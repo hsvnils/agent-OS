@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Einträge
 
+## [2026-06-22 10:32] — Claude Code
+- **Was:** Ausgangs-Prompt nach `docs/bootstrap-prompt.md` verschoben (per `git mv`, Historie erhalten) und
+  `docs/`-Ordner für Projektdokumente angelegt; `docs/README.md` mit Zweck des Ordners (Historie/Provenienz)
+  ergänzt.
+- **Warum:** CEO-Anweisung: Ausgangs-Prompt nicht löschen, sondern als Herkunftsnachweis dokumentieren;
+  `docs/` als Ablage für Briefs, Bootstrap- und spätere Build-Prompts etablieren.
+- **Betroffen:** `docs/bootstrap-prompt.md` (vormals `Claude_Code_Bootstrap_Prompt_Agenten.md`),
+  `docs/README.md`.
+
 ## [2026-06-22 10:24] — Claude Code
 - **Was:** Projekt initialisiert — Governance, Charta-System und 14 Agenten-Entwürfe angelegt.
 - **Warum:** Bootstrap-Anweisung des CEO (Datei `Claude_Code_Bootstrap_Prompt_Agenten.md`): Fundament des
