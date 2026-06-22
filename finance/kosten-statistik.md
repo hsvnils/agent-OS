@@ -5,16 +5,16 @@
 > Erfasste Kostenarten: Token-/API-Ausgaben je Agent, Tool-Abos, Pipeline-Kosten (z. B. Video-Cutter).
 > Siehe `AGENTS.md`, Abschnitt 5.9 „Kosten & Budget".
 
-## Monats-Soll-Ist (Übersicht)
+## Monats-Soll-Ist (Uebersicht)
 
-| Monat (JJJJ-MM) | Budget (EUR) | Ist gesamt (EUR) | Differenz | Trend | Größter Kostentreiber |
+| Monat (JJJJ-MM) | Budget (EUR) | Ist gesamt (EUR) | Differenz | Trend | Groesster Kostentreiber |
 |-----------------|--------------|------------------|-----------|-------|-----------------------|
 | `<JJJJ-MM>`     | `<aus budget.md>` | —           | —         | —     | —                     |
 
 ## Detail je Monat und Posten
 
 > Fortschreibung: Pro neuem Monat einen neuen Abschnitt „### `<JJJJ-MM>`" **oben** anlegen; Vormonate als
-> Historie **unverändert** lassen.
+> Historie **unveraendert** lassen.
 
 ### `<JJJJ-MM>` (Platzhalter)
 

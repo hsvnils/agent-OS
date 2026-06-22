@@ -1,26 +1,26 @@
-# Agent: <Klarname> (<Kürzel>)
+# Agent: <Klarname> (<Kuerzel>)
 Status: aktiv | Entwurf
 Modell: <empfohlenes Modell, modell-agnostisch>
 
 ## Rolle
-<1–2 Sätze>
+<1–2 Saetze>
 
 ## Auftrag / Verantwortlichkeiten
 - <…>
 
-## Ausdrücklich NICHT
+## Ausdruecklich NICHT
 - <Grenzen / was dieser Agent nicht tut>
 
-## Tools & Zugänge
+## Tools & Zugaenge
 - <…>
 
 ## Eskalation
-- Zuerst eigenständig im eigenen Mandat lösen; an den Head of Agents nur eskalieren, wenn nicht selbst
-  lösbar (außerhalb Mandat, fehlende Ressource/Zugang, CEO-Tor oder Blockade).
-- Wann an Head of Agents, wann an CTO (Blockaden), wann an CEO (Geld/Recht/Öffentlichkeit).
+- Zuerst eigenstaendig im eigenen Mandat loesen; an den Head of Agents nur eskalieren, wenn nicht selbst
+  loesbar (ausserhalb Mandat, fehlende Ressource/Zugang, CEO-Tor oder Blockade).
+- Wann an Head of Agents, wann an CTO (Blockaden), wann an CEO (Geld/Recht/Oeffentlichkeit).
 
 ## Output-Format
 - <wie Ergebnisse an den Head of Agents geliefert werden>
 
-## Änderungsregel
-Diese Datei darf nur der Head of Agents auf Anweisung des CEO ändern.
+## Aenderungsregel
+Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

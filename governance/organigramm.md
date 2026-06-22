@@ -1,10 +1,10 @@
 # Organigramm — Hierarchie des Agenten-Unternehmens
 
-> **Lebendes Dokument.** Es ändert sich, sobald Abteilungen **Unter-Agenten** bekommen.
-> **Quelle der Wahrheit für Agenten, Status und Charta-Dateien ist [`agents/REGISTRY.md`](../agents/REGISTRY.md).**
+> **Lebendes Dokument.** Es aendert sich, sobald Abteilungen **Unter-Agenten** bekommen.
+> **Quelle der Wahrheit fuer Agenten, Status und Charta-Dateien ist [`agents/REGISTRY.md`](../agents/REGISTRY.md).**
 > Dieses Dokument ist die **visuelle Hierarchie-Darstellung** und verweist auf die Registry — Status- und
 > Bestandsangaben werden **dort** gepflegt, nicht hier doppelt. Visuelle Map: [`organigramm.xmind`](organigramm.xmind).
-> `AGENTS.md` bleibt übergeordnet; bei Widerspruch gilt `AGENTS.md`.
+> `AGENTS.md` bleibt uebergeordnet; bei Widerspruch gilt `AGENTS.md`.
 
 ---
 
@@ -24,27 +24,27 @@ Unter-Agenten je Abteilung (optional, künftig)
       spezialisierte Sub-Agenten, vom jeweiligen Abteilungsleiter geführt
 ```
 
-- **Ebene 1 — CEO (Nils):** spricht ausschließlich mit dem Head of Agents.
-- **Ebene 2 — Head of Agents (00):** einziger Gesprächspartner des CEO; Supervisor aller Abteilungen.
+- **Ebene 1 — CEO (Nils):** spricht ausschliesslich mit dem Head of Agents.
+- **Ebene 2 — Head of Agents (00):** einziger Gespraechspartner des CEO; Supervisor aller Abteilungen.
 - **Ebene 3 — Abteilungsleiter (01–14):** die C-Rollen bzw. der Berater; sprechen nur mit dem HoA.
-- **Ebene 4 — Unter-Agenten (optional):** **jede Abteilung kann künftig Unter-Agenten erhalten**
-  (spezialisierte Sub-Agenten). Sie werden vom jeweiligen Abteilungsleiter geführt und sprechen nicht
-  direkt mit dem HoA oder CEO. Anlage neuer (Unter-)Agenten erfolgt als Charta über den HoA (CEO-Tor).
+- **Ebene 4 — Unter-Agenten (optional):** **jede Abteilung kann kuenftig Unter-Agenten erhalten**
+  (spezialisierte Sub-Agenten). Sie werden vom jeweiligen Abteilungsleiter gefuehrt und sprechen nicht
+  direkt mit dem HoA oder CEO. Anlage neuer (Unter-)Agenten erfolgt als Charta ueber den HoA (CEO-Tor).
 
-## Abteilungen und ihre (möglichen) Unter-Agenten
+## Abteilungen und ihre (moeglichen) Unter-Agenten
 
 Aktueller Bestand und Status: siehe [`agents/REGISTRY.md`](../agents/REGISTRY.md). Die Spalte
 „Unter-Agenten" zeigt den **Ausbaupfad** — heute noch leer, sofern nicht in der Registry anders vermerkt.
 
-| Abteilungsleiter | Beispiele künftiger Unter-Agenten |
+| Abteilungsleiter | Beispiele kuenftiger Unter-Agenten |
 |------------------|-----------------------------------|
 | 00 · Head of Agents | (Supervisor — keine eigene Unter-Ebene) |
 | 01 · Unternehmensberater | Markt-Research, Wettbewerbsanalyse |
 | 02 · CAO | Beschaffung, Termin-/Prozess-Assistenz |
 | 03 · CFO | Kosten-Tracking, Forecasting |
 | 04 · CRO | Sales-Outreach, Pricing-Analyse |
-| 05 · CISO | Security-Monitoring, DSGVO-Prüfung |
-| 06 · CBO | Visual-Design, Markenprüfung |
+| 05 · CISO | Security-Monitoring, DSGVO-Pruefung |
+| 06 · CBO | Visual-Design, Markenpruefung |
 | 07 · CPO | Spec-Writing, Research |
 | 08 · CTO | DevOps, Integrationen, Build/Test |
 | 09 · CXO | Journey-Mapping, Usability-Tests |
@@ -55,13 +55,13 @@ Aktueller Bestand und Status: siehe [`agents/REGISTRY.md`](../agents/REGISTRY.md
 | 14 · CKO | Wissensaufnahme, RAG-Indexierung |
 
 > Hinweis: Der **Video-Cutter-Agent** (vom CCO gesteuert) ist das erste konkret vorgesehene Beispiel eines
-> Unter-Agenten. Sobald er als Charta/Registry-Eintrag existiert, wird er hier und in der Registry geführt.
+> Unter-Agenten. Sobald er als Charta/Registry-Eintrag existiert, wird er hier und in der Registry gefuehrt.
 
-## Rollenverteilung gegenüber der Registry
+## Rollenverteilung gegenueber der Registry
 
 - **`agents/REGISTRY.md`** = **textbasierte Quelle der Wahrheit**: welche Agenten existieren, ihr **Status**
-  (`aktiv`/`Entwurf`) und die zugehörige **Charta-Datei**.
+  (`aktiv`/`Entwurf`) und die zugehoerige **Charta-Datei**.
 - **`governance/organigramm.md`** (dieses Dokument) = **visuelle Hierarchie-Darstellung**; verweist auf die
   Registry und bildet die Ebenen/Ausbaupfade ab.
-- **Keine doppelte Pflege widersprüchlicher Inhalte:** Status- und Bestandsänderungen passieren in der
+- **Keine doppelte Pflege widerspruechlicher Inhalte:** Status- und Bestandsaenderungen passieren in der
   Registry; dieses Dokument zeigt nur die Struktur und verlinkt.

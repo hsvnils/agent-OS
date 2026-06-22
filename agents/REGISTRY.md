@@ -1,6 +1,6 @@
 # Agenten-Registry
 
-> Org-Chart und Übersicht aller Agenten. Änderungen an Charten (und damit an dieser Liste) nimmt
+> Org-Chart und Uebersicht aller Agenten. Aenderungen an Charten (und damit an dieser Liste) nimmt
 > **nur der Head of Agents auf CEO-Anweisung** vor (siehe `AGENTS.md`, Abschnitt 3.3).
 
 ## Org-Chart
@@ -31,11 +31,11 @@ Kommunikationsregel: Abteilungs-Agenten sprechen **nur mit dem Head of Agents**,
 
 > Diese Datei ist die **textbasierte Quelle der Wahrheit** (Agenten, Status, Charta-Datei). Die **visuelle
 > Hierarchie-Darstellung** liegt in [`governance/organigramm.md`](../governance/organigramm.md)
-> (+ [`organigramm.xmind`](../governance/organigramm.xmind)) und verweist auf diese Registry zurück.
+> (+ [`organigramm.xmind`](../governance/organigramm.xmind)) und verweist auf diese Registry zurueck.
 
-## Übersichtstabelle
+## Uebersichtstabelle
 
-| Kürzel | Klarname | Status | Charta-Datei |
+| Kuerzel | Klarname | Status | Charta-Datei |
 |--------|----------|--------|--------------|
 | HoA  | Head of Agents | aktiv | `00_head-of-agents.md` |
 | —    | Unternehmensberater | Entwurf | `01_unternehmensberater.md` |
@@ -53,5 +53,5 @@ Kommunikationsregel: Abteilungs-Agenten sprechen **nur mit dem Head of Agents**,
 | CLO  | Chief Legal Officer | Entwurf | `13_clo.md` |
 | CKO  | Chief Knowledge Officer | Entwurf | `14_cko.md` |
 
-> **Welle 1 aktiv:** Head of Agents, CFO, CBO, CTO, CCO. Die übrigen Agenten sind als `Entwurf` angelegt;
-> ihre Aktivierung folgt später.
+> **Welle 1 aktiv:** Head of Agents, CFO, CBO, CTO, CCO. Die uebrigen Agenten sind als `Entwurf` angelegt;
+> ihre Aktivierung folgt spaeter.
