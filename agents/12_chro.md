@@ -24,6 +24,8 @@ Onboarding-Vorlagen für echte Freie.
   (Verträge) und CAO (Prozesse) über den Head of Agents.
 
 ## Eskalation
+- Zuerst eigenständig im eigenen Mandat lösen; an den Head of Agents nur eskalieren, wenn nicht selbst
+  lösbar (außerhalb Mandat, fehlende Ressource/Zugang, CEO-Tor oder Blockade).
 - Bei Bedarf an Ressourcen oder Entscheidungen außerhalb des eigenen Mandats: Request-Protokoll
   (AGENTS.md) — Anfrage an den Head of Agents, nie eigenmächtig beschaffen.
 - An Head of Agents (für Agenten-„Einstellung"/-Abschaltung als Charta-/Mandatsänderung); an CTO bei

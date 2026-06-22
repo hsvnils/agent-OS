@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Einträge
 
+## [2026-06-22 11:05] — Claude Code
+- **Was:** Governance-Modell in zwei Schritten erweitert. **(Teil 1 — Autonomie-Prinzip:** `AGENTS.md`
+  Abschnitt 5 ein übergeordnetes Autonomie-Prinzip vorangestellt (eigenständige Lösung ist Standard,
+  Eskalation die Ausnahme; Request-Protokoll greift nur im Eskalationsfall, IT-Regel als Spezialfall);
+  Standard-Eskalationszeile „Zuerst eigenständig … nur eskalieren, wenn nicht selbst lösbar …" in
+  `agents/_TEMPLATE.md` und allen 15 Charten im Feld „Eskalation" ergänzt. **(Teil 2 — Kosten & Budget:**
+  `AGENTS.md` um Abschnitt 5.9 „Kosten & Budget" ergänzt (laufende Kostenüberwachung/-statistik durch CFO,
+  Kostenvoranschlag bei neuen Modellen/Diensten/Abos, CEO-Monatsbudget als einzige Quelle
+  `finance/budget.md`, Budgetverwaltung durch HoA, Entscheidungslogik, CEO-Tor bleibt); `03_cfo.md` und
+  `00_head-of-agents.md` im Auftrag entsprechend erweitert; `finance/budget.md` (Platzhalter-Budget +
+  Änderungshistorie) und `finance/kosten-statistik.md` (monatlich, mit Historie) angelegt; Dateiübersicht in
+  `AGENTS.md` um `finance/` und `docs/` ergänzt.
+- **Warum:** CEO-Anweisung „Governance-Modell in zwei zusammenhängenden Schritten erweitern" — Autonomie als
+  Leitprinzip verankern und eine nachvollziehbare Kosten-/Budget-Governance einführen.
+- **Betroffen:** `AGENTS.md`, `agents/_TEMPLATE.md`, `agents/00_head-of-agents.md` … `agents/14_cko.md`
+  (alle 15 Charten), `finance/budget.md`, `finance/kosten-statistik.md`.
+
 ## [2026-06-22 10:48] — Claude Code
 - **Was:** (1) `AGENTS.md` um Abschnitt 5 „Request-/Freigabe-Protokoll" erweitert — Grundsatz, Anfrageformat,
   Entscheidungsbaum, CEO-Tor-Kategorien, Routing nach Bedarfstyp (technischer Bedarf → CTO/IT), proaktive

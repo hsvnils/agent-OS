@@ -22,6 +22,8 @@ Modell: Grok 4.3 (Legal-Reasoning) oder Gemini 3.1 Pro — Richtwert, modell-agn
   Abstimmung mit CFO, CRO, CHRO über den Head of Agents.
 
 ## Eskalation
+- Zuerst eigenständig im eigenen Mandat lösen; an den Head of Agents nur eskalieren, wenn nicht selbst
+  lösbar (außerhalb Mandat, fehlende Ressource/Zugang, CEO-Tor oder Blockade).
 - Bei Bedarf an Ressourcen oder Entscheidungen außerhalb des eigenen Mandats: Request-Protokoll
   (AGENTS.md) — Anfrage an den Head of Agents, nie eigenmächtig beschaffen.
 - An Head of Agents; an CTO bei technischer Blockade; **jede rechtliche Verbindlichkeit** als Entwurf an

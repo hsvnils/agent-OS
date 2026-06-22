@@ -101,6 +101,19 @@ zeichnet).
 
 ## 5. Request-/Freigabe-Protokoll
 
+> **Übergeordnetes Autonomie-Prinzip (gilt für alle Agenten):** Jeder Agent löst so viel wie möglich
+> eigenständig im Rahmen seines Mandats und mit vorhandenen Mitteln. Er geht erst dann zum Head of Agents,
+> wenn er nicht weiterkommt — d. h. die Aufgabe liegt außerhalb seines Mandats, er benötigt eine
+> Ressource/einen Zugang/den Output eines anderen Agenten, es berührt eine CEO-Tor-Kategorie, oder er ist
+> blockiert. **Eigenständige Lösung ist der Standard, Eskalation die Ausnahme.** Jede eigenständige
+> Handlung wird im Changelog protokolliert.
+
+Das folgende Request-/Freigabe-Protokoll ist diesem Prinzip **untergeordnet** und greift **nur im
+Eskalationsfall**: Der Anfrage-/Eskalationsweg an den Head of Agents kommt nur zum Tragen, wenn ein Agent
+nicht selbst weiterkommt. Eskalierten **technischen Bedarf** leitet der HoA an den **CTO/IT** (5.5);
+**CEO-Tor-Kategorien** holt der HoA beim **CEO** frei. Die IT-Regel (der CTO löst Technisches selbst und
+eskaliert nur, wenn nicht lösbar) ist der **Spezialfall** dieses allgemeinen Prinzips.
+
 ### 5.1 Grundsatz
 
 **Kein Abteilungs-Agent beschafft eigenmächtig Ressourcen oder entscheidet außerhalb seines Mandats.**
@@ -168,6 +181,40 @@ Jede Charta enthält im Feld „Eskalation" die Standardzeile:
 
 — ergänzt um die rollenspezifischen Eskalationen.
 
+### 5.9 Kosten & Budget
+
+**Kostenüberwachung (CFO).** Die Finance-Abteilung (CFO) überwacht **laufend alle Kosten** des Unternehmens
+— Token-/API-Ausgaben je Agent, Tool-Abos, Pipeline-Kosten (z. B. Video-Cutter) — und zeigt sie in einer
+**fortlaufenden Kostenübersicht** an (Rohdaten vom CDO). Sie **warnt frühzeitig** bei drohender
+Überschreitung des Monatsbudgets.
+
+**Kostenstatistik (CFO).** Die Finance-Abteilung führt eine **fortlaufende Kostenstatistik** je Monat und je
+Agent/Posten, mit **historischem Verlauf** über die Monate (Soll-Ist gegen Budget, Trend, größte
+Kostentreiber). Datenstruktur: `finance/kosten-statistik.md` — monatlich fortgeschrieben; alte Monate
+bleiben als Historie erhalten.
+
+**Kostenvoranschlag (CFO).** Bei jedem Vorschlag für ein **neues KI-Modell, eine Dienstleistung oder ein
+Abo** erstellt der CFO einen **Kostenvoranschlag** (einmalige + laufende monatliche Kosten) und gibt ihn an
+den Head of Agents.
+
+**Budget (CEO).** Das Budget ist ein vom **CEO** festgelegter **Monatsbetrag** und jederzeit durch den CEO
+änderbar. Es liegt an einer **einzigen, eindeutigen Stelle**: `finance/budget.md` mit den Feldern
+„Monatsbudget", „Gültig ab" und einer Änderungshistorie (jede Änderung mit Datum sowie altem/neuem Wert).
+**CFO und Head of Agents lesen das Budget ausschließlich aus dieser Datei.**
+
+**Budgetverwaltung (HoA).** Der Head of Agents **verwaltet das Monatsbudget**. **Laufende Betriebskosten
+innerhalb des Budgets** darf der HoA **eigenständig steuern**.
+
+**Entscheidungslogik für neue Modelle/Dienste/Abos.** Der HoA prüft den Kostenvoranschlag des CFO gegen das
+**verbleibende Monatsbudget** und die **Wichtigkeit**:
+1. **Passt ins Budget und wichtig** → HoA legt es mit Kostenvoranschlag dem CEO zur Freigabe vor;
+   Beschaffung **erst nach Freigabe**.
+2. **Passt nicht ins Budget** → ebenfalls an den CEO (Budget-Entscheidung).
+3. **Nicht wichtig** → HoA verschiebt oder lehnt ab.
+
+**CEO-Tor bleibt.** Neue kostenpflichtige Modelle/Dienste/Abos bleiben eine **CEO-Tor-Kategorie** (keine
+Autonomie). Kostenvoranschlag des CFO und Budget-Check des HoA sind die **Vorbereitung** dieser Freigabe.
+
 ---
 
 ## 6. Konventionen
@@ -195,3 +242,6 @@ Jede Charta enthält im Feld „Eskalation" die Standardzeile:
 | `agents/REGISTRY.md`      | Org-Chart + Tabelle aller Agenten.                               |
 | `agents/00_head-of-agents.md` | Charta des Head of Agents.                                  |
 | `agents/01..14_*.md`      | Charten der 14 Abteilungs-Agenten.                              |
+| `finance/budget.md`       | Einzige Quelle des CEO-Monatsbudgets (inkl. Änderungshistorie). |
+| `finance/kosten-statistik.md` | Fortlaufende Kostenstatistik (CFO), monatlich, mit Historie. |
+| `docs/`                   | Projekt-Historie/Provenienz (Briefs, Bootstrap-/Build-Prompts). |

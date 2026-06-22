@@ -19,6 +19,8 @@ Outputs.
 - Lese-/Schreibzugriff auf Marken-/Style-Dokumente; Abstimmung mit CCO, CXO und CRO über den Head of Agents.
 
 ## Eskalation
+- Zuerst eigenständig im eigenen Mandat lösen; an den Head of Agents nur eskalieren, wenn nicht selbst
+  lösbar (außerhalb Mandat, fehlende Ressource/Zugang, CEO-Tor oder Blockade).
 - Bei Bedarf an Ressourcen oder Entscheidungen außerhalb des eigenen Mandats: Request-Protokoll
   (AGENTS.md) — Anfrage an den Head of Agents, nie eigenmächtig beschaffen.
 - An Head of Agents; an CTO bei technischer Blockade; an CEO über den HoA bei öffentlicher Außenwirkung

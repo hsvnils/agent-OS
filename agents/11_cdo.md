@@ -21,6 +21,8 @@ Agenten **saubere Zahlen**.
   Agents.
 
 ## Eskalation
+- Zuerst eigenständig im eigenen Mandat lösen; an den Head of Agents nur eskalieren, wenn nicht selbst
+  lösbar (außerhalb Mandat, fehlende Ressource/Zugang, CEO-Tor oder Blockade).
 - Bei Bedarf an Ressourcen oder Entscheidungen außerhalb des eigenen Mandats: Request-Protokoll
   (AGENTS.md) — Anfrage an den Head of Agents, nie eigenmächtig beschaffen.
 - An Head of Agents; an CTO bei technischer Blockade (Datenpipelines); an CISO bei Datenschutzfragen.
