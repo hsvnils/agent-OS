@@ -29,6 +29,9 @@ Head of Agents (00)
 
 Kommunikationsregel: Abteilungs-Agenten sprechen **nur mit dem Head of Agents**, nie direkt mit dem CEO.
 
+> Visuelle Fassung dieses Org-Charts: [`Organigramm.xmind`](Organigramm.xmind) (XMind-Map; Top-Down-Org-Chart
+> mit Status-Labels „aktiv"/„Entwurf").
+
 ## Übersichtstabelle
 
 | Kürzel | Klarname | Status | Charta-Datei |

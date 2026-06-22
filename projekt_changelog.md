@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Einträge
 
+## [2026-06-22 11:20] — Claude Code
+- **Was:** XMind-Organigramm `agents/Organigramm.xmind` angelegt (Top-Down-Org-Chart: CEO → Head of Agents →
+  14 Abteilungs-Agenten, mit Status-Labels „aktiv"/„Entwurf", Kurznotizen je Rolle und Hanserautisch-Farben).
+  Querverweis dazu in `agents/REGISTRY.md` ergänzt.
+- **Warum:** CEO-Anweisung: Organigramm zusätzlich als XMind-Map ablegen.
+- **Betroffen:** `agents/Organigramm.xmind` (neu), `agents/REGISTRY.md`.
+
 ## [2026-06-22 11:05] — Claude Code
 - **Was:** Governance-Modell in zwei Schritten erweitert. **(Teil 1 — Autonomie-Prinzip:** `AGENTS.md`
   Abschnitt 5 ein übergeordnetes Autonomie-Prinzip vorangestellt (eigenständige Lösung ist Standard,
