@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Einträge
 
+## [2026-06-22 10:48] — Claude Code
+- **Was:** (1) `AGENTS.md` um Abschnitt 5 „Request-/Freigabe-Protokoll" erweitert — Grundsatz, Anfrageformat,
+  Entscheidungsbaum, CEO-Tor-Kategorien, Routing nach Bedarfstyp (technischer Bedarf → CTO/IT), proaktive
+  Bedarfsermittlung durch die IT und Zugriffs-Governance (CISO autorisiert, CTO setzt um); Folgeabschnitte
+  zu 6./7. umnummeriert. (2) Alle 14 Abteilungs-Charten mit recherchierten Verantwortlichkeiten,
+  Modell-Richtwerten und der Standard-Eskalationszeile (Request-Protokoll) befüllt; HoA-Charta um Verweis
+  auf das Request-Protokoll ergänzt. (3) `05_ciso.md` (Zugriffs-Autorisierung/Policy) und `08_cto.md`
+  (zentrale Anlaufstelle für technischen Bedarf + proaktive Bedarfsermittlung) entsprechend angepasst.
+  (4) `agents/REGISTRY.md` aktualisiert: Welle 1 (HoA, CFO, CBO, CTO, CCO) = aktiv, übrige = Entwurf.
+- **Warum:** CEO-autorisierte Setup-Aufgabe „Agenten-Verantwortlichkeiten + Request-Protokoll": Charten mit
+  echten C-Level-abgeleiteten Mandaten füllen und das universelle Request-/Freigabe- sowie
+  Bedarfs-Routing-Protokoll verankern. Weiterhin keine Orchestrierungslogik/kein Laufzeit-Verhalten.
+- **Betroffen:** `AGENTS.md`, `agents/REGISTRY.md`, `agents/00_head-of-agents.md` …
+  `agents/14_cko.md` (alle 14 Abteilungs-Charten).
+
 ## [2026-06-22 10:32] — Claude Code
 - **Was:** Ausgangs-Prompt nach `docs/bootstrap-prompt.md` verschoben (per `git mv`, Historie erhalten) und
   `docs/`-Ordner für Projektdokumente angelegt; `docs/README.md` mit Zweck des Ordners (Historie/Provenienz)

@@ -99,7 +99,78 @@ zeichnet).
 
 ---
 
-## 5. Konventionen
+## 5. Request-/Freigabe-Protokoll
+
+### 5.1 Grundsatz
+
+**Kein Abteilungs-Agent beschafft eigenmächtig Ressourcen oder entscheidet außerhalb seines Mandats.**
+Sobald ein Agent etwas benötigt — ein neues Tool, ein neues/anderes KI-Modell, einen API-Key/Zugang,
+Budget, den Output eines anderen Agenten, eine Prozess-/Mandatsänderung oder eine Entscheidung mit
+Geld/Recht/Öffentlichkeit — stellt er **zuerst eine Anfrage an den Head of Agents** und **handelt nicht,
+bevor er eine Antwort hat**.
+
+### 5.2 Anfrageformat
+
+```
+ANFRAGE an Head of Agents
+- Von: <Agent>
+- Benötigt: <konkret>
+- Wofür / Ziel: <Begründung>
+- Dringlichkeit: <niedrig|mittel|hoch>
+- Vorschlag/Optionen: <falls vorhanden>
+```
+
+### 5.3 Entscheidungsbaum des Head of Agents
+
+1. **Im bestehenden Mandat & mit vorhandenen Ressourcen lösbar, keine CEO-Tor-Kategorie berührt?**
+   → HoA genehmigt/koordiniert direkt, schreibt Changelog.
+2. **Blockade („geht nicht")?** → HoA beauftragt zuerst den **CTO** mit Lösung/Workaround, bevor er den
+   CEO behelligt.
+3. **CEO-Tor-Kategorie berührt?** → HoA bündelt es zu einer entscheidungsreifen Vorlage und holt
+   **Freigabe beim CEO** ein. **Erst nach Freigabe handeln.** Changelog.
+4. **Unklar oder risikobehaftet?** → im Zweifel an den CEO.
+
+### 5.4 CEO-Tor-Kategorien (immer Freigabe nötig)
+
+Geld/Kosten · Recht/Verträge · Öffentlichkeit/Veröffentlichung · neue kostenpflichtige oder
+risikobehaftete Tools/Modelle/Zugänge · Mandats-/Charta-Änderungen · Löschen von Daten.
+
+### 5.5 Routing nach Bedarfstyp
+
+- **Technischer Bedarf** (Zugang/Account, Tool, Integration/Connector, Infrastruktur, Modell-Setup) wird
+  vom Head of Agents an den **CTO (IT)** geleitet. Die IT präzisiert den Bedarf und prüft
+  Bestand/Machbarkeit:
+  - **Vorhanden und im Mandat** → die IT **provisioniert** (bei Zugriffs-/Sicherheitsrelevanz mit
+    **CISO-Freigabe**, siehe 5.7).
+  - **Nicht vorhanden, kostenpflichtig, neu oder riskant** → die IT formuliert die konkrete
+    **Beschaffungs-/Zugangsanforderung** und gibt sie an den HoA zurück, der **CEO-Freigabe** einholt
+    (CEO-Tor).
+- **Nicht-technischer Bedarf** läuft wie bisher **direkt über den HoA** (Entscheidungsbaum 5.3).
+
+### 5.6 Proaktive Bedarfsermittlung durch die IT
+
+Der **CTO (IT)** erkennt und meldet technischen Bedarf **eigenständig** — über den Head of Agents.
+Erkennt die IT einen Engpass, ein fehlendes Tool oder eine nötige Integration, formuliert sie den Bedarf
+proaktiv und reicht ihn (über den HoA, ggf. mit CEO-Tor) ein, statt auf eine Anfrage zu warten.
+
+### 5.7 Zugriffs-Governance
+
+- Der **CISO autorisiert** Berechtigungen und definiert die **Zugriffs-Policy** (welcher Agent darf was).
+- Der **CTO setzt** autorisierte Berechtigungen technisch **um**.
+- **Kein Agent erhält Zugriff ohne CISO-konforme Freigabe.**
+
+### 5.8 Standard-Eskalationszeile in jeder Charta
+
+Jede Charta enthält im Feld „Eskalation" die Standardzeile:
+
+> „Bei Bedarf an Ressourcen oder Entscheidungen außerhalb des eigenen Mandats: Request-Protokoll
+> (AGENTS.md) — Anfrage an den Head of Agents, nie eigenmächtig beschaffen."
+
+— ergänzt um die rollenspezifischen Eskalationen.
+
+---
+
+## 6. Konventionen
 
 - **Sprache:** Deutsch für alle menschlich gelesenen Texte.
 - **Modell-agnostisch:** keine harte Abhängigkeit von einem bestimmten Modell; Empfehlungen sind Richtwerte.
@@ -111,7 +182,7 @@ zeichnet).
 
 ---
 
-## 6. Dateiübersicht
+## 7. Dateiübersicht
 
 | Datei / Ordner            | Bedeutung                                                        |
 |---------------------------|------------------------------------------------------------------|

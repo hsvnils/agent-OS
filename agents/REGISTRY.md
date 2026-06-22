@@ -36,15 +36,18 @@ Kommunikationsregel: Abteilungs-Agenten sprechen **nur mit dem Head of Agents**,
 | HoA  | Head of Agents | aktiv | `00_head-of-agents.md` |
 | —    | Unternehmensberater | Entwurf | `01_unternehmensberater.md` |
 | CAO  | Chief Administrative Officer | Entwurf | `02_cao.md` |
-| CFO  | Chief Financial Officer | Entwurf | `03_cfo.md` |
+| CFO  | Chief Financial Officer | **aktiv** | `03_cfo.md` |
 | CRO  | Chief Revenue Officer | Entwurf | `04_cro.md` |
 | CISO | Chief Information Security Officer | Entwurf | `05_ciso.md` |
-| CBO  | Chief Brand Officer | Entwurf | `06_cbo.md` |
+| CBO  | Chief Brand Officer | **aktiv** | `06_cbo.md` |
 | CPO  | Chief Product Officer | Entwurf | `07_cpo.md` |
-| CTO  | Chief Technology Officer | Entwurf | `08_cto.md` |
+| CTO  | Chief Technology Officer | **aktiv** | `08_cto.md` |
 | CXO  | Chief Experience Officer | Entwurf | `09_cxo.md` |
-| CCO  | Chief Content Officer | Entwurf | `10_cco-content.md` |
+| CCO  | Chief Content Officer | **aktiv** | `10_cco-content.md` |
 | CDO  | Chief Data Officer | Entwurf | `11_cdo.md` |
 | CHRO | Chief Human Resources Officer | Entwurf | `12_chro.md` |
 | CLO  | Chief Legal Officer | Entwurf | `13_clo.md` |
 | CKO  | Chief Knowledge Officer | Entwurf | `14_cko.md` |
+
+> **Welle 1 aktiv:** Head of Agents, CFO, CBO, CTO, CCO. Die übrigen Agenten sind als `Entwurf` angelegt;
+> ihre Aktivierung folgt später.
