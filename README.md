@@ -36,8 +36,10 @@ CEO (Nils)  →  Head of Agents  →  Abteilungs-Agenten (01–14)
 | **`agents/`**             | **Die Charten.** Eine Datei je Agent — Rolle, Auftrag, Grenzen.   |
 | `agents/REGISTRY.md`      | Org-Chart + Übersichtstabelle aller Agenten.                      |
 | `agents/_TEMPLATE.md`     | Vorlage für neue Charten.                                          |
+| `docs/orchestrierung.md`  | Wie der Head of Agents Aufträge orchestriert (+ `docs/orchestrierung.xmind`). |
 
-Kurz: **`AGENTS.md` = Regeln**, **`agents/` = Charten**, **`projekt_changelog.md` = Protokoll**.
+Kurz: **`AGENTS.md` = Regeln**, **`agents/` = Charten**, **`projekt_changelog.md` = Protokoll**,
+**`docs/orchestrierung.md` = Ablauflogik**.
 
 ---
 
@@ -49,6 +51,8 @@ Kurz: **`AGENTS.md` = Regeln**, **`agents/` = Charten**, **`projekt_changelog.md
 3. Alles mit **Geld, Recht, Verträgen oder Öffentlichkeit** kommt als **Entwurf** zurück zur Freigabe durch
    den CEO.
 4. Nach jeder Änderung wird ein **Changelog-Eintrag** geschrieben und committet.
+
+Den vollständigen Auftrags-Lebenszyklus beschreibt [`docs/orchestrierung.md`](docs/orchestrierung.md).
 
 ---
 

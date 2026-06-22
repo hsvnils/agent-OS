@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Einträge
 
+## [2026-06-22 15:35] — Claude Code
+- **Was:** Kanonische Orchestrierungslogik als `docs/orchestrierung.md` festgehalten (Grundprinzip,
+  Auftrags-Lebenszyklus, Delegations-/Ergebnisformat, Eskalation & Request-Protokoll, Kosten & Budget,
+  CEO-Tore, Inter-Agenten-Zusammenarbeit, Konfliktlösung, Status & Gedächtnis, erste aktive Welle).
+  Verweise ergänzt: `AGENTS.md` (Org-Prinzip + Dateiübersicht), `README.md` und `docs/README.md`. Die vom
+  CEO abgelegte Visualisierung `docs/orchestrierung.xmind` aufgenommen und mitcommittet.
+- **Warum:** CEO-Anweisung „Orchestrierungslogik festhalten" — verbindliche Ablaufbeschreibung dokumentieren
+  und XMind-Map einbinden. Noch keine Implementierung/kein Laufzeit-Code (folgt nach Framework-Entscheidung).
+- **Betroffen:** `docs/orchestrierung.md` (neu), `docs/orchestrierung.xmind` (neu, vom CEO), `AGENTS.md`,
+  `README.md`, `docs/README.md`.
+
 ## [2026-06-22 11:20] — Claude Code
 - **Was:** XMind-Organigramm `agents/Organigramm.xmind` angelegt (Top-Down-Org-Chart: CEO → Head of Agents →
   14 Abteilungs-Agenten, mit Status-Labels „aktiv"/„Entwurf", Kurznotizen je Rolle und Hanserautisch-Farben).

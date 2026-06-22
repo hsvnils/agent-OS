@@ -38,6 +38,9 @@ Abteilungs-Agenten (01–14)
   einen technischen Weg oder eine tragfähige Alternative findet. Erst wenn auch der CTO begründet keine
   Lösung sieht, geht die Aufgabe mit dieser Begründung an den Head of Agents zurück.
 
+> **Orchestrierung siehe `docs/orchestrierung.md`** — kanonische Beschreibung des Auftrags-Lebenszyklus
+> (Supervisor-Pattern). Dieses Dokument ist `AGENTS.md` untergeordnet; bei Widerspruch gilt `AGENTS.md`.
+
 ---
 
 ## 3. Die drei Grundregeln
@@ -245,3 +248,4 @@ Autonomie). Kostenvoranschlag des CFO und Budget-Check des HoA sind die **Vorber
 | `finance/budget.md`       | Einzige Quelle des CEO-Monatsbudgets (inkl. Änderungshistorie). |
 | `finance/kosten-statistik.md` | Fortlaufende Kostenstatistik (CFO), monatlich, mit Historie. |
 | `docs/`                   | Projekt-Historie/Provenienz (Briefs, Bootstrap-/Build-Prompts). |
+| `docs/orchestrierung.md`  | Kanonische Orchestrierungslogik (HoA-Supervisor-Pattern).       |
