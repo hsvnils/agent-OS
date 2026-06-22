@@ -20,8 +20,7 @@ Repository so aussieht, wie es aussieht — als lückenloser Herkunftsnachweis.
 | Datei | Bedeutung |
 |-------|-----------|
 | `bootstrap-prompt.md` | Ursprünglicher Bootstrap-Prompt, aus dem das Fundament (Governance, Charta-System, 14 Agenten-Entwürfe) entstanden ist. |
-| `orchestrierung.md` | Kanonische Orchestrierungslogik — wie der Head of Agents Aufträge durch das Agenten-Unternehmen steuert (Auftrags-Lebenszyklus, Supervisor-Pattern). `AGENTS.md` untergeordnet. |
-| `orchestrierung.xmind` | Visuelle Map (XMind) zur Orchestrierungslogik — zugehörige Visualisierung zu `orchestrierung.md`. |
 
-> Hinweis: `orchestrierung.md` ist ein **lebendes Steuerungsdokument** (kein reines Historien-Artefakt). Es
-> liegt hier, weil `docs/` die übergreifenden Projektdokumente bündelt; maßgeblich bleibt `AGENTS.md`.
+> Hinweis: **Aktiv gepflegte Steuerungsdokumente** (Orchestrierungslogik, Organigramm) liegen **nicht** hier,
+> sondern in [`governance/`](../governance/README.md). `docs/` enthält ausschließlich **eingefrorene
+> Provenienz/Historie**.

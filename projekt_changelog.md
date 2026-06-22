@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Einträge
 
+## [2026-06-22 15:52] — Claude Code
+- **Was:** Ordner `governance/` für lebende, autoritative Steuerungsdokumente (AGENTS.md untergeordnet)
+  angelegt. Per `git mv` verschoben: `docs/orchestrierung.md` → `governance/orchestrierung.md`,
+  `docs/orchestrierung.xmind` → `governance/orchestrierung.xmind`, `agents/Organigramm.xmind` →
+  `governance/organigramm.xmind` (Dateiname vereinheitlicht). Neu: `governance/organigramm.md` (visuelle
+  Hierarchie CEO → HoA → Abteilungsleiter → optionale Unter-Agenten, verweist auf `agents/REGISTRY.md` als
+  Quelle der Wahrheit) und `governance/README.md`. `docs/README.md` bereinigt (nur noch Provenienz/Historie).
+  Verweise aktualisiert in `AGENTS.md`, `README.md` und `agents/REGISTRY.md`.
+- **Warum:** CEO-Anweisung: lebende Steuerungsdokumente von der eingefrorenen Provenienz in `docs/` trennen;
+  Organigramm als eigenständiges, erweiterbares Dokument mit Unter-Agenten-Ebene führen; keine doppelte
+  Pflege widersprüchlicher Inhalte (Registry = Quelle der Wahrheit, Organigramm = Visualisierung).
+- **Betroffen:** `governance/orchestrierung.md`, `governance/orchestrierung.xmind`,
+  `governance/organigramm.md` (neu), `governance/organigramm.xmind`, `governance/README.md` (neu),
+  `docs/README.md`, `AGENTS.md`, `README.md`, `agents/REGISTRY.md`.
+
 ## [2026-06-22 15:35] — Claude Code
 - **Was:** Kanonische Orchestrierungslogik als `docs/orchestrierung.md` festgehalten (Grundprinzip,
   Auftrags-Lebenszyklus, Delegations-/Ergebnisformat, Eskalation & Request-Protokoll, Kosten & Budget,

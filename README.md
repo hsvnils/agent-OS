@@ -34,12 +34,13 @@ CEO (Nils)  →  Head of Agents  →  Abteilungs-Agenten (01–14)
 | `README.md`               | Diese menschliche Übersicht.                                       |
 | **`projekt_changelog.md`**| **Das Protokoll.** Lückenloses Logbuch aller Änderungen.          |
 | **`agents/`**             | **Die Charten.** Eine Datei je Agent — Rolle, Auftrag, Grenzen.   |
-| `agents/REGISTRY.md`      | Org-Chart + Übersichtstabelle aller Agenten.                      |
+| `agents/REGISTRY.md`      | Org-Chart + Übersichtstabelle aller Agenten (Quelle der Wahrheit). |
 | `agents/_TEMPLATE.md`     | Vorlage für neue Charten.                                          |
-| `docs/orchestrierung.md`  | Wie der Head of Agents Aufträge orchestriert (+ `docs/orchestrierung.xmind`). |
+| `governance/orchestrierung.md` | Wie der Head of Agents Aufträge orchestriert (+ `.xmind`).   |
+| `governance/organigramm.md` | Visuelle Hierarchie CEO → HoA → Abteilungen → Unter-Agenten (+ `.xmind`). |
 
 Kurz: **`AGENTS.md` = Regeln**, **`agents/` = Charten**, **`projekt_changelog.md` = Protokoll**,
-**`docs/orchestrierung.md` = Ablauflogik**.
+**`governance/` = Ablauflogik & Hierarchie**.
 
 ---
 
@@ -52,7 +53,7 @@ Kurz: **`AGENTS.md` = Regeln**, **`agents/` = Charten**, **`projekt_changelog.md
    den CEO.
 4. Nach jeder Änderung wird ein **Changelog-Eintrag** geschrieben und committet.
 
-Den vollständigen Auftrags-Lebenszyklus beschreibt [`docs/orchestrierung.md`](docs/orchestrierung.md).
+Den vollständigen Auftrags-Lebenszyklus beschreibt [`governance/orchestrierung.md`](governance/orchestrierung.md).
 
 ---
 

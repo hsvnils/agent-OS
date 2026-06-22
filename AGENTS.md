@@ -38,8 +38,9 @@ Abteilungs-Agenten (01–14)
   einen technischen Weg oder eine tragfähige Alternative findet. Erst wenn auch der CTO begründet keine
   Lösung sieht, geht die Aufgabe mit dieser Begründung an den Head of Agents zurück.
 
-> **Orchestrierung siehe `docs/orchestrierung.md`** — kanonische Beschreibung des Auftrags-Lebenszyklus
-> (Supervisor-Pattern). Dieses Dokument ist `AGENTS.md` untergeordnet; bei Widerspruch gilt `AGENTS.md`.
+> **Orchestrierung siehe `governance/orchestrierung.md`**, **Hierarchie siehe `governance/organigramm.md`** —
+> beide beschreiben Auftrags-Lebenszyklus (Supervisor-Pattern) bzw. die Org-Hierarchie. Diese Dokumente sind
+> `AGENTS.md` untergeordnet; bei Widerspruch gilt `AGENTS.md`.
 
 ---
 
@@ -247,5 +248,7 @@ Autonomie). Kostenvoranschlag des CFO und Budget-Check des HoA sind die **Vorber
 | `agents/01..14_*.md`      | Charten der 14 Abteilungs-Agenten.                              |
 | `finance/budget.md`       | Einzige Quelle des CEO-Monatsbudgets (inkl. Änderungshistorie). |
 | `finance/kosten-statistik.md` | Fortlaufende Kostenstatistik (CFO), monatlich, mit Historie. |
-| `docs/`                   | Projekt-Historie/Provenienz (Briefs, Bootstrap-/Build-Prompts). |
-| `docs/orchestrierung.md`  | Kanonische Orchestrierungslogik (HoA-Supervisor-Pattern).       |
+| `governance/`             | Lebende Steuerungsdokumente (AGENTS.md untergeordnet).          |
+| `governance/orchestrierung.md` | Kanonische Orchestrierungslogik (HoA-Supervisor-Pattern).  |
+| `governance/organigramm.md` | Visuelle Hierarchie; verweist auf `agents/REGISTRY.md`.       |
+| `docs/`                   | Eingefrorene Provenienz/Historie (Briefs, Bootstrap-/Build-Prompts). |
