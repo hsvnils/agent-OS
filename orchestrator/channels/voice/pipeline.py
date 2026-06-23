@@ -19,13 +19,21 @@ import asyncio
 from .bridge import BridgeResult, HoaBridge
 
 
+# Default-Stimme ElevenLabs (multilingual-faehig), falls keine Voice-ID in config.toml steht.
+_DEFAULT_ELEVEN_VOICE = "21m00Tcm4TlvDq8ikWAM"
+
+
 def build_stt(cfg: dict, secrets: dict):
     """STT-Service aus Config (Default: Deepgram). Key kommt aus .env (Capability-Muster)."""
     provider = cfg.get("stt_provider", "deepgram").lower()
     if provider == "deepgram":
         from pipecat.services.deepgram.stt import DeepgramSTTService
-        return DeepgramSTTService(api_key=secrets["DEEPGRAM_API_KEY"],
-                                  live_options={"language": cfg.get("language", "de")})
+        return DeepgramSTTService(
+            api_key=secrets["DEEPGRAM_API_KEY"],
+            settings=DeepgramSTTService.Settings(
+                model="nova-2", language=cfg.get("language", "de"), smart_format=True
+            ),
+        )
     raise ValueError(f"Unbekannter STT-Provider: {provider}")
 
 
@@ -38,8 +46,14 @@ def build_tts(cfg: dict, secrets: dict):
                                   voice_id=cfg.get("tts_voice_id", ""))
     if provider == "elevenlabs":
         from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
-        return ElevenLabsTTSService(api_key=secrets["ELEVENLABS_API_KEY"],
-                                    voice_id=cfg.get("tts_voice_id", ""))
+        return ElevenLabsTTSService(
+            api_key=secrets["ELEVENLABS_API_KEY"],
+            settings=ElevenLabsTTSService.Settings(
+                voice=cfg.get("tts_voice_id") or _DEFAULT_ELEVEN_VOICE,
+                model="eleven_turbo_v2_5",  # multilingual + niedrige Latenz (deutsch)
+                language=cfg.get("language", "de"),
+            ),
+        )
     raise ValueError(f"Unbekannter TTS-Provider: {provider}")
 
 

@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 01:05] — Claude Code
+- **Was:** Voice-Builder gegen die echten Provider-APIs (Pipecat 1.4.0) finalisiert: Deepgram-STT nutzt
+  `settings=DeepgramSTTService.Settings(model="nova-2", language="de", smart_format=True)` statt des
+  veralteten dict-`live_options`; ElevenLabs-TTS nutzt `settings=ElevenLabsTTSService.Settings(voice=...,
+  model="eleven_turbo_v2_5", language="de")` mit Default-Stimme (multilingual) -> keine Deprecations mehr
+  aus eigenem Code. Mit den hinterlegten Keys konstruieren STT und TTS fehlerfrei (kostenlos, kein Netz beim
+  Init). Damit sind alle Live-API-Details verifiziert; offen bleibt nur der echte Sprachtest (Mikrofon/Browser,
+  billbar). Offline-Self-Checks 24/24 OK.
+- **Warum:** Letzte GATE-Absicherung vor dem Sprachtest -- Provider-Wiring an der installierten Version
+  bestaetigt, nicht geraten.
+- **Betroffen:** `orchestrator/channels/voice/pipeline.py`. (Keys liegen in `orchestrator/.env`, gitignored.)
+
 ## [2026-06-24 00:44] — Claude Code
 - **Was:** Phase-2-GATE vorbereitet/teilverifiziert. CEO-Wahl TTS = **ElevenLabs** (`config.toml [voice]`
   tts_provider). Pipecat 1.4.0 + Extras installiert (`webrtc,deepgram,silero,elevenlabs`) sowie
