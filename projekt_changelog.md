@@ -17,7 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-23 15:06] — Claude Code
+## [2026-06-23 15:29] — Claude Code
+- **Was:** GATE-B-Mini-Lauf vorbereitet und erstmals real versucht. `claude-agent-sdk` (0.2.107) im venv
+  installiert; Claude-CLI lokalisiert (`~/.npm-global/bin/claude`, 2.1.186; das SDK nutzt jedoch seine
+  mitgelieferte gebundelte CLI gleicher Version). `orchestrator/.env` aus der Vorlage angelegt und
+  `ANTHROPIC_API_KEY` eingetragen (gitignored, nie committet). GitHub-Remote `origin`
+  (https://github.com/hsvnils/agent-OS.git) angebunden, Token sicher in der macOS-Keychain (nicht in
+  `.git/config`), `main` gepusht. Live-Lauf (dry_run voruebergehend false): (1) Erste Test-Anweisung mit dem
+  Wort „Kostenschaetzung" wurde korrekt vom CEO-Tor (Kategorie geld) **vor** jeder Delegation blockiert und in
+  eine Freigabe-Anfrage verwandelt -- Governance greift real, kein Modellaufruf. (2) Zweite, tor-freie
+  Anweisung erreichte den echten SDK-Pfad; die Anthropic-API antwortete mit HTTP 400 „Credit balance is too
+  low". Wiring (Auth via API-Key, Modell, CLI, SDK, Delegation) ist damit verifiziert; einziger Blocker ist
+  das **zu niedrige Guthaben des Anthropic-API-Kontos**. `config.toml` wieder auf `dry_run = true`
+  zurueckgesetzt (sicherer Default; fuer den Live-Lauf nach Guthaben-Aufladung nur diese eine Zeile auf false).
+- **Warum:** CEO-Freigabe fuer GATE B und Repo-Anbindung erteilt. Beobachtung fuer CFO/Budget: jeder
+  CLI-basierte Agent-Turn laedt den vollen Claude-Code-Kontext (Skills/Memory, ~10k Cache-Tokens) -> grob
+  ~0,12 USD Overhead pro Aufruf; spaeter optimierbar (minimaler System-Prompt, Skills/MCP in der SDK-Session
+  abschalten oder fuer Subagenten die `anthropic`-API direkt nutzen).
+- **Betroffen:** `orchestrator/config.toml` (netto unveraendert), `orchestrator/.env` (neu, nicht versioniert),
+  Git-Remote `origin` (neu), Keychain (Token). Kein Quellcode geaendert.
+
 - **Was:** Git-Hygiene: `.gitattributes` neu angelegt (`* text=auto eol=lf` zur Zeilenenden-Normalisierung,
   `*.xmind binary`). `.gitignore` um macOS-`.DS_Store` (auch `**/.DS_Store`) ergaenzt; die ungetrackten
   `.DS_Store` und `orchestrator/.DS_Store` aus dem Arbeitsbaum entfernt. `git add --renormalize .` ausgefuehrt
