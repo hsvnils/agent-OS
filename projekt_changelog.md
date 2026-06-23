@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 00:44] — Claude Code
+- **Was:** Phase-2-GATE vorbereitet/teilverifiziert. CEO-Wahl TTS = **ElevenLabs** (`config.toml [voice]`
+  tts_provider). Pipecat 1.4.0 + Extras installiert (`webrtc,deepgram,silero,elevenlabs`) sowie
+  fastapi/uvicorn. Laufzeit-Importe gegen die installierte Version verifiziert und korrigiert:
+  `StartInterruptionFrame` entfaellt (Barge-in macht die Pipeline via allow_interruptions selbst),
+  Transport-Message heisst `OutputTransportMessageUrgentFrame`; SmallWebRTC-Signaling (`initialize`/
+  `get_answer`) bestaetigt. **Kostenloser Boot-Test bestanden:** Server startet und liefert Browser-Seite
+  und app.js (HTTP 200) aus -- ohne STT/TTS (Keys erst bei Verbindungsaufbau noetig). Neu:
+  `channels/voice/requirements.txt`; Install-Hinweis in `server.py` ergaenzt. Offline-Self-Checks 24/24 OK.
+- **Warum:** Vor dem echten Sprachtest die Laufzeit-API gegen das installierte Pipecat absichern (kein
+  Raten) und den nicht-billbaren Teil (Server-Boot/UI) verifizieren. Echter Sprachtest = letzter
+  GATE-Schritt: Keys (DEEPGRAM_API_KEY, ELEVENLABS_API_KEY) eintragen, im Browser sprechen.
+- **Betroffen:** `orchestrator/channels/voice/pipeline.py`, `orchestrator/channels/voice/server.py`,
+  `orchestrator/channels/voice/requirements.txt` (neu), `orchestrator/config.toml`.
+
 ## [2026-06-24 00:36] — Claude Code
 - **Was:** Phase 2 (Live-Voice-Oberflaeche, Browser) -- Offline-Teil gebaut und getestet, Laufzeit-Teil
   als GATE-verifiziertes Geruest. Neuer Kanal-Adapter `orchestrator/channels/voice/`: `bridge.py`

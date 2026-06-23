@@ -46,9 +46,8 @@ def build_tts(cfg: dict, secrets: dict):
 def make_hoa_processor(bridge: HoaBridge):
     """Custom FrameProcessor: erkannter Text -> HoA-Bruecke -> gesprochene Antwort (+ Panel)."""
     from pipecat.frames.frames import (
-        StartInterruptionFrame,
+        OutputTransportMessageUrgentFrame,
         TranscriptionFrame,
-        TransportMessageUrgentFrame,
         TTSSpeakFrame,
     )
     from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
@@ -57,11 +56,7 @@ def make_hoa_processor(bridge: HoaBridge):
         async def process_frame(self, frame, direction: "FrameDirection"):
             await super().process_frame(frame, direction)
 
-            # Barge-in: CEO spricht los -> nichts weiter tun, Pipeline bricht TTS selbst ab.
-            if isinstance(frame, StartInterruptionFrame):
-                await self.push_frame(frame, direction)
-                return
-
+            # Barge-in (CEO spricht los) erledigt die Pipeline selbst via allow_interruptions=True.
             # Finaler erkannter Satz des CEO -> HoA-Kern befragen.
             if isinstance(frame, TranscriptionFrame) and frame.text and frame.text.strip():
                 loop = asyncio.get_running_loop()
@@ -72,7 +67,9 @@ def make_hoa_processor(bridge: HoaBridge):
                 # Panel zuerst einblenden (parallel zur Sprache).
                 if result.panel is not None:
                     await self.push_frame(
-                        TransportMessageUrgentFrame(message={"kind": "panel", "panel": result.panel})
+                        OutputTransportMessageUrgentFrame(
+                            message={"kind": "panel", "panel": result.panel}
+                        )
                     )
                 if result.spoken:
                     await self.push_frame(TTSSpeakFrame(result.spoken))

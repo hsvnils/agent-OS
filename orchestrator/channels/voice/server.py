@@ -21,8 +21,8 @@ ROOT = Path(__file__).resolve().parents[3]
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 INSTALL_HINT = (
-    "Pipecat ist nicht installiert. Am GATE (nach Provider-Wahl) z. B.:\n"
-    '  pip install "pipecat-ai[webrtc,deepgram,silero,cartesia]"   # oder ...,elevenlabs\n'
+    "Voice-Abhaengigkeiten fehlen. Installation (siehe channels/voice/requirements.txt):\n"
+    '  pip install "pipecat-ai[webrtc,deepgram,silero,elevenlabs]" fastapi uvicorn\n'
 )
 
 

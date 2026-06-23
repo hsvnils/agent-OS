@@ -43,5 +43,5 @@ host = "localhost"
 port = 7860
 language = "de"
 stt_provider = "deepgram"        # Default; Key: DEEPGRAM_API_KEY
-tts_provider = "cartesia"        # cartesia | elevenlabs (CEO waehlt am GATE)
-tts_voice_id = ""                # vom Provider; am GATE eintragen
+tts_provider = "elevenlabs"      # CEO-Wahl am GATE (2026-06-24): beste deutsche Stimmqualitaet
+tts_voice_id = ""                # leer = ElevenLabs-Default-Stimme; optional eigene Voice-ID

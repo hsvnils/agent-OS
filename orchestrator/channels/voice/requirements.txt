@@ -1,0 +1,9 @@
+# Laufzeit-Abhaengigkeiten des Live-Voice-Kanals (Phase 2).
+# STT/TTS sind kostenpflichtig (CEO-Tor); WebRTC-Transport ist lokal/kostenlos.
+# Extra je nach gewaehltem TTS-Provider: elevenlabs (CEO-Wahl 2026-06-24) ODER cartesia.
+#
+#   pip install "pipecat-ai[webrtc,deepgram,silero,elevenlabs]" fastapi uvicorn
+#
+pipecat-ai[webrtc,deepgram,silero,elevenlabs]==1.4.0
+fastapi
+uvicorn
