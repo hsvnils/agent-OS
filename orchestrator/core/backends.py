@@ -92,6 +92,10 @@ class AgentSdkBackend:
             setting_sources=[],
             mcp_servers={},
             strict_mcp_config=True,
+            # Isolation: das persoenliche Claude-Code-Auto-Memory (~/.claude/.../memory/) NICHT in die
+            # Firmen-Subagenten laden. Strukturell verifiziert: damit ist memory_paths in der init-Config
+            # null. env wird vom SDK ueber os.environ gemerged (PATH/ANTHROPIC_API_KEY bleiben erhalten).
+            env={"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"},
             hooks=self._build_hooks(),
         )
         parts: list[str] = []

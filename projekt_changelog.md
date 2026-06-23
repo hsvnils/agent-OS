@@ -17,6 +17,29 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-23 20:08] — Claude Code
+- **Was:** Phase 1 (Auto-Memory-Isolation) abgeschlossen. Hebel ermittelt: ENV-Variable
+  `CLAUDE_CODE_DISABLE_AUTO_MEMORY` (aus dem CLI-Binary extrahiert). Strukturell verifiziert ueber die
+  `init`-Nachricht: ohne Variable `memory_paths = {"auto": ".../memory/"}`, mit `=1` `memory_paths = null`.
+  In `core/backends.py` gesetzt (`ClaudeAgentOptions.env={"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}`; SDK merged
+  ueber `os.environ`, PATH/Key bleiben). Danach zwei echte Auftraege live gefahren (Latenz-Strategie, dann
+  deren Risiken): (a) Isolation greift auch im Verhalten -- die Antworten zitieren das persoenliche
+  Claude-Code-Memory nicht mehr; (b) das dateibasierte Gedaechtnis traegt -- der zweite Auftrag bezog sich
+  praezise auf die im ersten skizzierte Strategie. Kanonischer Store `orchestrator/memory/log.jsonl` mit zwei
+  Eintraegen (kein persoenlicher Memory-Inhalt, leck-geschuetzt). Self-Checks 18/18 OK; `dry_run` wieder true.
+- **Warum:** CEO-Auftrag Phase 1: Isolation zuerst strukturell bestaetigen, erst dann echte Auftraege.
+- **Betroffen:** `orchestrator/core/backends.py`, `orchestrator/memory/log.jsonl` (neu, kanonischer Store).
+
+## [2026-06-23 20:07] — Head of Agents
+- **Was:** Auftrag erfolgreich bearbeitet: Nenne die zwei groessten Risiken der eben besprochenen Latenz-Strategie aus dem vorherigen Auftrag -- technisch und strategisch.
+- **Warum:** CEO-Anweisung ueber Kanal-Adapter
+- **Betroffen:** Subagenten: berater, cto
+
+## [2026-06-23 20:06] — Head of Agents
+- **Was:** Auftrag erfolgreich bearbeitet: Skizziere kurz eine schlanke technische Strategie, wie wir die Latenz unseres Prozesses senken. Der CTO liefert die technische Sicht, der Berater die strategische.
+- **Warum:** CEO-Anweisung ueber Kanal-Adapter
+- **Betroffen:** Subagenten: berater, cto
+
 ## [2026-06-23 19:38] — Claude Code
 - **Was:** Schritt B implementiert (GATE C freigegeben): dateibasiertes Agenten-Gedaechtnis. Neu
   `orchestrator/core/memory.py` (`Memory` mit append-only JSONL, `recall` = letzte N + stichwort-relevante
