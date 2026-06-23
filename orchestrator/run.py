@@ -31,7 +31,8 @@ def build_core(cfg: dict) -> HeadOfAgents:
     if cfg["run"]["dry_run"]:
         backend = MockBackend()
     else:
-        backend = AgentSdkBackend(cfg["models"], cfg["effort"])  # GATE B
+        # GATE B: echtes Backend. CEO-Tor zusaetzlich als SDK-PreToolUse-Hook.
+        backend = AgentSdkBackend(cfg["models"], cfg["effort"], gate=CeoGate())
     secrets = load_env_secrets(ROOT / "orchestrator" / ".env")
     # Dry-Run/Smoke-Laeufe verschmutzen das kanonische Changelog NICHT:
     # sie schreiben in ein separates, per .gitignore ausgeschlossenes Log.

@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-23 14:40] — Claude Code
+- **Was:** GATE-B-Vorbereitung: `AgentSdkBackend` echt implementiert, gebaut gegen die verifizierten Bindings
+  des Claude Agent SDK (`query`, `ClaudeAgentOptions`, `HookMatcher`, `AssistantMessage`/`TextBlock`;
+  PreToolUse-Hook mit `permissionDecision: deny` fuer CEO-Tor). Lazy import, damit die Offline-Self-Checks
+  ohne SDK gruen bleiben (weiterhin 10/10 OK). `run.py` verdrahtet das Backend inkl. CEO-Tor-Hook;
+  `orchestrator/README.md` um GATE-B-Voraussetzungen ergaenzt (claude-agent-sdk, Claude CLI,
+  ANTHROPIC_API_KEY; Live-Lauf ist billbar).
+- **Warum:** SDK-Bindings waren nach kurzer Nichtverfuegbarkeit des Klassifizierers per WebFetch verifizierbar;
+  damit kann der echte Mini-Lauf am GATE B ohne geratene API-Namen erfolgen. Ausfuehrung erst nach
+  CEO-Freigabe (Key + billbarer Lauf).
+- **Betroffen:** `orchestrator/core/backends.py`, `orchestrator/run.py`, `orchestrator/README.md`.
+
 ## [2026-06-23 14:30] — Claude Code
 - **Was:** Orchestrator Phase 2-4 (lauffaehiger, offline getesteter Kern) umgesetzt: `core/charter_loader.py`
   (Charta -> System-Prompt, Single Source of Truth), `core/subagents.py` (CTO+Berater aus Charten),

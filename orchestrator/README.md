@@ -34,17 +34,29 @@ Kosten:
 pytest orchestrator/tests -v
 ```
 
-## Start (GATE B — echter Mini-Lauf)
+## Start (GATE B — echter Mini-Lauf, billbar)
 
-Nach Eintragen des `ANTHROPIC_API_KEY` und `dry_run = false`:
+Voraussetzungen fuer den Live-Pfad:
 
 ```sh
-python orchestrator/run.py
+# 1. Agent-SDK + Claude CLI (das SDK ruft die CLI auf)
+pip install claude-agent-sdk
+npm install -g @anthropic-ai/claude-code      # Claude CLI
+# 2. Key eintragen (GATE B)
+cp orchestrator/.env.example orchestrator/.env   # ANTHROPIC_API_KEY ausfuellen
+# 3. In config.toml: dry_run = false
+# 4. Starten
+python -m orchestrator.run
 ```
+
+> Hinweis: Der Live-Lauf verursacht **echte Modell-Kosten** und braucht die Claude CLI. Bis dahin laeuft
+> alles im Dry-Run (Mock) ohne Kosten.
 
 ## Status
 
-- **Phase 1 (jetzt):** Geruest, Konfiguration, Governance-Dokumente angelegt.
-- **Ausstehend:** Python-Module (Kern, Adapter, Hooks, Tests) — werden umgesetzt, sobald ein
-  Python-Interpreter verfuegbar ist (Self-Checks muessen ausfuehrbar sein). Danach GATE B fuer den
-  echten Mini-Lauf.
+- **Phase 1-4 (fertig):** Geruest, Konfiguration, Governance-Dokumente; Kern (`core/`), Kanal-Adapter
+  (`channels/`), Governance-Hooks/Tools (`governance/`), Beobachtbarkeit (`observability/`), Einstieg
+  `run.py`. **Self-Checks: 10/10 OK** (Dry-Run/Mock, ohne Kosten).
+- **GATE B (offen):** echter Mini-Lauf ueber den Terminal-Adapter. Benoetigt `claude-agent-sdk`, Claude CLI
+  und `ANTHROPIC_API_KEY`. Der `AgentSdkBackend` ist gegen die offiziellen SDK-Bindings gebaut und wird beim
+  Mini-Lauf erstmals real ausgefuehrt.
