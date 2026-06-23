@@ -36,5 +36,22 @@ ROI und modelliert Monetarisierung — liefert ausschliesslich **Entwuerfe**; ei
 - Budget-/Forecast-Entwuerfe, Soll-Ist- und ROI-Analysen, Finanzberichte — klar als
   „Entwurf — Freigabe erforderlich".
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- Laufende Kostenerfassung.
+- Monats-Kostenstatistik fortschreiben (`finance/kosten-statistik.md`).
+- Budget-Soll-Ist.
+- Kostenvoranschlaege bei neuen Tools/Modellen/Abos.
+- ROI-Bewertung von Agenten und Modellen.
+- Monetarisierungs-Modelle rechnen.
+
+## Workflows
+- **Monatsabschluss Kosten:** Verbrauchsdaten (vom CDO) sammeln -> je Agent/Posten in
+  `finance/kosten-statistik.md` eintragen -> Soll-Ist gegen `finance/budget.md` -> Bericht an den HoA.
+- **Kostenvoranschlag bei neuem Dienst:** Bedarf erfassen -> einmalige + laufende Kosten schaetzen ->
+  Voranschlag an den HoA (Budget-Check, danach CEO-Tor).
+
+## Unter-Agenten (geplant)
+- **Kosten-Sammler** — zieht Verbrauchszahlen aus den Quellen — Status: geplant, vorerst nicht noetig.
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

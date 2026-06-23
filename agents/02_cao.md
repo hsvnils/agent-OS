@@ -30,5 +30,20 @@ Changelog-Disziplin — sorgt fuer reibungsfreies Zusammenarbeiten aller Agenten
 ## Output-Format
 - Prozessbeschreibungen, Termin-/Aufgabenlisten, KPI-Uebersichten, Tool-/Abo-Register.
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- Datei-/Ordner-Konventionen pflegen.
+- Vorlagen aktualisieren.
+- Termin-/Ablaufkoordination.
+- KPI-Sammlung je Agent.
+- Tool-/Abo-Inventar pflegen.
+- Changelog-Disziplin ueberwachen.
+
+## Workflows
+- **Monats-Admin-Check:** monatlich Konventionen, Vorlagen, KPIs, Tool-/Abo-Inventar und
+  Changelog-Disziplin pruefen -> Abweichungen an den HoA melden.
+
+## Unter-Agenten (geplant)
+- Vorerst keine Unter-Agenten noetig.
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

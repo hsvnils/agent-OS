@@ -29,5 +29,18 @@ Outputs.
 ## Output-Format
 - Brand-Guide, Tone-of-Voice-Vorgaben, Visual-Identity-Spezifikationen, Markenkonformitaets-Pruefvermerke.
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- Brand-Guide pflegen.
+- Outputs auf Markenkonformitaet pruefen (Content, App-UI, Kommunikation).
+- Kampagnen-Leitplanken setzen.
+- Tonalitaets-Checks.
+
+## Workflows
+- **Marken-Review:** Pruefschritt innerhalb der Content-Produktion (CCO-Entwurf -> CBO-Freigabe oder
+  Nachbesserungshinweis).
+
+## Unter-Agenten (geplant)
+- Vorerst keine Unter-Agenten noetig.
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

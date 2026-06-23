@@ -30,5 +30,18 @@ Agenten **saubere Zahlen**.
 ## Output-Format
 - Bereinigte Datensaetze, KPI-Definitionen, Dashboards/Reports mit Quellenangabe.
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- Datenquellen anbinden und normalisieren (Social-Insights, App-Analytics, GA4, Umsatz).
+- KPIs und Dashboards pflegen.
+- Datenqualitaet sichern.
+- Insights an andere Agenten liefern.
+
+## Workflows
+- **KPI-Dashboard-Update:** Quellen ziehen -> normalisieren -> Qualitaet pruefen -> KPIs/Dashboards
+  aktualisieren -> Insights an CFO/CRO/CCO/CPO.
+
+## Unter-Agenten (geplant)
+- **Daten-Ingest-Agent** — bindet Quellen an und normalisiert sie — Status: geplant.
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

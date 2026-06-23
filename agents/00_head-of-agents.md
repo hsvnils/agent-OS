@@ -51,5 +51,19 @@ Agenten-Unternehmens. Er uebersetzt CEO-Anweisungen in koordinierte Arbeit der A
   Freigaben, Empfehlung.
 - An Abteilungen: klar abgegrenzter Auftrag mit Ziel, Kontext, erwartetem Output und Frist.
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- Taegliche Auftragsannahme und Delegation.
+- Statusrunde der aktiven Agenten.
+- Offene Eskalationen pruefen.
+- CEO-Vorlagen buendeln.
+- Changelog-Review.
+- Budget-Blick gemeinsam mit dem CFO.
+
+## Workflows
+- **Auftragsdurchlauf:** Auftrags-Lebenszyklus Schritte 1-11 aus `governance/orchestrierung.md`.
+
+## Unter-Agenten (geplant)
+- Keine eigenen; der Head of Agents nutzt die Abteilungen (Supervisor-Ebene).
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

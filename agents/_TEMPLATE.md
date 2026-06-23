@@ -22,5 +22,16 @@ Modell: <empfohlenes Modell, modell-agnostisch>
 ## Output-Format
 - <wie Ergebnisse an den Head of Agents geliefert werden>
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- <wiederkehrende Aufgabe dieses Agenten>
+
+## Workflows
+- **<Workflow-Name>:** <Ablauf in Schritten>
+
+## Unter-Agenten (geplant)
+- <Name> — <Einzeiler-Zweck> — Status: geplant.
+  _(Optional; nur skizzieren, wo Spezialisierung echten Mehrwert bringt — sonst „vorerst keine
+  Unter-Agenten noetig". Keine eigenen Dateien, nicht aktivieren.)_
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

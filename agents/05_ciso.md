@@ -35,5 +35,18 @@ und verbindliche Sicherheits-Policies. **Autorisiert Zugriffs-/Berechtigungsverg
 - Zugriffs-Policy und Rollen-/Rechtekonzepte, Sicherheits-/DSGVO-Bewertungen, Risiko- und Massnahmenlisten,
   Incident-Reports.
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- Secrets- und Zugriffs-Audit.
+- DSGVO-Pruefung neuer Datenfluesse.
+- Risikopruefung neuer Tools/Connectoren.
+- Anomalie-Monitoring.
+- Sicherheits-Policies pflegen.
+
+## Workflows
+- **Zugriffsfreigabe:** Anfrage -> Policy-Check -> Freigabe (Autorisierung durch CISO, Umsetzung durch CTO).
+
+## Unter-Agenten (geplant)
+- Vorerst keine Unter-Agenten noetig.
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

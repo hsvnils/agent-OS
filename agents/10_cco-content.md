@@ -32,5 +32,28 @@ Storytelling und Audience-Aufbau. **Steuert den Video-Cutter-Agenten.**
 - Redaktionsplaene, fertige Content-Entwuerfe, Schnittvorgaben/-ergebnisse, Performance-Auswertungen — als
   „Entwurf — Freigabe vor Veroeffentlichung".
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- Redaktionskalender fuehren (Instagram, Threads, YouTube, TikTok, Twitch).
+- Posts/Skripte/Captions entwerfen.
+- Den Video-Cutter-Agenten steuern.
+- Celine-Formate koordinieren.
+- Performance auswerten (mit CDO).
+- Trend-Recherche.
+
+## Workflows
+- **Content-Produktion:** Recherche -> Konzept/Strategie -> Copy/Caption je Plattform -> Video-Cutter ->
+  CBO-Marken-Review -> CXO-Check -> Veroeffentlichung (als CEO-Tor).
+
+## Unter-Agenten (geplant)
+> An einem bewaehrten Content-Team-Muster orientiert. **Dies ist die Abteilung, in der Unter-Agenten zuerst
+> real gebaut werden.** Status durchgaengig: geplant (noch keine eigenen Dateien, nicht aktiviert).
+
+- **Research-Agent** — Themen-/Trend-Recherche — Status: geplant.
+- **Konzept/Strategie-Agent** — Formate und Kanalstrategie — Status: geplant.
+- **Copywriter/Caption-Agent (je Plattform)** — Texte/Captions je Plattform — Status: geplant.
+- **Video-Cutter-Agent** — Schnitt/Aufbereitung (existiert bereits separat, hier eingehaengt) —
+  Status: geplant.
+- **Reviewer-Agent** — Qualitaets-/Konsistenzpruefung vor dem Marken-Review — Status: geplant.
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

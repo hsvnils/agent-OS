@@ -36,5 +36,19 @@ Onboarding-Vorlagen fuer echte Freie.
 - Personal-/Belegschaftsanalysen (Agenten), Vorschlaege fuer neue Agenten/Modelle, Leistungsbewertungen,
   Vertrags-/Onboarding-Entwuerfe — Personalvorlagen klar als „Entwurf — Freigabe erforderlich".
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- Faehigkeitsluecken erkennen.
+- Neue Agenten oder Modelle vorschlagen.
+- Onboarding (Charta-Entwurf mit dem HoA).
+- Agenten-Performance ueberwachen.
+- Admin fuer echte Freie (Videograf, Celine).
+
+## Workflows
+- **Neuen Agenten vorschlagen und einarbeiten:** Vorschlag -> HoA -> CEO-Tor -> Charta (durch HoA) ->
+  Onboarding.
+
+## Unter-Agenten (geplant)
+- Vorerst keine Unter-Agenten noetig.
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

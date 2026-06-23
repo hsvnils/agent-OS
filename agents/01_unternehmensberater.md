@@ -33,5 +33,18 @@ Marktanalysen, Szenarien und entscheidungsreife Vorlagen fuer den CEO (ueber den
 ## Output-Format
 - Strukturierte Entscheidungsvorlage: Ausgangslage, Optionen, Bewertung, Empfehlung, offene Punkte.
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- Woechentliche Prozess-Review des Agenten-Unternehmens.
+- Engpass- und Effizienzanalyse.
+- Strategie-Briefings.
+- Benchmark gegen andere Fan-Brands.
+
+## Workflows
+- **Quartals-Strategie-Review:** Datenlage (CDO/CKO) sichten -> Engpaesse und Chancen bewerten ->
+  Szenarien und Empfehlung -> Entscheidungsvorlage an den HoA.
+
+## Unter-Agenten (geplant)
+- Vorerst keine Unter-Agenten noetig.
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

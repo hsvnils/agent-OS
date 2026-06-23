@@ -32,5 +32,18 @@ verloren geht.
 ## Output-Format
 - Kontext-Briefings, Wissensartikel, Antworten mit Quellen-/Belegangaben.
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- Wissensbasis pflegen (Briefs, Specs, Charten, Learnings, Changelog-Historie).
+- Durchsuchbar machen (Supabase pgvector).
+- Kontext fuer neue Agenten bereitstellen.
+- „Wie machen wir X / Was haben wir entschieden"-Anfragen beantworten.
+
+## Workflows
+- **Wissens-Update nach jedem Projekt:** Ergebnisse/Entscheidungen sammeln -> in die Wissensbasis
+  einpflegen -> indexieren (pgvector) -> auffindbar machen.
+
+## Unter-Agenten (geplant)
+- Vorerst keine Unter-Agenten noetig.
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.

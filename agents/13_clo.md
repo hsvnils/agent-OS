@@ -33,5 +33,18 @@ Ueberwacht Rechts- und IP-Risiken des Unternehmens und entwirft/prueft Vertraege
 - Vertrags-/Rechtstext-Entwuerfe, Lizenzanfrage-Entwuerfe und Risiko-/Compliance-Einschaetzungen — klar als
   „Entwurf — anwaltliche Pruefung erforderlich".
 
+## Aufgabenkatalog (wiederkehrende To-dos)
+- IP-/Lizenz-Risiken ueberwachen (Club-Logos, DFL, HSV).
+- Vertraege entwerfen/pruefen.
+- AGB und Datenschutz-Recht beobachten.
+- Musik-/Content-Rechte in Videos pruefen.
+- KI-Kennzeichnung im Blick behalten.
+
+## Workflows
+- **Vertrag/Lizenz-Pruefung:** Entwurf -> Anwalt-Review -> CEO (CEO-Tor).
+
+## Unter-Agenten (geplant)
+- Vorerst keine Unter-Agenten noetig.
+
 ## Aenderungsregel
 Diese Datei darf nur der Head of Agents auf Anweisung des CEO aendern.
