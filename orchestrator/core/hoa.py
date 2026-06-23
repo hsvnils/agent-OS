@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Callable, Iterator
 
 from ..governance.leak_guard import redact
-from .backends import Backend
+from .backends import Backend, BackendError
 from .charter_loader import SubagentSpec, compose_hoa_system_prompt
 from .routing import decide_delegation
 
@@ -58,14 +58,26 @@ class HeadOfAgents:
         for key in targets:
             spec = self.subagents.get(key)
             sysp = spec.system_prompt if spec else ""
-            out = self.backend.respond(key, sysp, message, {})
+            try:
+                out = self.backend.respond(key, sysp, message, {})
+            except BackendError as err:
+                # Echter Backend-/API-Fehler (keine Mandats-Blockade): sauber melden,
+                # nicht abstuerzen, keinen CTO-Workaround starten.
+                self._log("backend_error", key, str(err))
+                results[key] = "FEHLER: " + str(err)
+                continue
             self._log("delegate", key, out)
             if out.startswith("BLOCKED"):
                 # Blockade -> zuerst CTO (Workaround), bevor der CEO behelligt wird
                 cto = self.subagents.get("cto")
-                cto_out = self.backend.respond(
-                    "cto", cto.system_prompt if cto else "", "WORKAROUND fuer: " + message, {}
-                )
+                try:
+                    cto_out = self.backend.respond(
+                        "cto", cto.system_prompt if cto else "", "WORKAROUND fuer: " + message, {}
+                    )
+                except BackendError as err:
+                    self._log("backend_error", "cto", str(err))
+                    results[key] = "FEHLER: " + str(err)
+                    continue
                 self._log("escalate_cto", key, cto_out)
                 if cto_out.startswith("BLOCKED"):
                     results[key] = "ESKALATION an CEO noetig: " + out
@@ -78,11 +90,13 @@ class HeadOfAgents:
         # 3. Buendeln zu EINER Antwort
         consolidated = self._bundle(message, results, eskalationen)
 
-        # 4. Changelog-Pflicht
+        # 4. Changelog-Pflicht (wahrheitsgemaess: Fehler nicht als Erfolg protokollieren)
         if self.changelog:
+            had_error = any(v.startswith("FEHLER") for v in results.values())
+            status = "mit Fehler(n)" if had_error else "erfolgreich"
             self.changelog(
                 "Head of Agents",
-                "Auftrag bearbeitet: " + message,
+                f"Auftrag {status} bearbeitet: " + message,
                 "CEO-Anweisung ueber Kanal-Adapter",
                 "Subagenten: " + ", ".join(targets),
             )

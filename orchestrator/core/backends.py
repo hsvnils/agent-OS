@@ -8,6 +8,14 @@ from __future__ import annotations
 from typing import Callable, Protocol
 
 
+class BackendError(Exception):
+    """Modell-/Backend-Aufruf fehlgeschlagen (z. B. API-, Auth- oder Guthaben-Fehler).
+
+    Traegt eine bereits CEO-taugliche, umlautfreie Meldung -- der HoA gibt sie als
+    saubere Antwort aus, statt mit einem Traceback abzustuerzen.
+    """
+
+
 class Backend(Protocol):
     def respond(self, agent_key: str, system_prompt: str, message: str, context: dict) -> str: ...
 
@@ -77,12 +85,38 @@ class AgentSdkBackend:
             hooks=self._build_hooks(),
         )
         parts: list[str] = []
-        async for msg in query(prompt=message, options=options):
-            if isinstance(msg, AssistantMessage):
-                for block in msg.content:
-                    if isinstance(block, TextBlock):
-                        parts.append(block.text)
+        try:
+            async for msg in query(prompt=message, options=options):
+                if isinstance(msg, AssistantMessage):
+                    for block in msg.content:
+                        if isinstance(block, TextBlock):
+                            parts.append(block.text)
+        except Exception as exc:  # SDK-/CLI-/API-Fehler nicht als Traceback durchreichen
+            raise BackendError(self._readable_error(agent_key, exc)) from exc
         return "".join(parts).strip()
+
+    @staticmethod
+    def _readable_error(agent_key: str, exc: Exception) -> str:
+        """Macht aus einem rohen SDK-Fehler eine umlautfreie CEO-Meldung.
+
+        Das Agent SDK kollabiert den konkreten API-Grund (z. B. 'Credit balance is
+        too low') zu einer generischen Meldung. Wo erkennbar, geben wir einen
+        Hinweis; sonst listen wir die haeufigen Ursachen auf.
+        """
+        raw = str(exc).strip() or exc.__class__.__name__
+        low = raw.lower()
+        if "credit" in low or "balance" in low:
+            hinweis = "Anthropic-API-Guthaben zu niedrig -- unter console.anthropic.com (Billing) aufladen."
+        elif "401" in low or "auth" in low or "api key" in low or "api-key" in low:
+            hinweis = "Authentifizierung pruefen -- ANTHROPIC_API_KEY in orchestrator/.env."
+        elif "model" in low or "not found" in low or "404" in low:
+            hinweis = "Modell-Verfuegbarkeit pruefen (config.toml [models])."
+        else:
+            hinweis = (
+                "Haeufige Ursachen: API-Guthaben zu niedrig, Authentifizierung "
+                "(ANTHROPIC_API_KEY) oder Modell-Verfuegbarkeit. Details siehe Log."
+            )
+        return f"Modellaufruf fuer '{agent_key}' fehlgeschlagen ({raw}). {hinweis}"
 
     def _build_hooks(self):
         if self.gate is None:

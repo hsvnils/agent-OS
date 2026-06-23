@@ -17,7 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-23 15:29] — Claude Code
+## [2026-06-23 15:52] — Claude Code
+- **Was:** Robustheit des Live-Pfads: SDK-/CLI-/API-Fehler werden nicht mehr als Traceback durchgereicht.
+  Neue Ausnahme `BackendError` in `core/backends.py`; `AgentSdkBackend` faengt SDK-Ausnahmen und erzeugt eine
+  umlautfreie, CEO-taugliche Meldung (`_readable_error`, mit Hinweis bei erkennbarem Guthaben-/Auth-/Modell-
+  Problem -- da das SDK den konkreten API-Grund verwirft, sonst Auflistung der haeufigen Ursachen). `core/hoa.py`
+  faengt `BackendError` je Delegation ab, schreibt das Ergebnis als `FEHLER: ...` in die konsolidierte Antwort,
+  startet bei echten Fehlern keinen CTO-Workaround und kennzeichnet den Changelog wahrheitsgemaess
+  („erfolgreich" vs. „mit Fehler(n)"). Zwei neue Self-Checks (`tests/test_backend_fehler.py`). Self-Checks
+  jetzt **12/12 OK** (vorher 10/10; MockBackend-Verhalten unveraendert).
+- **Warum:** Beim GATE-B-Mini-Lauf brach der Orchestrator bei „Credit balance is too low" mit Traceback ab;
+  CEO-Anweisung: saubere Meldung statt Traceback. Robustheit fuer den naechsten Live-Lauf nach Guthaben-Aufladung.
+- **Betroffen:** `orchestrator/core/backends.py`, `orchestrator/core/hoa.py`,
+  `orchestrator/tests/test_backend_fehler.py` (neu).
+
 - **Was:** GATE-B-Mini-Lauf vorbereitet und erstmals real versucht. `claude-agent-sdk` (0.2.107) im venv
   installiert; Claude-CLI lokalisiert (`~/.npm-global/bin/claude`, 2.1.186; das SDK nutzt jedoch seine
   mitgelieferte gebundelte CLI gleicher Version). `orchestrator/.env` aus der Vorlage angelegt und
