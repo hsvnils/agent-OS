@@ -1,0 +1,18 @@
+# Secrets — NIE committen
+orchestrator/.env
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# Logs / lokale Beobachtbarkeit
+orchestrator/logs/
+*.log
+
+# Build-Artefakte
+.xmind-build/

@@ -3,9 +3,11 @@
 > **Zweck.** Dieses Dokument beschreibt **verbindlich, wie Auftraege durch das Agenten-Unternehmen fliessen**.
 > Es **ergaenzt** `AGENTS.md`, ersetzt es aber **nicht**. **Bei Widerspruch gilt `AGENTS.md`.**
 > Visuelle Fassung derselben Logik: [`orchestrierung.xmind`](orchestrierung.xmind).
+> Schnittstellen/Kanaele (kanal-agnostischer Kern + Adapter-Roadmap): [`schnittstellen.md`](schnittstellen.md).
 >
-> Status: **nur Dokumentation** — noch keine Orchestrierungs-Implementierung / kein Laufzeit-Code. Die
-> Umsetzung folgt nach der Framework-Entscheidung.
+> Status: **Bootstrap-Umsetzung begonnen.** Die erste Laufzeit-Stufe (HoA + CTO + Berater) wird im
+> Ordner `orchestrator/` gebaut; Plan: [`../ORCHESTRATOR_PLAN.md`](../ORCHESTRATOR_PLAN.md). Dieses
+> Dokument bleibt die kanonische Ablaufbeschreibung.
 
 ---
 

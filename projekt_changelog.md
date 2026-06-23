@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-23 10:55] — Claude Code
+- **Was:** Orchestrator Phase 1 (Foundation, ohne Laufzeit-Code): Ordner `orchestrator/` mit `.env.example`,
+  `config.toml` (dry_run-Default, Modelle/effort/Flags), `README.md` angelegt; `.gitignore` ergaenzt
+  (schliesst `orchestrator/.env` aus). Governance-Dokumente `governance/schnittstellen.md` (kanal-agnostischer
+  Kern + Adapter-Roadmap: Terminal jetzt, Live-Voice/Telegram geplant) und `governance/zugriffs-policy.md`
+  (Least-Privilege, grant_capability Fall A/B) neu. `agents/REGISTRY.md` um Spalte „Orchestrator"
+  (verdrahtet: HoA, CTO, Berater) erweitert; `agents/01_unternehmensberater.md` Status `Entwurf` -> `aktiv`.
+  `governance/orchestrierung.md` Status-/Verweis-Hinweis aktualisiert (Bootstrap begonnen, Verweis auf
+  schnittstellen.md).
+- **Warum:** GATE A freigegeben; Start der phasenweisen Umsetzung. Foundation ohne Python-Laufzeit, da auf
+  diesem Rechner kein Python-Interpreter installiert ist (nur Store-Platzhalter) — die ausfuehrbaren
+  Python-Module + Offline-Self-Checks folgen, sobald Python verfuegbar ist (Self-Check-Pflicht).
+- **Betroffen:** `.gitignore`, `orchestrator/.env.example`, `orchestrator/config.toml`,
+  `orchestrator/README.md`, `governance/schnittstellen.md`, `governance/zugriffs-policy.md`,
+  `agents/REGISTRY.md`, `agents/01_unternehmensberater.md`, `governance/orchestrierung.md`.
+
 ## [2026-06-23 10:30] — Claude Code
 - **Was:** `ORCHESTRATOR_PLAN.md` (Plan-Dokument) fuer den Bootstrap-Orchestrator angelegt — Dreiergruppe
   Head of Agents + CTO + Unternehmensberater auf Basis des Claude Agent SDK (Python), mit kanal-agnostischem

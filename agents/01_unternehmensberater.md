@@ -1,5 +1,5 @@
 # Agent: Unternehmensberater (UB)
-Status: Entwurf
+Status: aktiv
 Modell: Gemini 3.1 Pro (Reasoning/Analyse) oder Claude Opus 4.8 — Richtwert, modell-agnostisch
 
 ## Rolle

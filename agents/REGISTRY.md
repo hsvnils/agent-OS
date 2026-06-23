@@ -35,23 +35,29 @@ Kommunikationsregel: Abteilungs-Agenten sprechen **nur mit dem Head of Agents**,
 
 ## Uebersichtstabelle
 
-| Kuerzel | Klarname | Status | Charta-Datei |
-|--------|----------|--------|--------------|
-| HoA  | Head of Agents | aktiv | `00_head-of-agents.md` |
-| —    | Unternehmensberater | Entwurf | `01_unternehmensberater.md` |
-| CAO  | Chief Administrative Officer | Entwurf | `02_cao.md` |
-| CFO  | Chief Financial Officer | **aktiv** | `03_cfo.md` |
-| CRO  | Chief Revenue Officer | Entwurf | `04_cro.md` |
-| CISO | Chief Information Security Officer | Entwurf | `05_ciso.md` |
-| CBO  | Chief Brand Officer | **aktiv** | `06_cbo.md` |
-| CPO  | Chief Product Officer | Entwurf | `07_cpo.md` |
-| CTO  | Chief Technology Officer | **aktiv** | `08_cto.md` |
-| CXO  | Chief Experience Officer | Entwurf | `09_cxo.md` |
-| CCO  | Chief Content Officer | **aktiv** | `10_cco-content.md` |
-| CDO  | Chief Data Officer | Entwurf | `11_cdo.md` |
-| CHRO | Chief Human Resources Officer | Entwurf | `12_chro.md` |
-| CLO  | Chief Legal Officer | Entwurf | `13_clo.md` |
-| CKO  | Chief Knowledge Officer | Entwurf | `14_cko.md` |
+Zwei Zustaende werden unterschieden:
+- **Status** = Charta/Mandat (`aktiv` = Mandat steht; `Entwurf` = noch nicht).
+- **Orchestrator** = ob der Agent **real verdrahtet** ist und ueber den Orchestrator laeuft
+  (`verdrahtet` vs. `—`).
 
-> **Welle 1 aktiv:** Head of Agents, CFO, CBO, CTO, CCO. Die uebrigen Agenten sind als `Entwurf` angelegt;
-> ihre Aktivierung folgt spaeter.
+| Kuerzel | Klarname | Status | Orchestrator | Charta-Datei |
+|--------|----------|--------|--------------|--------------|
+| HoA  | Head of Agents | aktiv | **verdrahtet** | `00_head-of-agents.md` |
+| —    | Unternehmensberater | **aktiv** | **verdrahtet** | `01_unternehmensberater.md` |
+| CAO  | Chief Administrative Officer | Entwurf | — | `02_cao.md` |
+| CFO  | Chief Financial Officer | **aktiv** | — | `03_cfo.md` |
+| CRO  | Chief Revenue Officer | Entwurf | — | `04_cro.md` |
+| CISO | Chief Information Security Officer | Entwurf | — | `05_ciso.md` |
+| CBO  | Chief Brand Officer | **aktiv** | — | `06_cbo.md` |
+| CPO  | Chief Product Officer | Entwurf | — | `07_cpo.md` |
+| CTO  | Chief Technology Officer | **aktiv** | **verdrahtet** | `08_cto.md` |
+| CXO  | Chief Experience Officer | Entwurf | — | `09_cxo.md` |
+| CCO  | Chief Content Officer | **aktiv** | — | `10_cco-content.md` |
+| CDO  | Chief Data Officer | Entwurf | — | `11_cdo.md` |
+| CHRO | Chief Human Resources Officer | Entwurf | — | `12_chro.md` |
+| CLO  | Chief Legal Officer | Entwurf | — | `13_clo.md` |
+| CKO  | Chief Knowledge Officer | Entwurf | — | `14_cko.md` |
+
+> **Charta aktiv (Welle 1):** Head of Agents, CFO, CBO, CTO, CCO, Unternehmensberater.
+> **Im Orchestrator verdrahtet (Bootstrap):** Head of Agents, CTO, Unternehmensberater. Die uebrigen
+> Agenten werden spaeter durch HoA + CTO (+ Berater) aufgebaut; ihre Verdrahtung folgt.

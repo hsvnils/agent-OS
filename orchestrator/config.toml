@@ -1,0 +1,30 @@
+# Orchestrator-Konfiguration (modell-agnostisch; Werte sind Richtwerte/ueberschreibbar).
+# Diese Datei enthaelt KEINE Secrets. Secrets stehen in orchestrator/.env.
+
+[run]
+# dry_run = true  -> Mock-Backend, keine echten Modellaufrufe, keine Kosten (Self-Checks).
+# dry_run = false -> echtes Agent-SDK-Backend (benoetigt ANTHROPIC_API_KEY, GATE B).
+dry_run = true
+channel = "terminal"   # terminal | mock
+
+[models]
+# Defaults aus den Charten; per Config ueberschreibbar.
+hoa = "claude-opus-4-8"
+cto = "claude-opus-4-8"
+berater = "claude-opus-4-8"
+routing = "claude-haiku-4-5"   # guenstiges Modell fuer internes Routing (optional)
+
+[effort]
+hoa = "high"
+cto = "high"
+berater = "high"
+
+[observability]
+log_to_file = true
+log_dir = "orchestrator/logs"
+agentops_enabled = false        # externer Dienst = CEO-Tor; Standard aus
+
+[governance]
+budget_file = "finance/budget.md"
+policy_file = "governance/zugriffs-policy.md"
+changelog_file = "projekt_changelog.md"
