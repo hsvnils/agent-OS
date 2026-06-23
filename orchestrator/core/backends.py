@@ -58,11 +58,13 @@ class AgentSdkBackend:
         *,
         allowed_tools_map: dict[str, list[str]] | None = None,
         gate=None,
+        max_turns: int = 4,
     ):
         self.model_map = model_map
         self.effort_map = effort_map
         self.allowed_tools_map = allowed_tools_map or {}
         self.gate = gate  # optionaler CeoGate fuer SDK-PreToolUse-Hook
+        self.max_turns = max_turns
 
     def respond(self, agent_key: str, system_prompt: str, message: str, context: dict) -> str:
         import asyncio
@@ -77,11 +79,19 @@ class AgentSdkBackend:
             query,
         )
 
+        # Schlanke, deterministische Subagenten: nur unser komponierter System-Prompt,
+        # KEIN Projekt-CLAUDE.md/Skills (setting_sources=[]) und KEINE externen MCP-Server
+        # (strict_mcp_config). Das senkt den Kontext-Overhead und verhindert, dass das
+        # agentische Modell den (knappen) Turn fuer Tool-Versuche statt fuer eine Textantwort
+        # verbraucht. allowed_tools bleibt restriktiv (Default: keine Tools).
         options = ClaudeAgentOptions(
             system_prompt=system_prompt,
             model=self.model_map.get(agent_key, "claude-opus-4-8"),
             allowed_tools=self.allowed_tools_map.get(agent_key, []),
-            max_turns=1,
+            max_turns=self.max_turns,
+            setting_sources=[],
+            mcp_servers={},
+            strict_mcp_config=True,
             hooks=self._build_hooks(),
         )
         parts: list[str] = []

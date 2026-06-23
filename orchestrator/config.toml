@@ -6,6 +6,7 @@
 # dry_run = false -> echtes Agent-SDK-Backend (benoetigt ANTHROPIC_API_KEY, GATE B).
 dry_run = true
 channel = "terminal"   # terminal | mock
+max_turns = 4          # Turn-Spielraum je Subagent-Aufruf (Live-Backend); zu knapp -> "max turns"-Fehler
 
 [models]
 # Defaults aus den Charten; per Config ueberschreibbar.

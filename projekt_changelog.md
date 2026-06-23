@@ -17,6 +17,33 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-23 16:12] — Claude Code
+- **Was:** GATE B **bestanden**: der echte Mini-Lauf laeuft nach Guthaben-Aufladung vollstaendig durch
+  (CEO -> HoA -> echte Opus-Aufrufe an CTO und Berater -> eine konsolidierte Antwort; HoA-Auto-Changelog
+  16:05/16:08). Vorher trat `Reached maximum number of turns (1)` auf, weil die gebundelte CLI vollen
+  Projekt-/Skill-Kontext laedt und das Modell den einzigen Turn fuer Tool-Versuche verbraucht. Fix in
+  `core/backends.py`: Subagenten laufen jetzt schlank -- `setting_sources=[]` (kein Projekt-CLAUDE.md/Skills),
+  `mcp_servers={}` + `strict_mcp_config=True` (keine externen MCP), `max_turns` konfigurierbar
+  (`config.toml [run] max_turns`, Default 4; in `run.py` durchgereicht). Senkt zugleich den Kontext-Overhead.
+  Self-Checks weiterhin **12/12 OK**. `dry_run` wieder auf `true` gesetzt (sicherer Default; fuer Live-Lauf
+  diese eine Zeile auf false). Ausserdem drei Changelog-Kopfzeilen (14:40, 15:06, 15:29) wiederhergestellt,
+  die durch fehlerhaft formulierte vorherige Edits (Anker-Header im Ersatztext nicht erneut eingefuegt)
+  verloren gegangen waren -- Format gemaess AGENTS.md 3.2 wieder vollstaendig.
+- **Warum:** CEO-Freigabe fuer GATE B; Guthaben aufgeladen. Live-Pfad sollte vor dem naechsten Schritt
+  (Agenten-Gedaechtnis) verifiziert und stabil sein.
+- **Betroffen:** `orchestrator/core/backends.py`, `orchestrator/run.py`, `orchestrator/config.toml`,
+  `projekt_changelog.md` (Kopfzeilen-Reparatur).
+
+## [2026-06-23 16:08] — Head of Agents
+- **Was:** Auftrag erfolgreich bearbeitet: Skizziere kurz, wie wir die Beobachtbarkeit des Orchestrators technisch verbessern (Logging, Infrastruktur) und welcher strategische Nutzen fuer unsere Prozesse und Effizienz daraus entsteht. Der CTO liefert die technische Sicht, der Unternehmensberater die strategische -- buendle beides zu EINER Empfehlung.
+- **Warum:** CEO-Anweisung ueber Kanal-Adapter
+- **Betroffen:** Subagenten: berater, cto
+
+## [2026-06-23 16:05] — Head of Agents
+- **Was:** Auftrag mit Fehler(n) bearbeitet: Skizziere kurz, wie wir die Beobachtbarkeit des Orchestrators technisch verbessern (Logging, Infrastruktur) und welcher strategische Nutzen fuer unsere Prozesse und Effizienz daraus entsteht. Der CTO liefert die technische Sicht, der Unternehmensberater die strategische -- buendle beides zu EINER Empfehlung.
+- **Warum:** CEO-Anweisung ueber Kanal-Adapter
+- **Betroffen:** Subagenten: berater, cto
+
 ## [2026-06-23 15:52] — Claude Code
 - **Was:** Robustheit des Live-Pfads: SDK-/CLI-/API-Fehler werden nicht mehr als Traceback durchgereicht.
   Neue Ausnahme `BackendError` in `core/backends.py`; `AgentSdkBackend` faengt SDK-Ausnahmen und erzeugt eine
@@ -31,6 +58,7 @@ Eintragsformat:
 - **Betroffen:** `orchestrator/core/backends.py`, `orchestrator/core/hoa.py`,
   `orchestrator/tests/test_backend_fehler.py` (neu).
 
+## [2026-06-23 15:29] — Claude Code
 - **Was:** GATE-B-Mini-Lauf vorbereitet und erstmals real versucht. `claude-agent-sdk` (0.2.107) im venv
   installiert; Claude-CLI lokalisiert (`~/.npm-global/bin/claude`, 2.1.186; das SDK nutzt jedoch seine
   mitgelieferte gebundelte CLI gleicher Version). `orchestrator/.env` aus der Vorlage angelegt und
@@ -50,6 +78,7 @@ Eintragsformat:
 - **Betroffen:** `orchestrator/config.toml` (netto unveraendert), `orchestrator/.env` (neu, nicht versioniert),
   Git-Remote `origin` (neu), Keychain (Token). Kein Quellcode geaendert.
 
+## [2026-06-23 15:06] — Claude Code
 - **Was:** Git-Hygiene: `.gitattributes` neu angelegt (`* text=auto eol=lf` zur Zeilenenden-Normalisierung,
   `*.xmind binary`). `.gitignore` um macOS-`.DS_Store` (auch `**/.DS_Store`) ergaenzt; die ungetrackten
   `.DS_Store` und `orchestrator/.DS_Store` aus dem Arbeitsbaum entfernt. `git add --renormalize .` ausgefuehrt
@@ -58,6 +87,7 @@ Eintragsformat:
   fernhalten, bevor GATE B beginnt.
 - **Betroffen:** `.gitattributes` (neu), `.gitignore`.
 
+## [2026-06-23 14:40] — Claude Code
 - **Was:** GATE-B-Vorbereitung: `AgentSdkBackend` echt implementiert, gebaut gegen die verifizierten Bindings
   des Claude Agent SDK (`query`, `ClaudeAgentOptions`, `HookMatcher`, `AssistantMessage`/`TextBlock`;
   PreToolUse-Hook mit `permissionDecision: deny` fuer CEO-Tor). Lazy import, damit die Offline-Self-Checks
