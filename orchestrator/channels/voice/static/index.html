@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Head of Agents -- Live-Voice</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, system-ui, sans-serif;
+      background: #0b0f17; color: #e6edf3; display: grid;
+      grid-template-columns: 360px 1fr; min-height: 100vh;
+    }
+    .left { padding: 28px; border-right: 1px solid #1f2733; display: flex;
+            flex-direction: column; gap: 22px; }
+    h1 { font-size: 16px; font-weight: 600; margin: 0; color: #9fb3c8; letter-spacing: .04em; }
+    .orb { width: 140px; height: 140px; border-radius: 50%; margin: 8px auto;
+           background: radial-gradient(circle at 50% 40%, #1b3a5b, #0b1622);
+           box-shadow: 0 0 0 1px #1f2733; transition: box-shadow .25s, transform .25s; }
+    .orb.listening { box-shadow: 0 0 36px 4px #1f6feb; }
+    .orb.thinking  { box-shadow: 0 0 36px 4px #d29922; animation: pulse 1.2s infinite; }
+    .orb.speaking  { box-shadow: 0 0 36px 4px #2ea043; transform: scale(1.04); }
+    @keyframes pulse { 0%,100%{opacity:.7} 50%{opacity:1} }
+    .state { text-align: center; font-size: 14px; color: #9fb3c8; min-height: 20px; }
+    button { background: #1f6feb; color: #fff; border: 0; border-radius: 8px;
+             padding: 12px 16px; font-size: 15px; cursor: pointer; }
+    button.stop { background: #30363d; }
+    .right { padding: 28px; overflow: auto; }
+    .panel { background: #111722; border: 1px solid #1f2733; border-radius: 12px;
+             padding: 18px 20px; margin-bottom: 16px; }
+    .panel h2 { font-size: 15px; margin: 0 0 12px; color: #58a6ff; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #1f2733; }
+    th { color: #9fb3c8; font-weight: 600; }
+    .kv { display: flex; gap: 8px; margin: 4px 0; font-size: 14px; }
+    .kv b { color: #9fb3c8; min-width: 130px; }
+    .empty { color: #6e7681; }
+    small { color: #6e7681; }
+  </style>
+</head>
+<body>
+  <div class="left">
+    <h1>HEAD OF AGENTS</h1>
+    <div id="orb" class="orb"></div>
+    <div id="state" class="state">nicht verbunden</div>
+    <button id="connect">Gespraech starten</button>
+    <small>WebRTC lokal. Sprich einfach los -- Barge-in aktiv.</small>
+  </div>
+  <div class="right">
+    <div id="panels">
+      <div class="panel"><h2>Panel-Bereich</h2>
+        <div class="empty">Hier blendet der Head of Agents Inhalte ein
+        (z. B. "zeig mir die Kostenuebersicht").</div></div>
+    </div>
+  </div>
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>

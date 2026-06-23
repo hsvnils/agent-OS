@@ -1,0 +1,97 @@
+// Browser-Client fuer den Live-Voice-Kanal.
+// Verbindet per WebRTC mit dem lokalen Server, zeigt Zustaende (hoert zu / denkt / spricht)
+// und rendert Panel-Einblendungen (show_panel) aus Server-Nachrichten.
+//
+// GATE-verifiziert: die genaue Pipecat-JS-Client-API wird beim ersten echten Browser-Test
+// gegen die geladene SDK-Version bestaetigt; Panel-Rendering und Zustaende sind SDK-unabhaengig.
+
+import { RTVIClient } from "https://esm.sh/@pipecat-ai/client-js";
+import { SmallWebRTCTransport } from "https://esm.sh/@pipecat-ai/small-webrtc-transport";
+
+const orb = document.getElementById("orb");
+const stateEl = document.getElementById("state");
+const connectBtn = document.getElementById("connect");
+const panels = document.getElementById("panels");
+
+let client = null;
+let connected = false;
+
+function setState(s, label) {
+  orb.className = "orb" + (s ? " " + s : "");
+  stateEl.textContent = label;
+}
+
+function renderPanel(panel) {
+  const el = document.createElement("div");
+  el.className = "panel";
+  const h = document.createElement("h2");
+  h.textContent = panel.title || "Panel";
+  el.appendChild(h);
+
+  if (panel.type === "kostenuebersicht") {
+    el.appendChild(kv("Monatsbudget", panel.monatsbudget || "unbekannt"));
+    if (panel.soll_ist && panel.soll_ist.columns?.length) {
+      el.appendChild(makeTable(panel.soll_ist.columns, panel.soll_ist.rows || []));
+    }
+    if (panel.hinweis) el.appendChild(small(panel.hinweis));
+    if (panel.quellen) el.appendChild(small("Quellen: " + panel.quellen.join(", ")));
+  } else if (panel.type === "tabelle") {
+    el.appendChild(makeTable(panel.columns || [], panel.rows || []));
+  } else { // markdown / text
+    const p = document.createElement("div");
+    p.textContent = panel.markdown || "";
+    el.appendChild(p);
+  }
+  panels.prepend(el);
+}
+
+function kv(k, v) {
+  const d = document.createElement("div"); d.className = "kv";
+  const b = document.createElement("b"); b.textContent = k;
+  const s = document.createElement("span"); s.textContent = v;
+  d.append(b, s); return d;
+}
+function makeTable(cols, rows) {
+  const t = document.createElement("table");
+  const thead = document.createElement("tr");
+  cols.forEach(c => { const th = document.createElement("th"); th.textContent = c; thead.appendChild(th); });
+  t.appendChild(thead);
+  rows.forEach(r => {
+    const tr = document.createElement("tr");
+    r.forEach(c => { const td = document.createElement("td"); td.textContent = c; tr.appendChild(td); });
+    t.appendChild(tr);
+  });
+  return t;
+}
+function small(text) { const s = document.createElement("small"); s.textContent = text; s.style.display = "block"; s.style.marginTop = "8px"; return s; }
+
+function handleServerMessage(data) {
+  // Panel-Anweisung vom HoA (show_panel).
+  const msg = data?.data ?? data;
+  if (msg && msg.kind === "panel" && msg.panel) renderPanel(msg.panel);
+}
+
+async function connect() {
+  client = new RTVIClient({
+    transport: new SmallWebRTCTransport(),
+    params: { baseUrl: "", endpoints: { connect: "/api/offer" } },
+    enableMic: true,
+    enableCam: false,
+    callbacks: {
+      onConnected: () => { connected = true; connectBtn.textContent = "Beenden"; connectBtn.classList.add("stop"); setState("listening", "verbunden -- hoert zu"); },
+      onDisconnected: () => { connected = false; connectBtn.textContent = "Gespraech starten"; connectBtn.classList.remove("stop"); setState("", "getrennt"); },
+      onUserStartedSpeaking: () => setState("listening", "hoert zu ..."),
+      onBotLlmStarted: () => setState("thinking", "denkt nach ..."),
+      onBotStartedSpeaking: () => setState("speaking", "spricht ..."),
+      onBotStoppedSpeaking: () => setState("listening", "hoert zu"),
+      onServerMessage: handleServerMessage,
+      onError: (e) => setState("", "Fehler: " + (e?.message || e)),
+    },
+  });
+  setState("thinking", "verbinde ...");
+  await client.connect();
+}
+
+async function disconnect() { if (client) await client.disconnect(); }
+
+connectBtn.addEventListener("click", () => (connected ? disconnect() : connect()));

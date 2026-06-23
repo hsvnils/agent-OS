@@ -1,0 +1,117 @@
+"""show_panel -- UI-Anweisungen fuer die Browser-Oberflaeche (Einblendungen).
+
+Erzeugt JSON-faehige dicts, die ueber den WebRTC-Datenkanal an die Browser-Seite gehen
+und dort als Panel gerendert werden. Datenherkunft fuer Kosten: `finance/` (read-only).
+Jeder Panel-Inhalt laeuft durch den Leck-Schutz (keine .env-Werte in Panels).
+
+Bewusst schlank/erweiterbar: weitere Panel-Typen koennen ergaenzt werden.
+"""
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+from ...governance.leak_guard import redact
+
+ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_FINANCE = ROOT / "finance"
+
+# Anzeige-Verben -> nur reine Anzeige-Wuensche loesen ein Panel aus (lesend, kein CEO-Tor).
+_DISPLAY_VERBS = ("zeig", "zeige", "anzeig", "einblend", "blende", "uebersicht", "darstell")
+
+
+def detect_panel_intent(text: str):
+    """Erkennt reine Anzeige-Wuensche. Gibt (typ, daten) zurueck oder None.
+
+    Bewusst eng: nur wenn ein Anzeige-Verb vorkommt (bzw. das Wort 'kostenuebersicht'),
+    damit handlungsbezogene Anweisungen ('neues kostenpflichtiges Tool beschaffen') NICHT
+    als Panel missverstanden werden, sondern regulaer durch den HoA-Kern (inkl. Tor) laufen.
+    """
+    t = (text or "").lower()
+    if "kostenuebersicht" in t or (
+        ("kosten" in t or "budget" in t) and any(v in t for v in _DISPLAY_VERBS)
+    ):
+        return ("kostenuebersicht", None)
+    return None
+
+
+def build_panel(typ: str, daten: dict | None = None, *, finance_dir: Path | None = None,
+                secrets: list[str] | None = None) -> dict:
+    """Baut eine Panel-Anweisung. `typ`: kostenuebersicht | tabelle | text/markdown."""
+    secrets = secrets or []
+    daten = daten or {}
+    if typ == "kostenuebersicht":
+        panel = _kostenuebersicht(Path(finance_dir) if finance_dir else DEFAULT_FINANCE)
+    elif typ == "tabelle":
+        panel = {
+            "type": "tabelle",
+            "title": daten.get("title", "Tabelle"),
+            "columns": daten.get("columns", []),
+            "rows": daten.get("rows", []),
+        }
+    elif typ in ("text", "markdown"):
+        panel = {
+            "type": "markdown",
+            "title": daten.get("title", "Hinweis"),
+            "markdown": daten.get("markdown", ""),
+        }
+    else:
+        panel = {"type": "markdown", "title": "Unbekanntes Panel",
+                 "markdown": f"Unbekannter Panel-Typ: {typ}"}
+    return _redact_obj(panel, secrets)
+
+
+# -- intern --
+
+def _read(p: Path) -> str:
+    return p.read_text(encoding="utf-8") if p.exists() else ""
+
+
+def _kostenuebersicht(finance_dir: Path) -> dict:
+    budget_md = _read(finance_dir / "budget.md")
+    stats_md = _read(finance_dir / "kosten-statistik.md")
+    return {
+        "type": "kostenuebersicht",
+        "title": "Kostenuebersicht",
+        "monatsbudget": _extract_monatsbudget(budget_md),
+        "soll_ist": _extract_first_table(stats_md),
+        "quellen": ["finance/budget.md", "finance/kosten-statistik.md"],
+        "hinweis": "Lesende Anzeige aus finance/. Das Monatsbudget legt der CEO in "
+                   "finance/budget.md fest; Ist-Kosten pflegt der CFO.",
+    }
+
+
+def _extract_monatsbudget(budget_md: str) -> str:
+    for line in budget_md.splitlines():
+        if "Monatsbudget" in line and ":" in line:
+            val = line.split(":", 1)[1].strip().strip("*").strip()
+            val = val.replace("`", "").strip()
+            if val and "festzulegen" not in val and val != "—":
+                return val
+            return "noch nicht festgelegt (Platzhalter in finance/budget.md)"
+    return "unbekannt"
+
+
+def _extract_first_table(md: str) -> dict:
+    """Erste Markdown-Tabelle als {columns, rows} (fuer die Soll-Ist-Uebersicht)."""
+    rows: list[list[str]] = []
+    for line in md.splitlines():
+        s = line.strip()
+        if s.startswith("|") and s.endswith("|"):
+            cells = [c.strip() for c in s.strip("|").split("|")]
+            if set("".join(cells)) <= set("-: "):  # Trennzeile ueberspringen
+                continue
+            rows.append(cells)
+    if not rows:
+        return {"columns": [], "rows": []}
+    return {"columns": rows[0], "rows": rows[1:]}
+
+
+def _redact_obj(obj, secrets: list[str]):
+    if isinstance(obj, str):
+        return redact(obj, secrets)
+    if isinstance(obj, list):
+        return [_redact_obj(x, secrets) for x in obj]
+    if isinstance(obj, dict):
+        return {k: _redact_obj(v, secrets) for k, v in obj.items()}
+    return obj

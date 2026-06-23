@@ -27,13 +27,36 @@ So docken neue Oberflaechen an, **ohne den HoA-Kern zu aendern**.
 
 | Adapter | Status | Beschreibung |
 |---------|--------|--------------|
-| **Terminal** | **jetzt (Bootstrap)** | Streaming-Chat im Terminal; der CEO spricht mit dem HoA und erteilt Anweisungen. Minimal, nur um den HoA real bedienbar zu machen. |
-| **Live-Voice (Jarvis-Stil)** | **geplant — primaer** | Echtzeit-Sprachoberflaeche: Sprache rein -> HoA-Kern -> Sprache raus (niedrige Latenz, freihaendige Dauerkonversation). Technisch: Echtzeit-STT -> Kern -> TTS. NICHT im Bootstrap gebaut. |
-| **Telegram** | **geplant** | Text- UND Sprachnachrichten ueber Telegram (Voice -> STT -> HoA -> Antwort als Text und/oder Voice). Fuer unterwegs. NICHT im Bootstrap gebaut. |
+| **Terminal** | **fertig** | Streaming-Chat im Terminal; der CEO spricht mit dem HoA und erteilt Anweisungen. |
+| **Live-Voice (Browser)** | **jetzt** | Echtzeit-Sprachoberflaeche im Browser auf Basis von Pipecat. Transport: **WebRTC lokal/peer-to-peer** (kein kostenpflichtiger Transport-Dienst). Pipeline: Mikrofon -> VAD/Turn -> STT -> **Bruecke zum HoA-Kern** -> TTS -> Lautsprecher; Barge-in aktiv. Mit **show_panel** (Einblendungen waehrend des Gespraechs). STT/TTS sind kostenpflichtig (CEO-Tor). Code: `orchestrator/channels/voice/`. |
+| **Telegram** | **geplant** | Text- UND Sprachnachrichten ueber Telegram (Voice -> STT -> HoA -> Antwort als Text und/oder Voice). Fuer unterwegs. NICHT in diesem Build. |
 | **Mock** | intern | Test-Adapter fuer Offline-Self-Checks (kein echtes Modell, keine Kosten). |
+
+## Live-Voice im Browser (Detail)
+
+- **Schichten:** `channels/voice/bridge.py` (framework-unabhaengige Andockstelle Sprache<->HoA-Kern,
+  offline testbar), `panels.py` (show_panel), `pipeline.py` (Pipecat-Pipeline, Laufzeit),
+  `server.py` (WebRTC-Server + statische Seite), `static/` (minimale Browser-Oberflaeche).
+- **show_panel:** Der HoA kann waehrend des Gespraechs Inhalte einblenden — `kostenuebersicht`
+  (liest read-only aus `finance/`), `tabelle`, `text/markdown`. Reine Anzeige-Wuensche sind lesend
+  und laufen NICHT durch das CEO-Tor; alle anderen Anweisungen gehen durch den HoA-Kern (Tor,
+  Gedaechtnis, Delegation). **Keine Secrets in Panels** (Leck-Schutz gilt auch hier).
+- **CEO-Tore im Sprachkanal:** Beruehrt eine Anweisung ein Tor (Geld, Recht, Oeffentlichkeit, neue
+  externe Kosten, Mandats-/Charta-Aenderung, Datenloeschung), fuehrt der HoA sie NICHT aus, sondern
+  antwortet gesprochen mit einer Freigabe-Anfrage und protokolliert sie. (Sprachgebundene
+  Freigabe-Bestaetigung folgt spaeter.)
+- **Provider:** STT Deepgram (Default), TTS Cartesia ODER ElevenLabs (CEO waehlt); per `config.toml`
+  austauschbar. Keys ausschliesslich in `orchestrator/.env` (Capability-Muster: der Adapter erhaelt
+  die Faehigkeit, nie den Key).
+
+## Roadmap (Voice-Ausbau)
+
+- **Stufe 2:** „Jarvis-Gesicht" — Orb/Wellenform via Pipecat Voice UI Kit (reine Visualisierung).
+- **Stufe 3:** optionale Mac-App-Verpackung via Tauri (.dmg).
+- **Spaeter:** Telegram (Text + Voice).
 
 ## Anforderung an die Architektur
 
 Live-Voice und Telegram muessen **ohne Aenderung am HoA-Kern** andockbar sein. Der Leck-Schutz
 (`.env`-Redaktion) gilt **kanaluebergreifend** — kein Key erscheint je im Klartext, auch nicht ueber Voice
-oder Telegram.
+oder Telegram (auch nicht in Panels).

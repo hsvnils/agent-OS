@@ -17,6 +17,28 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 00:36] — Claude Code
+- **Was:** Phase 2 (Live-Voice-Oberflaeche, Browser) -- Offline-Teil gebaut und getestet, Laufzeit-Teil
+  als GATE-verifiziertes Geruest. Neuer Kanal-Adapter `orchestrator/channels/voice/`: `bridge.py`
+  (framework-unabhaengige Andockstelle Sprache<->HoA-Kern; reine Anzeige-Wuensche lesend ohne Tor, sonst
+  durch den HoA-Kern), `panels.py` (show_panel: `kostenuebersicht` aus `finance/`, `tabelle`,
+  `text/markdown`; leck-geschuetzt), `pipeline.py` (Pipecat-Pipeline STT -> Bruecke -> TTS, WebRTC,
+  Barge-in; HoA-Kern im Executor gegen Event-Loop-Verschachtelung), `server.py` (SmallWebRTC lokal +
+  FastAPI, statische Seite; bricht ohne Pipecat mit Install-Hinweis ab), `static/index.html`+`app.js`
+  (minimale Oberflaeche: Zustaende hoert zu/denkt/spricht + Panel-Bereich, Pipecat-JS-Client via CDN).
+  Fuenf neue Self-Checks (`tests/test_voice_bridge.py` + Intent-Test): Bruecke offline, Kanal-Gleichheit
+  Terminal==Voice, show_panel inkl. kostenuebersicht, Leck-Schutz in Panels, CEO-Tor im Voice-Pfad.
+  Gesamt **24/24 OK**. `config.toml [voice]` (Provider/Port/Sprache), `.env.example` um Voice-Keys
+  (Capability-Muster), `governance/schnittstellen.md` (Live-Voice jetzt, Roadmap Stufe 2/3),
+  `finance/kosten-statistik.md` (geschaetzte Voice-Kosten, niedriger Centbereich/Min; Dominanz Opus).
+- **Warum:** CEO-Auftrag Phase 2. STT/TTS = neue kostenpflichtige Dienste (CEO-Tor); dieser Build ist die
+  Freigabe, der echte Sprachtest folgt am GATE (Provider-Wahl + Keys). WebRTC-Transport lokal/kostenlos.
+  HoA-Kern unveraendert (nur Ein-/Ausgabe ergaenzt). Pipecat-Importe lazy; exakte API wird am GATE gegen
+  die installierte Version bestaetigt.
+- **Betroffen:** `orchestrator/channels/voice/*` (neu), `orchestrator/tests/test_voice_bridge.py` (neu),
+  `orchestrator/config.toml`, `orchestrator/.env.example`, `governance/schnittstellen.md`,
+  `finance/kosten-statistik.md`.
+
 ## [2026-06-23 20:08] — Claude Code
 - **Was:** Phase 1 (Auto-Memory-Isolation) abgeschlossen. Hebel ermittelt: ENV-Variable
   `CLAUDE_CODE_DISABLE_AUTO_MEMORY` (aus dem CLI-Binary extrahiert). Strukturell verifiziert ueber die

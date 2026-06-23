@@ -35,3 +35,13 @@ changelog_file = "projekt_changelog.md"
 enabled = true
 path = "orchestrator/memory/log.jsonl"          # kanonischer, versionierter Store
 recall_limit = 5                                 # letzte N Eintraege als Kontext (+ Stichwort-Treffer)
+
+[voice]
+# Live-Voice-Kanal (Browser, WebRTC lokal). STT/TTS sind kostenpflichtig (CEO-Tor).
+# Provider per einer Zeile austauschbar; Keys ausschliesslich in orchestrator/.env.
+host = "localhost"
+port = 7860
+language = "de"
+stt_provider = "deepgram"        # Default; Key: DEEPGRAM_API_KEY
+tts_provider = "cartesia"        # cartesia | elevenlabs (CEO waehlt am GATE)
+tts_voice_id = ""                # vom Provider; am GATE eintragen
