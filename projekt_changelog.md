@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-23 14:30] — Claude Code
+- **Was:** Orchestrator Phase 2-4 (lauffaehiger, offline getesteter Kern) umgesetzt: `core/charter_loader.py`
+  (Charta -> System-Prompt, Single Source of Truth), `core/subagents.py` (CTO+Berater aus Charten),
+  `core/routing.py` (Delegation + CEO-Tor-Erkennung), `core/backends.py` (MockBackend jetzt; AgentSdkBackend
+  als markierter Stub bis GATE B), `core/hoa.py` (kanal-agnostischer Kern: Auftrag -> delegieren -> EINE
+  Antwort, mit CEO-Tor-Vorpruefung, Eskalation an CTO, Changelog, Leck-Schutz), Kanal-Adapter
+  (`channels/base.py`, `terminal.py`, `mock.py`), Governance (`governance/ceo_gate_hook.py`,
+  `changelog_tool.py` umlautfrei, `capability.py` Fall A/B, `leak_guard.py`), Beobachtbarkeit
+  (`observability/logging.py`), Einstieg `run.py`. Sechs Self-Checks (`orchestrator/tests/`, unittest)
+  **real ausgefuehrt: 10/10 OK** (Durchstich, Kanal-Abstraktion, Autonomie, Eskalation, Secret-Governance,
+  Changelog). Dry-Run schreibt in separates `orchestrator/logs/changelog_dryrun.md` (gitignored), damit das
+  kanonische Changelog sauber bleibt.
+- **Warum:** GATE A freigegeben; Python 3.12.10 nun verfuegbar, daher ausfuehrbare Umsetzung + reale
+  Self-Checks. Offline/Mock ohne Kosten; echtes Agent-SDK-Backend erst ab GATE B.
+- **Betroffen:** `orchestrator/core/*.py`, `orchestrator/channels/*.py`, `orchestrator/governance/*.py`,
+  `orchestrator/observability/*.py`, `orchestrator/tests/*.py`, `orchestrator/run.py`,
+  `orchestrator/__init__.py` (Paketgeruest).
+
 ## [2026-06-23 10:55] — Claude Code
 - **Was:** Orchestrator Phase 1 (Foundation, ohne Laufzeit-Code): Ordner `orchestrator/` mit `.env.example`,
   `config.toml` (dry_run-Default, Modelle/effort/Flags), `README.md` angelegt; `.gitignore` ergaenzt
