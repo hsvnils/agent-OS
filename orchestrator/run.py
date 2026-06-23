@@ -12,6 +12,7 @@ from pathlib import Path
 from orchestrator.channels.terminal import TerminalAdapter
 from orchestrator.core.backends import AgentSdkBackend, MockBackend
 from orchestrator.core.hoa import HeadOfAgents
+from orchestrator.core.memory import Memory
 from orchestrator.core.subagents import load_default_subagents
 from orchestrator.governance.ceo_gate_hook import CeoGate
 from orchestrator.governance.changelog_tool import append_changelog
@@ -50,6 +51,18 @@ def build_core(cfg: dict) -> HeadOfAgents:
     else:
         changelog_path = ROOT / cfg["governance"]["changelog_file"]
     changelog = partial(append_changelog, changelog_path)
+
+    # Agenten-Gedaechtnis: Dry-Run in separaten, gitignorierten Store (kanonischer bleibt sauber).
+    mem_cfg = cfg.get("memory", {})
+    memory = None
+    if mem_cfg.get("enabled", True):
+        if cfg["run"]["dry_run"]:
+            mem_path = ROOT / "orchestrator" / "memory" / "log_dryrun.jsonl"
+        else:
+            mem_path = ROOT / mem_cfg.get("path", "orchestrator/memory/log.jsonl")
+        memory = Memory(mem_path, secrets=secrets,
+                        recall_limit=mem_cfg.get("recall_limit", 5))
+
     return HeadOfAgents(
         backend,
         subagents,
@@ -57,6 +70,7 @@ def build_core(cfg: dict) -> HeadOfAgents:
         leak_secrets=secrets,
         changelog=changelog,
         logger=Logger(),
+        memory=memory,
     )
 
 

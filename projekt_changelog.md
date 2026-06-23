@@ -17,6 +17,27 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-23 19:38] — Claude Code
+- **Was:** Schritt B implementiert (GATE C freigegeben): dateibasiertes Agenten-Gedaechtnis. Neu
+  `orchestrator/core/memory.py` (`Memory` mit append-only JSONL, `recall` = letzte N + stichwort-relevante
+  aeltere ohne Embeddings, `render_context`, Leck-Schutz via `redact`; `MemoryRecord` mit Feldern
+  ts/session_id/instruction/delegated_to/status/result_digest/eskalationen/tags). `core/hoa.py` verdrahtet:
+  Recall wird vor der Delegation als „Gedaechtnis-Kontext" dem Subagenten-Auftrag vorangestellt (Tor/Routing
+  nutzen den Original-Auftrag), nach dem Buendeln ein Eintrag (Status ok|mit_fehler|eskalation). `run.py`
+  erzeugt den Store (Dry-Run -> `memory/log_dryrun.jsonl`, gitignored; Live -> `memory/log.jsonl`).
+  `config.toml [memory]` (enabled/path/recall_limit), `.gitignore` um Dry-Run-Store ergaenzt.
+  Doku: `orchestrator/memory/README.md`, `governance/gedaechtnis.md` (Policy: Abgrenzung zum Changelog,
+  Isolation vom persoenlichen Claude-Code-Memory, Leck-Schutz, Retention). Sechs neue Self-Checks
+  (`tests/test_memory.py`): Round-Trip, Relevanz, Leck-Schutz, HoA-Integration, Dry-Run-Trennung, Isolation.
+  Gesamt **18/18 OK**. Dry-Run-Smoke bestaetigt: zweiter Auftrag sieht den Kontext des ersten; kanonischer
+  Store bleibt sauber. Offline, ohne Kosten.
+- **Warum:** CEO-Freigabe GATE C; Umfang schlank/dateibasiert gemaess `MEMORY_PLAN.md`. Offene Ausbaustufen
+  (Abschalten des CLI-Auto-Memory in Live-Subagenten, semantische Suche, Supabase) bleiben spaeteren GATES
+  vorbehalten.
+- **Betroffen:** `orchestrator/core/memory.py` (neu), `orchestrator/core/hoa.py`, `orchestrator/run.py`,
+  `orchestrator/config.toml`, `.gitignore`, `orchestrator/memory/README.md` (neu),
+  `governance/gedaechtnis.md` (neu), `orchestrator/tests/test_memory.py` (neu).
+
 ## [2026-06-23 19:31] — Claude Code
 - **Was:** `MEMORY_PLAN.md` (Plan-Dokument) fuer Schritt B angelegt: schlankes, dateibasiertes,
   git-versioniertes Agenten-Gedaechtnis (`orchestrator/memory/log.jsonl`, append-only), abgegrenzt vom

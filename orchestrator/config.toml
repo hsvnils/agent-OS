@@ -29,3 +29,9 @@ agentops_enabled = false        # externer Dienst = CEO-Tor; Standard aus
 budget_file = "finance/budget.md"
 policy_file = "governance/zugriffs-policy.md"
 changelog_file = "projekt_changelog.md"
+
+[memory]
+# Dateibasiertes Agenten-Gedaechtnis (append-only JSONL). Kein externer Dienst.
+enabled = true
+path = "orchestrator/memory/log.jsonl"          # kanonischer, versionierter Store
+recall_limit = 5                                 # letzte N Eintraege als Kontext (+ Stichwort-Treffer)
