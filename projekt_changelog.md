@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-23 19:31] — Claude Code
+- **Was:** `MEMORY_PLAN.md` (Plan-Dokument) fuer Schritt B angelegt: schlankes, dateibasiertes,
+  git-versioniertes Agenten-Gedaechtnis (`orchestrator/memory/log.jsonl`, append-only), abgegrenzt vom
+  Changelog, mit Lese-Pfad (`recall` vor Delegation) und Schreib-Pfad (`append` nach Buendeln), Leck-Schutz,
+  Dry-Run-Trennung und Isolation vom persoenlichen Claude-Code-Memory (inkl. Abschalten des CLI-Auto-Memory in
+  Subagenten). Sechs neue Self-Checks geplant (Ziel >= 18/18). Kein externer Dienst -> kein CEO-Tor, keine
+  Kosten. GATE C = Freigabe dieses Plans; danach Offline-Implementierung. Noch KEIN Memory-Laufzeit-Code.
+- **Warum:** CEO-Entscheidung: mit B (Kontext & Gedaechtnis) weitermachen, Umfang schlank/dateibasiert,
+  Vorgehen Plan-erst (GATE).
+- **Betroffen:** `MEMORY_PLAN.md` (neu).
+
 ## [2026-06-23 16:12] — Claude Code
 - **Was:** GATE B **bestanden**: der echte Mini-Lauf laeuft nach Guthaben-Aufladung vollstaendig durch
   (CEO -> HoA -> echte Opus-Aufrufe an CTO und Berater -> eine konsolidierte Antwort; HoA-Auto-Changelog
