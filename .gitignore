@@ -16,3 +16,7 @@ orchestrator/logs/
 
 # Build-Artefakte
 .xmind-build/
+
+# macOS
+.DS_Store
+**/.DS_Store

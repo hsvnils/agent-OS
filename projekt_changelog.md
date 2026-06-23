@@ -17,7 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-23 14:40] — Claude Code
+## [2026-06-23 15:06] — Claude Code
+- **Was:** Git-Hygiene: `.gitattributes` neu angelegt (`* text=auto eol=lf` zur Zeilenenden-Normalisierung,
+  `*.xmind binary`). `.gitignore` um macOS-`.DS_Store` (auch `**/.DS_Store`) ergaenzt; die ungetrackten
+  `.DS_Store` und `orchestrator/.DS_Store` aus dem Arbeitsbaum entfernt. `git add --renormalize .` ausgefuehrt
+  — alle getrackten Textdateien sind bereits LF, keine Inhaltsaenderung noetig.
+- **Warum:** Wechsel von Windows auf macOS; Zeilenenden plattformneutral fixieren und OS-Cruft vom Repo
+  fernhalten, bevor GATE B beginnt.
+- **Betroffen:** `.gitattributes` (neu), `.gitignore`.
+
 - **Was:** GATE-B-Vorbereitung: `AgentSdkBackend` echt implementiert, gebaut gegen die verifizierten Bindings
   des Claude Agent SDK (`query`, `ClaudeAgentOptions`, `HookMatcher`, `AssistantMessage`/`TextBlock`;
   PreToolUse-Hook mit `permissionDecision: deny` fuer CEO-Tor). Lazy import, damit die Offline-Self-Checks

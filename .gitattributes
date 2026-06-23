@@ -1,0 +1,5 @@
+# Zeilenenden normalisieren: im Repo immer LF, plattformneutral
+* text=auto eol=lf
+
+# Binaerformate nicht als Text behandeln (kein eol/diff-Mangling)
+*.xmind binary
