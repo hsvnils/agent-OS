@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-23 10:30] — Claude Code
+- **Was:** `ORCHESTRATOR_PLAN.md` (Plan-Dokument) fuer den Bootstrap-Orchestrator angelegt — Dreiergruppe
+  Head of Agents + CTO + Unternehmensberater auf Basis des Claude Agent SDK (Python), mit kanal-agnostischem
+  Kern (Adapter-Pattern, Terminal-Adapter jetzt; Live-Voice/Telegram nur architektonisch vorgesehen),
+  Governance-Durchsetzung (Changelog-Hook, CEO-Tor-PreToolUse-Hook), Secret-/Capability-Mechanik
+  (orchestrator/.env, grant_capability Fall A/B, Leck-Schutz-Hook, zugriffs-policy.md), Beobachtbarkeit,
+  Self-Checks und GATES. Noch KEIN Laufzeit-Code.
+- **Warum:** CEO-Anweisung „Bootstrap-Orchestrator": erst Plan, dann GATE A (Freigabe), erst danach
+  Implementierung. Scope strikt auf die Dreiergruppe begrenzt.
+- **Betroffen:** `ORCHESTRATOR_PLAN.md` (neu).
+
 ## [2026-06-23 09:45] — Claude Code
 - **Was:** `governance/organigramm.xmind` passend zur erweiterten `governance/organigramm.md` neu aufgebaut.
   Vier Ebenen: CEO -> Head of Agents -> Abteilungsleiter (14 C-Rollen/Berater) -> geplante Unter-Agenten.
