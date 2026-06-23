@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-23 09:45] — Claude Code
+- **Was:** `governance/organigramm.xmind` passend zur erweiterten `governance/organigramm.md` neu aufgebaut.
+  Vier Ebenen: CEO -> Head of Agents -> Abteilungsleiter (14 C-Rollen/Berater) -> geplante Unter-Agenten.
+  CCO (Research, Konzept/Strategie, Copywriter/Caption je Plattform, Video-Cutter eingehaengt, Reviewer) und
+  CTO (Backend, Frontend/iOS, DevOps/Infra) explizit als „geplant"; alle uebrigen Abteilungen mit einem
+  Knoten „Unter-Agenten bei Bedarf". Status-Labels aktiv/Entwurf je Abteilungsleiter, geplant je
+  Unter-Agent. Datei als gueltiger XMind-ZIP-Container (content.json/metadata.json/manifest.json) erzeugt
+  und verifiziert.
+- **Warum:** CEO-Anweisung: XMind-Map an die erweiterte Organigramm-Struktur angleichen. Map ist nur
+  Visualisierung; `agents/REGISTRY.md` bleibt Quelle der Wahrheit.
+- **Betroffen:** `governance/organigramm.xmind`.
+
 ## [2026-06-23 09:30] — Claude Code
 - **Was:** Alle 15 Charten unter `agents/` um die Abschnitte „Aufgabenkatalog (wiederkehrende To-dos)",
   „Workflows" und „Unter-Agenten (geplant)" erweitert (hinten angehaengt, vor der Aenderungsregel-Fussnote).
