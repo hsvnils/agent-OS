@@ -61,10 +61,39 @@ def build_panel(typ: str, daten: dict | None = None, *, finance_dir: Path | None
     return _redact_obj(panel, secrets)
 
 
+def finance_summary(finance_dir: Path | None = None, secrets: list[str] | None = None) -> str:
+    """Sprechbare Zusammenfassung der echten Finanzdaten aus finance/ (Domaene des CFO).
+
+    Damit der HoA inhaltlich antworten kann (nicht nur 'es gibt eine Uebersicht'). Leck-geschuetzt.
+    """
+    fd = Path(finance_dir) if finance_dir else DEFAULT_FINANCE
+    budget = _extract_monatsbudget(_read(fd / "budget.md"))
+    stats_plain = _plain(_read(fd / "kosten-statistik.md"))
+    text = (
+        f"Monatsbudget laut finance/budget.md: {budget}. "
+        f"Aus finance/kosten-statistik.md (CFO): {stats_plain[:900]}"
+    )
+    return redact(text, secrets or [])
+
+
 # -- intern --
 
 def _read(p: Path) -> str:
     return p.read_text(encoding="utf-8") if p.exists() else ""
+
+
+def _plain(md: str) -> str:
+    """Markdown grob zu Fliesstext (fuer sprechbare Finance-Zusammenfassung)."""
+    out = []
+    for line in md.splitlines():
+        s = line.strip()
+        if not s or s.startswith(">") or set(s) <= set("-:| "):
+            continue
+        s = re.sub(r"[#*`>]", "", s)
+        s = s.replace("|", " ").strip()
+        if s:
+            out.append(s)
+    return " ".join(" ".join(out).split())
 
 
 def _kostenuebersicht(finance_dir: Path) -> dict:

@@ -19,7 +19,7 @@ from __future__ import annotations
 import asyncio
 
 from ...governance.leak_guard import redact
-from .panels import build_panel
+from .panels import build_panel, finance_summary
 from .voices import get_selected_voice_id
 
 VOICE_SYSTEM_PROMPT = (
@@ -29,8 +29,11 @@ VOICE_SYSTEM_PROMPT = (
     "Beantworte normale Konversation und einfache Fragen SELBST und kurz. "
     "Nutze das Tool 'delegate' nur fuer echte Fachaufgaben: an='cto' fuer Technik/Infrastruktur/Code, "
     "an='berater' fuer Strategie/Analyse/Markt. Fasse das Ergebnis danach in 1-3 Saetzen gesprochen zusammen. "
-    "Nutze 'show_panel' (typ='kostenuebersicht'), wenn der CEO die Kosten-/Budgetuebersicht sehen will; "
-    "sag dazu kurz, dass du sie einblendest. "
+    "Fuer Geld-/Budget-/Kostenfragen hast du Zugriff auf Finance (CFO): nutze 'frage_finance', um die echten "
+    "Zahlen aus finance/ zu holen, und antworte INHALTLICH (nenne konkrete Werte/Status), nicht nur 'es gibt "
+    "eine Uebersicht'. Sag dabei kurz etwas wie 'Einen Moment, ich schaue bei Finance nach.', bevor du "
+    "nachschlaegst. Wenn der CEO die Uebersicht sehen will, nutze zusaetzlich 'show_panel' "
+    "(typ='kostenuebersicht') und sag, dass du sie einblendest -- fasse den Inhalt dann gesprochen zusammen. "
     "CEO-Tore: Bei allem mit Geld, Recht, Vertraegen, Oeffentlichkeit, neuen kostenpflichtigen Diensten, "
     "Mandats-/Charta-Aenderungen oder Datenloeschung fuehrst du NICHTS aus, sondern sagst, dass du dafuer "
     "die Freigabe des CEO brauchst. Du hast Spezialisten unter dir; du bist der einzige, der mit dem CEO spricht."
@@ -78,10 +81,17 @@ def _build_tools():
 
     show_panel = FunctionSchema(
         name="show_panel",
-        description="Blendet dem CEO ein Panel im Browser ein. typ='kostenuebersicht' zeigt Budget und "
-                    "Kostenstatistik aus finance/.",
+        description="Blendet dem CEO ein Panel im Browser ein und liefert dir dessen Inhalt zurueck. "
+                    "typ='kostenuebersicht' zeigt Budget und Kostenstatistik aus finance/.",
         properties={"typ": {"type": "string", "enum": ["kostenuebersicht"]}},
         required=["typ"],
+    )
+    frage_finance = FunctionSchema(
+        name="frage_finance",
+        description="Fragt Finance (CFO) nach den echten Zahlen aus finance/ (Budget, Ist-Kosten, "
+                    "Schaetzungen). Nutze dies fuer alle Geld-/Budget-/Kostenfragen, um inhaltlich zu antworten.",
+        properties={"frage": {"type": "string", "description": "Die Finanzfrage in einem Satz."}},
+        required=["frage"],
     )
     delegate = FunctionSchema(
         name="delegate",
@@ -94,7 +104,7 @@ def _build_tools():
         },
         required=["aufgabe", "an"],
     )
-    return ToolsSchema(standard_tools=[show_panel, delegate])
+    return ToolsSchema(standard_tools=[show_panel, frage_finance, delegate])
 
 
 def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, leak_secrets):
@@ -130,7 +140,15 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
         panel = build_panel(typ, finance_dir=finance_dir, secrets=leak_secrets)
         # Panel ueber den RTVI-Datenkanal an die Browser-Seite (parallel zur Sprache).
         await rtvi.push_frame(RTVIServerMessageFrame(data={"kind": "panel", "panel": panel}))
-        await params.result_callback({"status": "eingeblendet", "typ": typ})
+        # Inhalt zurueckgeben, damit der HoA gesprochen darueber sprechen kann.
+        inhalt = finance_summary(finance_dir, leak_secrets) if typ == "kostenuebersicht" else ""
+        await params.result_callback({"eingeblendet": True, "typ": typ, "inhalt": inhalt})
+
+    async def on_frage_finance(params):
+        frage = (params.arguments or {}).get("frage", "")
+        await params.result_callback(
+            {"frage": frage, "finance": finance_summary(finance_dir, leak_secrets)}
+        )
 
     async def on_delegate(params):
         args = params.arguments or {}
@@ -158,6 +176,7 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
         await params.result_callback({"ergebnis": redact(result, leak_secrets)})
 
     llm.register_function("show_panel", on_show_panel)
+    llm.register_function("frage_finance", on_frage_finance)
     llm.register_function("delegate", on_delegate, cancel_on_interruption=False)
 
     pipeline = Pipeline([

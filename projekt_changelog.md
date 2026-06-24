@@ -17,7 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-24 08:50] — Claude Code
+## [2026-06-24 09:01] — Claude Code
+- **Was:** HoA kann jetzt zu Finance-INHALTEN sprechen (nicht nur Panel einblenden). `show_panel` liefert dem
+  HoA zusaetzlich den Inhalt zurueck (`finance_summary` aus finance/: Budget-Status + Kostenstatistik). Neues
+  Tool `frage_finance(frage)` -- der HoA holt damit die echten Zahlen aus finance/ (Domaene des CFO) und
+  antwortet inhaltlich; System-Prompt instruiert ihn, kurz anzukuendigen ("Einen Moment, ich schaue bei
+  Finance nach.") und konkrete Werte/Status zu nennen. Neue Funktion `panels.finance_summary` (+ `_plain`),
+  leck-geschuetzt. Tools jetzt: show_panel, frage_finance, delegate. Self-Checks 24/24 OK; Boot verifiziert
+  (ein Prozess).
+- **Warum:** CEO-Feedback: der HoA blendete die Kostenuebersicht ein, konnte den Inhalt aber nicht
+  sprachlich wiedergeben. Gewuenscht: Nachfragen bei Finance + inhaltliche Auskunft.
+- **Betroffen:** `orchestrator/channels/voice/pipeline.py`, `orchestrator/channels/voice/panels.py`.
 - **Was:** Stimmen-Fehler behoben. ElevenLabs-Streaming (Pipecat nutzt die Websocket-API) akzeptiert nur
   Stimmen, die **im Account** sind -- Library-Stimmen muessen einmalig hinzugefuegt werden (der fruehere
   REST-Test war irrefuehrend; die erste Konversation lief nur, weil die Default-Stimme eine Account-Stimme
