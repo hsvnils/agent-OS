@@ -17,7 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-24 09:08] — Claude Code
+## [2026-06-24 14:23] — Claude Code
+- **Was:** `ROADMAP.md` angelegt: Ablaufplan mit GATES vom aktuellen Stand zum selbst-entwickelnden
+  Agenten-Unternehmen (24/7-Assistent). Phasen 5-13: Live-Kontext/Organigramm, Antrags-/Freigabe-Workflow
+  (Rueckgrat), Execution-Engine (handelnde Agenten auf Git-Branch + Tests), Web-Research, Innovations-Pipeline
+  (Berater), Telegram-Kanal, E-Mail/Kalender, Durable Task-Queue + Scheduler (24/7, fortsetzbar bei
+  Limit), Self-Development-Loop. Invarianten: Mensch-Freigabe hart, Aenderungen nur auf Branch+Tests+Rollback,
+  Selbst-Modifikation nur via freigegebenem Antrag, Kosten/Secrets governt. Enthaelt ehrliche Luecken-Analyse
+  („was fehlt zum Selbst-Entwickeln") und GATES-Uebersicht. Noch KEINE Umsetzung -- wartet auf GATE D.
+- **Warum:** CEO-Auftrag: klarer Plan mit Gates Richtung selbst-aufbauendes/-verbesserndes System.
+- **Betroffen:** `ROADMAP.md` (neu).
 - **Was:** (1) Konsultation fuer ALLE Fachagenten vorbereitet: `core/subagents.load_all_subagents()` laedt
   alle 14 Charten als konsultierbare Spezialisten (berater, cao, cfo, cro, ciso, cbo, cpo, cto, cxo, cco,
   cdo, chro, clo, cko); der Voice-Server nutzt sie, und das `delegate`-Tool akzeptiert jetzt jeden dieser
