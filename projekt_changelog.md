@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 00:07] — Claude Code
+- **Was:** Phase 10 Teil A (Telegram) -- Offline-Grundlage gebaut. Neues kanal-unabhaengiges HoA-Gehirn
+  `core/hoa_conversation.py` (Anthropic-Tool-Schleife, injizierbarer Client) + geteilte Werkzeugschicht
+  `core/hoa_tools.py` (frage_finance, set_budget, delegate, antrag_stellen/zeigen/freigeben/ablehnen/umsetzen/
+  mergen; Leck-Schutz, CEO-Tor) + `core/channels_common.py` (finance-Helfer, SSoT ueber Voice-Panels).
+  Telegram-Adapter `channels/telegram/bot.py` (Long-Polling, Text + Sprachnachricht via Deepgram-STT,
+  Antwort als Text; bedient nur autorisierte Chat-ID -- Sicherheits-Guard). `.env.example` um
+  TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_CHAT_ID. Fuenf neue Self-Checks (`tests/test_hoa_conversation.py`:
+  Tool-Loop, CEO-Tor, Finance-Inhalt, Leck-Schutz, Tool-Specs). Gesamt **41/41 OK**. Voice-Pfad bewusst
+  unangetastet (spaetere Vereinheitlichung als Aufraeumschritt notiert). Handy-Browser/Hosting: vom CEO
+  vorerst zurueckgestellt; echter Anruf (Twilio) bleibt Phase 10b am Ende.
+- **Warum:** CEO: zuerst Telegram (mobil), Hosting/Anruf spaeter. Offline-Teil ohne Kosten; Live-Betrieb
+  braucht Bot-Token (GATE).
+- **Betroffen:** `orchestrator/core/hoa_conversation.py` (neu), `orchestrator/core/hoa_tools.py` (neu),
+  `orchestrator/core/channels_common.py` (neu), `orchestrator/channels/telegram/*` (neu),
+  `orchestrator/tests/test_hoa_conversation.py` (neu), `orchestrator/.env.example`.
+
 ## [2026-06-24 23:58] — Claude Code
 - **Was:** Mobile Kontaktwege vorbereitet. CFO-Kostenvoranschlag in `finance/kosten-statistik.md`: Telegram
   praktisch fixkostenfrei (Bot-Token gratis; nur nutzungsabhaengig STT/TTS/LLM wie bisher); Handy-Browser
