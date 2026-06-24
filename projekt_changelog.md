@@ -32,6 +32,8 @@ Eintragsformat:
   und in die Roadmap aufgenommen.
 - **Betroffen:** `orchestrator/core/execution_live.py` (neu), `orchestrator/channels/voice/pipeline.py`,
   `orchestrator/channels/voice/server.py`, `ROADMAP.md`.
+
+## [2026-06-24 23:29] — Claude Code
 - **Was:** Phase 7 — Execution-Engine (Offline-Teil) gebaut. Neu `core/execution.py` (`ExecutionEngine`):
   setzt nur `freigegebene` Antraege um, mit injizierbaren Abhaengigkeiten (Workspace/Worktree, Coding-Agent,
   Tests, Diff) -> offline mit Mocks testbar. Guards: nur freigegeben; Status freigegeben -> in_umsetzung ->
