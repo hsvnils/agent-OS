@@ -62,7 +62,7 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
 > Reihenfolge nach Abhaengigkeit + Wert. Jede Phase ist eigenstaendig testbar (Offline-Self-Checks zuerst),
 > hat einen klaren GATE und einen Nutzen. „GATE" = CEO-Freigabe-Punkt vor billbaren/externen/riskanten Schritten.
 
-### Phase 5 — Live-Kontext & Organigramm im Gespraech  (Quick Win, risikoarm)
+### Phase 5 — Live-Kontext & Organigramm im Gespraech  (Quick Win, risikoarm) — UMGESETZT 2026-06-24
 - **Ziel:** Wenn der HoA einen Agenten konsultiert, zeigt die Oberflaeche live „HoA spricht mit Finance (CFO)";
   Organigramm-Panel; relevanter Kontext auf Anfrage einblendbar.
 - **Bausteine:** Delegations-/Kommunikations-Events ueber RTVI an die Browser-Seite; Organigramm-Panel aus
@@ -127,6 +127,15 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   (Phase 12), Berichte/Freigaben laufen mobil (Phase 10/11). Der Kreis schliesst sich.
 - **GATE:** der staerkste — Selbst-Modifikation **ausschliesslich** ueber freigegebene Antraege, Branch +
   Tests + CEO-Merge; harte Kosten-/Stopp-Limits.
+
+### Phase 14 — Oberflaechen-Erweiterung / generische Visualisierung  (ganz hinten)
+- **Ziel:** Der HoA kann Inhalte **frei und visuell** darstellen, nicht nur feste Panel-Typen. Insbesondere:
+  **Organigramm/Strukturen als MindMap**, dynamische Diagramme/Charts, frei konfigurierbare Ansichten — auf
+  Sprach-/Textanfrage („zeig mir das als MindMap"). Heutige Grenze: die Oberflaeche rendert feste
+  Panel-Typen; der HoA kann die Darstellungsform nicht beliebig aendern.
+- **Bausteine:** generische Visualisierungs-Schicht (der HoA emittiert eine Visualisierungs-Spezifikation —
+  z. B. Graph/MindMap/Chart — die die Browser-Seite rendert; bestehende Panels werden Spezialfaelle davon).
+- **GATE:** keiner zwingend (lokal/UI); Umsetzung erst nach den funktionalen Phasen. **Kosten:** keine externen.
 
 ---
 

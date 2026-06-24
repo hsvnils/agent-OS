@@ -17,7 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-24 14:31] — Claude Code
+## [2026-06-24 18:12] — Claude Code
+- **Was:** `ROADMAP.md` ergaenzt: Phase 5 als umgesetzt markiert; neue **Phase 14 — Oberflaechen-Erweiterung /
+  generische Visualisierung** (ganz hinten) fuer frei konfigurierbare/visuelle Darstellungen, u. a.
+  Organigramm/Strukturen als **MindMap** auf Anfrage (heutige Grenze: feste Panel-Typen). Neuer Detailplan
+  `PHASE6_PLAN.md` (Antrags-/Freigabe-Workflow): event-sourced Store `antraege/log.jsonl`, Lebenszyklus
+  (eingereicht -> freigegeben/abgelehnt -> in_umsetzung -> erledigt/fehlgeschlagen), HoA-Tools
+  (antrag_stellen/antraege_zeigen/antrag_freigeben/ablehnen, Freigabe nur nach CEO-Bestaetigung),
+  `antraege`-Panel, 6 Self-Checks, Governance. Noch KEINE Umsetzung -- wartet auf Phase-6-GATE.
+- **Warum:** CEO: MindMap-/visuelle Darstellung muss spaeter moeglich sein -> als Oberflaechen-Erweiterung
+  ganz nach hinten; mit Phase 6 (Rueckgrat) weitermachen, davor Detailplan + GATE (Roadmap-Vorgabe).
+- **Betroffen:** `ROADMAP.md`, `PHASE6_PLAN.md` (neu).
 - **Was:** Phase 5 (Live-Kontext & Organigramm) umgesetzt. Neues Agenten-Verzeichnis
   `channels/voice/directory.py` (eine Quelle fuer Routing, Anzeige-Labels, Organigramm). Im Gespraech zeigt
   die Oberflaeche jetzt live, mit welchem Agenten der HoA spricht: `delegate` und `frage_finance` senden
