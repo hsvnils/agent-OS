@@ -54,8 +54,9 @@ class HoaBridge:
 
 
 def _spoken_for_panel(typ: str) -> str:
+    # Gesprochene Texte (an den CEO) mit echten Umlauten -- bewusst nicht ASCII.
     if typ == "kostenuebersicht":
-        return "Hier ist deine Kostenuebersicht."
+        return "Hier ist deine Kostenübersicht."
     if typ == "tabelle":
         return "Ich blende dir die Tabelle ein."
-    return "Hier ist die gewuenschte Einblendung."
+    return "Hier ist die gewünschte Einblendung."

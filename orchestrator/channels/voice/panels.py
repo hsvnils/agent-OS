@@ -70,9 +70,10 @@ def _read(p: Path) -> str:
 def _kostenuebersicht(finance_dir: Path) -> dict:
     budget_md = _read(finance_dir / "budget.md")
     stats_md = _read(finance_dir / "kosten-statistik.md")
+    # 'type' ist ein Protokoll-Key (ASCII); 'title'/'hinweis' sind Anzeigetexte (Umlaute erlaubt).
     return {
         "type": "kostenuebersicht",
-        "title": "Kostenuebersicht",
+        "title": "Kostenübersicht",
         "monatsbudget": _extract_monatsbudget(budget_md),
         "soll_ist": _extract_first_table(stats_md),
         "quellen": ["finance/budget.md", "finance/kosten-statistik.md"],

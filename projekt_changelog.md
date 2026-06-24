@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 02:17] — Claude Code
+- **Was:** Live-Voice Browser-Client repariert + Umlaut-Konvention fuer die Agenten-Oberflaeche. (1) Bugfix:
+  Die Pipecat-JS-Hauptklasse heisst `PipecatClient` (nicht `RTVIClient`); `static/app.js` entsprechend
+  umgestellt (Import aus `@pipecat-ai/client-js`, Transport aus `@pipecat-ai/small-webrtc-transport`,
+  Verbindung via `connect({ connection_url: "/api/offer" })`, robuste Callbacks + Fehlerausgabe). Behebt den
+  Konsolen-Fehler "does not provide an export named 'RTVIClient'", durch den der Start-Button nichts tat.
+  (2) Neue Konvention: **Anzeige-/Kommunikationstexte der Agenten-Oberflaeche nutzen echte Umlaute (ae->ä,
+  oe->ö, ue->ü, ss->ß)**; Code-Bezeichner/Protokoll-Keys, Dateipfade und `.md`-Dateien bleiben ASCII.
+  Umgesetzt in `app.js`/`index.html` (Buttons, Zustaende hört zu/denkt/spricht), `bridge.py` (gesprochene
+  Texte) und `panels.py` (Panel-Titel/Hinweis); Protokoll-Key `type=kostenuebersicht` bleibt ASCII.
+  Self-Check-Assertion angepasst. Self-Checks 24/24 OK. Server neu gestartet, liefert korrigiertes app.js.
+- **Warum:** CEO-Test: Start-Button reagierte nicht (falscher JS-Export). Zusaetzlich CEO-Vorgabe: in der
+  Agenten-Kommunikation/Oberflaeche Umlaute verwenden (nicht in Code/.md).
+- **Betroffen:** `orchestrator/channels/voice/static/app.js`, `static/index.html`,
+  `orchestrator/channels/voice/bridge.py`, `orchestrator/channels/voice/panels.py`,
+  `orchestrator/tests/test_voice_bridge.py`.
+
 ## [2026-06-24 01:05] — Claude Code
 - **Was:** Voice-Builder gegen die echten Provider-APIs (Pipecat 1.4.0) finalisiert: Deepgram-STT nutzt
   `settings=DeepgramSTTService.Settings(model="nova-2", language="de", smart_format=True)` statt des

@@ -2,10 +2,10 @@
 // Verbindet per WebRTC mit dem lokalen Server, zeigt Zustaende (hoert zu / denkt / spricht)
 // und rendert Panel-Einblendungen (show_panel) aus Server-Nachrichten.
 //
-// GATE-verifiziert: die genaue Pipecat-JS-Client-API wird beim ersten echten Browser-Test
-// gegen die geladene SDK-Version bestaetigt; Panel-Rendering und Zustaende sind SDK-unabhaengig.
+// API: Pipecat JS SDK -- Hauptklasse PipecatClient (@pipecat-ai/client-js),
+// Transport SmallWebRTCTransport (@pipecat-ai/small-webrtc-transport).
 
-import { RTVIClient } from "https://esm.sh/@pipecat-ai/client-js";
+import { PipecatClient } from "https://esm.sh/@pipecat-ai/client-js";
 import { SmallWebRTCTransport } from "https://esm.sh/@pipecat-ai/small-webrtc-transport";
 
 const orb = document.getElementById("orb");
@@ -63,33 +63,41 @@ function makeTable(cols, rows) {
   });
   return t;
 }
-function small(text) { const s = document.createElement("small"); s.textContent = text; s.style.display = "block"; s.style.marginTop = "8px"; return s; }
+function small(text) {
+  const s = document.createElement("small"); s.textContent = text;
+  s.style.display = "block"; s.style.marginTop = "8px"; return s;
+}
 
 function handleServerMessage(data) {
-  // Panel-Anweisung vom HoA (show_panel).
-  const msg = data?.data ?? data;
+  // Panel-Anweisung vom Head of Agents (show_panel). Robust gegen Verschachtelung.
+  const msg = data?.data ?? data?.message ?? data;
   if (msg && msg.kind === "panel" && msg.panel) renderPanel(msg.panel);
 }
 
 async function connect() {
-  client = new RTVIClient({
+  client = new PipecatClient({
     transport: new SmallWebRTCTransport(),
-    params: { baseUrl: "", endpoints: { connect: "/api/offer" } },
     enableMic: true,
     enableCam: false,
     callbacks: {
-      onConnected: () => { connected = true; connectBtn.textContent = "Beenden"; connectBtn.classList.add("stop"); setState("listening", "verbunden -- hoert zu"); },
-      onDisconnected: () => { connected = false; connectBtn.textContent = "Gespraech starten"; connectBtn.classList.remove("stop"); setState("", "getrennt"); },
-      onUserStartedSpeaking: () => setState("listening", "hoert zu ..."),
-      onBotLlmStarted: () => setState("thinking", "denkt nach ..."),
-      onBotStartedSpeaking: () => setState("speaking", "spricht ..."),
-      onBotStoppedSpeaking: () => setState("listening", "hoert zu"),
+      onConnected: () => { connected = true; connectBtn.textContent = "Beenden"; connectBtn.classList.add("stop"); setState("listening", "verbunden — hört zu"); },
+      onDisconnected: () => { connected = false; connectBtn.textContent = "Gespräch starten"; connectBtn.classList.remove("stop"); setState("", "getrennt"); },
+      onBotReady: () => setState("listening", "bereit — hört zu"),
+      onUserStartedSpeaking: () => setState("listening", "hört zu …"),
+      onUserStoppedSpeaking: () => setState("thinking", "denkt nach …"),
+      onBotStartedSpeaking: () => setState("speaking", "spricht …"),
+      onBotStoppedSpeaking: () => setState("listening", "hört zu"),
       onServerMessage: handleServerMessage,
-      onError: (e) => setState("", "Fehler: " + (e?.message || e)),
+      onError: (e) => { setState("", "Fehler: " + (e?.message || e)); console.error("Pipecat-Fehler:", e); },
     },
   });
-  setState("thinking", "verbinde ...");
-  await client.connect();
+  setState("thinking", "verbinde …");
+  try {
+    await client.connect({ connection_url: window.location.origin + "/api/offer" });
+  } catch (e) {
+    setState("", "Verbindung fehlgeschlagen: " + (e?.message || e));
+    console.error("connect() fehlgeschlagen:", e);
+  }
 }
 
 async function disconnect() { if (client) await client.disconnect(); }

@@ -49,7 +49,8 @@ class TestVoiceBridge(unittest.TestCase):
         self.assertIn("finance/budget.md", res.panel["quellen"])
         # Reine Anzeige -> KEIN Tor ausgeloest.
         self.assertNotIn("ANFRAGE an CEO", res.spoken)
-        self.assertIn("Kostenuebersicht", res.spoken)
+        self.assertIn("Kostenübersicht", res.spoken)  # gesprochener Text mit Umlaut
+        self.assertEqual(res.panel["title"], "Kostenübersicht")
 
     def test_4_leck_schutz_in_panels(self):
         secret = "sk-ant-PANELSECRET-123"
