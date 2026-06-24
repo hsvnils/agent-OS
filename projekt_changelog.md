@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 19:34] — Claude Code
+- **Was:** Changelog-Integritaet repariert: 8 Eintraege hatten ueber die Sitzung ihre `## [Datum] — Akteur`-
+  Kopfzeile verloren (u. a. der CFO-Budget-Eintrag und mehrere Claude-Code-Eintraege). Kopfzeilen mit den aus
+  den Commits bekannten Zeitstempeln wiederhergestellt; jetzt 50/50 Header/Bodies, keine verwaisten Eintraege.
+- **Warum:** `projekt_changelog.md` ist kanonisches Governance-Dokument (AGENTS.md 3.2) -- Format muss
+  vollstaendig sein.
+- **Betroffen:** `projekt_changelog.md`.
+
 ## [2026-06-24 19:28] — Claude Code
 - **Was:** (1) Anleitung `docs/localhost-starten.md` angelegt (Start der Live-Voice-Oberflaeche, Beenden,
   Self-Checks). (2) Ursache des „technischen Fehlers" beim CTO-Auftrag „Datei anlegen" diagnostiziert: der
@@ -28,6 +36,8 @@ Eintragsformat:
   Erstellung durch Abteilungen ist Phase 7; bis dahin bleiben Konsultationen beratend. Die gewuenschte
   Anleitung wurde direkt von Claude Code erstellt.
 - **Betroffen:** `docs/localhost-starten.md` (neu), `orchestrator/channels/voice/pipeline.py`.
+
+## [2026-06-24 19:17] — CFO
 - **Was:** Monatsbudget gesetzt: 100 EUR/Monat (CEO-Ansage)
 - **Warum:** CEO-Ansage ueber Sprachkanal
 - **Betroffen:** finance/budget.md
@@ -47,6 +57,8 @@ Eintragsformat:
 - **Betroffen:** `orchestrator/core/antraege.py` (neu), `orchestrator/tests/test_antraege.py` (neu),
   `orchestrator/channels/voice/pipeline.py`, `orchestrator/channels/voice/server.py`,
   `orchestrator/channels/voice/static/app.js`, `governance/antraege.md` (neu), `.gitignore`.
+
+## [2026-06-24 18:12] — Claude Code
 - **Was:** `ROADMAP.md` ergaenzt: Phase 5 als umgesetzt markiert; neue **Phase 14 — Oberflaechen-Erweiterung /
   generische Visualisierung** (ganz hinten) fuer frei konfigurierbare/visuelle Darstellungen, u. a.
   Organigramm/Strukturen als **MindMap** auf Anfrage (heutige Grenze: feste Panel-Typen). Neuer Detailplan
@@ -57,6 +69,8 @@ Eintragsformat:
 - **Warum:** CEO: MindMap-/visuelle Darstellung muss spaeter moeglich sein -> als Oberflaechen-Erweiterung
   ganz nach hinten; mit Phase 6 (Rueckgrat) weitermachen, davor Detailplan + GATE (Roadmap-Vorgabe).
 - **Betroffen:** `ROADMAP.md`, `PHASE6_PLAN.md` (neu).
+
+## [2026-06-24 14:31] — Claude Code
 - **Was:** Phase 5 (Live-Kontext & Organigramm) umgesetzt. Neues Agenten-Verzeichnis
   `channels/voice/directory.py` (eine Quelle fuer Routing, Anzeige-Labels, Organigramm). Im Gespraech zeigt
   die Oberflaeche jetzt live, mit welchem Agenten der HoA spricht: `delegate` und `frage_finance` senden
@@ -69,6 +83,8 @@ Eintragsformat:
 - **Betroffen:** `orchestrator/channels/voice/directory.py` (neu), `orchestrator/channels/voice/pipeline.py`,
   `orchestrator/channels/voice/panels.py`, `orchestrator/channels/voice/static/app.js`,
   `orchestrator/channels/voice/static/index.html`.
+
+## [2026-06-24 14:23] — Claude Code
 - **Was:** `ROADMAP.md` angelegt: Ablaufplan mit GATES vom aktuellen Stand zum selbst-entwickelnden
   Agenten-Unternehmen (24/7-Assistent). Phasen 5-13: Live-Kontext/Organigramm, Antrags-/Freigabe-Workflow
   (Rueckgrat), Execution-Engine (handelnde Agenten auf Git-Branch + Tests), Web-Research, Innovations-Pipeline
@@ -78,6 +94,8 @@ Eintragsformat:
   („was fehlt zum Selbst-Entwickeln") und GATES-Uebersicht. Noch KEINE Umsetzung -- wartet auf GATE D.
 - **Warum:** CEO-Auftrag: klarer Plan mit Gates Richtung selbst-aufbauendes/-verbesserndes System.
 - **Betroffen:** `ROADMAP.md` (neu).
+
+## [2026-06-24 09:08] — Claude Code
 - **Was:** (1) Konsultation fuer ALLE Fachagenten vorbereitet: `core/subagents.load_all_subagents()` laedt
   alle 14 Charten als konsultierbare Spezialisten (berater, cao, cfo, cro, ciso, cbo, cpo, cto, cxo, cco,
   cdo, chro, clo, cko); der Voice-Server nutzt sie, und das `delegate`-Tool akzeptiert jetzt jeden dieser
@@ -90,6 +108,8 @@ Eintragsformat:
   Budget per Sprache ansagen, das der CFO dann in budget.md eintraegt (Governance 5.9: CEO legt Budget fest).
 - **Betroffen:** `orchestrator/core/subagents.py`, `orchestrator/channels/voice/pipeline.py`,
   `orchestrator/channels/voice/panels.py`, `orchestrator/channels/voice/server.py`.
+
+## [2026-06-24 09:01] — Claude Code
 - **Was:** HoA kann jetzt zu Finance-INHALTEN sprechen (nicht nur Panel einblenden). `show_panel` liefert dem
   HoA zusaetzlich den Inhalt zurueck (`finance_summary` aus finance/: Budget-Status + Kostenstatistik). Neues
   Tool `frage_finance(frage)` -- der HoA holt damit die echten Zahlen aus finance/ (Domaene des CFO) und
@@ -100,6 +120,8 @@ Eintragsformat:
 - **Warum:** CEO-Feedback: der HoA blendete die Kostenuebersicht ein, konnte den Inhalt aber nicht
   sprachlich wiedergeben. Gewuenscht: Nachfragen bei Finance + inhaltliche Auskunft.
 - **Betroffen:** `orchestrator/channels/voice/pipeline.py`, `orchestrator/channels/voice/panels.py`.
+
+## [2026-06-24 08:50] — Claude Code
 - **Was:** Stimmen-Fehler behoben. ElevenLabs-Streaming (Pipecat nutzt die Websocket-API) akzeptiert nur
   Stimmen, die **im Account** sind -- Library-Stimmen muessen einmalig hinzugefuegt werden (der fruehere
   REST-Test war irrefuehrend; die erste Konversation lief nur, weil die Default-Stimme eine Account-Stimme
@@ -109,6 +131,8 @@ Eintragsformat:
 - **Warum:** CEO meldete "Pipecat-Fehler" beim Wechsel auf Lola -- Ursache: "voice does not exist" im
   Streaming, da die Library-Stimme nicht im Account war.
 - **Betroffen:** ElevenLabs-Account (8 Stimmen hinzugefuegt), `orchestrator/channels/voice/static/app.js`.
+
+## [2026-06-24 08:41] — Claude Code
 - **Was:** Deutsche Stimme + Stimmen-Dropdown. Ursache des englischen Akzents war die Platzhalter-Stimme
   (Rachel, US-englisch); mehrsprachiges Modell + `language=de` waren korrekt. Neu `voices.py` mit 8
   kuratierten **deutschen** Stimmen (ElevenLabs Voice Library, direkt per voice_id nutzbar -- per Test
