@@ -17,7 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-24 08:41] — Claude Code
+## [2026-06-24 08:50] — Claude Code
+- **Was:** Stimmen-Fehler behoben. ElevenLabs-Streaming (Pipecat nutzt die Websocket-API) akzeptiert nur
+  Stimmen, die **im Account** sind -- Library-Stimmen muessen einmalig hinzugefuegt werden (der fruehere
+  REST-Test war irrefuehrend; die erste Konversation lief nur, weil die Default-Stimme eine Account-Stimme
+  war). Alle 8 kuratierten deutschen Stimmen dem ElevenLabs-Account hinzugefuegt (voice_id bleibt dabei
+  gleich -> `voices.py` unveraendert korrekt). Zusaetzlich Client-Fehlermeldung verbessert: zeigt jetzt den
+  echten Text statt "[object Object]". Verifiziert: alle 8 Stimmen jetzt im Account.
+- **Warum:** CEO meldete "Pipecat-Fehler" beim Wechsel auf Lola -- Ursache: "voice does not exist" im
+  Streaming, da die Library-Stimme nicht im Account war.
+- **Betroffen:** ElevenLabs-Account (8 Stimmen hinzugefuegt), `orchestrator/channels/voice/static/app.js`.
 - **Was:** Deutsche Stimme + Stimmen-Dropdown. Ursache des englischen Akzents war die Platzhalter-Stimme
   (Rachel, US-englisch); mehrsprachiges Modell + `language=de` waren korrekt. Neu `voices.py` mit 8
   kuratierten **deutschen** Stimmen (ElevenLabs Voice Library, direkt per voice_id nutzbar -- per Test

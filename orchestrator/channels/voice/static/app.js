@@ -148,7 +148,12 @@ async function connect() {
         el.play?.().catch((err) => console.warn("Audio-Wiedergabe blockiert:", err));
       },
       onServerMessage: handleServerMessage,
-      onError: (e) => { setState("", "Fehler: " + (e?.message || e)); console.error("Pipecat-Fehler:", e); },
+      onError: (e) => {
+        const msg = e?.message || e?.data?.message || e?.data?.error ||
+                    (e?.data ? JSON.stringify(e.data) : String(e));
+        console.error("Pipecat-Fehler:", e);
+        setState("", "Fehler: " + msg);
+      },
     },
   });
   setState("thinking", "verbinde …");
