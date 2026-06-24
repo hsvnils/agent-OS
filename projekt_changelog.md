@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 23:21] — Claude Code
+- **Was:** `PHASE7_PLAN.md` (Detailplan Execution-Engine / handelnde Agenten) angelegt: freigegebene Antraege
+  werden von einem Ausfuehrungs-Agenten (Claude Agent SDK mit Coding-Tools) in einem Git-Worktree auf Branch
+  `antrag/<id>` umgesetzt, Self-Checks laufen, Bericht (Diff/Tests/zu pruefen) entsteht; **kein Merge ohne
+  CEO**. Sicherheits-Invarianten (nur freigegebene Antraege, Isolation/Branch, Tests-Pflicht, Werkzeug-Grenzen,
+  Charta-/Governance-Schutz, CEO-Tor, Notbremse/Limits), Ablauf, Dateien, 6 Mock-Self-Checks und zwei offene
+  Designfragen (Merge-Weg; Ausloesung nur auf Befehl). Noch KEINE Umsetzung -- wartet auf Phase-7-GATE.
+- **Warum:** Roadmap Phase 7 (staerkster GATE): Abteilungen sollen freigegebene Aenderungen wirklich umsetzen
+  (wie der CEO selbst in Claude Code) -- kontrolliert, reversibel, getestet.
+- **Betroffen:** `PHASE7_PLAN.md` (neu).
+
 ## [2026-06-24 19:34] — Claude Code
 - **Was:** Changelog-Integritaet repariert: 8 Eintraege hatten ueber die Sitzung ihre `## [Datum] — Akteur`-
   Kopfzeile verloren (u. a. der CFO-Budget-Eintrag und mehrere Claude-Code-Eintraege). Kopfzeilen mit den aus
