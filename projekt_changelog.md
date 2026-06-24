@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 01:29] — Claude Code
+- **Was:** LUNA-Telegram-Bot **live auf der Synology DS923+** deployed (24/7, unabhaengig vom Mac). Per SSH
+  (dedizierter Key `~/.ssh/luna_nas`, Synology-Rechte gesetzt) eingerichtet: NAS-IP ist 192.168.178.129
+  (LAN3; .1 war die FritzBox). Repo nach `/volume1/docker/ki-unternehmen` uebertragen (tar-over-ssh, ohne
+  .venv, mit .git + orchestrator/.env) -- Home-Ordner war ungeeignet (verschluesselt/nur bei Login gemountet),
+  daher Container-Manager-Ordner. Docker 24.0.2 + Compose v2 vorhanden; Image gebaut (claude-agent-sdk +
+  anthropic), Container `luna-telegram` laeuft (Log „Telegram-Bot bereit.", restart unless-stopped).
+  PYTHONUNBUFFERED fuer sichtbare Logs (Dockerfile + compose). Lokaler Mac-Telegram-Bot gestoppt (nur ein
+  Poller pro Token); Voice-Server am Mac laeuft weiter.
+- **Warum:** CEO will 24/7 von unterwegs auf LUNA zugreifen; die NAS ist dauerhaft online -- Telegram-Bot
+  braucht nur ausgehendes Internet (keine Portfreigabe/HTTPS).
+- **Betroffen:** `deploy/Dockerfile`, `deploy/docker-compose.yml` (NAS-Deployment; Secrets nur in
+  orchestrator/.env, nicht versioniert).
+
 ## [2026-06-25 00:32] — Claude Code
 - **Was:** Hosting fuer 24/7-Zugriff von aussen vorbereitet (Synology DS923+). Schlankes Docker-Deployment
   des **Telegram-Bots** (nur ausgehendes Internet -- keine Portfreigabe/HTTPS noetig): `deploy/Dockerfile`

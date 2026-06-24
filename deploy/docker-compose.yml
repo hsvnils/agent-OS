@@ -6,6 +6,8 @@ services:
     image: luna-telegram:latest
     container_name: luna-telegram
     working_dir: /app
+    environment:
+      - PYTHONUNBUFFERED=1     # Logs sofort sichtbar (docker logs)
     volumes:
       # Repo (Code + Daten + .git + orchestrator/.env) in den Container einhaengen.
       - /volume1/docker/ki-unternehmen:/app

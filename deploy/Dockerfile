@@ -12,6 +12,7 @@ RUN apt-get update \
 #  - anthropic: konversationelles HoA-Gehirn (Tool-Loop)
 RUN pip install --no-cache-dir "claude-agent-sdk==0.2.107" "anthropic==0.111.0"
 
+ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 # Code/Daten kommen per Volume (siehe docker-compose.yml). Secrets liegen in orchestrator/.env (gemountet).
 CMD ["python", "-m", "orchestrator.channels.telegram.bot"]
