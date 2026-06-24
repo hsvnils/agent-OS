@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 00:23] — Claude Code
+- **Was:** Telegram live geschaltet + Head of Agents heisst jetzt **LUNA**. Bot-Token (@luna_headofagents_bot)
+  in orchestrator/.env (gitignored), via getMe verifiziert; CEO-Chat-ID 8594240885 als
+  TELEGRAM_ALLOWED_CHAT_ID gesetzt (Bot bedient nur den CEO). Name LUNA in beide System-Prompts aufgenommen
+  (Voice `pipeline.py` + Text `hoa_conversation.py`). Telegram-Bot + Voice-Server gestartet (je ein Prozess);
+  Self-Checks 41/41 OK.
+- **Warum:** CEO hat den BotFather-Token geliefert und LUNA als Namen bestimmt; mobiler Telegram-Zugang aktiv.
+- **Betroffen:** `orchestrator/channels/voice/pipeline.py`, `orchestrator/core/hoa_conversation.py`
+  (Secrets nur in orchestrator/.env, nicht versioniert).
+
 ## [2026-06-25 00:07] — Claude Code
 - **Was:** Phase 10 Teil A (Telegram) -- Offline-Grundlage gebaut. Neues kanal-unabhaengiges HoA-Gehirn
   `core/hoa_conversation.py` (Anthropic-Tool-Schleife, injizierbarer Client) + geteilte Werkzeugschicht
