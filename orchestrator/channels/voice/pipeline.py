@@ -19,16 +19,39 @@ from __future__ import annotations
 import asyncio
 
 from ...governance.leak_guard import redact
-from .panels import build_panel, finance_summary
+from .panels import build_panel, finance_summary, set_monatsbudget
 from .voices import get_selected_voice_id
+
+# Konsultierbare Fachagenten (Kurzname -> Kurzbeschreibung fuer das LLM-Tool).
+_AGENTS = {
+    "berater": "Unternehmensberater (Strategie, Analyse, Markt)",
+    "cao": "CAO (Administration, Organisation)",
+    "cfo": "CFO (Finanzen, Budget, Kosten)",
+    "cro": "CRO (Umsatz, Vertrieb, Monetarisierung)",
+    "ciso": "CISO (Informationssicherheit, Zugriffe)",
+    "cbo": "CBO (Marke, Branding)",
+    "cpo": "CPO (Produkt)",
+    "cto": "CTO (Technik, Infrastruktur, Code)",
+    "cxo": "CXO (Nutzererlebnis, UX)",
+    "cco": "CCO (Content, Redaktion)",
+    "cdo": "CDO (Daten, Analytics)",
+    "chro": "CHRO (Personal, Team)",
+    "clo": "CLO (Recht, Vertraege)",
+    "cko": "CKO (Wissen, Dokumentation)",
+}
 
 VOICE_SYSTEM_PROMPT = (
     "Du bist der Head of Agents des Hanserautisch Agenten-Unternehmens und sprichst direkt mit dem CEO "
     "(Nils) per Sprache. Sprich Deutsch, natuerlich, knapp und gesprochen -- kurze Saetze, keine "
     "Aufzaehlungen oder Markdown, keine Vorrede wie 'Konsolidierte Antwort'. "
     "Beantworte normale Konversation und einfache Fragen SELBST und kurz. "
-    "Nutze das Tool 'delegate' nur fuer echte Fachaufgaben: an='cto' fuer Technik/Infrastruktur/Code, "
-    "an='berater' fuer Strategie/Analyse/Markt. Fasse das Ergebnis danach in 1-3 Saetzen gesprochen zusammen. "
+    "Du hast Fachagenten unter dir und kannst jeden per Tool 'delegate' konsultieren (an=cto Technik, "
+    "berater Strategie, cfo Finanzen, cro Umsatz, ciso Sicherheit, cbo Marke, cpo Produkt, cxo UX, "
+    "cco Content, cdo Daten, chro Personal, clo Recht, cko Wissen, cao Administration). Nutze 'delegate' "
+    "nur fuer echte Fachfragen/Aufgaben; kuendige kurz an ('Einen Moment, ich frage den ... ') und fasse "
+    "das Ergebnis danach in 1-3 Saetzen gesprochen zusammen. "
+    "Wenn der CEO dir ein Monatsbudget nennt, bestaetige die Zahl kurz und trage sie dann mit 'set_budget' "
+    "ueber den CFO in finance/budget.md ein. "
     "Fuer Geld-/Budget-/Kostenfragen hast du Zugriff auf Finance (CFO): nutze 'frage_finance', um die echten "
     "Zahlen aus finance/ zu holen, und antworte INHALTLICH (nenne konkrete Werte/Status), nicht nur 'es gibt "
     "eine Uebersicht'. Sag dabei kurz etwas wie 'Einen Moment, ich schaue bei Finance nach.', bevor du "
@@ -95,16 +118,27 @@ def _build_tools():
     )
     delegate = FunctionSchema(
         name="delegate",
-        description="Delegiert eine echte Fachaufgabe an einen Spezialisten und liefert dessen Ergebnis. "
-                    "Nur fuer echte Aufgaben, nicht fuer normale Konversation.",
+        description="Delegiert eine echte Fachaufgabe an einen Spezialisten und liefert dessen Ergebnis "
+                    "zurueck (du fasst es danach gesprochen zusammen). Nur fuer echte Aufgaben/Fachfragen, "
+                    "nicht fuer normale Konversation. Spezialisten: "
+                    + "; ".join(f"{k}={v}" for k, v in _AGENTS.items()) + ".",
         properties={
-            "aufgabe": {"type": "string", "description": "Die Aufgabe in einem Satz."},
-            "an": {"type": "string", "enum": ["cto", "berater"],
-                   "description": "cto=Technik/Infrastruktur, berater=Strategie/Analyse."},
+            "aufgabe": {"type": "string", "description": "Die Aufgabe/Frage in einem Satz."},
+            "an": {"type": "string", "enum": list(_AGENTS.keys()),
+                   "description": "Kuerzel des zustaendigen Spezialisten."},
         },
         required=["aufgabe", "an"],
     )
-    return ToolsSchema(standard_tools=[show_panel, frage_finance, delegate])
+    set_budget = FunctionSchema(
+        name="set_budget",
+        description="Traegt das vom CEO genannte Monatsbudget ueber den CFO in finance/budget.md ein. "
+                    "Nur nutzen, wenn der CEO einen konkreten Betrag nennt -- bestaetige die Zahl vorher "
+                    "gesprochen ('Ich trage X Euro als Monatsbudget ein, richtig?').",
+        properties={"betrag_eur": {"type": "string",
+                                   "description": "Monatsbudget in Euro, nur Zahl, z. B. '500'."}},
+        required=["betrag_eur"],
+    )
+    return ToolsSchema(standard_tools=[show_panel, frage_finance, delegate, set_budget])
 
 
 def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, leak_secrets):
@@ -163,10 +197,14 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
             )
             return
         spec = core.subagents.get(an)
-        sysp = spec.system_prompt if spec else ""
+        if spec is None:
+            await params.result_callback({"fehler": f"Unbekannter Spezialist '{an}'."})
+            return
         loop = asyncio.get_running_loop()
         try:
-            result = await loop.run_in_executor(None, core.backend.respond, an, sysp, aufgabe, {})
+            result = await loop.run_in_executor(
+                None, core.backend.respond, an, spec.system_prompt, aufgabe, {}
+            )
         except Exception as exc:  # Backend-/API-Fehler nicht die Pipeline reissen lassen
             await params.result_callback({"fehler": str(exc)})
             return
@@ -175,9 +213,18 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
                            "CEO-Sprachkanal", f"Subagent: {an}")
         await params.result_callback({"ergebnis": redact(result, leak_secrets)})
 
+    async def on_set_budget(params):
+        betrag = str((params.arguments or {}).get("betrag_eur", "")).strip()
+        res = set_monatsbudget(betrag, finance_dir)
+        if core.changelog and res.get("ok"):
+            core.changelog("CFO", f"Monatsbudget gesetzt: {res['betrag']} EUR/Monat (CEO-Ansage)",
+                           "CEO-Ansage ueber Sprachkanal", "finance/budget.md")
+        await params.result_callback(res)
+
     llm.register_function("show_panel", on_show_panel)
     llm.register_function("frage_finance", on_frage_finance)
     llm.register_function("delegate", on_delegate, cancel_on_interruption=False)
+    llm.register_function("set_budget", on_set_budget, cancel_on_interruption=False)
 
     pipeline = Pipeline([
         transport.input(),

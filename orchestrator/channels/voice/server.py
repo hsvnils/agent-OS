@@ -52,7 +52,7 @@ def _build_live_core(cfg: dict, secret_values: list[str]):
     from ...core.backends import AgentSdkBackend
     from ...core.hoa import HeadOfAgents
     from ...core.memory import Memory
-    from ...core.subagents import load_default_subagents
+    from ...core.subagents import load_all_subagents
     from ...governance.ceo_gate_hook import CeoGate
     from ...governance.changelog_tool import append_changelog
     from ...observability.logging import Logger
@@ -64,7 +64,7 @@ def _build_live_core(cfg: dict, secret_values: list[str]):
     memory = Memory(ROOT / mem_cfg.get("path", "orchestrator/memory/log.jsonl"),
                     secrets=secret_values, recall_limit=mem_cfg.get("recall_limit", 5)) \
         if mem_cfg.get("enabled", True) else None
-    return HeadOfAgents(backend, load_default_subagents(), gate=CeoGate(),
+    return HeadOfAgents(backend, load_all_subagents(), gate=CeoGate(),
                         leak_secrets=secret_values, changelog=changelog,
                         logger=Logger(), memory=memory)
 

@@ -76,6 +76,47 @@ def finance_summary(finance_dir: Path | None = None, secrets: list[str] | None =
     return redact(text, secrets or [])
 
 
+def set_monatsbudget(betrag_eur: str, finance_dir: Path | None = None, when: str = "") -> dict:
+    """Traegt das Monatsbudget in finance/budget.md ein (CFO-Aktion auf CEO-Ansage).
+
+    Aktualisiert 'Monatsbudget' + 'Gueltig ab' und ergaenzt eine Historienzeile. .md bleibt ASCII.
+    """
+    from datetime import date
+
+    fd = Path(finance_dir) if finance_dir else DEFAULT_FINANCE
+    path = fd / "budget.md"
+    md = _read(path)
+    if not md:
+        return {"ok": False, "fehler": "finance/budget.md nicht gefunden"}
+
+    # Betrag auf ASCII/Zahl normalisieren (kein Euro-Zeichen in .md).
+    betrag = re.sub(r"[^0-9.,]", "", str(betrag_eur)).strip().strip(".,")
+    if not betrag:
+        return {"ok": False, "fehler": "kein gueltiger Betrag erkannt"}
+    when = when or date.today().isoformat()
+    alt = _extract_monatsbudget(md)
+
+    out, hist_done, seen_hist = [], False, False
+    for line in md.splitlines():
+        st = line.strip()
+        if st.startswith("- **Monatsbudget:**"):
+            out.append(f"- **Monatsbudget:** {betrag} EUR/Monat")
+            continue
+        if st.startswith("- **Gueltig ab:**"):
+            out.append(f"- **Gueltig ab:** {when}")
+            continue
+        if "Aenderungshistorie" in st:
+            seen_hist = True
+        out.append(line)
+        # Historienzeile direkt nach der Tabellen-Trennzeile einfuegen.
+        if seen_hist and not hist_done and set(st) <= set("|-: ") and st.startswith("|") and "-" in st:
+            out.append(f"| {when} | {alt} | {betrag} | CFO (CEO-Ansage) | per Sprache gesetzt |")
+            hist_done = True
+
+    path.write_text("\n".join(out) + ("\n" if md.endswith("\n") else ""), encoding="utf-8")
+    return {"ok": True, "betrag": betrag, "gueltig_ab": when, "alt": alt}
+
+
 # -- intern --
 
 def _read(p: Path) -> str:

@@ -17,7 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-24 09:01] — Claude Code
+## [2026-06-24 09:08] — Claude Code
+- **Was:** (1) Konsultation fuer ALLE Fachagenten vorbereitet: `core/subagents.load_all_subagents()` laedt
+  alle 14 Charten als konsultierbare Spezialisten (berater, cao, cfo, cro, ciso, cbo, cpo, cto, cxo, cco,
+  cdo, chro, clo, cko); der Voice-Server nutzt sie, und das `delegate`-Tool akzeptiert jetzt jeden dieser
+  Spezialisten (HoA kuendigt an + fasst Ergebnis gesprochen zusammen). (2) Budget per Sprache: neues Tool
+  `set_budget(betrag_eur)` -- der HoA traegt das vom CEO genannte Monatsbudget ueber den CFO in
+  `finance/budget.md` ein (`panels.set_monatsbudget`: aktualisiert Monatsbudget + Gueltig-ab + Historienzeile,
+  .md bleibt ASCII), mit gesprochener Rueckbestaetigung der Zahl und Changelog-Eintrag (Akteur CFO,
+  CEO-Ansage). Self-Checks 24/24 OK; Budget-Schreiben auf Kopie verifiziert.
+- **Warum:** CEO-Wunsch: inhaltliche Auskuenfte nicht nur fuer Finance, sondern fuer alle Agenten; und das
+  Budget per Sprache ansagen, das der CFO dann in budget.md eintraegt (Governance 5.9: CEO legt Budget fest).
+- **Betroffen:** `orchestrator/core/subagents.py`, `orchestrator/channels/voice/pipeline.py`,
+  `orchestrator/channels/voice/panels.py`, `orchestrator/channels/voice/server.py`.
 - **Was:** HoA kann jetzt zu Finance-INHALTEN sprechen (nicht nur Panel einblenden). `show_panel` liefert dem
   HoA zusaetzlich den Inhalt zurueck (`finance_summary` aus finance/: Budget-Status + Kostenstatistik). Neues
   Tool `frage_finance(frage)` -- der HoA holt damit die echten Zahlen aus finance/ (Domaene des CFO) und
