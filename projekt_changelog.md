@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 23:58] — Claude Code
+- **Was:** Mobile Kontaktwege vorbereitet. CFO-Kostenvoranschlag in `finance/kosten-statistik.md`: Telegram
+  praktisch fixkostenfrei (Bot-Token gratis; nur nutzungsabhaengig STT/TTS/LLM wie bisher); Handy-Browser
+  24/7 = nur Hosting (kostenlos per Dev-Tunnel solange der Mac laeuft, oder ~4-8 EUR/Monat kleiner VPS;
+  nicht Vercel); Telefon-Anruf via Twilio spaeter (~1 USD/Mon + ~1-2 ct/Min). Detailplan `PHASE10_PLAN.md`
+  (Telegram-Adapter am kanal-agnostischen Kern mit geteiltem HoA-Gehirn inkl. Tools; Text + Sprachnachricht +
+  Push; Handy-Browser via HTTPS; 5 Offline-Self-Checks; GATE = Bot-Token + Hosting-Wahl). Echter Anruf
+  (Phase 10b) ans Ende verschoben. Noch KEINE Umsetzung -- wartet auf GATE.
+- **Warum:** CEO: zuerst unterwegs erreichbar (Telegram + Handy-Browser), Anruf spaeter; Finance soll vorab
+  Kosten schaetzen (AGENTS.md 5.9, CEO-Tor-Vorbereitung).
+- **Betroffen:** `finance/kosten-statistik.md`, `PHASE10_PLAN.md` (neu).
+
 ## [2026-06-24 23:45] — Claude Code
 - **Was:** Phase 7 LIVE bestanden + verdrahtet. Reale Abhaengigkeiten `core/execution_live.py`
   (Git-Worktree auf Branch `antrag/<id>`, Coding-Agent via Claude Agent SDK mit Datei-/Bash-Tools
