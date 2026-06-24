@@ -76,20 +76,15 @@ def main() -> None:
         print(INSTALL_HINT, file=sys.stderr)
         raise SystemExit(2)
 
-    from .bridge import HoaBridge
-
     cfg = _load_config()
-    vcfg = cfg.get("voice", {})
     secrets = _load_secrets_map()
     secret_values = [v for v in secrets.values() if v]
 
     core = _build_live_core(cfg, secret_values)
-    bridge = HoaBridge(core, leak_secrets=secret_values, finance_dir=ROOT / "finance")
-
-    _serve(bridge, vcfg, secrets)
+    _serve(core, cfg, secrets, secret_values)
 
 
-def _serve(bridge, vcfg: dict, secrets: dict) -> None:
+def _serve(core, cfg: dict, secrets: dict, leak_secrets: list) -> None:
     """FastAPI + SmallWebRTC-Signaling + statische Seite. Pipeline pro Verbindung.
 
     Nutzt Pipecats `SmallWebRTCRequestHandler` (managt pc_id, POST-Offer UND PATCH-Renegotiation
@@ -118,6 +113,7 @@ def _serve(bridge, vcfg: dict, secrets: dict) -> None:
     from .pipeline import build_pipeline
 
     app = FastAPI()
+    vcfg = cfg.get("voice", {})
     host = vcfg.get("host", "localhost")
     port = int(vcfg.get("port", 7860))
     handler = SmallWebRTCRequestHandler(host=host)
@@ -151,7 +147,10 @@ def _serve(bridge, vcfg: dict, secrets: dict) -> None:
                     vad_analyzer=vad,
                 ),
             )
-            task, runner = build_pipeline(transport, bridge, vcfg, secrets)
+            task, runner = build_pipeline(
+                transport, core, vcfg, secrets,
+                finance_dir=ROOT / "finance", leak_secrets=leak_secrets,
+            )
             background_tasks.add_task(runner.run, task)
 
         return await handler.handle_web_request(

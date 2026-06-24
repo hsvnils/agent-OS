@@ -4,6 +4,6 @@
 #
 #   pip install "pipecat-ai[webrtc,deepgram,silero,elevenlabs]" fastapi uvicorn
 #
-pipecat-ai[webrtc,deepgram,silero,elevenlabs]==1.4.0
+pipecat-ai[webrtc,deepgram,silero,elevenlabs,anthropic]==1.4.0
 fastapi
 uvicorn

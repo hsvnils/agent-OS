@@ -17,6 +17,34 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 08:28] — Claude Code
+- **Was:** Live-Voice zu echtem Conversation-Loop umgebaut (CEO-Entscheidung: direkt antworten + bei Bedarf
+  delegieren; schnelles Modell). `pipeline.py` nutzt jetzt Pipecat-nativ ein streamendes Anthropic-LLM als
+  HoA (`AnthropicLLMService`, Modell `claude-haiku-4-5`) mit Context-Aggregatoren (Gespraechsgedaechtnis) und
+  Function-Calling: `show_panel(typ)` (Kostenuebersicht aus finance/ via RTVI-Server-Message an den Browser)
+  und `delegate(aufgabe, an)` (CTO/Berater ueber den Opus-Kern, mit CEO-Tor-Pruefung + Changelog). Dadurch
+  Barge-in, Streaming und niedrige Latenz **nativ**; der HoA antwortet kurz/gesprochen und delegiert nur bei
+  echten Aufgaben. Panels laufen ueber `RTVIProcessor`/`RTVIObserver`/`RTVIServerMessageFrame` (zuverlaessig
+  an `onServerMessage`). `server.py` reicht den HoA-Kern an die Pipeline; `config.toml [voice].llm_model`.
+  Tool-/LLM-/Context-/RTVI-APIs gegen Pipecat 1.4.0 verifiziert; Server-Boot bestaetigt (HTTP 200, ein
+  Prozess). Offline-Self-Checks 24/24 OK. (`AnthropicLLMService` via `pip install pipecat-ai[anthropic]`.)
+- **Warum:** CEO-Ziel: natuerliches Vollduplex-Gespraech (Reinreden jederzeit) mit smart zusammengefassten
+  Antworten -- statt blockierender Einzelauftrags-Verarbeitung mit vorgelesenem Bundle-Rahmen. Tool-Frage
+  geklaert: Pipecat ist das richtige Werkzeug; OpenJarvis ist ein textbasiertes Agenten-Framework ohne
+  Echtzeit-Voice/Barge-in -- kein Wechsel.
+- **Betroffen:** `orchestrator/channels/voice/pipeline.py`, `orchestrator/channels/voice/server.py`,
+  `orchestrator/config.toml`, `orchestrator/channels/voice/requirements.txt` (anthropic-Extra).
+
+## [2026-06-24 02:53] — Head of Agents
+- **Was:** Auftrag erfolgreich bearbeitet: Was sind deine Aufgaben?
+- **Warum:** CEO-Anweisung ueber Kanal-Adapter
+- **Betroffen:** Subagenten: berater
+
+## [2026-06-24 02:53] — Head of Agents
+- **Was:** Auftrag erfolgreich bearbeitet: Was sind deine Aufgaben?
+- **Warum:** CEO-Anweisung ueber Kanal-Adapter
+- **Betroffen:** Subagenten: berater
+
 ## [2026-06-24 02:50] — Claude Code
 - **Was:** Live-Voice Stabilitaet + Sprechqualitaet. (1) Reconnect-Loop (alle ~10 s `clearing track`, neue
   Pipeline, abgeschnittene laengere Antworten): Client-Verbindung von der veralteten `connection_url`-API auf

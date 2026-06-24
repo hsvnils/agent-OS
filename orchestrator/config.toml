@@ -45,3 +45,4 @@ language = "de"
 stt_provider = "deepgram"        # Default; Key: DEEPGRAM_API_KEY
 tts_provider = "elevenlabs"      # CEO-Wahl am GATE (2026-06-24): beste deutsche Stimmqualitaet
 tts_voice_id = ""                # leer = ElevenLabs-Default-Stimme; optional eigene Voice-ID
+llm_model = "claude-haiku-4-5"   # schnelles Modell fuer den HoA-Sprechpfad; Delegation nutzt Opus
