@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 00:32] — Claude Code
+- **Was:** Hosting fuer 24/7-Zugriff von aussen vorbereitet (Synology DS923+). Schlankes Docker-Deployment
+  des **Telegram-Bots** (nur ausgehendes Internet -- keine Portfreigabe/HTTPS noetig): `deploy/Dockerfile`
+  (python:3.12-slim + git + claude-agent-sdk + anthropic; ohne Pipecat), `deploy/docker-compose.yml`
+  (Bind-Mount des Repos inkl. .git + orchestrator/.env, restart unless-stopped) und
+  `deploy/synology-luna-hosting.md` (Anleitung: Repo auf NAS, Container Manager/SSH bauen+starten, testen).
+  Voice-Browser von aussen (HTTPS + Reverse-Proxy + WebRTC/TURN) bewusst spaeter; Execution auf der NAS
+  arbeitet auf dem NAS-Repo-Klon. Kein Code-/Verhaltensaenderung am Orchestrator.
+- **Warum:** CEO will von unterwegs 24/7 auf LUNA zugreifen; die DS923+ (x86-64, Container Manager, dauerhaft
+  online) ist dafuer ideal -- Telegram-Bot als einfachster, robuster Weg.
+- **Betroffen:** `deploy/Dockerfile` (neu), `deploy/docker-compose.yml` (neu),
+  `deploy/synology-luna-hosting.md` (neu).
+
 ## [2026-06-25 00:23] — Claude Code
 - **Was:** Telegram live geschaltet + Head of Agents heisst jetzt **LUNA**. Bot-Token (@luna_headofagents_bot)
   in orchestrator/.env (gitignored), via getMe verifiziert; CEO-Chat-ID 8594240885 als

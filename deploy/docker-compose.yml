@@ -1,0 +1,15 @@
+# LUNA Telegram-Bot auf der Synology (Container Manager / docker compose).
+# Pfad anpassen: lege das Repo z. B. unter /volume1/docker/ki-unternehmen ab.
+services:
+  luna-telegram:
+    build: .
+    image: luna-telegram:latest
+    container_name: luna-telegram
+    working_dir: /app
+    volumes:
+      # Repo (Code + Daten + .git + orchestrator/.env) in den Container einhaengen.
+      - /volume1/docker/ki-unternehmen:/app
+    env_file:
+      # Stellt die Keys auch in der Prozess-Umgebung bereit (die gebundelte CLI liest ANTHROPIC_API_KEY).
+      - /volume1/docker/ki-unternehmen/orchestrator/.env
+    restart: unless-stopped
