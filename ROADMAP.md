@@ -103,7 +103,22 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   erteilen, Statusmeldungen/Push empfangen.
 - **Bausteine:** Telegram-Kanal-Adapter am bestehenden kanal-agnostischen Kern; Voice-Notiz → STT → HoA;
   Push-Benachrichtigungen.
+- **Hinweis:** Ein echter Telegram-**Anruf** an einen Bot ist nicht moeglich (Bots nehmen keine Anrufe an).
+  Telegram liefert **Sprachnachrichten** (Push-to-talk) + Push -- ideal fuer unterwegs.
 - **GATE:** Bot-Token (extern) = CEO-Tor + Capability + CISO. **Kosten:** gering.
+
+### Phase 10b — Telefon-Anruf (Telefonie, „Jarvis anrufen")  (optional, parallel zu 10)
+- **Ziel:** Eine **Telefonnummer**, die man anruft und **live** mit dem HoA spricht (Streaming, Barge-in) --
+  das echte „Anruf"-Gefuehl.
+- **Bausteine:** Telefonie-Transport (z. B. Twilio) an die bestehende Pipecat-Pipeline (Pipecat hat fertige
+  Telefonie-Transports); derselbe HoA-Kern.
+- **GATE:** Telefonnummer + Minuten (extern, kostenpflichtig) = CEO-Tor + Capability + CISO. **Kosten:** real.
+
+### Hosting / Online-Betrieb (querschnittlich, vor 10/10b/12 noetig)
+- Der Voice-/Agent-Server ist **dauerhaft laufend** (WebRTC/Pipecat + Claude-CLI + Orchestrator) -> braucht
+  einen **persistenten Host** (VPS/Container: Fly.io, Railway, Render, Hetzner, oder ein Always-on-Mac/mini),
+  **nicht Vercel** (serverless, ungeeignet fuer Langlauf/WebRTC). Mobil im Browser: Host mit **HTTPS**
+  (Mikrofon-Zugriff). Eigene Phase/Entscheidung sobald 24/7 mobil gewuenscht ist.
 
 ### Phase 11 — Integrationen: E-Mail + Kalender  (ausfuehren + proaktiv melden)
 - **Ziel:** HoA kann E-Mails lesen/senden und Kalender lesen/schreiben; meldet **proaktiv** (Antwort auf

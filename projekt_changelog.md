@@ -17,7 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-24 23:29] — Claude Code
+## [2026-06-24 23:45] — Claude Code
+- **Was:** Phase 7 LIVE bestanden + verdrahtet. Reale Abhaengigkeiten `core/execution_live.py`
+  (Git-Worktree auf Branch `antrag/<id>`, Coding-Agent via Claude Agent SDK mit Datei-/Bash-Tools
+  `permission_mode=bypassPermissions` im isolierten Worktree, Self-Checks-Runner, Diff, commit/merge/cleanup).
+  **Erster echter Lauf erfolgreich:** freigegebener Test-Antrag -> Branch + Datei real angelegt
+  (`docs/phase7-test.md`, Umlaut-Regel eingehalten) -> Self-Checks 36/36 gruen -> Bericht; danach
+  Verifikations-Worktree/Branch aufgeraeumt (nicht in main). HoA-Tools `antrag_umsetzen` (nur freigegeben,
+  Branch+Tests, kein Merge) und `antrag_mergen` (nur erledigt, nach CEO-Bestaetigung) im Voice-Kanal
+  verdrahtet (`build_pipeline` + `server.py` mit `repo_root`); System-Prompt um die Ausloesungs-Nuance
+  ergaenzt. ROADMAP: Phase 10b (Telefon-Anruf via Telefonie/Twilio) + Hosting-Hinweis (persistenter Host,
+  nicht Vercel; HTTPS fuer mobiles Mikrofon). Self-Checks **36/36 OK**, Server-Boot verifiziert (ein Prozess).
+- **Warum:** CEO: LIVE-GATE freigegeben; Frage nach Online-/mobilem Betrieb + Anrufmoeglichkeit beantwortet
+  und in die Roadmap aufgenommen.
+- **Betroffen:** `orchestrator/core/execution_live.py` (neu), `orchestrator/channels/voice/pipeline.py`,
+  `orchestrator/channels/voice/server.py`, `ROADMAP.md`.
 - **Was:** Phase 7 — Execution-Engine (Offline-Teil) gebaut. Neu `core/execution.py` (`ExecutionEngine`):
   setzt nur `freigegebene` Antraege um, mit injizierbaren Abhaengigkeiten (Workspace/Worktree, Coding-Agent,
   Tests, Diff) -> offline mit Mocks testbar. Guards: nur freigegeben; Status freigegeben -> in_umsetzung ->

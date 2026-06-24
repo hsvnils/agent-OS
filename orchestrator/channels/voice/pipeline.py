@@ -43,6 +43,11 @@ VOICE_SYSTEM_PROMPT = (
     "Freigabe vorgelegt. Auf 'zeig mir die Antraege' nutze 'antraege_zeigen'. Einen Antrag gibst du nur "
     "frei ('antrag_freigeben'), wenn der CEO es ausdruecklich sagt -- bestaetige vorher kurz ('Ich gebe "
     "Antrag X frei, richtig?'); ablehnen via 'antrag_ablehnen'. "
+    "Umsetzung (Phase 7): Stammt der Auftrag vom CEO, genuegt eine kurze Rueckfrage 'Soll ich das machen?'; "
+    "bei einer Idee aus einer Abteilung legst du dem CEO ZUERST den Plan dar (was + wie), dann erst Freigabe. "
+    "Einen freigegebenen Antrag setzt du mit 'antrag_umsetzen' real um (Branch + Tests, kein Merge) und fasst "
+    "den Bericht gesprochen zusammen (Status, Tests, was zu pruefen). Nach main bringst du ihn nur mit "
+    "'antrag_mergen' nach ausdruecklicher CEO-Bestaetigung -- oder der CEO merged selbst in Git. "
     "Fuer Geld-/Budget-/Kostenfragen hast du Zugriff auf Finance (CFO): nutze 'frage_finance', um die echten "
     "Zahlen aus finance/ zu holen, und antworte INHALTLICH (nenne konkrete Werte/Status), nicht nur 'es gibt "
     "eine Uebersicht'. Sag dabei kurz etwas wie 'Einen Moment, ich schaue bei Finance nach.', bevor du "
@@ -167,16 +172,34 @@ def _build_tools():
         },
         required=["antrag_id"],
     )
+    antrag_umsetzen = FunctionSchema(
+        name="antrag_umsetzen",
+        description="Setzt einen FREIGEGEBENEN Antrag real um (Phase 7): isolierter Git-Branch, ein "
+                    "Ausfuehrungs-Agent aendert die Dateien, Self-Checks laufen. Kuendige kurz an ('Ich setze "
+                    "das jetzt um, einen Moment') -- dauert ggf. ~1 Minute. Es wird NICHT nach main gemergt.",
+        properties={"antrag_id": {"type": "string", "description": "Die Antrag-ID (Status freigegeben)."}},
+        required=["antrag_id"],
+    )
+    antrag_mergen = FunctionSchema(
+        name="antrag_mergen",
+        description="Mergt den Branch eines ERLEDIGTEN Antrags nach main -- NUR nach ausdruecklicher "
+                    "CEO-Bestaetigung. Bestaetige vorher kurz gesprochen.",
+        properties={"antrag_id": {"type": "string", "description": "Die Antrag-ID (Status erledigt)."}},
+        required=["antrag_id"],
+    )
     return ToolsSchema(standard_tools=[
         show_panel, frage_finance, delegate, set_budget,
         antrag_stellen, antraege_zeigen, antrag_freigeben, antrag_ablehnen,
+        antrag_umsetzen, antrag_mergen,
     ])
 
 
 def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, leak_secrets,
-                   antraege_path):
+                   antraege_path, repo_root):
     """Baut die Conversation-Pipeline + Task. `core` ist der HoA-Kern (fuer delegate/Changelog/CEO-Tor)."""
     from ...core.antraege import Antraege
+    from ...core.execution import ExecutionEngine
+    from ...core import execution_live as live
     from pipecat.pipeline.pipeline import Pipeline
     from pipecat.pipeline.runner import PipelineRunner
     from pipecat.pipeline.task import PipelineParams, PipelineTask
@@ -203,6 +226,14 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
     aggregator = LLMContextAggregatorPair(context)
     rtvi = RTVIProcessor()
     antraege = Antraege(antraege_path, secrets=leak_secrets, changelog=core.changelog)
+    engine = ExecutionEngine(
+        antraege,
+        make_workspace=live.real_make_workspace(repo_root),
+        run_agent=live.real_run_agent(model=cfg.get("exec_model", "claude-opus-4-8")),
+        run_tests=live.real_run_tests(),
+        diff=live.real_diff(),
+        secrets=leak_secrets, changelog=core.changelog,
+    )
 
     async def emit_activity(agent_key: str, state: str):
         # Live-Anzeige in der Oberflaeche: mit wem der HoA gerade spricht.
@@ -308,6 +339,37 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
         ok = antraege.ablehnen(aid, grund=(a.get("grund") or "").strip())
         await params.result_callback({"ok": ok, "antrag_id": aid, "status": "abgelehnt" if ok else None})
 
+    async def on_antrag_umsetzen(params):
+        aid = str((params.arguments or {}).get("antrag_id", "")).strip()
+        loop = asyncio.get_running_loop()
+        try:
+            res = await loop.run_in_executor(None, engine.umsetzen, aid)
+        except Exception as exc:
+            await params.result_callback({"ok": False, "fehler": str(exc)[:200]})
+            return
+        # Bei Erfolg den Branch committen, damit er mergebar ist.
+        if res.ok and res.status == "erledigt":
+            ws = str(repo_root / ".worktrees" / f"antrag-{aid}")
+            await loop.run_in_executor(None, live.commit_branch, ws, f"Antrag {aid}: umgesetzt")
+        await params.result_callback(
+            {"ok": res.ok, "status": res.status, "branch": res.branch,
+             "bericht": redact(res.bericht, leak_secrets)}
+        )
+
+    async def on_antrag_mergen(params):
+        aid = str((params.arguments or {}).get("antrag_id", "")).strip()
+        a = antraege.get(aid)
+        if not a or a.get("status") != "erledigt":
+            await params.result_callback(
+                {"ok": False, "hinweis": "Nur erledigte Antraege koennen gemergt werden."})
+            return
+        loop = asyncio.get_running_loop()
+        ok, out = await loop.run_in_executor(
+            None, live.merge_branch, repo_root, f"antrag/{aid}", f"Merge Antrag {aid}")
+        if ok and core.changelog:
+            core.changelog("CEO", f"Antrag {aid} nach main gemergt", "CEO-Bestaetigung", f"antrag/{aid}")
+        await params.result_callback({"ok": ok, "ausgabe": redact(out, leak_secrets)})
+
     llm.register_function("show_panel", on_show_panel)
     llm.register_function("frage_finance", on_frage_finance)
     llm.register_function("delegate", on_delegate, cancel_on_interruption=False)
@@ -316,6 +378,8 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
     llm.register_function("antraege_zeigen", on_antraege_zeigen)
     llm.register_function("antrag_freigeben", on_antrag_freigeben, cancel_on_interruption=False)
     llm.register_function("antrag_ablehnen", on_antrag_ablehnen, cancel_on_interruption=False)
+    llm.register_function("antrag_umsetzen", on_antrag_umsetzen, cancel_on_interruption=False)
+    llm.register_function("antrag_mergen", on_antrag_mergen, cancel_on_interruption=False)
 
     pipeline = Pipeline([
         transport.input(),
