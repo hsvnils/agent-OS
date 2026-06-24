@@ -91,16 +91,21 @@ def main() -> None:
 def _serve(bridge, vcfg: dict, secrets: dict) -> None:
     """FastAPI + SmallWebRTC-Signaling + statische Seite. Pipeline pro Verbindung.
 
-    GATE-verifiziert: die SmallWebRTC-Signaling-Details (offer/answer) werden beim GATE
-    gegen die installierte Pipecat-Version bestaetigt.
+    Nutzt Pipecats `SmallWebRTCRequestHandler` (managt pc_id, POST-Offer UND PATCH-Renegotiation
+    fuer die Audio-Spuren -- ohne PATCH bleibt die Bot-Audiospur stumm).
     """
     import uvicorn
-    from fastapi import FastAPI
+    from fastapi import BackgroundTasks, FastAPI
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
-    from pipecat.transports.smallwebrtc.connection import IceServer, SmallWebRTCConnection
-    from pipecat.transports.smallwebrtc.transport import SmallWebRTCTransport
     from pipecat.transports.base_transport import TransportParams
+    from pipecat.transports.smallwebrtc.connection import SmallWebRTCConnection
+    from pipecat.transports.smallwebrtc.request_handler import (
+        SmallWebRTCPatchRequest,
+        SmallWebRTCRequest,
+        SmallWebRTCRequestHandler,
+    )
+    from pipecat.transports.smallwebrtc.transport import SmallWebRTCTransport
 
     try:
         from pipecat.audio.vad.silero import SileroVADAnalyzer
@@ -113,33 +118,34 @@ def _serve(bridge, vcfg: dict, secrets: dict) -> None:
     app = FastAPI()
     host = vcfg.get("host", "localhost")
     port = int(vcfg.get("port", 7860))
+    handler = SmallWebRTCRequestHandler(host=host)
 
     @app.get("/")
     async def index():
         return FileResponse(str(STATIC_DIR / "index.html"))
 
     @app.post("/api/offer")
-    async def offer(payload: dict):
-        connection = SmallWebRTCConnection(
-            ice_servers=[IceServer(urls=["stun:stun.l.google.com:19302"])]
+    async def offer(request: SmallWebRTCRequest, background_tasks: BackgroundTasks):
+        async def on_connection(connection: SmallWebRTCConnection):
+            transport = SmallWebRTCTransport(
+                webrtc_connection=connection,
+                params=TransportParams(
+                    audio_in_enabled=True,
+                    audio_out_enabled=True,
+                    vad_analyzer=vad,
+                ),
+            )
+            task, runner = build_pipeline(transport, bridge, vcfg, secrets)
+            background_tasks.add_task(runner.run, task)
+
+        return await handler.handle_web_request(
+            request=request, webrtc_connection_callback=on_connection
         )
-        await connection.initialize(sdp=payload["sdp"], type=payload["type"])
 
-        transport = SmallWebRTCTransport(
-            webrtc_connection=connection,
-            params=TransportParams(
-                audio_in_enabled=True,
-                audio_out_enabled=True,
-                vad_analyzer=vad,
-            ),
-        )
-        task, runner = build_pipeline(transport, bridge, vcfg, secrets)
-
-        import asyncio
-        asyncio.create_task(runner.run(task))
-
-        answer = connection.get_answer()
-        return {"sdp": answer["sdp"], "type": answer["type"]}
+    @app.patch("/api/offer")
+    async def ice_candidate(request: SmallWebRTCPatchRequest):
+        await handler.handle_patch_request(request)
+        return {"status": "success"}
 
     if STATIC_DIR.exists():
         app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

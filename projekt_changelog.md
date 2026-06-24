@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 02:24] — Claude Code
+- **Was:** Live-Voice: kein Ton behoben. Ursache: der SmallWebRTC-Client schickt nach dem Offer ein
+  **PATCH /api/offer** zur Audio-Renegotiation; unser Server kannte nur POST -> 405 -> Bot-Audiospur wurde
+  nie ausgehandelt (stumm). `server.py` auf Pipecats `SmallWebRTCRequestHandler` umgestellt: POST via
+  `handle_web_request` (Transport/Pipeline im connection-callback, Bot als BackgroundTask), PATCH via
+  `handle_patch_request` (pc_id/Renegotiation). PATCH liefert jetzt 422 statt 405 (Methode akzeptiert).
+- **Warum:** CEO-Sprachtest: Verbindung + Pipeline liefen (Zustaende wechselten), aber keine Audioausgabe.
+- **Betroffen:** `orchestrator/channels/voice/server.py`.
+
 ## [2026-06-24 02:17] — Claude Code
 - **Was:** Live-Voice Browser-Client repariert + Umlaut-Konvention fuer die Agenten-Oberflaeche. (1) Bugfix:
   Die Pipecat-JS-Hauptklasse heisst `PipecatClient` (nicht `RTVIClient`); `static/app.js` entsprechend
