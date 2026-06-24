@@ -40,7 +40,10 @@ def build_panel(typ: str, daten: dict | None = None, *, finance_dir: Path | None
     """Baut eine Panel-Anweisung. `typ`: kostenuebersicht | tabelle | text/markdown."""
     secrets = secrets or []
     daten = daten or {}
-    if typ == "kostenuebersicht":
+    if typ == "organigramm":
+        from .directory import organigramm
+        panel = organigramm()
+    elif typ == "kostenuebersicht":
         panel = _kostenuebersicht(Path(finance_dir) if finance_dir else DEFAULT_FINANCE)
     elif typ == "tabelle":
         panel = {

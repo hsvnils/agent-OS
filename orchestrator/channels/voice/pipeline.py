@@ -19,26 +19,12 @@ from __future__ import annotations
 import asyncio
 
 from ...governance.leak_guard import redact
+from .directory import bereich_map, label as agent_label
 from .panels import build_panel, finance_summary, set_monatsbudget
 from .voices import get_selected_voice_id
 
-# Konsultierbare Fachagenten (Kurzname -> Kurzbeschreibung fuer das LLM-Tool).
-_AGENTS = {
-    "berater": "Unternehmensberater (Strategie, Analyse, Markt)",
-    "cao": "CAO (Administration, Organisation)",
-    "cfo": "CFO (Finanzen, Budget, Kosten)",
-    "cro": "CRO (Umsatz, Vertrieb, Monetarisierung)",
-    "ciso": "CISO (Informationssicherheit, Zugriffe)",
-    "cbo": "CBO (Marke, Branding)",
-    "cpo": "CPO (Produkt)",
-    "cto": "CTO (Technik, Infrastruktur, Code)",
-    "cxo": "CXO (Nutzererlebnis, UX)",
-    "cco": "CCO (Content, Redaktion)",
-    "cdo": "CDO (Daten, Analytics)",
-    "chro": "CHRO (Personal, Team)",
-    "clo": "CLO (Recht, Vertraege)",
-    "cko": "CKO (Wissen, Dokumentation)",
-}
+# Konsultierbare Fachagenten (Kurzname -> Kurzbeschreibung) aus dem zentralen Verzeichnis.
+_AGENTS = bereich_map()
 
 VOICE_SYSTEM_PROMPT = (
     "Du bist der Head of Agents des Hanserautisch Agenten-Unternehmens und sprichst direkt mit dem CEO "
@@ -57,6 +43,7 @@ VOICE_SYSTEM_PROMPT = (
     "eine Uebersicht'. Sag dabei kurz etwas wie 'Einen Moment, ich schaue bei Finance nach.', bevor du "
     "nachschlaegst. Wenn der CEO die Uebersicht sehen will, nutze zusaetzlich 'show_panel' "
     "(typ='kostenuebersicht') und sag, dass du sie einblendest -- fasse den Inhalt dann gesprochen zusammen. "
+    "Will der CEO die Unternehmensstruktur sehen, nutze show_panel mit typ='organigramm'. "
     "CEO-Tore: Bei allem mit Geld, Recht, Vertraegen, Oeffentlichkeit, neuen kostenpflichtigen Diensten, "
     "Mandats-/Charta-Aenderungen oder Datenloeschung fuehrst du NICHTS aus, sondern sagst, dass du dafuer "
     "die Freigabe des CEO brauchst. Du hast Spezialisten unter dir; du bist der einzige, der mit dem CEO spricht."
@@ -105,8 +92,9 @@ def _build_tools():
     show_panel = FunctionSchema(
         name="show_panel",
         description="Blendet dem CEO ein Panel im Browser ein und liefert dir dessen Inhalt zurueck. "
-                    "typ='kostenuebersicht' zeigt Budget und Kostenstatistik aus finance/.",
-        properties={"typ": {"type": "string", "enum": ["kostenuebersicht"]}},
+                    "typ='kostenuebersicht' zeigt Budget und Kostenstatistik aus finance/; "
+                    "typ='organigramm' zeigt die Unternehmensstruktur (CEO -> HoA -> Abteilungen).",
+        properties={"typ": {"type": "string", "enum": ["kostenuebersicht", "organigramm"]}},
         required=["typ"],
     )
     frage_finance = FunctionSchema(
@@ -169,6 +157,13 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
     aggregator = LLMContextAggregatorPair(context)
     rtvi = RTVIProcessor()
 
+    async def emit_activity(agent_key: str, state: str):
+        # Live-Anzeige in der Oberflaeche: mit wem der HoA gerade spricht.
+        await rtvi.push_frame(RTVIServerMessageFrame(data={
+            "kind": "agent_activity", "agent": agent_key,
+            "label": agent_label(agent_key), "state": state,
+        }))
+
     async def on_show_panel(params):
         typ = (params.arguments or {}).get("typ", "kostenuebersicht")
         panel = build_panel(typ, finance_dir=finance_dir, secrets=leak_secrets)
@@ -180,9 +175,13 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
 
     async def on_frage_finance(params):
         frage = (params.arguments or {}).get("frage", "")
-        await params.result_callback(
-            {"frage": frage, "finance": finance_summary(finance_dir, leak_secrets)}
-        )
+        await emit_activity("cfo", "start")
+        try:
+            return await params.result_callback(
+                {"frage": frage, "finance": finance_summary(finance_dir, leak_secrets)}
+            )
+        finally:
+            await emit_activity("cfo", "end")
 
     async def on_delegate(params):
         args = params.arguments or {}
@@ -201,6 +200,7 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
             await params.result_callback({"fehler": f"Unbekannter Spezialist '{an}'."})
             return
         loop = asyncio.get_running_loop()
+        await emit_activity(an, "start")  # Live-Anzeige: HoA spricht mit diesem Agenten
         try:
             result = await loop.run_in_executor(
                 None, core.backend.respond, an, spec.system_prompt, aufgabe, {}
@@ -208,6 +208,8 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
         except Exception as exc:  # Backend-/API-Fehler nicht die Pipeline reissen lassen
             await params.result_callback({"fehler": str(exc)})
             return
+        finally:
+            await emit_activity(an, "end")
         if core.changelog:
             core.changelog("Head of Agents", f"Voice-Delegation an {an}: {aufgabe}",
                            "CEO-Sprachkanal", f"Subagent: {an}")

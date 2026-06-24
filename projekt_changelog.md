@@ -17,7 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-24 14:23] — Claude Code
+## [2026-06-24 14:31] — Claude Code
+- **Was:** Phase 5 (Live-Kontext & Organigramm) umgesetzt. Neues Agenten-Verzeichnis
+  `channels/voice/directory.py` (eine Quelle fuer Routing, Anzeige-Labels, Organigramm). Im Gespraech zeigt
+  die Oberflaeche jetzt live, mit welchem Agenten der HoA spricht: `delegate` und `frage_finance` senden
+  `agent_activity`-RTVI-Events (start/end), die Browser-Seite zeigt "spricht mit <Agent>" und hebt die
+  Abteilung im Organigramm hervor. Neuer Panel-Typ `organigramm` (CEO -> HoA -> 14 Abteilungen) via
+  `show_panel(typ='organigramm')`; `panels.build_panel` + `app.js`/`index.html` rendern ihn. `pipeline._AGENTS`
+  wird aus dem Verzeichnis abgeleitet (keine Dublette). Self-Checks 24/24 OK; Boot verifiziert.
+- **Warum:** GATE D freigegeben, Start mit Phase 5 (Roadmap): sichtbarer Quick Win -- der CEO sieht im
+  Gespraech den relevanten Kontext und mit welchem exakten Agenten der HoA gerade kommuniziert.
+- **Betroffen:** `orchestrator/channels/voice/directory.py` (neu), `orchestrator/channels/voice/pipeline.py`,
+  `orchestrator/channels/voice/panels.py`, `orchestrator/channels/voice/static/app.js`,
+  `orchestrator/channels/voice/static/index.html`.
 - **Was:** `ROADMAP.md` angelegt: Ablaufplan mit GATES vom aktuellen Stand zum selbst-entwickelnden
   Agenten-Unternehmen (24/7-Assistent). Phasen 5-13: Live-Kontext/Organigramm, Antrags-/Freigabe-Workflow
   (Rueckgrat), Execution-Engine (handelnde Agenten auf Git-Branch + Tests), Web-Research, Innovations-Pipeline

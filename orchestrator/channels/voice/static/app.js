@@ -79,6 +79,33 @@ function renderPanel(panel) {
     }
     if (panel.hinweis) el.appendChild(small(panel.hinweis));
     if (panel.quellen) el.appendChild(small("Quellen: " + panel.quellen.join(", ")));
+  } else if (panel.type === "organigramm") {
+    const org = document.createElement("div");
+    org.className = "org";
+    const ceo = document.createElement("div");
+    ceo.className = "node ceo";
+    ceo.textContent = panel.ceo || "CEO";
+    const hoa = document.createElement("div");
+    hoa.className = "node hoa";
+    hoa.textContent = panel.hoa || "Head of Agents";
+    org.append(ceo, hoa);
+    const depts = document.createElement("div");
+    depts.className = "depts";
+    for (const a of panel.abteilungen || []) {
+      const d = document.createElement("div");
+      d.className = "dept";
+      d.dataset.key = a.key;
+      const b = document.createElement("b");
+      b.textContent = a.kuerzel;
+      d.append(b, document.createTextNode(" " + a.name));
+      const br = document.createElement("small");
+      br.textContent = a.bereich;
+      br.style.display = "block";
+      d.appendChild(br);
+      depts.appendChild(d);
+    }
+    org.appendChild(depts);
+    el.appendChild(org);
   } else if (panel.type === "tabelle") {
     el.appendChild(makeTable(panel.columns || [], panel.rows || []));
   } else { // markdown / text
@@ -111,11 +138,28 @@ function small(text) {
   const s = document.createElement("small"); s.textContent = text;
   s.style.display = "block"; s.style.marginTop = "8px"; return s;
 }
+const activityEl = document.getElementById("activity");
+
+function setActivity(label, on) {
+  activityEl.textContent = on ? "→ spricht mit " + label : "";
+  // Falls ein Organigramm sichtbar ist, die betroffene Abteilung hervorheben.
+  document.querySelectorAll(".org .dept").forEach((d) => d.classList.remove("active"));
+}
 
 function handleServerMessage(data) {
-  // Panel-Anweisung vom Head of Agents (show_panel). Robust gegen Verschachtelung.
+  // Server-Nachricht vom Head of Agents. Robust gegen Verschachtelung.
   const msg = data?.data ?? data?.message ?? data;
-  if (msg && msg.kind === "panel" && msg.panel) renderPanel(msg.panel);
+  if (!msg) return;
+  if (msg.kind === "panel" && msg.panel) {
+    renderPanel(msg.panel);
+  } else if (msg.kind === "agent_activity") {
+    const on = msg.state === "start";
+    setActivity(msg.label || msg.agent || "", on);
+    if (on && msg.agent) {
+      const d = document.querySelector('.org .dept[data-key="' + msg.agent + '"]');
+      if (d) d.classList.add("active");
+    }
+  }
 }
 
 async function connect() {
