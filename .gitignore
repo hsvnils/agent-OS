@@ -17,6 +17,9 @@ orchestrator/logs/
 # Agenten-Gedaechtnis: Dry-Run-Store nicht versionieren (kanonischer log.jsonl bleibt versioniert)
 orchestrator/memory/log_dryrun.jsonl
 
+# Live-Voice: lokale Stimmauswahl (Nutzerpraeferenz, kein Versionierungsbedarf)
+orchestrator/channels/voice/selected_voice.json
+
 # Build-Artefakte
 .xmind-build/
 

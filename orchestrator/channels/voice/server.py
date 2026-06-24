@@ -118,9 +118,21 @@ def _serve(core, cfg: dict, secrets: dict, leak_secrets: list) -> None:
     port = int(vcfg.get("port", 7860))
     handler = SmallWebRTCRequestHandler(host=host)
 
+    from .voices import GERMAN_VOICES, get_selected_voice_id, set_selected_voice_id
+
     @app.get("/")
     async def index():
         return FileResponse(str(STATIC_DIR / "index.html"))
+
+    @app.get("/api/voices")
+    async def list_voices():
+        return {"voices": GERMAN_VOICES, "selected": get_selected_voice_id()}
+
+    @app.post("/api/voice")
+    async def set_voice(raw: Request):
+        data = await raw.json()
+        ok = set_selected_voice_id((data or {}).get("voice_id", ""))
+        return {"ok": ok, "selected": get_selected_voice_id()}
 
     def _camel_to_snake(d: dict) -> dict:
         # Client (Pipecat JS) sendet teils camelCase; Server-Dataclass nutzt snake_case.

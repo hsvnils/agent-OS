@@ -37,6 +37,12 @@
     .kv b { color: #9fb3c8; min-width: 130px; }
     .empty { color: #6e7681; }
     small { color: #6e7681; }
+    .voice-select { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .voice-select label { font-size: 12px; color: #9fb3c8; letter-spacing: .04em; }
+    select { background: #111722; color: #e6edf3; border: 1px solid #1f2733;
+             border-radius: 8px; padding: 9px 10px; font-size: 14px; }
+    .vdesc { font-size: 12px; color: #9fb3c8; min-height: 16px; }
+    .vhint { font-size: 12px; color: #2ea043; min-height: 14px; }
   </style>
 </head>
 <body>
@@ -46,6 +52,12 @@
     <div id="state" class="state">nicht verbunden</div>
     <button id="connect">Gespräch starten</button>
     <small>WebRTC lokal. Sprich einfach los — Barge-in aktiv.</small>
+    <div class="voice-select">
+      <label for="voice">Stimme</label>
+      <select id="voice"></select>
+      <div id="voice-desc" class="vdesc"></div>
+      <div id="voice-hint" class="vhint"></div>
+    </div>
   </div>
   <div class="right">
     <div id="panels">

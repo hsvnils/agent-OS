@@ -20,9 +20,7 @@ import asyncio
 
 from ...governance.leak_guard import redact
 from .panels import build_panel
-
-# Default-Stimme ElevenLabs (multilingual-faehig), falls keine Voice-ID in config.toml steht.
-_DEFAULT_ELEVEN_VOICE = "21m00Tcm4TlvDq8ikWAM"
+from .voices import get_selected_voice_id
 
 VOICE_SYSTEM_PROMPT = (
     "Du bist der Head of Agents des Hanserautisch Agenten-Unternehmens und sprichst direkt mit dem CEO "
@@ -65,7 +63,8 @@ def build_tts(cfg: dict, secrets: dict):
         return ElevenLabsTTSService(
             api_key=secrets["ELEVENLABS_API_KEY"],
             settings=ElevenLabsTTSService.Settings(
-                voice=cfg.get("tts_voice_id") or _DEFAULT_ELEVEN_VOICE,
+                # Auswahl aus dem UI-Dropdown (gespeichert); Config-Override moeglich.
+                voice=cfg.get("tts_voice_id") or get_selected_voice_id(),
                 model="eleven_turbo_v2_5",
                 language=cfg.get("language", "de"),
             ),

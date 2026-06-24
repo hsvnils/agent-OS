@@ -12,6 +12,50 @@ const orb = document.getElementById("orb");
 const stateEl = document.getElementById("state");
 const connectBtn = document.getElementById("connect");
 const panels = document.getElementById("panels");
+const voiceSel = document.getElementById("voice");
+const voiceDesc = document.getElementById("voice-desc");
+const voiceHint = document.getElementById("voice-hint");
+let voiceList = [];
+
+function showVoiceDesc(id) {
+  const v = voiceList.find((x) => x.id === id);
+  voiceDesc.textContent = v ? v.beschreibung : "";
+}
+
+async function initVoices() {
+  try {
+    const d = await (await fetch("/api/voices")).json();
+    voiceList = d.voices || [];
+    voiceSel.innerHTML = "";
+    for (const v of voiceList) {
+      const opt = document.createElement("option");
+      opt.value = v.id;
+      opt.textContent = v.name;
+      if (v.id === d.selected) opt.selected = true;
+      voiceSel.appendChild(opt);
+    }
+    showVoiceDesc(d.selected);
+  } catch (e) {
+    voiceDesc.textContent = "Stimmen konnten nicht geladen werden.";
+  }
+}
+
+voiceSel.addEventListener("change", async () => {
+  const id = voiceSel.value;
+  showVoiceDesc(id);
+  try {
+    await fetch("/api/voice", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ voice_id: id }),
+    });
+    voiceHint.textContent = "Gespeichert — wird beim nächsten Gespräch aktiv.";
+  } catch (e) {
+    voiceHint.textContent = "Speichern fehlgeschlagen.";
+  }
+});
+
+initVoices();
 
 let client = null;
 let connected = false;

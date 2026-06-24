@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 08:41] — Claude Code
+- **Was:** Deutsche Stimme + Stimmen-Dropdown. Ursache des englischen Akzents war die Platzhalter-Stimme
+  (Rachel, US-englisch); mehrsprachiges Modell + `language=de` waren korrekt. Neu `voices.py` mit 8
+  kuratierten **deutschen** Stimmen (ElevenLabs Voice Library, direkt per voice_id nutzbar -- per Test
+  bestaetigt) inkl. Beschreibungen; Auswahl wird in `selected_voice.json` (gitignored) gespeichert.
+  `pipeline.build_tts` nutzt die gespeicherte Auswahl. Server-Endpoints `GET /api/voices` und
+  `POST /api/voice`; Oberflaeche um ein **Dropdown mit Beschreibung** ergaenzt (vor dem Gespraech waehlbar,
+  wird beim naechsten Gespraech aktiv). Self-Checks 24/24 OK; Endpoints + Boot verifiziert.
+- **Warum:** CEO-Feedback: Stimme klang teils englisch akzentuiert; Wunsch nach umschaltbarer, speicherbarer
+  Stimme zum Durchprobieren.
+- **Betroffen:** `orchestrator/channels/voice/voices.py` (neu), `orchestrator/channels/voice/pipeline.py`,
+  `orchestrator/channels/voice/server.py`, `orchestrator/channels/voice/static/index.html`,
+  `orchestrator/channels/voice/static/app.js`, `.gitignore`.
+
 ## [2026-06-24 08:28] — Claude Code
 - **Was:** Live-Voice zu echtem Conversation-Loop umgebaut (CEO-Entscheidung: direkt antworten + bei Bedarf
   delegieren; schnelles Modell). `pipeline.py` nutzt jetzt Pipecat-nativ ein streamendes Anthropic-LLM als
