@@ -20,6 +20,9 @@ orchestrator/memory/log_dryrun.jsonl
 # Live-Voice: lokale Stimmauswahl (Nutzerpraeferenz, kein Versionierungsbedarf)
 orchestrator/channels/voice/selected_voice.json
 
+# Antraege: Dry-Run-Store nicht versionieren (kanonischer antraege/log.jsonl bleibt versioniert)
+antraege/log_dryrun.jsonl
+
 # Build-Artefakte
 .xmind-build/
 

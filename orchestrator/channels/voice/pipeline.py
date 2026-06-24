@@ -38,6 +38,11 @@ VOICE_SYSTEM_PROMPT = (
     "das Ergebnis danach in 1-3 Saetzen gesprochen zusammen. "
     "Wenn der CEO dir ein Monatsbudget nennt, bestaetige die Zahl kurz und trage sie dann mit 'set_budget' "
     "ueber den CFO in finance/budget.md ein. "
+    "Aenderungen/Beschaffungen/Ideen laufen ueber Antraege: Will eine Abteilung oder du selbst etwas "
+    "aendern, stelle einen Antrag ('antrag_stellen') -- er wird NICHT ausgefuehrt, sondern dem CEO zur "
+    "Freigabe vorgelegt. Auf 'zeig mir die Antraege' nutze 'antraege_zeigen'. Einen Antrag gibst du nur "
+    "frei ('antrag_freigeben'), wenn der CEO es ausdruecklich sagt -- bestaetige vorher kurz ('Ich gebe "
+    "Antrag X frei, richtig?'); ablehnen via 'antrag_ablehnen'. "
     "Fuer Geld-/Budget-/Kostenfragen hast du Zugriff auf Finance (CFO): nutze 'frage_finance', um die echten "
     "Zahlen aus finance/ zu holen, und antworte INHALTLICH (nenne konkrete Werte/Status), nicht nur 'es gibt "
     "eine Uebersicht'. Sag dabei kurz etwas wie 'Einen Moment, ich schaue bei Finance nach.', bevor du "
@@ -126,11 +131,52 @@ def _build_tools():
                                    "description": "Monatsbudget in Euro, nur Zahl, z. B. '500'."}},
         required=["betrag_eur"],
     )
-    return ToolsSchema(standard_tools=[show_panel, frage_finance, delegate, set_budget])
+    antrag_stellen = FunctionSchema(
+        name="antrag_stellen",
+        description="Reicht einen Antrag (Aenderungs-/Beschaffungs-/Idee-Vorschlag) ein -- auch "
+                    "stellvertretend fuer eine Abteilung. Wird NICHT ausgefuehrt, nur dem CEO zur Freigabe "
+                    "vorgelegt.",
+        properties={
+            "titel": {"type": "string", "description": "Kurztitel des Antrags."},
+            "beschreibung": {"type": "string", "description": "Was und warum, in 1-2 Saetzen."},
+            "von": {"type": "string", "description": "Welche Abteilung/Rolle (z. B. cto, cfo, HoA)."},
+            "kategorie": {"type": "string",
+                          "description": "Falls CEO-Tor beruehrt: geld|recht|oeffentlichkeit|tools|mandat|daten."},
+        },
+        required=["titel", "beschreibung"],
+    )
+    antraege_zeigen = FunctionSchema(
+        name="antraege_zeigen",
+        description="Zeigt die Antraege als Panel und nennt sie kurz. status optional (z. B. 'eingereicht').",
+        properties={"status": {"type": "string", "description": "Optionaler Status-Filter."}},
+        required=[],
+    )
+    antrag_freigeben = FunctionSchema(
+        name="antrag_freigeben",
+        description="Gibt einen Antrag frei -- NUR nach ausdruecklicher CEO-Bestaetigung. Bestaetige vorher "
+                    "gesprochen ('Ich gebe Antrag X frei, richtig?'). Fuehrt noch nichts aus (das ist Phase 7).",
+        properties={"antrag_id": {"type": "string", "description": "Die Antrag-ID."}},
+        required=["antrag_id"],
+    )
+    antrag_ablehnen = FunctionSchema(
+        name="antrag_ablehnen",
+        description="Lehnt einen Antrag ab -- nach CEO-Entscheidung. Mit kurzer Begruendung.",
+        properties={
+            "antrag_id": {"type": "string", "description": "Die Antrag-ID."},
+            "grund": {"type": "string", "description": "Kurze Begruendung."},
+        },
+        required=["antrag_id"],
+    )
+    return ToolsSchema(standard_tools=[
+        show_panel, frage_finance, delegate, set_budget,
+        antrag_stellen, antraege_zeigen, antrag_freigeben, antrag_ablehnen,
+    ])
 
 
-def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, leak_secrets):
+def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, leak_secrets,
+                   antraege_path):
     """Baut die Conversation-Pipeline + Task. `core` ist der HoA-Kern (fuer delegate/Changelog/CEO-Tor)."""
+    from ...core.antraege import Antraege
     from pipecat.pipeline.pipeline import Pipeline
     from pipecat.pipeline.runner import PipelineRunner
     from pipecat.pipeline.task import PipelineParams, PipelineTask
@@ -156,6 +202,7 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
     )
     aggregator = LLMContextAggregatorPair(context)
     rtvi = RTVIProcessor()
+    antraege = Antraege(antraege_path, secrets=leak_secrets, changelog=core.changelog)
 
     async def emit_activity(agent_key: str, state: str):
         # Live-Anzeige in der Oberflaeche: mit wem der HoA gerade spricht.
@@ -223,10 +270,44 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
                            "CEO-Ansage ueber Sprachkanal", "finance/budget.md")
         await params.result_callback(res)
 
+    async def on_antrag_stellen(params):
+        a = params.arguments or {}
+        aid = antraege.stellen(
+            (a.get("titel") or "").strip(), (a.get("beschreibung") or "").strip(),
+            von=(a.get("von") or "Head of Agents").strip(), kategorie=(a.get("kategorie") or "").strip(),
+        )
+        await params.result_callback({"antrag_id": aid, "status": "eingereicht"})
+
+    async def on_antraege_zeigen(params):
+        status = (params.arguments or {}).get("status") or None
+        items = antraege.list(status)
+        panel = {"type": "antraege", "title": "Antraege",
+                 "antraege": [{"id": x["antrag_id"], "titel": x.get("titel", ""),
+                               "von": x.get("von", ""), "status": x.get("status", ""),
+                               "kategorie": x.get("kategorie", "")} for x in items]}
+        await rtvi.push_frame(RTVIServerMessageFrame(data={"kind": "panel", "panel": panel}))
+        await params.result_callback({"anzahl": len(items), "antraege": panel["antraege"]})
+
+    async def on_antrag_freigeben(params):
+        aid = str((params.arguments or {}).get("antrag_id", "")).strip()
+        ok = antraege.freigeben(aid)
+        await params.result_callback({"ok": ok, "antrag_id": aid, "status": "freigegeben" if ok else None,
+                                      "hinweis": "" if ok else "Antrag-ID nicht gefunden."})
+
+    async def on_antrag_ablehnen(params):
+        a = params.arguments or {}
+        aid = str(a.get("antrag_id", "")).strip()
+        ok = antraege.ablehnen(aid, grund=(a.get("grund") or "").strip())
+        await params.result_callback({"ok": ok, "antrag_id": aid, "status": "abgelehnt" if ok else None})
+
     llm.register_function("show_panel", on_show_panel)
     llm.register_function("frage_finance", on_frage_finance)
     llm.register_function("delegate", on_delegate, cancel_on_interruption=False)
     llm.register_function("set_budget", on_set_budget, cancel_on_interruption=False)
+    llm.register_function("antrag_stellen", on_antrag_stellen, cancel_on_interruption=False)
+    llm.register_function("antraege_zeigen", on_antraege_zeigen)
+    llm.register_function("antrag_freigeben", on_antrag_freigeben, cancel_on_interruption=False)
+    llm.register_function("antrag_ablehnen", on_antrag_ablehnen, cancel_on_interruption=False)
 
     pipeline = Pipeline([
         transport.input(),

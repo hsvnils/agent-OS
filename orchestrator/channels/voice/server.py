@@ -162,6 +162,7 @@ def _serve(core, cfg: dict, secrets: dict, leak_secrets: list) -> None:
             task, runner = build_pipeline(
                 transport, core, vcfg, secrets,
                 finance_dir=ROOT / "finance", leak_secrets=leak_secrets,
+                antraege_path=ROOT / "antraege" / "log.jsonl",
             )
             background_tasks.add_task(runner.run, task)
 

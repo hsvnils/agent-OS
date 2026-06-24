@@ -17,7 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-24 18:12] — Claude Code
+## [2026-06-24 18:18] — Claude Code
+- **Was:** Phase 6 (Antrags-/Freigabe-Workflow) umgesetzt -- GATE freigegeben (Freigabe per Sprache/Text).
+  Neuer event-sourced Store `core/antraege.py` (`Antraege`: stellen/freigeben/ablehnen/status_setzen, list/get
+  via Event-Folding; append-only `antraege/log.jsonl`, leck-geschuetzt, Changelog je Transition). Vier neue
+  HoA-Tools im Voice-Kanal: `antrag_stellen`, `antraege_zeigen` (Panel `antraege` + Kurzfassung),
+  `antrag_freigeben`, `antrag_ablehnen` -- Freigabe nur nach ausdruecklicher CEO-Bestaetigung; es wird NICHTS
+  ausgefuehrt (Ausfuehrung erst Phase 7). System-Prompt erweitert; `server.py` reicht den Store-Pfad durch;
+  `app.js` rendert das Antraege-Panel; `governance/antraege.md` (Policy) neu; `.gitignore` um Dry-Run-Store.
+  Sechs neue Self-Checks (`tests/test_antraege.py`): Round-Trip, Freigabe/Ablehnung, Event-Sourcing,
+  Leck-Schutz, Changelog-Callback, Status-Filter. Gesamt **30/30 OK**; Boot verifiziert (ein Prozess).
+- **Warum:** Roadmap Phase 6 (Rueckgrat der Mensch-im-Spiel-Steuerung): Abteilungen/HoA schlagen vor, der CEO
+  gibt frei, erst dann (Phase 7) wird umgesetzt.
+- **Betroffen:** `orchestrator/core/antraege.py` (neu), `orchestrator/tests/test_antraege.py` (neu),
+  `orchestrator/channels/voice/pipeline.py`, `orchestrator/channels/voice/server.py`,
+  `orchestrator/channels/voice/static/app.js`, `governance/antraege.md` (neu), `.gitignore`.
 - **Was:** `ROADMAP.md` ergaenzt: Phase 5 als umgesetzt markiert; neue **Phase 14 — Oberflaechen-Erweiterung /
   generische Visualisierung** (ganz hinten) fuer frei konfigurierbare/visuelle Darstellungen, u. a.
   Organigramm/Strukturen als **MindMap** auf Anfrage (heutige Grenze: feste Panel-Typen). Neuer Detailplan

@@ -106,6 +106,18 @@ function renderPanel(panel) {
     }
     org.appendChild(depts);
     el.appendChild(org);
+  } else if (panel.type === "antraege") {
+    const list = panel.antraege || [];
+    if (!list.length) {
+      const e = document.createElement("div"); e.className = "empty";
+      e.textContent = "Keine Antraege vorhanden.";
+      el.appendChild(e);
+    } else {
+      el.appendChild(makeTable(
+        ["ID", "Titel", "Von", "Status", "Kategorie"],
+        list.map((a) => [a.id, a.titel, a.von, a.status, a.kategorie || "—"])
+      ));
+    }
   } else if (panel.type === "tabelle") {
     el.appendChild(makeTable(panel.columns || [], panel.rows || []));
   } else { // markdown / text
