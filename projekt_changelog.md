@@ -17,6 +17,34 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 02:50] — Claude Code
+- **Was:** Live-Voice Stabilitaet + Sprechqualitaet. (1) Reconnect-Loop (alle ~10 s `clearing track`, neue
+  Pipeline, abgeschnittene laengere Antworten): Client-Verbindung von der veralteten `connection_url`-API auf
+  die aktuelle umgestellt -- `new SmallWebRTCTransport({ iceServers })` + `connect({ webrtcUrl: "/api/offer" })`.
+  (2) Gesprochener Text war der komplette Bundle-Rahmen ("Konsolidierte Antwort an den CEO: Auftrag: ..."):
+  neue `_voice_clean()` in `bridge.py` spricht nur die eigentliche Antwort (ohne Rahmen/Agenten-Praefix/grobes
+  Markdown); CEO-Tor-Antworten bleiben unveraendert. Self-Checks 24/24 OK (Kanal-Gleichheit auf Antwortinhalt
+  umgestellt).
+- **Warum:** CEO-Sprachtest: kurze Antwort (Kostenübersicht) hoerbar, laengere abgeschnitten; anderer
+  Frageninhalt wurde verarbeitet, aber durch Reconnects nicht sauber ausgegeben.
+- **Betroffen:** `orchestrator/channels/voice/static/app.js`, `orchestrator/channels/voice/bridge.py`,
+  `orchestrator/tests/test_voice_bridge.py`.
+
+## [2026-06-24 02:43] — Head of Agents
+- **Was:** Auftrag erfolgreich bearbeitet: Was sind deine Aufgaben?
+- **Warum:** CEO-Anweisung ueber Kanal-Adapter
+- **Betroffen:** Subagenten: berater
+
+## [2026-06-24 02:43] — Head of Agents
+- **Was:** Auftrag erfolgreich bearbeitet: Was sind deine Aufgaben?
+- **Warum:** CEO-Anweisung ueber Kanal-Adapter
+- **Betroffen:** Subagenten: berater
+
+## [2026-06-24 02:43] — Head of Agents
+- **Was:** Auftrag erfolgreich bearbeitet: Kannst Du einmal deine Aufgaben zusammenfassen?
+- **Warum:** CEO-Anweisung ueber Kanal-Adapter
+- **Betroffen:** Subagenten: berater
+
 ## [2026-06-24 02:41] — Claude Code
 - **Was:** Live-Voice Audio-Wiedergabe ergaenzt. Log-Befund: die Pipeline laeuft vollstaendig (Deepgram-STT
   verbindet, HoA antwortet, ElevenLabs erzeugt Sprache), aber der Browser-Client spielt die empfangene

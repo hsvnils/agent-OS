@@ -11,6 +11,7 @@ Trennung:
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from ...governance.leak_guard import redact
@@ -46,11 +47,42 @@ class HoaBridge:
             )
 
         # 2. Sonst: HoA-Kern (Gehirn) -> gesprochene Antwort (Stream gebuendelt).
-        spoken = "".join(self.core.handle(text))
-        return BridgeResult(spoken=self._redact(spoken), panel=None)
+        consolidated = "".join(self.core.handle(text))
+        return BridgeResult(spoken=self._redact(_voice_clean(consolidated)), panel=None)
 
     def _redact(self, s: str) -> str:
         return redact(s, self.leak_secrets)
+
+
+_MD = re.compile(r"[#*`>|_]+")
+
+
+def _voice_clean(text: str) -> str:
+    """Macht aus der konsolidierten HoA-Antwort einen sprechbaren Text.
+
+    Entfernt den Bundle-Rahmen ("Konsolidierte Antwort an den CEO:", "Auftrag: ..."),
+    die Agenten-Praefixe ("- berater: ") und grobe Markdown-Zeichen. CEO-Tor-Antworten
+    (kein Bundle-Header) werden unveraendert gesprochen.
+    """
+    lines = text.splitlines()
+    if not lines or not lines[0].startswith("Konsolidierte Antwort"):
+        return text.strip()
+    out: list[str] = []
+    for ln in lines[1:]:
+        s = ln.strip()
+        if not s or s.startswith("Auftrag:"):
+            continue
+        if set(s) <= set("-:| "):  # Markdown-Tabellentrenner ueberspringen
+            continue
+        if s.startswith("- "):  # "- berater: <text>" -> "<text>"
+            s = s[2:]
+            head, sep, rest = s.partition(": ")
+            if sep and head in ("berater", "cto"):
+                s = rest
+        s = _MD.sub("", s).strip()
+        if s:
+            out.append(s)
+    return " ".join(out).strip() or text.strip()
 
 
 def _spoken_for_panel(typ: str) -> str:

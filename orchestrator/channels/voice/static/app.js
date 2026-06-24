@@ -76,7 +76,9 @@ function handleServerMessage(data) {
 
 async function connect() {
   client = new PipecatClient({
-    transport: new SmallWebRTCTransport(),
+    transport: new SmallWebRTCTransport({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    }),
     enableMic: true,
     enableCam: false,
     callbacks: {
@@ -107,7 +109,7 @@ async function connect() {
   });
   setState("thinking", "verbinde …");
   try {
-    await client.connect({ connection_url: window.location.origin + "/api/offer" });
+    await client.connect({ webrtcUrl: window.location.origin + "/api/offer" });
   } catch (e) {
     setState("", "Verbindung fehlgeschlagen: " + (e?.message || e));
     console.error("connect() fehlgeschlagen:", e);

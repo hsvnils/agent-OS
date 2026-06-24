@@ -34,11 +34,13 @@ class TestVoiceBridge(unittest.TestCase):
         out = io.StringIO()
         TerminalAdapter(in_stream=io.StringIO(instruction + "\nexit\n"), out_stream=out).run(_core())
         terminal_text = out.getvalue()
-        # Dieselbe konsolidierte HoA-Antwort taucht in beiden Kanaelen auf.
-        self.assertIn("Konsolidierte Antwort an den CEO", voice_spoken)
+        # Gleicher HoA-Antwortinhalt in beiden Kanaelen; Voice ist nur sprechbar bereinigt
+        # (ohne Bundle-Rahmen "Konsolidierte Antwort an den CEO:" / "- berater:").
         self.assertIn("Konsolidierte Antwort an den CEO", terminal_text)
+        self.assertNotIn("Konsolidierte Antwort an den CEO", voice_spoken)
         self.assertIn("Thema Alpha", voice_spoken)
         self.assertIn("Thema Alpha", terminal_text)
+        self.assertIn("Ergebnis zu", voice_spoken)  # eigentliche Antwort wird gesprochen
 
     def test_3_show_panel_kostenuebersicht_aus_finance(self):
         bridge = HoaBridge(_core())
