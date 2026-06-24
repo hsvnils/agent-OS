@@ -31,6 +31,8 @@ Eintragsformat:
   dem ersten echten Branch-Lauf.
 - **Betroffen:** `orchestrator/core/execution.py` (neu), `orchestrator/tests/test_execution.py` (neu),
   `governance/execution.md` (neu), `.gitignore`.
+
+## [2026-06-24 23:21] — Claude Code
 - **Was:** `PHASE7_PLAN.md` (Detailplan Execution-Engine / handelnde Agenten) angelegt: freigegebene Antraege
   werden von einem Ausfuehrungs-Agenten (Claude Agent SDK mit Coding-Tools) in einem Git-Worktree auf Branch
   `antrag/<id>` umgesetzt, Self-Checks laufen, Bericht (Diff/Tests/zu pruefen) entsteht; **kein Merge ohne
