@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 02:41] — Claude Code
+- **Was:** Live-Voice Audio-Wiedergabe ergaenzt. Log-Befund: die Pipeline laeuft vollstaendig (Deepgram-STT
+  verbindet, HoA antwortet, ElevenLabs erzeugt Sprache), aber der Browser-Client spielt die empfangene
+  Bot-Audiospur nicht automatisch ab. In `static/app.js` `onTrackStarted(track, participant)`-Callback
+  ergaenzt: haengt die Bot-Audiospur (nicht das eigene Mikrofon) an ein `<audio autoplay>`-Element ->
+  hoerbare Ausgabe. Additive Aenderung, Verbindungslogik unveraendert. Ausserdem Betriebshinweis: stets
+  GENAU EIN Server-Prozess auf Port 7860 -- doppelte Prozesse fuehren zu Reconnect-Schleifen und
+  "clearing track"-Warnungen (Offer/PATCH landen bei wechselnden Prozessen, pc_id unbekannt).
+- **Warum:** CEO-Sprachtest: Zustaende wechselten und TTS lief, aber keine hoerbare Ausgabe.
+- **Betroffen:** `orchestrator/channels/voice/static/app.js`.
+
 ## [2026-06-24 02:35] — Claude Code
 - **Was:** Live-Voice 422 (Offer/PATCH) behoben. Zwei Ursachen: (1) Mehrere Server-Prozesse hingen
   gleichzeitig auf Port 7860 -- ein alter (typisierter) Stand beantwortete die Requests; hart aufgeraeumt.

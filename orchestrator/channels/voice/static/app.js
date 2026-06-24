@@ -87,6 +87,20 @@ async function connect() {
       onUserStoppedSpeaking: () => setState("thinking", "denkt nach …"),
       onBotStartedSpeaking: () => setState("speaking", "spricht …"),
       onBotStoppedSpeaking: () => setState("listening", "hört zu"),
+      onTrackStarted: (track, participant) => {
+        // Bot-Audiospur abspielen (der Client spielt sie nicht automatisch ab).
+        if (track.kind !== "audio") return;
+        if (participant && participant.local) return;  // eigenes Mikrofon nicht zurueckspielen
+        let el = document.getElementById("bot-audio");
+        if (!el) {
+          el = document.createElement("audio");
+          el.id = "bot-audio";
+          el.autoplay = true;
+          document.body.appendChild(el);
+        }
+        el.srcObject = new MediaStream([track]);
+        el.play?.().catch((err) => console.warn("Audio-Wiedergabe blockiert:", err));
+      },
       onServerMessage: handleServerMessage,
       onError: (e) => { setState("", "Fehler: " + (e?.message || e)); console.error("Pipecat-Fehler:", e); },
     },
