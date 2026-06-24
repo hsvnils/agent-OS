@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 19:28] — Claude Code
+- **Was:** (1) Anleitung `docs/localhost-starten.md` angelegt (Start der Live-Voice-Oberflaeche, Beenden,
+  Self-Checks). (2) Ursache des „technischen Fehlers" beim CTO-Auftrag „Datei anlegen" diagnostiziert: der
+  delegate-Aufruf an den CTO lief in `Reached maximum number of turns (4)` -- der Agent versuchte zu HANDELN
+  (Datei erstellen), was Fachagenten bis Phase 7 nicht koennen. Fix: der delegate-Handler stellt der Aufgabe
+  jetzt eine Vorgabe voran (nur BERATEN/Text, kein Handeln/keine Datei-/Code-Aenderung bis zum
+  Freigabe-/Execution-Workflow) -> Konsultationen liefern Text statt ins Turn-Limit zu laufen.
+- **Warum:** CEO-Beobachtung: HoA meldete technischen Fehler, als der CTO eine Datei anlegen sollte. Datei-
+  Erstellung durch Abteilungen ist Phase 7; bis dahin bleiben Konsultationen beratend. Die gewuenschte
+  Anleitung wurde direkt von Claude Code erstellt.
+- **Betroffen:** `docs/localhost-starten.md` (neu), `orchestrator/channels/voice/pipeline.py`.
+- **Was:** Monatsbudget gesetzt: 100 EUR/Monat (CEO-Ansage)
+- **Warum:** CEO-Ansage ueber Sprachkanal
+- **Betroffen:** finance/budget.md
+
 ## [2026-06-24 18:18] — Claude Code
 - **Was:** Phase 6 (Antrags-/Freigabe-Workflow) umgesetzt -- GATE freigegeben (Freigabe per Sprache/Text).
   Neuer event-sourced Store `core/antraege.py` (`Antraege`: stellen/freigeben/ablehnen/status_setzen, list/get

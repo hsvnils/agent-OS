@@ -246,11 +246,19 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
         if spec is None:
             await params.result_callback({"fehler": f"Unbekannter Spezialist '{an}'."})
             return
+        # Bis Phase 7 (Execution-Engine) koennen Fachagenten nur BERATEN, nicht handeln/Dateien aendern.
+        # Diese Vorgabe verhindert, dass der Agent eine Aktion zu erzwingen versucht und das Turn-Budget
+        # aufbraucht ("Reached maximum number of turns").
+        beratungs_aufgabe = (
+            "Beantworte als zustaendiger Fachagent KNAPP in Text. Du kannst derzeit NICHT selbst handeln, "
+            "ausfuehren oder Dateien/Code aendern (das laeuft spaeter ueber den Freigabe-Workflow); liefere "
+            "nur Rat bzw. den gewuenschten Inhalt als Text.\n\nAufgabe: " + aufgabe
+        )
         loop = asyncio.get_running_loop()
         await emit_activity(an, "start")  # Live-Anzeige: HoA spricht mit diesem Agenten
         try:
             result = await loop.run_in_executor(
-                None, core.backend.respond, an, spec.system_prompt, aufgabe, {}
+                None, core.backend.respond, an, spec.system_prompt, beratungs_aufgabe, {}
             )
         except Exception as exc:  # Backend-/API-Fehler nicht die Pipeline reissen lassen
             await params.result_callback({"fehler": str(exc)})
