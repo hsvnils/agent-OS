@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-24 02:35] — Claude Code
+- **Was:** Live-Voice 422 (Offer/PATCH) behoben. Zwei Ursachen: (1) Mehrere Server-Prozesse hingen
+  gleichzeitig auf Port 7860 -- ein alter (typisierter) Stand beantwortete die Requests; hart aufgeraeumt.
+  (2) Eigentlicher Bug: `from __future__ import annotations` in `server.py` machte die Routen-Annotationen
+  zu Strings, sodass FastAPI `Request`/`BackgroundTasks` nicht als Injektion erkannte und sie als fehlende
+  Query-Parameter ablehnte (422 "missing query raw"). Future-Import entfernt (3.14 hat `str | None` nativ);
+  zusaetzlich Offer/PATCH auf robustes rohes Body-Parsing umgestellt (camelCase<->snake_case, ICE-Candidates
+  sdpMid/sdpMLineIndex). Verifiziert: direkter POST erreicht jetzt den Handler (Log `offer keys: [sdp, type]`,
+  kein 422 mehr; 500 nur bei absichtlich ungueltigem Test-SDP).
+- **Warum:** CEO-Sprachtest scheiterte mit 422 auf POST/PATCH; Verbindung kam nie zustande.
+- **Betroffen:** `orchestrator/channels/voice/server.py`.
+
 ## [2026-06-24 02:24] — Claude Code
 - **Was:** Live-Voice: kein Ton behoben. Ursache: der SmallWebRTC-Client schickt nach dem Offer ein
   **PATCH /api/offer** zur Audio-Renegotiation; unser Server kannte nur POST -> 405 -> Bot-Audiospur wurde

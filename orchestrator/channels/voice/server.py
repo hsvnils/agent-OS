@@ -10,9 +10,10 @@ kostenpflichtig (CEO-Tor, am GATE freigegeben). Keys ausschliesslich aus orchest
 
 Hinweis: Pipecat-Importe sind lazy und werden am GATE gegen die installierte Version bestaetigt.
 Fehlt Pipecat, gibt der Start eine klare Installationsanweisung aus statt eines Tracebacks.
-"""
-from __future__ import annotations
 
+Hinweis: KEIN `from __future__ import annotations` -- FastAPI muss die Typen `Request`/
+`BackgroundTasks` der Routen-Parameter zur Laufzeit erkennen (sonst 422 "missing query").
+"""
 import sys
 import tomllib
 from pathlib import Path
@@ -95,12 +96,13 @@ def _serve(bridge, vcfg: dict, secrets: dict) -> None:
     fuer die Audio-Spuren -- ohne PATCH bleibt die Bot-Audiospur stumm).
     """
     import uvicorn
-    from fastapi import BackgroundTasks, FastAPI
+    from fastapi import BackgroundTasks, FastAPI, Request
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
     from pipecat.transports.base_transport import TransportParams
     from pipecat.transports.smallwebrtc.connection import SmallWebRTCConnection
     from pipecat.transports.smallwebrtc.request_handler import (
+        IceCandidate,
         SmallWebRTCPatchRequest,
         SmallWebRTCRequest,
         SmallWebRTCRequestHandler,
@@ -124,8 +126,22 @@ def _serve(bridge, vcfg: dict, secrets: dict) -> None:
     async def index():
         return FileResponse(str(STATIC_DIR / "index.html"))
 
+    def _camel_to_snake(d: dict) -> dict:
+        # Client (Pipecat JS) sendet teils camelCase; Server-Dataclass nutzt snake_case.
+        out = dict(d)
+        for cam, snake in (("pcId", "pc_id"), ("restartPc", "restart_pc"),
+                           ("requestData", "request_data")):
+            if cam in out and snake not in out:
+                out[snake] = out.pop(cam)
+        return out
+
     @app.post("/api/offer")
-    async def offer(request: SmallWebRTCRequest, background_tasks: BackgroundTasks):
+    async def offer(raw: Request, background_tasks: BackgroundTasks):
+        data = _camel_to_snake(await raw.json())
+        print("[voice] offer keys:", sorted(data.keys()), flush=True)
+        allowed = {"sdp", "type", "pc_id", "restart_pc", "request_data"}
+        request = SmallWebRTCRequest(**{k: v for k, v in data.items() if k in allowed})
+
         async def on_connection(connection: SmallWebRTCConnection):
             transport = SmallWebRTCTransport(
                 webrtc_connection=connection,
@@ -143,7 +159,20 @@ def _serve(bridge, vcfg: dict, secrets: dict) -> None:
         )
 
     @app.patch("/api/offer")
-    async def ice_candidate(request: SmallWebRTCPatchRequest):
+    async def ice_candidate(raw: Request):
+        data = await raw.json()
+        print("[voice] patch keys:", sorted(data.keys()),
+              "cand0:", sorted((data.get("candidates") or [{}])[0].keys()), flush=True)
+        cands = []
+        for c in data.get("candidates", []):
+            cands.append(IceCandidate(
+                candidate=c.get("candidate", ""),
+                sdp_mid=c.get("sdpMid", c.get("sdp_mid")),
+                sdp_mline_index=c.get("sdpMLineIndex", c.get("sdp_mline_index")),
+            ))
+        request = SmallWebRTCPatchRequest(
+            pc_id=data.get("pc_id") or data.get("pcId"), candidates=cands
+        )
         await handler.handle_patch_request(request)
         return {"status": "success"}
 
