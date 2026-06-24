@@ -17,7 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-24 23:21] — Claude Code
+## [2026-06-24 23:29] — Claude Code
+- **Was:** Phase 7 — Execution-Engine (Offline-Teil) gebaut. Neu `core/execution.py` (`ExecutionEngine`):
+  setzt nur `freigegebene` Antraege um, mit injizierbaren Abhaengigkeiten (Workspace/Worktree, Coding-Agent,
+  Tests, Diff) -> offline mit Mocks testbar. Guards: nur freigegeben; Status freigegeben -> in_umsetzung ->
+  erledigt/fehlgeschlagen; Tests-Gate (rot = fehlgeschlagen); Charta-/Regel-Schutz (agents/, AGENTS.md,
+  CLAUDE.md nur mit Kategorie `mandat`); Leck-Schutz im Bericht; Changelog je Transition. Sechs Mock-Self-Checks
+  (`tests/test_execution.py`). `governance/execution.md` (Policy, inkl. Ausloesungs-Nuance: CEO-Auftrag =
+  kurze Rueckfrage genuegt; Agenten-Idee = Plan zuerst vorlegen) und `.gitignore` (.worktrees/) ergaenzt.
+  Gesamt **36/36 OK**. CEO-Designentscheidungen: Merge = beides (manuell + sprachbestaetigtes antrag_mergen);
+  Ausfuehrung nach Freigabe. Noch KEINE echte Coding-Ausfuehrung -- die ist das separate Live-GATE.
+- **Warum:** Roadmap Phase 7 (staerkster GATE), GATE freigegeben. Offline-Grundlage + Sicherheits-Guards vor
+  dem ersten echten Branch-Lauf.
+- **Betroffen:** `orchestrator/core/execution.py` (neu), `orchestrator/tests/test_execution.py` (neu),
+  `governance/execution.md` (neu), `.gitignore`.
 - **Was:** `PHASE7_PLAN.md` (Detailplan Execution-Engine / handelnde Agenten) angelegt: freigegebene Antraege
   werden von einem Ausfuehrungs-Agenten (Claude Agent SDK mit Coding-Tools) in einem Git-Worktree auf Branch
   `antrag/<id>` umgesetzt, Self-Checks laufen, Bericht (Diff/Tests/zu pruefen) entsteht; **kein Merge ohne

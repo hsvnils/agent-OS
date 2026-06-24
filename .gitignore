@@ -23,6 +23,9 @@ orchestrator/channels/voice/selected_voice.json
 # Antraege: Dry-Run-Store nicht versionieren (kanonischer antraege/log.jsonl bleibt versioniert)
 antraege/log_dryrun.jsonl
 
+# Execution-Engine (Phase 7): Git-Worktrees der Antrags-Umsetzung
+.worktrees/
+
 # Build-Artefakte
 .xmind-build/
 
