@@ -96,14 +96,22 @@ class WatchStore:
 class WatchScheduler:
     """Faehrt freie Watcher (GitHub + Fachbereichs-Suche) und schreibt Funde in den Store."""
 
-    def __init__(self, store: WatchStore, *, github=None, web=None, research=None,
+    def __init__(self, store: WatchStore, *, github=None, web=None, research=None, notify=None,
                  secrets: list[str] | None = None, llm_enabled: bool = False):
         self.store = store
         self.github = github if github is not None else GitHubWatch()
         self.web = web
         self.research = research  # ResearchTickets: Fachbereichs-Suchen laufen ueber den Researcher
+        self.notify = notify      # callable(text, *, kategorie, quelle) -> proaktiver Push an den CEO
         self.secrets = secrets or []
         self.llm_enabled = llm_enabled  # Hintergrund-LLM aus (Token sparen); nur explizit aktivierbar
+
+    def _melde(self, text: str, *, kategorie: str, quelle: str) -> None:
+        if self.notify is not None:
+            try:
+                self.notify(text, kategorie=kategorie, quelle=quelle)
+            except Exception:
+                pass
 
     def github_tick(self, topics: list[str] | None = None, *, min_stars: int = 500) -> list[dict]:
         """Kostenlos: Repos mit vielen Sternen + schnellem Wachstum flaggen + persistieren."""
@@ -120,6 +128,11 @@ class WatchScheduler:
                                  "zuwachs": r.zuwachs, "neu": r.neu, "topic": topic})
         self.store.persist_stars(hist)
         self.store.mark_run("github")
+        if neue:  # nur Auffaelliges, eine knappe Meldung je Lauf
+            top = max(neue, key=lambda r: (r["zuwachs"], r["sterne"]))
+            self._melde(f"GitHub: {len(neue)} neue auffaellige Repos. Top: {top['name']} "
+                        f"({top['sterne']} Sterne, +{top['zuwachs']}). {top['url']}",
+                        kategorie="github", quelle="watcher")
         return neue
 
     def dept_tick(self, abteilung: str, *, max_pro_thema: int = 3) -> list[dict]:
@@ -151,6 +164,9 @@ class WatchScheduler:
                                     befund=f"{len(neue)} neue Eintraege im Wissensstand {abteilung}.",
                                     quellen=quellen)
         self.store.mark_run(f"dept:{abteilung}")
+        if neue:
+            self._melde(f"Researcher: {len(neue)} neue relevante Funde fuer {abteilung} im Wissensstand.",
+                        kategorie="fachbereich", quelle=f"researcher:{abteilung}")
         return neue
 
     def briefing(self, abteilung: str | None = None, limit: int = 20) -> list[dict]:

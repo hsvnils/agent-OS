@@ -81,15 +81,19 @@ def _build_ctx(cfg: dict, secrets: dict):
     google = GoogleWorkspace(GoogleAuth.from_env(env=secrets),
                              standard_einladung=secrets.get("GOOGLE_CALENDAR_DEFAULT_ATTENDEE", ""),
                              zeitzone=secrets.get("GOOGLE_CALENDAR_TIMEZONE", "Europe/Berlin"))
+    # Proaktiver Notifier (Outbox) -- LUNA/Watcher melden sich unaufgefordert beim CEO.
+    from ...core.notifications import Notifications
+    notifications = Notifications(ROOT / "notifications" / "log.jsonl", secrets=secret_values)
     # Phase 12: 24/7-Watcher (kostenlos). GitHub-Token optional (Rate-Limit); Hintergrund-LLM aus.
     from ...core.scheduler import WatchScheduler, WatchStore
     from ...governance.github_watch import GitHubWatch
     watch = WatchScheduler(WatchStore(ROOT / "watch" / "log.jsonl", secrets=secret_values),
                            github=GitHubWatch(env=secrets), web=web, research=research,
-                           secrets=secret_values)
+                           notify=notifications.enqueue, secrets=secret_values)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
-                       web=web, research=research, google=google, watch=watch), secret_values
+                       web=web, research=research, google=google, watch=watch,
+                       notifications=notifications), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:
@@ -186,6 +190,14 @@ def main() -> None:
     offset = 0
     while True:
         upd = _api(token, "getUpdates", {"offset": offset, "timeout": 30}, timeout=35)
+        # Proaktive Outbox zustellen -- LUNA/Watcher melden sich unaufgefordert beim CEO.
+        if allowed and ctx.notifications is not None:
+            try:
+                for n in ctx.notifications.pending()[:10]:
+                    if _api(token, "sendMessage", {"chat_id": allowed, "text": "🔔 " + n["text"]}).get("ok"):
+                        ctx.notifications.mark_sent(n["id"])
+            except Exception as exc:
+                print(f"[notify] Zustell-Fehler: {exc}", flush=True)
         for u in upd.get("result", []):
             offset = u["update_id"] + 1
             msg = u.get("message") or u.get("edited_message")

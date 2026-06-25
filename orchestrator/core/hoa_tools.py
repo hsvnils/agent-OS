@@ -27,6 +27,7 @@ class ToolContext:
     research: object | None = None  # ResearchTickets (Phase 8.5) oder None
     google: object | None = None    # GoogleWorkspace (Phase 11) oder None
     watch: object | None = None     # WatchScheduler (Phase 12) oder None
+    notifications: object | None = None  # Notifications-Outbox (proaktiver Push) oder None
 
 
 def tool_specs() -> list[dict]:
@@ -82,6 +83,13 @@ def tool_specs() -> list[dict]:
               "Hintergrund-Ablaeufe (Watcher + Selbst-Entwicklung).",
               {"pausieren": _bool("true = anhalten, false = wieder freigeben.")}, ["pausieren"]),
         _spec("autonomie_status", "Zeigt, ob die autonomen Ablaeufe aktuell pausiert sind.", {}, []),
+        _spec("melde_an_ceo", "Legt eine proaktive Nachricht an den CEO in die Outbox -- wird unaufgefordert "
+              "per Telegram zugestellt. Nutze das, um den CEU von selbst zu informieren (z. B. ein Anliegen "
+              "einer Abteilung, ein wichtiger Fund, eine erledigte Aufgabe).",
+              {"text": _str("Die Nachricht an den CEO."),
+               "kategorie": _str("Optional: z. B. 'anliegen', 'fund', 'erledigt'.")}, ["text"]),
+        _spec("benachrichtigungen_zeigen", "Zeigt noch nicht zugestellte proaktive Nachrichten (Outbox).",
+              {}, []),
         # -- Google Workspace (Phase 11): Lesen direkt, Schreiben/Senden NUR mit bestaetigt=true (Mensch-Tor) --
         _spec("mail_suchen", "Durchsucht das Google-Postfach (Gmail-Query, z. B. 'from:x is:unread').",
               {"query": _str("Gmail-Suchanfrage."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
@@ -279,6 +287,20 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
     if name == "autonomie_status":
         pausiert = ctx.watch.store.paused() if ctx.watch is not None else False
         return {"pausiert": pausiert}
+
+    if name == "melde_an_ceo":
+        if ctx.notifications is None:
+            return {"ok": False, "fehler": "Notifier nicht verfuegbar."}
+        nid = ctx.notifications.enqueue(redact((args.get("text") or "").strip(), sec),
+                                        kategorie=(args.get("kategorie") or "info").strip(), quelle="LUNA")
+        return {"ok": bool(nid), "id": nid,
+                "hinweis": "In Outbox -- wird per Telegram zugestellt." if nid else "Leer/Duplikat."}
+
+    if name == "benachrichtigungen_zeigen":
+        if ctx.notifications is None:
+            return {"offen": []}
+        return {"offen": [{"id": n["id"], "kategorie": n.get("kategorie", ""), "quelle": n.get("quelle", ""),
+                           "text": redact(n.get("text", ""), sec)} for n in ctx.notifications.pending()]}
 
     if name == "innovation_scouting":
         from .innovation import InnovationPipeline

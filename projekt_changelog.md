@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 13:30] — Claude Code
+- **Was:** Proaktiver Telegram-Notifier gebaut -- LUNA/Watcher/Abteilungen melden sich **unaufgefordert** beim
+  CEO. Neu: `core/notifications.py` (`Notifications`-Outbox, durable JSONL `notifications/log.jsonl`,
+  queued->sent, Dedup im Zeitfenster, leck-geschuetzt). Telegram-Bot stellt die Outbox im Hauptloop zu
+  (<=~35 s Latenz, keine Token). WatchScheduler bekommt `notify`-Callback und meldet GitHub-Auffaelligkeiten
+  + neue Fachbereichs-Funde proaktiv. HoA-Tools `melde_an_ceo(text,kategorie?)` (LUNA/Abteilungs-Anliegen ->
+  Push) und `benachrichtigungen_zeigen`. `ToolContext.notifications`; Sync-Skript excludet
+  `notifications/log.jsonl`. 7 neue Self-Checks; Gesamtsuite **96/96 OK**.
+- **Warum:** CEO will, dass LUNA sich von selbst meldet (Researcher findet etwas, Abteilung wendet sich mit
+  einer Bitte an LUNA, Aufgabe erledigt) -- nicht nur auf Anfrage antwortet.
+- **Betroffen:** `orchestrator/core/notifications.py` (neu), `orchestrator/core/scheduler.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_notifications.py` (neu), `deploy/sync-to-nas.sh`.
+
 ## [2026-06-25 13:05] — Claude Code
 - **Was:** IT-Bugfix Kalender -- Zeitzonen-Fehler behoben (betrifft Antrag A-20260625 „Kalender-Integration:
   Zeitzonen-Fehler beheben", von LUNA, Kategorie IT-Bug). `termin_anlegen` schickte `start`/`end` ohne
