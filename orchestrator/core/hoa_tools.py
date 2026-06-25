@@ -133,6 +133,26 @@ def tool_specs() -> list[dict]:
         _spec("tabelle_lesen", "Liest Werte aus einem Google Sheet.",
               {"spreadsheet_id": _str("Sheet-ID."), "bereich": _str("A1-Bereich, Default A1:Z100.")},
               ["spreadsheet_id"]),
+        _spec("posteingang", "Zeigt ungelesene Mails im Posteingang.",
+              {"max": _str("Max. Anzahl (Default 10).")}, []),
+        _spec("kalender_kollisionen", "Findet ueberlappende Termine (Kollisionen) in den naechsten Tagen.",
+              {"tage": _str("Zeitraum in Tagen (Default 7).")}, []),
+        _spec("termin_aendern", "Aendert einen Termin. OHNE bestaetigt=true nur Vorschau; erst nach "
+              "CEO-Bestaetigung mit bestaetigt=true.",
+              {"event_id": _str("Termin-ID."), "titel": _str("Neuer Titel (optional)."),
+               "start": _str("Neuer Start ISO (optional)."), "ende": _str("Neues Ende ISO (optional)."),
+               "ort": _str("Neuer Ort (optional)."), "bestaetigt": _bool("true erst nach CEO-Bestaetigung.")},
+              ["event_id"]),
+        _spec("termin_loeschen", "Loescht einen Termin. OHNE bestaetigt=true nur Vorschau; erst nach "
+              "CEO-Bestaetigung mit bestaetigt=true.",
+              {"event_id": _str("Termin-ID."), "bestaetigt": _bool("true erst nach CEO-Bestaetigung.")},
+              ["event_id"]),
+        _spec("mail_markieren", "Markiert eine Mail als gelesen (oder ungelesen). Benigne, ohne Bestaetigung.",
+              {"message_id": _str("Mail-ID."), "gelesen": _bool("true=gelesen (Default), false=ungelesen.")},
+              ["message_id"]),
+        _spec("drive_anlegen", "Legt eine Textdatei in Drive an. OHNE bestaetigt=true nur Vorschau.",
+              {"name": _str("Dateiname."), "inhalt": _str("Textinhalt."),
+               "bestaetigt": _bool("true erst nach CEO-Bestaetigung.")}, ["name", "inhalt"]),
         _spec("tabelle_schreiben", "Schreibt Werte in ein Google Sheet. OHNE bestaetigt=true nur Vorschau; "
               "erst nach CEO-Bestaetigung mit bestaetigt=true.",
               {"spreadsheet_id": _str("Sheet-ID."), "bereich": _str("A1-Bereich."),
@@ -397,9 +417,26 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             elif name == "tabelle_lesen":
                 res = gw.tabelle_lesen((a.get("spreadsheet_id") or "").strip(),
                                        a.get("bereich") or "A1:Z100")
-            else:  # tabelle_schreiben
+            elif name == "tabelle_schreiben":
                 res = gw.tabelle_schreiben((a.get("spreadsheet_id") or "").strip(), a.get("bereich") or "",
                                            a.get("werte") or [], bestaetigt=bool(a.get("bestaetigt")))
+            elif name == "posteingang":
+                res = gw.neue_mails(max_results=int(a.get("max") or 10))
+            elif name == "kalender_kollisionen":
+                res = gw.kalender_kollisionen(tage=int(a.get("tage") or 7))
+            elif name == "termin_aendern":
+                res = gw.termin_aendern((a.get("event_id") or "").strip(), titel=a.get("titel", ""),
+                                        start=a.get("start", ""), ende=a.get("ende", ""),
+                                        ort=a.get("ort", ""), bestaetigt=bool(a.get("bestaetigt")))
+            elif name == "termin_loeschen":
+                res = gw.termin_loeschen((a.get("event_id") or "").strip(),
+                                         bestaetigt=bool(a.get("bestaetigt")))
+            elif name == "mail_markieren":
+                res = gw.mail_markieren((a.get("message_id") or "").strip(),
+                                        gelesen=bool(a.get("gelesen", True)))
+            else:  # drive_anlegen
+                res = gw.drive_anlegen((a.get("name") or "").strip(), a.get("inhalt", ""),
+                                       bestaetigt=bool(a.get("bestaetigt")))
         except Exception as exc:
             res = {"ok": False, "fehler": str(exc)[:200]}
         return _redact_obj(res, sec)
@@ -457,7 +494,9 @@ _AGENT_KEYS = ("berater", "cao", "cfo", "cro", "ciso", "cbo", "cpo", "cto", "cxo
                "cdo", "chro", "clo", "cko", "res")
 
 _GOOGLE_TOOLS = ("mail_suchen", "mail_lesen", "mail_entwurf", "mail_senden", "kalender_agenda",
-                 "termin_anlegen", "drive_suchen", "drive_lesen", "tabelle_lesen", "tabelle_schreiben")
+                 "termin_anlegen", "drive_suchen", "drive_lesen", "tabelle_lesen", "tabelle_schreiben",
+                 "posteingang", "kalender_kollisionen", "termin_aendern", "termin_loeschen",
+                 "mail_markieren", "drive_anlegen")
 
 
 def _redact_obj(obj: dict, secrets: list[str]) -> dict:

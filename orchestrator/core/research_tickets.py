@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Callable
 
@@ -59,6 +59,20 @@ class ResearchTickets:
             self._log("Researcher", f"Research-Ticket erledigt ({ticket_id})",
                       f"Provider {provider}, {len(quellen or [])} Quellen", ticket_id)
         return ok
+
+    def aufraeumen(self, stunden: float = 1) -> int:
+        """Schliesst steckengebliebene Tickets (offen/in_arbeit, aelter als `stunden`) automatisch ab."""
+        grenze = datetime.now() - timedelta(hours=stunden)
+        n = 0
+        for t in self.list():
+            if t.get("status") in ("offen", "in_arbeit") and t.get("verlauf"):
+                try:
+                    if datetime.fromisoformat(t["verlauf"][-1]["ts"]) < grenze:
+                        self.fehlschlag(t["ticket_id"], grund="auto-abgeschlossen (unterbrochen)")
+                        n += 1
+                except (ValueError, KeyError):
+                    continue
+        return n
 
     def fehlschlag(self, ticket_id: str, *, grund: str = "") -> bool:
         ok = self._transition(ticket_id, "fehlgeschlagen", grund=grund)

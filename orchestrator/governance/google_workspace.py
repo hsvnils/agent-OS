@@ -227,6 +227,95 @@ class GoogleWorkspace:
         except Exception as exc:
             return _fehler(f"Termin anlegen fehlgeschlagen: {str(exc)[:160]}")
 
+    def neue_mails(self, max_results: int = 10) -> dict:
+        """Ungelesene Mails im Posteingang (fuer den proaktiven Mail-Watcher)."""
+        if (g := self._guard()):
+            return g
+        try:
+            svc = self.auth.service("gmail", "v1")
+            resp = svc.users().messages().list(userId="me", q="is:unread in:inbox",
+                                               maxResults=max(1, min(max_results, 25))).execute()
+            mails = []
+            for m in resp.get("messages", []):
+                full = svc.users().messages().get(
+                    userId="me", id=m["id"], format="metadata",
+                    metadataHeaders=["From", "Subject", "Date"]).execute()
+                h = {x["name"]: x["value"] for x in full.get("payload", {}).get("headers", [])}
+                mails.append({"id": m["id"], "von": h.get("From", ""), "betreff": h.get("Subject", ""),
+                              "datum": h.get("Date", ""), "snippet": full.get("snippet", "")})
+            return _ok(mails=mails)
+        except Exception as exc:
+            return _fehler(f"Posteingang-Abruf fehlgeschlagen: {str(exc)[:160]}")
+
+    def kalender_kollisionen(self, tage: int = 7) -> dict:
+        """Findet ueberlappende Termine (Kollisionen) in den naechsten Tagen."""
+        if (g := self._guard()):
+            return g
+        ag = self.kalender_agenda(tage=tage, max_results=50)
+        if not ag.get("ok"):
+            return ag
+        evs = []
+        for t in ag["termine"]:
+            s, e = _dt(t.get("start")), _dt(t.get("ende"))
+            if s and e:
+                evs.append((s, e, t.get("titel", "")))
+        evs.sort()
+        koll = []
+        for i in range(len(evs) - 1):
+            if evs[i + 1][0] < evs[i][1]:  # naechster Start vor aktuellem Ende
+                koll.append({"a": evs[i][2], "b": evs[i + 1][2], "ab": evs[i + 1][0].isoformat()})
+        return _ok(kollisionen=koll)
+
+    def termin_aendern(self, event_id: str, *, titel: str = "", start: str = "", ende: str = "",
+                       ort: str = "", bestaetigt: bool = False) -> dict:
+        if (g := self._guard()):
+            return g
+        if not bestaetigt:
+            return {"ok": False, "bestaetigung_noetig": True,
+                    "vorschau": {"event_id": event_id, "titel": titel, "start": start, "ende": ende},
+                    "hinweis": "Termin aendern braucht CEO-Bestaetigung -- erneut mit bestaetigt=true."}
+        try:
+            svc = self.auth.service("calendar", "v3")
+            patch: dict = {}
+            if titel:
+                patch["summary"] = titel
+            if ort:
+                patch["location"] = ort
+            if start:
+                patch["start"] = {"dateTime": start, "timeZone": self.zeitzone}
+            if ende:
+                patch["end"] = {"dateTime": ende, "timeZone": self.zeitzone}
+            ev = svc.events().patch(calendarId="primary", eventId=event_id, body=patch,
+                                    sendUpdates="all").execute()
+            return _ok(termin_id=ev.get("id"), link=ev.get("htmlLink"))
+        except Exception as exc:
+            return _fehler(f"Termin aendern fehlgeschlagen: {str(exc)[:160]}")
+
+    def termin_loeschen(self, event_id: str, *, bestaetigt: bool = False) -> dict:
+        if (g := self._guard()):
+            return g
+        if not bestaetigt:
+            return {"ok": False, "bestaetigung_noetig": True, "vorschau": {"event_id": event_id},
+                    "hinweis": "Termin loeschen braucht CEO-Bestaetigung -- erneut mit bestaetigt=true."}
+        try:
+            svc = self.auth.service("calendar", "v3")
+            svc.events().delete(calendarId="primary", eventId=event_id, sendUpdates="all").execute()
+            return _ok(geloescht=True)
+        except Exception as exc:
+            return _fehler(f"Termin loeschen fehlgeschlagen: {str(exc)[:160]}")
+
+    def mail_markieren(self, message_id: str, *, gelesen: bool = True) -> dict:
+        """Mail als gelesen/ungelesen markieren (benigne -- nicht gated)."""
+        if (g := self._guard()):
+            return g
+        try:
+            svc = self.auth.service("gmail", "v1")
+            body = {"removeLabelIds": ["UNREAD"]} if gelesen else {"addLabelIds": ["UNREAD"]}
+            svc.users().messages().modify(userId="me", id=message_id, body=body).execute()
+            return _ok(gelesen=gelesen)
+        except Exception as exc:
+            return _fehler(f"Mail markieren fehlgeschlagen: {str(exc)[:160]}")
+
     # ---------------- Drive ----------------
 
     def drive_suchen(self, query: str, max_results: int = 10) -> dict:
@@ -260,6 +349,23 @@ class GoogleWorkspace:
         except Exception as exc:
             return _fehler(f"Drive-Lesen fehlgeschlagen: {str(exc)[:160]}")
 
+    def drive_anlegen(self, name: str, inhalt: str, *, bestaetigt: bool = False) -> dict:
+        """Legt eine Textdatei in Drive an (gated). Teilen folgt spaeter (eigener Scope)."""
+        if (g := self._guard()):
+            return g
+        if not bestaetigt:
+            return {"ok": False, "bestaetigung_noetig": True, "vorschau": {"name": name},
+                    "hinweis": "Datei anlegen braucht CEO-Bestaetigung -- erneut mit bestaetigt=true."}
+        try:
+            from googleapiclient.http import MediaInMemoryUpload
+            svc = self.auth.service("drive", "v3")
+            media = MediaInMemoryUpload(inhalt.encode("utf-8"), mimetype="text/plain")
+            f = svc.files().create(body={"name": name}, media_body=media,
+                                   fields="id,webViewLink").execute()
+            return _ok(datei_id=f.get("id"), link=f.get("webViewLink"))
+        except Exception as exc:
+            return _fehler(f"Datei anlegen fehlgeschlagen: {str(exc)[:160]}")
+
     # ---------------- Sheets ----------------
 
     def tabelle_lesen(self, spreadsheet_id: str, bereich: str = "A1:Z100") -> dict:
@@ -292,6 +398,13 @@ class GoogleWorkspace:
 
 
 # ---------------- Helfer ----------------
+
+def _dt(s: str):
+    try:
+        return datetime.fromisoformat((s or "").replace("Z", "+00:00"))
+    except (ValueError, AttributeError):
+        return None
+
 
 def _mime(an: str, betreff: str, text: str) -> str:
     msg = EmailMessage()
@@ -354,6 +467,31 @@ class MockGoogleWorkspace:
                     "vorschau": {"titel": titel, "start": start, "ende": ende, "einladung": einladungen}}
         self.termine.append({"titel": titel, "start": start, "einladung": einladungen})
         return _ok(termin_id="e2", link="https://cal.test/e2", eingeladen=einladungen)
+
+    def neue_mails(self, max_results=10):
+        return _ok(mails=[{"id": "m9", "von": "chef@firma.test", "betreff": "Wichtig: Angebot",
+                           "datum": "2026-06-25", "snippet": "Bitte heute pruefen."}])
+
+    def kalender_kollisionen(self, tage=7):
+        return _ok(kollisionen=[])
+
+    def termin_aendern(self, event_id, *, titel="", start="", ende="", ort="", bestaetigt=False):
+        if not bestaetigt:
+            return {"ok": False, "bestaetigung_noetig": True, "vorschau": {"event_id": event_id}}
+        return _ok(termin_id=event_id, link="https://cal.test/e")
+
+    def termin_loeschen(self, event_id, *, bestaetigt=False):
+        if not bestaetigt:
+            return {"ok": False, "bestaetigung_noetig": True, "vorschau": {"event_id": event_id}}
+        return _ok(geloescht=True)
+
+    def mail_markieren(self, message_id, *, gelesen=True):
+        return _ok(gelesen=gelesen)
+
+    def drive_anlegen(self, name, inhalt, *, bestaetigt=False):
+        if not bestaetigt:
+            return {"ok": False, "bestaetigung_noetig": True, "vorschau": {"name": name}}
+        return _ok(datei_id="fneu", link="https://drive.test/fneu")
 
     def drive_suchen(self, query, max_results=10):
         return _ok(dateien=[{"id": "f1", "name": f"Datei {query}", "typ": "text/plain",

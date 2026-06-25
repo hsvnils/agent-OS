@@ -97,12 +97,13 @@ class WatchScheduler:
     """Faehrt freie Watcher (GitHub + Fachbereichs-Suche) und schreibt Funde in den Store."""
 
     def __init__(self, store: WatchStore, *, github=None, web=None, research=None, notify=None,
-                 secrets: list[str] | None = None, llm_enabled: bool = False):
+                 google=None, secrets: list[str] | None = None, llm_enabled: bool = False):
         self.store = store
         self.github = github if github is not None else GitHubWatch()
         self.web = web
         self.research = research  # ResearchTickets: Fachbereichs-Suchen laufen ueber den Researcher
         self.notify = notify      # callable(text, *, kategorie, quelle) -> proaktiver Push an den CEO
+        self.google = google      # GoogleWorkspace (Mail-/Kalender-Watcher) oder None
         self.secrets = secrets or []
         self.llm_enabled = llm_enabled  # Hintergrund-LLM aus (Token sparen); nur explizit aktivierbar
 
@@ -172,6 +173,43 @@ class WatchScheduler:
                         abteilung=f"Researcher/{abteilung}", kategorie="fachbereich",
                         quelle=f"researcher:{abteilung}", detail=detail)
         return neue
+
+    def mail_tick(self) -> list[dict]:
+        """Proaktiver Mail-Watcher (kostenlos): neue ungelesene Mails melden (dedupliziert)."""
+        if self.google is None or not self.google.verfuegbar():
+            return []
+        r = self.google.neue_mails()
+        if not r.get("ok"):
+            return []
+        neue = []
+        for m in r.get("mails", []):
+            if self.store.add_finding("mail", m.get("betreff", ""), f"mail:{m['id']}",
+                                      detail=m.get("von", ""), abteilung="Postfach"):
+                neue.append(m)
+        self.store.mark_run("mail")
+        if neue:
+            detail = "\n".join(f"- {m.get('von', '')}: {m.get('betreff', '')}" for m in neue)
+            self._melde(f"{len(neue)} neue ungelesene Mail(s). Neueste: {neue[0].get('betreff', '')[:50]}",
+                        abteilung="Postfach", kategorie="mail", quelle="mail-watcher", detail=detail)
+        return neue
+
+    def kalender_tick(self) -> list[dict]:
+        """Proaktiver Kalender-Watcher (kostenlos): Termin-Kollisionen melden (dedupliziert)."""
+        if self.google is None or not self.google.verfuegbar():
+            return []
+        r = self.google.kalender_kollisionen()
+        if not r.get("ok"):
+            return []
+        neu = []
+        for k in r.get("kollisionen", []):
+            key = f"koll:{k.get('a')}|{k.get('b')}|{k.get('ab')}"
+            if self.store.add_finding("kollision", f"{k.get('a')} <> {k.get('b')}", key, abteilung="Kalender"):
+                neu.append(k)
+                self._melde(f"Termin-Kollision: '{k.get('a')}' und '{k.get('b')}' ueberschneiden sich.",
+                            abteilung="Kalender", kategorie="kollision", quelle="kalender-watcher",
+                            detail=f"Ueberschneidung ab {k.get('ab')}")
+        self.store.mark_run("kalender")
+        return neu
 
     def briefing(self, abteilung: str | None = None, limit: int = 20) -> list[dict]:
         """Reine Anzeige der gesammelten Funde (kein LLM, keine Kosten)."""

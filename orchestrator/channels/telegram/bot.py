@@ -90,7 +90,7 @@ def _build_ctx(cfg: dict, secrets: dict):
     from ...governance.github_watch import GitHubWatch
     watch = WatchScheduler(WatchStore(ROOT / "watch" / "log.jsonl", secrets=secret_values),
                            github=GitHubWatch(env=secrets), web=web, research=research,
-                           notify=notifications.enqueue, secrets=secret_values)
+                           notify=notifications.enqueue, google=google, secrets=secret_values)
     # Briefings/Agenda (manuelle Punkte).
     from ...core.briefing import Agenda
     agenda = Agenda(ROOT / "agenda" / "log.jsonl", secrets=secret_values)
@@ -174,6 +174,47 @@ def _start_watch_loop(watch, interval_hours: float, *, maintenance=None, notify=
     threading.Thread(target=loop, daemon=True, name="watch-loop").start()
 
 
+def _start_selfdev_loop(ctx, secrets) -> None:
+    """Geplanter Selbst-Entwicklungs-Loop: 1x taeglich 09:00 (DE) EIN Bereich -> Antrag -> Freigabe-Push.
+
+    Nur aktiv mit SELF_DEV_ENABLED=1 (CEO-Freigabe der laufenden Token-Kosten); respektiert die Notbremse.
+    """
+    import itertools
+    import threading
+    import time
+    from datetime import datetime
+
+    if (secrets.get("SELF_DEV_ENABLED", "").strip().lower() not in ("1", "true", "yes", "on")
+            or ctx.watch is None):
+        return
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("Europe/Berlin")
+    except Exception:
+        tz = None
+    from ...core.self_development import SelfDevelopment
+    from ...core.watch_config import DEPARTMENT_WATCH
+    sd = SelfDevelopment(ctx.core, web=ctx.web, watch=ctx.watch, antraege=ctx.antraege,
+                         notify=ctx.notifications.enqueue, secrets=ctx.leak_secrets, enabled=True)
+    depts = itertools.cycle(list(DEPARTMENT_WATCH.keys()))
+
+    def loop():
+        time.sleep(45)
+        while True:
+            try:
+                jetzt = datetime.now(tz) if tz else datetime.now()
+                datum = jetzt.strftime("%Y-%m-%d")
+                if jetzt.hour == 9 and not ctx.agenda.briefing_gesendet("selfdev", datum) \
+                        and not ctx.watch.store.paused():
+                    sd.vorschlag_fuer(next(depts))   # erzeugt Antrag + Freigabe-Push
+                    ctx.agenda.markiere_briefing("selfdev", datum)
+            except Exception as exc:
+                print(f"[selfdev] Fehler: {exc}", flush=True)
+            time.sleep(300)
+
+    threading.Thread(target=loop, daemon=True, name="selfdev-loop").start()
+
+
 def _start_briefing_loop(ctx, notify) -> None:
     """Morgen-Briefing 08:00 + Abend-Briefing 20:00 (Europe/Berlin). Token-frugal (regelbasiert)."""
     import threading
@@ -242,9 +283,25 @@ def main() -> None:
           flush=True)
     _start_briefing_loop(ctx, ctx.notifications.enqueue)
     print("Briefing-Loop aktiv (Morgen 08:00 + Abend 20:00, Europe/Berlin).", flush=True)
+    _start_selfdev_loop(ctx, secrets)
+    if secrets.get("SELF_DEV_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
+        print("Self-Dev-Loop aktiv (taeglich 09:00, 1 Bereich -> Antrag mit Freigabe-Push).", flush=True)
     offset = 0
+    _last_poll = 0.0
     while True:
         upd = _api(token, "getUpdates", {"offset": offset, "timeout": 30}, timeout=35)
+        # Alle ~15 min kostenlos: neue Mails/Termin-Kollisionen pruefen + steckengebliebene Tickets schliessen.
+        import time as _t
+        if _t.time() - _last_poll > 900:
+            _last_poll = _t.time()
+            try:
+                if ctx.watch is not None and not ctx.watch.store.paused():
+                    ctx.watch.mail_tick()
+                    ctx.watch.kalender_tick()
+                if ctx.research is not None:
+                    ctx.research.aufraeumen(stunden=1)
+            except Exception as exc:
+                print(f"[poll] Fehler: {exc}", flush=True)
         # Proaktive Outbox zustellen -- LUNA/Watcher melden sich unaufgefordert beim CEO.
         if allowed and ctx.notifications is not None:
             try:

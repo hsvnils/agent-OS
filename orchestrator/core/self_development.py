@@ -29,12 +29,13 @@ class SelfDevErgebnis:
 
 
 class SelfDevelopment:
-    def __init__(self, core, *, web=None, watch=None, antraege=None, secrets: list[str] | None = None,
-                 enabled: bool = False, max_pro_lauf: int = 1):
+    def __init__(self, core, *, web=None, watch=None, antraege=None, notify=None,
+                 secrets: list[str] | None = None, enabled: bool = False, max_pro_lauf: int = 1):
         self.core = core
         self.web = web
         self.watch = watch          # WatchScheduler -> Fachbereichs-Wissensstand
         self.antraege = antraege
+        self.notify = notify        # proaktive Meldung an den CEO (Freigabe anfordern)
         self.secrets = secrets or []
         self.enabled = enabled      # geplanter Loop nur, wenn explizit aktiviert (Token-Schutz)
         self.max_pro_lauf = max_pro_lauf
@@ -56,6 +57,16 @@ class SelfDevelopment:
         pipe = InnovationPipeline(self.core, web=self.web, antraege=self.antraege, secrets=self.secrets)
         erg = pipe.run(f"Selbst-Weiterentwicklung Fachbereich {abteilung}",
                        abteilung=abteilung, wissen=wissen)
+        # Proaktiv den CEO um Freigabe bitten (Antrag liegt vor, wird nicht ausgefuehrt).
+        if erg.antrag_id and self.notify is not None:
+            titel = (erg.idee.splitlines()[0][:70] if erg.idee else "Vorschlag")
+            try:
+                self.notify(f"Neuer Selbst-Entwicklungs-Vorschlag (Antrag {erg.antrag_id}) -- bitte "
+                            f"freigeben oder ablehnen. Kurz: {titel}",
+                            abteilung=f"{abteilung} (Selbst-Entwicklung)", kategorie="freigabe",
+                            quelle="self-dev", detail=erg.idee)
+            except Exception:
+                pass
         return SelfDevErgebnis(abteilung=abteilung, idee=erg.idee, machbarkeit=erg.machbarkeit,
                                kostenvoranschlag=erg.kostenvoranschlag, antrag_id=erg.antrag_id)
 

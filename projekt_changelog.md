@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 14:45] — Claude Code
+- **Was:** Vier weitere CEO-Wuensche umgesetzt. (1) **Geplanter Selbst-Entwicklungs-Loop scharf** -- taeglich
+  09:00 (DE) EIN rotierender Bereich -> bewerteter Antrag -> **proaktiver Freigabe-Push** an den CEO
+  (SelfDevelopment.notify); nur mit `SELF_DEV_ENABLED=1` (gesetzt, CEO-Freigabe), respektiert die Notbremse.
+  (2) **Proaktiver Mail-/Kalender-Watcher** -- `WatchScheduler.mail_tick`/`kalender_tick` (neue ungelesene
+  Mails + Termin-Kollisionen, kostenlos, dedupliziert); Poll alle ~15 min im Hauptloop. (3) **Mehr
+  Google-Aktionen** (gated): `termin_aendern`, `termin_loeschen`, `drive_anlegen`, `mail_markieren` (benigne),
+  + Read-Tools `posteingang`, `kalender_kollisionen`. (4) **Ticket-Auto-Close** -- `ResearchTickets.aufraeumen`
+  schliesst steckengebliebene Tickets (offen/in_arbeit > 1 h) automatisch; laeuft im 15-min-Poll. 7 neue
+  Self-Checks; Gesamtsuite **113/113 OK**.
+- **Warum:** CEO will den Selbst-Entwicklungs-Loop aktiv (mit Freigabe ueber LUNA), proaktive Mail-/Termin-
+  Meldungen, mehr Google-Aktionen und dass erledigte/haengende Tickets selbststaendig geschlossen werden.
+- **Betroffen:** `orchestrator/governance/google_workspace.py`, `orchestrator/core/scheduler.py`,
+  `orchestrator/core/self_development.py`, `orchestrator/core/research_tickets.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_google_actions_watcher.py` (neu). Flag/Secret nur in `.env`.
+
 ## [2026-06-25 14:15] — Claude Code
 - **Was:** Vier CEO-Wuensche umgesetzt. (1) **Meldungen v2:** proaktive Nachrichten beginnen mit der
   **Abteilung**, tragen eine **Kurz-ID** (#xxxx) und ein **Detail** (Hintergrund); neues Tool
