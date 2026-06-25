@@ -97,10 +97,23 @@ def _fehler(hinweis: str) -> dict:
 class GoogleWorkspace:
     """Gmail/Kalender/Drive/Sheets -- Lesen frei, Schreiben gated. Echte API (lazy)."""
 
-    def __init__(self, auth: GoogleAuth, *, standard_einladung: str = ""):
+    def __init__(self, auth: GoogleAuth, *, standard_einladung: str = "",
+                 zeitzone: str = "Europe/Berlin"):
         self.auth = auth
         # Wird bei JEDEM Termin automatisch als Teilnehmer eingeladen (z. B. private iCloud-Adresse).
         self.standard_einladung = (standard_einladung or "").strip()
+        # Pflicht fuer die Google Calendar API, wenn die ISO-Zeit keinen Offset traegt
+        # (sonst Fehler „Missing time zone definition").
+        self.zeitzone = (zeitzone or "Europe/Berlin").strip()
+
+    def _event_body(self, titel: str, start: str, ende: str, ort: str, beschreibung: str,
+                    einladungen: list[str]) -> dict:
+        body = {"summary": titel, "location": ort, "description": beschreibung,
+                "start": {"dateTime": start, "timeZone": self.zeitzone},
+                "end": {"dateTime": ende, "timeZone": self.zeitzone}}
+        if einladungen:
+            body["attendees"] = [{"email": e} for e in einladungen]
+        return body
 
     def verfuegbar(self) -> bool:
         return self.auth.verfuegbar()
@@ -207,10 +220,7 @@ class GoogleWorkspace:
                     "hinweis": "Termin anlegen braucht CEO-Bestaetigung -- erneut mit bestaetigt=true."}
         try:
             svc = self.auth.service("calendar", "v3")
-            body = {"summary": titel, "location": ort, "description": beschreibung,
-                    "start": {"dateTime": start}, "end": {"dateTime": ende}}
-            if einladungen:
-                body["attendees"] = [{"email": e} for e in einladungen]
+            body = self._event_body(titel, start, ende, ort, beschreibung, einladungen)
             ev = svc.events().insert(calendarId="primary", body=body,
                                      sendUpdates="all").execute()  # Einladungs-Mail rausschicken
             return _ok(termin_id=ev.get("id"), link=ev.get("htmlLink"), eingeladen=einladungen)

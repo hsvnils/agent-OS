@@ -84,6 +84,15 @@ class TestGoogleWorkspace(unittest.TestCase):
                                          "ende": "2026-06-26T11:00:00", "bestaetigt": True}, ctx)
         self.assertEqual(ok["eingeladen"], ["hsvnils@icloud.com"])
 
+    def test_5c_termin_body_hat_zeitzone(self):
+        # Regression: ohne timeZone schlug die Calendar-API mit "Missing time zone definition" fehl.
+        gw = GoogleWorkspace(GoogleAuth.from_env({}), zeitzone="Europe/Berlin")
+        body = gw._event_body("Call", "2026-06-26T10:00:00", "2026-06-26T11:00:00", "", "",
+                              ["hsvnils@icloud.com"])
+        self.assertEqual(body["start"]["timeZone"], "Europe/Berlin")
+        self.assertEqual(body["end"]["timeZone"], "Europe/Berlin")
+        self.assertEqual(body["attendees"], [{"email": "hsvnils@icloud.com"}])
+
     def test_6_entwurf_ist_sicher(self):
         # Entwurf ist ohne Bestaetigung erlaubt (sendet nicht).
         r = run_tool("mail_entwurf", {"an": "x@test", "betreff": "B", "text": "T"}, _ctx())

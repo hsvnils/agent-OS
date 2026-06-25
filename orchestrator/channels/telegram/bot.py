@@ -79,7 +79,8 @@ def _build_ctx(cfg: dict, secrets: dict):
     # Phase 11: Google Workspace aus denselben .env-Secrets. Ohne OAuth-Credentials -> Fall-B (CEO-Tor).
     # GOOGLE_CALENDAR_DEFAULT_ATTENDEE wird bei jedem Termin automatisch eingeladen (z. B. private iCloud).
     google = GoogleWorkspace(GoogleAuth.from_env(env=secrets),
-                             standard_einladung=secrets.get("GOOGLE_CALENDAR_DEFAULT_ATTENDEE", ""))
+                             standard_einladung=secrets.get("GOOGLE_CALENDAR_DEFAULT_ATTENDEE", ""),
+                             zeitzone=secrets.get("GOOGLE_CALENDAR_TIMEZONE", "Europe/Berlin"))
     # Phase 12: 24/7-Watcher (kostenlos). GitHub-Token optional (Rate-Limit); Hintergrund-LLM aus.
     from ...core.scheduler import WatchScheduler, WatchStore
     from ...governance.github_watch import GitHubWatch
