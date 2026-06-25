@@ -82,11 +82,12 @@ def tool_specs() -> list[dict]:
               "treffen will (statt 15 Rohlinks). Macht LLM-Aufrufe -- auf Anfrage.",
               {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto).")}, ["abteilung"]),
         # -- Phase 13: Selbst-Entwicklung (on-demand; macht LLM-Aufrufe -> nur auf CEO-Anfrage) --
-        _spec("selbstentwicklung", "Phase 13: laesst einen Fachbereich aus seinem aktuellen Wissensstand EINEN "
-              "konkreten Verbesserungs-Vorschlag ableiten, von CTO+CFO bewerten und als ANTRAG einreichen "
-              "(keine Ausfuehrung; CEO entscheidet). Ohne Abteilung: Bereich mit dem meisten neuen Wissen. "
-              "Nutzt LLM -- nur auf CEO-Anfrage starten.",
-              {"abteilung": _str("Optional: Abteilungs-Kuerzel (sonst automatisch).")}, []),
+        _spec("selbstentwicklung", "Phase 13: laesst einen Fachbereich EINEN konkreten Verbesserungs-Vorschlag "
+              "ableiten und als ANTRAG einreichen (keine Ausfuehrung; CEO entscheidet). intern=false (Default): "
+              "aus den neuen Web-Funden; intern=true: Luecken-/Mandatsanalyse (was fehlt dem Bereich, um sein "
+              "Mandat zu erfuellen). Ohne Abteilung: Bereich mit dem meisten neuen Wissen. Nutzt LLM.",
+              {"abteilung": _str("Optional: Abteilungs-Kuerzel (sonst automatisch)."),
+               "intern": _bool("true = Luecken-/Mandatsanalyse statt Web-Funde.")}, []),
         _spec("autonomie_pausieren", "Notbremse: pausiert (true) oder reaktiviert (false) ALLE autonomen "
               "Hintergrund-Ablaeufe (Watcher + Selbst-Entwicklung).",
               {"pausieren": _bool("true = anhalten, false = wieder freigeben.")}, ["pausieren"]),
@@ -126,6 +127,9 @@ def tool_specs() -> list[dict]:
               {"fokus": _str("Optionaler Fokus, z. B. 'Token' oder 'Abos'.")}, []),
         _spec("kosten_statistik", "Zeigt die echte Token-/Kostenerfassung des laufenden Monats (je Quelle und "
               "Provider, EUR-geschaetzt).", {}, []),
+        _spec("finance_dashboard", "CFO-Gesamtueberblick: alle angebundenen KI-Modelle + Dienstleister (mit "
+              "Provider, Zweck, Kostenart, Key-Status) UND die gemessenen Monatskosten je Provider -- klar "
+              "gekennzeichnet, was gemessen/geschaetzt/gratis ist.", {}, []),
         # -- Google Workspace (Phase 11): Lesen direkt, Schreiben/Senden NUR mit bestaetigt=true (Mensch-Tor) --
         _spec("mail_suchen", "Durchsucht das Google-Postfach (Gmail-Query, z. B. 'from:x is:unread').",
               {"query": _str("Gmail-Suchanfrage."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
@@ -353,7 +357,7 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         if not ab:
             bereiche = sd._bereiche_mit_wissen()
             ab = bereiche[0] if bereiche else "berater"
-        erg = sd.vorschlag_fuer(ab)
+        erg = sd.vorschlag_fuer(ab, modus="intern" if args.get("intern") else "extern")
         return {"ok": True, "abteilung": erg.abteilung, "idee": redact(erg.idee, sec),
                 "machbarkeit": redact(erg.machbarkeit, sec),
                 "kostenvoranschlag": redact(erg.kostenvoranschlag, sec), "antrag_id": erg.antrag_id,
@@ -449,6 +453,15 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         if ctx.kosten is None:
             return {"hinweis": "Keine Kostenerfassung aktiv."}
         return ctx.kosten.monat()
+
+    if name == "finance_dashboard":
+        from ..governance.dienste_register import register
+        reg = register(ctx.secret_dict or {})
+        kosten = ctx.kosten.monat() if ctx.kosten is not None else {}
+        return {"modelle": reg["modelle"], "dienste": reg["dienste"],
+                "gemessene_kosten_monat": kosten,
+                "hinweis": "Chat/Fallbacks werden gemessen; Fachagenten (CLI) sind geschaetzt; Voice-Dienste "
+                           "nur im Voice-Kanal aktiv."}
 
     if name == "briefing_jetzt":
         from .briefing import Briefing

@@ -50,13 +50,26 @@ class SelfDevelopment:
         return "\n".join(f"- {f.get('titel', '')}: {f.get('detail', '') or f.get('url', '')}"
                          for f in funde if f.get("titel"))
 
-    def vorschlag_fuer(self, abteilung: str) -> SelfDevErgebnis:
-        """On-demand: EIN bewerteter Selbst-Entwicklungs-Vorschlag fuer einen Bereich -> Antrag."""
+    def vorschlag_fuer(self, abteilung: str, *, modus: str = "extern") -> SelfDevErgebnis:
+        """EIN bewerteter Vorschlag fuer einen Bereich -> Antrag.
+
+        modus='extern': aus dem Web-Wissensstand (neue Entwicklungen). modus='intern': Luecken-/Mandats-
+        Analyse -- der Bereich prueft seine Charta gegen seine aktuellen Faehigkeiten und schlaegt vor, was
+        ihm fehlt (Werkzeug/Daten/Prozess). So kommen Verbesserungsvorschlaege PROAKTIV aus dem System.
+        """
         abteilung = (abteilung or "berater").strip().lower()
-        wissen = self._wissen_text(abteilung)
+        if modus == "intern":
+            spec = self.core.subagents.get(abteilung)
+            charta = (spec.system_prompt[:1500] if spec else "")
+            thema = f"Interne Luecken-/Mandatsanalyse {abteilung}"
+            wissen = (f"Dein Mandat (Charta-Auszug):\n{charta}\n\nFrage dich kritisch: Welche EINE Faehigkeit, "
+                      "welches Werkzeug, welche Daten oder welcher Prozess fehlt dir, um dein Mandat optimal "
+                      "zu erfuellen? Schlage genau diese eine konkrete Verbesserung vor.")
+        else:
+            thema = f"Selbst-Weiterentwicklung Fachbereich {abteilung}"
+            wissen = self._wissen_text(abteilung)
         pipe = InnovationPipeline(self.core, web=self.web, antraege=self.antraege, secrets=self.secrets)
-        erg = pipe.run(f"Selbst-Weiterentwicklung Fachbereich {abteilung}",
-                       abteilung=abteilung, wissen=wissen)
+        erg = pipe.run(thema, abteilung=abteilung, wissen=wissen)
         # Proaktiv den CEO um Freigabe bitten (Antrag liegt vor, wird nicht ausgefuehrt).
         if erg.antrag_id and self.notify is not None:
             titel = (erg.idee.splitlines()[0][:70] if erg.idee else "Vorschlag")

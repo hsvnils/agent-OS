@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 19:15] — Claude Code
+- **Was:** (1) **Finance Live-Dashboard:** neues `governance/dienste_register.py` (Live-Register aller
+  KI-Modelle + Dienstleister aus den .env-Keys: Provider, Zweck, Kostenart, Key-Status, Erfassung) + Tool
+  `finance_dashboard` (Register + gemessene Monatskosten je Provider, klar gekennzeichnet gemessen/geschaetzt/
+  gratis). Gemini-Provider/Rate-Fix (Gratis-Tier=0). (2) **Proaktive Vorschlaege aus dem System:**
+  `SelfDevelopment.vorschlag_fuer(modus='intern')` -- Luecken-/Mandatsanalyse: ein Bereich prueft seine Charta
+  gegen seine Faehigkeiten und schlaegt PROAKTIV vor, was ihm fehlt -> Antrag + Freigabe-Push. Der taegliche
+  Self-Dev-Loop wechselt ab: gerade Tage intern (Luecken), ungerade extern (Web). Tool `selbstentwicklung`
+  bekommt `intern`-Flag. 4 neue Self-Checks; Gesamtsuite **139/139 OK**.
+- **Warum:** CFO soll Gesamtueberblick ueber Modelle/Token/Dienstleister/Kosten haben; und Verbesserungs-
+  vorschlaege (wie genau dieses Dashboard) sollen proaktiv aus dem System/den Agenten kommen, statt dass der
+  CEO an alles denken muss.
+- **Betroffen:** `orchestrator/governance/dienste_register.py` (neu), `orchestrator/core/hoa_tools.py`,
+  `orchestrator/core/self_development.py`, `orchestrator/core/kosten.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/core/hoa_conversation.py`,
+  `orchestrator/tests/test_dashboard_luecken.py` (neu).
+
 ## [2026-06-25 18:55] — Claude Code
 - **Was:** Chat-Ausfall behoben + **Gemini als Fallback** vorbereitet. Ursache: Anthropic meldet das harte
   Monatslimit als **400 invalid_request_error** ("usage limits ... regain access on 2026-07-01"). Zwei Bugs:

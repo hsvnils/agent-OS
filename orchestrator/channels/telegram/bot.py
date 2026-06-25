@@ -210,7 +210,10 @@ def _start_selfdev_loop(ctx, secrets) -> None:
                 datum = jetzt.strftime("%Y-%m-%d")
                 if jetzt.hour == 9 and not ctx.agenda.briefing_gesendet("selfdev", datum) \
                         and not ctx.watch.store.paused():
-                    sd.vorschlag_fuer(next(depts))   # erzeugt Antrag + Freigabe-Push
+                    # Abwechselnd: gerade Tage = interne Luecken-/Mandatsanalyse (proaktive Vorschlaege aus
+                    # dem System), ungerade = externe Web-Entwicklungen.
+                    modus = "intern" if jetzt.day % 2 == 0 else "extern"
+                    sd.vorschlag_fuer(next(depts), modus=modus)   # erzeugt Antrag + Freigabe-Push
                     ctx.agenda.markiere_briefing("selfdev", datum)
             except Exception as exc:
                 print(f"[selfdev] Fehler: {exc}", flush=True)
