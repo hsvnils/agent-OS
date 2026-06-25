@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 13:05] — Claude Code
+- **Was:** IT-Bugfix Kalender -- Zeitzonen-Fehler behoben (betrifft Antrag A-20260625 „Kalender-Integration:
+  Zeitzonen-Fehler beheben", von LUNA, Kategorie IT-Bug). `termin_anlegen` schickte `start`/`end` ohne
+  `timeZone`; die Google Calendar API verlangt das bei ISO-Zeiten ohne Offset und scheiterte mit „Missing
+  time zone definition". Fix: `GoogleWorkspace` traegt jetzt eine konfigurierbare Zeitzone
+  (`GOOGLE_CALENDAR_TIMEZONE`, Default Europe/Berlin) in start/end; neuer testbarer Helfer `_event_body`.
+  Regressionstest ergaenzt; Suite **89/89 OK**. Live verifiziert (echter Termin angelegt + danach geloescht).
+- **Warum:** LUNA konnte keine Kalendertermine anlegen; der Bug stammte aus dem Phase-11-Code.
+- **Betroffen:** `orchestrator/governance/google_workspace.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_google_workspace.py`.
+
 ## [2026-06-25 12:45] — Claude Code
 - **Was:** Phase 13 (Self-Development-Loop, Apex) gebaut + abgesichert. Der Kreis schliesst sich:
   Fachbereichs-Wissensstand (Phase 12) -> Agent leitet Verbesserung in SEINEM Bereich ab -> CTO/CFO-Bewertung
