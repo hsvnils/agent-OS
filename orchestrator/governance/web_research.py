@@ -219,35 +219,80 @@ class AnthropicProvider:
 
 
 class WebResearch:
-    """Router ueber zwei Provider (einfach/komplex) mit Verfuegbarkeits-Fallback + Leck-Schutz."""
+    """Brave-first-Router mit Eskalation auf Anthropic-Web + Leck-Schutz.
+
+    Policy (CEO, 2026-06-25): **Brave ist der Default.** Anthropic-Web (billbar) wird NUR genutzt, wenn
+    - Brave nicht verfuegbar ist,
+    - Brave einen Fehler liefert (z. B. Limit/Kontingent aufgebraucht),
+    - Brave keine Treffer liefert (Qualitaet unzureichend), ODER
+    - eine **Revision / weitere Recherche** beauftragt wird (`eskalation=True`, auch via `tiefe='komplex'`).
+    So bleiben die Suchkosten niedrig; teure agentische Recherche nur im Eskalationsfall.
+    """
 
     def __init__(self, *, einfach: Provider, komplex: Provider, secrets: list[str] | None = None):
-        self.einfach = einfach
-        self.komplex = komplex
+        self.einfach = einfach    # Brave (Default)
+        self.komplex = komplex    # Anthropic-Web (Eskalation)
         self.secrets = secrets or []
 
     @classmethod
     def from_env(cls, env: dict[str, str] | None = None, secrets: list[str] | None = None) -> "WebResearch":
         return cls(einfach=BraveProvider(env), komplex=AnthropicProvider(env), secrets=secrets)
 
-    def recherchiere(self, query: str, *, tiefe: str | None = None, max_results: int = 5) -> RechercheErgebnis:
-        # Secrets nie nach aussen an einen Provider geben.
-        query = redact(query or "", self.secrets)
-        stufe = route_komplexitaet(query, tiefe)
-        primary = self.komplex if stufe == "komplex" else self.einfach
-        fallback = self.einfach if stufe == "komplex" else self.komplex
+    def recherchiere(self, query: str, *, eskalation: bool = False, tiefe: str | None = None,
+                     max_results: int = 5) -> RechercheErgebnis:
+        query = redact(query or "", self.secrets)  # Secrets nie an einen Provider geben
+        will_eskalieren = bool(eskalation) or (tiefe or "").strip().lower() in (
+            "komplex", "tief", "deep", "anthropic")
 
-        prov = primary if primary.verfuegbar() else (fallback if fallback.verfuegbar() else None)
-        if prov is None:
-            return RechercheErgebnis(
-                ok=False, provider="", stufe=stufe,
-                hinweis=("Web-Research nicht aktiv -- kein Provider verfuegbar (BRAVE_API_KEY/"
-                         "ANTHROPIC_API_KEY fehlen). Neuer externer Zugang/Kosten -> CEO-Tor."),
-                freigabe_anfrage=_fall_b())
+        # Eskalation (Revision/weitere Recherche): direkt Anthropic-Web; faellt auf Brave zurueck,
+        # wenn Anthropic nicht freigegeben/verfuegbar ist.
+        if will_eskalieren:
+            anth = self._call(self.komplex, query, max_results)
+            if anth is not None and anth.ok:
+                return self._finish(anth, "eskaliert (Anthropic-Web)")
+            # Anthropic nicht aktiv ODER Fehler (z. B. Guthaben/Limit) -> Brave als Fallback.
+            grund = ("Anthropic-Web nicht aktiv" if anth is None
+                     else f"Anthropic-Web-Fehler ({anth.hinweis})")
+            brave = self._call(self.einfach, query, max_results)
+            if brave is not None and brave.ok:
+                brave.hinweis = (brave.hinweis + " " if brave.hinweis else "") + \
+                    f"(Eskalation gewuenscht, aber {grund} -- Brave genutzt)"
+                return self._finish(brave, f"eskaliert -> Brave ({grund})")
+            # Weder Anthropic nutzbar noch Brave ok -> bestes vorhandenes Ergebnis / Fall-B.
+            if anth is not None:
+                return self._finish(anth, "eskaliert (Anthropic-Web)")
+            if brave is not None:
+                return self._finish(brave, "eskaliert -> Brave")
+            return self._kein_provider("eskaliert")
 
-        erg = prov.suche(query, max_results=max_results)
+        # Default: Brave zuerst.
+        brave = self._call(self.einfach, query, max_results)
+        if brave is not None and brave.ok and brave.treffer:
+            return self._finish(brave, "brave")
+
+        # Brave nicht verfuegbar / Fehler (Limit) / keine Treffer -> auf Anthropic-Web eskalieren.
+        grund = ("Brave nicht verfuegbar" if brave is None
+                 else "Brave ohne Treffer" if brave.ok else f"Brave-Fehler ({brave.hinweis})")
+        anth = self._call(self.komplex, query, max_results)
+        if anth is not None and anth.ok:
+            anth.hinweis = (anth.hinweis + " " if anth.hinweis else "") + f"(auto-eskaliert: {grund})"
+            return self._finish(anth, f"auto-eskaliert -> Anthropic-Web ({grund})")
+
+        # Keine Eskalation moeglich -> bestes Brave-Ergebnis, sonst Fall-B (CEO-Tor).
+        if brave is not None:
+            return self._finish(brave, "brave")
+        return self._kein_provider("brave")
+
+    # -- intern --
+
+    def _call(self, provider: Provider, query: str, max_results: int) -> RechercheErgebnis | None:
+        """None, wenn der Provider nicht verfuegbar ist; sonst das (ggf. fehlerhafte) Ergebnis."""
+        if not provider.verfuegbar():
+            return None
+        return provider.suche(query, max_results=max_results)
+
+    def _finish(self, erg: RechercheErgebnis, stufe: str) -> RechercheErgebnis:
         erg.stufe = stufe
-        # Ergebnis defensiv durch den Leck-Schutz ziehen.
         sec = self.secrets
         erg.zusammenfassung = redact(erg.zusammenfassung, sec)
         erg.hinweis = redact(erg.hinweis, sec)
@@ -256,3 +301,10 @@ class WebResearch:
             t.url = redact(t.url, sec)
             t.auszug = redact(t.auszug, sec)
         return erg
+
+    def _kein_provider(self, stufe: str) -> RechercheErgebnis:
+        return RechercheErgebnis(
+            ok=False, provider="", stufe=stufe,
+            hinweis=("Web-Research nicht aktiv -- kein Provider verfuegbar (BRAVE_API_KEY fehlt; "
+                     "Anthropic-Web aus ohne WEB_RESEARCH_ANTHROPIC=1). CEO-Tor."),
+            freigabe_anfrage=_fall_b())

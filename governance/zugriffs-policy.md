@@ -26,13 +26,21 @@
 
 | Capability | Beschreibung | Erlaubte Agenten | Status |
 |------------|--------------|------------------|--------|
-| `web_research` (Brave) | Rohe Web-Treffer fuer einfache Lookups. | **res (Researcher)** | **LIVE** seit 2026-06-25 (CEO-Freigabe via `BRAVE_API_KEY`, Gratis-Kontingent) |
-| `web_research` (Anthropic-Web) | Agentische Mehrschritt-Recherche + Synthese fuer komplexe Fragen. | **res (Researcher)** | **vorbereitet -- CEO-Tor offen** (billbar; aus, bis `WEB_RESEARCH_ANTHROPIC=1`) |
+| `web_research` (Brave) | Rohe Web-Treffer; **Default** fuer alle Recherchen. | **res (Researcher)** | **LIVE** seit 2026-06-25 (CEO-Freigabe via `BRAVE_API_KEY`, Gratis-Kontingent) |
+| `web_research` (Anthropic-Web) | Agentische Mehrschritt-Recherche + Synthese; **nur als Eskalation**. | **res (Researcher)** | **freigeschaltet** 2026-06-25 (`WEB_RESEARCH_ANTHROPIC=1`); aktuell durch zu niedriges Anthropic-**API-Guthaben** blockiert -> Eskalation faellt auf Brave zurueck |
 
+> **Routing-Policy (CEO, 2026-06-25):** **Brave zuerst** -- immer. Anthropic-Web (billbar) wird NUR genutzt,
+> wenn Brave nicht verfuegbar ist, ein Limit/Fehler liefert, keine Treffer bringt, ODER der CEO eine
+> **Revision/weitere Recherche** beauftragt (`eskalation`). Schlaegt Anthropic-Web fehl (z. B. Guthaben),
+> faellt der Researcher automatisch auf Brave zurueck. So bleiben die Kosten niedrig.
+>
 > **Least-Privilege (Phase 8.5):** Die Web-Capability haelt **ausschliesslich der Researcher (Agent 15)**.
 > Andere Abteilungen erhalten Web-Infos **nur ueber ihn** (via LUNA): sie melden ihren Bedarf an den HoA, der
 > den Researcher beauftragt (`recherche_beauftragen` -> Research-Ticket). So gibt es **einen** Ort fuer
 > Kosten, Rate-Limit und Audit.
+>
+> **Offen:** Anthropic-`web_search` laeuft ueber die **raw API (Pay-as-you-go-Guthaben)**, nicht ueber das
+> CLI-Abo. Es wird erst wirken, wenn das Anthropic-API-Guthaben aufgeladen ist (console.anthropic.com/Billing).
 
 > **Go-Live `web_research` (Fall B, CEO-Tor):** Beide Provider sind externer Zugang/Kosten.
 > - **Brave Search API** -- ✅ aktiv. `BRAVE_API_KEY` in `orchestrator/.env` (Gratis-Kontingent; vom CEO geliefert).

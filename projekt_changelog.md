@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 10:35] — Claude Code
+- **Was:** Anthropic-Web **freigeschaltet** (CEO) + **Brave-first-Eskalations-Policy** umgesetzt.
+  `WEB_RESEARCH_ANTHROPIC=1` in `orchestrator/.env` (Mac + NAS, nicht versioniert). Router neu: **Brave ist
+  Default fuer alle Recherchen**; Anthropic-Web (billbar) nur als **Eskalation**, wenn Brave nicht verfuegbar
+  ist, Limit/Fehler liefert, keine Treffer bringt, ODER der CEO eine Revision/weitere Recherche beauftragt
+  (`recherche_beauftragen(..., eskalation=true)`). Schlaegt Anthropic-Web fehl (Guthaben/Limit), faellt der
+  Researcher automatisch auf Brave zurueck. Live verifiziert: Eskalations-Call erreicht die echte Anthropic-
+  API; diese meldet aktuell **'credit balance too low'** (web_search laeuft ueber raw-API-Guthaben, nicht CLI-
+  Abo) -> Fallback auf Brave greift sauber. Code fing den Fehler ab (kein Absturz). Suite **58/58 OK**
+  (Eskalation, Auto-Eskalation bei leer/Fehler/nicht-verfuegbar, Anthropic-Fehler-Fallback getestet).
+- **Warum:** CEO-Freigabe mit klarer kostenbewusster Policy (Brave zuerst, Anthropic nur bei Bedarf/Revision).
+  Offen: Anthropic-API-Guthaben aufladen (console.anthropic.com/Billing), damit die Eskalation real greift.
+- **Betroffen:** `orchestrator/governance/web_research.py` (Brave-first-Router + Eskalation + Fehler-Fallback),
+  `orchestrator/core/hoa_tools.py` (`eskalation`-Param), `orchestrator/tests/test_web_research.py`,
+  `governance/zugriffs-policy.md`, `PHASE8_PLAN.md`. Flag/Secret nur in `.env` (NICHT versioniert).
+
 ## [2026-06-25 10:15] — Claude Code
 - **Was:** Phase 8.5 -- **Researcher (Agent 15) + Research-Tickets** gebaut (auf CEO-Freigabe der Charta).
   Neuer Agent `agents/15_researcher.md` (zentraler Web-Recherche-Dienst; einziger Halter der Capability

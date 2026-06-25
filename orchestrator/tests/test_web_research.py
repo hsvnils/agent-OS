@@ -43,10 +43,14 @@ class TestWebResearch(unittest.TestCase):
         self.assertEqual(route_komplexitaet("wetter berlin", tiefe="komplex"), "komplex")
         self.assertEqual(route_komplexitaet("vergleiche A und B", tiefe="einfach"), "einfach")
 
-    def test_2_router_waehlt_provider(self):
+    def test_2_brave_first_eskalation_zu_anthropic(self):
         web = _mock_web()
+        # Standard: IMMER Brave zuerst (auch bei komplex klingender Frage).
         self.assertEqual(web.recherchiere("wetter berlin").provider, "brave")
-        self.assertEqual(web.recherchiere("analysiere markttrends bei agenten").provider, "anthropic")
+        self.assertEqual(web.recherchiere("analysiere markttrends bei agenten").provider, "brave")
+        # Revision/weitere Recherche -> Anthropic-Web.
+        self.assertEqual(web.recherchiere("analysiere markttrends", eskalation=True).provider, "anthropic")
+        self.assertEqual(web.recherchiere("tiefer bitte", tiefe="komplex").provider, "anthropic")
 
     def test_3_kein_provider_aktiv_ist_ceo_tor(self):
         # Echte Provider ohne Keys (leere env) -> kein Absturz, sondern Fall-B-Hinweis.
@@ -56,16 +60,44 @@ class TestWebResearch(unittest.TestCase):
         self.assertIn("CEO-Tor", erg.hinweis)
         self.assertIn("ANFRAGE an CEO", erg.freigabe_anfrage)
 
-    def test_4_verfuegbarkeits_fallback(self):
-        # Komplexe Anfrage, aber nur 'einfach' verfuegbar -> faellt auf 'einfach' zurueck.
+    def test_4_auto_eskalation_und_fallback(self):
+        from orchestrator.governance.web_research import RechercheErgebnis
+
         class _Aus(MockProvider):
             def verfuegbar(self):
                 return False
-        web = WebResearch(einfach=MockProvider("brave"), komplex=_Aus("anthropic"))
-        erg = web.recherchiere("analysiere und vergleiche viele optionen ausfuehrlich")
+
+        class _Leer(MockProvider):
+            def suche(self, query, *, max_results=5):
+                return RechercheErgebnis(ok=True, provider="brave", treffer=[])  # keine Treffer
+
+        class _Fehler(MockProvider):
+            def suche(self, query, *, max_results=5):
+                return RechercheErgebnis(ok=False, provider="brave", hinweis="Limit aufgebraucht")
+
+        # Brave ohne Treffer -> auto-eskaliert zu Anthropic.
+        self.assertEqual(WebResearch(einfach=_Leer("brave"), komplex=MockProvider("anthropic"))
+                         .recherchiere("x").provider, "anthropic")
+        # Brave-Fehler (Limit) -> auto-eskaliert zu Anthropic.
+        self.assertEqual(WebResearch(einfach=_Fehler("brave"), komplex=MockProvider("anthropic"))
+                         .recherchiere("x").provider, "anthropic")
+        # Brave nicht verfuegbar -> Anthropic.
+        self.assertEqual(WebResearch(einfach=_Aus("brave"), komplex=MockProvider("anthropic"))
+                         .recherchiere("x").provider, "anthropic")
+        # Eskalation gewuenscht, aber Anthropic aus -> Fallback Brave.
+        erg = WebResearch(einfach=MockProvider("brave"), komplex=_Aus("anthropic")).recherchiere(
+            "x", eskalation=True)
         self.assertTrue(erg.ok)
         self.assertEqual(erg.provider, "brave")
-        self.assertEqual(erg.stufe, "komplex")
+
+        # Eskalation gewuenscht, Anthropic verfuegbar aber FEHLER (z. B. Guthaben) -> Fallback Brave.
+        class _AnthFehler(MockProvider):
+            def suche(self, query, *, max_results=5):
+                return RechercheErgebnis(ok=False, provider="anthropic", hinweis="Guthaben zu niedrig")
+        erg2 = WebResearch(einfach=MockProvider("brave"), komplex=_AnthFehler("anthropic")).recherchiere(
+            "x", eskalation=True)
+        self.assertTrue(erg2.ok)
+        self.assertEqual(erg2.provider, "brave")
 
     def test_5_leck_schutz(self):
         secret = "sk-ant-WEBSECRET-9"

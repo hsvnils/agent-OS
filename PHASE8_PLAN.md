@@ -20,9 +20,11 @@ autonomen Aktionen aus Web-Inhalten, kein Schreiben/Beschaffen, keine Live-Calls
 | **Brave Search** | rohe Web-Treffer, guenstig/schnell (einfache Lookups) | `BRAVE_API_KEY` (neuer Account) | Gratis-Kontingent, dann gering |
 | **Anthropic-Web** | agentische Mehrschritt-Recherche + Synthese mit Quellen (komplexe Fragen) | vorhandener `ANTHROPIC_API_KEY` | billbar (~10 USD/1000 Suchen + Token) |
 
-**Router** (`route_komplexitaet`): einfache Anfrage -> Brave, komplexe (Analyse/Vergleich/Synthese, lange oder
-mehrteilige Fragen) -> Anthropic. Explizite `tiefe` schlaegt die Heuristik. Ist der bevorzugte Provider nicht
-verfuegbar, wird auf den anderen ausgewichen.
+**Routing-Policy (CEO, 2026-06-25): Brave zuerst, Anthropic nur als Eskalation.** Der Researcher liefert
+**immer zuerst Brave**. Anthropic-Web (billbar) wird NUR genutzt, wenn Brave nicht verfuegbar ist, ein
+Limit/Fehler liefert, keine Treffer bringt, ODER der CEO eine **Revision/weitere Recherche** beauftragt
+(`recherche_beauftragen(..., eskalation=true)`). Schlaegt Anthropic-Web fehl (z. B. Guthaben), faellt der
+Researcher automatisch auf Brave zurueck.
 
 ## 3. Sicherheits-Invarianten (nicht verhandelbar)
 
@@ -48,8 +50,9 @@ verfuegbar, wird auf den anderen ausgewichen.
 
 1. **Brave:** ✅ **live** seit 2026-06-25 — `BRAVE_API_KEY` in `orchestrator/.env` (Mac + NAS-Produktion),
    vom CEO geliefert (Gratis-Kontingent). Einfache UND komplexe Anfragen laufen aktuell ueber Brave.
-2. **Anthropic-Web:** noch **aus** (billbar). CFO-Kostenvoranschlag -> HoA-Budget-Check -> **CEO-Freigabe**;
-   dann `WEB_RESEARCH_ANTHROPIC=1` in `orchestrator/.env` setzen. Erst dann routen komplexe Fragen dorthin.
+2. **Anthropic-Web:** ✅ **freigeschaltet** 2026-06-25 (CEO) — `WEB_RESEARCH_ANTHROPIC=1` (Mac + NAS), nur als
+   Eskalation. **Offen:** laeuft ueber raw-API-Guthaben (nicht CLI-Abo) — aktuell „credit balance too low",
+   daher faellt die Eskalation auf Brave zurueck, bis das API-Guthaben aufgeladen ist (console.anthropic.com).
 3. Keys/Flags auf dem **NAS-Klon** (Produktion) hinterlegen; Mac bleibt fuer Entwicklung.
 4. Capability-Status in der Zugriffs-Policy fortschreiben + Live-Smoke-Test.
 
