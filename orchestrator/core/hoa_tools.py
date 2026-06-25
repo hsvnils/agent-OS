@@ -53,6 +53,10 @@ def tool_specs() -> list[dict]:
               "erledigt/fehlgeschlagen) als Text.", {"status": _str("Optionaler Status-Filter.")}, []),
         _spec("recherche_ticket", "Zeigt ein einzelnes Research-Ticket (Frage, Status, Befund, Quellen, Verlauf).",
               {"ticket_id": _str("Ticket-ID (R-...).")}, ["ticket_id"]),
+        _spec("innovation_scouting", "Startet die Innovations-Pipeline (Unternehmensberater): Web-Recherche -> "
+              "Idee -> Machbarkeit (CTO) + Kostenvoranschlag (CFO) -> entscheidungsreifer ANTRAG. Ergebnis ist "
+              "ein Antrag (keine Ausfuehrung; CEO entscheidet). Dauert ggf. etwas.",
+              {"thema": _str("Optionales Thema/Fokus (sonst allgemeines KI-Agenten-Scouting).")}, []),
         # -- Google Workspace (Phase 11): Lesen direkt, Schreiben/Senden NUR mit bestaetigt=true (Mensch-Tor) --
         _spec("mail_suchen", "Durchsucht das Google-Postfach (Gmail-Query, z. B. 'from:x is:unread').",
               {"query": _str("Gmail-Suchanfrage."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
@@ -186,6 +190,16 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                            "provider": t.get("provider", ""), "stufe": t.get("stufe", ""),
                            "befund": redact(t.get("befund", ""), sec), "quellen": t.get("quellen", []),
                            "verlauf": t.get("verlauf", [])}}
+
+    if name == "innovation_scouting":
+        from .innovation import InnovationPipeline
+        pipe = InnovationPipeline(ctx.core, web=ctx.web, antraege=ctx.antraege, secrets=sec)
+        erg = pipe.run((args.get("thema") or "Neue Entwicklungen bei KI-Agenten").strip())
+        return {"thema": erg.thema, "idee": redact(erg.idee, sec),
+                "machbarkeit": redact(erg.machbarkeit, sec),
+                "kostenvoranschlag": redact(erg.kostenvoranschlag, sec),
+                "quellen": erg.quellen, "antrag_id": erg.antrag_id,
+                "hinweis": "Als Antrag eingereicht -- CEO entscheidet (keine Ausfuehrung)."}
 
     if name in _GOOGLE_TOOLS:
         gw = ctx.google

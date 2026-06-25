@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 11:50] — Claude Code
+- **Was:** Phase 9 (Innovations-Pipeline) gebaut. Neues Modul `orchestrator/core/innovation.py` mit
+  `InnovationPipeline`: orchestriert Web-Recherche (Phase 8) -> Idee (Unternehmensberater, Agent 01) ->
+  Bewertung (CTO-Machbarkeit + CFO-Kostenvoranschlag) -> **entscheidungsreifer Antrag** (Phase 6, Status
+  `eingereicht`, von „Unternehmensberater (Innovation)"). **Kein Ausfuehren** -- CEO entscheidet (Mensch-Tor
+  bleibt hart). Neues LUNA-Tool `innovation_scouting(thema?)`. Robust (Backend-Fehler -> Antrag trotzdem,
+  kein Absturz), leck-geschuetzt, Backend injizierbar. 6 Offline-Self-Checks; Gesamtsuite **73/73 OK**.
+  Plan: `PHASE9_PLAN.md`.
+- **Warum:** Roadmap Phase 9 -- der Berater liefert fundierte, bewertete Weiterentwicklungs-Vorschlaege als
+  Antrag; schliesst den kontrollierten Selbst-Verbesserungs-Kreis (Vorschlag -> CEO-Freigabe -> Phase-7-Umsetzung).
+- **Betroffen:** `orchestrator/core/innovation.py` (neu), `orchestrator/core/hoa_tools.py`
+  (Tool `innovation_scouting`), `orchestrator/tests/test_innovation.py` (neu), `PHASE9_PLAN.md` (neu).
+
 ## [2026-06-25 11:35] — Claude Code
 - **Was:** Google-Kalender: **Standard-Einladung** ergaenzt. `termin_anlegen` laedt jetzt automatisch eine
   konfigurierte Adresse als Teilnehmer ein (CEO: private iCloud `hsvnils@icloud.com`) und verschickt die
