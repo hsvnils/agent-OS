@@ -6,7 +6,7 @@ from orchestrator.core.hoa import HeadOfAgents
 from orchestrator.core.subagents import load_default_subagents
 from orchestrator.governance.capability import grant_capability
 from orchestrator.governance.ceo_gate_hook import CeoGate
-from orchestrator.governance.leak_guard import redact
+from orchestrator.governance.leak_guard import is_redactable_secret, redact
 
 
 class TestSecretGovernance(unittest.TestCase):
@@ -41,6 +41,15 @@ class TestSecretGovernance(unittest.TestCase):
         red = redact(text, [secret])
         self.assertNotIn(secret, red)
         self.assertIn("[REDACTED]", red)
+
+    def test_is_redactable_secret_filtert_nicht_secrets(self):
+        # Echte Keys -> ja; Flags/Zahlen/E-Mails/kurze Werte -> nein (sonst werden IDs/Logs verstuemmelt).
+        self.assertTrue(is_redactable_secret("sk-ant-abcdef1234567890"))
+        self.assertTrue(is_redactable_secret("BSAGzbv3zkWK7It-c2NQ"))
+        self.assertFalse(is_redactable_secret("1"))                 # WEB_RESEARCH_ANTHROPIC=1
+        self.assertFalse(is_redactable_secret("8594240885"))        # Chat-ID (rein numerisch)
+        self.assertFalse(is_redactable_secret("hsvnils@icloud.com"))  # E-Mail (PII, kein Secret)
+        self.assertFalse(is_redactable_secret("Europe/Bln"))        # kurz
 
     def test_secret_taucht_nicht_in_hoa_ausgabe_auf(self):
         secret = "sk-test-SECRET-123456"

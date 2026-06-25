@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 13:45] — Claude Code
+- **Was:** Kritischer Leck-Schutz-Bugfix. Kurze/flag-/numerische/E-Mail-Werte aus `.env` (z. B.
+  `WEB_RESEARCH_ANTHROPIC=1`, Chat-ID, iCloud-Adresse) wurden faelschlich als Secrets behandelt -> redact()
+  ersetzte **jede '1' ueberall** und verstuemmelte IDs/Zeitstempel/Logs (Changelog, Antraege, Tickets) sowie
+  die Notifier-„sent"-IDs (-> Endlos-Resend derselben Push-Nachricht). Fix: neuer Filter
+  `is_redactable_secret` (Laenge >= 12, nicht rein numerisch, kein '@') -- genutzt in `load_env_secrets`
+  und in der Bot-Secret-Liste. Nur echte Keys/Token werden noch redigiert. Test ergaenzt; Suite **97/97 OK**.
+- **Warum:** Beim Live-Test des Notifiers fiel auf, dass Push-Meldungen mehrfach zugestellt wurden und IDs
+  verstuemmelt waren -- Ursache war die uebergriffige Redaktion durch den Flag-Wert '1'.
+- **Betroffen:** `orchestrator/governance/leak_guard.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_secret_governance.py`.
+
 ## [2026-06-25 13:30] — Claude Code
 - **Was:** Proaktiver Telegram-Notifier gebaut -- LUNA/Watcher/Abteilungen melden sich **unaufgefordert** beim
   CEO. Neu: `core/notifications.py` (`Notifications`-Outbox, durable JSONL `notifications/log.jsonl`,

@@ -52,7 +52,8 @@ def _build_ctx(cfg: dict, secrets: dict):
     from ...governance.changelog_tool import append_changelog
     from ...observability.logging import Logger
 
-    secret_values = [v for v in secrets.values() if v]
+    from ...governance.leak_guard import is_redactable_secret
+    secret_values = [v for v in secrets.values() if is_redactable_secret(v)]
     backend = AgentSdkBackend(cfg["models"], cfg["effort"], gate=CeoGate(),
                               max_turns=cfg["run"].get("max_turns", 4))
     changelog = partial(append_changelog, ROOT / cfg["governance"]["changelog_file"])
