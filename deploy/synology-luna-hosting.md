@@ -30,6 +30,25 @@ auswaehlen -> Build/Start. Volume-Pfad in der compose ggf. an deinen Ablageort a
 ## Schritt 3 -- Testen
 LUNA auf Telegram schreiben (@luna_headofagents_bot). Sie antwortet -- jetzt 24/7, auch wenn der Mac aus ist.
 
+## Code-Updates: Mac -> NAS syncen
+Wenn am Mac weiterentwickelt wird, bringt das Skript `deploy/sync-to-nas.sh` den **Code** auf die NAS und
+startet den Container neu. Es ueberschreibt **bewusst keine NAS-Live-Daten** (LUNA schreibt auf der NAS live
+Changelog/Antraege/Memory/Budget -- die NAS ist die Produktions-Datenquelle): die Live-Dateien sind aus dem
+Transfer ausgeschlossen, und es wird nichts geloescht.
+
+```sh
+deploy/sync-to-nas.sh             # Code syncen + Container restart (fragt NAS-sudo-Passwort)
+deploy/sync-to-nas.sh --build     # zusaetzlich Image neu bauen (bei Dep-Aenderung, z. B. neue Python-Pakete)
+deploy/sync-to-nas.sh --no-restart# nur Code syncen
+deploy/sync-to-nas.sh --dry-run   # nur anzeigen, welche Dateien uebertragen wuerden (NAS unberuehrt)
+```
+
+Technik: **tar-over-ssh** (macOS „openrsync" nutzt -e/Key nicht zuverlaessig). Voraussetzung ist ein Eintrag in
+`~/.ssh/config` (`Host luna-nas` -> NAS-IP + `IdentityFile ~/.ssh/luna_nas`), damit ssh den Key automatisch
+nutzt. Das NAS-sudo-Passwort wird zur Laufzeit abgefragt (oder via `NAS_SUDO_PW`) und steht nie im Repo.
+Geschuetzte Live-Daten: `orchestrator/.env`, `finance/budget.md`, `orchestrator/memory/log.jsonl`,
+`antraege/log.jsonl`, `projekt_changelog.md` (+ `.git/`, `.venv/`, `.worktrees/`, Caches).
+
 ## Hinweise
 - **Nur der Telegram-Kanal** laeuft hier. Der Voice-Browser von aussen braucht zusaetzlich HTTPS +
   Reverse-Proxy + WebRTC/TURN (spaeterer Schritt).

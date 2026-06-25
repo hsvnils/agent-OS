@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 09:10] — Claude Code
+- **Was:** NAS-Code-Sync Mac->NAS eingerichtet und live getestet. Neues Skript `deploy/sync-to-nas.sh`
+  schiebt **nur den Code** auf die NAS und startet den `luna-telegram`-Container neu. Es ueberschreibt
+  **keine NAS-Live-Daten** (NAS ist Produktions-Datenquelle): `orchestrator/.env`, `finance/budget.md`,
+  `orchestrator/memory/log.jsonl`, `antraege/log.jsonl`, `projekt_changelog.md` (+ `.git/`, `.venv/`,
+  `.worktrees/`, Caches) sind ausgeschlossen, und es wird nichts geloescht (kein --delete). Verifiziert per
+  Vorher/Nachher-`stat`: die vier Live-Dateien blieben byte-genau identisch. Flags: `--build` (Image-Rebuild
+  bei Dep-Aenderung), `--no-restart`, `--dry-run`. Technik: **tar-over-ssh** statt rsync, weil macOS
+  „openrsync" die Remote-Shell (-e/RSYNC_RSH/Key) nicht zuverlaessig nutzt; ssh-Key via neuem
+  `~/.ssh/config`-Eintrag (`Host luna-nas`). NAS-sudo-Passwort nur fluechtig (stdin an `sudo -S`), nie im
+  Repo. End-to-End getestet: Sync + Restart OK, Log „Telegram-Bot bereit.".
+- **Warum:** Bei Weiterentwicklung am Mac soll der Code auf der 24/7-NAS aktuell bleiben, ohne die dort live
+  geschriebenen Produktionsdaten zu gefaehrden (offener naechster Schritt laut Roadmap/Memory).
+- **Betroffen:** `deploy/sync-to-nas.sh` (neu), `deploy/synology-luna-hosting.md` (Abschnitt „Code-Updates"),
+  `~/.ssh/config` (neu, ausserhalb Repo; SSH-Key-Alias luna-nas).
+
 ## [2026-06-25 01:29] — Claude Code
 - **Was:** LUNA-Telegram-Bot **live auf der Synology DS923+** deployed (24/7, unabhaengig vom Mac). Per SSH
   (dedizierter Key `~/.ssh/luna_nas`, Synology-Rechte gesetzt) eingerichtet: NAS-IP ist 192.168.178.129
