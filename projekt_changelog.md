@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 21:55] — Claude Code
+- **Was:** Telegram-Anzeige aufgeraeumt. Neuer Filter `core/telegram_format.py` (`fuer_telegram`) wird vor
+  JEDEM Senden angewendet (Chat-Antworten + proaktive Meldungen/Briefings): entfernt rohe Markdown-Marker
+  (`**fett**`, `*betont*`, `# Header` -> Text; `* Punkt` -> `• Punkt`) und schreibt C-Level-Kuerzel gross
+  (cto->CTO, cfo->CFO ...). Grund: der Bot sendet reinen Text ohne parse_mode, daher erschienen die Sterne
+  woertlich und sorgten fuer Unuebersichtlichkeit. 5 neue Self-Checks; Gesamtsuite **147/147 OK**.
+- **Warum:** CEO-Feedback aus den Telegram-Screenshots (Sterne unleserlich; Abteilungen sollen gross).
+- **Betroffen:** `orchestrator/core/telegram_format.py` (neu), `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_telegram_format.py` (neu).
+
+
 ## [2026-06-25 19:15] — Claude Code
 - **Was:** (1) **Finance Live-Dashboard:** neues `governance/dienste_register.py` (Live-Register aller
   KI-Modelle + Dienstleister aus den .env-Keys: Provider, Zweck, Kostenart, Key-Status, Erfassung) + Tool

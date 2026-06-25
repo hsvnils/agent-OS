@@ -17,6 +17,8 @@ import urllib.request
 from functools import partial
 from pathlib import Path
 
+from ...core.telegram_format import fuer_telegram
+
 ROOT = Path(__file__).resolve().parents[3]
 API = "https://api.telegram.org"
 
@@ -378,7 +380,8 @@ def main() -> None:
                     msg = f"{kopf}{n['text']}  (#{kurz})"
                     if n.get("detail"):
                         msg += f"\nDetails: schreib mir \"zeig #{kurz}\""
-                    if _api(token, "sendMessage", {"chat_id": allowed, "text": msg}).get("ok"):
+                    if _api(token, "sendMessage",
+                            {"chat_id": allowed, "text": fuer_telegram(msg)}).get("ok"):
                         ctx.notifications.mark_sent(n["id"])
                         # Kontext in die CEO-Session geben, damit LUNA bei Rueckfragen ("ist freigegeben")
                         # weiss, worauf der CEO sich bezieht (Pushes kommen sonst ausserhalb des Chats an).
@@ -435,7 +438,7 @@ def main() -> None:
                 print(f"[chat] Fehler, Session zurueckgesetzt: {exc}", flush=True)
                 antwort = ("Es gab gerade einen technischen Fehler -- ich habe den Verlauf zurueckgesetzt. "
                            "Bitte stell die Frage noch einmal.")
-            _api(token, "sendMessage", {"chat_id": chat_id, "text": antwort[:4000]})
+            _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(antwort)[:4000]})
         time.sleep(0.5)
 
 
