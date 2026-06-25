@@ -358,6 +358,8 @@ def main() -> None:
                     kurz = n["id"].split("-")[-1]
                     kopf = f"🔔 {ab}: " if ab else "🔔 "
                     msg = f"{kopf}{n['text']}  (#{kurz})"
+                    if n.get("detail"):
+                        msg += f"\nDetails: schreib mir \"zeig #{kurz}\""
                     if _api(token, "sendMessage", {"chat_id": allowed, "text": msg}).get("ok"):
                         ctx.notifications.mark_sent(n["id"])
             except Exception as exc:

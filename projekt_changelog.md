@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 18:30] — Claude Code
+- **Was:** Funde-Handling verbessert (kein Ticket pro Fund -> Flut vermieden). **(A) Drill-down sichtbar:**
+  proaktive Meldungen mit Detail haengen jetzt den Hinweis `Details: schreib mir "zeig #xxxx"` an; LUNA loest
+  das ueber `meldung_details` auf. **(B) Funde -> Entscheidung:** neues Tool `funde_bewerten(abteilung)` --
+  buendelt die gesammelten Fachbereichs-Funde ueber die Innovations-Pipeline zu EINEM entscheidungsreifen
+  Antrag (Fachbereich-Idee + CTO-Machbarkeit + CFO-Kosten), statt 15 Rohlinks. System-Prompt erklaert beides.
+  Gesamtsuite **134/134 OK**.
+- **Warum:** CEO bekam Sammelmeldungen ("15 neue Funde"), konnte aber weder den Inhalt sehen noch entscheiden.
+  Jetzt: Inhalt auf Abruf + gebuendelte Entscheidungs-Antraege.
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`, `orchestrator/core/hoa_tools.py`,
+  `orchestrator/core/hoa_conversation.py`.
+
 ## [2026-06-25 18:10] — Claude Code
 - **Was:** **Multi-Provider-Chat (Anthropic-first + OpenAI-Fallback)** gebaut. Neues `core/model_router.py`
   (`ModelRouter`): der Chat ruft zuerst Anthropic; bei Guthaben-/Rate-/Ueberlastungsfehler automatisch

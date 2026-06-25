@@ -76,6 +76,11 @@ def tool_specs() -> list[dict]:
         _spec("wissensstand", "Zeigt den aktuellen Fachbereichs-Wissensstand einer Abteilung (gesammelte "
               "Web-Funde, neueste zuerst) -- reine Anzeige, keine neue Suche, keine Token.",
               {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto, ciso, cfo).")}, ["abteilung"]),
+        _spec("funde_bewerten", "Buendelt die neuen Funde einer Abteilung zu EINEM entscheidungsreifen "
+              "Vorschlag: der Fachbereich bewertet die Funde -> Idee -> Machbarkeit (CTO) + Kosten (CFO) -> "
+              "Antrag, ueber den der CEO entscheidet. Nutze das, wenn der CEO zu Funden eine Entscheidung "
+              "treffen will (statt 15 Rohlinks). Macht LLM-Aufrufe -- auf Anfrage.",
+              {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto).")}, ["abteilung"]),
         # -- Phase 13: Selbst-Entwicklung (on-demand; macht LLM-Aufrufe -> nur auf CEO-Anfrage) --
         _spec("selbstentwicklung", "Phase 13: laesst einen Fachbereich aus seinem aktuellen Wissensstand EINEN "
               "konkreten Verbesserungs-Vorschlag ableiten, von CTO+CFO bewerten und als ANTRAG einreichen "
@@ -297,7 +302,8 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                            "befund": redact(t.get("befund", ""), sec), "quellen": t.get("quellen", []),
                            "verlauf": t.get("verlauf", [])}}
 
-    if name in ("github_trends", "dept_briefing", "watch_digest", "watch_tick", "wissensstand"):
+    if name in ("github_trends", "dept_briefing", "watch_digest", "watch_tick", "wissensstand",
+                "funde_bewerten"):
         watch = ctx.watch
         if watch is None:
             from .scheduler import WatchScheduler, WatchStore
@@ -316,6 +322,20 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             ab = (args.get("abteilung") or "").strip().lower()
             return {"abteilung": ab,
                     "wissensstand": [_redact_obj(f, sec) for f in watch.briefing(ab)]}
+        if name == "funde_bewerten":
+            from .innovation import InnovationPipeline
+            ab = (args.get("abteilung") or "").strip().lower()
+            funde = watch.briefing(ab, limit=15)
+            if not funde:
+                return {"ok": False, "hinweis": f"Keine neuen Funde fuer {ab} im Wissensstand."}
+            wissen = "\n".join(f"- {f.get('titel', '')}: {f.get('detail', '') or f.get('url', '')}"
+                               for f in funde)
+            erg = InnovationPipeline(ctx.core, web=ctx.web, antraege=ctx.antraege, secrets=sec).run(
+                f"Bewerte die neuen Funde im Bereich {ab} und schlage EINE konkrete Massnahme vor",
+                abteilung=ab, wissen=wissen)
+            return {"ok": True, "abteilung": ab, "idee": redact(erg.idee, sec),
+                    "antrag_id": erg.antrag_id,
+                    "hinweis": "Als Antrag eingereicht -- CEO entscheidet (keine Ausfuehrung)."}
         if name == "watch_digest":
             return {"funde": [_redact_obj(f, sec)
                               for f in watch.briefing(None)
