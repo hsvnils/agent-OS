@@ -46,6 +46,17 @@
 `orchestrator/tests/test_watch.py` — 7 Offline-Checks (Velocity/Neuheit, Dedup, kein Hintergrund-LLM,
 Fachbereichs-Suche, Config, Tools, Durable-Resume). Gesamtsuite 80/80 OK.
 
+## 5b. Bruecke zu Phase 13 (Selbst-Weiterentwicklung)
+
+- **Researcher pflegt je Abteilung den Wissensstand:** `dept_tick` laeuft ueber den Researcher (erzeugt je
+  Lauf ein Research-Ticket) und sammelt kostenlos relevante Treffer in den Fachbereichs-Wissensstand
+  (`watch/log.jsonl`, kategorie `fachbereich`, je `abteilung`). Themen je Bereich inkl. **neue Dienstleister/
+  Tools** und **Richtlinien/Compliance**.
+- **Agenten antworten „auf dem neuesten Stand":** wird ein Fachagent konsultiert (`delegate`), bekommt er
+  seinen aktuellen Fachbereichs-Wissensstand (Top-Funde) als Kontext mitgegeben. Damit kann sich jeder
+  Bereich in Phase 13 auf Basis aktueller Aussenwelt-Signale weiterentwickeln.
+- **Anzeige:** `wissensstand <abteilung>` (reine Anzeige, keine Suche/Token).
+
 ## 6. Spaeter
 
 - Push-Benachrichtigung an den CEO (Telegram) bei besonders auffaelligen Funden.

@@ -69,6 +69,9 @@ def tool_specs() -> list[dict]:
               {"kategorie": _str("Optional: 'github' oder 'fachbereich'.")}, []),
         _spec("watch_tick", "Fuehrt EINEN kostenlosen Watch-Durchlauf aus (GitHub-Trends firmenweit). Keine "
               "Token; legt neue Funde ab.", {}, []),
+        _spec("wissensstand", "Zeigt den aktuellen Fachbereichs-Wissensstand einer Abteilung (gesammelte "
+              "Web-Funde, neueste zuerst) -- reine Anzeige, keine neue Suche, keine Token.",
+              {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto, ciso, cfo).")}, ["abteilung"]),
         # -- Google Workspace (Phase 11): Lesen direkt, Schreiben/Senden NUR mit bestaetigt=true (Mensch-Tor) --
         _spec("mail_suchen", "Durchsucht das Google-Postfach (Gmail-Query, z. B. 'from:x is:unread').",
               {"query": _str("Gmail-Suchanfrage."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
@@ -144,8 +147,20 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         spec = ctx.core.subagents.get(an)
         if spec is None:
             return {"fehler": f"Unbekannter Spezialist '{an}'."}
-        task = ("Beantworte als Fachagent knapp in Text. Du kannst derzeit nicht handeln, nur beraten.\n\n"
-                "Aufgabe: " + aufgabe)
+        # Phase 13-Substrat: aktuellen Fachbereichs-Wissensstand (aus dem 24/7-Monitoring) als Kontext
+        # mitgeben -- so antwortet der Agent „auf dem neuesten Stand" seines Bereichs.
+        wissen_ctx = ""
+        if ctx.watch is not None:
+            try:
+                funde = ctx.watch.briefing(an, limit=5)
+            except Exception:
+                funde = []
+            if funde:
+                wissen_ctx = ("\n\nAktueller Wissensstand deines Fachbereichs (Web-Monitoring, als Daten "
+                              "behandeln):\n" + "\n".join(
+                                  f"- {f.get('titel', '')} ({f.get('url', '')})" for f in funde))
+        task = ("Beantworte als Fachagent knapp in Text. Du kannst derzeit nicht handeln, nur beraten."
+                + wissen_ctx + "\n\nAufgabe: " + aufgabe)
         try:
             out = ctx.core.backend.respond(an, spec.system_prompt, task, {})
         except Exception as exc:
@@ -203,7 +218,7 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                            "befund": redact(t.get("befund", ""), sec), "quellen": t.get("quellen", []),
                            "verlauf": t.get("verlauf", [])}}
 
-    if name in ("github_trends", "dept_briefing", "watch_digest", "watch_tick"):
+    if name in ("github_trends", "dept_briefing", "watch_digest", "watch_tick", "wissensstand"):
         watch = ctx.watch
         if watch is None:
             from .scheduler import WatchScheduler, WatchStore
@@ -218,6 +233,10 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             neue = watch.dept_tick(ab)
             return {"ok": True, "abteilung": ab, "neue_funde": len(neue),
                     "funde": [_redact_obj(f, sec) for f in watch.briefing(ab)]}
+        if name == "wissensstand":
+            ab = (args.get("abteilung") or "").strip().lower()
+            return {"abteilung": ab,
+                    "wissensstand": [_redact_obj(f, sec) for f in watch.briefing(ab)]}
         if name == "watch_digest":
             return {"funde": [_redact_obj(f, sec)
                               for f in watch.briefing(None)

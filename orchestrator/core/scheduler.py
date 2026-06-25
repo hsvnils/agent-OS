@@ -88,11 +88,12 @@ class WatchStore:
 class WatchScheduler:
     """Faehrt freie Watcher (GitHub + Fachbereichs-Suche) und schreibt Funde in den Store."""
 
-    def __init__(self, store: WatchStore, *, github=None, web=None, secrets: list[str] | None = None,
-                 llm_enabled: bool = False):
+    def __init__(self, store: WatchStore, *, github=None, web=None, research=None,
+                 secrets: list[str] | None = None, llm_enabled: bool = False):
         self.store = store
         self.github = github if github is not None else GitHubWatch()
         self.web = web
+        self.research = research  # ResearchTickets: Fachbereichs-Suchen laufen ueber den Researcher
         self.secrets = secrets or []
         self.llm_enabled = llm_enabled  # Hintergrund-LLM aus (Token sparen); nur explizit aktivierbar
 
@@ -114,9 +115,14 @@ class WatchScheduler:
         return neue
 
     def dept_tick(self, abteilung: str, *, max_pro_thema: int = 3) -> list[dict]:
-        """Kostenlos (Brave-Gratis): je Suchthema des Fachbereichs Top-Treffer als Funde ablegen."""
+        """Fachbereichs-Wissensstand pflegen (kostenlos, Brave-Gratis) -- ueber den Researcher (Ticket).
+
+        Je Suchthema des Fachbereichs Top-Treffer als Funde ablegen (dedupliziert) und einen
+        Research-Ticket-Eintrag erzeugen (Nachverfolgbarkeit: welche Abteilung, was, Quellen).
+        """
         themen = themen_fuer(abteilung).get("suche", [])
         neue: list[dict] = []
+        quellen: list[str] = []
         if self.web is None:
             return neue
         for thema in themen:
@@ -127,6 +133,15 @@ class WatchScheduler:
                 if t.url and self.store.add_finding("fachbereich", t.titel, t.url,
                                                     detail=t.auszug[:160], abteilung=abteilung):
                     neue.append({"titel": t.titel, "url": t.url, "abteilung": abteilung, "thema": thema})
+                    quellen.append(t.url)
+        # Researcher dokumentiert den Fachbereichs-Lauf als Ticket (nur wenn es Neues gab).
+        if self.research is not None and neue:
+            tid = self.research.erstellen(
+                f"Fachbereichs-Wissensupdate {abteilung}: {len(neue)} neue Funde", abteilung=abteilung)
+            self.research.in_arbeit(tid)
+            self.research.erledigen(tid, provider="brave",
+                                    befund=f"{len(neue)} neue Eintraege im Wissensstand {abteilung}.",
+                                    quellen=quellen)
         self.store.mark_run(f"dept:{abteilung}")
         return neue
 

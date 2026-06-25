@@ -84,7 +84,8 @@ def _build_ctx(cfg: dict, secrets: dict):
     from ...core.scheduler import WatchScheduler, WatchStore
     from ...governance.github_watch import GitHubWatch
     watch = WatchScheduler(WatchStore(ROOT / "watch" / "log.jsonl", secrets=secret_values),
-                           github=GitHubWatch(env=secrets), web=web, secrets=secret_values)
+                           github=GitHubWatch(env=secrets), web=web, research=research,
+                           secrets=secret_values)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch), secret_values

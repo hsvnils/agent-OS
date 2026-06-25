@@ -77,6 +77,32 @@ class TestWatch(unittest.TestCase):
         self.assertEqual(d["abteilung"], "cfo")
         self.assertTrue(run_tool("watch_digest", {}, ctx)["funde"])
 
+    def test_6b_dept_tick_ueber_researcher(self):
+        # Fachbereichs-Suche erzeugt ein Research-Ticket (Researcher als Akteur, Nachverfolgbarkeit).
+        from orchestrator.core.research_tickets import ResearchTickets
+        research = ResearchTickets(Path(tempfile.mkdtemp()) / "r.jsonl")
+        sched = WatchScheduler(_store(), github=MockGitHubWatch(), web=_web(), research=research)
+        neue = sched.dept_tick("ciso")
+        self.assertTrue(neue)
+        tickets = research.list()
+        self.assertEqual(len(tickets), 1)
+        self.assertEqual(tickets[0]["abteilung"], "ciso")
+        self.assertEqual(tickets[0]["status"], "erledigt")
+
+    def test_6c_delegate_injiziert_wissensstand(self):
+        # Phase-13-Substrat: konsultierter Agent bekommt seinen Fachbereichs-Wissensstand als Kontext.
+        from orchestrator.core.backends import MockBackend
+        store = _store()
+        sched = WatchScheduler(store, github=MockGitHubWatch(), web=_web())
+        sched.dept_tick("cto")  # fuellt Wissensstand fuer cto
+        captured = {}
+        backend = MockBackend(scripted={"cto": lambda m, c: captured.setdefault("msg", m) or "ok"})
+        ctx = ToolContext(core=HeadOfAgents(backend, load_all_subagents(), gate=CeoGate()),
+                          antraege=Antraege(Path(tempfile.mkdtemp()) / "a.jsonl"), engine=None,
+                          finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=[], watch=sched)
+        run_tool("delegate", {"an": "cto", "aufgabe": "Status?"}, ctx)
+        self.assertIn("Wissensstand deines Fachbereichs", captured["msg"])
+
     def test_7_durable_resume(self):
         # Store ueberlebt Neustart (neue Instanz, gleiche Datei) -> Historie/Funde bleiben.
         path = Path(tempfile.mkdtemp()) / "w.jsonl"

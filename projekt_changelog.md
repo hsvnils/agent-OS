@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 12:25] — Claude Code
+- **Was:** Phase-12/13-Bruecke -- Fachbereichs-Recherche ueber den **Researcher** + Wissensstand zurueck an
+  die Agenten. (1) `dept_tick` laeuft jetzt ueber den Researcher: erzeugt je Lauf ein Research-Ticket
+  (Nachverfolgbarkeit: welche Abteilung, was, Quellen) und pflegt den Fachbereichs-Wissensstand (kostenlos,
+  Brave). (2) **Phase-13-Substrat:** beim Konsultieren eines Fachagenten (`delegate`) wird sein aktueller
+  Fachbereichs-Wissensstand (Top-Funde aus dem 24/7-Monitoring) als Kontext injiziert -> Agent antwortet „auf
+  dem neuesten Stand". (3) Neues read-only Tool `wissensstand <abteilung>` (keine Suche/Token). (4) Watch-
+  Themen je Bereich um **neue Dienstleister/Tools** und **IT-Richtlinien/Compliance** erweitert (cto, ciso).
+  WatchScheduler bekommt `research` injiziert (Bot-Verdrahtung). 2 neue Self-Checks; Gesamtsuite **82/82 OK**.
+- **Warum:** CEO-Vorgabe -- der Researcher soll spezialisiert fuer ALLE Abteilungen suchen, damit sich die
+  Agenten in ihren Bereichen weiterentwickeln und stets aktuell sind (Fundament fuer Phase 13).
+- **Betroffen:** `orchestrator/core/scheduler.py`, `orchestrator/core/hoa_tools.py` (delegate-Injektion +
+  Tool `wissensstand`), `orchestrator/core/watch_config.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_watch.py`, `PHASE12_PLAN.md`.
+
 ## [2026-06-25 12:10] — Claude Code
 - **Was:** Phase 12 (Durable Watch-Queue + Scheduler, 24/7) gebaut + Hintergrund-Loop live. **Token-frugal
   by design:** der 24/7-Loop macht NUR kostenlose Datenarbeit (GitHub-API + Brave-Gratis) und flaggt

@@ -13,7 +13,8 @@ DEPARTMENT_WATCH: dict[str, dict[str, list[str]]] = {
         "github": ["ai-agents", "autonomous-agents", "multi-agent"],
     },
     "cto": {  # Technology / IT
-        "suche": ["AI agent frameworks vergleich", "LLM orchestration tools", "MCP model context protocol"],
+        "suche": ["AI agent frameworks vergleich", "LLM orchestration tools", "MCP model context protocol",
+                  "neue KI-Dienstleister und Tools", "IT-Sicherheitsrichtlinien best practices"],
         "github": ["ai-agents", "llm", "agent-framework", "mcp", "llmops"],
     },
     "cfo": {  # Finance
@@ -21,7 +22,8 @@ DEPARTMENT_WATCH: dict[str, dict[str, list[str]]] = {
         "github": ["llm-inference", "cost-optimization"],
     },
     "ciso": {  # Security
-        "suche": ["LLM prompt injection defense", "AI agent security", "OWASP LLM top 10"],
+        "suche": ["LLM prompt injection defense", "AI agent security", "OWASP LLM top 10",
+                  "neue IT-Richtlinien Compliance", "ISO 27001 AI guidelines"],
         "github": ["llm-security", "prompt-injection", "ai-security"],
     },
     "cdo": {  # Data
