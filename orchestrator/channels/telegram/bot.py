@@ -254,6 +254,45 @@ def _start_briefing_loop(ctx, notify) -> None:
     threading.Thread(target=loop, daemon=True, name="briefing-loop").start()
 
 
+def _start_cfo_loop(ctx, notify) -> None:
+    """CFO-Kostenpruefung 1x taeglich nachts (03:00 DE): Freeware-/Abo-/Token-Sparpotenziale -> Push.
+
+    Ein LLM-Lauf/Tag (token-frugal). Manuell jederzeit ueber 'kosten_optimierung'. Respektiert die Notbremse.
+    """
+    import threading
+    import time
+    from datetime import datetime
+
+    from ...core.hoa_tools import run_tool
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("Europe/Berlin")
+    except Exception:
+        tz = None
+    if ctx.agenda is None or notify is None:
+        return
+
+    def loop():
+        time.sleep(60)
+        while True:
+            try:
+                jetzt = datetime.now(tz) if tz else datetime.now()
+                datum = jetzt.strftime("%Y-%m-%d")
+                paused = ctx.watch is not None and ctx.watch.store.paused()
+                if jetzt.hour == 3 and not ctx.agenda.briefing_gesendet("cfo-kosten", datum) and not paused:
+                    res = run_tool("kosten_optimierung", {}, ctx)
+                    if res.get("ok"):
+                        notify("Taegliche Kostenpruefung -- Vorschlaege liegen vor.",
+                               abteilung="CFO/Finance", kategorie="kosten", quelle="cfo-loop",
+                               detail=str(res.get("vorschlaege", ""))[:1500], dedup_stunden=0)
+                    ctx.agenda.markiere_briefing("cfo-kosten", datum)
+            except Exception as exc:
+                print(f"[cfo] Fehler: {exc}", flush=True)
+            time.sleep(300)
+
+    threading.Thread(target=loop, daemon=True, name="cfo-loop").start()
+
+
 def main() -> None:
     cfg = _load_config()
     secrets = _load_secrets()
@@ -284,6 +323,8 @@ def main() -> None:
           flush=True)
     _start_briefing_loop(ctx, ctx.notifications.enqueue)
     print("Briefing-Loop aktiv (Morgen 08:00 + Abend 20:00, Europe/Berlin).", flush=True)
+    _start_cfo_loop(ctx, ctx.notifications.enqueue)
+    print("CFO-Kostenloop aktiv (taeglich 03:00, Freeware/Abos/Token-Sparpotenziale).", flush=True)
     _start_selfdev_loop(ctx, secrets)
     if secrets.get("SELF_DEV_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Self-Dev-Loop aktiv (taeglich 09:00, 1 Bereich -> Antrag mit Freigabe-Push).", flush=True)

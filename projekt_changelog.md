@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 17:05] — Claude Code
+- **Was:** (1) **GitHub-Push live + hart gesperrt:** `GITHUB_TOKEN` (CEO-PAT) in `.env` (Mac+NAS, gitignored);
+  Auth read-only verifiziert (ls-remote). Push **ausschliesslich** auf `hsvnils/agent-OS` -- doppelt gesperrt
+  (Tool-Handler hardcodet + Guard in `push_branch`). (2) **CFO-Tagesloop:** neuer Daemon `_start_cfo_loop`
+  prueft taeglich 03:00 (DE) automatisch Freeware-Alternativen/ungenutzte Abos/Token-Sparpotenziale (CFO,
+  1 LLM-Lauf/Tag) und meldet die Vorschlaege proaktiv; manuell weiter ueber `kosten_optimierung`. Respektiert
+  Notbremse. (3) **Obsidian:** `vault/Dashboard.md` (versioniert) macht das Repo zu einem navigierbaren
+  Vault; Tool `obsidian_export` schreibt Live-Wissensstand + offene Tickets als Markdown nach `vault/`
+  (gitignored). Gesamtsuite **125/125 OK**.
+- **Warum:** CEO-Wuensche: Push nach GitHub (nur agent-OS!), taegliche CFO-Kostenpruefung, Obsidian als
+  kostenfreie Wissensoberflaeche.
+- **Betroffen:** `orchestrator/core/hoa_tools.py`, `orchestrator/core/execution_live.py`,
+  `orchestrator/channels/telegram/bot.py`, `vault/Dashboard.md` (neu), `.gitignore`. Token nur in `.env`
+  (NICHT versioniert).
+
 ## [2026-06-25 16:35] — Claude Code
 - **Was:** (1) **IT-Selbstheilung (CEO-Delegation):** neues `core/self_healing.py` (`ist_technisch_kostenfrei`
   + `SelfHealing.heilen`) + Tool `technische_freigabe(antrag_id)`. LUNA darf rein TECHNISCHE, KOSTENFREIE

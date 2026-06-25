@@ -106,6 +106,8 @@ def tool_specs() -> list[dict]:
         _spec("agenda_zeigen", "Zeigt die offenen manuellen Agenda-Punkte.", {}, []),
         _spec("systemcheck", "IT-Selbstcheck: prueft sofort, ob alle Prozesse/Komponenten laufen (Keys, "
               "Google, Stores, Watcher-Heartbeat). Kostenlos.", {}, []),
+        _spec("obsidian_export", "Schreibt den aktuellen Fachbereichs-Wissensstand und die offenen Tickets als "
+              "Markdown in den Obsidian-Vault (vault/). Kostenlos.", {}, []),
         _spec("offene_tickets", "Zeigt ALLE offenen Tickets (Antraege + Research) abteilungsuebergreifend -- "
               "LUNAs aktiver Arbeitsstand. Geschlossene sind hier NICHT enthalten (liegen im Abteilungsarchiv).",
               {}, []),
@@ -441,6 +443,33 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"offen": [{"id": n["id"], "text": redact(n.get("text", ""), sec)}
                           for n in ctx.agenda.offene()]}
 
+    if name == "obsidian_export":
+        from pathlib import Path as _P
+        from .watch_config import DEPARTMENT_WATCH
+        vault = _P(str(ctx.repo_root)) / "vault"
+        vault.mkdir(exist_ok=True)
+        ws = ["# Fachbereichs-Wissensstand", "", "_Erzeugt von LUNA (obsidian_export)._", ""]
+        if ctx.watch is not None:
+            for ab in DEPARTMENT_WATCH:
+                funde = ctx.watch.briefing(ab, limit=10)
+                if funde:
+                    ws.append(f"## {ab}")
+                    ws += [f"- {redact(f.get('titel', ''), sec)} — {f.get('url', '')}" for f in funde]
+                    ws.append("")
+        (vault / "Wissensstand.md").write_text("\n".join(ws), encoding="utf-8")
+        offen_a = [x for x in ctx.antraege.list()
+                   if x.get("status") in ("eingereicht", "freigegeben", "in_umsetzung")]
+        offen_r = ([x for x in ctx.research.list() if x.get("status") in ("offen", "in_arbeit")]
+                   if ctx.research is not None else [])
+        ot = ["# Offene Tickets", "", "## Antraege"]
+        ot += [f"- **{x.get('titel', '')}** ({x.get('status')}) — {x.get('von', '')} · `{x['antrag_id']}`"
+               for x in offen_a] or ["- (keine)"]
+        ot += ["", "## Research"]
+        ot += [f"- {redact(x.get('frage', ''), sec)[:70]} ({x.get('status')}) — {x.get('abteilung', '')}"
+               for x in offen_r] or ["- (keine)"]
+        (vault / "Offene-Tickets.md").write_text("\n".join(ot), encoding="utf-8")
+        return {"ok": True, "dateien": ["vault/Wissensstand.md", "vault/Offene-Tickets.md"]}
+
     if name == "systemcheck":
         from .self_maintenance import SelfMaintenance
         sm = SelfMaintenance(secrets=ctx.secret_dict or {}, watch=ctx.watch, google=ctx.google,
@@ -524,11 +553,13 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         if not token:
             return {"ok": False, "fall_b": True,
                     "hinweis": "GitHub-Push nicht aktiv -- GITHUB_TOKEN fehlt (CEO-Tor + CISO; PAT in .env)."}
-        repo = (ctx.secret_dict or {}).get("GITHUB_REPO", "github.com/hsvnils/agent-OS.git").strip()
+        # HART gesperrt: ausschliesslich hsvnils/agent-OS -- niemals ein anderes Repo anfassen.
+        repo = "github.com/hsvnils/agent-OS.git"
         from .execution_live import push_branch
         ok, out = push_branch(ctx.repo_root, f"antrag/{aid}", token=token, repo_url=repo)
         return {"ok": ok, "ausgabe": redact(out, sec + [token]),
-                "hinweis": "Branch gepusht -- als Pull Request auf GitHub mergen." if ok else "Push fehlgeschlagen."}
+                "hinweis": "Branch nach hsvnils/agent-OS gepusht -- als Pull Request mergen." if ok
+                else "Push fehlgeschlagen."}
 
     if name == "antrag_stellen":
         aid = ctx.antraege.stellen((args.get("titel") or "").strip(), (args.get("beschreibung") or "").strip(),

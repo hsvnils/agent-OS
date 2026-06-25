@@ -33,6 +33,11 @@ antraege/log_dryrun.jsonl
 # Build-Artefakte
 .xmind-build/
 
+# Obsidian: generierte Live-Exporte (Dashboard bleibt versioniert)
+vault/Wissensstand.md
+vault/Offene-Tickets.md
+.obsidian/
+
 # macOS
 .DS_Store
 **/.DS_Store
