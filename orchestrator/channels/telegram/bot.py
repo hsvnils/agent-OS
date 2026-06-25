@@ -41,7 +41,7 @@ def _load_secrets() -> dict:
 def _build_ctx(cfg: dict, secrets: dict):
     """Live-HoA-Werkzeugkontext (Opus-Backend, Gedaechtnis, Antraege, Execution-Engine)."""
     from ...core.antraege import Antraege
-    from ...core.backends import AgentSdkBackend
+    from ...core.backends import AgentSdkBackend, FallbackBackend
     from ...core.execution import ExecutionEngine
     from ...core import execution_live as live
     from ...core.hoa import HeadOfAgents
@@ -54,8 +54,11 @@ def _build_ctx(cfg: dict, secrets: dict):
 
     from ...governance.leak_guard import is_redactable_secret
     secret_values = [v for v in secrets.values() if is_redactable_secret(v)]
-    backend = AgentSdkBackend(cfg["models"], cfg["effort"], gate=CeoGate(),
-                              max_turns=cfg["run"].get("max_turns", 4))
+    # Fachagenten-Backend: Claude-CLI mit Gemini/OpenAI-Fallback (greift bei Anthropic-Sperre/Limit).
+    backend = FallbackBackend(
+        AgentSdkBackend(cfg["models"], cfg["effort"], gate=CeoGate(),
+                        max_turns=cfg["run"].get("max_turns", 4)),
+        fallbacks=_fallbacks(secrets, cfg))
     changelog = partial(append_changelog, ROOT / cfg["governance"]["changelog_file"])
     mem_cfg = cfg.get("memory", {})
     memory = Memory(ROOT / mem_cfg.get("path", "orchestrator/memory/log.jsonl"),

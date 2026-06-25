@@ -41,6 +41,41 @@ class MockBackend:
         return f"[{agent_key}] Ergebnis zu: {message.strip()}"
 
 
+class FallbackBackend:
+    """Primaeres Backend (Claude-CLI) mit Fallback auf OpenAI-kompatible Anbieter (Gemini gratis, OpenAI).
+
+    Faellt der Claude-CLI-Aufruf aus (z. B. Anthropic-Limit), liefert ein Fallback-Anbieter die Antwort.
+    Fachagenten-Aufrufe sind reine Text-Antworten (kein Tool-Calling) -> einfache Chat-Completion.
+    """
+
+    def __init__(self, primary: "Backend", *, fallbacks: list[dict] | None = None):
+        self.primary = primary
+        self.fallbacks = [f for f in (fallbacks or []) if f.get("key")]
+
+    def respond(self, agent_key: str, system_prompt: str, message: str, context: dict) -> str:
+        try:
+            return self.primary.respond(agent_key, system_prompt, message, context)
+        except Exception as exc:
+            if not self.fallbacks:
+                raise
+            for fb in self.fallbacks:
+                try:
+                    return self._kompatibel(fb, system_prompt, message)
+                except Exception:
+                    continue
+            raise exc
+
+    @staticmethod
+    def _kompatibel(fb: dict, system_prompt: str, message: str) -> str:
+        import openai
+        client = openai.OpenAI(api_key=fb["key"], base_url=fb.get("base_url") or None)
+        r = client.chat.completions.create(
+            model=fb["model"], max_tokens=1024,
+            messages=[{"role": "system", "content": system_prompt or "Antworte als Fachagent knapp."},
+                      {"role": "user", "content": message}])
+        return (r.choices[0].message.content or "").strip()
+
+
 class AgentSdkBackend:
     """Echtes Backend auf Basis des Claude Agent SDK (Python).
 
