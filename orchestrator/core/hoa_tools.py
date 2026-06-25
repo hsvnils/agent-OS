@@ -72,6 +72,16 @@ def tool_specs() -> list[dict]:
         _spec("wissensstand", "Zeigt den aktuellen Fachbereichs-Wissensstand einer Abteilung (gesammelte "
               "Web-Funde, neueste zuerst) -- reine Anzeige, keine neue Suche, keine Token.",
               {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto, ciso, cfo).")}, ["abteilung"]),
+        # -- Phase 13: Selbst-Entwicklung (on-demand; macht LLM-Aufrufe -> nur auf CEO-Anfrage) --
+        _spec("selbstentwicklung", "Phase 13: laesst einen Fachbereich aus seinem aktuellen Wissensstand EINEN "
+              "konkreten Verbesserungs-Vorschlag ableiten, von CTO+CFO bewerten und als ANTRAG einreichen "
+              "(keine Ausfuehrung; CEO entscheidet). Ohne Abteilung: Bereich mit dem meisten neuen Wissen. "
+              "Nutzt LLM -- nur auf CEO-Anfrage starten.",
+              {"abteilung": _str("Optional: Abteilungs-Kuerzel (sonst automatisch).")}, []),
+        _spec("autonomie_pausieren", "Notbremse: pausiert (true) oder reaktiviert (false) ALLE autonomen "
+              "Hintergrund-Ablaeufe (Watcher + Selbst-Entwicklung).",
+              {"pausieren": _bool("true = anhalten, false = wieder freigeben.")}, ["pausieren"]),
+        _spec("autonomie_status", "Zeigt, ob die autonomen Ablaeufe aktuell pausiert sind.", {}, []),
         # -- Google Workspace (Phase 11): Lesen direkt, Schreiben/Senden NUR mit bestaetigt=true (Mensch-Tor) --
         _spec("mail_suchen", "Durchsucht das Google-Postfach (Gmail-Query, z. B. 'from:x is:unread').",
               {"query": _str("Gmail-Suchanfrage."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
@@ -244,6 +254,31 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         # watch_tick
         neue = watch.github_tick()
         return {"ok": True, "neue_funde": len(neue), "repos": neue}
+
+    if name == "selbstentwicklung":
+        from .self_development import SelfDevelopment
+        sd = SelfDevelopment(ctx.core, web=ctx.web, watch=ctx.watch, antraege=ctx.antraege, secrets=sec)
+        if ctx.watch is not None and ctx.watch.store.paused():
+            return {"ok": False, "hinweis": "Autonomie pausiert (Notbremse) -- erst reaktivieren."}
+        ab = (args.get("abteilung") or "").strip().lower()
+        if not ab:
+            bereiche = sd._bereiche_mit_wissen()
+            ab = bereiche[0] if bereiche else "berater"
+        erg = sd.vorschlag_fuer(ab)
+        return {"ok": True, "abteilung": erg.abteilung, "idee": redact(erg.idee, sec),
+                "machbarkeit": redact(erg.machbarkeit, sec),
+                "kostenvoranschlag": redact(erg.kostenvoranschlag, sec), "antrag_id": erg.antrag_id,
+                "hinweis": "Als Antrag eingereicht -- CEO entscheidet (keine Ausfuehrung)."}
+
+    if name == "autonomie_pausieren":
+        if ctx.watch is None:
+            return {"fehler": "Kein Watcher verfuegbar."}
+        ctx.watch.store.set_pause(bool(args.get("pausieren")))
+        return {"ok": True, "pausiert": ctx.watch.store.paused()}
+
+    if name == "autonomie_status":
+        pausiert = ctx.watch.store.paused() if ctx.watch is not None else False
+        return {"pausiert": pausiert}
 
     if name == "innovation_scouting":
         from .innovation import InnovationPipeline

@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 12:45] — Claude Code
+- **Was:** Phase 13 (Self-Development-Loop, Apex) gebaut + abgesichert. Der Kreis schliesst sich:
+  Fachbereichs-Wissensstand (Phase 12) -> Agent leitet Verbesserung in SEINEM Bereich ab -> CTO/CFO-Bewertung
+  -> **Antrag** (Phase 6) -> CEO-Freigabe -> Execution (Phase 7). Neu: `core/self_development.py`
+  (`SelfDevelopment.vorschlag_fuer(abteilung)` on-demand, `lauf()` geplant+gated); `InnovationPipeline.run`
+  um `abteilung`/`wissen` erweitert (abteilungs- & wissensbasierte Vorschlaege, spart Web-Recherche).
+  HoA-Tools `selbstentwicklung(abteilung?)`, `autonomie_pausieren`, `autonomie_status`. **Notbremse:**
+  `WatchStore.set_pause/paused`; Bot-Hintergrund-Loop und Selbst-Entwicklung respektieren die Pause.
+  **Harte Invarianten:** nur Vorschlaege (Antrag, kein Ausfuehren); token-frugal (LLM nur on-demand; geplanter
+  Loop per Default AUS, `SELF_DEV_ENABLED`); CEO-Tor/Charta-Rechte/Leck-Schutz unveraendert. 6 neue
+  Self-Checks; Gesamtsuite **88/88 OK**. Plan: `PHASE13_PLAN.md`.
+- **Warum:** Roadmap-Apex -- die Agenten entwickeln sich auf Basis ihres aktuellen Fachbereichs-Wissens selbst
+  weiter, kontrolliert ueber den freigegebenen Antrags-/Execution-Pfad und token-bewusst.
+- **Betroffen:** `orchestrator/core/self_development.py` (neu), `orchestrator/core/innovation.py`,
+  `orchestrator/core/scheduler.py` (Pause), `orchestrator/core/hoa_tools.py` (3 Tools),
+  `orchestrator/channels/telegram/bot.py` (Loop respektiert Pause),
+  `orchestrator/tests/test_self_development.py` (neu), `PHASE13_PLAN.md` (neu).
+
 ## [2026-06-25 12:25] — Claude Code
 - **Was:** Phase-12/13-Bruecke -- Fachbereichs-Recherche ueber den **Researcher** + Wissensstand zurueck an
   die Agenten. (1) `dept_tick` laeuft jetzt ueber den Researcher: erzeugt je Lauf ein Research-Ticket

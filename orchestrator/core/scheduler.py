@@ -77,6 +77,14 @@ class WatchStore:
                  and (kategorie is None or e.get("kategorie") == kategorie)]
         return list(reversed(items))[:limit]
 
+    def set_pause(self, an: bool) -> None:
+        """Notbremse: haelt alle autonomen Ablaeufe an / gibt sie frei."""
+        self._append({"ts": _now(), "typ": "pause", "an": bool(an)})
+
+    def paused(self) -> bool:
+        zustand = [e.get("an") for e in self._events() if e.get("typ") == "pause"]
+        return bool(zustand[-1]) if zustand else False
+
     def last_run(self, job: str) -> str | None:
         runs = [e["ts"] for e in self._events() if e.get("typ") == "run" and e.get("job") == job]
         return runs[-1] if runs else None

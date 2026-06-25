@@ -145,9 +145,12 @@ def _start_watch_loop(watch, interval_hours: float) -> None:
         time.sleep(20)  # Start nicht blockieren
         while True:
             try:
-                watch.github_tick()                 # kostenlos (GitHub-API)
-                if rot is not None:
-                    watch.dept_tick(next(rot))       # je Tick EINE Abteilung -> Brave-Gratis-Quota schonen
+                if watch.store.paused():             # Notbremse -> nichts tun
+                    pass
+                else:
+                    watch.github_tick()              # kostenlos (GitHub-API)
+                    if rot is not None:
+                        watch.dept_tick(next(rot))    # je Tick EINE Abteilung -> Brave-Gratis-Quota schonen
             except Exception as exc:                 # nie den Bot mitreissen
                 print(f"[watch] Tick-Fehler: {exc}", flush=True)
             time.sleep(max(0.1, interval_hours) * 3600)

@@ -37,24 +37,35 @@ class InnovationPipeline:
         self.antraege = antraege    # Antraege (optional)
         self.secrets = secrets or []
 
-    def run(self, thema: str = "Neue Entwicklungen bei KI-Agenten") -> InnovationErgebnis:
+    def run(self, thema: str = "Neue Entwicklungen bei KI-Agenten", *, abteilung: str = "berater",
+            wissen: str = "") -> InnovationErgebnis:
+        """Erzeugt einen bewerteten Vorschlag als Antrag.
+
+        `abteilung`: welcher Fachagent die Idee liefert (Default Berater = firmenweite Innovation; sonst
+        Selbst-Weiterentwicklung dieses Bereichs, Phase 13). `wissen`: vorhandener Fachbereichs-Wissensstand
+        (spart eine Web-Recherche -> token-frugal).
+        """
         erg = InnovationErgebnis(thema=thema)
 
-        # 1. Beobachten -- Web-Recherche (ueber den Researcher/Web-Router), wenn verfuegbar.
-        if self.web is not None:
+        # 1. Befund -- vorhandener Wissensstand bevorzugt; sonst Web-Recherche (ueber den Researcher).
+        if wissen:
+            erg.befund = redact(wissen, self.secrets)
+        elif self.web is not None:
             r = self.web.recherchiere(f"Aktuelle Entwicklungen, Tools und Best Practices: {thema}")
             if getattr(r, "ok", False):
                 erg.befund = redact(r.zusammenfassung or "\n".join(
                     f"- {t.titel}: {t.auszug}" for t in r.treffer if t.titel), self.secrets)
                 erg.quellen = [t.url for t in r.treffer if t.url]
 
-        # 2. Idee -- Unternehmensberater (Agent 01).
+        # 2. Idee -- vom zustaendigen Fachagenten (Berater firmenweit, sonst der Bereich selbst).
+        rolle = ("der Unternehmensberater (Innovation)" if abteilung == "berater"
+                 else f"der Fachbereich '{abteilung}'")
         erg.idee = self._frag(
-            "berater",
-            "Du bist der Unternehmensberater (Innovation). Schlage GENAU EINE konkrete, umsetzbare "
-            "Weiterentwicklung fuer dieses KI-Agenten-Unternehmen vor: erste Zeile ein praegnanter Titel, "
-            "danach 2-3 Saetze Nutzen/Begruendung. Beziehe den Recherche-Befund ein, wenn vorhanden.\n\n"
-            f"Thema: {thema}\n\nRecherche-Befund:\n{erg.befund or '(keine Recherche)'}")
+            abteilung,
+            f"Du bist {rolle}. Schlage GENAU EINE konkrete, umsetzbare Weiterentwicklung in deinem "
+            "Verantwortungsbereich vor: erste Zeile ein praegnanter Titel, danach 2-3 Saetze "
+            "Nutzen/Begruendung. Stuetze dich auf den aktuellen Wissensstand, wenn vorhanden.\n\n"
+            f"Thema: {thema}\n\nWissensstand/Befund:\n{erg.befund or '(keiner)'}")
 
         # 3. Bewertung -- CTO (Machbarkeit) + CFO (Kostenvoranschlag).
         erg.machbarkeit = self._frag(
@@ -66,13 +77,15 @@ class InnovationPipeline:
 
         # 4. Antrag -- entscheidungsreif buendeln (Phase 6). Keine Ausfuehrung.
         if self.antraege is not None:
+            von = ("Unternehmensberater (Innovation)" if abteilung == "berater"
+                   else f"{abteilung} (Selbst-Entwicklung)")
             beschreibung = (
-                f"Idee (Unternehmensberater):\n{erg.idee}\n\n"
+                f"Idee ({von}):\n{erg.idee}\n\n"
                 f"Technische Machbarkeit (CTO):\n{erg.machbarkeit}\n\n"
                 f"Kostenvoranschlag (CFO):\n{erg.kostenvoranschlag}\n\n"
-                f"Quellen: {', '.join(erg.quellen) if erg.quellen else '(keine)'}")
+                f"Quellen: {', '.join(erg.quellen) if erg.quellen else '(Wissensstand)'}")
             erg.antrag_id = self.antraege.stellen(
-                _titel(erg.idee), beschreibung, von="Unternehmensberater (Innovation)",
+                _titel(erg.idee), beschreibung, von=von,
                 kategorie="Innovation/Beschaffung (Kosten pruefen)")
         return erg
 
