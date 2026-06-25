@@ -76,11 +76,22 @@ async def _arun(task: str, cwd: str, model: str, max_turns: int) -> str:
         env={"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"},
     )
     parts: list[str] = []
-    async for msg in query(prompt=task, options=options):
-        if isinstance(msg, AssistantMessage):
-            for block in msg.content:
-                if isinstance(block, TextBlock):
-                    parts.append(block.text)
+    try:
+        async for msg in query(prompt=task, options=options):
+            if isinstance(msg, AssistantMessage):
+                for block in msg.content:
+                    if isinstance(block, TextBlock):
+                        parts.append(block.text)
+    except Exception as exc:
+        s = str(exc).lower()
+        if any(w in s for w in ("usage limit", "limit", "credit", "balance", "error result",
+                                "too low", "quota")):
+            raise RuntimeError(
+                "Umsetzung nicht moeglich: Die Code-Ausfuehrung braucht das Claude-Modell (CLI), das aktuell "
+                "durch das Anthropic-Limit gesperrt ist (Zugang wieder ab 2026-07-01 oder mit aufgeladenem "
+                "Anthropic-Guthaben). Vorschlaege und Entscheidungen funktionieren weiter ueber Gemini; nur die "
+                "tatsaechliche Umsetzung wartet auf den Anthropic-Zugang.") from exc
+        raise
     return "".join(parts).strip()
 
 

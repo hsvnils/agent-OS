@@ -74,8 +74,8 @@ class SelfDevelopment:
         if erg.antrag_id and self.notify is not None:
             titel = (erg.idee.splitlines()[0][:70] if erg.idee else "Vorschlag")
             try:
-                self.notify(f"Neuer Selbst-Entwicklungs-Vorschlag (Antrag {erg.antrag_id}) -- bitte "
-                            f"freigeben oder ablehnen. Kurz: {titel}",
+                self.notify(f"Neuer Vorschlag: {titel}. Zum Entscheiden antworte mir: 'gib {erg.antrag_id} "
+                            f"frei' oder 'lehn {erg.antrag_id} ab'.",
                             abteilung=f"{abteilung} (Selbst-Entwicklung)", kategorie="freigabe",
                             quelle="self-dev", detail=erg.idee)
             except Exception:

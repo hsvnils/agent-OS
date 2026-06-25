@@ -195,6 +195,8 @@ def tool_specs() -> list[dict]:
               {"antrag_id": _str("Antrag-ID.")}, ["antrag_id"]),
         _spec("antrag_ablehnen", "Lehnt einen Antrag ab (mit Grund).",
               {"antrag_id": _str("Antrag-ID."), "grund": _str("Begruendung.")}, ["antrag_id"]),
+        _spec("antrag_details", "Zeigt einen einzelnen Antrag (Titel, Beschreibung, Status, Verlauf) -- per "
+              "voller ID oder kurzem Suffix.", {"antrag_id": _str("Antrag-ID oder Suffix.")}, ["antrag_id"]),
         _spec("antrag_umsetzen", "Setzt einen FREIGEGEBENEN Antrag real um (Branch + Tests, kein Merge). "
               "Dauert ggf. ~1 Minute.", {"antrag_id": _str("Antrag-ID (freigegeben).")}, ["antrag_id"]),
         _spec("antrag_mergen", "Mergt einen ERLEDIGTEN Antrag nach main -- nur nach CEO-Bestaetigung.",
@@ -613,6 +615,18 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"anzahl": len(items),
                 "antraege": [{"id": x["antrag_id"], "titel": x.get("titel", ""), "von": x.get("von", ""),
                               "status": x.get("status", "")} for x in items]}
+
+    if name == "antrag_details":
+        key = str(args.get("antrag_id", "")).strip().lstrip("#")
+        treffer = [a for a in ctx.antraege.list()
+                   if a["antrag_id"] == key or a["antrag_id"].endswith(key)]
+        if not treffer:
+            return {"fehler": f"Antrag '{key}' nicht gefunden. Tipp: '#xxxx' ist eine Meldungs-ID "
+                    "(meldung_details), kein Antrag."}
+        a = treffer[0]
+        return {"id": a["antrag_id"], "titel": a.get("titel", ""),
+                "beschreibung": redact(a.get("beschreibung", ""), sec), "von": a.get("von", ""),
+                "status": a.get("status", ""), "verlauf": a.get("verlauf", [])}
 
     if name == "antrag_freigeben":
         aid = str(args.get("antrag_id", "")).strip()

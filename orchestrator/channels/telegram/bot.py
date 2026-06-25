@@ -380,6 +380,24 @@ def main() -> None:
                         msg += f"\nDetails: schreib mir \"zeig #{kurz}\""
                     if _api(token, "sendMessage", {"chat_id": allowed, "text": msg}).get("ok"):
                         ctx.notifications.mark_sent(n["id"])
+                        # Kontext in die CEO-Session geben, damit LUNA bei Rueckfragen ("ist freigegeben")
+                        # weiss, worauf der CEO sich bezieht (Pushes kommen sonst ausserhalb des Chats an).
+                        try:
+                            cid = int(allowed)
+                            conv = sessions.get(cid)
+                            if conv is None:
+                                conv = HoaConversation(ctx, model=model,
+                                                       api_key=secrets["ANTHROPIC_API_KEY"],
+                                                       fallbacks=_fallbacks(secrets, cfg))
+                                sessions[cid] = conv
+                            kontext = f"(Proaktive Meldung, die ich dem CEO gesendet habe:) {ab}: {n['text']}"
+                            if n.get("detail"):
+                                kontext += f" | Detail: {str(n['detail'])[:300]}"
+                            conv.messages.append({"role": "user", "content": kontext})
+                            conv.messages.append({"role": "assistant",
+                                                  "content": [{"type": "text", "text": msg}]})
+                        except Exception:
+                            pass
             except Exception as exc:
                 print(f"[notify] Zustell-Fehler: {exc}", flush=True)
         for u in upd.get("result", []):

@@ -72,8 +72,8 @@ class TestGoogleActionsWatcher(unittest.TestCase):
         erg = sd.vorschlag_fuer("cfo")
         self.assertIsNotNone(erg.antrag_id)
         texte = " ".join(n["text"] for n in nb.pending())
-        self.assertIn("bitte", texte.lower())
-        self.assertIn("freigeben", texte.lower())
+        self.assertIn("frei", texte.lower())          # 'gib <id> frei'
+        self.assertIn(erg.antrag_id, texte)           # Antrags-ID steht in der Meldung (klare Aktion)
 
     def test_7_research_auto_close(self):
         r = ResearchTickets(Path(tempfile.mkdtemp()) / "r.jsonl")
