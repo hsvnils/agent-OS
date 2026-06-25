@@ -65,7 +65,8 @@ def _build_ctx(cfg: dict, secrets: dict):
                         changelog=changelog, logger=Logger(), memory=memory)
     antraege = Antraege(ROOT / "antraege" / "log.jsonl", secrets=secret_values, changelog=changelog)
     engine = ExecutionEngine(
-        antraege, make_workspace=live.real_make_workspace(ROOT),
+        antraege, make_workspace=live.real_make_workspace(
+            ROOT, snapshot=secrets.get("EXECUTION_AUTO_SNAPSHOT", "").strip() in ("1", "true", "yes")),
         run_agent=live.real_run_agent(model=cfg.get("voice", {}).get("exec_model", "claude-opus-4-8")),
         run_tests=live.real_run_tests(), diff=live.real_diff(),
         secrets=secret_values, changelog=changelog,

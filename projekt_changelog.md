@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 16:05] — Claude Code
+- **Was:** (1) **Restbaustelle Execution behoben:** `real_make_workspace(..., snapshot=True)` committet in der
+  Produktion (NAS) vor dem Branchen einen Deploy-Snapshot der aktuellen Dateien -> der Worktree bekommt den
+  AKTUELLEN deployten Code (vorher branchte er vom veralteten HEAD). Flag `EXECUTION_AUTO_SNAPSHOT=1` nur auf
+  NAS; Mac aus. Git-Identitaet (user.name/email) ins Image. (2) **Ticket-Management:** `offene_tickets`
+  (alle offenen Antraege+Research abteilungsuebergreifend = LUNAs aktiver, schlanker Stand) und
+  `abteilung_tickets(abteilung, status?)` (geschlossene aus dem Abteilungsarchiv, nur auf Abruf). Prompt
+  erklaert das schlanke Modell. (3) **Finance-Kostencheck:** `kosten_optimierung(fokus?)` -- CFO prueft
+  Freeware-/Token-Sparpotenziale (Vorschlag, kein Ausfuehren). 5 neue Self-Checks; Gesamtsuite **121/121 OK**.
+- **Warum:** CEO-Wunsch -- Execution gegen aktuellen Code; offene Tickets bei LUNA, geschlossene im
+  Abteilungsarchiv (Wissen schlank halten); Finance soll Kosten senken.
+- **Betroffen:** `orchestrator/core/execution_live.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/core/hoa_conversation.py`, `deploy/Dockerfile`,
+  `orchestrator/tests/test_tickets_finance.py` (neu).
+
 ## [2026-06-25 15:35] — Claude Code
 - **Was:** Zwei produktive Bugs (vom CEO via Telegram gemeldet) behoben. **(1) Git „dubious ownership" (exit
   128):** der Container laeuft als root, das Bind-Mount-Repo gehoert nilskrueger -> `git worktree add` brach

@@ -106,6 +106,16 @@ def tool_specs() -> list[dict]:
         _spec("agenda_zeigen", "Zeigt die offenen manuellen Agenda-Punkte.", {}, []),
         _spec("systemcheck", "IT-Selbstcheck: prueft sofort, ob alle Prozesse/Komponenten laufen (Keys, "
               "Google, Stores, Watcher-Heartbeat). Kostenlos.", {}, []),
+        _spec("offene_tickets", "Zeigt ALLE offenen Tickets (Antraege + Research) abteilungsuebergreifend -- "
+              "LUNAs aktiver Arbeitsstand. Geschlossene sind hier NICHT enthalten (liegen im Abteilungsarchiv).",
+              {}, []),
+        _spec("abteilung_tickets", "Holt Tickets einer Abteilung aus dem Archiv (auf Abruf) -- Default die "
+              "geschlossenen (erledigt/abgelehnt/fehlgeschlagen). So bleibt LUNAs aktiver Stand schlank.",
+              {"abteilung": _str("Abteilung/Rolle, z. B. cto, cfo, ciso."),
+               "status": _str("Optional: bestimmter Status; sonst alle geschlossenen.")}, ["abteilung"]),
+        _spec("kosten_optimierung", "Laesst den CFO pruefen, wo Kosten gesenkt werden koennen (Freeware-"
+              "Alternativen, Token-Nutzung reduzieren, ungenutzte Abos). Liefert Vorschlaege (kein Ausfuehren).",
+              {"fokus": _str("Optionaler Fokus, z. B. 'Token' oder 'Abos'.")}, []),
         # -- Google Workspace (Phase 11): Lesen direkt, Schreiben/Senden NUR mit bestaetigt=true (Mensch-Tor) --
         _spec("mail_suchen", "Durchsucht das Google-Postfach (Gmail-Query, z. B. 'from:x is:unread').",
               {"query": _str("Gmail-Suchanfrage."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
@@ -350,6 +360,55 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"id": n["id"], "abteilung": n.get("abteilung", ""), "kategorie": n.get("kategorie", ""),
                 "ts": n.get("ts", ""), "text": redact(n.get("text", ""), sec),
                 "detail": redact(n.get("detail", "") or "(kein weiterer Hintergrund gespeichert)", sec)}
+
+    if name == "offene_tickets":
+        offen_a = [x for x in ctx.antraege.list()
+                   if x.get("status") in ("eingereicht", "freigegeben", "in_umsetzung")]
+        offen_r = []
+        if ctx.research is not None:
+            offen_r = [x for x in ctx.research.list() if x.get("status") in ("offen", "in_arbeit")]
+        return {"anzahl": len(offen_a) + len(offen_r),
+                "antraege": [{"id": x["antrag_id"], "titel": x.get("titel", ""), "von": x.get("von", ""),
+                              "status": x.get("status", "")} for x in offen_a],
+                "research": [{"id": x["ticket_id"], "abteilung": x.get("abteilung", ""),
+                              "frage": (x.get("frage", "") or "")[:60], "status": x.get("status", "")}
+                             for x in offen_r]}
+
+    if name == "abteilung_tickets":
+        ab = (args.get("abteilung") or "").strip().lower()
+        status = (args.get("status") or "").strip().lower()
+        geschlossen = ("erledigt", "abgelehnt", "fehlgeschlagen")
+        def _match(v):
+            return ab and ab in (v or "").lower()
+        a_items = [x for x in ctx.antraege.list()
+                   if _match(x.get("von")) and (x.get("status") == status if status
+                                                else x.get("status") in geschlossen)]
+        r_items = []
+        if ctx.research is not None:
+            r_items = [x for x in ctx.research.list()
+                       if _match(x.get("abteilung")) and (x.get("status") == status if status
+                                                          else x.get("status") in geschlossen)]
+        return {"abteilung": ab, "anzahl": len(a_items) + len(r_items),
+                "antraege": [{"id": x["antrag_id"], "titel": x.get("titel", ""), "status": x.get("status", "")}
+                             for x in a_items],
+                "research": [{"id": x["ticket_id"], "frage": (x.get("frage", "") or "")[:60],
+                              "status": x.get("status", "")} for x in r_items]}
+
+    if name == "kosten_optimierung":
+        fokus = (args.get("fokus") or "").strip()
+        aktive = [k for k in ("ANTHROPIC_API_KEY", "DEEPGRAM_API_KEY", "ELEVENLABS_API_KEY",
+                              "AGENTOPS_API_KEY", "BRAVE_API_KEY") if (ctx.secret_dict or {}).get(k)]
+        finanz = finance_text(ctx.finance_dir, sec)
+        frage = ("Wo koennen wir Kosten senken? Pruefe Freeware-/Open-Source-Alternativen, ungenutzte Abos "
+                 "und Moeglichkeiten, die Token-/API-Nutzung zu reduzieren. Knapp, priorisiert.\n\n"
+                 f"Fokus: {fokus or 'alle Kosten'}\nAktive kostenpflichtige/externe Dienste (Keys gesetzt): "
+                 f"{', '.join(aktive)}\nBudget/Finanzen:\n{finanz}")
+        spec = ctx.core.subagents.get("cfo")
+        try:
+            out = ctx.core.backend.respond("cfo", spec.system_prompt if spec else "", frage, {})
+        except Exception as exc:
+            return {"ok": False, "fehler": str(exc)[:200]}
+        return {"ok": True, "vorschlaege": redact(out, sec)}
 
     if name == "briefing_jetzt":
         from .briefing import Briefing

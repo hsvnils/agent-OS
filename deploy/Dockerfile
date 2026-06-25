@@ -19,7 +19,9 @@ ENV PYTHONUNBUFFERED=1
 # Repo wird als Bind-Mount (Eigentuemer != root) eingehaengt -> Git wuerde sonst mit
 # "detected dubious ownership" (exit 128) abbrechen. /app als sicher markieren.
 RUN git config --global --add safe.directory /app \
- && git config --global --add safe.directory '*'
+ && git config --global --add safe.directory '*' \
+ && git config --global user.email "luna@hanserautisch.local" \
+ && git config --global user.name "LUNA"
 WORKDIR /app
 # Code/Daten kommen per Volume (siehe docker-compose.yml). Secrets liegen in orchestrator/.env (gemountet).
 CMD ["python", "-m", "orchestrator.channels.telegram.bot"]

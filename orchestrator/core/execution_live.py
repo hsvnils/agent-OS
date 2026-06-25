@@ -30,7 +30,7 @@ def _git(repo: str, *args, check=False):
     return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, check=check)
 
 
-def real_make_workspace(repo_root):
+def real_make_workspace(repo_root, *, snapshot: bool = False):
     repo_root = Path(repo_root)
 
     def make(antrag_id: str):
@@ -38,6 +38,12 @@ def real_make_workspace(repo_root):
         ws = repo_root / ".worktrees" / f"antrag-{antrag_id}"
         # Defensiv: Bind-Mount-Repo (Eigentuemer != Prozess-User) sonst "dubious ownership" -> exit 128.
         _git(repo_root, "config", "--global", "--add", "safe.directory", str(repo_root))
+        # Produktion (NAS): tar-Sync aktualisiert Dateien, nicht den git-Index -> HEAD waere veraltet.
+        # Vor dem Branchen einen Snapshot der aktuellen Dateien committen, damit der Worktree den
+        # AKTUELLEN deployten Code bekommt (nicht den alten HEAD). Auf dem Mac (snapshot=False) aus.
+        if snapshot:
+            _git(repo_root, "add", "-A")
+            _git(repo_root, "commit", "-m", f"Deploy-Snapshot vor Antrag {antrag_id}")  # ignoriert "nothing to commit"
         if ws.exists():
             _git(repo_root, "worktree", "remove", "--force", str(ws))
         _git(repo_root, "worktree", "prune")             # verwaiste Worktree-Eintraege aufraeumen
