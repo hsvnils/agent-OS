@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 11:20] — Claude Code
+- **Was:** Phase 11 (Google Workspace) **live geschaltet** fuer `hanserautisch@gmail.com`. OAuth-Desktop-Client
+  in der Google Cloud (Projekt LUNA) angelegt; einmalige Autorisierung ueber `deploy/google_oauth_authorize.py`
+  (Werte direkt in `.env` geschrieben, kein Echo). `GOOGLE_OAUTH_CLIENT_ID/SECRET/REFRESH_TOKEN` in
+  `orchestrator/.env` (Mac + NAS, gitignored). NAS-Image per `sync-to-nas.sh --build` neu gebaut (google-api-
+  python-client + google-auth), Container recreated. **Live-Test Mac UND NAS-Container OK:** Gmail (Treffer),
+  Kalender (ok), Drive (ok); `verfuegbar=True`. Schreib-Tools bleiben gated (bestaetigt=true). Mac-venv um
+  google-Libs ergaenzt.
+- **Warum:** CEO hat das Google-Konto + OAuth eingerichtet und die Zustimmung erteilt -> LUNA kann jetzt
+  Mails/Termine/Dateien/Sheets lesen (Schreiben nach Bestaetigung).
+- **Betroffen:** `governance/zugriffs-policy.md` (Status LIVE). Secrets/OAuth nur in `.env` (NICHT versioniert);
+  kein Code-Change (Phase-11-Code lag bereits vor).
+
 ## [2026-06-25 11:05] — Claude Code
 - **Was:** Phase 11 (Google Workspace) **offline gebaut** (Go-Live wartet auf CEO-Tor + CISO). LUNA bekommt
   Zugriff auf ein **separates Google-Konto** -- Gmail, Kalender, Drive, Sheets. Neues Modul
