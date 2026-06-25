@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 09:35] — Claude Code
+- **Was:** Phase 8 (Web-Research / Self-Education) **offline gebaut** (Go-Live wartet auf CEO-Tor). Neues
+  Modul `orchestrator/governance/web_research.py` mit Provider-Abstraktion + Router: `MockProvider` (offline,
+  kostenlos), `BraveProvider` (rohe Treffer, `BRAVE_API_KEY`) und `AnthropicProvider` (agentische Recherche +
+  Synthese via nativem web_search-Tool, vorhandener `ANTHROPIC_API_KEY`, lazy import). `route_komplexitaet`
+  waehlt einfache Lookups -> Brave, komplexe Recherche -> Anthropic; Verfuegbarkeits-Fallback. Neues
+  HoA-Tool `web_recherche(query, tiefe?)` (gated, Leck-Schutz; `ToolContext.web` injizierbar). Externe
+  Inhalte werden als Daten behandelt (Injection-Schutz); ohne freigegebene Keys kommt ein Fall-B-Hinweis
+  (CEO-Tor) statt Ergebnissen/Absturz. 8 Offline-Self-Checks; Gesamtsuite **49/49 OK** (vorher 41).
+  Zugriffs-Policy: Capability `web_research` fuer berater+cto als „vorbereitet -- CEO-Tor offen" eingetragen.
+  Plan: `PHASE8_PLAN.md`.
+- **Warum:** Roadmap Phase 8 (vom CEO als naechster Schritt gewaehlt) -- Augen nach aussen fuer Berater
+  (Innovations-Scouting) und IT (Self-Education); Offline-first, damit Go-Live nur noch ein Key-/Freigabe-Flip ist.
+- **Betroffen:** `orchestrator/governance/web_research.py` (neu), `orchestrator/core/hoa_tools.py`
+  (Tool `web_recherche` + `ToolContext.web`), `orchestrator/tests/test_web_research.py` (neu),
+  `governance/zugriffs-policy.md`, `PHASE8_PLAN.md` (neu).
+
 ## [2026-06-25 09:10] — Claude Code
 - **Was:** NAS-Code-Sync Mac->NAS eingerichtet und live getestet. Neues Skript `deploy/sync-to-nas.sh`
   schiebt **nur den Code** auf die NAS und startet den `luna-telegram`-Container neu. Es ueberschreibt
