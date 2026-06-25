@@ -30,6 +30,7 @@ class ToolContext:
     notifications: object | None = None  # Notifications-Outbox (proaktiver Push) oder None
     agenda: object | None = None         # Agenda (manuelle Punkte fuer Briefings) oder None
     secret_dict: dict | None = None      # geparste .env (Key->Wert) fuer Health-Checks (keine Ausgabe)
+    kosten: object | None = None         # KostenStore (Token-/Kostenerfassung) oder None
 
 
 def tool_specs() -> list[dict]:
@@ -118,6 +119,8 @@ def tool_specs() -> list[dict]:
         _spec("kosten_optimierung", "Laesst den CFO pruefen, wo Kosten gesenkt werden koennen (Freeware-"
               "Alternativen, Token-Nutzung reduzieren, ungenutzte Abos). Liefert Vorschlaege (kein Ausfuehren).",
               {"fokus": _str("Optionaler Fokus, z. B. 'Token' oder 'Abos'.")}, []),
+        _spec("kosten_statistik", "Zeigt die echte Token-/Kostenerfassung des laufenden Monats (je Quelle und "
+              "Provider, EUR-geschaetzt).", {}, []),
         # -- Google Workspace (Phase 11): Lesen direkt, Schreiben/Senden NUR mit bestaetigt=true (Mensch-Tor) --
         _spec("mail_suchen", "Durchsucht das Google-Postfach (Gmail-Query, z. B. 'from:x is:unread').",
               {"query": _str("Gmail-Suchanfrage."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
@@ -421,6 +424,11 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         except Exception as exc:
             return {"ok": False, "fehler": str(exc)[:200]}
         return {"ok": True, "vorschlaege": redact(out, sec)}
+
+    if name == "kosten_statistik":
+        if ctx.kosten is None:
+            return {"hinweis": "Keine Kostenerfassung aktiv."}
+        return ctx.kosten.monat()
 
     if name == "briefing_jetzt":
         from .briefing import Briefing

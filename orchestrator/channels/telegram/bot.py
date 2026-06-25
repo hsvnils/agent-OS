@@ -94,11 +94,14 @@ def _build_ctx(cfg: dict, secrets: dict):
                            notify=notifications.enqueue, google=google, secrets=secret_values)
     # Briefings/Agenda (manuelle Punkte).
     from ...core.briefing import Agenda
+    from ...core.kosten import KostenStore
     agenda = Agenda(ROOT / "agenda" / "log.jsonl", secrets=secret_values)
+    kosten = KostenStore(ROOT / "finance" / "kosten-log.jsonl", secrets=secret_values)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,
-                       notifications=notifications, agenda=agenda, secret_dict=secrets), secret_values
+                       notifications=notifications, agenda=agenda, secret_dict=secrets,
+                       kosten=kosten), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:
@@ -281,10 +284,13 @@ def _start_cfo_loop(ctx, notify) -> None:
                 paused = ctx.watch is not None and ctx.watch.store.paused()
                 if jetzt.hour == 3 and not ctx.agenda.briefing_gesendet("cfo-kosten", datum) and not paused:
                     res = run_tool("kosten_optimierung", {}, ctx)
+                    stat = ctx.kosten.monat() if ctx.kosten is not None else {}
+                    kopf = (f"Laufende Modellkosten {stat.get('monat', '')}: ca. {stat.get('gesamt_eur', 0)} EUR "
+                            f"(je Provider: {stat.get('je_provider', {})}).\n\n" if stat else "")
                     if res.get("ok"):
                         notify("Taegliche Kostenpruefung -- Vorschlaege liegen vor.",
                                abteilung="CFO/Finance", kategorie="kosten", quelle="cfo-loop",
-                               detail=str(res.get("vorschlaege", ""))[:1500], dedup_stunden=0)
+                               detail=(kopf + str(res.get("vorschlaege", "")))[:1800], dedup_stunden=0)
                     ctx.agenda.markiere_briefing("cfo-kosten", datum)
             except Exception as exc:
                 print(f"[cfo] Fehler: {exc}", flush=True)

@@ -81,6 +81,7 @@ class HoaConversation:
                         return _fehlertext(exc2)
                 else:
                     return _fehlertext(exc)
+            self._erfasse_kosten(resp)
             self.messages.append({"role": "assistant", "content": resp.content})
             tool_uses = [b for b in resp.content if getattr(b, "type", None) == "tool_use"]
             if not tool_uses:
@@ -111,6 +112,18 @@ class HoaConversation:
                 self.messages.pop()
             else:
                 break
+
+    def _erfasse_kosten(self, resp) -> None:
+        kosten = getattr(self.ctx, "kosten", None)
+        usage = getattr(resp, "usage", None)
+        if kosten is None or usage is None:
+            return
+        try:
+            kosten.record(quelle="chat", modell=self.model,
+                          input_tokens=getattr(usage, "input_tokens", 0) or 0,
+                          output_tokens=getattr(usage, "output_tokens", 0) or 0)
+        except Exception:
+            pass
 
     @staticmethod
     def _ist_verlauf_fehler(exc: Exception) -> bool:

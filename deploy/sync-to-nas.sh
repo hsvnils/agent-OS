@@ -48,6 +48,7 @@ TAR_EXCLUDES=(
   --exclude='./.env'
   --exclude='./projekt_changelog.md'
   --exclude='./finance/budget.md'
+  --exclude='./finance/kosten-log.jsonl'
   --exclude='./orchestrator/memory/log.jsonl'
   --exclude='./orchestrator/memory/log_dryrun.jsonl'
   --exclude='./antraege/log.jsonl'

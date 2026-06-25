@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 17:35] — Claude Code
+- **Was:** CFO **Stufe 2 -- echte Token-/Kostenerfassung.** Neues `core/kosten.py` (`KostenStore`,
+  append-only `finance/kosten-log.jsonl`, leck-geschuetzt): jeder echte Modell-Aufruf meldet Token-Nutzung;
+  Monats-Aggregation je Quelle/Provider, EUR-geschaetzt (Richtwert-Raten Anthropic + OpenAI). `HoaConversation`
+  erfasst `resp.usage` je Chat-Antwort; `ToolContext.kosten`; Tool `kosten_statistik` (laufender Monat). Der
+  CFO-Tagesloop (03:00) zeigt jetzt die echten laufenden Modellkosten je Provider mit an. Sync excludet
+  `finance/kosten-log.jsonl` (NAS-Live). 4 neue Self-Checks; Gesamtsuite **129/129 OK**. Vorbereitung fuer
+  die Anthropic/OpenAI-Lastverteilung (provider-Feld im Log).
+- **Warum:** CEO will echte Kostentransparenz (Token je Agent/Provider) -- Grundlage, um die staendig
+  aufgebrauchten Anthropic-API-Token sinnvoll auf Anthropic+OpenAI zu verteilen.
+- **Betroffen:** `orchestrator/core/kosten.py` (neu), `orchestrator/core/hoa_conversation.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/channels/telegram/bot.py`, `deploy/sync-to-nas.sh`,
+  `orchestrator/tests/test_kosten.py` (neu).
+
 ## [2026-06-25 17:05] — Claude Code
 - **Was:** (1) **GitHub-Push live + hart gesperrt:** `GITHUB_TOKEN` (CEO-PAT) in `.env` (Mac+NAS, gitignored);
   Auth read-only verifiziert (ls-remote). Push **ausschliesslich** auf `hsvnils/agent-OS` -- doppelt gesperrt
