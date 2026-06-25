@@ -12,8 +12,9 @@ RUN apt-get update \
 #  - anthropic: konversationelles HoA-Gehirn (Tool-Loop)
 #  - google-api-python-client + google-auth: Google Workspace (Phase 11; nur aktiv mit OAuth-Credentials)
 #  - tzdata: Zeitzone Europe/Berlin fuer die Briefings (08:00/20:00)
+#  - openai: Multi-Provider-Fallback fuer den Chat (Anthropic zuerst, OpenAI bei Engpass)
 RUN pip install --no-cache-dir "claude-agent-sdk==0.2.107" "anthropic==0.111.0" \
-    "google-api-python-client==2.149.0" "google-auth==2.35.0" "tzdata"
+    "google-api-python-client==2.149.0" "google-auth==2.35.0" "tzdata" "openai"
 
 ENV PYTHONUNBUFFERED=1
 # Repo wird als Bind-Mount (Eigentuemer != root) eingehaengt -> Git wuerde sonst mit

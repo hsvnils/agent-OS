@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 18:10] — Claude Code
+- **Was:** **Multi-Provider-Chat (Anthropic-first + OpenAI-Fallback)** gebaut. Neues `core/model_router.py`
+  (`ModelRouter`): der Chat ruft zuerst Anthropic; bei Guthaben-/Rate-/Ueberlastungsfehler automatisch
+  Umschalten auf OpenAI. Tool-Calling bleibt im Anthropic-Format; Router uebersetzt Verlauf/Tools nach OpenAI
+  und zurueck (`b*`-Helfer lesen SDK-Objekte UND dicts). `HoaConversation` nutzt den Router; Kostenerfassung
+  bucht den real genutzten Provider. Bot reicht `OPENAI_API_KEY` + `gpt-4o-mini` durch; `openai`-Lib ins Image.
+  5 neue Self-Checks; Gesamtsuite **134/134 OK**.
+- **Warum:** Anthropic-Guthaben staendig leer -> Fallback haelt den Chat am Laufen. **OFFEN:** gelieferter
+  OpenAI-Key authentifiziert, Konto hat aber **kein Guthaben** (insufficient_quota/429) -> Fallback greift erst
+  nach OpenAI-Billing (gpt-4o-mini sehr guenstig) oder Anthropic-Aufladung.
+- **Betroffen:** `orchestrator/core/model_router.py` (neu), `orchestrator/core/hoa_conversation.py`,
+  `orchestrator/channels/telegram/bot.py`, `deploy/Dockerfile`, `orchestrator/tests/test_model_router.py` (neu).
+
 ## [2026-06-25 17:45] — Claude Code
 - **Was:** CEO-Tor-Fehlalarm behoben -- "kostenlos/kostenfrei/gratis/open-source" loesten faelschlich das
   Geld-Tor aus (Teilstring "kosten") und blockierten legitime Recherchen (z. B. MCP-Scan). `detect_ceo_tor`

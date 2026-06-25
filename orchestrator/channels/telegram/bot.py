@@ -387,8 +387,10 @@ def main() -> None:
                 _api(token, "sendMessage", {"chat_id": chat_id,
                      "text": "Verlauf zurueckgesetzt. Wie kann ich helfen?"})
                 continue
-            conv = sessions.setdefault(chat_id, HoaConversation(ctx, model=model,
-                                                                api_key=secrets["ANTHROPIC_API_KEY"]))
+            conv = sessions.setdefault(chat_id, HoaConversation(
+                ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"],
+                openai_key=secrets.get("OPENAI_API_KEY", ""),
+                openai_model=cfg.get("voice", {}).get("openai_model", "gpt-4o-mini")))
             try:
                 antwort = conv.respond(text)
             except Exception as exc:

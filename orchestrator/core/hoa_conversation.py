@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 
 from .hoa_tools import ToolContext, run_tool, tool_specs
+from .model_router import bid, binput, bname, btext, btype
 
 TEXT_SYSTEM_PROMPT = (
     "Du bist LUNA, der Head of Agents des Hanserautisch Agenten-Unternehmens, und sprichst mit dem CEO "
@@ -46,36 +47,37 @@ TEXT_SYSTEM_PROMPT = (
 
 class HoaConversation:
     def __init__(self, ctx: ToolContext, *, api_key: str | None = None,
-                 model: str = "claude-haiku-4-5", client=None, max_tool_iterations: int = 8):
+                 model: str = "claude-haiku-4-5", client=None, openai_key: str = "",
+                 openai_model: str = "gpt-4o-mini", max_tool_iterations: int = 8):
         self.ctx = ctx
         self.model = model
         self.max_iter = max_tool_iterations
         self.tools = tool_specs()
         self.messages: list[dict] = []
         if client is not None:
-            self.client = client
+            anthropic_client = client
         else:
             from anthropic import Anthropic
-            self.client = Anthropic(api_key=api_key)
+            anthropic_client = Anthropic(api_key=api_key)
+        from .model_router import ModelRouter
+        self.router = ModelRouter(anthropic_client, anthropic_model=model, openai_key=openai_key,
+                                  openai_model=openai_model)
 
     def respond(self, user_text: str) -> str:
         self._repariere_verlauf()  # evtl. kaputten Tail (tool_use ohne tool_result) entfernen
         self.messages.append({"role": "user", "content": user_text})
         for _ in range(self.max_iter):
             try:
-                resp = self.client.messages.create(
-                    model=self.model, max_tokens=1024, system=TEXT_SYSTEM_PROMPT,
-                    tools=self.tools, messages=self.messages,
-                )
+                resp = self.router.create(system=TEXT_SYSTEM_PROMPT, tools=self.tools,
+                                          messages=self.messages)
             except Exception as exc:
                 # Kaputter Verlauf (z. B. 'tool_use ids ohne tool_result') -> Verlauf zuruecksetzen
                 # und EINMAL frisch versuchen, damit der Chat nicht dauerhaft blockiert.
                 if self._ist_verlauf_fehler(exc):
                     self.messages = [{"role": "user", "content": user_text}]
                     try:
-                        resp = self.client.messages.create(
-                            model=self.model, max_tokens=1024, system=TEXT_SYSTEM_PROMPT,
-                            tools=self.tools, messages=self.messages)
+                        resp = self.router.create(system=TEXT_SYSTEM_PROMPT, tools=self.tools,
+                                                  messages=self.messages)
                     except Exception as exc2:
                         self.messages = []
                         return _fehlertext(exc2)
@@ -83,18 +85,18 @@ class HoaConversation:
                     return _fehlertext(exc)
             self._erfasse_kosten(resp)
             self.messages.append({"role": "assistant", "content": resp.content})
-            tool_uses = [b for b in resp.content if getattr(b, "type", None) == "tool_use"]
+            tool_uses = [b for b in resp.content if btype(b) == "tool_use"]
             if not tool_uses:
                 return _text(resp.content)
             # WICHTIG: JEDES tool_use bekommt ein tool_result -- auch bei Tool-Fehler. Sonst wird der
-            # Verlauf ungueltig und die Anthropic-API lehnt jede weitere Nachricht ab (400).
+            # Verlauf ungueltig und die API lehnt jede weitere Nachricht ab (400).
             results = []
             for tu in tool_uses:
                 try:
-                    out = run_tool(tu.name, dict(tu.input or {}), self.ctx)
+                    out = run_tool(bname(tu), dict(binput(tu) or {}), self.ctx)
                 except Exception as exc:
-                    out = {"ok": False, "fehler": f"Werkzeug '{tu.name}' fehlgeschlagen: {str(exc)[:240]}"}
-                results.append({"type": "tool_result", "tool_use_id": tu.id,
+                    out = {"ok": False, "fehler": f"Werkzeug '{bname(tu)}' fehlgeschlagen: {str(exc)[:240]}"}
+                results.append({"type": "tool_result", "tool_use_id": bid(tu),
                                 "content": json.dumps(out, ensure_ascii=False)})
             self.messages.append({"role": "user", "content": results})
         return "Ich konnte das gerade nicht abschliessen -- bitte praezisiere kurz."
@@ -119,7 +121,7 @@ class HoaConversation:
         if kosten is None or usage is None:
             return
         try:
-            kosten.record(quelle="chat", modell=self.model,
+            kosten.record(quelle="chat", modell=getattr(resp, "model", self.model),
                           input_tokens=getattr(usage, "input_tokens", 0) or 0,
                           output_tokens=getattr(usage, "output_tokens", 0) or 0)
         except Exception:
@@ -132,8 +134,7 @@ class HoaConversation:
 
 
 def _text(content) -> str:
-    return " ".join(getattr(b, "text", "") for b in content
-                    if getattr(b, "type", None) == "text").strip()
+    return " ".join(btext(b) for b in content if btype(b) == "text").strip()
 
 
 def _fehlertext(exc: Exception) -> str:
