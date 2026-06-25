@@ -71,6 +71,19 @@ class TestGoogleWorkspace(unittest.TestCase):
                                            "werte": [["x"]]}, ctx)
         self.assertTrue(s["bestaetigung_noetig"])
 
+    def test_5b_standard_einladung(self):
+        # Konfigurierte Standard-Einladung (z. B. private iCloud) ist in Vorschau UND Ergebnis.
+        gw = MockGoogleWorkspace(standard_einladung="hsvnils@icloud.com")
+        ctx = ToolContext(core=HeadOfAgents(MockBackend(), load_all_subagents(), gate=CeoGate()),
+                          antraege=Antraege(Path(tempfile.mkdtemp()) / "a.jsonl"), engine=None,
+                          finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=[], google=gw)
+        vor = run_tool("termin_anlegen", {"titel": "Call", "start": "2026-06-26T10:00:00",
+                                          "ende": "2026-06-26T11:00:00"}, ctx)
+        self.assertIn("hsvnils@icloud.com", vor["vorschau"]["einladung"])
+        ok = run_tool("termin_anlegen", {"titel": "Call", "start": "2026-06-26T10:00:00",
+                                         "ende": "2026-06-26T11:00:00", "bestaetigt": True}, ctx)
+        self.assertEqual(ok["eingeladen"], ["hsvnils@icloud.com"])
+
     def test_6_entwurf_ist_sicher(self):
         # Entwurf ist ohne Bestaetigung erlaubt (sendet nicht).
         r = run_tool("mail_entwurf", {"an": "x@test", "betreff": "B", "text": "T"}, _ctx())

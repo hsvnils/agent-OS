@@ -97,8 +97,10 @@ def _fehler(hinweis: str) -> dict:
 class GoogleWorkspace:
     """Gmail/Kalender/Drive/Sheets -- Lesen frei, Schreiben gated. Echte API (lazy)."""
 
-    def __init__(self, auth: GoogleAuth):
+    def __init__(self, auth: GoogleAuth, *, standard_einladung: str = ""):
         self.auth = auth
+        # Wird bei JEDEM Termin automatisch als Teilnehmer eingeladen (z. B. private iCloud-Adresse).
+        self.standard_einladung = (standard_einladung or "").strip()
 
     def verfuegbar(self) -> bool:
         return self.auth.verfuegbar()
@@ -197,16 +199,21 @@ class GoogleWorkspace:
                        beschreibung: str = "", bestaetigt: bool = False) -> dict:
         if (g := self._guard()):
             return g
+        einladungen = [self.standard_einladung] if self.standard_einladung else []
         if not bestaetigt:
             return {"ok": False, "bestaetigung_noetig": True,
-                    "vorschau": {"titel": titel, "start": start, "ende": ende, "ort": ort},
+                    "vorschau": {"titel": titel, "start": start, "ende": ende, "ort": ort,
+                                 "einladung": einladungen},
                     "hinweis": "Termin anlegen braucht CEO-Bestaetigung -- erneut mit bestaetigt=true."}
         try:
             svc = self.auth.service("calendar", "v3")
-            ev = svc.events().insert(calendarId="primary", body={
-                "summary": titel, "location": ort, "description": beschreibung,
-                "start": {"dateTime": start}, "end": {"dateTime": ende}}).execute()
-            return _ok(termin_id=ev.get("id"), link=ev.get("htmlLink"))
+            body = {"summary": titel, "location": ort, "description": beschreibung,
+                    "start": {"dateTime": start}, "end": {"dateTime": ende}}
+            if einladungen:
+                body["attendees"] = [{"email": e} for e in einladungen]
+            ev = svc.events().insert(calendarId="primary", body=body,
+                                     sendUpdates="all").execute()  # Einladungs-Mail rausschicken
+            return _ok(termin_id=ev.get("id"), link=ev.get("htmlLink"), eingeladen=einladungen)
         except Exception as exc:
             return _fehler(f"Termin anlegen fehlgeschlagen: {str(exc)[:160]}")
 
@@ -300,9 +307,10 @@ def _extract_text(payload: dict) -> str:
 class MockGoogleWorkspace:
     """Deterministischer Stub ohne Netz/Libs -- fuer Offline-Self-Checks. Gleiches Gating-Verhalten."""
 
-    def __init__(self):
+    def __init__(self, standard_einladung: str = ""):
         self.gesendet: list[dict] = []
         self.termine: list[dict] = []
+        self.standard_einladung = (standard_einladung or "").strip()
 
     def verfuegbar(self) -> bool:
         return True
@@ -330,11 +338,12 @@ class MockGoogleWorkspace:
                              "ende": "2026-06-26T11:00:00", "ort": ""}])
 
     def termin_anlegen(self, titel, start, ende, *, ort="", beschreibung="", bestaetigt=False):
+        einladungen = [self.standard_einladung] if self.standard_einladung else []
         if not bestaetigt:
             return {"ok": False, "bestaetigung_noetig": True,
-                    "vorschau": {"titel": titel, "start": start, "ende": ende}}
-        self.termine.append({"titel": titel, "start": start})
-        return _ok(termin_id="e2", link="https://cal.test/e2")
+                    "vorschau": {"titel": titel, "start": start, "ende": ende, "einladung": einladungen}}
+        self.termine.append({"titel": titel, "start": start, "einladung": einladungen})
+        return _ok(termin_id="e2", link="https://cal.test/e2", eingeladen=einladungen)
 
     def drive_suchen(self, query, max_results=10):
         return _ok(dateien=[{"id": "f1", "name": f"Datei {query}", "typ": "text/plain",

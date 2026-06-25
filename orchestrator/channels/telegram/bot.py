@@ -77,7 +77,9 @@ def _build_ctx(cfg: dict, secrets: dict):
     web = WebResearch.from_env(env=secrets, secrets=secret_values)
     research = ResearchTickets(ROOT / "research" / "log.jsonl", secrets=secret_values, changelog=changelog)
     # Phase 11: Google Workspace aus denselben .env-Secrets. Ohne OAuth-Credentials -> Fall-B (CEO-Tor).
-    google = GoogleWorkspace(GoogleAuth.from_env(env=secrets))
+    # GOOGLE_CALENDAR_DEFAULT_ATTENDEE wird bei jedem Termin automatisch eingeladen (z. B. private iCloud).
+    google = GoogleWorkspace(GoogleAuth.from_env(env=secrets),
+                             standard_einladung=secrets.get("GOOGLE_CALENDAR_DEFAULT_ATTENDEE", ""))
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google), secret_values

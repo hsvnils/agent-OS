@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 11:35] — Claude Code
+- **Was:** Google-Kalender: **Standard-Einladung** ergaenzt. `termin_anlegen` laedt jetzt automatisch eine
+  konfigurierte Adresse als Teilnehmer ein (CEO: private iCloud `hsvnils@icloud.com`) und verschickt die
+  Einladung (`sendUpdates=all`). Adresse in `GOOGLE_CALENDAR_DEFAULT_ATTENDEE` (orchestrator/.env, Mac + NAS,
+  nicht versioniert -> PII bleibt aus dem Git). `GoogleWorkspace(standard_einladung=...)` + Bot-Verdrahtung
+  aus den Secrets; Vorschau zeigt die Einladung mit. Test ergaenzt; Suite **67/67 OK**. NAS: Code-Sync +
+  Restart, im Container verifiziert (Vorschau-Einladung = iCloud).
+- **Warum:** CEO will bei Google-Kalender-Terminen immer seine private Mailadresse mit eingeladen bekommen.
+- **Betroffen:** `orchestrator/governance/google_workspace.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_google_workspace.py`. Adresse nur in `.env` (NICHT versioniert).
+
 ## [2026-06-25 11:20] — Claude Code
 - **Was:** Phase 11 (Google Workspace) **live geschaltet** fuer `hanserautisch@gmail.com`. OAuth-Desktop-Client
   in der Google Cloud (Projekt LUNA) angelegt; einmalige Autorisierung ueber `deploy/google_oauth_authorize.py`
