@@ -50,8 +50,8 @@ TEXT_SYSTEM_PROMPT = (
 
 class HoaConversation:
     def __init__(self, ctx: ToolContext, *, api_key: str | None = None,
-                 model: str = "claude-haiku-4-5", client=None, openai_key: str = "",
-                 openai_model: str = "gpt-4o-mini", max_tool_iterations: int = 8):
+                 model: str = "claude-haiku-4-5", client=None, fallbacks: list[dict] | None = None,
+                 max_tool_iterations: int = 8):
         self.ctx = ctx
         self.model = model
         self.max_iter = max_tool_iterations
@@ -63,8 +63,7 @@ class HoaConversation:
             from anthropic import Anthropic
             anthropic_client = Anthropic(api_key=api_key)
         from .model_router import ModelRouter
-        self.router = ModelRouter(anthropic_client, anthropic_model=model, openai_key=openai_key,
-                                  openai_model=openai_model)
+        self.router = ModelRouter(anthropic_client, anthropic_model=model, fallbacks=fallbacks)
 
     def respond(self, user_text: str) -> str:
         self._repariere_verlauf()  # evtl. kaputten Tail (tool_use ohne tool_result) entfernen
@@ -132,8 +131,10 @@ class HoaConversation:
 
     @staticmethod
     def _ist_verlauf_fehler(exc: Exception) -> bool:
+        # NUR der echte Tool-Verlauf-Fehler (tool_use ohne tool_result). NICHT jeder 400er --
+        # z. B. Anthropic-'usage limit' ist auch ein 400/invalid_request, aber KEIN Verlaufsproblem.
         s = str(exc).lower()
-        return "tool_result" in s or "tool_use" in s or ("400" in s and "invalid_request" in s)
+        return "tool_result" in s or "tool_use" in s
 
 
 def _text(content) -> str:
@@ -142,8 +143,11 @@ def _text(content) -> str:
 
 def _fehlertext(exc: Exception) -> str:
     low = str(exc).lower()
-    if "credit" in low or "balance" in low:
-        return "Mein Modell-Guthaben ist gerade zu niedrig. Bitte spaeter erneut versuchen."
+    if any(w in low for w in ("usage limit", "regain access", "reached your", "quota", "insufficient",
+                              "credit", "balance", "too low")):
+        return ("Alle Modell-Anbieter sind gerade ohne Guthaben/Limit erschoepft (Anthropic-Limit, OpenAI "
+                "ohne Guthaben). Bitte ein Konto aufladen oder einen funktionierenden Anbieter (z. B. Gemini "
+                "Gratis-Tier) hinterlegen.")
     if "overloaded" in low or "rate" in low or "529" in low or "429" in low:
         return "Die KI ist gerade ueberlastet. Bitte in einem Moment erneut fragen."
     return "Es gab gerade einen technischen Fehler. Ich habe den Verlauf bereinigt -- bitte stell die Frage neu."

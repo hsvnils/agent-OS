@@ -299,6 +299,18 @@ def _start_cfo_loop(ctx, notify) -> None:
     threading.Thread(target=loop, daemon=True, name="cfo-loop").start()
 
 
+def _fallbacks(secrets: dict, cfg: dict) -> list[dict]:
+    """Chat-Fallbacks in Reihenfolge: Gemini (Gratis-Tier) zuerst, dann OpenAI. Nur mit gesetztem Key."""
+    from ...core.model_router import GEMINI_BASE_URL
+    v = cfg.get("voice", {})
+    return [
+        {"name": "gemini", "key": secrets.get("GEMINI_API_KEY", ""), "base_url": GEMINI_BASE_URL,
+         "model": v.get("gemini_model", "gemini-2.0-flash")},
+        {"name": "openai", "key": secrets.get("OPENAI_API_KEY", ""), "base_url": None,
+         "model": v.get("openai_model", "gpt-4o-mini")},
+    ]
+
+
 def main() -> None:
     cfg = _load_config()
     secrets = _load_secrets()
@@ -390,9 +402,7 @@ def main() -> None:
                      "text": "Verlauf zurueckgesetzt. Wie kann ich helfen?"})
                 continue
             conv = sessions.setdefault(chat_id, HoaConversation(
-                ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"],
-                openai_key=secrets.get("OPENAI_API_KEY", ""),
-                openai_model=cfg.get("voice", {}).get("openai_model", "gpt-4o-mini")))
+                ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"], fallbacks=_fallbacks(secrets, cfg)))
             try:
                 antwort = conv.respond(text)
             except Exception as exc:

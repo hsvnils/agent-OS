@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 18:55] — Claude Code
+- **Was:** Chat-Ausfall behoben + **Gemini als Fallback** vorbereitet. Ursache: Anthropic meldet das harte
+  Monatslimit als **400 invalid_request_error** ("usage limits ... regain access on 2026-07-01"). Zwei Bugs:
+  (1) `_ist_fallback_fehler` erkannte das NICHT -> kein Fallback; (2) `_ist_verlauf_fehler` wertete jeden
+  400+invalid_request als Verlauf-Korruption -> Reset -> generische Fehlermeldung im Chat. Fix:
+  `_ist_fallback_fehler` erkennt jetzt usage-limit/limit; `_ist_verlauf_fehler` matcht NUR noch
+  tool_use/tool_result (echte Verlauf-Korruption). `ModelRouter` unterstuetzt eine **Fallback-Liste**
+  (OpenAI-kompatibel) -> Gemini (Gratis-Tier, via `GEMINI_BASE_URL`) zuerst, dann OpenAI. Bot baut
+  `_fallbacks` aus `GEMINI_API_KEY`/`OPENAI_API_KEY`. Klarere Fehlermeldung bei "alle Anbieter erschoepft".
+  Gesamtsuite **135/135 OK**.
+- **Warum:** LUNA-Chat antwortete nur noch mit "technischer Fehler" -- Anthropic gesperrt bis 2026-07-01,
+  OpenAI ohne Guthaben. Gemini-Gratis-Tier funktioniert -> sobald `GEMINI_API_KEY` in .env, laeuft der Chat.
+- **Betroffen:** `orchestrator/core/model_router.py`, `orchestrator/core/hoa_conversation.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_model_router.py`. OFFEN: GEMINI_API_KEY
+  setzen (CEO liefert).
+
 ## [2026-06-25 18:30] — Claude Code
 - **Was:** Funde-Handling verbessert (kein Ticket pro Fund -> Flut vermieden). **(A) Drill-down sichtbar:**
   proaktive Meldungen mit Detail haengen jetzt den Hinweis `Details: schreib mir "zeig #xxxx"` an; LUNA loest

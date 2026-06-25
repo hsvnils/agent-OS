@@ -51,16 +51,23 @@ class _Norm:
 def _ist_fallback_fehler(exc: Exception) -> bool:
     s = str(exc).lower()
     return any(w in s for w in ("credit", "balance", "insufficient", "rate", "overloaded",
-                                "429", "529", "quota", "too low"))
+                                "429", "529", "quota", "too low", "usage limit", "usage limits",
+                                "reached your", "regain access", "limit"))
+
+
+# Gemini ist OpenAI-kompatibel erreichbar -> dieselbe Uebersetzung wie OpenAI nutzen.
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 
 class ModelRouter:
-    def __init__(self, anthropic_client, *, anthropic_model: str, openai_key: str = "",
-                 openai_model: str = "gpt-4o-mini", max_tokens: int = 1024):
+    """Anthropic zuerst; bei Engpass/Limit der Reihe nach durch die Fallbacks (OpenAI-kompatibel: OpenAI, Gemini)."""
+
+    def __init__(self, anthropic_client, *, anthropic_model: str, fallbacks: list[dict] | None = None,
+                 max_tokens: int = 1024):
         self.anthropic_client = anthropic_client
         self.anthropic_model = anthropic_model
-        self.openai_key = (openai_key or "").strip()
-        self.openai_model = openai_model
+        # fallbacks: [{"name","key","base_url"(opt),"model"}] -- nur mit gesetztem key genutzt.
+        self.fallbacks = [f for f in (fallbacks or []) if f.get("key")]
         self.max_tokens = max_tokens
 
     def create(self, *, system: str, tools: list, messages: list) -> _Norm:
@@ -70,17 +77,24 @@ class ModelRouter:
                 tools=tools, messages=messages)
             return _Norm(r.content, getattr(r, "usage", None), self.anthropic_model, "anthropic")
         except Exception as exc:
-            if self.openai_key and _ist_fallback_fehler(exc):
-                return self._openai(system, tools, messages)
-            raise
+            if not (self.fallbacks and _ist_fallback_fehler(exc)):
+                raise
+            letzter = exc
+            for fb in self.fallbacks:
+                try:
+                    return self._kompatibel(fb, system, tools, messages)
+                except Exception as e:
+                    letzter = e
+                    continue
+            raise letzter
 
-    # -- OpenAI-Fallback --
+    # -- OpenAI-kompatibler Fallback (OpenAI, Gemini) --
 
-    def _openai(self, system: str, tools: list, messages: list) -> _Norm:
+    def _kompatibel(self, fb: dict, system: str, tools: list, messages: list) -> _Norm:
         import openai
-        client = openai.OpenAI(api_key=self.openai_key)
+        client = openai.OpenAI(api_key=fb["key"], base_url=fb.get("base_url") or None)
         r = client.chat.completions.create(
-            model=self.openai_model, max_tokens=self.max_tokens,
+            model=fb["model"], max_tokens=self.max_tokens,
             messages=_zu_openai_messages(system, messages),
             tools=_zu_openai_tools(tools) or None, tool_choice="auto")
         msg = r.choices[0].message
@@ -95,7 +109,7 @@ class ModelRouter:
             bloecke.append({"type": "tool_use", "id": tc.id, "name": tc.function.name, "input": args})
         u = getattr(r, "usage", None)
         usage = _Usage(getattr(u, "prompt_tokens", 0) or 0, getattr(u, "completion_tokens", 0) or 0)
-        return _Norm(bloecke, usage, self.openai_model, "openai")
+        return _Norm(bloecke, usage, fb["model"], fb.get("name", "fallback"))
 
 
 def _zu_openai_tools(tools: list) -> list:

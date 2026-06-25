@@ -117,13 +117,24 @@ class TestModelRouter(unittest.TestCase):
         sys.modules["openai"] = fake
         try:
             r = ModelRouter(_AnthroFail(RuntimeError("rate limit 429")), anthropic_model="m",
-                            openai_key="sk-x", openai_model="gpt-4o-mini")
+                            fallbacks=[{"name": "openai", "key": "sk-x", "base_url": None,
+                                        "model": "gpt-4o-mini"}])
             out = r.create(system="s", tools=[], messages=[{"role": "user", "content": "Budget?"}])
         finally:
             del sys.modules["openai"]
         self.assertEqual(out.provider, "openai")
         self.assertEqual(bname(out.content[0]), "frage_finance")
         self.assertEqual(out.usage.input_tokens, 12)
+
+    def test_6_usage_limit_loest_fallback_aus(self):
+        # Anthropic-'usage limit' (400 invalid_request) MUSS einen Fallback ausloesen (Regression).
+        from orchestrator.core.model_router import _ist_fallback_fehler
+        self.assertTrue(_ist_fallback_fehler(RuntimeError(
+            "Error code: 400 - invalid_request_error: You have reached your specified API usage limits.")))
+        # ohne Fallback-Keys -> Fehler wird durchgereicht (nicht als Verlauf-Fehler verschluckt)
+        r = ModelRouter(_AnthroFail(RuntimeError("usage limits reached")), anthropic_model="m")
+        with self.assertRaises(RuntimeError):
+            r.create(system="s", tools=[], messages=[])
 
 
 if __name__ == "__main__":
