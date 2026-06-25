@@ -26,6 +26,7 @@ class ToolContext:
     web: object | None = None    # WebResearch (Phase 8) oder None -> aus env (BRAVE/ANTHROPIC-Key)
     research: object | None = None  # ResearchTickets (Phase 8.5) oder None
     google: object | None = None    # GoogleWorkspace (Phase 11) oder None
+    watch: object | None = None     # WatchScheduler (Phase 12) oder None
 
 
 def tool_specs() -> list[dict]:
@@ -57,6 +58,17 @@ def tool_specs() -> list[dict]:
               "Idee -> Machbarkeit (CTO) + Kostenvoranschlag (CFO) -> entscheidungsreifer ANTRAG. Ergebnis ist "
               "ein Antrag (keine Ausfuehrung; CEO entscheidet). Dauert ggf. etwas.",
               {"thema": _str("Optionales Thema/Fokus (sonst allgemeines KI-Agenten-Scouting).")}, []),
+        # -- Phase 12: 24/7-Watcher (KOSTENLOS, keine Token -- GitHub + Brave-Gratis, regelbasiert) --
+        _spec("github_trends", "Zeigt GitHub-Repos mit vielen Sternen, die schnell wachsen (kostenlos, keine "
+              "Token). Ohne Thema: firmenweite KI-Agenten-Topics.",
+              {"thema": _str("Optionales GitHub-Topic (z. B. 'ai-agents').")}, []),
+        _spec("dept_briefing", "Sammelt fuer eine Abteilung kostenlos relevante Fachbereichs-Treffer (Brave) "
+              "und zeigt die Funde. Kuerzel z. B. cto, cfo, ciso, cdo, cco, clo...",
+              {"abteilung": _str("Abteilungs-Kuerzel.")}, ["abteilung"]),
+        _spec("watch_digest", "Zeigt die gesammelten Watch-Funde (GitHub + Fachbereiche), neueste zuerst.",
+              {"kategorie": _str("Optional: 'github' oder 'fachbereich'.")}, []),
+        _spec("watch_tick", "Fuehrt EINEN kostenlosen Watch-Durchlauf aus (GitHub-Trends firmenweit). Keine "
+              "Token; legt neue Funde ab.", {}, []),
         # -- Google Workspace (Phase 11): Lesen direkt, Schreiben/Senden NUR mit bestaetigt=true (Mensch-Tor) --
         _spec("mail_suchen", "Durchsucht das Google-Postfach (Gmail-Query, z. B. 'from:x is:unread').",
               {"query": _str("Gmail-Suchanfrage."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
@@ -190,6 +202,29 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                            "provider": t.get("provider", ""), "stufe": t.get("stufe", ""),
                            "befund": redact(t.get("befund", ""), sec), "quellen": t.get("quellen", []),
                            "verlauf": t.get("verlauf", [])}}
+
+    if name in ("github_trends", "dept_briefing", "watch_digest", "watch_tick"):
+        watch = ctx.watch
+        if watch is None:
+            from .scheduler import WatchScheduler, WatchStore
+            watch = WatchScheduler(WatchStore(ctx.repo_root / "watch" / "log.jsonl", secrets=sec),
+                                   web=ctx.web, secrets=sec)
+        if name == "github_trends":
+            thema = (args.get("thema") or "").strip()
+            neue = watch.github_tick([thema] if thema else None)
+            return {"ok": True, "neue_funde": len(neue), "repos": neue}
+        if name == "dept_briefing":
+            ab = (args.get("abteilung") or "").strip().lower()
+            neue = watch.dept_tick(ab)
+            return {"ok": True, "abteilung": ab, "neue_funde": len(neue),
+                    "funde": [_redact_obj(f, sec) for f in watch.briefing(ab)]}
+        if name == "watch_digest":
+            return {"funde": [_redact_obj(f, sec)
+                              for f in watch.briefing(None)
+                              if (args.get("kategorie") or f.get("kategorie")) == f.get("kategorie")]}
+        # watch_tick
+        neue = watch.github_tick()
+        return {"ok": True, "neue_funde": len(neue), "repos": neue}
 
     if name == "innovation_scouting":
         from .innovation import InnovationPipeline

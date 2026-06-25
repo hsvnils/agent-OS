@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 12:10] — Claude Code
+- **Was:** Phase 12 (Durable Watch-Queue + Scheduler, 24/7) gebaut + Hintergrund-Loop live. **Token-frugal
+  by design:** der 24/7-Loop macht NUR kostenlose Datenarbeit (GitHub-API + Brave-Gratis) und flaggt
+  regelbasiert -- **kein LLM im Hintergrund** (`llm_enabled=False`). Neu: `governance/github_watch.py`
+  (GitHub-Search frei + `flag_fast_growers` per Sterne-Velocity/Neuheit + Mock), `core/watch_config.py`
+  (kuratierte Watch-Themen je Fachbereich: Suche + GitHub-Topics), `core/scheduler.py` (`WatchStore`
+  event-sourced JSONL `watch/log.jsonl` mit Sterne-Historie/Funde-Dedup/Lauf-Zeiten + `WatchScheduler`).
+  LUNA-Tools `github_trends`, `dept_briefing`, `watch_digest`, `watch_tick` (alle kostenlos). Bot:
+  Daemon-Thread `_start_watch_loop` -- GitHub jeden Tick, **eine** Abteilung je Tick (Brave-Quota schonen),
+  Intervall `WATCH_INTERVAL_HOURS` (Default 6 h); Fehler nie fatal. Sync-Skript excludet `watch/log.jsonl`.
+  7 Offline-Self-Checks; Gesamtsuite **80/80 OK**. Live-GitHub-API (frei) verifiziert.
+- **Warum:** CEO will 24/7-Beobachtung der Aussenwelt OHNE Token zu verbrennen, abteilungsrelevante Suchen je
+  Fachbereich und schnell wachsende High-Star-GitHub-Repos im Blick.
+- **Betroffen:** `orchestrator/governance/github_watch.py` (neu), `orchestrator/core/watch_config.py` (neu),
+  `orchestrator/core/scheduler.py` (neu), `orchestrator/core/hoa_tools.py`, `orchestrator/channels/telegram/
+  bot.py`, `orchestrator/tests/test_watch.py` (neu), `deploy/sync-to-nas.sh`, `PHASE12_PLAN.md` (neu).
+
 ## [2026-06-25 11:50] — Claude Code
 - **Was:** Phase 9 (Innovations-Pipeline) gebaut. Neues Modul `orchestrator/core/innovation.py` mit
   `InnovationPipeline`: orchestriert Web-Recherche (Phase 8) -> Idee (Unternehmensberater, Agent 01) ->

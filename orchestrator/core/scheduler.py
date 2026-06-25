@@ -1,0 +1,138 @@
+"""Phase 12 -- Durable Watch-Store + Scheduler (token-frugal, 24/7).
+
+Leitprinzip (CEO): **Hintergrundarbeit verbrennt keine Token.** Der Scheduler macht ausschliesslich
+**kostenlose** Datenarbeit -- GitHub-API (Sterne/Wachstum) und Brave-Gratis-Suche je Fachbereich -- und
+flaggt Auffaelliges **regelbasiert**. Teure LLM-Synthese (`innovation_scouting`) bleibt auf Anfrage und ist
+hier per Default **aus** (`llm_enabled=False`).
+
+Durable: event-sourced JSONL (`watch/log.jsonl`) mit Sterne-Historie (fuer Velocity), Funden (dedupliziert)
+und Lauf-Zeitstempeln (fuer Intervall-Faelligkeit + Resume nach Neustart). Leck-geschuetzt.
+"""
+from __future__ import annotations
+
+import json
+from datetime import datetime
+from pathlib import Path
+from typing import Callable
+
+from ..governance.github_watch import GitHubWatch, MockGitHubWatch, flag_fast_growers
+from ..governance.leak_guard import redact
+from .watch_config import FIRMEN_GITHUB_TOPICS, themen_fuer
+
+
+def _now() -> str:
+    return datetime.now().isoformat(timespec="seconds")
+
+
+class WatchStore:
+    """Append-only JSONL: Sterne-Historie, Funde (dedupliziert nach URL), Lauf-Zeitstempel."""
+
+    def __init__(self, path: str | Path, *, secrets: list[str] | None = None):
+        self.path = Path(path)
+        self.secrets = secrets or []
+
+    def _append(self, event: dict) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        line = redact(json.dumps(event, ensure_ascii=False), self.secrets)
+        with self.path.open("a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+
+    def _events(self) -> list[dict]:
+        if not self.path.exists():
+            return []
+        out = []
+        for line in self.path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    out.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+        return out
+
+    def star_history(self) -> dict[str, int]:
+        hist: dict[str, int] = {}
+        for e in self._events():
+            if e.get("typ") == "stars":
+                hist[e["repo"]] = e["sterne"]
+        return hist
+
+    def persist_stars(self, history: dict[str, int]) -> None:
+        for repo, sterne in history.items():
+            self._append({"ts": _now(), "typ": "stars", "repo": repo, "sterne": sterne})
+
+    def seen_urls(self) -> set[str]:
+        return {e.get("url", "") for e in self._events() if e.get("typ") == "finding"}
+
+    def add_finding(self, kategorie: str, titel: str, url: str, *, detail: str = "",
+                    abteilung: str = "") -> bool:
+        if url and url in self.seen_urls():
+            return False
+        self._append({"ts": _now(), "typ": "finding", "kategorie": kategorie, "titel": titel,
+                      "url": url, "detail": detail, "abteilung": abteilung})
+        return True
+
+    def findings(self, limit: int = 50, kategorie: str | None = None) -> list[dict]:
+        items = [e for e in self._events() if e.get("typ") == "finding"
+                 and (kategorie is None or e.get("kategorie") == kategorie)]
+        return list(reversed(items))[:limit]
+
+    def last_run(self, job: str) -> str | None:
+        runs = [e["ts"] for e in self._events() if e.get("typ") == "run" and e.get("job") == job]
+        return runs[-1] if runs else None
+
+    def mark_run(self, job: str) -> None:
+        self._append({"ts": _now(), "typ": "run", "job": job})
+
+
+class WatchScheduler:
+    """Faehrt freie Watcher (GitHub + Fachbereichs-Suche) und schreibt Funde in den Store."""
+
+    def __init__(self, store: WatchStore, *, github=None, web=None, secrets: list[str] | None = None,
+                 llm_enabled: bool = False):
+        self.store = store
+        self.github = github if github is not None else GitHubWatch()
+        self.web = web
+        self.secrets = secrets or []
+        self.llm_enabled = llm_enabled  # Hintergrund-LLM aus (Token sparen); nur explizit aktivierbar
+
+    def github_tick(self, topics: list[str] | None = None, *, min_stars: int = 500) -> list[dict]:
+        """Kostenlos: Repos mit vielen Sternen + schnellem Wachstum flaggen + persistieren."""
+        topics = topics or FIRMEN_GITHUB_TOPICS
+        hist = self.store.star_history()
+        neue: list[dict] = []
+        for topic in topics:
+            repos = self.github.trending(topic, min_stars=min_stars)
+            for r in flag_fast_growers(repos, hist):
+                wachstum = f"+{r.zuwachs} Sterne" if r.zuwachs else ("NEU" if r.neu else "")
+                detail = f"{r.sterne} Sterne ({wachstum}); {r.beschreibung}".strip()
+                if self.store.add_finding("github", r.name, r.url, detail=detail):
+                    neue.append({"name": r.name, "url": r.url, "sterne": r.sterne,
+                                 "zuwachs": r.zuwachs, "neu": r.neu, "topic": topic})
+        self.store.persist_stars(hist)
+        self.store.mark_run("github")
+        return neue
+
+    def dept_tick(self, abteilung: str, *, max_pro_thema: int = 3) -> list[dict]:
+        """Kostenlos (Brave-Gratis): je Suchthema des Fachbereichs Top-Treffer als Funde ablegen."""
+        themen = themen_fuer(abteilung).get("suche", [])
+        neue: list[dict] = []
+        if self.web is None:
+            return neue
+        for thema in themen:
+            erg = self.web.recherchiere(thema)  # Brave-first, kostenlos
+            if not getattr(erg, "ok", False):
+                continue
+            for t in erg.treffer[:max_pro_thema]:
+                if t.url and self.store.add_finding("fachbereich", t.titel, t.url,
+                                                    detail=t.auszug[:160], abteilung=abteilung):
+                    neue.append({"titel": t.titel, "url": t.url, "abteilung": abteilung, "thema": thema})
+        self.store.mark_run(f"dept:{abteilung}")
+        return neue
+
+    def briefing(self, abteilung: str | None = None, limit: int = 20) -> list[dict]:
+        """Reine Anzeige der gesammelten Funde (kein LLM, keine Kosten)."""
+        if abteilung:
+            return [f for f in self.store.findings(limit * 3)
+                    if f.get("abteilung") == abteilung][:limit]
+        return self.store.findings(limit)
