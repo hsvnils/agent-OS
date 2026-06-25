@@ -58,6 +58,17 @@
 >   `orchestrator/.env` (vorher CFO-Kostenvoranschlag). Bis dahin laufen auch komplexe Anfragen ueber Brave.
 > Ohne Freigabe liefert der jeweilige Provider einen Fall-B-Hinweis statt Ergebnissen (kein Absturz).
 
+## IT-Selbstheilung (CEO-Delegation 2026-06-25)
+
+> **Eng begrenzte Autonomie.** Der CEO hat LUNA/IT erlaubt, **rein technische, kostenfreie** Fixes (nur
+> Strom) **selbst** freizugeben, umzusetzen (Branch + Tests) und bei gruenen Tests nach main zu mergen --
+> ohne CEO-Freigabe. Werkzeug: `technische_freigabe(antrag_id)`; nur fuer Antraege der Kategorie
+> **`technisch-kostenfrei`**.
+> **Hart ausgeschlossen (immer CEO-Tor):** Geld/Kosten/neue Abos, Recht/Vertraege, Oeffentlichkeit,
+> Secrets/Keys, Charta/Mandat/Governance, Daten-Loeschung. Code-Schutz: Kategorie-Pflicht + Stichwort-Scan +
+> Tests-gruen-Pflicht + Notbremse + CEO-Meldung mit Bericht + Git-Reversibilitaet. Diese Delegation beruehrt
+> AGENTS.md 4 NICHT (kein Geld/Recht/Oeffentlichkeit).
+
 ## Aenderungshistorie
 
 | Datum | Capability | Agent | Aktion | Genehmigt durch |

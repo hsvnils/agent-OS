@@ -185,6 +185,16 @@ def tool_specs() -> list[dict]:
               "Dauert ggf. ~1 Minute.", {"antrag_id": _str("Antrag-ID (freigegeben).")}, ["antrag_id"]),
         _spec("antrag_mergen", "Mergt einen ERLEDIGTEN Antrag nach main -- nur nach CEO-Bestaetigung.",
               {"antrag_id": _str("Antrag-ID (erledigt).")}, ["antrag_id"]),
+        _spec("technische_freigabe", "IT-SELBSTHEILUNG: gibt einen NUR technischen, KOSTENFREIEN Antrag "
+              "(Kategorie 'technisch-kostenfrei') selbst frei, setzt ihn um (Branch + Tests) und mergt bei "
+              "gruenen Tests -- OHNE CEO. Nur fuer rein technische, kostenfreie Fixes (z. B. von IT/Self-"
+              "Maintenance); alles mit Kosten/Recht/Oeffentlichkeit/Charta/Secrets -> CEO. Der CEO wird "
+              "automatisch informiert. Nutze das nur, wenn du den Fix nach kurzer Pruefung fuer noetig und "
+              "sinnvoll haeltst.", {"antrag_id": _str("Antrag-ID (Kategorie technisch-kostenfrei).")},
+              ["antrag_id"]),
+        _spec("antrag_pushen", "Pusht den Antrag-Branch zu GitHub (fuer deinen Review/Merge per Pull Request). "
+              "Braucht GITHUB_TOKEN (sonst CEO-Tor-Hinweis).",
+              {"antrag_id": _str("Antrag-ID (Branch antrag/<id>).")}, ["antrag_id"]),
     ]
 
 
@@ -499,6 +509,26 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         except Exception as exc:
             res = {"ok": False, "fehler": str(exc)[:200]}
         return _redact_obj(res, sec)
+
+    if name == "technische_freigabe":
+        from .self_healing import SelfHealing
+        sh = SelfHealing(ctx.antraege, ctx.engine, repo_root=ctx.repo_root,
+                         notify=ctx.notifications.enqueue if ctx.notifications else None,
+                         watch=ctx.watch, secrets=sec)
+        res = sh.heilen(str(args.get("antrag_id", "")).strip())
+        return {k: (redact(v, sec) if isinstance(v, str) else v) for k, v in res.items()}
+
+    if name == "antrag_pushen":
+        aid = str(args.get("antrag_id", "")).strip()
+        token = (ctx.secret_dict or {}).get("GITHUB_TOKEN", "").strip()
+        if not token:
+            return {"ok": False, "fall_b": True,
+                    "hinweis": "GitHub-Push nicht aktiv -- GITHUB_TOKEN fehlt (CEO-Tor + CISO; PAT in .env)."}
+        repo = (ctx.secret_dict or {}).get("GITHUB_REPO", "github.com/hsvnils/agent-OS.git").strip()
+        from .execution_live import push_branch
+        ok, out = push_branch(ctx.repo_root, f"antrag/{aid}", token=token, repo_url=repo)
+        return {"ok": ok, "ausgabe": redact(out, sec + [token]),
+                "hinweis": "Branch gepusht -- als Pull Request auf GitHub mergen." if ok else "Push fehlgeschlagen."}
 
     if name == "antrag_stellen":
         aid = ctx.antraege.stellen((args.get("titel") or "").strip(), (args.get("beschreibung") or "").strip(),

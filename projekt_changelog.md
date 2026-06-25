@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 16:35] — Claude Code
+- **Was:** (1) **IT-Selbstheilung (CEO-Delegation):** neues `core/self_healing.py` (`ist_technisch_kostenfrei`
+  + `SelfHealing.heilen`) + Tool `technische_freigabe(antrag_id)`. LUNA darf rein TECHNISCHE, KOSTENFREIE
+  Antraege (Kategorie `technisch-kostenfrei`) selbst freigeben, umsetzen (Branch+Tests) und bei gruenen Tests
+  mergen -- der CEO wird informiert. **Harte Grenzen (Code):** Kategorie-Pflicht + Stichwort-Scan (Geld/Recht/
+  Oeffentlichkeit/Secrets/Charta/Loeschung -> immer CEO) + Tests-gruen-Pflicht + Notbremse + Git-Reversibel.
+  Governance in `zugriffs-policy.md` dokumentiert. (2) **GitHub-Push:** `execution_live.push_branch` + Tool
+  `antrag_pushen(antrag_id)` -- pusht den Antrag-Branch zu GitHub fuer CEO-Review per PR; gated auf
+  `GITHUB_TOKEN` (sonst Fall-B), Token wird in der Ausgabe redigiert. System-Prompt erklaert beide. 4 neue
+  Self-Checks; Gesamtsuite **125/125 OK**.
+- **Warum:** CEO-Wunsch (volle Variante): IT+Self-Maintenance behebt technische, kostenfreie Probleme selbst;
+  zusaetzlich Push nach GitHub fuer den Review.
+- **Betroffen:** `orchestrator/core/self_healing.py` (neu), `orchestrator/core/execution_live.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/core/hoa_conversation.py`, `governance/zugriffs-policy.md`,
+  `orchestrator/tests/test_self_healing.py` (neu).
+
 ## [2026-06-25 16:05] — Claude Code
 - **Was:** (1) **Restbaustelle Execution behoben:** `real_make_workspace(..., snapshot=True)` committet in der
   Produktion (NAS) vor dem Branchen einen Deploy-Snapshot der aktuellen Dateien -> der Worktree bekommt den

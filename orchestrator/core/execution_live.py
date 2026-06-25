@@ -117,6 +117,15 @@ def merge_branch(repo_root, branch: str, message: str) -> tuple[bool, str]:
     return (r.returncode == 0, (r.stdout + r.stderr).strip()[:300])
 
 
+def push_branch(repo_root, branch: str, *, token: str, repo_url: str) -> tuple[bool, str]:
+    """Pusht einen Branch zu GitHub (Token via x-access-token). Token erscheint nicht in der Ausgabe."""
+    url = f"https://x-access-token:{token}@{repo_url.lstrip('https://').lstrip('http://')}"
+    r = subprocess.run(["git", "-C", str(repo_root), "push", "-u", url, branch],
+                       capture_output=True, text=True)
+    out = (r.stdout + r.stderr).replace(token, "[REDACTED]").strip()[:400]
+    return (r.returncode == 0, out)
+
+
 def cleanup_workspace(repo_root, antrag_id: str) -> None:
     ws = Path(repo_root) / ".worktrees" / f"antrag-{antrag_id}"
     _git(repo_root, "worktree", "remove", "--force", str(ws))
