@@ -106,10 +106,10 @@ class WatchScheduler:
         self.secrets = secrets or []
         self.llm_enabled = llm_enabled  # Hintergrund-LLM aus (Token sparen); nur explizit aktivierbar
 
-    def _melde(self, text: str, *, kategorie: str, quelle: str) -> None:
+    def _melde(self, text: str, **kw) -> None:
         if self.notify is not None:
             try:
-                self.notify(text, kategorie=kategorie, quelle=quelle)
+                self.notify(text, **kw)
             except Exception:
                 pass
 
@@ -130,9 +130,11 @@ class WatchScheduler:
         self.store.mark_run("github")
         if neue:  # nur Auffaelliges, eine knappe Meldung je Lauf
             top = max(neue, key=lambda r: (r["zuwachs"], r["sterne"]))
-            self._melde(f"GitHub: {len(neue)} neue auffaellige Repos. Top: {top['name']} "
-                        f"({top['sterne']} Sterne, +{top['zuwachs']}). {top['url']}",
-                        kategorie="github", quelle="watcher")
+            detail = "\n".join(f"- {r['name']}: {r['sterne']} Sterne (+{r['zuwachs']}) {r['url']}"
+                               for r in neue)
+            self._melde(f"{len(neue)} neue auffällige Repos. Top: {top['name']} "
+                        f"({top['sterne']} Sterne, +{top['zuwachs']}).",
+                        abteilung="IT/Watcher", kategorie="github", quelle="watcher", detail=detail)
         return neue
 
     def dept_tick(self, abteilung: str, *, max_pro_thema: int = 3) -> list[dict]:
@@ -165,8 +167,10 @@ class WatchScheduler:
                                     quellen=quellen)
         self.store.mark_run(f"dept:{abteilung}")
         if neue:
-            self._melde(f"Researcher: {len(neue)} neue relevante Funde fuer {abteilung} im Wissensstand.",
-                        kategorie="fachbereich", quelle=f"researcher:{abteilung}")
+            detail = "\n".join(f"- {f['titel']}: {f['url']}" for f in neue)
+            self._melde(f"{len(neue)} neue relevante Funde für den Bereich im Wissensstand.",
+                        abteilung=f"Researcher/{abteilung}", kategorie="fachbereich",
+                        quelle=f"researcher:{abteilung}", detail=detail)
         return neue
 
     def briefing(self, abteilung: str | None = None, limit: int = 20) -> list[dict]:

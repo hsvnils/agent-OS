@@ -91,10 +91,13 @@ def _build_ctx(cfg: dict, secrets: dict):
     watch = WatchScheduler(WatchStore(ROOT / "watch" / "log.jsonl", secrets=secret_values),
                            github=GitHubWatch(env=secrets), web=web, research=research,
                            notify=notifications.enqueue, secrets=secret_values)
+    # Briefings/Agenda (manuelle Punkte).
+    from ...core.briefing import Agenda
+    agenda = Agenda(ROOT / "agenda" / "log.jsonl", secrets=secret_values)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,
-                       notifications=notifications), secret_values
+                       notifications=notifications, agenda=agenda, secret_dict=secrets), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:
@@ -132,10 +135,11 @@ def _transcribe(audio: bytes, deepgram_key: str, language: str = "de") -> str:
         return f"[Transkription fehlgeschlagen: {exc}]"
 
 
-def _start_watch_loop(watch, interval_hours: float) -> None:
-    """Phase 12: kostenloser 24/7-Hintergrund-Tick (GitHub jeden Lauf; Fachbereiche rundenweise).
+def _start_watch_loop(watch, interval_hours: float, *, maintenance=None, notify=None) -> None:
+    """Phase 12: kostenloser 24/7-Hintergrund-Tick (GitHub jeden Lauf; Fachbereiche rundenweise) +
+    IT-Self-Maintenance-Check je Lauf.
 
-    Daemon-Thread -- macht NUR freie Datenarbeit (keine Token). Fehler werden geloggt, nie fatal.
+    Daemon-Thread -- macht NUR freie Datenarbeit (keine Token). Fehler werden geloggt UND proaktiv gemeldet.
     """
     import itertools
     import threading
@@ -151,17 +155,61 @@ def _start_watch_loop(watch, interval_hours: float) -> None:
         time.sleep(20)  # Start nicht blockieren
         while True:
             try:
-                if watch.store.paused():             # Notbremse -> nichts tun
-                    pass
-                else:
+                if not watch.store.paused():         # Notbremse respektieren
                     watch.github_tick()              # kostenlos (GitHub-API)
                     if rot is not None:
                         watch.dept_tick(next(rot))    # je Tick EINE Abteilung -> Brave-Gratis-Quota schonen
-            except Exception as exc:                 # nie den Bot mitreissen
+                if maintenance is not None:           # IT-Healthcheck (kostenlos) -- meldet Probleme selbst
+                    maintenance.lauf()
+            except Exception as exc:                 # nie den Bot mitreissen -- aber proaktiv melden
                 print(f"[watch] Tick-Fehler: {exc}", flush=True)
+                if notify is not None:
+                    try:
+                        notify(f"Fehler im Hintergrund-Loop: {str(exc)[:200]}",
+                               abteilung="IT/Self-Maintenance", kategorie="fehler", quelle="watch-loop")
+                    except Exception:
+                        pass
             time.sleep(max(0.1, interval_hours) * 3600)
 
     threading.Thread(target=loop, daemon=True, name="watch-loop").start()
+
+
+def _start_briefing_loop(ctx, notify) -> None:
+    """Morgen-Briefing 08:00 + Abend-Briefing 20:00 (Europe/Berlin). Token-frugal (regelbasiert)."""
+    import threading
+    import time
+    from datetime import datetime
+
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("Europe/Berlin")
+    except Exception:
+        tz = None  # ohne tzdata: Serverzeit (im Container besser tzdata installieren)
+    if ctx.agenda is None or notify is None:
+        return
+    from ...core.briefing import Briefing
+
+    plan = {8: "morgen", 20: "abend"}
+
+    def loop():
+        time.sleep(30)
+        while True:
+            try:
+                jetzt = datetime.now(tz) if tz else datetime.now()
+                datum = jetzt.strftime("%Y-%m-%d")
+                art = plan.get(jetzt.hour)
+                if art and not ctx.agenda.briefing_gesendet(art, datum):
+                    text = Briefing(antraege=ctx.antraege, research=ctx.research, watch=ctx.watch,
+                                    agenda=ctx.agenda, secrets=ctx.leak_secrets).erstellen(
+                                        art, jetzt=jetzt.replace(tzinfo=None) if tz else jetzt)
+                    notify(text, abteilung="LUNA-Briefing", kategorie="briefing", quelle="briefing",
+                           dedup_stunden=0)
+                    ctx.agenda.markiere_briefing(art, datum)
+            except Exception as exc:
+                print(f"[briefing] Fehler: {exc}", flush=True)
+            time.sleep(300)  # alle 5 min pruefen
+
+    threading.Thread(target=loop, daemon=True, name="briefing-loop").start()
 
 
 def main() -> None:
@@ -186,8 +234,14 @@ def main() -> None:
         watch_h = float(secrets.get("WATCH_INTERVAL_HOURS", "") or 6)
     except ValueError:
         watch_h = 6.0
-    _start_watch_loop(ctx.watch, watch_h)
-    print(f"Watch-Loop aktiv (alle {watch_h:g} h, kostenlos: GitHub + 1 Fachbereich/Tick).", flush=True)
+    from ...core.self_maintenance import SelfMaintenance
+    maintenance = SelfMaintenance(secrets=ctx.secret_dict or {}, watch=ctx.watch, google=ctx.google,
+                                  repo_root=ROOT, notify=ctx.notifications.enqueue)
+    _start_watch_loop(ctx.watch, watch_h, maintenance=maintenance, notify=ctx.notifications.enqueue)
+    print(f"Watch-Loop aktiv (alle {watch_h:g} h, kostenlos: GitHub + 1 Fachbereich/Tick + IT-Healthcheck).",
+          flush=True)
+    _start_briefing_loop(ctx, ctx.notifications.enqueue)
+    print("Briefing-Loop aktiv (Morgen 08:00 + Abend 20:00, Europe/Berlin).", flush=True)
     offset = 0
     while True:
         upd = _api(token, "getUpdates", {"offset": offset, "timeout": 30}, timeout=35)
@@ -195,7 +249,11 @@ def main() -> None:
         if allowed and ctx.notifications is not None:
             try:
                 for n in ctx.notifications.pending()[:10]:
-                    if _api(token, "sendMessage", {"chat_id": allowed, "text": "🔔 " + n["text"]}).get("ok"):
+                    ab = n.get("abteilung") or n.get("quelle") or ""
+                    kurz = n["id"].split("-")[-1]
+                    kopf = f"🔔 {ab}: " if ab else "🔔 "
+                    msg = f"{kopf}{n['text']}  (#{kurz})"
+                    if _api(token, "sendMessage", {"chat_id": allowed, "text": msg}).get("ok"):
                         ctx.notifications.mark_sent(n["id"])
             except Exception as exc:
                 print(f"[notify] Zustell-Fehler: {exc}", flush=True)

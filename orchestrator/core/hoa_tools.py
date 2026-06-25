@@ -28,6 +28,8 @@ class ToolContext:
     google: object | None = None    # GoogleWorkspace (Phase 11) oder None
     watch: object | None = None     # WatchScheduler (Phase 12) oder None
     notifications: object | None = None  # Notifications-Outbox (proaktiver Push) oder None
+    agenda: object | None = None         # Agenda (manuelle Punkte fuer Briefings) oder None
+    secret_dict: dict | None = None      # geparste .env (Key->Wert) fuer Health-Checks (keine Ausgabe)
 
 
 def tool_specs() -> list[dict]:
@@ -84,12 +86,26 @@ def tool_specs() -> list[dict]:
               {"pausieren": _bool("true = anhalten, false = wieder freigeben.")}, ["pausieren"]),
         _spec("autonomie_status", "Zeigt, ob die autonomen Ablaeufe aktuell pausiert sind.", {}, []),
         _spec("melde_an_ceo", "Legt eine proaktive Nachricht an den CEO in die Outbox -- wird unaufgefordert "
-              "per Telegram zugestellt. Nutze das, um den CEU von selbst zu informieren (z. B. ein Anliegen "
-              "einer Abteilung, ein wichtiger Fund, eine erledigte Aufgabe).",
-              {"text": _str("Die Nachricht an den CEO."),
-               "kategorie": _str("Optional: z. B. 'anliegen', 'fund', 'erledigt'.")}, ["text"]),
+              "per Telegram zugestellt. Nutze das, um den CEO von selbst zu informieren (Anliegen einer "
+              "Abteilung, wichtiger Fund, erledigte Aufgabe, Fehler). Text immer mit der Abteilung beginnen "
+              "lassen -> Feld 'abteilung' setzen. 'detail' = Hintergrund fuer spaetere Rueckfragen.",
+              {"text": _str("Kurze Nachricht an den CEO."), "abteilung": _str("Absender-Abteilung/Rolle."),
+               "detail": _str("Optionaler Hintergrund (fuer Rueckfragen)."),
+               "kategorie": _str("Optional: z. B. 'anliegen', 'fund', 'erledigt', 'fehler'.")}, ["text"]),
         _spec("benachrichtigungen_zeigen", "Zeigt noch nicht zugestellte proaktive Nachrichten (Outbox).",
               {}, []),
+        _spec("meldung_details", "Zeigt den Hintergrund zu einer proaktiven Meldung -- per voller ID oder per "
+              "kurzem Suffix (die Ziffern hinter '#' in der Telegram-Nachricht).",
+              {"id": _str("Meldungs-ID oder Kurz-Suffix (z. B. '5282').")}, ["id"]),
+        # -- Briefings + Agenda + IT-Selbstcheck --
+        _spec("briefing_jetzt", "Erstellt sofort ein Briefing (kostenlos, aus den Stores). 'morgen' = ueber "
+              "Nacht erledigt + heute ansteht; 'abend' = heute erledigt + nachts ansteht.",
+              {"art": _str("'morgen' oder 'abend' (Default morgen).")}, []),
+        _spec("notiz_hinzufuegen", "Fuegt einen manuellen Punkt/Aufgabe zur Agenda hinzu -- erscheint in den "
+              "Briefings.", {"text": _str("Die Aufgabe/Notiz.")}, ["text"]),
+        _spec("agenda_zeigen", "Zeigt die offenen manuellen Agenda-Punkte.", {}, []),
+        _spec("systemcheck", "IT-Selbstcheck: prueft sofort, ob alle Prozesse/Komponenten laufen (Keys, "
+              "Google, Stores, Watcher-Heartbeat). Kostenlos.", {}, []),
         # -- Google Workspace (Phase 11): Lesen direkt, Schreiben/Senden NUR mit bestaetigt=true (Mensch-Tor) --
         _spec("mail_suchen", "Durchsucht das Google-Postfach (Gmail-Query, z. B. 'from:x is:unread').",
               {"query": _str("Gmail-Suchanfrage."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
@@ -292,6 +308,8 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         if ctx.notifications is None:
             return {"ok": False, "fehler": "Notifier nicht verfuegbar."}
         nid = ctx.notifications.enqueue(redact((args.get("text") or "").strip(), sec),
+                                        abteilung=(args.get("abteilung") or "").strip(),
+                                        detail=redact((args.get("detail") or "").strip(), sec),
                                         kategorie=(args.get("kategorie") or "info").strip(), quelle="LUNA")
         return {"ok": bool(nid), "id": nid,
                 "hinweis": "In Outbox -- wird per Telegram zugestellt." if nid else "Leer/Duplikat."}
@@ -299,8 +317,47 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
     if name == "benachrichtigungen_zeigen":
         if ctx.notifications is None:
             return {"offen": []}
-        return {"offen": [{"id": n["id"], "kategorie": n.get("kategorie", ""), "quelle": n.get("quelle", ""),
-                           "text": redact(n.get("text", ""), sec)} for n in ctx.notifications.pending()]}
+        return {"offen": [{"id": n["id"], "abteilung": n.get("abteilung", ""),
+                           "kategorie": n.get("kategorie", ""), "text": redact(n.get("text", ""), sec)}
+                          for n in ctx.notifications.pending()]}
+
+    if name == "meldung_details":
+        if ctx.notifications is None:
+            return {"fehler": "Notifier nicht verfuegbar."}
+        n = ctx.notifications.get(str(args.get("id", "")).strip())
+        if not n:
+            return {"fehler": "Meldung nicht gefunden."}
+        return {"id": n["id"], "abteilung": n.get("abteilung", ""), "kategorie": n.get("kategorie", ""),
+                "ts": n.get("ts", ""), "text": redact(n.get("text", ""), sec),
+                "detail": redact(n.get("detail", "") or "(kein weiterer Hintergrund gespeichert)", sec)}
+
+    if name == "briefing_jetzt":
+        from .briefing import Briefing
+        art = (args.get("art") or "morgen").strip().lower()
+        if art not in ("morgen", "abend"):
+            art = "morgen"
+        text = Briefing(antraege=ctx.antraege, research=ctx.research, watch=ctx.watch,
+                        agenda=ctx.agenda, secrets=sec).erstellen(art)
+        return {"ok": True, "art": art, "briefing": text}
+
+    if name == "notiz_hinzufuegen":
+        if ctx.agenda is None:
+            return {"ok": False, "fehler": "Agenda nicht verfuegbar."}
+        nid = ctx.agenda.notiz(redact((args.get("text") or "").strip(), sec))
+        return {"ok": True, "id": nid, "hinweis": "Zur Agenda hinzugefuegt -- erscheint in den Briefings."}
+
+    if name == "agenda_zeigen":
+        if ctx.agenda is None:
+            return {"offen": []}
+        return {"offen": [{"id": n["id"], "text": redact(n.get("text", ""), sec)}
+                          for n in ctx.agenda.offene()]}
+
+    if name == "systemcheck":
+        from .self_maintenance import SelfMaintenance
+        sm = SelfMaintenance(secrets=ctx.secret_dict or {}, watch=ctx.watch, google=ctx.google,
+                             repo_root=ctx.repo_root)
+        checks = sm.pruefe()
+        return {"alles_ok": all(x["ok"] for x in checks), "checks": checks}
 
     if name == "innovation_scouting":
         from .innovation import InnovationPipeline

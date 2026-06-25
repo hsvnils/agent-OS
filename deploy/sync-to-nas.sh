@@ -55,6 +55,7 @@ TAR_EXCLUDES=(
   --exclude='./research/log.jsonl'
   --exclude='./watch/log.jsonl'
   --exclude='./notifications/log.jsonl'
+  --exclude='./agenda/log.jsonl'
   --exclude='./orchestrator/channels/voice/selected_voice.json'
   # --- Git + virtuelle Umgebungen + Worktrees ---
   --exclude='./.git'

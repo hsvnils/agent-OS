@@ -26,16 +26,24 @@ class Notifications:
         self.path = Path(path)
         self.secrets = secrets or []
 
-    def enqueue(self, text: str, *, kategorie: str = "info", quelle: str = "",
-                dedup_stunden: float = 12) -> str | None:
-        """Nachricht in die Outbox legen. Gibt die ID zurueck (oder None, wenn dedupliziert/leer)."""
+    def enqueue(self, text: str, *, abteilung: str = "", kategorie: str = "info", quelle: str = "",
+                detail: str = "", dedup_stunden: float = 12) -> str | None:
+        """Nachricht in die Outbox legen. `abteilung` = Absender (wird vorangestellt); `detail` =
+        Hintergrund fuer Rueckfragen (meldung_details). Gibt die ID zurueck (None bei leer/Duplikat)."""
         text = (text or "").strip()
         if not text or self._kuerzlich(text, dedup_stunden):
             return None
         nid = "N-" + datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:4]
-        self._append({"ts": _now(), "id": nid, "typ": "queued", "kategorie": kategorie,
-                      "quelle": quelle, "text": text})
+        self._append({"ts": _now(), "id": nid, "typ": "queued", "abteilung": abteilung,
+                      "kategorie": kategorie, "quelle": quelle, "text": text, "detail": detail})
         return nid
+
+    def get(self, id_oder_suffix: str) -> dict | None:
+        """Findet eine Nachricht per voller ID oder per kurzem Suffix (die letzten Zeichen)."""
+        key = (id_oder_suffix or "").strip()
+        treffer = [e for e in self._events()
+                   if e.get("typ") == "queued" and (e.get("id") == key or e.get("id", "").endswith(key))]
+        return treffer[-1] if treffer else None
 
     def pending(self) -> list[dict]:
         """Noch nicht zugestellte Nachrichten, aelteste zuerst."""

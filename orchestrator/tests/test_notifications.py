@@ -48,9 +48,11 @@ class TestNotifications(unittest.TestCase):
                                notify=nb.enqueue)
         sched.github_tick(["ai-agents"])
         sched.dept_tick("cto")
-        texte = " ".join(n["text"] for n in nb.pending())
-        self.assertIn("GitHub", texte)
-        self.assertIn("cto", texte)
+        abteilungen = " ".join(n.get("abteilung", "") for n in nb.pending())
+        self.assertIn("IT/Watcher", abteilungen)        # GitHub-Meldung startet mit der Abteilung
+        self.assertIn("Researcher/cto", abteilungen)     # Fachbereichs-Meldung
+        # Detail (Hintergrund fuer Rueckfragen) ist befuellt
+        self.assertTrue(any(n.get("detail") for n in nb.pending()))
 
     def test_5_tools(self):
         names = {t["name"] for t in tool_specs()}

@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 14:15] — Claude Code
+- **Was:** Vier CEO-Wuensche umgesetzt. (1) **Meldungen v2:** proaktive Nachrichten beginnen mit der
+  **Abteilung**, tragen eine **Kurz-ID** (#xxxx) und ein **Detail** (Hintergrund); neues Tool
+  `meldung_details(id)` fuer Rueckfragen ("was steckt hinter #xxxx?"). (2) **Self-Maintenance:** die IT
+  ueberwacht jetzt kontinuierlich die eigenen Prozesse (`core/self_maintenance.py`: Keys, Google, Stores,
+  Watcher-Heartbeat) -- laeuft je Watch-Tick + meldet Probleme proaktiv (abteilung "IT/Self-Maintenance");
+  Tool `systemcheck`; Watch-Loop-Fehler werden jetzt auch proaktiv gemeldet. (3) **Briefings:** Morgen-
+  (08:00) und Abend-Briefing (20:00, **Europe/Berlin**) als Daemon-Loop -- regelbasiert/kostenlos aus den
+  Stores (ueber Nacht/heute erledigt + offene Punkte + manuell Hinzugefuegtes); `core/briefing.py` mit
+  `Agenda` (Tools `notiz_hinzufuegen`, `agenda_zeigen`) + `briefing_jetzt`. tzdata ins Image. (4) **Umlaute:**
+  LUNA-System-Prompt fordert ä/ö/ü/ß in Telegram; nutzersichtbare Template-Texte (Briefing/Watcher/Self-
+  Maintenance) auf Umlaute umgestellt. 9 neue Self-Checks; Gesamtsuite **106/106 OK**.
+- **Warum:** CEO will Rueckfragen zu Meldungen, kontinuierliche IT-Prozessueberwachung, feste Morgen-/Abend-
+  Briefings inkl. manueller Punkte und Umlaute in der Telegram-Kommunikation.
+- **Betroffen:** `orchestrator/core/notifications.py`, `orchestrator/core/self_maintenance.py` (neu),
+  `orchestrator/core/briefing.py` (neu), `orchestrator/core/scheduler.py`, `orchestrator/core/hoa_tools.py`,
+  `orchestrator/core/hoa_conversation.py`, `orchestrator/channels/telegram/bot.py`, `deploy/Dockerfile`,
+  `deploy/sync-to-nas.sh`, `orchestrator/tests/test_briefing_maintenance.py` (neu),
+  `orchestrator/tests/test_notifications.py`.
+
 ## [2026-06-25 13:45] — Claude Code
 - **Was:** Kritischer Leck-Schutz-Bugfix. Kurze/flag-/numerische/E-Mail-Werte aus `.env` (z. B.
   `WEB_RESEARCH_ANTHROPIC=1`, Chat-ID, iCloud-Adresse) wurden faelschlich als Secrets behandelt -> redact()
