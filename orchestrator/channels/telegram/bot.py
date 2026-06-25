@@ -305,7 +305,7 @@ def _fallbacks(secrets: dict, cfg: dict) -> list[dict]:
     v = cfg.get("voice", {})
     return [
         {"name": "gemini", "key": secrets.get("GEMINI_API_KEY", ""), "base_url": GEMINI_BASE_URL,
-         "model": v.get("gemini_model", "gemini-2.0-flash")},
+         "model": v.get("gemini_model", "gemini-2.5-flash")},
         {"name": "openai", "key": secrets.get("OPENAI_API_KEY", ""), "base_url": None,
          "model": v.get("openai_model", "gpt-4o-mini")},
     ]
