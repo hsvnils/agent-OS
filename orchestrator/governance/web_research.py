@@ -168,17 +168,24 @@ class AnthropicProvider:
     def __init__(self, env: dict[str, str] | None = None, *, model: str = DEFAULT_ANTHROPIC_MODEL,
                  max_uses: int = 5):
         import os
-        self._key = (env or os.environ).get("ANTHROPIC_API_KEY", "").strip()
+        e = env if env is not None else os.environ
+        self._key = e.get("ANTHROPIC_API_KEY", "").strip()
+        # WICHTIG (CEO-Tor): Der ANTHROPIC_API_KEY ist ohnehin vorhanden (Orchestrator-Kern).
+        # Das native web_search-Tool ist aber BILLBAR -> es bleibt aus, bis der CEO die Kosten
+        # explizit freigibt, indem WEB_RESEARCH_ANTHROPIC=1 in orchestrator/.env gesetzt wird.
+        self._enabled = e.get("WEB_RESEARCH_ANTHROPIC", "").strip().lower() in ("1", "true", "yes", "on")
         self._model = model
         self._max_uses = max_uses
 
     def verfuegbar(self) -> bool:
-        return bool(self._key)
+        return bool(self._key) and self._enabled
 
     def suche(self, query: str, *, max_results: int = 5) -> RechercheErgebnis:
         if not self.verfuegbar():
+            grund = ("ANTHROPIC_API_KEY fehlt" if not self._key
+                     else "billbar, noch nicht freigegeben -- WEB_RESEARCH_ANTHROPIC=1 fehlt")
             return RechercheErgebnis(ok=False, provider=self.name,
-                                     hinweis="Anthropic-Web nicht aktiv (ANTHROPIC_API_KEY fehlt) -- CEO-Tor.",
+                                     hinweis=f"Anthropic-Web nicht aktiv ({grund}) -- CEO-Tor.",
                                      freigabe_anfrage=_fall_b())
         try:
             import anthropic  # lazy: nur im Live-Pfad benoetigt

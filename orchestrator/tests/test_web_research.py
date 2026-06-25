@@ -88,6 +88,19 @@ class TestWebResearch(unittest.TestCase):
         self.assertFalse(res["ok"])
         self.assertIn("CEO-Tor", res["hinweis"])
 
+    def test_8b_anthropic_braucht_kosten_flag(self):
+        # Key vorhanden, aber ohne Freigabe-Flag -> NICHT verfuegbar (billbar, CEO-Tor).
+        self.assertFalse(AnthropicProvider({"ANTHROPIC_API_KEY": "sk-test"}).verfuegbar())
+        # Mit explizitem Flag -> verfuegbar.
+        self.assertTrue(AnthropicProvider(
+            {"ANTHROPIC_API_KEY": "sk-test", "WEB_RESEARCH_ANTHROPIC": "1"}).verfuegbar())
+        # Komplexe Anfrage, Anthropic ohne Flag, Brave aktiv -> Fallback auf Brave (kein billbarer Call).
+        web = WebResearch(einfach=MockProvider("brave"),
+                          komplex=AnthropicProvider({"ANTHROPIC_API_KEY": "sk-test"}))
+        erg = web.recherchiere("analysiere und vergleiche die optionen ausfuehrlich")
+        self.assertTrue(erg.ok)
+        self.assertEqual(erg.provider, "brave")
+
     def test_8_handler_ceo_tor_query(self):
         res = run_tool("web_recherche", {"query": "ein neues kostenpflichtiges Tool kaufen"},
                        _ctx(web=_mock_web()))

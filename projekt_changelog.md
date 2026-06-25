@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 10:05] — Claude Code
+- **Was:** Phase 8 **Brave-Provider live geschaltet** (CEO lieferte `BRAVE_API_KEY`). Key in `orchestrator/.env`
+  (Mac + NAS, gitignored, nicht committet). Live-Smoke-Tests OK (Mac + im NAS-Container, echte Treffer).
+  Zwei Fixes: (1) `web_recherche`-Handler/Bot nutzten `os.environ`, die App laedt `.env` aber in ein
+  `secrets`-Dict -> `ToolContext.web` wird jetzt in `telegram/bot.py` aus `secrets` gebaut
+  (`WebResearch.from_env(env=secrets, ...)`). (2) **Governance-Gate:** Der `ANTHROPIC_API_KEY` ist ohnehin da,
+  daher waere die **billbare** Anthropic-Web-Suche sonst sofort „verfuegbar" -- jetzt hinter explizitem Flag
+  `WEB_RESEARCH_ANTHROPIC=1` gesperrt (bleibt aus bis CEO-Kostenfreigabe; komplexe Anfragen laufen bis dahin
+  ueber Brave). NAS-Code-Sync + Container-Restart; LUNA recherchiert live ueber Telegram. Suite **50/50 OK**.
+- **Warum:** CEO hat Brave freigegeben (Gratis-Kontingent); Anthropic-Web bleibt kostengesperrt bis separate
+  Freigabe -- kein Suchkosten-Risiko ohne ausdrueckliche Zustimmung.
+- **Betroffen:** `orchestrator/governance/web_research.py` (Anthropic-Kosten-Flag), `orchestrator/channels/
+  telegram/bot.py` (ToolContext.web aus secrets), `orchestrator/tests/test_web_research.py` (+Gating-Test),
+  `governance/zugriffs-policy.md` (Brave live), `PHASE8_PLAN.md`. Secret nur in `.env` (NICHT versioniert).
+
 ## [2026-06-25 09:35] — Claude Code
 - **Was:** Phase 8 (Web-Research / Self-Education) **offline gebaut** (Go-Live wartet auf CEO-Tor). Neues
   Modul `orchestrator/governance/web_research.py` mit Provider-Abstraktion + Router: `MockProvider` (offline,

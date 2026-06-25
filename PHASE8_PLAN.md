@@ -46,10 +46,13 @@ verfuegbar, wird auf den anderen ausgewichen.
 
 ## 5. GATE — Go-Live-Checkliste (CEO)
 
-1. **Brave:** Account anlegen, `BRAVE_API_KEY` -> `orchestrator/.env` (CISO/Secret-Handling).
-2. **Anthropic-Web:** CFO-Kostenvoranschlag (laufende Suchkosten) -> HoA-Budget-Check -> **CEO-Freigabe**.
-3. Keys auf dem **NAS-Klon** (Produktion) hinterlegen; Mac bleibt fuer Entwicklung.
-4. Nach Freigabe: Capability-Status in der Zugriffs-Policy auf „live" + kurzer Live-Smoke-Test.
+1. **Brave:** ✅ **live** seit 2026-06-25 — `BRAVE_API_KEY` in `orchestrator/.env` (Mac + NAS-Produktion),
+   vom CEO geliefert (Gratis-Kontingent). Einfache UND komplexe Anfragen laufen aktuell ueber Brave.
+2. **Anthropic-Web:** noch **aus** (billbar). CFO-Kostenvoranschlag -> HoA-Budget-Check -> **CEO-Freigabe**;
+   dann `WEB_RESEARCH_ANTHROPIC=1` in `orchestrator/.env` setzen. Erst dann routen komplexe Fragen dorthin.
+3. Keys/Flags auf dem **NAS-Klon** (Produktion) hinterlegen; Mac bleibt fuer Entwicklung.
+4. Capability-Status in der Zugriffs-Policy fortschreiben + Live-Smoke-Test.
 
-> Erst nach 1–4 liefert `web_recherche` echte Ergebnisse. Bis dahin ist alles gebaut, getestet und sicher
-> inaktiv (Fall-B-Hinweis).
+> **Wichtig (CEO-Tor):** Der `ANTHROPIC_API_KEY` ist ohnehin vorhanden — deshalb ist die billbare
+> Anthropic-Web-Suche bewusst hinter dem expliziten Flag `WEB_RESEARCH_ANTHROPIC=1` gesperrt, nicht hinter
+> Key-Praesenz. So entstehen keine Suchkosten ohne ausdrueckliche Freigabe.

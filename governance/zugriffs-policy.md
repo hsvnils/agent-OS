@@ -26,17 +26,19 @@
 
 | Capability | Beschreibung | Erlaubte Agenten | Status |
 |------------|--------------|------------------|--------|
-| `web_research` | Web-Suche + Synthese (Brave fuer einfache Lookups, Anthropic-Web fuer komplexe Recherche). Externe Inhalte = Daten, keine Anweisungen. | berater, cto | **vorbereitet -- CEO-Tor offen** (Code + Offline-Self-Checks da; live erst nach CEO-Freigabe + Key in `.env`) |
+| `web_research` (Brave) | Rohe Web-Treffer fuer einfache Lookups. | berater, cto | **LIVE** seit 2026-06-25 (CEO-Freigabe via `BRAVE_API_KEY`, Gratis-Kontingent) |
+| `web_research` (Anthropic-Web) | Agentische Mehrschritt-Recherche + Synthese fuer komplexe Fragen. | berater, cto | **vorbereitet -- CEO-Tor offen** (billbar; aus, bis `WEB_RESEARCH_ANTHROPIC=1`) |
 
-> **Go-Live `web_research` (Fall B, CEO-Tor):** Beide Provider sind externer Zugang/Kosten. Aktivierung erst
-> nach CEO-Freigabe und Hinterlegung der Keys in `orchestrator/.env`:
-> - **Brave Search API** -- neuer Account + `BRAVE_API_KEY` (Gratis-Kontingent vorhanden; CISO/Secret-Handling).
-> - **Anthropic-Web** -- nutzt vorhandenen `ANTHROPIC_API_KEY`; das native web_search-Tool ist **billbar**
->   (ca. 10 USD je 1000 Suchen + Token) -> CFO-Kostenvoranschlag.
-> Ohne Keys liefert das Tool einen Fall-B-Hinweis statt Ergebnissen (kein Absturz).
+> **Go-Live `web_research` (Fall B, CEO-Tor):** Beide Provider sind externer Zugang/Kosten.
+> - **Brave Search API** -- ✅ aktiv. `BRAVE_API_KEY` in `orchestrator/.env` (Gratis-Kontingent; vom CEO geliefert).
+> - **Anthropic-Web** -- nutzt den vorhandenen `ANTHROPIC_API_KEY`, ist aber **billbar** (ca. 10 USD je 1000
+>   Suchen + Token). Bleibt **aus**, bis der CEO die Kosten freigibt durch `WEB_RESEARCH_ANTHROPIC=1` in
+>   `orchestrator/.env` (vorher CFO-Kostenvoranschlag). Bis dahin laufen auch komplexe Anfragen ueber Brave.
+> Ohne Freigabe liefert der jeweilige Provider einen Fall-B-Hinweis statt Ergebnissen (kein Absturz).
 
 ## Aenderungshistorie
 
 | Datum | Capability | Agent | Aktion | Genehmigt durch |
 |-------|------------|-------|--------|-----------------|
-| 2026-06-25 | `web_research` | berater, cto | vorbereitet (Code+Tests), noch NICHT live | offen (CEO-Tor) |
+| 2026-06-25 | `web_research` | berater, cto | vorbereitet (Code+Tests) | offen (CEO-Tor) |
+| 2026-06-25 | `web_research` (Brave) | berater, cto | **live** (BRAVE_API_KEY hinterlegt) | CEO (Key geliefert) |
