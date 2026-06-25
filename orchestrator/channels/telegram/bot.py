@@ -334,12 +334,21 @@ def main() -> None:
                 text = _transcribe(audio, deepgram, language) if audio else None
             if not text:
                 continue
+            if text.strip().lower() in ("/reset", "/neu", "/start"):
+                sessions.pop(chat_id, None)
+                _api(token, "sendMessage", {"chat_id": chat_id,
+                     "text": "Verlauf zurueckgesetzt. Wie kann ich helfen?"})
+                continue
             conv = sessions.setdefault(chat_id, HoaConversation(ctx, model=model,
                                                                 api_key=secrets["ANTHROPIC_API_KEY"]))
             try:
                 antwort = conv.respond(text)
             except Exception as exc:
-                antwort = f"Fehler: {exc}"
+                # Defensive: Session verwerfen, damit der Chat nie dauerhaft blockiert.
+                sessions.pop(chat_id, None)
+                print(f"[chat] Fehler, Session zurueckgesetzt: {exc}", flush=True)
+                antwort = ("Es gab gerade einen technischen Fehler -- ich habe den Verlauf zurueckgesetzt. "
+                           "Bitte stell die Frage noch einmal.")
             _api(token, "sendMessage", {"chat_id": chat_id, "text": antwort[:4000]})
         time.sleep(0.5)
 

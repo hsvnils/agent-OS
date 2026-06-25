@@ -16,6 +16,10 @@ RUN pip install --no-cache-dir "claude-agent-sdk==0.2.107" "anthropic==0.111.0" 
     "google-api-python-client==2.149.0" "google-auth==2.35.0" "tzdata"
 
 ENV PYTHONUNBUFFERED=1
+# Repo wird als Bind-Mount (Eigentuemer != root) eingehaengt -> Git wuerde sonst mit
+# "detected dubious ownership" (exit 128) abbrechen. /app als sicher markieren.
+RUN git config --global --add safe.directory /app \
+ && git config --global --add safe.directory '*'
 WORKDIR /app
 # Code/Daten kommen per Volume (siehe docker-compose.yml). Secrets liegen in orchestrator/.env (gemountet).
 CMD ["python", "-m", "orchestrator.channels.telegram.bot"]

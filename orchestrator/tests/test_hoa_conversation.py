@@ -85,6 +85,52 @@ class TestHoaConversation(unittest.TestCase):
         self.assertIn("frage_finance", names)
         self.assertIn("delegate", names)
 
+    def test_6_tool_fehler_zerstoert_chat_nicht(self):
+        # Ein Tool-Fehler darf NICHT durchschlagen -- jedes tool_use bekommt ein tool_result,
+        # danach laeuft das Gespraech normal weiter (Regression zum 'tool_use ohne tool_result'-400).
+        import orchestrator.core.hoa_conversation as hc
+        orig = hc.run_tool
+        hc.run_tool = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("git exit 128"))
+        try:
+            client = FakeClient([
+                _Resp([_Block(type="tool_use", id="t1", name="antrag_umsetzen", input={"antrag_id": "A-1"})]),
+                _Resp([_Block(type="text", text="Die Umsetzung ist leider fehlgeschlagen.")]),
+            ])
+            conv = HoaConversation(_ctx(), client=client)
+            out = conv.respond("Setz Antrag A-1 um.")
+        finally:
+            hc.run_tool = orig
+        self.assertIn("fehlgeschlagen", out)
+        # Verlauf ist gueltig: jedes tool_use hat ein tool_result.
+        results = [m for m in conv.messages if m["role"] == "user" and isinstance(m["content"], list)]
+        self.assertTrue(any(c.get("type") == "tool_result" for m in results for c in m["content"]))
+
+    def test_7_repariert_kaputten_verlauf(self):
+        conv = HoaConversation(_ctx(), client=FakeClient([]))
+        # Simuliere kaputten Tail: Assistant-tool_use ohne folgendes tool_result.
+        conv.messages = [{"role": "user", "content": "frueher"},
+                         {"role": "assistant", "content": [_Block(type="tool_use", id="x", name="f", input={})]}]
+        conv._repariere_verlauf()
+        self.assertEqual(conv.messages[-1]["role"], "user")  # kaputter Assistant-Tail entfernt
+
+    def test_8_selbstheilung_bei_verlauf_fehler(self):
+        # create() wirft zuerst den 'tool_result'-400, dann (nach Reset) liefert es Text.
+        class _HealClient:
+            def __init__(self):
+                self.calls = 0
+                self.messages = self
+
+            def create(self, **kw):
+                self.calls += 1
+                if self.calls == 1:
+                    raise RuntimeError("400 invalid_request_error: tool_use ids without tool_result")
+                return _Resp([_Block(type="text", text="Ja, ich bin da!")])
+        conv = HoaConversation(_ctx(), client=_HealClient())
+        conv.messages = [{"role": "assistant",
+                          "content": [_Block(type="tool_use", id="x", name="f", input={})]}]
+        out = conv.respond("Bist du da?")
+        self.assertEqual(out, "Ja, ich bin da!")
+
 
 if __name__ == "__main__":
     unittest.main()

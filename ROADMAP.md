@@ -185,3 +185,12 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
 - **Pro Phase:** eigener GATE wie oben (besonders streng bei Phase 7, 11, 12, 13).
 - **Empfohlener Start:** Phase 5 (sichtbarer Quick Win, kostenlos) parallel zur Detailplanung von Phase 6
   (Rueckgrat). Erst danach Phase 7 (handelnde Agenten).
+
+---
+
+## 8. Backlog (niedrige Prioritaet, „ganz nach hinten")
+
+- **Partner-/Akten-System (CRM-artig):** Mail-Router (sortiert neue Mails in Partner-Akten), Context-Parser
+  (versteht Inhalte, leitet naechste Schritte ab), Calendar-Sync (Termine zu Akten), zentraler Akte-Manager
+  (Verwaltung, Suche, Bericht, Alerts), optionaler Trend-Monitor je Partner. Idee aus einem LUNA-Self-Dev-Lauf
+  (2026-06-25); bewusst zurueckgestellt. Baut auf Gmail/Kalender (Phase 11) + Notifier auf.

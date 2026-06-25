@@ -36,9 +36,12 @@ def real_make_workspace(repo_root):
     def make(antrag_id: str):
         branch = f"antrag/{antrag_id}"
         ws = repo_root / ".worktrees" / f"antrag-{antrag_id}"
+        # Defensiv: Bind-Mount-Repo (Eigentuemer != Prozess-User) sonst "dubious ownership" -> exit 128.
+        _git(repo_root, "config", "--global", "--add", "safe.directory", str(repo_root))
         if ws.exists():
             _git(repo_root, "worktree", "remove", "--force", str(ws))
-        _git(repo_root, "branch", "-D", branch)  # evtl. alten Branch entfernen (ignoriert Fehler)
+        _git(repo_root, "worktree", "prune")             # verwaiste Worktree-Eintraege aufraeumen
+        _git(repo_root, "branch", "-D", branch)          # evtl. alten Branch entfernen (Fehler ignoriert)
         _git(repo_root, "worktree", "add", "-b", branch, str(ws), "HEAD", check=True)
         return (str(ws), branch)
 

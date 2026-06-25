@@ -29,6 +29,9 @@ TEXT_SYSTEM_PROMPT = (
     "'innovation_scouting'/'selbstentwicklung' (Vorschlag als Antrag), 'briefing_jetzt', 'notiz_hinzufuegen', "
     "'systemcheck', 'autonomie_pausieren' (Notbremse). Um dich proaktiv beim CEO zu melden: 'melde_an_ceo' "
     "(Feld 'abteilung' setzen, 'detail' fuer Rueckfragen). "
+    "Du hast KEINE Timer-/Erinnerungsfunktion: versprich NIEMALS, dich 'in X Minuten' von selbst zu melden. "
+    "Erledige Aufgaben sofort, oder sage klar, dass der CEO nachfragen soll; fuer Hintergrund-Ergebnisse "
+    "meldet sich der Watcher/Self-Maintenance ohnehin automatisch via 'melde_an_ceo'. "
     "WICHTIG: Schreibe alle Antworten an den CEO mit korrekten deutschen Umlauten (ä, ö, ü, ß) -- niemals ae/oe/ue/ss."
 )
 
@@ -48,25 +51,74 @@ class HoaConversation:
             self.client = Anthropic(api_key=api_key)
 
     def respond(self, user_text: str) -> str:
+        self._repariere_verlauf()  # evtl. kaputten Tail (tool_use ohne tool_result) entfernen
         self.messages.append({"role": "user", "content": user_text})
         for _ in range(self.max_iter):
-            resp = self.client.messages.create(
-                model=self.model, max_tokens=1024, system=TEXT_SYSTEM_PROMPT,
-                tools=self.tools, messages=self.messages,
-            )
+            try:
+                resp = self.client.messages.create(
+                    model=self.model, max_tokens=1024, system=TEXT_SYSTEM_PROMPT,
+                    tools=self.tools, messages=self.messages,
+                )
+            except Exception as exc:
+                # Kaputter Verlauf (z. B. 'tool_use ids ohne tool_result') -> Verlauf zuruecksetzen
+                # und EINMAL frisch versuchen, damit der Chat nicht dauerhaft blockiert.
+                if self._ist_verlauf_fehler(exc):
+                    self.messages = [{"role": "user", "content": user_text}]
+                    try:
+                        resp = self.client.messages.create(
+                            model=self.model, max_tokens=1024, system=TEXT_SYSTEM_PROMPT,
+                            tools=self.tools, messages=self.messages)
+                    except Exception as exc2:
+                        self.messages = []
+                        return _fehlertext(exc2)
+                else:
+                    return _fehlertext(exc)
             self.messages.append({"role": "assistant", "content": resp.content})
             tool_uses = [b for b in resp.content if getattr(b, "type", None) == "tool_use"]
             if not tool_uses:
                 return _text(resp.content)
+            # WICHTIG: JEDES tool_use bekommt ein tool_result -- auch bei Tool-Fehler. Sonst wird der
+            # Verlauf ungueltig und die Anthropic-API lehnt jede weitere Nachricht ab (400).
             results = []
             for tu in tool_uses:
-                out = run_tool(tu.name, dict(tu.input or {}), self.ctx)
+                try:
+                    out = run_tool(tu.name, dict(tu.input or {}), self.ctx)
+                except Exception as exc:
+                    out = {"ok": False, "fehler": f"Werkzeug '{tu.name}' fehlgeschlagen: {str(exc)[:240]}"}
                 results.append({"type": "tool_result", "tool_use_id": tu.id,
                                 "content": json.dumps(out, ensure_ascii=False)})
             self.messages.append({"role": "user", "content": results})
         return "Ich konnte das gerade nicht abschliessen -- bitte praezisiere kurz."
 
+    def _repariere_verlauf(self) -> None:
+        """Entfernt einen unvollstaendigen Tail: endet der Verlauf mit einem Assistant-tool_use ohne
+        folgendes tool_result, ist er fuer eine neue Nutzer-Nachricht ungueltig -> abschneiden."""
+        while self.messages:
+            last = self.messages[-1]
+            content = last.get("content")
+            hat_tool_use = isinstance(content, list) and any(
+                getattr(b, "type", None) == "tool_use" or (isinstance(b, dict) and b.get("type") == "tool_use")
+                for b in content)
+            if last.get("role") == "assistant" and hat_tool_use:
+                self.messages.pop()
+            else:
+                break
+
+    @staticmethod
+    def _ist_verlauf_fehler(exc: Exception) -> bool:
+        s = str(exc).lower()
+        return "tool_result" in s or "tool_use" in s or ("400" in s and "invalid_request" in s)
+
 
 def _text(content) -> str:
     return " ".join(getattr(b, "text", "") for b in content
                     if getattr(b, "type", None) == "text").strip()
+
+
+def _fehlertext(exc: Exception) -> str:
+    low = str(exc).lower()
+    if "credit" in low or "balance" in low:
+        return "Mein Modell-Guthaben ist gerade zu niedrig. Bitte spaeter erneut versuchen."
+    if "overloaded" in low or "rate" in low or "529" in low or "429" in low:
+        return "Die KI ist gerade ueberlastet. Bitte in einem Moment erneut fragen."
+    return "Es gab gerade einen technischen Fehler. Ich habe den Verlauf bereinigt -- bitte stell die Frage neu."

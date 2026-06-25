@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 15:35] — Claude Code
+- **Was:** Zwei produktive Bugs (vom CEO via Telegram gemeldet) behoben. **(1) Git „dubious ownership" (exit
+  128):** der Container laeuft als root, das Bind-Mount-Repo gehoert nilskrueger -> `git worktree add` brach
+  ab, `antrag_umsetzen` schlug fehl. Fix: `git config --global --add safe.directory /app` + `'*'` im
+  Dockerfile; defensiv auch in `execution_live.real_make_workspace` (+ `worktree prune`). **(2) Vergifteter
+  Gespraechsverlauf (400 'tool_use ids without tool_result'):** der git-Fehler flog aus dem Tool-Loop, der
+  Verlauf behielt ein tool_use ohne tool_result -> JEDE weitere Nachricht scheiterte dauerhaft. Fix in
+  `hoa_conversation`: jedes tool_use bekommt IMMER ein tool_result (Tool-Fehler werden gefangen);
+  `_repariere_verlauf` schneidet kaputte Tails ab; Selbstheilung bei Verlauf-Fehler (Reset + 1 Retry);
+  saubere Fehlertexte. Bot: Session bei Fehler verwerfen + `/reset`-Befehl. **(3) Prompt:** LUNA verspricht
+  keine zeitlich versprochenen Selbst-Meldungen mehr (kein Timer). 4 neue Self-Checks; Gesamtsuite
+  **116/116 OK**. Backlog-Idee (Partner-Akten-System) in ROADMAP aufgenommen (niedrige Prio).
+- **Warum:** CEO konnte unterwegs nicht mehr mit LUNA chatten (Dauer-400) und die Antrags-Umsetzung schlug
+  fehl; Ursache war die Kette git-128 -> Verlaufskorruption.
+- **Betroffen:** `orchestrator/core/hoa_conversation.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/core/execution_live.py`, `deploy/Dockerfile`,
+  `orchestrator/tests/test_hoa_conversation.py`, `ROADMAP.md`.
+
 ## [2026-06-25 14:45] — Claude Code
 - **Was:** Vier weitere CEO-Wuensche umgesetzt. (1) **Geplanter Selbst-Entwicklungs-Loop scharf** -- taeglich
   09:00 (DE) EIN rotierender Bereich -> bewerteter Antrag -> **proaktiver Freigabe-Push** an den CEO
