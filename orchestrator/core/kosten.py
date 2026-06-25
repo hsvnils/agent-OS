@@ -20,6 +20,10 @@ RATES_USD: dict[str, tuple[float, float]] = {
     "claude-opus-4-8": (15.0, 75.0),
     "gpt-4o": (2.5, 10.0),
     "gpt-4o-mini": (0.15, 0.60),
+    # Gemini: Gratis-Tier -> 0 (bei Ueberschreitung des Free-Tier paid; Richtwerte gering).
+    "gemini-2.5-flash": (0.0, 0.0),
+    "gemini-2.5-flash-lite": (0.0, 0.0),
+    "gemini-2.5-pro": (1.25, 10.0),
 }
 USD_TO_EUR = 0.92
 
@@ -91,4 +95,6 @@ def _provider(modell: str) -> str:
         return "openai"
     if m.startswith("claude"):
         return "anthropic"
+    if m.startswith("gemini") or "gemini" in m:
+        return "gemini"
     return "?"
