@@ -10,7 +10,9 @@ RUN apt-get update \
 # Laufzeit-Abhaengigkeiten des Telegram-Kanals:
 #  - claude-agent-sdk: delegate + Execution-Engine (gebundelte CLI, Linux-Build)
 #  - anthropic: konversationelles HoA-Gehirn (Tool-Loop)
-RUN pip install --no-cache-dir "claude-agent-sdk==0.2.107" "anthropic==0.111.0"
+#  - google-api-python-client + google-auth: Google Workspace (Phase 11; nur aktiv mit OAuth-Credentials)
+RUN pip install --no-cache-dir "claude-agent-sdk==0.2.107" "anthropic==0.111.0" \
+    "google-api-python-client==2.149.0" "google-auth==2.35.0"
 
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app

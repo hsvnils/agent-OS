@@ -28,6 +28,15 @@
 |------------|--------------|------------------|--------|
 | `web_research` (Brave) | Rohe Web-Treffer; **Default** fuer alle Recherchen. | **res (Researcher)** | **LIVE** seit 2026-06-25 (CEO-Freigabe via `BRAVE_API_KEY`, Gratis-Kontingent) |
 | `web_research` (Anthropic-Web) | Agentische Mehrschritt-Recherche + Synthese; **nur als Eskalation**. | **res (Researcher)** | **freigeschaltet** 2026-06-25 (`WEB_RESEARCH_ANTHROPIC=1`); aktuell durch zu niedriges Anthropic-**API-Guthaben** blockiert -> Eskalation faellt auf Brave zurueck |
+| `google_workspace` (gmail, calendar, drive, sheets) | Zugriff auf ein **separates Google-Konto** fuer LUNA: Mails/Termine/Dateien/Sheets lesen; Senden/Aendern/Schreiben nur gated. | **hoa (LUNA)** | **vorbereitet -- CEO-Tor + CISO offen** (Code + Offline-Self-Checks da; live erst nach OAuth-Credentials in `.env`) |
+
+> **Google-Sicherheitsmodell (CEO 2026-06-25): Lesen frei, Schreiben/Senden/Aendern nur nach Bestaetigung.**
+> Read-Tools (mail_suchen/lesen, kalender_agenda, drive_suchen/lesen, tabelle_lesen) laufen direkt.
+> Write-Tools (mail_senden, termin_anlegen, tabelle_schreiben) liefern OHNE `bestaetigt=true` nur eine
+> **Vorschau** und werden erst nach ausdruecklicher CEO-Bestaetigung ausgefuehrt (Mensch-Tor, AGENTS.md 4).
+> `mail_entwurf` ist sicher (legt nur einen Entwurf an, sendet nicht). Least-Privilege ueber OAuth-Scopes
+> (CISO autorisiert); Credentials NUR in `orchestrator/.env` (separates Konto), Refresh-Token nie im Repo.
+> **Go-Live:** OAuth-Setup laut `deploy/google-oauth-setup.md`; ohne Credentials -> Fall-B-Hinweis (CEO-Tor).
 
 > **Routing-Policy (CEO, 2026-06-25):** **Brave zuerst** -- immer. Anthropic-Web (billbar) wird NUR genutzt,
 > wenn Brave nicht verfuegbar ist, ein Limit/Fehler liefert, keine Treffer bringt, ODER der CEO eine
@@ -56,3 +65,4 @@
 | 2026-06-25 | `web_research` | berater, cto | vorbereitet (Code+Tests) | offen (CEO-Tor) |
 | 2026-06-25 | `web_research` (Brave) | berater, cto | **live** (BRAVE_API_KEY hinterlegt) | CEO (Key geliefert) |
 | 2026-06-25 | `web_research` | res (Researcher) | auf Researcher **verengt** (Least-Privilege, Agent 15 neu) | CEO (Charta-Freigabe) |
+| 2026-06-25 | `google_workspace` | hoa (LUNA) | vorbereitet (Code+Tests), noch NICHT live | offen (CEO-Tor + CISO) |

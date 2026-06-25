@@ -73,11 +73,14 @@ def _build_ctx(cfg: dict, secrets: dict):
     # injiziert .env nicht in die Prozess-Umgebung). Ohne Keys -> Fall-B-Hinweis (CEO-Tor).
     from ...governance.web_research import WebResearch
     from ...core.research_tickets import ResearchTickets
+    from ...governance.google_workspace import GoogleAuth, GoogleWorkspace
     web = WebResearch.from_env(env=secrets, secrets=secret_values)
     research = ResearchTickets(ROOT / "research" / "log.jsonl", secrets=secret_values, changelog=changelog)
+    # Phase 11: Google Workspace aus denselben .env-Secrets. Ohne OAuth-Credentials -> Fall-B (CEO-Tor).
+    google = GoogleWorkspace(GoogleAuth.from_env(env=secrets))
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
-                       web=web, research=research), secret_values
+                       web=web, research=research, google=google), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:

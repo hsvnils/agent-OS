@@ -1,6 +1,10 @@
 # Secrets — NIE committen
 orchestrator/.env
 .env
+# Google OAuth (Phase 11) — Client-Secret + Token nie ins Repo
+client_secret*.json
+**/client_secret*.json
+*token*.json
 
 # Python
 __pycache__/

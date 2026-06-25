@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 11:05] — Claude Code
+- **Was:** Phase 11 (Google Workspace) **offline gebaut** (Go-Live wartet auf CEO-Tor + CISO). LUNA bekommt
+  Zugriff auf ein **separates Google-Konto** -- Gmail, Kalender, Drive, Sheets. Neues Modul
+  `orchestrator/governance/google_workspace.py`: `GoogleAuth` (OAuth-Refresh-Token aus .env, lazy
+  Client-Bau), `GoogleWorkspace` (Lesen direkt; Senden/Aendern/Schreiben **gated** -- ohne `bestaetigt=true`
+  nur Vorschau, Mensch-Tor AGENTS.md 4; `mail_entwurf` sicher), `MockGoogleWorkspace` (Offline). 10 HoA-Tools
+  (`mail_suchen/lesen/entwurf/senden`, `kalender_agenda`, `termin_anlegen`, `drive_suchen/lesen`,
+  `tabelle_lesen/schreiben`); `ToolContext.google` + Bot-Verdrahtung aus den .env-Secrets. Ohne Credentials ->
+  Fall-B-Hinweis (kein Absturz, kein Netz, keine google-Libs noetig). Least-Privilege-Scopes (readonly +
+  compose/events/file/spreadsheets). 8 Offline-Self-Checks; Gesamtsuite **66/66 OK**. Dazu CEO-Anleitung
+  `deploy/google-oauth-setup.md` + Helfer `deploy/google_oauth_authorize.py` (einmaliger Refresh-Token);
+  Dockerfile um google-api-python-client + google-auth ergaenzt; `.gitignore` schuetzt client_secret/token.
+  Zugriffs-Policy + `PHASE11_PLAN.md` fortgeschrieben.
+- **Warum:** CEO will LUNA Zugriff auf die Google-Produkte geben (Mail/Kalender/Drive/Tabellen); Modell
+  „Lesen frei, Schreiben nur nach Bestaetigung", separates Konto. Offline-first -> Go-Live = OAuth-Credentials.
+- **Betroffen:** `orchestrator/governance/google_workspace.py` (neu), `orchestrator/core/hoa_tools.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_google_workspace.py` (neu),
+  `governance/zugriffs-policy.md`, `deploy/Dockerfile`, `deploy/google-oauth-setup.md` (neu),
+  `deploy/google_oauth_authorize.py` (neu), `.gitignore`, `PHASE11_PLAN.md` (neu).
+
 ## [2026-06-25 10:35] — Claude Code
 - **Was:** Anthropic-Web **freigeschaltet** (CEO) + **Brave-first-Eskalations-Policy** umgesetzt.
   `WEB_RESEARCH_ANTHROPIC=1` in `orchestrator/.env` (Mac + NAS, nicht versioniert). Router neu: **Brave ist

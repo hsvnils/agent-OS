@@ -25,6 +25,7 @@ class ToolContext:
     leak_secrets: list[str]
     web: object | None = None    # WebResearch (Phase 8) oder None -> aus env (BRAVE/ANTHROPIC-Key)
     research: object | None = None  # ResearchTickets (Phase 8.5) oder None
+    google: object | None = None    # GoogleWorkspace (Phase 11) oder None
 
 
 def tool_specs() -> list[dict]:
@@ -52,6 +53,40 @@ def tool_specs() -> list[dict]:
               "erledigt/fehlgeschlagen) als Text.", {"status": _str("Optionaler Status-Filter.")}, []),
         _spec("recherche_ticket", "Zeigt ein einzelnes Research-Ticket (Frage, Status, Befund, Quellen, Verlauf).",
               {"ticket_id": _str("Ticket-ID (R-...).")}, ["ticket_id"]),
+        # -- Google Workspace (Phase 11): Lesen direkt, Schreiben/Senden NUR mit bestaetigt=true (Mensch-Tor) --
+        _spec("mail_suchen", "Durchsucht das Google-Postfach (Gmail-Query, z. B. 'from:x is:unread').",
+              {"query": _str("Gmail-Suchanfrage."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
+        _spec("mail_lesen", "Liest eine Mail (Absender, Betreff, Text).",
+              {"message_id": _str("Mail-ID aus mail_suchen.")}, ["message_id"]),
+        _spec("mail_entwurf", "Legt einen Gmail-ENTWURF an (sendet NICHT) -- sicher.",
+              {"an": _str("Empfaenger."), "betreff": _str("Betreff."), "text": _str("Mailtext.")},
+              ["an", "betreff", "text"]),
+        _spec("mail_senden", "Sendet eine Mail. OHNE bestaetigt=true nur Vorschau; erst nach CEO-Bestaetigung "
+              "erneut mit bestaetigt=true aufrufen.",
+              {"an": _str("Empfaenger."), "betreff": _str("Betreff."), "text": _str("Mailtext."),
+               "bestaetigt": _bool("true erst nach ausdruecklicher CEO-Bestaetigung.")},
+              ["an", "betreff", "text"]),
+        _spec("kalender_agenda", "Zeigt anstehende Termine der naechsten Tage.",
+              {"tage": _str("Zeitraum in Tagen (Default 7).")}, []),
+        _spec("termin_anlegen", "Legt einen Kalendertermin an. OHNE bestaetigt=true nur Vorschau; erst nach "
+              "CEO-Bestaetigung mit bestaetigt=true.",
+              {"titel": _str("Titel."), "start": _str("Start ISO (2026-06-26T10:00:00)."),
+               "ende": _str("Ende ISO."), "ort": _str("Optionaler Ort."),
+               "bestaetigt": _bool("true erst nach CEO-Bestaetigung.")}, ["titel", "start", "ende"]),
+        _spec("drive_suchen", "Durchsucht Google Drive (Volltext).",
+              {"query": _str("Suchbegriff."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
+        _spec("drive_lesen", "Liest den Textinhalt einer Drive-Datei (Google-Doc wird als Text exportiert).",
+              {"file_id": _str("Datei-ID aus drive_suchen.")}, ["file_id"]),
+        _spec("tabelle_lesen", "Liest Werte aus einem Google Sheet.",
+              {"spreadsheet_id": _str("Sheet-ID."), "bereich": _str("A1-Bereich, Default A1:Z100.")},
+              ["spreadsheet_id"]),
+        _spec("tabelle_schreiben", "Schreibt Werte in ein Google Sheet. OHNE bestaetigt=true nur Vorschau; "
+              "erst nach CEO-Bestaetigung mit bestaetigt=true.",
+              {"spreadsheet_id": _str("Sheet-ID."), "bereich": _str("A1-Bereich."),
+               "werte": {"type": "array", "description": "Zeilen als Liste von Listen.",
+                         "items": {"type": "array", "items": {"type": "string"}}},
+               "bestaetigt": _bool("true erst nach CEO-Bestaetigung.")},
+              ["spreadsheet_id", "bereich", "werte"]),
         _spec("antrag_stellen", "Reicht einen Antrag (Aenderung/Beschaffung/Idee) ein; wird dem CEO zur "
               "Freigabe vorgelegt, nicht ausgefuehrt.",
               {"titel": _str("Kurztitel."), "beschreibung": _str("Was und warum."),
@@ -152,6 +187,41 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                            "befund": redact(t.get("befund", ""), sec), "quellen": t.get("quellen", []),
                            "verlauf": t.get("verlauf", [])}}
 
+    if name in _GOOGLE_TOOLS:
+        gw = ctx.google
+        if gw is None:
+            from ..governance.google_workspace import GoogleAuth, GoogleWorkspace
+            gw = GoogleWorkspace(GoogleAuth.from_env())
+        a = args
+        try:
+            if name == "mail_suchen":
+                res = gw.mail_suchen((a.get("query") or "").strip(), max_results=int(a.get("max") or 10))
+            elif name == "mail_lesen":
+                res = gw.mail_lesen((a.get("message_id") or "").strip())
+            elif name == "mail_entwurf":
+                res = gw.mail_entwurf(a.get("an", ""), a.get("betreff", ""), a.get("text", ""))
+            elif name == "mail_senden":
+                res = gw.mail_senden(a.get("an", ""), a.get("betreff", ""), a.get("text", ""),
+                                     bestaetigt=bool(a.get("bestaetigt")))
+            elif name == "kalender_agenda":
+                res = gw.kalender_agenda(tage=int(a.get("tage") or 7))
+            elif name == "termin_anlegen":
+                res = gw.termin_anlegen(a.get("titel", ""), a.get("start", ""), a.get("ende", ""),
+                                        ort=a.get("ort", ""), bestaetigt=bool(a.get("bestaetigt")))
+            elif name == "drive_suchen":
+                res = gw.drive_suchen((a.get("query") or "").strip(), max_results=int(a.get("max") or 10))
+            elif name == "drive_lesen":
+                res = gw.drive_lesen((a.get("file_id") or "").strip())
+            elif name == "tabelle_lesen":
+                res = gw.tabelle_lesen((a.get("spreadsheet_id") or "").strip(),
+                                       a.get("bereich") or "A1:Z100")
+            else:  # tabelle_schreiben
+                res = gw.tabelle_schreiben((a.get("spreadsheet_id") or "").strip(), a.get("bereich") or "",
+                                           a.get("werte") or [], bestaetigt=bool(a.get("bestaetigt")))
+        except Exception as exc:
+            res = {"ok": False, "fehler": str(exc)[:200]}
+        return _redact_obj(res, sec)
+
     if name == "antrag_stellen":
         aid = ctx.antraege.stellen((args.get("titel") or "").strip(), (args.get("beschreibung") or "").strip(),
                                    von=(args.get("von") or "Head of Agents").strip(),
@@ -204,9 +274,22 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
 _AGENT_KEYS = ("berater", "cao", "cfo", "cro", "ciso", "cbo", "cpo", "cto", "cxo", "cco",
                "cdo", "chro", "clo", "cko", "res")
 
+_GOOGLE_TOOLS = ("mail_suchen", "mail_lesen", "mail_entwurf", "mail_senden", "kalender_agenda",
+                 "termin_anlegen", "drive_suchen", "drive_lesen", "tabelle_lesen", "tabelle_schreiben")
+
+
+def _redact_obj(obj: dict, secrets: list[str]) -> dict:
+    """Leck-Schutz auf ein JSON-faehiges Ergebnis-Objekt (ueber die serialisierte Form)."""
+    import json
+    return json.loads(redact(json.dumps(obj, ensure_ascii=False), secrets))
+
 
 def _str(desc: str) -> dict:
     return {"type": "string", "description": desc}
+
+
+def _bool(desc: str) -> dict:
+    return {"type": "boolean", "description": desc}
 
 
 def _spec(name: str, desc: str, props: dict, required: list[str]) -> dict:
