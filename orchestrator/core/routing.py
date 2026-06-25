@@ -17,8 +17,16 @@ _STRAT = ["strategie", "markt", "analyse", "benchmark", "prozess", "effizienz",
           "wettbewerb", "szenario", "berater"]
 
 
+# Begriffe, die KEINE Kosten bedeuten -- vor der Pruefung neutralisieren, damit 'kostenlos'/'kostenfrei'
+# nicht faelschlich das Geld-Tor ausloesen (Teilstring 'kosten').
+_KEIN_GELD = ("kostenlos", "kostenfrei", "kostenfreie", "kostenfreien", "gratis", "freeware",
+              "open-source", "open source")
+
+
 def detect_ceo_tor(text: str) -> str | None:
     t = text.lower()
+    for neg in _KEIN_GELD:
+        t = t.replace(neg, " ")
     for cat, kws in CEO_TOR_KEYWORDS.items():
         if any(kw in t for kw in kws):
             return cat

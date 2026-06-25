@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 17:45] — Claude Code
+- **Was:** CEO-Tor-Fehlalarm behoben -- "kostenlos/kostenfrei/gratis/open-source" loesten faelschlich das
+  Geld-Tor aus (Teilstring "kosten") und blockierten legitime Recherchen (z. B. MCP-Scan). `detect_ceo_tor`
+  neutralisiert diese "kein-Geld"-Begriffe vor der Pruefung; echtes Geld (kostenpflichtig/bezahlen/Abo) bleibt
+  blockiert. Suite 129/129.
+- **Warum:** Researcher-Anfrage "kostenlose MCP Server" wurde faelschlich geblockt.
+- **Betroffen:** `orchestrator/core/routing.py`.
+
 ## [2026-06-25 17:35] — Claude Code
 - **Was:** CFO **Stufe 2 -- echte Token-/Kostenerfassung.** Neues `core/kosten.py` (`KostenStore`,
   append-only `finance/kosten-log.jsonl`, leck-geschuetzt): jeder echte Modell-Aufruf meldet Token-Nutzung;
