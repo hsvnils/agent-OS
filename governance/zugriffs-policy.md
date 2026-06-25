@@ -26,8 +26,13 @@
 
 | Capability | Beschreibung | Erlaubte Agenten | Status |
 |------------|--------------|------------------|--------|
-| `web_research` (Brave) | Rohe Web-Treffer fuer einfache Lookups. | berater, cto | **LIVE** seit 2026-06-25 (CEO-Freigabe via `BRAVE_API_KEY`, Gratis-Kontingent) |
-| `web_research` (Anthropic-Web) | Agentische Mehrschritt-Recherche + Synthese fuer komplexe Fragen. | berater, cto | **vorbereitet -- CEO-Tor offen** (billbar; aus, bis `WEB_RESEARCH_ANTHROPIC=1`) |
+| `web_research` (Brave) | Rohe Web-Treffer fuer einfache Lookups. | **res (Researcher)** | **LIVE** seit 2026-06-25 (CEO-Freigabe via `BRAVE_API_KEY`, Gratis-Kontingent) |
+| `web_research` (Anthropic-Web) | Agentische Mehrschritt-Recherche + Synthese fuer komplexe Fragen. | **res (Researcher)** | **vorbereitet -- CEO-Tor offen** (billbar; aus, bis `WEB_RESEARCH_ANTHROPIC=1`) |
+
+> **Least-Privilege (Phase 8.5):** Die Web-Capability haelt **ausschliesslich der Researcher (Agent 15)**.
+> Andere Abteilungen erhalten Web-Infos **nur ueber ihn** (via LUNA): sie melden ihren Bedarf an den HoA, der
+> den Researcher beauftragt (`recherche_beauftragen` -> Research-Ticket). So gibt es **einen** Ort fuer
+> Kosten, Rate-Limit und Audit.
 
 > **Go-Live `web_research` (Fall B, CEO-Tor):** Beide Provider sind externer Zugang/Kosten.
 > - **Brave Search API** -- ✅ aktiv. `BRAVE_API_KEY` in `orchestrator/.env` (Gratis-Kontingent; vom CEO geliefert).
@@ -42,3 +47,4 @@
 |-------|------------|-------|--------|-----------------|
 | 2026-06-25 | `web_research` | berater, cto | vorbereitet (Code+Tests) | offen (CEO-Tor) |
 | 2026-06-25 | `web_research` (Brave) | berater, cto | **live** (BRAVE_API_KEY hinterlegt) | CEO (Key geliefert) |
+| 2026-06-25 | `web_research` | res (Researcher) | auf Researcher **verengt** (Least-Privilege, Agent 15 neu) | CEO (Charta-Freigabe) |

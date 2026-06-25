@@ -22,10 +22,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _ctx(web=None, secrets=None):
+    from orchestrator.core.research_tickets import ResearchTickets
     core = HeadOfAgents(MockBackend(), load_all_subagents(), gate=CeoGate())
+    research = ResearchTickets(Path(tempfile.mkdtemp()) / "research.jsonl")
     return ToolContext(core=core, antraege=Antraege(Path(tempfile.mkdtemp()) / "log.jsonl"),
                        engine=None, finance_dir=ROOT / "finance", repo_root=ROOT,
-                       leak_secrets=secrets or [], web=web)
+                       leak_secrets=secrets or [], web=web, research=research)
 
 
 def _mock_web(secrets=None):
@@ -75,18 +77,26 @@ class TestWebResearch(unittest.TestCase):
         self.assertIn("[REDACTED]", erg.treffer[0].auszug)
 
     def test_6_tool_spec_und_handler(self):
-        self.assertIn("web_recherche", {t["name"] for t in tool_specs()})
-        res = run_tool("web_recherche", {"query": "wetter berlin"}, _ctx(web=_mock_web()))
+        names = {t["name"] for t in tool_specs()}
+        self.assertIn("recherche_beauftragen", names)
+        self.assertNotIn("web_recherche", names)  # Suche laeuft ueber den ticketenden Researcher
+        ctx = _ctx(web=_mock_web())
+        res = run_tool("recherche_beauftragen", {"frage": "wetter berlin", "abteilung": "cpo"}, ctx)
         self.assertTrue(res["ok"])
         self.assertEqual(res["provider"], "brave")
-        self.assertTrue(res["treffer"])
+        self.assertTrue(res["ticket_id"])
+        # Ticket wurde angelegt + erledigt, traegt die anfragende Abteilung.
+        t = ctx.research.get(res["ticket_id"])
+        self.assertEqual(t["status"], "erledigt")
+        self.assertEqual(t["abteilung"], "cpo")
 
     def test_7_handler_ohne_keys_meldet_ceo_tor(self):
-        # ctx.web=None -> aus leerer Sicht: ohne Keys kommt der CEO-Tor-Hinweis (kein Absturz).
-        res = run_tool("web_recherche", {"query": "wetter berlin"},
-                       _ctx(web=WebResearch(einfach=BraveProvider({}), komplex=AnthropicProvider({}))))
+        # Ohne Keys kommt der CEO-Tor-Hinweis (kein Absturz); Ticket wird auf fehlgeschlagen gesetzt.
+        ctx = _ctx(web=WebResearch(einfach=BraveProvider({}), komplex=AnthropicProvider({})))
+        res = run_tool("recherche_beauftragen", {"frage": "wetter berlin"}, ctx)
         self.assertFalse(res["ok"])
         self.assertIn("CEO-Tor", res["hinweis"])
+        self.assertEqual(ctx.research.get(res["ticket_id"])["status"], "fehlgeschlagen")
 
     def test_8b_anthropic_braucht_kosten_flag(self):
         # Key vorhanden, aber ohne Freigabe-Flag -> NICHT verfuegbar (billbar, CEO-Tor).
@@ -102,7 +112,7 @@ class TestWebResearch(unittest.TestCase):
         self.assertEqual(erg.provider, "brave")
 
     def test_8_handler_ceo_tor_query(self):
-        res = run_tool("web_recherche", {"query": "ein neues kostenpflichtiges Tool kaufen"},
+        res = run_tool("recherche_beauftragen", {"frage": "ein neues kostenpflichtiges Tool kaufen"},
                        _ctx(web=_mock_web()))
         self.assertTrue(res.get("blockiert"))
 

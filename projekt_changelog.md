@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-25 10:15] — Claude Code
+- **Was:** Phase 8.5 -- **Researcher (Agent 15) + Research-Tickets** gebaut (auf CEO-Freigabe der Charta).
+  Neuer Agent `agents/15_researcher.md` (zentraler Web-Recherche-Dienst; einziger Halter der Capability
+  `web_research`, Least-Privilege). Neuer event-sourced Ticket-Store `orchestrator/core/research_tickets.py`
+  (`research/log.jsonl`, append-only, leck-geschuetzt; Lebenszyklus offen->in_arbeit->erledigt|fehlgeschlagen)
+  -- bewusst abgegrenzt von Antraegen (Entscheidungs-Tickets). LUNA-Tools: `recherche_beauftragen(frage,
+  abteilung,tiefe?)` (legt Ticket an, sucht ueber den Web-Router, schreibt Befund+Quellen), `recherche_
+  tickets_zeigen(status?)`, `recherche_ticket(id)`. Direktes `web_recherche` aus dem LUNA-Toolset entfernt --
+  jede Suche laeuft jetzt ueber den ticketenden Researcher (Nachverfolgbarkeit: welche Abteilung, was, wann,
+  Befund, Quellen). `res` als konsultierbarer Subagent + in der delegate-Liste verdrahtet; Bot baut den
+  Research-Store in den ToolContext. Sync-Skript excludet `research/log.jsonl` (NAS-Produktionsdaten).
+  Registry + Zugriffs-Policy fortgeschrieben (web_research auf `res` verengt). 16 neue/aktualisierte
+  Self-Checks; Gesamtsuite **58/58 OK**. Live-Smoke (echtes Brave) OK: Ticket angelegt, 5 Quellen.
+- **Warum:** CEO-Wunsch -- ein dedizierter Research-Agent kapselt die Web-Recherche fuer alle Abteilungen
+  (ueber LUNA) mit lueckenloser Ticket-Nachverfolgung; getrennt vom Innovation-Agenten (01), der ihn nutzt.
+- **Betroffen:** `agents/15_researcher.md` (neu), `agents/REGISTRY.md`, `governance/zugriffs-policy.md`,
+  `orchestrator/core/research_tickets.py` (neu), `orchestrator/core/hoa_tools.py`,
+  `orchestrator/core/subagents.py`, `orchestrator/channels/telegram/bot.py`, `deploy/sync-to-nas.sh`,
+  `orchestrator/tests/test_research_tickets.py` (neu), `orchestrator/tests/test_web_research.py`.
+
 ## [2026-06-25 10:05] — Claude Code
 - **Was:** Phase 8 **Brave-Provider live geschaltet** (CEO lieferte `BRAVE_API_KEY`). Key in `orchestrator/.env`
   (Mac + NAS, gitignored, nicht committet). Live-Smoke-Tests OK (Mac + im NAS-Container, echte Treffer).
