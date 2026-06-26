@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-26 09:20] — Claude Code (im Auftrag des CEO)
+- **Was:** Operative Antrags-/Agenda-Status auf CEO-Anweisung bereinigt (direkt in den Live-Stores auf dem NAS,
+  da diese vom Code-Sync ausgenommen sind): (1) Antrag "Kalender-Integration: Zeitzonen-Fehler beheben" ->
+  **erledigt**. (2) Antrag "(nicht verfuegbar: Modellaufruf fuer 'cfo' fehlgeschlagen ...)" -> **abgelehnt**
+  (ungueltiger Antrag aus fehlgeschlagenem Modellaufruf). (3) Agenda-Aufgabe "Mail-Markieren erneut versuchen"
+  -> **erledigt/ausgesetzt**.
+- **Warum:** CEO-Anweisung im Chat (Kalender + CFO-Modellaufruf erledigt, Mail-Markieren aussetzen).
+- **Betroffen:** NAS-Stores antraege/log.jsonl + agenda/log.jsonl (nicht im Repo). Verbleibend offen:
+  Trend-Radar (Twitter API), zentrales Agenten-Aktivitaetsprotokoll.
+
 ## [2026-06-26 09:10] — Claude Code
 - **Was:** Kritischer Bot-Crash behoben. `core/execution_live.py` (`_arun`) bricht jetzt **vor** dem CLI-Start
   ab, wenn der Prozess als root laeuft (geteuid==0), mit klarer Fehlermeldung. Grund: Die Claude-CLI verweigert
