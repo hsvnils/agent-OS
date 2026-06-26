@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-26 10:40] — Claude Code (Umsetzung Antrag A-20260626-070431-adc5)
+- **Was:** Freigegebenen Antrag adc5 ("Einfuehrung eines zentralen Agenten-Aktivitaetsprotokolls") direkt
+  umgesetzt (kostenlos, ohne externe Dienste): neues Modul `core/aktivitaet.py` (event-sourced JSONL
+  `aktivitaet/log.jsonl`, leck-geschuetzt, durable) mit log/letzte/seit/zusammenfassung. Zentrale Einspeisung
+  ueber den **Changelog-Callback** (`channels/telegram/bot.py`) -> jeder Governance-Eintrag (Antrags-
+  Lebenszyklus, Execution, Charta) landet zugleich strukturiert im Protokoll, ohne jeden Agenten zu
+  instrumentieren. Neues LUNA-Tool `aktivitaet_protokoll` (Filter Akteur/Anzahl + 24h-Zusammenfassung je
+  Akteur/Kategorie), ToolContext-Feld `aktivitaet`. Vom Code-Sync ausgenommen (Live-Daten).
+- **Warum:** CEO-Freigabe des Antrags adc5; Umsetzung durch Claude Code (LUNA-Autonomie-Execution braucht
+  Anthropic-Guthaben, daher direkt umgesetzt).
+- **Betroffen:** orchestrator/core/aktivitaet.py (neu), orchestrator/tests/test_aktivitaet.py (neu),
+  orchestrator/channels/telegram/bot.py, orchestrator/core/hoa_tools.py, deploy/sync-to-nas.sh. Suite 156/156.
+
 ## [2026-06-26 10:10] — Claude Code
 - **Was:** GitHub-Watcher listet jetzt **jedes auffaellige Repo einzeln** in der Meldung
   (`core/scheduler.py` github_tick): nummerierte Liste mit Kurzbeschreibung, Sternen/Wachstum, URL und

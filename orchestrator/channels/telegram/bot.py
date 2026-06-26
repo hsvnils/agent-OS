@@ -61,7 +61,20 @@ def _build_ctx(cfg: dict, secrets: dict):
         AgentSdkBackend(cfg["models"], cfg["effort"], gate=CeoGate(),
                         max_turns=cfg["run"].get("max_turns", 4)),
         fallbacks=_fallbacks(secrets, cfg))
-    changelog = partial(append_changelog, ROOT / cfg["governance"]["changelog_file"])
+    # Antrag adc5: zentrales Aktivitaetsprotokoll. Der Changelog-Callback ist die zentrale Engstelle
+    # (Antrags-Lebenszyklus, Execution, Charta) -- jeder Changelog-Eintrag wird zusaetzlich strukturiert
+    # ins Protokoll geschrieben, ohne jeden Agenten einzeln zu instrumentieren.
+    from ...core.aktivitaet import Aktivitaet
+    aktivitaet = Aktivitaet(ROOT / "aktivitaet" / "log.jsonl", secrets=secret_values)
+    _md_changelog = partial(append_changelog, ROOT / cfg["governance"]["changelog_file"])
+
+    def changelog(actor, was, warum="", betroffen=""):
+        _md_changelog(actor, was, warum, betroffen)
+        try:
+            aktivitaet.log(actor, was, kategorie="governance", detail=warum, bezug=betroffen)
+        except Exception:
+            pass
+
     mem_cfg = cfg.get("memory", {})
     memory = Memory(ROOT / mem_cfg.get("path", "orchestrator/memory/log.jsonl"),
                     secrets=secret_values, recall_limit=mem_cfg.get("recall_limit", 5)) \
@@ -106,7 +119,7 @@ def _build_ctx(cfg: dict, secrets: dict):
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,
                        notifications=notifications, agenda=agenda, secret_dict=secrets,
-                       kosten=kosten), secret_values
+                       kosten=kosten, aktivitaet=aktivitaet), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:

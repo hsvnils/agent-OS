@@ -31,6 +31,7 @@ class ToolContext:
     agenda: object | None = None         # Agenda (manuelle Punkte fuer Briefings) oder None
     secret_dict: dict | None = None      # geparste .env (Key->Wert) fuer Health-Checks (keine Ausgabe)
     kosten: object | None = None         # KostenStore (Token-/Kostenerfassung) oder None
+    aktivitaet: object | None = None     # Aktivitaet (zentrales Agenten-Aktivitaetsprotokoll, adc5) oder None
 
 
 def tool_specs() -> list[dict]:
@@ -111,6 +112,11 @@ def tool_specs() -> list[dict]:
         _spec("notiz_hinzufuegen", "Fuegt einen manuellen Punkt/Aufgabe zur Agenda hinzu -- erscheint in den "
               "Briefings.", {"text": _str("Die Aufgabe/Notiz.")}, ["text"]),
         _spec("agenda_zeigen", "Zeigt die offenen manuellen Agenda-Punkte.", {}, []),
+        _spec("aktivitaet_protokoll", "Zeigt das zentrale Agenten-Aktivitaetsprotokoll (wer hat was getan) "
+              "-- juengste Eintraege, optional nach Akteur gefiltert, plus eine Zusammenfassung der letzten "
+              "24 Stunden (Eintraege je Akteur/Kategorie).",
+              {"akteur": _str("Optionaler Filter auf einen Agenten/eine Rolle (z. B. cfo, CEO, Researcher)."),
+               "anzahl": _str("Wie viele Eintraege (Default 15).")}, []),
         _spec("systemcheck", "IT-Selbstcheck: prueft sofort, ob alle Prozesse/Komponenten laufen (Keys, "
               "Google, Stores, Watcher-Heartbeat). Kostenlos.", {}, []),
         _spec("obsidian_export", "Schreibt den aktuellen Fachbereichs-Wissensstand und die offenen Tickets als "
@@ -485,6 +491,23 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             return {"offen": []}
         return {"offen": [{"id": n["id"], "text": redact(n.get("text", ""), sec)}
                           for n in ctx.agenda.offene()]}
+
+    if name == "aktivitaet_protokoll":
+        if ctx.aktivitaet is None:
+            return {"fehler": "Aktivitaetsprotokoll nicht verfuegbar."}
+        try:
+            n = int(str(args.get("anzahl", "")).strip() or 15)
+        except ValueError:
+            n = 15
+        akteur = str(args.get("akteur", "")).strip() or None
+        eintraege = ctx.aktivitaet.letzte(n, akteur=akteur)
+        return {
+            "eintraege": [{"ts": e.get("ts", ""), "akteur": e.get("akteur", ""),
+                           "aktion": redact(e.get("aktion", ""), sec),
+                           "kategorie": e.get("kategorie", ""),
+                           "bezug": e.get("bezug", "")} for e in eintraege],
+            "zusammenfassung_24h": ctx.aktivitaet.zusammenfassung(stunden=24),
+        }
 
     if name == "obsidian_export":
         from pathlib import Path as _P
