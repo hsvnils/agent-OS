@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-26 10:10] — Claude Code
+- **Was:** GitHub-Watcher listet jetzt **jedes auffaellige Repo einzeln** in der Meldung
+  (`core/scheduler.py` github_tick): nummerierte Liste mit Kurzbeschreibung, Sternen/Wachstum, URL und
+  Repo-Name statt nur des Top-Treffers.
+- **Warum:** CEO-Feedback: Watcher soll alle Funde einzeln auffuehren, nicht nur den Top-Treffer.
+- **Betroffen:** orchestrator/core/scheduler.py. Suite 147/147.
+- **Offen (CEO-Tor, nicht umgesetzt):** Execution-Root-Bypass via `IS_SANDBOX=1` (erlaubt der Claude-CLI
+  `--dangerously-skip-permissions` als root) -- bewusst NICHT committet, weil es autonome Code-Ausfuehrung als
+  root freischaltet (Sicherheits-/Kostenentscheidung des CEO). Wartet auf ausdrueckliche Freigabe.
+
 ## [2026-06-26 09:20] — Claude Code (im Auftrag des CEO)
 - **Was:** Operative Antrags-/Agenda-Status auf CEO-Anweisung bereinigt (direkt in den Live-Stores auf dem NAS,
   da diese vom Code-Sync ausgenommen sind): (1) Antrag "Kalender-Integration: Zeitzonen-Fehler beheben" ->

@@ -126,16 +126,19 @@ class WatchScheduler:
                 detail = f"{r.sterne} Sterne ({wachstum}); {r.beschreibung}".strip()
                 if self.store.add_finding("github", r.name, r.url, detail=detail):
                     neue.append({"name": r.name, "url": r.url, "sterne": r.sterne,
-                                 "zuwachs": r.zuwachs, "neu": r.neu, "topic": topic})
+                                 "zuwachs": r.zuwachs, "neu": r.neu, "topic": topic,
+                                 "beschreibung": (r.beschreibung or "").strip()})
         self.store.persist_stars(hist)
         self.store.mark_run("github")
-        if neue:  # nur Auffaelliges, eine knappe Meldung je Lauf
+        if neue:  # Auffaelliges: jedes Repo einzeln auffuehren (eine Meldung je Lauf)
             top = max(neue, key=lambda r: (r["zuwachs"], r["sterne"]))
-            detail = "\n".join(f"- {r['name']}: {r['sterne']} Sterne (+{r['zuwachs']}) {r['url']}"
-                               for r in neue)
-            self._melde(f"{len(neue)} neue auffällige Repos. Top: {top['name']} "
-                        f"({top['sterne']} Sterne, +{top['zuwachs']}).",
-                        abteilung="IT/Watcher", kategorie="github", quelle="watcher", detail=detail)
+            liste = "\n".join(
+                f"{i}. {(r.get('beschreibung') or 'ohne Beschreibung')[:90]} "
+                f"({r['sterne']} Sterne, +{r['zuwachs']}) -- {r['url']} -- {r['name']}"
+                for i, r in enumerate(neue, 1))
+            text = (f"{len(neue)} neue auffällige Repos. Top: {top['name']} "
+                    f"({top['sterne']} Sterne, +{top['zuwachs']}).\n\n{liste}")
+            self._melde(text, abteilung="IT/Watcher", kategorie="github", quelle="watcher", detail=liste)
         return neue
 
     def dept_tick(self, abteilung: str, *, max_pro_thema: int = 3) -> list[dict]:
