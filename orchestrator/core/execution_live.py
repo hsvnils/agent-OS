@@ -61,6 +61,19 @@ def real_run_agent(model: str = "claude-opus-4-8", max_turns: int = 30):
 
 
 async def _arun(task: str, cwd: str, model: str, max_turns: int) -> str:
+    import os
+
+    # Schutz: Die Claude-CLI verweigert `--dangerously-skip-permissions` (bypassPermissions) als root.
+    # Der Produktions-Container laeuft derzeit als root -> der CLI-Start crasht den SDK-Transport
+    # ("Fatal error in message reader") und reisst den ganzen Bot-Loop mit. Darum HIER abbrechen,
+    # BEVOR die CLI ueberhaupt gestartet wird -> sauberer, gefangener Fehler statt Prozess-Absturz.
+    if hasattr(os, "geteuid") and os.geteuid() == 0:
+        raise RuntimeError(
+            "Umsetzung nicht moeglich: Die Code-Ausfuehrung nutzt die Claude-CLI mit "
+            "--dangerously-skip-permissions, das aus Sicherheitsgruenden NICHT als root laufen darf. Der "
+            "Produktions-Container laeuft derzeit als root. Vorschlaege, Entscheidungen und Chat laufen "
+            "normal weiter; die tatsaechliche Umsetzung braucht einen Non-root-Container-User.")
+
     from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, TextBlock, query
 
     options = ClaudeAgentOptions(

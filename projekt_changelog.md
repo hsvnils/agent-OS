@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-26 09:10] — Claude Code
+- **Was:** Kritischer Bot-Crash behoben. `core/execution_live.py` (`_arun`) bricht jetzt **vor** dem CLI-Start
+  ab, wenn der Prozess als root laeuft (geteuid==0), mit klarer Fehlermeldung. Grund: Die Claude-CLI verweigert
+  `--dangerously-skip-permissions` als root; der bisherige CLI-Start im root-Container crashte den SDK-Transport
+  ("Fatal error in message reader") und riss den **gesamten Telegram-Message-Reader** mit -> LUNA reagierte nicht
+  mehr auf Chat (Hintergrund-Loops/Briefings liefen weiter). Trigger war am 25.06. 17:20 die Freigabe von Antrag
+  A-...e7a9 (Execution). Der Fehler wird nun von der ExecutionEngine sauber als 'fehlgeschlagen' gefangen.
+- **Warum:** CEO-Meldung "LUNA antwortet nicht". Ursache: toter Message-Reader nach Execution-Crash.
+- **Betroffen:** orchestrator/core/execution_live.py. Suite 147/147. Offen (Backlog): Container als Non-root-User
+  laufen lassen, damit Execution nach Anthropic-Zugang (ab 2026-07-01) tatsaechlich funktioniert.
+
 ## [2026-06-26 09:00] — Claude Code
 - **Was:** Telegram-Anzeige weiter aufgeraeumt + Referenz-IDs in Briefings.
   (1) `core/briefing.py`: Header ohne rohe `*...*`-Marker (sauberer Klartext statt Sternchen, die teils
