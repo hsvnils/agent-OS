@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-26 12:30] — Claude Code (Phase 14 + lebende Roadmap)
+- **Was:** **Phase 14 (freie Visualisierung) umgesetzt.** Neues Modul `core/visualisierung.py`: generische
+  Schicht, die aus einer Spezifikation (mindmap/organigramm/graph/balken) ein **reines SVG** erzeugt -- ohne
+  Fremd-Bibliothek, ohne externen Render-Dienst. LUNA-Tool **`visualisiere(art, titel, inhalt)`** (hoa_tools);
+  im Telegram-Kanal wird das SVG als Bild-Datei gesendet (neuer `_send_document`-Multipart-Pfad in bot.py,
+  ToolContext-Feld `visuals`, Versand im Hauptloop), im Browser als generisches `visualisierung`-Panel
+  (panels.py + app.js). Bestehende Panels bleiben Spezialfaelle. **ROADMAP.md** auf lebenden Stand gebracht
+  (Status-Tabelle als Single Source of Truth; Phasen 5–14 umgesetzt, 10b zurueckgestellt; Backlog inkl.
+  Execution-Modellzugang/lokales LLM). Ab jetzt wird die Roadmap bei jeder Phasenaenderung mitgepflegt.
+- **Warum:** CEO-Auftrag: Phase 14 umsetzen + Roadmap immer aktuell halten.
+- **Betroffen:** orchestrator/core/visualisierung.py (neu), orchestrator/tests/test_visualisierung.py (neu),
+  orchestrator/core/hoa_tools.py, orchestrator/channels/telegram/bot.py, orchestrator/channels/voice/panels.py,
+  orchestrator/channels/voice/static/app.js, ROADMAP.md. Suite 163/163.
+
 ## [2026-06-26 11:10] — Claude Code
 - **Was:** Produktions-Container laeuft jetzt als **Non-root-User** (luna, UID 1026 : GID 100 = NAS-Eigentuemer
   nilskrueger:users). `deploy/Dockerfile`: Git-Identitaet/safe.directory von --global auf **--system**

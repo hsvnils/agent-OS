@@ -14,6 +14,7 @@ import time
 import tomllib
 import urllib.parse
 import urllib.request
+import uuid
 from functools import partial
 from pathlib import Path
 
@@ -119,7 +120,7 @@ def _build_ctx(cfg: dict, secrets: dict):
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,
                        notifications=notifications, agenda=agenda, secret_dict=secrets,
-                       kosten=kosten, aktivitaet=aktivitaet), secret_values
+                       kosten=kosten, aktivitaet=aktivitaet, visuals=[]), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:
@@ -127,6 +128,32 @@ def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:
     data = urllib.parse.urlencode(params).encode()
     try:
         with urllib.request.urlopen(urllib.request.Request(url, data=data), timeout=timeout) as r:
+            return json.loads(r.read())
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def _send_document(token: str, chat_id, dateiname: str, inhalt: bytes, caption: str = "") -> dict:
+    """Sendet eine Datei (z. B. SVG-Visualisierung, Phase 14) per multipart/form-data."""
+    boundary = "----luna" + uuid.uuid4().hex
+    parts: list[bytes] = []
+
+    def feld(name: str, wert: str):
+        parts.append(f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n"
+                     f"{wert}\r\n".encode())
+
+    feld("chat_id", str(chat_id))
+    if caption:
+        feld("caption", caption[:1000])
+    parts.append((f"--{boundary}\r\nContent-Disposition: form-data; name=\"document\"; "
+                  f"filename=\"{dateiname}\"\r\nContent-Type: image/svg+xml\r\n\r\n").encode())
+    parts.append(inhalt if isinstance(inhalt, bytes) else str(inhalt).encode())
+    parts.append(f"\r\n--{boundary}--\r\n".encode())
+    body = b"".join(parts)
+    req = urllib.request.Request(f"{API}/bot{token}/sendDocument", data=body,
+                                 headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
             return json.loads(r.read())
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
@@ -452,6 +479,12 @@ def main() -> None:
                 antwort = ("Es gab gerade einen technischen Fehler — ich habe den Verlauf zurückgesetzt. "
                            "Bitte stell die Frage noch einmal.")
             _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(antwort)[:4000]})
+            # Phase 14: erzeugte Visualisierungen als Bild-Datei (SVG) nachsenden.
+            if ctx.visuals:
+                for vis in ctx.visuals:
+                    _send_document(token, chat_id, vis.get("dateiname", "visualisierung.svg"),
+                                   vis.get("svg", "").encode("utf-8"), caption=vis.get("titel", ""))
+                ctx.visuals.clear()
         time.sleep(0.5)
 
 

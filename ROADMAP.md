@@ -1,9 +1,33 @@
 # ROADMAP.md — Vom aktuellen Stand zum selbst-entwickelnden Agenten-Unternehmen
 
-> **Status: PLAN — wartet auf GATE D (CEO-Freigabe dieser Roadmap).** Beschreibt den Weg vom heutigen Stand
-> bis zum Ziel: ein 24/7 erreichbarer persoenlicher Assistent (Head of Agents) mit Fachabteilungen, die
-> Aufgaben eigenstaendig umsetzen, sich selbst weiterentwickeln und den CEO ueber den HoA auf dem Laufenden
-> halten. `AGENTS.md` bleibt kanonisch und uebergeordnet; jede Phase ist ihr untergeordnet.
+> **Status: GROSSTEILS UMGESETZT & LIVE (Stand 2026-06-26).** Diese Datei ist die **lebende** Roadmap und wird
+> bei jeder Phasenaenderung aktualisiert. Ziel: ein 24/7 erreichbarer persoenlicher Assistent (Head of Agents,
+> „LUNA") mit Fachabteilungen, die Aufgaben eigenstaendig umsetzen, sich selbst weiterentwickeln und den CEO
+> ueber den HoA auf dem Laufenden halten. `AGENTS.md` bleibt kanonisch und uebergeordnet; jede Phase ist ihr
+> untergeordnet.
+>
+> **Live-Stand:** LUNA laeuft 24/7 als Telegram-Bot (Docker, Synology-NAS, Non-root). **Phasen 5–14 umgesetzt.**
+> Offen: Phase 10b (Telefonie, zurueckgestellt). **Einziger funktionaler Blocker:** Execution braucht
+> Anthropic-Modellzugang (Guthaben/ab 2026-07-01) ODER ein lokales LLM (siehe Abschnitt 9).
+
+## Status-Uebersicht (Single Source of Truth)
+
+| Phase | Thema | Status |
+|------:|-------|--------|
+| 5  | Live-Kontext & Organigramm | ✅ umgesetzt |
+| 6  | Antrags-/Freigabe-Workflow | ✅ umgesetzt |
+| 7  | Execution-Engine (Branch+Tests) | ✅ gebaut (wartet auf Modellzugang) |
+| 8 / 8.5 | Web-Research + Researcher | ✅ umgesetzt (Brave live) |
+| 9  | Innovations-Pipeline | ✅ umgesetzt |
+| 10 / 10A | Telegram (Text+Voice) | ✅ live |
+| 10b | Telefon-Anruf (Twilio) | 🔲 zurueckgestellt |
+| 11 | Gmail + Kalender | ✅ live |
+| 12 | Durable Queue + 24/7-Watcher | ✅ umgesetzt |
+| 13 | Self-Development-Loop (Apex) | ✅ umgesetzt |
+| 14 | Freie Visualisierung (MindMap/Graph/Chart) | ✅ umgesetzt 2026-06-26 |
+
+**Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
+Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
 
 ---
 
@@ -77,7 +101,7 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   `antraege_zeigen`, `antrag_freigeben` (nur CEO-bestaetigt).
 - **GATE:** Design-Freigabe (governance-kritisch). **Kosten:** minimal.
 
-### Phase 7 — Execution-Engine: handelnde Agenten  (Abteilungen setzen wirklich um)
+### Phase 7 — Execution-Engine: handelnde Agenten  (Abteilungen setzen wirklich um) — UMGESETZT (wartet auf Modellzugang)
 - **Ziel:** „Wie wenn ich es selbst in Codex/Claude Code mache": ein Ausfuehrungs-Agent (Claude Agent SDK mit
   Datei-/Bash-/Test-Tools) setzt **freigegebene** Antraege auf einem **Git-Branch** um, laesst Self-Checks
   laufen, und meldet Ergebnis + was zu testen ist. **Kein Merge ohne CEO.**
@@ -109,7 +133,7 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
 
 ### Phase 10b — Telefon-Anruf (Telefonie, „Jarvis anrufen")  (optional, parallel zu 10)
 - **Ziel:** Eine **Telefonnummer**, die man anruft und **live** mit dem HoA spricht (Streaming, Barge-in) --
-  das echte „Anruf"-Gefuehl.
+  das echte „Anruf"-Gefuehl. **Status: ZURUECKGESTELLT** (bewusst spaeter; Twilio = laufende Kosten).
 - **Bausteine:** Telefonie-Transport (z. B. Twilio) an die bestehende Pipecat-Pipeline (Pipecat hat fertige
   Telefonie-Transports); derselbe HoA-Kern.
 - **GATE:** Telefonnummer + Minuten (extern, kostenpflichtig) = CEO-Tor + Capability + CISO. **Kosten:** real.
@@ -143,14 +167,16 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
 - **GATE:** der staerkste — Selbst-Modifikation **ausschliesslich** ueber freigegebene Antraege, Branch +
   Tests + CEO-Merge; harte Kosten-/Stopp-Limits.
 
-### Phase 14 — Oberflaechen-Erweiterung / generische Visualisierung  (ganz hinten)
+### Phase 14 — Oberflaechen-Erweiterung / generische Visualisierung — UMGESETZT 2026-06-26
 - **Ziel:** Der HoA kann Inhalte **frei und visuell** darstellen, nicht nur feste Panel-Typen. Insbesondere:
   **Organigramm/Strukturen als MindMap**, dynamische Diagramme/Charts, frei konfigurierbare Ansichten — auf
-  Sprach-/Textanfrage („zeig mir das als MindMap"). Heutige Grenze: die Oberflaeche rendert feste
-  Panel-Typen; der HoA kann die Darstellungsform nicht beliebig aendern.
-- **Bausteine:** generische Visualisierungs-Schicht (der HoA emittiert eine Visualisierungs-Spezifikation —
-  z. B. Graph/MindMap/Chart — die die Browser-Seite rendert; bestehende Panels werden Spezialfaelle davon).
-- **GATE:** keiner zwingend (lokal/UI); Umsetzung erst nach den funktionalen Phasen. **Kosten:** keine externen.
+  Sprach-/Textanfrage („zeig mir das als MindMap").
+- **Umsetzung:** Generische Visualisierungs-Schicht `core/visualisierung.py` — LUNA emittiert eine
+  **Spezifikation** (mindmap/organigramm/graph/balken), aus der ein **reines SVG** erzeugt wird (keine
+  Fremd-Bibliothek, kein externer Render-Dienst). LUNA-Tool **`visualisiere(art, titel, inhalt)`**; im
+  **Telegram**-Kanal wird das SVG als Bild-Datei gesendet (neuer `sendDocument`-Pfad), im **Browser** als
+  generisches `visualisierung`-Panel gerendert. Bestehende Panels bleiben Spezialfaelle. Suite +7 Tests.
+- **GATE:** keiner (lokal/UI, keine externen Kosten).
 
 ---
 
@@ -190,6 +216,17 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
 
 ## 8. Backlog (niedrige Prioritaet, „ganz nach hinten")
 
+- **Execution-Modellzugang (einziger funktionaler Blocker):** Die Code-Ausfuehrung (Phase 7) nutzt die
+  Claude-CLI (claude-opus-4-8). Drei Wege: (a) ~5–10 USD Anthropic-Guthaben, (b) automatisch ab 2026-07-01,
+  (c) **lokales LLM** auf gesponserter Hardware -> macht Execution dauerhaft kostenlos. Ziel-Hardware:
+  Mini-PC mit **128 GB Unified Memory** (NVIDIA DGX Spark / AMD Ryzen AI Max+ 395 / Mac Studio) + 1 TB SSD;
+  Modell z. B. GPT-OSS-120B oder Qwen3-Coder. Anbindung: Chat/Fachagenten trivial (OpenAI-kompatibler
+  FallbackBackend), Execution braucht einen neuen Nicht-CLI-Ausfuehrungs-Agenten (eigener Bau). Hardware
+  laeuft ueber Produkt-Sponsoring.
+- **Container als Non-root:** ✅ erledigt 2026-06-26 (sichere Execution ohne IS_SANDBOX-root-Bypass).
+- **Supabase** als Queue-/Store-Backend (laeuft aktuell dateibasiert -- funktioniert; Supabase robuster).
+- **Finance Stufe 2.5:** echte Token-Erfassung je Agent/Subagent (CLI-Subagenten liefern keine Tokenzahl).
+- **Secrets rotieren (operativ):** im Chat geteilte Keys (GitHub-PAT, OpenAI, Gemini) + NAS-Passwort neu erzeugen.
 - **Partner-/Akten-System (CRM-artig):** Mail-Router (sortiert neue Mails in Partner-Akten), Context-Parser
   (versteht Inhalte, leitet naechste Schritte ab), Calendar-Sync (Termine zu Akten), zentraler Akte-Manager
   (Verwaltung, Suche, Bericht, Alerts), optionaler Trend-Monitor je Partner. Idee aus einem LUNA-Self-Dev-Lauf

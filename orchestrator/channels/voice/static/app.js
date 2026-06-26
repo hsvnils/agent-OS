@@ -120,6 +120,11 @@ function renderPanel(panel) {
     }
   } else if (panel.type === "tabelle") {
     el.appendChild(makeTable(panel.columns || [], panel.rows || []));
+  } else if (panel.type === "visualisierung") { // Phase 14: freie SVG-Darstellung
+    const box = document.createElement("div");
+    box.className = "viz";
+    box.innerHTML = panel.svg || ""; // vertrauenswuerdig: serverseitig erzeugt + leck-geschuetzt
+    el.appendChild(box);
   } else { // markdown / text
     const p = document.createElement("div");
     p.textContent = panel.markdown || "";

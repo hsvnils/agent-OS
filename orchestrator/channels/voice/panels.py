@@ -52,6 +52,14 @@ def build_panel(typ: str, daten: dict | None = None, *, finance_dir: Path | None
             "columns": daten.get("columns", []),
             "rows": daten.get("rows", []),
         }
+    elif typ == "visualisierung":
+        # Phase 14: generische, frei darstellbare Visualisierung (MindMap/Graph/Balken/Organigramm) als SVG.
+        from ...core.visualisierung import aus_text, to_svg
+        spec = aus_text(daten.get("art", "mindmap"), daten.get("title", "Visualisierung"),
+                        daten.get("inhalt", ""))
+        panel = {"type": "visualisierung",
+                 "title": daten.get("title", spec.get("titel", "Visualisierung")),
+                 "svg": to_svg(spec)}
     elif typ in ("text", "markdown"):
         panel = {
             "type": "markdown",

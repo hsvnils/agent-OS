@@ -32,6 +32,7 @@ class ToolContext:
     secret_dict: dict | None = None      # geparste .env (Key->Wert) fuer Health-Checks (keine Ausgabe)
     kosten: object | None = None         # KostenStore (Token-/Kostenerfassung) oder None
     aktivitaet: object | None = None     # Aktivitaet (zentrales Agenten-Aktivitaetsprotokoll, adc5) oder None
+    visuals: list | None = None          # Phase 14: Ablage erzeugter Visualisierungen (SVG) zum Senden
 
 
 def tool_specs() -> list[dict]:
@@ -112,6 +113,14 @@ def tool_specs() -> list[dict]:
         _spec("notiz_hinzufuegen", "Fuegt einen manuellen Punkt/Aufgabe zur Agenda hinzu -- erscheint in den "
               "Briefings.", {"text": _str("Die Aufgabe/Notiz.")}, ["text"]),
         _spec("agenda_zeigen", "Zeigt die offenen manuellen Agenda-Punkte.", {}, []),
+        _spec("visualisiere", "Erstellt eine FREIE visuelle Darstellung (Phase 14) und sendet sie als Bild "
+              "(SVG) -- ohne externe Dienste. art: organigramm | mindmap | balken | graph. Fuer 'organigramm' "
+              "wird die Firmenstruktur automatisch gebaut (inhalt leer lassen). Sonst 'inhalt' so fuellen: "
+              "mindmap = 'Zweig A: kind1, kind2; Zweig B: kind3'; balken = 'Label1=10, Label2=20'; "
+              "graph = 'a-b, b-c, c-a'. Nutze das, wenn der CEO etwas SEHEN will ('zeig mir das als MindMap').",
+              {"art": _str("organigramm | mindmap | balken | graph."),
+               "titel": _str("Ueberschrift der Darstellung."),
+               "inhalt": _str("Inhalt im jeweiligen Kurzformat (bei organigramm leer).")}, ["art"]),
         _spec("aktivitaet_protokoll", "Zeigt das zentrale Agenten-Aktivitaetsprotokoll (wer hat was getan) "
               "-- juengste Eintraege, optional nach Akteur gefiltert, plus eine Zusammenfassung der letzten "
               "24 Stunden (Eintraege je Akteur/Kategorie).",
@@ -491,6 +500,23 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             return {"offen": []}
         return {"offen": [{"id": n["id"], "text": redact(n.get("text", ""), sec)}
                           for n in ctx.agenda.offene()]}
+
+    if name == "visualisiere":
+        from .visualisierung import aus_text, to_svg
+        art = str(args.get("art", "")).strip() or "mindmap"
+        titel = str(args.get("titel", "")).strip() or art.capitalize()
+        inhalt = str(args.get("inhalt", "") or "")
+        try:
+            spec = aus_text(art, titel, inhalt)
+            svg = redact(to_svg(spec), sec)
+        except Exception as exc:
+            return {"ok": False, "fehler": f"Visualisierung fehlgeschlagen: {exc}"}
+        if ctx.visuals is not None:
+            dateiname = "".join(c for c in titel.lower().replace(" ", "_") if c.isalnum() or c == "_")
+            ctx.visuals.append({"titel": titel, "art": spec.get("type", art),
+                                "svg": svg, "dateiname": (dateiname or "visualisierung") + ".svg"})
+        return {"ok": True, "art": spec.get("type", art), "titel": titel,
+                "hinweis": "Visualisierung wurde erstellt und wird als Bild gesendet."}
 
     if name == "aktivitaet_protokoll":
         if ctx.aktivitaet is None:
