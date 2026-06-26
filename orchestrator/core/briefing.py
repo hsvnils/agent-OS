@@ -108,12 +108,12 @@ class Briefing:
         getan_titel = "Über Nacht erledigt/passiert" if art == "morgen" else "Heute erledigt/passiert"
         ansteht_titel = "Heute steht an" if art == "morgen" else "Für die Nacht steht an"
 
-        teile = [zeile, "", f"*{getan_titel}:*"]
+        teile = [zeile, "", f"{getan_titel}:"]
         teile += [f"  - {x}" for x in erledigt] or ["  - (nichts protokolliert)"]
-        teile += ["", f"*{ansteht_titel}:*"]
+        teile += ["", f"{ansteht_titel}:"]
         teile += [f"  - {x}" for x in offen] or ["  - (keine offenen Punkte)"]
         if manuell:
-            teile += ["", "*Manuell hinzugefügt:*"] + [f"  - {x}" for x in manuell]
+            teile += ["", "Manuell hinzugefügt:"] + [f"  - {x}" for x in manuell]
         return redact("\n".join(teile), self.secrets)
 
     # -- Datenquellen (alle kostenlos) --
@@ -125,7 +125,7 @@ class Briefing:
                 letzte = a.get("verlauf", [])
                 if letzte and _tsstr(letzte[-1].get("ts")) and _tsstr(letzte[-1]["ts"]) >= start \
                         and a.get("status") in ("freigegeben", "erledigt", "abgelehnt"):
-                    out.append(f"Antrag '{a.get('titel', '')[:50]}' -> {a.get('status')}")
+                    out.append(f"Antrag '{a.get('titel', '')[:50]}' [{a.get('antrag_id')}] -> {a.get('status')}")
         if self.research is not None:
             for t in self.research.list("erledigt"):
                 if t.get("verlauf") and _tsstr(t['verlauf'][-1].get('ts')) \
@@ -142,10 +142,11 @@ class Briefing:
         if self.antraege is not None:
             for a in self.antraege.list():
                 if a.get("status") in ("eingereicht", "freigegeben"):
-                    out.append(f"Antrag '{a.get('titel', '')[:50]}' ({a.get('status')}) -- wartet auf dich")
+                    out.append(f"Antrag '{a.get('titel', '')[:50]}' [{a.get('antrag_id')}] "
+                               f"({a.get('status')}) -- wartet auf dich")
         if self.agenda is not None:
             for n in self.agenda.offene():
-                out.append(f"Aufgabe: {n.get('text', '')[:60]}")
+                out.append(f"Aufgabe: {n.get('text', '')[:60]} [{n.get('id')}]")
         return out[:15]
 
     def _manuell_neu(self, start: datetime) -> list[str]:

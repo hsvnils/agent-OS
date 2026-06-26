@@ -296,7 +296,7 @@ def _start_cfo_loop(ctx, notify) -> None:
                     kopf = (f"Laufende Modellkosten {stat.get('monat', '')}: ca. {stat.get('gesamt_eur', 0)} EUR "
                             f"(je Provider: {stat.get('je_provider', {})}).\n\n" if stat else "")
                     if res.get("ok"):
-                        notify("Taegliche Kostenpruefung -- Vorschlaege liegen vor.",
+                        notify("Tägliche Kostenprüfung — Vorschläge liegen vor.",
                                abteilung="CFO/Finance", kategorie="kosten", quelle="cfo-loop",
                                detail=(kopf + str(res.get("vorschlaege", "")))[:1800], dedup_stunden=0)
                     ctx.agenda.markiere_briefing("cfo-kosten", datum)
@@ -426,7 +426,7 @@ def main() -> None:
             if text.strip().lower() in ("/reset", "/neu", "/start"):
                 sessions.pop(chat_id, None)
                 _api(token, "sendMessage", {"chat_id": chat_id,
-                     "text": "Verlauf zurueckgesetzt. Wie kann ich helfen?"})
+                     "text": "Verlauf zurückgesetzt. Wie kann ich helfen?"})
                 continue
             conv = sessions.setdefault(chat_id, HoaConversation(
                 ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"], fallbacks=_fallbacks(secrets, cfg)))
@@ -436,7 +436,7 @@ def main() -> None:
                 # Defensive: Session verwerfen, damit der Chat nie dauerhaft blockiert.
                 sessions.pop(chat_id, None)
                 print(f"[chat] Fehler, Session zurueckgesetzt: {exc}", flush=True)
-                antwort = ("Es gab gerade einen technischen Fehler -- ich habe den Verlauf zurueckgesetzt. "
+                antwort = ("Es gab gerade einen technischen Fehler — ich habe den Verlauf zurückgesetzt. "
                            "Bitte stell die Frage noch einmal.")
             _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(antwort)[:4000]})
         time.sleep(0.5)

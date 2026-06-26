@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-26 09:00] — Claude Code
+- **Was:** Telegram-Anzeige weiter aufgeraeumt + Referenz-IDs in Briefings.
+  (1) `core/briefing.py`: Header ohne rohe `*...*`-Marker (sauberer Klartext statt Sternchen, die teils
+  durchrutschten); offene/erledigte Antraege zeigen jetzt ihre **Antrags-ID** `[A-...]`, Agenda-Aufgaben ihre
+  `[AG-...]`-ID -> CEO kann Punkte direkt referenzieren/freigeben.
+  (2) `channels/telegram/bot.py`: nutzersichtbare ASCII-Texte auf Umlaute umgestellt -- CFO-Kostenpruefung
+  ("Taegliche Kostenpruefung" -> "Tägliche Kostenprüfung — Vorschläge liegen vor."), /reset-Antwort und
+  Chat-Fehlertext.
+- **Warum:** CEO-Feedback: Briefing-Formatierung weiterhin mit Sternchen + teils ohne Umlaute; anstehende
+  Punkte ohne Referenz-ID nicht ansprechbar.
+- **Betroffen:** orchestrator/core/briefing.py, orchestrator/channels/telegram/bot.py. Suite 147/147.
+
 ## [2026-06-25 21:55] — Claude Code
 - **Was:** Telegram-Anzeige aufgeraeumt. Neuer Filter `core/telegram_format.py` (`fuer_telegram`) wird vor
   JEDEM Senden angewendet (Chat-Antworten + proaktive Meldungen/Briefings): entfernt rohe Markdown-Marker
