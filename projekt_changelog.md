@@ -17,7 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-26 10:40] — Claude Code (Umsetzung Antrag A-20260626-070431-adc5)
+## [2026-06-26 11:10] — Claude Code
+- **Was:** Produktions-Container laeuft jetzt als **Non-root-User** (luna, UID 1026 : GID 100 = NAS-Eigentuemer
+  nilskrueger:users). `deploy/Dockerfile`: Git-Identitaet/safe.directory von --global auf **--system**
+  (/etc/gitconfig, gilt fuer jeden User), neuer User luna + `USER luna` + HOME=/home/luna. Auf dem NAS die
+  bisher root-erstellten Daten-/Worktree-Pfade auf 1026:100 umgeeignet (chown), damit der Prozess sie
+  schreiben kann.
+- **Warum:** Die Claude-CLI verweigert `--dangerously-skip-permissions` als root -> Execution (Phase 7) war
+  blockiert und der riskante IS_SANDBOX-root-Bypass die einzige Alternative. Als Non-root entfaellt der
+  Bypass komplett: Execution funktioniert sicher, sobald Anthropic-Modellzugang da ist (ab 2026-07-01 oder
+  mit Guthaben). Der root-Guard in execution_live.py bleibt als Sicherheitsnetz (greift nur noch bei root).
+- **Betroffen:** deploy/Dockerfile; NAS-Dateieigentum unter /volume1/docker/ki-unternehmen. Suite 156/156.
 - **Was:** Freigegebenen Antrag adc5 ("Einfuehrung eines zentralen Agenten-Aktivitaetsprotokolls") direkt
   umgesetzt (kostenlos, ohne externe Dienste): neues Modul `core/aktivitaet.py` (event-sourced JSONL
   `aktivitaet/log.jsonl`, leck-geschuetzt, durable) mit log/letzte/seit/zusammenfassung. Zentrale Einspeisung
