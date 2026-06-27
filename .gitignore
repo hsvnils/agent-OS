@@ -41,3 +41,10 @@ vault/Offene-Tickets.md
 # macOS
 .DS_Store
 **/.DS_Store
+antraege/log.jsonl
+notifications/log.jsonl
+research/log.jsonl
+aktivitaet/log.jsonl
+agenda/log.jsonl
+watch/log.jsonl
+.claude/preview-logs/

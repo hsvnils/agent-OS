@@ -27,7 +27,7 @@
 | 13 | Self-Development-Loop (Apex) | ✅ umgesetzt |
 | 14 | Freie Visualisierung (MindMap/Graph/Chart) | ✅ umgesetzt 2026-06-26 |
 | 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 live 2026-06-27 — funktioniert; „intelligenter machen" = Backlog (spaeter) |
-| 16 | **LUNA Live-Arbeitsoberflaeche (Browser-Dashboard)** | 🔲 geplant — **HOHE Prioritaet (jetzt)** |
+| 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | 🔄 in Umsetzung — **MVP lokal lauffaehig 2026-06-27** (Auftraege-Inbox + Buttons live); NAS-Deploy offen |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
@@ -233,6 +233,14 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
 - **Abgrenzung:** erweitert/ersetzt das bisherige Voice-Panel (das nur fuer den Voice-Kanal war) durch eine
   eigenstaendige, mobil- und desktop-taugliche **Arbeits-Oberflaeche**.
 - **GATE:** Hosting/HTTPS + Auth (nur CEO). **Kosten:** gering (eigener Host/Container).
+- **Umsetzung (MVP, 2026-06-27):** „LUNA-OS" als **Desktop-aehnliches Browser-OS** -- `orchestrator/channels/web`
+  (FastAPI + statisches Frontend mit **WinBox.js**: Desktop, Top-Bar, Dock, draggbare/resizbare Fenster).
+  Apps: **Auftraege** (Live-Inbox offener Antraege als Evidenz-Karten mit Buttons **Freigeben/Ablehnen/Loeschen/
+  Mehr-Info**), Meldungen, Aktivitaet, Research, Finanzen. Aktionen ueber die echten Store-Methoden
+  (Changelog + CEO-Tor); Mehr-Info legt ein Research-Ticket an. Live per SSE. Lokal verifiziert (Screenshot,
+  alle Aktionen ok). Start: `python -m orchestrator.channels.web`.
+- **Offen (V2):** NAS-Deployment (fastapi/uvicorn ins Image, Port, HTTPS, **Auth nur CEO**), LUNA-Chat-Panel,
+  Mehr-Info wirklich agentisch (delegate/funde_bewerten), Antrags-Detailansicht, mobil-Feinschliff.
 
 ## 5. Sicherheit & Kosten-Leitplanken (querschnittlich)
 

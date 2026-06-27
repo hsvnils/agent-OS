@@ -21,6 +21,7 @@ from ..governance.leak_guard import redact
 
 STATUSES = (
     "eingereicht", "freigegeben", "abgelehnt", "in_umsetzung", "erledigt", "fehlgeschlagen",
+    "geloescht",
 )
 _BASE_FIELDS = ("von", "titel", "beschreibung", "kategorie", "betroffen")
 

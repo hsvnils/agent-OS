@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 14:30] — Claude Code (Phase 16: LUNA-OS MVP)
+- **Was:** Neue Web-Arbeitsoberflaeche **LUNA-OS** (Desktop-aehnliches Browser-OS) -- Phase-16-MVP. Modul `orchestrator/channels/web`: FastAPI-Backend (`app.py`) ueber den echten Stores + statisches Frontend mit **WinBox.js** (Desktop, Top-Bar, Dock, draggbare Fenster). Apps: **Auftraege** (Live-Inbox offener Antraege als Evidenz-Karten mit Buttons Freigeben/Ablehnen/Loeschen/Mehr-Info), Meldungen, Aktivitaet, Research, Finanzen. Aktionen ueber die echten Antraege-Store-Methoden (Changelog + CEO-Tor); Mehr-Info erstellt ein Research-Ticket. Live-Updates per SSE (mtime). `core/antraege.py`: Status **geloescht** ergaenzt (auditierbar). Lokal verifiziert: Screenshot + alle 4 Aktionen HTTP 200; Orchestrator-Suite 163/163. Start: `python -m orchestrator.channels.web`. WinBox vendored (Apache-2.0). Recherche: AG-UI/Approval-Dashboard-Muster.
+- **Warum:** CEO will eine taegliche, OS-aehnliche Live-Arbeitsoberflaeche zum Bearbeiten von Antraegen.
+- **Betroffen:** orchestrator/channels/web/* (neu), orchestrator/core/antraege.py, .gitignore, .claude/launch.json. Roadmap Phase 16 -> in Umsetzung.
+- **Offen (V2):** NAS-Deployment (fastapi/uvicorn ins Image, HTTPS, Auth nur CEO), LUNA-Chat-Panel, Mehr-Info wirklich agentisch.
+
 ## [2026-06-27 13:30] — Claude Code (Roadmap: UI-Phase + Cutter nach hinten)
 - **Was:** ROADMAP.md aktualisiert. (1) Neue **Phase 16 — LUNA Live-Arbeitsoberflaeche (Browser-Dashboard)**, HOHE Prioritaet: taegliche Arbeitsoberflaeche mit priorisierter Antrags-Inbox, Buttons (Freigeben/Ablehnen/Loeschen/Agent-Recherche), Echtzeit-Updates (WebSocket/SSE, AG-UI-Muster), LUNA-Chat + Panels; ueber bestehende Tools/Antrags-Logik (Changelog+CEO-Tor bleiben). (2) **Cutter (Phase 15) nach hinten** -- CEO: noch nicht intelligent genug; ffmpeg-Ansatz regelbasiert; Engine-Kandidat fuer 'intelligenter': **OpenCut** (Headless-Modus + Editor-API + MCP-Server, MIT, im Umbau). (3) Markt-Recherche (AG-UI, Agent-Inbox/Approval-Dashboards) in die Phase eingearbeitet.
 - **Warum:** CEO-Anweisung: Browser-Oberflaeche als echte taegliche Arbeitsumgebung priorisieren; Cutter spaeter intelligenter machen.

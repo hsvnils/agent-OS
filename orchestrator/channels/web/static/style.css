@@ -1,0 +1,98 @@
+/* LUNA-OS -- Desktop-aehnliche Arbeitsoberflaeche (Phase 16). */
+:root {
+  --bg1: #0b1220; --bg2: #1e293b; --panel: #0f172a; --card: #1e293b;
+  --fg: #e5e7eb; --muted: #94a3b8; --line: #334155;
+  --accent: #2563eb; --ok: #16a34a; --warn: #d97706; --danger: #dc2626; --info: #0891b2;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: var(--fg);
+  background: radial-gradient(1200px 800px at 70% -10%, #1d4ed8 0%, transparent 55%),
+              radial-gradient(900px 700px at -10% 110%, #0e7490 0%, transparent 50%),
+              linear-gradient(160deg, var(--bg1), var(--bg2));
+  overflow: hidden; user-select: none;
+}
+
+/* Top-Bar */
+#topbar {
+  position: fixed; top: 0; left: 0; right: 0; height: 38px; z-index: 50;
+  display: flex; align-items: center; gap: 16px; padding: 0 16px;
+  background: rgba(8,12,20,.55); backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+#topbar .brand { font-weight: 700; letter-spacing: .3px; }
+#topbar .live { color: var(--ok); font-size: 12px; }
+#topbar .live.stale { color: var(--muted); }
+#topbar #clock { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Desktop */
+#desktop { position: fixed; inset: 38px 0 84px 0; }
+
+/* Willkommen / leerer Desktop */
+#welcome {
+  position: absolute; top: 18%; left: 0; right: 0; text-align: center; color: var(--muted);
+}
+#welcome h1 { color: var(--fg); font-size: 26px; margin: 0 0 6px; }
+#welcome p { margin: 4px 0; }
+
+/* Dock */
+#dock {
+  position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 50;
+  display: flex; gap: 10px; padding: 10px 14px;
+  background: rgba(8,12,20,.55); backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,.08); border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.45);
+}
+.dock-app {
+  position: relative; width: 58px; display: flex; flex-direction: column; align-items: center;
+  gap: 4px; cursor: pointer; transition: transform .12s ease;
+}
+.dock-app:hover { transform: translateY(-6px); }
+.dock-app .ico {
+  width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+  font-size: 24px; background: linear-gradient(160deg, #243049, #16203a);
+  border: 1px solid rgba(255,255,255,.08);
+}
+.dock-app .lbl { font-size: 10px; color: var(--muted); }
+.dock-app .badge-n {
+  position: absolute; top: -4px; right: 6px; min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 9px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700;
+  display: grid; place-items: center;
+}
+
+/* App-Inhalte (in WinBox-Fenstern) */
+.app { padding: 12px 14px; color: var(--fg); }
+.app .leer { color: var(--muted); padding: 20px; text-align: center; }
+
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px; margin-bottom: 12px;
+}
+.card .head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.card .head b { font-size: 14px; }
+.card .meta { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+.card .desc { font-size: 13px; line-height: 1.45; color: #cbd5e1; white-space: pre-wrap;
+  max-height: 96px; overflow: hidden; position: relative; }
+.card .desc.open { max-height: none; }
+.card .mehr { color: var(--accent); font-size: 12px; cursor: pointer; margin: 4px 0 8px; }
+.card .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+.badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; }
+.badge.eingereicht { background: #3730a3; color: #c7d2fe; }
+.badge.freigegeben { background: #14532d; color: #bbf7d0; }
+.badge.in_umsetzung { background: #78350f; color: #fde68a; }
+
+.btn { border: none; border-radius: 9px; padding: 7px 12px; font-size: 12px; font-weight: 600;
+  cursor: pointer; color: #fff; }
+.btn:active { transform: translateY(1px); }
+.btn.ok { background: var(--ok); } .btn.warn { background: var(--warn); }
+.btn.info { background: var(--info); } .btn.danger { background: var(--danger); }
+.btn[disabled] { opacity: .5; cursor: default; }
+
+.row { display: flex; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.row .t { color: var(--muted); font-size: 11px; min-width: 64px; }
+.row b { font-weight: 600; }
+.kv { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+.kv .k { color: var(--muted); }
