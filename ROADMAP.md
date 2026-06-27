@@ -27,7 +27,7 @@
 | 13 | Self-Development-Loop (Apex) | ✅ umgesetzt |
 | 14 | Freie Visualisierung (MindMap/Graph/Chart) | ✅ umgesetzt 2026-06-26 |
 | 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 live 2026-06-27 — funktioniert; „intelligenter machen" = Backlog (spaeter) |
-| 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | ✅ **LIVE auf dem NAS 2026-06-27** (LAN + Login + Mond-Orb/Chat/agentisches Mehr-Info); HTTPS/extern offen |
+| 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | ✅ **VOLL LIVE 2026-06-27** -- LAN + **HTTPS extern** (`https://os.hanserautisch.synology.me`, ein Lesezeichen ueberall), Login, Mond-Orb/Chat, agentisches Mehr-Info, Detailansicht, Mobil, echte Umlaute, futuristisches Design, Sprach-Kontextbefehle |
 | 17 | **LUNA bedient den Rechner (Computer-Use, auf Anweisung)** | 🔲 geplant (Backlog) |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
@@ -256,12 +256,15 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   („zeig/öffne <app>" blendet die App ein -- per Tippen UND Mikrofon, geraeteuebergreifend; erste Stufe der
   geraeteuebergreifenden Sprach-Kontextanzeige). **Diese beiden V3-Commits sind lokal committet (b94a1d3,
   dbda8f3), aber noch NICHT auf den NAS deployt** (Deploy braucht ausdrueckliche CEO-Freigabe).
-- 🔲 **HTTPS + externer Zugriff (manueller CEO-Schritt, in Arbeit):** Synology Reverse-Proxy + Let's Encrypt
-  (`https://os.hanserautisch.synology.me` -> localhost:8765) + ggf. Port-443-Weiterleitung im Router. **Muss
-  der CEO selbst in DSM ausfuehren** -- Reverse-Proxy/Zertifikate/Firewall sind System-/Sicherheitseinstellungen
-  und das DSM-Login ist passwortgeschuetzt; der Assistent darf das nicht in seinem Namen tun, sondern **lotst
-  live + liest den Bildschirm read-only mit + verifiziert am Ende** (curl auf den HTTPS-Endpoint). Schaltet
-  zugleich das schon fertige **Mikrofon/Sprach-Eingabe** frei (Browser braucht secure context).
+- ✅ **HTTPS + externer Zugriff LIVE (2026-06-27):** Synology Reverse-Proxy (Quelle HTTPS
+  `os.hanserautisch.synology.me`:443 -> Ziel HTTP localhost:8765, WebSocket-Header fuer SSE) + Let's-Encrypt-
+  Zertifikat (`luna-encrypt`, gueltig bis 25.09.2026, dem Reverse-Proxy-Dienst zugeordnet) + **Port-443-
+  Freigabe in der Fritz!Box 7530 AX** (TCP 443->443). **Ein Lesezeichen fuer ueberall:**
+  **`https://os.hanserautisch.synology.me`** -- funktioniert im Heim-WLAN (Fritz!Box-NAT-Loopback) UND
+  unterwegs (Mobilfunk), Login ceo + LUNA_OS_PASSWORD. Verifiziert (curl ueber oeffentliche IP + normale DNS:
+  HTTP 401 + TLS ok). Der CEO hat die DSM-/Router-Sicherheitseinstellungen selbst ausgefuehrt; der Assistent
+  hat live gelotst + read-only mitgelesen + technisch verifiziert. **Schaltet das Mikrofon/Sprach-Eingabe frei**
+  (secure context).
 - **Offen (spaeter, auf Roadmap geparkt):** (a) **echtes Mikrofon im Realbetrieb** testen, sobald HTTPS steht;
   (b) **agentische Voice-Kontext-Steuerung** -- volle HoaConversation/Tools emittieren „zeige Panel X"/
   Visualisierung (Phase 14), sodass auch komplexe Anfragen als Ansicht erscheinen (nicht nur die feste

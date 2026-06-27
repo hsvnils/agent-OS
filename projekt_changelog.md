@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 20:30] — Claude Code (LUNA-OS V3 deployt + HTTPS/externer Zugriff LIVE)
+- **Was:** (1) V3-Commits (b94a1d3 Features, dbda8f3 Umlaute/Design/Sprach-Kontext) per sync-to-nas.sh auf den
+  NAS deployt (Code volume-gemountet -> Frontend sofort live; luna-os-Container vom CEO in DSM neu gestartet
+  fuer app.py). (2) **HTTPS + externer Zugriff jetzt LIVE:** Synology Reverse-Proxy
+  (HTTPS os.hanserautisch.synology.me:443 -> HTTP localhost:8765, WebSocket-Header), Let's-Encrypt-Zertifikat
+  `luna-encrypt` (bis 25.09.2026) dem Dienst zugeordnet, **Fritz!Box 7530 AX Portfreigabe TCP 443->443**.
+  Ergebnis: **ein Lesezeichen `https://os.hanserautisch.synology.me` funktioniert im Heim-WLAN
+  (NAT-Loopback) UND unterwegs (Mobilfunk)**. Verifiziert (curl ueber oeffentliche IP + normale DNS:
+  HTTP 401 + TLS verifiziert). Schaltet das Mikrofon/Sprach-Eingabe frei (secure context).
+- **Warum:** CEO-Anweisung „mach alles fertig + lotse mich durch externen Zugriff". Die DSM-/Router-
+  Sicherheitseinstellungen + Login hat der CEO selbst ausgefuehrt (System-/Sicherheitseinstellungen bleiben
+  beim Menschen); der Assistent hat live gelotst, read-only mitgelesen und technisch verifiziert.
+- **Betroffen:** ROADMAP.md (Status-Tabelle + Phase-16-Block); NAS-Deployment (luna-os); Infrastruktur
+  (DSM Reverse-Proxy/Zertifikat, Fritz!Box-Portfreigabe -- ausserhalb des Repos).
+
 ## [2026-06-27 19:45] — Claude Code (Roadmap-Pflege: HTTPS als CEO-Schritt + Backlog)
 - **Was:** ROADMAP.md aktualisiert: V3-Stand fortgeschrieben (Umlaute/Design/Sprach-Kontextbefehl ✅,
   beide Commits lokal aber noch nicht deployt). **HTTPS** als **manueller CEO-Schritt** markiert
