@@ -48,7 +48,7 @@ def auth(cred: HTTPBasicCredentials = Depends(_security)):
         return
     ok = cred and secrets.compare_digest(cred.username, _USER) and secrets.compare_digest(cred.password, _PW)
     if not ok:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Login noetig",
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Login nötig",
                             headers={"WWW-Authenticate": "Basic"})
 
 
@@ -226,16 +226,16 @@ async def mehr_info(antrag_id: str):
                   "folgenden Antrag KURZ (max. 5 Saetze): Nutzen, technische Machbarkeit, grobe Kosten, "
                   "Empfehlung (freigeben/ablehnen/nachschaerfen). Antwort auf Deutsch.\n\n"
                   f"Titel: {titel}\nBeschreibung: {beschreibung}")
-        bewertung = _llm([{"role": "user", "content": prompt}]) or "(Bewertung aktuell nicht verfuegbar.)"
+        bewertung = _llm([{"role": "user", "content": prompt}]) or "(Bewertung aktuell nicht verfügbar.)"
         tid = research.erstellen(f"Mehr Infos/Bewertung zum Antrag: {titel}", abteilung="Head of Agents")
     notifications.enqueue(f"Agenten-Bewertung zu '{titel}': {bewertung}",
                           abteilung="Berater/CTO/CFO", kategorie="bewertung", detail=bewertung)
     return JSONResponse({"ok": True, "ticket": tid, "bewertung": bewertung, "state": _state()})
 
 
-LUNA_SYS = ("Du bist LUNA, der Head of Agents eines KI-Agenten-Unternehmens und Nils' persoenlicher "
-            "Assistent. Antworte kurz, hilfsbereit und auf Deutsch mit Umlauten (ae/oe/ue/ss vermeiden, "
-            "echte Umlaute nutzen). Du hilfst beim Bearbeiten von Antraegen, Meldungen und Aufgaben.")
+LUNA_SYS = ("Du bist LUNA, der Head of Agents eines KI-Agenten-Unternehmens und Nils' persönlicher "
+            "Assistent. Antworte kurz, hilfsbereit und auf Deutsch mit echten Umlauten (ä, ö, ü, ß -- "
+            "niemals ae/oe/ue/ss). Du hilfst beim Bearbeiten von Anträgen, Meldungen und Aufgaben.")
 
 
 def _llm(messages):
@@ -270,7 +270,7 @@ async def chat(request: Request):
         rolle = "assistant" if h.get("role") == "luna" else "user"
         messages.append({"role": rolle, "content": str(h.get("text", ""))[:1200]})
     messages.append({"role": "user", "content": msg[:2000]})
-    return JSONResponse({"reply": _llm(messages) or "(Kein Modell verfuegbar.)"})
+    return JSONResponse({"reply": _llm(messages) or "(Kein Modell verfügbar.)"})
 
 
 @app.get("/api/events")

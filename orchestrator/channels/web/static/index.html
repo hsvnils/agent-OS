@@ -2,28 +2,31 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>LUNA OS</title>
-  <link rel="stylesheet" href="/static/style.css?v=3">
+  <link rel="stylesheet" href="/static/style.css?v=4">
   <script src="/static/vendor/winbox.bundle.min.js"></script>
 </head>
 <body>
+  <div id="starfield"></div>
+  <div id="grid"></div>
   <div id="topbar">
-    <div id="luna-orb" class="idle" title="LUNA — klick zum Reden">
+    <div id="luna-orb" class="idle" title="LUNA — antippen und sprechen">
       <span class="orb-ring r1"></span><span class="orb-ring r2"></span><span class="orb-core"></span>
     </div>
-    <span class="brand">LUNA&nbsp;OS</span>
-    <span id="live" class="live">● live</span>
+    <span class="brand">LUNA<span class="brand-os">OS</span></span>
+    <span id="live" class="live"><span class="dot"></span>ONLINE</span>
     <span id="clock"></span>
   </div>
   <div id="desktop">
     <div id="welcome">
-      <h1>Guten Tag, Nils.</h1>
-      <p>Deine Arbeitsoberflaeche. LUNA zeigt dir hier, was zu erledigen ist.</p>
-      <p>Oeffne unten im Dock <b>Auftraege</b>, um Antraege freizugeben.</p>
+      <div class="wm-glow"></div>
+      <h1>Willkommen, Nils.</h1>
+      <p>Deine Kommandozentrale. LUNA zeigt dir hier in Echtzeit, was zu erledigen ist.</p>
+      <p class="hint">Sag oder tippe „zeig mir die Aufträge" — oder öffne unten im Dock eine App.</p>
     </div>
   </div>
   <div id="dock"></div>
-  <script src="/static/app.js?v=3"></script>
+  <script src="/static/app.js?v=4"></script>
 </body>
 </html>

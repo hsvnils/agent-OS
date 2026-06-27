@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 19:15] — Claude Code (LUNA-OS: Umlaute + futuristisches Design + Sprach-Kontext)
+- **Was:** LUNA-OS-Oberflaeche ueberarbeitet:
+  (1) **Echte Umlaute ueberall** (CEO-Wunsch): UI-Beschriftungen mit ä/ö/ü/ß (Aufträge, Aktivität,
+  Löschen, „löschen?", Finanz-Labels) in index.html/app.js; nutzersichtbare Strings in app.py
+  (LUNA-Persona, „nicht verfügbar", „Kein Modell verfügbar", „Login nötig"). Code-Bezeichner bleiben ASCII.
+  (2) **Futuristisches Zukunftsdesign** (Sci-Fi-HUD): style.css komplett neu -- animiertes Sternenfeld +
+  perspektivisches Neon-Gitter + Aurora-Glow als Hintergrund, Glasmorphismus-Fenster (WinBox `.modern`
+  umgestylt), Neon-Cyan/Violett-Akzente, gluehende Buttons/Badges, Mono-Akzentschrift, holografisches Dock.
+  (3) **Sprach-/Text-Kontextbefehl** (CEO-Anforderung „auf Sprachanweisung Kontext zeigen, geraeteuebergreifend"):
+  client-seitiger Parser im LUNA-Chat erkennt „zeig/öffne <app>" und blendet die passende App
+  (Aufträge/Meldungen/Aktivität/Research/Finanzen) ein -- per Tippen UND Mikrofon (Web Speech API), auf
+  Handy/Rechner/iPad. Asset-Cache-Bust ?v=4. viewport-fit=cover + safe-area fuer Notch-Geraete.
+- **Warum:** CEO-Anweisungen (2026-06-27): Oberflaeche immer mit Umlauten, futuristisches Design,
+  Sprach-gesteuerte Kontextanzeige auf allen Geraeten. Zusaetzlich finance/kosten-log.jsonl gitignored
+  (Runtime-Store). Verifiziert im Preview (Desktop + mobil 375px): Design, Umlaute, Kontextbefehle
+  (5 Faelle inkl. Negativfall). Suite 163/163.
+- **Betroffen:** orchestrator/channels/web/static/{style.css,app.js,index.html}, .../app.py, .gitignore.
+
 ## [2026-06-27 18:30] — Claude Code (Phase 16 V3: Rest umgesetzt)
 - **Was:** LUNA-OS V3 vervollstaendigt (ausser HTTPS, das bleibt ein DSM-GUI-Schritt):
   (1) **Antrags-Detailansicht** -- neuer Endpoint `GET /api/antraege/{id}` mit vollem Verlauf/Evidenz;

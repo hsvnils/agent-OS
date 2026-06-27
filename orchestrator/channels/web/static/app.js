@@ -11,15 +11,38 @@ const zeit = (ts) => { try { return new Date(ts).toLocaleString("de-DE", { hour:
 
 // ---- Apps -----------------------------------------------------------------
 const APPS = {
-  auftraege: { icon: "📋", titel: "Auftraege", badge: () => STATE.antraege.length, render: renderAuftraege },
+  auftraege: { icon: "📋", titel: "Aufträge", badge: () => STATE.antraege.length, render: renderAuftraege },
   meldungen: { icon: "🔔", titel: "Meldungen", badge: () => STATE.meldungen.length, render: renderListe("meldungen", m => [m.abteilung, m.text, m.ts]) },
-  aktivitaet: { icon: "📊", titel: "Aktivitaet", badge: () => 0, render: renderListe("aktivitaet", a => [a.akteur, a.aktion, a.ts]) },
+  aktivitaet: { icon: "📊", titel: "Aktivität", badge: () => 0, render: renderListe("aktivitaet", a => [a.akteur, a.aktion, a.ts]) },
   research: { icon: "🔍", titel: "Research", badge: () => STATE.research.length, render: renderListe("research", r => [r.abteilung || r.status, r.frage, ""]) },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
 };
 
+// Sprach-/Text-Befehle: "zeig mir die Aufträge", "öffne Finanzen" -> passende App einblenden.
+// Funktioniert per Tippen UND per Mikrofon, auf jedem Geraet (Handy/Rechner/iPad).
+const APP_SYNONYME = [
+  ["auftraege", ["auftrag", "auftraege", "aufträge", "antrag", "anträge", "antraege", "aufgabe", "aufgaben", "freigabe", "freigaben", "inbox"]],
+  ["meldungen", ["meldung", "meldungen", "benachrichtigung", "benachrichtigungen", "nachrichten"]],
+  ["aktivitaet", ["aktivität", "aktivitaet", "aktivitäten", "protokoll", "verlauf", "log", "historie"]],
+  ["research", ["research", "recherche", "ticket", "tickets", "suche"]],
+  ["finance", ["finanzen", "finance", "budget", "kosten", "geld"]],
+];
+const ZEIG_VERB = /\b(zeig|zeige|öffne|oeffne|öffnen|oeffnen|anzeigen|geh|gehe|wechsel|wechsle|zeig mir|ruf|rufe|starte|öffn)\b/;
+function versucheKontextBefehl(text) {
+  const t = " " + text.toLowerCase().trim() + " ";
+  const istBefehl = ZEIG_VERB.test(t) || t.trim().split(/\s+/).length <= 2; // kurze Eingaben gelten als Befehl
+  for (const [id, woerter] of APP_SYNONYME) {
+    if (woerter.some(w => t.includes(" " + w) || t.includes(w + " "))) {
+      if (!istBefehl) return null;
+      openApp(id);
+      return APPS[id].titel;
+    }
+  }
+  return null;
+}
+
 function renderAuftraege() {
-  if (!STATE.antraege.length) return `<div class="app"><div class="leer">Keine offenen Auftraege. 🎉<br>LUNA meldet sich, wenn etwas ansteht.</div></div>`;
+  if (!STATE.antraege.length) return `<div class="app"><div class="leer">Keine offenen Aufträge. 🎉<br>LUNA meldet sich, wenn etwas ansteht.</div></div>`;
   const cards = STATE.antraege.map(a => {
     const lang = a.beschreibung.length > 240;
     const freigeben = a.status === "eingereicht"
@@ -35,7 +58,7 @@ function renderAuftraege() {
         ${freigeben}${ablehnen}
         <button class="btn ghost" data-detail="${esc(a.id)}">📄 Details</button>
         <button class="btn info" data-act="mehr-info" data-id="${esc(a.id)}">🔍 Mehr Info holen</button>
-        <button class="btn danger" data-act="loeschen" data-id="${esc(a.id)}">🗑 Loeschen</button>
+        <button class="btn danger" data-act="loeschen" data-id="${esc(a.id)}">🗑 Löschen</button>
       </div></div>`;
   }).join("");
   return `<div class="app">${cards}</div>`;
@@ -54,7 +77,7 @@ function renderListe(key, cols) {
 
 function renderFinance() {
   return `<div class="app"><div class="kv"><span class="k">Monatsbudget</span><b>${esc(STATE.finance.monatsbudget || "unbekannt")}</b></div>
-    <div class="kv"><span class="k">Offene Auftraege</span><b>${STATE.antraege.length}</b></div>
+    <div class="kv"><span class="k">Offene Aufträge</span><b>${STATE.antraege.length}</b></div>
     <div class="kv"><span class="k">Offene Research-Tickets</span><b>${STATE.research.length}</b></div></div>`;
 }
 
@@ -112,7 +135,7 @@ async function refresh() {
 async function aktion(id, akt, btn) {
   let body = {};
   if (akt === "ablehnen") { const g = prompt("Grund der Ablehnung?", ""); if (g === null) return; body = { grund: g }; }
-  if (akt === "loeschen" && !confirm("Antrag wirklich loeschen?")) return;
+  if (akt === "loeschen" && !confirm("Antrag wirklich löschen?")) return;
   // Mehr-Info ist jetzt agentisch (CTO/CFO + ggf. Recherche) -> kann ein paar Sekunden dauern.
   let alt;
   if (btn) { alt = btn.textContent; btn.disabled = true; if (akt === "mehr-info") btn.textContent = "⏳ Agenten arbeiten..."; }
@@ -228,6 +251,9 @@ function openLuna() {
     e.preventDefault();
     const t = inp.value.trim(); if (!t) return;
     addMsg("user", t); inp.value = "";
+    // Kontext-Befehl? ("zeig mir die Aufträge") -> App einblenden statt LLM zu fragen.
+    const app = versucheKontextBefehl(t);
+    if (app) { typeLuna(`Zeige dir „${app}". 🌙`); inp.focus(); return; }
     try {
       const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: t, history: LUNA_HISTORY }) });

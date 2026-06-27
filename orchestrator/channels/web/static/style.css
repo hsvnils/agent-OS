@@ -1,172 +1,251 @@
-/* LUNA-OS -- Desktop-aehnliche Arbeitsoberflaeche (Phase 16). */
+/* LUNA-OS — futuristische Kommandozentrale (Phase 16 V3). Sci-Fi-HUD: Neon, Glas, Glow. */
 :root {
-  --bg1: #0b1220; --bg2: #1e293b; --panel: #0f172a; --card: #1e293b;
-  --fg: #e5e7eb; --muted: #94a3b8; --line: #334155;
-  --accent: #2563eb; --ok: #16a34a; --warn: #d97706; --danger: #dc2626; --info: #0891b2;
+  --bg0: #03060f; --bg1: #060b1c; --bg2: #0a1430;
+  --glass: rgba(14, 24, 52, .55); --glass-hi: rgba(22, 38, 78, .65);
+  --fg: #e6f1ff; --muted: #8aa0c8; --line: rgba(120, 170, 255, .18);
+  --cyan: #2ee6ff; --cyan-soft: rgba(46, 230, 255, .15);
+  --violet: #a874ff; --magenta: #ff5cc8; --green: #45f0a6; --amber: #ffc14d; --red: #ff5c7a;
+  --accent: var(--cyan);
+  --glow-cyan: 0 0 12px rgba(46, 230, 255, .55), 0 0 32px rgba(46, 230, 255, .22);
+  --glow-violet: 0 0 12px rgba(168, 116, 255, .5);
+  --radius: 14px;
+  --font: -apple-system, "SF Pro Display", "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, monospace;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
-  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
-  color: var(--fg);
-  background: radial-gradient(1200px 800px at 70% -10%, #1d4ed8 0%, transparent 55%),
-              radial-gradient(900px 700px at -10% 110%, #0e7490 0%, transparent 50%),
-              linear-gradient(160deg, var(--bg1), var(--bg2));
+  font-family: var(--font); color: var(--fg);
+  background: var(--bg0);
   overflow: hidden; user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Top-Bar */
+/* Tiefen-Hintergrund: Sternenfeld + perspektivisches Neon-Gitter + Aurora-Schimmer */
+#starfield, #grid { position: fixed; inset: 0; z-index: -2; pointer-events: none; }
+#starfield {
+  background:
+    radial-gradient(1100px 700px at 78% -12%, rgba(40, 90, 200, .35), transparent 60%),
+    radial-gradient(900px 800px at -8% 112%, rgba(120, 40, 200, .30), transparent 55%),
+    radial-gradient(700px 500px at 50% 50%, rgba(46, 230, 255, .06), transparent 70%),
+    linear-gradient(160deg, var(--bg1), var(--bg0) 70%);
+}
+/* Sterne: zwei Ebenen feiner Punkte, langsam driftend */
+#starfield::before, #starfield::after {
+  content: ""; position: absolute; inset: -50%; z-index: -2;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.8), transparent),
+    radial-gradient(1px 1px at 70% 60%, rgba(180,220,255,.7), transparent),
+    radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,.6), transparent),
+    radial-gradient(1.4px 1.4px at 85% 25%, rgba(120,230,255,.8), transparent),
+    radial-gradient(1px 1px at 12% 70%, rgba(255,255,255,.6), transparent),
+    radial-gradient(1.2px 1.2px at 60% 12%, rgba(200,180,255,.7), transparent);
+  background-size: 380px 380px; opacity: .5; animation: drift 90s linear infinite;
+}
+#starfield::after { background-size: 260px 260px; opacity: .35; animation-duration: 150s; animation-direction: reverse; }
+@keyframes drift { to { transform: translate3d(60px, 40px, 0); } }
+#grid {
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(46, 230, 255, .10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(46, 230, 255, .10) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 100%, #000 0%, transparent 75%);
+          mask-image: radial-gradient(ellipse 80% 60% at 50% 100%, #000 0%, transparent 75%);
+  animation: gridflow 14s linear infinite;
+}
+@keyframes gridflow { to { background-position: 0 46px; } }
+
+/* Top-Bar — HUD-Leiste */
 #topbar {
-  position: fixed; top: 0; left: 0; right: 0; height: 38px; z-index: 50;
-  display: flex; align-items: center; gap: 16px; padding: 0 16px;
-  background: rgba(8,12,20,.55); backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255,255,255,.06);
+  position: fixed; top: 0; left: 0; right: 0; height: 46px; z-index: 50;
+  display: flex; align-items: center; gap: 18px; padding: 0 18px;
+  padding-top: env(safe-area-inset-top, 0);
+  background: linear-gradient(180deg, rgba(6, 12, 30, .82), rgba(6, 12, 30, .45));
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 0 rgba(46, 230, 255, .12), 0 8px 30px rgba(0, 0, 0, .5);
 }
-#topbar .brand { font-weight: 700; letter-spacing: .3px; }
+#topbar .brand { font-weight: 800; letter-spacing: 3px; font-size: 15px; text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(46, 230, 255, .5); }
+#topbar .brand .brand-os { color: var(--cyan); margin-left: 3px; }
+#topbar .live { font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px; color: var(--green);
+  display: inline-flex; align-items: center; gap: 6px; }
+#topbar .live .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+  box-shadow: 0 0 8px var(--green); animation: blink 2s ease-in-out infinite; }
+#topbar .live.stale { color: var(--muted); } #topbar .live.stale .dot { background: var(--muted); box-shadow: none; animation: none; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+#topbar #clock { margin-left: auto; color: var(--fg); font-family: var(--mono); font-variant-numeric: tabular-nums;
+  letter-spacing: 1px; text-shadow: 0 0 10px rgba(46, 230, 255, .35); }
 
-/* LUNA-Orb (animiertes Mond-Symbol mit Zustaenden: idle / listening / speaking) */
-#luna-orb { position: relative; width: 26px; height: 26px; cursor: pointer; flex: 0 0 auto; }
+/* LUNA-Orb (animiertes Mond-Symbol: idle / listening / speaking) */
+#luna-orb { position: relative; width: 28px; height: 28px; cursor: pointer; flex: 0 0 auto; }
 #luna-orb .orb-core {
   position: absolute; inset: 4px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #eef2ff, #93c5fd 55%, #3b82f6 100%);
-  box-shadow: 0 0 8px 2px rgba(96,165,250,.7); transition: background .35s, box-shadow .35s;
+  background: radial-gradient(circle at 35% 30%, #eaf6ff, #6cc7ff 55%, #2b7bff 100%);
+  box-shadow: 0 0 10px 2px rgba(46, 230, 255, .8); transition: background .35s, box-shadow .35s;
 }
-#luna-orb .orb-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(96,165,250,.6); opacity: 0; }
-/* idle: ruhiges Atmen */
+#luna-orb .orb-ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(46, 230, 255, .6); opacity: 0; }
 #luna-orb.idle .orb-core { animation: orbBreathe 4s ease-in-out infinite; }
-@keyframes orbBreathe { 0%,100% { box-shadow: 0 0 6px 1px rgba(96,165,250,.5); transform: scale(1); }
-  50% { box-shadow: 0 0 13px 3px rgba(96,165,250,.85); transform: scale(1.06); } }
-/* listening: cyan, Ringe laufen NACH INNEN (LUNA hoert zu) */
+@keyframes orbBreathe { 0%,100% { box-shadow: 0 0 8px 1px rgba(46, 230, 255, .55); transform: scale(1); }
+  50% { box-shadow: 0 0 16px 4px rgba(46, 230, 255, .9); transform: scale(1.06); } }
 #luna-orb.listening .orb-core {
-  background: radial-gradient(circle at 35% 30%, #ccfbf1, #22d3ee 55%, #06b6d4 100%);
-  box-shadow: 0 0 13px 3px rgba(34,211,238,.95); }
-#luna-orb.listening .orb-ring { border-color: rgba(34,211,238,.85); animation: orbConverge 1.2s ease-out infinite; }
+  background: radial-gradient(circle at 35% 30%, #d4fbff, #22d3ee 55%, #06b6d4 100%);
+  box-shadow: 0 0 16px 4px rgba(34, 211, 238, .95); }
+#luna-orb.listening .orb-ring { border-color: rgba(34, 211, 238, .85); animation: orbConverge 1.2s ease-out infinite; }
 #luna-orb.listening .orb-ring.r2 { animation-delay: .6s; }
-@keyframes orbConverge { 0% { transform: scale(2); opacity: 0; } 45% { opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
-/* speaking: gruen, Ringe laufen NACH AUSSEN + Puls (LUNA spricht) */
+@keyframes orbConverge { 0% { transform: scale(2.2); opacity: 0; } 45% { opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
 #luna-orb.speaking .orb-core {
-  background: radial-gradient(circle at 35% 30%, #dcfce7, #4ade80 55%, #16a34a 100%);
-  box-shadow: 0 0 15px 4px rgba(74,222,128,.95); animation: orbPulse .5s ease-in-out infinite; }
-#luna-orb.speaking .orb-ring { border-color: rgba(74,222,128,.85); animation: orbEmanate 1s ease-out infinite; }
+  background: radial-gradient(circle at 35% 30%, #d6ffe9, #45f0a6 55%, #16a34a 100%);
+  box-shadow: 0 0 18px 5px rgba(69, 240, 166, .95); animation: orbPulse .5s ease-in-out infinite; }
+#luna-orb.speaking .orb-ring { border-color: rgba(69, 240, 166, .85); animation: orbEmanate 1s ease-out infinite; }
 #luna-orb.speaking .orb-ring.r2 { animation-delay: .5s; }
-@keyframes orbEmanate { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(2.1); opacity: 0; } }
-@keyframes orbPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes orbEmanate { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(2.3); opacity: 0; } }
+@keyframes orbPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14); } }
+
+/* Desktop + Willkommen */
+#desktop { position: fixed; inset: 46px 0 96px 0; }
+#welcome { position: absolute; top: 16%; left: 0; right: 0; text-align: center; color: var(--muted); padding: 0 22px; }
+#welcome .wm-glow { position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+  width: 320px; height: 320px; border-radius: 50%; z-index: -1; pointer-events: none;
+  background: radial-gradient(circle, rgba(46, 230, 255, .18), transparent 60%); filter: blur(8px); }
+#welcome h1 { color: var(--fg); font-size: 30px; margin: 0 0 10px; font-weight: 800; letter-spacing: .5px;
+  text-shadow: 0 0 26px rgba(46, 230, 255, .45); }
+#welcome p { margin: 5px 0; font-size: 14px; }
+#welcome .hint { color: var(--cyan); font-family: var(--mono); font-size: 12px; margin-top: 14px; opacity: .85; }
+
+/* Dock — holografische Leiste */
+#dock {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 50;
+  display: flex; gap: 8px; padding: 10px 14px;
+  background: var(--glass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--line); border-radius: 20px;
+  box-shadow: 0 14px 50px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .06), var(--glow-cyan);
+}
+.dock-app { position: relative; width: 60px; display: flex; flex-direction: column; align-items: center;
+  gap: 5px; cursor: pointer; transition: transform .15s ease; }
+.dock-app:hover { transform: translateY(-7px); }
+.dock-app .ico {
+  width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; font-size: 24px;
+  background: linear-gradient(160deg, rgba(40, 60, 110, .7), rgba(14, 22, 48, .7));
+  border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+  transition: box-shadow .2s, border-color .2s; }
+.dock-app:hover .ico { border-color: rgba(46, 230, 255, .55); box-shadow: var(--glow-cyan), inset 0 1px 0 rgba(255, 255, 255, .12); }
+.dock-app .lbl { font-size: 10px; color: var(--muted); letter-spacing: .4px; }
+.dock-app .badge-n {
+  position: absolute; top: -5px; right: 5px; min-width: 19px; height: 19px; padding: 0 5px;
+  border-radius: 10px; background: linear-gradient(160deg, var(--magenta), var(--red)); color: #fff;
+  font-size: 11px; font-weight: 800; display: grid; place-items: center;
+  box-shadow: 0 0 10px rgba(255, 92, 200, .7); }
+
+/* App-Inhalte (in WinBox-Fenstern) */
+.app { padding: 14px 16px; color: var(--fg); }
+.app .leer { color: var(--muted); padding: 26px; text-align: center; font-family: var(--mono); font-size: 13px; }
+
+.card {
+  position: relative; background: var(--glass-hi); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 14px; margin-bottom: 13px; overflow: hidden;
+  transition: border-color .2s, box-shadow .2s; }
+.card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--cyan), var(--violet)); box-shadow: var(--glow-cyan); }
+.card:hover { border-color: rgba(46, 230, 255, .4); box-shadow: 0 8px 30px rgba(0, 0, 0, .4), var(--glow-cyan); }
+.card .head { display: flex; align-items: center; gap: 9px; margin-bottom: 5px; flex-wrap: wrap; }
+.card .head b { font-size: 14.5px; font-weight: 700; }
+.card .head b.titel { cursor: pointer; }
+.card .head b.titel:hover { color: var(--cyan); text-shadow: 0 0 12px rgba(46, 230, 255, .5); }
+.card .meta { color: var(--muted); font-size: 11.5px; font-family: var(--mono); margin-bottom: 9px; letter-spacing: .3px; }
+.card .desc { font-size: 13px; line-height: 1.5; color: #c5d6f0; white-space: pre-wrap;
+  max-height: 98px; overflow: hidden; position: relative; }
+.card .desc.open { max-height: none; }
+.card .mehr { color: var(--cyan); font-size: 12px; cursor: pointer; margin: 5px 0 8px; font-family: var(--mono); }
+.card .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+.badge { font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 999px; text-transform: uppercase;
+  letter-spacing: .8px; font-family: var(--mono); border: 1px solid transparent; }
+.badge.eingereicht { background: rgba(46, 230, 255, .12); color: var(--cyan); border-color: rgba(46, 230, 255, .4); }
+.badge.freigegeben { background: rgba(69, 240, 166, .12); color: var(--green); border-color: rgba(69, 240, 166, .4); }
+.badge.in_umsetzung { background: rgba(255, 193, 77, .12); color: var(--amber); border-color: rgba(255, 193, 77, .4); }
+.badge.abgelehnt, .badge.geloescht, .badge.fehlgeschlagen { background: rgba(255, 92, 122, .12); color: var(--red); border-color: rgba(255, 92, 122, .4); }
+.badge.erledigt { background: rgba(168, 116, 255, .14); color: var(--violet); border-color: rgba(168, 116, 255, .4); }
+
+.btn { border: 1px solid transparent; border-radius: 10px; padding: 8px 13px; font-size: 12px; font-weight: 700;
+  cursor: pointer; color: #04121a; letter-spacing: .3px; transition: transform .08s, box-shadow .2s, filter .2s; }
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(1px); }
+.btn.ok { background: linear-gradient(160deg, #7dffc4, var(--green)); box-shadow: 0 0 14px rgba(69, 240, 166, .45); }
+.btn.warn { background: linear-gradient(160deg, #ffd98a, var(--amber)); box-shadow: 0 0 14px rgba(255, 193, 77, .4); }
+.btn.info { background: linear-gradient(160deg, #7df0ff, var(--cyan)); box-shadow: 0 0 14px rgba(46, 230, 255, .45); }
+.btn.danger { background: linear-gradient(160deg, #ff8aa1, var(--red)); color: #fff; box-shadow: 0 0 14px rgba(255, 92, 122, .4); }
+.btn.ghost { background: transparent; color: var(--fg); border-color: var(--line); }
+.btn.ghost:hover { border-color: rgba(46, 230, 255, .5); box-shadow: var(--glow-cyan); }
+.btn[disabled] { opacity: .5; cursor: default; filter: grayscale(.3); }
+
+.row { display: flex; gap: 10px; padding: 11px 4px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.row:hover { background: rgba(46, 230, 255, .04); }
+.row .t { color: var(--muted); font-size: 11px; font-family: var(--mono); min-width: 66px; }
+.row b { font-weight: 600; }
+.row .grund { color: var(--muted); font-size: 12px; }
+.kv { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; border-bottom: 1px solid var(--line); }
+.kv .k { color: var(--muted); font-size: 13px; }
+.kv b { font-family: var(--mono); font-size: 15px; color: var(--cyan); text-shadow: 0 0 10px rgba(46, 230, 255, .35); }
+
+/* Antrags-Detailansicht */
+.app.detail .head { margin-bottom: 7px; }
+.app.detail .desc.full { max-height: none; overflow: visible; margin-bottom: 12px; }
+.app.detail h3 { font-size: 11px; color: var(--cyan); margin: 16px 0 7px; text-transform: uppercase;
+  letter-spacing: 1.5px; font-family: var(--mono); }
 
 /* LUNA-Chat */
 .chat { display: flex; flex-direction: column; height: 100%; }
-.chat-msgs { flex: 1; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-.msg { max-width: 82%; padding: 8px 12px; border-radius: 13px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
-.msg.user { align-self: flex-end; background: var(--accent); color: #fff; }
-.msg.luna { align-self: flex-start; background: var(--card); border: 1px solid var(--line); }
-.chat-form { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--line); }
-.chat-form input { flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-  color: var(--fg); padding: 9px 12px; font-size: 13px; outline: none; }
-.chat-form button { background: var(--accent); border: none; color: #fff; border-radius: 10px; padding: 0 14px; cursor: pointer; }
-#topbar .live { color: var(--ok); font-size: 12px; }
-#topbar .live.stale { color: var(--muted); }
-#topbar #clock { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chat-msgs { flex: 1; overflow: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 82%; padding: 9px 13px; border-radius: 14px; font-size: 13.5px; line-height: 1.5; white-space: pre-wrap; }
+.msg.user { align-self: flex-end; background: linear-gradient(160deg, #1d7bff, #0b5ed8); color: #fff;
+  border: 1px solid rgba(120, 180, 255, .4); box-shadow: 0 0 14px rgba(29, 123, 255, .35); }
+.msg.luna { align-self: flex-start; background: var(--glass-hi); border: 1px solid var(--line);
+  box-shadow: 0 0 12px rgba(46, 230, 255, .12); }
+.chat-form { display: flex; gap: 8px; padding: 11px; border-top: 1px solid var(--line);
+  background: rgba(6, 12, 30, .5); }
+.chat-form input { flex: 1; background: rgba(4, 8, 22, .7); border: 1px solid var(--line); border-radius: 11px;
+  color: var(--fg); padding: 10px 13px; font-size: 13.5px; outline: none; transition: border-color .2s, box-shadow .2s; }
+.chat-form input:focus { border-color: rgba(46, 230, 255, .6); box-shadow: var(--glow-cyan); }
+.chat-form button { background: linear-gradient(160deg, #7df0ff, var(--cyan)); border: none; color: #04121a;
+  border-radius: 11px; padding: 0 15px; cursor: pointer; font-weight: 800; box-shadow: 0 0 14px rgba(46, 230, 255, .4); }
+.chat-form #chat-mic, .chat-form #chat-tts { background: rgba(4, 8, 22, .7); border: 1px solid var(--line);
+  color: var(--fg); font-size: 15px; padding: 0 12px; box-shadow: none; }
+.chat-form #chat-mic.on { background: var(--cyan); color: #04121a; border-color: var(--cyan);
+  animation: micPulse 1.1s ease-in-out infinite; }
+.chat-form #chat-tts.on { background: var(--green); color: #04121a; border-color: var(--green); box-shadow: 0 0 12px rgba(69, 240, 166, .5); }
+@keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(46, 230, 255, .55); } 50% { box-shadow: 0 0 0 6px rgba(46, 230, 255, 0); } }
 
-/* Desktop */
-#desktop { position: fixed; inset: 38px 0 84px 0; }
-
-/* Willkommen / leerer Desktop */
-#welcome {
-  position: absolute; top: 18%; left: 0; right: 0; text-align: center; color: var(--muted);
-}
-#welcome h1 { color: var(--fg); font-size: 26px; margin: 0 0 6px; }
-#welcome p { margin: 4px 0; }
-
-/* Dock */
-#dock {
-  position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 50;
-  display: flex; gap: 10px; padding: 10px 14px;
-  background: rgba(8,12,20,.55); backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,.08); border-radius: 18px;
-  box-shadow: 0 12px 40px rgba(0,0,0,.45);
-}
-.dock-app {
-  position: relative; width: 58px; display: flex; flex-direction: column; align-items: center;
-  gap: 4px; cursor: pointer; transition: transform .12s ease;
-}
-.dock-app:hover { transform: translateY(-6px); }
-.dock-app .ico {
-  width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
-  font-size: 24px; background: linear-gradient(160deg, #243049, #16203a);
-  border: 1px solid rgba(255,255,255,.08);
-}
-.dock-app .lbl { font-size: 10px; color: var(--muted); }
-.dock-app .badge-n {
-  position: absolute; top: -4px; right: 6px; min-width: 18px; height: 18px; padding: 0 5px;
-  border-radius: 9px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700;
-  display: grid; place-items: center;
-}
-
-/* App-Inhalte (in WinBox-Fenstern) */
-.app { padding: 12px 14px; color: var(--fg); }
-.app .leer { color: var(--muted); padding: 20px; text-align: center; }
-
-.card {
-  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
-  padding: 12px; margin-bottom: 12px;
-}
-.card .head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.card .head b { font-size: 14px; }
-.card .meta { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
-.card .desc { font-size: 13px; line-height: 1.45; color: #cbd5e1; white-space: pre-wrap;
-  max-height: 96px; overflow: hidden; position: relative; }
-.card .desc.open { max-height: none; }
-.card .mehr { color: var(--accent); font-size: 12px; cursor: pointer; margin: 4px 0 8px; }
-.card .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-
-.badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; }
-.badge.eingereicht { background: #3730a3; color: #c7d2fe; }
-.badge.freigegeben { background: #14532d; color: #bbf7d0; }
-.badge.in_umsetzung { background: #78350f; color: #fde68a; }
-
-.btn { border: none; border-radius: 9px; padding: 7px 12px; font-size: 12px; font-weight: 600;
-  cursor: pointer; color: #fff; }
-.btn:active { transform: translateY(1px); }
-.btn.ok { background: var(--ok); } .btn.warn { background: var(--warn); }
-.btn.info { background: var(--info); } .btn.danger { background: var(--danger); }
-.btn[disabled] { opacity: .5; cursor: default; }
-
-.row { display: flex; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--line); font-size: 13px; }
-.row .t { color: var(--muted); font-size: 11px; min-width: 64px; }
-.row b { font-weight: 600; }
-.kv { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--line); }
-.kv .k { color: var(--muted); }
-
-/* Antrags-Detailansicht */
-.card .head b.titel { cursor: pointer; }
-.card .head b.titel:hover { text-decoration: underline; }
-.btn.ghost { background: #334155; }
-.app.detail .head { margin-bottom: 6px; }
-.app.detail .desc.full { max-height: none; overflow: visible; margin-bottom: 10px; }
-.app.detail h3 { font-size: 13px; color: var(--muted); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .4px; }
-.row .grund { color: var(--muted); font-size: 12px; }
-
-/* Mic-/TTS-Knopf im Chat (Web Speech API) */
-.chat-form #chat-mic, .chat-form #chat-tts { background: var(--panel); border: 1px solid var(--line);
-  font-size: 15px; padding: 0 11px; }
-.chat-form #chat-mic.on { background: var(--info); border-color: var(--info); animation: micPulse 1.1s ease-in-out infinite; }
-.chat-form #chat-tts.on { background: var(--ok); border-color: var(--ok); }
-@keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(8,145,178,.6); } 50% { box-shadow: 0 0 0 5px rgba(8,145,178,0); } }
+/* WinBox — futuristisches Glas-Fenster */
+.winbox.modern { background: transparent; border-radius: 16px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, .65), 0 0 0 1px rgba(46, 230, 255, .25), var(--glow-cyan); }
+.winbox.modern .wb-header { background: linear-gradient(180deg, rgba(18, 30, 64, .96), rgba(10, 18, 44, .96));
+  border-bottom: 1px solid var(--line); height: 40px; line-height: 40px;
+  border-radius: 16px 16px 0 0; backdrop-filter: blur(10px); }
+.winbox.modern .wb-title { font-family: var(--font); font-weight: 700; letter-spacing: .5px; font-size: 13.5px;
+  color: var(--fg); text-shadow: 0 0 12px rgba(46, 230, 255, .3); }
+.winbox.modern .wb-body { background: linear-gradient(180deg, rgba(8, 14, 34, .94), rgba(6, 11, 26, .96));
+  color: var(--fg); border-radius: 0 0 16px 16px; backdrop-filter: blur(12px); }
+.winbox.modern .wb-control * { filter: hue-rotate(-10deg) brightness(1.2); }
+.winbox.modern .wb-body::-webkit-scrollbar { width: 9px; }
+.winbox.modern .wb-body::-webkit-scrollbar-thumb { background: rgba(46, 230, 255, .25); border-radius: 5px; }
+.winbox.modern .wb-body::-webkit-scrollbar-thumb:hover { background: rgba(46, 230, 255, .45); }
 
 /* Mobil-Feinschliff (Touch / schmale Screens) */
 @media (max-width: 640px) {
-  #topbar { gap: 10px; padding: 0 10px; }
-  #topbar .brand { font-size: 14px; }
-  #desktop { inset: 38px 0 78px 0; }
-  #welcome { top: 12%; padding: 0 16px; }
-  #welcome h1 { font-size: 21px; }
-  /* Dock: volle Breite, scrollbar bei vielen Apps, fingerfreundlich */
+  #topbar { gap: 12px; padding: 0 12px; height: 50px; }
+  #topbar .brand { font-size: 14px; letter-spacing: 2px; }
+  #desktop { inset: 50px 0 90px 0; }
+  #welcome { top: 12%; } #welcome h1 { font-size: 23px; }
   #dock { left: 8px; right: 8px; transform: none; bottom: 8px; gap: 6px; padding: 8px;
-    justify-content: space-around; overflow-x: auto; border-radius: 16px; }
-  .dock-app { width: 54px; }
-  .dock-app .ico { width: 42px; height: 42px; font-size: 21px; }
-  /* Karten/Buttons groesser fuer Touch */
+    justify-content: space-around; overflow-x: auto; border-radius: 18px; }
+  .dock-app { width: 56px; } .dock-app .ico { width: 44px; height: 44px; font-size: 22px; }
   .card .actions { gap: 6px; }
-  .btn { padding: 9px 13px; font-size: 13px; }
-  .chat-form button, .chat-form #chat-mic, .chat-form #chat-tts { padding: 0 13px; min-width: 42px; }
+  .btn { padding: 10px 13px; font-size: 13px; }
+  .chat-form button, .chat-form #chat-mic, .chat-form #chat-tts { padding: 0 14px; min-width: 44px; }
   .msg { max-width: 88%; font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #starfield::before, #starfield::after, #grid, #topbar .live .dot { animation: none; }
 }
