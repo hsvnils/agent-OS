@@ -99,6 +99,8 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
         ok = fo.zusammenfuegen_xfade(segmente, ausgabe, leiser_ton=nur_broll)
         if not ok:                                 # Fallback: harte Schnitte, falls Uebergaenge scheitern
             ok = fo.zusammenfuegen(segmente, ausgabe, leiser_ton=nur_broll)
+    if ok:                                         # Unter Telegram-Limit (50 MB) halten
+        fo.auf_groesse_begrenzen(ausgabe, max_mb=48)
 
     if untertitel and ass_events:
         untertitel_status = "eingebrannt" if (ok and ass) else (f"als .srt ({srt.name})" if srt else False)

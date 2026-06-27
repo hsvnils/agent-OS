@@ -111,6 +111,32 @@ def dauer_von(pfad: Path) -> float:
     return info.dauer if info else 0.0
 
 
+def auf_groesse_begrenzen(pfad: Path, *, max_mb: float = 48.0) -> bool:
+    """Re-encodet das Reel auf eine Ziel-Bitrate, falls > max_mb (Telegram-Bot-Limit ist 50 MB).
+
+    Gibt True zurueck, wenn die Datei danach unter dem Limit liegt.
+    """
+    try:
+        mb = Path(pfad).stat().st_size / 1024 / 1024
+    except OSError:
+        return False
+    if mb <= max_mb:
+        return True
+    d = dauer_von(pfad) or 1.0
+    ziel_bits = max_mb * 8 * 1024 * 1024 * 0.93           # etwas Reserve
+    vbit = max(800_000, int(ziel_bits / d) - 128_000)     # minus Audio ~128k
+    tmp = Path(pfad).with_suffix(".tmp.mp4")
+    ok = _run(["ffmpeg", "-y", "-i", str(pfad),
+               "-c:v", "libx264", "-preset", "medium", "-b:v", str(vbit),
+               "-maxrate", str(int(vbit * 1.5)), "-bufsize", str(int(vbit * 2)), "-pix_fmt", "yuv420p",
+               "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(tmp)])
+    if ok and tmp.exists():
+        tmp.replace(pfad)
+        return Path(pfad).stat().st_size / 1024 / 1024 <= max_mb
+    tmp.unlink(missing_ok=True)
+    return False
+
+
 def zusammenfuegen_xfade(segmente: list[Path], ziel: Path, *, uebergang: float = 0.35,
                          leiser_ton: bool = False) -> bool:
     """Fuegt Segmente mit weichen Uebergaengen (xfade) + Audio-Crossfade (acrossfade) zusammen.

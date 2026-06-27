@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 12:30] — Claude Code (Cutter: Telegram-Groessenlimit)
+- **Was:** `ffmpeg_ops.auf_groesse_begrenzen` -- Reel wird nach dem Schnitt auf <48 MB re-encodet, falls groesser (Telegram-Bot-sendVideo-Limit = 50 MB). In Pipeline eingehaengt. Grund: echter Test mit dem TEST-Ordner (7 HSV-Clips 1080p/4K -> 5 verwendet, 32s) ergab 57 MB -> Telegram-Versand schlug fehl. Nach Fix 46 MB, erfolgreich gesendet. Crop-to-Fill + Uebergaenge auf echtem Material visuell bestaetigt.
+- **Warum:** Reels (v. a. aus 4K-Quellen) ueberschreiten sonst das Telegram-Limit.
+- **Betroffen:** cutter/ffmpeg_ops.py, cutter/pipeline.py. Tests 6/6.
+
 ## [2026-06-27 12:00] — Claude Code (Cutter professioneller)
 - **Was:** Cutter-Qualitaet deutlich verbessert. (1) **Crop-to-Fill** statt Blur-Balken: Querformat wird vergroessert + mittig beschnitten -> fuellt 9:16 ganz, KEIN Strecken (frueher wirkten Clips gestreckt/mit Balken). (2) **Effekte:** dezenter Farb-Grade (eq: Kontrast/Saettigung) + sanfter Ken-Burns-Zoom (zoompan) auf B-Roll. (3) **Uebergaenge:** weiche xfade-Uebergaenge (Crossfade/Smooth-Slides, rotierend) + acrossfade fuer Audio, statt harter Aneinanderreihung. Neue ffmpeg_ops: _vertikal_filter, zusammenfuegen_xfade, dauer_von; Pipeline nutzt xfade-Assembly (Fallback harte Schnitte). Visuell verifiziert (Crop-to-Fill + Crossfade-Frames), Tests 6/6. Watcher-Dienst neu gestartet.
 - **Warum:** CEO: 'professioneller machen' -- nichts strecken, Uebergaenge + Effekte.
