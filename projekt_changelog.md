@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 13:30] — Claude Code (Roadmap: UI-Phase + Cutter nach hinten)
+- **Was:** ROADMAP.md aktualisiert. (1) Neue **Phase 16 — LUNA Live-Arbeitsoberflaeche (Browser-Dashboard)**, HOHE Prioritaet: taegliche Arbeitsoberflaeche mit priorisierter Antrags-Inbox, Buttons (Freigeben/Ablehnen/Loeschen/Agent-Recherche), Echtzeit-Updates (WebSocket/SSE, AG-UI-Muster), LUNA-Chat + Panels; ueber bestehende Tools/Antrags-Logik (Changelog+CEO-Tor bleiben). (2) **Cutter (Phase 15) nach hinten** -- CEO: noch nicht intelligent genug; ffmpeg-Ansatz regelbasiert; Engine-Kandidat fuer 'intelligenter': **OpenCut** (Headless-Modus + Editor-API + MCP-Server, MIT, im Umbau). (3) Markt-Recherche (AG-UI, Agent-Inbox/Approval-Dashboards) in die Phase eingearbeitet.
+- **Warum:** CEO-Anweisung: Browser-Oberflaeche als echte taegliche Arbeitsumgebung priorisieren; Cutter spaeter intelligenter machen.
+- **Betroffen:** ROADMAP.md (Status-Tabelle, Header, Phase 15 + neue Phase 16).
+
 ## [2026-06-27 13:00] — Claude Code (Cutter: randlos + fester Ueberblenden-Uebergang)
 - **Was:** (1) **Schwarzrand-Entfernung**: `ffmpeg_ops._schwarzrand_crop` erkennt eingebrannte schwarze Balken per cropdetect und schneidet sie VOR dem Crop-to-Fill weg -> Inhalt fuellt 9:16 garantiert randlos (verifiziert: Letterbox-Clip -> ohne Balken). (2) **Fester Uebergang**: immer weiches Ueberblenden (xfade transition=fade) fuer ALLE Schnitte statt rotierender Effekte. segment_normalisieren bekam Param randschnitt. Tests 6/6.
 - **Warum:** CEO: keine schwarzen Raender (Inhalt muss fuellen), immer Ueberblenden als fester Effekt.

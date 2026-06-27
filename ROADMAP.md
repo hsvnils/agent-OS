@@ -6,9 +6,10 @@
 > ueber den HoA auf dem Laufenden halten. `AGENTS.md` bleibt kanonisch und uebergeordnet; jede Phase ist ihr
 > untergeordnet.
 >
-> **Live-Stand:** LUNA laeuft 24/7 als Telegram-Bot (Docker, Synology-NAS, Non-root). **Phasen 5–14 umgesetzt.**
-> Offen: Phase 10b (Telefonie, zurueckgestellt). **Einziger funktionaler Blocker:** Execution braucht
-> Anthropic-Modellzugang (Guthaben/ab 2026-07-01) ODER ein lokales LLM (siehe Abschnitt 9).
+> **Live-Stand:** LUNA laeuft 24/7 als Telegram-Bot (Docker, Synology-NAS, Non-root). **Phasen 5–15 umgesetzt.**
+> **Aktueller Fokus (HOCH):** Phase 16 — eine taeglich nutzbare **Live-Arbeitsoberflaeche im Browser**.
+> Zurueckgestellt: Phase 10b (Telefonie), Cutter „intelligenter machen" (Backlog). **Funktionaler Blocker:**
+> Execution braucht Anthropic-Modellzugang (Guthaben/ab 2026-07-01) ODER ein lokales LLM (siehe Abschnitt 9).
 
 ## Status-Uebersicht (Single Source of Truth)
 
@@ -25,7 +26,8 @@
 | 12 | Durable Queue + 24/7-Watcher | ✅ umgesetzt |
 | 13 | Self-Development-Loop (Apex) | ✅ umgesetzt |
 | 14 | Freie Visualisierung (MindMap/Graph/Chart) | ✅ umgesetzt 2026-06-26 |
-| 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 umgesetzt 2026-06-27 (Autostart + Telegram-Meldung live) |
+| 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 live 2026-06-27 — funktioniert; „intelligenter machen" = Backlog (spaeter) |
+| 16 | **LUNA Live-Arbeitsoberflaeche (Browser-Dashboard)** | 🔲 geplant — **HOHE Prioritaet (jetzt)** |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
@@ -194,8 +196,43 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
 - **V2 (umgesetzt 2026-06-27):** **Autostart** via launchd (`com.hanserautisch.cutter.watch.plist` -> startet
   den Watcher bei jedem Login, KeepAlive); **Telegram-Meldung** -- fertiges Reel geht als Video an den
   LUNA-Chat (`cutter/melden.py`, gleiches Bot-Token). Live verifiziert.
-- **Offen (Tuning):** Untertitel einbrennen (libass-ffmpeg statt .srt), besseres Whisper-Modell (`small` DE),
-  Musik/Beat-Sync, Qualitaets-Tuning auf echten Clips; Schnitt per Chat anstossen (NAS->Mac-Trigger).
+- **Offen (Tuning, kleiner):** Untertitel einbrennen (libass-ffmpeg statt .srt), besseres Whisper-Modell
+  (`small` DE), Musik/Beat-Sync, subjekt-bewusster Crop; Schnitt per Chat anstossen (NAS->Mac-Trigger).
+- **„Intelligenter machen" (Backlog, CEO: noch nicht intelligent genug -> nach hinten):** der ffmpeg-Ansatz
+  ist regelbasiert. Fuer echten Profi-Schnitt spaeter einen **echten Editor headless steuern**.
+  **Kandidat: OpenCut** (github.com/opencut-app/opencut, MIT) -- die Neufassung bringt **Headless-Modus,
+  Editor-API und MCP-Server fuer KI-Agenten**; damit koennte LUNA einen vollwertigen Editor programmatisch
+  bedienen (Effekte, Timeline, Plugins) statt nur ffmpeg-Filter. Heute noch im Umbau -> beobachten, spaeter
+  evaluieren.
+
+### Phase 16 — LUNA Live-Arbeitsoberflaeche (Browser-Dashboard) — GEPLANT, HOHE PRIORITAET (jetzt)
+- **Ziel:** Eine **taeglich nutzbare, echte Arbeitsoberflaeche im Browser**, mit der der CEO arbeitet und auf
+  der **LUNA mitarbeitet**. Sie zeigt **live und proaktiv die wichtigsten zu erledigenden Dinge** und man
+  bearbeitet **Antraege direkt per Buttons**: Freigeben, Ablehnen, Loeschen, „Mehr Infos durch Agenten holen".
+  Keine reine Anzeige -- ein Arbeits-Werkzeug, das sich gut bedienen laesst.
+- **Kern-Ansicht „Was muss ich erledigen":** priorisierte **Inbox** offener Antraege + Aufgaben (offene
+  Freigaben zuerst). Jeder Eintrag ist eine **Karte mit Evidenz** -- Begruendung, CTO-Machbarkeit,
+  CFO-Kostenvoranschlag -- damit eine Entscheidung in Sekunden faellt (evidenzbasiert; LUNA erklaert wie ein
+  Teammate, nicht als Debug-Log).
+- **Aktionen je Antrag (Buttons):** Freigeben · Ablehnen (mit Grund) · Loeschen · **„Recherche/Bewertung
+  beauftragen"** (ein Agent holt mehr Infos: funde_bewerten / recherche_beauftragen / delegate). Alles laeuft
+  ueber die **bestehenden LUNA-Tools + Antrags-/Freigabe-Logik (Phase 6)** -> Changelog + CEO-Tor bleiben
+  hart; die UI ist nur der bequeme Weg fuer dieselben kontrollierten Aktionen (kein Auto-Merge).
+- **Live:** Echtzeit-Updates (WebSocket/SSE, Event-Stream-Muster vgl. **AG-UI**-Protokoll) -> neue Antraege,
+  Meldungen, Aktivitaeten erscheinen **sofort ohne Reload**.
+- **Weitere Panels:** LUNA-**Chat** (direkt schreiben, wie Telegram), proaktive **Meldungen**,
+  **Aktivitaetsprotokoll** (adc5), **Finance-Dashboard**, **Research-Tickets**, Mail-/Kalender-Kurzansicht,
+  freie **Visualisierungen** (Phase 14).
+- **Bausteine:** Backend-API ueber dem Orchestrator (z. B. FastAPI) -- exponiert Stores
+  (antraege/notifications/aktivitaet/research/agenda) + Tools als Endpunkte + einen Event-Stream;
+  eigenstaendiges Web-Frontend (echtes Dashboard, nicht das Voice-Panel); **Auth (nur CEO)**; persistenter
+  **HTTPS-Host** (der NAS-Container kann die Web-UI mitliefern, sonst kleiner Web-Service).
+- **Design-Prinzipien (aus Marktrecherche 2026):** priorisierte/aktionsfaehige Signale, evidenzbasierte
+  Approval-Karten, Echtzeit-State-Streaming, sichtbare Governance/Rollback. Referenzmuster: AG-UI
+  (Agent<->Frontend-Event-Protokoll), „Agent-Inbox"/Approval-Queue-Dashboards.
+- **Abgrenzung:** erweitert/ersetzt das bisherige Voice-Panel (das nur fuer den Voice-Kanal war) durch eine
+  eigenstaendige, mobil- und desktop-taugliche **Arbeits-Oberflaeche**.
+- **GATE:** Hosting/HTTPS + Auth (nur CEO). **Kosten:** gering (eigener Host/Container).
 
 ## 5. Sicherheit & Kosten-Leitplanken (querschnittlich)
 
