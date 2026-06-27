@@ -14,14 +14,20 @@ from pathlib import Path
 BREITE, HOEHE, FPS = 1080, 1920, 30
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".avi", ".mkv", ".webm", ".hevc", ".mts"}
 
-# Vertikales Format mit unscharfem, formatfuellendem Hintergrund + scharfem, eingepasstem Vordergrund.
-_VERTIKAL = (
-    f"split[a][b];"
-    f"[a]scale={BREITE}:{HOEHE}:force_original_aspect_ratio=increase,"
-    f"crop={BREITE}:{HOEHE},boxblur=24:2[bg];"
-    f"[b]scale={BREITE}:{HOEHE}:force_original_aspect_ratio=decrease[fg];"
-    f"[bg][fg]overlay=(W-w)/2:(H-h)/2,setsar=1,fps={FPS}"
-)
+# Crop-to-Fill: Bild wird vergroessert, bis es das 9:16-Format ganz fuellt, dann mittig beschnitten.
+# KEIN Strecken (Seitenverhaeltnis bleibt), KEINE Blur-Balken. Plus dezenter Farb-Grade (Kontrast/Saettigung).
+_GRADE = "eq=contrast=1.06:saturation=1.12:brightness=0.01"
+_FUELLEN = (f"scale={BREITE}:{HOEHE}:force_original_aspect_ratio=increase,"
+            f"crop={BREITE}:{HOEHE},setsar=1,fps={FPS}")
+# Sanfter, langsamer Zoom (Ken-Burns) -- gibt B-Roll Leben. Quelle vorher leicht groesser skalieren.
+_ZOOM = (f"scale={int(BREITE*1.25)}:{int(HOEHE*1.25)}:force_original_aspect_ratio=increase,"
+         f"crop={int(BREITE*1.25)}:{int(HOEHE*1.25)},"
+         f"zoompan=z='min(zoom+0.0008,1.18)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
+         f"s={BREITE}x{HOEHE}:fps={FPS},setsar=1")
+
+
+def _vertikal_filter(zoom: bool) -> str:
+    return (f"{_ZOOM},{_GRADE}" if zoom else f"{_FUELLEN},{_GRADE}")
 
 
 @dataclass
@@ -81,22 +87,75 @@ def clips_im_ordner(ordner: Path) -> list[Path]:
 
 
 def segment_normalisieren(quelle: Path, ziel: Path, *, start: float, dauer: float,
-                          hat_audio: bool) -> bool:
-    """Schneidet [start, start+dauer] und bringt es auf einheitliches 9:16-H.264-Format.
+                          hat_audio: bool, zoom: bool = False) -> bool:
+    """Schneidet [start, start+dauer], fuellt das 9:16-Format (Crop-to-Fill, kein Strecken), graded.
 
-    Clips ohne Ton bekommen eine stille Tonspur, damit das spaetere Concat konsistente
-    Streams hat. Gibt True bei Erfolg zurueck.
+    `zoom=True` legt einen sanften Ken-Burns-Zoom drueber (fuer B-Roll). Clips ohne Ton bekommen eine
+    stille Tonspur, damit die spaeteren Uebergaenge konsistente Streams haben.
     """
     cmd = ["ffmpeg", "-y", "-ss", f"{max(0.0, start):.3f}", "-t", f"{max(0.1, dauer):.3f}",
            "-i", str(quelle)]
     if not hat_audio:
         cmd += ["-f", "lavfi", "-t", f"{max(0.1, dauer):.3f}", "-i",
                 "anullsrc=channel_layout=stereo:sample_rate=44100"]
-    cmd += ["-vf", _VERTIKAL, "-r", str(FPS),
+    cmd += ["-vf", _vertikal_filter(zoom), "-r", str(FPS),
             "-map", "0:v:0", "-map", ("1:a:0" if not hat_audio else "0:a:0?"),
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-ar", "44100", "-ac", "2",
             "-shortest", "-movflags", "+faststart", str(ziel)]
+    return _run(cmd)
+
+
+def dauer_von(pfad: Path) -> float:
+    info = probe(pfad)
+    return info.dauer if info else 0.0
+
+
+def zusammenfuegen_xfade(segmente: list[Path], ziel: Path, *, uebergang: float = 0.35,
+                         leiser_ton: bool = False) -> bool:
+    """Fuegt Segmente mit weichen Uebergaengen (xfade) + Audio-Crossfade (acrossfade) zusammen.
+
+    Tasteful rotierende Uebergaenge (Crossfade/Smooth-Slides). Lautheit am Ende normalisiert.
+    """
+    n = len(segmente)
+    if n == 0:
+        return False
+    if n == 1:
+        af = "loudnorm=I=-16:TP=-1.5:LRA=11"
+        if leiser_ton:
+            af = "volume=0.15," + af
+        return _run(["ffmpeg", "-y", "-i", str(segmente[0]), "-af", af,
+                     "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
+                     "-c:a", "aac", "-ar", "44100", "-ac", "2", "-movflags", "+faststart", str(ziel)])
+
+    T = uebergang
+    typen = ["fade", "smoothleft", "slideup", "smoothright", "fadeblack"]
+    dauern = [max(0.5, dauer_von(s)) for s in segmente]
+    filters: list[str] = []
+    # Video: xfade-Kette mit kumulativem Offset.
+    vlabel, cum = "[0:v]", dauern[0]
+    for i in range(1, n):
+        out = f"[v{i}]"
+        offset = max(0.1, cum - T)
+        filters.append(f"{vlabel}[{i}:v]xfade=transition={typen[(i - 1) % len(typen)]}:"
+                       f"duration={T}:offset={offset:.3f}{out}")
+        vlabel, cum = out, cum + dauern[i] - T
+    # Audio: acrossfade-Kette.
+    alabel = "[0:a]"
+    for i in range(1, n):
+        out = f"[a{i}]"
+        filters.append(f"{alabel}[{i}:a]acrossfade=d={T}{out}")
+        alabel = out
+    af = f"{alabel}aresample=44100" + (",volume=0.15" if leiser_ton else "") + \
+        ",loudnorm=I=-16:TP=-1.5:LRA=11[aout]"
+    filters.append(af)
+
+    cmd = ["ffmpeg", "-y"]
+    for s in segmente:
+        cmd += ["-i", str(s)]
+    cmd += ["-filter_complex", ";".join(filters), "-map", vlabel, "-map", "[aout]",
+            "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-ar", "44100", "-ac", "2", "-movflags", "+faststart", str(ziel)]
     return _run(cmd)
 
 

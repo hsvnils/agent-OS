@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 12:00] — Claude Code (Cutter professioneller)
+- **Was:** Cutter-Qualitaet deutlich verbessert. (1) **Crop-to-Fill** statt Blur-Balken: Querformat wird vergroessert + mittig beschnitten -> fuellt 9:16 ganz, KEIN Strecken (frueher wirkten Clips gestreckt/mit Balken). (2) **Effekte:** dezenter Farb-Grade (eq: Kontrast/Saettigung) + sanfter Ken-Burns-Zoom (zoompan) auf B-Roll. (3) **Uebergaenge:** weiche xfade-Uebergaenge (Crossfade/Smooth-Slides, rotierend) + acrossfade fuer Audio, statt harter Aneinanderreihung. Neue ffmpeg_ops: _vertikal_filter, zusammenfuegen_xfade, dauer_von; Pipeline nutzt xfade-Assembly (Fallback harte Schnitte). Visuell verifiziert (Crop-to-Fill + Crossfade-Frames), Tests 6/6. Watcher-Dienst neu gestartet.
+- **Warum:** CEO: 'professioneller machen' -- nichts strecken, Uebergaenge + Effekte.
+- **Betroffen:** cutter/ffmpeg_ops.py, cutter/pipeline.py, cutter/README.md.
+- **Hinweis (ehrlich):** ffmpeg hat keine manuellen Key-Frames wie ein GUI-Editor; Bewegung via zoompan/xfade (programmatisch). 'Bester Ausschnitt' bei B-Roll = aktuell mittig/zeitlich ~20%; subjekt-bewusster Crop waere ein Upgrade.
+
 ## [2026-06-27 11:30] — Claude Code (Cutter: Untertitel aus)
 - **Was:** Untertitel im Cutter standardmaessig AUS (CEO-Wunsch). `schneide_ordner(untertitel=False)` Default; keine `.srt` mehr. Sprach-Erkennung (Whisper) bleibt INTERN fuer Silence-Trimmen + Gemini-Reihenfolge. CLI-Flag `--mit-untertitel` als Opt-in. Watcher-Dienst neu gestartet (laedt neuen Code).
 - **Warum:** CEO will keine Untertitel.

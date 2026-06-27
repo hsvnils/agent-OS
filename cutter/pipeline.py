@@ -66,7 +66,7 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
     for i, a in enumerate(auswahlen):
         seg = arbeit / f"seg_{i:03d}.mp4"
         if not fo.segment_normalisieren(a.clip.pfad, seg, start=a.start, dauer=a.dauer,
-                                        hat_audio=a.clip.hat_audio):
+                                        hat_audio=a.clip.hat_audio, zoom=(a.typ == "broll")):
             continue
         if a.typ == "sprache":
             for t in a.transkript:
@@ -93,7 +93,12 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
             _schreibe_ass(ass_events, ass)
 
     nur_broll = all(a.typ == "broll" for a in auswahlen)
-    ok = fo.zusammenfuegen(segmente, ausgabe, untertitel_ass=ass, leiser_ton=nur_broll)
+    if untertitel and ass:                         # Untertitel-Einbrennen nur im Hart-Schnitt-Pfad
+        ok = fo.zusammenfuegen(segmente, ausgabe, untertitel_ass=ass, leiser_ton=nur_broll)
+    else:                                          # Standard: weiche Uebergaenge + Effekte
+        ok = fo.zusammenfuegen_xfade(segmente, ausgabe, leiser_ton=nur_broll)
+        if not ok:                                 # Fallback: harte Schnitte, falls Uebergaenge scheitern
+            ok = fo.zusammenfuegen(segmente, ausgabe, leiser_ton=nur_broll)
 
     if untertitel and ass_events:
         untertitel_status = "eingebrannt" if (ok and ass) else (f"als .srt ({srt.name})" if srt else False)

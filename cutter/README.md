@@ -10,8 +10,11 @@ ohne externe Dienste. Laeuft lokal auf dem Mac. **Posten bleibt CEO-Tor** (der C
   - **B-Roll:** ein praegnanter Ausschnitt, Ton leise (Musik kommst du in Instagram dazu).
 - **Untertitel: standardmaessig AUS** (CEO-Wunsch). Optional mit `--mit-untertitel` (Einbrennen braucht
   ffmpeg mit libass; sonst `.srt` daneben).
-- Alles wird auf **9:16** gebracht (scharfes Bild zentriert, unscharfer Hintergrund — Reel-Look),
-  Lautheit normalisiert, sauber zusammengeschnitten.
+- **Crop-to-Fill auf 9:16:** Querformat-Clips werden vergroessert und mittig beschnitten, sodass sie das
+  Hochformat **ganz fuellen** — kein Strecken, keine schwarzen/unscharfen Balken.
+- **Effekte:** dezenter Farb-Grade (mehr Kontrast/Saettigung) + sanfter Ken-Burns-Zoom auf B-Roll.
+- **Uebergaenge:** weiche `xfade`-Uebergaenge (Crossfade/Smooth-Slides) + Audio-Crossfade zwischen den Clips.
+- Lautheit normalisiert (loudnorm).
 - **Gemini** (gratis) ordnet die Clips zu einer stimmigen Reihenfolge (Hook zuerst).
 
 ## Voraussetzungen
