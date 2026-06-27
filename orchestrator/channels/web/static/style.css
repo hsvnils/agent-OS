@@ -55,6 +55,11 @@ body {
   animation: gridflow 14s linear infinite;
 }
 @keyframes gridflow { to { background-position: 0 46px; } }
+/* langsam durchlaufender HUD-Scan-Balken (Jarvis-Holo-Feel, dezent) */
+#scan { position: fixed; left: 0; right: 0; height: 140px; top: -140px; z-index: 0; pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(46, 230, 255, .05) 55%, rgba(46, 230, 255, .11));
+  animation: scanSweep 10s linear infinite; }
+@keyframes scanSweep { 0% { top: -140px; } 100% { top: 100%; } }
 
 /* Top-Bar — HUD-Leiste */
 #topbar {
@@ -78,8 +83,15 @@ body {
 #topbar #clock { margin-left: auto; color: var(--fg); font-family: var(--mono); font-variant-numeric: tabular-nums;
   letter-spacing: 1px; text-shadow: 0 0 10px rgba(46, 230, 255, .35); }
 
-/* LUNA-Orb (animiertes Mond-Symbol: idle / listening / speaking) */
-#luna-orb { position: relative; width: 28px; height: 28px; cursor: pointer; flex: 0 0 auto; }
+/* LUNA-Orb (Jarvis-Reaktor: idle / listening / speaking; audio-reaktiv ueber --energy) */
+#luna-orb { position: relative; width: 30px; height: 30px; cursor: pointer; flex: 0 0 auto; --energy: 0; }
+/* rotierender Reaktor-Ring (HUD-Flair, immer aktiv) */
+#luna-orb::after {
+  content: ""; position: absolute; inset: -4px; border-radius: 50%; pointer-events: none;
+  border: 1px solid rgba(46, 230, 255, .28); border-top-color: rgba(46, 230, 255, .9);
+  border-right-color: rgba(168, 116, 255, .6); animation: orbSpin 7s linear infinite;
+}
+@keyframes orbSpin { to { transform: rotate(360deg); } }
 #luna-orb .orb-core {
   position: absolute; inset: 4px; border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #eaf6ff, #6cc7ff 55%, #2b7bff 100%);
@@ -95,13 +107,16 @@ body {
 #luna-orb.listening .orb-ring { border-color: rgba(34, 211, 238, .85); animation: orbConverge 1.2s ease-out infinite; }
 #luna-orb.listening .orb-ring.r2 { animation-delay: .6s; }
 @keyframes orbConverge { 0% { transform: scale(2.2); opacity: 0; } 45% { opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
+/* speaking: gruen + pulsiert mit Lolas echter Stimme (--energy aus dem Audio-Analyser) */
 #luna-orb.speaking .orb-core {
   background: radial-gradient(circle at 35% 30%, #d6ffe9, #45f0a6 55%, #16a34a 100%);
-  box-shadow: 0 0 18px 5px rgba(69, 240, 166, .95); animation: orbPulse .5s ease-in-out infinite; }
+  transform: scale(calc(1 + var(--energy) * 0.5));
+  box-shadow: 0 0 calc(10px + var(--energy) * 26px) calc(2px + var(--energy) * 7px) rgba(69, 240, 166, .95);
+  transition: transform .06s linear, box-shadow .09s linear; }
+#luna-orb.speaking::after { border-top-color: rgba(69, 240, 166, .95); animation-duration: 2.5s; }
 #luna-orb.speaking .orb-ring { border-color: rgba(69, 240, 166, .85); animation: orbEmanate 1s ease-out infinite; }
 #luna-orb.speaking .orb-ring.r2 { animation-delay: .5s; }
 @keyframes orbEmanate { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(2.3); opacity: 0; } }
-@keyframes orbPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14); } }
 
 /* Desktop + Willkommen */
 #desktop { position: fixed; inset: 46px 0 96px 0; }
@@ -257,5 +272,6 @@ body {
   .msg { max-width: 88%; font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #starfield::before, #starfield::after, #grid, #topbar .live .dot { animation: none; }
+  #starfield::before, #starfield::after, #grid, #scan, #luna-orb::after, #topbar .live .dot { animation: none; }
+  #scan { display: none; }
 }

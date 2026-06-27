@@ -265,11 +265,26 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   HTTP 401 + TLS ok). Der CEO hat die DSM-/Router-Sicherheitseinstellungen selbst ausgefuehrt; der Assistent
   hat live gelotst + read-only mitgelesen + technisch verifiziert. **Schaltet das Mikrofon/Sprach-Eingabe frei**
   (secure context).
-- **Offen (spaeter, auf Roadmap geparkt):** (a) **echtes Mikrofon im Realbetrieb** testen, sobald HTTPS steht;
-  (b) **agentische Voice-Kontext-Steuerung** -- volle HoaConversation/Tools emittieren „zeige Panel X"/
-  Visualisierung (Phase 14), sodass auch komplexe Anfragen als Ansicht erscheinen (nicht nur die feste
-  App-Liste des Client-Parsers); (c) „Mehr Info" optional mit eigener HoaConversation-Session je Antrag;
-  (d) weiterer Mobil-Feinschliff im Realbetrieb; (e) TTS-Stimme/Qualitaet am Orb feinjustieren.
+- **Live-Voice-LUNA am Orb (2026-06-27):** Orb = sprechende LUNA (Browser-STT + ElevenLabs-Stimme „Lola",
+  volle HoaConversation). Hoeren auf Mac+Safari verifiziert (CEO); Sprechen+Hoeren auf Safari ok.
+  **Web-Audio-Unlock** (Ton auf Safari/iOS), **Kontext-Anzeige** (Frage zu Anträgen/Tickets -> Panel auf +
+  gesprochene Erklaerung), **Satz-Streaming-TTS** + **Barge-in** (Orb antippen unterbricht LUNA) +
+  **audio-reaktiver Jarvis-Orb** (Reaktor-Ring, pulsiert mit der Stimme) + HUD-Scan-Sweep.
+- **Offen (spaeter, auf Roadmap geparkt):** (a) **Sprach-EINGABE auf iPhone/iPad** via Deepgram-STT
+  (MediaRecorder -> /api/stt), da iOS Safari keine Web-Speech-Erkennung hat; (b) **echtes hands-free Barge-in**
+  (in LUNA reinreden ohne Tap) braucht Echo-Cancellation -> Pipecat-Vollkanal; (c) **agentische
+  Voice-Kontext-Steuerung** -- volle HoaConversation/Tools emittieren „zeige Panel X"/Visualisierung (Phase 14)
+  fuer komplexe Anfragen; (d) „Mehr Info" mit eigener Session je Antrag; (e) weiterer Mobil-Feinschliff.
+
+#### Naechste Ausbau-Cluster (CEO-Wunsch 2026-06-27, nach OpenJarvis-Vorbild)
+- **Complete Device Control** (LUNA bedient Geraete/Rechner wie OpenJarvis) = **deckt sich mit Phase 17**
+  (Computer-Use). Dort weiterfuehren -- harte Governance (nur auf Anweisung, CEO-Tor, Not-Aus, Audit).
+- **Jarvis Intelligent Features** (proaktive Intelligenz: Kontext-Bewusstsein, smarte Vorschlaege,
+  Routinen/Automationen, Erinnerungen). Baut auf vorhandenem Notifier/Briefing/Self-Dev/Watcher auf;
+  zu konkretisieren als eigener Block.
+- **„Your Second Brain"** (persoenliche Wissensbasis: Notizen/Dokumente/Mails/Termine durchsuchbar +
+  vernetzt, Retrieval/RAG ueber CEO-Daten). Knuepft an Memory (Phase) + das geparkte
+  **Partner-/Akten-System (CRM-artig)** (Backlog) an; Gmail/Kalender (Phase 11) als Quellen.
 
 ### Phase 17 — LUNA bedient den Rechner (Computer-Use, auf Anweisung) — GEPLANT (Backlog)
 - **Ziel:** Auf **ausdrueckliche CEO-Anweisung** kann LUNA den Rechner des CEO **bedienen** -- Apps oeffnen

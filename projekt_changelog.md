@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 22:45] — Claude Code (Voice-LUNA: Barge-in + Jarvis-Visualisierung)
+- **Was:** (1) **Barge-in/Unterbrechen (CEO-Feedback):** Orb antippen, waehrend LUNA spricht -> sie verstummt
+  sofort (`stopAudio` ueber `BufferSource.stop()` -> onended loest die Sprech-Schleife, die danach automatisch
+  wieder zuhoert); Status zeigt „Orb antippen zum Unterbrechen". (2) **Jarvis-Visualisierung:**
+  **audio-reaktiver Orb** -- AnalyserNode im Audio-Graph treibt eine CSS-Variable `--energy`, der Orb pulsiert/
+  glueht mit Lolas echter Stimme; **rotierender Reaktor-Ring** am Orb; **dezenter HUD-Scan-Sweep** ueber die
+  Oberflaeche (#scan); Orb leicht groesser. prefers-reduced-motion respektiert. Cache-Bust ?v=7.
+  (3) **ROADMAP:** Live-Voice-Stand dokumentiert; CEO-Wunsch-Cluster nach OpenJarvis-Vorbild geparkt --
+  Complete Device Control (= Phase 17), Jarvis Intelligent Features, „Your Second Brain" (Wissensbasis/RAG,
+  knuepft an Memory + Partner-/Akten-System).
+- **Warum:** CEO: „kann LUNA nicht unterbrechen" + „Oberflaeche schoener/moderner, schau bei Jarvis".
+  Verifiziert im Preview: Barge-in verstummt LUNA (Tap-Test), Reaktor-Ring/Scan/Energie-Glow sichtbar, keine
+  Konsolenfehler, Suite 163/163. Echtes hands-free Barge-in (ohne Tap) braucht Echo-Cancellation (Pipecat) ->
+  geparkt. Stand „Gespraech auf Mac+Safari laeuft" vom CEO bestaetigt.
+- **Betroffen:** orchestrator/channels/web/static/{app.js,style.css,index.html}, ROADMAP.md.
+
 ## [2026-06-27 22:10] — Claude Code (Voice-LUNA Finetuning: Ton-Fix + Kontext-Anzeige + Satz-Streaming)
 - **Was:** (1) **Ton-Fix (Hauptproblem „LUNA nicht hoerbar"):** Audio laeuft jetzt ueber einen
   **Web-Audio-Context, der beim Orb-/Gespraech-/Sende-Tap entsperrt wird** (`unlockAudio` in der Nutzer-Geste).

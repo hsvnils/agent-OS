@@ -213,11 +213,29 @@ const LUNA_HISTORY = [];
 
 // Web-Audio: noetig, weil Safari/iOS (und Chrome) Audio nur nach einer Nutzer-Geste abspielen.
 // Wir entsperren den AudioContext beim Orb-/Gespraech-Tap (unlockAudio) -> danach darf LUNA von selbst sprechen.
-let AUDIO_CTX = null, CUR_SRC = null;
+let AUDIO_CTX = null, CUR_SRC = null, ANALYSER = null;
 function ensureAudio() {
   try { if (!AUDIO_CTX) AUDIO_CTX = new (window.AudioContext || window.webkitAudioContext)(); } catch {}
+  if (AUDIO_CTX && !ANALYSER) {  // Analyser fuer die audio-reaktive Orb-Visualisierung (Jarvis-Stil)
+    try { ANALYSER = AUDIO_CTX.createAnalyser(); ANALYSER.fftSize = 64; ANALYSER.smoothingTimeConstant = 0.7;
+      ANALYSER.connect(AUDIO_CTX.destination); } catch {}
+  }
   if (AUDIO_CTX && AUDIO_CTX.state === "suspended") { try { AUDIO_CTX.resume(); } catch {} }
   return AUDIO_CTX;
+}
+// Treibt die Orb-Animation aus Lolas echter Stimme (Amplitude -> CSS-Variable --energy).
+function startOrbViz() {
+  if (!ANALYSER) return;
+  const data = new Uint8Array(ANALYSER.frequencyBinCount);
+  const orb = document.getElementById("luna-orb");
+  (function tick() {
+    if (!VOICE.sprechen) { if (orb) orb.style.setProperty("--energy", "0"); return; }
+    try { ANALYSER.getByteFrequencyData(data); } catch {}
+    let sum = 0; for (const v of data) sum += v;
+    const e = Math.min(1, (sum / data.length) / 105);
+    if (orb) orb.style.setProperty("--energy", e.toFixed(2));
+    requestAnimationFrame(tick);
+  })();
 }
 function unlockAudio() {  // MUSS im Klick-/Tap-Handler laufen (Nutzer-Geste)
   const ac = ensureAudio(); if (!ac) return;
@@ -231,7 +249,8 @@ function voiceToggleUI() { const b = document.getElementById("voice-toggle");
 
 function stopAudio() {
   VOICE.sprechen = false;
-  try { if (CUR_SRC) { CUR_SRC.onended = null; CUR_SRC.stop(); CUR_SRC = null; } } catch {}
+  // stop() loest onended aus -> die wartende lunaSpeak-Schleife laeuft weiter und nimmt wieder auf (Barge-in).
+  try { if (CUR_SRC) CUR_SRC.stop(); } catch {}
   try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch {}
 }
 
@@ -247,7 +266,8 @@ function inSaetze(text) {
 
 // LUNA spricht die ganze Antwort (Satz fuer Satz, ElevenLabs -> Fallback Browser-Stimme).
 async function lunaSpeak(text) {
-  setOrb("speaking"); voiceStatus("LUNA spricht…"); VOICE.sprechen = true;
+  setOrb("speaking"); voiceStatus("LUNA spricht… — Orb antippen zum Unterbrechen"); VOICE.sprechen = true;
+  startOrbViz();  // Orb pulsiert mit Lolas Stimme
   const saetze = inSaetze(text);
   let premiumOk = true;
   for (const satz of saetze) {
@@ -271,7 +291,8 @@ async function spieleTts(text) {
     if (!audioBuf) return false;
     if (!VOICE.sprechen) return true;
     await new Promise((res) => {
-      const s = ac.createBufferSource(); s.buffer = audioBuf; s.connect(ac.destination);
+      const s = ac.createBufferSource(); s.buffer = audioBuf;
+      s.connect(ANALYSER || ac.destination);  // ueber den Analyser -> audio-reaktiver Orb
       CUR_SRC = s; s.onended = () => { if (CUR_SRC === s) CUR_SRC = null; res(); };
       try { s.start(0); } catch { res(); }
     });
@@ -323,6 +344,8 @@ function stopVoice() {
 }
 function toggleVoice() {
   unlockAudio();  // im Tap-Kontext -> erlaubt LUNA, danach von selbst zu sprechen (Safari/iOS!)
+  // BARGE-IN: spricht LUNA gerade? -> sofort verstummen; lunaSpeak nimmt danach automatisch wieder auf.
+  if (VOICE.sprechen) { stopAudio(); voiceStatus("…ja?"); return; }
   if (!WINS.luna) openLuna(); else WINS.luna.focus();
   if (!SR) {  // z. B. iOS Safari: keine Sprach-Eingabe -> aber LUNA spricht (auf getippte Eingabe)
     voiceStatus("Auf diesem Gerät bitte tippen — LUNA antwortet mit Stimme.");
