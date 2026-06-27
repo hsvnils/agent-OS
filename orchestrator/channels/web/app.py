@@ -337,8 +337,10 @@ async def tts(request: Request):
     key = _secret("ELEVENLABS_API_KEY")
     if not key:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "TTS nicht konfiguriert")
-    from ..voice.voices import get_selected_voice_id
-    voice_id = _secret("LUNA_OS_VOICE_ID") or get_selected_voice_id()
+    # LUNA-OS spricht mit der deutschen Stimme „Lola" (CEO-Wahl); per .env LUNA_OS_VOICE_ID ueberschreibbar.
+    from ..voice.voices import GERMAN_VOICES
+    lola = next((v["id"] for v in GERMAN_VOICES if v["name"] == "Lola"), GERMAN_VOICES[0]["id"])
+    voice_id = _secret("LUNA_OS_VOICE_ID") or lola
     audio = await asyncio.to_thread(_elevenlabs_tts, text[:1500], voice_id, key)
     if not audio:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "TTS fehlgeschlagen")

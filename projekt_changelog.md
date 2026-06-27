@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 21:35] — Claude Code (LUNA-OS-Stimme: Lola)
+- **Was:** LUNA-OS spricht jetzt mit der deutschen ElevenLabs-Stimme **„Lola"**
+  (voice_id SiMvlSW9cKKHDYT4BzOp, aus voice/voices.py per Name aufgeloest -> keine Magic-ID im Code);
+  per `.env` `LUNA_OS_VOICE_ID` weiterhin ueberschreibbar. Beeinflusst nur den LUNA-OS-Orb, nicht den
+  separaten Voice-Kanal (dessen Default/Auswahl bleibt unveraendert).
+- **Warum:** CEO-Wahl -- „Lola" wie frueher genutzt. Lola-ID-Aufloesung verifiziert; /api/tts-Integration
+  war bereits gruen (nur voice_id geaendert -> kein erneuter ElevenLabs-Call). Suite 163/163.
+- **Betroffen:** orchestrator/channels/web/app.py.
+
 ## [2026-06-27 21:15] — Claude Code (LUNA-OS: Live-Voice-LUNA am Orb mit ElevenLabs-Stimme)
 - **Was:** Der Mond-Orb ist jetzt die **sprechende Live-LUNA** (CEO-Prioritaet vor dem Tipp-Chat). Orb antippen
   -> freihaendiges Sprach-Gespraech: Browser-Ohren (Web Speech `SpeechRecognition`, de-DE, kontinuierliche
