@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 10:00] — Claude Code (Cutter Agent V1)
+- **Was:** Neuer **Cutter Agent** (Paket `cutter/`): Ordner mit Clips -> automatisches 9:16-Instagram-Reel,
+  lokal auf dem Mac, kostenlos, ohne externe Dienste. Module: `ffmpeg_ops` (probe/normalisieren/concat,
+  9:16 mit Blur-Hintergrund, loudnorm), `transkription` (whisper.cpp lokal -> faster-whisper -> Deepgram ->
+  leer), `pipeline` (Sprach-Erkennung je Clip, Sprech-Clips mit Untertiteln, B-Roll-Ausschnitt, Gemini-
+  Reihenfolge), `watch` (unbeaufsichtigter Inbox/Outbox-Watcher), CLI (`python -m cutter <ordner>`). Auf dem
+  Mac installiert: whisper.cpp (brew) + Modell `~/whisper-models/ggml-base.bin`. Untertitel als `.srt`
+  (Einbrennen braucht ffmpeg mit libass -- aktuelles Build hat das nicht). Tests 6/6 (cutter/tests). ROADMAP
+  um Phase 15 ergaenzt.
+- **Warum:** CEO-Wunsch: Clips-Ordner -> Instagram-Schnitt ohne manuelle Arbeit. **palmier-pro geprueft und
+  verworfen** (macOS-GUI-Editor, interaktiv, generiert nur neue Videos, keine Batch-Automatik). Keine neuen
+  kostenpflichtigen Dienste noetig (FFmpeg + lokales Whisper + vorhandenes Gemini).
+- **Betroffen:** cutter/ (neu: ffmpeg_ops.py, transkription.py, pipeline.py, watch.py, __main__.py,
+  __init__.py, README.md, tests/test_cutter.py), ROADMAP.md. Instagram-Posten bleibt CEO-Tor.
+
 ## [2026-06-26 12:30] — Claude Code (Phase 14 + lebende Roadmap)
 - **Was:** **Phase 14 (freie Visualisierung) umgesetzt.** Neues Modul `core/visualisierung.py`: generische
   Schicht, die aus einer Spezifikation (mindmap/organigramm/graph/balken) ein **reines SVG** erzeugt -- ohne

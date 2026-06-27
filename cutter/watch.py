@@ -1,0 +1,83 @@
+"""Ordner-Watcher fuer den unbeaufsichtigten Betrieb auf dem Mac.
+
+Idee: Du legst deine Clips in einen Projekt-Unterordner des **Inbox**-Ordners. Sobald dort eine
+Weile nichts Neues mehr dazukommt (Upload fertig), schneidet der Watcher automatisch ein Reel und
+legt es in den **Outbox**-Ordner. Du musst nicht am Rechner sitzen -- nur den Mac anlassen.
+
+Start:  python -m cutter.watch
+Default-Ordner:  ~/CutterInbox  ->  ~/CutterOutbox  (per Argument/Env aenderbar).
+Kein Posten -- nur die fertige Datei (Instagram-Posten bleibt CEO-Tor).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import time
+from datetime import datetime
+from pathlib import Path
+
+from .ffmpeg_ops import clips_im_ordner
+from .pipeline import schneide_ordner
+
+MARKER = ".cutter_status.json"
+
+
+def _stabil(ordner: Path, ruhe_sek: float) -> bool:
+    """True, wenn seit `ruhe_sek` keine Datei im Ordner mehr geaendert wurde (Upload fertig)."""
+    clips = clips_im_ordner(ordner)
+    if not clips:
+        return False
+    juengste = max(p.stat().st_mtime for p in clips)
+    return (time.time() - juengste) >= ruhe_sek
+
+
+def _verarbeite(projekt: Path, outbox: Path, ziel_dauer: float) -> None:
+    ausgabe = outbox / f"{projekt.name}_reel.mp4"
+    print(f"[{datetime.now():%H:%M:%S}] schneide '{projekt.name}' ...", flush=True)
+    bericht = schneide_ordner(projekt, ausgabe, ziel_dauer=ziel_dauer)
+    (projekt / MARKER).write_text(json.dumps(
+        {"ts": datetime.now().isoformat(timespec="seconds"), **bericht}, ensure_ascii=False, indent=2),
+        encoding="utf-8")
+    if bericht.get("ok"):
+        print(f"[{datetime.now():%H:%M:%S}] fertig -> {ausgabe} "
+              f"({bericht['verwendet']} Clips, {bericht['dauer_sek']}s, "
+              f"Untertitel: {bericht['untertitel']})", flush=True)
+    else:
+        print(f"[{datetime.now():%H:%M:%S}] FEHLER: {bericht.get('fehler')}", flush=True)
+
+
+def loop(inbox: Path, outbox: Path, *, intervall: float = 15.0, ruhe_sek: float = 30.0,
+         ziel_dauer: float = 45.0, einmal: bool = False) -> None:
+    inbox.mkdir(parents=True, exist_ok=True)
+    outbox.mkdir(parents=True, exist_ok=True)
+    print(f"Cutter-Watcher aktiv. Inbox: {inbox}  ->  Outbox: {outbox}", flush=True)
+    print("Lege Clips in einen Unterordner der Inbox -- der Schnitt startet automatisch.", flush=True)
+    while True:
+        try:
+            for projekt in sorted(p for p in inbox.iterdir() if p.is_dir()):
+                if (projekt / MARKER).exists():
+                    continue
+                if _stabil(projekt, ruhe_sek):
+                    _verarbeite(projekt, outbox, ziel_dauer)
+        except Exception as exc:                       # nie den Watcher mitreissen
+            print(f"[watch] Fehler: {exc}", flush=True)
+        if einmal:
+            return
+        time.sleep(intervall)
+
+
+def main(argv=None) -> int:
+    p = argparse.ArgumentParser(description="Cutter-Watcher -- unbeaufsichtigter Auto-Schnitt.")
+    p.add_argument("--inbox", default=os.environ.get("CUTTER_INBOX", str(Path.home() / "CutterInbox")))
+    p.add_argument("--outbox", default=os.environ.get("CUTTER_OUTBOX", str(Path.home() / "CutterOutbox")))
+    p.add_argument("--dauer", type=float, default=45.0, help="Ziel-Gesamtlaenge (Sekunden).")
+    p.add_argument("--ruhe", type=float, default=30.0, help="Ruhe-Sekunden bis Upload als fertig gilt.")
+    p.add_argument("--einmal", action="store_true", help="Nur einen Durchlauf (zum Testen).")
+    a = p.parse_args(argv)
+    loop(Path(a.inbox), Path(a.outbox), ruhe_sek=a.ruhe, ziel_dauer=a.dauer, einmal=a.einmal)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -25,6 +25,7 @@
 | 12 | Durable Queue + 24/7-Watcher | ✅ umgesetzt |
 | 13 | Self-Development-Loop (Apex) | ✅ umgesetzt |
 | 14 | Freie Visualisierung (MindMap/Graph/Chart) | ✅ umgesetzt 2026-06-26 |
+| 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1 umgesetzt 2026-06-27 (LUNA-Anbindung = V2 offen) |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
@@ -179,6 +180,19 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
 - **GATE:** keiner (lokal/UI, keine externen Kosten).
 
 ---
+
+### Phase 15 — Cutter Agent: automatischer Video-Schnitt — V1 UMGESETZT 2026-06-27
+- **Ziel:** Ordner mit Clips -> fertiges **9:16-Instagram-Reel**, vollautomatisch, **lokal auf dem Mac**,
+  ohne externe Dienste/Kosten. Pro Clip Sprach-Erkennung (lokales Whisper), Sprech-Clips mit Untertiteln,
+  B-Roll mit praegnantem Ausschnitt; Gemini ordnet die Reihenfolge; 9:16 mit Blur-Hintergrund, Ton normalisiert.
+- **Umsetzung (V1):** Paket `cutter/` (ffmpeg_ops, transkription [whisper.cpp/faster-whisper/Deepgram],
+  pipeline, watch, CLI). Einmal-Lauf `python -m cutter <ordner>`; unbeaufsichtigt `python -m cutter.watch`
+  (Inbox/Outbox). Untertitel werden als `.srt` abgelegt (Einbrennen braucht ffmpeg mit libass -- aktuelles
+  Build hat das nicht). Tests 6/6. **palmier-pro geprueft und verworfen** (macOS-GUI-Editor, interaktiv, keine
+  Batch-Automatik).
+- **Governance:** Instagram-**Posten bleibt CEO-Tor** (Oeffentlichkeit) -- der Cutter erzeugt nur die Datei.
+- **V2 (offen):** LUNA-Telegram-Anbindung (Auftrag/Statusmeldung), Untertitel einbrennen (libass-ffmpeg),
+  besseres Whisper-Modell (`small` fuer Deutsch), Musik/Beat-Sync, Qualitaets-Tuning auf echten Clips.
 
 ## 5. Sicherheit & Kosten-Leitplanken (querschnittlich)
 
