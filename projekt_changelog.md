@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 17:00] — Claude Code (Roadmap: Phase 17 + Doku-Pflege fuer neuen Chat)
+- **Was:** ROADMAP.md um **Phase 17** ergaenzt: „LUNA bedient auf Anweisung den Rechner" (Computer-Use --
+  Apps/Maus/Tastatur steuern; Wege: Claude Computer-Use oder lokale macOS-Automatisierung; **harte
+  Governance**: nur auf Anweisung, CEO-Tor, Least-Privilege, Not-Aus, Audit; Backlog). V3-Teilstand der
+  Phase 16 dokumentiert (Chat-Panel + agentisches Mehr-Info erledigt; HTTPS offen). Einstiegs-Memory
+  `projekt-status.md` auf Stand 2026-06-27 gebracht (Phasen 5-16 + Cutter + LUNA-OS live), damit ein neuer
+  Chat sauber startet (Kontextfenster fast voll).
+- **Warum:** CEO-Anweisung: Computer-Steuerung in die Roadmap; alle Start-Dokumente fuer einen frischen Chat
+  pflegen.
+- **Betroffen:** ROADMAP.md, projekt_changelog.md; Memory projekt-status.md + MEMORY.md.
+
 ## [2026-06-27 16:30] — Claude Code (LUNA-OS: animierter Orb + Chat + agentisches Mehr-Info)
 - **Was:** (1) **Animiertes LUNA-Mond-Symbol** in der Top-Bar mit drei Zustaenden: idle (atmende Mondsichel),
   **listening** (cyan, Ringe nach innen = LUNA hoert zu), **speaking** (gruen, Ringe nach aussen + Puls = LUNA

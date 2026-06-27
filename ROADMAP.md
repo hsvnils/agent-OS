@@ -27,7 +27,8 @@
 | 13 | Self-Development-Loop (Apex) | ✅ umgesetzt |
 | 14 | Freie Visualisierung (MindMap/Graph/Chart) | ✅ umgesetzt 2026-06-26 |
 | 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 live 2026-06-27 — funktioniert; „intelligenter machen" = Backlog (spaeter) |
-| 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | ✅ **LIVE auf dem NAS 2026-06-27** (LAN-Zugriff + Login); HTTPS/extern + Chat-Panel offen |
+| 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | ✅ **LIVE auf dem NAS 2026-06-27** (LAN + Login + Mond-Orb/Chat/agentisches Mehr-Info); HTTPS/extern offen |
+| 17 | **LUNA bedient den Rechner (Computer-Use, auf Anweisung)** | 🔲 geplant (Backlog) |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
@@ -250,6 +251,22 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   Schritt, schaltet zugleich **Mikrofon/Sprach-Eingabe** fuer den Orb frei, da Browser dafuer HTTPS braucht).
 - **Offen (spaeter):** echte Sprach-Eingabe (Mikrofon) + TTS am Orb (nach HTTPS), Antrags-Detailansicht,
   mobil-Feinschliff, „Mehr Info" via voll-tool-faehigem HoaConversation statt einfachem LLM-Call.
+
+### Phase 17 — LUNA bedient den Rechner (Computer-Use, auf Anweisung) — GEPLANT (Backlog)
+- **Ziel:** Auf **ausdrueckliche CEO-Anweisung** kann LUNA den Rechner des CEO **bedienen** -- Apps oeffnen
+  und steuern, klicken, tippen, Workflows/Dateiaktionen ausfuehren („mach X in App Y", „lade das hoch",
+  „raeum den Ordner auf"). Wie ein Assistent, der Maus/Tastatur uebernimmt.
+- **Bausteine:** Computer-Use-Faehigkeit (Screenshot + Maus/Tastatur). Zwei Wege: (a) **Claude Computer-Use**
+  (Anthropic; braucht Modellzugang -- gleiches Tor wie Execution), (b) **lokale Automatisierung** auf dem Mac
+  (AppleScript/osascript, cliclick, macOS-Accessibility-API). LUNA emittiert Aktionsschritte -> lokaler
+  Mac-Runner fuehrt sie aus. Laeuft **lokal auf dem Mac** (wie der Cutter); LUNA (NAS) erteilt den Auftrag ->
+  braucht den NAS->Mac-Kanal.
+- **Governance (HART -- maechtige, riskante Faehigkeit):** **nur auf ausdrueckliche Anweisung, nie autonom**.
+  Jede Aktion mit **Geld/Recht/Oeffentlichkeit/Loeschen** = CEO-Tor mit Bestaetigung. **Least-Privilege**
+  (nur freigegebene Apps/Ordner), **Not-Aus** (Stopp jederzeit), **Audit** jeder Aktion im
+  Aktivitaetsprotokoll (adc5). Voller Rechnerzugriff = hohes Risiko -> strenge Bestaetigungen, Sandbox/
+  eingeschraenkter Scope wo moeglich.
+- **GATE:** sehr stark (Kontrolle ueber den Rechner). **Kosten:** ggf. Modellzugang (Computer-Use-Modell).
 
 ## 5. Sicherheit & Kosten-Leitplanken (querschnittlich)
 
