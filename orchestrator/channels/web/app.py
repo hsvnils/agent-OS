@@ -67,6 +67,16 @@ def _antrag_dto(a):
     }
 
 
+def _antrag_detail_dto(a):
+    """Vollansicht eines Antrags inkl. Verlauf (Evidenz fuer eine schnelle Entscheidung)."""
+    d = _antrag_dto(a)
+    d["betroffen"] = (a.get("betroffen") or "").strip()
+    d["verlauf"] = [{"ts": s.get("ts", ""), "event": s.get("event", ""),
+                     "akteur": s.get("akteur", ""), "grund": s.get("grund", "")}
+                    for s in a.get("verlauf", [])]
+    return d
+
+
 def _offene_antraege():
     offen = [a for a in antraege.list() if a.get("status") in OFFEN]
     offen.sort(key=lambda a: (_RANG.get(a.get("status"), 9), -len(a.get("verlauf", []))))
@@ -132,6 +142,14 @@ def state():
     return _state()
 
 
+@app.get("/api/antraege/{antrag_id}")
+def antrag_detail(antrag_id: str):
+    a = antraege.get(antrag_id)
+    if not a:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Antrag nicht gefunden")
+    return _antrag_detail_dto(a)
+
+
 @app.post("/api/antraege/{antrag_id}/freigeben")
 async def freigeben(antrag_id: str):
     ok = antraege.freigeben(antrag_id)
@@ -151,17 +169,65 @@ async def loeschen(antrag_id: str):
     return JSONResponse({"ok": ok, "state": _state()})
 
 
+_HOA_CACHE: dict = {}
+
+
+def _hoa_conversation():
+    """Lazy + gecachte volle HoaConversation (echte Tool-Schleife: delegate CTO/CFO, recherche...).
+
+    Reused die Verdrahtung aus dem Telegram-Kanal. Liefert None, wenn kein Anthropic-Key/keine
+    Abhaengigkeiten vorhanden sind (z. B. lokal) -> Aufrufer faellt auf den einfachen LLM-Call zurueck.
+    """
+    if "conv" in _HOA_CACHE:
+        return _HOA_CACHE["conv"]
+    try:
+        from ..telegram.bot import _build_ctx, _fallbacks, _load_config, _load_secrets
+        from ...core.hoa_conversation import HoaConversation
+        cfg = _load_config()
+        secrets = _load_secrets()
+        if not secrets.get("ANTHROPIC_API_KEY"):
+            _HOA_CACHE["conv"] = None
+            return None
+        ctx, _ = _build_ctx(cfg, secrets)
+        model = cfg.get("voice", {}).get("llm_model", "claude-haiku-4-5")
+        conv = HoaConversation(ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"],
+                               fallbacks=_fallbacks(secrets, cfg))
+        _HOA_CACHE["conv"] = conv
+        return conv
+    except Exception as exc:
+        print(f"[mehr-info] HoaConversation nicht verfuegbar, Fallback auf LLM: {exc}", flush=True)
+        _HOA_CACHE["conv"] = None
+        return None
+
+
 @app.post("/api/antraege/{antrag_id}/mehr-info")
 async def mehr_info(antrag_id: str):
     a = antraege.get(antrag_id) or {}
     titel = (a.get("titel") or antrag_id)[:90]
-    # Agentisch: ein Fachagent bewertet den Antrag sofort (LLM) -> als Meldung; zusaetzlich Research-Ticket.
-    prompt = ("Du bist ein erfahrener Berater (CTO/CFO-Sicht) eines Agenten-Unternehmens. Bewerte den "
-              "folgenden Antrag KURZ (max. 5 Saetze): Nutzen, technische Machbarkeit, grobe Kosten, "
-              "Empfehlung (freigeben/ablehnen/nachschaerfen). Antwort auf Deutsch.\n\n"
-              f"Titel: {titel}\nBeschreibung: {(a.get('beschreibung') or '(keine)')[:1500]}")
-    bewertung = _llm([{"role": "user", "content": prompt}]) or "(Bewertung aktuell nicht verfuegbar.)"
-    tid = research.erstellen(f"Mehr Infos/Bewertung zum Antrag: {titel}", abteilung="Head of Agents")
+    beschreibung = (a.get("beschreibung") or "(keine)")[:1500]
+    conv = _hoa_conversation()
+    if conv is not None:
+        # Voll-agentisch: LUNA bewertet mit echten Werkzeugen (delegate an CTO/CFO, recherche_beauftragen).
+        auftrag = (
+            "Hole mehr Infos zu diesem offenen Antrag und bewerte ihn entscheidungsreif fuer den CEO. "
+            "Konsultiere dazu den CTO (technische Machbarkeit) und den CFO (grobe Kosten) per 'delegate'; "
+            "wenn externe Fakten fehlen, nutze 'recherche_beauftragen'. Fasse danach in max. 6 Saetzen "
+            "zusammen: Nutzen, Machbarkeit, Kosten, klare Empfehlung (freigeben/ablehnen/nachschaerfen). "
+            "Lege selbst KEINEN neuen Antrag an und entscheide nicht -- nur bewerten.\n\n"
+            f"Antrag {antrag_id} -- Titel: {titel}\nBeschreibung: {beschreibung}")
+        try:
+            bewertung = (await asyncio.to_thread(conv.respond, auftrag)).strip()
+        except Exception as exc:
+            bewertung = f"(Agentische Bewertung fehlgeschlagen: {str(exc)[:160]})"
+        tid = None  # delegate/recherche legen ihre eigenen Tickets an
+    else:
+        # Fallback (lokal/ohne Anthropic-Key): ein einfacher Gemini-Bewertungs-Call.
+        prompt = ("Du bist ein erfahrener Berater (CTO/CFO-Sicht) eines Agenten-Unternehmens. Bewerte den "
+                  "folgenden Antrag KURZ (max. 5 Saetze): Nutzen, technische Machbarkeit, grobe Kosten, "
+                  "Empfehlung (freigeben/ablehnen/nachschaerfen). Antwort auf Deutsch.\n\n"
+                  f"Titel: {titel}\nBeschreibung: {beschreibung}")
+        bewertung = _llm([{"role": "user", "content": prompt}]) or "(Bewertung aktuell nicht verfuegbar.)"
+        tid = research.erstellen(f"Mehr Infos/Bewertung zum Antrag: {titel}", abteilung="Head of Agents")
     notifications.enqueue(f"Agenten-Bewertung zu '{titel}': {bewertung}",
                           abteilung="Berater/CTO/CFO", kategorie="bewertung", detail=bewertung)
     return JSONResponse({"ok": True, "ticket": tid, "bewertung": bewertung, "state": _state()})

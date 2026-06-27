@@ -135,3 +135,38 @@ body {
 .row b { font-weight: 600; }
 .kv { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--line); }
 .kv .k { color: var(--muted); }
+
+/* Antrags-Detailansicht */
+.card .head b.titel { cursor: pointer; }
+.card .head b.titel:hover { text-decoration: underline; }
+.btn.ghost { background: #334155; }
+.app.detail .head { margin-bottom: 6px; }
+.app.detail .desc.full { max-height: none; overflow: visible; margin-bottom: 10px; }
+.app.detail h3 { font-size: 13px; color: var(--muted); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .4px; }
+.row .grund { color: var(--muted); font-size: 12px; }
+
+/* Mic-/TTS-Knopf im Chat (Web Speech API) */
+.chat-form #chat-mic, .chat-form #chat-tts { background: var(--panel); border: 1px solid var(--line);
+  font-size: 15px; padding: 0 11px; }
+.chat-form #chat-mic.on { background: var(--info); border-color: var(--info); animation: micPulse 1.1s ease-in-out infinite; }
+.chat-form #chat-tts.on { background: var(--ok); border-color: var(--ok); }
+@keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(8,145,178,.6); } 50% { box-shadow: 0 0 0 5px rgba(8,145,178,0); } }
+
+/* Mobil-Feinschliff (Touch / schmale Screens) */
+@media (max-width: 640px) {
+  #topbar { gap: 10px; padding: 0 10px; }
+  #topbar .brand { font-size: 14px; }
+  #desktop { inset: 38px 0 78px 0; }
+  #welcome { top: 12%; padding: 0 16px; }
+  #welcome h1 { font-size: 21px; }
+  /* Dock: volle Breite, scrollbar bei vielen Apps, fingerfreundlich */
+  #dock { left: 8px; right: 8px; transform: none; bottom: 8px; gap: 6px; padding: 8px;
+    justify-content: space-around; overflow-x: auto; border-radius: 16px; }
+  .dock-app { width: 54px; }
+  .dock-app .ico { width: 42px; height: 42px; font-size: 21px; }
+  /* Karten/Buttons groesser fuer Touch */
+  .card .actions { gap: 6px; }
+  .btn { padding: 9px 13px; font-size: 13px; }
+  .chat-form button, .chat-form #chat-mic, .chat-form #chat-tts { padding: 0 13px; min-width: 42px; }
+  .msg { max-width: 88%; font-size: 14px; }
+}

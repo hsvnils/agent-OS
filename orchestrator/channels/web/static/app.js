@@ -27,12 +27,13 @@ function renderAuftraege() {
     const ablehnen = (a.status === "eingereicht" || a.status === "freigegeben")
       ? `<button class="btn warn" data-act="ablehnen" data-id="${esc(a.id)}">✕ Ablehnen</button>` : "";
     return `<div class="card">
-      <div class="head"><span class="badge ${esc(a.status)}">${esc(a.status)}</span><b>${esc(a.titel)}</b></div>
+      <div class="head"><span class="badge ${esc(a.status)}">${esc(a.status)}</span><b class="titel" data-detail="${esc(a.id)}" title="Details anzeigen">${esc(a.titel)}</b></div>
       <div class="meta">von ${esc(a.von)}${a.kategorie ? " · " + esc(a.kategorie) : ""} · ${esc(a.id)}</div>
       <div class="desc">${esc(a.beschreibung) || "<i>keine Beschreibung</i>"}</div>
       ${lang ? `<div class="mehr" data-mehr>mehr anzeigen ▾</div>` : ""}
       <div class="actions">
         ${freigeben}${ablehnen}
+        <button class="btn ghost" data-detail="${esc(a.id)}">📄 Details</button>
         <button class="btn info" data-act="mehr-info" data-id="${esc(a.id)}">🔍 Mehr Info holen</button>
         <button class="btn danger" data-act="loeschen" data-id="${esc(a.id)}">🗑 Loeschen</button>
       </div></div>`;
@@ -58,6 +59,14 @@ function renderFinance() {
 }
 
 // ---- Fenster ---------------------------------------------------------------
+const istMobil = () => window.matchMedia("(max-width: 640px)").matches;
+// Auf schmalen Screens fuellen Fenster (fast) den Bildschirm; sonst gestaffelt/kompakt.
+function winGeom(breite, hoehe, off) {
+  // Mobil: Fenster fuellt die Breite und laesst oben die Top-Bar (38) und unten das Dock (~84) frei,
+  // damit die Chat-Eingabe nicht hinter dem Dock verschwindet.
+  if (istMobil()) return { width: "100%", height: Math.max(280, window.innerHeight - 38 - 84) + "px", x: 0, y: 38 };
+  return { width: breite, height: hoehe, x: 90 + (off || 0), y: 60 + (off || 0) };
+}
 let zaehler = 0;
 function openApp(id) {
   const app = APPS[id];
@@ -65,7 +74,7 @@ function openApp(id) {
   if (WINS[id]) { WINS[id].focus(); return; }
   const off = (zaehler++ % 5) * 34;
   const win = new WinBox(`${app.icon}  ${app.titel}`, {
-    width: "560px", height: "72%", x: 90 + off, y: 60 + off, class: ["modern"],
+    ...winGeom("560px", "72%", off), class: ["modern"],
     onclose: () => { delete WINS[id]; return false; },
   });
   WINS[id] = win;
@@ -100,22 +109,51 @@ async function refresh() {
     renderOffene(); updateBadges(); setLive(true);
   } catch { setLive(false); }
 }
-async function aktion(id, akt) {
+async function aktion(id, akt, btn) {
   let body = {};
   if (akt === "ablehnen") { const g = prompt("Grund der Ablehnung?", ""); if (g === null) return; body = { grund: g }; }
   if (akt === "loeschen" && !confirm("Antrag wirklich loeschen?")) return;
+  // Mehr-Info ist jetzt agentisch (CTO/CFO + ggf. Recherche) -> kann ein paar Sekunden dauern.
+  let alt;
+  if (btn) { alt = btn.textContent; btn.disabled = true; if (akt === "mehr-info") btn.textContent = "⏳ Agenten arbeiten..."; }
   try {
     const r = await fetch(`/api/antraege/${encodeURIComponent(id)}/${akt}`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const d = await r.json();
+    if (akt === "mehr-info" && d.bewertung) alert("LUNA-Bewertung:\n\n" + d.bewertung);
     if (d.state) { STATE = d.state; renderOffene(); updateBadges(); }
-  } catch { alert("Aktion fehlgeschlagen."); }
+  } catch { if (btn) { btn.disabled = false; btn.textContent = alt; } alert("Aktion fehlgeschlagen."); }
+}
+
+// ---- Antrags-Detailansicht -------------------------------------------------
+const EVENT_LABEL = { eingereicht: "📥 eingereicht", freigegeben: "✅ freigegeben", abgelehnt: "⛔ abgelehnt",
+  in_umsetzung: "⚙️ in Umsetzung", erledigt: "🏁 erledigt", fehlgeschlagen: "💥 fehlgeschlagen", geloescht: "🗑 geloescht" };
+async function openDetail(id) {
+  const wid = "detail:" + id;
+  if (WINS[wid]) { WINS[wid].focus(); return; }
+  const win = new WinBox("📄  Antrag " + id, { ...(istMobil() ? winGeom() : { width: "520px", height: "66%", x: "center", y: "center" }),
+    class: ["modern"], onclose: () => { delete WINS[wid]; return false; } });
+  WINS[wid] = win;
+  win.body.innerHTML = `<div class="app"><div class="leer">Lade Details...</div></div>`;
+  try {
+    const a = await (await fetch(`/api/antraege/${encodeURIComponent(id)}`)).json();
+    const verlauf = (a.verlauf || []).map(s =>
+      `<div class="row"><span class="t">${esc(zeit(s.ts))}</span><div><b>${esc(EVENT_LABEL[s.event] || s.event)}</b>${s.akteur ? " · " + esc(s.akteur) : ""}${s.grund ? `<br><span class="grund">${esc(s.grund)}</span>` : ""}</div></div>`).join("");
+    win.body.innerHTML = `<div class="app detail">
+      <div class="head"><span class="badge ${esc(a.status)}">${esc(a.status)}</span><b>${esc(a.titel)}</b></div>
+      <div class="meta">von ${esc(a.von)}${a.kategorie ? " · " + esc(a.kategorie) : ""} · ${esc(a.id)}</div>
+      <div class="desc full">${esc(a.beschreibung) || "<i>keine Beschreibung</i>"}</div>
+      ${a.betroffen ? `<div class="kv"><span class="k">Betroffen</span><b>${esc(a.betroffen)}</b></div>` : ""}
+      <h3>Verlauf</h3>${verlauf || `<div class="leer">noch keine Schritte</div>`}</div>`;
+  } catch { win.body.innerHTML = `<div class="app"><div class="leer">Konnte Details nicht laden.</div></div>`; }
 }
 
 // ---- Events ----------------------------------------------------------------
 document.addEventListener("click", (e) => {
+  const det = e.target.closest("[data-detail]");
+  if (det) { openDetail(det.dataset.detail); return; }
   const btn = e.target.closest("[data-act]");
-  if (btn) { aktion(btn.dataset.id, btn.dataset.act); return; }
+  if (btn) { aktion(btn.dataset.id, btn.dataset.act, btn); return; }
   const mehr = e.target.closest("[data-mehr]");
   if (mehr) { const d = mehr.previousElementSibling; d.classList.toggle("open");
     mehr.textContent = d.classList.contains("open") ? "weniger anzeigen ▴" : "mehr anzeigen ▾"; }
@@ -133,20 +171,59 @@ function connectSSE() {
   } catch { /* Polling-Fallback */ setInterval(refresh, 5000); }
 }
 
+// ---- Sprache (Web Speech API, browser-nativ; braucht HTTPS oder localhost) --
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const SPEECH = { canListen: !!SR, canSpeak: "speechSynthesis" in window, tts: false, rec: null, hoeren: false };
+
+function toggleDictation(inp, form) {
+  if (SPEECH.hoeren) { try { SPEECH.rec.stop(); } catch {} return; }
+  const rec = new SR();
+  rec.lang = "de-DE"; rec.interimResults = true; rec.continuous = false;
+  SPEECH.rec = rec; SPEECH.hoeren = true;
+  setOrb("listening");
+  const mic = document.getElementById("chat-mic"); if (mic) mic.classList.add("on");
+  rec.onresult = (e) => { inp.value = Array.from(e.results).map(r => r[0].transcript).join(""); };
+  rec.onerror = () => {};
+  rec.onend = () => {
+    SPEECH.hoeren = false;
+    if (mic) mic.classList.remove("on");
+    setOrb(WINS.luna ? "listening" : "idle");
+    if (inp.value.trim()) form.requestSubmit();  // gesprochenen Satz direkt abschicken
+  };
+  try { rec.start(); } catch { SPEECH.hoeren = false; }
+}
+
+function speak(text) {
+  if (!SPEECH.tts || !SPEECH.canSpeak || !text) return;
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "de-DE"; u.rate = 1.05;
+    const v = window.speechSynthesis.getVoices().find(x => x.lang && x.lang.startsWith("de"));
+    if (v) u.voice = v;
+    window.speechSynthesis.speak(u);
+  } catch {}
+}
+
 // ---- LUNA-Orb + Chat -------------------------------------------------------
 const LUNA_HISTORY = [];
 function setOrb(s) { const o = document.getElementById("luna-orb"); if (o) o.className = s; }
 
 function openLuna() {
   if (WINS.luna) { WINS.luna.focus(); return; }
-  const win = new WinBox("🌙  LUNA", { width: "420px", height: "62%", x: "right", y: 60,
+  const win = new WinBox("🌙  LUNA", { ...(istMobil() ? winGeom() : { width: "420px", height: "62%", x: "right", y: 60 }),
     class: ["modern"], onclose: () => { delete WINS.luna; setOrb("idle"); return false; } });
   WINS.luna = win;
   const begruessung = LUNA_HISTORY.length ? "" : `<div class="msg luna">Hallo Nils 🌙 Wie kann ich helfen?</div>`;
   const msgs = LUNA_HISTORY.map(m => `<div class="msg ${m.role}">${esc(m.text)}</div>`).join("");
+  const micBtn = SPEECH.canListen ? `<button type="button" id="chat-mic" title="Sprechen (Mikrofon)">🎤</button>` : "";
+  const ttsBtn = SPEECH.canSpeak ? `<button type="button" id="chat-tts" class="${SPEECH.tts ? "on" : ""}" title="LUNA spricht Antworten vor">🔊</button>` : "";
   win.body.innerHTML = `<div class="chat"><div class="chat-msgs" id="chat-msgs">${begruessung}${msgs}</div>
-    <form class="chat-form" id="chat-form"><input id="chat-in" placeholder="Schreib LUNA..." autocomplete="off"><button type="submit">➤</button></form></div>`;
+    <form class="chat-form" id="chat-form">${micBtn}<input id="chat-in" placeholder="Schreib LUNA..." autocomplete="off">${ttsBtn}<button type="submit">➤</button></form></div>`;
   const form = win.body.querySelector("#chat-form"), inp = win.body.querySelector("#chat-in");
+  const mic = win.body.querySelector("#chat-mic"); if (mic) mic.onclick = () => toggleDictation(inp, form);
+  const tts = win.body.querySelector("#chat-tts");
+  if (tts) tts.onclick = () => { SPEECH.tts = !SPEECH.tts; tts.classList.toggle("on", SPEECH.tts); if (!SPEECH.tts) window.speechSynthesis.cancel(); };
   form.onsubmit = async (e) => {
     e.preventDefault();
     const t = inp.value.trim(); if (!t) return;
@@ -172,6 +249,7 @@ function typeLuna(text) {
   const box = document.getElementById("chat-msgs");
   const d = document.createElement("div"); d.className = "msg luna"; if (box) box.appendChild(d);
   setOrb("speaking");
+  speak(text);  // wenn TTS aktiv: LUNA spricht die Antwort vor
   let i = 0;
   (function step() {
     if (d) d.textContent = text.slice(0, i);

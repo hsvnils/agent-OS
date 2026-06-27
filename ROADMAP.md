@@ -244,13 +244,18 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   `python -m orchestrator.channels.web`, Port **8765**), fastapi/uvicorn im Image, **HTTP-Basic-Login**
   (LUNA_OS_USER/LUNA_OS_PASSWORD aus .env; nur aktiv wenn Passwort gesetzt). Verifiziert: ohne Login 401,
   mit Login 200. **Zugriff im LAN: http://192.168.178.129:8765** (User `ceo`, Passwort in orchestrator/.env).
-- **V3 (2026-06-27, teilweise):** ✅ **LUNA-Chat-Panel** im OS (animiertes Mond-Symbol mit Zustaenden
-  idle/listening/speaking; Klick -> Chat ueber `/api/chat`, Gemini). ✅ **Agentisches „Mehr Info"**
-  (LLM-Berater bewertet den Antrag sofort -> Meldung). 🔲 **HTTPS + externer Zugriff offen** (Synology
-  Reverse-Proxy + Let's Encrypt auf z. B. `https://os.hanserautisch.synology.me` -> localhost:8765; DSM-GUI-
-  Schritt, schaltet zugleich **Mikrofon/Sprach-Eingabe** fuer den Orb frei, da Browser dafuer HTTPS braucht).
-- **Offen (spaeter):** echte Sprach-Eingabe (Mikrofon) + TTS am Orb (nach HTTPS), Antrags-Detailansicht,
-  mobil-Feinschliff, „Mehr Info" via voll-tool-faehigem HoaConversation statt einfachem LLM-Call.
+- **V3 (2026-06-27, fast komplett):** ✅ **LUNA-Chat-Panel** im OS (animiertes Mond-Symbol mit Zustaenden
+  idle/listening/speaking; Klick -> Chat ueber `/api/chat`, Gemini). ✅ **Antrags-Detailansicht**
+  (`GET /api/antraege/{id}` + Detail-Fenster mit vollem Verlauf/Evidenz). ✅ **Mobil-Feinschliff** (Fenster
+  vollflaechig auf schmalen Screens, Dock voll breit, Touch-Buttons; Chat-Eingabe nicht mehr hinterm Dock).
+  ✅ **Mikrofon-Eingabe + TTS am Orb** (Web Speech API, browser-nativ -- diktieren + Vorlesen; aktiv auf
+  localhost/HTTPS). ✅ **„Mehr Info" agentisch** ueber die volle HoaConversation (echte Tool-Schleife:
+  delegate CTO/CFO + recherche_beauftragen; Fallback auf einfachen LLM-Call ohne Anthropic-Key).
+  🔲 **HTTPS + externer Zugriff offen** (Synology Reverse-Proxy + Let's Encrypt auf z. B.
+  `https://os.hanserautisch.synology.me` -> localhost:8765; DSM-GUI-Schritt). Das Mikrofon ist im Code fertig
+  und greift, sobald die UI ueber HTTPS laeuft (Browser verlangt secure context).
+- **Offen (spaeter):** „Mehr Info" optional ueber voll-tool-faehiges HoaConversation mit eigener Session pro
+  Antrag; weiterer mobil-Feinschliff im Realbetrieb.
 
 ### Phase 17 — LUNA bedient den Rechner (Computer-Use, auf Anweisung) — GEPLANT (Backlog)
 - **Ziel:** Auf **ausdrueckliche CEO-Anweisung** kann LUNA den Rechner des CEO **bedienen** -- Apps oeffnen

@@ -17,6 +17,27 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 18:30] — Claude Code (Phase 16 V3: Rest umgesetzt)
+- **Was:** LUNA-OS V3 vervollstaendigt (ausser HTTPS, das bleibt ein DSM-GUI-Schritt):
+  (1) **Antrags-Detailansicht** -- neuer Endpoint `GET /api/antraege/{id}` mit vollem Verlauf/Evidenz;
+  Klick auf Antrags-Titel oder „Details"-Button oeffnet ein Detail-Fenster (Status, Beschreibung,
+  Betroffen, Verlaufs-Schritte).
+  (2) **Mobil-Feinschliff** -- WinBox-Fenster fuellen auf schmalen Screens (<=640px) den Bildschirm und
+  lassen Top-Bar + Dock frei (Chat-Eingabe nicht mehr hinterm Dock); Dock ueber volle Breite, groessere
+  Touch-Buttons (CSS-Media-Query + responsives `winGeom()`).
+  (3) **Mikrofon-Eingabe + TTS am Orb** -- Web Speech API (browser-nativ): 🎤-Knopf diktiert in den Chat
+  (de-DE, schickt gesprochenen Satz direkt ab, Orb zeigt „listening"), 🔊-Toggle laesst LUNA Antworten
+  vorlesen (SpeechSynthesis). Funktioniert auf localhost/HTTPS -> bereit fuer den HTTPS-Schalter.
+  (4) **„Mehr Info" agentisch via voller HoaConversation** -- statt einfachem Gemini-Call laeuft jetzt die
+  echte Tool-Schleife (delegate an CTO/CFO, recherche_beauftragen) ueber die wiederverwendete
+  Telegram-Verdrahtung (`_build_ctx`); sicherer Fallback auf den einfachen LLM-Call, wenn kein
+  Anthropic-Key/Abhaengigkeiten da sind. Asset-Cache-Bust `?v=3`. `__main__` liest jetzt `PORT` (Preview).
+- **Warum:** CEO-Anweisung „erst den Rest von V3 umsetzen" (Phase 16). Verifiziert im Browser-Preview
+  (Desktop + mobil 375px): Detailansicht, Karte/Buttons, Chat-Eingabe mit Mic/TTS, agentische Bewertung
+  (lokal real durchgelaufen: delegate -> Researcher-Brave-Suche -> CEO-Bewertung). Suite 163/163.
+- **Betroffen:** orchestrator/channels/web/app.py, .../__main__.py, .../static/{app.js,index.html,style.css},
+  .claude/launch.json (autoPort fuer Preview).
+
 ## [2026-06-27 17:00] — Claude Code (Roadmap: Phase 17 + Doku-Pflege fuer neuen Chat)
 - **Was:** ROADMAP.md um **Phase 17** ergaenzt: „LUNA bedient auf Anweisung den Rechner" (Computer-Use --
   Apps/Maus/Tastatur steuern; Wege: Claude Computer-Use oder lokale macOS-Automatisierung; **harte

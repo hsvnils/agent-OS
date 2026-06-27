@@ -5,7 +5,8 @@
       "name": "luna-os",
       "runtimeExecutable": "/Users/nilskrueger/Documents/KI-Unternehmen/.venv/bin/python",
       "runtimeArgs": ["-m", "orchestrator.channels.web"],
-      "port": 8765
+      "port": 8765,
+      "autoPort": true
     }
   ]
 }
