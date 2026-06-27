@@ -25,7 +25,7 @@
 | 12 | Durable Queue + 24/7-Watcher | ✅ umgesetzt |
 | 13 | Self-Development-Loop (Apex) | ✅ umgesetzt |
 | 14 | Freie Visualisierung (MindMap/Graph/Chart) | ✅ umgesetzt 2026-06-26 |
-| 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1 umgesetzt 2026-06-27 (LUNA-Anbindung = V2 offen) |
+| 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 umgesetzt 2026-06-27 (Autostart + Telegram-Meldung live) |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
@@ -191,8 +191,11 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   Build hat das nicht). Tests 6/6. **palmier-pro geprueft und verworfen** (macOS-GUI-Editor, interaktiv, keine
   Batch-Automatik).
 - **Governance:** Instagram-**Posten bleibt CEO-Tor** (Oeffentlichkeit) -- der Cutter erzeugt nur die Datei.
-- **V2 (offen):** LUNA-Telegram-Anbindung (Auftrag/Statusmeldung), Untertitel einbrennen (libass-ffmpeg),
-  besseres Whisper-Modell (`small` fuer Deutsch), Musik/Beat-Sync, Qualitaets-Tuning auf echten Clips.
+- **V2 (umgesetzt 2026-06-27):** **Autostart** via launchd (`com.hanserautisch.cutter.watch.plist` -> startet
+  den Watcher bei jedem Login, KeepAlive); **Telegram-Meldung** -- fertiges Reel geht als Video an den
+  LUNA-Chat (`cutter/melden.py`, gleiches Bot-Token). Live verifiziert.
+- **Offen (Tuning):** Untertitel einbrennen (libass-ffmpeg statt .srt), besseres Whisper-Modell (`small` DE),
+  Musik/Beat-Sync, Qualitaets-Tuning auf echten Clips; Schnitt per Chat anstossen (NAS->Mac-Trigger).
 
 ## 5. Sicherheit & Kosten-Leitplanken (querschnittlich)
 

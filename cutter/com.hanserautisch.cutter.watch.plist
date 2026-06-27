@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- LaunchAgent: startet den Cutter-Watcher automatisch, sobald der Mac (mit Login) laeuft.
+     Installation siehe cutter/README.md. PATH enthaelt /opt/homebrew/bin (ffmpeg, whisper-cli). -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hanserautisch.cutter.watch</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/nilskrueger/Documents/KI-Unternehmen/.venv/bin/python</string>
+        <string>-m</string>
+        <string>cutter.watch</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/nilskrueger/Documents/KI-Unternehmen</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/nilskrueger/Library/Logs/cutter-watch.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/nilskrueger/Library/Logs/cutter-watch.log</string>
+</dict>
+</plist>

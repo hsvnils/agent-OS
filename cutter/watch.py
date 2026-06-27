@@ -17,8 +17,9 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from . import melden
 from .ffmpeg_ops import clips_im_ordner
-from .pipeline import schneide_ordner
+from .pipeline import _lade_env, schneide_ordner
 
 MARKER = ".cutter_status.json"
 
@@ -32,7 +33,7 @@ def _stabil(ordner: Path, ruhe_sek: float) -> bool:
     return (time.time() - juengste) >= ruhe_sek
 
 
-def _verarbeite(projekt: Path, outbox: Path, ziel_dauer: float) -> None:
+def _verarbeite(projekt: Path, outbox: Path, ziel_dauer: float, token: str = "", chat: str = "") -> None:
     ausgabe = outbox / f"{projekt.name}_reel.mp4"
     print(f"[{datetime.now():%H:%M:%S}] schneide '{projekt.name}' ...", flush=True)
     bericht = schneide_ordner(projekt, ausgabe, ziel_dauer=ziel_dauer)
@@ -43,15 +44,28 @@ def _verarbeite(projekt: Path, outbox: Path, ziel_dauer: float) -> None:
         print(f"[{datetime.now():%H:%M:%S}] fertig -> {ausgabe} "
               f"({bericht['verwendet']} Clips, {bericht['dauer_sek']}s, "
               f"Untertitel: {bericht['untertitel']})", flush=True)
+        # V2: Reel an den LUNA-Chat melden (Senden an den CEO selbst -- kein CEO-Tor).
+        if token and chat:
+            cap = (f"🎬 Cutter: Reel '{projekt.name}' fertig — {bericht['verwendet']} Clips, "
+                   f"{bericht['dauer_sek']}s, Untertitel: {bericht['untertitel']}. "
+                   f"Musik + Posten machst du in Instagram.")
+            if not melden.sende_reel(token, chat, ausgabe, cap):
+                melden.sende_text(token, chat, cap + f"\n(Video zu gross fuer Telegram? Datei: {ausgabe})")
     else:
         print(f"[{datetime.now():%H:%M:%S}] FEHLER: {bericht.get('fehler')}", flush=True)
+        if token and chat:
+            melden.sende_text(token, chat, f"🎬 Cutter: '{projekt.name}' fehlgeschlagen — {bericht.get('fehler')}")
 
 
 def loop(inbox: Path, outbox: Path, *, intervall: float = 15.0, ruhe_sek: float = 30.0,
          ziel_dauer: float = 45.0, einmal: bool = False) -> None:
     inbox.mkdir(parents=True, exist_ok=True)
     outbox.mkdir(parents=True, exist_ok=True)
-    print(f"Cutter-Watcher aktiv. Inbox: {inbox}  ->  Outbox: {outbox}", flush=True)
+    env = _lade_env()
+    token = env.get("TELEGRAM_BOT_TOKEN", "")
+    chat = env.get("TELEGRAM_ALLOWED_CHAT_ID", "")
+    print(f"Cutter-Watcher aktiv. Inbox: {inbox}  ->  Outbox: {outbox}"
+          + (" | Telegram-Meldung: an" if token and chat else ""), flush=True)
     print("Lege Clips in einen Unterordner der Inbox -- der Schnitt startet automatisch.", flush=True)
     while True:
         try:
@@ -59,7 +73,7 @@ def loop(inbox: Path, outbox: Path, *, intervall: float = 15.0, ruhe_sek: float 
                 if (projekt / MARKER).exists():
                     continue
                 if _stabil(projekt, ruhe_sek):
-                    _verarbeite(projekt, outbox, ziel_dauer)
+                    _verarbeite(projekt, outbox, ziel_dauer, token, chat)
         except Exception as exc:                       # nie den Watcher mitreissen
             print(f"[watch] Fehler: {exc}", flush=True)
         if einmal:

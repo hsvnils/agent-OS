@@ -42,8 +42,18 @@ Lege deine Clips in einen **Unterordner** von `~/CutterInbox` (z. B. `~/CutterIn
 Sobald dort ~30 s nichts Neues mehr dazukommt, wird automatisch geschnitten; das Reel landet in
 `~/CutterOutbox/`. Du musst nicht am Rechner sitzen.
 
-**Automatisch beim Mac-Start** (optional): einen `launchd`-Dienst einrichten, der `python -m cutter.watch`
-dauerhaft laufen laesst — auf Wunsch baue ich die `.plist` dafuer.
+**Automatisch beim Mac-Start (eingerichtet):** Ein `launchd`-Dienst startet den Watcher bei jedem Login.
+```bash
+cp cutter/com.hanserautisch.cutter.watch.plist ~/Library/LaunchAgents/
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.hanserautisch.cutter.watch.plist
+launchctl list | grep cutter            # laeuft?
+tail -f ~/Library/Logs/cutter-watch.log # Live-Log
+# Stoppen: launchctl bootout gui/$(id -u)/com.hanserautisch.cutter.watch
+```
+
+**Telegram-Meldung (V2):** Ist ein Reel fertig, schickt der Watcher es **als Video an deinen LUNA-Chat**
+(gleiches Bot-Token, `TELEGRAM_*` aus `orchestrator/.env`). Du bekommst das Ergebnis aufs Handy, ohne am
+Rechner zu sitzen. Senden an dich selbst ist kein CEO-Tor; Instagram-Posten machst du weiter manuell.
 
 ## Grenzen (ehrlich)
 

@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 11:00] — Claude Code (Cutter Agent V2: Autostart + Telegram)
+- **Was:** Cutter Agent V2. (1) **Autostart**: launchd-LaunchAgent `cutter/com.hanserautisch.cutter.watch.plist`
+  (PATH inkl. /opt/homebrew/bin fuer ffmpeg/whisper, RunAtLoad+KeepAlive) -- der Watcher startet bei jedem
+  Login automatisch; installiert + geladen, laeuft. (2) **Telegram-Meldung**: `cutter/melden.py` schickt das
+  fertige Reel als Video an den LUNA-Chat (gleiches Bot-Token, TELEGRAM_* aus .env); in watch.py eingebunden.
+  Live verifiziert: Clips in ~/CutterInbox -> Dienst schneidet -> Reel in ~/CutterOutbox + per Telegram.
+- **Warum:** CEO-Wunsch: unbeaufsichtigt (Mac anlassen) + LUNA meldet das Ergebnis aufs Handy.
+- **Betroffen:** cutter/melden.py (neu), cutter/watch.py, cutter/com.hanserautisch.cutter.watch.plist (neu),
+  cutter/README.md, ROADMAP.md (Phase 15 V1+V2). Senden an den CEO ist kein CEO-Tor; Instagram-Posten bleibt es.
+
 ## [2026-06-27 10:00] — Claude Code (Cutter Agent V1)
 - **Was:** Neuer **Cutter Agent** (Paket `cutter/`): Ordner mit Clips -> automatisches 9:16-Instagram-Reel,
   lokal auf dem Mac, kostenlos, ohne externe Dienste. Module: `ffmpeg_ops` (probe/normalisieren/concat,
