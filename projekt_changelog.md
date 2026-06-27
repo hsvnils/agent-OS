@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 22:10] — Claude Code (Voice-LUNA Finetuning: Ton-Fix + Kontext-Anzeige + Satz-Streaming)
+- **Was:** (1) **Ton-Fix (Hauptproblem „LUNA nicht hoerbar"):** Audio laeuft jetzt ueber einen
+  **Web-Audio-Context, der beim Orb-/Gespraech-/Sende-Tap entsperrt wird** (`unlockAudio` in der Nutzer-Geste).
+  Safari/iOS/Chrome erlauben Audio nur nach einer Geste -- vorher wurde `Audio.play()` still abgewiesen.
+  Premium-Stimme (Lola) wird per `decodeAudioData` ueber den entsperrten Context gespielt; Browser-Stimme als
+  Fallback. (2) **Kontext-Anzeige (CEO-Wunsch):** Fragen, die eine Ansicht betreffen („welche Anträge sind
+  offen?", „wie viele Tickets?", „mein Budget?"), oeffnen jetzt **automatisch das passende Panel**
+  (Auftraege/Research/Finanzen/Meldungen/Aktivität) UND LUNA erklaert die Daten gesprochen dazu
+  (`panelFuerFrage`). Reine „zeig X"-Befehle bleiben kurz. (3) **Satz-fuer-Satz-TTS** (OpenJARVIS-Muster):
+  Antwort wird in Saetze zerlegt, LUNA faengt frueher an zu sprechen (kuerzere Latenz). (4) **iOS:** wo der
+  Browser keine Sprach-Eingabe kann (iOS Safari hat keine Web-Speech-Erkennung), bleibt der Knopf
+  „🔊 Stimme aktivieren" + Tippen -> LUNA spricht trotzdem (Lola). Cache-Bust ?v=6.
+- **Warum:** CEO-Feedback: Stimme auf Mac/iPhone/iPad nicht hoerbar + Kontext soll angezeigt statt nur als Text
+  beantwortet werden; Anregung „schau bei OpenJARVIS". Uebernommen: Satz-Streaming + Intent->UI-Aktion.
+  Verifiziert im Preview: Frage oeffnet Panel + LUNA antwortet mit echten Daten, inSaetze/panelFuerFrage
+  korrekt, keine Konsolenfehler, Suite 163/163. Echte Tonausgabe nur auf Geraet mit Lautsprecher pruefbar.
+  **Offen/empfohlen (next):** Sprach-EINGABE auf iPhone/iPad via Deepgram-STT (MediaRecorder -> /api/stt),
+  da iOS Safari keine Web-Speech-Erkennung hat.
+- **Betroffen:** orchestrator/channels/web/static/{app.js,index.html}.
+
 ## [2026-06-27 21:35] — Claude Code (LUNA-OS-Stimme: Lola)
 - **Was:** LUNA-OS spricht jetzt mit der deutschen ElevenLabs-Stimme **„Lola"**
   (voice_id SiMvlSW9cKKHDYT4BzOp, aus voice/voices.py per Name aufgeloest -> keine Magic-ID im Code);

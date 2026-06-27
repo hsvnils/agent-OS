@@ -40,6 +40,15 @@ function versucheKontextBefehl(text) {
   }
   return null;
 }
+// Erkennt, ob eine FRAGE eine Ansicht betrifft (auch ohne „zeig") -> dann blendet LUNA das Panel ein
+// und erklaert die Daten dazu. Z. B. „welche Anträge sind offen?" -> Auftraege-Fenster + gesprochene Erklaerung.
+function panelFuerFrage(text) {
+  const t = " " + text.toLowerCase() + " ";
+  for (const [id, woerter] of APP_SYNONYME) {
+    if (woerter.some(w => t.includes(" " + w) || t.includes(w + " "))) return id;
+  }
+  return null;
+}
 
 function renderAuftraege() {
   if (!STATE.antraege.length) return `<div class="app"><div class="leer">Keine offenen Aufträge. 🎉<br>LUNA meldet sich, wenn etwas ansteht.</div></div>`;
@@ -199,8 +208,21 @@ function connectSSE() {
 // die echte LUNA mit Tools/Persona antwortet gesprochen). Der Tipp-Chat ist die Rueckfallebene.
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const SPEECH = { canListen: !!SR, canSpeak: "speechSynthesis" in window };
-const VOICE = { active: false, rec: null, audio: null };
+const VOICE = { active: false, rec: null, sprechen: false };
 const LUNA_HISTORY = [];
+
+// Web-Audio: noetig, weil Safari/iOS (und Chrome) Audio nur nach einer Nutzer-Geste abspielen.
+// Wir entsperren den AudioContext beim Orb-/Gespraech-Tap (unlockAudio) -> danach darf LUNA von selbst sprechen.
+let AUDIO_CTX = null, CUR_SRC = null;
+function ensureAudio() {
+  try { if (!AUDIO_CTX) AUDIO_CTX = new (window.AudioContext || window.webkitAudioContext)(); } catch {}
+  if (AUDIO_CTX && AUDIO_CTX.state === "suspended") { try { AUDIO_CTX.resume(); } catch {} }
+  return AUDIO_CTX;
+}
+function unlockAudio() {  // MUSS im Klick-/Tap-Handler laufen (Nutzer-Geste)
+  const ac = ensureAudio(); if (!ac) return;
+  try { const b = ac.createBuffer(1, 1, 22050); const s = ac.createBufferSource(); s.buffer = b; s.connect(ac.destination); s.start(0); } catch {}
+}
 
 function setOrb(s) { const o = document.getElementById("luna-orb"); if (o) o.className = s; }
 function voiceStatus(t) { const el = document.getElementById("voice-status"); if (el) el.textContent = t; }
@@ -208,37 +230,65 @@ function voiceToggleUI() { const b = document.getElementById("voice-toggle");
   if (b) { b.classList.toggle("on", VOICE.active); b.textContent = VOICE.active ? "⏹ Gespräch beenden" : "🎙️ Gespräch starten"; } }
 
 function stopAudio() {
-  try { if (VOICE.audio) { VOICE.audio.pause(); VOICE.audio = null; } } catch {}
+  VOICE.sprechen = false;
+  try { if (CUR_SRC) { CUR_SRC.onended = null; CUR_SRC.stop(); CUR_SRC = null; } } catch {}
   try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch {}
 }
 
-// LUNA spricht: erst ElevenLabs (/api/tts) probieren, sonst Browser-Stimme. Danach im Gespraech weiter zuhoeren.
+// Zerlegt die Antwort in Saetze -> LUNA faengt frueher an zu sprechen (Streaming-Muster, vgl. OpenJARVIS).
+function inSaetze(text) {
+  const teile = String(text).replace(/\s+/g, " ").match(/[^.!?…]+[.!?…]+|\S[^.!?…]*$/g) || [text];
+  const out = []; let buf = "";
+  for (const s of teile) { buf += (buf ? " " : "") + s.trim();
+    if (buf.length >= 60) { out.push(buf); buf = ""; } }
+  if (buf.trim()) out.push(buf.trim());
+  return out.filter(Boolean);
+}
+
+// LUNA spricht die ganze Antwort (Satz fuer Satz, ElevenLabs -> Fallback Browser-Stimme).
 async function lunaSpeak(text) {
-  setOrb("speaking"); voiceStatus("LUNA spricht…");
-  let gesprochen = false;
+  setOrb("speaking"); voiceStatus("LUNA spricht…"); VOICE.sprechen = true;
+  const saetze = inSaetze(text);
+  let premiumOk = true;
+  for (const satz of saetze) {
+    if (!VOICE.sprechen) break;                 // abgebrochen (Barge-in/Stop)
+    const ok = premiumOk && await spieleTts(satz);
+    if (!ok) { premiumOk = false; await browserSpeak(satz); }  // sobald Premium scheitert: Browser-Stimme
+  }
+  VOICE.sprechen = false;
+  if (VOICE.active) startListening(); else setOrb(WINS.luna ? "listening" : "idle");
+}
+
+// Holt einen Satz als MP3 von /api/tts und spielt ihn ueber den AudioContext. true = gespielt.
+async function spieleTts(text) {
+  const ac = ensureAudio(); if (!ac) return false;
   try {
     const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }) });
-    if (r.ok && (r.headers.get("content-type") || "").includes("audio")) {
-      const url = URL.createObjectURL(await r.blob());
-      await new Promise((res) => {
-        const a = new Audio(url); VOICE.audio = a;
-        a.onended = a.onerror = () => { URL.revokeObjectURL(url); if (VOICE.audio === a) VOICE.audio = null; res(); };
-        a.play().catch(() => res());
-      });
-      gesprochen = true;
-    }
-  } catch { /* Netz/Fehler -> Browser-Stimme */ }
-  if (!gesprochen && SPEECH.canSpeak) {
+    if (!r.ok || !(r.headers.get("content-type") || "").includes("audio")) return false;
+    const data = await r.arrayBuffer();
+    const audioBuf = await ac.decodeAudioData(data.slice(0)).catch(() => null);
+    if (!audioBuf) return false;
+    if (!VOICE.sprechen) return true;
     await new Promise((res) => {
-      try { window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text); u.lang = "de-DE"; u.rate = 1.04;
-        const v = window.speechSynthesis.getVoices().find(x => x.lang && x.lang.startsWith("de"));
-        if (v) u.voice = v; u.onend = u.onerror = res; window.speechSynthesis.speak(u);
-      } catch { res(); }
+      const s = ac.createBufferSource(); s.buffer = audioBuf; s.connect(ac.destination);
+      CUR_SRC = s; s.onended = () => { if (CUR_SRC === s) CUR_SRC = null; res(); };
+      try { s.start(0); } catch { res(); }
     });
-  }
-  if (VOICE.active) startListening(); else setOrb(WINS.luna ? "listening" : "idle");
+    return true;
+  } catch { return false; }
+}
+
+// Fallback: Browser-Stimme (kein Premium). Wartet bis der Satz gesprochen ist.
+function browserSpeak(text) {
+  return new Promise((res) => {
+    if (!SPEECH.canSpeak || !VOICE.sprechen) return res();
+    try {
+      const u = new SpeechSynthesisUtterance(text); u.lang = "de-DE"; u.rate = 1.04;
+      const v = window.speechSynthesis.getVoices().find(x => x.lang && x.lang.startsWith("de"));
+      if (v) u.voice = v; u.onend = u.onerror = res; window.speechSynthesis.speak(u);
+    } catch { res(); }
+  });
 }
 
 // Eine Hoer-Runde: nimmt einen gesprochenen Satz auf und schickt ihn an LUNA.
@@ -272,7 +322,12 @@ function stopVoice() {
   voiceStatus("Gespräch pausiert — Orb antippen zum Weitersprechen."); voiceToggleUI();
 }
 function toggleVoice() {
+  unlockAudio();  // im Tap-Kontext -> erlaubt LUNA, danach von selbst zu sprechen (Safari/iOS!)
   if (!WINS.luna) openLuna(); else WINS.luna.focus();
+  if (!SR) {  // z. B. iOS Safari: keine Sprach-Eingabe -> aber LUNA spricht (auf getippte Eingabe)
+    voiceStatus("Auf diesem Gerät bitte tippen — LUNA antwortet mit Stimme.");
+    return;
+  }
   if (VOICE.active) stopVoice(); else startVoice();
 }
 
@@ -285,7 +340,7 @@ function openLuna() {
   const msgs = LUNA_HISTORY.map(m => `<div class="msg ${m.role}">${esc(m.text)}</div>`).join("");
   const voiceBtn = SPEECH.canListen
     ? `<button type="button" id="voice-toggle" class="${VOICE.active ? "on" : ""}">${VOICE.active ? "⏹ Gespräch beenden" : "🎙️ Gespräch starten"}</button>`
-    : `<span class="voice-status">Sprache braucht HTTPS + Chrome/Safari</span>`;
+    : `<button type="button" id="voice-toggle" onclick="unlockAudio()">🔊 Stimme aktivieren</button>`;
   win.body.innerHTML = `<div class="chat">
     <div class="voice-bar">${voiceBtn}<span id="voice-status" class="voice-status">${VOICE.active ? "Ich höre…" : "Sprich mit LUNA oder tippe."}</span></div>
     <div class="chat-msgs" id="chat-msgs">${begruessung}${msgs}</div>
@@ -294,9 +349,10 @@ function openLuna() {
   const vt = win.body.querySelector("#voice-toggle"); if (vt) vt.onclick = toggleVoice;
   form.onsubmit = (e) => {
     e.preventDefault();
+    unlockAudio();  // Tippen+Senden ist eine Geste -> erlaubt LUNA, die Antwort vorzulesen (auch iOS)
     const t = inp.value.trim(); if (!t) return;
     inp.value = "";
-    sendeAnLuna(t, VOICE.active);  // getippt: nur sprechen, wenn Gespraech aktiv
+    sendeAnLuna(t, true);  // der Orb ist die sprechende LUNA -> Antwort wird vorgelesen
     inp.focus();
   };
   if (!VOICE.active) setOrb("idle");
@@ -306,9 +362,12 @@ function openLuna() {
 // Schickt eine Nutzer-Aeusserung an LUNA. sprich=true -> Antwort wird gesprochen (+ Gespraech laeuft weiter).
 async function sendeAnLuna(text, sprich) {
   addMsg("user", text);
-  // Kontext-Befehl? ("zeig mir die Aufträge") -> App einblenden, auch per Sprache.
+  // Reiner Anzeige-Befehl ("zeig mir die Aufträge") -> App einblenden, kurz bestaetigen, fertig.
   const app = versucheKontextBefehl(text);
   if (app) { const s = `Zeige dir „${app}".`; typeLunaText(s); if (sprich) lunaSpeak(s); else setOrb(WINS.luna ? "listening" : "idle"); return; }
+  // Frage betrifft eine Ansicht (Anträge/Tickets/Finanzen…)? -> passendes Panel sofort zeigen, LUNA erklaert dazu.
+  const ziel = panelFuerFrage(text);
+  if (ziel) openApp(ziel);
   setOrb("speaking"); voiceStatus("LUNA denkt…");
   let reply = "(keine Antwort)";
   try {
