@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 11:30] — Claude Code (Cutter: Untertitel aus)
+- **Was:** Untertitel im Cutter standardmaessig AUS (CEO-Wunsch). `schneide_ordner(untertitel=False)` Default; keine `.srt` mehr. Sprach-Erkennung (Whisper) bleibt INTERN fuer Silence-Trimmen + Gemini-Reihenfolge. CLI-Flag `--mit-untertitel` als Opt-in. Watcher-Dienst neu gestartet (laedt neuen Code).
+- **Warum:** CEO will keine Untertitel.
+- **Betroffen:** cutter/pipeline.py, cutter/__main__.py, cutter/README.md. Tests 6/6.
+
 ## [2026-06-27 11:00] — Claude Code (Cutter Agent V2: Autostart + Telegram)
 - **Was:** Cutter Agent V2. (1) **Autostart**: launchd-LaunchAgent `cutter/com.hanserautisch.cutter.watch.plist`
   (PATH inkl. /opt/homebrew/bin fuer ffmpeg/whisper, RunAtLoad+KeepAlive) -- der Watcher startet bei jedem

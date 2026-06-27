@@ -14,11 +14,15 @@ def main(argv=None) -> int:
     p.add_argument("--ausgabe", default=None, help="Ziel-MP4 (Default: <ordner>/<name>_reel.mp4).")
     p.add_argument("--dauer", type=float, default=45.0, help="Ziel-Gesamtlaenge in Sekunden (Default 45).")
     p.add_argument("--ohne-gemini", action="store_true", help="Keine KI-Reihenfolge (Dateiname-Reihenfolge).")
-    p.add_argument("--ohne-transkript", action="store_true", help="Keine Transkription/Untertitel.")
+    p.add_argument("--ohne-transkript", action="store_true",
+                   help="Keine Transkription (schneller; ohne Sprach-Erkennung/-Trimmen).")
+    p.add_argument("--mit-untertitel", action="store_true",
+                   help="Untertitel erzeugen (Standard: AUS).")
     a = p.parse_args(argv)
 
     bericht = schneide_ordner(a.ordner, a.ausgabe, ziel_dauer=a.dauer,
-                              transkribieren=not a.ohne_transkript, gemini=not a.ohne_gemini)
+                              transkribieren=not a.ohne_transkript, gemini=not a.ohne_gemini,
+                              untertitel=a.mit_untertitel)
     print(json.dumps(bericht, ensure_ascii=False, indent=2))
     return 0 if bericht.get("ok") else 1
 

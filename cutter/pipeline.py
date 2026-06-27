@@ -31,7 +31,7 @@ class Auswahl:
 def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
                     max_sprache: float = 14.0, broll_dauer: float = 3.2,
                     transkribieren: bool = True, gemini: bool = True,
-                    sprache: str = "de") -> dict:
+                    untertitel: bool = False, sprache: str = "de") -> dict:
     """Schneidet alle Clips eines Ordners zu einem Reel. Gibt einen Bericht (dict) zurueck."""
     ordner = Path(ordner)
     if not fo.ffmpeg_vorhanden():
@@ -83,24 +83,22 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
         ausgabe = ordner / f"{ordner.name}_reel.mp4"
     ausgabe = Path(ausgabe)
 
-    # Untertitel: einbrennen wenn das ffmpeg-Build libass hat -- sonst als .srt daneben ablegen
-    # (Instagram bringt eigene Auto-Captions; oder die .srt importieren).
-    kann_brennen = fo.hat_filter("subtitles")
+    # Untertitel nur auf Wunsch (Default aus). Einbrennen braucht ffmpeg mit libass -- sonst .srt daneben.
     ass = srt = None
-    if ass_events:
+    if untertitel and ass_events:
         srt = ausgabe.with_suffix(".srt")
         _schreibe_srt(ass_events, srt)
-        if kann_brennen:
+        if fo.hat_filter("subtitles"):
             ass = arbeit / "untertitel.ass"
             _schreibe_ass(ass_events, ass)
 
     nur_broll = all(a.typ == "broll" for a in auswahlen)
     ok = fo.zusammenfuegen(segmente, ausgabe, untertitel_ass=ass, leiser_ton=nur_broll)
 
-    if ass_events:
-        untertitel = "eingebrannt" if (ok and ass) else (f"als .srt ({srt.name})" if srt else False)
+    if untertitel and ass_events:
+        untertitel_status = "eingebrannt" if (ok and ass) else (f"als .srt ({srt.name})" if srt else False)
     else:
-        untertitel = False
+        untertitel_status = False
     return {
         "ok": ok,
         "ausgabe": str(ausgabe) if ok else None,
@@ -108,8 +106,8 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
         "clips_gesamt": len(clips),
         "verwendet": len(segmente),
         "dauer_sek": round(sum(a.dauer for a in auswahlen[:len(segmente)]), 1),
-        "untertitel": untertitel,
-        "srt": str(srt) if (srt and ass_events and not ass) else None,
+        "untertitel": untertitel_status,
+        "srt": str(srt) if (srt and not ass) else None,
         "details": [{"datei": a.clip.pfad.name, "typ": a.typ,
                      "ausschnitt": f"{a.start:.1f}-{a.start + a.dauer:.1f}s"}
                     for a in auswahlen[:len(segmente)]],

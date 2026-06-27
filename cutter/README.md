@@ -5,9 +5,11 @@ ohne externe Dienste. Laeuft lokal auf dem Mac. **Posten bleibt CEO-Tor** (der C
 
 ## Was er macht
 
-- Pro Clip wird erkannt, ob **Sprache** enthalten ist (lokales Whisper).
-  - **Sprech-Clip:** Stille am Rand wird getrimmt, Untertitel werden erzeugt.
+- Pro Clip wird erkannt, ob **Sprache** enthalten ist (lokales Whisper, nur intern).
+  - **Sprech-Clip:** Stille am Rand wird getrimmt.
   - **B-Roll:** ein praegnanter Ausschnitt, Ton leise (Musik kommst du in Instagram dazu).
+- **Untertitel: standardmaessig AUS** (CEO-Wunsch). Optional mit `--mit-untertitel` (Einbrennen braucht
+  ffmpeg mit libass; sonst `.srt` daneben).
 - Alles wird auf **9:16** gebracht (scharfes Bild zentriert, unscharfer Hintergrund — Reel-Look),
   Lautheit normalisiert, sauber zusammengeschnitten.
 - **Gemini** (gratis) ordnet die Clips zu einer stimmigen Reihenfolge (Hook zuerst).
@@ -17,12 +19,8 @@ ohne externe Dienste. Laeuft lokal auf dem Mac. **Posten bleibt CEO-Tor** (der C
 | Werkzeug | Zweck | Status |
 |---|---|---|
 | **ffmpeg/ffprobe** | Schnitt/Format/Export | vorhanden (brew) |
-| **whisper.cpp** + Modell (`~/whisper-models/ggml-*.bin`) | lokale Transkription | installiert (Modell `base`; `small` ist fuer Deutsch besser) |
+| **whisper.cpp** + Modell (`~/whisper-models/ggml-*.bin`) | Sprach-Erkennung (intern) | installiert (`base`) |
 | **GEMINI_API_KEY** (in `orchestrator/.env`) | KI-Reihenfolge | vorhanden |
-
-> **Untertitel einbrennen** braucht ein ffmpeg **mit libass**. Das aktuelle Build hat das nicht — daher wird
-> der Text als **`.srt`-Datei** neben das Reel gelegt (in Instagram die Auto-Captions nutzen oder die .srt
-> importieren). Mit einem libass-ffmpeg werden die Untertitel direkt ins Bild gebrannt.
 
 ## Bedienung
 
