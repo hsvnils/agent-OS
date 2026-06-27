@@ -133,7 +133,56 @@ function connectSSE() {
   } catch { /* Polling-Fallback */ setInterval(refresh, 5000); }
 }
 
+// ---- LUNA-Orb + Chat -------------------------------------------------------
+const LUNA_HISTORY = [];
+function setOrb(s) { const o = document.getElementById("luna-orb"); if (o) o.className = s; }
+
+function openLuna() {
+  if (WINS.luna) { WINS.luna.focus(); return; }
+  const win = new WinBox("🌙  LUNA", { width: "420px", height: "62%", x: "right", y: 60,
+    class: ["modern"], onclose: () => { delete WINS.luna; setOrb("idle"); return false; } });
+  WINS.luna = win;
+  const begruessung = LUNA_HISTORY.length ? "" : `<div class="msg luna">Hallo Nils 🌙 Wie kann ich helfen?</div>`;
+  const msgs = LUNA_HISTORY.map(m => `<div class="msg ${m.role}">${esc(m.text)}</div>`).join("");
+  win.body.innerHTML = `<div class="chat"><div class="chat-msgs" id="chat-msgs">${begruessung}${msgs}</div>
+    <form class="chat-form" id="chat-form"><input id="chat-in" placeholder="Schreib LUNA..." autocomplete="off"><button type="submit">➤</button></form></div>`;
+  const form = win.body.querySelector("#chat-form"), inp = win.body.querySelector("#chat-in");
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const t = inp.value.trim(); if (!t) return;
+    addMsg("user", t); inp.value = "";
+    try {
+      const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: t, history: LUNA_HISTORY }) });
+      const d = await r.json(); typeLuna(d.reply || "(keine Antwort)");
+    } catch { typeLuna("(Verbindungsfehler)"); }
+    inp.focus();
+  };
+  setOrb("listening"); setTimeout(() => inp.focus(), 50);
+}
+function addMsg(role, text) {
+  LUNA_HISTORY.push({ role, text });
+  const box = document.getElementById("chat-msgs"); if (!box) return;
+  const d = document.createElement("div"); d.className = "msg " + role; d.textContent = text;
+  box.appendChild(d); box.scrollTop = box.scrollHeight;
+}
+// LUNA "spricht": Text laeuft Zeichen fuer Zeichen ein, Orb zeigt solange die Sprech-Animation.
+function typeLuna(text) {
+  LUNA_HISTORY.push({ role: "luna", text });
+  const box = document.getElementById("chat-msgs");
+  const d = document.createElement("div"); d.className = "msg luna"; if (box) box.appendChild(d);
+  setOrb("speaking");
+  let i = 0;
+  (function step() {
+    if (d) d.textContent = text.slice(0, i);
+    if (box) box.scrollTop = box.scrollHeight;
+    if (i++ < text.length) setTimeout(step, 16);
+    else setOrb(WINS.luna ? "listening" : "idle");
+  })();
+}
+
 // ---- Start -----------------------------------------------------------------
 buildDock(); clock(); setInterval(clock, 1000);
+document.getElementById("luna-orb").onclick = openLuna;
 refresh().then(() => { openApp("auftraege"); });
 connectSSE();

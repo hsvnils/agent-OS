@@ -4,12 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LUNA OS</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=2">
   <script src="/static/vendor/winbox.bundle.min.js"></script>
 </head>
 <body>
   <div id="topbar">
-    <span class="brand">🌙 LUNA&nbsp;OS</span>
+    <div id="luna-orb" class="idle" title="LUNA — klick zum Reden">
+      <span class="orb-ring r1"></span><span class="orb-ring r2"></span><span class="orb-core"></span>
+    </div>
+    <span class="brand">LUNA&nbsp;OS</span>
     <span id="live" class="live">● live</span>
     <span id="clock"></span>
   </div>
@@ -21,6 +24,6 @@
     </div>
   </div>
   <div id="dock"></div>
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=2"></script>
 </body>
 </html>

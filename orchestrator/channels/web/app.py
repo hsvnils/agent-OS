@@ -154,11 +154,57 @@ async def loeschen(antrag_id: str):
 @app.post("/api/antraege/{antrag_id}/mehr-info")
 async def mehr_info(antrag_id: str):
     a = antraege.get(antrag_id) or {}
-    frage = f"Mehr Infos/Bewertung zum Antrag: {(a.get('titel') or antrag_id)[:80]}"
-    tid = research.erstellen(frage, abteilung="Head of Agents")
-    notifications.enqueue(f"Recherche zum Antrag beauftragt (Ticket {tid}).",
-                          abteilung="LUNA-OS", kategorie="research")
-    return JSONResponse({"ok": True, "ticket": tid, "state": _state()})
+    titel = (a.get("titel") or antrag_id)[:90]
+    # Agentisch: ein Fachagent bewertet den Antrag sofort (LLM) -> als Meldung; zusaetzlich Research-Ticket.
+    prompt = ("Du bist ein erfahrener Berater (CTO/CFO-Sicht) eines Agenten-Unternehmens. Bewerte den "
+              "folgenden Antrag KURZ (max. 5 Saetze): Nutzen, technische Machbarkeit, grobe Kosten, "
+              "Empfehlung (freigeben/ablehnen/nachschaerfen). Antwort auf Deutsch.\n\n"
+              f"Titel: {titel}\nBeschreibung: {(a.get('beschreibung') or '(keine)')[:1500]}")
+    bewertung = _llm([{"role": "user", "content": prompt}]) or "(Bewertung aktuell nicht verfuegbar.)"
+    tid = research.erstellen(f"Mehr Infos/Bewertung zum Antrag: {titel}", abteilung="Head of Agents")
+    notifications.enqueue(f"Agenten-Bewertung zu '{titel}': {bewertung}",
+                          abteilung="Berater/CTO/CFO", kategorie="bewertung", detail=bewertung)
+    return JSONResponse({"ok": True, "ticket": tid, "bewertung": bewertung, "state": _state()})
+
+
+LUNA_SYS = ("Du bist LUNA, der Head of Agents eines KI-Agenten-Unternehmens und Nils' persoenlicher "
+            "Assistent. Antworte kurz, hilfsbereit und auf Deutsch mit Umlauten (ae/oe/ue/ss vermeiden, "
+            "echte Umlaute nutzen). Du hilfst beim Bearbeiten von Antraegen, Meldungen und Aufgaben.")
+
+
+def _llm(messages):
+    """Ein LLM-Aufruf ueber Gemini (gratis) -> OpenAI-Fallback. Leck-geschuetzt. Leerer String bei Fehler."""
+    key = os.environ.get("GEMINI_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    if not key:
+        return ""
+    try:
+        import openai
+
+        from ...governance.leak_guard import is_redactable_secret, redact
+        from ...core.model_router import GEMINI_BASE_URL
+        base = GEMINI_BASE_URL if os.environ.get("GEMINI_API_KEY") else None
+        model = "gemini-2.5-flash" if base else "gpt-4o-mini"
+        client = openai.OpenAI(api_key=key, base_url=base)
+        r = client.chat.completions.create(model=model, messages=messages)
+        out = (r.choices[0].message.content or "").strip()[:1600]
+        sec = [v for v in os.environ.values() if is_redactable_secret(v)]
+        return redact(out, sec)
+    except Exception as exc:
+        return f"(LLM-Fehler: {str(exc)[:120]})"
+
+
+@app.post("/api/chat")
+async def chat(request: Request):
+    body = await _json(request)
+    msg = (body.get("message") or "").strip()
+    if not msg:
+        return JSONResponse({"reply": ""})
+    messages = [{"role": "system", "content": LUNA_SYS}]
+    for h in (body.get("history") or [])[-8:]:
+        rolle = "assistant" if h.get("role") == "luna" else "user"
+        messages.append({"role": rolle, "content": str(h.get("text", ""))[:1200]})
+    messages.append({"role": "user", "content": msg[:2000]})
+    return JSONResponse({"reply": _llm(messages) or "(Kein Modell verfuegbar.)"})
 
 
 @app.get("/api/events")

@@ -23,6 +23,45 @@ body {
   border-bottom: 1px solid rgba(255,255,255,.06);
 }
 #topbar .brand { font-weight: 700; letter-spacing: .3px; }
+
+/* LUNA-Orb (animiertes Mond-Symbol mit Zustaenden: idle / listening / speaking) */
+#luna-orb { position: relative; width: 26px; height: 26px; cursor: pointer; flex: 0 0 auto; }
+#luna-orb .orb-core {
+  position: absolute; inset: 4px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #eef2ff, #93c5fd 55%, #3b82f6 100%);
+  box-shadow: 0 0 8px 2px rgba(96,165,250,.7); transition: background .35s, box-shadow .35s;
+}
+#luna-orb .orb-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(96,165,250,.6); opacity: 0; }
+/* idle: ruhiges Atmen */
+#luna-orb.idle .orb-core { animation: orbBreathe 4s ease-in-out infinite; }
+@keyframes orbBreathe { 0%,100% { box-shadow: 0 0 6px 1px rgba(96,165,250,.5); transform: scale(1); }
+  50% { box-shadow: 0 0 13px 3px rgba(96,165,250,.85); transform: scale(1.06); } }
+/* listening: cyan, Ringe laufen NACH INNEN (LUNA hoert zu) */
+#luna-orb.listening .orb-core {
+  background: radial-gradient(circle at 35% 30%, #ccfbf1, #22d3ee 55%, #06b6d4 100%);
+  box-shadow: 0 0 13px 3px rgba(34,211,238,.95); }
+#luna-orb.listening .orb-ring { border-color: rgba(34,211,238,.85); animation: orbConverge 1.2s ease-out infinite; }
+#luna-orb.listening .orb-ring.r2 { animation-delay: .6s; }
+@keyframes orbConverge { 0% { transform: scale(2); opacity: 0; } 45% { opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
+/* speaking: gruen, Ringe laufen NACH AUSSEN + Puls (LUNA spricht) */
+#luna-orb.speaking .orb-core {
+  background: radial-gradient(circle at 35% 30%, #dcfce7, #4ade80 55%, #16a34a 100%);
+  box-shadow: 0 0 15px 4px rgba(74,222,128,.95); animation: orbPulse .5s ease-in-out infinite; }
+#luna-orb.speaking .orb-ring { border-color: rgba(74,222,128,.85); animation: orbEmanate 1s ease-out infinite; }
+#luna-orb.speaking .orb-ring.r2 { animation-delay: .5s; }
+@keyframes orbEmanate { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(2.1); opacity: 0; } }
+@keyframes orbPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
+/* LUNA-Chat */
+.chat { display: flex; flex-direction: column; height: 100%; }
+.chat-msgs { flex: 1; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.msg { max-width: 82%; padding: 8px 12px; border-radius: 13px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
+.msg.user { align-self: flex-end; background: var(--accent); color: #fff; }
+.msg.luna { align-self: flex-start; background: var(--card); border: 1px solid var(--line); }
+.chat-form { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--line); }
+.chat-form input { flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  color: var(--fg); padding: 9px 12px; font-size: 13px; outline: none; }
+.chat-form button { background: var(--accent); border: none; color: #fff; border-radius: 10px; padding: 0 14px; cursor: pointer; }
 #topbar .live { color: var(--ok); font-size: 12px; }
 #topbar .live.stale { color: var(--muted); }
 #topbar #clock { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
