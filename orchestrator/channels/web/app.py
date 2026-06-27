@@ -8,12 +8,15 @@ Start lokal:  python -m orchestrator.channels.web   (-> http://127.0.0.1:8765)
 """
 import asyncio
 import json
+import os
+import secrets
 import time
 from functools import partial
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 
 from ...core.antraege import Antraege
@@ -34,7 +37,22 @@ agenda = Agenda(ROOT / "agenda" / "log.jsonl")
 OFFEN = ("eingereicht", "freigegeben", "in_umsetzung")
 _RANG = {"eingereicht": 0, "freigegeben": 1, "in_umsetzung": 2}
 
-app = FastAPI(title="LUNA-OS")
+# Login-Schutz: nur aktiv, wenn LUNA_OS_PASSWORD gesetzt ist (auf dem NAS via .env). Lokal ohne Passwort offen.
+_USER = os.environ.get("LUNA_OS_USER", "ceo")
+_PW = os.environ.get("LUNA_OS_PASSWORD", "")
+_security = HTTPBasic(auto_error=False)
+
+
+def auth(cred: HTTPBasicCredentials = Depends(_security)):
+    if not _PW:
+        return
+    ok = cred and secrets.compare_digest(cred.username, _USER) and secrets.compare_digest(cred.password, _PW)
+    if not ok:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Login noetig",
+                            headers={"WWW-Authenticate": "Basic"})
+
+
+app = FastAPI(title="LUNA-OS", dependencies=[Depends(auth)])
 
 
 def _antrag_dto(a):

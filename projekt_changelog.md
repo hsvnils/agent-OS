@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 15:30] — Claude Code (LUNA-OS V2: NAS-Deploy + Login)
+- **Was:** LUNA-OS auf den NAS gebracht. (1) **HTTP-Basic-Login** in `channels/web/app.py` (LUNA_OS_USER/LUNA_OS_PASSWORD aus .env; nur aktiv wenn Passwort gesetzt -> lokal offen, NAS geschuetzt). (2) `deploy/Dockerfile`: fastapi==0.138 + uvicorn==0.49 ergaenzt. (3) `docker-compose.yml`: zweiter Dienst **luna-os** (gleiches Image+Volume+env_file, Befehl `python -m orchestrator.channels.web`, LUNA_OS_HOST=0.0.0.0, Port 8765:8765). (4) Login (User ceo, zufaelliges Passwort) in NAS-.env gesetzt (nicht im Chat). Deployt (--build). Verifiziert: luna-os Up, ohne Login 401, mit Login 200, Statik 200, Bot weiter gesund. **Zugriff LAN: http://192.168.178.129:8765**.
+- **Warum:** taegliche Arbeitsoberflaeche muss 24/7 ohne Terminal erreichbar sein.
+- **Betroffen:** orchestrator/channels/web/app.py, deploy/Dockerfile, deploy/docker-compose.yml, NAS-.env. Roadmap Phase 16 -> LIVE.
+- **Offen (V3):** HTTPS + extern (Synology Reverse-Proxy/Let's Encrypt), Chat-Panel, Mehr-Info agentisch.
+
 ## [2026-06-27 14:30] — Claude Code (Phase 16: LUNA-OS MVP)
 - **Was:** Neue Web-Arbeitsoberflaeche **LUNA-OS** (Desktop-aehnliches Browser-OS) -- Phase-16-MVP. Modul `orchestrator/channels/web`: FastAPI-Backend (`app.py`) ueber den echten Stores + statisches Frontend mit **WinBox.js** (Desktop, Top-Bar, Dock, draggbare Fenster). Apps: **Auftraege** (Live-Inbox offener Antraege als Evidenz-Karten mit Buttons Freigeben/Ablehnen/Loeschen/Mehr-Info), Meldungen, Aktivitaet, Research, Finanzen. Aktionen ueber die echten Antraege-Store-Methoden (Changelog + CEO-Tor); Mehr-Info erstellt ein Research-Ticket. Live-Updates per SSE (mtime). `core/antraege.py`: Status **geloescht** ergaenzt (auditierbar). Lokal verifiziert: Screenshot + alle 4 Aktionen HTTP 200; Orchestrator-Suite 163/163. Start: `python -m orchestrator.channels.web`. WinBox vendored (Apache-2.0). Recherche: AG-UI/Approval-Dashboard-Muster.
 - **Warum:** CEO will eine taegliche, OS-aehnliche Live-Arbeitsoberflaeche zum Bearbeiten von Antraegen.

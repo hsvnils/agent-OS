@@ -14,7 +14,8 @@ RUN apt-get update \
 #  - tzdata: Zeitzone Europe/Berlin fuer die Briefings (08:00/20:00)
 #  - openai: Multi-Provider-Fallback fuer den Chat (Anthropic zuerst, OpenAI bei Engpass)
 RUN pip install --no-cache-dir "claude-agent-sdk==0.2.107" "anthropic==0.111.0" \
-    "google-api-python-client==2.149.0" "google-auth==2.35.0" "tzdata" "openai"
+    "google-api-python-client==2.149.0" "google-auth==2.35.0" "tzdata" "openai" \
+    "fastapi==0.138.0" "uvicorn==0.49.0"
 
 ENV PYTHONUNBUFFERED=1
 # Git-Identitaet + safe.directory SYSTEMWEIT (/etc/gitconfig) -- gilt fuer JEDEN User, auch den

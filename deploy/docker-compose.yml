@@ -15,3 +15,23 @@ services:
       # Stellt die Keys auch in der Prozess-Umgebung bereit (die gebundelte CLI liest ANTHROPIC_API_KEY).
       - /volume1/docker/ki-unternehmen/orchestrator/.env
     restart: unless-stopped
+
+  # Phase 16: LUNA-OS -- Web-Arbeitsoberflaeche (gleiches Image + Volume, anderer Befehl + Port).
+  # Erreichbar im LAN unter http://<NAS-IP>:8765 (Login via LUNA_OS_PASSWORD in .env).
+  luna-os:
+    build: .
+    image: luna-telegram:latest
+    container_name: luna-os
+    working_dir: /app
+    command: ["python", "-m", "orchestrator.channels.web"]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LUNA_OS_HOST=0.0.0.0
+      - LUNA_OS_PORT=8765
+    ports:
+      - "8765:8765"
+    volumes:
+      - /volume1/docker/ki-unternehmen:/app
+    env_file:
+      - /volume1/docker/ki-unternehmen/orchestrator/.env
+    restart: unless-stopped

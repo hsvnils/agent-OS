@@ -27,7 +27,7 @@
 | 13 | Self-Development-Loop (Apex) | ✅ umgesetzt |
 | 14 | Freie Visualisierung (MindMap/Graph/Chart) | ✅ umgesetzt 2026-06-26 |
 | 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 live 2026-06-27 — funktioniert; „intelligenter machen" = Backlog (spaeter) |
-| 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | 🔄 in Umsetzung — **MVP lokal lauffaehig 2026-06-27** (Auftraege-Inbox + Buttons live); NAS-Deploy offen |
+| 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | ✅ **LIVE auf dem NAS 2026-06-27** (LAN-Zugriff + Login); HTTPS/extern + Chat-Panel offen |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
@@ -239,7 +239,11 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   Mehr-Info**), Meldungen, Aktivitaet, Research, Finanzen. Aktionen ueber die echten Store-Methoden
   (Changelog + CEO-Tor); Mehr-Info legt ein Research-Ticket an. Live per SSE. Lokal verifiziert (Screenshot,
   alle Aktionen ok). Start: `python -m orchestrator.channels.web`.
-- **Offen (V2):** NAS-Deployment (fastapi/uvicorn ins Image, Port, HTTPS, **Auth nur CEO**), LUNA-Chat-Panel,
+- **V2 (2026-06-27): NAS-Deployment LIVE.** Zweiter Compose-Dienst `luna-os` (gleiches Image, Befehl
+  `python -m orchestrator.channels.web`, Port **8765**), fastapi/uvicorn im Image, **HTTP-Basic-Login**
+  (LUNA_OS_USER/LUNA_OS_PASSWORD aus .env; nur aktiv wenn Passwort gesetzt). Verifiziert: ohne Login 401,
+  mit Login 200. **Zugriff im LAN: http://192.168.178.129:8765** (User `ceo`, Passwort in orchestrator/.env).
+- **Offen (V3):** HTTPS + externer Zugriff (Synology Reverse-Proxy + Let's Encrypt), LUNA-Chat-Panel im OS,
   Mehr-Info wirklich agentisch (delegate/funde_bewerten), Antrags-Detailansicht, mobil-Feinschliff.
 
 ## 5. Sicherheit & Kosten-Leitplanken (querschnittlich)
