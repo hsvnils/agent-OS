@@ -86,19 +86,55 @@ def clips_im_ordner(ordner: Path) -> list[Path]:
                   if p.is_file() and p.suffix.lower() in VIDEO_EXT and not p.name.startswith("."))
 
 
-def segment_normalisieren(quelle: Path, ziel: Path, *, start: float, dauer: float,
-                          hat_audio: bool, zoom: bool = False) -> bool:
-    """Schneidet [start, start+dauer], fuellt das 9:16-Format (Crop-to-Fill, kein Strecken), graded.
+def _schwarzrand_crop(quelle: Path, start: float, dauer: float) -> str | None:
+    """Erkennt eingebrannte schwarze Raender (cropdetect) -> 'crop=W:H:X:Y' oder None.
 
-    `zoom=True` legt einen sanften Ken-Burns-Zoom drueber (fuer B-Roll). Clips ohne Ton bekommen eine
-    stille Tonspur, damit die spaeteren Uebergaenge konsistente Streams haben.
+    Nur wenn wirklich ein Rand entfernt wird (>=4 % einer Dimension), damit nichts faelschlich
+    beschnitten wird. So fuellt der Inhalt nach dem Scale-to-Fill garantiert ohne schwarze Balken.
     """
+    info = probe(quelle)
+    if not info or not info.breite or not info.hoehe:
+        return None
+    mid = max(0.0, start + dauer / 2)
+    try:
+        r = subprocess.run(["ffmpeg", "-ss", f"{mid:.2f}", "-t", "2", "-i", str(quelle),
+                            "-vf", "cropdetect=limit=24:round=2:reset=0", "-f", "null", "-"],
+                           capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    crops = [line.split("crop=")[1].strip().split()[0]
+             for line in (r.stderr or "").splitlines() if "crop=" in line]
+    if not crops:
+        return None
+    try:
+        w, h, x, y = (int(v) for v in crops[-1].split(":"))
+    except ValueError:
+        return None
+    if w <= 0 or h <= 0:
+        return None
+    if h <= info.hoehe * 0.96 or w <= info.breite * 0.96:     # echter Rand vorhanden
+        return f"crop={w}:{h}:{x}:{y}"
+    return None
+
+
+def segment_normalisieren(quelle: Path, ziel: Path, *, start: float, dauer: float,
+                          hat_audio: bool, zoom: bool = False, randschnitt: bool = True) -> bool:
+    """Schneidet [start, start+dauer], entfernt schwarze Raender, fuellt 9:16 (Crop-to-Fill), graded.
+
+    `zoom=True` legt einen sanften Ken-Burns-Zoom drueber (fuer B-Roll). `randschnitt` entfernt
+    eingebrannte schwarze Balken vor dem Fuellen. Clips ohne Ton bekommen eine stille Tonspur.
+    """
+    vorfilter = ""
+    if randschnitt:
+        crop = _schwarzrand_crop(quelle, start, dauer)
+        if crop:
+            vorfilter = crop + ","
     cmd = ["ffmpeg", "-y", "-ss", f"{max(0.0, start):.3f}", "-t", f"{max(0.1, dauer):.3f}",
            "-i", str(quelle)]
     if not hat_audio:
         cmd += ["-f", "lavfi", "-t", f"{max(0.1, dauer):.3f}", "-i",
                 "anullsrc=channel_layout=stereo:sample_rate=44100"]
-    cmd += ["-vf", _vertikal_filter(zoom), "-r", str(FPS),
+    cmd += ["-vf", vorfilter + _vertikal_filter(zoom), "-r", str(FPS),
             "-map", "0:v:0", "-map", ("1:a:0" if not hat_audio else "0:a:0?"),
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-ar", "44100", "-ac", "2",
@@ -155,7 +191,8 @@ def zusammenfuegen_xfade(segmente: list[Path], ziel: Path, *, uebergang: float =
                      "-c:a", "aac", "-ar", "44100", "-ac", "2", "-movflags", "+faststart", str(ziel)])
 
     T = uebergang
-    typen = ["fade", "smoothleft", "slideup", "smoothright", "fadeblack"]
+    # Fester Uebergang fuer ALLE Schnitte: weiches Ueberblenden (Crossfade).
+    typ = "fade"
     dauern = [max(0.5, dauer_von(s)) for s in segmente]
     filters: list[str] = []
     # Video: xfade-Kette mit kumulativem Offset.
@@ -163,7 +200,7 @@ def zusammenfuegen_xfade(segmente: list[Path], ziel: Path, *, uebergang: float =
     for i in range(1, n):
         out = f"[v{i}]"
         offset = max(0.1, cum - T)
-        filters.append(f"{vlabel}[{i}:v]xfade=transition={typen[(i - 1) % len(typen)]}:"
+        filters.append(f"{vlabel}[{i}:v]xfade=transition={typ}:"
                        f"duration={T}:offset={offset:.3f}{out}")
         vlabel, cum = out, cum + dauern[i] - T
     # Audio: acrossfade-Kette.

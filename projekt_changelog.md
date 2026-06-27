@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 13:00] — Claude Code (Cutter: randlos + fester Ueberblenden-Uebergang)
+- **Was:** (1) **Schwarzrand-Entfernung**: `ffmpeg_ops._schwarzrand_crop` erkennt eingebrannte schwarze Balken per cropdetect und schneidet sie VOR dem Crop-to-Fill weg -> Inhalt fuellt 9:16 garantiert randlos (verifiziert: Letterbox-Clip -> ohne Balken). (2) **Fester Uebergang**: immer weiches Ueberblenden (xfade transition=fade) fuer ALLE Schnitte statt rotierender Effekte. segment_normalisieren bekam Param randschnitt. Tests 6/6.
+- **Warum:** CEO: keine schwarzen Raender (Inhalt muss fuellen), immer Ueberblenden als fester Effekt.
+- **Betroffen:** cutter/ffmpeg_ops.py, cutter/README.md.
+
 ## [2026-06-27 12:30] — Claude Code (Cutter: Telegram-Groessenlimit)
 - **Was:** `ffmpeg_ops.auf_groesse_begrenzen` -- Reel wird nach dem Schnitt auf <48 MB re-encodet, falls groesser (Telegram-Bot-sendVideo-Limit = 50 MB). In Pipeline eingehaengt. Grund: echter Test mit dem TEST-Ordner (7 HSV-Clips 1080p/4K -> 5 verwendet, 32s) ergab 57 MB -> Telegram-Versand schlug fehl. Nach Fix 46 MB, erfolgreich gesendet. Crop-to-Fill + Uebergaenge auf echtem Material visuell bestaetigt.
 - **Warum:** Reels (v. a. aus 4K-Quellen) ueberschreiten sonst das Telegram-Limit.

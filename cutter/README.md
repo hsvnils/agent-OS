@@ -10,10 +10,13 @@ ohne externe Dienste. Laeuft lokal auf dem Mac. **Posten bleibt CEO-Tor** (der C
   - **B-Roll:** ein praegnanter Ausschnitt, Ton leise (Musik kommst du in Instagram dazu).
 - **Untertitel: standardmaessig AUS** (CEO-Wunsch). Optional mit `--mit-untertitel` (Einbrennen braucht
   ffmpeg mit libass; sonst `.srt` daneben).
+- **Schwarzrand-Entfernung:** eingebrannte schwarze Balken werden per `cropdetect` erkannt und vor dem
+  Fuellen weggeschnitten — der Inhalt fuellt das Bild garantiert randlos.
 - **Crop-to-Fill auf 9:16:** Querformat-Clips werden vergroessert und mittig beschnitten, sodass sie das
   Hochformat **ganz fuellen** — kein Strecken, keine schwarzen/unscharfen Balken.
 - **Effekte:** dezenter Farb-Grade (mehr Kontrast/Saettigung) + sanfter Ken-Burns-Zoom auf B-Roll.
-- **Uebergaenge:** weiche `xfade`-Uebergaenge (Crossfade/Smooth-Slides) + Audio-Crossfade zwischen den Clips.
+- **Uebergaenge:** fester, weicher **Crossfade (Ueberblenden)** zwischen allen Clips + Audio-Crossfade.
+- **Groesse:** Reel wird automatisch unter 50 MB gehalten (Telegram-Versand-Limit).
 - Lautheit normalisiert (loudnorm).
 - **Gemini** (gratis) ordnet die Clips zu einer stimmigen Reihenfolge (Hook zuerst).
 
