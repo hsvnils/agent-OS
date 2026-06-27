@@ -243,8 +243,13 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   `python -m orchestrator.channels.web`, Port **8765**), fastapi/uvicorn im Image, **HTTP-Basic-Login**
   (LUNA_OS_USER/LUNA_OS_PASSWORD aus .env; nur aktiv wenn Passwort gesetzt). Verifiziert: ohne Login 401,
   mit Login 200. **Zugriff im LAN: http://192.168.178.129:8765** (User `ceo`, Passwort in orchestrator/.env).
-- **Offen (V3):** HTTPS + externer Zugriff (Synology Reverse-Proxy + Let's Encrypt), LUNA-Chat-Panel im OS,
-  Mehr-Info wirklich agentisch (delegate/funde_bewerten), Antrags-Detailansicht, mobil-Feinschliff.
+- **V3 (2026-06-27, teilweise):** ✅ **LUNA-Chat-Panel** im OS (animiertes Mond-Symbol mit Zustaenden
+  idle/listening/speaking; Klick -> Chat ueber `/api/chat`, Gemini). ✅ **Agentisches „Mehr Info"**
+  (LLM-Berater bewertet den Antrag sofort -> Meldung). 🔲 **HTTPS + externer Zugriff offen** (Synology
+  Reverse-Proxy + Let's Encrypt auf z. B. `https://os.hanserautisch.synology.me` -> localhost:8765; DSM-GUI-
+  Schritt, schaltet zugleich **Mikrofon/Sprach-Eingabe** fuer den Orb frei, da Browser dafuer HTTPS braucht).
+- **Offen (spaeter):** echte Sprach-Eingabe (Mikrofon) + TTS am Orb (nach HTTPS), Antrags-Detailansicht,
+  mobil-Feinschliff, „Mehr Info" via voll-tool-faehigem HoaConversation statt einfachem LLM-Call.
 
 ## 5. Sicherheit & Kosten-Leitplanken (querschnittlich)
 
