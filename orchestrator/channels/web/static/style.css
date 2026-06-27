@@ -195,8 +195,18 @@ body {
 .app.detail h3 { font-size: 11px; color: var(--cyan); margin: 16px 0 7px; text-transform: uppercase;
   letter-spacing: 1.5px; font-family: var(--mono); }
 
-/* LUNA-Chat */
+/* LUNA-Chat + Voice-Leiste */
 .chat { display: flex; flex-direction: column; height: 100%; }
+.voice-bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-bottom: 1px solid var(--line); background: rgba(6, 12, 30, .5); }
+.voice-bar #voice-toggle { background: linear-gradient(160deg, #7df0ff, var(--cyan)); color: #04121a;
+  border: none; border-radius: 999px; padding: 8px 14px; font-weight: 800; font-size: 12.5px; cursor: pointer;
+  white-space: nowrap; box-shadow: 0 0 14px rgba(46, 230, 255, .4); transition: filter .15s; }
+.voice-bar #voice-toggle:hover { filter: brightness(1.08); }
+.voice-bar #voice-toggle.on { background: linear-gradient(160deg, #ff8aa1, var(--red)); color: #fff;
+  box-shadow: 0 0 14px rgba(255, 92, 122, .45); }
+.voice-bar .voice-status { color: var(--muted); font-size: 12px; font-family: var(--mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-msgs { flex: 1; overflow: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .msg { max-width: 82%; padding: 9px 13px; border-radius: 14px; font-size: 13.5px; line-height: 1.5; white-space: pre-wrap; }
 .msg.user { align-self: flex-end; background: linear-gradient(160deg, #1d7bff, #0b5ed8); color: #fff;

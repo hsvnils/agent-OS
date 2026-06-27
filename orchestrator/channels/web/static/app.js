@@ -194,99 +194,153 @@ function connectSSE() {
   } catch { /* Polling-Fallback */ setInterval(refresh, 5000); }
 }
 
-// ---- Sprache (Web Speech API, browser-nativ; braucht HTTPS oder localhost) --
+// ---- Live-Gespraech mit LUNA (Browser-Ohren + ElevenLabs-Stimme) -----------
+// Der Orb ist die SPRECHENDE Live-LUNA: antippen -> freihaendiges Gespraech (du sprichst,
+// die echte LUNA mit Tools/Persona antwortet gesprochen). Der Tipp-Chat ist die Rueckfallebene.
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-const SPEECH = { canListen: !!SR, canSpeak: "speechSynthesis" in window, tts: false, rec: null, hoeren: false };
+const SPEECH = { canListen: !!SR, canSpeak: "speechSynthesis" in window };
+const VOICE = { active: false, rec: null, audio: null };
+const LUNA_HISTORY = [];
 
-function toggleDictation(inp, form) {
-  if (SPEECH.hoeren) { try { SPEECH.rec.stop(); } catch {} return; }
-  const rec = new SR();
+function setOrb(s) { const o = document.getElementById("luna-orb"); if (o) o.className = s; }
+function voiceStatus(t) { const el = document.getElementById("voice-status"); if (el) el.textContent = t; }
+function voiceToggleUI() { const b = document.getElementById("voice-toggle");
+  if (b) { b.classList.toggle("on", VOICE.active); b.textContent = VOICE.active ? "⏹ Gespräch beenden" : "🎙️ Gespräch starten"; } }
+
+function stopAudio() {
+  try { if (VOICE.audio) { VOICE.audio.pause(); VOICE.audio = null; } } catch {}
+  try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch {}
+}
+
+// LUNA spricht: erst ElevenLabs (/api/tts) probieren, sonst Browser-Stimme. Danach im Gespraech weiter zuhoeren.
+async function lunaSpeak(text) {
+  setOrb("speaking"); voiceStatus("LUNA spricht…");
+  let gesprochen = false;
+  try {
+    const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }) });
+    if (r.ok && (r.headers.get("content-type") || "").includes("audio")) {
+      const url = URL.createObjectURL(await r.blob());
+      await new Promise((res) => {
+        const a = new Audio(url); VOICE.audio = a;
+        a.onended = a.onerror = () => { URL.revokeObjectURL(url); if (VOICE.audio === a) VOICE.audio = null; res(); };
+        a.play().catch(() => res());
+      });
+      gesprochen = true;
+    }
+  } catch { /* Netz/Fehler -> Browser-Stimme */ }
+  if (!gesprochen && SPEECH.canSpeak) {
+    await new Promise((res) => {
+      try { window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text); u.lang = "de-DE"; u.rate = 1.04;
+        const v = window.speechSynthesis.getVoices().find(x => x.lang && x.lang.startsWith("de"));
+        if (v) u.voice = v; u.onend = u.onerror = res; window.speechSynthesis.speak(u);
+      } catch { res(); }
+    });
+  }
+  if (VOICE.active) startListening(); else setOrb(WINS.luna ? "listening" : "idle");
+}
+
+// Eine Hoer-Runde: nimmt einen gesprochenen Satz auf und schickt ihn an LUNA.
+function startListening() {
+  if (!VOICE.active || !SR) return;
+  stopAudio();
+  let rec; try { rec = new SR(); } catch { return; }
   rec.lang = "de-DE"; rec.interimResults = true; rec.continuous = false;
-  SPEECH.rec = rec; SPEECH.hoeren = true;
-  setOrb("listening");
-  const mic = document.getElementById("chat-mic"); if (mic) mic.classList.add("on");
-  rec.onresult = (e) => { inp.value = Array.from(e.results).map(r => r[0].transcript).join(""); };
+  VOICE.rec = rec; setOrb("listening"); voiceStatus("Ich höre…");
+  let text = "";
+  rec.onresult = (e) => { text = Array.from(e.results).map(r => r[0].transcript).join(""); voiceStatus(text || "Ich höre…"); };
   rec.onerror = () => {};
   rec.onend = () => {
-    SPEECH.hoeren = false;
-    if (mic) mic.classList.remove("on");
-    setOrb(WINS.luna ? "listening" : "idle");
-    if (inp.value.trim()) form.requestSubmit();  // gesprochenen Satz direkt abschicken
+    VOICE.rec = null;
+    if (!VOICE.active) return;
+    const t = text.trim();
+    if (t) sendeAnLuna(t, true);   // -> LUNA antwortet + spricht -> danach wieder zuhoeren
+    else startListening();          // Stille: weiter zuhoeren
   };
-  try { rec.start(); } catch { SPEECH.hoeren = false; }
+  try { rec.start(); } catch { /* evtl. schon aktiv */ }
 }
 
-function speak(text) {
-  if (!SPEECH.tts || !SPEECH.canSpeak || !text) return;
-  try {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "de-DE"; u.rate = 1.05;
-    const v = window.speechSynthesis.getVoices().find(x => x.lang && x.lang.startsWith("de"));
-    if (v) u.voice = v;
-    window.speechSynthesis.speak(u);
-  } catch {}
+function startVoice() {
+  if (!SR) { addMsg("luna", "Sprach-Eingabe braucht HTTPS und einen unterstützten Browser (Chrome/Safari)."); return; }
+  VOICE.active = true; voiceToggleUI(); startListening();
 }
-
-// ---- LUNA-Orb + Chat -------------------------------------------------------
-const LUNA_HISTORY = [];
-function setOrb(s) { const o = document.getElementById("luna-orb"); if (o) o.className = s; }
+function stopVoice() {
+  VOICE.active = false; stopAudio();
+  try { VOICE.rec && VOICE.rec.stop(); } catch {}
+  VOICE.rec = null; setOrb(WINS.luna ? "listening" : "idle");
+  voiceStatus("Gespräch pausiert — Orb antippen zum Weitersprechen."); voiceToggleUI();
+}
+function toggleVoice() {
+  if (!WINS.luna) openLuna(); else WINS.luna.focus();
+  if (VOICE.active) stopVoice(); else startVoice();
+}
 
 function openLuna() {
   if (WINS.luna) { WINS.luna.focus(); return; }
-  const win = new WinBox("🌙  LUNA", { ...(istMobil() ? winGeom() : { width: "420px", height: "62%", x: "right", y: 60 }),
-    class: ["modern"], onclose: () => { delete WINS.luna; setOrb("idle"); return false; } });
+  const win = new WinBox("🌙  LUNA", { ...(istMobil() ? winGeom() : { width: "440px", height: "64%", x: "right", y: 60 }),
+    class: ["modern"], onclose: () => { delete WINS.luna; stopVoice(); setOrb("idle"); return false; } });
   WINS.luna = win;
-  const begruessung = LUNA_HISTORY.length ? "" : `<div class="msg luna">Hallo Nils 🌙 Wie kann ich helfen?</div>`;
+  const begruessung = LUNA_HISTORY.length ? "" : `<div class="msg luna">Hallo Nils 🌙 Tippe oben auf „Gespräch starten" und sprich mit mir — oder schreib unten.</div>`;
   const msgs = LUNA_HISTORY.map(m => `<div class="msg ${m.role}">${esc(m.text)}</div>`).join("");
-  const micBtn = SPEECH.canListen ? `<button type="button" id="chat-mic" title="Sprechen (Mikrofon)">🎤</button>` : "";
-  const ttsBtn = SPEECH.canSpeak ? `<button type="button" id="chat-tts" class="${SPEECH.tts ? "on" : ""}" title="LUNA spricht Antworten vor">🔊</button>` : "";
-  win.body.innerHTML = `<div class="chat"><div class="chat-msgs" id="chat-msgs">${begruessung}${msgs}</div>
-    <form class="chat-form" id="chat-form">${micBtn}<input id="chat-in" placeholder="Schreib LUNA..." autocomplete="off">${ttsBtn}<button type="submit">➤</button></form></div>`;
+  const voiceBtn = SPEECH.canListen
+    ? `<button type="button" id="voice-toggle" class="${VOICE.active ? "on" : ""}">${VOICE.active ? "⏹ Gespräch beenden" : "🎙️ Gespräch starten"}</button>`
+    : `<span class="voice-status">Sprache braucht HTTPS + Chrome/Safari</span>`;
+  win.body.innerHTML = `<div class="chat">
+    <div class="voice-bar">${voiceBtn}<span id="voice-status" class="voice-status">${VOICE.active ? "Ich höre…" : "Sprich mit LUNA oder tippe."}</span></div>
+    <div class="chat-msgs" id="chat-msgs">${begruessung}${msgs}</div>
+    <form class="chat-form" id="chat-form"><input id="chat-in" placeholder="Schreib LUNA..." autocomplete="off"><button type="submit">➤</button></form></div>`;
   const form = win.body.querySelector("#chat-form"), inp = win.body.querySelector("#chat-in");
-  const mic = win.body.querySelector("#chat-mic"); if (mic) mic.onclick = () => toggleDictation(inp, form);
-  const tts = win.body.querySelector("#chat-tts");
-  if (tts) tts.onclick = () => { SPEECH.tts = !SPEECH.tts; tts.classList.toggle("on", SPEECH.tts); if (!SPEECH.tts) window.speechSynthesis.cancel(); };
-  form.onsubmit = async (e) => {
+  const vt = win.body.querySelector("#voice-toggle"); if (vt) vt.onclick = toggleVoice;
+  form.onsubmit = (e) => {
     e.preventDefault();
     const t = inp.value.trim(); if (!t) return;
-    addMsg("user", t); inp.value = "";
-    // Kontext-Befehl? ("zeig mir die Aufträge") -> App einblenden statt LLM zu fragen.
-    const app = versucheKontextBefehl(t);
-    if (app) { typeLuna(`Zeige dir „${app}". 🌙`); inp.focus(); return; }
-    try {
-      const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: t, history: LUNA_HISTORY }) });
-      const d = await r.json(); typeLuna(d.reply || "(keine Antwort)");
-    } catch { typeLuna("(Verbindungsfehler)"); }
+    inp.value = "";
+    sendeAnLuna(t, VOICE.active);  // getippt: nur sprechen, wenn Gespraech aktiv
     inp.focus();
   };
-  setOrb("listening"); setTimeout(() => inp.focus(), 50);
+  if (!VOICE.active) setOrb("idle");
+  setTimeout(() => inp.focus(), 50);
 }
+
+// Schickt eine Nutzer-Aeusserung an LUNA. sprich=true -> Antwort wird gesprochen (+ Gespraech laeuft weiter).
+async function sendeAnLuna(text, sprich) {
+  addMsg("user", text);
+  // Kontext-Befehl? ("zeig mir die Aufträge") -> App einblenden, auch per Sprache.
+  const app = versucheKontextBefehl(text);
+  if (app) { const s = `Zeige dir „${app}".`; typeLunaText(s); if (sprich) lunaSpeak(s); else setOrb(WINS.luna ? "listening" : "idle"); return; }
+  setOrb("speaking"); voiceStatus("LUNA denkt…");
+  let reply = "(keine Antwort)";
+  try {
+    const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, history: LUNA_HISTORY }) });
+    reply = (await r.json()).reply || reply;
+  } catch { reply = "(Verbindungsfehler)"; }
+  typeLunaText(reply);
+  if (sprich) lunaSpeak(reply); else setOrb(WINS.luna ? "listening" : "idle");
+}
+
 function addMsg(role, text) {
   LUNA_HISTORY.push({ role, text });
   const box = document.getElementById("chat-msgs"); if (!box) return;
   const d = document.createElement("div"); d.className = "msg " + role; d.textContent = text;
   box.appendChild(d); box.scrollTop = box.scrollHeight;
 }
-// LUNA "spricht": Text laeuft Zeichen fuer Zeichen ein, Orb zeigt solange die Sprech-Animation.
-function typeLuna(text) {
+// Rendert LUNAs Antwort im Chat (Schreibmaschinen-Effekt). Das SPRECHEN macht lunaSpeak separat.
+function typeLunaText(text) {
   LUNA_HISTORY.push({ role: "luna", text });
   const box = document.getElementById("chat-msgs");
   const d = document.createElement("div"); d.className = "msg luna"; if (box) box.appendChild(d);
-  setOrb("speaking");
-  speak(text);  // wenn TTS aktiv: LUNA spricht die Antwort vor
   let i = 0;
   (function step() {
     if (d) d.textContent = text.slice(0, i);
     if (box) box.scrollTop = box.scrollHeight;
-    if (i++ < text.length) setTimeout(step, 16);
-    else setOrb(WINS.luna ? "listening" : "idle");
+    if (i++ < text.length) setTimeout(step, 14);
   })();
 }
 
 // ---- Start -----------------------------------------------------------------
 buildDock(); clock(); setInterval(clock, 1000);
-document.getElementById("luna-orb").onclick = openLuna;
+document.getElementById("luna-orb").onclick = toggleVoice;  // Orb antippen = Live-Gespraech starten/stoppen
 refresh().then(() => { openApp("auftraege"); });
 connectSSE();

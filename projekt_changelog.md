@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 21:15] — Claude Code (LUNA-OS: Live-Voice-LUNA am Orb mit ElevenLabs-Stimme)
+- **Was:** Der Mond-Orb ist jetzt die **sprechende Live-LUNA** (CEO-Prioritaet vor dem Tipp-Chat). Orb antippen
+  -> freihaendiges Sprach-Gespraech: Browser-Ohren (Web Speech `SpeechRecognition`, de-DE, kontinuierliche
+  Hoer-/Antwort-Schleife) + **ElevenLabs-Premium-Stimme** fuer LUNAs Antworten. Backend:
+  (1) **`/api/chat` nutzt jetzt die VOLLE LUNA** (`HoaConversation` mit Persona + Tools + Verlauf, persistente
+  Sitzung) statt einfachem Gemini-Call -- der Orb spricht mit derselben LUNA wie Telegram (Fallback: einfacher
+  Persona-LLM ohne Anthropic-Key). (2) **Neuer `/api/tts`** -> ElevenLabs (`eleven_turbo_v2_5`, Stimme aus
+  voice/voices.py `get_selected_voice_id`, Default „Niklas"/Jarvis; via `LUNA_OS_VOICE_ID` ueberschreibbar);
+  liefert MP3, 503/502 -> Frontend faellt auf Browser-Stimme zurueck. ElevenLabs-Key aus .env (`_secret`,
+  unabhaengig vom Anthropic-Zugang). Frontend: Voice-Leiste mit „Gespraech starten/beenden", Orb-Klick =
+  toggleVoice, Barge-/Stopp ueber Orb; Kontext-Sprachbefehle bleiben. Tipp-Chat als Rueckfallebene. Cache-Bust ?v=5.
+- **Warum:** CEO: „ueber den Orb die LIVE-LUNA, die sprachlich antwortet und mit der ich ein Gespraech fuehre"
+  hat Prioritaet; Stimmenwahl = ElevenLabs (vorhandenes Abo). Verifiziert im Preview: `/api/tts` liefert MP3
+  (ElevenLabs), `/api/chat` antwortet als echte LUNA mit Tool-Daten („0 offene Auftraege"), Voice-Fenster
+  rendert, keine Konsolenfehler. Mikrofon-Aufnahme nur auf echtem Geraet/HTTPS testbar. Suite 163/163.
+- **Betroffen:** orchestrator/channels/web/app.py, .../static/{app.js,style.css,index.html}.
+
 ## [2026-06-27 20:30] — Claude Code (LUNA-OS V3 deployt + HTTPS/externer Zugriff LIVE)
 - **Was:** (1) V3-Commits (b94a1d3 Features, dbda8f3 Umlaute/Design/Sprach-Kontext) per sync-to-nas.sh auf den
   NAS deployt (Code volume-gemountet -> Frontend sofort live; luna-os-Container vom CEO in DSM neu gestartet

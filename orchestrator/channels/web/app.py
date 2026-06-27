@@ -15,7 +15,7 @@ from functools import partial
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 
@@ -169,34 +169,78 @@ async def loeschen(antrag_id: str):
     return JSONResponse({"ok": ok, "state": _state()})
 
 
-_HOA_CACHE: dict = {}
+_CTX_CACHE: dict = {}
+_SECRETS_CACHE: dict = {}
+_LUNA_SESSION: dict = {}
 
 
-def _hoa_conversation():
-    """Lazy + gecachte volle HoaConversation (echte Tool-Schleife: delegate CTO/CFO, recherche...).
+def _secret(name: str) -> str:
+    """Liest einen Wert aus orchestrator/.env (gecacht). Unabhaengig vom Anthropic-Zugang --
+    damit z. B. ElevenLabs-TTS auch dann geht, wenn die volle LUNA mangels Anthropic-Key ausfaellt."""
+    if "d" not in _SECRETS_CACHE:
+        try:
+            from ..telegram.bot import _load_secrets
+            _SECRETS_CACHE["d"] = _load_secrets()
+        except Exception:
+            _SECRETS_CACHE["d"] = {}
+    return _SECRETS_CACHE["d"].get(name) or os.environ.get(name, "")
 
-    Reused die Verdrahtung aus dem Telegram-Kanal. Liefert None, wenn kein Anthropic-Key/keine
-    Abhaengigkeiten vorhanden sind (z. B. lokal) -> Aufrufer faellt auf den einfachen LLM-Call zurueck.
-    """
-    if "conv" in _HOA_CACHE:
-        return _HOA_CACHE["conv"]
+
+def _ctx_cached():
+    """Baut den vollen LUNA-Werkzeugkontext EINMAL (schwer) und cacht ihn. None ohne Anthropic-Key."""
+    if "ctx" in _CTX_CACHE:
+        return _CTX_CACHE["ctx"]
     try:
-        from ..telegram.bot import _build_ctx, _fallbacks, _load_config, _load_secrets
-        from ...core.hoa_conversation import HoaConversation
+        from ..telegram.bot import _build_ctx, _load_config, _load_secrets
         cfg = _load_config()
         secrets = _load_secrets()
         if not secrets.get("ANTHROPIC_API_KEY"):
-            _HOA_CACHE["conv"] = None
+            _CTX_CACHE["ctx"] = None
             return None
         ctx, _ = _build_ctx(cfg, secrets)
-        model = cfg.get("voice", {}).get("llm_model", "claude-haiku-4-5")
-        conv = HoaConversation(ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"],
-                               fallbacks=_fallbacks(secrets, cfg))
-        _HOA_CACHE["conv"] = conv
-        return conv
+        _CTX_CACHE.update(ctx=ctx, cfg=cfg, secrets=secrets)
+        return ctx
     except Exception as exc:
-        print(f"[mehr-info] HoaConversation nicht verfuegbar, Fallback auf LLM: {exc}", flush=True)
-        _HOA_CACHE["conv"] = None
+        print(f"[luna] Voller Kontext nicht verfuegbar, Fallback auf einfachen LLM: {exc}", flush=True)
+        _CTX_CACHE["ctx"] = None
+        return None
+
+
+def _make_conversation():
+    """Frische HoaConversation aus dem gecachten Kontext (echte Tool-Schleife). None ohne Kontext.
+    Frisch = kein geteilter Verlauf -> fuer Einmal-Aufgaben (z. B. Mehr-Info)."""
+    ctx = _ctx_cached()
+    if ctx is None:
+        return None
+    from ..telegram.bot import _fallbacks
+    from ...core.hoa_conversation import HoaConversation
+    cfg, secrets = _CTX_CACHE["cfg"], _CTX_CACHE["secrets"]
+    model = cfg.get("voice", {}).get("llm_model", "claude-haiku-4-5")
+    return HoaConversation(ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"],
+                           fallbacks=_fallbacks(secrets, cfg))
+
+
+def _luna_session():
+    """Persistente LUNA-Gespraechssitzung fuer den Orb/Chat (haelt den Verlauf). None ohne Kontext."""
+    if "conv" not in _LUNA_SESSION:
+        _LUNA_SESSION["conv"] = _make_conversation()
+    return _LUNA_SESSION["conv"]
+
+
+def _elevenlabs_tts(text: str, voice_id: str, key: str):
+    """Spricht Text mit ElevenLabs (eleven_turbo_v2_5) -> MP3-Bytes. None bei Fehler."""
+    import urllib.request
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_128"
+    payload = json.dumps({"text": text, "model_id": "eleven_turbo_v2_5",
+                          "voice_settings": {"stability": 0.5, "similarity_boost": 0.75}}).encode()
+    req = urllib.request.Request(url, data=payload, method="POST",
+                                 headers={"xi-api-key": key, "Content-Type": "application/json",
+                                          "Accept": "audio/mpeg"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.read()
+    except Exception as exc:
+        print(f"[tts] ElevenLabs-Fehler: {str(exc)[:160]}", flush=True)
         return None
 
 
@@ -205,7 +249,7 @@ async def mehr_info(antrag_id: str):
     a = antraege.get(antrag_id) or {}
     titel = (a.get("titel") or antrag_id)[:90]
     beschreibung = (a.get("beschreibung") or "(keine)")[:1500]
-    conv = _hoa_conversation()
+    conv = _make_conversation()
     if conv is not None:
         # Voll-agentisch: LUNA bewertet mit echten Werkzeugen (delegate an CTO/CFO, recherche_beauftragen).
         auftrag = (
@@ -265,12 +309,40 @@ async def chat(request: Request):
     msg = (body.get("message") or "").strip()
     if not msg:
         return JSONResponse({"reply": ""})
+    # Echte LUNA: volle HoaConversation (Persona + Tools + Verlauf). Der Orb spricht so mit der
+    # gleichen LUNA wie Telegram. Fallback: einfacher Persona-LLM-Call ohne Anthropic-Key.
+    conv = _luna_session()
+    if conv is not None:
+        try:
+            reply = await asyncio.to_thread(conv.respond, msg[:2000])
+            return JSONResponse({"reply": reply or "(keine Antwort)"})
+        except Exception as exc:
+            print(f"[luna chat] Fehler, Fallback auf einfachen LLM: {exc}", flush=True)
     messages = [{"role": "system", "content": LUNA_SYS}]
     for h in (body.get("history") or [])[-8:]:
         rolle = "assistant" if h.get("role") == "luna" else "user"
         messages.append({"role": rolle, "content": str(h.get("text", ""))[:1200]})
     messages.append({"role": "user", "content": msg[:2000]})
     return JSONResponse({"reply": _llm(messages) or "(Kein Modell verfügbar.)"})
+
+
+@app.post("/api/tts")
+async def tts(request: Request):
+    """Spricht Text mit LUNAs ElevenLabs-Stimme (Premium). Liefert MP3. 503/502, wenn nicht
+    verfuegbar -> das Frontend faellt dann auf die Browser-Stimme zurueck."""
+    body = await _json(request)
+    text = (body.get("text") or "").strip()
+    if not text:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "kein Text")
+    key = _secret("ELEVENLABS_API_KEY")
+    if not key:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "TTS nicht konfiguriert")
+    from ..voice.voices import get_selected_voice_id
+    voice_id = _secret("LUNA_OS_VOICE_ID") or get_selected_voice_id()
+    audio = await asyncio.to_thread(_elevenlabs_tts, text[:1500], voice_id, key)
+    if not audio:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "TTS fehlgeschlagen")
+    return Response(content=audio, media_type="audio/mpeg")
 
 
 @app.get("/api/events")
