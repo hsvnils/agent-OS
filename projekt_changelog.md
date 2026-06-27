@@ -17,10 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-06-27 11:49] — Researcher
-- **Was:** Research-Ticket angelegt (R-20260627-114913-4f0c): Mehr Infos/Bewertung zum Antrag: Social-Media Trend-Radar (T
-- **Warum:** angefragt von Head of Agents
-- **Betroffen:** R-20260627-114913-4f0c
+## [2026-06-27 16:30] — Claude Code (LUNA-OS: animierter Orb + Chat + agentisches Mehr-Info)
+- **Was:** (1) **Animiertes LUNA-Mond-Symbol** in der Top-Bar mit drei Zustaenden: idle (atmende Mondsichel),
+  **listening** (cyan, Ringe nach innen = LUNA hoert zu), **speaking** (gruen, Ringe nach aussen + Puls = LUNA
+  spricht). Klick -> LUNA-**Chat-Fenster**. (2) **/api/chat** (LUNA-Persona ueber Gemini, leck-geschuetzt);
+  Antwort laeuft als Schreibmaschine ein, Orb zeigt solange 'speaking'. (3) **Agentisches 'Mehr Info'**:
+  mehr-info ruft jetzt einen LLM-Berater (CTO/CFO-Sicht), der den Antrag sofort kurz bewertet -> als Meldung
+  + Research-Ticket. (4) Asset-Versionierung (?v=2) gegen Browser-Cache. Lokal verifiziert: Chat antwortet,
+  Bewertung sinnvoll, alle 3 Orb-Zustaende gerendert (Screenshots). Deployt auf NAS.
+- **Warum:** CEO will ein lebendiges LUNA-Symbol (Zuhoeren/Sprechen sichtbar) + Chat im OS.
+- **Betroffen:** orchestrator/channels/web/app.py + static/{index.html,style.css,app.js}.
+- **Hinweis:** Echte Sprach-Eingabe (Mikrofon) braucht HTTPS (Browser-Sicherheitskontext) -> mit V3
+  (Reverse-Proxy). Aktuell Text-Chat; die Orb-Zustaende sind schon voll funktionsfaehig.
 
 ## [2026-06-27 15:30] — Claude Code (LUNA-OS V2: NAS-Deploy + Login)
 - **Was:** LUNA-OS auf den NAS gebracht. (1) **HTTP-Basic-Login** in `channels/web/app.py` (LUNA_OS_USER/LUNA_OS_PASSWORD aus .env; nur aktiv wenn Passwort gesetzt -> lokal offen, NAS geschuetzt). (2) `deploy/Dockerfile`: fastapi==0.138 + uvicorn==0.49 ergaenzt. (3) `docker-compose.yml`: zweiter Dienst **luna-os** (gleiches Image+Volume+env_file, Befehl `python -m orchestrator.channels.web`, LUNA_OS_HOST=0.0.0.0, Port 8765:8765). (4) Login (User ceo, zufaelliges Passwort) in NAS-.env gesetzt (nicht im Chat). Deployt (--build). Verifiziert: luna-os Up, ohne Login 401, mit Login 200, Statik 200, Bot weiter gesund. **Zugriff LAN: http://192.168.178.129:8765**.
