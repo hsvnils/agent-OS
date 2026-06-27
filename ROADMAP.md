@@ -244,18 +244,29 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   `python -m orchestrator.channels.web`, Port **8765**), fastapi/uvicorn im Image, **HTTP-Basic-Login**
   (LUNA_OS_USER/LUNA_OS_PASSWORD aus .env; nur aktiv wenn Passwort gesetzt). Verifiziert: ohne Login 401,
   mit Login 200. **Zugriff im LAN: http://192.168.178.129:8765** (User `ceo`, Passwort in orchestrator/.env).
-- **V3 (2026-06-27, fast komplett):** ✅ **LUNA-Chat-Panel** im OS (animiertes Mond-Symbol mit Zustaenden
+- **V3 (2026-06-27):** ✅ **LUNA-Chat-Panel** im OS (animiertes Mond-Symbol mit Zustaenden
   idle/listening/speaking; Klick -> Chat ueber `/api/chat`, Gemini). ✅ **Antrags-Detailansicht**
   (`GET /api/antraege/{id}` + Detail-Fenster mit vollem Verlauf/Evidenz). ✅ **Mobil-Feinschliff** (Fenster
   vollflaechig auf schmalen Screens, Dock voll breit, Touch-Buttons; Chat-Eingabe nicht mehr hinterm Dock).
   ✅ **Mikrofon-Eingabe + TTS am Orb** (Web Speech API, browser-nativ -- diktieren + Vorlesen; aktiv auf
   localhost/HTTPS). ✅ **„Mehr Info" agentisch** ueber die volle HoaConversation (echte Tool-Schleife:
   delegate CTO/CFO + recherche_beauftragen; Fallback auf einfachen LLM-Call ohne Anthropic-Key).
-  🔲 **HTTPS + externer Zugriff offen** (Synology Reverse-Proxy + Let's Encrypt auf z. B.
-  `https://os.hanserautisch.synology.me` -> localhost:8765; DSM-GUI-Schritt). Das Mikrofon ist im Code fertig
-  und greift, sobald die UI ueber HTTPS laeuft (Browser verlangt secure context).
-- **Offen (spaeter):** „Mehr Info" optional ueber voll-tool-faehiges HoaConversation mit eigener Session pro
-  Antrag; weiterer mobil-Feinschliff im Realbetrieb.
+  ✅ **Echte Umlaute** in der gesamten Oberflaeche (CEO-Wunsch). ✅ **Futuristisches Design** (Sci-Fi-HUD:
+  Sternenfeld + Neon-Gitter, Glasmorphismus, Cyan/Violett-Glow). ✅ **Sprach-/Text-Kontextbefehl**
+  („zeig/öffne <app>" blendet die App ein -- per Tippen UND Mikrofon, geraeteuebergreifend; erste Stufe der
+  geraeteuebergreifenden Sprach-Kontextanzeige). **Diese beiden V3-Commits sind lokal committet (b94a1d3,
+  dbda8f3), aber noch NICHT auf den NAS deployt** (Deploy braucht ausdrueckliche CEO-Freigabe).
+- 🔲 **HTTPS + externer Zugriff (manueller CEO-Schritt, in Arbeit):** Synology Reverse-Proxy + Let's Encrypt
+  (`https://os.hanserautisch.synology.me` -> localhost:8765) + ggf. Port-443-Weiterleitung im Router. **Muss
+  der CEO selbst in DSM ausfuehren** -- Reverse-Proxy/Zertifikate/Firewall sind System-/Sicherheitseinstellungen
+  und das DSM-Login ist passwortgeschuetzt; der Assistent darf das nicht in seinem Namen tun, sondern **lotst
+  live + liest den Bildschirm read-only mit + verifiziert am Ende** (curl auf den HTTPS-Endpoint). Schaltet
+  zugleich das schon fertige **Mikrofon/Sprach-Eingabe** frei (Browser braucht secure context).
+- **Offen (spaeter, auf Roadmap geparkt):** (a) **echtes Mikrofon im Realbetrieb** testen, sobald HTTPS steht;
+  (b) **agentische Voice-Kontext-Steuerung** -- volle HoaConversation/Tools emittieren „zeige Panel X"/
+  Visualisierung (Phase 14), sodass auch komplexe Anfragen als Ansicht erscheinen (nicht nur die feste
+  App-Liste des Client-Parsers); (c) „Mehr Info" optional mit eigener HoaConversation-Session je Antrag;
+  (d) weiterer Mobil-Feinschliff im Realbetrieb; (e) TTS-Stimme/Qualitaet am Orb feinjustieren.
 
 ### Phase 17 — LUNA bedient den Rechner (Computer-Use, auf Anweisung) — GEPLANT (Backlog)
 - **Ziel:** Auf **ausdrueckliche CEO-Anweisung** kann LUNA den Rechner des CEO **bedienen** -- Apps oeffnen
@@ -309,6 +320,13 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
 
 ## 8. Backlog (niedrige Prioritaet, „ganz nach hinten")
 
+- **Cutter „aus Profi-Videos lernen" (Stil-Analyzer, CEO-Idee 2026-06-27):** Realistische Stufe = ein
+  **Stil-Profil-Extraktor**: Profi-Reels einlesen -> Schnitt-Grammatik messen (Szenenwechsel/Cliplaengen via
+  Scene-Detection, Uebergangs-Typ Hartschnitt-vs-Crossfade, Farbstatistik/Grade, Zoom/Crop-Verhalten,
+  Beat-/Musik-Sync) -> `stil-profil.json`, das die bestehende ffmpeg-Pipeline steuert (datengetriebenes
+  Tuning, kostenlos, lokal). **Nicht** realistisch: beliebige Effekte/Plugins/LUTs exakt erkennen + 1:1
+  reproduzieren (neuronaler Edit-Style-Transfer, Forschungsniveau). Reine Analyse ist lokal/gratis; Feature =
+  CTO-Antrag. Gehoert zu „Cutter intelligenter machen" (Phase 15) / OpenCut-Richtung.
 - **Execution-Modellzugang (einziger funktionaler Blocker):** Die Code-Ausfuehrung (Phase 7) nutzt die
   Claude-CLI (claude-opus-4-8). Drei Wege: (a) ~5–10 USD Anthropic-Guthaben, (b) automatisch ab 2026-07-01,
   (c) **lokales LLM** auf gesponserter Hardware -> macht Execution dauerhaft kostenlos. Ziel-Hardware:

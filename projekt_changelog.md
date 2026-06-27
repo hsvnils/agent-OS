@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-27 19:45] — Claude Code (Roadmap-Pflege: HTTPS als CEO-Schritt + Backlog)
+- **Was:** ROADMAP.md aktualisiert: V3-Stand fortgeschrieben (Umlaute/Design/Sprach-Kontextbefehl ✅,
+  beide Commits lokal aber noch nicht deployt). **HTTPS** als **manueller CEO-Schritt** markiert
+  (Reverse-Proxy/Zertifikat/Firewall = System-/Sicherheitseinstellungen + DSM-Login -> fuehrt der CEO selbst
+  aus; Assistent lotst/liest read-only mit/verifiziert, fuehrt aber keine Sicherheitseinstellungen in seinem
+  Namen aus). „Alles andere fuer spaeter" geparkt: echtes Mikrofon nach HTTPS, agentische
+  Voice-Kontext-Steuerung (Panels/Visualisierung), „Mehr Info" mit eigener Session, Mobil-Feinschliff, TTS-
+  Feintuning. Backlog ergaenzt: **Cutter Stil-Analyzer** (aus Profi-Videos „lernen" = Stil-Profil
+  extrahieren -> ffmpeg-Pipeline steuern; echter Edit-Style-Transfer bleibt out-of-scope).
+- **Warum:** CEO-Anweisung, HTTPS umzusetzen + „alles andere auf der Roadmap fuer spaeter vermerken". HTTPS-
+  Sicherheitseinstellungen kann der Assistent regelkonform nicht selbst vornehmen -> als CEO-Schritt
+  dokumentiert; uebrige Punkte als Roadmap-Backlog festgehalten.
+- **Betroffen:** ROADMAP.md.
+
 ## [2026-06-27 19:15] — Claude Code (LUNA-OS: Umlaute + futuristisches Design + Sprach-Kontext)
 - **Was:** LUNA-OS-Oberflaeche ueberarbeitet:
   (1) **Echte Umlaute ueberall** (CEO-Wunsch): UI-Beschriftungen mit ä/ö/ü/ß (Aufträge, Aktivität,
