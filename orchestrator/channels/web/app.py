@@ -470,6 +470,12 @@ async def investment_detail(symbol: str, asset: str = "aktie"):
     return JSONResponse(await asyncio.to_thread(eng.detail, symbol, asset))
 
 
+@app.get("/api/investment/suche")
+async def investment_suche(q: str = ""):
+    eng = _investment_engine()
+    return JSONResponse(await asyncio.to_thread(eng.market.suche, q))
+
+
 @app.post("/api/investment/watchlist")
 async def investment_watchlist(request: Request):
     body = await _json(request)
@@ -478,6 +484,17 @@ async def investment_watchlist(request: Request):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "kein Symbol")
     inv_store.watchlist_add(sym, asset=(body.get("asset") or "aktie"))
     _changelog("CIO", f"Watchlist ergaenzt: {sym.upper()}", "CEO ueber LUNA-OS", "investment")
+    return JSONResponse({"ok": True, "investment": investment()})
+
+
+@app.post("/api/investment/watchlist/remove")
+async def investment_watchlist_remove(request: Request):
+    body = await _json(request)
+    sym = (body.get("symbol") or "").strip()
+    if not sym:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "kein Symbol")
+    inv_store.watchlist_remove(sym)
+    _changelog("CIO", f"Watchlist entfernt: {sym.upper()}", "CEO ueber LUNA-OS", "investment")
     return JSONResponse({"ok": True, "investment": investment()})
 
 

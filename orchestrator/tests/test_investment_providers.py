@@ -72,6 +72,22 @@ class TestProviders(unittest.TestCase):
         self.assertTrue(r["ok"])
         self.assertEqual(r["name"], "Apple Inc.")
 
+    def test_suche_aktie_und_krypto(self):
+        fetch = FakeFetch({
+            "finnhub.io": {"result": [{"symbol": "AAPL", "description": "APPLE INC"},
+                                      {"symbol": "AAPL.SW", "description": "Apple Schweiz"}]},
+            "coingecko.com": {"coins": [{"id": "apecoin", "name": "ApeCoin", "symbol": "ape"}]},
+        })
+        md = MarketData(secrets={"FINNHUB_API_KEY": "k"}, fetch=fetch)
+        r = md.suche("ap")
+        paare = {(t["symbol"], t["asset"]) for t in r["treffer"]}
+        self.assertIn(("AAPL", "aktie"), paare)
+        self.assertNotIn(("AAPL.SW", "aktie"), paare)   # Symbole mit Punkt werden gefiltert
+        self.assertIn(("apecoin", "krypto"), paare)     # Krypto-symbol = CoinGecko-ID
+
+    def test_suche_leer(self):
+        self.assertEqual(MarketData(secrets={}).suche("")["treffer"], [])
+
     def test_alle_provider_haben_url(self):
         for p in PROVIDERS:
             self.assertTrue(p["url"].startswith("http"))

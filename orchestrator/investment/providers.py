@@ -154,6 +154,38 @@ class MarketData:
                 for x in (d or []) if x.get("headline")][:limit]
         return {"ok": True, "provider": "Finnhub", "news": news}
 
+    def suche(self, query: str) -> dict:
+        """Symbol-Suche fuer die Watchlist-Autovervollstaendigung: Aktien (Finnhub) + Krypto (CoinGecko).
+        Krypto-`symbol` = CoinGecko-ID (fuer Kursabfragen); `ticker` = Anzeige-Kuerzel."""
+        query = (query or "").strip()
+        treffer: list[dict] = []
+        if not query:
+            return {"ok": True, "treffer": treffer}
+        key = self._key("FINNHUB_API_KEY")
+        if key:
+            try:
+                d = self._fetch(f"https://finnhub.io/api/v1/search?q={urllib.parse.quote(query)}&token={key}")
+                for x in (d.get("result") or []):
+                    sym = x.get("symbol") or ""
+                    if sym and "." not in sym and ":" not in sym:  # einfache US-Symbole bevorzugen
+                        treffer.append({"symbol": sym, "name": x.get("description", ""), "asset": "aktie"})
+                    if len(treffer) >= 6:
+                        break
+            except Exception:
+                pass
+        try:
+            ck = self._key("COINGECKO_API_KEY")
+            headers = {"x-cg-demo-api-key": ck} if ck else {}
+            d = self._fetch(f"https://api.coingecko.com/api/v3/search?query={urllib.parse.quote(query)}",
+                            headers=headers)
+            for x in (d.get("coins") or [])[:6]:
+                if x.get("id"):
+                    treffer.append({"symbol": x["id"], "name": x.get("name", ""), "asset": "krypto",
+                                    "ticker": (x.get("symbol") or "").upper()})
+        except Exception:
+            pass
+        return {"ok": True, "treffer": treffer[:12]}
+
     def aktie_rsi(self, symbol: str):
         """Aktuellster RSI (Alpha Vantage) + Label. None bei Fehler/Limit (AV-Free: ~25 Calls/Tag)."""
         r = self.indikator(symbol, "RSI")

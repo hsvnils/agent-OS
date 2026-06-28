@@ -29,7 +29,7 @@ async function ladeInvestment() {
   if (!INVEST) { win.body.innerHTML = `<div class="app"><div class="leer">Investment nicht verfügbar.</div></div>`; return; }
   const i = INVEST;
   const prov = (i.provider || []).map(p => `<span class="pill ${p.konfiguriert ? "active" : "off"}"><span class="dot"></span>${esc(p.name)}</span>`).join(" ");
-  const wl = (i.watchlist || []).map(w => `<span class="badge eingereicht">${esc(w.symbol)}</span>`).join(" ") || "<i>leer</i>";
+  const wl = (i.watchlist || []).map(w => `<span class="chip"><b>${esc(w.symbol)}</b><span class="meta">${esc(w.asset)}</span><button class="chip-x" data-invremove="${esc(w.symbol)}" title="Aus Watchlist entfernen">✕</button></span>`).join("") || "<i>leer</i>";
   const sl = (i.shortlist || []).map(s => { const c = s.veraenderung_pct; const v = (c > 0 ? "+" : "") + (c == null ? "?" : Number(c).toFixed(1)) + "%";
     return `<div class="row klick" data-invsym="${esc(s.symbol)}" data-invasset="${esc(s.asset || "aktie")}" title="Details zu ${esc(s.symbol)}"><span class="t" style="color:${c >= 0 ? "var(--green)" : "var(--red)"}">${v}</span><div><b>${esc(s.symbol)}</b> <span class="meta">${esc(s.asset)} · ${esc(s.quelle)}</span></div><span class="chev">›</span></div>`; }).join("")
     || `<div class="leer">Noch kein Screen — klick „Screen jetzt".</div>`;
@@ -47,8 +47,10 @@ async function ladeInvestment() {
     <div class="kv"><span class="k">Track-Record</span><b>${esc(scText)}</b></div>
     <div class="kv"><span class="k">Historie (append-only)</span><b>${esc(histText)}</b></div>
     <div style="margin:10px 0; display:flex; gap:6px; flex-wrap:wrap">${prov}</div>
-    <div class="brain-bar"><input id="inv-sym" placeholder="Symbol zur Watchlist (AAPL / bitcoin)…" autocomplete="off">
-      <button class="btn ok" onclick="investWatchAdd()">＋</button><button class="btn info" onclick="investScreen(this)">📡 Screen jetzt</button></div>
+    <div class="brain-bar">
+      <div class="inv-ac"><input id="inv-sym" placeholder="Aktie/Krypto suchen & hinzufügen…" autocomplete="off" oninput="investSuche(this.value)">
+        <div id="inv-suggest" class="inv-suggest"></div></div>
+      <button class="btn info" onclick="investScreen(this)">📡 Screen jetzt</button></div>
     <h3>Watchlist</h3><div>${wl}</div>
     <h3>Shortlist (letzter Screen)</h3>${sl}
     <h3>Vorschläge (vom Risk-Agent geprüft)</h3>${sug}</div>`;
@@ -98,11 +100,32 @@ function invDetailKrypto(d) {
     ${i.homepage ? linkRow({ label: "Website", url: i.homepage }) : ""}
     ${i.beschreibung ? `<h3>Über</h3><div class="desc full">${esc(i.beschreibung)}</div>` : ""}`;
 }
-async function investWatchAdd() {
-  const inp = document.getElementById("inv-sym"); const s = (inp && inp.value || "").trim(); if (!s) return;
-  const asset = /^[a-z]/.test(s) && s.length > 4 ? "krypto" : "aktie";  // coingecko-ids sind lowercase
+let _invSucheTimer = null;
+function investSuche(q) {
+  clearTimeout(_invSucheTimer);
+  const box = document.getElementById("inv-suggest"); if (!box) return;
+  q = (q || "").trim();
+  if (q.length < 2) { box.innerHTML = ""; box.classList.remove("open"); return; }
+  _invSucheTimer = setTimeout(async () => {
+    try {
+      const d = await (await fetch("/api/investment/suche?q=" + encodeURIComponent(q))).json();
+      const t = d.treffer || [];
+      box.innerHTML = t.length ? t.map(x => `<div class="ac-item" data-acsym="${esc(x.symbol)}" data-acasset="${esc(x.asset)}"><b>${esc(x.ticker || x.symbol)}</b> <span class="meta">${esc(x.name || "")} · ${esc(x.asset)}</span></div>`).join("")
+        : `<div class="ac-item leer">keine Treffer</div>`;
+      box.classList.add("open");
+    } catch { box.innerHTML = ""; }
+  }, 300);
+}
+async function investWatchAddDirect(symbol, asset) {
   try { await fetch("/api/investment/watchlist", { method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ symbol: s, asset }) }); if (inp) inp.value = ""; } catch {}
+    body: JSON.stringify({ symbol, asset: asset || "aktie" }) }); } catch {}
+  const box = document.getElementById("inv-suggest"); if (box) { box.innerHTML = ""; box.classList.remove("open"); }
+  const inp = document.getElementById("inv-sym"); if (inp) inp.value = "";
+  ladeInvestment();
+}
+async function investWatchRemove(symbol) {
+  try { await fetch("/api/investment/watchlist/remove", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ symbol }) }); } catch {}
   ladeInvestment();
 }
 
@@ -465,6 +488,10 @@ document.addEventListener("click", (e) => {
   const orb = e.target.closest("#luna-orb"); if (orb) { toggleVoice(); return; }
   const talk = e.target.closest("#talk"); if (talk) { toggleVoice(); return; }
   const tog = e.target.closest("#side-toggle, #nav-open"); if (tog) { document.getElementById("sidebar").classList.toggle("open"); return; }
+  const ac = e.target.closest("[data-acsym]");
+  if (ac) { investWatchAddDirect(ac.dataset.acsym, ac.dataset.acasset); return; }
+  const rm = e.target.closest("[data-invremove]");
+  if (rm) { investWatchRemove(rm.dataset.invremove); return; }
   const inv = e.target.closest("[data-invsym]");
   if (inv) { openInvestDetail(inv.dataset.invsym, inv.dataset.invasset); return; }
   const cmd = e.target.closest("[data-cmd]");

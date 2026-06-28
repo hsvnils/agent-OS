@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 16:10] — Claude Code (Watchlist-Autocomplete + Entfernen + automatisches Backup)
+- **Was:** (1) **Symbol-Autovervollstaendigung** fuer die Watchlist: `MarketData.suche` (Aktien via Finnhub
+  `/search`, Krypto via CoinGecko `/search`; Krypto-Symbol = CoinGecko-ID) + Endpunkt `/api/investment/suche` +
+  Frontend-Dropdown (debounced, asset-bewusst). Live verifiziert (apple -> AAPL/AppLovin/Applied Materials).
+  (2) **Aus der Watchlist entfernen:** Chips mit ✕ + Endpunkt `/api/investment/watchlist/remove`. Add/Remove im
+  Preview verifiziert. (3) **Automatisches Off-NAS-Backup:** `deploy/backup-from-nas.sh` self-contained
+  umgebaut (schreibt nach `~/LUNA-Backups`, AUSSERHALB ~/Documents, damit launchd ohne Full-Disk-Access laeuft
+  -- macOS-TCC; Aufbewahrung: letzte 30, neuestes hat die volle Historie). **launchd-Agent**
+  `com.hanserautisch.investment-backup` (taeglich 03:00 + bei Login) installiert + live verifiziert (Exit 0,
+  9 Stores/3972 Events gesichert). Kein manuelles Anfassen noetig. Cache ?v=14. Suite **203/203**.
+- **Warum:** CEO-Wuensche: Autocomplete + Loeschen in der Watchlist; Backup automatisch.
+- **Betroffen:** orchestrator/investment/providers.py, channels/web/{app.py,static/*},
+  tests/test_investment_providers.py, deploy/backup-from-nas.sh,
+  deploy/com.hanserautisch.investment-backup.plist (neu). (launchd-Agent + ~/LUNA-Backups ausserhalb des Repos.)
+
 ## [2026-06-28 15:40] — Claude Code (Investment-Datenhaltung: All-Time-Historie + Off-NAS-Backup)
 - **Was:** Sichergestellt, dass die Investment-Daten **vollstaendig + dauerhaft** sind (CEO-Anliegen „nichts
   darf verloren gehen"): (1) **Auswertungen lesen die KOMPLETTE Historie** -- `InvestmentStore.list`
