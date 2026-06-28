@@ -326,6 +326,57 @@ def _start_briefing_loop(ctx, notify) -> None:
     threading.Thread(target=loop, daemon=True, name="briefing-loop").start()
 
 
+def _start_investment_loop(ctx, secrets) -> None:
+    """Automatischer Investment-Screen (advisory, token-frugal/kostenlos): werktags 16:00 DE ein Markt-Screen
+    -> Vorschlaege (jeder vom Risk-Agent geprueft) -> Alerts ueber den Notifier; montags 09:00 Wochenprognose.
+
+    Standardmaessig AUS -- Aktivierung via INVESTMENT_AUTO_SCREEN=1 (Autonomie-Stufe L1: nur Melden, keine
+    Trades). Respektiert keine extra Notbremse, weil rein lesend + advisory.
+    """
+    import threading
+    import time
+    from datetime import datetime
+
+    eng = getattr(ctx, "investment", None)
+    if eng is None:
+        return
+    if secrets.get("INVESTMENT_AUTO_SCREEN", "").strip().lower() not in ("1", "true", "yes", "on"):
+        return
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("Europe/Berlin")
+    except Exception:
+        tz = None
+
+    def _letztes_datum(tabelle):
+        items = eng.store.list(tabelle)
+        return (items[-1].get("ts", "")[:10]) if items else ""
+
+    def loop():
+        time.sleep(45)
+        while True:
+            try:
+                jetzt = datetime.now(tz) if tz else datetime.now()
+                datum = jetzt.strftime("%Y-%m-%d")
+                # Taeglicher Markt-Screen (werktags ~16:00), 1x/Tag
+                if jetzt.weekday() < 5 and jetzt.hour == 16 and _letztes_datum("screening") != datum:
+                    r = eng.screen_und_vorschlagen(max_vorschlaege=3)
+                    n = len(r.get("erstellt", []))
+                    ctx.notifications.enqueue(
+                        f"Markt-Screen erledigt: {n} neue Vorschlaege (Risk-geprueft), "
+                        f"{len(r.get('vom_risk_abgelehnt', []))} vom Risk-Agent abgelehnt. Modus: advisory.",
+                        abteilung="CIO", kategorie="investment")
+                # Wochenprognose montags ~09:00, 1x/Tag
+                if jetzt.weekday() == 0 and jetzt.hour == 9 and _letztes_datum("forecasts") != datum:
+                    eng.wochenprognose()
+            except Exception as exc:
+                print(f"[investment] Fehler: {exc}", flush=True)
+            time.sleep(300)
+
+    threading.Thread(target=loop, daemon=True, name="investment-loop").start()
+    print("Investment-Loop aktiv (werktags 16:00 Markt-Screen + Mo 09:00 Wochenprognose, advisory).", flush=True)
+
+
 def _start_cfo_loop(ctx, notify) -> None:
     """CFO-Kostenpruefung 1x taeglich nachts (03:00 DE): Freeware-/Abo-/Token-Sparpotenziale -> Push.
 
@@ -415,6 +466,7 @@ def main() -> None:
     _start_selfdev_loop(ctx, secrets)
     if secrets.get("SELF_DEV_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Self-Dev-Loop aktiv (taeglich 09:00, 1 Bereich -> Antrag mit Freigabe-Push).", flush=True)
+    _start_investment_loop(ctx, secrets)  # nur aktiv mit INVESTMENT_AUTO_SCREEN=1
     offset = 0
     _last_poll = 0.0
     while True:

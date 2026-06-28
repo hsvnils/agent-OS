@@ -31,10 +31,10 @@ async function ladeInvestment() {
   const prov = (i.provider || []).map(p => `<span class="pill ${p.konfiguriert ? "active" : "off"}"><span class="dot"></span>${esc(p.name)}</span>`).join(" ");
   const wl = (i.watchlist || []).map(w => `<span class="badge eingereicht">${esc(w.symbol)}</span>`).join(" ") || "<i>leer</i>";
   const sl = (i.shortlist || []).map(s => { const c = s.veraenderung_pct; const v = (c > 0 ? "+" : "") + (c == null ? "?" : Number(c).toFixed(1)) + "%";
-    return `<div class="row"><span class="t" style="color:${c >= 0 ? "var(--green)" : "var(--red)"}">${v}</span><div><b>${esc(s.symbol)}</b> <span class="meta">${esc(s.asset)} · ${esc(s.quelle)}</span></div></div>`; }).join("")
+    return `<div class="row klick" data-invsym="${esc(s.symbol)}" data-invasset="${esc(s.asset || "aktie")}" title="Details zu ${esc(s.symbol)}"><span class="t" style="color:${c >= 0 ? "var(--green)" : "var(--red)"}">${v}</span><div><b>${esc(s.symbol)}</b> <span class="meta">${esc(s.asset)} · ${esc(s.quelle)}</span></div><span class="chev">›</span></div>`; }).join("")
     || `<div class="leer">Noch kein Screen — klick „Screen jetzt".</div>`;
-  const sug = (i.vorschlaege || []).map(s => `<div class="card">
-    <div class="head"><span class="badge ${s.risiko_label === "spekulativ" ? "in_umsetzung" : "freigegeben"}">${esc(s.risiko_label || "")}</span><b>${esc((s.aktion || "").toUpperCase())} ${esc(s.symbol)}</b></div>
+  const sug = (i.vorschlaege || []).map(s => `<div class="card klick" data-invsym="${esc(s.symbol)}" data-invasset="${esc(/^[a-z]/.test(s.symbol || "") && (s.symbol || "").length > 4 ? "krypto" : "aktie")}" title="Details zu ${esc(s.symbol)}">
+    <div class="head"><span class="badge ${s.risiko_label === "spekulativ" ? "in_umsetzung" : "freigegeben"}">${esc(s.risiko_label || "")}</span><b>${esc((s.aktion || "").toUpperCase())} ${esc(s.symbol)}</b><span class="chev">›</span></div>
     <div class="desc">${esc(s.grund || "")}</div>
     <div class="meta">Konfidenz ${Math.round((s.konfidenz || 0) * 100)}% · ${(s.quellen || []).map(esc).join(", ")}</div></div>`).join("")
     || `<div class="leer">Noch keine Vorschläge.</div>`;
@@ -51,6 +51,40 @@ async function investScreen(btn) {
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Screent…"; }
   try { await fetch("/api/investment/screen", { method: "POST" }); } catch {}
   ladeInvestment();
+}
+// Detailansicht zu einem Wert (Aktie: Profil + Quote + News; Krypto: CoinGecko-Infos).
+async function openInvestDetail(symbol, asset) {
+  const wid = "invdet:" + symbol;
+  if (WINS[wid]) { WINS[wid].focus(); return; }
+  const win = new WinBox("📈  " + symbol, { ...(istMobil() ? winGeom() : { width: "480px", height: "64%", x: "center", y: "center" }),
+    class: ["modern"], onclose: () => { delete WINS[wid]; return false; } });
+  WINS[wid] = win;
+  win.body.innerHTML = `<div class="app"><div class="leer">Lade Infos zu ${esc(symbol)}…</div></div>`;
+  try {
+    const d = await (await fetch(`/api/investment/detail?symbol=${encodeURIComponent(symbol)}&asset=${encodeURIComponent(asset || "aktie")}`)).json();
+    win.body.innerHTML = `<div class="app detail">${asset === "krypto" ? invDetailKrypto(d) : invDetailAktie(d)}</div>`;
+  } catch { win.body.innerHTML = `<div class="app"><div class="leer">Konnte Infos nicht laden.</div></div>`; }
+}
+function invDetailAktie(d) {
+  const p = d.profil, q = d.quote;
+  const kv = (k, v) => v != null && v !== "" ? `<div class="kv"><span class="k">${esc(k)}</span><b>${esc(v)}</b></div>` : "";
+  const news = (d.news || []).map(n => `<div class="row"><div><b>${esc(n.titel)}</b><br><span class="meta">${esc(n.quelle || "")}</span></div></div>`).join("");
+  const hinweis = (d.hinweise || []).length ? `<div class="leer">${esc(d.hinweise[0])}</div>` : "";
+  return `<div class="head"><b>${esc((p && p.name) || d.symbol)}</b></div>
+    ${p ? `<div class="meta">${esc(p.branche || "")}${p.boerse ? " · " + esc(p.boerse) : ""}${p.land ? " · " + esc(p.land) : ""}</div>` : ""}
+    ${q ? kv("Preis", q.preis) + kv("Veränderung", (q.veraenderung_pct > 0 ? "+" : "") + q.veraenderung_pct + "%") + kv("Tageshoch", q.hoch) + kv("Tagestief", q.tief) : ""}
+    ${p ? kv("Marktkap. (Mio)", p.marktkap_mio) + kv("IPO", p.ipo) + (p.web ? `<div class="kv"><span class="k">Web</span><b><a href="${esc(p.web)}" target="_blank" rel="noopener">${esc(p.web)}</a></b></div>` : "") : ""}
+    ${news ? `<h3>News</h3>${news}` : ""}${hinweis}`;
+}
+function invDetailKrypto(d) {
+  const i = d.info || {};
+  const kv = (k, v) => v != null && v !== "" ? `<div class="kv"><span class="k">${esc(k)}</span><b>${esc(v)}</b></div>` : "";
+  if (!i.ok) return `<div class="leer">Keine Krypto-Infos verfügbar.</div>`;
+  return `<div class="head"><b>${esc(i.name)} (${esc(i.symbol)})</b></div>
+    ${kv("Preis (EUR)", i.preis_eur)}${kv("Veränderung 24h", (i.veraenderung_pct > 0 ? "+" : "") + Number(i.veraenderung_pct || 0).toFixed(2) + "%")}
+    ${kv("Marktkap. (EUR)", i.marktkap_eur)}${kv("ATH (EUR)", i.ath_eur)}${kv("ATL (EUR)", i.atl_eur)}
+    ${i.homepage ? `<div class="kv"><span class="k">Web</span><b><a href="${esc(i.homepage)}" target="_blank" rel="noopener">${esc(i.homepage)}</a></b></div>` : ""}
+    ${i.beschreibung ? `<h3>Über</h3><div class="desc full">${esc(i.beschreibung)}</div>` : ""}`;
 }
 async function investWatchAdd() {
   const inp = document.getElementById("inv-sym"); const s = (inp && inp.value || "").trim(); if (!s) return;
@@ -417,6 +451,8 @@ document.addEventListener("click", (e) => {
   const orb = e.target.closest("#luna-orb"); if (orb) { toggleVoice(); return; }
   const talk = e.target.closest("#talk"); if (talk) { toggleVoice(); return; }
   const tog = e.target.closest("#side-toggle, #nav-open"); if (tog) { document.getElementById("sidebar").classList.toggle("open"); return; }
+  const inv = e.target.closest("[data-invsym]");
+  if (inv) { openInvestDetail(inv.dataset.invsym, inv.dataset.invasset); return; }
   const cmd = e.target.closest("[data-cmd]");
   if (cmd) { cmd.dataset.cmd === "talk" ? toggleVoice() : navTo(cmd.dataset.cmd); return; }
   const navi = e.target.closest("[data-app]");

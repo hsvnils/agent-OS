@@ -101,6 +101,23 @@ class InvestmentEngine:
         return {"ok": True, "screening_id": screen["screening_id"], "erstellt": erstellt,
                 "vom_risk_abgelehnt": abgelehnt, "hinweise": screen.get("hinweise", [])}
 
+    # -- Detail zu einem Wert (fuer die anklickbare Detailansicht) --
+    def detail(self, symbol: str, asset: str = "aktie") -> dict:
+        symbol = (symbol or "").strip()
+        if not symbol:
+            return {"ok": False, "fehler": "Kein Symbol."}
+        if asset == "krypto":
+            d = self.market.crypto_detail(symbol)
+            return {"ok": d.get("ok", False), "asset": "krypto", "symbol": symbol, "info": d}
+        quote = self.market.aktie_quote(symbol)
+        profil = self.market.aktie_profil(symbol)
+        news = self.market.aktie_news(symbol)
+        return {"ok": True, "asset": "aktie", "symbol": symbol.upper(),
+                "quote": quote if quote.get("ok") else None,
+                "profil": profil if profil.get("ok") else None,
+                "news": news.get("news", []) if news.get("ok") else [],
+                "hinweise": [x.get("hinweis") for x in (quote, profil, news) if x.get("fall_b")]}
+
     # -- 3) Wochenprognose + Scorecard --
     def wochenprognose(self) -> dict:
         erstellt = []

@@ -30,6 +30,16 @@ class FakeMarket:
     def aktie_quote(self, symbol):
         return {"ok": True, "preis": 100, "veraenderung_pct": (self._quote or {}).get(symbol, 0.0)}
 
+    def aktie_profil(self, symbol):
+        return {"ok": True, "name": symbol + " Inc.", "branche": "Tech", "boerse": "NASDAQ"}
+
+    def aktie_news(self, symbol, von="", bis="", limit=3):
+        return {"ok": True, "news": [{"titel": "Headline", "quelle": "Reuters", "url": "http://x"}]}
+
+    def crypto_detail(self, coin_id):
+        return {"ok": True, "name": coin_id.title(), "symbol": coin_id[:3].upper(), "preis_eur": 50000,
+                "veraenderung_pct": 1.2, "beschreibung": "Eine Kryptowaehrung."}
+
 
 class TestRiskAgent(unittest.TestCase):
     def test_konservativ_vs_spekulativ(self):
@@ -100,6 +110,16 @@ class TestEngine(unittest.TestCase):
         r = eng.markt_screen()
         self.assertTrue(r["ok"])  # Krypto liefert trotzdem
         self.assertTrue(any("FMP" in h for h in r["hinweise"]))
+
+    def test_detail_aktie_und_krypto(self):
+        eng = self._engine(quote={"AAA": 2.0})
+        da = eng.detail("AAA", "aktie")
+        self.assertEqual(da["asset"], "aktie")
+        self.assertEqual(da["profil"]["name"], "AAA Inc.")
+        self.assertTrue(da["news"])
+        dk = eng.detail("bitcoin", "krypto")
+        self.assertEqual(dk["asset"], "krypto")
+        self.assertTrue(dk["info"]["ok"])
 
     def test_wochenprognose_und_scorecard(self):
         self.store.watchlist_add("AAA")

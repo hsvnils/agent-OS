@@ -121,6 +121,59 @@ class MarketData:
                    "veraenderung_pct": x.get("changesPercentage")} for x in (d or [])][:25]
         return {"ok": True, "provider": "FMP", "gewinner": movers}
 
+    # ---- Detail-Infos (fuer die anklickbare Detailansicht) ------------------
+    def aktie_profil(self, symbol: str) -> dict:
+        """Unternehmensprofil (Finnhub profile2): Name, Branche, Marktkap., Boerse, Land, Web, Logo."""
+        key = self._key("FINNHUB_API_KEY")
+        if not key:
+            return self._fallb("Finnhub", "FINNHUB_API_KEY")
+        url = f"https://finnhub.io/api/v1/stock/profile2?symbol={urllib.parse.quote(symbol)}&token={key}"
+        try:
+            d = self._fetch(url)
+        except Exception as exc:
+            return {"ok": False, "provider": "Finnhub", "fehler": str(exc)[:160]}
+        return {"ok": True, "provider": "Finnhub", "name": d.get("name"), "branche": d.get("finnhubIndustry"),
+                "boerse": d.get("exchange"), "land": d.get("country"), "web": d.get("weburl"),
+                "logo": d.get("logo"), "marktkap_mio": d.get("marketCapitalization"), "ipo": d.get("ipo")}
+
+    def aktie_news(self, symbol: str, *, von: str = "", bis: str = "", limit: int = 3) -> dict:
+        """Aktuelle Unternehmens-News (Finnhub company-news)."""
+        key = self._key("FINNHUB_API_KEY")
+        if not key:
+            return self._fallb("Finnhub", "FINNHUB_API_KEY")
+        from datetime import date, timedelta
+        bis = bis or date.today().isoformat()
+        von = von or (date.today() - timedelta(days=7)).isoformat()
+        url = (f"https://finnhub.io/api/v1/company-news?symbol={urllib.parse.quote(symbol)}"
+               f"&from={von}&to={bis}&token={key}")
+        try:
+            d = self._fetch(url)
+        except Exception as exc:
+            return {"ok": False, "provider": "Finnhub", "fehler": str(exc)[:160]}
+        news = [{"titel": x.get("headline"), "quelle": x.get("source"), "url": x.get("url")}
+                for x in (d or []) if x.get("headline")][:limit]
+        return {"ok": True, "provider": "Finnhub", "news": news}
+
+    def crypto_detail(self, coin_id: str) -> dict:
+        """Krypto-Detail (CoinGecko /coins/{id}): Preis, Marktkap., ATH/ATL, Kurzbeschreibung, Homepage."""
+        key = self._key("COINGECKO_API_KEY")
+        url = (f"https://api.coingecko.com/api/v3/coins/{urllib.parse.quote(coin_id)}"
+               "?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false")
+        headers = {"x-cg-demo-api-key": key} if key else {}
+        try:
+            d = self._fetch(url, headers=headers)
+        except Exception as exc:
+            return {"ok": False, "provider": "CoinGecko", "fehler": str(exc)[:160]}
+        m = d.get("market_data") or {}
+        beschr = ((d.get("description") or {}).get("en") or "").strip()
+        return {"ok": True, "provider": "CoinGecko", "name": d.get("name"), "symbol": (d.get("symbol") or "").upper(),
+                "preis_eur": (m.get("current_price") or {}).get("eur"),
+                "veraenderung_pct": m.get("price_change_percentage_24h"),
+                "marktkap_eur": (m.get("market_cap") or {}).get("eur"),
+                "ath_eur": (m.get("ath") or {}).get("eur"), "atl_eur": (m.get("atl") or {}).get("eur"),
+                "homepage": ((d.get("links") or {}).get("homepage") or [""])[0],
+                "beschreibung": beschr[:400]}
+
     # ---- SEC EDGAR (User-Agent) ---------------------------------------------
     def filings(self, cik) -> dict:
         ua = self._key("SEC_EDGAR_USER_AGENT")

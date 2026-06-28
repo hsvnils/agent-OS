@@ -204,6 +204,14 @@ body {
 .kv .k { color: var(--muted); font-size: 13px; }
 .kv b { font-family: var(--mono); font-size: 15px; color: var(--cyan); text-shadow: 0 0 10px rgba(46, 230, 255, .35); }
 
+/* Anklickbare Ergebnisse (Investment) */
+.row.klick, .card.klick { cursor: pointer; }
+.row.klick { align-items: center; }
+.row.klick:hover, .card.klick:hover { border-color: rgba(46, 230, 255, .4); }
+.row.klick:hover { background: rgba(46, 230, 255, .07); }
+.klick .chev { margin-left: auto; color: var(--cyan); font-size: 16px; opacity: .6; }
+.card.klick .chev { margin-left: auto; }
+
 /* Second Brain (Wissen-App) */
 .brain-bar, .brain-add { display: flex; gap: 8px; margin-bottom: 12px; }
 .brain-add { margin: 12px 0 4px; }

@@ -462,6 +462,12 @@ async def investment_screen():
                          "hinweise": r.get("hinweise", []), "investment": investment()})
 
 
+@app.get("/api/investment/detail")
+async def investment_detail(symbol: str, asset: str = "aktie"):
+    eng = _investment_engine()
+    return JSONResponse(await asyncio.to_thread(eng.detail, symbol, asset))
+
+
 @app.post("/api/investment/watchlist")
 async def investment_watchlist(request: Request):
     body = await _json(request)

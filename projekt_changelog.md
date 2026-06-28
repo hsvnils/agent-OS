@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 14:40] — Claude Code (Investment Phase 2 Rest: anklickbare Details + Auto-Screen)
+- **Was:** (1) **Anklickbare Ergebnisse:** Shortlist-Zeilen + Vorschlags-Karten sind klickbar -> **Detail-
+  Fenster** mit Infos. Neu in MarketData: `aktie_profil` (Finnhub profile2: Name/Branche/Marktkap./Boerse/
+  Land/Web), `aktie_news` (company-news), `crypto_detail` (CoinGecko /coins/{id}: Preis/Marktkap./ATH/ATL/
+  Beschreibung/Homepage). `InvestmentEngine.detail(symbol, asset)` aggregiert; Endpunkt `/api/investment/detail`;
+  Frontend `openInvestDetail` (Aktie: Profil+Quote+News, Krypto: Infos), `.klick`-Styling. Live verifiziert:
+  Klick auf SDOT -> „Sadot Group Inc · Food Products · NASDAQ · +247% · Hoch/Tief"; Apple/Bitcoin-Details OK.
+  (2) **Auto-Screen-Loop (Rest Phase 2):** `_start_investment_loop` im Bot -- werktags 16:00 DE ein Markt-Screen
+  -> Risk-gepruefte Vorschlaege + Alert ueber Notifier; montags 09:00 Wochenprognose. **Default AUS**, Aktivierung
+  via `INVESTMENT_AUTO_SCREEN=1` (Autonomie-Stufe L1: nur Melden, keine Trades; dedup ueber Store-Datum).
+  Cache ?v=11. Suite **200/200**.
+- **Warum:** CEO: „Rest Phase 2" + Ergebnisse anklickbar mit Detailinfos. Damit ist Phase 2 vollstaendig
+  (advisory). Naechstes: Phase 3 (Track-Record sammeln, dann Paper-Modus GATE C).
+- **Betroffen:** orchestrator/investment/{providers,engine}.py, channels/telegram/bot.py, channels/web/{app.py,
+  static/*}, tests/test_investment_engine.py, INVESTMENT_ROADMAP.md.
+
 ## [2026-06-28 14:00] — Claude Code (Investment Phase 2 — die drei Schleifen, advisory)
 - **Was:** CIO-Engine + Risk-Agent gebaut und in LUNA verdrahtet (advisory, **keine Trades**):
   **`orchestrator/investment/risk.py`** (`RiskAgent` -- regelbasierter Checker: Label konservativ/spekulativ,
