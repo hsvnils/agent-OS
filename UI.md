@@ -19,6 +19,23 @@ rotierender Reaktor-Ring). Wirkung: ruhig, technisch, „lebendig" -- nie verspi
 
 ---
 
+## 1a. Feste Identitaet (NICHT entfernen / nicht ersetzen)
+
+Diese zwei Elemente sind die unveraenderliche Identitaet von LUNA und bleiben in jeder kuenftigen Version
+erhalten:
+
+- **Der LUNA-Orb** (`#luna-orb`) -- das animierte Mond-/Reaktor-Symbol mit den Zustaenden
+  **idle / listening / speaking**, audio-reaktiv ueber die CSS-Variable `--energy` (pulsiert mit Lolas echter
+  Stimme), mit rotierendem Reaktor-Ring. Er ist das visuelle Herz der Oberflaeche (gross im zentralen
+  AI-Core/Hero) und zugleich der **Einstieg ins Live-Gespraech** (antippen = `toggleVoice`). Redesigns duerfen
+  ihn umstellen/vergroessern, aber **nie weglassen** und seine drei Zustaende + Audio-Reaktivitaet erhalten.
+- **Die Stimme „Lola"** -- die deutsche **ElevenLabs**-Stimme (`voice_id SiMvlSW9cKKHDYT4BzOp`, Modell
+  `eleven_turbo_v2_5`, aufgeloest in `voice/voices.py` per Name; ueber `.env LUNA_OS_VOICE_ID` ueberschreibbar)
+  ist LUNAs **Standard-Sprachausgabe**. Sie bleibt die hoerbare Identitaet; Browser-Stimme nur als Fallback,
+  wenn ElevenLabs nicht erreichbar ist. Stimme nur auf ausdrueckliche CEO-Anweisung wechseln.
+
+---
+
 ## 2. Farb-Tokens (CSS-Variablen in `:root`)
 
 Immer diese Variablen nutzen, **keine** Hex-Werte direkt im Komponenten-CSS.
@@ -99,7 +116,8 @@ Alle Panels folgen demselben Grundgeruest:
 - **Agent-Card:** Name + Status-Pille + dezente Wellenform/Aktivitaet.
 - **Quick-Command-Button:** Glas-Button mit Icon + Label, Cyan-Hover-Glow.
 - **Orb / Core:** zentrales animiertes Mond-/Reaktor-Symbol (`#luna-orb`, Zustaende idle/listening/speaking,
-  audio-reaktiv ueber `--energy`) -- die visuelle Identitaet von LUNA; im Hero gross, in der Topbar klein.
+  audio-reaktiv ueber `--energy`) im AI-Core/Hero -- die feste visuelle Identitaet von LUNA (siehe **1a**),
+  zugleich Einstieg ins Live-Gespraech; spricht mit der Stimme **„Lola"** (siehe 1a).
 - **Buttons:** `.btn` mit Varianten `ok/warn/info/danger/ghost` (siehe `style.css`); gefuellt = Aktion,
   `ghost` = sekundaer.
 - **Badges:** Status-/Kategorie-Badges (`.badge.<status>`), Pillenform, UPPERCASE, Mono.

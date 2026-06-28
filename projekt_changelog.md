@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 12:00] — Claude Code (UI.md Identitaet + loop-engineering-Pruefung + Investment-Roadmap)
+- **Was:** (1) **UI.md** ergaenzt: neuer Abschnitt „1a. Feste Identitaet (nicht entfernen)" -- der **LUNA-Orb**
+  (#luna-orb, idle/listening/speaking, audio-reaktiv) UND die deutsche **ElevenLabs-Stimme „Lola"**
+  (voice_id SiMvlSW9cKKHDYT4BzOp, eleven_turbo_v2_5) sind als unveraenderliche Identitaet verankert; veralteten
+  Orb-Hinweis korrigiert. (2) **cobusgreyling/loop-engineering geprueft** (MIT; Design-Philosophie + 3 npm-CLIs
+  loop-init/audit/cost fuer Coding-Agenten/GitHub-Actions): Empfehlung = **kein Code-/CLI-Einbau** (falscher
+  Runtime/Scope; LUNA hat das meiste schon: WatchScheduler=Scheduling, Second Brain=Skills, MCP=Connectors,
+  delegate+Execution=Maker/Checker+Worktrees), aber **Konzepte uebernehmen** -- v. a. die Autonomie-Treppe
+  L1->L2->L3 (= advisory->paper->live), Maker/Checker, Loop-Kostenbudget. (3) **INVESTMENT_ROADMAP.md** aus dem
+  CEO-`Investment_Abteilung_Bauplan.md` abgeleitet: lebende Roadmap (CIO + Unter-Agenten, Modi advisory/paper/
+  live mit GATES A–D, drei Kern-Schleifen, Daten/MCP, Supabase-Speicher, Governance, LUNA-Anbindung, Kosten,
+  Loop-Engineering-Lehre). **Advisory-only, keine Trades, alles Geld = CEO-Tor.** Status: geplant.
+- **Warum:** CEO-Auftrag: Orb+Lola in UI.md festschreiben; loop-engineering-Einbau pruefen; Investment-Plan in
+  eine schrittweise Roadmap ueberfuehren. Reine Doku -- kein Code/Deploy noetig.
+- **Betroffen:** UI.md, INVESTMENT_ROADMAP.md (neu).
+
 ## [2026-06-28 11:20] — Claude Code (Command-Center-Redesign im Jarvis-Stil + UI.md)
 - **Was:** (1) **UI.md** als globales **Design-System** angelegt (Farb-Tokens, Typografie, Layout
   Sidebar/Topbar/Panel-Grid/Voicebar, Komponenten, Motion, Sprache, technische Regeln + Checkliste fuer neue
