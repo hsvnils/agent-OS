@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 17:30] — Claude Code (Phase 17 M1: Swift-Menueleisten-Orb)
+- **Was:** Neues Swift-Paket `mac/LunaOrb/` (SwiftPM) — nativer macOS-Menueleisten-Orb (NSStatusItem,
+  `.accessory`-Policy, kein Dock-Icon). Drei Orb-Zustaende (idle/listening/speaking via SF-Symbol + Tint),
+  Menue „Mit LUNA sprechen…" -> `/api/chat` der **lokalen** LUNA (127.0.0.1:8765, nur localhost),
+  „Verbindung pruefen" (Ping), „Not-Aus" schreibt Sperr-Flag `~/.luna_orb_killswitch` (vom kuenftigen
+  Aktuator zu pruefen). Dateien: Package.swift, Sources/LunaOrb/{main,OrbState,LunaClient}.swift,
+  README.md, .gitignore. **Verifiziert:** `swift build` gruen; Orb laeuft als Menueleisten-App; lokale LUNA
+  gestartet -> Ping 200; `/api/chat`-Round-Trip liefert echte LUNA-Antwort (Gemini-Fallback).
+- **Warum:** Phase-17-Milestone M1 (PHASE17_PLAN.md) — die Shell des Co-Working-Orbs steht und spricht mit
+  der bestehenden lokalen LUNA, ohne die NAS-Container anzufassen (additiv, separater Prozess).
+- **Betroffen:** mac/LunaOrb/** (neu), projekt_changelog.md.
+
 ## [2026-06-28 17:05] — Claude Code (Phase 17: MVP-Teilplan „LUNA am Mac" beschlossen)
 - **Was:** `PHASE17_PLAN.md` angelegt — vereinbarter MVP-Zuschnitt fuer Phase 17 (Live-Co-Working am
   Rechner). CEO-Entscheidungen 2026-06-28: **native Swift `.app`** als Menueleisten-Orb; erster Build
