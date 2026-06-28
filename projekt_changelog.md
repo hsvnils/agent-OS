@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 18:10] — Claude Code (Phase 17 M2: On-Screen-Awareness + App-Wissen)
+- **Was:** Neues Paket `runner/` (additiv, Mac-lokal): `awareness.py` (vorderste App + Fenstertitel +
+  laufende Apps via osascript/System Events; degradiert auf Nicht-macOS ohne Crash) und `capabilities.py`
+  (scannt installierte Programme, fuehrt automatisch fortgeschriebene Markdown-Registry
+  `runner/app_register.md` [gitignored, maschinenspezifisch], empfiehlt zur Aufgabe passende Apps samt
+  Steuerungsweg). Zwei neue LUNA-Tools in `orchestrator/core/hoa_tools.py`: **`bildschirm_sehen`**
+  (On-Screen-Awareness, nur Lesen) und **`apps_kennen`** (App-Wissen + Empfehlung). Test
+  `orchestrator/tests/test_phase17_mac_tools.py` (plattform-sicher). `.gitignore` um die generierte Registry
+  ergaenzt. **Verifiziert:** Suite 203/203 + 6 neue gruen; `bildschirm_sehen` liefert real die Vordergrund-App
+  + laufende Apps; `apps_kennen` scannt 107 Apps und empfiehlt korrekt (Text -> TextEdit/Notes).
+- **Warum:** Phase-17-Milestone M2 (PHASE17_PLAN.md) — LUNA „sieht" die App-Lage und kennt die installierten
+  Programme/ihre Eignung. Grundlage fuer gezieltes Handeln + Vorschlaege (M3). NAS-LUNA unberuehrt (Tools
+  degradieren auf Linux).
+- **Betroffen:** runner/** (neu), orchestrator/core/hoa_tools.py, orchestrator/tests/test_phase17_mac_tools.py,
+  .gitignore, projekt_changelog.md.
+
 ## [2026-06-28 17:45] — Claude Code (Phase 17: CEO-Klarstellungen in den Plan aufgenommen)
 - **Was:** `PHASE17_PLAN.md` Abschnitt „3a. Klarstellungen CEO (2. Runde)" ergaenzt: (1) **„Eine LUNA, zwei
   Gesichter"** als Architektur-Invariante — Mac-Orb + NAS-LUNA sind dieselbe LUNA (gleicher Code/Regeln/

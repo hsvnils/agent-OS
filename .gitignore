@@ -52,3 +52,6 @@ brain/log.jsonl
 investment/log.jsonl
 .claude/preview-logs/
 backups/
+
+# Phase 17: maschinenspezifische App-Registry (generiert)
+runner/app_register.md

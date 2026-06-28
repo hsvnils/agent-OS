@@ -253,6 +253,15 @@ def tool_specs() -> list[dict]:
         _spec("watchlist_hinzufuegen", "Nimmt einen Wert in die Investment-Watchlist auf.",
               {"symbol": _str("Tickersymbol (AAPL) oder CoinGecko-ID (bitcoin)."),
                "asset": _str("'aktie' oder 'krypto' (Default aktie).")}, ["symbol"]),
+        # -- Phase 17: LUNA am Mac (On-Screen-Awareness + App-Wissen) --
+        _spec("bildschirm_sehen", "Phase 17 (Mac): On-Screen-Awareness — zeigt, welche App im Vordergrund "
+              "ist (mit Fenstertitel) und welche Apps gerade laufen. Nur Lesen, kein Eingriff. Nur am Mac "
+              "(sonst Hinweis auf fehlende Verfuegbarkeit).", {}, []),
+        _spec("apps_kennen", "Phase 17 (Mac): LUNAs App-Wissen — scannt die installierten Programme, "
+              "aktualisiert die App-Registry (runner/app_register.md) und empfiehlt (optional zur 'aufgabe') "
+              "passende Programme samt Steuerungsweg.",
+              {"aufgabe": _str("Optional: Aufgabe, fuer die eine passende App gesucht wird, "
+                               "z. B. 'Notiz schreiben'.")}, []),
     ]
 
 
@@ -794,6 +803,24 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             ctx.core.changelog("CEO", f"Antrag {aid} nach main gemergt", "CEO-Bestaetigung (Telegram)",
                                f"antrag/{aid}")
         return {"ok": ok, "ausgabe": redact(out, sec)}
+
+    if name == "bildschirm_sehen":
+        from runner import awareness
+        return awareness.snapshot()
+
+    if name == "apps_kennen":
+        from runner import capabilities
+        try:
+            pfad = str(capabilities.write_register_md())
+        except Exception:
+            pfad = ""
+        reg = capabilities.build_register()
+        out = {"installiert": reg["installiert"], "bekannte_apps": reg["bekannt"][:40],
+               "registry": pfad}
+        auf = (args.get("aufgabe") or "").strip()
+        if auf:
+            out["empfehlung"] = capabilities.recommend_for(auf)
+        return out
 
     return {"fehler": f"Unbekanntes Tool: {name}"}
 
