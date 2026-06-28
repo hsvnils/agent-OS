@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 15:40] — Claude Code (Investment-Datenhaltung: All-Time-Historie + Off-NAS-Backup)
+- **Was:** Sichergestellt, dass die Investment-Daten **vollstaendig + dauerhaft** sind (CEO-Anliegen „nichts
+  darf verloren gehen"): (1) **Auswertungen lesen die KOMPLETTE Historie** -- `InvestmentStore.list`
+  Default-Limit von 500 auf praktisch unbegrenzt; bestaetigt append-only/event-sourced (nur `"a"`-Schreiben,
+  nichts wird ueberschrieben/geloescht). (2) **`store.historie()`** (All-Time-Zaehlung je Tabelle + Zeitraum) ->
+  in `/api/investment` + Investment-App sichtbar („Historie (append-only): N Einträge…"). (3)
+  **`deploy/backup-from-nas.sh`** -- zieht eine zeitgestempelte Off-NAS-Kopie ALLER Live-Stores (investment,
+  antraege, research, notifications, agenda, aktivitaet, watch, brain, kosten, memory) auf den Mac; live
+  getestet (9 Stores, 3.969 Events gesichert). `backups/` gitignored. (4) **governance/investment.md** um
+  „Datenhaltungs-Garantie" erweitert (append-only, Basis-Preis je Prognose, Backup, Supabase als durables Ziel).
+- **Warum:** CEO fragte, ob alle Investment-Daten gespeichert werden + eine All-Time-Historie existiert. Antwort:
+  ja (append-only), gehaertet um Komplett-Reads + Sichtbarkeit + Off-NAS-Backup. **Durables Ziel bleibt
+  Supabase** (Roadmap, noch nicht verdrahtet). Cache ?v=13. Suite 201/201.
+- **Betroffen:** orchestrator/investment/store.py, channels/web/{app.py,static/*}, deploy/backup-from-nas.sh
+  (neu), governance/investment.md, .gitignore.
+
 ## [2026-06-28 15:10] — Claude Code (Detailansicht-Plus + Investment Phase 3 gestartet)
 - **Was:** (1) **Detailansicht angereichert:** RSI (Alpha Vantage, mit Label ueberkauft/ueberverkauft/neutral),
   Links-Sektion (Unternehmens-Website, SEC-Filings/EDGAR, TradingView-Chart), Krypto: Rang + 24h-Volumen.

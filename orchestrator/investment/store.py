@@ -36,8 +36,22 @@ class InvestmentStore:
         self._append({"ts": _now(), "id": rid, "tabelle": tabelle, **daten})
         return rid
 
-    def list(self, tabelle: str, limit: int = 500) -> list[dict]:
+    def list(self, tabelle: str, limit: int = 1_000_000) -> list[dict]:
+        # Default praktisch "alles" -- Auswertungen/Scorecard lesen die KOMPLETTE All-Time-Historie.
         return [e for e in self._events() if e.get("tabelle") == tabelle][-limit:]
+
+    def historie(self) -> dict:
+        """All-Time-Zaehlung je Tabelle (zur Sichtbarkeit/Verifikation, dass nichts verloren geht)."""
+        evs = self._events()
+        zaehl = {t: 0 for t in TABELLEN}
+        for e in evs:
+            t = e.get("tabelle")
+            if t in zaehl:
+                zaehl[t] += 1
+        erster = evs[0].get("ts") if evs else None
+        letzter = evs[-1].get("ts") if evs else None
+        return {"eintraege_gesamt": len(evs), "je_tabelle": zaehl, "seit": erster, "bis": letzter,
+                "datei": str(self.path)}
 
     # -- mode (inv_mode) --
     def mode(self) -> str:

@@ -55,10 +55,25 @@ Ausfuehrungs-Pfad = austauschbare Komponente (advisory = loggen/melden; paper/li
 - **CISO/CTO**: Keys/Capabilities (Least-Privilege, Leck-Schutz). **Changelog-Pflicht** nach jeder Aktion.
 - Konflikt Maker/Checker -> CIO mediiert; ungeloest/strategisch -> HoA -> CEO.
 
-## 6 Datenspeicher (Supabase, geplant; uebergangsweise dateibasiert)
+## 6 Datenspeicher + All-Time-Historie (Datenhaltungs-Garantie)
 
-`inv_watchlist` · `inv_screening` · `inv_forecasts` · `inv_actuals` · `inv_scorecard` · `inv_suggestions` ·
-`inv_mode` · `inv_paper_trades`/`inv_positions`. CDO normalisiert; CFO sieht die Datendienst-Kosten.
+**Append-only / event-sourced.** Der `InvestmentStore` (`investment/log.jsonl`) schreibt **ausschliesslich
+anhaengend** -- jeder Screen, jede Prognose (inkl. **Basis-Preis** zum Prognosezeitpunkt), jedes eingetretene
+Ergebnis (Actual), jeder Vorschlag und jeder Modus-Wechsel wird **dauerhaft mit Zeitstempel** gespeichert.
+**Nichts wird ueberschrieben oder geloescht** (auch „Watchlist entfernen" ist nur ein neues Event). Damit ist
+der Vorhersage-vs-Realitaet-Abgleich (Scorecard) jederzeit ueber die **komplette Historie** moeglich;
+Auswertungen lesen die **gesamte** Historie (kein Lese-Limit). `store.historie()` zeigt die All-Time-Zaehlung.
+
+Tabellen (Supabase-Ziel `inv_*`, uebergangsweise dateibasiert): `watchlist` · `screening` · `forecasts` ·
+`actuals` · `scorecard` · `suggestions` · `mode` · `positions`. CDO normalisiert; CFO sieht Datendienst-Kosten.
+
+**Durabilitaet / „nichts geht verloren":**
+- Die Live-Historie liegt im **NAS-Docker-Volume**; sie ist **gitignored + vom Code-Sync ausgeschlossen**,
+  damit ein Deploy sie **nie ueberschreibt**.
+- **Off-NAS-Backup:** `deploy/backup-from-nas.sh` zieht eine **zeitgestempelte Kopie** aller Live-Stores auf
+  den Mac (zweite, unabhaengige Kopie; alte Backups bleiben). Regelmaessig ausfuehren (oder spaeter cron).
+- **Durables Ziel = Supabase** (vorhandenes Pro-Projekt): queryable, repliziert, gesichert -- die eigentliche
+  Langfrist-Loesung (Roadmap Phase 1, noch nicht verdrahtet). Bis dahin: Datei-Store + Backup-Skript.
 
 ## 7 Status
 

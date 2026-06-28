@@ -51,3 +51,4 @@ finance/kosten-log.jsonl
 brain/log.jsonl
 investment/log.jsonl
 .claude/preview-logs/
+backups/

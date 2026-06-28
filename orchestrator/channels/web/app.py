@@ -446,6 +446,7 @@ def investment():
         "fehlende_keys": [p["name"] for p in st["fehlende_keys"]],
         "watchlist": st["watchlist"],
         "scorecard": eng.scorecard(),
+        "historie": inv_store.historie(),
         "shortlist": _letzte_shortlist()[:12],
         "vorschlaege": [{"symbol": s.get("symbol"), "aktion": s.get("aktion"), "grund": s.get("grund"),
                          "risiko_label": s.get("risiko_label"), "konfidenz": s.get("konfidenz"),

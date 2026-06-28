@@ -40,9 +40,12 @@ async function ladeInvestment() {
     || `<div class="leer">Noch keine Vorschläge.</div>`;
   const sc = i.scorecard || {};
   const scText = sc.ausgewertet ? `${Math.round((sc.trefferquote || 0) * 100)}% Trefferquote (${sc.treffer}/${sc.ausgewertet})` : "noch keine Auswertung";
+  const h = i.historie || {}; const jt = h.je_tabelle || {};
+  const histText = h.eintraege_gesamt ? `${h.eintraege_gesamt} Einträge (all-time) · ${jt.forecasts || 0} Prognosen · ${jt.actuals || 0} ausgewertet · ${jt.screening || 0} Screens` : "noch leer";
   win.body.innerHTML = `<div class="app">
     <div class="kv"><span class="k">Modus</span><b>${esc(i.modus)}</b></div>
     <div class="kv"><span class="k">Track-Record</span><b>${esc(scText)}</b></div>
+    <div class="kv"><span class="k">Historie (append-only)</span><b>${esc(histText)}</b></div>
     <div style="margin:10px 0; display:flex; gap:6px; flex-wrap:wrap">${prov}</div>
     <div class="brain-bar"><input id="inv-sym" placeholder="Symbol zur Watchlist (AAPL / bitcoin)…" autocomplete="off">
       <button class="btn ok" onclick="investWatchAdd()">＋</button><button class="btn info" onclick="investScreen(this)">📡 Screen jetzt</button></div>
