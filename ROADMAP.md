@@ -265,6 +265,12 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   HTTP 401 + TLS ok). Der CEO hat die DSM-/Router-Sicherheitseinstellungen selbst ausgefuehrt; der Assistent
   hat live gelotst + read-only mitgelesen + technisch verifiziert. **Schaltet das Mikrofon/Sprach-Eingabe frei**
   (secure context).
+- **Command-Center-Redesign (2026-06-28):** LUNA-OS im **Jarvis-HUD-Stil** -- linke Sidebar-Navigation,
+  Topbar (System-Status/Uhr/Suche), zentraler AI-Core/Globe mit audio-reaktivem Orb, Panel-Grid (AI Core
+  Overview, Live Intelligence Feed, Active Agents, Mission Timeline, Quick Commands, System Monitor mit Gauges,
+  Memory Insights, LLM/Provider-Status), durchgehende „TALK TO LUNA"-Leiste; App-Fenster (WinBox) bleiben.
+  **Globales Design-System in `UI.md`** (SSOT fuer den Look -- alle neuen Funktionen folgen ihm). Endpunkt
+  `/api/overview`. Echte Daten statt Mock.
 - **Live-Voice-LUNA am Orb (2026-06-27):** Orb = sprechende LUNA (Browser-STT + ElevenLabs-Stimme „Lola",
   volle HoaConversation). Hoeren auf Mac+Safari verifiziert (CEO); Sprechen+Hoeren auf Safari ok.
   **Web-Audio-Unlock** (Ton auf Safari/iOS), **Kontext-Anzeige** (Frage zu Anträgen/Tickets -> Panel auf +

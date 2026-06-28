@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 11:20] — Claude Code (Command-Center-Redesign im Jarvis-Stil + UI.md)
+- **Was:** (1) **UI.md** als globales **Design-System** angelegt (Farb-Tokens, Typografie, Layout
+  Sidebar/Topbar/Panel-Grid/Voicebar, Komponenten, Motion, Sprache, technische Regeln + Checkliste fuer neue
+  Funktionen) -- damit alle neuen Features demselben Look folgen. (2) **LUNA-OS auf „Command Center"
+  umgebaut** (CEO-Vorlage Jarvis-HUD): linke **Sidebar-Navigation** (mit Live-Counts, aktivem Cyan-Balken,
+  Mobil-Menue), neue **Topbar** (System-Status, Datum/Uhr, Suche, LIVE), zentraler **AI-Core/Globe** mit dem
+  audio-reaktiven Orb, **Panel-Grid** mit HUD-Eckwinkeln: AI Core Overview, Live Intelligence Feed (Meldungen),
+  Active Agents, Mission Timeline (heutige Termine), Quick Commands, System Monitor (SVG-Gauges mit **echten**
+  LUNA-Zahlen), Memory Insights, LLM/Provider-Status. Durchgehende **„TALK TO LUNA"-Leiste** (= toggleVoice).
+  Die bestehenden App-**Fenster** (WinBox) bleiben und oeffnen aus Sidebar/Panels. Neuer Endpunkt
+  **`/api/overview`** (Counts + Provider-Status aus .env + Agentenliste). Cache-Bust ?v=9.
+- **Warum:** CEO: „bau dieses Jarvis-Command-Center-Design nach + halte unser Design global in einer UI.md
+  fest". Echte Daten statt Mock (Antraege/Meldungen/Research/Wissen/Provider). Verifiziert im Preview
+  (Desktop-Grid + Mobil mit Menue-Toggle, Nav oeffnet Fenster, Provider-Status live, keine Konsolenfehler),
+  Suite 174/174.
+- **Betroffen:** UI.md (neu), orchestrator/channels/web/app.py, .../static/{index.html,style.css,app.js}.
+
 ## [2026-06-28 11:00] — Claude Code (Second Brain + proaktive Tages-Insights)
 - **Was:** Zwei neue Faehigkeiten (CEO-Wunsch nach OpenJarvis-Vorbild):
   (1) **Your Second Brain** -- durchsuchbare persoenliche Wissensbasis. Neues Modul `core/brain.py`

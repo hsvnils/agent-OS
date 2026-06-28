@@ -3,31 +3,55 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>LUNA OS</title>
-  <link rel="stylesheet" href="/static/style.css?v=8">
+  <title>LUNA Command Center</title>
+  <link rel="stylesheet" href="/static/style.css?v=9">
   <script src="/static/vendor/winbox.bundle.min.js"></script>
 </head>
 <body>
   <div id="starfield"></div>
   <div id="grid"></div>
   <div id="scan"></div>
-  <div id="topbar">
-    <div id="luna-orb" class="idle" title="LUNA — antippen und sprechen">
-      <span class="orb-ring r1"></span><span class="orb-ring r2"></span><span class="orb-core"></span>
+
+  <div id="cc">
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div class="brand-block">
+        <div class="brand-mark"><span></span></div>
+        <div><div class="brand">LUNA</div><div class="brand-sub">COMMAND CENTER</div></div>
+        <button id="side-toggle" title="Menü">☰</button>
+      </div>
+      <nav id="nav"></nav>
+      <div class="side-voice">
+        <div class="side-voice-head">VOICE STATUS <span id="side-voice-state">Bereit</span></div>
+        <div class="wave" id="side-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <button id="focus-btn" class="focus-btn">⚡ Fokus-Modus</button>
+      </div>
+    </aside>
+
+    <!-- Body -->
+    <div id="cc-body">
+      <header id="topbar">
+        <button id="nav-open" title="Menü">☰</button>
+        <div class="sysstatus"><span class="dot"></span>SYSTEM&nbsp;<b>OPTIMAL</b></div>
+        <div class="clockblock"><div id="datum"></div><div id="clock"></div></div>
+        <div class="topactions">
+          <input id="topsearch" placeholder="Suche · frag LUNA …" autocomplete="off">
+          <span id="live" class="live"><span class="dot"></span>LIVE</span>
+        </div>
+      </header>
+
+      <main id="cc-main"><!-- Panels werden von app.js gerendert --></main>
+
+      <footer id="voicebar">
+        <button id="talk" class="talk">
+          <span class="talk-wave left"><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="talk-mid"><b>TALK TO LUNA</b><small id="talk-sub">tippen zum Sprechen</small></span>
+          <span class="talk-wave right"><i></i><i></i><i></i><i></i><i></i></span>
+        </button>
+      </footer>
     </div>
-    <span class="brand">LUNA<span class="brand-os">OS</span></span>
-    <span id="live" class="live"><span class="dot"></span>ONLINE</span>
-    <span id="clock"></span>
   </div>
-  <div id="desktop">
-    <div id="welcome">
-      <div class="wm-glow"></div>
-      <h1>Willkommen, Nils.</h1>
-      <p>Deine Kommandozentrale. LUNA zeigt dir hier in Echtzeit, was zu erledigen ist.</p>
-      <p class="hint">Sag oder tippe „zeig mir die Aufträge" — oder öffne unten im Dock eine App.</p>
-    </div>
-  </div>
-  <div id="dock"></div>
-  <script src="/static/app.js?v=8"></script>
+
+  <script src="/static/app.js?v=9"></script>
 </body>
 </html>

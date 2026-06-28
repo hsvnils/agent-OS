@@ -180,28 +180,144 @@ function renderApp(id) {
 }
 function renderOffene() { Object.keys(WINS).forEach(renderApp); }
 
-// ---- Dock ------------------------------------------------------------------
-function buildDock() {
-  const dock = document.getElementById("dock");
-  dock.innerHTML = Object.entries(APPS).map(([id, a]) =>
-    `<div class="dock-app" data-app="${id}"><div class="ico">${a.icon}</div><div class="lbl">${esc(a.titel)}</div><span class="badge-n" data-badge="${id}" hidden></span></div>`).join("");
-  dock.querySelectorAll(".dock-app").forEach(el => el.onclick = () => openApp(el.dataset.app));
+// ---- Sidebar-Navigation ----------------------------------------------------
+const NAV = [
+  { id: "home", icon: "▦", label: "Command Center" },
+  { id: "auftraege", icon: "📋", label: "Aufträge", count: () => STATE.antraege.length },
+  { id: "lagebild", icon: "📡", label: "Lagebild" },
+  { id: "wissen", icon: "🧠", label: "Wissen" },
+  { id: "research", icon: "🔍", label: "Research", count: () => STATE.research.length },
+  { id: "meldungen", icon: "🔔", label: "Meldungen", count: () => STATE.meldungen.length },
+  { id: "aktivitaet", icon: "📊", label: "Aktivität" },
+  { id: "finance", icon: "💶", label: "Finanzen" },
+  { id: "luna", icon: "💬", label: "LUNA-Chat" },
+];
+let AKTIV_NAV = "home";
+function buildSidebar() {
+  const nav = document.getElementById("nav");
+  nav.innerHTML = NAV.map(n => `<div class="nav-item${n.id === AKTIV_NAV ? " active" : ""}" data-app="${n.id}">
+    <span class="nico">${n.icon}</span><span>${esc(n.label)}</span><span class="ncount" data-ncount="${n.id}" hidden></span></div>`).join("");
+  updateSidebarCounts();
 }
-function updateBadges() {
-  Object.entries(APPS).forEach(([id, a]) => {
-    const el = document.querySelector(`[data-badge="${id}"]`);
-    if (!el) return;
-    const n = a.badge();
-    el.hidden = !n; el.textContent = n;
+function updateSidebarCounts() {
+  NAV.forEach(n => {
+    const el = document.querySelector(`[data-ncount="${n.id}"]`); if (!el) return;
+    const c = n.count ? n.count() : 0; el.hidden = !c; el.textContent = c;
   });
-  document.getElementById("welcome").style.display = STATE.antraege.length ? "none" : "";
+  document.querySelectorAll(".nav-item").forEach(el =>
+    el.classList.toggle("active", el.dataset.app === AKTIV_NAV));
+}
+function navTo(id) {
+  if (id === "home") { AKTIV_NAV = "home"; renderDashboard(); updateSidebarCounts(); }
+  else if (id === "luna") { AKTIV_NAV = "luna"; openLuna(); updateSidebarCounts(); }
+  else { AKTIV_NAV = id; openApp(id); updateSidebarCounts(); }
+  document.getElementById("sidebar").classList.remove("open");  // mobil zuklappen
+}
+
+// ---- Command-Center-Dashboard ----------------------------------------------
+let OVERVIEW = { counts: {}, providers: [], agenten: [], providers_connected: 0 };
+let LAGE = { daten: {} };
+
+function gauge(val, max, label) {
+  const r = 30, c = 2 * Math.PI * r, frac = Math.max(0, Math.min(1, max ? val / max : 0));
+  return `<div class="gauge"><svg viewBox="0 0 76 76">
+    <circle cx="38" cy="38" r="${r}" fill="none" stroke="rgba(120,170,255,.15)" stroke-width="6"/>
+    <circle cx="38" cy="38" r="${r}" fill="none" stroke="#2ee6ff" stroke-width="6" stroke-linecap="round"
+      stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - frac)).toFixed(1)}" transform="rotate(-90 38 38)"/>
+    <text class="gv" x="38" y="43" text-anchor="middle">${val}</text></svg>
+    <div class="glabel">${esc(label)}</div></div>`;
+}
+function panel(titel, inhalt, opts = {}) {
+  const head = `<div class="panel-h"><span>${esc(titel)}</span>${opts.right || ""}</div>`;
+  return `<div class="panel${opts.cls ? " " + opts.cls : ""}">${head}${inhalt}</div>`;
+}
+
+function renderDashboard() {
+  const main = document.getElementById("cc-main"); if (!main) return;
+  const c = OVERVIEW.counts || {};
+  const d = LAGE.daten || {};
+
+  // Hero / AI Core
+  const hero = `<div class="panel hero col-2">
+    <div class="hero-core"><span class="globe"></span><span class="orbit"></span>
+      <div id="luna-orb" class="idle" title="LUNA — antippen und sprechen">
+        <span class="orb-ring r1"></span><span class="orb-ring r2"></span><span class="orb-core"></span></div></div>
+    <div class="htitle">LUNA</div><div class="hsub">AI CORE</div><div class="hver">v3 · Command Center</div></div>`;
+
+  // AI Core Overview
+  const ov = panel("AI Core Overview", `
+    ${ovItem("🌙", "LUNA Core", "Head of Agents", "active")}
+    ${ovItem("🧠", "Memory", (c.wissen || 0) + " Wissens-Einträge", (c.wissen ? "active" : "off"))}
+    ${ovItem("🔊", "Voice", "ElevenLabs (Lola)", "active")}
+    ${ovItem("🤖", "Agents", "14 Abteilungen", "active")}
+    ${ovItem("🧩", "LLMs", OVERVIEW.providers_connected + " verbunden", (OVERVIEW.providers_connected ? "active" : "off"))}
+    ${ovItem("🛡️", "System", "Optimal", "active")}`);
+
+  // Live Intelligence Feed (Meldungen)
+  const feedItems = (STATE.meldungen || []).slice(0, 6).map(m => `<div class="feed-item">
+    <span class="fi">🔔</span><div><div class="ft">${esc((m.text || "").slice(0, 70))}</div>
+    <div class="fs">${esc(m.abteilung || "")}</div></div><span class="tag info">INFO</span></div>`).join("");
+  const feed = panel("Live Intelligence Feed", feedItems || `<div class="leer">Keine neuen Meldungen.</div>`,
+    { right: `<span class="livep"><span class="dot"></span>LIVE</span>` });
+
+  // Active Agents
+  const agentCards = (OVERVIEW.agenten || []).map(a => `<div class="agent ${a.status}">
+    <div class="an">${esc(a.name)}</div><span class="pill ${a.status}"><span class="dot"></span>${a.status === "active" ? "Active" : "Standby"}</span>
+    <div class="aw"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>`).join("");
+  const agents = panel("Active Agents", `<div class="agents-grid">${agentCards}</div>`,
+    { cls: "col-2", right: `<span class="right" data-app="auftraege">Alle ›</span>` });
+
+  // Mission Timeline (heutige Termine)
+  const tl = (d.termine_heute || []).map(t => `<div class="tl-item"><span class="tlz">${esc(t.zeit)}</span><span class="tlt">${esc(t.titel)}</span></div>`).join("");
+  const timeline = panel("Mission Timeline — Heute", tl || `<div class="leer">Heute keine Termine.</div>`,
+    { right: `<span class="right" data-app="lagebild">Lagebild ›</span>` });
+
+  // Quick Commands
+  const quick = panel("Quick Commands", `<div class="qc-grid">
+    <button class="qc" data-cmd="talk"><span class="qci">🎙️</span>Sprach-Gespräch starten</button>
+    <button class="qc" data-cmd="auftraege"><span class="qci">📋</span>Aufträge öffnen</button>
+    <button class="qc" data-cmd="wissen"><span class="qci">🧠</span>Wissen durchsuchen</button>
+    <button class="qc" data-cmd="lagebild"><span class="qci">📡</span>Lagebild anzeigen</button></div>`);
+
+  // System Monitor (echte LUNA-Zahlen)
+  const sysmon = panel("System Monitor", `<div class="gauges">
+    ${gauge(c.antraege || 0, 10, "Aufträge")}${gauge(c.research || 0, 10, "Tickets")}
+    ${gauge(c.wissen || 0, 20, "Wissen")}${gauge(c.meldungen || 0, 10, "Meldungen")}</div>`);
+
+  // Memory Insights
+  const mem = panel("Memory Insights", `
+    <div class="kv"><span class="k">Wissens-Einträge</span><b>${c.wissen || 0}</b></div>
+    <div class="kv"><span class="k">Offene Research-Tickets</span><b>${c.research || 0}</b></div>
+    <div class="kv"><span class="k">Aktivitäts-Einträge</span><b>${c.aktivitaet || 0}</b></div>
+    <div class="kv"><span class="k">Monatsbudget</span><b>${esc(OVERVIEW.monatsbudget || "—")}</b></div>`,
+    { right: `<span class="right" data-app="wissen">Wissen ›</span>` });
+
+  // LLM / Provider Status
+  const provs = (OVERVIEW.providers || []).map(p => `<div class="prov ${p.connected ? "on" : "off"}">
+    <div><div class="pn">${esc(p.name)}</div><div class="ps">${p.connected ? "Verbunden" : "Nicht verknüpft"}</div></div>
+    <span class="pd"></span></div>`).join("");
+  const llm = panel("LLM / Provider Status", `<div class="prov-grid">${provs}</div>`,
+    { right: `<span class="livep"><span class="dot"></span>${OVERVIEW.providers_connected} aktiv</span>` });
+
+  main.innerHTML = ov + hero + feed + agents + timeline + quick + sysmon + mem + llm;
+  setOrb(VOICE.active ? "listening" : "idle");  // Orb-Zustand nach Neurender wiederherstellen
+}
+function ovItem(icon, titel, sub, status) {
+  return `<div class="ov-item"><span class="ovi">${icon}</span>
+    <div><div class="ovt">${esc(titel)}</div><div class="ovs">${esc(sub)}</div></div>
+    <span class="pill ${status}"><span class="dot"></span>${status === "active" ? "Active" : "—"}</span></div>`;
 }
 
 // ---- Daten + Aktionen ------------------------------------------------------
 async function refresh() {
   try {
     STATE = await (await fetch("/api/state")).json();
-    renderOffene(); updateBadges(); setLive(true);
+    setLive(true);
+    // Dashboard-Daten (parallel, fehlertolerant)
+    try { OVERVIEW = await (await fetch("/api/overview")).json(); } catch {}
+    try { LAGE = await (await fetch("/api/lagebild")).json(); } catch {}
+    renderOffene(); updateSidebarCounts();
+    if (AKTIV_NAV === "home") renderDashboard();
   } catch { setLive(false); }
 }
 async function aktion(id, akt, btn) {
@@ -216,7 +332,7 @@ async function aktion(id, akt, btn) {
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const d = await r.json();
     if (akt === "mehr-info" && d.bewertung) alert("LUNA-Bewertung:\n\n" + d.bewertung);
-    if (d.state) { STATE = d.state; renderOffene(); updateBadges(); }
+    if (d.state) { STATE = d.state; renderOffene(); updateSidebarCounts(); if (AKTIV_NAV === "home") renderDashboard(); }
   } catch { if (btn) { btn.disabled = false; btn.textContent = alt; } alert("Aktion fehlgeschlagen."); }
 }
 
@@ -245,6 +361,13 @@ async function openDetail(id) {
 
 // ---- Events ----------------------------------------------------------------
 document.addEventListener("click", (e) => {
+  const orb = e.target.closest("#luna-orb"); if (orb) { toggleVoice(); return; }
+  const talk = e.target.closest("#talk"); if (talk) { toggleVoice(); return; }
+  const tog = e.target.closest("#side-toggle, #nav-open"); if (tog) { document.getElementById("sidebar").classList.toggle("open"); return; }
+  const cmd = e.target.closest("[data-cmd]");
+  if (cmd) { cmd.dataset.cmd === "talk" ? toggleVoice() : navTo(cmd.dataset.cmd); return; }
+  const navi = e.target.closest("[data-app]");
+  if (navi) { navTo(navi.dataset.app); return; }
   const det = e.target.closest("[data-detail]");
   if (det) { openDetail(det.dataset.detail); return; }
   const btn = e.target.closest("[data-act]");
@@ -253,10 +376,12 @@ document.addEventListener("click", (e) => {
   if (mehr) { const d = mehr.previousElementSibling; d.classList.toggle("open");
     mehr.textContent = d.classList.contains("open") ? "weniger anzeigen ▴" : "mehr anzeigen ▾"; }
 });
-function setLive(on) { const el = document.getElementById("live"); el.classList.toggle("stale", !on);
-  el.textContent = on ? "● live" : "○ offline"; }
-function clock() { document.getElementById("clock").textContent =
-  new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }); }
+function setLive(on) { const el = document.getElementById("live"); if (el) el.classList.toggle("stale", !on); }
+function clock() {
+  const now = new Date();
+  const cl = document.getElementById("clock"); if (cl) cl.textContent = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const dt = document.getElementById("datum"); if (dt) dt.textContent = now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+}
 
 function connectSSE() {
   try {
@@ -305,8 +430,17 @@ function unlockAudio() {  // MUSS im Klick-/Tap-Handler laufen (Nutzer-Geste)
   try { const b = ac.createBuffer(1, 1, 22050); const s = ac.createBufferSource(); s.buffer = b; s.connect(ac.destination); s.start(0); } catch {}
 }
 
-function setOrb(s) { const o = document.getElementById("luna-orb"); if (o) o.className = s; }
-function voiceStatus(t) { const el = document.getElementById("voice-status"); if (el) el.textContent = t; }
+function setOrb(s) {
+  const o = document.getElementById("luna-orb"); if (o) o.className = s;
+  const on = (s === "listening" || s === "speaking");
+  const w = document.getElementById("side-wave"); if (w) w.classList.toggle("on", on);
+  const t = document.getElementById("talk"); if (t) t.classList.toggle("on", on);
+}
+function voiceStatus(t) {
+  const el = document.getElementById("voice-status"); if (el) el.textContent = t;  // im Chat-Fenster
+  const sv = document.getElementById("side-voice-state"); if (sv) sv.textContent = t;
+  const ts = document.getElementById("talk-sub"); if (ts) ts.textContent = t;
+}
 function voiceToggleUI() { const b = document.getElementById("voice-toggle");
   if (b) { b.classList.toggle("on", VOICE.active); b.textContent = VOICE.active ? "⏹ Gespräch beenden" : "🎙️ Gespräch starten"; } }
 
@@ -485,7 +619,13 @@ function typeLunaText(text) {
 }
 
 // ---- Start -----------------------------------------------------------------
-buildDock(); clock(); setInterval(clock, 1000);
-document.getElementById("luna-orb").onclick = toggleVoice;  // Orb antippen = Live-Gespraech starten/stoppen
-refresh().then(() => { openApp("auftraege"); });
+buildSidebar(); clock(); setInterval(clock, 1000);
+// Topbar-Suche: Enter -> an LUNA (oeffnet Chat); Kontext-Befehle blenden direkt das Panel ein.
+const _ts = document.getElementById("topsearch");
+if (_ts) _ts.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && _ts.value.trim()) { const t = _ts.value.trim(); _ts.value = "";
+    openLuna(); sendeAnLuna(t, false); }
+});
+refresh();          // laedt Daten + rendert das Command-Center-Dashboard (Home)
 connectSSE();
+// Orb-/Talk-Klicks laufen ueber die zentrale Event-Delegation (siehe oben).

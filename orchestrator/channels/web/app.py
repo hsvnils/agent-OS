@@ -387,6 +387,38 @@ async def brain_merken(request: Request):
     return JSONResponse({"ok": True, "id": bid, "items": [_brain_item_dto(e) for e in brain.list(40)]})
 
 
+@app.get("/api/overview")
+def overview():
+    """Command-Center-Uebersicht: reale Counts, Provider-Status (aus .env), Agentenliste."""
+    offene = _offene_antraege()
+    offene_research = [t for t in research.list() if t.get("status") in ("offen", "in_arbeit")]
+    providers = [{"name": n, "connected": bool(_secret(k))} for n, k in (
+        ("Claude", "ANTHROPIC_API_KEY"), ("Gemini", "GEMINI_API_KEY"), ("OpenAI", "OPENAI_API_KEY"),
+        ("ElevenLabs", "ELEVENLABS_API_KEY"), ("Deepgram", "DEEPGRAM_API_KEY"), ("Brave", "BRAVE_API_KEY"),
+        ("GitHub", "GITHUB_TOKEN"), ("Google", "GOOGLE_OAUTH_REFRESH_TOKEN"))]
+    agenten = [
+        {"name": "LUNA Core", "status": "active"},
+        {"name": "Researcher", "status": "active" if offene_research else "standby"},
+        {"name": "Berater", "status": "standby"},
+        {"name": "CTO / IT", "status": "standby"},
+        {"name": "CFO / Finance", "status": "standby"},
+        {"name": "Self-Maintenance", "status": "active"},
+    ]
+    return {
+        "counts": {
+            "antraege": len(offene),
+            "meldungen": len(notifications.pending()),
+            "research": len(offene_research),
+            "wissen": len(brain.list(100000)),
+            "aktivitaet": len(_aktivitaet_letzte(100000)),
+        },
+        "providers": providers,
+        "providers_connected": sum(1 for p in providers if p["connected"]),
+        "agenten": agenten,
+        "monatsbudget": _budget(),
+    }
+
+
 @app.get("/api/lagebild")
 def lagebild():
     ctx = _ctx_cached()
