@@ -277,14 +277,20 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   fuer komplexe Anfragen; (d) „Mehr Info" mit eigener Session je Antrag; (e) weiterer Mobil-Feinschliff.
 
 #### Naechste Ausbau-Cluster (CEO-Wunsch 2026-06-27, nach OpenJarvis-Vorbild)
-- **Complete Device Control** (LUNA bedient Geraete/Rechner wie OpenJarvis) = **deckt sich mit Phase 17**
+- ✅ **Jarvis Intelligent Features -- proaktive Tages-Insights (MVP, 2026-06-28):** `core/insights.py`
+  (Lagebild: offene Entscheidungen, heutige Termine, ungelesene Mails, offene Tickets, Agenda; regelbasiert).
+  Tool `lagebild`, ans Morgen-Briefing angehaengt, LUNA-OS-App **Lagebild**. **Ausbau:** Erinnerungen/Routinen,
+  Kontext-Vorschlaege („naechste Schritte"), echte Anomalie-Erkennung.
+- ✅ **„Your Second Brain" (MVP, 2026-06-28):** `core/brain.py` (Wissensbasis, lexikalische Suche), Tools
+  `brain_merken`/`brain_suchen` (quellenuebergreifend: Wissen + Research/Antraege + Gmail + Drive), LUNA-OS-App
+  **Wissen**. **Ausbau:** Drive-Volltext-Ingest, semantische Suche (Embeddings), Auto-Ingest aus Mails/
+  Research, Verknuepfung mit dem geparkten **Partner-/Akten-System (CRM-artig)**.
+- 🔲 **Complete Device Control** (LUNA bedient Geraete/Rechner wie OpenJarvis) = **deckt sich mit Phase 17**
   (Computer-Use). Dort weiterfuehren -- harte Governance (nur auf Anweisung, CEO-Tor, Not-Aus, Audit).
-- **Jarvis Intelligent Features** (proaktive Intelligenz: Kontext-Bewusstsein, smarte Vorschlaege,
-  Routinen/Automationen, Erinnerungen). Baut auf vorhandenem Notifier/Briefing/Self-Dev/Watcher auf;
-  zu konkretisieren als eigener Block.
-- **„Your Second Brain"** (persoenliche Wissensbasis: Notizen/Dokumente/Mails/Termine durchsuchbar +
-  vernetzt, Retrieval/RAG ueber CEO-Daten). Knuepft an Memory (Phase) + das geparkte
-  **Partner-/Akten-System (CRM-artig)** (Backlog) an; Gmail/Kalender (Phase 11) als Quellen.
+- 🔲 **Investmentagent (CEO-Wunsch 2026-06-28, als Naechstes):** Agent, der Maerkte/Werte **recherchiert +
+  analysiert** und **Entscheidungsvorlagen/Entwuerfe** erstellt. HART: **keine personalisierte Anlageberatung,
+  keine Trades/Geldbewegungen** -- alles Geld-/Recht-relevante bleibt CEO-/Mensch-Tor (AGENTS.md 4). Nur
+  Vorschlaege; Ausfuehrung nie autonom.
 
 ### Phase 17 — LUNA bedient den Rechner (Computer-Use, auf Anweisung) — GEPLANT (Backlog)
 - **Ziel:** Auf **ausdrueckliche CEO-Anweisung** kann LUNA den Rechner des CEO **bedienen** -- Apps oeffnen

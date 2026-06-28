@@ -33,6 +33,8 @@ class ToolContext:
     kosten: object | None = None         # KostenStore (Token-/Kostenerfassung) oder None
     aktivitaet: object | None = None     # Aktivitaet (zentrales Agenten-Aktivitaetsprotokoll, adc5) oder None
     visuals: list | None = None          # Phase 14: Ablage erzeugter Visualisierungen (SVG) zum Senden
+    brain: object | None = None          # Second Brain (Wissensbasis) oder None
+    insights: object | None = None       # Tages-Insights/Lagebild oder None
 
 
 def tool_specs() -> list[dict]:
@@ -226,6 +228,18 @@ def tool_specs() -> list[dict]:
         _spec("antrag_pushen", "Pusht den Antrag-Branch zu GitHub (fuer deinen Review/Merge per Pull Request). "
               "Braucht GITHUB_TOKEN (sonst CEO-Tor-Hinweis).",
               {"antrag_id": _str("Antrag-ID (Branch antrag/<id>).")}, ["antrag_id"]),
+        _spec("brain_merken", "Speichert Wissen dauerhaft im Second Brain (persoenliche Wissensbasis) -- "
+              "Fakten, Notizen, Beschluesse, die du dir merken sollst. Spaeter per 'brain_suchen' auffindbar.",
+              {"text": _str("Der zu merkende Inhalt."), "titel": _str("Kurztitel (optional)."),
+               "tags": {"type": "array", "items": {"type": "string"}, "description": "Schlagworte (optional)."}},
+              ["text"]),
+        _spec("brain_suchen", "Durchsucht das Second Brain quellenuebergreifend: gespeichertes Wissen + interne "
+              "Daten (Research-Befunde, Antraege) + -- falls verfuegbar -- Gmail und Drive. Liefert die besten "
+              "Treffer mit Quelle; fasse sie fuer den CEO zusammen.",
+              {"frage": _str("Wonach suchen?")}, ["frage"]),
+        _spec("lagebild", "Proaktive Tages-Insights: was auf den CEO wartet (Entscheidungen/Antraege), heutige "
+              "Termine, ungelesene Mails, offene Tickets, Agenda. Token-frugal aus den Stores + Google.",
+              {}, []),
     ]
 
 
@@ -579,6 +593,28 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                 "quellen": erg.quellen, "antrag_id": erg.antrag_id,
                 "hinweis": "Als Antrag eingereicht -- CEO entscheidet (keine Ausfuehrung)."}
 
+    if name == "brain_merken":
+        if ctx.brain is None:
+            return {"fehler": "Second Brain nicht verfuegbar."}
+        bid = ctx.brain.merken((args.get("text") or ""), titel=(args.get("titel") or ""),
+                               tags=args.get("tags") or [], quelle="ceo")
+        if not bid:
+            return {"ok": False, "hinweis": "Leerer Inhalt -- nichts gemerkt."}
+        if ctx.core.changelog:
+            ctx.core.changelog("LUNA", f"Wissen im Second Brain gemerkt ({bid})", "CEO-Anweisung", "brain")
+        return {"ok": True, "id": bid}
+
+    if name == "brain_suchen":
+        frage = (args.get("frage") or "").strip()
+        if not frage:
+            return {"fehler": "Leere Suchanfrage."}
+        return _brain_suchen(frage, ctx, sec)
+
+    if name == "lagebild":
+        if ctx.insights is None:
+            return {"fehler": "Insights nicht verfuegbar."}
+        return {"lagebild": redact(ctx.insights.lagebild(), sec)}
+
     if name in _GOOGLE_TOOLS:
         gw = ctx.google
         if gw is None:
@@ -721,6 +757,63 @@ _GOOGLE_TOOLS = ("mail_suchen", "mail_lesen", "mail_entwurf", "mail_senden", "ka
                  "termin_anlegen", "drive_suchen", "drive_lesen", "tabelle_lesen", "tabelle_schreiben",
                  "posteingang", "kalender_kollisionen", "termin_aendern", "termin_loeschen",
                  "mail_markieren", "drive_anlegen")
+
+
+def _brain_suchen(frage: str, ctx: ToolContext, sec: list[str]) -> dict:
+    """Quellenuebergreifende Suche fuers Second Brain: Wissensspeicher + interne Stores + Google (Mail/Drive)."""
+    from .brain import _tokens
+    q = set(_tokens(frage))
+    treffer: list[dict] = []
+
+    if ctx.brain is not None:
+        for e in ctx.brain.suchen(frage, limit=6):
+            treffer.append({"quelle": "brain:" + e.get("quelle", "notiz"),
+                            "titel": e.get("titel") or (e.get("text", "")[:50]),
+                            "text": e.get("text", "")[:300], "ref": e.get("id", "")})
+
+    def _lex(text: str) -> int:
+        return len(q & set(_tokens(text)))
+
+    if ctx.research is not None:
+        try:
+            for t in ctx.research.list():
+                blob = (t.get("frage", "") or "") + " " + (t.get("befund", "") or "")
+                if _lex(blob) >= 1:
+                    treffer.append({"quelle": "research", "titel": (t.get("frage") or "")[:60],
+                                    "text": (t.get("befund") or t.get("status", ""))[:300],
+                                    "ref": t.get("ticket_id", "")})
+        except Exception:
+            pass
+    if ctx.antraege is not None:
+        try:
+            for a in ctx.antraege.list():
+                blob = (a.get("titel", "") or "") + " " + (a.get("beschreibung", "") or "")
+                if _lex(blob) >= 1:
+                    treffer.append({"quelle": "antrag", "titel": (a.get("titel") or "")[:60],
+                                    "text": (a.get("beschreibung") or "")[:300], "ref": a.get("antrag_id", "")})
+        except Exception:
+            pass
+    # Live-Quellen (nur wenn Google verbunden): Gmail + Drive
+    if ctx.google is not None:
+        try:
+            m = ctx.google.mail_suchen(frage, max_results=4)
+            if m and m.get("ok"):
+                for x in m.get("mails", [])[:4]:
+                    treffer.append({"quelle": "gmail", "titel": (x.get("betreff") or "")[:60],
+                                    "text": f"Von {x.get('von', '')}: {x.get('snippet', '')}"[:300],
+                                    "ref": x.get("id", "")})
+        except Exception:
+            pass
+        try:
+            d = ctx.google.drive_suchen(frage, max_results=4)
+            if d and d.get("ok"):
+                for x in (d.get("dateien") or d.get("files") or [])[:4]:
+                    treffer.append({"quelle": "drive", "titel": (x.get("name") or x.get("titel") or "")[:60],
+                                    "text": "", "ref": x.get("id", "")})
+        except Exception:
+            pass
+
+    return {"anzahl": len(treffer), "treffer": _redact_obj({"t": treffer[:12]}, sec)["t"]}
 
 
 def _redact_obj(obj: dict, secrets: list[str]) -> dict:

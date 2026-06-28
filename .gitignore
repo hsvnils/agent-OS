@@ -48,4 +48,5 @@ aktivitaet/log.jsonl
 agenda/log.jsonl
 watch/log.jsonl
 finance/kosten-log.jsonl
+brain/log.jsonl
 .claude/preview-logs/

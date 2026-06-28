@@ -20,7 +20,9 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 
 from ...core.antraege import Antraege
+from ...core.brain import Brain
 from ...core.briefing import Agenda
+from ...core.insights import Insights
 from ...core.notifications import Notifications
 from ...core.research_tickets import ResearchTickets
 from ...governance.changelog_tool import append_changelog
@@ -33,6 +35,9 @@ antraege = Antraege(ROOT / "antraege" / "log.jsonl", changelog=_changelog)
 notifications = Notifications(ROOT / "notifications" / "log.jsonl")
 research = ResearchTickets(ROOT / "research" / "log.jsonl", changelog=_changelog)
 agenda = Agenda(ROOT / "agenda" / "log.jsonl")
+brain = Brain(ROOT / "brain" / "log.jsonl")
+# Internes Lagebild (ohne Google); fuer das volle Lagebild (Termine/Mails) nutzt der Endpunkt die LUNA-ctx.
+insights_intern = Insights(antraege=antraege, research=research, agenda=agenda)
 
 OFFEN = ("eingereicht", "freigegeben", "in_umsetzung")
 _RANG = {"eingereicht": 0, "freigegeben": 1, "in_umsetzung": 2}
@@ -345,6 +350,52 @@ async def tts(request: Request):
     if not audio:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "TTS fehlgeschlagen")
     return Response(content=audio, media_type="audio/mpeg")
+
+
+# ---- Second Brain (Wissensbasis) ----
+def _brain_item_dto(e):
+    return {"id": e.get("id"), "titel": e.get("titel") or (e.get("text", "")[:50]),
+            "text": e.get("text", ""), "tags": e.get("tags", []), "quelle": e.get("quelle", "notiz"),
+            "ts": e.get("ts", "")}
+
+
+@app.get("/api/brain")
+def brain_liste(q: str = ""):
+    q = (q or "").strip()
+    if q:
+        # quellenuebergreifend, wenn die volle LUNA-ctx verfuegbar ist; sonst nur der Wissensspeicher.
+        ctx = _ctx_cached()
+        if ctx is not None:
+            from ...core.hoa_tools import _brain_suchen
+            res = _brain_suchen(q, ctx, [])
+            return {"q": q, "treffer": res.get("treffer", [])}
+        return {"q": q, "treffer": [{"quelle": "brain:" + e.get("quelle", "notiz"),
+                                     "titel": e.get("titel") or e.get("text", "")[:50],
+                                     "text": e.get("text", "")[:300], "ref": e.get("id", "")}
+                                    for e in brain.suchen(q)]}
+    return {"items": [_brain_item_dto(e) for e in brain.list(40)]}
+
+
+@app.post("/api/brain")
+async def brain_merken(request: Request):
+    body = await _json(request)
+    text = (body.get("text") or "").strip()
+    if not text:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "kein Text")
+    bid = brain.merken(text, titel=(body.get("titel") or ""), tags=body.get("tags") or [], quelle="ceo")
+    _changelog("LUNA-OS", f"Wissen im Second Brain gemerkt ({bid})", "CEO ueber LUNA-OS", "brain")
+    return JSONResponse({"ok": True, "id": bid, "items": [_brain_item_dto(e) for e in brain.list(40)]})
+
+
+@app.get("/api/lagebild")
+def lagebild():
+    ctx = _ctx_cached()
+    ins = ctx.insights if (ctx is not None and getattr(ctx, "insights", None)) else insights_intern
+    try:
+        return {"daten": ins.daten(), "text": ins.lagebild()}
+    except Exception as exc:
+        return {"daten": insights_intern.daten(), "text": insights_intern.lagebild(),
+                "hinweis": str(exc)[:120]}
 
 
 @app.get("/api/events")

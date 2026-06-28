@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 11:00] — Claude Code (Second Brain + proaktive Tages-Insights)
+- **Was:** Zwei neue Faehigkeiten (CEO-Wunsch nach OpenJarvis-Vorbild):
+  (1) **Your Second Brain** -- durchsuchbare persoenliche Wissensbasis. Neues Modul `core/brain.py`
+  (event-sourced JSONL, merken/suchen/vergessen, lexikalische Suche, Dedup, leck-geschuetzt). LUNA-Tools
+  `brain_merken`/`brain_suchen`; `brain_suchen` sucht **quellenuebergreifend** (gemerktes Wissen + interne
+  Stores [Research/Antraege] + -- falls verbunden -- Gmail + Drive, `_brain_suchen`-Foederation in hoa_tools).
+  (2) **Jarvis Intelligent Feature: proaktive Tages-Insights** -- `core/insights.py` (Lagebild: offene
+  Entscheidungen/Antraege, heutige Termine [Kalender live], ungelesene Mails [Gmail live], offene Tickets,
+  Agenda; rein regelbasiert/token-frugal). LUNA-Tool `lagebild`; **ans Morgen-Briefing angehaengt** (proaktiv).
+  ToolContext um `brain`/`insights` erweitert, in `_build_ctx` verdrahtet; LUNA-System-Prompt ergaenzt.
+  **LUNA-OS:** neue Apps **Wissen** (durchsuchen inkl. Gmail/Drive + Wissen merken) und **Lagebild**
+  (Tagesstand), Endpunkte `/api/brain` (GET/POST) + `/api/lagebild`. Cache-Bust ?v=8.
+- **Warum:** CEO: „weiter mit Jarvis Intelligent Features und Second Brain". Verifiziert: Tests (brain 7/7,
+  insights 4/4, Suite 174/174); Endpunkte live im Preview -- brain_suchen fand quellenuebergreifend sogar eine
+  Drive-Datei, Lagebild fragte Gmail live ab; Wissen-/Lagebild-App rendern sauber, keine Konsolenfehler.
+  Stores `brain/log.jsonl` gitignored + vom NAS-Sync ausgeschlossen.
+- **Betroffen:** orchestrator/core/{brain.py,insights.py,hoa_tools.py,hoa_conversation.py},
+  orchestrator/channels/telegram/bot.py, orchestrator/channels/web/{app.py,static/*},
+  orchestrator/tests/{test_brain.py,test_insights.py}, .gitignore, deploy/sync-to-nas.sh.
+
 ## [2026-06-27 22:45] — Claude Code (Voice-LUNA: Barge-in + Jarvis-Visualisierung)
 - **Was:** (1) **Barge-in/Unterbrechen (CEO-Feedback):** Orb antippen, waehrend LUNA spricht -> sie verstummt
   sofort (`stopAudio` ueber `BufferSource.stop()` -> onended loest die Sprech-Schleife, die danach automatisch

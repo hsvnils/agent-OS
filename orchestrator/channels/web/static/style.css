@@ -204,6 +204,13 @@ body {
 .kv .k { color: var(--muted); font-size: 13px; }
 .kv b { font-family: var(--mono); font-size: 15px; color: var(--cyan); text-shadow: 0 0 10px rgba(46, 230, 255, .35); }
 
+/* Second Brain (Wissen-App) */
+.brain-bar, .brain-add { display: flex; gap: 8px; margin-bottom: 12px; }
+.brain-add { margin: 12px 0 4px; }
+.brain-bar input, .brain-add input { flex: 1; background: rgba(4, 8, 22, .7); border: 1px solid var(--line);
+  border-radius: 10px; color: var(--fg); padding: 9px 12px; font-size: 13px; outline: none; }
+.brain-bar input:focus, .brain-add input:focus { border-color: rgba(46, 230, 255, .6); box-shadow: var(--glow-cyan); }
+
 /* Antrags-Detailansicht */
 .app.detail .head { margin-bottom: 7px; }
 .app.detail .desc.full { max-height: none; overflow: visible; margin-bottom: 12px; }

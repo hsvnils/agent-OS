@@ -116,11 +116,18 @@ def _build_ctx(cfg: dict, secrets: dict):
     from ...core.kosten import KostenStore
     agenda = Agenda(ROOT / "agenda" / "log.jsonl", secrets=secret_values)
     kosten = KostenStore(ROOT / "finance" / "kosten-log.jsonl", secrets=secret_values)
+    # Second Brain (Wissensbasis) + proaktive Tages-Insights (Lagebild).
+    from ...core.brain import Brain
+    from ...core.insights import Insights
+    brain = Brain(ROOT / "brain" / "log.jsonl", secrets=secret_values)
+    insights = Insights(antraege=antraege, research=research, agenda=agenda, google=google,
+                        secrets=secret_values)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,
                        notifications=notifications, agenda=agenda, secret_dict=secrets,
-                       kosten=kosten, aktivitaet=aktivitaet, visuals=[]), secret_values
+                       kosten=kosten, aktivitaet=aktivitaet, visuals=[],
+                       brain=brain, insights=insights), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:
@@ -295,6 +302,13 @@ def _start_briefing_loop(ctx, notify) -> None:
                     text = Briefing(antraege=ctx.antraege, research=ctx.research, watch=ctx.watch,
                                     agenda=ctx.agenda, secrets=ctx.leak_secrets).erstellen(
                                         art, jetzt=jetzt.replace(tzinfo=None) if tz else jetzt)
+                    # Proaktive Tages-Insights ans Morgen-Briefing anhaengen (Lagebild: Termine/Mails/Entsch.).
+                    if art == "morgen" and ctx.insights is not None:
+                        try:
+                            text += "\n\n" + ctx.insights.lagebild(
+                                jetzt=jetzt.replace(tzinfo=None) if tz else jetzt)
+                        except Exception as exc:
+                            print(f"[briefing] Lagebild-Fehler: {exc}", flush=True)
                     notify(text, abteilung="LUNA-Briefing", kategorie="briefing", quelle="briefing",
                            dedup_stunden=0)
                     ctx.agenda.markiere_briefing(art, datum)

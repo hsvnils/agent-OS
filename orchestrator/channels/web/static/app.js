@@ -15,8 +15,70 @@ const APPS = {
   meldungen: { icon: "🔔", titel: "Meldungen", badge: () => STATE.meldungen.length, render: renderListe("meldungen", m => [m.abteilung, m.text, m.ts]) },
   aktivitaet: { icon: "📊", titel: "Aktivität", badge: () => 0, render: renderListe("aktivitaet", a => [a.akteur, a.aktion, a.ts]) },
   research: { icon: "🔍", titel: "Research", badge: () => STATE.research.length, render: renderListe("research", r => [r.abteilung || r.status, r.frage, ""]) },
+  lagebild: { icon: "📡", titel: "Lagebild", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Lagebild…</div></div>`, load: ladeLagebild },
+  wissen: { icon: "🧠", titel: "Wissen", badge: () => 0, render: renderWissen, load: ladeWissen },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
 };
+
+// ---- Second Brain (Wissen) -------------------------------------------------
+let BRAIN_ITEMS = [];
+function renderWissen() {
+  const liste = (BRAIN_ITEMS || []).map(e => `<div class="card">
+      <div class="head"><b>${esc(e.titel || e.text.slice(0, 50))}</b></div>
+      ${e.tags && e.tags.length ? `<div class="meta">${e.tags.map(esc).join(" · ")}</div>` : ""}
+      <div class="desc">${esc(e.text)}</div></div>`).join("");
+  return `<div class="app">
+    <div class="brain-bar">
+      <input id="brain-q" placeholder="Wissen durchsuchen (intern + Gmail + Drive)…" autocomplete="off">
+      <button class="btn info" onclick="brainSuchen()">🔍 Suchen</button>
+    </div>
+    <div id="brain-results">${liste || `<div class="leer">Noch kein Wissen gespeichert. Merk dir was unten. 🧠</div>`}</div>
+    <div class="brain-add">
+      <input id="brain-note" placeholder="Neues Wissen merken…" autocomplete="off">
+      <button class="btn ok" onclick="brainMerken()">＋ Merken</button>
+    </div></div>`;
+}
+async function ladeWissen() {
+  try { BRAIN_ITEMS = (await (await fetch("/api/brain")).json()).items || []; } catch { BRAIN_ITEMS = []; }
+  renderApp("wissen");
+}
+async function brainSuchen() {
+  const q = (document.getElementById("brain-q") || {}).value || "";
+  const box = document.getElementById("brain-results");
+  if (box) box.innerHTML = `<div class="leer">Suche…</div>`;
+  try {
+    const d = await (await fetch("/api/brain?q=" + encodeURIComponent(q.trim()))).json();
+    const t = (d.treffer || []);
+    if (box) box.innerHTML = t.length ? t.map(x => `<div class="card">
+      <div class="head"><span class="badge eingereicht">${esc(x.quelle)}</span><b>${esc(x.titel)}</b></div>
+      <div class="desc">${esc(x.text)}</div></div>`).join("") : `<div class="leer">Keine Treffer.</div>`;
+  } catch { if (box) box.innerHTML = `<div class="leer">Suche fehlgeschlagen.</div>`; }
+}
+async function brainMerken() {
+  const inp = document.getElementById("brain-note"); const text = (inp && inp.value || "").trim();
+  if (!text) return;
+  try { await fetch("/api/brain", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }) }); if (inp) inp.value = ""; ladeWissen(); } catch { alert("Konnte nicht merken."); }
+}
+
+// ---- Lagebild (proaktive Tages-Insights) -----------------------------------
+async function ladeLagebild() {
+  let d;
+  try { d = (await (await fetch("/api/lagebild")).json()).daten; } catch { d = null; }
+  const win = WINS.lagebild; if (!win) return;
+  if (!d) { win.body.innerHTML = `<div class="app"><div class="leer">Lagebild nicht verfügbar.</div></div>`; return; }
+  const sek = (titel, zeilen) => zeilen.length
+    ? `<h3>${esc(titel)}</h3>` + zeilen.map(z => `<div class="row"><div>${z}</div></div>`).join("") : "";
+  const ent = (d.entscheidungen || []).map(x => `<b>${esc(x.titel)}</b> <span class="meta">[${esc(x.id)}] ${esc(x.status)}</span>`);
+  const term = (d.termine_heute || []).map(x => `<b>${esc(x.zeit)}</b> ${esc(x.titel)}`);
+  const mails = d.mails && d.mails.verfuegbar ? (d.mails.liste || []).map(x => `<b>${esc(x.von)}</b>: ${esc(x.betreff)}`) : [];
+  const tick = (d.tickets || []).map(x => `${esc(x.frage)} <span class="meta">[${esc(x.id)}]</span>`);
+  const ag = (d.agenda || []).map(esc);
+  const body = sek("Auf dich warten", ent) + sek("Heute im Kalender", term)
+    + (d.mails && d.mails.verfuegbar ? sek(`Ungelesene Mails (${d.mails.anzahl})`, mails) : "")
+    + sek("Offene Research-Tickets", tick) + sek("Agenda", ag);
+  win.body.innerHTML = `<div class="app detail">${body || `<div class="leer">Alles ruhig. Nichts Dringendes. 👍</div>`}</div>`;
+}
 
 // Sprach-/Text-Befehle: "zeig mir die Aufträge", "öffne Finanzen" -> passende App einblenden.
 // Funktioniert per Tippen UND per Mikrofon, auf jedem Geraet (Handy/Rechner/iPad).
@@ -111,6 +173,7 @@ function openApp(id) {
   });
   WINS[id] = win;
   renderApp(id);
+  if (app.load) app.load();  // App laedt ihre Daten selbst (z. B. Wissen, Lagebild)
 }
 function renderApp(id) {
   if (WINS[id]) WINS[id].body.innerHTML = APPS[id].render();
