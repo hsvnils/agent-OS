@@ -17,8 +17,48 @@ const APPS = {
   research: { icon: "🔍", titel: "Research", badge: () => STATE.research.length, render: renderListe("research", r => [r.abteilung || r.status, r.frage, ""]) },
   lagebild: { icon: "📡", titel: "Lagebild", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Lagebild…</div></div>`, load: ladeLagebild },
   wissen: { icon: "🧠", titel: "Wissen", badge: () => 0, render: renderWissen, load: ladeWissen },
+  investment: { icon: "📈", titel: "Investment", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Investment…</div></div>`, load: ladeInvestment },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
 };
+
+// ---- Investment (CIO, advisory) --------------------------------------------
+let INVEST = null;
+async function ladeInvestment() {
+  try { INVEST = await (await fetch("/api/investment")).json(); } catch { INVEST = null; }
+  const win = WINS.investment; if (!win) return;
+  if (!INVEST) { win.body.innerHTML = `<div class="app"><div class="leer">Investment nicht verfügbar.</div></div>`; return; }
+  const i = INVEST;
+  const prov = (i.provider || []).map(p => `<span class="pill ${p.konfiguriert ? "active" : "off"}"><span class="dot"></span>${esc(p.name)}</span>`).join(" ");
+  const wl = (i.watchlist || []).map(w => `<span class="badge eingereicht">${esc(w.symbol)}</span>`).join(" ") || "<i>leer</i>";
+  const sl = (i.shortlist || []).map(s => { const c = s.veraenderung_pct; const v = (c > 0 ? "+" : "") + (c == null ? "?" : Number(c).toFixed(1)) + "%";
+    return `<div class="row"><span class="t" style="color:${c >= 0 ? "var(--green)" : "var(--red)"}">${v}</span><div><b>${esc(s.symbol)}</b> <span class="meta">${esc(s.asset)} · ${esc(s.quelle)}</span></div></div>`; }).join("")
+    || `<div class="leer">Noch kein Screen — klick „Screen jetzt".</div>`;
+  const sug = (i.vorschlaege || []).map(s => `<div class="card">
+    <div class="head"><span class="badge ${s.risiko_label === "spekulativ" ? "in_umsetzung" : "freigegeben"}">${esc(s.risiko_label || "")}</span><b>${esc((s.aktion || "").toUpperCase())} ${esc(s.symbol)}</b></div>
+    <div class="desc">${esc(s.grund || "")}</div>
+    <div class="meta">Konfidenz ${Math.round((s.konfidenz || 0) * 100)}% · ${(s.quellen || []).map(esc).join(", ")}</div></div>`).join("")
+    || `<div class="leer">Noch keine Vorschläge.</div>`;
+  win.body.innerHTML = `<div class="app">
+    <div class="kv"><span class="k">Modus</span><b>${esc(i.modus)}</b></div>
+    <div style="margin:10px 0; display:flex; gap:6px; flex-wrap:wrap">${prov}</div>
+    <div class="brain-bar"><input id="inv-sym" placeholder="Symbol zur Watchlist (AAPL / bitcoin)…" autocomplete="off">
+      <button class="btn ok" onclick="investWatchAdd()">＋</button><button class="btn info" onclick="investScreen(this)">📡 Screen jetzt</button></div>
+    <h3>Watchlist</h3><div>${wl}</div>
+    <h3>Shortlist (letzter Screen)</h3>${sl}
+    <h3>Vorschläge (vom Risk-Agent geprüft)</h3>${sug}</div>`;
+}
+async function investScreen(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Screent…"; }
+  try { await fetch("/api/investment/screen", { method: "POST" }); } catch {}
+  ladeInvestment();
+}
+async function investWatchAdd() {
+  const inp = document.getElementById("inv-sym"); const s = (inp && inp.value || "").trim(); if (!s) return;
+  const asset = /^[a-z]/.test(s) && s.length > 4 ? "krypto" : "aktie";  // coingecko-ids sind lowercase
+  try { await fetch("/api/investment/watchlist", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ symbol: s, asset }) }); if (inp) inp.value = ""; } catch {}
+  ladeInvestment();
+}
 
 // ---- Second Brain (Wissen) -------------------------------------------------
 let BRAIN_ITEMS = [];
@@ -186,6 +226,7 @@ const NAV = [
   { id: "auftraege", icon: "📋", label: "Aufträge", count: () => STATE.antraege.length },
   { id: "lagebild", icon: "📡", label: "Lagebild" },
   { id: "wissen", icon: "🧠", label: "Wissen" },
+  { id: "investment", icon: "📈", label: "Investment" },
   { id: "research", icon: "🔍", label: "Research", count: () => STATE.research.length },
   { id: "meldungen", icon: "🔔", label: "Meldungen", count: () => STATE.meldungen.length },
   { id: "aktivitaet", icon: "📊", label: "Aktivität" },
@@ -299,7 +340,18 @@ function renderDashboard() {
   const llm = panel("LLM / Provider Status", `<div class="prov-grid">${provs}</div>`,
     { right: `<span class="livep"><span class="dot"></span>${OVERVIEW.providers_connected} aktiv</span>` });
 
-  main.innerHTML = ov + hero + feed + agents + timeline + quick + sysmon + mem + llm;
+  // Investment (advisory)
+  const iv = INVEST || {};
+  const ivtop = (iv.shortlist || []).slice(0, 4).map(s => { const c = s.veraenderung_pct;
+    return `<div class="row"><span class="t" style="color:${c >= 0 ? "var(--green)" : "var(--red)"}">${(c > 0 ? "+" : "") + (c == null ? "?" : Number(c).toFixed(1))}%</span><div><b>${esc(s.symbol)}</b> <span class="meta">${esc(s.asset || "")}</span></div></div>`; }).join("");
+  const investP = panel("Investment (CIO)", `
+    <div class="kv"><span class="k">Modus</span><b>${esc(iv.modus || "advisory")}</b></div>
+    <div class="kv"><span class="k">Offene Vorschläge</span><b>${(iv.vorschlaege || []).length}</b></div>
+    <div class="kv"><span class="k">Watchlist</span><b>${(iv.watchlist || []).length}</b></div>
+    ${ivtop ? `<h3>Top-Mover</h3>${ivtop}` : `<div class="leer">Noch kein Screen.</div>`}`,
+    { right: `<span class="right" data-app="investment">Öffnen ›</span>` });
+
+  main.innerHTML = ov + hero + feed + agents + timeline + quick + sysmon + investP + mem + llm;
   setOrb(VOICE.active ? "listening" : "idle");  // Orb-Zustand nach Neurender wiederherstellen
 }
 function ovItem(icon, titel, sub, status) {
@@ -316,6 +368,7 @@ async function refresh() {
     // Dashboard-Daten (parallel, fehlertolerant)
     try { OVERVIEW = await (await fetch("/api/overview")).json(); } catch {}
     try { LAGE = await (await fetch("/api/lagebild")).json(); } catch {}
+    try { INVEST = await (await fetch("/api/investment")).json(); } catch {}
     renderOffene(); updateSidebarCounts();
     if (AKTIV_NAV === "home") renderDashboard();
   } catch { setLive(false); }

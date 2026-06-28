@@ -122,12 +122,19 @@ def _build_ctx(cfg: dict, secrets: dict):
     brain = Brain(ROOT / "brain" / "log.jsonl", secrets=secret_values)
     insights = Insights(antraege=antraege, research=research, agenda=agenda, google=google,
                         secrets=secret_values)
+    # Investment-Abteilung (CIO, advisory) -- Marktdaten via Capability, Alerts ueber den Notifier.
+    from ...investment.engine import InvestmentEngine
+    from ...investment.providers import MarketData
+    from ...investment.store import InvestmentStore
+    investment = InvestmentEngine(
+        MarketData(secrets=secrets), InvestmentStore(ROOT / "investment" / "log.jsonl", secrets=secret_values),
+        notify=notifications.enqueue)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,
                        notifications=notifications, agenda=agenda, secret_dict=secrets,
                        kosten=kosten, aktivitaet=aktivitaet, visuals=[],
-                       brain=brain, insights=insights), secret_values
+                       brain=brain, insights=insights, investment=investment), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:

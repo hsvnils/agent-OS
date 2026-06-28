@@ -35,6 +35,7 @@ class ToolContext:
     visuals: list | None = None          # Phase 14: Ablage erzeugter Visualisierungen (SVG) zum Senden
     brain: object | None = None          # Second Brain (Wissensbasis) oder None
     insights: object | None = None       # Tages-Insights/Lagebild oder None
+    investment: object | None = None     # InvestmentEngine (CIO, advisory) oder None
 
 
 def tool_specs() -> list[dict]:
@@ -240,6 +241,16 @@ def tool_specs() -> list[dict]:
         _spec("lagebild", "Proaktive Tages-Insights: was auf den CEO wartet (Entscheidungen/Antraege), heutige "
               "Termine, ungelesene Mails, offene Tickets, Agenda. Token-frugal aus den Stores + Google.",
               {}, []),
+        _spec("investment_status", "Zeigt den Stand der Investment-Abteilung (CIO): Modus (advisory), "
+              "Provider-Status, Watchlist, offene Vorschlaege. Nur Lesen.", {}, []),
+        _spec("investment_screen", "Fuehrt einen Markt-Screen aus (FMP-Gewinner + Krypto) und erzeugt daraus "
+              "Vorschlaege -- jeder durch den Risk-Agent geprueft (Maker/Checker). Freigegebene werden gemeldet. "
+              "Advisory: keine Trades.", {}, []),
+        _spec("investment_vorschlaege", "Listet die aktuellen Investment-Vorschlaege (Symbol, Aktion, Grund, "
+              "Risiko-Label, Konfidenz).", {}, []),
+        _spec("watchlist_hinzufuegen", "Nimmt einen Wert in die Investment-Watchlist auf.",
+              {"symbol": _str("Tickersymbol (AAPL) oder CoinGecko-ID (bitcoin)."),
+               "asset": _str("'aktie' oder 'krypto' (Default aktie).")}, ["symbol"]),
     ]
 
 
@@ -614,6 +625,40 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         if ctx.insights is None:
             return {"fehler": "Insights nicht verfuegbar."}
         return {"lagebild": redact(ctx.insights.lagebild(), sec)}
+
+    if name in ("investment_status", "investment_screen", "investment_vorschlaege", "watchlist_hinzufuegen"):
+        if ctx.investment is None:
+            return {"fehler": "Investment-Abteilung (CIO) nicht verfuegbar."}
+        eng = ctx.investment
+        if name == "investment_status":
+            st = eng.status()
+            return _redact_obj({"modus": st["modus"],
+                                "provider": [{"name": p["name"], "konfiguriert": p.get("konfiguriert")}
+                                             for p in st["provider"]],
+                                "fehlende_keys": [p["name"] for p in st["fehlende_keys"]],
+                                "watchlist": st["watchlist"],
+                                "offene_vorschlaege": len(st["offene_vorschlaege"])}, sec)
+        if name == "investment_screen":
+            r = eng.screen_und_vorschlagen()
+            return _redact_obj({"ok": True, "erstellt": len(r.get("erstellt", [])),
+                                "vom_risk_abgelehnt": len(r.get("vom_risk_abgelehnt", [])),
+                                "vorschlaege": [{"symbol": x["symbol"], "label": x["urteil"]["label"]}
+                                                for x in r.get("erstellt", [])],
+                                "hinweise": r.get("hinweise", [])}, sec)
+        if name == "investment_vorschlaege":
+            vs = [s for s in eng.store.list("suggestions") if s.get("status") == "offen"]
+            return _redact_obj({"anzahl": len(vs),
+                                "vorschlaege": [{"symbol": s.get("symbol"), "aktion": s.get("aktion"),
+                                                 "grund": s.get("grund"), "risiko_label": s.get("risiko_label"),
+                                                 "konfidenz": s.get("konfidenz")} for s in reversed(vs)][:15]}, sec)
+        # watchlist_hinzufuegen
+        symbol = (args.get("symbol") or "").strip()
+        if not symbol:
+            return {"fehler": "Kein Symbol."}
+        eng.store.watchlist_add(symbol, asset=(args.get("asset") or "aktie"))
+        if ctx.core.changelog:
+            ctx.core.changelog("CIO", f"Watchlist ergaenzt: {symbol.upper()}", "CEO-Anweisung", "investment")
+        return {"ok": True, "symbol": symbol.upper()}
 
     if name in _GOOGLE_TOOLS:
         gw = ctx.google

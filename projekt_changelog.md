@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 14:00] — Claude Code (Investment Phase 2 — die drei Schleifen, advisory)
+- **Was:** CIO-Engine + Risk-Agent gebaut und in LUNA verdrahtet (advisory, **keine Trades**):
+  **`orchestrator/investment/risk.py`** (`RiskAgent` -- regelbasierter Checker: Label konservativ/spekulativ,
+  Veto bei Extrem-Bewegung >=80%, Nachschaerfung bei Konfidenz <0.4, max. Positionsgroesse) +
+  **`orchestrator/investment/engine.py`** (`InvestmentEngine`: `markt_screen` [FMP-Gewinner + CoinGecko-Krypto
+  -> sortierte Shortlist], `vorschlag`/`screen_und_vorschlagen` [Maker -> Risk-Checker -> nur Freigegebene
+  gespeichert/gemeldet], `wochenprognose`+`scorecard` [walk-forward]). **LUNA-OS:** App + Dashboard-Panel
+  **Investment** + Endpunkte `/api/investment` (GET status/shortlist/vorschlaege), `/screen`, `/watchlist`.
+  **LUNA-Tools:** investment_status/investment_screen/investment_vorschlaege/watchlist_hinzufuegen +
+  ToolContext.investment + _build_ctx (Notifier-Alerts -> Telegram) + System-Prompt (advisory-Hinweis). Cache ?v=10.
+- **Warum:** CEO „Phase 2 starten". **Live verifiziert** (echte Keys): Markt-Screen liefert reale Shortlist
+  (LCDL +32%, AAPL-Quotes, BTC/ETH), Risk-Agent **vetoed Extrem-Mover** (SDOT +247% etc.) und gibt moderatere
+  als „spekulativ, max 1-2%" frei; LUNA-OS-Panel + Tools getestet. Suite **199/199** (10 Engine/Risk-Tests).
+  **Offen:** Auto-Schedule (taeglicher Screen ueber WatchScheduler) + Wochenzyklus-Automatik.
+- **Betroffen:** orchestrator/investment/{risk,engine}.py (neu), tests/test_investment_engine.py (neu),
+  orchestrator/core/{hoa_tools,hoa_conversation}.py, channels/telegram/bot.py, channels/web/{app.py,static/*},
+  INVESTMENT_ROADMAP.md.
+
 ## [2026-06-28 13:30] — Claude Code (Investment GATE B bestanden + FMP-Fix /stable)
 - **Was:** CEO hat die 3 gratis Keys (FINNHUB/ALPHAVANTAGE/FMP) in beide .env (Mac+NAS) eingetragen. Live vom
   Mac verifiziert (ohne Key-Werte auszugeben): **CoinGecko** (BTC/EUR), **Finnhub** (AAPL-Quote), **Alpha

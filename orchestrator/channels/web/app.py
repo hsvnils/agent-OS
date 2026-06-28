@@ -38,6 +38,9 @@ agenda = Agenda(ROOT / "agenda" / "log.jsonl")
 brain = Brain(ROOT / "brain" / "log.jsonl")
 # Internes Lagebild (ohne Google); fuer das volle Lagebild (Termine/Mails) nutzt der Endpunkt die LUNA-ctx.
 insights_intern = Insights(antraege=antraege, research=research, agenda=agenda)
+# Investment (Phase 2, advisory): Engine + Store. MarketData wird lazy aus den .env-Keys gebaut.
+from ...investment.store import InvestmentStore
+inv_store = InvestmentStore(ROOT / "investment" / "log.jsonl")
 
 OFFEN = ("eingereicht", "freigegeben", "in_umsetzung")
 _RANG = {"eingereicht": 0, "freigegeben": 1, "in_umsetzung": 2}
@@ -417,6 +420,57 @@ def overview():
         "agenten": agenten,
         "monatsbudget": _budget(),
     }
+
+
+def _investment_engine():
+    """Lazy InvestmentEngine aus den .env-Keys (Capability). Advisory, keine Trades."""
+    _secret("X")  # befuellt _SECRETS_CACHE["d"]
+    from ...investment.engine import InvestmentEngine
+    from ...investment.providers import MarketData
+    md = MarketData(secrets=_SECRETS_CACHE.get("d", {}))
+    return InvestmentEngine(md, inv_store)
+
+
+def _letzte_shortlist():
+    scr = inv_store.list("screening")
+    return scr[-1].get("shortlist", []) if scr else []
+
+
+@app.get("/api/investment")
+def investment():
+    eng = _investment_engine()
+    st = eng.status()
+    return {
+        "modus": st["modus"],
+        "provider": [{"name": p["name"], "konfiguriert": p.get("konfiguriert")} for p in st["provider"]],
+        "fehlende_keys": [p["name"] for p in st["fehlende_keys"]],
+        "watchlist": st["watchlist"],
+        "shortlist": _letzte_shortlist()[:12],
+        "vorschlaege": [{"symbol": s.get("symbol"), "aktion": s.get("aktion"), "grund": s.get("grund"),
+                         "risiko_label": s.get("risiko_label"), "konfidenz": s.get("konfidenz"),
+                         "quellen": s.get("quellen", []), "ts": s.get("ts")}
+                        for s in reversed(inv_store.list("suggestions"))][:15],
+    }
+
+
+@app.post("/api/investment/screen")
+async def investment_screen():
+    eng = _investment_engine()
+    r = await asyncio.to_thread(eng.screen_und_vorschlagen)
+    return JSONResponse({"ok": True, "erstellt": len(r.get("erstellt", [])),
+                         "abgelehnt": len(r.get("vom_risk_abgelehnt", [])),
+                         "hinweise": r.get("hinweise", []), "investment": investment()})
+
+
+@app.post("/api/investment/watchlist")
+async def investment_watchlist(request: Request):
+    body = await _json(request)
+    sym = (body.get("symbol") or "").strip()
+    if not sym:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "kein Symbol")
+    inv_store.watchlist_add(sym, asset=(body.get("asset") or "aktie"))
+    _changelog("CIO", f"Watchlist ergaenzt: {sym.upper()}", "CEO ueber LUNA-OS", "investment")
+    return JSONResponse({"ok": True, "investment": investment()})
 
 
 @app.get("/api/lagebild")
