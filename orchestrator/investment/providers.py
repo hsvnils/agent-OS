@@ -111,7 +111,8 @@ class MarketData:
         key = self._key("FMP_API_KEY")
         if not key:
             return self._fallb("FMP", "FMP_API_KEY")
-        url = f"https://financialmodelingprep.com/api/v3/stock_market/gainers?apikey={key}"
+        # FMP neue "stable"-API (die alten /api/v3/-Endpunkte sind fuer neue Free-Keys gesperrt/403).
+        url = f"https://financialmodelingprep.com/stable/biggest-gainers?apikey={key}"
         try:
             d = self._fetch(url)
         except Exception as exc:

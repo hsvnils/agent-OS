@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 13:30] — Claude Code (Investment GATE B bestanden + FMP-Fix /stable)
+- **Was:** CEO hat die 3 gratis Keys (FINNHUB/ALPHAVANTAGE/FMP) in beide .env (Mac+NAS) eingetragen. Live vom
+  Mac verifiziert (ohne Key-Werte auszugeben): **CoinGecko** (BTC/EUR), **Finnhub** (AAPL-Quote), **Alpha
+  Vantage** (RSI) OK. **FMP** gab 403 -> Ursache: FMP hat auf die neue **`/stable/`-API** umgestellt, die alten
+  `/api/v3/`-Endpunkte sind fuer neue Free-Keys gesperrt. Fix: `screener_gewinner` nutzt jetzt
+  `/stable/biggest-gainers` -> live OK (Top-Gewinner geliefert). **GATE B bestanden.** SEC EDGAR optional offen
+  (braucht nur SEC_EDGAR_USER_AGENT-Kontaktzeile).
+- **Warum:** Datenschicht der Investment-Abteilung live (advisory, keine Trades). Naechstes: Phase 2
+  (die drei Schleifen + Verdrahtung CIO/Risk-Agent in den Orchestrator + Investment-Panel im LUNA-OS).
+- **Betroffen:** orchestrator/investment/providers.py (FMP /stable), INVESTMENT_ROADMAP.md.
+
 ## [2026-06-28 13:10] — Claude Code (Investment Phase 1 — Datenschicht ohne Keys, Mock-getestet)
 - **Was:** Investment-Datenanbindung + Speicher gebaut, **so weit ohne API-Keys moeglich** (Self-Checks gegen
   Mock): **`orchestrator/investment/providers.py`** -- `MarketData`-Fassade ueber 5 Provider (CoinGecko,
