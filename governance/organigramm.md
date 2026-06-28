@@ -17,34 +17,37 @@ CEO (Nils)
 Head of Agents (00)
    │  Supervisor — zerlegt, delegiert, buendelt, eskaliert
    ▼
-Abteilungsleiter (C-Rollen / Berater, 01–14)
+Abteilungsleiter (C-Rollen / Berater / Researcher / CIO, 01–16)
    │  je Abteilung ein verantwortlicher Leit-Agent
    ▼
-Unter-Agenten je Abteilung (geplant)
+Unter-Agenten je Abteilung
    │  spezialisierte Sub-Agenten, vom jeweiligen Abteilungsleiter gefuehrt
-   ├─ 10 CCO → Research · Konzept/Strategie · Copywriter/Caption (je Plattform) · Video-Cutter · Reviewer
-   ├─ 08 CTO → Backend · Frontend/iOS · DevOps/Infra
+   ├─ 16 CIO → **Risk-Agent (AKTIV)** · Markt-Screener · Technik · Fundamental · Sentiment · Synthese (geplant)
+   ├─ 10 CCO → Research · Konzept/Strategie · Copywriter/Caption (je Plattform) · Video-Cutter · Reviewer (geplant)
+   ├─ 08 CTO → Backend · Frontend/iOS · DevOps/Infra (geplant)
    └─ uebrige Abteilungen → Unter-Agenten bei Bedarf
 ```
 
 - **Ebene 1 — CEO (Nils):** spricht ausschliesslich mit dem Head of Agents.
 - **Ebene 2 — Head of Agents (00):** einziger Gespraechspartner des CEO; Supervisor aller Abteilungen.
-- **Ebene 3 — Abteilungsleiter (01–14):** die C-Rollen bzw. der Berater; sprechen nur mit dem HoA.
-- **Ebene 4 — Unter-Agenten (geplant):** **jede Abteilung kann kuenftig Unter-Agenten erhalten**
-  (spezialisierte Sub-Agenten). Sie werden vom jeweiligen Abteilungsleiter gefuehrt und sprechen nicht
-  direkt mit dem HoA oder CEO. Anlage neuer (Unter-)Agenten erfolgt als Charta ueber den HoA (CEO-Tor).
-  Derzeit sind sie nur **skizziert (Status: geplant)** — noch keine eigenen Dateien, nicht aktiviert.
-  **CCO und CTO** sind die ersten Abteilungen mit explizit geplanten Unter-Agenten (zuerst real beim CCO).
+- **Ebene 3 — Abteilungsleiter (01–16):** die C-Rollen / Berater / Researcher / CIO; sprechen nur mit dem HoA.
+- **Ebene 4 — Unter-Agenten:** **jede Abteilung kann Unter-Agenten erhalten** (spezialisierte Sub-Agenten).
+  Sie werden vom jeweiligen Abteilungsleiter gefuehrt und sprechen nicht direkt mit dem HoA oder CEO. Anlage
+  neuer (Unter-)Agenten erfolgt als Charta ueber den HoA (CEO-Tor). **Erster AKTIVER Unter-Agent: der
+  Risk-Agent (16a) unter dem CIO** (Pflicht-Gegenpruefer); die uebrigen sind **skizziert (Status: geplant)** —
+  noch keine eigenen Dateien, nicht aktiviert.
 
 ## Abteilungen und ihre (moeglichen) Unter-Agenten
 
-Alle Unter-Agenten sind **Status: geplant** (Skizze; keine eigenen Dateien, nicht aktiviert). Details je
-Abteilung stehen im Abschnitt „Unter-Agenten (geplant)" der jeweiligen Charta. Aktueller Bestand/Status der
-**aktiven** Agenten: siehe [`agents/REGISTRY.md`](../agents/REGISTRY.md) (Quelle der Wahrheit).
+Die meisten Unter-Agenten sind **Status: geplant** (Skizze; keine eigenen Dateien, nicht aktiviert) — einzige
+**Ausnahme:** der **Risk-Agent (16a, aktiv)** unter dem CIO. Details je Abteilung stehen im Abschnitt
+„Unter-Agenten" der jeweiligen Charta. Aktueller Bestand/Status: siehe
+[`agents/REGISTRY.md`](../agents/REGISTRY.md) (Quelle der Wahrheit).
 
-| Abteilungsleiter | Geplante Unter-Agenten (Status: geplant) |
-|------------------|-------------------------------------------|
+| Abteilungsleiter | Unter-Agenten |
+|------------------|---------------|
 | 00 · Head of Agents | Supervisor — keine eigene Unter-Ebene |
+| **16 · CIO** | **Risk-Agent (AKTIV, `16a_risk-agent.md`)**; Markt-Screener, Technik, Fundamental, Sentiment, Synthese (geplant) |
 | 01 · Unternehmensberater | Unter-Agenten bei Bedarf |
 | 02 · CAO | Unter-Agenten bei Bedarf |
 | 03 · CFO | bei Bedarf — z. B. Kosten-Sammler |

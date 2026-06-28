@@ -25,7 +25,9 @@ Head of Agents (00)
    ├── 12  CHRO  — Chief Human Resources Officer
    ├── 13  CLO   — Chief Legal Officer
    ├── 14  CKO   — Chief Knowledge Officer
-   └── 15  RES   — Researcher (zentraler Web-Recherche-Dienst)
+   ├── 15  RES   — Researcher (zentraler Web-Recherche-Dienst)
+   └── 16  CIO   — Chief Investment Officer (Investment-Abteilung)
+           └── 16a Risk-Agent (aktiv) — Pflicht-Gegenpruefer (Checker)
 ```
 
 Kommunikationsregel: Abteilungs-Agenten sprechen **nur mit dem Head of Agents**, nie direkt mit dem CEO.
@@ -59,6 +61,8 @@ Zwei Zustaende werden unterschieden:
 | CLO  | Chief Legal Officer | Entwurf | — | `13_clo.md` |
 | CKO  | Chief Knowledge Officer | Entwurf | — | `14_cko.md` |
 | RES  | Researcher | **aktiv** | **verdrahtet** | `15_researcher.md` |
+| CIO  | Chief Investment Officer | Entwurf | — | `16_cio.md` |
+| CIO-RISK | Risk-Agent (Unter-Agent des CIO) | **aktiv** | — | `16a_risk-agent.md` |
 
 > **Charta aktiv (Welle 1):** Head of Agents, CFO, CBO, CTO, CCO, Unternehmensberater, Researcher.
 > **Im Orchestrator verdrahtet (Bootstrap):** Head of Agents, CTO, Unternehmensberater, Researcher. Die

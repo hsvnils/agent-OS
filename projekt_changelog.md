@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 12:45] — Head of Agents / Claude Code (Investment Phase 0 — GATE A, CEO-freigegeben)
+- **Was:** Investment-Abteilung Phase 0 angelegt (nach CEO-Freigabe GATE A):
+  **`agents/16_cio.md`** (Chief Investment Officer, Status **Entwurf**, advisory-only, keine autonomen Trades) +
+  **`agents/16a_risk-agent.md`** (Risk-Agent, Status **aktiv** — erster aktiver Unter-Agent ueberhaupt,
+  Pflicht-Gegenpruefer/Checker mit Veto, auf ausdrueckliche CEO-Anweisung von Anfang an aktiv) +
+  **`governance/investment.md`** (Modi advisory/paper/live + GATES, Risiko-Limits-Platzhalter, Freigabe-/
+  Eskalations-Regeln, Maker/Checker). **REGISTRY.md** + **organigramm.md** um CIO (16) und Risk-Agent (16a)
+  ergaenzt; INVESTMENT_ROADMAP.md Phase 0 = erledigt.
+- **Warum:** CEO-Anweisung „GATE A freigegeben; Risk-Agent als eigener aktiver Unter-Agent von Anfang an".
+  Charta-Anlage gemaess AGENTS.md 3.3 (Diff gezeigt + CEO bestaetigt). **Keine** Datenanbindung, keine Keys,
+  keine Trades — reine Governance-Grundlage. Naechstes: Phase 1 (gratis Daten, GATE B).
+- **Betroffen:** agents/16_cio.md (neu), agents/16a_risk-agent.md (neu), governance/investment.md (neu),
+  agents/REGISTRY.md, governance/organigramm.md, INVESTMENT_ROADMAP.md.
+
 ## [2026-06-28 12:25] — Claude Code (Loop Engineering als Governance-Regel uebernommen)
 - **Was:** Neues lebendes Steuerungsdokument **`governance/autonomie-stufen.md`** -- macht die aus „Loop
   Engineering" (cobusgreyling, MIT) uebernommenen Konzepte **verbindlich**: Autonomie-Treppe **L1→L2→L3**

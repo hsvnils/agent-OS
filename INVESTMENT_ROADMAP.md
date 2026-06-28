@@ -5,7 +5,9 @@
 > sauberem, gateten Schalter Richtung Paper- und spaeter Live-Trading. `AGENTS.md` bleibt kanonisch und
 > uebergeordnet; jede Phase ist ihr untergeordnet. `.md` umlautfrei (ae/oe/ue/ss), Changelog-Pflicht.
 >
-> **Status: GEPLANT** — noch nichts umgesetzt; dies ist der Fahrplan. Wir arbeiten ihn Phase fuer Phase ein.
+> **Status: Phase 0 erledigt (2026-06-28)** — CIO-Charta (Entwurf) + **Risk-Agent (aktiv)** + Governance
+> angelegt; Registry/Organigramm ergaenzt. Naechstes: Phase 1 (gratis Daten, GATE B). Wir arbeiten die
+> Roadmap Phase fuer Phase ein.
 
 ---
 
@@ -26,7 +28,7 @@
 
 | Phase | Thema | Modus | GATE | Status |
 |------:|-------|-------|------|--------|
-| 0 | Plan & Charta (CIO + Governance) | advisory | GATE A: Freigabe Plan/Charta | 🔲 geplant |
+| 0 | Plan & Charta (CIO + Governance) | advisory | GATE A: Freigabe Plan/Charta | ✅ erledigt 2026-06-28 |
 | 1 | Datenanbindung (gratis) + Speicher | advisory | GATE B: gratis API-Keys in .env (CISO/CTO) | 🔲 geplant |
 | 2 | Die drei Schleifen (Screen/Prognose/Alerts) | advisory | — (kein Ausfuehren) | 🔲 geplant |
 | 3 | Vertrauen aufbauen + Paper-Modus | advisory → paper | GATE C: Paper aktivieren (Alpaca) | 🔲 geplant |
@@ -46,8 +48,9 @@ gateter Pfad vorbereitet.
   ueberwacht Fruehbeweger, liefert actionable Vorschlaege an LUNA. **Trifft keine Trades autonom.**
 - Aufnahme in `agents/REGISTRY.md`; Einhaengen im `governance/organigramm.md` (+ `.xmind`) unter LUNA.
 
-**Unter-Agenten (Skizze, orientiert an `virattt/ai-hedge-fund`):** Markt-Screener · Technik-Analyst ·
-Fundamental-Analyst · News/Sentiment-Analyst · Risk-Agent · Portfolio/Synthese-Agent. Autonomie-Prinzip:
+**Unter-Agenten (orientiert an `virattt/ai-hedge-fund`):** **Risk-Agent — AKTIV ab Tag eins**
+(`agents/16a_risk-agent.md`, Pflicht-Gegenpruefer/Checker); Markt-Screener · Technik-Analyst ·
+Fundamental-Analyst · News/Sentiment-Analyst · Portfolio/Synthese-Agent — **geplant**. Autonomie-Prinzip:
 Unter-Agenten loesen selbst, eskalieren an den CIO; der CIO an LUNA nur bei Bedarf.
 
 ---
