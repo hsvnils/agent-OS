@@ -47,6 +47,24 @@ angefasst/kaputtgemacht**. Der Mac-Teil ist **additiv** und ein **separater Proz
 - **Python-Seite besitzt** das Gespraech, die Tool-Entscheidung, **Allowlist/Tor/Audit** und die **Bruecke**
   ins LUNA-System. **Das Tor wird serverseitig (Python) erzwungen** und nativ (Sheet) sichtbar bestaetigt.
 
+## 3a. Klarstellungen CEO (2026-06-28, 2. Runde) — verbindlich
+
+- **„Eine LUNA, zwei Gesichter" (Pflicht):** Mac-Orb und NAS-LUNA sind **dieselbe** LUNA — gleicher Code,
+  gleiche Regeln (`AGENTS.md`), gleiche Agenten-Charten (`agents/*`). **Aber** lebender Zustand (Gedaechtnis/
+  `brain`, offene Antraege, Meldungen, Verlauf) liegt **live auf der NAS** (sync-ausgenommen). Damit nichts
+  **auseinanderdriftet**, liest/schreibt der Mac-Orb diesen Zustand ueber die **NAS-Bruecke** (gemeinsame
+  Quelle der Wahrheit), statt eine eigene lokale Insel zu fuehren. Architektur-Invariante, nicht optional.
+- **App-Wissen als fortgeschriebene `.md`-Registry:** `runner/capabilities.py` **scannt installierte
+  Programme** und schreibt eine **automatisch aktualisierte** `.md` (App -> wofuer gut -> wie steuerbar).
+  Bei neu installierten Programmen wird die Registry beim naechsten Scan **aktualisiert**. LUNA leitet daraus
+  ab, **welche App ideal fuer eine Aufgabe** ist.
+- **Cursor-Steuerung ausdruecklich gewollt/erlaubt:** Maus bewegen/klicken (AX/cliclick) ist Teil des
+  Aktuators — unter demselben Tor (Allowlist/Vorschau+Bestaetigung/Not-Aus/Audit).
+- **Live-Gespraech ist der KERN (M4):** Duplex-Sprachschleife am Orb wie hinter dem LUNA-OS-Orb — LUNA hoert
+  zu, antwortet in der Sprache des CEO, **Barge-in** (Unterbrechen erlaubt), **kombiniert CEO-Kontext +
+  On-Screen-Awareness** und bedient dann den Rechner. Nativer Weg: `SFSpeechRecognizer` (DE) + `AVAudioEngine`
+  (Echo-Cancellation) = echtes Barge-in ohne Pipecat. **Diese Gespraechsart ist Lunas Kern, nicht ein Add-on.**
+
 ## 4. Neue Bausteine
 
 | Modul | Inhalt |

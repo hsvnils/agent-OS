@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 17:45] — Claude Code (Phase 17: CEO-Klarstellungen in den Plan aufgenommen)
+- **Was:** `PHASE17_PLAN.md` Abschnitt „3a. Klarstellungen CEO (2. Runde)" ergaenzt: (1) **„Eine LUNA, zwei
+  Gesichter"** als Architektur-Invariante — Mac-Orb + NAS-LUNA sind dieselbe LUNA (gleicher Code/Regeln/
+  Charten); lebender Zustand (brain/Antraege/Verlauf) liegt live auf der NAS, Mac-Orb liest/schreibt ihn ueber
+  die NAS-Bruecke (keine divergente lokale Insel). (2) **App-Wissen als automatisch fortgeschriebene
+  `.md`-Registry** (Scan installierter Programme -> wofuer/wie steuerbar; bei Neuinstallation aktualisiert).
+  (3) **Cursor-Steuerung** ausdruecklich gewollt/erlaubt (unter dem Aktuator-Tor). (4) **Live-Gespraech
+  (Duplex, Barge-in, Kontext+On-Screen-Awareness) ist Lunas KERN** (M4; nativ SFSpeechRecognizer+AVAudioEngine).
+- **Warum:** CEO-Rueckfragen/Vorgaben (2026-06-28) verbindlich verankern, bevor M2 gebaut wird.
+- **Betroffen:** PHASE17_PLAN.md, projekt_changelog.md.
+
 ## [2026-06-28 17:30] — Claude Code (Phase 17 M1: Swift-Menueleisten-Orb)
 - **Was:** Neues Swift-Paket `mac/LunaOrb/` (SwiftPM) — nativer macOS-Menueleisten-Orb (NSStatusItem,
   `.accessory`-Policy, kein Dock-Icon). Drei Orb-Zustaende (idle/listening/speaking via SF-Symbol + Tint),
