@@ -1,0 +1,97 @@
+# PHASE 17 — Teilplan: „LUNA am Mac" (Live-Co-Working am Rechner)
+
+> Untergeordnet `AGENTS.md` (kanonisch) und `governance/autonomie-stufen.md` (L1->L2->L3).
+> Voller Vision-Text + Bausteine: `ROADMAP.md` -> „Phase 17". Dieses Dokument ist der **vereinbarte
+> MVP-Zuschnitt** (CEO-Entscheidungen 2026-06-28) und der GATE fuer den ersten Schritt.
+
+---
+
+## 1. CEO-Vision (verbindlich, praezisiert 2026-06-28)
+
+Nicht ein fest verdrahtetes Einzel-Skript, sondern **generelle On-Screen-Awareness + echte Mac-Steuerung**:
+LUNA **weiss, welche App vorne ist**, welche Programme **installiert** sind, **was jedes Programm kann** und
+**welches sie fuer welche Aufgabe** nutzt. Verpackt in einen **kleinen Menueleisten-Orb** (oben neben Akku/
+Claude), der **nur laeuft, wenn der Mac an ist**, und der **Zugang ins bestehende LUNA-System** hat (Agenten,
+Wissen, Dateien auf der NAS ablegen). Co-Working: CEO sieht die App, spricht/weist an, LUNA setzt **live** um,
+CEO justiert per Sprache, LUNA schlaegt selbst vor.
+
+**Harte Randbedingung:** die **bestehende LUNA** (NAS-Container `luna-telegram`, `luna-os`) wird **nicht
+angefasst/kaputtgemacht**. Der Mac-Teil ist **additiv** und ein **separater Prozess**.
+
+## 2. Entscheidungen (CEO 2026-06-28)
+
+- **App-Technik:** **native Swift `.app`** (Menueleisten-Orb), nicht Python/rumps.
+- **Erster Zuschnitt:** **L1 + L2 mit EINER App** — erster Build bringt schon **eine** benigne, gegatete
+  Steuer-Aktion mit, damit Co-Working sofort **live** erlebbar ist.
+- **Ort/Kanal:** Steuerung laeuft **lokal am Mac** (wo Schirm + Apps sind); kein NAS->Mac-Befehlskanal im MVP.
+  Die Bruecke ins LUNA-System (Wissen/Agenten) laeuft lokal (Orchestrator-Code liegt am Mac) + NAS-Ablage per
+  bestehendem `ssh luna-nas`.
+
+## 3. Architektur (zwei Haelften, lokal am Mac)
+
+```
+[ Swift Menueleisten-Orb (.app) ]            [ Lokale LUNA (Python) ]
+  Augen + Haende + UI                          Verstand + Wissen + Tor
+  - NSStatusItem-Orb (idle/listen/speak)  <->  - orchestrator/channels/web (LUNA-OS), lokal
+  - Screen Recording (Screenshot)              - HoaConversation + Tools (Gemini/Anthropic)
+  - Accessibility (AX-Baum lesen + handeln)    - runner/  (NEU): awareness, capabilities, gate, audit
+  - Mikrofon / Voice                           - Bruecke: brain/memory/delegate + NAS-Ablage (ssh)
+  - native Bestaetigungs-Sheet (CEO-Tor)
+  - Not-Aus-Knopf
+        |  localhost HTTP/WS (nur 127.0.0.1)            |
+        +----------------------------------------------+
+```
+
+- **Native Seite (Swift) besitzt** Capture + Aktuator-Primitive (Permissions haengen sauber am `.app`-Bundle),
+  Mikrofon/Voice, den Orb, das **native Bestaetigungs-Sheet** und den **Not-Aus**.
+- **Python-Seite besitzt** das Gespraech, die Tool-Entscheidung, **Allowlist/Tor/Audit** und die **Bruecke**
+  ins LUNA-System. **Das Tor wird serverseitig (Python) erzwungen** und nativ (Sheet) sichtbar bestaetigt.
+
+## 4. Neue Bausteine
+
+| Modul | Inhalt |
+|-------|--------|
+| `mac/LunaOrb/` (Swift) | Menueleisten-Orb (NSStatusItem, `.accessory`-Policy), Capture (Screenshot/AX), Aktuator-Ausfuehrung, Voice, Bestaetigungs-Sheet, Not-Aus. Spricht nur mit `127.0.0.1`. |
+| `runner/awareness.py` | Vorderste App, Fenstertitel, AX-Zusammenfassung, Screenshot-Abruf -> strukturierter „Was sehe ich"-Kontext. |
+| `runner/capabilities.py` | Installierte Apps scannen (`/Applications`, `mdfind`) + **kuratierte Faehigkeits-Karte** (App -> wofuer -> wie ansteuerbar). Waechst. |
+| `runner/actuator.py` | Aktuator-Tor: **Allowlist** (Least-Privilege), **Vorschau->Bestaetigung**, **Not-Aus** (respektiert `autonomie_pausieren`), **Audit** in `aktivitaet/log.jsonl`. Geld/Recht/Oeffentlichkeit/Loeschen = CEO-Tor. |
+| `orchestrator/channels/web` (+) | Neue lokale Endpunkte fuer Co-Working (observe/act) + neue LUNA-Tools (`bildschirm_sehen`, `apps_kennen`, `rechner_aktion`). Mac-only, import-guarded; NAS-Deploy unberuehrt. |
+
+## 5. Governance (HART)
+
+- **Nur auf ausdrueckliche Anweisung, nie autonom.**
+- **Vier Schutzschichten** vor jeder Aktion: Allowlist · Vorschau+Bestaetigung (natives Sheet) · Not-Aus ·
+  Audit. **Geld/Recht/Oeffentlichkeit/Loeschen = CEO-Tor.** (Beispiel: Mail **senden** gesperrt, nur Entwurf.)
+- **Least-Privilege:** Allowlist startet mit **einer** App + **einem** benignen, umkehrbaren Verb.
+- **Autonomie-Treppe:** L1 (sehen/vorschlagen) + L2 (gegatete, umkehrbare Aktion). **Kein L3** im MVP.
+- **Maker/Checker:** LUNA (Maker) schlaegt Aktion vor; **CEO-Bestaetigung im Sheet** ist der Checker.
+
+## 6. Erste L2-App (Demo): Klartext schreiben in **TextEdit**
+
+Benigne, voll umkehrbar, sofort sichtbar, keine personenbezogenen Daten, keine Sende-/Loesch-Verben.
+Allowlist-Eintrag #1: `TextEdit` -> Verb `text_schreiben` (neues Dokument anlegen + Text einfuegen). Swappbar.
+
+## 7. GATE des MVP
+
+1. Menueleisten-Orb **installiert + startet** (Swift `.app` baut, Orb sichtbar in der Menueleiste).
+2. **Awareness** liefert: welche App ist vorne · welche Apps installiert · was kann die App · Screenshot/AX-Read.
+3. **Bruecke** steht: LUNA greift auf Wissen (brain/memory) + Agenten zu; NAS-Ablage moeglich.
+4. **L2-Demo**: in TextEdit auf Anweisung Text schreiben — **mit Vorschau, Bestaetigung, Audit, Not-Aus**.
+5. **Bestehende LUNA unberuehrt** (separater Prozess; NAS-Container nicht veraendert).
+6. Self-Checks gruen · Changelog · Commit.
+
+## 8. Milestones (Reihenfolge)
+
+- **M0** — dieser Plan + Changelog + Commit. *(erledigt mit diesem Eintrag)*
+- **M1** — Swift-Menueleisten-Orb baut + erscheint + spricht mit lokaler LUNA (`/api/chat`). Drei Orb-Zustaende.
+- **M2** — `runner/awareness.py` + `runner/capabilities.py` + Endpunkt; LUNA beantwortet „was siehst du / welche
+  App / was kann sie / welche Apps habe ich".
+- **M3** — `runner/actuator.py` (Tor: Allowlist/Vorschau/Not-Aus/Audit) + natives Bestaetigungs-Sheet + die
+  EINE TextEdit-Aktion. End-to-end Co-Working-Demo.
+- **M4** — Voice-Schleife am Orb (Mikrofon -> /api/chat -> TTS) im nativen App-Kontext; GATE-Abnahme.
+
+## 9. Modell-Hinweis
+
+Fluessiges „beliebige App per Hingucken bedienen" wird mit **Claude Computer-Use** am staerksten (selbes
+Anthropic-Tor wie Execution, frei ab 2026-07-01). **L1-Awareness + skriptbasierte L2-Aktionen laufen schon
+mit Gemini** — der MVP ist model-agnostisch, ab 1. Juli mit Opus schaerfer.

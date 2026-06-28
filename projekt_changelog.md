@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 17:05] — Claude Code (Phase 17: MVP-Teilplan „LUNA am Mac" beschlossen)
+- **Was:** `PHASE17_PLAN.md` angelegt — vereinbarter MVP-Zuschnitt fuer Phase 17 (Live-Co-Working am
+  Rechner). CEO-Entscheidungen 2026-06-28: **native Swift `.app`** als Menueleisten-Orb; erster Build
+  **L1+L2 mit EINER App** (On-Screen-Awareness + eine benigne, gegatete Steuer-Aktion in TextEdit);
+  Steuerung **lokal am Mac**, kein NAS->Mac-Kanal im MVP. Architektur (Swift-Orb = Augen/Haende/UI <->
+  lokale Python-LUNA = Verstand/Wissen/Tor), neue Bausteine (`mac/LunaOrb/`, `runner/awareness.py`,
+  `runner/capabilities.py`, `runner/actuator.py`, web-Endpunkte/Tools), Governance (vier Schutzschichten,
+  CEO-Tor, Not-Aus, Audit, Least-Privilege; L1+L2, kein L3), GATE + Milestones M0–M4.
+- **Warum:** CEO startet Phase 17; vor dem Bau ein kleiner, sicherer MVP-Plan mit GATE (AGENTS.md/
+  autonomie-stufen.md). Bestehende LUNA (NAS-Container) bleibt unberuehrt — Mac-Teil ist additiv.
+- **Betroffen:** PHASE17_PLAN.md (neu), projekt_changelog.md.
+
 ## [2026-06-28 16:30] — Claude Code (Roadmap: Phase 17 = Live-Co-Working am Rechner)
 - **Was:** ROADMAP.md Phase 17 um die CEO-Vision **„Paralleles Co-Working"** erweitert: nicht nur
   Einzelauftraege (Computer-Use), sondern **gemeinsames Live-Arbeiten im Gespraech** -- CEO sieht die offene
