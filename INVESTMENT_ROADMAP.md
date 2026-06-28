@@ -189,9 +189,9 @@ LUNA bereits):
 - **Skills/persistentes Wissen** = unser **Second Brain**; **Plugins/Connectors (MCP)** = Daten-MCPs;
   **Scheduling/Automations** = WatchScheduler; **Worktrees** = Git-Branch-Sandbox der Execution-Engine.
 
-Empfehlung: **kein Einbau der Bibliothek/CLIs**, aber die L1→L2→L3-Treppe + Maker/Checker + Loop-Kostenbudget
-als feste Entwurfsregeln fuer Investment (und kuenftige autonome Loops) verankern -- ideal in
-`governance/investment.md` und `governance/orchestrierung.md`.
+**Uebernommen (2026-06-28):** Die L1→L2→L3-Treppe + Maker/Checker + Loop-Kostenbudget sind als verbindliche
+Entwurfsregeln in **`governance/autonomie-stufen.md`** verankert (referenziert aus `governance/orchestrierung.md`
+§12) -- gelten fuer **alle** autonomen Loops, nicht nur Investment. **Kein** Code-/CLI-Import.
 
 ---
 

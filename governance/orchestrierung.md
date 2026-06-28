@@ -104,3 +104,11 @@ Mandats-/Charta-Aenderungen · Loeschen von Daten.
 - **Aktiv:** HoA + **CTO, CCO, CFO, CBO**. **Uebrige: Entwurf.**
 - Eskaliert eine Aufgabe an einen **noch nicht aktiven Agenten**, **uebernimmt der HoA interim** oder die
   Aufgabe **wartet, bis der Agent aktiviert ist**.
+
+## 12 Autonome Schleifen — Autonomie-Stufen (Loop Engineering)
+
+- Jede **autonome Schleife** (Watcher, Briefings, Self-Development, kuenftig Investment-Screening) folgt der
+  verbindlichen **Autonomie-Treppe L1 → L2 → L3** (Report → Assisted → Unattended) mit **Maker/Checker** und
+  **Kosten je Schleife**. Start immer auf L1; Stufenwechsel = **CEO-Tor**.
+- Details: [`autonomie-stufen.md`](autonomie-stufen.md) (Konzept aus „Loop Engineering" uebernommen — als
+  Entwurfsregeln, kein Code-Import).

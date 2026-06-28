@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 12:25] — Claude Code (Loop Engineering als Governance-Regel uebernommen)
+- **Was:** Neues lebendes Steuerungsdokument **`governance/autonomie-stufen.md`** -- macht die aus „Loop
+  Engineering" (cobusgreyling, MIT) uebernommenen Konzepte **verbindlich**: Autonomie-Treppe **L1→L2→L3**
+  (Report→Assisted→Unattended, Start immer L1, Stufenwechsel = CEO-Tor), **Maker/Checker** (ab L2),
+  **Kosten je Schleife** (CFO), + Checkliste fuer neue autonome Schleifen. Referenziert aus
+  `governance/orchestrierung.md` (neuer §12) und `governance/README.md`; INVESTMENT_ROADMAP.md §10 auf
+  „uebernommen" aktualisiert. **Kein** Code-/CLI-Import (npm-CLIs zielen auf Coding-Agenten; LUNA hat die
+  Bausteine bereits).
+- **Warum:** CEO-Anweisung, das Loop-Engineering-Konzept zu uebernehmen, bevor Phase 0 der Investment-Roadmap
+  startet. Reine Governance-Doku; AGENTS.md bleibt kanonisch.
+- **Betroffen:** governance/autonomie-stufen.md (neu), governance/orchestrierung.md, governance/README.md,
+  INVESTMENT_ROADMAP.md.
+
 ## [2026-06-28 12:00] — Claude Code (UI.md Identitaet + loop-engineering-Pruefung + Investment-Roadmap)
 - **Was:** (1) **UI.md** ergaenzt: neuer Abschnitt „1a. Feste Identitaet (nicht entfernen)" -- der **LUNA-Orb**
   (#luna-orb, idle/listening/speaking, audio-reaktiv) UND die deutsche **ElevenLabs-Stimme „Lola"**

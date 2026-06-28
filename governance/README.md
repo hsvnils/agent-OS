@@ -18,6 +18,7 @@ werden **aktiv fortgeschrieben**, sobald sich Struktur oder Ablaeufe aendern.
 | `orchestrierung.xmind` | Visuelle Map (XMind) zur Orchestrierungslogik. |
 | `organigramm.md` | Visuelle Hierarchie (CEO → HoA → Abteilungsleiter → optionale Unter-Agenten); verweist auf `agents/REGISTRY.md` als Quelle der Wahrheit. |
 | `organigramm.xmind` | Visuelle Map (XMind) des Organigramms. |
+| `autonomie-stufen.md` | Entwurfsraster fuer autonome Schleifen (Loop Engineering): Autonomie-Treppe L1→L2→L3, Maker/Checker, Kosten je Schleife. Gilt fuer alle autonomen Loops. |
 
 ## Quelle der Wahrheit
 
