@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 15:10] — Claude Code (Detailansicht-Plus + Investment Phase 3 gestartet)
+- **Was:** (1) **Detailansicht angereichert:** RSI (Alpha Vantage, mit Label ueberkauft/ueberverkauft/neutral),
+  Links-Sektion (Unternehmens-Website, SEC-Filings/EDGAR, TradingView-Chart), Krypto: Rang + 24h-Volumen.
+  MarketData.aktie_rsi + crypto_detail (rang/volumen); engine.detail um rsi/links erweitert. Live verifiziert
+  (AAPL RSI 41.3 neutral + 3 Links; Apple-Profil). (2) **Phase 3 gestartet -- Walk-forward-Track-Record:**
+  Wochenprognose speichert jetzt Basis-Preis + Asset; neu `engine.scorecard_aktualisieren` (faellige Prognosen
+  >7T gegen aktuellen Kurs auswerten -> Actual = Wochen-Rendite %, Anomalie-Meldung bei starker Abweichung),
+  scorecard() um mittleren Betrag erweitert. Taeglich im Investment-Loop ausgewertet. Sichtbar: Scorecard in
+  /api/investment + Investment-App (Track-Record) + Dashboard-Panel (Trefferquote) + LUNA-Tool
+  `investment_scorecard`. Cache ?v=12. Suite **201/201**.
+- **Warum:** CEO: Detailansicht anreichern + Phase 3 starten. Phase 3 = advisory laufen lassen und
+  Track-Record/Scorecard sammeln (Vertrauensbasis); Paper-Modus (Alpaca) bleibt GATE C. Hinweis:
+  Alpha-Vantage-Free ~25 Calls/Tag -> RSI im Detail ist best-effort (faellt sonst weg).
+- **Betroffen:** orchestrator/investment/{providers,engine,store}.py, channels/telegram/bot.py,
+  channels/web/{app.py,static/*}, core/hoa_tools.py, tests/test_investment_engine.py, INVESTMENT_ROADMAP.md.
+
 ## [2026-06-28 14:40] — Claude Code (Investment Phase 2 Rest: anklickbare Details + Auto-Screen)
 - **Was:** (1) **Anklickbare Ergebnisse:** Shortlist-Zeilen + Vorschlags-Karten sind klickbar -> **Detail-
   Fenster** mit Infos. Neu in MarketData: `aktie_profil` (Finnhub profile2: Name/Branche/Marktkap./Boerse/

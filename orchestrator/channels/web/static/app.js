@@ -38,8 +38,11 @@ async function ladeInvestment() {
     <div class="desc">${esc(s.grund || "")}</div>
     <div class="meta">Konfidenz ${Math.round((s.konfidenz || 0) * 100)}% · ${(s.quellen || []).map(esc).join(", ")}</div></div>`).join("")
     || `<div class="leer">Noch keine Vorschläge.</div>`;
+  const sc = i.scorecard || {};
+  const scText = sc.ausgewertet ? `${Math.round((sc.trefferquote || 0) * 100)}% Trefferquote (${sc.treffer}/${sc.ausgewertet})` : "noch keine Auswertung";
   win.body.innerHTML = `<div class="app">
     <div class="kv"><span class="k">Modus</span><b>${esc(i.modus)}</b></div>
+    <div class="kv"><span class="k">Track-Record</span><b>${esc(scText)}</b></div>
     <div style="margin:10px 0; display:flex; gap:6px; flex-wrap:wrap">${prov}</div>
     <div class="brain-bar"><input id="inv-sym" placeholder="Symbol zur Watchlist (AAPL / bitcoin)…" autocomplete="off">
       <button class="btn ok" onclick="investWatchAdd()">＋</button><button class="btn info" onclick="investScreen(this)">📡 Screen jetzt</button></div>
@@ -65,25 +68,31 @@ async function openInvestDetail(symbol, asset) {
     win.body.innerHTML = `<div class="app detail">${asset === "krypto" ? invDetailKrypto(d) : invDetailAktie(d)}</div>`;
   } catch { win.body.innerHTML = `<div class="app"><div class="leer">Konnte Infos nicht laden.</div></div>`; }
 }
+const kvz = (k, v) => v != null && v !== "" ? `<div class="kv"><span class="k">${esc(k)}</span><b>${esc(v)}</b></div>` : "";
+const linkRow = (l) => `<div class="kv"><span class="k">${esc(l.label)}</span><b><a href="${esc(l.url)}" target="_blank" rel="noopener">öffnen ↗</a></b></div>`;
+const rsiFarbe = { ueberkauft: "var(--red)", ueberverkauft: "var(--green)", neutral: "var(--cyan)" };
 function invDetailAktie(d) {
-  const p = d.profil, q = d.quote;
-  const kv = (k, v) => v != null && v !== "" ? `<div class="kv"><span class="k">${esc(k)}</span><b>${esc(v)}</b></div>` : "";
+  const p = d.profil, q = d.quote, r = d.rsi;
   const news = (d.news || []).map(n => `<div class="row"><div><b>${esc(n.titel)}</b><br><span class="meta">${esc(n.quelle || "")}</span></div></div>`).join("");
+  const links = (d.links || []).map(linkRow).join("");
   const hinweis = (d.hinweise || []).length ? `<div class="leer">${esc(d.hinweise[0])}</div>` : "";
   return `<div class="head"><b>${esc((p && p.name) || d.symbol)}</b></div>
     ${p ? `<div class="meta">${esc(p.branche || "")}${p.boerse ? " · " + esc(p.boerse) : ""}${p.land ? " · " + esc(p.land) : ""}</div>` : ""}
-    ${q ? kv("Preis", q.preis) + kv("Veränderung", (q.veraenderung_pct > 0 ? "+" : "") + q.veraenderung_pct + "%") + kv("Tageshoch", q.hoch) + kv("Tagestief", q.tief) : ""}
-    ${p ? kv("Marktkap. (Mio)", p.marktkap_mio) + kv("IPO", p.ipo) + (p.web ? `<div class="kv"><span class="k">Web</span><b><a href="${esc(p.web)}" target="_blank" rel="noopener">${esc(p.web)}</a></b></div>` : "") : ""}
+    ${q ? kvz("Preis", q.preis) + kvz("Veränderung", (q.veraenderung_pct > 0 ? "+" : "") + q.veraenderung_pct + "%") + kvz("Tageshoch", q.hoch) + kvz("Tagestief", q.tief) : ""}
+    ${r ? `<div class="kv"><span class="k">RSI (14)</span><b style="color:${rsiFarbe[r.label] || "var(--fg)"}">${esc(r.wert)} · ${esc(r.label)}</b></div>` : ""}
+    ${p ? kvz("Marktkap. (Mio)", p.marktkap_mio) + kvz("IPO", p.ipo) : ""}
+    ${links ? `<h3>Weitere Infos</h3>${links}` : ""}
     ${news ? `<h3>News</h3>${news}` : ""}${hinweis}`;
 }
 function invDetailKrypto(d) {
   const i = d.info || {};
-  const kv = (k, v) => v != null && v !== "" ? `<div class="kv"><span class="k">${esc(k)}</span><b>${esc(v)}</b></div>` : "";
   if (!i.ok) return `<div class="leer">Keine Krypto-Infos verfügbar.</div>`;
   return `<div class="head"><b>${esc(i.name)} (${esc(i.symbol)})</b></div>
-    ${kv("Preis (EUR)", i.preis_eur)}${kv("Veränderung 24h", (i.veraenderung_pct > 0 ? "+" : "") + Number(i.veraenderung_pct || 0).toFixed(2) + "%")}
-    ${kv("Marktkap. (EUR)", i.marktkap_eur)}${kv("ATH (EUR)", i.ath_eur)}${kv("ATL (EUR)", i.atl_eur)}
-    ${i.homepage ? `<div class="kv"><span class="k">Web</span><b><a href="${esc(i.homepage)}" target="_blank" rel="noopener">${esc(i.homepage)}</a></b></div>` : ""}
+    ${kvz("Rang", i.rang ? "#" + i.rang : "")}${kvz("Preis (EUR)", i.preis_eur)}
+    ${kvz("Veränderung 24h", (i.veraenderung_pct > 0 ? "+" : "") + Number(i.veraenderung_pct || 0).toFixed(2) + "%")}
+    ${kvz("Marktkap. (EUR)", i.marktkap_eur)}${kvz("24h-Volumen (EUR)", i.volumen_eur)}
+    ${kvz("ATH (EUR)", i.ath_eur)}${kvz("ATL (EUR)", i.atl_eur)}
+    ${i.homepage ? linkRow({ label: "Website", url: i.homepage }) : ""}
     ${i.beschreibung ? `<h3>Über</h3><div class="desc full">${esc(i.beschreibung)}</div>` : ""}`;
 }
 async function investWatchAdd() {
@@ -378,8 +387,10 @@ function renderDashboard() {
   const iv = INVEST || {};
   const ivtop = (iv.shortlist || []).slice(0, 4).map(s => { const c = s.veraenderung_pct;
     return `<div class="row"><span class="t" style="color:${c >= 0 ? "var(--green)" : "var(--red)"}">${(c > 0 ? "+" : "") + (c == null ? "?" : Number(c).toFixed(1))}%</span><div><b>${esc(s.symbol)}</b> <span class="meta">${esc(s.asset || "")}</span></div></div>`; }).join("");
+  const ivsc = iv.scorecard || {};
   const investP = panel("Investment (CIO)", `
     <div class="kv"><span class="k">Modus</span><b>${esc(iv.modus || "advisory")}</b></div>
+    <div class="kv"><span class="k">Trefferquote</span><b>${ivsc.ausgewertet ? Math.round((ivsc.trefferquote || 0) * 100) + "%" : "—"}</b></div>
     <div class="kv"><span class="k">Offene Vorschläge</span><b>${(iv.vorschlaege || []).length}</b></div>
     <div class="kv"><span class="k">Watchlist</span><b>${(iv.watchlist || []).length}</b></div>
     ${ivtop ? `<h3>Top-Mover</h3>${ivtop}` : `<div class="leer">Noch kein Screen.</div>`}`,

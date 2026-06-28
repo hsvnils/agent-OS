@@ -9,10 +9,11 @@ from orchestrator.investment.store import InvestmentStore
 
 class FakeMarket:
     """Mock-MarketData fuer die Engine-Tests (kein Netz)."""
-    def __init__(self, gainers=None, crypto=None, quote=None):
+    def __init__(self, gainers=None, crypto=None, quote=None, price=100):
         self._gainers = gainers
         self._crypto = crypto
         self._quote = quote
+        self._price = price
 
     def provider_status(self):
         return [{"name": "FMP", "konfiguriert": True}]
@@ -28,13 +29,16 @@ class FakeMarket:
         return {"ok": True, "provider": "CoinGecko", "preise": self._crypto or {}}
 
     def aktie_quote(self, symbol):
-        return {"ok": True, "preis": 100, "veraenderung_pct": (self._quote or {}).get(symbol, 0.0)}
+        return {"ok": True, "preis": self._price, "veraenderung_pct": (self._quote or {}).get(symbol, 0.0)}
 
     def aktie_profil(self, symbol):
         return {"ok": True, "name": symbol + " Inc.", "branche": "Tech", "boerse": "NASDAQ"}
 
     def aktie_news(self, symbol, von="", bis="", limit=3):
         return {"ok": True, "news": [{"titel": "Headline", "quelle": "Reuters", "url": "http://x"}]}
+
+    def aktie_rsi(self, symbol):
+        return {"wert": 55.0, "label": "neutral", "stand": "2026-06-28"}
 
     def crypto_detail(self, coin_id):
         return {"ok": True, "name": coin_id.title(), "symbol": coin_id[:3].upper(), "preis_eur": 50000,
@@ -120,6 +124,22 @@ class TestEngine(unittest.TestCase):
         dk = eng.detail("bitcoin", "krypto")
         self.assertEqual(dk["asset"], "krypto")
         self.assertTrue(dk["info"]["ok"])
+
+    def test_scorecard_walkforward(self):
+        from datetime import datetime, timedelta
+        eng = InvestmentEngine(FakeMarket(price=110), self.store)
+        self.store.forecast_add("AAA", prognose="steigt", konfidenz=0.6, horizont="1W",
+                                basis_preis=100, asset="aktie")
+        # vor Ablauf des Horizonts: keine Auswertung
+        r0 = eng.scorecard_aktualisieren(jetzt=datetime.now() + timedelta(days=1))
+        self.assertEqual(r0["neu_bewertet"], 0)
+        # nach Ablauf: +10% (110 vs 100) -> "steigt" Treffer
+        r1 = eng.scorecard_aktualisieren(jetzt=datetime.now() + timedelta(days=8))
+        self.assertEqual(r1["neu_bewertet"], 1)
+        self.assertEqual(r1["scorecard"]["trefferquote"], 1.0)
+        # idempotent: kein doppeltes Auswerten
+        r2 = eng.scorecard_aktualisieren(jetzt=datetime.now() + timedelta(days=9))
+        self.assertEqual(r2["neu_bewertet"], 0)
 
     def test_wochenprognose_und_scorecard(self):
         self.store.watchlist_add("AAA")

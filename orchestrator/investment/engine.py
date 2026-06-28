@@ -109,45 +109,98 @@ class InvestmentEngine:
         if asset == "krypto":
             d = self.market.crypto_detail(symbol)
             return {"ok": d.get("ok", False), "asset": "krypto", "symbol": symbol, "info": d}
+        sym = symbol.upper()
         quote = self.market.aktie_quote(symbol)
         profil = self.market.aktie_profil(symbol)
         news = self.market.aktie_news(symbol)
-        return {"ok": True, "asset": "aktie", "symbol": symbol.upper(),
+        rsi = getattr(self.market, "aktie_rsi", lambda _s: None)(symbol)  # best-effort (AV-Free-Limit)
+        links = [
+            {"label": "SEC-Filings (EDGAR)", "url": f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&ticker={sym}&type=10-K&dateb=&owner=include&count=10"},
+            {"label": "Chart (TradingView)", "url": f"https://www.tradingview.com/symbols/{sym}/"},
+        ]
+        if profil.get("ok") and profil.get("web"):
+            links.insert(0, {"label": "Unternehmens-Website", "url": profil["web"]})
+        return {"ok": True, "asset": "aktie", "symbol": sym,
                 "quote": quote if quote.get("ok") else None,
                 "profil": profil if profil.get("ok") else None,
+                "rsi": rsi, "links": links,
                 "news": news.get("news", []) if news.get("ok") else [],
                 "hinweise": [x.get("hinweis") for x in (quote, profil, news) if x.get("fall_b")]}
 
     # -- 3) Wochenprognose + Scorecard --
+    def _aktueller_preis(self, symbol: str, asset: str):
+        if asset == "krypto":
+            c = self.market.crypto_preis([symbol], vs="eur")
+            return _zahl((c.get("preise", {}).get(symbol) or {}).get("eur")) if c.get("ok") else None
+        q = self.market.aktie_quote(symbol)
+        return _zahl(q.get("preis")) if q.get("ok") else None
+
     def wochenprognose(self) -> dict:
         erstellt = []
         for w in self.store.watchlist():
             sym, asset = w["symbol"], w.get("asset", "aktie")
-            chg = 0.0
+            chg, basis = 0.0, None
             if asset == "krypto":
                 c = self.market.crypto_preis([sym], vs="eur")
                 if c.get("ok"):
-                    chg = _zahl((c["preise"].get(sym) or {}).get("eur_24h_change"))
+                    v = c["preise"].get(sym) or {}
+                    chg = _zahl(v.get("eur_24h_change")); basis = _zahl(v.get("eur")) or None
             else:
                 q = self.market.aktie_quote(sym)
                 if q.get("ok"):
-                    chg = _zahl(q.get("veraenderung_pct"))
+                    chg = _zahl(q.get("veraenderung_pct")); basis = _zahl(q.get("preis")) or None
             richtung = "steigt" if chg > 1 else ("faellt" if chg < -1 else "seitwaerts")
             konfidenz = min(0.8, 0.5 + abs(chg) / 100.0)
             fid = self.store.forecast_add(sym, prognose=richtung, konfidenz=konfidenz, horizont="1W",
-                                          rationale=f"Momentum {chg:+.1f}%")
+                                          rationale=f"Momentum {chg:+.1f}%", basis_preis=basis, asset=asset)
             erstellt.append({"symbol": sym, "prognose": richtung, "konfidenz": round(konfidenz, 2),
                              "forecast_id": fid})
         return {"ok": True, "prognosen": erstellt}
+
+    def scorecard_aktualisieren(self, *, tage: int = 7, jetzt=None) -> dict:
+        """Walk-forward: faellige Prognosen (aelter als `tage`) gegen den aktuellen Kurs auswerten
+        -> Actual (Wochen-Rendite %) speichern. Bei starker Abweichung Anomalie melden."""
+        from datetime import datetime, timedelta
+        jetzt = jetzt or datetime.now()
+        bewertet = {a.get("bezug_forecast") for a in self.store.list("actuals")}
+        neu = 0
+        for f in self.store.list("forecasts"):
+            fid = f.get("id")
+            if fid in bewertet:
+                continue
+            try:
+                ts = datetime.fromisoformat(f.get("ts", ""))
+            except ValueError:
+                continue
+            if (jetzt - ts) < timedelta(days=tage):
+                continue  # Horizont noch nicht erreicht
+            basis = _zahl(f.get("basis_preis"))
+            akt = self._aktueller_preis(f.get("symbol"), f.get("asset", "aktie"))
+            if not basis or not akt:
+                continue
+            ret = round((akt - basis) / basis * 100, 2)
+            self.store.actual_add(f.get("symbol"), wert=ret, bezug_forecast=fid)
+            neu += 1
+            # Anomalie-Obduktion: Prognose lag deutlich daneben -> melden (Researcher-Hook spaeter)
+            if self.notify and not _traf_zu(f, {"wert": ret}) and abs(ret) >= 8:
+                try:
+                    self.notify(f"Prognose-Anomalie {f.get('symbol')}: erwartet '{f.get('prognose')}', "
+                                f"real {ret:+.1f}% in {tage}T. Ursache pruefen.",
+                                abteilung="CIO", kategorie="investment")
+                except Exception:
+                    pass
+        return {"neu_bewertet": neu, "scorecard": self.scorecard()}
 
     def scorecard(self) -> dict:
         forecasts = self.store.list("forecasts")
         actuals = {a.get("bezug_forecast"): a for a in self.store.list("actuals")}
         bewertet = [f for f in forecasts if f.get("id") in actuals]
         treffer = sum(1 for f in bewertet if _traf_zu(f, actuals[f["id"]]))
+        fehler = [abs(_zahl(actuals[f["id"]].get("wert"))) for f in bewertet]
         return {"prognosen_gesamt": len(forecasts), "ausgewertet": len(bewertet),
                 "treffer": treffer,
-                "trefferquote": round(treffer / len(bewertet), 2) if bewertet else None}
+                "trefferquote": round(treffer / len(bewertet), 2) if bewertet else None,
+                "mittlerer_betrag_pct": round(sum(fehler) / len(fehler), 1) if fehler else None}
 
 
 def _traf_zu(forecast: dict, actual: dict) -> bool:

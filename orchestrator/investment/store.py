@@ -71,10 +71,10 @@ class InvestmentStore:
 
     # -- forecasts/actuals/scorecard --
     def forecast_add(self, symbol: str, *, prognose: str, konfidenz: float, horizont: str,
-                     rationale: str = "") -> str:
+                     rationale: str = "", basis_preis=None, asset: str = "aktie") -> str:
         return self.add("forecasts", {"symbol": symbol.upper(), "prognose": prognose,
                                       "konfidenz": konfidenz, "horizont": horizont, "rationale": rationale,
-                                      "status": "offen"})
+                                      "basis_preis": basis_preis, "asset": asset, "status": "offen"})
 
     def actual_add(self, symbol: str, *, wert, bezug_forecast: str = "") -> str:
         return self.add("actuals", {"symbol": symbol.upper(), "wert": wert, "bezug_forecast": bezug_forecast})

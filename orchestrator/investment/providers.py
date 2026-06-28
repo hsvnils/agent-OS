@@ -154,6 +154,22 @@ class MarketData:
                 for x in (d or []) if x.get("headline")][:limit]
         return {"ok": True, "provider": "Finnhub", "news": news}
 
+    def aktie_rsi(self, symbol: str):
+        """Aktuellster RSI (Alpha Vantage) + Label. None bei Fehler/Limit (AV-Free: ~25 Calls/Tag)."""
+        r = self.indikator(symbol, "RSI")
+        if not r.get("ok"):
+            return None
+        ta = (r.get("roh") or {}).get("Technical Analysis: RSI") or {}
+        if not ta:
+            return None
+        try:
+            latest = sorted(ta.keys(), reverse=True)[0]
+            val = float(ta[latest]["RSI"])
+        except Exception:
+            return None
+        label = "ueberkauft" if val >= 70 else ("ueberverkauft" if val <= 30 else "neutral")
+        return {"wert": round(val, 1), "label": label, "stand": latest}
+
     def crypto_detail(self, coin_id: str) -> dict:
         """Krypto-Detail (CoinGecko /coins/{id}): Preis, Marktkap., ATH/ATL, Kurzbeschreibung, Homepage."""
         key = self._key("COINGECKO_API_KEY")
@@ -167,8 +183,10 @@ class MarketData:
         m = d.get("market_data") or {}
         beschr = ((d.get("description") or {}).get("en") or "").strip()
         return {"ok": True, "provider": "CoinGecko", "name": d.get("name"), "symbol": (d.get("symbol") or "").upper(),
+                "rang": d.get("market_cap_rank"),
                 "preis_eur": (m.get("current_price") or {}).get("eur"),
                 "veraenderung_pct": m.get("price_change_percentage_24h"),
+                "volumen_eur": (m.get("total_volume") or {}).get("eur"),
                 "marktkap_eur": (m.get("market_cap") or {}).get("eur"),
                 "ath_eur": (m.get("ath") or {}).get("eur"), "atl_eur": (m.get("atl") or {}).get("eur"),
                 "homepage": ((d.get("links") or {}).get("homepage") or [""])[0],

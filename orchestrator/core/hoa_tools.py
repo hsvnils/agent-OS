@@ -248,6 +248,8 @@ def tool_specs() -> list[dict]:
               "Advisory: keine Trades.", {}, []),
         _spec("investment_vorschlaege", "Listet die aktuellen Investment-Vorschlaege (Symbol, Aktion, Grund, "
               "Risiko-Label, Konfidenz).", {}, []),
+        _spec("investment_scorecard", "Zeigt den Investment-Track-Record (Scorecard): ausgewertete Prognosen, "
+              "Trefferquote, mittlere Bewegung. Die Vertrauensbasis fuer einen spaeteren Paper-Modus.", {}, []),
         _spec("watchlist_hinzufuegen", "Nimmt einen Wert in die Investment-Watchlist auf.",
               {"symbol": _str("Tickersymbol (AAPL) oder CoinGecko-ID (bitcoin)."),
                "asset": _str("'aktie' oder 'krypto' (Default aktie).")}, ["symbol"]),
@@ -626,10 +628,13 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             return {"fehler": "Insights nicht verfuegbar."}
         return {"lagebild": redact(ctx.insights.lagebild(), sec)}
 
-    if name in ("investment_status", "investment_screen", "investment_vorschlaege", "watchlist_hinzufuegen"):
+    if name in ("investment_status", "investment_screen", "investment_vorschlaege", "investment_scorecard",
+                "watchlist_hinzufuegen"):
         if ctx.investment is None:
             return {"fehler": "Investment-Abteilung (CIO) nicht verfuegbar."}
         eng = ctx.investment
+        if name == "investment_scorecard":
+            return _redact_obj(eng.scorecard(), sec)
         if name == "investment_status":
             st = eng.status()
             return _redact_obj({"modus": st["modus"],

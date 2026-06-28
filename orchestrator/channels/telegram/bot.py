@@ -366,6 +366,10 @@ def _start_investment_loop(ctx, secrets) -> None:
                         f"Markt-Screen erledigt: {n} neue Vorschlaege (Risk-geprueft), "
                         f"{len(r.get('vom_risk_abgelehnt', []))} vom Risk-Agent abgelehnt. Modus: advisory.",
                         abteilung="CIO", kategorie="investment")
+                    try:
+                        eng.scorecard_aktualisieren()  # faellige Wochenprognosen auswerten (Track-Record)
+                    except Exception as exc:
+                        print(f"[investment] Scorecard-Fehler: {exc}", flush=True)
                 # Wochenprognose montags ~09:00, 1x/Tag
                 if jetzt.weekday() == 0 and jetzt.hour == 9 and _letztes_datum("forecasts") != datum:
                     eng.wochenprognose()
