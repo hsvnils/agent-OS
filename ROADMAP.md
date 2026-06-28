@@ -28,7 +28,7 @@
 | 14 | Freie Visualisierung (MindMap/Graph/Chart) | ✅ umgesetzt 2026-06-26 |
 | 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 live 2026-06-27 — funktioniert; „intelligenter machen" = Backlog (spaeter) |
 | 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | ✅ **VOLL LIVE 2026-06-27** -- LAN + **HTTPS extern** (`https://os.hanserautisch.synology.me`, ein Lesezeichen ueberall), Login, Mond-Orb/Chat, agentisches Mehr-Info, Detailansicht, Mobil, echte Umlaute, futuristisches Design, Sprach-Kontextbefehle |
-| 17 | **LUNA bedient den Rechner (Computer-Use, auf Anweisung)** | 🔲 geplant (Backlog) |
+| 17 | **LUNA bedient den Rechner / Live-Co-Working** (Computer-Use; paralleles Arbeiten im Gespraech -- ich sehe, sie setzt um, justiert per Sprache, schlaegt vor; z. B. XMind/Mail) | 🔲 geplant (Backlog) |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
@@ -298,15 +298,26 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   keine Trades/Geldbewegungen** -- alles Geld-/Recht-relevante bleibt CEO-/Mensch-Tor (AGENTS.md 4). Nur
   Vorschlaege; Ausfuehrung nie autonom.
 
-### Phase 17 — LUNA bedient den Rechner (Computer-Use, auf Anweisung) — GEPLANT (Backlog)
+### Phase 17 — LUNA bedient den Rechner / Live-Co-Working am Rechner — GEPLANT (Backlog)
 - **Ziel:** Auf **ausdrueckliche CEO-Anweisung** kann LUNA den Rechner des CEO **bedienen** -- Apps oeffnen
   und steuern, klicken, tippen, Workflows/Dateiaktionen ausfuehren („mach X in App Y", „lade das hoch",
   „raeum den Ordner auf"). Wie ein Assistent, der Maus/Tastatur uebernimmt.
-- **Bausteine:** Computer-Use-Faehigkeit (Screenshot + Maus/Tastatur). Zwei Wege: (a) **Claude Computer-Use**
-  (Anthropic; braucht Modellzugang -- gleiches Tor wie Execution), (b) **lokale Automatisierung** auf dem Mac
-  (AppleScript/osascript, cliclick, macOS-Accessibility-API). LUNA emittiert Aktionsschritte -> lokaler
-  Mac-Runner fuehrt sie aus. Laeuft **lokal auf dem Mac** (wie der Cutter); LUNA (NAS) erteilt den Auftrag ->
-  braucht den NAS->Mac-Kanal.
+- **VISION „Paralleles Co-Working" (CEO 2026-06-28):** Nicht nur Einzelauftraege, sondern **gemeinsames
+  Live-Arbeiten im Gespraech**: Der CEO **sieht** die offene App, **erzaehlt/bespricht/weist an**, und LUNA
+  **setzt es live um** -- der CEO sieht das Ergebnis sofort und **justiert per Sprache** („nein, den Knoten
+  woanders", „aendere die Mail so"), LUNA passt an und **schlaegt selbst Dinge vor**. Beispiele:
+  **XMind** offen -> CEO beschreibt einen Prozess -> LUNA legt die Knoten/Aeste an, der CEO korrigiert im
+  Dialog; **Mail** -> diktieren/besprechen -> LUNA schreibt/aendert (Senden bleibt Mensch-Tor); generell:
+  **alles, was der CEO am Rechner tun kann, im Gespraech anweisen/besprechen und LUNA macht es live**. Das ist
+  die Vollausbaustufe von Computer-Use (kollaborativ, sprachgesteuert, vorschlagend) -- nicht nur „Befehl ->
+  Tat".
+- **Bausteine:** (1) **App-Steuerung**: (a) **Claude Computer-Use** (Anthropic; braucht Modellzugang -- gleiches
+  Tor wie Execution), (b) **lokale Automatisierung** (AppleScript/osascript, cliclick, macOS-Accessibility-API;
+  app-spezifisch tiefer, wo Scripting existiert, z. B. Mail/XMind-Export). (2) **Bildschirm-/App-Wahrnehmung**:
+  LUNA muss **sehen**, was auf dem Schirm/in der App ist (Screenshot + ggf. Accessibility-Baum), um praezise
+  zu handeln UND um Vorschlaege zu machen. (3) **Gespraechs-Schleife**: bestehende Live-Voice-LUNA (Orb) treibt
+  das Co-Working (du sprichst, sie handelt, du justierst). (4) **Lokaler Mac-Runner** (wie der Cutter) fuehrt
+  aus; LUNA (NAS) erteilt den Auftrag -> braucht den **NAS->Mac-Kanal**.
 - **Governance (HART -- maechtige, riskante Faehigkeit):** **nur auf ausdrueckliche Anweisung, nie autonom**.
   Jede Aktion mit **Geld/Recht/Oeffentlichkeit/Loeschen** = CEO-Tor mit Bestaetigung. **Least-Privilege**
   (nur freigegebene Apps/Ordner), **Not-Aus** (Stopp jederzeit), **Audit** jeder Aktion im

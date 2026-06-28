@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 16:30] — Claude Code (Roadmap: Phase 17 = Live-Co-Working am Rechner)
+- **Was:** ROADMAP.md Phase 17 um die CEO-Vision **„Paralleles Co-Working"** erweitert: nicht nur
+  Einzelauftraege (Computer-Use), sondern **gemeinsames Live-Arbeiten im Gespraech** -- CEO sieht die offene
+  App, erzaehlt/weist an, LUNA setzt live um, CEO justiert per Sprache, LUNA schlaegt selbst vor (Beispiele
+  XMind: Prozess-Knoten anlegen/aendern; Mail: diktieren/aendern, Senden bleibt Mensch-Tor). Bausteine
+  ergaenzt: App-Steuerung (Claude Computer-Use ODER lokale Automatisierung), **Bildschirm-/App-Wahrnehmung**
+  (LUNA muss sehen, was auf dem Schirm ist), Gespraechs-Schleife (Live-Voice-Orb), lokaler Mac-Runner +
+  NAS->Mac-Kanal. Status-Tabelle aktualisiert. Governance bleibt HART (nur auf Anweisung, CEO-Tor fuer
+  Geld/Recht/Oeffentlichkeit/Loeschen, Not-Aus, Audit, Least-Privilege).
+- **Warum:** CEO-Wunsch, parallel mit LUNA arbeiten zu koennen („ich sehe, sie setzt um"); eingeordnet als
+  Vollausbaustufe von Phase 17.
+- **Betroffen:** ROADMAP.md.
+
 ## [2026-06-28 16:10] — Claude Code (Watchlist-Autocomplete + Entfernen + automatisches Backup)
 - **Was:** (1) **Symbol-Autovervollstaendigung** fuer die Watchlist: `MarketData.suche` (Aktien via Finnhub
   `/search`, Krypto via CoinGecko `/search`; Krypto-Symbol = CoinGecko-ID) + Endpunkt `/api/investment/suche` +
