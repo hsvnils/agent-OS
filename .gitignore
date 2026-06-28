@@ -49,4 +49,5 @@ agenda/log.jsonl
 watch/log.jsonl
 finance/kosten-log.jsonl
 brain/log.jsonl
+investment/log.jsonl
 .claude/preview-logs/

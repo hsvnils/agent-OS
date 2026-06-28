@@ -29,7 +29,7 @@
 | Phase | Thema | Modus | GATE | Status |
 |------:|-------|-------|------|--------|
 | 0 | Plan & Charta (CIO + Governance) | advisory | GATE A: Freigabe Plan/Charta | ✅ erledigt 2026-06-28 |
-| 1 | Datenanbindung (gratis) + Speicher | advisory | GATE B: gratis API-Keys in .env (CISO/CTO) | 🔲 geplant |
+| 1 | Datenanbindung (gratis) + Speicher | advisory | GATE B: gratis API-Keys in .env (CISO/CTO) | 🟡 Code fertig (Mock-getestet) — wartet auf gratis Keys |
 | 2 | Die drei Schleifen (Screen/Prognose/Alerts) | advisory | — (kein Ausfuehren) | 🔲 geplant |
 | 3 | Vertrauen aufbauen + Paper-Modus | advisory → paper | GATE C: Paper aktivieren (Alpaca) | 🔲 geplant |
 | 4 | Live-Trading (hart abgesichert) | live | GATE D: Live aktivieren (haerteste Guardrails) | 🔲 geplant |
@@ -86,6 +86,11 @@ paper/live = Broker-Adapter). Der Schalter ist da, ohne dass jetzt etwas Echtes 
   (Knuepft an den bestehenden Backlog-Punkt „Supabase als Queue-/Store-Backend" der Haupt-ROADMAP an.)
 - **Self-Checks gegen Mock/aufgezeichnete Daten** (ohne Kosten/ohne Live-Calls). **GATE B:** gratis API-Keys in
   `.env` (CTO provisioniert, CISO-Freigabe; Capability-Muster, Leck-Schutz).
+- **Umgesetzt (2026-06-28, ohne Keys):** `orchestrator/investment/providers.py` (`MarketData`-Fassade,
+  Capability/Key-Erkennung, **Fall-B ohne Key**, injizierbares HTTP) + `orchestrator/investment/store.py`
+  (`InvestmentStore`, dateibasierter Stand-in fuer `inv_*`, Modus default advisory) + 15 Tests (Mock, gruen).
+  CoinGecko + SEC EDGAR sind keyless; Finnhub/Alpha Vantage/FMP brauchen je einen **gratis** Key (GATE B).
+  Aktiv wird die Live-Anbindung erst mit eingesetzten Keys.
 
 ### Phase 2 — Die drei Kern-Schleifen (advisory)
 - **3.1 Taeglicher Markt-Screen:** ein/zwei **Bulk-Abfragen** (Gesamtmarkt-Mover, ungewoehnliches Volumen,

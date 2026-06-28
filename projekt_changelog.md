@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-28 13:10] — Claude Code (Investment Phase 1 — Datenschicht ohne Keys, Mock-getestet)
+- **Was:** Investment-Datenanbindung + Speicher gebaut, **so weit ohne API-Keys moeglich** (Self-Checks gegen
+  Mock): **`orchestrator/investment/providers.py`** -- `MarketData`-Fassade ueber 5 Provider (CoinGecko,
+  SEC EDGAR, Finnhub, Alpha Vantage, FMP) im **Capability-Muster**: liest Keys aus `.env`, liefert **Fall-B**
+  (kein Crash/keine Kosten) ohne Key, HTTP injizierbar (Tests ohne Netz). `provider_status()`/`fehlende_keys()`
+  fuer GATE B. **`orchestrator/investment/store.py`** -- `InvestmentStore` (event-sourced JSONL, dateibasierter
+  Stand-in fuer Supabase `inv_*`: watchlist/screening/forecasts/actuals/scorecard/suggestions/mode/positions;
+  Modus default **advisory**; leck-geschuetzt). 15 neue Tests (Mock), Suite **189/189**. `investment/log.jsonl`
+  gitignored + vom NAS-Sync ausgeschlossen.
+- **Warum:** CEO: „mach weiter bis du die Keys brauchst". Live-Anbindung wird erst durch gratis Keys aktiv
+  (**GATE B**). CoinGecko + SEC EDGAR sind keyless; Finnhub/Alpha Vantage/FMP brauchen je einen gratis Key.
+  **Keine Trades, keine Kosten.** Noch nicht in den Orchestrator/LUNA-Tools verdrahtet (Phase 2).
+- **Betroffen:** orchestrator/investment/{__init__,providers,store}.py,
+  orchestrator/tests/{test_investment_providers,test_investment_store}.py, INVESTMENT_ROADMAP.md, .gitignore,
+  deploy/sync-to-nas.sh.
+
 ## [2026-06-28 12:45] — Head of Agents / Claude Code (Investment Phase 0 — GATE A, CEO-freigegeben)
 - **Was:** Investment-Abteilung Phase 0 angelegt (nach CEO-Freigabe GATE A):
   **`agents/16_cio.md`** (Chief Investment Officer, Status **Entwurf**, advisory-only, keine autonomen Trades) +
