@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 09:30] — Claude Code (Phase 17 M4-Fix: .app-Bundle + Umlaute im Orb)
+- **Was:** (1) **Crash-Fix** „Orb verschwindet beim Gespraech-Start": Ursache laut Crash-Report = TCC-
+  Privacy-Violation — das per Linker ins Binary eingebettete Info.plist wird von macOS fuer Spracherkennung
+  NICHT akzeptiert. Loesung: echtes **`.app`-Bundle** (Info.plist in `Contents/`). Neues `build_app.sh`
+  (swift build -> LunaOrb.app zusammensetzen -> ad-hoc codesign); Info.plist um CFBundleExecutable/
+  CFBundlePackageType ergaenzt. Start jetzt via `./build_app.sh && open LunaOrb.app`. (2) **Umlaute in der
+  sichtbaren Oberflaeche** (CEO-Wunsch): alle Nutzer-Texte in `main.swift` (Menue/Dialoge), die Voice-
+  Hinweise und die Info.plist-Berechtigungstexte auf echte ä/ö/ü/ß umgestellt (Code/Bezeichner bleiben
+  ASCII). LunaOrb.app gitignored. **Verifiziert:** `build_app.sh` gruen; Bundle traegt UsageDescriptions +
+  Bundle-ID + Ad-hoc-Signatur; Orb startet stabil als App-Bundle (kein Crash beim Start).
+- **Warum:** CEO meldete Crash + fehlende Umlaute. Das `.app`-Bundle ist zugleich der geplante „installierbar"-
+  Haerteschritt und Voraussetzung fuer Mikrofon/Spracherkennung.
+- **Betroffen:** mac/LunaOrb/{build_app.sh (neu), Info.plist, .gitignore, README.md,
+  Sources/LunaOrb/{main.swift, VoiceSession.swift}}, projekt_changelog.md.
+
 ## [2026-06-29 09:05] — Claude Code (Phase 17 M4: Live-Gespraech am Orb, Lunas Kern)
 - **Was:** Native Duplex-Sprachschleife im Swift-Orb. Neu `mac/LunaOrb/Sources/LunaOrb/VoiceSession.swift`:
   Mikrofon (AVAudioEngine mit Voice-Processing = **Echo-Cancellation**) -> **SFSpeechRecognizer (de-DE)** ->

@@ -66,7 +66,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch serverOnline {
         case .some(true): statusText = "Lokale LUNA: verbunden"
         case .some(false): statusText = "Lokale LUNA: offline (Port 8765?)"
-        case .none: statusText = "Lokale LUNA: pruefe…"
+        case .none: statusText = "Lokale LUNA: prüfe…"
         }
         let statusLine = NSMenuItem(title: statusText, action: nil, keyEquivalent: "")
         statusLine.isEnabled = false
@@ -74,7 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let voiceOn = voice.isActive
         let voiceItem = NSMenuItem(
-            title: voiceOn ? "Gespraech beenden" : "Live-Gespraech starten",
+            title: voiceOn ? "Gespräch beenden" : "Live-Gespräch starten",
             action: #selector(toggleVoice), keyEquivalent: "g")
         voiceItem.target = self
         voiceItem.isEnabled = (serverOnline != false)
@@ -86,7 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         talk.isEnabled = (serverOnline != false)
         menu.addItem(talk)
 
-        let recheck = NSMenuItem(title: "Verbindung pruefen", action: #selector(refreshServerStatus), keyEquivalent: "r")
+        let recheck = NSMenuItem(title: "Verbindung prüfen", action: #selector(refreshServerStatus), keyEquivalent: "r")
         recheck.target = self
         menu.addItem(recheck)
 
@@ -94,12 +94,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let instant = currentModeIsInstant()
         let modeItem = NSMenuItem(
-            title: instant ? "Modus: Sofort-Umsetzung (EIN)" : "Modus: Erst bestaetigen (Standard)",
+            title: instant ? "Modus: Sofort-Umsetzung (EIN)" : "Modus: Erst bestätigen (Standard)",
             action: #selector(toggleMode), keyEquivalent: "")
         modeItem.target = self
         modeItem.state = instant ? .on : .off
-        modeItem.toolTip = "Sofort-Modus: benigne, freigegebene Aktionen ohne Rueckfrage. "
-            + "Geld/Recht/Oeffentlichkeit/Loeschen bleiben immer bestaetigungspflichtig."
+        modeItem.toolTip = "Sofort-Modus: benigne, freigegebene Aktionen ohne Rückfrage. "
+            + "Geld/Recht/Öffentlichkeit/Löschen bleiben immer bestätigungspflichtig."
         menu.addItem(modeItem)
 
         let killActive = FileManager.default.fileExists(atPath: killSwitchPath)
@@ -126,9 +126,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             voice.start { [weak self] ok in
                 if !ok {
                     let a = NSAlert()
-                    a.messageText = "Live-Gespraech nicht moeglich"
+                    a.messageText = "Live-Gespräch nicht möglich"
                     a.informativeText = "Bitte Mikrofon und Spracherkennung erlauben "
-                        + "(System-Einstellungen -> Datenschutz & Sicherheit)."
+                        + "(Systemeinstellungen → Datenschutz & Sicherheit)."
                     a.runModal()
                 }
                 self?.rebuildMenu(serverOnline: nil)
@@ -147,12 +147,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func askLuna() {
         let alert = NSAlert()
         alert.messageText = "Was soll LUNA tun?"
-        alert.informativeText = "Live-Co-Working (M1): Nachricht an die lokale LUNA. Steuerung/Awareness folgen."
+        alert.informativeText = "Tipp-Nachricht an die lokale LUNA. Für das gesprochene Live-Gespräch den Orb-Menüpunkt Live-Gespräch starten verwenden."
         alert.addButton(withTitle: "Senden")
         alert.addButton(withTitle: "Abbrechen")
 
         let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
-        input.placeholderString = "z. B. Was kannst du gerade?"
+        input.placeholderString = "z. B. In welcher App bin ich gerade?"
         alert.accessoryView = input
         alert.window.initialFirstResponder = input
 

@@ -95,7 +95,7 @@ final class VoiceSession: NSObject, AVAudioPlayerDelegate {
         setState(.listening)
 
         guard let recognizer = recognizer, recognizer.isAvailable else {
-            onInfo?("Spracherkennung de-DE nicht verfuegbar."); return
+            onInfo?("Spracherkennung de-DE nicht verfügbar."); return
         }
         task = recognizer.recognitionTask(with: req) { [weak self] result, error in
             guard let self = self else { return }

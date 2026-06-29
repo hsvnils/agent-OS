@@ -16,8 +16,18 @@ Voraussetzung: Xcode / Swift-Toolchain (getestet mit Swift 6.3 / Xcode 26).
 
 ## Starten
 
+**Fuer das Live-Gespraech (M4) als `.app`-Bundle starten** — nur so findet macOS-TCC die Mikrofon-/
+Sprach-Berechtigungen (ein nacktes Binary crasht beim ersten Zugriff):
+
 ```bash
-./.build/debug/LunaOrb   # Orb erscheint oben rechts in der Menueleiste
+./build_app.sh           # baut + signiert LunaOrb.app (Release)
+open LunaOrb.app         # Orb erscheint oben rechts in der Menueleiste
+```
+
+Schneller Entwickler-Lauf ohne Voice (Awareness/Steuerung/Tippen funktionieren):
+
+```bash
+swift build && ./.build/debug/LunaOrb
 ```
 
 Die **lokale LUNA** muss laufen, damit „Mit LUNA sprechen…" funktioniert:
