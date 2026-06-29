@@ -263,12 +263,14 @@ def tool_specs() -> list[dict]:
               {"aufgabe": _str("Optional: Aufgabe, fuer die eine passende App gesucht wird, "
                                "z. B. 'Notiz schreiben'.")}, []),
         _spec("rechner_aktion", "Phase 17 (Mac): fuehrt eine GEGATETE Steuer-Aktion am Rechner aus "
-              "(Allowlist, Vorschau/Bestaetigung, Not-Aus, Audit). Start-Allowlist: TextEdit/text_schreiben. "
-              "OHNE bestaetigt=true kommt im Bestaetigen-Modus erst eine Vorschau; im Sofort-Modus werden "
-              "benigne Aktionen direkt ausgefuehrt. CEO-Tor (Geld/Recht/Oeffentlichkeit/Loeschen) wird IMMER "
-              "bestaetigt.",
-              {"app": _str("App, z. B. 'TextEdit'."), "verb": _str("Aktion, z. B. 'text_schreiben'."),
-               "inhalt": _str("Inhalt/Parameter, z. B. der zu schreibende Text."),
+              "(Allowlist, Vorschau/Bestaetigung, Not-Aus, Audit). Verben: 'app_oeffnen' (startet eine "
+              "installierte App, z. B. app='XMind') fuer JEDE installierte App; 'text_schreiben' (app='TextEdit', "
+              "inhalt=Text). OHNE bestaetigt=true kommt im Bestaetigen-Modus erst eine Vorschau; im Sofort-Modus "
+              "werden benigne Aktionen direkt ausgefuehrt. CEO-Tor (Geld/Recht/Oeffentlichkeit/Loeschen) wird "
+              "IMMER bestaetigt.",
+              {"app": _str("App, z. B. 'XMind' oder 'TextEdit'."),
+               "verb": _str("Aktion: 'app_oeffnen' oder 'text_schreiben'."),
+               "inhalt": _str("Inhalt/Parameter, z. B. der zu schreibende Text (bei text_schreiben)."),
                "bestaetigt": _bool("true erst nach ausdruecklicher CEO-Bestaetigung.")},
               ["app", "verb"]),
         _spec("steuerung_modus", "Phase 17 (Mac): zeigt oder setzt den Steuerungs-Modus. setzen='sofort' "

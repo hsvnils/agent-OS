@@ -35,6 +35,12 @@ ALLOWLIST: dict[str, dict[str, dict]] = {
     },
 }
 
+# Generische Verben, die fuer JEDE installierte App erlaubt sind (benigne, umkehrbare Aktionen).
+GENERIC_VERBS: dict[str, dict] = {
+    "app_oeffnen": {"kategorie": "benign",
+                    "beschreibung": "Eine installierte App starten/in den Vordergrund holen (benigne)."},
+}
+
 
 def is_macos() -> bool:
     return sys.platform == "darwin"
@@ -67,14 +73,27 @@ def is_stopped() -> bool:
 
 # -- Allowlist-Pruefung --
 
+def _app_installed(app: str) -> bool:
+    from . import capabilities
+    low = app.lower()
+    return any(low == a.lower() or low in a.lower() for a in capabilities.scan_installed_apps())
+
+
 def allowed(app: str, verb: str) -> dict | None:
-    return ALLOWLIST.get(app, {}).get(verb)
+    """Spezifikation der Aktion oder None. Generische Verben gelten fuer jede installierte App."""
+    spec = ALLOWLIST.get(app, {}).get(verb)
+    if spec is not None:
+        return spec
+    if verb in GENERIC_VERBS and _app_installed(app):
+        return GENERIC_VERBS[verb]
+    return None
 
 
 def allowlist_text() -> str:
     teile = []
     for app, verbs in ALLOWLIST.items():
         teile.append(f"{app}: " + ", ".join(verbs.keys()))
+    teile.append("jede installierte App: " + ", ".join(GENERIC_VERBS.keys()))
     return " | ".join(teile)
 
 
@@ -107,9 +126,21 @@ def execute(app: str, verb: str, inhalt: str) -> dict:
         return {"ausgefuehrt": False, "grund": "NOT-AUS aktiv"}
     if allowed(app, verb) is None:
         return {"ausgefuehrt": False, "grund": "nicht in Allowlist"}
+    if verb == "app_oeffnen":
+        return _app_oeffnen(app)
     if app == "TextEdit" and verb == "text_schreiben":
         return _textedit_schreiben(inhalt)
     return {"ausgefuehrt": False, "grund": "Verb nicht implementiert"}
+
+
+def _app_oeffnen(app: str) -> dict:
+    try:
+        p = subprocess.run(["open", "-a", app], capture_output=True, text=True, timeout=_TIMEOUT)
+    except Exception as exc:  # pragma: no cover
+        return {"ausgefuehrt": False, "grund": str(exc)[:200]}
+    if p.returncode != 0:
+        return {"ausgefuehrt": False, "grund": (p.stderr or "open-Fehler").strip()[:200]}
+    return {"ausgefuehrt": True, "app": app, "aktion": "geoeffnet"}
 
 
 def _ensure_running(app: str, sekunden: float = 3.0) -> bool:

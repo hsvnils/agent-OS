@@ -2,13 +2,14 @@ import AVFoundation
 import AppKit
 import Speech
 
-/// Live-Gespraech (Phase 17, M4) — Lunas Kern: zuhoeren, antworten, unterbrechbar (Barge-in).
+/// Live-Gespraech (Phase 17, M4) — Lunas Kern: zuhoeren, antworten, sprechen.
 ///
-/// Pipeline: Mikrofon (AVAudioEngine, Voice-Processing = Echo-Cancellation) -> SFSpeechRecognizer (de-DE)
-/// -> bei Sprechpause die Aeusserung an die lokale LUNA (`/api/chat`) -> Antwort per ElevenLabs (`/api/tts`,
-/// Fallback System-Stimme). Waehrend LUNA spricht, hoert sie weiter; echte Sprache des CEO stoppt die
-/// Wiedergabe sofort (Barge-in).
-final class VoiceSession: NSObject, AVAudioPlayerDelegate {
+/// Bewusst **Halbduplex** fuer Robustheit: waehrend LUNA spricht, ist das Mikrofon AUS (kein Feedback-Loop,
+/// kein fragiles Voice-Processing). Ablauf je Runde: Mikrofon (AVAudioEngine) -> SFSpeechRecognizer (de-DE)
+/// -> bei Sprechpause Aeusserung an die lokale LUNA (`/api/chat`) -> Antwort per ElevenLabs (`/api/tts`,
+/// Fallback System-Stimme) -> danach wieder zuhoeren. Jeder Schritt meldet seinen Status (onInfo) fuer
+/// sichtbare Diagnose. Barge-in (Reinreden) kommt als spaetere Ausbaustufe (braucht Echo-Cancellation).
+final class VoiceSession: NSObject, AVAudioPlayerDelegate, NSSpeechSynthesizerDelegate {
     enum State { case idle, listening, speaking }
 
     private let client: LunaClient
@@ -21,10 +22,8 @@ final class VoiceSession: NSObject, AVAudioPlayerDelegate {
 
     private var silenceTimer: Timer?
     private var lastTranscript = ""
-    private var speaking = false
     private var active = false
 
-    /// Zustands-/Fehler-Callbacks fuer Orb + Menue (immer Main-Thread).
     var onState: ((State) -> Void)?
     var onTranscript: ((String) -> Void)?
     var onInfo: ((String) -> Void)?
@@ -39,52 +38,61 @@ final class VoiceSession: NSObject, AVAudioPlayerDelegate {
 
     // MARK: - Start/Stop
 
-    /// Fragt Berechtigungen an und startet die Hoer-Schleife. completion(false) bei fehlender Erlaubnis.
     func start(_ completion: @escaping (Bool) -> Void) {
-        requestPermissions { [weak self] ok in
+        requestPermissions { [weak self] ok, why in
             guard let self = self else { return }
-            guard ok else { self.onInfo?("Mikrofon-/Spracherkennung nicht erlaubt."); completion(false); return }
+            guard ok else { self.onInfo?(why); completion(false); return }
             self.active = true
-            self.beginListening()
+            self.startListening()
             completion(true)
         }
     }
 
     func stop() {
         active = false
-        stopSpeaking()
         silenceTimer?.invalidate(); silenceTimer = nil
-        task?.cancel(); task = nil
-        request?.endAudio(); request = nil
-        if engine.isRunning { engine.stop() }
-        engine.inputNode.removeTap(onBus: 0)
+        player?.stop(); player = nil
+        if synth.isSpeaking { synth.stopSpeaking() }
+        teardownAudio()
         setState(.idle)
+        onInfo?("Gespraech beendet.")
     }
 
-    private func requestPermissions(_ done: @escaping (Bool) -> Void) {
+    /// Reiner Ausgabe-Test (unabhaengig vom Mikrofon) — prueft, ob man LUNA hoert.
+    func speakTest() {
+        speak("Hallo, ich bin LUNA. Wenn du mich hoerst, funktioniert die Sprachausgabe.", resumeAfter: false)
+    }
+
+    private func requestPermissions(_ done: @escaping (Bool, String) -> Void) {
         SFSpeechRecognizer.requestAuthorization { auth in
-            let speechOK = (auth == .authorized)
+            guard auth == .authorized else {
+                DispatchQueue.main.async { done(false, "Spracherkennung nicht erlaubt (Datenschutz-Einstellungen).") }
+                return
+            }
             AVCaptureDevice.requestAccess(for: .audio) { micOK in
-                DispatchQueue.main.async { done(speechOK && micOK) }
+                DispatchQueue.main.async {
+                    done(micOK, micOK ? "" : "Mikrofon nicht erlaubt (Datenschutz-Einstellungen).")
+                }
             }
         }
     }
 
     // MARK: - Hoeren
 
-    private func beginListening() {
+    private func startListening() {
         guard active else { return }
-        // frische Erkennung je Aeusserung (vermeidet das ~1-Minuten-Limit der Engine).
-        task?.cancel(); task = nil
+        teardownAudio()
+
+        guard let recognizer = recognizer, recognizer.isAvailable else {
+            onInfo?("Spracherkennung de-DE nicht verfuegbar."); return
+        }
         let req = SFSpeechAudioBufferRecognitionRequest()
         req.shouldReportPartialResults = true
         request = req
 
         let input = engine.inputNode
-        // Echo-Cancellation: damit das Mikro nicht Lunas eigene Stimme aufnimmt (echtes Barge-in).
-        try? input.setVoiceProcessingEnabled(true)
-        let format = input.outputFormat(forBus: 0)
-        input.removeTap(onBus: 0)
+        let format = input.inputFormat(forBus: 0)
+        guard format.sampleRate > 0 else { onInfo?("Kein Mikrofon-Eingang gefunden."); return }
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             self?.request?.append(buffer)
         }
@@ -93,19 +101,17 @@ final class VoiceSession: NSObject, AVAudioPlayerDelegate {
             onInfo?("Audio-Engine-Fehler: \(error.localizedDescription)"); return
         }
         setState(.listening)
+        onInfo?("Ich hoere zu …")
 
-        guard let recognizer = recognizer, recognizer.isAvailable else {
-            onInfo?("Spracherkennung de-DE nicht verfügbar."); return
-        }
         task = recognizer.recognitionTask(with: req) { [weak self] result, error in
             guard let self = self else { return }
             if let result = result {
                 let text = result.bestTranscription.formattedString
-                self.handlePartial(text)
+                if !text.isEmpty { self.handlePartial(text) }
             }
-            if error != nil, self.active, !self.speaking {
-                // Erkennung neu aufsetzen (z. B. nach Timeout).
-                self.restartListeningSoon()
+            if let error = error, self.active {
+                // Haeufig nur ein Timeout/Abbruch — still neu aufsetzen, wenn nichts laeuft.
+                NSLog("LUNA Voice recognition: %@", error.localizedDescription)
             }
         }
     }
@@ -115,16 +121,9 @@ final class VoiceSession: NSObject, AVAudioPlayerDelegate {
         guard !trimmed.isEmpty else { return }
         lastTranscript = trimmed
         onTranscript?(trimmed)
-
-        // Barge-in: spricht der CEO, waehrend LUNA redet -> Wiedergabe sofort stoppen.
-        if speaking, trimmed.split(separator: " ").count >= 2 {
-            stopSpeaking()
-            setState(.listening)
-        }
-
-        // Sprechpause -> Aeusserung als abgeschlossen werten.
+        // Sprechpause -> Aeusserung abgeschlossen.
         silenceTimer?.invalidate()
-        silenceTimer = Timer.scheduledTimer(withTimeInterval: 1.3, repeats: false) { [weak self] _ in
+        silenceTimer = Timer.scheduledTimer(withTimeInterval: 1.2, repeats: false) { [weak self] _ in
             self?.finalizeUtterance()
         }
     }
@@ -133,59 +132,56 @@ final class VoiceSession: NSObject, AVAudioPlayerDelegate {
         let utterance = lastTranscript
         lastTranscript = ""
         guard active, !utterance.isEmpty else { return }
-        // Erkennung pausieren, waehrend LUNA denkt/antwortet.
-        task?.cancel(); task = nil
-        request?.endAudio(); request = nil
-
+        // Mikrofon AUS, waehrend LUNA denkt + spricht (Halbduplex).
+        teardownAudio()
+        setState(.idle)
+        onInfo?("Verstanden: \(utterance)")
         client.chat(utterance) { [weak self] reply in
-            self?.speak(reply)
+            self?.speak(reply, resumeAfter: true)
         }
     }
 
-    private func restartListeningSoon() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
-            guard let self = self, self.active, !self.speaking else { return }
-            self.beginListening()
-        }
+    private func teardownAudio() {
+        silenceTimer?.invalidate(); silenceTimer = nil
+        task?.cancel(); task = nil
+        request?.endAudio(); request = nil
+        if engine.isRunning { engine.stop() }
+        engine.inputNode.removeTap(onBus: 0)
     }
 
     // MARK: - Sprechen
 
-    private func speak(_ text: String) {
-        guard active else { return }
+    private func speak(_ text: String, resumeAfter: Bool) {
         let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !clean.isEmpty else { restartListeningSoon(); return }
-        speaking = true
+        guard !clean.isEmpty else { if resumeAfter { startListening() }; return }
         setState(.speaking)
-        // Waehrend des Sprechens weiter zuhoeren (Barge-in).
-        beginListening()
+        onInfo?("LUNA antwortet …")
+        resumeListeningAfterSpeaking = resumeAfter
 
         client.tts(clean) { [weak self] data in
-            guard let self = self, self.speaking else { return }
+            guard let self = self else { return }
             if let data = data, let p = try? AVAudioPlayer(data: data) {
                 self.player = p
                 p.delegate = self
                 p.play()
             } else {
-                // Fallback: System-Stimme (kein ElevenLabs verfuegbar).
+                // Fallback: macOS-System-Stimme.
+                self.onInfo?("ElevenLabs nicht verfuegbar — System-Stimme.")
                 self.synth.startSpeaking(clean)
+                if !self.synth.isSpeaking { self.finishedSpeaking() }
             }
         }
     }
 
-    private func stopSpeaking() {
-        speaking = false
-        player?.stop(); player = nil
-        if synth.isSpeaking { synth.stopSpeaking() }
-    }
+    private var resumeListeningAfterSpeaking = true
 
     private func finishedSpeaking() {
-        guard speaking else { return }
-        speaking = false
-        guard active else { return }
-        setState(.listening)
-        // Hoeren laeuft bereits (beginListening in speak); zur Sicherheit neu aufsetzen, falls beendet.
-        if task == nil { beginListening() }
+        player = nil
+        if active && resumeListeningAfterSpeaking {
+            startListening()
+        } else {
+            setState(.idle)
+        }
     }
 
     // AVAudioPlayerDelegate
@@ -193,15 +189,14 @@ final class VoiceSession: NSObject, AVAudioPlayerDelegate {
         DispatchQueue.main.async { [weak self] in self?.finishedSpeaking() }
     }
 
+    // NSSpeechSynthesizerDelegate
+    func speechSynthesizer(_ sender: NSSpeechSynthesizer, didFinishSpeaking finished: Bool) {
+        DispatchQueue.main.async { [weak self] in self?.finishedSpeaking() }
+    }
+
     // MARK: - Hilfen
 
     private func setState(_ s: State) {
         DispatchQueue.main.async { [weak self] in self?.onState?(s) }
-    }
-}
-
-extension VoiceSession: NSSpeechSynthesizerDelegate {
-    func speechSynthesizer(_ sender: NSSpeechSynthesizer, didFinishSpeaking finished: Bool) {
-        DispatchQueue.main.async { [weak self] in self?.finishedSpeaking() }
     }
 }

@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 10:05] — Claude Code (Phase 17: Voice robust (Halbduplex) + app_oeffnen + Diagnose)
+- **Was:** (1) **VoiceSession neu als Halbduplex** (`mac/LunaOrb/.../VoiceSession.swift`): waehrend LUNA
+  spricht, ist das Mikrofon AUS (kein Feedback-Loop, kein fragiles Voice-Processing); je Runde hoeren ->
+  Sprechpause -> `/api/chat` -> ElevenLabs/`/api/tts` (Fallback System-Stimme) -> wieder hoeren. **Sichtbare
+  Diagnose** ueber onInfo/onTranscript (Menue-Zeile „Stimme: …"). Neuer Menuepunkt **„Stimme testen"**
+  (`speakTest`, reiner Ausgabe-Test unabhaengig vom Mikrofon). main.swift: Status-Refactor (gespeicherter
+  serverOnline), Diagnosezeile. Barge-in zurueckgestellt (braucht Echo-Cancellation) — Stabilitaet zuerst.
+  (2) **Aktuator `app_oeffnen`** (`runner/actuator.py`): generisches benignes Verb fuer JEDE installierte App
+  (`open -a`), unter dem gleichen Tor; `rechner_aktion`-Beschreibung erweitert. **Verifiziert:** Suite 217/217;
+  `build_app.sh` gruen; `/api/tts` liefert MP3 (Ausgabe ok); Chat „oeffne XMind" -> XMind startet real.
+- **Warum:** CEO meldete: beim Gespraech keine hoerbare Antwort, „oeffne XMind" passierte nichts. Ursache 1:
+  fragile Vollduplex-Audiokette -> Halbduplex + Diagnose. Ursache 2: es gab gar kein Tool zum App-Oeffnen ->
+  `app_oeffnen` ergaenzt.
+- **Betroffen:** mac/LunaOrb/Sources/LunaOrb/{VoiceSession.swift, main.swift}, runner/actuator.py,
+  orchestrator/core/hoa_tools.py, projekt_changelog.md.
+
 ## [2026-06-29 09:45] — Claude Code (Roadmap: Gemini-Omni-Pruefung fuer den Cutter)
 - **Was:** ROADMAP.md Backlog um den Punkt „**ZEITNAH PRUEFEN — Gemini Omni fuer den Cutter**" ergaenzt
   (CEO-Wunsch): pruefen, ob Googles multimodales/Omni-Modell den Cutter verbessert (Szenen-/Highlight-

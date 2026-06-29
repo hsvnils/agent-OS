@@ -10,6 +10,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var state: OrbState = .idle {
         didSet { renderOrb() }
     }
+    private var serverOnline: Bool?
+    private var lastVoiceInfo: String = ""
 
     /// Not-Aus-Flag, das der Python-Aktuator vor jeder Aktion prueft.
     private let killSwitchPath = (NSHomeDirectory() as NSString)
@@ -23,7 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         configureVoice()
         renderOrb()
-        rebuildMenu(serverOnline: nil)
+        rebuildMenu()
         refreshServerStatus()
     }
 
@@ -36,9 +38,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         voice.onInfo = { [weak self] msg in
-            self?.rebuildMenu(serverOnline: nil)
-            self?.refreshServerStatus()
+            self?.lastVoiceInfo = msg
+            self?.rebuildMenu()
             NSLog("LUNA Voice: %@", msg)
+        }
+        voice.onTranscript = { [weak self] text in
+            self?.lastVoiceInfo = "Gehört: " + text
+            self?.rebuildMenu()
         }
     }
 
@@ -54,7 +60,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Menue
 
-    private func rebuildMenu(serverOnline: Bool?) {
+    private func rebuildMenu() {
         let menu = NSMenu()
 
         let title = NSMenuItem(title: "LUNA am Mac", action: nil, keyEquivalent: "")
@@ -72,6 +78,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusLine.isEnabled = false
         menu.addItem(statusLine)
 
+        if !lastVoiceInfo.isEmpty {
+            let info = NSMenuItem(title: "Stimme: " + lastVoiceInfo, action: nil, keyEquivalent: "")
+            info.isEnabled = false
+            menu.addItem(info)
+        }
+
         let voiceOn = voice.isActive
         let voiceItem = NSMenuItem(
             title: voiceOn ? "Gespräch beenden" : "Live-Gespräch starten",
@@ -80,6 +92,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         voiceItem.isEnabled = (serverOnline != false)
         voiceItem.state = voiceOn ? .on : .off
         menu.addItem(voiceItem)
+
+        let test = NSMenuItem(title: "Stimme testen", action: #selector(testVoice), keyEquivalent: "t")
+        test.target = self
+        test.isEnabled = (serverOnline != false)
+        menu.addItem(test)
 
         let talk = NSMenuItem(title: "Mit LUNA tippen…", action: #selector(askLuna), keyEquivalent: "l")
         talk.target = self
@@ -120,8 +137,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleVoice() {
         if voice.isActive {
             voice.stop()
-            rebuildMenu(serverOnline: nil)
-            refreshServerStatus()
+            rebuildMenu()
         } else {
             voice.start { [weak self] ok in
                 if !ok {
@@ -131,16 +147,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         + "(Systemeinstellungen → Datenschutz & Sicherheit)."
                     a.runModal()
                 }
-                self?.rebuildMenu(serverOnline: nil)
-                self?.refreshServerStatus()
+                self?.rebuildMenu()
             }
         }
     }
 
+    @objc private func testVoice() {
+        voice.speakTest()
+    }
+
     @objc private func refreshServerStatus() {
-        rebuildMenu(serverOnline: nil)
+        rebuildMenu()
         client.ping { [weak self] online in
-            self?.rebuildMenu(serverOnline: online)
+            self?.serverOnline = online
+            self?.rebuildMenu()
         }
     }
 
@@ -184,8 +204,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleMode() {
         let next = currentModeIsInstant() ? "bestaetigen" : "sofort"
         try? (next + "\n").write(toFile: modePath, atomically: true, encoding: .utf8)
-        rebuildMenu(serverOnline: nil)
-        refreshServerStatus()
+        rebuildMenu()
     }
 
     @objc private func toggleKillSwitch() {
@@ -197,8 +216,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             try? "not-aus aktiviert: \(stamp)\n".write(toFile: killSwitchPath, atomically: true, encoding: .utf8)
             state = .idle
         }
-        rebuildMenu(serverOnline: nil)
-        refreshServerStatus()
+        rebuildMenu()
     }
 }
 
