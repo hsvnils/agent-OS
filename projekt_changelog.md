@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 11:10] — Claude Code (Phase 17: App in den Vordergrund holen)
+- **Was:** Beim Arbeiten in einer App holt LUNA sie jetzt in den **Vordergrund** (vorher blieb sie hinten).
+  `runner/actuator.py`: `app_oeffnen` macht nach `open -a` zusaetzlich `activate` (sicher im Vordergrund);
+  neue Helfer `app_aktivieren(app)` und `datei_im_vordergrund_oeffnen(pfad)` (`open <pfad>`). Die XMind-Tools
+  (`xmind_lesen`, `xmind_bearbeiten` in `orchestrator/core/hoa_tools.py`) holen nach Erfolg **XMind mit der
+  Datei in den Vordergrund**; beim Bearbeiten zusaetzlicher Hinweis, dass eine offene Datei einmal neu
+  geoeffnet werden muss, damit die Aenderung sichtbar wird. **Verifiziert:** Suite 223/223; app_aktivieren/
+  app_oeffnen/datei_im_vordergrund liefern ok (XMind kommt nach vorn).
+- **Warum:** CEO-Wunsch 2026-06-29 — die App, ueber die gesprochen/in der gearbeitet wird, soll sichtbar im
+  Vordergrund sein, nicht im Hintergrund.
+- **Betroffen:** runner/actuator.py, orchestrator/core/hoa_tools.py, projekt_changelog.md.
+
 ## [2026-06-29 10:55] — Claude Code (Phase 17 M5/#3: Computer-Use-Integrationsplan)
 - **Was:** PHASE17_PLAN.md um Abschnitt „8a. M5/#3 — Computer-Use" ergaenzt: Architektur (Orb-Screenshot ->
   Anthropic-Computer-Use-Loop -> jede Aktion durch DASSELBE Tor: actuator.gate/Not-Aus/Allowlist/Audit,

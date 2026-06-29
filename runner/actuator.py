@@ -147,12 +147,37 @@ def execute(app: str, verb: str, inhalt: str) -> dict:
 
 def _app_oeffnen(app: str) -> dict:
     try:
+        # -a startet die App; danach activate, damit sie sicher im VORDERGRUND ist (auch wenn sie lief).
         p = subprocess.run(["open", "-a", app], capture_output=True, text=True, timeout=_TIMEOUT)
     except Exception as exc:  # pragma: no cover
         return {"ausgefuehrt": False, "grund": str(exc)[:200]}
     if p.returncode != 0:
         return {"ausgefuehrt": False, "grund": (p.stderr or "open-Fehler").strip()[:200]}
-    return {"ausgefuehrt": True, "app": app, "aktion": "geoeffnet"}
+    app_aktivieren(app)
+    return {"ausgefuehrt": True, "app": app, "aktion": "geoeffnet und in den Vordergrund geholt"}
+
+
+def app_aktivieren(app: str) -> dict:
+    """Holt eine App in den Vordergrund (osascript activate). App-Name als argv (keine Injection)."""
+    if not is_macos():
+        return {"ok": False}
+    script = "on run argv\ntell application (item 1 of argv) to activate\nend run"
+    try:
+        p = subprocess.run(["osascript", "-e", script, app], capture_output=True, text=True, timeout=_TIMEOUT)
+    except Exception as exc:  # pragma: no cover
+        return {"ok": False, "grund": str(exc)[:120]}
+    return {"ok": p.returncode == 0}
+
+
+def datei_im_vordergrund_oeffnen(pfad: str) -> dict:
+    """Oeffnet eine Datei in ihrer Standard-App und holt diese in den Vordergrund (`open <pfad>`)."""
+    if not is_macos():
+        return {"ok": False}
+    try:
+        p = subprocess.run(["open", pfad], capture_output=True, text=True, timeout=_TIMEOUT)
+    except Exception as exc:  # pragma: no cover
+        return {"ok": False, "grund": str(exc)[:120]}
+    return {"ok": p.returncode == 0}
 
 
 def _ensure_running(app: str, sekunden: float = 3.0) -> bool:

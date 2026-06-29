@@ -887,11 +887,15 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return res
 
     if name == "xmind_lesen":
-        from runner import xmind
+        from runner import actuator, xmind
         pfad = (args.get("pfad") or "").strip() or xmind.find_recent_xmind()
         if not pfad:
             return {"fehler": "Keine .xmind-Datei gefunden. Bitte Pfad nennen."}
-        return xmind.read_outline(pfad)
+        res = xmind.read_outline(pfad)
+        if res.get("ok") and actuator.is_macos():
+            actuator.datei_im_vordergrund_oeffnen(pfad)
+            res["vordergrund"] = "XMind mit der Datei in den Vordergrund geholt."
+        return res
 
     if name == "xmind_bearbeiten":
         from runner import actuator, xmind
@@ -919,6 +923,10 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             res = xmind.rename_node(pfad, ziel, titel)
         else:
             return {"fehler": f"Unbekannte Aktion '{aktion}'. Erlaubt: knoten_hinzufuegen, umbenennen."}
+        if res.get("ok") and actuator.is_macos():
+            actuator.datei_im_vordergrund_oeffnen(pfad)
+            res["vordergrund"] = ("XMind in den Vordergrund geholt. Falls die Datei schon offen war: einmal "
+                                  "schliessen und neu oeffnen, damit die Aenderung sichtbar wird.")
         if ctx.aktivitaet:
             ctx.aktivitaet.log("Mac-Aktuator", f"XMind {aktion}: {'ok' if res.get('ok') else 'fehlgeschlagen'}",
                                kategorie="rechner_aktion", detail=str(res)[:200])
