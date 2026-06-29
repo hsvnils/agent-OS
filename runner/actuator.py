@@ -39,6 +39,10 @@ ALLOWLIST: dict[str, dict[str, dict]] = {
 GENERIC_VERBS: dict[str, dict] = {
     "app_oeffnen": {"kategorie": "benign",
                     "beschreibung": "Eine installierte App starten/in den Vordergrund holen (benigne)."},
+    "tastatur_text": {"kategorie": "benign",
+                      "beschreibung": "Text in die vorderste App tippen (System Events keystroke)."},
+    "taste": {"kategorie": "benign",
+              "beschreibung": "Ein Tastenkuerzel druecken, z. B. 'cmd+s' oder 'return' (vorderste App)."},
 }
 
 
@@ -140,9 +144,66 @@ def execute(app: str, verb: str, inhalt: str) -> dict:
         return {"ausgefuehrt": False, "grund": "nicht in Allowlist"}
     if verb == "app_oeffnen":
         return _app_oeffnen(app)
+    if verb == "tastatur_text":
+        return _tastatur_text(inhalt)
+    if verb == "taste":
+        return _taste(inhalt)
     if app == "TextEdit" and verb == "text_schreiben":
         return _textedit_schreiben(inhalt)
     return {"ausgefuehrt": False, "grund": "Verb nicht implementiert"}
+
+
+def _tastatur_text(text: str) -> dict:
+    """Tippt Text in die vorderste App (Text als argv -> keine AppleScript-Injection)."""
+    if not (text or "").strip():
+        return {"ausgefuehrt": False, "grund": "Leerer Text."}
+    script = ("on run argv\n"
+              'tell application "System Events" to keystroke (item 1 of argv)\n'
+              "end run")
+    try:
+        p = subprocess.run(["osascript", "-e", script, text], capture_output=True, text=True, timeout=_TIMEOUT)
+    except Exception as exc:  # pragma: no cover
+        return {"ausgefuehrt": False, "grund": str(exc)[:200]}
+    if p.returncode != 0:
+        return {"ausgefuehrt": False, "grund": (p.stderr or "keystroke-Fehler").strip()[:200]}
+    return {"ausgefuehrt": True, "aktion": "getippt", "zeichen": len(text)}
+
+
+_MODIFIERS = {"cmd": "command down", "command": "command down", "ctrl": "control down",
+              "control": "control down", "opt": "option down", "option": "option down",
+              "alt": "option down", "shift": "shift down"}
+_KEYCODES = {"return": 36, "enter": 36, "tab": 48, "escape": 53, "esc": 53, "space": 49,
+             "delete": 51, "backspace": 51, "left": 123, "right": 124, "down": 125, "up": 126}
+
+
+def build_taste_script(inhalt: str) -> str | None:
+    """Baut das AppleScript fuer ein Tastenkuerzel (z. B. 'cmd+s', 'return'). None bei ungueltig."""
+    teile = [t for t in (inhalt or "").lower().replace(" ", "").split("+") if t]
+    if not teile:
+        return None
+    *mods, key = teile
+    using = ""
+    gewaehlt = [_MODIFIERS[m] for m in mods if m in _MODIFIERS]
+    if gewaehlt:
+        using = " using {" + ", ".join(gewaehlt) + "}"
+    if key in _KEYCODES:
+        return f'tell application "System Events" to key code {_KEYCODES[key]}{using}'
+    if len(key) == 1 and (key.isalnum()):
+        return f'tell application "System Events" to keystroke "{key}"{using}'
+    return None
+
+
+def _taste(inhalt: str) -> dict:
+    script = build_taste_script(inhalt)
+    if script is None:
+        return {"ausgefuehrt": False, "grund": f"Tastenkuerzel '{inhalt}' nicht erkannt."}
+    try:
+        p = subprocess.run(["osascript", "-e", script], capture_output=True, text=True, timeout=_TIMEOUT)
+    except Exception as exc:  # pragma: no cover
+        return {"ausgefuehrt": False, "grund": str(exc)[:200]}
+    if p.returncode != 0:
+        return {"ausgefuehrt": False, "grund": (p.stderr or "Tasten-Fehler").strip()[:200]}
+    return {"ausgefuehrt": True, "aktion": "taste", "kuerzel": inhalt}
 
 
 def _app_oeffnen(app: str) -> dict:

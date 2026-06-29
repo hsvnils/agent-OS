@@ -111,27 +111,34 @@ Allowlist-Eintrag #1: `TextEdit` -> Verb `text_schreiben` (neues Dokument anlege
   Datei: `runner/xmind.py` + Tools `xmind_lesen`/`xmind_bearbeiten`, gegated). **Teil #3 = Computer-Use**
   (siehe 8a).
 
-## 8a. M5/#3 — Computer-Use (generisch sehen + bedienen), wired ab Anthropic-Zugang
+## 8a. M5/#3 — Generisches „sehen + bedienen" (Gemini-Loop + deterministisch)
 
-> **Status: vorbereitet, Aktivierung mit Anthropic-Zugang (~2026-07-01).** Wird **nicht ungetestet**
-> ausgeliefert — eine generische Rechner-Steuerung kommt erst scharf, wenn sie real getestet werden kann.
+> **Korrektur (CEO-Frage 2026-06-29): Anthropic ist NICHT zwingend.** „Computer Use" = zwei Haelften:
+> **Haende** (klicken/tippen) sind gratis + lokal; **Augen+Kopf** (Screenshot deuten -> Aktion entscheiden)
+> brauchen EIN multimodales Modell — das kann **Gemini (Gratis-Tier)**, Anthropic (am zuverlaessigsten,
+> billbar, ab ~01.07.) oder spaeter ein **lokales** Modell sein. CEO-Wahl: **beides** — Gemini-Loop generisch
+> UND deterministische App-Recipes praezise.
 
-**Idee:** generisches „per Hingucken jede App bedienen" — LUNA sieht den Schirm (Screenshot) und steuert
-Maus/Tastatur ueber den **Anthropic-Computer-Use**-Tool-Loop. Ergaenzt (statt ersetzt) die app-spezifischen,
-praezisen Wege (#2 XMind-Datei).
+**Zwei macOS-Berechtigungen sind der Schluessel** (Befund 2026-06-29): echtes Steuern braucht
+- **Bedienungshilfen/Accessibility** — fuer Tastatur/Maus (`keystroke`/Klick); Fehler 1002 ohne.
+- **Bildschirmaufnahme/Screen Recording** — fuer Screenshots; serverseitiges `screencapture` schlaegt sonst
+  fehl („could not create image from display").
+Beide haengen am ausfuehrenden Prozess. **Folge:** Capture + Aktuator gehoeren in den **Orb (.app)** (dort
+erteilt der CEO die Rechte einmal sauber), nicht in den terminal-gestarteten Server. Datei-/`open`-Aktionen
+(XMind, app_oeffnen) brauchen das NICHT und laufen schon.
 
-**Architektur (geplant):**
-- **Capture im Orb (Swift):** Screen-Recording-Berechtigung am `.app`; aktives Fenster/Bildschirm als PNG.
-- **Loop in Python:** neues `runner/computer_use.py` ruft das Anthropic-Computer-Use-Modell mit Screenshot +
-  Ziel; das Modell schlaegt Aktionen vor (click/type/scroll/key).
-- **Jede Aktion durch DASSELBE Tor:** `actuator.gate()` (Modus bestaetigen/sofort), Not-Aus
-  (`~/.luna_orb_killswitch`), **Allowlist** (nur freigegebene Apps), **Audit** (aktivitaet/log.jsonl). CEO-Tor
-  (Geld/Recht/Oeffentlichkeit/Loeschen) bleibt immer bestaetigungspflichtig.
-- **Kosten:** Computer-Use ist billbar -> CFO-Kostenvoranschlag + CEO-Tor vor Aktivierung; Limit je Sitzung.
+**Stand:**
+- ✅ **Deterministische Haende (gratis):** Aktuator-Verben `app_oeffnen`, `text_schreiben`, **`tastatur_text`**
+  (Text in vorderste App), **`taste`** (Kuerzel wie `cmd+s`/`return`). Logik gebaut + unit-getestet; Ausfuehrung
+  braucht Accessibility (s. o.).
+- 🔲 **Augen (Gemini):** `runner/computer_use.py` — Screenshot (vom Orb) -> Gemini-Vision -> Aktion
+  (click/type/key/scroll als JSON). Capture im Orb, Klick via `cliclick` (frei: `brew install cliclick`) oder
+  CGEvent.
+- **Jede Aktion durch DASSELBE Tor:** `actuator.gate()`, Not-Aus, Allowlist, Audit; CEO-Tor bleibt.
 
-**Bei Aktivierung (Checkliste):** ANTHROPIC_API_KEY/Guthaben live -> `computer_use.py` + Orb-Capture bauen ->
-nur 1 Allowlist-App, Sofort-Modus AUS -> an einer benignen Aufgabe testen -> Self-Checks gruen -> Changelog/
-Commit -> Allowlist behutsam erweitern.
+**Naechster Bau:** Aktuator+Capture in den Orb verlagern (Accessibility + Screen Recording einmal erteilen) ->
+dann Gemini-Loop end-to-end. `cliclick` = kleiner CEO-Tor (Gratis-Tool). Anthropic-Computer-Use bleibt
+optionales Qualitaets-Upgrade ab 01.07.
 
 ## 9. Modell-Hinweis
 

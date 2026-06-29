@@ -263,14 +263,15 @@ def tool_specs() -> list[dict]:
               {"aufgabe": _str("Optional: Aufgabe, fuer die eine passende App gesucht wird, "
                                "z. B. 'Notiz schreiben'.")}, []),
         _spec("rechner_aktion", "Phase 17 (Mac): fuehrt eine GEGATETE Steuer-Aktion am Rechner aus "
-              "(Allowlist, Vorschau/Bestaetigung, Not-Aus, Audit). Verben: 'app_oeffnen' (startet eine "
-              "installierte App, z. B. app='XMind') fuer JEDE installierte App; 'text_schreiben' (app='TextEdit', "
-              "inhalt=Text). OHNE bestaetigt=true kommt im Bestaetigen-Modus erst eine Vorschau; im Sofort-Modus "
-              "werden benigne Aktionen direkt ausgefuehrt. CEO-Tor (Geld/Recht/Oeffentlichkeit/Loeschen) wird "
-              "IMMER bestaetigt.",
-              {"app": _str("App, z. B. 'XMind' oder 'TextEdit'."),
-               "verb": _str("Aktion: 'app_oeffnen' oder 'text_schreiben'."),
-               "inhalt": _str("Inhalt/Parameter, z. B. der zu schreibende Text (bei text_schreiben)."),
+              "(Allowlist, Vorschau/Bestaetigung, Not-Aus, Audit). Verben fuer JEDE installierte App: "
+              "'app_oeffnen' (startet+Vordergrund, app='XMind'); 'tastatur_text' (tippt inhalt in die vorderste "
+              "App); 'taste' (Tastenkuerzel, inhalt='cmd+s' oder 'return'). App-spezifisch: 'text_schreiben' "
+              "(app='TextEdit', inhalt=Text). OHNE bestaetigt=true kommt im Bestaetigen-Modus erst eine "
+              "Vorschau; im Sofort-Modus werden benigne Aktionen direkt ausgefuehrt. CEO-Tor (Geld/Recht/"
+              "Oeffentlichkeit/Loeschen) wird IMMER bestaetigt.",
+              {"app": _str("App, z. B. 'XMind' oder 'TextEdit' (bei tastatur_text/taste die vorderste App)."),
+               "verb": _str("'app_oeffnen' | 'tastatur_text' | 'taste' | 'text_schreiben'."),
+               "inhalt": _str("Text (tastatur_text/text_schreiben) bzw. Kuerzel wie 'cmd+s' (taste)."),
                "bestaetigt": _bool("true erst nach ausdruecklicher CEO-Bestaetigung.")},
               ["app", "verb"]),
         _spec("steuerung_modus", "Phase 17 (Mac): zeigt oder setzt den Steuerungs-Modus. setzen='sofort' "

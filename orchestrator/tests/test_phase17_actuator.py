@@ -45,6 +45,31 @@ class TestAllowlist(_Patch):
         self.assertIsNone(actuator.allowed("TextEdit", "loeschen"))
 
 
+class TestTastenkuerzel(unittest.TestCase):
+    def test_cmd_s(self):
+        s = actuator.build_taste_script("cmd+s")
+        self.assertIn('keystroke "s"', s)
+        self.assertIn("command down", s)
+
+    def test_mehrere_modifier(self):
+        s = actuator.build_taste_script("cmd+shift+s")
+        self.assertIn("command down", s)
+        self.assertIn("shift down", s)
+
+    def test_spezialtaste_return(self):
+        s = actuator.build_taste_script("return")
+        self.assertIn("key code 36", s)
+
+    def test_pfeiltaste_mit_modifier(self):
+        s = actuator.build_taste_script("cmd+left")
+        self.assertIn("key code 123", s)
+        self.assertIn("command down", s)
+
+    def test_ungueltig(self):
+        self.assertIsNone(actuator.build_taste_script(""))
+        self.assertIsNone(actuator.build_taste_script("cmd+nochnichtbekannt"))
+
+
 class TestNotAus(_Patch):
     def test_not_aus_sperrt_plan(self):
         if not actuator.is_macos():

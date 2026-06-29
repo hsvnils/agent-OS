@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 11:40] — Claude Code (Phase 17: deterministische Tastatur-Haende + Computer-Use-Architektur korrigiert)
+- **Was:** (1) **Generische Haende (deterministisch, gratis):** Aktuator-Verben **`tastatur_text`** (tippt Text
+  in die vorderste App) und **`taste`** (Tastenkuerzel wie 'cmd+s'/'return', Parser `build_taste_script` mit
+  Modifier-/Spezialtasten-Map) in `runner/actuator.py`; in GENERIC_VERBS (jede installierte App), gegated.
+  `rechner_aktion`-Beschreibung erweitert. Unit-Tests (`test_phase17_actuator.py`). (2) **Architektur-Korrektur
+  (CEO-Frage 'warum Anthropic noetig?'):** Anthropic ist NICHT zwingend — Bedienen ist gratis/lokal; nur das
+  'Screenshot deuten' braucht ein multimodales Modell (Gemini Gratis-Tier moeglich). PHASE17_PLAN.md 8a neu
+  gefasst (Gemini-Loop + deterministisch; CEO-Wahl 'beides'). (3) **Befund:** echtes Steuern braucht zwei
+  macOS-Rechte am ausfuehrenden Prozess: **Accessibility** (Tasten/Maus; Fehler 1002 im Server-Kontext) +
+  **Screen Recording** (Screenshot; serverseitig 'could not create image from display'). -> Aktuator+Capture
+  gehoeren in den **Orb (.app)**. **Verifiziert:** Suite 228/228 (+5 Parser-Tests); Tastenkuerzel-Parser ok.
+  **Noch NICHT live:** keystroke-Ausfuehrung braucht Accessibility (im Terminal-Server nicht erteilt) — Logik
+  steht, laeuft sobald der ausfuehrende Prozess (Orb) das Recht hat.
+- **Warum:** CEO will 'beides' (Gemini-Loop + deterministisch) und fragte, warum Anthropic noetig sei — Antwort
+  eingearbeitet; Fundament (Haende) gebaut, Architektur (Orb-Kontext) geklaert.
+- **Betroffen:** runner/actuator.py, orchestrator/core/hoa_tools.py,
+  orchestrator/tests/test_phase17_actuator.py, PHASE17_PLAN.md, projekt_changelog.md.
+
 ## [2026-06-29 11:10] — Claude Code (Phase 17: App in den Vordergrund holen)
 - **Was:** Beim Arbeiten in einer App holt LUNA sie jetzt in den **Vordergrund** (vorher blieb sie hinten).
   `runner/actuator.py`: `app_oeffnen` macht nach `open -a` zusaetzlich `activate` (sicher im Vordergrund);
