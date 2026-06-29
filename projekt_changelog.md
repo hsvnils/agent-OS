@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 08:40] — Claude Code (Phase 17 M3: Aktuator mit Tor + zwei Modi)
+- **Was:** `runner/actuator.py` (neu) — Aktuator hinter vier Schutzschichten: **Allowlist** (Start nur
+  TextEdit/text_schreiben), **Vorschau->Bestaetigung**, **Not-Aus** (`~/.luna_orb_killswitch`), **Audit**.
+  **Zwei Modi** (CEO-Wunsch): `bestaetigen` (Default: erst Vorschau, dann Ja) und `sofort` (benigne,
+  freigegebene Aktionen ohne Rueckfrage) — umschaltbar; **CEO-Tor (Geld/Recht/Oeffentlichkeit/Loeschen)
+  bleibt in BEIDEN Modi bestaetigungspflichtig**. Modus liegt in `~/.luna_orb_mode` (gemeinsam Python+Orb).
+  Neue LUNA-Tools `rechner_aktion` + `steuerung_modus` (`orchestrator/core/hoa_tools.py`). Swift-Orb
+  (`mac/LunaOrb/.../main.swift`): Menue-Schalter „Modus: Sofort/Bestaetigen". TextEdit-Executor startet die App
+  robust (open -a + warten) und uebergibt Text als argv (keine AppleScript-Injection). Test
+  `orchestrator/tests/test_phase17_actuator.py`. **Verifiziert:** Suite 217/217; Vorschau (kein Eingriff),
+  Allowlist-Block, echte TextEdit-Ausfuehrung, Audit-Log; voller Loop ueber `/api/chat` (LUNA fragt im
+  Bestaetigen-Modus zurueck statt still auszufuehren).
+- **Warum:** Phase-17-Milestone M3 (PHASE17_PLAN.md) — LUNA bedient den Rechner kontrolliert; CEO-Wunsch nach
+  einem aktivierbaren Sofort-Modus umgesetzt, ohne die harte CEO-Tor-Regel aufzuweichen.
+- **Betroffen:** runner/actuator.py (neu), orchestrator/core/hoa_tools.py,
+  mac/LunaOrb/Sources/LunaOrb/main.swift, orchestrator/tests/test_phase17_actuator.py, projekt_changelog.md.
+
 ## [2026-06-28 18:10] — Claude Code (Phase 17 M2: On-Screen-Awareness + App-Wissen)
 - **Was:** Neues Paket `runner/` (additiv, Mac-lokal): `awareness.py` (vorderste App + Fenstertitel +
   laufende Apps via osascript/System Events; degradiert auf Nicht-macOS ohne Crash) und `capabilities.py`

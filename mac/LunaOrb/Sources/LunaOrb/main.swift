@@ -10,9 +10,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         didSet { renderOrb() }
     }
 
-    /// Not-Aus-Flag, das der (kuenftige) Python-Aktuator vor jeder Aktion prueft.
+    /// Not-Aus-Flag, das der Python-Aktuator vor jeder Aktion prueft.
     private let killSwitchPath = (NSHomeDirectory() as NSString)
         .appendingPathComponent(".luna_orb_killswitch")
+
+    /// Steuerungs-Modus-Datei (gemeinsam mit dem Python-Aktuator): "sofort" | "bestaetigen".
+    private let modePath = (NSHomeDirectory() as NSString)
+        .appendingPathComponent(".luna_orb_mode")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -61,6 +65,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(recheck)
 
         menu.addItem(.separator())
+
+        let instant = currentModeIsInstant()
+        let modeItem = NSMenuItem(
+            title: instant ? "Modus: Sofort-Umsetzung (EIN)" : "Modus: Erst bestaetigen (Standard)",
+            action: #selector(toggleMode), keyEquivalent: "")
+        modeItem.target = self
+        modeItem.state = instant ? .on : .off
+        modeItem.toolTip = "Sofort-Modus: benigne, freigegebene Aktionen ohne Rueckfrage. "
+            + "Geld/Recht/Oeffentlichkeit/Loeschen bleiben immer bestaetigungspflichtig."
+        menu.addItem(modeItem)
 
         let killActive = FileManager.default.fileExists(atPath: killSwitchPath)
         let kill = NSMenuItem(title: killActive ? "Not-Aus AKTIV — aufheben" : "Not-Aus (Steuerung sperren)",
@@ -114,6 +128,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.informativeText = reply
         alert.addButton(withTitle: "OK")
         alert.runModal()
+    }
+
+    private func currentModeIsInstant() -> Bool {
+        let raw = (try? String(contentsOfFile: modePath, encoding: .utf8)) ?? ""
+        return raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "sofort"
+    }
+
+    @objc private func toggleMode() {
+        let next = currentModeIsInstant() ? "bestaetigen" : "sofort"
+        try? (next + "\n").write(toFile: modePath, atomically: true, encoding: .utf8)
+        rebuildMenu(serverOnline: nil)
+        refreshServerStatus()
     }
 
     @objc private func toggleKillSwitch() {

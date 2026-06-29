@@ -262,6 +262,19 @@ def tool_specs() -> list[dict]:
               "passende Programme samt Steuerungsweg.",
               {"aufgabe": _str("Optional: Aufgabe, fuer die eine passende App gesucht wird, "
                                "z. B. 'Notiz schreiben'.")}, []),
+        _spec("rechner_aktion", "Phase 17 (Mac): fuehrt eine GEGATETE Steuer-Aktion am Rechner aus "
+              "(Allowlist, Vorschau/Bestaetigung, Not-Aus, Audit). Start-Allowlist: TextEdit/text_schreiben. "
+              "OHNE bestaetigt=true kommt im Bestaetigen-Modus erst eine Vorschau; im Sofort-Modus werden "
+              "benigne Aktionen direkt ausgefuehrt. CEO-Tor (Geld/Recht/Oeffentlichkeit/Loeschen) wird IMMER "
+              "bestaetigt.",
+              {"app": _str("App, z. B. 'TextEdit'."), "verb": _str("Aktion, z. B. 'text_schreiben'."),
+               "inhalt": _str("Inhalt/Parameter, z. B. der zu schreibende Text."),
+               "bestaetigt": _bool("true erst nach ausdruecklicher CEO-Bestaetigung.")},
+              ["app", "verb"]),
+        _spec("steuerung_modus", "Phase 17 (Mac): zeigt oder setzt den Steuerungs-Modus. setzen='sofort' "
+              "(benigne, freigegebene Aktionen ohne Rueckfrage) oder 'bestaetigen' (Standard: erst Vorschau, "
+              "dann Ja). CEO-Tor bleibt in BEIDEN Modi bestaetigungspflichtig.",
+              {"setzen": _str("Optional: 'sofort' oder 'bestaetigen'.")}, []),
     ]
 
 
@@ -821,6 +834,41 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         if auf:
             out["empfehlung"] = capabilities.recommend_for(auf)
         return out
+
+    if name == "steuerung_modus":
+        from runner import actuator
+        setzen = (args.get("setzen") or "").strip()
+        if setzen:
+            m = actuator.set_mode(setzen)
+            if ctx.aktivitaet:
+                ctx.aktivitaet.log("CEO", f"Steuerungs-Modus gesetzt: {m}", kategorie="einstellung")
+            return {"modus": m, "gesetzt": True, "sofort_aktiv": m == actuator.MODE_INSTANT}
+        m = actuator.get_mode()
+        return {"modus": m, "sofort_aktiv": m == actuator.MODE_INSTANT,
+                "not_aus_aktiv": actuator.is_stopped()}
+
+    if name == "rechner_aktion":
+        from runner import actuator
+        app = (args.get("app") or "").strip()
+        verb = (args.get("verb") or "").strip()
+        inhalt = args.get("inhalt") or ""
+        plan = actuator.plan(app, verb, inhalt)
+        if not plan.get("ok"):
+            return {"blockiert": True, "hinweis": plan.get("grund"), "allowlist": plan.get("allowlist")}
+        bestaetigt = bool(args.get("bestaetigt"))
+        if plan["bestaetigung_noetig"] and not bestaetigt:
+            if ctx.aktivitaet:
+                ctx.aktivitaet.log("Mac-Aktuator", f"Vorschau: {verb} in {app}",
+                                   kategorie="rechner_aktion", detail=str(inhalt)[:200])
+            return {"vorschau": True, "app": app, "verb": verb, "inhalt": inhalt,
+                    "kategorie": plan["kategorie"], "modus": plan["modus"],
+                    "frage": "Soll ich das so ausfuehren? Bestaetige mit 'ja'."}
+        res = actuator.execute(app, verb, inhalt)
+        if ctx.aktivitaet:
+            status = "ausgefuehrt" if res.get("ausgefuehrt") else "fehlgeschlagen"
+            ctx.aktivitaet.log("Mac-Aktuator", f"{verb} in {app}: {status}",
+                               kategorie="rechner_aktion", detail=str(inhalt)[:200])
+        return res
 
     return {"fehler": f"Unbekanntes Tool: {name}"}
 
