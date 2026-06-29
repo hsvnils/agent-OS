@@ -43,6 +43,8 @@ GENERIC_VERBS: dict[str, dict] = {
                       "beschreibung": "Text in die vorderste App tippen (System Events keystroke)."},
     "taste": {"kategorie": "benign",
               "beschreibung": "Ein Tastenkuerzel druecken, z. B. 'cmd+s' oder 'return' (vorderste App)."},
+    "klick": {"kategorie": "benign",
+              "beschreibung": "Maus-Klick an Koordinaten 'x,y' (fuer den Seh-Loop)."},
 }
 
 
@@ -148,25 +150,34 @@ def execute(app: str, verb: str, inhalt: str) -> dict:
         return _tastatur_text(inhalt)
     if verb == "taste":
         return _taste(inhalt)
+    if verb == "klick":
+        return _klick(inhalt)
     if app == "TextEdit" and verb == "text_schreiben":
         return _textedit_schreiben(inhalt)
     return {"ausgefuehrt": False, "grund": "Verb nicht implementiert"}
 
 
 def _tastatur_text(text: str) -> dict:
-    """Tippt Text in die vorderste App (Text als argv -> keine AppleScript-Injection)."""
+    """Tippt Text in die vorderste App — ueber den Orb (Bedienungshilfen-Recht liegt dort)."""
     if not (text or "").strip():
         return {"ausgefuehrt": False, "grund": "Leerer Text."}
-    script = ("on run argv\n"
-              'tell application "System Events" to keystroke (item 1 of argv)\n'
-              "end run")
-    try:
-        p = subprocess.run(["osascript", "-e", script, text], capture_output=True, text=True, timeout=_TIMEOUT)
-    except Exception as exc:  # pragma: no cover
-        return {"ausgefuehrt": False, "grund": str(exc)[:200]}
-    if p.returncode != 0:
-        return {"ausgefuehrt": False, "grund": (p.stderr or "keystroke-Fehler").strip()[:200]}
-    return {"ausgefuehrt": True, "aktion": "getippt", "zeichen": len(text)}
+    from . import orb_bridge
+    r = orb_bridge.sende("tippen", text=text)
+    if r.get("ok"):
+        return {"ausgefuehrt": True, "aktion": "getippt", "zeichen": len(text)}
+    return {"ausgefuehrt": False, "grund": r.get("grund", "Orb-Steuerung fehlgeschlagen.")}
+
+
+def _klick(inhalt: str) -> dict:
+    """Maus-Klick an 'x,y' — ueber den Orb."""
+    teile = [t.strip() for t in str(inhalt or "").replace(";", ",").split(",") if t.strip()]
+    if len(teile) < 2 or not teile[0].lstrip("-").isdigit() or not teile[1].lstrip("-").isdigit():
+        return {"ausgefuehrt": False, "grund": "Koordinaten als 'x,y' angeben."}
+    from . import orb_bridge
+    r = orb_bridge.sende("klick", x=int(teile[0]), y=int(teile[1]))
+    if r.get("ok"):
+        return {"ausgefuehrt": True, "aktion": "klick", "x": int(teile[0]), "y": int(teile[1])}
+    return {"ausgefuehrt": False, "grund": r.get("grund", "Orb-Steuerung fehlgeschlagen.")}
 
 
 _MODIFIERS = {"cmd": "command down", "command": "command down", "ctrl": "control down",
@@ -194,16 +205,14 @@ def build_taste_script(inhalt: str) -> str | None:
 
 
 def _taste(inhalt: str) -> dict:
-    script = build_taste_script(inhalt)
-    if script is None:
+    """Tastenkuerzel druecken — ueber den Orb (Bedienungshilfen-Recht liegt dort)."""
+    if build_taste_script(inhalt) is None:  # gleiche Validierung wie der Orb-Parser
         return {"ausgefuehrt": False, "grund": f"Tastenkuerzel '{inhalt}' nicht erkannt."}
-    try:
-        p = subprocess.run(["osascript", "-e", script], capture_output=True, text=True, timeout=_TIMEOUT)
-    except Exception as exc:  # pragma: no cover
-        return {"ausgefuehrt": False, "grund": str(exc)[:200]}
-    if p.returncode != 0:
-        return {"ausgefuehrt": False, "grund": (p.stderr or "Tasten-Fehler").strip()[:200]}
-    return {"ausgefuehrt": True, "aktion": "taste", "kuerzel": inhalt}
+    from . import orb_bridge
+    r = orb_bridge.sende("taste", kuerzel=inhalt)
+    if r.get("ok"):
+        return {"ausgefuehrt": True, "aktion": "taste", "kuerzel": inhalt}
+    return {"ausgefuehrt": False, "grund": r.get("grund", "Orb-Steuerung fehlgeschlagen.")}
 
 
 def _app_oeffnen(app: str) -> dict:

@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 12:45] — Claude Code (Phase 17 M5/#3: Haende in den Orb (native Steuerung via Datei-Queue))
+- **Was:** Tastatur/Maus laufen jetzt im Orb-Kontext (dort liegt das Bedienungshilfen-Recht). Neu
+  `mac/LunaOrb/.../OrbActuator.swift` — native CGEvent-Primitive (tippen via keyboardSetUnicodeString, taste
+  via Keycode+Flags, klick) + Berechtigungspruefung `AXIsProcessTrusted`; liest Befehle aus `~/.luna_orb/`
+  (Datei-Queue) und schreibt Ergebnisse zurueck. main.swift: Aktuator-Start + Menue „Steuerung erlauben
+  (Bedienungshilfen)" (Prompt + oeffnet den Einstellungs-Bereich). Server-Seite: `runner/orb_bridge.py`
+  (schreibt cmd-/liest res-Datei, Timeout) + Aktuator routet `tastatur_text`/`taste`/`klick` ueber den Orb
+  (osascript-Weg entfaellt, da Permission dort fehlte). Neues Verb `klick` (x,y). **Verifiziert:** Suite
+  228/228; Datei-Queue Round-Trip Server->Orb->Ergebnis laeuft (Orb meldet sauber „Bedienungshilfen nicht
+  erlaubt", da noch nicht erteilt -> Plumbing bewiesen). Live-Tasten/Klicks nach CEO-Freigabe der
+  Bedienungshilfen.
+- **Warum:** CEO „Mach das" — Haende in den Orb verlagern (Accessibility am .app), damit `tastatur_text`/`taste`/
+  `klick` real wirken; Voraussetzung fuer den generischen Seh-Handle-Loop.
+- **Betroffen:** mac/LunaOrb/Sources/LunaOrb/{OrbActuator.swift (neu), main.swift}, runner/orb_bridge.py (neu),
+  runner/actuator.py, orchestrator/core/hoa_tools.py, projekt_changelog.md.
+
 ## [2026-06-29 12:15] — Claude Code (Phase 17 M5/#3: LUNA sieht den Bildschirm (Gemini-Augen, gratis))
 - **Was:** Generisches „Bildschirm sehen" — der Orb nimmt einen Screenshot auf und ein Vision-Modell liest ihn.
   Neu `runner/vision.py` (`bild_lesen` -> Gemini-Vision via OpenAI-kompatibel, gratis; kein Anthropic) + neuer

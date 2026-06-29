@@ -6,6 +6,7 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private let client = LunaClient()
+    private let orbActuator = OrbActuator()
     private lazy var voice = VoiceSession(client: client)
     private var state: OrbState = .idle {
         didSet { renderOrb() }
@@ -24,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         configureVoice()
+        orbActuator.start()
         renderOrb()
         rebuildMenu()
         refreshServerStatus()
@@ -123,6 +125,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         modeItem.toolTip = "Sofort-Modus: benigne, freigegebene Aktionen ohne Rückfrage. "
             + "Geld/Recht/Öffentlichkeit/Löschen bleiben immer bestätigungspflichtig."
         menu.addItem(modeItem)
+
+        let axGranted = orbActuator.accessibilityGranted
+        let ax = NSMenuItem(
+            title: axGranted ? "Steuerung: erlaubt (Bedienungshilfen)" : "Steuerung erlauben (Bedienungshilfen)…",
+            action: #selector(grantControl), keyEquivalent: "")
+        ax.target = self
+        ax.state = axGranted ? .on : .off
+        menu.addItem(ax)
 
         let killActive = FileManager.default.fileExists(atPath: killSwitchPath)
         let kill = NSMenuItem(title: killActive ? "Not-Aus AKTIV — aufheben" : "Not-Aus (Steuerung sperren)",
@@ -231,6 +241,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleMode() {
         let next = currentModeIsInstant() ? "bestaetigen" : "sofort"
         try? (next + "\n").write(toFile: modePath, atomically: true, encoding: .utf8)
+        rebuildMenu()
+    }
+
+    @objc private func grantControl() {
+        if orbActuator.accessibilityGranted {
+            let a = NSAlert()
+            a.messageText = "Steuerung ist erlaubt"
+            a.informativeText = "LUNA darf Tastatur und Maus bedienen (Bedienungshilfen)."
+            a.runModal()
+            return
+        }
+        orbActuator.requestAccessibility()
+        // Direkt zum richtigen Einstellungs-Bereich.
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
         rebuildMenu()
     }
 

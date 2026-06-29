@@ -265,8 +265,9 @@ def tool_specs() -> list[dict]:
         _spec("rechner_aktion", "Phase 17 (Mac): fuehrt eine GEGATETE Steuer-Aktion am Rechner aus "
               "(Allowlist, Vorschau/Bestaetigung, Not-Aus, Audit). Verben fuer JEDE installierte App: "
               "'app_oeffnen' (startet+Vordergrund, app='XMind'); 'tastatur_text' (tippt inhalt in die vorderste "
-              "App); 'taste' (Tastenkuerzel, inhalt='cmd+s' oder 'return'). App-spezifisch: 'text_schreiben' "
-              "(app='TextEdit', inhalt=Text). OHNE bestaetigt=true kommt im Bestaetigen-Modus erst eine "
+              "App); 'taste' (Tastenkuerzel, inhalt='cmd+s' oder 'return'); 'klick' (Maus-Klick, inhalt='x,y'). "
+              "App-spezifisch: 'text_schreiben' (app='TextEdit', inhalt=Text). Tastatur/Maus laufen ueber den "
+              "LUNA Orb (Bedienungshilfen noetig). OHNE bestaetigt=true kommt im Bestaetigen-Modus erst eine "
               "Vorschau; im Sofort-Modus werden benigne Aktionen direkt ausgefuehrt. CEO-Tor (Geld/Recht/"
               "Oeffentlichkeit/Loeschen) wird IMMER bestaetigt.",
               {"app": _str("App, z. B. 'XMind' oder 'TextEdit' (bei tastatur_text/taste die vorderste App)."),
