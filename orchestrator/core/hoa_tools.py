@@ -277,6 +277,20 @@ def tool_specs() -> list[dict]:
               "(benigne, freigegebene Aktionen ohne Rueckfrage) oder 'bestaetigen' (Standard: erst Vorschau, "
               "dann Ja). CEO-Tor bleibt in BEIDEN Modi bestaetigungspflichtig.",
               {"setzen": _str("Optional: 'sofort' oder 'bestaetigen'.")}, []),
+        _spec("xmind_lesen", "Phase 17 (Mac): liest den INHALT einer XMind-Mindmap (alle Knoten/Struktur) "
+              "direkt aus der .xmind-Datei. Ohne 'pfad' wird die zuletzt geaenderte .xmind genommen.",
+              {"pfad": _str("Optional: Pfad zur .xmind-Datei.")}, []),
+        _spec("xmind_bearbeiten", "Phase 17 (Mac): bearbeitet eine XMind-Mindmap GEGATET (Vorschau/"
+              "Bestaetigung/Not-Aus/Audit). aktion='knoten_hinzufuegen' (titel; optional eltern=Titel des "
+              "Eltern-Knotens, sonst Wurzel) oder 'umbenennen' (ziel=aktueller Titel, titel=neuer Titel). "
+              "Ohne 'pfad' die zuletzt geaenderte .xmind. OHNE bestaetigt=true im Bestaetigen-Modus erst "
+              "eine Vorschau. Hinweis: bei offener Datei Aenderung erst nach erneutem Oeffnen sichtbar.",
+              {"aktion": _str("'knoten_hinzufuegen' oder 'umbenennen'."),
+               "titel": _str("Neuer Knoten-Titel bzw. neuer Name."),
+               "eltern": _str("Optional: Titel des Eltern-Knotens (bei knoten_hinzufuegen)."),
+               "ziel": _str("Bei 'umbenennen': aktueller Titel des Zielknotens."),
+               "pfad": _str("Optional: Pfad zur .xmind-Datei."),
+               "bestaetigt": _bool("true erst nach ausdruecklicher CEO-Bestaetigung.")}, ["aktion"]),
     ]
 
 
@@ -870,6 +884,44 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             status = "ausgefuehrt" if res.get("ausgefuehrt") else "fehlgeschlagen"
             ctx.aktivitaet.log("Mac-Aktuator", f"{verb} in {app}: {status}",
                                kategorie="rechner_aktion", detail=str(inhalt)[:200])
+        return res
+
+    if name == "xmind_lesen":
+        from runner import xmind
+        pfad = (args.get("pfad") or "").strip() or xmind.find_recent_xmind()
+        if not pfad:
+            return {"fehler": "Keine .xmind-Datei gefunden. Bitte Pfad nennen."}
+        return xmind.read_outline(pfad)
+
+    if name == "xmind_bearbeiten":
+        from runner import actuator, xmind
+        aktion = (args.get("aktion") or "").strip()
+        pfad = (args.get("pfad") or "").strip() or xmind.find_recent_xmind()
+        if not pfad:
+            return {"fehler": "Keine .xmind-Datei gefunden. Bitte Pfad nennen."}
+        g = actuator.gate("benign")
+        if not g.get("ok"):
+            return {"blockiert": True, "hinweis": g.get("grund")}
+        titel = (args.get("titel") or "").strip()
+        eltern = (args.get("eltern") or "").strip() or None
+        ziel = (args.get("ziel") or "").strip()
+        if g["bestaetigung_noetig"] and not bool(args.get("bestaetigt")):
+            geplant = (f"Knoten '{titel}' unter '{eltern or 'Wurzel'}' anlegen"
+                       if aktion == "knoten_hinzufuegen" else f"'{ziel}' umbenennen in '{titel}'")
+            if ctx.aktivitaet:
+                ctx.aktivitaet.log("Mac-Aktuator", f"Vorschau XMind: {aktion}",
+                                   kategorie="rechner_aktion", detail=geplant)
+            return {"vorschau": True, "aktion": aktion, "datei": pfad, "geplant": geplant,
+                    "frage": "Soll ich das in der XMind-Datei umsetzen? Bestaetige mit 'ja'."}
+        if aktion == "knoten_hinzufuegen":
+            res = xmind.add_node(pfad, titel, eltern=eltern)
+        elif aktion == "umbenennen":
+            res = xmind.rename_node(pfad, ziel, titel)
+        else:
+            return {"fehler": f"Unbekannte Aktion '{aktion}'. Erlaubt: knoten_hinzufuegen, umbenennen."}
+        if ctx.aktivitaet:
+            ctx.aktivitaet.log("Mac-Aktuator", f"XMind {aktion}: {'ok' if res.get('ok') else 'fehlgeschlagen'}",
+                               kategorie="rechner_aktion", detail=str(res)[:200])
         return res
 
     return {"fehler": f"Unbekanntes Tool: {name}"}

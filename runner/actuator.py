@@ -71,6 +71,18 @@ def is_stopped() -> bool:
     return KILLSWITCH_PATH.exists()
 
 
+# -- Wiederverwendbares Tor (fuer andere gegatete Faehigkeiten, z. B. XMind-Bearbeitung) --
+
+def gate(kategorie: str = "benign") -> dict:
+    """Prueft Not-Aus + Modus und sagt, ob bestaetigt werden muss. Fuehrt NICHTS aus.
+    kategorie 'ceo_tor' -> immer Bestaetigung (auch im Sofort-Modus)."""
+    if is_stopped():
+        return {"ok": False, "grund": "NOT-AUS aktiv — Steuerung gesperrt. Erst im Orb aufheben."}
+    mode = get_mode()
+    confirm = (kategorie == "ceo_tor") or (mode != MODE_INSTANT)
+    return {"ok": True, "bestaetigung_noetig": confirm, "modus": mode}
+
+
 # -- Allowlist-Pruefung --
 
 def _app_installed(app: str) -> bool:

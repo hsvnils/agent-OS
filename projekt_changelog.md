@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 10:50] — Claude Code (Phase 17 M5/#2: XMind-Inhalt sehen + bearbeiten)
+- **Was:** LUNA kann den **Inhalt** einer XMind-Mindmap lesen UND bearbeiten — direkt ueber die `.xmind`-Datei
+  (ZIP + content.json), ohne Screenshot/Computer-Use. Neu `runner/xmind.py` (find_recent_xmind, read_outline,
+  add_node, rename_node; ZIP wird sauber neu geschrieben, andere Eintraege unveraendert). Neuer Gate-Helper
+  `runner/actuator.gate(kategorie)` (Not-Aus + Modus, wiederverwendbar). Zwei LUNA-Tools:
+  **`xmind_lesen`** (read-only Gliederung) und **`xmind_bearbeiten`** (aktion=knoten_hinzufuegen|umbenennen,
+  gegated: Vorschau/Bestaetigung/Not-Aus/Audit). Test `orchestrator/tests/test_phase17_xmind.py`.
+  **Verifiziert:** Suite 223/223 (+6 neu); Chat „Lies governance/organigramm.xmind" -> LUNA nennt die
+  Struktur (CEO/HoA/14 C-Level); Gate-Bearbeiten Vorschau->Ausfuehrung legt Knoten real an (an Kopie getestet,
+  Repo-Datei unveraendert). **Hinweis:** Aenderung geht in die Datei; bei offener Datei erst nach erneutem
+  Oeffnen sichtbar (Live-waehrend-offen = Computer-Use-Weg #3).
+- **Warum:** CEO-Anweisung 2026-06-29 — LUNA soll Programminhalte (XMind) sehen + bearbeiten; gewaehlt wurde
+  Weg #2 (app-spezifisch ueber Dateiformat) zusammen mit #3 (Computer-Use, folgt mit Anthropic-Zugang).
+- **Betroffen:** runner/xmind.py (neu), runner/actuator.py, orchestrator/core/hoa_tools.py,
+  orchestrator/tests/test_phase17_xmind.py, projekt_changelog.md.
+
 ## [2026-06-29 10:25] — Claude Code (Roadmap: Social Media Analyzer + M5 Inhalte sehen/bearbeiten)
 - **Was:** ROADMAP.md ergaenzt: (1) Backlog **„Social Media Analyzer"** (CEO-Wunsch) — monatlicher Import
   von Instagram-/Facebook-Insights -> Aufbereitung -> **automatisches Befuellen des Media-Kits in Canva**
