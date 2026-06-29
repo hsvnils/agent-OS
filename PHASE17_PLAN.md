@@ -107,6 +107,31 @@ Allowlist-Eintrag #1: `TextEdit` -> Verb `text_schreiben` (neues Dokument anlege
 - **M3** — `runner/actuator.py` (Tor: Allowlist/Vorschau/Not-Aus/Audit) + natives Bestaetigungs-Sheet + die
   EINE TextEdit-Aktion. End-to-end Co-Working-Demo.
 - **M4** — Voice-Schleife am Orb (Mikrofon -> /api/chat -> TTS) im nativen App-Kontext; GATE-Abnahme.
+- **M5** — Tiefes App-Verstaendnis (Inhalte sehen + bearbeiten). **Teil #2 erledigt** (XMind ueber `.xmind`-
+  Datei: `runner/xmind.py` + Tools `xmind_lesen`/`xmind_bearbeiten`, gegated). **Teil #3 = Computer-Use**
+  (siehe 8a).
+
+## 8a. M5/#3 — Computer-Use (generisch sehen + bedienen), wired ab Anthropic-Zugang
+
+> **Status: vorbereitet, Aktivierung mit Anthropic-Zugang (~2026-07-01).** Wird **nicht ungetestet**
+> ausgeliefert — eine generische Rechner-Steuerung kommt erst scharf, wenn sie real getestet werden kann.
+
+**Idee:** generisches „per Hingucken jede App bedienen" — LUNA sieht den Schirm (Screenshot) und steuert
+Maus/Tastatur ueber den **Anthropic-Computer-Use**-Tool-Loop. Ergaenzt (statt ersetzt) die app-spezifischen,
+praezisen Wege (#2 XMind-Datei).
+
+**Architektur (geplant):**
+- **Capture im Orb (Swift):** Screen-Recording-Berechtigung am `.app`; aktives Fenster/Bildschirm als PNG.
+- **Loop in Python:** neues `runner/computer_use.py` ruft das Anthropic-Computer-Use-Modell mit Screenshot +
+  Ziel; das Modell schlaegt Aktionen vor (click/type/scroll/key).
+- **Jede Aktion durch DASSELBE Tor:** `actuator.gate()` (Modus bestaetigen/sofort), Not-Aus
+  (`~/.luna_orb_killswitch`), **Allowlist** (nur freigegebene Apps), **Audit** (aktivitaet/log.jsonl). CEO-Tor
+  (Geld/Recht/Oeffentlichkeit/Loeschen) bleibt immer bestaetigungspflichtig.
+- **Kosten:** Computer-Use ist billbar -> CFO-Kostenvoranschlag + CEO-Tor vor Aktivierung; Limit je Sitzung.
+
+**Bei Aktivierung (Checkliste):** ANTHROPIC_API_KEY/Guthaben live -> `computer_use.py` + Orb-Capture bauen ->
+nur 1 Allowlist-App, Sofort-Modus AUS -> an einer benignen Aufgabe testen -> Self-Checks gruen -> Changelog/
+Commit -> Allowlist behutsam erweitern.
 
 ## 9. Modell-Hinweis
 

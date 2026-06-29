@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 10:55] — Claude Code (Phase 17 M5/#3: Computer-Use-Integrationsplan)
+- **Was:** PHASE17_PLAN.md um Abschnitt „8a. M5/#3 — Computer-Use" ergaenzt: Architektur (Orb-Screenshot ->
+  Anthropic-Computer-Use-Loop -> jede Aktion durch DASSELBE Tor: actuator.gate/Not-Aus/Allowlist/Audit,
+  CEO-Tor bleibt), Kosten (billbar -> CFO/CEO-Tor) und Aktivierungs-Checkliste. **Status: vorbereitet,
+  Aktivierung mit Anthropic-Zugang (~2026-07-01)** — wird NICHT ungetestet ausgeliefert. M5 in die
+  Milestone-Liste aufgenommen (Teil #2 XMind erledigt, Teil #3 Computer-Use folgt).
+- **Warum:** CEO waehlte „2 und 3"; #3 (generisches Sehen+Bedienen) braucht Modellzugang -> Plan jetzt fixiert,
+  Bau/Test bei Verfuegbarkeit.
+- **Betroffen:** PHASE17_PLAN.md, projekt_changelog.md.
+
 ## [2026-06-29 10:50] — Claude Code (Phase 17 M5/#2: XMind-Inhalt sehen + bearbeiten)
 - **Was:** LUNA kann den **Inhalt** einer XMind-Mindmap lesen UND bearbeiten — direkt ueber die `.xmind`-Datei
   (ZIP + content.json), ohne Screenshot/Computer-Use. Neu `runner/xmind.py` (find_recent_xmind, read_outline,
