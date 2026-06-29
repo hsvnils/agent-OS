@@ -355,6 +355,25 @@ async def tts(request: Request):
     return Response(content=audio, media_type="audio/mpeg")
 
 
+@app.post("/api/sehen")
+async def sehen(request: Request):
+    """LUNAs Augen: nimmt einen Screenshot (base64-PNG vom Orb) + optionale Frage und liefert eine
+    Beschreibung via Vision-Modell (Gemini, gratis). Der Screenshot kommt vom Orb (Screen-Recording)."""
+    import base64
+
+    from runner.vision import bild_lesen
+    body = await _json(request)
+    b64 = (body.get("bild_base64") or "").strip()
+    if not b64:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "kein Bild")
+    try:
+        img = base64.b64decode(b64)
+    except Exception:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "ungueltiges Bild")
+    res = await asyncio.to_thread(bild_lesen, img, (body.get("frage") or ""))
+    return JSONResponse(res)
+
+
 # ---- Second Brain (Wissensbasis) ----
 def _brain_item_dto(e):
     return {"id": e.get("id"), "titel": e.get("titel") or (e.get("text", "")[:50]),

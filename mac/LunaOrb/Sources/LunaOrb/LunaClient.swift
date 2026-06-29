@@ -44,6 +44,26 @@ final class LunaClient {
         }.resume()
     }
 
+    /// LUNAs Augen: Screenshot (base64-PNG) + optionale Frage -> Beschreibung via Vision-Modell.
+    func sehen(_ base64: String, _ frage: String, _ done: @escaping (String) -> Void) {
+        var req = URLRequest(url: baseURL.appendingPathComponent("/api/sehen"))
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.timeoutInterval = 60
+        req.httpBody = try? JSONSerialization.data(withJSONObject: ["bild_base64": base64, "frage": frage])
+        URLSession.shared.dataTask(with: req) { data, _, err in
+            var text = "Konnte den Bildschirm nicht lesen."
+            if let err = err {
+                text = "Verbindungsfehler: \(err.localizedDescription)"
+            } else if let data = data,
+                      let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                if let t = obj["text"] as? String, !t.isEmpty { text = t }
+                else if let g = obj["grund"] as? String, !g.isEmpty { text = g }
+            }
+            DispatchQueue.main.async { done(text) }
+        }.resume()
+    }
+
     /// LUNAs ElevenLabs-Stimme: Text -> MP3-Daten. nil, wenn TTS nicht verfuegbar (Fallback Browser/System).
     func tts(_ text: String, _ done: @escaping (Data?) -> Void) {
         var req = URLRequest(url: baseURL.appendingPathComponent("/api/tts"))

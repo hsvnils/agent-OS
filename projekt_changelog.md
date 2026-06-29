@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 12:15] — Claude Code (Phase 17 M5/#3: LUNA sieht den Bildschirm (Gemini-Augen, gratis))
+- **Was:** Generisches „Bildschirm sehen" — der Orb nimmt einen Screenshot auf und ein Vision-Modell liest ihn.
+  Neu `runner/vision.py` (`bild_lesen` -> Gemini-Vision via OpenAI-kompatibel, gratis; kein Anthropic) + neuer
+  Endpunkt **`/api/sehen`** in `orchestrator/channels/web/app.py` (nimmt base64-PNG + optionale Frage). Orb:
+  `ScreenReader.swift` (ScreenCaptureKit `SCScreenshotManager`, Berechtigung Bildschirmaufnahme), `LunaClient.sehen`,
+  Menuepunkt **„Was siehst du?"** (Screenshot -> /api/sehen -> Beschreibung als Dialog). Package.swift Plattform
+  auf macOS 14 angehoben (SCScreenshotManager). **`cliclick` installiert** (brew, fuer spaetere Maus-Klicks).
+  **Verifiziert:** Suite 228/228; `/api/sehen` mit Test-PNG -> Gemini erkennt korrekt App (XMind), Button
+  („Exportieren") und Inhalt; `build_app.sh` gruen; Orb laeuft. **Live-Capture vom Orb testet der CEO**
+  (Bildschirmaufnahme beim ersten „Was siehst du?" erlauben).
+- **Warum:** CEO will „beides" (Gemini-Loop + deterministisch) und Inhalte generisch sehen — die „Augen" sind
+  damit gratis (Gemini), ohne Anthropic. Screenshot kommt vom Orb (Screen-Recording am .app), da serverseitig
+  TCC-blockiert.
+- **Betroffen:** runner/vision.py (neu), orchestrator/channels/web/app.py,
+  mac/LunaOrb/Sources/LunaOrb/{ScreenReader.swift (neu), LunaClient.swift, main.swift}, mac/LunaOrb/Package.swift,
+  projekt_changelog.md. (System: cliclick via brew installiert.)
+
 ## [2026-06-29 11:40] — Claude Code (Phase 17: deterministische Tastatur-Haende + Computer-Use-Architektur korrigiert)
 - **Was:** (1) **Generische Haende (deterministisch, gratis):** Aktuator-Verben **`tastatur_text`** (tippt Text
   in die vorderste App) und **`taste`** (Tastenkuerzel wie 'cmd+s'/'return', Parser `build_taste_script` mit

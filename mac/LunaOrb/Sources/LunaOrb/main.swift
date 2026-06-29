@@ -103,6 +103,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         talk.isEnabled = (serverOnline != false)
         menu.addItem(talk)
 
+        let see = NSMenuItem(title: "Was siehst du?", action: #selector(seeScreen), keyEquivalent: "s")
+        see.target = self
+        see.isEnabled = (serverOnline != false)
+        menu.addItem(see)
+
         let recheck = NSMenuItem(title: "Verbindung prüfen", action: #selector(refreshServerStatus), keyEquivalent: "r")
         recheck.target = self
         menu.addItem(recheck)
@@ -154,6 +159,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func testVoice() {
         voice.speakTest()
+    }
+
+    @objc private func seeScreen() {
+        lastVoiceInfo = "Schaue auf den Bildschirm …"
+        rebuildMenu()
+        Task { [weak self] in
+            let png = await ScreenReader.capturePNG()
+            await MainActor.run {
+                guard let self = self else { return }
+                guard let png = png else {
+                    self.lastVoiceInfo = "Bildschirmaufnahme nicht erlaubt (Systemeinstellungen → "
+                        + "Datenschutz & Sicherheit → Bildschirmaufnahme)."
+                    self.rebuildMenu()
+                    return
+                }
+                self.client.sehen(png.base64EncodedString(), "") { text in
+                    self.lastVoiceInfo = "Bildschirm gelesen."
+                    self.rebuildMenu()
+                    self.showReply(text)
+                }
+            }
+        }
     }
 
     @objc private func refreshServerStatus() {
