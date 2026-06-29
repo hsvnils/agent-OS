@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 09:45] — Claude Code (Roadmap: Gemini-Omni-Pruefung fuer den Cutter)
+- **Was:** ROADMAP.md Backlog um den Punkt „**ZEITNAH PRUEFEN — Gemini Omni fuer den Cutter**" ergaenzt
+  (CEO-Wunsch): pruefen, ob Googles multimodales/Omni-Modell den Cutter verbessert (Szenen-/Highlight-
+  Verstaendnis, Reihenfolge/Schnittauswahl, bester Ausschnitt); Modellname/Verfuegbarkeit/Kosten/Datenschutz
+  klaeren -> entscheidungsreifer Antrag (CEO-Tor). Prioritaet zeitnah.
+- **Warum:** CEO-Anweisung 2026-06-29.
+- **Betroffen:** ROADMAP.md, projekt_changelog.md.
+
 ## [2026-06-29 09:30] — Claude Code (Phase 17 M4-Fix: .app-Bundle + Umlaute im Orb)
 - **Was:** (1) **Crash-Fix** „Orb verschwindet beim Gespraech-Start": Ursache laut Crash-Report = TCC-
   Privacy-Violation — das per Linker ins Binary eingebettete Info.plist wird von macOS fuer Spracherkennung

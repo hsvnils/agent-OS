@@ -361,6 +361,12 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
 
 ## 8. Backlog (niedrige Prioritaet, „ganz nach hinten")
 
+- **ZEITNAH PRUEFEN — „Gemini Omni" fuer den Cutter (CEO-Wunsch 2026-06-29):** pruefen, ob Googles
+  multimodales/Omni-Modell den Cutter (Phase 15) verbessert — z. B. inhaltliches Szenen-/Highlight-Verstaendnis,
+  bessere Reihenfolge/Schnittauswahl, Auswahl des „besten Ausschnitts", evtl. Untertitel/Sprachverstaendnis.
+  Abklaeren: konkreter Modellname/Verfuegbarkeit, Kosten (CFO-Kostenvoranschlag), Datenschutz (Clips gehen an
+  Google), Mehrwert vs. lokale Gratis-Pipeline. Ergebnis = entscheidungsreifer Antrag (CEO-Tor). **Prioritaet:
+  zeitnah** (nicht „ganz nach hinten").
 - **Cutter „aus Profi-Videos lernen" (Stil-Analyzer, CEO-Idee 2026-06-27):** Realistische Stufe = ein
   **Stil-Profil-Extraktor**: Profi-Reels einlesen -> Schnitt-Grammatik messen (Szenenwechsel/Cliplaengen via
   Scene-Detection, Uebergangs-Typ Hartschnitt-vs-Crossfade, Farbstatistik/Grade, Zoom/Crop-Verhalten,
