@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 10:25] — Claude Code (Roadmap: Social Media Analyzer + M5 Inhalte sehen/bearbeiten)
+- **Was:** ROADMAP.md ergaenzt: (1) Backlog **„Social Media Analyzer"** (CEO-Wunsch) — monatlicher Import
+  von Instagram-/Facebook-Insights -> Aufbereitung -> **automatisches Befuellen des Media-Kits in Canva**
+  (Canva-Autofill-API/MCP), Veroeffentlichen bleibt CEO-Tor. (2) Phase 17 **MVP-Status (M1–M4 ✅)** +
+  Milestone **M5 „Tiefes App-Verstaendnis: Inhalte SEHEN & BEARBEITEN"** (CEO-Prio): heute kennt LUNA nur
+  App-Namen, nicht den Inhalt (z. B. XMind-Knoten) — Wege Vision/Accessibility/Dateiformat/Computer-Use
+  dokumentiert. Voice-Latenz + NAS-Bruecke als offene Punkte vermerkt.
+- **Warum:** CEO-Anweisungen 2026-06-29 (neuer Tool-Wunsch + Kern-Faehigkeit „Inhalte sehen & bearbeiten").
+- **Betroffen:** ROADMAP.md, projekt_changelog.md.
+
 ## [2026-06-29 10:05] — Claude Code (Phase 17: Voice robust (Halbduplex) + app_oeffnen + Diagnose)
 - **Was:** (1) **VoiceSession neu als Halbduplex** (`mac/LunaOrb/.../VoiceSession.swift`): waehrend LUNA
   spricht, ist das Mikrofon AUS (kein Feedback-Loop, kein fragiles Voice-Processing); je Runde hoeren ->

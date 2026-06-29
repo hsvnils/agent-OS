@@ -325,6 +325,25 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   eingeschraenkter Scope wo moeglich.
 - **GATE:** sehr stark (Kontrolle ueber den Rechner). **Kosten:** ggf. Modellzugang (Computer-Use-Modell).
 
+#### MVP-Status „LUNA am Mac" (Stand 2026-06-29)
+- ✅ **M1–M4 umgesetzt:** nativer Menueleisten-Orb (`mac/LunaOrb/`, Swift-`.app`), On-Screen-Awareness
+  (welche App vorne/laufend) + App-Wissen (Registry installierter Apps, Empfehlung), Aktuator mit Tor
+  (Allowlist, Vorschau/Bestaetigung, Not-Aus, Audit, zwei Modi bestaetigen/sofort), `app_oeffnen` (jede
+  installierte App), `text_schreiben` (TextEdit), Live-Gespraech (halbduplex, ElevenLabs, Diagnose).
+- 🔲 **M5 — Tiefes App-Verstaendnis: Inhalte SEHEN & BEARBEITEN (CEO-Prio 2026-06-29).** Heute kennt LUNA nur
+  App-Namen/Fenstertitel, **nicht den Inhalt** (z. B. die Knoten in XMind). Ziel: Inhalte lesen UND
+  bearbeiten. Wege: (a) **Vision** — Screenshot -> multimodales Modell „liest" den Schirm (funktioniert generisch,
+  auch fuer Electron/Canvas wie XMind; Sehen geht mit Gemini schon heute). (b) **Accessibility-Baum** (AXUIElement)
+  fuer native Apps (begrenzt bei Electron-Apps wie XMind). (c) **App-spezifisch ueber Dateiformat/Scripting**
+  (z. B. `.xmind` = ZIP+JSON direkt lesen/schreiben; AppleScript fuer Mail/Notes) — praeziser, aber je App
+  einzeln. (d) **Bearbeiten generisch** = **Claude Computer-Use** (Vision -> simulierte Maus/Tastatur; gleiches
+  Anthropic-Tor, ab 2026-07-01). **Empfehlung:** zuerst „Sehen" (Vision, Screenshot vom Orb -> Modell), dann
+  Bearbeiten gegated (Computer-Use generisch oder app-spezifische Recipe je freigegebenem Verb). Screen-Capture
+  = neue Berechtigung (Screen Recording am `.app`).
+- 🔲 **Voice-Latenz** spaeter optimieren (CEO 2026-06-29: laeuft, aber langsam) — Streaming-TTS, schnelleres
+  Modell fuer kurze Antworten, fruehzeitiges Senden.
+- 🔲 **NAS-Bruecke „eine LUNA, zwei Gesichter"** — gemeinsamer Live-Zustand (brain/Antraege) statt lokaler Insel.
+
 ## 5. Sicherheit & Kosten-Leitplanken (querschnittlich)
 
 - **Niemals Auto-Merge/Auto-Deploy** ohne CEO. Selbst-Modifikation immer auf Branch, mit Tests, reversibel.
@@ -361,6 +380,13 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
 
 ## 8. Backlog (niedrige Prioritaet, „ganz nach hinten")
 
+- **Social Media Analyzer (CEO-Wunsch 2026-06-29):** Agent/Tool, in das der CEO **monatlich** die Zahlen aus
+  **Instagram- und Facebook-Insights** laedt (Export/CSV oder manuell), das daraus die Kennzahlen aufbereitet
+  und **automatisch das Media-Kit in Canva befuellt**. Bausteine: (1) Insights-Import (CSV/Screenshot/spaeter
+  Meta-Graph-API), (2) Kennzahlen-Aufbereitung + Monats-Historie (wie die CFO-Kostenstatistik), (3)
+  **Canva-Autofill** ueber Canva Connect API (Brand-Template-Autofill: Datensatz -> Design) ODER Canva-MCP.
+  Abklaeren: Canva-Plan/API-Zugang + Kosten (CFO), Meta-API-Zugang vs. manueller Export, Datenschutz. Posten/
+  Veroeffentlichen bleibt CEO-Tor; Tool liefert das befuellte Media-Kit als Entwurf. Ergebnis = Antrag (CEO-Tor).
 - **ZEITNAH PRUEFEN — „Gemini Omni" fuer den Cutter (CEO-Wunsch 2026-06-29):** pruefen, ob Googles
   multimodales/Omni-Modell den Cutter (Phase 15) verbessert — z. B. inhaltliches Szenen-/Highlight-Verstaendnis,
   bessere Reihenfolge/Schnittauswahl, Auswahl des „besten Ausschnitts", evtl. Untertitel/Sprachverstaendnis.
