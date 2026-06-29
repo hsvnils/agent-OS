@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>LUNA Orb</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.hanserautisch.lunaorb</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.4</string>
+    <key>CFBundleVersion</key>
+    <string>4</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>LUNA hoert zu, um im Live-Gespraech auf deine Sprache zu reagieren.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>LUNA wandelt deine Sprache in Text, um dich im Co-Working zu verstehen.</string>
+</dict>
+</plist>

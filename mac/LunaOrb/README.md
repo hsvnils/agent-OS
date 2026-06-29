@@ -30,16 +30,28 @@ python -m orchestrator.channels.web        # http://127.0.0.1:8765
 
 Abweichende URL: Env `LUNA_LOCAL_URL` setzen.
 
-## Stand (M1)
+## Stand (M1–M4)
 
-- Menueleisten-Orb (NSStatusItem, `.accessory`-Policy), drei Zustaende.
-- „Mit LUNA sprechen…" -> `/api/chat` der lokalen LUNA, Antwort als Dialog.
-- „Verbindung pruefen" (Ping `GET /`), Live-Status im Menue.
-- „Not-Aus" schreibt ein Sperr-Flag (`~/.luna_orb_killswitch`), das der kuenftige Aktuator vor jeder
-  Aktion prueft.
+- **M1** Menueleisten-Orb (NSStatusItem, `.accessory`), drei Zustaende; „Mit LUNA tippen…" -> `/api/chat`;
+  „Verbindung pruefen"; „Not-Aus" -> Sperr-Flag `~/.luna_orb_killswitch`.
+- **M2/M3** On-Screen-Awareness + App-Wissen + Aktuator laufen serverseitig (Paket `runner/`, LUNA-Tools).
+  Menue-Schalter „Modus: Sofort/Bestaetigen" (`~/.luna_orb_mode`).
+- **M4** **Live-Gespraech** (`VoiceSession.swift`): „Live-Gespraech starten" im Menue ->
+  Mikrofon (AVAudioEngine, Echo-Cancellation) -> SFSpeechRecognizer (de-DE) -> `/api/chat` ->
+  Antwort per ElevenLabs (`/api/tts`, Fallback System-Stimme). **Barge-in**: reinreden stoppt die Wiedergabe.
+  Orb spiegelt zuhoeren/sprechen.
 
-## Naechste Milestones
+### Live-Gespraech testen
+1. Lokale LUNA starten (siehe oben), Orb starten.
+2. Orb anklicken -> **„Live-Gespraech starten"**. Beim ersten Mal **Mikrofon + Spracherkennung erlauben**.
+3. Sprich; bei Sprechpause antwortet LUNA hoerbar. Du kannst jederzeit **reinreden** (Barge-in).
+4. **„Gespraech beenden"** stoppt die Schleife.
 
-- **M2** — On-Screen-Awareness (vorderste App, Accessibility-Baum, Screenshot) + App-Wissen.
-- **M3** — Aktuator mit Tor (Allowlist/Vorschau/Bestaetigung/Not-Aus/Audit) + erste TextEdit-Aktion.
-- **M4** — Voice-Schleife am Orb (Mikrofon -> /api/chat -> TTS).
+> Berechtigungen: das Binary traegt eine eingebettete `Info.plist` mit den Mikrofon-/Sprach-Texten.
+> Falls macOS keinen Dialog zeigt, hilft das Verpacken in ein echtes `.app`-Bundle (geplanter Haerteschritt).
+
+## Naechste Schritte
+
+- **NAS-Bruecke** („eine LUNA, zwei Gesichter") — gemeinsamer Zustand statt lokaler Insel.
+- Allowlist wachsen lassen (weitere Apps/Verben, gegated), Cursor-Steuerung, Claude Computer-Use (ab 01.07.).
+- Verpacken als signiertes `.app` (Autostart via launchd).

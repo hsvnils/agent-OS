@@ -43,4 +43,18 @@ final class LunaClient {
             DispatchQueue.main.async { done(reply) }
         }.resume()
     }
+
+    /// LUNAs ElevenLabs-Stimme: Text -> MP3-Daten. nil, wenn TTS nicht verfuegbar (Fallback Browser/System).
+    func tts(_ text: String, _ done: @escaping (Data?) -> Void) {
+        var req = URLRequest(url: baseURL.appendingPathComponent("/api/tts"))
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.timeoutInterval = 30
+        req.httpBody = try? JSONSerialization.data(withJSONObject: ["text": text])
+        URLSession.shared.dataTask(with: req) { data, resp, err in
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            let ok = err == nil && code == 200 && (data?.isEmpty == false)
+            DispatchQueue.main.async { done(ok ? data : nil) }
+        }.resume()
+    }
 }

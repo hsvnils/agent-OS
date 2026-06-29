@@ -6,6 +6,7 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private let client = LunaClient()
+    private lazy var voice = VoiceSession(client: client)
     private var state: OrbState = .idle {
         didSet { renderOrb() }
     }
@@ -20,9 +21,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        configureVoice()
         renderOrb()
         rebuildMenu(serverOnline: nil)
         refreshServerStatus()
+    }
+
+    private func configureVoice() {
+        voice.onState = { [weak self] s in
+            switch s {
+            case .idle: self?.state = .idle
+            case .listening: self?.state = .listening
+            case .speaking: self?.state = .speaking
+            }
+        }
+        voice.onInfo = { [weak self] msg in
+            self?.rebuildMenu(serverOnline: nil)
+            self?.refreshServerStatus()
+            NSLog("LUNA Voice: %@", msg)
+        }
     }
 
     // MARK: - Orb-Darstellung
@@ -55,7 +72,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusLine.isEnabled = false
         menu.addItem(statusLine)
 
-        let talk = NSMenuItem(title: "Mit LUNA sprechen…", action: #selector(askLuna), keyEquivalent: "l")
+        let voiceOn = voice.isActive
+        let voiceItem = NSMenuItem(
+            title: voiceOn ? "Gespraech beenden" : "Live-Gespraech starten",
+            action: #selector(toggleVoice), keyEquivalent: "g")
+        voiceItem.target = self
+        voiceItem.isEnabled = (serverOnline != false)
+        voiceItem.state = voiceOn ? .on : .off
+        menu.addItem(voiceItem)
+
+        let talk = NSMenuItem(title: "Mit LUNA tippen…", action: #selector(askLuna), keyEquivalent: "l")
         talk.target = self
         talk.isEnabled = (serverOnline != false)
         menu.addItem(talk)
@@ -90,6 +116,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // MARK: - Aktionen
+
+    @objc private func toggleVoice() {
+        if voice.isActive {
+            voice.stop()
+            rebuildMenu(serverOnline: nil)
+            refreshServerStatus()
+        } else {
+            voice.start { [weak self] ok in
+                if !ok {
+                    let a = NSAlert()
+                    a.messageText = "Live-Gespraech nicht moeglich"
+                    a.informativeText = "Bitte Mikrofon und Spracherkennung erlauben "
+                        + "(System-Einstellungen -> Datenschutz & Sicherheit)."
+                    a.runModal()
+                }
+                self?.rebuildMenu(serverOnline: nil)
+                self?.refreshServerStatus()
+            }
+        }
+    }
 
     @objc private func refreshServerStatus() {
         rebuildMenu(serverOnline: nil)

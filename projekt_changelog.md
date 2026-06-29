@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-29 09:05] — Claude Code (Phase 17 M4: Live-Gespraech am Orb, Lunas Kern)
+- **Was:** Native Duplex-Sprachschleife im Swift-Orb. Neu `mac/LunaOrb/Sources/LunaOrb/VoiceSession.swift`:
+  Mikrofon (AVAudioEngine mit Voice-Processing = **Echo-Cancellation**) -> **SFSpeechRecognizer (de-DE)** ->
+  bei Sprechpause Aeusserung an die lokale LUNA (`/api/chat`) -> Antwort per **ElevenLabs** (`/api/tts`,
+  Fallback NSSpeechSynthesizer). **Barge-in**: reinreden stoppt die Wiedergabe sofort; Orb spiegelt
+  zuhoeren/sprechen. `LunaClient.tts()` ergaenzt. Menue „Live-Gespraech starten/beenden" (Tipp-Chat
+  umbenannt „Mit LUNA tippen…"). **Berechtigungen:** `Info.plist` mit Mikrofon-/Sprach-Texten +
+  Bundle-ID, via Linker (`-sectcreate __TEXT __info_plist`) ins Binary eingebettet (Package.swift).
+  **Verifiziert:** `swift build` gruen; Section `__info_plist` + beide UsageDescriptions im Binary; Orb
+  startet. Echter Mikrofon-/Sprach-Loop wird vom CEO live getestet (TCC-Dialoge + Audio nur am Geraet).
+- **Warum:** Phase-17-Milestone M4 (PHASE17_PLAN.md) — das Live-Gespraech ist Lunas Kern: zuhoeren, in der
+  Sprache des CEO antworten, unterbrechbar, Kontext + On-Screen-Awareness kombinieren und live handeln.
+- **Betroffen:** mac/LunaOrb/Sources/LunaOrb/{VoiceSession.swift (neu), main.swift, LunaClient.swift},
+  mac/LunaOrb/Info.plist (neu), mac/LunaOrb/Package.swift, mac/LunaOrb/README.md, projekt_changelog.md.
+
 ## [2026-06-29 08:40] — Claude Code (Phase 17 M3: Aktuator mit Tor + zwei Modi)
 - **Was:** `runner/actuator.py` (neu) — Aktuator hinter vier Schutzschichten: **Allowlist** (Start nur
   TextEdit/text_schreiben), **Vorschau->Bestaetigung**, **Not-Aus** (`~/.luna_orb_killswitch`), **Audit**.
