@@ -243,7 +243,8 @@ function renderAuftraege() {
         <button class="btn danger" data-act="loeschen" data-id="${esc(a.id)}">🗑 Löschen</button>
       </div></div>`;
   }).join("");
-  return `<div class="app">${cards}</div>`;
+  const bar = `<div class="actions" style="margin:0 0 8px 0"><button class="btn ghost" data-batch="reformat" title="Alle offenen Anträge ins neue Format bringen; freigegebene werden zurückgesetzt">🔄 Alle neu formatieren</button></div>`;
+  return `<div class="app">${bar}${cards}</div>`;
 }
 
 function renderListe(key, cols) {
@@ -446,6 +447,16 @@ async function refresh() {
     if (AKTIV_NAV === "home") renderDashboard();
   } catch { setLive(false); }
 }
+async function batchReformat(btn) {
+  if (!confirm("Alle offenen Anträge ins neue Format bringen? Freigegebene werden dabei zurückgesetzt (du musst sie neu freigeben). Das kann je nach Anzahl etwas dauern.")) return;
+  const alt = btn.textContent; btn.disabled = true; btn.textContent = "⏳ LUNA formatiert alle...";
+  try {
+    const r = await fetch("/api/antraege/neu-formatieren", { method: "POST" });
+    const d = await r.json();
+    if (d.state) { STATE = d.state; renderOffene(); updateSidebarCounts(); if (AKTIV_NAV === "home") renderDashboard(); }
+    alert("Fertig: " + ((d.res && d.res.anzahl) || 0) + " Anträge neu formatiert.");
+  } catch { btn.disabled = false; btn.textContent = alt; alert("Aktion fehlgeschlagen."); }
+}
 async function aktion(id, akt, btn) {
   let body = {};
   if (akt === "ablehnen") { const g = prompt("Grund der Ablehnung?", ""); if (g === null) return; body = { grund: g }; }
@@ -508,6 +519,8 @@ document.addEventListener("click", (e) => {
   if (navi) { navTo(navi.dataset.app); return; }
   const det = e.target.closest("[data-detail]");
   if (det) { openDetail(det.dataset.detail); return; }
+  const batch = e.target.closest("[data-batch]");
+  if (batch) { batchReformat(batch); return; }
   const btn = e.target.closest("[data-act]");
   if (btn) { aktion(btn.dataset.id, btn.dataset.act, btn); return; }
   const mehr = e.target.closest("[data-mehr]");
