@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-01 01:00] — Claude Code (Antrags-Revision durch CEO-Feedback + Batch-Reformat)
+- **Was:** Neue Faehigkeit: **Antraege revidieren**. `antraege.py` `revidieren()` (neues Event mit
+  ueberarbeitetem titel/beschreibung + Status zurueck auf 'eingereicht' -> Neufreigabe noetig) +
+  `reset_eingereicht()`. `innovation.py`: `revidiere(antrag_id, feedback)` -- Fachagenten (Gemini-Fallback)
+  denken Loesung + Kostenvoranschlag NEU anhand CEO-Feedback (suchen guenstigere/kostenlose Wege), Ergebnis im
+  neuen knappen Format mit `↻ REVIDIERT`-Marker; `neu_formatieren()` (Batch: alle offenen Antraege ins neue
+  Format, freigegebene zurueckgesetzt). CFO-Format als `_CFO_PROMPT` faktorisiert, `_baue_beschreibung`/
+  `_agent_fuer` Helfer. LUNA-Tools `antrag_revidieren` + `antraege_neu_formatieren`. LUNA-OS: Endpunkte
+  `/api/antraege/{id}/revidieren` + `/api/antraege/neu-formatieren`; Frontend: Button **„✏️ Revidieren"** mit
+  Feedback-Eingabefeld (Status-/Kosten-Update live). Asset-Cache-Bust v15. **Verifiziert:** Suite 228/228;
+  Revision-Smoke-Test (Feedback 'mach es kostenlos' -> 'KOSTEN: 0 EUR' + Status eingereicht); app.js Syntax ok.
+- **Warum:** CEO-Wunsch 2026-07-01 -- Antraege ins neue Format regenerieren, freigegebene zuruecksetzen, und
+  ein Feld, in das der CEO Feedback eintraegt (z. B. 'guenstiger/kostenlos'), das von LUNA/Sonnet verstanden
+  und neu erarbeitet wird.
+- **Betroffen:** orchestrator/core/{antraege.py, innovation.py, hoa_tools.py},
+  orchestrator/channels/web/{app.py, static/app.js, static/index.html}, projekt_changelog.md.
+
 ## [2026-07-01 00:20] — Claude Code (CFO-Kostenvoranschlag: auf einen Blick, EUR, Stufen)
 - **Was:** CFO-Kostenvoranschlag der Innovations-/Self-Dev-Pipeline (`innovation.py`) auf ein knappes,
   scannbares Format umgestellt: Zeile 1 zwingend `KOSTEN: ~<einmalig> EUR einmalig, ~<laufend> EUR/Monat`,

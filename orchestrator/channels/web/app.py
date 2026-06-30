@@ -194,6 +194,39 @@ async def loeschen(antrag_id: str):
     return JSONResponse({"ok": ok, "state": _state()})
 
 
+def _innovation_pipe():
+    """InnovationPipeline aus dem gecachten Kontext (Fachagenten via Gemini-Fallback). None ohne Kontext."""
+    ctx = _ctx_cached()
+    if ctx is None:
+        return None
+    from ...core.innovation import InnovationPipeline
+    from ...governance.leak_guard import is_redactable_secret
+    sec = [v for v in _CTX_CACHE["secrets"].values() if is_redactable_secret(v)]
+    return InnovationPipeline(ctx.core, web=ctx.web, antraege=antraege, secrets=sec)
+
+
+@app.post("/api/antraege/{antrag_id}/revidieren")
+async def revidieren(antrag_id: str, request: Request):
+    """CEO-Revision: Feedback (z. B. 'guenstiger/kostenlos') -> LUNA ueberarbeitet den Antrag und setzt
+    ihn auf 'eingereicht' zurueck (Neufreigabe noetig)."""
+    body = await _json(request)
+    pipe = _innovation_pipe()
+    if pipe is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Revision braucht den vollen LUNA-Kontext.")
+    res = await asyncio.to_thread(pipe.revidiere, antrag_id, (body.get("feedback") or "").strip())
+    return JSONResponse({"ok": bool(res.get("ok")), "res": res, "state": _state()})
+
+
+@app.post("/api/antraege/neu-formatieren")
+async def antraege_neu_formatieren():
+    """Bringt alle offenen Antraege ins neue Format; freigegebene werden zurueckgesetzt (Neufreigabe)."""
+    pipe = _innovation_pipe()
+    if pipe is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Braucht den vollen LUNA-Kontext.")
+    res = await asyncio.to_thread(pipe.neu_formatieren)
+    return JSONResponse({"ok": True, "res": res, "state": _state()})
+
+
 _CTX_CACHE: dict = {}
 _SECRETS_CACHE: dict = {}
 _LUNA_SESSION: dict = {}

@@ -215,6 +215,16 @@ def tool_specs() -> list[dict]:
               {"antrag_id": _str("Antrag-ID."), "grund": _str("Begruendung.")}, ["antrag_id"]),
         _spec("antrag_details", "Zeigt einen einzelnen Antrag (Titel, Beschreibung, Status, Verlauf) -- per "
               "voller ID oder kurzem Suffix.", {"antrag_id": _str("Antrag-ID oder Suffix.")}, ["antrag_id"]),
+        _spec("antrag_revidieren", "Ueberarbeitet einen Antrag anhand von CEO-Feedback (z. B. 'mach es "
+              "guenstiger oder kostenlos', 'andere Stufe', 'kuerzer') -- LUNA/Fachagenten denken Loesung + "
+              "Kostenvoranschlag neu (suchen guenstigere/kostenlose Wege) und setzen den Antrag auf "
+              "'eingereicht' zurueck (du musst neu freigeben).",
+              {"antrag_id": _str("Antrag-ID oder Suffix."),
+               "feedback": _str("Was soll anders/besser sein? z. B. 'guenstiger', 'kostenlos', 'Stufe 20 EUR'.")},
+              ["antrag_id", "feedback"]),
+        _spec("antraege_neu_formatieren", "Bringt ALLE offenen Antraege ins neue, knappe Format (Kosten auf "
+              "einen Blick in EUR) und setzt freigegebene dabei auf 'eingereicht' zurueck (Neufreigabe noetig).",
+              {}, []),
         _spec("antrag_umsetzen", "Setzt einen FREIGEGEBENEN Antrag real um (Branch + Tests, kein Merge). "
               "Dauert ggf. ~1 Minute.", {"antrag_id": _str("Antrag-ID (freigegeben).")}, ["antrag_id"]),
         _spec("antrag_mergen", "Mergt einen ERLEDIGTEN Antrag nach main -- nur nach CEO-Bestaetigung.",
@@ -802,6 +812,22 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"id": a["antrag_id"], "titel": a.get("titel", ""),
                 "beschreibung": redact(a.get("beschreibung", ""), sec), "von": a.get("von", ""),
                 "status": a.get("status", ""), "verlauf": a.get("verlauf", [])}
+
+    if name == "antrag_revidieren":
+        key = str(args.get("antrag_id", "")).strip().lstrip("#")
+        treffer = [a for a in ctx.antraege.list()
+                   if a["antrag_id"] == key or a["antrag_id"].endswith(key)]
+        if not treffer:
+            return {"fehler": f"Antrag '{key}' nicht gefunden."}
+        from .innovation import InnovationPipeline
+        pipe = InnovationPipeline(ctx.core, web=ctx.web, antraege=ctx.antraege, secrets=sec)
+        res = pipe.revidiere(treffer[0]["antrag_id"], (args.get("feedback") or "").strip())
+        return _redact_obj(res, sec)
+
+    if name == "antraege_neu_formatieren":
+        from .innovation import InnovationPipeline
+        pipe = InnovationPipeline(ctx.core, web=ctx.web, antraege=ctx.antraege, secrets=sec)
+        return _redact_obj(pipe.neu_formatieren(), sec)
 
     if name == "antrag_freigeben":
         aid = str(args.get("antrag_id", "")).strip()

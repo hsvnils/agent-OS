@@ -229,13 +229,15 @@ function renderAuftraege() {
       ? `<button class="btn ok" data-act="freigeben" data-id="${esc(a.id)}">✓ Freigeben</button>` : "";
     const ablehnen = (a.status === "eingereicht" || a.status === "freigegeben")
       ? `<button class="btn warn" data-act="ablehnen" data-id="${esc(a.id)}">✕ Ablehnen</button>` : "";
+    const revidieren = (a.status === "eingereicht" || a.status === "freigegeben")
+      ? `<button class="btn info" data-act="revidieren" data-id="${esc(a.id)}" title="Feedback geben, LUNA überarbeitet (z. B. günstiger/kostenlos)">✏️ Revidieren</button>` : "";
     return `<div class="card">
       <div class="head"><span class="badge ${esc(a.status)}">${esc(a.status)}</span><b class="titel" data-detail="${esc(a.id)}" title="Details anzeigen">${esc(a.titel)}</b></div>
       <div class="meta">von ${esc(a.von)}${a.kategorie ? " · " + esc(a.kategorie) : ""} · ${esc(a.id)}</div>
       <div class="desc">${esc(a.beschreibung) || "<i>keine Beschreibung</i>"}</div>
       ${lang ? `<div class="mehr" data-mehr>mehr anzeigen ▾</div>` : ""}
       <div class="actions">
-        ${freigeben}${ablehnen}
+        ${freigeben}${ablehnen}${revidieren}
         <button class="btn ghost" data-detail="${esc(a.id)}">📄 Details</button>
         <button class="btn info" data-act="mehr-info" data-id="${esc(a.id)}">🔍 Mehr Info holen</button>
         <button class="btn danger" data-act="loeschen" data-id="${esc(a.id)}">🗑 Löschen</button>
@@ -447,10 +449,16 @@ async function refresh() {
 async function aktion(id, akt, btn) {
   let body = {};
   if (akt === "ablehnen") { const g = prompt("Grund der Ablehnung?", ""); if (g === null) return; body = { grund: g }; }
+  if (akt === "revidieren") {
+    const fb = prompt("Was soll anders/besser sein? LUNA überarbeitet den Antrag (Status wird zurückgesetzt, du musst neu freigeben).\n\nz. B.: mach es günstiger · geht das kostenlos? · nur die 20-Euro-Stufe · kürzer fassen", "");
+    if (fb === null) return; body = { feedback: fb };
+  }
   if (akt === "loeschen" && !confirm("Antrag wirklich löschen?")) return;
-  // Mehr-Info ist jetzt agentisch (CTO/CFO + ggf. Recherche) -> kann ein paar Sekunden dauern.
+  // Mehr-Info/Revidieren sind agentisch (CTO/CFO + ggf. Recherche) -> kann einige Sekunden dauern.
   let alt;
-  if (btn) { alt = btn.textContent; btn.disabled = true; if (akt === "mehr-info") btn.textContent = "⏳ Agenten arbeiten..."; }
+  if (btn) { alt = btn.textContent; btn.disabled = true;
+    if (akt === "mehr-info") btn.textContent = "⏳ Agenten arbeiten...";
+    if (akt === "revidieren") btn.textContent = "⏳ LUNA überarbeitet..."; }
   try {
     const r = await fetch(`/api/antraege/${encodeURIComponent(id)}/${akt}`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });

@@ -72,37 +72,64 @@ class InnovationPipeline:
         erg.machbarkeit = self._frag(
             "cto", "Bewerte knapp die technische Machbarkeit, den Aufwand und Risiken dieser Idee "
             "(3-5 Saetze):\n\n" + erg.idee)
-        erg.kostenvoranschlag = self._frag(
-            "cfo",
-            "Erstelle einen KNAPPEN, auf einen Blick erfassbaren Kostenvoranschlag in EURO. "
-            "Genau dieses Format, hoechstens ~7 Zeilen, KEINE Tabellen, KEINE Pipes (|), KEINE Sterne:\n"
-            "Zeile 1 MUSS exakt so beginnen: 'KOSTEN: ~<einmalig> EUR einmalig, ~<laufend> EUR/Monat'.\n"
-            "Dann (falls sinnvoll) 'Stufen:' mit 2 Varianten und ihrem UNTERSCHIED, z. B.:\n"
-            "  - Sparvariante (~20 EUR/Monat): <was man dafuer bekommt>\n"
-            "  - Mehr (~40 EUR/Monat): <was zusaetzlich dazukommt>\n"
-            "Dann 'Nutzen: <ein Satz: was es bringt/spart, wann es sich rechnet>'.\n"
-            "Dann 'Kostentreiber: <der eine Haupt-Hebel, der die Kosten bestimmt>'.\n"
-            "Schaetze grob; nenne Spannen. Fuer diese Idee:\n\n" + erg.idee)
+        erg.kostenvoranschlag = self._frag("cfo", _CFO_PROMPT + erg.idee)
 
         # 4. Antrag -- entscheidungsreif buendeln (Phase 6). Keine Ausfuehrung.
         if self.antraege is not None:
             von = ("Unternehmensberater (Innovation)" if abteilung == "berater"
                    else f"{abteilung} (Selbst-Entwicklung)")
             titel = _titel(erg.idee)
-            # Klar gegliederter, markdown-freier Antrag (saubere Darstellung in Telegram + LUNA-OS).
             quellen = ", ".join(erg.quellen) if erg.quellen else "(aus dem Wissensstand)"
-            kosten = _clean(erg.kostenvoranschlag)
-            kopf = _kosten_kopf(kosten)  # die KOSTEN-Kernzeile ganz nach oben (auf einen Blick)
-            beschreibung = (
-                (f"{kopf}\n\n" if kopf else "")
-                + f"IDEE ({von})\n{_clean(erg.idee, titel)}\n\n"
-                f"MACHBARKEIT (CTO)\n{_clean(erg.machbarkeit)}\n\n"
-                f"KOSTEN (CFO)\n{kosten}\n\n"
-                f"QUELLEN\n{quellen}")
+            beschreibung = _baue_beschreibung(von, titel, erg.idee, erg.machbarkeit,
+                                              erg.kostenvoranschlag, quellen)
             erg.antrag_id = self.antraege.stellen(
                 titel, beschreibung, von=von,
                 kategorie="Innovation/Beschaffung (Kosten pruefen)")
         return erg
+
+    def revidiere(self, antrag_id: str, feedback: str = "", *, neutral: bool = False) -> dict:
+        """Ueberarbeitet einen bestehenden Antrag anhand von CEO-Feedback (z. B. 'guenstiger/kostenlos')
+        und setzt ihn auf 'eingereicht' zurueck (Neufreigabe noetig). neutral=True: nur sauber neu
+        formatieren, Inhalt in der Sache beibehalten. Laeuft ueber die Fachagenten (Gemini-Fallback)."""
+        if self.antraege is None:
+            return {"ok": False, "fehler": "Kein Antrags-Store."}
+        a = self.antraege.get(antrag_id)
+        if a is None:
+            return {"ok": False, "fehler": f"Antrag {antrag_id} nicht gefunden."}
+        von = a.get("von", "Head of Agents")
+        alt = a.get("beschreibung", "")
+        fb = (feedback or "").strip()
+        if neutral or not fb:
+            auftrag = ("Bring den folgenden Vorschlag inhaltlich unveraendert, aber knapp auf den Punkt: "
+                       "erste Zeile praegnanter Titel, dann 2-4 Saetze Loesung/Nutzen.")
+            ceo = ""
+        else:
+            auftrag = ("Ueberarbeite den folgenden Vorschlag anhand des CEO-Feedbacks. Finde wo immer moeglich "
+                       "GUENSTIGERE oder KOSTENLOSE Wege (Open-Source/Freeware/vorhandene Mittel/manuell). "
+                       f"CEO-Feedback: '{fb}'. Erste Zeile praegnanter Titel, dann 2-4 Saetze Loesung/Nutzen.")
+            ceo = f"\nCEO-Vorgabe: {fb}"
+        idee = self._frag(_agent_fuer(von), auftrag + "\n\nBestehender Vorschlag:\n" + alt[:1500])
+        machbarkeit = self._frag("cto", "Bewerte knapp Machbarkeit/Aufwand/Risiken (3-5 Saetze):\n\n" + idee)
+        kosten = self._frag("cfo", _CFO_PROMPT + idee + ceo)
+        titel = _titel(idee)
+        beschreibung = _baue_beschreibung(von, titel, idee, machbarkeit, kosten,
+                                          "(aus dem Wissensstand)", revision=(None if neutral else fb))
+        self.antraege.revidieren(antrag_id, titel=titel, beschreibung=beschreibung,
+                                 grund=("Revision: " + fb) if fb else "Neu formatiert")
+        return {"ok": True, "antrag_id": antrag_id, "titel": titel}
+
+    def neu_formatieren(self) -> dict:
+        """Batch: alle nicht-finalen Antraege sauber ins neue Format bringen; freigegebene werden dabei
+        auf 'eingereicht' zurueckgesetzt (Neufreigabe noetig)."""
+        if self.antraege is None:
+            return {"ok": False, "fehler": "Kein Antrags-Store."}
+        verarbeitet = []
+        for a in self.antraege.list():
+            if a.get("status") in ("erledigt", "abgelehnt", "geloescht"):
+                continue
+            r = self.revidiere(a["antrag_id"], "", neutral=True)
+            verarbeitet.append({"id": a["antrag_id"], "ok": bool(r.get("ok"))})
+        return {"ok": True, "anzahl": len(verarbeitet), "verarbeitet": verarbeitet}
 
     def _frag(self, agent_key: str, prompt: str) -> str:
         spec = self.core.subagents.get(agent_key)
@@ -145,6 +172,50 @@ def _kosten_kopf(kosten: str) -> str:
         if s.upper().startswith("KOSTEN"):
             return "💶 " + s
     return ""
+
+
+# Einheitliches, auf einen Blick erfassbares CFO-Format (EUR, Stufen, Nutzen, Kostentreiber).
+_CFO_PROMPT = (
+    "Erstelle einen KNAPPEN, auf einen Blick erfassbaren Kostenvoranschlag in EURO. "
+    "Genau dieses Format, hoechstens ~7 Zeilen, KEINE Tabellen, KEINE Pipes (|), KEINE Sterne:\n"
+    "Zeile 1 MUSS exakt so beginnen: 'KOSTEN: ~<einmalig> EUR einmalig, ~<laufend> EUR/Monat'.\n"
+    "Dann (falls sinnvoll) 'Stufen:' mit 2 Varianten und ihrem UNTERSCHIED, z. B.:\n"
+    "  - Sparvariante (~20 EUR/Monat): <was man dafuer bekommt>\n"
+    "  - Mehr (~40 EUR/Monat): <was zusaetzlich dazukommt>\n"
+    "Wenn es kostenlos/mit Bordmitteln geht, sag das klar (KOSTEN: 0 EUR ...).\n"
+    "Dann 'Nutzen: <ein Satz: was es bringt/spart, wann es sich rechnet>'.\n"
+    "Dann 'Kostentreiber: <der eine Haupt-Hebel, der die Kosten bestimmt>'.\n"
+    "Schaetze grob; nenne Spannen. Fuer diese Idee:\n\n")
+
+
+def _baue_beschreibung(von: str, titel: str, idee: str, machbarkeit: str, kosten: str,
+                       quellen: str, *, revision: str | None = None) -> str:
+    """Klar gegliederter, markdown-freier Antrag; Kosten-Kernzeile ganz oben (auf einen Blick)."""
+    kosten_clean = _clean(kosten)
+    kopf = _kosten_kopf(kosten_clean)
+    teile = []
+    if kopf:
+        teile.append(kopf)
+    if revision:
+        teile.append(f"↻ REVIDIERT (CEO-Feedback): {revision}")
+    if teile:
+        teile.append("")  # Leerzeile nach dem Kopf
+    teile += [
+        f"IDEE ({von})\n{_clean(idee, titel)}", "",
+        f"MACHBARKEIT (CTO)\n{_clean(machbarkeit)}", "",
+        f"KOSTEN (CFO)\n{kosten_clean}", "",
+        f"QUELLEN\n{quellen}",
+    ]
+    return "\n".join(teile)
+
+
+def _agent_fuer(von: str) -> str:
+    """Leitet aus dem 'von'-Feld den zustaendigen Fachagenten ab (Self-Dev: der Bereich; sonst Berater)."""
+    v = (von or "").lower()
+    for key in ("cto", "cfo", "cro", "ciso", "cbo", "cpo", "cxo", "cco", "cdo", "clo", "cko", "cao", "chro"):
+        if v.startswith(key):
+            return key
+    return "berater"
 
 
 def _clean(text: str, drop_titel: str | None = None) -> str:

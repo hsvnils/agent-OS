@@ -66,6 +66,26 @@ class Antraege:
         """Fuer Phase 7: in_umsetzung/erledigt/fehlgeschlagen."""
         return self._transition(antrag_id, status, **extra)
 
+    def revidieren(self, antrag_id: str, *, titel: str | None = None, beschreibung: str | None = None,
+                   grund: str = "") -> bool:
+        """Inhalt eines Antrags ueberarbeiten und auf 'eingereicht' zuruecksetzen (CEO muss neu freigeben).
+        Ein spaeteres Event mit titel/beschreibung ueberschreibt den Inhalt (siehe _fold)."""
+        if self.get(antrag_id) is None:
+            return False
+        ev = {"ts": _now(), "antrag_id": antrag_id, "event": "eingereicht", "akteur": "CEO/Revision",
+              "grund": (grund or "Revision")[:300]}
+        if titel:
+            ev["titel"] = titel
+        if beschreibung:
+            ev["beschreibung"] = beschreibung
+        self._append(ev)
+        self._log("CEO", f"Antrag revidiert + zur Neufreigabe ({antrag_id})", grund or "Revision", antrag_id)
+        return True
+
+    def reset_eingereicht(self, antrag_id: str, *, grund: str = "Zurueckgesetzt") -> bool:
+        """Status zurueck auf 'eingereicht' (z. B. eine Freigabe ruecknehmen), Inhalt bleibt."""
+        return self.revidieren(antrag_id, grund=grund)
+
     # -- lesen --
 
     def get(self, antrag_id: str) -> dict | None:
