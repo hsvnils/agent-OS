@@ -61,7 +61,7 @@ class SelfDevelopment:
         if modus == "intern":
             spec = self.core.subagents.get(abteilung)
             charta = (spec.system_prompt[:1500] if spec else "")
-            thema = f"Interne Luecken-/Mandatsanalyse {abteilung}"
+            thema = f"Interne Lücken-/Mandatsanalyse {abteilung}"
             wissen = (f"Dein Mandat (Charta-Auszug):\n{charta}\n\nFrage dich kritisch: Welche EINE Faehigkeit, "
                       "welches Werkzeug, welche Daten oder welcher Prozess fehlt dir, um dein Mandat optimal "
                       "zu erfuellen? Schlage genau diese eine konkrete Verbesserung vor.")
@@ -91,8 +91,8 @@ class SelfDevelopment:
         if self.watch is not None and getattr(self.watch.store, "paused", lambda: False)():
             return {"ok": False, "hinweis": "Autonomie pausiert (Notbremse) -- kein Selbst-Entwicklungs-Lauf."}
         if not self.enabled:
-            return {"ok": False, "hinweis": "Selbst-Entwicklungs-Loop ist aus (SELF_DEV_ENABLED=1 noetig). "
-                    "On-demand ueber das Tool selbstentwicklung."}
+            return {"ok": False, "hinweis": "Selbst-Entwicklungs-Loop ist aus (SELF_DEV_ENABLED=1 nötig). "
+                    "On-demand über das Tool selbstentwicklung."}
         ziele = (abteilungen or self._bereiche_mit_wissen())[: self.max_pro_lauf]
         ergebnisse = [self.vorschlag_fuer(a) for a in ziele]
         return {"ok": True, "antraege": [e.antrag_id for e in ergebnisse if e.antrag_id]}

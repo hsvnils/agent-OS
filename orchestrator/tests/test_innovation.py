@@ -51,7 +51,7 @@ class TestInnovation(unittest.TestCase):
         core = _core(scripted={"berater": boom, "cto": boom, "cfo": boom})
         erg = InnovationPipeline(core, web=_web(),
                                  antraege=Antraege(Path(tempfile.mkdtemp()) / "a.jsonl")).run()
-        self.assertIn("nicht verfuegbar", erg.idee)
+        self.assertIn("nicht verfügbar", erg.idee)
         self.assertIsNotNone(erg.antrag_id)  # Antrag entsteht trotzdem (mit Hinweis)
 
     def test_4_leck_schutz(self):

@@ -167,7 +167,7 @@ class WatchScheduler:
                 f"Fachbereichs-Wissensupdate {abteilung}: {len(neue)} neue Funde", abteilung=abteilung)
             self.research.in_arbeit(tid)
             self.research.erledigen(tid, provider="brave",
-                                    befund=f"{len(neue)} neue Eintraege im Wissensstand {abteilung}.",
+                                    befund=f"{len(neue)} neue Einträge im Wissensstand {abteilung}.",
                                     quellen=quellen)
         self.store.mark_run(f"dept:{abteilung}")
         if neue:
@@ -208,9 +208,9 @@ class WatchScheduler:
             key = f"koll:{k.get('a')}|{k.get('b')}|{k.get('ab')}"
             if self.store.add_finding("kollision", f"{k.get('a')} <> {k.get('b')}", key, abteilung="Kalender"):
                 neu.append(k)
-                self._melde(f"Termin-Kollision: '{k.get('a')}' und '{k.get('b')}' ueberschneiden sich.",
+                self._melde(f"Termin-Kollision: '{k.get('a')}' und '{k.get('b')}' überschneiden sich.",
                             abteilung="Kalender", kategorie="kollision", quelle="kalender-watcher",
-                            detail=f"Ueberschneidung ab {k.get('ab')}")
+                            detail=f"Überschneidung ab {k.get('ab')}")
         self.store.mark_run("kalender")
         return neu
 

@@ -63,11 +63,20 @@ def auth(cred: HTTPBasicCredentials = Depends(_security)):
 app = FastAPI(title="LUNA-OS", dependencies=[Depends(auth)])
 
 
+def _md_strip(s: str) -> str:
+    """Entfernt Markdown-Schmuck (**, *, #, __) fuer eine saubere Darstellung in LUNA-OS."""
+    import re as _re
+    s = _re.sub(r"\*\*(.+?)\*\*", r"\1", s or "")
+    s = _re.sub(r"__(.+?)__", r"\1", s)
+    s = _re.sub(r"(?m)^\s{0,3}#{1,6}\s*", "", s)
+    return s.replace("**", "").replace("__", "").strip()
+
+
 def _antrag_dto(a):
     return {
         "id": a.get("antrag_id"),
-        "titel": (a.get("titel") or "(ohne Titel)").lstrip("*").strip()[:120],
-        "beschreibung": (a.get("beschreibung") or "").strip(),
+        "titel": (_md_strip(a.get("titel") or "") or "(ohne Titel)")[:120],
+        "beschreibung": _md_strip(a.get("beschreibung") or ""),
         "von": a.get("von", ""),
         "kategorie": a.get("kategorie", ""),
         "status": a.get("status", ""),

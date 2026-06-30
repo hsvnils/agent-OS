@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-30 14:30] — Claude Code (Telegram-Umlaute an der Wurzel + Antrags-Struktur sauberer)
+- **Was:** (1) **Umlaute systemisch:** Fachagenten-Backend (`backends.py` FallbackBackend) haengt jetzt eine
+  Stil-Anweisung an JEDEN Fachagenten-Prompt an: korrektes Deutsch mit echten Umlauten (ä/ö/ü/ß) + reiner
+  Fliesstext OHNE Markdown (keine `**`, `#`). Das war die Wurzel: Innovations-/Self-Dev-Antraege kamen in
+  ae/oe/ue + mit Sternen, weil die Subagenten (anders als LUNAs Chat) keine Umlaut-Vorgabe hatten. Zusaetzlich
+  vereinzelte ASCII-Anzeigetexte gefixt: CIO-Push (Vorschläge/geprüft, bot.py), Self-Dev-Hinweis/Thema
+  (nötig/über/Lücken), Kalender-Watcher (überschneiden/Überschneidung), Wissensstand (Einträge, scheduler.py).
+  (2) **Antrags-Struktur (innovation.py):** klar gegliederte, markdown-freie Beschreibung — Abschnitte
+  `IDEE / MACHBARKEIT (CTO) / KOSTEN (CFO) / QUELLEN`; Titel ohne Sterne; dupliziertem Titel in der IDEE
+  entfernt (`_strip_md`/`_clean`). (3) **LUNA-OS-Anzeige (app.py):** `_md_strip` entfernt Markdown aus Antrags-
+  Titel/Beschreibung -> auch Alt-Antraege werden sauber dargestellt. Test (`test_innovation.py`) auf die neue
+  Umlaut-Meldung nachgezogen. **Verifiziert:** Suite 228/228.
+- **Warum:** CEO-Meldung 2026-06-30 -- Telegram noch ae/oe/ue (CIO „geprueft", Briefing „fuer"); Antraege
+  schlecht dargestellt (Sterne) und inhaltlich unstrukturiert. Wurzel (Subagenten-Stil) statt Symptom-Jagd.
+- **Betroffen:** orchestrator/core/{backends.py, innovation.py, scheduler.py, self_development.py},
+  orchestrator/channels/{telegram/bot.py, web/app.py}, orchestrator/tests/test_innovation.py, projekt_changelog.md.
+
 ## [2026-06-30 12:30] — Claude Code (CEO: LUNA auf Sonnet 5 umgestellt)
 - **Was:** `orchestrator/config.toml`: LUNAs Gehirn (`[voice] llm_model`), die Fachagenten (`[models]`
   hoa/cto/berater) und die Code-Execution (`[voice] exec_model`, neu) von `claude-haiku-4-5`/`claude-opus-4-8`

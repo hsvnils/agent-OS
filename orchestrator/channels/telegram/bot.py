@@ -363,7 +363,7 @@ def _start_investment_loop(ctx, secrets) -> None:
                     r = eng.screen_und_vorschlagen(max_vorschlaege=3)
                     n = len(r.get("erstellt", []))
                     ctx.notifications.enqueue(
-                        f"Markt-Screen erledigt: {n} neue Vorschlaege (Risk-geprueft), "
+                        f"Markt-Screen erledigt: {n} neue Vorschläge (Risk-geprüft), "
                         f"{len(r.get('vom_risk_abgelehnt', []))} vom Risk-Agent abgelehnt. Modus: advisory.",
                         abteilung="CIO", kategorie="investment")
                     try:

@@ -12,6 +12,7 @@ Umsetzung erst nach CEO-Freigabe (Phase 7). Leck-geschuetzt; Modell-Backend ist 
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from ..governance.leak_guard import redact
@@ -79,13 +80,16 @@ class InnovationPipeline:
         if self.antraege is not None:
             von = ("Unternehmensberater (Innovation)" if abteilung == "berater"
                    else f"{abteilung} (Selbst-Entwicklung)")
+            titel = _titel(erg.idee)
+            # Klar gegliederter, markdown-freier Antrag (saubere Darstellung in Telegram + LUNA-OS).
+            quellen = ", ".join(erg.quellen) if erg.quellen else "(aus dem Wissensstand)"
             beschreibung = (
-                f"Idee ({von}):\n{erg.idee}\n\n"
-                f"Technische Machbarkeit (CTO):\n{erg.machbarkeit}\n\n"
-                f"Kostenvoranschlag (CFO):\n{erg.kostenvoranschlag}\n\n"
-                f"Quellen: {', '.join(erg.quellen) if erg.quellen else '(Wissensstand)'}")
+                f"IDEE ({von})\n{_clean(erg.idee, titel)}\n\n"
+                f"MACHBARKEIT (CTO)\n{_clean(erg.machbarkeit)}\n\n"
+                f"KOSTEN (CFO)\n{_clean(erg.kostenvoranschlag)}\n\n"
+                f"QUELLEN\n{quellen}")
             erg.antrag_id = self.antraege.stellen(
-                _titel(erg.idee), beschreibung, von=von,
+                titel, beschreibung, von=von,
                 kategorie="Innovation/Beschaffung (Kosten pruefen)")
         return erg
 
@@ -95,14 +99,36 @@ class InnovationPipeline:
         try:
             out = self.core.backend.respond(agent_key, system_prompt, prompt, {})
         except Exception as exc:  # Modell-/Backend-Fehler nicht durchreichen
-            return f"(nicht verfuegbar: {str(exc)[:120]})"
+            return f"(nicht verfügbar — Modell/Backend-Fehler: {str(exc)[:120]})"
         return redact(out, self.secrets)
 
 
 def _titel(idee: str) -> str:
-    """Erste nicht-leere Zeile als Kurztitel (max. 80 Zeichen)."""
+    """Erste nicht-leere Zeile als Kurztitel (max. 80 Zeichen), ohne Markdown."""
     for line in (idee or "").splitlines():
-        line = line.strip().lstrip("#").strip()
+        line = _strip_md(line)
         if line:
             return line[:80]
     return "Innovations-Vorschlag"
+
+
+def _strip_md(s: str) -> str:
+    """Entfernt Markdown-Schmuck aus einer Zeile (**, *, #, __) -> reiner Text."""
+    s = re.sub(r"\*\*(.+?)\*\*", r"\1", s or "")
+    s = re.sub(r"__(.+?)__", r"\1", s)
+    s = re.sub(r"(?<!\w)\*(.+?)\*(?!\w)", r"\1", s)
+    s = re.sub(r"^\s{0,3}#{1,6}\s*", "", s)
+    return s.replace("**", "").replace("__", "").strip()
+
+
+def _clean(text: str, drop_titel: str | None = None) -> str:
+    """Markdown-frei + getrimmt; entfernt optional eine fuehrende Zeile, die den Titel dupliziert."""
+    zeilen = [_strip_md(z) for z in (text or "").splitlines()]
+    # fuehrende Leerzeilen weg
+    while zeilen and not zeilen[0]:
+        zeilen.pop(0)
+    if drop_titel and zeilen and zeilen[0][:80].strip().lower() == _strip_md(drop_titel)[:80].strip().lower():
+        zeilen.pop(0)
+        while zeilen and not zeilen[0]:
+            zeilen.pop(0)
+    return "\n".join(zeilen).strip() or "(keine Angabe)"

@@ -48,19 +48,25 @@ class FallbackBackend:
     Fachagenten-Aufrufe sind reine Text-Antworten (kein Tool-Calling) -> einfache Chat-Completion.
     """
 
+    # Gilt fuer ALLE Fachagenten (Innovation/Berater/CTO/CFO/...): nutzersichtbare Texte (Antraege,
+    # Bewertungen) brauchen echte Umlaute und keinen Markdown-Schmuck -- sonst landen ae/oe/ue + ** im Antrag.
+    _STIL = ("\n\nStil deiner Antwort: korrektes Deutsch mit echten Umlauten (ä, ö, ü, ß) -- niemals "
+             "ae/oe/ue/ss. Reiner Fliesstext ohne Markdown: KEINE Sternchen (**, *), KEINE Rauten (#).")
+
     def __init__(self, primary: "Backend", *, fallbacks: list[dict] | None = None):
         self.primary = primary
         self.fallbacks = [f for f in (fallbacks or []) if f.get("key")]
 
     def respond(self, agent_key: str, system_prompt: str, message: str, context: dict) -> str:
+        sp = (system_prompt or "") + self._STIL
         try:
-            return self.primary.respond(agent_key, system_prompt, message, context)
+            return self.primary.respond(agent_key, sp, message, context)
         except Exception as exc:
             if not self.fallbacks:
                 raise
             for fb in self.fallbacks:
                 try:
-                    return self._kompatibel(fb, system_prompt, message)
+                    return self._kompatibel(fb, sp, message)
                 except Exception:
                     continue
             raise exc
