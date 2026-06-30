@@ -10,10 +10,12 @@ max_turns = 4          # Turn-Spielraum je Subagent-Aufruf (Live-Backend); zu kn
 
 [models]
 # Defaults aus den Charten; per Config ueberschreibbar.
-hoa = "claude-opus-4-8"
-cto = "claude-opus-4-8"
-berater = "claude-opus-4-8"
-routing = "claude-haiku-4-5"   # guenstiges Modell fuer internes Routing (optional)
+# CEO-Umstellung 2026-06-30: LUNA + Fachagenten + Execution auf Sonnet 5 (claude-sonnet-5).
+# Greift, sobald Anthropic-API-Guthaben verfuegbar ist; bis dahin Gemini-Fallback. Kosten = CEO-Tor/Budget.
+hoa = "claude-sonnet-5"
+cto = "claude-sonnet-5"
+berater = "claude-sonnet-5"
+routing = "claude-haiku-4-5"   # guenstiges Modell fuer internes Routing (bewusst Haiku: kostenbewusst)
 
 [effort]
 hoa = "high"
@@ -45,4 +47,5 @@ language = "de"
 stt_provider = "deepgram"        # Default; Key: DEEPGRAM_API_KEY
 tts_provider = "elevenlabs"      # CEO-Wahl am GATE (2026-06-24): beste deutsche Stimmqualitaet
 tts_voice_id = ""                # leer = ElevenLabs-Default-Stimme; optional eigene Voice-ID
-llm_model = "claude-haiku-4-5"   # schnelles Modell fuer den HoA-Sprechpfad; Delegation nutzt Opus
+llm_model = "claude-sonnet-5"    # LUNAs Gehirn (HoA-Chat/Sprechpfad). CEO 2026-06-30.
+exec_model = "claude-sonnet-5"   # Code-Execution (Claude-CLI). CEO 2026-06-30; CLI-Pfad, nicht Raw-API.

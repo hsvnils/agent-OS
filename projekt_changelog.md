@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-06-30 12:30] — Claude Code (CEO: LUNA auf Sonnet 5 umgestellt)
+- **Was:** `orchestrator/config.toml`: LUNAs Gehirn (`[voice] llm_model`), die Fachagenten (`[models]`
+  hoa/cto/berater) und die Code-Execution (`[voice] exec_model`, neu) von `claude-haiku-4-5`/`claude-opus-4-8`
+  auf **`claude-sonnet-5`** umgestellt. Routing-Modell bewusst auf `claude-haiku-4-5` belassen (kostenbewusst,
+  internes Routing). Modell-IDs ueber claude-api-Skill verifiziert (Sonnet 5 = `claude-sonnet-5`, adaptive
+  Thinking default, $3/$15 pro 1M, Intro $2/$10 bis 31.08.2026).
+- **Warum:** CEO-Entscheidung 2026-06-30 (Umfang: Chat + Fachagenten + Execution; jetzt eintragen). Sonnet 5
+  bietet nahezu Opus-Qualitaet bei agentischer Arbeit/Tool-Calling + Vision, guenstiger als Opus 4.8.
+  **WICHTIG:** greift erst, wenn **Anthropic-API-Guthaben** verfuegbar ist (Raw-API ueber ModelRouter, nicht
+  CLI-Abo) — Anthropic-Sperre bis 2026-07-01 + frueherer 'credit balance too low'-Blocker; bis dahin faellt
+  LUNA weiter auf Gemini zurueck (kein Bruch). Kostenpflichtiges Modell = **CEO-Tor/Budget** (finance/budget.md,
+  CFO). **Deployment:** NAS-Sync noetig (sync-to-nas.sh), damit die NAS-Container die neue Config nutzen.
+  **Verifiziert:** config.toml laedt; Suite 228/228.
+- **Betroffen:** orchestrator/config.toml, projekt_changelog.md.
+
 ## [2026-06-29 12:45] — Claude Code (Phase 17 M5/#3: Haende in den Orb (native Steuerung via Datei-Queue))
 - **Was:** Tastatur/Maus laufen jetzt im Orb-Kontext (dort liegt das Bedienungshilfen-Recht). Neu
   `mac/LunaOrb/.../OrbActuator.swift` — native CGEvent-Primitive (tippen via keyboardSetUnicodeString, taste
