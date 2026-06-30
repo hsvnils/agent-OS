@@ -73,8 +73,16 @@ class InnovationPipeline:
             "cto", "Bewerte knapp die technische Machbarkeit, den Aufwand und Risiken dieser Idee "
             "(3-5 Saetze):\n\n" + erg.idee)
         erg.kostenvoranschlag = self._frag(
-            "cfo", "Erstelle einen knappen Kostenvoranschlag (einmalige + laufende monatliche Kosten, grob) "
-            "fuer diese Idee:\n\n" + erg.idee)
+            "cfo",
+            "Erstelle einen KNAPPEN, auf einen Blick erfassbaren Kostenvoranschlag in EURO. "
+            "Genau dieses Format, hoechstens ~7 Zeilen, KEINE Tabellen, KEINE Pipes (|), KEINE Sterne:\n"
+            "Zeile 1 MUSS exakt so beginnen: 'KOSTEN: ~<einmalig> EUR einmalig, ~<laufend> EUR/Monat'.\n"
+            "Dann (falls sinnvoll) 'Stufen:' mit 2 Varianten und ihrem UNTERSCHIED, z. B.:\n"
+            "  - Sparvariante (~20 EUR/Monat): <was man dafuer bekommt>\n"
+            "  - Mehr (~40 EUR/Monat): <was zusaetzlich dazukommt>\n"
+            "Dann 'Nutzen: <ein Satz: was es bringt/spart, wann es sich rechnet>'.\n"
+            "Dann 'Kostentreiber: <der eine Haupt-Hebel, der die Kosten bestimmt>'.\n"
+            "Schaetze grob; nenne Spannen. Fuer diese Idee:\n\n" + erg.idee)
 
         # 4. Antrag -- entscheidungsreif buendeln (Phase 6). Keine Ausfuehrung.
         if self.antraege is not None:
@@ -83,10 +91,13 @@ class InnovationPipeline:
             titel = _titel(erg.idee)
             # Klar gegliederter, markdown-freier Antrag (saubere Darstellung in Telegram + LUNA-OS).
             quellen = ", ".join(erg.quellen) if erg.quellen else "(aus dem Wissensstand)"
+            kosten = _clean(erg.kostenvoranschlag)
+            kopf = _kosten_kopf(kosten)  # die KOSTEN-Kernzeile ganz nach oben (auf einen Blick)
             beschreibung = (
-                f"IDEE ({von})\n{_clean(erg.idee, titel)}\n\n"
+                (f"{kopf}\n\n" if kopf else "")
+                + f"IDEE ({von})\n{_clean(erg.idee, titel)}\n\n"
                 f"MACHBARKEIT (CTO)\n{_clean(erg.machbarkeit)}\n\n"
-                f"KOSTEN (CFO)\n{_clean(erg.kostenvoranschlag)}\n\n"
+                f"KOSTEN (CFO)\n{kosten}\n\n"
                 f"QUELLEN\n{quellen}")
             erg.antrag_id = self.antraege.stellen(
                 titel, beschreibung, von=von,
@@ -113,12 +124,27 @@ def _titel(idee: str) -> str:
 
 
 def _strip_md(s: str) -> str:
-    """Entfernt Markdown-Schmuck aus einer Zeile (**, *, #, __) -> reiner Text."""
-    s = re.sub(r"\*\*(.+?)\*\*", r"\1", s or "")
+    """Entfernt Markdown-Schmuck aus einer Zeile (**, *, #, __) und wandelt Tabellen in lesbaren Text."""
+    s = s or ""
+    if re.fullmatch(r"\s*\|?[\s:|-]+\|?\s*", s) and "-" in s:  # Tabellen-Trennzeile |---|---|
+        return ""
+    s = re.sub(r"\*\*(.+?)\*\*", r"\1", s)
     s = re.sub(r"__(.+?)__", r"\1", s)
     s = re.sub(r"(?<!\w)\*(.+?)\*(?!\w)", r"\1", s)
     s = re.sub(r"^\s{0,3}#{1,6}\s*", "", s)
-    return s.replace("**", "").replace("__", "").strip()
+    s = s.replace("**", "").replace("__", "")
+    if s.strip().startswith("|") or " | " in s:            # Tabellen-Zeile -> 'a · b · c'
+        s = re.sub(r"\s*\|\s*", " · ", s.strip().strip("|")).strip(" ·")
+    return s.strip()
+
+
+def _kosten_kopf(kosten: str) -> str:
+    """Holt die KOSTEN-Kernzeile ('KOSTEN: ...') aus dem CFO-Text -- fuer die Anzeige ganz oben."""
+    for line in (kosten or "").splitlines():
+        s = line.strip()
+        if s.upper().startswith("KOSTEN"):
+            return "💶 " + s
+    return ""
 
 
 def _clean(text: str, drop_titel: str | None = None) -> str:

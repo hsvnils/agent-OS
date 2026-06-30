@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-01 00:20] — Claude Code (CFO-Kostenvoranschlag: auf einen Blick, EUR, Stufen)
+- **Was:** CFO-Kostenvoranschlag der Innovations-/Self-Dev-Pipeline (`innovation.py`) auf ein knappes,
+  scannbares Format umgestellt: Zeile 1 zwingend `KOSTEN: ~<einmalig> EUR einmalig, ~<laufend> EUR/Monat`,
+  danach `Stufen:` (z. B. Sparvariante ~20 EUR vs. Mehr ~40 EUR -- mit dem konkreten UNTERSCHIED), `Nutzen:`
+  (ein Satz), `Kostentreiber:` -- in **EUR**, max ~7 Zeilen, KEINE Tabellen/Pipes/Sterne. Im Antrag steht die
+  **Kosten-Kernzeile jetzt ganz oben** (`💶 KOSTEN…`, via `_kosten_kopf`) -> auf einen Blick erfassbar.
+  `_strip_md` (innovation) + `_md_strip` (LUNA-OS, app.py) wandeln zusaetzlich Markdown-Tabellen in lesbaren
+  Text (`a · b · c`, Trennzeilen raus) -> auch ALT-Antraege werden in LUNA-OS sauber dargestellt.
+- **Warum:** CEO-Meldung 2026-07-01 -- CFO-Voranschlaege unuebersichtlich (rohe Markdown-Tabellen, USD,
+  Textwand); CEO muss auf einen Blick Monatskosten + Nutzen + Stufen (20 vs. 40 EUR) erkennen.
+  Neue Antraege bekommen das volle Format; bestehende werden zumindest lesbar gerendert.
+- **Betroffen:** orchestrator/core/innovation.py, orchestrator/channels/web/app.py, projekt_changelog.md.
+
 ## [2026-06-30 14:30] — Claude Code (Telegram-Umlaute an der Wurzel + Antrags-Struktur sauberer)
 - **Was:** (1) **Umlaute systemisch:** Fachagenten-Backend (`backends.py` FallbackBackend) haengt jetzt eine
   Stil-Anweisung an JEDEN Fachagenten-Prompt an: korrektes Deutsch mit echten Umlauten (ä/ö/ü/ß) + reiner

@@ -64,12 +64,20 @@ app = FastAPI(title="LUNA-OS", dependencies=[Depends(auth)])
 
 
 def _md_strip(s: str) -> str:
-    """Entfernt Markdown-Schmuck (**, *, #, __) fuer eine saubere Darstellung in LUNA-OS."""
+    """Entfernt Markdown-Schmuck (**, *, #, __) und wandelt Tabellen in lesbaren Text -- fuer LUNA-OS."""
     import re as _re
-    s = _re.sub(r"\*\*(.+?)\*\*", r"\1", s or "")
-    s = _re.sub(r"__(.+?)__", r"\1", s)
-    s = _re.sub(r"(?m)^\s{0,3}#{1,6}\s*", "", s)
-    return s.replace("**", "").replace("__", "").strip()
+    out = []
+    for line in (s or "").splitlines():
+        if _re.fullmatch(r"\s*\|?[\s:|-]+\|?\s*", line) and "-" in line:  # Tabellen-Trennzeile
+            continue
+        line = _re.sub(r"\*\*(.+?)\*\*", r"\1", line)
+        line = _re.sub(r"__(.+?)__", r"\1", line)
+        line = _re.sub(r"(?<!\w)\*(.+?)\*(?!\w)", r"\1", line)
+        line = _re.sub(r"^\s{0,3}#{1,6}\s*", "", line).replace("**", "").replace("__", "")
+        if line.strip().startswith("|") or " | " in line:               # Tabellen-Zeile -> 'a · b · c'
+            line = _re.sub(r"\s*\|\s*", " · ", line.strip().strip("|")).strip(" ·")
+        out.append(line)
+    return "\n".join(out).strip()
 
 
 def _antrag_dto(a):
