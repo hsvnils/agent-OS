@@ -19,11 +19,12 @@ KRYPTO_DEFAULT = ["bitcoin", "ethereum", "solana"]
 
 class InvestmentEngine:
     def __init__(self, market: MarketData, store: InvestmentStore, *, risk: RiskAgent | None = None,
-                 notify=None):
+                 notify=None, brain=None):
         self.market = market
         self.store = store
         self.risk = risk or RiskAgent()
         self.notify = notify  # optional: callback(text, abteilung=, kategorie=, detail=)
+        self.brain = brain    # optional: callback(text, *, titel, tags, quelle, ref) -- Second Brain
 
     # -- Status --
     def status(self) -> dict:
@@ -100,6 +101,58 @@ class InvestmentEngine:
                 break
         return {"ok": True, "screening_id": screen["screening_id"], "erstellt": erstellt,
                 "vom_risk_abgelehnt": abgelehnt, "hinweise": screen.get("hinweise", [])}
+
+    # -- Insider-Screen (SEC Form 4, oeffentliche Pflichtmeldungen) --
+    def insider_scan(self, symbols=None, *, min_kauf_wert: float = 50_000.0, cluster_min: int = 2,
+                     max_alerts: int = 5, seit: str = "") -> dict:
+        """Insider-Screen ueber die Watchlist (oder uebergebene Aktien-Symbole): oeffentliche Form-4-**KAEUFE**
+        ziehen, je Symbol aggregieren (Cluster = Zahl kaufender Insider, Summe der Kaufwerte). Auffaellige
+        Cluster ODER Grosskaeufe -> Signal (gespeichert) + Risk-gepruefter 'beobachten'-Alert + Second-Brain-
+        Notiz. Nur Kaeufe, nur oeffentliche Filings, keine Trades."""
+        syms = symbols if symbols is not None else [
+            w["symbol"] for w in self.store.watchlist() if w.get("asset", "aktie") == "aktie"]
+        signale, hinweise = [], []
+        for sym in syms:
+            r = self.market.insider_transactions(sym, seit=seit)
+            if r.get("fall_b"):
+                if r["hinweis"] not in hinweise:
+                    hinweise.append(r["hinweis"])
+                continue
+            if not r.get("ok"):
+                continue
+            kaeufe = [t for t in r.get("transaktionen", []) if t.get("transaktion") == "kauf"]
+            if not kaeufe:
+                continue
+            insider_namen = sorted({t.get("insider") for t in kaeufe if t.get("insider")})
+            cluster = len(insider_namen)
+            summe = round(sum(_zahl(t.get("wert")) for t in kaeufe), 2)
+            if cluster < cluster_min and summe < min_kauf_wert:
+                continue  # weder Insider-Cluster noch grosser Einzelkauf -> unauffaellig
+            konfidenz = round(min(0.85, 0.4 + 0.1 * cluster + min(0.25, summe / 1_000_000.0)), 2)
+            rollen = ", ".join(sorted({t.get("rolle") for t in kaeufe if t.get("rolle")}))[:80]
+            sig_id = self.store.insider_signal_add(
+                sym, insider="; ".join(insider_namen)[:120], rolle=rollen, transaktion="kauf",
+                betrag=summe, anzahl=cluster, datum=(kaeufe[0].get("datum") or ""),
+                quelle=r.get("quelle", "SEC Form 4"), filing_url=r.get("filing_url", ""),
+                konfidenz=konfidenz, cluster=cluster)
+            grund = (f"Insider-Kauf: {cluster} Insider ({rollen or 'k.A.'}) kauften zusammen ~{_geld(summe)} "
+                     f"(SEC Form 4).")
+            v = self.vorschlag(sym, aktion="beobachten", grund=grund, asset="aktie",
+                               veraenderung_pct=0.0, konfidenz=konfidenz,
+                               quellen=[r.get("filing_url") or "SEC Form 4"])
+            if self.brain:
+                try:
+                    self.brain(f"{sym}: Insider-Kauf-Cluster ({cluster} Insider, ~{_geld(summe)}, "
+                               f"{rollen or 'k.A.'}). Quelle SEC Form 4: {r.get('filing_url', '')}",
+                               titel=f"Insider-Kauf {sym}", tags=["insider", "cio", sym.lower()],
+                               quelle="insider", ref=f"insider:{sym}:{kaeufe[0].get('datum', '')}")
+                except Exception:
+                    pass
+            signale.append({"symbol": sym, "cluster": cluster, "summe": summe, "signal_id": sig_id,
+                            "alert": bool(v.get("ok")), "konfidenz": konfidenz})
+            if len(signale) >= max_alerts:
+                break
+        return {"ok": True, "signale": signale, "hinweise": hinweise, "geprueft": len(syms)}
 
     # -- Detail zu einem Wert (fuer die anklickbare Detailansicht) --
     def detail(self, symbol: str, asset: str = "aktie") -> dict:
@@ -214,3 +267,11 @@ def _zahl(v) -> float:
         return float(v)
     except (TypeError, ValueError):
         return 0.0
+
+
+def _geld(x) -> str:
+    """Kompakte Geldangabe (Form 4 = US-Filings -> USD), deutsche Tausenderpunkte."""
+    try:
+        return f"{float(x):,.0f} USD".replace(",", ".")
+    except (TypeError, ValueError):
+        return "? USD"

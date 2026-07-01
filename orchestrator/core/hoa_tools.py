@@ -260,6 +260,13 @@ def tool_specs() -> list[dict]:
               "Risiko-Label, Konfidenz).", {}, []),
         _spec("investment_scorecard", "Zeigt den Investment-Track-Record (Scorecard): ausgewertete Prognosen, "
               "Trefferquote, mittlere Bewegung. Die Vertrauensbasis fuer einen spaeteren Paper-Modus.", {}, []),
+        _spec("insider_scan", "Screent oeffentliche SEC-Form-4-Insider-KAEUFE ueber die Watchlist (oder "
+              "uebergebene Symbole): erkennt Insider-Cluster/Grosskaeufe, erzeugt Risk-gepruefte Beobachten-"
+              "Alerts mit Filing-Link + Second-Brain-Notiz. Advisory, keine Trades.",
+              {"symbole": {"type": "array", "items": {"type": "string"},
+                           "description": "Optionale Aktien-Symbole (sonst die Watchlist)."}}, []),
+        _spec("insider_signale_zeigen", "Listet die neuesten Insider-Signale (Symbol, Cluster, Summe, "
+              "Rolle, Konfidenz, Filing-Link).", {}, []),
         _spec("watchlist_hinzufuegen", "Nimmt einen Wert in die Investment-Watchlist auf.",
               {"symbol": _str("Tickersymbol (AAPL) oder CoinGecko-ID (bitcoin)."),
                "asset": _str("'aktie' oder 'krypto' (Default aktie).")}, ["symbol"]),
@@ -679,7 +686,7 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"lagebild": redact(ctx.insights.lagebild(), sec)}
 
     if name in ("investment_status", "investment_screen", "investment_vorschlaege", "investment_scorecard",
-                "watchlist_hinzufuegen"):
+                "insider_scan", "insider_signale_zeigen", "watchlist_hinzufuegen"):
         if ctx.investment is None:
             return {"fehler": "Investment-Abteilung (CIO) nicht verfuegbar."}
         eng = ctx.investment
@@ -706,6 +713,20 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                                 "vorschlaege": [{"symbol": s.get("symbol"), "aktion": s.get("aktion"),
                                                  "grund": s.get("grund"), "risiko_label": s.get("risiko_label"),
                                                  "konfidenz": s.get("konfidenz")} for s in reversed(vs)][:15]}, sec)
+        if name == "insider_scan":
+            r = eng.insider_scan(symbols=(args.get("symbole") or None))
+            return _redact_obj({"ok": True, "geprueft": r.get("geprueft"),
+                                "signale": [{"symbol": s["symbol"], "cluster": s["cluster"],
+                                             "summe": s["summe"], "konfidenz": s["konfidenz"],
+                                             "alert": s["alert"]} for s in r.get("signale", [])],
+                                "hinweise": r.get("hinweise", [])}, sec)
+        if name == "insider_signale_zeigen":
+            sigs = eng.store.insider_signals(30)
+            return _redact_obj({"anzahl": len(sigs),
+                                "signale": [{"symbol": s.get("symbol"), "cluster": s.get("cluster"),
+                                             "betrag": s.get("betrag"), "rolle": s.get("rolle"),
+                                             "konfidenz": s.get("konfidenz"), "filing_url": s.get("filing_url"),
+                                             "datum": s.get("datum")} for s in sigs]}, sec)
         # watchlist_hinzufuegen
         symbol = (args.get("symbol") or "").strip()
         if not symbol:

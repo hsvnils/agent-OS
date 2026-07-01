@@ -128,7 +128,7 @@ def _build_ctx(cfg: dict, secrets: dict):
     from ...investment.store import InvestmentStore
     investment = InvestmentEngine(
         MarketData(secrets=secrets), InvestmentStore(ROOT / "investment" / "log.jsonl", secrets=secret_values),
-        notify=notifications.enqueue)
+        notify=notifications.enqueue, brain=brain.merken)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,

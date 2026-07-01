@@ -9,11 +9,12 @@ from orchestrator.investment.store import InvestmentStore
 
 class FakeMarket:
     """Mock-MarketData fuer die Engine-Tests (kein Netz)."""
-    def __init__(self, gainers=None, crypto=None, quote=None, price=100):
+    def __init__(self, gainers=None, crypto=None, quote=None, price=100, insider=None):
         self._gainers = gainers
         self._crypto = crypto
         self._quote = quote
         self._price = price
+        self._insider = insider   # dict symbol->antwort, oder None = Fall-B (kein Finnhub-Key)
 
     def provider_status(self):
         return [{"name": "FMP", "konfiguriert": True}]
@@ -43,6 +44,13 @@ class FakeMarket:
     def crypto_detail(self, coin_id):
         return {"ok": True, "name": coin_id.title(), "symbol": coin_id[:3].upper(), "preis_eur": 50000,
                 "veraenderung_pct": 1.2, "beschreibung": "Eine Kryptowaehrung."}
+
+    def insider_transactions(self, symbol, seit=""):
+        if self._insider is None:
+            return {"ok": False, "fall_b": True,
+                    "hinweis": "Finnhub nicht konfiguriert -- FINNHUB_API_KEY noetig."}
+        return self._insider.get(symbol, {"ok": True, "transaktionen": [], "quelle": "SEC Form 4",
+                                          "filing_url": "http://sec.gov/x"})
 
 
 class TestRiskAgent(unittest.TestCase):
@@ -140,6 +148,44 @@ class TestEngine(unittest.TestCase):
         # idempotent: kein doppeltes Auswerten
         r2 = eng.scorecard_aktualisieren(jetzt=datetime.now() + timedelta(days=9))
         self.assertEqual(r2["neu_bewertet"], 0)
+
+    def test_insider_scan_cluster_und_alert(self):
+        meldungen, gemerkt = [], []
+        insider = {"XYZ": {"ok": True, "quelle": "SEC Form 4", "filing_url": "http://sec.gov/xyz",
+                   "transaktionen": [
+                       {"insider": "Doe", "rolle": "CEO", "transaktion": "kauf", "wert": 60000, "datum": "2026-06-20"},
+                       {"insider": "Roe", "rolle": "CFO", "transaktion": "kauf", "wert": 40000, "datum": "2026-06-21"},
+                       {"insider": "Sam", "rolle": "VP", "transaktion": "verkauf", "wert": 5000, "datum": "2026-06-22"},
+                   ]}}
+        eng = InvestmentEngine(FakeMarket(insider=insider), self.store,
+                               notify=lambda text, **kw: meldungen.append(text),
+                               brain=lambda text, **kw: gemerkt.append(text))
+        r = eng.insider_scan(symbols=["XYZ"])
+        self.assertTrue(r["ok"])
+        self.assertEqual(len(r["signale"]), 1)
+        self.assertEqual(r["signale"][0]["cluster"], 2)          # nur die 2 KAUFENDEN Insider zaehlen
+        self.assertEqual(r["signale"][0]["summe"], 100000.0)
+        self.assertTrue(r["signale"][0]["alert"])
+        self.assertEqual(len(self.store.list("insider_signals")), 1)
+        self.assertEqual(len(self.store.list("suggestions")), 1)  # Risk-freigegebener Alert -> Vorschlag
+        self.assertTrue(meldungen and "XYZ" in meldungen[0])
+        self.assertTrue(gemerkt and "XYZ" in gemerkt[0])
+        self.assertIn("sec.gov", self.store.list("insider_signals")[0]["filing_url"])
+
+    def test_insider_scan_unauffaellig_kein_signal(self):
+        insider = {"AAA": {"ok": True, "quelle": "SEC Form 4", "filing_url": "http://x",
+                   "transaktionen": [{"insider": "Solo", "rolle": "VP", "transaktion": "kauf",
+                                      "wert": 1000, "datum": "2026-06-20"}]}}
+        eng = InvestmentEngine(FakeMarket(insider=insider), self.store)
+        r = eng.insider_scan(symbols=["AAA"])   # 1 Insider + kleiner Betrag -> unter Schwelle
+        self.assertEqual(len(r["signale"]), 0)
+        self.assertEqual(len(self.store.list("insider_signals")), 0)
+
+    def test_insider_scan_fall_b_ohne_key(self):
+        eng = InvestmentEngine(FakeMarket(insider=None), self.store)
+        r = eng.insider_scan(symbols=["AAA"])
+        self.assertEqual(len(r["signale"]), 0)
+        self.assertTrue(any("FINNHUB" in h for h in r["hinweise"]))
 
     def test_wochenprognose_und_scorecard(self):
         self.store.watchlist_add("AAA")

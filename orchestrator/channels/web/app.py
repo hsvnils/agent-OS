@@ -568,7 +568,7 @@ def _investment_engine():
     from ...investment.engine import InvestmentEngine
     from ...investment.providers import MarketData
     md = MarketData(secrets=_SECRETS_CACHE.get("d", {}))
-    return InvestmentEngine(md, inv_store)
+    return InvestmentEngine(md, inv_store, brain=brain.merken)
 
 
 def _letzte_shortlist():

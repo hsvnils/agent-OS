@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-01 23:35] — Claude Code — B-Phase 2 Insider-Screening + Alerts
+- **Was:** `InvestmentEngine.insider_scan()` -- zieht Form-4-Kaeufe je Watchlist-Symbol, erkennt Insider-
+  **Cluster**/Grosskaeufe, erzeugt Risk-gepruefte 'beobachten'-Alerts (via Notifier/`melde_an_ceo`) mit
+  Filing-Link + **Second-Brain-Notiz**. Engine um optionalen `brain`-Callback erweitert (in `bot.py` +
+  `app.py` verdrahtet). Neue HoA-Tools **`insider_scan`** + **`insider_signale_zeigen`**. 3 neue Engine-Tests
+  (Cluster/Alert, unauffaellig, Fall-B); Gesamtsuite **234** gruen.
+- **Warum:** Bauplan Teil B / Roadmap Phase 2.5 (advisory, keine Trades).
+- **Betroffen:** orchestrator/investment/engine.py, orchestrator/core/hoa_tools.py,
+  orchestrator/channels/telegram/bot.py, orchestrator/channels/web/app.py,
+  orchestrator/tests/test_investment_engine.py
+
 ## [2026-07-01 23:15] — Claude Code — B-Phase 1 Insider-Datenanbindung (gratis)
 - **Was:** `MarketData.insider_transactions()` (SEC **Form 4** via Finnhub, normalisiert Kauf/Verkauf je
   Insider, Wert-Berechnung, Filing-Link, **Fall-B** ohne Key) + `InvestmentStore`-Tabelle `insider_signals`
