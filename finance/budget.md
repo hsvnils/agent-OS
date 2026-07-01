@@ -7,11 +7,12 @@
 
 ## Aktuelles Budget
 
-- **Monatsbudget:** `<vom CEO festzulegen>` EUR/Monat
-- **Gueltig ab:** `<Datum>`
+- **Monatsbudget:** 100 EUR/Monat
+- **Gueltig ab:** 2026-06-24
 
 ## Aenderungshistorie
 
 | Datum | Alt (EUR/Monat) | Neu (EUR/Monat) | Geaendert durch | Bemerkung |
 |-------|-----------------|-----------------|----------------|-----------|
+| 2026-06-24 | noch nicht festgelegt (Platzhalter in finance/budget.md) | 100 | CFO (CEO-Ansage) | per Sprache gesetzt |
 | —     | —               | —               | —              | Platzhalter — noch kein Budget festgelegt; wartet auf CEO-Vorgabe. |
