@@ -524,3 +524,42 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .wave i, .talk-wave i, .agent .aw i, .brand-mark span, .hero-core .orbit, .sysstatus .dot, .panel-h .livep .dot { animation: none; }
 }
+
+/* ---- Agenten-Mindmap (lebendiges Organigramm) ---- */
+.mindmap { display: flex; flex-direction: column; height: 100%; }
+.mm-head { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 4px 6px 8px; color: var(--fg); font-size: 13px; flex-wrap: wrap; }
+.mm-legend { display: flex; gap: 12px; font-size: 11px; color: var(--muted); }
+.mm-legend .lg { display: inline-flex; align-items: center; gap: 5px; }
+.mm-legend .lg i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.mm-legend .active i { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.mm-legend .standby i { background: var(--amber); }
+.mm-legend .offline i { background: var(--muted); opacity: .5; }
+.mm-legend .human i { background: var(--violet); box-shadow: 0 0 6px var(--violet); }
+.mm-svg { flex: 1; width: 100%; min-height: 0; }
+.mm-lbl { fill: var(--fg); font-size: 11px; font-family: var(--mono, monospace); paint-order: stroke;
+  stroke: var(--bg0); stroke-width: 3px; }
+.mm-lbl.big { fill: var(--cyan); font-size: 13px; font-weight: 700; }
+.mm-lbl.sub { fill: var(--muted); font-size: 9px; }
+.mm-link { stroke: var(--line); stroke-width: 1.4px; fill: none; }
+.mm-link.active { stroke: var(--green); stroke-width: 2px; opacity: .85; }
+.mm-link.standby { stroke: rgba(255,193,77,.35); }
+.mm-link.offline { stroke: rgba(138,160,200,.16); stroke-dasharray: 2 4; }
+.mm-link.human { stroke: var(--violet); stroke-width: 2px; opacity: .7; }
+.mm-node { stroke: var(--bg0); stroke-width: 2px; }
+.mm-node.active { fill: var(--green); }
+.mm-node.standby { fill: var(--amber); }
+.mm-node.offline { fill: var(--muted); opacity: .45; }
+.mm-node.human { fill: var(--violet); }
+.mm-node.luna { fill: var(--cyan); stroke: rgba(46,230,255,.4); stroke-width: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .mm-node.active { animation: mmglow 1.9s ease-in-out infinite; }
+  .mm-node.luna { animation: mmglow 2.4s ease-in-out infinite; }
+  .mm-node.human { animation: mmglowv 3s ease-in-out infinite; }
+  .mm-link.active { stroke-dasharray: 4 6; animation: mmflow 1.1s linear infinite; }
+  @keyframes mmglow { 0%,100% { filter: drop-shadow(0 0 2px var(--green)); }
+    50% { filter: drop-shadow(0 0 8px var(--green)); } }
+  @keyframes mmglowv { 0%,100% { filter: drop-shadow(0 0 2px var(--violet)); }
+    50% { filter: drop-shadow(0 0 9px var(--violet)); } }
+  @keyframes mmflow { to { stroke-dashoffset: -20; } }
+}

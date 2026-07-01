@@ -19,6 +19,7 @@ const APPS = {
   wissen: { icon: "🧠", titel: "Wissen", badge: () => 0, render: renderWissen, load: ladeWissen },
   investment: { icon: "📈", titel: "Investment", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Investment…</div></div>`, load: ladeInvestment },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
+  agenten: { icon: "🕸️", titel: "Agenten-Map", badge: () => 0, render: renderAgenten, load: ladeAgenten },
 };
 
 // ---- Investment (CIO, advisory) --------------------------------------------
@@ -196,6 +197,7 @@ const APP_SYNONYME = [
   ["meldungen", ["meldung", "meldungen", "benachrichtigung", "benachrichtigungen", "nachrichten"]],
   ["aktivitaet", ["aktivität", "aktivitaet", "aktivitäten", "protokoll", "verlauf", "log", "historie"]],
   ["research", ["research", "recherche", "ticket", "tickets", "suche"]],
+  ["agenten", ["agenten", "agent", "mindmap", "map", "organigramm", "team", "abteilungen"]],
   ["finance", ["finanzen", "finance", "budget", "kosten", "geld"]],
 ];
 const ZEIG_VERB = /\b(zeig|zeige|öffne|oeffne|öffnen|oeffnen|anzeigen|geh|gehe|wechsel|wechsle|zeig mir|ruf|rufe|starte|öffn)\b/;
@@ -245,6 +247,43 @@ function renderAuftraege() {
   }).join("");
   const bar = `<div class="actions" style="margin:0 0 8px 0"><button class="btn ghost" data-batch="reformat" title="Alle offenen Anträge ins neue Format bringen; freigegebene werden zurückgesetzt">🔄 Alle neu formatieren</button></div>`;
   return `<div class="app">${bar}${cards}</div>`;
+}
+
+// ---- Agenten-Mindmap (lebendiges Organigramm mit Live-Status) ---------------
+let AGENTEN = null;
+async function ladeAgenten() {
+  try { AGENTEN = await (await fetch("/api/agenten")).json(); } catch { AGENTEN = null; }
+  renderApp("agenten");
+}
+function renderAgenten() {
+  if (!AGENTEN) return `<div class="app"><div class="leer">Lade Agenten-Map…</div></div>`;
+  const W = 900, H = 660, cx = 450, cy = 355, rx = 350, ry = 235;
+  const deps = AGENTEN.departments || [], ceo = AGENTEN.ceo || {}, n = deps.length || 1;
+  const node = (x, y, r, cls) => `<circle cx="${x}" cy="${y}" r="${r}" class="mm-node ${cls}"/>`;
+  let links = "", subs = "", nodes = "";
+  deps.forEach((d, i) => {
+    const a = -Math.PI / 2 + (i + 0.6) * (2 * Math.PI / n);  // halber Versatz -> Spitze bleibt fuer CEO frei
+    const x = cx + rx * Math.cos(a), y = cy + ry * Math.sin(a);
+    links += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" class="mm-link ${d.status}"/>`;
+    nodes += node(x, y, 9, d.status);
+    const anchor = Math.cos(a) > 0.25 ? "start" : Math.cos(a) < -0.25 ? "end" : "middle";
+    const off = anchor === "start" ? 15 : anchor === "end" ? -15 : 0;
+    nodes += `<text x="${x + off}" y="${y - (Math.abs(Math.cos(a)) < 0.25 ? (Math.sin(a) < 0 ? 15 : -8) : 0) + 4}" text-anchor="${anchor}" class="mm-lbl">${esc(d.name)}</text>`;
+    (d.subs || []).forEach((s, j) => {
+      const sx = x + 34 * Math.cos(a), sy = y + 34 * Math.sin(a) + j * 15;
+      subs += `<line x1="${x}" y1="${y}" x2="${sx}" y2="${sy}" class="mm-link sub ${s.status}"/>` + node(sx, sy, 5, s.status);
+      subs += `<text x="${sx + (anchor === "end" ? -9 : 9)}" y="${sy + 4}" text-anchor="${anchor === "middle" ? "start" : anchor}" class="mm-lbl sub">${esc(s.name)}</text>`;
+    });
+  });
+  const ceoY = 74;
+  const ceoBits = `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${ceoY}" class="mm-link human"/>${node(cx, ceoY, 12, "human")}<text x="${cx}" y="${ceoY - 18}" text-anchor="middle" class="mm-lbl big">${esc(ceo.name || "CEO")}</text>`;
+  const lunaBits = node(cx, cy, 18, "luna") + `<text x="${cx}" y="${cy + 36}" text-anchor="middle" class="mm-lbl big">LUNA · Head of Agents</text>`;
+  const legend = `<div class="mm-legend"><span class="lg active"><i></i>Aktiv</span><span class="lg standby"><i></i>Standby</span><span class="lg offline"><i></i>Offline</span><span class="lg human"><i></i>CEO</span></div>`;
+  return `<div class="app mindmap">
+    <div class="mm-head"><b>Agenten-Organigramm — Live-Status</b>${legend}</div>
+    <svg viewBox="0 0 ${W} ${H}" class="mm-svg" preserveAspectRatio="xMidYMid meet">
+      ${links}${ceoBits}${subs}${lunaBits}${nodes}
+    </svg></div>`;
 }
 
 function renderListe(key, cols) {
@@ -302,6 +341,7 @@ const NAV = [
   { id: "research", icon: "🔍", label: "Research", count: () => STATE.research.length },
   { id: "meldungen", icon: "🔔", label: "Meldungen", count: () => STATE.meldungen.length },
   { id: "aktivitaet", icon: "📊", label: "Aktivität" },
+  { id: "agenten", icon: "🕸️", label: "Agenten-Map" },
   { id: "finance", icon: "💶", label: "Finanzen" },
   { id: "luna", icon: "💬", label: "LUNA-Chat" },
 ];
@@ -378,7 +418,7 @@ function renderDashboard() {
     <div class="an">${esc(a.name)}</div><span class="pill ${a.status}"><span class="dot"></span>${a.status === "active" ? "Active" : "Standby"}</span>
     <div class="aw"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>`).join("");
   const agents = panel("Active Agents", `<div class="agents-grid">${agentCards}</div>`,
-    { cls: "col-2", right: `<span class="right" data-app="auftraege">Alle ›</span>` });
+    { cls: "col-2", right: `<span class="right" data-app="agenten">Map ›</span>` });
 
   // Mission Timeline (heutige Termine)
   const tl = (d.termine_heute || []).map(t => `<div class="tl-item"><span class="tlz">${esc(t.zeit)}</span><span class="tlt">${esc(t.titel)}</span></div>`).join("");

@@ -459,6 +459,77 @@ async def brain_merken(request: Request):
     return JSONResponse({"ok": True, "id": bid, "items": [_brain_item_dto(e) for e in brain.list(40)]})
 
 
+# Org-Hierarchie (stabil, aus governance/organigramm.md). Status wird live aus dem Aktivitaetsprotokoll
+# hergeleitet: kuerzlich aktiv -> 'active', vorhanden aber ruhig -> 'standby', geplant/nicht aktiviert -> 'offline'.
+_DEPARTMENTS = [
+    ("berater", "01 · Berater", "Unternehmensberater / Innovation", []),
+    ("cao", "02 · CAO", "Admin & Operations", []),
+    ("cfo", "03 · CFO", "Finance", []),
+    ("cro", "04 · CRO", "Revenue / Sponsoring", []),
+    ("ciso", "05 · CISO", "Security", []),
+    ("cbo", "06 · CBO", "Business Development", []),
+    ("cpo", "07 · CPO", "Product", []),
+    ("cto", "08 · CTO", "IT / Technik", [("backend", "Backend", "offline"),
+                                         ("devops", "DevOps/Infra", "offline")]),
+    ("cxo", "09 · CXO", "Experience", []),
+    ("cco", "10 · CCO", "Content / Marketing", [("cutter", "Video-Cutter", "standby")]),
+    ("cdo", "11 · CDO", "Data", []),
+    ("chro", "12 · CHRO", "People", []),
+    ("clo", "13 · CLO", "Legal", []),
+    ("cko", "14 · CKO", "Knowledge", []),
+    ("researcher", "15 · Researcher", "Web-Recherche", []),
+    ("cio", "16 · CIO", "Investment", [("risk", "Risk-Agent", "standby")]),
+]
+
+
+def _aktive_akteure(minuten: int = 90) -> set:
+    """Kleingeschriebene Kuerzel der Akteure, die in den letzten N Minuten etwas getan haben."""
+    from datetime import datetime, timedelta
+    grenze = (datetime.now() - timedelta(minutes=minuten)).isoformat(timespec="seconds")
+    aktiv = set()
+    for e in _aktivitaet_letzte(200):
+        if (e.get("ts") or "") >= grenze:
+            aktiv.add((e.get("akteur") or "").strip().lower())
+    return aktiv
+
+
+@app.get("/api/agenten")
+def agenten():
+    """Org-Mindmap der Agenten mit Live-Status (active/standby/offline)."""
+    aktiv = _aktive_akteure()
+
+    def _status(key: str, default: str = "standby") -> str:
+        aliases = {key}
+        if key == "berater":
+            aliases |= {"beratung", "innovation"}
+        if key == "cio":
+            aliases.add("investment")
+        if key == "researcher":
+            aliases.add("recherche")
+        return "active" if any(al in a for a in aktiv for al in aliases) else default
+
+    depts = []
+    for key, name, rolle, subs in _DEPARTMENTS:
+        st = _status(key)
+        # Researcher gilt als aktiv, wenn offene Tickets laufen
+        if key == "researcher" and [t for t in research.list() if t.get("status") in ("offen", "in_arbeit")]:
+            st = "active"
+        depts.append({"key": key, "name": name, "rolle": rolle, "status": st,
+                      "subs": [{"key": sk, "name": sn, "status": ss} for sk, sn, ss in subs]})
+    luna_active = bool(aktiv & {"head of agents", "luna", "ceo", "mac-aktuator", "cfo", "cto"}) or True
+    return {
+        "ceo": {"name": "CEO (Nils)", "rolle": "Auftraggeber", "status": "human"},
+        "luna": {"name": "LUNA", "rolle": "Head of Agents", "status": "active" if luna_active else "standby"},
+        "departments": depts,
+        "stand": _now_iso(),
+    }
+
+
+def _now_iso():
+    from datetime import datetime
+    return datetime.now().isoformat(timespec="seconds")
+
+
 @app.get("/api/overview")
 def overview():
     """Command-Center-Uebersicht: reale Counts, Provider-Status (aus .env), Agentenliste."""
