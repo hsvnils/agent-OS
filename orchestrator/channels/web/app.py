@@ -53,7 +53,11 @@ _PW = os.environ.get("LUNA_OS_PASSWORD", "")
 _security = HTTPBasic(auto_error=False)
 
 
-def auth(cred: HTTPBasicCredentials = Depends(_security)):
+def auth(request: Request, cred: HTTPBasicCredentials = Depends(_security)):
+    # Webhook-Endpunkte (Instagram/Meta) sind von der Basic-Auth ausgenommen: Meta kann sich nicht per Login
+    # authentifizieren. Sie sichern sich selbst -- GET ueber den Verify-Token, POST ueber die HMAC-Signatur.
+    if request.url.path.startswith("/api/webhook/"):
+        return
     if not _PW:
         return
     ok = cred and secrets.compare_digest(cred.username, _USER) and secrets.compare_digest(cred.password, _PW)

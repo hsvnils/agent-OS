@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 00:07] — Claude Code — Fix: Instagram-Webhook von LUNA-OS-Basic-Auth ausnehmen
+- **Was:** `app.py` `auth`-Dependency nimmt `/api/webhook/*` von der HTTP-Basic-Auth aus (Request-Pfad-Check).
+  Der Webhook sichert sich selbst -- GET ueber den Verify-Token, POST ueber die HMAC-Signatur. Lokal
+  verifiziert: `/api/state`=401 (weiter geschuetzt), `/api/webhook/instagram`=403 statt 401 (Handler erreicht).
+- **Warum:** Meta-Verify-Handshake scheiterte mit `401 {"detail":"Login noetig"}` -- die globale Basic-Auth
+  (`FastAPI(dependencies=[Depends(auth)])`) blockierte Metas Webhook-Aufruf, der sich nicht einloggen kann.
+- **Betroffen:** orchestrator/channels/web/app.py
+
 ## [2026-07-02 00:50] — Claude Code — ROADMAP: Collab-CRM als erster Baustein des Partner-/Akten-Systems
 - **Was:** In `ROADMAP.md` beim Backlog-Punkt „Partner-/Akten-System (CRM-artig)" vermerkt, dass der erste
   Baustein (Collab-CRM unter dem CRO, kanalagnostischer Store + Instagram-Webhook + LUNA-OS-App) umgesetzt ist
