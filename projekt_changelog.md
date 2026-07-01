@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 00:50] — Claude Code — Doku: Instagram App-Review-Einreichungspaket
+- **Was:** `docs/APP_REVIEW_INSTAGRAM.md` -- fertige Texte (Use-Case, Detail, Pruefer-Anleitung, Screencast-
+  Drehbuch via Tester-Account, App-Settings-Checkliste) fuer die Meta App-Review von
+  `instagram_business_manage_messages`. Referenz zum Fortsetzen.
+- **Warum:** Business-Verifizierung laeuft (~2 Werktage); App-Review folgt danach. CEO: morgen weiter.
+- **Betroffen:** docs/APP_REVIEW_INSTAGRAM.md
+
 ## [2026-07-02 00:35] — Claude Code — Instagram-Webhook: robuster Payload-Parser (beide Formate)
 - **Was:** `nachrichten_aus_webhook()` parst jetzt auch `entry[].changes[].value` + Metas flache Feldprobe
   `{"field":"messages","value":{...}}`, nicht nur `entry[].messaging[]`. **Live verifiziert:** Metas
