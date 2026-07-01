@@ -31,7 +31,7 @@
 | 0 | Plan & Charta (CIO + Governance) | advisory | GATE A: Freigabe Plan/Charta | ✅ erledigt 2026-06-28 |
 | 1 | Datenanbindung (gratis) + Speicher | advisory | GATE B: gratis API-Keys in .env (CISO/CTO) | ✅ GATE B bestanden 2026-06-28 (Finnhub/AlphaVantage/FMP/CoinGecko live; SEC optional offen) |
 | 2 | Die drei Schleifen (Screen/Prognose/Alerts) | advisory | — (kein Ausfuehren) | ✅ umgesetzt 2026-06-28 (engine+Risk-Agent, LUNA-OS-Panel + Tools + anklickbare Detailansicht + Auto-Screen-Loop) |
-| 2.5 | Insider-Screening (SEC Form 4) | advisory | — (kein Ausfuehren) | 🟡 in Arbeit 2026-07-01 (Erweiterung der drei Schleifen; SEC EDGAR gratis, dateibasiert) |
+| 2.5 | Insider-Screening (SEC Form 4) | advisory | — (kein Ausfuehren) | ✅ umgesetzt 2026-07-01 (insider_scan + Store-Tabelle + HoA-Tools + LUNA-OS-Anzeige; dateibasiert, Suite gruen) |
 | 3 | Vertrauen aufbauen + Paper-Modus | advisory → paper | GATE C: Paper aktivieren (Alpaca) | 🟡 gestartet 2026-06-28 (Walk-forward-Scorecard/Track-Record live; advisory laeuft, sammelt; Paper = GATE C offen) |
 | 4 | Live-Trading (hart abgesichert) | live | GATE D: Live aktivieren (haerteste Guardrails) | 🔲 geplant |
 

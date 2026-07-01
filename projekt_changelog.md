@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-01 23:50] — Claude Code — B-Phase 3 Insider-Anzeige (LUNA-OS) + Teil B fertig
+- **Was:** `/api/investment` liefert jetzt `insider`-Signale; neuer POST `/api/investment/insider-scan`.
+  Investment-App (`static/app.js`) um Button **„Insider-Scan"** + Sektion **„Insider-Signale (SEC Form 4)"**
+  (Symbol/Cluster/Betrag/Rolle/Konfidenz/Filing-Link) erweitert; Cache-Bust **v19**. Roadmap Phase 2.5 auf
+  ✅ umgesetzt. Preview verifiziert (Panel rendert, Button + Sektion da, kein JS-Fehler).
+- **Warum:** Bauplan Teil B / Roadmap Phase 2.5 -- Anzeige; damit ist **Teil B (Insider-Screening) komplett**
+  (B-Phasen 0-3, advisory, dateibasiert, kein neuer bezahlter Dienst).
+- **Betroffen:** orchestrator/channels/web/app.py, orchestrator/channels/web/static/app.js,
+  orchestrator/channels/web/static/index.html, INVESTMENT_ROADMAP.md
+
 ## [2026-07-01 23:35] — Claude Code — B-Phase 2 Insider-Screening + Alerts
 - **Was:** `InvestmentEngine.insider_scan()` -- zieht Form-4-Kaeufe je Watchlist-Symbol, erkennt Insider-
   **Cluster**/Grosskaeufe, erzeugt Risk-gepruefte 'beobachten'-Alerts (via Notifier/`melde_an_ceo`) mit

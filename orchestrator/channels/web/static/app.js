@@ -39,6 +39,11 @@ async function ladeInvestment() {
     <div class="desc">${esc(s.grund || "")}</div>
     <div class="meta">Konfidenz ${Math.round((s.konfidenz || 0) * 100)}% · ${(s.quellen || []).map(esc).join(", ")}</div></div>`).join("")
     || `<div class="leer">Noch keine Vorschläge.</div>`;
+  const ins = (i.insider || []).map(s => `<div class="card">
+    <div class="head"><span class="badge in_umsetzung">Insider</span><b>${esc(s.symbol)}</b><span class="meta">${s.cluster || 1} Insider · ~${s.betrag != null ? esc(s.betrag) : "?"} USD</span></div>
+    <div class="desc">${esc(s.rolle || "k.A.")} · Konfidenz ${Math.round((s.konfidenz || 0) * 100)}%${s.datum ? " · " + esc(s.datum) : ""}</div>
+    ${s.filing_url ? `<div class="meta"><a href="${esc(s.filing_url)}" target="_blank" rel="noopener">SEC Form 4 ↗</a></div>` : ""}</div>`).join("")
+    || `<div class="leer">Noch keine Insider-Signale — klick „Insider-Scan".</div>`;
   const sc = i.scorecard || {};
   const scText = sc.ausgewertet ? `${Math.round((sc.trefferquote || 0) * 100)}% Trefferquote (${sc.treffer}/${sc.ausgewertet})` : "noch keine Auswertung";
   const h = i.historie || {}; const jt = h.je_tabelle || {};
@@ -51,14 +56,21 @@ async function ladeInvestment() {
     <div class="brain-bar">
       <div class="inv-ac"><input id="inv-sym" placeholder="Aktie/Krypto suchen & hinzufügen…" autocomplete="off" oninput="investSuche(this.value)">
         <div id="inv-suggest" class="inv-suggest"></div></div>
-      <button class="btn info" onclick="investScreen(this)">📡 Screen jetzt</button></div>
+      <button class="btn info" onclick="investScreen(this)">📡 Screen jetzt</button>
+      <button class="btn info" onclick="investInsiderScan(this)">🔍 Insider-Scan</button></div>
     <h3>Watchlist</h3><div>${wl}</div>
     <h3>Shortlist (letzter Screen)</h3>${sl}
-    <h3>Vorschläge (vom Risk-Agent geprüft)</h3>${sug}</div>`;
+    <h3>Vorschläge (vom Risk-Agent geprüft)</h3>${sug}
+    <h3>Insider-Signale (SEC Form 4)</h3>${ins}</div>`;
 }
 async function investScreen(btn) {
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Screent…"; }
   try { await fetch("/api/investment/screen", { method: "POST" }); } catch {}
+  ladeInvestment();
+}
+async function investInsiderScan(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Scannt…"; }
+  try { await fetch("/api/investment/insider-scan", { method: "POST" }); } catch {}
   ladeInvestment();
 }
 // Detailansicht zu einem Wert (Aktie: Profil + Quote + News; Krypto: CoinGecko-Infos).

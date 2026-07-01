@@ -592,6 +592,10 @@ def investment():
                          "risiko_label": s.get("risiko_label"), "konfidenz": s.get("konfidenz"),
                          "quellen": s.get("quellen", []), "ts": s.get("ts")}
                         for s in reversed(inv_store.list("suggestions"))][:15],
+        "insider": [{"symbol": s.get("symbol"), "cluster": s.get("cluster"), "betrag": s.get("betrag"),
+                     "rolle": s.get("rolle"), "konfidenz": s.get("konfidenz"),
+                     "filing_url": s.get("filing_url"), "datum": s.get("datum"), "ts": s.get("ts")}
+                    for s in inv_store.insider_signals(15)],
     }
 
 
@@ -601,6 +605,15 @@ async def investment_screen():
     r = await asyncio.to_thread(eng.screen_und_vorschlagen)
     return JSONResponse({"ok": True, "erstellt": len(r.get("erstellt", [])),
                          "abgelehnt": len(r.get("vom_risk_abgelehnt", [])),
+                         "hinweise": r.get("hinweise", []), "investment": investment()})
+
+
+@app.post("/api/investment/insider-scan")
+async def investment_insider_scan():
+    """Insider-Screen (SEC Form 4) ueber die Watchlist -> Signale/Alerts. Advisory, keine Trades."""
+    eng = _investment_engine()
+    r = await asyncio.to_thread(eng.insider_scan)
+    return JSONResponse({"ok": True, "signale": len(r.get("signale", [])),
                          "hinweise": r.get("hinweise", []), "investment": investment()})
 
 
