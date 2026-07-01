@@ -22,6 +22,18 @@ STUFEN = ("neu", "in_gespraech", "angebot", "vereinbart", "abgelehnt")
 QUELLEN = ("instagram", "telegram", "gmail", "manuell")
 RICHTUNGEN = ("ein", "aus")
 
+# Regelbasierte Klassifikation (token-frugal, kostenlos) -- Kooperations-Signalwoerter.
+_KOOP_KEYWORDS = ("kooperation", "koop", "collab", "zusammenarbeit", "zusammen arbeiten", "sponsor",
+                  "sponsoring", "werbung", "kampagne", "partnerschaft", "partner", "anfrage", "barter",
+                  "produkttest", "rabattcode", "affiliate", "brand deal", "brand", "marke", "influencer")
+
+
+def klassifiziere(text: str) -> str:
+    """Regelbasiert: 'kooperation' bei Koop-Signalwoertern, sonst 'unklar'. Kein LLM (token-frugal);
+    eine tiefere Einschaetzung kann LUNA bei Bedarf via delegate an den CRO-Fachagenten anfordern."""
+    t = (text or "").lower()
+    return "kooperation" if any(k in t for k in _KOOP_KEYWORDS) else "unklar"
+
 
 def _now() -> str:
     return datetime.now().isoformat(timespec="seconds")
@@ -45,7 +57,7 @@ class CrmStore:
 
     # -- schreiben --
     def nachricht_erfassen(self, firma: str, text: str, *, quelle: str = "manuell", richtung: str = "ein",
-                           absender: str = "", extern_id: str = "") -> str:
+                           absender: str = "", extern_id: str = "", kategorie: str = "") -> str:
         """Erfasst eine (eingehende) Nachricht einer Firma. `extern_id` (z. B. Meta-Message-ID) dedupliziert
         Webhook-Wiederholungen. Neue Firma bekommt automatisch Status 'neu'. Gibt "" bei leer/Duplikat."""
         firma = (firma or "").strip()
@@ -56,10 +68,27 @@ class CrmStore:
             return ""  # Dedup: schon erfasst (Webhook-Retry)
         mid = _id("M")
         self._append({"ts": _now(), "id": mid, "event": "nachricht", "firma": firma, "quelle": quelle,
-                      "richtung": richtung, "text": text, "absender": absender, "extern_id": extern_id})
+                      "richtung": richtung, "text": text, "absender": absender, "extern_id": extern_id,
+                      "kategorie": kategorie})
         if not self._letzter_status(firma):
             self._append({"ts": _now(), "id": _id("S"), "event": "status", "firma": firma, "status": "neu"})
         return mid
+
+    def verarbeite_eingang(self, firma: str, text: str, *, quelle: str = "instagram", absender: str = "",
+                           extern_id: str = "") -> dict:
+        """Erfasst eine eingehende DM inkl. regelbasierter Klassifikation und legt bei einer NEUEN
+        Kooperationsanfrage automatisch ein 'pruefen'-To-do an. Gibt {mid, kategorie, todo_id, firma}.
+        Basis fuer Webhook (Instagram) und kuenftige Kanaele (Telegram/Gmail)."""
+        firma = (firma or "").strip()
+        kategorie = klassifiziere(text)
+        neu = self._letzter_status(firma) is None
+        mid = self.nachricht_erfassen(firma, text, quelle=quelle, richtung="ein", absender=absender,
+                                      extern_id=extern_id, kategorie=kategorie)
+        todo_id = ""
+        if mid and kategorie == "kooperation" and neu:
+            todo_id = self.todo_hinzufuegen(firma, f"Neue Kooperationsanfrage von {firma} pruefen/antworten",
+                                            begruendung="Erstkontakt via " + quelle)
+        return {"mid": mid, "kategorie": kategorie, "todo_id": todo_id, "firma": firma, "neu": neu}
 
     def status_setzen(self, firma: str, status: str) -> str:
         if status not in STUFEN:

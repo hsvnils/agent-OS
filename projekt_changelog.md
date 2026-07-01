@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 00:45] — Claude Code — A-Phase 2+3 Collab-CRM Logik + Anzeige (Teil A code-komplett)
+- **Was:** A2 -- regelbasierte Klassifikation (`klassifiziere()`, Koop-Keywords, token-frugal, kein LLM) +
+  `CrmStore.verarbeite_eingang()` (eingehende DM -> Kategorie + Auto-To-do bei NEUER Kooperationsanfrage);
+  Instagram-Webhook meldet Kooperationsanfragen ueber **Notifier** + legt **Second-Brain**-Notiz an
+  (`brain_merken`, quelle=crm). Neue HoA-Tools `crm_zeigen`/`crm_konversation`/`crm_todo_erledigen`/
+  `crm_status_setzen`; `CrmStore` in `ToolContext` + `bot.py` verdrahtet. A3 -- LUNA-OS-App **„Collab-CRM"**
+  (`/api/crm` + `/api/crm/konversation` + `/api/crm/todo/{id}/erledigen`; `app.js` APPS+NAV+`ladeCRM` +
+  Konversations-Fenster). Cache-Bust **v20**. 3 neue Tests; Gesamtsuite **250**. Preview verifiziert
+  (DM -> Klassifikation -> Store -> API -> UI -> Konversation).
+- **Warum:** Bauplan Teil A / A-Phasen 2+3. Kein Auto-Senden (Oeffentlichkeit = CEO-Tor). Damit ist **Teil A
+  code-komplett** (Live-Empfang wartet nur auf GATE B: Meta-App + INSTAGRAM_* in .env).
+- **Betroffen:** orchestrator/core/crm.py, orchestrator/core/hoa_tools.py, orchestrator/channels/web/app.py,
+  orchestrator/channels/web/static/app.js, orchestrator/channels/web/static/index.html,
+  orchestrator/channels/telegram/bot.py, orchestrator/tests/test_crm.py
+
 ## [2026-07-02 00:20] — Claude Code — A-Phase 1 Instagram-Anbindung (Code; GATE B offen)
 - **Was:** Capability-Modul `orchestrator/governance/instagram.py` (`InstagramAuth.from_env` +
   `InstagramMessaging`: Verify-Challenge, **HMAC-SHA256-Signaturpruefung**, Webhook-Parsing nur eingehender

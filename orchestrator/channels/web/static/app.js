@@ -18,6 +18,7 @@ const APPS = {
   lagebild: { icon: "📡", titel: "Lagebild", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Lagebild…</div></div>`, load: ladeLagebild },
   wissen: { icon: "🧠", titel: "Wissen", badge: () => 0, render: renderWissen, load: ladeWissen },
   investment: { icon: "📈", titel: "Investment", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Investment…</div></div>`, load: ladeInvestment },
+  crm: { icon: "🤝", titel: "Collab-CRM", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade CRM…</div></div>`, load: ladeCRM },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
   agenten: { icon: "🕸️", titel: "Agenten-Map", badge: () => 0, render: renderAgenten, load: ladeAgenten },
 };
@@ -72,6 +73,44 @@ async function investInsiderScan(btn) {
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Scannt…"; }
   try { await fetch("/api/investment/insider-scan", { method: "POST" }); } catch {}
   ladeInvestment();
+}
+// ---- Collab-CRM (CRO) ------------------------------------------------------
+let CRM = null;
+async function ladeCRM() {
+  try { CRM = await (await fetch("/api/crm")).json(); } catch { CRM = null; }
+  const win = WINS.crm; if (!win) return;
+  if (!CRM) { win.body.innerHTML = `<div class="app"><div class="leer">CRM nicht verfügbar.</div></div>`; return; }
+  const c = CRM, u = c.uebersicht || {}, pipe = u.pipeline || {};
+  const pipeHtml = ["neu", "in_gespraech", "angebot", "vereinbart", "abgelehnt"].map(s => `<div class="kv"><span class="k">${esc(s)}</span><b>${pipe[s] || 0}</b></div>`).join("");
+  const todos = (c.todos || []).map(t => `<div class="card">
+    <div class="head"><span class="badge in_umsetzung">To-do</span><b>${esc(t.firma)}</b></div>
+    <div class="desc">${esc(t.vorschlag)}</div>${t.begruendung ? `<div class="meta">${esc(t.begruendung)}</div>` : ""}
+    <button class="btn" data-crmtodo="${esc(t.id)}">✓ Erledigt</button></div>`).join("")
+    || `<div class="leer">Keine offenen To-dos.</div>`;
+  const firmen = (c.firmen || []).map(f => `<div class="row klick" data-crmfirma="${esc(f.firma)}" title="Verlauf von ${esc(f.firma)}"><span class="t">${esc(f.status)}</span><div><b>${esc(f.firma)}</b> <span class="meta">${esc(f.quelle || "")} · ${f.nachrichten || 0} Nachr.</span></div><span class="chev">›</span></div>`).join("")
+    || `<div class="leer">Noch keine Anfragen erfasst — kommt automatisch per Instagram-Webhook.</div>`;
+  win.body.innerHTML = `<div class="app">
+    <div class="kv"><span class="k">Firmen gesamt</span><b>${u.firmen_gesamt || 0}</b></div>
+    <div class="kv"><span class="k">Offene To-dos</span><b>${u.offene_todos || 0}</b></div>
+    <h3>Pipeline</h3>${pipeHtml}
+    <h3>Offene To-dos</h3>${todos}
+    <h3>Firmen (nach letztem Kontakt)</h3>${firmen}</div>`;
+}
+async function crmTodoErledigt(id) {
+  try { await fetch("/api/crm/todo/" + encodeURIComponent(id) + "/erledigen", { method: "POST" }); } catch {}
+  ladeCRM();
+}
+async function openCrmKonversation(firma) {
+  const wid = "crmk:" + firma;
+  if (WINS[wid]) { WINS[wid].focus(); return; }
+  const win = new WinBox("🤝  " + firma, { ...(istMobil() ? winGeom() : { width: "460px", height: "62%", x: "center", y: "center" }), class: ["modern"], onclose: () => { delete WINS[wid]; return false; } });
+  WINS[wid] = win;
+  win.body.innerHTML = `<div class="app"><div class="leer">Lade Verlauf…</div></div>`;
+  try {
+    const d = await (await fetch("/api/crm/konversation?firma=" + encodeURIComponent(firma))).json();
+    const msgs = (d.nachrichten || []).map(m => `<div class="row"><span class="t">${m.richtung === "ein" ? "⬅︎" : "➡︎"}</span><div><b>${esc(m.text)}</b><br><span class="meta">${esc(m.kategorie || "")}${m.ts ? " · " + esc(m.ts) : ""}</span></div></div>`).join("") || `<div class="leer">Kein Verlauf.</div>`;
+    win.body.innerHTML = `<div class="app detail"><div class="head"><b>${esc(firma)}</b></div>${msgs}</div>`;
+  } catch { win.body.innerHTML = `<div class="app"><div class="leer">Konnte Verlauf nicht laden.</div></div>`; }
 }
 // Detailansicht zu einem Wert (Aktie: Profil + Quote + News; Krypto: CoinGecko-Infos).
 async function openInvestDetail(symbol, asset) {
@@ -350,6 +389,7 @@ const NAV = [
   { id: "lagebild", icon: "📡", label: "Lagebild" },
   { id: "wissen", icon: "🧠", label: "Wissen" },
   { id: "investment", icon: "📈", label: "Investment" },
+  { id: "crm", icon: "🤝", label: "Collab-CRM" },
   { id: "research", icon: "🔍", label: "Research", count: () => STATE.research.length },
   { id: "meldungen", icon: "🔔", label: "Meldungen", count: () => STATE.meldungen.length },
   { id: "aktivitaet", icon: "📊", label: "Aktivität" },
@@ -565,6 +605,10 @@ document.addEventListener("click", (e) => {
   if (rm) { investWatchRemove(rm.dataset.invremove); return; }
   const inv = e.target.closest("[data-invsym]");
   if (inv) { openInvestDetail(inv.dataset.invsym, inv.dataset.invasset); return; }
+  const crmt = e.target.closest("[data-crmtodo]");
+  if (crmt) { crmTodoErledigt(crmt.dataset.crmtodo); return; }
+  const crmf = e.target.closest("[data-crmfirma]");
+  if (crmf) { openCrmKonversation(crmf.dataset.crmfirma); return; }
   const cmd = e.target.closest("[data-cmd]");
   if (cmd) { cmd.dataset.cmd === "talk" ? toggleVoice() : navTo(cmd.dataset.cmd); return; }
   const navi = e.target.closest("[data-app]");

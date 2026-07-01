@@ -36,6 +36,7 @@ class ToolContext:
     brain: object | None = None          # Second Brain (Wissensbasis) oder None
     insights: object | None = None       # Tages-Insights/Lagebild oder None
     investment: object | None = None     # InvestmentEngine (CIO, advisory) oder None
+    crm: object | None = None            # CrmStore (Collab-CRM, CRO) oder None
 
 
 def tool_specs() -> list[dict]:
@@ -267,6 +268,15 @@ def tool_specs() -> list[dict]:
                            "description": "Optionale Aktien-Symbole (sonst die Watchlist)."}}, []),
         _spec("insider_signale_zeigen", "Listet die neuesten Insider-Signale (Symbol, Cluster, Summe, "
               "Rolle, Konfidenz, Filing-Link).", {}, []),
+        _spec("crm_zeigen", "Zeigt das Collab-CRM (CRO): Pipeline-Uebersicht, Firmen (Status/letzter Kontakt) "
+              "und offene To-do-Vorschlaege. Nur Lesen.", {}, []),
+        _spec("crm_konversation", "Zeigt den Nachrichtenverlauf einer Firma im Collab-CRM.",
+              {"firma": _str("Firmen-/Absendername wie im CRM.")}, ["firma"]),
+        _spec("crm_todo_erledigen", "Markiert einen Collab-CRM-To-do-Vorschlag als erledigt.",
+              {"todo_id": _str("Die To-do-ID (T-...).")}, ["todo_id"]),
+        _spec("crm_status_setzen", "Setzt die Pipeline-Stufe einer Firma im Collab-CRM "
+              "(neu|in_gespraech|angebot|vereinbart|abgelehnt).",
+              {"firma": _str("Firmenname."), "status": _str("Pipeline-Stufe.")}, ["firma", "status"]),
         _spec("watchlist_hinzufuegen", "Nimmt einen Wert in die Investment-Watchlist auf.",
               {"symbol": _str("Tickersymbol (AAPL) oder CoinGecko-ID (bitcoin)."),
                "asset": _str("'aktie' oder 'krypto' (Default aktie).")}, ["symbol"]),
@@ -735,6 +745,38 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         if ctx.core.changelog:
             ctx.core.changelog("CIO", f"Watchlist ergaenzt: {symbol.upper()}", "CEO-Anweisung", "investment")
         return {"ok": True, "symbol": symbol.upper()}
+
+    if name in ("crm_zeigen", "crm_konversation", "crm_todo_erledigen", "crm_status_setzen"):
+        if ctx.crm is None:
+            return {"fehler": "Collab-CRM (CRO) nicht verfuegbar."}
+        crm = ctx.crm
+        if name == "crm_zeigen":
+            return _redact_obj({"uebersicht": crm.uebersicht(),
+                                "firmen": [{"firma": f.get("firma"), "status": f.get("status"),
+                                            "nachrichten": f.get("nachrichten"), "quelle": f.get("quelle"),
+                                            "letzter_kontakt": f.get("letzter_kontakt")}
+                                           for f in crm.firmen()][:30],
+                                "todos": [{"id": t.get("id"), "firma": t.get("firma"),
+                                           "vorschlag": t.get("vorschlag"), "faellig": t.get("faellig")}
+                                          for t in crm.todos(nur_offen=True)][:30]}, sec)
+        if name == "crm_konversation":
+            firma = (args.get("firma") or "").strip()
+            msgs = crm.konversation(firma)
+            return _redact_obj({"firma": firma, "anzahl": len(msgs),
+                                "nachrichten": [{"richtung": m.get("richtung"), "text": m.get("text"),
+                                                 "kategorie": m.get("kategorie"), "ts": m.get("ts")}
+                                                for m in msgs][-30:]}, sec)
+        if name == "crm_todo_erledigen":
+            crm.todo_erledigen((args.get("todo_id") or "").strip())
+            return {"ok": True}
+        # crm_status_setzen
+        firma = (args.get("firma") or "").strip()
+        stufe = (args.get("status") or "").strip()
+        try:
+            crm.status_setzen(firma, stufe)
+        except ValueError as exc:
+            return {"fehler": str(exc)}
+        return {"ok": True, "firma": firma, "status": stufe}
 
     if name in _GOOGLE_TOOLS:
         gw = ctx.google

@@ -53,6 +53,28 @@ class TestCrmStore(unittest.TestCase):
         self.assertEqual(u["pipeline"]["angebot"], 1)
         self.assertEqual(u["pipeline"]["neu"], 1)
 
+    def test_klassifikation_regelbasiert(self):
+        from orchestrator.core.crm import klassifiziere
+        self.assertEqual(klassifiziere("Hallo, wir haben Interesse an einer Kooperation!"), "kooperation")
+        self.assertEqual(klassifiziere("Sponsoring-Anfrage fuer euren Kanal"), "kooperation")
+        self.assertEqual(klassifiziere("Wie komme ich ins Stadion?"), "unklar")
+
+    def test_verarbeite_eingang_kooperation_legt_todo(self):
+        r = self.s.verarbeite_eingang("BrandX", "Sponsoring-Anfrage fuer eure Reichweite",
+                                      quelle="instagram", extern_id="ig9")
+        self.assertEqual(r["kategorie"], "kooperation")
+        self.assertTrue(r["mid"] and r["todo_id"])       # neue Kooperation -> automatisch To-do
+        self.assertEqual(len(self.s.todos()), 1)
+        r2 = self.s.verarbeite_eingang("BrandX", "noch eine Kooperation", extern_id="ig10")
+        self.assertEqual(r2["todo_id"], "")              # zweite Nachricht -> kein zweites To-do
+        self.assertEqual(len(self.s.todos()), 1)
+
+    def test_verarbeite_eingang_privat_kein_todo(self):
+        r = self.s.verarbeite_eingang("FanY", "Super Spiel gestern!", extern_id="ig11")
+        self.assertEqual(r["kategorie"], "unklar")
+        self.assertEqual(r["todo_id"], "")
+        self.assertEqual(len(self.s.todos()), 0)
+
     def test_leak_schutz_beim_schreiben(self):
         s = CrmStore(Path(self.dir.name) / "l2.jsonl", secrets=["GEHEIMTOKEN123"])
         s.nachricht_erfassen("Acme", "mein token ist GEHEIMTOKEN123", extern_id="a")

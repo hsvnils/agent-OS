@@ -129,12 +129,14 @@ def _build_ctx(cfg: dict, secrets: dict):
     investment = InvestmentEngine(
         MarketData(secrets=secrets), InvestmentStore(ROOT / "investment" / "log.jsonl", secrets=secret_values),
         notify=notifications.enqueue, brain=brain.merken)
+    from ...core.crm import CrmStore
+    crm = CrmStore(ROOT / "crm" / "log.jsonl", secrets=secret_values, changelog=changelog)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,
                        notifications=notifications, agenda=agenda, secret_dict=secrets,
                        kosten=kosten, aktivitaet=aktivitaet, visuals=[],
-                       brain=brain, insights=insights, investment=investment), secret_values
+                       brain=brain, insights=insights, investment=investment, crm=crm), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:

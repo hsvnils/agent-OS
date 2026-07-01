@@ -651,10 +651,55 @@ async def instagram_webhook(request: Request):
     erfasst = 0
     for n in ig.nachrichten_aus_webhook(payload):
         absender = n.get("absender") or "unbekannt"
-        if crm_store.nachricht_erfassen(absender, n["text"], quelle="instagram", richtung="ein",
-                                        absender=absender, extern_id=n.get("extern_id", "")):
-            erfasst += 1
+        r = crm_store.verarbeite_eingang(absender, n["text"], quelle="instagram", absender=absender,
+                                         extern_id=n.get("extern_id", ""))
+        if not r.get("mid"):
+            continue
+        erfasst += 1
+        if r.get("kategorie") == "kooperation":   # nur Kooperationsanfragen melden (kein Spam bei Privatem)
+            try:
+                notifications.enqueue(f"Neue Kooperations-DM von {r['firma']} (Instagram): {n['text'][:180]}",
+                                      abteilung="CRO", kategorie="anliegen",
+                                      detail="Collab-CRM -> pruefen/antworten (kein Auto-Senden).")
+            except Exception:
+                pass
+            try:
+                brain.merken(f"Instagram-Kooperationsanfrage von {r['firma']}: {n['text'][:240]}",
+                             titel=f"Collab-Anfrage {r['firma']}", tags=["crm", "cro", "instagram"],
+                             quelle="crm", ref="crm:" + (n.get("extern_id") or r["mid"]))
+            except Exception:
+                pass
     return JSONResponse({"ok": True, "erfasst": erfasst})
+
+
+@app.get("/api/crm")
+def crm():
+    """Collab-CRM (CRO): Pipeline-Uebersicht, Firmen (nach letztem Kontakt) + offene To-dos. Nur Lesen."""
+    firmen = crm_store.firmen()
+    firmen.sort(key=lambda f: f.get("letzter_kontakt") or "", reverse=True)
+    return {
+        "uebersicht": crm_store.uebersicht(),
+        "firmen": [{"firma": f.get("firma"), "status": f.get("status"), "nachrichten": f.get("nachrichten"),
+                    "quelle": f.get("quelle"), "letzter_kontakt": f.get("letzter_kontakt")}
+                   for f in firmen][:40],
+        "todos": [{"id": t.get("id"), "firma": t.get("firma"), "vorschlag": t.get("vorschlag"),
+                   "begruendung": t.get("begruendung"), "ts": t.get("ts")}
+                  for t in crm_store.todos(nur_offen=True)][:40],
+    }
+
+
+@app.get("/api/crm/konversation")
+def crm_konversation(firma: str):
+    msgs = crm_store.konversation(firma)
+    return {"firma": firma, "nachrichten": [{"richtung": m.get("richtung"), "text": m.get("text"),
+            "kategorie": m.get("kategorie"), "ts": m.get("ts"), "quelle": m.get("quelle")}
+            for m in msgs][-50:]}
+
+
+@app.post("/api/crm/todo/{todo_id}/erledigen")
+def crm_todo_erledigen(todo_id: str):
+    crm_store.todo_erledigen(todo_id)
+    return JSONResponse({"ok": True})
 
 
 @app.get("/api/investment/detail")
