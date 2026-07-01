@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 00:20] — Claude Code — A-Phase 1 Instagram-Anbindung (Code; GATE B offen)
+- **Was:** Capability-Modul `orchestrator/governance/instagram.py` (`InstagramAuth.from_env` +
+  `InstagramMessaging`: Verify-Challenge, **HMAC-SHA256-Signaturpruefung**, Webhook-Parsing nur eingehender
+  Text; `MockInstagramMessaging`). Webhook-Routen **GET/POST `/api/webhook/instagram`** in `app.py`
+  (Signatur pflicht, eingehende DMs -> `CrmStore`, quelle=instagram, Dedup via Message-ID). `CrmStore` in
+  `app.py` verdrahtet. 7 Tests (gruen; Gesamtsuite **247**).
+- **Warum:** Bauplan Teil A / A-Phase 1. **Kein Vercel** (Webhook laeuft ueber die bestehende HTTPS-URL). Live-
+  Aktivierung = **GATE B** (CEO richtet Meta-App ein, `INSTAGRAM_*` in `.env`, CEO-Tor + CISO) -- Code ist
+  bereit + mock-getestet.
+- **Betroffen:** orchestrator/governance/instagram.py, orchestrator/channels/web/app.py,
+  orchestrator/tests/test_instagram.py
+
 ## [2026-07-02 00:05] — Claude Code (als Head of Agents, CEO-Freigabe) — A-Phase 0 Collab-CRM
 - **Was:** CRO-Charta (`agents/04_cro.md`) um **Collab-CRM** ergaenzt (6 Punkte: Auftrag, „Ausdruecklich NICHT"
   kein Auto-Senden, Tools, Aufgabenkatalog, Workflow, Unter-Agent). Neuer **kanalagnostischer** `CrmStore`

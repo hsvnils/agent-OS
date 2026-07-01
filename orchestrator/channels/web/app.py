@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 
 from ...core.antraege import Antraege
 from ...core.brain import Brain
+from ...core.crm import CrmStore
 from ...core.briefing import Agenda
 from ...core.insights import Insights
 from ...core.notifications import Notifications
@@ -36,6 +37,7 @@ notifications = Notifications(ROOT / "notifications" / "log.jsonl")
 research = ResearchTickets(ROOT / "research" / "log.jsonl", changelog=_changelog)
 agenda = Agenda(ROOT / "agenda" / "log.jsonl")
 brain = Brain(ROOT / "brain" / "log.jsonl")
+crm_store = CrmStore(ROOT / "crm" / "log.jsonl", changelog=_changelog)
 # Internes Lagebild (ohne Google); fuer das volle Lagebild (Termine/Mails) nutzt der Endpunkt die LUNA-ctx.
 insights_intern = Insights(antraege=antraege, research=research, agenda=agenda)
 # Investment (Phase 2, advisory): Engine + Store. MarketData wird lazy aus den .env-Keys gebaut.
@@ -615,6 +617,44 @@ async def investment_insider_scan():
     r = await asyncio.to_thread(eng.insider_scan)
     return JSONResponse({"ok": True, "signale": len(r.get("signale", [])),
                          "hinweise": r.get("hinweise", []), "investment": investment()})
+
+
+# -- Collab-CRM: Instagram-Webhook (nur Empfang/Tracken -- kein Senden) --
+def _instagram():
+    _secret("X")  # befuellt _SECRETS_CACHE["d"]
+    from ...governance.instagram import InstagramAuth, InstagramMessaging
+    return InstagramMessaging(InstagramAuth.from_env(_SECRETS_CACHE.get("d", {})))
+
+
+@app.get("/api/webhook/instagram")
+async def instagram_verify(request: Request):
+    """Meta-Verify-Handshake (GET): gibt hub.challenge zurueck, wenn der Verify-Token stimmt."""
+    p = request.query_params
+    challenge = _instagram().verify_challenge(p.get("hub.mode", ""), p.get("hub.verify_token", ""),
+                                              p.get("hub.challenge", ""))
+    if challenge is None:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Verify fehlgeschlagen.")
+    return Response(content=challenge, media_type="text/plain")
+
+
+@app.post("/api/webhook/instagram")
+async def instagram_webhook(request: Request):
+    """Eingehende Instagram-DMs -> CrmStore. HMAC-Signatur pflicht. Nur Empfang, kein Senden."""
+    ig = _instagram()
+    body = await request.body()
+    if not ig.signatur_gueltig(body, request.headers.get("x-hub-signature-256", "")):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Signatur ungueltig.")
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except Exception:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Payload kein JSON.")
+    erfasst = 0
+    for n in ig.nachrichten_aus_webhook(payload):
+        absender = n.get("absender") or "unbekannt"
+        if crm_store.nachricht_erfassen(absender, n["text"], quelle="instagram", richtung="ein",
+                                        absender=absender, extern_id=n.get("extern_id", "")):
+            erfasst += 1
+    return JSONResponse({"ok": True, "erfasst": erfasst})
 
 
 @app.get("/api/investment/detail")
