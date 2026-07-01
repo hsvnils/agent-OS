@@ -35,6 +35,13 @@ def _http_json(url: str, headers: dict | None = None, timeout: int = 15):
         return json.loads(r.read().decode("utf-8"))
 
 
+def _num(v) -> float:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 class MarketData:
     """Fassade ueber die Daten-Provider. `secrets` = geparste .env (Key->Wert). `fetch` injizierbar (Tests)."""
 
@@ -236,3 +243,44 @@ class MarketData:
         except Exception as exc:
             return {"ok": False, "provider": "SEC EDGAR", "fehler": str(exc)[:160]}
         return {"ok": True, "provider": "SEC EDGAR", "name": d.get("name"), "cik": cik10}
+
+    # ---- Insider-Transaktionen (SEC Form 4) ---------------------------------
+    def insider_transactions(self, symbol: str, *, seit: str = "") -> dict:
+        """Oeffentliche Insider-Transaktionen (SEC **Form 4**) fuer ein Symbol -- ueber Finnhub
+        (`/stock/insider-transactions`, saubere JSON). Normalisiert zu Kauf/Verkauf je Insider; nur die
+        oeffentlichen Pflichtmeldungen, keine nicht-oeffentliche Information. Ohne Finnhub-Key: Fall-B
+        (keyless SEC-EDGAR-Form-4-XML-Parsing ist eine spaetere Ausbaustufe). `_fetch` injizierbar (Tests)."""
+        key = self._key("FINNHUB_API_KEY")
+        if not key:
+            return self._fallb("Finnhub", "FINNHUB_API_KEY")
+        from datetime import date, timedelta
+        seit = seit or (date.today() - timedelta(days=90)).isoformat()
+        url = (f"https://finnhub.io/api/v1/stock/insider-transactions?symbol={urllib.parse.quote(symbol)}"
+               f"&from={seit}&token={key}")
+        try:
+            d = self._fetch(url)
+        except Exception as exc:
+            return {"ok": False, "provider": "Finnhub", "fehler": str(exc)[:160]}
+        txns: list[dict] = []
+        for x in (d.get("data") or []):
+            code = (x.get("transactionCode") or "").upper()
+            if code not in ("P", "S"):   # P=Kauf, S=Verkauf; Optionen/Grants/Sonstige ignorieren
+                continue
+            anzahl = _num(x.get("change"))
+            preis = _num(x.get("transactionPrice"))
+            txns.append({
+                "symbol": symbol.upper(),
+                "insider": x.get("name") or "",
+                "rolle": x.get("position") or x.get("role") or "",
+                "transaktion": "kauf" if code == "P" else "verkauf",
+                "anzahl": anzahl,
+                "preis": preis,
+                "wert": round(abs(anzahl) * preis, 2) if (anzahl and preis) else None,
+                "datum": x.get("transactionDate") or x.get("filingDate") or "",
+                "code": code,
+            })
+        # Klickbarer Beleg: SEC-EDGAR-Form-4-Uebersicht des Emittenten.
+        filing_url = ("https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=4&dateb=&owner=include"
+                      f"&count=40&company={urllib.parse.quote(symbol.upper())}")
+        return {"ok": True, "provider": "Finnhub", "symbol": symbol.upper(),
+                "transaktionen": txns, "quelle": "SEC Form 4 (via Finnhub)", "filing_url": filing_url}

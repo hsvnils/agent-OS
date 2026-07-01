@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-01 23:15] — Claude Code — B-Phase 1 Insider-Datenanbindung (gratis)
+- **Was:** `MarketData.insider_transactions()` (SEC **Form 4** via Finnhub, normalisiert Kauf/Verkauf je
+  Insider, Wert-Berechnung, Filing-Link, **Fall-B** ohne Key) + `InvestmentStore`-Tabelle `insider_signals`
+  (`insider_signal_add`/`insider_signals`). 4 neue Tests (Mock, gruen; Gesamtsuite **231**).
+- **Warum:** Bauplan Teil B / Roadmap Phase 2.5 -- gratis Datenanbindung fuers Insider-Screening (kein neuer
+  bezahlter Dienst, SEC EDGAR/Finnhub-Free).
+- **Betroffen:** orchestrator/investment/providers.py, orchestrator/investment/store.py,
+  orchestrator/tests/test_investment_providers.py, orchestrator/tests/test_investment_store.py
+
 ## [2026-07-01 23:06] — Claude Code (als Head of Agents, CEO-Freigabe) — B-Phase 0 Insider-Screening
 - **Was:** CIO-Charta (`agents/16_cio.md`) um Insider-/Smart-Money-Screen (SEC Form 4) ergaenzt (5 Punkte:
   Auftrag, „Ausdruecklich NICHT" rechtliche Klarstellung nur oeffentliche Pflichtmeldungen, Tools, Aufgaben-

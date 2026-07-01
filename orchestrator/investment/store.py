@@ -15,7 +15,8 @@ from pathlib import Path
 
 from ..governance.leak_guard import redact
 
-TABELLEN = ("watchlist", "screening", "forecasts", "actuals", "scorecard", "suggestions", "mode", "positions")
+TABELLEN = ("watchlist", "screening", "forecasts", "actuals", "scorecard", "suggestions", "mode",
+            "positions", "insider_signals")
 MODI = ("advisory", "paper", "live")
 
 
@@ -99,6 +100,21 @@ class InvestmentStore:
         return self.add("suggestions", {"symbol": symbol.upper(), "aktion": aktion, "grund": grund,
                                         "quellen": quellen or [], "konfidenz": konfidenz,
                                         "risiko_label": risiko_label, "status": "offen"})
+
+    # -- insider_signals (Insider-/Smart-Money-Signale, SEC Form 4) --
+    def insider_signal_add(self, symbol: str, *, insider: str, rolle: str = "", transaktion: str = "kauf",
+                           betrag=None, anzahl=None, datum: str = "", quelle: str = "", filing_url: str = "",
+                           bewertung: str = "", konfidenz: float = 0.0, cluster: int = 1,
+                           risiko_label: str = "spekulativ") -> str:
+        return self.add("insider_signals", {"symbol": symbol.upper(), "insider": insider, "rolle": rolle,
+                                            "transaktion": transaktion, "betrag": betrag, "anzahl": anzahl,
+                                            "datum": datum, "quelle": quelle, "filing_url": filing_url,
+                                            "bewertung": bewertung, "konfidenz": konfidenz, "cluster": cluster,
+                                            "risiko_label": risiko_label, "status": "offen"})
+
+    def insider_signals(self, limit: int = 200) -> list[dict]:
+        """Neueste Insider-Signale zuerst (fuer Anzeige/Alerts)."""
+        return list(reversed(self.list("insider_signals")))[:limit]
 
     # -- intern --
     def _append(self, event: dict) -> None:

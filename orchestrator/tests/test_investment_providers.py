@@ -72,6 +72,32 @@ class TestProviders(unittest.TestCase):
         self.assertTrue(r["ok"])
         self.assertEqual(r["name"], "Apple Inc.")
 
+    def test_insider_transactions_normalisiert(self):
+        fetch = FakeFetch({"insider-transactions": {"data": [
+            {"name": "Doe John", "position": "CEO", "transactionCode": "P", "change": 1000,
+             "transactionPrice": 10.0, "transactionDate": "2026-06-20"},
+            {"name": "Roe Jane", "position": "Director", "transactionCode": "P", "change": 500,
+             "transactionPrice": 12.0, "transactionDate": "2026-06-21"},
+            {"name": "Smith Sam", "position": "CFO", "transactionCode": "S", "change": -300,
+             "transactionPrice": 11.0, "transactionDate": "2026-06-22"},
+            {"name": "Grant Guy", "position": "VP", "transactionCode": "A", "change": 200,
+             "transactionPrice": 0, "transactionDate": "2026-06-19"},
+        ]}})
+        md = MarketData(secrets={"FINNHUB_API_KEY": "k"}, fetch=fetch)
+        r = md.insider_transactions("XYZ")
+        self.assertTrue(r["ok"])
+        self.assertEqual(len(r["transaktionen"]), 3)             # Grant (Code 'A') rausgefiltert
+        kaeufe = [t for t in r["transaktionen"] if t["transaktion"] == "kauf"]
+        self.assertEqual(len(kaeufe), 2)
+        self.assertEqual(kaeufe[0]["wert"], 10000.0)             # 1000 * 10.0
+        self.assertEqual(kaeufe[0]["rolle"], "CEO")
+        self.assertIn("sec.gov", r["filing_url"])
+
+    def test_insider_transactions_fall_b_ohne_key(self):
+        r = MarketData(secrets={}).insider_transactions("XYZ")
+        self.assertTrue(r["fall_b"])
+        self.assertIn("FINNHUB_API_KEY", r["hinweis"])
+
     def test_suche_aktie_und_krypto(self):
         fetch = FakeFetch({
             "finnhub.io": {"result": [{"symbol": "AAPL", "description": "APPLE INC"},

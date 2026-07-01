@@ -42,6 +42,17 @@ class TestInvestmentStore(unittest.TestCase):
         self.assertEqual(len(self.s.list("forecasts")), 1)
         self.assertEqual(self.s.list("suggestions")[0]["risiko_label"], "spekulativ")
 
+    def test_insider_signal_add_und_list(self):
+        self.s.insider_signal_add("aapl", insider="Doe John", rolle="CEO", transaktion="kauf",
+                                  betrag=10000, anzahl=1000, datum="2026-06-20", quelle="SEC Form 4",
+                                  filing_url="http://sec.gov/x", cluster=2, konfidenz=0.6)
+        sigs = self.s.insider_signals()
+        self.assertEqual(len(sigs), 1)
+        self.assertEqual(sigs[0]["symbol"], "AAPL")
+        self.assertEqual(sigs[0]["cluster"], 2)
+        self.assertEqual(sigs[0]["status"], "offen")
+        self.assertTrue(self.s.list("insider_signals"))
+
     def test_unbekannte_tabelle(self):
         with self.assertRaises(ValueError):
             self.s.add("gibtsnicht", {})
