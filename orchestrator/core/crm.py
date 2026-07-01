@@ -1,0 +1,152 @@
+"""Collab-CRM-Store (kanalagnostisch, event-sourced JSONL).
+
+Erfasst eingehende Kooperations-/Sponsoring-Anfragen aus verschiedenen Kanaelen (Feld `quelle`:
+instagram|telegram|gmail|manuell) als leichtgewichtiges CRM: Unternehmen/Kontakt, Nachrichten-Verlauf,
+Pipeline-Status und To-do-Vorschlaege. **Nur lesen/tracken/vorschlagen -- kein Senden** (Oeffentlichkeit =
+CEO-Tor). Fundament fuers geplante Partner-/Akten-System; Instagram ist nur der erste Kanal.
+
+Append-only JSONL; der Zustand je Firma wird aus den Events gefaltet. Leck-geschuetzt beim Schreiben.
+Gitignored + vom NAS-Sync ausgeschlossen. Abgegrenzt von Antraegen (Freigaben) und Second Brain (Wissen).
+"""
+from __future__ import annotations
+
+import json
+import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import Callable
+
+from ..governance.leak_guard import redact
+
+STUFEN = ("neu", "in_gespraech", "angebot", "vereinbart", "abgelehnt")
+QUELLEN = ("instagram", "telegram", "gmail", "manuell")
+RICHTUNGEN = ("ein", "aus")
+
+
+def _now() -> str:
+    return datetime.now().isoformat(timespec="seconds")
+
+
+def _key(firma: str) -> str:
+    """Normalisierter Firmen-Schluessel (case-insensitiv) fuer die Zuordnung der Events."""
+    return (firma or "").strip().lower()
+
+
+def _id(prefix: str) -> str:
+    return prefix + "-" + datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:4]
+
+
+class CrmStore:
+    def __init__(self, path: str | Path, *, secrets: list[str] | None = None,
+                 changelog: Callable[..., None] | None = None):
+        self.path = Path(path)
+        self.secrets = secrets or []
+        self.changelog = changelog
+
+    # -- schreiben --
+    def nachricht_erfassen(self, firma: str, text: str, *, quelle: str = "manuell", richtung: str = "ein",
+                           absender: str = "", extern_id: str = "") -> str:
+        """Erfasst eine (eingehende) Nachricht einer Firma. `extern_id` (z. B. Meta-Message-ID) dedupliziert
+        Webhook-Wiederholungen. Neue Firma bekommt automatisch Status 'neu'. Gibt "" bei leer/Duplikat."""
+        firma = (firma or "").strip()
+        if not firma or not (text or "").strip():
+            return ""
+        if extern_id and any(e.get("extern_id") == extern_id
+                             for e in self._events() if e.get("event") == "nachricht"):
+            return ""  # Dedup: schon erfasst (Webhook-Retry)
+        mid = _id("M")
+        self._append({"ts": _now(), "id": mid, "event": "nachricht", "firma": firma, "quelle": quelle,
+                      "richtung": richtung, "text": text, "absender": absender, "extern_id": extern_id})
+        if not self._letzter_status(firma):
+            self._append({"ts": _now(), "id": _id("S"), "event": "status", "firma": firma, "status": "neu"})
+        return mid
+
+    def status_setzen(self, firma: str, status: str) -> str:
+        if status not in STUFEN:
+            raise ValueError(f"Unbekannter Status: {status}")
+        sid = _id("S")
+        self._append({"ts": _now(), "id": sid, "event": "status", "firma": (firma or "").strip(),
+                      "status": status})
+        return sid
+
+    def todo_hinzufuegen(self, firma: str, vorschlag: str, *, faellig: str = "", begruendung: str = "") -> str:
+        tid = _id("T")
+        self._append({"ts": _now(), "id": tid, "event": "todo", "firma": (firma or "").strip(),
+                      "vorschlag": vorschlag, "faellig": faellig, "begruendung": begruendung, "status": "offen"})
+        return tid
+
+    def todo_erledigen(self, todo_id: str) -> bool:
+        self._append({"ts": _now(), "id": _id("TE"), "event": "todo_erledigt", "todo_id": todo_id})
+        return True
+
+    # -- lesen (gefaltet) --
+    def _letzter_status(self, firma: str) -> str | None:
+        st, k = None, _key(firma)
+        for e in self._events():
+            if e.get("event") == "status" and _key(e.get("firma")) == k:
+                st = e.get("status")
+        return st
+
+    def konversation(self, firma: str) -> list[dict]:
+        k = _key(firma)
+        return [e for e in self._events() if e.get("event") == "nachricht" and _key(e.get("firma")) == k]
+
+    def firmen(self) -> list[dict]:
+        """Gefalteter Stand je Firma: Status, Nachrichtenzahl, letzter Kontakt, Quelle."""
+        firmen: dict[str, dict] = {}
+        for e in self._events():
+            ev, k = e.get("event"), _key(e.get("firma"))
+            if not k:
+                continue
+            f = firmen.setdefault(k, {"firma": e.get("firma"), "status": "neu", "nachrichten": 0,
+                                      "letzter_kontakt": None, "quelle": e.get("quelle")})
+            if e.get("firma"):
+                f["firma"] = e.get("firma")
+            if ev == "nachricht":
+                f["nachrichten"] += 1
+                f["letzter_kontakt"] = e.get("ts")
+                f["quelle"] = e.get("quelle") or f["quelle"]
+            elif ev == "status":
+                f["status"] = e.get("status", f["status"])
+        return list(firmen.values())
+
+    def todos(self, *, nur_offen: bool = True) -> list[dict]:
+        erledigt = {e.get("todo_id") for e in self._events() if e.get("event") == "todo_erledigt"}
+        out = []
+        for e in self._events():
+            if e.get("event") != "todo":
+                continue
+            status = "erledigt" if e.get("id") in erledigt else "offen"
+            if nur_offen and status == "erledigt":
+                continue
+            out.append({k: e.get(k) for k in ("id", "firma", "vorschlag", "faellig", "begruendung", "ts")}
+                       | {"status": status})
+        return out
+
+    def uebersicht(self) -> dict:
+        firmen = self.firmen()
+        pipeline = {s: 0 for s in STUFEN}
+        for f in firmen:
+            pipeline[f.get("status", "neu")] = pipeline.get(f.get("status", "neu"), 0) + 1
+        return {"firmen_gesamt": len(firmen), "pipeline": pipeline,
+                "offene_todos": len(self.todos(nur_offen=True))}
+
+    # -- intern --
+    def _append(self, event: dict) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        line = redact(json.dumps(event, ensure_ascii=False), self.secrets)
+        with self.path.open("a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+
+    def _events(self) -> list[dict]:
+        if not self.path.exists():
+            return []
+        out: list[dict] = []
+        for line in self.path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    out.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+        return out

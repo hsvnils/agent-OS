@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 00:05] — Claude Code (als Head of Agents, CEO-Freigabe) — A-Phase 0 Collab-CRM
+- **Was:** CRO-Charta (`agents/04_cro.md`) um **Collab-CRM** ergaenzt (6 Punkte: Auftrag, „Ausdruecklich NICHT"
+  kein Auto-Senden, Tools, Aufgabenkatalog, Workflow, Unter-Agent). Neuer **kanalagnostischer** `CrmStore`
+  (`orchestrator/core/crm.py`, event-sourced JSONL `crm/log.jsonl`, Quelle instagram|telegram|gmail|manuell,
+  Pipeline neu->in_gespraech->angebot->vereinbart|abgelehnt, To-dos, Dedup via extern_id). 6 Tests (gruen;
+  Gesamtsuite **240**). `CRM_PLAN.md`; `crm/log.jsonl` gitignored.
+- **Warum:** Bauplan Teil A; CEO-Entscheidung File-Store statt Supabase + kanalagnostisch. Charta-Diff vorab
+  freigegeben (AGENTS.md 3.3).
+- **Betroffen:** agents/04_cro.md, orchestrator/core/crm.py, orchestrator/tests/test_crm.py, CRM_PLAN.md, .gitignore
+
 ## [2026-07-01 23:50] — Claude Code — B-Phase 3 Insider-Anzeige (LUNA-OS) + Teil B fertig
 - **Was:** `/api/investment` liefert jetzt `insider`-Signale; neuer POST `/api/investment/insider-scan`.
   Investment-App (`static/app.js`) um Button **„Insider-Scan"** + Sektion **„Insider-Signale (SEC Form 4)"**

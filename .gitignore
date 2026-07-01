@@ -50,6 +50,7 @@ watch/log.jsonl
 finance/kosten-log.jsonl
 brain/log.jsonl
 investment/log.jsonl
+crm/log.jsonl
 .claude/preview-logs/
 backups/
 
