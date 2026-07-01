@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 00:35] — Claude Code — Instagram-Webhook: robuster Payload-Parser (beide Formate)
+- **Was:** `nachrichten_aus_webhook()` parst jetzt auch `entry[].changes[].value` + Metas flache Feldprobe
+  `{"field":"messages","value":{...}}`, nicht nur `entry[].messaging[]`. **Live verifiziert:** Metas
+  „messages"-Feldprobe kommt an (`sig_valid=True`), wird geparst, im `CrmStore` gespeichert + klassifiziert.
+  Temporaeres Diagnose-Logging wieder entfernt. 2 neue Tests; Suite gruen.
+- **Warum:** Meta signiert+liefert Webhooks korrekt (Instagram-App-Secret stimmt, Basic-Auth-Fix wirkt). Echte
+  Fremd-DMs bleiben **Meta-seitig** blockiert bis App-Review/Veroeffentlichung -- der Dev-Modus liefert nur
+  Test-Events + DMs zwischen App-Rollen-Accounts (dokumentierter Meta-Gate, kein Code-Problem).
+- **Betroffen:** orchestrator/governance/instagram.py, orchestrator/channels/web/app.py,
+  orchestrator/tests/test_instagram.py
+
 ## [2026-07-02 00:07] — Claude Code — Fix: Instagram-Webhook von LUNA-OS-Basic-Auth ausnehmen
 - **Was:** `app.py` `auth`-Dependency nimmt `/api/webhook/*` von der HTTP-Basic-Auth aus (Request-Pfad-Check).
   Der Webhook sichert sich selbst -- GET ueber den Verify-Token, POST ueber die HMAC-Signatur. Lokal

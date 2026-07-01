@@ -75,20 +75,31 @@ class InstagramMessaging:
 
     @staticmethod
     def nachrichten_aus_webhook(payload: dict) -> list[dict]:
-        """Normalisiert einen Instagram-Messaging-Webhook zu [{extern_id, absender, text, ts}] --
-        nur echte eingehende Text-Nachrichten (keine Echos/Reactions/Read-Events/Attachments)."""
+        """Normalisiert einen Instagram-Messaging-Webhook zu [{extern_id, absender, text, ts}] -- nur echte
+        eingehende Text-Nachrichten (keine Echos/Reactions/Read-Events/Attachments). Robust gegen mehrere
+        Payload-Formen: reales Envelope `entry[].messaging[]` bzw. `entry[].changes[].value`, sowie Metas
+        flache Feldprobe `{"field":"messages","value":{...}}`."""
+        payload = payload or {}
+        rohe: list[dict] = []
+        for entry in payload.get("entry", []):
+            rohe.extend(entry.get("messaging", []) or [])
+            for ch in entry.get("changes", []) or []:                 # Feld-Abo-Form (changes[].value)
+                if ch.get("field") == "messages" and isinstance(ch.get("value"), dict):
+                    rohe.append(ch["value"])
+        if not rohe and payload.get("field") == "messages" and isinstance(payload.get("value"), dict):
+            rohe.append(payload["value"])                             # Metas flache Feldprobe
+
         out = []
-        for entry in (payload or {}).get("entry", []):
-            for m in entry.get("messaging", []):
-                msg = m.get("message") or {}
-                if msg.get("is_echo"):
-                    continue  # eigene ausgehende Nachricht
-                text = (msg.get("text") or "").strip()
-                if not text:
-                    continue  # nur Text (Attachments/Reactions ignorieren)
-                out.append({"extern_id": msg.get("mid") or "",
-                            "absender": (m.get("sender") or {}).get("id", ""),
-                            "text": text, "ts": m.get("timestamp")})
+        for m in rohe:
+            msg = m.get("message") or {}
+            if msg.get("is_echo"):
+                continue  # eigene ausgehende Nachricht
+            text = (msg.get("text") or "").strip()
+            if not text:
+                continue  # nur Text (Attachments/Reactions ignorieren)
+            out.append({"extern_id": msg.get("mid") or "",
+                        "absender": (m.get("sender") or {}).get("id", ""),
+                        "text": text, "ts": m.get("timestamp")})
         return out
 
 

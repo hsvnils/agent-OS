@@ -35,6 +35,22 @@ class TestInstagram(unittest.TestCase):
         self.assertEqual(ns[0]["absender"], "user1")
         self.assertIn("kooperieren", ns[0]["text"])
 
+    def test_nachrichten_feldprobe_flach(self):
+        # Metas "Feldprobe" sendet ein flaches {"field":"messages","value":{...}}
+        payload = {"field": "messages", "value": {"sender": {"id": "12334"}, "recipient": {"id": "23245"},
+                   "timestamp": "1527459824", "message": {"mid": "random_mid", "text": "random_text"}}}
+        ns = InstagramMessaging.nachrichten_aus_webhook(payload)
+        self.assertEqual(len(ns), 1)
+        self.assertEqual(ns[0]["absender"], "12334")
+        self.assertEqual(ns[0]["text"], "random_text")
+
+    def test_nachrichten_changes_form(self):
+        payload = {"object": "instagram", "entry": [{"changes": [{"field": "messages", "value": {
+            "sender": {"id": "u9"}, "message": {"mid": "m9", "text": "Kooperation via changes"}}}]}]}
+        ns = InstagramMessaging.nachrichten_aus_webhook(payload)
+        self.assertEqual(len(ns), 1)
+        self.assertEqual(ns[0]["absender"], "u9")
+
     def test_verfuegbar_und_fall_b(self):
         self.assertTrue(self.ig.verfuegbar())
         leer = InstagramMessaging(InstagramAuth())
