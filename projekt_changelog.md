@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-01 23:06] — Claude Code (als Head of Agents, CEO-Freigabe) — B-Phase 0 Insider-Screening
+- **Was:** CIO-Charta (`agents/16_cio.md`) um Insider-/Smart-Money-Screen (SEC Form 4) ergaenzt (5 Punkte:
+  Auftrag, „Ausdruecklich NICHT" rechtliche Klarstellung nur oeffentliche Pflichtmeldungen, Tools, Aufgaben-
+  katalog, Workflow). `INVESTMENT_ROADMAP.md` um **Phase 2.5** (Insider-Screening, advisory, dateibasiert, kein
+  GATE) + Status-Tabellenzeile erweitert.
+- **Warum:** CEO-freigegebener Bauplan (Insider-Screening unter CIO, Teil B); Charta-Diff vorab freigegeben (AGENTS.md 3.3).
+- **Betroffen:** agents/16_cio.md, INVESTMENT_ROADMAP.md
+
 ## [2026-07-01 01:00] — Claude Code (Antrags-Revision durch CEO-Feedback + Batch-Reformat)
 - **Was:** Neue Faehigkeit: **Antraege revidieren**. `antraege.py` `revidieren()` (neues Event mit
   ueberarbeitetem titel/beschreibung + Status zurueck auf 'eingereicht' -> Neufreigabe noetig) +

@@ -31,6 +31,7 @@
 | 0 | Plan & Charta (CIO + Governance) | advisory | GATE A: Freigabe Plan/Charta | ✅ erledigt 2026-06-28 |
 | 1 | Datenanbindung (gratis) + Speicher | advisory | GATE B: gratis API-Keys in .env (CISO/CTO) | ✅ GATE B bestanden 2026-06-28 (Finnhub/AlphaVantage/FMP/CoinGecko live; SEC optional offen) |
 | 2 | Die drei Schleifen (Screen/Prognose/Alerts) | advisory | — (kein Ausfuehren) | ✅ umgesetzt 2026-06-28 (engine+Risk-Agent, LUNA-OS-Panel + Tools + anklickbare Detailansicht + Auto-Screen-Loop) |
+| 2.5 | Insider-Screening (SEC Form 4) | advisory | — (kein Ausfuehren) | 🟡 in Arbeit 2026-07-01 (Erweiterung der drei Schleifen; SEC EDGAR gratis, dateibasiert) |
 | 3 | Vertrauen aufbauen + Paper-Modus | advisory → paper | GATE C: Paper aktivieren (Alpaca) | 🟡 gestartet 2026-06-28 (Walk-forward-Scorecard/Track-Record live; advisory laeuft, sammelt; Paper = GATE C offen) |
 | 4 | Live-Trading (hart abgesichert) | live | GATE D: Live aktivieren (haerteste Guardrails) | 🔲 geplant |
 
@@ -107,6 +108,17 @@ paper/live = Broker-Adapter). Der Schalter ist da, ohne dass jetzt etwas Echtes 
   Zeitbezug. (Nutzt den bestehenden proaktiven Notifier + Telegram-Kanal.)
 - **Self-Checks:** Screener liefert Shortlist; Prognose gespeichert; Scorecard rechnet Soll-Ist; Obduktion
   recherchiert; Alert enthaelt Grund+Quelle+Risiko-Label. **Keine Ausfuehrung.**
+
+### Phase 2.5 — Insider-Screening (SEC Form 4) — kein GATE (advisory, gratis)
+- **Erweiterung** der drei Schleifen um oeffentliche **Insider-Kaeufe** (Form 4): taeglicher Insider-Screen
+  ueber `MarketData.insider_transactions()` (SEC EDGAR keyless + optional Finnhub), Filter (Kauf vs. Verkauf,
+  Rolle, Volumen, **Cluster mehrerer Insider**, kleine Werte) -> Einspeisung in die bestehende Shortlist.
+- Neue Store-Tabelle `insider_signals` (dateibasiert im `InvestmentStore`, **kein Supabase**). Risk-Agent
+  bewertet; Alert ueber Notifier/Telegram + LUNA-OS mit **Filing-Link**; Second-Brain-Eintrag (`brain_merken`).
+- **Ehrliche Grenzen:** nur Aktien (Krypto/ETF kein Form-4-Aequivalent -> spaetere optionale Stufe).
+- **Self-Checks** gegen aufgezeichnete Form-4-Mock-Daten: Cluster erkannt, Alert mit Filing-Link, LUNA
+  aussagefaehig. **Kein GATE** noetig (SEC EDGAR gratis, kein neuer bezahlter Dienst); Form4API/OpenInsider
+  bewusst spaeter (dann CFO-Kostencheck + CEO-Tor).
 
 ### Phase 3 — Vertrauen aufbauen, dann Paper — GATE C
 - advisory laufen lassen, Track-Record sammeln; Scorecard im LUNA-OS sichtbar machen.
