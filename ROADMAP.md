@@ -415,3 +415,8 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
   (versteht Inhalte, leitet naechste Schritte ab), Calendar-Sync (Termine zu Akten), zentraler Akte-Manager
   (Verwaltung, Suche, Bericht, Alerts), optionaler Trend-Monitor je Partner. Idee aus einem LUNA-Self-Dev-Lauf
   (2026-06-25); bewusst zurueckgestellt. Baut auf Gmail/Kalender (Phase 11) + Notifier auf.
+  **Erster Baustein umgesetzt 2026-07-01 (Branch feat/insider-crm, noch nicht deployt):** Collab-CRM unter dem
+  CRO -- kanalagnostischer `CrmStore` (`orchestrator/core/crm.py`), Instagram-Webhook, regelbasierte
+  Klassifikation + To-do-Vorschlaege, LUNA-OS-App „Collab-CRM". Das kanalagnostische Fundament (Quelle
+  instagram|telegram|gmail) ist die Basis fuer den Rest dieses Systems. Live-Empfang wartet auf die Meta-App
+  (GATE B). Details in `CRM_PLAN.md`.

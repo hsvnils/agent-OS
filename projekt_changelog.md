@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 00:50] — Claude Code — ROADMAP: Collab-CRM als erster Baustein des Partner-/Akten-Systems
+- **Was:** In `ROADMAP.md` beim Backlog-Punkt „Partner-/Akten-System (CRM-artig)" vermerkt, dass der erste
+  Baustein (Collab-CRM unter dem CRO, kanalagnostischer Store + Instagram-Webhook + LUNA-OS-App) umgesetzt ist
+  (Branch feat/insider-crm, noch nicht deployt). Roadmap bleibt lebende SSOT.
+- **Warum:** CEO-Anweisung „Roadmap immer aktuell"; Teil A des Bauplans ist code-komplett.
+- **Betroffen:** ROADMAP.md
+
 ## [2026-07-02 00:45] — Claude Code — A-Phase 2+3 Collab-CRM Logik + Anzeige (Teil A code-komplett)
 - **Was:** A2 -- regelbasierte Klassifikation (`klassifiziere()`, Koop-Keywords, token-frugal, kein LLM) +
   `CrmStore.verarbeite_eingang()` (eingehende DM -> Kategorie + Auto-To-do bei NEUER Kooperationsanfrage);
