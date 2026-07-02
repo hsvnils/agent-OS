@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 22:55] — Claude Code — #2: Konfigurierbares Dashboard pro User (Widgets anordnen/ausblenden)
+- **Was:** Command-Center-Dashboard ist jetzt pro Nutzer konfigurierbar. `app.js`: Widget-Register (10 Panels
+  mit IDs) statt fixer innerHTML-Kette; Reihenfolge + ausgeblendete pro User (`LAYOUT`). **Bearbeiten-Modus**
+  (✎-Button in der Topbar): jedes Widget bekommt Ziehgriff + ✕-Ausblenden, Drag&Drop-Reihenfolge (HTML5-DnD),
+  „Ausgeblendete Widgets"-Tray zum Wiederhinzufuegen, „Fertig"-Button. **Persistenz pro User** ueber neue
+  Endpunkte `GET/POST /api/prefs` (app.py, Schluessel=username, Kern-Endpunkt ohne Modul-Gate) in Supabase-
+  Tabelle `luna_os_prefs` (Migration `docs/hcc_luna_os_prefs.sql`) + `localStorage`-Cache (sofort/offline,
+  Supabase = geraeteuebergreifend). `style.css`: Edit-Modus-Styles; `index.html`: Topbar-Button. Cache-Bust v32.
+- **Warum:** CEO-Wunsch (#2) -- Dashboard als ablegbare Module, pro User speicherbar.
+- **Betroffen:** `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/{app.js,style.css,
+  index.html}`, `docs/hcc_luna_os_prefs.sql` (neu). Im Preview verifiziert (Edit-Modus, Ausblenden/Tray,
+  Reorder, Persistenz localStorage, keine Console-Fehler). OFFEN (CEO): SQL ausfuehren (fuer geraete-
+  uebergreifend); ohne Tabelle laeuft es pro Geraet via localStorage.
+
 ## [2026-07-02 22:35] — Claude Code — LUNA-OS: helles Theme + Umschalter Dunkel/Hell/Automatisch
 - **Was:** Zweites, helles Erscheinungsbild + Umschalter. `style.css`: `html.theme-light`-Variablen-Set
   (helle bg/glass, dunkler Text, gedaempfte Akzente/Glows) + Overrides der fest verdrahteten dunklen Flaechen

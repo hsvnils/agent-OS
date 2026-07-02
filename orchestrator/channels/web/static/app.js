@@ -25,6 +25,71 @@ try { matchMedia("(prefers-color-scheme: light)").addEventListener("change", () 
   if ((localStorage.getItem("luna-theme") || "auto") === "auto") applyTheme();
 }); } catch { /* aeltere Browser */ }
 
+// #2: Konfigurierbares Dashboard -- Widget-Reihenfolge + ausgeblendete, pro User in Supabase gespeichert.
+const DASH_DEFAULT = ["ov", "hero", "feed", "agents", "timeline", "quick", "sysmon", "investP", "mem", "llm"];
+const DASH_TITEL = { ov: "AI Core Overview", hero: "LUNA Core", feed: "Live Intelligence Feed",
+  agents: "Active Agents", timeline: "Mission Timeline", quick: "Quick Commands", sysmon: "System Monitor",
+  investP: "Investment", mem: "Memory Insights", llm: "LLM / Provider" };
+let LAYOUT = { order: [...DASH_DEFAULT], hidden: [] };
+let PREFS = {};
+let EDIT = false;
+let DRAG = null;
+
+function normLayout(l) {
+  l = l || {};
+  const hidden = (Array.isArray(l.hidden) ? l.hidden : []).filter(id => DASH_DEFAULT.includes(id));
+  const order = (Array.isArray(l.order) ? l.order : []).filter(id => DASH_DEFAULT.includes(id));
+  DASH_DEFAULT.forEach(id => { if (!order.includes(id)) order.push(id); });  // neue Widgets hinten anfuegen
+  return { order, hidden };
+}
+async function ladePrefs() {
+  try { const p = JSON.parse(localStorage.getItem("luna-prefs") || "{}"); if (p.dashboard) LAYOUT = normLayout(p.dashboard); } catch { /* egal */ }
+  try { const r = await (await fetch("/api/prefs")).json(); PREFS = r.prefs || {}; if (PREFS.dashboard) LAYOUT = normLayout(PREFS.dashboard); } catch { /* offline -> localStorage/Default */ }
+}
+async function savePrefs() {
+  PREFS = { ...PREFS, dashboard: LAYOUT };
+  try { localStorage.setItem("luna-prefs", JSON.stringify(PREFS)); } catch { /* egal */ }
+  try { await fetch("/api/prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prefs: PREFS }) }); } catch { /* offline: bleibt lokal */ }
+}
+function toggleEdit() {
+  EDIT = !EDIT;
+  AKTIV_NAV = "home";
+  if (!EDIT) savePrefs();
+  renderDashboard(); updateSidebarCounts();
+  document.getElementById("edit-dash")?.classList.toggle("on", EDIT);
+}
+function hideWidget(id) { if (!LAYOUT.hidden.includes(id)) LAYOUT.hidden.push(id); savePrefs(); renderDashboard(); }
+function showWidget(id) { LAYOUT.hidden = LAYOUT.hidden.filter(x => x !== id); savePrefs(); renderDashboard(); }
+function tagWidget(id, html) {
+  if (!html) return "";
+  let h = html.replace('<div class="', `<div data-wid="${id}"${EDIT ? ' draggable="true"' : ""} class="`);
+  if (EDIT) h = h.replace(">", `><div class="wedit"><span class="wdrag" title="Ziehen zum Anordnen">⠿</span>` +
+    `<button class="whide" data-whide="${id}" title="Ausblenden">✕</button></div>`);
+  return h;
+}
+function dashTray() {
+  const hid = LAYOUT.order.filter(id => LAYOUT.hidden.includes(id));
+  const chips = hid.length
+    ? hid.map(id => `<button class="wadd" data-wadd="${id}">+ ${esc(DASH_TITEL[id] || id)}</button>`).join("")
+    : `<span class="leer">Keine ausgeblendeten Widgets.</span>`;
+  return `<div class="panel dash-tray"><div class="tray-chips">
+    <b>Bearbeiten:</b> Widgets ziehen zum Anordnen · ✕ ausblenden · unten wieder hinzufügen.
+    <button class="btn primary" data-editdone="1">Fertig</button></div>
+    <div class="tray-chips" style="margin-top:8px">${chips}</div></div>`;
+}
+// Drag & Drop zum Anordnen (nur im Edit-Modus); Handler einmalig registriert.
+document.addEventListener("dragstart", e => { if (!EDIT) return; const p = e.target.closest("[data-wid]"); if (!p) return; DRAG = p.dataset.wid; e.dataTransfer.effectAllowed = "move"; p.classList.add("dragging"); });
+document.addEventListener("dragend", e => { const p = e.target.closest("[data-wid]"); if (p) p.classList.remove("dragging"); DRAG = null; });
+document.addEventListener("dragover", e => { if (EDIT && DRAG) e.preventDefault(); });
+document.addEventListener("drop", e => {
+  if (!EDIT || !DRAG) return; e.preventDefault();
+  const target = e.target.closest("[data-wid]"); if (!target || target.dataset.wid === DRAG) return;
+  const from = LAYOUT.order.indexOf(DRAG), to = LAYOUT.order.indexOf(target.dataset.wid);
+  if (from < 0 || to < 0) return;
+  LAYOUT.order.splice(from, 1); LAYOUT.order.splice(to, 0, DRAG);
+  savePrefs(); renderDashboard();
+});
+
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const zeit = (ts) => { try { return new Date(ts).toLocaleString("de-DE", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }); } catch { return ""; } };
@@ -763,7 +828,11 @@ function renderDashboard() {
     ${ivtop ? `<h3>Top-Mover</h3>${ivtop}` : `<div class="leer">Noch kein Screen.</div>`}`,
     { right: `<span class="right" data-app="investment">Öffnen ›</span>` });
 
-  main.innerHTML = ov + hero + feed + agents + timeline + quick + sysmon + investP + mem + llm;
+  // #2: Widget-Register -> nach gespeicherter Reihenfolge, ohne ausgeblendete. Im Edit-Modus mit Tray/Controls.
+  const W = { ov, hero, feed, agents, timeline, quick, sysmon, investP, mem, llm };
+  const sichtbar = LAYOUT.order.filter(id => !LAYOUT.hidden.includes(id));
+  main.innerHTML = sichtbar.map(id => tagWidget(id, W[id])).join("") + (EDIT ? dashTray() : "");
+  main.classList.toggle("editing", EDIT);
   setOrb(VOICE.active ? "listening" : "idle");  // Orb-Zustand nach Neurender wiederherstellen
 }
 function ovItem(icon, titel, sub, status) {
@@ -873,6 +942,12 @@ document.addEventListener("click", (e) => {
   if (csave) { cutterJob(); return; }
   const th = e.target.closest("[data-theme-set]");
   if (th) { setTheme(th.dataset.themeSet); return; }
+  const ed = e.target.closest("#edit-dash, [data-editdone]");
+  if (ed) { toggleEdit(); return; }
+  const wh = e.target.closest("[data-whide]");
+  if (wh) { hideWidget(wh.dataset.whide); return; }
+  const wa = e.target.closest("[data-wadd]");
+  if (wa) { showWidget(wa.dataset.wadd); return; }
   const cmd = e.target.closest("[data-cmd]");
   if (cmd) { cmd.dataset.cmd === "talk" ? toggleVoice() : navTo(cmd.dataset.cmd); return; }
   const navi = e.target.closest("[data-app]");
@@ -1141,6 +1216,7 @@ if (_ts) _ts.addEventListener("keydown", (e) => {
 (async function boot() {
   applyTheme();       // Theme-Klasse ist schon (flash-frei) vom Head-Script gesetzt -> hier nur Button-Status
   await ladeMe();
+  await ladePrefs();  // #2: Dashboard-Layout pro User (Reihenfolge + ausgeblendete)
   buildSidebar();
   refresh();          // laedt Daten + rendert das Command-Center-Dashboard (Home)
 })();

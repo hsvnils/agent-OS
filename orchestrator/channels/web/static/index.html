@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>LUNA Command Center</title>
-  <link rel="stylesheet" href="/static/style.css?v=31">
+  <link rel="stylesheet" href="/static/style.css?v=32">
   <!-- Theme flash-frei anwenden, bevor der Body rendert (Dunkel/Hell/Auto aus localStorage). -->
   <script>(function () {
     var m = localStorage.getItem("luna-theme") || "auto";
@@ -47,6 +47,7 @@
         <div class="clockblock"><div id="datum"></div><div id="clock"></div></div>
         <div class="topactions">
           <input id="topsearch" placeholder="Suche · frag LUNA …" autocomplete="off">
+          <button id="edit-dash" title="Dashboard anpassen (Widgets anordnen/aus­blenden)">✎</button>
           <span id="live" class="live"><span class="dot"></span>LIVE</span>
         </div>
       </header>
@@ -63,6 +64,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=31"></script>
+  <script src="/static/app.js?v=32"></script>
 </body>
 </html>

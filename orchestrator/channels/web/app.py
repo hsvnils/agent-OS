@@ -340,6 +340,36 @@ async def cutter_report(request: Request):
     return JSONResponse(r)
 
 
+# -- #2: Nutzer-Praeferenzen (pro Nutzer, geraeteuebergreifend) -- z. B. das Dashboard-Layout. --------
+# Kernendpunkt (kein Modul-Gate): jeder eingeloggte Nutzer liest/schreibt NUR seine eigenen Prefs
+# (Schluessel = username). Ohne Tabelle/Supabase -> leer (Frontend faellt auf localStorage/Default zurueck).
+
+def _pref_user(request: Request) -> str:
+    u = getattr(request.state, "user", None) or {}
+    return u.get("username") or _USER
+
+
+@app.get("/api/prefs")
+def prefs_get(request: Request):
+    import urllib.parse as _up
+    uname = _pref_user(request)
+    if _sb is not None and _sb.verfuegbar():
+        r = _sb.select("luna_os_prefs", params="select=prefs&username=eq." + _up.quote(uname) + "&limit=1")
+        if r.get("ok") and r.get("rows"):
+            return {"prefs": r["rows"][0].get("prefs") or {}}
+    return {"prefs": {}}
+
+
+@app.post("/api/prefs")
+async def prefs_set(request: Request):
+    uname = _pref_user(request)
+    d = await request.json()
+    prefs = d.get("prefs") if isinstance(d.get("prefs"), dict) else {}
+    if _sb is not None and _sb.verfuegbar():
+        _sb.upsert("luna_os_prefs", {"username": uname, "prefs": prefs}, on_conflict="username")
+    return JSONResponse({"ok": True})
+
+
 @app.get("/api/antraege/{antrag_id}")
 def antrag_detail(antrag_id: str):
     a = antraege.get(antrag_id)
