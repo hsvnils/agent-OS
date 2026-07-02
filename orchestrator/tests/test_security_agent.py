@@ -56,6 +56,14 @@ class TestSecurityAgent(unittest.TestCase):
         self.assertEqual(f[0].schwere, "hoch")
         self.assertIn("requests", f[0].detail)
 
+    def test_dependencies_cve_und_fix_im_detail(self):
+        run = lambda cmd: '{"dependencies":[{"name":"requests","version":"2.0","vulns":[{"id":"CVE-x","fix_versions":["2.3.1"]}]}]}'
+        f = self._agent(run=run)._check_dependencies()
+        self.assertEqual(f[0].schwere, "hoch")
+        self.assertIn("requests 2.0", f[0].detail)
+        self.assertIn("CVE-x", f[0].detail)
+        self.assertIn("2.3.1", f[0].detail)
+
     def test_dependencies_sauber(self):
         run = lambda cmd: '{"dependencies":[{"name":"safe","version":"1.0","vulns":[]}]}'
         f = self._agent(run=run)._check_dependencies()

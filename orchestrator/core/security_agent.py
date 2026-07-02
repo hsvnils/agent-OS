@@ -117,11 +117,24 @@ class SecurityAgent:
         except (ValueError, AttributeError, TypeError):
             return [Finding("dependencies", "niedrig", "pip-audit-Ausgabe nicht lesbar", roh[:120], "")]
         if verwundbar:
-            liste = ", ".join(f"{d.get('name')} {d.get('version')}" for d in verwundbar[:8])
+            liste = "; ".join(self._fmt_vuln(d) for d in verwundbar[:8])
             return [Finding("dependencies", "hoch", f"{len(verwundbar)} verwundbare Abhaengigkeit(en)",
                             "CVE-behaftet: " + liste,
                             "Betroffene Pakete aktualisieren (Antrag/PR; Tests gruen halten).")]
         return [Finding("dependencies", "ok", "Keine bekannten CVEs in den Dependencies", "", "")]
+
+    @staticmethod
+    def _fmt_vuln(d: dict) -> str:
+        """'<name> <version> [<CVE-ids>] -> fix: <versions>' -- macht den Befund umsetzbar."""
+        vs = d.get("vulns") or []
+        ids = ", ".join(str(v.get("id")) for v in vs if v.get("id"))
+        fixes = ", ".join(fx for v in vs for fx in (v.get("fix_versions") or []))
+        teil = f"{d.get('name')} {d.get('version')}"
+        if ids:
+            teil += f" [{ids}]"
+        if fixes:
+            teil += f" -> fix: {fixes}"
+        return teil
 
     # -- Loop --
 
@@ -130,7 +143,10 @@ class SecurityAgent:
         luecken = [f for f in findings if f.schwere != "ok"]
         hoch = [f for f in luecken if f.schwere == "hoch"]
         if luecken and self.notify:
-            detail = "\n".join(f"- [{f.schwere}] {f.titel}: {f.empfehlung or f.detail}" for f in luecken)
+            detail = "\n".join(
+                f"- [{f.schwere}] {f.titel}: "
+                + " | ".join(t for t in (f.detail, f.empfehlung) if t)
+                for f in luecken)
             try:
                 self.notify(f"Sicherheits-Audit: {len(luecken)} Befund(e)"
                             + (f", davon {len(hoch)} hoch" if hoch else "") + ".",

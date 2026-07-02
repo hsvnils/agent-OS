@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 21:45] — Claude Code — Security-Audit: Paketname/CVE/Fix-Version in Meldung sichtbar
+- **Was:** In `orchestrator/core/security_agent.py` zwei Luecken geschlossen: (1) `_check_dependencies`
+  reichert den Befund-`detail` jetzt via neuem `_fmt_vuln()` mit CVE-/GHSA-ID **und Fix-Version** an
+  (`<name> <version> [<ids>] -> fix: <versions>`); (2) die L1-Meldung in `lauf()` zeigt jetzt `detail`
+  UND `empfehlung` (vorher `empfehlung or detail` -> Paketname wurde unterschlagen). Neuer Test
+  `test_dependencies_cve_und_fix_im_detail`. Alle 12 Tests gruen.
+- **Warum:** CEO-Audit meldete „1 verwundbare Abhaengigkeit (hoch)" ohne Paketname -> Befund war nicht
+  umsetzbar. Jetzt nennt die Meldung/der Antrag Paket + CVE + Zielversion.
+- **Betroffen:** orchestrator/core/security_agent.py, orchestrator/tests/test_security_agent.py.
+  Wirkt erst nach Neustart des `luna-telegram`-Containers (reiner Code-Change, kein Rebuild noetig).
+
 ## [2026-07-03 01:00] — Claude Code — pip-audit ins Image (aktiver Dependency-CVE-Scan fuer Phase 21)
 - **Was:** `pip-audit==2.10.1` in `deploy/Dockerfile` (pip-install-Zeile) aufgenommen -> der Cybersecurity-
   Agent (Phase 21) kann jetzt die Container-Dependencies aktiv auf bekannte CVEs pruefen. Reales pip-audit-
