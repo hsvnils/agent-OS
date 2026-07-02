@@ -33,7 +33,7 @@
 | 19 | **CRM-Akte: Mail-Tracking** (Gmail-Mails je Unternehmen in die CRM-Akte) | ✅ **gebaut 2026-07-03** (`core/crm_mail.py`, quelle='mail', L1-Loop im Bot-Poll; luna-telegram-Neustart fuer den Tick) |
 | 20 | **Kanaluebergreifende Nachrichten-Timeline** (Instagram/Mail/Telegram chronologisch) | ✅ **gebaut 2026-07-03** (`CrmStore.timeline`, `/api/crm/timeline`, LUNA-OS-App „Timeline" mit Kanal-Badges) |
 | 21 | **Cybersecurity-Agent** (CISO-Ausbau: Zugriffe verhindern · Luecken finden · Luecken schliessen) | ✅ **gebaut 2026-07-03** (`core/security_agent.py`, Checks Secret-Hygiene/Hardening/Dependencies; L1 melden + L2 Antrag; Tool `sicherheits_audit`; gated Loop `SECURITY_AUDIT_ENABLED`; kein Auto-Change = CEO-Tor) |
-| 22 | **CISO-Agent ausbauen** (Static-Security-Scan nach SkillSpector-Muster: AST/Taint/OSV.dev/Injection-Erkennung, Risiko-Score) | 🔲 geplant — HOCH (Recherche 2026-07-03) |
+| 22 | **CISO-Agent ausbauen** (Static-Security-Scan nach SkillSpector-Muster: AST/Taint/OSV.dev/Injection-Erkennung, Risiko-Score) | 🔨 im Bau — **Inkr. 1 gebaut 2026-07-03** (AST-Code-Scan `_check_code_security` + Risiko-Score 0-100; unser Code = 0 Funde); offen: OSV.dev, Taint, Injection-Muster, SARIF |
 | 23 | **Haertung externer Eingaben** (Prompt-Injection-/PII-Filter fuer Mail/DM/Web) | 🔲 geplant — HOCH-MITTEL |
 | 24 | **Skill-/Charta-Standard + gepruefter Skill-Import** (Agent-Skills-Format + Erfolgsmetriken je Charta; Import via Phase-22-Gate) | 🔲 geplant — MITTEL |
 | 25 | **Execution-Sandbox-Policy** (deklarativ; Blaupause fuer Phase 17, aus OpenShell/NemoClaw) | 🔲 geplant — MITTEL (an Phase 17 gekoppelt) |
@@ -477,6 +477,13 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
   - **Governance/GATE:** reiner Melde-/Vorschlags-Loop (L1 melden, L2 Antrag); jede WIRKUNG (Fix/Sperre/
     Rotation) bleibt CEO-Tor. Scan selbst lokal/kostenlos = kein GATE. **Lizenz vor Code-Uebernahme pruefen**
     (Regel-Nachbau ist unproblematisch). Baut direkt auf Phase 21.
+  - **Umsetzung (Inkrement 1, 2026-07-03):** `_check_code_security()` in `core/security_agent.py` -- AST-Scan
+    des `orchestrator/`-Codes auf `os.system/os.popen`, `subprocess(..., shell=True)`, `eval/exec`,
+    `__import__`, `pickle.load(s)`, `yaml.load` ohne Loader; praezise (nur echte Calls, Tests uebersprungen,
+    sicheres Listen-`subprocess.run` bleibt unbeanstandet). **Risiko-Score 0-100** im `lauf()`-Ergebnis + in der
+    Meldung. +4 Tests (16 gruen); realer Scan unseres Codes = **0 Funde** (clean). **Offen (naechste Inkremente):**
+    OSV.dev als `pip-audit`-Ergaenzung, Taint-Tracking Credential->Netz, Prompt-Injection-/Tool-Poisoning-Muster,
+    SARIF-Ausgabe. Wirkt nach `luna-telegram`-Neustart (reiner Code-Change).
 
 - **Phase 23 — Haertung externer Eingaben (Prompt-Injection-/PII-Filter) [HOCH-MITTEL]:**
   - **Ziel:** Inhalte, die LUNA von aussen verarbeitet (Gmail, Instagram-DMs, Web-Recherche, spaeter weitere),

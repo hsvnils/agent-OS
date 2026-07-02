@@ -73,6 +73,50 @@ class TestSecurityAgent(unittest.TestCase):
         f = self._agent(run=None)._check_dependencies()
         self.assertEqual(f[0].schwere, "niedrig")
 
+    def test_code_security_findet_gefaehrliche_aufrufe(self):
+        (self.root / "orchestrator").mkdir()
+        (self.root / "orchestrator" / "mod.py").write_text(
+            "import os, subprocess\n"
+            "def f(x):\n"
+            "    os.system(x)\n"
+            "    subprocess.run(x, shell=True)\n"
+            "    eval(x)\n"
+            "    subprocess.run(['ls', '-la'])\n",   # sicher -> darf NICHT flaggen
+            encoding="utf-8")
+        f = self._agent()._check_code_security()
+        hoch = [x for x in f if x.schwere == "hoch"]
+        self.assertTrue(hoch)
+        self.assertIn("os.system", hoch[0].detail)
+        self.assertIn("shell=True", hoch[0].detail)
+        self.assertIn("eval()", hoch[0].detail)
+
+    def test_code_security_sauberes_subprocess_ok(self):
+        (self.root / "orchestrator").mkdir()
+        (self.root / "orchestrator" / "mod.py").write_text(
+            "import subprocess\n"
+            "def f():\n"
+            "    return subprocess.run(['ls'], capture_output=True, text=True)\n",
+            encoding="utf-8")
+        f = self._agent()._check_code_security()
+        self.assertEqual(f[0].schwere, "ok")
+
+    def test_code_security_ignoriert_strings_und_testdateien(self):
+        (self.root / "orchestrator" / "tests").mkdir(parents=True)
+        (self.root / "orchestrator" / "tests" / "test_x.py").write_text(
+            "import os\nos.system('rm -rf /')\n", encoding="utf-8")           # Testdatei -> ignoriert
+        (self.root / "orchestrator" / "mod.py").write_text(
+            "MUSTER = 'os.system'\nHINWEIS = 'nutze kein eval()'\n", encoding="utf-8")  # nur Strings
+        f = self._agent()._check_code_security()
+        self.assertEqual(f[0].schwere, "ok")
+
+    def test_lauf_liefert_risiko_score(self):
+        run = lambda cmd: "orchestrator/.env\n" if "ls-files" in cmd else ""
+        a = self._agent(run=run, env={"LUNA_OS_PASSWORD": ""}, notify=lambda text, **kw: None)
+        r = a.lauf()
+        self.assertIn("score", r)
+        self.assertGreater(r["score"], 0)
+        self.assertLessEqual(r["score"], 100)
+
     def test_lauf_meldet_und_antrag(self):
         gemeldet = []
         class FakeAntraege:

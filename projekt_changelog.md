@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 01:20] — Claude Code — Phase 22 (Inkr. 1): AST-Code-Security-Scan + Risiko-Score
+- **Was:** `core/security_agent.py` um `_check_code_security()` erweitert -- statischer AST-Scan des eigenen
+  `orchestrator/`-Codes auf riskante Aufrufe (`os.system/os.popen`, `subprocess(shell=True)`, `eval/exec`,
+  `__import__`, `pickle.load(s)`, `yaml.load` ohne Loader). Praezise: nur echte Call-Knoten, Test-Dateien
+  uebersprungen, sicheres Listen-`subprocess.run` bleibt unbeanstandet. Neu: **Risiko-Score 0-100** (SkillSpector-
+  Gewichtung) im `lauf()`-Ergebnis + in der Meldung. +4 Tests (Suite 16 gruen, Gesamt 340 gruen). Realer Scan
+  unseres Codes = 0 Funde.
+- **Warum:** Phase 22 (CISO-Ausbau nach SkillSpector-Muster) -- erstes Inkrement. L1/L2, keine autonome Aenderung.
+- **Betroffen:** orchestrator/core/security_agent.py, orchestrator/tests/test_security_agent.py, ROADMAP.md.
+  Offen: OSV.dev, Taint, Injection-Muster, SARIF. Wirkt nach luna-telegram-Neustart (reiner Code-Change).
+
 ## [2026-07-03 00:35] — Claude Code — Recherche-/Entscheidungs-Register angelegt
 - **Was:** Neue Datei `docs/entscheidungs-register.md` -- laufendes Register geprüfter externer Ideen/Tools mit
   Datum, Entscheidung (uebernehmen/teilweise/verworfen/validiert/spaeter) und Begruendung + Index-Tabelle.

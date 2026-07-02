@@ -16,10 +16,14 @@ Checks (alle lokal, kostenlos, deterministisch, injizierbar -> Self-Checks ohne 
 """
 from __future__ import annotations
 
+import ast
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
+
+# Punkte je Schwere fuer den Risiko-Score (0-100), angelehnt an SkillSpector-Gewichtung.
+_SCORE_PUNKTE = {"hoch": 25, "mittel": 10, "niedrig": 5}
 
 # Muster, die in .gitignore stehen MUESSEN (Secrets/Zugaenge). Substring-Match gegen die .gitignore.
 _PFLICHT_IGNORE = (".env", "client_secret", "token")
@@ -52,7 +56,8 @@ class SecurityAgent:
     # -- Audit --
 
     def audit(self) -> list[Finding]:
-        return (self._check_secret_hygiene() + self._check_hardening() + self._check_dependencies())
+        return (self._check_secret_hygiene() + self._check_hardening()
+                + self._check_dependencies() + self._check_code_security())
 
     def _check_secret_hygiene(self) -> list[Finding]:
         out: list[Finding] = []
@@ -123,6 +128,78 @@ class SecurityAgent:
                             "Betroffene Pakete aktualisieren (Antrag/PR; Tests gruen halten).")]
         return [Finding("dependencies", "ok", "Keine bekannten CVEs in den Dependencies", "", "")]
 
+    def _check_code_security(self, unterordner: str = "orchestrator") -> list[Finding]:
+        """Statischer AST-Scan des eigenen Codes auf riskante Aufrufe (SkillSpector-Muster).
+
+        Praezise: flaggt nur echte Call-Knoten (keine Strings/Kommentare) und NICHT das sichere
+        `subprocess.run([...])` -- nur `shell=True` ist der Ausloeser. Tests/Test-Dateien werden uebersprungen.
+        """
+        basis = self.root / unterordner
+        if not basis.exists():
+            return [Finding("code-security", "ok", "Kein Code-Verzeichnis zum Scannen", "", "")]
+        treffer: list[tuple[str, str, int, str]] = []   # (schwere, datei, zeile, muster)
+        for pfad in sorted(basis.rglob("*.py")):
+            posix = pfad.as_posix()
+            if "/tests/" in posix or pfad.name.startswith("test_"):
+                continue
+            try:
+                baum = ast.parse(pfad.read_text(encoding="utf-8"))
+            except (OSError, SyntaxError, ValueError):
+                continue
+            rel = pfad.relative_to(self.root).as_posix()
+            for knoten in ast.walk(baum):
+                if isinstance(knoten, ast.Call):
+                    befund = self._einstufen_call(knoten)
+                    if befund:
+                        schwere, muster = befund
+                        treffer.append((schwere, rel, getattr(knoten, "lineno", 0), muster))
+        if not treffer:
+            return [Finding("code-security", "ok", "Keine riskanten Code-Aufrufe gefunden", "", "")]
+
+        def _zeilen(ts):
+            return "; ".join(f"{datei}:{zeile} ({muster})" for _, datei, zeile, muster in ts[:8])
+
+        out: list[Finding] = []
+        hoch = [t for t in treffer if t[0] == "hoch"]
+        mittel = [t for t in treffer if t[0] == "mittel"]
+        if hoch:
+            out.append(Finding("code-security", "hoch", f"{len(hoch)} riskante(r) Code-Aufruf(e)",
+                               _zeilen(hoch),
+                               "Pruefen/absichern: kein shell=True, kein eval/exec/os.system auf "
+                               "Fremd-Eingaben (Fix als Branch+Tests)."))
+        if mittel:
+            out.append(Finding("code-security", "mittel", f"{len(mittel)} potenziell riskante(r) Code-Aufruf(e)",
+                               _zeilen(mittel),
+                               "Sichere Varianten nutzen (yaml.safe_load; kein pickle auf Fremddaten)."))
+        return out
+
+    @staticmethod
+    def _einstufen_call(knoten: ast.Call) -> tuple[str, str] | None:
+        """Stuft einen AST-Call ein -> (schwere, muster) oder None. Deterministisch, ohne Ausfuehrung."""
+        f = knoten.func
+        if isinstance(f, ast.Name):
+            if f.id in ("eval", "exec"):
+                return ("hoch", f"{f.id}()")
+            if f.id == "__import__":
+                return ("mittel", "__import__()")
+        if isinstance(f, ast.Attribute):
+            attr = f.attr
+            wurzel = f.value.id if isinstance(f.value, ast.Name) else None
+            if wurzel == "os" and attr in ("system", "popen"):
+                return ("hoch", f"os.{attr}()")
+            # subprocess NUR mit shell=True (sicheres Listen-argv bleibt unbeanstandet)
+            if wurzel == "subprocess" or attr in ("run", "call", "Popen", "check_output", "check_call"):
+                for kw in knoten.keywords:
+                    if (kw.arg == "shell" and isinstance(kw.value, ast.Constant)
+                            and kw.value.value is True):
+                        return ("hoch", f"{attr}(shell=True)")
+            if wurzel == "pickle" and attr in ("load", "loads"):
+                return ("mittel", f"pickle.{attr}()")
+            if wurzel == "yaml" and attr == "load":
+                if not any(kw.arg == "Loader" for kw in knoten.keywords):
+                    return ("mittel", "yaml.load(ohne Loader)")
+        return None
+
     @staticmethod
     def _fmt_vuln(d: dict) -> str:
         """'<name> <version> [<CVE-ids>] -> fix: <versions>' -- macht den Befund umsetzbar."""
@@ -142,6 +219,7 @@ class SecurityAgent:
         findings = self.audit()
         luecken = [f for f in findings if f.schwere != "ok"]
         hoch = [f for f in luecken if f.schwere == "hoch"]
+        score = min(100, sum(_SCORE_PUNKTE.get(f.schwere, 0) for f in luecken))
         if luecken and self.notify:
             detail = "\n".join(
                 f"- [{f.schwere}] {f.titel}: "
@@ -149,7 +227,8 @@ class SecurityAgent:
                 for f in luecken)
             try:
                 self.notify(f"Sicherheits-Audit: {len(luecken)} Befund(e)"
-                            + (f", davon {len(hoch)} hoch" if hoch else "") + ".",
+                            + (f", davon {len(hoch)} hoch" if hoch else "")
+                            + f" (Risiko-Score {score}/100).",
                             abteilung="CISO/Security", kategorie="security", quelle="security-audit",
                             detail=detail)
             except Exception:
@@ -166,8 +245,8 @@ class SecurityAgent:
                                "regelbasierter Audit (L1/L2)", "security")
             except Exception:
                 pass
-        return {"ok": True, "befunde": len(luecken), "hoch": len(hoch), "antrag_id": antrag_id,
-                "findings": [f.__dict__ for f in findings]}
+        return {"ok": True, "befunde": len(luecken), "hoch": len(hoch), "score": score,
+                "antrag_id": antrag_id, "findings": [f.__dict__ for f in findings]}
 
     # -- intern --
 
