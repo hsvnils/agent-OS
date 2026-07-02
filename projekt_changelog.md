@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 09:45] — Claude Code — HCC-Roadmap: CEO-Entscheidungen eingearbeitet
+- **Was:** `HCC_INTEGRATION_ROADMAP.md` aktualisiert: Architektur = **A (Shared Supabase) + NAS-Offline-
+  Fallback (Write-Through)**; **Telegram fliegt** aus HCC (Idee „Team-Reminder" ins Backlog); **alter Video-
+  Cutter wird geloescht** (Phase 3, inkl. Worker/Routen/`cutter_*`+`worker_*`-Schema), LUNA-Cutter gespiegelt
+  ueber neue schlanke Tabellen (Phase 4); Datenschutz-Freigabe (Supabase-Cloud) vermerkt. Entscheidungen +
+  Backlog-Abschnitt ergaenzt.
+- **Warum:** CEO-Feedback zur Roadmap.
+- **Betroffen:** HCC_INTEGRATION_ROADMAP.md
+
 ## [2026-07-02 09:30] — Claude Code — HCC<->LUNA Integration: Bestand + Roadmap
 - **Was:** Bestehendes Dashboard `~/Documents/nilshubv2` (Hanserautisch Command Center, Next.js+Supabase)
   erkundet und dokumentiert: `docs/HCC_BESTAND.md` (Module/Routen/Supabase-Schema/Worker/Ueberschneidung mit
