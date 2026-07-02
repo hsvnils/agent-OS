@@ -79,6 +79,12 @@ def tool_specs() -> list[dict]:
               {"kategorie": _str("Optional: 'github' oder 'fachbereich'.")}, []),
         _spec("watch_tick", "Fuehrt EINEN kostenlosen Watch-Durchlauf aus (GitHub-Trends firmenweit). Keine "
               "Token; legt neue Funde ab.", {}, []),
+        _spec("content_feed_lauf", "K3: laesst den Content-Researcher EINEN Trend-Scouting-Durchlauf machen -- "
+              "Brave-Web-Recherche je Content-Thema (kostenlos, kein Hintergrund-LLM) -> neue Trend-Kandidaten "
+              "(Status 'new') nach Supabase, sichtbar in LUNA-OS unter „Trends“ fuers Team-Review. Dedup gegen "
+              "bestehende Quellen; respektiert die Notbremse. Kein Auto-Publish (Oeffentlichkeit = CEO-Tor).",
+              {"max_pro_thema": _str("Optional: max. Kandidaten je Suchthema (Default 3)."),
+               "max_gesamt": _str("Optional: max. Kandidaten gesamt je Lauf (Default 8).")}, []),
         _spec("wissensstand", "Zeigt den aktuellen Fachbereichs-Wissensstand einer Abteilung (gesammelte "
               "Web-Funde, neueste zuerst) -- reine Anzeige, keine neue Suche, keine Token.",
               {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto, ciso, cfo).")}, ["abteilung"]),
@@ -365,6 +371,33 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         except Exception as exc:
             return {"fehler": str(exc)[:200]}
         return {"ergebnis": redact(out, sec)}
+
+    if name == "content_feed_lauf":
+        from .content_feed import ContentFeed
+        from .content_store import ContentStore, TREND_FELDER, TREND_STATUSES
+        from ..governance.supabase import SupabaseAuth, SupabaseClient
+        sb = SupabaseClient(SupabaseAuth.from_env(ctx.secret_dict or {}))
+        if not sb.verfuegbar():
+            return {"ok": False, "hinweis": "content_feed: Supabase nicht konfiguriert "
+                    "(SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY noetig)."}
+        web = ctx.web
+        if web is None:
+            from ..governance.web_research import WebResearch
+            web = WebResearch.from_env(secrets=sec)
+        trends = ContentStore(sb, "trend_signals", TREND_FELDER,
+                              ctx.repo_root / "content_ops" / "trends_cache.jsonl",
+                              statuses=TREND_STATUSES, secrets=sec)
+        feed = ContentFeed(web=web, trends_store=trends,
+                           notify=(ctx.notifications.enqueue if ctx.notifications else None),
+                           research=ctx.research,
+                           watch_store=(ctx.watch.store if ctx.watch else None), secrets=sec)
+        r = feed.trend_lauf(max_pro_thema=int(args.get("max_pro_thema") or 3),
+                            max_gesamt=int(args.get("max_gesamt") or 8))
+        if r.get("pausiert"):
+            return {"ok": False, "pausiert": True, "hinweis": "Autonomie pausiert (Notbremse) -- kein Lauf."}
+        return {"ok": bool(r.get("ok")), "erzeugt": r.get("erzeugt", 0),
+                "kandidaten": [{"title": k["title"], "url": k["source_url"]}
+                               for k in r.get("kandidaten", [])]}
 
     if name == "recherche_beauftragen":
         frage = (args.get("frage") or "").strip()

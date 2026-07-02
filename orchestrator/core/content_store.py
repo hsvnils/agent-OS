@@ -52,6 +52,22 @@ class ContentStore:
                 return rows
         return self._cache_lesen()[:limit]
 
+    def add(self, daten: dict) -> dict:
+        """Neue Zeile INSERTen (Supabase upsert). Pflichtfelder je Tabelle beachten (z. B.
+        trend_signals.title NOT NULL). created_at/updated_at werden gesetzt, falls fehlend; die id
+        laesst der Store bewusst offen -> Supabase vergibt sie per Default (gen_random_uuid()).
+        Aktualisiert den lokalen Cache (vorne einfuegen). Offline -> Fall-B (kein Schreiben)."""
+        if self.client is None or not self.client.verfuegbar():
+            return {"ok": False, "fall_b": True,
+                    "hinweis": "Supabase nicht verfuegbar -- Anlegen offline nicht moeglich."}
+        row = {k: v for k, v in daten.items() if v is not None}
+        row.setdefault("created_at", _now())
+        row.setdefault("updated_at", _now())
+        r = self.client.upsert(self.tabelle, row)
+        if r.get("ok"):
+            self._cache_prepend(row)
+        return r
+
     def status_setzen(self, rid: str, status: str) -> dict:
         if self.statuses and status not in self.statuses:
             return {"ok": False, "fehler": f"Unbekannter Status: {status}"}
@@ -90,6 +106,9 @@ class ContentStore:
                 except json.JSONDecodeError:
                     continue
         return out
+
+    def _cache_prepend(self, row: dict) -> None:
+        self._cache_schreiben([row] + self._cache_lesen())
 
     def _cache_felder(self, rid: str, felder: dict) -> None:
         rows = self._cache_lesen()

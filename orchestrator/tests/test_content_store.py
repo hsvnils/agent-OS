@@ -68,6 +68,30 @@ class TestContentStore(unittest.TestCase):
     def test_offline_status_fall_b(self):
         self.assertTrue(self._store(SupabaseClient(SupabaseAuth())).status_setzen("t1", "approved")["fall_b"])
 
+    def test_add_insert_und_cache(self):
+        mock = MockSupabaseClient()
+        store = self._store(mock)
+        r = store.add({"title": "Neuer Trend", "status": "new", "source_url": "https://x.test/1"})
+        self.assertTrue(r["ok"])
+        tabelle, rows, _ = mock.upserts[-1]
+        self.assertEqual(tabelle, "trend_signals")
+        self.assertEqual(rows[0]["title"], "Neuer Trend")
+        self.assertIn("created_at", rows[0])   # Zeitstempel automatisch gesetzt
+        self.assertIn("updated_at", rows[0])
+        self.assertNotIn("id", rows[0])        # id bleibt offen -> Supabase-Default
+        # Cache wurde vorne befuellt (Offline-Fallback fuer die Anzeige)
+        self.assertEqual(self._store(SupabaseClient(SupabaseAuth())).list()[0]["title"], "Neuer Trend")
+
+    def test_add_none_werte_fallen_raus(self):
+        mock = MockSupabaseClient()
+        self._store(mock).add({"title": "T", "relevance": None, "score": None})
+        rows = mock.upserts[-1][1]
+        self.assertNotIn("relevance", rows[0])   # None-Felder gehen nicht an Supabase (Defaults greifen)
+
+    def test_add_offline_fall_b(self):
+        r = self._store(SupabaseClient(SupabaseAuth())).add({"title": "T"})
+        self.assertTrue(r["fall_b"])
+
 
 if __name__ == "__main__":
     unittest.main()

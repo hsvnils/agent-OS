@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 16:10] — Claude Code — K3-Pilot: Content-Feed-Loop (LUNA fuettert content_ops)
+- **Was:** Erster Baustein von K3 (LUNA-Agenten fuettern content_ops). (1) `ContentStore.add()` +
+  `_cache_prepend()` ergaenzt (Insert neuer Zeilen via Supabase-upsert; created_at/updated_at auto, id bleibt
+  offen -> Supabase-Default; None-Felder fallen raus). (2) Neuer `orchestrator/core/content_feed.py` mit
+  `ContentFeed.trend_lauf()` -- Content-Researcher erzeugt ueber Brave-Web-Recherche (kostenlos, KEIN
+  Hintergrund-LLM) Trend-Kandidaten und schreibt sie mit Status `new` nach `trend_signals`; Dedup gegen
+  bestehende `source_url`, Limits (max je Thema + max gesamt), Notbremse (`WatchStore.paused`), Research-Ticket
+  + CEO-Meldung. Default-Themen = kuratierte Content-Themen (`watch_config`, Abteilung 'cco'). Als Loop nach
+  `governance/autonomie-stufen.md` §5b entworfen, **Autonomie L1** (nur sammeln + melden; kein Auto-Publish,
+  Oeffentlichkeit = CEO-Tor). (3) LUNA-Tool `content_feed_lauf` (manueller Ausloeser) + gated
+  Hintergrund-Loop `_start_content_feed_loop` (taeglich 07:00 DE, nur mit `CONTENT_FEED_ENABLED=1`).
+- **Warum:** K3 laut Uebergabe 2026-07-02 = naechster Schritt; ersetzt den alten Dummy-Worker schrittweise.
+- **Betroffen:** `orchestrator/core/content_store.py`, `orchestrator/core/content_feed.py` (neu),
+  `orchestrator/core/hoa_tools.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_content_store.py`, `orchestrator/tests/test_content_feed.py` (neu). Suite 287 gruen.
+
 ## [2026-07-02 14:30] — Claude Code — Loop Engineering in der Roadmap verankert (recherchiert)
 - **Was:** Loop-Engineering war schon in `governance/autonomie-stufen.md` (L1→L2→L3, Maker/Checker) +
   `INVESTMENT_ROADMAP.md` §10, aber nicht als uebergreifendes Prinzip in der Haupt-`ROADMAP.md`. Ergaenzt:

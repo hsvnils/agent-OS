@@ -287,6 +287,52 @@ def _start_selfdev_loop(ctx, secrets) -> None:
     threading.Thread(target=loop, daemon=True, name="selfdev-loop").start()
 
 
+def _start_content_feed_loop(ctx, secrets) -> None:
+    """K3: geplanter Content-Feed-Loop -- 1x taeglich 07:00 (DE) ein Trend-Scouting-Durchlauf.
+
+    Token-frugal: NUR Brave-Web-Recherche (kostenlos, KEIN Hintergrund-LLM). Erzeugt Trend-Kandidaten
+    (Status 'new') in Supabase -> LUNA-OS-App „Trends" fuers Team-Review. Autonomie L1 (nur sammeln +
+    melden; kein Auto-Publish). Nur aktiv mit CONTENT_FEED_ENABLED=1; respektiert die Notbremse.
+    """
+    import threading
+    import time
+    from datetime import datetime
+
+    if (secrets.get("CONTENT_FEED_ENABLED", "").strip().lower() not in ("1", "true", "yes", "on")):
+        return
+    from ...core.content_feed import ContentFeed
+    from ...core.content_store import ContentStore, TREND_FELDER, TREND_STATUSES
+    from ...governance.supabase import SupabaseAuth, SupabaseClient
+    sb = SupabaseClient(SupabaseAuth.from_env(secrets))
+    if not sb.verfuegbar() or ctx.agenda is None:
+        return
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("Europe/Berlin")
+    except Exception:
+        tz = None
+    trends = ContentStore(sb, "trend_signals", TREND_FELDER, ROOT / "content_ops" / "trends_cache.jsonl",
+                          statuses=TREND_STATUSES, secrets=ctx.leak_secrets)
+    feed = ContentFeed(web=ctx.web, trends_store=trends, notify=ctx.notifications.enqueue,
+                       research=ctx.research, watch_store=(ctx.watch.store if ctx.watch else None),
+                       secrets=ctx.leak_secrets)
+
+    def loop():
+        time.sleep(60)
+        while True:
+            try:
+                jetzt = datetime.now(tz) if tz else datetime.now()
+                datum = jetzt.strftime("%Y-%m-%d")
+                if jetzt.hour == 7 and not ctx.agenda.briefing_gesendet("content-feed", datum):
+                    feed.trend_lauf()   # pausen-bewusst; meldet neue Kandidaten selbst
+                    ctx.agenda.markiere_briefing("content-feed", datum)
+            except Exception as exc:
+                print(f"[content-feed] Fehler: {exc}", flush=True)
+            time.sleep(300)
+
+    threading.Thread(target=loop, daemon=True, name="content-feed-loop").start()
+
+
 def _start_briefing_loop(ctx, notify) -> None:
     """Morgen-Briefing 08:00 + Abend-Briefing 20:00 (Europe/Berlin). Token-frugal (regelbasiert)."""
     import threading
@@ -477,6 +523,10 @@ def main() -> None:
     if secrets.get("SELF_DEV_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Self-Dev-Loop aktiv (taeglich 09:00, 1 Bereich -> Antrag mit Freigabe-Push).", flush=True)
     _start_investment_loop(ctx, secrets)  # nur aktiv mit INVESTMENT_AUTO_SCREEN=1
+    _start_content_feed_loop(ctx, secrets)  # K3: nur aktiv mit CONTENT_FEED_ENABLED=1
+    if secrets.get("CONTENT_FEED_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
+        print("Content-Feed-Loop aktiv (taeglich 07:00, Brave-Trend-Scouting -> Kandidaten in „Trends“).",
+              flush=True)
     offset = 0
     _last_poll = 0.0
     crm_sync = None
