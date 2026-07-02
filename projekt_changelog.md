@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 21:35] — Claude Code — K6 Housekeeping: NAS-Ordner entfernt (Worker vorher gesichert)
+- **Was:** NAS-Docker-Ordner `hanserautisch` (toter Synology-Worker + *.zip-Artefakte, 12 MB) als
+  `~/k6_backup_20260702_161937/hanserautisch_worker.tar.gz` (2.1 MB) gesichert und dann samt leerem
+  `nilshubv2`-Ordner entfernt. Verbleiben: `ki-unternehmen` (LUNA) + `synoscheduler`. Externer Zugriff
+  verifiziert: `https://os.hanserautisch.synology.me` erreichbar (TLS ok) + Login erzwungen (401 ohne Auth).
+- **Warum:** K6-Rest-Housekeeping (CEO-Auftrag).
+- **Betroffen:** NAS-Dateisystem (kein Repo). OFFEN (CEO, kein `gh` am Mac): GitHub-Repo `hsvnils/nilshubv2`
+  archivieren; ggf. alte Synology-Task-Scheduler-Tasks des Workers deaktivieren (Worker-Ordner ist weg).
+
 ## [2026-07-02 21:20] — Claude Code — K6 ABGESCHLOSSEN: HCC/Worker stillgelegt, DB bereinigt
 - **Was:** CEO hat nach doppeltem Backup (Supabase-Dashboard + NAS-CSV) `docs/hcc_k6_drop.sql` ausgefuehrt ->
   **25 Alt-Tabellen gedroppt** (cutter_*/worker_*/agent_*/telegram_*/content_findings/*_reviews/
