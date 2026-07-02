@@ -33,6 +33,11 @@
 | 19 | **CRM-Akte: Mail-Tracking** (Gmail-Mails je Unternehmen in die CRM-Akte) | ✅ **gebaut 2026-07-03** (`core/crm_mail.py`, quelle='mail', L1-Loop im Bot-Poll; luna-telegram-Neustart fuer den Tick) |
 | 20 | **Kanaluebergreifende Nachrichten-Timeline** (Instagram/Mail/Telegram chronologisch) | ✅ **gebaut 2026-07-03** (`CrmStore.timeline`, `/api/crm/timeline`, LUNA-OS-App „Timeline" mit Kanal-Badges) |
 | 21 | **Cybersecurity-Agent** (CISO-Ausbau: Zugriffe verhindern · Luecken finden · Luecken schliessen) | ✅ **gebaut 2026-07-03** (`core/security_agent.py`, Checks Secret-Hygiene/Hardening/Dependencies; L1 melden + L2 Antrag; Tool `sicherheits_audit`; gated Loop `SECURITY_AUDIT_ENABLED`; kein Auto-Change = CEO-Tor) |
+| 22 | **CISO-Agent ausbauen** (Static-Security-Scan nach SkillSpector-Muster: AST/Taint/OSV.dev/Injection-Erkennung, Risiko-Score) | 🔲 geplant — HOCH (Recherche 2026-07-03) |
+| 23 | **Haertung externer Eingaben** (Prompt-Injection-/PII-Filter fuer Mail/DM/Web) | 🔲 geplant — HOCH-MITTEL |
+| 24 | **Skill-/Charta-Standard + gepruefter Skill-Import** (Agent-Skills-Format + Erfolgsmetriken je Charta; Import via Phase-22-Gate) | 🔲 geplant — MITTEL |
+| 25 | **Execution-Sandbox-Policy** (deklarativ; Blaupause fuer Phase 17, aus OpenShell/NemoClaw) | 🔲 geplant — MITTEL (an Phase 17 gekoppelt) |
+| 26 | **Gedaechtnis: Vektor-Recall + Trajektorien-Lernen** (optional, aus MemPalace/ruflo) | 🔲 optional — NIEDRIG |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
@@ -448,6 +453,80 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
   Deliverable-Fokus** + **Erfolgsmetriken je Charta**, ausgepraegtere Personas, validierte Workflows. Umsetzung
   nur ueber den **Head of Agents auf CEO-Anweisung** (Charta-Schreibrecht, AGENTS.md 3.3). Quelle:
   `github.com/msitarzewski/agency-agents/issues/525`. **Ergebnis = Charta-Diff-Vorlage (CEO-Tor).**
+
+### Neu — CEO 2026-07-03 (Phasen 22-26: aus Recherche „Agent-Oekosystem" konkretisiert)
+
+> Ergebnis der Recherche zu **NVIDIA SkillSpector/Skills/OpenShell, MemPalace, ruflo, agency-agents #525**.
+> Die drei „PRUEFEN"-Punkte oben (NVIDIA Skills, MemPalace, The Agency) sind hiermit in konkrete Phasen
+> ueberfuehrt; ruflo ist neu bewertet. Kurzfazit: **SkillSpector = Volltreffer** (direkter Phase-21-Ausbau),
+> NVIDIA-Skills-**Format** + OpenShell-**Prinzip** uebernehmbar, MemPalace **validiert** unseren Ist-Stand,
+> ruflo grossteils Overkill (zwei Rosinen). Reihenfolge = Prioritaet. Details/Quellen: Chat-Zusammenfassung
+> 2026-07-03.
+
+- **Phase 22 — CISO-Agent ausbauen (Static-Security-Scan nach SkillSpector-Muster) [HOCH]:**
+  - **Ziel:** Phase-21-Agent von 3 Checks (Secret-Hygiene/Hardening/`pip-audit`) auf ein breiteres, regel-
+    basiertes Set heben, das SkillSpector-Kategorien nachbaut -- angewandt auf UNSEREN eigenen Code + genutzte
+    Tools/Skills. Klarster „1:1 lernbar"-Kandidat (gleicher Stack: Python, regelbasiert wie `security_agent.py`).
+  - **Bausteine:** (a) AST-Scan gefaehrlicher Aufrufe (`exec`/`eval`/`subprocess`/`os.system`/`shell=True`);
+    (b) Taint-Tracking Credential/Datei -> Netzwerk-Sink (ergaenzt `leak_guard`); (c) **OSV.dev**-Abfrage als
+    Ergaenzung zu `pip-audit` (kein API-Key, Offline-Fallback, mehr Oekosysteme); (d) Muster fuer Prompt-
+    Injection/Excessive-Agency/Tool-/Memory-Poisoning gegen unsere Tool-Definitionen; (e) **Risiko-Score 0-100**
+    + Ausgabe (Terminal/JSON/**SARIF**) + Exit-Code-Gate.
+  - **Quelle:** NVIDIA **SkillSpector** (`github.com/nvidia/skillspector`; 68 Muster/17 Kategorien; Studie
+    Liu et al. 2026: 26,1% Skills verwundbar, 5,2% boesartig).
+  - **Governance/GATE:** reiner Melde-/Vorschlags-Loop (L1 melden, L2 Antrag); jede WIRKUNG (Fix/Sperre/
+    Rotation) bleibt CEO-Tor. Scan selbst lokal/kostenlos = kein GATE. **Lizenz vor Code-Uebernahme pruefen**
+    (Regel-Nachbau ist unproblematisch). Baut direkt auf Phase 21.
+
+- **Phase 23 — Haertung externer Eingaben (Prompt-Injection-/PII-Filter) [HOCH-MITTEL]:**
+  - **Ziel:** Inhalte, die LUNA von aussen verarbeitet (Gmail, Instagram-DMs, Web-Recherche, spaeter weitere),
+    werden VOR Modell-/Tool-Nutzung auf Injection-Muster + PII gefiltert/markiert -- Schutz vor „indirect
+    prompt injection" ueber Fremdinhalte.
+  - **Bausteine:** regelbasierter Input-Sanitizer/Klassifikator (Injection-Muster aus Phase 22 wiederverwenden);
+    PII-Erkennung vor Ausleitung nach aussen (ergaenzt `leak_guard` beim Senden). Als Loop mit Not-Aus.
+  - **Quelle:** SkillSpector (Injection-Muster) + `ruvnet/ruflo` (AIDefence, 14-Typ-Pipeline).
+  - **Governance/GATE:** rein defensiv (filtern/markieren), keine autonome Aktion; verdaechtige Inhalte ->
+    Meldung. Lokal = kein GATE. Haengt logisch an Phase 22.
+
+- **Phase 24 — Skill-/Charta-Standard + gepruefter Skill-Import [MITTEL]:**
+  - **Ziel:** Unsere Agenten/Faehigkeiten als portable, versionierbare Skills nach dem offenen „Agent Skills"-
+    Format formalisieren; Tuer fuer geprueften Import von Community-Skills oeffnen.
+  - **Bausteine:** (a) Schema `SKILL.md` (Instruktion) + `skill-card` (Identitaet/Governance/Version) + Eval-/
+    Testset + optional `BENCHMARK.md` + optionale Signatur -- unsere `agents/*.md`-Charten darauf heben; (b) je
+    Charta **Ergebnis-/Deliverable-Fokus + Erfolgsmetriken** (aus „The Agency" #525); (c) Import-Pipeline fuer
+    Fremd-Skills -- **JEDER Import zuerst durch das Security-Gate aus Phase 22** (Skills mit Skripten 2,12x
+    haeufiger verwundbar).
+  - **Quelle:** `NVIDIA/skills` (Format), `VoltAgent/awesome-agent-skills` (1000+ Skills), agency-agents #525
+    (Metriken). **Inhaltliche** NVIDIA-Skills (CUDA/Jetson) bleiben irrelevant -- nur das Format zaehlt.
+  - **Governance/GATE:** Charta-Aenderungen NUR Head of Agents auf ausdrueckliche CEO-Anweisung mit Diff
+    (AGENTS.md 3.3); jeder externe Skill = CEO-Tor + Security-Gate.
+
+- **Phase 25 — Execution-Sandbox-Policy (deklarativ) fuer Phase 17 [MITTEL, konzeptionell]:**
+  - **Ziel:** Formale, deklarative Sicherheits-Policy fuer die Execution/Computer-Use-Faehigkeit (Phase 7/17):
+    allow-listed Dateipfade, Egress-Regeln, Syscall-/Prozess-Deny, Credentials nur als Env (nie im Sandbox-FS)
+    -- ergaenzt unser bestehendes „Branch+Tests+CEO-Merge, non-root".
+  - **Bausteine:** Policy-Schema (YAML) + Enforcement-Punkt vor Datei-/Netz-/Prozess-Aktionen. Als **Blaupause**,
+    nicht Voll-Adoption (OpenShell ist Rust/schwer).
+  - **Quelle:** `NVIDIA/openshell` (Defense-in-Depth, deklarative YAML-Policy) + `NVIDIA/NemoClaw` (24/7-Agenten-
+    Referenzstack).
+  - **Governance/GATE:** staerkt genau die Phase-17-Governance (Least-Privilege, Not-Aus, Audit). Design-Freigabe;
+    greift erst mit Phase 17 (daran gekoppelt).
+
+- **Phase 26 — Gedaechtnis: Vektor-Recall + Trajektorien-Lernen (optional) [NIEDRIG]:**
+  - **Ziel:** Optionaler Ausbau von `brain.py`/`memory.py`, WENN das Volumen waechst: semantischer Recall via
+    Embeddings + „was hat funktioniert"-Lernen aus vergangenen Laeufen.
+  - **Bausteine:** (a) Vektor-Recall-Schicht (lokal, z. B. ChromaDB/SQLite) ueber den bestehenden verlustfreien
+    Stores -- unsere Zwei-Ebenen-Struktur (`MEMORY.md`-Index ~ „Closets", Fakt-Dateien/JSONL ~ „Drawers")
+    entspricht schon MemPalace; (b) Trajektorien-Store fuer erfolgreiche Ablaeufe.
+  - **Quelle:** **MemPalace** (Method-of-Loci, ~170-Token-Wake-up, Zero-LLM-Writes -- **validiert** unseren
+    Ansatz) + `ruflo` (Trajektorien-Learning).
+  - **Governance/GATE:** local-first, token-frugal, keine externe Ausleitung; kein GATE. Heute reicht
+    Index+Keyword -> bewusst optional/spaeter. Substanz/Lizenz von MemPalace vor Tool-Uebernahme pruefen
+    (eher Konzepte als das Tool uebernehmen).
+
+- **Nicht weiterverfolgen (aus derselben Recherche):** NVIDIA-Skill-**Inhalte** (CUDA/Jetson), **ruflo als
+  Framework** (Foederation/Byzantine-Consensus = Overkill fuer ein Ein-CEO-Unternehmen; TS-Stack), **OpenShell
+  als Voll-Adoption** (Rust). agency-agents #525 liefert nur den Metrik-/Deliverable-Gedanken (in Phase 24).
 
 ### Aelterer Backlog
 

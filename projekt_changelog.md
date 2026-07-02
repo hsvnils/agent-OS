@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 00:20] — Claude Code — Roadmap: Phasen 22-26 aus Agent-Oekosystem-Recherche
+- **Was:** In `ROADMAP.md` fuenf neue Phasen ergaenzt (Status-Tabelle + Detail-Block im Backlog), abgeleitet aus
+  der CEO-beauftragten Recherche zu NVIDIA SkillSpector/Skills/OpenShell, MemPalace, ruflo, agency-agents #525:
+  P22 CISO-Agent-Ausbau (Static-Security-Scan nach SkillSpector, HOCH), P23 Haertung externer Eingaben
+  (Injection-/PII-Filter), P24 Skill-/Charta-Standard + gepruefter Import, P25 Execution-Sandbox-Policy
+  (OpenShell-Blaupause fuer Phase 17), P26 Vektor-Recall + Trajektorien-Lernen (optional). Plus „Nicht
+  weiterverfolgen"-Liste. Die drei „PRUEFEN"-Backlog-Punkte (NVIDIA Skills/MemPalace/The Agency) sind damit in
+  konkrete Phasen ueberfuehrt.
+- **Warum:** CEO-Auftrag „schreibe aus der Zusammenfassung eine Roadmap".
+- **Betroffen:** ROADMAP.md. Reine Planung -- keine Umsetzung (jede Phase bleibt eigener GATE/CEO-Tor).
+
 ## [2026-07-02 21:55] — Claude Code — Security-Fund behoben: pip auf >=26.1.2 angehoben (5 CVEs)
 - **Was:** Der Phase-21-Audit fand 5 CVEs im gebundelten `pip 25.0.1` des Base-Images (u. a.
   PYSEC-2026-196, CVE-2025-8869, CVE-2026-1703/-3219/-6357). In `deploy/Dockerfile` einen
