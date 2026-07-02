@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 12:40] — Claude Code — Konsolidierung K1+K2: Trends-Pilot in LUNA-OS
+- **Was:** `orchestrator/core/trends.py` (`TrendStore` -- Supabase als DB via `SupabaseClient`, lokaler
+  JSONL-Cache-Fallback, `list()`/`status_setzen()`, Status new/reviewing/draft_created/approved/published/
+  ignored). Endpunkte `GET /api/trends` + `POST /api/trends/{id}/status`. LUNA-OS-App **„Trends"** (Trend-Inbox
+  mit Relevanz/Score/Quelle + Status-Buttons), APPS+NAV, Cache-Bust **v21**. 5 Tests; Gesamtsuite **270**.
+  Preview: UI rendert, kein JS-Fehler.
+- **Warum:** HCC->LUNA-OS Konsolidierung, K1 (content_ops-Datenschicht) + K2 (content_ops-App), Trends als
+  erster Content-Typ (Blaupause fuer Ideen/Drafts/Quellen).
+- **Betroffen:** orchestrator/core/trends.py, orchestrator/tests/test_trends.py,
+  orchestrator/channels/web/app.py, orchestrator/channels/web/static/app.js,
+  orchestrator/channels/web/static/index.html, .gitignore
+
 ## [2026-07-02 12:10] — Claude Code — Richtungswechsel: Konsolidierung HCC -> LUNA-OS (Roadmap neu)
 - **Was:** CEO-Entscheidung: **EIN System = LUNA-OS** (Gehirn + Team-Web-Gesicht); altes nilshubv2/Next.js +
   Worker **stilllegen**; behaltene Teile (content_ops, CRM, Team) in LUNA-OS **nachbauen**; **Supabase = primaere

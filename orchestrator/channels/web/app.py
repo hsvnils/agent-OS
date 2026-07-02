@@ -22,6 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from ...core.antraege import Antraege
 from ...core.brain import Brain
 from ...core.crm import CrmStore
+from ...core.trends import TrendStore
 from ...core.briefing import Agenda
 from ...core.insights import Insights
 from ...core.notifications import Notifications
@@ -57,6 +58,24 @@ def _crm_projektor():
 
 
 crm_store = CrmStore(ROOT / "crm" / "log.jsonl", changelog=_changelog, projektor=_crm_projektor())
+
+
+def _supabase_client():
+    """SupabaseClient aus der .env (service_role). None nur bei Import-Fehler; ohne Keys -> Fall-B im Client."""
+    try:
+        from ...governance.supabase import SupabaseAuth, SupabaseClient
+        try:
+            from ..telegram.bot import _load_secrets
+            sec = _load_secrets()
+        except Exception:
+            sec = dict(os.environ)
+        return SupabaseClient(SupabaseAuth.from_env(sec))
+    except Exception:
+        return None
+
+
+# content_ops (K1/K2): Supabase = DB, lokaler Cache-Fallback.
+trends_store = TrendStore(_supabase_client(), ROOT / "trends" / "cache.jsonl")
 # Internes Lagebild (ohne Google); fuer das volle Lagebild (Termine/Mails) nutzt der Endpunkt die LUNA-ctx.
 insights_intern = Insights(antraege=antraege, research=research, agenda=agenda)
 # Investment (Phase 2, advisory): Engine + Store. MarketData wird lazy aus den .env-Keys gebaut.
@@ -723,6 +742,19 @@ def crm_konversation(firma: str):
 def crm_todo_erledigen(todo_id: str):
     crm_store.todo_erledigen(todo_id)
     return JSONResponse({"ok": True})
+
+
+# content_ops -- Trends (K2)
+@app.get("/api/trends")
+def trends():
+    return {"trends": trends_store.list(100)}
+
+
+@app.post("/api/trends/{trend_id}/status")
+async def trends_status(trend_id: str, request: Request):
+    body = await _json(request)
+    r = await asyncio.to_thread(trends_store.status_setzen, trend_id, (body.get("status") or "").strip())
+    return JSONResponse({"ok": bool(r.get("ok")), "res": r, "trends": trends_store.list(100)})
 
 
 @app.get("/api/investment/detail")

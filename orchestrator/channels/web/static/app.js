@@ -19,6 +19,7 @@ const APPS = {
   wissen: { icon: "🧠", titel: "Wissen", badge: () => 0, render: renderWissen, load: ladeWissen },
   investment: { icon: "📈", titel: "Investment", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Investment…</div></div>`, load: ladeInvestment },
   crm: { icon: "🤝", titel: "Collab-CRM", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade CRM…</div></div>`, load: ladeCRM },
+  trends: { icon: "🔥", titel: "Trends", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Trends…</div></div>`, load: ladeTrends },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
   agenten: { icon: "🕸️", titel: "Agenten-Map", badge: () => 0, render: renderAgenten, load: ladeAgenten },
 };
@@ -111,6 +112,27 @@ async function openCrmKonversation(firma) {
     const msgs = (d.nachrichten || []).map(m => `<div class="row"><span class="t">${m.richtung === "ein" ? "⬅︎" : "➡︎"}</span><div><b>${esc(m.text)}</b><br><span class="meta">${esc(m.kategorie || "")}${m.ts ? " · " + esc(m.ts) : ""}</span></div></div>`).join("") || `<div class="leer">Kein Verlauf.</div>`;
     win.body.innerHTML = `<div class="app detail"><div class="head"><b>${esc(firma)}</b></div>${msgs}</div>`;
   } catch { win.body.innerHTML = `<div class="app"><div class="leer">Konnte Verlauf nicht laden.</div></div>`; }
+}
+// ---- content_ops: Trends (K2) ----------------------------------------------
+let TRENDS = null;
+const trendStatusLabels = { new: "Neu", reviewing: "In Prüfung", draft_created: "Entwurf erstellt", approved: "Freigegeben", published: "Veröffentlicht", ignored: "Ignoriert" };
+function trendStatusLabel(s) { return trendStatusLabels[s] || s || ""; }
+async function ladeTrends() {
+  try { TRENDS = await (await fetch("/api/trends")).json(); } catch { TRENDS = null; }
+  const win = WINS.trends; if (!win) return;
+  if (!TRENDS) { win.body.innerHTML = `<div class="app"><div class="leer">Trends nicht verfügbar.</div></div>`; return; }
+  const relFarbe = { high: "var(--green)", medium: "var(--cyan)", low: "var(--fg)" };
+  const rows = (TRENDS.trends || []).map(t => `<div class="card">
+    <div class="head"><span class="badge ${t.status === "approved" ? "freigegeben" : "in_umsetzung"}">${esc(trendStatusLabel(t.status))}</span><b>${esc(t.title)}</b><span class="meta" style="color:${relFarbe[t.relevance] || "var(--fg)"}">${esc(t.relevance || "")}${t.score != null ? " · " + t.score : ""}</span></div>
+    ${t.description ? `<div class="desc">${esc(t.description)}</div>` : ""}
+    <div class="meta">${esc(t.source_name || t.source_type || "")}${t.source_url ? ` · <a href="${esc(t.source_url)}" target="_blank" rel="noopener">Quelle ↗</a>` : ""}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${["reviewing", "approved", "ignored"].map(s => `<button class="btn" data-trendid="${esc(t.id)}" data-trendstatus="${s}">${esc(trendStatusLabel(s))}</button>`).join("")}</div>
+  </div>`).join("") || `<div class="leer">Noch keine Trends. LUNAs Social-Media-Researcher füllt sie später (K3).</div>`;
+  win.body.innerHTML = `<div class="app"><h3>Trend-Inbox</h3>${rows}</div>`;
+}
+async function trendStatus(id, status) {
+  try { await fetch("/api/trends/" + encodeURIComponent(id) + "/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }); } catch {}
+  ladeTrends();
 }
 // Detailansicht zu einem Wert (Aktie: Profil + Quote + News; Krypto: CoinGecko-Infos).
 async function openInvestDetail(symbol, asset) {
@@ -390,6 +412,7 @@ const NAV = [
   { id: "wissen", icon: "🧠", label: "Wissen" },
   { id: "investment", icon: "📈", label: "Investment" },
   { id: "crm", icon: "🤝", label: "Collab-CRM" },
+  { id: "trends", icon: "🔥", label: "Trends" },
   { id: "research", icon: "🔍", label: "Research", count: () => STATE.research.length },
   { id: "meldungen", icon: "🔔", label: "Meldungen", count: () => STATE.meldungen.length },
   { id: "aktivitaet", icon: "📊", label: "Aktivität" },
@@ -609,6 +632,8 @@ document.addEventListener("click", (e) => {
   if (crmt) { crmTodoErledigt(crmt.dataset.crmtodo); return; }
   const crmf = e.target.closest("[data-crmfirma]");
   if (crmf) { openCrmKonversation(crmf.dataset.crmfirma); return; }
+  const trs = e.target.closest("[data-trendid]");
+  if (trs) { trendStatus(trs.dataset.trendid, trs.dataset.trendstatus); return; }
   const cmd = e.target.closest("[data-cmd]");
   if (cmd) { cmd.dataset.cmd === "talk" ? toggleVoice() : navTo(cmd.dataset.cmd); return; }
   const navi = e.target.closest("[data-app]");

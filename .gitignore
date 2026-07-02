@@ -52,6 +52,7 @@ brain/log.jsonl
 investment/log.jsonl
 crm/log.jsonl
 crm/sync_cursor.txt
+trends/cache.jsonl
 .claude/preview-logs/
 backups/
 
