@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 00:40] — Claude Code — Phase 21: Cybersecurity-Agent (CISO-Ausbau, L1/L2)
+- **Was:** `orchestrator/core/security_agent.py` `SecurityAgent` -- kostenloser, regelbasierter Sicherheits-
+  Audit (kein LLM) entlang der drei CEO-Stossrichtungen (Zugriffe verhindern/Luecken finden/schliessen):
+  Checks (1) Secret-Hygiene (`.gitignore` deckt Secrets/Datenstores + KEINE Secrets im git-Index via
+  `git ls-files`), (2) Hardening (`LUNA_OS_PASSWORD`-Login, Leck-Schutz aktiv), (3) Dependencies best-effort
+  (`pip-audit` -> CVEs, sonst Empfehlung). **L1** `lauf()` meldet Befunde (Notifier, Abteilung CISO/Security);
+  **L2** `lauf(als_antrag=True)` buendelt einen Remediation-Antrag (Phase 6). **Keine autonome Aenderung** --
+  Sperren/Aktualisieren/Key-Rotation = CEO-Tor. LUNA-Tool `sicherheits_audit(als_antrag?)`; gated Tages-Loop
+  `_start_security_loop` (04:00, nur mit `SECURITY_AUDIT_ENABLED=1`, L1). Injizierbar -> Self-Checks ohne Netz.
+- **Warum:** CEO-Roadmap Phase 21.
+- **Betroffen:** `orchestrator/core/security_agent.py` (neu), `orchestrator/core/hoa_tools.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_security_agent.py` (neu). Suite 335 gruen;
+  echter Selbst-Audit des Repos gruen (Hygiene ok, einzige Luecke: pip-audit nicht installiert -> Empfehlung).
+  OFFEN (optional): pip-audit ins Image (Dockerfile + --build) fuer aktive CVE-Scans; CISO-Charta-Ergaenzung
+  nur ueber HoA auf CEO-Anweisung.
+
 ## [2026-07-03 00:10] — Claude Code — Phase 19+20: CRM-Akte trackt Mails + kanaluebergreifende Timeline
 - **Was:** (Phase 19) `orchestrator/core/crm_mail.py` `CrmMailTracker`: ordnet Gmail-Mails (via
   `google.mail_suchen(firmenname)`) bestehenden CRM-Firmen zu und erfasst sie als CRM-Nachricht

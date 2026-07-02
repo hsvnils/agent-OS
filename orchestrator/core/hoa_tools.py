@@ -89,6 +89,13 @@ def tool_specs() -> list[dict]:
               {"stufe": _str("trends | ideen | drafts | alles (Default: trends)."),
                "max_gesamt": _str("Optional: max. Kandidaten je Stufe/Lauf (Default 8 fuer Trends, 5 sonst).")},
               []),
+        _spec("sicherheits_audit", "CISO/Security (Phase 21): kostenloser, regelbasierter Sicherheits-Audit -- "
+              "Secret-Hygiene (.gitignore + keine Secrets im git-Index), Login-Hardening (LUNA_OS_PASSWORD), "
+              "Dependency-CVEs (pip-audit). Meldet die Befunde. Mit als_antrag=true buendelt er einen "
+              "Remediation-Antrag (CEO-Tor). KEINE autonome Aenderung -- Sperren/Aktualisieren/Key-Rotation "
+              "entscheidet der CEO.",
+              {"als_antrag": {"type": "boolean", "description": "true -> Befunde als entscheidungsreifen "
+                              "Antrag buendeln (sonst nur melden)."}}, []),
         _spec("wissensstand", "Zeigt den aktuellen Fachbereichs-Wissensstand einer Abteilung (gesammelte "
               "Web-Funde, neueste zuerst) -- reine Anzeige, keine neue Suche, keine Token.",
               {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto, ciso, cfo).")}, ["abteilung"]),
@@ -402,6 +409,24 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                 "hinweis": r.get("hinweis", ""),
                 "kandidaten": [{"title": k.get("title", ""), "url": k.get("source_url", "")}
                                for k in r.get("kandidaten", [])]}
+
+    if name == "sicherheits_audit":
+        import subprocess
+        from .security_agent import SecurityAgent
+
+        def _run(cmd):
+            try:
+                return subprocess.run(cmd, capture_output=True, text=True, timeout=90,
+                                      cwd=str(ctx.repo_root)).stdout
+            except Exception:
+                return ""
+        sa = SecurityAgent(repo_root=ctx.repo_root, env=ctx.secret_dict or {}, secrets=sec, run=_run,
+                           notify=(ctx.notifications.enqueue if ctx.notifications else None),
+                           antraege=ctx.antraege, changelog=ctx.core.changelog)
+        r = sa.lauf(als_antrag=bool(args.get("als_antrag")))
+        return {"ok": True, "befunde": r["befunde"], "hoch": r["hoch"], "antrag_id": r.get("antrag_id"),
+                "findings": [{"schwere": f["schwere"], "titel": f["titel"], "empfehlung": f["empfehlung"]}
+                             for f in r["findings"] if f["schwere"] != "ok"]}
 
     if name == "recherche_beauftragen":
         frage = (args.get("frage") or "").strip()

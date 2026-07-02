@@ -32,7 +32,7 @@
 | 18 | **HCC -> LUNA-OS Konsolidierung** (EIN System = LUNA-OS; nilshubv2/Worker stillgelegt; Supabase = DB; content_ops/CRM/Team/Cutter als LUNA-OS-Apps; Team-Auth/Rollen) | ✅ **K0-K6 KOMPLETT 2026-07-02** -- nur noch 10 LUNA-Tabellen, Vercel/Worker weg; `HCC_INTEGRATION_ROADMAP.md` |
 | 19 | **CRM-Akte: Mail-Tracking** (Gmail-Mails je Unternehmen in die CRM-Akte) | ✅ **gebaut 2026-07-03** (`core/crm_mail.py`, quelle='mail', L1-Loop im Bot-Poll; luna-telegram-Neustart fuer den Tick) |
 | 20 | **Kanaluebergreifende Nachrichten-Timeline** (Instagram/Mail/Telegram chronologisch) | ✅ **gebaut 2026-07-03** (`CrmStore.timeline`, `/api/crm/timeline`, LUNA-OS-App „Timeline" mit Kanal-Badges) |
-| 21 | **Cybersecurity-Agent** (CISO-Ausbau: Zugriffe verhindern · Luecken finden · Luecken schliessen) | 🔲 offen (CEO 2026-07-02, recherchiert -- s. Backlog) |
+| 21 | **Cybersecurity-Agent** (CISO-Ausbau: Zugriffe verhindern · Luecken finden · Luecken schliessen) | ✅ **gebaut 2026-07-03** (`core/security_agent.py`, Checks Secret-Hygiene/Hardening/Dependencies; L1 melden + L2 Antrag; Tool `sicherheits_audit`; gated Loop `SECURITY_AUDIT_ENABLED`; kein Auto-Change = CEO-Tor) |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).

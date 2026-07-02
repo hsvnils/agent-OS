@@ -287,6 +287,51 @@ def _start_selfdev_loop(ctx, secrets) -> None:
     threading.Thread(target=loop, daemon=True, name="selfdev-loop").start()
 
 
+def _start_security_loop(ctx, secrets) -> None:
+    """Phase 21: taeglicher Sicherheits-Audit (CISO-Ausbau) -- 1x taeglich 04:00 (DE), L1 (nur melden).
+
+    Kostenlos/regelbasiert (kein LLM). Nur aktiv mit SECURITY_AUDIT_ENABLED=1; respektiert die Notbremse.
+    Keine autonome Aenderung -- Befunde gehen als Meldung an den CEO (Antrag nur on-demand ueber das Tool).
+    """
+    import subprocess
+    import threading
+    import time
+    from datetime import datetime
+
+    if secrets.get("SECURITY_AUDIT_ENABLED", "").strip().lower() not in ("1", "true", "yes", "on") \
+            or ctx.agenda is None:
+        return
+    from ...core.security_agent import SecurityAgent
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("Europe/Berlin")
+    except Exception:
+        tz = None
+
+    def _run(cmd):
+        try:
+            return subprocess.run(cmd, capture_output=True, text=True, timeout=90, cwd=str(ROOT)).stdout
+        except Exception:
+            return ""
+
+    def loop():
+        time.sleep(90)
+        while True:
+            try:
+                jetzt = datetime.now(tz) if tz else datetime.now()
+                datum = jetzt.strftime("%Y-%m-%d")
+                if jetzt.hour == 4 and not ctx.agenda.briefing_gesendet("security-audit", datum) \
+                        and (ctx.watch is None or not ctx.watch.store.paused()):
+                    SecurityAgent(repo_root=ROOT, env=secrets, secrets=ctx.leak_secrets, run=_run,
+                                  notify=ctx.notifications.enqueue).lauf(als_antrag=False)
+                    ctx.agenda.markiere_briefing("security-audit", datum)
+            except Exception as exc:
+                print(f"[security] Fehler: {exc}", flush=True)
+            time.sleep(300)
+
+    threading.Thread(target=loop, daemon=True, name="security-loop").start()
+
+
 def _start_content_feed_loop(ctx, secrets) -> None:
     """K3: geplanter Content-Feed-Loop -- 1x taeglich 07:00 (DE) volle Pipeline Trends->Ideen->Drafts.
 
@@ -523,6 +568,9 @@ def main() -> None:
     if secrets.get("CONTENT_FEED_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Content-Feed-Loop aktiv (taeglich 07:00, Pipeline Trends->Ideen->Drafts -> Kandidaten in "
               "LUNA-OS).", flush=True)
+    _start_security_loop(ctx, secrets)  # Phase 21: nur aktiv mit SECURITY_AUDIT_ENABLED=1
+    if secrets.get("SECURITY_AUDIT_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
+        print("Security-Audit-Loop aktiv (taeglich 04:00, regelbasiert, L1-Meldung).", flush=True)
     offset = 0
     _last_poll = 0.0
     crm_sync = None
