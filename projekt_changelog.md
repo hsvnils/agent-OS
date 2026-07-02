@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 10:15] — Claude Code — HCC Phase 1: Supabase-Client (Datenbruecke)
+- **Was:** `orchestrator/governance/supabase.py` -- Capability-Muster fuer die geteilte Datenbasis:
+  `SupabaseAuth.from_env` (SUPABASE_URL/SERVICE_ROLE_KEY) + `SupabaseClient` (PostgREST upsert/select/delete
+  via urllib, service_role, Fall-B ohne Keys, HTTP injizierbar) + `MockSupabaseClient`. 6 Tests; Suite 258.
+  Live-Verbindungstest von der NAS bestanden (profiles 200 / trend_signals 206). Nur geteilte Team-Flaechen;
+  luna-os-Interna bleiben lokal. `docs/crm_supabase_schema.sql` (relationale Projektion) fuer den CRM-Pilot.
+- **Warum:** HCC<->LUNA Integration, Phase 1 (Architektur A: Shared Supabase + NAS-Fallback).
+- **Betroffen:** orchestrator/governance/supabase.py, orchestrator/tests/test_supabase.py, docs/crm_supabase_schema.sql
+
 ## [2026-07-02 09:45] — Claude Code — HCC-Roadmap: CEO-Entscheidungen eingearbeitet
 - **Was:** `HCC_INTEGRATION_ROADMAP.md` aktualisiert: Architektur = **A (Shared Supabase) + NAS-Offline-
   Fallback (Write-Through)**; **Telegram fliegt** aus HCC (Idee „Team-Reminder" ins Backlog); **alter Video-
