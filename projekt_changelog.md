@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 11:40] — Claude Code — HCC Phase 3 (Teilstart): Video-Cutter + Invest ausgemistet
+- **Was:** Im HCC-Repo (`~/Documents/nilshubv2`, Branch `chore/ausmisten-cutter-invest`, NICHT gemergt/deployt)
+  die **isolierten** Bereiche entfernt: **Video-Cutter** (app/video-cutter+api, lib/cutter, components/video-
+  cutter) + **Invest** (app/invest); Nav/middleware/Modul-Route bereinigt (invest-Modultyp bleibt vorerst wg.
+  agents-office). **Build gruen.** DROP-SQL fuer `cutter_*` in `docs/hcc_drop_cutter.sql` (CEO fuehrt in
+  Produktion aus). **Befund:** agents/workers/telegram sind NICHT sauber entfernbar -- content_ops haengt an
+  `lib/workers`/`agents`/`telegram` (Kandidaten-Fuetterung: getTrendDetectorCandidates/getTelegramIdeaCandidates
+  /getDraftAssistantSuggestions) -> verschoben nach LUNA-Phase 5/6 (LUNA-Agenten uebernehmen die Fuetterung).
+- **Warum:** HCC-Ausmisten (#2), sicherer Teil; alter Cutter weg als Vorbereitung fuer #3 (LUNA-Cutter spiegeln).
+- **Betroffen:** (Repo nilshubv2, Branch) + docs/hcc_drop_cutter.sql
+
 ## [2026-07-02 11:05] — Claude Code — HCC Phase 2: CRM Rueckschreiben (bidirektional 1:1)
 - **Was:** `orchestrator/core/crm_sync.py` (`CrmSync.pull()` -- holt Supabase-Zeilen mit `updated_by='hcc'`
   cursor-basiert und wendet sie lokal an). `CrmStore.uebernehmen_status_extern/uebernehmen_todo_extern`
