@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 21:20] — Claude Code — K6 ABGESCHLOSSEN: HCC/Worker stillgelegt, DB bereinigt
+- **Was:** CEO hat nach doppeltem Backup (Supabase-Dashboard + NAS-CSV) `docs/hcc_k6_drop.sql` ausgefuehrt ->
+  **25 Alt-Tabellen gedroppt** (cutter_*/worker_*/agent_*/telegram_*/content_findings/*_reviews/
+  ai_intel_assets/notifications/approvals/profiles/team_members). Live verifiziert: **nur noch die 10 LUNA-
+  Tabellen uebrig** (trend_signals/ideas/content_drafts/sources/ai_intel_items/crm_companies/crm_messages/
+  crm_todos/luna_os_users/luna_cutter_jobs), Zeilen intakt, LUNA-OS unveraendert. **Vercel-Projekt `nilshubv2`
+  geloescht** (Code bleibt auf GitHub). K3 ist scharf (CONTENT_FEED_ENABLED=1, luna-telegram neu gestartet).
+- **Warum:** Konsolidierung auf EIN System (LUNA-OS) abgeschlossen -- K6 der HCC->LUNA-Roadmap.
+- **Betroffen:** Supabase (DROP), Vercel (Projekt weg); Doku `HCC_INTEGRATION_ROADMAP.md` +
+  `docs/HCC_K6_STILLLEGUNG.md`. **K0-K6 komplett.** Rest-Housekeeping optional: GitHub-Repo `nilshubv2`
+  archivieren, NAS-Ordner `hanserautisch`/`nilshubv2` entfernen.
+
 ## [2026-07-02 21:00] — Claude Code — K6 Vorbereitung: Backup #2 + K3 scharf + DROP-SQL (noch keine Loeschung)
 - **Was:** CEO-Antworten eingearbeitet (HCC=Vercel, K3 scharf ok, Review-Meta loeschen, doppeltes Backup).
   Umkehrbare Schritte erledigt: (1) **Backup #2 (CSV)** aller 25 DROP-Tabellen auf die NAS `~/k6_backup_<ts>/`

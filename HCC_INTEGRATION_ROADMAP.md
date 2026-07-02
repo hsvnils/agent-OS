@@ -90,10 +90,18 @@ Notiz) + Formular „Reel-Job anstossen". Mac-Seite: `cutter/luna_bridge.py` (Lu
 + `LUNA_OS_USER` + `LUNA_OS_PASSWORD` setzen; Cutter-Watcher neu starten (launchd) + luna-os neu starten.
 **Posten bleibt CEO-Tor.**
 
-### K6 -- nilshubv2 + Worker stilllegen
-Wenn alles in LUNA-OS laeuft: Next.js-App + Synology-Worker abschalten/Deploy entfernen; nicht mehr genutzte
-Supabase-Tabellen bereinigen (cutter_*/worker_*/agent_*/telegram_* -- mit Backup, DROP-SQL wie
-`docs/hcc_drop_cutter.sql`).
+### K6 -- nilshubv2 + Worker stilllegen -- ✅ ERLEDIGT (2026-07-02)
+Bestandsaufnahme + Plan: `docs/HCC_K6_STILLLEGUNG.md`. Ausgefuehrt:
+- **Backup (doppelt):** Supabase-Dashboard-Backup (heute) + vollstaendiger CSV-Export aller DROP-Tabellen auf
+  der NAS `~/k6_backup_20260702_161937/` (grosse Tabellen per Content-Range-Pagination komplett).
+- **K3 scharf:** `CONTENT_FEED_ENABLED=1` in NAS-.env, luna-telegram neu gestartet.
+- **DB bereinigt:** `docs/hcc_k6_drop.sql` ausgefuehrt -> 25 Alt-Tabellen gedroppt (cutter_*/worker_*/agent_*/
+  telegram_*/content_findings/*_reviews/ai_intel_assets/notifications/approvals/profiles/team_members).
+  **Verifiziert:** nur noch die 10 LUNA-Tabellen uebrig (trend_signals/ideas/content_drafts/sources/
+  ai_intel_items/crm_*/luna_os_users/luna_cutter_jobs), Zeilen intakt, LUNA-OS laeuft unveraendert.
+- **HCC-Web-App:** Vercel-Projekt `nilshubv2` geloescht (Code bleibt auf GitHub `hsvnils/nilshubv2`).
+**Rest-Housekeeping (optional, wann immer):** GitHub-Repo `nilshubv2` archivieren; NAS-Ordner `hanserautisch`
+(toter Worker + Zips) + leeren `nilshubv2`-Ordner sichern/entfernen.
 
 ## Reihenfolge / Hinweise
 K1->K2 (Datenschicht dann UI) ist das Fundament der Team-Flaeche; K3 (Agenten) fuettert sie; K4 (Team-Auth) vor

@@ -1,7 +1,9 @@
-# K6 -- Stilllegung nilshubv2 + Worker (Bestandsaufnahme + Plan)
+# K6 -- Stilllegung nilshubv2 + Worker (Bestandsaufnahme + Plan) -- ✅ ABGESCHLOSSEN 2026-07-02
 
-> Stand 2026-07-02. **Reine Bestandsaufnahme + Plan -- nichts ist geloescht/abgeschaltet.**
-> Loeschen/Abschalten = **CEO-Tor**. Reihenfolge: erst Bestaetigen, dann Backup, dann schrittweise.
+> **ERLEDIGT (2026-07-02):** Doppeltes Backup gemacht, `hcc_k6_drop.sql` ausgefuehrt (25 Alt-Tabellen weg,
+> nur noch die 10 LUNA-Tabellen -- verifiziert), Vercel-Projekt `nilshubv2` geloescht, K3 scharf. LUNA-OS
+> laeuft unveraendert. Rest optional: GitHub-Repo archivieren, NAS-Ordner `hanserautisch`/`nilshubv2` entfernen.
+> (Historie/Plan unten bleibt zur Nachvollziehbarkeit.)
 
 ## 1. Live-Befund (Supabase, Zeilen + juengster Eintrag)
 
