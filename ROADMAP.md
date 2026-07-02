@@ -527,7 +527,9 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
     "CISO/Security", kategorie="security", quelle="input-guard")`). `notify`-Callback in `CrmMailTracker`,
     `CrmStore` und `WebResearch` ergaenzt (Default None) und im Bot verdrahtet (`notifications.enqueue`);
     Spam-Schutz durch das eingebaute Dedup des Notifiers (12h). Damit wird aus der stillen Markierung ein
-    aktives Sicherheitssignal (Phase 23 -> Phase 21). +4 Tests (Gesamt 364 gruen). **Phase 23 = vollstaendig.**
+    aktives Sicherheitssignal (Phase 23 -> Phase 21). +4 Tests (Gesamt 364 gruen). CISO-Meldung an ALLEN
+    Pfaden: Bot (`bot.py`: Mail-Tick, Web) UND Web-App (`channels/web/app.py`: Instagram-DM-Webhook -> selber
+    Outbox-File, Bot stellt zu). **Phase 23 = vollstaendig.**
 
 - **Phase 24 — Skill-/Charta-Standard + gepruefter Skill-Import [MITTEL]:**
   - **Ziel:** Unsere Agenten/Faehigkeiten als portable, versionierbare Skills nach dem offenen „Agent Skills"-

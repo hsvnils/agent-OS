@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 03:15] — Claude Code — CISO-Connect auch im Instagram-DM-Webhook (app.py)
+- **Was:** In `channels/web/app.py` den `crm_store` mit `notify=notifications.enqueue` verdrahtet (gleicher
+  Outbox-File wie der Bot -> der Bot stellt die Meldung zu). Damit meldet auch der Instagram-DM-Webhook
+  (`crm_store.verarbeite_eingang`) einen Prompt-Injection-Verdacht an CISO/Security -- die vorher offene Luecke.
+  app.py byte-compiliert, 364 Tests gruen.
+- **Warum:** Phase 23 lueckenlos auf ALLEN Ingestion-Pfaden (Bot-Mail/Web + Web-App-DM-Webhook).
+- **Betroffen:** orchestrator/channels/web/app.py, ROADMAP.md.
+
 ## [2026-07-03 03:00] — Claude Code — Phase 23 (Inkr. 3, FERTIG): CISO-Connect (Injection -> Security-Meldung)
 - **Was:** Bei Prompt-Injection-Verdacht meldet die Ingestion-Stelle zusaetzlich an CISO/Security. `notify`-
   Callback (Default None) in `CrmMailTracker`, `CrmStore` und `WebResearch` ergaenzt; im Bot mit

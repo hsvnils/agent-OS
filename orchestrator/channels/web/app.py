@@ -61,7 +61,8 @@ def _crm_projektor():
         return None
 
 
-crm_store = CrmStore(ROOT / "crm" / "log.jsonl", changelog=_changelog, projektor=_crm_projektor())
+crm_store = CrmStore(ROOT / "crm" / "log.jsonl", changelog=_changelog, projektor=_crm_projektor(),
+                     notify=notifications.enqueue)   # Phase 23<->21: Injection im DM-Webhook meldet an CISO
 
 
 def _supabase_client():
