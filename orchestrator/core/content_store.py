@@ -19,6 +19,9 @@ IDEA_FELDER = "id,title,description,status,category,tags,source_type,ai_summary,
 IDEA_STATUSES = ("inbox", "sorted", "planned", "in_progress", "done", "archived")
 DRAFT_FELDER = "id,title,platform,content_format,status,hook,caption,hashtags,trend_id,created_at,updated_at"
 DRAFT_STATUSES = ("idea", "in_progress", "review", "approved", "scheduled", "published", "archived")
+SOURCE_FELDER = "id,name,source_type,url,is_active,priority,created_at,updated_at"
+AIINTEL_FELDER = "id,source_type,platform,title,author,summary,hcc_relevance_score,feasibility_score,risk_score,recommendation,source_url,created_at,updated_at"
+AIINTEL_RECS = ("use", "investigate", "later", "ignore")
 
 
 def _now() -> str:
@@ -27,12 +30,14 @@ def _now() -> str:
 
 class ContentStore:
     def __init__(self, client, tabelle: str, felder: str, cache_path: str | Path, *,
-                 statuses: tuple = (), order: str = "created_at.desc", secrets: list[str] | None = None):
+                 statuses: tuple = (), status_feld: str = "status", order: str = "created_at.desc",
+                 secrets: list[str] | None = None):
         self.client = client
         self.tabelle = tabelle
         self.felder = felder
         self.cache_path = Path(cache_path)
         self.statuses = tuple(statuses)
+        self.status_feld = status_feld   # bei ai_intel z. B. "recommendation" statt "status"
         self.order = order
         self.secrets = secrets or []
 
@@ -50,12 +55,17 @@ class ContentStore:
     def status_setzen(self, rid: str, status: str) -> dict:
         if self.statuses and status not in self.statuses:
             return {"ok": False, "fehler": f"Unbekannter Status: {status}"}
+        return self.patch(rid, {self.status_feld: status})
+
+    def patch(self, rid: str, felder: dict) -> dict:
+        """Generisches Teil-Update (PATCH) beliebiger Felder + updated_at; aktualisiert den Cache. Fuer
+        Statuswechsel (status_setzen), is_active-Toggle (sources), recommendation (ai_intel) etc."""
         if self.client is None or not self.client.verfuegbar():
             return {"ok": False, "fall_b": True,
-                    "hinweis": "Supabase nicht verfuegbar -- Statuswechsel offline nicht moeglich."}
-        r = self.client.update(self.tabelle, {"status": status, "updated_at": _now()}, params=f"id=eq.{rid}")
+                    "hinweis": "Supabase nicht verfuegbar -- Aenderung offline nicht moeglich."}
+        r = self.client.update(self.tabelle, {**felder, "updated_at": _now()}, params=f"id=eq.{rid}")
         if r.get("ok"):
-            self._cache_status(rid, status)
+            self._cache_felder(rid, felder)
         return r
 
     # -- lokaler Cache --
@@ -81,9 +91,9 @@ class ContentStore:
                     continue
         return out
 
-    def _cache_status(self, rid: str, status: str) -> None:
+    def _cache_felder(self, rid: str, felder: dict) -> None:
         rows = self._cache_lesen()
         for row in rows:
             if row.get("id") == rid:
-                row["status"] = status
+                row.update(felder)
         self._cache_schreiben(rows)

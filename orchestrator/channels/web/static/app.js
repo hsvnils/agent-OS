@@ -22,6 +22,8 @@ const APPS = {
   trends: { icon: "🔥", titel: "Trends", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Trends…</div></div>`, load: ladeTrends },
   ideas: { icon: "💡", titel: "Ideen-Labor", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Ideen…</div></div>`, load: ladeIdeen },
   drafts: { icon: "✍️", titel: "Drafts", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Drafts…</div></div>`, load: ladeDrafts },
+  quellen: { icon: "📡", titel: "Quellen", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Quellen…</div></div>`, load: ladeQuellen },
+  aiinbox: { icon: "🧩", titel: "AI-Inbox", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade AI-Inbox…</div></div>`, load: ladeAiInbox },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
   agenten: { icon: "🕸️", titel: "Agenten-Map", badge: () => 0, render: renderAgenten, load: ladeAgenten },
 };
@@ -175,6 +177,42 @@ async function ladeDrafts() {
 async function draftStatus(id, status) {
   try { await fetch("/api/drafts/" + encodeURIComponent(id) + "/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }); } catch {}
   ladeDrafts();
+}
+// ---- content_ops: Quellen (K2) ---------------------------------------------
+let SOURCES = null;
+async function ladeQuellen() {
+  try { SOURCES = await (await fetch("/api/sources")).json(); } catch { SOURCES = null; }
+  const win = WINS.quellen; if (!win) return;
+  if (!SOURCES) { win.body.innerHTML = `<div class="app"><div class="leer">Quellen nicht verfügbar.</div></div>`; return; }
+  const rows = (SOURCES.sources || []).map(s => `<div class="card">
+    <div class="head"><span class="badge ${s.is_active ? "freigegeben" : "abgelehnt"}">${s.is_active ? "Aktiv" : "Inaktiv"}</span><b>${esc(s.name)}</b><span class="meta">${esc(s.source_type || "")}${s.priority != null ? " · Prio " + s.priority : ""}</span></div>
+    ${s.url ? `<div class="meta"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url)} ↗</a></div>` : ""}
+    <div style="margin-top:6px"><button class="btn" data-srcid="${esc(s.id)}" data-srcaktiv="${s.is_active ? "0" : "1"}">${s.is_active ? "Deaktivieren" : "Aktivieren"}</button></div>
+  </div>`).join("") || `<div class="leer">Noch keine Quellen.</div>`;
+  win.body.innerHTML = `<div class="app"><h3>Quellen</h3>${rows}</div>`;
+}
+async function sourceAktiv(id, aktiv) {
+  try { await fetch("/api/sources/" + encodeURIComponent(id) + "/aktiv", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ is_active: aktiv === "1" }) }); } catch {}
+  ladeQuellen();
+}
+// ---- content_ops: AI-Inbox (K2) --------------------------------------------
+let AIINBOX = null;
+const recLabels = { use: "Nutzen", investigate: "Prüfen", later: "Später", ignore: "Ignorieren" };
+async function ladeAiInbox() {
+  try { AIINBOX = await (await fetch("/api/ai-inbox")).json(); } catch { AIINBOX = null; }
+  const win = WINS.aiinbox; if (!win) return;
+  if (!AIINBOX) { win.body.innerHTML = `<div class="app"><div class="leer">AI-Inbox nicht verfügbar.</div></div>`; return; }
+  const rows = (AIINBOX.items || []).map(it => `<div class="card">
+    <div class="head"><span class="badge ${it.recommendation === "use" ? "freigegeben" : (it.recommendation === "ignore" ? "abgelehnt" : "in_umsetzung")}">${esc(recLabels[it.recommendation] || it.recommendation || "—")}</span><b>${esc(it.title || "(ohne Titel)")}</b><span class="meta">${esc(it.source_type || "")}${it.author ? " · " + esc(it.author) : ""}</span></div>
+    ${it.summary ? `<div class="desc">${esc(it.summary)}</div>` : ""}
+    <div class="meta">Relevanz ${it.hcc_relevance_score ?? "?"} · Machbarkeit ${it.feasibility_score ?? "?"} · Risiko ${it.risk_score ?? "?"}${it.source_url ? ` · <a href="${esc(it.source_url)}" target="_blank" rel="noopener">Quelle ↗</a>` : ""}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${["use", "investigate", "later", "ignore"].map(rc => `<button class="btn" data-aiid="${esc(it.id)}" data-airec="${rc}">${esc(recLabels[rc])}</button>`).join("")}</div>
+  </div>`).join("") || `<div class="leer">AI-Inbox leer.</div>`;
+  win.body.innerHTML = `<div class="app"><h3>AI-Inbox</h3>${rows}</div>`;
+}
+async function aiRec(id, rec) {
+  try { await fetch("/api/ai-inbox/" + encodeURIComponent(id) + "/recommendation", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recommendation: rec }) }); } catch {}
+  ladeAiInbox();
 }
 // Detailansicht zu einem Wert (Aktie: Profil + Quote + News; Krypto: CoinGecko-Infos).
 async function openInvestDetail(symbol, asset) {
@@ -457,6 +495,8 @@ const NAV = [
   { id: "trends", icon: "🔥", label: "Trends" },
   { id: "ideas", icon: "💡", label: "Ideen-Labor" },
   { id: "drafts", icon: "✍️", label: "Drafts" },
+  { id: "quellen", icon: "📡", label: "Quellen" },
+  { id: "aiinbox", icon: "🧩", label: "AI-Inbox" },
   { id: "research", icon: "🔍", label: "Research", count: () => STATE.research.length },
   { id: "meldungen", icon: "🔔", label: "Meldungen", count: () => STATE.meldungen.length },
   { id: "aktivitaet", icon: "📊", label: "Aktivität" },
@@ -682,6 +722,10 @@ document.addEventListener("click", (e) => {
   if (idc) { ideaStatus(idc.dataset.ideaid, idc.dataset.ideastatus); return; }
   const drf = e.target.closest("[data-draftid]");
   if (drf) { draftStatus(drf.dataset.draftid, drf.dataset.draftstatus); return; }
+  const src = e.target.closest("[data-srcid]");
+  if (src) { sourceAktiv(src.dataset.srcid, src.dataset.srcaktiv); return; }
+  const aii = e.target.closest("[data-aiid]");
+  if (aii) { aiRec(aii.dataset.aiid, aii.dataset.airec); return; }
   const cmd = e.target.closest("[data-cmd]");
   if (cmd) { cmd.dataset.cmd === "talk" ? toggleVoice() : navTo(cmd.dataset.cmd); return; }
   const navi = e.target.closest("[data-app]");

@@ -51,6 +51,20 @@ class TestContentStore(unittest.TestCase):
         self.assertEqual(mock.patches[-1][0], "ideas")
         self.assertFalse(store.status_setzen("i1", "approved")["ok"])   # 'approved' gehoert zu Trends, nicht Ideen
 
+    def test_patch_beliebiges_feld(self):
+        mock = MockSupabaseClient()
+        r = self._store(mock, tabelle="sources", statuses=()).patch("s1", {"is_active": False})
+        self.assertTrue(r["ok"])
+        self.assertEqual(mock.patches[-1][0], "sources")
+        self.assertEqual(mock.patches[-1][1]["is_active"], False)
+
+    def test_status_feld_recommendation(self):
+        mock = MockSupabaseClient()
+        store = ContentStore(mock, "ai_intel_items", TREND_FELDER, self.cache,
+                             statuses=("use", "investigate", "later", "ignore"), status_feld="recommendation")
+        self.assertTrue(store.status_setzen("a1", "use")["ok"])
+        self.assertEqual(mock.patches[-1][1]["recommendation"], "use")     # PATCH auf recommendation, nicht status
+
     def test_offline_status_fall_b(self):
         self.assertTrue(self._store(SupabaseClient(SupabaseAuth())).status_setzen("t1", "approved")["fall_b"])
 

@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 14:05] — Claude Code — Konsolidierung K2: Sources + AI-Inbox (content_ops-Flaeche komplett)
+- **Was:** ContentStore verallgemeinert -- `status_feld` (beliebiges Statusfeld, z. B. `recommendation`) +
+  generisches `patch(rid, felder)`. **Sources-App** (`/api/sources` + `is_active`-Toggle via patch; name/
+  source_type/url/priority; kein Status) + **AI-Inbox-App** (`/api/ai-inbox` + recommendation use/investigate/
+  later/ignore via status_setzen mit status_feld=recommendation; Titel/Autor/Summary/Scores). LUNA-OS-Apps
+  „Quellen" + „AI-Inbox", Cache-Bust **v24**. 2 neue Tests; Gesamtsuite **274**; Preview ok. **Damit ist die
+  content_ops-Team-Flaeche in LUNA-OS komplett** (Trends/Ideen/Drafts/Quellen/AI-Inbox, lesen+schreiben Supabase).
+- **Warum:** HCC->LUNA-OS Konsolidierung K1/K2 abgeschlossen. Naechster grosser Hebel: K3 (LUNA-Agenten fuettern).
+- **Betroffen:** orchestrator/core/content_store.py, orchestrator/tests/test_content_store.py,
+  orchestrator/channels/web/app.py, orchestrator/channels/web/static/app.js + index.html
+
 ## [2026-07-02 13:40] — Claude Code — Konsolidierung K2: Drafts (Kern-Pipeline Trends->Ideen->Drafts komplett)
 - **Was:** Drafts als dritter content_ops-Typ ueber den generischen `ContentStore` (`content_drafts`,
   DRAFT_FELDER/DRAFT_STATUSES idea/in_progress/review/approved/scheduled/published/archived). `/api/drafts` +

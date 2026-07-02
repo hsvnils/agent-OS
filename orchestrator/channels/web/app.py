@@ -22,8 +22,8 @@ from fastapi.staticfiles import StaticFiles
 from ...core.antraege import Antraege
 from ...core.brain import Brain
 from ...core.crm import CrmStore
-from ...core.content_store import (ContentStore, DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES,
-                                   TREND_FELDER, TREND_STATUSES)
+from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, DRAFT_FELDER, DRAFT_STATUSES,
+                                   IDEA_FELDER, IDEA_STATUSES, SOURCE_FELDER, TREND_FELDER, TREND_STATUSES)
 from ...core.briefing import Agenda
 from ...core.insights import Insights
 from ...core.notifications import Notifications
@@ -83,6 +83,9 @@ ideas_store = ContentStore(_sb, "ideas", IDEA_FELDER, ROOT / "content_ops" / "id
                            statuses=IDEA_STATUSES)
 drafts_store = ContentStore(_sb, "content_drafts", DRAFT_FELDER, ROOT / "content_ops" / "drafts_cache.jsonl",
                             statuses=DRAFT_STATUSES)
+sources_store = ContentStore(_sb, "sources", SOURCE_FELDER, ROOT / "content_ops" / "sources_cache.jsonl")
+aiinbox_store = ContentStore(_sb, "ai_intel_items", AIINTEL_FELDER, ROOT / "content_ops" / "aiinbox_cache.jsonl",
+                             statuses=AIINTEL_RECS, status_feld="recommendation")
 # Internes Lagebild (ohne Google); fuer das volle Lagebild (Termine/Mails) nutzt der Endpunkt die LUNA-ctx.
 insights_intern = Insights(antraege=antraege, research=research, agenda=agenda)
 # Investment (Phase 2, advisory): Engine + Store. MarketData wird lazy aus den .env-Keys gebaut.
@@ -786,6 +789,31 @@ async def drafts_status(draft_id: str, request: Request):
     body = await _json(request)
     r = await asyncio.to_thread(drafts_store.status_setzen, draft_id, (body.get("status") or "").strip())
     return JSONResponse({"ok": bool(r.get("ok")), "res": r, "drafts": drafts_store.list(100)})
+
+
+@app.get("/api/sources")
+def sources():
+    return {"sources": sources_store.list(200)}
+
+
+@app.post("/api/sources/{source_id}/aktiv")
+async def sources_aktiv(source_id: str, request: Request):
+    body = await _json(request)
+    aktiv = bool(body.get("is_active"))
+    r = await asyncio.to_thread(sources_store.patch, source_id, {"is_active": aktiv})
+    return JSONResponse({"ok": bool(r.get("ok")), "res": r, "sources": sources_store.list(200)})
+
+
+@app.get("/api/ai-inbox")
+def ai_inbox():
+    return {"items": aiinbox_store.list(100)}
+
+
+@app.post("/api/ai-inbox/{item_id}/recommendation")
+async def ai_inbox_recommendation(item_id: str, request: Request):
+    body = await _json(request)
+    r = await asyncio.to_thread(aiinbox_store.status_setzen, item_id, (body.get("recommendation") or "").strip())
+    return JSONResponse({"ok": bool(r.get("ok")), "res": r, "items": aiinbox_store.list(100)})
 
 
 @app.get("/api/investment/detail")
