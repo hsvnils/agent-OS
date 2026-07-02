@@ -13,6 +13,8 @@ bereits bekannte Kooperations-Firmen. So bleibt das CRM sauber (kein Newsletter-
 """
 from __future__ import annotations
 
+from . import input_guard   # Phase 23: eingehende Fremd-Inhalte auf Prompt-Injection pruefen/markieren
+
 
 class CrmMailTracker:
     def __init__(self, *, crm, google, eigene_adresse: str = "", secrets: list[str] | None = None):
@@ -42,6 +44,9 @@ class CrmMailTracker:
                 text = (m.get("betreff") or "(kein Betreff)").strip()
                 if m.get("snippet"):
                     text += " — " + str(m["snippet"])[:200]
+                # Phase 23: Fremd-Inhalt vor dem Speichern auf Prompt-Injection pruefen und ggf. markieren,
+                # damit LUNA/Timeline die Nachricht als potenziell manipulativ erkennt (Lesen bleibt sicher).
+                text, _guard = input_guard.markiere_wenn_verdaechtig(text, quelle="mail")
                 mid = self.crm.nachricht_erfassen(
                     firma, text, quelle="mail", richtung=richtung, absender=von,
                     extern_id="mail:" + str(m.get("id", "")), kategorie="mail")

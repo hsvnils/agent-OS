@@ -33,8 +33,8 @@
 | 19 | **CRM-Akte: Mail-Tracking** (Gmail-Mails je Unternehmen in die CRM-Akte) | ✅ **gebaut 2026-07-03** (`core/crm_mail.py`, quelle='mail', L1-Loop im Bot-Poll; luna-telegram-Neustart fuer den Tick) |
 | 20 | **Kanaluebergreifende Nachrichten-Timeline** (Instagram/Mail/Telegram chronologisch) | ✅ **gebaut 2026-07-03** (`CrmStore.timeline`, `/api/crm/timeline`, LUNA-OS-App „Timeline" mit Kanal-Badges) |
 | 21 | **Cybersecurity-Agent** (CISO-Ausbau: Zugriffe verhindern · Luecken finden · Luecken schliessen) | ✅ **gebaut 2026-07-03** (`core/security_agent.py`, Checks Secret-Hygiene/Hardening/Dependencies; L1 melden + L2 Antrag; Tool `sicherheits_audit`; gated Loop `SECURITY_AUDIT_ENABLED`; kein Auto-Change = CEO-Tor) |
-| 22 | **CISO-Agent ausbauen** (Static-Security-Scan nach SkillSpector-Muster: AST/Taint/OSV.dev/Injection-Erkennung, Risiko-Score) | 🔨 im Bau — **Inkr. 1+2 gebaut 2026-07-03** (AST-Code-Scan + Risiko-Score 0-100; OSV.dev-Check der Dockerfile-Pins; unser Code + Pins = 0 Funde); offen: Taint, Injection-Muster, SARIF |
-| 23 | **Haertung externer Eingaben** (Prompt-Injection-/PII-Filter fuer Mail/DM/Web) | 🔲 geplant — HOCH-MITTEL |
+| 22 | **CISO-Agent ausbauen** (Static-Security-Scan nach SkillSpector-Muster) | ✅ **Kern fertig 2026-07-03** (AST-Code-Scan + Risiko-Score 0-100; OSV.dev-Check der Dockerfile-Pins; unser Code + Pins = 0 Funde). **Optionaler Backlog:** Taint-Tracking, Injection-Muster (-> Phase 23), SARIF |
+| 23 | **Haertung externer Eingaben** (Prompt-Injection-/PII-Filter fuer Mail/DM/Web) | 🔨 im Bau — **Inkr. 1 gebaut 2026-07-03** (`core/input_guard.py`: Injection-/PII-Erkennung + Untrusted-Wrap + PII-Redaktion; verankert in `crm_mail`); offen: Wiring web_research + Instagram-DMs |
 | 24 | **Skill-/Charta-Standard + gepruefter Skill-Import** (Agent-Skills-Format + Erfolgsmetriken je Charta; Import via Phase-22-Gate) | 🔲 geplant — MITTEL |
 | 25 | **Execution-Sandbox-Policy** (deklarativ; Blaupause fuer Phase 17, aus OpenShell/NemoClaw) | 🔲 geplant — MITTEL (an Phase 17 gekoppelt) |
 | 26 | **Gedaechtnis: Vektor-Recall + Trajektorien-Lernen** (optional, aus MemPalace/ruflo) | 🔲 optional — NIEDRIG |
@@ -490,6 +490,11 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
     HTTP-Client in `hoa_tools.sicherheits_audit` per `urllib` (Timeout 10s, Fehler -> uebersprungen). Live gegen
     unsere 7 Pins verifiziert = 0 CVEs. Ergaenzt `_check_dependencies` (installierte Umgebung) um die DEKLARIERTE
     Pin-Ebene. +4 Tests (Suite 20 gruen, Gesamt 344 gruen).
+  - **Status 2026-07-03: KERN FERTIG.** Die zwei hochwertigsten Bausteine (AST-Code-Scan + OSV.dev) sind live.
+    **Optionaler Backlog (abnehmender Grenznutzen fuer unser Setup):** (3) Taint-Tracking Credential->Netz --
+    `leak_guard` deckt das Kernrisiko schon; (4) Injection-/Tool-Poisoning-Muster -- greift real erst bei
+    externen Eingaben -> in **Phase 23** verschoben; (5) SARIF-Ausgabe -- erst sinnvoll mit einer CI, die sie
+    konsumiert.
 
 - **Phase 23 — Haertung externer Eingaben (Prompt-Injection-/PII-Filter) [HOCH-MITTEL]:**
   - **Ziel:** Inhalte, die LUNA von aussen verarbeitet (Gmail, Instagram-DMs, Web-Recherche, spaeter weitere),
@@ -500,6 +505,15 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
   - **Quelle:** SkillSpector (Injection-Muster) + `ruvnet/ruflo` (AIDefence, 14-Typ-Pipeline).
   - **Governance/GATE:** rein defensiv (filtern/markieren), keine autonome Aktion; verdaechtige Inhalte ->
     Meldung. Lokal = kein GATE. Haengt logisch an Phase 22.
+  - **Umsetzung (Inkrement 1, 2026-07-03):** `core/input_guard.py` -- regelbasiert/deterministisch (kein LLM):
+    `pruefe(text)` erkennt Prompt-Injection-Muster (Instruktions-Override DE/EN, Rollen-Uebernahme,
+    System-Prompt-Leak, Anti-Refusal, Exfiltration, Tool-Schmuggel, versteckte HTML-Anweisung, unsichtbare/
+    Bidi-Zeichen) + PII (email/iban/kreditkarte mit Luhn-Check); `umschliesse_extern()` (Untrusted-Boundary
+    gegen indirect injection), `redigiere_pii()`, `markiere_wenn_verdaechtig()`. Konservativ -> kein Fehlalarm
+    auf harmlosen Nachrichten (verifiziert). **Verankert in `core/crm_mail.py`:** eingehende Mails werden vor
+    dem Speichern gescannt und bei Verdacht sichtbar markiert (erscheint in CRM/Timeline). +12 Tests
+    (Gesamt 356 gruen). **Offen (naechste Inkremente):** gleiche Verankerung in Web-Recherche-Ergebnissen und
+    Instagram-DM-Eingang; optional Injection-Meldung an CISO/Security. Wirkt nach `luna-telegram`-Neustart.
 
 - **Phase 24 — Skill-/Charta-Standard + gepruefter Skill-Import [MITTEL]:**
   - **Ziel:** Unsere Agenten/Faehigkeiten als portable, versionierbare Skills nach dem offenen „Agent Skills"-

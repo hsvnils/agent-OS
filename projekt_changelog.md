@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 02:10] — Claude Code — Phase 22 Kern geschlossen + Phase 23 (Inkr. 1): Input-Haertung
+- **Was:** (1) Phase 22 in ROADMAP als **Kern fertig** markiert (AST-Scan + OSV.dev live; Inkr. 3-5 =
+  optionaler Backlog). (2) Neues Modul `core/input_guard.py` -- regelbasierter Prompt-Injection-/PII-Filter:
+  `pruefe` (Injection-Muster DE/EN + PII email/iban/kreditkarte-Luhn), `umschliesse_extern` (Untrusted-Boundary),
+  `redigiere_pii`, `markiere_wenn_verdaechtig`. Unsichtbare/Bidi-Zeichen werden erkannt (aus Code-Punkten
+  gebaut, kein literales Zeichen in der Quelle). In `core/crm_mail.py` verankert: eingehende Mails werden vor
+  dem Speichern gescannt + bei Verdacht markiert. +12 Tests (Gesamt 356 gruen), kein Fehlalarm auf harmlosen
+  Nachrichten verifiziert.
+- **Warum:** Phase 23, Inkrement 1 (Haertung externer Eingaben). Rein defensiv, keine autonome Aktion.
+- **Betroffen:** core/input_guard.py (neu), core/crm_mail.py, tests/test_input_guard.py (neu),
+  tests/test_crm_mail.py, ROADMAP.md. Offen: Wiring web_research + Instagram-DMs. Wirkt nach luna-telegram-Neustart.
+
 ## [2026-07-03 01:45] — Claude Code — Phase 22 (Inkr. 2): OSV.dev-Check der gepinnten Dependencies
 - **Was:** `core/security_agent.py` um `_check_osv()` + `_dockerfile_pins()` erweitert -- prueft die exakt
   gepinnten Dependencies (`name==version`) aus `deploy/Dockerfile` unabhaengig von `pip-audit` gegen OSV.dev
