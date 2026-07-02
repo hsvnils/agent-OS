@@ -14,6 +14,9 @@ RUN apt-get update \
 #  - tzdata: Zeitzone Europe/Berlin fuer die Briefings (08:00/20:00)
 #  - openai: Multi-Provider-Fallback fuer den Chat (Anthropic zuerst, OpenAI bei Engpass)
 #  - pip-audit: Dependency-CVE-Scan fuer den Cybersecurity-Agent (Phase 21, sicherheits_audit)
+# pip selbst aktuell halten: das Base-Image bundlet pip 25.0.1 -> mehrere CVEs
+# (u. a. PYSEC-2026-196, CVE-2025-8869). >=26.1.2 deckt alle bekannten Funde ab.
+RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.2"
 RUN pip install --no-cache-dir "claude-agent-sdk==0.2.107" "anthropic==0.111.0" \
     "google-api-python-client==2.149.0" "google-auth==2.35.0" "tzdata" "openai" \
     "fastapi==0.138.0" "uvicorn==0.49.0" "pip-audit==2.10.1"

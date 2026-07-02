@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 21:55] — Claude Code — Security-Fund behoben: pip auf >=26.1.2 angehoben (5 CVEs)
+- **Was:** Der Phase-21-Audit fand 5 CVEs im gebundelten `pip 25.0.1` des Base-Images (u. a.
+  PYSEC-2026-196, CVE-2025-8869, CVE-2026-1703/-3219/-6357). In `deploy/Dockerfile` einen
+  `python -m pip install --upgrade "pip>=26.1.2"`-Schritt vor der Dependency-Installation ergaenzt.
+- **Warum:** Konkreter High-Befund aus `sicherheits_audit` (via `docker exec luna-telegram pip-audit`
+  verifiziert). >=26.1.2 deckt alle fuenf Fix-Versionen ab.
+- **Betroffen:** deploy/Dockerfile. Braucht Image-Rebuild (`./deploy/sync-to-nas.sh --build`); danach
+  `sicherheits_audit` erneut -> erwartet 0 Funde.
+
 ## [2026-07-02 21:45] — Claude Code — Security-Audit: Paketname/CVE/Fix-Version in Meldung sichtbar
 - **Was:** In `orchestrator/core/security_agent.py` zwei Luecken geschlossen: (1) `_check_dependencies`
   reichert den Befund-`detail` jetzt via neuem `_fmt_vuln()` mit CVE-/GHSA-ID **und Fix-Version** an
