@@ -34,13 +34,14 @@
 ### K0 -- Datenbruecke + CRM-Pilot -- ✅ ERLEDIGT
 SupabaseClient + CRM-Store/Projektion + Collab-CRM-App in LUNA-OS, live bewiesen (Supabase = DB).
 
-### K1 -- content_ops-Datenschicht in LUNA-OS
-Supabase-Tabellen sources/trend_signals/ideas/content_drafts/content_findings via `SupabaseClient` (+ lokaler
-Fallback) an LUNA-OS anbinden (Lese-/Schreib-Store-Klassen nach CRM-Muster). GATE: Verbindungstest.
+### K1 -- content_ops-Datenschicht in LUNA-OS -- 🟡 Trends erledigt (Muster steht)
+Supabase-Tabellen via `SupabaseClient` (+ lokaler Fallback) an LUNA-OS anbinden. **Trends live:**
+`orchestrator/core/trends.py` (`TrendStore`, select + PATCH/update, Cache-Fallback). Ideen/Drafts/Quellen/
+AI-Inbox folgen nach demselben Muster.
 
-### K2 -- content_ops-Apps in LUNA-OS (Team-Flaeche)
-Neue LUNA-OS-Apps: Trends, Ideen-Labor, Drafts, Quellen, AI-Inbox -- Anzeige **und** Bearbeiten (schreibt nach
-Supabase). Muster der bestehenden LUNA-OS-Apps (app.js APPS + /api/*).
+### K2 -- content_ops-Apps in LUNA-OS (Team-Flaeche) -- 🟡 Trends-App erledigt (2026-07-02)
+**Trends-App live** (Inbox + Status-Buttons, `/api/trends` + status; lesen+schreiben gegen Supabase live
+bewiesen). Verbleibend: Ideen-Labor, Drafts, Quellen, AI-Inbox nach demselben Muster (app.js APPS + /api/*).
 
 ### K3 -- LUNA-Agenten fuettern content_ops
 Social-Media-Researcher + Content-Agenten (Ausbaustufe des Researchers) -> schreiben Trends/Ideen/Drafts/
