@@ -43,16 +43,24 @@ content_drafts/sources/ai_intel_items).
 **Alle content_ops-Apps live** (lesen+schreiben gegen Supabase bewiesen): Trends(7) · Ideen-Labor(6) ·
 Drafts(10) · Quellen(6, is_active-Toggle) · AI-Inbox(24, recommendation). Cache-Bust v24.
 
-### K3 -- LUNA-Agenten fuettern content_ops (als Loop, Loop Engineering)
-Social-Media-Researcher + Content-Agenten (Ausbaustufe des Researchers) -> schreiben Trends/Ideen/Drafts/
-Findings nach Supabase. **Ersetzt den alten Dummy-Worker** endgueltig. Entworfen nach `governance/autonomie-
-stufen.md` (Loop-Anatomie + L1→L2→L3):
+### K3 -- LUNA-Agenten fuettern content_ops (als Loop, Loop Engineering) -- ✅ CODE-KOMPLETT (2026-07-02)
+Social-Media-Researcher + Content-Agenten -> schreiben Trends/Ideen/Drafts nach Supabase. **Ersetzt den alten
+Dummy-Worker.** Entworfen nach `governance/autonomie-stufen.md` (Loop-Anatomie + L1→L2→L3):
 - **Ziel:** N neue, relevante Kandidaten je Lauf (Trends/Ideen/Draft-Vorschlaege).
-- **Trigger:** Zeitplan (WatchScheduler, taeglich/stuendlich) je aktiver Quelle (`sources`).
-- **Lauf:** Web-Recherche (Brave/Researcher) -> Kandidaten generieren (guenstiges Modell fuer Routine).
-- **Verifikation:** Relevanz-/Qualitaets-Check (Maker/Checker) -> schreibt mit Status `new`/`review`.
-- **Stop:** max. Kandidaten/Lauf + Token-Budget (CFO); Notbremse (`autonomie_pausieren`).
+- **Trigger:** Zeitplan (`_start_content_feed_loop`, taeglich 07:00 DE, nur mit `CONTENT_FEED_ENABLED=1`) oder
+  manuell (LUNA-Tool `content_feed_lauf`, stufe = trends|ideen|drafts|alles).
+- **Lauf:** Trends = Brave-Web-Recherche (kostenlos); Ideen/Drafts = Content-Fachagent (`cco`, LLM,
+  guenstiges Modell). Bulk je Stufe.
+- **Verifikation:** Dedup (`source_url`; Status-Progression) + **Team-Review** in LUNA-OS.
+- **Stop:** max. Kandidaten/Lauf + Notbremse (`autonomie_pausieren`/`WatchStore.paused`).
 - **Autonomie:** **L1/L2** -- Kandidaten fuers **Team-Review** (kein Auto-Publish; Oeffentlichkeit = CEO-Tor).
+
+**Umgesetzt:** `orchestrator/core/content_feed.py` (`ContentFeed`: `trend_lauf`/`ideen_lauf`/`drafts_lauf`/
+`pipeline_lauf`) + `ContentStore.add()` (Insert). Pipeline: Trends `new` -> Ideen `inbox` -> Drafts `idea`;
+verarbeitete Quellen ruecken vor (Trend->`reviewing`, Idee->`sorted`), damit nichts doppelt laeuft. Suite 294.
+**OFFEN:** deployen + **live gegen Supabase verifizieren** (`CONTENT_FEED_ENABLED=1` in NAS-.env, luna-telegram
+neu starten; oder `content_feed_lauf` via Telegram). Feinschliff: LLM-Relevanzfilter der Roh-Trends (Checker),
+`trend_id`-Verknuepfung Idee->Draft, `sources`-Tabelle als zusaetzlicher Trigger.
 
 ### K4 -- Team-Auth + Rollen in LUNA-OS
 Mehr-Nutzer-Login (statt einzel-CEO-Basic-Auth) + Modul-/Rollen-Zugriff (wie HCC `allowed_modules`). CEO voll,

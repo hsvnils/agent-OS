@@ -79,12 +79,16 @@ def tool_specs() -> list[dict]:
               {"kategorie": _str("Optional: 'github' oder 'fachbereich'.")}, []),
         _spec("watch_tick", "Fuehrt EINEN kostenlosen Watch-Durchlauf aus (GitHub-Trends firmenweit). Keine "
               "Token; legt neue Funde ab.", {}, []),
-        _spec("content_feed_lauf", "K3: laesst den Content-Researcher EINEN Trend-Scouting-Durchlauf machen -- "
-              "Brave-Web-Recherche je Content-Thema (kostenlos, kein Hintergrund-LLM) -> neue Trend-Kandidaten "
-              "(Status 'new') nach Supabase, sichtbar in LUNA-OS unter „Trends“ fuers Team-Review. Dedup gegen "
-              "bestehende Quellen; respektiert die Notbremse. Kein Auto-Publish (Oeffentlichkeit = CEO-Tor).",
-              {"max_pro_thema": _str("Optional: max. Kandidaten je Suchthema (Default 3)."),
-               "max_gesamt": _str("Optional: max. Kandidaten gesamt je Lauf (Default 8).")}, []),
+        _spec("content_feed_lauf", "K3: laesst den Content-Researcher content_ops fuettern. stufe='trends' "
+              "(Default): Brave-Web-Recherche je Content-Thema (kostenlos) -> Trend-Kandidaten (Status 'new'). "
+              "stufe='ideen': aus offenen Trends Content-Ideen ableiten (Fachagent, LLM) -> ideas (Status "
+              "'inbox'). stufe='drafts': aus offenen Ideen Reel-Entwuerfe (Hook/Caption/Hashtags) -> "
+              "content_drafts (Status 'idea'). stufe='alles': volle Pipeline Trends->Ideen->Drafts. Alles "
+              "landet als Kandidat in LUNA-OS fuers Team-Review; Dedup + Notbremse; KEIN Auto-Publish "
+              "(Oeffentlichkeit = CEO-Tor).",
+              {"stufe": _str("trends | ideen | drafts | alles (Default: trends)."),
+               "max_gesamt": _str("Optional: max. Kandidaten je Stufe/Lauf (Default 8 fuer Trends, 5 sonst).")},
+              []),
         _spec("wissensstand", "Zeigt den aktuellen Fachbereichs-Wissensstand einer Abteilung (gesammelte "
               "Web-Funde, neueste zuerst) -- reine Anzeige, keine neue Suche, keine Token.",
               {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto, ciso, cfo).")}, ["abteilung"]),
@@ -373,30 +377,30 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"ergebnis": redact(out, sec)}
 
     if name == "content_feed_lauf":
-        from .content_feed import ContentFeed
-        from .content_store import ContentStore, TREND_FELDER, TREND_STATUSES
         from ..governance.supabase import SupabaseAuth, SupabaseClient
         sb = SupabaseClient(SupabaseAuth.from_env(ctx.secret_dict or {}))
         if not sb.verfuegbar():
             return {"ok": False, "hinweis": "content_feed: Supabase nicht konfiguriert "
                     "(SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY noetig)."}
-        web = ctx.web
-        if web is None:
-            from ..governance.web_research import WebResearch
-            web = WebResearch.from_env(secrets=sec)
-        trends = ContentStore(sb, "trend_signals", TREND_FELDER,
-                              ctx.repo_root / "content_ops" / "trends_cache.jsonl",
-                              statuses=TREND_STATUSES, secrets=sec)
-        feed = ContentFeed(web=web, trends_store=trends,
-                           notify=(ctx.notifications.enqueue if ctx.notifications else None),
-                           research=ctx.research,
-                           watch_store=(ctx.watch.store if ctx.watch else None), secrets=sec)
-        r = feed.trend_lauf(max_pro_thema=int(args.get("max_pro_thema") or 3),
-                            max_gesamt=int(args.get("max_gesamt") or 8))
+        feed = _content_feed(ctx, sb, sec)
+        stufe = (args.get("stufe") or "trends").strip().lower()
+        if stufe == "alles":
+            r = feed.pipeline_lauf(max_pro_stufe=int(args.get("max_gesamt") or 5))
+            if r.get("pausiert"):
+                return {"ok": False, "pausiert": True, "hinweis": "Autonomie pausiert (Notbremse)."}
+            return {"ok": True, "trends": r.get("trends", 0), "ideen": r.get("ideen", 0),
+                    "drafts": r.get("drafts", 0)}
+        if stufe == "ideen":
+            r = feed.ideen_lauf(max_gesamt=int(args.get("max_gesamt") or 5))
+        elif stufe == "drafts":
+            r = feed.drafts_lauf(max_gesamt=int(args.get("max_gesamt") or 5))
+        else:
+            r = feed.trend_lauf(max_gesamt=int(args.get("max_gesamt") or 8))
         if r.get("pausiert"):
             return {"ok": False, "pausiert": True, "hinweis": "Autonomie pausiert (Notbremse) -- kein Lauf."}
-        return {"ok": bool(r.get("ok")), "erzeugt": r.get("erzeugt", 0),
-                "kandidaten": [{"title": k["title"], "url": k["source_url"]}
+        return {"ok": bool(r.get("ok")), "stufe": stufe, "erzeugt": r.get("erzeugt", 0),
+                "hinweis": r.get("hinweis", ""),
+                "kandidaten": [{"title": k.get("title", ""), "url": k.get("source_url", "")}
                                for k in r.get("kandidaten", [])]}
 
     if name == "recherche_beauftragen":
@@ -1068,6 +1072,27 @@ _GOOGLE_TOOLS = ("mail_suchen", "mail_lesen", "mail_entwurf", "mail_senden", "ka
                  "termin_anlegen", "drive_suchen", "drive_lesen", "tabelle_lesen", "tabelle_schreiben",
                  "posteingang", "kalender_kollisionen", "termin_aendern", "termin_loeschen",
                  "mail_markieren", "drive_anlegen")
+
+
+def _content_feed(ctx: ToolContext, sb, sec: list[str]):
+    """Baut den K3-ContentFeed mit allen content_ops-Stores + LLM-Core (fuer die Ideen-/Draft-Stufen)."""
+    from .content_feed import ContentFeed
+    from .content_store import (ContentStore, DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES,
+                                TREND_FELDER, TREND_STATUSES)
+    web = ctx.web
+    if web is None:
+        from ..governance.web_research import WebResearch
+        web = WebResearch.from_env(secrets=sec)
+    co = ctx.repo_root / "content_ops"
+    trends = ContentStore(sb, "trend_signals", TREND_FELDER, co / "trends_cache.jsonl",
+                          statuses=TREND_STATUSES, secrets=sec)
+    ideas = ContentStore(sb, "ideas", IDEA_FELDER, co / "ideas_cache.jsonl",
+                         statuses=IDEA_STATUSES, secrets=sec)
+    drafts = ContentStore(sb, "content_drafts", DRAFT_FELDER, co / "drafts_cache.jsonl",
+                          statuses=DRAFT_STATUSES, secrets=sec)
+    return ContentFeed(web=web, trends_store=trends, ideas_store=ideas, drafts_store=drafts, core=ctx.core,
+                       notify=(ctx.notifications.enqueue if ctx.notifications else None),
+                       research=ctx.research, watch_store=(ctx.watch.store if ctx.watch else None), secrets=sec)
 
 
 def _brain_suchen(frage: str, ctx: ToolContext, sec: list[str]) -> dict:

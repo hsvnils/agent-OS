@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 17:20] — Claude Code — K3 CODE-KOMPLETT: Content-Pipeline Trends->Ideen->Drafts
+- **Was:** K3 fertiggebaut. `ContentFeed` um zwei LLM-Stufen erweitert: `ideen_lauf()` (aus offenen Trends
+  `new` -> Content-Ideen via Fachagent `cco` -> `ideas` Status `inbox`; Trend rueckt auf `reviewing`) und
+  `drafts_lauf()` (aus offenen Ideen `inbox` -> Reel-Entwuerfe Hook/Caption/Hashtags -> `content_drafts`
+  Status `idea`; Idee rueckt auf `sorted`) + `pipeline_lauf()` (volle Kette). Status-Progression = idempotenter
+  Dedup (nichts laeuft doppelt). Schema live abgeglichen (nilshubv2 001_initial_schema.sql): `hashtags`/`tags`
+  = `text[]` -> als Liste geschrieben; keine CHECK-Constraints auf status/platform. LUNA-Tool `content_feed_lauf`
+  auf `stufe`=trends|ideen|drafts|alles erweitert; Tages-Loop `_start_content_feed_loop` faehrt jetzt die volle
+  `pipeline_lauf` (07:00 DE, `CONTENT_FEED_ENABLED=1`). Neuer Helper `_content_feed()` baut den Feed mit allen
+  Stores + LLM-Core. Autonomie L1/L2 (nur Kandidaten fuers Team-Review; kein Auto-Publish = CEO-Tor).
+- **Warum:** „K3 zu Ende machen" (CEO); ersetzt getTelegramIdeaCandidates/getDraftAssistantSuggestions des alten
+  Dummy-Workers durch LUNA-Agenten.
+- **Betroffen:** `orchestrator/core/content_feed.py`, `orchestrator/core/hoa_tools.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_content_feed.py`,
+  `HCC_INTEGRATION_ROADMAP.md`. Suite 294 gruen. OFFEN: deployen + live gegen Supabase verifizieren.
+
 ## [2026-07-02 16:10] — Claude Code — K3-Pilot: Content-Feed-Loop (LUNA fuettert content_ops)
 - **Was:** Erster Baustein von K3 (LUNA-Agenten fuettern content_ops). (1) `ContentStore.add()` +
   `_cache_prepend()` ergaenzt (Insert neuer Zeilen via Supabase-upsert; created_at/updated_at auto, id bleibt

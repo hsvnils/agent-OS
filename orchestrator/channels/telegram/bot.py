@@ -288,11 +288,12 @@ def _start_selfdev_loop(ctx, secrets) -> None:
 
 
 def _start_content_feed_loop(ctx, secrets) -> None:
-    """K3: geplanter Content-Feed-Loop -- 1x taeglich 07:00 (DE) ein Trend-Scouting-Durchlauf.
+    """K3: geplanter Content-Feed-Loop -- 1x taeglich 07:00 (DE) volle Pipeline Trends->Ideen->Drafts.
 
-    Token-frugal: NUR Brave-Web-Recherche (kostenlos, KEIN Hintergrund-LLM). Erzeugt Trend-Kandidaten
-    (Status 'new') in Supabase -> LUNA-OS-App „Trends" fuers Team-Review. Autonomie L1 (nur sammeln +
-    melden; kein Auto-Publish). Nur aktiv mit CONTENT_FEED_ENABLED=1; respektiert die Notbremse.
+    Trends kostenlos (Brave); Ideen/Drafts ueber den Content-Fachagenten (LLM, guenstiges Modell). Alles
+    landet als Kandidat mit Review-Status in Supabase -> LUNA-OS (Trends/Ideen/Drafts) fuers Team. Autonomie
+    L1/L2 (nur Kandidaten + melden; kein Auto-Publish, Oeffentlichkeit = CEO-Tor). Nur aktiv mit
+    CONTENT_FEED_ENABLED=1; respektiert die Notbremse.
     """
     import threading
     import time
@@ -300,9 +301,8 @@ def _start_content_feed_loop(ctx, secrets) -> None:
 
     if (secrets.get("CONTENT_FEED_ENABLED", "").strip().lower() not in ("1", "true", "yes", "on")):
         return
-    from ...core.content_feed import ContentFeed
-    from ...core.content_store import ContentStore, TREND_FELDER, TREND_STATUSES
     from ...governance.supabase import SupabaseAuth, SupabaseClient
+    from ...core.hoa_tools import _content_feed
     sb = SupabaseClient(SupabaseAuth.from_env(secrets))
     if not sb.verfuegbar() or ctx.agenda is None:
         return
@@ -311,11 +311,7 @@ def _start_content_feed_loop(ctx, secrets) -> None:
         tz = ZoneInfo("Europe/Berlin")
     except Exception:
         tz = None
-    trends = ContentStore(sb, "trend_signals", TREND_FELDER, ROOT / "content_ops" / "trends_cache.jsonl",
-                          statuses=TREND_STATUSES, secrets=ctx.leak_secrets)
-    feed = ContentFeed(web=ctx.web, trends_store=trends, notify=ctx.notifications.enqueue,
-                       research=ctx.research, watch_store=(ctx.watch.store if ctx.watch else None),
-                       secrets=ctx.leak_secrets)
+    feed = _content_feed(ctx, sb, ctx.leak_secrets)
 
     def loop():
         time.sleep(60)
@@ -324,7 +320,7 @@ def _start_content_feed_loop(ctx, secrets) -> None:
                 jetzt = datetime.now(tz) if tz else datetime.now()
                 datum = jetzt.strftime("%Y-%m-%d")
                 if jetzt.hour == 7 and not ctx.agenda.briefing_gesendet("content-feed", datum):
-                    feed.trend_lauf()   # pausen-bewusst; meldet neue Kandidaten selbst
+                    feed.pipeline_lauf(max_pro_stufe=5)   # pausen-bewusst; meldet neue Kandidaten je Stufe
                     ctx.agenda.markiere_briefing("content-feed", datum)
             except Exception as exc:
                 print(f"[content-feed] Fehler: {exc}", flush=True)
@@ -525,8 +521,8 @@ def main() -> None:
     _start_investment_loop(ctx, secrets)  # nur aktiv mit INVESTMENT_AUTO_SCREEN=1
     _start_content_feed_loop(ctx, secrets)  # K3: nur aktiv mit CONTENT_FEED_ENABLED=1
     if secrets.get("CONTENT_FEED_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
-        print("Content-Feed-Loop aktiv (taeglich 07:00, Brave-Trend-Scouting -> Kandidaten in „Trends“).",
-              flush=True)
+        print("Content-Feed-Loop aktiv (taeglich 07:00, Pipeline Trends->Ideen->Drafts -> Kandidaten in "
+              "LUNA-OS).", flush=True)
     offset = 0
     _last_poll = 0.0
     crm_sync = None
