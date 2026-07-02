@@ -12,6 +12,19 @@ async function ladeMe() {
 }
 const darf = (id) => id === "home" || !ME.apps || ME.apps.includes(id);
 
+// Theme: Dunkel / Hell / Automatisch (pro Gerät in localStorage; Auto folgt dem System-Erscheinungsbild).
+function applyTheme() {
+  const mode = localStorage.getItem("luna-theme") || "auto";
+  const light = mode === "light" || (mode === "auto" && matchMedia("(prefers-color-scheme: light)").matches);
+  document.documentElement.classList.toggle("theme-light", light);
+  document.documentElement.classList.toggle("theme-dark", !light);
+  document.querySelectorAll("#theme-switch button").forEach(b => b.classList.toggle("active", b.dataset.themeSet === mode));
+}
+function setTheme(mode) { localStorage.setItem("luna-theme", mode); applyTheme(); }
+try { matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
+  if ((localStorage.getItem("luna-theme") || "auto") === "auto") applyTheme();
+}); } catch { /* aeltere Browser */ }
+
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const zeit = (ts) => { try { return new Date(ts).toLocaleString("de-DE", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }); } catch { return ""; } };
@@ -858,6 +871,8 @@ document.addEventListener("click", (e) => {
   if (tu) { teamAktiv(tu.dataset.teamuser, tu.dataset.teamaktiv); return; }
   const csave = e.target.closest("[data-cuttersave]");
   if (csave) { cutterJob(); return; }
+  const th = e.target.closest("[data-theme-set]");
+  if (th) { setTheme(th.dataset.themeSet); return; }
   const cmd = e.target.closest("[data-cmd]");
   if (cmd) { cmd.dataset.cmd === "talk" ? toggleVoice() : navTo(cmd.dataset.cmd); return; }
   const navi = e.target.closest("[data-app]");
@@ -1124,6 +1139,7 @@ if (_ts) _ts.addEventListener("keydown", (e) => {
 });
 // K4: erst Rolle/erlaubte Apps laden (blendet nicht-erlaubte Apps aus), dann Sidebar + Daten.
 (async function boot() {
+  applyTheme();       // Theme-Klasse ist schon (flash-frei) vom Head-Script gesetzt -> hier nur Button-Status
   await ladeMe();
   buildSidebar();
   refresh();          // laedt Daten + rendert das Command-Center-Dashboard (Home)

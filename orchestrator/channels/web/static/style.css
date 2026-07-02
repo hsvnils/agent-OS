@@ -597,3 +597,38 @@ body {
 .team-msg { font-size: 13px; min-height: 16px; }
 .team-msg.ok { color: var(--green); }
 .team-msg.err { color: var(--red); }
+
+/* ============ Helles Theme (Umschalter Dunkel / Hell / Automatisch) ============
+   Auto wird in JS aufgeloest (html.theme-light / html.theme-dark), damit keine Media-Query-Duplikate
+   noetig sind. Variablen-Overrides + die fest verdrahteten dunklen Flaechen (Sidebar/Voice/Fenster). */
+html.theme-light {
+  --bg0: #e9eff7; --bg1: #f5f8fd; --bg2: #dbe5f3;
+  --glass: rgba(255, 255, 255, .74); --glass-hi: rgba(255, 255, 255, .92);
+  --fg: #0f1e38; --muted: #56688a; --line: rgba(30, 72, 140, .16);
+  --cyan: #0a90b3; --cyan-soft: rgba(10, 144, 179, .12);
+  --violet: #7a51cf; --green: #0f9d68; --amber: #b9790a; --red: #dc4560;
+  --glow-cyan: 0 4px 16px rgba(30, 72, 140, .12); --glow-violet: 0 4px 16px rgba(122, 81, 207, .12);
+}
+html.theme-light body { background: var(--bg0); }
+html.theme-light #starfield {
+  background:
+    radial-gradient(1100px 700px at 78% -12%, rgba(120, 160, 230, .22), transparent 60%),
+    radial-gradient(900px 800px at -8% 112%, rgba(170, 140, 230, .16), transparent 55%),
+    linear-gradient(160deg, var(--bg1), var(--bg0) 72%);
+}
+html.theme-light #starfield::before, html.theme-light #starfield::after { opacity: 0; }
+html.theme-light #grid { opacity: .16; }
+html.theme-light #scan { opacity: .1; }
+html.theme-light #sidebar { background: linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(236, 243, 251, .8)); }
+html.theme-light #voicebar { background: linear-gradient(0deg, rgba(222, 233, 248, .8), transparent); }
+html.theme-light #topsearch { background: rgba(255, 255, 255, .82); }
+html.theme-light .winbox.modern .wb-header { background: linear-gradient(180deg, #f6faff, #e8f1fb); color: var(--fg); }
+html.theme-light .winbox.modern .wb-body { background: #ffffff; }
+html.theme-light .winbox.modern .wb-title { color: var(--fg); }
+
+/* Theme-Umschalter in der Sidebar */
+.theme-switch { display: flex; gap: 2px; width: 100%; margin: 8px 0 2px; padding: 3px; border-radius: 10px;
+  background: var(--glass-hi); border: 1px solid var(--line); flex: 0 0 auto; }
+.theme-switch button { flex: 1; padding: 5px 0; border: none; background: none; color: var(--muted);
+  font: inherit; font-size: 11px; border-radius: 7px; cursor: pointer; transition: background .15s, color .15s; }
+.theme-switch button.active { background: var(--cyan-soft); color: var(--cyan); font-weight: 700; }

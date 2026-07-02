@@ -4,7 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>LUNA Command Center</title>
-  <link rel="stylesheet" href="/static/style.css?v=30">
+  <link rel="stylesheet" href="/static/style.css?v=31">
+  <!-- Theme flash-frei anwenden, bevor der Body rendert (Dunkel/Hell/Auto aus localStorage). -->
+  <script>(function () {
+    var m = localStorage.getItem("luna-theme") || "auto";
+    var light = m === "light" || (m === "auto" && window.matchMedia("(prefers-color-scheme: light)").matches);
+    document.documentElement.classList.add(light ? "theme-light" : "theme-dark");
+  })();</script>
   <script src="/static/vendor/winbox.bundle.min.js"></script>
 </head>
 <body>
@@ -21,6 +27,11 @@
         <button id="side-toggle" title="Menü">☰</button>
       </div>
       <nav id="nav"></nav>
+      <div class="theme-switch" id="theme-switch" title="Erscheinungsbild">
+        <button data-theme-set="dark">Dunkel</button>
+        <button data-theme-set="light">Hell</button>
+        <button data-theme-set="auto">Auto</button>
+      </div>
       <div class="side-voice">
         <div class="side-voice-head">VOICE STATUS <span id="side-voice-state">Bereit</span></div>
         <div class="wave" id="side-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -52,6 +63,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=30"></script>
+  <script src="/static/app.js?v=31"></script>
 </body>
 </html>

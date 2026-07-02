@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 22:35] — Claude Code — LUNA-OS: helles Theme + Umschalter Dunkel/Hell/Automatisch
+- **Was:** Zweites, helles Erscheinungsbild + Umschalter. `style.css`: `html.theme-light`-Variablen-Set
+  (helle bg/glass, dunkler Text, gedaempfte Akzente/Glows) + Overrides der fest verdrahteten dunklen Flaechen
+  (Sidebar/Voice-Leiste/Suche/WinBox-Fenster) + gedaempfte Deko (Sternenfeld/Grid/Scan). Umschalter (Segmented
+  Control Dunkel/Hell/Auto) in der Sidebar. `index.html`: flash-freies Head-Inline-Script (setzt Theme-Klasse
+  vor Body-Render). `app.js`: `applyTheme()`/`setTheme()`, **Auto folgt `prefers-color-scheme`** (Live-Listener),
+  Auswahl pro Geraet in `localStorage`. Cache-Bust v31.
+- **Warum:** CEO-Wunsch (#3) -- helles Theme + Automatik zusaetzlich zum dunklen.
+- **Betroffen:** `orchestrator/channels/web/static/{style.css,index.html,app.js}`. Im Preview verifiziert
+  (Hell/Dunkel/Auto schalten, heller Look lesbar, Umschalter aktiv, keine Console-Fehler).
+
 ## [2026-07-02 22:20] — Claude Code — Fix: LLM/Provider-Panel ragte in Safari aus dem Container (rausgezoomt)
 - **Was:** Im Command-Center ragten beim Rauszoomen (Safari) die Provider-Kaesten unten aus dem
   „LLM/Provider Status"-Panel. Ursache: Safari-Grid-Bug -- gestreckte Grid-Items (`align-items: stretch`)
