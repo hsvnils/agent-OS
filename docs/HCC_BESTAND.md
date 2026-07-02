@@ -34,6 +34,15 @@ einen eigenen Docker-Ordner dafuer. Ursprung: eine fruehere, parallele Auspraegu
 - **Ops/Team:** `profiles`, `team_members`, `notifications`, `approvals`, `activity_events`.
 - **KEIN CRM/Kontakte/Leads** — muss fuer die geteilte CRM-Basis neu angelegt werden.
 
+## Datenbestand (Stand 2026-07-02, `pg_stat_user_tables`)
+- **Echte Team-Daten (behalten/migrieren):** Content-Pipeline ~90 Zeilen (content_findings 28, ai_intel_items
+  24, content_drafts 10, trend_signals 7, ideas 6, sources 6 + Reviews) — Startkorpus fuer den Social-Media-
+  Researcher/Content-Agenten. Team/Auth: profiles 2, users 3, team_members 2 (kleines Team).
+- **Ballast/Loeschkandidaten (Phase 3, risikoarm):** Worker-/Agenten-Logs ~13.000 (worker_tasks 5191,
+  activity_events 3983, agent_runs 3803 -- fast nur Heartbeats/Testlaeufe), Cutter ~45 (nur Testjobs),
+  telegram_inputs 47.
+- Rest = Supabase-interne Auth/Storage-Tabellen (nicht projektrelevant). `approvals` leer.
+
 ## Worker (Synology, aktuell offline)
 Node/TS-Dienst, laeuft getrennt von der Web-App. Schreibt Heartbeats, `agent_runs`, `worker_tasks`,
 `activity_events` nach Supabase; treibt den Video-Cutter. Aktuell keine echten Scraper/KI-Calls.
