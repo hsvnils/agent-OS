@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 19:00] — Claude Code — Fix: Sidebar-Menue scrollt jetzt + Nutzer-Chip-Layout
+- **Was:** Das Sidebar-Menue liess sich nicht scrollen (mit „Team" 18 Eintraege -> unten abgeschnitten auf
+  kleinen Hoehen). Ursache: `#nav` hatte `flex:1` ohne `min-height:0`/eigenes `overflow` -> in einem
+  Flex-Column-Container wird die Liste abgeschnitten statt scrollbar. Fix: `#nav { flex:1 1 auto; min-height:0;
+  overflow-y:auto }` + schlanker Scrollbar; `brand-block`/`side-voice` `flex:0 0 auto` (schrumpfen nicht, Nav
+  bekommt den Scrollraum). Zusatz: `brand-block` `flex-wrap:wrap`, damit der K4-Nutzer-Chip auf einer eigenen
+  vollen Zeile sitzt statt in der Brand-Zeile gequetscht. Cache-Bust v27.
+- **Warum:** CEO-Hinweis -- Menue nicht scrollbar.
+- **Betroffen:** `orchestrator/channels/web/static/{style.css,index.html}`. Im Preview verifiziert (Handy 812px:
+  Nav scrollt bis „Team"/„LUNA-Chat", Voice-Leiste bleibt unten; keine Console-Fehler). Reines Frontend
+  (volume-gemountet) -> nach Sync sofort live per Hard-Reload, kein Container-Neustart noetig.
+
 ## [2026-07-02 18:40] — Claude Code — K4: Team-Verwaltungs-App in LUNA-OS (statt CLI)
 - **Was:** Rollenvergabe wie im HCC jetzt als **LUNA-OS-App „Team"** (kein CLI-Zwang mehr). Backend
   (`web/app.py`): `GET /api/team` (Nutzerliste + Module + Rollen), `POST /api/team` (anlegen/aktualisieren,
