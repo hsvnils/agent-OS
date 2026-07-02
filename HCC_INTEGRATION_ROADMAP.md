@@ -43,9 +43,16 @@ content_drafts/sources/ai_intel_items).
 **Alle content_ops-Apps live** (lesen+schreiben gegen Supabase bewiesen): Trends(7) · Ideen-Labor(6) ·
 Drafts(10) · Quellen(6, is_active-Toggle) · AI-Inbox(24, recommendation). Cache-Bust v24.
 
-### K3 -- LUNA-Agenten fuettern content_ops
+### K3 -- LUNA-Agenten fuettern content_ops (als Loop, Loop Engineering)
 Social-Media-Researcher + Content-Agenten (Ausbaustufe des Researchers) -> schreiben Trends/Ideen/Drafts/
-Findings nach Supabase. **Ersetzt den alten Dummy-Worker** endgueltig.
+Findings nach Supabase. **Ersetzt den alten Dummy-Worker** endgueltig. Entworfen nach `governance/autonomie-
+stufen.md` (Loop-Anatomie + L1→L2→L3):
+- **Ziel:** N neue, relevante Kandidaten je Lauf (Trends/Ideen/Draft-Vorschlaege).
+- **Trigger:** Zeitplan (WatchScheduler, taeglich/stuendlich) je aktiver Quelle (`sources`).
+- **Lauf:** Web-Recherche (Brave/Researcher) -> Kandidaten generieren (guenstiges Modell fuer Routine).
+- **Verifikation:** Relevanz-/Qualitaets-Check (Maker/Checker) -> schreibt mit Status `new`/`review`.
+- **Stop:** max. Kandidaten/Lauf + Token-Budget (CFO); Notbremse (`autonomie_pausieren`).
+- **Autonomie:** **L1/L2** -- Kandidaten fuers **Team-Review** (kein Auto-Publish; Oeffentlichkeit = CEO-Tor).
 
 ### K4 -- Team-Auth + Rollen in LUNA-OS
 Mehr-Nutzer-Login (statt einzel-CEO-Basic-Auth) + Modul-/Rollen-Zugriff (wie HCC `allowed_modules`). CEO voll,

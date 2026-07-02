@@ -34,6 +34,12 @@
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
 
+**Design-Prinzip fuer ALLE autonomen Schleifen -- Loop Engineering:** Neue Loops (Watcher, Briefings,
+Self-Dev, Investment-Screen, kuenftig content_ops-Fuetterung) werden nicht als Einzel-Prompts, sondern als
+**Loop** entworfen: Ziel (messbar) · Trigger · Lauf · Verifikation/Eval (Maker/Checker) · Stop-Bedingung --
+plus Autonomie-Treppe **L1→L2→L3** und Kostenrahmen je Loop. Verbindlich in `governance/autonomie-stufen.md`
+(Grundidee: „den Loop entwerfen, der den Agenten ansteuert", statt jeden Prompt von Hand; Osmani u. a., 2026).
+
 ---
 
 ## 1. Ziel & Leitprinzipien

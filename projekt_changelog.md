@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 14:30] — Claude Code — Loop Engineering in der Roadmap verankert (recherchiert)
+- **Was:** Loop-Engineering war schon in `governance/autonomie-stufen.md` (L1→L2→L3, Maker/Checker) +
+  `INVESTMENT_ROADMAP.md` §10, aber nicht als uebergreifendes Prinzip in der Haupt-`ROADMAP.md`. Ergaenzt:
+  (1) autonomie-stufen.md **§5b „Loop-Anatomie"** (Ziel/Trigger/Lauf/Verifikation/Stop; aktuelle Fassung
+  Osmani u. a. 2026 -- „den Loop entwerfen, der den Agenten ansteuert", statt Einzel-Prompt); (2) ROADMAP.md
+  Design-Prinzip fuer ALLE autonomen Schleifen (Verweis auf autonomie-stufen.md); (3) HCC_INTEGRATION_ROADMAP
+  **K3 als konkreter Loop** (Ziel/Trigger/Lauf/Verifikation/Stop, L1/L2, Team-Review, kein Auto-Publish).
+- **Warum:** CEO-Frage; Loop-Engineering als Leitbild fuer die content_ops-Fuetterung (K3) und alle Loops.
+- **Betroffen:** governance/autonomie-stufen.md, ROADMAP.md, HCC_INTEGRATION_ROADMAP.md
+
 ## [2026-07-02 14:05] — Claude Code — Konsolidierung K2: Sources + AI-Inbox (content_ops-Flaeche komplett)
 - **Was:** ContentStore verallgemeinert -- `status_feld` (beliebiges Statusfeld, z. B. `recommendation`) +
   generisches `patch(rid, felder)`. **Sources-App** (`/api/sources` + `is_active`-Toggle via patch; name/

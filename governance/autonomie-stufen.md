@@ -61,6 +61,23 @@ Loop Engineering nennt fuenf Bausteine; LUNA deckt sie ab:
 - **Sub-Agenten (Maker/Checker)** → `delegate` + Fachagenten + Risk/Tests.
 - **Worktrees/Isolation** → Git-Branch-Sandbox der Execution-Engine.
 
+## 5b Loop-Anatomie (jeden Loop so entwerfen)
+
+Loop Engineering (breiter gefasst, popularisiert Juni 2026 von **Addy Osmani**, aufbauend auf Peter Steinberger
++ Anthropics Boris Cherny): Grundidee -- **nicht den einzelnen Prompt schreiben, sondern den Loop entwerfen,
+der den Agenten fuer einen ansteuert.** Menschliches Urteil steckt im **System-Design** (Akzeptanzkriterien,
+Verzweigungen, Retry/Stop), nicht in Handarbeit je Modellaufruf. Jede LUNA-Schleife wird entlang dieser fuenf
+Teile spezifiziert:
+
+1. **Ziel (messbar):** Woran ist „gut/fertig" erkennbar? (z. B. „N neue, relevante Trend-Kandidaten").
+2. **Trigger:** Zeitplan (`core/scheduler.py`/WatchScheduler) oder Event (Webhook/neue Mail/DM).
+3. **Lauf:** welche Agenten/Tools, welche Modelle (Routine guenstig, Synthese stark), **Bulk statt Einzel**.
+4. **Verifikation/Eval:** Akzeptanzkriterien + **Maker/Checker** (§3) + ggf. **Team-Review** (L1/L2).
+5. **Stop-Bedingung:** Limits (max. Kandidaten/Lauf, Token-/Kostenbudget, Zeit) + **Kill-Switch/Notbremse**.
+
+Autonomiegrad (L1→L2→L3, §2) und Kostenrahmen (§4) sind Teil jeder Loop-Spezifikation. Wirkungskategorien
+(Geld/Recht/Oeffentlichkeit/Loeschen) bleiben CEO-Tor.
+
 ## 6 Checkliste fuer eine neue autonome Schleife
 
 1. **Start auf L1** (nur melden). Zweck + Datenquelle + Meldeweg festlegen.
