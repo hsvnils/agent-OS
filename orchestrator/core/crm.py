@@ -50,10 +50,34 @@ def _id(prefix: str) -> str:
 
 class CrmStore:
     def __init__(self, path: str | Path, *, secrets: list[str] | None = None,
-                 changelog: Callable[..., None] | None = None):
+                 changelog: Callable[..., None] | None = None, projektor=None):
         self.path = Path(path)
         self.secrets = secrets or []
         self.changelog = changelog
+        self.projektor = projektor  # optional: Write-Through nach Supabase (duck-typed .firma/.nachricht/.todo)
+
+    # -- Write-Through-Projektion (best-effort; lokaler Store bleibt Quelle + Fallback) --
+    def _projiziere_firma(self, firma: str) -> None:
+        if not self.projektor:
+            return
+        k = _key(firma)
+        for f in self.firmen():
+            if _key(f.get("firma")) == k:
+                try:
+                    self.projektor.firma({"ref": k, "firma": f.get("firma"), "status": f.get("status"),
+                                          "quelle": f.get("quelle"), "nachrichten": f.get("nachrichten"),
+                                          "letzter_kontakt": f.get("letzter_kontakt"), "updated_by": "luna"})
+                except Exception:
+                    pass
+                return
+
+    def _projiziere(self, methode: str, payload: dict) -> None:
+        if not self.projektor:
+            return
+        try:
+            getattr(self.projektor, methode)(payload)
+        except Exception:
+            pass
 
     # -- schreiben --
     def nachricht_erfassen(self, firma: str, text: str, *, quelle: str = "manuell", richtung: str = "ein",
@@ -72,6 +96,11 @@ class CrmStore:
                       "kategorie": kategorie})
         if not self._letzter_status(firma):
             self._append({"ts": _now(), "id": _id("S"), "event": "status", "firma": firma, "status": "neu"})
+        # Write-Through: erst die Firma (FK-Ziel), dann die Nachricht.
+        self._projiziere_firma(firma)
+        self._projiziere("nachricht", {"extern_id": extern_id or None, "ref": _key(firma), "firma": firma,
+                                       "richtung": richtung, "quelle": quelle, "kategorie": kategorie,
+                                       "text": text, "ts": _now()})
         return mid
 
     def verarbeite_eingang(self, firma: str, text: str, *, quelle: str = "instagram", absender: str = "",
@@ -96,16 +125,29 @@ class CrmStore:
         sid = _id("S")
         self._append({"ts": _now(), "id": sid, "event": "status", "firma": (firma or "").strip(),
                       "status": status})
+        self._projiziere_firma(firma)
         return sid
 
     def todo_hinzufuegen(self, firma: str, vorschlag: str, *, faellig: str = "", begruendung: str = "") -> str:
         tid = _id("T")
-        self._append({"ts": _now(), "id": tid, "event": "todo", "firma": (firma or "").strip(),
+        firma = (firma or "").strip()
+        self._append({"ts": _now(), "id": tid, "event": "todo", "firma": firma,
                       "vorschlag": vorschlag, "faellig": faellig, "begruendung": begruendung, "status": "offen"})
+        self._projiziere_firma(firma)  # sicherstellen, dass die Firma (FK-Ziel) existiert
+        self._projiziere("todo", {"id": tid, "ref": _key(firma), "firma": firma, "vorschlag": vorschlag,
+                                  "begruendung": begruendung, "faellig": faellig, "status": "offen",
+                                  "updated_by": "luna"})
         return tid
 
     def todo_erledigen(self, todo_id: str) -> bool:
         self._append({"ts": _now(), "id": _id("TE"), "event": "todo_erledigt", "todo_id": todo_id})
+        for t in self.todos(nur_offen=False):
+            if t.get("id") == todo_id:
+                self._projiziere("todo", {"id": todo_id, "ref": _key(t.get("firma")), "firma": t.get("firma"),
+                                          "vorschlag": t.get("vorschlag"), "begruendung": t.get("begruendung"),
+                                          "faellig": t.get("faellig"), "status": "erledigt",
+                                          "updated_by": "luna"})
+                break
         return True
 
     # -- lesen (gefaltet) --

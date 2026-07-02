@@ -130,7 +130,11 @@ def _build_ctx(cfg: dict, secrets: dict):
         MarketData(secrets=secrets), InvestmentStore(ROOT / "investment" / "log.jsonl", secrets=secret_values),
         notify=notifications.enqueue, brain=brain.merken)
     from ...core.crm import CrmStore
-    crm = CrmStore(ROOT / "crm" / "log.jsonl", secrets=secret_values, changelog=changelog)
+    from ...core.crm_projection import SupabaseCrmProjection
+    from ...governance.supabase import SupabaseAuth, SupabaseClient
+    _sb_auth = SupabaseAuth.from_env(secrets)
+    _crm_proj = SupabaseCrmProjection(SupabaseClient(_sb_auth)) if _sb_auth.verfuegbar() else None
+    crm = CrmStore(ROOT / "crm" / "log.jsonl", secrets=secret_values, changelog=changelog, projektor=_crm_proj)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,

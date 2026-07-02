@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 10:40] — Claude Code — HCC Phase 2: CRM Write-Through nach Supabase
+- **Was:** `orchestrator/core/crm_projection.py` (`SupabaseCrmProjection`, duck-typed .firma/.nachricht/.todo
+  -> Upsert in crm_companies/crm_messages/crm_todos). `CrmStore` um optionalen `projektor` erweitert: nach
+  jedem Ereignis Write-Through (Firma zuerst wg. FK, dann Nachricht/To-do), best-effort -> lokaler Store bleibt
+  Quelle + Offline-Fallback; alle LUNA-Zeilen `updated_by='luna'`. In `web/app.py` + `telegram/bot.py`
+  verdrahtet (aktiviert automatisch, sobald SUPABASE_URL+SERVICE_ROLE_KEY da sind, sonst rein lokal). CRM-
+  Tabellen in Supabase angelegt (CEO). 2 neue Tests; Gesamtsuite **260**.
+- **Warum:** HCC<->LUNA Phase 2 (CRM-Pilot, relationale Projektion, Option A).
+- **Betroffen:** orchestrator/core/crm_projection.py, orchestrator/core/crm.py,
+  orchestrator/channels/web/app.py, orchestrator/channels/telegram/bot.py, orchestrator/tests/test_crm.py
+
 ## [2026-07-02 10:15] — Claude Code — HCC Phase 1: Supabase-Client (Datenbruecke)
 - **Was:** `orchestrator/governance/supabase.py` -- Capability-Muster fuer die geteilte Datenbasis:
   `SupabaseAuth.from_env` (SUPABASE_URL/SERVICE_ROLE_KEY) + `SupabaseClient` (PostgREST upsert/select/delete

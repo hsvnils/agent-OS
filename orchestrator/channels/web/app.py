@@ -37,7 +37,26 @@ notifications = Notifications(ROOT / "notifications" / "log.jsonl")
 research = ResearchTickets(ROOT / "research" / "log.jsonl", changelog=_changelog)
 agenda = Agenda(ROOT / "agenda" / "log.jsonl")
 brain = Brain(ROOT / "brain" / "log.jsonl")
-crm_store = CrmStore(ROOT / "crm" / "log.jsonl", changelog=_changelog)
+
+
+def _crm_projektor():
+    """Write-Through-Projektor nach Supabase, sobald SUPABASE_URL + SERVICE_ROLE_KEY da sind (sonst None ->
+    rein lokal). Liest die Keys aus orchestrator/.env (bzw. os.environ als Fallback)."""
+    try:
+        from ...core.crm_projection import SupabaseCrmProjection
+        from ...governance.supabase import SupabaseAuth, SupabaseClient
+        try:
+            from ..telegram.bot import _load_secrets
+            sec = _load_secrets()
+        except Exception:
+            sec = dict(os.environ)
+        auth = SupabaseAuth.from_env(sec)
+        return SupabaseCrmProjection(SupabaseClient(auth)) if auth.verfuegbar() else None
+    except Exception:
+        return None
+
+
+crm_store = CrmStore(ROOT / "crm" / "log.jsonl", changelog=_changelog, projektor=_crm_projektor())
 # Internes Lagebild (ohne Google); fuer das volle Lagebild (Termine/Mails) nutzt der Endpunkt die LUNA-ctx.
 insights_intern = Insights(antraege=antraege, research=research, agenda=agenda)
 # Investment (Phase 2, advisory): Engine + Store. MarketData wird lazy aus den .env-Keys gebaut.

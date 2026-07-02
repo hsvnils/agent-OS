@@ -75,6 +75,29 @@ class TestCrmStore(unittest.TestCase):
         self.assertEqual(r["todo_id"], "")
         self.assertEqual(len(self.s.todos()), 0)
 
+    def test_write_through_projektion_nach_supabase(self):
+        from orchestrator.governance.supabase import MockSupabaseClient
+        from orchestrator.core.crm_projection import SupabaseCrmProjection
+        mock = MockSupabaseClient()
+        s = CrmStore(Path(self.dir.name) / "p.jsonl", projektor=SupabaseCrmProjection(mock))
+        s.verarbeite_eingang("Acme GmbH", "Sponsoring-Kooperation gewuenscht", quelle="instagram",
+                             extern_id="ig1")
+        tabellen = [u[0] for u in mock.upserts]
+        self.assertIn("crm_companies", tabellen)   # Firma projiziert
+        self.assertIn("crm_messages", tabellen)    # Nachricht projiziert
+        self.assertIn("crm_todos", tabellen)       # neue Kooperation -> To-do projiziert
+        comp = next(u[1][0] for u in mock.upserts if u[0] == "crm_companies")
+        self.assertEqual(comp["ref"], "acme gmbh")
+        self.assertEqual(comp["status"], "neu")
+        self.assertEqual(comp["updated_by"], "luna")
+        msg = next(u[1][0] for u in mock.upserts if u[0] == "crm_messages")
+        self.assertEqual(msg["extern_id"], "ig1")
+        self.assertEqual(msg["kategorie"], "kooperation")
+
+    def test_ohne_projektor_kein_fehler(self):
+        # Store ohne Projektor arbeitet rein lokal (kein Crash).
+        self.assertTrue(self.s.verarbeite_eingang("X", "hallo", extern_id="a")["mid"])
+
     def test_leak_schutz_beim_schreiben(self):
         s = CrmStore(Path(self.dir.name) / "l2.jsonl", secrets=["GEHEIMTOKEN123"])
         s.nachricht_erfassen("Acme", "mein token ist GEHEIMTOKEN123", extern_id="a")
