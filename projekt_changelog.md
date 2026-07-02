@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 20:40] — Claude Code — K6 Bestandsaufnahme (Stilllegung nilshubv2 + Worker), nur Doku
+- **Was:** Reine Inventur vor K6 -- nichts geloescht/abgeschaltet. Neues `docs/HCC_K6_STILLLEGUNG.md`:
+  Live-Tabelleninventur (Zeilen + juengster Eintrag) mit KEEP/DROP/PRUEFEN-Einordnung, Dienste-/Deployment-
+  Stand, Reihenfolge-Blocker und gestufter Stilllege-Plan (K6.0-K6.6) + offene CEO-Fragen. Befund: Worker tot
+  (worker_*/agent_*/activity_events zuletzt 2026-06-27), telegram_inputs/cutter_* seit 06-23, Content-Tabellen
+  seit 06-12 unveraendert; NAS-Ordner `nilshubv2` leer (HCC-App laeuft dort nicht), Worker-Artefakte in
+  `/volume1/docker/hanserautisch`. LUNA nutzt nur KEEP-Tabellen (trend_signals/ideas/content_drafts/sources/
+  ai_intel_items/crm_*/luna_os_users/luna_cutter_jobs).
+- **Warum:** CEO -- K6 vorbereiten (Loeschen = CEO-Tor; erst Bestandsaufnahme + Plan).
+- **Betroffen:** `docs/HCC_K6_STILLLEGUNG.md` (neu). Keine Code-/DB-Aenderung.
+
 ## [2026-07-02 20:10] — Claude Code — K5-Fix: eigene Tabelle luna_cutter_jobs (Kollision mit HCC-cutter_jobs)
 - **Was:** Beim Live-Test schlug der Insert fehl (HTTP 400, `column cutter_jobs.fehler does not exist`): die
   Tabelle `cutter_jobs` existiert bereits aus dem alten HCC-Video-Cutter (Migration 028, voellig anderes Schema
