@@ -50,7 +50,7 @@ Wo liegt die Source of Truth + wie laeuft der **bidirektionale** Sync mit luna-o
   Abgleich bei Wiederkehr mit **Vorrang-Regel luna-os gewinnt**. Self-Checks gegen Mock.
 - **GATE B:** Supabase-Key in `.env` + Verbindungstest.
 
-### Phase 2 -- CRM-Pilot (erste geteilte Flaeche) -- 🟡 Write-Through UMGESETZT 2026-07-02 (Rueckschreiben offen)
+### Phase 2 -- CRM-Pilot (erste geteilte Flaeche) -- ✅ UMGESETZT 2026-07-02 (bidirektional 1:1 live bewiesen)
 - Gemeinsame `crm_*`-Tabellen in Supabase; luna-os-CRM auf die geteilte Basis (SupabaseCrmStore bzw. Bridge);
   CRM-View im HCC. Beweist **bidirektional + Vorrang** end-to-end. (Baut auf dem schon gebauten Collab-CRM auf.)
 - **Self-Checks:** DM ueber LUNA -> in HCC sichtbar; Statuswechsel im HCC -> in LUNA sichtbar; Konflikt -> luna-os
