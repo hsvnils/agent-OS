@@ -44,7 +44,7 @@ _EMAIL = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 _IBAN = re.compile(r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){2,7}[ ]?[A-Z0-9]{1,3}\b")
 _CC = re.compile(r"\b(?:\d[ -]?){13,19}\b")
 
-_MARKER = "[Sicherheitshinweis: moeglicher Prompt-Injection-Versuch] "
+MARKER = "[Sicherheitshinweis: moeglicher Prompt-Injection-Versuch] "
 
 
 def _luhn(ziffern: str) -> bool:
@@ -124,5 +124,5 @@ def markiere_wenn_verdaechtig(text: str, quelle: str = "extern") -> tuple[str, B
     """Prueft `text`; bei Injection-Verdacht wird ein sichtbarer Marker vorangestellt. Gibt (text, Befund)."""
     b = pruefe(text)
     if b.injection:
-        return (_MARKER + (text or ""), b)
+        return (MARKER + (text or ""), b)
     return (text or "", b)

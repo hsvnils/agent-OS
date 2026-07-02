@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 02:35] — Claude Code — Phase 23 (Inkr. 2, KERN FERTIG): Input-Filter in Web + Instagram
+- **Was:** `input_guard` zusaetzlich verankert in (a) **Web-Recherche** (`governance/web_research._finish`:
+  externer Text wird auf Prompt-Injection geprueft; neues Feld `RechercheErgebnis.sicherheit` + Marker an der
+  Zusammenfassung) und (b) **Instagram-DMs/kuenftige Kanaele** (`core/crm.verarbeite_eingang`: Klassifikation
+  auf Originaltext, gespeichert wird der markierte Text). Marker `_MARKER` -> oeffentlich `MARKER`. +4 Tests
+  (Gesamt 360 gruen). Damit sind alle drei Vektoren abgedeckt: Mail, Web, DM.
+- **Warum:** Phase 23, Inkrement 2 -- Kern fertig. Rein defensiv (markieren), keine autonome Aktion.
+- **Betroffen:** core/input_guard.py, governance/web_research.py, core/crm.py, tests/test_web_research.py,
+  tests/test_crm.py, ROADMAP.md. Optionaler Rest: Injection-Meldung an CISO. Wirkt nach luna-telegram-Neustart.
+
 ## [2026-07-03 02:10] — Claude Code — Phase 22 Kern geschlossen + Phase 23 (Inkr. 1): Input-Haertung
 - **Was:** (1) Phase 22 in ROADMAP als **Kern fertig** markiert (AST-Scan + OSV.dev live; Inkr. 3-5 =
   optionaler Backlog). (2) Neues Modul `core/input_guard.py` -- regelbasierter Prompt-Injection-/PII-Filter:

@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from .leak_guard import redact
+from ..core import input_guard   # Phase 23: externe Inhalte auf Prompt-Injection pruefen
 
 # Modell fuer die agentische Anthropic-Recherche. Sonnet ist fuer Web-Synthese ein guter
 # Kosten/Leistungs-Kompromiss; bei Bedarf ueberschreibbar. Modell-agnostisch (Richtwert).
@@ -60,6 +61,7 @@ class RechercheErgebnis:
     stufe: str = ""               # "einfach" | "komplex"
     hinweis: str = ""             # Fall-B- / Fehlerhinweis (umlautfrei, CEO-tauglich)
     freigabe_anfrage: str = ""    # gesetzt im Fall B (CEO-Tor)
+    sicherheit: str = ""          # Phase 23: gesetzt bei Prompt-Injection-Verdacht im externen Inhalt
 
 
 class Provider(Protocol):
@@ -300,6 +302,12 @@ class WebResearch:
             t.titel = redact(t.titel, sec)
             t.url = redact(t.url, sec)
             t.auszug = redact(t.auszug, sec)
+        # Phase 23: externer Inhalt ist untrusted -> auf Prompt-Injection pruefen, bei Verdacht markieren.
+        kombiniert = " \n".join([erg.zusammenfassung] + [f"{t.titel} {t.auszug}" for t in erg.treffer])
+        befund = input_guard.pruefe(kombiniert)
+        if befund.injection:
+            erg.sicherheit = "Prompt-Injection-Verdacht im externen Inhalt: " + ", ".join(befund.injection)
+            erg.zusammenfassung = input_guard.MARKER + erg.zusammenfassung
         return erg
 
     def _kein_provider(self, stufe: str) -> RechercheErgebnis:

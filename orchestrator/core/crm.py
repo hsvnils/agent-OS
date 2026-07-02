@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Callable
 
 from ..governance.leak_guard import redact
+from . import input_guard   # Phase 23: eingehende Fremd-Nachrichten auf Prompt-Injection pruefen
 
 STUFEN = ("neu", "in_gespraech", "angebot", "vereinbart", "abgelehnt")
 QUELLEN = ("instagram", "telegram", "gmail", "manuell")
@@ -109,7 +110,9 @@ class CrmStore:
         Kooperationsanfrage automatisch ein 'pruefen'-To-do an. Gibt {mid, kategorie, todo_id, firma}.
         Basis fuer Webhook (Instagram) und kuenftige Kanaele (Telegram/Gmail)."""
         firma = (firma or "").strip()
-        kategorie = klassifiziere(text)
+        kategorie = klassifiziere(text)      # Klassifikation auf dem ORIGINALtext (Marker wuerde sie verzerren)
+        # Phase 23: Fremd-Inhalt (DM etc.) vor dem Speichern auf Prompt-Injection pruefen und ggf. markieren.
+        text, _guard = input_guard.markiere_wenn_verdaechtig(text, quelle=quelle)
         neu = self._letzter_status(firma) is None
         mid = self.nachricht_erfassen(firma, text, quelle=quelle, richtung="ein", absender=absender,
                                       extern_id=extern_id, kategorie=kategorie)
