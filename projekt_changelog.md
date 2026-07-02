@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 23:10] — Claude Code — Fix: Dashboard + Menue scrollen nicht (Safari, min-height:0-Kette)
+- **Was:** Bei normalem Zoom liessen sich weder `#cc-main` (Dashboard) noch `#nav` (Menue) scrollen -- Inhalt
+  wurde am Viewport abgeschnitten. Ursache (wie beim frueheren `#nav`-Fix): Flex-/Grid-Container brauchen
+  `min-height: 0`, sonst wachsen sie auf Inhaltshoehe statt ihre `overflow-y:auto`-Kinder scrollen zu lassen
+  (Safari strikt). Fix: `#cc` `grid-template-rows: minmax(0,1fr)` (Zeile auf Viewport fixieren + Schrumpfen
+  erlauben), `#cc-body` + `#cc-main` je `min-height: 0`. Cache-Bust v33.
+- **Warum:** CEO-Befund -- konnte Dashboard + Menue nicht scrollen.
+- **Betroffen:** `orchestrator/channels/web/static/{style.css,index.html}`. Im Preview verifiziert (1200x600:
+  #cc-main 452->1308 scrollt, #nav 250->842 scrollt; keine Console-Fehler). Safari-spezifisch -> am Geraet
+  gegenpruefen.
+
 ## [2026-07-02 22:55] — Claude Code — #2: Konfigurierbares Dashboard pro User (Widgets anordnen/ausblenden)
 - **Was:** Command-Center-Dashboard ist jetzt pro Nutzer konfigurierbar. `app.js`: Widget-Register (10 Panels
   mit IDs) statt fixer innerHTML-Kette; Reihenfolge + ausgeblendete pro User (`LAYOUT`). **Bearbeiten-Modus**
