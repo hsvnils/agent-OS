@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 12:10] — Claude Code — Richtungswechsel: Konsolidierung HCC -> LUNA-OS (Roadmap neu)
+- **Was:** CEO-Entscheidung: **EIN System = LUNA-OS** (Gehirn + Team-Web-Gesicht); altes nilshubv2/Next.js +
+  Worker **stilllegen**; behaltene Teile (content_ops, CRM, Team) in LUNA-OS **nachbauen**; **Supabase = primaere
+  DB + NAS-Fallback** (kein Zwei-App-Sync mehr). `HCC_INTEGRATION_ROADMAP.md` komplett neu (Phasen K0-K6:
+  Datenschicht -> content_ops-Apps -> LUNA-Agenten-Fuetterung -> Team-Auth/Rollen -> Cutter-App -> nilshubv2
+  stilllegen). ROADMAP.md Phase 18 aktualisiert.
+- **Warum:** CEO will eine Codebasis/Deploy, LUNA als Gehirn+Gesicht, Team mit Rollen. Folge: CRM-Store/
+  Projektion/SupabaseClient/Collab-CRM-App passen direkt; Read-back crm_sync wird ueberfluessig (spaeter raus).
+- **Betroffen:** HCC_INTEGRATION_ROADMAP.md, ROADMAP.md
+
 ## [2026-07-02 11:40] — Claude Code — HCC Phase 3 (Teilstart): Video-Cutter + Invest ausgemistet
 - **Was:** Im HCC-Repo (`~/Documents/nilshubv2`, Branch `chore/ausmisten-cutter-invest`, NICHT gemergt/deployt)
   die **isolierten** Bereiche entfernt: **Video-Cutter** (app/video-cutter+api, lib/cutter, components/video-

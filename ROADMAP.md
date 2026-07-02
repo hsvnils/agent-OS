@@ -29,7 +29,7 @@
 | 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 live 2026-06-27 — funktioniert; „intelligenter machen" = Backlog (spaeter) |
 | 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | ✅ **VOLL LIVE 2026-06-27** -- LAN + **HTTPS extern** (`https://os.hanserautisch.synology.me`, ein Lesezeichen ueberall), Login, Mond-Orb/Chat, agentisches Mehr-Info, Detailansicht, Mobil, echte Umlaute, futuristisches Design, Sprach-Kontextbefehle |
 | 17 | **LUNA bedient den Rechner / Live-Co-Working** (Computer-Use; paralleles Arbeiten im Gespraech -- ich sehe, sie setzt um, justiert per Sprache, schlaegt vor; z. B. XMind/Mail) | 🔲 geplant (Backlog) |
-| 18 | **HCC als Team-Web-Gesicht** (Hanserautisch Command Center fuers Social-Media-Team; luna-os = Gehirn/Datenhoheit + Vorrang, gemeinsame Datenbasis bidirektional) | 🔲 geplant -- eigene Roadmap `HCC_INTEGRATION_ROADMAP.md` (Bestand `docs/HCC_BESTAND.md`) |
+| 18 | **HCC -> LUNA-OS Konsolidierung** (CEO 2026-07-02: EIN System = LUNA-OS als Gehirn+Team-Web-Gesicht; altes nilshubv2/Next.js + Worker stilllegen; Supabase = DB + NAS-Fallback; content_ops/CRM/Team als LUNA-OS-Apps; Team-Auth/Rollen) | 🟡 laufend -- K0 (CRM-Pilot) erledigt; Roadmap `HCC_INTEGRATION_ROADMAP.md`, Bestand `docs/HCC_BESTAND.md` |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).

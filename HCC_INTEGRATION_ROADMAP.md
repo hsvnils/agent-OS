@@ -1,97 +1,70 @@
-# HCC <-> LUNA Integration-Roadmap
+# HCC -> LUNA-OS Konsolidierung (Roadmap)
 
-> Ziel: Das **Hanserautisch Command Center (HCC)** wird das **Web-Gesicht fuer das Social-Media-Team**;
-> **luna-os** bleibt Gehirn + Datenhoheit. Bestand siehe `docs/HCC_BESTAND.md`. Stand 2026-07-02 (Entwurf).
+> **Richtungswechsel (CEO 2026-07-02): EIN System = LUNA-OS** (Gehirn + Web-Gesicht). Das alte HCC
+> (`~/Documents/nilshubv2`, Next.js) + der Synology-Worker werden **stillgelegt**. Die behaltenen Teile
+> (content_ops, CRM, Team) werden **in LUNA-OS nachgebaut**. **Supabase = primaere DB + NAS-Offline-Fallback.**
+> Bestand des alten HCC: `docs/HCC_BESTAND.md`.
 
-## Leitprinzipien (verbindlich)
-1. **luna-os hat IMMER Vorrang.** Bei Konflikten gewinnt luna-os; HCC ist die Bedien-/Team-Oberflaeche.
-2. **HCC = Web-Gesicht fuers Social-Media-Team.** Keine LUNA-/Investment-/Agenten-*Module* im HCC selbst.
-3. **Gemeinsame Datenbasis, bidirektional.** Aenderungen im HCC-Web-Gesicht werden zurueckgeschrieben;
-   LUNAs Fachagenten arbeiten im Hintergrund auf denselben Daten (wie das Collab-CRM schon jetzt).
-4. **HCC hat keine eigenen Agenten.** LUNAs Agenten bedienen HCC im Hintergrund.
-5. Governance wie gehabt: Oeffentlichkeit/Geld/Recht = CEO-Tor; kein Auto-Posten/Senden; Leck-Schutz auch bei
-   Supabase-Writes; Charten nur HoA/CEO; Changelog-Pflicht; `.md` umlautfrei.
+## Leitprinzipien
+1. **Eine Codebasis, ein Deploy:** LUNA-OS (FastAPI + JS) ist Gehirn UND Team-Web-Gesicht.
+2. **Daten:** Supabase = geteilte Datenbank; luna-os haelt lokale Fallback-/Offline-Kopie; **luna-os Vorrang**.
+3. **Team-Zugang:** Mehr-Nutzer-Login + Rollen/Modul-Zugriff im LUNA-OS (CEO voll, Team scoped).
+4. **LUNA-Agenten fuettern** content_ops/CRM im Hintergrund (keine eigenen Agenten im „Gesicht").
+5. **nilshubv2 (Next.js) + Synology-Worker: raus.** Kein alter Deploy mehr.
+6. Governance wie gehabt: CEO-Tor (Oeffentlichkeit/Geld/Recht), kein Auto-Posten, Leck-Schutz auch bei
+   Supabase-Writes, Changelog-Pflicht, `.md` umlautfrei, Datenschutz (Supabase-Cloud ok).
 
-## Ziel-Scope HCC (was bleibt / was fliegt)
-| HCC-Modul | Zukunft |
+## Uebernommen aus HCC (in LUNA-OS nachbauen) vs. raus
+| Aus HCC | Zukunft in LUNA-OS |
 |---|---|
-| content_ops (trends/content-radar/drafts/ideas/sources/ai-inbox) | **BLEIBT** (Team-Kern) -- aber die Logik dahinter kommt aus LUNA (Social-Media-Researcher + Agenten) |
-| CRM (neu) | **NEU** -- Collab-CRM als erste geteilte Flaeche |
-| video-cutter | **BLEIBT als Spiegel** -- ausgefuehrt von luna-os (Phase 15), HCC zeigt/triggert |
-| administration (team/settings/security/profile/auth/notifications/activity) | **BLEIBT** (Team-Zugang/Rollen) |
-| telegram (bots/intake) | **FLIEGT** -- im HCC nicht mehr benoetigt (LUNA besitzt Telegram). Spaetere Idee siehe „Backlog" |
-| agents_workers (agents/agent-config/agents-office/eigener Worker) | **FLIEGT** -- LUNA uebernimmt; **alter Video-Cutter (Worker+UI+Logik+cutter_*-Schema) wird geloescht** (Phase 3) |
-| invest | **FLIEGT** -- LUNAs CIO |
+| content_ops (sources/trends/ideas/drafts/ai-inbox) | **Nachbauen** als LUNA-OS-Apps (Team-Flaeche) |
+| CRM | **Schon da** (Collab-CRM-App + Store + Supabase-Projektion) -- Blaupause |
+| Team/Rollen/Auth | **Nachbauen** (Mehr-Nutzer + Modul-Zugriff) |
+| eigener Worker, agents-office-3D, invest, telegram-intake, Video-Cutter | **Raus** (LUNA-CIO/-Cutter/-Telegram/-Agenten uebernehmen) |
 
-## Architektur-Kern: die eine grosse Entscheidung (Phase 1)
-Wo liegt die Source of Truth + wie laeuft der **bidirektionale** Sync mit luna-os-Vorrang?
-- **Option A -- Shared Supabase (empfohlen fuer geteilte Team-Entitaeten):** luna-os liest/schreibt Supabase
-  direkt ueber austauschbare `SupabaseStore`-Backends (der `CrmStore`/`InvestmentStore` sind bereits als
-  swappable Klassen gebaut). HCC nutzt Supabase wie gewohnt. Bidirektional „von Natur aus"; luna-os-Vorrang
-  ueber Schreib-Logik + Timestamps. luna-os-**Interna** (Antraege, Watch, Memory, Aktivitaet) bleiben lokal.
-- **Option B -- Sync-Bridge:** luna-os behaelt File-Stores; ein Bridge-Dienst synct bidirektional mit Supabase
-  (Konfliktloesung: luna-os gewinnt). Mehr bewegliche Teile, aber luna-os bleibt voll offline-fest.
-- **ENTSCHIEDEN (CEO 2026-07-02): Option A -- Shared Supabase, mit NAS-Offline-Fallback.** Supabase ist die
-  **primaere gemeinsame Datenbasis** (Single Source, bidirektional). luna-os schreibt **write-through**: primaer
-  nach Supabase UND haelt zusaetzlich eine **lokale Spiegel-/Fallback-Kopie** auf der NAS (JSONL). Ist Supabase
-  nicht erreichbar, arbeitet luna-os lokal weiter und gleicht bei Wiederkehr ab (luna-os gewinnt bei Konflikt).
-  So bleibt LUNA offline-fest, ohne die gemeinsame Basis aufzugeben. Gilt fuer die geteilten Team-Flaechen
-  (CRM, Content, Cutter-Status); luna-os-Interna (Antraege, Watch, Memory, Aktivitaet) bleiben rein lokal.
+## Auswirkung auf bereits Gebautes
+- **Passt direkt:** `SupabaseClient` (governance/supabase.py), `SupabaseCrmProjection`, CRM-Store, Collab-CRM-App
+  in LUNA-OS, CRM-Tabellen in Supabase. Das ist die neue Architektur im Kleinen.
+- **Wird ueberfluessig (Ein-App-Welt):** der Read-back-Sync `crm_sync` (war fuer die Zwei-App-Welt gedacht) --
+  bleibt vorerst harmlos, spaeter entfernbar.
+- **Video-Cutter + Invest im HCC** bereits entfernt (Branch `chore/ausmisten-cutter-invest`); DROP-SQL fuer
+  cutter_* in `docs/hcc_drop_cutter.sql`.
 
-## Phasen (mit GATES)
-### Phase 0 -- Bestand + Ziel-Scope
-`docs/HCC_BESTAND.md` (erledigt) + Scope-Tabelle oben. **GATE:** CEO bestaetigt „bleibt/fliegt".
+## Phasen (K = Konsolidierung)
+### K0 -- Datenbruecke + CRM-Pilot -- ✅ ERLEDIGT
+SupabaseClient + CRM-Store/Projektion + Collab-CRM-App in LUNA-OS, live bewiesen (Supabase = DB).
 
-### Phase 1 -- Datenbruecke (Fundament fuer alles) -- ✅ UMGESETZT 2026-07-02
-- Architektur = **A (entschieden)**. Supabase-Zugang fuer luna-os: `SUPABASE_URL` + Service-Key in NAS-`.env`
-  (CISO-Freigabe, CEO-Tor -- Dienst existiert bereits, keine neuen Kosten; Key NIE in den Chat).
-- Generisches **`SupabaseStore`-Muster mit Write-Through + lokalem Fallback:** schreibt primaer nach Supabase
-  und spiegelt in eine lokale JSONL-Kopie (NAS); Lesen bevorzugt Supabase, faellt bei Ausfall lokal zurueck;
-  Abgleich bei Wiederkehr mit **Vorrang-Regel luna-os gewinnt**. Self-Checks gegen Mock.
-- **GATE B:** Supabase-Key in `.env` + Verbindungstest.
+### K1 -- content_ops-Datenschicht in LUNA-OS
+Supabase-Tabellen sources/trend_signals/ideas/content_drafts/content_findings via `SupabaseClient` (+ lokaler
+Fallback) an LUNA-OS anbinden (Lese-/Schreib-Store-Klassen nach CRM-Muster). GATE: Verbindungstest.
 
-### Phase 2 -- CRM-Pilot (erste geteilte Flaeche) -- ✅ UMGESETZT 2026-07-02 (bidirektional 1:1 live bewiesen)
-- Gemeinsame `crm_*`-Tabellen in Supabase; luna-os-CRM auf die geteilte Basis (SupabaseCrmStore bzw. Bridge);
-  CRM-View im HCC. Beweist **bidirektional + Vorrang** end-to-end. (Baut auf dem schon gebauten Collab-CRM auf.)
-- **Self-Checks:** DM ueber LUNA -> in HCC sichtbar; Statuswechsel im HCC -> in LUNA sichtbar; Konflikt -> luna-os
-  gewinnt.
+### K2 -- content_ops-Apps in LUNA-OS (Team-Flaeche)
+Neue LUNA-OS-Apps: Trends, Ideen-Labor, Drafts, Quellen, AI-Inbox -- Anzeige **und** Bearbeiten (schreibt nach
+Supabase). Muster der bestehenden LUNA-OS-Apps (app.js APPS + /api/*).
 
-### Phase 3 -- HCC ausmisten
-- Aus dem HCC entfernen: Module `agents_workers` (agents/agent-config/agents-office/eigener Worker), `invest`,
-  **`telegram`** (bots/intake), und den **alten Video-Cutter komplett** (Worker unter `worker/` + `worker-
-  deploy.zip`, Routen `app/video-cutter/*` + `app/workers`, `app/api/video-cutter`, Lib/Components, sowie das
-  `cutter_*`- und `worker_*`-Schema in Supabase -- per neuer Migration droppen). Mit Diff/Bestaetigung.
-- HCC auf Team-Scope reduzieren: `content_ops`, CRM, Cutter-**Spiegel** (aus luna-os), `administration`.
+### K3 -- LUNA-Agenten fuettern content_ops
+Social-Media-Researcher + Content-Agenten (Ausbaustufe des Researchers) -> schreiben Trends/Ideen/Drafts/
+Findings nach Supabase. **Ersetzt den alten Dummy-Worker** endgueltig.
 
-### Phase 4 -- Cutter spiegeln
-- luna-os-Cutter (Phase 15) ist die **ausfuehrende Instanz**. **Neue, schlanke** gemeinsame Cutter-Tabellen in
-  Supabase (nachdem das alte `cutter_*`-Schema in Phase 3 entfernt wurde), zugeschnitten auf den luna-os-Cutter
-  (Jobs/Status/Outputs). HCC zeigt Jobs/Historie + kann Jobs anstossen; luna-os verarbeitet und schreibt Status
-  zurueck (Write-Through + lokaler Fallback).
+### K4 -- Team-Auth + Rollen in LUNA-OS
+Mehr-Nutzer-Login (statt einzel-CEO-Basic-Auth) + Modul-/Rollen-Zugriff (wie HCC `allowed_modules`). CEO voll,
+Team scoped. **Vor dem Team-Go-Live.**
 
-### Phase 5 -- Social-Media-Researcher in luna-os (Ausbaustufe)
-- HCCs Konzepte (trends/content-radar/sources/content_findings) als **neuen Social-Media-Researcher** in
-  luna-os bauen (Ausbaustufe des bestehenden Researchers, Agent 15). Ergebnisse fliessen als Trends/Findings/
-  Ideas/Drafts in die geteilte Basis -> HCC zeigt sie dem Team.
+### K5 -- Cutter-App in LUNA-OS
+LUNA-Cutter (Phase 15) Job-Status/Historie direkt als LUNA-OS-App zeigen + anstossen (kein App-zu-App-Spiegel
+mehr noetig).
 
-### Phase 6 -- LUNA-Agenten im Hintergrund fuers HCC
-- LUNAs Fachagenten bearbeiten HCC-Content-Entitaeten im Hintergrund (Idee->Entwurf, Findings->Vorschlag),
-  wie das CRM jetzt. HCC bleibt **agentenlos** (nur Ansicht/Freigabe durchs Team).
+### K6 -- nilshubv2 + Worker stilllegen
+Wenn alles in LUNA-OS laeuft: Next.js-App + Synology-Worker abschalten/Deploy entfernen; nicht mehr genutzte
+Supabase-Tabellen bereinigen (cutter_*/worker_*/agent_*/telegram_* -- mit Backup, DROP-SQL wie
+`docs/hcc_drop_cutter.sql`).
 
-### Phase 7 -- Team-Zugang scharf schalten
-- HCC Auth/Rollen/`allowed_modules` fuer das Social-Media-Team (Least-Privilege, CISO). Go-Live-Check.
-
-## Reihenfolge / Abhaengigkeiten
-Phase 1 (Datenbruecke) ist das Fundament. **Phase 2 (CRM-Pilot) validiert das Muster**, bevor Cutter (4),
-Researcher (5) und Content-Agenten (6) folgen. Phase 3 (Ausmisten) kann parallel ab Phase 2 laufen.
-
-## Entscheidungen (CEO 2026-07-02)
-- **Architektur:** Option A -- Shared Supabase als primaere Basis + **NAS-Offline-Fallback** (Write-Through).
-- **Telegram:** raus aus dem HCC (nicht mehr benoetigt). Spaetere Idee im Backlog.
-- **Alter Cutter:** wird geloescht (Phase 3); LUNA-Cutter wird gespiegelt.
-- **Datenschutz:** Team-/CRM-/Content-Daten in der Supabase-Cloud ist ok.
-- In Haupt-`ROADMAP.md` als **Phase 18** verankert.
+## Reihenfolge / Hinweise
+K1->K2 (Datenschicht dann UI) ist das Fundament der Team-Flaeche; K3 (Agenten) fuettert sie; K4 (Team-Auth) vor
+Go-Live; K5 (Cutter) unabhaengig; **K6 (Stilllegen) ganz am Ende**, erst wenn LUNA-OS alles ersetzt. Ehrlich:
+das Nachbauen der content_ops-UI ist der groesste Brocken (das alte HCC hatte dafuer schon fertige Next.js-
+Seiten -- die bauen wir in LUNA-OS neu).
 
 ## Backlog / spaetere Ideen
-- **Telegram-Reminder fuer Team-User:** ueber LUNAs Telegram bestimmte HCC-Nutzer an offene Aufgaben/To-dos
-  erinnern (z. B. „Firma X seit 3 Tagen offen"). Nutzt den bestehenden Notifier; kein eigener HCC-Bot.
+- Telegram-Reminder fuer Team-User (ueber LUNAs Telegram, kein eigener Bot).
+- CRM-Read-back `crm_sync` entfernen (Ein-App-Welt).
