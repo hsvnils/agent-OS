@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 20:10] — Claude Code — K5-Fix: eigene Tabelle luna_cutter_jobs (Kollision mit HCC-cutter_jobs)
+- **Was:** Beim Live-Test schlug der Insert fehl (HTTP 400, `column cutter_jobs.fehler does not exist`): die
+  Tabelle `cutter_jobs` existiert bereits aus dem alten HCC-Video-Cutter (Migration 028, voellig anderes Schema
+  title/source_folder/error + Status-CHECK ohne `running`). Mein `create table if not exists` hatte daher nichts
+  angelegt. Fix: LUNA nutzt jetzt eine **eigene Tabelle `luna_cutter_jobs`** (app.py cutter_store + Migration
+  `docs/hcc_k5_cutter_jobs.sql` umbenannt). Kollidiert nicht mehr mit dem alten HCC-Cutter (faellt in K6 weg).
+- **Warum:** Namenskollision mit Bestands-Schema; Live-Rundlauf-Test.
+- **Betroffen:** `orchestrator/channels/web/app.py`, `docs/hcc_k5_cutter_jobs.sql`. Import ok. OFFEN (CEO):
+  korrigierte SQL (luna_cutter_jobs) in Supabase ausfuehren; luna-os laeuft bereits mit K5-Code.
+
 ## [2026-07-02 19:45] — Claude Code — K5: Cutter-App in LUNA-OS (Job-Status/Historie + anstossen)
 - **Was:** Cutter (Phase 15, laeuft lokal auf dem Mac) an LUNA-OS (NAS) angebunden. Bruecke = **ueber die
   LUNA-OS-API** (CEO-Wahl; kein Supabase-service_role auf dem Mac). Tabelle `cutter_jobs` (generischer

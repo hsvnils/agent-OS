@@ -90,7 +90,8 @@ sources_store = ContentStore(_sb, "sources", SOURCE_FELDER, ROOT / "content_ops"
 aiinbox_store = ContentStore(_sb, "ai_intel_items", AIINTEL_FELDER, ROOT / "content_ops" / "aiinbox_cache.jsonl",
                              statuses=AIINTEL_RECS, status_feld="recommendation")
 # K5: Cutter-Jobs (geteilt Mac<->LUNA-OS). Generischer ContentStore reicht (list/add/patch).
-cutter_store = ContentStore(_sb, "cutter_jobs", CUTTER_FELDER, ROOT / "cutter_ops" / "jobs_cache.jsonl",
+# Eigene Tabelle `luna_cutter_jobs` -- NICHT das alte HCC `cutter_jobs` (anderes Schema, wird in K6 gedroppt).
+cutter_store = ContentStore(_sb, "luna_cutter_jobs", CUTTER_FELDER, ROOT / "cutter_ops" / "jobs_cache.jsonl",
                             statuses=CUTTER_STATUSES)
 # Internes Lagebild (ohne Google); fuer das volle Lagebild (Termine/Mails) nutzt der Endpunkt die LUNA-ctx.
 insights_intern = Insights(antraege=antraege, research=research, agenda=agenda)
