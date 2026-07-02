@@ -563,3 +563,14 @@ body {
     50% { filter: drop-shadow(0 0 9px var(--violet)); } }
   @keyframes mmflow { to { stroke-dashoffset: -20; } }
 }
+
+/* K4: Nutzer-Chip (Team-Auth) in der Brand-Leiste */
+#user-chip { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 10px;
+  padding: 8px 10px; border-radius: 12px; background: rgba(120,170,255,.08);
+  border: 1px solid rgba(120,170,255,.16); }
+#user-chip .uc-ava { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 700; font-size: 13px; color: #05121f;
+  background: linear-gradient(135deg, #2ee6ff, #7aa2ff); }
+#user-chip .uc-txt { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+#user-chip .uc-txt b { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#user-chip .uc-txt small { font-size: 11px; opacity: .6; }

@@ -62,9 +62,18 @@ verarbeitete Quellen ruecken vor (Trend->`reviewing`, Idee->`sorted`), damit nic
 neu starten; oder `content_feed_lauf` via Telegram). Feinschliff: LLM-Relevanzfilter der Roh-Trends (Checker),
 `trend_id`-Verknuepfung Idee->Draft, `sources`-Tabelle als zusaetzlicher Trigger.
 
-### K4 -- Team-Auth + Rollen in LUNA-OS
+### K4 -- Team-Auth + Rollen in LUNA-OS -- ✅ CODE-KOMPLETT (2026-07-02)
 Mehr-Nutzer-Login (statt einzel-CEO-Basic-Auth) + Modul-/Rollen-Zugriff (wie HCC `allowed_modules`). CEO voll,
-Team scoped. **Vor dem Team-Go-Live.**
+Team scoped. **Umgesetzt:** `orchestrator/core/team_auth.py` (TeamAuth gegen Supabase-Tabelle `luna_os_users`;
+PBKDF2-Passwort-Hash stdlib; Module content_ops/crm/invest/administration; Rolle `owner`=Superuser; Pfad->Modul-
+Gating). `web/app.py`: Auth loest env-CEO (owner) ODER Team-Nutzer auf, setzt `request.state.user`, gated
+sensible Endpunkte (403); neuer `/api/me`. Frontend (`app.js`): laedt `/api/me`, blendet nicht-erlaubte Apps in
+Sidebar/Dock aus, Nutzer-Chip (Name+Rolle); Cache-Bust v25. Nutzerverwaltung per CLI
+`python -m orchestrator.core.team_auth add|list|deactivate` (Passwort bleibt ausserhalb des Chats). Migration:
+`docs/hcc_k4_luna_os_users.sql`. Suite 314; im Preview verifiziert (Owner=alle Apps; Content-Rolle=6 Apps).
+**Graceful:** ohne Tabelle bleibt env-CEO-Basic-Auth unveraendert. **OFFEN (CEO):** SQL-Migration in Supabase
+ausfuehren + Team-Nutzer anlegen (CLI); luna-os ist bereits neu gestartet (Code kommt beim naechsten Sync).
+Feinschliff spaeter: Team-Admin-App im Frontend, Kern-Endpunkte (state/lagebild) feiner scopen, Logout-Flow.
 
 ### K5 -- Cutter-App in LUNA-OS
 LUNA-Cutter (Phase 15) Job-Status/Historie direkt als LUNA-OS-App zeigen + anstossen (kein App-zu-App-Spiegel

@@ -28,6 +28,7 @@ from ...core.briefing import Agenda
 from ...core.insights import Insights
 from ...core.notifications import Notifications
 from ...core.research_tickets import ResearchTickets
+from ...core.team_auth import MODULE, TeamAuth, erlaubte_apps, hat_modul, modul_fuer_pfad
 from ...governance.changelog_tool import append_changelog
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -95,10 +96,34 @@ inv_store = InvestmentStore(ROOT / "investment" / "log.jsonl")
 OFFEN = ("eingereicht", "freigegeben", "in_umsetzung")
 _RANG = {"eingereicht": 0, "freigegeben": 1, "in_umsetzung": 2}
 
-# Login-Schutz: nur aktiv, wenn LUNA_OS_PASSWORD gesetzt ist (auf dem NAS via .env). Lokal ohne Passwort offen.
+# K4 -- Team-Auth + Rollen: CEO ist Superuser via env (LUNA_OS_USER/PASSWORD, auf dem NAS in .env), zusaetzlich
+# Team-Nutzer aus der Supabase-Tabelle luna_os_users (Rollen + allowed_modules). Ohne Passwort UND ohne
+# Nutzer-Tabelle bleibt LUNA-OS lokal offen (Dev). Sensible Module/Aktionen werden pro Pfad gated.
 _USER = os.environ.get("LUNA_OS_USER", "ceo")
 _PW = os.environ.get("LUNA_OS_PASSWORD", "")
 _security = HTTPBasic(auto_error=False)
+_team_auth = TeamAuth(_sb, changelog=_changelog)
+
+
+def _ceo_user() -> dict:
+    """Der env-CEO = Superuser (Rolle owner -> alle Module)."""
+    return {"username": _USER, "display_name": "CEO", "role": "owner",
+            "allowed_modules": list(MODULE), "is_active": True}
+
+
+def _login_erforderlich() -> bool:
+    return bool(_PW) or _team_auth.verfuegbar()
+
+
+def _resolve_user(cred: HTTPBasicCredentials | None) -> dict | None:
+    if cred and _PW and secrets.compare_digest(cred.username, _USER) \
+            and secrets.compare_digest(cred.password, _PW):
+        return _ceo_user()
+    if cred and _team_auth.verfuegbar():
+        u = _team_auth.verify(cred.username, cred.password)
+        if u:
+            return u
+    return None
 
 
 def auth(request: Request, cred: HTTPBasicCredentials = Depends(_security)):
@@ -106,12 +131,19 @@ def auth(request: Request, cred: HTTPBasicCredentials = Depends(_security)):
     # authentifizieren. Sie sichern sich selbst -- GET ueber den Verify-Token, POST ueber die HMAC-Signatur.
     if request.url.path.startswith("/api/webhook/"):
         return
-    if not _PW:
-        return
-    ok = cred and secrets.compare_digest(cred.username, _USER) and secrets.compare_digest(cred.password, _PW)
-    if not ok:
+    user = _resolve_user(cred)
+    if user is None:
+        if not _login_erforderlich():
+            request.state.user = _ceo_user()   # lokaler Dev ohne Passwort/Tabelle: offener Owner
+            return
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Login nötig",
                             headers={"WWW-Authenticate": "Basic"})
+    request.state.user = user
+    # Modul-Gating: sensible App-Endpunkte/Aktionen brauchen das passende Modul (Owner sieht alles).
+    modul = modul_fuer_pfad(request.method, request.url.path)
+    if modul and not hat_modul(user, modul):
+        raise HTTPException(status.HTTP_403_FORBIDDEN,
+                            f"Kein Zugriff auf Modul '{modul}'")
 
 
 app = FastAPI(title="LUNA-OS", dependencies=[Depends(auth)])
@@ -219,6 +251,15 @@ def index():
 @app.get("/api/state")
 def state():
     return _state()
+
+
+@app.get("/api/me")
+def me(request: Request):
+    """K4: der eingeloggte Nutzer + seine sichtbaren Apps (SSOT fuers Frontend-Gating)."""
+    u = getattr(request.state, "user", None) or _ceo_user()
+    return {"username": u.get("username"), "display_name": u.get("display_name"),
+            "role": u.get("role"), "allowed_modules": u.get("allowed_modules") or [],
+            "apps": erlaubte_apps(u)}
 
 
 @app.get("/api/antraege/{antrag_id}")

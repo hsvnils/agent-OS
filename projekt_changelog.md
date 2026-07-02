@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 18:05] — Claude Code — K4: Team-Auth + Rollen in LUNA-OS (Mehr-Nutzer-Login)
+- **Was:** LUNA-OS von Single-CEO-Basic-Auth auf **Mehr-Nutzer + Rollen/Module** umgestellt. Neu
+  `orchestrator/core/team_auth.py`: TeamAuth gegen Supabase-Tabelle `luna_os_users` (Login/Anlegen/Liste/
+  Deaktivieren), Passwort-Hashing PBKDF2-HMAC-SHA256 (stdlib, nie Klartext), Module content_ops/crm/invest/
+  administration, Rolle `owner`=Superuser sonst `allowed_modules`, `modul_fuer_pfad`-Gating, `erlaubte_apps`
+  (SSOT Frontend), CLI `python -m orchestrator.core.team_auth add|list|deactivate`. `web/app.py`: `auth`
+  loest env-CEO (owner) ODER Team-Nutzer auf, setzt `request.state.user`, gated sensible Endpunkte mit 403;
+  neuer `/api/me`. Frontend `static/app.js`: `ladeMe()` -> blendet nicht-erlaubte Apps in Sidebar/Dock aus
+  (`darf()`), Nutzer-Chip (Name+Rolle) + CSS; Cache-Bust v25. Migration `docs/hcc_k4_luna_os_users.sql`.
+- **Warum:** „Weiter mit K4" (CEO) -- Team-Zugang mit Rollen vor dem Team-Go-Live.
+- **Betroffen:** `orchestrator/core/team_auth.py` (neu), `orchestrator/channels/web/app.py`,
+  `orchestrator/channels/web/static/{app.js,style.css,index.html}`, `orchestrator/tests/test_team_auth.py`
+  (neu), `docs/hcc_k4_luna_os_users.sql` (neu), `HCC_INTEGRATION_ROADMAP.md`. Suite 314 gruen; im Preview
+  verifiziert (Owner=17 Apps, Content-Rolle=6 Apps, keine Console-Fehler). Graceful: ohne Tabelle bleibt
+  env-CEO-Basic-Auth unveraendert. OFFEN (CEO): SQL-Migration ausfuehren + Team-Nutzer per CLI anlegen.
+
 ## [2026-07-02 17:20] — Claude Code — K3 CODE-KOMPLETT: Content-Pipeline Trends->Ideen->Drafts
 - **Was:** K3 fertiggebaut. `ContentFeed` um zwei LLM-Stufen erweitert: `ideen_lauf()` (aus offenen Trends
   `new` -> Content-Ideen via Fachagent `cco` -> `ideas` Status `inbox`; Trend rueckt auf `reviewing`) und

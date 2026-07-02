@@ -3,7 +3,14 @@
 "use strict";
 
 let STATE = { antraege: [], meldungen: [], aktivitaet: [], research: [], finance: {} };
+let ME = { apps: null, role: "owner", display_name: "", username: "" };  // apps=null -> alles zeigen (bis geladen)
 const WINS = {};  // app-id -> WinBox
+
+// K4: erlaubte Apps des eingeloggten Nutzers (SSOT vom Backend /api/me). darf() = Sichtbarkeits-/Zugriffs-Gate.
+async function ladeMe() {
+  try { ME = await (await fetch("/api/me")).json(); } catch { ME = { apps: null, role: "owner" }; }
+}
+const darf = (id) => id === "home" || !ME.apps || ME.apps.includes(id);
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -469,6 +476,7 @@ let zaehler = 0;
 function openApp(id) {
   const app = APPS[id];
   if (!app) return;
+  if (!darf(id)) return;   // K4: kein Zugriff auf dieses Modul
   if (WINS[id]) { WINS[id].focus(); return; }
   const off = (zaehler++ % 5) * 34;
   const win = new WinBox(`${app.icon}  ${app.titel}`, {
@@ -507,9 +515,24 @@ const NAV = [
 let AKTIV_NAV = "home";
 function buildSidebar() {
   const nav = document.getElementById("nav");
-  nav.innerHTML = NAV.map(n => `<div class="nav-item${n.id === AKTIV_NAV ? " active" : ""}" data-app="${n.id}">
+  nav.innerHTML = NAV.filter(n => darf(n.id)).map(n => `<div class="nav-item${n.id === AKTIV_NAV ? " active" : ""}" data-app="${n.id}">
     <span class="nico">${n.icon}</span><span>${esc(n.label)}</span><span class="ncount" data-ncount="${n.id}" hidden></span></div>`).join("");
   updateSidebarCounts();
+  zeigeNutzer();
+}
+// K4: Nutzer-Chip in der Brand-Leiste (Name + Rolle). Owner = CEO/Voll.
+function zeigeNutzer() {
+  const block = document.querySelector(".brand-block");
+  if (!block || !ME.username) return;
+  let chip = document.getElementById("user-chip");
+  if (!chip) {
+    chip = document.createElement("div");
+    chip.id = "user-chip";
+    block.appendChild(chip);
+  }
+  const rolle = ME.role === "owner" ? "Voll-Zugriff" : esc(ME.role || "");
+  chip.innerHTML = `<span class="uc-ava">${esc((ME.display_name || ME.username || "?")[0].toUpperCase())}</span>
+    <span class="uc-txt"><b>${esc(ME.display_name || ME.username)}</b><small>${rolle}</small></span>`;
 }
 function updateSidebarCounts() {
   NAV.forEach(n => {
@@ -520,6 +543,7 @@ function updateSidebarCounts() {
     el.classList.toggle("active", el.dataset.app === AKTIV_NAV));
 }
 function navTo(id) {
+  if (!darf(id)) return;   // K4: nicht-erlaubte Bereiche ignorieren
   if (id === "home") { AKTIV_NAV = "home"; renderDashboard(); updateSidebarCounts(); }
   else if (id === "luna") { AKTIV_NAV = "luna"; openLuna(); updateSidebarCounts(); }
   else { AKTIV_NAV = id; openApp(id); updateSidebarCounts(); }
@@ -983,13 +1007,18 @@ function typeLunaText(text) {
 }
 
 // ---- Start -----------------------------------------------------------------
-buildSidebar(); clock(); setInterval(clock, 1000);
+clock(); setInterval(clock, 1000);
 // Topbar-Suche: Enter -> an LUNA (oeffnet Chat); Kontext-Befehle blenden direkt das Panel ein.
 const _ts = document.getElementById("topsearch");
 if (_ts) _ts.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && _ts.value.trim()) { const t = _ts.value.trim(); _ts.value = "";
     openLuna(); sendeAnLuna(t, false); }
 });
-refresh();          // laedt Daten + rendert das Command-Center-Dashboard (Home)
+// K4: erst Rolle/erlaubte Apps laden (blendet nicht-erlaubte Apps aus), dann Sidebar + Daten.
+(async function boot() {
+  await ladeMe();
+  buildSidebar();
+  refresh();          // laedt Daten + rendert das Command-Center-Dashboard (Home)
+})();
 connectSSE();
 // Orb-/Talk-Klicks laufen ueber die zentrale Event-Delegation (siehe oben).
