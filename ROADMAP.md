@@ -460,8 +460,8 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
 > Die drei „PRUEFEN"-Punkte oben (NVIDIA Skills, MemPalace, The Agency) sind hiermit in konkrete Phasen
 > ueberfuehrt; ruflo ist neu bewertet. Kurzfazit: **SkillSpector = Volltreffer** (direkter Phase-21-Ausbau),
 > NVIDIA-Skills-**Format** + OpenShell-**Prinzip** uebernehmbar, MemPalace **validiert** unseren Ist-Stand,
-> ruflo grossteils Overkill (zwei Rosinen). Reihenfolge = Prioritaet. Details/Quellen: Chat-Zusammenfassung
-> 2026-07-03.
+> ruflo grossteils Overkill (zwei Rosinen). Reihenfolge = Prioritaet. **Volle Begruendung je Quelle (uebernehmen/
+> teilweise/verworfen) + Quellen: `docs/entscheidungs-register.md` (Eintrag 2026-07-03).**
 
 - **Phase 22 — CISO-Agent ausbauen (Static-Security-Scan nach SkillSpector-Muster) [HOCH]:**
   - **Ziel:** Phase-21-Agent von 3 Checks (Secret-Hygiene/Hardening/`pip-audit`) auf ein breiteres, regel-

@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 00:35] — Claude Code — Recherche-/Entscheidungs-Register angelegt
+- **Was:** Neue Datei `docs/entscheidungs-register.md` -- laufendes Register geprüfter externer Ideen/Tools mit
+  Datum, Entscheidung (uebernehmen/teilweise/verworfen/validiert/spaeter) und Begruendung + Index-Tabelle.
+  Erster Eintrag = die Agent-Oekosystem-Recherche 2026-07-03 (SkillSpector/Skills/OpenShell/NemoClaw/MemPalace/
+  ruflo/agency-agents #525/VoltAgent). ROADMAP-Provenienz-Zeile verweist jetzt auf das Register.
+- **Warum:** CEO-Wunsch -- kuenftig nachschlagen koennen, ob etwas schon bewertet wurde und warum es ggf.
+  verworfen wurde (statt es doppelt zu pruefen).
+- **Betroffen:** docs/entscheidungs-register.md (neu), ROADMAP.md (Verweis).
+
 ## [2026-07-03 00:20] — Claude Code — Roadmap: Phasen 22-26 aus Agent-Oekosystem-Recherche
 - **Was:** In `ROADMAP.md` fuenf neue Phasen ergaenzt (Status-Tabelle + Detail-Block im Backlog), abgeleitet aus
   der CEO-beauftragten Recherche zu NVIDIA SkillSpector/Skills/OpenShell, MemPalace, ruflo, agency-agents #525:
