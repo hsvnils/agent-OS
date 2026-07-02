@@ -34,14 +34,14 @@
 ### K0 -- Datenbruecke + CRM-Pilot -- ✅ ERLEDIGT
 SupabaseClient + CRM-Store/Projektion + Collab-CRM-App in LUNA-OS, live bewiesen (Supabase = DB).
 
-### K1 -- content_ops-Datenschicht in LUNA-OS -- 🟡 Trends + Ideen live (generischer Store)
-`orchestrator/core/content_store.py` (`ContentStore`, parametriert je Tabelle: select + PATCH-Status +
-Cache-Fallback). **Live: trend_signals + ideas.** Drafts/Quellen/AI-Inbox = je eine weitere Instanz.
+### K1 -- content_ops-Datenschicht in LUNA-OS -- ✅ ERLEDIGT (2026-07-02)
+`orchestrator/core/content_store.py` (`ContentStore`, parametriert je Tabelle: select + PATCH via `status_feld`
++ generisches `patch` + Cache-Fallback). Live fuer alle content_ops-Tabellen (trend_signals/ideas/
+content_drafts/sources/ai_intel_items).
 
-### K2 -- content_ops-Apps in LUNA-OS (Team-Flaeche) -- 🟡 Trends + Ideen + Drafts live (2026-07-02)
-**Kern-Pipeline Trends -> Ideen -> Drafts live** (Inbox + Status-Buttons, lesen+schreiben gegen Supabase
-bewiesen: 7 Trends / 6 Ideen / 10 Drafts). Verbleibend: **Sources** (name/is_active/priority, kein Status ->
-Read-only + is_active-Toggle) + **AI-Inbox** (recommendation/scores -> eigene Form).
+### K2 -- content_ops-Apps in LUNA-OS (Team-Flaeche) -- ✅ ERLEDIGT (2026-07-02)
+**Alle content_ops-Apps live** (lesen+schreiben gegen Supabase bewiesen): Trends(7) · Ideen-Labor(6) ·
+Drafts(10) · Quellen(6, is_active-Toggle) · AI-Inbox(24, recommendation). Cache-Bust v24.
 
 ### K3 -- LUNA-Agenten fuettern content_ops
 Social-Media-Researcher + Content-Agenten (Ausbaustufe des Researchers) -> schreiben Trends/Ideen/Drafts/
