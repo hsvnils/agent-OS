@@ -411,7 +411,9 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                                for k in r.get("kandidaten", [])]}
 
     if name == "sicherheits_audit":
+        import json as _json
         import subprocess
+        import urllib.request
         from .security_agent import SecurityAgent
 
         def _run(cmd):
@@ -420,11 +422,21 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                                       cwd=str(ctx.repo_root)).stdout
             except Exception:
                 return ""
+
+        def _http(url, body):   # OSV.dev-Query (kein API-Key); Fehler -> None (Check meldet dann nichts)
+            try:
+                req = urllib.request.Request(url, data=_json.dumps(body).encode("utf-8"),
+                                             headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    return _json.loads(resp.read().decode("utf-8"))
+            except Exception:
+                return None
         sa = SecurityAgent(repo_root=ctx.repo_root, env=ctx.secret_dict or {}, secrets=sec, run=_run,
-                           notify=(ctx.notifications.enqueue if ctx.notifications else None),
+                           http=_http, notify=(ctx.notifications.enqueue if ctx.notifications else None),
                            antraege=ctx.antraege, changelog=ctx.core.changelog)
         r = sa.lauf(als_antrag=bool(args.get("als_antrag")))
-        return {"ok": True, "befunde": r["befunde"], "hoch": r["hoch"], "antrag_id": r.get("antrag_id"),
+        return {"ok": True, "befunde": r["befunde"], "hoch": r["hoch"], "score": r.get("score"),
+                "antrag_id": r.get("antrag_id"),
                 "findings": [{"schwere": f["schwere"], "titel": f["titel"], "empfehlung": f["empfehlung"]}
                              for f in r["findings"] if f["schwere"] != "ok"]}
 

@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 01:45] — Claude Code — Phase 22 (Inkr. 2): OSV.dev-Check der gepinnten Dependencies
+- **Was:** `core/security_agent.py` um `_check_osv()` + `_dockerfile_pins()` erweitert -- prueft die exakt
+  gepinnten Dependencies (`name==version`) aus `deploy/Dockerfile` unabhaengig von `pip-audit` gegen OSV.dev
+  (kein API-Key). HTTP ist injizierbar (`http=`-Param); nur aktiv wenn verdrahtet -> kein Rauschen offline.
+  In `hoa_tools.sicherheits_audit` einen `urllib`-HTTP-Client (Timeout 10s, Fehler -> None) verdrahtet + `score`
+  im Rueckgabewert. Live gegen unsere 7 Pins verifiziert = 0 CVEs. +4 Tests (Suite 20 gruen, Gesamt 344 gruen).
+- **Warum:** Phase 22, Inkrement 2. Ergaenzt den Scan der installierten Umgebung um die deklarierte Pin-Ebene
+  (faengt verwundbare Pins an der Quelle). L1/L2, keine autonome Aenderung.
+- **Betroffen:** orchestrator/core/security_agent.py, orchestrator/core/hoa_tools.py,
+  orchestrator/tests/test_security_agent.py, ROADMAP.md. Offen: Taint, Injection-Muster, SARIF.
+
 ## [2026-07-03 01:20] — Claude Code — Phase 22 (Inkr. 1): AST-Code-Security-Scan + Risiko-Score
 - **Was:** `core/security_agent.py` um `_check_code_security()` erweitert -- statischer AST-Scan des eigenen
   `orchestrator/`-Codes auf riskante Aufrufe (`os.system/os.popen`, `subprocess(shell=True)`, `eval/exec`,

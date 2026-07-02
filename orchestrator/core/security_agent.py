@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import ast
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
@@ -44,11 +45,13 @@ class Finding:
 
 class SecurityAgent:
     def __init__(self, *, repo_root, env: dict | None = None, secrets: list[str] | None = None,
-                 run: Callable[[list], str] | None = None, notify=None, antraege=None, changelog=None):
+                 run: Callable[[list], str] | None = None, http: Callable[[str, dict], dict] | None = None,
+                 notify=None, antraege=None, changelog=None):
         self.root = Path(repo_root)
         self.env = env or {}
         self.secrets = secrets or []
         self.run = run                 # injizierbarer Kommando-Runner (git ls-files, pip-audit) -> stdout
+        self.http = http               # injizierbarer HTTP-POST (url, json) -> dict (OSV.dev); None = uebersprungen
         self.notify = notify
         self.antraege = antraege
         self.changelog = changelog
@@ -56,8 +59,11 @@ class SecurityAgent:
     # -- Audit --
 
     def audit(self) -> list[Finding]:
-        return (self._check_secret_hygiene() + self._check_hardening()
-                + self._check_dependencies() + self._check_code_security())
+        checks = (self._check_secret_hygiene() + self._check_hardening()
+                  + self._check_dependencies() + self._check_code_security())
+        if self.http is not None:      # OSV.dev nur wenn ein HTTP-Client verdrahtet ist (sonst kein Rauschen)
+            checks += self._check_osv()
+        return checks
 
     def _check_secret_hygiene(self) -> list[Finding]:
         out: list[Finding] = []
@@ -212,6 +218,48 @@ class SecurityAgent:
         if fixes:
             teil += f" -> fix: {fixes}"
         return teil
+
+    def _check_osv(self) -> list[Finding]:
+        """Gepinnte Dependencies (deploy/Dockerfile) unabhaengig von pip-audit gegen OSV.dev pruefen.
+
+        Ergaenzt `_check_dependencies` (das die INSTALLIERTE Umgebung scannt) um einen Check der DEKLARIERTEN
+        Pins -- faengt eine verwundbare Pin-Version an der Quelle, ohne dass pip installiert sein muss.
+        """
+        pins = self._dockerfile_pins()
+        if not pins:
+            return [Finding("supply-chain", "ok", "Keine gepinnten Dependencies gefunden", "", "")]
+        verwundbar: list[str] = []
+        for name, version in pins:
+            try:
+                res = self.http("https://api.osv.dev/v1/query",
+                                {"package": {"name": name, "ecosystem": "PyPI"}, "version": version})
+            except Exception:
+                res = None
+            vulns = (res or {}).get("vulns") if isinstance(res, dict) else None
+            if vulns:
+                ids = ", ".join(str(v.get("id")) for v in vulns[:3] if v.get("id"))
+                verwundbar.append(f"{name} {version}" + (f" [{ids}]" if ids else ""))
+        if verwundbar:
+            return [Finding("supply-chain", "hoch",
+                            f"{len(verwundbar)} gepinnte Dependency(s) mit OSV-CVE",
+                            "OSV.dev: " + "; ".join(verwundbar[:8]),
+                            "Betroffene Pins anheben (deploy/Dockerfile; Branch+Tests).")]
+        return [Finding("supply-chain", "ok",
+                        f"{len(pins)} gepinnte Dependencies ohne bekannte OSV-CVEs", "", "")]
+
+    def _dockerfile_pins(self) -> list[tuple[str, str]]:
+        """Liest exakte Pins ('name==version') aus deploy/Dockerfile. Nur ==-Pins (>= wird bewusst ignoriert)."""
+        df = self.root / "deploy" / "Dockerfile"
+        if not df.exists():
+            return []
+        try:
+            text = df.read_text(encoding="utf-8")
+        except OSError:
+            return []
+        gesehen: dict[str, str] = {}
+        for m in re.finditer(r'"([A-Za-z0-9._-]+)==([0-9][A-Za-z0-9.\-_]*)"', text):
+            gesehen[m.group(1)] = m.group(2)   # letzter Pin je Paket gewinnt
+        return sorted(gesehen.items())
 
     # -- Loop --
 

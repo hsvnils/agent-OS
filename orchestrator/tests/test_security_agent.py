@@ -109,6 +109,38 @@ class TestSecurityAgent(unittest.TestCase):
         f = self._agent()._check_code_security()
         self.assertEqual(f[0].schwere, "ok")
 
+    def test_osv_findet_vulnerable_pin(self):
+        (self.root / "deploy").mkdir()
+        (self.root / "deploy" / "Dockerfile").write_text(
+            'RUN pip install "requests==2.0.0" "safe==1.0.0"\n', encoding="utf-8")
+        def fake_http(url, body):
+            return {"vulns": [{"id": "GHSA-xxxx"}]} if body["package"]["name"] == "requests" else {}
+        f = self._agent(http=fake_http)._check_osv()
+        self.assertEqual(f[0].schwere, "hoch")
+        self.assertIn("requests 2.0.0", f[0].detail)
+        self.assertIn("GHSA-xxxx", f[0].detail)
+
+    def test_osv_sauber(self):
+        (self.root / "deploy").mkdir()
+        (self.root / "deploy" / "Dockerfile").write_text('RUN pip install "safe==1.0.0"\n', encoding="utf-8")
+        f = self._agent(http=lambda url, body: {})._check_osv()
+        self.assertEqual(f[0].schwere, "ok")
+
+    def test_dockerfile_pins_parsing(self):
+        (self.root / "deploy").mkdir()
+        (self.root / "deploy" / "Dockerfile").write_text(
+            'RUN pip install "a-b==1.2.3" "c==4.5" "pip>=26.1.2"\n', encoding="utf-8")
+        pins = dict(self._agent()._dockerfile_pins())
+        self.assertEqual(pins.get("a-b"), "1.2.3")
+        self.assertEqual(pins.get("c"), "4.5")
+        self.assertNotIn("pip", pins)   # >=-Pin wird bewusst ignoriert
+
+    def test_audit_ohne_http_kein_osv(self):
+        (self.root / "deploy").mkdir()
+        (self.root / "deploy" / "Dockerfile").write_text('RUN pip install "x==1.0"\n', encoding="utf-8")
+        findings = self._agent(http=None).audit()
+        self.assertFalse(any(f.kategorie == "supply-chain" for f in findings))
+
     def test_lauf_liefert_risiko_score(self):
         run = lambda cmd: "orchestrator/.env\n" if "ls-files" in cmd else ""
         a = self._agent(run=run, env={"LUNA_OS_PASSWORD": ""}, notify=lambda text, **kw: None)
