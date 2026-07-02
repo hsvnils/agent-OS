@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 21:00] — Claude Code — K6 Vorbereitung: Backup #2 + K3 scharf + DROP-SQL (noch keine Loeschung)
+- **Was:** CEO-Antworten eingearbeitet (HCC=Vercel, K3 scharf ok, Review-Meta loeschen, doppeltes Backup).
+  Umkehrbare Schritte erledigt: (1) **Backup #2 (CSV)** aller 25 DROP-Tabellen auf die NAS `~/k6_backup_<ts>/`
+  (worker_tasks/agent_runs/activity_events per Content-Range-Pagination vollstaendig). (2) **K3 scharf**:
+  `CONTENT_FEED_ENABLED=1` in NAS-`.env` gesetzt (mit `.env.bak.k6_*`; wirkt nach luna-telegram-Neustart).
+  (3) **DROP-SQL** `docs/hcc_k6_drop.sql` geschrieben (Cutter-alt/Worker/Agent/Telegram/Review-Meta/profiles/
+  team_members, cascade, in Transaktion). K6-Doku um Fortschritt ergaenzt. **Keine Tabelle geloescht** --
+  DROP-Ausfuehrung = CEO-Tor (nach Backup-#1-Bestaetigung).
+- **Warum:** K6 sicher vorbereiten (CEO hat Stilllegung freigegeben).
+- **Betroffen:** `docs/hcc_k6_drop.sql` (neu), `docs/HCC_K6_STILLLEGUNG.md`; NAS: CSV-Backup + .env-Flag.
+
 ## [2026-07-02 20:40] — Claude Code — K6 Bestandsaufnahme (Stilllegung nilshubv2 + Worker), nur Doku
 - **Was:** Reine Inventur vor K6 -- nichts geloescht/abgeschaltet. Neues `docs/HCC_K6_STILLLEGUNG.md`:
   Live-Tabelleninventur (Zeilen + juengster Eintrag) mit KEEP/DROP/PRUEFEN-Einordnung, Dienste-/Deployment-

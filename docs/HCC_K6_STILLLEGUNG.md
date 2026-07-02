@@ -75,7 +75,21 @@ endgueltigen DROP bestaetigen.
 - **K6.6 HCC-App stilllegen:** Deployment abschalten (Vercel/NAS), Repo `nilshubv2` archivieren (GitHub:
   „Archive"), NAS-Ordner `nilshubv2` (leer) + `hanserautisch` (Worker+Zips) sichern & entfernen.
 
-## 5. Offene Fragen an den CEO (bevor irgendetwas passiert)
+## 4b. Fortschritt (2026-07-02, CEO-Antworten eingearbeitet)
+
+CEO-Entscheidungen: HCC laeuft auf **Vercel** · K3 scharf schalten **OK** · Review-Meta **loeschen** ·
+**doppeltes Backup**. Bereits erledigt (umkehrbar):
+- ✅ **Backup #2 (CSV)** aller DROP-Tabellen auf der NAS: `~/k6_backup_<ts>/` (worker_tasks/agent_runs/
+  activity_events vollstaendig paginiert). 
+- ✅ **K3 scharf**: `CONTENT_FEED_ENABLED=1` in NAS-`.env` gesetzt (Backup `.env.bak.k6_*`). **Wirkt erst nach
+  luna-telegram-Neustart (CEO).**
+- ✅ **DROP-SQL vorbereitet**: `docs/hcc_k6_drop.sql` (inkl. Review-Meta). Ausfuehrung durch CEO nach Backup #1.
+
+Offen (CEO-Schritte): Backup #1 (Supabase-Dashboard) bestaetigen → `hcc_k6_drop.sql` ausfuehren → luna-telegram
+neu starten → Vercel-Deployment abschalten → Repo `nilshubv2` archivieren → NAS-Ordner `hanserautisch`
+(Worker+Zips) + `nilshubv2` sichern/entfernen (K6.2/K6.6).
+
+## 5. Offene Fragen an den CEO -- BEANTWORTET (siehe 4b)
 
 1. **Wo laeuft die HCC-Web-App aktuell und nutzt sie noch jemand?** (bestimmt, ob K6.6 sofort geht)
 2. **K3 jetzt scharf schalten** (`CONTENT_FEED_ENABLED=1`)? -- Voraussetzung fuer K6.4.
