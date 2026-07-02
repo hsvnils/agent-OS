@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 11:05] — Claude Code — HCC Phase 2: CRM Rueckschreiben (bidirektional 1:1)
+- **Was:** `orchestrator/core/crm_sync.py` (`CrmSync.pull()` -- holt Supabase-Zeilen mit `updated_by='hcc'`
+  cursor-basiert und wendet sie lokal an). `CrmStore.uebernehmen_status_extern/uebernehmen_todo_extern`
+  (appenden OHNE Rueck-Projektion = Loop-Schutz; Vorrang luna-os). In den Telegram-Bot-Poll eingehaengt (laeuft
+  sofort beim Start + alle ~15 min). MockSupabaseClient um `select` erweitert. 5 neue Tests (Statuswechsel,
+  Todo-erledigt, idempotent, kein Rueck-Loop, Fall-B); Gesamtsuite **265**. `crm/sync_cursor.txt` gitignored.
+- **Warum:** HCC<->LUNA Phase 2, bidirektionale 1:1-Synchronisierung (mit Write-Through zusammen komplett).
+- **Betroffen:** orchestrator/core/crm_sync.py, orchestrator/core/crm.py, orchestrator/governance/supabase.py,
+  orchestrator/channels/telegram/bot.py, orchestrator/tests/test_crm_sync.py, .gitignore
+
 ## [2026-07-02 10:40] — Claude Code — HCC Phase 2: CRM Write-Through nach Supabase
 - **Was:** `orchestrator/core/crm_projection.py` (`SupabaseCrmProjection`, duck-typed .firma/.nachricht/.todo
   -> Upsert in crm_companies/crm_messages/crm_todos). `CrmStore` um optionalen `projektor` erweitert: nach

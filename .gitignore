@@ -51,6 +51,7 @@ finance/kosten-log.jsonl
 brain/log.jsonl
 investment/log.jsonl
 crm/log.jsonl
+crm/sync_cursor.txt
 .claude/preview-logs/
 backups/
 

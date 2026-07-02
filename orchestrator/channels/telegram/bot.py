@@ -479,6 +479,10 @@ def main() -> None:
     _start_investment_loop(ctx, secrets)  # nur aktiv mit INVESTMENT_AUTO_SCREEN=1
     offset = 0
     _last_poll = 0.0
+    crm_sync = None
+    if getattr(ctx, "crm", None) is not None and getattr(ctx.crm, "projektor", None) is not None:
+        from ...core.crm_sync import CrmSync
+        crm_sync = CrmSync(ctx.crm, ctx.crm.projektor.client, cursor_path=ROOT / "crm" / "sync_cursor.txt")
     while True:
         upd = _api(token, "getUpdates", {"offset": offset, "timeout": 30}, timeout=35)
         # Alle ~15 min kostenlos: neue Mails/Termin-Kollisionen pruefen + steckengebliebene Tickets schliessen.
@@ -491,6 +495,8 @@ def main() -> None:
                     ctx.watch.kalender_tick()
                 if ctx.research is not None:
                     ctx.research.aufraeumen(stunden=1)
+                if crm_sync is not None:          # Rueckschreiben: HCC-CRM-Aenderungen lokal uebernehmen
+                    crm_sync.pull()
             except Exception as exc:
                 print(f"[poll] Fehler: {exc}", flush=True)
         # Proaktive Outbox zustellen -- LUNA/Watcher melden sich unaufgefordert beim CEO.

@@ -110,12 +110,16 @@ class MockSupabaseClient(SupabaseClient):
         super().__init__(SupabaseAuth(url="https://mock.supabase.co", service_key="mock"))
         self.upserts: list[tuple] = []
         self.deletes: list[tuple] = []
+        self.rows: dict[str, list] = {}   # Tests seeden hier vorgefilterte Antworten je Tabelle
 
     def upsert(self, tabelle, rows, *, on_conflict=None):
         if isinstance(rows, dict):
             rows = [rows]
         self.upserts.append((tabelle, rows, on_conflict))
         return {"ok": True, "anzahl": len(rows)}
+
+    def select(self, tabelle, *, params=""):
+        return {"ok": True, "rows": list(self.rows.get(tabelle, []))}
 
     def delete(self, tabelle, *, params):
         self.deletes.append((tabelle, params))

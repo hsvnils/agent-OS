@@ -150,6 +150,30 @@ class CrmStore:
                 break
         return True
 
+    # -- Rueckschreiben: externe (HCC-)Aenderungen lokal uebernehmen, OHNE zurueck zu projizieren --
+    def uebernehmen_status_extern(self, firma: str, status: str) -> bool:
+        """Wendet eine im HCC gemachte Statusaenderung lokal an. Kein Write-Through zurueck (Loop-Schutz);
+        Supabase hat die Aenderung bereits. Kein Effekt, wenn der Status lokal schon so ist."""
+        if status not in STUFEN:
+            return False
+        firma = (firma or "").strip()
+        if self._letzter_status(firma) == status:
+            return False
+        self._append({"ts": _now(), "id": _id("S"), "event": "status", "firma": firma,
+                      "status": status, "quelle_sync": "hcc"})
+        return True
+
+    def uebernehmen_todo_extern(self, todo_id: str, status: str) -> bool:
+        """Uebernimmt eine im HCC gemachte To-do-Aenderung (aktuell: 'erledigt') lokal, ohne Rueck-Projektion."""
+        if status != "erledigt":
+            return False
+        offen = {t.get("id") for t in self.todos(nur_offen=True)}
+        if todo_id not in offen:
+            return False  # schon erledigt oder unbekannt
+        self._append({"ts": _now(), "id": _id("TE"), "event": "todo_erledigt", "todo_id": todo_id,
+                      "quelle_sync": "hcc"})
+        return True
+
     # -- lesen (gefaltet) --
     def _letzter_status(self, firma: str) -> str | None:
         st, k = None, _key(firma)
