@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 22:20] — Claude Code — Fix: LLM/Provider-Panel ragte in Safari aus dem Container (rausgezoomt)
+- **Was:** Im Command-Center ragten beim Rauszoomen (Safari) die Provider-Kaesten unten aus dem
+  „LLM/Provider Status"-Panel. Ursache: Safari-Grid-Bug -- gestreckte Grid-Items (`align-items: stretch`)
+  passen ihre Zeilenhoehe nicht an nested-Grid-Inhalt an. Fix: `.panel` rendert Inhalt als **Flex-Spalte**
+  (`display:flex; flex-direction:column`) -> Safari misst die Inhaltshoehe korrekt; gleiche Panel-Hoehen
+  bleiben erhalten. Zusatz: Container-Hardening (`min-width:0`, `overflow-wrap:anywhere`) gegen Ueberlauf
+  langer Woerter/URLs. Cache-Bust v30.
+- **Warum:** CEO-Befund (Screenshot) -- Infos sollen sauber im Container bleiben.
+- **Betroffen:** `orchestrator/channels/web/static/{style.css,index.html}`. Im Preview verifiziert (Provider
+  enthalten, Top-Reihe gleich hoch, keine Console-Fehler). Reines Frontend -> nach Sync sofort live (Hard-
+  Reload). Safari-spezifisch, daher am echten Geraet gegenpruefen.
+
 ## [2026-07-02 21:35] — Claude Code — K6 Housekeeping: NAS-Ordner entfernt (Worker vorher gesichert)
 - **Was:** NAS-Docker-Ordner `hanserautisch` (toter Synology-Worker + *.zip-Artefakte, 12 MB) als
   `~/k6_backup_20260702_161937/hanserautisch_worker.tar.gz` (2.1 MB) gesichert und dann samt leerem
