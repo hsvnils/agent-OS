@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 18:40] — Claude Code — K4: Team-Verwaltungs-App in LUNA-OS (statt CLI)
+- **Was:** Rollenvergabe wie im HCC jetzt als **LUNA-OS-App „Team"** (kein CLI-Zwang mehr). Backend
+  (`web/app.py`): `GET /api/team` (Nutzerliste + Module + Rollen), `POST /api/team` (anlegen/aktualisieren,
+  Passwort wird server-seitig gehasht), `POST /api/team/{username}/aktiv` (aktiv/inaktiv) -- alle ueber Modul
+  `administration` gegated (owner/admin). `team_auth.py`: `/api/team` -> administration in `modul_fuer_pfad`,
+  App `team` in `APP_MODUL`. Frontend (`app.js`): App + Sidebar-Eintrag „Team" (👥), Formular (Benutzername/
+  Anzeigename/Passwort/Rolle + Modul-Checkboxen) + Nutzerliste mit Aktiv/Inaktiv-Toggle; CSS + Cache-Bust v26.
+- **Warum:** CEO -- CLI-Nutzeranlage zu umstaendlich; Rollenvergabe soll wie im HCC in der Oberflaeche gehen.
+- **Betroffen:** `orchestrator/channels/web/app.py`, `orchestrator/core/team_auth.py`,
+  `orchestrator/channels/web/static/{app.js,style.css,index.html}`, `orchestrator/tests/test_team_auth.py`.
+  Suite 316 gruen; im Preview verifiziert (Formular + 3 Nutzerkarten + Toggle, keine Console-Fehler). Die CLI
+  bleibt als Alternative bestehen.
+
 ## [2026-07-02 18:05] — Claude Code — K4: Team-Auth + Rollen in LUNA-OS (Mehr-Nutzer-Login)
 - **Was:** LUNA-OS von Single-CEO-Basic-Auth auf **Mehr-Nutzer + Rollen/Module** umgestellt. Neu
   `orchestrator/core/team_auth.py`: TeamAuth gegen Supabase-Tabelle `luna_os_users` (Login/Anlegen/Liste/

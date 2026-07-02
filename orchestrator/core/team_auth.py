@@ -37,6 +37,7 @@ APP_MODUL = {
     "auftraege": "administration", "meldungen": "administration", "aktivitaet": "administration",
     "research": "administration", "agenten": "administration", "lagebild": "administration",
     "wissen": "administration", "finance": "administration", "luna": "administration",
+    "team": "administration",
 }
 # Sinnvolle Voreinstellung je Rolle, wenn beim Anlegen keine Module angegeben werden.
 ROLLE_STANDARD_MODULE = {
@@ -183,6 +184,7 @@ _MODUL_PFADE = {
 # Administrative Aktionen (nur owner/admin bzw. administration-Modul).
 _ADMIN_POST_PREFIXE = ("/api/antraege/",)
 _ADMIN_PFADE = ("/api/chat", "/api/tts", "/api/sehen")
+_ADMIN_PREFIXE = ("/api/team",)   # Team-Verwaltung: GET+POST nur administration
 
 
 def modul_fuer_pfad(method: str, pfad: str) -> str | None:
@@ -190,7 +192,7 @@ def modul_fuer_pfad(method: str, pfad: str) -> str | None:
     for modul, prefixe in _MODUL_PFADE.items():
         if any(pfad.startswith(p) for p in prefixe):
             return modul
-    if pfad in _ADMIN_PFADE:
+    if pfad in _ADMIN_PFADE or any(pfad.startswith(p) for p in _ADMIN_PREFIXE):
         return "administration"
     if method.upper() == "POST" and any(pfad.startswith(p) for p in _ADMIN_POST_PREFIXE):
         return "administration"

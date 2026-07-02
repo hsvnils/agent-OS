@@ -43,8 +43,12 @@ class TestRollenModule(unittest.TestCase):
 
     def test_owner_alle_apps(self):
         apps = erlaubte_apps({"role": "owner", "allowed_modules": []})
-        for a in ("trends", "crm", "investment", "auftraege", "finance", "luna", "home"):
+        for a in ("trends", "crm", "investment", "auftraege", "finance", "luna", "home", "team"):
             self.assertIn(a, apps)
+
+    def test_team_app_nur_administration(self):
+        self.assertIn("team", erlaubte_apps({"role": "owner", "allowed_modules": []}))
+        self.assertNotIn("team", erlaubte_apps({"role": "content", "allowed_modules": ["content_ops"]}))
 
     def test_module_fuer_rolle(self):
         self.assertEqual(module_fuer_rolle("owner"), ["content_ops", "crm", "invest", "administration"])
@@ -65,6 +69,11 @@ class TestPfadModul(unittest.TestCase):
     def test_administration(self):
         self.assertEqual(modul_fuer_pfad("POST", "/api/antraege/x/freigeben"), "administration")
         self.assertEqual(modul_fuer_pfad("POST", "/api/chat"), "administration")
+
+    def test_team_verwaltung_gated(self):
+        self.assertEqual(modul_fuer_pfad("GET", "/api/team"), "administration")
+        self.assertEqual(modul_fuer_pfad("POST", "/api/team"), "administration")
+        self.assertEqual(modul_fuer_pfad("POST", "/api/team/lisa/aktiv"), "administration")
 
     def test_kernendpunkt_kein_modul(self):
         self.assertIsNone(modul_fuer_pfad("GET", "/api/state"))

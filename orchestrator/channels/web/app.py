@@ -28,7 +28,7 @@ from ...core.briefing import Agenda
 from ...core.insights import Insights
 from ...core.notifications import Notifications
 from ...core.research_tickets import ResearchTickets
-from ...core.team_auth import MODULE, TeamAuth, erlaubte_apps, hat_modul, modul_fuer_pfad
+from ...core.team_auth import MODULE, MODUL_LABELS, TeamAuth, erlaubte_apps, hat_modul, modul_fuer_pfad
 from ...governance.changelog_tool import append_changelog
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -260,6 +260,32 @@ def me(request: Request):
     return {"username": u.get("username"), "display_name": u.get("display_name"),
             "role": u.get("role"), "allowed_modules": u.get("allowed_modules") or [],
             "apps": erlaubte_apps(u)}
+
+
+# -- K4: Team-Verwaltung (nur Modul 'administration' -> owner/admin; Gating in auth) ------------------
+
+@app.get("/api/team")
+def team_liste():
+    return {"verfuegbar": _team_auth.verfuegbar(), "users": _team_auth.liste(),
+            "module": [{"id": m, "label": MODUL_LABELS.get(m, m)} for m in MODULE],
+            "rollen": ["owner", "admin", "team", "content", "viewer"]}
+
+
+@app.post("/api/team")
+async def team_anlegen(request: Request):
+    d = await request.json()
+    r = _team_auth.anlegen((d.get("username") or "").strip(), d.get("passwort") or "",
+                           role=(d.get("role") or "content"),
+                           allowed_modules=d.get("allowed_modules"),
+                           display_name=(d.get("display_name") or "").strip())
+    return JSONResponse({**r, "users": _team_auth.liste()})
+
+
+@app.post("/api/team/{username}/aktiv")
+async def team_aktiv(username: str, request: Request):
+    d = await request.json()
+    r = _team_auth.setzen_aktiv(username, bool(d.get("aktiv", True)))
+    return JSONResponse({**r, "users": _team_auth.liste()})
 
 
 @app.get("/api/antraege/{antrag_id}")

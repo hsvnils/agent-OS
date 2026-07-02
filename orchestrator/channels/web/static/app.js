@@ -33,6 +33,7 @@ const APPS = {
   aiinbox: { icon: "🧩", titel: "AI-Inbox", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade AI-Inbox…</div></div>`, load: ladeAiInbox },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
   agenten: { icon: "🕸️", titel: "Agenten-Map", badge: () => 0, render: renderAgenten, load: ladeAgenten },
+  team: { icon: "👥", titel: "Team", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Team…</div></div>`, load: ladeTeam },
 };
 
 // ---- Investment (CIO, advisory) --------------------------------------------
@@ -201,6 +202,56 @@ async function ladeQuellen() {
 async function sourceAktiv(id, aktiv) {
   try { await fetch("/api/sources/" + encodeURIComponent(id) + "/aktiv", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ is_active: aktiv === "1" }) }); } catch {}
   ladeQuellen();
+}
+// ---- K4: Team-Verwaltung (Rollen + Module) ---------------------------------
+let TEAM = null;
+const teamRolleLabel = { owner: "Owner (Voll)", admin: "Admin (Voll)", team: "Team (Content+CRM)", content: "Content", viewer: "Viewer" };
+async function ladeTeam() {
+  try { TEAM = await (await fetch("/api/team")).json(); } catch { TEAM = null; }
+  const win = WINS.team; if (!win) return;
+  if (!TEAM) { win.body.innerHTML = `<div class="app"><div class="leer">Team-Verwaltung nicht verfügbar.</div></div>`; return; }
+  if (!TEAM.verfuegbar) { win.body.innerHTML = `<div class="app"><div class="leer">Nutzer-Tabelle nicht verfügbar — SQL-Migration <code>luna_os_users</code> in Supabase ausführen.</div></div>`; return; }
+  const module = TEAM.module || [];
+  const rollen = TEAM.rollen || ["content"];
+  const users = (TEAM.users || []).map(u => `<div class="card">
+    <div class="head"><span class="badge ${u.is_active === false ? "abgelehnt" : "freigegeben"}">${u.is_active === false ? "Inaktiv" : "Aktiv"}</span>
+      <b>${esc(u.display_name || u.username)}</b><span class="meta">@${esc(u.username)} · ${esc(teamRolleLabel[u.role] || u.role || "")}</span></div>
+    <div class="meta">Module: ${(u.allowed_modules || []).map(esc).join(", ") || "—"}${u.role === "owner" ? " (alle)" : ""}</div>
+    <div style="margin-top:6px"><button class="btn" data-teamuser="${esc(u.username)}" data-teamaktiv="${u.is_active === false ? "1" : "0"}">${u.is_active === false ? "Aktivieren" : "Deaktivieren"}</button></div>
+  </div>`).join("") || `<div class="leer">Noch keine Nutzer.</div>`;
+  const modChecks = module.map(m => `<label class="team-modlbl"><input type="checkbox" class="team-mod" value="${esc(m.id)}"> ${esc(m.label)}</label>`).join("");
+  const rollenOpts = rollen.map(r => `<option value="${esc(r)}">${esc(teamRolleLabel[r] || r)}</option>`).join("");
+  win.body.innerHTML = `<div class="app">
+    <h3>Neuen Nutzer anlegen</h3>
+    <div class="team-form">
+      <input id="team-username" placeholder="Benutzername (Login)" autocomplete="off">
+      <input id="team-name" placeholder="Anzeigename (optional)" autocomplete="off">
+      <input id="team-pw" type="password" placeholder="Passwort" autocomplete="new-password">
+      <select id="team-role">${rollenOpts}</select>
+      <div class="team-mods"><div class="team-mods-h">Module (leer = Standard der Rolle):</div>${modChecks}</div>
+      <button class="btn primary" data-teamsave="1">Anlegen / aktualisieren</button>
+      <div id="team-msg" class="team-msg"></div>
+    </div>
+    <h3 style="margin-top:14px">Nutzer (${(TEAM.users || []).length})</h3>
+    ${users}
+  </div>`;
+}
+async function teamAnlegen() {
+  const g = (id) => (document.getElementById(id) || {}).value || "";
+  const username = g("team-username").trim(), passwort = g("team-pw"), role = g("team-role") || "content";
+  const display_name = g("team-name").trim();
+  const mods = [...document.querySelectorAll(".team-mod:checked")].map(c => c.value);
+  const msg = document.getElementById("team-msg");
+  if (!username || !passwort) { if (msg) { msg.textContent = "Benutzername und Passwort sind Pflicht."; msg.className = "team-msg err"; } return; }
+  let r; try { r = await (await fetch("/api/team", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, passwort, role, display_name, allowed_modules: mods.length ? mods : null }) })).json(); }
+  catch { r = { ok: false, hinweis: "Netzwerkfehler." }; }
+  if (msg) { msg.textContent = r.ok ? `Nutzer „${username}" gespeichert.` : ("Fehler: " + (r.hinweis || r.fehler || "unbekannt")); msg.className = "team-msg " + (r.ok ? "ok" : "err"); }
+  if (r.ok) ladeTeam();
+}
+async function teamAktiv(username, aktiv) {
+  try { await fetch("/api/team/" + encodeURIComponent(username) + "/aktiv", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aktiv: aktiv === "1" }) }); } catch {}
+  ladeTeam();
 }
 // ---- content_ops: AI-Inbox (K2) --------------------------------------------
 let AIINBOX = null;
@@ -510,6 +561,7 @@ const NAV = [
   { id: "aktivitaet", icon: "📊", label: "Aktivität" },
   { id: "agenten", icon: "🕸️", label: "Agenten-Map" },
   { id: "finance", icon: "💶", label: "Finanzen" },
+  { id: "team", icon: "👥", label: "Team" },
   { id: "luna", icon: "💬", label: "LUNA-Chat" },
 ];
 let AKTIV_NAV = "home";
@@ -750,6 +802,10 @@ document.addEventListener("click", (e) => {
   if (src) { sourceAktiv(src.dataset.srcid, src.dataset.srcaktiv); return; }
   const aii = e.target.closest("[data-aiid]");
   if (aii) { aiRec(aii.dataset.aiid, aii.dataset.airec); return; }
+  const tsave = e.target.closest("[data-teamsave]");
+  if (tsave) { teamAnlegen(); return; }
+  const tu = e.target.closest("[data-teamuser]");
+  if (tu) { teamAktiv(tu.dataset.teamuser, tu.dataset.teamaktiv); return; }
   const cmd = e.target.closest("[data-cmd]");
   if (cmd) { cmd.dataset.cmd === "talk" ? toggleVoice() : navTo(cmd.dataset.cmd); return; }
   const navi = e.target.closest("[data-app]");
