@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 01:00] — Claude Code — pip-audit ins Image (aktiver Dependency-CVE-Scan fuer Phase 21)
+- **Was:** `pip-audit==2.10.1` in `deploy/Dockerfile` (pip-install-Zeile) aufgenommen -> der Cybersecurity-
+  Agent (Phase 21) kann jetzt die Container-Dependencies aktiv auf bekannte CVEs pruefen. Reales pip-audit-
+  JSON-Schema verifiziert (`{"dependencies":[{name,version,vulns}],"fixes":...}`) -- der Parser in
+  `security_agent._check_dependencies` trifft es exakt; end-to-end lokal getestet (erkennt CVE-behaftete
+  Pakete korrekt).
+- **Warum:** CEO -- die einzige vom Selbst-Audit gemeldete Luecke schliessen (aktiver CVE-Scan).
+- **Betroffen:** `deploy/Dockerfile`. **Build-Zeit-Aenderung -> Image neu bauen noetig.** OFFEN (CEO):
+  `./deploy/sync-to-nas.sh --build` (Code syncen + Image bauen + Container neu starten; fragt NAS-sudo-Passwort).
+
 ## [2026-07-03 00:40] — Claude Code — Phase 21: Cybersecurity-Agent (CISO-Ausbau, L1/L2)
 - **Was:** `orchestrator/core/security_agent.py` `SecurityAgent` -- kostenloser, regelbasierter Sicherheits-
   Audit (kein LLM) entlang der drei CEO-Stossrichtungen (Zugriffe verhindern/Luecken finden/schliessen):

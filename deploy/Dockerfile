@@ -13,9 +13,10 @@ RUN apt-get update \
 #  - google-api-python-client + google-auth: Google Workspace (Phase 11; nur aktiv mit OAuth-Credentials)
 #  - tzdata: Zeitzone Europe/Berlin fuer die Briefings (08:00/20:00)
 #  - openai: Multi-Provider-Fallback fuer den Chat (Anthropic zuerst, OpenAI bei Engpass)
+#  - pip-audit: Dependency-CVE-Scan fuer den Cybersecurity-Agent (Phase 21, sicherheits_audit)
 RUN pip install --no-cache-dir "claude-agent-sdk==0.2.107" "anthropic==0.111.0" \
     "google-api-python-client==2.149.0" "google-auth==2.35.0" "tzdata" "openai" \
-    "fastapi==0.138.0" "uvicorn==0.49.0"
+    "fastapi==0.138.0" "uvicorn==0.49.0" "pip-audit==2.10.1"
 
 ENV PYTHONUNBUFFERED=1
 # Git-Identitaet + safe.directory SYSTEMWEIT (/etc/gitconfig) -- gilt fuer JEDEN User, auch den
