@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 09:30] — Claude Code — HCC<->LUNA Integration: Bestand + Roadmap
+- **Was:** Bestehendes Dashboard `~/Documents/nilshubv2` (Hanserautisch Command Center, Next.js+Supabase)
+  erkundet und dokumentiert: `docs/HCC_BESTAND.md` (Module/Routen/Supabase-Schema/Worker/Ueberschneidung mit
+  LUNA). Neue `HCC_INTEGRATION_ROADMAP.md` (Vision: HCC = Team-Web-Gesicht, luna-os = Gehirn+Datenhoheit+
+  Vorrang, gemeinsame bidirektionale Datenbasis; 8 Phasen 0-7 mit GATES; Architektur-Kern A/B). ROADMAP.md
+  um **Phase 18 (HCC als Team-Web-Gesicht)** ergaenzt.
+- **Warum:** CEO-Vision -- HCC fuers Social-Media-Team; Cutter aus luna-os spiegeln, Researcher als Ausbaustufe
+  in luna-os, Agenten laufen im Hintergrund fuers HCC (wie CRM). Nur Planung, kein Code.
+- **Betroffen:** docs/HCC_BESTAND.md, HCC_INTEGRATION_ROADMAP.md, ROADMAP.md
+
 ## [2026-07-02 00:50] — Claude Code — Doku: Instagram App-Review-Einreichungspaket
 - **Was:** `docs/APP_REVIEW_INSTAGRAM.md` -- fertige Texte (Use-Case, Detail, Pruefer-Anleitung, Screencast-
   Drehbuch via Tester-Account, App-Settings-Checkliste) fuer die Meta App-Review von
