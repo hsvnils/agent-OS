@@ -22,7 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from ...core.antraege import Antraege
 from ...core.brain import Brain
 from ...core.crm import CrmStore
-from ...core.trends import TrendStore
+from ...core.content_store import (ContentStore, IDEA_FELDER, IDEA_STATUSES, TREND_FELDER, TREND_STATUSES)
 from ...core.briefing import Agenda
 from ...core.insights import Insights
 from ...core.notifications import Notifications
@@ -74,8 +74,12 @@ def _supabase_client():
         return None
 
 
-# content_ops (K1/K2): Supabase = DB, lokaler Cache-Fallback.
-trends_store = TrendStore(_supabase_client(), ROOT / "trends" / "cache.jsonl")
+# content_ops (K1/K2): Supabase = DB, lokaler Cache-Fallback. Ein ContentStore je Tabelle.
+_sb = _supabase_client()
+trends_store = ContentStore(_sb, "trend_signals", TREND_FELDER, ROOT / "content_ops" / "trends_cache.jsonl",
+                            statuses=TREND_STATUSES)
+ideas_store = ContentStore(_sb, "ideas", IDEA_FELDER, ROOT / "content_ops" / "ideas_cache.jsonl",
+                           statuses=IDEA_STATUSES)
 # Internes Lagebild (ohne Google); fuer das volle Lagebild (Termine/Mails) nutzt der Endpunkt die LUNA-ctx.
 insights_intern = Insights(antraege=antraege, research=research, agenda=agenda)
 # Investment (Phase 2, advisory): Engine + Store. MarketData wird lazy aus den .env-Keys gebaut.
@@ -755,6 +759,18 @@ async def trends_status(trend_id: str, request: Request):
     body = await _json(request)
     r = await asyncio.to_thread(trends_store.status_setzen, trend_id, (body.get("status") or "").strip())
     return JSONResponse({"ok": bool(r.get("ok")), "res": r, "trends": trends_store.list(100)})
+
+
+@app.get("/api/ideas")
+def ideas():
+    return {"ideas": ideas_store.list(100)}
+
+
+@app.post("/api/ideas/{idea_id}/status")
+async def ideas_status(idea_id: str, request: Request):
+    body = await _json(request)
+    r = await asyncio.to_thread(ideas_store.status_setzen, idea_id, (body.get("status") or "").strip())
+    return JSONResponse({"ok": bool(r.get("ok")), "res": r, "ideas": ideas_store.list(100)})
 
 
 @app.get("/api/investment/detail")

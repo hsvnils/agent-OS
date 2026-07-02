@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 13:20] — Claude Code — Konsolidierung K2: Ideen-Labor + generischer ContentStore
+- **Was:** `orchestrator/core/content_store.py` -- **generischer `ContentStore`** (Supabase=DB via select +
+  PATCH-Status, lokaler Cache-Fallback; parametriert je Tabelle: FELDER/STATUSES). Ersetzt die bespoke
+  `trends.py` (geloescht). Trends laufen jetzt ueber ContentStore; **neu: Ideen-Labor** (`/api/ideas` +
+  status-Endpunkt, LUNA-OS-App „Ideen-Labor" mit Status Eingang/Einsortiert/Geplant/In Arbeit/Erledigt/
+  Archiviert). Cache-Bust **v22**. Tests test_content_store (6, parametriert); Gesamtsuite **272**. Preview ok.
+- **Warum:** HCC->LUNA-OS Konsolidierung K1/K2 -- zweiter content_ops-Typ; DRY-Store fuer alle weiteren
+  (Drafts/Quellen/AI-Inbox folgen per Instanz).
+- **Betroffen:** orchestrator/core/content_store.py (+ trends.py/test_trends.py geloescht),
+  orchestrator/tests/test_content_store.py, orchestrator/channels/web/app.py,
+  orchestrator/channels/web/static/app.js + index.html, .gitignore
+
 ## [2026-07-02 12:55] — Claude Code — Fix: Trend-Status-Write via PATCH (statt Upsert)
 - **Was:** `SupabaseClient.update()` (PATCH, Teil-Update) ergaenzt; `TrendStore.status_setzen` nutzt jetzt PATCH
   `id=eq.<id>` statt Upsert. Grund: Upsert scheiterte mit HTTP 400, weil `trend_signals.title` NOT NULL ist und

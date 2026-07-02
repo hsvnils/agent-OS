@@ -20,6 +20,7 @@ const APPS = {
   investment: { icon: "📈", titel: "Investment", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Investment…</div></div>`, load: ladeInvestment },
   crm: { icon: "🤝", titel: "Collab-CRM", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade CRM…</div></div>`, load: ladeCRM },
   trends: { icon: "🔥", titel: "Trends", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Trends…</div></div>`, load: ladeTrends },
+  ideas: { icon: "💡", titel: "Ideen-Labor", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Ideen…</div></div>`, load: ladeIdeen },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
   agenten: { icon: "🕸️", titel: "Agenten-Map", badge: () => 0, render: renderAgenten, load: ladeAgenten },
 };
@@ -133,6 +134,26 @@ async function ladeTrends() {
 async function trendStatus(id, status) {
   try { await fetch("/api/trends/" + encodeURIComponent(id) + "/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }); } catch {}
   ladeTrends();
+}
+// ---- content_ops: Ideen-Labor (K2) -----------------------------------------
+let IDEAS = null;
+const ideaStatusLabels = { inbox: "Eingang", sorted: "Einsortiert", planned: "Geplant", in_progress: "In Arbeit", done: "Erledigt", archived: "Archiviert" };
+function ideaStatusLabel(s) { return ideaStatusLabels[s] || s || ""; }
+async function ladeIdeen() {
+  try { IDEAS = await (await fetch("/api/ideas")).json(); } catch { IDEAS = null; }
+  const win = WINS.ideas; if (!win) return;
+  if (!IDEAS) { win.body.innerHTML = `<div class="app"><div class="leer">Ideen nicht verfügbar.</div></div>`; return; }
+  const rows = (IDEAS.ideas || []).map(i => `<div class="card">
+    <div class="head"><span class="badge ${i.status === "done" ? "freigegeben" : "in_umsetzung"}">${esc(ideaStatusLabel(i.status))}</span><b>${esc(i.title)}</b>${i.category ? `<span class="meta">${esc(i.category)}</span>` : ""}</div>
+    ${i.description ? `<div class="desc">${esc(i.description)}</div>` : ""}
+    ${i.ai_summary ? `<div class="meta">KI: ${esc(i.ai_summary)}</div>` : ""}${i.next_steps ? `<div class="meta">Naechste Schritte: ${esc(i.next_steps)}</div>` : ""}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${["sorted", "planned", "done", "archived"].map(s => `<button class="btn" data-ideaid="${esc(i.id)}" data-ideastatus="${s}">${esc(ideaStatusLabel(s))}</button>`).join("")}</div>
+  </div>`).join("") || `<div class="leer">Noch keine Ideen. LUNAs Agenten füllen sie später (K3).</div>`;
+  win.body.innerHTML = `<div class="app"><h3>Ideen-Labor</h3>${rows}</div>`;
+}
+async function ideaStatus(id, status) {
+  try { await fetch("/api/ideas/" + encodeURIComponent(id) + "/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }); } catch {}
+  ladeIdeen();
 }
 // Detailansicht zu einem Wert (Aktie: Profil + Quote + News; Krypto: CoinGecko-Infos).
 async function openInvestDetail(symbol, asset) {
@@ -413,6 +434,7 @@ const NAV = [
   { id: "investment", icon: "📈", label: "Investment" },
   { id: "crm", icon: "🤝", label: "Collab-CRM" },
   { id: "trends", icon: "🔥", label: "Trends" },
+  { id: "ideas", icon: "💡", label: "Ideen-Labor" },
   { id: "research", icon: "🔍", label: "Research", count: () => STATE.research.length },
   { id: "meldungen", icon: "🔔", label: "Meldungen", count: () => STATE.meldungen.length },
   { id: "aktivitaet", icon: "📊", label: "Aktivität" },
@@ -634,6 +656,8 @@ document.addEventListener("click", (e) => {
   if (crmf) { openCrmKonversation(crmf.dataset.crmfirma); return; }
   const trs = e.target.closest("[data-trendid]");
   if (trs) { trendStatus(trs.dataset.trendid, trs.dataset.trendstatus); return; }
+  const idc = e.target.closest("[data-ideaid]");
+  if (idc) { ideaStatus(idc.dataset.ideaid, idc.dataset.ideastatus); return; }
   const cmd = e.target.closest("[data-cmd]");
   if (cmd) { cmd.dataset.cmd === "talk" ? toggleVoice() : navTo(cmd.dataset.cmd); return; }
   const navi = e.target.closest("[data-app]");
