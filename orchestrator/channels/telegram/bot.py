@@ -543,6 +543,13 @@ def main() -> None:
                     ctx.research.aufraeumen(stunden=1)
                 if crm_sync is not None:          # Rueckschreiben: HCC-CRM-Aenderungen lokal uebernehmen
                     crm_sync.pull()
+                # Phase 19: CRM-Akten mit passenden Gmail-Mails anreichern (Kanal 'mail'; dedupliziert).
+                if ctx.crm is not None and ctx.google is not None \
+                        and (ctx.watch is None or not ctx.watch.store.paused()):
+                    from ...core.crm_mail import CrmMailTracker
+                    CrmMailTracker(crm=ctx.crm, google=ctx.google,
+                                   eigene_adresse=secrets.get("GOOGLE_ACCOUNT_EMAIL", "hanserautisch@gmail.com"),
+                                   secrets=ctx.leak_secrets).lauf()
             except Exception as exc:
                 print(f"[poll] Fehler: {exc}", flush=True)
         # Proaktive Outbox zustellen -- LUNA/Watcher melden sich unaufgefordert beim CEO.

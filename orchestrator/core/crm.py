@@ -186,6 +186,16 @@ class CrmStore:
         k = _key(firma)
         return [e for e in self._events() if e.get("event") == "nachricht" and _key(e.get("firma")) == k]
 
+    def timeline(self, *, firma: str | None = None, limit: int = 100) -> list[dict]:
+        """Phase 20: Nachrichten **kanaluebergreifend** (Instagram/Mail/Telegram/...) chronologisch,
+        neueste zuerst. Optional auf eine Firma gefiltert. Feld `quelle` = Kanal."""
+        k = _key(firma) if firma else None
+        felder = ("id", "firma", "quelle", "richtung", "text", "absender", "kategorie", "ts")
+        msgs = [{f: e.get(f) for f in felder} for e in self._events()
+                if e.get("event") == "nachricht" and (k is None or _key(e.get("firma")) == k)]
+        msgs.sort(key=lambda m: m.get("ts") or "", reverse=True)
+        return msgs[:limit]
+
     def firmen(self) -> list[dict]:
         """Gefalteter Stand je Firma: Status, Nachrichtenzahl, letzter Kontakt, Quelle."""
         firmen: dict[str, dict] = {}

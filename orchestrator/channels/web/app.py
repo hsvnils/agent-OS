@@ -897,6 +897,12 @@ def crm_konversation(firma: str):
             for m in msgs][-50:]}
 
 
+@app.get("/api/crm/timeline")
+def crm_timeline(firma: str = ""):
+    """Phase 20: kanaluebergreifende Nachrichten-Timeline (Instagram/Mail/... chronologisch)."""
+    return {"nachrichten": crm_store.timeline(firma=(firma or None), limit=120)}
+
+
 @app.post("/api/crm/todo/{todo_id}/erledigen")
 def crm_todo_erledigen(todo_id: str):
     crm_store.todo_erledigen(todo_id)

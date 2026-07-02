@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 00:10] — Claude Code — Phase 19+20: CRM-Akte trackt Mails + kanaluebergreifende Timeline
+- **Was:** (Phase 19) `orchestrator/core/crm_mail.py` `CrmMailTracker`: ordnet Gmail-Mails (via
+  `google.mail_suchen(firmenname)`) bestehenden CRM-Firmen zu und erfasst sie als CRM-Nachricht
+  `quelle="mail"` (dedup ueber `extern_id="mail:<id>"`; nur Lesen/Spiegeln; legt KEINE neuen Firmen aus Mails
+  an). Als L1-Loop im Bot-Poll (~15 min, kostenlos, kein LLM; `eigene_adresse` bestimmt Richtung ein/aus).
+  (Phase 20) `CrmStore.timeline(firma?, limit)` = alle Nachrichten kanaluebergreifend chronologisch; Endpunkt
+  `GET /api/crm/timeline`; neue LUNA-OS-App „Timeline" (🕒) mit Kanal-Badges (📸 Instagram/✉️ Mail/💬 Telegram),
+  Firma, Richtung, Zeit. CRM-Konversation zeigt Mails jetzt neben DMs (gemeinsamer `crmMsgRow`). Modul-Gate
+  `timeline`->crm. Cache-Bust v34.
+- **Warum:** CEO-Roadmap Phase 19+20.
+- **Betroffen:** `orchestrator/core/{crm.py,crm_mail.py}`, `orchestrator/channels/web/app.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/core/team_auth.py`,
+  `orchestrator/channels/web/static/{app.js,index.html}`, `orchestrator/tests/test_crm_mail.py` (neu). Suite
+  324 gruen; im Preview verifiziert (Timeline kanaluebergreifend, keine Console-Fehler). Aktiv sobald CRM-
+  Firmen existieren; luna-telegram-Neustart fuer den Mail-Tick.
+
 ## [2026-07-02 23:45] — Claude Code — ROADMAP: neue offene Punkte (CEO) + Web-Recherche
 - **Was:** CEO-Wuensche als Roadmap-Punkte aufgenommen + Web-Recherche dazu. Status-Tabelle: Phase 18 (HCC-
   Konsolidierung) auf ✅ K0-K6; neu Phase 19 **CRM-Akte Mail-Tracking** (Gmail je Unternehmen), Phase 20

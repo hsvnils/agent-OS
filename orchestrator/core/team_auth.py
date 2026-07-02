@@ -32,7 +32,7 @@ MODUL_LABELS = {
 APP_MODUL = {
     "trends": "content_ops", "ideas": "content_ops", "drafts": "content_ops",
     "quellen": "content_ops", "aiinbox": "content_ops", "cutter": "content_ops",
-    "crm": "crm",
+    "crm": "crm", "timeline": "crm",
     "investment": "invest",
     "auftraege": "administration", "meldungen": "administration", "aktivitaet": "administration",
     "research": "administration", "agenten": "administration", "lagebild": "administration",

@@ -104,6 +104,7 @@ const APPS = {
   wissen: { icon: "🧠", titel: "Wissen", badge: () => 0, render: renderWissen, load: ladeWissen },
   investment: { icon: "📈", titel: "Investment", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Investment…</div></div>`, load: ladeInvestment },
   crm: { icon: "🤝", titel: "Collab-CRM", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade CRM…</div></div>`, load: ladeCRM },
+  timeline: { icon: "🕒", titel: "Timeline", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Timeline…</div></div>`, load: ladeTimeline },
   trends: { icon: "🔥", titel: "Trends", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Trends…</div></div>`, load: ladeTrends },
   ideas: { icon: "💡", titel: "Ideen-Labor", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Ideen…</div></div>`, load: ladeIdeen },
   drafts: { icon: "✍️", titel: "Drafts", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Drafts…</div></div>`, load: ladeDrafts },
@@ -200,9 +201,26 @@ async function openCrmKonversation(firma) {
   win.body.innerHTML = `<div class="app"><div class="leer">Lade Verlauf…</div></div>`;
   try {
     const d = await (await fetch("/api/crm/konversation?firma=" + encodeURIComponent(firma))).json();
-    const msgs = (d.nachrichten || []).map(m => `<div class="row"><span class="t">${m.richtung === "ein" ? "⬅︎" : "➡︎"}</span><div><b>${esc(m.text)}</b><br><span class="meta">${esc(m.kategorie || "")}${m.ts ? " · " + esc(m.ts) : ""}</span></div></div>`).join("") || `<div class="leer">Kein Verlauf.</div>`;
+    const msgs = (d.nachrichten || []).map(m => crmMsgRow(m)).join("") || `<div class="leer">Kein Verlauf.</div>`;
     win.body.innerHTML = `<div class="app detail"><div class="head"><b>${esc(firma)}</b></div>${msgs}</div>`;
   } catch { win.body.innerHTML = `<div class="app"><div class="leer">Konnte Verlauf nicht laden.</div></div>`; }
+}
+// Kanaluebergreifend: Kanal-Badge je Nachricht (Instagram/Mail/Telegram/...).
+const KANAL = { instagram: { i: "📸", l: "Instagram" }, mail: { i: "✉️", l: "Mail" }, telegram: { i: "💬", l: "Telegram" }, manuell: { i: "✎", l: "Manuell" } };
+const kanalIcon = q => (KANAL[q] || { i: "•" }).i;
+const kanalLabel = q => (KANAL[q] || { l: q || "—" }).l;
+function crmMsgRow(m, mitFirma = false) {
+  return `<div class="row"><span class="t" title="${esc(kanalLabel(m.quelle))} · ${m.richtung === "ein" ? "eingehend" : "ausgehend"}">${kanalIcon(m.quelle)}${m.richtung === "ein" ? "⬅︎" : "➡︎"}</span>
+    <div>${mitFirma ? `<b>${esc(m.firma || "")}</b> ` : ""}<b>${esc(m.text)}</b><br>
+    <span class="meta">${esc(kanalLabel(m.quelle))}${m.kategorie && m.kategorie !== "mail" ? " · " + esc(m.kategorie) : ""}${m.ts ? " · " + esc(m.ts) : ""}</span></div></div>`;
+}
+// Phase 20: kanaluebergreifende Timeline (alle Firmen, alle Kanaele, chronologisch).
+async function ladeTimeline() {
+  let d; try { d = await (await fetch("/api/crm/timeline")).json(); } catch { d = null; }
+  const win = WINS.timeline; if (!win) return;
+  if (!d) { win.body.innerHTML = `<div class="app"><div class="leer">Timeline nicht verfügbar.</div></div>`; return; }
+  const rows = (d.nachrichten || []).map(m => crmMsgRow(m, true)).join("") || `<div class="leer">Noch keine Nachrichten.</div>`;
+  win.body.innerHTML = `<div class="app"><h3>Timeline — alle Kanäle</h3>${rows}</div>`;
 }
 // ---- content_ops: Trends (K2) ----------------------------------------------
 let TRENDS = null;
@@ -678,6 +696,7 @@ const NAV = [
   { id: "wissen", icon: "🧠", label: "Wissen" },
   { id: "investment", icon: "📈", label: "Investment" },
   { id: "crm", icon: "🤝", label: "Collab-CRM" },
+  { id: "timeline", icon: "🕒", label: "Timeline" },
   { id: "trends", icon: "🔥", label: "Trends" },
   { id: "ideas", icon: "💡", label: "Ideen-Labor" },
   { id: "drafts", icon: "✍️", label: "Drafts" },
