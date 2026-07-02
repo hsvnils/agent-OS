@@ -43,8 +43,8 @@ class TrendStore:
             return {"ok": False, "fehler": f"Unbekannter Status: {status}"}
         if self.client is None or not self.client.verfuegbar():
             return {"ok": False, "fall_b": True, "hinweis": "Supabase nicht verfuegbar -- Statuswechsel offline nicht moeglich."}
-        r = self.client.upsert("trend_signals", {"id": trend_id, "status": status, "updated_at": _now()},
-                               on_conflict="id")
+        r = self.client.update("trend_signals", {"status": status, "updated_at": _now()},
+                               params=f"id=eq.{trend_id}")
         if r.get("ok"):
             self._cache_status(trend_id, status)
         return r

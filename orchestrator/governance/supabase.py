@@ -80,6 +80,19 @@ class SupabaseClient:
             return {"ok": False, "fehler": str(exc)[:160]}
         return {"ok": True, "anzahl": len(rows)}
 
+    def update(self, tabelle: str, patch: dict, *, params: str) -> dict:
+        """PATCH -- Teil-Update bestehender Zeilen (im Gegensatz zu upsert kein INSERT -> keine NOT-NULL-
+        Probleme bei nur teilweise gesetzten Spalten). `params` = Filter (z. B. 'id=eq.<uuid>')."""
+        if not self.verfuegbar():
+            return self.fall_b()
+        url = f"{self.auth.url}/rest/v1/{urllib.parse.quote(tabelle)}?" + params
+        try:
+            self._fetch(url, method="PATCH", data=json.dumps(patch).encode("utf-8"),
+                        headers=self._headers({"Prefer": "return=minimal"}))
+        except Exception as exc:
+            return {"ok": False, "fehler": str(exc)[:160]}
+        return {"ok": True}
+
     def select(self, tabelle: str, *, params: str = "") -> dict:
         if not self.verfuegbar():
             return self.fall_b()
@@ -110,6 +123,7 @@ class MockSupabaseClient(SupabaseClient):
         super().__init__(SupabaseAuth(url="https://mock.supabase.co", service_key="mock"))
         self.upserts: list[tuple] = []
         self.deletes: list[tuple] = []
+        self.patches: list[tuple] = []
         self.rows: dict[str, list] = {}   # Tests seeden hier vorgefilterte Antworten je Tabelle
 
     def upsert(self, tabelle, rows, *, on_conflict=None):
@@ -117,6 +131,10 @@ class MockSupabaseClient(SupabaseClient):
             rows = [rows]
         self.upserts.append((tabelle, rows, on_conflict))
         return {"ok": True, "anzahl": len(rows)}
+
+    def update(self, tabelle, patch, *, params):
+        self.patches.append((tabelle, patch, params))
+        return {"ok": True}
 
     def select(self, tabelle, *, params=""):
         return {"ok": True, "rows": list(self.rows.get(tabelle, []))}

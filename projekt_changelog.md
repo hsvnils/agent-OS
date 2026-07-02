@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 12:55] — Claude Code — Fix: Trend-Status-Write via PATCH (statt Upsert)
+- **Was:** `SupabaseClient.update()` (PATCH, Teil-Update) ergaenzt; `TrendStore.status_setzen` nutzt jetzt PATCH
+  `id=eq.<id>` statt Upsert. Grund: Upsert scheiterte mit HTTP 400, weil `trend_signals.title` NOT NULL ist und
+  beim Status-Write nur `status` gesendet wird (Upsert impliziert INSERT). PATCH aktualisiert nur die Zeile.
+  MockSupabaseClient.update + Tests; Gesamtsuite **271**.
+- **Warum:** Live-Test des Trend-Status-Writes gab 400; Read-Pfad war schon live ok (7 Trends aus Supabase).
+- **Betroffen:** orchestrator/governance/supabase.py, orchestrator/core/trends.py,
+  orchestrator/tests/test_supabase.py, orchestrator/tests/test_trends.py
+
 ## [2026-07-02 12:40] — Claude Code — Konsolidierung K1+K2: Trends-Pilot in LUNA-OS
 - **Was:** `orchestrator/core/trends.py` (`TrendStore` -- Supabase als DB via `SupabaseClient`, lokaler
   JSONL-Cache-Fallback, `list()`/`status_setzen()`, Status new/reviewing/draft_created/approved/published/

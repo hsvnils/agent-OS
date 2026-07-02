@@ -34,15 +34,17 @@ class TestTrendStore(unittest.TestCase):
         rows = offline.list()
         self.assertEqual(rows[0]["title"], "Retro-Trikots")
 
-    def test_status_setzen_upsert(self):
+    def test_status_setzen_patch(self):
         mock = MockSupabaseClient()
         mock.rows["trend_signals"] = [{"id": "t1", "title": "X", "status": "new"}]
         store = TrendStore(mock, self.cache)
         store.list()                                  # Cache befuellen
         r = store.status_setzen("t1", "approved")
         self.assertTrue(r["ok"])
-        self.assertEqual(mock.upserts[-1][0], "trend_signals")
-        self.assertEqual(mock.upserts[-1][1][0]["status"], "approved")
+        tabelle, patch, params = mock.patches[-1]      # PATCH statt Upsert (Teil-Update)
+        self.assertEqual(tabelle, "trend_signals")
+        self.assertEqual(patch["status"], "approved")
+        self.assertIn("id=eq.t1", params)
 
     def test_status_ungueltig(self):
         store = TrendStore(MockSupabaseClient(), self.cache)

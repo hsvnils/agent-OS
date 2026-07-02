@@ -51,6 +51,14 @@ class TestSupabase(unittest.TestCase):
         self.assertEqual(f.calls[0]["method"], "GET")
         self.assertIn("select=ref&limit=1", f.calls[0]["url"])
 
+    def test_update_baut_patch(self):
+        f = FakeFetch()
+        r = self._client(f).update("trend_signals", {"status": "approved"}, params="id=eq.t1")
+        self.assertTrue(r["ok"])
+        self.assertEqual(f.calls[0]["method"], "PATCH")
+        self.assertIn("id=eq.t1", f.calls[0]["url"])
+        self.assertEqual(f.calls[0]["data"], {"status": "approved"})
+
     def test_fehler_wird_gefangen(self):
         def boom(*a, **k):
             raise RuntimeError("netzwerk weg")
