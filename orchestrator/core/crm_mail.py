@@ -17,11 +17,13 @@ from . import input_guard   # Phase 23: eingehende Fremd-Inhalte auf Prompt-Inje
 
 
 class CrmMailTracker:
-    def __init__(self, *, crm, google, eigene_adresse: str = "", secrets: list[str] | None = None):
+    def __init__(self, *, crm, google, eigene_adresse: str = "", secrets: list[str] | None = None,
+                 notify=None):
         self.crm = crm                       # CrmStore
         self.google = google                 # GoogleWorkspace (mail_suchen) oder None
         self.eigene = (eigene_adresse or "").strip().lower()
         self.secrets = secrets or []
+        self.notify = notify                 # Phase 23<->21: CISO-Meldung bei Prompt-Injection (oder None)
 
     def _verfuegbar(self) -> bool:
         return (self.crm is not None and self.google is not None
@@ -46,10 +48,16 @@ class CrmMailTracker:
                     text += " — " + str(m["snippet"])[:200]
                 # Phase 23: Fremd-Inhalt vor dem Speichern auf Prompt-Injection pruefen und ggf. markieren,
                 # damit LUNA/Timeline die Nachricht als potenziell manipulativ erkennt (Lesen bleibt sicher).
-                text, _guard = input_guard.markiere_wenn_verdaechtig(text, quelle="mail")
+                text, guard = input_guard.markiere_wenn_verdaechtig(text, quelle="mail")
                 mid = self.crm.nachricht_erfassen(
                     firma, text, quelle="mail", richtung=richtung, absender=von,
                     extern_id="mail:" + str(m.get("id", "")), kategorie="mail")
                 if mid:
                     erfasst += 1
+                    if guard.injection and self.notify:
+                        try:
+                            self.notify(input_guard.melde_text("mail", von, guard),
+                                        abteilung="CISO/Security", kategorie="security", quelle="input-guard")
+                        except Exception:
+                            pass
         return {"ok": True, "erfasst": erfasst, "firmen": len(firmen)}

@@ -34,7 +34,7 @@
 | 20 | **Kanaluebergreifende Nachrichten-Timeline** (Instagram/Mail/Telegram chronologisch) | ✅ **gebaut 2026-07-03** (`CrmStore.timeline`, `/api/crm/timeline`, LUNA-OS-App „Timeline" mit Kanal-Badges) |
 | 21 | **Cybersecurity-Agent** (CISO-Ausbau: Zugriffe verhindern · Luecken finden · Luecken schliessen) | ✅ **gebaut 2026-07-03** (`core/security_agent.py`, Checks Secret-Hygiene/Hardening/Dependencies; L1 melden + L2 Antrag; Tool `sicherheits_audit`; gated Loop `SECURITY_AUDIT_ENABLED`; kein Auto-Change = CEO-Tor) |
 | 22 | **CISO-Agent ausbauen** (Static-Security-Scan nach SkillSpector-Muster) | ✅ **Kern fertig 2026-07-03** (AST-Code-Scan + Risiko-Score 0-100; OSV.dev-Check der Dockerfile-Pins; unser Code + Pins = 0 Funde). **Optionaler Backlog:** Taint-Tracking, Injection-Muster (-> Phase 23), SARIF |
-| 23 | **Haertung externer Eingaben** (Prompt-Injection-/PII-Filter fuer Mail/DM/Web) | ✅ **Kern fertig 2026-07-03** (`core/input_guard.py` verankert in **Mail** (`crm_mail`) + **Web-Recherche** (`web_research._finish`) + **Instagram-DMs** (`crm.verarbeite_eingang`); Injection-Marker + Untrusted-Boundary). Optional: Injection-Meldung an CISO/Security |
+| 23 | **Haertung externer Eingaben** (Prompt-Injection-/PII-Filter fuer Mail/DM/Web) | ✅ **fertig 2026-07-03** (`core/input_guard.py` verankert in **Mail** (`crm_mail`) + **Web-Recherche** (`web_research._finish`) + **Instagram-DMs** (`crm.verarbeite_eingang`); Injection-Marker + Untrusted-Boundary + **CISO-Meldung bei Verdacht** = Bruecke zu Phase 21) |
 | 24 | **Skill-/Charta-Standard + gepruefter Skill-Import** (Agent-Skills-Format + Erfolgsmetriken je Charta; Import via Phase-22-Gate) | 🔲 geplant — MITTEL |
 | 25 | **Execution-Sandbox-Policy** (deklarativ; Blaupause fuer Phase 17, aus OpenShell/NemoClaw) | 🔲 geplant — MITTEL (an Phase 17 gekoppelt) |
 | 26 | **Gedaechtnis: Vektor-Recall + Trajektorien-Lernen** (optional, aus MemPalace/ruflo) | 🔲 optional — NIEDRIG |
@@ -522,6 +522,12 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
     Marker `input_guard.MARKER` (oeffentlich). +4 Tests (Gesamt 360 gruen). **Damit sind alle drei genannten
     Vektoren abgedeckt: Mail · Web · DM.** **Optionaler Rest:** bei Verdacht zusaetzlich eine Meldung an
     CISO/Security schicken (verbindet Phase 23 mit Phase 21). Wirkt nach `luna-telegram`-Neustart.
+  - **Umsetzung (Inkrement 3, 2026-07-03) -- FERTIG (CISO-Connect):** Bei Injection-Verdacht meldet die
+    Ingestion-Stelle zusaetzlich an **CISO/Security** (`input_guard.melde_text` -> `notify(..., abteilung=
+    "CISO/Security", kategorie="security", quelle="input-guard")`). `notify`-Callback in `CrmMailTracker`,
+    `CrmStore` und `WebResearch` ergaenzt (Default None) und im Bot verdrahtet (`notifications.enqueue`);
+    Spam-Schutz durch das eingebaute Dedup des Notifiers (12h). Damit wird aus der stillen Markierung ein
+    aktives Sicherheitssignal (Phase 23 -> Phase 21). +4 Tests (Gesamt 364 gruen). **Phase 23 = vollstaendig.**
 
 - **Phase 24 — Skill-/Charta-Standard + gepruefter Skill-Import [MITTEL]:**
   - **Ziel:** Unsere Agenten/Faehigkeiten als portable, versionierbare Skills nach dem offenen „Agent Skills"-

@@ -105,6 +105,8 @@ def _build_ctx(cfg: dict, secrets: dict):
     # Proaktiver Notifier (Outbox) -- LUNA/Watcher melden sich unaufgefordert beim CEO.
     from ...core.notifications import Notifications
     notifications = Notifications(ROOT / "notifications" / "log.jsonl", secrets=secret_values)
+    # Phase 23<->21: Web-Recherche meldet Prompt-Injection-Verdacht an CISO/Security (web wurde oben gebaut).
+    web.notify = notifications.enqueue
     # Phase 12: 24/7-Watcher (kostenlos). GitHub-Token optional (Rate-Limit); Hintergrund-LLM aus.
     from ...core.scheduler import WatchScheduler, WatchStore
     from ...governance.github_watch import GitHubWatch
@@ -134,7 +136,8 @@ def _build_ctx(cfg: dict, secrets: dict):
     from ...governance.supabase import SupabaseAuth, SupabaseClient
     _sb_auth = SupabaseAuth.from_env(secrets)
     _crm_proj = SupabaseCrmProjection(SupabaseClient(_sb_auth)) if _sb_auth.verfuegbar() else None
-    crm = CrmStore(ROOT / "crm" / "log.jsonl", secrets=secret_values, changelog=changelog, projektor=_crm_proj)
+    crm = CrmStore(ROOT / "crm" / "log.jsonl", secrets=secret_values, changelog=changelog, projektor=_crm_proj,
+                   notify=notifications.enqueue)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,
@@ -597,7 +600,8 @@ def main() -> None:
                     from ...core.crm_mail import CrmMailTracker
                     CrmMailTracker(crm=ctx.crm, google=ctx.google,
                                    eigene_adresse=secrets.get("GOOGLE_ACCOUNT_EMAIL", "hanserautisch@gmail.com"),
-                                   secrets=ctx.leak_secrets).lauf()
+                                   secrets=ctx.leak_secrets,
+                                   notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
             except Exception as exc:
                 print(f"[poll] Fehler: {exc}", flush=True)
         # Proaktive Outbox zustellen -- LUNA/Watcher melden sich unaufgefordert beim CEO.

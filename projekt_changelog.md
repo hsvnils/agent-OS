@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 03:00] — Claude Code — Phase 23 (Inkr. 3, FERTIG): CISO-Connect (Injection -> Security-Meldung)
+- **Was:** Bei Prompt-Injection-Verdacht meldet die Ingestion-Stelle zusaetzlich an CISO/Security. `notify`-
+  Callback (Default None) in `CrmMailTracker`, `CrmStore` und `WebResearch` ergaenzt; im Bot mit
+  `notifications.enqueue` verdrahtet (crm, crm_mail-Tick, web via `web.notify=`). Meldungstext-Helfer
+  `input_guard.melde_text`. Spam-Schutz durch das Notifier-Dedup (12h). +4 Tests (Gesamt 364 gruen).
+  Byte-compile aller geaenderten Module ok.
+- **Warum:** Phase 23, Inkrement 3 -- verbindet die passive Markierung (Phase 23) mit der aktiven CISO-
+  Meldeschleife (Phase 21). **Phase 23 damit vollstaendig.**
+- **Betroffen:** core/input_guard.py, core/crm.py, core/crm_mail.py, governance/web_research.py,
+  channels/telegram/bot.py, tests/{test_crm,test_crm_mail,test_web_research}.py, ROADMAP.md.
+  Wirkt nach luna-telegram-Neustart.
+
 ## [2026-07-03 02:35] — Claude Code — Phase 23 (Inkr. 2, KERN FERTIG): Input-Filter in Web + Instagram
 - **Was:** `input_guard` zusaetzlich verankert in (a) **Web-Recherche** (`governance/web_research._finish`:
   externer Text wird auf Prompt-Injection geprueft; neues Feld `RechercheErgebnis.sicherheit` + Marker an der

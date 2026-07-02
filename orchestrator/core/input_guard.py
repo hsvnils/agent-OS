@@ -126,3 +126,9 @@ def markiere_wenn_verdaechtig(text: str, quelle: str = "extern") -> tuple[str, B
     if b.injection:
         return (MARKER + (text or ""), b)
     return (text or "", b)
+
+
+def melde_text(quelle: str, absender: str, befund: Befund) -> str:
+    """Meldungstext fuer CISO/Security bei Injection-Verdacht (Phase 23 <-> Phase 21)."""
+    who = f" von {absender}" if (absender or "").strip() else ""
+    return f"Moeglicher Prompt-Injection-Versuch in {quelle}{who}: " + ", ".join(befund.injection)

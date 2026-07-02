@@ -231,10 +231,12 @@ class WebResearch:
     So bleiben die Suchkosten niedrig; teure agentische Recherche nur im Eskalationsfall.
     """
 
-    def __init__(self, *, einfach: Provider, komplex: Provider, secrets: list[str] | None = None):
+    def __init__(self, *, einfach: Provider, komplex: Provider, secrets: list[str] | None = None,
+                 notify=None):
         self.einfach = einfach    # Brave (Default)
         self.komplex = komplex    # Anthropic-Web (Eskalation)
         self.secrets = secrets or []
+        self.notify = notify      # Phase 23<->21: CISO-Meldung bei Prompt-Injection im Web-Ergebnis (oder None)
 
     @classmethod
     def from_env(cls, env: dict[str, str] | None = None, secrets: list[str] | None = None) -> "WebResearch":
@@ -308,6 +310,12 @@ class WebResearch:
         if befund.injection:
             erg.sicherheit = "Prompt-Injection-Verdacht im externen Inhalt: " + ", ".join(befund.injection)
             erg.zusammenfassung = input_guard.MARKER + erg.zusammenfassung
+            if self.notify:
+                try:
+                    self.notify(input_guard.melde_text("web-recherche", erg.provider, befund),
+                                abteilung="CISO/Security", kategorie="security", quelle="input-guard")
+                except Exception:
+                    pass
         return erg
 
     def _kein_provider(self, stufe: str) -> RechercheErgebnis:
