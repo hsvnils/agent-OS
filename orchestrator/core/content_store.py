@@ -17,6 +17,8 @@ TREND_FELDER = "id,title,description,source_type,source_name,source_url,relevanc
 TREND_STATUSES = ("new", "reviewing", "draft_created", "approved", "published", "ignored")
 IDEA_FELDER = "id,title,description,status,category,tags,source_type,ai_summary,next_steps,created_at,updated_at"
 IDEA_STATUSES = ("inbox", "sorted", "planned", "in_progress", "done", "archived")
+DRAFT_FELDER = "id,title,platform,content_format,status,hook,caption,hashtags,trend_id,created_at,updated_at"
+DRAFT_STATUSES = ("idea", "in_progress", "review", "approved", "scheduled", "published", "archived")
 
 
 def _now() -> str:

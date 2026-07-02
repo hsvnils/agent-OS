@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 13:40] — Claude Code — Konsolidierung K2: Drafts (Kern-Pipeline Trends->Ideen->Drafts komplett)
+- **Was:** Drafts als dritter content_ops-Typ ueber den generischen `ContentStore` (`content_drafts`,
+  DRAFT_FELDER/DRAFT_STATUSES idea/in_progress/review/approved/scheduled/published/archived). `/api/drafts` +
+  status-Endpunkt; LUNA-OS-App **„Drafts"** (Hook/Caption/Hashtags + Status-Buttons). Cache-Bust **v23**;
+  Suite **272**; Preview ok. Damit ist die Kern-Content-Pipeline **Trends -> Ideen -> Drafts** in LUNA-OS
+  komplett (lesen+schreiben gegen Supabase).
+- **Warum:** HCC->LUNA-OS Konsolidierung K1/K2. Offen: Sources (name/is_active, kein Status) + AI-Inbox
+  (recommendation/scores) -- andere Form, folgen separat.
+- **Betroffen:** orchestrator/core/content_store.py, orchestrator/channels/web/app.py,
+  orchestrator/channels/web/static/app.js + index.html
+
 ## [2026-07-02 13:20] — Claude Code — Konsolidierung K2: Ideen-Labor + generischer ContentStore
 - **Was:** `orchestrator/core/content_store.py` -- **generischer `ContentStore`** (Supabase=DB via select +
   PATCH-Status, lokaler Cache-Fallback; parametriert je Tabelle: FELDER/STATUSES). Ersetzt die bespoke

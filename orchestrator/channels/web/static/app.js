@@ -21,6 +21,7 @@ const APPS = {
   crm: { icon: "🤝", titel: "Collab-CRM", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade CRM…</div></div>`, load: ladeCRM },
   trends: { icon: "🔥", titel: "Trends", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Trends…</div></div>`, load: ladeTrends },
   ideas: { icon: "💡", titel: "Ideen-Labor", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Ideen…</div></div>`, load: ladeIdeen },
+  drafts: { icon: "✍️", titel: "Drafts", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Drafts…</div></div>`, load: ladeDrafts },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
   agenten: { icon: "🕸️", titel: "Agenten-Map", badge: () => 0, render: renderAgenten, load: ladeAgenten },
 };
@@ -154,6 +155,26 @@ async function ladeIdeen() {
 async function ideaStatus(id, status) {
   try { await fetch("/api/ideas/" + encodeURIComponent(id) + "/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }); } catch {}
   ladeIdeen();
+}
+// ---- content_ops: Drafts (K2) ----------------------------------------------
+let DRAFTS = null;
+const draftStatusLabels = { idea: "Idee", in_progress: "In Arbeit", review: "Review", approved: "Freigegeben", scheduled: "Geplant", published: "Veröffentlicht", archived: "Archiviert" };
+function draftStatusLabel(s) { return draftStatusLabels[s] || s || ""; }
+async function ladeDrafts() {
+  try { DRAFTS = await (await fetch("/api/drafts")).json(); } catch { DRAFTS = null; }
+  const win = WINS.drafts; if (!win) return;
+  if (!DRAFTS) { win.body.innerHTML = `<div class="app"><div class="leer">Drafts nicht verfügbar.</div></div>`; return; }
+  const rows = (DRAFTS.drafts || []).map(d => `<div class="card">
+    <div class="head"><span class="badge ${["approved", "published", "scheduled"].includes(d.status) ? "freigegeben" : "in_umsetzung"}">${esc(draftStatusLabel(d.status))}</span><b>${esc(d.title)}</b><span class="meta">${esc(d.platform || "")}${d.content_format ? " · " + esc(d.content_format) : ""}</span></div>
+    ${d.hook ? `<div class="desc"><b>Hook:</b> ${esc(d.hook)}</div>` : ""}${d.caption ? `<div class="meta">${esc(d.caption)}</div>` : ""}
+    ${(d.hashtags && d.hashtags.length) ? `<div class="meta">${d.hashtags.map(h => "#" + esc(h)).join(" ")}</div>` : ""}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${["in_progress", "review", "approved", "scheduled", "published"].map(s => `<button class="btn" data-draftid="${esc(d.id)}" data-draftstatus="${s}">${esc(draftStatusLabel(s))}</button>`).join("")}</div>
+  </div>`).join("") || `<div class="leer">Noch keine Drafts. LUNAs Content-Agenten füllen sie später (K3).</div>`;
+  win.body.innerHTML = `<div class="app"><h3>Drafts</h3>${rows}</div>`;
+}
+async function draftStatus(id, status) {
+  try { await fetch("/api/drafts/" + encodeURIComponent(id) + "/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }); } catch {}
+  ladeDrafts();
 }
 // Detailansicht zu einem Wert (Aktie: Profil + Quote + News; Krypto: CoinGecko-Infos).
 async function openInvestDetail(symbol, asset) {
@@ -435,6 +456,7 @@ const NAV = [
   { id: "crm", icon: "🤝", label: "Collab-CRM" },
   { id: "trends", icon: "🔥", label: "Trends" },
   { id: "ideas", icon: "💡", label: "Ideen-Labor" },
+  { id: "drafts", icon: "✍️", label: "Drafts" },
   { id: "research", icon: "🔍", label: "Research", count: () => STATE.research.length },
   { id: "meldungen", icon: "🔔", label: "Meldungen", count: () => STATE.meldungen.length },
   { id: "aktivitaet", icon: "📊", label: "Aktivität" },
@@ -658,6 +680,8 @@ document.addEventListener("click", (e) => {
   if (trs) { trendStatus(trs.dataset.trendid, trs.dataset.trendstatus); return; }
   const idc = e.target.closest("[data-ideaid]");
   if (idc) { ideaStatus(idc.dataset.ideaid, idc.dataset.ideastatus); return; }
+  const drf = e.target.closest("[data-draftid]");
+  if (drf) { draftStatus(drf.dataset.draftid, drf.dataset.draftstatus); return; }
   const cmd = e.target.closest("[data-cmd]");
   if (cmd) { cmd.dataset.cmd === "talk" ? toggleVoice() : navTo(cmd.dataset.cmd); return; }
   const navi = e.target.closest("[data-app]");

@@ -22,7 +22,8 @@ from fastapi.staticfiles import StaticFiles
 from ...core.antraege import Antraege
 from ...core.brain import Brain
 from ...core.crm import CrmStore
-from ...core.content_store import (ContentStore, IDEA_FELDER, IDEA_STATUSES, TREND_FELDER, TREND_STATUSES)
+from ...core.content_store import (ContentStore, DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES,
+                                   TREND_FELDER, TREND_STATUSES)
 from ...core.briefing import Agenda
 from ...core.insights import Insights
 from ...core.notifications import Notifications
@@ -80,6 +81,8 @@ trends_store = ContentStore(_sb, "trend_signals", TREND_FELDER, ROOT / "content_
                             statuses=TREND_STATUSES)
 ideas_store = ContentStore(_sb, "ideas", IDEA_FELDER, ROOT / "content_ops" / "ideas_cache.jsonl",
                            statuses=IDEA_STATUSES)
+drafts_store = ContentStore(_sb, "content_drafts", DRAFT_FELDER, ROOT / "content_ops" / "drafts_cache.jsonl",
+                            statuses=DRAFT_STATUSES)
 # Internes Lagebild (ohne Google); fuer das volle Lagebild (Termine/Mails) nutzt der Endpunkt die LUNA-ctx.
 insights_intern = Insights(antraege=antraege, research=research, agenda=agenda)
 # Investment (Phase 2, advisory): Engine + Store. MarketData wird lazy aus den .env-Keys gebaut.
@@ -771,6 +774,18 @@ async def ideas_status(idea_id: str, request: Request):
     body = await _json(request)
     r = await asyncio.to_thread(ideas_store.status_setzen, idea_id, (body.get("status") or "").strip())
     return JSONResponse({"ok": bool(r.get("ok")), "res": r, "ideas": ideas_store.list(100)})
+
+
+@app.get("/api/drafts")
+def drafts():
+    return {"drafts": drafts_store.list(100)}
+
+
+@app.post("/api/drafts/{draft_id}/status")
+async def drafts_status(draft_id: str, request: Request):
+    body = await _json(request)
+    r = await asyncio.to_thread(drafts_store.status_setzen, draft_id, (body.get("status") or "").strip())
+    return JSONResponse({"ok": bool(r.get("ok")), "res": r, "drafts": drafts_store.list(100)})
 
 
 @app.get("/api/investment/detail")
