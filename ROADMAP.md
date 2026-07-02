@@ -30,8 +30,8 @@
 | 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | ✅ **VOLL LIVE 2026-06-27** -- LAN + **HTTPS extern** (`https://os.hanserautisch.synology.me`, ein Lesezeichen ueberall), Login, Mond-Orb/Chat, agentisches Mehr-Info, Detailansicht, Mobil, echte Umlaute, futuristisches Design, Sprach-Kontextbefehle |
 | 17 | **LUNA bedient den Rechner / Live-Co-Working** (Computer-Use; paralleles Arbeiten im Gespraech -- ich sehe, sie setzt um, justiert per Sprache, schlaegt vor; z. B. XMind/Mail) | 🔲 geplant (Backlog) |
 | 18 | **HCC -> LUNA-OS Konsolidierung** (EIN System = LUNA-OS; nilshubv2/Worker stillgelegt; Supabase = DB; content_ops/CRM/Team/Cutter als LUNA-OS-Apps; Team-Auth/Rollen) | ✅ **K0-K6 KOMPLETT 2026-07-02** -- nur noch 10 LUNA-Tabellen, Vercel/Worker weg; `HCC_INTEGRATION_ROADMAP.md` |
-| 19 | **CRM-Akte: Mail-Tracking** (Gmail-Mails je Unternehmen in die CRM-Akte aufnehmen) | 🔲 offen (CEO 2026-07-02) |
-| 20 | **Kanaluebergreifende Nachrichten-Timeline** (Instagram-DMs + Mails + Telegram chronologisch je Kontakt/Unternehmen) | 🔲 offen (CEO 2026-07-02) |
+| 19 | **CRM-Akte: Mail-Tracking** (Gmail-Mails je Unternehmen in die CRM-Akte) | ✅ **gebaut 2026-07-03** (`core/crm_mail.py`, quelle='mail', L1-Loop im Bot-Poll; luna-telegram-Neustart fuer den Tick) |
+| 20 | **Kanaluebergreifende Nachrichten-Timeline** (Instagram/Mail/Telegram chronologisch) | ✅ **gebaut 2026-07-03** (`CrmStore.timeline`, `/api/crm/timeline`, LUNA-OS-App „Timeline" mit Kanal-Badges) |
 | 21 | **Cybersecurity-Agent** (CISO-Ausbau: Zugriffe verhindern · Luecken finden · Luecken schliessen) | 🔲 offen (CEO 2026-07-02, recherchiert -- s. Backlog) |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
