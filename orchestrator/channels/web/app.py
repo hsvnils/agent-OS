@@ -11,6 +11,7 @@ import json
 import os
 import secrets
 import time
+import uuid
 from functools import partial
 from pathlib import Path
 
@@ -22,8 +23,9 @@ from fastapi.staticfiles import StaticFiles
 from ...core.antraege import Antraege
 from ...core.brain import Brain
 from ...core.crm import CrmStore
-from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, DRAFT_FELDER, DRAFT_STATUSES,
-                                   IDEA_FELDER, IDEA_STATUSES, SOURCE_FELDER, TREND_FELDER, TREND_STATUSES)
+from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, CUTTER_FELDER, CUTTER_STATUSES,
+                                   DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES, SOURCE_FELDER,
+                                   TREND_FELDER, TREND_STATUSES)
 from ...core.briefing import Agenda
 from ...core.insights import Insights
 from ...core.notifications import Notifications
@@ -87,6 +89,9 @@ drafts_store = ContentStore(_sb, "content_drafts", DRAFT_FELDER, ROOT / "content
 sources_store = ContentStore(_sb, "sources", SOURCE_FELDER, ROOT / "content_ops" / "sources_cache.jsonl")
 aiinbox_store = ContentStore(_sb, "ai_intel_items", AIINTEL_FELDER, ROOT / "content_ops" / "aiinbox_cache.jsonl",
                              statuses=AIINTEL_RECS, status_feld="recommendation")
+# K5: Cutter-Jobs (geteilt Mac<->LUNA-OS). Generischer ContentStore reicht (list/add/patch).
+cutter_store = ContentStore(_sb, "cutter_jobs", CUTTER_FELDER, ROOT / "cutter_ops" / "jobs_cache.jsonl",
+                            statuses=CUTTER_STATUSES)
 # Internes Lagebild (ohne Google); fuer das volle Lagebild (Termine/Mails) nutzt der Endpunkt die LUNA-ctx.
 insights_intern = Insights(antraege=antraege, research=research, agenda=agenda)
 # Investment (Phase 2, advisory): Engine + Store. MarketData wird lazy aus den .env-Keys gebaut.
@@ -286,6 +291,52 @@ async def team_aktiv(username: str, request: Request):
     d = await request.json()
     r = _team_auth.setzen_aktiv(username, bool(d.get("aktiv", True)))
     return JSONResponse({**r, "users": _team_auth.liste()})
+
+
+# -- K5: Cutter-Jobs (Modul content_ops). Mac-Cutter meldet ueber /report, holt offene Jobs ueber /queue. ----
+
+_CUTTER_REPORT_FELDER = ("status", "clips_verwendet", "dauer_sek", "untertitel", "reel_datei",
+                         "groesse_mb", "fehler")
+
+
+@app.get("/api/cutter")
+def cutter_liste():
+    return {"verfuegbar": _sb is not None and _sb.verfuegbar(),
+            "jobs": cutter_store.list(limit=100), "statuses": list(CUTTER_STATUSES)}
+
+
+@app.post("/api/cutter/job")
+async def cutter_job(request: Request):
+    """Aus LUNA-OS einen Reel-Job anstossen -> Status `queued`; der Mac-Watcher holt ihn per /queue ab."""
+    d = await request.json()
+    projekt = (d.get("projekt") or "").strip()
+    if not projekt:
+        return JSONResponse({"ok": False, "hinweis": "Projekt-/Ordnername noetig."})
+    r = cutter_store.add({"id": uuid.uuid4().hex, "projekt": projekt[:200],
+                          "note": ((d.get("note") or "").strip()[:500] or None),
+                          "status": "queued", "quelle": "luna-os"})
+    return JSONResponse({**r, "jobs": cutter_store.list(limit=100)})
+
+
+@app.get("/api/cutter/queue")
+def cutter_queue():
+    """Vom Mac-Watcher gepollt: offene (queued) Jobs."""
+    return {"jobs": [j for j in cutter_store.list(limit=100) if j.get("status") == "queued"]}
+
+
+@app.post("/api/cutter/report")
+async def cutter_report(request: Request):
+    """Der Mac-Cutter meldet Job-Status. Mit job_id -> vorhandene Zeile (aus /queue) aktualisieren;
+    ohne job_id -> neue Zeile (auto-verarbeiteter Ordner)."""
+    d = await request.json()
+    felder = {k: d[k] for k in _CUTTER_REPORT_FELDER if k in d}
+    jid = (d.get("job_id") or "").strip()
+    if jid:
+        r = cutter_store.patch(jid, felder)
+    else:
+        r = cutter_store.add({"id": uuid.uuid4().hex, "projekt": (d.get("projekt") or "")[:200],
+                              "quelle": "mac", **felder})
+    return JSONResponse(r)
 
 
 @app.get("/api/antraege/{antrag_id}")

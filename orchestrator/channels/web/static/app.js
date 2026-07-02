@@ -31,6 +31,7 @@ const APPS = {
   drafts: { icon: "✍️", titel: "Drafts", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Drafts…</div></div>`, load: ladeDrafts },
   quellen: { icon: "📡", titel: "Quellen", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Quellen…</div></div>`, load: ladeQuellen },
   aiinbox: { icon: "🧩", titel: "AI-Inbox", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade AI-Inbox…</div></div>`, load: ladeAiInbox },
+  cutter: { icon: "🎬", titel: "Cutter", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Cutter…</div></div>`, load: ladeCutter },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
   agenten: { icon: "🕸️", titel: "Agenten-Map", badge: () => 0, render: renderAgenten, load: ladeAgenten },
   team: { icon: "👥", titel: "Team", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Team…</div></div>`, load: ladeTeam },
@@ -252,6 +253,54 @@ async function teamAnlegen() {
 async function teamAktiv(username, aktiv) {
   try { await fetch("/api/team/" + encodeURIComponent(username) + "/aktiv", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aktiv: aktiv === "1" }) }); } catch {}
   ladeTeam();
+}
+// ---- K5: Cutter (Reel-Jobs, geteilt Mac<->LUNA-OS) --------------------------
+let CUTTER = null;
+const cutBadge = { done: "freigegeben", running: "in_umsetzung", queued: "eingereicht", failed: "abgelehnt" };
+const cutLabel = { done: "Fertig", running: "Läuft", queued: "In Warteschlange", failed: "Fehler" };
+async function ladeCutter() {
+  try { CUTTER = await (await fetch("/api/cutter")).json(); } catch { CUTTER = null; }
+  const win = WINS.cutter; if (!win) return;
+  if (!CUTTER) { win.body.innerHTML = `<div class="app"><div class="leer">Cutter nicht verfügbar.</div></div>`; return; }
+  if (!CUTTER.verfuegbar) { win.body.innerHTML = `<div class="app"><div class="leer">Cutter-Jobs nicht verfügbar — SQL-Migration <code>cutter_jobs</code> in Supabase ausführen.</div></div>`; return; }
+  const jobs = (CUTTER.jobs || []).map(j => {
+    const st = j.status || "queued";
+    const det = [
+      j.clips_verwendet != null ? `${j.clips_verwendet} Clips` : "",
+      j.dauer_sek != null ? `${j.dauer_sek}s` : "",
+      j.untertitel ? `UT: ${esc(String(j.untertitel))}` : "",
+      j.groesse_mb != null ? `${j.groesse_mb} MB` : "",
+    ].filter(Boolean).join(" · ");
+    return `<div class="card">
+      <div class="head"><span class="badge ${cutBadge[st] || ""}">${cutLabel[st] || esc(st)}</span>
+        <b>${esc(j.projekt || "—")}</b><span class="meta">${esc(j.quelle || "")}${j.created_at ? " · " + zeit(j.created_at) : ""}</span></div>
+      ${det ? `<div class="meta">${esc(det)}</div>` : ""}
+      ${j.reel_datei ? `<div class="meta">🎬 ${esc(j.reel_datei)}</div>` : ""}
+      ${j.fehler ? `<div class="desc" style="color:var(--red)">${esc(j.fehler)}</div>` : ""}
+      ${j.note ? `<div class="desc">${esc(j.note)}</div>` : ""}
+    </div>`; }).join("") || `<div class="leer">Noch keine Reel-Jobs.</div>`;
+  win.body.innerHTML = `<div class="app">
+    <h3>Reel-Job anstoßen</h3>
+    <div class="team-form">
+      <input id="cut-projekt" placeholder="Ordnername in der Cutter-Inbox (z. B. hsv_stadion)" autocomplete="off">
+      <input id="cut-note" placeholder="Notiz (optional)" autocomplete="off">
+      <button class="btn primary" data-cuttersave="1">Job anstoßen</button>
+      <div id="cut-msg" class="team-msg"></div>
+      <div class="meta">Der Mac-Cutter holt den Job ab, schneidet den Ordner und meldet den Status hierher zurück. Posten bleibt CEO-Tor.</div>
+    </div>
+    <h3 style="margin-top:14px">Jobs & Historie (${(CUTTER.jobs || []).length})</h3>
+    ${jobs}
+  </div>`;
+}
+async function cutterJob() {
+  const g = (id) => (document.getElementById(id) || {}).value || "";
+  const projekt = g("cut-projekt").trim(), note = g("cut-note").trim();
+  const msg = document.getElementById("cut-msg");
+  if (!projekt) { if (msg) { msg.textContent = "Ordnername ist Pflicht."; msg.className = "team-msg err"; } return; }
+  let r; try { r = await (await fetch("/api/cutter/job", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projekt, note }) })).json(); }
+  catch { r = { ok: false, hinweis: "Netzwerkfehler." }; }
+  if (msg) { msg.textContent = r.ok ? `Job „${projekt}" in Warteschlange.` : ("Fehler: " + (r.hinweis || r.fehler || "unbekannt")); msg.className = "team-msg " + (r.ok ? "ok" : "err"); }
+  if (r.ok) ladeCutter();
 }
 // ---- content_ops: AI-Inbox (K2) --------------------------------------------
 let AIINBOX = null;
@@ -556,6 +605,7 @@ const NAV = [
   { id: "drafts", icon: "✍️", label: "Drafts" },
   { id: "quellen", icon: "📡", label: "Quellen" },
   { id: "aiinbox", icon: "🧩", label: "AI-Inbox" },
+  { id: "cutter", icon: "🎬", label: "Cutter" },
   { id: "research", icon: "🔍", label: "Research", count: () => STATE.research.length },
   { id: "meldungen", icon: "🔔", label: "Meldungen", count: () => STATE.meldungen.length },
   { id: "aktivitaet", icon: "📊", label: "Aktivität" },
@@ -806,6 +856,8 @@ document.addEventListener("click", (e) => {
   if (tsave) { teamAnlegen(); return; }
   const tu = e.target.closest("[data-teamuser]");
   if (tu) { teamAktiv(tu.dataset.teamuser, tu.dataset.teamaktiv); return; }
+  const csave = e.target.closest("[data-cuttersave]");
+  if (csave) { cutterJob(); return; }
   const cmd = e.target.closest("[data-cmd]");
   if (cmd) { cmd.dataset.cmd === "talk" ? toggleVoice() : navTo(cmd.dataset.cmd); return; }
   const navi = e.target.closest("[data-app]");

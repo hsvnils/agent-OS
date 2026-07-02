@@ -66,6 +66,12 @@ class TestPfadModul(unittest.TestCase):
         self.assertEqual(modul_fuer_pfad("GET", "/api/crm"), "crm")
         self.assertEqual(modul_fuer_pfad("POST", "/api/investment/screen"), "invest")
 
+    def test_cutter_content_ops(self):
+        self.assertEqual(modul_fuer_pfad("GET", "/api/cutter"), "content_ops")
+        self.assertEqual(modul_fuer_pfad("POST", "/api/cutter/job"), "content_ops")
+        self.assertEqual(modul_fuer_pfad("POST", "/api/cutter/report"), "content_ops")
+        self.assertIn("cutter", erlaubte_apps({"role": "content", "allowed_modules": ["content_ops"]}))
+
     def test_administration(self):
         self.assertEqual(modul_fuer_pfad("POST", "/api/antraege/x/freigeben"), "administration")
         self.assertEqual(modul_fuer_pfad("POST", "/api/chat"), "administration")

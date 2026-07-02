@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 19:45] — Claude Code — K5: Cutter-App in LUNA-OS (Job-Status/Historie + anstossen)
+- **Was:** Cutter (Phase 15, laeuft lokal auf dem Mac) an LUNA-OS (NAS) angebunden. Bruecke = **ueber die
+  LUNA-OS-API** (CEO-Wahl; kein Supabase-service_role auf dem Mac). Tabelle `cutter_jobs` (generischer
+  ContentStore, `CUTTER_FELDER`/`CUTTER_STATUSES` in content_store.py). LUNA-OS-Endpunkte (Modul content_ops):
+  `GET /api/cutter`, `POST /api/cutter/job` (queued), `GET /api/cutter/queue` (Mac-Poll), `POST
+  /api/cutter/report` (Mac meldet running/done/failed; job_id -> Update sonst neue Zeile). Frontend: App
+  „Cutter" (🎬) + Sidebar-Eintrag -- Job-Historie mit Status-Badges + „Reel-Job anstossen"-Formular. Mac-Seite:
+  `cutter/luna_bridge.py` (LunaBridge, Basic-Auth via LUNA_OS_URL/USER/PASSWORD in Mac-.env; inaktiv ohne
+  Config) + `cutter/watch.py` meldet Status + holt queued Jobs. Gating `/api/cutter` -> content_ops, App-
+  Zuordnung `cutter`->content_ops. Migration `docs/hcc_k5_cutter_jobs.sql`. Cache-Bust v28.
+- **Warum:** „Weiter mit K5" (CEO) -- Cutter-Steuerung/Historie zentral in LUNA-OS.
+- **Betroffen:** `orchestrator/core/content_store.py`, `orchestrator/channels/web/app.py`,
+  `orchestrator/core/team_auth.py`, `orchestrator/channels/web/static/{app.js,index.html}`,
+  `orchestrator/tests/test_team_auth.py`, `cutter/luna_bridge.py` (neu), `cutter/watch.py`,
+  `cutter/tests/test_luna_bridge.py` (neu), `docs/hcc_k5_cutter_jobs.sql` (neu), `HCC_INTEGRATION_ROADMAP.md`.
+  Suite 317 (orchestrator) + 11 (cutter) gruen; im Preview verifiziert. OFFEN (CEO): SQL ausfuehren,
+  LUNA_OS_URL/USER/PASSWORD in Mac-.env, Cutter-Watcher + luna-os neu starten. Posten bleibt CEO-Tor.
+
 ## [2026-07-02 19:00] — Claude Code — Fix: Sidebar-Menue scrollt jetzt + Nutzer-Chip-Layout
 - **Was:** Das Sidebar-Menue liess sich nicht scrollen (mit „Team" 18 Eintraege -> unten abgeschnitten auf
   kleinen Hoehen). Ursache: `#nav` hatte `flex:1` ohne `min-height:0`/eigenes `overflow` -> in einem

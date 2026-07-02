@@ -75,9 +75,20 @@ Sidebar/Dock aus, Nutzer-Chip (Name+Rolle); Cache-Bust v25. Nutzerverwaltung per
 ausfuehren + Team-Nutzer anlegen (CLI); luna-os ist bereits neu gestartet (Code kommt beim naechsten Sync).
 Feinschliff spaeter: Team-Admin-App im Frontend, Kern-Endpunkte (state/lagebild) feiner scopen, Logout-Flow.
 
-### K5 -- Cutter-App in LUNA-OS
-LUNA-Cutter (Phase 15) Job-Status/Historie direkt als LUNA-OS-App zeigen + anstossen (kein App-zu-App-Spiegel
-mehr noetig).
+### K5 -- Cutter-App in LUNA-OS -- ✅ CODE-KOMPLETT (2026-07-02)
+LUNA-Cutter (Phase 15) Job-Status/Historie als LUNA-OS-App zeigen + anstossen. **Bruecke (CEO-Wahl): ueber die
+LUNA-OS-API, kein Supabase-Key auf dem Mac.** Umgesetzt: Tabelle `cutter_jobs` (via generischem ContentStore,
+CUTTER_FELDER/STATUSES). LUNA-OS-Endpunkte (Modul content_ops): `GET /api/cutter` (Historie), `POST
+/api/cutter/job` (Reel-Job anstossen -> `queued`), `GET /api/cutter/queue` (Mac pollt), `POST /api/cutter/report`
+(Mac meldet running/done/failed; mit job_id -> Update, ohne -> neue Zeile). Frontend: App „Cutter" (🎬) +
+Sidebar-Eintrag: Job-Historie mit Status-Badges (queued/running/done/failed, Clips/Dauer/Groesse/Reel/Fehler/
+Notiz) + Formular „Reel-Job anstossen". Mac-Seite: `cutter/luna_bridge.py` (LunaBridge, Basic-Auth via
+`LUNA_OS_URL`/`LUNA_OS_USER`/`LUNA_OS_PASSWORD` in Mac-.env; inaktiv ohne Config -> laeuft wie bisher lokal) +
+`cutter/watch.py` meldet Status + holt queued Jobs (verarbeitet auch trotz Marker). Migration
+`docs/hcc_k5_cutter_jobs.sql`. Cache-Bust v28. Suite 317 (orchestrator) + 11 (cutter); im Preview verifiziert
+(App + Job-Karten + Badges, keine Console-Fehler). **OFFEN (CEO):** SQL ausfuehren; in Mac-.env `LUNA_OS_URL`
++ `LUNA_OS_USER` + `LUNA_OS_PASSWORD` setzen; Cutter-Watcher neu starten (launchd) + luna-os neu starten.
+**Posten bleibt CEO-Tor.**
 
 ### K6 -- nilshubv2 + Worker stilllegen
 Wenn alles in LUNA-OS laeuft: Next.js-App + Synology-Worker abschalten/Deploy entfernen; nicht mehr genutzte

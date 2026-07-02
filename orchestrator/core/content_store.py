@@ -22,6 +22,9 @@ DRAFT_STATUSES = ("idea", "in_progress", "review", "approved", "scheduled", "pub
 SOURCE_FELDER = "id,name,source_type,url,is_active,priority,created_at,updated_at"
 AIINTEL_FELDER = "id,source_type,platform,title,author,summary,hcc_relevance_score,feasibility_score,risk_score,recommendation,source_url,created_at,updated_at"
 AIINTEL_RECS = ("use", "investigate", "later", "ignore")
+# K5 -- Cutter-Jobs (geteilt Mac<->LUNA-OS). Mac meldet ueber die LUNA-OS-API; LUNA-OS besitzt Supabase.
+CUTTER_FELDER = "id,projekt,status,quelle,clips_verwendet,dauer_sek,untertitel,reel_datei,groesse_mb,fehler,note,created_at,updated_at"
+CUTTER_STATUSES = ("queued", "running", "done", "failed")
 
 
 def _now() -> str:

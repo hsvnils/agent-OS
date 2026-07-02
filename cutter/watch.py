@@ -19,6 +19,7 @@ from pathlib import Path
 
 from . import melden
 from .ffmpeg_ops import clips_im_ordner
+from .luna_bridge import LunaBridge
 from .pipeline import _lade_env, schneide_ordner
 
 MARKER = ".cutter_status.json"
@@ -33,13 +34,30 @@ def _stabil(ordner: Path, ruhe_sek: float) -> bool:
     return (time.time() - juengste) >= ruhe_sek
 
 
-def _verarbeite(projekt: Path, outbox: Path, ziel_dauer: float, token: str = "", chat: str = "") -> None:
+def _verarbeite(projekt: Path, outbox: Path, ziel_dauer: float, token: str = "", chat: str = "",
+                bridge: LunaBridge | None = None, job_id: str = "") -> None:
     ausgabe = outbox / f"{projekt.name}_reel.mp4"
     print(f"[{datetime.now():%H:%M:%S}] schneide '{projekt.name}' ...", flush=True)
+    if bridge is not None and bridge.aktiv():
+        bridge.melden(job_id=job_id, projekt=projekt.name, status="running")
     bericht = schneide_ordner(projekt, ausgabe, ziel_dauer=ziel_dauer)
     (projekt / MARKER).write_text(json.dumps(
         {"ts": datetime.now().isoformat(timespec="seconds"), **bericht}, ensure_ascii=False, indent=2),
         encoding="utf-8")
+    # K5: Status an LUNA-OS melden (sichtbar in der Cutter-App). Best-effort.
+    if bridge is not None and bridge.aktiv():
+        if bericht.get("ok"):
+            try:
+                groesse_mb = round(ausgabe.stat().st_size / (1024 * 1024), 1) if ausgabe.exists() else None
+            except OSError:
+                groesse_mb = None
+            bridge.melden(job_id=job_id, projekt=projekt.name, status="done",
+                          clips_verwendet=bericht.get("verwendet"), dauer_sek=bericht.get("dauer_sek"),
+                          untertitel=str(bericht.get("untertitel")), reel_datei=ausgabe.name,
+                          groesse_mb=groesse_mb)
+        else:
+            bridge.melden(job_id=job_id, projekt=projekt.name, status="failed",
+                          fehler=str(bericht.get("fehler", ""))[:300])
     if bericht.get("ok"):
         print(f"[{datetime.now():%H:%M:%S}] fertig -> {ausgabe} "
               f"({bericht['verwendet']} Clips, {bericht['dauer_sek']}s, "
@@ -64,16 +82,26 @@ def loop(inbox: Path, outbox: Path, *, intervall: float = 15.0, ruhe_sek: float 
     env = _lade_env()
     token = env.get("TELEGRAM_BOT_TOKEN", "")
     chat = env.get("TELEGRAM_ALLOWED_CHAT_ID", "")
+    bridge = LunaBridge.from_env(env)   # K5: Status/Queue via LUNA-OS-API (nur wenn LUNA_OS_URL+Passwort da)
     print(f"Cutter-Watcher aktiv. Inbox: {inbox}  ->  Outbox: {outbox}"
-          + (" | Telegram-Meldung: an" if token and chat else ""), flush=True)
+          + (" | Telegram-Meldung: an" if token and chat else "")
+          + (" | LUNA-OS-Bruecke: an" if bridge.aktiv() else ""), flush=True)
     print("Lege Clips in einen Unterordner der Inbox -- der Schnitt startet automatisch.", flush=True)
     while True:
         try:
+            # K5: von LUNA-OS angestossene Jobs zuerst (auch wenn der Ordner schon einen Marker hat).
+            for job in (bridge.offene_jobs() if bridge.aktiv() else []):
+                projekt = inbox / (job.get("projekt") or "")
+                if projekt.is_dir():
+                    _verarbeite(projekt, outbox, ziel_dauer, token, chat, bridge, job.get("id", ""))
+                else:
+                    bridge.melden(job_id=job.get("id", ""), projekt=job.get("projekt", ""),
+                                  status="failed", fehler="Ordner nicht in der Cutter-Inbox gefunden.")
             for projekt in sorted(p for p in inbox.iterdir() if p.is_dir()):
                 if (projekt / MARKER).exists():
                     continue
                 if _stabil(projekt, ruhe_sek):
-                    _verarbeite(projekt, outbox, ziel_dauer, token, chat)
+                    _verarbeite(projekt, outbox, ziel_dauer, token, chat, bridge)
         except Exception as exc:                       # nie den Watcher mitreissen
             print(f"[watch] Fehler: {exc}", flush=True)
         if einmal:

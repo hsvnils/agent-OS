@@ -31,7 +31,7 @@ MODUL_LABELS = {
 # Welche LUNA-OS-App gehoert zu welchem Modul (SSOT fuer die Frontend-Sichtbarkeit).
 APP_MODUL = {
     "trends": "content_ops", "ideas": "content_ops", "drafts": "content_ops",
-    "quellen": "content_ops", "aiinbox": "content_ops",
+    "quellen": "content_ops", "aiinbox": "content_ops", "cutter": "content_ops",
     "crm": "crm",
     "investment": "invest",
     "auftraege": "administration", "meldungen": "administration", "aktivitaet": "administration",
@@ -177,7 +177,7 @@ class TeamAuth:
 
 # App-spezifische Endpunkt-Praefixe je Modul. GET+POST beide gated.
 _MODUL_PFADE = {
-    "content_ops": ("/api/trends", "/api/ideas", "/api/drafts", "/api/sources", "/api/ai-inbox"),
+    "content_ops": ("/api/trends", "/api/ideas", "/api/drafts", "/api/sources", "/api/ai-inbox", "/api/cutter"),
     "crm": ("/api/crm",),
     "invest": ("/api/investment",),
 }
