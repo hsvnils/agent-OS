@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 23:20] — Claude Code — #2 Dashboard-Prefs geraeteuebergreifend LIVE bestaetigt
+- **Was:** CEO hat `docs/hcc_luna_os_prefs.sql` ausgefuehrt + luna-os neu gestartet. Live verifiziert (NAS-curl):
+  Tabelle `luna_os_prefs` existiert (1 Zeile), `GET /api/prefs` -> HTTP 200 mit echtem gespeichertem
+  Dashboard-Layout (order+hidden). Der Round-Trip Browser->Supabase->Laden funktioniert -> Dashboard-Layout
+  ist pro User geraeteuebergreifend. (Kein Test-Write, um das echte Layout nicht zu ueberschreiben.)
+- **Warum:** Abschluss #2.
+- **Betroffen:** nur Verifikation (kein Code). Alle 6 CEO-Punkte (Container/Dashboard/Theme/Investment/Self-*/
+  opus-4-6) erledigt.
+
 ## [2026-07-02 23:10] — Claude Code — Fix: Dashboard + Menue scrollen nicht (Safari, min-height:0-Kette)
 - **Was:** Bei normalem Zoom liessen sich weder `#cc-main` (Dashboard) noch `#nav` (Menue) scrollen -- Inhalt
   wurde am Viewport abgeschnitten. Ursache (wie beim frueheren `#nav`-Fix): Flex-/Grid-Container brauchen
