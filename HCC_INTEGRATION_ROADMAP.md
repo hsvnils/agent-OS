@@ -38,9 +38,10 @@ SupabaseClient + CRM-Store/Projektion + Collab-CRM-App in LUNA-OS, live bewiesen
 `orchestrator/core/content_store.py` (`ContentStore`, parametriert je Tabelle: select + PATCH-Status +
 Cache-Fallback). **Live: trend_signals + ideas.** Drafts/Quellen/AI-Inbox = je eine weitere Instanz.
 
-### K2 -- content_ops-Apps in LUNA-OS (Team-Flaeche) -- 🟡 Trends + Ideen-Labor live (2026-07-02)
-**Trends + Ideen-Labor live** (Inbox + Status-Buttons, lesen+schreiben gegen Supabase live bewiesen).
-Verbleibend: Drafts, Quellen, AI-Inbox nach demselben Muster (ContentStore-Instanz + 2 Endpunkte + app.js-App).
+### K2 -- content_ops-Apps in LUNA-OS (Team-Flaeche) -- 🟡 Trends + Ideen + Drafts live (2026-07-02)
+**Kern-Pipeline Trends -> Ideen -> Drafts live** (Inbox + Status-Buttons, lesen+schreiben gegen Supabase
+bewiesen: 7 Trends / 6 Ideen / 10 Drafts). Verbleibend: **Sources** (name/is_active/priority, kein Status ->
+Read-only + is_active-Toggle) + **AI-Inbox** (recommendation/scores -> eigene Form).
 
 ### K3 -- LUNA-Agenten fuettern content_ops
 Social-Media-Researcher + Content-Agenten (Ausbaustufe des Researchers) -> schreiben Trends/Ideen/Drafts/
