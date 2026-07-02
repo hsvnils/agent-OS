@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-02 23:45] — Claude Code — ROADMAP: neue offene Punkte (CEO) + Web-Recherche
+- **Was:** CEO-Wuensche als Roadmap-Punkte aufgenommen + Web-Recherche dazu. Status-Tabelle: Phase 18 (HCC-
+  Konsolidierung) auf ✅ K0-K6; neu Phase 19 **CRM-Akte Mail-Tracking** (Gmail je Unternehmen), Phase 20
+  **kanaluebergreifende Nachrichten-Timeline**, Phase 21 **Cybersecurity-Agent** (CISO-Ausbau: Zugriffe
+  verhindern/Luecken finden/schliessen). Backlog-Detail + recherchierte Synthese: Cybersecurity-Agenten-
+  Ablaeufe 2026 (Discovery->Priorisierung->Exploitability-Validation->Remediation; CodeMender/IBM/Torq), fuer
+  LUNA L1->L2 (Antrag/Branch, kein Auto-Change, CEO-Tor). Zusaetzlich PRUEFEN-Punkte: NVIDIA Skills (Kern =
+  Physical-AI/CUDA, NICHT 1:1; aber SkillSpector + OpenShell + awesome-agent-skills relevant), MemPalace
+  (verlustfreies hierarchisches Gedaechtnis -- Konzepte lernbar, Provenienz/Hype verifizieren), „The Agency"
+  agency-agents #525 (Deliverable-Fokus/Erfolgsmetriken je Charta).
+- **Warum:** CEO-Anweisung -- neue offene Punkte + Recherche-Auftrag.
+- **Betroffen:** `ROADMAP.md`. Nur Doku/Recherche.
+
 ## [2026-07-02 23:20] — Claude Code — #2 Dashboard-Prefs geraeteuebergreifend LIVE bestaetigt
 - **Was:** CEO hat `docs/hcc_luna_os_prefs.sql` ausgefuehrt + luna-os neu gestartet. Live verifiziert (NAS-curl):
   Tabelle `luna_os_prefs` existiert (1 Zeile), `GET /api/prefs` -> HTTP 200 mit echtem gespeichertem

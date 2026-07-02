@@ -29,7 +29,10 @@
 | 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 live 2026-06-27 — funktioniert; „intelligenter machen" = Backlog (spaeter) |
 | 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | ✅ **VOLL LIVE 2026-06-27** -- LAN + **HTTPS extern** (`https://os.hanserautisch.synology.me`, ein Lesezeichen ueberall), Login, Mond-Orb/Chat, agentisches Mehr-Info, Detailansicht, Mobil, echte Umlaute, futuristisches Design, Sprach-Kontextbefehle |
 | 17 | **LUNA bedient den Rechner / Live-Co-Working** (Computer-Use; paralleles Arbeiten im Gespraech -- ich sehe, sie setzt um, justiert per Sprache, schlaegt vor; z. B. XMind/Mail) | 🔲 geplant (Backlog) |
-| 18 | **HCC -> LUNA-OS Konsolidierung** (CEO 2026-07-02: EIN System = LUNA-OS als Gehirn+Team-Web-Gesicht; altes nilshubv2/Next.js + Worker stilllegen; Supabase = DB + NAS-Fallback; content_ops/CRM/Team als LUNA-OS-Apps; Team-Auth/Rollen) | 🟡 laufend -- K0 (CRM-Pilot) erledigt; Roadmap `HCC_INTEGRATION_ROADMAP.md`, Bestand `docs/HCC_BESTAND.md` |
+| 18 | **HCC -> LUNA-OS Konsolidierung** (EIN System = LUNA-OS; nilshubv2/Worker stillgelegt; Supabase = DB; content_ops/CRM/Team/Cutter als LUNA-OS-Apps; Team-Auth/Rollen) | ✅ **K0-K6 KOMPLETT 2026-07-02** -- nur noch 10 LUNA-Tabellen, Vercel/Worker weg; `HCC_INTEGRATION_ROADMAP.md` |
+| 19 | **CRM-Akte: Mail-Tracking** (Gmail-Mails je Unternehmen in die CRM-Akte aufnehmen) | 🔲 offen (CEO 2026-07-02) |
+| 20 | **Kanaluebergreifende Nachrichten-Timeline** (Instagram-DMs + Mails + Telegram chronologisch je Kontakt/Unternehmen) | 🔲 offen (CEO 2026-07-02) |
+| 21 | **Cybersecurity-Agent** (CISO-Ausbau: Zugriffe verhindern · Luecken finden · Luecken schliessen) | 🔲 offen (CEO 2026-07-02, recherchiert -- s. Backlog) |
 
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
@@ -386,6 +389,67 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
 ---
 
 ## 8. Backlog (niedrige Prioritaet, „ganz nach hinten")
+
+### Neu — CEO 2026-07-02 (Phasen 19-21 + Recherche-Backlog)
+
+- **Phase 19 — CRM-Akte: Mail-Tracking (CEO 2026-07-02):** Die CRM-Akte eines Unternehmens (`crm_companies`
+  + `crm_messages`) soll auch **E-Mails** mit tracken. Baustein vorhanden: Google Workspace (Phase 11) ist live
+  (`governance/google_workspace.py`, Gmail-Lesen frei). Umsetzung: je CRM-Unternehmen die zugehoerigen Gmail-
+  Mails (Match ueber Domain/Absender/Empfaenger) als CRM-Nachricht-Zeilen (Kanal `mail`) in die Akte spiegeln
+  -> erscheinen in der Collab-CRM-App neben Instagram-DMs. **Als Loop** (governance/autonomie-stufen.md): Mail-
+  Watcher (schon im Bot-Poll) -> Zuordnung zu Unternehmen -> Write-Through nach Supabase (wie CRM-Projektion).
+  Sicher: nur Lesen/Spiegeln; Senden bleibt gated.
+
+- **Phase 20 — Kanaluebergreifende Nachrichten-Timeline (CEO 2026-07-02):** Eine **Timeline**, die Nachrichten
+  **kanaluebergreifend chronologisch** zeigt (Instagram-DMs + Mails + Telegram + spaeter weitere) -- je Kontakt/
+  Unternehmen und/oder global. Baut auf Phase 19 auf (einheitliches `crm_messages`-Schema mit `kanal`-Feld als
+  gemeinsamer Nenner). Umsetzung: LUNA-OS-App/Panel „Timeline" -- ein Endpunkt liefert die gemergten, nach Zeit
+  sortierten Nachrichten aller Kanaele; Filter je Kanal/Kontakt. Kein Auto-Antworten (Oeffentlichkeit = CEO-Tor).
+
+- **Phase 21 — Cybersecurity-Agent (CISO-Ausbau) (CEO 2026-07-02, recherchiert):** Dedizierter Security-Agent,
+  der drei Stossrichtungen bedient: **(a) Zugriffe verhindern · (b) Luecken finden · (c) Luecken schliessen.**
+  **Marktstand/Ablaeufe 2026 (recherchiert):** Security-Agenten laufen als **kontinuierlicher Loop** Scoping ->
+  Discovery (Angriffsflaeche/Assets) -> Priorisierung -> **Exploitability-Validation** (nicht nur „CVE da",
+  sondern „wirklich ausnutzbar?") -> Remediation/Mobilization. Bausteine anderer: Vulnerability-Discovery im
+  eigenen Code inkl. Zero-Days + Auto-Patch (Google DeepMind **CodeMender**), Alert-Triage/Investigation
+  (SOC-Tier-1-Automatisierung, Torq **Socrates** ~90 %), autonome Remediation-Pipelines (IBM **Autonomous
+  Security**, „Repair Agent"), **Abwehr agentischer Angriffe** (IBM 2026: eigene Agenten koennen Ziel werden).
+  **Fuer LUNA (L1->L2, KEINE autonome Systemaenderung):** Loop wie unsere anderen -- L1 melden (Findings), L2
+  Vorschlag als **Antrag/Branch+Tests** (CEO-Merge). Kostenlose Bausteine: Dependency-CVEs (`pip-audit`/
+  `npm audit`), Secret-Scan (unser `leak_guard` + gitleaks), statische Code-Sicherheitspruefung (Fachagent /
+  `security-review`-Skill), Config-/Permission-Audit (Non-root-Container ✓, Supabase-RLS ✓, `.env`-Rechte,
+  offene Ports). Nutzt vorhandene **Zugriffs-Governance** (AGENTS.md 5.7: CISO autorisiert, CTO setzt um) +
+  Self-Maintenance. **Wirkung (Zugriff sperren/aendern, Keys rotieren) bleibt CEO-Tor.** Verwandt: NVIDIA
+  **SkillSpector** (Security-Scanner fuer Agent-Skills) + **OpenShell** (sichere Agenten-Sandbox) -- s. u.
+
+- **PRUEFEN — NVIDIA Agent Skills (Open Source, GitHub) (CEO 2026-07-02):** NVIDIA hat 2026 Agent-Skills/Tools
+  frei veroeffentlicht (`github.com/NVIDIA/skills`, `skills.sh`, NeMo-Agent-Toolkit). **Befund:** die Kern-Skills
+  sind **NVIDIA-software- + Physical-AI/Robotik-spezifisch** (CUDA-X, Simulation, autonome Fahrzeuge) -> fuer
+  unser Content-/Business-Agentenunternehmen **NICHT 1:1** uebernehmbar. **ABER wertvoll:** (1) **SkillSpector**
+  (`github.com/NVIDIA/skillspector`) -- Security-Scanner fuer Agent-Skills (Schwachstellen/malicious patterns);
+  passt direkt zu Phase 21, da wir Claude-Code-Skills nutzen. (2) **OpenShell** (`github.com/NVIDIA/openshell`)
+  -- sichere Sandbox-Runtime fuer autonome Agenten; relevant fuer unsere Execution-Engine (Phase 7). (3)
+  Skill-Oekosystem **VoltAgent/awesome-agent-skills** (1000+ Claude-Code-kompatible Skills) gezielt nach fuer uns
+  nutzbaren Skills durchsuchen. **Ergebnis = Antrag (CEO-Tor).**
+
+- **PRUEFEN — MemPalace (persistentes Gedaechtnis) (CEO 2026-07-02):** Viral gewordenes Open-Source-Langzeit-
+  gedaechtnis: **verlustfrei** + hierarchisch nach **Method-of-Loci** (Wings/Rooms/Halls), local-first
+  (ChromaDB+SQLite), **inkrementelles/token-frugales Laden** (~170 Token Startup), Schichten (working/episodic/
+  semantic/procedural), Spitzenwerte auf LongMemEval. **Wir haben schon:** Second Brain (`core/brain.py`),
+  Memory (`core/memory.py`, JSONL append-only + Recall), Datei-Auto-Memory -- aber **flacher/einfacher**.
+  **Lernbar:** hierarchische statt flache Organisation · verlustfreie Speicherung + inkrementelles Recall (passt
+  zu unserem Kostenprinzip) · local-first. **Vorsicht:** Provenienz/Hype fragwuerdig („Promi-Entwickler", 22k
+  Stars in 48h) -> **Substanz + Lizenz verifizieren** vor Uebernahme; wahrscheinlich **Konzepte** uebernehmen,
+  nicht das Tool. **Ergebnis = Second-Brain-Ausbau-Antrag (CEO-Tor).**
+
+- **PRUEFEN — „The Agency" (agency-agents Issue #525) (CEO 2026-07-02):** Sammlung rollen-/persona-basierter
+  Spezialisten-Agenten, **deliverable-fokussiert**, „battle-tested" Workflows mit Erfolgsmetriken. **Wir haben
+  schon:** 14 Abteilungs-Agenten mit Charten (AGENTS.md). **Uebernehmen-Kandidaten:** staerkerer **Ergebnis-/
+  Deliverable-Fokus** + **Erfolgsmetriken je Charta**, ausgepraegtere Personas, validierte Workflows. Umsetzung
+  nur ueber den **Head of Agents auf CEO-Anweisung** (Charta-Schreibrecht, AGENTS.md 3.3). Quelle:
+  `github.com/msitarzewski/agency-agents/issues/525`. **Ergebnis = Charta-Diff-Vorlage (CEO-Tor).**
+
+### Aelterer Backlog
 
 - **Social Media Analyzer (CEO-Wunsch 2026-06-29):** Agent/Tool, in das der CEO **monatlich** die Zahlen aus
   **Instagram- und Facebook-Insights** laedt (Export/CSV oder manuell), das daraus die Kennzahlen aufbereitet
