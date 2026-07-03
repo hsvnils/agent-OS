@@ -41,10 +41,29 @@
 | **Brand-Voice-Framework (4 Dimensionen) + Konsistenz** (CBO) | 2026-07-04 | **UEBERNEHMEN** (in CBO-Skills) | `skills/cbo/` markenstimme + markenkonformitaet-pruefen |
 | **6 Datenqualitaets-Dimensionen + North-Star/Vanity** (CDO) | 2026-07-04 | **UEBERNEHMEN** (in CDO-Skills) | `skills/cdo/` datenqualitaet-pruefen + kennzahlen-definieren |
 | **MBB-Beratungsframeworks** (MECE/Issue-Tree/Hypothesen/Pyramid/Porter/BCG/Ansoff/BMC) (UB) | 2026-07-04 | **TEILWEISE UEBERNEHMEN** (Prinzipien, nicht Ballast) | `skills/berater/` (3 Skills) |
+| **safishamsi/graphify** (Code/Docs -> Knowledge-Graph fuer Coding-Assistenten) | 2026-07-04 | **REFERENZ / OPTIONAL** (kein Laufzeit-Bedarf; ggf. Ad-hoc-CLI) | Dev-Codebasis-Uebersicht, nicht in LUNA |
 
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-07-04 — safishamsi/graphify (CEO-Frage: hilft uns das?)
+
+**Was:** Python/MIT-Dev-Tool (CLI + MCP-Server + IDE-Skill), das Codebasis/Docs/Medien in einen abfragbaren
+**Knowledge-Graph** verwandelt, damit **KI-Coding-Assistenten** ein Projekt semantisch verstehen (Tree-sitter-
+AST + LLM-Backends + Community-Detection/Leiden; optional Neo4j/Postgres). Aktiv (v0.9.5, Juli 2026).
+
+**Bewertung durch unsere Brille:** Zielt auf **Code-Verstaendnis fuer Coding-Assistenten** -- **nicht** auf
+unser Geschaeft (Content/Reels/CRM/Social/Abteilungen). Einzige plausible Nische: unsere wachsende LUNA-
+Codebasis als Architektur-Graph (Dev-Hilfe / besserer Kontext fuer Execution/Self-Dev). Aber: Claude Code
+navigiert die Codebasis bereits via grep/read; das Tool ist **schwer** (Tree-sitter/uv/optional Neo4j) und
+**token-kostend** (LLM-Analyse) -> gegen „dependency-arm/token-frugal/local-first"; MCP/Import waere zudem
+Security-Gate + CEO-Tor.
+
+**Entscheidung:** **REFERENZ / OPTIONAL** -- **kein Laufzeit-Einbau in LUNA**. Falls je noetig: **gelegentlich
+als CLI** (`graphify extract`) fuer eine einmalige Codebasis-/Architektur-Uebersicht. Aktuell **kein Bedarf**.
+
+**Quelle:** github.com/safishamsi/graphify (README).
 
 ### 2026-07-04 — UB-Recherche: MBB-Beratungsframeworks (CEO-Auftrag „richtig wertvoll machen")
 

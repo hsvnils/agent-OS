@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 05:50] — Claude Code — Bewertung: safishamsi/graphify (Register)
+- **Was:** CEO-Frage geprueft und im `docs/entscheidungs-register.md` protokolliert. graphify = Dev-Tool
+  (Code/Docs -> Knowledge-Graph fuer Coding-Assistenten). Kein Bezug zu unserem Geschaeft; einzige Nische =
+  Codebasis-Uebersicht, aber schwer + token-kostend + gegen unsere Prinzipien. Entscheidung: REFERENZ/OPTIONAL,
+  kein Laufzeit-Einbau; ggf. Ad-hoc-CLI. Kein Bedarf jetzt.
+- **Warum:** CEO-Auftrag „schau ob es uns weiterhilft".
+- **Betroffen:** `docs/entscheidungs-register.md`.
+
 ## [2026-07-04 05:35] — Claude Code — CEO-Ziel aufgenommen: Auto-Reel-Pipeline -> Facebook (Ad-Umsatz)
 - **Was:** Neues CEO-Ziel (demnaechst) in `ROADMAP.md` (`## 8. Backlog`, oben) dokumentiert: Sammelordner ->
   Cutter schneidet taeglich ein 45-Sek-Reel -> automatischer Facebook-Upload (Ad-Umsatz), Stimmung/Inhalt
