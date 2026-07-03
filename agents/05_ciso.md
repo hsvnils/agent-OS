@@ -35,6 +35,13 @@ und verbindliche Sicherheits-Policies. **Autorisiert Zugriffs-/Berechtigungsverg
 - Zugriffs-Policy und Rollen-/Rechtekonzepte, Sicherheits-/DSGVO-Bewertungen, Risiko- und Massnahmenlisten,
   Incident-Reports.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** aktuelle Zugriffs-Policy, Sicherheits-Audit-Berichte (SARIF/JSON), Risiko-/Massnahmen-
+  liste, Incident-Reports.
+- **Erfolgsmetriken:** 0 offene `hoch`-Befunde im letzten Audit; Risiko-Score im Trend fallend; 100 %
+  der neuen Fremd-Skills/Tools vor Uebernahme durchs Security-Gate (Phase 22/24); kurze Reaktionszeit
+  bei Incidents.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Secrets- und Zugriffs-Audit.
 - DSGVO-Pruefung neuer Datenfluesse.

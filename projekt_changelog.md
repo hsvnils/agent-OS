@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 14:45] — Head of Agents (Claude Code) — Phase 24 (b): Erfolgsmetriken je Charta (CEO-freigegeben)
+- **Was:** Neuer Charta-Abschnitt „## Erfolgsmetriken & Deliverables" in `agents/_TEMPLATE.md` (Vorlage) und
+  beispielhaft befuellt in `agents/05_ciso.md` (CISO). Restliche 16 Charten folgen als separater Sammel-Diff
+  (jeweils CEO-Freigabe).
+- **Warum:** CEO-Freigabe am 2026-07-03 (Diff vorgelegt + bestaetigt) fuer Phase 24 Baustein (b) --
+  Deliverable-Fokus + messbare Erfolgskriterien je Charta (AGENTS.md 3.3: Charta-Aenderung nur HoA auf
+  CEO-Anweisung mit Diff).
+- **Betroffen:** `agents/_TEMPLATE.md`, `agents/05_ciso.md`.
+
 ## [2026-07-03 14:30] — Claude Code — Phase 24 (c)+(a): Skill-Security-Gate + Format-Standard
 - **Was:** Baustein (c) -- neues Modul `core/skill_gate.py`: statisches Sicherheits-Gate `pruefe_skill()` fuer
   Skill-Ordner (SKILL.md + Skripte), fuehrt NICHTS aus. Prueft Prompt-Injection in SKILL.md

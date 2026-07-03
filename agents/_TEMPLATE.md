@@ -22,6 +22,10 @@ Modell: <empfohlenes Modell, modell-agnostisch>
 ## Output-Format
 - <wie Ergebnisse an den Head of Agents geliefert werden>
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** <konkrete Ergebnis-Artefakte, die dieser Agent liefert>
+- **Erfolgsmetriken:** <messbare Kriterien, woran Erfolg erkennbar ist (Ziel/Schwelle)>
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - <wiederkehrende Aufgabe dieses Agenten>
 
