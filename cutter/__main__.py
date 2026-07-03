@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 from .pipeline import schneide_ordner
@@ -18,7 +19,13 @@ def main(argv=None) -> int:
                    help="Keine Transkription (schneller; ohne Sprach-Erkennung/-Trimmen).")
     p.add_argument("--mit-untertitel", action="store_true",
                    help="Untertitel erzeugen (Standard: AUS).")
+    p.add_argument("--video-ki", action="store_true",
+                   help="OPT-IN: Clips zu Gemini hochladen (Video-Verstaendnis fuer die Reihenfolge). "
+                        "CEO-Tor: sendet Rohclips an Google (Paid-Tier). Braucht GEMINI_API_KEY.")
     a = p.parse_args(argv)
+
+    if a.video_ki:                                     # Schalter setzt die Opt-in-Env fuer diesen Lauf
+        os.environ["CUTTER_VIDEO_KI"] = "1"
 
     bericht = schneide_ordner(a.ordner, a.ausgabe, ziel_dauer=a.dauer,
                               transkribieren=not a.ohne_transkript, gemini=not a.ohne_gemini,

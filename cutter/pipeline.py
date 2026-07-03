@@ -9,6 +9,7 @@ Liefert KEINE Veroeffentlichung -- nur die fertige Datei (Instagram-Posten bleib
 """
 from __future__ import annotations
 
+import os
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -53,8 +54,24 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
     if not auswahlen:
         return {"ok": False, "fehler": "Keine lesbaren Clips."}
 
+    reihenfolge_methode = "dateiname"
     if gemini and env.get("GEMINI_API_KEY") and len(auswahlen) > 1:
-        order = _gemini_reihenfolge(auswahlen, env["GEMINI_API_KEY"])
+        order = None
+        # OPT-IN Video-Verstaendnis (CUTTER_VIDEO_KI=1): Clips werden zu Gemini hochgeladen (CEO-Tor, Paid-Tier).
+        if str(env.get("CUTTER_VIDEO_KI", "")).strip().lower() in ("1", "true", "yes", "on"):
+            try:
+                from .gemini_video import GeminiVideoClient, reihenfolge_via_video
+                order = reihenfolge_via_video(
+                    auswahlen, GeminiVideoClient(env["GEMINI_API_KEY"],
+                                                 env.get("CUTTER_VIDEO_MODEL", "gemini-2.5-flash-lite")))
+                if order:
+                    reihenfolge_methode = "gemini-video"
+            except Exception:
+                order = None
+        if order is None:                                  # Fallback: Text-Reihenfolge (nur Transkript)
+            order = _gemini_reihenfolge(auswahlen, env["GEMINI_API_KEY"])
+            if order:
+                reihenfolge_methode = "gemini-text"
         if order:
             auswahlen = [auswahlen[i] for i in order if 0 <= i < len(auswahlen)] or auswahlen
 
@@ -110,6 +127,7 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
         "ok": ok,
         "ausgabe": str(ausgabe) if ok else None,
         "transkriptions_weg": weg or "keiner (keine Untertitel)",
+        "reihenfolge": reihenfolge_methode,
         "clips_gesamt": len(clips),
         "verwendet": len(segmente),
         "dauer_sek": round(sum(a.dauer for a in auswahlen[:len(segmente)]), 1),
@@ -159,6 +177,10 @@ def _lade_env() -> dict:
             if line and not line.startswith("#") and "=" in line:
                 k, _, v = line.partition("=")
                 env[k.strip()] = v.strip().strip('"').strip("'")
+    # Cutter-Video-Schalter duerfen per Prozess-Umgebung (CLI --video-ki / launchd) gesetzt werden.
+    for k in ("CUTTER_VIDEO_KI", "CUTTER_VIDEO_MODEL"):
+        if os.environ.get(k):
+            env[k] = os.environ[k]
     return env
 
 

@@ -26,7 +26,7 @@
 | 12 | Durable Queue + 24/7-Watcher | ✅ umgesetzt |
 | 13 | Self-Development-Loop (Apex) | ✅ umgesetzt |
 | 14 | Freie Visualisierung (MindMap/Graph/Chart) | ✅ umgesetzt 2026-06-26 |
-| 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 live 2026-06-27 — funktioniert; „intelligenter machen" = Backlog (spaeter) |
+| 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 live 2026-06-27 — funktioniert. **Video-KI Opt-in-Pilot 2026-07-03** (`cutter/gemini_video.py`, `--video-ki`/`CUTTER_VIDEO_KI=1`, Default AUS): Gemini sieht die Clips an (statt nur Transkript) fuer die Reihenfolge — Aktivieren = CEO-Tor (Clips zu Google, Paid-Tier). Weiteres „intelligenter machen" = Backlog |
 | 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | ✅ **VOLL LIVE 2026-06-27** -- LAN + **HTTPS extern** (`https://os.hanserautisch.synology.me`, ein Lesezeichen ueberall), Login, Mond-Orb/Chat, agentisches Mehr-Info, Detailansicht, Mobil, echte Umlaute, futuristisches Design, Sprach-Kontextbefehle |
 | 17 | **LUNA bedient den Rechner / Live-Co-Working** (Computer-Use; paralleles Arbeiten im Gespraech -- ich sehe, sie setzt um, justiert per Sprache, schlaegt vor; z. B. XMind/Mail) | 🔲 geplant (Backlog) |
 | 18 | **HCC -> LUNA-OS Konsolidierung** (EIN System = LUNA-OS; nilshubv2/Worker stillgelegt; Supabase = DB; content_ops/CRM/Team/Cutter als LUNA-OS-Apps; Team-Auth/Rollen) | ✅ **K0-K6 KOMPLETT 2026-07-02** -- nur noch 10 LUNA-Tabellen, Vercel/Worker weg; `HCC_INTEGRATION_ROADMAP.md` |

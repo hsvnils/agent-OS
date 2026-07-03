@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 19:20] — Claude Code — Cutter: Gemini-Video-Verstaendnis als Opt-in-Pilot (CEO-freigegeben)
+- **Was:** Neues `cutter/gemini_video.py` -- laedt Clips per Files-API zu Gemini hoch und laesst das Modell
+  sie ANSEHEN (statt nur Transkript-Text) fuer die Reihenfolge (`GeminiVideoClient` + `reihenfolge_via_video`,
+  urllib-REST, kein SDK; 360p-Proxy-Downsampling; robuster Fallback -> None). Verdrahtet in `cutter/pipeline.py`
+  (nur bei `CUTTER_VIDEO_KI=1`, Fallback Text->Dateiname; Bericht-Feld `reihenfolge`), CLI-Schalter `--video-ki`
+  in `cutter/__main__.py`, `_lade_env` uebernimmt die Video-Schalter aus der Prozess-Umgebung. README ergaenzt.
+  **Default AUS**; Aktivieren bleibt CEO-Tor (Rohclips zu Google, Paid-Tier `gemini-2.5-flash-lite`). +10 Tests
+  (Cutter 21 gruen). Register-Eintrag aktualisiert.
+- **Warum:** CEO-freigegeben (Wahl „Opt-in-Pilot bauen"). Code ist inert bis Flag+Paid-Key gesetzt -> das
+  Geld/Datenschutz-Tor bleibt beim CEO.
+- **Betroffen:** `cutter/gemini_video.py` (neu), `cutter/pipeline.py`, `cutter/__main__.py`,
+  `cutter/README.md`, `cutter/tests/test_gemini_video.py` (neu), `docs/entscheidungs-register.md`, `ROADMAP.md`.
+
 ## [2026-07-03 18:40] — Claude Code — Recherche „Gemini Omni" fuer den Cutter (Ergebnis im Register)
 - **Was:** Bewertung des CEO-Wunsches „Gemini Omni" (Video-Verstaendnis) fuer den Cutter im
   `docs/entscheidungs-register.md` protokolliert (Index + Detail). Befund: kein Produkt „Omni" = multimodale

@@ -38,6 +38,18 @@ python -m cutter /Pfad/zum/Clip-Ordner            # -> <ordner>/<name>_reel.mp4
 python -m cutter <ordner> --dauer 30 --ohne-gemini # Optionen
 ```
 
+**Video-KI (OPT-IN, Standard AUS):** Normalerweise ordnet Gemini die Clips nur anhand des **Transkripts**
+(es sieht die Clips nicht). Mit `--video-ki` (oder `CUTTER_VIDEO_KI=1` in der Umgebung) werden die Clips als
+**Video zu Gemini hochgeladen**, damit das Modell sie **ansieht** (visueller Hook/Highlight -> bessere
+Reihenfolge). Modell per `CUTTER_VIDEO_MODEL` (Default `gemini-2.5-flash-lite`).
+```bash
+python -m cutter <ordner> --video-ki      # A/B gegen die normale (Text-)Reihenfolge
+```
+> **CEO-Tor / Datenschutz:** Dabei gehen die **Rohclips an Google**. Nur auf **Paid-Tier** vertretbar
+> (Free-Tier nutzt Inhalte fuers Training). Kosten sind gering (~1-3 Cent/Lauf), aber es ist bewusst opt-in.
+> Bei jedem Fehler faellt der Cutter automatisch auf die Text- bzw. Dateiname-Reihenfolge zurueck. Der
+> Bericht zeigt unter `reihenfolge`, welcher Weg genutzt wurde (`gemini-video` | `gemini-text` | `dateiname`).
+
 **Unbeaufsichtigt (Mac anlassen, Clips reinlegen — fertig):**
 ```bash
 python -m cutter.watch        # Inbox ~/CutterInbox  ->  Outbox ~/CutterOutbox

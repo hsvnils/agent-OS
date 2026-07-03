@@ -28,7 +28,7 @@
 | **ruflo** -- *Einzelideen* (AIDefence, Trajektorien-Lernen) | 2026-07-03 | **TEILWEISE** (2 Ideen) | Phase 23 / Phase 26 |
 | **agency-agents #525** („The Agency") | 2026-07-03 | **MINIMAL** (nur Metrik-Idee) | Phase 24 |
 | **VoltAgent/awesome-agent-skills** (1000+ Skills) | 2026-07-03 | **SPAETER** (nur via Security-Gate) | Phase 24 |
-| **Gemini „Omni"** (Video-Verstaendnis fuer den Cutter) | 2026-07-03 | **SPAETER/OPTIONAL** (Opt-in-Pilot, CEO-Tor) | Cutter Phase 15 -- Antrag an CEO |
+| **Gemini „Omni"** (Video-Verstaendnis fuer den Cutter) | 2026-07-03 | **OPT-IN-PILOT GEBAUT** (Aktivieren = CEO-Tor) | Cutter Phase 15 (`--video-ki`) |
 
 ---
 
@@ -55,9 +55,10 @@ Highlight-Verstaendnis, bessere Reihenfolge, „bester Ausschnitt", Untertitel).
   Transkripts). Nutzen v. a. bei **visuellem** Material (B-Roll/Action/Szenerie); bei reinem Talking-Head
   gering. Nachteil: harte Google-/Netz-Abhaengigkeit, Upload-Latenz, Datenschutz-Verschiebung.
 
-**Entscheidung:** **SPAETER/OPTIONAL** — empfohlen als **Opt-in-Pilot** (Flag/Env, Default bleibt lokal+gratis;
-Paid-Tier Flash-Lite; A/B gegen die lokale Reihenfolge). **CEO-Tor** (neuer kostenpflichtiger Dienst + Clips zu
-Google). Umsetzung erst nach CEO-Freigabe; noch **kein** Code geaendert.
+**Entscheidung:** **OPT-IN-PILOT GEBAUT** (CEO-freigegeben 2026-07-03). `cutter/gemini_video.py` +
+`--video-ki`/`CUTTER_VIDEO_KI=1` (Default AUS, Paid-Tier `gemini-2.5-flash-lite`, Fallback Text->Dateiname,
+Bericht-Feld `reihenfolge`). **Aktivieren bleibt CEO-Tor** (Clips zu Google, Billing an) -- der Code ist
+inert, bis der CEO das Flag setzt + einen Paid-Key hinterlegt. A/B-Vergleich gegen die Text-Reihenfolge moeglich.
 
 **Quellen:** ai.google.dev/gemini-api/docs/pricing (258 Token/s Video; Flash-Lite $0.10 / Flash $0.30 pro 1M;
 Free-Tier „used to improve products" = ja, Paid = nein).
