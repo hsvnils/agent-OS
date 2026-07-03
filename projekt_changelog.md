@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 01:20] — Claude Code — CRO angereichert: erster Skill „kooperation-bewerten"
+- **Was:** Neuer gegateter Skill `skills/cro/kooperation-bewerten/SKILL.md` -- bewertet Kooperations-/
+  Sponsoring-Anfragen (Fit-Ampel, Red Flags), holt Reichweite/Engagement via `social_media_analyzer` +
+  Historie aus dem Collab-CRM, kalkuliert einen Angebots-Entwurf (Preis-Spanne, Annahmen offengelegt).
+  Gate-Verdikt: bestanden (Score 0); wird in den CRO-System-Prompt geladen (via `dept_skills`). Verbindliche
+  Zusagen/Preise/Vertraege bleiben CEO-Tor (Geld/Recht). 481 Tests gruen.
+- **Warum:** Pilot-Ausbau der Abteilung CRO (CEO-Wahl) auf dem neuen Skill-Mechanismus -- Skill = kein CEO-Tor.
+- **Betroffen:** `skills/cro/kooperation-bewerten/SKILL.md` (neu).
+
 ## [2026-07-04 01:00] — Claude Code — Abteilungs-Ausbau: Skills je Abteilung (Mechanismus)
 - **Was:** Neues `core/dept_skills.py` `lade_dept_skills(key, repo)` -- laedt Skills aus `skills/<key>/*`,
   jeden zuerst durch das Security-Gate (`skill_gate.pruefe_skill`); abgelehnte (hoch-Fund) werden NICHT
