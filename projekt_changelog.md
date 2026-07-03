@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 05:20] — Head of Agents (Claude Code) — Berater-Charta vertieft (CEO-freigegeben)
+- **Was:** `agents/01_unternehmensberater.md`: Auftrag + Aufgabenkatalog + Workflows verweisen auf die 3
+  Berater-Skills; **Output-Format auf Pyramid-Prinzip** (Empfehlung zuerst) gehoben; neuer Workflow
+  „Effizienz-Review". Status bleibt aktiv.
+- **Warum:** CEO-Freigabe am 2026-07-04 (Diff als 4 Bloecke + „anwenden"). AGENTS.md 3.3.
+- **Betroffen:** `agents/01_unternehmensberater.md`.
+
 ## [2026-07-04 05:10] — Claude Code — Unternehmensberater angereichert: 3 Beratungs-Skills
 - **Was:** Recherche (MBB-Beratungsframeworks) im Register protokolliert und genutzt: 3 gegatete Skills unter
   `skills/berater/` -- `strukturiertes-problemloesen` (MECE/Issue-Tree/Hypothesen/7-Schritte + Pyramid-Output),
