@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 23:00] — Claude Code — Social-Media-Analyzer (Kern): Insights -> Kennzahlen + Media-Kit
+- **Was:** Neues `core/social_kit.py`: `MetaInsights` (Meta Graph API v22, eigenes Konto, injizierbarer HTTP)
+  holt Follower/Reichweite/Profilaufrufe/Engagement (aus letzten Posts)/Top-Posts; `SocialStore` fuehrt eine
+  Monats-Historie (JSONL, juengster je Monat); `media_kit()` erzeugt den Media-Kit-Entwurf mit Monatstrend.
+  Tool `social_media_analyzer(monat?, nur_historie?)` in `hoa_tools.py` (holt bei Token, sonst Setup-Hinweis +
+  Historie); ToolContext-Feld `social`, in `bot.py` verdrahtet; Store gitignored + sync-ausgeschlossen.
+  Setup-Doku `docs/SOCIAL_ANALYZER_SETUP.md`. +8 Tests (451 gruen); Tool-Handler offline verifiziert (Trend
+  ggue. Vormonat). **Wichtig:** eigenes Konto braucht nur ein Admin-Token (Insights-Scope) -- NICHT GATE B.
+- **Warum:** CEO-Wunsch Social-Media-Analyzer. Import = Meta-API (CEO-Wahl), Canva-Autofill spaeter (CEO-Tor).
+- **Betroffen:** `orchestrator/core/social_kit.py` (neu), `orchestrator/core/hoa_tools.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_social_kit.py` (neu),
+  `docs/SOCIAL_ANALYZER_SETUP.md` (neu), `.gitignore`, `deploy/sync-to-nas.sh`, `ROADMAP.md`.
+
 ## [2026-07-03 22:15] — Claude Code — Cutter: szenenbewusster B-Roll-Ausschnitt (ffmpeg, lokal/gratis)
 - **Was:** Neuer `ffmpeg_ops.szenen_zeiten()` (Szenenwechsel via ffmpeg `select='gt(scene,..)'`, testbarer
   Parser `_parse_szenen_pts`). `pipeline._broll_start()` legt den B-Roll-Ausschnitt jetzt auf die laengste

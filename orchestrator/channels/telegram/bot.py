@@ -135,6 +135,8 @@ def _build_ctx(cfg: dict, secrets: dict):
     brain = Brain(ROOT / "brain" / "log.jsonl", secrets=secret_values)
     from ...core.trajektorien import TrajektorienStore
     trajektorien = TrajektorienStore(ROOT / "trajektorien" / "log.jsonl", secrets=secret_values)
+    from ...core.social_kit import SocialStore
+    social = SocialStore(ROOT / "social" / "log.jsonl", secrets=secret_values)
     insights = Insights(antraege=antraege, research=research, agenda=agenda, google=google,
                         secrets=secret_values)
     # Investment-Abteilung (CIO, advisory) -- Marktdaten via Capability, Alerts ueber den Notifier.
@@ -157,7 +159,7 @@ def _build_ctx(cfg: dict, secrets: dict):
                        notifications=notifications, agenda=agenda, secret_dict=secrets,
                        kosten=kosten, aktivitaet=aktivitaet, visuals=[],
                        brain=brain, insights=insights, investment=investment, crm=crm,
-                       trajektorien=trajektorien), secret_values
+                       trajektorien=trajektorien, social=social), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:

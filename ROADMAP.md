@@ -573,13 +573,12 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
 
 ### Aelterer Backlog
 
-- **Social Media Analyzer (CEO-Wunsch 2026-06-29):** Agent/Tool, in das der CEO **monatlich** die Zahlen aus
-  **Instagram- und Facebook-Insights** laedt (Export/CSV oder manuell), das daraus die Kennzahlen aufbereitet
-  und **automatisch das Media-Kit in Canva befuellt**. Bausteine: (1) Insights-Import (CSV/Screenshot/spaeter
-  Meta-Graph-API), (2) Kennzahlen-Aufbereitung + Monats-Historie (wie die CFO-Kostenstatistik), (3)
-  **Canva-Autofill** ueber Canva Connect API (Brand-Template-Autofill: Datensatz -> Design) ODER Canva-MCP.
-  Abklaeren: Canva-Plan/API-Zugang + Kosten (CFO), Meta-API-Zugang vs. manueller Export, Datenschutz. Posten/
-  Veroeffentlichen bleibt CEO-Tor; Tool liefert das befuellte Media-Kit als Entwurf. Ergebnis = Antrag (CEO-Tor).
+- **Social Media Analyzer (CEO-Wunsch 2026-06-29):** 🟡 **Kern gebaut 2026-07-03.** (1) Insights-Import ueber
+  **Meta Graph API** (eigenes Konto, `core/social_kit.py` `MetaInsights` -- Token vom CEO, KEINE App-Review;
+  Setup: `docs/SOCIAL_ANALYZER_SETUP.md`), (2) Kennzahlen (Follower/Reichweite/Profilaufrufe/Engagement/Top-
+  Posts) + **Monats-Historie** (`SocialStore`) + **Media-Kit-Entwurf** mit Monatstrend (`media_kit`), Tool
+  `social_media_analyzer`. **Offen (3):** **Canva-Autofill** (Canva Connect API -- Zugang/Kosten = CEO-Tor,
+  eigener Antrag). Posten/Veroeffentlichen bleibt CEO-Tor.
 - **ZEITNAH PRUEFEN — „Gemini Omni" fuer den Cutter (CEO-Wunsch 2026-06-29):** pruefen, ob Googles
   multimodales/Omni-Modell den Cutter (Phase 15) verbessert — z. B. inhaltliches Szenen-/Highlight-Verstaendnis,
   bessere Reihenfolge/Schnittauswahl, Auswahl des „besten Ausschnitts", evtl. Untertitel/Sprachverstaendnis.

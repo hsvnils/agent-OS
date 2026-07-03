@@ -38,6 +38,7 @@ class ToolContext:
     insights: object | None = None       # Tages-Insights/Lagebild oder None
     investment: object | None = None     # InvestmentEngine (CIO, advisory) oder None
     crm: object | None = None            # CrmStore (Collab-CRM, CRO) oder None
+    social: object | None = None         # SocialStore (Social-Media-Analyzer, CBO/CCO) oder None
 
 
 def tool_specs() -> list[dict]:
@@ -301,6 +302,13 @@ def tool_specs() -> list[dict]:
                "alle": {"type": "boolean", "description": "true -> auch Misserfolge einbeziehen (Default: nur "
                         "erfolgreiche)."}},
               ["aufgabe"]),
+        _spec("social_media_analyzer", "CBO/CCO: holt die Insights des EIGENEN Instagram-Kontos (Meta Graph API, "
+              "eigenes Token -- KEINE fremde App-Review noetig), verdichtet sie zu Kennzahlen mit Monats-Historie "
+              "und liefert einen Media-Kit-ENTWURF (Follower/Reichweite/Profilaufrufe/Engagement + Monatstrend). "
+              "Ohne Token: zeigt vorhandene Historie + Setup-Hinweis. Canva-Autofill/Posten bleibt CEO-Tor.",
+              {"monat": _str("Optional 'YYYY-MM' (Default: aktueller Monat)."),
+               "nur_historie": {"type": "boolean", "description": "true -> nicht neu abrufen, nur gespeicherte "
+                                "Zahlen/Media-Kit zeigen."}}, []),
         _spec("lagebild", "Proaktive Tages-Insights: was auf den CEO wartet (Entscheidungen/Antraege), heutige "
               "Termine, ungelesene Mails, offene Tickets, Agenda. Token-frugal aus den Stores + Google.",
               {}, []),
@@ -869,6 +877,37 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
              "ergebnis": redact(e.get("ergebnis", ""), sec), "erfolg": e.get("erfolg", True),
              "tags": e.get("tags", [])}
             for e in treffer]}
+
+    if name == "social_media_analyzer":
+        if ctx.social is None:
+            return {"fehler": "Social-Store nicht verfuegbar."}
+        from .social_kit import MetaInsights, media_kit
+        env = ctx.secret_dict or {}
+        monat = (args.get("monat") or "").strip() or None
+        token = env.get("INSTAGRAM_INSIGHTS_TOKEN") or env.get("INSTAGRAM_PAGE_TOKEN") or ""
+        ig_id = env.get("INSTAGRAM_IG_USER_ID") or ""
+        neu = None
+        if not args.get("nur_historie"):
+            mi = MetaInsights(token, ig_id)
+            if mi.verfuegbar:
+                snap = mi.hole(monat)
+                if snap is not None:
+                    ctx.social.speichere(snap)
+                    neu = snap.monat
+        aktuell = ctx.social.monat(monat or neu)
+        if aktuell is None:
+            hinweis = ("Noch keine Insights gespeichert. Fuer den Live-Abruf: INSTAGRAM_IG_USER_ID + ein "
+                       "Insights-Token (INSTAGRAM_INSIGHTS_TOKEN oder INSTAGRAM_PAGE_TOKEN) in der .env setzen "
+                       "(eigenes Konto -- keine App-Review noetig).") if not (token and ig_id) else \
+                      "Abruf lieferte keine Daten (Token/ID/Berechtigung pruefen)."
+            return {"ok": False, "hinweis": hinweis}
+        verlauf = ctx.social.verlauf()
+        idx = next((i for i, s in enumerate(verlauf) if s.get("monat") == aktuell.get("monat")), None)
+        vormonat = verlauf[idx - 1] if (idx is not None and idx > 0) else None
+        kit = media_kit(aktuell, vormonat)
+        return {"ok": True, "aktualisiert": bool(neu), "media_kit": redact(kit["media_kit_text"], sec),
+                "kennzahlen": kit["kennzahlen"], "top_posts": kit["top_posts"],
+                "monate_erfasst": [s.get("monat") for s in verlauf], "hinweis": kit["hinweis"]}
 
     if name == "lagebild":
         if ctx.insights is None:
