@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 20:00] — Claude Code — App-Review Instagram: Umfang + Feld-Texte fuer „Zulaessige Nutzung"
+- **Was:** `docs/APP_REVIEW_INSTAGRAM.md` um Abschnitt 7 ergaenzt: Empfehlung, nur `instagram_business_basic`
+  + `instagram_business_manage_messages` einzureichen und **Human Agent** + `instagram_business_manage_insights`
+  aus der Einreichung zu ENTFERNEN (App empfaengt nur DMs, sendet nichts; „insights" im Code = internes
+  Lagebild, nicht IG-Analytics). Fertige englische Feld-Texte je Berechtigung + Screencast-/Zustimmungshinweis.
+- **Warum:** GATE B / Meta App-Review; Berechtigungen ohne demonstrierbaren Screencast -> Ablehnungsrisiko.
+  Vorbereitung fuer die CEO-Einreichung (Oeffentlichkeits-/CEO-Tor -- Einreichen macht der CEO).
+- **Betroffen:** `docs/APP_REVIEW_INSTAGRAM.md`.
+
 ## [2026-07-03 19:20] — Claude Code — Cutter: Gemini-Video-Verstaendnis als Opt-in-Pilot (CEO-freigegeben)
 - **Was:** Neues `cutter/gemini_video.py` -- laedt Clips per Files-API zu Gemini hoch und laesst das Modell
   sie ANSEHEN (statt nur Transkript-Text) fuer die Reihenfolge (`GeminiVideoClient` + `reihenfolge_via_video`,
