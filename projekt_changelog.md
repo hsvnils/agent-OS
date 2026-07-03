@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 04:40] — Claude Code — CDO angereichert: 2 Skills (datenqualitaet-pruefen, kennzahlen-definieren)
+- **Was:** Recherche (6 Datenqualitaets-Dimensionen + North-Star/Vanity 2026) im Register protokolliert und
+  genutzt: `skills/cdo/datenqualitaet-pruefen` (Raster Genauigkeit/Vollstaendigkeit/Konsistenz/Aktualitaet/
+  Gueltigkeit/Eindeutigkeit -> Ampel + Quelle/Stand) und `skills/cdo/kennzahlen-definieren` (North-Star-Metrik
+  + actionable KPIs, Vanity-Test/-Kennzeichnung). Beide Gate: bestanden; CDO laedt 2 Skills. CDO liefert
+  Grundlage, keinen Beschluss; PII -> CISO. Suite gruen.
+- **Warum:** Abteilungsausbau CDO (nach CBO) -- online recherchiert, lokal als Skills (kein CEO-Tor).
+- **Betroffen:** `skills/cdo/datenqualitaet-pruefen/SKILL.md` (neu), `skills/cdo/kennzahlen-definieren/SKILL.md`
+  (neu), `docs/entscheidungs-register.md`.
+
 ## [2026-07-04 04:20] — Head of Agents (Claude Code) — CBO-Charta vertieft (CEO-freigegeben)
 - **Was:** `agents/06_cbo.md`: Markenstimme praezisiert (4 Tonalitaets-Dimensionen, Skill `markenstimme`);
   Aufgabenkatalog + Marken-Review-Workflow verweisen jetzt auf die Skills (`markenstimme`,

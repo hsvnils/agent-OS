@@ -39,10 +39,29 @@
 | **awesome-mcp-servers / best-of-mcp-servers** | 2026-07-03 | **REFERENZ** (Tool-Discovery) | Import nur via Security-Gate + CEO-Tor |
 | **Creator-Monetarisierung/Pricing-Benchmarks 2026** (CRO) | 2026-07-04 | **UEBERNEHMEN** (in CRO-Skills) | `skills/cro/` pricing-struktur + umsatz-diversifizierung |
 | **Brand-Voice-Framework (4 Dimensionen) + Konsistenz** (CBO) | 2026-07-04 | **UEBERNEHMEN** (in CBO-Skills) | `skills/cbo/` markenstimme + markenkonformitaet-pruefen |
+| **6 Datenqualitaets-Dimensionen + North-Star/Vanity** (CDO) | 2026-07-04 | **UEBERNEHMEN** (in CDO-Skills) | `skills/cdo/` datenqualitaet-pruefen + kennzahlen-definieren |
 
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-07-04 — CDO-Recherche: Datenqualitaets-Dimensionen + North-Star/Vanity (CEO-Auftrag)
+
+**Kontext:** CDO-Ausbau -- online nach nuetzlichen Daten-/KPI-Frameworks gesucht.
+
+**Befund:**
+- **6 Datenqualitaets-Dimensionen** (Wang/Strong 1996): Genauigkeit, Vollstaendigkeit, Konsistenz,
+  Aktualitaet, Gueltigkeit, Eindeutigkeit -- Standard-Raster zur Pruefung, bevor Zahlen weitergegeben werden.
+- **North-Star-Metrik + actionable vs. vanity:** eine Leitmetrik (beantwortet „So what?"), wenige actionable
+  KPIs (Engagement-Rate, Conversion, CAC/CLV, Umsatz/wiederkehrend), Vanity (Follower/Likes/Views) nur als
+  Kontext. **Vanity-Test:** „steigt die Zahl auch, wenn's schlechter wird?" -> dann Vanity.
+
+**Entscheidung:** **UEBERNEHMEN in CDO-Skills** (lokal): `skills/cdo/datenqualitaet-pruefen` (6-Dim-Raster
+-> Ampel) und `skills/cdo/kennzahlen-definieren` (North Star + actionable, Vanity kennzeichnen). North-Star-
+Wahl = CEO-Bestaetigung; CDO liefert Grundlage, keinen Beschluss; PII -> CISO/DSGVO.
+
+**Quellen:** iceDQ / IBM / Collibra / dbt (Datenqualitaets-Dimensionen); Neal Schaffer / Amplitude / Mixpanel
+(North-Star-/Vanity-Metriken).
 
 ### 2026-07-04 — CBO-Recherche: Brand-Voice-Framework + Markenkonsistenz (CEO-Auftrag)
 
