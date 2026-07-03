@@ -33,6 +33,17 @@ Definiere je Leistung ein Paket; typische Bausteine:
 - **Richtwert je 1.000 Follower ist eine CEO-Vorgabe.** Ist sie in `finance/`/Charta hinterlegt -> diese nehmen.
   Sonst: eine **begruendete Annahme** klar als solche kennzeichnen und dem CEO zur Bestaetigung vorlegen.
 
+## Marktbenchmark (2026, Referenz -- KEINE Vorgabe)
+Nur zur Einordnung/Plausibilisierung; der verbindliche Preis ist eine CEO-Entscheidung.
+- **Tier Micro (10k-100k Follower):** ~500-5.000 USD je Feed-Post -- grosse Spanne, stark abhaengig von
+  Engagement/Nische. (Nano <10k deutlich weniger; Mid >100k deutlich mehr.)
+- **Grobe Faustregel Startwert:** ~10 USD je 1.000 Follower fuer einen Feed-Post, dann mit Engagement-/
+  Nischen-/Regions-Faktor anpassen (USD ~ EUR fuer die grobe Einordnung).
+- **Format:** Reel 1,5-3x Feed-Post; Story deutlich guenstiger.
+- **Engagement:** > ~5% Engagement-Rate -> 40-60% Aufschlag ueblich.
+- **Publikum:** DACH/westlich -> +20-40% ggue. Schwellenmaerkten.
+- Quellen: Influencer Marketing Hub / Later / Shopify (2026-Benchmarks).
+
 ## Output (an den Head of Agents)
 Eine kompakte **Paket-/Preis-Tabelle**: Paket · Leistung · Richtpreis-Spanne · Aufschlag-Optionen · Annahmen.
 Bei Bedarf zusaetzlich eine Empfehlung, welches Paket zur konkreten Anfrage passt.

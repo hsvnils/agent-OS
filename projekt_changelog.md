@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 03:30] — Claude Code — CRO-Recherche verwertet: Benchmarks + Diversifizierungs-Skill
+- **Was:** Online-Recherche (Creator-Monetarisierung/Pricing-Benchmarks 2026) im `docs/entscheidungs-register.md`
+  protokolliert und direkt genutzt: `skills/cro/pricing-struktur` um „Marktbenchmark (2026, Referenz)" ergaenzt
+  (Micro-Tier 500-5.000 USD, ~10 USD/1.000 Follower, Reel 1,5-3x, Engagement/DACH-Aufschlag -- als Referenz,
+  kein Fixpreis); neuer Skill `skills/cro/umsatz-diversifizierung` (Einnahmen-Mix jenseits Sponsoring: Affiliate/
+  digitale Produkte/Abos/UGC-Lizenzierung; Trend zu owned+wiederkehrend). CRO laedt jetzt **4 Skills**. Beide
+  Gate: bestanden. 490 Tests gruen. Geld/Recht bleibt CEO-Tor.
+- **Warum:** CEO-Auftrag „schau online nach Nuetzlichem fuer die Abteilung". Lokal, kein externes Tool/Kosten.
+- **Betroffen:** `skills/cro/pricing-struktur/SKILL.md`, `skills/cro/umsatz-diversifizierung/SKILL.md` (neu),
+  `docs/entscheidungs-register.md`.
+
 ## [2026-07-04 03:00] — Claude Code — CRO abgerundet: 2 weitere Skills (pricing-struktur, outreach-pitch)
 - **Was:** Zwei komplementaere CRO-Skills ergaenzt: `skills/cro/pricing-struktur/SKILL.md` (Kooperations-Pakete
   + transparente Richtpreis-Logik als Basis fuer `kooperation-bewerten`) und `skills/cro/outreach-pitch/SKILL.md`

@@ -37,10 +37,32 @@
 | **Instagram Private-API** (instagrapi/trypeggy) | 2026-07-03 | **VERWORFEN** (ToS-/Sperr-Risiko) | offizielle Graph-API bleibt |
 | **moviepy / captacity** (Video) | 2026-07-03 | **VERWORFEN** (unterbesetzt/ungewartet) | wir nutzen ffmpeg direkt |
 | **awesome-mcp-servers / best-of-mcp-servers** | 2026-07-03 | **REFERENZ** (Tool-Discovery) | Import nur via Security-Gate + CEO-Tor |
+| **Creator-Monetarisierung/Pricing-Benchmarks 2026** (CRO) | 2026-07-04 | **UEBERNEHMEN** (in CRO-Skills) | `skills/cro/` pricing-struktur + umsatz-diversifizierung |
 
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-07-04 — CRO-Recherche: Creator-Monetarisierung + Pricing-Benchmarks (CEO-Auftrag)
+
+**Kontext:** Beim CRO-Ausbau nach online Nuetzlichem fuer die Abteilung gesucht.
+
+**Befund (Benchmarks 2026):**
+- **Sponsored-Post-Preise je Tier:** Nano (<10k) ~100-500 USD; **Micro (10k-100k) ~500-5.000 USD**; Mid
+  (100k-1M) ~5.000-25.000 USD je Feed-Post. Faustregel-Startwert ~10 USD/1.000 Follower, dann anpassen.
+- **Preis-Treiber:** Engagement (>5% -> +40-60%), Format (Reel 1,5-3x Feed, Story guenstiger), Publikum
+  (DACH/westlich +20-40%).
+- **Umsatz-Mix/Trend:** Brand-Deals dominant (~69-82%), aber Verschiebung zu **owned + wiederkehrend**
+  (digitale Produkte ~67% der monetarisierenden Creator, Abos/Memberships, Affiliate, UGC-Lizenzierung).
+  Diversifizierung senkt Volatilitaet.
+
+**Entscheidung:** **UEBERNEHMEN in CRO-Skills** (lokal, kein externes Tool/Kosten): Benchmarks als *Referenz*
+in `skills/cro/pricing-struktur` (verbindlicher Preis bleibt CEO-Entscheidung); neuer Skill
+`skills/cro/umsatz-diversifizierung` fuer den Einnahmen-Mix. Keine Fixpreise erfunden -- alles Entwurf/
+Referenz, Geld/Recht = CEO-Tor.
+
+**Quellen:** Influencer Marketing Hub, Later, Shopify, Hootsuite (Influencer-Rates 2026); Circle / Influencer
+Marketing Factory (Creator-Economy-Statistiken 2026).
 
 ### 2026-07-03 — Repo-Recherche „GitHub-Bausteine fuer LUNA-OS" (CEO-Report)
 
