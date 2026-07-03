@@ -400,6 +400,36 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
 
 ## 8. Backlog (niedrige Prioritaet, „ganz nach hinten")
 
+### CEO-Ziel 2026-07-04 (DEMNAECHST, Prio) — Vollautomatische taegliche Reel-Pipeline -> Facebook (Ad-Umsatz)
+
+**Ziel:** Aus einem **Sammelordner mit Videos** schneidet der Cutter **taeglich** automatisch ein kurzes
+**45-Sek-Reel**, das **automatisch auf Facebook** hochgeladen wird und via **Ads Umsatz** bringt.
+**Stimmung/Inhalt variieren taeglich**; alle Ergebnisse werden in einer **festen Dateistruktur** abgelegt.
+**Laeuft vollautomatisch.**
+
+**Bausteine (haben wir / fehlt):**
+1. **Sammelordner** (Quelle) — trivial.
+2. **Taegliche Auswahl + Schnitt** — der **Cutter existiert** (ffmpeg + whisper.cpp + Gemini-Reihenfolge,
+   szenenbewusst, Ziel-Dauer bereits Parameter `ziel_dauer=45`). Fehlt: **Tages-Scheduler** (launchd/cron)
+   + **Auswahl-Variation** (jeden Tag andere Clips).
+3. **Variation Stimmung/Inhalt** — Rotations-/Themen-Mechanismus (Stimmungs-/Themen-Tag je Tag, ggf. Musik/
+   Schnitt-Stil) -> nie zweimal gleich; markenkonform (CBO `markenstimme`).
+4. **Dateistruktur** — datumsbasierte Ablage (z. B. `Outbox/JJJJ-MM-TT/reel.mp4` + `metadata.json`: genutzte
+   Clips, Stimmung, Thema, Status/Upload-ID).
+5. **Auto-Upload Facebook** — Video/Reel-Publishing via Graph API (`pages_manage_posts` + Video-Upload,
+   **Seiten-Token**).
+6. **Ad-Umsatz** — Facebook-Monetarisierung/In-Stream-Ads-Eligibility (separat, an Meta-Voraussetzungen gebunden).
+
+**Offene Punkte / Governance (ehrlich, VOR dem Bau klaeren):**
+- **Auto-Posten = Oeffentlichkeit = CEO-Tor** (AGENTS.md 4). Vollautomatisch veroeffentlichen widerspricht dem
+  Standard-Tor -> braucht **entweder** eine ausdrueckliche stehende CEO-Freigabe genau fuer diese Pipeline
+  **oder** einen taeglichen 1-Tap-Freigabeschritt (CEO gibt das Reel frei). **CEO legt den Autonomiegrad fest.**
+- **Meta-Abhaengigkeit:** Upload + Monetarisierung haengen an der Meta-API/Freigabe (gleiche Baustelle wie
+  DMs/Insights). Fuer die **eigene Seite** mit **Seiten-Token** ggf. machbar -> genau pruefen (Publishing-Scope).
+- **Marke/Qualitaet:** Vollautomatik ohne Marken-/Qualitaets-Check ist riskant -> CBO-Review oder Mindest-
+  Kriterien einbauen.
+- **Kosten:** lokal/gratis (ffmpeg) bzw. Cent-Bereich, falls Gemini-Video-KI (`--video-ki`) genutzt wird.
+
 ### Neu — CEO 2026-07-02 (Phasen 19-21 + Recherche-Backlog)
 
 - **Phase 19 — CRM-Akte: Mail-Tracking (CEO 2026-07-02):** Die CRM-Akte eines Unternehmens (`crm_companies`

@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 05:35] — Claude Code — CEO-Ziel aufgenommen: Auto-Reel-Pipeline -> Facebook (Ad-Umsatz)
+- **Was:** Neues CEO-Ziel (demnaechst) in `ROADMAP.md` (`## 8. Backlog`, oben) dokumentiert: Sammelordner ->
+  Cutter schneidet taeglich ein 45-Sek-Reel -> automatischer Facebook-Upload (Ad-Umsatz), Stimmung/Inhalt
+  taeglich variieren, feste Dateistruktur, vollautomatisch. Mit Bausteinen (Cutter existiert; fehlt Scheduler/
+  Variation/Dateistruktur/FB-Upload/Monetarisierung) und **offenen Governance-Punkten** (Auto-Posten =
+  Oeffentlichkeit = CEO-Tor -> Autonomiegrad klaeren; Meta-Abhaengigkeit; Marken-/Qualitaets-Check).
+- **Warum:** CEO-Anweisung, das Ziel festzuhalten (noch kein Bau).
+- **Betroffen:** `ROADMAP.md`.
+
 ## [2026-07-04 05:20] — Head of Agents (Claude Code) — Berater-Charta vertieft (CEO-freigegeben)
 - **Was:** `agents/01_unternehmensberater.md`: Auftrag + Aufgabenkatalog + Workflows verweisen auf die 3
   Berater-Skills; **Output-Format auf Pyramid-Prinzip** (Empfehlung zuerst) gehoben; neuer Workflow
