@@ -918,7 +918,8 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         from .social_kit import MetaInsights, media_kit
         env = ctx.secret_dict or {}
         monat = (args.get("monat") or "").strip() or None
-        token = env.get("INSTAGRAM_INSIGHTS_TOKEN") or env.get("INSTAGRAM_PAGE_TOKEN") or ""
+        token = (env.get("INSTAGRAM_INSIGHTS_TOKEN") or env.get("INSTAGRAM_ACCESS_TOKEN")
+                 or env.get("INSTAGRAM_PAGE_TOKEN") or "")
         ig_id = env.get("INSTAGRAM_IG_USER_ID") or ""
         neu = None
         if not args.get("nur_historie"):

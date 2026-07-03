@@ -40,6 +40,13 @@ class TestInstagramConversations(unittest.TestCase):
         r = InstagramConversations("tok", "OWN", http=boom)
         self.assertEqual(r.konversationen(), [])
         self.assertEqual(r.nachrichten("c1"), [])
+        self.assertIn("net", r.letzter_fehler)
+
+    def test_api_fehlerobjekt_sichtbar(self):
+        r = InstagramConversations("tok", "OWN",
+                                   http=lambda p, q: {"error": {"message": "(#100) requires page token"}})
+        self.assertEqual(r.konversationen(), [])
+        self.assertIn("page token", r.letzter_fehler)
 
 
 class FakeReader:
@@ -85,6 +92,12 @@ class TestCrmInstagramTracker(unittest.TestCase):
         CrmInstagramTracker(crm=self.crm, reader=self._reader()).lauf()
         r2 = CrmInstagramTracker(crm=self.crm, reader=self._reader()).lauf()
         self.assertEqual(r2["neu"], 0)        # gleiche Message-IDs -> kein Duplikat
+
+    def test_tracker_reicht_api_fehler_durch(self):
+        reader = InstagramConversations("tok", "OWN", http=lambda p, q: {"error": {"message": "boom"}})
+        res = CrmInstagramTracker(crm=self.crm, reader=reader).lauf()
+        self.assertEqual(res["gesehen"], 0)
+        self.assertIn("boom", res.get("api_fehler", ""))
 
     def test_ohne_token_hinweis(self):
         r = CrmInstagramTracker(crm=self.crm, reader=InstagramConversations("", "")).lauf()

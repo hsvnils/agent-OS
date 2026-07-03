@@ -120,6 +120,7 @@ class InstagramConversations:
         self.own_id = str(own_id or "").strip()
         self.http = http or self._get
         self.base = base
+        self.letzter_fehler = ""            # letzte API-Fehlermeldung (fuer Diagnose)
 
     def _konv_pfad(self) -> str:
         return "me/conversations" if "graph.instagram.com" in self.base else f"{self.own_id}/conversations"
@@ -130,17 +131,36 @@ class InstagramConversations:
 
     def _get(self, pfad: str, params: dict) -> dict:
         import json
+        import urllib.error
         import urllib.parse
         import urllib.request
         p = dict(params or {}); p["access_token"] = self.token
         url = f"{self.base}/{pfad}?{urllib.parse.urlencode(p)}"
-        with urllib.request.urlopen(url, timeout=20) as r:
-            return json.loads(r.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(url, timeout=20) as r:
+                return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:      # Metas Fehler-JSON (message/#code) lesbar durchreichen
+            try:
+                body = e.read().decode("utf-8")[:300]
+            except Exception:
+                body = ""
+            raise RuntimeError(f"HTTP {e.code}: {body or e.reason}")
+
+    def _fehler_pruefen(self, d) -> bool:
+        """True (+ letzter_fehler gesetzt), wenn die API ein Fehler-Objekt lieferte."""
+        if isinstance(d, dict) and d.get("error"):
+            err = d["error"]
+            self.letzter_fehler = str(err.get("message") or err)[:200] if isinstance(err, dict) else str(err)[:200]
+            return True
+        return False
 
     def konversationen(self) -> list[str]:
         try:
             d = self.http(self._konv_pfad(), {"platform": "instagram"})
-        except Exception:
+        except Exception as exc:
+            self.letzter_fehler = str(exc)[:200]
+            return []
+        if self._fehler_pruefen(d):
             return []
         return [c.get("id") for c in (d or {}).get("data", []) if c.get("id")]
 
@@ -148,7 +168,10 @@ class InstagramConversations:
         """[{id, from_id, from_username, text, ts}] der (max. 20) letzten Nachrichten eines Threads."""
         try:
             d = self.http(conv_id, {"fields": "messages{id,created_time,from,to,message}"})
-        except Exception:
+        except Exception as exc:
+            self.letzter_fehler = str(exc)[:200]
+            return []
+        if self._fehler_pruefen(d):
             return []
         msgs = (((d or {}).get("messages") or {}).get("data")) or []
         out = []

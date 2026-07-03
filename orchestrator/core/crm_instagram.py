@@ -35,4 +35,8 @@ class CrmInstagramTracker:
                                                   absender=m.get("from_id", ""), extern_id=m.get("id", ""))
                 if res.get("mid"):                             # "" bei Duplikat (Dedup ueber extern_id)
                     neu += 1
-        return {"ok": True, "gesehen": gesehen, "neu": neu}
+        ergebnis = {"ok": True, "gesehen": gesehen, "neu": neu}
+        fehler = getattr(self.reader, "letzter_fehler", "")
+        if not gesehen and fehler:                             # 0 Nachrichten + API-Fehler -> sichtbar machen
+            ergebnis["api_fehler"] = fehler
+        return ergebnis
