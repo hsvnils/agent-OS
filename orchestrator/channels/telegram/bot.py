@@ -474,15 +474,18 @@ def _start_investment_loop(ctx, secrets) -> None:
         return (items[-1].get("ts", "")[:10]) if items else ""
 
     collector = None
+    forecaster = None
     if feature_loop:
         from ...governance.supabase import SupabaseAuth, SupabaseClient
         from ...investment.features import FeatureCollector
+        from ...investment.forecaster import Forecaster
         from ...investment.loop_store import LoopStore
         _auth = SupabaseAuth.from_env(secrets)
         _sb = SupabaseClient(_auth) if _auth.verfuegbar() else None
         _leak = [v for v in secrets.values() if isinstance(v, str) and v]
-        collector = FeatureCollector(eng.market, LoopStore(ROOT / "investment" / "features.jsonl",
-                                                           supabase=_sb, secrets=_leak))
+        _loop_store = LoopStore(ROOT / "investment" / "features.jsonl", supabase=_sb, secrets=_leak)
+        collector = FeatureCollector(eng.market, _loop_store)
+        forecaster = Forecaster(_loop_store)
 
     def loop():
         time.sleep(45)
@@ -490,13 +493,30 @@ def _start_investment_loop(ctx, secrets) -> None:
             try:
                 jetzt = datetime.now(tz) if tz else datetime.now()
                 datum = jetzt.strftime("%Y-%m-%d")
-                # Taeglicher Merkmals-/Preis-Snapshot (~07:00), 1x/Tag
+                # Taeglicher Merkmals-/Preis-Snapshot (~07:00) + Abgleich faelliger Prognosen, 1x/Tag
                 if collector is not None and jetzt.hour == 7 and collector.store.last_datum("inv_features") != datum:
                     r = collector.collect(eng.store.watchlist(), datum=datum)
                     ctx.notifications.enqueue(
                         f"Merkmals-Snapshot: {len(r['gesammelt'])} Werte erfasst ({datum}), "
                         f"{len(r['uebersprungen'])} bereits vorhanden.",
                         abteilung="CIO", kategorie="investment", quelle="feature-loop", dedup_stunden=0)
+                    a = forecaster.auswerten(heute=datum)   # 7-Tage-Prognosen gegen die Realitaet abgleichen
+                    if a["neu_bewertet"]:
+                        k = a["kennzahlen"].get("gesamt", {})
+                        ctx.notifications.enqueue(
+                            f"Prognose-Abgleich: {a['neu_bewertet']} ausgewertet. "
+                            f"Fehler (MAE) {k.get('mae_pct')}% vs. Baseline {k.get('baseline_mae_pct')}%, "
+                            f"Richtungsquote {round((k.get('richtungsquote') or 0) * 100)}%.",
+                            abteilung="CIO", kategorie="investment", quelle="loop-abgleich", dedup_stunden=0)
+                # Woechentliche 7-Tage-Prognose (Mo ~09:00), 1x/Tag
+                if forecaster is not None and jetzt.weekday() == 0 and jetzt.hour == 9:
+                    _fc = forecaster.store.list("inv_forecasts")
+                    if (_fc[-1].get("erstellt_am") if _fc else "") != datum:
+                        p = forecaster.prognostizieren(eng.store.watchlist(), datum=datum)
+                        ctx.notifications.enqueue(
+                            f"7-Tage-Prognose erstellt: {len(p['erstellt'])} Werte "
+                            f"(Modell {forecaster.MODELL_VERSION}, faellig {p['faellig_am']}).",
+                            abteilung="CIO", kategorie="investment", quelle="loop-prognose", dedup_stunden=0)
                 # Taeglicher Markt-Screen (werktags ~16:00), 1x/Tag
                 if auto_screen and jetzt.weekday() < 5 and jetzt.hour == 16 and _letztes_datum("screening") != datum:
                     r = eng.screen_und_vorschlagen(max_vorschlaege=3)
@@ -521,7 +541,7 @@ def _start_investment_loop(ctx, secrets) -> None:
     if auto_screen:
         aktive.append("werktags 16:00 Markt-Screen + Mo 09:00 Wochenprognose")
     if feature_loop:
-        aktive.append("taeglich 07:00 Merkmals-Snapshot")
+        aktive.append("taeglich 07:00 Merkmals-Snapshot + Prognose-Abgleich, Mo 09:00 7-Tage-Prognose")
     print("Investment-Loop aktiv (" + "; ".join(aktive) + ", advisory).", flush=True)
 
 

@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 09:45] — Claude Code — Investment: Walk-Forward-Lern-Loop Schritt 2 (Prognose + Abweichungs-Register)
+- **Was:** `orchestrator/investment/forecaster.py` (`Forecaster`): (1) `prognostizieren()` — je Watchlist-Wert
+  mit genug Historie eine **7-Tage-Prognose** (Richtung + Renditespanne + Konfidenz, getaggt mit
+  `modell_version` = `v1-momentum`, gedaempfte Momentum-Fortschreibung als ehrlicher Startpunkt); speichert auch
+  die **naive Baseline** (Random-Walk, erwartete 7-Tage-Rendite 0 %). (2) `auswerten()` — gleicht faellige
+  Prognosen mit der eingetretenen Realitaet ab, schreibt `inv_actuals` **und je Prognose EINEN Eintrag ins
+  separate `inv_deviations`-Register** (Fehler, Richtungstreffer, Baseline-Fehler, `besser_als_baseline`,
+  Regime). (3) `kennzahlen()` — MAE/Richtungsquote/Anteil-besser-als-Baseline gesamt + je Modell-Version (misst,
+  ob der Fehler ueber die Zeit kleiner wird). Idempotent (kein Doppel-Eintrag), append-only-freundlich (kein
+  Mutieren der Prognose). In `_start_investment_loop` verdrahtet: taeglich ~07:00 Abgleich nach dem Snapshot,
+  Mo ~09:00 die 7-Tage-Prognose (gated durch INV_FEATURE_LOOP=1). 7 neue Tests; volle Suite 504 gruen.
+- **Warum:** Schritt 2 des CEO-Loops -- Prognose -> Realitaet -> Abweichung SEPARAT festhalten -> gegen die
+  Baseline messen, ob Daten-/Wissens-Anreicherung die Prognosen genauer macht. Advisory, kein Geld/Trade/Gate.
+- **Betroffen:** `orchestrator/investment/forecaster.py`, `orchestrator/tests/test_investment_forecaster.py`,
+  `orchestrator/channels/telegram/bot.py`, `projekt_changelog.md`.
+
 ## [2026-07-04 09:10] — Claude Code — Investment: Walk-Forward-Lern-Loop Schritt 1 (Supabase + Merkmals-Sammler)
 - **Was:** Fundament fuer den CEO-gewuenschten Prognose-Lern-Loop gebaut (advisory, KEIN Geld, KEIN Trade, KEIN
   Gate). (1) `docs/hcc_inv_loop.sql` — Supabase-Schema mit `inv_features`, `inv_forecasts`, `inv_actuals`,
