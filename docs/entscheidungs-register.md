@@ -32,7 +32,7 @@
 | **NVIDIA Nemotron 3 Ultra** (550B-MoE, offene Gewichte) | 2026-07-03 | **SPAETER/OPTIONAL** (technisch machbar; kein Bedarf jetzt) | Multi-Provider-Fallback-Kandidat -- CEO-Tor |
 | **CFO Token-Erfassung je Agent** (aus Repo-Report) | 2026-07-03 | **UEBERNEHMEN** (Idee, home-grown) | Finance Stufe 2.5 -- `model_router` usage -> KostenStore |
 | **langfuse** (LLM-Observability, self-hosted) | 2026-07-03 | **SPAETER/OPTIONAL** (schwer f. NAS) | nur falls Trace-UI gewuenscht |
-| **PySceneDetect** (Szenen-/Highlight-Erkennung) | 2026-07-03 | **SPAETER/OPTIONAL** (Pilot) | Cutter „intelligenter machen" (lokal/gratis) |
+| **PySceneDetect** (Szenen-/Highlight-Erkennung) | 2026-07-03 | **UMGESETZT via ffmpeg** (Lib selbst VERWORFEN: OpenCV-Dep) | Cutter szenenbewusster B-Roll-Ausschnitt |
 | **mem0** (+Supabase pgvector, Memory-Layer) | 2026-07-03 | **SPAETER** (Konflikt Phase 26: BM25 bewusst gewaehlt) | erst bei echtem Vektor-Recall-Bedarf |
 | **Instagram Private-API** (instagrapi/trypeggy) | 2026-07-03 | **VERWORFEN** (ToS-/Sperr-Risiko) | offizielle Graph-API bleibt |
 | **moviepy / captacity** (Video) | 2026-07-03 | **VERWORFEN** (unterbesetzt/ungewartet) | wir nutzen ffmpeg direkt |
@@ -64,8 +64,10 @@ Graph-API. LangGraph-Frameworks (langgraph-supervisor) wuerden unseren SDK-Kern 
 2. **Cutter lokal intelligenter** (Backlog „Cutter intelligenter machen"). **PySceneDetect** (BSD, Python,
    CPU) = Szenen-/Highlight-Erkennung fuer bessere Ausschnitt-/Segmentwahl; Stille-Trimmen via unser
    vorhandenes **ffmpeg silencedetect** (statt Dependency **auto-editor**). Alles lokal/gratis, passt zum
-   Stil-Profil-Backlog. **Entscheidung: PySceneDetect = SPAETER/OPTIONAL (Pilot), auto-editor = als Idee via
-   ffmpeg nachbauen.**
+   Stil-Profil-Backlog. **Entscheidung/Umsetzung (2026-07-03): UMGESETZT via ffmpeg** (`select='gt(scene,..)'`,
+   `ffmpeg_ops.szenen_zeiten`) statt der PySceneDetect-Lib -- „technisch besser fuer uns": kein OpenCV, gleiche
+   Umgebung, ausreichend fuer B-Roll-Ausschnittwahl (Lib selbst VERWORFEN wegen OpenCV-Dep). Szenenbewusster
+   B-Roll-Start live, Default AN, abschaltbar (`CUTTER_SZENEN=0` / `--ohne-szenen`); lokal auf Mac verifiziert.
 
 **Bewusst ABGELEHNT / schon entschieden:**
 - **mem0 (+Supabase pgvector)** — Report-Top-Pick, aber **Konflikt mit Phase 26**: wir haben Vektor-Recall

@@ -22,10 +22,14 @@ def main(argv=None) -> int:
     p.add_argument("--video-ki", action="store_true",
                    help="OPT-IN: Clips zu Gemini hochladen (Video-Verstaendnis fuer die Reihenfolge). "
                         "CEO-Tor: sendet Rohclips an Google (Paid-Tier). Braucht GEMINI_API_KEY.")
+    p.add_argument("--ohne-szenen", action="store_true",
+                   help="B-Roll-Ausschnitt NICHT szenenbewusst waehlen (Standard: an, lokal via ffmpeg).")
     a = p.parse_args(argv)
 
     if a.video_ki:                                     # Schalter setzt die Opt-in-Env fuer diesen Lauf
         os.environ["CUTTER_VIDEO_KI"] = "1"
+    if a.ohne_szenen:
+        os.environ["CUTTER_SZENEN"] = "0"
 
     bericht = schneide_ordner(a.ordner, a.ausgabe, ziel_dauer=a.dauer,
                               transkribieren=not a.ohne_transkript, gemini=not a.ohne_gemini,

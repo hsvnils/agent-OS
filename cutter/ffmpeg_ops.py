@@ -271,6 +271,36 @@ def stille_spannen(pfad: Path, *, mindest_stille: float = 0.6, schwelle_db: int 
     return spannen
 
 
+def szenen_zeiten(pfad: Path, *, schwelle: float = 0.3, timeout: int = 300) -> list[float]:
+    """Szenenwechsel-Zeitpunkte (Sekunden) via ffmpeg scene-Detection. Best-effort -> [] bei Fehler.
+
+    Dependency-frei (nutzt das vorhandene ffmpeg, kein OpenCV): der `select='gt(scene,..)'`-Filter markiert
+    Frames mit hohem Bildunterschied, `showinfo` schreibt deren `pts_time` nach stderr.
+    """
+    try:
+        r = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-nostats", "-i", str(pfad),
+             "-filter:v", f"select='gt(scene,{schwelle})',showinfo", "-an", "-f", "null", "-"],
+            capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError):
+        return []
+    return _parse_szenen_pts(r.stderr or "")
+
+
+def _parse_szenen_pts(text: str) -> list[float]:
+    """Zieht die pts_time-Werte aus der showinfo-Ausgabe -> sortierte Sekunden-Liste."""
+    zeiten: list[float] = []
+    for teil in text.split("pts_time:")[1:]:
+        stueck = teil.strip()
+        if not stueck:
+            continue
+        try:
+            zeiten.append(float(stueck.split()[0]))
+        except (ValueError, IndexError):
+            continue
+    return sorted(zeiten)
+
+
 def _run(cmd: list[str]) -> bool:
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=1200)

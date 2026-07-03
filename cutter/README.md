@@ -50,6 +50,11 @@ python -m cutter <ordner> --video-ki      # A/B gegen die normale (Text-)Reihenf
 > Bei jedem Fehler faellt der Cutter automatisch auf die Text- bzw. Dateiname-Reihenfolge zurueck. Der
 > Bericht zeigt unter `reihenfolge`, welcher Weg genutzt wurde (`gemini-video` | `gemini-text` | `dateiname`).
 
+**Szenenbewusster B-Roll-Ausschnitt (Standard AN, lokal/gratis):** Fuer Clips ohne Sprache waehlt der Cutter
+den Ausschnitt nicht mehr blind „ab ~20 %", sondern legt ihn per **ffmpeg-Szenenerkennung** auf die laengste
+zusammenhaengende Szene (kurz nach dem Schnitt) -- so startet das Reel nicht mitten in einem Uebergang. Kein
+OpenCV/keine Extra-Abhaengigkeit. Abschaltbar mit `--ohne-szenen` bzw. `CUTTER_SZENEN=0`.
+
 **Unbeaufsichtigt (Mac anlassen, Clips reinlegen — fertig):**
 ```bash
 python -m cutter.watch        # Inbox ~/CutterInbox  ->  Outbox ~/CutterOutbox

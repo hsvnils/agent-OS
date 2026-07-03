@@ -151,10 +151,36 @@ def _clip_auswaehlen(info, weg, max_sprache, broll_dauer, sprache, env) -> Auswa
         ende = min(info.dauer, transkript[-1]["ende"] + 0.2)
         dauer = min(max_sprache, max(1.0, ende - start))
         return Auswahl(info, "sprache", start, dauer, transkript)
-    # B-Roll: praegnanter Ausschnitt ab ~20 % (wackelige Anfaenge ueberspringen).
-    start = min(max(0.0, info.dauer * 0.2), max(0.0, info.dauer - 0.5))
+    # B-Roll: szenenbewusst den praegnantesten Ausschnitt waehlen (Fallback: ab ~20 %).
+    start = _broll_start(info, broll_dauer, env)
     dauer = min(broll_dauer, max(0.8, info.dauer - start))
     return Auswahl(info, "broll", start, dauer, [])
+
+
+def _broll_start(info, broll_dauer: float, env: dict) -> float:
+    """Waehlt den B-Roll-Start szenenbewusst: laengste zusammenhaengende Szene, kurz nach dem Schnitt.
+
+    Fallback (zu kurz / abgeschaltet / keine Szenen erkannt): der bisherige ~20-%-Start. Rein lokal/gratis
+    ueber ffmpeg. Abschaltbar per `CUTTER_SZENEN=0` bzw. CLI `--ohne-szenen`.
+    """
+    default = min(max(0.0, info.dauer * 0.2), max(0.0, info.dauer - 0.5))
+    if str(env.get("CUTTER_SZENEN", "1")).strip().lower() in ("0", "false", "no", "off"):
+        return default
+    if info.dauer < max(2.0, broll_dauer + 0.5):          # zu kurz -> nichts zu suchen
+        return default
+    cuts = fo.szenen_zeiten(info.pfad)
+    if not cuts:
+        return default
+    grenzen = [0.0] + [c for c in cuts if 0.0 < c < info.dauer] + [info.dauer]
+    bestes, best_len = None, 0.0
+    for a, b in zip(grenzen, grenzen[1:]):
+        if (b - a) > best_len:
+            best_len, bestes = (b - a), (a, b)
+    if bestes is None:
+        return default
+    a, b = bestes
+    start = min(a + 0.3, max(a, b - broll_dauer))         # Uebergang ueberspringen, Platz fuer broll_dauer lassen
+    return max(0.0, min(start, max(0.0, info.dauer - 0.5)))
 
 
 def _auf_budget(auswahlen: list, ziel_dauer: float) -> list:
@@ -177,8 +203,8 @@ def _lade_env() -> dict:
             if line and not line.startswith("#") and "=" in line:
                 k, _, v = line.partition("=")
                 env[k.strip()] = v.strip().strip('"').strip("'")
-    # Cutter-Video-Schalter duerfen per Prozess-Umgebung (CLI --video-ki / launchd) gesetzt werden.
-    for k in ("CUTTER_VIDEO_KI", "CUTTER_VIDEO_MODEL"):
+    # Cutter-Schalter duerfen per Prozess-Umgebung (CLI / launchd) gesetzt werden.
+    for k in ("CUTTER_VIDEO_KI", "CUTTER_VIDEO_MODEL", "CUTTER_SZENEN"):
         if os.environ.get(k):
             env[k] = os.environ[k]
     return env

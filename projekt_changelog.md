@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 22:15] — Claude Code — Cutter: szenenbewusster B-Roll-Ausschnitt (ffmpeg, lokal/gratis)
+- **Was:** Neuer `ffmpeg_ops.szenen_zeiten()` (Szenenwechsel via ffmpeg `select='gt(scene,..)'`, testbarer
+  Parser `_parse_szenen_pts`). `pipeline._broll_start()` legt den B-Roll-Ausschnitt jetzt auf die laengste
+  zusammenhaengende Szene (kurz nach dem Schnitt) statt blind „ab ~20 %". Default AN, abschaltbar
+  (`CUTTER_SZENEN=0` / CLI `--ohne-szenen`; `_lade_env`-Overlay erweitert). Nur B-Roll (Sprach-Clips
+  unveraendert). README + Register aktualisiert. +8 Tests (Cutter 29 gruen); ffmpeg-Pfad lokal am Mac
+  mit synthetischem 2-Szenen-Clip verifiziert (Cut bei 2.0s erkannt).
+- **Warum:** Additiver Punkt #2 aus der CEO-Repo-Report-Bewertung („Cutter intelligenter machen"). Bewusst
+  **ffmpeg statt PySceneDetect** (kein OpenCV -- technisch besser fuer unsere Skala/unseren Stack). Lokal/gratis.
+- **Betroffen:** `cutter/ffmpeg_ops.py`, `cutter/pipeline.py`, `cutter/__main__.py`, `cutter/README.md`,
+  `cutter/tests/test_szenen.py` (neu), `docs/entscheidungs-register.md`, `ROADMAP.md`.
+
 ## [2026-07-03 21:45] — Claude Code — CFO Finance Stufe 2.5: Token-/Kostenerfassung je Agent
 - **Was:** Kosten werden jetzt JE AGENT erfasst (bisher nur „chat"). `KostenStore.record` bekam `agent`-Feld
   + optional echte `kosten_usd` (Vorrang vor Schaetzung); `monat()` liefert neues `je_agent`-Aggregat
