@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 18:10] — Claude Code — Secrets-Rotation-Checkliste vorbereitet (Ablage)
+- **Was:** Neue Doku `docs/secrets-rotation-checkliste.md` -- geordnete Rotationsliste aller Zugangs-Secrets
+  (aus den Env-Referenzen des Codes), priorisiert: „im Chat geteilt" zuerst (GITHUB_TOKEN, OPENAI_API_KEY,
+  GEMINI_API_KEY), dann Kern-Betrieb, Google-OAuth, Voice, Investment-Datenquellen, Instagram/Meta, Passwoerter.
+  Enthaelt Ablageorte + Erzeugen-bei + Test je Key. **Keine Secret-Werte im Dokument.** Durchfuehrung = CEO.
+- **Warum:** CEO-Auftrag, Rotation vorbereiten und zur spaeteren Durchsicht ablegen (operativer/Sicherheits-
+  Punkt aus dem Backlog).
+- **Betroffen:** `docs/secrets-rotation-checkliste.md` (neu).
+
 ## [2026-07-03 17:45] — Claude Code — Phase 26: BM25-Recall + Trajektorien-Lernen (dependency-frei)
 - **Was:** (a) Neues `core/ranking.py` = BM25-Ranking (Okapi, Lucene-IDF), lokal/dependency-frei; `Brain.suchen`
   darauf umgestellt (Term-Frequenz + Seltenheit + Doc-Laenge statt reinem Set-Overlap, Titel weiter doppelt
