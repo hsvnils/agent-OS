@@ -312,6 +312,10 @@ def tool_specs() -> list[dict]:
               {"monat": _str("Optional 'YYYY-MM' (Default: aktueller Monat)."),
                "nur_historie": {"type": "boolean", "description": "true -> nicht neu abrufen, nur gespeicherte "
                                 "Zahlen/Media-Kit zeigen."}}, []),
+        _spec("crm_dm_abrufen", "CRO/Collab-CRM: pollt die Instagram-DMs des EIGENEN Kontos ueber die Graph "
+              "Conversations-API und legt neue eingehende Kooperations-DMs im CRM ab (Klassifikation + To-do). "
+              "Nur Lesen; braucht INSTAGRAM_IG_USER_ID + Token (keine App-Review noetig). Ohne Keys: Hinweis.",
+              {}, []),
         _spec("lagebild", "Proaktive Tages-Insights: was auf den CEO wartet (Entscheidungen/Antraege), heutige "
               "Termine, ungelesene Mails, offene Tickets, Agenda. Token-frugal aus den Stores + Google.",
               {}, []),
@@ -938,6 +942,18 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"ok": True, "aktualisiert": bool(neu), "media_kit": redact(kit["media_kit_text"], sec),
                 "kennzahlen": kit["kennzahlen"], "top_posts": kit["top_posts"],
                 "monate_erfasst": [s.get("monat") for s in verlauf], "hinweis": kit["hinweis"]}
+
+    if name == "crm_dm_abrufen":
+        if ctx.crm is None:
+            return {"fehler": "Collab-CRM nicht verfuegbar."}
+        from ..governance.instagram import InstagramConversations
+        from .crm_instagram import CrmInstagramTracker
+        env = ctx.secret_dict or {}
+        tok = env.get("INSTAGRAM_ACCESS_TOKEN") or env.get("INSTAGRAM_PAGE_TOKEN") or ""
+        igid = env.get("INSTAGRAM_IG_USER_ID") or ""
+        reader = InstagramConversations(tok, igid)
+        return CrmInstagramTracker(crm=ctx.crm, reader=reader, secrets=sec,
+                                   notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
 
     if name == "lagebild":
         if ctx.insights is None:

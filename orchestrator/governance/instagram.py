@@ -103,6 +103,58 @@ class InstagramMessaging:
         return out
 
 
+class InstagramConversations:
+    """Liest eingehende IG-DMs per Graph-API-**Poll** (Conversations-API) -- fuers EIGENE Konto, NUR Lesen.
+
+    Anders als der Webhook (Advanced-Access-Review noetig) reicht hier ein Access-Token des eigenen Kontos
+    mit `instagram_business_basic` + `instagram_business_manage_messages`. Endpoints (Instagram-Login):
+    `GET /me/conversations?platform=instagram` -> Threads; `GET /{conv}?fields=messages{id,created_time,from,
+    to,message}` -> Nachrichten. Injizierbarer HTTP -> offline testbar. Kein Senden.
+    """
+
+    def __init__(self, token: str, own_id, *, http=None,
+                 base: str = "https://graph.instagram.com/v25.0"):
+        self.token = (token or "").strip()
+        self.own_id = str(own_id or "").strip()
+        self.http = http or self._get
+        self.base = base
+
+    @property
+    def verfuegbar(self) -> bool:
+        return bool(self.token and self.own_id)
+
+    def _get(self, pfad: str, params: dict) -> dict:
+        import json
+        import urllib.parse
+        import urllib.request
+        p = dict(params or {}); p["access_token"] = self.token
+        url = f"{self.base}/{pfad}?{urllib.parse.urlencode(p)}"
+        with urllib.request.urlopen(url, timeout=20) as r:
+            return json.loads(r.read().decode("utf-8"))
+
+    def konversationen(self) -> list[str]:
+        try:
+            d = self.http("me/conversations", {"platform": "instagram"})
+        except Exception:
+            return []
+        return [c.get("id") for c in (d or {}).get("data", []) if c.get("id")]
+
+    def nachrichten(self, conv_id: str) -> list[dict]:
+        """[{id, from_id, from_username, text, ts}] der (max. 20) letzten Nachrichten eines Threads."""
+        try:
+            d = self.http(conv_id, {"fields": "messages{id,created_time,from,to,message}"})
+        except Exception:
+            return []
+        msgs = (((d or {}).get("messages") or {}).get("data")) or []
+        out = []
+        for m in msgs:
+            frm = m.get("from") or {}
+            out.append({"id": m.get("id", ""), "from_id": str(frm.get("id", "")),
+                        "from_username": frm.get("username", ""), "text": (m.get("message") or "").strip(),
+                        "ts": m.get("created_time", "")})
+        return out
+
+
 class MockInstagramMessaging(InstagramMessaging):
     """Offline-Variante: Signatur immer 'gueltig' -- fuer Self-Checks ohne Keys/Netz."""
 

@@ -33,6 +33,22 @@ Follower, Reichweite (28 Tage), Profilaufrufe, Engagement-Rate (aus den letzten 
 Durchschnitt Likes/Kommentare, Top-3-Posts -- je Monat, mit **Monatstrend**. Metriken sind konfigurierbar
 (`core/social_kit.py`, `_KONTO_METRIKEN`), falls Meta welche deprecatet.
 
+## Instagram-DMs lesen (Collab-CRM, ohne App-Review)
+
+Dasselbe eigene Konto + Token erschliesst auch das **Lesen der DMs** per Graph-**Poll** (Conversations-API) --
+**NICHT** die abgebrochene Advanced-Access-Review (GATE B, fuer fremde-DM-Webhooks). Nur Lesen, kein Senden.
+
+- **Env:** `INSTAGRAM_IG_USER_ID` (wie oben) + `INSTAGRAM_ACCESS_TOKEN` (oder das vorhandene
+  `INSTAGRAM_PAGE_TOKEN`). Scopes: `instagram_business_basic` + `instagram_business_manage_messages`.
+- **Endpoints:** `GET /me/conversations?platform=instagram` -> Threads; `GET /{conv}?fields=messages{...}`
+  (Instagram-Login: `graph.instagram.com/v25.0`; `InstagramConversations.base` ist umstellbar, falls dein Token
+  der Facebook-Login-Variante entspricht -> `graph.facebook.com`).
+- **Betrieb:** laeuft automatisch im 15-min-Poll (neben dem Gmail-Tracker); neue eingehende DMs landen im CRM
+  (Klassifikation + To-do + Injection-Filter). **Sofort testen:** LUNA „ruf die Instagram-DMs ab"
+  (Tool `crm_dm_abrufen`).
+- **Dedup:** ueber die Message-ID; wiederholtes Pollen erzeugt keine Duplikate. Eigene (ausgehende)
+  Nachrichten werden uebersprungen.
+
 ## Spaeter (optional, eigener Antrag)
 
 **Canva-Autofill:** Media-Kit automatisch in ein Canva-Brand-Template befuellen (Canva Connect API). Braucht

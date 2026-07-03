@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 01:50] — Claude Code — CRM: Instagram-DM-Lesen per Graph-Poll (eigenes Konto, ohne GATE B)
+- **Was:** Neuer Lesepfad fuer Instagram-DMs des EIGENEN Kontos via Graph Conversations-API (Poll) --
+  `InstagramConversations` (`governance/instagram.py`, `me/conversations` + `{conv}?fields=messages{...}`,
+  injizierbarer HTTP) + `core/crm_instagram.py` `CrmInstagramTracker` (speist neue eingehende DMs in
+  `CrmStore.verarbeite_eingang`; eigene/leere uebersprungen; Dedup ueber Message-ID). Tool `crm_dm_abrufen`
+  (manueller Poll) + automatisch im 15-min-Poll (`bot.py`, gated auf `INSTAGRAM_ACCESS_TOKEN`/
+  `INSTAGRAM_PAGE_TOKEN` + `INSTAGRAM_IG_USER_ID`). Setup-Doku ergaenzt. +6 Tests (487 gruen).
+  **Wichtig:** eigenes Konto -> nur Admin-Token mit `instagram_business_manage_messages`, KEINE Advanced-
+  Access-Review (nicht GATE B). Nur Lesen; Senden bleibt CEO-Tor.
+- **Warum:** CEO hat Graph-API-Token samt Berechtigungen erstellt -> DM-Lesen (Poll) statt Webhook (GATE B).
+- **Betroffen:** `orchestrator/governance/instagram.py`, `orchestrator/core/crm_instagram.py` (neu),
+  `orchestrator/core/hoa_tools.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_crm_instagram.py` (neu), `docs/SOCIAL_ANALYZER_SETUP.md`.
+
 ## [2026-07-04 01:20] — Claude Code — CRO angereichert: erster Skill „kooperation-bewerten"
 - **Was:** Neuer gegateter Skill `skills/cro/kooperation-bewerten/SKILL.md` -- bewertet Kooperations-/
   Sponsoring-Anfragen (Fit-Ampel, Red Flags), holt Reichweite/Engagement via `social_media_analyzer` +

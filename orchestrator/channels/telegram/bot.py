@@ -621,6 +621,17 @@ def main() -> None:
                                    eigene_adresse=secrets.get("GOOGLE_ACCOUNT_EMAIL", "hanserautisch@gmail.com"),
                                    secrets=ctx.leak_secrets,
                                    notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
+                # Instagram-DMs des eigenen Kontos per Graph-Poll ins CRM (keine App-Review noetig).
+                _ig_tok = secrets.get("INSTAGRAM_ACCESS_TOKEN") or secrets.get("INSTAGRAM_PAGE_TOKEN")
+                _ig_id = secrets.get("INSTAGRAM_IG_USER_ID")
+                if ctx.crm is not None and _ig_tok and _ig_id \
+                        and (ctx.watch is None or not ctx.watch.store.paused()):
+                    from ...core.crm_instagram import CrmInstagramTracker
+                    from ...governance.instagram import InstagramConversations
+                    CrmInstagramTracker(crm=ctx.crm,
+                                        reader=InstagramConversations(_ig_tok, _ig_id),
+                                        secrets=ctx.leak_secrets,
+                                        notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
             except Exception as exc:
                 print(f"[poll] Fehler: {exc}", flush=True)
         # Proaktive Outbox zustellen -- LUNA/Watcher melden sich unaufgefordert beim CEO.
