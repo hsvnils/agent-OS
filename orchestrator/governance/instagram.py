@@ -154,9 +154,11 @@ class InstagramConversations:
             return True
         return False
 
-    def konversationen(self) -> list[str]:
+    def konversationen(self, *, limit: int = 25) -> list[str]:
+        # `limit` + schlanke `fields` sind Pflicht: grosse Konten haben zu viele Threads -> sonst Meta-Fehler
+        # "Please reduce the amount of data you're asking for" (Code 1). Threads kommen nach Aktivitaet sortiert.
         try:
-            d = self.http(self._konv_pfad(), {"platform": "instagram"})
+            d = self.http(self._konv_pfad(), {"platform": "instagram", "fields": "id", "limit": str(limit)})
         except Exception as exc:
             self.letzter_fehler = str(exc)[:200]
             return []
@@ -167,7 +169,7 @@ class InstagramConversations:
     def nachrichten(self, conv_id: str) -> list[dict]:
         """[{id, from_id, from_username, text, ts}] der (max. 20) letzten Nachrichten eines Threads."""
         try:
-            d = self.http(conv_id, {"fields": "messages{id,created_time,from,to,message}"})
+            d = self.http(conv_id, {"fields": "messages.limit(20){id,created_time,from,to,message}"})
         except Exception as exc:
             self.letzter_fehler = str(exc)[:200]
             return []
