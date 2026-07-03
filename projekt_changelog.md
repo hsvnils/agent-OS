@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 15:30] — Claude Code — Referenz-Skill fuer Phase-24-Verifikation
+- **Was:** Neuer Beispiel-Skill `skills/beispiel-zusammenfassung/SKILL.md` (konforme skill-card, keine
+  Skripte) -- dient als Format-Vorlage (governance/skill-standard.md) und zur Verifikation des Gates
+  `skill_pruefen`. Lokal geprueft: Verdikt `bestanden`, Score 0.
+- **Warum:** Konkreter Pfad zum Testen des Skill-Security-Gates nach dem Deploy.
+- **Betroffen:** `skills/beispiel-zusammenfassung/SKILL.md` (neu).
+
 ## [2026-07-03 15:05] — Head of Agents (Claude Code) — Phase 24 (b): Erfolgsmetriken in allen restlichen Charten (CEO-freigegeben)
 - **Was:** Abschnitt „## Erfolgsmetriken & Deliverables" in die 17 restlichen Charten eingefuegt (00, 01-04,
   06-16, 16a) -- Inhalt je Charta rollenspezifisch (Deliverables + messbare Erfolgskriterien), Formatierung
