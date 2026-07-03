@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 10:15] — Claude Code — Investment: Anlageklassen (ETF) + Discovery-Universum ausserhalb der Watchlist
+- **Was:** (1) **ETF als eigene Anlageklasse** (`asset="etf"`, laeuft datenseitig ueber den Aktien-Pfad); Prognosen
+  UND das Abweichungs-Register tragen jetzt die Anlageklasse, und `Forecaster.kennzahlen()` schluesselt zusaetzlich
+  **je Anlageklasse** auf (`je_asset`: aktie/etf/krypto) -- Genauigkeit/Feintuning je Klasse messbar. (2) Neues
+  `orchestrator/investment/universe.py` mit fester, frei erweiterbarer **Kernliste** (10 Aktien, 5 ETFs, 5 Krypto;
+  Benchmarks SPY/BTC bleiben in `features.BASELINES`). `FeatureCollector.collect()` sammelt jetzt **Watchlist +
+  Kernuniversum + Benchmarks** (token-frugal: 1 Abruf je Wert/Tag; `universe=[]` beschraenkt auf die Watchlist).
+  Der Forecaster prognostiziert das ganze **Panel** (Watchlist + Universum). (3) `Forecaster.chancen()` liefert die
+  staerksten **bullischen Werte AUSSERHALB der Watchlist**; der Loop reicht sie Mo durch den **Risk-Agent**
+  (`engine.vorschlag`) -> Alert. So bekommt der CEO Vorschlaege von aussen. 4 neue Tests; volle Suite 508 gruen.
+- **Warum:** CEO -- ETF/Krypto/Aktie getrennt auswerten; moeglichst viel Daten sammeln und Vorschlaege von
+  ausserhalb der eigenen Watchlist erhalten. Advisory, kein Geld/Trade/Gate.
+- **Betroffen:** `orchestrator/investment/universe.py`, `orchestrator/investment/features.py`,
+  `orchestrator/investment/forecaster.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_investment_features.py`, `orchestrator/tests/test_investment_forecaster.py`.
+
 ## [2026-07-04 09:45] — Claude Code — Investment: Walk-Forward-Lern-Loop Schritt 2 (Prognose + Abweichungs-Register)
 - **Was:** `orchestrator/investment/forecaster.py` (`Forecaster`): (1) `prognostizieren()` — je Watchlist-Wert
   mit genug Historie eine **7-Tage-Prognose** (Richtung + Renditespanne + Konfidenz, getaggt mit

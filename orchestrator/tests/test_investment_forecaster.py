@@ -87,5 +87,30 @@ class TestForecaster(unittest.TestCase):
         self.assertIn("anteil_besser_baseline", k["gesamt"])
 
 
+    def test_kennzahlen_je_anlageklasse(self):
+        _seed_historie(self.store, "AAPL", [100, 101, 102, 103, 104, 105], start="2026-01-01")
+        _seed_historie(self.store, "ETHEREUM", [2000, 2020, 2040, 2060, 2080, 2100], start="2026-01-01")
+        self.fc.prognostizieren([{"symbol": "AAPL", "asset": "aktie"},
+                                 {"symbol": "ETHEREUM", "asset": "krypto"}], datum="2026-01-06")
+        self.store.feature_add("AAPL", "aktie", "2026-01-13", 108.0, 0.0, {})
+        self.store.feature_add("ETHEREUM", "krypto", "2026-01-13", 2200.0, 0.0, {})
+        k = self.fc.auswerten(heute="2026-01-13")["kennzahlen"]
+        self.assertIn("aktie", k["je_asset"])
+        self.assertIn("krypto", k["je_asset"])
+        self.assertEqual(k["je_asset"]["aktie"]["n"], 1)
+        dev = next(d for d in self.store.list("inv_deviations") if d["symbol"] == "ETHEREUM")
+        self.assertEqual(dev["asset"], "krypto")   # Anlageklasse im Register
+
+    def test_chancen_nur_ausserhalb_watchlist(self):
+        _seed_historie(self.store, "AAPL", [100, 105, 110, 116, 122, 128], start="2026-01-01")
+        _seed_historie(self.store, "MSFT", [200, 210, 221, 233, 245, 258], start="2026-01-01")
+        self.fc.prognostizieren([{"symbol": "AAPL", "asset": "aktie"},
+                                 {"symbol": "MSFT", "asset": "aktie"}], datum="2026-01-06")
+        chancen = self.fc.chancen(["AAPL"], min_konfidenz=0.6)
+        symbole = [c["symbol"] for c in chancen]
+        self.assertIn("MSFT", symbole)       # Vorschlag von aussen
+        self.assertNotIn("AAPL", symbole)    # Watchlist ausgeschlossen
+
+
 if __name__ == "__main__":
     unittest.main()

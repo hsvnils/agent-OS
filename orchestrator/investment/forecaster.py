@@ -102,7 +102,8 @@ class Forecaster:
                                    "faellig_am": f.get("faellig_am"), "real_return_pct": real_ret,
                                    "real_richtung": _richtung(real_ret)})
             self.store.deviation_add({
-                "forecast_id": fid, "symbol": f.get("symbol"), "modell_version": f.get("modell_version"),
+                "forecast_id": fid, "symbol": f.get("symbol"), "asset": f.get("asset", "aktie"),
+                "modell_version": f.get("modell_version"),
                 "erstellt_am": f.get("erstellt_am"), "faellig_am": f.get("faellig_am"),
                 "prognose_return_pct": ziel, "real_return_pct": real_ret, "fehler_abs_pct": fehler,
                 "richtungstreffer": f.get("richtung") == _richtung(real_ret),
@@ -112,15 +113,36 @@ class Forecaster:
             neu += 1
         return {"ok": True, "neu_bewertet": neu, "kennzahlen": self.kennzahlen()}
 
-    # -- 3) Kennzahlen aus dem Register (wird der Fehler kleiner?) --
+    # -- 3) Kennzahlen aus dem Register (wird der Fehler kleiner? -- gesamt, je Version, je Anlageklasse) --
     def kennzahlen(self) -> dict:
         devs = self.store.list("inv_deviations")
         if not devs:
             return {"n": 0}
         je_version: dict[str, list] = {}
+        je_asset: dict[str, list] = {}
         for d in devs:
             je_version.setdefault(d.get("modell_version", "?"), []).append(d)
-        return {"gesamt": _agg(devs), "je_version": {k: _agg(v) for k, v in je_version.items()}}
+            je_asset.setdefault(d.get("asset", "aktie"), []).append(d)
+        return {"gesamt": _agg(devs),
+                "je_version": {k: _agg(v) for k, v in je_version.items()},
+                "je_asset": {k: _agg(v) for k, v in je_asset.items()}}
+
+    # -- 4) Chancen AUSSERHALB der Watchlist (Vorschlaege) --
+    def chancen(self, watchlist_symbols, *, max_n: int = 5, min_konfidenz: float = 0.6) -> list[dict]:
+        """Aus dem juengsten Prognose-Lauf die staerksten bullischen Werte, die NICHT auf der Watchlist stehen.
+        Der Loop reicht sie durch den Risk-Agent (engine.vorschlag) -> Alert. So kommen Vorschlaege von aussen."""
+        fcs = self.store.list("inv_forecasts")
+        if not fcs:
+            return []
+        letzter = fcs[-1].get("erstellt_am")
+        wl = {(s or "").upper() for s in watchlist_symbols}
+        kand = [f for f in fcs
+                if f.get("erstellt_am") == letzter and (f.get("symbol") or "").upper() not in wl
+                and f.get("richtung") == "steigt" and _num(f.get("konfidenz")) >= min_konfidenz]
+        kand.sort(key=lambda f: _num(f.get("konfidenz")), reverse=True)
+        return [{"symbol": f.get("symbol"), "asset": f.get("asset", "aktie"),
+                 "ziel_return_pct": _num(f.get("ziel_return_pct")), "konfidenz": _num(f.get("konfidenz")),
+                 "rationale": f.get("rationale", "")} for f in kand[:max_n]]
 
 
 def _agg(rows: list[dict]) -> dict:

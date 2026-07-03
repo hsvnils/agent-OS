@@ -508,15 +508,27 @@ def _start_investment_loop(ctx, secrets) -> None:
                             f"Fehler (MAE) {k.get('mae_pct')}% vs. Baseline {k.get('baseline_mae_pct')}%, "
                             f"Richtungsquote {round((k.get('richtungsquote') or 0) * 100)}%.",
                             abteilung="CIO", kategorie="investment", quelle="loop-abgleich", dedup_stunden=0)
-                # Woechentliche 7-Tage-Prognose (Mo ~09:00), 1x/Tag
+                # Woechentliche 7-Tage-Prognose (Mo ~09:00), 1x/Tag -- Watchlist + Discovery-Universum
                 if forecaster is not None and jetzt.weekday() == 0 and jetzt.hour == 9:
                     _fc = forecaster.store.list("inv_forecasts")
                     if (_fc[-1].get("erstellt_am") if _fc else "") != datum:
-                        p = forecaster.prognostizieren(eng.store.watchlist(), datum=datum)
+                        from ...investment.universe import panel
+                        wl = eng.store.watchlist()
+                        p = forecaster.prognostizieren(panel(wl), datum=datum)
                         ctx.notifications.enqueue(
                             f"7-Tage-Prognose erstellt: {len(p['erstellt'])} Werte "
                             f"(Modell {forecaster.MODELL_VERSION}, faellig {p['faellig_am']}).",
                             abteilung="CIO", kategorie="investment", quelle="loop-prognose", dedup_stunden=0)
+                        # Chancen AUSSERHALB der Watchlist -> je durch den Risk-Agent (engine.vorschlag) -> Alert
+                        for ch in forecaster.chancen([w.get("symbol") for w in wl], max_n=3):
+                            try:
+                                eng.vorschlag(
+                                    ch["symbol"], aktion="beobachten",
+                                    grund=f"7-Tage-Prognose steigt {ch['ziel_return_pct']:+.1f}% (nicht auf Watchlist)",
+                                    asset=ch["asset"], veraenderung_pct=ch["ziel_return_pct"],
+                                    konfidenz=ch["konfidenz"], quellen=["7-Tage-Prognose " + forecaster.MODELL_VERSION])
+                            except Exception as exc:
+                                print(f"[investment] Chancen-Vorschlag-Fehler: {exc}", flush=True)
                 # Taeglicher Markt-Screen (werktags ~16:00), 1x/Tag
                 if auto_screen and jetzt.weekday() < 5 and jetzt.hour == 16 and _letztes_datum("screening") != datum:
                     r = eng.screen_und_vorschlagen(max_vorschlaege=3)

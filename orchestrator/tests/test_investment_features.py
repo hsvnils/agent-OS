@@ -87,6 +87,23 @@ class TestFeatureCollector(unittest.TestCase):
         self.assertIn("AAPL", r2["uebersprungen"])
         self.assertEqual(len([e for e in self.store.list("inv_features") if e["symbol"] == "AAPL"]), 1)
 
+    def test_universe_wird_mitgesammelt_und_etf_getaggt(self):
+        c = FeatureCollector(StubMarket(), self.store)
+        c.collect([{"symbol": "XYZ", "asset": "aktie"}], datum="2026-01-02")
+        rows = {e["symbol"]: e for e in self.store.list("inv_features")}
+        self.assertIn("XYZ", rows)          # Watchlist
+        self.assertIn("QQQ", rows)          # aus dem Kernuniversum
+        self.assertEqual(rows["QQQ"]["asset"], "etf")
+        self.assertIn("ETHEREUM", rows)     # Krypto aus dem Kernuniversum
+        self.assertEqual(rows["ETHEREUM"]["asset"], "krypto")
+
+    def test_universe_leer_beschraenkt_auf_watchlist(self):
+        c = FeatureCollector(StubMarket(), self.store)
+        c.collect([{"symbol": "XYZ", "asset": "aktie"}], universe=[], datum="2026-01-02")
+        syms = {e["symbol"] for e in self.store.list("inv_features")}
+        self.assertNotIn("QQQ", syms)       # ohne Universum kein Discovery
+        self.assertIn("XYZ", syms)
+
     def test_kein_kurs_landet_in_hinweisen(self):
         c = FeatureCollector(StubMarket(ok=False), self.store)
         r = c.collect([{"symbol": "AAPL", "asset": "aktie"}], datum="2026-01-02")

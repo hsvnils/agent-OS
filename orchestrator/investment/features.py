@@ -30,7 +30,7 @@ class FeatureCollector:
         self.store = store        # investment.loop_store.LoopStore
 
     def _preis(self, symbol: str, asset: str):
-        """(close, change_pct) oder (None, 0.0) bei fehlendem Kurs/Fall-B."""
+        """(close, change_pct) oder (None, 0.0) bei fehlendem Kurs/Fall-B. ETF laeuft ueber den Aktien-Pfad."""
         if asset == "krypto":
             c = self.market.crypto_preis([symbol], vs="eur")
             if c.get("ok"):
@@ -42,14 +42,19 @@ class FeatureCollector:
             return _num(q.get("preis")) or None, _num(q.get("veraenderung_pct"))
         return None, 0.0
 
-    def collect(self, watchlist, *, datum: str | None = None) -> dict:
+    def collect(self, watchlist, *, universe=None, datum: str | None = None) -> dict:
+        """Sammelt Merkmale fuer Watchlist + Discovery-Universum (Standard: universe.CORE_UNIVERSE) + Benchmarks.
+        `universe=[]` beschraenkt bewusst auf die Watchlist (z. B. in Tests)."""
         from datetime import date
+
+        from .universe import CORE_UNIVERSE
         datum = datum or date.today().isoformat()
+        uni = CORE_UNIVERSE if universe is None else universe
         gesammelt, uebersprungen, hinweise = [], [], []
 
         seen: set[str] = set()
         ziele: list[dict] = []
-        for w in list(watchlist) + BASELINES:
+        for w in list(watchlist) + list(uni) + BASELINES:
             sym = (w.get("symbol") or "").strip()
             if not sym or sym.upper() in seen:
                 continue
