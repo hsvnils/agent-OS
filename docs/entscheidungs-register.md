@@ -40,10 +40,30 @@
 | **Creator-Monetarisierung/Pricing-Benchmarks 2026** (CRO) | 2026-07-04 | **UEBERNEHMEN** (in CRO-Skills) | `skills/cro/` pricing-struktur + umsatz-diversifizierung |
 | **Brand-Voice-Framework (4 Dimensionen) + Konsistenz** (CBO) | 2026-07-04 | **UEBERNEHMEN** (in CBO-Skills) | `skills/cbo/` markenstimme + markenkonformitaet-pruefen |
 | **6 Datenqualitaets-Dimensionen + North-Star/Vanity** (CDO) | 2026-07-04 | **UEBERNEHMEN** (in CDO-Skills) | `skills/cdo/` datenqualitaet-pruefen + kennzahlen-definieren |
+| **MBB-Beratungsframeworks** (MECE/Issue-Tree/Hypothesen/Pyramid/Porter/BCG/Ansoff/BMC) (UB) | 2026-07-04 | **TEILWEISE UEBERNEHMEN** (Prinzipien, nicht Ballast) | `skills/berater/` (3 Skills) |
 
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-07-04 — UB-Recherche: MBB-Beratungsframeworks (CEO-Auftrag „richtig wertvoll machen")
+
+**Kontext:** Unternehmensberater (Agent 01) soll deutlich wertvoller werden. Ist-Stand: konsultierbar (starker
+Pfad Sonnet 5/high), Innovations-Pipeline (`innovation_scouting`), Self-Dev-Ideengeber, Routing -- aber ohne
+feste Methodik.
+
+**Befund (Top-Frameworks McKinsey/BCG/Bain):**
+- **Problemloesen:** MECE, Issue Trees, hypothesengetrieben, 7-Schritte-Prozess. **Kommunikation:** Pyramid
+  Principle (Antwort zuerst). **Strategie:** SWOT, Porter's Five Forces, BCG-Matrix, Ansoff, Business Model
+  Canvas, Wertkette.
+
+**Entscheidung:** **TEILWEISE UEBERNEHMEN -- Prinzipien, nicht Ballast** (keine Interview-Framework-Sammlung
+1:1). 3 Skills gebaut: `strukturiertes-problemloesen` (MECE/Issue-Tree/Hypothesen/7-Schritte + Pyramid-Output),
+`strategie-framework-toolkit` (das *richtige* Framework waehlen, 1-2 statt alle), `effizienz-prozess-review`
+(Engpass-/Prozessanalyse des Agenten-Unternehmens mit Impact/Aufwand). Lokal, kein CEO-Tor; Entscheidung
+bleibt CEO.
+
+**Quellen:** StrategyU / High Bridge / Slideworks / Hacking-the-Case (MBB-Frameworks + 7-Schritte-Prozess).
 
 ### 2026-07-04 — CDO-Recherche: Datenqualitaets-Dimensionen + North-Star/Vanity (CEO-Auftrag)
 

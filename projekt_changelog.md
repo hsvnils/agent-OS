@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 05:10] — Claude Code — Unternehmensberater angereichert: 3 Beratungs-Skills
+- **Was:** Recherche (MBB-Beratungsframeworks) im Register protokolliert und genutzt: 3 gegatete Skills unter
+  `skills/berater/` -- `strukturiertes-problemloesen` (MECE/Issue-Tree/Hypothesen/7-Schritte + Pyramid-Output),
+  `strategie-framework-toolkit` (SWOT/Porter/BCG/Ansoff/BMC/Wertkette -- das richtige waehlen) und
+  `effizienz-prozess-review` (Engpass-/Prozessanalyse mit Impact/Aufwand). Alle Gate: bestanden; der Berater
+  laedt jetzt 3 Skills. Entscheidung bleibt CEO. Suite gruen.
+- **Warum:** CEO-Auftrag, den Unternehmensberater „richtig wertvoll" zu machen -- Beratungs-Methodik statt
+  Ad-hoc. Prinzipien uebernommen, kein Framework-Ballast. Lokal, kein CEO-Tor.
+- **Betroffen:** `skills/berater/strukturiertes-problemloesen/SKILL.md` (neu),
+  `skills/berater/strategie-framework-toolkit/SKILL.md` (neu),
+  `skills/berater/effizienz-prozess-review/SKILL.md` (neu), `docs/entscheidungs-register.md`.
+
 ## [2026-07-04 04:50] — Head of Agents (Claude Code) — CDO-Charta vertieft + Status aktiv (CEO-freigegeben)
 - **Was:** `agents/11_cdo.md`: Auftrag/Aufgabenkatalog/KPI-Dashboard-Workflow verweisen jetzt auf die CDO-Skills
   (`datenqualitaet-pruefen` = 6 Dimensionen; `kennzahlen-definieren` = North Star + actionable, Vanity
