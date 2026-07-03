@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 10:45] — Claude Code — Investment: Command-Center in LUNA-OS (Schritt 3, Lern-Loop sichtbar)
+- **Was:** Der Walk-Forward-Lern-Loop ist jetzt in der LUNA-OS-App „Investment" sichtbar. (1) Backend:
+  `Forecaster.verlauf()` (MAE je Auswertungs-Woche) + Endpunkt `/api/investment/loop` in `app.py`
+  (`_investment_loop_payload`: Kennzahlen gesamt/je-Version/je-Anlageklasse, Fehler-Verlauf, offene Prognosen,
+  Abweichungs-Register, Panel-Zusammenfassung) -- liest `investment/features.jsonl` read-only aus dem geteilten
+  Docker-Volume, das der Bot schreibt. (2) Frontend (`app.js` `invLoopHtml` + Helfer): „Lern-Loop"-Block mit
+  KPI-Kacheln, **Inline-SVG-Fehler-Verlauf** (Modell vs. Baseline, niedriger=besser), Balken je Anlageklasse,
+  offene Prognosen (Richtungspfeil/Ziel/Konfidenz/faellig) und dem **Abweichungs-Register** (Prognose->real,
+  Fehler, schlaegt/unter Baseline). (3) CSS `.inv-loop/.inv-kpi/.inv-svg/...` im Jarvis-Stil; kein Chart-CDN
+  (selbst-genuegsam). Cache-Bust v37->v38. UI.md gepflegt. Isoliert per Preview verifiziert (Mock-Daten,
+  Testdatei + Launch-Config wieder entfernt). `Forecaster.verlauf()` mit Test; volle Suite 509 gruen.
+- **Warum:** Schritt 3 der CEO-Roadmap -- den Lern-Loop (Prognose/Abgleich/Abweichung/Baseline) sichtbar und
+  auswertbar machen. Advisory, kein Geld/Trade/Gate.
+- **Betroffen:** `orchestrator/investment/forecaster.py`, `orchestrator/tests/test_investment_forecaster.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app.js`,
+  `orchestrator/channels/web/static/style.css`, `orchestrator/channels/web/static/index.html`, `UI.md`.
+
 ## [2026-07-04 10:15] — Claude Code — Investment: Anlageklassen (ETF) + Discovery-Universum ausserhalb der Watchlist
 - **Was:** (1) **ETF als eigene Anlageklasse** (`asset="etf"`, laeuft datenseitig ueber den Aktien-Pfad); Prognosen
   UND das Abweichungs-Register tragen jetzt die Anlageklasse, und `Forecaster.kennzahlen()` schluesselt zusaetzlich

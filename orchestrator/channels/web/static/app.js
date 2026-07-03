@@ -117,9 +117,10 @@ const APPS = {
 };
 
 // ---- Investment (CIO, advisory) --------------------------------------------
-let INVEST = null;
+let INVEST = null, INVLOOP = null;
 async function ladeInvestment() {
   try { INVEST = await (await fetch("/api/investment")).json(); } catch { INVEST = null; }
+  try { INVLOOP = await (await fetch("/api/investment/loop")).json(); } catch { INVLOOP = null; }
   const win = WINS.investment; if (!win) return;
   if (!INVEST) { win.body.innerHTML = `<div class="app"><div class="leer">Investment nicht verfügbar.</div></div>`; return; }
   const i = INVEST;
@@ -147,6 +148,7 @@ async function ladeInvestment() {
     <div class="kv"><span class="k">Track-Record</span><b>${esc(scText)}</b></div>
     <div class="kv"><span class="k">Historie (append-only)</span><b>${esc(histText)}</b></div>
     <div style="margin:10px 0; display:flex; gap:6px; flex-wrap:wrap">${prov}</div>
+    ${invLoopHtml(INVLOOP)}
     <div class="brain-bar">
       <div class="inv-ac"><input id="inv-sym" placeholder="Aktie/Krypto suchen & hinzufügen…" autocomplete="off" oninput="investSuche(this.value)">
         <div id="inv-suggest" class="inv-suggest"></div></div>
@@ -156,6 +158,69 @@ async function ladeInvestment() {
     <h3>Shortlist (letzter Screen)</h3>${sl}
     <h3>Vorschläge (vom Risk-Agent geprüft)</h3>${sug}
     <h3>Insider-Signale (SEC Form 4)</h3>${ins}</div>`;
+}
+
+// ---- Investment-Lern-Loop (Walk-Forward): Command-Center-Block -------------
+const invPct = v => (v == null ? "–" : Math.round(v) + "%");
+const invNum = v => (v == null ? "–" : Number(v).toFixed(1));
+function invKpi(label, wert, sub) {
+  return `<div class="inv-kpi"><div class="k">${esc(label)}</div><b>${wert}</b><span>${esc(sub || "")}</span></div>`;
+}
+// Fehler-Verlauf: zwei Linien (Modell vs. Baseline), niedriger = besser.
+function invTrendSvg(v) {
+  if (!v || !v.length) return `<div class="leer">Noch kein Fehler-Verlauf — braucht ausgewertete Prognosen.</div>`;
+  const W = 320, H = 120, pad = 22;
+  const max = Math.max(1, ...v.flatMap(p => [p.mae_pct || 0, p.baseline_mae_pct || 0]));
+  const x = i => pad + (v.length <= 1 ? (W - 2 * pad) / 2 : i * (W - 2 * pad) / (v.length - 1));
+  const y = val => H - pad - ((val || 0) / max) * (H - 2 * pad);
+  const path = key => v.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p[key]).toFixed(1)}`).join(" ");
+  const dot = (key, cls) => v.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p[key]).toFixed(1)}" r="2.4" class="inv-dot ${cls}"/>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" class="inv-svg" preserveAspectRatio="none" role="img">
+    <path d="${path("baseline_mae_pct")}" class="inv-line base"/><path d="${path("mae_pct")}" class="inv-line strat"/>
+    ${dot("baseline_mae_pct", "base")}${dot("mae_pct", "strat")}</svg>`;
+}
+function invLoopHtml(L) {
+  if (!L) return "";
+  const g = (L.kennzahlen && L.kennzahlen.gesamt) || {};
+  const p = L.panel || {};
+  const kpis = g.n
+    ? `<div class="inv-kpis">
+        ${invKpi("Richtungsquote", invPct((g.richtungsquote || 0) * 100), g.n + " ausgewertet")}
+        ${invKpi("Fehler (MAE)", invNum(g.mae_pct) + "%", "je Prognose")}
+        ${invKpi("Baseline", invNum(g.baseline_mae_pct) + "%", "Messlatte")}
+        ${invKpi("Besser als Baseline", invPct((g.anteil_besser_baseline || 0) * 100), "Trefferanteil")}
+      </div>`
+    : `<div class="leer">Noch keine ausgewerteten Prognosen — der Loop sammelt (Prognose Mo, Abgleich nach 7 Tagen).</div>`;
+  const klassen = Object.entries((L.kennzahlen && L.kennzahlen.je_asset) || {}).map(([k, a]) =>
+    `<div class="inv-cls"><span class="lbl">${esc(k)}</span>
+      <div class="bar"><i style="width:${Math.round((a.richtungsquote || 0) * 100)}%"></i></div>
+      <span class="val">${invPct((a.richtungsquote || 0) * 100)} · MAE ${invNum(a.mae_pct)}% · n=${a.n}</span></div>`).join("")
+    || `<div class="leer">–</div>`;
+  const prog = (L.offene_prognosen || []).slice(0, 8).map(f => {
+    const up = f.richtung === "steigt", dn = f.richtung === "faellt";
+    const col = up ? "var(--green)" : dn ? "var(--red)" : "var(--muted)";
+    const pfeil = up ? "▲" : dn ? "▼" : "▬";
+    return `<div class="row"><span class="t" style="color:${col}">${pfeil} ${(f.ziel_return_pct > 0 ? "+" : "") + invNum(f.ziel_return_pct)}%</span>
+      <div><b>${esc(f.symbol)}</b> <span class="meta">${esc(f.asset)} · Konf. ${invPct((f.konfidenz || 0) * 100)} · fällig ${esc(f.faellig_am || "")}</span></div></div>`;
+  }).join("") || `<div class="leer">Noch keine offenen Prognosen.</div>`;
+  const reg = (L.register || []).slice(0, 8).map(d => {
+    const gut = d.besser_als_baseline;
+    return `<div class="row"><span class="t" style="color:${gut ? "var(--green)" : "var(--amber)"}">Δ ${invNum(d.fehler_abs_pct)}%</span>
+      <div><b>${esc(d.symbol)}</b> <span class="meta">${esc(d.asset)} · Prognose ${invNum(d.prognose_return_pct)}% → real ${invNum(d.real_return_pct)}%${d.richtungstreffer ? " · Richtung ✓" : ""}</span></div>
+      <span class="badge ${gut ? "freigegeben" : "in_umsetzung"}">${gut ? "schlägt Baseline" : "unter Baseline"}</span></div>`;
+  }).join("") || `<div class="leer">Register noch leer — Abweichungen erscheinen nach dem ersten Abgleich.</div>`;
+  return `<div class="inv-loop">
+    <div class="inv-loop-head"><b>Lern-Loop (Walk-Forward)</b>
+      <span class="meta">${p.symbole || 0} Werte · ${p.snapshots || 0} Snapshots · Stand ${esc(p.letzter || "–")} · Modell ${esc(L.modell_version || "")}</span></div>
+    ${kpis}
+    <div class="inv-two">
+      <div><h4>Fehler-Verlauf <span class="meta">niedriger = besser</span></h4>${invTrendSvg(L.verlauf)}
+        <div class="inv-leg"><span><i class="strat"></i>Modell</span><span><i class="base"></i>Baseline</span></div></div>
+      <div><h4>Je Anlageklasse</h4>${klassen}</div>
+    </div>
+    <h4>Offene Prognosen</h4>${prog}
+    <h4>Abweichungs-Register <span class="meta">separat, dauerhaft</span></h4>${reg}
+  </div>`;
 }
 async function investScreen(btn) {
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Screent…"; }

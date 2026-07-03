@@ -99,6 +99,9 @@ insights_intern = Insights(antraege=antraege, research=research, agenda=agenda)
 # Investment (Phase 2, advisory): Engine + Store. MarketData wird lazy aus den .env-Keys gebaut.
 from ...investment.store import InvestmentStore
 inv_store = InvestmentStore(ROOT / "investment" / "log.jsonl")
+# Walk-Forward-Lern-Loop: read-only auf dieselbe Datei, die der Bot schreibt (geteiltes Volume).
+from ...investment.loop_store import LoopStore
+loop_store = LoopStore(ROOT / "investment" / "features.jsonl")
 
 OFFEN = ("eingereicht", "freigegeben", "in_umsetzung")
 _RANG = {"eingereicht": 0, "freigegeben": 1, "in_umsetzung": 2}
@@ -801,6 +804,50 @@ def investment():
                      "filing_url": s.get("filing_url"), "datum": s.get("datum"), "ts": s.get("ts")}
                     for s in inv_store.insider_signals(15)],
     }
+
+
+def _inum(v) -> float:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _investment_loop_payload() -> dict:
+    """Lern-Loop-Daten fuer das Command-Center: Kennzahlen (gesamt/je Version/je Anlageklasse), Fehler-Verlauf,
+    offene Prognosen und das Abweichungs-Register. Liest die vom Bot geschriebene Datei (geteiltes Volume)."""
+    from ...investment.forecaster import Forecaster
+    fc = Forecaster(loop_store)
+    devs = loop_store.list("inv_deviations")
+    fcs = loop_store.list("inv_forecasts")
+    feats = loop_store.list("inv_features")
+    bewertet = {d.get("forecast_id") for d in devs}
+    offen = [f for f in fcs if f.get("id") not in bewertet]
+    return {
+        "modell_version": Forecaster.MODELL_VERSION,
+        "kennzahlen": fc.kennzahlen(),
+        "verlauf": fc.verlauf(),
+        "offene_prognosen": [
+            {"symbol": f.get("symbol"), "asset": f.get("asset", "aktie"), "richtung": f.get("richtung"),
+             "ziel_return_pct": _inum(f.get("ziel_return_pct")), "konfidenz": _inum(f.get("konfidenz")),
+             "erstellt_am": f.get("erstellt_am"), "faellig_am": f.get("faellig_am")}
+            for f in reversed(offen)][:20],
+        "register": [
+            {"symbol": d.get("symbol"), "asset": d.get("asset", "aktie"),
+             "prognose_return_pct": _inum(d.get("prognose_return_pct")),
+             "real_return_pct": _inum(d.get("real_return_pct")), "fehler_abs_pct": _inum(d.get("fehler_abs_pct")),
+             "richtungstreffer": bool(d.get("richtungstreffer")),
+             "besser_als_baseline": bool(d.get("besser_als_baseline")),
+             "faellig_am": d.get("faellig_am"), "modell_version": d.get("modell_version")}
+            for d in reversed(devs)][:20],
+        "panel": {"symbole": len({e.get("symbol") for e in feats}), "snapshots": len(feats),
+                  "letzter": loop_store.last_datum("inv_features")},
+    }
+
+
+@app.get("/api/investment/loop")
+def investment_loop():
+    return _investment_loop_payload()
 
 
 @app.post("/api/investment/screen")

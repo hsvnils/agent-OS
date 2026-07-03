@@ -145,6 +145,30 @@ class Forecaster:
                  "rationale": f.get("rationale", "")} for f in kand[:max_n]]
 
 
+    # -- 5) Fehler-Verlauf je Auswertungs-Woche (wird der Fehler ueber die Zeit kleiner?) --
+    def verlauf(self) -> list[dict]:
+        buckets: dict[str, list] = {}
+        for d in self.store.list("inv_deviations"):
+            wk = _iso_woche(d.get("faellig_am"))
+            if wk:
+                buckets.setdefault(wk, []).append(d)
+        out = []
+        for wk in sorted(buckets):
+            v = buckets[wk]
+            out.append({"woche": wk, "n": len(v),
+                        "mae_pct": round(sum(_num(x.get("fehler_abs_pct")) for x in v) / len(v), 3),
+                        "baseline_mae_pct": round(sum(_num(x.get("baseline_fehler_abs_pct")) for x in v) / len(v), 3)})
+        return out
+
+
+def _iso_woche(datum: str) -> str:
+    try:
+        y, w, _ = date.fromisoformat((datum or "")[:10]).isocalendar()
+        return f"{y}-W{w:02d}"
+    except (ValueError, TypeError):
+        return ""
+
+
 def _agg(rows: list[dict]) -> dict:
     n = len(rows)
     if not n:

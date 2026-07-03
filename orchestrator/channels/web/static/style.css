@@ -222,6 +222,35 @@ body {
 .ac-item:hover { background: rgba(46,230,255,.1); }
 .ac-item.leer { color: var(--muted); cursor: default; }
 
+/* Investment-Lern-Loop (Walk-Forward) -- Command-Center-Block */
+.inv-loop { margin: 12px 0; padding: 12px; border: 1px solid rgba(46,230,255,.22); border-radius: 12px;
+  background: rgba(8,14,34,.4); }
+.inv-loop-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.inv-loop-head b { color: var(--cyan); font-family: var(--mono); letter-spacing: .5px; }
+.inv-loop h4 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--muted); font-weight: 600; }
+.inv-loop h4 .meta { text-transform: none; letter-spacing: 0; }
+.inv-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 10px; }
+.inv-kpi { background: rgba(20,30,48,.55); border-radius: 10px; padding: 8px 10px; }
+.inv-kpi .k { font-size: 11px; color: var(--muted); }
+.inv-kpi b { display: block; font-size: 20px; color: var(--fg); font-family: var(--mono); line-height: 1.2; }
+.inv-kpi span { font-size: 10px; color: var(--muted); }
+.inv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 520px) { .inv-two { grid-template-columns: 1fr; } }
+.inv-svg { width: 100%; height: 120px; }
+.inv-line { fill: none; stroke-width: 2; }
+.inv-line.strat { stroke: var(--cyan); }
+.inv-line.base { stroke: var(--muted); stroke-dasharray: 4 4; }
+.inv-dot.strat { fill: var(--cyan); } .inv-dot.base { fill: var(--muted); }
+.inv-leg { display: flex; gap: 14px; font-size: 11px; color: var(--muted); margin-top: 4px; }
+.inv-leg i { display: inline-block; width: 12px; height: 2px; vertical-align: middle; margin-right: 4px; }
+.inv-leg i.strat { background: var(--cyan); } .inv-leg i.base { background: var(--muted); }
+.inv-cls { display: grid; grid-template-columns: 54px 1fr auto; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; }
+.inv-cls .lbl { color: var(--fg); text-transform: capitalize; }
+.inv-cls .bar { height: 7px; background: rgba(20,30,48,.7); border-radius: 4px; overflow: hidden; }
+.inv-cls .bar i { display: block; height: 100%; background: var(--cyan); }
+.inv-cls .val { color: var(--muted); font-size: 11px; white-space: nowrap; }
+
 /* Anklickbare Ergebnisse (Investment) */
 .row.klick, .card.klick { cursor: pointer; }
 .row.klick { align-items: center; }

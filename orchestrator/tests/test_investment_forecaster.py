@@ -101,6 +101,21 @@ class TestForecaster(unittest.TestCase):
         dev = next(d for d in self.store.list("inv_deviations") if d["symbol"] == "ETHEREUM")
         self.assertEqual(dev["asset"], "krypto")   # Anlageklasse im Register
 
+    def test_verlauf_je_woche(self):
+        # zwei Auswertungen in verschiedenen Wochen -> zwei Trend-Punkte
+        for tag, close in [("2026-01-01", 100.0), ("2026-01-02", 101.0), ("2026-01-03", 102.0),
+                           ("2026-01-04", 103.0), ("2026-01-05", 104.0), ("2026-01-06", 105.0)]:
+            self.store.feature_add("AAPL", "aktie", tag, close, 0.0, {})
+        self.fc.prognostizieren([{"symbol": "AAPL", "asset": "aktie"}], datum="2026-01-02")  # faellig 2026-01-09
+        self.fc.prognostizieren([{"symbol": "AAPL", "asset": "aktie"}], datum="2026-01-06")  # faellig 2026-01-13
+        self.store.feature_add("AAPL", "aktie", "2026-01-09", 106.0, 0.0, {})
+        self.store.feature_add("AAPL", "aktie", "2026-01-13", 108.0, 0.0, {})
+        self.fc.auswerten(heute="2026-01-13")
+        v = self.fc.verlauf()
+        self.assertGreaterEqual(len(v), 2)
+        self.assertIn("mae_pct", v[0])
+        self.assertIn("baseline_mae_pct", v[0])
+
     def test_chancen_nur_ausserhalb_watchlist(self):
         _seed_historie(self.store, "AAPL", [100, 105, 110, 116, 122, 128], start="2026-01-01")
         _seed_historie(self.store, "MSFT", [200, 210, 221, 233, 245, 258], start="2026-01-01")
