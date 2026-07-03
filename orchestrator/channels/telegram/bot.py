@@ -621,10 +621,13 @@ def main() -> None:
                                    eigene_adresse=secrets.get("GOOGLE_ACCOUNT_EMAIL", "hanserautisch@gmail.com"),
                                    secrets=ctx.leak_secrets,
                                    notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
-                # Instagram-DMs des eigenen Kontos per Graph-Poll ins CRM (keine App-Review noetig).
+                # Instagram-DM-Poll: standardmaessig AUS (grosse Konten -> Meta-Timeout "reduce the amount
+                # of data"; ausserdem ohne App-Veroeffentlichung keine fremden DMs). Opt-in INSTAGRAM_DM_POLL=1;
+                # manuell jederzeit via Tool `crm_dm_abrufen`.
                 _ig_tok = secrets.get("INSTAGRAM_ACCESS_TOKEN") or secrets.get("INSTAGRAM_PAGE_TOKEN")
                 _ig_id = secrets.get("INSTAGRAM_IG_USER_ID")
-                if ctx.crm is not None and _ig_tok and _ig_id \
+                _ig_poll_an = str(secrets.get("INSTAGRAM_DM_POLL", "")).strip().lower() in ("1", "true", "yes", "on")
+                if _ig_poll_an and ctx.crm is not None and _ig_tok and _ig_id \
                         and (ctx.watch is None or not ctx.watch.store.paused()):
                     from ...core.crm_instagram import CrmInstagramTracker
                     from ...governance.instagram import InstagramConversations
