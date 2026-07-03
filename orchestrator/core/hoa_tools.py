@@ -386,13 +386,16 @@ def tool_specs() -> list[dict]:
               {"pfad": _str("Optional: Pfad zur .xmind-Datei.")}, []),
         _spec("xmind_bearbeiten", "Phase 17 (Mac): bearbeitet eine XMind-Mindmap GEGATET (Vorschau/"
               "Bestaetigung/Not-Aus/Audit). aktion='knoten_hinzufuegen' (titel; optional eltern=Titel des "
-              "Eltern-Knotens, sonst Wurzel) oder 'umbenennen' (ziel=aktueller Titel, titel=neuer Titel). "
-              "Ohne 'pfad' die zuletzt geaenderte .xmind. OHNE bestaetigt=true im Bestaetigen-Modus erst "
-              "eine Vorschau. Hinweis: bei offener Datei Aenderung erst nach erneutem Oeffnen sichtbar.",
-              {"aktion": _str("'knoten_hinzufuegen' oder 'umbenennen'."),
+              "Eltern-Knotens, sonst Wurzel), 'umbenennen' (ziel=aktueller Titel, titel=neuer Titel), "
+              "'knoten_loeschen' (ziel; samt Unterknoten) oder 'knoten_verschieben' (ziel; eltern=neuer "
+              "Eltern-Knoten). Ohne 'pfad' die zuletzt geaenderte .xmind. OHNE bestaetigt=true im "
+              "Bestaetigen-Modus erst eine Vorschau. Hinweis: bei offener Datei Aenderung erst nach erneutem "
+              "Oeffnen sichtbar.",
+              {"aktion": _str("knoten_hinzufuegen | umbenennen | knoten_loeschen | knoten_verschieben."),
                "titel": _str("Neuer Knoten-Titel bzw. neuer Name."),
-               "eltern": _str("Optional: Titel des Eltern-Knotens (bei knoten_hinzufuegen)."),
-               "ziel": _str("Bei 'umbenennen': aktueller Titel des Zielknotens."),
+               "eltern": _str("Titel des Eltern-Knotens (bei knoten_hinzufuegen) bzw. neuer Eltern-Knoten "
+                              "(bei knoten_verschieben)."),
+               "ziel": _str("Aktueller Titel des Zielknotens (umbenennen/loeschen/verschieben)."),
                "pfad": _str("Optional: Pfad zur .xmind-Datei."),
                "bestaetigt": _bool("true erst nach ausdruecklicher CEO-Bestaetigung.")}, ["aktion"]),
     ]
@@ -1255,9 +1258,14 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         titel = (args.get("titel") or "").strip()
         eltern = (args.get("eltern") or "").strip() or None
         ziel = (args.get("ziel") or "").strip()
+        _geplant = {
+            "knoten_hinzufuegen": f"Knoten '{titel}' unter '{eltern or 'Wurzel'}' anlegen",
+            "umbenennen": f"'{ziel}' umbenennen in '{titel}'",
+            "knoten_loeschen": f"Knoten '{ziel}' (samt Unterknoten) loeschen",
+            "knoten_verschieben": f"'{ziel}' verschieben unter '{eltern}'",
+        }
         if g["bestaetigung_noetig"] and not bool(args.get("bestaetigt")):
-            geplant = (f"Knoten '{titel}' unter '{eltern or 'Wurzel'}' anlegen"
-                       if aktion == "knoten_hinzufuegen" else f"'{ziel}' umbenennen in '{titel}'")
+            geplant = _geplant.get(aktion, aktion)
             if ctx.aktivitaet:
                 ctx.aktivitaet.log("Mac-Aktuator", f"Vorschau XMind: {aktion}",
                                    kategorie="rechner_aktion", detail=geplant)
@@ -1267,8 +1275,13 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             res = xmind.add_node(pfad, titel, eltern=eltern)
         elif aktion == "umbenennen":
             res = xmind.rename_node(pfad, ziel, titel)
+        elif aktion == "knoten_loeschen":
+            res = xmind.delete_node(pfad, ziel)
+        elif aktion == "knoten_verschieben":
+            res = xmind.move_node(pfad, ziel, eltern or "")
         else:
-            return {"fehler": f"Unbekannte Aktion '{aktion}'. Erlaubt: knoten_hinzufuegen, umbenennen."}
+            return {"fehler": f"Unbekannte Aktion '{aktion}'. Erlaubt: knoten_hinzufuegen, umbenennen, "
+                              "knoten_loeschen, knoten_verschieben."}
         if res.get("ok") and actuator.is_macos():
             actuator.datei_im_vordergrund_oeffnen(pfad)
             res["vordergrund"] = ("XMind in den Vordergrund geholt. Falls die Datei schon offen war: einmal "

@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 00:20] — Claude Code — Phase 17 (M5): XMind-Bearbeiten um loeschen/verschieben + Tests
+- **Was:** `runner/xmind.py` um `delete_node` (samt Unterknoten; Wurzel-Schutz) und `move_node` (in anderen
+  Eltern-Knoten; Wurzel- + Zyklus-Schutz) erweitert -> Tool `xmind_bearbeiten` kann jetzt
+  knoten_hinzufuegen | umbenennen | **knoten_loeschen** | **knoten_verschieben** (gegated: Vorschau/
+  Bestaetigung/Audit). Damit ist die vom CEO beschriebene Korrekturschleife („den Knoten woanders" / entfernen)
+  abgedeckt. Erstmals Tests fuer den Phase-17-M5-Kern: `test_xmind.py` (10, alle Verben + Guards) +
+  `test_vision.py` (2 Guards fuer den bislang untestierten `/api/sehen`-Pfad `runner/vision.py`). +12 Tests
+  (476 gruen). Befund: „Sehen" (Vision) + XMind-Lesen/Bearbeiten waren bereits gebaut -- hier ergaenzt/gehaertet.
+- **Warum:** Phase 17 weiterbauen (CEO-Plan 3/3), app-spezifische Bearbeiten-Recipe -- lokal, testbar, ohne
+  Anthropic-Blocker. Generisches Computer-Use bleibt am Anthropic-Modellzugang gated.
+- **Betroffen:** `runner/xmind.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/tests/test_xmind.py` (neu),
+  `orchestrator/tests/test_vision.py` (neu), `ROADMAP.md`.
+
 ## [2026-07-03 23:45] — Claude Code — GATE C: Alpaca-Paper-Trading (Code fertig, inert)
 - **Was:** Neuer Alpaca-Paper-Broker-Adapter `investment/broker.py` (`AlpacaPaperBroker`, injizierbarer HTTP,
   inert ohne Keys). Harte Order-Pruefung `RiskAgent.pruefe_order` (Kauf nur <= Buying-Power UND <= 5 % Equity;

@@ -355,6 +355,11 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   Anthropic-Tor, ab 2026-07-01). **Empfehlung:** zuerst „Sehen" (Vision, Screenshot vom Orb -> Modell), dann
   Bearbeiten gegated (Computer-Use generisch oder app-spezifische Recipe je freigegebenem Verb). Screen-Capture
   = neue Berechtigung (Screen Recording am `.app`).
+  - **Fortschritt 2026-07-03:** „Sehen" ist LIVE (Orb `capturePNG` -> `/api/sehen` -> `runner/vision.py`
+    Gemini). **XMind-Bearbeiten-Recipe** (app-spezifisch, `runner/xmind.py`) deckt jetzt die volle CEO-
+    Korrekturschleife: `knoten_hinzufuegen` · `umbenennen` · **`knoten_loeschen`** · **`knoten_verschieben`**
+    (Wurzel-/Zyklus-Schutz), gegated (Vorschau/Bestaetigung/Audit). +12 Tests (XMind-Verben + Vision-Guards).
+    Offen: generisches Bearbeiten (Computer-Use, Anthropic-Tor), Voice-integriertes Co-Working, NAS->Mac-Bruecke.
 - 🔲 **Voice-Latenz** spaeter optimieren (CEO 2026-06-29: laeuft, aber langsam) — Streaming-TTS, schnelleres
   Modell fuer kurze Antworten, fruehzeitiges Senden.
 - 🔲 **NAS-Bruecke „eine LUNA, zwei Gesichter"** — gemeinsamer Live-Zustand (brain/Antraege) statt lokaler Insel.

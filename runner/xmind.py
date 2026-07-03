@@ -68,6 +68,24 @@ def _find_topic(topic: dict, ziel: str) -> dict | None:
     return None
 
 
+def _find_parent(topic: dict, ziel: str) -> dict | None:
+    """Gibt den Knoten zurueck, dessen `children.attached` ein Kind mit Titel `ziel` enthaelt."""
+    for kind in topic.get("children", {}).get("attached", []):
+        if (kind.get("title") or "").strip().lower() == ziel.strip().lower():
+            return topic
+        treffer = _find_parent(kind, ziel)
+        if treffer:
+            return treffer
+    return None
+
+
+def _enthaelt(topic: dict, titel: str) -> bool:
+    """True, wenn `topic` selbst oder ein Nachfahre `titel` traegt (Zyklus-Schutz beim Verschieben)."""
+    if (topic.get("title") or "").strip().lower() == titel.strip().lower():
+        return True
+    return any(_enthaelt(k, titel) for k in topic.get("children", {}).get("attached", []))
+
+
 def _walk(topic: dict, tiefe: int, lines: list) -> None:
     lines.append("  " * tiefe + "- " + (topic.get("title") or "(ohne Titel)"))
     for kind in topic.get("children", {}).get("attached", []):
@@ -143,3 +161,67 @@ def rename_node(path: str, ziel: str, neuer_titel: str) -> dict:
     except Exception as exc:
         return {"ok": False, "grund": f"Schreibfehler: {str(exc)[:200]}"}
     return {"ok": True, "pfad": path, "alt": alt, "neu": neuer_titel}
+
+
+def delete_node(path: str, ziel: str) -> dict:
+    """Loescht den Knoten `ziel` (samt Unterknoten). Der Wurzel-Knoten kann nicht geloescht werden."""
+    ziel = (ziel or "").strip()
+    if not ziel:
+        return {"ok": False, "grund": "Kein Ziel-Knoten."}
+    try:
+        data = _read_content(path)
+    except Exception as exc:
+        return {"ok": False, "grund": f"Lesefehler: {str(exc)[:200]}"}
+    for sheet in data:
+        root = sheet.get("rootTopic", {})
+        if (root.get("title") or "").strip().lower() == ziel.lower():
+            return {"ok": False, "grund": "Der Wurzel-Knoten kann nicht geloescht werden."}
+        parent = _find_parent(root, ziel)
+        if parent is None:
+            continue
+        attached = parent.get("children", {}).get("attached", [])
+        neu = [k for k in attached if (k.get("title") or "").strip().lower() != ziel.lower()]
+        parent["children"]["attached"] = neu
+        try:
+            _write_content(path, data)
+        except Exception as exc:
+            return {"ok": False, "grund": f"Schreibfehler: {str(exc)[:200]}"}
+        return {"ok": True, "pfad": path, "geloescht": ziel, "anzahl": len(attached) - len(neu),
+                "eltern": parent.get("title")}
+    return {"ok": False, "grund": f"Knoten '{ziel}' nicht gefunden."}
+
+
+def move_node(path: str, ziel: str, neuer_eltern: str) -> dict:
+    """Verschiebt `ziel` (samt Unterknoten) unter den Knoten `neuer_eltern` (im selben Blatt)."""
+    ziel = (ziel or "").strip()
+    neuer_eltern = (neuer_eltern or "").strip()
+    if not ziel or not neuer_eltern:
+        return {"ok": False, "grund": "Ziel oder neuer Eltern-Knoten fehlt."}
+    if ziel.lower() == neuer_eltern.lower():
+        return {"ok": False, "grund": "Ziel und neuer Eltern-Knoten sind identisch."}
+    try:
+        data = _read_content(path)
+    except Exception as exc:
+        return {"ok": False, "grund": f"Lesefehler: {str(exc)[:200]}"}
+    for sheet in data:
+        root = sheet.get("rootTopic", {})
+        if (root.get("title") or "").strip().lower() == ziel.lower():
+            return {"ok": False, "grund": "Der Wurzel-Knoten kann nicht verschoben werden."}
+        parent = _find_parent(root, ziel)
+        if parent is None:
+            continue                                   # Knoten nicht in diesem Blatt
+        knoten = _find_topic(root, ziel)
+        if _enthaelt(knoten, neuer_eltern):
+            return {"ok": False, "grund": "Zielort liegt innerhalb des zu verschiebenden Knotens (Zyklus)."}
+        neu_ziel = _find_topic(root, neuer_eltern)
+        if neu_ziel is None:
+            return {"ok": False, "grund": f"Neuer Eltern-Knoten '{neuer_eltern}' nicht gefunden (gleiches Blatt?)."}
+        att = parent.get("children", {}).get("attached", [])
+        parent["children"]["attached"] = [k for k in att if k is not knoten]
+        neu_ziel.setdefault("children", {}).setdefault("attached", []).append(knoten)
+        try:
+            _write_content(path, data)
+        except Exception as exc:
+            return {"ok": False, "grund": f"Schreibfehler: {str(exc)[:200]}"}
+        return {"ok": True, "pfad": path, "verschoben": ziel, "nach": neuer_eltern, "von": parent.get("title")}
+    return {"ok": False, "grund": f"Knoten '{ziel}' nicht gefunden."}
