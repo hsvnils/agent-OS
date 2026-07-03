@@ -33,6 +33,22 @@ _INJECTION: list[tuple[str, re.Pattern]] = [
     ("tool-schmuggel", re.compile(r"<\s*/?\s*(tool_call|function_call|tool_use|system)\b", re.I)),
     ("versteckte-html-anweisung", re.compile(
         r"<!--[^>]*\b(ignore|instruction|prompt|system|anweisung)\b[^>]*-->", re.I | re.S)),
+    # -- Inkr.4: erweiterte Muster (weiterhin konservativ, nur klar boesartige Formulierungen) --
+    ("jailbreak-persona", re.compile(
+        r"\b(do anything now|dan[- ]?mode|developer[- ]?mode|jailbreak|entwicklermodus)\b"
+        r"|\b(no|without)\b[^.\n]{0,15}\b(restrictions?|limitations?|guardrails?|safety filters?)\b"
+        r"|\bohne\b[^.\n]{0,15}\b(einschraenkung(en)?|beschraenkung(en)?|sicherheitsfilter)\b", re.I)),
+    ("neue-anweisung", re.compile(
+        r"\byour new\b[^.\n]{0,15}\b(task|instructions?|role|system ?prompt|job)\b"
+        r"|\bnew instructions?\s*:"
+        r"|\b(deine|ihre) neue\b[^.\n]{0,10}\b(aufgabe|anweisung(en)?|rolle)\b"
+        r"|\bab sofort gilt\b", re.I)),
+    ("chat-template-token", re.compile(
+        r"<\|(?:im_start|im_end|endoftext|system|user|assistant)\|>"
+        r"|\[/?INST\]|<<\s*/?\s*SYS\s*>>", re.I)),
+    ("kodierte-nutzlast", re.compile(
+        r"\b(decode|dekodiere|entschluessle|entschluessele)\b[^.\n]{0,30}"
+        r"\b(base ?64|base ?32|hex|rot13)\b", re.I)),
 ]
 # Unsichtbare / Bidi-Deception-Zeichen (Zero-Width, Richtungs-Override) -- aus Code-Punkten gebaut,
 # damit KEIN literales unsichtbares Zeichen in der Quelldatei steht.

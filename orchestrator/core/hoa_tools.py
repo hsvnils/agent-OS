@@ -95,7 +95,9 @@ def tool_specs() -> list[dict]:
               "Remediation-Antrag (CEO-Tor). KEINE autonome Aenderung -- Sperren/Aktualisieren/Key-Rotation "
               "entscheidet der CEO.",
               {"als_antrag": {"type": "boolean", "description": "true -> Befunde als entscheidungsreifen "
-                              "Antrag buendeln (sonst nur melden)."}}, []),
+                              "Antrag buendeln (sonst nur melden)."},
+               "sarif": {"type": "boolean", "description": "true -> zusaetzlich ein maschinenlesbares "
+                         "SARIF-2.1.0-Dokument der Befunde zurueckgeben (fuer CI/Code-Scanning)."}}, []),
         _spec("wissensstand", "Zeigt den aktuellen Fachbereichs-Wissensstand einer Abteilung (gesammelte "
               "Web-Funde, neueste zuerst) -- reine Anzeige, keine neue Suche, keine Token.",
               {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto, ciso, cfo).")}, ["abteilung"]),
@@ -435,10 +437,14 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                            http=_http, notify=(ctx.notifications.enqueue if ctx.notifications else None),
                            antraege=ctx.antraege, changelog=ctx.core.changelog)
         r = sa.lauf(als_antrag=bool(args.get("als_antrag")))
-        return {"ok": True, "befunde": r["befunde"], "hoch": r["hoch"], "score": r.get("score"),
-                "antrag_id": r.get("antrag_id"),
-                "findings": [{"schwere": f["schwere"], "titel": f["titel"], "empfehlung": f["empfehlung"]}
-                             for f in r["findings"] if f["schwere"] != "ok"]}
+        ergebnis = {"ok": True, "befunde": r["befunde"], "hoch": r["hoch"], "score": r.get("score"),
+                    "antrag_id": r.get("antrag_id"),
+                    "findings": [{"schwere": f["schwere"], "titel": f["titel"], "empfehlung": f["empfehlung"]}
+                                 for f in r["findings"] if f["schwere"] != "ok"]}
+        if args.get("sarif"):
+            from .security_agent import Finding, nach_sarif
+            ergebnis["sarif"] = nach_sarif([Finding(**f) for f in r["findings"]])
+        return ergebnis
 
     if name == "recherche_beauftragen":
         frage = (args.get("frage") or "").strip()

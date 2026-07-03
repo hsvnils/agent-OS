@@ -26,6 +26,11 @@ from typing import Callable
 # Punkte je Schwere fuer den Risiko-Score (0-100), angelehnt an SkillSpector-Gewichtung.
 _SCORE_PUNKTE = {"hoch": 25, "mittel": 10, "niedrig": 5}
 
+# Werkzeug-Version fuer SARIF-Metadaten (Inkr.5). Bei relevanten Check-Aenderungen hochziehen.
+_VERSION = "1.0"
+# Schwere -> SARIF-Level (2.1.0). "ok" ist kein Ergebnis und wird ausgelassen.
+_SARIF_LEVEL = {"hoch": "error", "mittel": "warning", "niedrig": "note"}
+
 # Muster, die in .gitignore stehen MUESSEN (Secrets/Zugaenge). Substring-Match gegen die .gitignore.
 _PFLICHT_IGNORE = (".env", "client_secret", "token")
 # Getrackte Dateien, die NIE im Repo landen duerfen (Secret-Leak). *.example ist erlaubt.
@@ -41,6 +46,45 @@ class Finding:
     titel: str
     detail: str = ""
     empfehlung: str = ""
+
+
+def nach_sarif(findings: list["Finding"], *, tool_name: str = "LUNA-SecurityAgent",
+               version: str = _VERSION) -> dict:
+    """Exportiert Befunde als SARIF 2.1.0 (Inkr.5) -- maschinenlesbar fuer CI/Code-Scanning.
+
+    Nur echte Luecken werden zu SARIF-`results` (schwere != "ok"); Regeln (`rules`) werden je
+    Kategorie dedupliziert. Deterministisch, ohne Seiteneffekte -> direkt testbar.
+    """
+    luecken = [f for f in findings if f.schwere != "ok"]
+    regeln: dict[str, dict] = {}
+    for f in luecken:
+        regeln.setdefault(f.kategorie, {
+            "id": f.kategorie,
+            "name": f.kategorie,
+            "shortDescription": {"text": f.kategorie},
+        })
+    results = []
+    for f in luecken:
+        text = f.titel + (f" -- {f.detail}" if f.detail else "")
+        results.append({
+            "ruleId": f.kategorie,
+            "level": _SARIF_LEVEL.get(f.schwere, "warning"),
+            "message": {"text": text},
+            "properties": {"schwere": f.schwere, "empfehlung": f.empfehlung},
+        })
+    return {
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [{
+            "tool": {"driver": {
+                "name": tool_name,
+                "informationUri": "https://sarifweb.azurewebsites.net",
+                "version": version,
+                "rules": list(regeln.values()),
+            }},
+            "results": results,
+        }],
+    }
 
 
 class SecurityAgent:
@@ -64,6 +108,10 @@ class SecurityAgent:
         if self.http is not None:      # OSV.dev nur wenn ein HTTP-Client verdrahtet ist (sonst kein Rauschen)
             checks += self._check_osv()
         return checks
+
+    def sarif(self) -> dict:
+        """Fuehrt den Audit aus und gibt die Befunde als SARIF-2.1.0-Dokument zurueck (Inkr.5)."""
+        return nach_sarif(self.audit())
 
     def _check_secret_hygiene(self) -> list[Finding]:
         out: list[Finding] = []

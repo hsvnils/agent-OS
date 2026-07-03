@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from orchestrator.core.security_agent import SecurityAgent
+from orchestrator.core.security_agent import Finding, SecurityAgent, nach_sarif
 
 
 class TestSecurityAgent(unittest.TestCase):
@@ -177,6 +177,46 @@ class TestSecurityAgent(unittest.TestCase):
         self.assertEqual(r["befunde"], 0)
         self.assertEqual(gemeldet, [])            # keine Luecke -> keine Meldung
         self.assertIsNone(r["antrag_id"])
+
+
+    def test_sarif_grundstruktur_und_level_mapping(self):
+        findings = [
+            Finding("code-security", "hoch", "riskante Aufrufe", "mod.py:3 (eval())", "absichern"),
+            Finding("hardening", "mittel", "Login offen", "kein Passwort", "Passwort setzen"),
+            Finding("dependencies", "niedrig", "kein Audit", "", "pip-audit"),
+            Finding("secret-hygiene", "ok", "alles gut", "", ""),   # ok -> kein SARIF-Result
+        ]
+        doc = nach_sarif(findings)
+        self.assertEqual(doc["version"], "2.1.0")
+        run = doc["runs"][0]
+        results = run["results"]
+        self.assertEqual(len(results), 3)                          # ok wurde ausgelassen
+        levels = {r["ruleId"]: r["level"] for r in results}
+        self.assertEqual(levels["code-security"], "error")
+        self.assertEqual(levels["hardening"], "warning")
+        self.assertEqual(levels["dependencies"], "note")
+        self.assertIn("mod.py:3", results[0]["message"]["text"])
+        self.assertEqual(results[0]["properties"]["empfehlung"], "absichern")
+        # Regeln je Kategorie dedupliziert
+        rule_ids = {r["id"] for r in run["tool"]["driver"]["rules"]}
+        self.assertEqual(rule_ids, {"code-security", "hardening", "dependencies"})
+
+    def test_sarif_leer_wenn_alles_ok(self):
+        doc = nach_sarif([Finding("x", "ok", "gut", "", "")])
+        self.assertEqual(doc["runs"][0]["results"], [])
+        self.assertEqual(doc["runs"][0]["tool"]["driver"]["rules"], [])
+
+    def test_sarif_regeln_dedupliziert(self):
+        findings = [Finding("code-security", "hoch", "a", "", ""),
+                    Finding("code-security", "mittel", "b", "", "")]
+        rules = nach_sarif(findings)["runs"][0]["tool"]["driver"]["rules"]
+        self.assertEqual(len(rules), 1)
+
+    def test_agent_sarif_methode(self):
+        run = lambda cmd: "orchestrator/.env\n" if "ls-files" in cmd else ""
+        doc = self._agent(run=run, env={"LUNA_OS_PASSWORD": ""}).sarif()
+        self.assertEqual(doc["version"], "2.1.0")
+        self.assertTrue(doc["runs"][0]["results"])                 # .env getrackt -> mind. ein Result
 
 
 if __name__ == "__main__":

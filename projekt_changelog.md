@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 12:00] — Claude Code — Phase 22 Inkr.4+5: erweiterte Injection-Muster + SARIF-Export
+- **Was:** Inkr.4 -- vier neue, konservative Prompt-Injection-Muster in `core/input_guard.py`
+  (`jailbreak-persona`, `neue-anweisung`, `chat-template-token`, `kodierte-nutzlast`). Inkr.5 -- SARIF-2.1.0-
+  Export der Security-Befunde: neue Funktion `nach_sarif()` + Methode `SecurityAgent.sarif()` in
+  `core/security_agent.py` (Schwere->Level: hoch=error/mittel=warning/niedrig=note, `ok` ausgelassen, Regeln
+  je Kategorie dedupliziert); optionales Tool-Flag `sicherheits_audit(sarif=true)` in `core/hoa_tools.py`.
+  +9 Tests (373 gruen, war 364).
+- **Warum:** Optionaler Backlog aus Phase 22 (SkillSpector-Muster) abschliessen -- den frisch gebauten
+  Security-Block risikoarm abrunden (kein CEO-Tor, reiner Code).
+- **Betroffen:** `orchestrator/core/input_guard.py`, `orchestrator/core/security_agent.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/tests/test_input_guard.py`,
+  `orchestrator/tests/test_security_agent.py`, `ROADMAP.md`.
+
 ## [2026-07-03 03:15] — Claude Code — CISO-Connect auch im Instagram-DM-Webhook (app.py)
 - **Was:** In `channels/web/app.py` den `crm_store` mit `notify=notifications.enqueue` verdrahtet (gleicher
   Outbox-File wie der Bot -> der Bot stellt die Meldung zu). Damit meldet auch der Instagram-DM-Webhook
