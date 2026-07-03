@@ -98,6 +98,14 @@ def tool_specs() -> list[dict]:
                               "Antrag buendeln (sonst nur melden)."},
                "sarif": {"type": "boolean", "description": "true -> zusaetzlich ein maschinenlesbares "
                          "SARIF-2.1.0-Dokument der Befunde zurueckgeben (fuer CI/Code-Scanning)."}}, []),
+        _spec("skill_pruefen", "CISO/Security (Phase 24): statisches Sicherheits-Gate fuer einen Skill-Ordner "
+              "(SKILL.md + evtl. Skripte) VOR der Uebernahme -- prueft Prompt-Injection in der Anleitung, "
+              "riskante Code-Aufrufe (AST) und gefaehrliche Shell-Muster. Fuehrt den Skill NIE aus. Liefert "
+              "Verdikt (bestanden|pruefen|abgelehnt) + Risiko-Score. Uebernahme eines Fremd-Skills bleibt "
+              "CEO-Tor -- dieses Gate ist die technische Vorpruefung, nicht die Freigabe.",
+              {"pfad": _str("Ordnerpfad des Skills, relativ zum Repo-Root (z. B. 'skills/mein-skill')."),
+               "sarif": {"type": "boolean", "description": "true -> zusaetzlich SARIF-2.1.0-Dokument."}},
+              ["pfad"]),
         _spec("wissensstand", "Zeigt den aktuellen Fachbereichs-Wissensstand einer Abteilung (gesammelte "
               "Web-Funde, neueste zuerst) -- reine Anzeige, keine neue Suche, keine Token.",
               {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto, ciso, cfo).")}, ["abteilung"]),
@@ -444,6 +452,27 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         if args.get("sarif"):
             from .security_agent import Finding, nach_sarif
             ergebnis["sarif"] = nach_sarif([Finding(**f) for f in r["findings"]])
+        return ergebnis
+
+    if name == "skill_pruefen":
+        from pathlib import Path as _Path
+        from .skill_gate import pruefe_skill
+        roh = (args.get("pfad") or "").strip()
+        if not roh:
+            return {"fehler": "Kein Skill-Pfad angegeben."}
+        wurzel = _Path(ctx.repo_root).resolve()
+        ziel = (wurzel / roh).resolve()
+        # Pfad-Traversal verhindern: Ziel muss unter dem Repo-Root liegen.
+        if wurzel != ziel and wurzel not in ziel.parents:
+            return {"fehler": "Pfad liegt ausserhalb des Repos -- abgelehnt."}
+        r = pruefe_skill(ziel)
+        ergebnis = {"ok": True, "verdikt": r.verdikt, "blockiert": r.blockiert, "score": r.score,
+                    "zusammenfassung": r.zusammenfassung(),
+                    "findings": [{"schwere": f.schwere, "kategorie": f.kategorie, "titel": f.titel,
+                                  "detail": f.detail, "empfehlung": f.empfehlung}
+                                 for f in r.findings if f.schwere != "ok"]}
+        if args.get("sarif"):
+            ergebnis["sarif"] = r.sarif()
         return ergebnis
 
     if name == "recherche_beauftragen":

@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 14:30] — Claude Code — Phase 24 (c)+(a): Skill-Security-Gate + Format-Standard
+- **Was:** Baustein (c) -- neues Modul `core/skill_gate.py`: statisches Sicherheits-Gate `pruefe_skill()` fuer
+  Skill-Ordner (SKILL.md + Skripte), fuehrt NICHTS aus. Prueft Prompt-Injection in SKILL.md
+  (`input_guard`), riskante Python-Aufrufe (AST-Reuse `SecurityAgent._einstufen_call`) und Shell-Muster
+  (curl|bash, rm -rf, eval, sudo). Verdikt bestanden|pruefen|abgelehnt + Risiko-Score + Exit-Code + SARIF.
+  Neues HoA-Tool `skill_pruefen(pfad, sarif?)` in `core/hoa_tools.py` (pfad-Traversal-Schutz, nur lesend).
+  Baustein (a) -- neue Governance-Doku `governance/skill-standard.md` (SKILL.md/skill-card-Schema, Import-
+  Pipeline, GATE) + Validator `core/skill_format.py` (skill-card-Frontmatter, dependency-frei, kein
+  yaml.load). +19 Tests (392 gruen, war 373). **Offen (b):** Erfolgsmetriken je Charta = CEO-Tor.
+- **Warum:** Phase 24 Bausteine (c) Import via Phase-22-Gate + (a) portables Skill-Format. Reiner Code +
+  neue Doku, kein Charta-Change.
+- **Betroffen:** `orchestrator/core/skill_gate.py` (neu), `orchestrator/core/skill_format.py` (neu),
+  `orchestrator/core/hoa_tools.py`, `governance/skill-standard.md` (neu),
+  `orchestrator/tests/test_skill_gate.py` (neu), `orchestrator/tests/test_skill_format.py` (neu), `ROADMAP.md`.
+
 ## [2026-07-03 12:00] — Claude Code — Phase 22 Inkr.4+5: erweiterte Injection-Muster + SARIF-Export
 - **Was:** Inkr.4 -- vier neue, konservative Prompt-Injection-Muster in `core/input_guard.py`
   (`jailbreak-persona`, `neue-anweisung`, `chat-template-token`, `kodierte-nutzlast`). Inkr.5 -- SARIF-2.1.0-
