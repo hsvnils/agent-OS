@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 04:20] — Head of Agents (Claude Code) — CBO-Charta vertieft (CEO-freigegeben)
+- **Was:** `agents/06_cbo.md`: Markenstimme praezisiert (4 Tonalitaets-Dimensionen, Skill `markenstimme`);
+  Aufgabenkatalog + Marken-Review-Workflow verweisen jetzt auf die Skills (`markenstimme`,
+  `markenkonformitaet-pruefen`). Status bleibt aktiv.
+- **Warum:** CEO-Freigabe am 2026-07-04 (Diff als 3 Bloecke vorgelegt + „anwenden"). AGENTS.md 3.3.
+- **Betroffen:** `agents/06_cbo.md`.
+
 ## [2026-07-04 04:10] — Claude Code — CBO angereichert: 2 Skills (markenstimme, markenkonformitaet-pruefen)
 - **Was:** Recherche (Brand-Voice-4-Dimensionen + Markenkonsistenz 2026) im `docs/entscheidungs-register.md`
   protokolliert und genutzt: `skills/cbo/markenstimme` (Tonalitaet als 4-Dim-Prozente, Do/Don't, als Prompt-
