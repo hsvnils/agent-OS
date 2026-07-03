@@ -29,10 +29,38 @@
 | **agency-agents #525** („The Agency") | 2026-07-03 | **MINIMAL** (nur Metrik-Idee) | Phase 24 |
 | **VoltAgent/awesome-agent-skills** (1000+ Skills) | 2026-07-03 | **SPAETER** (nur via Security-Gate) | Phase 24 |
 | **Gemini „Omni"** (Video-Verstaendnis fuer den Cutter) | 2026-07-03 | **OPT-IN-PILOT GEBAUT** (Aktivieren = CEO-Tor) | Cutter Phase 15 (`--video-ki`) |
+| **NVIDIA Nemotron 3 Ultra** (550B-MoE, offene Gewichte) | 2026-07-03 | **SPAETER/OPTIONAL** (technisch machbar; kein Bedarf jetzt) | Multi-Provider-Fallback-Kandidat -- CEO-Tor |
 
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-07-03 — NVIDIA Nemotron 3 Ultra als Modell fuer LUNA (CEO-Frage)
+
+**Kontext:** CEO fragte, ob wir NVIDIA Nemotron 3 Ultra nutzen koennen.
+
+**Befund:**
+- **Was:** 550B-Mixture-of-Experts (55B aktiv), Hybrid Mamba-2/Transformer, **1M-Kontext**, **offene Gewichte**
+  (NVIDIA Open Model License, kommerzielle Nutzung erlaubt). Auf „Long-running Agents" ausgerichtet, ~300 Tok/s.
+- **Verfuegbar** ueber HuggingFace, **OpenRouter**, ModelScope, **NVIDIA NIM / build.nvidia.com**, Perplexity.
+  OpenRouter-Preis **$0.50 Input / $2.20 Output pro 1M**; zusaetzlich eine **kostenlose** OpenRouter-Variante.
+- **Integration:** **Trivial** -- unser `model_router.py` unterstuetzt beliebige **OpenAI-kompatible** Fallbacks
+  (`{name,key,base_url,model}`). build.nvidia.com und OpenRouter sind OpenAI-kompatibel -> als zusaetzlicher
+  Fallback in Minuten einbindbar, KEIN Umbau. **Self-Hosting der 550B-Gewichte scheidet auf unserer Hardware
+  aus** (NAS ohne GPU, Mac zu klein) -> nur der API-Weg ist realistisch.
+- **Bedarf:** Wir haben bereits einen funktionierenden Multi-Provider-Fallback (Anthropic primaer + Gemini +
+  OpenAI). Nemotron waere ein **zusaetzlicher** Fallback / Kosten-Experiment, **kein** Lueckenfueller.
+- **Risiken:** Qualitaet fuer UNSERE Agenten unbewiesen (laut Analysten Top-US-Open-Model, aber hinter den
+  geschlossenen Frontier-Modellen); **Datenschutz** der Free-Endpoints pruefen (Free-Tiers loggen/trainieren
+  oft); ein weiterer Key/Provider zu verwalten.
+
+**Entscheidung:** **SPAETER/OPTIONAL.** Technisch problemlos nutzbar (OpenAI-kompatibler Fallback via
+build.nvidia.com/OpenRouter), aber **kein akuter Bedarf**. Sinnvollster Einsatz: **zusaetzlicher, guenstiger
+Fallback-Provider** (nicht als Primaer-Ersatz fuer Claude). Einbindung = **CEO-Tor** (neuer Provider/Modell)
++ kurzer CFO-Blick; noch **kein** Code geaendert.
+
+**Quellen:** developer.nvidia.com/blog (Nemotron 3 Ultra), artificialanalysis.ai (Launch), openrouter.ai/nvidia/
+nemotron-3-ultra-550b-a55b (Preise + :free-Variante), vllm.ai (Day-0-Support).
 
 ### 2026-07-03 — Gemini „Omni" (Video-Verstaendnis) fuer den Cutter (CEO-Wunsch, Prio zeitnah)
 

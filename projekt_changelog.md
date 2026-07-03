@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 20:30] — Claude Code — Bewertung: NVIDIA Nemotron 3 Ultra (Register)
+- **Was:** CEO-Frage geprueft und im `docs/entscheidungs-register.md` protokolliert. Befund: 550B-MoE, offene
+  Gewichte, verfuegbar via OpenRouter/build.nvidia.com (OpenAI-kompatibel) -> in unseren Multi-Provider-Router
+  trivial als Fallback einbindbar; Self-Hosting scheidet auf unserer Hardware aus. Kein akuter Bedarf (Fallback
+  existiert). Entscheidung: SPAETER/OPTIONAL, sinnvollster Einsatz = zusaetzlicher guenstiger Fallback; Einbindung
+  = CEO-Tor. Kein Code geaendert.
+- **Warum:** CEO-Auftrag „pruefe, ob wir Nemotron 3 Ultra nutzen koennen".
+- **Betroffen:** `docs/entscheidungs-register.md`.
+
 ## [2026-07-03 20:00] — Claude Code — App-Review Instagram: Umfang + Feld-Texte fuer „Zulaessige Nutzung"
 - **Was:** `docs/APP_REVIEW_INSTAGRAM.md` um Abschnitt 7 ergaenzt: Empfehlung, nur `instagram_business_basic`
   + `instagram_business_manage_messages` einzureichen und **Human Agent** + `instagram_business_manage_insights`
