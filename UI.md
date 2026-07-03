@@ -78,18 +78,19 @@ Fester Rahmen, scrollender Inhalt:
 ├───────────┬───────────────────────────────────────────────────┤
 │ SIDEBAR   │  MAIN  =  Panel-Grid (responsive)                  │
 │ (Nav +    │   - Hero/Core (animierter Globe/Reaktor)           │
-│  Voice-   │   - Panels: Overview, Live-Feed, Agents, Timeline, │
-│  Status)  │     System/Stats, Memory/Brain, LLM-Status, …      │
-├───────────┴───────────────────────────────────────────────────┤
-│ VOICE-BAR  „TALK TO LUNA — ich höre …"  (Orb-/Gespraech-Toggle)│
-└───────────────────────────────────────────────────────────────┘
+│  Theme +  │   - Panels: Overview, Live-Feed, Organigramm,      │
+│  Fokus)   │     Timeline, System/Stats, Memory/Brain, …        │
+└───────────┴───────────────────────────────────────────────────┘
 ```
 
 - **Topbar:** fixe Hoehe, Glas + Blur, untere Neon-Kante.
-- **Sidebar:** Navigation; aktiver Eintrag mit Cyan-Balken links + Glas-Highlight; unten Voice-Status
-  (Mini-Waveform). Klick auf einen Eintrag oeffnet die jeweilige App (WinBox-Fenster) bzw. das Home-Grid.
+- **Sidebar:** Navigation; aktiver Eintrag mit Cyan-Balken links + Glas-Highlight; unten Theme-Umschalter +
+  Fokus-Modus. Klick auf einen Eintrag oeffnet die jeweilige App (WinBox-Fenster) bzw. das Home-Grid.
 - **Main:** CSS-Grid aus Panels (`auto-fit`, min ~280–360px). Reihenfolge nach Wichtigkeit.
-- **Voice-Bar:** prominente „TALK TO LUNA"-Leiste; tippen = `toggleVoice` (Live-Gespraech).
+- **Voice-Ausloeser:** der **Orb** im Dashboard (antippen = `toggleVoice`, Live-Gespraech). Keine separate
+  „TALK TO LUNA"-Leiste unten und **kein** Voice-Status in der Sidebar mehr (2026-07-04 entfernt).
+- **Organigramm:** XMind-artiger Baum (CEO -> LUNA -> Abteilungen -> Unter-Agenten) mit Live-Status
+  (`renderAgenten`, App „Organigramm").
 - **Hintergrund:** `#starfield` + `#grid` + `#scan` (siehe vorhandenes CSS) -- nie entfernen.
 - **App-Fenster:** Detailarbeit laeuft weiter in **WinBox**-Fenstern (Stil `.winbox.modern`), die ueber dem
   Dashboard schweben. Das Dashboard ist die Startseite/Uebersicht, die Fenster sind die Tiefe.

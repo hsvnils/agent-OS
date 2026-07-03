@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 06:10] — Claude Code — LUNA-OS UI: Organigramm-XMind-Baum + Voice-Bar/-Status raus
+- **Was:** (1) Die Agenten-Map ist jetzt ein **XMind-artiger Baum** (CEO -> LUNA -> Abteilungen -> Unter-Agenten,
+  links->rechts, Box-Knoten mit Live-Status) statt des radialen Organigramms (`renderAgenten` in `static/app.js`
+  + neue CSS in `static/style.css`; Nav-Titel „Agenten-Map" -> „Organigramm"). (2) **„Talk to Luna"-Leiste**
+  (Footer `#voicebar`) komplett entfernt -- Voice startet ueber den **Orb** im Dashboard. (3) **Voice-Status-
+  Grafik** in der Sidebar (Kopf + Wave) entfernt; „Fokus-Modus" bleibt. Cache-Version v34->v35. UI.md (SSOT)
+  angeglichen. Isoliert per Preview verifiziert (22 Knoten/21 Kanten, Screenshot).
+- **Warum:** CEO-Wuensche (Organigramm wie XMind; „Talk to Luna" + Voice-Status raus).
+- **Betroffen:** `orchestrator/channels/web/static/index.html`, `static/app.js`, `static/style.css`, `UI.md`.
+
 ## [2026-07-04 05:50] — Claude Code — Bewertung: safishamsi/graphify (Register)
 - **Was:** CEO-Frage geprueft und im `docs/entscheidungs-register.md` protokolliert. graphify = Dev-Tool
   (Code/Docs -> Knowledge-Graph fuer Coding-Assistenten). Kein Bezug zu unserem Geschaeft; einzige Nische =

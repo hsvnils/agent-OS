@@ -565,6 +565,22 @@ body {
 .mm-node.offline { fill: var(--muted); opacity: .45; }
 .mm-node.human { fill: var(--violet); }
 .mm-node.luna { fill: var(--cyan); stroke: rgba(46,230,255,.4); stroke-width: 4px; }
+/* XMind-artiger Baum (Box-Knoten) */
+.mm-scroll { flex: 1; min-height: 0; overflow: auto; }
+.mm-b rect { fill: var(--panel, rgba(20,30,48,.7)); stroke: var(--line); stroke-width: 1.4px; }
+.mm-bt { fill: var(--fg); font-size: 11.5px; font-weight: 700; font-family: var(--mono, monospace); }
+.mm-bs { fill: var(--muted); font-size: 9px; font-family: var(--mono, monospace); }
+.mm-b.active rect { stroke: var(--green); box-shadow: 0 0 6px var(--green); }
+.mm-b.active .mm-bt { fill: var(--green); }
+.mm-b.standby rect { stroke: rgba(255,193,77,.55); }
+.mm-b.offline rect { stroke: rgba(138,160,200,.22); stroke-dasharray: 3 3; }
+.mm-b.offline .mm-bt, .mm-b.offline .mm-bs { opacity: .5; }
+.mm-b.human rect { stroke: var(--violet); stroke-width: 2px; }
+.mm-b.human .mm-bt { fill: var(--violet); }
+.mm-b.luna rect { stroke: var(--cyan); stroke-width: 2.5px; fill: rgba(46,230,255,.08); }
+.mm-b.luna .mm-bt { fill: var(--cyan); }
+.mm-b.sub rect { fill: rgba(20,30,48,.5); }
+.mm-b.sub .mm-bt { font-size: 10.5px; font-weight: 600; }
 @media (prefers-reduced-motion: no-preference) {
   .mm-node.active { animation: mmglow 1.9s ease-in-out infinite; }
   .mm-node.luna { animation: mmglow 2.4s ease-in-out infinite; }

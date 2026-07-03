@@ -112,7 +112,7 @@ const APPS = {
   aiinbox: { icon: "🧩", titel: "AI-Inbox", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade AI-Inbox…</div></div>`, load: ladeAiInbox },
   cutter: { icon: "🎬", titel: "Cutter", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Cutter…</div></div>`, load: ladeCutter },
   finance: { icon: "💶", titel: "Finanzen", badge: () => 0, render: renderFinance },
-  agenten: { icon: "🕸️", titel: "Agenten-Map", badge: () => 0, render: renderAgenten, load: ladeAgenten },
+  agenten: { icon: "🕸️", titel: "Organigramm", badge: () => 0, render: renderAgenten, load: ladeAgenten },
   team: { icon: "👥", titel: "Team", badge: () => 0, render: () => `<div class="app"><div class="leer">Lade Team…</div></div>`, load: ladeTeam },
 };
 
@@ -612,34 +612,44 @@ async function ladeAgenten() {
   renderApp("agenten");
 }
 function renderAgenten() {
-  if (!AGENTEN) return `<div class="app"><div class="leer">Lade Agenten-Map…</div></div>`;
-  const W = 900, H = 660, cx = 450, cy = 355, rx = 350, ry = 235;
-  const deps = AGENTEN.departments || [], ceo = AGENTEN.ceo || {}, n = deps.length || 1;
-  const node = (x, y, r, cls) => `<circle cx="${x}" cy="${y}" r="${r}" class="mm-node ${cls}"/>`;
-  let links = "", subs = "", nodes = "";
-  deps.forEach((d, i) => {
-    const a = -Math.PI / 2 + (i + 0.6) * (2 * Math.PI / n);  // halber Versatz -> Spitze bleibt fuer CEO frei
-    const x = cx + rx * Math.cos(a), y = cy + ry * Math.sin(a);
-    links += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" class="mm-link ${d.status}"/>`;
-    nodes += node(x, y, 9, d.status);
-    const anchor = Math.cos(a) > 0.25 ? "start" : Math.cos(a) < -0.25 ? "end" : "middle";
-    const off = anchor === "start" ? 15 : anchor === "end" ? -15 : 0;
-    nodes += `<text x="${x + off}" y="${y - (Math.abs(Math.cos(a)) < 0.25 ? (Math.sin(a) < 0 ? 15 : -8) : 0) + 4}" text-anchor="${anchor}" class="mm-lbl">${esc(d.name)}</text>`;
-    (d.subs || []).forEach((s, j) => {
-      const sx = x + 34 * Math.cos(a), sy = y + 34 * Math.sin(a) + j * 15;
-      subs += `<line x1="${x}" y1="${y}" x2="${sx}" y2="${sy}" class="mm-link sub ${s.status}"/>` + node(sx, sy, 5, s.status);
-      subs += `<text x="${sx + (anchor === "end" ? -9 : 9)}" y="${sy + 4}" text-anchor="${anchor === "middle" ? "start" : anchor}" class="mm-lbl sub">${esc(s.name)}</text>`;
+  if (!AGENTEN) return `<div class="app"><div class="leer">Lade Organigramm…</div></div>`;
+  const deps = AGENTEN.departments || [], ceo = AGENTEN.ceo || {}, luna = AGENTEN.luna || {};
+  // XMind-artiger Baum, links -> rechts: CEO -> LUNA -> Abteilungen -> Unter-Agenten.
+  const xCEO = 14, xLUNA = 150, xDEP = 322, xSUB = 540;
+  const wCEO = 122, wLUNA = 156, wDEP = 200, wSUB = 156, boxH = 34, rowH = 46, padY = 22;
+  // Jede Abteilung belegt so viele Zeilen wie sie Unter-Agenten hat (min. 1).
+  let row = 0;
+  const layout = deps.map(d => { const nSub = Math.max(1, (d.subs || []).length); const start = row; row += nSub; return { d, start, nSub }; });
+  const rows = Math.max(1, row);
+  const H = padY * 2 + rows * rowH, W = xSUB + wSUB + 16;
+  const yOf = r => padY + r * rowH + rowH / 2;
+  layout.forEach(L => L.yc = yOf(L.start + (L.nSub - 1) / 2));
+  const lunaY = padY + rows * rowH / 2, ceoY = lunaY;
+  const box = (x, y, w, titel, cls, sub) => {
+    const t = sub
+      ? `<text x="${x + w / 2}" y="${y - 3}" text-anchor="middle" class="mm-bt">${esc(titel)}</text><text x="${x + w / 2}" y="${y + 11}" text-anchor="middle" class="mm-bs">${esc(sub)}</text>`
+      : `<text x="${x + w / 2}" y="${y + 4}" text-anchor="middle" class="mm-bt">${esc(titel)}</text>`;
+    return `<g class="mm-b ${cls}"><rect x="${x}" y="${y - boxH / 2}" width="${w}" height="${boxH}" rx="8"/>${t}</g>`;
+  };
+  const link = (x1, y1, x2, y2, cls) => { const dx = (x2 - x1) / 2; return `<path d="M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}" class="mm-link ${cls}"/>`; };
+  let links = link(xCEO + wCEO, ceoY, xLUNA, lunaY, "human"), nodes = "";
+  layout.forEach(L => {
+    links += link(xLUNA + wLUNA, lunaY, xDEP, L.yc, L.d.status);
+    nodes += box(xDEP, L.yc, wDEP, L.d.name, "dep " + L.d.status, L.d.rolle);
+    (L.d.subs || []).forEach((s, j) => {
+      const sy = yOf(L.start + j);
+      links += link(xDEP + wDEP, L.yc, xSUB, sy, s.status);
+      nodes += box(xSUB, sy, wSUB, s.name, "sub " + s.status);
     });
   });
-  const ceoY = 74;
-  const ceoBits = `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${ceoY}" class="mm-link human"/>${node(cx, ceoY, 12, "human")}<text x="${cx}" y="${ceoY - 18}" text-anchor="middle" class="mm-lbl big">${esc(ceo.name || "CEO")}</text>`;
-  const lunaBits = node(cx, cy, 18, "luna") + `<text x="${cx}" y="${cy + 36}" text-anchor="middle" class="mm-lbl big">LUNA · Head of Agents</text>`;
-  const legend = `<div class="mm-legend"><span class="lg active"><i></i>Aktiv</span><span class="lg standby"><i></i>Standby</span><span class="lg offline"><i></i>Offline</span><span class="lg human"><i></i>CEO</span></div>`;
+  nodes += box(xCEO, ceoY, wCEO, ceo.name || "CEO", "human", ceo.rolle);
+  nodes += box(xLUNA, lunaY, wLUNA, luna.name || "LUNA", "luna", luna.rolle || "Head of Agents");
+  const legend = `<div class="mm-legend"><span class="lg active"><i></i>Aktiv</span><span class="lg standby"><i></i>Standby</span><span class="lg offline"><i></i>Geplant</span><span class="lg human"><i></i>CEO</span></div>`;
   return `<div class="app mindmap">
-    <div class="mm-head"><b>Agenten-Organigramm — Live-Status</b>${legend}</div>
-    <svg viewBox="0 0 ${W} ${H}" class="mm-svg" preserveAspectRatio="xMidYMid meet">
-      ${links}${ceoBits}${subs}${lunaBits}${nodes}
-    </svg></div>`;
+    <div class="mm-head"><b>Organigramm — Live-Status</b>${legend}</div>
+    <div class="mm-scroll"><svg viewBox="0 0 ${W} ${H}" class="mm-svg" preserveAspectRatio="xMidYMid meet" style="min-width:${W}px">
+      ${links}${nodes}
+    </svg></div></div>`;
 }
 
 function renderListe(key, cols) {
