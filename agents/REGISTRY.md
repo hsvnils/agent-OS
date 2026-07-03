@@ -49,7 +49,7 @@ Zwei Zustaende werden unterschieden:
 | —    | Unternehmensberater | **aktiv** | **verdrahtet** | `01_unternehmensberater.md` |
 | CAO  | Chief Administrative Officer | Entwurf | — | `02_cao.md` |
 | CFO  | Chief Financial Officer | **aktiv** | — | `03_cfo.md` |
-| CRO  | Chief Revenue Officer | Entwurf | — | `04_cro.md` |
+| CRO  | Chief Revenue Officer | aktiv | — | `04_cro.md` |
 | CISO | Chief Information Security Officer | Entwurf | — | `05_ciso.md` |
 | CBO  | Chief Brand Officer | **aktiv** | — | `06_cbo.md` |
 | CPO  | Chief Product Officer | Entwurf | — | `07_cpo.md` |

@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 03:45] — Head of Agents (Claude Code) — CRO-Charta vertieft + Status aktiv (CEO-freigegeben)
+- **Was:** `agents/04_cro.md` vertieft: Mandat um **Umsatz-Diversifizierung** (owned/wiederkehrend) + Pricing-
+  Richtwert-Platzhalter erweitert; Aufgabenkatalog + Workflows um den **Kooperations-Zyklus** (pricing-struktur
+  -> kooperation-bewerten -> outreach-pitch) und **Umsatz-Diversifizierung** ergaenzt (verweisen auf die 4
+  CRO-Skills). **Status Entwurf -> aktiv**; `agents/REGISTRY.md` angeglichen.
+- **Warum:** CEO-Freigabe am 2026-07-04 (Diff als 4 Bloecke vorgelegt + „komplett anwenden" + „auf aktiv"
+  bestaetigt). AGENTS.md 3.3 (Charta-Aenderung nur HoA auf CEO-Anweisung mit Diff).
+- **Betroffen:** `agents/04_cro.md`, `agents/REGISTRY.md`.
+
 ## [2026-07-04 03:30] — Claude Code — CRO-Recherche verwertet: Benchmarks + Diversifizierungs-Skill
 - **Was:** Online-Recherche (Creator-Monetarisierung/Pricing-Benchmarks 2026) im `docs/entscheidungs-register.md`
   protokolliert und direkt genutzt: `skills/cro/pricing-struktur` um „Marktbenchmark (2026, Referenz)" ergaenzt
