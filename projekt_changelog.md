@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 17:00] — Claude Code — Phase 25: Execution-Sandbox-Policy (deklarativ, Blaupause)
+- **Was:** Neue Policy-Engine `core/sandbox_policy.py` (`SandboxPolicy`, `lade_policy`) -- deklarative,
+  maschinell pruefbare Sicherheits-Policy fuer handelnde Agenten: Datei-Zugriff (allow-list + Deny-Vorrang +
+  Traversal-Schutz), Egress/Host (allow-list, `*.domain`), Prozess-/Kommando-Muster (deny-list: rm -rf, sudo,
+  curl|bash, git push/rebase/reset --hard, mkfs, dd, fork-bomb, chmod 777), `creds_env_only`. Default-Policy
+  `governance/sandbox-policy.json` (JSON = YAML-Teilmenge, KEIN yaml.load), Doku `governance/sandbox-policy.md`,
+  Vorab-Pruef-Tool `sandbox_check(art, ziel, modus?)` in `hoa_tools.py` (fuehrt nichts aus). +18 Tests
+  (422 gruen, war 404). Blaupause -- Live-Enforcement erst mit Phase 17 (daran gekoppelt).
+- **Warum:** Phase 25 -- formalisiert die bisher nur als Prompt-Text (`EXECUTION_RULES`) vorhandenen Grenzen
+  zu einer erzwingbaren Policy (Least Privilege, Not-Aus). Reiner Code + Doku, kein CEO-Tor.
+- **Betroffen:** `orchestrator/core/sandbox_policy.py` (neu), `governance/sandbox-policy.json` (neu),
+  `governance/sandbox-policy.md` (neu), `orchestrator/core/hoa_tools.py`,
+  `orchestrator/tests/test_sandbox_policy.py` (neu), `ROADMAP.md`.
+
 ## [2026-07-03 16:15] — Claude Code — Phase 22 Inkr.3: Taint-Tracking (Datenfluss extern -> Code-Sink)
 - **Was:** In `core/security_agent.py` intraprozedurale Taint-Analyse ergaenzt: module-level `analysiere_taint()`
   (AST, deterministisch, kein LLM) + Methode `SecurityAgent._check_taint()`, verdrahtet in `audit()`. Meldet

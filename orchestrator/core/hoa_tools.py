@@ -107,6 +107,14 @@ def tool_specs() -> list[dict]:
               {"pfad": _str("Ordnerpfad des Skills, relativ zum Repo-Root (z. B. 'skills/mein-skill')."),
                "sarif": {"type": "boolean", "description": "true -> zusaetzlich SARIF-2.1.0-Dokument."}},
               ["pfad"]),
+        _spec("sandbox_check", "CISO/Security (Phase 25): prueft eine geplante Aktion gegen die deklarative "
+              "Execution-Sandbox-Policy (`governance/sandbox-policy.json`) -- Datei-Zugriff (allow-list), "
+              "Egress/Host (allow-list) oder Kommando (deny-list). Reine Vorab-Pruefung (fuehrt NICHTS aus); "
+              "Blaupause fuer die Phase-17-Governance. Liefert erlaubt/verweigert + Grund.",
+              {"art": _str("datei | netz | prozess."),
+               "ziel": _str("Pfad (datei), Host (netz) oder Kommando (prozess)."),
+               "modus": _str("Optional bei art=datei: read | write (Default write).")},
+              ["art", "ziel"]),
         _spec("wissensstand", "Zeigt den aktuellen Fachbereichs-Wissensstand einer Abteilung (gesammelte "
               "Web-Funde, neueste zuerst) -- reine Anzeige, keine neue Suche, keine Token.",
               {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto, ciso, cfo).")}, ["abteilung"]),
@@ -475,6 +483,25 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         if args.get("sarif"):
             ergebnis["sarif"] = r.sarif()
         return ergebnis
+
+    if name == "sandbox_check":
+        from pathlib import Path as _Path
+        from .sandbox_policy import lade_policy
+        art = (args.get("art") or "").strip().lower()
+        ziel = (args.get("ziel") or "").strip()
+        if art not in ("datei", "netz", "prozess"):
+            return {"fehler": "art muss datei | netz | prozess sein."}
+        if not ziel:
+            return {"fehler": "Kein Ziel angegeben."}
+        pol = lade_policy(_Path(ctx.repo_root) / "governance" / "sandbox-policy.json")
+        if art == "datei":
+            e = pol.pruefe_datei(ziel, sandbox_root=str(ctx.repo_root),
+                                 modus=(args.get("modus") or "write"))
+        elif art == "netz":
+            e = pol.pruefe_netz(ziel)
+        else:
+            e = pol.pruefe_prozess(ziel)
+        return {"ok": True, "art": art, "ziel": ziel, "erlaubt": e.erlaubt, "grund": e.grund, "regel": e.regel}
 
     if name == "recherche_beauftragen":
         frage = (args.get("frage") or "").strip()

@@ -1,0 +1,27 @@
+{
+  "fs_allow": [
+    "."
+  ],
+  "fs_deny": [
+    "agents/",
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".git/",
+    ".env",
+    "orchestrator/.env"
+  ],
+  "net_allow_hosts": [],
+  "proc_deny": [
+    "\\brm\\s+-[a-z]*(?:rf|fr)[a-z]*\\b",
+    "\\bsudo\\b",
+    "\\b(curl|wget)\\b[^|]*\\|\\s*(sudo\\s+)?(ba)?sh\\b",
+    "\\bgit\\s+push\\b",
+    "\\bgit\\s+(?:\\w+\\s+)*(?:rebase|filter-branch)\\b",
+    "\\bgit\\s+reset\\s+--hard\\b",
+    "\\bmkfs\\b",
+    "\\bdd\\s+if=",
+    ":\\s*\\(\\s*\\)\\s*\\{",
+    "\\bchmod\\s+777\\b"
+  ],
+  "creds_env_only": true
+}
