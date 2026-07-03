@@ -123,7 +123,10 @@ class InstagramConversations:
         self.letzter_fehler = ""            # letzte API-Fehlermeldung (fuer Diagnose)
 
     def _konv_pfad(self) -> str:
-        return "me/conversations" if "graph.instagram.com" in self.base else f"{self.own_id}/conversations"
+        # DMs laufen ueber den SEITEN-Knoten -> `me/conversations` (Seiten-Token). Der IG-Account-Knoten
+        # `{ig-id}/conversations` liefert "(#3) Application does not have the capability". `me` passt fuer
+        # Seiten-Token (=Seite) UND Instagram-Login-Token (=IG-Konto).
+        return "me/conversations"
 
     @property
     def verfuegbar(self) -> bool:

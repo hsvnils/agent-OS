@@ -15,8 +15,7 @@ class TestInstagramConversations(unittest.TestCase):
 
     def test_parsing_mit_http(self):
         def http(pfad, params):
-            if pfad.endswith("/conversations"):
-                self.assertEqual(pfad, "OWN/conversations")     # Facebook-Login: {ig-id}/conversations
+            if pfad == "me/conversations":                      # DMs ueber den Seiten-Knoten
                 self.assertEqual(params["platform"], "instagram")
                 return {"data": [{"id": "c1"}, {"id": "c2"}]}
             return {"messages": {"data": [
@@ -28,11 +27,8 @@ class TestInstagramConversations(unittest.TestCase):
         self.assertEqual(n[0]["from_id"], "U1")
         self.assertEqual(n[0]["text"], "Hallo!")
 
-    def test_pfad_je_variante(self):
-        self.assertEqual(InstagramConversations("t", "OWN")._konv_pfad(), "OWN/conversations")
-        self.assertEqual(
-            InstagramConversations("t", "OWN", base="https://graph.instagram.com/v25.0")._konv_pfad(),
-            "me/conversations")
+    def test_konv_pfad_immer_me(self):
+        self.assertEqual(InstagramConversations("t", "OWN")._konv_pfad(), "me/conversations")
 
     def test_http_fehler_leer(self):
         def boom(pfad, params):
