@@ -445,8 +445,12 @@ def _start_investment_loop(ctx, secrets) -> None:
     """Automatischer Investment-Screen (advisory, token-frugal/kostenlos): werktags 16:00 DE ein Markt-Screen
     -> Vorschlaege (jeder vom Risk-Agent geprueft) -> Alerts ueber den Notifier; montags 09:00 Wochenprognose.
 
-    Standardmaessig AUS -- Aktivierung via INVESTMENT_AUTO_SCREEN=1 (Autonomie-Stufe L1: nur Melden, keine
-    Trades). Respektiert keine extra Notbremse, weil rein lesend + advisory.
+    Zusaetzlich (Walk-Forward-Lern-Loop, Schritt 1): taeglich ~07:00 ein **Merkmals-/Preis-Snapshot** der
+    Watchlist + Benchmarks (SPY/BTC) in den `LoopStore` (lokal + Supabase). Baut unsere eigene Kurs-Historie
+    auf -- Grundlage fuer 7-Tage-Prognose, Abgleich und das getrennte Abweichungs-Register.
+
+    Standardmaessig AUS. Aktivierung: INVESTMENT_AUTO_SCREEN=1 (Screen/Prognose) bzw. INV_FEATURE_LOOP=1
+    (Merkmals-Sammler). Autonomie-Stufe L1: nur Lesen/Melden, keine Trades, kein Geld.
     """
     import threading
     import time
@@ -455,7 +459,9 @@ def _start_investment_loop(ctx, secrets) -> None:
     eng = getattr(ctx, "investment", None)
     if eng is None:
         return
-    if secrets.get("INVESTMENT_AUTO_SCREEN", "").strip().lower() not in ("1", "true", "yes", "on"):
+    auto_screen = secrets.get("INVESTMENT_AUTO_SCREEN", "").strip().lower() in ("1", "true", "yes", "on")
+    feature_loop = secrets.get("INV_FEATURE_LOOP", "").strip().lower() in ("1", "true", "yes", "on")
+    if not (auto_screen or feature_loop):
         return
     try:
         from zoneinfo import ZoneInfo
@@ -467,14 +473,32 @@ def _start_investment_loop(ctx, secrets) -> None:
         items = eng.store.list(tabelle)
         return (items[-1].get("ts", "")[:10]) if items else ""
 
+    collector = None
+    if feature_loop:
+        from ...governance.supabase import SupabaseAuth, SupabaseClient
+        from ...investment.features import FeatureCollector
+        from ...investment.loop_store import LoopStore
+        _auth = SupabaseAuth.from_env(secrets)
+        _sb = SupabaseClient(_auth) if _auth.verfuegbar() else None
+        _leak = [v for v in secrets.values() if isinstance(v, str) and v]
+        collector = FeatureCollector(eng.market, LoopStore(ROOT / "investment" / "features.jsonl",
+                                                           supabase=_sb, secrets=_leak))
+
     def loop():
         time.sleep(45)
         while True:
             try:
                 jetzt = datetime.now(tz) if tz else datetime.now()
                 datum = jetzt.strftime("%Y-%m-%d")
+                # Taeglicher Merkmals-/Preis-Snapshot (~07:00), 1x/Tag
+                if collector is not None and jetzt.hour == 7 and collector.store.last_datum("inv_features") != datum:
+                    r = collector.collect(eng.store.watchlist(), datum=datum)
+                    ctx.notifications.enqueue(
+                        f"Merkmals-Snapshot: {len(r['gesammelt'])} Werte erfasst ({datum}), "
+                        f"{len(r['uebersprungen'])} bereits vorhanden.",
+                        abteilung="CIO", kategorie="investment", quelle="feature-loop", dedup_stunden=0)
                 # Taeglicher Markt-Screen (werktags ~16:00), 1x/Tag
-                if jetzt.weekday() < 5 and jetzt.hour == 16 and _letztes_datum("screening") != datum:
+                if auto_screen and jetzt.weekday() < 5 and jetzt.hour == 16 and _letztes_datum("screening") != datum:
                     r = eng.screen_und_vorschlagen(max_vorschlaege=3)
                     n = len(r.get("erstellt", []))
                     ctx.notifications.enqueue(
@@ -486,14 +510,19 @@ def _start_investment_loop(ctx, secrets) -> None:
                     except Exception as exc:
                         print(f"[investment] Scorecard-Fehler: {exc}", flush=True)
                 # Wochenprognose montags ~09:00, 1x/Tag
-                if jetzt.weekday() == 0 and jetzt.hour == 9 and _letztes_datum("forecasts") != datum:
+                if auto_screen and jetzt.weekday() == 0 and jetzt.hour == 9 and _letztes_datum("forecasts") != datum:
                     eng.wochenprognose()
             except Exception as exc:
                 print(f"[investment] Fehler: {exc}", flush=True)
             time.sleep(300)
 
     threading.Thread(target=loop, daemon=True, name="investment-loop").start()
-    print("Investment-Loop aktiv (werktags 16:00 Markt-Screen + Mo 09:00 Wochenprognose, advisory).", flush=True)
+    aktive = []
+    if auto_screen:
+        aktive.append("werktags 16:00 Markt-Screen + Mo 09:00 Wochenprognose")
+    if feature_loop:
+        aktive.append("taeglich 07:00 Merkmals-Snapshot")
+    print("Investment-Loop aktiv (" + "; ".join(aktive) + ", advisory).", flush=True)
 
 
 def _start_cfo_loop(ctx, notify) -> None:

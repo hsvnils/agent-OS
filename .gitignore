@@ -52,6 +52,7 @@ brain/log.jsonl
 trajektorien/log.jsonl
 social/log.jsonl
 investment/log.jsonl
+investment/features.jsonl
 crm/log.jsonl
 crm/sync_cursor.txt
 content_ops/

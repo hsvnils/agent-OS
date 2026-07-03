@@ -17,6 +17,37 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 09:10] — Claude Code — Investment: Walk-Forward-Lern-Loop Schritt 1 (Supabase + Merkmals-Sammler)
+- **Was:** Fundament fuer den CEO-gewuenschten Prognose-Lern-Loop gebaut (advisory, KEIN Geld, KEIN Trade, KEIN
+  Gate). (1) `docs/hcc_inv_loop.sql` — Supabase-Schema mit `inv_features`, `inv_forecasts`, `inv_actuals`,
+  **`inv_deviations` (separates, dauerhaftes Abweichungs-Register)** und `inv_model_runs` (Lern-Log). (2)
+  `orchestrator/investment/loop_store.py` — `LoopStore`: lokaler append-only JSONL = Quelle/Offline-Fallback +
+  best-effort Supabase-Write-through (Ausfall stoppt den Loop nie). (3) `orchestrator/investment/features.py` —
+  `FeatureCollector`: taeglicher Kurs-Snapshot der Watchlist + Benchmarks (SPY/BTC), leitet aus der eigenen
+  angesammelten Historie Merkmale ab (Renditen 1/5/10/20T, Vola_20, SMA5/20, Momentum); 1 Snapshot je Wert/Tag,
+  token-/call-frugal, keine bezahlten Dienste. (4) In `_start_investment_loop` (bot.py) verdrahtet: taeglich
+  ~07:00 Merkmals-Snapshot, gated durch neues `INV_FEATURE_LOOP=1` (Screen/Prognose weiter via
+  INVESTMENT_AUTO_SCREEN=1). (5) `investment/features.jsonl` in .gitignore + sync-exclude (Live-Daten geschuetzt);
+  Flags in `.env.example` dokumentiert. 7 neue Tests (offline, gemockt); volle Suite 497 gruen.
+- **Warum:** CEO-Vorschlag — Daten fortlaufend sammeln, nach 7 Tagen 7-Tage-Prognose, dann mit Realitaet
+  abgleichen, Abweichungen SEPARAT festhalten und messen, ob Anreicherung die Prognosen genauer macht. Supabase
+  ist dafuer jetzt CEO-gewuenscht (hebt die alte "erst wenn noetig"-Zurueckstellung auf).
+- **Betroffen:** `docs/hcc_inv_loop.sql`, `orchestrator/investment/loop_store.py`,
+  `orchestrator/investment/features.py`, `orchestrator/tests/test_investment_features.py`,
+  `orchestrator/channels/telegram/bot.py`, `.gitignore`, `deploy/sync-to-nas.sh`, `orchestrator/.env.example`.
+
+## [2026-07-04 07:40] — Claude Code — Organigramm: 2-reihiger Top-down-Baum (kein Horizontal-Scroll)
+- **Was:** `renderAgenten` in `orchestrator/channels/web/static/app.js` auf **zwei Reihen** umgebaut: die
+  Abteilungen liegen jetzt in Reihe A (Dept 0-7) und Reihe B (Dept 8-15), je mittig unter LUNA, mit ihren
+  Unter-Agenten je darunter. Vertikale Reihenfolge LUNA -> Reihe A -> Reihe-A-Subs -> Reihe B -> Reihe-B-Subs;
+  `rowGap` haelt Reihe B klar unter den Reihe-A-Subs (keine Kollision). Breite dadurch ~828px statt ~1580px ->
+  **kein horizontaler Scroll** mehr. Kompakte Boxen (Kuerzel gross + Nummer, Rolle als `<title>`-Tooltip)
+  unveraendert. Isoliert per Preview verifiziert (Mock mit 16 Depts+Subs), Testdatei/Launch-Config wieder
+  entfernt. Cache-Bust v36->v37 in `index.html` (style.css + app.js). UI.md „Organigramm" aktualisiert.
+- **Warum:** CEO-Wunsch — einreihiger Top-down-Baum war bei 16 Abteilungen zu breit (Horizontal-Scroll).
+- **Betroffen:** `orchestrator/channels/web/static/app.js`, `orchestrator/channels/web/static/index.html`,
+  `UI.md`, `projekt_changelog.md`.
+
 ## [2026-07-04 06:25] — Claude Code — Organigramm: Top-down-Baum (statt seitlich)
 - **Was:** `renderAgenten` von links->rechts auf **oben->unten** umgestellt (CEO oben -> LUNA -> Abteilungs-
   Reihe -> Unter-Agenten darunter, vertikale Elbow-Verbindungen; Abteilungen kompakt: Kuerzel gross + Nummer,
