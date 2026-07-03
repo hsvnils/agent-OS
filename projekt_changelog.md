@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 18:40] — Claude Code — Recherche „Gemini Omni" fuer den Cutter (Ergebnis im Register)
+- **Was:** Bewertung des CEO-Wunsches „Gemini Omni" (Video-Verstaendnis) fuer den Cutter im
+  `docs/entscheidungs-register.md` protokolliert (Index + Detail). Befund: kein Produkt „Omni" = multimodale
+  Gemini-Modelle mit Video-Input; Ist-Cutter nutzt Gemini nur mit TEXT; Kosten <1-3 Cent/Lauf
+  (258 Token/s Video); Datenschutz = nur Paid-Tier trainiert NICHT. Entscheidung: SPAETER/OPTIONAL als
+  Opt-in-Pilot (CEO-Tor), kein Code geaendert.
+- **Warum:** CEO-Auftrag „gucken, wie es mit Gemini Omni aussieht" -- entscheidungsreife Vorbereitung.
+- **Betroffen:** `docs/entscheidungs-register.md`.
+
 ## [2026-07-03 18:10] — Claude Code — Secrets-Rotation-Checkliste vorbereitet (Ablage)
 - **Was:** Neue Doku `docs/secrets-rotation-checkliste.md` -- geordnete Rotationsliste aller Zugangs-Secrets
   (aus den Env-Referenzen des Codes), priorisiert: „im Chat geteilt" zuerst (GITHUB_TOKEN, OPENAI_API_KEY,

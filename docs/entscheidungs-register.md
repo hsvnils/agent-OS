@@ -28,10 +28,39 @@
 | **ruflo** -- *Einzelideen* (AIDefence, Trajektorien-Lernen) | 2026-07-03 | **TEILWEISE** (2 Ideen) | Phase 23 / Phase 26 |
 | **agency-agents #525** („The Agency") | 2026-07-03 | **MINIMAL** (nur Metrik-Idee) | Phase 24 |
 | **VoltAgent/awesome-agent-skills** (1000+ Skills) | 2026-07-03 | **SPAETER** (nur via Security-Gate) | Phase 24 |
+| **Gemini „Omni"** (Video-Verstaendnis fuer den Cutter) | 2026-07-03 | **SPAETER/OPTIONAL** (Opt-in-Pilot, CEO-Tor) | Cutter Phase 15 -- Antrag an CEO |
 
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-07-03 — Gemini „Omni" (Video-Verstaendnis) fuer den Cutter (CEO-Wunsch, Prio zeitnah)
+
+**Kontext:** CEO fragte, ob Googles multimodales „Omni"-Modell den Cutter (Phase 15) verbessert (Szenen-/
+Highlight-Verstaendnis, bessere Reihenfolge, „bester Ausschnitt", Untertitel).
+
+**Befund:**
+- **Kein Produkt namens „Gemini Omni".** Gemeint sind die **multimodalen Gemini-Modelle mit Video-Input**
+  (Files-API: Clip hochladen, Modell verarbeitet Frames @1 fps + Audio).
+- **Ist-Zustand Cutter:** nutzt `gemini-2.5-flash` **nur mit Text** (Transkript + Dateiname) fuer die
+  Reihenfolge -- es **sieht die Clips nicht**. Transkription laeuft lokal (whisper.cpp). Video verlaesst den
+  Mac heute NICHT (nur kurze Transkript-Schnipsel gehen an Google, Free-Tier).
+- **Kosten (CFO-Voranschlag):** Video = **258 Token/s** (+ Audio ~32/s). Typischer Lauf ~3-5 Min Rohmaterial
+  ~= 60-90k Input-Token. Mit **Gemini 2.5 Flash-Lite** ($0.10/1M) ~**<1 Cent/Lauf**, mit 2.5 Flash ($0.30/1M)
+  ~2-3 Cent/Lauf. 30 Laeufe/Monat < 1 USD. **Kein Kostenblocker.**
+- **Datenschutz (Kernpunkt):** **Free-Tier -> Daten werden fuers Training genutzt.** **Paid-Tier -> NICHT.**
+  Fuer echtes Video-Verstaendnis muessten die Rohclips zu Google -> nur auf **Paid-Tier** (Billing an)
+  datenschutz-vertretbar. Heute ist die Pipeline fast vollstaendig lokal.
+- **Mehrwert:** echtes visuelles Highlight-/Best-Cut-/Hook-Verstaendnis (heute „blind" auf Basis des
+  Transkripts). Nutzen v. a. bei **visuellem** Material (B-Roll/Action/Szenerie); bei reinem Talking-Head
+  gering. Nachteil: harte Google-/Netz-Abhaengigkeit, Upload-Latenz, Datenschutz-Verschiebung.
+
+**Entscheidung:** **SPAETER/OPTIONAL** — empfohlen als **Opt-in-Pilot** (Flag/Env, Default bleibt lokal+gratis;
+Paid-Tier Flash-Lite; A/B gegen die lokale Reihenfolge). **CEO-Tor** (neuer kostenpflichtiger Dienst + Clips zu
+Google). Umsetzung erst nach CEO-Freigabe; noch **kein** Code geaendert.
+
+**Quellen:** ai.google.dev/gemini-api/docs/pricing (258 Token/s Video; Flash-Lite $0.10 / Flash $0.30 pro 1M;
+Free-Tier „used to improve products" = ja, Paid = nein).
 
 ### 2026-07-03 — Recherche „Agent-Oekosystem" (CEO-Auftrag)
 
