@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 04:50] — Head of Agents (Claude Code) — CDO-Charta vertieft + Status aktiv (CEO-freigegeben)
+- **Was:** `agents/11_cdo.md`: Auftrag/Aufgabenkatalog/KPI-Dashboard-Workflow verweisen jetzt auf die CDO-Skills
+  (`datenqualitaet-pruefen` = 6 Dimensionen; `kennzahlen-definieren` = North Star + actionable, Vanity
+  kennzeichnen). **Status Entwurf -> aktiv**; `agents/REGISTRY.md` angeglichen.
+- **Warum:** CEO-Freigabe am 2026-07-04 (Diff als 3 Bloecke + „anwenden" + „auf aktiv"). AGENTS.md 3.3.
+- **Betroffen:** `agents/11_cdo.md`, `agents/REGISTRY.md`.
+
 ## [2026-07-04 04:40] — Claude Code — CDO angereichert: 2 Skills (datenqualitaet-pruefen, kennzahlen-definieren)
 - **Was:** Recherche (6 Datenqualitaets-Dimensionen + North-Star/Vanity 2026) im Register protokolliert und
   genutzt: `skills/cdo/datenqualitaet-pruefen` (Raster Genauigkeit/Vollstaendigkeit/Konsistenz/Aktualitaet/

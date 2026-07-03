@@ -56,7 +56,7 @@ Zwei Zustaende werden unterschieden:
 | CTO  | Chief Technology Officer | **aktiv** | **verdrahtet** | `08_cto.md` |
 | CXO  | Chief Experience Officer | Entwurf | — | `09_cxo.md` |
 | CCO  | Chief Content Officer | **aktiv** | — | `10_cco-content.md` |
-| CDO  | Chief Data Officer | Entwurf | — | `11_cdo.md` |
+| CDO  | Chief Data Officer | aktiv | — | `11_cdo.md` |
 | CHRO | Chief Human Resources Officer | Entwurf | — | `12_chro.md` |
 | CLO  | Chief Legal Officer | Entwurf | — | `13_clo.md` |
 | CKO  | Chief Knowledge Officer | Entwurf | — | `14_cko.md` |
