@@ -140,12 +140,15 @@ def _build_ctx(cfg: dict, secrets: dict):
     insights = Insights(antraege=antraege, research=research, agenda=agenda, google=google,
                         secrets=secret_values)
     # Investment-Abteilung (CIO, advisory) -- Marktdaten via Capability, Alerts ueber den Notifier.
+    from ...investment.broker import AlpacaPaperBroker
     from ...investment.engine import InvestmentEngine
     from ...investment.providers import MarketData
     from ...investment.store import InvestmentStore
+    # GATE C: Paper-Broker (Alpaca). Inert ohne Keys; paper-Modus aktivieren + jede Order = CEO-Tor.
+    _paper_broker = AlpacaPaperBroker(secrets.get("ALPACA_API_KEY", ""), secrets.get("ALPACA_API_SECRET", ""))
     investment = InvestmentEngine(
         MarketData(secrets=secrets), InvestmentStore(ROOT / "investment" / "log.jsonl", secrets=secret_values),
-        notify=notifications.enqueue, brain=brain.merken)
+        notify=notifications.enqueue, brain=brain.merken, broker=_paper_broker)
     from ...core.crm import CrmStore
     from ...core.crm_projection import SupabaseCrmProjection
     from ...governance.supabase import SupabaseAuth, SupabaseClient

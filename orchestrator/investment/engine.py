@@ -19,12 +19,73 @@ KRYPTO_DEFAULT = ["bitcoin", "ethereum", "solana"]
 
 class InvestmentEngine:
     def __init__(self, market: MarketData, store: InvestmentStore, *, risk: RiskAgent | None = None,
-                 notify=None, brain=None):
+                 notify=None, brain=None, broker=None):
         self.market = market
         self.store = store
         self.risk = risk or RiskAgent()
         self.notify = notify  # optional: callback(text, abteilung=, kategorie=, detail=)
         self.brain = brain    # optional: callback(text, *, titel, tags, quelle, ref) -- Second Brain
+        self.broker = broker  # GATE C: Paper-Broker (Alpaca) oder None (advisory)
+
+    # -- GATE C: Paper-Trading (simuliert, echte Kurse) --
+    def paper_konto(self) -> dict:
+        """Konto + Positionen des Paper-Brokers. Read-only; Modus/Keys werden gemeldet, nichts ausgefuehrt."""
+        modus = self.store.mode()
+        if self.broker is None or not self.broker.verfuegbar:
+            return {"ok": False, "modus": modus,
+                    "hinweis": "Alpaca-Paper nicht konfiguriert (ALPACA_API_KEY/ALPACA_API_SECRET in .env)."}
+        konto = self.broker.konto()
+        if konto is None:
+            return {"ok": False, "modus": modus, "hinweis": "Konto-Abruf fehlgeschlagen (Keys/Netz pruefen)."}
+        return {"ok": True, "modus": modus,
+                "konto": {k: konto.get(k) for k in ("cash", "buying_power", "equity", "portfolio_value",
+                                                    "status") if k in konto},
+                "positionen": [{"symbol": p.get("symbol"), "qty": p.get("qty"),
+                                "marktwert": p.get("market_value"), "pl": p.get("unrealized_pl")}
+                               for p in self.broker.positionen()]}
+
+    def paper_order(self, symbol: str, qty: float, side: str, *, asset: str = "aktie",
+                    bestaetigt: bool = False) -> dict:
+        """Platziert eine PAPER-Order -- nur in modus 'paper', mit CEO-Bestaetigung und harter Risk-Pruefung."""
+        modus = self.store.mode()
+        if modus != "paper":
+            return {"ok": False, "hinweis": f"Modus ist '{modus}', nicht 'paper'. paper aktivieren = CEO-Tor "
+                                            "(GATE C) ueber 'investment_modus'."}
+        if self.broker is None or not self.broker.verfuegbar:
+            return {"ok": False, "hinweis": "Alpaca-Paper nicht konfiguriert (Keys fehlen)."}
+        symbol = (symbol or "").upper().strip()
+        side = (side or "buy").lower().strip()
+        qty = _zahl(qty)
+        if not symbol or qty <= 0 or side not in ("buy", "sell"):
+            return {"ok": False, "hinweis": "Ungueltige Order (symbol/qty/side)."}
+        preis = _zahl(self._aktueller_preis(symbol, asset))
+        order_wert = preis * qty
+        konto = self.broker.konto() or {}
+        urteil = self.risk.pruefe_order(order_wert=order_wert, konto_equity=_zahl(konto.get("equity")),
+                                        buying_power=_zahl(konto.get("buying_power")), side=side)
+        if not urteil["ok"]:
+            self.store.add("positions", {"symbol": symbol, "qty": qty, "side": side, "status": "abgelehnt",
+                                         "grund": urteil["grund"], "order_wert": round(order_wert, 2)})
+            return {"ok": False, "abgelehnt": True, "grund": urteil["grund"]}
+        if not bestaetigt:                                   # CEO-Tor je Order
+            return {"ok": False, "bestaetigung_noetig": True, "symbol": symbol, "qty": qty, "side": side,
+                    "geschaetzter_wert": round(order_wert, 2), "risk": urteil["grund"],
+                    "hinweis": "Paper-Order (simuliert). Mit bestaetigt=true ausfuehren."}
+        res = self.broker.order(symbol, qty, side)
+        if res is None:
+            self.store.add("positions", {"symbol": symbol, "qty": qty, "side": side, "status": "fehler"})
+            return {"ok": False, "hinweis": "Broker-Order fehlgeschlagen (Keys/Markt/Zeitfenster?)."}
+        oid = self.store.add("positions", {"symbol": symbol, "qty": qty, "side": side, "status": "platziert",
+                                           "order_wert": round(order_wert, 2),
+                                           "broker_order_id": res.get("id", ""), "modus": "paper"})
+        if self.notify:
+            try:
+                self.notify(f"Paper-Order platziert: {side} {qty} {symbol} (~{_geld(order_wert)}).",
+                            abteilung="CIO/Investment", kategorie="investment", quelle="paper-trade")
+            except Exception:
+                pass
+        return {"ok": True, "platziert": True, "order_id": oid, "broker_order_id": res.get("id", ""),
+                "symbol": symbol, "qty": qty, "side": side, "geschaetzter_wert": round(order_wert, 2)}
 
     # -- Status --
     def status(self) -> dict:

@@ -26,10 +26,17 @@ Modus in `finance/investment-config.md` bzw. Supabase `inv_mode` (Wechsel = CEO-
 | Modus | Bedeutung | Autonomie-Stufe | GATE |
 |-------|-----------|-----------------|------|
 | **advisory** (aktiv) | nur Vorschlaege; CEO fuehrt selbst aus | L1/L2 | — |
-| **paper** (geplant) | simuliert mit echten Kursen (Alpaca Paper) | L2 | GATE C |
-| **live** (geplant, AUS) | echtes Auto-Trading, harte Limits + Kill-Switch | L3 | GATE D |
+| **paper** (Code fertig, AUS) | simuliert mit echten Kursen (Alpaca Paper) | L2 | GATE C |
+| **live** (gesperrt) | echtes Auto-Trading, harte Limits + Kill-Switch | L3 | GATE D |
 
-Ausfuehrungs-Pfad = austauschbare Komponente (advisory = loggen/melden; paper/live = Broker-Adapter).
+Ausfuehrungs-Pfad = austauschbare Komponente (advisory = loggen/melden; **paper = Alpaca-Paper-Adapter**
+`investment/broker.py`; live = spaeter). `investment_modus` schaltet den Modus (paper = CEO-Tor); `live` ist
+im Tool hart gesperrt.
+
+**GATE C aktivieren (CEO):** (1) Alpaca-**Paper**-Konto anlegen, `ALPACA_API_KEY` + `ALPACA_API_SECRET` in
+`orchestrator/.env` (Mac + NAS) setzen (neuer Broker = CEO-Tor); (2) Container neu starten; (3) LUNA:
+„Investment-Modus auf paper" -> mit bestaetigt=true. Danach sind **Paper-Orders** moeglich -- jede Order
+zusaetzlich CEO-bestaetigt (`paper_order ... bestaetigt=true`), echtes Geld bleibt unberuehrt.
 
 ## 3 Maker/Checker (Pflicht)
 
@@ -42,8 +49,10 @@ Ausfuehrungs-Pfad = austauschbare Komponente (advisory = loggen/melden; paper/li
 > Im advisory-Modus als **Empfehlung**; ab paper/live **hart durchgesetzt** vom Risk-Agent. Konkrete Werte
 > legt der CEO bei GATE C/D fest. Erhoehung eines Limits = CEO-Tor.
 
-- Max. Positionsgroesse je Wert: _tbd_ · Max. Exposure je Sektor/Asset-Klasse: _tbd_
-- Tagesverlust-Limit (paper/live): _tbd_ · Kill-Switch: aktivierbar, Default AUS (CEO-Tor).
+- **Max. Positionsgroesse je Wert: 5 % des Equity** (hart ab paper, `RiskAgent.MAX_POSITION_PCT`; Kauf nur,
+  wenn Ordervolumen <= Buying-Power UND <= 5 % Equity). Min-Equity fuer Orders: `MIN_EQUITY`. Erhoehung = CEO-Tor.
+- Max. Exposure je Sektor/Asset-Klasse: _tbd_ · Tagesverlust-Limit (paper/live): _tbd_ · Kill-Switch:
+  aktivierbar, Default AUS (CEO-Tor).
 - Anomalie-Schwelle (Prognose vs. Realitaet) fuer Obduktion: _tbd_ (Start z. B. > 1.5x erwartete Bewegung).
 - Konfidenz-Mindestschwelle fuer einen Alert: _tbd_.
 
@@ -79,4 +88,8 @@ Tabellen (Supabase-Ziel `inv_*`, uebergangsweise dateibasiert): `watchlist` · `
 
 - **Phase 0 (GATE A): erledigt** — CIO-Charta (Entwurf) + Risk-Agent (aktiv) + dieses Dokument + Registry/
   Organigramm. Keine Datenanbindung, keine Keys, keine Trades.
-- Naechstes: **Phase 1 (GATE B)** — gratis Datenanbindung (Capability) + Supabase-Tabellen.
+- **Phase 1/2: erledigt** — gratis Datenanbindung (Capability) + Store + advisory-Schleifen + Scorecard.
+- **GATE C: Code fertig 2026-07-03 (AUS)** — Alpaca-Paper-Adapter (`investment/broker.py`), harte
+  Order-Limits (`RiskAgent.pruefe_order`), Paper-Ausfuehrungspfad (`InvestmentEngine.paper_order`, Modus-Gate +
+  CEO-Bestaetigung je Order), Tools `investment_modus`/`paper_konto`/`paper_order`. **Inert bis** CEO Alpaca-
+  Keys setzt + paper aktiviert. Naechstes (CEO): Keys + Aktivierung, dann Paper-Track-Record aufbauen.

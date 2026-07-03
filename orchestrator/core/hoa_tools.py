@@ -321,6 +321,21 @@ def tool_specs() -> list[dict]:
               "Risiko-Label, Konfidenz).", {}, []),
         _spec("investment_scorecard", "Zeigt den Investment-Track-Record (Scorecard): ausgewertete Prognosen, "
               "Trefferquote, mittlere Bewegung. Die Vertrauensbasis fuer einen spaeteren Paper-Modus.", {}, []),
+        _spec("investment_modus", "GATE C/D: schaltet den Investment-Modus (advisory | paper | live). "
+              "Aktivierung von paper/live ist ein CEO-Tor -- OHNE bestaetigt=true wird nur der Effekt erklaert. "
+              "paper = simulierter Handel mit echten Kursen (Alpaca Paper); live bleibt gesperrt.",
+              {"modus": _str("advisory | paper | live."),
+               "bestaetigt": {"type": "boolean", "description": "true -> Moduswechsel wirklich setzen (CEO-Tor)."},
+               "grund": _str("Optionaler Grund/Notiz.")}, ["modus"]),
+        _spec("paper_konto", "GATE C: zeigt das Alpaca-Paper-Konto (Cash/Buying-Power/Equity) + offene "
+              "Positionen. Nur Lesen; ohne Keys/Modus wird der Setup-Stand gemeldet.", {}, []),
+        _spec("paper_order", "GATE C: platziert eine PAPER-Order (simuliert, echtes Geld NICHT betroffen) -- "
+              "nur im Modus 'paper', mit harter Risk-Pruefung. CEO-Tor: OHNE bestaetigt=true nur Vorschau "
+              "(Wert + Risk-Urteil).",
+              {"symbol": _str("Ticker, z. B. AAPL."), "qty": {"type": "number", "description": "Stueckzahl."},
+               "side": _str("buy | sell."), "asset": _str("aktie | krypto (Default aktie)."),
+               "bestaetigt": {"type": "boolean", "description": "true -> Order wirklich platzieren (CEO-Tor)."}},
+              ["symbol", "qty", "side"]),
         _spec("insider_scan", "Screent oeffentliche SEC-Form-4-Insider-KAEUFE ueber die Watchlist (oder "
               "uebergebene Symbole): erkennt Insider-Cluster/Grosskaeufe, erzeugt Risk-gepruefte Beobachten-"
               "Alerts mit Filing-Link + Second-Brain-Notiz. Advisory, keine Trades.",
@@ -915,10 +930,31 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"lagebild": redact(ctx.insights.lagebild(), sec)}
 
     if name in ("investment_status", "investment_screen", "investment_vorschlaege", "investment_scorecard",
-                "insider_scan", "insider_signale_zeigen", "watchlist_hinzufuegen"):
+                "insider_scan", "insider_signale_zeigen", "watchlist_hinzufuegen",
+                "investment_modus", "paper_konto", "paper_order"):
         if ctx.investment is None:
             return {"fehler": "Investment-Abteilung (CIO) nicht verfuegbar."}
         eng = ctx.investment
+        if name == "investment_modus":
+            modus = (args.get("modus") or "").strip().lower()
+            if modus not in ("advisory", "paper", "live"):
+                return {"fehler": "Modus muss advisory | paper | live sein."}
+            if modus == "live":
+                return {"blockiert": True, "hinweis": "live (echtes Auto-Trading) ist gesperrt (GATE D, spaeter)."}
+            if modus in ("paper",) and not args.get("bestaetigt"):
+                return {"bestaetigung_noetig": True, "modus": modus,
+                        "hinweis": "Aktivierung von paper = CEO-Tor. Mit bestaetigt=true setzen. Danach sind "
+                                   "Paper-Orders (simuliert) moeglich; echtes Geld bleibt unberuehrt."}
+            mid = eng.store.set_mode(modus, akteur="CEO", grund=(args.get("grund") or ""))
+            if ctx.core and getattr(ctx.core, "changelog", None):
+                ctx.core.changelog("CIO/Investment", f"Investment-Modus -> {modus}", "CEO-Tor", "investment")
+            return {"ok": True, "modus": modus, "id": mid}
+        if name == "paper_konto":
+            return _redact_obj(eng.paper_konto(), sec)
+        if name == "paper_order":
+            return _redact_obj(eng.paper_order(
+                (args.get("symbol") or ""), args.get("qty") or 0, (args.get("side") or "buy"),
+                asset=(args.get("asset") or "aktie"), bestaetigt=bool(args.get("bestaetigt"))), sec)
         if name == "investment_scorecard":
             return _redact_obj(eng.scorecard(), sec)
         if name == "investment_status":

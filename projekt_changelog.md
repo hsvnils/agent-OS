@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 23:45] — Claude Code — GATE C: Alpaca-Paper-Trading (Code fertig, inert)
+- **Was:** Neuer Alpaca-Paper-Broker-Adapter `investment/broker.py` (`AlpacaPaperBroker`, injizierbarer HTTP,
+  inert ohne Keys). Harte Order-Pruefung `RiskAgent.pruefe_order` (Kauf nur <= Buying-Power UND <= 5 % Equity;
+  Verkauf risikoreduzierend; `MAX_POSITION_PCT`/`MIN_EQUITY`). Paper-Ausfuehrungspfad
+  `InvestmentEngine.paper_order` (nur Modus 'paper', harte Risk-Pruefung, CEO-Bestaetigung je Order, Log in
+  Store-Tabelle 'positions') + `paper_konto`. Tools `investment_modus` (paper=CEO-Tor, live gesperrt),
+  `paper_konto`, `paper_order` (bestaetigt=true). In `bot.py` verdrahtet (Keys `ALPACA_API_KEY/SECRET`).
+  Governance/INVESTMENT_ROADMAP aktualisiert (Order-Limits gefuellt, GATE-C-Code fertig). +13 Tests (464 gruen);
+  Governance-Gates offline verifiziert.
+- **Warum:** GATE C aus dem CEO-Plan (Investment advisory -> paper). Alles inert bis CEO Alpaca-Keys setzt +
+  paper aktiviert (beides CEO-Tor); echtes Geld nie betroffen (Paper).
+- **Betroffen:** `orchestrator/investment/broker.py` (neu), `orchestrator/investment/risk.py`,
+  `orchestrator/investment/engine.py`, `orchestrator/core/hoa_tools.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_gate_c.py` (neu),
+  `governance/investment.md`, `INVESTMENT_ROADMAP.md`.
+
 ## [2026-07-03 23:00] — Claude Code — Social-Media-Analyzer (Kern): Insights -> Kennzahlen + Media-Kit
 - **Was:** Neues `core/social_kit.py`: `MetaInsights` (Meta Graph API v22, eigenes Konto, injizierbarer HTTP)
   holt Follower/Reichweite/Profilaufrufe/Engagement (aus letzten Posts)/Top-Posts; `SocialStore` fuehrt eine
