@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 16:15] — Claude Code — Phase 22 Inkr.3: Taint-Tracking (Datenfluss extern -> Code-Sink)
+- **Was:** In `core/security_agent.py` intraprozedurale Taint-Analyse ergaenzt: module-level `analysiere_taint()`
+  (AST, deterministisch, kein LLM) + Methode `SecurityAgent._check_taint()`, verdrahtet in `audit()`. Meldet
+  NUR echte Fluesse nicht vertrauenswuerdiger Daten (Funktionsparameter, input(), os.environ, sys.argv,
+  request.*, .read()/.json() ...) in Code-Ausfuehrungs-Sinks (eval/exec/compile/__import__/os.system/os.popen/
+  subprocess(shell=True)) -- praeziser als der grobe AST-Scan (Konstanten werden NICHT getaintet). Fixpunkt-
+  Propagation ueber Zuweisungen, Scope-Isolation je Funktion. Unser Code = 0 Funde. Tool-Beschreibung
+  `sicherheits_audit` aktualisiert. +12 Tests (404 gruen, war 392). **Phase 22 vollstaendig.**
+- **Warum:** Optionaler Backlog-Rest von Phase 22 (SkillSpector-Muster) abschliessen -- reiner Code, kein CEO-Tor.
+- **Betroffen:** `orchestrator/core/security_agent.py`, `orchestrator/core/hoa_tools.py`,
+  `orchestrator/tests/test_security_agent.py`, `ROADMAP.md`.
+
 ## [2026-07-03 15:30] — Claude Code — Referenz-Skill fuer Phase-24-Verifikation
 - **Was:** Neuer Beispiel-Skill `skills/beispiel-zusammenfassung/SKILL.md` (konforme skill-card, keine
   Skripte) -- dient als Format-Vorlage (governance/skill-standard.md) und zur Verifikation des Gates

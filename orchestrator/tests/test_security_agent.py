@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from orchestrator.core.security_agent import Finding, SecurityAgent, nach_sarif
+from orchestrator.core.security_agent import Finding, SecurityAgent, analysiere_taint, nach_sarif
 
 
 class TestSecurityAgent(unittest.TestCase):
@@ -217,6 +217,72 @@ class TestSecurityAgent(unittest.TestCase):
         doc = self._agent(run=run, env={"LUNA_OS_PASSWORD": ""}).sarif()
         self.assertEqual(doc["version"], "2.1.0")
         self.assertTrue(doc["runs"][0]["results"])                 # .env getrackt -> mind. ein Result
+
+    # -- Taint-Tracking (Inkr.3) --
+
+    def _taint(self, code):
+        import ast
+        return [m for _, m in analysiere_taint(ast.parse(code))]
+
+    def test_taint_param_in_os_system(self):
+        self.assertIn("os.system()", self._taint("import os\ndef f(x):\n    os.system(x)\n"))
+
+    def test_taint_konstante_ist_sauber(self):
+        # Konstantes Argument = kein Taint-Fluss (der grobe Code-Scan flaggt es separat, der Taint-Scan NICHT).
+        self.assertEqual(self._taint("import os\ndef f():\n    os.system('ls -la')\n"), [])
+
+    def test_taint_propagation_durch_konkatenation(self):
+        code = "import os\ndef f(user):\n    cmd = 'echo ' + user\n    os.system(cmd)\n"
+        self.assertIn("os.system()", self._taint(code))
+
+    def test_taint_input_quelle_in_eval(self):
+        self.assertIn("eval()", self._taint("def f():\n    x = input()\n    return eval(x)\n"))
+
+    def test_taint_shell_true_mit_param(self):
+        code = "import subprocess\ndef f(cmd):\n    subprocess.run(cmd, shell=True)\n"
+        self.assertIn("run(shell=True)", self._taint(code))
+
+    def test_taint_shell_liste_konstant_sauber(self):
+        code = "import subprocess\ndef f():\n    subprocess.run(['ls', '-la'])\n"
+        self.assertEqual(self._taint(code), [])
+
+    def test_taint_environ_quelle(self):
+        code = "import os\ndef f():\n    p = os.environ['X']\n    os.system(p)\n"
+        self.assertIn("os.system()", self._taint(code))
+
+    def test_taint_scope_isolation(self):
+        # Sauberer Sink in eigener Funktion darf nicht durch Param einer ANDEREN Funktion getaintet werden.
+        code = "import os\ndef a(x):\n    pass\ndef b():\n    os.system('fix')\n"
+        self.assertEqual(self._taint(code), [])
+
+    def test_check_taint_findet_flow(self):
+        (self.root / "orchestrator").mkdir()
+        (self.root / "orchestrator" / "mod.py").write_text(
+            "import os\ndef handler(req):\n    os.system(req)\n", encoding="utf-8")
+        f = self._agent()._check_taint()
+        self.assertEqual(f[0].schwere, "hoch")
+        self.assertEqual(f[0].kategorie, "taint-flow")
+        self.assertIn("os.system()", f[0].detail)
+
+    def test_check_taint_sauber(self):
+        (self.root / "orchestrator").mkdir()
+        (self.root / "orchestrator" / "mod.py").write_text(
+            "import os\ndef f():\n    os.system('date')\n", encoding="utf-8")
+        f = self._agent()._check_taint()
+        self.assertEqual(f[0].schwere, "ok")
+
+    def test_check_taint_ignoriert_testdateien(self):
+        (self.root / "orchestrator" / "tests").mkdir(parents=True)
+        (self.root / "orchestrator" / "tests" / "test_x.py").write_text(
+            "import os\ndef f(x):\n    os.system(x)\n", encoding="utf-8")     # Testdatei -> ignoriert
+        f = self._agent()._check_taint()
+        self.assertEqual(f[0].schwere, "ok")
+
+    def test_audit_enthaelt_taint_kategorie(self):
+        (self.root / "orchestrator").mkdir()
+        (self.root / "orchestrator" / "mod.py").write_text("x = 1\n", encoding="utf-8")
+        findings = self._agent().audit()
+        self.assertTrue(any(f.kategorie == "taint-flow" for f in findings))
 
 
 if __name__ == "__main__":

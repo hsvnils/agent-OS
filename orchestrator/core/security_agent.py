@@ -87,6 +87,110 @@ def nach_sarif(findings: list["Finding"], *, tool_name: str = "LUNA-SecurityAgen
     }
 
 
+# -- Taint-Tracking (Inkr.3): Datenfluss extern/Parameter -> Code-Ausfuehrungs-Sink --
+# Deterministisch, intraprozedural, kein LLM. Konservativ: Parameter gelten als nicht vertrauenswuerdig
+# (haeufigste Command-Injection-Quelle), Konstanten NICHT.
+
+# Code-Ausfuehrungs-Sinks (nur diese; pickle/yaml deckt bereits _check_code_security ab).
+_EXEC_NAMEN = frozenset({"eval", "exec", "compile", "__import__"})
+# Taint-Quellen: Attribut-Calls, die externe Daten liefern (heuristisch).
+_QUELL_ATTR = frozenset({"getenv", "read", "readline", "readlines", "recv", "recvfrom",
+                         "json", "get_json", "get_data"})
+# Bare-Referenzen, die als extern gelten.
+_QUELL_NAME = frozenset({"request"})                # Flask/Django request-Objekt
+_QUELL_ATTR_REF = frozenset({"argv", "environ"})    # sys.argv, os.environ
+
+
+def _ist_quell_call(call: ast.Call) -> bool:
+    f = call.func
+    if isinstance(f, ast.Name) and f.id == "input":
+        return True
+    if isinstance(f, ast.Attribute) and f.attr in _QUELL_ATTR:
+        return True
+    return False
+
+
+def _expr_tainted(node: ast.AST, tainted: set[str]) -> bool:
+    """True, wenn der Ausdruck einen taint-behafteten Namen oder eine Taint-Quelle enthaelt (ueberapprox.)."""
+    for n in ast.walk(node):
+        if isinstance(n, ast.Name) and (n.id in tainted or n.id in _QUELL_NAME):
+            return True
+        if isinstance(n, ast.Attribute) and n.attr in _QUELL_ATTR_REF:
+            return True
+        if isinstance(n, ast.Call) and _ist_quell_call(n):
+            return True
+    return False
+
+
+def _sink_info(call: ast.Call) -> tuple[str, ast.AST | None] | None:
+    """(sink_label, zu_pruefendes_Argument) wenn `call` ein Code-Ausfuehrungs-Sink ist, sonst None."""
+    f = call.func
+    erstes = call.args[0] if call.args else None
+    if isinstance(f, ast.Name) and f.id in _EXEC_NAMEN:
+        return (f"{f.id}()", erstes)
+    if isinstance(f, ast.Attribute):
+        attr = f.attr
+        wurzel = f.value.id if isinstance(f.value, ast.Name) else None
+        if wurzel == "os" and attr in ("system", "popen"):
+            return (f"os.{attr}()", erstes)
+        if wurzel == "subprocess" or attr in ("run", "call", "Popen", "check_output", "check_call"):
+            if any(kw.arg == "shell" and isinstance(kw.value, ast.Constant) and kw.value.value is True
+                   for kw in call.keywords):
+                return (f"{attr}(shell=True)", erstes)
+    return None
+
+
+def _walk_own(fn: ast.AST):
+    """Knoten im Koerper von `fn`, OHNE in verschachtelte Funktionen/Lambdas abzusteigen (eigener Scope)."""
+    stapel = list(getattr(fn, "body", []))
+    while stapel:
+        knoten = stapel.pop()
+        yield knoten
+        for kind in ast.iter_child_nodes(knoten):
+            if isinstance(kind, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+                continue
+            stapel.append(kind)
+
+
+def analysiere_taint(baum: ast.AST) -> list[tuple[int, str]]:
+    """Findet Fluesse extern/Parameter -> Code-Sink. Gibt (zeile, sink_label). Intraprozedural, ueberapprox."""
+    treffer: list[tuple[int, str]] = []
+    funktionen = [n for n in ast.walk(baum) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    for fn in funktionen:
+        a = fn.args
+        tainted: set[str] = {arg.arg for arg in (list(a.posonlyargs) + list(a.args) + list(a.kwonlyargs))}
+        if a.vararg:
+            tainted.add(a.vararg.arg)
+        if a.kwarg:
+            tainted.add(a.kwarg.arg)
+        # Zuweisungen (eigener Scope) fuer die Taint-Propagation sammeln.
+        zuweisungen: list[tuple[list[str], ast.AST]] = []
+        for node in _walk_own(fn):
+            if isinstance(node, ast.Assign):
+                namen = [t.id for t in node.targets if isinstance(t, ast.Name)]
+                if namen:
+                    zuweisungen.append((namen, node.value))
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.value is not None:
+                zuweisungen.append(([node.target.id], node.value))
+        # Fixpunkt: propagiere Taint durch Zuweisungen, bis stabil.
+        geaendert = True
+        while geaendert:
+            geaendert = False
+            for namen, wert in zuweisungen:
+                if _expr_tainted(wert, tainted):
+                    for nm in namen:
+                        if nm not in tainted:
+                            tainted.add(nm)
+                            geaendert = True
+        # Sinks im eigenen Scope pruefen.
+        for node in _walk_own(fn):
+            if isinstance(node, ast.Call):
+                info = _sink_info(node)
+                if info and info[1] is not None and _expr_tainted(info[1], tainted):
+                    treffer.append((getattr(node, "lineno", 0), info[0]))
+    return sorted(set(treffer))
+
+
 class SecurityAgent:
     def __init__(self, *, repo_root, env: dict | None = None, secrets: list[str] | None = None,
                  run: Callable[[list], str] | None = None, http: Callable[[str, dict], dict] | None = None,
@@ -104,7 +208,7 @@ class SecurityAgent:
 
     def audit(self) -> list[Finding]:
         checks = (self._check_secret_hygiene() + self._check_hardening()
-                  + self._check_dependencies() + self._check_code_security())
+                  + self._check_dependencies() + self._check_code_security() + self._check_taint())
         if self.http is not None:      # OSV.dev nur wenn ein HTTP-Client verdrahtet ist (sonst kein Rauschen)
             checks += self._check_osv()
         return checks
@@ -253,6 +357,36 @@ class SecurityAgent:
                 if not any(kw.arg == "Loader" for kw in knoten.keywords):
                     return ("mittel", "yaml.load(ohne Loader)")
         return None
+
+    def _check_taint(self, unterordner: str = "orchestrator") -> list[Finding]:
+        """Taint-Tracking (Inkr.3): meldet Fluesse extern/Parameter -> Code-Sink im eigenen Code.
+
+        Praeziser als `_check_code_security` (das jeden Sink flaggt): hier zaehlt nur, wenn nicht
+        vertrauenswuerdige Daten tatsaechlich in eval/exec/os.system/shell fliessen (echter Injection-Pfad).
+        Tests werden uebersprungen. Konstante Argumente werden bewusst NICHT als Taint gewertet.
+        """
+        basis = self.root / unterordner
+        if not basis.exists():
+            return [Finding("taint-flow", "ok", "Kein Code-Verzeichnis fuer Taint-Analyse", "", "")]
+        treffer: list[tuple[str, int, str]] = []
+        for pfad in sorted(basis.rglob("*.py")):
+            posix = pfad.as_posix()
+            if "/tests/" in posix or pfad.name.startswith("test_"):
+                continue
+            try:
+                baum = ast.parse(pfad.read_text(encoding="utf-8"))
+            except (OSError, SyntaxError, ValueError):
+                continue
+            rel = pfad.relative_to(self.root).as_posix()
+            for zeile, label in analysiere_taint(baum):
+                treffer.append((rel, zeile, label))
+        if not treffer:
+            return [Finding("taint-flow", "ok", "Keine Taint-Fluesse (extern -> Code-Sink) gefunden", "", "")]
+        treffer = sorted(set(treffer))
+        detail = "; ".join(f"{d}:{z} ({m})" for d, z, m in treffer[:8])
+        return [Finding("taint-flow", "hoch", f"{len(treffer)} moegliche(r) Taint-Fluss(e) extern->Code-Sink",
+                        detail, "Externe/Parameter-Daten NICHT in eval/exec/os.system/shell geben -- "
+                        "validieren/whitelisten (Fix als Branch+Tests).")]
 
     @staticmethod
     def _fmt_vuln(d: dict) -> str:

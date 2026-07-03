@@ -89,9 +89,10 @@ def tool_specs() -> list[dict]:
               {"stufe": _str("trends | ideen | drafts | alles (Default: trends)."),
                "max_gesamt": _str("Optional: max. Kandidaten je Stufe/Lauf (Default 8 fuer Trends, 5 sonst).")},
               []),
-        _spec("sicherheits_audit", "CISO/Security (Phase 21): kostenloser, regelbasierter Sicherheits-Audit -- "
-              "Secret-Hygiene (.gitignore + keine Secrets im git-Index), Login-Hardening (LUNA_OS_PASSWORD), "
-              "Dependency-CVEs (pip-audit). Meldet die Befunde. Mit als_antrag=true buendelt er einen "
+        _spec("sicherheits_audit", "CISO/Security (Phase 21/22): kostenloser, regelbasierter Sicherheits-Audit "
+              "-- Secret-Hygiene (.gitignore + keine Secrets im git-Index), Login-Hardening (LUNA_OS_PASSWORD), "
+              "Dependency-CVEs (pip-audit + OSV.dev), Code-Scan (AST) und Taint-Analyse (extern -> Code-Sink). "
+              "Meldet die Befunde. Mit als_antrag=true buendelt er einen "
               "Remediation-Antrag (CEO-Tor). KEINE autonome Aenderung -- Sperren/Aktualisieren/Key-Rotation "
               "entscheidet der CEO.",
               {"als_antrag": {"type": "boolean", "description": "true -> Befunde als entscheidungsreifen "
