@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 21:00] — Claude Code — Bewertung CEO-Repo-Report (24 Repos) im Register
+- **Was:** CEO-Recherche-Report (GitHub-Bausteine fuer LUNA-OS) durch unsere Brille bewertet und im
+  `docs/entscheidungs-register.md` protokolliert (Index + Detail). Kern: das meiste haben wir bereits
+  (VALIDIERT). Echt additiv nur 2 Punkte -> (1) CFO Token-Erfassung je Agent = UEBERNEHMEN (home-grown,
+  Finance 2.5), (2) PySceneDetect fuer den Cutter = SPAETER/OPTIONAL (Pilot). Abgelehnt: mem0 (Konflikt
+  Phase 26), Instagram-Private-API (ToS), moviepy/captacity, Framework-Ersatz. langfuse = optional; MCP-
+  Verzeichnisse = Referenz.
+- **Warum:** CEO-Auftrag „schau dir das an, was/wie/warum uebernehmen". Entscheidungs-Doku, keine Umsetzung.
+- **Betroffen:** `docs/entscheidungs-register.md`.
+
 ## [2026-07-03 20:30] — Claude Code — Bewertung: NVIDIA Nemotron 3 Ultra (Register)
 - **Was:** CEO-Frage geprueft und im `docs/entscheidungs-register.md` protokolliert. Befund: 550B-MoE, offene
   Gewichte, verfuegbar via OpenRouter/build.nvidia.com (OpenAI-kompatibel) -> in unseren Multi-Provider-Router

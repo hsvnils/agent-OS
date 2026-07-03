@@ -30,10 +30,60 @@
 | **VoltAgent/awesome-agent-skills** (1000+ Skills) | 2026-07-03 | **SPAETER** (nur via Security-Gate) | Phase 24 |
 | **Gemini „Omni"** (Video-Verstaendnis fuer den Cutter) | 2026-07-03 | **OPT-IN-PILOT GEBAUT** (Aktivieren = CEO-Tor) | Cutter Phase 15 (`--video-ki`) |
 | **NVIDIA Nemotron 3 Ultra** (550B-MoE, offene Gewichte) | 2026-07-03 | **SPAETER/OPTIONAL** (technisch machbar; kein Bedarf jetzt) | Multi-Provider-Fallback-Kandidat -- CEO-Tor |
+| **CFO Token-Erfassung je Agent** (aus Repo-Report) | 2026-07-03 | **UEBERNEHMEN** (Idee, home-grown) | Finance Stufe 2.5 -- `model_router` usage -> KostenStore |
+| **langfuse** (LLM-Observability, self-hosted) | 2026-07-03 | **SPAETER/OPTIONAL** (schwer f. NAS) | nur falls Trace-UI gewuenscht |
+| **PySceneDetect** (Szenen-/Highlight-Erkennung) | 2026-07-03 | **SPAETER/OPTIONAL** (Pilot) | Cutter „intelligenter machen" (lokal/gratis) |
+| **mem0** (+Supabase pgvector, Memory-Layer) | 2026-07-03 | **SPAETER** (Konflikt Phase 26: BM25 bewusst gewaehlt) | erst bei echtem Vektor-Recall-Bedarf |
+| **Instagram Private-API** (instagrapi/trypeggy) | 2026-07-03 | **VERWORFEN** (ToS-/Sperr-Risiko) | offizielle Graph-API bleibt |
+| **moviepy / captacity** (Video) | 2026-07-03 | **VERWORFEN** (unterbesetzt/ungewartet) | wir nutzen ffmpeg direkt |
+| **awesome-mcp-servers / best-of-mcp-servers** | 2026-07-03 | **REFERENZ** (Tool-Discovery) | Import nur via Security-Gate + CEO-Tor |
 
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-07-03 — Repo-Recherche „GitHub-Bausteine fuer LUNA-OS" (CEO-Report)
+
+**Kontext:** CEO lieferte einen Recherche-Report (24 Repos, 9 Kategorien) und fragte, was/wie/warum wir
+davon uebernehmen. Bewertung durch unsere Brille: **das meiste haben wir bereits selbst gebaut** (Report ist
+greenfield gedacht). Nur wenige Teile sind echt additiv.
+
+**Bereits vorhanden -> VALIDIERT (nichts zu tun):** Orchestrierung/Supervisor (Claude Agent SDK + governance/
+orchestrierung.md), Second Brain + Trajektorien (Phase 26, BM25), Voice (Pipecat), Telegram-Bot, Cutter
+(ffmpeg + whisper.cpp/faster-whisper + Gemini), CIO-Advisory + Risk-Checker, Instagram via offizielle
+Graph-API. LangGraph-Frameworks (langgraph-supervisor) wuerden unseren SDK-Kern neu schreiben -> **VERWORFEN**.
+
+**Echt additiv (2 Kandidaten, prinzipien-konform):**
+1. **CFO Token-/Kosten-Erfassung je Agent** (Idee, nicht das Tool). Fuellt unsere bekannte Luecke „Finance
+   Stufe 2.5" (Subagenten liefern keine Tokenzahl). Umsetzung **home-grown**: `usage`-Feld der Anthropic/
+   OpenAI-Antworten im `model_router` je Agent in den `KostenStore` schreiben -- dependency-frei, local.
+   **langfuse** = maechtige Alternative (self-hosted Trace-UI, Kosten je Session), aber **schwer** (TS/
+   ClickHouse-Docker-Stack auf der schwachen NAS) -> nur wenn wir echte Trace-UI wollen. `ccusage` misst die
+   Claude-*Code*-Kosten des CEO, nicht LUNAs Laufzeit -> marginal. `agentops` = SaaS-Ausleitung -> gegen
+   unser Prinzip. **Entscheidung: Idee UEBERNEHMEN (home-grown), langfuse = SPAETER/OPTIONAL.**
+2. **Cutter lokal intelligenter** (Backlog „Cutter intelligenter machen"). **PySceneDetect** (BSD, Python,
+   CPU) = Szenen-/Highlight-Erkennung fuer bessere Ausschnitt-/Segmentwahl; Stille-Trimmen via unser
+   vorhandenes **ffmpeg silencedetect** (statt Dependency **auto-editor**). Alles lokal/gratis, passt zum
+   Stil-Profil-Backlog. **Entscheidung: PySceneDetect = SPAETER/OPTIONAL (Pilot), auto-editor = als Idee via
+   ffmpeg nachbauen.**
+
+**Bewusst ABGELEHNT / schon entschieden:**
+- **mem0 (+Supabase pgvector)** — Report-Top-Pick, aber **Konflikt mit Phase 26**: wir haben Vektor-Recall
+  bewusst zugunsten dependency-freiem BM25 zurueckgestellt (token-frugal, keine Ausleitung, Zero-LLM-Writes;
+  MemPalace VALIDIERT unseren Ansatz). mem0 macht LLM-Writes (Token-Kosten) + Vektor-DB-/Embedding-Abhaengigkeit.
+  **SPAETER** -- erst wenn Volumen waechst und semantischer Recall wirklich noetig wird (= die geparkte
+  Phase-26-Vektor-Option).
+- **Instagram Private-API** (instagrapi, trypeggy/instagram_dm_mcp) — **VERWORFEN** (ToS-/Sperr-Risiko; wir
+  nutzen korrekt die offizielle Graph-API, wie der Report selbst empfiehlt).
+- **moviepy** (unterbesetzt), **captacity** (ungewartet) — **VERWORFEN** (wir nutzen ffmpeg direkt).
+- **father-bot/livekit/langgraph** etc. — **VERWORFEN** (wuerden vorhandene, integrierte Bausteine ersetzen).
+
+**Referenz/Watchlist (kein Import):** `punkpeye/awesome-mcp-servers` + `best-of-mcp-servers` als Tool-
+Discovery-Quelle; `ai-hedge-fund`/`TradingAgents` als Investment-Muster (LangGraph -> nur Ideen); `sec-edgar-mcp`
+(Form-4-Insider) als moegliches spaeteres Daten-Tool fuer den Insider/CIO -- **jeder** MCP-/Fremd-Import
+zuerst durch das Security-Gate (Phase 22/24) + CEO-Tor.
+
+**Quelle:** CEO-Report `compass_artifact_...md` (Downloads), Juli 2026.
 
 ### 2026-07-03 — NVIDIA Nemotron 3 Ultra als Modell fuer LUNA (CEO-Frage)
 
