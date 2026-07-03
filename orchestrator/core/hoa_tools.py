@@ -34,6 +34,7 @@ class ToolContext:
     aktivitaet: object | None = None     # Aktivitaet (zentrales Agenten-Aktivitaetsprotokoll, adc5) oder None
     visuals: list | None = None          # Phase 14: Ablage erzeugter Visualisierungen (SVG) zum Senden
     brain: object | None = None          # Second Brain (Wissensbasis) oder None
+    trajektorien: object | None = None   # Phase 26: TrajektorienStore ("was hat funktioniert") oder None
     insights: object | None = None       # Tages-Insights/Lagebild oder None
     investment: object | None = None     # InvestmentEngine (CIO, advisory) oder None
     crm: object | None = None            # CrmStore (Collab-CRM, CRO) oder None
@@ -285,6 +286,21 @@ def tool_specs() -> list[dict]:
               "Daten (Research-Befunde, Antraege) + -- falls verfuegbar -- Gmail und Drive. Liefert die besten "
               "Treffer mit Quelle; fasse sie fuer den CEO zusammen.",
               {"frage": _str("Wonach suchen?")}, ["frage"]),
+        _spec("erfahrung_merken", "Phase 26: haelt einen erfolgreich geloesten Ablauf als Trajektorie fest "
+              "(Aufgabe -> Vorgehen -> Ergebnis), damit LUNA bei aehnlichen Aufgaben daraus schoepfen kann. "
+              "Nur bewaehrte/abgeschlossene Wege festhalten.",
+              {"aufgabe": _str("Worum ging es (kurz)?"),
+               "vorgehen": _str("Wie wurde es geloest (die Schritte)?"),
+               "ergebnis": _str("Ergebnis/Ausgang (optional)."),
+               "erfolg": {"type": "boolean", "description": "Hat es funktioniert? (Default true)."},
+               "tags": {"type": "array", "items": {"type": "string"}, "description": "Schlagworte (optional)."}},
+              ["aufgabe", "vorgehen"]),
+        _spec("erfahrung_abrufen", "Phase 26: findet zu einer neuen Aufgabe aehnliche, frueher erfolgreiche "
+              "Trajektorien (bewaehrte Loesungswege) -- lokal, token-frugal, keine neue Recherche.",
+              {"aufgabe": _str("Die aktuelle Aufgabe/Frage."),
+               "alle": {"type": "boolean", "description": "true -> auch Misserfolge einbeziehen (Default: nur "
+                        "erfolgreiche)."}},
+              ["aufgabe"]),
         _spec("lagebild", "Proaktive Tages-Insights: was auf den CEO wartet (Entscheidungen/Antraege), heutige "
               "Termine, ungelesene Mails, offene Tickets, Agenda. Token-frugal aus den Stores + Google.",
               {}, []),
@@ -826,6 +842,32 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         if not frage:
             return {"fehler": "Leere Suchanfrage."}
         return _brain_suchen(frage, ctx, sec)
+
+    if name == "erfahrung_merken":
+        if ctx.trajektorien is None:
+            return {"fehler": "Trajektorien-Store nicht verfuegbar."}
+        tid = ctx.trajektorien.merken(
+            (args.get("aufgabe") or ""), (args.get("vorgehen") or ""),
+            ergebnis=(args.get("ergebnis") or ""), erfolg=bool(args.get("erfolg", True)),
+            tags=args.get("tags") or [])
+        if not tid:
+            return {"fehler": "Aufgabe und Vorgehen duerfen nicht leer sein."}
+        if ctx.core and getattr(ctx.core, "changelog", None):
+            ctx.core.changelog("LUNA", f"Trajektorie gemerkt ({tid})", "Erfahrungslernen", "trajektorien")
+        return {"ok": True, "id": tid}
+
+    if name == "erfahrung_abrufen":
+        if ctx.trajektorien is None:
+            return {"fehler": "Trajektorien-Store nicht verfuegbar."}
+        aufgabe = (args.get("aufgabe") or "").strip()
+        if not aufgabe:
+            return {"fehler": "Leere Aufgabe."}
+        treffer = ctx.trajektorien.aehnliche(aufgabe, nur_erfolg=not bool(args.get("alle")))
+        return {"ok": True, "treffer": [
+            {"aufgabe": redact(e.get("aufgabe", ""), sec), "vorgehen": redact(e.get("vorgehen", ""), sec),
+             "ergebnis": redact(e.get("ergebnis", ""), sec), "erfolg": e.get("erfolg", True),
+             "tags": e.get("tags", [])}
+            for e in treffer]}
 
     if name == "lagebild":
         if ctx.insights is None:

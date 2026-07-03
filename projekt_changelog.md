@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 17:45] — Claude Code — Phase 26: BM25-Recall + Trajektorien-Lernen (dependency-frei)
+- **Was:** (a) Neues `core/ranking.py` = BM25-Ranking (Okapi, Lucene-IDF), lokal/dependency-frei; `Brain.suchen`
+  darauf umgestellt (Term-Frequenz + Seltenheit + Doc-Laenge statt reinem Set-Overlap, Titel weiter doppelt
+  gewichtet, Recency als Tie-Break). (b) Neues `core/trajektorien.py` = `TrajektorienStore` (event-sourced
+  JSONL wie Brain): `merken(aufgabe, vorgehen, ...)` + `aehnliche(aufgabe)` via BM25 ("was hat funktioniert").
+  Verdrahtet: ToolContext-Feld `trajektorien`, Instanz in `bot.py` (`trajektorien/log.jsonl`), Tools
+  `erfahrung_merken`/`erfahrung_abrufen` in `hoa_tools.py`; Store gitignored + NAS-sync-ausgeschlossen.
+  **Bewusst KEINE** neuronalen Embeddings (Widerspruch zu token-frugal + keine Ausleitung -- BM25 ist der
+  beste dependency-freie Kompromiss). +13 Tests (435 gruen, war 422). **Phase 26 umgesetzt.**
+- **Warum:** Phase 26 (optional/niedrig) -- besserer Recall + Erfahrungslernen, local-first, ohne neue
+  Abhaengigkeit/Kosten. Reiner Code, kein CEO-Tor.
+- **Betroffen:** `orchestrator/core/ranking.py` (neu), `orchestrator/core/trajektorien.py` (neu),
+  `orchestrator/core/brain.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_ranking.py` (neu), `orchestrator/tests/test_trajektorien.py` (neu), `.gitignore`,
+  `deploy/sync-to-nas.sh`, `ROADMAP.md`.
+
 ## [2026-07-03 17:00] — Claude Code — Phase 25: Execution-Sandbox-Policy (deklarativ, Blaupause)
 - **Was:** Neue Policy-Engine `core/sandbox_policy.py` (`SandboxPolicy`, `lade_policy`) -- deklarative,
   maschinell pruefbare Sicherheits-Policy fuer handelnde Agenten: Datei-Zugriff (allow-list + Deny-Vorrang +

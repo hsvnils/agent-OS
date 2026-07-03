@@ -49,6 +49,7 @@ agenda/log.jsonl
 watch/log.jsonl
 finance/kosten-log.jsonl
 brain/log.jsonl
+trajektorien/log.jsonl
 investment/log.jsonl
 crm/log.jsonl
 crm/sync_cursor.txt

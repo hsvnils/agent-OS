@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 from ..governance.leak_guard import redact
+from . import ranking
 
 _WORT = re.compile(r"[\wäöüß]+", re.UNICODE)
 
@@ -60,22 +61,21 @@ class Brain:
         return list(reversed(self._items()))[:limit]
 
     def suchen(self, frage: str, limit: int = 8) -> list[dict]:
-        """Lexikalische Suche: Term-Overlap (Titel doppelt gewichtet), dann Aktualitaet."""
-        q = set(_tokens(frage))
-        if not q:
+        """Lexikalische Suche per BM25 (Titel doppelt gewichtet), Aktualitaet als Tie-Break."""
+        items = self._items()
+        if not items:
             return []
-        scored: list[tuple[int, dict]] = []
-        for e in self._items():
-            titel_tokens = set(_tokens(e.get("titel", "")))
-            text_tokens = set(_tokens(e.get("text", "")))
-            tag_tokens = {t.lower() for t in e.get("tags", [])}
-            treffer = len(q & (titel_tokens | text_tokens | tag_tokens))
-            if not treffer:
-                continue
-            score = treffer + len(q & titel_tokens) * 2
-            scored.append((score, e))
-        scored.sort(key=lambda x: (x[0], x[1].get("ts", "")), reverse=True)
-        return [e for _, e in scored[:limit]]
+        # Neueste zuerst -> bei gleichem BM25-Score gewinnt (stabile Sortierung) der aktuellere Eintrag.
+        items = sorted(items, key=lambda e: e.get("ts", ""), reverse=True)
+        dokumente: list[tuple] = []
+        for e in items:
+            toks = (_tokens(e.get("titel", "")) * 2               # Titel doppelt gewichtet
+                    + _tokens(e.get("text", ""))
+                    + _tokens(" ".join(e.get("tags", []))))
+            dokumente.append((e.get("id"), toks))
+        rang = ranking.bm25_ranking(frage, dokumente)
+        nach_id = {e.get("id"): e for e in items}
+        return [nach_id[k] for k, _ in rang[:limit] if k in nach_id]
 
     # -- intern --
 
