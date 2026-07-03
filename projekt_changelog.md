@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 21:45] — Claude Code — CFO Finance Stufe 2.5: Token-/Kostenerfassung je Agent
+- **Was:** Kosten werden jetzt JE AGENT erfasst (bisher nur „chat"). `KostenStore.record` bekam `agent`-Feld
+  + optional echte `kosten_usd` (Vorrang vor Schaetzung); `monat()` liefert neues `je_agent`-Aggregat
+  (`core/kosten.py`). Neuer Backend-Callback `on_usage(agent, modell, in, out, usd)`: `AgentSdkBackend` greift
+  die SDK-`ResultMessage`-Usage (inkl. `total_cost_usd`) ab, `FallbackBackend._kompatibel` die OpenAI-Fallback-
+  Usage (`core/backends.py`, defensiver Helfer `sdk_usage`). In `bot.py` verdrahtet -> Subagenten-Aufrufe buchen
+  mit ihrem agent_key. Haupt-Chat laeuft unter agent=„HoA". `finance_dashboard`-Hinweis korrigiert. +8 Tests
+  (443 gruen). Schliesst Backlog „Finance Stufe 2.5".
+- **Warum:** Additiver Punkt #1 aus der CEO-Repo-Report-Bewertung -- home-grown (dependency-frei), statt des
+  schweren langfuse-Stacks. Fuellt die bekannte Luecke „Subagenten liefern keine Tokenzahl".
+- **Betroffen:** `orchestrator/core/kosten.py`, `orchestrator/core/backends.py`,
+  `orchestrator/core/hoa_conversation.py`, `orchestrator/core/hoa_tools.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_kosten.py`,
+  `orchestrator/tests/test_backends_usage.py` (neu), `ROADMAP.md`.
+
 ## [2026-07-03 21:00] — Claude Code — Bewertung CEO-Repo-Report (24 Repos) im Register
 - **Was:** CEO-Recherche-Report (GitHub-Bausteine fuer LUNA-OS) durch unsere Brille bewertet und im
   `docs/entscheidungs-register.md` protokolliert (Index + Detail). Kern: das meiste haben wir bereits

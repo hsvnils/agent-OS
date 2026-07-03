@@ -602,7 +602,10 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
   laeuft ueber Produkt-Sponsoring.
 - **Container als Non-root:** ✅ erledigt 2026-06-26 (sichere Execution ohne IS_SANDBOX-root-Bypass).
 - **Supabase** als Queue-/Store-Backend (laeuft aktuell dateibasiert -- funktioniert; Supabase robuster).
-- **Finance Stufe 2.5:** echte Token-Erfassung je Agent/Subagent (CLI-Subagenten liefern keine Tokenzahl).
+- **Finance Stufe 2.5:** ✅ **umgesetzt 2026-07-03** -- echte Token-/Kostenerfassung JE AGENT. Backend-
+  `on_usage`-Callback erfasst Subagenten (SDK-`ResultMessage`-Usage inkl. echtem `total_cost_usd`) + OpenAI-
+  Fallback-Usage; `KostenStore` hat `agent`-Dimension + `je_agent`-Aggregat (`core/kosten.py`, `backends.py`,
+  `bot.py`). (Aus CEO-Repo-Report; siehe `docs/entscheidungs-register.md`.)
 - **Secrets rotieren (operativ):** im Chat geteilte Keys (GitHub-PAT, OpenAI, Gemini) + NAS-Passwort neu erzeugen.
 - **Partner-/Akten-System (CRM-artig):** Mail-Router (sortiert neue Mails in Partner-Akten), Context-Parser
   (versteht Inhalte, leitet naechste Schritte ab), Calendar-Sync (Termine zu Akten), zentraler Akte-Manager

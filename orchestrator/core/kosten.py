@@ -1,9 +1,10 @@
-"""CFO Stufe 2 -- echte Token-/Kostenerfassung (CDO-Rohdaten -> CFO-Statistik).
+"""CFO Stufe 2.5 -- echte Token-/Kostenerfassung JE AGENT (CDO-Rohdaten -> CFO-Statistik).
 
-Jeder echte Modell-Aufruf (Chat, Web-Synthese) meldet seine Token-Nutzung hier; daraus entsteht eine
-fortlaufende Kostenstatistik je Monat/Quelle/Modell (Richtwerte, EUR-geschaetzt). Append-only JSONL
-(`finance/kosten-log.jsonl`), leck-geschuetzt. Grundlage fuer Budget-Warnung und die Anthropic/OpenAI-
-Lastverteilung (naechster Schritt).
+Jeder echte Modell-Aufruf meldet seine Token-Nutzung hier -- Chat (HoA) UND die Fachagenten/Subagenten
+(ueber den Backend-`on_usage`-Callback: SDK-`ResultMessage`-Usage bzw. OpenAI-Fallback-Usage). Daraus
+entsteht eine fortlaufende Kostenstatistik je Monat/Quelle/**Agent**/Modell. Kosten sind EUR-geschaetzt
+(Richtwerte) ODER echt, wenn der Provider `total_cost_usd` liefert. Append-only JSONL
+(`finance/kosten-log.jsonl`), leck-geschuetzt.
 """
 from __future__ import annotations
 
@@ -43,17 +44,22 @@ class KostenStore:
         self.path = Path(path)
         self.secrets = secrets or []
 
-    def record(self, *, quelle: str, modell: str, input_tokens: int, output_tokens: int) -> dict:
-        eur = schaetze_eur(modell, input_tokens, output_tokens)
-        ev = {"ts": datetime.now().isoformat(timespec="seconds"), "quelle": quelle, "modell": modell,
-              "provider": _provider(modell), "in": int(input_tokens), "out": int(output_tokens),
-              "eur": eur}
+    def record(self, *, quelle: str, modell: str, input_tokens: int, output_tokens: int,
+               agent: str = "", kosten_usd: float | None = None) -> dict:
+        # `kosten_usd` (falls vom Provider gemeldet, z. B. SDK-ResultMessage.total_cost_usd) hat Vorrang
+        # vor der Richtwert-Schaetzung -> echte Kosten statt Naeherung.
+        eur = (round(float(kosten_usd) * USD_TO_EUR, 4) if isinstance(kosten_usd, (int, float))
+               else schaetze_eur(modell, input_tokens, output_tokens))
+        ev = {"ts": datetime.now().isoformat(timespec="seconds"), "quelle": quelle, "agent": agent or quelle,
+              "modell": modell, "provider": _provider(modell), "in": int(input_tokens),
+              "out": int(output_tokens), "eur": eur}
         self._append(ev)
         return ev
 
     def monat(self, ym: str | None = None) -> dict:
         ym = ym or datetime.now().strftime("%Y-%m")
         je_quelle: dict[str, dict] = {}
+        je_agent: dict[str, dict] = {}
         je_provider: dict[str, float] = {}
         gesamt = 0.0
         for e in self._events():
@@ -63,11 +69,16 @@ class KostenStore:
             d = je_quelle.setdefault(q, {"in": 0, "out": 0, "eur": 0.0, "aufrufe": 0})
             d["in"] += e.get("in", 0); d["out"] += e.get("out", 0)
             d["eur"] = round(d["eur"] + e.get("eur", 0.0), 4); d["aufrufe"] += 1
+            # Agent-Dimension (Finance 2.5): Alt-Eintraege ohne 'agent' fallen auf die 'quelle' zurueck.
+            a = e.get("agent") or q
+            da = je_agent.setdefault(a, {"in": 0, "out": 0, "eur": 0.0, "aufrufe": 0})
+            da["in"] += e.get("in", 0); da["out"] += e.get("out", 0)
+            da["eur"] = round(da["eur"] + e.get("eur", 0.0), 4); da["aufrufe"] += 1
             je_provider[e.get("provider", "?")] = round(
                 je_provider.get(e.get("provider", "?"), 0.0) + e.get("eur", 0.0), 4)
             gesamt += e.get("eur", 0.0)
         return {"monat": ym, "gesamt_eur": round(gesamt, 2), "je_quelle": je_quelle,
-                "je_provider": je_provider}
+                "je_agent": je_agent, "je_provider": je_provider}
 
     def _append(self, event: dict) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

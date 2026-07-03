@@ -8,6 +8,31 @@ from __future__ import annotations
 from typing import Callable, Protocol
 
 
+def sdk_usage(msg) -> tuple[int, int, float | None] | None:
+    """Zieht (input_tokens, output_tokens, kosten_usd) aus einer SDK-`ResultMessage`. None sonst.
+
+    Defensiv gegen SDK-Versionen: erkennt die ResultMessage am Typnamen ODER am Feld `total_cost_usd`;
+    `usage` kann dict ODER Objekt sein. Andere Nachrichten (AssistantMessage etc.) -> None.
+    """
+    if type(msg).__name__ != "ResultMessage" and not hasattr(msg, "total_cost_usd"):
+        return None
+    u = getattr(msg, "usage", None)
+
+    def _g(*namen):
+        for n in namen:
+            v = u.get(n) if isinstance(u, dict) else getattr(u, n, None)
+            if isinstance(v, (int, float)) and v:
+                return int(v)
+        return 0
+
+    intok, outtok = _g("input_tokens"), _g("output_tokens")
+    usd = getattr(msg, "total_cost_usd", None)
+    usd = float(usd) if isinstance(usd, (int, float)) else None
+    if not intok and not outtok and usd is None:
+        return None
+    return (intok, outtok, usd)
+
+
 class BackendError(Exception):
     """Modell-/Backend-Aufruf fehlgeschlagen (z. B. API-, Auth- oder Guthaben-Fehler).
 
@@ -53,9 +78,11 @@ class FallbackBackend:
     _STIL = ("\n\nStil deiner Antwort: korrektes Deutsch mit echten Umlauten (ä, ö, ü, ß) -- niemals "
              "ae/oe/ue/ss. Reiner Fliesstext ohne Markdown: KEINE Sternchen (**, *), KEINE Rauten (#).")
 
-    def __init__(self, primary: "Backend", *, fallbacks: list[dict] | None = None):
+    def __init__(self, primary: "Backend", *, fallbacks: list[dict] | None = None, on_usage=None):
         self.primary = primary
         self.fallbacks = [f for f in (fallbacks or []) if f.get("key")]
+        # on_usage(agent_key, modell, input_tokens, output_tokens, kosten_usd|None) -- CFO-Erfassung (Finance 2.5).
+        self.on_usage = on_usage
 
     def respond(self, agent_key: str, system_prompt: str, message: str, context: dict) -> str:
         sp = (system_prompt or "") + self._STIL
@@ -66,19 +93,25 @@ class FallbackBackend:
                 raise
             for fb in self.fallbacks:
                 try:
-                    return self._kompatibel(fb, sp, message)
+                    return self._kompatibel(fb, agent_key, sp, message)
                 except Exception:
                     continue
             raise exc
 
-    @staticmethod
-    def _kompatibel(fb: dict, system_prompt: str, message: str) -> str:
+    def _kompatibel(self, fb: dict, agent_key: str, system_prompt: str, message: str) -> str:
         import openai
         client = openai.OpenAI(api_key=fb["key"], base_url=fb.get("base_url") or None)
         r = client.chat.completions.create(
             model=fb["model"], max_tokens=1024,
             messages=[{"role": "system", "content": system_prompt or "Antworte als Fachagent knapp."},
                       {"role": "user", "content": message}])
+        u = getattr(r, "usage", None)
+        if u is not None and self.on_usage:
+            try:
+                self.on_usage(agent_key, fb["model"], getattr(u, "prompt_tokens", 0) or 0,
+                              getattr(u, "completion_tokens", 0) or 0, None)
+            except Exception:
+                pass
         return (r.choices[0].message.content or "").strip()
 
 
@@ -100,12 +133,15 @@ class AgentSdkBackend:
         allowed_tools_map: dict[str, list[str]] | None = None,
         gate=None,
         max_turns: int = 4,
+        on_usage=None,
     ):
         self.model_map = model_map
         self.effort_map = effort_map
         self.allowed_tools_map = allowed_tools_map or {}
         self.gate = gate  # optionaler CeoGate fuer SDK-PreToolUse-Hook
         self.max_turns = max_turns
+        # on_usage(agent_key, modell, input_tokens, output_tokens, kosten_usd|None) -- CFO-Erfassung (Finance 2.5).
+        self.on_usage = on_usage
 
     def respond(self, agent_key: str, system_prompt: str, message: str, context: dict) -> str:
         import asyncio
@@ -146,6 +182,13 @@ class AgentSdkBackend:
                     for block in msg.content:
                         if isinstance(block, TextBlock):
                             parts.append(block.text)
+                elif self.on_usage is not None:      # ResultMessage am Ende -> Token/Kosten erfassen (Finance 2.5)
+                    u = sdk_usage(msg)
+                    if u is not None:
+                        try:
+                            self.on_usage(agent_key, options.model, u[0], u[1], u[2])
+                        except Exception:
+                            pass
         except Exception as exc:  # SDK-/CLI-/API-Fehler nicht als Traceback durchreichen
             raise BackendError(self._readable_error(agent_key, exc)) from exc
         return "".join(parts).strip()

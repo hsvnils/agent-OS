@@ -145,7 +145,7 @@ class HoaConversation:
         if kosten is None or usage is None:
             return
         try:
-            kosten.record(quelle="chat", modell=getattr(resp, "model", self.model),
+            kosten.record(quelle="chat", agent="HoA", modell=getattr(resp, "model", self.model),
                           input_tokens=getattr(usage, "input_tokens", 0) or 0,
                           output_tokens=getattr(usage, "output_tokens", 0) or 0)
         except Exception:

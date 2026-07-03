@@ -118,6 +118,17 @@ def _build_ctx(cfg: dict, secrets: dict):
     from ...core.kosten import KostenStore
     agenda = Agenda(ROOT / "agenda" / "log.jsonl", secrets=secret_values)
     kosten = KostenStore(ROOT / "finance" / "kosten-log.jsonl", secrets=secret_values)
+    # Finance 2.5: Token/Kosten JE AGENT erfassen -- der Backend-Callback bucht Subagenten-Aufrufe
+    # (SDK-Pfad + OpenAI-Fallback) mit ihrem agent_key in den KostenStore. Fehler nie durchreichen.
+    def _kosten_sink(agent_key, modell, in_tok, out_tok, usd):
+        try:
+            kosten.record(quelle="agent", agent=agent_key, modell=modell,
+                          input_tokens=in_tok, output_tokens=out_tok, kosten_usd=usd)
+        except Exception:
+            pass
+    backend.on_usage = _kosten_sink
+    if getattr(backend, "primary", None) is not None:
+        backend.primary.on_usage = _kosten_sink
     # Second Brain (Wissensbasis) + proaktive Tages-Insights (Lagebild).
     from ...core.brain import Brain
     from ...core.insights import Insights

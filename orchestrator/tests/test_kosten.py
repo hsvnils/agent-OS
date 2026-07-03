@@ -29,6 +29,28 @@ class TestKosten(unittest.TestCase):
         self.assertIn("openai", m["je_provider"])
         self.assertGreater(m["gesamt_eur"], 0)
 
+    def test_2b_je_agent_und_echte_usd(self):
+        ks = KostenStore(Path(tempfile.mkdtemp()) / "k.jsonl")
+        ks.record(quelle="chat", agent="HoA", modell="claude-opus-4-8", input_tokens=1000, output_tokens=500)
+        ks.record(quelle="agent", agent="CFO", modell="claude-haiku-4-5", input_tokens=800, output_tokens=200)
+        # kosten_usd hat Vorrang vor der Schaetzung -> 2 USD * 0.92 = 1.84 EUR
+        ev = ks.record(quelle="agent", agent="CFO", modell="claude-opus-4-8", input_tokens=1, output_tokens=1,
+                       kosten_usd=2.0)
+        self.assertAlmostEqual(ev["eur"], 1.84, places=2)
+        m = ks.monat()
+        self.assertIn("je_agent", m)
+        self.assertEqual(m["je_agent"]["CFO"]["aufrufe"], 2)
+        self.assertEqual(m["je_agent"]["HoA"]["aufrufe"], 1)
+
+    def test_2c_alteintrag_ohne_agent_faellt_auf_quelle(self):
+        from datetime import datetime
+        p = Path(tempfile.mkdtemp()) / "k.jsonl"
+        p.write_text('{"ts":"%s-01T00:00:00","quelle":"chat","modell":"claude-haiku-4-5",'
+                     '"provider":"anthropic","in":10,"out":5,"eur":0.01}\n'
+                     % datetime.now().strftime("%Y-%m"), encoding="utf-8")
+        m = KostenStore(p).monat()
+        self.assertIn("chat", m["je_agent"])            # Alt-Eintrag ohne 'agent' -> unter 'quelle' gebucket
+
     def test_3_provider_erkennung(self):
         ks = KostenStore(Path(tempfile.mkdtemp()) / "k.jsonl")
         self.assertEqual(ks.record(quelle="x", modell="gpt-4o-mini", input_tokens=1,

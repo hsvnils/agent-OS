@@ -724,7 +724,8 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         kosten = ctx.kosten.monat() if ctx.kosten is not None else {}
         return {"modelle": reg["modelle"], "dienste": reg["dienste"],
                 "gemessene_kosten_monat": kosten,
-                "hinweis": "Chat/Fallbacks werden gemessen; Fachagenten (CLI) sind geschaetzt; Voice-Dienste "
+                "hinweis": "Chat UND Fachagenten werden je Agent gemessen (SDK-Usage bzw. Fallback-Usage; "
+                           "'je_agent' in der Statistik); nur ohne gemeldete Usage wird geschaetzt. Voice-Dienste "
                            "nur im Voice-Kanal aktiv."}
 
     if name == "briefing_jetzt":
