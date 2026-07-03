@@ -120,6 +120,9 @@ def tool_specs() -> list[dict]:
         _spec("wissensstand", "Zeigt den aktuellen Fachbereichs-Wissensstand einer Abteilung (gesammelte "
               "Web-Funde, neueste zuerst) -- reine Anzeige, keine neue Suche, keine Token.",
               {"abteilung": _str("Abteilungs-Kuerzel (z. B. cto, ciso, cfo).")}, ["abteilung"]),
+        _spec("skills_der_abteilung", "Zeigt die Skills einer Abteilung: welche (gepruefte) Skills geladen "
+              "sind und welche das Security-Gate abgelehnt hat. Reine Anzeige.",
+              {"abteilung": _str("Abteilungs-Kuerzel (z. B. cro, cfo, ciso).")}, ["abteilung"]),
         _spec("funde_bewerten", "Buendelt die neuen Funde einer Abteilung zu EINEM entscheidungsreifen "
               "Vorschlag: der Fachbereich bewertet die Funde -> Idee -> Machbarkeit (CTO) + Kosten (CFO) -> "
               "Antrag, ueber den der CEO entscheidet. Nutze das, wenn der CEO zu Funden eine Entscheidung "
@@ -738,6 +741,15 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         except Exception as exc:
             return {"ok": False, "fehler": str(exc)[:200]}
         return {"ok": True, "vorschlaege": redact(out, sec)}
+
+    if name == "skills_der_abteilung":
+        from .dept_skills import lade_dept_skills
+        ab = (args.get("abteilung") or "").strip().lower()
+        if not ab:
+            return {"fehler": "Keine Abteilung angegeben."}
+        _, meta = lade_dept_skills(ab, ctx.repo_root)
+        return {"ok": True, "abteilung": ab, "skills": meta,
+                "geladen": [m["skill"] for m in meta if m.get("geladen")]}
 
     if name == "kosten_statistik":
         if ctx.kosten is None:

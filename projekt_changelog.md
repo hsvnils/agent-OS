@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 01:00] — Claude Code — Abteilungs-Ausbau: Skills je Abteilung (Mechanismus)
+- **Was:** Neues `core/dept_skills.py` `lade_dept_skills(key, repo)` -- laedt Skills aus `skills/<key>/*`,
+  jeden zuerst durch das Security-Gate (`skill_gate.pruefe_skill`); abgelehnte (hoch-Fund) werden NICHT
+  geladen, bestandene werden als Instruktion an den Charta-System-Prompt angehaengt. Verdrahtet in
+  `charter_loader.load_subagent` (Fehler nie durchreichen; ohne Skills bleibt die Charta pur). Neues
+  Anzeige-Tool `skills_der_abteilung`. Doku `governance/skill-standard.md` (2.2). +5 Tests (481 gruen).
+  Damit koennen Abteilungen mit gepruefter, wiederverwendbarer Kompetenz angereichert werden -- OHNE
+  Charta-Aenderung (Skill hinzufuegen = kein CEO-Tor, das Gate entscheidet).
+- **Warum:** CEO-Wunsch, Abteilungen gezielt mit Wissen/Skills anzureichern; Ansatz „erst Mechanismus".
+  Naechster Schritt: Pilot-Abteilung CRO mit erstem Skill + Wissen + (CEO-Tor) Charta-Vertiefung.
+- **Betroffen:** `orchestrator/core/dept_skills.py` (neu), `orchestrator/core/charter_loader.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/tests/test_dept_skills.py` (neu), `governance/skill-standard.md`.
+
 ## [2026-07-04 00:20] — Claude Code — Phase 17 (M5): XMind-Bearbeiten um loeschen/verschieben + Tests
 - **Was:** `runner/xmind.py` um `delete_node` (samt Unterknoten; Wurzel-Schutz) und `move_node` (in anderen
   Eltern-Knoten; Wurzel- + Zyklus-Schutz) erweitert -> Tool `xmind_bearbeiten` kann jetzt

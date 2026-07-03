@@ -64,7 +64,16 @@ modell: Richtwert (modell-agnostisch)
 Die Konformitaet prueft `orchestrator/core/skill_format.py` (`validiere` / `ist_konform`) — **dependency-frei**
 (bewusst **kein** `yaml.load` auf Fremd-Cards, das flaggt unser eigenes Gate zu Recht).
 
-### 2.2 Charten als Skills
+### 2.2 Skills je Abteilung (live)
+
+Eine Abteilung `<key>` (z. B. `cro`, `cfo`, `ciso`) traegt Skills unter **`skills/<key>/<skill-name>/SKILL.md`**.
+Beim Laden des Fachagenten (`charter_loader.load_subagent`) wird jeder Skill zuerst durch das Security-Gate
+(`skill_gate.pruefe_skill`) geprueft; ein **abgelehnter** Skill (hoch-Fund) wird **nicht** geladen. Die
+Instruktion der geladenen Skills wird an den Charta-System-Prompt angehaengt (`core/dept_skills.py`). So wird
+eine Abteilung mit gepruefter, wiederverwendbarer Kompetenz angereichert -- **ohne** Charta-Aenderung
+(Skill hinzufuegen ist kein CEO-Tor; das Gate entscheidet). Sichtbar via Tool `skills_der_abteilung`.
+
+### 2.3 Charten als Skills
 
 Die `agents/*.md`-Charten werden schrittweise auf dieses Format gehoben (skill-card-Kopf) und um
 **Erfolgsmetriken/Deliverables** ergaenzt (Baustein b, siehe `agents/_TEMPLATE.md`). **Wichtig:** Charta-

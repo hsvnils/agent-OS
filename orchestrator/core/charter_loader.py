@@ -70,10 +70,17 @@ def compose_hoa_system_prompt() -> str:
 
 def load_subagent(rel: str, key: str) -> SubagentSpec:
     text = load_text(rel)
+    # Abteilungs-Skills (gegatet) an den Charta-Prompt anhaengen -- reichert die Abteilung an, ohne die
+    # Charta zu aendern. Fehler nie durchreichen (Abteilung bleibt auch ohne Skills nutzbar).
+    try:
+        from . import dept_skills
+        skill_block, _ = dept_skills.lade_dept_skills(key, repo_root())
+    except Exception:
+        skill_block = ""
     return SubagentSpec(
         key=key,
         name=_extract_title(text),
         model_richtwert=_extract_model(text),
-        system_prompt=text,
+        system_prompt=text + skill_block,
         tools=_extract_tools(text),
     )
