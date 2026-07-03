@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 03:00] — Claude Code — CRO abgerundet: 2 weitere Skills (pricing-struktur, outreach-pitch)
+- **Was:** Zwei komplementaere CRO-Skills ergaenzt: `skills/cro/pricing-struktur/SKILL.md` (Kooperations-Pakete
+  + transparente Richtpreis-Logik als Basis fuer `kooperation-bewerten`) und `skills/cro/outreach-pitch/SKILL.md`
+  (proaktiver, markenkonformer Erstkontakt/Pitch-Entwurf). Beide Gate-Verdikt bestanden (Score 0); die CRO
+  laedt jetzt 3 Skills. Verbindliche Preise + Senden bleiben CEO-Tor. 490 Tests gruen.
+- **Warum:** CRO als vollstaendiges Pilot-Beispiel des Skill-Mechanismus abrunden (kompletter Kooperations-
+  Zyklus: Struktur -> Bewerten -> Outreach). Skills = kein CEO-Tor.
+- **Betroffen:** `skills/cro/pricing-struktur/SKILL.md` (neu), `skills/cro/outreach-pitch/SKILL.md` (neu).
+
+## [2026-07-04 02:35] — Claude Code — Instagram-Feinschliff (iterative Live-Fixes, Meta danach vom CEO abgehakt)
+- **Was:** Live-Debugging der Instagram-Anbindung: Konversations-Poll mit `limit`+schlanken `fields` (Commit
+  `c7b08bd`), DMs ueber Seiten-Knoten `me/conversations` statt IG-Knoten (`ee0f59d`), Auto-DM-Poll default AUS
+  per `INSTAGRAM_DM_POLL` (`58e9cce`). Ergebnis: DMs fuer das grosse Konto ueber Poll nicht machbar (Meta-
+  Timeout) + Webhook braucht App-Freigabe (abgelehnt) -> CEO hakt Meta ab. Insights-Code funktioniert bei
+  gueltigem Token. Kein weiterer Handlungsbedarf.
+- **Warum:** CEO-Auftrag Instagram-Anbindung; danach bewusst zurueckgestellt.
+- **Betroffen:** `orchestrator/governance/instagram.py`, `orchestrator/channels/telegram/bot.py`.
+
 ## [2026-07-04 02:10] — Claude Code — Instagram-Anbindung an Facebook-Login-Token angepasst (v25.0)
 - **Was:** CEO-Token stammt aus `graph.facebook.com` (Facebook-Login, v25.0, User-Token mit
   instagram_manage_insights/-messages, pages_read_engagement/-manage_metadata u. a.). Daher: `MetaInsights`-
