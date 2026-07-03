@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 04:10] — Claude Code — CBO angereichert: 2 Skills (markenstimme, markenkonformitaet-pruefen)
+- **Was:** Recherche (Brand-Voice-4-Dimensionen + Markenkonsistenz 2026) im `docs/entscheidungs-register.md`
+  protokolliert und genutzt: `skills/cbo/markenstimme` (Tonalitaet als 4-Dim-Prozente, Do/Don't, als Prompt-
+  Grundlage; Startvorschlag fuer Hanserautisch = CEO/CBO-Bestaetigung) und `skills/cbo/markenkonformitaet-
+  pruefen` (Review-Raster Stimme/Werte/Visual/Do-Don't/Konsistenz -> Ampel + Nachbesserung). Beide Gate:
+  bestanden; CBO laedt jetzt 2 Skills. Veroeffentlichung = CEO-Tor. Suite gruen.
+- **Warum:** Abteilungsausbau CBO (nach CRO) -- online recherchiert, lokal als Skills umgesetzt (kein CEO-Tor).
+- **Betroffen:** `skills/cbo/markenstimme/SKILL.md` (neu), `skills/cbo/markenkonformitaet-pruefen/SKILL.md`
+  (neu), `docs/entscheidungs-register.md`.
+
 ## [2026-07-04 03:45] — Head of Agents (Claude Code) — CRO-Charta vertieft + Status aktiv (CEO-freigegeben)
 - **Was:** `agents/04_cro.md` vertieft: Mandat um **Umsatz-Diversifizierung** (owned/wiederkehrend) + Pricing-
   Richtwert-Platzhalter erweitert; Aufgabenkatalog + Workflows um den **Kooperations-Zyklus** (pricing-struktur

@@ -38,10 +38,27 @@
 | **moviepy / captacity** (Video) | 2026-07-03 | **VERWORFEN** (unterbesetzt/ungewartet) | wir nutzen ffmpeg direkt |
 | **awesome-mcp-servers / best-of-mcp-servers** | 2026-07-03 | **REFERENZ** (Tool-Discovery) | Import nur via Security-Gate + CEO-Tor |
 | **Creator-Monetarisierung/Pricing-Benchmarks 2026** (CRO) | 2026-07-04 | **UEBERNEHMEN** (in CRO-Skills) | `skills/cro/` pricing-struktur + umsatz-diversifizierung |
+| **Brand-Voice-Framework (4 Dimensionen) + Konsistenz** (CBO) | 2026-07-04 | **UEBERNEHMEN** (in CBO-Skills) | `skills/cbo/` markenstimme + markenkonformitaet-pruefen |
 
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-07-04 — CBO-Recherche: Brand-Voice-Framework + Markenkonsistenz (CEO-Auftrag)
+
+**Kontext:** CBO-Ausbau -- online nach nuetzlichen Marken-Frameworks gesucht.
+
+**Befund:**
+- **Tonalitaet -- 4 Dimensionen** (Nielsen Norman): Humorvoll↔Ernst, Locker↔Foermlich, Respektvoll↔Frech,
+  Enthusiastisch↔Sachlich -- als **Prozente** verorten (nimmt das Raten raus, konsistent ueber Kanaele).
+- **Markenkonsistenz** zahlt messbar (Vertrauen; Umsatz-Uplift bis ~33% in Studien); haeufiger Fehler: alles
+  gleichzeitig aendern statt schrittweise. Brand-Voice-Chart ist 2026 auch **Prompt-Grundlage** (Agenten).
+
+**Entscheidung:** **UEBERNEHMEN in CBO-Skills** (lokal): `skills/cbo/markenstimme` (4-Dim-Verortung +
+Do/Don't + Anwendung als Prompt) und `skills/cbo/markenkonformitaet-pruefen` (Review-Raster -> Ampel +
+Nachbesserung). Konkrete Marken-Verortung = CEO/CBO-Bestaetigung; Veroeffentlichung = CEO-Tor.
+
+**Quellen:** Nielsen Norman Group (Tone-Dimensionen), InfluenceFlow / Bigeye / Inkbot (Brand-Voice-Guides 2026).
 
 ### 2026-07-04 — CRO-Recherche: Creator-Monetarisierung + Pricing-Benchmarks (CEO-Auftrag)
 
