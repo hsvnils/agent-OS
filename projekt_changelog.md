@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 06:25] — Claude Code — Organigramm: Top-down-Baum (statt seitlich)
+- **Was:** `renderAgenten` von links->rechts auf **oben->unten** umgestellt (CEO oben -> LUNA -> Abteilungs-
+  Reihe -> Unter-Agenten darunter, vertikale Elbow-Verbindungen; Abteilungen kompakt: Kuerzel gross + Nummer,
+  Rolle als Tooltip). Bei 16 Abteilungen breit -> horizontaler Scroll (`.mm-scroll`). Cache v35->v36. UI.md
+  angeglichen. Per Preview verifiziert (voller Baum bei 1640px, Screenshot).
+- **Warum:** CEO-Wunsch -- Baum soll wie ein Baum nach unten wachsen (natuerlicher im Browser).
+- **Betroffen:** `orchestrator/channels/web/static/app.js`, `static/index.html`, `UI.md`.
+
 ## [2026-07-04 06:10] — Claude Code — LUNA-OS UI: Organigramm-XMind-Baum + Voice-Bar/-Status raus
 - **Was:** (1) Die Agenten-Map ist jetzt ein **XMind-artiger Baum** (CEO -> LUNA -> Abteilungen -> Unter-Agenten,
   links->rechts, Box-Knoten mit Live-Status) statt des radialen Organigramms (`renderAgenten` in `static/app.js`

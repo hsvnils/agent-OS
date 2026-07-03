@@ -614,36 +614,39 @@ async function ladeAgenten() {
 function renderAgenten() {
   if (!AGENTEN) return `<div class="app"><div class="leer">Lade Organigramm…</div></div>`;
   const deps = AGENTEN.departments || [], ceo = AGENTEN.ceo || {}, luna = AGENTEN.luna || {};
-  // XMind-artiger Baum, links -> rechts: CEO -> LUNA -> Abteilungen -> Unter-Agenten.
-  const xCEO = 14, xLUNA = 150, xDEP = 322, xSUB = 540;
-  const wCEO = 122, wLUNA = 156, wDEP = 200, wSUB = 156, boxH = 34, rowH = 46, padY = 22;
-  // Jede Abteilung belegt so viele Zeilen wie sie Unter-Agenten hat (min. 1).
-  let row = 0;
-  const layout = deps.map(d => { const nSub = Math.max(1, (d.subs || []).length); const start = row; row += nSub; return { d, start, nSub }; });
-  const rows = Math.max(1, row);
-  const H = padY * 2 + rows * rowH, W = xSUB + wSUB + 16;
-  const yOf = r => padY + r * rowH + rowH / 2;
-  layout.forEach(L => L.yc = yOf(L.start + (L.nSub - 1) / 2));
-  const lunaY = padY + rows * rowH / 2, ceoY = lunaY;
-  const box = (x, y, w, titel, cls, sub) => {
+  // Klassischer Baum von OBEN nach UNTEN: CEO -> LUNA -> Abteilungen (Reihe) -> Unter-Agenten (darunter).
+  const bw = 92, bh = 34, colStep = 104, padX = 18, padTop = 20, vGap = 66, subStep = 40;
+  const n = deps.length || 1;
+  const depX = i => padX + i * colStep + bw / 2;                 // Spalten-Zentrum der Abteilung i
+  const centerX = (depX(0) + depX(n - 1)) / 2;
+  const yCEO = padTop + bh / 2, yLUNA = yCEO + vGap, yDEP = yLUNA + vGap, ySUB = yDEP + vGap;
+  const maxSub = Math.max(0, ...deps.map(d => (d.subs || []).length));
+  const H = ySUB + Math.max(0, maxSub - 1) * subStep + bh / 2 + 12;
+  const W = padX * 2 + (n - 1) * colStep + bw;
+  const box = (cxp, y, w, titel, cls, sub, tip) => {
     const t = sub
-      ? `<text x="${x + w / 2}" y="${y - 3}" text-anchor="middle" class="mm-bt">${esc(titel)}</text><text x="${x + w / 2}" y="${y + 11}" text-anchor="middle" class="mm-bs">${esc(sub)}</text>`
-      : `<text x="${x + w / 2}" y="${y + 4}" text-anchor="middle" class="mm-bt">${esc(titel)}</text>`;
-    return `<g class="mm-b ${cls}"><rect x="${x}" y="${y - boxH / 2}" width="${w}" height="${boxH}" rx="8"/>${t}</g>`;
+      ? `<text x="${cxp}" y="${y - 3}" text-anchor="middle" class="mm-bt">${esc(titel)}</text><text x="${cxp}" y="${y + 10}" text-anchor="middle" class="mm-bs">${esc(sub)}</text>`
+      : `<text x="${cxp}" y="${y + 4}" text-anchor="middle" class="mm-bt">${esc(titel)}</text>`;
+    return `<g class="mm-b ${cls}">${tip ? `<title>${esc(tip)}</title>` : ""}<rect x="${cxp - w / 2}" y="${y - bh / 2}" width="${w}" height="${bh}" rx="8"/>${t}</g>`;
   };
-  const link = (x1, y1, x2, y2, cls) => { const dx = (x2 - x1) / 2; return `<path d="M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}" class="mm-link ${cls}"/>`; };
-  let links = link(xCEO + wCEO, ceoY, xLUNA, lunaY, "human"), nodes = "";
-  layout.forEach(L => {
-    links += link(xLUNA + wLUNA, lunaY, xDEP, L.yc, L.d.status);
-    nodes += box(xDEP, L.yc, wDEP, L.d.name, "dep " + L.d.status, L.d.rolle);
-    (L.d.subs || []).forEach((s, j) => {
-      const sy = yOf(L.start + j);
-      links += link(xDEP + wDEP, L.yc, xSUB, sy, s.status);
-      nodes += box(xSUB, sy, wSUB, s.name, "sub " + s.status);
+  // vertikale Elbow-Verbindung (Eltern unten -> Kind oben)
+  const vlink = (x1, y1, x2, y2, cls) => { const my = (y1 + y2) / 2; return `<path d="M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}" class="mm-link ${cls}"/>`; };
+  let links = vlink(centerX, yCEO + bh / 2, centerX, yLUNA - bh / 2, "human"), nodes = "";
+  deps.forEach((d, i) => {
+    const cx = depX(i);
+    links += vlink(centerX, yLUNA + bh / 2, cx, yDEP - bh / 2, d.status);
+    const num = (d.name.split("·")[0] || "").trim();
+    const kuerzel = (d.name.split("·")[1] || d.name).trim();
+    nodes += box(cx, yDEP, bw, kuerzel, "dep " + d.status, num, d.rolle);
+    (d.subs || []).forEach((s, j) => {
+      const sy = ySUB + j * subStep;
+      const py = j === 0 ? yDEP + bh / 2 : sy - subStep + bh / 2;
+      links += vlink(cx, py, cx, sy - bh / 2, s.status);
+      nodes += box(cx, sy, bw, s.name, "sub " + s.status, "", s.name);
     });
   });
-  nodes += box(xCEO, ceoY, wCEO, ceo.name || "CEO", "human", ceo.rolle);
-  nodes += box(xLUNA, lunaY, wLUNA, luna.name || "LUNA", "luna", luna.rolle || "Head of Agents");
+  nodes += box(centerX, yCEO, 122, ceo.name || "CEO", "human", ceo.rolle);
+  nodes += box(centerX, yLUNA, 138, luna.name || "LUNA", "luna", luna.rolle || "Head of Agents");
   const legend = `<div class="mm-legend"><span class="lg active"><i></i>Aktiv</span><span class="lg standby"><i></i>Standby</span><span class="lg offline"><i></i>Geplant</span><span class="lg human"><i></i>CEO</span></div>`;
   return `<div class="app mindmap">
     <div class="mm-head"><b>Organigramm — Live-Status</b>${legend}</div>

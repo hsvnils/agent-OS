@@ -89,8 +89,9 @@ Fester Rahmen, scrollender Inhalt:
 - **Main:** CSS-Grid aus Panels (`auto-fit`, min ~280–360px). Reihenfolge nach Wichtigkeit.
 - **Voice-Ausloeser:** der **Orb** im Dashboard (antippen = `toggleVoice`, Live-Gespraech). Keine separate
   „TALK TO LUNA"-Leiste unten und **kein** Voice-Status in der Sidebar mehr (2026-07-04 entfernt).
-- **Organigramm:** XMind-artiger Baum (CEO -> LUNA -> Abteilungen -> Unter-Agenten) mit Live-Status
-  (`renderAgenten`, App „Organigramm").
+- **Organigramm:** Baum **von oben nach unten** (CEO -> LUNA -> Abteilungen-Reihe -> Unter-Agenten darunter)
+  mit Live-Status (`renderAgenten`, App „Organigramm"). Bei 16 Abteilungen breit -> `.mm-scroll` scrollt
+  horizontal.
 - **Hintergrund:** `#starfield` + `#grid` + `#scan` (siehe vorhandenes CSS) -- nie entfernen.
 - **App-Fenster:** Detailarbeit laeuft weiter in **WinBox**-Fenstern (Stil `.winbox.modern`), die ueber dem
   Dashboard schweben. Das Dashboard ist die Startseite/Uebersicht, die Fenster sind die Tiefe.
