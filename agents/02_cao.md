@@ -30,6 +30,11 @@ Changelog-Disziplin — sorgt fuer reibungsfreies Zusammenarbeiten aller Agenten
 ## Output-Format
 - Prozessbeschreibungen, Termin-/Aufgabenlisten, KPI-Uebersichten, Tool-/Abo-Register.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Prozess-/Policy-Dokumente, Vorlagen, Koordinations-Uebersichten, Changelog-Kontrolle.
+- **Erfolgsmetriken:** Changelog-Disziplin 100 % (keine Aufgabe ohne Eintrag); Policies/Vorlagen aktuell;
+  Durchlaufzeit interner Koordination.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Datei-/Ordner-Konventionen pflegen.
 - Vorlagen aktualisieren.

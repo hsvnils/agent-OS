@@ -33,6 +33,11 @@ Marktanalysen, Szenarien und entscheidungsreife Vorlagen fuer den CEO (ueber den
 ## Output-Format
 - Strukturierte Entscheidungsvorlage: Ausgangslage, Optionen, Bewertung, Empfehlung, offene Punkte.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Marktanalysen, Szenarien, Effizienz-/Prozessbewertungen, entscheidungsreife Vorlagen.
+- **Erfolgsmetriken:** Vorlagen mit klarer Empfehlung + Quellen; Anteil umgesetzter Empfehlungen; erkannte
+  Ineffizienzen je Quartal.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Woechentliche Prozess-Review des Agenten-Unternehmens.
 - Engpass- und Effizienzanalyse.

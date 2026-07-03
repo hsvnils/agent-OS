@@ -32,6 +32,11 @@ verloren geht.
 ## Output-Format
 - Kontext-Briefings, Wissensartikel, Antworten mit Quellen-/Belegangaben.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** strukturiertes, auffindbares Wissen (Index/Register), Wissens-Snapshots.
+- **Erfolgsmetriken:** Auffindbarkeit (Treffer-/Antwortquote); Aktualitaet des Wissensstands; kein Wissensverlust bei
+  Uebergaben.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Wissensbasis pflegen (Briefs, Specs, Charten, Learnings, Changelog-Historie).
 - Durchsuchbar machen (Supabase pgvector).

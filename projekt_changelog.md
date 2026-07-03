@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-03 15:05] — Head of Agents (Claude Code) — Phase 24 (b): Erfolgsmetriken in allen restlichen Charten (CEO-freigegeben)
+- **Was:** Abschnitt „## Erfolgsmetriken & Deliverables" in die 17 restlichen Charten eingefuegt (00, 01-04,
+  06-16, 16a) -- Inhalt je Charta rollenspezifisch (Deliverables + messbare Erfolgskriterien), Formatierung
+  wie CISO-Beispiel. Damit haben `_TEMPLATE.md` + alle 18 Charten den Abschnitt. Phase 24 = vollstaendig.
+- **Warum:** CEO-Freigabe am 2026-07-03 (Sammel-Diff als Tabelle vorgelegt + bestaetigt, „alle 17 anwenden");
+  AGENTS.md 3.3 (Charta-Aenderung nur HoA auf CEO-Anweisung mit Diff).
+- **Betroffen:** `agents/00_head-of-agents.md`, `01_unternehmensberater.md`, `02_cao.md`, `03_cfo.md`,
+  `04_cro.md`, `06_cbo.md`, `07_cpo.md`, `08_cto.md`, `09_cxo.md`, `10_cco-content.md`, `11_cdo.md`,
+  `12_chro.md`, `13_clo.md`, `14_cko.md`, `15_researcher.md`, `16_cio.md`, `16a_risk-agent.md`, `ROADMAP.md`.
+
 ## [2026-07-03 14:45] — Head of Agents (Claude Code) — Phase 24 (b): Erfolgsmetriken je Charta (CEO-freigegeben)
 - **Was:** Neuer Charta-Abschnitt „## Erfolgsmetriken & Deliverables" in `agents/_TEMPLATE.md` (Vorlage) und
   beispielhaft befuellt in `agents/05_ciso.md` (CISO). Restliche 16 Charten folgen als separater Sammel-Diff

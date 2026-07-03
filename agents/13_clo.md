@@ -33,6 +33,11 @@ Ueberwacht Rechts- und IP-Risiken des Unternehmens und entwirft/prueft Vertraege
 - Vertrags-/Rechtstext-Entwuerfe, Lizenzanfrage-Entwuerfe und Risiko-/Compliance-Einschaetzungen — klar als
   „Entwurf — anwaltliche Pruefung erforderlich".
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Vertrags-/IP-Entwuerfe, Rechtsrisiko-Bewertungen (ausschliesslich Entwuerfe; ein Anwalt zeichnet).
+- **Erfolgsmetriken:** identifizierte Rechts-/IP-Risiken vor Eskalation; vollstaendige Entwuerfe mit Fundstellen;
+  keine ungepruefte rechtliche Aussenwirkung.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - IP-/Lizenz-Risiken ueberwachen (Club-Logos, DFL, HSV).
 - Vertraege entwerfen/pruefen.

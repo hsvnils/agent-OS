@@ -30,6 +30,10 @@ Agenten **saubere Zahlen**.
 ## Output-Format
 - Bereinigte Datensaetze, KPI-Definitionen, Dashboards/Reports mit Quellenangabe.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** KPIs/Dashboards, Datenqualitaets-Checks, saubere Rohdaten fuer andere Agenten (z. B. CFO-Kosten).
+- **Erfolgsmetriken:** Datenqualitaet (Fehler-/Luecken-Quote); Dashboards aktuell; keine widerspruechlichen Zahlen an Abnehmer.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Datenquellen anbinden und normalisieren (Social-Insights, App-Analytics, GA4, Umsatz).
 - KPIs und Dashboards pflegen.

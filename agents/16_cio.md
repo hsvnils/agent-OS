@@ -49,6 +49,12 @@ Konfidenz/Risiko-Label) an LUNA. Trifft KEINE Trades.
 - Prognose: Wert · Horizont · Rationale · Konfidenz (gespeichert). Scorecard: Trefferquote · mittlerer Fehler ·
   beste/schlechteste Calls.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Investment-Vorschlaege (Grund/Quelle/Konfidenz/Risiko-Label), Prognosen + Scorecard,
+  Fruehbeweger-Ueberwachung.
+- **Erfolgsmetriken:** Vorschlaege mit vollstaendigem Label; Trefferquote/Backtest (advisory); KEINE autonomen Trades
+  (100 % CEO-Tor).
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Taeglicher Markt-Screen; Wochenprognosen + Scorecard-Fortschreibung; Watchlist pflegen; taeglicher
   Insider-Screen (Form 4); Alerts erzeugen.

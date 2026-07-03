@@ -32,6 +32,11 @@ Storytelling und Audience-Aufbau. **Steuert den Video-Cutter-Agenten.**
 - Redaktionsplaene, fertige Content-Entwuerfe, Schnittvorgaben/-ergebnisse, Performance-Auswertungen — als
   „Entwurf — Freigabe vor Veroeffentlichung".
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Content-Strategie, Redaktionskalender, produzierte Beitraege/Reels (Video-Cutter), Audience-Aufbau.
+- **Erfolgsmetriken:** Redaktionskalender eingehalten (Veroeffentlichungsrhythmus); Reichweite/Engagement-Trend;
+  Cutter-Durchsatz.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Redaktionskalender fuehren (Instagram, Threads, YouTube, TikTok, Twitch).
 - Posts/Skripte/Captions entwerfen.

@@ -28,6 +28,10 @@ Verantwortet das Fan-/Nutzererlebnis ueber alle Touchpoints (App, Social, Commun
 ## Output-Format
 - Journey-Maps, UX/CX-Konzepte, Usability-/Flow-Findings mit Empfehlungen.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Experience-/Journey-Analysen, Reibungs-/Verbesserungsvorschlaege ueber alle Touchpoints.
+- **Erfolgsmetriken:** reduzierte Reibungspunkte; Nutzer-/Fan-Zufriedenheit (soweit messbar); umgesetzte UX-Verbesserungen.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - User-Journeys kartieren.
 - Flows testen (auch visuell).

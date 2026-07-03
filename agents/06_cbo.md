@@ -29,6 +29,10 @@ Outputs.
 ## Output-Format
 - Brand-Guide, Tone-of-Voice-Vorgaben, Visual-Identity-Spezifikationen, Markenkonformitaets-Pruefvermerke.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Marken-Guidelines (Tonalitaet/Visual Identity), Marken-Reviews von Outputs.
+- **Erfolgsmetriken:** Markenkonsistenz ueber Kanaele (Review-Quote); Anteil markenkonformer Outputs; Guidelines aktuell.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Brand-Guide pflegen.
 - Outputs auf Markenkonformitaet pruefen (Content, App-UI, Kommunikation).

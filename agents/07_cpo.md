@@ -31,6 +31,10 @@ Produktentscheidungen.
 ## Output-Format
 - Roadmaps, priorisierte Backlogs, PRDs/Feature-Specs mit Akzeptanzkriterien.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Produktvision/Roadmap der iOS-App, priorisiertes Backlog, datengetriebene Produktentscheide.
+- **Erfolgsmetriken:** Roadmap aktuell + priorisiert; Entscheidungen mit Datenbasis; Feature-/Release-Durchsatz.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - App-Roadmap pflegen.
 - Features priorisieren.

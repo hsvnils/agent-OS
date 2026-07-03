@@ -38,6 +38,10 @@ Verantwortet den Gesamt-Umsatz von Hanserautisch: Monetarisierung, Vertrieb, Par
 ## Output-Format
 - Monetarisierungs-/Pricing-Konzepte, Partnerschafts-Steckbriefe, Umsatz-Entscheidungsvorlagen.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Monetarisierungs-/Pricing-Entwuerfe, Vertriebs-/Partnerschafts-Vorschlaege, Umsatz-Pipeline.
+- **Erfolgsmetriken:** Umsatz-Trend; qualifizierte Leads/Partnerschaften; Pricing-Entscheidungen mit Datenbasis.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Monetarisierungs-Pipeline pflegen.
 - Sponsor-/Partner-Liste fuehren.

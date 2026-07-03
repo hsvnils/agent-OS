@@ -41,6 +41,12 @@ Aufgaben sowie die **zentrale Anlaufstelle fuer technischen Bedarf**. „Geht ni
 - Loesungsbeschreibung, Umsetzungsschritte, Bedarfs-/Beschaffungsanforderungen, Risiken/Aufwand,
   ggf. Alternativen.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** betriebene Infrastruktur (Uptime), technische Loesungen/Workarounds fuer Blockaden,
+  Beschaffungs-/Zugangsanforderungen.
+- **Erfolgsmetriken:** 'Geht nicht'-Faelle mit Loesung/Alternative geloest (Quote); System-Uptime/Healthchecks gruen;
+  Reaktionszeit als IT-Feuerwehr.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Infrastruktur betreiben (NAS, Vercel, Supabase, HCC).
 - Technischen Bedarf als erste Anlaufstelle bearbeiten.

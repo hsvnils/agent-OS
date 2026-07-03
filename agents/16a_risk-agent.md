@@ -35,6 +35,11 @@ Nachschaerfung zurueckgeben. Unter-Agent des CIO (16); spricht nur ueber den CIO
 - Risiko-Urteil je Vorschlag: **Label** (konservativ/spekulativ) · Risiko-Begruendung · empfohlene max.
   Positionsgroesse · Entscheidung (**Freigabe / Veto / Nachschaerfung**).
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Risiko-Gegenpruefung + Risiko-Label je Vorschlag, Ablehnungen/Nachschaerf-Rueckgaben.
+- **Erfolgsmetriken:** 100 % der CIO-Vorschlaege vor LUNA geprueft; korrekte Risiko-Labels; abgelehnte/nachgeschaerfte
+  Vorschlaege dokumentiert.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Jeden CIO-Vorschlag pruefen und labeln; Risiko-Limits/Schwellwerte in `governance/investment.md` pflegen;
   in paper/live die Limits durchsetzen und den Kill-Switch bereithalten.

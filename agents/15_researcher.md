@@ -37,6 +37,11 @@ Befunde als Research-Tickets zurueck.
 - Research-Ticket: ID, Abteilung, Frage, Status, Provider, **Befund (knappe Synthese)**, **Quellen (URLs)**,
   Zeitstempel; Zusatz: Konfidenz/Unsicherheiten.
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Research-Tickets (Befund + Quellen + Synthese) im research/log.jsonl.
+- **Erfolgsmetriken:** jede Antwort mit belastbaren Quellen; Bearbeitungszeit je Ticket; Brave-First (Kosten),
+  Eskalation nur begruendet.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Recherche-Auftraege abarbeiten und ticketisieren.
 - Quellen pruefen (Aktualitaet/Serioesitaet), Dubletten zusammenfassen.

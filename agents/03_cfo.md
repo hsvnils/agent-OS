@@ -36,6 +36,12 @@ ROI und modelliert Monetarisierung — liefert ausschliesslich **Entwuerfe**; ei
 - Budget-/Forecast-Entwuerfe, Soll-Ist- und ROI-Analysen, Finanzberichte — klar als
   „Entwurf — Freigabe erforderlich".
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** fortlaufende Kostenuebersicht + Monats-Kostenstatistik, Kostenvoranschlaege, ROI-/
+  Monetarisierungs-Entwuerfe, Budget-Warnungen.
+- **Erfolgsmetriken:** Ist-Kosten im Budget (Soll-Ist-Abweichung < Schwelle); Fruehwarnung vor Ueberschreitung;
+  Kostenvoranschlag bei jedem neuen Modell/Dienst/Abo.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Laufende Kostenerfassung.
 - Monats-Kostenstatistik fortschreiben (`finance/kosten-statistik.md`).

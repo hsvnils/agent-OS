@@ -36,6 +36,11 @@ Onboarding-Vorlagen fuer echte Freie.
 - Personal-/Belegschaftsanalysen (Agenten), Vorschlaege fuer neue Agenten/Modelle, Leistungsbewertungen,
   Vertrags-/Onboarding-Entwuerfe — Personalvorlagen klar als „Entwurf — Freigabe erforderlich".
 
+## Erfolgsmetriken & Deliverables
+- **Deliverables:** Faehigkeitsluecken-Analysen, Agenten-/Modell-Vorschlaege, Leistungsuebersichten,
+  Vertrags-/Onboarding-Vorlagen.
+- **Erfolgsmetriken:** erkannte + geschlossene Faehigkeitsluecken; passende Modellzuordnung je Rolle; Vorlagen aktuell.
+
 ## Aufgabenkatalog (wiederkehrende To-dos)
 - Faehigkeitsluecken erkennen.
 - Neue Agenten oder Modelle vorschlagen.
