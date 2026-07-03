@@ -614,15 +614,26 @@ async function ladeAgenten() {
 function renderAgenten() {
   if (!AGENTEN) return `<div class="app"><div class="leer">Lade Organigramm…</div></div>`;
   const deps = AGENTEN.departments || [], ceo = AGENTEN.ceo || {}, luna = AGENTEN.luna || {};
-  // Klassischer Baum von OBEN nach UNTEN: CEO -> LUNA -> Abteilungen (Reihe) -> Unter-Agenten (darunter).
-  const bw = 92, bh = 34, colStep = 104, padX = 18, padTop = 20, vGap = 66, subStep = 40;
+  // Top-down-Baum: CEO -> LUNA -> Abteilungen auf ZWEI Reihen (A/B) je ~8 -> Unter-Agenten darunter.
+  // Zwei Reihen halten die Breite bei ~830px (statt ~1580px bei einer Reihe) -> kein Horizontal-Scroll.
+  const bw = 92, bh = 34, colStep = 100, padX = 18, padTop = 20, vGap = 66, subStep = 40, rowGap = 34;
   const n = deps.length || 1;
-  const depX = i => padX + i * colStep + bw / 2;                 // Spalten-Zentrum der Abteilung i
-  const centerX = (depX(0) + depX(n - 1)) / 2;
-  const yCEO = padTop + bh / 2, yLUNA = yCEO + vGap, yDEP = yLUNA + vGap, ySUB = yDEP + vGap;
-  const maxSub = Math.max(0, ...deps.map(d => (d.subs || []).length));
-  const H = ySUB + Math.max(0, maxSub - 1) * subStep + bh / 2 + 12;
-  const W = padX * 2 + (n - 1) * colStep + bw;
+  const half = Math.ceil(n / 2);
+  const rowA = deps.slice(0, half), rowB = deps.slice(half);
+  const cols = Math.max(rowA.length, rowB.length, 1);
+  const W = padX * 2 + (cols - 1) * colStep + bw;
+  const centerX = W / 2;
+  // Spalten-Zentrum: jede Reihe wird mittig unter LUNA ausgerichtet.
+  const rowX = (row, j) => centerX - ((row.length - 1) * colStep) / 2 + j * colStep;
+  const rowMaxSub = row => Math.max(0, ...row.map(d => (d.subs || []).length));
+  const maxSubA = rowMaxSub(rowA), maxSubB = rowMaxSub(rowB);
+  const yCEO = padTop + bh / 2, yLUNA = yCEO + vGap;
+  const yDEPA = yLUNA + vGap, ySUBA = yDEPA + vGap;
+  // Unterkante der Reihe-A-Subs; darunter (mit rowGap) beginnt Reihe B -> keine Kollision.
+  const subABottom = maxSubA > 0 ? ySUBA + (maxSubA - 1) * subStep : yDEPA;
+  const yDEPB = subABottom + rowGap + vGap, ySUBB = yDEPB + vGap;
+  const subBBottom = maxSubB > 0 ? ySUBB + (maxSubB - 1) * subStep : yDEPB;
+  const H = subBBottom + bh / 2 + 12;
   const box = (cxp, y, w, titel, cls, sub, tip) => {
     const t = sub
       ? `<text x="${cxp}" y="${y - 3}" text-anchor="middle" class="mm-bt">${esc(titel)}</text><text x="${cxp}" y="${y + 10}" text-anchor="middle" class="mm-bs">${esc(sub)}</text>`
@@ -632,19 +643,23 @@ function renderAgenten() {
   // vertikale Elbow-Verbindung (Eltern unten -> Kind oben)
   const vlink = (x1, y1, x2, y2, cls) => { const my = (y1 + y2) / 2; return `<path d="M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}" class="mm-link ${cls}"/>`; };
   let links = vlink(centerX, yCEO + bh / 2, centerX, yLUNA - bh / 2, "human"), nodes = "";
-  deps.forEach((d, i) => {
-    const cx = depX(i);
-    links += vlink(centerX, yLUNA + bh / 2, cx, yDEP - bh / 2, d.status);
-    const num = (d.name.split("·")[0] || "").trim();
-    const kuerzel = (d.name.split("·")[1] || d.name).trim();
-    nodes += box(cx, yDEP, bw, kuerzel, "dep " + d.status, num, d.rolle);
-    (d.subs || []).forEach((s, j) => {
-      const sy = ySUB + j * subStep;
-      const py = j === 0 ? yDEP + bh / 2 : sy - subStep + bh / 2;
-      links += vlink(cx, py, cx, sy - bh / 2, s.status);
-      nodes += box(cx, sy, bw, s.name, "sub " + s.status, "", s.name);
+  const drawRow = (row, yDEP, ySUB) => {
+    row.forEach((d, i) => {
+      const cx = rowX(row, i);
+      links += vlink(centerX, yLUNA + bh / 2, cx, yDEP - bh / 2, d.status);
+      const num = (d.name.split("·")[0] || "").trim();
+      const kuerzel = (d.name.split("·")[1] || d.name).trim();
+      nodes += box(cx, yDEP, bw, kuerzel, "dep " + d.status, num, d.rolle);
+      (d.subs || []).forEach((s, j) => {
+        const sy = ySUB + j * subStep;
+        const py = j === 0 ? yDEP + bh / 2 : sy - subStep + bh / 2;
+        links += vlink(cx, py, cx, sy - bh / 2, s.status);
+        nodes += box(cx, sy, bw, s.name, "sub " + s.status, "", s.name);
+      });
     });
-  });
+  };
+  drawRow(rowA, yDEPA, ySUBA);
+  drawRow(rowB, yDEPB, ySUBB);
   nodes += box(centerX, yCEO, 122, ceo.name || "CEO", "human", ceo.rolle);
   nodes += box(centerX, yLUNA, 138, luna.name || "LUNA", "luna", luna.rolle || "Head of Agents");
   const legend = `<div class="mm-legend"><span class="lg active"><i></i>Aktiv</span><span class="lg standby"><i></i>Standby</span><span class="lg offline"><i></i>Geplant</span><span class="lg human"><i></i>CEO</span></div>`;
