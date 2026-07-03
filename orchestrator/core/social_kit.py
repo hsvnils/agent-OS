@@ -20,7 +20,7 @@ from pathlib import Path
 
 from ..governance.leak_guard import redact
 
-_BASE = "https://graph.facebook.com/v22.0"
+_BASE = "https://graph.facebook.com/v25.0"
 # Konto-Insights-Metriken (period=days_28). Konfigurierbar, da Meta oefter deprecatet.
 _KONTO_METRIKEN = ("reach", "profile_views")
 

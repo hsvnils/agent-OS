@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 02:10] — Claude Code — Instagram-Anbindung an Facebook-Login-Token angepasst (v25.0)
+- **Was:** CEO-Token stammt aus `graph.facebook.com` (Facebook-Login, v25.0, User-Token mit
+  instagram_manage_insights/-messages, pages_read_engagement/-manage_metadata u. a.). Daher: `MetaInsights`-
+  Basis v22 -> **v25.0**; `InstagramConversations`-Basis auf **graph.facebook.com/v25.0** + Konversations-Pfad
+  `{ig-user-id}/conversations` (statt `me/conversations`; `me/...` bleibt fuer die Instagram-Login-Variante,
+  automatisch je Basis). +1 Test (488 gruen).
+- **Warum:** Token-Variante (Screenshot Graph API Explorer) -> beide Pfade auf dieselbe FB-Login-Basis bringen.
+- **Betroffen:** `orchestrator/core/social_kit.py`, `orchestrator/governance/instagram.py`,
+  `orchestrator/tests/test_crm_instagram.py`.
+
 ## [2026-07-04 01:50] — Claude Code — CRM: Instagram-DM-Lesen per Graph-Poll (eigenes Konto, ohne GATE B)
 - **Was:** Neuer Lesepfad fuer Instagram-DMs des EIGENEN Kontos via Graph Conversations-API (Poll) --
   `InstagramConversations` (`governance/instagram.py`, `me/conversations` + `{conv}?fields=messages{...}`,

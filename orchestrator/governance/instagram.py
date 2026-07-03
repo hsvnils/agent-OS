@@ -113,11 +113,16 @@ class InstagramConversations:
     """
 
     def __init__(self, token: str, own_id, *, http=None,
-                 base: str = "https://graph.instagram.com/v25.0"):
+                 base: str = "https://graph.facebook.com/v25.0"):
+        # Default = Facebook-Login-Variante (graph.facebook.com, Konversationen ueber {ig-user-id}).
+        # Fuer die Instagram-Login-Variante base auf graph.instagram.com setzen -> dann 'me/conversations'.
         self.token = (token or "").strip()
         self.own_id = str(own_id or "").strip()
         self.http = http or self._get
         self.base = base
+
+    def _konv_pfad(self) -> str:
+        return "me/conversations" if "graph.instagram.com" in self.base else f"{self.own_id}/conversations"
 
     @property
     def verfuegbar(self) -> bool:
@@ -134,7 +139,7 @@ class InstagramConversations:
 
     def konversationen(self) -> list[str]:
         try:
-            d = self.http("me/conversations", {"platform": "instagram"})
+            d = self.http(self._konv_pfad(), {"platform": "instagram"})
         except Exception:
             return []
         return [c.get("id") for c in (d or {}).get("data", []) if c.get("id")]
