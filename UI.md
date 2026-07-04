@@ -151,7 +151,7 @@ Alle Panels folgen demselben Grundgeruest:
 - **Theming nur ueber CSS-Variablen** (Abschnitt 2). Neue Farbe noetig? -> zuerst Token definieren.
 - **Selbst-genuegsam:** keine externen Fonts/Icon-CDNs/JS-CDNs; vendored Libs unter `static/vendor/`
   (aktuell nur WinBox).
-- **Cache-Bust:** bei jeder Frontend-Aenderung `?v=N` in `index.html` erhoehen (aktuell v38).
+- **Cache-Bust:** bei jeder Frontend-Aenderung `?v=N` in `index.html` erhoehen (aktuell v41).
 - **Investment-Command-Center (App „Investment"):** ueber der Watchlist ein „Lern-Loop (Walk-Forward)"-Block
   aus `/api/investment/loop` -- KPI-Kacheln (Richtungsquote, MAE, Baseline, Anteil besser Baseline), Fehler-
   Verlauf als **Inline-SVG** (Modell cyan vs. Baseline gestrichelt, niedriger = besser), Balken je Anlageklasse,

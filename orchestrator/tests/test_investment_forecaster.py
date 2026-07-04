@@ -82,7 +82,7 @@ class TestForecaster(unittest.TestCase):
         self.store.feature_add("AAPL", "aktie", "2026-01-13", 106.0, 0.0, {})
         k = self.fc.auswerten(heute="2026-01-13")["kennzahlen"]
         self.assertEqual(k["gesamt"]["n"], 1)
-        self.assertIn("v1-momentum", k["je_version"])
+        self.assertIn("v2-multisignal", k["je_version"])
         self.assertIn("mae_pct", k["gesamt"])
         self.assertIn("anteil_besser_baseline", k["gesamt"])
 
@@ -115,6 +115,21 @@ class TestForecaster(unittest.TestCase):
         self.assertGreaterEqual(len(v), 2)
         self.assertIn("mae_pct", v[0])
         self.assertIn("baseline_mae_pct", v[0])
+
+    def test_mehr_signal_prognose_und_attribution(self):
+        _seed_historie(self.store, "AAPL", [100, 102, 104, 106, 108, 110, 112], start="2026-01-01")
+        self.fc.prognostizieren([{"symbol": "AAPL", "asset": "aktie"}], datum="2026-01-07")
+        f = self.store.list("inv_forecasts")[-1]
+        self.assertEqual(f["richtung"], "steigt")
+        self.assertGreaterEqual(f["signale_zahl"], 2)          # Mehrfach-Signal real erfuellt
+        self.assertTrue(f["treiber"])                          # Treiber-Signaltypen gesetzt
+        # Auswertung -> je_signal-Attribution im Register
+        self.store.feature_add("AAPL", "aktie", "2026-01-14", 118.0, 0.0, {})
+        k = self.fc.auswerten(heute="2026-01-14")["kennzahlen"]
+        self.assertIn("je_signal", k)
+        self.assertTrue(set(k["je_signal"]).issubset({"momentum", "trend", "breakout"}))
+        dev = self.store.list("inv_deviations")[-1]
+        self.assertTrue(dev["signale"])                        # Signaltypen im Abweichungs-Register
 
     def test_chancen_nur_ausserhalb_watchlist(self):
         _seed_historie(self.store, "AAPL", [100, 105, 110, 116, 122, 128], start="2026-01-01")

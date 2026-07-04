@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 12:15] — Claude Code — Investment: Mehr-Signal-Prognose (v2) + Signal-Attribution (Schritt 4c)
+- **Was:** Der Forecaster nutzt jetzt ein **Mehr-Signal-Modell (`v2-multisignal`)** statt reinem Momentum.
+  Neues `orchestrator/investment/signals.py` (`berechne(closes)`): gerichtete Signale **Momentum**, **Trend
+  (SMA-5 vs SMA-20)**, **Breakout (Position in der 20-Tage-Range)** -- jeweils richtung/staerke/detail. Der
+  Forecaster bestimmt die Richtung per **Mehrheit** der Signale, zaehlt die uebereinstimmenden Signale
+  (`signale_zahl` -- speist die Autonomie-Leitplanke „>= 2 Signale" mit echten Daten) und speichert die
+  **Treiber-Signaltypen**. Das Abweichungs-Register bekommt `signale` (welche Signale die Richtung trugen);
+  `kennzahlen()` hat jetzt `je_signal` = **Attribution** (Trefferquote je Signaltyp -> welche Signale wirklich
+  treffen = das Lernen). Dashboard: neuer Block „Signal-Attribution" (Balken je Signaltyp). Modell-Version-
+  Bump v1->v2 macht den Fortschritt in `je_version` sichtbar. Cache v40->v41. 5 neue Tests; volle Suite 530 gruen.
+- **Warum:** Schritt 4c -- die menschlichen Entscheidungs-Schulen als bewertete Signale, damit „>= 2 Signale"
+  real wird und das Register misst, welche Signale treffen. Advisory, kein Geld/Gate.
+- **Betroffen:** `orchestrator/investment/signals.py`, `orchestrator/investment/forecaster.py`,
+  `orchestrator/channels/web/static/app.js`, `orchestrator/channels/web/static/index.html`, `UI.md`,
+  `orchestrator/tests/test_investment_signals.py`, `orchestrator/tests/test_investment_forecaster.py`.
+
 ## [2026-07-04 11:45] — Claude Code — Investment: Kurs-Detailansicht aus eigener Historie (Schritt 4b)
 - **Was:** Die anklickbare Wert-Detailansicht (Aktie + Krypto) zeigt jetzt einen **Kursverlauf** aus unserer
   eigenen, taeglich angesammelten Historie (`inv_features`-Closes) -- Tages-Kurslinie + **SMA-20-Overlay** als
