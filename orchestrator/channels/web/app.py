@@ -854,6 +854,29 @@ def investment_loop():
     return _investment_loop_payload()
 
 
+@app.post("/api/investment/sammeln")
+async def investment_sammeln():
+    """'Jetzt sammeln': Merkmals-/Preis-Snapshot der Watchlist+Universum + faellige Prognosen/Abgleich --
+    fuellt den Walk-Forward-Loop sofort (statt bis 07:00 zu warten). Advisory, keine Trades."""
+    eng = _investment_engine()
+
+    def run():
+        from ...investment.features import FeatureCollector
+        from ...investment.forecaster import Forecaster
+        from ...investment.universe import panel
+        wl = eng.store.watchlist()
+        r = FeatureCollector(eng.market, loop_store).collect(wl)
+        fc = Forecaster(loop_store)
+        p = fc.prognostizieren(panel(wl))
+        a = fc.auswerten()
+        return {"gesammelt": len(r.get("gesammelt", [])), "uebersprungen": len(r.get("uebersprungen", [])),
+                "prognosen_neu": len(p.get("erstellt", [])), "ausgewertet": a.get("neu_bewertet", 0),
+                "hinweise": r.get("hinweise", [])[:3]}
+
+    res = await asyncio.to_thread(run)
+    return JSONResponse({"ok": True, **res, "loop": _investment_loop_payload()})
+
+
 @app.post("/api/investment/screen")
 async def investment_screen():
     eng = _investment_engine()

@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 18:00] — Claude Code — Investment: G/V-Label deutlich + „Jetzt sammeln"-Knopf
+- **Was:** (1) **Gewinn/Verlust deutlich gekennzeichnet** in allen Verkaufs-Vorschlaegen: neuer Helfer
+  `_gv_hinweis` -> „✅ GEWINN +4.20 USD (+15.3%)" bzw. „🔻 VERLUST -2.40 USD (-8.1%)"; verwendet in Take-Profit,
+  Auto-Stop-Loss, Schutz-Verkauf und im LUNA-Verkauf (`paper_order_freigabe`). (2) **„Jetzt sammeln"-Knopf**:
+  Endpunkt `/api/investment/sammeln` (FeatureCollector.collect + Forecaster.prognostizieren/auswerten gegen den
+  geteilten `loop_store`) + Button „📥 Jetzt sammeln" in der LUNA-OS-Investment-App + LUNA-Tool
+  `investment_sammeln` (Telegram). Fuellt den Walk-Forward-Loop sofort, statt bis 07:00 zu warten. Cache v41->v42.
+  Suite 573 gruen.
+- **Warum:** CEO -- G/V soll klar Gewinn/Verlust zeigen; und der Lern-Loop soll manuell startbar sein (Daten
+  jetzt statt Warten). Hinweis: Prognosen brauchen weiter >= 6 Tage Historie; ein Klick liefert die heutigen
+  Snapshots (Watchlist+Universum), Prognosen entstehen, sobald genug Tage gesammelt sind.
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`, `orchestrator/core/hoa_tools.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app.js`,
+  `orchestrator/channels/web/static/index.html`.
+
 ## [2026-07-04 17:40] — Claude Code — Investment: Konto-Balance (Cash) in Kauf-Vorschlaegen
 - **Was:** Kauf-Vorschlaege zeigen jetzt die verfuegbare **Balance auf dem Paper-Konto (Cash in USD)**. Helfer
   `_cash_txt`; `_autonomie_kontext` traegt `cash`; ergaenzt in Auto-Trade (Aktie/ETF), Nacht-Krypto, Monitor-

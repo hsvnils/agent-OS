@@ -523,6 +523,14 @@ def _cash_txt(cash) -> str:
     return f" Konto: {round(_autonomie_f(cash), 2)} USD Cash." if cash not in (None, "") else ""
 
 
+def _gv_hinweis(pl_usd, plpc=None) -> str:
+    """Deutliches Gewinn/Verlust-Label fuer Verkaufs-Vorschlaege, z. B. '✅ GEWINN +4.20 USD (+15.3%)'."""
+    pl = _autonomie_f(pl_usd)
+    kopf = "✅ GEWINN" if pl >= 0 else "🔻 VERLUST"
+    proz = f" ({plpc:+.1f}%)" if plpc is not None else ""
+    return f"{kopf} {pl:+.2f} USD{proz}"
+
+
 def _autonomie_kontext(eng, forecaster, watch, datum: str) -> dict:
     """Baut den Live-Kontext fuer die Autonomie-Leitplanken (Paper): Equity, Tagesverlust, Kill-Switch,
     genutztes Nacht-Budget + heutige Trades, Track-Record-Freischaltung."""
@@ -689,8 +697,8 @@ def _market_monitor_tick(ctx, eng, monitor, betrag_usd: float = 30.0) -> None:
             if held:                                          # halten wir -> Schutz-Verkauf statt Nachkauf
                 if order_sym in offene_sells or held["qty"] <= 0:
                     continue
-                frage = (f"Live-Abfall: {c['symbol']} faellt {c['move_pct']:+.1f}% (kurzfristig) — du haeltst es "
-                         f"(aktuell {held['plpc']:+.1f}% / {held['pl']:+.2f} USD). Position schuetzen? "
+                frage = (f"Live-Abfall: {c['symbol']} faellt {c['move_pct']:+.1f}% (kurzfristig) — du haeltst es. "
+                         f"Verkauf jetzt = {_gv_hinweis(held['pl'], held['plpc'])}. Position schuetzen? "
                          f"Verkauf {held['qty']:g} {order_sym} (Paper)?")
                 ctx.approvals.add("paper_order", {"symbol": order_sym, "qty": held["qty"], "side": "sell",
                                                   "asset": asset, "preis": preis}, frage=frage)
@@ -737,12 +745,12 @@ def _exit_monitor_tick(ctx, eng, *, stop_pct: float = 8.0, target_pct: float = 1
             r = eng.paper_order(sym, qty, "sell", asset=asset, bestaetigt=True, preis=preis)
             if ctx.notifications:
                 ctx.notifications.enqueue(
-                    f"Auto-Stop-Loss: {qty:g} {sym} bei {plpc:+.1f}% ({pl_usd:+.2f} USD) verkauft — "
+                    f"Auto-Stop-Loss: {qty:g} {sym} verkauft -> {_gv_hinweis(pl_usd, plpc)} — "
                     f"{'ok' if r.get('ok') else 'Fehler: ' + str(r.get('grund') or r.get('hinweis'))}.",
                     abteilung="CIO", kategorie="investment", quelle="exit", dedup_stunden=0)
         elif sig == "target" and ctx.approvals is not None and sym not in offene_sells:   # Take-Profit -> vorschlagen
-            frage = (f"Gewinn mitnehmen? {p.get('symbol')} steht bei {plpc:+.1f}% ({pl_usd:+.2f} USD). "
-                     f"Verkauf {qty:g} {sym} (Paper)?")
+            frage = (f"Gewinn mitnehmen? {p.get('symbol')}: Verkauf {qty:g} {sym} = "
+                     f"{_gv_hinweis(pl_usd, plpc)} (Paper). Ausfuehren?")
             ctx.approvals.add("paper_order", {"symbol": sym, "qty": qty, "side": "sell", "asset": asset,
                                               "preis": preis}, frage=frage)
 

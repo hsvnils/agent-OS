@@ -358,6 +358,9 @@ def tool_specs() -> list[dict]:
                "signale": {"type": "number", "description": "Zahl uebereinstimmender Signale."},
                "risiko_label": _str("konservativ | spekulativ.")},
               ["symbol"]),
+        _spec("investment_sammeln", "Sammelt JETZT einen Merkmals-/Preis-Snapshot der Watchlist+Universum und "
+              "erstellt/wertet faellige 7-Tage-Prognosen aus -- fuellt den Walk-Forward-Lern-Loop sofort, statt "
+              "bis 07:00 zu warten. Advisory, keine Trades.", {}, []),
         _spec("insider_scan", "Screent oeffentliche SEC-Form-4-Insider-KAEUFE ueber die Watchlist (oder "
               "uebergebene Symbole): erkennt Insider-Cluster/Grosskaeufe, erzeugt Risk-gepruefte Beobachten-"
               "Alerts mit Filing-Link + Second-Brain-Notiz. Advisory, keine Trades.",
@@ -978,7 +981,7 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
 
     if name in ("investment_status", "investment_screen", "investment_vorschlaege", "investment_scorecard",
                 "insider_scan", "insider_signale_zeigen", "watchlist_hinzufuegen",
-                "investment_modus", "paper_konto", "paper_order", "paper_order_freigabe"):
+                "investment_modus", "paper_konto", "paper_order", "paper_order_freigabe", "investment_sammeln"):
         if ctx.investment is None:
             return {"fehler": "Investment-Abteilung (CIO) nicht verfuegbar."}
         eng = ctx.investment
@@ -1046,12 +1049,12 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             pl_txt = ""
             if side == "buy" and konto.get("cash") is not None:   # verfuegbare Balance beim Kauf anzeigen
                 pl_txt = f" Konto: {round(_f(konto.get('cash')), 2)} USD Cash."
-            elif side == "sell":                             # aktuellen Gewinn/Verlust der Position anzeigen
+            elif side == "sell":                             # deutliches Gewinn/Verlust-Label beim Verkauf
                 ziel = symbol.replace("/", "").upper()
                 for pos in (eng.paper_konto() or {}).get("positionen", []):
                     if (pos.get("symbol") or "").replace("/", "").upper() == ziel:
                         pl = _f(pos.get("pl"))
-                        pl_txt = f" Aktueller G/V der Position: {pl:+.2f} USD."
+                        pl_txt = f" Verkauf jetzt = {'✅ GEWINN' if pl >= 0 else '🔻 VERLUST'} {pl:+.2f} USD."
                         break
             frage = (f"Paper-{'Kauf' if side == 'buy' else 'Verkauf'}: {qty:g} {symbol} (~{wert} USD).{pl_txt} "
                      f"{lp}. Ausfuehren?")
@@ -1061,6 +1064,23 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             aid = ctx.approvals.add("paper_order", payload, frage=frage)
             return {"ok": True, "freigabe_id": aid, "geschaetzter_wert": wert, "urteil": urteil,
                     "hinweis": "1-Tap-Freigabe (Ja/Nein) an den CEO gesendet."}
+        if name == "investment_sammeln":
+            from ..governance.supabase import SupabaseAuth, SupabaseClient
+            from ..investment.features import FeatureCollector
+            from ..investment.forecaster import Forecaster
+            from ..investment.loop_store import LoopStore
+            from ..investment.universe import panel
+            _auth = SupabaseAuth.from_env(ctx.secret_dict or {})
+            _sb = SupabaseClient(_auth) if _auth.verfuegbar() else None
+            store = LoopStore(ctx.repo_root / "investment" / "features.jsonl", supabase=_sb, secrets=ctx.leak_secrets)
+            wl = eng.store.watchlist()
+            r = FeatureCollector(eng.market, store).collect(wl)
+            fc = Forecaster(store)
+            p = fc.prognostizieren(panel(wl))
+            a = fc.auswerten()
+            return {"ok": True, "gesammelt": len(r.get("gesammelt", [])),
+                    "uebersprungen": len(r.get("uebersprungen", [])), "prognosen_neu": len(p.get("erstellt", [])),
+                    "ausgewertet": a.get("neu_bewertet", 0), "hinweise": r.get("hinweise", [])[:3]}
         if name == "investment_scorecard":
             return _redact_obj(eng.scorecard(), sec)
         if name == "investment_status":

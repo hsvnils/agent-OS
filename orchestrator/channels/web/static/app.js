@@ -152,6 +152,7 @@ async function ladeInvestment() {
     <div class="brain-bar">
       <div class="inv-ac"><input id="inv-sym" placeholder="Aktie/Krypto suchen & hinzufügen…" autocomplete="off" oninput="investSuche(this.value)">
         <div id="inv-suggest" class="inv-suggest"></div></div>
+      <button class="btn info" onclick="investSammeln(this)">📥 Jetzt sammeln</button>
       <button class="btn info" onclick="investScreen(this)">📡 Screen jetzt</button>
       <button class="btn info" onclick="investInsiderScan(this)">🔍 Insider-Scan</button></div>
     <h3>Watchlist</h3><div>${wl}</div>
@@ -238,6 +239,14 @@ function invLeitplankenHtml(lp) {
       <span class="dot"></span>${aktiv ? "Autonomes Handeln AKTIV (Modus " + esc(lp.modus) + ")"
         : "Autonomes Handeln inaktiv — Modus " + esc(lp.modus || "advisory") + " (greift ab Paper/Live)"}</div>
     <div class="inv-lp">${cfg}</div>`;
+}
+async function investSammeln(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Sammelt…"; }
+  try {
+    const r = await (await fetch("/api/investment/sammeln", { method: "POST" })).json();
+    if (r && r.ok) alert(`Gesammelt: ${r.gesammelt} Werte (${r.uebersprungen} schon vorhanden) · Prognosen neu: ${r.prognosen_neu} · ausgewertet: ${r.ausgewertet}`);
+  } catch {}
+  ladeInvestment();
 }
 async function investScreen(btn) {
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Screent…"; }
