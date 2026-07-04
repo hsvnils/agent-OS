@@ -63,6 +63,7 @@ TAR_EXCLUDES=(
   --exclude='./social/log.jsonl'
   --exclude='./investment/log.jsonl'
   --exclude='./investment/features.jsonl'
+  --exclude='./approvals/log.jsonl'
   --exclude='./orchestrator/channels/voice/selected_voice.json'
   # --- Git + virtuelle Umgebungen + Worktrees ---
   --exclude='./.git'

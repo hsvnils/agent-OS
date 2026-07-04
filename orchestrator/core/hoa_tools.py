@@ -39,6 +39,7 @@ class ToolContext:
     investment: object | None = None     # InvestmentEngine (CIO, advisory) oder None
     crm: object | None = None            # CrmStore (Collab-CRM, CRO) oder None
     social: object | None = None         # SocialStore (Social-Media-Analyzer, CBO/CCO) oder None
+    approvals: object | None = None      # ApprovalStore (1-Tap-Freigaben per Telegram, Schritt 5) oder None
 
 
 def tool_specs() -> list[dict]:
@@ -343,6 +344,15 @@ def tool_specs() -> list[dict]:
                "side": _str("buy | sell."), "asset": _str("aktie | krypto (Default aktie)."),
                "bestaetigt": {"type": "boolean", "description": "true -> Order wirklich platzieren (CEO-Tor)."}},
               ["symbol", "qty", "side"]),
+        _spec("paper_order_freigabe", "Schickt dem CEO eine 1-Tap-Freigabe-Anfrage (Ja/Nein-Buttons per "
+              "Telegram) fuer eine PAPER-Order. Prueft die Autonomie-Leitplanken (informativ) und legt die "
+              "Anfrage an; bei 'Ja' wird die simulierte Order platziert. Nur im Modus 'paper'. Kein echtes Geld.",
+              {"symbol": _str("Ticker, z. B. AAPL."), "qty": {"type": "number", "description": "Stueckzahl."},
+               "side": _str("buy | sell (Default buy)."), "asset": _str("aktie | etf | krypto (Default aktie)."),
+               "konfidenz": {"type": "number", "description": "0..1 (fuer das Leitplanken-Urteil)."},
+               "signale": {"type": "number", "description": "Zahl uebereinstimmender Signale."},
+               "risiko_label": _str("konservativ | spekulativ.")},
+              ["symbol", "qty"]),
         _spec("insider_scan", "Screent oeffentliche SEC-Form-4-Insider-KAEUFE ueber die Watchlist (oder "
               "uebergebene Symbole): erkennt Insider-Cluster/Grosskaeufe, erzeugt Risk-gepruefte Beobachten-"
               "Alerts mit Filing-Link + Second-Brain-Notiz. Advisory, keine Trades.",
@@ -963,7 +973,7 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
 
     if name in ("investment_status", "investment_screen", "investment_vorschlaege", "investment_scorecard",
                 "insider_scan", "insider_signale_zeigen", "watchlist_hinzufuegen",
-                "investment_modus", "paper_konto", "paper_order"):
+                "investment_modus", "paper_konto", "paper_order", "paper_order_freigabe"):
         if ctx.investment is None:
             return {"fehler": "Investment-Abteilung (CIO) nicht verfuegbar."}
         eng = ctx.investment
@@ -987,6 +997,37 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             return _redact_obj(eng.paper_order(
                 (args.get("symbol") or ""), args.get("qty") or 0, (args.get("side") or "buy"),
                 asset=(args.get("asset") or "aktie"), bestaetigt=bool(args.get("bestaetigt"))), sec)
+        if name == "paper_order_freigabe":
+            if ctx.approvals is None:
+                return {"fehler": "Freigabe-Kanal nicht verfuegbar (nur ueber den Telegram-Bot)."}
+            if eng.store.mode() != "paper":
+                return {"ok": False, "hinweis": f"Modus ist '{eng.store.mode()}', nicht 'paper'. Erst paper aktivieren."}
+            symbol = (args.get("symbol") or "").upper().strip()
+            side = (args.get("side") or "buy").lower().strip()
+            asset = (args.get("asset") or "aktie").lower().strip()
+            try:
+                qty = float(args.get("qty") or 0)
+            except (TypeError, ValueError):
+                qty = 0.0
+            if not symbol or qty <= 0 or side not in ("buy", "sell"):
+                return {"fehler": "symbol, qty (>0) und side (buy|sell) noetig."}
+            from ..investment.autonomy_policy import AutonomyPolicy
+            preis = eng._aktueller_preis(symbol, asset) or 0
+            wert = round(float(preis) * qty, 2)
+            konto = (eng.paper_konto() or {}).get("konto") or {}
+            urteil = AutonomyPolicy().pruefe(
+                {"symbol": symbol, "asset": asset, "side": side, "betrag_eur": wert,
+                 "konfidenz": float(args.get("konfidenz") or 0), "signale": int(float(args.get("signale") or 0)),
+                 "risiko_label": (args.get("risiko_label") or "konservativ")},
+                {"equity": float(konto.get("equity") or 0), "autonomie_freigeschaltet": False})
+            lp = "alle Leitplanken erfuellt" if urteil["erlaubt_autonom"] else \
+                ("Freigabe noetig: " + "; ".join(urteil["gruende"][:2]) if urteil["gruende"] else "Freigabe noetig")
+            frage = (f"Paper-{'Kauf' if side == 'buy' else 'Verkauf'}: {qty:g} {symbol} (~{wert} USD). "
+                     f"{lp}. Ausfuehren?")
+            aid = ctx.approvals.add("paper_order", {"symbol": symbol, "qty": qty, "side": side, "asset": asset},
+                                    frage=frage)
+            return {"ok": True, "freigabe_id": aid, "geschaetzter_wert": wert, "urteil": urteil,
+                    "hinweis": "1-Tap-Freigabe (Ja/Nein) an den CEO gesendet."}
         if name == "investment_scorecard":
             return _redact_obj(eng.scorecard(), sec)
         if name == "investment_status":

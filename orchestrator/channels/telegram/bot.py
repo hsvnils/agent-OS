@@ -156,13 +156,15 @@ def _build_ctx(cfg: dict, secrets: dict):
     _crm_proj = SupabaseCrmProjection(SupabaseClient(_sb_auth)) if _sb_auth.verfuegbar() else None
     crm = CrmStore(ROOT / "crm" / "log.jsonl", secrets=secret_values, changelog=changelog, projektor=_crm_proj,
                    notify=notifications.enqueue)
+    from ...investment.approvals import ApprovalStore
+    approvals = ApprovalStore(ROOT / "approvals" / "log.jsonl", secrets=secret_values)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,
                        notifications=notifications, agenda=agenda, secret_dict=secrets,
                        kosten=kosten, aktivitaet=aktivitaet, visuals=[],
                        brain=brain, insights=insights, investment=investment, crm=crm,
-                       trajektorien=trajektorien, social=social), secret_values
+                       trajektorien=trajektorien, social=social, approvals=approvals), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:
@@ -173,6 +175,30 @@ def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:
             return json.loads(r.read())
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
+
+
+def _send_approval(token: str, chat_id, apv: dict) -> dict:
+    """Schickt eine Freigabe-Anfrage mit Inline-Keyboard (Ja/Nein). Der Klick kommt als callback_query zurueck."""
+    kb = {"inline_keyboard": [[{"text": "✅ Ja", "callback_data": f"apv:{apv['id']}:yes"},
+                               {"text": "❌ Nein", "callback_data": f"apv:{apv['id']}:no"}]]}
+    return _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(apv.get("frage", "Freigabe?")),
+                                       "reply_markup": json.dumps(kb)})
+
+
+def _approval_ausfuehren(ctx, apv: dict) -> str:
+    """Fuehrt die bei 'Ja' hinterlegte Aktion aus und liefert eine kurze Ergebnis-Zeile."""
+    typ = apv.get("typ")
+    p = apv.get("payload") or {}
+    if typ == "paper_order":
+        eng = getattr(ctx, "investment", None)
+        if eng is None:
+            return "Investment-Abteilung nicht verfuegbar."
+        r = eng.paper_order(p.get("symbol", ""), p.get("qty", 0), p.get("side", "buy"),
+                            asset=p.get("asset", "aktie"), bestaetigt=True)
+        if r.get("ok"):
+            return f"Paper-Order platziert: {p.get('side')} {p.get('qty'):g} {p.get('symbol')} (~{r.get('geschaetzter_wert')} USD)."
+        return "Order nicht ausgefuehrt: " + str(r.get("grund") or r.get("hinweis") or "unbekannt")
+    return "Unbekannter Freigabe-Typ."
 
 
 def _send_document(token: str, chat_id, dateiname: str, inhalt: bytes, caption: str = "") -> dict:
@@ -731,8 +757,42 @@ def main() -> None:
                             pass
             except Exception as exc:
                 print(f"[notify] Zustell-Fehler: {exc}", flush=True)
+        # Offene 1-Tap-Freigaben als Ja/Nein-Buttons zustellen (Schritt 5).
+        if allowed and getattr(ctx, "approvals", None) is not None:
+            try:
+                for a in ctx.approvals.pending_unsent()[:5]:
+                    if _send_approval(token, allowed, a).get("ok"):
+                        ctx.approvals.mark_sent(a["id"])
+            except Exception as exc:
+                print(f"[approval] Zustell-Fehler: {exc}", flush=True)
         for u in upd.get("result", []):
             offset = u["update_id"] + 1
+            # Button-Klick (callback_query) auf eine Freigabe-Anfrage
+            cb = u.get("callback_query")
+            if cb:
+                try:
+                    data = cb.get("data") or ""
+                    cbchat = str((((cb.get("message") or {}).get("chat")) or {}).get("id", ""))
+                    if allowed and cbchat != allowed:
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "Nicht autorisiert."})
+                    elif data.startswith("apv:") and getattr(ctx, "approvals", None) is not None:
+                        _, aid, ent = data.split(":", 2)
+                        apv = ctx.approvals.get(aid)
+                        if not apv or apv.get("status") != "offen":
+                            _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "Bereits entschieden."})
+                        else:
+                            ja = ent == "yes"
+                            res = _approval_ausfuehren(ctx, apv) if ja else "Abgelehnt."
+                            ctx.approvals.entscheiden(aid, ja, ergebnis=(res if ja else "abgelehnt"))
+                            _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": ("Ja" if ja else "Nein")})
+                            mid = (cb.get("message") or {}).get("message_id")
+                            if mid:
+                                _api(token, "editMessageText",
+                                     {"chat_id": cbchat, "message_id": mid,
+                                      "text": fuer_telegram(apv.get("frage", "") + f"\n\n{'✅ Ja' if ja else '❌ Nein'} — {res}")})
+                except Exception as exc:
+                    print(f"[callback] Fehler: {exc}", flush=True)
+                continue
             msg = u.get("message") or u.get("edited_message")
             if not msg:
                 continue

@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 12:50] — Claude Code — Telegram: 1-Tap-Freigaben (Ja/Nein-Buttons) + Paper-Order-Freigabe (Schritt 5)
+- **Was:** Inline-Keyboard-Freigaben ueber Telegram. `orchestrator/investment/approvals.py` (`ApprovalStore`,
+  append-only, Zustand je id gefaltet; add/pending_unsent/mark_sent/get/offen/**entscheiden idempotent**).
+  Bot (`bot.py`): stellt offene Freigaben als **Ja/Nein-Inline-Keyboard** zu (`_send_approval`, gleiches
+  Outbox-Muster wie Notifications), verarbeitet jetzt **`callback_query`** (Button-Klick) -> `entscheiden` +
+  fuehrt bei „Ja" die Aktion aus (`_approval_ausfuehren`) + editiert die Nachricht mit dem Ergebnis; „Nein" =
+  abgelehnt. Neues Tool **`paper_order_freigabe`** (hoa_tools): prueft die Autonomie-Leitplanken (informativ),
+  legt eine Paper-Order-Freigabe an und schickt dem CEO die Ja/Nein-Buttons; bei „Ja" wird die **simulierte**
+  Order platziert (`engine.paper_order(bestaetigt=true)`, harte Risk-Pruefung). Nur Modus 'paper', kein echtes
+  Geld. `ToolContext.approvals` ergaenzt; `approvals/log.jsonl` in .gitignore + sync-exclude. 6 neue Tests;
+  volle Suite 536 gruen.
+- **Warum:** CEO-Frage „Ja/Nein-Buttons per Telegram?" -> ja. Schritt 5: der Human-in-the-Loop-Kanal fuer
+  `autonomy_policy.benoetigt_freigabe`. Noch KEINE autonome Ausfuehrung -- LUNA schlaegt vor, der CEO tippt.
+- **Betroffen:** `orchestrator/investment/approvals.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/tests/test_investment_approvals.py`, `.gitignore`,
+  `deploy/sync-to-nas.sh`.
+
 ## [2026-07-04 12:15] — Claude Code — Investment: Mehr-Signal-Prognose (v2) + Signal-Attribution (Schritt 4c)
 - **Was:** Der Forecaster nutzt jetzt ein **Mehr-Signal-Modell (`v2-multisignal`)** statt reinem Momentum.
   Neues `orchestrator/investment/signals.py` (`berechne(closes)`): gerichtete Signale **Momentum**, **Trend
