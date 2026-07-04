@@ -1,5 +1,6 @@
-// LUNA-OS UI-V2 -- helles, dashboard-/sektionsbasiertes UI (opt-in, siehe UI.md Abschnitt V2).
-// Nutzt DIESELBEN /api/*-Endpunkte wie V1, aber ohne Fenster (WinBox). Deutsch, echte Daten.
+// LUNA-OS UI-V2 -- helles, dashboard-/sektionsbasiertes UI (opt-in, siehe UI.md Abschnitt 11).
+// Nutzt DIESELBEN /api/*-Endpunkte wie V1, aber ohne Fenster (WinBox). Deutsch mit echten Umlauten.
+// Ziel: VOLLE Paritaet zu V1 -- alle Bereiche, Felder und Aktionen sind auch hier erreichbar.
 "use strict";
 
 /* =========================== Helfer =========================== */
@@ -11,33 +12,46 @@ const jpost = async (u, body) => { try { const r = await fetch(u, { method: "POS
 const num = (v, d = 1) => { const n = Number(v); return isFinite(n) ? n.toFixed(d) : "–"; };
 const pct = (v) => isFinite(Number(v)) ? Math.round(Number(v) * 100) + " %" : "–";
 const firstOf = (o, keys, dflt = "") => { for (const k of keys) if (o && o[k] != null && o[k] !== "") return o[k]; return dflt; };
+const zeit = (ts) => { try { return new Date(ts).toLocaleString("de-DE", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }); } catch { return ""; } };
 function zeitKurz(t) {
-  if (!t) return "";
-  const d = new Date(t); if (isNaN(d)) return String(t).slice(0, 16).replace("T", " ");
+  if (!t) return ""; const d = new Date(t); if (isNaN(d)) return String(t).slice(0, 16).replace("T", " ");
   const s = Math.floor((Date.now() - d.getTime()) / 1000);
   if (s < 60) return "gerade eben"; if (s < 3600) return Math.floor(s / 60) + " Min";
   if (s < 86400) return Math.floor(s / 3600) + " Std"; return Math.floor(s / 86400) + " T";
 }
 
+/* Status-/Label-Karten (1:1 aus V1 uebernommen -> gleiche Begriffe) */
+const trendLbl = { new: "Neu", reviewing: "In Prüfung", draft_created: "Entwurf erstellt", approved: "Freigegeben", published: "Veröffentlicht", ignored: "Ignoriert" };
+const ideaLbl = { inbox: "Eingang", sorted: "Einsortiert", planned: "Geplant", in_progress: "In Arbeit", done: "Erledigt", archived: "Archiviert" };
+const draftLbl = { idea: "Idee", in_progress: "In Arbeit", review: "Review", approved: "Freigegeben", scheduled: "Geplant", published: "Veröffentlicht", archived: "Archiviert" };
+const recLbl = { use: "Nutzen", investigate: "Prüfen", later: "Später", ignore: "Ignorieren" };
+const rolleLbl = { owner: "Owner (Voll)", admin: "Admin (Voll)", team: "Team (Content+CRM)", content: "Content", viewer: "Viewer" };
+const cutLbl = { done: "Fertig", running: "Läuft", queued: "In Warteschlange", failed: "Fehler" };
+const cutBadge = { done: "ok", running: "wartet", queued: "wartet", failed: "err" };
+const evLbl = { eingereicht: "eingereicht", freigegeben: "freigegeben", abgelehnt: "abgelehnt", in_umsetzung: "in Umsetzung", erledigt: "erledigt", fehlgeschlagen: "fehlgeschlagen", geloescht: "gelöscht" };
+const kanal = { instagram: "📸 Instagram", mail: "✉️ Mail", telegram: "💬 Telegram", manuell: "✎ Manuell" };
+const badgeCls = (st) => ({ eingereicht: "wartet", freigegeben: "ok", abgelehnt: "err", in_umsetzung: "wartet", erledigt: "ok", aktiv: "aktiv", inaktiv: "neutral" }[st] || "neutral");
+
 /* =========================== Zustand =========================== */
 let ME = { apps: null, role: "owner", display_name: "CEO", username: "" };
 let PREFS = {};
-let STATE = {}, OVERVIEW = {}, LOOP = {};
-let AKTIV = "dash";
+let STATE = {}, OVERVIEW = {}, LOOP = {}, INVEST = {};
+let AKTIV = "dash", SUBTAB = {};
 
-/* Sektionen (Icon-Nav). modul = Gate ueber /api/me.apps (null = immer sichtbar). */
+/* Sektionen (Icon-Nav). app = Gate ueber /api/me.apps (null = immer sichtbar). Deckt ALLE V1-Bereiche ab. */
 const SECTIONS = [
   { id: "dash", icon: "▦", label: "Dashboard", app: "home" },
-  { id: "approvals", icon: "✔", label: "Freigaben", app: "auftraege" },
+  { id: "freigaben", icon: "✔", label: "Freigaben", app: "auftraege" },
   { id: "investment", icon: "📈", label: "Investment", app: "investment" },
   { id: "crm", icon: "🤝", label: "CRM", app: "crm" },
   { id: "content", icon: "✎", label: "Content", app: "trends" },
   { id: "cutter", icon: "🎬", label: "Cutter", app: "cutter" },
-  { id: "knowledge", icon: "🧠", label: "Wissen", app: "wissen" },
-  { id: "agents", icon: "🛰", label: "Agenten", app: "home" },
+  { id: "wissen", icon: "🧠", label: "Wissen", app: "wissen" },
+  { id: "agenten", icon: "🛰", label: "Agenten", app: "home" },
+  { id: "system", icon: "📡", label: "System", app: null },
   { id: "team", icon: "👥", label: "Team", app: "team" },
 ];
-const darf = (app) => app === "home" || !ME.apps || ME.apps.includes(app);
+const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.includes(app);
 
 /* =========================== Theme / Shell =========================== */
 function applyTheme() {
@@ -46,368 +60,458 @@ function applyTheme() {
   document.documentElement.classList.toggle("v2-dark", dark);
   document.documentElement.classList.toggle("v2-light", !dark);
 }
-function toggleTheme() {
-  const m = localStorage.getItem("luna-v2-theme") || "light";
-  localStorage.setItem("luna-v2-theme", m === "dark" ? "light" : "dark");
-  applyTheme();
-}
-async function setUiMode(mode) {   // zurueck zu V1
+function toggleTheme() { const m = localStorage.getItem("luna-v2-theme") || "light"; localStorage.setItem("luna-v2-theme", m === "dark" ? "light" : "dark"); applyTheme(); }
+async function setUiMode(mode) {
   if (mode !== "v2") mode = "v1";
   try { localStorage.setItem("luna-ui-mode", mode); } catch { }
-  PREFS = { ...PREFS, ui_version: mode };
-  await jpost("/api/prefs", { prefs: PREFS });
+  PREFS = { ...PREFS, ui_version: mode }; await jpost("/api/prefs", { prefs: PREFS });
   location.href = "/?ui=" + mode;
 }
-
 function buildShell() {
-  // Nav-Icons (modul-gated)
   $("#v2-nav").innerHTML = SECTIONS.filter(s => darf(s.app)).map(s =>
     `<button data-go="${s.id}" class="${s.id === "dash" ? "home " : ""}${s.id === AKTIV ? "active" : ""}" title="${esc(s.label)}">${s.icon}</button>`).join("");
-  // Aktions-Pills (echte Aktionen)
-  const pills = [
-    darf("auftraege") ? `<button class="v2-pill" data-go="approvals">✔ Freigabe pruefen</button>` : "",
+  $("#v2-pills").innerHTML = [
+    darf("auftraege") ? `<button class="v2-pill" data-go="freigaben">✔ Freigabe prüfen</button>` : "",
     darf("investment") ? `<button class="v2-pill" data-act="inv-screen">🔍 Screen starten</button>` : "",
     `<button class="v2-pill" data-toggle-chat>💬 LUNA fragen</button>`,
-    `<button class="v2-pill cta" data-ui-mode="v1">↩ Zurueck zu UI V1</button>`,
+    `<button class="v2-pill cta" data-ui-mode="v1">↩ Zurück zu UI V1</button>`,
   ].filter(Boolean).join("");
-  $("#v2-pills").innerHTML = pills;
-  // Avatar
   const nm = (ME.display_name || ME.username || "L").trim();
-  $("#v2-avatar").textContent = nm.slice(0, 1).toUpperCase();
-  $("#v2-avatar").title = nm;
+  $("#v2-avatar").textContent = nm.slice(0, 1).toUpperCase(); $("#v2-avatar").title = nm + (ME.role === "owner" ? " · Voll-Zugriff" : " · " + (ME.role || ""));
 }
 
 /* =========================== Router =========================== */
-function go(id) {
+const RENDER = {};
+function go(id, sub) {
   if (!SECTIONS.find(s => s.id === id)) id = "dash";
-  AKTIV = id;
+  AKTIV = id; if (sub) SUBTAB[id] = sub;
   document.querySelectorAll("#v2-nav button").forEach(b => b.classList.toggle("active", b.dataset.go === id));
-  const app = $("#v2-app");
-  app.innerHTML = `<div class="v2-empty">Lade …</div>`;
-  ({ dash: renderDash, approvals: renderApprovals, investment: renderInvestment, crm: renderCrm,
-     content: renderContent, cutter: renderCutter, knowledge: renderKnowledge, agents: renderAgents,
-     team: renderTeam })[id]();
+  $("#v2-app").innerHTML = `<div class="v2-empty">Lade …</div>`;
+  (RENDER[id] || renderDash)();
 }
 
-/* =========================== Dashboard =========================== */
-async function ladeDashDaten() {
-  [STATE, OVERVIEW, LOOP] = await Promise.all([
-    jget("/api/state"), jget("/api/overview"), jget("/api/investment/loop")]);
-  STATE = STATE || {}; OVERVIEW = OVERVIEW || {}; LOOP = LOOP || {};
-}
-function sparkFromVerlauf(verlauf) {
-  const v = (verlauf || []).slice(-24);
-  if (!v.length) return "";
-  const vals = v.map(x => Number(x.mae_pct) || 0); const mx = Math.max(...vals, 1);
-  return `<div class="v2-spark">${v.map(x => { const h = Math.round((Number(x.mae_pct) || 0) / mx * 100);
-    const gut = (Number(x.mae_pct) || 0) <= (Number(x.baseline_mae_pct) || 0);
-    return `<i class="${gut ? "g" : "a"}" style="height:${Math.max(6, h)}%"></i>`; }).join("")}</div>`;
-}
-function gaugeSvg(frac) {
-  const p = Math.max(0, Math.min(1, frac || 0)); const ang = Math.PI * (1 - p);
-  const r = 62, cx = 80, cy = 78; const x = cx + r * Math.cos(ang), y = cy - r * Math.sin(ang);
-  const big = p > 0.5 ? 1 : 0;
-  return `<svg viewBox="0 0 160 96" width="180" height="108" aria-hidden="true">
-    <path d="M18 78 A62 62 0 0 1 142 78" fill="none" stroke="var(--v2-line-soft)" stroke-width="13" stroke-linecap="round"/>
-    <path d="M18 78 A62 62 0 ${big} 1 ${x.toFixed(1)} ${y.toFixed(1)}" fill="none"
-      stroke="url(#gg)" stroke-width="13" stroke-linecap="round"/>
-    <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="var(--v2-orange)"/><stop offset=".6" stop-color="var(--v2-green)"/>
-      <stop offset="1" stop-color="var(--v2-blue)"/></linearGradient></defs></svg>`;
-}
-function tile(title, inner, cls = "") {
-  return `<div class="v2-tile ${cls}"><div class="v2-tile-h"><span class="t">${esc(title)}</span><span class="dots">···</span></div>${inner}</div>`;
-}
+/* =========================== Bausteine =========================== */
+function secHead(title, actions = "") { return `<div class="v2-sec-head"><h1>${esc(title)}</h1><div class="actions">${actions}</div></div>`; }
+function tile(title, inner, cls = "", extraHead = "") { return `<div class="v2-tile ${cls}"><div class="v2-tile-h"><span class="t">${esc(title)}</span>${extraHead || `<span class="dots">···</span>`}</div>${inner}</div>`; }
 function kpiTile(title, big, delta, sub, spark) {
   const d = delta ? `<span class="delta ${delta.up ? "up" : "down"}">${delta.up ? "↗" : "↘"} ${esc(delta.text)}</span>` : "";
   return tile(title, `<div class="v2-kpi">${esc(big)} ${d}</div>${sub ? `<div class="v2-sub">${esc(sub)}</div>` : ""}${spark || ""}`);
 }
+const emptyRow = (t) => `<div class="v2-empty">${esc(t)}</div>`;
+function tabs(sec, list) {
+  const cur = SUBTAB[sec] || list[0][0];
+  return `<div class="v2-tabs">${list.map(([id, lbl]) => `<button class="${id === cur ? "active" : ""}" data-tab="${sec}:${id}">${esc(lbl)}</button>`).join("")}</div>`;
+}
+/* Detail-Overlay (ersetzt WinBox-Fenster) */
+function openModal(title, html) {
+  let m = $("#v2-modal"); if (!m) { m = document.createElement("div"); m.id = "v2-modal"; document.body.appendChild(m); }
+  m.innerHTML = `<div class="v2-modal-back" data-modal-close></div><div class="v2-modal-card"><header><b>${esc(title)}</b><button class="v2-icon" data-modal-close>✕</button></header><div class="v2-modal-body">${html}</div></div>`;
+  m.hidden = false;
+}
+function closeModal() { const m = $("#v2-modal"); if (m) m.hidden = true; }
 
+/* Responsiver Fehler-Verlauf-Chart (Modell vs. Baseline), aus V1 portiert */
+function trendChart(verlauf) {
+  const v = (verlauf || []); if (!v.length) return emptyRow("Noch kein Fehler-Verlauf — braucht ausgewertete Prognosen.");
+  const W = 640, H = 150, padL = 30, padR = 10, padT = 10, padB = 20;
+  const max = Math.max(1, ...v.flatMap(p => [p.mae_pct || 0, p.baseline_mae_pct || 0])) * 1.1;
+  const x = i => padL + (v.length <= 1 ? (W - padL - padR) / 2 : i * (W - padL - padR) / (v.length - 1));
+  const y = val => H - padB - ((val || 0) / max) * (H - padT - padB);
+  const line = k => v.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p[k]).toFixed(1)}`).join(" ");
+  const grid = [0, .5, 1].map(f => { const t = max * f, yy = y(t).toFixed(1); return `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" class="v2-cgrid"/><text x="${padL - 5}" y="${+yy + 3}" class="v2-cax" text-anchor="end">${t.toFixed(1)}</text>`; }).join("");
+  const xi = v.length > 2 ? [0, Math.floor((v.length - 1) / 2), v.length - 1] : v.map((_, i) => i);
+  const xl = xi.map(i => `<text x="${x(i).toFixed(1)}" y="${H - 5}" class="v2-cax" text-anchor="middle">${esc((v[i].woche || "").replace("2026-", ""))}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" class="v2-chart">
+    ${grid}<path d="${line("baseline_mae_pct")}" class="v2-line base"/><path d="${line("mae_pct")}" class="v2-line strat"/>${xl}</svg>
+    <div class="v2-legend"><span><i style="background:var(--v2-accent)"></i>Modell</span><span><i style="background:var(--v2-faint)"></i>Baseline</span></div>`;
+}
+function balken(obj, suffix = "Treffer") {
+  return Object.entries(obj || {}).map(([k, a]) =>
+    `<div class="v2-bar-row"><span class="lbl">${esc(k)}</span><div class="v2-bar"><i style="width:${Math.round((a.richtungsquote || 0) * 100)}%"></i></div>
+      <span class="val">${pct(a.richtungsquote)} ${suffix} · n=${a.n}</span></div>`).join("") || emptyRow("–");
+}
+
+/* =========================== Dashboard =========================== */
+RENDER.dash = renderDash;
 async function renderDash() {
-  await ladeDashDaten();
+  [STATE, OVERVIEW, LOOP] = await Promise.all([jget("/api/state"), jget("/api/overview"), jget("/api/investment/loop")]);
+  STATE = STATE || {}; OVERVIEW = OVERVIEW || {}; LOOP = LOOP || {};
   const g = (LOOP.kennzahlen && LOOP.kennzahlen.gesamt) || {};
-  const antraege = STATE.antraege || [];
-  const provs = OVERVIEW.providers || [];
+  const antraege = STATE.antraege || [], provs = OVERVIEW.providers || [];
   const connected = Number(OVERVIEW.providers_connected) || provs.filter(p => p.konfiguriert || p.connected).length;
   const provFrac = provs.length ? connected / provs.length : 0;
   const budget = OVERVIEW.monatsbudget || firstOf(STATE.finance || {}, ["monatsbudget", "budget"], "–");
-  const aktiv = STATE.aktivitaet || [];
+  const aktiv = STATE.aktivitaet || [], meld = STATE.meldungen || [], research = STATE.research || [];
 
-  // Erste-Schritte (echte System-Bereitschaft)
   const schritte = [
-    { t: "Provider verbunden", done: connected > 0 },
-    { t: "Watchlist/Investment aktiv", done: !!(LOOP.panel && LOOP.panel.symbole) },
+    { t: "Datenquellen verbunden", done: connected > 0 },
+    { t: "Investment-Loop aktiv", done: !!(LOOP.panel && LOOP.panel.symbole) },
     { t: "Team eingerichtet", done: (OVERVIEW.counts && OVERVIEW.counts.wissen != null) },
     { t: "Budget gesetzt", done: budget && budget !== "–" },
   ];
   const doneN = schritte.filter(s => s.done).length;
-
   const kpis = [
     kpiTile("Monatsbudget", String(budget), null, "aus finance/budget.md"),
     kpiTile("Prognose-Trefferquote", g.n ? pct(g.richtungsquote) : "–",
       g.n ? { up: (g.anteil_besser_baseline || 0) >= .5, text: pct(g.anteil_besser_baseline) + " > Baseline" } : null,
-      g.n ? `n=${g.n} · MAE ${num(g.mae_pct)} vs ${num(g.baseline_mae_pct)}` : "noch keine Auswertung",
-      sparkFromVerlauf(LOOP.verlauf)),
-    kpiTile("Offene Freigaben", String(antraege.length),
-      antraege.length ? { up: false, text: "wartet" } : { up: true, text: "frei" },
+      g.n ? `n=${g.n} · MAE ${num(g.mae_pct)} vs ${num(g.baseline_mae_pct)}` : "noch keine Auswertung", sparkFromVerlauf(LOOP.verlauf)),
+    kpiTile("Offene Freigaben", String(antraege.length), antraege.length ? { up: false, text: "wartet" } : { up: true, text: "frei" },
       antraege.length ? "warten auf CEO-Entscheidung" : "alles freigegeben"),
-    kpiTile("Provider verbunden", `${connected}/${provs.length || "–"}`,
-      { up: provFrac >= .5, text: pct(provFrac) }, "externe Datenquellen"),
+    kpiTile("Provider verbunden", `${connected}/${provs.length || "–"}`, { up: provFrac >= .5, text: pct(provFrac) }, "externe Datenquellen"),
   ].join("");
-
-  // Investment-Lern-Loop (w8)
   const loopTile = tile("Investment · Lern-Loop", `
-    <div class="v2-kpi">${g.n ? pct(g.richtungsquote) : "–"} <span class="delta ${(g.anteil_besser_baseline || 0) >= .5 ? "up" : "down"}">${g.n ? pct(g.anteil_besser_baseline) + " schlägt Baseline" : ""}</span></div>
-    <div class="v2-sub">Richtungsquote · MAE ${num(g.mae_pct)} vs Baseline ${num(g.baseline_mae_pct)} · n=${g.n || 0}</div>
-    ${sparkFromVerlauf(LOOP.verlauf)}
-    <div class="v2-legend"><span><i style="background:var(--v2-green)"></i>schlägt Baseline</span><span><i style="background:var(--v2-accent)"></i>darunter</span></div>`, "w8");
-
-  // Compliance-Puls (w4)
-  const policy = [
-    { t: "Datenquellen verbunden", ok: provFrac >= .5 },
-    { t: "Freigabe-Tore aktiv", ok: true },
-    { t: "Security-Audit taeglich", ok: true },
-  ];
+    <div class="v2-kpi">${g.n ? pct(g.richtungsquote) : "–"} <span class="delta ${(g.anteil_besser_baseline || 0) >= .5 ? "up" : "down"}">${g.n ? pct(g.anteil_besser_baseline) + " schlaegt Baseline" : ""}</span></div>
+    <div class="v2-sub">Richtungsquote · MAE ${num(g.mae_pct)} vs Baseline ${num(g.baseline_mae_pct)} · n=${g.n || 0}</div>${trendChart(LOOP.verlauf)}`, "w8");
+  const policy = [{ t: "Datenquellen verbunden", ok: provFrac >= .5 }, { t: "Freigabe-Tore aktiv", ok: true }, { t: "Security-Audit täglich", ok: true }];
   const pulsTile = tile("Compliance-Puls", `
     <div class="v2-gauge">${gaugeSvg(provFrac)}<div class="val">${pct(provFrac)}</div><div class="cap">Anbindungs-Abdeckung</div></div>
     <div class="v2-policy">${policy.map(p => `<div class="row"><span>${esc(p.t)}</span><span class="v2-badge ${p.ok ? "aktiv" : "wartet"}">${p.ok ? "Aktiv" : "Offen"}</span></div>`).join("")}</div>`, "w4");
-
-  // Live-Aktivitaet (w8)
-  const live = aktiv.slice(0, 6).map(a => {
-    const name = firstOf(a, ["titel", "text", "name", "aktion"], "Ereignis");
-    const t = firstOf(a, ["ts", "zeit", "zeitpunkt", "erstellt_am"], "");
-    return `<tr><td><b>${esc(String(name).slice(0, 60))}</b></td><td>${esc(zeitKurz(t))}</td><td><span class="v2-badge live">Live</span></td></tr>`;
-  }).join("") || `<tr><td colspan="3" class="v2-empty">Noch keine Aktivitaet.</td></tr>`;
-  const liveTile = tile("Live-Aktivitaet", `<table class="v2-table"><thead><tr><th>Ereignis</th><th>Zeit</th><th>Status</th></tr></thead><tbody>${live}</tbody></table>`, "w8");
-
-  // Erste-Schritte (w4)
-  const stepTile = tile("Erste Schritte", `
-    <div class="v2-sub">System-Bereitschaft</div>
-    <div class="v2-progress"><i style="width:${Math.round(doneN / schritte.length * 100)}%"></i></div>
+  const live = aktiv.slice(0, 8).map(a => `<tr><td><b>${esc(String(firstOf(a, ["akteur", "titel", "name"], "Ereignis")))}</b> ${esc(String(firstOf(a, ["aktion", "text"], "")).slice(0, 70))}</td><td>${esc(zeitKurz(firstOf(a, ["ts", "zeit", "erstellt_am"], "")))}</td><td><span class="v2-badge live">Live</span></td></tr>`).join("") || `<tr><td colspan="3" class="v2-empty">Noch keine Aktivität.</td></tr>`;
+  const liveTile = tile("Live-Aktivität", `<table class="v2-table"><thead><tr><th>Ereignis</th><th>Zeit</th><th>Status</th></tr></thead><tbody>${live}</tbody></table>`, "w8");
+  const stepTile = tile("Erste Schritte", `<div class="v2-sub">System-Bereitschaft</div><div class="v2-progress"><i style="width:${Math.round(doneN / schritte.length * 100)}%"></i></div>
     ${schritte.map(s => `<div class="v2-check ${s.done ? "done" : ""}"><span class="mark">${s.done ? "✓" : ""}</span>${esc(s.t)}</div>`).join("")}`, "w4");
-
+  const miniK = [kpiTile("Meldungen", String(meld.length), null, "ungelesen"), kpiTile("Research-Tickets", String(research.length), null, "offen")].join("");
   $("#v2-app").innerHTML = `
-    <div class="v2-welcome"><h1>Willkommen zurueck, ${esc(ME.display_name || "CEO")}</h1>
+    <div class="v2-welcome"><h1>Willkommen zurück, ${esc(ME.display_name || "CEO")}</h1>
       <p>Dein KI-Kontrollraum — Agenten, Kosten und Compliance im Blick.</p></div>
-    <div class="v2-grid">
-      ${kpis}
-      ${loopTile}${pulsTile}
-      ${liveTile}${stepTile}
-    </div>`;
+    <div class="v2-grid">${kpis}${loopTile}${pulsTile}${liveTile}${stepTile}${miniK}</div>`;
+}
+function sparkFromVerlauf(verlauf) {
+  const v = (verlauf || []).slice(-28); if (!v.length) return "";
+  const mx = Math.max(...v.map(x => Number(x.mae_pct) || 0), 1);
+  return `<div class="v2-spark">${v.map(x => { const h = Math.round((Number(x.mae_pct) || 0) / mx * 100); const gut = (Number(x.mae_pct) || 0) <= (Number(x.baseline_mae_pct) || 0); return `<i class="${gut ? "g" : "a"}" style="height:${Math.max(6, h)}%"></i>`; }).join("")}</div>`;
+}
+function gaugeSvg(frac) {
+  const p = Math.max(0, Math.min(1, frac || 0)), ang = Math.PI * (1 - p), r = 62, cx = 80, cy = 78;
+  const x = cx + r * Math.cos(ang), y = cy - r * Math.sin(ang), big = p > 0.5 ? 1 : 0;
+  return `<svg viewBox="0 0 160 96" width="180" height="108" aria-hidden="true">
+    <path d="M18 78 A62 62 0 0 1 142 78" fill="none" stroke="var(--v2-line-soft)" stroke-width="13" stroke-linecap="round"/>
+    <path d="M18 78 A62 62 0 ${big} 1 ${x.toFixed(1)} ${y.toFixed(1)}" fill="none" stroke="url(#gg)" stroke-width="13" stroke-linecap="round"/>
+    <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--v2-orange)"/><stop offset=".6" stop-color="var(--v2-green)"/><stop offset="1" stop-color="var(--v2-blue)"/></linearGradient></defs></svg>`;
 }
 
 /* =========================== Freigaben =========================== */
-function secHead(title, actions = "") {
-  return `<div class="v2-sec-head"><h1>${esc(title)}</h1><div class="actions">${actions}</div></div>`;
-}
-async function renderApprovals() {
+RENDER.freigaben = renderFreigaben;
+async function renderFreigaben() {
   STATE = await jget("/api/state") || STATE;
   const a = STATE.antraege || [];
-  const rows = a.map(x => {
-    const id = firstOf(x, ["id"]); const titel = firstOf(x, ["titel", "titel_kurz", "name"], "Antrag");
-    const von = firstOf(x, ["von", "abteilung", "agent"], ""); const st = firstOf(x, ["status"], "eingereicht");
-    const kat = firstOf(x, ["kategorie"], "");
-    return `<div class="v2-list-row"><div class="grow"><b>${esc(titel)}</b><small>${esc(von)}${kat ? " · " + esc(kat) : ""}</small></div>
-      <span class="v2-badge ${esc(st)}">${esc(st)}</span>
-      <button class="v2-btn ok" data-act="antrag-ok" data-id="${esc(id)}">Freigeben</button>
-      <button class="v2-btn danger" data-act="antrag-no" data-id="${esc(id)}">Ablehnen</button></div>`;
-  }).join("") || `<div class="v2-empty">Keine offenen Freigaben — alles erledigt.</div>`;
-  $("#v2-app").innerHTML = secHead("Freigaben") + `<div class="v2-tile w12">${rows}</div>`;
+  const cards = a.map(x => {
+    const id = x.id, st = x.status || "eingereicht";
+    const btns = [
+      st === "eingereicht" ? `<button class="v2-btn ok" data-act="antrag-freigeben" data-id="${esc(id)}">✓ Freigeben</button>` : "",
+      (st === "eingereicht" || st === "freigegeben") ? `<button class="v2-btn danger" data-act="antrag-ablehnen" data-id="${esc(id)}">✕ Ablehnen</button>` : "",
+      (st === "eingereicht" || st === "freigegeben") ? `<button class="v2-btn" data-act="antrag-revidieren" data-id="${esc(id)}">✏️ Revidieren</button>` : "",
+      `<button class="v2-btn" data-act="antrag-detail" data-id="${esc(id)}">📄 Details</button>`,
+      `<button class="v2-btn" data-act="antrag-mehr" data-id="${esc(id)}">🔍 Mehr Info</button>`,
+      `<button class="v2-btn" data-act="antrag-loeschen" data-id="${esc(id)}">🗑 Löschen</button>`,
+    ].filter(Boolean).join("");
+    return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${badgeCls(st)}">${esc(st)}</span><b>${esc(x.titel)}</b></div>
+      <div class="v2-sub">von ${esc(x.von)}${x.kategorie ? " · " + esc(x.kategorie) : ""} · ${esc(id)}</div>
+      <div class="v2-desc">${esc(x.beschreibung) || "<i>keine Beschreibung</i>"}</div><div class="v2-card-actions">${btns}</div></div>`;
+  }).join("") || emptyRow("Keine offenen Freigaben — alles erledigt. 🎉");
+  const bar = a.length ? `<button class="v2-btn" data-act="antrag-reformat">🔄 Alle neu formatieren</button>` : "";
+  $("#v2-app").innerHTML = secHead("Freigaben", bar) + `<div class="v2-cards">${cards}</div>`;
 }
 
-/* =========================== Investment =========================== */
+/* =========================== Investment (FULL) =========================== */
+RENDER.investment = renderInvestment;
 async function renderInvestment() {
-  const [inv, loop] = await Promise.all([jget("/api/investment"), jget("/api/investment/loop")]);
-  LOOP = loop || {}; const g = (LOOP.kennzahlen && LOOP.kennzahlen.gesamt) || {};
-  const mk = LOOP.insider_kontrolle;
-  const vers = Object.entries((LOOP.kennzahlen && LOOP.kennzahlen.je_version) || {}).map(([k, v]) =>
-    `<div class="v2-list-row"><div class="grow"><b>${esc(k)}</b><small>MAE ${num(v.mae_pct)} vs ${num(v.baseline_mae_pct)} · Richtung ${pct(v.richtungsquote)} · n=${v.n}</small></div>
-      <span class="v2-badge ${(v.anteil_besser_baseline || 0) >= .5 ? "ok" : "wartet"}">${pct(v.anteil_besser_baseline)} schlägt Baseline</span></div>`).join("") || `<div class="v2-empty">Noch keine Versions-Daten.</div>`;
-  const offen = (LOOP.offene_prognosen || []).slice(0, 10).map(f =>
-    `<tr><td><b>${esc(f.symbol)}</b></td><td>${esc(f.asset || "")}</td><td>${f.ziel_return_pct > 0 ? "+" : ""}${num(f.ziel_return_pct)} %</td><td>${pct(f.konfidenz)}</td><td>${esc(f.faellig_am || "")}</td></tr>`).join("")
-    || `<tr><td colspan="5" class="v2-empty">Keine offenen Prognosen.</td></tr>`;
-  const mkTile = mk && mk.insider && mk.insider.n ? tile("Marktdrift-Kontrolle (Insider vs. Markt)", `
-    <div class="v2-list-row"><div class="grow"><b>Insider-Wochen</b><small>n=${mk.insider.n}</small></div>
-      <span>Richtung ${pct(mk.insider.richtung_pct)} · schlägt Markt ${pct(mk.insider.schlaegt_markt_pct)} · Ø Alpha ${num(mk.insider.alpha_schnitt_pct)} %</span></div>
-    <div class="v2-list-row"><div class="grow"><b>Basisrate (alle Wochen)</b><small>n=${mk.basisrate.n}</small></div>
-      <span>Richtung ${pct(mk.basisrate.richtung_pct)} · schlägt Markt ${pct(mk.basisrate.schlaegt_markt_pct)}</span></div>
-    <div class="v2-sub">Vorsprung Insider: ${mk.edge_richtung_pp > 0 ? "+" : ""}${mk.edge_richtung_pp} pp Richtung · ${mk.edge_markt_pp > 0 ? "+" : ""}${mk.edge_markt_pp} pp schlägt-Markt</div>`, "w12") : "";
-  const actions = `<button class="v2-btn" data-act="inv-sammeln">Jetzt sammeln</button>
-    <button class="v2-btn" data-act="inv-backfill">Historie laden</button>
-    <button class="v2-btn" data-act="inv-screen">Screen</button>
-    <button class="v2-btn" data-act="inv-insider">Insider-Scan</button>`;
-  $("#v2-app").innerHTML = secHead("Investment", actions) + `<div class="v2-grid">
-    ${kpiTile("Richtungsquote", g.n ? pct(g.richtungsquote) : "–", g.n ? { up: (g.anteil_besser_baseline || 0) >= .5, text: pct(g.anteil_besser_baseline) } : null, `n=${g.n || 0}`, sparkFromVerlauf(LOOP.verlauf))}
-    ${kpiTile("MAE (Fehler)", num(g.mae_pct), null, `Baseline ${num(g.baseline_mae_pct)}`)}
-    ${kpiTile("Modus", esc((inv && inv.modus) || "–"), null, "Handels-Modus")}
-    ${kpiTile("Watchlist", String((inv && inv.watchlist ? inv.watchlist.length : 0)), null, "beobachtete Werte")}
-    ${tile("Je Modell-Version", vers, "w6")}
-    ${tile("Offene Prognosen", `<table class="v2-table"><thead><tr><th>Symbol</th><th>Klasse</th><th>Ziel</th><th>Konf.</th><th>faellig</th></tr></thead><tbody>${offen}</tbody></table>`, "w6")}
-    ${mkTile}
-  </div>`;
+  [INVEST, LOOP] = await Promise.all([jget("/api/investment"), jget("/api/investment/loop")]);
+  INVEST = INVEST || {}; LOOP = LOOP || {};
+  const i = INVEST, g = (LOOP.kennzahlen && LOOP.kennzahlen.gesamt) || {}, mk = LOOP.insider_kontrolle;
+  const sc = i.scorecard || {}, h = i.historie || {}, jt = h.je_tabelle || {};
+  const scText = sc.ausgewertet ? `${pct(sc.trefferquote)} (${sc.treffer}/${sc.ausgewertet})` : "noch keine Auswertung";
+  const histText = h.eintraege_gesamt ? `${h.eintraege_gesamt} Einträge · ${jt.forecasts || 0} Prognosen · ${jt.actuals || 0} ausgewertet · ${jt.screening || 0} Screens` : "noch leer";
+  const prov = (i.provider || []).map(p => `<span class="v2-chip ${p.konfiguriert ? "on" : "off"}">${esc(p.name)}</span>`).join(" ");
+  const wl = (i.watchlist || []).map(w => `<span class="v2-chip"><b>${esc(w.symbol)}</b> <small>${esc(w.asset)}</small><button class="chip-x" data-act="inv-remove" data-id="${esc(w.symbol)}" title="Entfernen">✕</button></span>`).join("") || "<i>leer</i>";
+  const sl = (i.shortlist || []).map(s => { const c = s.veraenderung_pct, v = (c > 0 ? "+" : "") + (c == null ? "?" : Number(c).toFixed(1)) + "%";
+    return `<div class="v2-list-row klick" data-act="inv-detail" data-id="${esc(s.symbol)}" data-asset="${esc(s.asset || "aktie")}"><span style="color:${c >= 0 ? "var(--v2-green)" : "var(--v2-red)"};font-weight:700;width:64px">${v}</span><div class="grow"><b>${esc(s.symbol)}</b> <small>${esc(s.asset)} · ${esc(s.quelle)}</small></div><span>›</span></div>`; }).join("") || emptyRow("Noch kein Screen — klick auf Screen jetzt.");
+  const sug = (i.vorschlaege || []).map(s => `<div class="v2-list-row klick" data-act="inv-detail" data-id="${esc(s.symbol)}" data-asset="${/^[a-z]/.test(s.symbol || "") && (s.symbol || "").length > 4 ? "krypto" : "aktie"}">
+    <span class="v2-badge ${s.risiko_label === "spekulativ" ? "wartet" : "ok"}">${esc(s.risiko_label || "")}</span>
+    <div class="grow"><b>${esc((s.aktion || "").toUpperCase())} ${esc(s.symbol)}</b><small>${esc(s.grund || "")} · Konfidenz ${pct(s.konfidenz)}</small></div><span>›</span></div>`).join("") || emptyRow("Noch keine Vorschläge.");
+  const ins = (i.insider || []).map(s => `<div class="v2-list-row"><span class="v2-badge wartet">Insider</span><div class="grow"><b>${esc(s.symbol)}</b> <small>${s.cluster || 1} Insider · ~${s.betrag != null ? esc(s.betrag) : "?"} USD · ${esc(s.rolle || "k.A.")} · Konf. ${pct(s.konfidenz)}${s.datum ? " · " + esc(s.datum) : ""}</small></div>${s.filing_url ? `<a href="${esc(s.filing_url)}" target="_blank" rel="noopener">Form 4 ↗</a>` : ""}</div>`).join("") || emptyRow("Noch keine Insider-Signale — klick auf Insider-Scan.");
+  const vers = Object.entries((LOOP.kennzahlen && LOOP.kennzahlen.je_version) || {}).map(([k, a]) =>
+    `<div class="v2-list-row"><div class="grow"><b>${esc(k)}</b><small>MAE ${num(a.mae_pct)} vs ${num(a.baseline_mae_pct)} · Richtung ${pct(a.richtungsquote)} · n=${a.n}</small></div><span class="v2-badge ${(a.anteil_besser_baseline || 0) >= .5 ? "ok" : "wartet"}">${pct(a.anteil_besser_baseline)} schlägt Baseline</span></div>`).join("") || emptyRow("Noch keine Versions-Daten.");
+  const offen = (LOOP.offene_prognosen || []).slice(0, 12).map(f => { const up = f.richtung === "steigt", dn = f.richtung === "faellt";
+    return `<tr><td style="color:${up ? "var(--v2-green)" : dn ? "var(--v2-red)" : "var(--v2-muted)"}">${up ? "▲" : dn ? "▼" : "▬"} ${(f.ziel_return_pct > 0 ? "+" : "") + num(f.ziel_return_pct)}%</td><td><b>${esc(f.symbol)}</b></td><td>${esc(f.asset || "")}</td><td>${pct(f.konfidenz)}</td><td>${esc(f.faellig_am || "")}</td></tr>`; }).join("") || `<tr><td colspan="5" class="v2-empty">Keine offenen Prognosen.</td></tr>`;
+  const reg = (LOOP.register || []).slice(0, 10).map(d => `<tr><td style="color:${d.besser_als_baseline ? "var(--v2-green)" : "var(--v2-amber)"}">Δ ${num(d.fehler_abs_pct)}%</td><td><b>${esc(d.symbol)}</b> ${esc(d.asset || "")}</td><td>${num(d.prognose_return_pct)}% → ${num(d.real_return_pct)}%${d.richtungstreffer ? " ✓" : ""}${d.backtest ? " · BT" : ""}</td><td><span class="v2-badge ${d.besser_als_baseline ? "ok" : "wartet"}">${d.besser_als_baseline ? "schlägt Baseline" : "unter Baseline"}</span></td></tr>`).join("") || `<tr><td colspan="4" class="v2-empty">Register noch leer.</td></tr>`;
+  const lp = LOOP.leitplanken, lpHtml = lp ? `<div class="v2-lp-status ${lp.autonom_aktiv ? "on" : "off"}"><span class="dot"></span>${lp.autonom_aktiv ? "Autonomes Handeln AKTIV (Modus " + esc(lp.modus) + ")" : "Autonomes Handeln inaktiv — Modus " + esc(lp.modus || "advisory")}</div>${(lp.konfiguration || []).map(c => `<div class="v2-list-row"><div class="grow"><b>${esc(c.label)}</b></div><span>${esc(c.wert)}</span></div>`).join("")}` : emptyRow("–");
+  const mkHtml = mk && mk.insider && mk.insider.n ? `
+    <div class="v2-list-row"><div class="grow"><b>Insider-Wochen</b><small>n=${mk.insider.n}</small></div><span>Richtung ${pct(mk.insider.richtung_pct)} · schlägt Markt ${pct(mk.insider.schlaegt_markt_pct)} · Ø Alpha ${num(mk.insider.alpha_schnitt_pct)}%</span></div>
+    <div class="v2-list-row"><div class="grow"><b>Basisrate (alle Wochen)</b><small>n=${mk.basisrate.n}</small></div><span>Richtung ${pct(mk.basisrate.richtung_pct)} · schlägt Markt ${pct(mk.basisrate.schlaegt_markt_pct)}</span></div>
+    <div class="v2-sub">Vorsprung: ${mk.edge_richtung_pp > 0 ? "+" : ""}${mk.edge_richtung_pp} pp Richtung · ${mk.edge_markt_pp > 0 ? "+" : ""}${mk.edge_markt_pp} pp schlägt-Markt</div>` : emptyRow("Noch keine Marktdrift-Kontrolle.");
+  const actions = `<button class="v2-btn" data-act="inv-sammeln">📥 Jetzt sammeln</button><button class="v2-btn" data-act="inv-backfill">📚 Historie laden</button><button class="v2-btn" data-act="inv-screen">📡 Screen jetzt</button><button class="v2-btn" data-act="inv-insider">🔍 Insider-Scan</button>`;
+  $("#v2-app").innerHTML = secHead("Investment", actions) + `
+    <div class="v2-grid">
+      ${kpiTile("Modus", esc(i.modus || "–"), null, "Handels-Modus")}
+      ${kpiTile("Track-Record", scText.split(" ")[0] || "–", null, scText)}
+      ${kpiTile("Richtungsquote", g.n ? pct(g.richtungsquote) : "–", g.n ? { up: (g.anteil_besser_baseline || 0) >= .5, text: pct(g.anteil_besser_baseline) } : null, `n=${g.n || 0} · MAE ${num(g.mae_pct)} vs ${num(g.baseline_mae_pct)}`, sparkFromVerlauf(LOOP.verlauf))}
+      ${kpiTile("Watchlist", String((i.watchlist || []).length), null, "beobachtete Werte")}
+      ${tile("Watchlist verwalten", `<div style="margin-bottom:10px" class="v2-inv-search"><input id="inv-sym" placeholder="Aktie/Krypto suchen & hinzufügen…" autocomplete="off"><div id="inv-suggest" class="v2-suggest"></div></div><div class="v2-chips">${wl}</div>`, "w6")}
+      ${tile("Provider", `<div class="v2-chips">${prov || "–"}</div><div class="v2-sub" style="margin-top:10px">Historie: ${esc(histText)}</div>`, "w6")}
+      ${tile("Lern-Loop · Fehler-Verlauf", `<div class="v2-sub">${(LOOP.panel || {}).symbole || 0} Werte · ${(LOOP.panel || {}).snapshots || 0} Snapshots · Modell ${esc(LOOP.modell_version || "")}</div>${trendChart(LOOP.verlauf)}`, "w8")}
+      ${tile("Je Anlageklasse", balken((LOOP.kennzahlen || {}).je_asset), "w4")}
+      ${tile("Signal-Attribution", balken((LOOP.kennzahlen || {}).je_signal), "w6")}
+      ${tile("Je Modell-Version", vers, "w6")}
+      ${tile("Marktdrift-Kontrolle (Insider vs. Markt)", mkHtml, "w12")}
+      ${tile("Offene Prognosen", `<table class="v2-table"><thead><tr><th>Ziel</th><th>Symbol</th><th>Klasse</th><th>Konf.</th><th>fällig</th></tr></thead><tbody>${offen}</tbody></table>`, "w6")}
+      ${tile("Abweichungs-Register", `<table class="v2-table"><thead><tr><th>Fehler</th><th>Symbol</th><th>Prognose→real</th><th>Bewertung</th></tr></thead><tbody>${reg}</tbody></table>`, "w6")}
+      ${tile("Shortlist (letzter Screen)", sl, "w4")}
+      ${tile("Vorschläge (Risk-geprüft)", sug, "w4")}
+      ${tile("Insider-Signale (SEC Form 4)", ins, "w4")}
+      ${tile("Autonomie-Leitplanken", lpHtml, "w12")}
+    </div>`;
+  const inp = $("#inv-sym"); if (inp) inp.addEventListener("input", () => invSuche(inp.value));
+}
+let _sucheTimer = null;
+function invSuche(q) {
+  clearTimeout(_sucheTimer); const box = $("#inv-suggest"); if (!box) return; q = (q || "").trim();
+  if (q.length < 2) { box.innerHTML = ""; box.classList.remove("open"); return; }
+  _sucheTimer = setTimeout(async () => {
+    const d = await jget("/api/investment/suche?q=" + encodeURIComponent(q)) || {}; const t = d.treffer || [];
+    box.innerHTML = t.length ? t.map(x => `<div data-act="inv-add" data-id="${esc(x.symbol)}" data-asset="${esc(x.asset)}"><b>${esc(x.ticker || x.symbol)}</b> <small>${esc(x.name || "")} · ${esc(x.asset)}</small></div>`).join("") : `<div class="v2-empty">keine Treffer</div>`;
+    box.classList.add("open");
+  }, 300);
+}
+async function invDetail(symbol, asset) {
+  openModal(symbol, `<div class="v2-empty">Lade Infos zu ${esc(symbol)}…</div>`);
+  const d = await jget(`/api/investment/detail?symbol=${encodeURIComponent(symbol)}&asset=${encodeURIComponent(asset || "aktie")}`);
+  if (!d) { openModal(symbol, emptyRow("Konnte Infos nicht laden.")); return; }
+  const kv = (k, v) => v != null && v !== "" ? `<div class="v2-kv"><span>${esc(k)}</span><b>${esc(v)}</b></div>` : "";
+  const kurs = kursChart(d.kurs_historie);
+  let body;
+  if (asset === "krypto") {
+    const i = d.info || {};
+    body = i.ok ? `<h3>${esc(i.name)} (${esc(i.symbol)})</h3>${kurs}${kv("Rang", i.rang ? "#" + i.rang : "")}${kv("Preis (EUR)", i.preis_eur)}${kv("Veränderung 24h", (i.veraenderung_pct > 0 ? "+" : "") + num(i.veraenderung_pct, 2) + "%")}${kv("Marktkap. (EUR)", i.marktkap_eur)}${kv("24h-Volumen", i.volumen_eur)}${kv("ATH", i.ath_eur)}${kv("ATL", i.atl_eur)}${i.beschreibung ? `<h3>Über</h3><p>${esc(i.beschreibung)}</p>` : ""}` : emptyRow("Keine Krypto-Infos verfügbar.");
+  } else {
+    const p = d.profil, q = d.quote, r = d.rsi;
+    const news = (d.news || []).map(n => `<div class="v2-list-row"><div class="grow"><b>${esc(n.titel)}</b><small>${esc(n.quelle || "")}</small></div></div>`).join("");
+    body = `<h3>${esc((p && p.name) || d.symbol)}</h3>${p ? `<div class="v2-sub">${esc(p.branche || "")}${p.boerse ? " · " + esc(p.boerse) : ""}${p.land ? " · " + esc(p.land) : ""}</div>` : ""}${kurs}
+      ${q ? kv("Preis", q.preis) + kv("Veränderung", (q.veraenderung_pct > 0 ? "+" : "") + q.veraenderung_pct + "%") + kv("Tageshoch", q.hoch) + kv("Tagestief", q.tief) : ""}
+      ${r ? kv("RSI (14)", r.wert + " · " + r.label) : ""}${p ? kv("Marktkap. (Mio)", p.marktkap_mio) + kv("IPO", p.ipo) : ""}
+      ${news ? `<h3>News</h3>${news}` : ""}${(d.hinweise || []).length ? emptyRow(d.hinweise[0]) : ""}`;
+  }
+  openModal(symbol, body);
+}
+function kursChart(h) {
+  if (!h || h.length < 2) return `<div class="v2-sub">Noch zu wenig Kurs-Historie.</div>`;
+  const W = 460, H = 130, pad = 22, closes = h.map(p => p.close);
+  const lo = Math.min(...closes), hi = Math.max(...closes), span = (hi - lo) || 1;
+  const x = i => pad + (h.length <= 1 ? 0 : i * (W - 2 * pad) / (h.length - 1));
+  const y = v => H - pad - ((v - lo) / span) * (H - 2 * pad);
+  const path = h.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p.close).toFixed(1)}`).join(" ");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" class="v2-chart"><path d="${path}" class="v2-line strat"/></svg><div class="v2-sub">${esc(h[0].datum)} → ${esc(h[h.length - 1].datum)} · ${h.length} Tage</div>`;
 }
 
 /* =========================== CRM =========================== */
+RENDER.crm = renderCrm;
 async function renderCrm() {
-  const [crm, tl] = await Promise.all([jget("/api/crm"), jget("/api/crm/timeline")]);
-  const firmen = (crm && crm.firmen || []).map(f =>
-    `<div class="v2-list-row"><div class="grow"><b>${esc(firstOf(f, ["name", "firma"], "Firma"))}</b><small>${esc(firstOf(f, ["status", "phase"], ""))}</small></div>
-      <span class="v2-badge neutral">${esc(firstOf(f, ["status"], ""))}</span></div>`).join("") || `<div class="v2-empty">Keine Firmen.</div>`;
-  const todos = (crm && crm.todos || []).map(t =>
-    `<div class="v2-list-row"><div class="grow"><b>${esc(firstOf(t, ["titel", "text", "aufgabe"], "Todo"))}</b><small>${esc(firstOf(t, ["firma", "faellig"], ""))}</small></div>
-      <button class="v2-btn ok" data-act="crm-todo" data-id="${esc(firstOf(t, ["id"]))}">Erledigt</button></div>`).join("") || `<div class="v2-empty">Keine offenen Todos.</div>`;
-  const msgs = (tl && tl.nachrichten || []).slice(0, 12).map(m =>
-    `<div class="v2-list-row"><div class="grow"><b>${esc(firstOf(m, ["firma", "von", "absender"], ""))}</b><small>${esc(String(firstOf(m, ["text", "inhalt", "nachricht"], "")).slice(0, 90))}</small></div>
-      <small>${esc(zeitKurz(firstOf(m, ["ts", "zeit", "erstellt_am"], "")))}</small></div>`).join("") || `<div class="v2-empty">Keine Nachrichten.</div>`;
-  $("#v2-app").innerHTML = secHead("Collab-CRM") + `<div class="v2-grid">
-    ${tile("Firmen", firmen, "w6")}${tile("Offene Todos", todos, "w6")}
-    ${tile("Timeline (kanaluebergreifend)", msgs, "w12")}</div>`;
+  const sub = SUBTAB.crm || "pipeline";
+  const [crm, tl] = await Promise.all([jget("/api/crm"), sub === "timeline" ? jget("/api/crm/timeline") : Promise.resolve(null)]);
+  const c = crm || {}, u = c.uebersicht || {}, pipe = u.pipeline || {};
+  let body;
+  if (sub === "timeline") {
+    body = tile("Timeline — alle Kanäle", (tl && tl.nachrichten || []).map(m => crmMsg(m, true)).join("") || emptyRow("Noch keine Nachrichten."), "w12");
+  } else {
+    const pipeHtml = ["neu", "in_gespraech", "angebot", "vereinbart", "abgelehnt"].map(s => `<div class="v2-kv"><span>${esc(s)}</span><b>${pipe[s] || 0}</b></div>`).join("");
+    const todos = (c.todos || []).map(t => `<div class="v2-list-row"><span class="v2-badge wartet">To-do</span><div class="grow"><b>${esc(t.firma)}</b><small>${esc(t.vorschlag || "")}${t.begruendung ? " · " + esc(t.begruendung) : ""}</small></div><button class="v2-btn ok" data-act="crm-todo" data-id="${esc(t.id)}">✓ Erledigt</button></div>`).join("") || emptyRow("Keine offenen To-dos.");
+    const firmen = (c.firmen || []).map(f => `<div class="v2-list-row klick" data-act="crm-firma" data-id="${esc(f.firma)}"><span class="v2-badge neutral">${esc(f.status)}</span><div class="grow"><b>${esc(f.firma)}</b><small>${esc(f.quelle || "")} · ${f.nachrichten || 0} Nachr.</small></div><span>›</span></div>`).join("") || emptyRow("Noch keine Anfragen — kommt automatisch per Instagram-Webhook.");
+    body = `${kpiTile("Firmen gesamt", String(u.firmen_gesamt || 0), null, "im CRM")}${kpiTile("Offene To-dos", String(u.offene_todos || 0), null, "zu erledigen")}
+      ${tile("Pipeline", pipeHtml, "w6")}${tile("Offene To-dos", todos, "w6")}${tile("Firmen (nach letztem Kontakt)", firmen, "w12")}`;
+  }
+  $("#v2-app").innerHTML = secHead("Collab-CRM") + tabs("crm", [["pipeline", "Pipeline & Firmen"], ["timeline", "Timeline"]]) + `<div class="v2-grid">${body}</div>`;
+}
+function crmMsg(m, mitFirma) {
+  return `<div class="v2-list-row"><span title="${esc(m.richtung === "ein" ? "eingehend" : "ausgehend")}">${esc(kanal[m.quelle] || "•").split(" ")[0]}${m.richtung === "ein" ? "⬅︎" : "➡︎"}</span><div class="grow">${mitFirma && m.firma ? `<b>${esc(m.firma)}</b> ` : ""}<b>${esc(m.text)}</b><small>${esc(kanal[m.quelle] || m.quelle || "")}${m.ts ? " · " + esc(m.ts) : ""}</small></div></div>`;
+}
+async function crmFirma(firma) {
+  openModal(firma, `<div class="v2-empty">Lade Verlauf…</div>`);
+  const d = await jget("/api/crm/konversation?firma=" + encodeURIComponent(firma));
+  openModal(firma, (d && d.nachrichten || []).map(m => crmMsg(m, false)).join("") || emptyRow("Kein Verlauf."));
 }
 
-/* =========================== Content-Ops =========================== */
-function contentList(items, keys, statusKey = "status") {
-  return (items || []).slice(0, 20).map(x =>
-    `<div class="v2-list-row"><div class="grow"><b>${esc(String(firstOf(x, keys, "—")).slice(0, 80))}</b><small>${esc(firstOf(x, ["quelle", "thema", "kanal"], ""))}</small></div>
-      <span class="v2-badge neutral">${esc(firstOf(x, [statusKey], ""))}</span></div>`).join("") || `<div class="v2-empty">Leer.</div>`;
-}
+/* =========================== Content (Sub-Tabs) =========================== */
+RENDER.content = renderContent;
 async function renderContent() {
-  const [tr, id, dr, inb] = await Promise.all([jget("/api/trends"), jget("/api/ideas"), jget("/api/drafts"), jget("/api/ai-inbox")]);
-  $("#v2-app").innerHTML = secHead("Content-Ops") + `<div class="v2-grid">
-    ${tile("Trends", contentList(tr && tr.trends, ["titel", "text", "thema"]), "w6")}
-    ${tile("Ideen-Labor", contentList(id && id.ideas, ["titel", "text", "idee"]), "w6")}
-    ${tile("Drafts", contentList(dr && dr.drafts, ["titel", "text"]), "w6")}
-    ${tile("AI-Inbox", contentList(inb && inb.items, ["titel", "text", "betreff"]), "w6")}</div>`;
+  const sub = SUBTAB.content || "trends";
+  const map = { trends: "/api/trends", ideen: "/api/ideas", drafts: "/api/drafts", quellen: "/api/sources", aiinbox: "/api/ai-inbox" };
+  const d = await jget(map[sub]) || {};
+  let rows = "";
+  if (sub === "trends") rows = (d.trends || []).map(t => card(trendLbl[t.status], t.title, `${esc(t.description || "")}<br><small>${esc(t.source_name || t.source_type || "")}${t.relevance ? " · " + esc(t.relevance) : ""}${t.score != null ? " · " + t.score : ""}</small>${t.source_url ? ` · <a href="${esc(t.source_url)}" target="_blank" rel="noopener">Quelle ↗</a>` : ""}`, ["reviewing", "approved", "ignored"].map(s => btn("trend", t.id, s, trendLbl[s])).join(""), t.status === "approved")).join("");
+  if (sub === "ideen") rows = (d.ideas || []).map(x => card(ideaLbl[x.status], x.title, `${esc(x.description || "")}${x.ai_summary ? `<br><small>KI: ${esc(x.ai_summary)}</small>` : ""}${x.next_steps ? `<br><small>Nächste Schritte: ${esc(x.next_steps)}</small>` : ""}`, ["sorted", "planned", "done", "archived"].map(s => btn("idea", x.id, s, ideaLbl[s])).join(""), x.status === "done")).join("");
+  if (sub === "drafts") rows = (d.drafts || []).map(x => card(draftLbl[x.status], x.title, `${x.hook ? `<b>Hook:</b> ${esc(x.hook)}<br>` : ""}${esc(x.caption || "")}${(x.hashtags && x.hashtags.length) ? `<br><small>${x.hashtags.map(h => "#" + esc(h)).join(" ")}</small>` : ""}<br><small>${esc(x.platform || "")}${x.content_format ? " · " + esc(x.content_format) : ""}</small>`, ["in_progress", "review", "approved", "scheduled", "published"].map(s => btn("draft", x.id, s, draftLbl[s])).join(""), ["approved", "published", "scheduled"].includes(x.status))).join("");
+  if (sub === "quellen") rows = (d.sources || []).map(s => card(s.is_active ? "Aktiv" : "Inaktiv", s.name, `${esc(s.source_type || "")}${s.priority != null ? " · Prio " + s.priority : ""}${s.url ? ` · <a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url)} ↗</a>` : ""}`, `<button class="v2-btn" data-act="src-toggle" data-id="${esc(s.id)}" data-val="${s.is_active ? "0" : "1"}">${s.is_active ? "Deaktivieren" : "Aktivieren"}</button>`, s.is_active)).join("");
+  if (sub === "aiinbox") rows = (d.items || []).map(it => card(recLbl[it.recommendation] || it.recommendation, it.title || "(ohne Titel)", `${esc(it.summary || "")}<br><small>${esc(it.source_type || "")}${it.author ? " · " + esc(it.author) : ""} · Relevanz ${it.hcc_relevance_score ?? "?"} · Machbarkeit ${it.feasibility_score ?? "?"} · Risiko ${it.risk_score ?? "?"}</small>${it.source_url ? ` · <a href="${esc(it.source_url)}" target="_blank" rel="noopener">Quelle ↗</a>` : ""}`, ["use", "investigate", "later", "ignore"].map(rc => btn("ai", it.id, rc, recLbl[rc])).join(""), it.recommendation === "use")).join("");
+  $("#v2-app").innerHTML = secHead("Content-Ops") + tabs("content", [["trends", "Trends"], ["ideen", "Ideen-Labor"], ["drafts", "Drafts"], ["quellen", "Quellen"], ["aiinbox", "AI-Inbox"]]) + `<div class="v2-cards">${rows || emptyRow("Leer.")}</div>`;
 }
+function card(badge, titel, body, actions, good) {
+  return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${good ? "ok" : "neutral"}">${esc(badge || "")}</span><b>${esc(titel)}</b></div><div class="v2-desc">${body}</div>${actions ? `<div class="v2-card-actions">${actions}</div>` : ""}</div>`;
+}
+const btn = (typ, id, val, lbl) => `<button class="v2-btn" data-act="status" data-typ="${typ}" data-id="${esc(id)}" data-val="${esc(val)}">${esc(lbl)}</button>`;
 
 /* =========================== Cutter =========================== */
+RENDER.cutter = renderCutter;
 async function renderCutter() {
   const c = await jget("/api/cutter") || {};
-  const jobs = (c.jobs || []).slice(0, 20).map(j =>
-    `<tr><td><b>${esc(firstOf(j, ["name", "titel", "ordner"], "Job"))}</b></td><td>${esc(zeitKurz(firstOf(j, ["ts", "erstellt_am"], "")))}</td>
-      <td><span class="v2-badge ${esc(firstOf(j, ["status"], "wartet"))}">${esc(firstOf(j, ["status"], ""))}</span></td></tr>`).join("")
-    || `<tr><td colspan="3" class="v2-empty">Keine Jobs.</td></tr>`;
-  const av = c.verfuegbar ? `<span class="v2-badge aktiv">Mac-Bruecke verbunden</span>` : `<span class="v2-badge wartet">Mac-Bruecke offline</span>`;
-  $("#v2-app").innerHTML = secHead("Cutter", av) + tile("Jobs", `<table class="v2-table"><thead><tr><th>Job</th><th>Zeit</th><th>Status</th></tr></thead><tbody>${jobs}</tbody></table>`, "w12");
+  if (!c.verfuegbar) { $("#v2-app").innerHTML = secHead("Cutter") + `<div class="v2-tile w12">${emptyRow("Cutter-Jobs nicht verfügbar — SQL-Migration cutter_jobs in Supabase ausführen.")}</div>`; return; }
+  const jobs = (c.jobs || []).map(j => { const st = j.status || "queued";
+    const det = [j.clips_verwendet != null ? `${j.clips_verwendet} Clips` : "", j.dauer_sek != null ? `${j.dauer_sek}s` : "", j.groesse_mb != null ? `${j.groesse_mb} MB` : ""].filter(Boolean).join(" · ");
+    return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${cutBadge[st] || "neutral"}">${cutLbl[st] || esc(st)}</span><b>${esc(j.projekt || "—")}</b></div>
+      <div class="v2-sub">${esc(j.quelle || "")}${j.created_at ? " · " + zeit(j.created_at) : ""}${det ? " · " + esc(det) : ""}</div>
+      ${j.reel_datei ? `<div class="v2-sub">🎬 ${esc(j.reel_datei)}</div>` : ""}${j.fehler ? `<div class="v2-desc" style="color:var(--v2-red)">${esc(j.fehler)}</div>` : ""}${j.note ? `<div class="v2-desc">${esc(j.note)}</div>` : ""}</div>`; }).join("") || emptyRow("Noch keine Reel-Jobs.");
+  const form = `<div class="v2-form"><input id="cut-projekt" placeholder="Ordnername in der Cutter-Inbox (z. B. hsv_stadion)"><input id="cut-note" placeholder="Notiz (optional)"><button class="v2-btn pri" data-act="cutter-job">Job anstoßen</button><div id="cut-msg" class="v2-msg"></div><div class="v2-sub">Der Mac-Cutter holt den Job ab, schneidet den Ordner und meldet den Status zurück. Posten bleibt CEO-Tor.</div></div>`;
+  $("#v2-app").innerHTML = secHead("Cutter") + `<div class="v2-grid">${tile("Reel-Job anstoßen", form, "w5")}${tile(`Jobs & Historie (${(c.jobs || []).length})`, jobs, "w7")}</div>`;
 }
 
-/* =========================== Wissen / Lagebild =========================== */
-async function renderKnowledge() {
-  const [b, l] = await Promise.all([jget("/api/brain"), jget("/api/lagebild")]);
-  const items = (b && b.items || []).slice(0, 20).map(x =>
-    `<div class="v2-list-row"><div class="grow"><b>${esc(firstOf(x, ["titel", "thema"], "Notiz"))}</b><small>${esc(String(firstOf(x, ["text", "inhalt"], "")).slice(0, 120))}</small></div>
-      <small>${esc(firstOf(x, ["quelle", "tags"], ""))}</small></div>`).join("") || `<div class="v2-empty">Kein Wissen erfasst.</div>`;
-  const lage = l && (l.text || l.hinweis) ? `<div style="white-space:pre-wrap;line-height:1.5">${esc(l.text || l.hinweis)}</div>` : `<div class="v2-empty">Kein Lagebild.</div>`;
-  $("#v2-app").innerHTML = secHead("Wissen & Lagebild") + `<div class="v2-grid">
-    ${tile("Lagebild", lage, "w6")}${tile("Second Brain", items, "w6")}</div>`;
+/* =========================== Wissen + Lagebild =========================== */
+RENDER.wissen = renderWissen;
+async function renderWissen() {
+  const sub = SUBTAB.wissen || "brain";
+  if (sub === "lagebild") {
+    const l = await jget("/api/lagebild") || {}; const d = l.daten || {};
+    const sek = (t, arr) => arr && arr.length ? tile(t, arr.map(z => `<div class="v2-list-row"><div class="grow">${z}</div></div>`).join(""), "w6") : "";
+    const ent = (d.entscheidungen || []).map(x => `<b>${esc(x.titel)}</b> <small>[${esc(x.id)}] ${esc(x.status)}</small>`);
+    const term = (d.termine_heute || []).map(x => `<b>${esc(x.zeit)}</b> ${esc(x.titel)}`);
+    const mails = d.mails && d.mails.verfuegbar ? (d.mails.liste || []).map(x => `<b>${esc(x.von)}</b>: ${esc(x.betreff)}`) : [];
+    const tick = (d.tickets || []).map(x => `${esc(x.frage)} <small>[${esc(x.id)}]</small>`);
+    const ag = (d.agenda || []).map(esc);
+    const body = [sek("Auf dich warten", ent), sek("Heute im Kalender", term), d.mails && d.mails.verfuegbar ? sek(`Ungelesene Mails (${d.mails.anzahl})`, mails) : "", sek("Offene Research-Tickets", tick), sek("Agenda", ag)].join("") || `<div class="v2-tile w12">${emptyRow("Alles ruhig. Nichts Dringendes. 👍")}</div>`;
+    $("#v2-app").innerHTML = secHead("Wissen & Lagebild") + tabs("wissen", [["brain", "Second Brain"], ["lagebild", "Lagebild"]]) + `<div class="v2-grid">${body}</div>`;
+    return;
+  }
+  const b = await jget("/api/brain") || {};
+  const liste = (b.items || []).map(e => `<div class="v2-card"><div class="v2-card-h"><b>${esc(e.titel || (e.text || "").slice(0, 50))}</b></div>${e.tags && e.tags.length ? `<div class="v2-sub">${e.tags.map(esc).join(" · ")}</div>` : ""}<div class="v2-desc">${esc(e.text)}</div></div>`).join("") || emptyRow("Noch kein Wissen gespeichert. Merk dir was. 🧠");
+  const search = `<div class="v2-form-row"><input id="brain-q" placeholder="Wissen durchsuchen (intern + Gmail + Drive)…"><button class="v2-btn" data-act="brain-suchen">🔍 Suchen</button></div>`;
+  const add = `<div class="v2-form-row"><input id="brain-note" placeholder="Neues Wissen merken…"><button class="v2-btn ok" data-act="brain-merken">＋ Merken</button></div>`;
+  $("#v2-app").innerHTML = secHead("Wissen & Lagebild") + tabs("wissen", [["brain", "Second Brain"], ["lagebild", "Lagebild"]]) + `<div class="v2-tile w12">${search}<div id="brain-results" class="v2-cards">${liste}</div>${add}</div>`;
 }
 
 /* =========================== Agenten =========================== */
+RENDER.agenten = renderAgents;
 async function renderAgents() {
   const a = await jget("/api/agenten") || {};
-  const deps = (a.departments || []).map(d => {
-    const st = firstOf(d, ["status"], "standby");
-    const badge = st === "active" ? "aktiv" : st === "offline" ? "err" : "standby";
-    return `<div class="v2-list-row"><div class="grow"><b>${esc(d.name || d.key)}</b><small>${esc(d.rolle || "")}${d.subs && d.subs.length ? " · " + d.subs.length + " Sub-Agenten" : ""}</small></div>
-      <span class="v2-badge ${badge}">${esc(st)}</span></div>`;
-  }).join("") || `<div class="v2-empty">Keine Agenten geladen.</div>`;
-  const head = `<div class="v2-list-row"><div class="grow"><b>CEO → LUNA (Head of Agents)</b><small>${esc(a.stand || "")}</small></div><span class="v2-badge aktiv">aktiv</span></div>`;
-  $("#v2-app").innerHTML = secHead("Agenten-Organisation") + tile("Abteilungen", head + deps, "w12");
+  const stB = (st) => st === "active" ? "aktiv" : st === "offline" ? "err" : "wartet";
+  const stL = (st) => st === "active" ? "Aktiv" : st === "offline" ? "Geplant" : "Standby";
+  const deps = (a.departments || []).map(d => `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${stB(d.status)}">${stL(d.status)}</span><b>${esc(d.name || d.key)}</b></div><div class="v2-sub">${esc(d.rolle || "")}</div>${(d.subs || []).length ? `<div class="v2-chips" style="margin-top:8px">${(d.subs || []).map(s => `<span class="v2-chip">${esc(s.name)} <small>${stL(s.status)}</small></span>`).join("")}</div>` : ""}</div>`).join("") || emptyRow("Keine Agenten geladen.");
+  const head = `<div class="v2-tile w12"><div class="v2-list-row"><div class="grow"><b>${esc((a.ceo || {}).name || "CEO")}</b><small>${esc((a.ceo || {}).rolle || "")}</small></div><span>→</span><div class="grow"><b>${esc((a.luna || {}).name || "LUNA")}</b><small>${esc((a.luna || {}).rolle || "Head of Agents")}</small></div><span class="v2-badge aktiv">aktiv</span></div><div class="v2-sub">Stand ${esc(a.stand || "")}</div></div>`;
+  $("#v2-app").innerHTML = secHead("Agenten-Organisation") + `<div class="v2-grid">${head}</div><div class="v2-cards" style="margin-top:16px">${deps}</div>`;
+}
+
+/* =========================== System (Sub-Tabs) =========================== */
+RENDER.system = renderSystem;
+async function renderSystem() {
+  const sub = SUBTAB.system || "research";
+  STATE = await jget("/api/state") || STATE;
+  let body;
+  if (sub === "research") body = (STATE.research || []).map(r => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(firstOf(r, ["status", "abteilung"], ""))}</span><div class="grow"><b>${esc(firstOf(r, ["frage", "titel"], ""))}</b>${r.id ? `<small>${esc(r.id)}</small>` : ""}</div></div>`).join("") || emptyRow("Keine Research-Tickets.");
+  if (sub === "meldungen") body = (STATE.meldungen || []).map(m => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(m.abteilung || "")}</span><div class="grow"><b>${esc(m.text)}</b><small>${esc(zeitKurz(m.ts))}</small></div></div>`).join("") || emptyRow("Keine Meldungen.");
+  if (sub === "aktivitaet") body = (STATE.aktivitaet || []).map(a => `<div class="v2-list-row"><span class="v2-badge live">Live</span><div class="grow"><b>${esc(a.akteur || "")}</b> ${esc(a.aktion || "")}<small>${esc(zeitKurz(a.ts))}</small></div></div>`).join("") || emptyRow("Keine Aktivität.");
+  if (sub === "finanzen") { const f = STATE.finance || {}; body = `<div class="v2-kv"><span>Monatsbudget</span><b>${esc(f.monatsbudget || "unbekannt")}</b></div><div class="v2-kv"><span>Offene Aufträge</span><b>${(STATE.antraege || []).length}</b></div><div class="v2-kv"><span>Offene Research-Tickets</span><b>${(STATE.research || []).length}</b></div>`; }
+  $("#v2-app").innerHTML = secHead("System") + tabs("system", [["research", "Research"], ["meldungen", "Meldungen"], ["aktivitaet", "Aktivität"], ["finanzen", "Finanzen"]]) + `<div class="v2-tile w12">${body}</div>`;
 }
 
 /* =========================== Team =========================== */
+RENDER.team = renderTeam;
 async function renderTeam() {
   const t = await jget("/api/team") || {};
-  if (!t.verfuegbar) { $("#v2-app").innerHTML = secHead("Team") + `<div class="v2-tile w12"><div class="v2-empty">Team-Verwaltung nicht aktiv (keine Nutzer-Tabelle).</div></div>`; return; }
-  const users = (t.users || []).map(u =>
-    `<div class="v2-list-row"><div class="grow"><b>${esc(firstOf(u, ["display_name", "username"], "Nutzer"))}</b><small>${esc(firstOf(u, ["role"], ""))} · ${esc((u.allowed_modules || []).join(", "))}</small></div>
-      <span class="v2-badge ${u.is_active ? "aktiv" : "neutral"}">${u.is_active ? "aktiv" : "inaktiv"}</span></div>`).join("") || `<div class="v2-empty">Keine Nutzer.</div>`;
-  $("#v2-app").innerHTML = secHead("Team") + tile("Nutzer", users, "w12");
+  if (!t.verfuegbar) { $("#v2-app").innerHTML = secHead("Team") + `<div class="v2-tile w12">${emptyRow("Nutzer-Tabelle nicht verfügbar — SQL-Migration luna_os_users in Supabase ausführen.")}</div>`; return; }
+  const users = (t.users || []).map(u => `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${u.is_active === false ? "neutral" : "aktiv"}">${u.is_active === false ? "Inaktiv" : "Aktiv"}</span><b>${esc(u.display_name || u.username)}</b></div>
+    <div class="v2-sub">@${esc(u.username)} · ${esc(rolleLbl[u.role] || u.role || "")} · Module: ${(u.allowed_modules || []).map(esc).join(", ") || "—"}${u.role === "owner" ? " (alle)" : ""}</div>
+    <div class="v2-card-actions"><button class="v2-btn" data-act="team-aktiv" data-id="${esc(u.username)}" data-val="${u.is_active === false ? "1" : "0"}">${u.is_active === false ? "Aktivieren" : "Deaktivieren"}</button></div></div>`).join("") || emptyRow("Noch keine Nutzer.");
+  const mods = (t.module || []).map(m => `<label class="v2-modlbl"><input type="checkbox" class="team-mod" value="${esc(m.id)}"> ${esc(m.label)}</label>`).join("");
+  const rollen = (t.rollen || ["content"]).map(r => `<option value="${esc(r)}">${esc(rolleLbl[r] || r)}</option>`).join("");
+  const form = `<div class="v2-form"><input id="team-username" placeholder="Benutzername (Login)"><input id="team-name" placeholder="Anzeigename (optional)"><input id="team-pw" type="password" placeholder="Passwort"><select id="team-role">${rollen}</select><div class="v2-mods"><small>Module (leer = Standard der Rolle):</small>${mods}</div><button class="v2-btn pri" data-act="team-save">Anlegen / aktualisieren</button><div id="team-msg" class="v2-msg"></div></div>`;
+  $("#v2-app").innerHTML = secHead("Team") + `<div class="v2-grid">${tile("Neuen Nutzer anlegen", form, "w5")}${tile("Nutzer", users, "w7")}</div>`;
 }
 
 /* =========================== Aktionen =========================== */
 async function handleAct(act, el) {
-  const id = el.dataset.id;
-  const flash = (msg) => { el.textContent = msg; };
-  if (act === "antrag-ok") { await jpost(`/api/antraege/${id}/freigeben`); return renderApprovals(); }
-  if (act === "antrag-no") { await jpost(`/api/antraege/${id}/ablehnen`, { grund: "abgelehnt (UI-V2)" }); return renderApprovals(); }
-  if (act === "crm-todo") { await jpost(`/api/crm/todo/${id}/erledigen`); return renderCrm(); }
-  if (act === "inv-sammeln") { flash("Sammle …"); await jpost("/api/investment/sammeln"); return renderInvestment(); }
-  if (act === "inv-backfill") { flash("Lade Historie …"); await jpost("/api/investment/backfill", { seit: "2026-01-01" }); return renderInvestment(); }
-  if (act === "inv-screen") { flash("Screen …"); await jpost("/api/investment/screen"); return AKTIV === "investment" ? renderInvestment() : null; }
-  if (act === "inv-insider") { flash("Insider-Scan …"); await jpost("/api/investment/insider-scan"); return renderInvestment(); }
+  const id = el.dataset.id, val = el.dataset.val, asset = el.dataset.asset, typ = el.dataset.typ;
+  const flash = (m) => { const o = el.textContent; el.textContent = m; return o; };
+  switch (act) {
+    case "antrag-freigeben": await jpost(`/api/antraege/${id}/freigeben`); return renderFreigaben();
+    case "antrag-ablehnen": { const grund = prompt("Grund der Ablehnung?", ""); if (grund === null) return; await jpost(`/api/antraege/${id}/ablehnen`, { grund }); return renderFreigaben(); }
+    case "antrag-revidieren": { const feedback = prompt("Was soll anders/besser sein? LUNA überarbeitet den Antrag (du musst neu freigeben).", ""); if (feedback === null) return; flash("⏳ überarbeitet…"); await jpost(`/api/antraege/${id}/revidieren`, { feedback }); return renderFreigaben(); }
+    case "antrag-loeschen": if (!confirm("Antrag wirklich löschen?")) return; await jpost(`/api/antraege/${id}/loeschen`); return renderFreigaben();
+    case "antrag-mehr": { flash("⏳ Agenten…"); const r = await jpost(`/api/antraege/${id}/mehr-info`); if (r && r.bewertung) alert("LUNA-Bewertung:\n\n" + r.bewertung); return renderFreigaben(); }
+    case "antrag-reformat": if (!confirm("Alle offenen Anträge neu formatieren? Freigegebene werden zurückgesetzt.")) return; flash("⏳ formatiert…"); await jpost("/api/antraege/neu-formatieren"); return renderFreigaben();
+    case "antrag-detail": return antragDetail(id);
+    case "crm-todo": await jpost(`/api/crm/todo/${id}/erledigen`); return renderCrm();
+    case "crm-firma": return crmFirma(id);
+    case "status": {
+      const map = { trend: ["/api/trends/", "status", renderContent], idea: ["/api/ideas/", "status", renderContent], draft: ["/api/drafts/", "status", renderContent], ai: ["/api/ai-inbox/", "recommendation", renderContent] };
+      const [base, key, re] = map[typ]; await jpost(`${base}${encodeURIComponent(id)}/${key === "recommendation" ? "recommendation" : "status"}`, key === "recommendation" ? { recommendation: val } : { status: val }); return re();
+    }
+    case "src-toggle": await jpost(`/api/sources/${encodeURIComponent(id)}/aktiv`, { is_active: val === "1" }); return renderContent();
+    case "inv-sammeln": flash("⏳ sammelt…"); await jpost("/api/investment/sammeln"); return renderInvestment();
+    case "inv-backfill": flash("⏳ Historie…"); await jpost("/api/investment/backfill", { seit: "2026-01-01" }); return renderInvestment();
+    case "inv-screen": flash("⏳ Screen…"); await jpost("/api/investment/screen"); return AKTIV === "investment" ? renderInvestment() : go("investment");
+    case "inv-insider": flash("⏳ Insider…"); await jpost("/api/investment/insider-scan"); return renderInvestment();
+    case "inv-add": await jpost("/api/investment/watchlist", { symbol: id, asset: asset || "aktie" }); return renderInvestment();
+    case "inv-remove": await jpost("/api/investment/watchlist/remove", { symbol: id }); return renderInvestment();
+    case "inv-detail": return invDetail(id, asset);
+    case "cutter-job": { const p = ($("#cut-projekt") || {}).value || "", n = ($("#cut-note") || {}).value || "", msg = $("#cut-msg"); if (!p.trim()) { if (msg) { msg.textContent = "Ordnername ist Pflicht."; msg.className = "v2-msg err"; } return; } const r = await jpost("/api/cutter/job", { projekt: p.trim(), note: n.trim() }); if (msg) { msg.textContent = r && r.ok ? `Job „${p}" in Warteschlange.` : "Fehler: " + ((r && (r.hinweis || r.fehler)) || "unbekannt"); msg.className = "v2-msg " + (r && r.ok ? "ok" : "err"); } if (r && r.ok) renderCutter(); return; }
+    case "brain-suchen": { const q = ($("#brain-q") || {}).value || ""; const d = await jget("/api/brain?q=" + encodeURIComponent(q)) || {}; const box = $("#brain-results"); if (box) box.innerHTML = (d.items || []).map(e => `<div class="v2-card"><div class="v2-card-h"><b>${esc(e.titel || (e.text || "").slice(0, 50))}</b></div><div class="v2-desc">${esc(e.text)}</div></div>`).join("") || emptyRow("Keine Treffer."); return; }
+    case "brain-merken": { const inp = $("#brain-note"); const v = (inp && inp.value || "").trim(); if (!v) return; await jpost("/api/brain", { text: v }); if (inp) inp.value = ""; return renderWissen(); }
+    case "team-aktiv": await jpost(`/api/team/${encodeURIComponent(id)}/aktiv`, { is_active: val === "1" }); return renderTeam();
+    case "team-save": { const g = (i) => ($("#" + i) || {}).value || ""; const mods = [...document.querySelectorAll(".team-mod:checked")].map(c => c.value); const msg = $("#team-msg"); const r = await jpost("/api/team", { username: g("team-username").trim(), display_name: g("team-name").trim(), passwort: g("team-pw"), role: g("team-role"), allowed_modules: mods }); if (msg) { msg.textContent = r && r.ok ? "Gespeichert." : "Fehler: " + ((r && r.hinweis) || "unbekannt"); msg.className = "v2-msg " + (r && r.ok ? "ok" : "err"); } if (r && r.ok) renderTeam(); return; }
+  }
+}
+async function antragDetail(id) {
+  openModal("Antrag " + id, `<div class="v2-empty">Lade Details…</div>`);
+  const a = await jget(`/api/antraege/${encodeURIComponent(id)}`); if (!a) { openModal("Antrag " + id, emptyRow("Konnte Details nicht laden.")); return; }
+  const verlauf = (a.verlauf || []).map(s => `<div class="v2-list-row"><span>${esc(zeit(s.ts))}</span><div class="grow"><b>${esc(evLbl[s.event] || s.event)}</b>${s.akteur ? " · " + esc(s.akteur) : ""}${s.grund ? `<br><small>${esc(s.grund)}</small>` : ""}</div></div>`).join("") || emptyRow("noch keine Schritte");
+  openModal(a.titel || ("Antrag " + id), `<div class="v2-card-h"><span class="v2-badge ${badgeCls(a.status)}">${esc(a.status)}</span></div>
+    <div class="v2-sub">von ${esc(a.von)}${a.kategorie ? " · " + esc(a.kategorie) : ""} · ${esc(a.id)}</div>
+    <div class="v2-desc">${esc(a.beschreibung) || "<i>keine Beschreibung</i>"}</div>${a.betroffen ? `<div class="v2-kv"><span>Betroffen</span><b>${esc(a.betroffen)}</b></div>` : ""}
+    <h3>Verlauf</h3>${verlauf}`);
 }
 
 /* =========================== LUNA-Chat + Voice =========================== */
 let CHAT_OPEN = false, REC = null, LISTENING = false, AUDIO = null;
 function chatShell() {
-  $("#v2-chat").innerHTML = `
-    <header>LUNA <button class="v2-icon" id="v2-mic" title="Sprechen">🎙</button></header>
+  $("#v2-chat").innerHTML = `<header>LUNA <button class="v2-icon" id="v2-mic" title="Sprechen">🎙</button></header>
     <div class="log" id="v2-log"><div class="msg luna">Hallo! Wie kann ich helfen?</div></div>
     <form id="v2-chatform"><input id="v2-chatin" placeholder="Frag LUNA …" autocomplete="off"><button class="v2-btn pri" type="submit">↑</button></form>`;
   $("#v2-chatform").addEventListener("submit", (e) => { e.preventDefault(); const v = $("#v2-chatin").value.trim(); if (v) { $("#v2-chatin").value = ""; sendChat(v); } });
   $("#v2-mic").addEventListener("click", toggleVoice);
 }
-function toggleChat(open) {
-  CHAT_OPEN = open == null ? !CHAT_OPEN : open;
-  const c = $("#v2-chat"); c.hidden = !CHAT_OPEN;
-  if (CHAT_OPEN && !c.dataset.init) { chatShell(); c.dataset.init = "1"; }
-}
-function addMsg(who, text) {
-  const log = $("#v2-log"); if (!log) return;
-  const d = document.createElement("div"); d.className = "msg " + who; d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight;
-}
-async function sendChat(text) {
-  addMsg("me", text);
-  const r = await jpost("/api/chat", { text });
-  const reply = (r && (r.reply || r.antwort)) || "…";
-  addMsg("luna", reply); lunaSpeak(reply);
-}
-function setOrb(state) { const o = $("#v2-orb"); o.className = "v2-orb " + state; }
+function toggleChat(open) { CHAT_OPEN = open == null ? !CHAT_OPEN : open; const c = $("#v2-chat"); c.hidden = !CHAT_OPEN; if (CHAT_OPEN && !c.dataset.init) { chatShell(); c.dataset.init = "1"; } }
+function addMsg(who, text) { const log = $("#v2-log"); if (!log) return; const d = document.createElement("div"); d.className = "msg " + who; d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; }
+async function sendChat(text) { addMsg("me", text); const r = await jpost("/api/chat", { text }); const reply = (r && (r.reply || r.antwort)) || "…"; addMsg("luna", reply); lunaSpeak(reply); }
+function setOrb(state) { $("#v2-orb").className = "v2-orb " + state; }
 async function lunaSpeak(text) {
-  try {
-    const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: String(text).slice(0, 600) }) });
-    if (!r.ok) return; const buf = await r.arrayBuffer();
-    const ctx = AUDIO || (AUDIO = new (window.AudioContext || window.webkitAudioContext)());
-    const audio = await ctx.decodeAudioData(buf); const src = ctx.createBufferSource(); src.buffer = audio;
-    src.connect(ctx.destination); setOrb("speaking"); src.onended = () => setOrb("idle"); src.start();
+  try { const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: String(text).slice(0, 600) }) });
+    if (!r.ok) return; const buf = await r.arrayBuffer(); const ctx = AUDIO || (AUDIO = new (window.AudioContext || window.webkitAudioContext)());
+    const audio = await ctx.decodeAudioData(buf); const src = ctx.createBufferSource(); src.buffer = audio; src.connect(ctx.destination); setOrb("speaking"); src.onended = () => setOrb("idle"); src.start();
   } catch { setOrb("idle"); }
 }
 function toggleVoice() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { toggleChat(true); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) { toggleChat(true); return; }
   if (LISTENING) { REC && REC.stop(); return; }
   REC = new SR(); REC.lang = "de-DE"; REC.interimResults = false;
-  REC.onstart = () => { LISTENING = true; setOrb("listening"); };
-  REC.onend = () => { LISTENING = false; setOrb("idle"); };
-  REC.onresult = (e) => { const t = e.results[0][0].transcript; toggleChat(true); sendChat(t); };
-  REC.start();
+  REC.onstart = () => { LISTENING = true; setOrb("listening"); }; REC.onend = () => { LISTENING = false; setOrb("idle"); };
+  REC.onresult = (e) => { const t = e.results[0][0].transcript; toggleChat(true); sendChat(t); }; REC.start();
 }
 
 /* =========================== SSE Live =========================== */
-function connectSSE() {
-  try {
-    const es = new EventSource("/api/events");
-    es.onmessage = () => { if (AKTIV === "dash") renderDash(); };
-  } catch { }
-}
+function connectSSE() { try { const es = new EventSource("/api/events"); es.onmessage = () => { if (AKTIV === "dash") renderDash(); }; } catch { } }
 
 /* =========================== Events + Boot =========================== */
 document.addEventListener("click", (e) => {
   const g = e.target.closest("[data-go]"); if (g) { go(g.dataset.go); return; }
+  const tb = e.target.closest("[data-tab]"); if (tb) { const [sec, id] = tb.dataset.tab.split(":"); go(sec, id); return; }
   const um = e.target.closest("[data-ui-mode]"); if (um) { setUiMode(um.dataset.uiMode); return; }
   const tc = e.target.closest("[data-toggle-chat]"); if (tc) { toggleChat(); return; }
   const orb = e.target.closest("#v2-orb"); if (orb) { toggleVoice(); return; }
   const th = e.target.closest("#v2-theme"); if (th) { toggleTheme(); return; }
+  const mc = e.target.closest("[data-modal-close]"); if (mc) { closeModal(); return; }
   const ac = e.target.closest("[data-act]"); if (ac) { handleAct(ac.dataset.act, ac); return; }
 });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
 (async function boot() {
   applyTheme();
-  [ME, PREFS] = await Promise.all([
-    jget("/api/me").then(x => x || ME),
-    jget("/api/prefs").then(x => (x && x.prefs) || {}),
-  ]);
-  buildShell();
-  go("dash");
-  connectSSE();
+  [ME, PREFS] = await Promise.all([jget("/api/me").then(x => x || ME), jget("/api/prefs").then(x => (x && x.prefs) || {})]);
+  buildShell(); go("dash"); connectSSE();
 })();

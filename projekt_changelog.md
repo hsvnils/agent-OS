@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-05 00:20] — Claude Code — UI-V2: volle V1-Paritaet, volle Breite, echte Umlaute
+- **Was:** `app-v2.js` komplett ausgebaut auf **volle Funktions-/Daten-Paritaet zu V1** (CEO-Auftrag: „alles was
+  V1 zeigt, muss V2 zeigen"). Alle 19 V1-NAV-Bereiche sind jetzt in V2 erreichbar (statt vorher ~9):
+  Freigaben (freigeben/ablehnen/revidieren/loeschen/mehr-info/Detail-Overlay/neu-formatieren), Investment
+  (17 Kacheln: Lern-Loop-Chart, je-Anlageklasse, Signal-Attribution, je-Modell-Version, Marktdrift-Kontrolle,
+  offene Prognosen, Register, Watchlist +Add/Remove/Suche-Autocomplete, Shortlist/Vorschlaege/Insider ->
+  Detail-Overlay mit Kurschart, Leitplanken, Provider, Track-Record/Historie), CRM (Pipeline/Todos/Firmen ->
+  Konversation-Overlay + Timeline-Tab), Content mit 5 Sub-Tabs (Trends/Ideen/Drafts/Quellen/AI-Inbox inkl. aller
+  Status-Aktionen), Cutter (Job-Formular + Jobs), Wissen (Second Brain Suche+Merken) + Lagebild-Tab, Agenten
+  (Abteilungen+Sub-Agenten), System mit 4 Sub-Tabs (Research/Meldungen/Aktivitaet/Finanzen), Team (Anlegen-Form).
+  Fenster-Ersatz: **Detail-Overlay** (`#v2-modal`) statt WinBox. **Volle Breite** (`#v2-app` max-width:none).
+  **Echte Umlaute** in allen sichtbaren Strings (UI.md 3/7): Praefen->Prüfen, Zurueck->Zurück, Aktivitaet->
+  Aktivität, taeglich->täglich, Veroeffentlicht->Veröffentlicht etc. Neue `style-v2.css`-Komponenten (Cards,
+  Tabs, Modal, Chips, Balken, Chart, Forms, Autocomplete, Leitplanken-Status). V2-Cache v1->v2.
+- **Warum:** Erste V2-Version deckte nur ~40% von V1 ab; CEO forderte lueckenlose Paritaet + volle Breite + Umlaute.
+- **Intensiv verifiziert (preview, 1440px):** alle 10 Top-Sektionen + alle Sub-Tabs rendern FEHLERFREI (0 Konsolen-
+  Fehler); Tab-Wechsel, Detail-Overlay, volle Breite, Umlaute bestaetigt; Agenten zeigt 17 echte Abteilungen,
+  Dashboard echte Daten. **Suite 604 gruen.** Nur Frontend geaendert (kein Backend). **NICHT deployt** (CEO-Ansage).
+- **Betroffen:** `orchestrator/channels/web/static/{app-v2.js (neu geschrieben), style-v2.css, index-v2.html}`.
+
 ## [2026-07-04 23:30] — Claude Code — LUNA-OS: zweites UI (UI-V2, helles „Flux"-Dashboard) per Umschalter
 - **Was:** Zweites, eigenstaendiges UI neben dem Command Center (jetzt „UI-V1"). **UI-V2** = helles, glasiges,
   dashboard-/sektionsbasiertes Design (Vorbild Flux-Screenshots), **ohne Fenster (kein WinBox)**, Deutsch,
