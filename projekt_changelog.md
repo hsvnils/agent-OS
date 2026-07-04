@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 14:40] — Claude Code — Investment: Krypto-Orders manuell handel-/testbar (Schritt 7.2)
+- **Was:** `engine.krypto_usd(symbol)` loest eine Krypto-Eingabe (CoinGecko-ID | Ticker | Alpaca-Symbol) zu
+  (Alpaca-Handelssymbol, **USD-Preis**) auf. `engine.paper_order` nutzt das automatisch fuer `asset=krypto`
+  (kein Preis vorgegeben) -> so kann LUNA `paper_order('bitcoin', 0.001, buy, asset=krypto)` platzieren; das Tool
+  `paper_order_freigabe` ebenso (Krypto -> Alpaca-Symbol + USD, Preis in der Freigabe hinterlegt). Ermoeglicht den
+  **Smoke-Test** des Krypto-Order-Pfads (BTC/USD, gtc) VOR dem ersten Nacht-Signal. 5 neue Tests; Suite 557 gruen.
+- **Warum:** Der riskanteste, ungetestete Pfad (Alpaca-Krypto-Symbolformat) sollte manuell pruefbar sein, statt
+  blind auf ein Nacht-Signal zu warten. Paper, kein echtes Geld.
+- **Betroffen:** `orchestrator/investment/engine.py`, `orchestrator/core/hoa_tools.py`,
+  `orchestrator/tests/test_investment_broker.py`.
+
 ## [2026-07-04 14:20] — Claude Code — Investment: Nacht-Chance-Filter „nur wenn es Sinn macht" (Schritt 7.1)
 - **Was:** Nacht-Krypto handelt nicht mehr routinemaessig, sondern **nur die seltene Top-Chance**. Neuer
   strenger Filter `auto_trader.ist_nacht_chance` (Konfidenz >= 0.80 UND alle 3 Signale einig UND erwartetes

@@ -44,10 +44,28 @@ class InvestmentEngine:
                                 "marktwert": p.get("market_value"), "pl": p.get("unrealized_pl")}
                                for p in self.broker.positionen()]}
 
+    def krypto_usd(self, symbol: str):
+        """(Alpaca-Handelssymbol, USD-Preis) fuer eine Krypto-Eingabe (CoinGecko-ID | Ticker | Alpaca-Symbol).
+        (None, 0.0) wenn (bei Alpaca) nicht handelbar oder kein Preis."""
+        from .broker import ALPACA_KRYPTO
+        s = (symbol or "").strip()
+        low = s.lower()
+        if low in ALPACA_KRYPTO:
+            cg = low
+        else:
+            rev = {v.upper(): k for k, v in ALPACA_KRYPTO.items()}                  # "BTC/USD" -> bitcoin
+            tick = {v.split("/")[0].upper(): k for k, v in ALPACA_KRYPTO.items()}   # "BTC" -> bitcoin
+            cg = rev.get(s.upper()) or tick.get(s.upper())
+        if not cg:
+            return (None, 0.0)
+        r = self.market.crypto_preis([cg], vs="usd")
+        usd = _zahl((r.get("preise", {}).get(cg) or {}).get("usd")) if r.get("ok") else 0.0
+        return (ALPACA_KRYPTO[cg], usd)
+
     def paper_order(self, symbol: str, qty: float, side: str, *, asset: str = "aktie",
                     bestaetigt: bool = False, preis: float | None = None) -> dict:
         """Platziert eine PAPER-Order -- nur in modus 'paper', mit CEO-Bestaetigung und harter Risk-Pruefung.
-        `preis` optional vorgeben (z. B. Krypto in USD, wenn `symbol` das Alpaca-Handelssymbol ist)."""
+        `preis` optional vorgeben (USD). Krypto-Symbol darf CoinGecko-ID/Ticker/Alpaca-Symbol sein (Auto-Preis USD)."""
         modus = self.store.mode()
         if modus != "paper":
             return {"ok": False, "hinweis": f"Modus ist '{modus}', nicht 'paper'. paper aktivieren = CEO-Tor "
@@ -59,6 +77,11 @@ class InvestmentEngine:
         qty = _zahl(qty)
         if not symbol or qty <= 0 or side not in ("buy", "sell"):
             return {"ok": False, "hinweis": "Ungueltige Order (symbol/qty/side)."}
+        if asset == "krypto" and preis is None:              # CoinGecko-ID/Ticker -> Alpaca-Symbol + USD-Preis
+            alp, usd = self.krypto_usd(symbol)
+            if not alp or usd <= 0:
+                return {"ok": False, "hinweis": f"Krypto '{symbol}' bei Alpaca nicht handelbar oder kein Preis."}
+            symbol, preis = alp, usd
         preis = _zahl(preis if preis is not None else self._aktueller_preis(symbol, asset))
         order_wert = preis * qty
         konto = self.broker.konto() or {}

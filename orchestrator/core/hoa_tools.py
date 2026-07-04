@@ -1012,7 +1012,13 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             if not symbol or qty <= 0 or side not in ("buy", "sell"):
                 return {"fehler": "symbol, qty (>0) und side (buy|sell) noetig."}
             from ..investment.autonomy_policy import AutonomyPolicy
-            preis = eng._aktueller_preis(symbol, asset) or 0
+            preis_vorgabe = None
+            if asset == "krypto":                            # CoinGecko-ID/Ticker -> Alpaca-Symbol + USD-Preis
+                alp, usd = eng.krypto_usd(symbol)
+                if not alp or usd <= 0:
+                    return {"fehler": f"Krypto '{symbol}' bei Alpaca nicht handelbar oder kein Preis."}
+                symbol, preis_vorgabe = alp, usd
+            preis = preis_vorgabe if preis_vorgabe is not None else (eng._aktueller_preis(symbol, asset) or 0)
             wert = round(float(preis) * qty, 2)
             konto = (eng.paper_konto() or {}).get("konto") or {}
             urteil = AutonomyPolicy().pruefe(
@@ -1024,8 +1030,10 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                 ("Freigabe noetig: " + "; ".join(urteil["gruende"][:2]) if urteil["gruende"] else "Freigabe noetig")
             frage = (f"Paper-{'Kauf' if side == 'buy' else 'Verkauf'}: {qty:g} {symbol} (~{wert} USD). "
                      f"{lp}. Ausfuehren?")
-            aid = ctx.approvals.add("paper_order", {"symbol": symbol, "qty": qty, "side": side, "asset": asset},
-                                    frage=frage)
+            payload = {"symbol": symbol, "qty": qty, "side": side, "asset": asset}
+            if preis_vorgabe is not None:
+                payload["preis"] = preis_vorgabe
+            aid = ctx.approvals.add("paper_order", payload, frage=frage)
             return {"ok": True, "freigabe_id": aid, "geschaetzter_wert": wert, "urteil": urteil,
                     "hinweis": "1-Tap-Freigabe (Ja/Nein) an den CEO gesendet."}
         if name == "investment_scorecard":

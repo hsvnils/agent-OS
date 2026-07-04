@@ -35,13 +35,42 @@ class TestKryptoSymbol(unittest.TestCase):
         self.assertIsNone(alpaca_krypto_symbol(""))
 
 
+class _StubMarketUSD:
+    def crypto_preis(self, ids, vs="eur"):
+        return {"ok": True, "preise": {ids[0]: {"usd": 60000.0}}}
+
+
+class TestKryptoUsdResolve(unittest.TestCase):
+    def setUp(self):
+        self.eng = InvestmentEngine(_StubMarketUSD(), InvestmentStore("/tmp/_x.jsonl"))
+
+    def test_coingecko_id(self):
+        self.assertEqual(self.eng.krypto_usd("bitcoin"), ("BTC/USD", 60000.0))
+
+    def test_ticker(self):
+        self.assertEqual(self.eng.krypto_usd("BTC"), ("BTC/USD", 60000.0))
+
+    def test_alpaca_symbol(self):
+        self.assertEqual(self.eng.krypto_usd("BTC/USD"), ("BTC/USD", 60000.0))
+
+    def test_unbekannt(self):
+        self.assertEqual(self.eng.krypto_usd("cardano"), (None, 0.0))
+
+
 class TestPaperOrderPreisUndTif(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
         self.store = InvestmentStore(Path(self.dir.name) / "log.jsonl")
         self.store.set_mode("paper")
         self.broker = _FakeBroker()
-        self.eng = InvestmentEngine(MarketData({}), self.store, broker=self.broker)
+        self.eng = InvestmentEngine(_StubMarketUSD(), self.store, broker=self.broker)
+
+    def test_krypto_order_per_coingecko_id_wird_aufgeloest(self):
+        r = self.eng.paper_order("bitcoin", 0.001, "buy", asset="krypto", bestaetigt=True)
+        self.assertTrue(r["ok"])
+        self.assertEqual(self.broker.orders[0]["symbol"], "BTC/USD")   # aufgeloest
+        self.assertEqual(self.broker.orders[0]["tif"], "gtc")
+        self.assertEqual(r["geschaetzter_wert"], 60.0)                 # 0.001 * 60000
 
     def tearDown(self):
         self.dir.cleanup()
