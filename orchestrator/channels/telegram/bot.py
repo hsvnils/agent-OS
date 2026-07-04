@@ -573,6 +573,48 @@ def _auto_trade_krypto_tick(ctx, eng, forecaster, datum: str) -> None:
                                           "preis": preis}, frage=frage)
 
 
+def _market_monitor_tick(ctx, eng, monitor, betrag_usd: float = 30.0) -> None:
+    """Ein Monitor-Durchlauf (nur Paper): Live-Kurse von Watchlist+Universum -> auffaellige Bewegungen.
+    Dip (faellt) -> kleiner Kauf-Vorschlag per 1-Tap-Freigabe; starker Anstieg -> Info-Alert. Frugal."""
+    from ...investment.broker import alpaca_krypto_symbol
+    from ...investment.universe import panel
+    quotes: dict = {}
+    krypto_ids: list = []
+    for w in panel(eng.store.watchlist()):
+        sym, asset = w.get("symbol"), w.get("asset", "aktie")
+        if asset == "krypto":
+            krypto_ids.append(sym)
+            continue
+        q = eng.market.aktie_quote(sym)
+        if q.get("ok") and _autonomie_f(q.get("preis")) > 0:
+            quotes[sym] = {"preis": _autonomie_f(q.get("preis")), "asset": asset}
+    if krypto_ids:
+        r = eng.market.crypto_preis(krypto_ids, vs="usd")
+        for cid, v in (r.get("preise") or {}).items() if r.get("ok") else []:
+            p = _autonomie_f(v.get("usd"))
+            if p > 0:
+                quotes[cid] = {"preis": p, "asset": "krypto"}
+    for c in monitor.beobachte(quotes)[:3]:
+        if c["richtung"] == "faellt" and ctx.approvals is not None:      # Dip -> kleiner Kauf-Vorschlag
+            sym, preis, asset = c["symbol"], c["preis"], c["asset"]
+            if asset == "krypto":
+                alp = alpaca_krypto_symbol(sym)
+                if not alp:
+                    continue
+                sym = alp
+            qty = round(betrag_usd / preis, 6)
+            if qty <= 0:
+                continue
+            frage = (f"Live-Dip: {c['symbol']} faellt {c['move_pct']:+.1f}% (kurzfristig). Kauf-Chance im Paper? "
+                     f"{qty:g} {sym} (~{betrag_usd:g} USD). Ausfuehren?")
+            ctx.approvals.add("paper_order", {"symbol": sym, "qty": qty, "side": "buy", "asset": asset,
+                                              "preis": preis}, frage=frage)
+        elif c["richtung"] == "steigt" and ctx.notifications is not None:
+            ctx.notifications.enqueue(
+                f"Live-Bewegung: {c['symbol']} {c['move_pct']:+.1f}% in kurzer Zeit — auffaellig.",
+                abteilung="CIO", kategorie="investment", quelle="monitor", dedup_stunden=1)
+
+
 def _start_investment_loop(ctx, secrets) -> None:
     """Automatischer Investment-Screen (advisory, token-frugal/kostenlos): werktags 16:00 DE ein Markt-Screen
     -> Vorschlaege (jeder vom Risk-Agent geprueft) -> Alerts ueber den Notifier; montags 09:00 Wochenprognose.
@@ -593,7 +635,8 @@ def _start_investment_loop(ctx, secrets) -> None:
         return
     auto_screen = secrets.get("INVESTMENT_AUTO_SCREEN", "").strip().lower() in ("1", "true", "yes", "on")
     feature_loop = secrets.get("INV_FEATURE_LOOP", "").strip().lower() in ("1", "true", "yes", "on")
-    if not (auto_screen or feature_loop):
+    monitor_an = secrets.get("INV_MONITOR", "").strip().lower() in ("1", "true", "yes", "on")
+    if not (auto_screen or feature_loop or monitor_an):
         return
     try:
         from zoneinfo import ZoneInfo
@@ -623,15 +666,25 @@ def _start_investment_loop(ctx, secrets) -> None:
         auto_trader = AutoTrader()
     # Autonomer Paper-Trader: standardmaessig AUS; nur Paper; autonom erst nach Track-Record-Freischaltung.
     auto_trade_an = secrets.get("INV_AUTO_TRADE", "").strip().lower() in ("1", "true", "yes", "on")
+    # Intraday-Markt-Monitor: standardmaessig AUS; alle ~10 Min Live-Kurse -> Dip-Vorschlaege per Freigabe.
+    monitor = None
+    if monitor_an:
+        from ...investment.monitor import MarketMonitor
+        monitor = MarketMonitor()
 
     def loop():
         time.sleep(45)
         _autotrade_datum = ""
         _autotrade_krypto_datum = ""
+        _last_monitor = 0.0
         while True:
             try:
                 jetzt = datetime.now(tz) if tz else datetime.now()
                 datum = jetzt.strftime("%Y-%m-%d")
+                # Intraday-Monitor alle ~10 Min (nur Paper): Live-Bewegungen -> Dip-Vorschlaege per Freigabe
+                if monitor is not None and eng.store.mode() == "paper" and time.time() - _last_monitor > 600:
+                    _last_monitor = time.time()
+                    _market_monitor_tick(ctx, eng, monitor)
                 # Taeglicher Merkmals-/Preis-Snapshot (~07:00) + Abgleich faelliger Prognosen, 1x/Tag
                 if collector is not None and jetzt.hour == 7 and collector.store.last_datum("inv_features") != datum:
                     r = collector.collect(eng.store.watchlist(), datum=datum)
@@ -708,6 +761,8 @@ def _start_investment_loop(ctx, secrets) -> None:
     if auto_trade_an:
         aktive.append("werktags 15:00 Auto-Paper-Trade Aktien/ETF + 02:00 Nacht-Krypto (Leitplanken; autonom "
                       "erst nach Track-Record, sonst Freigabe)")
+    if monitor_an:
+        aktive.append("Intraday-Monitor alle ~10 Min (Live-Dips -> Freigabe-Vorschlaege)")
     print("Investment-Loop aktiv (" + "; ".join(aktive) + ").", flush=True)
 
 

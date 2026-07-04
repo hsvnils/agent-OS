@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 15:30] — Claude Code — Investment: Intraday-Markt-Monitor (Live-Dips -> Freigabe) (Schritt 8)
+- **Was:** Ergaenzt den Batch-Betrieb um eine **reaktive Live-Ebene** (CEO: „tagsueber die Kurse im Blick, bei
+  Live-Aenderungen dynamisch vorschlagen"). `orchestrator/investment/monitor.py` (`MarketMonitor`): haelt je
+  Wert eine gleitende Referenz (Preis+Zeit) und meldet eine Kandidaten-Bewegung, wenn sich der Kurs seit der
+  Referenz um >= Schwelle (Default 4 %) innerhalb des Fensters (Default 30 Min) bewegt hat; Referenz wird
+  nachgezogen (kein Dauerfeuer). Bot (`_market_monitor_tick`, alle ~10 Min, nur Paper, gated `INV_MONITOR=1`):
+  holt Live-Kurse von Watchlist+Universum (Finnhub-Quotes + CoinGecko-Bulk USD), **Dip -> kleiner Paper-Kauf-
+  Vorschlag per 1-Tap-Freigabe** (Ja/Nein), starker Anstieg -> Info-Alert. Frugal/regelbasiert (kein LLM je
+  Tick). Standardmaessig AUS. 6 neue Tests; volle Suite 563 gruen.
+- **Warum:** Schritt 8 -- CEO-Anforderung: nicht nur taegliche Batch-Laeufe, sondern ein Agent, der tagsueber
+  live reagiert und Chancen (v. a. Dips) sofort als Ja/Nein-Vorschlag meldet. Paper, kein echtes Geld.
+- **Betroffen:** `orchestrator/investment/monitor.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_investment_monitor.py`, `orchestrator/.env.example`.
+
 ## [2026-07-04 15:00] — Claude Code — Investment: Paper-Freigabe per USD-Betrag (Schritt 7.3)
 - **Was:** Das Tool `paper_order_freigabe` nimmt jetzt `betrag_usd` (USD-Betrag) statt zwingend `qty`
   (Stueckzahl) -- „fuer 30 USD Bitcoin" rechnet die Stueckzahl selbst aus (Bruchteile), Kurs holt es selbst
