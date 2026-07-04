@@ -176,10 +176,8 @@ function invTrendSvg(v) {
   const x = i => pad + (v.length <= 1 ? (W - 2 * pad) / 2 : i * (W - 2 * pad) / (v.length - 1));
   const y = val => H - pad - ((val || 0) / max) * (H - 2 * pad);
   const path = key => v.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p[key]).toFixed(1)}`).join(" ");
-  const dot = (key, cls) => v.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p[key]).toFixed(1)}" r="2.4" class="inv-dot ${cls}"/>`).join("");
   return `<svg viewBox="0 0 ${W} ${H}" class="inv-svg" preserveAspectRatio="none" role="img">
-    <path d="${path("baseline_mae_pct")}" class="inv-line base"/><path d="${path("mae_pct")}" class="inv-line strat"/>
-    ${dot("baseline_mae_pct", "base")}${dot("mae_pct", "strat")}</svg>`;
+    <path d="${path("baseline_mae_pct")}" class="inv-line base"/><path d="${path("mae_pct")}" class="inv-line strat"/></svg>`;
 }
 function invLoopHtml(L) {
   if (!L) return "";

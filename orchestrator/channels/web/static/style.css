@@ -238,7 +238,7 @@ body {
 .inv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 520px) { .inv-two { grid-template-columns: 1fr; } }
 .inv-svg { width: 100%; height: 120px; }
-.inv-line { fill: none; stroke-width: 2; }
+.inv-line { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; }
 .inv-line.strat { stroke: var(--cyan); }
 .inv-line.base { stroke: var(--muted); stroke-dasharray: 4 4; }
 .inv-dot.strat { fill: var(--cyan); } .inv-dot.base { fill: var(--muted); }

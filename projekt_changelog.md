@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 19:15] — Claude Code — UI-Fix: Fehler-Verlauf-Graph (keine ovalen Punkte mehr)
+- **Was:** Der Fehler-Verlauf-Chart sah „komisch" aus -- die SVG wird per `preserveAspectRatio="none"` auf die
+  volle Breite gestreckt, wodurch die runden Punkte zu **ovalen Blobs** wurden und die Linien ungleich dick.
+  Fix: Punkte (`<circle>`) aus `invTrendSvg` entfernt (nur noch die zwei Linien Modell/Baseline);
+  `.inv-line { vector-effect: non-scaling-stroke }` -> Linien bleiben unter der Streckung ueberall gleich duenn/
+  scharf (gilt auch fuer den Kurs-Chart). Isoliert (breit, Hell-Theme) per Preview verifiziert -> sauber.
+  Cache v45->v46.
+- **Warum:** CEO -- „der Graph sieht voll komisch aus" (gestreckte Punkte/Striche).
+- **Betroffen:** `orchestrator/channels/web/static/app.js`, `.../style.css`, `.../index.html`.
+
 ## [2026-07-04 19:05] — Claude Code — UI-Fix: Investment-Loop im Hell-Theme (grauer Schleier weg)
 - **Was:** Der Lern-Loop-Block wirkte im **Hell-Theme** wie mit einem grauen Overlay ueberzogen. Ursache:
   `html.theme-light .wb-body` ist **weiss**, aber die Loop-Styles hatten **hartkodierte dunkle** Hintergruende
