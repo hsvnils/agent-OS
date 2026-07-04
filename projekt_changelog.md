@@ -17,6 +17,29 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 21:30] — Claude Code — Investment: Modell v4 (Insider-Discovery, SEC Form 4, 30-Tage-Horizont)
+- **Was:** Neues Prognose-Modell **`v4-insider-30d`** als 4. Signal-Ansatz. **Vorab geprueft (empirisch, Live-
+  Finnhub):** Offenmarkt-KAEUFE (Form-4-Code P) kommen bei unseren Mega-Caps (AAPL/NVDA/META/JPM ...) praktisch
+  NIE vor (0 in 12 Monaten) -- der Insider-Edge liegt bei Small/Mid-Caps. Darum **Discovery** statt festes
+  Universum: neues **`insider_universe.INSIDER_SCREEN_UNIVERSE`** (32 insider-aktive Werte, getrennt von
+  CORE_UNIVERSE) + **30-Tage-Horizont** (Insider wirkt ueber Wochen-Monate, nicht 7 Tage). Neu:
+  `investment/insider.py` (`InsiderModel`: point-in-time-Cluster-Erkennung via `filing_datum`, rueckwirkender
+  Backtest ohne Look-ahead, Live-Produzent + eigene Auswertung). `providers.insider_transactions` gibt jetzt
+  `filing_datum` getrennt zurueck (point-in-time). `signals.insider_signal` + `forecaster.insider_forecast_fields`
+  (+ Konstanten `MODELL_VERSION_INSIDER`, `INSIDER_HORIZONT_TAGE`). v4 haengt am „Historie laden"-Flow
+  (hoa_tools + app.py) und am woechentlichen Bot-Loop (Live-Prognose Mo + 30-Tage-Abgleich). Dashboard „Je
+  Modell-Version" zeigt v4 automatisch + Hinweistext (kein 1:1-Vergleich zu 7-Tage-MAE). Cache v48->v49.
+  **Vollstaendig getrennt von v2/v3** (eigene inv_deviations/inv_forecasts, `inv_features` unberuehrt).
+- **Warum:** CEO-Entscheidung: reine Preis-Signale haben keinen Edge (Richtung 41 %) -> Insider-Kaeufe als
+  Nicht-Preis-Signal testen. CEO waehlte Discovery-Ansatz + 30-Tage-Horizont.
+- **Ehrliches Zwischenergebnis (Smoke-Test, 12-Symbol-Subset, 6 Monate):** n=71 insider-aktive Wochen,
+  Richtungsquote **50,7 %** (besser als 41 % der Preis-Signale, aber ~Muenzwurf), besser-als-Baseline 46,5 %,
+  MAE 16,3 vs 15,9. Kein klarer Edge im Subset -> echter Test = volles Universum + **Live-out-of-sample**.
+- **Betroffen:** `orchestrator/investment/insider.py` (neu), `.../insider_universe.py` (neu),
+  `.../providers.py`, `.../signals.py`, `.../forecaster.py`; `core/hoa_tools.py`, `channels/web/app.py`,
+  `channels/telegram/bot.py`, `channels/web/static/app.js` + `index.html` (v49);
+  `tests/test_investment_insider_v4.py` (neu, 13 Tests). Suite **597 gruen**. **NICHT deployt** (CEO-Ansage).
+
 ## [2026-07-04 20:10] — Claude Code — Investment: Modell v3 (Aktien=Momentum, Krypto=Mean-Reversion) + Versions-Vergleich
 - **Was:** Neues Modell `v3-perasset` (`forecast_fields(closes, asset)`): **Aktien/ETF = Momentum** (wie bisher),
   **Krypto = Mean-Reversion** (Signale invertiert -- 7-Tage-Krypto lief in der Historie gegen den Trend, 42 %

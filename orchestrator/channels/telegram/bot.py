@@ -790,12 +790,14 @@ def _start_investment_loop(ctx, secrets) -> None:
 
     collector = None
     forecaster = None
+    insider_model = None
     auto_trader = None
     if feature_loop:
         from ...governance.supabase import SupabaseAuth, SupabaseClient
         from ...investment.auto_trader import AutoTrader
         from ...investment.features import FeatureCollector
         from ...investment.forecaster import Forecaster
+        from ...investment.insider import InsiderModel
         from ...investment.loop_store import LoopStore
         _auth = SupabaseAuth.from_env(secrets)
         _sb = SupabaseClient(_auth) if _auth.verfuegbar() else None
@@ -803,6 +805,7 @@ def _start_investment_loop(ctx, secrets) -> None:
         _loop_store = LoopStore(ROOT / "investment" / "features.jsonl", supabase=_sb, secrets=_leak)
         collector = FeatureCollector(eng.market, _loop_store)
         forecaster = Forecaster(_loop_store)
+        insider_model = InsiderModel(eng.market, _loop_store)   # v4 = Insider-Discovery (30-Tage, out-of-sample)
         auto_trader = AutoTrader()
     # Autonomer Paper-Trader: standardmaessig AUS; nur Paper; autonom erst nach Track-Record-Freischaltung.
     auto_trade_an = secrets.get("INV_AUTO_TRADE", "").strip().lower() in ("1", "true", "yes", "on")
@@ -835,6 +838,15 @@ def _start_investment_loop(ctx, secrets) -> None:
                         f"{len(r['uebersprungen'])} bereits vorhanden.",
                         abteilung="CIO", kategorie="investment", quelle="feature-loop", dedup_stunden=0)
                     a = forecaster.auswerten(heute=datum)   # 7-Tage-Prognosen gegen die Realitaet abgleichen
+                    if insider_model is not None:
+                        try:
+                            ia = insider_model.auswerten(heute=datum)   # v4: faellige 30-Tage-Insider-Prognosen
+                            if ia.get("neu_bewertet"):
+                                ctx.notifications.enqueue(
+                                    f"Insider-Prognose-Abgleich (v4): {ia['neu_bewertet']} ausgewertet (30 Tage).",
+                                    abteilung="CIO", kategorie="investment", quelle="loop-insider", dedup_stunden=0)
+                        except Exception as exc:
+                            print(f"[investment] Insider-Auswerten-Fehler: {exc}", flush=True)
                     if a["neu_bewertet"]:
                         k = a["kennzahlen"].get("gesamt", {})
                         ctx.notifications.enqueue(
@@ -863,6 +875,17 @@ def _start_investment_loop(ctx, secrets) -> None:
                                     konfidenz=ch["konfidenz"], quellen=["7-Tage-Prognose " + forecaster.MODELL_VERSION])
                             except Exception as exc:
                                 print(f"[investment] Chancen-Vorschlag-Fehler: {exc}", flush=True)
+                        # v4: Insider-Discovery -- Werte mit aktuell frischem Form-4-Cluster-Kauf (30-Tage-Prognose)
+                        if insider_model is not None:
+                            try:
+                                il = insider_model.live_prognosen(datum=datum)
+                                if il.get("erstellt"):
+                                    ctx.notifications.enqueue(
+                                        f"Insider-Prognosen (v4) erstellt: {', '.join(il['erstellt'])} "
+                                        f"(30 Tage, faellig {il['faellig_am']}).",
+                                        abteilung="CIO", kategorie="investment", quelle="loop-insider", dedup_stunden=0)
+                            except Exception as exc:
+                                print(f"[investment] Insider-Live-Prognose-Fehler: {exc}", flush=True)
                 # Taeglicher Markt-Screen (werktags ~16:00), 1x/Tag
                 if auto_screen and jetzt.weekday() < 5 and jetzt.hour == 16 and _letztes_datum("screening") != datum:
                     r = eng.screen_und_vorschlagen(max_vorschlaege=3)

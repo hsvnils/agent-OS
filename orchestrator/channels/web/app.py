@@ -898,8 +898,15 @@ async def investment_backfill(request: Request):
         h = bf.lade_historie(ziele, seit=seit)
         b = bf.backtest()
         Forecaster(loop_store).prognostizieren(panel(eng.store.watchlist()))   # aktuelle Prognose(n)
+        from ...investment.insider import InsiderModel                          # v4 = Insider-Discovery, 30-Tage
+        im = InsiderModel(eng.market, loop_store)
+        iv = im.backtest(seit=seit)
+        il = im.live_prognosen()
         return {"zeilen_neu": h.get("zeilen_neu", 0), "auswertungen_neu": b.get("auswertungen_neu", 0),
-                "hinweise": h.get("hinweise", [])}
+                "insider_auswertungen_neu": iv.get("auswertungen_neu", 0),
+                "insider_wochen": iv.get("insider_wochen", 0),
+                "insider_live_prognosen": len(il.get("erstellt", [])),
+                "hinweise": (h.get("hinweise", []) + iv.get("hinweise", []))[:8]}
 
     res = await asyncio.to_thread(run)
     return JSONResponse({"ok": True, **res, "loop": _investment_loop_payload()})

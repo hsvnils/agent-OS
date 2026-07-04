@@ -17,8 +17,15 @@ import uuid
 from datetime import date, timedelta
 
 from .signals import berechne as berechne_signale
+from .signals import insider_signal as _insider_signal
 
 SCHWELLE_PCT = 1.0   # ab hier gilt eine Bewegung als steigt/faellt (sonst seitwaerts)
+
+# v4 = Insider-Discovery: nicht auf feste Universe geschraubt, sondern Werte MIT frischem Form-4-Cluster-Kauf.
+# Eigener 30-Tage-Horizont (Insider-Edge wirkt ueber Wochen-Monate, nicht 7 Tage). Version traegt den Horizont
+# im Namen -> im Dashboard sofort erkennbar, dass v4 NICHT 1:1 gegen die 7-Tage-MAE von v2/v3 zu lesen ist.
+MODELL_VERSION_INSIDER = "v4-insider-30d"
+INSIDER_HORIZONT_TAGE = 30
 
 
 def _num(v) -> float:
@@ -206,6 +213,45 @@ def forecast_fields(closes: list[float], asset: str = "aktie") -> dict:
             "signale": [{"typ": s["typ"], "richtung": s["richtung"]} for s in signale],
             "ret_5d": ret5, "vola_20d": vola, "basis_close": basis,
             "rationale": f"{zahl}/{len(signale)} Signale fuer {richtung} ({stance}: {', '.join(treiber) or 'uneins'})"}
+
+
+INSIDER_DAEMPFUNG = 0.3   # gedaempfte Magnitude auf 30-Tage-Sicht (wie v3 -- ehrlich, kein Ueberschiessen)
+
+
+def insider_forecast_fields(closes: list[float], insider: dict, *, horizont: int = INSIDER_HORIZONT_TAGE) -> dict:
+    """Kern des v4-Modells (Insider-Discovery). Prognose fuer einen Wert MIT frischem Insider-KAUF-Cluster.
+    Das Insider-Signal ist der **Haupttreiber** (bullisch); die Preis-Signale (Momentum/Trend/Breakout) reiten
+    nur als Bestaetigung mit. `insider` = {cluster:int, summe:float, ...}. Pure Funktion -- live UND Backtest.
+    Gibt bewusst dieselben Felder wie `forecast_fields` zurueck (Register/Dashboard sind versions-agnostisch)."""
+    basis = closes[-1]
+    ret5 = round((basis / closes[-6] - 1) * 100, 3) if len(closes) > 5 and closes[-6] > 0 else 0.0
+    tages = [closes[i] / closes[i - 1] - 1 for i in range(1, len(closes)) if closes[i - 1] > 0]
+    vola = round(statistics.pstdev(tages[-20:]) * 100, 3) if len(tages) >= 2 else 0.0
+    cluster = int(_num(insider.get("cluster")))
+    summe = _num(insider.get("summe"))
+    isig = _insider_signal(cluster, summe)
+    preis_signale = berechne_signale(closes)
+    signale = [isig] + preis_signale
+
+    # Insider entscheidet die Richtung (steigt); Preis-Signale modulieren nur Betrag/Konfidenz.
+    richtung = "steigt"
+    bestaetigend = sum(1 for s in preis_signale if s["richtung"] == "steigt")
+    widersprechend = sum(1 for s in preis_signale if s["richtung"] == "faellt")
+    zahl = 1 + bestaetigend                                   # Insider + zustimmende Preis-Signale
+    # Erwartete 30-Tage-Rendite: Insider-Basis + gedaempftes Momentum, gedaempft bei Preis-Gegenwind.
+    basis_ret = 2.0 + 1.0 * max(0, cluster - 1)               # Insider-Grundhaltung (bullisch), waechst mit Cluster
+    momentum_add = INSIDER_DAEMPFUNG * max(0.0, ret5)
+    gegenwind = 1.0 - 0.15 * widersprechend
+    ziel = round(max(0.0, (basis_ret + momentum_add) * max(0.4, gegenwind)) * isig["staerke"] / 0.5, 3)
+    band = round(vola * math.sqrt(horizont), 3)
+    konf = round(min(0.9, 0.4 + 0.1 * cluster + 0.05 * bestaetigend + min(0.2, summe / 1_000_000.0)), 2)
+    treiber = ["insider"] + [s["typ"] for s in preis_signale if s["richtung"] == "steigt"]
+    return {"richtung": richtung, "ziel_return_pct": ziel, "spanne_low": round(ziel - band, 3),
+            "spanne_high": round(ziel + band, 3), "konfidenz": konf, "signale_zahl": zahl, "treiber": treiber,
+            "signale": [{"typ": s["typ"], "richtung": s["richtung"]} for s in signale],
+            "ret_5d": ret5, "vola_20d": vola, "basis_close": basis,
+            "rationale": f"Insider-Cluster ({cluster} Kaeufer, ~{summe:,.0f} USD) + {bestaetigend} bestaetigende "
+                         f"Preis-Signale -> steigt auf {horizont}T"}
 
 
 def _iso_woche(datum: str) -> str:

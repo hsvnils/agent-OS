@@ -345,6 +345,7 @@ class MarketData:
                 "preis": preis,
                 "wert": round(abs(anzahl) * preis, 2) if (anzahl and preis) else None,
                 "datum": x.get("transactionDate") or x.get("filingDate") or "",
+                "filing_datum": x.get("filingDate") or x.get("transactionDate") or "",  # erst hier oeffentlich bekannt -> point-in-time
                 "code": code,
             })
         # Klickbarer Beleg: SEC-EDGAR-Form-4-Uebersicht des Emittenten.

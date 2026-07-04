@@ -46,3 +46,12 @@ def berechne(closes: list[float]) -> list[dict]:
 def _gerichtet(typ: str, wert: float, *, schwelle: float, staerke: float, detail: str) -> dict:
     richtung = "steigt" if wert > schwelle else ("faellt" if wert < -schwelle else "neutral")
     return {"typ": typ, "richtung": richtung, "staerke": round(min(1.0, staerke), 2), "detail": detail}
+
+
+def insider_signal(cluster: int, summe: float) -> dict:
+    """Nicht-Preis-Signal aus SEC Form 4: ein frischer Insider-KAUF-Cluster ist bullisch (dokumentierte
+    Vorhersagekraft, v. a. bei Small/Mid-Caps). `cluster` = Zahl kaufender Insider, `summe` = Kaufwert USD.
+    Staerke steigt mit Cluster-Groesse und Kaufsumme. Immer richtung=steigt (nur Kaeufe werden gemeldet)."""
+    staerke = min(1.0, 0.3 + 0.2 * max(0, cluster - 1) + min(0.4, summe / 1_000_000.0))
+    return {"typ": "insider", "richtung": "steigt", "staerke": round(staerke, 2),
+            "detail": f"{cluster} Insider-Kaeufer, ~{summe:,.0f} USD"}

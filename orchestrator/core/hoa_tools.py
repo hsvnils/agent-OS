@@ -1099,8 +1099,17 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             h = bf.lade_historie(ziele, seit=seit)
             b = bf.backtest()
             Forecaster(store).prognostizieren(panel(eng.store.watchlist()))
+            # v4 = Insider-Discovery (eigenes Screen-Universum, 30-Tage-Horizont) -- fuellt "Je Modell-Version".
+            from ..investment.insider import InsiderModel
+            im = InsiderModel(eng.market, store)
+            iv = im.backtest(seit=seit)
+            il = im.live_prognosen()
             return {"ok": True, "zeilen_neu": h.get("zeilen_neu", 0),
-                    "auswertungen_neu": b.get("auswertungen_neu", 0), "hinweise": h.get("hinweise", [])}
+                    "auswertungen_neu": b.get("auswertungen_neu", 0),
+                    "insider_auswertungen_neu": iv.get("auswertungen_neu", 0),
+                    "insider_wochen": iv.get("insider_wochen", 0),
+                    "insider_live_prognosen": len(il.get("erstellt", [])),
+                    "hinweise": (h.get("hinweise", []) + iv.get("hinweise", []))[:8]}
         if name == "investment_scorecard":
             return _redact_obj(eng.scorecard(), sec)
         if name == "investment_status":

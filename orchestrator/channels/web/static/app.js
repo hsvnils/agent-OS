@@ -253,7 +253,8 @@ function invLoopHtml(L) {
       <div><h4>Je Anlageklasse</h4>${klassen}</div>
     </div>
     ${attr ? `<h4>Signal-Attribution <span class="meta">welche Signale treffen</span></h4>${attr}` : ""}
-    ${vers ? `<h4>Je Modell-Version <span class="meta">schlägt es die Baseline?</span></h4><div class="inv-lp">${vers}</div>` : ""}
+    ${vers ? `<h4>Je Modell-Version <span class="meta">schlägt es die Baseline?</span></h4><div class="inv-lp">${vers}</div>
+      <div class="meta" style="margin-top:6px">v4-insider-30d = eigenes Modell: nur Werte mit frischem SEC-Form-4-Insider-Cluster-Kauf, 30-Tage-Horizont (kleinere Stichprobe). Nicht 1:1 gegen die 7-Tage-MAE von v2/v3 zu lesen — Maßstab ist „schlägt Baseline" + Richtungsquote auf dem Insider-Subset.</div>` : ""}
     <h4>Offene Prognosen</h4>${prog}
     <h4>Abweichungs-Register <span class="meta">separat, dauerhaft</span></h4>${reg}
     ${invLeitplankenHtml(L.leitplanken)}
