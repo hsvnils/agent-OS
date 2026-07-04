@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 17:10] — Claude Code — Investment: Positions-bewusster, symmetrischer Monitor (Kauf + Verkauf)
+- **Was:** Der Intraday-Monitor kennt jetzt die offenen Positionen (`_positionen_index`: normalisiert Ticker/
+  Krypto-Basis, matcht Live-Kandidaten). `_market_monitor_tick` handelt jetzt **positions-bewusst**: (1) Wert
+  NICHT im Depot + scharfer Dip -> **Kauf**-Vorschlag (wie bisher). (2) Wert IM Depot + scharfer Abfall ->
+  **SCHUTZ-Verkauf**-Vorschlag statt Nachkauf (behebt den Averaging-Down-Bug -- vorher haette er einen Kauf
+  vorgeschlagen). (3) Anstieg -> Info-Alert (das +15%-Take-Profit macht weiter der Exit-Monitor). Dedupe gegen
+  offene Buy-/Sell-Freigaben je Symbol. Damit wird **Verkauf gleichwertig zu Kauf** ueberwacht. Suite 573 gruen.
+- **Warum:** CEO-Befund -- bisher wurden faktisch nur Kauf-Chancen aktiv ueberwacht; Verkauf nur ueber die festen
+  Exit-Schwellen. Und ein Dip auf einen gehaltenen Wert haette faelschlich einen Nachkauf vorgeschlagen.
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`.
+
 ## [2026-07-04 16:50] — Claude Code — Telegram: Freigabe ohne Rueckfrage + sofort (UX-Fix)
 - **Was:** Zwei Reibungspunkte behoben. (1) **Verzoegerung:** Tool-erzeugte Freigaben wurden erst vom
   periodischen Poll zugestellt (~1 Min Lag). Neu `_deliver_approvals(...)` -- wird jetzt auch **direkt nach der

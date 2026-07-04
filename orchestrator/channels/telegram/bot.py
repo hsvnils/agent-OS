@@ -617,11 +617,35 @@ def _auto_trade_krypto_tick(ctx, eng, forecaster, datum: str) -> None:
                                           "preis": preis}, frage=frage)
 
 
+def _positionen_index(eng) -> dict:
+    """Offene Paper-Positionen -> {normalisiertes Symbol: {order_symbol, qty, asset}}.
+    Schluessel: Ticker (Aktie) bzw. Basis (Krypto, z. B. 'BTC') -- damit Live-Kandidaten zugeordnet werden koennen."""
+    from ...investment.monitor import krypto_order_symbol
+    idx: dict = {}
+    broker = getattr(eng, "broker", None)
+    if broker is None or not broker.verfuegbar:
+        return idx
+    for p in broker.positionen():
+        asset = "krypto" if p.get("asset_class") == "crypto" else "aktie"
+        sym = p.get("symbol") or ""
+        if asset == "krypto":
+            order_sym = krypto_order_symbol(sym)      # BTCUSD -> BTC/USD
+            key = order_sym.split("/")[0]             # BTC
+        else:
+            order_sym = sym.upper()
+            key = order_sym
+        idx[key] = {"order_symbol": order_sym, "qty": _autonomie_f(p.get("qty")), "asset": asset}
+    return idx
+
+
 def _market_monitor_tick(ctx, eng, monitor, betrag_usd: float = 30.0) -> None:
-    """Ein Monitor-Durchlauf (nur Paper): Live-Kurse von Watchlist+Universum -> auffaellige Bewegungen.
-    Dip (faellt) -> kleiner Kauf-Vorschlag per 1-Tap-Freigabe; starker Anstieg -> Info-Alert. Frugal."""
+    """Positions-BEWUSSTER Monitor (nur Paper): Live-Kurse Watchlist+Universum -> auffaellige Bewegungen.
+    Nicht im Depot + Dip -> Kauf-Vorschlag. Im Depot + scharfer Abfall -> SCHUTZ-Verkauf-Vorschlag (kein
+    Nachkauf!). Anstieg -> Info-Alert (das +15%-Take-Profit macht der Exit-Monitor). Alles per 1-Tap-Freigabe."""
     from ...investment.broker import alpaca_krypto_symbol
     from ...investment.universe import panel
+    if ctx.approvals is None:
+        return
     quotes: dict = {}
     krypto_ids: list = []
     for w in panel(eng.store.watchlist()):
@@ -638,24 +662,43 @@ def _market_monitor_tick(ctx, eng, monitor, betrag_usd: float = 30.0) -> None:
             p = _autonomie_f(v.get("usd"))
             if p > 0:
                 quotes[cid] = {"preis": p, "asset": "krypto"}
+    idx = _positionen_index(eng)
+    offene = ctx.approvals.offen()
+    offene_sells = {(a.get("payload") or {}).get("symbol") for a in offene if (a.get("payload") or {}).get("side") == "sell"}
+    offene_buys = {(a.get("payload") or {}).get("symbol") for a in offene if (a.get("payload") or {}).get("side") == "buy"}
     for c in monitor.beobachte(quotes)[:3]:
-        if c["richtung"] == "faellt" and ctx.approvals is not None:      # Dip -> kleiner Kauf-Vorschlag
-            sym, preis, asset = c["symbol"], c["preis"], c["asset"]
-            if asset == "krypto":
-                alp = alpaca_krypto_symbol(sym)
-                if not alp:
-                    continue
-                sym = alp
-            qty = round(betrag_usd / preis, 6)
-            if qty <= 0:
+        asset, preis = c["asset"], c["preis"]
+        if asset == "krypto":
+            order_sym = alpaca_krypto_symbol(c["symbol"])
+            if not order_sym:
                 continue
-            frage = (f"Live-Dip: {c['symbol']} faellt {c['move_pct']:+.1f}% (kurzfristig). Kauf-Chance im Paper? "
-                     f"{qty:g} {sym} (~{betrag_usd:g} USD). Ausfuehren?")
-            ctx.approvals.add("paper_order", {"symbol": sym, "qty": qty, "side": "buy", "asset": asset,
-                                              "preis": preis}, frage=frage)
-        elif c["richtung"] == "steigt" and ctx.notifications is not None:
+            key = order_sym.split("/")[0]
+        else:
+            order_sym = (c["symbol"] or "").upper()
+            key = order_sym
+        held = idx.get(key)
+        if c["richtung"] == "faellt":
+            if held:                                          # halten wir -> Schutz-Verkauf statt Nachkauf
+                if order_sym in offene_sells or held["qty"] <= 0:
+                    continue
+                frage = (f"Live-Abfall: {c['symbol']} faellt {c['move_pct']:+.1f}% (kurzfristig) — du haeltst es. "
+                         f"Position schuetzen? Verkauf {held['qty']:g} {order_sym} (Paper)?")
+                ctx.approvals.add("paper_order", {"symbol": order_sym, "qty": held["qty"], "side": "sell",
+                                                  "asset": asset, "preis": preis}, frage=frage)
+            else:                                             # nicht im Depot -> Kauf-Chance
+                if order_sym in offene_buys:
+                    continue
+                qty = round(betrag_usd / preis, 6)
+                if qty <= 0:
+                    continue
+                frage = (f"Live-Dip: {c['symbol']} faellt {c['move_pct']:+.1f}% (kurzfristig). Kauf-Chance im "
+                         f"Paper? {qty:g} {order_sym} (~{betrag_usd:g} USD). Ausfuehren?")
+                ctx.approvals.add("paper_order", {"symbol": order_sym, "qty": qty, "side": "buy",
+                                                  "asset": asset, "preis": preis}, frage=frage)
+        elif ctx.notifications is not None:                   # steigt -> Info (Take-Profit macht der Exit-Monitor)
+            zusatz = " — im Depot" if held else ""
             ctx.notifications.enqueue(
-                f"Live-Bewegung: {c['symbol']} {c['move_pct']:+.1f}% in kurzer Zeit — auffaellig.",
+                f"Live-Bewegung: {c['symbol']} {c['move_pct']:+.1f}% in kurzer Zeit{zusatz}.",
                 abteilung="CIO", kategorie="investment", quelle="monitor", dedup_stunden=1)
 
 
