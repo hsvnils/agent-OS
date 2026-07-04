@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 19:05] — Claude Code — UI-Fix: Investment-Loop im Hell-Theme (grauer Schleier weg)
+- **Was:** Der Lern-Loop-Block wirkte im **Hell-Theme** wie mit einem grauen Overlay ueberzogen. Ursache:
+  `html.theme-light .wb-body` ist **weiss**, aber die Loop-Styles hatten **hartkodierte dunkle** Hintergruende
+  (`rgba(8,14,34,.4)` / `rgba(20,30,48,.55/.7)`) -> dunkle Flaechen auf Weiss = grauer Schleier. Fix: `.inv-loop`
+  Hintergrund transparent; `.inv-kpi` + `.inv-lp-status` -> `var(--glass)` (theme-adaptiv, wie die uebrigen
+  Karten); `.inv-cls .bar` -> `var(--cyan-soft)`. Dark-Theme bleibt praktisch unveraendert. Isoliert im
+  Hell-Theme (weisser wb-body) per Preview verifiziert -> sauber. Cache v44->v45.
+- **Warum:** CEO im Light Mode; der Loop-Block war dark-theme-only gestylt. (Alert-Popup war NICHT die Ursache.)
+- **Betroffen:** `orchestrator/channels/web/static/style.css`, `.../index.html`.
+
 ## [2026-07-04 18:50] — Claude Code — Investment: Historie-Backfill + rueckwirkender Backtest
 - **Was:** Fuellt den Walk-Forward-Loop sofort mit echten Daten (statt 6 Tage sammeln). Provider:
   `MarketData.aktie_historie` (Alpha Vantage TIME_SERIES_DAILY) + `crypto_historie` (CoinGecko market_chart).
