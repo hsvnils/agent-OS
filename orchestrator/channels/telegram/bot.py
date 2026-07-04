@@ -178,11 +178,43 @@ def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:
 
 
 def _send_approval(token: str, chat_id, apv: dict) -> dict:
-    """Schickt eine Freigabe-Anfrage mit Inline-Keyboard (Ja/Nein). Der Klick kommt als callback_query zurueck."""
+    """Schickt eine Freigabe mit Inline-Keyboard (Ja / Nein / Andere Summe). Klick kommt als callback_query."""
     kb = {"inline_keyboard": [[{"text": "✅ Ja", "callback_data": f"apv:{apv['id']}:yes"},
-                               {"text": "❌ Nein", "callback_data": f"apv:{apv['id']}:no"}]]}
+                               {"text": "❌ Nein", "callback_data": f"apv:{apv['id']}:no"}],
+                              [{"text": "✏️ Andere Summe", "callback_data": f"apv:{apv['id']}:amt"}]]}
     return _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(apv.get("frage", "Freigabe?")),
                                        "reply_markup": json.dumps(kb)})
+
+
+def _parse_betrag(text: str) -> float:
+    """Zieht einen USD-Betrag aus einer Nachricht (z. B. '50', '50 USD', '50,5')."""
+    import re
+    m = re.search(r"(\d+(?:[.,]\d+)?)", text or "")
+    return float(m.group(1).replace(",", ".")) if m else 0.0
+
+
+def _neue_paper_freigabe(ctx, eng, params: dict, betrag_usd: float):
+    """Legt eine neue Paper-Order-Freigabe fuer einen USD-Betrag an (Kurs frisch geholt). -> Freigabe-ID | None."""
+    symbol = params.get("symbol")
+    asset = params.get("asset", "aktie")
+    side = params.get("side", "buy")
+    preis_vorgabe = None
+    if asset == "krypto":
+        alp, usd = eng.krypto_usd(symbol)
+        if not alp or usd <= 0:
+            return None
+        symbol, preis_vorgabe = alp, usd
+    preis = _autonomie_f(preis_vorgabe if preis_vorgabe is not None else (eng._aktueller_preis(symbol, asset) or 0))
+    if preis <= 0:
+        return None
+    qty = round(betrag_usd / preis, 6)
+    if qty <= 0:
+        return None
+    frage = f"Paper-{'Kauf' if side == 'buy' else 'Verkauf'}: {qty:g} {symbol} (~{round(betrag_usd, 2)} USD). Ausfuehren?"
+    payload = {"symbol": symbol, "qty": qty, "side": side, "asset": asset}
+    if preis_vorgabe is not None:
+        payload["preis"] = preis_vorgabe
+    return ctx.approvals.add("paper_order", payload, frage=frage)
 
 
 def _approval_ausfuehren(ctx, apv: dict) -> str:
@@ -836,6 +868,7 @@ def main() -> None:
     ctx, _ = _build_ctx(cfg, secrets)
     model = cfg.get("voice", {}).get("llm_model", "claude-haiku-4-5")
     sessions: dict[int, HoaConversation] = {}
+    awaiting_betrag: dict[int, dict] = {}   # chat_id -> Order-Parameter, wenn auf 'Andere Summe' gewartet wird
 
     print("Telegram-Bot bereit." + ("" if allowed else " WARNUNG: keine TELEGRAM_ALLOWED_CHAT_ID gesetzt."))
     try:
@@ -961,17 +994,27 @@ def main() -> None:
                     elif data.startswith("apv:") and getattr(ctx, "approvals", None) is not None:
                         _, aid, ent = data.split(":", 2)
                         apv = ctx.approvals.get(aid)
+                        mid = (cb.get("message") or {}).get("message_id")
                         if not apv or apv.get("status") != "offen":
                             _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "Bereits entschieden."})
+                        elif ent == "amt":                       # Andere Summe -> auf neuen USD-Betrag warten
+                            p = apv.get("payload") or {}
+                            awaiting_betrag[int(cbchat)] = {"symbol": p.get("symbol"), "asset": p.get("asset", "aktie"),
+                                                            "side": p.get("side", "buy")}
+                            ctx.approvals.entscheiden(aid, False, ergebnis="andere Summe angefragt")
+                            _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "USD-Betrag eingeben"})
+                            if mid:
+                                _api(token, "editMessageText",
+                                     {"chat_id": cbchat, "message_id": mid, "reply_markup": json.dumps({"inline_keyboard": []}),
+                                      "text": fuer_telegram(apv.get("frage", "") + "\n\n✏️ Schick mir den gewuenschten USD-Betrag als Zahl.")})
                         else:
                             ja = ent == "yes"
                             res = _approval_ausfuehren(ctx, apv) if ja else "Abgelehnt."
                             ctx.approvals.entscheiden(aid, ja, ergebnis=(res if ja else "abgelehnt"))
                             _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": ("Ja" if ja else "Nein")})
-                            mid = (cb.get("message") or {}).get("message_id")
                             if mid:
                                 _api(token, "editMessageText",
-                                     {"chat_id": cbchat, "message_id": mid,
+                                     {"chat_id": cbchat, "message_id": mid, "reply_markup": json.dumps({"inline_keyboard": []}),
                                       "text": fuer_telegram(apv.get("frage", "") + f"\n\n{'✅ Ja' if ja else '❌ Nein'} — {res}")})
                 except Exception as exc:
                     print(f"[callback] Fehler: {exc}", flush=True)
@@ -993,6 +1036,22 @@ def main() -> None:
                 audio = _download_voice(token, msg["voice"]["file_id"])
                 text = _transcribe(audio, deepgram, language) if audio else None
             if not text:
+                continue
+            # Antwort auf 'Andere Summe': Betrag lesen -> frische Freigabe (Ja/Nein/Andere Summe) senden
+            if chat_id in awaiting_betrag and getattr(ctx, "approvals", None) is not None:
+                params = awaiting_betrag.pop(chat_id)
+                betrag = _parse_betrag(text)
+                if betrag > 0:
+                    aid = _neue_paper_freigabe(ctx, ctx.investment, params, betrag)
+                    apv = ctx.approvals.get(aid) if aid else None
+                    if apv and _send_approval(token, chat_id, apv).get("ok"):
+                        ctx.approvals.mark_sent(aid)
+                    else:
+                        _api(token, "sendMessage", {"chat_id": chat_id,
+                             "text": "Konnte keinen Kurs holen — Freigabe abgebrochen."})
+                else:
+                    _api(token, "sendMessage", {"chat_id": chat_id,
+                         "text": "Das war keine Zahl — Freigabe abgebrochen. Frag gern neu."})
                 continue
             if text.strip().lower() in ("/reset", "/neu", "/start"):
                 sessions.pop(chat_id, None)

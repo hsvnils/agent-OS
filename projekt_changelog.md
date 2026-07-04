@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 16:00] — Claude Code — Telegram: Freigabe mit „Andere Summe" (Ja/Nein/Andere Summe)
+- **Was:** Jede Paper-Freigabe hat jetzt drei Buttons: **✅ Ja · ❌ Nein · ✏️ Andere Summe**. Bei „Andere Summe"
+  fragt LUNA nach einem USD-Betrag; die naechste Zahl-Nachricht des CEO wird abgefangen (`awaiting_betrag`-State
+  je Chat), der Kurs frisch geholt, die Stueckzahl neu berechnet und eine **frische Freigabe** (wieder Ja/Nein/
+  Andere Summe) gesendet. `_send_approval` (3 Buttons), `_parse_betrag` (USD aus Text: '50', '50 USD', '12,5'),
+  `_neue_paper_freigabe` (Betrag -> Order-Freigabe, Kurs frisch, auch Krypto). Erledigte Freigaben verlieren die
+  Buttons (editMessageText mit leerem Keyboard). Erster echter **Krypto-Paper-Trade im Alpaca-Dashboard
+  bestaetigt** (BTCUSD 0.000478, ~29.95 USD). 4 neue Tests; volle Suite 567 gruen.
+- **Warum:** CEO-Wunsch -- flexibel mehr/weniger als der Vorschlag investieren, ohne neu zu formulieren.
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_telegram_betrag.py`.
+
 ## [2026-07-04 15:30] — Claude Code — Investment: Intraday-Markt-Monitor (Live-Dips -> Freigabe) (Schritt 8)
 - **Was:** Ergaenzt den Batch-Betrieb um eine **reaktive Live-Ebene** (CEO: „tagsueber die Kurse im Blick, bei
   Live-Aenderungen dynamisch vorschlagen"). `orchestrator/investment/monitor.py` (`MarketMonitor`): haelt je
