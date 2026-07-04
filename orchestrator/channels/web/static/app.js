@@ -160,6 +160,7 @@ async function ladeInvestment() {
     <h3>Shortlist (letzter Screen)</h3>${sl}
     <h3>Vorschläge (vom Risk-Agent geprüft)</h3>${sug}
     <h3>Insider-Signale (SEC Form 4)</h3>${ins}</div>`;
+  invMountCharts();
 }
 
 // ---- Investment-Lern-Loop (Walk-Forward): Command-Center-Block -------------
@@ -169,15 +170,41 @@ function invKpi(label, wert, sub) {
   return `<div class="inv-kpi"><div class="k">${esc(label)}</div><b>${wert}</b><span>${esc(sub || "")}</span></div>`;
 }
 // Fehler-Verlauf: zwei Linien (Modell vs. Baseline), niedriger = besser.
-function invTrendSvg(v) {
-  if (!v || !v.length) return `<div class="leer">Noch kein Fehler-Verlauf — braucht ausgewertete Prognosen.</div>`;
-  const W = 320, H = 120, pad = 22;
-  const max = Math.max(1, ...v.flatMap(p => [p.mae_pct || 0, p.baseline_mae_pct || 0]));
-  const x = i => pad + (v.length <= 1 ? (W - 2 * pad) / 2 : i * (W - 2 * pad) / (v.length - 1));
-  const y = val => H - pad - ((val || 0) / max) * (H - 2 * pad);
-  const path = key => v.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p[key]).toFixed(1)}`).join(" ");
-  return `<svg viewBox="0 0 ${W} ${H}" class="inv-svg" preserveAspectRatio="none" role="img">
-    <path d="${path("baseline_mae_pct")}" class="inv-line base"/><path d="${path("mae_pct")}" class="inv-line strat"/></svg>`;
+// Fehler-Verlauf als ECHTER, responsiver Chart: zeichnet sich pixelgenau zur Containerbreite (mit Achsen/Gitter/
+// Hover) und rendert bei jeder Groessenaenderung frisch (ResizeObserver) -- kein Strecken, keine Fremd-Lib.
+let _invChartRO = null;
+function invMountCharts() {
+  const el = document.getElementById("inv-trend");
+  if (!el) return;
+  invRenderTrend(el);
+  if (!_invChartRO) _invChartRO = new ResizeObserver(es => es.forEach(e => invRenderTrend(e.target)));
+  try { _invChartRO.disconnect(); _invChartRO.observe(el); } catch {}
+}
+function invRenderTrend(el) {
+  const v = (INVLOOP && INVLOOP.verlauf) || [];
+  if (!v.length) { el.innerHTML = `<div class="leer">Noch kein Fehler-Verlauf — braucht ausgewertete Prognosen.</div>`; return; }
+  const W = Math.max(260, Math.round(el.clientWidth || 320)), H = 150, padL = 30, padR = 10, padT = 10, padB = 20;
+  const max = Math.max(1, ...v.flatMap(p => [p.mae_pct || 0, p.baseline_mae_pct || 0])) * 1.1;
+  const x = i => padL + (v.length <= 1 ? (W - padL - padR) / 2 : i * (W - padL - padR) / (v.length - 1));
+  const y = val => H - padB - ((val || 0) / max) * (H - padT - padB);
+  const line = k => v.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p[k]).toFixed(1)}`).join(" ");
+  const dots = (k, c) => v.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p[k]).toFixed(1)}" r="2.4" class="c-dot ${c}"/>`).join("");
+  const grid = [0, .5, 1].map(f => { const t = max * f, yy = y(t).toFixed(1); return `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" class="c-grid"/><text x="${padL - 5}" y="${(+yy + 3)}" class="c-axt" text-anchor="end">${t.toFixed(1)}</text>`; }).join("");
+  const xi = v.length > 2 ? [0, Math.floor((v.length - 1) / 2), v.length - 1] : v.map((_, i) => i);
+  const xl = xi.map(i => `<text x="${x(i).toFixed(1)}" y="${H - 5}" class="c-axt" text-anchor="middle">${esc((v[i].woche || "").replace("2026-", ""))}</text>`).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" class="inv-chart-svg" role="img">
+    ${grid}<path d="${line("baseline_mae_pct")}" class="inv-line base"/><path d="${line("mae_pct")}" class="inv-line strat"/>
+    ${dots("baseline_mae_pct", "base")}${dots("mae_pct", "strat")}${xl}</svg><div class="c-tip" style="display:none"></div>`;
+  const svg = el.querySelector("svg"), tip = el.querySelector(".c-tip");
+  svg.addEventListener("mousemove", ev => {
+    const r = svg.getBoundingClientRect();
+    let i = Math.round(((ev.clientX - r.left) / r.width * W - padL) / ((W - padL - padR) / Math.max(1, v.length - 1)));
+    i = Math.max(0, Math.min(v.length - 1, i)); const p = v[i];
+    tip.innerHTML = `<b>${esc((p.woche || "").replace("2026-", ""))}</b> · Modell ${(p.mae_pct || 0).toFixed(1)}% · Baseline ${(p.baseline_mae_pct || 0).toFixed(1)}%`;
+    tip.style.display = "block";
+    tip.style.left = Math.max(0, Math.min(r.width - 190, ev.clientX - r.left - 60)) + "px";
+  });
+  svg.addEventListener("mouseleave", () => { tip.style.display = "none"; });
 }
 function invLoopHtml(L) {
   if (!L) return "";
@@ -218,7 +245,7 @@ function invLoopHtml(L) {
       <span class="meta">${p.symbole || 0} Werte · ${p.snapshots || 0} Snapshots · Stand ${esc(p.letzter || "–")} · Modell ${esc(L.modell_version || "")}</span></div>
     ${kpis}
     <div class="inv-two">
-      <div><h4>Fehler-Verlauf <span class="meta">niedriger = besser</span></h4>${invTrendSvg(L.verlauf)}
+      <div><h4>Fehler-Verlauf <span class="meta">niedriger = besser</span></h4><div class="inv-chart" id="inv-trend"></div>
         <div class="inv-leg"><span><i class="strat"></i>Modell</span><span><i class="base"></i>Baseline</span></div></div>
       <div><h4>Je Anlageklasse</h4>${klassen}</div>
     </div>
@@ -255,7 +282,7 @@ async function investBackfill(btn) {
   let txt = "";
   try {
     const r = await (await fetch("/api/investment/backfill", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ seit: "2026-01-01" }) })).json();
-    if (r && r.ok) txt = `✅ ${r.zeilen_neu} Kurse · ${r.auswertungen_neu} Backtest-Auswertungen`;
+    if (r && r.ok) txt = `✅ ${r.zeilen_neu} Kurse · ${r.auswertungen_neu} Backtest` + ((r.hinweise && r.hinweise.length) ? ` · ⚠️ ${r.hinweise.length} übersprungen: ${r.hinweise[0]}` : "");
   } catch { txt = "Fehler beim Laden"; }
   await ladeInvestment();
   const b = document.querySelector('[onclick="investBackfill(this)"]');

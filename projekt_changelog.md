@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 19:45] — Claude Code — LUNA-OS: Fehler-Verlauf als echter, responsiver Chart
+- **Was:** Der Fehler-Verlauf ist jetzt ein richtiger, adaptiver Chart (weiterhin selbst-gehostetes SVG, keine
+  Fremd-Lib). `invRenderTrend` zeichnet mit **Y-Achse (MAE-Ticks) + X-Achse (Wochen) + Gitterlinien + runden
+  Punkten + Hover-Tooltip** (Woche · Modell · Baseline) und rendert **pixelgenau zur Containerbreite** -- ein
+  **ResizeObserver** (`invMountCharts`, aufgerufen am Ende von `ladeInvestment`) zeichnet bei jeder Groessen-/
+  Fensteraenderung frisch neu, also **kein Strecken** mehr. Isoliert bei 920px + 380px verifiziert (runde Punkte,
+  scharfe Linien, Achsen intakt). Ausserdem: „Historie laden"-Button zeigt jetzt **Hinweise** (uebersprungene
+  Symbole) im Ergebnis. Cache v46->v47.
+- **Warum:** CEO -- „richtiger Graph, der sich an die Fensterbreite anpasst" + sehen, welche Symbole beim
+  Backfill uebersprungen wurden.
+- **Betroffen:** `orchestrator/channels/web/static/app.js`, `.../style.css`, `.../index.html`.
+
 ## [2026-07-04 19:30] — Claude Code — Investment: Aktien-Historie via FMP (statt Alpha-Vantage-Limit)
 - **Was:** Beim Backfill luden die Aktien/ETFs meist nicht (Alpha Vantage Free ~25/Tag + ~5/min -> Rate-Limit
   bei 17 Symbolen in einem Lauf). Neu `MarketData.aktie_historie_fmp` (FMP historical-price-eod, ~250/Tag,
