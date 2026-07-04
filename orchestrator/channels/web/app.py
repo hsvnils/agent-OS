@@ -839,7 +839,7 @@ def _investment_loop_payload() -> dict:
              "prognose_return_pct": _inum(d.get("prognose_return_pct")),
              "real_return_pct": _inum(d.get("real_return_pct")), "fehler_abs_pct": _inum(d.get("fehler_abs_pct")),
              "richtungstreffer": bool(d.get("richtungstreffer")),
-             "besser_als_baseline": bool(d.get("besser_als_baseline")),
+             "besser_als_baseline": bool(d.get("besser_als_baseline")), "backtest": bool(d.get("backtest")),
              "faellig_am": d.get("faellig_am"), "modell_version": d.get("modell_version")}
             for d in reversed(devs)][:20],
         "panel": {"symbole": len({e.get("symbol") for e in feats}), "snapshots": len(feats),
@@ -872,6 +872,34 @@ async def investment_sammeln():
         return {"gesammelt": len(r.get("gesammelt", [])), "uebersprungen": len(r.get("uebersprungen", [])),
                 "prognosen_neu": len(p.get("erstellt", [])), "ausgewertet": a.get("neu_bewertet", 0),
                 "hinweise": r.get("hinweise", [])[:3]}
+
+    res = await asyncio.to_thread(run)
+    return JSONResponse({"ok": True, **res, "loop": _investment_loop_payload()})
+
+
+@app.post("/api/investment/backfill")
+async def investment_backfill(request: Request):
+    """Historie-Backfill (echte Tageskurse seit `seit`) + rueckwirkender Backtest -> Register/KPIs sofort gefuellt.
+    Backtest schaltet keine Autonomie frei (nur Live zaehlt). Advisory, keine Trades."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    seit = (body.get("seit") or "2026-01-01").strip()
+    eng = _investment_engine()
+
+    def run():
+        from ...investment.backfill import Backfill
+        from ...investment.features import BASELINES
+        from ...investment.forecaster import Forecaster
+        from ...investment.universe import panel
+        ziele = panel(eng.store.watchlist()) + BASELINES
+        bf = Backfill(eng.market, loop_store)
+        h = bf.lade_historie(ziele, seit=seit)
+        b = bf.backtest()
+        Forecaster(loop_store).prognostizieren(panel(eng.store.watchlist()))   # aktuelle Prognose(n)
+        return {"zeilen_neu": h.get("zeilen_neu", 0), "auswertungen_neu": b.get("auswertungen_neu", 0),
+                "hinweise": h.get("hinweise", [])}
 
     res = await asyncio.to_thread(run)
     return JSONResponse({"ok": True, **res, "loop": _investment_loop_payload()})

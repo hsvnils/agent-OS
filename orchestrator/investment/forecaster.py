@@ -61,36 +61,16 @@ class Forecaster:
             if len(closes) < self.MIN_HISTORIE:
                 uebersprungen.append(sym)
                 continue
-            basis = closes[-1]
-            ret5 = round((basis / closes[-6] - 1) * 100, 3) if closes[-6] > 0 else 0.0
-            tages = [closes[i] / closes[i - 1] - 1 for i in range(1, len(closes)) if closes[i - 1] > 0]
-            vola = round(statistics.pstdev(tages[-20:]) * 100, 3) if len(tages) >= 2 else 0.0
-            # Mehr-Signal-Modell (v2): Richtung per Mehrheit der Signale; Konfidenz steigt mit Uebereinstimmung.
-            signale = berechne_signale(closes)
-            up = sum(1 for s in signale if s["richtung"] == "steigt")
-            dn = sum(1 for s in signale if s["richtung"] == "faellt")
-            if up > dn:
-                richtung, zahl = "steigt", up
-            elif dn > up:
-                richtung, zahl = "faellt", dn
-            else:
-                richtung, zahl = "seitwaerts", 0
-            betrag = abs(round(0.5 * ret5, 3))                # Groesse aus dem Momentum, Vorzeichen aus der Richtung
-            ziel = betrag if richtung == "steigt" else (-betrag if richtung == "faellt" else 0.0)
-            band = round(vola * math.sqrt(self.HORIZONT_TAGE), 3)
-            konf = round(min(0.9, 0.4 + 0.15 * zahl + abs(ziel) / 60.0), 2)
-            # Signaltypen, die mit der finalen Richtung uebereinstimmen (fuer Attribution im Register)
-            treiber = [s["typ"] for s in signale if s["richtung"] == richtung and richtung != "seitwaerts"]
+            ff = forecast_fields(closes)
             fid = str(uuid.uuid4())
             self.store.forecast_add({
                 "id": fid, "symbol": sym, "asset": asset, "erstellt_am": datum, "faellig_am": faellig,
-                "richtung": richtung, "ziel_return_pct": ziel,
-                "spanne_low": round(ziel - band, 3), "spanne_high": round(ziel + band, 3),
-                "konfidenz": konf, "modell_version": self.MODELL_VERSION,
-                "signale": [{"typ": s["typ"], "richtung": s["richtung"]} for s in signale], "signale_zahl": zahl,
-                "treiber": treiber,
-                "features_ref": {"ret_5d": ret5, "vola_20d": vola, "basis_close": basis},
-                "rationale": f"{zahl}/{len(signale)} Signale fuer {richtung} ({', '.join(treiber) or 'uneins'})",
+                "richtung": ff["richtung"], "ziel_return_pct": ff["ziel_return_pct"],
+                "spanne_low": ff["spanne_low"], "spanne_high": ff["spanne_high"],
+                "konfidenz": ff["konfidenz"], "modell_version": self.MODELL_VERSION,
+                "signale": ff["signale"], "signale_zahl": ff["signale_zahl"], "treiber": ff["treiber"],
+                "features_ref": {"ret_5d": ff["ret_5d"], "vola_20d": ff["vola_20d"], "basis_close": ff["basis_close"]},
+                "rationale": ff["rationale"],
                 "baseline_richtung": "seitwaerts", "baseline_return_pct": 0.0, "status": "offen"})
             erstellt.append(sym)
         return {"ok": True, "datum": datum, "faellig_am": faellig, "erstellt": erstellt,
@@ -120,7 +100,7 @@ class Forecaster:
                                    "real_richtung": _richtung(real_ret)})
             self.store.deviation_add({
                 "forecast_id": fid, "symbol": f.get("symbol"), "asset": f.get("asset", "aktie"),
-                "modell_version": f.get("modell_version"), "signale": f.get("treiber", []),
+                "modell_version": f.get("modell_version"), "signale": f.get("treiber", []), "backtest": False,
                 "erstellt_am": f.get("erstellt_am"), "faellig_am": f.get("faellig_am"),
                 "prognose_return_pct": ziel, "real_return_pct": real_ret, "fehler_abs_pct": fehler,
                 "richtungstreffer": f.get("richtung") == _richtung(real_ret),
@@ -147,6 +127,11 @@ class Forecaster:
                 "je_version": {k: _agg(v) for k, v in je_version.items()},
                 "je_asset": {k: _agg(v) for k, v in je_asset.items()},
                 "je_signal": {k: _agg(v) for k, v in je_signal.items()}}
+
+    def live_gesamt(self) -> dict:
+        """Aggregat NUR der Live-Auswertungen (Backtest ausgenommen) -- Basis fuer die Autonomie-Freischaltung.
+        Backtest fuellt das Dashboard, darf aber echtes autonomes Handeln nicht freischalten."""
+        return _agg([d for d in self.store.list("inv_deviations") if not d.get("backtest")])
 
     # -- 4) Chancen AUSSERHALB der Watchlist (Vorschlaege) --
     def chancen(self, watchlist_symbols, *, max_n: int = 5, min_konfidenz: float = 0.6) -> list[dict]:
@@ -181,6 +166,34 @@ class Forecaster:
                         "mae_pct": round(sum(_num(x.get("fehler_abs_pct")) for x in v) / len(v), 3),
                         "baseline_mae_pct": round(sum(_num(x.get("baseline_fehler_abs_pct")) for x in v) / len(v), 3)})
         return out
+
+
+def forecast_fields(closes: list[float]) -> dict:
+    """Kern des v2-Modells: aus einer Close-Reihe (bis zum As-of-Tag) die Prognose-Felder bauen.
+    Pure Funktion -- von `prognostizieren` (live) UND vom Backtest (historisch, ohne Look-ahead) genutzt."""
+    basis = closes[-1]
+    ret5 = round((basis / closes[-6] - 1) * 100, 3) if len(closes) > 5 and closes[-6] > 0 else 0.0
+    tages = [closes[i] / closes[i - 1] - 1 for i in range(1, len(closes)) if closes[i - 1] > 0]
+    vola = round(statistics.pstdev(tages[-20:]) * 100, 3) if len(tages) >= 2 else 0.0
+    signale = berechne_signale(closes)
+    up = sum(1 for s in signale if s["richtung"] == "steigt")
+    dn = sum(1 for s in signale if s["richtung"] == "faellt")
+    if up > dn:
+        richtung, zahl = "steigt", up
+    elif dn > up:
+        richtung, zahl = "faellt", dn
+    else:
+        richtung, zahl = "seitwaerts", 0
+    betrag = abs(round(0.5 * ret5, 3))
+    ziel = betrag if richtung == "steigt" else (-betrag if richtung == "faellt" else 0.0)
+    band = round(vola * math.sqrt(Forecaster.HORIZONT_TAGE), 3)
+    konf = round(min(0.9, 0.4 + 0.15 * zahl + abs(ziel) / 60.0), 2)
+    treiber = [s["typ"] for s in signale if s["richtung"] == richtung and richtung != "seitwaerts"]
+    return {"richtung": richtung, "ziel_return_pct": ziel, "spanne_low": round(ziel - band, 3),
+            "spanne_high": round(ziel + band, 3), "konfidenz": konf, "signale_zahl": zahl, "treiber": treiber,
+            "signale": [{"typ": s["typ"], "richtung": s["richtung"]} for s in signale],
+            "ret_5d": ret5, "vola_20d": vola, "basis_close": basis,
+            "rationale": f"{zahl}/{len(signale)} Signale fuer {richtung} ({', '.join(treiber) or 'uneins'})"}
 
 
 def _iso_woche(datum: str) -> str:

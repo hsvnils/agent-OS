@@ -540,7 +540,7 @@ def _autonomie_kontext(eng, forecaster, watch, datum: str) -> dict:
     tagesverlust = round((1 - equity / last) * 100, 2) if last > 0 else 0.0   # positiv = Verlust
     heute = [p for p in eng.store.list("positions")
              if p.get("modus") == "paper" and p.get("status") == "platziert" and p.get("ts", "")[:10] == datum]
-    k = forecaster.kennzahlen().get("gesamt", {})
+    k = forecaster.live_gesamt()   # NUR Live-Auswertungen (Backtest schaltet keine Autonomie frei)
     freigeschaltet = k.get("n", 0) >= 20 and _autonomie_f(k.get("richtungsquote")) >= 0.55
     return {"equity": equity, "cash": _autonomie_f(konto.get("cash")), "tagesverlust_pct": tagesverlust,
             "kill_switch": bool(watch and watch.store.paused()),

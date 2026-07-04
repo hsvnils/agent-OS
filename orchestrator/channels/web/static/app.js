@@ -153,6 +153,7 @@ async function ladeInvestment() {
       <div class="inv-ac"><input id="inv-sym" placeholder="Aktie/Krypto suchen & hinzufügen…" autocomplete="off" oninput="investSuche(this.value)">
         <div id="inv-suggest" class="inv-suggest"></div></div>
       <button class="btn info" onclick="investSammeln(this)">📥 Jetzt sammeln</button>
+      <button class="btn info" onclick="investBackfill(this)">📚 Historie laden</button>
       <button class="btn info" onclick="investScreen(this)">📡 Screen jetzt</button>
       <button class="btn info" onclick="investInsiderScan(this)">🔍 Insider-Scan</button></div>
     <h3>Watchlist</h3><div>${wl}</div>
@@ -211,7 +212,7 @@ function invLoopHtml(L) {
   const reg = (L.register || []).slice(0, 8).map(d => {
     const gut = d.besser_als_baseline;
     return `<div class="row"><span class="t" style="color:${gut ? "var(--green)" : "var(--amber)"}">Δ ${invNum(d.fehler_abs_pct)}%</span>
-      <div><b>${esc(d.symbol)}</b> <span class="meta">${esc(d.asset)} · Prognose ${invNum(d.prognose_return_pct)}% → real ${invNum(d.real_return_pct)}%${d.richtungstreffer ? " · Richtung ✓" : ""}</span></div>
+      <div><b>${esc(d.symbol)}</b> <span class="meta">${esc(d.asset)} · Prognose ${invNum(d.prognose_return_pct)}% → real ${invNum(d.real_return_pct)}%${d.richtungstreffer ? " · Richtung ✓" : ""}${d.backtest ? " · Backtest" : ""}</span></div>
       <span class="badge ${gut ? "freigegeben" : "in_umsetzung"}">${gut ? "schlägt Baseline" : "unter Baseline"}</span></div>`;
   }).join("") || `<div class="leer">Register noch leer — Abweichungen erscheinen nach dem ersten Abgleich.</div>`;
   return `<div class="inv-loop">
@@ -250,6 +251,17 @@ async function investSammeln(btn) {
   await ladeInvestment();
   const b = document.querySelector('[onclick="investSammeln(this)"]');
   if (b && txt) { b.textContent = txt; setTimeout(() => { b.textContent = "📥 Jetzt sammeln"; }, 4000); }
+}
+async function investBackfill(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Lädt Historie…"; }
+  let txt = "";
+  try {
+    const r = await (await fetch("/api/investment/backfill", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ seit: "2026-01-01" }) })).json();
+    if (r && r.ok) txt = `✅ ${r.zeilen_neu} Kurse · ${r.auswertungen_neu} Backtest-Auswertungen`;
+  } catch { txt = "Fehler beim Laden"; }
+  await ladeInvestment();
+  const b = document.querySelector('[onclick="investBackfill(this)"]');
+  if (b && txt) { b.textContent = txt; setTimeout(() => { b.textContent = "📚 Historie laden"; }, 6000); }
 }
 async function investScreen(btn) {
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Screent…"; }

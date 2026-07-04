@@ -84,14 +84,19 @@ class FeatureCollector:
         hist = self.store.features_for(symbol)
         closes = [_num(h["close"]) for h in hist if _num(h["close"]) > 0]
         closes.append(_num(close))
+        return derive(closes)
 
-        def ret(n: int):
-            return round((closes[-1] / closes[-1 - n] - 1) * 100, 3) if len(closes) > n and closes[-1 - n] > 0 else None
 
-        tages_rets = [closes[i] / closes[i - 1] - 1 for i in range(1, len(closes)) if closes[i - 1] > 0]
-        vola_20d = round(statistics.pstdev(tages_rets[-20:]) * 100, 3) if len(tages_rets) >= 2 else None
-        sma_5 = round(sum(closes[-5:]) / min(len(closes), 5), 6) if closes else None
-        sma_20 = round(sum(closes[-20:]) / min(len(closes), 20), 6) if closes else None
-        return {"ret_1d": ret(1), "ret_5d": ret(5), "ret_10d": ret(10), "ret_20d": ret(20),
-                "vola_20d": vola_20d, "sma_5": sma_5, "sma_20": sma_20,
-                "ueber_sma20": (closes[-1] > sma_20) if sma_20 else None, "n_hist": len(closes)}
+def derive(closes: list[float]) -> dict:
+    """Abgeleitete Merkmale aus einer chronologischen Close-Reihe (inkl. aktuellem Wert am Ende).
+    Pure Funktion -- auch vom Backfill genutzt, damit historische Zeilen wie live-gesammelte aussehen."""
+    def ret(n: int):
+        return round((closes[-1] / closes[-1 - n] - 1) * 100, 3) if len(closes) > n and closes[-1 - n] > 0 else None
+
+    tages_rets = [closes[i] / closes[i - 1] - 1 for i in range(1, len(closes)) if closes[i - 1] > 0]
+    vola_20d = round(statistics.pstdev(tages_rets[-20:]) * 100, 3) if len(tages_rets) >= 2 else None
+    sma_5 = round(sum(closes[-5:]) / min(len(closes), 5), 6) if closes else None
+    sma_20 = round(sum(closes[-20:]) / min(len(closes), 20), 6) if closes else None
+    return {"ret_1d": ret(1), "ret_5d": ret(5), "ret_10d": ret(10), "ret_20d": ret(20),
+            "vola_20d": vola_20d, "sma_5": sma_5, "sma_20": sma_20,
+            "ueber_sma20": (closes[-1] > sma_20) if sma_20 else None, "n_hist": len(closes)}

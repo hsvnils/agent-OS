@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 18:50] — Claude Code — Investment: Historie-Backfill + rueckwirkender Backtest
+- **Was:** Fuellt den Walk-Forward-Loop sofort mit echten Daten (statt 6 Tage sammeln). Provider:
+  `MarketData.aktie_historie` (Alpha Vantage TIME_SERIES_DAILY) + `crypto_historie` (CoinGecko market_chart).
+  `investment/backfill.py` (`Backfill`): `lade_historie(seit=2026-01-01)` schreibt echte Tageskurse als
+  inv_features (mit denselben Merkmalen wie live, `derive` aus features.py extrahiert); `backtest()` erzeugt
+  **rueckwirkend, ohne Look-ahead** woechentliche Prognosen (`forecast_fields` aus forecaster.py extrahiert) und
+  wertet sie gegen den 7-Tage-spaeteren Kurs aus -> Eintraege ins Abweichungs-Register mit `backtest=True`
+  (idempotent). Deviations tragen jetzt `backtest`; `Forecaster.live_gesamt()` aggregiert NUR Live -> Autonomie-
+  Freischaltung nutzt Live-only (Backtest fuellt Dashboard, schaltet nichts frei). Trigger: Button „📚 Historie
+  laden" (LUNA-OS) + Endpunkt `/api/investment/backfill` + Tool `investment_backfill` (Telegram); Register-
+  Zeilen im Dashboard mit „· Backtest" markiert. Cache v43->v44. 7 neue Tests; volle Suite 580 gruen.
+- **Warum:** CEO -- Historie ziehen (seit 01.01.2026), damit KPIs/Fehler-Verlauf/Register sofort mit echten
+  Daten leben, statt Wochen zu warten. Ehrlich: Backtest ist kein Live-Beweis -> keine Autonomie-Freischaltung.
+  Alpha-Vantage-Free ~25 Abrufe/Tag (bei vielen Werten ggf. Teil-Ladung, Hinweise werden zurueckgegeben).
+- **Betroffen:** `orchestrator/investment/backfill.py`, `providers.py`, `forecaster.py`, `features.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/channels/web/app.py`, `.../static/app.js`, `.../index.html`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_investment_backfill.py`.
+
 ## [2026-07-04 18:20] — Claude Code — UX-Fix „Jetzt sammeln" (kein Popup) + Roadmap: LUNA 3D-Hologramm
 - **Was:** (1) Der „Jetzt sammeln"-Button nutzte `alert()` -> Safari dunkelt bei offenem Popup die GANZE Seite ab
   (wirkte wie „Lern-Loop dunkel hinterlegt"). Popup entfernt; Rueckmeldung jetzt **inline** (Button zeigt kurz

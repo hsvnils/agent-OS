@@ -113,6 +113,48 @@ class MarketData:
         return {"ok": True, "provider": "Alpha Vantage", "symbol": symbol.upper(),
                 "indikator": indicator, "roh": d}
 
+    # ---- Historische Tageskurse (fuer Backfill/Backtest) --------------------
+    def aktie_historie(self, symbol: str, *, outputsize: str = "full") -> dict:
+        """Taegliche Schlusskurse einer Aktie/ETF (Alpha Vantage TIME_SERIES_DAILY). -> {closes: {datum: close}}.
+        `outputsize`: 'compact' (~100 Tage) oder 'full' (voll). Free-Limit ~25 Abrufe/Tag."""
+        key = self._key("ALPHAVANTAGE_API_KEY")
+        if not key:
+            return self._fallb("Alpha Vantage", "ALPHAVANTAGE_API_KEY")
+        url = (f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={urllib.parse.quote(symbol)}"
+               f"&outputsize={outputsize}&apikey={key}")
+        try:
+            d = self._fetch(url)
+        except Exception as exc:
+            return {"ok": False, "provider": "Alpha Vantage", "fehler": str(exc)[:160]}
+        ts = d.get("Time Series (Daily)") if isinstance(d, dict) else None
+        if not ts:
+            note = (d.get("Note") or d.get("Information") or d.get("Error Message")) if isinstance(d, dict) else None
+            return {"ok": False, "provider": "Alpha Vantage", "hinweis": (note or "keine Zeitreihe")[:160]}
+        closes = {tag: _num(v.get("4. close")) for tag, v in ts.items() if _num(v.get("4. close")) > 0}
+        return {"ok": True, "provider": "Alpha Vantage", "closes": closes}
+
+    def crypto_historie(self, coin_id: str, *, tage: int = 180, vs: str = "usd") -> dict:
+        """Taegliche Schlusskurse eines Coins (CoinGecko market_chart). -> {closes: {datum: close}}. Keyless."""
+        from datetime import datetime, timezone
+        key = self._key("COINGECKO_API_KEY")
+        url = (f"https://api.coingecko.com/api/v3/coins/{urllib.parse.quote(coin_id)}/market_chart"
+               f"?vs_currency={urllib.parse.quote(vs)}&days={int(tage)}")
+        headers = {"x-cg-demo-api-key": key} if key else {}
+        try:
+            d = self._fetch(url, headers=headers)
+        except Exception as exc:
+            return {"ok": False, "provider": "CoinGecko", "fehler": str(exc)[:160]}
+        closes: dict = {}
+        for punkt in (d.get("prices") or []) if isinstance(d, dict) else []:
+            try:
+                ms, price = punkt[0], _num(punkt[1])
+            except (TypeError, IndexError):
+                continue
+            if price > 0:
+                tag = datetime.fromtimestamp(ms / 1000, tz=timezone.utc).date().isoformat()
+                closes[tag] = price   # letzter Punkt des Tages gewinnt (Dict-Ueberschreibung)
+        return {"ok": True, "provider": "CoinGecko", "closes": closes}
+
     # ---- FMP (key) ----------------------------------------------------------
     def screener_gewinner(self) -> dict:
         key = self._key("FMP_API_KEY")

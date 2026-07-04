@@ -361,6 +361,10 @@ def tool_specs() -> list[dict]:
         _spec("investment_sammeln", "Sammelt JETZT einen Merkmals-/Preis-Snapshot der Watchlist+Universum und "
               "erstellt/wertet faellige 7-Tage-Prognosen aus -- fuellt den Walk-Forward-Lern-Loop sofort, statt "
               "bis 07:00 zu warten. Advisory, keine Trades.", {}, []),
+        _spec("investment_backfill", "Laedt echte Kurs-HISTORIE (Standard seit 2026-01-01: Alpha Vantage Aktie/"
+              "ETF, CoinGecko Krypto) + rueckwirkender BACKTEST -> fuellt Abweichungs-Register/KPIs/Fehler-Verlauf "
+              "sofort mit echten Daten. Backtest schaltet KEINE Autonomie frei (nur Live zaehlt). Advisory.",
+              {"seit": _str("Startdatum JJJJ-MM-TT (Default 2026-01-01).")}, []),
         _spec("insider_scan", "Screent oeffentliche SEC-Form-4-Insider-KAEUFE ueber die Watchlist (oder "
               "uebergebene Symbole): erkennt Insider-Cluster/Grosskaeufe, erzeugt Risk-gepruefte Beobachten-"
               "Alerts mit Filing-Link + Second-Brain-Notiz. Advisory, keine Trades.",
@@ -981,7 +985,8 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
 
     if name in ("investment_status", "investment_screen", "investment_vorschlaege", "investment_scorecard",
                 "insider_scan", "insider_signale_zeigen", "watchlist_hinzufuegen",
-                "investment_modus", "paper_konto", "paper_order", "paper_order_freigabe", "investment_sammeln"):
+                "investment_modus", "paper_konto", "paper_order", "paper_order_freigabe", "investment_sammeln",
+                "investment_backfill"):
         if ctx.investment is None:
             return {"fehler": "Investment-Abteilung (CIO) nicht verfuegbar."}
         eng = ctx.investment
@@ -1081,6 +1086,21 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             return {"ok": True, "gesammelt": len(r.get("gesammelt", [])),
                     "uebersprungen": len(r.get("uebersprungen", [])), "prognosen_neu": len(p.get("erstellt", [])),
                     "ausgewertet": a.get("neu_bewertet", 0), "hinweise": r.get("hinweise", [])[:3]}
+        if name == "investment_backfill":
+            from ..investment.backfill import Backfill
+            from ..investment.features import BASELINES
+            from ..investment.forecaster import Forecaster
+            from ..investment.loop_store import LoopStore
+            from ..investment.universe import panel
+            seit = (args.get("seit") or "2026-01-01").strip()
+            store = LoopStore(ctx.repo_root / "investment" / "features.jsonl", secrets=ctx.leak_secrets)  # lokal
+            ziele = panel(eng.store.watchlist()) + BASELINES
+            bf = Backfill(eng.market, store)
+            h = bf.lade_historie(ziele, seit=seit)
+            b = bf.backtest()
+            Forecaster(store).prognostizieren(panel(eng.store.watchlist()))
+            return {"ok": True, "zeilen_neu": h.get("zeilen_neu", 0),
+                    "auswertungen_neu": b.get("auswertungen_neu", 0), "hinweise": h.get("hinweise", [])}
         if name == "investment_scorecard":
             return _redact_obj(eng.scorecard(), sec)
         if name == "investment_status":
