@@ -525,42 +525,52 @@ def _auto_trade_tick(ctx, eng, forecaster, auto_trader, datum: str) -> None:
         # aktion == "skip" -> globaler Schutzschalter -> nichts tun
 
 
-def _auto_trade_krypto_tick(ctx, eng, forecaster, auto_trader, datum: str) -> None:
-    """Nacht-Durchlauf fuer KRYPTO (24/7, Paper): Top-Krypto-Chance -> Leitplanken. Krypto = spekulativ ->
-    laeuft ueber die 1-Tap-Freigabe (nicht autonom), solange die 'nur-konservativ'-Regel gilt."""
+def _auto_trade_krypto_tick(ctx, eng, forecaster, datum: str) -> None:
+    """Nacht-Durchlauf KRYPTO (24/7, Paper): handelt NUR die seltene Top-Chance (strenger Nacht-Filter) in
+    winziger Summe. Enge Nacht-Leitplanke -> autonom NACH Track-Record, davor 1-Tap-Freigabe. Die meisten
+    Naechte passiert nichts. Downside aktuell nur durch den Mini-Einsatz begrenzt (Stop-Loss noch nicht als
+    Order platziert)."""
+    from ...investment.autonomy_policy import AutonomyPolicy, Leitplanken
+    from ...investment.auto_trader import AutoTrader, ist_nacht_chance
     from ...investment.broker import alpaca_krypto_symbol
-    lp = auto_trader.policy.lp
+    lp = Leitplanken.nacht_krypto()
+    trader = AutoTrader(AutonomyPolicy(lp=lp, whitelist=set()))
     kontext = _autonomie_kontext(eng, forecaster, ctx.watch, datum)
+    # Top-Krypto-Chance -> nur wenn sie den strengen Filter besteht (hohe Konfidenz, alle Signale einig, hohes Ziel)
     chancen = [c for c in forecaster.chancen([], min_konfidenz=lp.min_konfidenz)
-               if c.get("asset") == "krypto"][:1]
-    for c in chancen:
-        alp = alpaca_krypto_symbol(c["symbol"])
-        if not alp:                                          # bei Alpaca nicht handelbar -> ueberspringen
-            continue
-        usd = eng.market.crypto_preis([c["symbol"]], vs="usd")
-        preis = _autonomie_f((usd.get("preise", {}).get(c["symbol"]) or {}).get("usd")) if usd.get("ok") else 0.0
-        if preis <= 0:
-            continue
-        betrag = round(min(lp.max_position_eur, kontext["equity"] * lp.max_position_pct / 100.0), 2)
-        qty = round(betrag / preis, 6)
-        if qty <= 0:
-            continue
-        trade = {"symbol": alp, "asset": "krypto", "side": "buy", "betrag_eur": betrag,
-                 "konfidenz": c["konfidenz"], "signale": c.get("signale_zahl", 0), "risiko_label": "spekulativ"}
-        d = auto_trader.entscheide(trade, kontext)
-        if d["aktion"] == "auto":                            # (nur falls Krypto autonom erlaubt wuerde)
-            r = eng.paper_order(alp, qty, "buy", asset="krypto", bestaetigt=True, preis=preis)
-            if ctx.notifications:
-                ctx.notifications.enqueue(
-                    f"Autonome Paper-Order (Krypto): buy {qty:g} {alp} (~{betrag} USD) — "
-                    f"{'platziert' if r.get('ok') else 'abgelehnt'}.",
-                    abteilung="CIO", kategorie="investment", quelle="auto-trade", dedup_stunden=0)
-        elif d["aktion"] == "freigabe" and ctx.approvals is not None:
-            gruende = "; ".join(d["urteil"]["gruende"][:2]) or "Freigabe noetig"
-            frage = (f"Nacht-Paper-Kauf (Krypto): {qty:g} {alp} (~{betrag} USD, Konf. "
-                     f"{round(c['konfidenz'] * 100)}%, {c.get('signale_zahl', 0)} Signale). {gruende}. Ausfuehren?")
-            ctx.approvals.add("paper_order", {"symbol": alp, "qty": qty, "side": "buy", "asset": "krypto",
-                                              "preis": preis}, frage=frage)
+               if c.get("asset") == "krypto"
+               and ist_nacht_chance(c, min_konfidenz=lp.min_konfidenz, min_signale=lp.min_signale)]
+    if not chancen:
+        return                                               # keine wuerdige Chance -> nichts tun (Normalfall)
+    c = chancen[0]
+    alp = alpaca_krypto_symbol(c["symbol"])
+    if not alp:                                              # bei Alpaca nicht handelbar
+        return
+    usd = eng.market.crypto_preis([c["symbol"]], vs="usd")
+    preis = _autonomie_f((usd.get("preise", {}).get(c["symbol"]) or {}).get("usd")) if usd.get("ok") else 0.0
+    if preis <= 0:
+        return
+    betrag = round(min(lp.max_position_eur, kontext["equity"] * lp.max_position_pct / 100.0), 2)
+    qty = round(betrag / preis, 6)
+    if qty <= 0:
+        return
+    trade = {"symbol": alp, "asset": "krypto", "side": "buy", "betrag_eur": betrag,
+             "konfidenz": c["konfidenz"], "signale": c.get("signale_zahl", 0), "risiko_label": "spekulativ"}
+    d = trader.entscheide(trade, kontext)
+    if d["aktion"] == "auto":
+        r = eng.paper_order(alp, qty, "buy", asset="krypto", bestaetigt=True, preis=preis)
+        if ctx.notifications:
+            ctx.notifications.enqueue(
+                f"Autonome Nacht-Krypto-Order: buy {qty:g} {alp} (~{betrag} USD, Konf. "
+                f"{round(c['konfidenz'] * 100)}%, Ziel {c.get('ziel_return_pct'):+.1f}%) — "
+                f"{'platziert' if r.get('ok') else 'abgelehnt'}.",
+                abteilung="CIO", kategorie="investment", quelle="auto-trade", dedup_stunden=0)
+    elif d["aktion"] == "freigabe" and ctx.approvals is not None:
+        frage = (f"Nacht-Top-Chance (Krypto, Paper): {qty:g} {alp} (~{betrag} USD, Konf. "
+                 f"{round(c['konfidenz'] * 100)}%, {c.get('signale_zahl', 0)} Signale, Ziel "
+                 f"{c.get('ziel_return_pct'):+.1f}%). Autonom erst nach Track-Record. Ausfuehren?")
+        ctx.approvals.add("paper_order", {"symbol": alp, "qty": qty, "side": "buy", "asset": "krypto",
+                                          "preis": preis}, frage=frage)
 
 
 def _start_investment_loop(ctx, secrets) -> None:
@@ -684,7 +694,7 @@ def _start_investment_loop(ctx, secrets) -> None:
                         and jetzt.hour == 2 and _autotrade_krypto_datum != datum \
                         and eng.store.mode() == "paper":
                     _autotrade_krypto_datum = datum
-                    _auto_trade_krypto_tick(ctx, eng, forecaster, auto_trader, datum)
+                    _auto_trade_krypto_tick(ctx, eng, forecaster, datum)
             except Exception as exc:
                 print(f"[investment] Fehler: {exc}", flush=True)
             time.sleep(300)

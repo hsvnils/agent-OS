@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 14:20] — Claude Code — Investment: Nacht-Chance-Filter „nur wenn es Sinn macht" (Schritt 7.1)
+- **Was:** Nacht-Krypto handelt nicht mehr routinemaessig, sondern **nur die seltene Top-Chance**. Neuer
+  strenger Filter `auto_trader.ist_nacht_chance` (Konfidenz >= 0.80 UND alle 3 Signale einig UND erwartetes
+  Ziel >= 8 %). Eigene enge Leitplanke `Leitplanken.nacht_krypto` (max ~30 USD/Trade, 1 Trade/Nacht,
+  `nur_konservativ=False`) -> besteht eine Chance den Filter, darf Krypto (trotz spekulativ) **nach Track-
+  Record-Freischaltung autonom** laufen (CEO-Entscheidung), davor 1-Tap-Freigabe. `_auto_trade_krypto_tick`
+  entsprechend umgebaut: kein Filter bestanden -> **nichts tun** (Normalfall). Ehrlich vermerkt: Downside
+  aktuell nur durch den Mini-Einsatz begrenzt -- **echte Stop-/Bracket-Order noch nicht platziert**. 6 neue
+  Tests; volle Suite 552 gruen. governance/investment.md Abschnitt 4 ergaenzt.
+- **Warum:** CEO-Hintergrund fuers autonome Nacht-Trading: nur handeln, wenn eine grosse, ueberzeugende,
+  asymmetrische Chance da ist (viel Potenzial, wenig Einsatz) -- sonst nichts. Paper, kein echtes Geld.
+- **Betroffen:** `orchestrator/investment/autonomy_policy.py`, `orchestrator/investment/auto_trader.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_investment_auto_trader.py`,
+  `governance/investment.md`.
+
 ## [2026-07-04 13:50] — Claude Code — Investment: Nacht-Krypto im Auto-Loop (24/7, Paper, Freigabe) (Schritt 7)
 - **Was:** Der Auto-Loop deckt jetzt auch **Krypto rund um die Uhr** ab (CEO: „nachts nur Krypto"). Neuer
   Nacht-Durchlauf `_auto_trade_krypto_tick` (~02:00, jeden Tag, nur Paper): nimmt die Top-Krypto-Chance,

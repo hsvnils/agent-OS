@@ -71,6 +71,14 @@ zusaetzlich CEO-bestaetigt (`paper_order ... bestaetigt=true`), echtes Geld blei
 **Weiteres:** Max. Positionsgroesse je Wert mit Freigabe 5 % (`RiskAgent.MAX_POSITION_PCT`). Anomalie-Schwelle
 (Prognose vs. Realitaet): Start > 1.5x erwartete Bewegung. Alle Werte drehbar durch den CEO (CEO-Tor).
 
+**Nacht-Krypto (24/7, nur Paper) -- „nur wenn es Sinn macht":** Der Nacht-Loop handelt **nicht** routinemaessig,
+sondern nur die **seltene Top-Chance** (strenger Filter `auto_trader.ist_nacht_chance`: Konfidenz >= 0.80 UND
+alle 3 Signale einig UND erwartetes Ziel >= 8 %). Dafuer gilt eine **eigene, enge Leitplanke**
+(`Leitplanken.nacht_krypto`: max ~30 USD/Trade, 1 Trade/Nacht, `nur_konservativ=False`) -- d. h. besteht eine
+Chance diesen hohen Filter, darf Krypto (obwohl spekulativ) **nach Track-Record-Freischaltung autonom** laufen;
+davor 1-Tap-Freigabe. Downside aktuell nur durch den **Mini-Einsatz** begrenzt -- **echte Stop-/Bracket-Order
+ist noch nicht platziert** (spaeterer Schritt). Aenderung dieser Werte = CEO-Tor.
+
 ## 5 Freigabe- & Eskalations-Regeln
 
 - **CEO-Tor (immer Freigabe):** jeder echte Trade · jede Modus-Aktivierung (paper/live) · jeder neue

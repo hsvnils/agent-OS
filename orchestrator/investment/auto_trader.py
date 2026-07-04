@@ -13,6 +13,22 @@ from __future__ import annotations
 from .autonomy_policy import AutonomyPolicy
 
 
+def _num(v) -> float:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def ist_nacht_chance(c: dict, *, min_konfidenz: float = 0.80, min_signale: int = 3,
+                     min_ziel_pct: float = 8.0) -> bool:
+    """Strenger Nacht-Filter: nur die seltene, sehr ueberzeugende, asymmetrische Chance.
+    Hohe Modell-Konfidenz UND alle Signale einig UND hohes erwartetes Ziel. Sonst: kein Nacht-Trade."""
+    return (_num(c.get("konfidenz")) >= min_konfidenz
+            and int(_num(c.get("signale_zahl"))) >= min_signale
+            and _num(c.get("ziel_return_pct")) >= min_ziel_pct)
+
+
 class AutoTrader:
     def __init__(self, policy: AutonomyPolicy | None = None):
         self.policy = policy or AutonomyPolicy()

@@ -31,6 +31,15 @@ class Leitplanken:
     # Globale Schutzschalter
     tagesverlust_stop_pct: float = 3.0   # ab hier ALLE Autonomie aus (nur risikoreduzierende Verkaeufe)
 
+    @classmethod
+    def nacht_krypto(cls) -> "Leitplanken":
+        """Enge Leitplanke fuer den Nacht-Krypto-Handel: nur die seltene Top-Chance, winziger Einsatz.
+        `nur_konservativ=False` -> Krypto (spekulativ) autonom erlaubt, ABER nur nachdem der strenge
+        Nacht-Chance-Filter (hohe Konfidenz + alle Signale einig + hohes Ziel) bestanden ist."""
+        return cls(max_position_pct=1.0, max_position_eur=30.0, min_konfidenz=0.80, min_signale=3,
+                   max_trades_fenster=1, nacht_budget_eur=60.0, whitelist_pflicht=False, nur_konservativ=False,
+                   pflicht_stop_loss_pct=5.0, tagesverlust_stop_pct=3.0)
+
 
 def _default_whitelist() -> set[str]:
     from .universe import CORE_UNIVERSE
