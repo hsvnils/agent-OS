@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 11:45] — Claude Code — Investment: Kurs-Detailansicht aus eigener Historie (Schritt 4b)
+- **Was:** Die anklickbare Wert-Detailansicht (Aktie + Krypto) zeigt jetzt einen **Kursverlauf** aus unserer
+  eigenen, taeglich angesammelten Historie (`inv_features`-Closes) -- Tages-Kurslinie + **SMA-20-Overlay** als
+  Inline-SVG (kein Chart-CDN). Backend: `LoopStore.kurs_serie(symbol)` ([{datum, close, sma20}]) + `/api/
+  investment/detail` liefert `kurs_historie`. Frontend: `invKursHtml` in `invDetailAktie`/`invDetailKrypto`,
+  CSS `.inv-line.close/.sma` + `.inv-svg.kurs`. Ehrlich: nur Tages-Closes vorhanden (kein Intraday-OHLC) ->
+  Linien-Chart statt Candlestick; Leerzustand bei <2 Tagen. Cache v39->v40. 1 neuer Test; Suite 525 gruen.
+  Isoliert per Preview verifiziert (Testdatei + Launch-Config entfernt).
+- **Warum:** Schritt 4b -- sofort sichtbarer Mehrwert aus vorhandenen Daten, kein Broker noetig.
+  Advisory, kein Geld/Gate.
+- **Betroffen:** `orchestrator/investment/loop_store.py`, `orchestrator/channels/web/app.py`,
+  `orchestrator/channels/web/static/app.js`, `orchestrator/channels/web/static/style.css`,
+  `orchestrator/channels/web/static/index.html`, `orchestrator/tests/test_investment_features.py`.
+
 ## [2026-07-04 11:20] — Claude Code — Investment: Autonomie-Leitplanken als Code + Dashboard-Status (Schritt 4a)
 - **Was:** Die CEO-abgesegneten Leitplanken-Kriterien als ausfuehrbare, getestete Logik.
   `orchestrator/investment/autonomy_policy.py` (`Leitplanken`-Dataclass + `AutonomyPolicy.pruefe`): prueft einen

@@ -77,6 +77,17 @@ class LoopStore:
                 for e in self.list("inv_features") if e.get("symbol") == sym and _num(e.get("close")) > 0]
         return sorted(rows, key=lambda r: r.get("datum") or "")
 
+    def kurs_serie(self, symbol: str) -> list[dict]:
+        """[{datum, close, sma20}] aufsteigend -- fuer die Kurs-Detailansicht (eigene angesammelte Historie)."""
+        sym = symbol.upper()
+        rows = []
+        for e in self.list("inv_features"):
+            if e.get("symbol") == sym and _num(e.get("close")) > 0:
+                f = e.get("features") or {}
+                rows.append({"datum": e.get("datum"), "close": round(_num(e.get("close")), 4),
+                             "sma20": f.get("sma_20")})
+        return sorted(rows, key=lambda r: r.get("datum") or "")
+
     # -- inv_forecasts / inv_actuals / inv_deviations / inv_model_runs (Schritt 2 nutzt diese) --
     def forecast_add(self, row: dict) -> dict:
         return self.add("inv_forecasts", row)

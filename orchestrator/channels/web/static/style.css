@@ -259,6 +259,9 @@ body {
 .inv-lp-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 4px 0;
   border-bottom: 1px solid var(--line); }
 .inv-lp-row .k { color: var(--muted); } .inv-lp-row b { color: var(--fg); font-family: var(--mono); }
+.inv-svg.kurs { height: 140px; }
+.inv-line.close { stroke: var(--cyan); } .inv-line.sma { stroke: var(--amber); stroke-dasharray: 4 3; }
+.inv-leg i.close { background: var(--cyan); } .inv-leg i.sma { background: var(--amber); }
 
 /* Anklickbare Ergebnisse (Investment) */
 .row.klick, .card.klick { cursor: pointer; }

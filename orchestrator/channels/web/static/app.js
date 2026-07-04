@@ -510,6 +510,28 @@ async function openInvestDetail(symbol, asset) {
 const kvz = (k, v) => v != null && v !== "" ? `<div class="kv"><span class="k">${esc(k)}</span><b>${esc(v)}</b></div>` : "";
 const linkRow = (l) => `<div class="kv"><span class="k">${esc(l.label)}</span><b><a href="${esc(l.url)}" target="_blank" rel="noopener">öffnen ↗</a></b></div>`;
 const rsiFarbe = { ueberkauft: "var(--red)", ueberverkauft: "var(--green)", neutral: "var(--cyan)" };
+// Kursverlauf aus unserer eigenen angesammelten Historie (Tages-Closes + SMA-20). Inline-SVG, kein CDN.
+function invKursHtml(h) {
+  if (!h || h.length < 2)
+    return `<h3>Kursverlauf</h3><div class="leer">Noch zu wenig Historie — der Loop sammelt täglich einen Kurs.</div>`;
+  const W = 440, H = 140, pad = 26;
+  const closes = h.map(p => p.close);
+  const smas = h.map(p => p.sma20).filter(v => v != null);
+  const lo = Math.min(...closes, ...(smas.length ? smas : [Infinity]));
+  const hi = Math.max(...closes, ...(smas.length ? smas : [-Infinity]));
+  const span = (hi - lo) || 1;
+  const x = i => pad + (h.length <= 1 ? 0 : i * (W - 2 * pad) / (h.length - 1));
+  const y = v => H - pad - ((v - lo) / span) * (H - 2 * pad);
+  const closePath = h.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p.close).toFixed(1)}`).join(" ");
+  const smaPts = h.map((p, i) => p.sma20 != null ? `${x(i).toFixed(1)} ${y(p.sma20).toFixed(1)}` : null).filter(Boolean);
+  const smaPath = smaPts.length > 1 ? "M" + smaPts.join(" L") : "";
+  const last = closes[closes.length - 1];
+  return `<h3>Kursverlauf <span class="meta">eigene Historie · ${h.length} Tage</span></h3>
+    <svg viewBox="0 0 ${W} ${H}" class="inv-svg kurs" preserveAspectRatio="none" role="img">
+      ${smaPath ? `<path d="${smaPath}" class="inv-line sma"/>` : ""}<path d="${closePath}" class="inv-line close"/></svg>
+    <div class="inv-leg"><span><i class="close"></i>Kurs ${last}</span>${smaPts.length ? `<span><i class="sma"></i>SMA-20</span>` : ""}
+      <span class="meta">${esc(h[0].datum)} → ${esc(h[h.length - 1].datum)}</span></div>`;
+}
 function invDetailAktie(d) {
   const p = d.profil, q = d.quote, r = d.rsi;
   const news = (d.news || []).map(n => `<div class="row"><div><b>${esc(n.titel)}</b><br><span class="meta">${esc(n.quelle || "")}</span></div></div>`).join("");
@@ -517,6 +539,7 @@ function invDetailAktie(d) {
   const hinweis = (d.hinweise || []).length ? `<div class="leer">${esc(d.hinweise[0])}</div>` : "";
   return `<div class="head"><b>${esc((p && p.name) || d.symbol)}</b></div>
     ${p ? `<div class="meta">${esc(p.branche || "")}${p.boerse ? " · " + esc(p.boerse) : ""}${p.land ? " · " + esc(p.land) : ""}</div>` : ""}
+    ${invKursHtml(d.kurs_historie)}
     ${q ? kvz("Preis", q.preis) + kvz("Veränderung", (q.veraenderung_pct > 0 ? "+" : "") + q.veraenderung_pct + "%") + kvz("Tageshoch", q.hoch) + kvz("Tagestief", q.tief) : ""}
     ${r ? `<div class="kv"><span class="k">RSI (14)</span><b style="color:${rsiFarbe[r.label] || "var(--fg)"}">${esc(r.wert)} · ${esc(r.label)}</b></div>` : ""}
     ${p ? kvz("Marktkap. (Mio)", p.marktkap_mio) + kvz("IPO", p.ipo) : ""}
@@ -527,6 +550,7 @@ function invDetailKrypto(d) {
   const i = d.info || {};
   if (!i.ok) return `<div class="leer">Keine Krypto-Infos verfügbar.</div>`;
   return `<div class="head"><b>${esc(i.name)} (${esc(i.symbol)})</b></div>
+    ${invKursHtml(d.kurs_historie)}
     ${kvz("Rang", i.rang ? "#" + i.rang : "")}${kvz("Preis (EUR)", i.preis_eur)}
     ${kvz("Veränderung 24h", (i.veraenderung_pct > 0 ? "+" : "") + Number(i.veraenderung_pct || 0).toFixed(2) + "%")}
     ${kvz("Marktkap. (EUR)", i.marktkap_eur)}${kvz("24h-Volumen (EUR)", i.volumen_eur)}

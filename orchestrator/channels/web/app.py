@@ -1026,7 +1026,9 @@ async def ai_inbox_recommendation(item_id: str, request: Request):
 @app.get("/api/investment/detail")
 async def investment_detail(symbol: str, asset: str = "aktie"):
     eng = _investment_engine()
-    return JSONResponse(await asyncio.to_thread(eng.detail, symbol, asset))
+    d = await asyncio.to_thread(eng.detail, symbol, asset)
+    d["kurs_historie"] = loop_store.kurs_serie(symbol)   # eigene angesammelte Kurs-Historie (Loop)
+    return JSONResponse(d)
 
 
 @app.get("/api/investment/suche")

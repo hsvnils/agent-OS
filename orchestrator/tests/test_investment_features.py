@@ -53,6 +53,13 @@ class TestLoopStore(unittest.TestCase):
         closes = [r["close"] for r in self.s.features_for("AAPL")]
         self.assertEqual(closes, [100.0, 102.0, 103.0])  # nach Datum sortiert
 
+    def test_kurs_serie_mit_sma(self):
+        self.s.feature_add("AAPL", "aktie", "2026-01-02", 102.0, 0.0, {"sma_20": 101.5})
+        self.s.feature_add("AAPL", "aktie", "2026-01-01", 100.0, 0.0, {"sma_20": None})
+        serie = self.s.kurs_serie("aapl")
+        self.assertEqual([r["datum"] for r in serie], ["2026-01-01", "2026-01-02"])  # sortiert
+        self.assertEqual(serie[1]["sma20"], 101.5)
+
     def test_abweichungs_register_getrennt(self):
         self.s.deviation_add({"symbol": "AAPL", "modell_version": "v1", "fehler_abs_pct": 2.3,
                               "richtungstreffer": True, "besser_als_baseline": True})
