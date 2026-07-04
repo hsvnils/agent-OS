@@ -344,15 +344,20 @@ def tool_specs() -> list[dict]:
                "side": _str("buy | sell."), "asset": _str("aktie | krypto (Default aktie)."),
                "bestaetigt": {"type": "boolean", "description": "true -> Order wirklich platzieren (CEO-Tor)."}},
               ["symbol", "qty", "side"]),
-        _spec("paper_order_freigabe", "Schickt dem CEO eine 1-Tap-Freigabe-Anfrage (Ja/Nein-Buttons per "
-              "Telegram) fuer eine PAPER-Order. Prueft die Autonomie-Leitplanken (informativ) und legt die "
-              "Anfrage an; bei 'Ja' wird die simulierte Order platziert. Nur im Modus 'paper'. Kein echtes Geld.",
-              {"symbol": _str("Ticker, z. B. AAPL."), "qty": {"type": "number", "description": "Stueckzahl."},
+        _spec("paper_order_freigabe", "Bevorzugtes Werkzeug, wenn der CEO im Paper-Modus etwas kaufen/verkaufen "
+              "will: schickt ihm eine 1-Tap-Freigabe (Ja/Nein-Buttons per Telegram). Holt den Kurs selbst "
+              "(auch Krypto: 'bitcoin'/'BTC'/'BTC/USD' -> USD). Menge per `qty` (Stueckzahl) ODER `betrag_usd` "
+              "(USD-Betrag, z. B. 'fuer 30 USD' -> rechnet die Stueckzahl selbst, auch Bruchteile). Bei 'Ja' "
+              "wird die simulierte Order platziert. Nur Modus 'paper'. Kein echtes Geld. NICHT nach der "
+              "Stueckzahl zurueckfragen, wenn ein USD-Betrag genannt ist -- `betrag_usd` nutzen.",
+              {"symbol": _str("Ticker/Coin, z. B. AAPL, bitcoin, BTC."),
+               "qty": {"type": "number", "description": "Stueckzahl (optional, wenn betrag_usd gesetzt)."},
+               "betrag_usd": {"type": "number", "description": "USD-Betrag statt Stueckzahl (z. B. 30)."},
                "side": _str("buy | sell (Default buy)."), "asset": _str("aktie | etf | krypto (Default aktie)."),
                "konfidenz": {"type": "number", "description": "0..1 (fuer das Leitplanken-Urteil)."},
                "signale": {"type": "number", "description": "Zahl uebereinstimmender Signale."},
                "risiko_label": _str("konservativ | spekulativ.")},
-              ["symbol", "qty"]),
+              ["symbol"]),
         _spec("insider_scan", "Screent oeffentliche SEC-Form-4-Insider-KAEUFE ueber die Watchlist (oder "
               "uebergebene Symbole): erkennt Insider-Cluster/Grosskaeufe, erzeugt Risk-gepruefte Beobachten-"
               "Alerts mit Filing-Link + Second-Brain-Notiz. Advisory, keine Trades.",
@@ -1005,12 +1010,16 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             symbol = (args.get("symbol") or "").upper().strip()
             side = (args.get("side") or "buy").lower().strip()
             asset = (args.get("asset") or "aktie").lower().strip()
-            try:
-                qty = float(args.get("qty") or 0)
-            except (TypeError, ValueError):
-                qty = 0.0
-            if not symbol or qty <= 0 or side not in ("buy", "sell"):
-                return {"fehler": "symbol, qty (>0) und side (buy|sell) noetig."}
+
+            def _f(x):
+                try:
+                    return float(x or 0)
+                except (TypeError, ValueError):
+                    return 0.0
+            qty = _f(args.get("qty"))
+            betrag_usd = _f(args.get("betrag_usd"))
+            if not symbol or side not in ("buy", "sell"):
+                return {"fehler": "symbol + side (buy|sell) noetig."}
             from ..investment.autonomy_policy import AutonomyPolicy
             preis_vorgabe = None
             if asset == "krypto":                            # CoinGecko-ID/Ticker -> Alpaca-Symbol + USD-Preis
@@ -1018,8 +1027,14 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                 if not alp or usd <= 0:
                     return {"fehler": f"Krypto '{symbol}' bei Alpaca nicht handelbar oder kein Preis."}
                 symbol, preis_vorgabe = alp, usd
-            preis = preis_vorgabe if preis_vorgabe is not None else (eng._aktueller_preis(symbol, asset) or 0)
-            wert = round(float(preis) * qty, 2)
+            preis = float(preis_vorgabe if preis_vorgabe is not None else (eng._aktueller_preis(symbol, asset) or 0))
+            if preis <= 0:
+                return {"fehler": f"Kein aktueller Kurs fuer {symbol}."}
+            if qty <= 0 and betrag_usd > 0:                  # USD-Betrag -> Stueckzahl (auch Bruchteile)
+                qty = round(betrag_usd / preis, 6)
+            if qty <= 0:
+                return {"fehler": "qty (Stueckzahl) ODER betrag_usd (USD-Betrag) noetig."}
+            wert = round(preis * qty, 2)
             konto = (eng.paper_konto() or {}).get("konto") or {}
             urteil = AutonomyPolicy().pruefe(
                 {"symbol": symbol, "asset": asset, "side": side, "betrag_eur": wert,

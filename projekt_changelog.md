@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 15:00] — Claude Code — Investment: Paper-Freigabe per USD-Betrag (Schritt 7.3)
+- **Was:** Das Tool `paper_order_freigabe` nimmt jetzt `betrag_usd` (USD-Betrag) statt zwingend `qty`
+  (Stueckzahl) -- „fuer 30 USD Bitcoin" rechnet die Stueckzahl selbst aus (Bruchteile), Kurs holt es selbst
+  (Aktie via Finnhub, Krypto via `krypto_usd`). Tool-Beschreibung geschaerft (bevorzugtes Werkzeug fuer
+  Paper-Kauf/-Verkauf; nicht nach Stueckzahl zurueckfragen, wenn ein USD-Betrag genannt ist). `symbol` einziges
+  Pflichtfeld. Behebt die Reibung im Smoke-Test (LUNA fragte nach Stueckzahl statt Ja/Nein-Buttons zu schicken).
+  Suite 557 gruen.
+- **Warum:** CEO nannte einen USD-Betrag; das Tool brauchte aber eine Stueckzahl -> LUNA fragte per Text zurueck
+  statt die 1-Tap-Freigabe zu senden.
+- **Betroffen:** `orchestrator/core/hoa_tools.py`.
+
 ## [2026-07-04 14:40] — Claude Code — Investment: Krypto-Orders manuell handel-/testbar (Schritt 7.2)
 - **Was:** `engine.krypto_usd(symbol)` loest eine Krypto-Eingabe (CoinGecko-ID | Ticker | Alpaca-Symbol) zu
   (Alpaca-Handelssymbol, **USD-Preis**) auf. `engine.paper_order` nutzt das automatisch fuer `asset=krypto`
