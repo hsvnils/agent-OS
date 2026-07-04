@@ -1043,7 +1043,15 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                 {"equity": float(konto.get("equity") or 0), "autonomie_freigeschaltet": False})
             lp = "alle Leitplanken erfuellt" if urteil["erlaubt_autonom"] else \
                 ("Freigabe noetig: " + "; ".join(urteil["gruende"][:2]) if urteil["gruende"] else "Freigabe noetig")
-            frage = (f"Paper-{'Kauf' if side == 'buy' else 'Verkauf'}: {qty:g} {symbol} (~{wert} USD). "
+            pl_txt = ""
+            if side == "sell":                               # aktuellen Gewinn/Verlust der Position anzeigen
+                ziel = symbol.replace("/", "").upper()
+                for pos in (eng.paper_konto() or {}).get("positionen", []):
+                    if (pos.get("symbol") or "").replace("/", "").upper() == ziel:
+                        pl = _f(pos.get("pl"))
+                        pl_txt = f" Aktueller G/V der Position: {pl:+.2f} USD."
+                        break
+            frage = (f"Paper-{'Kauf' if side == 'buy' else 'Verkauf'}: {qty:g} {symbol} (~{wert} USD).{pl_txt} "
                      f"{lp}. Ausfuehren?")
             payload = {"symbol": symbol, "qty": qty, "side": side, "asset": asset}
             if preis_vorgabe is not None:

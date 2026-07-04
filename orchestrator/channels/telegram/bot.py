@@ -634,7 +634,8 @@ def _positionen_index(eng) -> dict:
         else:
             order_sym = sym.upper()
             key = order_sym
-        idx[key] = {"order_symbol": order_sym, "qty": _autonomie_f(p.get("qty")), "asset": asset}
+        idx[key] = {"order_symbol": order_sym, "qty": _autonomie_f(p.get("qty")), "asset": asset,
+                    "pl": _autonomie_f(p.get("unrealized_pl")), "plpc": _autonomie_f(p.get("unrealized_plpc")) * 100}
     return idx
 
 
@@ -681,8 +682,9 @@ def _market_monitor_tick(ctx, eng, monitor, betrag_usd: float = 30.0) -> None:
             if held:                                          # halten wir -> Schutz-Verkauf statt Nachkauf
                 if order_sym in offene_sells or held["qty"] <= 0:
                     continue
-                frage = (f"Live-Abfall: {c['symbol']} faellt {c['move_pct']:+.1f}% (kurzfristig) — du haeltst es. "
-                         f"Position schuetzen? Verkauf {held['qty']:g} {order_sym} (Paper)?")
+                frage = (f"Live-Abfall: {c['symbol']} faellt {c['move_pct']:+.1f}% (kurzfristig) — du haeltst es "
+                         f"(aktuell {held['plpc']:+.1f}% / {held['pl']:+.2f} USD). Position schuetzen? "
+                         f"Verkauf {held['qty']:g} {order_sym} (Paper)?")
                 ctx.approvals.add("paper_order", {"symbol": order_sym, "qty": held["qty"], "side": "sell",
                                                   "asset": asset, "preis": preis}, frage=frage)
             else:                                             # nicht im Depot -> Kauf-Chance
@@ -723,15 +725,16 @@ def _exit_monitor_tick(ctx, eng, *, stop_pct: float = 8.0, target_pct: float = 1
         sym = krypto_order_symbol(p.get("symbol")) if asset == "krypto" else (p.get("symbol") or "")
         preis = _autonomie_f(p.get("current_price")) or None
         plpc = round(_autonomie_f(p.get("unrealized_plpc")) * 100, 1)
+        pl_usd = _autonomie_f(p.get("unrealized_pl"))
         if sig == "stop":                                    # Stop-Loss -> automatisch verkaufen
             r = eng.paper_order(sym, qty, "sell", asset=asset, bestaetigt=True, preis=preis)
             if ctx.notifications:
                 ctx.notifications.enqueue(
-                    f"Auto-Stop-Loss: {qty:g} {sym} bei {plpc:+.1f}% verkauft — "
+                    f"Auto-Stop-Loss: {qty:g} {sym} bei {plpc:+.1f}% ({pl_usd:+.2f} USD) verkauft — "
                     f"{'ok' if r.get('ok') else 'Fehler: ' + str(r.get('grund') or r.get('hinweis'))}.",
                     abteilung="CIO", kategorie="investment", quelle="exit", dedup_stunden=0)
         elif sig == "target" and ctx.approvals is not None and sym not in offene_sells:   # Take-Profit -> vorschlagen
-            frage = (f"Gewinn mitnehmen? {p.get('symbol')} steht bei {plpc:+.1f}%. "
+            frage = (f"Gewinn mitnehmen? {p.get('symbol')} steht bei {plpc:+.1f}% ({pl_usd:+.2f} USD). "
                      f"Verkauf {qty:g} {sym} (Paper)?")
             ctx.approvals.add("paper_order", {"symbol": sym, "qty": qty, "side": "sell", "asset": asset,
                                               "preis": preis}, frage=frage)

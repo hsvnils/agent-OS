@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 17:25] — Claude Code — Investment: Gewinn/Verlust in Verkaufs-Vorschlaegen
+- **Was:** Verkaufs-Vorschlaege zeigen jetzt den **aktuellen Gewinn/Verlust der Position in USD** (+ %), nicht
+  nur Prozent. Betrifft: Take-Profit-Vorschlag + Auto-Stop-Loss-Meldung (`_exit_monitor_tick`: `+X.XX USD`),
+  Schutz-Verkauf des positions-bewussten Monitors (`_positionen_index` traegt jetzt `pl`/`plpc`; Frage zeigt
+  `+X.X% / +X.XX USD`) und den LUNA-Verkauf ueber `paper_order_freigabe` (sucht die Position, haengt „Aktueller
+  G/V: +X.XX USD" an). Nutzt Alpaca `unrealized_pl`/`unrealized_plpc`. Suite 573 gruen.
+- **Warum:** CEO-Frage -- bei einem Verkaufs-Vorschlag soll der moegliche Gewinn sichtbar sein. („Andere Summe"
+  ging bei Verkaeufen bereits.)
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`, `orchestrator/core/hoa_tools.py`.
+
 ## [2026-07-04 17:10] — Claude Code — Investment: Positions-bewusster, symmetrischer Monitor (Kauf + Verkauf)
 - **Was:** Der Intraday-Monitor kennt jetzt die offenen Positionen (`_positionen_index`: normalisiert Ticker/
   Krypto-Basis, matcht Live-Kandidaten). `_market_monitor_tick` handelt jetzt **positions-bewusst**: (1) Wert
