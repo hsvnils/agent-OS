@@ -271,6 +271,24 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
 .v2-modal-body { padding: 16px 20px; overflow-y: auto; }
 .v2-modal-body h3 { font-size: 15px; margin: 16px 0 8px; } .v2-modal-body h3:first-child { margin-top: 0; }
 
+/* Organigramm-Mindmap (SVG-Baum, hell) */
+.v2-mm-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12px; color: var(--v2-muted); }
+.v2-mm-legend .lg i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+.v2-mm-legend .active i { background: var(--v2-green); } .v2-mm-legend .standby i { background: var(--v2-amber); }
+.v2-mm-legend .offline i { background: var(--v2-faint); } .v2-mm-legend .human i { background: var(--v2-accent); }
+.v2-mm-scroll { overflow-x: auto; }
+.v2-mm-svg { width: 100%; height: auto; display: block; }
+.v2-mm-b rect { fill: var(--v2-card-solid); stroke: var(--v2-line); stroke-width: 1.2; }
+.v2-mm-b .v2-mm-bt { fill: var(--v2-fg); font-size: 11px; font-weight: 700; }
+.v2-mm-b .v2-mm-bs { fill: var(--v2-muted); font-size: 9px; }
+.v2-mm-b.dep.active rect { stroke: var(--v2-green); } .v2-mm-b.dep.standby rect { stroke: var(--v2-amber); } .v2-mm-b.dep.offline rect { stroke: var(--v2-faint); opacity: .7; }
+.v2-mm-b.sub rect { fill: var(--v2-bg2); } .v2-mm-b.sub .v2-mm-bt { font-size: 10px; font-weight: 600; }
+.v2-mm-b.sub.active rect { stroke: var(--v2-green); } .v2-mm-b.sub.standby rect { stroke: var(--v2-amber); } .v2-mm-b.sub.offline rect { opacity: .6; }
+.v2-mm-b.human rect { fill: var(--v2-accent); stroke: none; } .v2-mm-b.human .v2-mm-bt, .v2-mm-b.human .v2-mm-bs { fill: #fff; }
+.v2-mm-b.luna rect { fill: #ede4ff; stroke: #c8a2ff; } .v2-mm-b.luna .v2-mm-bt { fill: #5a2ea6; }
+.v2-mm-link { fill: none; stroke: var(--v2-line); stroke-width: 1.4; }
+.v2-mm-link.active { stroke: var(--v2-green); } .v2-mm-link.standby { stroke: var(--v2-amber); } .v2-mm-link.offline { stroke: var(--v2-faint); opacity: .5; } .v2-mm-link.human { stroke: var(--v2-accent); }
+
 @media (max-width: 1000px) {
   .v2-cards { grid-template-columns: 1fr; }
   #v2-app { padding: 18px 16px 96px; }

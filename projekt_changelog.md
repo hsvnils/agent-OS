@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-05 01:10] — Claude Code — UI-V2: Organigramm-Mindmap + SMA-20-Linie (Grafik-Paritaet)
+- **Was:** Klickstrecken-Audit V1 vs V2 durchgefuehrt (alle Fenster/Grafiken/Aktionen). Zwei fehlende GRAFIKEN in
+  V2 nachgezogen: (1) **Organigramm-Mindmap** (SVG-Baum CEO->LUNA->Abteilungen 2 Reihen->Sub-Agenten mit
+  Live-Status-Farben) -- aus V1 `renderAgenten` portiert, hell gestylt (neue `.v2-mm-*`-Styles). Ersetzt die
+  bisherige Karten-Liste in der Agenten-Sektion. (2) **SMA-20-Linie** im Kurs-Detail-Chart (`kursChart`), war
+  vorher nur Kurslinie. V2-Cache v2->v3.
+- **Warum:** CEO-Auftrag „alle Klickstrecken/Fenster/Grafiken aus V1 muessen in V2 erreichbar sein"; Mindmap
+  fehlte als einzige echte Grafik-Luecke.
+- **Audit-Ergebnis:** Alle 18 V1-App-Fenster, alle Detail-Fenster (Antrag/Invest/CRM-Konversation -> V2-Overlays),
+  alle Aktionen und Charts sind in V2 erreichbar. Rest-Unterschiede sind kosmetisch (Dashboard-Panels anders
+  angeordnet; die 4 System-Monitor-Gauges als Zahl statt Ring; Chart-Hover-Tooltip fehlt) -- Daten/Funktion ueberall da.
+- **Verifiziert (preview):** Mindmap rendert (22 Knoten/21 Links, Abteilungen mit Nummern + Status-Farben);
+  Suite 604 gruen. Nur Frontend.
+- **Betroffen:** `orchestrator/channels/web/static/{app-v2.js, style-v2.css, index-v2.html}`.
+
 ## [2026-07-05 00:20] — Claude Code — UI-V2: volle V1-Paritaet, volle Breite, echte Umlaute
 - **Was:** `app-v2.js` komplett ausgebaut auf **volle Funktions-/Daten-Paritaet zu V1** (CEO-Auftrag: „alles was
   V1 zeigt, muss V2 zeigen"). Alle 19 V1-NAV-Bereiche sind jetzt in V2 erreichbar (statt vorher ~9):

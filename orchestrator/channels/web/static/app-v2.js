@@ -295,12 +295,15 @@ async function invDetail(symbol, asset) {
 }
 function kursChart(h) {
   if (!h || h.length < 2) return `<div class="v2-sub">Noch zu wenig Kurs-Historie.</div>`;
-  const W = 460, H = 130, pad = 22, closes = h.map(p => p.close);
-  const lo = Math.min(...closes), hi = Math.max(...closes), span = (hi - lo) || 1;
+  const W = 460, H = 130, pad = 22, closes = h.map(p => p.close), smas = h.map(p => p.sma20).filter(v => v != null);
+  const lo = Math.min(...closes, ...(smas.length ? smas : [Infinity])), hi = Math.max(...closes, ...(smas.length ? smas : [-Infinity])), span = (hi - lo) || 1;
   const x = i => pad + (h.length <= 1 ? 0 : i * (W - 2 * pad) / (h.length - 1));
   const y = v => H - pad - ((v - lo) / span) * (H - 2 * pad);
   const path = h.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p.close).toFixed(1)}`).join(" ");
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" class="v2-chart"><path d="${path}" class="v2-line strat"/></svg><div class="v2-sub">${esc(h[0].datum)} → ${esc(h[h.length - 1].datum)} · ${h.length} Tage</div>`;
+  const smaPts = h.map((p, i) => p.sma20 != null ? `${x(i).toFixed(1)} ${y(p.sma20).toFixed(1)}` : null).filter(Boolean);
+  const smaPath = smaPts.length > 1 ? "M" + smaPts.join(" L") : "";
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" class="v2-chart">${smaPath ? `<path d="${smaPath}" class="v2-line base"/>` : ""}<path d="${path}" class="v2-line strat"/></svg>
+    <div class="v2-legend"><span><i style="background:var(--v2-accent)"></i>Kurs ${closes[closes.length - 1]}</span>${smaPts.length ? `<span><i style="background:var(--v2-faint)"></i>SMA-20</span>` : ""}<span class="v2-sub">${esc(h[0].datum)} → ${esc(h[h.length - 1].datum)} · ${h.length} Tage</span></div>`;
 }
 
 /* =========================== CRM =========================== */
@@ -386,15 +389,52 @@ async function renderWissen() {
   $("#v2-app").innerHTML = secHead("Wissen & Lagebild") + tabs("wissen", [["brain", "Second Brain"], ["lagebild", "Lagebild"]]) + `<div class="v2-tile w12">${search}<div id="brain-results" class="v2-cards">${liste}</div>${add}</div>`;
 }
 
-/* =========================== Agenten =========================== */
+/* =========================== Agenten (Organigramm-Mindmap, aus V1 portiert) =========================== */
 RENDER.agenten = renderAgents;
 async function renderAgents() {
   const a = await jget("/api/agenten") || {};
-  const stB = (st) => st === "active" ? "aktiv" : st === "offline" ? "err" : "wartet";
+  const deps = a.departments || [], ceo = a.ceo || {}, luna = a.luna || {};
   const stL = (st) => st === "active" ? "Aktiv" : st === "offline" ? "Geplant" : "Standby";
-  const deps = (a.departments || []).map(d => `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${stB(d.status)}">${stL(d.status)}</span><b>${esc(d.name || d.key)}</b></div><div class="v2-sub">${esc(d.rolle || "")}</div>${(d.subs || []).length ? `<div class="v2-chips" style="margin-top:8px">${(d.subs || []).map(s => `<span class="v2-chip">${esc(s.name)} <small>${stL(s.status)}</small></span>`).join("")}</div>` : ""}</div>`).join("") || emptyRow("Keine Agenten geladen.");
-  const head = `<div class="v2-tile w12"><div class="v2-list-row"><div class="grow"><b>${esc((a.ceo || {}).name || "CEO")}</b><small>${esc((a.ceo || {}).rolle || "")}</small></div><span>→</span><div class="grow"><b>${esc((a.luna || {}).name || "LUNA")}</b><small>${esc((a.luna || {}).rolle || "Head of Agents")}</small></div><span class="v2-badge aktiv">aktiv</span></div><div class="v2-sub">Stand ${esc(a.stand || "")}</div></div>`;
-  $("#v2-app").innerHTML = secHead("Agenten-Organisation") + `<div class="v2-grid">${head}</div><div class="v2-cards" style="margin-top:16px">${deps}</div>`;
+  const legend = `<div class="v2-mm-legend"><span class="lg active"><i></i>Aktiv</span><span class="lg standby"><i></i>Standby</span><span class="lg offline"><i></i>Geplant</span><span class="lg human"><i></i>CEO</span></div>`;
+  let svg = emptyRow("Keine Agenten geladen.");
+  if (deps.length) {
+    // Top-down-Baum: CEO -> LUNA -> Abteilungen auf ZWEI Reihen (A/B) -> Unter-Agenten (identische Geometrie wie V1).
+    const bw = 96, bh = 34, colStep = 106, padX = 18, padTop = 20, vGap = 66, subStep = 40, rowGap = 34;
+    const half = Math.ceil((deps.length || 1) / 2), rowA = deps.slice(0, half), rowB = deps.slice(half);
+    const cols = Math.max(rowA.length, rowB.length, 1);
+    const W = padX * 2 + (cols - 1) * colStep + bw, centerX = W / 2;
+    const rowX = (row, j) => centerX - ((row.length - 1) * colStep) / 2 + j * colStep;
+    const rowMaxSub = row => Math.max(0, ...row.map(d => (d.subs || []).length));
+    const maxSubA = rowMaxSub(rowA), maxSubB = rowMaxSub(rowB);
+    const yCEO = padTop + bh / 2, yLUNA = yCEO + vGap, yDEPA = yLUNA + vGap, ySUBA = yDEPA + vGap;
+    const subABottom = maxSubA > 0 ? ySUBA + (maxSubA - 1) * subStep : yDEPA;
+    const yDEPB = subABottom + rowGap + vGap, ySUBB = yDEPB + vGap;
+    const subBBottom = maxSubB > 0 ? ySUBB + (maxSubB - 1) * subStep : yDEPB;
+    const H = subBBottom + bh / 2 + 12;
+    const box = (cxp, y, w, titel, cls, sub, tip) => {
+      const t = sub ? `<text x="${cxp}" y="${y - 3}" text-anchor="middle" class="v2-mm-bt">${esc(titel)}</text><text x="${cxp}" y="${y + 10}" text-anchor="middle" class="v2-mm-bs">${esc(sub)}</text>`
+        : `<text x="${cxp}" y="${y + 4}" text-anchor="middle" class="v2-mm-bt">${esc(titel)}</text>`;
+      return `<g class="v2-mm-b ${cls}">${tip ? `<title>${esc(tip)}</title>` : ""}<rect x="${cxp - w / 2}" y="${y - bh / 2}" width="${w}" height="${bh}" rx="9"/>${t}</g>`;
+    };
+    const vlink = (x1, y1, x2, y2, cls) => { const my = (y1 + y2) / 2; return `<path d="M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}" class="v2-mm-link ${cls}"/>`; };
+    let links = vlink(centerX, yCEO + bh / 2, centerX, yLUNA - bh / 2, "human"), nodes = "";
+    const drawRow = (row, yDEP, ySUB) => row.forEach((d, i) => {
+      const cx = rowX(row, i);
+      links += vlink(centerX, yLUNA + bh / 2, cx, yDEP - bh / 2, d.status);
+      const num = (d.name.split("·")[0] || "").trim(), kuerzel = (d.name.split("·")[1] || d.name).trim();
+      nodes += box(cx, yDEP, bw, kuerzel, "dep " + d.status, num, d.rolle);
+      (d.subs || []).forEach((s, j) => {
+        const sy = ySUB + j * subStep, py = j === 0 ? yDEP + bh / 2 : sy - subStep + bh / 2;
+        links += vlink(cx, py, cx, sy - bh / 2, s.status);
+        nodes += box(cx, sy, bw, s.name, "sub " + s.status, "", s.name + " · " + stL(s.status));
+      });
+    });
+    drawRow(rowA, yDEPA, ySUBA); drawRow(rowB, yDEPB, ySUBB);
+    nodes += box(centerX, yCEO, 126, ceo.name || "CEO", "human", ceo.rolle);
+    nodes += box(centerX, yLUNA, 142, luna.name || "LUNA", "luna", luna.rolle || "Head of Agents");
+    svg = `<div class="v2-mm-scroll"><svg viewBox="0 0 ${W} ${H}" class="v2-mm-svg" preserveAspectRatio="xMidYMid meet" style="min-width:${Math.min(W, 900)}px">${links}${nodes}</svg></div>`;
+  }
+  $("#v2-app").innerHTML = secHead("Agenten-Organisation") + tile("Organigramm — Live-Status", legend + svg, "w12");
 }
 
 /* =========================== System (Sub-Tabs) =========================== */
