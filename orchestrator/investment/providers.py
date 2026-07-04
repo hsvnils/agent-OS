@@ -114,9 +114,10 @@ class MarketData:
                 "indikator": indicator, "roh": d}
 
     # ---- Historische Tageskurse (fuer Backfill/Backtest) --------------------
-    def aktie_historie(self, symbol: str, *, outputsize: str = "full") -> dict:
+    def aktie_historie(self, symbol: str, *, outputsize: str = "compact") -> dict:
         """Taegliche Schlusskurse einer Aktie/ETF (Alpha Vantage TIME_SERIES_DAILY). -> {closes: {datum: close}}.
-        `outputsize`: 'compact' (~100 Tage) oder 'full' (voll). Free-Limit ~25 Abrufe/Tag."""
+        `outputsize`: 'compact' (~100 Tage, FREI) -- 'full' ist bei Alpha Vantage inzwischen PREMIUM.
+        Free-Limit ~25 Abrufe/Tag. Fuer laengere Historie ist FMP (`aktie_historie_fmp`) die Primaerquelle."""
         key = self._key("ALPHAVANTAGE_API_KEY")
         if not key:
             return self._fallb("Alpha Vantage", "ALPHAVANTAGE_API_KEY")

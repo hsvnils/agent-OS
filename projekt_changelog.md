@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 19:55] — Claude Code — Investment: AV-Fallback auf 'compact' (full = Premium)
+- **Was:** Beim Backfill fielen 6 Aktien (FMP fand nichts) auf Alpha Vantage zurueck -- dort ist
+  `outputsize=full` inzwischen **Premium** (Fehlermeldung „…is a premium feature…"). AV-Fallback jetzt auf
+  `outputsize=compact` (~100 Tage, kostenlos; reicht fuers Backtesten); `MarketData.aktie_historie` Default
+  ebenfalls `compact`. FMP bleibt Primaerquelle (hat ~1250 Kurse geladen, Aktien-Backtests laufen). Suite gruen.
+- **Warum:** Die 6 uebersprungenen Symbole (AVGO u. a.) sollen ueber den kostenlosen AV-compact-Pfad geladen
+  werden.
+- **Betroffen:** `orchestrator/investment/backfill.py`, `orchestrator/investment/providers.py`.
+
 ## [2026-07-04 19:45] — Claude Code — LUNA-OS: Fehler-Verlauf als echter, responsiver Chart
 - **Was:** Der Fehler-Verlauf ist jetzt ein richtiger, adaptiver Chart (weiterhin selbst-gehostetes SVG, keine
   Fremd-Lib). `invRenderTrend` zeichnet mit **Y-Achse (MAE-Ticks) + X-Achse (Wochen) + Gitterlinien + runden

@@ -61,7 +61,7 @@ class Backfill:
             else:                                             # Aktie/ETF: FMP (grosszuegiger) zuerst, dann Alpha Vantage
                 r = self.market.aktie_historie_fmp(sym)
                 if not r.get("ok"):
-                    r = self.market.aktie_historie(sym, outputsize="full")
+                    r = self.market.aktie_historie(sym, outputsize="compact")   # 'full' = AV-Premium -> compact (frei)
             if not r.get("ok"):
                 hinweise.append(f"{sym}: {r.get('hinweis') or r.get('fehler') or 'nicht verfuegbar'}")
                 continue
