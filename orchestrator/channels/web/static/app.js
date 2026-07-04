@@ -21,6 +21,15 @@ function applyTheme() {
   document.querySelectorAll("#theme-switch button").forEach(b => b.classList.toggle("active", b.dataset.themeSet === mode));
 }
 function setTheme(mode) { localStorage.setItem("luna-theme", mode); applyTheme(); }
+
+// UI-Version V1 <-> V2: Wahl pro Nutzer (Prefs + localStorage-Flash-Schutz), dann Seite in der Zielversion laden.
+async function setUiMode(mode) {
+  if (mode !== "v2") mode = "v1";
+  try { localStorage.setItem("luna-ui-mode", mode); } catch { /* egal */ }
+  PREFS = { ...PREFS, ui_version: mode };
+  try { await fetch("/api/prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prefs: PREFS }) }); } catch { /* offline: Query-Override greift trotzdem */ }
+  location.href = "/?ui=" + mode;   // Server liefert die passende Einstiegs-Datei
+}
 try { matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
   if ((localStorage.getItem("luna-theme") || "auto") === "auto") applyTheme();
 }); } catch { /* aeltere Browser */ }
@@ -1173,6 +1182,8 @@ document.addEventListener("click", (e) => {
   if (csave) { cutterJob(); return; }
   const th = e.target.closest("[data-theme-set]");
   if (th) { setTheme(th.dataset.themeSet); return; }
+  const uim = e.target.closest("[data-ui-mode]");
+  if (uim) { setUiMode(uim.dataset.uiMode); return; }
   const ed = e.target.closest("#edit-dash, [data-editdone]");
   if (ed) { toggleEdit(); return; }
   const wh = e.target.closest("[data-whide]");

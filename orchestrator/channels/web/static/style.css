@@ -700,6 +700,13 @@ html.theme-light .winbox.modern .wb-title { color: var(--fg); }
   font: inherit; font-size: 11px; border-radius: 7px; cursor: pointer; transition: background .15s, color .15s; }
 .theme-switch button.active { background: var(--cyan-soft); color: var(--cyan); font-weight: 700; }
 
+/* Umschalter Design-Version V1 <-> V2 (spiegelt .theme-switch) */
+.ui-switch { display: flex; gap: 2px; width: 100%; margin: 2px 0 6px; padding: 3px; border-radius: 10px;
+  background: var(--glass-hi); border: 1px solid var(--line); flex: 0 0 auto; }
+.ui-switch button { flex: 1; padding: 5px 0; border: none; background: none; color: var(--muted);
+  font: inherit; font-size: 11px; border-radius: 7px; cursor: pointer; transition: background .15s, color .15s; }
+.ui-switch button.active { background: var(--violet-soft, rgba(168, 116, 255, .16)); color: var(--violet); font-weight: 700; }
+
 /* ============ #2: Konfigurierbares Dashboard (Bearbeiten-Modus) ============ */
 #edit-dash { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 9px; cursor: pointer;
   background: rgba(46, 230, 255, .1); border: 1px solid var(--line); color: var(--fg); font-size: 15px; }

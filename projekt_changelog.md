@@ -17,6 +17,29 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 23:30] — Claude Code — LUNA-OS: zweites UI (UI-V2, helles „Flux"-Dashboard) per Umschalter
+- **Was:** Zweites, eigenstaendiges UI neben dem Command Center (jetzt „UI-V1"). **UI-V2** = helles, glasiges,
+  dashboard-/sektionsbasiertes Design (Vorbild Flux-Screenshots), **ohne Fenster (kein WinBox)**, Deutsch,
+  **echte Daten** aus den bestehenden `/api/...`-Endpunkten. Umschaltbar in beiden Richtungen, persistent pro
+  Nutzer.
+  - **Backend:** `/`-Route waehlt Einstiegs-Datei via neuem `_ui_version(request)` (`?ui=v1|v2`-Override →
+    sonst `prefs.ui_version` → Default v1; defensiv). `luna_os_prefs.prefs.ui_version` (kein Schema-Change).
+  - **V1 (nur additiv):** Umschalt-Knopf in Sidebar (`index.html`) + `setUiMode`/Click-Handler (`app.js`) +
+    `.ui-switch`-Style (`style.css`); Rendering/Fenster unveraendert. Cache v50→v51.
+  - **V2 (neu):** `static/index-v2.html` (Top-Nav, Mount `#v2-app`, Orb/Voice-Launcher), `static/style-v2.css`
+    (eigenes helles `--v2-*`-Token-Set, Glas-Kacheln, KPI, Gauge, Tabellen, Badges, Dunkel-Variante,
+    reduced-motion), `static/app-v2.js` (SPA-Router; Dashboard-Kacheln Budget/Investment/Freigaben/Provider +
+    Compliance-Puls-Gauge + Live-Aktivitaet + Erste-Schritte; Voll-Sektionen Investment/CRM/Content/Cutter/
+    Freigaben/Wissen/Agenten/Team; LUNA-Chat + Voice via `/api/chat`,`/api/tts`; Modul-Gating via `/api/me`).
+  - **UI.md** um Abschnitt „11. UI-V2" erweitert (SSOT: opt-in, echte Daten, Deutsch, Orb+Voice Pflicht,
+    `?ui=`-Escape-Hatch).
+- **Warum:** CEO-Idee — zweites, komplett neu gedachtes Design; V1 darf nicht kaputtgehen, Umschalter noetig.
+- **Verifiziert (lokal, preview):** `/` = V1 (Default, unveraendert + neuer Knopf); `/?ui=v2` = V2-Shell mit
+  echten Daten (Budget 100 EUR, Provider 8/8, Live-Aktivitaet, Gauge); Sektions-Router (Investment 6 Kacheln);
+  `/?ui=v1` Escape-Hatch → V1. 5 neue Tests (Routing + Prefs). **Suite 604 gruen.** **NICHT deployt** (CEO-Ansage).
+- **Betroffen:** `orchestrator/channels/web/app.py`, `.../static/{index.html,app.js,style.css}` (klein/additiv),
+  `.../static/{index-v2.html,style-v2.css,app-v2.js}` (neu), `UI.md`, `tests/test_web_ui_version.py` (neu).
+
 ## [2026-07-04 22:40] — Claude Code — Roadmap: Investment-v4-Feintuning in den Backlog
 - **Was:** Neuer Backlog-Abschnitt „Investment v4 (Insider) — Feintuning" in `ROADMAP.md` (unter „## 8. Backlog"):
   (1) **n-Konsistenz** zwischen Marktdrift-Kontrolle (rechnet frisch je Lauf, n schwankt wg. AV-Rate-Limit unter

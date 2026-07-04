@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>LUNA Command Center</title>
-  <link rel="stylesheet" href="/static/style.css?v=50">
+  <link rel="stylesheet" href="/static/style.css?v=51">
   <!-- Theme flash-frei anwenden, bevor der Body rendert (Dunkel/Hell/Auto aus localStorage). -->
   <script>(function () {
     var m = localStorage.getItem("luna-theme") || "auto";
@@ -32,6 +32,10 @@
         <button data-theme-set="light">Hell</button>
         <button data-theme-set="auto">Auto</button>
       </div>
+      <div class="ui-switch" id="ui-switch" title="Design-Version">
+        <button data-ui-mode="v1" class="active">UI V1</button>
+        <button data-ui-mode="v2">UI V2</button>
+      </div>
       <div class="side-voice">
         <button id="focus-btn" class="focus-btn">⚡ Fokus-Modus</button>
       </div>
@@ -54,6 +58,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=50"></script>
+  <script src="/static/app.js?v=51"></script>
 </body>
 </html>

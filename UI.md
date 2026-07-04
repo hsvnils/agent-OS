@@ -180,3 +180,28 @@ Inspiriert vom „JARVIS Command Center"-HUD (CEO-Vorlage 2026-06-28): Sidebar-N
 AI-Core/Globe, Panel-Grid (AI Core Overview, Live Intelligence Feed, Active Agents, Mission Timeline,
 System Monitor, Memory Insights, LLM Status, Quick Commands), durchgehende „Talk to …"-Leiste.
 LUNA-Umsetzung nutzt **reale** Daten (Antraege, Meldungen, Research, Second Brain, Lagebild, Provider-Status).
+
+---
+
+## 11. UI-V2 — helles „Flux"-Dashboard (opt-in, zweite Design-Sprache)
+
+Seit 2026-07-04 gibt es ein **zweites, gleichwertiges UI** neben dem Command Center (jetzt „UI-V1"). UI-V2 ist
+ein **helles, glasiges, dashboard-/sektionsbasiertes** Design (Vorbild: „Flux"-Screenshots @orbixstudiollc) —
+**ohne Fenster-Paradigma (kein WinBox)**. Beide UIs sind gleichberechtigt; der Nutzer waehlt.
+
+- **Umschalten & Persistenz:** Umschalter in beiden UIs (V1: Sidebar-Knopf; V2: Pill „Zurueck zu UI V1").
+  Wahl liegt in `luna_os_prefs.prefs.ui_version` (pro Nutzer, geraeteuebergreifend) + localStorage-Flash-Schutz.
+  Der `/`-Handler serviert `index.html` (V1, Default) oder `index-v2.html` (V2). **`?ui=v1|v2`** ist der harte
+  Override/Escape-Hatch (V1 muss immer erreichbar bleiben).
+- **Dateien:** `static/index-v2.html`, `static/style-v2.css`, `static/app-v2.js` (eigenes Token-Set
+  `--v2-*`, kollidiert NICHT mit V1). V1-Dateien bleiben unangetastet (nur additiver Umschalt-Knopf).
+- **Bindende Regeln gelten weiter:** **echte Daten** (keine Mock-Zahlen; alle Kacheln aus `/api/...`),
+  **Deutsch mit Umlauten**, `prefers-reduced-motion`, `?v=N`-Cache-Bust (V2-Assets eigener Zaehler),
+  selbstgenuegsam (kein CDN), Modul-Gating via `/api/me`.
+- **Feste Identitaet bleibt (Punkt 1a):** **Orb + Stimme „Lola"** sind auch in V2 Pflicht — als Orb-/Voice-
+  Launcher unten rechts + Inline-Chat-Panel (kein Fenster). Reuse `/api/chat`, `/api/tts`, `/api/sehen`.
+- **Struktur V2:** Top-Nav (Icon-Reihe + Aktions-Pills + Sprache/Theme/Avatar) statt Sidebar; Kachel-Grid
+  (`--v2-radius`-Glaskarten) fuers Dashboard; Apps werden **geroutete Voll-Sektionen** in `#v2-app` statt
+  Fenster. Helles Default-Theme; Dunkel-Variante `html.v2-dark` optional.
+- **Neue Funktion in V2:** als Kachel (Dashboard) und/oder als Sektion; nur `--v2-*`-Tokens/`.v2-*`-Komponenten
+  (`.v2-tile`, `.v2-kpi`, `.v2-badge`, `.v2-table`, Gauge) verwenden; Daten ueber vorhandene `/api/...`-Endpunkte.

@@ -253,9 +253,31 @@ def _mtimes():
     return s
 
 
+def _ui_version(request: Request) -> str:
+    """UI-Version fuer den eingeloggten Nutzer: `?ui=v1|v2`-Override gewinnt, sonst `prefs.ui_version`,
+    Default `v1`. Defensiv -- jeder Fehler faellt auf v1 zurueck (V1 darf nie unerreichbar werden)."""
+    q = (request.query_params.get("ui") or "").strip().lower()
+    if q in ("v1", "v2"):
+        return q
+    try:
+        import urllib.parse as _up
+        uname = _pref_user(request)
+        if _sb is not None and _sb.verfuegbar():
+            r = _sb.select("luna_os_prefs", params="select=prefs&username=eq." + _up.quote(uname) + "&limit=1")
+            if r.get("ok") and r.get("rows"):
+                v = ((r["rows"][0].get("prefs") or {}).get("ui_version") or "").strip().lower()
+                if v == "v2":
+                    return "v2"
+    except Exception:
+        pass
+    return "v1"
+
+
 @app.get("/")
-def index():
-    return FileResponse(STATIC / "index.html")
+def index(request: Request):
+    """Serviert die gewaehlte UI-Version: V1 (index.html, Default) oder V2 (index-v2.html, opt-in)."""
+    datei = "index-v2.html" if _ui_version(request) == "v2" else "index.html"
+    return FileResponse(STATIC / datei)
 
 
 @app.get("/api/state")
