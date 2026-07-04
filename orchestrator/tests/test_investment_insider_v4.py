@@ -87,25 +87,29 @@ class TestClusterPointInTime(unittest.TestCase):
 
 
 class _InsiderStubMarket:
-    """Steigende Kurse + fixe Form-4-Kaeufe fuer JEDES Symbol (Test steuert Universum ueber Patch)."""
+    """Steigende Aktien-Kurse + FLACHER Markt (SPY) + fixe Form-4-Kaeufe (Test steuert Universum ueber Patch).
+    Der flache Benchmark macht das Insider-Alpha (Aktie steigt, Markt nicht) messbar."""
     def __init__(self, filings, *, start="2026-01-01", n=200, slope=1.0):
         d = date.fromisoformat(start)
-        self.hist = {(d + timedelta(days=i)).isoformat(): 100.0 + slope * i for i in range(n)}
+        self.tage = [(d + timedelta(days=i)).isoformat() for i in range(n)]
+        self.aktie = {t: 100.0 + slope * i for i, t in enumerate(self.tage)}
+        self.markt = {t: 100.0 for t in self.tage}          # SPY flach -> Marktdrift = 0
         self.filings = filings
         self.cutoff = None            # simuliert "heute": Kurse nach cutoff sind noch nicht bekannt
 
-    def _closes(self):
-        return {t: c for t, c in self.hist.items() if not self.cutoff or t <= self.cutoff}
+    def _closes(self, symbol):
+        src = self.markt if symbol.upper() == "SPY" else self.aktie
+        return {t: c for t, c in src.items() if not self.cutoff or t <= self.cutoff}
 
     def insider_transactions(self, symbol, *, seit=""):
         txns = [dict(transaktion="kauf", **f) for f in self.filings if not seit or f["filing_datum"] >= seit]
         return {"ok": True, "transaktionen": txns}
 
     def aktie_historie_fmp(self, symbol):
-        return {"ok": True, "closes": self._closes()}
+        return {"ok": True, "closes": self._closes(symbol)}
 
     def aktie_historie(self, symbol, *, outputsize="compact"):
-        return {"ok": True, "closes": self._closes()}
+        return {"ok": True, "closes": self._closes(symbol)}
 
 
 class TestInsiderBacktest(unittest.TestCase):
@@ -159,6 +163,27 @@ class TestInsiderBacktest(unittest.TestCase):
         self.market.filings = [{"insider": "A", "filing_datum": "2026-03-02", "wert": 5_000}]   # zu klein
         p = self.im.live_prognosen(datum="2026-03-05")
         self.assertEqual(p["erstellt"], [])
+
+    def test_marktdrift_kontrolle_alpha_und_edge(self):
+        r = self.im.backtest(seit="2026-01-01")
+        mk = r["markt_kontrolle"]
+        self.assertEqual(mk["typ"], "insider_markt_kontrolle")
+        self.assertEqual(mk["benchmark"], "SPY")
+        self.assertGreater(mk["insider"]["n"], 0)
+        # Aktie steigt, Markt (SPY) flach -> Insider-Wochen schlagen den Markt zu 100 %, Alpha positiv.
+        self.assertEqual(mk["insider"]["schlaegt_markt_pct"], 1.0)
+        self.assertGreater(mk["insider"]["alpha_schnitt_pct"], 0)
+        # Basisrate existiert (alle Wochen-Fenster) und ist groesser als die Insider-Teilmenge.
+        self.assertGreaterEqual(mk["basisrate"]["n"], mk["insider"]["n"])
+        # Kontrolle ist per markt_kontrolle() abrufbar (Dashboard-Pfad).
+        self.assertEqual(self.im.markt_kontrolle()["insider"]["n"], mk["insider"]["n"])
+
+    def test_deviation_traegt_markt_felder(self):
+        self.im.backtest(seit="2026-01-01")
+        devs = [d for d in self.store.list("inv_deviations") if d["modell_version"] == MODELL_VERSION_INSIDER]
+        self.assertTrue(devs)
+        self.assertTrue(all("schlaegt_markt" in d and "excess_return_pct" in d for d in devs))
+        self.assertTrue(all(d["schlaegt_markt"] for d in devs))          # Aktie schlaegt den flachen Markt
 
 
 if __name__ == "__main__":

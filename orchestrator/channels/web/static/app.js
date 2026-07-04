@@ -255,10 +255,34 @@ function invLoopHtml(L) {
     ${attr ? `<h4>Signal-Attribution <span class="meta">welche Signale treffen</span></h4>${attr}` : ""}
     ${vers ? `<h4>Je Modell-Version <span class="meta">schlägt es die Baseline?</span></h4><div class="inv-lp">${vers}</div>
       <div class="meta" style="margin-top:6px">v4-insider-30d = eigenes Modell: nur Werte mit frischem SEC-Form-4-Insider-Cluster-Kauf, 30-Tage-Horizont (kleinere Stichprobe). Nicht 1:1 gegen die 7-Tage-MAE von v2/v3 zu lesen — Maßstab ist „schlägt Baseline" + Richtungsquote auf dem Insider-Subset.</div>` : ""}
+    ${invMarktKontrolleHtml(L.insider_kontrolle)}
     <h4>Offene Prognosen</h4>${prog}
     <h4>Abweichungs-Register <span class="meta">separat, dauerhaft</span></h4>${reg}
     ${invLeitplankenHtml(L.leitplanken)}
   </div>`;
+}
+function invMarktKontrolleHtml(mk) {
+  if (!mk || !mk.insider || !mk.insider.n) return "";
+  const ins = mk.insider, bas = mk.basisrate || {};
+  const pct = (x) => x == null ? "–" : invPct(x * 100);
+  const eR = mk.edge_richtung_pp, eM = mk.edge_markt_pp;   // Prozentpunkte Vorsprung Insider vs Basisrate
+  const alpha = ins.alpha_schnitt_pct;
+  // Echter Edge = Insider schlägt den Markt HÄUFIGER als der Durchschnitts-Wert (edge_markt_pp > 0) und Alpha > 0.
+  const echterEdge = (eM != null && eM > 0) && (alpha != null && alpha > 0);
+  const grenzwertig = (eM != null && eM > 0) || (alpha != null && alpha > 0);
+  const badge = echterEdge ? ["freigegeben", "Edge über Marktdrift"]
+    : grenzwertig ? ["in_umsetzung", "grenzwertig"] : ["in_umsetzung", "kein Edge über Markt"];
+  const row = (lbl, o, n) => `<div class="inv-lp-row"><span class="k" style="text-transform:none">${lbl}</span>
+      <b>Richtung ${pct(o.richtung_pct)} · schlägt Markt ${pct(o.schlaegt_markt_pct)} · n=${n}</b></div>`;
+  return `<h4>Marktdrift-Kontrolle <span class="meta">Insider vs. „steigt eh mit dem Markt" (${esc(mk.benchmark || "SPY")}, ${mk.horizont_tage || 30}T)</span>
+      <span class="badge ${badge[0]}" style="margin-left:8px">${badge[1]}</span></h4>
+    <div class="inv-lp">
+      ${row("Insider-Wochen", ins, ins.n)}
+      ${row("Basisrate (alle Wochen)", bas, bas.n)}
+      <div class="inv-lp-row"><span class="k" style="text-transform:none">Vorsprung Insider</span>
+        <b style="color:${(eM != null && eM > 0) ? "var(--green)" : "var(--amber)"}">Richtung ${eR == null ? "–" : (eR > 0 ? "+" : "") + eR + " pp"} · schlägt Markt ${eM == null ? "–" : (eM > 0 ? "+" : "") + eM + " pp"} · Ø Alpha ${alpha == null ? "–" : (alpha > 0 ? "+" : "") + invNum(alpha) + "%"}</b></div>
+    </div>
+    <div class="meta" style="margin-top:6px">Trennt Insider-Alpha von der Marktdrift: über 30 Tage steigt in einem freundlichen Markt fast jede Aktie. Nur wenn Insider-Werte den Markt <b>häufiger schlagen</b> als der Durchschnitt (Vorsprung &gt; 0) und das Ø-Alpha positiv ist, ist der Edge echt — nicht bloß Mitschwimmen.</div>`;
 }
 function invLeitplankenHtml(lp) {
   if (!lp) return "";

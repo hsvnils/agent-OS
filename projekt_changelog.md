@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 22:15] — Claude Code — Investment: Marktdrift-Kontrolle fuer v4 (Insider vs. SPY + Basisrate)
+- **Was:** v4-Backtest um eine **Marktdrift-Kontrolle** erweitert (`investment/insider.py`): je 30-Tage-Fenster
+  jetzt zusaetzlich der **SPY-Return** ueber DASSELBE Fenster -> `markt_return_pct`/`excess_return_pct`/
+  `schlaegt_markt` je Insider-Zeile. Plus eine **Basisrate** ueber ALLE Wochen-Fenster des Screen-Universums
+  (auch ohne Insider) = ehrlicher Vergleichsmassstab. Ergebnis als Summary in `inv_model_runs`
+  (`typ=insider_markt_kontrolle`, frisch je Lauf) via neuem `markt_kontrolle()`; Dashboard-Payload
+  (`_investment_loop_payload` -> `insider_kontrolle`) + neuer Frontend-Block „Marktdrift-Kontrolle"
+  (Insider-Wochen vs Basisrate, Vorsprung in pp, Ø-Alpha, Edge-Badge). Cache v49->v50. 2 neue Tests.
+- **Warum:** CEO: pruefen, ob v4s 58 % Richtungsquote echtes Insider-Alpha sind oder nur Marktdrift (ueber
+  30 Tage steigt fast jede Aktie). Die Kontrolle trennt beides.
+- **ERGEBNIS (Live-Backtest, volles 32er-Universum, SPY-Benchmark):** Insider-Wochen (n=117): Richtung
+  **58,1 %**, schlaegt Markt **55,6 %**, Ø-Alpha **+6,06 %**. Basisrate (n=260): Richtung **46,5 %**, schlaegt
+  Markt **46,2 %**. **Vorsprung: +11,6 pp Richtung, +9,4 pp schlaegt-Markt.** -> Die 58 % sind NICHT Marktdrift:
+  dieselben Werte laufen ohne Insider-Signal bei 46,5 % (sogar unter Muenzwurf). Insider-Cluster-Kaeufe zeigen
+  echten Vorsprung. **Vorbehalte:** Backtest (nicht live), kuratiertes Universum, ueberlappende Fenster ->
+  effektives n < 117; Ø-Alpha mean-lastig. Sauberer Beweis = Live-out-of-sample (8 offene v4-Prognosen, faellig
+  2026-08-03).
+- **Betroffen:** `orchestrator/investment/insider.py`, `channels/web/app.py`, `channels/web/static/app.js` +
+  `index.html` (v50), `tests/test_investment_insider_v4.py` (15 Tests). Suite **599 gruen**.
+
 ## [2026-07-04 21:30] — Claude Code — Investment: Modell v4 (Insider-Discovery, SEC Form 4, 30-Tage-Horizont)
 - **Was:** Neues Prognose-Modell **`v4-insider-30d`** als 4. Signal-Ansatz. **Vorab geprueft (empirisch, Live-
   Finnhub):** Offenmarkt-KAEUFE (Form-4-Code P) kommen bei unseren Mega-Caps (AAPL/NVDA/META/JPM ...) praktisch

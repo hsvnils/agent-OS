@@ -25,6 +25,8 @@ LOOKBACK_TAGE = 90        # ein Cluster gilt, wenn die Kaeufe in den letzten 90 
 CLUSTER_MIN = 2           # >= 2 verschiedene kaufende Insider = Cluster
 MIN_KAUF_WERT = 50_000.0  # ODER ein einzelner Grosskauf >= 50k USD
 MIN_HISTORIE = 6          # ohne genug Kurs-Historie keine Prognose
+MARKT_BENCHMARK = "SPY"   # Marktdrift-Kontrolle: Vergleich gegen den Gesamtmarkt ueber dasselbe 30-Tage-Fenster
+KONTROLLE_TYP = "insider_markt_kontrolle"
 
 
 def _num(v) -> float:
@@ -87,18 +89,37 @@ class InsiderModel:
             return []
         return sorted((str(t)[:10], _num(c)) for t, c in (r.get("closes") or {}).items() if _num(c) > 0)
 
-    # -- 1) Rueckwirkender Backtest (fuellt das Register/Dashboard sofort) --
+    @staticmethod
+    def _ret_ueber(reihe: list[tuple[str, float]], von: str, bis: str) -> float | None:
+        """Prozentuale Rendite einer (datum, close)-Reihe vom ersten Kurs >= `von` bis zum ersten Kurs >= `bis`."""
+        c0 = next((c for t, c in reihe if t >= von), None)
+        c1 = next((c for t, c in reihe if t >= bis), None)
+        if not c0 or not c1 or c0 <= 0:
+            return None
+        return round((c1 / c0 - 1) * 100, 3)
+
+    # -- 1) Rueckwirkender Backtest + Marktdrift-Kontrolle (fuellt das Register/Dashboard sofort) --
     def backtest(self, *, seit: str = "2026-01-01", step_tage: int = 7,
                  horizont: int = INSIDER_HORIZONT_TAGE) -> dict:
         """Walk-Forward ueber das Screen-Universum: an woechentlichen As-of-Tagen NUR bei aktivem Insider-Cluster
         eine 30-Tage-Prognose bilden und gegen den tatsaechlich eingetretenen Kurs auswerten -> inv_deviations
-        (backtest=True). Kein Look-ahead (nur bis `as_of` gemeldete Filings)."""
+        (backtest=True). Kein Look-ahead (nur bis `as_of` gemeldete Filings).
+
+        **Marktdrift-Kontrolle:** je Fenster wird zusaetzlich der SPY-Return ueber DASSELBE 30-Tage-Fenster
+        berechnet. So laesst sich trennen, ob Insider-Werte den Markt schlagen (echter Edge) oder nur mit dem
+        Markt mitsteigen. Zusaetzlich eine **Basisrate** ueber ALLE Wochen-Fenster (auch ohne Insider) -- der
+        Vergleichsmassstab fuer die Insider-Trefferquote. Die Kontrolle wird als Summary (inv_model_runs)
+        gespeichert (frisch je Lauf, unabhaengig von schon persistierten Zeilen)."""
         erledigt = {(d.get("symbol"), d.get("erstellt_am"))
                     for d in self.store.list("inv_deviations")
                     if d.get("backtest") and d.get("modell_version") == MODELL_VERSION_INSIDER}
         # Insider-Historie muss vor dem ersten As-of-Tag beginnen (Lookback), darum grosszuegiger Vorlauf.
         insider_seit = (date.fromisoformat(seit) - timedelta(days=LOOKBACK_TAGE + 30)).isoformat()
+        spy = self._preise(MARKT_BENCHMARK)                    # Benchmark einmal laden (Marktdrift-Referenz)
         neu, geprueft, mit_signal, hinweise = 0, 0, 0, []
+        # In-Memory-Zaehler fuer die Kontroll-Summary (frisch je Lauf):
+        ins_n = ins_up = ins_beat = 0; ins_alpha = 0.0         # Insider-Fenster
+        bas_n = bas_up = bas_beat = bas_markt_n = 0            # alle Wochen-Fenster (Basisrate)
         for w in INSIDER_SCREEN_UNIVERSE:
             sym = (w.get("symbol") or "").upper()
             if not sym:
@@ -122,15 +143,29 @@ class InsiderModel:
                 if as_of < seit:
                     i += 1
                     continue
+                faellig = (date.fromisoformat(as_of) + timedelta(days=horizont)).isoformat()
+                j = next((k for k in range(i + 1, len(reihe)) if d_index[k] >= faellig), None)
+                if j is None:
+                    break                                      # Zukunft (as_of+30d) noch nicht eingetreten
+                real_ret = round((closes[j] / closes[i] - 1) * 100, 3) if closes[i] > 0 else 0.0
+                markt_ret = self._ret_ueber(spy, as_of, faellig)   # SPY ueber dasselbe Fenster (None ohne Benchmark)
+                schlaegt_markt = (markt_ret is not None and real_ret > markt_ret)
+                # Basisrate: JEDES Wochen-Fenster (unkonditioniert) -- der ehrliche Vergleichsmassstab.
+                bas_n += 1
+                bas_up += 1 if real_ret > 1.0 else 0
+                if markt_ret is not None:
+                    bas_markt_n += 1
+                    bas_beat += 1 if schlaegt_markt else 0
                 cl = self._cluster_at(kaeufe, as_of)
                 if cl:
-                    faellig = (date.fromisoformat(as_of) + timedelta(days=horizont)).isoformat()
-                    j = next((k for k in range(i + 1, len(reihe)) if d_index[k] >= faellig), None)
-                    if j is None:
-                        break                                  # Zukunft (as_of+30d) noch nicht eingetreten
+                    mit_signal += 1
+                    ff = insider_forecast_fields(closes[:i + 1], cl, horizont=horizont)
+                    ins_n += 1
+                    ins_up += 1 if real_ret > 1.0 else 0
+                    if markt_ret is not None:
+                        ins_beat += 1 if schlaegt_markt else 0
+                        ins_alpha += real_ret - markt_ret
                     if (sym, as_of) not in erledigt:
-                        ff = insider_forecast_fields(closes[:i + 1], cl, horizont=horizont)
-                        real_ret = round((closes[j] / closes[i] - 1) * 100, 3) if closes[i] > 0 else 0.0
                         ziel = ff["ziel_return_pct"]
                         fehler = round(abs(ziel - real_ret), 3)
                         base_fehler = round(abs(real_ret), 3)  # naive Baseline = 0 %
@@ -142,17 +177,47 @@ class InsiderModel:
                             "baseline_fehler_abs_pct": base_fehler, "besser_als_baseline": fehler < base_fehler,
                             "konfidenz": ff["konfidenz"], "horizont_tage": horizont,
                             "insider_cluster": cl["cluster"], "insider_summe": cl["summe"],
+                            "markt_return_pct": markt_ret, "schlaegt_markt": schlaegt_markt,
+                            "excess_return_pct": (round(real_ret - markt_ret, 3) if markt_ret is not None else None),
                             "regime": ("hohe_vola" if ff["vola_20d"] >= 3.0 else "niedrige_vola")})
                         neu += 1
-                    mit_signal += 1
                 # naechster As-of-Tag (>= step_tage spaeter)
                 nxt = next((k for k in range(i + 1, len(reihe))
                             if d_index[k] >= (date.fromisoformat(as_of) + timedelta(days=step_tage)).isoformat()), None)
                 if nxt is None:
                     break
                 i = nxt
+        kontrolle = self._kontroll_summary(seit, horizont, spy_ok=bool(spy),
+                                            ins=(ins_n, ins_up, ins_beat, ins_alpha),
+                                            bas=(bas_n, bas_up, bas_beat, bas_markt_n))
+        self.store.model_run_add(kontrolle)
         return {"ok": True, "auswertungen_neu": neu, "insider_wochen": mit_signal, "symbole_geprueft": geprueft,
-                "hinweise": hinweise[:6], "modell_version": MODELL_VERSION_INSIDER}
+                "hinweise": hinweise[:6], "modell_version": MODELL_VERSION_INSIDER, "markt_kontrolle": kontrolle}
+
+    @staticmethod
+    def _kontroll_summary(seit: str, horizont: int, *, spy_ok: bool, ins, bas) -> dict:
+        """Baut die Marktdrift-Kontroll-Zusammenfassung: Insider-Fenster vs. unkonditionierte Basisrate.
+        `edge_*_pp` = Vorsprung der Insider-Wochen in Prozentpunkten. Positiv = echter Edge ueber die Marktdrift."""
+        ins_n, ins_up, ins_beat, ins_alpha = ins
+        bas_n, bas_up, bas_beat, bas_markt_n = bas
+        def q(z, n):
+            return round(z / n, 3) if n else None
+        i_rich, i_markt = q(ins_up, ins_n), q(ins_beat, ins_n)
+        b_rich, b_markt = q(bas_up, bas_n), q(bas_beat, bas_markt_n)
+        return {
+            "typ": KONTROLLE_TYP, "stand": date.today().isoformat(), "benchmark": MARKT_BENCHMARK,
+            "horizont_tage": horizont, "seit": seit, "benchmark_ok": spy_ok,
+            "insider": {"n": ins_n, "richtung_pct": i_rich, "schlaegt_markt_pct": i_markt,
+                        "alpha_schnitt_pct": (round(ins_alpha / ins_n, 3) if ins_n else None)},
+            "basisrate": {"n": bas_n, "richtung_pct": b_rich, "schlaegt_markt_pct": b_markt},
+            "edge_richtung_pp": (round((i_rich - b_rich) * 100, 1) if i_rich is not None and b_rich is not None else None),
+            "edge_markt_pp": (round((i_markt - b_markt) * 100, 1) if i_markt is not None and b_markt is not None else None),
+        }
+
+    def markt_kontrolle(self) -> dict | None:
+        """Juengste gespeicherte Marktdrift-Kontroll-Zusammenfassung (fuer das Dashboard)."""
+        runs = [r for r in self.store.list("inv_model_runs") if r.get("typ") == KONTROLLE_TYP]
+        return runs[-1] if runs else None
 
     # -- 2) Live-Prognosen (out-of-sample -- sammeln fuer den echten Beweis) --
     def live_prognosen(self, *, datum: str | None = None, horizont: int = INSIDER_HORIZONT_TAGE) -> dict:

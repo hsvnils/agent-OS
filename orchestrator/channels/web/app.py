@@ -818,6 +818,7 @@ def _investment_loop_payload() -> dict:
     offene Prognosen und das Abweichungs-Register. Liest die vom Bot geschriebene Datei (geteiltes Volume)."""
     from ...investment.autonomy_policy import AutonomyPolicy
     from ...investment.forecaster import Forecaster
+    from ...investment.insider import InsiderModel
     fc = Forecaster(loop_store)
     modus = inv_store.mode()
     devs = loop_store.list("inv_deviations")
@@ -829,6 +830,8 @@ def _investment_loop_payload() -> dict:
         "modell_version": Forecaster.MODELL_VERSION,
         "kennzahlen": fc.kennzahlen(),
         "verlauf": fc.verlauf(),
+        "insider_kontrolle": InsiderModel(None, loop_store).markt_kontrolle(),
+
         "offene_prognosen": [
             {"symbol": f.get("symbol"), "asset": f.get("asset", "aktie"), "richtung": f.get("richtung"),
              "ziel_return_pct": _inum(f.get("ziel_return_pct")), "konfidenz": _inum(f.get("konfidenz")),
