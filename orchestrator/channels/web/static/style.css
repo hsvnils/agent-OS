@@ -250,6 +250,15 @@ body {
 .inv-cls .bar { height: 7px; background: rgba(20,30,48,.7); border-radius: 4px; overflow: hidden; }
 .inv-cls .bar i { display: block; height: 100%; background: var(--cyan); }
 .inv-cls .val { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.inv-lp-status { display: flex; align-items: center; gap: 8px; font-size: 12px; margin: 4px 0 8px;
+  padding: 7px 10px; border-radius: 8px; background: rgba(20,30,48,.55); }
+.inv-lp-status .dot { width: 8px; height: 8px; border-radius: 50%; }
+.inv-lp-status.off { color: var(--muted); } .inv-lp-status.off .dot { background: var(--muted); }
+.inv-lp-status.on { color: var(--green); } .inv-lp-status.on .dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.inv-lp { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px 14px; }
+.inv-lp-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 4px 0;
+  border-bottom: 1px solid var(--line); }
+.inv-lp-row .k { color: var(--muted); } .inv-lp-row b { color: var(--fg); font-family: var(--mono); }
 
 /* Anklickbare Ergebnisse (Investment) */
 .row.klick, .card.klick { cursor: pointer; }

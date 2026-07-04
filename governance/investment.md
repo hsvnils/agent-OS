@@ -44,17 +44,32 @@ zusaetzlich CEO-bestaetigt (`paper_order ... bestaetigt=true`), echtes Geld blei
 - **Checker:** **Risk-Agent (16a, aktiv)** prueft JEDEN Vorschlag, vergibt Risiko-Label und kann
   Veto/Nachschaerfung verlangen — **kein** Alert an LUNA ohne sein Urteil.
 
-## 4 Risiko-Limits & Schwellwerte (Platzhalter bis paper)
+## 4 Risiko-Limits & Autonomie-Leitplanken (CEO-abgesegnet 2026-07-03)
 
-> Im advisory-Modus als **Empfehlung**; ab paper/live **hart durchgesetzt** vom Risk-Agent. Konkrete Werte
-> legt der CEO bei GATE C/D fest. Erhoehung eines Limits = CEO-Tor.
+> Im advisory-Modus als **Empfehlung**; ab paper/live **hart durchgesetzt**. Werte = **Startwerte**, jede
+> Aenderung/Erhoehung = **CEO-Tor**. Als ausfuehrbare Logik in `investment/autonomy_policy.py` (`Leitplanken`)
+> + `RiskAgent.pruefe_order`. Prinzip: **jeder autonome Trade muss ALLE Gates erfuellen** -- sonst kein
+> autonomer Trade, sondern eine **1-Tap-Freigabe-Anfrage per Telegram**. Verkaeufe sind risikoreduzierend und
+> laufen durch (auch unter Kill-Switch).
 
-- **Max. Positionsgroesse je Wert: 5 % des Equity** (hart ab paper, `RiskAgent.MAX_POSITION_PCT`; Kauf nur,
-  wenn Ordervolumen <= Buying-Power UND <= 5 % Equity). Min-Equity fuer Orders: `MIN_EQUITY`. Erhoehung = CEO-Tor.
-- Max. Exposure je Sektor/Asset-Klasse: _tbd_ · Tagesverlust-Limit (paper/live): _tbd_ · Kill-Switch:
-  aktivierbar, Default AUS (CEO-Tor).
-- Anomalie-Schwelle (Prognose vs. Realitaet) fuer Obduktion: _tbd_ (Start z. B. > 1.5x erwartete Bewegung).
-- Konfidenz-Mindestschwelle fuer einen Alert: _tbd_.
+**Harte Gates je Trade (autonom):**
+- **Max. Position autonom: 2 % des Equity UND 50 EUR** je Trade (mit CEO-Freigabe bis 5 %).
+- **Mindest-Konfidenz: 0.70** (darunter -> Freigabe). **Risiko-Label muss `konservativ`** sein (`spekulativ`
+  -> immer Freigabe).
+- **Mehrfach-Signal-Pflicht: >= 2** unabhaengige Signale (kein Single-Signal-Autotrade).
+- **Instrument-Whitelist Pflicht** (liquide Kernwerte, `autonomy_policy._default_whitelist`).
+- **Nacht-Budget: 200 EUR** autonomes Gesamtvolumen je Fenster · **max. 3 autonome Trades/Fenster**.
+
+**Exit-Automatik (Vorgabe fuer den Order-Pfad ab paper/live):**
+- **Pflicht-Stop-Loss: -8 %** je autonomem Kauf · **nur Limit-Orders** autonom (kein Market).
+
+**Globale Schutzschalter:**
+- **Tagesverlust-Stop: -3 %** -> ALLE Autonomie aus (nur noch risikoreduzierende Verkaeufe).
+- **Kill-Switch** (Telegram) · Default AUS · schaltet Autonomie sofort ab.
+- **Track-Record-Freischaltung:** Autonomie greift erst nach belegbar gutem Paper-/Live-Track-Record.
+
+**Weiteres:** Max. Positionsgroesse je Wert mit Freigabe 5 % (`RiskAgent.MAX_POSITION_PCT`). Anomalie-Schwelle
+(Prognose vs. Realitaet): Start > 1.5x erwartete Bewegung. Alle Werte drehbar durch den CEO (CEO-Tor).
 
 ## 5 Freigabe- & Eskalations-Regeln
 

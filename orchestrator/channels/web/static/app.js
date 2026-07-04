@@ -220,7 +220,19 @@ function invLoopHtml(L) {
     </div>
     <h4>Offene Prognosen</h4>${prog}
     <h4>Abweichungs-Register <span class="meta">separat, dauerhaft</span></h4>${reg}
+    ${invLeitplankenHtml(L.leitplanken)}
   </div>`;
+}
+function invLeitplankenHtml(lp) {
+  if (!lp) return "";
+  const aktiv = lp.autonom_aktiv;
+  const cfg = (lp.konfiguration || []).map(c =>
+    `<div class="inv-lp-row"><span class="k">${esc(c.label)}</span><b>${esc(c.wert)}</b></div>`).join("");
+  return `<h4>Autonomie-Leitplanken <span class="meta">CEO-abgesegnet</span></h4>
+    <div class="inv-lp-status ${aktiv ? "on" : "off"}">
+      <span class="dot"></span>${aktiv ? "Autonomes Handeln AKTIV (Modus " + esc(lp.modus) + ")"
+        : "Autonomes Handeln inaktiv — Modus " + esc(lp.modus || "advisory") + " (greift ab Paper/Live)"}</div>
+    <div class="inv-lp">${cfg}</div>`;
 }
 async function investScreen(btn) {
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Screent…"; }

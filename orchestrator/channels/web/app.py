@@ -816,8 +816,10 @@ def _inum(v) -> float:
 def _investment_loop_payload() -> dict:
     """Lern-Loop-Daten fuer das Command-Center: Kennzahlen (gesamt/je Version/je Anlageklasse), Fehler-Verlauf,
     offene Prognosen und das Abweichungs-Register. Liest die vom Bot geschriebene Datei (geteiltes Volume)."""
+    from ...investment.autonomy_policy import AutonomyPolicy
     from ...investment.forecaster import Forecaster
     fc = Forecaster(loop_store)
+    modus = inv_store.mode()
     devs = loop_store.list("inv_deviations")
     fcs = loop_store.list("inv_forecasts")
     feats = loop_store.list("inv_features")
@@ -842,6 +844,8 @@ def _investment_loop_payload() -> dict:
             for d in reversed(devs)][:20],
         "panel": {"symbole": len({e.get("symbol") for e in feats}), "snapshots": len(feats),
                   "letzter": loop_store.last_datum("inv_features")},
+        "leitplanken": {"modus": modus, "autonom_aktiv": modus in ("paper", "live"),
+                        "konfiguration": AutonomyPolicy().konfiguration()},
     }
 
 

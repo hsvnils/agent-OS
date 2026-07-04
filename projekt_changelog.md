@@ -17,6 +17,25 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 11:20] — Claude Code — Investment: Autonomie-Leitplanken als Code + Dashboard-Status (Schritt 4a)
+- **Was:** Die CEO-abgesegneten Leitplanken-Kriterien als ausfuehrbare, getestete Logik.
+  `orchestrator/investment/autonomy_policy.py` (`Leitplanken`-Dataclass + `AutonomyPolicy.pruefe`): prueft einen
+  geplanten Trade gegen harte Gates (Positionsgroesse 2%/50 EUR, Konfidenz>=0.70, Risiko-Label konservativ,
+  Mehrfach-Signal>=2, Whitelist-Pflicht, Nacht-Budget 200 EUR, max. 3 Trades/Fenster) + globale Schutzschalter
+  (Tagesverlust-Stop -3%, Kill-Switch, Track-Record-Freischaltung) -> `erlaubt_autonom` / `benoetigt_freigabe`
+  mit einzeln nachvollziehbaren Checks. Verkaeufe sind risikoreduzierend -> durchgelassen. **Voellig inert**
+  (steckt spaeter im Order-Pfad). `konfiguration()` fuer die Anzeige. `governance/investment.md` Abschnitt 4 mit
+  den konkreten Startwerten gefuellt (waren _tbd_; Aenderung = CEO-Tor). Dashboard: `/api/investment/loop` um
+  `leitplanken` erweitert (Modus, autonom_aktiv, Konfiguration); LUNA-OS-Panel „Autonomie-Leitplanken" mit
+  Status („inaktiv -- Modus advisory, greift ab Paper/Live") + Werte-Aufstellung. Cache v38->v39. 15 neue Tests;
+  volle Suite 524 gruen. Isoliert per Preview verifiziert (Testdateien + Launch-Config entfernt).
+- **Warum:** Schritt 4 -- das Rueckgrat fuer „nachts autonom innerhalb der Leitplanken": Kriterien als Code,
+  testbar + sichtbar, ohne Broker/Geld. Advisory, kein Gate.
+- **Betroffen:** `orchestrator/investment/autonomy_policy.py`, `orchestrator/tests/test_investment_autonomy.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app.js`,
+  `orchestrator/channels/web/static/style.css`, `orchestrator/channels/web/static/index.html`,
+  `governance/investment.md`.
+
 ## [2026-07-04 10:45] — Claude Code — Investment: Command-Center in LUNA-OS (Schritt 3, Lern-Loop sichtbar)
 - **Was:** Der Walk-Forward-Lern-Loop ist jetzt in der LUNA-OS-App „Investment" sichtbar. (1) Backend:
   `Forecaster.verlauf()` (MAE je Auswertungs-Woche) + Endpunkt `/api/investment/loop` in `app.py`
