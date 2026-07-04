@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 18:20] — Claude Code — UX-Fix „Jetzt sammeln" (kein Popup) + Roadmap: LUNA 3D-Hologramm
+- **Was:** (1) Der „Jetzt sammeln"-Button nutzte `alert()` -> Safari dunkelt bei offenem Popup die GANZE Seite ab
+  (wirkte wie „Lern-Loop dunkel hinterlegt"). Popup entfernt; Rueckmeldung jetzt **inline** (Button zeigt kurz
+  „✅ N gesammelt · …", dann zurueck). Cache v42->v43. (2) **Roadmap-Eintrag (spaeter):** lebendiger 3D-Avatar/
+  Hologramm fuer LUNA (blinzelt, Lip-Sync zu ElevenLabs „Lola", States idle/thinking/speaking) in ROADMAP.md
+  „## 8. Backlog" -- **mit Reconciliation auf unser Setup** (Vanilla-JS -> natives Three.js lokal vendored, kein
+  React/CDN; Web-Audio-AnalyserNode fuer Lip-Sync; NAS-Docker ohne GPU-Zwang; Feature-Flag Orb<->Hologramm).
+  NICHT umgesetzt (CEO: nur zur Kenntnis/Roadmap). Memory-Note angelegt.
+- **Warum:** CEO-Frage (dunkler Loop-Bereich = das alert-Popup) + CEO-Roadmap-Wunsch (3D-Avatar spaeter).
+- **Betroffen:** `orchestrator/channels/web/static/app.js`, `orchestrator/channels/web/static/index.html`,
+  `ROADMAP.md`.
+
 ## [2026-07-04 18:00] — Claude Code — Investment: G/V-Label deutlich + „Jetzt sammeln"-Knopf
 - **Was:** (1) **Gewinn/Verlust deutlich gekennzeichnet** in allen Verkaufs-Vorschlaegen: neuer Helfer
   `_gv_hinweis` -> „✅ GEWINN +4.20 USD (+15.3%)" bzw. „🔻 VERLUST -2.40 USD (-8.1%)"; verwendet in Take-Profit,

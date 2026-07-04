@@ -430,6 +430,30 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
   Kriterien einbauen.
 - **Kosten:** lokal/gratis (ffmpeg) bzw. Cent-Bereich, falls Gemini-Video-KI (`--video-ki`) genutzt wird.
 
+### CEO-Ziel 2026-07-04 (spaeter) — Lebendiger 3D-Avatar/Hologramm fuer LUNA
+
+**Ziel:** LUNA bekommt in LUNA-OS ein hochwertiges, **browserbasiertes 3D-Hologramm** (blau/cyan, holografisch),
+das **lebt**: schwebt/atmet im Leerlauf, **blinzelt** regelmaessig, hat State-abhaengige Animationen und bewegt
+beim Sprechen **Lippen/Kopf/Augen/Glow synchron zur ElevenLabs-Ausgabe (Stimme „Lola")**. Vorbild = das
+CEO-Bild (weiblich/androgyner AI-Kopf, leuchtende Augen, kurze leuchtende Haare, Mond-/Luna-Motiv als gebogenes
+„L", HUD-Ringe, Partikel, Scanlines). Ersetzt/ergaenzt den heutigen **Orb** als zentrales Voice-Element.
+
+**Reconciliation mit UNSEREM Projekt (wichtig — der ChatGPT-Prompt ist generisch):**
+- Frontend ist **Vanilla JS** (kein React) -> **natives Three.js**, **lokal vendored** unter
+  `static/vendor/` (Selbstgenuegsamkeit, kein CDN — siehe UI.md), NICHT @react-three/fiber.
+- **ElevenLabs „Lola" + Voice-Orb existieren** (`toggleVoice`, Pipecat/Voice-Server am Mac) -> Lip-Sync per
+  **Web-Audio AnalyserNode** am vorhandenen Audio-Element (RMS/Frequenz -> Mundoeffnung); Viseme/Timestamps
+  optional spaeter, Struktur dafuer vorsehen.
+- **States mappen auf vorhandene Zustaende:** idle / listening (Mikro an) / thinking (LLM generiert) /
+  speaking (TTS spielt) / error. An UI.md-Identitaet halten (Cyan, prefers-reduced-motion, Umlaute).
+- **NAS-Docker + kein GPU-Zwang** -> Partikel begrenzen, Postprocessing optional (graceful degradation),
+  responsive Canvas, sauberes dispose (keine Memory-Leaks). Feature-Flag + Umschalter Orb <-> Hologramm.
+- **MVP prozedural** (Three.js-Geometrien: emissive Augen, animierbarer Mund, Haar-Kurven/Partikel, L-Mond-Halo,
+  HUD-Ringe, Orbit-Linien, Scanlines) mit sauberem Pfad, spaeter ein echtes **GLB/VRM** mit Morph-Targets
+  (mouthOpen/jawOpen/viseme_*/blinkLeft/blinkRight) einzuhaengen (Mapping-Tabelle).
+- **Erst Repo inspizieren + Plan, dann bauen; bestehende LUNA-OS-Funktionalitaet nicht brechen.** Prompt-Detail
+  liegt beim CEO; vor Umsetzung mit dem echten Setup abgleichen.
+
 ### Neu — CEO 2026-07-02 (Phasen 19-21 + Recherche-Backlog)
 
 - **Phase 19 — CRM-Akte: Mail-Tracking (CEO 2026-07-02):** Die CRM-Akte eines Unternehmens (`crm_companies`

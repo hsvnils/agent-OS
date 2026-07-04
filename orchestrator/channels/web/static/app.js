@@ -242,11 +242,14 @@ function invLeitplankenHtml(lp) {
 }
 async function investSammeln(btn) {
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Sammelt…"; }
+  let txt = "";
   try {
     const r = await (await fetch("/api/investment/sammeln", { method: "POST" })).json();
-    if (r && r.ok) alert(`Gesammelt: ${r.gesammelt} Werte (${r.uebersprungen} schon vorhanden) · Prognosen neu: ${r.prognosen_neu} · ausgewertet: ${r.ausgewertet}`);
-  } catch {}
-  ladeInvestment();
+    if (r && r.ok) txt = `✅ ${r.gesammelt} gesammelt · ${r.prognosen_neu} Prognosen · ${r.ausgewertet} ausgewertet`;
+  } catch { txt = "Fehler beim Sammeln"; }
+  await ladeInvestment();
+  const b = document.querySelector('[onclick="investSammeln(this)"]');
+  if (b && txt) { b.textContent = txt; setTimeout(() => { b.textContent = "📥 Jetzt sammeln"; }, 4000); }
 }
 async function investScreen(btn) {
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Screent…"; }
