@@ -430,6 +430,23 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
   Kriterien einbauen.
 - **Kosten:** lokal/gratis (ffmpeg) bzw. Cent-Bereich, falls Gemini-Video-KI (`--video-ki`) genutzt wird.
 
+### Investment v4 (Insider) — Feintuning (CEO 2026-07-04, spaeter; erst live sammeln)
+
+Modell **v4-insider-30d** ist live und sammelt automatisch (Backtest-Edge drift-kontrolliert bestaetigt:
+Insider-Wochen Richtung ~54-58 % / schlaegt Markt ~53-56 % vs. Basisrate ~41-46 %, Ø-Alpha positiv). Bevor wir
+daraus mehr machen, laeuft es erst **out-of-sample live** (Prognosen faellig ab 2026-08-03). Danach diese zwei
+Praezisierungen — **niedrige Prio, kein Blocker:**
+1. **n-Konsistenz Kontrolle vs. Register.** Der Block „Marktdrift-Kontrolle" rechnet je Lauf frisch (n schwankt,
+   z. B. 68 statt 104), weil unter NAS-Last das Alpha-Vantage-Rate-Limit (1 Req/s) einzelne Symbole ausfaellt.
+   Fix: Kontrolle ueber dieselbe Symbol-Menge wie das Register rechnen bzw. FMP-only mit kleinem Delay statt
+   AV-Fallback, damit kein Wert wegen Rate-Limit fehlt -> beide n stimmen ueberein. (`investment/insider.py`)
+2. **Median-Alpha zusaetzlich zum Mittelwert.** Ø-Alpha ist mean-lastig (einzelne Ausreisser wie RIVN ziehen).
+   Median-Alpha (robuster) neben dem Mittel in Summary + Dashboard-Block zeigen. (`investment/insider.py`,
+   `channels/web/static/app.js`)
+
+Spaetere Ausbaustufen (wenn der Live-Edge haelt): Universum erweitern (mehr n), Positionsgroesse an Cluster-
+Staerke koppeln, keyless SEC-EDGAR-Form-4-Fallback (Finnhub-Unabhaengigkeit). Alles CEO-Tor bei Geldwirkung.
+
 ### CEO-Ziel 2026-07-04 (spaeter) — Lebendiger 3D-Avatar/Hologramm fuer LUNA
 
 **Ziel:** LUNA bekommt in LUNA-OS ein hochwertiges, **browserbasiertes 3D-Hologramm** (blau/cyan, holografisch),

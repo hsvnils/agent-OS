@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 22:40] — Claude Code — Roadmap: Investment-v4-Feintuning in den Backlog
+- **Was:** Neuer Backlog-Abschnitt „Investment v4 (Insider) — Feintuning" in `ROADMAP.md` (unter „## 8. Backlog"):
+  (1) **n-Konsistenz** zwischen Marktdrift-Kontrolle (rechnet frisch je Lauf, n schwankt wg. AV-Rate-Limit unter
+  NAS-Last) und Register; Fix via FMP-only + Delay. (2) **Median-Alpha** zusaetzlich zum Mittelwert. Niedrige
+  Prio, kein Blocker -- erst laeuft v4 live out-of-sample (faellig ab 2026-08-03).
+- **Warum:** CEO-Entscheidung: die beiden Praezisierungen aus der Session nicht jetzt bauen, sondern erst
+  Live-Daten sammeln.
+- **Betroffen:** `ROADMAP.md`.
+
 ## [2026-07-04 22:15] — Claude Code — Investment: Marktdrift-Kontrolle fuer v4 (Insider vs. SPY + Basisrate)
 - **Was:** v4-Backtest um eine **Marktdrift-Kontrolle** erweitert (`investment/insider.py`): je 30-Tage-Fenster
   jetzt zusaetzlich der **SPY-Return** ueber DASSELBE Fenster -> `markt_return_pct`/`excess_return_pct`/
