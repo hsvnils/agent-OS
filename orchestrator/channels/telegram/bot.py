@@ -518,6 +518,11 @@ def _autonomie_f(v) -> float:
         return 0.0
 
 
+def _cash_txt(cash) -> str:
+    """' Konto: <cash> USD Cash.' fuer Kauf-Vorschlaege (verfuegbare Balance auf dem Paper-Konto)."""
+    return f" Konto: {round(_autonomie_f(cash), 2)} USD Cash." if cash not in (None, "") else ""
+
+
 def _autonomie_kontext(eng, forecaster, watch, datum: str) -> dict:
     """Baut den Live-Kontext fuer die Autonomie-Leitplanken (Paper): Equity, Tagesverlust, Kill-Switch,
     genutztes Nacht-Budget + heutige Trades, Track-Record-Freischaltung."""
@@ -529,7 +534,7 @@ def _autonomie_kontext(eng, forecaster, watch, datum: str) -> dict:
              if p.get("modus") == "paper" and p.get("status") == "platziert" and p.get("ts", "")[:10] == datum]
     k = forecaster.kennzahlen().get("gesamt", {})
     freigeschaltet = k.get("n", 0) >= 20 and _autonomie_f(k.get("richtungsquote")) >= 0.55
-    return {"equity": equity, "tagesverlust_pct": tagesverlust,
+    return {"equity": equity, "cash": _autonomie_f(konto.get("cash")), "tagesverlust_pct": tagesverlust,
             "kill_switch": bool(watch and watch.store.paused()),
             "nacht_budget_genutzt": round(sum(_autonomie_f(p.get("order_wert")) for p in heute), 2),
             "trades_im_fenster": len(heute), "autonomie_freigeschaltet": freigeschaltet}
@@ -563,7 +568,7 @@ def _auto_trade_tick(ctx, eng, forecaster, auto_trader, datum: str) -> None:
         elif d["aktion"] == "freigabe" and ctx.approvals is not None:
             gruende = "; ".join(d["urteil"]["gruende"][:2]) or "Freigabe noetig"
             frage = (f"Paper-Kauf: {qty:g} {c['symbol']} (~{betrag} USD, Konf. {round(c['konfidenz'] * 100)}%, "
-                     f"{c.get('signale_zahl', 0)} Signale). {gruende}. Ausfuehren?")
+                     f"{c.get('signale_zahl', 0)} Signale).{_cash_txt(kontext.get('cash'))} {gruende}. Ausfuehren?")
             ctx.approvals.add("paper_order", {"symbol": c["symbol"], "qty": qty, "side": "buy",
                                               "asset": c["asset"]}, frage=frage)
         # aktion == "skip" -> globaler Schutzschalter -> nichts tun
@@ -612,7 +617,8 @@ def _auto_trade_krypto_tick(ctx, eng, forecaster, datum: str) -> None:
     elif d["aktion"] == "freigabe" and ctx.approvals is not None:
         frage = (f"Nacht-Top-Chance (Krypto, Paper): {qty:g} {alp} (~{betrag} USD, Konf. "
                  f"{round(c['konfidenz'] * 100)}%, {c.get('signale_zahl', 0)} Signale, Ziel "
-                 f"{c.get('ziel_return_pct'):+.1f}%). Autonom erst nach Track-Record. Ausfuehren?")
+                 f"{c.get('ziel_return_pct'):+.1f}%).{_cash_txt(kontext.get('cash'))} "
+                 f"Autonom erst nach Track-Record. Ausfuehren?")
         ctx.approvals.add("paper_order", {"symbol": alp, "qty": qty, "side": "buy", "asset": "krypto",
                                           "preis": preis}, frage=frage)
 
@@ -664,6 +670,7 @@ def _market_monitor_tick(ctx, eng, monitor, betrag_usd: float = 30.0) -> None:
             if p > 0:
                 quotes[cid] = {"preis": p, "asset": "krypto"}
     idx = _positionen_index(eng)
+    cash_txt = _cash_txt(((eng.paper_konto() or {}).get("konto") or {}).get("cash"))
     offene = ctx.approvals.offen()
     offene_sells = {(a.get("payload") or {}).get("symbol") for a in offene if (a.get("payload") or {}).get("side") == "sell"}
     offene_buys = {(a.get("payload") or {}).get("symbol") for a in offene if (a.get("payload") or {}).get("side") == "buy"}
@@ -694,7 +701,7 @@ def _market_monitor_tick(ctx, eng, monitor, betrag_usd: float = 30.0) -> None:
                 if qty <= 0:
                     continue
                 frage = (f"Live-Dip: {c['symbol']} faellt {c['move_pct']:+.1f}% (kurzfristig). Kauf-Chance im "
-                         f"Paper? {qty:g} {order_sym} (~{betrag_usd:g} USD). Ausfuehren?")
+                         f"Paper? {qty:g} {order_sym} (~{betrag_usd:g} USD).{cash_txt} Ausfuehren?")
                 ctx.approvals.add("paper_order", {"symbol": order_sym, "qty": qty, "side": "buy",
                                                   "asset": asset, "preis": preis}, frage=frage)
         elif ctx.notifications is not None:                   # steigt -> Info (Take-Profit macht der Exit-Monitor)

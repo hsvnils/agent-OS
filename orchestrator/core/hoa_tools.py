@@ -1044,7 +1044,9 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             lp = "alle Leitplanken erfuellt" if urteil["erlaubt_autonom"] else \
                 ("Freigabe noetig: " + "; ".join(urteil["gruende"][:2]) if urteil["gruende"] else "Freigabe noetig")
             pl_txt = ""
-            if side == "sell":                               # aktuellen Gewinn/Verlust der Position anzeigen
+            if side == "buy" and konto.get("cash") is not None:   # verfuegbare Balance beim Kauf anzeigen
+                pl_txt = f" Konto: {round(_f(konto.get('cash')), 2)} USD Cash."
+            elif side == "sell":                             # aktuellen Gewinn/Verlust der Position anzeigen
                 ziel = symbol.replace("/", "").upper()
                 for pos in (eng.paper_konto() or {}).get("positionen", []):
                     if (pos.get("symbol") or "").replace("/", "").upper() == ziel:

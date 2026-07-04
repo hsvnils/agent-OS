@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 17:40] — Claude Code — Investment: Konto-Balance (Cash) in Kauf-Vorschlaegen
+- **Was:** Kauf-Vorschlaege zeigen jetzt die verfuegbare **Balance auf dem Paper-Konto (Cash in USD)**. Helfer
+  `_cash_txt`; `_autonomie_kontext` traegt `cash`; ergaenzt in Auto-Trade (Aktie/ETF), Nacht-Krypto, Monitor-
+  Dip-Kauf und im LUNA-Kauf ueber `paper_order_freigabe` (nutzt das bereits geholte Konto). Suite 573 gruen.
+- **Warum:** CEO-Wunsch -- beim Kauf soll sichtbar sein, wie viel Cash noch auf dem Abrechnungskonto ist.
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`, `orchestrator/core/hoa_tools.py`.
+
 ## [2026-07-04 17:25] — Claude Code — Investment: Gewinn/Verlust in Verkaufs-Vorschlaegen
 - **Was:** Verkaufs-Vorschlaege zeigen jetzt den **aktuellen Gewinn/Verlust der Position in USD** (+ %), nicht
   nur Prozent. Betrifft: Take-Profit-Vorschlag + Auto-Stop-Loss-Meldung (`_exit_monitor_tick`: `+X.XX USD`),
