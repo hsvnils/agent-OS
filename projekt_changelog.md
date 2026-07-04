@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-05 01:45] — Claude Code — UI-V2: Dashboard bearbeitbar + Freigaben-Layout + Chart-Fix + klickbare Kacheln
+- **Was:** Vier CEO-Feedback-Punkte an der Live-V2 behoben:
+  1. **Dashboard bearbeitbar** (wie V1): Edit-Modus „✎ Anpassen" -> Widgets per Drag&Drop anordnen,
+     Ausblenden (✕) + Wieder-Einblenden (Tray); Reihenfolge/ausgeblendete pro Nutzer in
+     `PREFS.v2_dashboard` (+ localStorage-Fallback). 10 Dashboard-Widgets registriert.
+  2. **Freigaben-Layout** entzerrt: Beschreibung auf 5 Zeilen geclamped (`-webkit-line-clamp`) -> gleich hohe
+     Karten (verifiziert 5x264px) statt Textwaende; Volltext weiter im Detail-Overlay.
+  3. **Investment-Chart-Streckung behoben**: Fehler-Verlauf jetzt breiten-bewusst gerendert
+     (`drawTrend`/`mountTrends` mit ResizeObserver, viewBox-Breite = Container-Pixelbreite -> 1:1, keine
+     verzerrten KWs/Linien) + Hover-Tooltip. Ersetzt das alte `preserveAspectRatio=none`.
+  4. **Dashboard-Kacheln klickbar**: Research-Tickets->System/Research, Meldungen->System/Meldungen, Offene
+     Freigaben->Freigaben, Trefferquote/Loop/Provider->Investment, Live->System/Aktivitaet (mit „›"-Indikator;
+     im Edit-Modus deaktiviert).
+  V2-Cache v3->v4. Neue Styles (.v2-desc.clamp, .v2-trend/.v2-ctip, Edit-Modus, .v2-grip/.v2-wx/.v2-tray, klickbare Kacheln).
+- **Warum:** CEO-Feedback an der deployten V2: Freigaben-Layout „Katastrophe", Chart-KWs gestreckt,
+  Research-Kachel nicht anklickbar, Dashboard soll bearbeitbar sein wie V1.
+- **Verifiziert (preview 1440px):** Chart 1:1 (viewBox=Pixelbreite), Freigaben-Karten gleich hoch, 7 klickbare
+  Kacheln, Edit-Modus Drag/Hide/Show/Tray + Persistenz. Suite 604 gruen. Nur Frontend.
+- **Betroffen:** `orchestrator/channels/web/static/{app-v2.js, style-v2.css, index-v2.html}`.
+
 ## [2026-07-05 01:10] — Claude Code — UI-V2: Organigramm-Mindmap + SMA-20-Linie (Grafik-Paritaet)
 - **Was:** Klickstrecken-Audit V1 vs V2 durchgefuehrt (alle Fenster/Grafiken/Aktionen). Zwei fehlende GRAFIKEN in
   V2 nachgezogen: (1) **Organigramm-Mindmap** (SVG-Baum CEO->LUNA->Abteilungen 2 Reihen->Sub-Agenten mit

@@ -38,6 +38,28 @@ let PREFS = {};
 let STATE = {}, OVERVIEW = {}, LOOP = {}, INVEST = {};
 let AKTIV = "dash", SUBTAB = {};
 
+/* Dashboard-Bearbeiten (wie V1): Widget-Reihenfolge + ausgeblendete, pro Nutzer in PREFS.v2_dashboard. */
+const DASH2_DEFAULT = ["budget", "trefferquote", "freigaben", "provider", "loop", "compliance", "live", "schritte", "meldungen", "research"];
+const DASH2_TITEL = { budget: "Monatsbudget", trefferquote: "Prognose-Trefferquote", freigaben: "Offene Freigaben", provider: "Provider verbunden", loop: "Investment · Lern-Loop", compliance: "Compliance-Puls", live: "Live-Aktivität", schritte: "Erste Schritte", meldungen: "Meldungen", research: "Research-Tickets" };
+let DASH2 = { order: [...DASH2_DEFAULT], hidden: [] };
+let EDIT2 = false, DRAG2 = null;
+let _VERLAUF = [], _trendRO = null;
+
+function normDash2(l) {
+  l = l || {}; const hidden = (Array.isArray(l.hidden) ? l.hidden : []).filter(id => DASH2_DEFAULT.includes(id));
+  const order = (Array.isArray(l.order) ? l.order : []).filter(id => DASH2_DEFAULT.includes(id));
+  DASH2_DEFAULT.forEach(id => { if (!order.includes(id)) order.push(id); });
+  return { order, hidden };
+}
+function saveDash2() {
+  PREFS = { ...PREFS, v2_dashboard: DASH2 };
+  try { localStorage.setItem("luna-v2-dash", JSON.stringify(DASH2)); } catch { }
+  jpost("/api/prefs", { prefs: PREFS });
+}
+function hideW2(id) { if (!DASH2.hidden.includes(id)) DASH2.hidden.push(id); saveDash2(); renderDash(); }
+function showW2(id) { DASH2.hidden = DASH2.hidden.filter(x => x !== id); saveDash2(); renderDash(); }
+function reorder2(from, to) { const o = DASH2.order.filter(x => x !== from); o.splice(Math.max(0, o.indexOf(to)), 0, from); DASH2.order = o; saveDash2(); renderDash(); }
+
 /* Sektionen (Icon-Nav). app = Gate ueber /api/me.apps (null = immer sichtbar). Deckt ALLE V1-Bereiche ab. */
 const SECTIONS = [
   { id: "dash", icon: "▦", label: "Dashboard", app: "home" },
@@ -110,20 +132,32 @@ function openModal(title, html) {
 }
 function closeModal() { const m = $("#v2-modal"); if (m) m.hidden = true; }
 
-/* Responsiver Fehler-Verlauf-Chart (Modell vs. Baseline), aus V1 portiert */
-function trendChart(verlauf) {
-  const v = (verlauf || []); if (!v.length) return emptyRow("Noch kein Fehler-Verlauf — braucht ausgewertete Prognosen.");
-  const W = 640, H = 150, padL = 30, padR = 10, padT = 10, padB = 20;
+/* Fehler-Verlauf-Chart (Modell vs. Baseline): breiten-bewusst gerendert -> KEINE Streckung.
+   viewBox-Breite = Container-Pixelbreite -> 1:1-Abbildung (Achsen/Text unverzerrt). ResizeObserver wie V1. */
+function chartMount() {
+  return `<div class="v2-trend"></div><div class="v2-legend"><span><i style="background:var(--v2-accent)"></i>Modell</span><span><i style="background:var(--v2-faint)"></i>Baseline</span></div>`;
+}
+function mountTrends() {
+  const els = document.querySelectorAll(".v2-trend"); if (!els.length) return;
+  els.forEach(drawTrend);
+  if (!_trendRO) _trendRO = new ResizeObserver(es => es.forEach(e => drawTrend(e.target)));
+  try { _trendRO.disconnect(); els.forEach(el => _trendRO.observe(el)); } catch { }
+}
+function drawTrend(el) {
+  const v = _VERLAUF || [];
+  if (!v.length) { el.innerHTML = `<div class="v2-sub" style="padding:16px 0">Noch kein Fehler-Verlauf — braucht ausgewertete Prognosen.</div>`; return; }
+  const W = Math.max(280, Math.round(el.clientWidth || 600)), H = 168, padL = 34, padR = 12, padT = 12, padB = 24;
   const max = Math.max(1, ...v.flatMap(p => [p.mae_pct || 0, p.baseline_mae_pct || 0])) * 1.1;
   const x = i => padL + (v.length <= 1 ? (W - padL - padR) / 2 : i * (W - padL - padR) / (v.length - 1));
   const y = val => H - padB - ((val || 0) / max) * (H - padT - padB);
   const line = k => v.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p[k]).toFixed(1)}`).join(" ");
-  const grid = [0, .5, 1].map(f => { const t = max * f, yy = y(t).toFixed(1); return `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" class="v2-cgrid"/><text x="${padL - 5}" y="${+yy + 3}" class="v2-cax" text-anchor="end">${t.toFixed(1)}</text>`; }).join("");
+  const grid = [0, .5, 1].map(f => { const t = max * f, yy = y(t).toFixed(1); return `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" class="v2-cgrid"/><text x="${padL - 6}" y="${+yy + 3}" class="v2-cax" text-anchor="end">${t.toFixed(1)}</text>`; }).join("");
   const xi = v.length > 2 ? [0, Math.floor((v.length - 1) / 2), v.length - 1] : v.map((_, i) => i);
-  const xl = xi.map(i => `<text x="${x(i).toFixed(1)}" y="${H - 5}" class="v2-cax" text-anchor="middle">${esc((v[i].woche || "").replace("2026-", ""))}</text>`).join("");
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" class="v2-chart">
-    ${grid}<path d="${line("baseline_mae_pct")}" class="v2-line base"/><path d="${line("mae_pct")}" class="v2-line strat"/>${xl}</svg>
-    <div class="v2-legend"><span><i style="background:var(--v2-accent)"></i>Modell</span><span><i style="background:var(--v2-faint)"></i>Baseline</span></div>`;
+  const xl = xi.map(i => `<text x="${x(i).toFixed(1)}" y="${H - 7}" class="v2-cax" text-anchor="middle">${esc((v[i].woche || "").replace("2026-", ""))}</text>`).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" class="v2-chart" role="img">${grid}<path d="${line("baseline_mae_pct")}" class="v2-line base"/><path d="${line("mae_pct")}" class="v2-line strat"/>${xl}</svg><div class="v2-ctip" style="display:none"></div>`;
+  const svg = el.querySelector("svg"), tip = el.querySelector(".v2-ctip");
+  svg.addEventListener("mousemove", ev => { const r = svg.getBoundingClientRect(); let i = Math.round(((ev.clientX - r.left) / r.width * W - padL) / ((W - padL - padR) / Math.max(1, v.length - 1))); i = Math.max(0, Math.min(v.length - 1, i)); const p = v[i]; tip.innerHTML = `<b>${esc((p.woche || "").replace("2026-", ""))}</b> · Modell ${(p.mae_pct || 0).toFixed(1)}% · Baseline ${(p.baseline_mae_pct || 0).toFixed(1)}%`; tip.style.display = "block"; tip.style.left = Math.max(0, Math.min(r.width - 200, ev.clientX - r.left - 60)) + "px"; });
+  svg.addEventListener("mouseleave", () => { tip.style.display = "none"; });
 }
 function balken(obj, suffix = "Treffer") {
   return Object.entries(obj || {}).map(([k, a]) =>
@@ -131,50 +165,61 @@ function balken(obj, suffix = "Treffer") {
       <span class="val">${pct(a.richtungsquote)} ${suffix} · n=${a.n}</span></div>`).join("") || emptyRow("–");
 }
 
-/* =========================== Dashboard =========================== */
+/* =========================== Dashboard (bearbeitbar) =========================== */
 RENDER.dash = renderDash;
+function kpiInner(big, delta, sub, spark) {
+  const d = delta ? `<span class="delta ${delta.up ? "up" : "down"}">${delta.up ? "↗" : "↘"} ${esc(delta.text)}</span>` : "";
+  return `<div class="v2-kpi">${esc(big)} ${d}</div>${sub ? `<div class="v2-sub">${esc(sub)}</div>` : ""}${spark || ""}`;
+}
+function dashTile(id, w) {
+  const linkAttr = (!EDIT2 && w.link) ? (w.link.startsWith("go:") ? `data-go="${w.link.slice(3)}"` : `data-tab="${w.link.slice(4)}"`) : "";
+  const cls = "v2-tile " + (w.span || "") + ((!EDIT2 && w.link) ? " klick" : "") + (EDIT2 ? " editing" : "");
+  const rightHead = EDIT2 ? `<button class="v2-wx" data-whide2="${id}" title="Ausblenden">✕</button>`
+    : (w.link ? `<span class="dots go">›</span>` : `<span class="dots">···</span>`);
+  const grip = EDIT2 ? `<span class="v2-grip" title="Ziehen zum Anordnen">⠿</span>` : "";
+  return `<div class="${cls}" data-wid="${id}" ${EDIT2 ? 'draggable="true"' : linkAttr}>
+    <div class="v2-tile-h"><span class="t">${grip}${esc(DASH2_TITEL[id])}</span>${rightHead}</div>${w.html}</div>`;
+}
+function dash2Tray(W) {
+  const hid = DASH2.order.filter(id => W[id] && DASH2.hidden.includes(id));
+  return `<div class="v2-tray"><b>Ausgeblendet:</b> ${hid.length ? hid.map(id => `<button class="v2-btn" data-wadd2="${id}">＋ ${esc(DASH2_TITEL[id])}</button>`).join("") : `<span class="v2-sub">nichts ausgeblendet</span>`}</div>`;
+}
 async function renderDash() {
   [STATE, OVERVIEW, LOOP] = await Promise.all([jget("/api/state"), jget("/api/overview"), jget("/api/investment/loop")]);
-  STATE = STATE || {}; OVERVIEW = OVERVIEW || {}; LOOP = LOOP || {};
+  STATE = STATE || {}; OVERVIEW = OVERVIEW || {}; LOOP = LOOP || {}; _VERLAUF = LOOP.verlauf || [];
   const g = (LOOP.kennzahlen && LOOP.kennzahlen.gesamt) || {};
   const antraege = STATE.antraege || [], provs = OVERVIEW.providers || [];
   const connected = Number(OVERVIEW.providers_connected) || provs.filter(p => p.konfiguriert || p.connected).length;
   const provFrac = provs.length ? connected / provs.length : 0;
   const budget = OVERVIEW.monatsbudget || firstOf(STATE.finance || {}, ["monatsbudget", "budget"], "–");
   const aktiv = STATE.aktivitaet || [], meld = STATE.meldungen || [], research = STATE.research || [];
-
   const schritte = [
-    { t: "Datenquellen verbunden", done: connected > 0 },
-    { t: "Investment-Loop aktiv", done: !!(LOOP.panel && LOOP.panel.symbole) },
-    { t: "Team eingerichtet", done: (OVERVIEW.counts && OVERVIEW.counts.wissen != null) },
-    { t: "Budget gesetzt", done: budget && budget !== "–" },
-  ];
+    { t: "Datenquellen verbunden", done: connected > 0 }, { t: "Investment-Loop aktiv", done: !!(LOOP.panel && LOOP.panel.symbole) },
+    { t: "Team eingerichtet", done: (OVERVIEW.counts && OVERVIEW.counts.wissen != null) }, { t: "Budget gesetzt", done: budget && budget !== "–" }];
   const doneN = schritte.filter(s => s.done).length;
-  const kpis = [
-    kpiTile("Monatsbudget", String(budget), null, "aus finance/budget.md"),
-    kpiTile("Prognose-Trefferquote", g.n ? pct(g.richtungsquote) : "–",
-      g.n ? { up: (g.anteil_besser_baseline || 0) >= .5, text: pct(g.anteil_besser_baseline) + " > Baseline" } : null,
-      g.n ? `n=${g.n} · MAE ${num(g.mae_pct)} vs ${num(g.baseline_mae_pct)}` : "noch keine Auswertung", sparkFromVerlauf(LOOP.verlauf)),
-    kpiTile("Offene Freigaben", String(antraege.length), antraege.length ? { up: false, text: "wartet" } : { up: true, text: "frei" },
-      antraege.length ? "warten auf CEO-Entscheidung" : "alles freigegeben"),
-    kpiTile("Provider verbunden", `${connected}/${provs.length || "–"}`, { up: provFrac >= .5, text: pct(provFrac) }, "externe Datenquellen"),
-  ].join("");
-  const loopTile = tile("Investment · Lern-Loop", `
-    <div class="v2-kpi">${g.n ? pct(g.richtungsquote) : "–"} <span class="delta ${(g.anteil_besser_baseline || 0) >= .5 ? "up" : "down"}">${g.n ? pct(g.anteil_besser_baseline) + " schlaegt Baseline" : ""}</span></div>
-    <div class="v2-sub">Richtungsquote · MAE ${num(g.mae_pct)} vs Baseline ${num(g.baseline_mae_pct)} · n=${g.n || 0}</div>${trendChart(LOOP.verlauf)}`, "w8");
   const policy = [{ t: "Datenquellen verbunden", ok: provFrac >= .5 }, { t: "Freigabe-Tore aktiv", ok: true }, { t: "Security-Audit täglich", ok: true }];
-  const pulsTile = tile("Compliance-Puls", `
-    <div class="v2-gauge">${gaugeSvg(provFrac)}<div class="val">${pct(provFrac)}</div><div class="cap">Anbindungs-Abdeckung</div></div>
-    <div class="v2-policy">${policy.map(p => `<div class="row"><span>${esc(p.t)}</span><span class="v2-badge ${p.ok ? "aktiv" : "wartet"}">${p.ok ? "Aktiv" : "Offen"}</span></div>`).join("")}</div>`, "w4");
   const live = aktiv.slice(0, 8).map(a => `<tr><td><b>${esc(String(firstOf(a, ["akteur", "titel", "name"], "Ereignis")))}</b> ${esc(String(firstOf(a, ["aktion", "text"], "")).slice(0, 70))}</td><td>${esc(zeitKurz(firstOf(a, ["ts", "zeit", "erstellt_am"], "")))}</td><td><span class="v2-badge live">Live</span></td></tr>`).join("") || `<tr><td colspan="3" class="v2-empty">Noch keine Aktivität.</td></tr>`;
-  const liveTile = tile("Live-Aktivität", `<table class="v2-table"><thead><tr><th>Ereignis</th><th>Zeit</th><th>Status</th></tr></thead><tbody>${live}</tbody></table>`, "w8");
-  const stepTile = tile("Erste Schritte", `<div class="v2-sub">System-Bereitschaft</div><div class="v2-progress"><i style="width:${Math.round(doneN / schritte.length * 100)}%"></i></div>
-    ${schritte.map(s => `<div class="v2-check ${s.done ? "done" : ""}"><span class="mark">${s.done ? "✓" : ""}</span>${esc(s.t)}</div>`).join("")}`, "w4");
-  const miniK = [kpiTile("Meldungen", String(meld.length), null, "ungelesen"), kpiTile("Research-Tickets", String(research.length), null, "offen")].join("");
+
+  const W = {
+    budget: { span: "", link: null, html: kpiInner(String(budget), null, "aus finance/budget.md") },
+    trefferquote: { span: "", link: "go:investment", html: kpiInner(g.n ? pct(g.richtungsquote) : "–", g.n ? { up: (g.anteil_besser_baseline || 0) >= .5, text: pct(g.anteil_besser_baseline) + " > Baseline" } : null, g.n ? `n=${g.n} · MAE ${num(g.mae_pct)} vs ${num(g.baseline_mae_pct)}` : "noch keine Auswertung", sparkFromVerlauf(LOOP.verlauf)) },
+    freigaben: { span: "", link: "go:freigaben", html: kpiInner(String(antraege.length), antraege.length ? { up: false, text: "wartet" } : { up: true, text: "frei" }, antraege.length ? "warten auf CEO-Entscheidung" : "alles freigegeben") },
+    provider: { span: "", link: "go:investment", html: kpiInner(`${connected}/${provs.length || "–"}`, { up: provFrac >= .5, text: pct(provFrac) }, "externe Datenquellen") },
+    loop: { span: "w8", link: "go:investment", html: `<div class="v2-kpi">${g.n ? pct(g.richtungsquote) : "–"} <span class="delta ${(g.anteil_besser_baseline || 0) >= .5 ? "up" : "down"}">${g.n ? pct(g.anteil_besser_baseline) + " schlägt Baseline" : ""}</span></div><div class="v2-sub">Richtungsquote · MAE ${num(g.mae_pct)} vs Baseline ${num(g.baseline_mae_pct)} · n=${g.n || 0}</div>${chartMount()}` },
+    compliance: { span: "w4", link: null, html: `<div class="v2-gauge">${gaugeSvg(provFrac)}<div class="val">${pct(provFrac)}</div><div class="cap">Anbindungs-Abdeckung</div></div><div class="v2-policy">${policy.map(p => `<div class="row"><span>${esc(p.t)}</span><span class="v2-badge ${p.ok ? "aktiv" : "wartet"}">${p.ok ? "Aktiv" : "Offen"}</span></div>`).join("")}</div>` },
+    live: { span: "w8", link: "tab:system:aktivitaet", html: `<table class="v2-table"><thead><tr><th>Ereignis</th><th>Zeit</th><th>Status</th></tr></thead><tbody>${live}</tbody></table>` },
+    schritte: { span: "w4", link: null, html: `<div class="v2-sub">System-Bereitschaft</div><div class="v2-progress"><i style="width:${Math.round(doneN / schritte.length * 100)}%"></i></div>${schritte.map(s => `<div class="v2-check ${s.done ? "done" : ""}"><span class="mark">${s.done ? "✓" : ""}</span>${esc(s.t)}</div>`).join("")}` },
+    meldungen: { span: "", link: "tab:system:meldungen", html: kpiInner(String(meld.length), null, "ungelesen") },
+    research: { span: "", link: "tab:system:research", html: kpiInner(String(research.length), null, "offen") },
+  };
+  const order = DASH2.order.filter(id => W[id] && !DASH2.hidden.includes(id));
+  const editBtn = `<button class="v2-btn ${EDIT2 ? "pri" : ""}" data-editdash>${EDIT2 ? "✓ Fertig" : "✎ Anpassen"}</button>`;
   $("#v2-app").innerHTML = `
-    <div class="v2-welcome"><h1>Willkommen zurück, ${esc(ME.display_name || "CEO")}</h1>
-      <p>Dein KI-Kontrollraum — Agenten, Kosten und Compliance im Blick.</p></div>
-    <div class="v2-grid">${kpis}${loopTile}${pulsTile}${liveTile}${stepTile}${miniK}</div>`;
+    <div class="v2-welcome"><div class="v2-welcome-row"><div><h1>Willkommen zurück, ${esc(ME.display_name || "CEO")}</h1>
+      <p>Dein KI-Kontrollraum — Agenten, Kosten und Compliance im Blick.</p></div>${editBtn}</div></div>
+    <div class="v2-grid ${EDIT2 ? "editing" : ""}">${order.map(id => dashTile(id, W[id])).join("")}</div>
+    ${EDIT2 ? dash2Tray(W) : ""}`;
+  mountTrends();
 }
 function sparkFromVerlauf(verlauf) {
   const v = (verlauf || []).slice(-28); if (!v.length) return "";
@@ -207,7 +252,7 @@ async function renderFreigaben() {
     ].filter(Boolean).join("");
     return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${badgeCls(st)}">${esc(st)}</span><b>${esc(x.titel)}</b></div>
       <div class="v2-sub">von ${esc(x.von)}${x.kategorie ? " · " + esc(x.kategorie) : ""} · ${esc(id)}</div>
-      <div class="v2-desc">${esc(x.beschreibung) || "<i>keine Beschreibung</i>"}</div><div class="v2-card-actions">${btns}</div></div>`;
+      <div class="v2-desc clamp">${esc(x.beschreibung) || "<i>keine Beschreibung</i>"}</div><div class="v2-card-actions">${btns}</div></div>`;
   }).join("") || emptyRow("Keine offenen Freigaben — alles erledigt. 🎉");
   const bar = a.length ? `<button class="v2-btn" data-act="antrag-reformat">🔄 Alle neu formatieren</button>` : "";
   $("#v2-app").innerHTML = secHead("Freigaben", bar) + `<div class="v2-cards">${cards}</div>`;
@@ -217,7 +262,7 @@ async function renderFreigaben() {
 RENDER.investment = renderInvestment;
 async function renderInvestment() {
   [INVEST, LOOP] = await Promise.all([jget("/api/investment"), jget("/api/investment/loop")]);
-  INVEST = INVEST || {}; LOOP = LOOP || {};
+  INVEST = INVEST || {}; LOOP = LOOP || {}; _VERLAUF = LOOP.verlauf || [];
   const i = INVEST, g = (LOOP.kennzahlen && LOOP.kennzahlen.gesamt) || {}, mk = LOOP.insider_kontrolle;
   const sc = i.scorecard || {}, h = i.historie || {}, jt = h.je_tabelle || {};
   const scText = sc.ausgewertet ? `${pct(sc.trefferquote)} (${sc.treffer}/${sc.ausgewertet})` : "noch keine Auswertung";
@@ -249,7 +294,7 @@ async function renderInvestment() {
       ${kpiTile("Watchlist", String((i.watchlist || []).length), null, "beobachtete Werte")}
       ${tile("Watchlist verwalten", `<div style="margin-bottom:10px" class="v2-inv-search"><input id="inv-sym" placeholder="Aktie/Krypto suchen & hinzufügen…" autocomplete="off"><div id="inv-suggest" class="v2-suggest"></div></div><div class="v2-chips">${wl}</div>`, "w6")}
       ${tile("Provider", `<div class="v2-chips">${prov || "–"}</div><div class="v2-sub" style="margin-top:10px">Historie: ${esc(histText)}</div>`, "w6")}
-      ${tile("Lern-Loop · Fehler-Verlauf", `<div class="v2-sub">${(LOOP.panel || {}).symbole || 0} Werte · ${(LOOP.panel || {}).snapshots || 0} Snapshots · Modell ${esc(LOOP.modell_version || "")}</div>${trendChart(LOOP.verlauf)}`, "w8")}
+      ${tile("Lern-Loop · Fehler-Verlauf", `<div class="v2-sub">${(LOOP.panel || {}).symbole || 0} Werte · ${(LOOP.panel || {}).snapshots || 0} Snapshots · Modell ${esc(LOOP.modell_version || "")}</div>${chartMount()}`, "w8")}
       ${tile("Je Anlageklasse", balken((LOOP.kennzahlen || {}).je_asset), "w4")}
       ${tile("Signal-Attribution", balken((LOOP.kennzahlen || {}).je_signal), "w6")}
       ${tile("Je Modell-Version", vers, "w6")}
@@ -262,6 +307,7 @@ async function renderInvestment() {
       ${tile("Autonomie-Leitplanken", lpHtml, "w12")}
     </div>`;
   const inp = $("#inv-sym"); if (inp) inp.addEventListener("input", () => invSuche(inp.value));
+  mountTrends();
 }
 let _sucheTimer = null;
 function invSuche(q) {
@@ -535,10 +581,13 @@ function toggleVoice() {
 }
 
 /* =========================== SSE Live =========================== */
-function connectSSE() { try { const es = new EventSource("/api/events"); es.onmessage = () => { if (AKTIV === "dash") renderDash(); }; } catch { } }
+function connectSSE() { try { const es = new EventSource("/api/events"); es.onmessage = () => { if (AKTIV === "dash" && !EDIT2) renderDash(); }; } catch { } }
 
 /* =========================== Events + Boot =========================== */
 document.addEventListener("click", (e) => {
+  const ed = e.target.closest("[data-editdash]"); if (ed) { EDIT2 = !EDIT2; renderDash(); return; }
+  const wh2 = e.target.closest("[data-whide2]"); if (wh2) { hideW2(wh2.dataset.whide2); return; }
+  const wa2 = e.target.closest("[data-wadd2]"); if (wa2) { showW2(wa2.dataset.wadd2); return; }
   const g = e.target.closest("[data-go]"); if (g) { go(g.dataset.go); return; }
   const tb = e.target.closest("[data-tab]"); if (tb) { const [sec, id] = tb.dataset.tab.split(":"); go(sec, id); return; }
   const um = e.target.closest("[data-ui-mode]"); if (um) { setUiMode(um.dataset.uiMode); return; }
@@ -550,8 +599,16 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
+/* Drag&Drop zum Anordnen der Dashboard-Widgets (nur im Edit-Modus) */
+document.addEventListener("dragstart", (e) => { const t = e.target.closest("[data-wid]"); if (!t || !EDIT2) return; DRAG2 = t.dataset.wid; t.classList.add("dragging"); });
+document.addEventListener("dragend", (e) => { const t = e.target.closest("[data-wid]"); if (t) t.classList.remove("dragging"); DRAG2 = null; });
+document.addEventListener("dragover", (e) => { if (EDIT2 && DRAG2) e.preventDefault(); });
+document.addEventListener("drop", (e) => { if (!EDIT2 || !DRAG2) return; const t = e.target.closest("[data-wid]"); if (!t || t.dataset.wid === DRAG2) return; e.preventDefault(); reorder2(DRAG2, t.dataset.wid); });
+
 (async function boot() {
   applyTheme();
   [ME, PREFS] = await Promise.all([jget("/api/me").then(x => x || ME), jget("/api/prefs").then(x => (x && x.prefs) || {})]);
+  let saved = PREFS.v2_dashboard; if (!saved) { try { saved = JSON.parse(localStorage.getItem("luna-v2-dash") || "null"); } catch { } }
+  DASH2 = normDash2(saved);
   buildShell(); go("dash"); connectSSE();
 })();

@@ -271,6 +271,28 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
 .v2-modal-body { padding: 16px 20px; overflow-y: auto; }
 .v2-modal-body h3 { font-size: 15px; margin: 16px 0 8px; } .v2-modal-body h3:first-child { margin-top: 0; }
 
+/* Freigaben: Beschreibung clampen -> gleich hohe Karten */
+.v2-desc.clamp { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Chart-Mount (breiten-bewusst) + Hover-Tooltip */
+.v2-trend { position: relative; margin-top: 10px; }
+.v2-ctip { position: absolute; top: 0; background: var(--v2-card-solid); border: 1px solid var(--v2-line); border-radius: 8px;
+  padding: 5px 9px; font-size: 11px; box-shadow: var(--v2-shadow); pointer-events: none; white-space: nowrap; }
+
+/* Klickbare Kacheln (Navigation) */
+.v2-tile.klick { cursor: pointer; transition: transform .12s, box-shadow .15s; }
+.v2-tile.klick:hover { transform: translateY(-2px); box-shadow: var(--v2-shadow-hi); }
+.v2-tile-h .dots.go { color: var(--v2-accent); font-weight: 800; }
+
+/* Dashboard-Bearbeiten-Modus */
+.v2-welcome-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.v2-grid.editing .v2-tile { outline: 2px dashed var(--v2-line); outline-offset: 2px; }
+.v2-tile.editing { cursor: grab; } .v2-tile.dragging { opacity: .45; }
+.v2-grip { color: var(--v2-faint); cursor: grab; margin-right: 6px; }
+.v2-wx { border: none; background: var(--v2-red-soft); color: var(--v2-red); width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 12px; }
+.v2-tray { margin-top: 16px; padding: 14px 16px; border: 1px dashed var(--v2-line); border-radius: var(--v2-radius); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.v2-tray b { font-size: 13px; }
+
 /* Organigramm-Mindmap (SVG-Baum, hell) */
 .v2-mm-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12px; color: var(--v2-muted); }
 .v2-mm-legend .lg i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
