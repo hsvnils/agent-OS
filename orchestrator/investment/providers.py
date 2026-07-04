@@ -133,6 +133,31 @@ class MarketData:
         closes = {tag: _num(v.get("4. close")) for tag, v in ts.items() if _num(v.get("4. close")) > 0}
         return {"ok": True, "provider": "Alpha Vantage", "closes": closes}
 
+    def aktie_historie_fmp(self, symbol: str) -> dict:
+        """Taegliche Schlusskurse (FMP historical-price-eod). Grosszuegigeres Free-Limit als Alpha Vantage."""
+        key = self._key("FMP_API_KEY")
+        if not key:
+            return self._fallb("FMP", "FMP_API_KEY")
+        url = (f"https://financialmodelingprep.com/stable/historical-price-eod/light"
+               f"?symbol={urllib.parse.quote(symbol)}&apikey={key}")
+        try:
+            d = self._fetch(url)
+        except Exception as exc:
+            return {"ok": False, "provider": "FMP", "fehler": str(exc)[:160]}
+        rows = d.get("historical") if isinstance(d, dict) else d       # neue (Liste) + alte ({historical:[...]}) Form
+        if not isinstance(rows, list) or not rows:
+            note = (d.get("Error Message") or d.get("message")) if isinstance(d, dict) else None
+            return {"ok": False, "provider": "FMP", "hinweis": (note or "keine Historie")[:160]}
+        closes: dict = {}
+        for x in rows:
+            if not isinstance(x, dict):
+                continue
+            tag = x.get("date")
+            c = _num(x.get("close") if x.get("close") is not None else (x.get("price") or x.get("adjClose")))
+            if tag and c > 0:
+                closes[str(tag)[:10]] = c
+        return {"ok": True, "provider": "FMP", "closes": closes}
+
     def crypto_historie(self, coin_id: str, *, tage: int = 180, vs: str = "usd") -> dict:
         """Taegliche Schlusskurse eines Coins (CoinGecko market_chart). -> {closes: {datum: close}}. Keyless."""
         from datetime import datetime, timezone

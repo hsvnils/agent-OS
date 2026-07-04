@@ -30,6 +30,21 @@ class TestProviderHistorie(unittest.TestCase):
         md = MarketData({"ALPHAVANTAGE_API_KEY": "x"}, fetch=lambda u, headers=None: {"Note": "rate limit"})
         self.assertFalse(md.aktie_historie("AAPL")["ok"])
 
+    def test_aktie_historie_fmp_liste(self):
+        def fake(url, headers=None):
+            return [{"date": "2026-06-02", "close": 191.0}, {"date": "2026-06-01", "price": 190.0}]
+        r = MarketData({"FMP_API_KEY": "x"}, fetch=fake).aktie_historie_fmp("AAPL")
+        self.assertTrue(r["ok"])
+        self.assertEqual(r["closes"]["2026-06-01"], 190.0)
+        self.assertEqual(r["closes"]["2026-06-02"], 191.0)
+
+    def test_aktie_historie_fmp_alte_form(self):
+        def fake(url, headers=None):
+            return {"symbol": "AAPL", "historical": [{"date": "2026-06-01", "close": 190.0}]}
+        r = MarketData({"FMP_API_KEY": "x"}, fetch=fake).aktie_historie_fmp("AAPL")
+        self.assertTrue(r["ok"])
+        self.assertEqual(r["closes"]["2026-06-01"], 190.0)
+
     def test_crypto_historie_parst_coingecko(self):
         def fake(url, headers=None):
             return {"prices": [[1717200000000, 60000.0], [1717286400000, 61000.0]]}
@@ -46,6 +61,8 @@ class _StubMarket:
         self.hist = {}
         for i in range(n):
             self.hist[(d + timedelta(days=i)).isoformat()] = 100.0 + i    # + Aufwaertstrend
+    def aktie_historie_fmp(self, symbol):
+        return {"ok": True, "closes": dict(self.hist)}
     def aktie_historie(self, symbol, *, outputsize="full"):
         return {"ok": True, "closes": dict(self.hist)}
     def crypto_historie(self, coin_id, *, tage=180, vs="usd"):

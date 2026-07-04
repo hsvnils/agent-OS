@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 19:30] — Claude Code — Investment: Aktien-Historie via FMP (statt Alpha-Vantage-Limit)
+- **Was:** Beim Backfill luden die Aktien/ETFs meist nicht (Alpha Vantage Free ~25/Tag + ~5/min -> Rate-Limit
+  bei 17 Symbolen in einem Lauf). Neu `MarketData.aktie_historie_fmp` (FMP historical-price-eod, ~250/Tag,
+  parst neue Listen- + alte {historical}-Form). `Backfill.lade_historie` nimmt fuer Aktie/ETF jetzt **FMP zuerst**,
+  Alpha Vantage nur als Fallback. Krypto weiter CoinGecko. 2 neue Tests; volle Suite 582 gruen.
+- **Warum:** CEO -- „danach erst Aktien": die Aktien-Historie soll zuverlaessig laden (Backtest je Anlageklasse
+  fuer aktie/etf, nicht nur Krypto). Nach Deploy einmal „📚 Historie laden" -> Aktien/ETF sollten via FMP kommen.
+- **Betroffen:** `orchestrator/investment/providers.py`, `orchestrator/investment/backfill.py`,
+  `orchestrator/tests/test_investment_backfill.py`.
+
 ## [2026-07-04 19:15] — Claude Code — UI-Fix: Fehler-Verlauf-Graph (keine ovalen Punkte mehr)
 - **Was:** Der Fehler-Verlauf-Chart sah „komisch" aus -- die SVG wird per `preserveAspectRatio="none"` auf die
   volle Breite gestreckt, wodurch die runden Punkte zu **ovalen Blobs** wurden und die Linien ungleich dick.

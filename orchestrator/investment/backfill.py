@@ -56,8 +56,12 @@ class Backfill:
             asset = w.get("asset", "aktie")
             if not sym:
                 continue
-            r = (self.market.crypto_historie(sym, tage=tage) if asset == "krypto"
-                 else self.market.aktie_historie(sym, outputsize="full"))
+            if asset == "krypto":
+                r = self.market.crypto_historie(sym, tage=tage)
+            else:                                             # Aktie/ETF: FMP (grosszuegiger) zuerst, dann Alpha Vantage
+                r = self.market.aktie_historie_fmp(sym)
+                if not r.get("ok"):
+                    r = self.market.aktie_historie(sym, outputsize="full")
             if not r.get("ok"):
                 hinweise.append(f"{sym}: {r.get('hinweis') or r.get('fehler') or 'nicht verfuegbar'}")
                 continue
