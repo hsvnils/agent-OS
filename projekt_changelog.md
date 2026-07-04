@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 13:50] — Claude Code — Investment: Nacht-Krypto im Auto-Loop (24/7, Paper, Freigabe) (Schritt 7)
+- **Was:** Der Auto-Loop deckt jetzt auch **Krypto rund um die Uhr** ab (CEO: „nachts nur Krypto"). Neuer
+  Nacht-Durchlauf `_auto_trade_krypto_tick` (~02:00, jeden Tag, nur Paper): nimmt die Top-Krypto-Chance,
+  mappt CoinGecko-ID -> **Alpaca-Handelssymbol** (`broker.alpaca_krypto_symbol`, USD-Paare BTC/ETH/SOL/DOGE/…),
+  holt den **USD-Preis** (CoinGecko vs=usd), dimensioniert aus den Leitplanken und laesst `AutoTrader` ent-
+  scheiden. **Krypto = spekulativ** -> laeuft ueber die **1-Tap-Freigabe** (nicht autonom, solange die
+  'nur-konservativ'-Regel gilt). `engine.paper_order` nimmt jetzt optional `preis` (Krypto in USD) + nutzt
+  **time_in_force 'gtc'** fuer Krypto (24/7); der Freigabe-Executor reicht den gespeicherten Preis durch.
+  Aktien/ETF-Auto-Trade bleibt werktags 15:00. Standardmaessig AUS (INV_AUTO_TRADE). 4 neue Tests; Suite 546 gruen.
+- **Warum:** Schritt 7 -- Nacht-Handel realistisch machen (nur Krypto handelt nachts). Sicher: Paper, Krypto
+  immer per Freigabe, Leitplanken + Kill-Switch aktiv. Kein echtes Geld.
+- **Hinweis:** Alpaca-Krypto-Symbolformat/-Unterstuetzung nicht gegen die Live-API verifizierbar -> erster
+  echter Krypto-Paper-Trade als Smoke-Test beobachten (Freigabe antippen, Fill pruefen).
+- **Betroffen:** `orchestrator/investment/broker.py`, `orchestrator/investment/engine.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_investment_broker.py`,
+  `orchestrator/.env.example`.
+
 ## [2026-07-04 13:20] — Claude Code — Investment: Autonomer Paper-Loop mit Leitplanken (Schritt 6)
 - **Was:** `orchestrator/investment/auto_trader.py` (`AutoTrader.entscheide`): entscheidet je Chance **auto**
   (alle Leitplanken erfuellt UND Track-Record freigeschaltet -> autonome Paper-Order), **freigabe** (nicht voll

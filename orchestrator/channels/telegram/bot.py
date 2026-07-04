@@ -194,7 +194,7 @@ def _approval_ausfuehren(ctx, apv: dict) -> str:
         if eng is None:
             return "Investment-Abteilung nicht verfuegbar."
         r = eng.paper_order(p.get("symbol", ""), p.get("qty", 0), p.get("side", "buy"),
-                            asset=p.get("asset", "aktie"), bestaetigt=True)
+                            asset=p.get("asset", "aktie"), bestaetigt=True, preis=p.get("preis"))
         if r.get("ok"):
             return f"Paper-Order platziert: {p.get('side')} {p.get('qty'):g} {p.get('symbol')} (~{r.get('geschaetzter_wert')} USD)."
         return "Order nicht ausgefuehrt: " + str(r.get("grund") or r.get("hinweis") or "unbekannt")
@@ -525,6 +525,44 @@ def _auto_trade_tick(ctx, eng, forecaster, auto_trader, datum: str) -> None:
         # aktion == "skip" -> globaler Schutzschalter -> nichts tun
 
 
+def _auto_trade_krypto_tick(ctx, eng, forecaster, auto_trader, datum: str) -> None:
+    """Nacht-Durchlauf fuer KRYPTO (24/7, Paper): Top-Krypto-Chance -> Leitplanken. Krypto = spekulativ ->
+    laeuft ueber die 1-Tap-Freigabe (nicht autonom), solange die 'nur-konservativ'-Regel gilt."""
+    from ...investment.broker import alpaca_krypto_symbol
+    lp = auto_trader.policy.lp
+    kontext = _autonomie_kontext(eng, forecaster, ctx.watch, datum)
+    chancen = [c for c in forecaster.chancen([], min_konfidenz=lp.min_konfidenz)
+               if c.get("asset") == "krypto"][:1]
+    for c in chancen:
+        alp = alpaca_krypto_symbol(c["symbol"])
+        if not alp:                                          # bei Alpaca nicht handelbar -> ueberspringen
+            continue
+        usd = eng.market.crypto_preis([c["symbol"]], vs="usd")
+        preis = _autonomie_f((usd.get("preise", {}).get(c["symbol"]) or {}).get("usd")) if usd.get("ok") else 0.0
+        if preis <= 0:
+            continue
+        betrag = round(min(lp.max_position_eur, kontext["equity"] * lp.max_position_pct / 100.0), 2)
+        qty = round(betrag / preis, 6)
+        if qty <= 0:
+            continue
+        trade = {"symbol": alp, "asset": "krypto", "side": "buy", "betrag_eur": betrag,
+                 "konfidenz": c["konfidenz"], "signale": c.get("signale_zahl", 0), "risiko_label": "spekulativ"}
+        d = auto_trader.entscheide(trade, kontext)
+        if d["aktion"] == "auto":                            # (nur falls Krypto autonom erlaubt wuerde)
+            r = eng.paper_order(alp, qty, "buy", asset="krypto", bestaetigt=True, preis=preis)
+            if ctx.notifications:
+                ctx.notifications.enqueue(
+                    f"Autonome Paper-Order (Krypto): buy {qty:g} {alp} (~{betrag} USD) — "
+                    f"{'platziert' if r.get('ok') else 'abgelehnt'}.",
+                    abteilung="CIO", kategorie="investment", quelle="auto-trade", dedup_stunden=0)
+        elif d["aktion"] == "freigabe" and ctx.approvals is not None:
+            gruende = "; ".join(d["urteil"]["gruende"][:2]) or "Freigabe noetig"
+            frage = (f"Nacht-Paper-Kauf (Krypto): {qty:g} {alp} (~{betrag} USD, Konf. "
+                     f"{round(c['konfidenz'] * 100)}%, {c.get('signale_zahl', 0)} Signale). {gruende}. Ausfuehren?")
+            ctx.approvals.add("paper_order", {"symbol": alp, "qty": qty, "side": "buy", "asset": "krypto",
+                                              "preis": preis}, frage=frage)
+
+
 def _start_investment_loop(ctx, secrets) -> None:
     """Automatischer Investment-Screen (advisory, token-frugal/kostenlos): werktags 16:00 DE ein Markt-Screen
     -> Vorschlaege (jeder vom Risk-Agent geprueft) -> Alerts ueber den Notifier; montags 09:00 Wochenprognose.
@@ -579,6 +617,7 @@ def _start_investment_loop(ctx, secrets) -> None:
     def loop():
         time.sleep(45)
         _autotrade_datum = ""
+        _autotrade_krypto_datum = ""
         while True:
             try:
                 jetzt = datetime.now(tz) if tz else datetime.now()
@@ -634,12 +673,18 @@ def _start_investment_loop(ctx, secrets) -> None:
                 # Wochenprognose montags ~09:00, 1x/Tag
                 if auto_screen and jetzt.weekday() == 0 and jetzt.hour == 9 and _letztes_datum("forecasts") != datum:
                     eng.wochenprognose()
-                # Autonomer Paper-Trade (werktags ~15:00), 1x/Tag -- nur Paper, standardmaessig AUS (INV_AUTO_TRADE)
+                # Autonomer Paper-Trade Aktien/ETF (werktags ~15:00), 1x/Tag -- nur Paper, AUS by default
                 if auto_trade_an and auto_trader is not None and forecaster is not None \
                         and jetzt.weekday() < 5 and jetzt.hour == 15 and _autotrade_datum != datum \
                         and eng.store.mode() == "paper":
                     _autotrade_datum = datum
                     _auto_trade_tick(ctx, eng, forecaster, auto_trader, datum)
+                # Nacht-Krypto (24/7, ~02:00), 1x/Nacht -- nur Paper; Krypto=spekulativ -> Freigabe-Buttons
+                if auto_trade_an and auto_trader is not None and forecaster is not None \
+                        and jetzt.hour == 2 and _autotrade_krypto_datum != datum \
+                        and eng.store.mode() == "paper":
+                    _autotrade_krypto_datum = datum
+                    _auto_trade_krypto_tick(ctx, eng, forecaster, auto_trader, datum)
             except Exception as exc:
                 print(f"[investment] Fehler: {exc}", flush=True)
             time.sleep(300)
@@ -651,7 +696,8 @@ def _start_investment_loop(ctx, secrets) -> None:
     if feature_loop:
         aktive.append("taeglich 07:00 Merkmals-Snapshot + Prognose-Abgleich, Mo 09:00 7-Tage-Prognose")
     if auto_trade_an:
-        aktive.append("werktags 15:00 Auto-Paper-Trade (Leitplanken; autonom erst nach Track-Record, sonst Freigabe)")
+        aktive.append("werktags 15:00 Auto-Paper-Trade Aktien/ETF + 02:00 Nacht-Krypto (Leitplanken; autonom "
+                      "erst nach Track-Record, sonst Freigabe)")
     print("Investment-Loop aktiv (" + "; ".join(aktive) + ").", flush=True)
 
 

@@ -15,6 +15,17 @@ import urllib.request
 
 _BASE = "https://paper-api.alpaca.markets"
 
+# CoinGecko-ID -> Alpaca-Krypto-Handelssymbol (USD-Paare). Nur bei Alpaca handelbare Majors; Rest -> None.
+ALPACA_KRYPTO = {
+    "bitcoin": "BTC/USD", "ethereum": "ETH/USD", "solana": "SOL/USD", "dogecoin": "DOGE/USD",
+    "litecoin": "LTC/USD", "avalanche-2": "AVAX/USD", "chainlink": "LINK/USD", "aave": "AAVE/USD",
+}
+
+
+def alpaca_krypto_symbol(coingecko_id: str) -> str | None:
+    """Alpaca-Handelssymbol zu einer CoinGecko-ID, oder None wenn (bei Alpaca) nicht handelbar."""
+    return ALPACA_KRYPTO.get((coingecko_id or "").lower())
+
 
 class AlpacaPaperBroker:
     def __init__(self, key: str, secret: str, *, http=None, base: str = _BASE):
