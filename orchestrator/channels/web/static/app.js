@@ -227,6 +227,9 @@ function invLoopHtml(L) {
     `<div class="inv-cls"><span class="lbl">${esc(k)}</span>
       <div class="bar"><i style="width:${Math.round((a.richtungsquote || 0) * 100)}%"></i></div>
       <span class="val">${invPct((a.richtungsquote || 0) * 100)} Treffer · n=${a.n}</span></div>`).join("");
+  const vers = Object.entries((L.kennzahlen && L.kennzahlen.je_version) || {}).map(([k, a]) =>
+    `<div class="inv-lp-row"><span class="k" style="text-transform:none">${esc(k)}</span>
+      <b>${invPct((a.anteil_besser_baseline || 0) * 100)} schlägt Baseline · MAE ${invNum(a.mae_pct)} vs ${invNum(a.baseline_mae_pct)} · Richtung ${invPct((a.richtungsquote || 0) * 100)} · n=${a.n}</b></div>`).join("");
   const prog = (L.offene_prognosen || []).slice(0, 8).map(f => {
     const up = f.richtung === "steigt", dn = f.richtung === "faellt";
     const col = up ? "var(--green)" : dn ? "var(--red)" : "var(--muted)";
@@ -250,6 +253,7 @@ function invLoopHtml(L) {
       <div><h4>Je Anlageklasse</h4>${klassen}</div>
     </div>
     ${attr ? `<h4>Signal-Attribution <span class="meta">welche Signale treffen</span></h4>${attr}` : ""}
+    ${vers ? `<h4>Je Modell-Version <span class="meta">schlägt es die Baseline?</span></h4><div class="inv-lp">${vers}</div>` : ""}
     <h4>Offene Prognosen</h4>${prog}
     <h4>Abweichungs-Register <span class="meta">separat, dauerhaft</span></h4>${reg}
     ${invLeitplankenHtml(L.leitplanken)}

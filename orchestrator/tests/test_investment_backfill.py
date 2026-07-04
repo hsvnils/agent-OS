@@ -15,6 +15,16 @@ class TestForecastFields(unittest.TestCase):
         self.assertGreater(ff["ziel_return_pct"], 0)
         self.assertIn("basis_close", ff)
 
+    def test_v3_aktie_momentum_krypto_mean_reversion(self):
+        up = [100, 102, 104, 106, 108, 110, 112]
+        self.assertEqual(forecast_fields(up, "aktie")["richtung"], "steigt")    # Aktie = Momentum
+        self.assertEqual(forecast_fields(up, "krypto")["richtung"], "faellt")   # Krypto = Mean-Reversion (invertiert)
+
+    def test_v3_magnitude_gedaempft(self):
+        up = [100, 102, 104, 106, 108, 110, 112]
+        ff = forecast_fields(up, "aktie")
+        self.assertLess(abs(ff["ziel_return_pct"]), abs(ff["ret_5d"]) * 0.5)    # < 0.5-Fortschreibung
+
 
 class TestProviderHistorie(unittest.TestCase):
     def test_aktie_historie_parst_alpha_vantage(self):

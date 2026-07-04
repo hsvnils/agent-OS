@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 20:10] — Claude Code — Investment: Modell v3 (Aktien=Momentum, Krypto=Mean-Reversion) + Versions-Vergleich
+- **Was:** Neues Modell `v3-perasset` (`forecast_fields(closes, asset)`): **Aktien/ETF = Momentum** (wie bisher),
+  **Krypto = Mean-Reversion** (Signale invertiert -- 7-Tage-Krypto lief in der Historie gegen den Trend, 42 %
+  Richtungsquote), **Magnitude gedaempft** (0.5 -> 0.3, das Modell ueberschoss). Backtest jetzt **versions-
+  bewusst** (Dedup je symbol+erstellt_am+**modell_version**) -> ein neuer Backfill-Lauf erzeugt v3-Auswertungen
+  NEBEN v2 -> direkter Vergleich. Dashboard: neuer Block **„Je Modell-Version"** (schlaegt es die Baseline? MAE
+  v3 vs v2, Richtungsquote, n). Cache v47->v48. 3 neue Tests; volle Suite 584 gruen.
+- **Warum:** CEO „mach es wie du fuer richtig haeltst": das Modell schlug die Baseline nicht (MAE 7.3 % > 6.7 %,
+  Krypto-Richtung 42 %). v3 ist der datengetriebene Hebel; der Backtest misst, ob es wirklich besser ist.
+- **Naechster CEO-Schritt:** nach Deploy einmal **„📚 Historie laden"** -> v3-Backtest fuellt sich; „Je
+  Modell-Version" zeigt, ob v3 v2 + die Baseline schlaegt.
+- **Betroffen:** `orchestrator/investment/forecaster.py`, `orchestrator/investment/backfill.py`,
+  `orchestrator/channels/web/static/app.js`, `.../index.html`,
+  `orchestrator/tests/test_investment_backfill.py`, `orchestrator/tests/test_investment_forecaster.py`.
+
 ## [2026-07-04 19:55] — Claude Code — Investment: AV-Fallback auf 'compact' (full = Premium)
 - **Was:** Beim Backfill fielen 6 Aktien (FMP fand nichts) auf Alpha Vantage zurueck -- dort ist
   `outputsize=full` inzwischen **Premium** (Fehlermeldung „…is a premium feature…"). AV-Fallback jetzt auf

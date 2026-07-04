@@ -82,7 +82,7 @@ class TestForecaster(unittest.TestCase):
         self.store.feature_add("AAPL", "aktie", "2026-01-13", 106.0, 0.0, {})
         k = self.fc.auswerten(heute="2026-01-13")["kennzahlen"]
         self.assertEqual(k["gesamt"]["n"], 1)
-        self.assertIn("v2-multisignal", k["je_version"])
+        self.assertIn("v3-perasset", k["je_version"])
         self.assertIn("mae_pct", k["gesamt"])
         self.assertIn("anteil_besser_baseline", k["gesamt"])
 

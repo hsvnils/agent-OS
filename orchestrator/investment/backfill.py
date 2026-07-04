@@ -84,8 +84,8 @@ class Backfill:
         for e in self.store.list("inv_features"):
             per_sym.setdefault(e.get("symbol"), []).append(
                 (e.get("datum"), _num(e.get("close")), e.get("asset", "aktie")))
-        erledigt = {(d.get("symbol"), d.get("erstellt_am")) for d in self.store.list("inv_deviations")
-                    if d.get("backtest")}
+        erledigt = {(d.get("symbol"), d.get("erstellt_am"), d.get("modell_version"))
+                    for d in self.store.list("inv_deviations") if d.get("backtest")}
         neu = 0
         for sym, rows in per_sym.items():
             rows = sorted(r for r in rows if r[0] and r[1] > 0)
@@ -101,8 +101,8 @@ class Backfill:
                 j = next((k for k in range(i + 1, len(rows)) if dates[k] >= faellig), None)
                 if j is None:
                     break
-                if (sym, d_i) not in erledigt:
-                    ff = forecast_fields(closes[:i + 1])
+                if (sym, d_i, Forecaster.MODELL_VERSION) not in erledigt:
+                    ff = forecast_fields(closes[:i + 1], asset)
                     real_ret = round((closes[j] / closes[i] - 1) * 100, 3) if closes[i] > 0 else 0.0
                     ziel = ff["ziel_return_pct"]
                     fehler = round(abs(ziel - real_ret), 3)

@@ -38,7 +38,7 @@ def _richtung(ret_pct: float) -> str:
 
 class Forecaster:
     HORIZONT_TAGE = 7
-    MODELL_VERSION = "v2-multisignal"
+    MODELL_VERSION = "v3-perasset"   # Aktien=Momentum, Krypto=Mean-Reversion, gedaempfte Magnitude
     MIN_HISTORIE = 6      # ohne genug Historie keine Prognose
 
     def __init__(self, store):
@@ -61,7 +61,7 @@ class Forecaster:
             if len(closes) < self.MIN_HISTORIE:
                 uebersprungen.append(sym)
                 continue
-            ff = forecast_fields(closes)
+            ff = forecast_fields(closes, asset)
             fid = str(uuid.uuid4())
             self.store.forecast_add({
                 "id": fid, "symbol": sym, "asset": asset, "erstellt_am": datum, "faellig_am": faellig,
@@ -168,32 +168,44 @@ class Forecaster:
         return out
 
 
-def forecast_fields(closes: list[float]) -> dict:
-    """Kern des v2-Modells: aus einer Close-Reihe (bis zum As-of-Tag) die Prognose-Felder bauen.
-    Pure Funktion -- von `prognostizieren` (live) UND vom Backtest (historisch, ohne Look-ahead) genutzt."""
+DAEMPFUNG = 0.3   # gedaempfte Magnitude (war 0.5) -- das Modell ueberschoss (MAE > Baseline)
+
+
+def forecast_fields(closes: list[float], asset: str = "aktie") -> dict:
+    """Kern des v3-Modells: aus einer Close-Reihe (bis zum As-of-Tag) die Prognose-Felder bauen.
+    **Aktien/ETF = Momentum** (Trend setzt sich fort), **Krypto = Mean-Reversion** (Signale invertiert -- 7-Tage-
+    Krypto lief in der Historie gegen den Trend). Magnitude gedaempft. Pure Funktion -- live UND Backtest."""
     basis = closes[-1]
     ret5 = round((basis / closes[-6] - 1) * 100, 3) if len(closes) > 5 and closes[-6] > 0 else 0.0
     tages = [closes[i] / closes[i - 1] - 1 for i in range(1, len(closes)) if closes[i - 1] > 0]
     vola = round(statistics.pstdev(tages[-20:]) * 100, 3) if len(tages) >= 2 else 0.0
     signale = berechne_signale(closes)
-    up = sum(1 for s in signale if s["richtung"] == "steigt")
-    dn = sum(1 for s in signale if s["richtung"] == "faellt")
+    krypto = (asset == "krypto")
+
+    def eff(s):   # effektive Richtung nach Anlageklassen-Haltung (Krypto: invertiert = Mean-Reversion)
+        if s["richtung"] == "neutral" or not krypto:
+            return s["richtung"]
+        return "faellt" if s["richtung"] == "steigt" else "steigt"
+
+    up = sum(1 for s in signale if eff(s) == "steigt")
+    dn = sum(1 for s in signale if eff(s) == "faellt")
     if up > dn:
         richtung, zahl = "steigt", up
     elif dn > up:
         richtung, zahl = "faellt", dn
     else:
         richtung, zahl = "seitwaerts", 0
-    betrag = abs(round(0.5 * ret5, 3))
+    betrag = abs(round(DAEMPFUNG * ret5, 3))
     ziel = betrag if richtung == "steigt" else (-betrag if richtung == "faellt" else 0.0)
     band = round(vola * math.sqrt(Forecaster.HORIZONT_TAGE), 3)
     konf = round(min(0.9, 0.4 + 0.15 * zahl + abs(ziel) / 60.0), 2)
-    treiber = [s["typ"] for s in signale if s["richtung"] == richtung and richtung != "seitwaerts"]
+    treiber = [s["typ"] for s in signale if eff(s) == richtung and richtung != "seitwaerts"]
+    stance = "mean-reversion" if krypto else "momentum"
     return {"richtung": richtung, "ziel_return_pct": ziel, "spanne_low": round(ziel - band, 3),
             "spanne_high": round(ziel + band, 3), "konfidenz": konf, "signale_zahl": zahl, "treiber": treiber,
             "signale": [{"typ": s["typ"], "richtung": s["richtung"]} for s in signale],
             "ret_5d": ret5, "vola_20d": vola, "basis_close": basis,
-            "rationale": f"{zahl}/{len(signale)} Signale fuer {richtung} ({', '.join(treiber) or 'uneins'})"}
+            "rationale": f"{zahl}/{len(signale)} Signale fuer {richtung} ({stance}: {', '.join(treiber) or 'uneins'})"}
 
 
 def _iso_woche(datum: str) -> str:
