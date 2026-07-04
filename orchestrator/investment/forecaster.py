@@ -163,7 +163,8 @@ class Forecaster:
         kand.sort(key=lambda f: _num(f.get("konfidenz")), reverse=True)
         return [{"symbol": f.get("symbol"), "asset": f.get("asset", "aktie"),
                  "ziel_return_pct": _num(f.get("ziel_return_pct")), "konfidenz": _num(f.get("konfidenz")),
-                 "rationale": f.get("rationale", "")} for f in kand[:max_n]]
+                 "signale_zahl": int(_num(f.get("signale_zahl"))), "rationale": f.get("rationale", "")}
+                for f in kand[:max_n]]
 
 
     # -- 5) Fehler-Verlauf je Auswertungs-Woche (wird der Fehler ueber die Zeit kleiner?) --

@@ -467,6 +467,64 @@ def _start_briefing_loop(ctx, notify) -> None:
     threading.Thread(target=loop, daemon=True, name="briefing-loop").start()
 
 
+def _autonomie_f(v) -> float:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _autonomie_kontext(eng, forecaster, watch, datum: str) -> dict:
+    """Baut den Live-Kontext fuer die Autonomie-Leitplanken (Paper): Equity, Tagesverlust, Kill-Switch,
+    genutztes Nacht-Budget + heutige Trades, Track-Record-Freischaltung."""
+    konto = (eng.paper_konto() or {}).get("konto") or {}
+    equity = _autonomie_f(konto.get("equity"))
+    last = _autonomie_f(konto.get("last_equity")) or equity
+    tagesverlust = round((1 - equity / last) * 100, 2) if last > 0 else 0.0   # positiv = Verlust
+    heute = [p for p in eng.store.list("positions")
+             if p.get("modus") == "paper" and p.get("status") == "platziert" and p.get("ts", "")[:10] == datum]
+    k = forecaster.kennzahlen().get("gesamt", {})
+    freigeschaltet = k.get("n", 0) >= 20 and _autonomie_f(k.get("richtungsquote")) >= 0.55
+    return {"equity": equity, "tagesverlust_pct": tagesverlust,
+            "kill_switch": bool(watch and watch.store.paused()),
+            "nacht_budget_genutzt": round(sum(_autonomie_f(p.get("order_wert")) for p in heute), 2),
+            "trades_im_fenster": len(heute), "autonomie_freigeschaltet": freigeschaltet}
+
+
+def _auto_trade_tick(ctx, eng, forecaster, auto_trader, datum: str) -> None:
+    """Ein Auto-Trade-Durchlauf (nur Paper): Top-Chance dimensionieren -> Leitplanken -> autonom / Freigabe."""
+    lp = auto_trader.policy.lp
+    kontext = _autonomie_kontext(eng, forecaster, ctx.watch, datum)
+    chancen = [c for c in forecaster.chancen([], min_konfidenz=lp.min_konfidenz)
+               if c.get("asset") in ("aktie", "etf")][:1]   # USD-Werte; Krypto (EUR-Quelle) hier bewusst aussen vor
+    for c in chancen:
+        preis = eng._aktueller_preis(c["symbol"], c["asset"])
+        if not preis or preis <= 0:
+            continue
+        betrag = round(min(lp.max_position_eur, kontext["equity"] * lp.max_position_pct / 100.0), 2)
+        qty = round(betrag / preis, 4)
+        if qty <= 0:
+            continue
+        trade = {"symbol": c["symbol"], "asset": c["asset"], "side": "buy", "betrag_eur": betrag,
+                 "konfidenz": c["konfidenz"], "signale": c.get("signale_zahl", 0), "risiko_label": "konservativ"}
+        d = auto_trader.entscheide(trade, kontext)
+        if d["aktion"] == "auto":
+            r = eng.paper_order(c["symbol"], qty, "buy", asset=c["asset"], bestaetigt=True)
+            if ctx.notifications:
+                ok = r.get("ok")
+                ctx.notifications.enqueue(
+                    f"Autonome Paper-Order: buy {qty:g} {c['symbol']} (~{betrag} USD) — "
+                    f"{'platziert' if ok else 'abgelehnt: ' + str(r.get('grund') or r.get('hinweis'))}.",
+                    abteilung="CIO", kategorie="investment", quelle="auto-trade", dedup_stunden=0)
+        elif d["aktion"] == "freigabe" and ctx.approvals is not None:
+            gruende = "; ".join(d["urteil"]["gruende"][:2]) or "Freigabe noetig"
+            frage = (f"Paper-Kauf: {qty:g} {c['symbol']} (~{betrag} USD, Konf. {round(c['konfidenz'] * 100)}%, "
+                     f"{c.get('signale_zahl', 0)} Signale). {gruende}. Ausfuehren?")
+            ctx.approvals.add("paper_order", {"symbol": c["symbol"], "qty": qty, "side": "buy",
+                                              "asset": c["asset"]}, frage=frage)
+        # aktion == "skip" -> globaler Schutzschalter -> nichts tun
+
+
 def _start_investment_loop(ctx, secrets) -> None:
     """Automatischer Investment-Screen (advisory, token-frugal/kostenlos): werktags 16:00 DE ein Markt-Screen
     -> Vorschlaege (jeder vom Risk-Agent geprueft) -> Alerts ueber den Notifier; montags 09:00 Wochenprognose.
@@ -501,8 +559,10 @@ def _start_investment_loop(ctx, secrets) -> None:
 
     collector = None
     forecaster = None
+    auto_trader = None
     if feature_loop:
         from ...governance.supabase import SupabaseAuth, SupabaseClient
+        from ...investment.auto_trader import AutoTrader
         from ...investment.features import FeatureCollector
         from ...investment.forecaster import Forecaster
         from ...investment.loop_store import LoopStore
@@ -512,9 +572,13 @@ def _start_investment_loop(ctx, secrets) -> None:
         _loop_store = LoopStore(ROOT / "investment" / "features.jsonl", supabase=_sb, secrets=_leak)
         collector = FeatureCollector(eng.market, _loop_store)
         forecaster = Forecaster(_loop_store)
+        auto_trader = AutoTrader()
+    # Autonomer Paper-Trader: standardmaessig AUS; nur Paper; autonom erst nach Track-Record-Freischaltung.
+    auto_trade_an = secrets.get("INV_AUTO_TRADE", "").strip().lower() in ("1", "true", "yes", "on")
 
     def loop():
         time.sleep(45)
+        _autotrade_datum = ""
         while True:
             try:
                 jetzt = datetime.now(tz) if tz else datetime.now()
@@ -570,6 +634,12 @@ def _start_investment_loop(ctx, secrets) -> None:
                 # Wochenprognose montags ~09:00, 1x/Tag
                 if auto_screen and jetzt.weekday() == 0 and jetzt.hour == 9 and _letztes_datum("forecasts") != datum:
                     eng.wochenprognose()
+                # Autonomer Paper-Trade (werktags ~15:00), 1x/Tag -- nur Paper, standardmaessig AUS (INV_AUTO_TRADE)
+                if auto_trade_an and auto_trader is not None and forecaster is not None \
+                        and jetzt.weekday() < 5 and jetzt.hour == 15 and _autotrade_datum != datum \
+                        and eng.store.mode() == "paper":
+                    _autotrade_datum = datum
+                    _auto_trade_tick(ctx, eng, forecaster, auto_trader, datum)
             except Exception as exc:
                 print(f"[investment] Fehler: {exc}", flush=True)
             time.sleep(300)
@@ -580,7 +650,9 @@ def _start_investment_loop(ctx, secrets) -> None:
         aktive.append("werktags 16:00 Markt-Screen + Mo 09:00 Wochenprognose")
     if feature_loop:
         aktive.append("taeglich 07:00 Merkmals-Snapshot + Prognose-Abgleich, Mo 09:00 7-Tage-Prognose")
-    print("Investment-Loop aktiv (" + "; ".join(aktive) + ", advisory).", flush=True)
+    if auto_trade_an:
+        aktive.append("werktags 15:00 Auto-Paper-Trade (Leitplanken; autonom erst nach Track-Record, sonst Freigabe)")
+    print("Investment-Loop aktiv (" + "; ".join(aktive) + ").", flush=True)
 
 
 def _start_cfo_loop(ctx, notify) -> None:

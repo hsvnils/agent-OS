@@ -38,8 +38,8 @@ class InvestmentEngine:
         if konto is None:
             return {"ok": False, "modus": modus, "hinweis": "Konto-Abruf fehlgeschlagen (Keys/Netz pruefen)."}
         return {"ok": True, "modus": modus,
-                "konto": {k: konto.get(k) for k in ("cash", "buying_power", "equity", "portfolio_value",
-                                                    "status") if k in konto},
+                "konto": {k: konto.get(k) for k in ("cash", "buying_power", "equity", "last_equity",
+                                                    "portfolio_value", "status") if k in konto},
                 "positionen": [{"symbol": p.get("symbol"), "qty": p.get("qty"),
                                 "marktwert": p.get("market_value"), "pl": p.get("unrealized_pl")}
                                for p in self.broker.positionen()]}

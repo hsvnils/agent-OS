@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 13:20] — Claude Code — Investment: Autonomer Paper-Loop mit Leitplanken (Schritt 6)
+- **Was:** `orchestrator/investment/auto_trader.py` (`AutoTrader.entscheide`): entscheidet je Chance **auto**
+  (alle Leitplanken erfuellt UND Track-Record freigeschaltet -> autonome Paper-Order), **freigabe** (nicht voll
+  autonom, kein globaler Stopp -> 1-Tap-Ja/Nein an CEO) oder **skip** (Kill-Switch/Tagesverlust-Stop aktiv).
+  Reine Logik auf `autonomy_policy`. Im Bot verdrahtet (`_auto_trade_tick` + `_autonomie_kontext`): werktags
+  ~15:00, **nur Paper**, **standardmaessig AUS** (`INV_AUTO_TRADE=1`): baut Live-Kontext (Equity/last_equity ->
+  Tagesverlust, Kill-Switch = Notbremse/WatchStore.paused, genutztes Nacht-Budget + heutige Trades aus den
+  Paper-Positionen, Track-Record-Freischaltung = Scorecard n>=20 & Richtungsquote>=0.55), dimensioniert die
+  Top-Chance (min. Positionsgroesse aus den Leitplanken), prueft, und handelt autonom ODER schickt die
+  Freigabe-Buttons. **Nur aktie/etf** (USD; Krypto via EUR-Quelle bewusst aussen vor). `engine.paper_konto` um
+  `last_equity` erweitert; `forecaster.chancen` um `signale_zahl`. `.env.example` dokumentiert INV_AUTO_TRADE.
+  6 neue Tests; volle Suite 542 gruen.
+- **Warum:** Schritt 6 -- „nachts autonom innerhalb der Leitplanken", maximal sicher gestaffelt: aus by default,
+  nur Paper, autonome Ausfuehrung erst nach belegtem Track-Record, sonst immer CEO-Freigabe. Kein echtes Geld.
+- **Betroffen:** `orchestrator/investment/auto_trader.py`, `orchestrator/investment/engine.py`,
+  `orchestrator/investment/forecaster.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_investment_auto_trader.py`, `orchestrator/.env.example`.
+
 ## [2026-07-04 12:50] — Claude Code — Telegram: 1-Tap-Freigaben (Ja/Nein-Buttons) + Paper-Order-Freigabe (Schritt 5)
 - **Was:** Inline-Keyboard-Freigaben ueber Telegram. `orchestrator/investment/approvals.py` (`ApprovalStore`,
   append-only, Zustand je id gefaltet; add/pending_unsent/mark_sent/get/offen/**entscheiden idempotent**).
