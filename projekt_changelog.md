@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 16:50] — Claude Code — Telegram: Freigabe ohne Rueckfrage + sofort (UX-Fix)
+- **Was:** Zwei Reibungspunkte behoben. (1) **Verzoegerung:** Tool-erzeugte Freigaben wurden erst vom
+  periodischen Poll zugestellt (~1 Min Lag). Neu `_deliver_approvals(...)` -- wird jetzt auch **direkt nach der
+  LUNA-Antwort** aufgerufen -> der Ja/Nein-Button kommt sofort. (2) **Ueberfluessige Rueckfrage:** System-Prompt
+  (INVESTMENT) ergaenzt -- bei Paper-Kauf/-Verkauf (auch „frag mich per Freigabe", „kauf fuer 30 USD", „verkauf
+  meine Position") ruft LUNA **sofort** `paper_order_freigabe` auf (betrag_usd/side/symbol), **ohne** vorher per
+  Text nach Bestaetigung/Stueckzahl zu fragen -- die Buttons sind die Bestaetigung, der Kurs wird selbst geholt.
+  Suite 573 gruen.
+- **Warum:** CEO-Feedback: die Freigabe soll direkt kommen, ohne LLM-Zwischenschritt und ohne 1-Min-Lag.
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`, `orchestrator/core/hoa_conversation.py`.
+
 ## [2026-07-04 16:30] — Claude Code — Investment: Verkaufen + Positions-Schutz (Stop-Loss/Take-Profit) (Schritt 9)
 - **Was:** Das System verkauft jetzt auch (bisher nur gekauft). `monitor.exit_signal(unrealized_plpc)` ->
   'stop' (<= -8 %) | 'target' (>= +15 %) | None; `monitor.krypto_order_symbol` (Positions-'BTCUSD' ->

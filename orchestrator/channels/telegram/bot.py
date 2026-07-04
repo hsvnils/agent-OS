@@ -186,6 +186,18 @@ def _send_approval(token: str, chat_id, apv: dict) -> dict:
                                        "reply_markup": json.dumps(kb)})
 
 
+def _deliver_approvals(token: str, chat_id, ctx) -> None:
+    """Stellt offene, noch nicht gesendete 1-Tap-Freigaben als Buttons zu (sofort, ohne auf den Poll zu warten)."""
+    if not chat_id or getattr(ctx, "approvals", None) is None:
+        return
+    try:
+        for a in ctx.approvals.pending_unsent()[:5]:
+            if _send_approval(token, chat_id, a).get("ok"):
+                ctx.approvals.mark_sent(a["id"])
+    except Exception as exc:
+        print(f"[approval] Zustell-Fehler: {exc}", flush=True)
+
+
 def _parse_betrag(text: str) -> float:
     """Zieht einen USD-Betrag aus einer Nachricht (z. B. '50', '50 USD', '50,5')."""
     import re
@@ -1011,13 +1023,8 @@ def main() -> None:
             except Exception as exc:
                 print(f"[notify] Zustell-Fehler: {exc}", flush=True)
         # Offene 1-Tap-Freigaben als Ja/Nein-Buttons zustellen (Schritt 5).
-        if allowed and getattr(ctx, "approvals", None) is not None:
-            try:
-                for a in ctx.approvals.pending_unsent()[:5]:
-                    if _send_approval(token, allowed, a).get("ok"):
-                        ctx.approvals.mark_sent(a["id"])
-            except Exception as exc:
-                print(f"[approval] Zustell-Fehler: {exc}", flush=True)
+        if allowed:
+            _deliver_approvals(token, allowed, ctx)
         for u in upd.get("result", []):
             offset = u["update_id"] + 1
             # Button-Klick (callback_query) auf eine Freigabe-Anfrage
@@ -1106,6 +1113,7 @@ def main() -> None:
                 antwort = ("Es gab gerade einen technischen Fehler — ich habe den Verlauf zurückgesetzt. "
                            "Bitte stell die Frage noch einmal.")
             _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(antwort)[:4000]})
+            _deliver_approvals(token, chat_id, ctx)   # falls die Antwort eine Freigabe erzeugt hat: sofort senden
             # Phase 14: erzeugte Visualisierungen als Bild-Datei (SVG) nachsenden.
             if ctx.visuals:
                 for vis in ctx.visuals:
