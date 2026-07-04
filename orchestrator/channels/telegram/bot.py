@@ -647,6 +647,41 @@ def _market_monitor_tick(ctx, eng, monitor, betrag_usd: float = 30.0) -> None:
                 abteilung="CIO", kategorie="investment", quelle="monitor", dedup_stunden=1)
 
 
+def _exit_monitor_tick(ctx, eng, *, stop_pct: float = 8.0, target_pct: float = 15.0) -> None:
+    """Ueberwacht offene Paper-Positionen: -stop_pct -> AUTOMATISCHER Verkauf (Stop-Loss, Kapitalschutz);
+    +target_pct -> 'Gewinn mitnehmen?'-Vorschlag per 1-Tap-Freigabe. Der automatische Stop laeuft auch bei
+    aktiver Notbremse (Risiko schliessen ist immer erlaubt)."""
+    broker = getattr(eng, "broker", None)
+    if broker is None or not broker.verfuegbar:
+        return
+    from ...investment.monitor import exit_signal, krypto_order_symbol
+    offene_sells = {(a.get("payload") or {}).get("symbol") for a in ctx.approvals.offen()
+                    if ctx.approvals is not None and (a.get("payload") or {}).get("side") == "sell"}
+    for p in broker.positionen():
+        sig = exit_signal(p.get("unrealized_plpc"), stop_pct=stop_pct, target_pct=target_pct)
+        if not sig:
+            continue
+        qty = _autonomie_f(p.get("qty"))
+        if qty <= 0:
+            continue
+        asset = "krypto" if p.get("asset_class") == "crypto" else "aktie"
+        sym = krypto_order_symbol(p.get("symbol")) if asset == "krypto" else (p.get("symbol") or "")
+        preis = _autonomie_f(p.get("current_price")) or None
+        plpc = round(_autonomie_f(p.get("unrealized_plpc")) * 100, 1)
+        if sig == "stop":                                    # Stop-Loss -> automatisch verkaufen
+            r = eng.paper_order(sym, qty, "sell", asset=asset, bestaetigt=True, preis=preis)
+            if ctx.notifications:
+                ctx.notifications.enqueue(
+                    f"Auto-Stop-Loss: {qty:g} {sym} bei {plpc:+.1f}% verkauft — "
+                    f"{'ok' if r.get('ok') else 'Fehler: ' + str(r.get('grund') or r.get('hinweis'))}.",
+                    abteilung="CIO", kategorie="investment", quelle="exit", dedup_stunden=0)
+        elif sig == "target" and ctx.approvals is not None and sym not in offene_sells:   # Take-Profit -> vorschlagen
+            frage = (f"Gewinn mitnehmen? {p.get('symbol')} steht bei {plpc:+.1f}%. "
+                     f"Verkauf {qty:g} {sym} (Paper)?")
+            ctx.approvals.add("paper_order", {"symbol": sym, "qty": qty, "side": "sell", "asset": asset,
+                                              "preis": preis}, frage=frage)
+
+
 def _start_investment_loop(ctx, secrets) -> None:
     """Automatischer Investment-Screen (advisory, token-frugal/kostenlos): werktags 16:00 DE ein Markt-Screen
     -> Vorschlaege (jeder vom Risk-Agent geprueft) -> Alerts ueber den Notifier; montags 09:00 Wochenprognose.
@@ -713,10 +748,12 @@ def _start_investment_loop(ctx, secrets) -> None:
             try:
                 jetzt = datetime.now(tz) if tz else datetime.now()
                 datum = jetzt.strftime("%Y-%m-%d")
-                # Intraday-Monitor alle ~10 Min (nur Paper): Live-Bewegungen -> Dip-Vorschlaege per Freigabe
-                if monitor is not None and eng.store.mode() == "paper" and time.time() - _last_monitor > 600:
+                # Alle ~10 Min (nur Paper): Positions-Schutz (Stop-Loss/Take-Profit) IMMER; Live-Dip-Monitor optional
+                if eng.store.mode() == "paper" and time.time() - _last_monitor > 600:
                     _last_monitor = time.time()
-                    _market_monitor_tick(ctx, eng, monitor)
+                    _exit_monitor_tick(ctx, eng)             # Kapitalschutz: Auto-Stop-Loss + Take-Profit-Vorschlag
+                    if monitor is not None:
+                        _market_monitor_tick(ctx, eng, monitor)
                 # Taeglicher Merkmals-/Preis-Snapshot (~07:00) + Abgleich faelliger Prognosen, 1x/Tag
                 if collector is not None and jetzt.hour == 7 and collector.store.last_datum("inv_features") != datum:
                     r = collector.collect(eng.store.watchlist(), datum=datum)

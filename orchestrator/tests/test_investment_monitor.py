@@ -1,6 +1,6 @@
 import unittest
 
-from orchestrator.investment.monitor import MarketMonitor
+from orchestrator.investment.monitor import MarketMonitor, exit_signal, krypto_order_symbol
 
 
 class _Clock:
@@ -49,6 +49,29 @@ class TestMarketMonitor(unittest.TestCase):
         self.m.beobachte({"AAPL": {"preis": 100.0, "asset": "aktie"}})
         self.clk.t += 2000     # > Fenster
         self.assertEqual(self.m.beobachte({"AAPL": {"preis": 90.0, "asset": "aktie"}}), [])   # Referenz neu, kein Signal
+
+
+class TestExitSignal(unittest.TestCase):
+    def test_stop_loss(self):
+        self.assertEqual(exit_signal(-0.09, stop_pct=8.0, target_pct=15.0), "stop")
+
+    def test_take_profit(self):
+        self.assertEqual(exit_signal(0.16, stop_pct=8.0, target_pct=15.0), "target")
+
+    def test_im_rahmen_kein_signal(self):
+        self.assertIsNone(exit_signal(-0.03, stop_pct=8.0, target_pct=15.0))
+        self.assertIsNone(exit_signal(0.10, stop_pct=8.0, target_pct=15.0))
+
+    def test_string_plpc(self):
+        self.assertEqual(exit_signal("-0.08", stop_pct=8.0, target_pct=15.0), "stop")
+
+
+class TestKryptoOrderSymbol(unittest.TestCase):
+    def test_positions_symbol_zu_order_symbol(self):
+        self.assertEqual(krypto_order_symbol("BTCUSD"), "BTC/USD")
+
+    def test_schon_slash(self):
+        self.assertEqual(krypto_order_symbol("ETH/USD"), "ETH/USD")
 
 
 if __name__ == "__main__":

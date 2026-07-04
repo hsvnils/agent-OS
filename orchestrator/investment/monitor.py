@@ -19,6 +19,25 @@ def _num(v) -> float:
         return 0.0
 
 
+def exit_signal(unrealized_plpc, *, stop_pct: float = 8.0, target_pct: float = 15.0) -> str | None:
+    """Exit-Entscheidung fuer eine offene Position anhand ihres unrealisierten P/L (Bruchteil, z. B. -0.05).
+    -> 'stop' (Verlust deckeln, automatisch verkaufen) | 'target' (Gewinnziel, Verkauf vorschlagen) | None."""
+    p = _num(unrealized_plpc) * 100
+    if p <= -abs(stop_pct):
+        return "stop"
+    if p >= abs(target_pct):
+        return "target"
+    return None
+
+
+def krypto_order_symbol(symbol: str) -> str:
+    """Positions-Symbol -> Order-Symbol fuer Krypto (Alpaca: Position 'BTCUSD' -> Order 'BTC/USD')."""
+    s = (symbol or "").upper()
+    if "/" in s:
+        return s
+    return s[:-3] + "/USD" if s.endswith("USD") else s
+
+
 class MarketMonitor:
     def __init__(self, *, schwelle_pct: float = 4.0, fenster_sek: int = 1800, clock=None):
         self.schwelle = schwelle_pct

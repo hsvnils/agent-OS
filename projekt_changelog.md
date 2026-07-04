@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-04 16:30] — Claude Code — Investment: Verkaufen + Positions-Schutz (Stop-Loss/Take-Profit) (Schritt 9)
+- **Was:** Das System verkauft jetzt auch (bisher nur gekauft). `monitor.exit_signal(unrealized_plpc)` ->
+  'stop' (<= -8 %) | 'target' (>= +15 %) | None; `monitor.krypto_order_symbol` (Positions-'BTCUSD' ->
+  Order-'BTC/USD'). Bot `_exit_monitor_tick` (im 10-Min-Poll, **immer bei Paper**, unabhaengig von INV_MONITOR):
+  liest offene Paper-Positionen (Alpaca unrealized_plpc) -> **Stop-Loss = automatischer Verkauf** (Kapitalschutz,
+  laeuft auch bei aktiver Notbremse), **Take-Profit = 'Gewinn mitnehmen?'-Vorschlag per 1-Tap-Freigabe**
+  (dedupliziert gegen offene Sell-Freigaben). Bewusst **keine** Alpaca-Bracket-Orders (die gibt's nur fuer
+  Aktien, nicht Krypto) -> eigene Positions-Ueberwachung deckt beides einheitlich ab. 6 neue Tests; Suite 573
+  gruen.
+- **Warum:** CEO-Befund „wir haben nur gekauft, nie verkauft" + Schritt 9 (die eigentliche Verlust-Absicherung).
+  Ehrlich: Ueberwachung alle ~10 Min (nicht tick-genau); ein sehr schneller Crash zwischen zwei Checks kann den
+  Stop ueberschreiten. Paper, kein echtes Geld.
+- **Betroffen:** `orchestrator/investment/monitor.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_investment_monitor.py`.
+
 ## [2026-07-04 16:00] — Claude Code — Telegram: Freigabe mit „Andere Summe" (Ja/Nein/Andere Summe)
 - **Was:** Jede Paper-Freigabe hat jetzt drei Buttons: **✅ Ja · ❌ Nein · ✏️ Andere Summe**. Bei „Andere Summe"
   fragt LUNA nach einem USD-Betrag; die naechste Zahl-Nachricht des CEO wird abgefangen (`awaiting_betrag`-State
