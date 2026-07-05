@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-05 14:42] — Claude Code
+- **Was:** Scanline-Sweep des 2D-Hologramms entschaerft (harte, fast weisse Leiste -> breiter, weicher, sehr
+  transparenter Schimmer: Alpha 0.16->0.05, Bandbreite ~14% der Hoehe). Cache-Bump `luna-avatar.js?v=10`,
+  `app.js?v=56`, `app-v2.js?v=10`. Im Browser verifiziert (weiche Scanline, keine Konsolen-Fehler).
+- **Warum:** CEO meldete eine stoerende weisse Linie ueber dem Hologramm-Bild.
+- **Betroffen:** `orchestrator/channels/web/static/luna-avatar.js`, `index.html`, `index-v2.html`, `app.js`, `app-v2.js`.
+
 ## [2026-07-05 14:35] — Claude Code
 - **Was:** LUNA-Hologramm von 3D-GLB auf **2D-Living-Portrait** umgebaut. `static/luna-avatar.js` nutzt jetzt DAS
   Kunstbild (`static/luna-portrait.png`, per CEO abzulegen) direkt als Ebene + Canvas-Overlay (holografischer
