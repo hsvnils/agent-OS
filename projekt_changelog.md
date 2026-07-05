@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-05 15:40] — Claude Code
+- **Was:** **Ursache der horizontalen Linie ueber dem Hologramm gefunden und behoben.** Es war KEIN
+  Hologramm-Element, sondern das leere Inline-Chat-Panel `#v2-chat`: die Regel `.v2-chat { display:flex }`
+  ueberschrieb das `hidden`-Attribut, sodass das leere Panel als 2px hoher, ~368px breiter Streifen sichtbar
+  blieb (`position:fixed; bottom:92px; z-index:40; background:var(--v2-card-solid)` -> weiss im Hellmodus,
+  dunkel im Dunkelmodus = exakt das Symptom). Fiel erst mit dem dunklen Hologramm dahinter auf. Fix:
+  `.v2-chat[hidden]{ display:none }` in `style-v2.css` (Spezifitaet 0,2,0 > 0,1,0 -> `[hidden]` gewinnt).
+  Chat-Oeffnen/Schliessen (`toggleChat` setzt `hidden`) im echten V2-Dashboard verifiziert: geschlossen
+  display:none (keine Linie), geoffnet display:flex (Chat geht auf). Cache-Bump `style-v2.css?v=8`.
+  Zusatz: CEO-Bild `luna-portrait.png` (das echte Hologramm-Kunstbild) mit-versioniert, damit es bei Deploys
+  nicht verloren geht.
+- **Warum:** CEO meldete eine persistente Linie, die ueber das Hologramm hinausging und theme-abhaengig die
+  Farbe wechselte -> per Live-DOM-Analyse als `#v2-chat`-Streifen identifiziert.
+- **Betroffen:** `orchestrator/channels/web/static/style-v2.css`, `index-v2.html`, `static/luna-portrait.png`.
+
 ## [2026-07-05 15:20] — Claude Code
 - **Was:** Scanline-Sweep im 2D-Hologramm **ganz entfernt** (erzeugte einen sichtbaren horizontalen Streifen
   ueber dem Kunstbild). Die feine statische Scanline-Textur kommt weiterhin dezent aus CSS `.luna-holo::after`.
