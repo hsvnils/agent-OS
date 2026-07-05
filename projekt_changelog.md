@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-05 04:45] — Claude Code — LUNA-Avatar: Hologramm-Shading maximal (Fresnel-Glow + dunkler Canvas)
+- **Was:** CEO: „Hologramm-Look maximal aufdrehen" (als leuchtendes Sinnbild, nicht Portraet). Material des
+  GLB von schlicht-blau -> **MeshStandard mit blauem Emissive** (Gesichtsdetails aus der Textur leuchten) +
+  **Fresnel-Rand-Gluehen** (onBeforeCompile: leuchtende Kanten) + **Transluzenz** (opacity .58, depthWrite off).
+  Schwaches Ambient-Grundlicht. **Dunkler radialer Canvas-Hintergrund** + Glow-Rahmen auf `.luna-holo` (V1+V2),
+  damit das Hologramm gluehen kann statt auf Weiss zu verpuffen. Sichelmond/Ringe/Glow **prominenter/heller**.
+  Cache-Bump (luna-avatar `?v=8`, V1 v54/style v53, V2 app v8/style v7).
+- **Warum:** vorher „leicht blauer Mensch"; jetzt klar ein glühendes blaues KI-Hologramm (Referenz-Vibe).
+- **Verifiziert (preview):** rendert als transluzentes, kantengluehendes blaues Hologramm auf dunklem Grund,
+  0 Konsolen-Fehler. Suite **609 gruen**.
+- **WEITER OFFEN (Likeness):** exaktes Referenz-Gesicht braucht ENTWEDER CEO-eigenes RPM/VRoid-Modell (Host aus
+  Sandbox blockiert -> CEO legt GLB ins Repo) ODER Photo-Avatar-Cloud (D-ID/HeyGen, CEO-Tor). Aktuell noch der
+  Platzhalter-Charakter (mit Brille), aber im Hologramm-Look.
+- **Betroffen:** `static/luna-avatar.js`, `static/style.css`, `static/style-v2.css`, `static/{index.html,
+  index-v2.html,app.js,app-v2.js}` (Cache).
+
 ## [2026-07-05 04:15] — Claude Code — LUNA-Avatar: echtes 3D-GLB-Modell statt prozedural (Ready Player Me + Morph-Lip-Sync)
 - **Was:** Nach CEO-Feedback („sieht nicht richtig aus, evtl. HeyGen o.ae.?") -> **Recherche** (HeyGen LiveAvatar
   vs. selbst gehostet) im Entscheidungs-Register protokolliert: **HeyGen verworfen** (Cloud + ~$0,10/Min + realer

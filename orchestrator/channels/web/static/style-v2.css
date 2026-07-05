@@ -173,7 +173,9 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
 @keyframes v2pulse { 0%, 100% { box-shadow: 0 10px 30px rgba(47, 107, 255, .35); }
   50% { box-shadow: 0 10px 42px rgba(47, 107, 255, .65); } }
 /* LUNA 3D-Hologramm (Ecke unten-rechts, dehnt sich beim Sprechen) */
-.luna-holo { position: fixed; right: 14px; bottom: 14px; z-index: 40; width: 190px; height: 200px; cursor: pointer;
+.luna-holo { position: fixed; right: 14px; bottom: 14px; z-index: 40; width: 190px; height: 210px; cursor: pointer;
+  border-radius: 18px; overflow: hidden; background: radial-gradient(circle at 50% 38%, #0c1b3a 0%, #060b1c 68%, #04060f 100%);
+  box-shadow: 0 12px 40px rgba(47, 107, 255, .28), inset 0 0 0 1px rgba(120, 170, 255, .18);
   transition: width .35s cubic-bezier(.2,.8,.2,1), height .35s cubic-bezier(.2,.8,.2,1); }
 .luna-holo.big { width: 320px; height: 360px; }
 .luna-holo canvas { width: 100% !important; height: 100% !important; display: block; }

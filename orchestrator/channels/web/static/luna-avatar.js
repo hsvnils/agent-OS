@@ -30,6 +30,7 @@ export function createAvatar(container, opts = {}) {
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
+  scene.add(new THREE.AmbientLight(0x2a4a80, 0.7));   // schwaches Grundlicht -> Emissive/Fresnel tragen den Look
   const camera = new THREE.PerspectiveCamera(30, w / h, 0.01, 100);
   camera.position.set(0, 0.0, 0.74);
   const tex = glowTexture();
@@ -40,17 +41,17 @@ export function createAvatar(container, opts = {}) {
   const framing = new THREE.Group(); root.add(framing);
 
   // -- Holografische Rahmung (Sichelmond, Ringe, Glow, Partikel, Ripple) um den Kopf --
-  const csS = new THREE.Shape(); csS.absarc(0, 0, 0.5, 0, Math.PI * 2, false);
-  const hole = new THREE.Path(); hole.absarc(0.11, 0.02, 0.44, 0, Math.PI * 2, true); csS.holes.push(hole);
+  const csS = new THREE.Shape(); csS.absarc(0, 0, 0.6, 0, Math.PI * 2, false);
+  const hole = new THREE.Path(); hole.absarc(0.13, 0.02, 0.53, 0, Math.PI * 2, true); csS.holes.push(hole);
   const crescent = new THREE.Mesh(track(new THREE.ShapeGeometry(csS, 96)),
-    addMat(new THREE.MeshBasicMaterial({ color: COL.main, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })));
-  crescent.position.set(-0.02, 0.06, -0.5); framing.add(crescent);
-  const headGlow = new THREE.Sprite(addMat(new THREE.SpriteMaterial({ color: COL.main, map: tex, transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending })));
-  headGlow.scale.set(0.95, 1.05, 1); headGlow.position.set(0, 0.03, -0.25); framing.add(headGlow);
+    addMat(new THREE.MeshBasicMaterial({ color: COL.bright, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })));
+  crescent.position.set(-0.02, 0.06, -0.45); framing.add(crescent);
+  const headGlow = new THREE.Sprite(addMat(new THREE.SpriteMaterial({ color: COL.main, map: tex, transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending })));
+  headGlow.scale.set(1.15, 1.25, 1); headGlow.position.set(0, 0.03, -0.2); framing.add(headGlow);
   const rings = new THREE.Group(); framing.add(rings);
-  [[0.62, 0.02], [0.78, 0.05]].forEach(([r, tilt], i) => {
-    const ring = new THREE.Mesh(track(new THREE.TorusGeometry(r, 0.003, 6, 120)),
-      addMat(new THREE.MeshBasicMaterial({ color: COL.main, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false })));
+  [[0.66, 0.02], [0.84, 0.05], [0.52, -0.03]].forEach(([r, tilt], i) => {
+    const ring = new THREE.Mesh(track(new THREE.TorusGeometry(r, 0.004, 6, 140)),
+      addMat(new THREE.MeshBasicMaterial({ color: COL.main, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false })));
     ring.rotation.x = Math.PI / 2 + tilt; ring.rotation.z = i * 0.5; rings.add(ring);
   });
   const SN = reduced ? 60 : 160, sp = new Float32Array(SN * 3);
@@ -62,10 +63,19 @@ export function createAvatar(container, opts = {}) {
   for (let i = 0; i < 3; i++) { const rr = 0.12 + i * 0.13;
     const rg = new THREE.Mesh(track(new THREE.RingGeometry(rr, rr + 0.006, 64)), addMat(new THREE.MeshBasicMaterial({ color: COL.main, transparent: true, opacity: 0.28 - i * 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }))); rg.rotation.x = -Math.PI / 2; base.add(rg); }
 
-  // -- Holografisches Material fuer das GLB: Original-Textur behalten (Gesichtsdetails) + blau toenen. --
+  // -- Holografisches Material: dunkler Koerper, blau EMISSIV (Gesichtsdetails aus der Textur leuchten),
+  //    + FRESNEL-Rand-Gluehen (leuchtende Kanten) + Transluzenz -> echter Hologramm-Look. --
   function holoMat(orig) {
     const map = orig && orig.map ? orig.map : null;
-    return addMat(new THREE.MeshBasicMaterial({ map, color: new THREE.Color(0x74a8ff), transparent: true, opacity: 0.9, depthWrite: true }));
+    const m = new THREE.MeshStandardMaterial({
+      color: 0x08142c, emissive: new THREE.Color(0x2f6bff), emissiveMap: map, emissiveIntensity: 1.35,
+      metalness: 0, roughness: 1, transparent: true, opacity: 0.58, depthWrite: false, blending: THREE.NormalBlending,
+    });
+    m.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace("#include <emissivemap_fragment>",
+        "#include <emissivemap_fragment>\n float _fres = pow(1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition))), 2.2);\n totalEmissiveRadiance += _fres * vec3(0.45,0.72,1.0) * 1.9;");
+    };
+    return addMat(m);
   }
 
   // -- GLB laden --
