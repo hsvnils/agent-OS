@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-05 15:20] — Claude Code
+- **Was:** Scanline-Sweep im 2D-Hologramm **ganz entfernt** (erzeugte einen sichtbaren horizontalen Streifen
+  ueber dem Kunstbild). Die feine statische Scanline-Textur kommt weiterhin dezent aus CSS `.luna-holo::after`.
+  Cache-Bump `luna-avatar.js?v=11`, `app.js?v=57`, `app-v2.js?v=11`. Im Browser mit hellem Test-Portrait
+  verifiziert (kein horizontaler Streifen, keine Konsolen-Fehler).
+- **Warum:** CEO bestaetigte, dass das Kunstbild selbst keine Linie hat -> die Linie kam vom Scanline-Sweep;
+  Weichzeichnen (v10) reichte nicht bzw. war deploy-abhaengig, daher komplette Entfernung.
+- **Betroffen:** `orchestrator/channels/web/static/luna-avatar.js`, `index.html`, `index-v2.html`, `app.js`, `app-v2.js`.
+
 ## [2026-07-05 14:42] — Claude Code
 - **Was:** Scanline-Sweep des 2D-Hologramms entschaerft (harte, fast weisse Leiste -> breiter, weicher, sehr
   transparenter Schimmer: Alpha 0.16->0.05, Bandbreite ~14% der Hoehe). Cache-Bump `luna-avatar.js?v=10`,

@@ -99,15 +99,8 @@ export function createAvatar(container, opts = {}) {
       bloom(W * MOUTH[0], H * MOUTH[1], mr, tint, Math.min(0.85, 0.25 + energy * 0.7));
     }
 
-    // Scanline-Sweep (Hologramm) -- dezent: breite, weiche, sehr transparente Leiste statt harter Strich
-    if (!reduced) {
-      const spd = state === "thinking" ? 0.9 : 0.45;
-      const sy = ((t * spd) % 1) * H;
-      const band = Math.max(26, H * 0.14);
-      const lg = ctx.createLinearGradient(0, sy - band, 0, sy + band);
-      lg.addColorStop(0, rgba(tint, 0)); lg.addColorStop(0.5, rgba(tint, 0.05 * glow)); lg.addColorStop(1, rgba(tint, 0));
-      ctx.fillStyle = lg; ctx.fillRect(0, sy - band, W, band * 2);
-    }
+    // (Scanline-Sweep entfernt -- erzeugte einen sichtbaren horizontalen Streifen ueber dem Bild.
+    //  Die feine statische Scanline-Textur kommt weiterhin dezent aus CSS `.luna-holo::after`.)
 
     // Basis-Ring (Projektions-Sockel unten)
     ctx.globalCompositeOperation = "lighter";
