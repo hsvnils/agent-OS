@@ -34,16 +34,20 @@ erhalten:
   ist LUNAs **Standard-Sprachausgabe**. Sie bleibt die hoerbare Identitaet; Browser-Stimme nur als Fallback,
   wenn ElevenLabs nicht erreichbar ist. Stimme nur auf ausdrueckliche CEO-Anweisung wechseln.
 
-**3D-Hologramm (opt-in, ab 2026-07-05):** Alternativ zum Orb gibt es ein prozedurales **3D-Hologramm**
-(`static/luna-avatar.js`, Three.js **lokal vendored** unter `static/vendor/three/`, kein CDN) -- blaue,
-holografische Frauen-Bueste (Punkt-/Konstellations-Netz, Sichelmond, Orbit-Ringe, Ripple-Sockel) mit denselben
-Zustaenden **idle/listening/thinking/speaking/error** und **Lip-Sync** aus Lolas Amplitude (`setEnergy`, gleicher
-`AnalyserNode` wie der Orb). Es **ersetzt den Orb** an gleicher Stelle (Ecke unten-rechts), **ergaenzt** ihn also,
-statt die Identitaet zu brechen: Klick = `toggleVoice`, gleiche Stimme. Umschalter **Orb <-> Hologramm** pro
-Nutzer (Pref `avatar`), Feature-Flag `/api/me.avatar_enabled` (env `LUNA_AVATAR`), **lazy-load**, Fallback auf
-den Orb ohne WebGL, `prefers-reduced-motion` respektiert. Der **Orb bleibt Default und Pflicht-Fallback** --
-das Hologramm ist eine opt-in Darstellungsvariante, kein Ersatz der Identitaet. Spaeter: GLB/VRM mit
-Morph-Targets (echtes Gesicht) hinter derselben `setState/setEnergy`-API.
+**Hologramm (opt-in, ab 2026-07-05, 2D-Living-Portrait ab 2026-07-05):** Alternativ zum Orb gibt es ein
+**2D-Living-Portrait** (`static/luna-avatar.js`, **kein 3D/WebGL, kein Three.js**): es nutzt **direkt das
+LUNA-Kunstbild** (`static/luna-portrait.png`, per CEO abgelegt) als Ebene und legt darueber ein Canvas mit
+holografischem Glow, **Scanline-Sweep**, **pulsierenden Augen-Glints**, **Blinzeln** und einem **Mund-Bloom**,
+der **live auf Lolas Amplitude reagiert** (`setEnergy`, gleicher `AnalyserNode` wie der Orb). Screen-Blend stellt
+dunkle Bildteile frei -> Hologramm-Look auf dunklem Grund. Zustaende **idle/listening/thinking/speaking/error**.
+Es **ersetzt den Orb** an gleicher Stelle (Ecke unten-rechts), **ergaenzt** ihn also, statt die Identitaet zu
+brechen: Klick = `toggleVoice`, gleiche Stimme. Umschalter **Orb <-> Hologramm** pro Nutzer (Pref `avatar`),
+Feature-Flag `/api/me.avatar_enabled` (env `LUNA_AVATAR`), **lazy-load**, `prefers-reduced-motion` respektiert.
+Fehlt das Bild, zeigt das Modul einen holografischen Rahmen ohne Gesicht. Der **Orb bleibt Default und
+Pflicht-Fallback** -- das Hologramm ist eine opt-in Darstellungsvariante, kein Ersatz der Identitaet.
+Gesichtspunkte (Augen/Mund) sind im Modul als Konstanten justierbar. Der fruehere prozedurale 3D-/GLB-Ansatz
+(Three.js/Ready-Player-Me) wurde zugunsten des bildtreuen 2D-Portraits **verworfen** (Aehnlichkeit zum
+Kunstbild nur so erreichbar, ohne kostenpflichtige Foto-Avatar-Dienste).
 
 ---
 

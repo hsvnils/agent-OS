@@ -42,8 +42,12 @@
 | **6 Datenqualitaets-Dimensionen + North-Star/Vanity** (CDO) | 2026-07-04 | **UEBERNEHMEN** (in CDO-Skills) | `skills/cdo/` datenqualitaet-pruefen + kennzahlen-definieren |
 | **MBB-Beratungsframeworks** (MECE/Issue-Tree/Hypothesen/Pyramid/Porter/BCG/Ansoff/BMC) (UB) | 2026-07-04 | **TEILWEISE UEBERNEHMEN** (Prinzipien, nicht Ballast) | `skills/berater/` (3 Skills) |
 | **safishamsi/graphify** (Code/Docs -> Knowledge-Graph fuer Coding-Assistenten) | 2026-07-04 | **REFERENZ / OPTIONAL** (kein Laufzeit-Bedarf; ggf. Ad-hoc-CLI) | Dev-Codebasis-Uebersicht, nicht in LUNA |
-| **3D-Avatar: GLB (Ready Player Me) + TalkingHead-Ansatz** (selbst gehostet) | 2026-07-05 | **UMGESETZT** (Pipeline: vendored Three.js+GLTFLoader, GLB mit Morph-Targets, holografisch geshadet, Lip-Sync) | `static/luna-avatar.js` -- CEO waehlt eigenen RPM-Avatar; kostenlos, kein Cloud |
-| **3D-Avatar: HeyGen LiveAvatar** (fotorealistischer Cloud-Streaming-Avatar) | 2026-07-05 | **VERWORFEN (fuer jetzt)** | Cloud-Abhaengigkeit + ~$0,10/Min laufend (CEO-Tor) + Optik = realer Mensch, nicht Hologramm; ElevenLabs-Integration vorhanden, aber nicht selbst gehostet |
+| **3D-Avatar: GLB (Ready Player Me) + TalkingHead-Ansatz** (selbst gehostet) | 2026-07-05 | **VERWORFEN (revidiert)** -- zunaechst umgesetzt, dann verworfen: RPM/Selfie-GLBs treffen das stilisierte KI-Kunstbild des CEO nicht; kein Sprachmodell (auch Fable 5 nicht) macht aus einem Bild einen gerigten 3D-Kopf | ersetzt durch 2D-Living-Portrait (Zeile unten); Three.js/GLB entfernt |
+| **2D-Living-Portrait** (Kunstbild direkt + Canvas-Glow/Scanline/Augen/Mund-Bloom, kein 3D/WebGL) | 2026-07-05 | **UMGESETZT** -- bildtreu (nutzt DAS Kunstbild), gratis, kein externes Tool, kein CDN | `static/luna-avatar.js`; Bild unter `static/luna-portrait.png`; gleiche `setState/setEnergy`-API |
+| **3D-Avatar: HeyGen LiveAvatar** (fotorealistischer Cloud-Streaming-Avatar) | 2026-07-05 | **VERWORFEN** | Cloud + ~$0,10/Min laufend (CEO-Tor); Optik = realer Mensch, nicht Hologramm |
+| **Foto->3D-Avatar-Dienste: Avaturn / Ready Player Me** (Selfie -> GLB mit ARKit-Blendshapes/Visemes) | 2026-07-05 | **VERWORFEN** | erzeugen realistische Menschen aus einem echten Gesicht -> treffen das stilisierte KI-Kunstbild nicht; CEO will genau sein Bild |
+| **DeepMotion (SayMotion / Animate 3D)** | 2026-07-05 | **VERWORFEN (falscher Zweck)** | liefert Koerper-Animation/Motion-Capture, keinen Gesichts-Avatar mit Visemes -- passt nicht zum Lip-Sync-Bedarf |
+| **Bild->3D-Mesh (Meshy / Tripo) + Talking-Portrait (LivePortrait, lokal)** | 2026-07-05 | **NICHT GEWAEHLT** (Alternativen) | Meshy/Tripo: statisches Mesh ohne Gesichts-Rig (Lip-Sync fehlt); LivePortrait: gratis/bildtreu, aber Vorab-Render statt Live + Einrichtungsaufwand -- CEO waehlte 2D-Living-Portrait |
 
 ---
 

@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-05 14:35] — Claude Code
+- **Was:** LUNA-Hologramm von 3D-GLB auf **2D-Living-Portrait** umgebaut. `static/luna-avatar.js` nutzt jetzt DAS
+  Kunstbild (`static/luna-portrait.png`, per CEO abzulegen) direkt als Ebene + Canvas-Overlay (holografischer
+  Glow, Scanline-Sweep, pulsierende/blinzelnde Augen-Glints, Mund-Bloom live aus Lolas Amplitude, Screen-Blend
+  fuer Hologramm-Look). Gleiche `createAvatar/setState/setEnergy/dispose`-API -> V1/V2-Integration unveraendert.
+  3D-Ballast entfernt: vendored Three.js + GLTFLoader + BufferGeometryUtils + GLB-Modell geloescht, Import-Map
+  aus beiden Shells raus; Cache-Bump `luna-avatar.js?v=9`, `app.js?v=55`, `app-v2.js?v=9`. Test `test_web_avatar.py`
+  auf 2D angepasst (Three.js/Import-Map-Assertions entfernt, Portrait-Bezug geprueft). UI.md 1a + Entscheidungs-
+  Register aktualisiert (3D/GLB VERWORFEN; Avaturn/RPM/DeepMotion/HeyGen geprueft+verworfen).
+- **Warum:** CEO will genau SEIN KI-Kunstbild als Hologramm, gratis und ohne grossen Aufwand/HeyGen. Kein
+  Sprachmodell (auch Fable 5 nicht) und keine Selfie-Avatar-Dienste treffen die stilisierte Figur -> bildtreues
+  2D-Portrait ist der einzige Weg, der das leistet.
+- **Betroffen:** `orchestrator/channels/web/static/luna-avatar.js`, `index.html`, `index-v2.html`, `app.js`,
+  `app-v2.js`, `orchestrator/tests/test_web_avatar.py`, `UI.md`, `docs/entscheidungs-register.md`;
+  geloescht: `static/vendor/three/*`, `static/vendor/models/luna-avatar.glb`.
+
 ## [2026-07-05 04:45] — Claude Code — LUNA-Avatar: Hologramm-Shading maximal (Fresnel-Glow + dunkler Canvas)
 - **Was:** CEO: „Hologramm-Look maximal aufdrehen" (als leuchtendes Sinnbild, nicht Portraet). Material des
   GLB von schlicht-blau -> **MeshStandard mit blauem Emissive** (Gesichtsdetails aus der Textur leuchten) +

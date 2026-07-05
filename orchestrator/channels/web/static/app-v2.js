@@ -586,7 +586,7 @@ async function applyAvatar() {
   if (on) {
     holo.hidden = false; orb.style.display = "none";
     if (!AVATAR) {
-      try { AV_MOD = AV_MOD || await import("/static/luna-avatar.js?v=8");
+      try { AV_MOD = AV_MOD || await import("/static/luna-avatar.js?v=9");
         AVATAR = AV_MOD.createAvatar(holo, { reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches }); }
       catch (e) { console.warn("[luna] Avatar-Ladefehler", e); AVATAR = null; }
       if (!AVATAR) { holo.hidden = true; orb.style.display = ""; }   // Fallback auf Orb
