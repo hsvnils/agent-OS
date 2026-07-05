@@ -570,6 +570,38 @@ async function antragDetail(id) {
 
 /* =========================== LUNA-Chat + Voice =========================== */
 let CHAT_OPEN = false, REC = null, LISTENING = false, AUDIO = null;
+let AVATAR = null, AV_MOD = null;   // 3D-Hologramm (lazy geladen)
+
+function updateHoloToggle() {
+  const b = $("#v2-holo-toggle"); if (!b) return;
+  b.hidden = ME.avatar_enabled === false;
+  const on = PREFS.avatar === "hologramm";
+  b.textContent = on ? "🌙" : "◐"; b.classList.toggle("on", on);
+  b.title = on ? "Hologramm aktiv — zum Orb wechseln" : "Orb aktiv — zum 3D-Hologramm wechseln";
+}
+async function applyAvatar() {
+  updateHoloToggle();
+  const holo = $("#luna-holo"), orb = $("#v2-orb"); if (!holo || !orb) return;
+  const on = ME.avatar_enabled !== false && PREFS.avatar === "hologramm";
+  if (on) {
+    holo.hidden = false; orb.style.display = "none";
+    if (!AVATAR) {
+      try { AV_MOD = AV_MOD || await import("/static/luna-avatar.js?v=6");
+        AVATAR = AV_MOD.createAvatar(holo, { reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches }); }
+      catch (e) { console.warn("[luna] Avatar-Ladefehler", e); AVATAR = null; }
+      if (!AVATAR) { holo.hidden = true; orb.style.display = ""; }   // Fallback auf Orb
+    }
+  } else {
+    if (AVATAR) { AVATAR.dispose(); AVATAR = null; }
+    holo.hidden = true; orb.style.display = "";
+  }
+}
+async function setAvatarPref(mode) {
+  PREFS = { ...PREFS, avatar: mode };
+  try { localStorage.setItem("luna-v2-avatar", mode); } catch { }
+  jpost("/api/prefs", { prefs: PREFS });
+  await applyAvatar();
+}
 function chatShell() {
   $("#v2-chat").innerHTML = `<header>LUNA <button class="v2-icon" id="v2-mic" title="Sprechen">🎙</button></header>
     <div class="log" id="v2-log"><div class="msg luna">Hallo! Wie kann ich helfen?</div></div>
@@ -579,13 +611,28 @@ function chatShell() {
 }
 function toggleChat(open) { CHAT_OPEN = open == null ? !CHAT_OPEN : open; const c = $("#v2-chat"); c.hidden = !CHAT_OPEN; if (CHAT_OPEN && !c.dataset.init) { chatShell(); c.dataset.init = "1"; } }
 function addMsg(who, text) { const log = $("#v2-log"); if (!log) return; const d = document.createElement("div"); d.className = "msg " + who; d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; }
-async function sendChat(text) { addMsg("me", text); const r = await jpost("/api/chat", { text }); const reply = (r && (r.reply || r.antwort)) || "…"; addMsg("luna", reply); lunaSpeak(reply); }
-function setOrb(state) { $("#v2-orb").className = "v2-orb " + state; }
+async function sendChat(text) { addMsg("me", text); setOrb("thinking"); const r = await jpost("/api/chat", { text }); const reply = (r && (r.reply || r.antwort)) || "…"; addMsg("luna", reply); lunaSpeak(reply); }
+function setOrb(state) {
+  const o = $("#v2-orb"); if (o) o.className = "v2-orb " + state;
+  if (AVATAR) AVATAR.setState(state);
+  const holo = $("#luna-holo"); if (holo) holo.classList.toggle("big", state === "speaking" || state === "listening");
+}
 async function lunaSpeak(text) {
-  try { const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: String(text).slice(0, 600) }) });
-    if (!r.ok) return; const buf = await r.arrayBuffer(); const ctx = AUDIO || (AUDIO = new (window.AudioContext || window.webkitAudioContext)());
-    const audio = await ctx.decodeAudioData(buf); const src = ctx.createBufferSource(); src.buffer = audio; src.connect(ctx.destination); setOrb("speaking"); src.onended = () => setOrb("idle"); src.start();
-  } catch { setOrb("idle"); }
+  let raf = 0;
+  try {
+    const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: String(text).slice(0, 600) }) });
+    if (!r.ok) { setOrb("idle"); return; }
+    const buf = await r.arrayBuffer(); const ctx = AUDIO || (AUDIO = new (window.AudioContext || window.webkitAudioContext)());
+    const audio = await ctx.decodeAudioData(buf); const src = ctx.createBufferSource(); src.buffer = audio;
+    if (AVATAR) {   // Lip-Sync: Amplitude von Lolas Stimme -> Avatar-Energie (Mund/Glow)
+      const an = ctx.createAnalyser(); an.fftSize = 64; an.smoothingTimeConstant = 0.7; src.connect(an); an.connect(ctx.destination);
+      const data = new Uint8Array(an.frequencyBinCount);
+      const loop = () => { an.getByteFrequencyData(data); let s = 0; for (const v of data) s += v; AVATAR.setEnergy(Math.min(1, (s / data.length) / 105)); raf = requestAnimationFrame(loop); }; loop();
+    } else src.connect(ctx.destination);
+    setOrb("speaking");
+    src.onended = () => { setOrb("idle"); if (raf) cancelAnimationFrame(raf); if (AVATAR) AVATAR.setEnergy(0); };
+    src.start();
+  } catch { setOrb("idle"); if (raf) cancelAnimationFrame(raf); }
 }
 function toggleVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) { toggleChat(true); return; }
@@ -609,6 +656,8 @@ document.addEventListener("click", (e) => {
   const um = e.target.closest("[data-ui-mode]"); if (um) { setUiMode(um.dataset.uiMode); return; }
   const tc = e.target.closest("[data-toggle-chat]"); if (tc) { toggleChat(); return; }
   const orb = e.target.closest("#v2-orb"); if (orb) { toggleVoice(); return; }
+  const holo = e.target.closest("#luna-holo"); if (holo) { toggleVoice(); return; }
+  const ht = e.target.closest("#v2-holo-toggle"); if (ht) { setAvatarPref(PREFS.avatar === "hologramm" ? "orb" : "hologramm"); return; }
   const th = e.target.closest("#v2-theme"); if (th) { toggleTheme(); return; }
   const mc = e.target.closest("[data-modal-close]"); if (mc) { closeModal(); return; }
   const ac = e.target.closest("[data-act]"); if (ac) { handleAct(ac.dataset.act, ac); return; }
@@ -632,5 +681,6 @@ document.addEventListener("drop", (e) => { if (!EDIT2 || !DRAG2) return; const t
   [ME, PREFS] = await Promise.all([jget("/api/me").then(x => x || ME), jget("/api/prefs").then(x => (x && x.prefs) || {})]);
   let saved = PREFS.v2_dashboard; if (!saved) { try { saved = JSON.parse(localStorage.getItem("luna-v2-dash") || "null"); } catch { } }
   DASH2 = normDash2(saved);
-  buildShell(); go("dash"); connectSSE();
+  if (!PREFS.avatar) { try { const a = localStorage.getItem("luna-v2-avatar"); if (a) PREFS.avatar = a; } catch { } }
+  buildShell(); go("dash"); connectSSE(); applyAvatar();
 })();

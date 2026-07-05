@@ -34,6 +34,36 @@ try { matchMedia("(prefers-color-scheme: light)").addEventListener("change", () 
   if ((localStorage.getItem("luna-theme") || "auto") === "auto") applyTheme();
 }); } catch { /* aeltere Browser */ }
 
+// LUNA 3D-Hologramm (opt-in, lazy geladen) -- ersetzt den Orb; teilt sich das Modul mit V2.
+let AVATAR = null, AV_MOD = null;
+function updateAvatarSwitch() {
+  const sw = document.getElementById("avatar-switch"); if (!sw) return;
+  sw.hidden = ME.avatar_enabled === false;
+  const mode = PREFS.avatar === "hologramm" ? "hologramm" : "orb";
+  sw.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.avatarSet === mode));
+}
+async function applyAvatar() {
+  updateAvatarSwitch();
+  const holo = document.getElementById("luna-holo"); if (!holo) return;
+  const on = ME.avatar_enabled !== false && PREFS.avatar === "hologramm";
+  document.body.classList.toggle("holo-on", on);
+  if (on) {
+    holo.hidden = false;
+    if (!AVATAR) {
+      try { AV_MOD = AV_MOD || await import("/static/luna-avatar.js?v=6");
+        AVATAR = AV_MOD.createAvatar(holo, { reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches }); }
+      catch (e) { console.warn("[luna] Avatar-Ladefehler", e); AVATAR = null; }
+      if (!AVATAR) { holo.hidden = true; document.body.classList.remove("holo-on"); }   // Fallback: Orb
+    }
+  } else { if (AVATAR) { AVATAR.dispose(); AVATAR = null; } holo.hidden = true; }
+}
+async function setAvatarPref(mode) {
+  PREFS = { ...PREFS, avatar: mode };
+  try { localStorage.setItem("luna-avatar-mode", mode); } catch { }
+  try { await fetch("/api/prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prefs: PREFS }) }); } catch { }
+  applyAvatar();
+}
+
 // #2: Konfigurierbares Dashboard -- Widget-Reihenfolge + ausgeblendete, pro User in Supabase gespeichert.
 const DASH_DEFAULT = ["ov", "hero", "feed", "agents", "timeline", "quick", "sysmon", "investP", "mem", "llm"];
 const DASH_TITEL = { ov: "AI Core Overview", hero: "LUNA Core", feed: "Live Intelligence Feed",
@@ -1152,6 +1182,7 @@ async function openDetail(id) {
 // ---- Events ----------------------------------------------------------------
 document.addEventListener("click", (e) => {
   const orb = e.target.closest("#luna-orb"); if (orb) { toggleVoice(); return; }
+  const holo = e.target.closest("#luna-holo"); if (holo) { toggleVoice(); return; }
   const talk = e.target.closest("#talk"); if (talk) { toggleVoice(); return; }
   const tog = e.target.closest("#side-toggle, #nav-open"); if (tog) { document.getElementById("sidebar").classList.toggle("open"); return; }
   const ac = e.target.closest("[data-acsym]");
@@ -1184,6 +1215,8 @@ document.addEventListener("click", (e) => {
   if (th) { setTheme(th.dataset.themeSet); return; }
   const uim = e.target.closest("[data-ui-mode]");
   if (uim) { setUiMode(uim.dataset.uiMode); return; }
+  const av = e.target.closest("[data-avatar-set]");
+  if (av) { setAvatarPref(av.dataset.avatarSet); return; }
   const ed = e.target.closest("#edit-dash, [data-editdone]");
   if (ed) { toggleEdit(); return; }
   const wh = e.target.closest("[data-whide]");
@@ -1250,6 +1283,7 @@ function startOrbViz() {
     let sum = 0; for (const v of data) sum += v;
     const e = Math.min(1, (sum / data.length) / 105);
     if (orb) orb.style.setProperty("--energy", e.toFixed(2));
+    if (AVATAR) AVATAR.setEnergy(e);
     requestAnimationFrame(tick);
   })();
 }
@@ -1263,6 +1297,8 @@ function setOrb(s) {
   const on = (s === "listening" || s === "speaking");
   const w = document.getElementById("side-wave"); if (w) w.classList.toggle("on", on);
   const t = document.getElementById("talk"); if (t) t.classList.toggle("on", on);
+  if (AVATAR) AVATAR.setState(s);
+  const holo = document.getElementById("luna-holo"); if (holo) holo.classList.toggle("big", on);
 }
 function voiceStatus(t) {
   const el = document.getElementById("voice-status"); if (el) el.textContent = t;  // im Chat-Fenster
@@ -1459,7 +1495,9 @@ if (_ts) _ts.addEventListener("keydown", (e) => {
   applyTheme();       // Theme-Klasse ist schon (flash-frei) vom Head-Script gesetzt -> hier nur Button-Status
   await ladeMe();
   await ladePrefs();  // #2: Dashboard-Layout pro User (Reihenfolge + ausgeblendete)
+  if (!PREFS.avatar) { try { const a = localStorage.getItem("luna-avatar-mode"); if (a) PREFS.avatar = a; } catch { } }
   buildSidebar();
+  applyAvatar();      // Orb oder 3D-Hologramm gemaess Pref
   refresh();          // laedt Daten + rendert das Command-Center-Dashboard (Home)
 })();
 connectSSE();

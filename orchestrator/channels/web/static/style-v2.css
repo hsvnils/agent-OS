@@ -172,6 +172,14 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
 .v2-orb.speaking .moon { transform: scale(calc(1 + var(--v2-energy, 0) * .35)); }
 @keyframes v2pulse { 0%, 100% { box-shadow: 0 10px 30px rgba(47, 107, 255, .35); }
   50% { box-shadow: 0 10px 42px rgba(47, 107, 255, .65); } }
+/* LUNA 3D-Hologramm (Ecke unten-rechts, dehnt sich beim Sprechen) */
+.luna-holo { position: fixed; right: 14px; bottom: 14px; z-index: 40; width: 190px; height: 200px; cursor: pointer;
+  transition: width .35s cubic-bezier(.2,.8,.2,1), height .35s cubic-bezier(.2,.8,.2,1); }
+.luna-holo.big { width: 320px; height: 360px; }
+.luna-holo canvas { width: 100% !important; height: 100% !important; display: block; }
+.luna-holo::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(140,190,255,.05) 0 1px, transparent 1px 3px); }
+#v2-holo-toggle.on { border-color: var(--v2-accent); color: var(--v2-accent); }
 .v2-chat { position: fixed; right: 22px; bottom: 92px; z-index: 40; width: min(380px, 92vw); max-height: 62vh;
   display: flex; flex-direction: column; background: var(--v2-card-solid); border: 1px solid var(--v2-line);
   border-radius: var(--v2-radius); box-shadow: var(--v2-shadow-hi); overflow: hidden; }

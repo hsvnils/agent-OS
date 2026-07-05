@@ -289,9 +289,11 @@ def state():
 def me(request: Request):
     """K4: der eingeloggte Nutzer + seine sichtbaren Apps (SSOT fuers Frontend-Gating)."""
     u = getattr(request.state, "user", None) or _ceo_user()
+    # Feature-Flag fuer das 3D-Hologramm (Umschalter Orb<->Hologramm). Default an; per env LUNA_AVATAR=0 global aus.
+    avatar_enabled = os.environ.get("LUNA_AVATAR", "1").strip().lower() not in ("0", "false", "no", "off")
     return {"username": u.get("username"), "display_name": u.get("display_name"),
             "role": u.get("role"), "allowed_modules": u.get("allowed_modules") or [],
-            "apps": erlaubte_apps(u)}
+            "apps": erlaubte_apps(u), "avatar_enabled": avatar_enabled}
 
 
 # -- K4: Team-Verwaltung (nur Modul 'administration' -> owner/admin; Gating in auth) ------------------

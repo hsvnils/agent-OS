@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>LUNA · Kontrollraum</title>
-  <link rel="stylesheet" href="/static/style-v2.css?v=5">
+  <link rel="stylesheet" href="/static/style-v2.css?v=6">
   <!-- Theme flash-frei (V2 Default: hell). Dunkel nur, wenn Nutzer es fuer V2 explizit waehlt. -->
   <script>(function () {
     var m = localStorage.getItem("luna-v2-theme") || "light";
@@ -24,6 +24,7 @@
     <div class="v2-pills" id="v2-pills"><!-- Aktions-Pills: von app-v2.js gefuellt --></div>
     <div class="v2-topright">
       <button class="v2-icon" id="v2-search" title="Suche">🔎</button>
+      <button class="v2-icon" id="v2-holo-toggle" title="Orb / Hologramm" hidden>🌙</button>
       <button class="v2-icon" id="v2-theme" title="Hell/Dunkel">☀</button>
       <button class="v2-lang" id="v2-lang" title="Sprache">🌐 DE</button>
       <div class="v2-avatar" id="v2-avatar" title="Profil"></div>
@@ -34,8 +35,10 @@
 
   <!-- LUNA: Orb + Voice-Launcher (UI.md 1a -- bleibt Pflicht, auch in V2) -->
   <button id="v2-orb" class="v2-orb idle" title="Mit LUNA sprechen"><span class="moon"></span></button>
+  <!-- LUNA 3D-Hologramm (opt-in; ersetzt den Orb an gleicher Stelle) -->
+  <div id="luna-holo" class="luna-holo" title="Mit LUNA sprechen" hidden></div>
   <section id="v2-chat" class="v2-chat" hidden><!-- Inline-Chat-Panel (kein Fenster) --></section>
 
-  <script src="/static/app-v2.js?v=5"></script>
+  <script src="/static/app-v2.js?v=6"></script>
 </body>
 </html>

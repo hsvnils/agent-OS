@@ -34,6 +34,17 @@ erhalten:
   ist LUNAs **Standard-Sprachausgabe**. Sie bleibt die hoerbare Identitaet; Browser-Stimme nur als Fallback,
   wenn ElevenLabs nicht erreichbar ist. Stimme nur auf ausdrueckliche CEO-Anweisung wechseln.
 
+**3D-Hologramm (opt-in, ab 2026-07-05):** Alternativ zum Orb gibt es ein prozedurales **3D-Hologramm**
+(`static/luna-avatar.js`, Three.js **lokal vendored** unter `static/vendor/three/`, kein CDN) -- blaue,
+holografische Frauen-Bueste (Punkt-/Konstellations-Netz, Sichelmond, Orbit-Ringe, Ripple-Sockel) mit denselben
+Zustaenden **idle/listening/thinking/speaking/error** und **Lip-Sync** aus Lolas Amplitude (`setEnergy`, gleicher
+`AnalyserNode` wie der Orb). Es **ersetzt den Orb** an gleicher Stelle (Ecke unten-rechts), **ergaenzt** ihn also,
+statt die Identitaet zu brechen: Klick = `toggleVoice`, gleiche Stimme. Umschalter **Orb <-> Hologramm** pro
+Nutzer (Pref `avatar`), Feature-Flag `/api/me.avatar_enabled` (env `LUNA_AVATAR`), **lazy-load**, Fallback auf
+den Orb ohne WebGL, `prefers-reduced-motion` respektiert. Der **Orb bleibt Default und Pflicht-Fallback** --
+das Hologramm ist eine opt-in Darstellungsvariante, kein Ersatz der Identitaet. Spaeter: GLB/VRM mit
+Morph-Targets (echtes Gesicht) hinter derselben `setState/setEnergy`-API.
+
 ---
 
 ## 2. Farb-Tokens (CSS-Variablen in `:root`)

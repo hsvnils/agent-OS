@@ -706,6 +706,14 @@ html.theme-light .winbox.modern .wb-title { color: var(--fg); }
 .ui-switch button { flex: 1; padding: 5px 0; border: none; background: none; color: var(--muted);
   font: inherit; font-size: 11px; border-radius: 7px; cursor: pointer; transition: background .15s, color .15s; }
 .ui-switch button.active { background: var(--violet-soft, rgba(168, 116, 255, .16)); color: var(--violet); font-weight: 700; }
+/* LUNA 3D-Hologramm (Ecke unten-rechts, dehnt sich beim Sprechen) */
+.luna-holo { position: fixed; right: 16px; bottom: 16px; z-index: 60; width: 200px; height: 210px; cursor: pointer;
+  transition: width .35s cubic-bezier(.2,.8,.2,1), height .35s cubic-bezier(.2,.8,.2,1); }
+.luna-holo.big { width: 330px; height: 370px; }
+.luna-holo canvas { width: 100% !important; height: 100% !important; display: block; }
+.luna-holo::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(46,230,255,.06) 0 1px, transparent 1px 3px); }
+body.holo-on #luna-orb { visibility: hidden; }
 
 /* ============ #2: Konfigurierbares Dashboard (Bearbeiten-Modus) ============ */
 #edit-dash { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 9px; cursor: pointer;

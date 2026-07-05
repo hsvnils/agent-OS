@@ -17,6 +17,29 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-05 03:30] — Claude Code — LUNA 3D-Hologramm/Avatar (prozedural, Lip-Sync zu „Lola", V1+V2)
+- **Was:** CEO-Ziel „lebendiges 3D-Hologramm" umgesetzt (ROADMAP „## 8. Backlog"). **Three.js lokal vendored**
+  (`static/vendor/three/three.module.min.js`, r160, MIT, kein CDN). Geteiltes ES-Modul `static/luna-avatar.js`
+  (`createAvatar/setState/setEnergy/dispose`): prozedurale **blaue holografische Frauen-Bueste** nach
+  CEO-Referenzbild -- Kopf als Punkt-/Konstellations-Netz + Front-Gesichts-Cluster + Halo, leuchtende Augen mit
+  **Blinzeln**, Stirn-Gem, animierter Mund, Haar-Straehnen, **Sichelmond**, Orbit-Ringe mit Node-Punkten,
+  **Ripple-Sockel**, Sterne. States **idle/listening/thinking/speaking/error**, **Lip-Sync** ueber `setEnergy`
+  (AnalyserNode an Lolas TTS). `prefers-reduced-motion` + Tab-Pause + sauberes `dispose`, WebGL-Fallback auf Orb.
+  - **In V1 UND V2 integriert:** Ecke unten-rechts (`#luna-holo`), dehnt sich beim Sprechen; Umschalter
+    **Orb<->Hologramm** pro Nutzer (Pref `avatar`, localStorage-Fallback); Klick = `toggleVoice`; States an den
+    vorhandenen `setOrb()`-Hook; Lip-Sync V2 = neuer Analyser in `lunaSpeak`, V1 = vorhandener `startOrbViz`-Loop.
+    **Lazy-Load** (Three.js nur bei aktivem Hologramm). Orb bleibt Default + Pflicht-Fallback (UI.md 1a).
+  - **Backend:** `/api/me.avatar_enabled` (env `LUNA_AVATAR`, Default 1) -> Feature-Flag fuer den Umschalter.
+  - **UI.md 1a** ergaenzt (Hologramm = opt-in Darstellung, Orb bleibt Identitaet/Fallback). Cache V2 v5->v6, V1 v51->v52.
+- **Warum:** CEO: „widmen wir uns dem 3D-Hologramm". Referenzbild geliefert -> Look daran ausgerichtet.
+- **Verifiziert (preview, beide Shells):** mountet fehlerfrei (0 Konsolen-Fehler), Szene rendert (Kopf/Augen/Gem/
+  Sichelmond/Ringe/Ripple), Umschalter zeigt/versteckt, Orb-Fallback, dispose beim Zurueckschalten. Suite **608
+  gruen** (4 neue Tests: Static-Auslieferung avatar/three + avatar_enabled). Nur Frontend + `/api/me`-Feld.
+- **Betroffen:** neu `static/luna-avatar.js`, `static/vendor/three/three.module.min.js`,
+  `tests/test_web_avatar.py`; geaendert `channels/web/app.py` (/api/me), `static/{index.html,app.js,style.css,
+  index-v2.html,app-v2.js,style-v2.css}`, `UI.md`. **NAECHSTER FEINSCHLIFF:** Look weiter ans Referenzbild
+  (Gesichtsdetails); spaeter GLB/VRM.
+
 ## [2026-07-05 02:30] — Claude Code — UI-V2: Bento-Hierarchie + Detail-Side-Sheet + A11y (nach UX-Recherche)
 - **Was:** Onlinerecherche (Inspiration orbix.studio „Bento Grid Dashboard"-Guide + Dashboard-UX-Best-Practices)
   -> drei Verbesserungen umgesetzt:
