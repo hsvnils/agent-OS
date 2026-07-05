@@ -42,6 +42,8 @@
 | **6 Datenqualitaets-Dimensionen + North-Star/Vanity** (CDO) | 2026-07-04 | **UEBERNEHMEN** (in CDO-Skills) | `skills/cdo/` datenqualitaet-pruefen + kennzahlen-definieren |
 | **MBB-Beratungsframeworks** (MECE/Issue-Tree/Hypothesen/Pyramid/Porter/BCG/Ansoff/BMC) (UB) | 2026-07-04 | **TEILWEISE UEBERNEHMEN** (Prinzipien, nicht Ballast) | `skills/berater/` (3 Skills) |
 | **safishamsi/graphify** (Code/Docs -> Knowledge-Graph fuer Coding-Assistenten) | 2026-07-04 | **REFERENZ / OPTIONAL** (kein Laufzeit-Bedarf; ggf. Ad-hoc-CLI) | Dev-Codebasis-Uebersicht, nicht in LUNA |
+| **3D-Avatar: GLB (Ready Player Me) + TalkingHead-Ansatz** (selbst gehostet) | 2026-07-05 | **UMGESETZT** (Pipeline: vendored Three.js+GLTFLoader, GLB mit Morph-Targets, holografisch geshadet, Lip-Sync) | `static/luna-avatar.js` -- CEO waehlt eigenen RPM-Avatar; kostenlos, kein Cloud |
+| **3D-Avatar: HeyGen LiveAvatar** (fotorealistischer Cloud-Streaming-Avatar) | 2026-07-05 | **VERWORFEN (fuer jetzt)** | Cloud-Abhaengigkeit + ~$0,10/Min laufend (CEO-Tor) + Optik = realer Mensch, nicht Hologramm; ElevenLabs-Integration vorhanden, aber nicht selbst gehostet |
 
 ---
 

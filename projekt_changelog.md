@@ -17,6 +17,29 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-05 04:15] — Claude Code — LUNA-Avatar: echtes 3D-GLB-Modell statt prozedural (Ready Player Me + Morph-Lip-Sync)
+- **Was:** Nach CEO-Feedback („sieht nicht richtig aus, evtl. HeyGen o.ae.?") -> **Recherche** (HeyGen LiveAvatar
+  vs. selbst gehostet) im Entscheidungs-Register protokolliert: **HeyGen verworfen** (Cloud + ~$0,10/Min + realer
+  Mensch statt Hologramm), **CEO waehlt GLB + selbst gehostet**. Umgesetzt: `luna-avatar.js` laedt jetzt ein
+  **echtes 3D-Modell** (Ready-Player-Me-GLB, vendored `static/vendor/models/luna-avatar.glb`, 72 Morph-Targets:
+  Visemes + eyeBlink) via **vendored GLTFLoader** (`vendor/three/loaders/` + `utils/BufferGeometryUtils.js`,
+  Import-Map `three` -> lokale three.module, kein CDN). Holografisch blau getoent (Original-Textur erhalten ->
+  echte Gesichtszuege), gerahmt von Sichelmond/Ringen/Ripple. **Lip-Sync ueber jawOpen/Visem-Morph aus
+  setEnergy**, **Blinzeln ueber eyeBlink*-Morphs**. States/Umschalter/Fallback/Infra aus dem prozeduralen
+  Schritt bleiben unveraendert. Import-Maps in V1+V2. Cache-Bump (luna-avatar `?v=7`, index v53/app-v2 v7).
+- **Warum:** prozedurale Geometrie kann kein echtes Gesicht -> echtes GLB-Modell ist der richtige Weg
+  (kostenlos, selbst gehostet, „Lola" bleibt, holografisch shaderbar, matcht Referenz besser als HeyGen).
+- **Verifiziert (preview):** Modul + GLB laden fehlerfrei (Import-Map/GLTFLoader ok), **echtes Frauen-Gesicht
+  rendert** (Textur + blau getoent), Umschalter/Mount/dispose ok. Suite **609 gruen** (Tests auf vendored
+  Assets + Import-Map + GLB angepasst).
+- **OFFEN (naechster Schritt, CEO-Input):** (1) **eigener Avatar** — CEO baut seine LUNA bei Ready Player Me
+  (Host aus Sandbox blockiert -> CEO legt die GLB ins Repo); (2) **Hologramm-Shading** verstaerken
+  (Fresnel-Rand-Glow/Transluzenz) fuer den Glow-Look statt „leicht blauer Mensch"; spaeter Viseme-Timestamps.
+- **Betroffen:** `static/luna-avatar.js` (neu geschrieben), `static/vendor/three/{loaders/GLTFLoader.js,
+  utils/BufferGeometryUtils.js}` + `vendor/models/luna-avatar.glb` (neu vendored), `static/{index.html,
+  index-v2.html,app.js,app-v2.js}` (Import-Map + Cache), `docs/entscheidungs-register.md`,
+  `tests/test_web_avatar.py`.
+
 ## [2026-07-05 03:30] — Claude Code — LUNA 3D-Hologramm/Avatar (prozedural, Lip-Sync zu „Lola", V1+V2)
 - **Was:** CEO-Ziel „lebendiges 3D-Hologramm" umgesetzt (ROADMAP „## 8. Backlog"). **Three.js lokal vendored**
   (`static/vendor/three/three.module.min.js`, r160, MIT, kein CDN). Geteiltes ES-Modul `static/luna-avatar.js`
