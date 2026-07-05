@@ -17,6 +17,27 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-05 02:30] — Claude Code — UI-V2: Bento-Hierarchie + Detail-Side-Sheet + A11y (nach UX-Recherche)
+- **Was:** Onlinerecherche (Inspiration orbix.studio „Bento Grid Dashboard"-Guide + Dashboard-UX-Best-Practices)
+  -> drei Verbesserungen umgesetzt:
+  1. **Bento-Groessenhierarchie** (Groesse = Wichtigkeit): Standard-Dashboard neu geordnet (Hero zuerst,
+     F-Pattern). **Freigaben = Hero (w4, tall)** mit Zahl + **Top-3 offenen Antraegen + Inline-Freigeben/Details**
+     (Progressive Disclosure statt nur Zaehler). Loop=Feature (w8, Chart), Metrik-Reihe (Budget/Trefferquote/
+     Provider/Compliance je 3), **Live-Aktivitaet full-width (w12)**, Accent-Reihe Schritte/Meldungen/Research
+     (w4) -- Meldungen/Research jetzt mit Mini-Liste statt nackter Zahl.
+  2. **Detail als Side-Sheet** (von rechts einfahrend, 460px, volle Hoehe) statt zentralem Modal -- Kontext
+     bleibt sichtbar; gilt fuer alle Detail-Ansichten (Antrag/Invest/CRM).
+  3. **Barrierefreiheit/Technik:** Fokus-Ringe (`:focus-visible`) + Tastatur-Aktivierung (Enter/Space) +
+     `role`/`aria-label` je Kachel; **Kontrast** `--v2-faint` #94a3b8->#5f6b7e (WCAG AA >=4.5:1);
+     **min-height** auf Hero/Chart/Gauge gegen Layout-Sprung (CLS). Responsive: Heroes bei <=1000px full-width.
+  Antrags-Aktionen jetzt kontext-bewusst (aus Dashboard ODER Freigaben). V2-Cache v4->v5.
+- **Warum:** CEO wollte Verbesserungspotential recherchiert + umgesetzt; unser V2 war „Card-Grid" ohne
+  Groessen-Hierarchie (Bento-Fehler Nr. 1 laut Quellen).
+- **Verifiziert (preview 1440px):** Bento-Spans korrekt (Hero 447 + Feature 909 + Metrik 4x331 + Feed 1372 +
+  Accent 3x447), Freigaben-Hero mit 6 Inline-Buttons, Side-Sheet rechts angedockt (460px/volle Hoehe), Chart
+  1:1, Kontrast #5f6b7e, 0 Konsolen-Fehler. Suite 604 gruen. Nur Frontend.
+- **Betroffen:** `orchestrator/channels/web/static/{app-v2.js, style-v2.css, index-v2.html}`.
+
 ## [2026-07-05 01:45] — Claude Code — UI-V2: Dashboard bearbeitbar + Freigaben-Layout + Chart-Fix + klickbare Kacheln
 - **Was:** Vier CEO-Feedback-Punkte an der Live-V2 behoben:
   1. **Dashboard bearbeitbar** (wie V1): Edit-Modus „✎ Anpassen" -> Widgets per Drag&Drop anordnen,

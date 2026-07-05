@@ -39,7 +39,7 @@ let STATE = {}, OVERVIEW = {}, LOOP = {}, INVEST = {};
 let AKTIV = "dash", SUBTAB = {};
 
 /* Dashboard-Bearbeiten (wie V1): Widget-Reihenfolge + ausgeblendete, pro Nutzer in PREFS.v2_dashboard. */
-const DASH2_DEFAULT = ["budget", "trefferquote", "freigaben", "provider", "loop", "compliance", "live", "schritte", "meldungen", "research"];
+const DASH2_DEFAULT = ["freigaben", "loop", "budget", "trefferquote", "provider", "compliance", "live", "schritte", "meldungen", "research"];
 const DASH2_TITEL = { budget: "Monatsbudget", trefferquote: "Prognose-Trefferquote", freigaben: "Offene Freigaben", provider: "Provider verbunden", loop: "Investment · Lern-Loop", compliance: "Compliance-Puls", live: "Live-Aktivität", schritte: "Erste Schritte", meldungen: "Meldungen", research: "Research-Tickets" };
 let DASH2 = { order: [...DASH2_DEFAULT], hidden: [] };
 let EDIT2 = false, DRAG2 = null;
@@ -172,12 +172,14 @@ function kpiInner(big, delta, sub, spark) {
   return `<div class="v2-kpi">${esc(big)} ${d}</div>${sub ? `<div class="v2-sub">${esc(sub)}</div>` : ""}${spark || ""}`;
 }
 function dashTile(id, w) {
-  const linkAttr = (!EDIT2 && w.link) ? (w.link.startsWith("go:") ? `data-go="${w.link.slice(3)}"` : `data-tab="${w.link.slice(4)}"`) : "";
-  const cls = "v2-tile " + (w.span || "") + ((!EDIT2 && w.link) ? " klick" : "") + (EDIT2 ? " editing" : "");
-  const rightHead = EDIT2 ? `<button class="v2-wx" data-whide2="${id}" title="Ausblenden">✕</button>`
-    : (w.link ? `<span class="dots go">›</span>` : `<span class="dots">···</span>`);
+  const clickable = !EDIT2 && w.link;
+  const linkAttr = clickable ? (w.link.startsWith("go:") ? `data-go="${w.link.slice(3)}"` : `data-tab="${w.link.slice(4)}"`) : "";
+  const a11y = clickable ? `role="button" tabindex="0" aria-label="${esc(w.aria || DASH2_TITEL[id])}"` : `role="region" aria-label="${esc(w.aria || DASH2_TITEL[id])}"`;
+  const cls = "v2-tile " + (w.span || "") + (clickable ? " klick" : "") + (EDIT2 ? " editing" : "");
+  const rightHead = EDIT2 ? `<button class="v2-wx" data-whide2="${id}" title="Ausblenden" aria-label="Widget ausblenden">✕</button>`
+    : (w.link ? `<span class="dots go" aria-hidden="true">›</span>` : `<span class="dots" aria-hidden="true">···</span>`);
   const grip = EDIT2 ? `<span class="v2-grip" title="Ziehen zum Anordnen">⠿</span>` : "";
-  return `<div class="${cls}" data-wid="${id}" ${EDIT2 ? 'draggable="true"' : linkAttr}>
+  return `<div class="${cls}" data-wid="${id}" ${EDIT2 ? 'draggable="true"' : linkAttr + " " + a11y}>
     <div class="v2-tile-h"><span class="t">${grip}${esc(DASH2_TITEL[id])}</span>${rightHead}</div>${w.html}</div>`;
 }
 function dash2Tray(W) {
@@ -200,17 +202,29 @@ async function renderDash() {
   const policy = [{ t: "Datenquellen verbunden", ok: provFrac >= .5 }, { t: "Freigabe-Tore aktiv", ok: true }, { t: "Security-Audit täglich", ok: true }];
   const live = aktiv.slice(0, 8).map(a => `<tr><td><b>${esc(String(firstOf(a, ["akteur", "titel", "name"], "Ereignis")))}</b> ${esc(String(firstOf(a, ["aktion", "text"], "")).slice(0, 70))}</td><td>${esc(zeitKurz(firstOf(a, ["ts", "zeit", "erstellt_am"], "")))}</td><td><span class="v2-badge live">Live</span></td></tr>`).join("") || `<tr><td colspan="3" class="v2-empty">Noch keine Aktivität.</td></tr>`;
 
+  // Freigaben-HERO: Zahl + Top-3 offene Antraege mit Inline-Aktion (Progressive Disclosure statt nur Zaehler).
+  const topFreig = antraege.slice(0, 3).map(x => `<div class="v2-list-row">
+      <span class="v2-badge ${badgeCls(x.status || "eingereicht")}">${esc(x.status || "eingereicht")}</span>
+      <div class="grow"><b>${esc(x.titel || "Antrag")}</b><small>${esc(x.von || "")}${x.kategorie ? " · " + esc(x.kategorie) : ""}</small></div>
+      ${(x.status === "eingereicht") ? `<button class="v2-btn ok sm" data-act="antrag-freigeben" data-id="${esc(x.id)}" title="Freigeben">✓</button>` : ""}
+      <button class="v2-btn sm" data-act="antrag-detail" data-id="${esc(x.id)}" title="Details">›</button></div>`).join("")
+    || `<div class="v2-check done" style="border:none"><span class="mark">✓</span>alles freigegeben — nichts offen</div>`;
+  const freigInner = `<div class="v2-kpi">${antraege.length} <span class="delta ${antraege.length ? "down" : "up"}">${antraege.length ? "wartet" : "frei"}</span></div>
+    <div class="v2-hero-list">${topFreig}</div>
+    ${antraege.length > 3 ? `<button class="v2-linkbtn" data-go="freigaben">Alle ${antraege.length} ansehen ›</button>` : ""}`;
+  const miniList = (arr, keys, sub) => arr.slice(0, 2).map(x => `<div class="v2-mini"><b>${esc(String(firstOf(x, keys, "—")).slice(0, 54))}</b>${sub ? `<small>${esc(String(firstOf(x, sub, "")).slice(0, 40))}</small>` : ""}</div>`).join("") || `<div class="v2-sub">nichts offen</div>`;
+
   const W = {
-    budget: { span: "", link: null, html: kpiInner(String(budget), null, "aus finance/budget.md") },
-    trefferquote: { span: "", link: "go:investment", html: kpiInner(g.n ? pct(g.richtungsquote) : "–", g.n ? { up: (g.anteil_besser_baseline || 0) >= .5, text: pct(g.anteil_besser_baseline) + " > Baseline" } : null, g.n ? `n=${g.n} · MAE ${num(g.mae_pct)} vs ${num(g.baseline_mae_pct)}` : "noch keine Auswertung", sparkFromVerlauf(LOOP.verlauf)) },
-    freigaben: { span: "", link: "go:freigaben", html: kpiInner(String(antraege.length), antraege.length ? { up: false, text: "wartet" } : { up: true, text: "frei" }, antraege.length ? "warten auf CEO-Entscheidung" : "alles freigegeben") },
-    provider: { span: "", link: "go:investment", html: kpiInner(`${connected}/${provs.length || "–"}`, { up: provFrac >= .5, text: pct(provFrac) }, "externe Datenquellen") },
-    loop: { span: "w8", link: "go:investment", html: `<div class="v2-kpi">${g.n ? pct(g.richtungsquote) : "–"} <span class="delta ${(g.anteil_besser_baseline || 0) >= .5 ? "up" : "down"}">${g.n ? pct(g.anteil_besser_baseline) + " schlägt Baseline" : ""}</span></div><div class="v2-sub">Richtungsquote · MAE ${num(g.mae_pct)} vs Baseline ${num(g.baseline_mae_pct)} · n=${g.n || 0}</div>${chartMount()}` },
-    compliance: { span: "w4", link: null, html: `<div class="v2-gauge">${gaugeSvg(provFrac)}<div class="val">${pct(provFrac)}</div><div class="cap">Anbindungs-Abdeckung</div></div><div class="v2-policy">${policy.map(p => `<div class="row"><span>${esc(p.t)}</span><span class="v2-badge ${p.ok ? "aktiv" : "wartet"}">${p.ok ? "Aktiv" : "Offen"}</span></div>`).join("")}</div>` },
-    live: { span: "w8", link: "tab:system:aktivitaet", html: `<table class="v2-table"><thead><tr><th>Ereignis</th><th>Zeit</th><th>Status</th></tr></thead><tbody>${live}</tbody></table>` },
-    schritte: { span: "w4", link: null, html: `<div class="v2-sub">System-Bereitschaft</div><div class="v2-progress"><i style="width:${Math.round(doneN / schritte.length * 100)}%"></i></div>${schritte.map(s => `<div class="v2-check ${s.done ? "done" : ""}"><span class="mark">${s.done ? "✓" : ""}</span>${esc(s.t)}</div>`).join("")}` },
-    meldungen: { span: "", link: "tab:system:meldungen", html: kpiInner(String(meld.length), null, "ungelesen") },
-    research: { span: "", link: "tab:system:research", html: kpiInner(String(research.length), null, "offen") },
+    freigaben: { span: "w4 tall", link: null, aria: `Offene Freigaben: ${antraege.length}`, html: freigInner },
+    loop: { span: "w8 tall", link: "go:investment", aria: `Investment Lern-Loop, Richtungsquote ${g.n ? pct(g.richtungsquote) : "keine Daten"}`, html: `<div class="v2-kpi">${g.n ? pct(g.richtungsquote) : "–"} <span class="delta ${(g.anteil_besser_baseline || 0) >= .5 ? "up" : "down"}">${g.n ? pct(g.anteil_besser_baseline) + " schlägt Baseline" : ""}</span></div><div class="v2-sub">Richtungsquote · MAE ${num(g.mae_pct)} vs Baseline ${num(g.baseline_mae_pct)} · n=${g.n || 0}</div>${chartMount()}` },
+    budget: { span: "", link: null, aria: `Monatsbudget ${budget}`, html: kpiInner(String(budget), null, "aus finance/budget.md") },
+    trefferquote: { span: "", link: "go:investment", aria: `Prognose-Trefferquote ${g.n ? pct(g.richtungsquote) : "keine Daten"}`, html: kpiInner(g.n ? pct(g.richtungsquote) : "–", g.n ? { up: (g.anteil_besser_baseline || 0) >= .5, text: pct(g.anteil_besser_baseline) + " > Baseline" } : null, g.n ? `n=${g.n} · MAE ${num(g.mae_pct)} vs ${num(g.baseline_mae_pct)}` : "noch keine Auswertung", sparkFromVerlauf(LOOP.verlauf)) },
+    provider: { span: "", link: "go:investment", aria: `Provider verbunden ${connected} von ${provs.length}`, html: kpiInner(`${connected}/${provs.length || "–"}`, { up: provFrac >= .5, text: pct(provFrac) }, "externe Datenquellen") },
+    compliance: { span: "", link: null, aria: `Compliance-Puls ${pct(provFrac)}`, html: `<div class="v2-gauge">${gaugeSvg(provFrac)}<div class="val">${pct(provFrac)}</div><div class="cap">Anbindungs-Abdeckung</div></div><div class="v2-policy">${policy.map(p => `<div class="row"><span>${esc(p.t)}</span><span class="v2-badge ${p.ok ? "aktiv" : "wartet"}">${p.ok ? "Aktiv" : "Offen"}</span></div>`).join("")}</div>` },
+    live: { span: "w12", link: "tab:system:aktivitaet", aria: "Live-Aktivität", html: `<table class="v2-table"><thead><tr><th>Ereignis</th><th>Zeit</th><th>Status</th></tr></thead><tbody>${live}</tbody></table>` },
+    schritte: { span: "w4", link: null, aria: `Erste Schritte, ${doneN} von ${schritte.length} erledigt`, html: `<div class="v2-sub">System-Bereitschaft</div><div class="v2-progress"><i style="width:${Math.round(doneN / schritte.length * 100)}%"></i></div>${schritte.map(s => `<div class="v2-check ${s.done ? "done" : ""}"><span class="mark">${s.done ? "✓" : ""}</span>${esc(s.t)}</div>`).join("")}` },
+    meldungen: { span: "w4", link: "tab:system:meldungen", aria: `Meldungen: ${meld.length}`, html: `<div class="v2-kpi">${meld.length} <span class="v2-sub" style="font-size:12px">ungelesen</span></div><div class="v2-hero-list">${miniList(meld, ["text"], ["abteilung"])}</div>` },
+    research: { span: "w4", link: "tab:system:research", aria: `Research-Tickets: ${research.length}`, html: `<div class="v2-kpi">${research.length} <span class="v2-sub" style="font-size:12px">offen</span></div><div class="v2-hero-list">${miniList(research, ["frage", "titel"], ["abteilung", "status"])}</div>` },
   };
   const order = DASH2.order.filter(id => W[id] && !DASH2.hidden.includes(id));
   const editBtn = `<button class="v2-btn ${EDIT2 ? "pri" : ""}" data-editdash>${EDIT2 ? "✓ Fertig" : "✎ Anpassen"}</button>`;
@@ -511,16 +525,17 @@ async function renderTeam() {
 }
 
 /* =========================== Aktionen =========================== */
+const reFreig = () => AKTIV === "dash" ? renderDash() : renderFreigaben();  // Antrags-Aktion aus Dashboard ODER Freigaben
 async function handleAct(act, el) {
   const id = el.dataset.id, val = el.dataset.val, asset = el.dataset.asset, typ = el.dataset.typ;
   const flash = (m) => { const o = el.textContent; el.textContent = m; return o; };
   switch (act) {
-    case "antrag-freigeben": await jpost(`/api/antraege/${id}/freigeben`); return renderFreigaben();
-    case "antrag-ablehnen": { const grund = prompt("Grund der Ablehnung?", ""); if (grund === null) return; await jpost(`/api/antraege/${id}/ablehnen`, { grund }); return renderFreigaben(); }
-    case "antrag-revidieren": { const feedback = prompt("Was soll anders/besser sein? LUNA überarbeitet den Antrag (du musst neu freigeben).", ""); if (feedback === null) return; flash("⏳ überarbeitet…"); await jpost(`/api/antraege/${id}/revidieren`, { feedback }); return renderFreigaben(); }
-    case "antrag-loeschen": if (!confirm("Antrag wirklich löschen?")) return; await jpost(`/api/antraege/${id}/loeschen`); return renderFreigaben();
-    case "antrag-mehr": { flash("⏳ Agenten…"); const r = await jpost(`/api/antraege/${id}/mehr-info`); if (r && r.bewertung) alert("LUNA-Bewertung:\n\n" + r.bewertung); return renderFreigaben(); }
-    case "antrag-reformat": if (!confirm("Alle offenen Anträge neu formatieren? Freigegebene werden zurückgesetzt.")) return; flash("⏳ formatiert…"); await jpost("/api/antraege/neu-formatieren"); return renderFreigaben();
+    case "antrag-freigeben": await jpost(`/api/antraege/${id}/freigeben`); return reFreig();
+    case "antrag-ablehnen": { const grund = prompt("Grund der Ablehnung?", ""); if (grund === null) return; await jpost(`/api/antraege/${id}/ablehnen`, { grund }); return reFreig(); }
+    case "antrag-revidieren": { const feedback = prompt("Was soll anders/besser sein? LUNA überarbeitet den Antrag (du musst neu freigeben).", ""); if (feedback === null) return; flash("⏳ überarbeitet…"); await jpost(`/api/antraege/${id}/revidieren`, { feedback }); return reFreig(); }
+    case "antrag-loeschen": if (!confirm("Antrag wirklich löschen?")) return; await jpost(`/api/antraege/${id}/loeschen`); return reFreig();
+    case "antrag-mehr": { flash("⏳ Agenten…"); const r = await jpost(`/api/antraege/${id}/mehr-info`); if (r && r.bewertung) alert("LUNA-Bewertung:\n\n" + r.bewertung); return reFreig(); }
+    case "antrag-reformat": if (!confirm("Alle offenen Anträge neu formatieren? Freigegebene werden zurückgesetzt.")) return; flash("⏳ formatiert…"); await jpost("/api/antraege/neu-formatieren"); return reFreig();
     case "antrag-detail": return antragDetail(id);
     case "crm-todo": await jpost(`/api/crm/todo/${id}/erledigen`); return renderCrm();
     case "crm-firma": return crmFirma(id);
@@ -588,6 +603,7 @@ document.addEventListener("click", (e) => {
   const ed = e.target.closest("[data-editdash]"); if (ed) { EDIT2 = !EDIT2; renderDash(); return; }
   const wh2 = e.target.closest("[data-whide2]"); if (wh2) { hideW2(wh2.dataset.whide2); return; }
   const wa2 = e.target.closest("[data-wadd2]"); if (wa2) { showW2(wa2.dataset.wadd2); return; }
+  const ac0 = e.target.closest("[data-act]"); if (ac0) { handleAct(ac0.dataset.act, ac0); return; }  // Aktionen VOR Navigation (Inline-Buttons in klickbaren Kacheln)
   const g = e.target.closest("[data-go]"); if (g) { go(g.dataset.go); return; }
   const tb = e.target.closest("[data-tab]"); if (tb) { const [sec, id] = tb.dataset.tab.split(":"); go(sec, id); return; }
   const um = e.target.closest("[data-ui-mode]"); if (um) { setUiMode(um.dataset.uiMode); return; }
@@ -597,7 +613,13 @@ document.addEventListener("click", (e) => {
   const mc = e.target.closest("[data-modal-close]"); if (mc) { closeModal(); return; }
   const ac = e.target.closest("[data-act]"); if (ac) { handleAct(ac.dataset.act, ac); return; }
 });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { closeModal(); return; }
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches('.v2-tile.klick[role="button"]')) {
+    e.preventDefault(); const el = e.target;
+    if (el.dataset.go) go(el.dataset.go); else if (el.dataset.tab) { const [s, i] = el.dataset.tab.split(":"); go(s, i); }
+  }
+});
 
 /* Drag&Drop zum Anordnen der Dashboard-Widgets (nur im Edit-Modus) */
 document.addEventListener("dragstart", (e) => { const t = e.target.closest("[data-wid]"); if (!t || !EDIT2) return; DRAG2 = t.dataset.wid; t.classList.add("dragging"); });
