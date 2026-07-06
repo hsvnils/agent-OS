@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-06 13:20] — Claude Code
+- **Was:** Einmaliger **8-Wochen-Rueck-Scan** der Instagram-DMs gebaut. `InstagramConversations.nachrichten_seit`
+  blaettert die `messages`-Kante per `.after()`-Cursor bis zu einem Zeit-Cutoff zurueck; `CrmInstagramTracker
+  .backfill(wochen=8)` geht alle Threads durch und speist eingehende Text-DMs in den CRM-Pfad (dedupliziert
+  ueber `extern_id` -> keine Doppel mit dem laufenden Poll). Neues HoA-Tool **`crm_dm_backfill`** (Param
+  `wochen`, Default 8), per LUNA/Telegram ausloesbar. Tests: `nachrichten_seit`-Blaettern+Cutoff und
+  `backfill`-Zaehlung+Dedup (Suite 617 gruen). **Live-Probelauf:** 3 echte eingehende DMs gefunden.
+- **Warum:** CEO will die DMs der letzten 8 Wochen rueckwirkend ins CRM ziehen (einmalig). Reader las bisher
+  nur die letzten 20 Nachrichten je Thread.
+- **Betroffen:** `orchestrator/governance/instagram.py`, `orchestrator/core/crm_instagram.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/tests/test_crm_instagram.py`.
 ## [2026-07-06 12:45] — Claude Code
 - **Was:** Selbst-erneuernder Instagram/Meta-Token eingebaut. Neu `governance/instagram_token.py`
   (`InstagramTokenManager` + `ig_reader_aus_env`): haelt einen langlebigen 60-Tage-**Nutzer-Token** frisch

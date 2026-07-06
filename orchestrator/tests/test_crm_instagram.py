@@ -44,6 +44,35 @@ class TestInstagramConversations(unittest.TestCase):
         self.assertEqual(r.konversationen(), [])
         self.assertIn("page token", r.letzter_fehler)
 
+    def test_nachrichten_seit_blaettert_und_stoppt_am_cutoff(self):
+        import datetime
+        import time
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        def iso(days):
+            return (now - datetime.timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S+0000")
+
+        calls = {"n": 0}
+
+        def http(pfad, params):
+            calls["n"] += 1
+            f = params["fields"]
+            if ".after(" not in f:                              # Seite 1 (neueste)
+                return {"messages": {"data": [
+                    {"id": "m1", "from": {"id": "U1", "username": "co"}, "message": "neu", "created_time": iso(1)}],
+                    "paging": {"cursors": {"after": "A1"}}}}
+            if "after(A1)" in f:                                # Seite 2: eine im Fenster, eine zu alt
+                return {"messages": {"data": [
+                    {"id": "m2", "from": {"id": "U1", "username": "co"}, "message": "mittel", "created_time": iso(5)},
+                    {"id": "m3", "from": {"id": "U1", "username": "co"}, "message": "zu alt", "created_time": iso(70)}],
+                    "paging": {"cursors": {"after": "A2"}}}}
+            raise AssertionError("darf nach dem Cutoff nicht weiterblaettern")
+
+        r = InstagramConversations("tok", "OWN", http=http)
+        msgs = r.nachrichten_seit("c1", seit_ts=time.time() - 56 * 86400)   # 8 Wochen
+        self.assertEqual([m["id"] for m in msgs], ["m1", "m2"])              # m3 (70 Tage) raus
+        self.assertEqual(calls["n"], 2)                                     # Stopp am Cutoff, keine 3. Seite
+
 
 class FakeReader:
     own_id = "OWN"
@@ -52,10 +81,13 @@ class FakeReader:
     def __init__(self, convs):
         self._c = convs
 
-    def konversationen(self):
+    def konversationen(self, *, limit=None):
         return list(self._c.keys())
 
     def nachrichten(self, conv):
+        return self._c[conv]
+
+    def nachrichten_seit(self, conv, *, seit_ts=0.0, max_seiten=40):   # Backfill nutzt dieselben Daten
         return self._c[conv]
 
 
@@ -97,6 +129,21 @@ class TestCrmInstagramTracker(unittest.TestCase):
 
     def test_ohne_token_hinweis(self):
         r = CrmInstagramTracker(crm=self.crm, reader=InstagramConversations("", "")).lauf()
+        self.assertFalse(r["ok"])
+        self.assertIn("Token", r["hinweis"])
+
+    def test_backfill_zaehlt_und_dedupliziert(self):
+        r = CrmInstagramTracker(crm=self.crm, reader=self._reader()).backfill(wochen=8)
+        self.assertTrue(r["ok"])
+        self.assertEqual(r["wochen"], 8)
+        self.assertEqual(r["threads"], 1)
+        self.assertEqual(r["gesehen"], 1)          # eigene + leere uebersprungen
+        self.assertEqual(r["neu"], 1)
+        r2 = CrmInstagramTracker(crm=self.crm, reader=self._reader()).backfill(wochen=8)
+        self.assertEqual(r2["neu"], 0)             # gleiche Message-IDs -> Dedup
+
+    def test_backfill_ohne_token_hinweis(self):
+        r = CrmInstagramTracker(crm=self.crm, reader=InstagramConversations("", "")).backfill()
         self.assertFalse(r["ok"])
         self.assertIn("Token", r["hinweis"])
 

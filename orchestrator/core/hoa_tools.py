@@ -317,6 +317,10 @@ def tool_specs() -> list[dict]:
               "Conversations-API und legt neue eingehende Kooperations-DMs im CRM ab (Klassifikation + To-do). "
               "Nur Lesen; braucht INSTAGRAM_IG_USER_ID + Token (keine App-Review noetig). Ohne Keys: Hinweis.",
               {}, []),
+        _spec("crm_dm_backfill", "CRO/Collab-CRM: EINMALIGER Rueck-Scan der Instagram-DMs -- blaettert je "
+              "Thread bis `wochen` Wochen zurueck und legt alle eingehenden Kooperations-DMs im CRM ab "
+              "(dedupliziert, kollidiert nicht mit dem laufenden Poll). Nur Lesen.",
+              {"wochen": {"type": "integer", "description": "Wie viele Wochen zurueck scannen (Default 8)."}}, []),
         _spec("lagebild", "Proaktive Tages-Insights: was auf den CEO wartet (Entscheidungen/Antraege), heutige "
               "Termine, ungelesene Mails, offene Tickets, Agenda. Token-frugal aus den Stores + Google.",
               {}, []),
@@ -974,6 +978,17 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         reader = ig_reader_aus_env(ctx.secret_dict or {})   # selbst-erneuernder Seiten-Token oder statisch
         return CrmInstagramTracker(crm=ctx.crm, reader=reader, secrets=sec,
                                    notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
+
+    if name == "crm_dm_backfill":
+        if ctx.crm is None:
+            return {"fehler": "Collab-CRM nicht verfuegbar."}
+        from ..governance.instagram_token import ig_reader_aus_env
+        from .crm_instagram import CrmInstagramTracker
+        reader = ig_reader_aus_env(ctx.secret_dict or {})
+        wochen = int(args.get("wochen") or 8)
+        return CrmInstagramTracker(crm=ctx.crm, reader=reader, secrets=sec,
+                                   notify=(ctx.notifications.enqueue if ctx.notifications else None)
+                                   ).backfill(wochen=wochen)
 
     if name == "lagebild":
         if ctx.insights is None:

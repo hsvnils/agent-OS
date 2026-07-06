@@ -194,12 +194,56 @@ class InstagramConversations:
         if self._fehler_pruefen(d):
             return []
         msgs = (((d or {}).get("messages") or {}).get("data")) or []
-        out = []
-        for m in msgs:
-            frm = m.get("from") or {}
-            out.append({"id": m.get("id", ""), "from_id": str(frm.get("id", "")),
-                        "from_username": frm.get("username", ""), "text": (m.get("message") or "").strip(),
-                        "ts": m.get("created_time", "")})
+        return [self._norm(m) for m in msgs]
+
+    @staticmethod
+    def _norm(m: dict) -> dict:
+        frm = m.get("from") or {}
+        return {"id": m.get("id", ""), "from_id": str(frm.get("id", "")),
+                "from_username": frm.get("username", ""), "text": (m.get("message") or "").strip(),
+                "ts": m.get("created_time", "")}
+
+    @staticmethod
+    def _ts(iso: str) -> float:
+        """ISO-8601 (Meta: '...+0000') -> Unix-Sekunden; 0.0 bei Fehler."""
+        try:
+            import datetime
+            return datetime.datetime.fromisoformat((iso or "").replace("+0000", "+00:00")).timestamp()
+        except Exception:
+            return 0.0
+
+    def nachrichten_seit(self, conv_id: str, *, seit_ts: float = 0.0, max_seiten: int = 40,
+                         pro_seite: int = 25) -> list[dict]:
+        """Alle Nachrichten eines Threads **ab** `seit_ts` (Unix-Sekunden) -- durch Zurueckblaettern der
+        `messages`-Kante per `.after()`-Cursor (Nachrichten kommen neueste-zuerst). Stoppt, sobald eine
+        Nachricht aelter als `seit_ts` erreicht ist, keine Seite mehr folgt, oder `max_seiten` erreicht ist.
+        Fuer den einmaligen Rueck-Scan (Backfill). Rueckgabe wie `nachrichten`.
+        """
+        out: list[dict] = []
+        after = None
+        for _ in range(max(1, max_seiten)):
+            felder = f"messages.limit({pro_seite})"
+            if after:
+                felder += f".after({after})"
+            felder += "{id,created_time,from,message}"
+            try:
+                d = self.http(conv_id, {"fields": felder})
+            except Exception as exc:
+                self.letzter_fehler = str(exc)[:200]
+                break
+            if self._fehler_pruefen(d):
+                break
+            ed = (d or {}).get("messages") or {}
+            data = ed.get("data") or []
+            aelter = False
+            for m in data:
+                if seit_ts and self._ts(m.get("created_time")) < seit_ts:
+                    aelter = True                 # aelter als Grenze -> nicht uebernehmen (Rest ist noch aelter)
+                    continue
+                out.append(self._norm(m))
+            after = ((ed.get("paging") or {}).get("cursors") or {}).get("after")
+            if aelter or not after or not data:
+                break
         return out
 
 
