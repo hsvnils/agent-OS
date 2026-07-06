@@ -23,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from ...core.antraege import Antraege
 from ...core.brain import Brain
 from ...core.crm import CrmStore
+from ...core.ig_inbox import IgInboxStore
 from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, CUTTER_FELDER, CUTTER_STATUSES,
                                    DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES, SOURCE_FELDER,
                                    TREND_FELDER, TREND_STATUSES)
@@ -63,6 +64,7 @@ def _crm_projektor():
 
 crm_store = CrmStore(ROOT / "crm" / "log.jsonl", changelog=_changelog, projektor=_crm_projektor(),
                      notify=notifications.enqueue)   # Phase 23<->21: Injection im DM-Webhook meldet an CISO
+ig_inbox_store = IgInboxStore(ROOT / "ig_inbox" / "log.jsonl")   # Collab-Radar: Voll-Postfach-Archiv + KI-Analyse
 
 
 def _supabase_client():
@@ -1044,6 +1046,45 @@ def crm_timeline(firma: str = ""):
 def crm_todo_erledigen(todo_id: str):
     crm_store.todo_erledigen(todo_id)
     return JSONResponse({"ok": True})
+
+
+def _radar_kompakt(k: dict) -> dict:
+    a = k.get("analyse") or {}
+    return {"contact_id": k.get("contact_id"), "name": k.get("name"),
+            "nachrichten": k.get("nachrichten"), "ein": k.get("ein"), "aus": k.get("aus"),
+            "letzte_ts": k.get("letzte_ts"), "letzte_richtung": k.get("letzte_richtung"),
+            "letzter_text": k.get("letzter_text"), "analysiert": bool(a),
+            "collab": bool(a.get("collab")), "zusammenfassung": a.get("zusammenfassung") or "",
+            "stand": a.get("stand") or "", "offene_todos": a.get("offene_todos") or [],
+            "warten_auf": a.get("warten_auf") or "", "gesehen_ts": k.get("gesehen_ts"),
+            "reminder_ts": k.get("reminder_ts")}
+
+
+@app.get("/api/collab-radar")
+def collab_radar(nur_collab: int = 0):
+    """Collab-Radar (Phase 3): Kontakte aus dem Voll-Postfach-Archiv mit KI-Analyse -- collab ja/nein,
+    Zusammenfassung, Stand, offene To-dos, wer am Zug. Nur Lesen. `nur_collab=1` filtert auf Kooperationen."""
+    kontakte = ig_inbox_store.kontakte()
+    kontakte.sort(key=lambda k: k.get("letzte_ts") or "", reverse=True)
+    alle = [_radar_kompakt(k) for k in kontakte]
+    uebersicht = {
+        "kontakte": len(alle),
+        "collab": sum(1 for k in alle if k["collab"]),
+        "warten_auf_uns": sum(1 for k in alle if k["collab"] and k["warten_auf"] == "uns"),
+        "offene_todos": sum(len(k["offene_todos"]) for k in alle if k["collab"]),
+        "unanalysiert": sum(1 for k in alle if not k["analysiert"]),
+    }
+    liste = [k for k in alle if k["collab"]] if nur_collab else alle
+    return {"uebersicht": uebersicht, "kontakte": liste[:100]}
+
+
+@app.get("/api/collab-radar/verlauf")
+def collab_radar_verlauf(contact_id: str):
+    """Voller Gespraechs-Verlauf eines Kontakts (ein/aus, Medien-Marker), chronologisch."""
+    msgs = ig_inbox_store.verlauf(contact_id)
+    return {"contact_id": contact_id, "nachrichten": [
+        {"richtung": m.get("richtung"), "text": ("[Medien]" if m.get("medien") else m.get("text")),
+         "ts": m.get("ts_msg") or m.get("ts")} for m in msgs][-80:]}
 
 
 # content_ops -- Trends (K2)

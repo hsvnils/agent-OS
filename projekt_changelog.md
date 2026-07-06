@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-06 15:25] — Claude Code
+- **Was:** **Collab-Radar Phase 3** (Ansicht in LUNA-OS, V2). `app.py`: `IgInboxStore` verdrahtet +
+  Endpunkte `/api/collab-radar` (Kontakte mit KI-Analyse: collab, Zusammenfassung, Stand, offene To-dos,
+  warten_auf; Uebersicht collab/warten_auf_uns/offene_todos/unanalysiert; `nur_collab`-Filter) und
+  `/api/collab-radar/verlauf` (voller Gespraechs-Verlauf ein/aus). `app-v2.js`: neue Sektion **„Radar"**
+  (🎯) mit KPIs, Tabs „Nur Collabs / Alle Kontakte", Kontaktliste (Collab-/„Wir am Zug"-Badge + KI-
+  Zusammenfassung) + Verlaufs-Modal. Cache `app-v2.js?v=12`. **Im echten Dashboard verifiziert** (API 200,
+  KPIs, Liste, Detail-Modal, keine Konsolenfehler). 628 Tests gruen.
+- **Warum:** CEO will Collab-Gespraeche mit KI-Erkenntnissen (offene To-dos, wer am Zug) sichtbar haben.
+- **Betroffen:** `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`,
+  `orchestrator/channels/web/static/index-v2.html`. OFFEN: V1-Parität (app.js) + Phase 4 (Reminder).
 ## [2026-07-06 14:55] — Claude Code
 - **Was:** **Collab-Radar Phase 2** (KI-Analyse je Gespraech, **modell-agnostisch**). Neu `core/ig_analyse.py`:
   `IgAnalyzer` liest den Verlauf eines Kontakts und laesst ein guenstiges Modell erkennen: collab ja/nein,

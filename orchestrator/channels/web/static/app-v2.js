@@ -66,6 +66,7 @@ const SECTIONS = [
   { id: "freigaben", icon: "✔", label: "Freigaben", app: "auftraege" },
   { id: "investment", icon: "📈", label: "Investment", app: "investment" },
   { id: "crm", icon: "🤝", label: "CRM", app: "crm" },
+  { id: "radar", icon: "🎯", label: "Radar", app: "crm" },
   { id: "content", icon: "✎", label: "Content", app: "trends" },
   { id: "cutter", icon: "🎬", label: "Cutter", app: "cutter" },
   { id: "wissen", icon: "🧠", label: "Wissen", app: "wissen" },
@@ -393,6 +394,37 @@ async function crmFirma(firma) {
   openModal(firma, (d && d.nachrichten || []).map(m => crmMsg(m, false)).join("") || emptyRow("Kein Verlauf."));
 }
 
+/* =========================== Collab-Radar =========================== */
+RENDER.radar = renderCollabRadar;
+async function renderCollabRadar() {
+  const sub = SUBTAB.radar || "collab";
+  const r = await jget("/api/collab-radar" + (sub === "collab" ? "?nur_collab=1" : "")) || {};
+  const u = r.uebersicht || {}, ks = r.kontakte || [];
+  const wartenBadge = (w) => w === "uns" ? `<span class="v2-badge wartet">Wir am Zug</span>`
+    : w === "kontakt" ? `<span class="v2-badge neutral">Warten auf Kontakt</span>` : "";
+  const rows = ks.map(k => {
+    const todos = (k.offene_todos || []).length;
+    const info = k.analysiert ? esc(k.zusammenfassung || k.stand || "—") : "Noch nicht analysiert";
+    return `<div class="v2-list-row klick" data-act="radar-kontakt" data-id="${esc(k.contact_id)}">
+      <span class="v2-badge ${k.collab ? "ok" : "neutral"}">${k.collab ? "Collab" : "—"}</span>
+      <div class="grow"><b>@${esc(k.name)}</b> ${wartenBadge(k.warten_auf)}<small>${info}${todos ? " · " + todos + " To-do" : ""} · ${k.nachrichten || 0} Nachr. (ein ${k.ein}/aus ${k.aus})</small></div><span>›</span></div>`;
+  }).join("") || emptyRow(sub === "collab"
+    ? "Noch keine Collab-Gespräche erkannt — erst Postfach synchronisieren und analysieren lassen."
+    : "Kein Kontakt im Archiv — sag LUNA „synchronisiere das Instagram-Postfach\".");
+  const body = `${kpiTile("Collab-Gespräche", String(u.collab || 0), null, "erkannt")}${kpiTile("Wir am Zug", String(u.warten_auf_uns || 0), null, "warten auf uns")}
+    ${kpiTile("Offene To-dos", String(u.offene_todos || 0), null, "aus Analysen")}${kpiTile("Unanalysiert", String(u.unanalysiert || 0), null, "Kontakte")}
+    ${tile("Kontakte", rows, "w12")}`;
+  $("#v2-app").innerHTML = secHead("Collab-Radar") + tabs("radar", [["collab", "Nur Collabs"], ["alle", "Alle Kontakte"]]) + `<div class="v2-grid">${body}</div>`;
+}
+async function radarKontakt(cid) {
+  openModal("Gesprächs-Verlauf", `<div class="v2-empty">Lade Verlauf…</div>`);
+  const d = await jget("/api/collab-radar/verlauf?contact_id=" + encodeURIComponent(cid)) || {};
+  const rows = (d.nachrichten || []).map(m =>
+    `<div class="v2-list-row"><span title="${m.richtung === "ein" ? "eingehend" : "ausgehend"}">${m.richtung === "ein" ? "⬅︎" : "➡︎"}</span><div class="grow"><b>${esc(m.text || "")}</b><small>${m.richtung === "ein" ? "Kontakt" : "Wir"}${m.ts ? " · " + esc(m.ts) : ""}</small></div></div>`
+  ).join("") || emptyRow("Kein Verlauf.");
+  openModal("Gesprächs-Verlauf", rows);
+}
+
 /* =========================== Content (Sub-Tabs) =========================== */
 RENDER.content = renderContent;
 async function renderContent() {
@@ -539,6 +571,7 @@ async function handleAct(act, el) {
     case "antrag-detail": return antragDetail(id);
     case "crm-todo": await jpost(`/api/crm/todo/${id}/erledigen`); return renderCrm();
     case "crm-firma": return crmFirma(id);
+    case "radar-kontakt": return radarKontakt(id);
     case "status": {
       const map = { trend: ["/api/trends/", "status", renderContent], idea: ["/api/ideas/", "status", renderContent], draft: ["/api/drafts/", "status", renderContent], ai: ["/api/ai-inbox/", "recommendation", renderContent] };
       const [base, key, re] = map[typ]; await jpost(`${base}${encodeURIComponent(id)}/${key === "recommendation" ? "recommendation" : "status"}`, key === "recommendation" ? { recommendation: val } : { status: val }); return re();
