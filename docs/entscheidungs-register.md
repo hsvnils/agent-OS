@@ -29,6 +29,7 @@
 | **agency-agents #525** („The Agency") | 2026-07-03 | **MINIMAL** (nur Metrik-Idee) | Phase 24 |
 | **VoltAgent/awesome-agent-skills** (1000+ Skills) | 2026-07-03 | **SPAETER** (nur via Security-Gate) | Phase 24 |
 | **Gemini „Omni"** (Video-Verstaendnis fuer den Cutter) | 2026-07-03 | **OPT-IN-PILOT GEBAUT** (Aktivieren = CEO-Tor) | Cutter Phase 15 (`--video-ki`) |
+| **Gemini 3.5 Flash — Free-Tier fuer DM-Gespraechsanalyse** (Collab-Radar Phase 2) | 2026-07-06 | **FREE-TIER REAL** (1.500 Anfragen/Tag = 0 EUR) **ABER Datenschutz-Haken:** Free-Tier nutzt Inhalte zum **Google-Training** -> fuer private Partner-DMs kritisch. Empfehlung: Bezahl-Tier ($1,50/$9, keine Datennutzung) oder Anthropic Haiku. **Analyse modell-agnostisch gebaut** (`IG_ANALYSE_MODELL`, Schalter Gemini/OpenAI/Claude). **Modellwahl = CEO-Tor (Datenschutz)** | `core/ig_analyse.py` |
 | **NVIDIA Nemotron 3 Ultra** (550B-MoE, offene Gewichte) | 2026-07-03 | **SPAETER/OPTIONAL** (technisch machbar; kein Bedarf jetzt) | Multi-Provider-Fallback-Kandidat -- CEO-Tor |
 | **CFO Token-Erfassung je Agent** (aus Repo-Report) | 2026-07-03 | **UEBERNEHMEN** (Idee, home-grown) | Finance Stufe 2.5 -- `model_router` usage -> KostenStore |
 | **langfuse** (LLM-Observability, self-hosted) | 2026-07-03 | **SPAETER/OPTIONAL** (schwer f. NAS) | nur falls Trace-UI gewuenscht |

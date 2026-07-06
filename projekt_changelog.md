@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-06 14:55] — Claude Code
+- **Was:** **Collab-Radar Phase 2** (KI-Analyse je Gespraech, **modell-agnostisch**). Neu `core/ig_analyse.py`:
+  `IgAnalyzer` liest den Verlauf eines Kontakts und laesst ein guenstiges Modell erkennen: collab ja/nein,
+  Zusammenfassung, Stand, offene To-dos, warten_auf (uns/kontakt/niemand). `analyse_llm_aus_env` waehlt den
+  Provider per `IG_ANALYSE_MODELL` (gemini*/gpt*/claude*) + passendem Key (OpenAI-kompatibel fuer Gemini).
+  Reine Medien -> kein Modellaufruf; nur bei neuen Nachrichten neu analysieren (`braucht_analyse`) -> minimale
+  Kosten. Tool **`ig_analyse`**. Tests `test_ig_analyse.py` (5) + Suite gruen (628). **Gemini-3.5-Flash-Check:**
+  Free-Tier real (1.500/Tag), ABER nutzt Inhalte zum Training -> Datenschutz-Haken bei privaten DMs; Register
+  aktualisiert; Modellwahl = CEO-Tor.
+- **Warum:** CEO will Gespraeche automatisch verstehen (Collab-Filter, offene To-dos) und fragte nach dem
+  (angeblich kostenlosen) Gemini 3.5 Flash.
+- **Betroffen:** `orchestrator/core/ig_analyse.py` (neu), `orchestrator/tests/test_ig_analyse.py` (neu),
+  `orchestrator/core/hoa_tools.py`, `docs/entscheidungs-register.md`.
 ## [2026-07-06 14:30] — Claude Code
 - **Was:** **Collab-Radar Phase 1** (Voll-Postfach-Archiv). Neu `core/ig_inbox.py`: `IgInboxStore`
   (event-sourced JSONL `ig_inbox/log.jsonl`, gitignored + deploy-excl) spiegelt das **gesamte** IG-Postfach

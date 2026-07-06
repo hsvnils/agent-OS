@@ -325,6 +325,10 @@ def tool_specs() -> list[dict]:
               "ausgehend, alle Kontakte, Text + Medien-Marker) ins Archiv `ig_inbox` (dedupliziert). Grundlage "
               "fuer KI-Analyse + Nachfass-Reminder. Nur Lesen. Zeit-Budget -> ggf. teilweise (erneut ausloesen).",
               {"wochen": {"type": "integer", "description": "Wie viele Wochen zurueck (Default 8)."}}, []),
+        _spec("ig_analyse", "Collab-Radar Phase 2: analysiert die Instagram-Gespraeche im Archiv mit einem "
+              "guenstigen KI-Modell (collab ja/nein, Zusammenfassung, Stand, offene To-dos, wer am Zug). Nur "
+              "neue seit letzter Analyse (ausser alle=true). Modell via IG_ANALYSE_MODELL.",
+              {"alle": {"type": "boolean", "description": "true -> alle Gespraeche neu analysieren."}}, []),
         _spec("lagebild", "Proaktive Tages-Insights: was auf den CEO wartet (Entscheidungen/Antraege), heutige "
               "Termine, ungelesene Mails, offene Tickets, Agenda. Token-frugal aus den Stores + Google.",
               {}, []),
@@ -1001,6 +1005,15 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         store = IgInboxStore(ctx.repo_root / "ig_inbox" / "log.jsonl", secrets=sec)
         wochen = int(args.get("wochen") or 8)
         return IgInboxSync(store=store, reader=reader).voll_sync(wochen=wochen)
+
+    if name == "ig_analyse":
+        from .ig_inbox import IgInboxStore
+        from .ig_analyse import IgAnalyzer, analyse_llm_aus_env
+        env = ctx.secret_dict or {}
+        store = IgInboxStore(ctx.repo_root / "ig_inbox" / "log.jsonl", secrets=sec)
+        modell = (env.get("IG_ANALYSE_MODELL") or "gemini-flash-latest").strip()
+        az = IgAnalyzer(llm=analyse_llm_aus_env(env), modell=modell)
+        return az.analysiere_store(store, nur_neue=not bool(args.get("alle")))
 
     if name == "lagebild":
         if ctx.insights is None:
