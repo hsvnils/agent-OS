@@ -468,13 +468,19 @@ _LUNA_SESSION: dict = {}
 def _secret(name: str) -> str:
     """Liest einen Wert aus orchestrator/.env (gecacht). Unabhaengig vom Anthropic-Zugang --
     damit z. B. ElevenLabs-TTS auch dann geht, wenn die volle LUNA mangels Anthropic-Key ausfaellt."""
+    return _secrets_dict().get(name) or os.environ.get(name, "")
+
+
+def _secrets_dict() -> dict:
+    """Vollstaendiges (gecachtes) Secrets-Dict aus orchestrator/.env -- fuer Aufrufer, die mehrere Keys auf
+    einmal brauchen (z. B. der manuelle Instagram-DM-Sync). Unabhaengig vom Anthropic-Zugang."""
     if "d" not in _SECRETS_CACHE:
         try:
             from ..telegram.bot import _load_secrets
             _SECRETS_CACHE["d"] = _load_secrets()
         except Exception:
             _SECRETS_CACHE["d"] = {}
-    return _SECRETS_CACHE["d"].get(name) or os.environ.get(name, "")
+    return _SECRETS_CACHE["d"]
 
 
 def _ctx_cached():
@@ -1054,6 +1060,23 @@ def crm_timeline(firma: str = ""):
 def crm_todo_erledigen(todo_id: str):
     crm_store.todo_erledigen(todo_id)
     return JSONResponse({"ok": True})
+
+
+@app.post("/api/crm/sync")
+async def crm_sync():
+    """Manueller Instagram-DM-Abruf -- macht dasselbe wie der automatische Poll: pollt die DM-Threads des
+    EIGENEN Kontos ueber die Graph Conversations-API und speist neue EINGEHENDE Kooperations-DMs in den
+    CRM-Pfad (Klassifikation + To-do + Notifier). Nur Empfang/Lesen -- kein Senden (Oeffentlichkeit = CEO-Tor).
+    Gibt {ok, gesehen, neu} bzw. {ok:false, hinweis/api_fehler}."""
+    from ...governance.instagram_token import ig_reader_aus_env
+    from ...governance.leak_guard import is_redactable_secret
+    from ...core.crm_instagram import CrmInstagramTracker
+    sec_dict = _secrets_dict()
+    reader = ig_reader_aus_env(sec_dict)
+    sec = [v for v in sec_dict.values() if isinstance(v, str) and is_redactable_secret(v)]
+    tracker = CrmInstagramTracker(crm=crm_store, reader=reader, secrets=sec, notify=notifications.enqueue)
+    res = await asyncio.to_thread(tracker.lauf)
+    return JSONResponse(res)
 
 
 def _radar_kompakt(k: dict) -> dict:

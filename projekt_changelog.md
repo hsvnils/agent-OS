@@ -17,7 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-07-06 16:10] — Claude Code
+## [2026-07-06 16:50] — Claude Code
+- **Was:** Manuellen Instagram-DM-Sync-Button „🔄 DMs synchronisieren" in der Collab-CRM-Ansicht (LUNA-OS V2)
+  eingebaut. Neuer Endpunkt `POST /api/crm/sync` ruft denselben inkrementellen DM-Poll auf wie die Automatik
+  (`CrmInstagramTracker.lauf()` -> Graph Conversations-API des eigenen Kontos -> `verarbeite_eingang`:
+  Klassifikation/To-do/Notifier; nur Empfang, kein Senden). Neuer Helfer `_secrets_dict()` in app.py.
+  Cache-Bust app-v2.js v12 -> v13.
+- **Warum:** Fuer den Meta-App-Review-Screencast: der Pruefer sieht den manuellen Abruf direkt in der
+  OS-Oberflaeche (Webhook stellt im Dev-Modus nicht zuverlaessig live zu). CEO-Anweisung in der Sitzung.
+- **Betroffen:** orchestrator/channels/web/app.py, orchestrator/channels/web/static/app-v2.js,
+  orchestrator/channels/web/static/index-v2.html
 - **Was:** Instagram-Webhook spiegelt eingehende DMs jetzt zusaetzlich ins Collab-Radar-Voll-Archiv
   (`ig_inbox_store.nachricht_hinzu`), unabhaengig von der Konversations-Enumeration.
 - **Warum:** DIAGNOSE: `me/conversations?platform=instagram` gibt fuer das (grosse) CEO-Postfach nur 1 Thread
