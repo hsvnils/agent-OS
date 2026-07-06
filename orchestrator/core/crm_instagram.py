@@ -41,10 +41,12 @@ class CrmInstagramTracker:
             ergebnis["api_fehler"] = fehler
         return ergebnis
 
-    def backfill(self, *, wochen: int = 8, max_konv: int = 50, max_seiten: int = 40) -> dict:
+    def backfill(self, *, wochen: int = 8, max_konv: int = 50, max_seiten: int = 40,
+                 zeit_budget_s: int = 90) -> dict:
         """EINMALIGER Rueck-Scan: blaettert je Thread bis `wochen` Wochen zurueck und speist alle eingehenden
         Text-DMs in den CRM-Pfad (dedupliziert ueber `extern_id` -> keine Doppel mit dem laufenden Poll).
-        Gibt {ok, wochen, threads, gesehen, neu}. Braucht `reader.nachrichten_seit`.
+        `zeit_budget_s`: harte Laufzeit-Grenze -> antwortet garantiert; bei Abbruch `teilweise=True` (einfach
+        erneut ausloesen, Dedup verhindert Doppel). Gibt Aufschluesselung. Braucht `reader.nachrichten_seit`.
         """
         if not self.verfuegbar():
             return {"ok": False, "hinweis": "Instagram-Token/IG-User-ID fehlt (INSTAGRAM_USER_TOKEN + "
@@ -53,10 +55,13 @@ class CrmInstagramTracker:
             return {"ok": False, "hinweis": "Reader kann nicht zurueckblaettern (nachrichten_seit fehlt)."}
         import time
         seit_ts = time.time() - max(1, wochen) * 7 * 86400
+        deadline = time.time() + max(10, zeit_budget_s)
         threads = nachrichten = ausgehend = eingehend = eingehend_ohne_text = gesehen = neu = 0
-        for conv in self.reader.konversationen(limit=max_konv):
+        for conv in self.reader.konversationen(limit=max_konv, deadline=deadline):
+            if time.time() > deadline:
+                break
             threads += 1
-            for m in self.reader.nachrichten_seit(conv, seit_ts=seit_ts, max_seiten=max_seiten):
+            for m in self.reader.nachrichten_seit(conv, seit_ts=seit_ts, max_seiten=max_seiten, deadline=deadline):
                 nachrichten += 1
                 if m.get("from_id") == self.reader.own_id:
                     ausgehend += 1                             # eigene ausgehende Nachricht -> nicht ins CRM
@@ -72,9 +77,14 @@ class CrmInstagramTracker:
                 if res.get("mid"):                             # "" bei Duplikat (Dedup ueber extern_id)
                     neu += 1
         # Transparente Aufschluesselung, damit sichtbar ist, WAS gefiltert wurde (CRM = nur eingehender Text).
+        teilweise = time.time() > deadline
         ergebnis = {"ok": True, "wochen": wochen, "threads": threads, "nachrichten": nachrichten,
                     "ausgehend": ausgehend, "eingehend": eingehend,
-                    "eingehend_ohne_text": eingehend_ohne_text, "gesehen": gesehen, "neu": neu}
+                    "eingehend_ohne_text": eingehend_ohne_text, "gesehen": gesehen, "neu": neu,
+                    "teilweise": teilweise}
+        if teilweise:
+            ergebnis["hinweis"] = ("Zeit-Budget erreicht -> Teilergebnis. Einfach erneut ausloesen, um weiter "
+                                   "zurueck zu scannen (dedupliziert, keine Doppel).")
         fehler = getattr(self.reader, "letzter_fehler", "")
         if not gesehen and fehler:
             ergebnis["api_fehler"] = fehler

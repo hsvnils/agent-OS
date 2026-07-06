@@ -81,13 +81,13 @@ class FakeReader:
     def __init__(self, convs):
         self._c = convs
 
-    def konversationen(self, *, limit=None):
+    def konversationen(self, *, limit=None, deadline=0.0):
         return list(self._c.keys())
 
     def nachrichten(self, conv):
         return self._c[conv]
 
-    def nachrichten_seit(self, conv, *, seit_ts=0.0, max_seiten=40):   # Backfill nutzt dieselben Daten
+    def nachrichten_seit(self, conv, *, seit_ts=0.0, max_seiten=40, deadline=0.0):   # Backfill nutzt dieselben Daten
         return self._c[conv]
 
 

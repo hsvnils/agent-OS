@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-06 13:45] — Claude Code
+- **Was:** Backfill-Laufzeit gebaendigt: hartes **Zeit-Budget** (`zeit_budget_s`, Default 90s) mit
+  `deadline`-Abbruch in `konversationen`/`nachrichten_seit`; Reader-Timeout 20->15s. `backfill` liefert bei
+  Abbruch `teilweise=True` + Hinweis (erneut ausloesen -> dedupliziert weiter). Behebt: LUNA gab beim tiefen
+  Scan minutenlang keine Rueckmeldung (Timeout-Gefahr).
+- **Warum:** CEO loeste den 8-Wochen-Scan aus und bekam 7 Min lang keine Antwort (viele sequenzielle
+  Meta-Abfragen ~8s/Seite -> synchroner Tool-Aufruf lief zu lange / Timeout-Risiko).
+- **Betroffen:** `orchestrator/governance/instagram.py`, `orchestrator/core/crm_instagram.py`,
+  `orchestrator/tests/test_crm_instagram.py`.
 ## [2026-07-06 13:20] — Claude Code
 - **Was:** Einmaliger **8-Wochen-Rueck-Scan** der Instagram-DMs gebaut. `InstagramConversations.nachrichten_seit`
   blaettert die `messages`-Kante per `.after()`-Cursor bis zu einem Zeit-Cutoff zurueck; `CrmInstagramTracker

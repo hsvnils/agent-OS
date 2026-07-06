@@ -113,13 +113,14 @@ class InstagramConversations:
     """
 
     def __init__(self, token: str, own_id, *, http=None,
-                 base: str = "https://graph.facebook.com/v25.0"):
+                 base: str = "https://graph.facebook.com/v25.0", timeout: int = 15):
         # Default = Facebook-Login-Variante (graph.facebook.com, Konversationen ueber {ig-user-id}).
         # Fuer die Instagram-Login-Variante base auf graph.instagram.com setzen -> dann 'me/conversations'.
         self.token = (token or "").strip()
         self.own_id = str(own_id or "").strip()
         self.http = http or self._get
         self.base = base
+        self.timeout = timeout              # kurzer Timeout -> haengende/leere Endseiten kosten wenig
         self.letzter_fehler = ""            # letzte API-Fehlermeldung (fuer Diagnose)
 
     def _konv_pfad(self) -> str:
@@ -140,7 +141,7 @@ class InstagramConversations:
         p = dict(params or {}); p["access_token"] = self.token
         url = f"{self.base}/{pfad}?{urllib.parse.urlencode(p)}"
         try:
-            with urllib.request.urlopen(url, timeout=20) as r:
+            with urllib.request.urlopen(url, timeout=self.timeout) as r:
                 return json.loads(r.read().decode("utf-8"))
         except urllib.error.HTTPError as e:      # Metas Fehler-JSON (message/#code) lesbar durchreichen
             try:
@@ -157,14 +158,18 @@ class InstagramConversations:
             return True
         return False
 
-    def konversationen(self, *, limit: int = 25) -> list[str]:
+    def konversationen(self, *, limit: int = 25, deadline: float = 0.0) -> list[str]:
         # Meta-Eigenheit: `platform=instagram` vertraegt pro Seite nur **limit=1** -- hoehere Limits liefern
         # zuverlaessig HTTP 500 / Code 1 ("Please reduce the amount of data you're asking for"). Deshalb
         # blaettern wir Thread fuer Thread mit dem `after`-Cursor durch, bis `limit` Threads gesammelt sind
         # oder keine Seite mehr folgt. Threads kommen nach Aktivitaet sortiert (neueste zuerst).
+        # `deadline` (Unix-Sekunden, 0 = aus): Abbruch, sobald ueberschritten -> haelt Backfill-Laufzeit im Zaum.
+        import time
         ids: list[str] = []
         after = None
         for _ in range(max(1, limit)):
+            if deadline and time.time() > deadline:
+                break
             params = {"platform": "instagram", "fields": "id", "limit": "1"}
             if after:
                 params["after"] = after
@@ -213,15 +218,18 @@ class InstagramConversations:
             return 0.0
 
     def nachrichten_seit(self, conv_id: str, *, seit_ts: float = 0.0, max_seiten: int = 40,
-                         pro_seite: int = 25) -> list[dict]:
+                         pro_seite: int = 25, deadline: float = 0.0) -> list[dict]:
         """Alle Nachrichten eines Threads **ab** `seit_ts` (Unix-Sekunden) -- durch Zurueckblaettern der
         `messages`-Kante per `.after()`-Cursor (Nachrichten kommen neueste-zuerst). Stoppt, sobald eine
-        Nachricht aelter als `seit_ts` erreicht ist, keine Seite mehr folgt, oder `max_seiten` erreicht ist.
-        Fuer den einmaligen Rueck-Scan (Backfill). Rueckgabe wie `nachrichten`.
+        Nachricht aelter als `seit_ts` erreicht ist, keine Seite mehr folgt, `max_seiten` erreicht ist oder
+        die `deadline` (Unix-Sekunden, 0 = aus) ueberschritten wird. Fuer den einmaligen Rueck-Scan (Backfill).
         """
+        import time
         out: list[dict] = []
         after = None
         for _ in range(max(1, max_seiten)):
+            if deadline and time.time() > deadline:
+                break
             felder = f"messages.limit({pro_seite})"
             if after:
                 felder += f".after({after})"
