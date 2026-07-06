@@ -996,6 +996,14 @@ async def instagram_webhook(request: Request):
         if not r.get("mid"):
             continue
         erfasst += 1
+        # Auch ins Collab-Radar-Voll-Archiv spiegeln (eingehend) -> Radar waechst in Echtzeit mit, unabhaengig
+        # von der (fuer grosse Postfaecher unzuverlaessigen) Konversations-Enumeration.
+        try:
+            ig_inbox_store.nachricht_hinzu(absender, absender, richtung="ein", text=n.get("text", ""),
+                                           medien=False, extern_id=n.get("extern_id", ""),
+                                           ts_msg=str(n.get("ts") or ""))
+        except Exception:
+            pass
         if r.get("kategorie") == "kooperation":   # nur Kooperationsanfragen melden (kein Spam bei Privatem)
             try:
                 notifications.enqueue(f"Neue Kooperations-DM von {r['firma']} (Instagram): {n['text'][:180]}",

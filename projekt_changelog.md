@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-06 16:10] — Claude Code
+- **Was:** Instagram-Webhook spiegelt eingehende DMs jetzt zusaetzlich ins Collab-Radar-Voll-Archiv
+  (`ig_inbox_store.nachricht_hinzu`), unabhaengig von der Konversations-Enumeration.
+- **Warum:** DIAGNOSE: `me/conversations?platform=instagram` gibt fuer das (grosse) CEO-Postfach nur 1 Thread
+  zurueck und bricht bei mehr mit code-1/Timeout ab (Meta-seitige Ueberlastung) -> Sync UND CRM-Poll sehen nur
+  1 Thread; die vielen echten Marken-Threads fehlen. Zuverlaessiger Weg = Webhook (event-getrieben). ABER: eine
+  brandneue Marken-Antwort (irobot 15:18) kam NICHT im System an -> Webhook-Zustellung muss geprueft werden.
+- **Betroffen:** `orchestrator/channels/web/app.py`.
+
 ## [2026-07-06 15:45] — Claude Code
 - **Was:** **Collab-Radar Automatik** statt Buttons. Im Bot-Poll (`bot.py`) laeuft jetzt **einmal pro Tag**
   automatisch: Voll-Postfach-Sync (`IgInboxSync.voll_sync`) + KI-Analyse neuer Gespraeche
