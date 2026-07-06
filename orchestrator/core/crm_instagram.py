@@ -53,19 +53,28 @@ class CrmInstagramTracker:
             return {"ok": False, "hinweis": "Reader kann nicht zurueckblaettern (nachrichten_seit fehlt)."}
         import time
         seit_ts = time.time() - max(1, wochen) * 7 * 86400
-        threads = gesehen = neu = 0
+        threads = nachrichten = ausgehend = eingehend = eingehend_ohne_text = gesehen = neu = 0
         for conv in self.reader.konversationen(limit=max_konv):
             threads += 1
             for m in self.reader.nachrichten_seit(conv, seit_ts=seit_ts, max_seiten=max_seiten):
-                if not m.get("text") or m.get("from_id") == self.reader.own_id:
-                    continue                                   # leer oder eigene ausgehende Nachricht
+                nachrichten += 1
+                if m.get("from_id") == self.reader.own_id:
+                    ausgehend += 1                             # eigene ausgehende Nachricht -> nicht ins CRM
+                    continue
+                eingehend += 1
+                if not m.get("text"):
+                    eingehend_ohne_text += 1                   # Medien/Reaktion/Like ohne Text -> nicht ins CRM
+                    continue
                 gesehen += 1
                 firma = m.get("from_username") or m.get("from_id") or "unbekannt"
                 res = self.crm.verarbeite_eingang(firma, m["text"], quelle="instagram",
                                                   absender=m.get("from_id", ""), extern_id=m.get("id", ""))
                 if res.get("mid"):                             # "" bei Duplikat (Dedup ueber extern_id)
                     neu += 1
-        ergebnis = {"ok": True, "wochen": wochen, "threads": threads, "gesehen": gesehen, "neu": neu}
+        # Transparente Aufschluesselung, damit sichtbar ist, WAS gefiltert wurde (CRM = nur eingehender Text).
+        ergebnis = {"ok": True, "wochen": wochen, "threads": threads, "nachrichten": nachrichten,
+                    "ausgehend": ausgehend, "eingehend": eingehend,
+                    "eingehend_ohne_text": eingehend_ohne_text, "gesehen": gesehen, "neu": neu}
         fehler = getattr(self.reader, "letzter_fehler", "")
         if not gesehen and fehler:
             ergebnis["api_fehler"] = fehler

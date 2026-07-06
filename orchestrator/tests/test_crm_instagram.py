@@ -137,7 +137,11 @@ class TestCrmInstagramTracker(unittest.TestCase):
         self.assertTrue(r["ok"])
         self.assertEqual(r["wochen"], 8)
         self.assertEqual(r["threads"], 1)
-        self.assertEqual(r["gesehen"], 1)          # eigene + leere uebersprungen
+        self.assertEqual(r["nachrichten"], 3)      # transparente Aufschluesselung
+        self.assertEqual(r["ausgehend"], 1)        # m2 (OWN)
+        self.assertEqual(r["eingehend"], 2)        # m1 + m3
+        self.assertEqual(r["eingehend_ohne_text"], 1)  # m3 (leer)
+        self.assertEqual(r["gesehen"], 1)          # nur m1 (eingehend + Text)
         self.assertEqual(r["neu"], 1)
         r2 = CrmInstagramTracker(crm=self.crm, reader=self._reader()).backfill(wochen=8)
         self.assertEqual(r2["neu"], 0)             # gleiche Message-IDs -> Dedup
