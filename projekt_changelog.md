@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-06 15:45] — Claude Code
+- **Was:** **Collab-Radar Automatik** statt Buttons. Im Bot-Poll (`bot.py`) laeuft jetzt **einmal pro Tag**
+  automatisch: Voll-Postfach-Sync (`IgInboxSync.voll_sync`) + KI-Analyse neuer Gespraeche
+  (`IgAnalyzer.analysiere_store`). Opt-in `IG_RADAR_AUTO=1`; Tages-Drossel ueber `WatchStore.last_run`
+  (laeuft nicht in jedem 15-Min-Tick -> Meta-/Kosten-schonend); Modell via `IG_ANALYSE_MODELL`. Manuell
+  weiterhin `ig_postfach_sync`/`ig_analyse`.
+- **Warum:** CEO fragte Buttons vs. automatisch -> Automatik ist besser (kein manuelles Triggern). Rueckwirkender
+  8-Wochen-Sync ist einmalig erledigt (399 Nachrichten, 0 Collab = korrekt, nur Test-Chat vorhanden).
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`.
 ## [2026-07-06 15:25] — Claude Code
 - **Was:** **Collab-Radar Phase 3** (Ansicht in LUNA-OS, V2). `app.py`: `IgInboxStore` verdrahtet +
   Endpunkte `/api/collab-radar` (Kontakte mit KI-Analyse: collab, Zusammenfassung, Stand, offene To-dos,

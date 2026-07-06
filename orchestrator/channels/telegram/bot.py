@@ -1070,6 +1070,26 @@ def main() -> None:
                     if _ig_reader.verfuegbar:
                         CrmInstagramTracker(crm=ctx.crm, reader=_ig_reader, secrets=ctx.leak_secrets,
                                             notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
+                # Collab-Radar: EINMAL PRO TAG das Voll-Postfach spiegeln + neue Gespraeche analysieren
+                # (opt-in IG_RADAR_AUTO=1; Modell via IG_ANALYSE_MODELL). Tages-Drossel ueber WatchStore.last_run
+                # -> laeuft nicht in jedem 15-Min-Tick (Meta-/Kosten-schonend). Manuell: ig_postfach_sync/ig_analyse.
+                _radar_an = str(secrets.get("IG_RADAR_AUTO", "")).strip().lower() in ("1", "true", "yes", "on")
+                if _radar_an and _ig_id and ctx.watch is not None and not ctx.watch.store.paused():
+                    _heute = __import__("datetime").datetime.now().date().isoformat()
+                    _lr = ctx.watch.store.last_run("ig_radar")
+                    if not _lr or str(_lr)[:10] != _heute:
+                        ctx.watch.store.mark_run("ig_radar")
+                        from ...core.ig_inbox import IgInboxStore, IgInboxSync
+                        from ...core.ig_analyse import IgAnalyzer, analyse_llm_aus_env
+                        from ...governance.instagram_token import ig_reader_aus_env
+                        _rreader = ig_reader_aus_env(secrets)
+                        if _rreader.verfuegbar:
+                            _rstore = IgInboxStore(ROOT / "ig_inbox" / "log.jsonl", secrets=ctx.leak_secrets)
+                            IgInboxSync(store=_rstore, reader=_rreader).voll_sync(wochen=8, zeit_budget_s=120)
+                            _az = IgAnalyzer(llm=analyse_llm_aus_env(secrets),
+                                             modell=secrets.get("IG_ANALYSE_MODELL", "claude-haiku-4-5"))
+                            if _az.verfuegbar():
+                                _az.analysiere_store(_rstore)
             except Exception as exc:
                 print(f"[poll] Fehler: {exc}", flush=True)
         # Proaktive Outbox zustellen -- LUNA/Watcher melden sich unaufgefordert beim CEO.
