@@ -158,16 +158,31 @@ class InstagramConversations:
         return False
 
     def konversationen(self, *, limit: int = 25) -> list[str]:
-        # `limit` + schlanke `fields` sind Pflicht: grosse Konten haben zu viele Threads -> sonst Meta-Fehler
-        # "Please reduce the amount of data you're asking for" (Code 1). Threads kommen nach Aktivitaet sortiert.
-        try:
-            d = self.http(self._konv_pfad(), {"platform": "instagram", "fields": "id", "limit": str(limit)})
-        except Exception as exc:
-            self.letzter_fehler = str(exc)[:200]
-            return []
-        if self._fehler_pruefen(d):
-            return []
-        return [c.get("id") for c in (d or {}).get("data", []) if c.get("id")]
+        # Meta-Eigenheit: `platform=instagram` vertraegt pro Seite nur **limit=1** -- hoehere Limits liefern
+        # zuverlaessig HTTP 500 / Code 1 ("Please reduce the amount of data you're asking for"). Deshalb
+        # blaettern wir Thread fuer Thread mit dem `after`-Cursor durch, bis `limit` Threads gesammelt sind
+        # oder keine Seite mehr folgt. Threads kommen nach Aktivitaet sortiert (neueste zuerst).
+        ids: list[str] = []
+        after = None
+        for _ in range(max(1, limit)):
+            params = {"platform": "instagram", "fields": "id", "limit": "1"}
+            if after:
+                params["after"] = after
+            try:
+                d = self.http(self._konv_pfad(), params)
+            except Exception as exc:
+                self.letzter_fehler = str(exc)[:200]
+                break
+            if self._fehler_pruefen(d):
+                break
+            data = (d or {}).get("data", []) or []
+            for c in data:
+                if c.get("id"):
+                    ids.append(c["id"])
+            after = (((d or {}).get("paging") or {}).get("cursors") or {}).get("after")
+            if not after or not data:
+                break
+        return ids
 
     def nachrichten(self, conv_id: str) -> list[dict]:
         """[{id, from_id, from_username, text, ts}] der (max. 20) letzten Nachrichten eines Threads."""

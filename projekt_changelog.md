@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-06 12:20] — Claude Code
+- **Was:** Instagram-DM-Poll live gegen Metas Graph-API getestet und einen Blocker im Code behoben:
+  `InstagramConversations.konversationen` nutzte `limit=25`, aber `me/conversations?platform=instagram`
+  liefert nur mit **limit=1** Daten (hoehere Limits -> HTTP 500 / Code 1 "reduce the amount of data").
+  Jetzt Thread-fuer-Thread mit `after`-Cursor durchblaettern bis `limit` erreicht. Live verifiziert: echter
+  Thread + 21 Nachrichten gelesen (Seiten-Token). Tests gruen (18).
+- **Warum:** CEO hat Meta-App veroeffentlicht + Seiten-Token gesetzt; DM-Ziehen sollte laufen. Test zeigte:
+  Rechte alle granted, Seiten-Token funktioniert, ABER der Code-Default limit=25 haette 0 Threads geliefert.
+- **Betroffen:** `orchestrator/governance/instagram.py`.
 ## [2026-07-05 15:40] — Claude Code
 - **Was:** **Ursache der horizontalen Linie ueber dem Hologramm gefunden und behoben.** Es war KEIN
   Hologramm-Element, sondern das leere Inline-Chat-Panel `#v2-chat`: die Regel `.v2-chat { display:flex }`
