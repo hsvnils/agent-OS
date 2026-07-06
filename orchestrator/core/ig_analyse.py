@@ -58,39 +58,46 @@ def _json_aus_text(s: str) -> dict:
     return {}
 
 
-def analyse_llm_aus_env(env: dict):
-    """Baut die LLM-Callable `(system, user) -> str` gemaess `IG_ANALYSE_MODELL` + vorhandenem Key.
-    Provider automatisch anhand des Modellnamens: gemini* -> Google (OpenAI-kompatibel), gpt* -> OpenAI,
-    claude* -> Anthropic. Gibt None, wenn kein passender Key vorhanden ist."""
-    modell = (env.get("IG_ANALYSE_MODELL") or "gemini-flash-latest").strip()
-    low = modell.lower()
-    if low.startswith("claude"):
-        key = env.get("ANTHROPIC_API_KEY")
-        if not key:
-            return None
+def _anthropic_call(modell: str, key: str):
+    def call(system, user):
+        import anthropic
+        r = anthropic.Anthropic(api_key=key).messages.create(
+            model=modell, max_tokens=700, system=system, messages=[{"role": "user", "content": user}])
+        return "".join(getattr(b, "text", "") for b in r.content if getattr(b, "type", "") == "text")
+    return call
 
-        def call(system, user):
-            import anthropic
-            r = anthropic.Anthropic(api_key=key).messages.create(
-                model=modell, max_tokens=700, system=system,
-                messages=[{"role": "user", "content": user}])
-            return "".join(getattr(b, "text", "") for b in r.content if getattr(b, "type", "") == "text")
-        return call
-    # OpenAI-kompatibel (Gemini/OpenAI)
-    if low.startswith("gemini"):
-        key, base_url = env.get("GEMINI_API_KEY"), GEMINI_BASE_URL
-    else:
-        key, base_url = env.get("OPENAI_API_KEY"), None
-    if not key:
-        return None
 
+def _openai_call(modell: str, key: str, base_url):
     def call(system, user):
         import openai
-        r = openai.OpenAI(api_key=key, base_url=base_url).chat.completions.create(
+        r = openai.OpenAI(api_key=key, base_url=base_url or None).chat.completions.create(
             model=modell, max_tokens=700,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
         return r.choices[0].message.content or ""
     return call
+
+
+def analyse_llm_aus_env(env: dict):
+    """Baut die LLM-Callable `(system, user) -> str` gemaess Config. Provider automatisch:
+      - `IG_ANALYSE_BASE_URL` gesetzt -> **eigener/lokaler** OpenAI-kompatibler Endpunkt (Ollama/LM Studio/
+        vLLM); Key `IG_ANALYSE_KEY` (Default 'local'). -> spaeterer Wechsel auf lokales LLM = nur .env.
+      - Modell `claude*` -> Anthropic (ANTHROPIC_API_KEY)
+      - Modell `gemini*` -> Google, OpenAI-kompatibel (GEMINI_API_KEY)
+      - sonst (`gpt*` etc.) -> OpenAI (OPENAI_API_KEY)
+    Gibt None, wenn kein passender Key vorhanden ist."""
+    modell = (env.get("IG_ANALYSE_MODELL") or "gemini-flash-latest").strip()
+    low = modell.lower()
+    base_url_override = (env.get("IG_ANALYSE_BASE_URL") or "").strip()
+    if base_url_override:                                    # lokales/eigenes Modell (OpenAI-kompatibel)
+        return _openai_call(modell, env.get("IG_ANALYSE_KEY") or "local", base_url_override)
+    if low.startswith("claude"):
+        key = env.get("ANTHROPIC_API_KEY")
+        return _anthropic_call(modell, key) if key else None
+    if low.startswith("gemini"):
+        key, base_url = env.get("GEMINI_API_KEY"), GEMINI_BASE_URL
+    else:
+        key, base_url = env.get("OPENAI_API_KEY"), None
+    return _openai_call(modell, key, base_url) if key else None
 
 
 class IgAnalyzer:

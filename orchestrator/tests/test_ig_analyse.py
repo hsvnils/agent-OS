@@ -70,6 +70,9 @@ class TestIgAnalyzer(unittest.TestCase):
                                                       "OPENAI_API_KEY": "x"})))
         self.assertTrue(callable(analyse_llm_aus_env({"IG_ANALYSE_MODELL": "claude-haiku-4-5",
                                                       "ANTHROPIC_API_KEY": "x"})))
+        # Lokales/eigenes Modell: base_url gesetzt -> Callable ohne externen Key (spaeterer Mac)
+        self.assertTrue(callable(analyse_llm_aus_env({"IG_ANALYSE_MODELL": "llama-3.3",
+                                                      "IG_ANALYSE_BASE_URL": "http://localhost:11434/v1"})))
 
 
 if __name__ == "__main__":
