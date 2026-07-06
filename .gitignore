@@ -65,3 +65,6 @@ approvals/log.jsonl
 
 # Instagram/Meta Token-Store (Live-Secret, selbst-erneuernd -- nie committen)
 orchestrator/state/
+
+# Instagram-Postfach-Archiv (Collab-Radar, Live-Daten)
+ig_inbox/

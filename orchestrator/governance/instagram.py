@@ -122,6 +122,7 @@ class InstagramConversations:
         self.base = base
         self.timeout = timeout              # kurzer Timeout -> haengende/leere Endseiten kosten wenig
         self.letzter_fehler = ""            # letzte API-Fehlermeldung (fuer Diagnose)
+        self.unvollstaendig = False         # True, wenn der letzte Tief-Scan durch Fehler/Deadline abbrach
 
     def _konv_pfad(self) -> str:
         # DMs laufen ueber den SEITEN-Knoten -> `me/conversations` (Seiten-Token). Der IG-Account-Knoten
@@ -189,6 +190,22 @@ class InstagramConversations:
                 break
         return ids
 
+    def kontakt(self, conv_id: str) -> dict:
+        """Der NICHT-eigene Teilnehmer eines Threads (= der Kontakt) -> {id, username} oder {}.
+        Fuer das Voll-Postfach-Archiv, damit auch AUSgehende Nachrichten dem richtigen Kontakt zugeordnet
+        werden (bei ausgehenden ist `from` das eigene Konto)."""
+        try:
+            d = self.http(conv_id, {"fields": "participants"})
+        except Exception as exc:
+            self.letzter_fehler = str(exc)[:200]
+            return {}
+        if self._fehler_pruefen(d):
+            return {}
+        for p in ((d or {}).get("participants") or {}).get("data", []) or []:
+            if str(p.get("id")) != self.own_id:
+                return {"id": str(p.get("id", "")), "username": p.get("username", "")}
+        return {}
+
     def nachrichten(self, conv_id: str) -> list[dict]:
         """[{id, from_id, from_username, text, ts}] der (max. 20) letzten Nachrichten eines Threads."""
         try:
@@ -227,26 +244,39 @@ class InstagramConversations:
         import time
         out: list[dict] = []
         after = None
+        self.unvollstaendig = False
         for _ in range(max(1, max_seiten)):
             if deadline and time.time() > deadline:
+                self.unvollstaendig = True             # durch Zeit-Budget abgebrochen -> unvollstaendig
                 break
             felder = f"messages.limit({pro_seite})"
             if after:
                 felder += f".after({after})"
             felder += "{id,created_time,from,message}"
-            try:
-                d = self.http(conv_id, {"fields": felder})
-            except Exception as exc:
-                self.letzter_fehler = str(exc)[:200]
+            # Metas messages-Kante wirft haeufig transiente 500er/Timeouts/Code 1 -> bis zu 3 Versuche,
+            # damit ein einzelner Aussetzer nicht den ganzen Scan abschneidet.
+            ed = None
+            for versuch in range(3):
+                try:
+                    d = self.http(conv_id, {"fields": felder})
+                except Exception as exc:
+                    self.letzter_fehler = str(exc)[:200]
+                    time.sleep(1.0 * (versuch + 1))
+                    continue
+                if isinstance(d, dict) and d.get("error"):
+                    self._fehler_pruefen(d)
+                    time.sleep(1.0 * (versuch + 1))
+                    continue
+                ed = (d or {}).get("messages") or {}
                 break
-            if self._fehler_pruefen(d):
+            if ed is None:                             # nach Retries keine Seite -> abbrechen
+                self.unvollstaendig = True
                 break
-            ed = (d or {}).get("messages") or {}
             data = ed.get("data") or []
             aelter = False
             for m in data:
                 if seit_ts and self._ts(m.get("created_time")) < seit_ts:
-                    aelter = True                 # aelter als Grenze -> nicht uebernehmen (Rest ist noch aelter)
+                    aelter = True                      # aelter als Grenze -> nicht uebernehmen (Rest noch aelter)
                     continue
                 out.append(self._norm(m))
             after = ((ed.get("paging") or {}).get("cursors") or {}).get("after")

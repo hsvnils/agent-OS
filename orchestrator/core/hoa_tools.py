@@ -321,6 +321,10 @@ def tool_specs() -> list[dict]:
               "Thread bis `wochen` Wochen zurueck und legt alle eingehenden Kooperations-DMs im CRM ab "
               "(dedupliziert, kollidiert nicht mit dem laufenden Poll). Nur Lesen.",
               {"wochen": {"type": "integer", "description": "Wie viele Wochen zurueck scannen (Default 8)."}}, []),
+        _spec("ig_postfach_sync", "Collab-Radar Phase 1: spiegelt das GESAMTE Instagram-Postfach (ein- UND "
+              "ausgehend, alle Kontakte, Text + Medien-Marker) ins Archiv `ig_inbox` (dedupliziert). Grundlage "
+              "fuer KI-Analyse + Nachfass-Reminder. Nur Lesen. Zeit-Budget -> ggf. teilweise (erneut ausloesen).",
+              {"wochen": {"type": "integer", "description": "Wie viele Wochen zurueck (Default 8)."}}, []),
         _spec("lagebild", "Proaktive Tages-Insights: was auf den CEO wartet (Entscheidungen/Antraege), heutige "
               "Termine, ungelesene Mails, offene Tickets, Agenda. Token-frugal aus den Stores + Google.",
               {}, []),
@@ -989,6 +993,14 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return CrmInstagramTracker(crm=ctx.crm, reader=reader, secrets=sec,
                                    notify=(ctx.notifications.enqueue if ctx.notifications else None)
                                    ).backfill(wochen=wochen)
+
+    if name == "ig_postfach_sync":
+        from ..governance.instagram_token import ig_reader_aus_env
+        from .ig_inbox import IgInboxStore, IgInboxSync
+        reader = ig_reader_aus_env(ctx.secret_dict or {})
+        store = IgInboxStore(ctx.repo_root / "ig_inbox" / "log.jsonl", secrets=sec)
+        wochen = int(args.get("wochen") or 8)
+        return IgInboxSync(store=store, reader=reader).voll_sync(wochen=wochen)
 
     if name == "lagebild":
         if ctx.insights is None:

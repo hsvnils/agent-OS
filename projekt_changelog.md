@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-06 14:30] — Claude Code
+- **Was:** **Collab-Radar Phase 1** (Voll-Postfach-Archiv). Neu `core/ig_inbox.py`: `IgInboxStore`
+  (event-sourced JSONL `ig_inbox/log.jsonl`, gitignored + deploy-excl) spiegelt das **gesamte** IG-Postfach
+  je Kontakt (ein- UND ausgehend, Text + Medien-Marker, dedupliziert ueber Meta-Message-ID); Events
+  nachricht/analyse/gesehen/reminder + Faltung (kontakte/verlauf/braucht_analyse). `IgInboxSync.voll_sync`
+  zieht alle Threads bis N Wochen zurueck. Reader erweitert: `kontakt()` (Nicht-eigener Teilnehmer, damit
+  Ausgehendes korrekt zugeordnet wird), `nachrichten_seit()` mit **Retries** (transiente Meta-500er/Timeouts)
+  + ehrlichem `unvollstaendig`-Flag; Reader-Timeout 15s. Tool **`ig_postfach_sync`**. Tests
+  `test_ig_inbox.py` (6) + Suite gruen. **Live verifiziert:** ein/aus korrekt getrennt; `teilweise` korrekt;
+  Mehrfachlauf fuellt dedupliziert auf (349 -> +25).
+- **Warum:** CEO will das GANZE Postfach ziehen (ein+aus) als Basis fuer KI-Analyse (Collab-Filter, offene
+  To-dos) + Nachfass-Reminder (Phasen 2-4).
+- **Betroffen:** `orchestrator/core/ig_inbox.py` (neu), `orchestrator/tests/test_ig_inbox.py` (neu),
+  `orchestrator/governance/instagram.py`, `orchestrator/core/hoa_tools.py`, `.gitignore`, `deploy/sync-to-nas.sh`.
 ## [2026-07-06 13:45] — Claude Code
 - **Was:** Backfill-Laufzeit gebaendigt: hartes **Zeit-Budget** (`zeit_budget_s`, Default 90s) mit
   `deadline`-Abbruch in `konversationen`/`nachrichten_seit`; Reader-Timeout 20->15s. `backfill` liefert bei
