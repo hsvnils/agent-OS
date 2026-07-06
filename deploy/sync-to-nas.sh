@@ -46,6 +46,8 @@ TAR_EXCLUDES=(
   # --- NAS-Live-Daten (Produktions-Datenquelle, LUNA schreibt sie live) ---
   --exclude='./orchestrator/.env'
   --exclude='./.env'
+  --exclude='./orchestrator/state'
+
   --exclude='./projekt_changelog.md'
   --exclude='./finance/budget.md'
   --exclude='./finance/kosten-log.jsonl'

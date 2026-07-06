@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-06 12:45] — Claude Code
+- **Was:** Selbst-erneuernder Instagram/Meta-Token eingebaut. Neu `governance/instagram_token.py`
+  (`InstagramTokenManager` + `ig_reader_aus_env`): haelt einen langlebigen 60-Tage-**Nutzer-Token** frisch
+  (fb_exchange_token, App-Secret) und leitet daraus den **permanenten Seiten-Token** ab (Page-Token aus
+  long-lived User-Token laeuft nicht ab) -> LUNA holt/erneuert den Token selbst, kein manuelles Nachlegen.
+  Persistenz `orchestrator/state/instagram_token.json` (gitignored + Deploy-Exclude, Live-Secret). Bot-Poll
+  und Tool `crm_dm_abrufen` nutzen jetzt `ig_reader_aus_env` (Manager bevorzugt, sonst statischer
+  INSTAGRAM_ACCESS_TOKEN als Fallback). Tests `test_instagram_token.py` (7) + volle Suite gruen (614).
+  **Live verifiziert:** Seed->60-Tage-Token (bis 2026-09-04)->permanenter Seiten-Token; 21 DMs gelesen,
+  davon 2 echte eingehende.
+- **Warum:** CEO hat die Meta-App veroeffentlicht und will DMs ziehen; kurzlebige Tokens liefen alle 1-2 Std
+  bzw. am selben Tag ab. Jetzt dauerhaft ohne Handarbeit.
+- **Betroffen:** `orchestrator/governance/instagram_token.py` (neu), `orchestrator/tests/test_instagram_token.py`
+  (neu), `orchestrator/channels/telegram/bot.py`, `orchestrator/core/hoa_tools.py`, `.gitignore`,
+  `deploy/sync-to-nas.sh`.
 ## [2026-07-06 12:20] — Claude Code
 - **Was:** Instagram-DM-Poll live gegen Metas Graph-API getestet und einen Blocker im Code behoben:
   `InstagramConversations.konversationen` nutzte `limit=25`, aber `me/conversations?platform=instagram`

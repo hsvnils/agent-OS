@@ -62,3 +62,6 @@ backups/
 # Phase 17: maschinenspezifische App-Registry (generiert)
 runner/app_register.md
 approvals/log.jsonl
+
+# Instagram/Meta Token-Store (Live-Secret, selbst-erneuernd -- nie committen)
+orchestrator/state/

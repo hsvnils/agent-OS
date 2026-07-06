@@ -969,12 +969,9 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
     if name == "crm_dm_abrufen":
         if ctx.crm is None:
             return {"fehler": "Collab-CRM nicht verfuegbar."}
-        from ..governance.instagram import InstagramConversations
+        from ..governance.instagram_token import ig_reader_aus_env
         from .crm_instagram import CrmInstagramTracker
-        env = ctx.secret_dict or {}
-        tok = env.get("INSTAGRAM_ACCESS_TOKEN") or env.get("INSTAGRAM_PAGE_TOKEN") or ""
-        igid = env.get("INSTAGRAM_IG_USER_ID") or ""
-        reader = InstagramConversations(tok, igid)
+        reader = ig_reader_aus_env(ctx.secret_dict or {})   # selbst-erneuernder Seiten-Token oder statisch
         return CrmInstagramTracker(crm=ctx.crm, reader=reader, secrets=sec,
                                    notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
 

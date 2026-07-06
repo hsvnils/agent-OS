@@ -1057,20 +1057,19 @@ def main() -> None:
                                    eigene_adresse=secrets.get("GOOGLE_ACCOUNT_EMAIL", "hanserautisch@gmail.com"),
                                    secrets=ctx.leak_secrets,
                                    notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
-                # Instagram-DM-Poll: standardmaessig AUS (grosse Konten -> Meta-Timeout "reduce the amount
-                # of data"; ausserdem ohne App-Veroeffentlichung keine fremden DMs). Opt-in INSTAGRAM_DM_POLL=1;
-                # manuell jederzeit via Tool `crm_dm_abrufen`.
-                _ig_tok = secrets.get("INSTAGRAM_ACCESS_TOKEN") or secrets.get("INSTAGRAM_PAGE_TOKEN")
+                # Instagram-DM-Poll: opt-in INSTAGRAM_DM_POLL=1. Token selbst-erneuernd (INSTAGRAM_USER_TOKEN
+                # + INSTAGRAM_APP_SECRET -> permanenter Seiten-Token) oder statisch (INSTAGRAM_ACCESS_TOKEN).
+                # Manuell jederzeit via Tool `crm_dm_abrufen`.
                 _ig_id = secrets.get("INSTAGRAM_IG_USER_ID")
                 _ig_poll_an = str(secrets.get("INSTAGRAM_DM_POLL", "")).strip().lower() in ("1", "true", "yes", "on")
-                if _ig_poll_an and ctx.crm is not None and _ig_tok and _ig_id \
+                if _ig_poll_an and ctx.crm is not None and _ig_id \
                         and (ctx.watch is None or not ctx.watch.store.paused()):
                     from ...core.crm_instagram import CrmInstagramTracker
-                    from ...governance.instagram import InstagramConversations
-                    CrmInstagramTracker(crm=ctx.crm,
-                                        reader=InstagramConversations(_ig_tok, _ig_id),
-                                        secrets=ctx.leak_secrets,
-                                        notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
+                    from ...governance.instagram_token import ig_reader_aus_env
+                    _ig_reader = ig_reader_aus_env(secrets)
+                    if _ig_reader.verfuegbar:
+                        CrmInstagramTracker(crm=ctx.crm, reader=_ig_reader, secrets=ctx.leak_secrets,
+                                            notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
             except Exception as exc:
                 print(f"[poll] Fehler: {exc}", flush=True)
         # Proaktive Outbox zustellen -- LUNA/Watcher melden sich unaufgefordert beim CEO.
