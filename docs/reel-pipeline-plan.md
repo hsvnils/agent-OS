@@ -80,12 +80,14 @@ Die Spiel-Ordner bleiben unveraendert die Quelle. Pfade sind per Env/CLI konfigu
 ## NAS-Betrieb (24/7 ohne Mac)
 Der Schnitt laeuft im `luna-os`-Container statt am Mac (gleicher Code -> gleiches Ergebnis, nur langsamer).
 - **ffmpeg** ins Image (`deploy/Dockerfile`); Rebuild noetig.
-- **Video-Archiv** `/volume1/reels/` in den Container gemountet (`deploy/docker-compose.yml`: `- /volume1/reels:/reels`).
-  `source/` wird per **Synology Cloud Sync** aus dem Dropbox-Ordner „Dateianfragen" gespiegelt (alle Rohvideos,
-  datierte Spiel-Ordner). `outbox/<datum>/` + `state/` liegen daneben.
-- **Nightly-Job** via DSM-Aufgabenplaner:
-  `docker exec -e LUNA_OS_URL=http://localhost:8765 luna-os python -m cutter.reel_daily --source /reels/source
-  --outbox /reels/outbox --state /reels/state --einreichen --schnell-index`
+- **Rohvideo-Quelle liegt schon auf der NAS** (Cloud Sync laeuft bereits):
+  `/volume1/SocialMediaTeam/Dropbox-Medien/Dateianfragen` -> read-only als `/reelsrc` gemountet
+  (`deploy/docker-compose.yml`). **Kein neuer Sync noetig.**
+- **Outbox/State** schreibt der Job nach `/app/reel_work/{outbox,state}` (Repo-Mount, schon beschreibbar;
+  gitignored + sync-excludiert). Fertige Reels also datiert unter `reel_work/outbox/<datum>/` auf der NAS.
+- **Nightly-Job** via DSM-Aufgabenplaner (Benutzer root):
+  `/usr/local/bin/docker exec -e LUNA_OS_URL=http://localhost:8765 luna-os python -m cutter.reel_daily
+  --source /reelsrc --outbox /app/reel_work/outbox --state /app/reel_work/state --einreichen --schnell-index`
 - **Schnell-Index** (`--schnell-index` / `baue_index(energie_analyse=False)`): ueberspringt die teure Szenen-/
   Ton-Analyse (nur ffprobe) -> Minuten statt Stunden beim Erst-Aufbau; Inhaltserkennung via Gemini-Tagging.
 - Approval + FB-Upload laufen ohnehin auf der NAS -> die ganze Kette ist Mac-unabhaengig.

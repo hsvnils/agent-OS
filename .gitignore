@@ -71,3 +71,6 @@ ig_inbox/
 
 # Reel-Freigabe-Store (Stufe C, Live-Daten: eingereichte Reel-Videos + Log -- nie committen)
 reel_freigabe/
+
+# Reel-Pipeline NAS-Arbeitsordner (Outbox/State/Index -- Live-Daten, nie committen)
+reel_work/
