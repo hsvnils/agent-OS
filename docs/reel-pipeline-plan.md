@@ -53,9 +53,15 @@ Die Spiel-Ordner bleiben unveraendert die Quelle. Pfade sind per Env/CLI konfigu
   (`app-v2.js`, Video-Vorschau + Freigeben/Ablehnen) + Telegram-Hinweis (Notifier). Freigabe -> Status
   'freigegeben' (Stufe D liest es). Endpunkte `/api/reel`(+`/einreichen`,`/{id}/video`,`/{id}/freigeben`,
   `/{id}/ablehnen`). Cache app-v2.js v14. Live-Daten `reel_freigabe/` (gitignored + sync-exkludiert).
-- **Stufe D -- Facebook-Upload**: Token-Scopes pruefen/erweitern (`pages_manage_posts` + `pages_read_engagement`;
-  Seed-Token einmalig neu holen -- fuer die EIGENE Seite i. d. R. ohne grosses App-Review). Upload via FB-Reels-
-  API (`POST /{page-id}/video_reels`, 3-Phasen: start -> upload -> finish `video_state=PUBLISHED`). **[offen]**
+- **Stufe D -- Facebook-Upload**: **[Code gebaut, Token-Scope offen]** `governance/facebook_reels.poste_reel`
+  (3-Phasen `POST /{page-id}/video_reels`: start -> Binaer-Upload -> finish `video_state=PUBLISHED`, nur urllib);
+  `instagram_token.page_info` liefert (page_id, Seiten-Token). Freigabe in der Reels-App startet den Upload im
+  Hintergrund (`_reel_posten`, BackgroundTasks) -> Status gepostet(fb_video_id)|fehler; „🔁 Erneut posten" als
+  Retry. **Aktivierung ganz am Ende:** Seed-Token einmalig mit **`pages_manage_posts`** (+ pages_read_engagement)
+  neu holen (eigene Seite, du bist Admin -> i. d. R. ohne grosses App-Review). Bis dahin -> Status 'fehler' mit
+  klarer Meldung.
+- **Reels-App:** editierbarer, kurzer Caption-Text (wird 1:1 gepostet), Video-Vorschau, Freigeben&posten /
+  Ablehnen / Erneut posten. Cache app-v2.js v15.
 - **Stufe E -- Betrieb**: CFO-Kostenueberwachung, Themen-Rotation ausbauen, Retries, spaeter Performance-Report
   (Insights). **[offen]**
 

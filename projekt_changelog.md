@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-07 20:30] — Claude Code
+- **Was:** Reel-Pipeline: editierbarer Caption-Text in der Reels-App + **Stufe D (Facebook-Upload, Code)**.
+  (1) Reels-App zeigt den (gekuerzten) Text als editierbares Feld; „Freigeben & posten" sendet den ggf.
+  angepassten Text -> wird 1:1 gepostet. THEMEN-Captions gekuerzt. (2) `governance/facebook_reels.poste_reel`
+  (3-Phasen video_reels-Upload, nur urllib) + `instagram_token.page_info` (page_id+Seiten-Token). Freigabe
+  startet `_reel_posten` (BackgroundTasks) -> Status gepostet(fb_video_id)|fehler; Endpunkt
+  `/api/reel/{id}/posten` als Retry, Button „🔁 Erneut posten". 4 neue Tests (test_facebook_reels).
+  Cache v15. **Token-Scope pages_manage_posts als letzter Aktivierungsschritt offen** (bis dahin Status
+  'fehler' mit klarer Meldung).
+- **Warum:** CEO: Text anzeigen+kurz halten; danach Stufe D bauen, Token ganz am Ende.
+- **Betroffen:** orchestrator/governance/facebook_reels.py, orchestrator/governance/instagram_token.py,
+  orchestrator/channels/web/app.py, orchestrator/channels/web/static/app-v2.js, index-v2.html,
+  cutter/reel_select.py, orchestrator/tests/test_facebook_reels.py, docs/reel-pipeline-plan.md
+
 ## [2026-07-07 20:00] — Claude Code
 - **Was:** Reel-Pipeline **Stufe C (1-Tap-Freigabe)** gebaut. Neu `orchestrator/core/reel_store.py`
   (event-sourced Freigabe-Store: wartet->freigegeben|abgelehnt->gepostet|fehler, 4 Tests gruen). LUNA-OS-

@@ -464,11 +464,19 @@ RENDER.reel = renderReels;
 async function renderReels() {
   const d = await jget("/api/reel") || {};
   const badge = { wartet: "wartet", freigegeben: "ok", abgelehnt: "danger", gepostet: "ok", fehler: "danger" };
-  const lbl = { wartet: "Wartet auf Freigabe", freigegeben: "Freigegeben", abgelehnt: "Abgelehnt", gepostet: "Gepostet", fehler: "Fehler" };
-  const cards = (d.reels || []).map(r => `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${badge[r.status] || "neutral"}">${lbl[r.status] || esc(r.status)}</span><b>${esc(r.thema || "Reel")}</b> <small>${esc(r.datum || "")}${r.dauer_sek ? " · " + r.dauer_sek + "s" : ""}</small></div>
+  const lbl = { wartet: "Wartet auf Freigabe", freigegeben: "Freigegeben – wird gepostet…", abgelehnt: "Abgelehnt", gepostet: "Gepostet", fehler: "Fehler" };
+  const cards = (d.reels || []).map(r => {
+    const wartet = r.status === "wartet", postbar = r.status === "freigegeben" || r.status === "fehler";
+    return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${badge[r.status] || "neutral"}">${lbl[r.status] || esc(r.status)}</span><b>${esc(r.thema || "Reel")}</b> <small>${esc(r.datum || "")}${r.dauer_sek ? " · " + r.dauer_sek + "s" : ""}</small></div>
     <video src="/api/reel/${esc(r.id)}/video" controls playsinline preload="metadata" style="width:100%;max-height:60vh;border-radius:12px;background:#000;margin:8px 0"></video>
-    ${r.caption ? `<div class="v2-desc">${esc(r.caption)}</div>` : ""}${(r.spiele && r.spiele.length) ? `<div class="v2-sub">${r.spiele.map(esc).join(" · ")}</div>` : ""}
-    ${r.status === "wartet" ? `<div style="display:flex;gap:8px;margin-top:8px"><button class="v2-btn ok" data-act="reel-freigeben" data-id="${esc(r.id)}">✅ Freigeben</button><button class="v2-btn danger" data-act="reel-ablehnen" data-id="${esc(r.id)}">❌ Ablehnen</button></div>` : ""}</div>`).join("") || emptyRow("Noch keine Reels — der Mac-Cutter reicht sie nach dem Schnitt hier ein (Auto-Posten bleibt CEO-Tor).");
+    <div class="v2-sub">Text fürs Video (wird so gepostet – kurz halten):</div>
+    <textarea id="cap-${esc(r.id)}" rows="2" maxlength="180" ${wartet ? "" : "readonly"} style="width:100%;resize:vertical;font:inherit">${esc(r.caption || "")}</textarea>
+    ${(r.spiele && r.spiele.length) ? `<div class="v2-sub">${r.spiele.map(esc).join(" · ")}</div>` : ""}
+    ${r.status === "gepostet" && r.fb_video_id ? `<div class="v2-sub">✅ Facebook · video_id ${esc(r.fb_video_id)}</div>` : ""}
+    ${r.status === "fehler" && r.fehler ? `<div class="v2-desc" style="color:var(--v2-red)">${esc(r.fehler)}</div>` : ""}
+    ${wartet ? `<div style="display:flex;gap:8px;margin-top:8px"><button class="v2-btn ok" data-act="reel-freigeben" data-id="${esc(r.id)}">✅ Freigeben & posten</button><button class="v2-btn danger" data-act="reel-ablehnen" data-id="${esc(r.id)}">❌ Ablehnen</button></div>` : ""}
+    ${postbar ? `<div style="display:flex;gap:8px;margin-top:8px"><button class="v2-btn" data-act="reel-posten" data-id="${esc(r.id)}">🔁 Erneut posten</button></div>` : ""}</div>`;
+  }).join("") || emptyRow("Noch keine Reels — der Mac-Cutter reicht sie nach dem Schnitt hier ein (Auto-Posten bleibt CEO-Tor).");
   $("#v2-app").innerHTML = secHead("Reels") + `<div class="v2-cards">${cards}</div>`;
 }
 
@@ -586,8 +594,9 @@ async function handleAct(act, el) {
     case "crm-todo": await jpost(`/api/crm/todo/${id}/erledigen`); return renderCrm();
     case "crm-sync": { flash("⏳ synchronisiert…"); const r = await jpost("/api/crm/sync"); if (r && r.api_fehler) alert("Instagram-Sync-Fehler:\n" + r.api_fehler); else if (r && r.ok === false) alert("Sync nicht möglich:\n" + (r.hinweis || "unbekannt")); return renderCrm(); }
     case "crm-firma": return crmFirma(id);
-    case "reel-freigeben": flash("⏳ …"); await jpost(`/api/reel/${id}/freigeben`); return renderReels();
+    case "reel-freigeben": { const t = (($(`#cap-${id}`) || {}).value || "").trim(); flash("⏳ …"); await jpost(`/api/reel/${id}/freigeben`, { caption: t }); return renderReels(); }
     case "reel-ablehnen": if (!confirm("Reel ablehnen? Es wird nicht gepostet.")) return; await jpost(`/api/reel/${id}/ablehnen`); return renderReels();
+    case "reel-posten": flash("⏳ …"); await jpost(`/api/reel/${id}/posten`); return renderReels();
     case "radar-kontakt": return radarKontakt(id);
     case "status": {
       const map = { trend: ["/api/trends/", "status", renderContent], idea: ["/api/ideas/", "status", renderContent], draft: ["/api/drafts/", "status", renderContent], ai: ["/api/ai-inbox/", "recommendation", renderContent] };

@@ -25,11 +25,11 @@ THEMA_TAGS = {
 
 # Thema: (Name, Energie-Praeferenz "hoch"|"mittel"|"mix", Caption-Vorlage).
 THEMEN = [
-    ("Tore & Highlights",    "hoch",   "Die besten Szenen ⚽️ #hsv #hanserautisch"),
-    ("Fan-Stimmung",         "mittel", "Diese Stimmung! \U0001f9e1\U0001f5a4 #fans #hanserautisch"),
-    ("Beste Momente",        "mix",    "Momente, die bleiben. #hanserautisch"),
-    ("Emotionen pur",        "mix",    "Fussball ist Emotion \U0001f525 #hanserautisch"),
-    ("Woche im Rueckblick",  "mix",    "Unser Rueckblick \U0001f4fd️ #hanserautisch"),
+    ("Tore & Highlights",    "hoch",   "Beste Szenen ⚽️ #HSV"),
+    ("Fan-Stimmung",         "mittel", "Diese Stimmung! \U0001f9e1\U0001f5a4 #HSV"),
+    ("Beste Momente",        "mix",    "Unsere Momente \U0001f5a4 #HSV"),
+    ("Emotionen pur",        "mix",    "Pure Emotionen \U0001f525 #HSV"),
+    ("Woche im Rueckblick",  "mix",    "Rueckblick \U0001f4fd️ #HSV"),
 ]
 
 

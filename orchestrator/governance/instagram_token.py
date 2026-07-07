@@ -50,6 +50,7 @@ class InstagramTokenManager:
         self.letzter_fehler = ""
         self._page_cache = ""
         self._page_cache_ts = 0.0
+        self._page_id = ""
 
     @classmethod
     def from_env(cls, env: dict | None = None, *, state_path: str | None = None, http=None) -> "InstagramTokenManager":
@@ -161,7 +162,14 @@ class InstagramTokenManager:
             return ""
         self._page_cache = chosen["access_token"]
         self._page_cache_ts = now
+        self._page_id = str(chosen.get("id") or "")
         return self._page_cache
+
+    def page_info(self, *, ig_user_id: str = "") -> tuple:
+        """(page_id, page_token) der Ziel-Seite -- fuer Seiten-Publishing (Facebook-Reels-Upload, Stufe D).
+        ('', '') bei Fehler (Token/Rechte pruefen)."""
+        token = self.page_token(ig_user_id=ig_user_id)
+        return (self._page_id, token) if token else ("", "")
 
 
 def ig_reader_aus_env(env: dict, *, state_path: str | None = None, http=None):

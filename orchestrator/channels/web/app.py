@@ -15,7 +15,7 @@ import uuid
 from functools import partial
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
@@ -1131,10 +1131,54 @@ def reel_video(rid: str):
     return FileResponse(r["video"], media_type="video/mp4")
 
 
+def _reel_posten(rid: str) -> None:
+    """Stufe D: freigegebenes Reel als Facebook-Reel veroeffentlichen (Hintergrund). Status -> gepostet|fehler.
+    Braucht einen Seiten-Token mit pages_manage_posts (Token-Scope). Bis dahin schlaegt es sauber fehl."""
+    r = reel_store.holen(rid)
+    if not r or not r.get("video"):
+        return
+    try:
+        from ...governance.facebook_reels import poste_reel
+        from ...governance.instagram_token import InstagramTokenManager
+        sec = _secrets_dict()
+        mgr = InstagramTokenManager.from_env(sec)
+        page_id, token = mgr.page_info(ig_user_id=sec.get("INSTAGRAM_IG_USER_ID", ""))
+        res = poste_reel(page_id, token, r["video"], r.get("caption", ""))
+    except Exception as exc:
+        res = {"ok": False, "fehler": str(exc)[:200]}
+    if res.get("ok"):
+        reel_store.status_setzen(rid, "gepostet", fb_video_id=res.get("video_id"))
+        try:
+            notifications.enqueue(f"Reel auf Facebook veroeffentlicht (video_id {res.get('video_id')}).",
+                                  abteilung="CBO", kategorie="info")
+        except Exception:
+            pass
+    else:
+        reel_store.status_setzen(rid, "fehler", fehler=(res.get("fehler") or "Upload fehlgeschlagen")[:300])
+
+
 @app.post("/api/reel/{rid}/freigeben")
-def reel_freigeben(rid: str):
-    """CEO-Freigabe -> Status 'freigegeben' (Stufe D laedt es danach zu Facebook)."""
-    return JSONResponse({"ok": reel_store.status_setzen(rid, "freigegeben")})
+async def reel_freigeben(rid: str, request: Request, hintergrund: BackgroundTasks):
+    """CEO-Freigabe -> Status 'freigegeben' (optional angepasster Caption-Text) und startet den FB-Upload
+    (Stufe D) im Hintergrund. Auto-Posten passiert NUR nach dieser Freigabe (CEO-Tor)."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    caption = (body or {}).get("caption")
+    ok = reel_store.status_setzen(rid, "freigegeben", **({"caption": caption} if caption is not None else {}))
+    if ok:
+        hintergrund.add_task(_reel_posten, rid)
+    return JSONResponse({"ok": ok})
+
+
+@app.post("/api/reel/{rid}/posten")
+def reel_posten(rid: str, hintergrund: BackgroundTasks):
+    """Upload erneut anstossen (z. B. nach Fehler). Nur fuer bereits eingereichte Reels."""
+    if not reel_store.holen(rid):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Reel nicht gefunden.")
+    hintergrund.add_task(_reel_posten, rid)
+    return JSONResponse({"ok": True, "status": "upload_gestartet"})
 
 
 @app.post("/api/reel/{rid}/ablehnen")
