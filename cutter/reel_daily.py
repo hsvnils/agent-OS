@@ -48,8 +48,18 @@ def _stage(clips: list[dict], arbeit: Path) -> list[Path]:
     return staged
 
 
+def _lade_allowlist(state: Path) -> set | None:
+    """Optionale explizite Allowlist `state/source_allowlist.txt` (ein Ordnername je Zeile, '#'=Kommentar).
+    Fehlt sie -> None (dann greift die Spielordner-Heuristik)."""
+    p = state / "source_allowlist.txt"
+    if not p.exists():
+        return None
+    namen = {ln.strip() for ln in p.read_text("utf-8").splitlines() if ln.strip() and not ln.startswith("#")}
+    return namen or None
+
+
 def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
-         ziel_dauer: float = 45.0, gemini: bool = False) -> dict:
+         ziel_dauer: float = 45.0, gemini: bool = False, transkribieren: bool = False) -> dict:
     """Ein Tages-Reel erzeugen. Gibt einen Bericht (dict). Kein Upload."""
     tag = tag or date.today()
     state = Path(state)
@@ -57,7 +67,7 @@ def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
     index_pfad = state / "clip_index.json"
     used_pfad = state / "used.jsonl"
 
-    idx_res = rq.baue_index(source, index_pfad)
+    idx_res = rq.baue_index(source, index_pfad, allowlist=_lade_allowlist(state))
     if not idx_res.get("ok"):
         return idx_res
     index = rq.lade_index(index_pfad)
@@ -80,7 +90,9 @@ def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
         if not staged:
             return {"ok": False, "fehler": "Kein Clip konnte bereitgestellt werden (Pfade pruefen)."}
         # Themen-Mix ueber Spiele: unsere Reihenfolge steht schon -> keine Gemini-Umsortierung (Default).
-        bericht = schneide_ordner(arbeit, ausgabe, ziel_dauer=ziel_dauer, gemini=gemini)
+        # Transkription standardmaessig AUS (Fan-Montage mit Originalton -> viel schneller, kein Whisper).
+        bericht = schneide_ordner(arbeit, ausgabe, ziel_dauer=ziel_dauer, gemini=gemini,
+                                  transkribieren=transkribieren)
     finally:
         shutil.rmtree(arbeit, ignore_errors=True)
 
@@ -119,6 +131,8 @@ def main(argv=None) -> int:
     p.add_argument("--dauer", type=float, default=45.0, help="Ziel-Gesamtlaenge in Sekunden (Default 45).")
     p.add_argument("--datum", default=None, help="Datum YYYY-MM-DD (Default heute) -- fuer Tests/Nachlauf.")
     p.add_argument("--mit-gemini", action="store_true", help="Gemini-Reihenfolge zulassen (Default aus).")
+    p.add_argument("--mit-transkript", action="store_true",
+                   help="Whisper-Transkription an (Sprach-Trimmen; Default aus -> schneller).")
     a = p.parse_args(argv)
 
     source = _pfad(a.source, "REEL_SOURCE", "~/ReelSource")
@@ -126,7 +140,8 @@ def main(argv=None) -> int:
     state = _pfad(a.state, "REEL_STATE", "~/ReelState")
     tag = date.fromisoformat(a.datum) if a.datum else None
 
-    res = lauf(source=source, outbox=outbox, state=state, tag=tag, ziel_dauer=a.dauer, gemini=a.mit_gemini)
+    res = lauf(source=source, outbox=outbox, state=state, tag=tag, ziel_dauer=a.dauer, gemini=a.mit_gemini,
+               transkribieren=a.mit_transkript)
     print(json.dumps(res, ensure_ascii=False, indent=2))
     return 0 if res.get("ok") else 1
 

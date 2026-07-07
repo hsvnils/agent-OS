@@ -42,6 +42,18 @@ class TestAuswahl(unittest.TestCase):
         self.assertTrue(all(c["pfad"] not in genutzt for c in aus))
 
 
+class TestSpielordnerErkennung(unittest.TestCase):
+    def test_erkennt_spiele_und_meidet_nicht_spiele(self):
+        spiele = ["B04 vs HSV - 16.05.2026", "BMG vs. HSV - 24.08.2025", "HSV 2vs1 Stuttgart - 30.11.2025",
+                  "HSV 5 vs Braunschweig 3", "29. Spieltag - VfB Stuttgart - Hamburger SV", "HSV vs BVB"]
+        keine = ["A Message for Ludo", "AOOSTAR X Hanserautisch", "DanceForGood-Website",
+                 "Community-Einsendungen Aufstiegsfeier", "Biggie & Henning - 30.05.2026"]
+        for s in spiele:
+            self.assertTrue(rq.ist_spielordner(s), s)
+        for n in keine:
+            self.assertFalse(rq.ist_spielordner(n), n)
+
+
 class TestPersistenz(unittest.TestCase):
     def test_lade_genutzte_nur_im_zeitfenster(self):
         with tempfile.TemporaryDirectory() as d:

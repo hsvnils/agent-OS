@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-07 18:30] — Claude Code
+- **Was:** Reel-Pipeline auf echtes Material angepasst (Quelle /Volumes/SocialMediaTeam/.../Dateianfragen, 50
+  gemischte Ordner / ~1854 Clips). (1) Spielordner-Allowlist: `reel_source.ist_spielordner` (Muster
+  vs/2vs1/Spieltag) + optionale explizite Allowlist-Datei `state/source_allowlist.txt` -> Nicht-Spiel-Ordner
+  (DanceForGood, Website, Community-Einsendungen …) fallen raus. (2) Whisper-Transkription im Tages-Reel
+  standardmaessig AUS (Fan-Montage mit Originalton -> deutlich schneller; `--mit-transkript` reaktiviert).
+  Neuer Test `TestSpielordnerErkennung` (6 Tests gruen). End-to-End auf echtem Spielordner bestanden (41s-Reel).
+- **Warum:** Erst-Index ueber alle 1854 Clips waere ~12 h; Quelle ist gemischt + enthaelt Fan-Einsendungen.
+  CEO-Entscheidung: Allowlist echter Spiele + Transkription aus.
+- **Betroffen:** cutter/reel_source.py, cutter/reel_daily.py, cutter/tests/test_reel.py
+
 ## [2026-07-07 18:00] — Claude Code
 - **Was:** Reel-Pipeline geplant + Stufe A/B gebaut (Facebook-Reel-Ziel). Neu: `docs/reel-pipeline-plan.md`
   (Design + CEO-Entscheidungen: 1-Tap-Freigabe, Themen-Mix ueber Spiele, FB-Reel/Originalton, Tagging-Heuristik

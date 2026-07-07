@@ -11,10 +11,21 @@ in dasselbe Index-Schema schreiben (Feld `themen`).
 from __future__ import annotations
 
 import json
+import re
 import time
 from pathlib import Path
 
 from . import ffmpeg_ops as fo
+
+# Erkennt echte Spielordner am Namen ("... vs ...", "HSV 2vs1 ...", "29. Spieltag - ..."). Damit fallen
+# Nicht-Spiel-Ordner (z. B. "DanceForGood-Website", "A Message for Ludo", "Community-Einsendungen") raus.
+_SPIEL_MUSTER = re.compile(r"\bvs\b|\dvs\d|spieltag", re.IGNORECASE)
+
+
+def ist_spielordner(name: str) -> bool:
+    """True, wenn der Ordnername nach einem Spiel aussieht (Allowlist-Heuristik). Ueberschreibbar per
+    expliziter Allowlist-Datei (siehe `reel_daily`)."""
+    return bool(_SPIEL_MUSTER.search(name or ""))
 
 
 def _energie(info) -> float:
@@ -30,11 +41,14 @@ def _energie(info) -> float:
     return round(0.7 * aktiv + 0.3 * dichte, 3)                            # Audio (Jubel) dominiert
 
 
-def baue_index(source_dir, index_pfad, *, neu: bool = False) -> dict:
+def baue_index(source_dir, index_pfad, *, neu: bool = False, nur_spiele: bool = True,
+               allowlist: set[str] | None = None) -> dict:
     """Scannt `source_dir` (Spiel-Unterordner) und schreibt/aktualisiert den Clip-Index (JSON).
 
-    Cacht ueber die Datei-Signatur (mtime_ns, groesse): unveraenderte Clips werden nicht neu geprobed
-    (spart die teure ffmpeg-Analyse). Gibt {ok, clips, spiele, neu}.
+    Filtert die Ordner: ist `allowlist` gesetzt, werden nur Ordner mit exakt diesem Namen beruecksichtigt;
+    sonst (bei `nur_spiele`) nur Ordner, die `ist_spielordner` erkennt. Cacht ueber die Datei-Signatur
+    (mtime_ns, groesse): unveraenderte Clips werden nicht neu geprobed (spart die teure ffmpeg-Analyse).
+    Gibt {ok, clips, spiele, neu, ausgeschlossen}.
     """
     source_dir = Path(source_dir)
     index_pfad = Path(index_pfad)
@@ -54,8 +68,16 @@ def baue_index(source_dir, index_pfad, *, neu: bool = False) -> dict:
     clips: list[dict] = []
     spiele: set[str] = set()
     neu_gezaehlt = 0
+    ausgeschlossen = 0
     for spiel_dir in sorted(p for p in source_dir.iterdir() if p.is_dir()):
         spiel = spiel_dir.name
+        if allowlist is not None:
+            if spiel not in allowlist:
+                ausgeschlossen += 1
+                continue
+        elif nur_spiele and not ist_spielordner(spiel):
+            ausgeschlossen += 1
+            continue
         for pfad in fo.clips_im_ordner(spiel_dir):
             key = str(pfad)
             try:
@@ -80,7 +102,8 @@ def baue_index(source_dir, index_pfad, *, neu: bool = False) -> dict:
     index_pfad.parent.mkdir(parents=True, exist_ok=True)
     index_pfad.write_text(json.dumps({"stand": time.strftime("%Y-%m-%dT%H:%M:%S"), "clips": clips},
                                      ensure_ascii=False, indent=2), "utf-8")
-    return {"ok": True, "clips": len(clips), "spiele": len(spiele), "neu": neu_gezaehlt}
+    return {"ok": True, "clips": len(clips), "spiele": len(spiele), "neu": neu_gezaehlt,
+            "ausgeschlossen": ausgeschlossen}
 
 
 def lade_index(index_pfad) -> list[dict]:
