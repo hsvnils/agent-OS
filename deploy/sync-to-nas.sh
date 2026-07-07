@@ -48,6 +48,7 @@ TAR_EXCLUDES=(
   --exclude='./.env'
   --exclude='./orchestrator/state'
   --exclude='./ig_inbox'
+  --exclude='./reel_freigabe'
 
   --exclude='./projekt_changelog.md'
   --exclude='./finance/budget.md'

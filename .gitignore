@@ -68,3 +68,6 @@ orchestrator/state/
 
 # Instagram-Postfach-Archiv (Collab-Radar, Live-Daten)
 ig_inbox/
+
+# Reel-Freigabe-Store (Stufe C, Live-Daten: eingereichte Reel-Videos + Log -- nie committen)
+reel_freigabe/

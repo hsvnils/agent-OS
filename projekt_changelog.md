@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-07 20:00] — Claude Code
+- **Was:** Reel-Pipeline **Stufe C (1-Tap-Freigabe)** gebaut. Neu `orchestrator/core/reel_store.py`
+  (event-sourced Freigabe-Store: wartet->freigegeben|abgelehnt->gepostet|fehler, 4 Tests gruen). LUNA-OS-
+  Endpunkte `POST /api/reel/einreichen` (Video als base64/JSON -> keine multipart-Dependency),
+  `GET /api/reel`, `GET /api/reel/{id}/video`, `POST /api/reel/{id}/freigeben|ablehnen` + Notifier-Hinweis.
+  LUNA-OS-App **Reels** (`app-v2.js`: Video-Vorschau + Freigeben/Ablehnen; SECTIONS-Eintrag, Cache v14).
+  Mac-Seite: `LunaBridge.reel_einreichen` + `reel_daily --einreichen`. Live-Daten `reel_freigabe/` in
+  .gitignore + sync-to-nas exkludiert.
+- **Warum:** Auto-Posten = Oeffentlichkeit = CEO-Tor (AGENTS.md 4) -> jedes Reel wird vor dem FB-Upload
+  (Stufe D) einzeln freigegeben. CEO-Wahl: Web-App + Telegram-Hinweis.
+- **Betroffen:** orchestrator/core/reel_store.py, orchestrator/tests/test_reel_store.py,
+  orchestrator/channels/web/app.py, orchestrator/channels/web/static/app-v2.js,
+  orchestrator/channels/web/static/index-v2.html, cutter/luna_bridge.py, cutter/reel_daily.py,
+  docs/reel-pipeline-plan.md, .gitignore, deploy/sync-to-nas.sh
+
 ## [2026-07-07 19:35] — Claude Code
 - **Was:** Reel-Content-Tagging nutzt jetzt `gemini-2.5-flash` (statt flash-lite), eigene Env `CUTTER_TAG_MODEL`
   (entkoppelt vom Ordering-Modell CUTTER_VIDEO_MODEL). Kostennotiz aktualisiert (~0,3-0,9 Cent/Clip, Bibliothek

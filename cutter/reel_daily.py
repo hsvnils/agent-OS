@@ -123,7 +123,19 @@ def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
 
     return {"ok": True, "datum": tag.isoformat(), "thema": thema[0], "reel": str(ausgabe),
             "verwendet": len(verwendet), "dauer_sek": bericht.get("dauer_sek"), "caption": thema[2],
-            "metadata": str(tag_dir / "metadata.json")}
+            "spiele": meta["spiele"], "metadata": str(tag_dir / "metadata.json")}
+
+
+def _einreichen(res: dict) -> dict:
+    """Reicht das fertige Reel bei LUNA-OS zur CEO-Freigabe ein (ueber die Mac-Bruecke). Best-effort."""
+    from .luna_bridge import LunaBridge
+    from .pipeline import _lade_env
+    br = LunaBridge.from_env(_lade_env())
+    if not br.aktiv():
+        return {"eingereicht": False, "hinweis": "LUNA-OS-Bruecke inaktiv (LUNA_OS_URL/PASSWORD fehlt)."}
+    meta = {k: res.get(k) for k in ("datum", "thema", "caption", "dauer_sek", "spiele")}
+    r = br.reel_einreichen(res["reel"], meta)
+    return {"eingereicht": bool(r and r.get("ok")), "reel_id": (r or {}).get("id")}
 
 
 def _pfad(cli: str | None, env_key: str, fallback: str) -> Path:
@@ -142,6 +154,8 @@ def main(argv=None) -> int:
     p.add_argument("--mit-gemini", action="store_true", help="Gemini-Reihenfolge zulassen (Default aus).")
     p.add_argument("--mit-transkript", action="store_true",
                    help="Whisper-Transkription an (Sprach-Trimmen; Default aus -> schneller).")
+    p.add_argument("--einreichen", action="store_true",
+                   help="Fertiges Reel zur CEO-Freigabe an LUNA-OS senden (Stufe C). Kein Auto-Posten.")
     a = p.parse_args(argv)
 
     source = _pfad(a.source, "REEL_SOURCE", "~/ReelSource")
@@ -151,6 +165,8 @@ def main(argv=None) -> int:
 
     res = lauf(source=source, outbox=outbox, state=state, tag=tag, ziel_dauer=a.dauer,
                clip_laenge=a.clip_laenge, gemini=a.mit_gemini, transkribieren=a.mit_transkript)
+    if a.einreichen and res.get("ok"):
+        res.update(_einreichen(res))
     print(json.dumps(res, ensure_ascii=False, indent=2))
     return 0 if res.get("ok") else 1
 

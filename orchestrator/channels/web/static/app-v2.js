@@ -69,6 +69,7 @@ const SECTIONS = [
   { id: "radar", icon: "🎯", label: "Radar", app: "crm" },
   { id: "content", icon: "✎", label: "Content", app: "trends" },
   { id: "cutter", icon: "🎬", label: "Cutter", app: "cutter" },
+  { id: "reel", icon: "📤", label: "Reels", app: "cutter" },
   { id: "wissen", icon: "🧠", label: "Wissen", app: "wissen" },
   { id: "agenten", icon: "🛰", label: "Agenten", app: "home" },
   { id: "system", icon: "📡", label: "System", app: null },
@@ -458,6 +459,19 @@ async function renderCutter() {
   $("#v2-app").innerHTML = secHead("Cutter") + `<div class="v2-grid">${tile("Reel-Job anstoßen", form, "w5")}${tile(`Jobs & Historie (${(c.jobs || []).length})`, jobs, "w7")}</div>`;
 }
 
+/* =========================== Reels (Stufe C: 1-Tap-Freigabe) =========================== */
+RENDER.reel = renderReels;
+async function renderReels() {
+  const d = await jget("/api/reel") || {};
+  const badge = { wartet: "wartet", freigegeben: "ok", abgelehnt: "danger", gepostet: "ok", fehler: "danger" };
+  const lbl = { wartet: "Wartet auf Freigabe", freigegeben: "Freigegeben", abgelehnt: "Abgelehnt", gepostet: "Gepostet", fehler: "Fehler" };
+  const cards = (d.reels || []).map(r => `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${badge[r.status] || "neutral"}">${lbl[r.status] || esc(r.status)}</span><b>${esc(r.thema || "Reel")}</b> <small>${esc(r.datum || "")}${r.dauer_sek ? " · " + r.dauer_sek + "s" : ""}</small></div>
+    <video src="/api/reel/${esc(r.id)}/video" controls playsinline preload="metadata" style="width:100%;max-height:60vh;border-radius:12px;background:#000;margin:8px 0"></video>
+    ${r.caption ? `<div class="v2-desc">${esc(r.caption)}</div>` : ""}${(r.spiele && r.spiele.length) ? `<div class="v2-sub">${r.spiele.map(esc).join(" · ")}</div>` : ""}
+    ${r.status === "wartet" ? `<div style="display:flex;gap:8px;margin-top:8px"><button class="v2-btn ok" data-act="reel-freigeben" data-id="${esc(r.id)}">✅ Freigeben</button><button class="v2-btn danger" data-act="reel-ablehnen" data-id="${esc(r.id)}">❌ Ablehnen</button></div>` : ""}</div>`).join("") || emptyRow("Noch keine Reels — der Mac-Cutter reicht sie nach dem Schnitt hier ein (Auto-Posten bleibt CEO-Tor).");
+  $("#v2-app").innerHTML = secHead("Reels") + `<div class="v2-cards">${cards}</div>`;
+}
+
 /* =========================== Wissen + Lagebild =========================== */
 RENDER.wissen = renderWissen;
 async function renderWissen() {
@@ -572,6 +586,8 @@ async function handleAct(act, el) {
     case "crm-todo": await jpost(`/api/crm/todo/${id}/erledigen`); return renderCrm();
     case "crm-sync": { flash("⏳ synchronisiert…"); const r = await jpost("/api/crm/sync"); if (r && r.api_fehler) alert("Instagram-Sync-Fehler:\n" + r.api_fehler); else if (r && r.ok === false) alert("Sync nicht möglich:\n" + (r.hinweis || "unbekannt")); return renderCrm(); }
     case "crm-firma": return crmFirma(id);
+    case "reel-freigeben": flash("⏳ …"); await jpost(`/api/reel/${id}/freigeben`); return renderReels();
+    case "reel-ablehnen": if (!confirm("Reel ablehnen? Es wird nicht gepostet.")) return; await jpost(`/api/reel/${id}/ablehnen`); return renderReels();
     case "radar-kontakt": return radarKontakt(id);
     case "status": {
       const map = { trend: ["/api/trends/", "status", renderContent], idea: ["/api/ideas/", "status", renderContent], draft: ["/api/drafts/", "status", renderContent], ai: ["/api/ai-inbox/", "recommendation", renderContent] };

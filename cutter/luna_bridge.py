@@ -34,7 +34,7 @@ class LunaBridge:
     def aktiv(self) -> bool:
         return bool(self.base and self._pw)
 
-    def _req(self, pfad: str, *, method: str = "GET", data: dict | None = None):
+    def _req(self, pfad: str, *, method: str = "GET", data: dict | None = None, timeout: int | None = None):
         if not self.aktiv():
             return None
         token = base64.b64encode(f"{self._user}:{self._pw}".encode()).decode()
@@ -44,12 +44,23 @@ class LunaBridge:
             headers={"Authorization": "Basic " + token,
                      **({"Content-Type": "application/json"} if body else {})})
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as r:
+            with urllib.request.urlopen(req, timeout=timeout or self.timeout) as r:
                 txt = r.read().decode("utf-8")
                 return json.loads(txt) if txt.strip() else {}
         except Exception as exc:
             print(f"[luna-bridge] {method} {pfad} fehlgeschlagen: {str(exc)[:120]}", flush=True)
             return None
+
+    def reel_einreichen(self, video_pfad: str, meta: dict) -> dict | None:
+        """Reicht ein fertiges Reel bei LUNA-OS zur CEO-Freigabe ein (Video als base64 im JSON). `meta`:
+        datum/thema/caption/dauer_sek/spiele/clips. Gibt {ok, id} oder None. Kein Auto-Posten (CEO-Tor)."""
+        from pathlib import Path
+        try:
+            b64 = base64.b64encode(Path(video_pfad).read_bytes()).decode()
+        except OSError as exc:
+            print(f"[luna-bridge] Reel lesen fehlgeschlagen: {str(exc)[:120]}", flush=True)
+            return None
+        return self._req("/api/reel/einreichen", method="POST", data={**meta, "video_b64": b64}, timeout=180)
 
     def offene_jobs(self) -> list[dict]:
         """Von LUNA-OS in die Warteschlange gestellte Jobs (queued)."""

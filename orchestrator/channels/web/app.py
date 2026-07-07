@@ -30,6 +30,7 @@ from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, C
 from ...core.briefing import Agenda
 from ...core.insights import Insights
 from ...core.notifications import Notifications
+from ...core.reel_store import ReelStore
 from ...core.research_tickets import ResearchTickets
 from ...core.team_auth import MODULE, MODUL_LABELS, TeamAuth, erlaubte_apps, hat_modul, modul_fuer_pfad
 from ...governance.changelog_tool import append_changelog
@@ -65,6 +66,8 @@ def _crm_projektor():
 crm_store = CrmStore(ROOT / "crm" / "log.jsonl", changelog=_changelog, projektor=_crm_projektor(),
                      notify=notifications.enqueue)   # Phase 23<->21: Injection im DM-Webhook meldet an CISO
 ig_inbox_store = IgInboxStore(ROOT / "ig_inbox" / "log.jsonl")   # Collab-Radar: Voll-Postfach-Archiv + KI-Analyse
+REEL_DIR = ROOT / "reel_freigabe"                                # Stufe C: eingereichte Reels (Video + Log)
+reel_store = ReelStore(REEL_DIR / "log.jsonl")
 
 
 def _supabase_client():
@@ -1077,6 +1080,67 @@ async def crm_sync():
     tracker = CrmInstagramTracker(crm=crm_store, reader=reader, secrets=sec, notify=notifications.enqueue)
     res = await asyncio.to_thread(tracker.lauf)
     return JSONResponse(res)
+
+
+# -- Reel-Pipeline Stufe C: 1-Tap-Freigabe (Mac reicht ein -> CEO gibt frei; Auto-Posten = CEO-Tor) --
+@app.post("/api/reel/einreichen")
+async def reel_einreichen(request: Request):
+    """Der Mac-Cutter reicht ein fertiges Reel ein (Video als base64 im JSON -> keine multipart-Dependency).
+    Wird als 'wartet' registriert; der CEO gibt es in der Reels-App frei. Kein Auto-Posten."""
+    import base64 as _b64
+    body = await request.json()
+    b64 = body.get("video_b64") or ""
+    if not b64:
+        return JSONResponse({"ok": False, "fehler": "Kein Video (video_b64)."}, status_code=400)
+    try:
+        daten = _b64.b64decode(b64)
+    except Exception:
+        return JSONResponse({"ok": False, "fehler": "video_b64 ungueltig."}, status_code=400)
+    rid = uuid.uuid4().hex[:12]
+    REEL_DIR.mkdir(parents=True, exist_ok=True)
+    ziel = REEL_DIR / f"{rid}.mp4"
+    ziel.write_bytes(daten)
+    reel_store.einreichen(rid=rid, datum=str(body.get("datum", "")), thema=str(body.get("thema", "")),
+                          caption=str(body.get("caption", "")), video=str(ziel),
+                          spiele=body.get("spiele") or [], dauer_sek=body.get("dauer_sek"),
+                          clips=body.get("clips") or [])
+    thema = str(body.get("thema", ""))
+    datum = str(body.get("datum", ""))
+    try:
+        notifications.enqueue(
+            f"Neues Reel ({thema}, {datum}) wartet auf Freigabe -> LUNA-OS App Reels.",
+            abteilung="CBO", kategorie="anliegen",
+            detail="Auto-Reel-Pipeline: in der Reels-App ansehen und Freigeben/Ablehnen (Auto-Posten = CEO-Tor).")
+    except Exception:
+        pass
+    return JSONResponse({"ok": True, "id": rid})
+
+
+@app.get("/api/reel")
+def reel_liste():
+    """Eingereichte Reels (neueste zuerst) fuer die Reels-App."""
+    return {"reels": reel_store.liste(limit=60)}
+
+
+@app.get("/api/reel/{rid}/video")
+def reel_video(rid: str):
+    """Liefert das eingereichte Reel-Video (Inline-Vorschau in der Reels-App)."""
+    r = reel_store.holen(rid)
+    if not r or not r.get("video") or not Path(r["video"]).exists():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Video nicht gefunden.")
+    return FileResponse(r["video"], media_type="video/mp4")
+
+
+@app.post("/api/reel/{rid}/freigeben")
+def reel_freigeben(rid: str):
+    """CEO-Freigabe -> Status 'freigegeben' (Stufe D laedt es danach zu Facebook)."""
+    return JSONResponse({"ok": reel_store.status_setzen(rid, "freigegeben")})
+
+
+@app.post("/api/reel/{rid}/ablehnen")
+def reel_ablehnen(rid: str):
+    """CEO-Ablehnung -> Status 'abgelehnt' (wird nicht gepostet)."""
+    return JSONResponse({"ok": reel_store.status_setzen(rid, "abgelehnt")})
 
 
 def _radar_kompakt(k: dict) -> dict:

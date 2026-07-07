@@ -47,8 +47,12 @@ Die Spiel-Ordner bleiben unveraendert die Quelle. Pfade sind per Env/CLI konfigu
 - **Stufe B -- Tages-Selektor + Schnitt** (`cutter/reel_select.py` + `cutter/reel_daily.py`): Tagesthema
   (rotierend), themenbasierte Auswahl ueber Spiele mit Anti-Doppel, Schnitt via bestehender Pipeline, Ablage
   in `outbox/<datum>/` + `metadata.json`, Protokoll in `used.jsonl`. Ohne Meta baubar. **[gebaut]**
-- **Stufe C -- 1-Tap-Freigabe-Bridge**: LUNA-OS erkennt neues Reel -> Antrag mit Video-Vorschau -> Telegram-
-  Freigabe. Nutzt den vorhandenen Freigabe-Workflow. **[offen]**
+- **Stufe C -- 1-Tap-Freigabe-Bridge**: **[gebaut]** Mac reicht das Reel per `reel_daily --einreichen` ->
+  `LunaBridge.reel_einreichen` (base64/JSON, keine multipart-Dependency) bei LUNA-OS ein
+  (`POST /api/reel/einreichen`); `ReelStore` (`core/reel_store.py`) haelt es als 'wartet'; LUNA-OS-App **Reels**
+  (`app-v2.js`, Video-Vorschau + Freigeben/Ablehnen) + Telegram-Hinweis (Notifier). Freigabe -> Status
+  'freigegeben' (Stufe D liest es). Endpunkte `/api/reel`(+`/einreichen`,`/{id}/video`,`/{id}/freigeben`,
+  `/{id}/ablehnen`). Cache app-v2.js v14. Live-Daten `reel_freigabe/` (gitignored + sync-exkludiert).
 - **Stufe D -- Facebook-Upload**: Token-Scopes pruefen/erweitern (`pages_manage_posts` + `pages_read_engagement`;
   Seed-Token einmalig neu holen -- fuer die EIGENE Seite i. d. R. ohne grosses App-Review). Upload via FB-Reels-
   API (`POST /{page-id}/video_reels`, 3-Phasen: start -> upload -> finish `video_state=PUBLISHED`). **[offen]**
