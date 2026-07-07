@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-07 18:00] — Claude Code
+- **Was:** Reel-Pipeline geplant + Stufe A/B gebaut (Facebook-Reel-Ziel). Neu: `docs/reel-pipeline-plan.md`
+  (Design + CEO-Entscheidungen: 1-Tap-Freigabe, Themen-Mix ueber Spiele, FB-Reel/Originalton, Tagging-Heuristik
+  v0). Code: `cutter/reel_source.py` (Clip-Index + heuristische Energie), `cutter/reel_select.py` (Themen-
+  Rotation + Auswahl ueber Spiele mit Anti-Doppel), `cutter/reel_daily.py` (Tages-Orchestrator ->
+  outbox/<datum>/reel.mp4 + metadata.json + used.jsonl; KEIN Upload). Tests `cutter/tests/test_reel.py`
+  (5 Unit-Tests gruen) + End-to-End-Rauchtest mit ffmpeg-Testclips bestanden. launchd
+  `cutter/com.hanserautisch.reel.daily.plist`. ROADMAP-Backlog-Sektion aktualisiert.
+- **Warum:** CEO-Ziel „vollautomatische taegliche Reel-Pipeline -> Facebook" (ROADMAP Backlog, Prio). Waehrend
+  der Meta-DM-Review baubar, da Stufe A/B ohne Meta auskommt.
+- **Betroffen:** docs/reel-pipeline-plan.md, cutter/reel_source.py, cutter/reel_select.py, cutter/reel_daily.py,
+  cutter/tests/test_reel.py, cutter/com.hanserautisch.reel.daily.plist, ROADMAP.md
+
 ## [2026-07-06 16:50] — Claude Code
 - **Was:** Manuellen Instagram-DM-Sync-Button „🔄 DMs synchronisieren" in der Collab-CRM-Ansicht (LUNA-OS V2)
   eingebaut. Neuer Endpunkt `POST /api/crm/sync` ruft denselben inkrementellen DM-Poll auf wie die Automatik

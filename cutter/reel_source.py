@@ -1,0 +1,94 @@
+"""Reel-Pipeline (Stufe A) -- Clip-Index ueber die Spiel-Ordner der Quelle.
+
+Scannt das Quell-Verzeichnis (pro Spiel ein Unterordner, z. B. "HSV vs FCB - 2026-05-01"), erfasst je Clip
+Dauer + Audio + eine **heuristische Energie** (0..1: laut/aktiv vs. ruhig -- v0 ohne KI, rein lokal ueber
+ffmpeg) und legt das Ergebnis gecacht als JSON ab. Fundament fuer die themenbasierte Tages-Auswahl
+(`reel_select`).
+
+Kostenlos/lokal. KEIN Upload, KEINE Cloud. Spaeter kann die Gemini-Video-KI (CEO-Tor) reichere Themen-Tags
+in dasselbe Index-Schema schreiben (Feld `themen`).
+"""
+from __future__ import annotations
+
+import json
+import time
+from pathlib import Path
+
+from . import ffmpeg_ops as fo
+
+
+def _energie(info) -> float:
+    """Heuristische Energie 0..1: Anteil NICHT-stiller Zeit (laute Momente = Tore/Jubel) + Szenendichte.
+    Rein lokal ueber ffmpeg. Ohne Audio -> nur Szenendichte (halbes Gewicht)."""
+    dauer = max(0.1, info.dauer)
+    szenen = fo.szenen_zeiten(info.pfad)
+    dichte = min(1.0, len(szenen) / (dauer / 3.0)) if dauer > 0 else 0.0   # ~1 Schnitt / 3 s = 1.0
+    if not info.hat_audio:
+        return round(0.5 * dichte, 3)
+    stille = sum(max(0.0, e - s) for s, e in fo.stille_spannen(info.pfad))
+    aktiv = max(0.0, min(1.0, 1.0 - stille / dauer))
+    return round(0.7 * aktiv + 0.3 * dichte, 3)                            # Audio (Jubel) dominiert
+
+
+def baue_index(source_dir, index_pfad, *, neu: bool = False) -> dict:
+    """Scannt `source_dir` (Spiel-Unterordner) und schreibt/aktualisiert den Clip-Index (JSON).
+
+    Cacht ueber die Datei-Signatur (mtime_ns, groesse): unveraenderte Clips werden nicht neu geprobed
+    (spart die teure ffmpeg-Analyse). Gibt {ok, clips, spiele, neu}.
+    """
+    source_dir = Path(source_dir)
+    index_pfad = Path(index_pfad)
+    if not source_dir.exists():
+        return {"ok": False, "fehler": f"Quell-Verzeichnis fehlt: {source_dir}"}
+    if not fo.ffmpeg_vorhanden():
+        return {"ok": False, "fehler": "ffmpeg/ffprobe nicht gefunden (brew install ffmpeg)."}
+
+    alt: dict[str, dict] = {}
+    if index_pfad.exists() and not neu:
+        try:
+            for c in json.loads(index_pfad.read_text("utf-8")).get("clips", []):
+                alt[c["pfad"]] = c
+        except Exception:
+            alt = {}
+
+    clips: list[dict] = []
+    spiele: set[str] = set()
+    neu_gezaehlt = 0
+    for spiel_dir in sorted(p for p in source_dir.iterdir() if p.is_dir()):
+        spiel = spiel_dir.name
+        for pfad in fo.clips_im_ordner(spiel_dir):
+            key = str(pfad)
+            try:
+                st = pfad.stat()
+                sig = [st.st_mtime_ns, st.st_size]
+            except OSError:
+                continue
+            vorhanden = alt.get(key)
+            if vorhanden and vorhanden.get("sig") == sig:          # unveraendert -> Cache uebernehmen
+                clips.append(vorhanden)
+                spiele.add(vorhanden.get("spiel", spiel))
+                continue
+            info = fo.probe(pfad)
+            if info is None or info.dauer <= 0:
+                continue
+            clips.append({"pfad": key, "spiel": spiel, "dauer": round(info.dauer, 2),
+                          "hat_audio": info.hat_audio, "energie": _energie(info),
+                          "themen": [], "sig": sig})
+            spiele.add(spiel)
+            neu_gezaehlt += 1
+
+    index_pfad.parent.mkdir(parents=True, exist_ok=True)
+    index_pfad.write_text(json.dumps({"stand": time.strftime("%Y-%m-%dT%H:%M:%S"), "clips": clips},
+                                     ensure_ascii=False, indent=2), "utf-8")
+    return {"ok": True, "clips": len(clips), "spiele": len(spiele), "neu": neu_gezaehlt}
+
+
+def lade_index(index_pfad) -> list[dict]:
+    """Liest den gecachten Clip-Index (Liste von Clip-Dicts). [] bei fehlender/kaputter Datei."""
+    p = Path(index_pfad)
+    if not p.exists():
+        return []
+    try:
+        return json.loads(p.read_text("utf-8")).get("clips", [])
+    except Exception:
+        return []

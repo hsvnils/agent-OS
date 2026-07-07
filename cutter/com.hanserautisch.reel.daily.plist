@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- LaunchAgent: taeglicher Reel-Lauf (Stufe A+B). Schneidet EIN 45s-Reel aus dem Spielarchiv und legt es
+     in die Outbox. KEIN Upload -- das Reel wartet auf die 1-Tap-Freigabe (Stufe C/D).
+     VOR der Installation die drei REEL_*-Pfade an deine (gemountete NAS-)Verzeichnisse anpassen.
+     Installation:  cp cutter/com.hanserautisch.reel.daily.plist ~/Library/LaunchAgents/
+                    launchctl load ~/Library/LaunchAgents/com.hanserautisch.reel.daily.plist -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hanserautisch.reel.daily</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/nilskrueger/Documents/KI-Unternehmen/.venv/bin/python</string>
+        <string>-m</string>
+        <string>cutter.reel_daily</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/nilskrueger/Documents/KI-Unternehmen</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>REEL_SOURCE</key>
+        <string>/Volumes/NAS/reels/source</string>
+        <key>REEL_OUTBOX</key>
+        <string>/Volumes/NAS/reels/outbox</string>
+        <key>REEL_STATE</key>
+        <string>/Volumes/NAS/reels/state</string>
+    </dict>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key><integer>6</integer>
+        <key>Minute</key><integer>0</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>/Users/nilskrueger/Library/Logs/reel-daily.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/nilskrueger/Library/Logs/reel-daily.log</string>
+</dict>
+</plist>

@@ -407,6 +407,16 @@ bauen kontrolliert darauf auf. Das groesste Risiko ist nicht technischer, sonder
 **Stimmung/Inhalt variieren taeglich**; alle Ergebnisse werden in einer **festen Dateistruktur** abgelegt.
 **Laeuft vollautomatisch.**
 
+**Stand 2026-07-07 — Plan + Stufe A/B gebaut.** Design-Doc: `docs/reel-pipeline-plan.md` (CEO-Entscheidungen:
+1-Tap-Freigabe pro Reel, Themen-Mix ueber Spiele, FB-Reel mit Originalton, Themen-Tagging v0-Heuristik).
+Gebaut + getestet (end-to-end mit ffmpeg-Testclips, 5 Unit-Tests gruen): **Stufe A** Clip-Index
+(`cutter/reel_source.py`, heuristische Energie), **Stufe B** Themen-Selektor + Tages-Orchestrator
+(`cutter/reel_select.py` + `cutter/reel_daily.py`: Tagesthema rotierend, Auswahl ueber Spiele mit Anti-Doppel,
+Schnitt via bestehender Pipeline -> `outbox/<datum>/reel.mp4` + `metadata.json`; kein Upload). launchd
+`cutter/com.hanserautisch.reel.daily.plist` (REEL_SOURCE/OUTBOX/STATE anpassen, dann installieren).
+**Offen:** Stufe C (1-Tap-Freigabe-Bridge), Stufe D (FB-Reels-Upload + Token-Scope `pages_manage_posts`),
+Stufe E (Betrieb).
+
 **Bausteine (haben wir / fehlt):**
 1. **Sammelordner** (Quelle) — trivial.
 2. **Taegliche Auswahl + Schnitt** — der **Cutter existiert** (ffmpeg + whisper.cpp + Gemini-Reihenfolge,
