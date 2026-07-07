@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-07 18:45] — Claude Code
+- **Was:** Reel-Pacing einstellbar gemacht: neuer Parameter/Flag `clip_laenge` (Default 4.6s) im Tages-Lauf
+  steuert die Clip-Anzahl (ziel_dauer/clip_laenge -> ~9-10 Clips fuer 45s). Wird an `schneide_ordner`
+  (broll_dauer) durchgereicht; Auswahl begrenzt auf Budget+Puffer (keine unnoetige Clip-Analyse). CLI
+  `--clip-laenge`.
+- **Warum:** CEO wollte Mittelweg zwischen 4 (zu ruhig) und 14 Clips (zu hektisch) -> ~9-10.
+- **Betroffen:** cutter/reel_daily.py
+
 ## [2026-07-07 18:30] — Claude Code
 - **Was:** Reel-Pipeline auf echtes Material angepasst (Quelle /Volumes/SocialMediaTeam/.../Dateianfragen, 50
   gemischte Ordner / ~1854 Clips). (1) Spielordner-Allowlist: `reel_source.ist_spielordner` (Muster

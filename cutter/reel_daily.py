@@ -59,8 +59,13 @@ def _lade_allowlist(state: Path) -> set | None:
 
 
 def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
-         ziel_dauer: float = 45.0, gemini: bool = False, transkribieren: bool = False) -> dict:
-    """Ein Tages-Reel erzeugen. Gibt einen Bericht (dict). Kein Upload."""
+         ziel_dauer: float = 45.0, clip_laenge: float = 4.6, gemini: bool = False,
+         transkribieren: bool = False) -> dict:
+    """Ein Tages-Reel erzeugen. Gibt einen Bericht (dict). Kein Upload.
+
+    `clip_laenge` steuert das Tempo: ohne Transkription ist jeder Clip B-Roll dieser Laenge -> ziel_dauer /
+    clip_laenge ergibt die Clip-Anzahl (Default ~4,6s -> ~9-10 Clips fuer ein 45s-Reel).
+    """
     tag = tag or date.today()
     state = Path(state)
     state.mkdir(parents=True, exist_ok=True)
@@ -76,7 +81,9 @@ def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
 
     thema = rs.thema_fuer_tag(tag)
     genutzt = rs.lade_genutzte(used_pfad)
-    auswahl = rs.waehle_clips(index, thema, genutzt=genutzt, seed=tag.isoformat())
+    # Nur so viele Clips waehlen (+ kleiner Puffer), wie ins Budget passen -> keine unnoetige Clip-Analyse.
+    max_clips = int(ziel_dauer / max(1.0, clip_laenge)) + 3
+    auswahl = rs.waehle_clips(index, thema, genutzt=genutzt, max_clips=max_clips, seed=tag.isoformat())
     if not auswahl:
         return {"ok": False, "fehler": "Keine passenden Clips fuer die Auswahl."}
 
@@ -91,8 +98,8 @@ def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
             return {"ok": False, "fehler": "Kein Clip konnte bereitgestellt werden (Pfade pruefen)."}
         # Themen-Mix ueber Spiele: unsere Reihenfolge steht schon -> keine Gemini-Umsortierung (Default).
         # Transkription standardmaessig AUS (Fan-Montage mit Originalton -> viel schneller, kein Whisper).
-        bericht = schneide_ordner(arbeit, ausgabe, ziel_dauer=ziel_dauer, gemini=gemini,
-                                  transkribieren=transkribieren)
+        bericht = schneide_ordner(arbeit, ausgabe, ziel_dauer=ziel_dauer, broll_dauer=clip_laenge,
+                                  gemini=gemini, transkribieren=transkribieren)
     finally:
         shutil.rmtree(arbeit, ignore_errors=True)
 
@@ -129,6 +136,8 @@ def main(argv=None) -> int:
     p.add_argument("--outbox", default=None, help="Ausgabe-Verzeichnis. Env REEL_OUTBOX.")
     p.add_argument("--state", default=None, help="Status-Verzeichnis (Index/used). Env REEL_STATE.")
     p.add_argument("--dauer", type=float, default=45.0, help="Ziel-Gesamtlaenge in Sekunden (Default 45).")
+    p.add_argument("--clip-laenge", type=float, default=4.6,
+                   help="Laenge je Clip in Sekunden -> steuert die Anzahl (Default 4.6 -> ~9-10 Clips).")
     p.add_argument("--datum", default=None, help="Datum YYYY-MM-DD (Default heute) -- fuer Tests/Nachlauf.")
     p.add_argument("--mit-gemini", action="store_true", help="Gemini-Reihenfolge zulassen (Default aus).")
     p.add_argument("--mit-transkript", action="store_true",
@@ -140,8 +149,8 @@ def main(argv=None) -> int:
     state = _pfad(a.state, "REEL_STATE", "~/ReelState")
     tag = date.fromisoformat(a.datum) if a.datum else None
 
-    res = lauf(source=source, outbox=outbox, state=state, tag=tag, ziel_dauer=a.dauer, gemini=a.mit_gemini,
-               transkribieren=a.mit_transkript)
+    res = lauf(source=source, outbox=outbox, state=state, tag=tag, ziel_dauer=a.dauer,
+               clip_laenge=a.clip_laenge, gemini=a.mit_gemini, transkribieren=a.mit_transkript)
     print(json.dumps(res, ensure_ascii=False, indent=2))
     return 0 if res.get("ok") else 1
 
