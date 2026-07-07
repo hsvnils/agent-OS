@@ -17,7 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-07-07 20:45] — Claude Code
+## [2026-07-07 21:15] — Claude Code
+- **Was:** Reel-Pipeline NAS-faehig gemacht (24/7 ohne Mac). (1) ffmpeg ins Image (`deploy/Dockerfile`).
+  (2) Video-Archiv-Mount `/volume1/reels:/reels` in `deploy/docker-compose.yml` (luna-os). (3) Schnell-Index-
+  Modus `baue_index(energie_analyse=False)` + `reel_daily --schnell-index` -> ueberspringt Szenen-/Ton-Analyse
+  (nur ffprobe) fuer den grossen Erst-Aufbau. (4) `_einreichen` respektiert Prozess-Env (LUNA_OS_URL ueber .env)
+  -> Nightly-Job im Container kann sich per localhost:8765 einreichen. End-to-End + 13 Cutter-Tests gruen.
+- **Warum:** CEO: gesamte Reel-Erstellung auf die NAS verlagern (nachts, langsam ok), alle Videos per Cloud
+  Sync auf der NAS mit Datums-Kennung. Rebuild + compose + Cloud Sync + DSM-Aufgabenplaner = CEO-Setup.
+- **Betroffen:** deploy/Dockerfile, deploy/docker-compose.yml, cutter/reel_source.py, cutter/reel_daily.py,
+  docs/reel-pipeline-plan.md
 - **Was:** Reel-Caption-Vorlagen korrigiert: echte Umlaute (ae/oe/ue/ss -> ä/ö/ü/ß, z. B. „Rückblick") und
   immer die Hashtags „#hsv #hanserautisch". THEMA_TAGS-Schluessel „Woche im Rückblick" mitgezogen.
 - **Warum:** CEO: Posting-Texte (Content) muessen echte Umlaute + die Marken-Hashtags nutzen. Mac-seitig

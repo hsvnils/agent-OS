@@ -60,7 +60,7 @@ def _lade_allowlist(state: Path) -> set | None:
 
 def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
          ziel_dauer: float = 45.0, clip_laenge: float = 4.6, gemini: bool = False,
-         transkribieren: bool = False) -> dict:
+         transkribieren: bool = False, schnell_index: bool = False) -> dict:
     """Ein Tages-Reel erzeugen. Gibt einen Bericht (dict). Kein Upload.
 
     `clip_laenge` steuert das Tempo: ohne Transkription ist jeder Clip B-Roll dieser Laenge -> ziel_dauer /
@@ -72,7 +72,8 @@ def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
     index_pfad = state / "clip_index.json"
     used_pfad = state / "used.jsonl"
 
-    idx_res = rq.baue_index(source, index_pfad, allowlist=_lade_allowlist(state))
+    idx_res = rq.baue_index(source, index_pfad, allowlist=_lade_allowlist(state),
+                            energie_analyse=not schnell_index)
     if not idx_res.get("ok"):
         return idx_res
     index = rq.lade_index(index_pfad)
@@ -130,7 +131,11 @@ def _einreichen(res: dict) -> dict:
     """Reicht das fertige Reel bei LUNA-OS zur CEO-Freigabe ein (ueber die Mac-Bruecke). Best-effort."""
     from .luna_bridge import LunaBridge
     from .pipeline import _lade_env
-    br = LunaBridge.from_env(_lade_env())
+    env = _lade_env()
+    for k in ("LUNA_OS_URL", "LUNA_OS_USER", "LUNA_OS_PASSWORD"):   # Prozess-Env darf .env ueberschreiben
+        if os.environ.get(k):                                       # (NAS-Job im Container: localhost:8765)
+            env[k] = os.environ[k]
+    br = LunaBridge.from_env(env)
     if not br.aktiv():
         return {"eingereicht": False, "hinweis": "LUNA-OS-Bruecke inaktiv (LUNA_OS_URL/PASSWORD fehlt)."}
     meta = {k: res.get(k) for k in ("datum", "thema", "caption", "dauer_sek", "spiele")}
@@ -156,6 +161,9 @@ def main(argv=None) -> int:
                    help="Whisper-Transkription an (Sprach-Trimmen; Default aus -> schneller).")
     p.add_argument("--einreichen", action="store_true",
                    help="Fertiges Reel zur CEO-Freigabe an LUNA-OS senden (Stufe C). Kein Auto-Posten.")
+    p.add_argument("--schnell-index", action="store_true",
+                   help="Index ohne Szenen-/Ton-Analyse (nur Auflösung/Dauer) -> viel schneller beim Erst-"
+                        "Aufbau grosser Archive (NAS). Inhaltserkennung uebernimmt Gemini-Tagging.")
     a = p.parse_args(argv)
 
     source = _pfad(a.source, "REEL_SOURCE", "~/ReelSource")
@@ -164,7 +172,8 @@ def main(argv=None) -> int:
     tag = date.fromisoformat(a.datum) if a.datum else None
 
     res = lauf(source=source, outbox=outbox, state=state, tag=tag, ziel_dauer=a.dauer,
-               clip_laenge=a.clip_laenge, gemini=a.mit_gemini, transkribieren=a.mit_transkript)
+               clip_laenge=a.clip_laenge, gemini=a.mit_gemini, transkribieren=a.mit_transkript,
+               schnell_index=a.schnell_index)
     if a.einreichen and res.get("ok"):
         res.update(_einreichen(res))
     print(json.dumps(res, ensure_ascii=False, indent=2))

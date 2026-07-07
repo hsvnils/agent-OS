@@ -77,6 +77,19 @@ Die Spiel-Ordner bleiben unveraendert die Quelle. Pfade sind per Env/CLI konfigu
   (`gemini-2.5-flash-lite`, 360p-Proxys, ~0,1-0,3 Cent/Clip einmalig). (c) Spaeter: lokales Vision-Modell
   (neuer Mac) = echte Erkennung ohne Cloud/Kosten.
 
+## NAS-Betrieb (24/7 ohne Mac)
+Der Schnitt laeuft im `luna-os`-Container statt am Mac (gleicher Code -> gleiches Ergebnis, nur langsamer).
+- **ffmpeg** ins Image (`deploy/Dockerfile`); Rebuild noetig.
+- **Video-Archiv** `/volume1/reels/` in den Container gemountet (`deploy/docker-compose.yml`: `- /volume1/reels:/reels`).
+  `source/` wird per **Synology Cloud Sync** aus dem Dropbox-Ordner „Dateianfragen" gespiegelt (alle Rohvideos,
+  datierte Spiel-Ordner). `outbox/<datum>/` + `state/` liegen daneben.
+- **Nightly-Job** via DSM-Aufgabenplaner:
+  `docker exec -e LUNA_OS_URL=http://localhost:8765 luna-os python -m cutter.reel_daily --source /reels/source
+  --outbox /reels/outbox --state /reels/state --einreichen --schnell-index`
+- **Schnell-Index** (`--schnell-index` / `baue_index(energie_analyse=False)`): ueberspringt die teure Szenen-/
+  Ton-Analyse (nur ffprobe) -> Minuten statt Stunden beim Erst-Aufbau; Inhaltserkennung via Gemini-Tagging.
+- Approval + FB-Upload laufen ohnehin auf der NAS -> die ganze Kette ist Mac-unabhaengig.
+
 ## Governance / Risiken
 - **Auto-Posten = CEO-Tor** -> geloest ueber 1-Tap-Freigabe pro Reel (Stufe C).
 - **Musik/Rechte** -> Originalton (kein Fremdmusik-Risiko fuer Monetarisierung).

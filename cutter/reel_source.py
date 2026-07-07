@@ -42,12 +42,16 @@ def _energie(info) -> float:
 
 
 def baue_index(source_dir, index_pfad, *, neu: bool = False, nur_spiele: bool = True,
-               allowlist: set[str] | None = None) -> dict:
+               allowlist: set[str] | None = None, energie_analyse: bool = True) -> dict:
     """Scannt `source_dir` (Spiel-Unterordner) und schreibt/aktualisiert den Clip-Index (JSON).
 
     Filtert die Ordner: ist `allowlist` gesetzt, werden nur Ordner mit exakt diesem Namen beruecksichtigt;
     sonst (bei `nur_spiele`) nur Ordner, die `ist_spielordner` erkennt. Cacht ueber die Datei-Signatur
     (mtime_ns, groesse): unveraenderte Clips werden nicht neu geprobed (spart die teure ffmpeg-Analyse).
+
+    `energie_analyse=False` (Schnell-Modus): ueberspringt die teure Szenen-/Stille-Analyse (nur ffprobe fuer
+    Dauer/Aufloesung) -> Minuten statt Stunden beim Erst-Aufbau grosser Archive (z. B. auf der NAS). Die
+    Inhaltserkennung uebernimmt dann Gemini-Tagging; die Energie ist neutral (0.5).
     Gibt {ok, clips, spiele, neu, ausgeschlossen}.
     """
     source_dir = Path(source_dir)
@@ -99,7 +103,8 @@ def baue_index(source_dir, index_pfad, *, neu: bool = False, nur_spiele: bool = 
                 continue
             clips.append({"pfad": key, "spiel": spiel, "dauer": round(info.dauer, 2),
                           "hat_audio": info.hat_audio, "breite": info.breite, "hoehe": info.hoehe,
-                          "energie": _energie(info), "themen": [], "sig": sig})
+                          "energie": (_energie(info) if energie_analyse else 0.5),
+                          "themen": [], "sig": sig})
             spiele.add(spiel)
             neu_gezaehlt += 1
 

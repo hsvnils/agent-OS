@@ -32,6 +32,10 @@ services:
       - "8765:8765"
     volumes:
       - /volume1/docker/ki-unternehmen:/app
+      # Reel-Pipeline auf der NAS: Video-Archiv (Cloud-Sync-Quelle + Outbox/State) in den Container einhaengen.
+      # Der naechtliche Job laeuft via `docker exec luna-os python -m cutter.reel_daily --source /reels/source ...`.
+      # Cloud Sync spiegelt den Dropbox-Ordner „Dateianfragen" nach /volume1/reels/source.
+      - /volume1/reels:/reels
     env_file:
       - /volume1/docker/ki-unternehmen/orchestrator/.env
     restart: unless-stopped

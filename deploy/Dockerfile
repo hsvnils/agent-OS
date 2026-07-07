@@ -4,8 +4,9 @@
 FROM python:3.12-slim
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git ca-certificates \
+ && apt-get install -y --no-install-recommends git ca-certificates ffmpeg \
  && rm -rf /var/lib/apt/lists/*
+# ffmpeg: Reel-Pipeline (Schnitt) auf der NAS -- ersetzt den Mac-Cutter fuer den naechtlichen Reel-Job.
 
 # Laufzeit-Abhaengigkeiten des Telegram-Kanals:
 #  - claude-agent-sdk: delegate + Execution-Engine (gebundelte CLI, Linux-Build)
