@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-07 19:35] — Claude Code
+- **Was:** Reel-Content-Tagging nutzt jetzt `gemini-2.5-flash` (statt flash-lite), eigene Env `CUTTER_TAG_MODEL`
+  (entkoppelt vom Ordering-Modell CUTTER_VIDEO_MODEL). Kostennotiz aktualisiert (~0,3-0,9 Cent/Clip, Bibliothek
+  ~6-18 EUR). Entscheidung im Register protokolliert.
+- **Warum:** CEO-Wahl: Genauigkeits-Sweetspot fuer die Tor/Jubel-Klassifikation (flash-lite zu grob).
+- **Betroffen:** cutter/reel_tag.py, docs/entscheidungs-register.md
+
 ## [2026-07-07 19:20] — Claude Code
 - **Was:** Gemini-Video-Content-Tagging fuer die Reel-Pipeline (opt-in, CEO-Tor). `gemini_video.tags_via_video`
   + `_parse_tags` (kontrolliertes Vokabular tor/jubel/choreo/fans/interview/stadion/spielszene/sonstiges) lassen

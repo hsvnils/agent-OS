@@ -5,9 +5,11 @@ ins Index-Feld `themen`. Damit kann die Tages-Auswahl (`reel_select`) gezielt zu
 bevorzugen -- echte Inhaltserkennung statt nur Audio-Energie-Proxy.
 
 **Standardmaessig AUS.** Laeuft nur mit `CUTTER_VIDEO_KI=1` UND `GEMINI_API_KEY`. Sendet 360p-Proxys der
-Clips an Google (Paid-Tier). Kosten grob ~0,1-0,3 Cent je Clip, einmalig (Ergebnis wird im Index gecacht);
-Fan-Clips zeigen erkennbare Personen -> bewusste CEO-Entscheidung. Bei jedem Fehler wird die Charge
-uebersprungen (nie Absturz); der Clip bleibt ungetaggt und wird beim naechsten Lauf erneut versucht.
+Clips an Google (Paid-Tier). Modell `gemini-2.5-flash` (CEO-Wahl 2026-07-07: Genauigkeits-Sweetspot;
+umschaltbar per `CUTTER_TAG_MODEL`). Kosten grob ~0,3-0,9 Cent je Clip, einmalig (Ergebnis wird im Index
+gecacht) -> ganze Bibliothek grob ~6-18 EUR. Fan-Clips zeigen erkennbare Personen -> bewusste CEO-Entscheidung.
+Bei jedem Fehler wird die Charge uebersprungen (nie Absturz); der Clip bleibt ungetaggt und wird beim
+naechsten Lauf erneut versucht.
 
 CLI:  python -m cutter.reel_tag --state <REEL_STATE> [--charge 8] [--max 0]
 """
@@ -44,7 +46,7 @@ def tagge_index(state: Path, *, charge: int = 8, max_clips: int = 0) -> dict:
     if not offen:
         return {"ok": True, "getaggt": 0, "offen": 0, "hinweis": "Alle Clips bereits getaggt."}
 
-    client = GeminiVideoClient(key, model=(env.get("CUTTER_VIDEO_MODEL") or "gemini-2.5-flash-lite"))
+    client = GeminiVideoClient(key, model=(env.get("CUTTER_TAG_MODEL") or "gemini-2.5-flash"))
     per_pfad: dict[str, list] = {}
     for i in range(0, len(offen), max(1, charge)):
         res = tags_via_video([c["pfad"] for c in offen[i:i + charge]], client)
