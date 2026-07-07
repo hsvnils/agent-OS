@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-08 00:05] — Claude Code
+- **Was:** Spiel-Hashtag in der Reel-Caption ergaenzt. Neu `reel_source.spiel_hashtag()` leitet aus dem
+  Ordnernamen die Teams ab ("HSV vs FCB - 2026-05-01" -> "#HSVFCB", auch Score "HSV 2vs1 FCB"; ohne erkennbare
+  Teams "" ). `reel_daily.lauf()` haengt ihn hinter "#hsv #hanserautisch" an (Caption in Metadata + Ergebnis).
+- **Warum:** CEO-Wunsch — jedes Reel soll zusaetzlich einen spiel-spezifischen Hashtag tragen (Auffindbarkeit).
+- **Betroffen:** `cutter/reel_source.py`, `cutter/reel_daily.py`, `cutter/tests/test_reel.py` (3 neue Tests,
+  19/19 gruen).
+
+## [2026-07-07 23:55] — Claude Code
+- **Was:** Reel-Pipeline auf **ein Spielordner pro Reel** umgestellt (statt alle Spiele auf einmal zu scannen).
+  Neu in `cutter/reel_daily.py`: `_spielordner()` (nur Ordner-Scan, kein ffprobe), `waehle_spiel()`
+  (Rotation: am laengsten nicht dran zuerst, Gleichstand deterministisch je Datum) und `--spiel`-Flag
+  (gezielt eins). `lauf()` indiziert jetzt nur den gewaehlten Ordner (`baue_index(neu=True, allowlist={spiel})`),
+  protokolliert das Spiel in `state/used_games.jsonl` und gibt `spiel` in Metadata/Ergebnis zurueck. Vorteil:
+  Index-Aufbau in Sekunden statt Minuten (nur ein Ordner) + thematisch geschlossenes Reel.
+- **Warum:** CEO-Wunsch — Voll-Scan aller Spielordner beim NAS-Erstlauf zu langsam; ein Reel soll aus EINEM Spiel
+  bestehen.
+- **Betroffen:** `cutter/reel_daily.py`, `cutter/tests/test_reel.py` (3 neue Tests, 16/16 gruen),
+  `docs/reel-pipeline-plan.md`.
+
 ## [2026-07-07 21:15] — Claude Code
 - **Was:** Reel-Pipeline NAS-faehig gemacht (24/7 ohne Mac). (1) ffmpeg ins Image (`deploy/Dockerfile`).
   (2) Video-Archiv-Mount `/volume1/reels:/reels` in `deploy/docker-compose.yml` (luna-os). (3) Schnell-Index-

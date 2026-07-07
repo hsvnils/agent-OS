@@ -6,7 +6,10 @@
 ## CEO-Entscheidungen (2026-07-07)
 - **Freigabe:** 1-Tap pro Reel (Cutter schneidet automatisch, CEO gibt jedes Reel per Telegram/LUNA-OS frei,
   erst dann Upload). Bleibt governance-konform (Auto-Posten = CEO-Tor, AGENTS.md 4).
-- **Clip-Auswahl:** Themen-Mix ueber die Spiele hinweg (Tagesthema steuert die Auswahl).
+- **Clip-Auswahl:** **Ein Spiel pro Reel** (Rotation: am laengsten nicht dran zuerst -> alle Spiele kommen der
+  Reihe nach durch, kein Doppel). Nur dieser eine Ordner wird indiziert -> schneller Aufbau, thematisch
+  geschlossenes Reel. Innerhalb des Spiels steuert das Tagesthema (Energie/Tags) die Clip-Auswahl.
+  `--spiel "<Ordnername>"` erzwingt gezielt eins (Test). Protokoll: `state/used_games.jsonl`.
 - **Format/Ton:** Facebook-Reel (9:16) mit Originalton (kein Rechte-/Monetarisierungsrisiko durch Fremdmusik).
 - **Themen-Tagging v0:** Heuristik (Audio-Energie/Szenendichte, lokal/gratis). Gemini-Video-Tagging spaeter
   optional (CEO-Tor, Paid-Tier, Clips zu Google).

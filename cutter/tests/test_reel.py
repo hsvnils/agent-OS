@@ -7,6 +7,7 @@ from datetime import date
 from pathlib import Path
 
 from cutter import gemini_video as gv
+from cutter import reel_daily as rd
 from cutter import reel_select as rs
 from cutter import reel_source as rq
 
@@ -117,6 +118,38 @@ class TestPersistenz(unittest.TestCase):
             idx = rq.lade_index(p)
             self.assertTrue(idx and idx[0]["pfad"] == "x.mp4")
             self.assertEqual(rq.lade_index(Path(d) / "fehlt.json"), [])
+
+
+class TestSpielHashtag(unittest.TestCase):
+    def test_vs_mit_datum(self):
+        self.assertEqual(rq.spiel_hashtag("HSV vs FCB - 2026-05-01"), "#HSVFCB")
+
+    def test_score_schreibweise(self):
+        self.assertEqual(rq.spiel_hashtag("HSV 2vs1 FCB"), "#HSVFCB")
+
+    def test_ohne_teams_leer(self):
+        self.assertEqual(rq.spiel_hashtag("29. Spieltag - 2026-05-01"), "")
+        self.assertEqual(rq.spiel_hashtag(""), "")
+
+
+class TestSpielRotation(unittest.TestCase):
+    def test_nie_genutztes_zuerst(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "used_games.jsonl"
+            p.write_text(json.dumps({"ts": time.time(), "spiel": "A"}) + "\n", "utf-8")
+            # A wurde eben genutzt, B nie -> B kommt dran.
+            self.assertEqual(rd.waehle_spiel(["A", "B"], p, seed="x"), "B")
+
+    def test_am_laengsten_nicht_dran_zuerst(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "used_games.jsonl"
+            p.write_text(json.dumps({"ts": time.time() - 5 * 86400, "spiel": "A"}) + "\n"
+                         + json.dumps({"ts": time.time() - 1 * 86400, "spiel": "B"}) + "\n", "utf-8")
+            self.assertEqual(rd.waehle_spiel(["A", "B"], p, seed="x"), "A")
+
+    def test_leere_liste(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(rd.waehle_spiel([], Path(d) / "used_games.jsonl", seed="x"))
 
 
 if __name__ == "__main__":

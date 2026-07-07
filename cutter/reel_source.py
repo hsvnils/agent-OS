@@ -28,6 +28,25 @@ def ist_spielordner(name: str) -> bool:
     return bool(_SPIEL_MUSTER.search(name or ""))
 
 
+_ALNUM = re.compile(r"[^0-9A-Za-zÄÖÜäöüß]")
+_SCORE = re.compile(r"^\d+vs\d+$", re.IGNORECASE)
+
+
+def spiel_hashtag(name: str) -> str:
+    """Leitet aus dem Spiel-Ordnernamen einen kompakten Hashtag der Teams ab.
+
+    "HSV vs FCB - 2026-05-01" -> "#HSVFCB"; auch Score-Schreibweise "HSV 2vs1 FCB" -> "#HSVFCB".
+    Gibt "" zurueck, wenn keine zwei Teams erkennbar sind (z. B. "29. Spieltag - ...")."""
+    kopf = (name or "").split(" - ")[0].strip()          # Datum hinten abschneiden
+    tokens = kopf.split()
+    idx = next((i for i, t in enumerate(tokens) if t.lower() == "vs" or _SCORE.match(t)), None)
+    if idx is None or idx == 0 or idx == len(tokens) - 1:
+        return ""
+    a = _ALNUM.sub("", tokens[idx - 1])
+    b = _ALNUM.sub("", tokens[idx + 1])
+    return f"#{a}{b}" if (a and b) else ""
+
+
 def _energie(info) -> float:
     """Heuristische Energie 0..1: Anteil NICHT-stiller Zeit (laute Momente = Tore/Jubel) + Szenendichte.
     Rein lokal ueber ffmpeg. Ohne Audio -> nur Szenendichte (halbes Gewicht)."""

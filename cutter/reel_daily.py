@@ -1,13 +1,18 @@
 """Reel-Pipeline (Stufe A+B, Orchestrator) -- taeglicher Lauf am Mac.
 
-Ablauf: Clip-Index aktualisieren -> Tages-Thema + gemischte Clip-Auswahl (Anti-Doppel) -> ausgewaehlte Clips
-in einen Arbeitsordner verlinken -> bestehende Cutter-Pipeline schneidet ein 45s-Reel -> Ablage in
-`outbox/<datum>/reel.mp4` + `metadata.json` -> genutzte Clips protokollieren (`state/used.jsonl`).
+Ablauf: **ein Spielordner pro Reel auswaehlen** (rotierend, am laengsten nicht dran zuerst) -> nur diesen
+Ordner indizieren -> Tages-Thema + Clip-Auswahl (Anti-Doppel) -> ausgewaehlte Clips in einen Arbeitsordner
+verlinken -> bestehende Cutter-Pipeline schneidet ein 45s-Reel -> Ablage in `outbox/<datum>/reel.mp4` +
+`metadata.json` -> genutzte Clips + Spiel protokollieren (`state/used.jsonl`, `state/used_games.jsonl`).
+
+Ein Reel = ein Spiel. So bleibt jedes Reel thematisch geschlossen und der Index-Aufbau ist schnell
+(nur ein Ordner statt des ganzen Archivs).
 
 **Kein Upload, keine Veroeffentlichung.** Das fertige Reel wartet auf die 1-Tap-Freigabe (Stufe C/D).
 Rein lokal/gratis. Pfade per CLI/Env konfigurierbar (Quelle liegt auf der gemounteten NAS).
 
 CLI:  python -m cutter.reel_daily [--source ..] [--outbox ..] [--state ..] [--dauer 45] [--datum YYYY-MM-DD]
+      [--spiel "HSV vs FCB - 2026-05-01"]  # gezielt EIN Spiel (Default: automatische Rotation)
 Env:  REEL_SOURCE / REEL_OUTBOX / REEL_STATE
 """
 from __future__ import annotations
@@ -15,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import shutil
 import sys
 import tempfile
@@ -58,29 +64,79 @@ def _lade_allowlist(state: Path) -> set | None:
     return namen or None
 
 
+def _spielordner(source: Path, allowlist: set | None) -> list[str]:
+    """Namen aller in Frage kommenden Spielordner in `source` (sortiert). Ist `allowlist` gesetzt, zaehlen
+    nur diese Ordner; sonst die per `ist_spielordner` erkannten. Nur der Ordner-SCAN, kein ffprobe -> schnell."""
+    if not source.exists():
+        return []
+    namen: list[str] = []
+    for d in sorted(p for p in source.iterdir() if p.is_dir()):
+        if allowlist is not None:
+            if d.name in allowlist:
+                namen.append(d.name)
+        elif rq.ist_spielordner(d.name):
+            namen.append(d.name)
+    return namen
+
+
+def waehle_spiel(spiele: list[str], used_games_pfad: Path, seed: str) -> str | None:
+    """Waehlt EIN Spiel: das am laengsten nicht genutzte zuerst (nie genutzt = ganz vorn) -> alle Spiele
+    kommen der Reihe nach durch, kein Doppel bis alle dran waren. Gleichstand -> deterministisch je `seed`."""
+    if not spiele:
+        return None
+    last: dict[str, float] = {}
+    p = Path(used_games_pfad)
+    if p.exists():
+        for line in p.read_text("utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                ev = json.loads(line)
+            except Exception:
+                continue
+            s = ev.get("spiel")
+            if s:
+                last[s] = max(last.get(s, 0.0), float(ev.get("ts", 0)))
+    rnd = random.Random(seed)
+    return sorted(spiele, key=lambda s: (last.get(s, 0.0), rnd.random()))[0]
+
+
 def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
          ziel_dauer: float = 45.0, clip_laenge: float = 4.6, gemini: bool = False,
-         transkribieren: bool = False, schnell_index: bool = False) -> dict:
-    """Ein Tages-Reel erzeugen. Gibt einen Bericht (dict). Kein Upload.
+         transkribieren: bool = False, schnell_index: bool = False, spiel: str | None = None) -> dict:
+    """Ein Tages-Reel aus EINEM Spielordner erzeugen. Gibt einen Bericht (dict). Kein Upload.
 
     `clip_laenge` steuert das Tempo: ohne Transkription ist jeder Clip B-Roll dieser Laenge -> ziel_dauer /
     clip_laenge ergibt die Clip-Anzahl (Default ~4,6s -> ~9-10 Clips fuer ein 45s-Reel).
+    `spiel`: gezielt EIN Spielordner (Name); ohne Angabe waehlt die Rotation automatisch eines aus.
     """
     tag = tag or date.today()
+    source = Path(source)
     state = Path(state)
     state.mkdir(parents=True, exist_ok=True)
     index_pfad = state / "clip_index.json"
     used_pfad = state / "used.jsonl"
+    used_games_pfad = state / "used_games.jsonl"
 
-    idx_res = rq.baue_index(source, index_pfad, allowlist=_lade_allowlist(state),
+    # Genau EIN Spielordner pro Reel -> nur diesen indizieren (schnell, thematisch geschlossen).
+    allow = _lade_allowlist(state)
+    verfuegbar = _spielordner(source, allow)
+    if not verfuegbar:
+        return {"ok": False, "fehler": f"Keine Spielordner in der Quelle gefunden: {source}"}
+    gewaehlt = spiel or waehle_spiel(verfuegbar, used_games_pfad, tag.isoformat())
+
+    idx_res = rq.baue_index(source, index_pfad, neu=True, allowlist={gewaehlt},
                             energie_analyse=not schnell_index)
     if not idx_res.get("ok"):
         return idx_res
     index = rq.lade_index(index_pfad)
     if not index:
-        return {"ok": False, "fehler": "Clip-Index leer -- keine Clips in der Quelle."}
+        return {"ok": False, "fehler": f"Keine Clips im Spielordner '{gewaehlt}'."}
 
     thema = rs.thema_fuer_tag(tag)
+    spiel_tag = rq.spiel_hashtag(gewaehlt)                 # z. B. "#HSVFCB" -- an die Caption anhaengen
+    caption = f"{thema[2]} {spiel_tag}" if spiel_tag else thema[2]
     genutzt = rs.lade_genutzte(used_pfad)
     # Nur so viele Clips waehlen (+ kleiner Puffer), wie ins Budget passen -> keine unnoetige Clip-Analyse.
     max_clips = int(ziel_dauer / max(1.0, clip_laenge)) + 3
@@ -111,20 +167,23 @@ def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
     verwendet_namen = {d["datei"] for d in bericht.get("details", [])}
     verwendet = [c for c, s in zip(auswahl, staged) if s.name in verwendet_namen] or auswahl
 
-    meta = {"datum": tag.isoformat(), "thema": thema[0], "caption": thema[2],
+    spiele = sorted({c.get("spiel", "?") for c in verwendet}) or [gewaehlt]
+    meta = {"datum": tag.isoformat(), "thema": thema[0], "caption": caption,
             "status": "fertig_wartet_auf_freigabe", "fb_video_id": None,
             "ziel_dauer": ziel_dauer, "dauer_sek": bericht.get("dauer_sek"), "reel": str(ausgabe),
             "verwendete_clips": [c["pfad"] for c in verwendet],
-            "spiele": sorted({c.get("spiel", "?") for c in verwendet}), "schnitt": bericht}
+            "spiel": gewaehlt, "spiele": spiele, "schnitt": bericht}
     (tag_dir / "metadata.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), "utf-8")
 
     with used_pfad.open("a", encoding="utf-8") as f:
         f.write(json.dumps({"ts": time.time(), "datum": tag.isoformat(), "thema": thema[0],
-                            "clips": [c["pfad"] for c in verwendet]}) + "\n")
+                            "spiel": gewaehlt, "clips": [c["pfad"] for c in verwendet]}) + "\n")
+    with used_games_pfad.open("a", encoding="utf-8") as f:                 # Spiel-Rotation protokollieren
+        f.write(json.dumps({"ts": time.time(), "datum": tag.isoformat(), "spiel": gewaehlt}) + "\n")
 
-    return {"ok": True, "datum": tag.isoformat(), "thema": thema[0], "reel": str(ausgabe),
-            "verwendet": len(verwendet), "dauer_sek": bericht.get("dauer_sek"), "caption": thema[2],
-            "spiele": meta["spiele"], "metadata": str(tag_dir / "metadata.json")}
+    return {"ok": True, "datum": tag.isoformat(), "thema": thema[0], "spiel": gewaehlt, "reel": str(ausgabe),
+            "verwendet": len(verwendet), "dauer_sek": bericht.get("dauer_sek"), "caption": caption,
+            "spiele": spiele, "metadata": str(tag_dir / "metadata.json")}
 
 
 def _einreichen(res: dict) -> dict:
@@ -156,6 +215,8 @@ def main(argv=None) -> int:
     p.add_argument("--clip-laenge", type=float, default=4.6,
                    help="Laenge je Clip in Sekunden -> steuert die Anzahl (Default 4.6 -> ~9-10 Clips).")
     p.add_argument("--datum", default=None, help="Datum YYYY-MM-DD (Default heute) -- fuer Tests/Nachlauf.")
+    p.add_argument("--spiel", default=None,
+                   help="Gezielt EIN Spielordner (exakter Name). Ohne Angabe: automatische Rotation.")
     p.add_argument("--mit-gemini", action="store_true", help="Gemini-Reihenfolge zulassen (Default aus).")
     p.add_argument("--mit-transkript", action="store_true",
                    help="Whisper-Transkription an (Sprach-Trimmen; Default aus -> schneller).")
@@ -173,7 +234,7 @@ def main(argv=None) -> int:
 
     res = lauf(source=source, outbox=outbox, state=state, tag=tag, ziel_dauer=a.dauer,
                clip_laenge=a.clip_laenge, gemini=a.mit_gemini, transkribieren=a.mit_transkript,
-               schnell_index=a.schnell_index)
+               schnell_index=a.schnell_index, spiel=a.spiel)
     if a.einreichen and res.get("ok"):
         res.update(_einreichen(res))
     print(json.dumps(res, ensure_ascii=False, indent=2))
