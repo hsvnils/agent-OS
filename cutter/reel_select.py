@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import random
+import statistics
 from datetime import date, datetime
 from pathlib import Path
 
@@ -34,6 +35,26 @@ def _passt_energie(clip: dict, praeferenz: str) -> bool:
     if praeferenz == "mittel":
         return 0.3 <= e <= 0.8
     return True                                           # "mix": alles erlaubt
+
+
+def _kurzseite(clip: dict):
+    """Kurze Bildseite (orientierungsunabhaengiges Aufloesungsmass: 1080p -> 1080, egal ob hoch/quer).
+    None, wenn die Aufloesung im Index nicht bekannt ist (Altbestand)."""
+    b, h = clip.get("breite"), clip.get("hoehe")
+    return min(b, h) if (b and h) else None
+
+
+def filter_qualitaet(clips: list[dict], *, min_kurz: int = 480, rel_median: float = 0.5) -> list[dict]:
+    """Wirft Clips raus, deren Aufloesung DEUTLICH unter dem Rest liegt: kurze Seite unter
+    max(`min_kurz`, `rel_median` * Median). So bleibt z. B. 720p neben 1080p erhalten, aber ein 360p-Clip
+    zwischen HD-Material fliegt raus. Clips ohne bekannte Aufloesung bleiben drin; faellt auf die Eingabe
+    zurueck, wenn sonst nichts uebrig bliebe (z. B. wenn ALLES niedrig aufgeloest ist)."""
+    kurz = [k for k in (_kurzseite(c) for c in clips) if k]
+    if not kurz:
+        return clips
+    grenze = max(min_kurz, rel_median * statistics.median(kurz))
+    gut = [c for c in clips if (_kurzseite(c) is None or _kurzseite(c) >= grenze)]
+    return gut or clips
 
 
 def lade_genutzte(used_pfad, *, tage: int = 14) -> set:
@@ -67,6 +88,7 @@ def waehle_clips(index: list[dict], thema: tuple, *, genutzt: set | None = None,
     genutzt = genutzt or set()
     _, praeferenz, _ = thema
     passend = [c for c in index if _passt_energie(c, praeferenz)] or list(index)
+    passend = filter_qualitaet(passend)                  # Ausreisser mit schlechter Aufloesung aussortieren
     rnd = random.Random(seed or datetime.now().strftime("%Y-%m-%d"))
 
     frisch = [c for c in passend if c["pfad"] not in genutzt]

@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-07 19:00] — Claude Code
+- **Was:** Qualitaetsfilter (Aufloesung) in die Reel-Pipeline. Clip-Index speichert jetzt breite/hoehe
+  (Altbestand wird guenstig per ffprobe nachgetragen, ohne Szenen-Analyse zu wiederholen). Neuer
+  `reel_select.filter_qualitaet`: wirft Clips raus, deren kurze Bildseite DEUTLICH unter dem Median liegt
+  (< max(480, 0.5*Median)) -> kein 360p zwischen HD, aber 720p bleibt neben 1080p; Fallback, wenn alles
+  niedrig aufgeloest ist. In `waehle_clips` verankert. 4 neue Tests (10 gesamt gruen).
+- **Warum:** CEO-Wunsch: verhindern, dass deutlich schlechter aufgeloestes Material im Reel landet.
+- **Betroffen:** cutter/reel_source.py, cutter/reel_select.py, cutter/tests/test_reel.py
+
 ## [2026-07-07 18:45] — Claude Code
 - **Was:** Reel-Pacing einstellbar gemacht: neuer Parameter/Flag `clip_laenge` (Default 4.6s) im Tages-Lauf
   steuert die Clip-Anzahl (ziel_dauer/clip_laenge -> ~9-10 Clips fuer 45s). Wird an `schneide_ordner`

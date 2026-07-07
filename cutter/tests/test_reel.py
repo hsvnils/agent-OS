@@ -14,6 +14,10 @@ def _clip(pfad, spiel, energie):
     return {"pfad": pfad, "spiel": spiel, "energie": energie, "dauer": 4.0, "hat_audio": True}
 
 
+def _clip_res(pfad, breite, hoehe):
+    return {"pfad": pfad, "spiel": "S", "energie": 0.5, "breite": breite, "hoehe": hoehe}
+
+
 class TestThemaRotation(unittest.TestCase):
     def test_deterministisch_und_kein_wiederholen(self):
         self.assertEqual(rs.thema_fuer_tag(date(2026, 7, 7)), rs.thema_fuer_tag(date(2026, 7, 7)))
@@ -52,6 +56,27 @@ class TestSpielordnerErkennung(unittest.TestCase):
             self.assertTrue(rq.ist_spielordner(s), s)
         for n in keine:
             self.assertFalse(rq.ist_spielordner(n), n)
+
+
+class TestQualitaet(unittest.TestCase):
+    def test_wirft_deutlich_schlechtere_raus(self):
+        clips = [_clip_res("a", 1080, 1920), _clip_res("b", 1080, 1920),
+                 _clip_res("c", 1080, 1920), _clip_res("schlecht", 360, 640)]
+        pfade = {c["pfad"] for c in rs.filter_qualitaet(clips)}
+        self.assertIn("a", pfade)
+        self.assertNotIn("schlecht", pfade)
+
+    def test_720p_bleibt_neben_1080p(self):
+        clips = [_clip_res("hd", 1080, 1920), _clip_res("sd", 720, 1280)]
+        self.assertEqual(len(rs.filter_qualitaet(clips)), 2)
+
+    def test_alles_niedrig_bleibt_erhalten(self):
+        clips = [_clip_res("a", 360, 640), _clip_res("b", 360, 640)]
+        self.assertEqual(len(rs.filter_qualitaet(clips)), 2)   # Fallback: nicht alles wegwerfen
+
+    def test_unbekannte_aufloesung_bleibt(self):
+        clips = [{"pfad": "x", "spiel": "S", "energie": 0.5}]
+        self.assertEqual(rs.filter_qualitaet(clips), clips)
 
 
 class TestPersistenz(unittest.TestCase):

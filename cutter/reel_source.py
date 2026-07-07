@@ -87,6 +87,10 @@ def baue_index(source_dir, index_pfad, *, neu: bool = False, nur_spiele: bool = 
                 continue
             vorhanden = alt.get(key)
             if vorhanden and vorhanden.get("sig") == sig:          # unveraendert -> Cache uebernehmen
+                if "hoehe" not in vorhanden:                       # Altbestand: Aufloesung guenstig nachtragen
+                    pi = fo.probe(pfad)                            # nur ffprobe (schnell) -- KEINE Szenen-Analyse
+                    if pi is not None:
+                        vorhanden = {**vorhanden, "breite": pi.breite, "hoehe": pi.hoehe}
                 clips.append(vorhanden)
                 spiele.add(vorhanden.get("spiel", spiel))
                 continue
@@ -94,8 +98,8 @@ def baue_index(source_dir, index_pfad, *, neu: bool = False, nur_spiele: bool = 
             if info is None or info.dauer <= 0:
                 continue
             clips.append({"pfad": key, "spiel": spiel, "dauer": round(info.dauer, 2),
-                          "hat_audio": info.hat_audio, "energie": _energie(info),
-                          "themen": [], "sig": sig})
+                          "hat_audio": info.hat_audio, "breite": info.breite, "hoehe": info.hoehe,
+                          "energie": _energie(info), "themen": [], "sig": sig})
             spiele.add(spiel)
             neu_gezaehlt += 1
 
