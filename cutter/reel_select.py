@@ -12,6 +12,17 @@ import statistics
 from datetime import date, datetime
 from pathlib import Path
 
+# Thema -> bevorzugte Inhalts-Tags (aus dem Gemini-Video-Tagging, Feld `themen`). Leere Menge = alles passt.
+# Wird nur wirksam, wenn Clips getaggt sind (sonst faellt die Auswahl auf die Energie-Heuristik zurueck).
+THEMA_TAGS = {
+    "Tore & Highlights": {"tor", "jubel", "spielszene"},
+    "Fan-Stimmung": {"fans", "choreo", "stadion"},
+    "Beste Momente": {"tor", "jubel", "choreo"},
+    "Emotionen pur": {"jubel", "fans", "interview"},
+    "Woche im Rueckblick": set(),
+}
+
+
 # Thema: (Name, Energie-Praeferenz "hoch"|"mittel"|"mix", Caption-Vorlage).
 THEMEN = [
     ("Tore & Highlights",    "hoch",   "Die besten Szenen ⚽️ #hsv #hanserautisch"),
@@ -57,6 +68,22 @@ def filter_qualitaet(clips: list[dict], *, min_kurz: int = 480, rel_median: floa
     return gut or clips
 
 
+def _tag_treffer(clip: dict, thema: tuple) -> bool:
+    """True, wenn die Inhalts-Tags des Clips zum Tagesthema passen. Ohne Themen-Mapping (leere Menge) oder
+    ohne getaggte Clips gilt alles als Treffer -> kein Effekt (graceful, solange nicht getaggt wurde)."""
+    ziel = THEMA_TAGS.get(thema[0]) or set()
+    if not ziel:
+        return True
+    return bool(set(clip.get("themen") or []) & ziel)
+
+
+def _nach_tags(clips: list, thema: tuple) -> list:
+    """Stabile Umsortierung: thematisch passende Clips nach vorn (Rest behaelt seine Reihenfolge)."""
+    treffer = [c for c in clips if _tag_treffer(c, thema)]
+    rest = [c for c in clips if not _tag_treffer(c, thema)]
+    return treffer + rest if rest else clips        # kein Effekt, wenn alle "treffen" (z. B. ungetaggt)
+
+
 def lade_genutzte(used_pfad, *, tage: int = 14) -> set:
     """Clip-Pfade, die in den letzten `tage` Tagen schon in einem Reel waren (Anti-Doppel)."""
     p = Path(used_pfad)
@@ -95,6 +122,9 @@ def waehle_clips(index: list[dict], thema: tuple, *, genutzt: set | None = None,
     rueckfall = [c for c in passend if c["pfad"] in genutzt]
     rnd.shuffle(frisch)
     rnd.shuffle(rueckfall)
+    # Wenn Clips getaggt sind: thematisch passende innerhalb jeder Gruppe nach vorn (sonst kein Effekt).
+    frisch = _nach_tags(frisch, thema)
+    rueckfall = _nach_tags(rueckfall, thema)
     pool = frisch + rueckfall                             # frische zuerst, dann ggf. auffuellen
 
     nach_spiel: dict[str, list] = {}

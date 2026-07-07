@@ -21,6 +21,9 @@ from pathlib import Path
 
 _HOST = "https://generativelanguage.googleapis.com"
 
+# Kontrolliertes Vokabular fuer die Inhaltserkennung (Fussball-Fan-Clips). Gemini vergibt NUR diese Tags.
+TAG_VOKABULAR = ("tor", "jubel", "choreo", "fans", "interview", "stadion", "spielszene", "sonstiges")
+
 
 class GeminiVideoClient:
     """Duenner REST-Client fuer die Gemini Files-API + generateContent (nur urllib, kein SDK)."""
@@ -143,5 +146,56 @@ def reihenfolge_via_video(auswahlen: list, client, *, downsample: bool = True) -
             f"{n} Clips (Index 0..{n - 1}) zu einer spannenden Reihenfolge -- staerkster visueller Hook "
             "zuerst, dann Aufbau. Antworte NUR mit einer JSON-Liste von Indizes, z. B. [2,0,1].")})
         return _parse_order(client.generate(parts) or "", n)
+    except Exception:
+        return None
+
+
+def _parse_tags(txt: str, n: int) -> list | None:
+    """Extrahiert eine JSON-Liste von Tag-Listen (je Clip). Filtert auf TAG_VOKABULAR; Laenge muss n sein.
+    None, wenn unbrauchbar."""
+    i, j = (txt or "").find("["), (txt or "").rfind("]")
+    if i < 0 or j <= i:
+        return None
+    try:
+        roh = json.loads(txt[i:j + 1])
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(roh, list) or len(roh) != n:
+        return None
+    out: list[list[str]] = []
+    for eintrag in roh:
+        if not isinstance(eintrag, list):
+            return None
+        tags = [t.lower() for t in eintrag if isinstance(t, str) and t.lower() in TAG_VOKABULAR]
+        out.append(tags[:3])
+    return out
+
+
+def tags_via_video(pfade: list, client, *, downsample: bool = True) -> dict | None:
+    """Laedt die Clips hoch, laesst Gemini je Clip 1-3 Inhalts-Tags aus TAG_VOKABULAR vergeben (echte
+    Inhaltserkennung: Tor/Jubel/Choreo …). Gibt {pfad: [tags]} oder None bei Fehler. CEO-Tor: sendet
+    (360p-Proxy-)Clips an Google."""
+    try:
+        parts: list = []
+        reihen: list[str] = []
+        for p in pfade:
+            proxy = _downsample(str(p)) if downsample else None
+            up = client.upload(str(proxy or p))
+            if not up or not up.get("uri"):
+                return None
+            if up.get("name") and not client.warte_aktiv(up["name"]):
+                return None
+            parts.append({"text": f"Clip {len(reihen)}:"})
+            parts.append({"file_data": {"mime_type": up.get("mime", "video/mp4"), "file_uri": up["uri"]}})
+            reihen.append(str(p))
+        vok = ", ".join(TAG_VOKABULAR)
+        parts.append({"text": (
+            f"Du siehst {len(reihen)} kurze Fussball-Fan-Clips (Index 0..{len(reihen) - 1}). Vergib je Clip "
+            f"1-3 Inhalts-Tags NUR aus dieser Liste: [{vok}]. Antworte NUR als JSON-Liste von Tag-Listen in "
+            'Clip-Reihenfolge, z. B. [["tor","jubel"],["fans"]].')})
+        tags = _parse_tags(client.generate(parts) or "", len(reihen))
+        if tags is None:
+            return None
+        return {reihen[i]: tags[i] for i in range(len(reihen))}
     except Exception:
         return None

@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-07 19:20] — Claude Code
+- **Was:** Gemini-Video-Content-Tagging fuer die Reel-Pipeline (opt-in, CEO-Tor). `gemini_video.tags_via_video`
+  + `_parse_tags` (kontrolliertes Vokabular tor/jubel/choreo/fans/interview/stadion/spielszene/sonstiges) lassen
+  Clips ansehen und vergeben Inhalts-Tags. Runner `cutter/reel_tag.py` taggt ungetaggte Index-Clips (Cache im
+  Feld `themen`), nur mit CUTTER_VIDEO_KI=1 + GEMINI_API_KEY (gemini-2.5-flash-lite, 360p-Proxys). `reel_select`
+  bevorzugt via `THEMA_TAGS`/`_nach_tags` zum Tagesthema passende Clips (graceful: ungetaggt = kein Effekt).
+  6 neue Tests (42 Cutter-Tests gesamt gruen). Kostenschaetzung: ~0,1-0,3 Cent/Clip, ganze Bibliothek einmalig
+  grob ~2-6 €. Aktivierung bleibt CEO-Schalter.
+- **Warum:** CEO wollte echte Inhaltserkennung (Tore/Jubel) statt nur Audio-Energie-Proxy -> Gemini-Tagging
+  freigeschaltet (Bau; Aktivierung via Key/Flag).
+- **Betroffen:** cutter/gemini_video.py, cutter/reel_tag.py, cutter/reel_select.py, cutter/tests/test_reel.py,
+  docs/reel-pipeline-plan.md
+
 ## [2026-07-07 19:00] — Claude Code
 - **Was:** Qualitaetsfilter (Aufloesung) in die Reel-Pipeline. Clip-Index speichert jetzt breite/hoehe
   (Altbestand wird guenstig per ffprobe nachgetragen, ohne Szenen-Analyse zu wiederholen). Neuer

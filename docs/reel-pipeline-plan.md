@@ -55,6 +55,18 @@ Die Spiel-Ordner bleiben unveraendert die Quelle. Pfade sind per Env/CLI konfigu
 - **Stufe E -- Betrieb**: CFO-Kostenueberwachung, Themen-Rotation ausbauen, Retries, spaeter Performance-Report
   (Insights). **[offen]**
 
+## Qualitaet & Inhaltserkennung
+- **Qualitaetsfilter (lokal, gratis):** Der Index speichert die Aufloesung (breite/hoehe);
+  `reel_select.filter_qualitaet` sortiert Clips aus, deren kurze Bildseite deutlich unter dem Median liegt
+  (< max(480, 0.5*Median)) -> kein 360p zwischen HD, 720p bleibt neben 1080p.
+- **Inhaltserkennung -- Stufen:** (a) Audio-Energie + Szenendichte = lokaler Gratis-Proxy fuer „lauter Moment"
+  (Jubel/Tor), aber keine echte Erkennung. (b) **Gemini-Video-Tagging (opt-in, CEO-Tor)**:
+  `gemini_video.tags_via_video` + Runner `cutter/reel_tag.py` lassen die Clips ANSEHEN und vergeben Inhalts-
+  Tags (tor/jubel/choreo/fans/interview/stadion/spielszene) ins Index-Feld `themen`; `reel_select` bevorzugt
+  dann zum Tagesthema passende Clips (`THEMA_TAGS`). Nur mit `CUTTER_VIDEO_KI=1` + `GEMINI_API_KEY`
+  (`gemini-2.5-flash-lite`, 360p-Proxys, ~0,1-0,3 Cent/Clip einmalig). (c) Spaeter: lokales Vision-Modell
+  (neuer Mac) = echte Erkennung ohne Cloud/Kosten.
+
 ## Governance / Risiken
 - **Auto-Posten = CEO-Tor** -> geloest ueber 1-Tap-Freigabe pro Reel (Stufe C).
 - **Musik/Rechte** -> Originalton (kein Fremdmusik-Risiko fuer Monetarisierung).

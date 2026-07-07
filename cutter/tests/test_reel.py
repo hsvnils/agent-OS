@@ -6,6 +6,7 @@ import unittest
 from datetime import date
 from pathlib import Path
 
+from cutter import gemini_video as gv
 from cutter import reel_select as rs
 from cutter import reel_source as rq
 
@@ -77,6 +78,26 @@ class TestQualitaet(unittest.TestCase):
     def test_unbekannte_aufloesung_bleibt(self):
         clips = [{"pfad": "x", "spiel": "S", "energie": 0.5}]
         self.assertEqual(rs.filter_qualitaet(clips), clips)
+
+
+class TestContentTags(unittest.TestCase):
+    def test_parse_tags_filtert_und_prueft_laenge(self):
+        self.assertEqual(gv._parse_tags('[["tor","xx"],["fans"]]', 2), [["tor"], ["fans"]])
+        self.assertEqual(gv._parse_tags('[["a"],["b"]]', 2), [[], []])   # unbekannte Tags -> leer
+        self.assertIsNone(gv._parse_tags('[["tor"]]', 2))                 # Laenge passt nicht
+        self.assertIsNone(gv._parse_tags('kein json', 1))
+
+    def test_thema_bevorzugt_passende_tags(self):
+        clips = [{"pfad": "fan", "spiel": "S", "energie": 0.5, "themen": ["fans"]},
+                 {"pfad": "tor", "spiel": "S", "energie": 0.5, "themen": ["tor"]}]
+        sortiert = rs._nach_tags(clips, ("Tore & Highlights", "hoch", "x"))
+        self.assertEqual(sortiert[0]["pfad"], "tor")                     # Tor-Clip nach vorn
+
+    def test_ungetaggt_kein_effekt(self):
+        clips = [{"pfad": "a", "spiel": "S", "energie": 0.5},
+                 {"pfad": "b", "spiel": "S", "energie": 0.5}]
+        self.assertEqual([c["pfad"] for c in rs._nach_tags(clips, ("Tore & Highlights", "hoch", "x"))],
+                         ["a", "b"])                                      # Reihenfolge unveraendert
 
 
 class TestPersistenz(unittest.TestCase):
