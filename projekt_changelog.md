@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-07 20:45] — Claude Code
+- **Was:** Reel-Caption-Vorlagen korrigiert: echte Umlaute (ae/oe/ue/ss -> ä/ö/ü/ß, z. B. „Rückblick") und
+  immer die Hashtags „#hsv #hanserautisch". THEMA_TAGS-Schluessel „Woche im Rückblick" mitgezogen.
+- **Warum:** CEO: Posting-Texte (Content) muessen echte Umlaute + die Marken-Hashtags nutzen. Mac-seitig
+  (Cutter erzeugt die Caption) -> kein NAS-Deploy noetig; bestehendes Reel in der App per Textfeld anpassbar.
+- **Betroffen:** cutter/reel_select.py
+
 ## [2026-07-07 20:30] — Claude Code
 - **Was:** Reel-Pipeline: editierbarer Caption-Text in der Reels-App + **Stufe D (Facebook-Upload, Code)**.
   (1) Reels-App zeigt den (gekuerzten) Text als editierbares Feld; „Freigeben & posten" sendet den ggf.
