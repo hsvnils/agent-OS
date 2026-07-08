@@ -693,6 +693,14 @@ CEO-Bild (weiblich/androgyner AI-Kopf, leuchtende Augen, kurze leuchtende Haare,
   Modell z. B. GPT-OSS-120B oder Qwen3-Coder. Anbindung: Chat/Fachagenten trivial (OpenAI-kompatibler
   FallbackBackend), Execution braucht einen neuen Nicht-CLI-Ausfuehrungs-Agenten (eigener Bau). Hardware
   laeuft ueber Produkt-Sponsoring.
+- **LUNA-Gehirn: Modell-Provider-Robustheit — ZURUECKGESTELLT (CEO 2026-07-08).** Der Chat-/Sprechpfad (auch
+  der Orb/Iron-Man-Modus) laeuft aktuell auf dem **Gemini-Gratis-Fallback**, weil Anthropic ohne Guthaben ist.
+  Unter Last (der Ziel-Loop haemmert Gemini mit einem Vision-Aufruf pro Schritt, parallel zum Chat) reisst
+  gelegentlich Geminis **Gratis-Rate-Limit** -> Meldung „alle Anbieter erschoepft" (intermittierend, kein
+  Dauerfehler; funktioniert Sekunden spaeter wieder). **Bewusst nach hinten gestellt** — kein Blocker fuer die
+  uebrigen Arbeitspunkte. **Dauerhafte Loesung = das lokale LLM** (siehe Punkt „Execution-Modellzugang" oben):
+  es uebernimmt LUNAs Gehirn ganz ohne Cloud-Guthaben/Rate-Limit. Zwischen-Optionen nur bei Bedarf: kleines
+  Anthropic-Guthaben (CEO-Tor) ODER Rate-Limit-Retry/Backoff im Fallback (on demand baubar).
 - **Container als Non-root:** ✅ erledigt 2026-06-26 (sichere Execution ohne IS_SANDBOX-root-Bypass).
 - **Supabase** als Queue-/Store-Backend (laeuft aktuell dateibasiert -- funktioniert; Supabase robuster).
 - **Finance Stufe 2.5:** ✅ **umgesetzt 2026-07-03** -- echte Token-/Kostenerfassung JE AGENT. Backend-

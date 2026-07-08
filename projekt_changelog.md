@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-08 15:35] — Claude Code
+- **Was:** Modell-Provider-Robustheit (LUNAs Chat-/Sprech-Gehirn) im Backlog **zurueckgestellt**. Diagnose:
+  Anthropic ohne Guthaben -> Chat laeuft auf Gemini-Gratis-Fallback (korrekt verdrahtet, verifiziert: /api/chat
+  antwortet). Intermittierende „alle Anbieter erschoepft"-Meldung = Geminis Gratis-Rate-Limit unter Last
+  (Ziel-Loop + Chat gleichzeitig auf Gemini). CEO-Entscheidung: nach hinten stellen, **lokales LLM uebernimmt
+  LUNAs Gehirn spaeter** (Dauer-Loesung, kein Cloud-Guthaben/Limit).
+- **Warum:** CEO will erst an anderen Punkten weiterarbeiten; kein Blocker.
+- **Betroffen:** `ROADMAP.md` (Abschnitt 8 Backlog, beim Punkt Execution-Modellzugang/lokales LLM).
+
 ## [2026-07-08 15:05] — Claude Code
 - **Was:** Phase 17 M6 — zwei Bugfixes nach dem ersten Live-Test am Mac. (1) **Robustheit:** der Ziel-Loop
   (`runner/computer_use.py`) bricht nicht mehr ab, wenn Gemini mal Prosa statt JSON liefert -> `DECIDE_VERSUCHE=3`
