@@ -360,6 +360,14 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
     Korrekturschleife: `knoten_hinzufuegen` · `umbenennen` · **`knoten_loeschen`** · **`knoten_verschieben`**
     (Wurzel-/Zyklus-Schutz), gegated (Vorschau/Bestaetigung/Audit). +12 Tests (XMind-Verben + Vision-Guards).
     Offen: generisches Bearbeiten (Computer-Use, Anthropic-Tor), Voice-integriertes Co-Working, NAS->Mac-Bruecke.
+- 🟡 **M6 — Generischer Sprach-Steuer-Loop (Iron-Man-Modus), server-seitig gebaut + getestet 2026-07-08:**
+  `runner/computer_use.py` `fuehre_ziel_aus()` — aus EINEM gesprochenen Ziel eine Kette `sehen->entscheiden->
+  handeln` (Gemini, gratis) mit strikter JSON-Aktion, normierten Koordinaten (retina-fest), **Gefahr-/CEO-Tor-
+  Stopp** + Konfidenz-Stopp, Not-Aus je Schritt, `max_schritte`-Deckel, Audit. Verhalten **„Ansagen & handeln"**
+  (CEO 2026-07-08): benignes laeuft direkt + wird angesagt, Gefaehrliches/Unsicheres haelt an + fragt (nie
+  automatisch). LUNA-Tool **`rechner_ziel`**; dependency-injected -> **24 Tests gruen** (708 gesamt). **Offen
+  (Geraet, Swift):** Orb-Screenshot auf Anfrage (`orb_bridge` `typ:"screenshot"` -> `{ok,bild_base64,breite,
+  hoehe}` in Punkten), dann laeuft die Kette end-to-end.
 - 🔲 **Voice-Latenz** spaeter optimieren (CEO 2026-06-29: laeuft, aber langsam) — Streaming-TTS, schnelleres
   Modell fuer kurze Antworten, fruehzeitiges Senden.
 - 🔲 **NAS-Bruecke „eine LUNA, zwei Gesichter"** — gemeinsamer Live-Zustand (brain/Antraege) statt lokaler Insel.

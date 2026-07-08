@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-08 11:00] — Claude Code
+- **Was:** Phase 17 M6 — generischer Sprach-Steuer-Loop („Iron-Man-Modus") server-seitig gebaut. Neu
+  `runner/computer_use.py` (`fuehre_ziel_aus`): aus EINEM gesprochenen Ziel eine Kette sehen->entscheiden->
+  handeln (Gemini/gratis), strikte JSON-Aktion (klick/tippe/taste/oeffne_app/fertig/frage), normierte
+  Koordinaten->Bildschirmpunkte (`map_klick`, retina-fest), Gefahr-Heuristik (`ist_gefaehrlich`) + Konfidenz-
+  Schwelle -> anhalten & zurueckfragen, Not-Aus je Schritt, `max_schritte`-Deckel, Audit. Verhalten „Ansagen &
+  handeln" (CEO-Entscheidung 2026-07-08). Neues LUNA-Tool `rechner_ziel` (Orb-Screenshot + `vision.bild_lesen`
+  + `actuator.execute`). Dependency-injected -> 24 neue Tests; volle Suite 708 gruen (660 orchestrator + 48
+  cutter). Doku: `PHASE17_PLAN.md` §8a + `ROADMAP.md` Phase 17 M6.
+- **Warum:** CEO-Ziel: den Rechner „wie Tony Stark" nur per Sprache ueber LUNA steuern (Phase 17 weiter ausbauen).
+- **Betroffen:** `runner/computer_use.py` (neu), `orchestrator/tests/test_phase17_computer_use.py` (neu),
+  `orchestrator/core/hoa_tools.py` (Tool `rechner_ziel`), `PHASE17_PLAN.md`, `ROADMAP.md`.
+- **Offen (Geraet, Swift):** Orb-Screenshot auf Anfrage (`orb_bridge` `typ:"screenshot"` ->
+  `{ok,bild_base64,breite,hoehe}`), damit die Kette am Mac end-to-end laeuft. Nur am Geraet baubar/testbar.
+
 ## [2026-07-08 09:30] — Claude Code
 - **Was:** Nightly-Reel-Automatik aktiviert (Betrieb, kein Code): DSM-Aufgabenplaner-Job (Benutzer root, taegl.
   03:30) `docker exec -e LUNA_OS_URL=http://localhost:8765 luna-os python -u -m cutter.reel_daily --source

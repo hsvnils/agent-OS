@@ -131,14 +131,25 @@ erteilt der CEO die Rechte einmal sauber), nicht in den terminal-gestarteten Ser
 - ✅ **Deterministische Haende (gratis):** Aktuator-Verben `app_oeffnen`, `text_schreiben`, **`tastatur_text`**
   (Text in vorderste App), **`taste`** (Kuerzel wie `cmd+s`/`return`). Logik gebaut + unit-getestet; Ausfuehrung
   braucht Accessibility (s. o.).
-- 🔲 **Augen (Gemini):** `runner/computer_use.py` — Screenshot (vom Orb) -> Gemini-Vision -> Aktion
-  (click/type/key/scroll als JSON). Capture im Orb, Klick via `cliclick` (frei: `brew install cliclick`) oder
-  CGEvent.
-- **Jede Aktion durch DASSELBE Tor:** `actuator.gate()`, Not-Aus, Allowlist, Audit; CEO-Tor bleibt.
+- ✅ **Augen + Loop (Gemini), server-seitig gebaut + unit-getestet (2026-07-08):** `runner/computer_use.py` —
+  der generische `sehen -> entscheiden -> handeln`-Loop `fuehre_ziel_aus()`. Aus EINEM gesprochenen Ziel macht
+  LUNA eine Kette atomarer Schritte (klick/tippe/taste/oeffne_app/fertig/frage). Strikte JSON-Validierung,
+  normierte Koordinaten (0..1) -> Bildschirmpunkte (`map_klick`, retina-fest), **Gefahr-Heuristik**
+  (`ist_gefaehrlich`: senden/loeschen/kaufen/posten... + `cmd+delete` -> immer anhalten), Konfidenz-Schwelle,
+  Not-Aus-Check je Schritt, `max_schritte`-Deckel, Audit je Schritt. **Verhalten „Ansagen & handeln"**
+  (CEO-Wahl 2026-07-08): benigne Schritte laufen direkt + werden angesagt; gefaehrlich/unsicher -> **anhalten
+  + zurueckfragen, NICHT ausfuehren**. LUNA-Tool **`rechner_ziel`** verdrahtet Orb-Screenshot + Gemini
+  (`vision.bild_lesen`) + Aktuator. **Dependency-injected -> 24 Tests gruen ohne Mac/Gemini.**
+- **Jede Aktion durch DASSELBE Tor:** `actuator.execute()` (Not-Aus, Allowlist, Audit); gefaehrlich/CEO-Tor
+  wird vom Loop **vorher** abgefangen und nie automatisch ausgefuehrt.
 
-**Naechster Bau:** Aktuator+Capture in den Orb verlagern (Accessibility + Screen Recording einmal erteilen) ->
-dann Gemini-Loop end-to-end. `cliclick` = kleiner CEO-Tor (Gratis-Tool). Anthropic-Computer-Use bleibt
-optionales Qualitaets-Upgrade ab 01.07.
+**Einziger offener Geraete-Teil (Swift, nur am Mac baubar/testbar):** der Orb muss einen **Screenshot auf
+Anfrage** liefern. Der Server schickt `orb_bridge.sende("screenshot")` und erwartet als Antwort-JSON
+`{ok, bild_base64, breite, hoehe}` (Breite/Hoehe in **Punkten**, damit `map_klick` stimmt). Heute PUSHt der
+Orb Screenshots nur menuegetrieben an `/api/sehen`; fuer den Loop muss `OrbActuator`/`ScreenReader` den
+Queue-Befehl `typ:"screenshot"` behandeln (ScreenCaptureKit -> PNG -> base64 + `NSScreen.main` Punkt-Groesse).
+Danach laeuft die Kette end-to-end. `cliclick`/CGEvent-Haende + Vision stehen schon.
+Anthropic-Computer-Use bleibt optionales Qualitaets-Upgrade.
 
 ## 9. Modell-Hinweis
 

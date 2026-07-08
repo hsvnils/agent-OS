@@ -439,6 +439,16 @@ def tool_specs() -> list[dict]:
                "ziel": _str("Aktueller Titel des Zielknotens (umbenennen/loeschen/verschieben)."),
                "pfad": _str("Optional: Pfad zur .xmind-Datei."),
                "bestaetigt": _bool("true erst nach ausdruecklicher CEO-Bestaetigung.")}, ["aktion"]),
+        _spec("rechner_ziel", "Phase 17 (Mac): setzt EIN gesprochenes ZIEL am Rechner selbststaendig um "
+              "(Iron-Man-Modus). LUNA sieht den Schirm (Orb-Screenshot -> Gemini), entscheidet den naechsten "
+              "Handgriff (klick/tippe/taste/App oeffnen), fuehrt ihn aus und schaut wieder — bis fertig. "
+              "'Ansagen & handeln': benigne Schritte laufen direkt; bei GEFAHR (senden/loeschen/kaufen/posten/"
+              "bezahlen = CEO-Tor) oder Unsicherheit HAELT sie an und fragt zurueck (fuehrt es NICHT aus). "
+              "Not-Aus (Orb) stoppt sofort, jeder Schritt wird auditiert. Nur auf ausdrueckliche Anweisung. "
+              "Braucht den laufenden Orb mit Bedienungshilfen + Bildschirmaufnahme.",
+              {"ziel": _str("Das Ziel in Alltagssprache, z. B. 'oeffne Safari und geh auf hsv.de'."),
+               "max_schritte": {"type": "integer", "description": "Optionaler Deckel (Default 8)."}},
+              ["ziel"]),
     ]
 
 
@@ -1479,6 +1489,59 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             ctx.aktivitaet.log("Mac-Aktuator", f"XMind {aktion}: {'ok' if res.get('ok') else 'fehlgeschlagen'}",
                                kategorie="rechner_aktion", detail=str(res)[:200])
         return res
+
+    if name == "rechner_ziel":
+        import base64 as _b64
+
+        from runner import actuator, awareness, computer_use as cu, orb_bridge, vision
+        if not actuator.is_macos():
+            return {"blockiert": True, "hinweis": "Rechner-Steuerung nur am Mac verfuegbar."}
+        ziel = (args.get("ziel") or "").strip()
+        if not ziel:
+            return {"fehler": "Bitte ein Ziel angeben, z. B. 'oeffne Safari und geh auf hsv.de'."}
+        try:
+            max_schritte = int(args.get("max_schritte") or cu.MAX_SCHRITTE_STD)
+        except (TypeError, ValueError):
+            max_schritte = cu.MAX_SCHRITTE_STD
+        max_schritte = max(1, min(20, max_schritte))            # harter Deckel
+
+        def _screenshot() -> dict:
+            r = orb_bridge.sende("screenshot", timeout=8.0)
+            if not r.get("ok"):
+                return {"ok": False, "grund": r.get("grund", "Kein Screenshot vom Orb.")}
+            try:
+                bild = _b64.b64decode(r.get("bild_base64") or "")
+            except Exception:
+                return {"ok": False, "grund": "Screenshot unlesbar."}
+            return {"ok": True, "bild": bild, "breite": int(r.get("breite") or 0),
+                    "hoehe": int(r.get("hoehe") or 0)}
+
+        def _entscheide(z: str, bild: bytes, verlauf: list) -> str:
+            anweisung = (cu.SYSTEM_HINWEIS + f"\n\nZIEL: {z}"
+                         + ("\nBisher erledigt: " + " | ".join(verlauf[-6:]) if verlauf else ""))
+            r = vision.bild_lesen(bild, anweisung)
+            return r.get("text", "") if r.get("ok") else ""
+
+        def _handle(aktion: dict, shot: dict) -> dict:
+            vorder = (awareness.frontmost_app().get("app") or "").strip()
+            art = aktion["aktion"]
+            if art == "oeffne_app":
+                return actuator.execute(aktion["app"], "app_oeffnen", "")
+            if art == "tippe":
+                return actuator.execute(vorder, "tastatur_text", aktion["text"])
+            if art == "taste":
+                return actuator.execute(vorder, "taste", aktion["kuerzel"])
+            if art == "klick":
+                x, y = cu.map_klick(aktion["x"], aktion["y"], shot.get("breite", 0), shot.get("hoehe", 0))
+                return actuator.execute(vorder, "klick", f"{x},{y}")
+            return {"ausgefuehrt": False, "grund": f"Verb '{art}' nicht ausfuehrbar."}
+
+        def _audit(kurz: str, detail: str = "") -> None:
+            if ctx.aktivitaet:
+                ctx.aktivitaet.log("Mac-Ziel-Loop", kurz, kategorie="rechner_aktion", detail=detail[:200])
+
+        return cu.fuehre_ziel_aus(ziel, screenshot=_screenshot, entscheide=_entscheide, handle=_handle,
+                                  gestoppt=actuator.is_stopped, max_schritte=max_schritte, audit=_audit)
 
     return {"fehler": f"Unbekanntes Tool: {name}"}
 
