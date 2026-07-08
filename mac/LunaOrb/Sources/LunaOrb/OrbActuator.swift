@@ -70,9 +70,31 @@ final class OrbActuator {
             let x = (cmd["x"] as? Double) ?? Double((cmd["x"] as? Int) ?? -1)
             let y = (cmd["y"] as? Double) ?? Double((cmd["y"] as? Int) ?? -1)
             return click(x: x, y: y)
+        case "screenshot":
+            return screenshot()
         default:
             return ["ok": false, "grund": "Unbekannter Befehl: \(typ)"]
         }
+    }
+
+    /// Screenshot auf Anfrage (Phase 17, M6 — Ziel-Loop). Liefert das PNG base64-kodiert plus die
+    /// Groesse des Hauptbildschirms in **Punkten** (passend zum CGEvent-Klick-Koordinatenraum, damit die
+    /// normierten Modell-Koordinaten 0..1 serverseitig korrekt gemappt werden). Braucht die Berechtigung
+    /// **Bildschirmaufnahme** (wie „Was siehst du?"); ohne -> klare Rueckmeldung.
+    private func screenshot() -> [String: Any] {
+        let sem = DispatchSemaphore(value: 0)
+        var png: Data?
+        Task {
+            png = await ScreenReader.capturePNG()
+            sem.signal()
+        }
+        _ = sem.wait(timeout: .now() + 6)
+        guard let data = png else {
+            return ["ok": false, "grund": "Bildschirmaufnahme (Screen Recording) fuer LUNA Orb nicht erlaubt."]
+        }
+        let size = NSScreen.main?.frame.size ?? .zero
+        return ["ok": true, "bild_base64": data.base64EncodedString(),
+                "breite": Int(size.width), "hoehe": Int(size.height)]
     }
 
     // MARK: - CGEvent-Primitive

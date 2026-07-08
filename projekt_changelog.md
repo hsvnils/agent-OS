@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-08 11:20] — Claude Code
+- **Was:** Phase 17 M6 — Orb-Screenshot-auf-Anfrage (Swift). `OrbActuator.execute` behandelt jetzt den
+  Queue-Befehl `typ:"screenshot"` -> nimmt via `ScreenReader.capturePNG()` ein PNG auf und liefert
+  `{ok, bild_base64, breite, hoehe}` (Groesse in Punkten, passend zum CGEvent-Klickraum). Damit laeuft die
+  `rechner_ziel`-Kette am Mac end-to-end. `swift build` gruen (kompiliert). **Laufzeit-Test (Bildschirmaufnahme-
+  + Bedienungshilfen-Recht, echtes Klicken) steht noch aus — nur am Geraet.**
+- **Warum:** letzter fehlender Baustein fuer den Iron-Man-Loop (Server-Seite war 11:00 fertig).
+- **Betroffen:** `mac/LunaOrb/Sources/LunaOrb/OrbActuator.swift`.
+
 ## [2026-07-08 11:00] — Claude Code
 - **Was:** Phase 17 M6 — generischer Sprach-Steuer-Loop („Iron-Man-Modus") server-seitig gebaut. Neu
   `runner/computer_use.py` (`fuehre_ziel_aus`): aus EINEM gesprochenen Ziel eine Kette sehen->entscheiden->
