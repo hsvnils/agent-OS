@@ -97,6 +97,41 @@ def _app_installed(app: str) -> bool:
     return any(low == a.lower() or low in a.lower() for a in capabilities.scan_installed_apps())
 
 
+# Lokalisierte / umgangssprachliche App-Namen -> echter App-Name (macOS oeffnet nur den echten Namen,
+# z. B. heisst der Rechner intern 'Calculator', nicht 'Taschenrechner').
+_APP_SYNONYME = {
+    "taschenrechner": "Calculator", "rechner": "Calculator", "calculator": "Calculator",
+    "notizen": "Notes", "notes": "Notes", "systemeinstellungen": "System Settings",
+    "einstellungen": "System Settings", "browser": "Safari", "musik": "Music",
+    "nachrichten": "Messages", "erinnerungen": "Reminders", "kalender": "Calendar",
+    "fotos": "Photos", "karten": "Maps", "kontakte": "Contacts", "vorschau": "Preview",
+}
+
+
+def aufloesen_app(name: str, apps: list[str] | None = None) -> str | None:
+    """Findet den echten Namen einer installierten App zu einer (evtl. lokalisierten/umgangssprachlichen)
+    Bezeichnung. Beispiel: 'Taschenrechner'/'Rechner' -> 'Calculator'. None, wenn nichts passt."""
+    low = (name or "").strip().lower()
+    if not low:
+        return None
+    if apps is None:
+        from . import capabilities
+        apps = capabilities.scan_installed_apps()
+    for a in apps:                                   # 1) exakt (case-insensitive)
+        if a.lower() == low:
+            return a
+    ziel = _APP_SYNONYME.get(low)                    # 2) Synonym / lokalisiert
+    if ziel:
+        for a in apps:
+            if a.lower() == ziel.lower():
+                return a
+        return ziel                                  # nicht im Scan, aber 'open -a' kennt den Bundle-Namen
+    for a in apps:                                   # 3) Teilstring
+        if low in a.lower() or a.lower() in low:
+            return a
+    return None
+
+
 def allowed(app: str, verb: str) -> dict | None:
     """Spezifikation der Aktion oder None. Generische Verben gelten fuer jede installierte App."""
     spec = ALLOWLIST.get(app, {}).get(verb)
@@ -123,6 +158,8 @@ def plan(app: str, verb: str, inhalt: str) -> dict:
         return {"ok": False, "grund": "Aktuator nur am Mac verfuegbar."}
     if is_stopped():
         return {"ok": False, "grund": "NOT-AUS aktiv — Steuerung gesperrt. Erst im Orb aufheben."}
+    if verb == "app_oeffnen":
+        app = aufloesen_app(app) or app              # 'Taschenrechner' -> 'Calculator'
     spec = allowed(app, verb)
     if spec is None:
         return {"ok": False, "grund": f"Nicht in der Allowlist. Erlaubt: {allowlist_text()}",
@@ -142,6 +179,8 @@ def execute(app: str, verb: str, inhalt: str) -> dict:
         return {"ausgefuehrt": False, "grund": "nur am Mac"}
     if is_stopped():
         return {"ausgefuehrt": False, "grund": "NOT-AUS aktiv"}
+    if verb == "app_oeffnen":
+        app = aufloesen_app(app) or app              # 'Taschenrechner' -> 'Calculator'
     if allowed(app, verb) is None:
         return {"ausgefuehrt": False, "grund": "nicht in Allowlist"}
     if verb == "app_oeffnen":

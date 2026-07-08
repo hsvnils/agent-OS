@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-08 15:05] — Claude Code
+- **Was:** Phase 17 M6 — zwei Bugfixes nach dem ersten Live-Test am Mac. (1) **Robustheit:** der Ziel-Loop
+  (`runner/computer_use.py`) bricht nicht mehr ab, wenn Gemini mal Prosa statt JSON liefert -> `DECIDE_VERSUCHE=3`
+  (bis zu 3x neu fragen) + Toleranz gegen englische Feld-/Aktionsnamen (`action/click/type/key/open/...`,
+  `key/shortcut/app_name/value`). (2) **App-Namen:** `runner/actuator.aufloesen_app()` mappt lokalisierte/
+  umgangssprachliche Namen auf den echten App-Namen (`Taschenrechner`->`Calculator`), genutzt in `plan()`+
+  `execute()` fuer `app_oeffnen` -> kein falscher Allowlist-Block mehr. +7 Tests (49 Phase-17-Tests, Suite 665
+  orchestrator gruen). **Live am Mac verifiziert:** Ziel-Loop oeffnet den Rechner (Spotlight: cmd+space -> tippen
+  -> return, alle Schritte ausgefuehrt); Haende (Accessibility) bestaetigt.
+- **Warum:** erster echter Gerätetest zeigte „keine Antwort" (Loop-Abbruch bei Nicht-JSON) und „nicht auf der
+  Allow List" (Namens-Mismatch). Beide behoben.
+- **Betroffen:** `runner/computer_use.py`, `runner/actuator.py`, `orchestrator/tests/test_phase17_computer_use.py`.
+
 ## [2026-07-08 11:20] — Claude Code
 - **Was:** Phase 17 M6 — Orb-Screenshot-auf-Anfrage (Swift). `OrbActuator.execute` behandelt jetzt den
   Queue-Befehl `typ:"screenshot"` -> nimmt via `ScreenReader.capturePNG()` ein PNG auf und liefert

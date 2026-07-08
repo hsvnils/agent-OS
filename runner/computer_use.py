@@ -31,6 +31,18 @@ AKTIONEN = ("klick", "tippe", "taste", "oeffne_app", "fertig", "frage")
 # Deckel + Schwellen (bewusst konservativ).
 MAX_SCHRITTE_STD = 8
 KONFIDENZ_SCHWELLE = 0.55
+DECIDE_VERSUCHE = 3          # so oft neu fragen, wenn das Modell keine brauchbare Aktion liefert
+
+# Toleranz gegen englische / synonyme Aktionsnamen (Modelle weichen manchmal vom Schema ab).
+_ACTION_ALIAS = {
+    "click": "klick", "tap": "klick",
+    "type": "tippe", "tippen": "tippe", "write": "tippe", "input": "tippe",
+    "key": "taste", "press": "taste", "hotkey": "taste", "shortcut": "taste", "keypress": "taste",
+    "open": "oeffne_app", "open_app": "oeffne_app", "launch": "oeffne_app", "app_oeffnen": "oeffne_app",
+    "oeffne": "oeffne_app", "starte": "oeffne_app",
+    "done": "fertig", "finish": "fertig", "complete": "fertig", "finished": "fertig",
+    "ask": "frage", "question": "frage",
+}
 
 # Woerter, die eine Aktion als gefaehrlich/CEO-Tor markieren (Geld/Recht/Oeffentlichkeit/Loeschen).
 # Wird gegen das Ziel des Klicks/den Text/die Begruendung geprueft.
@@ -84,7 +96,8 @@ def validiere_aktion(d: dict) -> dict:
     """Prueft die geparste Aktion gegen das Schema. {ok, aktion?, ...} oder {ok:False, grund}."""
     if not isinstance(d, dict):
         return {"ok": False, "grund": "Keine Aktion."}
-    art = str(d.get("aktion", "")).strip().lower()
+    art = str(d.get("aktion") or d.get("action") or "").strip().lower()
+    art = _ACTION_ALIAS.get(art, art)
     if art not in AKTIONEN:
         return {"ok": False, "grund": f"Unbekannte Aktion '{art}'. Erlaubt: {', '.join(AKTIONEN)}."}
     try:
@@ -103,17 +116,17 @@ def validiere_aktion(d: dict) -> dict:
             return {"ok": False, "grund": "x,y muessen normiert sein (0..1)."}
         aus["x"], aus["y"] = x, y
     elif art == "tippe":
-        text = str(d.get("text", ""))
+        text = str(d.get("text") or d.get("value") or d.get("input") or "")
         if not text:
             return {"ok": False, "grund": "tippe braucht 'text'."}
         aus["text"] = text
     elif art == "taste":
-        kuerzel = str(d.get("kuerzel", "")).strip()
+        kuerzel = str(d.get("kuerzel") or d.get("key") or d.get("shortcut") or d.get("hotkey") or "").strip()
         if not kuerzel:
             return {"ok": False, "grund": "taste braucht 'kuerzel'."}
         aus["kuerzel"] = kuerzel
     elif art == "oeffne_app":
-        app = str(d.get("app", "")).strip()
+        app = str(d.get("app") or d.get("app_name") or d.get("application") or "").strip()
         if not app:
             return {"ok": False, "grund": "oeffne_app braucht 'app'."}
         aus["app"] = app
@@ -198,14 +211,18 @@ def fuehre_ziel_aus(ziel: str, *, screenshot: Callable[[], dict], entscheide: Ca
         if not shot.get("ok"):
             return {"status": "fehler", "schritte": schritte,
                     "ansage": f"Ich sehe den Bildschirm nicht: {shot.get('grund', 'kein Screenshot')}."}
-        roh = entscheide(ziel, shot.get("bild") or b"", list(verlauf))
-        geparst = parse_aktion(roh)
-        pruef = validiere_aktion(geparst or {})
-        if not pruef.get("ok"):
-            _log("Aktion unbrauchbar", pruef.get("grund", ""))
+        aktion = None
+        for _versuch in range(max(1, DECIDE_VERSUCHE)):     # Modell liefert mal Prosa statt JSON -> neu fragen
+            roh = entscheide(ziel, shot.get("bild") or b"", list(verlauf))
+            pruef = validiere_aktion(parse_aktion(roh) or {})
+            if pruef.get("ok"):
+                aktion = pruef
+                break
+            _log("Antwort unbrauchbar, neuer Versuch", pruef.get("grund", ""))
+        if aktion is None:
             return {"status": "fehler", "schritte": schritte,
-                    "ansage": f"Ich konnte den naechsten Schritt nicht bestimmen ({pruef.get('grund')})."}
-        aktion = pruef
+                    "ansage": "Ich komme mit dem naechsten Schritt gerade nicht klar. Sag es mir bitte "
+                              "nochmal oder etwas konkreter."}
         ansage = beschreibe(aktion)
 
         if aktion["aktion"] == "fertig":

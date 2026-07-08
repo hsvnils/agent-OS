@@ -2,6 +2,7 @@
 import json
 import unittest
 
+from runner import actuator
 from runner import computer_use as cu
 
 
@@ -57,6 +58,31 @@ class TestValidieren(unittest.TestCase):
     def test_taste_und_app(self):
         self.assertTrue(cu.validiere_aktion({"aktion": "taste", "kuerzel": "return"})["ok"])
         self.assertTrue(cu.validiere_aktion({"aktion": "oeffne_app", "app": "Safari"})["ok"])
+
+    def test_englische_aliase(self):
+        r = cu.validiere_aktion({"action": "click", "x": 0.5, "y": 0.5})
+        self.assertTrue(r["ok"]); self.assertEqual(r["aktion"], "klick")
+        r = cu.validiere_aktion({"action": "open", "app_name": "Safari"})
+        self.assertTrue(r["ok"]); self.assertEqual(r["aktion"], "oeffne_app"); self.assertEqual(r["app"], "Safari")
+        r = cu.validiere_aktion({"action": "type", "value": "hallo"})
+        self.assertTrue(r["ok"]); self.assertEqual(r["aktion"], "tippe"); self.assertEqual(r["text"], "hallo")
+        r = cu.validiere_aktion({"aktion": "taste", "key": "cmd+s"})
+        self.assertTrue(r["ok"]); self.assertEqual(r["kuerzel"], "cmd+s")
+
+
+class TestAppAufloesung(unittest.TestCase):
+    def test_synonym_und_exakt(self):
+        apps = ["Calculator", "Safari", "Mail"]
+        self.assertEqual(actuator.aufloesen_app("Taschenrechner", apps=apps), "Calculator")
+        self.assertEqual(actuator.aufloesen_app("rechner", apps=apps), "Calculator")
+        self.assertEqual(actuator.aufloesen_app("calculator", apps=apps), "Calculator")   # exakt (ci)
+        self.assertEqual(actuator.aufloesen_app("Safari", apps=apps), "Safari")
+
+    def test_teilstring_und_none(self):
+        self.assertEqual(actuator.aufloesen_app("safari", apps=["Safari Technology Preview"]),
+                         "Safari Technology Preview")
+        self.assertIsNone(actuator.aufloesen_app("gibtsnicht xyz", apps=["Calculator"]))
+        self.assertIsNone(actuator.aufloesen_app("", apps=["Calculator"]))
 
 
 class TestGefahr(unittest.TestCase):
@@ -133,7 +159,9 @@ class TestLoop(unittest.TestCase):
 
     def test_kaputte_modellantwort(self):
         handle, _ = self._handle_ok()
-        r = cu.fuehre_ziel_aus("egal", screenshot=_shot_ok(), entscheide=_decider("kein json"), handle=handle)
+        # Alle Retry-Versuche liefern kein JSON -> Loop gibt sauber 'fehler' zurueck (kein Absturz).
+        r = cu.fuehre_ziel_aus("egal", screenshot=_shot_ok(),
+                               entscheide=_decider("kein json", "kein json", "kein json"), handle=handle)
         self.assertEqual(r["status"], "fehler")
 
     def test_frage_beendet_loop(self):
@@ -164,6 +192,24 @@ class TestLoop(unittest.TestCase):
         handle, _ = self._handle_ok()
         r = cu.fuehre_ziel_aus("  ", screenshot=_shot_ok(), entscheide=_decider(), handle=handle)
         self.assertEqual(r["status"], "fehler")
+
+    def test_retry_prosa_dann_erfolg(self):
+        # Modell liefert zweimal Prosa (kein JSON), beim 3. Versuch gueltiges JSON -> Loop macht weiter.
+        handle, aufgerufen = self._handle_ok()
+        dec = _decider("Ich schaue mal...", "Einen Moment...",
+                       json.dumps({"aktion": "oeffne_app", "app": "Safari", "konfidenz": 0.9,
+                                   "begruendung": "Safari"}),
+                       json.dumps({"aktion": "fertig", "ergebnis": "offen", "konfidenz": 1}))
+        r = cu.fuehre_ziel_aus("oeffne safari", screenshot=_shot_ok(), entscheide=dec, handle=handle)
+        self.assertEqual(r["status"], "fertig")
+        self.assertEqual(aufgerufen, ["oeffne_app"])
+
+    def test_retry_erschoepft_dann_fehler(self):
+        handle, aufgerufen = self._handle_ok()
+        dec = _decider("kein json", "immer noch nicht", "auch das nicht")   # 3x unbrauchbar
+        r = cu.fuehre_ziel_aus("egal", screenshot=_shot_ok(), entscheide=dec, handle=handle)
+        self.assertEqual(r["status"], "fehler")
+        self.assertEqual(aufgerufen, [])
 
 
 if __name__ == "__main__":
