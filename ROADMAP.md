@@ -45,9 +45,10 @@ Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitae
 **Entwicklungs-Roadmap (2026-07-08):** Jeder vom CEO **freigegebene** Antrag landet automatisch auf einer
 eigenen Entwicklungs-Roadmap (`core/entwicklungs_roadmap.py` -> `entwicklung/roadmap.jsonl` + gerendertes
 `entwicklung/roadmap.md`, Live-Daten auf der NAS). Einziger Schreibpfad ist der Hook in `Antraege.freigeben()`
--> nur nach CEO-Freigabe, **nie autonom**. Claude Code ruft die Liste per SSH ab (`ssh luna-nas cat
-…/entwicklung/roadmap.md`), arbeitet Punkte ab und markiert sie via CLI als umgesetzt. LUNA setzt nichts mehr
-selbst im Hintergrund um.
+-> nur nach CEO-Freigabe, **nie autonom**. Zwei Abruf-Wege: **Claude Code** per SSH (`ssh luna-nas cat
+…/entwicklung/roadmap.md`) und **Web** in LUNA-OS (App-Kachel „Roadmap", `GET /api/entwicklungs-roadmap`,
+read-only). Claude Code arbeitet Punkte ab und markiert sie via CLI als umgesetzt. LUNA setzt nichts mehr
+selbst im Hintergrund um. (Alle Vorschlaege + Entscheidungen bleiben ohnehin vollstaendig im `antraege`-Store.)
 
 **Design-Prinzip fuer ALLE autonomen Schleifen -- Loop Engineering:** Neue Loops (Watcher, Briefings,
 Self-Dev, Investment-Screen, kuenftig content_ops-Fuetterung) werden nicht als Einzel-Prompts, sondern als

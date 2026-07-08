@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-08 16:40] — Claude Code
+- **Was:** Entwicklungs-Roadmap zusaetzlich **im Web** abrufbar (CEO-Wunsch). Neuer read-only Endpoint
+  `GET /api/entwicklungs-roadmap` (app.py, nutzt den vorhandenen Store) + LUNA-OS-App-Kachel „Roadmap"
+  (`app-v2.js`: SECTIONS-Eintrag `devroadmap` + `renderDevRoadmap`, Karten wie Reels; Cache `app-v2.js?v=16`).
+  Schreiben bleibt ausschliesslich der Freigabe-Hook/CLI -- die Web-Ansicht ist rein lesend. Im Browser-Preview
+  verifiziert (Kachel rendert Titel/Status/Beschreibung/Antrag korrekt). Klargestellt: alle Vorschlaege +
+  Entscheidungen liegen ohnehin vollstaendig im `antraege`-Store (nichts zu bauen).
+- **Warum:** CEO will die Roadmap nicht nur per SSH (Claude Code), sondern auch jederzeit im Browser sehen.
+- **Betroffen:** `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`,
+  `orchestrator/channels/web/static/index-v2.html`, `ROADMAP.md`.
+
 ## [2026-07-08 16:10] — Claude Code
 - **Was:** Entwicklungs-Roadmap eingefuehrt: jeder vom CEO **freigegebene** Antrag landet automatisch als
   Arbeitspunkt auf einer eigenen Roadmap, die Claude Code spaeter abarbeitet. Neu `core/entwicklungs_roadmap.py`

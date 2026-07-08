@@ -64,6 +64,7 @@ function reorder2(from, to) { const o = DASH2.order.filter(x => x !== from); o.s
 const SECTIONS = [
   { id: "dash", icon: "▦", label: "Dashboard", app: "home" },
   { id: "freigaben", icon: "✔", label: "Freigaben", app: "auftraege" },
+  { id: "devroadmap", icon: "🗺", label: "Roadmap", app: null },
   { id: "investment", icon: "📈", label: "Investment", app: "investment" },
   { id: "crm", icon: "🤝", label: "CRM", app: "crm" },
   { id: "radar", icon: "🎯", label: "Radar", app: "crm" },
@@ -457,6 +458,23 @@ async function renderCutter() {
       ${j.reel_datei ? `<div class="v2-sub">🎬 ${esc(j.reel_datei)}</div>` : ""}${j.fehler ? `<div class="v2-desc" style="color:var(--v2-red)">${esc(j.fehler)}</div>` : ""}${j.note ? `<div class="v2-desc">${esc(j.note)}</div>` : ""}</div>`; }).join("") || emptyRow("Noch keine Reel-Jobs.");
   const form = `<div class="v2-form"><input id="cut-projekt" placeholder="Ordnername in der Cutter-Inbox (z. B. hsv_stadion)"><input id="cut-note" placeholder="Notiz (optional)"><button class="v2-btn pri" data-act="cutter-job">Job anstoßen</button><div id="cut-msg" class="v2-msg"></div><div class="v2-sub">Der Mac-Cutter holt den Job ab, schneidet den Ordner und meldet den Status zurück. Posten bleibt CEO-Tor.</div></div>`;
   $("#v2-app").innerHTML = secHead("Cutter") + `<div class="v2-grid">${tile("Reel-Job anstoßen", form, "w5")}${tile(`Jobs & Historie (${(c.jobs || []).length})`, jobs, "w7")}</div>`;
+}
+
+/* =========================== Entwicklungs-Roadmap (freigegebene Antraege) =========================== */
+RENDER.devroadmap = renderDevRoadmap;
+async function renderDevRoadmap() {
+  const d = await jget("/api/entwicklungs-roadmap") || {};
+  const badge = { offen: "wartet", in_arbeit: "neutral", umgesetzt: "ok", verworfen: "danger" };
+  const lbl = { offen: "🔲 offen", in_arbeit: "🟡 in Arbeit", umgesetzt: "✅ umgesetzt", verworfen: "✖ verworfen" };
+  const items = d.items || [];
+  const cards = items.map(it => {
+    const st = it.status || "offen";
+    return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${badge[st] || "neutral"}">${lbl[st] || esc(st)}</span><b>${esc(it.titel || "(ohne Titel)")}</b> <small>freigegeben ${esc((it.freigegeben_ts || "").slice(0, 10))}</small></div>
+    ${it.beschreibung ? `<div class="v2-desc">${esc(it.beschreibung)}</div>` : ""}
+    <div class="v2-sub">Von ${esc(it.von || "-")} · Quelle ${esc(it.quelle || "-")} · Antrag ${esc(it.antrag_id || "-")}${it.notiz ? " · Notiz: " + esc(it.notiz) : ""}</div></div>`;
+  }).join("") || emptyRow("Noch keine freigegebenen Anträge auf der Roadmap. Sobald du einen Vorschlag freigibst, erscheint er hier — Claude Code arbeitet die Punkte ab.");
+  const offen = items.filter(i => (i.status || "offen") === "offen").length;
+  $("#v2-app").innerHTML = secHead("Entwicklungs-Roadmap", `<span class="v2-sub">${offen} offen · ${items.length} gesamt</span>`) + `<div class="v2-cards">${cards}</div>`;
 }
 
 /* =========================== Reels (Stufe C: 1-Tap-Freigabe) =========================== */

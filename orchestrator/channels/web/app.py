@@ -1125,6 +1125,13 @@ def reel_liste():
     return {"reels": reel_store.liste(limit=60)}
 
 
+@app.get("/api/entwicklungs-roadmap")
+def entwicklungs_roadmap_liste():
+    """Read-only: die Entwicklungs-Roadmap (aus freigegebenen Antraegen) fuer die LUNA-OS-Ansicht.
+    Schreiben passiert nur ueber den Freigabe-Hook / die CLI -- die Web-Ansicht ist rein lesend."""
+    return {"items": entwicklungs_roadmap.list()}
+
+
 @app.get("/api/reel/{rid}/video")
 def reel_video(rid: str):
     """Liefert das eingereichte Reel-Video (Inline-Vorschau in der Reels-App)."""
