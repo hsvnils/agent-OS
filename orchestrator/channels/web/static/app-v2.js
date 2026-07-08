@@ -469,9 +469,9 @@ async function renderDevRoadmap() {
   const items = d.items || [];
   const cards = items.map(it => {
     const st = it.status || "offen";
-    return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${badge[st] || "neutral"}">${lbl[st] || esc(st)}</span><b>${esc(it.titel || "(ohne Titel)")}</b> <small>freigegeben ${esc((it.freigegeben_ts || "").slice(0, 10))}</small></div>
-    ${it.beschreibung ? `<div class="v2-desc">${esc(it.beschreibung)}</div>` : ""}
-    <div class="v2-sub">Von ${esc(it.von || "-")} · Quelle ${esc(it.quelle || "-")} · Antrag ${esc(it.antrag_id || "-")}${it.notiz ? " · Notiz: " + esc(it.notiz) : ""}</div></div>`;
+    return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${badge[st] || "neutral"}">${lbl[st] || esc(st)}</span><b>${esc(it.titel || "(ohne Titel)")}</b></div>
+      <div class="v2-sub">von ${esc(it.von || "-")} · ${esc(it.quelle || "-")} · ${esc(it.antrag_id || "-")} · freigegeben ${esc((it.freigegeben_ts || "").slice(0, 10))}${it.notiz ? " · Notiz: " + esc(it.notiz) : ""}</div>
+      <div class="v2-desc clamp">${esc(it.beschreibung) || "<i>keine Beschreibung</i>"}</div></div>`;
   }).join("") || emptyRow("Noch keine freigegebenen Anträge auf der Roadmap. Sobald du einen Vorschlag freigibst, erscheint er hier — Claude Code arbeitet die Punkte ab.");
   const offen = items.filter(i => (i.status || "offen") === "offen").length;
   $("#v2-app").innerHTML = secHead("Entwicklungs-Roadmap", `<span class="v2-sub">${offen} offen · ${items.length} gesamt</span>`) + `<div class="v2-cards">${cards}</div>`;

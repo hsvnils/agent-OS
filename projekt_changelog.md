@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-08 17:20] — Claude Code
+- **Was:** Roadmap-Kacheln kompakter -- 1:1 im Freigaben-Stil: Badge+Titel, einzeilige Meta, Beschreibung
+  mit `v2-desc clamp` (auf 5 Zeilen begrenzt statt voll ausgeklappt). Cache `app-v2.js?v=17`. Im Browser-
+  Preview verifiziert (line-clamp aktiv, ~101px statt voller Hoehe).
+- **Warum:** CEO: die Kacheln waren zu riesig; sollen aussehen wie im Bereich „Freigaben".
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/index-v2.html`.
+
 ## [2026-07-08 16:40] — Claude Code
 - **Was:** Entwicklungs-Roadmap zusaetzlich **im Web** abrufbar (CEO-Wunsch). Neuer read-only Endpoint
   `GET /api/entwicklungs-roadmap` (app.py, nutzt den vorhandenen Store) + LUNA-OS-App-Kachel „Roadmap"
