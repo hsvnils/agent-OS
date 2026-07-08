@@ -32,10 +32,14 @@ def _now() -> str:
 
 class Antraege:
     def __init__(self, path: str | Path, *, secrets: list[str] | None = None,
-                 changelog: Callable[..., None] | None = None):
+                 changelog: Callable[..., None] | None = None,
+                 on_freigabe: Callable[[dict], None] | None = None):
         self.path = Path(path)
         self.secrets = secrets or []
         self.changelog = changelog
+        # Wird NUR bei einer erfolgreichen CEO-Freigabe mit dem gefalteten Antrag aufgerufen
+        # (Entwicklungs-Roadmap). Fehler hier duerfen die Freigabe nie blockieren.
+        self.on_freigabe = on_freigabe
 
     # -- schreiben --
 
@@ -54,6 +58,11 @@ class Antraege:
         ok = self._transition(antrag_id, "freigegeben", akteur=akteur)
         if ok:
             self._log("CEO", f"Antrag freigegeben: {antrag_id}", "CEO-Freigabe ueber HoA", antrag_id)
+            if self.on_freigabe:
+                try:
+                    self.on_freigabe(self.get(antrag_id))   # -> Entwicklungs-Roadmap
+                except Exception:
+                    pass                                     # Roadmap-Fehler blockiert die Freigabe nie
         return ok
 
     def ablehnen(self, antrag_id: str, *, grund: str = "", akteur: str = "CEO") -> bool:

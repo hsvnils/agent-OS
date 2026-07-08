@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-08 16:10] — Claude Code
+- **Was:** Entwicklungs-Roadmap eingefuehrt: jeder vom CEO **freigegebene** Antrag landet automatisch als
+  Arbeitspunkt auf einer eigenen Roadmap, die Claude Code spaeter abarbeitet. Neu `core/entwicklungs_roadmap.py`
+  (`EntwicklungsRoadmap`, event-sourced JSONL `entwicklung/roadmap.jsonl` + gerendertes umlaut-freies
+  `entwicklung/roadmap.md`; Lebenszyklus offen->in_arbeit->umgesetzt|verworfen; `aufnehmen` idempotent per
+  antrag_id; `backfill` fuer vergangene Freigaben; CLI --backfill/--render/--list/--umsetzen/--verwerfen).
+  Einziger Schreibpfad = neuer Hook `on_freigabe` in `Antraege.freigeben()` (failsafe) -> nur nach CEO-Freigabe
+  (Telegram-Chat ODER Web-App), **nie autonom**; LUNA erhaelt kein Roadmap-Schreib-Tool. Verkabelt in
+  bot.py/app.py/voice pipeline.py. `entwicklung/` als Live-Daten in .gitignore + sync-to-nas-Exclude. +8 Tests
+  (Suite 673 gruen).
+- **Warum:** CEO-Wunsch: LUNA soll nichts mehr riskant im Hintergrund umsetzen; freigegebene Vorschlaege
+  (auch vergangene) sollen auf eine Entwicklungs-Roadmap, die wir hier in Claude Code kontrolliert abarbeiten.
+- **Betroffen:** `orchestrator/core/entwicklungs_roadmap.py` (neu), `orchestrator/tests/test_entwicklungs_roadmap.py`
+  (neu), `orchestrator/core/antraege.py`, `orchestrator/channels/{telegram/bot.py,web/app.py,voice/pipeline.py}`,
+  `.gitignore`, `deploy/sync-to-nas.sh`, `ROADMAP.md`.
+
 ## [2026-07-08 15:35] — Claude Code
 - **Was:** Modell-Provider-Robustheit (LUNAs Chat-/Sprech-Gehirn) im Backlog **zurueckgestellt**. Diagnose:
   Anthropic ohne Guthaben -> Chat laeuft auf Gemini-Gratis-Fallback (korrekt verdrahtet, verifiziert: /api/chat

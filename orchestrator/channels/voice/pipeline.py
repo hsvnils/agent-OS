@@ -198,6 +198,7 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
                    antraege_path, repo_root):
     """Baut die Conversation-Pipeline + Task. `core` ist der HoA-Kern (fuer delegate/Changelog/CEO-Tor)."""
     from ...core.antraege import Antraege
+    from ...core.entwicklungs_roadmap import EntwicklungsRoadmap
     from ...core.execution import ExecutionEngine
     from ...core import execution_live as live
     from pipecat.pipeline.pipeline import Pipeline
@@ -225,7 +226,10 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
     )
     aggregator = LLMContextAggregatorPair(context)
     rtvi = RTVIProcessor()
-    antraege = Antraege(antraege_path, secrets=leak_secrets, changelog=core.changelog)
+    entwicklungs_roadmap = EntwicklungsRoadmap(repo_root / "entwicklung" / "roadmap.jsonl",
+                                               secrets=leak_secrets, changelog=core.changelog)
+    antraege = Antraege(antraege_path, secrets=leak_secrets, changelog=core.changelog,
+                        on_freigabe=entwicklungs_roadmap.aufnehmen)
     engine = ExecutionEngine(
         antraege,
         make_workspace=live.real_make_workspace(repo_root),

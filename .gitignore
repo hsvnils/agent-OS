@@ -74,3 +74,6 @@ reel_freigabe/
 
 # Reel-Pipeline NAS-Arbeitsordner (Outbox/State/Index -- Live-Daten, nie committen)
 reel_work/
+
+# Entwicklungs-Roadmap (aus freigegebenen Antraegen; Live-Daten auf der NAS, nie committen)
+entwicklung/

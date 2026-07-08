@@ -44,6 +44,7 @@ def _load_secrets() -> dict:
 def _build_ctx(cfg: dict, secrets: dict):
     """Live-HoA-Werkzeugkontext (Opus-Backend, Gedaechtnis, Antraege, Execution-Engine)."""
     from ...core.antraege import Antraege
+    from ...core.entwicklungs_roadmap import EntwicklungsRoadmap
     from ...core.backends import AgentSdkBackend, FallbackBackend
     from ...core.execution import ExecutionEngine
     from ...core import execution_live as live
@@ -82,7 +83,10 @@ def _build_ctx(cfg: dict, secrets: dict):
         if mem_cfg.get("enabled", True) else None
     core = HeadOfAgents(backend, load_all_subagents(), gate=CeoGate(), leak_secrets=secret_values,
                         changelog=changelog, logger=Logger(), memory=memory)
-    antraege = Antraege(ROOT / "antraege" / "log.jsonl", secrets=secret_values, changelog=changelog)
+    entwicklungs_roadmap = EntwicklungsRoadmap(ROOT / "entwicklung" / "roadmap.jsonl",
+                                               secrets=secret_values, changelog=changelog)
+    antraege = Antraege(ROOT / "antraege" / "log.jsonl", secrets=secret_values, changelog=changelog,
+                        on_freigabe=entwicklungs_roadmap.aufnehmen)
     engine = ExecutionEngine(
         antraege, make_workspace=live.real_make_workspace(
             ROOT, snapshot=secrets.get("EXECUTION_AUTO_SNAPSHOT", "").strip() in ("1", "true", "yes")),

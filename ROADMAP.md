@@ -42,6 +42,13 @@
 **Quer dazu live:** Notifier, Briefings (08:00/20:00), Self-Maintenance/Healing, CFO-Kostenerfassung,
 Multi-Provider-Fallback (Gemini/OpenAI), Non-root-Container, zentrales Aktivitaetsprotokoll (adc5).
 
+**Entwicklungs-Roadmap (2026-07-08):** Jeder vom CEO **freigegebene** Antrag landet automatisch auf einer
+eigenen Entwicklungs-Roadmap (`core/entwicklungs_roadmap.py` -> `entwicklung/roadmap.jsonl` + gerendertes
+`entwicklung/roadmap.md`, Live-Daten auf der NAS). Einziger Schreibpfad ist der Hook in `Antraege.freigeben()`
+-> nur nach CEO-Freigabe, **nie autonom**. Claude Code ruft die Liste per SSH ab (`ssh luna-nas cat
+…/entwicklung/roadmap.md`), arbeitet Punkte ab und markiert sie via CLI als umgesetzt. LUNA setzt nichts mehr
+selbst im Hintergrund um.
+
 **Design-Prinzip fuer ALLE autonomen Schleifen -- Loop Engineering:** Neue Loops (Watcher, Briefings,
 Self-Dev, Investment-Screen, kuenftig content_ops-Fuetterung) werden nicht als Einzel-Prompts, sondern als
 **Loop** entworfen: Ziel (messbar) · Trigger · Lauf · Verifikation/Eval (Maker/Checker) · Stop-Bedingung --

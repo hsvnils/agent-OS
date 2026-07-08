@@ -21,6 +21,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 
 from ...core.antraege import Antraege
+from ...core.entwicklungs_roadmap import EntwicklungsRoadmap
 from ...core.brain import Brain
 from ...core.crm import CrmStore
 from ...core.ig_inbox import IgInboxStore
@@ -39,7 +40,9 @@ ROOT = Path(__file__).resolve().parents[3]
 STATIC = Path(__file__).resolve().parent / "static"
 
 _changelog = partial(append_changelog, ROOT / "projekt_changelog.md")
-antraege = Antraege(ROOT / "antraege" / "log.jsonl", changelog=_changelog)
+entwicklungs_roadmap = EntwicklungsRoadmap(ROOT / "entwicklung" / "roadmap.jsonl", changelog=_changelog)
+antraege = Antraege(ROOT / "antraege" / "log.jsonl", changelog=_changelog,
+                    on_freigabe=entwicklungs_roadmap.aufnehmen)
 notifications = Notifications(ROOT / "notifications" / "log.jsonl")
 research = ResearchTickets(ROOT / "research" / "log.jsonl", changelog=_changelog)
 agenda = Agenda(ROOT / "agenda" / "log.jsonl")
