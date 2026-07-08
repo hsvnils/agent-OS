@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-08 09:30] — Claude Code
+- **Was:** Nightly-Reel-Automatik aktiviert (Betrieb, kein Code): DSM-Aufgabenplaner-Job (Benutzer root, taegl.
+  03:30) `docker exec -e LUNA_OS_URL=http://localhost:8765 luna-os python -u -m cutter.reel_daily --source
+  /reelsrc --outbox /app/reel_work/outbox --state /app/reel_work/state --einreichen --schnell-index`. Die
+  Telegram-Benachrichtigung ("Neues Reel … wartet auf Freigabe -> LUNA-OS App Reels.") ist bereits verdrahtet:
+  `/api/reel/einreichen` -> `notifications.enqueue` -> Bot-Loop stellt an CEO-Chat zu. Chain verifiziert (Basic-
+  Auth via .env im luna-os-Container, /reelsrc ro-Mount, ffmpeg im Image). Ein-Spiel-Code auf NAS bestaetigt.
+- **Warum:** CEO-Wunsch: heute Nacht automatisch schneiden + Telegram-Hinweis, morgens Ergebnis pruefen.
+- **Betroffen:** Betrieb/NAS (DSM-Aufgabenplaner); keine Repo-Dateien geaendert ausser diesem Changelog.
+
 ## [2026-07-08 00:05] — Claude Code
 - **Was:** Spiel-Hashtag in der Reel-Caption ergaenzt. Neu `reel_source.spiel_hashtag()` leitet aus dem
   Ordnernamen die Teams ab ("HSV vs FCB - 2026-05-01" -> "#HSVFCB", auch Score "HSV 2vs1 FCB"; ohne erkennbare
