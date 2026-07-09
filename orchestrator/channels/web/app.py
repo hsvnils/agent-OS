@@ -1341,7 +1341,7 @@ async def investment_watchlist_remove(request: Request):
     return JSONResponse({"ok": True, "investment": investment()})
 
 
-# -- Depot-Ansichten: Paper (Alpaca-Sim) + echtes Depot (manuell). Beide read-only, keine Order. --
+# -- Depot-Ansichten: Paper (Alpaca-Sim, read-only) + echtes Depot (manuelles Transaktions-Ledger). --
 @app.get("/api/investment/portfolio")
 async def investment_portfolio():
     """Paper-Depot: Gesamtwert + Positionen (Aktien/ETF/Krypto) aus dem Alpaca-Paper-Konto."""
@@ -1351,15 +1351,21 @@ async def investment_portfolio():
 
 @app.get("/api/investment/depot")
 async def investment_depot():
-    """Echtes Depot: manuell gepflegte reale Bestaende, live bewertet ueber Marktdaten."""
+    """Echtes Depot: aus dem Transaktions-Ledger gefaltete Netto-Positionen, live bewertet. Plus Buchungsliste."""
     from ...investment.portfolio import real_portfolio
     market = _investment_engine().market
-    holdings = inv_store.real_holdings()
-    return JSONResponse(await asyncio.to_thread(real_portfolio, holdings, market))
+    agg = inv_store.real_positionen()
+
+    def _bauen():
+        dp = real_portfolio(agg["positionen"], market, realisiert=agg["realisiert"])
+        dp["transaktionen"] = list(reversed(inv_store.real_trades()))[:50]   # neueste zuerst
+        return dp
+    return JSONResponse(await asyncio.to_thread(_bauen))
 
 
-@app.post("/api/investment/depot/add")
-async def investment_depot_add(request: Request):
+@app.post("/api/investment/depot/trade")
+async def investment_depot_trade(request: Request):
+    """Bucht einen Kauf/Verkauf ins echte Depot (manuell, keine echte Ausfuehrung)."""
     body = await _json(request)
     sym = (body.get("symbol") or "").strip()
     if not sym:
@@ -1367,23 +1373,52 @@ async def investment_depot_add(request: Request):
     klasse = (body.get("klasse") or "aktie").strip().lower()
     if klasse not in ("aktie", "etf", "krypto"):
         klasse = "aktie"
-    rid = inv_store.real_add(sym, klasse=klasse, stueck=_inum(body.get("stueck")),
-                             einstand_preis=_inum(body.get("einstand_preis")),
-                             kurs_id=(body.get("kurs_id") or "").strip(),
-                             waehrung=(body.get("waehrung") or "USD").strip())
-    _changelog("CIO", f"Echtes Depot: Position ergaenzt {sym.upper()} ({klasse})", "CEO ueber LUNA-OS", "investment")
+    side = "verkauf" if str(body.get("side", "kauf")).lower().startswith("verk") else "kauf"
+    rid = inv_store.real_trade(sym, side=side, klasse=klasse, stueck=_inum(body.get("stueck")),
+                               preis=_inum(body.get("preis")), gebuehr=_inum(body.get("gebuehr")),
+                               kurs_id=(body.get("kurs_id") or "").strip(),
+                               waehrung=(body.get("waehrung") or "USD").strip(),
+                               datum=(body.get("datum") or "").strip())
+    _changelog("CIO", f"Echtes Depot: {side} gebucht {sym.upper()} ({klasse})", "CEO ueber LUNA-OS", "investment")
     return JSONResponse({"ok": True, "id": rid})
 
 
-@app.post("/api/investment/depot/remove")
-async def investment_depot_remove(request: Request):
+@app.post("/api/investment/depot/storno")
+async def investment_depot_storno(request: Request):
+    """Storniert eine einzelne Buchung im echten Depot."""
     body = await _json(request)
     eid = (body.get("id") or "").strip()
     if not eid:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "keine id")
-    inv_store.real_remove(eid)
-    _changelog("CIO", f"Echtes Depot: Position entfernt {eid}", "CEO ueber LUNA-OS", "investment")
+    inv_store.real_storno(eid)
+    _changelog("CIO", f"Echtes Depot: Buchung storniert {eid}", "CEO ueber LUNA-OS", "investment")
     return JSONResponse({"ok": True})
+
+
+def _investment_engine_mit_broker():
+    """Engine inkl. Paper-Broker fuer Order-Ausfuehrung (paper_order). Risk-Agent per Default."""
+    from ...investment.engine import InvestmentEngine
+    from ...investment.providers import MarketData
+    return InvestmentEngine(MarketData(secrets=_secrets_dict()), inv_store, broker=_paper_broker())
+
+
+@app.post("/api/investment/paper-order")
+async def investment_paper_order(request: Request):
+    """Manuelle Paper-Order (CEO). Zweistufig: ohne bestaetigt -> Schaetzwert+Risk zurueck; mit bestaetigt -> ausfuehren.
+    PAPER = Spielgeld, kein Echtgeld-Tor. Autonomes Handeln durch LUNA bleibt separat gated."""
+    body = await _json(request)
+    sym = (body.get("symbol") or "").strip()
+    if not sym:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "kein Symbol")
+    side = "sell" if str(body.get("side", "buy")).lower().startswith(("s", "verk")) else "buy"
+    asset = "krypto" if (body.get("asset") or "aktie").strip().lower() == "krypto" else "aktie"
+    qty = _inum(body.get("qty"))
+    bestaetigt = bool(body.get("bestaetigt"))
+    eng = _investment_engine_mit_broker()
+    res = await asyncio.to_thread(eng.paper_order, sym, qty, side, asset=asset, bestaetigt=bestaetigt)
+    if bestaetigt and res.get("ok"):
+        _changelog("CIO", f"Paper-Order {side} {qty} {sym.upper()}", "CEO ueber LUNA-OS", "investment")
+    return JSONResponse(res)
 
 
 @app.get("/api/lagebild")

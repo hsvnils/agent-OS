@@ -84,29 +84,71 @@ class InvestmentStore:
                 stand[sym] = {"symbol": sym, "asset": e.get("asset", "aktie")}
         return list(stand.values())
 
-    # -- real_depot (manuell gepflegte ECHTE Bestaende des CEO; getrennt vom Paper-Konto) --
-    def real_add(self, symbol: str, *, klasse: str = "aktie", stueck: float = 0.0,
-                 einstand_preis: float = 0.0, kurs_id: str = "", waehrung: str = "USD") -> str:
-        """Fuegt eine reale Position hinzu. kurs_id = CoinGecko-Id bei Krypto, sonst Ticker (leer = Symbol)."""
-        return self.add("real_depot", {"symbol": symbol.upper(), "klasse": klasse, "stueck": stueck,
-                                        "einstand_preis": einstand_preis, "waehrung": waehrung.upper(),
-                                        "kurs_id": (kurs_id or symbol).strip(), "aktion": "add"})
+    # -- real_depot: manuelles Transaktions-Ledger des ECHTEN Depots (getrennt vom Paper-Konto) --
+    # Jede Buchung (Kauf/Verkauf) ist ein Event; Bestand + Ø-Einstand + realisierte G/V werden gefaltet.
+    # Bewusst als Ledger (nicht statischer Bestand), damit eine spaetere echte Broker-Anbindung dasselbe
+    # Schema nutzen kann. Legacy-Events (aktion add/remove aus der ersten Version) bleiben kompatibel.
+    def real_trade(self, symbol: str, *, side: str = "kauf", klasse: str = "aktie", stueck: float = 0.0,
+                   preis: float = 0.0, gebuehr: float = 0.0, kurs_id: str = "", waehrung: str = "USD",
+                   datum: str = "") -> str:
+        """Bucht einen Kauf ('kauf') oder Verkauf ('verkauf'). kurs_id = CoinGecko-Id bei Krypto, sonst Ticker."""
+        side = "verkauf" if str(side).lower().startswith("verk") else "kauf"
+        return self.add("real_depot", {"symbol": symbol.upper(), "klasse": klasse, "side": side,
+                                       "stueck": float(stueck), "preis": float(preis), "gebuehr": float(gebuehr),
+                                       "waehrung": waehrung.upper(), "kurs_id": (kurs_id or symbol).strip(),
+                                       "datum": datum, "aktion": "trade"})
 
-    def real_remove(self, eintrag_id: str) -> str:
-        return self.add("real_depot", {"ref": eintrag_id, "aktion": "remove"})
+    def real_storno(self, ref_id: str) -> str:
+        """Storniert eine einzelne Buchung (macht sie rueckgaengig)."""
+        return self.add("real_depot", {"ref": ref_id, "aktion": "storno"})
 
-    def real_holdings(self) -> list[dict]:
-        """Gefalteter Stand der realen Bestaende: hinzugefuegte, nicht wieder entfernte Positionen."""
-        stand: dict[str, dict] = {}
-        for e in self.list("real_depot"):
-            if e.get("aktion") == "remove":
-                stand.pop(e.get("ref"), None)
-            else:
-                stand[e.get("id")] = {"id": e.get("id"), "symbol": e.get("symbol"),
-                                      "klasse": e.get("klasse", "aktie"), "stueck": e.get("stueck", 0.0),
-                                      "einstand_preis": e.get("einstand_preis", 0.0),
-                                      "waehrung": e.get("waehrung", "USD"), "kurs_id": e.get("kurs_id", "")}
-        return list(stand.values())
+    def real_trades(self) -> list[dict]:
+        """Aktive (nicht stornierte) Buchungen, chronologisch. Legacy 'add' -> Kauf, 'remove' -> Storno."""
+        events = self.list("real_depot")
+        storniert = {e.get("ref") for e in events if e.get("aktion") in ("storno", "remove")}
+        trades: list[dict] = []
+        for e in events:
+            if e.get("aktion") in ("storno", "remove") or e.get("id") in storniert:
+                continue
+            if e.get("aktion") == "add":         # Legacy-Bestand -> als Kauf interpretieren
+                trades.append({"id": e.get("id"), "symbol": e.get("symbol"), "klasse": e.get("klasse", "aktie"),
+                               "side": "kauf", "stueck": float(e.get("stueck") or 0), "preis": float(e.get("einstand_preis") or 0),
+                               "gebuehr": 0.0, "waehrung": e.get("waehrung", "USD"), "kurs_id": e.get("kurs_id", ""),
+                               "datum": e.get("datum", ""), "ts": e.get("ts")})
+            elif e.get("aktion") == "trade":
+                trades.append({"id": e.get("id"), "symbol": e.get("symbol"), "klasse": e.get("klasse", "aktie"),
+                               "side": e.get("side", "kauf"), "stueck": float(e.get("stueck") or 0),
+                               "preis": float(e.get("preis") or 0), "gebuehr": float(e.get("gebuehr") or 0),
+                               "waehrung": e.get("waehrung", "USD"), "kurs_id": e.get("kurs_id", ""),
+                               "datum": e.get("datum", ""), "ts": e.get("ts")})
+        return trades
+
+    def real_positionen(self) -> dict:
+        """Faltet die Buchungen zu Netto-Positionen (Ø-Einstand, Bestand) und realisierter G/V (Durchschnittskosten).
+        Rueckgabe: {"positionen": [...], "realisiert": float}. Nur Positionen mit Bestand > 0 werden gelistet."""
+        proto: dict[str, dict] = {}
+        for t in self.real_trades():                      # chronologisch (list() erhaelt Reihenfolge)
+            sym = t["symbol"]
+            p = proto.setdefault(sym, {"symbol": sym, "klasse": t["klasse"], "kurs_id": t["kurs_id"] or sym,
+                                       "waehrung": t["waehrung"], "qty": 0.0, "cost": 0.0, "realisiert": 0.0})
+            p["klasse"] = t["klasse"]; p["kurs_id"] = t["kurs_id"] or p["kurs_id"]; p["waehrung"] = t["waehrung"]
+            if t["side"] == "verkauf":
+                avg = (p["cost"] / p["qty"]) if p["qty"] > 1e-12 else 0.0
+                verk = min(t["stueck"], p["qty"]) if p["qty"] > 1e-12 else t["stueck"]
+                p["realisiert"] += verk * t["preis"] - verk * avg - t["gebuehr"]
+                p["cost"] -= verk * avg
+                p["qty"] -= verk
+            else:                                          # kauf
+                p["qty"] += t["stueck"]
+                p["cost"] += t["stueck"] * t["preis"] + t["gebuehr"]
+        positionen, realisiert_ges = [], 0.0
+        for p in proto.values():
+            realisiert_ges += p["realisiert"]
+            if p["qty"] > 1e-9:
+                positionen.append({"symbol": p["symbol"], "klasse": p["klasse"], "kurs_id": p["kurs_id"],
+                                   "waehrung": p["waehrung"], "stueck": round(p["qty"], 10),
+                                   "einstand_preis": (p["cost"] / p["qty"]) if p["qty"] else 0.0})
+        return {"positionen": positionen, "realisiert": round(realisiert_ges, 6)}
 
     # -- forecasts/actuals/scorecard --
     def forecast_add(self, symbol: str, *, prognose: str, konfidenz: float, horizont: str,

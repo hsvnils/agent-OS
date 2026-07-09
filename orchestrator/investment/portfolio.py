@@ -106,8 +106,9 @@ def _live_kurs(market, holding: dict, vs: str = "usd") -> float | None:
     return None
 
 
-def real_portfolio(holdings: list[dict], market=None, *, vs: str = "usd") -> dict:
-    """Manuell gepflegte reale Bestaende, live bewertet. Positionen ohne ermittelbaren Kurs -> kurs=None."""
+def real_portfolio(holdings: list[dict], market=None, *, vs: str = "usd", realisiert: float = 0.0) -> dict:
+    """Manuell gepflegte reale Bestaende, live bewertet. Positionen ohne ermittelbaren Kurs -> kurs=None.
+    `realisiert` = bereits realisierte G/V aus Verkaeufen (fliesst in die Summe)."""
     positionen: list[dict] = []
     for h in holdings or []:
         stueck = _num(h.get("stueck"))
@@ -143,6 +144,7 @@ def real_portfolio(holdings: list[dict], market=None, *, vs: str = "usd") -> dic
             "einstand": einstand_ges,
             "gv_abs": gesamtwert - einstand_ges,
             "gv_pct": ((gesamtwert - einstand_ges) / einstand_ges * 100.0) if einstand_ges else 0.0,
+            "realisiert": round(realisiert, 2),
             "waehrung": vs.upper(),
             "unbewertet": len(positionen) - len(bewertbar),
         },

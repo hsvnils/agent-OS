@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 14:10] — Claude Code
+- **Was:** Trading vorbereitet (CEO-Wunsch „eigene Kaeufe/Verkaeufe, Paper + echt"). **Paper:** manuelle
+  Kaufen/Verkaufen-Order im Web-Depot ueber die bestehende `engine.paper_order`-Logik (Risk-Pruefung +
+  zweistufige CEO-Bestaetigung), neuer Endpunkt `POST /api/investment/paper-order`, Order-Formular +
+  „Verkaufen"-Schnellaktion je Position. Modus muss „paper" sein; PAPER=Spielgeld -> kein Echtgeld-Tor,
+  autonomes Handeln bleibt separat gated. **Echtes Depot:** vom statischen Bestand auf ein
+  **Transaktions-Ledger** umgestellt — Kauf/Verkauf als Events, Ø-Einstand + realisierte G/V per
+  Durchschnittskosten, Storno je Buchung. Store: `real_trade/real_storno/real_trades/real_positionen`
+  (ersetzt real_add/remove/holdings; Legacy add/remove bleibt lesbar). Endpunkte `/depot/trade` + `/depot/storno`
+  (ersetzen /depot/add + /depot/remove), `/depot` liefert nun Netto-Positionen + Buchungsliste + realisierte G/V.
+  UI: Kauf/Verkauf-Formular mit Gebuehr, Buchungsliste mit Storno, realisierte G/V in der Kopfzeile. Echte
+  Broker-/Exchange-Ausfuehrung bleibt spaeterer Schritt (= CEO-Tor). Tests erweitert (11 gruen: Ø-Einstand,
+  Teil-/Vollverkauf, Storno, Gebuehr). Cache v22. **Bugfix im Zuge dessen:** JS-Syntaxfehler (gerades
+  Anfuehrungszeichen in einem "..."-String) hatte app-v2.js komplett lahmgelegt -> jetzt `node --check` sauber.
+- **Warum:** CEO: „Kann ich schon eigene Kaeufe/Verkaeufe machen (Paper+Echt)? Technisch vorbereiten." Scope
+  „beides".
+- **Betroffen:** orchestrator/investment/store.py, orchestrator/investment/portfolio.py,
+  orchestrator/channels/web/app.py, orchestrator/channels/web/static/app-v2.js,
+  orchestrator/channels/web/static/index-v2.html, orchestrator/tests/test_investment_portfolio.py
+
 ## [2026-07-09 13:35] — Claude Code
 - **Was:** G/V in der Depot-Tabelle auf **zwei Spalten** aufgeteilt: „G/V" (Betrag) und „G/V %" (Prozent),
   je in der Position-Farbe. Waehrung unveraendert (keine EUR-Umrechnung). Cache v21.

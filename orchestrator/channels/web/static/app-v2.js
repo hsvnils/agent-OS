@@ -310,7 +310,7 @@ function gruppenChips(gruppen, cur) {
     return `<span class="v2-chip"><b>${esc(KLASSE_LABEL[k] || k)}</b> ${geld(g.wert, cur)} <small style="color:${up ? "var(--v2-green)" : "var(--v2-red)"}">${up ? "+" : ""}${geld(g.gv_abs, cur)}</small></span>`;
   }).join("") + `</div>`;
 }
-function depotTable(positionen, cur, removable) {
+function depotTable(positionen, cur, extraCell) {
   const rows = (positionen || []).map(p => {
     const gv = p.gv_abs, col = gv == null ? "var(--v2-muted)" : (gv >= 0 ? "var(--v2-green)" : "var(--v2-red)");
     const perStk = (v) => `<br><small style="color:var(--v2-muted)">à ${geld(v, cur)}</small>`;
@@ -318,30 +318,50 @@ function depotTable(positionen, cur, removable) {
     const wert = p.wert == null ? "<i title='Kurs nicht abrufbar'>Kurs fehlt</i>" : geld(p.wert, cur) + (p.kurs ? perStk(p.kurs) : "");
     const gvBetrag = gv == null ? "–" : `${gv >= 0 ? "+" : ""}${geld(gv, cur)}`;
     const gvProzent = gv == null ? "–" : `${p.gv_pct >= 0 ? "+" : ""}${num(p.gv_pct, 1)} %`;
-    const x = removable ? `<td><button class="chip-x" data-act="depot-remove" data-id="${esc(p.id)}" title="Entfernen">✕</button></td>` : "";
+    const x = extraCell ? `<td>${extraCell(p)}</td>` : "";
     return `<tr><td><span class="v2-chip">${esc(KLASSE_LABEL[p.klasse] || p.klasse)}</span></td><td><b>${esc(p.symbol)}</b></td><td>${num(p.stueck, 4)}</td><td>${einstand}</td><td>${wert}</td><td style="color:${col}">${gvBetrag}</td><td style="color:${col}">${gvProzent}</td>${x}</tr>`;
-  }).join("") || `<tr><td colspan="${removable ? 8 : 7}" class="v2-empty">Keine Positionen.</td></tr>`;
-  return `<table class="v2-table"><thead><tr><th>Klasse</th><th>Symbol</th><th>Stück</th><th title="Gesamter Einstandswert (Stück × Ø-Kaufpreis)">Einstand</th><th title="Aktueller Gesamtwert (Stück × aktueller Kurs)">Wert</th><th>G/V</th><th>G/V %</th>${removable ? "<th></th>" : ""}</tr></thead><tbody>${rows}</tbody></table>`;
+  }).join("") || `<tr><td colspan="${extraCell ? 8 : 7}" class="v2-empty">Keine Positionen.</td></tr>`;
+  return `<table class="v2-table"><thead><tr><th>Klasse</th><th>Symbol</th><th>Stück</th><th title="Gesamter Einstandswert (Stück × Ø-Kaufpreis)">Einstand</th><th title="Aktueller Gesamtwert (Stück × aktueller Kurs)">Wert</th><th>G/V</th><th>G/V %</th>${extraCell ? "<th></th>" : ""}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 function depotPaperTile(pf) {
   if (!pf || !pf.verfuegbar)
     return tile("💼 Paper-Depot (Alpaca-Sim)", emptyRow((pf && pf.grund) || "Paper-Konto nicht verbunden."), "w6");
   const k = pf.konto || {}, cur = k.waehrung || "USD", up = (k.tag_abs || 0) >= 0;
   const head = `<div class="v2-kpi">${geld(k.gesamtwert, cur)} <span class="delta ${up ? "up" : "down"}">${up ? "↗" : "↘"} ${geld(k.tag_abs, cur)} (${num(k.tag_pct, 2)}%)</span></div><div class="v2-sub">Cash ${geld(k.cash, cur)} · Kaufkraft ${geld(k.kaufkraft, cur)} · Positionen ${geld(k.positionswert, cur)}</div>`;
-  return tile("💼 Paper-Depot (Alpaca-Sim)", head + gruppenChips(pf.gruppen, cur) + depotTable(pf.positionen, cur, false), "w6");
+  const order = `<div class="v2-depot-form" style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0">
+      <select id="po-side" class="v2-inp"><option value="buy">Kaufen</option><option value="sell">Verkaufen</option></select>
+      <select id="po-klasse" class="v2-inp"><option value="aktie">Aktie/ETF</option><option value="krypto">Krypto</option></select>
+      <input id="po-sym" class="v2-inp" placeholder="Symbol (AAPL / bitcoin)" style="width:150px">
+      <input id="po-qty" class="v2-inp" type="number" step="any" placeholder="Stück" style="width:90px">
+      <button class="v2-btn pri" data-act="paper-order">Order (Paper)</button>
+    </div>`;
+  const sell = (p) => `<button class="v2-btn sm" data-act="paper-sell" data-id="${esc(p.symbol)}" data-asset="${esc(p.klasse)}" data-val="${esc(p.stueck)}">Verkaufen</button>`;
+  return tile("💼 Paper-Depot (Alpaca-Sim)", head + order + gruppenChips(pf.gruppen, cur) + depotTable(pf.positionen, cur, sell), "w6");
+}
+function txListe(tx, cur) {
+  if (!tx || !tx.length) return "";
+  const rows = tx.map(t => {
+    const sell = t.side === "verkauf";
+    return `<div class="v2-list-row"><span class="v2-badge ${sell ? "wartet" : "ok"}">${sell ? "Verkauf" : "Kauf"}</span><div class="grow"><b>${esc(t.symbol)}</b> <small>${num(t.stueck, 4)} × ${geld(t.preis, cur)}${t.gebuehr ? " · Geb. " + geld(t.gebuehr, cur) : ""}${t.datum ? " · " + esc(t.datum) : ""}</small></div><button class="chip-x" data-act="depot-storno" data-id="${esc(t.id)}" title="Buchung stornieren">✕</button></div>`;
+  }).join("");
+  return `<div class="v2-sub" style="margin:12px 0 4px">Buchungen (neueste zuerst)</div>${rows}`;
 }
 function depotEchtTile(dp) {
   const s = (dp && dp.summe) || {}, cur = s.waehrung || "USD", up = (s.gv_abs || 0) >= 0;
-  const head = `<div class="v2-kpi">${geld(s.gesamtwert, cur)} <span class="delta ${up ? "up" : "down"}">${up ? "↗" : "↘"} ${geld(s.gv_abs, cur)} (${num(s.gv_pct, 2)}%)</span></div><div class="v2-sub">Einstand ${geld(s.einstand, cur)}${s.unbewertet ? " · " + s.unbewertet + " ohne Kurs" : ""} · Bewertung in ${esc(cur)}</div>`;
+  const rz = s.realisiert || 0;
+  const rzHtml = rz ? ` · realisiert <b style="color:${rz >= 0 ? "var(--v2-green)" : "var(--v2-red)"}">${rz >= 0 ? "+" : ""}${geld(rz, cur)}</b>` : "";
+  const head = `<div class="v2-kpi">${geld(s.gesamtwert, cur)} <span class="delta ${up ? "up" : "down"}">${up ? "↗" : "↘"} ${geld(s.gv_abs, cur)} (${num(s.gv_pct, 2)}%)</span></div><div class="v2-sub">Einstand ${geld(s.einstand, cur)}${rzHtml}${s.unbewertet ? " · " + s.unbewertet + " ohne Kurs" : ""} · offene G/V (unrealisiert)</div>`;
   const form = `<div class="v2-depot-form" style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0">
+      <select id="dep-side" class="v2-inp"><option value="kauf">Kauf</option><option value="verkauf">Verkauf</option></select>
       <select id="dep-klasse" class="v2-inp"><option value="aktie">Aktie</option><option value="etf">ETF</option><option value="krypto">Krypto</option></select>
       <input id="dep-sym" class="v2-inp" placeholder="Symbol (AAPL)" style="width:110px">
       <input id="dep-id" class="v2-inp" placeholder="Kurs-Id (Krypto: bitcoin)" style="width:150px">
-      <input id="dep-stueck" class="v2-inp" type="number" step="any" placeholder="Stück" style="width:90px">
-      <input id="dep-preis" class="v2-inp" type="number" step="any" placeholder="Einstand/Stück" style="width:130px">
-      <button class="v2-btn" data-act="depot-add">+ Hinzufügen</button>
+      <input id="dep-stueck" class="v2-inp" type="number" step="any" placeholder="Stück" style="width:80px">
+      <input id="dep-preis" class="v2-inp" type="number" step="any" placeholder="Preis/Stück" style="width:110px">
+      <input id="dep-gebuehr" class="v2-inp" type="number" step="any" placeholder="Gebühr" style="width:80px">
+      <button class="v2-btn" data-act="depot-trade">Buchen</button>
     </div>`;
-  return tile("🏦 Echtes Depot (manuell)", head + form + depotTable((dp && dp.positionen) || [], cur, true), "w6");
+  return tile("🏦 Echtes Depot (manuell)", head + form + depotTable((dp && dp.positionen) || [], cur, null) + txListe(dp && dp.transaktionen, cur), "w6");
 }
 RENDER.investment = renderInvestment;
 async function renderInvestment() {
@@ -708,17 +728,44 @@ async function handleAct(act, el) {
     case "inv-add": await jpost("/api/investment/watchlist", { symbol: id, asset: asset || "aktie" }); return renderInvestment();
     case "inv-remove": await jpost("/api/investment/watchlist/remove", { symbol: id }); return renderInvestment();
     case "inv-detail": return invDetail(id, asset);
-    case "depot-add": {
+    case "depot-trade": {
       const sym = (($("#dep-sym") || {}).value || "").trim();
       if (!sym) { flash("Symbol fehlt."); return; }
-      const kl = ($("#dep-klasse") || {}).value || "aktie";
-      const r = await jpost("/api/investment/depot/add", { symbol: sym, klasse: kl,
-        stueck: ($("#dep-stueck") || {}).value || 0, einstand_preis: ($("#dep-preis") || {}).value || 0,
+      const side = ($("#dep-side") || {}).value || "kauf";
+      const stueck = Number(($("#dep-stueck") || {}).value || 0);
+      if (!(stueck > 0)) { flash("Stück fehlt."); return; }
+      const r = await jpost("/api/investment/depot/trade", { symbol: sym, side, klasse: ($("#dep-klasse") || {}).value || "aktie",
+        stueck, preis: ($("#dep-preis") || {}).value || 0, gebuehr: ($("#dep-gebuehr") || {}).value || 0,
         kurs_id: (($("#dep-id") || {}).value || "").trim() });
-      flash(r && r.ok ? `„${sym.toUpperCase()}" ergänzt.` : "Fehler beim Hinzufügen.");
+      flash(r && r.ok ? `${side === "verkauf" ? "Verkauf" : "Kauf"} „${sym.toUpperCase()}" gebucht.` : "Fehler beim Buchen.");
       return renderInvestment();
     }
-    case "depot-remove": await jpost("/api/investment/depot/remove", { id }); return renderInvestment();
+    case "depot-storno": if (!confirm("Diese Buchung stornieren?")) return; await jpost("/api/investment/depot/storno", { id }); return renderInvestment();
+    case "paper-sell": {
+      const set = (k, v) => { const e = $("#" + k); if (e) e.value = v; };
+      set("po-side", "sell"); set("po-sym", id); set("po-klasse", asset === "krypto" ? "krypto" : "aktie"); set("po-qty", val || "");
+      const e = $("#po-sym"); if (e) e.scrollIntoView({ block: "center" });
+      flash("Verkauf vorbereitet — Stück prüfen und auf Order klicken."); return;
+    }
+    case "paper-order": {
+      const sym = (($("#po-sym") || {}).value || "").trim();
+      if (!sym) { flash("Symbol fehlt."); return; }
+      const side = ($("#po-side") || {}).value || "buy";
+      const assetK = ($("#po-klasse") || {}).value || "aktie";
+      const qty = Number(($("#po-qty") || {}).value || 0);
+      if (!(qty > 0)) { flash("Stück fehlt."); return; }
+      const est = await jpost("/api/investment/paper-order", { symbol: sym, side, asset: assetK, qty });
+      if (!est) { flash("Order fehlgeschlagen."); return; }
+      if (est.abgelehnt) { alert("Risk-Ablehnung:\n" + (est.grund || "")); return; }
+      if (est.bestaetigung_noetig) {
+        if (!confirm(`${side === "sell" ? "VERKAUF" : "KAUF"} ${qty} ${sym.toUpperCase()} (~${geld(est.geschaetzter_wert, "USD")}).\nRisk: ${est.risk || "ok"}\n\nPaper-Order (Spielgeld) ausführen?`)) return;
+        const done = await jpost("/api/investment/paper-order", { symbol: sym, side, asset: assetK, qty, bestaetigt: true });
+        flash(done && done.ok ? "✅ Paper-Order platziert." : "Fehler: " + ((done && done.hinweis) || "unbekannt"));
+        return renderInvestment();
+      }
+      flash(est.ok ? "✅ platziert." : "Hinweis: " + (est.hinweis || "unbekannt"));
+      return renderInvestment();
+    }
     case "cutter-job": { const p = ($("#cut-projekt") || {}).value || "", n = ($("#cut-note") || {}).value || "", msg = $("#cut-msg"); if (!p.trim()) { if (msg) { msg.textContent = "Ordnername ist Pflicht."; msg.className = "v2-msg err"; } return; } const r = await jpost("/api/cutter/job", { projekt: p.trim(), note: n.trim() }); if (msg) { msg.textContent = r && r.ok ? `Job „${p}" in Warteschlange.` : "Fehler: " + ((r && (r.hinweis || r.fehler)) || "unbekannt"); msg.className = "v2-msg " + (r && r.ok ? "ok" : "err"); } if (r && r.ok) renderCutter(); return; }
     case "brain-suchen": { const q = ($("#brain-q") || {}).value || ""; const d = await jget("/api/brain?q=" + encodeURIComponent(q)) || {}; const box = $("#brain-results"); if (box) box.innerHTML = (d.items || []).map(e => `<div class="v2-card"><div class="v2-card-h"><b>${esc(e.titel || (e.text || "").slice(0, 50))}</b></div><div class="v2-desc">${esc(e.text)}</div></div>`).join("") || emptyRow("Keine Treffer."); return; }
     case "brain-merken": { const inp = $("#brain-note"); const v = (inp && inp.value || "").trim(); if (!v) return; await jpost("/api/brain", { text: v }); if (inp) inp.value = ""; return renderWissen(); }

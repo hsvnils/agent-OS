@@ -98,18 +98,57 @@ class TestRealPortfolio(unittest.TestCase):
         self.assertEqual(dp["summe"]["gesamtwert"], 0)
 
 
-class TestRealDepotStore(unittest.TestCase):
-    def test_add_remove_fold(self):
+class TestRealDepotLedger(unittest.TestCase):
+    def test_kauf_aggregiert_durchschnitt(self):
         with tempfile.TemporaryDirectory() as d:
             st = InvestmentStore(Path(d) / "log.jsonl")
-            rid = st.real_add("AAPL", klasse="aktie", stueck=5, einstand_preis=100)
-            st.real_add("BTC", klasse="krypto", stueck=0.1, einstand_preis=40000, kurs_id="bitcoin")
-            self.assertEqual(len(st.real_holdings()), 2)
-            st.real_remove(rid)
-            hold = st.real_holdings()
-            self.assertEqual(len(hold), 1)
-            self.assertEqual(hold[0]["symbol"], "BTC")
-            self.assertEqual(hold[0]["kurs_id"], "bitcoin")
+            st.real_trade("AAPL", side="kauf", klasse="aktie", stueck=10, preis=100)
+            st.real_trade("AAPL", side="kauf", klasse="aktie", stueck=10, preis=120)
+            agg = st.real_positionen()
+            self.assertEqual(len(agg["positionen"]), 1)
+            pos = agg["positionen"][0]
+            self.assertAlmostEqual(pos["stueck"], 20)
+            self.assertAlmostEqual(pos["einstand_preis"], 110)   # (10*100 + 10*120)/20
+            self.assertEqual(agg["realisiert"], 0.0)
+
+    def test_teilverkauf_realisiert_gv(self):
+        with tempfile.TemporaryDirectory() as d:
+            st = InvestmentStore(Path(d) / "log.jsonl")
+            st.real_trade("AAPL", side="kauf", klasse="aktie", stueck=10, preis=100)
+            st.real_trade("AAPL", side="verkauf", klasse="aktie", stueck=4, preis=150)
+            agg = st.real_positionen()
+            pos = agg["positionen"][0]
+            self.assertAlmostEqual(pos["stueck"], 6)
+            self.assertAlmostEqual(pos["einstand_preis"], 100)   # Ø-Einstand unveraendert
+            self.assertAlmostEqual(agg["realisiert"], 200.0)     # 4 * (150-100)
+
+    def test_vollverkauf_schliesst_position(self):
+        with tempfile.TemporaryDirectory() as d:
+            st = InvestmentStore(Path(d) / "log.jsonl")
+            st.real_trade("AAPL", side="kauf", stueck=5, preis=100)
+            st.real_trade("AAPL", side="verkauf", stueck=5, preis=90)
+            agg = st.real_positionen()
+            self.assertEqual(agg["positionen"], [])              # Bestand 0 -> nicht gelistet
+            self.assertAlmostEqual(agg["realisiert"], -50.0)     # 5 * (90-100)
+
+    def test_storno_macht_buchung_rueckgaengig(self):
+        with tempfile.TemporaryDirectory() as d:
+            st = InvestmentStore(Path(d) / "log.jsonl")
+            rid = st.real_trade("AAPL", side="kauf", stueck=10, preis=100)
+            st.real_trade("BTC", side="kauf", klasse="krypto", stueck=0.1, preis=40000, kurs_id="bitcoin")
+            self.assertEqual(len(st.real_positionen()["positionen"]), 2)
+            st.real_storno(rid)
+            positionen = st.real_positionen()["positionen"]
+            self.assertEqual(len(positionen), 1)
+            self.assertEqual(positionen[0]["symbol"], "BTC")
+            self.assertEqual(len(st.real_trades()), 1)
+
+    def test_gebuehr_erhoeht_einstand(self):
+        with tempfile.TemporaryDirectory() as d:
+            st = InvestmentStore(Path(d) / "log.jsonl")
+            st.real_trade("AAPL", side="kauf", stueck=10, preis=100, gebuehr=10)
+            pos = st.real_positionen()["positionen"][0]
+            self.assertAlmostEqual(pos["einstand_preis"], 101)   # (1000 + 10 Gebuehr)/10
 
 
 if __name__ == "__main__":
