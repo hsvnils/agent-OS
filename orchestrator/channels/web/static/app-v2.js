@@ -313,12 +313,14 @@ function gruppenChips(gruppen, cur) {
 function depotTable(positionen, cur, removable) {
   const rows = (positionen || []).map(p => {
     const gv = p.gv_abs, col = gv == null ? "var(--v2-muted)" : (gv >= 0 ? "var(--v2-green)" : "var(--v2-red)");
-    const wert = p.wert == null ? "<i title='Kurs nicht abrufbar'>Kurs fehlt</i>" : geld(p.wert, cur);
+    const perStk = (v) => `<br><small style="color:var(--v2-muted)">à ${geld(v, cur)}</small>`;
+    const einstand = geld(p.einstand_wert, cur) + perStk(p.einstand_preis);
+    const wert = p.wert == null ? "<i title='Kurs nicht abrufbar'>Kurs fehlt</i>" : geld(p.wert, cur) + (p.kurs ? perStk(p.kurs) : "");
     const gvTxt = gv == null ? "–" : `${gv >= 0 ? "+" : ""}${geld(gv, cur)} <small>(${p.gv_pct >= 0 ? "+" : ""}${num(p.gv_pct, 1)}%)</small>`;
     const x = removable ? `<td><button class="chip-x" data-act="depot-remove" data-id="${esc(p.id)}" title="Entfernen">✕</button></td>` : "";
-    return `<tr><td><span class="v2-chip">${esc(KLASSE_LABEL[p.klasse] || p.klasse)}</span></td><td><b>${esc(p.symbol)}</b></td><td>${num(p.stueck, 4)}</td><td>${geld(p.einstand_preis, cur)}</td><td>${wert}</td><td style="color:${col}">${gvTxt}</td>${x}</tr>`;
+    return `<tr><td><span class="v2-chip">${esc(KLASSE_LABEL[p.klasse] || p.klasse)}</span></td><td><b>${esc(p.symbol)}</b></td><td>${num(p.stueck, 4)}</td><td>${einstand}</td><td>${wert}</td><td style="color:${col}">${gvTxt}</td>${x}</tr>`;
   }).join("") || `<tr><td colspan="${removable ? 7 : 6}" class="v2-empty">Keine Positionen.</td></tr>`;
-  return `<table class="v2-table"><thead><tr><th>Klasse</th><th>Symbol</th><th>Stück</th><th>Einstand</th><th>Wert</th><th>G/V</th>${removable ? "<th></th>" : ""}</tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table class="v2-table"><thead><tr><th>Klasse</th><th>Symbol</th><th>Stück</th><th title="Gesamter Einstandswert (Stück × Ø-Kaufpreis)">Einstand</th><th title="Aktueller Gesamtwert (Stück × aktueller Kurs)">Wert</th><th>G/V</th>${removable ? "<th></th>" : ""}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 function depotPaperTile(pf) {
   if (!pf || !pf.verfuegbar)

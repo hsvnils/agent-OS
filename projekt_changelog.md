@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 13:20] — Claude Code
+- **Was:** Depot-Tabelle konsistent gemacht. Spalte „Einstand" zeigte den Ø-Kaufpreis **pro Stueck**, „Wert"
+  aber den **Gesamtwert** -> in einer Zeile nicht vergleichbar (bei Krypto wirkte die G/V dadurch
+  widerspruechlich). Jetzt zeigen **beide** Spalten den Gesamtwert (Einstandswert bzw. aktueller Wert), der
+  Stueckpreis steht als kleiner Zusatz „a X" darunter; Spaltenkoepfe mit Tooltip. G/V = Wert - Einstand geht
+  jetzt sauber auf.
+- **Warum:** CEO-Rueckfrage „ist Einstand das, was der Wert zum Einkaufszeitpunkt war?" -> deckte die
+  Pro-Stueck/Gesamt-Vermischung auf.
+- **Betroffen:** orchestrator/channels/web/static/app-v2.js, orchestrator/channels/web/static/index-v2.html (Cache v20)
+
 ## [2026-07-09 13:05] — Claude Code
 - **Was:** Ausfuehrungs-Recht (x-Bit) fuer `deploy/sync-to-nas.sh` wiederhergestellt und dauerhaft in Git
   verankert (git-Mode 100644 -> 100755). Ursache der „permission denied"-Meldung beim Deploy.
