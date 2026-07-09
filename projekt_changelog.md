@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 09:55] — Claude Code
+- **Was:** (1) Roadmap-Kacheln **anklickbar** -> Detail-Modal (wie Freigaben); `renderDevRoadmap` speichert die
+  Items, neue `roadmapDetail(rid)` + Klick-`data-act="roadmap-detail"`. (2) **Antrags-Inhalt sauber
+  strukturiert** ueberall: neuer JS-Helfer `fmtBeschreibung()` rendert die Sektionen (IDEE/MACHBARKEIT (CTO)/
+  KOSTEN (CFO)/QUELLEN, durch Leerzeilen getrennt) als Label-Kopf + Absatz statt als Textwust -- in der
+  Freigaben-Detailansicht (`antragDetail`) UND im Roadmap-Modal. Karten-Teaser `antragPreview()` zeigt die
+  IDEE-Kernaussage (geklammert) statt der KOSTEN-Zeile -- in Freigaben + Roadmap. Cache `app-v2.js?v=18`.
+  (3) **Backfill korrigiert**: nimmt nur Antraege mit **aktuellem** Status `freigegeben` auf (nicht „hatte je
+  ein freigegeben-Event" -- das fing auch spaeter zurueckgesetzte/weitergezogene). Test angepasst.
+  Im Browser-Preview verifiziert (Kachel klickbar, Modal strukturiert). Suite 673 gruen.
+- **Warum:** CEO: Kacheln nicht anklickbar; Inhalt (KOSTEN/IDEE/MACHBARKEIT-Block) kaum lesbar/bewertbar --
+  bei Freigaben UND Roadmap sauberer strukturieren.
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `.../index-v2.html`,
+  `orchestrator/core/entwicklungs_roadmap.py`, `orchestrator/tests/test_entwicklungs_roadmap.py`.
+
 ## [2026-07-08 17:20] — Claude Code
 - **Was:** Roadmap-Kacheln kompakter -- 1:1 im Freigaben-Stil: Badge+Titel, einzeilige Meta, Beschreibung
   mit `v2-desc clamp` (auf 5 Zeilen begrenzt statt voll ausgeklappt). Cache `app-v2.js?v=17`. Im Browser-

@@ -71,14 +71,22 @@ class TestBackfill(unittest.TestCase):
             self.assertEqual(rm.backfill(antraege), 0)               # idempotent
             self.assertEqual(len(rm.list()), 2)
 
-    def test_backfill_faengt_auch_spaeter_umgesetzte(self):
+    def test_backfill_nur_aktueller_status(self):
+        # Nur AKTUELL freigegebene zaehlen. Ein zurueckgesetzter (eingereicht) bzw. weitergezogener
+        # (in_umsetzung) Antrag gehoert NICHT auf die Roadmap.
         with tempfile.TemporaryDirectory() as d:
             antraege = Antraege(Path(d) / "antraege.jsonl")
-            a1 = antraege.stellen("Umgesetzter", "b")
+            a1 = antraege.stellen("Zurueckgesetzt", "b")
             antraege.freigeben(a1)
-            antraege.status_setzen(a1, "in_umsetzung")               # aktueller Status != freigegeben
+            antraege.reset_eingereicht(a1)                           # wieder eingereicht -> NICHT drauf
+            a2 = antraege.stellen("In Umsetzung", "b")
+            antraege.freigeben(a2)
+            antraege.status_setzen(a2, "in_umsetzung")               # weitergezogen -> NICHT drauf
+            a3 = antraege.stellen("Aktuell freigegeben", "b")
+            antraege.freigeben(a3)                                    # <- nur dieser
             rm = EntwicklungsRoadmap(Path(d) / "roadmap.jsonl")
-            self.assertEqual(rm.backfill(antraege), 1)               # verlauf hatte 'freigegeben'
+            self.assertEqual(rm.backfill(antraege), 1)
+            self.assertEqual(rm.list()[0]["antrag_id"], a3)
 
 
 class TestHook(unittest.TestCase):

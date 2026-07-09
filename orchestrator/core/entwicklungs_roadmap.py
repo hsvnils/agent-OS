@@ -110,13 +110,14 @@ class EntwicklungsRoadmap:
     # -- Backfill (vergangene Freigaben) --
 
     def backfill(self, antraege) -> int:
-        """Nimmt alle Antraege auf, die je ein `freigegeben`-Event hatten (auch wenn ihr aktueller
-        Status inzwischen in_umsetzung/erledigt ist). Idempotent. Gibt Anzahl neu aufgenommener zurueck."""
+        """Nimmt alle Antraege auf, deren **aktueller** Status `freigegeben` ist (= vom CEO freigegeben,
+        noch nicht abgearbeitet) -- konsistent zum Live-Hook. Bewusst NICHT „hatte irgendwann mal ein
+        freigegeben-Event": ein spaeter zurueckgesetzter (eingereicht) oder abgelehnter Antrag gehoert nicht
+        auf die Roadmap. Idempotent. Gibt Anzahl neu aufgenommener zurueck."""
         n = 0
-        for a in antraege.list():
-            if any(s.get("event") == "freigegeben" for s in a.get("verlauf", [])):
-                if self.aufnehmen(a, render=False) is not None:
-                    n += 1
+        for a in antraege.list(status="freigegeben"):
+            if self.aufnehmen(a, render=False) is not None:
+                n += 1
         self.render_md()
         return n
 

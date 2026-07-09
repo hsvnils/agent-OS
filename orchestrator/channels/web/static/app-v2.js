@@ -123,6 +123,29 @@ function kpiTile(title, big, delta, sub, spark) {
   return tile(title, `<div class="v2-kpi">${esc(big)} ${d}</div>${sub ? `<div class="v2-sub">${esc(sub)}</div>` : ""}${spark || ""}`);
 }
 const emptyRow = (t) => `<div class="v2-empty">${esc(t)}</div>`;
+
+/* Antrags-Beschreibung sauber strukturieren: Sektionen (IDEE (..)/MACHBARKEIT (CTO)/KOSTEN (CFO)/QUELLEN,
+   getrennt durch Leerzeilen) mit Label-Kopf + Absatz rendern, statt allem als Textwust. */
+function fmtBeschreibung(text) {
+  const t = String(text == null ? "" : text).trim();
+  if (!t) return "<i>keine Beschreibung</i>";
+  const H = 'style="font-weight:700;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;opacity:.55;margin-top:.75rem"';
+  const B = 'style="white-space:pre-wrap;margin-top:.15rem;line-height:1.5"';
+  return t.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean).map(b => {
+    const i = b.indexOf("\n");
+    const head = (i === -1 ? b : b.slice(0, i)).trim();
+    const body = (i === -1 ? "" : b.slice(i + 1)).trim();
+    if (/^(IDEE|MACHBARKEIT|KOSTEN|QUELLEN|BEFUND)\b/i.test(head) && body)
+      return `<div ${H}>${esc(head)}</div><div ${B}>${esc(body)}</div>`;
+    return `<div style="white-space:pre-wrap;margin-top:.6rem;font-weight:600">${esc(b)}</div>`;  // Einzeiler (💶/↻)
+  }).join("");
+}
+/* Kurzer, sauberer Karten-Teaser: die IDEE-Kernaussage (fallback: ganzer Text). */
+function antragPreview(text) {
+  const t = String(text == null ? "" : text);
+  const m = t.match(/^IDEE\b[^\n]*\n([\s\S]*?)(?:\n\s*\n|$)/mi);
+  return esc((m ? m[1] : t).trim()) || "<i>keine Beschreibung</i>";
+}
 function tabs(sec, list) {
   const cur = SUBTAB[sec] || list[0][0];
   return `<div class="v2-tabs">${list.map(([id, lbl]) => `<button class="${id === cur ? "active" : ""}" data-tab="${sec}:${id}">${esc(lbl)}</button>`).join("")}</div>`;
@@ -269,7 +292,7 @@ async function renderFreigaben() {
     ].filter(Boolean).join("");
     return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${badgeCls(st)}">${esc(st)}</span><b>${esc(x.titel)}</b></div>
       <div class="v2-sub">von ${esc(x.von)}${x.kategorie ? " · " + esc(x.kategorie) : ""} · ${esc(id)}</div>
-      <div class="v2-desc clamp">${esc(x.beschreibung) || "<i>keine Beschreibung</i>"}</div><div class="v2-card-actions">${btns}</div></div>`;
+      <div class="v2-desc clamp">${antragPreview(x.beschreibung)}</div><div class="v2-card-actions">${btns}</div></div>`;
   }).join("") || emptyRow("Keine offenen Freigaben — alles erledigt. 🎉");
   const bar = a.length ? `<button class="v2-btn" data-act="antrag-reformat">🔄 Alle neu formatieren</button>` : "";
   $("#v2-app").innerHTML = secHead("Freigaben", bar) + `<div class="v2-cards">${cards}</div>`;
@@ -462,19 +485,28 @@ async function renderCutter() {
 
 /* =========================== Entwicklungs-Roadmap (freigegebene Antraege) =========================== */
 RENDER.devroadmap = renderDevRoadmap;
+let ROADMAP_ITEMS = [];
+const RM_BADGE = { offen: "wartet", in_arbeit: "neutral", umgesetzt: "ok", verworfen: "danger" };
+const RM_LBL = { offen: "🔲 offen", in_arbeit: "🟡 in Arbeit", umgesetzt: "✅ umgesetzt", verworfen: "✖ verworfen" };
 async function renderDevRoadmap() {
   const d = await jget("/api/entwicklungs-roadmap") || {};
-  const badge = { offen: "wartet", in_arbeit: "neutral", umgesetzt: "ok", verworfen: "danger" };
-  const lbl = { offen: "🔲 offen", in_arbeit: "🟡 in Arbeit", umgesetzt: "✅ umgesetzt", verworfen: "✖ verworfen" };
-  const items = d.items || [];
-  const cards = items.map(it => {
+  ROADMAP_ITEMS = d.items || [];
+  const cards = ROADMAP_ITEMS.map(it => {
     const st = it.status || "offen";
-    return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${badge[st] || "neutral"}">${lbl[st] || esc(st)}</span><b>${esc(it.titel || "(ohne Titel)")}</b></div>
-      <div class="v2-sub">von ${esc(it.von || "-")} · ${esc(it.quelle || "-")} · ${esc(it.antrag_id || "-")} · freigegeben ${esc((it.freigegeben_ts || "").slice(0, 10))}${it.notiz ? " · Notiz: " + esc(it.notiz) : ""}</div>
-      <div class="v2-desc clamp">${esc(it.beschreibung) || "<i>keine Beschreibung</i>"}</div></div>`;
+    return `<div class="v2-card klick" data-act="roadmap-detail" data-id="${esc(it.roadmap_id)}" style="cursor:pointer"><div class="v2-card-h"><span class="v2-badge ${RM_BADGE[st] || "neutral"}">${RM_LBL[st] || esc(st)}</span><b>${esc(it.titel || "(ohne Titel)")}</b></div>
+      <div class="v2-sub">von ${esc(it.von || "-")} · ${esc(it.quelle || "-")} · freigegeben ${esc((it.freigegeben_ts || "").slice(0, 10))}${it.notiz ? " · Notiz: " + esc(it.notiz) : ""}</div>
+      <div class="v2-desc clamp">${antragPreview(it.beschreibung)}</div></div>`;
   }).join("") || emptyRow("Noch keine freigegebenen Anträge auf der Roadmap. Sobald du einen Vorschlag freigibst, erscheint er hier — Claude Code arbeitet die Punkte ab.");
-  const offen = items.filter(i => (i.status || "offen") === "offen").length;
-  $("#v2-app").innerHTML = secHead("Entwicklungs-Roadmap", `<span class="v2-sub">${offen} offen · ${items.length} gesamt</span>`) + `<div class="v2-cards">${cards}</div>`;
+  const offen = ROADMAP_ITEMS.filter(i => (i.status || "offen") === "offen").length;
+  $("#v2-app").innerHTML = secHead("Entwicklungs-Roadmap", `<span class="v2-sub">${offen} offen · ${ROADMAP_ITEMS.length} gesamt</span>`) + `<div class="v2-cards">${cards}</div>`;
+}
+function roadmapDetail(rid) {
+  const it = ROADMAP_ITEMS.find(x => x.roadmap_id === rid);
+  if (!it) return;
+  const st = it.status || "offen";
+  openModal(it.titel || "Roadmap-Punkt", `<div class="v2-card-h"><span class="v2-badge ${RM_BADGE[st] || "neutral"}">${RM_LBL[st] || esc(st)}</span></div>
+    <div class="v2-sub">von ${esc(it.von || "-")} · Quelle ${esc(it.quelle || "-")} · Antrag ${esc(it.antrag_id || "-")} · freigegeben ${esc((it.freigegeben_ts || "").slice(0, 10))}${it.notiz ? " · Notiz: " + esc(it.notiz) : ""}</div>
+    <div class="v2-desc">${fmtBeschreibung(it.beschreibung)}</div>`);
 }
 
 /* =========================== Reels (Stufe C: 1-Tap-Freigabe) =========================== */
@@ -609,6 +641,7 @@ async function handleAct(act, el) {
     case "antrag-mehr": { flash("⏳ Agenten…"); const r = await jpost(`/api/antraege/${id}/mehr-info`); if (r && r.bewertung) alert("LUNA-Bewertung:\n\n" + r.bewertung); return reFreig(); }
     case "antrag-reformat": if (!confirm("Alle offenen Anträge neu formatieren? Freigegebene werden zurückgesetzt.")) return; flash("⏳ formatiert…"); await jpost("/api/antraege/neu-formatieren"); return reFreig();
     case "antrag-detail": return antragDetail(id);
+    case "roadmap-detail": return roadmapDetail(id);
     case "crm-todo": await jpost(`/api/crm/todo/${id}/erledigen`); return renderCrm();
     case "crm-sync": { flash("⏳ synchronisiert…"); const r = await jpost("/api/crm/sync"); if (r && r.api_fehler) alert("Instagram-Sync-Fehler:\n" + r.api_fehler); else if (r && r.ok === false) alert("Sync nicht möglich:\n" + (r.hinweis || "unbekannt")); return renderCrm(); }
     case "crm-firma": return crmFirma(id);
@@ -641,7 +674,7 @@ async function antragDetail(id) {
   const verlauf = (a.verlauf || []).map(s => `<div class="v2-list-row"><span>${esc(zeit(s.ts))}</span><div class="grow"><b>${esc(evLbl[s.event] || s.event)}</b>${s.akteur ? " · " + esc(s.akteur) : ""}${s.grund ? `<br><small>${esc(s.grund)}</small>` : ""}</div></div>`).join("") || emptyRow("noch keine Schritte");
   openModal(a.titel || ("Antrag " + id), `<div class="v2-card-h"><span class="v2-badge ${badgeCls(a.status)}">${esc(a.status)}</span></div>
     <div class="v2-sub">von ${esc(a.von)}${a.kategorie ? " · " + esc(a.kategorie) : ""} · ${esc(a.id)}</div>
-    <div class="v2-desc">${esc(a.beschreibung) || "<i>keine Beschreibung</i>"}</div>${a.betroffen ? `<div class="v2-kv"><span>Betroffen</span><b>${esc(a.betroffen)}</b></div>` : ""}
+    <div class="v2-desc">${fmtBeschreibung(a.beschreibung)}</div>${a.betroffen ? `<div class="v2-kv"><span>Betroffen</span><b>${esc(a.betroffen)}</b></div>` : ""}
     <h3>Verlauf</h3>${verlauf}`);
 }
 
