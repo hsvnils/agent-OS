@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 18:05] — Claude Code
+- **Was:** Einsteiger-Ansatz korrigiert (Missverstaendnis). Separate „Fuer Einsteiger"-Seite + Nav-Eintrag
+  wieder **entfernt**. Stattdessen: **Info-Symbol (ℹ️) an jedem erklaerten Container**, neben den drei Punkten
+  — Mouseover zeigt eine laienverstaendliche Erklaerung, was der Container ist und was da passiert. Umsetzung
+  ueber eine Titel->Text-Tabelle `TILE_INFO`, die `tile()` automatisch einblendet (kein Annotieren jedes
+  Aufrufs). Erklaerungen fuer alle 19 Investment-Container (Modus, Track-Record, Richtungsquote, Watchlist,
+  Paper-/Echtes Depot, Provider, Lern-Loop, Je Anlageklasse, Signal-Attribution, Je Modell-Version,
+  Marktdrift-Kontrolle, Offene Prognosen, Abweichungs-Register, Shortlist, Vorschlaege, Insider-Signale,
+  Autonomie-Leitplanken). `.v2-info`-Tooltip-Komponente bleibt; `.v2-ampel/.v2-ein-*/.v2-glos`-CSS +
+  `renderEinsteiger/ampel/RISIKO_MAP` entfernt. Cache v26 / css v12. Browser verifiziert (19 ℹ️ + Tooltip).
+- **Warum:** CEO wollte KEINE eigene Einsteiger-Seite, sondern Erklaerungen direkt am jeweiligen Container
+  (per ℹ️-Mouseover neben den drei Punkten), damit man z. B. den Lern-Loop versteht.
+- **Betroffen:** orchestrator/channels/web/static/app-v2.js, orchestrator/channels/web/static/style-v2.css,
+  orchestrator/channels/web/static/index-v2.html
+
 ## [2026-07-09 17:45] — Claude Code
 - **Was:** Neuen **Einsteiger-Bereich** in LUNA-OS gebaut (Nav 🎓 „Einsteiger", neben Investment) — erklaert
   Investieren in einfacher Sprache fuer Laien. Kacheln: „So funktioniert dieser Bereich", „Die 3 Bausteine"
