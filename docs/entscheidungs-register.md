@@ -50,10 +50,35 @@
 | **Foto->3D-Avatar-Dienste: Avaturn / Ready Player Me** (Selfie -> GLB mit ARKit-Blendshapes/Visemes) | 2026-07-05 | **VERWORFEN** | erzeugen realistische Menschen aus einem echten Gesicht -> treffen das stilisierte KI-Kunstbild nicht; CEO will genau sein Bild |
 | **DeepMotion (SayMotion / Animate 3D)** | 2026-07-05 | **VERWORFEN (falscher Zweck)** | liefert Koerper-Animation/Motion-Capture, keinen Gesichts-Avatar mit Visemes -- passt nicht zum Lip-Sync-Bedarf |
 | **Bild->3D-Mesh (Meshy / Tripo) + Talking-Portrait (LivePortrait, lokal)** | 2026-07-05 | **NICHT GEWAEHLT** (Alternativen) | Meshy/Tripo: statisches Mesh ohne Gesichts-Rig (Lip-Sync fehlt); LivePortrait: gratis/bildtreu, aber Vorab-Render statt Live + Einrichtungsaufwand -- CEO waehlte 2D-Living-Portrait |
+| **Echtes Trading: Broker-/Exchange-Anbindung** (IBKR / Alpaca-Live / Kraken / Bitpanda; TR/Scalable ohne API) | 2026-07-09 | **ZURUECKGESTELLT** -- CEO waehlt „LUNA beraet, ich handle selbst" (manuelles Ledger); keine API-Anbindung vorerst | Optionen bewertet als Rueckfall fuer spaetere API-Ausfuehrung; Anbindung = CEO-Tor |
 
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-07-09 — Echtes Trading: welchen Broker anbinden? (CEO-Frage)
+
+**Was:** Bewertung, welches echte Konto fuer Trading (Aktien/ETF/Krypto) anzubinden waere. Entscheidender Faktor
+= **offene Handels-API**.
+
+**Optionen durch unsere Brille:**
+- **Trade Republic / Scalable / comdirect / ING / DKB:** keine offizielle Retail-Handels-API -> fuer
+  programmatische Ausfuehrung ungeeignet (aber: dt. Broker machen Abgeltungssteuer automatisch).
+- **Interactive Brokers (IBKR):** einziger ernsthafter, fuer DE-Privatanleger offener API-Broker fuer
+  Aktien/ETF (EU-reguliert, IBIE Irland). Nachteil: komplexer, **Steuer selbst** (kein Abzug -> Steuerberater).
+  Dt. Reseller CapTrader/LYNX = gleiche API + dt. Support.
+- **Alpaca (Live):** technisch fast Null-Aufwand (identische API zu unserem Paper), aber Live-Konto fuer
+  DE-Privatpersonen vermutlich nicht oeffenbar -- muesste verifiziert werden.
+- **Krypto:** Kraken / Bitpanda / Coinbase (EU-reguliert, gute APIs). Bitpanda am DE-retail-freundlichsten
+  (inkl. Steuerreport). Binance regulatorisch in EU heikel.
+
+**Entscheidung (CEO 2026-07-09):** **ZURUECKGESTELLT** -- Modell „**LUNA beraet, ich handle selbst**".
+Kein Broker-API-Anschluss vorerst; der CEO handelt in seinem eigenen Broker, LUNA trackt + beraet ueber das
+**manuelle Transaktions-Ledger** (echtes Depot). Passt zum Prinzip „Vertrauen vor Geld". Eine spaetere
+API-Ausfuehrung bleibt moeglich (Adapter-Architektur `investment/broker.py`, GATE D) und ist **CEO-Tor**
+(Geld/Zugang/Steuer; CFO-Kostenvoranschlag + CISO-Policy + Steuerberater).
+
+**Quelle:** interne Bewertung (Broker-API-Landschaft DE/EU, Stand 2026-07; ggf. vor Anbindung frisch verifizieren).
 
 ### 2026-07-04 — safishamsi/graphify (CEO-Frage: hilft uns das?)
 

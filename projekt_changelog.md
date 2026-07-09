@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 14:30] — Claude Code
+- **Was:** Broker-/Exchange-Frage fuers echte Trading bewertet + im Entscheidungs-Register protokolliert
+  (Index-Zeile + Detail). CEO-Entscheidung: **ZURUECKGESTELLT** -- Modell „LUNA beraet, ich handle selbst"
+  (manuelles Ledger), keine API-Anbindung vorerst. Optionen (IBKR fuer Aktien/ETF, Kraken/Bitpanda fuer
+  Krypto, Alpaca-Live technisch trivial aber DE-Eignung fraglich; TR/Scalable ohne API) als Rueckfall
+  dokumentiert. Anbindung bleibt CEO-Tor.
+- **Warum:** CEO-Frage „welches echte Konto anbinden?"; Governance-Protokollierung (Register-first).
+- **Betroffen:** docs/entscheidungs-register.md
+
 ## [2026-07-09 14:10] — Claude Code
 - **Was:** Trading vorbereitet (CEO-Wunsch „eigene Kaeufe/Verkaeufe, Paper + echt"). **Paper:** manuelle
   Kaufen/Verkaufen-Order im Web-Depot ueber die bestehende `engine.paper_order`-Logik (Risk-Pruefung +
