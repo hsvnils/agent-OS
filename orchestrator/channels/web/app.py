@@ -355,88 +355,6 @@ async def cutter_job(request: Request):
     return JSONResponse({**r, "jobs": cutter_store.list(limit=100)})
 
 
-def _reel_pfade() -> tuple[str, str, str]:
-    """Container-Pfade wie die naechtliche Pipeline (ueberschreibbar per Env). Clips ro unter /reelsrc."""
-    return (os.environ.get("REEL_SOURCE", "/reelsrc"),
-            os.environ.get("REEL_OUTBOX", "/app/reel_work/outbox"),
-            os.environ.get("REEL_STATE", "/app/reel_work/state"))
-
-
-async def _reel_bauen_bg(job_id: str, thema: str, spiel: str, alle_spiele: bool,
-                         min_d: float, max_d: float) -> None:
-    """Baut das Reel IM CONTAINER (wie der Nightly-Job) und reicht es zur CEO-Freigabe ein. Best-effort."""
-    def _run() -> dict:
-        try:
-            from cutter import reel_daily
-        except Exception as exc:
-            return {"ok": False, "fehler": f"cutter nicht importierbar: {exc}"}
-        src, out, st = _reel_pfade()
-        res = reel_daily.lauf(source=src, outbox=out, state=st, thema_name=(thema or None),
-                              alle_spiele=alle_spiele, spiel=(spiel or None), ziel_dauer=max_d,
-                              min_dauer=min_d, schnell_index=True)
-        if res.get("ok"):
-            try:
-                reel_store.einreichen(datum=res.get("datum", ""), thema=res.get("thema", ""),
-                                      caption=res.get("caption", ""), video=res.get("reel", ""),
-                                      spiele=res.get("spiele"), dauer_sek=res.get("dauer_sek"))
-            except Exception as exc:
-                return {"ok": False, "fehler": f"Reel gebaut, aber Einreichen fehlgeschlagen: {exc}"}
-        return res
-
-    try:
-        res = await asyncio.to_thread(_run)
-    except Exception as exc:
-        res = {"ok": False, "fehler": f"Reel-Bau abgestuerzt: {exc}"}
-    try:
-        if res.get("ok"):
-            cutter_store.patch(job_id, {"status": "done", "dauer_sek": res.get("dauer_sek"),
-                                        "reel_datei": res.get("reel")})
-        else:
-            cutter_store.patch(job_id, {"status": "failed",
-                                        "fehler": (res.get("fehler") or res.get("hinweis") or "")[:500]})
-    except Exception:
-        pass
-
-
-def _reel_job_start(*, thema: str = "", spiel: str = "", alle_spiele: bool = False,
-                    min_dauer: float = 15.0, max_dauer: float = 45.0) -> dict:
-    """Startet einen manuellen Themen-Reel-Bau auf der NAS (Container-Hintergrund-Task, wie der Nightly-Job).
-    Mindestlaenge nie unter 15 s. Legt best-effort einen Cutter-Job-Eintrag zur Statusanzeige an."""
-    min_d = max(15.0, float(min_dauer or 15))
-    max_d = max(min_d, float(max_dauer or 45))
-    ziel = "alle Spiele" if alle_spiele else (spiel or "?")
-    label = f"🎬 Reel · {thema or 'Auto'} · {ziel}"
-    job_id = uuid.uuid4().hex
-    try:
-        cutter_store.add({"id": job_id, "projekt": label[:200], "status": "running", "quelle": "luna-os-nas",
-                          "note": f"Thema {thema or 'Auto'} · {ziel} · {int(min_d)}-{int(max_d)}s"[:500]})
-    except Exception:
-        pass
-    asyncio.create_task(_reel_bauen_bg(job_id, thema, spiel, alle_spiele, min_d, max_d))
-    return {"ok": True, "job_id": job_id, "label": label}
-
-
-@app.post("/api/cutter/reel")
-async def cutter_reel(request: Request):
-    """Manuellen Themen-Reel anfordern (Thema, Einzelspiel/alle Spiele, Min-/Max-Laenge) -> baut auf der NAS."""
-    d = await _json(request)
-    thema = (d.get("thema") or "").strip()
-    alle = bool(d.get("alle_spiele"))
-    spiel = (d.get("spiel") or "").strip()
-    if not alle and not spiel:
-        return JSONResponse({"ok": False, "hinweis": "Spielordner-Namen angeben oder 'alle Spiele' waehlen."})
-    r = _reel_job_start(thema=thema, spiel=spiel, alle_spiele=alle,
-                        min_dauer=_inum(d.get("min_dauer")) or 15, max_dauer=_inum(d.get("max_dauer")) or 45)
-    _changelog("Cutter", f"Manueller Reel-Auftrag (NAS): {thema or 'Auto'} ({'alle Spiele' if alle else spiel})",
-               "CEO ueber LUNA-OS", "cutter")
-    def _jobs():
-        try:
-            return cutter_store.list(limit=100)
-        except Exception:
-            return []
-    return JSONResponse({**r, "jobs": _jobs()})
-
-
 @app.get("/api/cutter/queue")
 def cutter_queue():
     """Vom Mac-Watcher gepollt: offene (queued) Jobs."""
@@ -1281,22 +1199,9 @@ def reel_posten(rid: str, hintergrund: BackgroundTasks):
 
 
 @app.post("/api/reel/{rid}/ablehnen")
-async def reel_ablehnen(rid: str, request: Request):
-    """CEO-Ablehnung -> Status 'abgelehnt' (wird nicht gepostet). Mit {neu:true} wird direkt ein NEUER
-    Reel-Job (gleiches Spiel/Thema) angestossen."""
-    body = await _json(request)
-    ok = reel_store.status_setzen(rid, "abgelehnt")
-    neu_job = False
-    if ok and bool((body or {}).get("neu")):
-        r = reel_store.holen(rid) or {}
-        spiele = r.get("spiele") or []
-        einzel = spiele[0] if (len(spiele) == 1 and spiele[0] not in ("alle Spiele", "?", "")) else ""
-        _reel_job_start(thema=(r.get("thema") or ""), spiel=einzel, alle_spiele=(not einzel),
-                        min_dauer=15, max_dauer=(_inum(r.get("dauer_sek")) or 45))
-        neu_job = True
-        _changelog("Cutter", f"Reel abgelehnt -> neues angefordert (NAS, {r.get('thema') or 'Auto'})",
-                   "CEO ueber LUNA-OS", "cutter")
-    return JSONResponse({"ok": ok, "neu_job": neu_job})
+def reel_ablehnen(rid: str):
+    """CEO-Ablehnung -> Status 'abgelehnt' (wird nicht gepostet)."""
+    return JSONResponse({"ok": reel_store.status_setzen(rid, "abgelehnt")})
 
 
 def _radar_kompakt(k: dict) -> dict:

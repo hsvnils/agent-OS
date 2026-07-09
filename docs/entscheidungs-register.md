@@ -51,6 +51,7 @@
 | **DeepMotion (SayMotion / Animate 3D)** | 2026-07-05 | **VERWORFEN (falscher Zweck)** | liefert Koerper-Animation/Motion-Capture, keinen Gesichts-Avatar mit Visemes -- passt nicht zum Lip-Sync-Bedarf |
 | **Bild->3D-Mesh (Meshy / Tripo) + Talking-Portrait (LivePortrait, lokal)** | 2026-07-05 | **NICHT GEWAEHLT** (Alternativen) | Meshy/Tripo: statisches Mesh ohne Gesichts-Rig (Lip-Sync fehlt); LivePortrait: gratis/bildtreu, aber Vorab-Render statt Live + Einrichtungsaufwand -- CEO waehlte 2D-Living-Portrait |
 | **Echtes Trading: Broker-/Exchange-Anbindung** (IBKR / Alpaca-Live / Kraken / Bitpanda; TR/Scalable ohne API) | 2026-07-09 | **ZURUECKGESTELLT** -- CEO waehlt „LUNA beraet, ich handle selbst" (manuelles Ledger); keine API-Anbindung vorerst | Optionen bewertet als Rueckfall fuer spaetere API-Ausfuehrung; Anbindung = CEO-Tor |
+| **Cutter-Umbau (eigener Worker) + Manueller Cutter** (Reels nach Thema/Spiel/Laenge; Ablehnen->neu; Min 15s) | 2026-07-09 | **ZURUECKGESTELLT bis MACO470** -- erster Wurf gebaut + revertiert (nicht deployt); finaler Bau als Queue-Worker auf dem MACO470 | Plan: `docs/cutter-worker-plan.md`; Referenz-Commits 5001c61/57b4065 |
 
 ---
 

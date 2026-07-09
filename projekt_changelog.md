@@ -17,38 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-07-09 21:00] — Claude Code
-- **Was:** Manuelle Themen-Reels laufen jetzt **auf der NAS im luna-os-Container** (wie die naechtliche
-  Pipeline), nicht mehr ueber den Mac-Watcher. `POST /api/cutter/reel` startet einen Hintergrund-Task im
-  Container (`asyncio.to_thread` -> `reel_daily.lauf(source=/reelsrc, outbox=/app/reel_work/outbox,
-  state=/app/reel_work/state, thema_name/alle_spiele/min_dauer=15, schnell_index)`) und reicht das fertige
-  Reel direkt via `reel_store.einreichen` zur CEO-Freigabe ein; Statusanzeige best-effort als Cutter-Job
-  (running->done/failed). Reject->neu nutzt denselben In-Container-Start. **Zurueckgebaut:** der zuvor (20:40)
-  gebaute Mac-Weg — `watch.py` Reel-Handler + `REEL_*` in der watch-plist wieder entfernt (kein doppelter
-  Bau, keine Mac-Abhaengigkeit). Frontend-Texte auf „auf der NAS … unter Reels" umgestellt. Cache v30.
-  Container-Pfade via Env ueberschreibbar (REEL_SOURCE/OUTBOX/STATE). Tests gruen; Web verifiziert.
-- **Warum:** CEO: manuelle Reels sollen wie die automatischen auf der NAS laufen, nicht am Mac.
-- **Betroffen:** orchestrator/channels/web/app.py, cutter/watch.py, cutter/com.hanserautisch.cutter.watch.plist,
-  cutter/tests/test_reel_manual.py, orchestrator/channels/web/static/app-v2.js,
-  orchestrator/channels/web/static/index-v2.html
-
-## [2026-07-09 20:40] — Claude Code
-- **Was:** Cutter erweitert (CEO-Wunsch, Phase 1 — vorhandene Tags; Pyro/Fangesang spaeter). (1) **Ablehnen ->
-  neues erstellen?**: `/api/reel/{id}/ablehnen` nimmt `{neu:true}` und stoesst direkt einen neuen Reel-Job
-  (gleiches Spiel/Thema) an; Reels-UI fragt beim Ablehnen nach. (2) **Mindestlaenge 15 s** global erzwungen:
-  `reel_daily.lauf(min_dauer=15)` reicht zu kurze Reels NICHT ein (mit Hinweis). (3) **Manueller Reel-Bereich**
-  in der Cutter-App: Thema (Torjubel/Tore & Highlights/Beste Momente/Fan-Stimmung/Emotionen pur),
-  Einzelspiel/Overall, Min-/Max-Laenge -> `POST /api/cutter/reel` (Parameter als JSON im note-Feld). (4)
-  **Overall-Modus** + Themen-Wahl in `reel_daily.lauf` (alle_spiele/thema_name); `reel_select`: Thema „Torjubel"
-  + `thema_by_name`/`MANUELLE_THEMEN`. (5) **Mac-Watcher** (`watch.py`) erkennt Reel-Jobs (note-JSON) und baut
-  via `reel_daily.lauf` + reicht ein; `REEL_*`-Env in die watch-plist ergaenzt. Qualitaetsfilter (Aufloesung)
-  greift wie gehabt. Tests +4 (37 Cutter-Tests gruen). Cache v29. Web verifiziert; **Mac-Reel-Produktion
-  muss der CEO testen** (Watcher-Neustart + REEL_SOURCE noetig).
-- **Warum:** CEO: Ablehnen-Rueckfrage, Mindestlaenge 15 s, manueller Reel-Bereich mit Thema/Spiel/Laenge.
-- **Betroffen:** cutter/reel_select.py, cutter/reel_daily.py, cutter/watch.py,
-  cutter/com.hanserautisch.cutter.watch.plist, cutter/tests/test_reel_manual.py,
-  orchestrator/channels/web/app.py, orchestrator/channels/web/static/app-v2.js,
-  orchestrator/channels/web/static/index-v2.html
+## [2026-07-09 21:20] — Claude Code
+- **Was:** Cutter-Erweiterung (manueller Cutter + NAS-Variante, commits 5001c61/57b4065) **revertiert** — war
+  nicht deployt. CEO-Entscheidung: Manueller Cutter + Umbau auf eigenen Cutter-Worker werden **final erst
+  gebaut, wenn der MACO470 da ist** (dann laeuft die Videoverarbeitung auf dem MACO470 statt NAS; kein
+  Bauen im Web-Prozess). Vollstaendiger Plan dokumentiert; im Entscheidungs-Register vermerkt. Codebasis
+  zurueck auf Stand b7c1823 (kein Cutter-Rest).
+- **Warum:** CEO: „alles erstmal so lassen, den Manuellen Cutter + Umbau final erst mit dem MACO470". Nichts
+  deployt -> sauber revertierbar.
+- **Betroffen:** docs/cutter-worker-plan.md (neu), docs/entscheidungs-register.md, projekt_changelog.md
+  (+ Revert von cutter/reel_daily.py, cutter/reel_select.py, cutter/watch.py, cutter/tests/test_reel_manual.py,
+  orchestrator/channels/web/app.py, orchestrator/channels/web/static/app-v2.js, index-v2.html)
 
 ## [2026-07-09 18:30] — Claude Code
 - **Was:** Lern-Loop-Chart: die Linie „Modell" in **„LUNA"** umbenannt (Legende, Hover-Tooltip, Info-Tooltip,

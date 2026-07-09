@@ -577,17 +577,8 @@ async function renderCutter() {
     return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${cutBadge[st] || "neutral"}">${cutLbl[st] || esc(st)}</span><b>${esc(j.projekt || "—")}</b></div>
       <div class="v2-sub">${esc(j.quelle || "")}${j.created_at ? " · " + zeit(j.created_at) : ""}${det ? " · " + esc(det) : ""}</div>
       ${j.reel_datei ? `<div class="v2-sub">🎬 ${esc(j.reel_datei)}</div>` : ""}${j.fehler ? `<div class="v2-desc" style="color:var(--v2-red)">${esc(j.fehler)}</div>` : ""}${j.note ? `<div class="v2-desc">${esc(j.note)}</div>` : ""}</div>`; }).join("") || emptyRow("Noch keine Reel-Jobs.");
-  const themaOpts = ["Torjubel", "Tore & Highlights", "Beste Momente", "Fan-Stimmung", "Emotionen pur"]
-    .map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
-  const reelForm = `<div class="v2-form">
-      <select id="rl-thema">${themaOpts}</select>
-      <select id="rl-modus"><option value="einzel">Einzelnes Spiel</option><option value="alle">Über alle Spiele</option></select>
-      <input id="rl-spiel" placeholder="Spielordner-Name (bei Einzelspiel)">
-      <div class="v2-form-row"><input id="rl-min" type="number" step="1" placeholder="Min-Länge (s)" value="15"><input id="rl-max" type="number" step="1" placeholder="Max-Länge (s)" value="45"></div>
-      <button class="v2-btn pri" data-act="reel-auftrag">🎬 Reel bauen lassen</button><div id="rl-msg" class="v2-msg"></div>
-      <div class="v2-sub">LUNA sucht auf der NAS passende Clips (nur ausreichende Qualität), schneidet ein Reel (≥ 15 s) und legt es dir unter „Reels" zur Freigabe vor. „Pyro" & „Fangesang" folgen später.</div></div>`;
   const form = `<div class="v2-form"><input id="cut-projekt" placeholder="Ordnername in der Cutter-Inbox (z. B. hsv_stadion)"><input id="cut-note" placeholder="Notiz (optional)"><button class="v2-btn pri" data-act="cutter-job">Job anstoßen</button><div id="cut-msg" class="v2-msg"></div><div class="v2-sub">Der Mac-Cutter holt den Job ab, schneidet den Ordner und meldet den Status zurück. Posten bleibt CEO-Tor.</div></div>`;
-  $("#v2-app").innerHTML = secHead("Cutter") + `<div class="v2-grid">${tile("🎬 Manueller Reel-Auftrag", reelForm, "w6")}${tile("Reel-Job aus Ordner", form, "w6")}${tile(`Jobs & Historie (${(c.jobs || []).length})`, jobs, "w12")}</div>`;
+  $("#v2-app").innerHTML = secHead("Cutter") + `<div class="v2-grid">${tile("Reel-Job anstoßen", form, "w5")}${tile(`Jobs & Historie (${(c.jobs || []).length})`, jobs, "w7")}</div>`;
 }
 
 /* =========================== Entwicklungs-Roadmap (freigegebene Antraege) =========================== */
@@ -775,13 +766,7 @@ async function handleAct(act, el) {
     case "crm-sync": { flash("⏳ synchronisiert…"); const r = await jpost("/api/crm/sync"); if (r && r.api_fehler) alert("Instagram-Sync-Fehler:\n" + r.api_fehler); else if (r && r.ok === false) alert("Sync nicht möglich:\n" + (r.hinweis || "unbekannt")); return renderCrm(); }
     case "crm-firma": return crmFirma(id);
     case "reel-freigeben": { const t = (($(`#cap-${id}`) || {}).value || "").trim(); flash("⏳ …"); await jpost(`/api/reel/${id}/freigeben`, { caption: t }); return renderReels(); }
-    case "reel-ablehnen": {
-      if (!confirm("Reel ablehnen? Es wird nicht gepostet.")) return;
-      const neu = confirm("Soll LUNA direkt ein NEUES Reel erstellen (gleiches Spiel/Thema)?");
-      const r = await jpost(`/api/reel/${id}/ablehnen`, { neu });
-      if (neu) flash(r && r.neu_job ? "Abgelehnt — neues Reel angefordert." : "Abgelehnt (neues Reel nicht möglich).");
-      return renderReels();
-    }
+    case "reel-ablehnen": if (!confirm("Reel ablehnen? Es wird nicht gepostet.")) return; await jpost(`/api/reel/${id}/ablehnen`); return renderReels();
     case "reel-posten": flash("⏳ …"); await jpost(`/api/reel/${id}/posten`); return renderReels();
     case "radar-kontakt": return radarKontakt(id);
     case "status": {
@@ -847,14 +832,6 @@ async function handleAct(act, el) {
       return renderInvestment();
     }
     case "cutter-job": { const p = ($("#cut-projekt") || {}).value || "", n = ($("#cut-note") || {}).value || "", msg = $("#cut-msg"); if (!p.trim()) { if (msg) { msg.textContent = "Ordnername ist Pflicht."; msg.className = "v2-msg err"; } return; } const r = await jpost("/api/cutter/job", { projekt: p.trim(), note: n.trim() }); if (msg) { msg.textContent = r && r.ok ? `Job „${p}" in Warteschlange.` : "Fehler: " + ((r && (r.hinweis || r.fehler)) || "unbekannt"); msg.className = "v2-msg " + (r && r.ok ? "ok" : "err"); } if (r && r.ok) renderCutter(); return; }
-    case "reel-auftrag": {
-      const thema = ($("#rl-thema") || {}).value || "", alle = (($("#rl-modus") || {}).value === "alle");
-      const spiel = (($("#rl-spiel") || {}).value || "").trim(), msg = $("#rl-msg");
-      if (!alle && !spiel) { if (msg) { msg.textContent = "Spielordner-Namen angeben oder Über alle Spiele wählen."; msg.className = "v2-msg err"; } return; }
-      const r = await jpost("/api/cutter/reel", { thema, alle_spiele: alle, spiel, min_dauer: ($("#rl-min") || {}).value || 15, max_dauer: ($("#rl-max") || {}).value || 45 });
-      if (msg) { const ok = r && r.ok; msg.textContent = ok ? "Reel wird auf der NAS gebaut — erscheint gleich unter Reels zur Freigabe." : "Fehler: " + ((r && r.hinweis) || "unbekannt"); msg.className = "v2-msg " + (ok ? "ok" : "err"); }
-      if (r && r.ok) renderCutter(); return;
-    }
     case "brain-suchen": { const q = ($("#brain-q") || {}).value || ""; const d = await jget("/api/brain?q=" + encodeURIComponent(q)) || {}; const box = $("#brain-results"); if (box) box.innerHTML = (d.items || []).map(e => `<div class="v2-card"><div class="v2-card-h"><b>${esc(e.titel || (e.text || "").slice(0, 50))}</b></div><div class="v2-desc">${esc(e.text)}</div></div>`).join("") || emptyRow("Keine Treffer."); return; }
     case "brain-merken": { const inp = $("#brain-note"); const v = (inp && inp.value || "").trim(); if (!v) return; await jpost("/api/brain", { text: v }); if (inp) inp.value = ""; return renderWissen(); }
     case "team-aktiv": await jpost(`/api/team/${encodeURIComponent(id)}/aktiv`, { is_active: val === "1" }); return renderTeam();
