@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 21:00] — Claude Code
+- **Was:** Manuelle Themen-Reels laufen jetzt **auf der NAS im luna-os-Container** (wie die naechtliche
+  Pipeline), nicht mehr ueber den Mac-Watcher. `POST /api/cutter/reel` startet einen Hintergrund-Task im
+  Container (`asyncio.to_thread` -> `reel_daily.lauf(source=/reelsrc, outbox=/app/reel_work/outbox,
+  state=/app/reel_work/state, thema_name/alle_spiele/min_dauer=15, schnell_index)`) und reicht das fertige
+  Reel direkt via `reel_store.einreichen` zur CEO-Freigabe ein; Statusanzeige best-effort als Cutter-Job
+  (running->done/failed). Reject->neu nutzt denselben In-Container-Start. **Zurueckgebaut:** der zuvor (20:40)
+  gebaute Mac-Weg — `watch.py` Reel-Handler + `REEL_*` in der watch-plist wieder entfernt (kein doppelter
+  Bau, keine Mac-Abhaengigkeit). Frontend-Texte auf „auf der NAS … unter Reels" umgestellt. Cache v30.
+  Container-Pfade via Env ueberschreibbar (REEL_SOURCE/OUTBOX/STATE). Tests gruen; Web verifiziert.
+- **Warum:** CEO: manuelle Reels sollen wie die automatischen auf der NAS laufen, nicht am Mac.
+- **Betroffen:** orchestrator/channels/web/app.py, cutter/watch.py, cutter/com.hanserautisch.cutter.watch.plist,
+  cutter/tests/test_reel_manual.py, orchestrator/channels/web/static/app-v2.js,
+  orchestrator/channels/web/static/index-v2.html
+
 ## [2026-07-09 20:40] — Claude Code
 - **Was:** Cutter erweitert (CEO-Wunsch, Phase 1 — vorhandene Tags; Pyro/Fangesang spaeter). (1) **Ablehnen ->
   neues erstellen?**: `/api/reel/{id}/ablehnen` nimmt `{neu:true}` und stoesst direkt einen neuen Reel-Job
