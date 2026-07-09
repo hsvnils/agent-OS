@@ -3,7 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from orchestrator.investment.portfolio import paper_portfolio, real_portfolio, normalisiere_position
+from orchestrator.investment.portfolio import (paper_portfolio, real_portfolio, normalisiere_position,
+                                               depot_hinweise)
 from orchestrator.investment.store import InvestmentStore
 
 
@@ -96,6 +97,24 @@ class TestRealPortfolio(unittest.TestCase):
         dp = real_portfolio([], FakeMarket())
         self.assertEqual(dp["positionen"], [])
         self.assertEqual(dp["summe"]["gesamtwert"], 0)
+
+
+class TestDepotHinweise(unittest.TestCase):
+    def test_stop_target_none(self):
+        pos = [{"symbol": "AAPL", "klasse": "aktie", "gv_pct": -10.0},
+               {"symbol": "MSFT", "klasse": "aktie", "gv_pct": 20.0},
+               {"symbol": "TSLA", "klasse": "aktie", "gv_pct": 3.0},
+               {"symbol": "XYZ", "klasse": "aktie", "gv_pct": None}]
+        h = depot_hinweise(pos, stop_pct=8, target_pct=15)
+        sig = {x["symbol"]: x["signal"] for x in h}
+        self.assertEqual(sig.get("AAPL"), "stop")
+        self.assertEqual(sig.get("MSFT"), "target")
+        self.assertNotIn("TSLA", sig)          # innerhalb der Schwellen
+        self.assertNotIn("XYZ", sig)           # unbewertet
+        self.assertIn("Verkauf erwaegen", next(x["text"] for x in h if x["symbol"] == "AAPL"))
+
+    def test_leer(self):
+        self.assertEqual(depot_hinweise([]), [])
 
 
 class TestRealDepotLedger(unittest.TestCase):

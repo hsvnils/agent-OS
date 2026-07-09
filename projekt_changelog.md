@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 15:00] — Claude Code
+- **Was:** LUNA-Advisory mit dem ECHTEN Depot verbunden — **rein beratend, KEINE Ausfuehrung** (das echte
+  Depot hat keinen Broker, macht keine echten Trades). Neu: `portfolio.depot_hinweise()` (Stop-Loss-/
+  Take-Profit-Schwellen aus der unrealisierten G/V, nutzt `monitor.exit_signal`). (1) `/api/investment/depot`
+  liefert jetzt `hinweise`; (2) Bot-Tick `_real_depot_monitor_tick` (alle ~10 Min, **modus-unabhaengig**)
+  schickt Hinweise ueber den Notifier (dedup 12 h); (3) Briefing-Zeile `_depot_briefing_zeile` haengt
+  Gesamtwert/offene+realisierte G/V + Hinweise ans Morgen-/Abend-Briefing; (4) UI: LUNA-Hinweis-Block im
+  echten-Depot-Panel mit Badge (🛑 Stop-Loss / 🎯 Take-Profit) + Disclaimer „Ausfuehrung machst du selbst in
+  deinem Broker". Tests +2 (13 gruen). Cache v23. Browser verifiziert (Take-Profit-Hinweis bei +213 %).
+- **Warum:** CEO: „Verbinde LUNA mit dem echten Depot" — mit der Auflage „darf noch keine echten
+  Transaktionen machen". Passt zum gewaehlten Modell „LUNA beraet, CEO handelt selbst".
+- **Betroffen:** orchestrator/investment/portfolio.py, orchestrator/channels/web/app.py,
+  orchestrator/channels/telegram/bot.py, orchestrator/channels/web/static/app-v2.js,
+  orchestrator/channels/web/static/index-v2.html, orchestrator/tests/test_investment_portfolio.py
+
 ## [2026-07-09 14:30] — Claude Code
 - **Was:** Broker-/Exchange-Frage fuers echte Trading bewertet + im Entscheidungs-Register protokolliert
   (Index-Zeile + Detail). CEO-Entscheidung: **ZURUECKGESTELLT** -- Modell „LUNA beraet, ich handle selbst"

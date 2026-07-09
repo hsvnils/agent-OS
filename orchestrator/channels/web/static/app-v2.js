@@ -351,6 +351,8 @@ function depotEchtTile(dp) {
   const rz = s.realisiert || 0;
   const rzHtml = rz ? ` · realisiert <b style="color:${rz >= 0 ? "var(--v2-green)" : "var(--v2-red)"}">${rz >= 0 ? "+" : ""}${geld(rz, cur)}</b>` : "";
   const head = `<div class="v2-kpi">${geld(s.gesamtwert, cur)} <span class="delta ${up ? "up" : "down"}">${up ? "↗" : "↘"} ${geld(s.gv_abs, cur)} (${num(s.gv_pct, 2)}%)</span></div><div class="v2-sub">Einstand ${geld(s.einstand, cur)}${rzHtml}${s.unbewertet ? " · " + s.unbewertet + " ohne Kurs" : ""} · offene G/V (unrealisiert)</div>`;
+  const hinweise = (dp && dp.hinweise) || [];
+  const hinweiseHtml = hinweise.length ? `<div style="margin:10px 0">${hinweise.map(h => `<div class="v2-list-row"><span class="v2-badge ${h.signal === "stop" ? "wartet" : "ok"}">${h.signal === "stop" ? "🛑 Stop-Loss" : "🎯 Take-Profit"}</span><div class="grow"><small>${esc(h.text)}</small></div></div>`).join("")}<div class="v2-sub" style="margin-top:4px">LUNA berät — Ausführung machst du selbst in deinem Broker.</div></div>` : "";
   const form = `<div class="v2-depot-form" style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0">
       <select id="dep-side" class="v2-inp"><option value="kauf">Kauf</option><option value="verkauf">Verkauf</option></select>
       <select id="dep-klasse" class="v2-inp"><option value="aktie">Aktie</option><option value="etf">ETF</option><option value="krypto">Krypto</option></select>
@@ -361,7 +363,7 @@ function depotEchtTile(dp) {
       <input id="dep-gebuehr" class="v2-inp" type="number" step="any" placeholder="Gebühr" style="width:80px">
       <button class="v2-btn" data-act="depot-trade">Buchen</button>
     </div>`;
-  return tile("🏦 Echtes Depot (manuell)", head + form + depotTable((dp && dp.positionen) || [], cur, null) + txListe(dp && dp.transaktionen, cur), "w6");
+  return tile("🏦 Echtes Depot (manuell)", head + hinweiseHtml + form + depotTable((dp && dp.positionen) || [], cur, null) + txListe(dp && dp.transaktionen, cur), "w6");
 }
 RENDER.investment = renderInvestment;
 async function renderInvestment() {

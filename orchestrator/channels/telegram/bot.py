@@ -505,6 +505,13 @@ def _start_briefing_loop(ctx, notify) -> None:
                                 jetzt=jetzt.replace(tzinfo=None) if tz else jetzt)
                         except Exception as exc:
                             print(f"[briefing] Lagebild-Fehler: {exc}", flush=True)
+                    # Echtes Depot (falls befuellt): kurze Advisory-Zeile ans Briefing anhaengen (rein beratend).
+                    try:
+                        dz = _depot_briefing_zeile(getattr(ctx, "investment", None))
+                        if dz:
+                            text += "\n\n" + dz
+                    except Exception as exc:
+                        print(f"[briefing] Depot-Zeile-Fehler: {exc}", flush=True)
                     notify(text, abteilung="LUNA-Briefing", kategorie="briefing", quelle="briefing",
                            dedup_stunden=0)
                     ctx.agenda.markiere_briefing(art, datum)
@@ -759,6 +766,42 @@ def _exit_monitor_tick(ctx, eng, *, stop_pct: float = 8.0, target_pct: float = 1
                                               "preis": preis}, frage=frage)
 
 
+def _real_depot_monitor_tick(ctx, eng, *, stop_pct: float = 8.0, target_pct: float = 15.0) -> None:
+    """ECHTES Depot -- rein BERATEND: bewertet die manuell gepflegten Positionen live und meldet Stop-Loss-/
+    Take-Profit-Schwellen ueber den Notifier. KEINE Order, KEINE Approval, KEINE echte Ausfuehrung -- LUNA
+    beraet nur, der CEO handelt selbst in seinem Broker."""
+    if ctx.notifications is None:
+        return
+    from ...investment.portfolio import real_portfolio, depot_hinweise
+    agg = eng.store.real_positionen()
+    if not agg["positionen"]:
+        return
+    dp = real_portfolio(agg["positionen"], eng.market)
+    for h in depot_hinweise(dp["positionen"], stop_pct=stop_pct, target_pct=target_pct):
+        ctx.notifications.enqueue(
+            f"Echtes Depot — {h['text']}", abteilung="CIO", kategorie="investment",
+            quelle="depot-advisory", dedup_stunden=12)
+
+
+def _depot_briefing_zeile(eng) -> str | None:
+    """Kurze Advisory-Zeile fuers ECHTE Depot im Briefing (Gesamtwert, offene/realisierte G/V, Hinweise).
+    None, wenn das Depot leer ist. Rein beratend."""
+    if eng is None:
+        return None
+    from ...investment.portfolio import real_portfolio, depot_hinweise
+    agg = eng.store.real_positionen()
+    if not agg["positionen"]:
+        return None
+    dp = real_portfolio(agg["positionen"], eng.market, realisiert=agg["realisiert"])
+    s = dp["summe"]
+    cur = s.get("waehrung", "USD")
+    zeilen = [f"Echtes Depot: Gesamtwert {s['gesamtwert']:.2f} {cur} "
+              f"(offen {s['gv_abs']:+.2f} {cur} / {s['gv_pct']:+.1f}%; realisiert {s['realisiert']:+.2f} {cur})."]
+    for h in depot_hinweise(dp["positionen"]):
+        zeilen.append(f"  - {h['text']}")
+    return "\n".join(zeilen)
+
+
 def _start_investment_loop(ctx, secrets) -> None:
     """Automatischer Investment-Screen (advisory, token-frugal/kostenlos): werktags 16:00 DE ein Markt-Screen
     -> Vorschlaege (jeder vom Risk-Agent geprueft) -> Alerts ueber den Notifier; montags 09:00 Wochenprognose.
@@ -824,6 +867,7 @@ def _start_investment_loop(ctx, secrets) -> None:
         _autotrade_datum = ""
         _autotrade_krypto_datum = ""
         _last_monitor = 0.0
+        _last_depot = 0.0
         while True:
             try:
                 jetzt = datetime.now(tz) if tz else datetime.now()
@@ -834,6 +878,10 @@ def _start_investment_loop(ctx, secrets) -> None:
                     _exit_monitor_tick(ctx, eng)             # Kapitalschutz: Auto-Stop-Loss + Take-Profit-Vorschlag
                     if monitor is not None:
                         _market_monitor_tick(ctx, eng, monitor)
+                # Alle ~10 Min (unabhaengig vom Modus): ECHTES Depot beraten (nur Hinweise, keine Ausfuehrung)
+                if time.time() - _last_depot > 600:
+                    _last_depot = time.time()
+                    _real_depot_monitor_tick(ctx, eng)
                 # Taeglicher Merkmals-/Preis-Snapshot (~07:00) + Abgleich faelliger Prognosen, 1x/Tag
                 if collector is not None and jetzt.hour == 7 and collector.store.last_datum("inv_features") != datum:
                     r = collector.collect(eng.store.watchlist(), datum=datum)

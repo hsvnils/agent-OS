@@ -83,6 +83,30 @@ def paper_portfolio(broker) -> dict:
     }
 
 
+def depot_hinweise(positionen, *, stop_pct: float = 8.0, target_pct: float = 15.0) -> list[dict]:
+    """Rein BERATENDE Hinweise fuer bewertete Positionen (echtes Depot) -- keine Ausfuehrung, keine Order.
+    Meldet Stop-Loss- (-stop_pct) und Take-Profit-Schwellen (+target_pct) anhand der unrealisierten G/V.
+    -> Liste {symbol, klasse, signal:'stop'|'target', gv_pct, text}."""
+    from .monitor import exit_signal
+    out: list[dict] = []
+    for p in positionen or []:
+        gvp = p.get("gv_pct")
+        if gvp is None:
+            continue
+        sig = exit_signal(gvp / 100.0, stop_pct=stop_pct, target_pct=target_pct)
+        if not sig:
+            continue
+        if sig == "stop":
+            text = (f"{p['symbol']} liegt bei {gvp:+.1f}% — Stop-Loss-Schwelle (-{stop_pct:g}%) erreicht. "
+                    f"Verkauf erwaegen (in deinem Broker).")
+        else:
+            text = (f"{p['symbol']} liegt bei {gvp:+.1f}% — Gewinnziel (+{target_pct:g}%) erreicht. "
+                    f"Gewinn mitnehmen erwaegen.")
+        out.append({"symbol": p["symbol"], "klasse": p.get("klasse"), "signal": sig,
+                    "gv_pct": round(gvp, 2), "text": text})
+    return out
+
+
 def _live_kurs(market, holding: dict, vs: str = "usd") -> float | None:
     """Aktueller Kurs einer realen Position ueber die vorhandenen Marktdaten. None wenn nicht ermittelbar."""
     if market is None:

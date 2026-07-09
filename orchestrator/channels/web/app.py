@@ -1352,13 +1352,14 @@ async def investment_portfolio():
 @app.get("/api/investment/depot")
 async def investment_depot():
     """Echtes Depot: aus dem Transaktions-Ledger gefaltete Netto-Positionen, live bewertet. Plus Buchungsliste."""
-    from ...investment.portfolio import real_portfolio
+    from ...investment.portfolio import real_portfolio, depot_hinweise
     market = _investment_engine().market
     agg = inv_store.real_positionen()
 
     def _bauen():
         dp = real_portfolio(agg["positionen"], market, realisiert=agg["realisiert"])
         dp["transaktionen"] = list(reversed(inv_store.real_trades()))[:50]   # neueste zuerst
+        dp["hinweise"] = depot_hinweise(dp["positionen"])                    # rein beratend (LUNA)
         return dp
     return JSONResponse(await asyncio.to_thread(_bauen))
 
