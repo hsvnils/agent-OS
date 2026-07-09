@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 18:30] — Claude Code
+- **Was:** Lern-Loop-Chart: die Linie „Modell" in **„LUNA"** umbenannt (Legende, Hover-Tooltip, Info-Tooltip,
+  Code-Kommentar) — verstaendlicher, weil es LUNAs eigene Vorhersage ist. „Je Modell-Version"-Kachel und das
+  Versions-Label „Modell v<x>" bleiben (das meint Modell-Versionen, nicht die Linie). Cache v28.
+- **Warum:** CEO: „Wenn Modell LUNAs Vorhersage ist, lass es uns LUNA nennen."
+- **Betroffen:** orchestrator/channels/web/static/app-v2.js, orchestrator/channels/web/static/index-v2.html
+
 ## [2026-07-09 18:20] — Claude Code
 - **Was:** Lern-Loop-Tooltip praezisiert. CEO-Rueckfrage „Baseline = das echte, Modell = LUNA?" -> im Code
   geprueft: Baseline ist NICHT der echte Kurs, sondern eine **naive Random-Walk-Baseline** („Kurs bleibt

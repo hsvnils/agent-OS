@@ -131,7 +131,7 @@ const TILE_INFO = {
   "🏦 Echtes Depot (manuell)": `Deine echten Bestände, die du selbst einträgst. LUNA bewertet sie live und berät dich — kauft aber nie selbst.`,
   "Watchlist verwalten": `Werte zum Beobachten hinzufügen oder entfernen. Beobachten heißt nur ansehen, nicht kaufen.`,
   "Provider": `Die externen Datenquellen, aus denen LUNA Kurse und Infos zieht. Grün = verbunden.`,
-  "Lern-Loop · Fehler-Verlauf": `Zwei FEHLER-Kurven (keine echten Kurse!). „Modell" = LUNAs Vorhersagen. „Baseline" = ein Dummy, der stur sagt „der Kurs bleibt gleich" — die Messlatte. Gezeigt wird, wie weit beide im Schnitt danebenlagen: je tiefer, desto besser. LUNA ist nur dann wirklich gut, wenn die Modell-Linie UNTER der Baseline liegt.`,
+  "Lern-Loop · Fehler-Verlauf": `Zwei FEHLER-Kurven (keine echten Kurse!). „LUNA" = die Vorhersagen von LUNA. „Baseline" = ein Dummy, der stur sagt „der Kurs bleibt gleich" — die Messlatte. Gezeigt wird, wie weit beide im Schnitt danebenlagen: je tiefer, desto besser. LUNA ist nur dann wirklich gut, wenn die LUNA-Linie UNTER der Baseline liegt.`,
   "Je Anlageklasse": `Wie treffsicher LUNAs Prognosen je Anlage-Art sind (Aktie/ETF/Krypto). „Treffer" = Richtung stimmte.`,
   "Signal-Attribution": `Welche Signale (z. B. Momentum, Trend) wie oft richtig lagen — zeigt, worauf LUNAs Ideen beruhen.`,
   "Je Modell-Version": `Vergleich von LUNAs verschiedenen Prognose-Modellen: welche Version besser abschneidet.`,
@@ -188,10 +188,10 @@ function openModal(title, html) {
 }
 function closeModal() { const m = $("#v2-modal"); if (m) m.hidden = true; }
 
-/* Fehler-Verlauf-Chart (Modell vs. Baseline): breiten-bewusst gerendert -> KEINE Streckung.
+/* Fehler-Verlauf-Chart (LUNA vs. Baseline): breiten-bewusst gerendert -> KEINE Streckung.
    viewBox-Breite = Container-Pixelbreite -> 1:1-Abbildung (Achsen/Text unverzerrt). ResizeObserver wie V1. */
 function chartMount() {
-  return `<div class="v2-trend"></div><div class="v2-legend"><span><i style="background:var(--v2-accent)"></i>Modell</span><span><i style="background:var(--v2-faint)"></i>Baseline</span></div>`;
+  return `<div class="v2-trend"></div><div class="v2-legend"><span><i style="background:var(--v2-accent)"></i>LUNA</span><span><i style="background:var(--v2-faint)"></i>Baseline</span></div>`;
 }
 function mountTrends() {
   const els = document.querySelectorAll(".v2-trend"); if (!els.length) return;
@@ -212,7 +212,7 @@ function drawTrend(el) {
   const xl = xi.map(i => `<text x="${x(i).toFixed(1)}" y="${H - 7}" class="v2-cax" text-anchor="middle">${esc((v[i].woche || "").replace("2026-", ""))}</text>`).join("");
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" class="v2-chart" role="img">${grid}<path d="${line("baseline_mae_pct")}" class="v2-line base"/><path d="${line("mae_pct")}" class="v2-line strat"/>${xl}</svg><div class="v2-ctip" style="display:none"></div>`;
   const svg = el.querySelector("svg"), tip = el.querySelector(".v2-ctip");
-  svg.addEventListener("mousemove", ev => { const r = svg.getBoundingClientRect(); let i = Math.round(((ev.clientX - r.left) / r.width * W - padL) / ((W - padL - padR) / Math.max(1, v.length - 1))); i = Math.max(0, Math.min(v.length - 1, i)); const p = v[i]; tip.innerHTML = `<b>${esc((p.woche || "").replace("2026-", ""))}</b> · Modell ${(p.mae_pct || 0).toFixed(1)}% · Baseline ${(p.baseline_mae_pct || 0).toFixed(1)}%`; tip.style.display = "block"; tip.style.left = Math.max(0, Math.min(r.width - 200, ev.clientX - r.left - 60)) + "px"; });
+  svg.addEventListener("mousemove", ev => { const r = svg.getBoundingClientRect(); let i = Math.round(((ev.clientX - r.left) / r.width * W - padL) / ((W - padL - padR) / Math.max(1, v.length - 1))); i = Math.max(0, Math.min(v.length - 1, i)); const p = v[i]; tip.innerHTML = `<b>${esc((p.woche || "").replace("2026-", ""))}</b> · LUNA ${(p.mae_pct || 0).toFixed(1)}% · Baseline ${(p.baseline_mae_pct || 0).toFixed(1)}%`; tip.style.display = "block"; tip.style.left = Math.max(0, Math.min(r.width - 200, ev.clientX - r.left - 60)) + "px"; });
   svg.addEventListener("mouseleave", () => { tip.style.display = "none"; });
 }
 function balken(obj, suffix = "Treffer") {
