@@ -485,7 +485,12 @@ def _start_briefing_loop(ctx, notify) -> None:
         return
     from ...core.briefing import Briefing
 
-    plan = {8: "morgen", 20: "abend"}
+    def _plan():                                    # Briefing-Zeiten aus den Einstellungen (fallback 8/20)
+        try:
+            cfg = ctx.investment.store.settings()
+            return {int(cfg["briefing_morgen_stunde"]): "morgen", int(cfg["briefing_abend_stunde"]): "abend"}
+        except Exception:
+            return {8: "morgen", 20: "abend"}
 
     def loop():
         time.sleep(30)
@@ -493,7 +498,7 @@ def _start_briefing_loop(ctx, notify) -> None:
             try:
                 jetzt = datetime.now(tz) if tz else datetime.now()
                 datum = jetzt.strftime("%Y-%m-%d")
-                art = plan.get(jetzt.hour)
+                art = _plan().get(jetzt.hour)
                 if art and not ctx.agenda.briefing_gesendet(art, datum):
                     text = Briefing(antraege=ctx.antraege, research=ctx.research, watch=ctx.watch,
                                     agenda=ctx.agenda, secrets=ctx.leak_secrets).erstellen(
@@ -766,18 +771,21 @@ def _exit_monitor_tick(ctx, eng, *, stop_pct: float = 8.0, target_pct: float = 1
                                               "preis": preis}, frage=frage)
 
 
-def _real_depot_monitor_tick(ctx, eng, *, stop_pct: float = 8.0, target_pct: float = 15.0) -> None:
+def _real_depot_monitor_tick(ctx, eng) -> None:
     """ECHTES Depot -- rein BERATEND: bewertet die manuell gepflegten Positionen live und meldet Stop-Loss-/
-    Take-Profit-Schwellen ueber den Notifier. KEINE Order, KEINE Approval, KEINE echte Ausfuehrung -- LUNA
-    beraet nur, der CEO handelt selbst in seinem Broker."""
+    Take-Profit-Schwellen ueber den Notifier. Schwellen + Alert-Schalter kommen aus den Einstellungen.
+    KEINE Order, KEINE Approval, KEINE echte Ausfuehrung -- LUNA beraet nur, der CEO handelt selbst."""
     if ctx.notifications is None:
+        return
+    cfg = eng.store.settings()
+    if not cfg.get("depot_alerts", True):
         return
     from ...investment.portfolio import real_portfolio, depot_hinweise
     agg = eng.store.real_positionen()
     if not agg["positionen"]:
         return
     dp = real_portfolio(agg["positionen"], eng.market)
-    for h in depot_hinweise(dp["positionen"], stop_pct=stop_pct, target_pct=target_pct):
+    for h in depot_hinweise(dp["positionen"], stop_pct=cfg["depot_stop_pct"], target_pct=cfg["depot_target_pct"]):
         ctx.notifications.enqueue(
             f"Echtes Depot — {h['text']}", abteilung="CIO", kategorie="investment",
             quelle="depot-advisory", dedup_stunden=12)
@@ -795,11 +803,33 @@ def _depot_briefing_zeile(eng) -> str | None:
     dp = real_portfolio(agg["positionen"], eng.market, realisiert=agg["realisiert"])
     s = dp["summe"]
     cur = s.get("waehrung", "USD")
+    cfg = eng.store.settings()
     zeilen = [f"Echtes Depot: Gesamtwert {s['gesamtwert']:.2f} {cur} "
               f"(offen {s['gv_abs']:+.2f} {cur} / {s['gv_pct']:+.1f}%; realisiert {s['realisiert']:+.2f} {cur})."]
-    for h in depot_hinweise(dp["positionen"]):
+    for h in depot_hinweise(dp["positionen"], stop_pct=cfg["depot_stop_pct"], target_pct=cfg["depot_target_pct"]):
         zeilen.append(f"  - {h['text']}")
     return "\n".join(zeilen)
+
+
+_ALERT_KEYS = {"investment": "alert_investment", "crm": "alert_crm",
+               "security": "alert_security", "content": "alert_content"}
+
+
+def _alert_erlaubt(cfg: dict, kategorie: str) -> bool:
+    """Ist diese Push-Kategorie in den Einstellungen aktiviert? (Unbekannte Kategorien immer erlaubt.)"""
+    key = _ALERT_KEYS.get((kategorie or "").lower())
+    return bool(cfg.get(key, True)) if key else True
+
+
+def _in_ruhezeit(cfg: dict, stunde: int) -> bool:
+    """„Nicht stoeren"-Fenster aktiv? Unterstuetzt Fenster ueber Mitternacht (z. B. 22->7)."""
+    von, bis = cfg.get("ruhezeit_von"), cfg.get("ruhezeit_bis")
+    if von is None or bis is None:
+        return False
+    von, bis = int(von), int(bis)
+    if von == bis:
+        return False
+    return (von <= stunde < bis) if von < bis else (stunde >= von or stunde < bis)
 
 
 def _start_investment_loop(ctx, secrets) -> None:
@@ -875,9 +905,11 @@ def _start_investment_loop(ctx, secrets) -> None:
                 # Alle ~10 Min (nur Paper): Positions-Schutz (Stop-Loss/Take-Profit) IMMER; Live-Dip-Monitor optional
                 if eng.store.mode() == "paper" and time.time() - _last_monitor > 600:
                     _last_monitor = time.time()
-                    _exit_monitor_tick(ctx, eng)             # Kapitalschutz: Auto-Stop-Loss + Take-Profit-Vorschlag
+                    cfg = eng.store.settings()              # Schwellen/Betrag aus den Einstellungen
+                    _exit_monitor_tick(ctx, eng, stop_pct=cfg["paper_stop_pct"], target_pct=cfg["paper_target_pct"])
                     if monitor is not None:
-                        _market_monitor_tick(ctx, eng, monitor)
+                        monitor.schwelle = cfg["paper_dip_schwelle_pct"]
+                        _market_monitor_tick(ctx, eng, monitor, betrag_usd=cfg["paper_order_betrag_usd"])
                 # Alle ~10 Min (unabhaengig vom Modus): ECHTES Depot beraten (nur Hinweise, keine Ausfuehrung)
                 if time.time() - _last_depot > 600:
                     _last_depot = time.time()
@@ -1145,9 +1177,18 @@ def main() -> None:
             except Exception as exc:
                 print(f"[poll] Fehler: {exc}", flush=True)
         # Proaktive Outbox zustellen -- LUNA/Watcher melden sich unaufgefordert beim CEO.
+        # Einstellungen: "Nicht stoeren"-Fenster haelt Pushes zurueck (bleiben pending); abgeschaltete
+        # Alert-Arten werden verworfen. Freigaben/Approvals laufen getrennt und sind nicht betroffen.
         if allowed and ctx.notifications is not None:
             try:
-                for n in ctx.notifications.pending()[:10]:
+                _cfg = ctx.investment.store.settings() if getattr(ctx, "investment", None) else {}
+                _stunde = (datetime.now(tz) if tz else datetime.now()).hour
+                # "Nicht stoeren" aktiv -> leere Liste, Pushes bleiben pending und kommen nach dem Fenster.
+                _pending = [] if _in_ruhezeit(_cfg, _stunde) else ctx.notifications.pending()[:10]
+                for n in _pending:
+                    if not _alert_erlaubt(_cfg, n.get("kategorie")):
+                        ctx.notifications.mark_sent(n["id"])   # Kategorie abgeschaltet -> still verwerfen
+                        continue
                     ab = n.get("abteilung") or n.get("quelle") or ""
                     kurz = n["id"].split("-")[-1]
                     kopf = f"🔔 {ab}: " if ab else "🔔 "

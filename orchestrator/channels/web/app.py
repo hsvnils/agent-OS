@@ -1355,11 +1355,13 @@ async def investment_depot():
     from ...investment.portfolio import real_portfolio, depot_hinweise
     market = _investment_engine().market
     agg = inv_store.real_positionen()
+    cfg = inv_store.settings()
 
     def _bauen():
         dp = real_portfolio(agg["positionen"], market, realisiert=agg["realisiert"])
         dp["transaktionen"] = list(reversed(inv_store.real_trades()))[:50]   # neueste zuerst
-        dp["hinweise"] = depot_hinweise(dp["positionen"])                    # rein beratend (LUNA)
+        dp["hinweise"] = depot_hinweise(dp["positionen"], stop_pct=cfg["depot_stop_pct"],
+                                        target_pct=cfg["depot_target_pct"])   # rein beratend (LUNA)
         return dp
     return JSONResponse(await asyncio.to_thread(_bauen))
 
@@ -1420,6 +1422,50 @@ async def investment_paper_order(request: Request):
     if bestaetigt and res.get("ok"):
         _changelog("CIO", f"Paper-Order {side} {qty} {sym.upper()}", "CEO ueber LUNA-OS", "investment")
     return JSONResponse(res)
+
+
+# -- Einstellungen (in der Weboberflaeche anpassbar; geteilte SSOT fuer Web + Telegram-Bot). --
+_SETTING_STUNDE = {"briefing_morgen_stunde", "briefing_abend_stunde"}
+_SETTING_STUNDE_OPT = {"ruhezeit_von", "ruhezeit_bis"}          # Stunde ODER None (= aus)
+_SETTING_BOOL = {"depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content"}
+
+
+def _coerce_setting(key: str, wert):
+    """Bringt einen Einstellwert in den richtigen Typ + Wertebereich. Wirft ValueError bei Unfug."""
+    if key in _SETTING_BOOL:
+        return bool(wert) if not isinstance(wert, str) else wert.strip().lower() in ("1", "true", "an", "ja", "on")
+    if key in _SETTING_STUNDE:
+        return max(0, min(23, int(float(wert))))
+    if key in _SETTING_STUNDE_OPT:
+        if wert in (None, "", "aus"):
+            return None
+        return max(0, min(23, int(float(wert))))
+    return max(0.0, float(wert))                                # pct / Betrag
+
+
+@app.get("/api/settings")
+def settings_get():
+    return JSONResponse(inv_store.settings())
+
+
+@app.post("/api/settings")
+async def settings_set(request: Request):
+    body = await _json(request)
+    roh = body.get("settings") if isinstance(body.get("settings"), dict) else body
+    from ...investment.store import SETTINGS_DEFAULTS
+    werte, fehler = {}, {}
+    for k, v in (roh or {}).items():
+        if k not in SETTINGS_DEFAULTS:
+            continue
+        try:
+            werte[k] = _coerce_setting(k, v)
+        except (TypeError, ValueError):
+            fehler[k] = v
+    if werte:
+        inv_store.set_settings(werte)
+        _changelog("CEO", "Einstellungen geaendert: " + ", ".join(sorted(werte)), "CEO ueber LUNA-OS", "settings")
+    return JSONResponse({"ok": not fehler, "gespeichert": sorted(werte), "fehler": fehler,
+                         "settings": inv_store.settings()})
 
 
 @app.get("/api/lagebild")

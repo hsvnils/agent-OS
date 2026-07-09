@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 17:20] — Claude Code
+- **Was:** „Einstellungen"-Seite in LUNA-OS gebaut (Gruppen A/B/C) + geteilter Settings-Speicher als SSOT, den
+  **Web UND Telegram-Bot** lesen. Store: `settings`-Tabelle im InvestmentStore (`SETTINGS_DEFAULTS`,
+  `settings()/set_setting()/set_settings()`, event-sourced, letzte Aenderung gewinnt). Endpunkte
+  `GET/POST /api/settings` mit Typ-Coercion (Prozent/Betrag→float, Stunde 0–23, Ruhezeit Stunde|aus, bool).
+  Einstellbar: **A echtes Depot** (Stop-Loss-/Take-Profit-Schwelle, Advisory-Alerts an/aus), **B Paper**
+  (Auto-Stop-Loss/Take-Profit, Standard-Order-Betrag, Live-Dip-Empfindlichkeit), **C Benachrichtigungen**
+  (Briefing-Zeiten, „Nicht stoeren"-Ruhezeiten inkl. ueber Mitternacht, Alert-Arten je Kategorie an/aus).
+  Consumer verdrahtet: /depot + `_real_depot_monitor_tick` + `_depot_briefing_zeile` lesen die Depot-Schwellen
+  & den Alert-Schalter; `_exit_monitor_tick`/`_market_monitor_tick`/`MarketMonitor.schwelle` die Paper-Werte;
+  Briefing-Loop die Zeiten; Notifier-Zustellung filtert nach Ruhezeit (haelt zurueck) + Alert-Arten (verwirft).
+  UI: neue ⚙-Kachel + `renderEinstellungen` (3 Gruppen, Speichern). Moduswechsel + Budget bewusst NICHT hier.
+  Tests +4 (Store/Endpoint-Coercion/Notifier-Filter). Cache v24 / css v10. Browser verifiziert (Speichern +
+  Persistenz).
+- **Warum:** CEO-Wunsch, solche Werte in der Oberflaeche anzupassen; Umfang A+B+C.
+- **Betroffen:** orchestrator/investment/store.py, orchestrator/channels/web/app.py,
+  orchestrator/channels/telegram/bot.py, orchestrator/channels/web/static/app-v2.js,
+  orchestrator/channels/web/static/style-v2.css, orchestrator/channels/web/static/index-v2.html,
+  orchestrator/tests/test_investment_settings.py
+
 ## [2026-07-09 15:00] — Claude Code
 - **Was:** LUNA-Advisory mit dem ECHTEN Depot verbunden — **rein beratend, KEINE Ausfuehrung** (das echte
   Depot hat keinen Broker, macht keine echten Trades). Neu: `portfolio.depot_hinweise()` (Stop-Loss-/

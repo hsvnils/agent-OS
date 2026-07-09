@@ -16,8 +16,30 @@ from pathlib import Path
 from ..governance.leak_guard import redact
 
 TABELLEN = ("watchlist", "screening", "forecasts", "actuals", "scorecard", "suggestions", "mode",
-            "positions", "insider_signals", "real_depot")
+            "positions", "insider_signals", "real_depot", "settings")
 MODI = ("advisory", "paper", "live")
+
+# In der Weboberflaeche einstellbare Werte (geteilte SSOT: Web + Telegram-Bot lesen `settings()`).
+SETTINGS_DEFAULTS = {
+    # A -- echtes Depot (Beratung)
+    "depot_stop_pct": 8.0,          # Stop-Loss-Hinweis ab -x %
+    "depot_target_pct": 15.0,       # Take-Profit-Hinweis ab +x %
+    "depot_alerts": True,           # Advisory-Push-Alerts (Telegram) an/aus
+    # B -- Paper-Depot (Spielgeld-Auto-Trading)
+    "paper_stop_pct": 8.0,          # Auto-Stop-Loss (verkauft) ab -x %
+    "paper_target_pct": 15.0,       # Take-Profit-Vorschlag ab +x %
+    "paper_order_betrag_usd": 30.0, # Standard-Order-Betrag fuer 1-Tap-Kaeufe
+    "paper_dip_schwelle_pct": 4.0,  # Empfindlichkeit Live-Dip-Monitor
+    # C -- Benachrichtigungen / Briefings
+    "briefing_morgen_stunde": 8,    # Morgen-Briefing (Stunde 0-23)
+    "briefing_abend_stunde": 20,    # Abend-Briefing (Stunde 0-23)
+    "ruhezeit_von": None,           # "Nicht stoeren" von Stunde (None = aus)
+    "ruhezeit_bis": None,           # "Nicht stoeren" bis Stunde (None = aus)
+    "alert_investment": True,       # Alert-Arten (Push-Kategorien) an/aus
+    "alert_crm": True,
+    "alert_security": True,
+    "alert_content": True,
+}
 
 
 def _now() -> str:
@@ -149,6 +171,24 @@ class InvestmentStore:
                                    "waehrung": p["waehrung"], "stueck": round(p["qty"], 10),
                                    "einstand_preis": (p["cost"] / p["qty"]) if p["qty"] else 0.0})
         return {"positionen": positionen, "realisiert": round(realisiert_ges, 6)}
+
+    # -- settings (in der Weboberflaeche einstellbar; geteilte SSOT fuer Web + Bot) --
+    def settings(self) -> dict:
+        """Gefalteter Einstellungsstand = Defaults, ueberlagert von gespeicherten Aenderungen (letzte gewinnt)."""
+        stand = dict(SETTINGS_DEFAULTS)
+        for e in self.list("settings"):
+            k = e.get("key")
+            if k in SETTINGS_DEFAULTS:
+                stand[k] = e.get("wert")
+        return stand
+
+    def set_setting(self, key: str, wert, *, akteur: str = "CEO") -> str:
+        if key not in SETTINGS_DEFAULTS:
+            raise ValueError(f"Unbekannte Einstellung: {key}")
+        return self.add("settings", {"key": key, "wert": wert, "akteur": akteur})
+
+    def set_settings(self, werte: dict, *, akteur: str = "CEO") -> list[str]:
+        return [self.set_setting(k, v, akteur=akteur) for k, v in werte.items() if k in SETTINGS_DEFAULTS]
 
     # -- forecasts/actuals/scorecard --
     def forecast_add(self, symbol: str, *, prognose: str, konfidenz: float, horizont: str,

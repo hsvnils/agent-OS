@@ -76,6 +76,7 @@ const SECTIONS = [
   { id: "agenten", icon: "🛰", label: "Agenten", app: "home" },
   { id: "system", icon: "📡", label: "System", app: null },
   { id: "team", icon: "👥", label: "Team", app: "team" },
+  { id: "einstellungen", icon: "⚙", label: "Einstellungen", app: null },
 ];
 const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.includes(app);
 
@@ -697,6 +698,28 @@ async function renderTeam() {
   $("#v2-app").innerHTML = secHead("Team") + `<div class="v2-grid">${tile("Neuen Nutzer anlegen", form, "w5")}${tile("Nutzer", users, "w7")}</div>`;
 }
 
+/* =========================== Einstellungen =========================== */
+const SETTING_KEYS = ["depot_stop_pct", "depot_target_pct", "depot_alerts", "paper_stop_pct", "paper_target_pct",
+  "paper_order_betrag_usd", "paper_dip_schwelle_pct", "briefing_morgen_stunde", "briefing_abend_stunde",
+  "ruhezeit_von", "ruhezeit_bis", "alert_investment", "alert_crm", "alert_security", "alert_content"];
+const SETTING_BOOLS = new Set(["depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content"]);
+const SETTING_OPT = new Set(["ruhezeit_von", "ruhezeit_bis"]);
+RENDER.einstellungen = renderEinstellungen;
+async function renderEinstellungen() {
+  const cfg = await jget("/api/settings") || {};
+  const nInp = (k, label, sub) => `<label class="v2-set-row"><span class="v2-set-lbl">${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ""}</span><input id="set-${k}" class="v2-inp" type="number" step="any" value="${cfg[k] != null ? esc(String(cfg[k])) : ""}" style="width:120px"></label>`;
+  const chk = (k, label, sub) => `<label class="v2-set-row"><span class="v2-set-lbl">${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ""}</span><input id="set-${k}" type="checkbox" ${cfg[k] ? "checked" : ""}></label>`;
+  const a = nInp("depot_stop_pct", "Stop-Loss-Hinweis", "ab −x %") + nInp("depot_target_pct", "Take-Profit-Hinweis", "ab +x %") + chk("depot_alerts", "Advisory-Alerts (Telegram)", "an/aus");
+  const b = nInp("paper_stop_pct", "Auto-Stop-Loss", "verkauft ab −x %") + nInp("paper_target_pct", "Take-Profit-Vorschlag", "ab +x %") + nInp("paper_order_betrag_usd", "Standard-Order-Betrag", "USD je 1-Tap-Kauf") + nInp("paper_dip_schwelle_pct", "Live-Dip-Empfindlichkeit", "% Bewegung");
+  const c = nInp("briefing_morgen_stunde", "Morgen-Briefing", "Stunde 0–23") + nInp("briefing_abend_stunde", "Abend-Briefing", "Stunde 0–23") + nInp("ruhezeit_von", "Nicht stören von", "Stunde (leer = aus)") + nInp("ruhezeit_bis", "Nicht stören bis", "Stunde (leer = aus)") + chk("alert_investment", "Alerts: Investment") + chk("alert_crm", "Alerts: CRM") + chk("alert_security", "Alerts: Security") + chk("alert_content", "Alerts: Content");
+  const actions = `<span id="set-msg" class="v2-msg"></span><button class="v2-btn pri" data-act="settings-save">Speichern</button>`;
+  $("#v2-app").innerHTML = secHead("Einstellungen", actions) + `<div class="v2-grid">
+    ${tile("🏦 Echtes Depot (Beratung)", a, "w4")}
+    ${tile("💼 Paper-Depot (Spielgeld)", b, "w4")}
+    ${tile("🔔 Benachrichtigungen & Briefings", c, "w4")}
+  </div><div class="v2-sub" style="margin-top:8px">Gilt für Anzeige, Telegram-Hinweise und Briefings. Moduswechsel (advisory→paper→live) und Budget bleiben separat abgesichert.</div>`;
+}
+
 /* =========================== Aktionen =========================== */
 const reFreig = () => AKTIV === "dash" ? renderDash() : renderFreigaben();  // Antrags-Aktion aus Dashboard ODER Freigaben
 async function handleAct(act, el) {
@@ -743,6 +766,18 @@ async function handleAct(act, el) {
       return renderInvestment();
     }
     case "depot-storno": if (!confirm("Diese Buchung stornieren?")) return; await jpost("/api/investment/depot/storno", { id }); return renderInvestment();
+    case "settings-save": {
+      const settings = {};
+      for (const k of SETTING_KEYS) {
+        const e = $("#set-" + k); if (!e) continue;
+        if (SETTING_BOOLS.has(k)) settings[k] = e.checked;
+        else if (SETTING_OPT.has(k)) settings[k] = e.value.trim() === "" ? null : e.value;
+        else settings[k] = e.value;
+      }
+      const r = await jpost("/api/settings", { settings }); const msg = $("#set-msg");
+      if (msg) { msg.textContent = r && r.ok ? "Gespeichert ✓" : "Fehler beim Speichern"; msg.className = "v2-msg " + (r && r.ok ? "ok" : "err"); }
+      return;
+    }
     case "paper-sell": {
       const set = (k, v) => { const e = $("#" + k); if (e) e.value = v; };
       set("po-side", "sell"); set("po-sym", id); set("po-klasse", asset === "krypto" ? "krypto" : "aktie"); set("po-qty", val || "");
