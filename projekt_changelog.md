@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 13:05] — Claude Code
+- **Was:** Ausfuehrungs-Recht (x-Bit) fuer `deploy/sync-to-nas.sh` wiederhergestellt und dauerhaft in Git
+  verankert (git-Mode 100644 -> 100755). Ursache der „permission denied"-Meldung beim Deploy.
+- **Warum:** CEO bekam beim Deploy `zsh: permission denied: deploy/sync-to-nas.sh`; ohne x-Bit im Git-Baum
+  kam der Fehler nach jedem Checkout/Sync wieder.
+- **Betroffen:** deploy/sync-to-nas.sh
+
 ## [2026-07-09 12:55] — Claude Code
 - **Was:** Depot-/Portfolio-Ansicht gebaut (CEO sah bisher seine Bestaende nicht). Zwei getrennte Ansichten
   in der LUNA-OS-Investment-App: (1) **Paper-Depot (Alpaca-Sim)** — Gesamtwert/Cash/Kaufkraft + Positionen
