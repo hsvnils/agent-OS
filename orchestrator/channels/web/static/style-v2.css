@@ -266,6 +266,27 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
   background: var(--v2-bg1); color: var(--v2-fg); }
 .v2-depot-form { align-items: center; }
 
+/* Einsteiger-Bereich: Info-Tooltip (Mouseover) + Risiko-Ampel */
+.v2-info { position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--v2-line); color: var(--v2-muted);
+  font-size: 11px; font-weight: 700; font-style: normal; cursor: help; user-select: none; }
+.v2-info .v2-info-pop { position: absolute; top: 25px; right: 0; width: 260px; background: var(--v2-card-solid);
+  border: 1px solid var(--v2-line); border-radius: 12px; box-shadow: var(--v2-shadow-hi); padding: 10px 12px;
+  font-size: 12.5px; font-weight: 400; line-height: 1.45; color: var(--v2-fg); text-align: left;
+  opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .12s, transform .12s; z-index: 60; }
+.v2-info:hover .v2-info-pop, .v2-info:focus .v2-info-pop { opacity: 1; visibility: visible; transform: translateY(0); }
+.v2-ampel { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--v2-muted); }
+.v2-ampel .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.v2-ein-card { border: 1px solid var(--v2-line-soft); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.v2-ein-card h4 { margin: 0 0 4px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.v2-ein-card p { margin: 4px 0; font-size: 13.5px; line-height: 1.5; color: var(--v2-fg); }
+.v2-ein-step { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--v2-line-soft); }
+.v2-ein-step:last-child { border-bottom: none; }
+.v2-ein-num { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--v2-accent); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+.v2-glos { font-size: 13.5px; line-height: 1.5; } .v2-glos dt { font-weight: 700; margin-top: 8px; }
+.v2-glos dd { margin: 0 0 2px; color: var(--v2-muted); }
+
 /* Einstellungen: Label-Wert-Zeilen */
 .v2-set-row { display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 8px 0; border-bottom: 1px solid var(--v2-line-soft); }

@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 17:45] — Claude Code
+- **Was:** Neuen **Einsteiger-Bereich** in LUNA-OS gebaut (Nav 🎓 „Einsteiger", neben Investment) — erklaert
+  Investieren in einfacher Sprache fuer Laien. Kacheln: „So funktioniert dieser Bereich", „Die 3 Bausteine"
+  (Aktie/ETF/Krypto mit Risiko-**Ampel** gruen/gelb/rot), „Ideen fuer dich" (ruhiger ETF-Starter + LUNAs
+  Vorschlaege aus `/api/investment`, laienverstaendlich umformuliert, mit Ampel), „Was mache ich wo?"
+  (4-Schritte-Ablauf Idee->Broker->Echtes Depot eintragen->LUNA beobachtet), „Wichtige Woerter" (Mini-Lexikon),
+  „Kleingedrucktes" (Disclaimer: Bildung + LUNAs Meinung, KEINE Finanzberatung, nur verkraftbares Geld).
+  Jede Kachel hat ein **ℹ️-Symbol mit Mouseover-Erklaerung** (neue `.v2-info`-Tooltip-Komponente, hover/focus,
+  clippt nicht); Helfer `infoTip()`/`ampel()`. Rein Frontend + Reuse bestehender Advisory-Daten, keine
+  Ausfuehrung. Cache v25 / css v11. Browser verifiziert (Rendering + Tooltip sichtbar).
+  **Bugfix im Zuge dessen:** erneut ein gerades Anfuehrungszeichen in einem "..."-String -> per node --check
+  gefunden und behoben.
+- **Warum:** CEO hat keine Vorkenntnisse zu Aktien/Krypto/ETF und wuenscht einen eigenen, verstaendlichen
+  Bereich mit Ideen + Erklaerungen + Info-Mouseovers.
+- **Betroffen:** orchestrator/channels/web/static/app-v2.js, orchestrator/channels/web/static/style-v2.css,
+  orchestrator/channels/web/static/index-v2.html
+
 ## [2026-07-09 17:20] — Claude Code
 - **Was:** „Einstellungen"-Seite in LUNA-OS gebaut (Gruppen A/B/C) + geteilter Settings-Speicher als SSOT, den
   **Web UND Telegram-Bot** lesen. Store: `settings`-Tabelle im InvestmentStore (`SETTINGS_DEFAULTS`,

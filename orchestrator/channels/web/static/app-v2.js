@@ -67,6 +67,7 @@ const SECTIONS = [
   { id: "freigaben", icon: "✔", label: "Freigaben", app: "auftraege" },
   { id: "devroadmap", icon: "🗺", label: "Roadmap", app: null },
   { id: "investment", icon: "📈", label: "Investment", app: "investment" },
+  { id: "einsteiger", icon: "🎓", label: "Einsteiger", app: "investment" },
   { id: "crm", icon: "🤝", label: "CRM", app: "crm" },
   { id: "radar", icon: "🎯", label: "Radar", app: "crm" },
   { id: "content", icon: "✎", label: "Content", app: "trends" },
@@ -718,6 +719,59 @@ async function renderEinstellungen() {
     ${tile("💼 Paper-Depot (Spielgeld)", b, "w4")}
     ${tile("🔔 Benachrichtigungen & Briefings", c, "w4")}
   </div><div class="v2-sub" style="margin-top:8px">Gilt für Anzeige, Telegram-Hinweise und Briefings. Moduswechsel (advisory→paper→live) und Budget bleiben separat abgesichert.</div>`;
+}
+
+/* =========================== Einsteiger =========================== */
+// Info-Symbol mit Mouseover-Erklaerung (kommt in den Kachel-Kopf via extraHead).
+function infoTip(text) { return `<span class="v2-info" tabindex="0">i<span class="v2-info-pop">${esc(text)}</span></span>`; }
+function ampel(farbe, text) {
+  const c = farbe === "green" ? "var(--v2-green)" : farbe === "red" ? "var(--v2-red)" : "var(--v2-amber)";
+  return `<span class="v2-ampel"><span class="dot" style="background:${c}"></span>${esc(text)}</span>`;
+}
+const RISIKO_MAP = { spekulativ: ["red", "hohes Risiko"], erhoeht: ["amber", "erhöhtes Risiko"],
+  mittel: ["amber", "mittleres Risiko"], solide: ["green", "eher ruhig"], konservativ: ["green", "eher ruhig"] };
+RENDER.einsteiger = renderEinsteiger;
+async function renderEinsteiger() {
+  const inv = await jget("/api/investment") || {};
+  const intro = `<p style="font-size:14px;line-height:1.55">Willkommen! Hier erklärt dir LUNA das Investieren <b>in einfacher Sprache</b> — ohne Fachchinesisch. LUNA schlägt Ideen vor und erklärt sie; <b>entscheiden und kaufen tust immer du selbst</b> in deiner Broker-App. Fahr mit der Maus über das <b>i</b> oben rechts an jeder Kachel — dort steht, was drin ist und was passiert.</p>`;
+  const bausteine = `
+    <div class="v2-ein-card"><h4>📈 Aktie ${ampel("amber", "mittleres Risiko")}</h4><p>Ein winziger Anteil an EINER einzelnen Firma (z.B. Apple). Läuft die Firma gut, steigt dein Anteil — läuft sie schlecht, fällt er.</p></div>
+    <div class="v2-ein-card"><h4>🧺 ETF ${ampel("green", "eher ruhig")}</h4><p>Ein Korb aus vielen Firmen auf einmal (oft hunderte). Dein Geld ist automatisch gestreut — fällt eine Firma, fangen die anderen es ab. Der beliebteste Einstieg.</p></div>
+    <div class="v2-ein-card"><h4>🪙 Krypto ${ampel("red", "hohes Risiko")}</h4><p>Digitale Währungen wie Bitcoin. Können stark steigen — aber genauso stark fallen. Faustregel: nur Geld, dessen Totalverlust du verschmerzen könntest.</p></div>`;
+  const starter = `<div class="v2-ein-card"><h4>🧺 Breit gestreuter ETF — der ruhigste Start ${ampel("green", "eher ruhig")}</h4><p>Viele Einsteiger beginnen mit einem ETF auf den „MSCI World" — der bündelt ~1500 große Firmen weltweit in einem Produkt.</p><p><b>Was du tun könntest:</b> einen kleinen, festen Betrag pro Monat. Ruhig, breit gestreut, wenig Aufwand.</p></div>`;
+  const lunaIdeen = (inv.vorschlaege || []).slice(0, 5).map(s => {
+    const r = RISIKO_MAP[(s.risiko_label || "").toLowerCase()] || ["amber", "mittleres Risiko"];
+    return `<div class="v2-ein-card"><h4>${esc((s.symbol || "").toUpperCase())} ${ampel(r[0], r[1])}</h4><p><b>LUNAs Idee:</b> ${esc((s.aktion || "beobachten"))}${s.grund ? " — " + esc(s.grund) : ""}.</p><p><b>Was du tun könntest:</b> in deiner Broker-App suchen, einen kleinen Betrag kaufen, dann unter „Investment → Echtes Depot" eintragen.</p></div>`;
+  }).join("");
+  const ideen = starter + (lunaIdeen || `<div class="v2-sub">LUNA sammelt gerade noch Ideen — unter „Investment" auf „Screen jetzt" tippen. Der ruhige ETF-Start oben passt aber immer.</div>`);
+  const step = (n, titel, text, tip) => `<div class="v2-ein-step"><div class="v2-ein-num">${n}</div><div class="grow"><b>${esc(titel)}</b>${tip ? " " + infoTip(tip) : ""}<div class="v2-sub" style="margin-top:2px">${text}</div></div></div>`;
+  const ablauf =
+    step(1, "Idee aussuchen", `Nimm eine aus „Ideen für dich", die du verstehst — lieber ruhig (grün) als riskant (rot).`) +
+    step(2, "In deiner Broker-App kaufen", `Öffne deine Broker-App, suche den Namen, kauf einen kleinen Betrag.`, `Ein „Broker" ist die App/Bank, über die du kaufst (z.B. Trade Republic). LUNA kauft NICHT für dich — du klickst selbst.`) +
+    step(3, `Im „Echtes Depot" eintragen`, `Geh zu „Investment → Echtes Depot" und buche deinen Kauf (Symbol, Stück, Preis).`, `So kennt LUNA deinen Bestand und kann ihn für dich beobachten.`) +
+    step(4, "LUNA beobachtet", `LUNA meldet sich, wenn ein Wert stark gestiegen ist (Gewinn mitnehmen?) oder gefallen ist (Verlust begrenzen?).`);
+  const glossar = `<dl class="v2-glos">
+    <dt>Aktie</dt><dd>Anteil an einer einzelnen Firma.</dd>
+    <dt>ETF</dt><dd>Ein Korb aus vielen Aktien — automatische Streuung.</dd>
+    <dt>Krypto</dt><dd>Digitale Währung (z.B. Bitcoin), stark schwankend.</dd>
+    <dt>Kurs</dt><dd>Der aktuelle Preis eines Werts.</dd>
+    <dt>Streuung (Diversifikation)</dt><dd>Geld auf viele Werte verteilen, damit ein Ausrutscher nicht wehtut.</dd>
+    <dt>Volatilität</dt><dd>Wie stark der Preis schwankt. Hoch = wilde Ausschläge.</dd>
+    <dt>Dividende</dt><dd>Gewinn­ausschüttung mancher Firmen an ihre Anteilseigner.</dd>
+    <dt>G/V</dt><dd>Gewinn/Verlust — wie viel du gerade im Plus oder Minus bist.</dd>
+    <dt>Stop-Loss</dt><dd>Grenze, ab der man verkauft, um Verluste zu begrenzen.</dd>
+    <dt>Take-Profit</dt><dd>Grenze, ab der man Gewinne mitnimmt.</dd>
+    <dt>Broker</dt><dd>Die App/Bank, über die du kaufst und verkaufst.</dd>
+    <dt>Depot</dt><dd>Deine Übersicht aller Bestände.</dd></dl>`;
+  const disclaimer = `<p style="font-size:13px;line-height:1.5;color:var(--v2-muted)">Das hier ist <b>Bildung + LUNAs Meinung</b>, <b>keine Finanzberatung</b>. Investiere nur Geld, dessen Verlust du verkraften kannst — besonders bei Krypto. Kurse schwanken; niemand (auch LUNA nicht) kann die Zukunft vorhersagen. Bei größeren Beträgen sprich mit einem unabhängigen Berater.</p>`;
+  $("#v2-app").innerHTML = secHead("Für Einsteiger") + `<div class="v2-grid">
+    ${tile("👋 So funktioniert dieser Bereich", intro, "w12", infoTip("Hier erklärt LUNA das Investieren einfach. Wichtig: LUNA schlägt nur vor — kaufen und entscheiden tust du selbst. Keine Finanzberatung."))}
+    ${tile("Die 3 Bausteine — einfach erklärt", bausteine, "w6", infoTip("Aktie, ETF und Krypto sind die drei Arten, in die du investieren kannst. Die Ampel zeigt grob das Risiko: grün ruhig, gelb mittel, rot riskant."))}
+    ${tile("Ideen für dich", ideen, "w6", infoTip("Vorschläge von LUNA, einfach erklärt. Kein Versprechen auf Gewinn — je röter die Ampel, desto riskanter. Für den ruhigen Start ist ein breiter ETF meist am sinnvollsten."))}
+    ${tile("Was mache ich wo? — dein Ablauf", ablauf, "w6", infoTip("Dein Weg von der Idee zum beobachteten Bestand — in 4 Schritten."))}
+    ${tile("Wichtige Wörter — kurz erklärt", glossar, "w6", infoTip("Ein Mini-Lexikon der häufigsten Begriffe. Fahr auch über die i-Symbole der anderen Kacheln."))}
+    ${tile("⚠️ Wichtig / Kleingedrucktes", disclaimer, "w12", infoTip("Bitte einmal lesen."))}
+  </div>`;
 }
 
 /* =========================== Aktionen =========================== */
