@@ -71,6 +71,12 @@ Security-Gate + CEO-Tor.
 **Entscheidung:** **REFERENZ / OPTIONAL** -- **kein Laufzeit-Einbau in LUNA**. Falls je noetig: **gelegentlich
 als CLI** (`graphify extract`) fuer eine einmalige Codebasis-/Architektur-Uebersicht. Aktuell **kein Bedarf**.
 
+**Re-Check 2026-07-09 (CEO-Nachfrage, dasselbe Tool bestaetigt):** Bewertung gilt **unveraendert**. Kein neuer
+Bedarf entstanden -- LUNA-Codebasis ist mit ~210 Python-Dateien / ~27k Zeilen (fast alles `orchestrator/`)
+mittelgross und per grep/read gut navigierbar; die plausiblen Abnehmer (Execution, Self-Dev, LUNA-Gehirn)
+sind gerade inaktiv/blockiert. Fuer eine einmalige Architektur-/Abhaengigkeitsuebersicht ist das leichte
+Bordmittel `core/visualisierung.py` (SVG-Graph) vorzuziehen. **Bleibt REFERENZ / OPTIONAL, kein Einbau.**
+
 **Quelle:** github.com/safishamsi/graphify (README).
 
 ### 2026-07-04 — UB-Recherche: MBB-Beratungsframeworks (CEO-Auftrag „richtig wertvoll machen")

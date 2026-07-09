@@ -17,7 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
-## [2026-07-09 09:55] — Claude Code
+## [2026-07-09 12:30] — Claude Code
+- **Was:** Re-Check „Graphify" auf CEO-Nachfrage. Register-first geklaert: CEO meint dasselbe
+  `safishamsi/graphify` (bereits am 2026-07-04 bewertet). Ergebnis: Bewertung gilt unveraendert, kein neuer
+  Bedarf, bleibt REFERENZ / OPTIONAL (kein Einbau). Re-Check-Notiz im Detail-Eintrag ergaenzt.
+- **Warum:** CEO-Auftrag „Graphify pruefen" (erste Aufgabe der Session); Governance-Protokollierung.
+- **Betroffen:** docs/entscheidungs-register.md
+
 - **Was:** (1) Roadmap-Kacheln **anklickbar** -> Detail-Modal (wie Freigaben); `renderDevRoadmap` speichert die
   Items, neue `roadmapDetail(rid)` + Klick-`data-act="roadmap-detail"`. (2) **Antrags-Inhalt sauber
   strukturiert** ueberall: neuer JS-Helfer `fmtBeschreibung()` rendert die Sektionen (IDEE/MACHBARKEIT (CTO)/
