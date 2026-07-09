@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 18:20] — Claude Code
+- **Was:** Lern-Loop-Tooltip praezisiert. CEO-Rueckfrage „Baseline = das echte, Modell = LUNA?" -> im Code
+  geprueft: Baseline ist NICHT der echte Kurs, sondern eine **naive Random-Walk-Baseline** („Kurs bleibt
+  gleich", 0 % Rendite, forecaster.py) — die Messlatte; beide Linien sind **Fehler-Kurven** (MAE), kein Kurs.
+  Tooltip klargestellt: Modell = LUNAs Vorhersagen, Baseline = Dummy-Vergleich, tiefer = besser, LUNA nur gut
+  wenn Modell-Linie UNTER Baseline. Cache v27.
+- **Warum:** Tooltip lud zur Fehldeutung ein (eine Linie sei der echte Kurs).
+- **Betroffen:** orchestrator/channels/web/static/app-v2.js, orchestrator/channels/web/static/index-v2.html
+
 ## [2026-07-09 18:05] — Claude Code
 - **Was:** Einsteiger-Ansatz korrigiert (Missverstaendnis). Separate „Fuer Einsteiger"-Seite + Nav-Eintrag
   wieder **entfernt**. Stattdessen: **Info-Symbol (ℹ️) an jedem erklaerten Container**, neben den drei Punkten

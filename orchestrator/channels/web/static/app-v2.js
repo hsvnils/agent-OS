@@ -131,7 +131,7 @@ const TILE_INFO = {
   "🏦 Echtes Depot (manuell)": `Deine echten Bestände, die du selbst einträgst. LUNA bewertet sie live und berät dich — kauft aber nie selbst.`,
   "Watchlist verwalten": `Werte zum Beobachten hinzufügen oder entfernen. Beobachten heißt nur ansehen, nicht kaufen.`,
   "Provider": `Die externen Datenquellen, aus denen LUNA Kurse und Infos zieht. Grün = verbunden.`,
-  "Lern-Loop · Fehler-Verlauf": `LUNA sagt Kurse voraus und vergleicht sie später mit der Realität. Die Kurve zeigt den durchschnittlichen Fehler über die Wochen — je tiefer, desto besser. „Baseline" ist ein ganz simpler Vergleichsmaßstab: LUNA sollte besser sein als der.`,
+  "Lern-Loop · Fehler-Verlauf": `Zwei FEHLER-Kurven (keine echten Kurse!). „Modell" = LUNAs Vorhersagen. „Baseline" = ein Dummy, der stur sagt „der Kurs bleibt gleich" — die Messlatte. Gezeigt wird, wie weit beide im Schnitt danebenlagen: je tiefer, desto besser. LUNA ist nur dann wirklich gut, wenn die Modell-Linie UNTER der Baseline liegt.`,
   "Je Anlageklasse": `Wie treffsicher LUNAs Prognosen je Anlage-Art sind (Aktie/ETF/Krypto). „Treffer" = Richtung stimmte.`,
   "Signal-Attribution": `Welche Signale (z. B. Momentum, Trend) wie oft richtig lagen — zeigt, worauf LUNAs Ideen beruhen.`,
   "Je Modell-Version": `Vergleich von LUNAs verschiedenen Prognose-Modellen: welche Version besser abschneidet.`,
