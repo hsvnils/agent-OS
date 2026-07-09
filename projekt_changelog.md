@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 13:35] — Claude Code
+- **Was:** G/V in der Depot-Tabelle auf **zwei Spalten** aufgeteilt: „G/V" (Betrag) und „G/V %" (Prozent),
+  je in der Position-Farbe. Waehrung unveraendert (keine EUR-Umrechnung). Cache v21.
+- **Warum:** CEO-Wunsch „G/V einmal in Prozent und einmal in Euro" -> auf Rueckfrage geklaert: nur Layout,
+  zwei getrennte Spalten, keine Waehrungsumrechnung.
+- **Betroffen:** orchestrator/channels/web/static/app-v2.js, orchestrator/channels/web/static/index-v2.html
+
 ## [2026-07-09 13:20] — Claude Code
 - **Was:** Depot-Tabelle konsistent gemacht. Spalte „Einstand" zeigte den Ø-Kaufpreis **pro Stueck**, „Wert"
   aber den **Gesamtwert** -> in einer Zeile nicht vergleichbar (bei Krypto wirkte die G/V dadurch
