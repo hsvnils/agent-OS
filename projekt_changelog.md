@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 20:40] — Claude Code
+- **Was:** Cutter erweitert (CEO-Wunsch, Phase 1 — vorhandene Tags; Pyro/Fangesang spaeter). (1) **Ablehnen ->
+  neues erstellen?**: `/api/reel/{id}/ablehnen` nimmt `{neu:true}` und stoesst direkt einen neuen Reel-Job
+  (gleiches Spiel/Thema) an; Reels-UI fragt beim Ablehnen nach. (2) **Mindestlaenge 15 s** global erzwungen:
+  `reel_daily.lauf(min_dauer=15)` reicht zu kurze Reels NICHT ein (mit Hinweis). (3) **Manueller Reel-Bereich**
+  in der Cutter-App: Thema (Torjubel/Tore & Highlights/Beste Momente/Fan-Stimmung/Emotionen pur),
+  Einzelspiel/Overall, Min-/Max-Laenge -> `POST /api/cutter/reel` (Parameter als JSON im note-Feld). (4)
+  **Overall-Modus** + Themen-Wahl in `reel_daily.lauf` (alle_spiele/thema_name); `reel_select`: Thema „Torjubel"
+  + `thema_by_name`/`MANUELLE_THEMEN`. (5) **Mac-Watcher** (`watch.py`) erkennt Reel-Jobs (note-JSON) und baut
+  via `reel_daily.lauf` + reicht ein; `REEL_*`-Env in die watch-plist ergaenzt. Qualitaetsfilter (Aufloesung)
+  greift wie gehabt. Tests +4 (37 Cutter-Tests gruen). Cache v29. Web verifiziert; **Mac-Reel-Produktion
+  muss der CEO testen** (Watcher-Neustart + REEL_SOURCE noetig).
+- **Warum:** CEO: Ablehnen-Rueckfrage, Mindestlaenge 15 s, manueller Reel-Bereich mit Thema/Spiel/Laenge.
+- **Betroffen:** cutter/reel_select.py, cutter/reel_daily.py, cutter/watch.py,
+  cutter/com.hanserautisch.cutter.watch.plist, cutter/tests/test_reel_manual.py,
+  orchestrator/channels/web/app.py, orchestrator/channels/web/static/app-v2.js,
+  orchestrator/channels/web/static/index-v2.html
+
 ## [2026-07-09 18:30] — Claude Code
 - **Was:** Lern-Loop-Chart: die Linie „Modell" in **„LUNA"** umbenannt (Legende, Hover-Tooltip, Info-Tooltip,
   Code-Kommentar) — verstaendlicher, weil es LUNAs eigene Vorhersage ist. „Je Modell-Version"-Kachel und das

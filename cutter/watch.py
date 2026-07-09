@@ -75,6 +75,59 @@ def _verarbeite(projekt: Path, outbox: Path, ziel_dauer: float, token: str = "",
             melden.sende_text(token, chat, f"🎬 Cutter: '{projekt.name}' fehlgeschlagen — {bericht.get('fehler')}")
 
 
+def _reel_params(job: dict) -> dict | None:
+    """Reel-Job? Die Parameter stecken als JSON im `note`-Feld (typ=='reel'). Sonst None (normaler Cut-Job)."""
+    note = job.get("note")
+    if not note:
+        return None
+    try:
+        d = json.loads(note)
+    except Exception:
+        return None
+    return d if isinstance(d, dict) and d.get("typ") == "reel" else None
+
+
+def _verarbeite_reel(job: dict, reel_src, reel_out, reel_state, token: str, chat: str,
+                     bridge: LunaBridge | None) -> None:
+    """Manuellen Themen-Reel bauen (reel_daily.lauf) und zur CEO-Freigabe einreichen. Best-effort, nie Absturz."""
+    from . import reel_daily
+    p = _reel_params(job) or {}
+    job_id, label = job.get("id", ""), job.get("projekt", "Reel")
+    if not reel_src:
+        if bridge:
+            bridge.melden(job_id=job_id, projekt=label, status="failed",
+                          fehler="REEL_SOURCE im Watcher nicht gesetzt (Env in der watch-plist ergaenzen).")
+        return
+    if bridge:
+        bridge.melden(job_id=job_id, projekt=label, status="running")
+    try:
+        res = reel_daily.lauf(source=reel_src, outbox=reel_out, state=reel_state,
+                              thema_name=p.get("thema") or None, alle_spiele=bool(p.get("alle_spiele")),
+                              spiel=p.get("spiel") or None, ziel_dauer=float(p.get("max_dauer") or 45),
+                              min_dauer=float(p.get("min_dauer") or 15), schnell_index=True)
+    except Exception as exc:                               # nie den Watcher mitreissen
+        res = {"ok": False, "fehler": f"Reel-Bau abgestuerzt: {exc}"}
+    if res.get("ok"):
+        eingereicht = False
+        if bridge and bridge.aktiv():
+            meta = {k: res.get(k) for k in ("datum", "thema", "caption", "dauer_sek", "spiele")}
+            r = bridge.reel_einreichen(res["reel"], meta)
+            eingereicht = bool(r and r.get("ok"))
+        if bridge:
+            bridge.melden(job_id=job_id, projekt=label, status="done", dauer_sek=res.get("dauer_sek"),
+                          reel_datei=res.get("reel"),
+                          note="eingereicht" if eingereicht else "gebaut (nicht eingereicht)")
+        if token and chat:
+            melden.sende_text(token, chat, f"🎬 Manuelles Reel '{label}' fertig — {res.get('verwendet')} "
+                                           f"Clips, {res.get('dauer_sek')}s. Wartet auf deine Freigabe.")
+    else:
+        grund = res.get("fehler") or res.get("hinweis") or "unbekannt"
+        if bridge:
+            bridge.melden(job_id=job_id, projekt=label, status="failed", fehler=grund)
+        if token and chat:
+            melden.sende_text(token, chat, f"🎬 Reel '{label}' nicht erstellt — {grund}")
+
+
 def loop(inbox: Path, outbox: Path, *, intervall: float = 15.0, ruhe_sek: float = 30.0,
          ziel_dauer: float = 45.0, einmal: bool = False) -> None:
     inbox.mkdir(parents=True, exist_ok=True)
@@ -87,10 +140,17 @@ def loop(inbox: Path, outbox: Path, *, intervall: float = 15.0, ruhe_sek: float 
           + (" | Telegram-Meldung: an" if token and chat else "")
           + (" | LUNA-OS-Bruecke: an" if bridge.aktiv() else ""), flush=True)
     print("Lege Clips in einen Unterordner der Inbox -- der Schnitt startet automatisch.", flush=True)
+    # Reel-Pfade fuer manuelle Themen-Reels (aus der Env; ohne REEL_SOURCE bleiben Reel-Jobs deaktiviert).
+    reel_src = Path(os.environ["REEL_SOURCE"]).expanduser() if os.environ.get("REEL_SOURCE") else None
+    reel_out = Path(os.environ.get("REEL_OUTBOX") or "").expanduser() if os.environ.get("REEL_OUTBOX") else outbox
+    reel_state = Path(os.environ["REEL_STATE"]).expanduser() if os.environ.get("REEL_STATE") else (outbox.parent / "reel_state")
     while True:
         try:
             # K5: von LUNA-OS angestossene Jobs zuerst (auch wenn der Ordner schon einen Marker hat).
             for job in (bridge.offene_jobs() if bridge.aktiv() else []):
+                if _reel_params(job) is not None:          # manueller Themen-Reel (kein Inbox-Ordner)
+                    _verarbeite_reel(job, reel_src, reel_out, reel_state, token, chat, bridge)
+                    continue
                 projekt = inbox / (job.get("projekt") or "")
                 if projekt.is_dir():
                     _verarbeite(projekt, outbox, ziel_dauer, token, chat, bridge, job.get("id", ""))

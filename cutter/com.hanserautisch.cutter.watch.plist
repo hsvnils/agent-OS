@@ -18,6 +18,13 @@
     <dict>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <!-- Fuer manuelle Themen-Reels aus LUNA-OS: dieselben Pfade wie in der reel.daily-plist. -->
+        <key>REEL_SOURCE</key>
+        <string>/Volumes/NAS/reels/source</string>
+        <key>REEL_OUTBOX</key>
+        <string>/Volumes/NAS/reels/outbox</string>
+        <key>REEL_STATE</key>
+        <string>/Volumes/NAS/reels/state</string>
     </dict>
     <key>RunAtLoad</key>
     <true/>

@@ -104,12 +104,16 @@ def waehle_spiel(spiele: list[str], used_games_pfad: Path, seed: str) -> str | N
 
 def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
          ziel_dauer: float = 45.0, clip_laenge: float = 4.6, gemini: bool = False,
-         transkribieren: bool = False, schnell_index: bool = False, spiel: str | None = None) -> dict:
-    """Ein Tages-Reel aus EINEM Spielordner erzeugen. Gibt einen Bericht (dict). Kein Upload.
+         transkribieren: bool = False, schnell_index: bool = False, spiel: str | None = None,
+         thema_name: str | None = None, alle_spiele: bool = False, min_dauer: float = 15.0) -> dict:
+    """Ein Reel erzeugen. Gibt einen Bericht (dict). Kein Upload.
 
     `clip_laenge` steuert das Tempo: ohne Transkription ist jeder Clip B-Roll dieser Laenge -> ziel_dauer /
     clip_laenge ergibt die Clip-Anzahl (Default ~4,6s -> ~9-10 Clips fuer ein 45s-Reel).
     `spiel`: gezielt EIN Spielordner (Name); ohne Angabe waehlt die Rotation automatisch eines aus.
+    `thema_name`: gezieltes Thema (z. B. "Torjubel"); ohne Angabe die Tages-Rotation.
+    `alle_spiele`: ueber ALLE Spiele hinweg suchen (statt einem Ordner) -- fuer manuelle Themen-Reels.
+    `min_dauer`: Mindestlaenge in Sekunden (Default 15). Faellt das Reel darunter, wird es NICHT eingereicht.
     """
     tag = tag or date.today()
     source = Path(source)
@@ -119,28 +123,39 @@ def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
     used_pfad = state / "used.jsonl"
     used_games_pfad = state / "used_games.jsonl"
 
-    # Genau EIN Spielordner pro Reel -> nur diesen indizieren (schnell, thematisch geschlossen).
+    # Einzelspiel (schnell, thematisch geschlossen) ODER ueber alle Spiele (manueller Themen-Reel).
     allow = _lade_allowlist(state)
     verfuegbar = _spielordner(source, allow)
     if not verfuegbar:
         return {"ok": False, "fehler": f"Keine Spielordner in der Quelle gefunden: {source}"}
-    gewaehlt = spiel or waehle_spiel(verfuegbar, used_games_pfad, tag.isoformat())
+    if alle_spiele:
+        gewaehlt = None
+        index_allow = set(verfuegbar)                     # ueber ALLE Spiele suchen
+        label = "alle Spiele"
+    else:
+        gewaehlt = spiel or waehle_spiel(verfuegbar, used_games_pfad, tag.isoformat())
+        if gewaehlt not in verfuegbar:
+            return {"ok": False, "fehler": f"Spielordner '{gewaehlt}' nicht gefunden. "
+                                           f"Verfuegbar: {', '.join(verfuegbar[:20])}"}
+        index_allow = {gewaehlt}
+        label = gewaehlt
 
-    idx_res = rq.baue_index(source, index_pfad, neu=True, allowlist={gewaehlt},
+    idx_res = rq.baue_index(source, index_pfad, neu=True, allowlist=index_allow,
                             energie_analyse=not schnell_index)
     if not idx_res.get("ok"):
         return idx_res
     index = rq.lade_index(index_pfad)
     if not index:
-        return {"ok": False, "fehler": f"Keine Clips im Spielordner '{gewaehlt}'."}
+        return {"ok": False, "fehler": f"Keine Clips gefunden ({label})."}
 
-    thema = rs.thema_fuer_tag(tag)
-    spiel_tag = rq.spiel_hashtag(gewaehlt)                 # z. B. "#HSVFCB" -- an die Caption anhaengen
+    thema = rs.thema_by_name(thema_name) or rs.thema_fuer_tag(tag)
+    spiel_tag = "" if alle_spiele else rq.spiel_hashtag(gewaehlt)   # z. B. "#HSVFCB" -- an die Caption
     caption = f"{thema[2]} {spiel_tag}" if spiel_tag else thema[2]
     genutzt = rs.lade_genutzte(used_pfad)
     # Nur so viele Clips waehlen (+ kleiner Puffer), wie ins Budget passen -> keine unnoetige Clip-Analyse.
     max_clips = int(ziel_dauer / max(1.0, clip_laenge)) + 3
-    auswahl = rs.waehle_clips(index, thema, genutzt=genutzt, max_clips=max_clips, seed=tag.isoformat())
+    auswahl = rs.waehle_clips(index, thema, genutzt=genutzt, max_clips=max_clips,
+                              seed=(thema_name or "") + tag.isoformat())
     if not auswahl:
         return {"ok": False, "fehler": "Keine passenden Clips fuer die Auswahl."}
 
@@ -163,25 +178,33 @@ def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
     if not bericht.get("ok"):
         return {"ok": False, "fehler": bericht.get("fehler", "Schnitt fehlgeschlagen."), "schnitt": bericht}
 
+    # Mindestlaenge erzwingen: zu kurze Reels werden NICHT eingereicht (globale Regel, Default 15 s).
+    dauer = float(bericht.get("dauer_sek") or 0)
+    if dauer < min_dauer:
+        return {"ok": False, "zu_kurz": True, "dauer_sek": dauer, "thema": thema[0], "spiel": label,
+                "fehler": f"Reel nur {dauer:.0f}s (< Mindestlaenge {min_dauer:.0f}s) — nicht eingereicht. "
+                          f"Zu wenige/zu kurze passende Clips ({label})."}
+
     # Welche Clips wurden tatsaechlich verwendet (Pipeline kann am Budget kuerzen)? -> ueber Staging-Namen.
     verwendet_namen = {d["datei"] for d in bericht.get("details", [])}
     verwendet = [c for c, s in zip(auswahl, staged) if s.name in verwendet_namen] or auswahl
 
-    spiele = sorted({c.get("spiel", "?") for c in verwendet}) or [gewaehlt]
+    spiele = sorted({c.get("spiel", "?") for c in verwendet}) or ([gewaehlt] if gewaehlt else [])
     meta = {"datum": tag.isoformat(), "thema": thema[0], "caption": caption,
             "status": "fertig_wartet_auf_freigabe", "fb_video_id": None,
             "ziel_dauer": ziel_dauer, "dauer_sek": bericht.get("dauer_sek"), "reel": str(ausgabe),
             "verwendete_clips": [c["pfad"] for c in verwendet],
-            "spiel": gewaehlt, "spiele": spiele, "schnitt": bericht}
+            "spiel": label, "spiele": spiele, "schnitt": bericht}
     (tag_dir / "metadata.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), "utf-8")
 
     with used_pfad.open("a", encoding="utf-8") as f:
         f.write(json.dumps({"ts": time.time(), "datum": tag.isoformat(), "thema": thema[0],
-                            "spiel": gewaehlt, "clips": [c["pfad"] for c in verwendet]}) + "\n")
-    with used_games_pfad.open("a", encoding="utf-8") as f:                 # Spiel-Rotation protokollieren
-        f.write(json.dumps({"ts": time.time(), "datum": tag.isoformat(), "spiel": gewaehlt}) + "\n")
+                            "spiel": label, "clips": [c["pfad"] for c in verwendet]}) + "\n")
+    if gewaehlt:                                                            # Spiel-Rotation nur bei Einzelspiel
+        with used_games_pfad.open("a", encoding="utf-8") as f:
+            f.write(json.dumps({"ts": time.time(), "datum": tag.isoformat(), "spiel": gewaehlt}) + "\n")
 
-    return {"ok": True, "datum": tag.isoformat(), "thema": thema[0], "spiel": gewaehlt, "reel": str(ausgabe),
+    return {"ok": True, "datum": tag.isoformat(), "thema": thema[0], "spiel": label, "reel": str(ausgabe),
             "verwendet": len(verwendet), "dauer_sek": bericht.get("dauer_sek"), "caption": caption,
             "spiele": spiele, "metadata": str(tag_dir / "metadata.json")}
 
@@ -217,6 +240,12 @@ def main(argv=None) -> int:
     p.add_argument("--datum", default=None, help="Datum YYYY-MM-DD (Default heute) -- fuer Tests/Nachlauf.")
     p.add_argument("--spiel", default=None,
                    help="Gezielt EIN Spielordner (exakter Name). Ohne Angabe: automatische Rotation.")
+    p.add_argument("--thema", default=None,
+                   help="Gezieltes Thema (z. B. 'Torjubel'). Ohne Angabe: Tages-Rotation.")
+    p.add_argument("--alle-spiele", action="store_true",
+                   help="Ueber ALLE Spiele hinweg suchen (statt einem Ordner) -- fuer manuelle Themen-Reels.")
+    p.add_argument("--min-dauer", type=float, default=15.0,
+                   help="Mindestlaenge in Sekunden (Default 15). Kuerzere Reels werden nicht eingereicht.")
     p.add_argument("--mit-gemini", action="store_true", help="Gemini-Reihenfolge zulassen (Default aus).")
     p.add_argument("--mit-transkript", action="store_true",
                    help="Whisper-Transkription an (Sprach-Trimmen; Default aus -> schneller).")
@@ -234,7 +263,8 @@ def main(argv=None) -> int:
 
     res = lauf(source=source, outbox=outbox, state=state, tag=tag, ziel_dauer=a.dauer,
                clip_laenge=a.clip_laenge, gemini=a.mit_gemini, transkribieren=a.mit_transkript,
-               schnell_index=a.schnell_index, spiel=a.spiel)
+               schnell_index=a.schnell_index, spiel=a.spiel, thema_name=a.thema,
+               alle_spiele=a.alle_spiele, min_dauer=a.min_dauer)
     if a.einreichen and res.get("ok"):
         res.update(_einreichen(res))
     print(json.dumps(res, ensure_ascii=False, indent=2))

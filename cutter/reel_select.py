@@ -15,6 +15,7 @@ from pathlib import Path
 # Thema -> bevorzugte Inhalts-Tags (aus dem Gemini-Video-Tagging, Feld `themen`). Leere Menge = alles passt.
 # Wird nur wirksam, wenn Clips getaggt sind (sonst faellt die Auswahl auf die Energie-Heuristik zurueck).
 THEMA_TAGS = {
+    "Torjubel": {"tor", "jubel"},
     "Tore & Highlights": {"tor", "jubel", "spielszene"},
     "Fan-Stimmung": {"fans", "choreo", "stadion"},
     "Beste Momente": {"tor", "jubel", "choreo"},
@@ -25,18 +26,32 @@ THEMA_TAGS = {
 
 # Thema: (Name, Energie-Praeferenz "hoch"|"mittel"|"mix", Caption-Vorlage).
 THEMEN = [
+    ("Torjubel",             "hoch",   "Tooor! ⚽️\U0001f525 #hsv #hanserautisch"),
     ("Tore & Highlights",    "hoch",   "Beste Szenen ⚽️ #hsv #hanserautisch"),
     ("Fan-Stimmung",         "mittel", "Diese Stimmung! \U0001f9e1\U0001f5a4 #hsv #hanserautisch"),
     ("Beste Momente",        "mix",    "Unsere Momente \U0001f5a4 #hsv #hanserautisch"),
     ("Emotionen pur",        "mix",    "Pure Emotionen \U0001f525 #hsv #hanserautisch"),
     ("Woche im Rückblick",   "mix",    "Rückblick \U0001f4fd️ #hsv #hanserautisch"),
 ]
+# Fuer den manuellen Reel-Bereich anwaehlbar (Themen, deren Tags heute schon vergeben werden).
+MANUELLE_THEMEN = ["Torjubel", "Tore & Highlights", "Beste Momente", "Fan-Stimmung", "Emotionen pur"]
 
 
 def thema_fuer_tag(tag: date | None = None) -> tuple:
     """Deterministische Themen-Rotation nach Tages-Ordinalzahl -> nie zwei Tage am Stueck dasselbe."""
     tag = tag or date.today()
     return THEMEN[tag.toordinal() % len(THEMEN)]
+
+
+def thema_by_name(name: str | None) -> tuple | None:
+    """Thema-Tupel per Name (case-insensitive). None, wenn kein Treffer -> Aufrufer nutzt Rotation."""
+    ziel = (name or "").strip().lower()
+    if not ziel:
+        return None
+    for t in THEMEN:
+        if t[0].lower() == ziel:
+            return t
+    return None
 
 
 def _passt_energie(clip: dict, praeferenz: str) -> bool:
