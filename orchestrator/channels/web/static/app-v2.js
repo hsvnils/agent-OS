@@ -11,6 +11,7 @@ const jget = async (u) => { try { const r = await fetch(u); return r.ok ? await 
 const jpost = async (u, body) => { try { const r = await fetch(u, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) }); return r.ok ? await r.json() : null; } catch { return null; } };
 const num = (v, d = 1) => { const n = Number(v); return isFinite(n) ? n.toFixed(d) : "–"; };
 const pct = (v) => isFinite(Number(v)) ? Math.round(Number(v) * 100) + " %" : "–";
+const geld = (v, cur = "USD") => { const n = Number(v); if (!isFinite(n)) return "–"; try { return n.toLocaleString("de-DE", { style: "currency", currency: (cur || "USD").toUpperCase(), maximumFractionDigits: 2 }); } catch { return num(n, 2) + " " + (cur || "USD").toUpperCase(); } };
 const firstOf = (o, keys, dflt = "") => { for (const k of keys) if (o && o[k] != null && o[k] !== "") return o[k]; return dflt; };
 const zeit = (ts) => { try { return new Date(ts).toLocaleString("de-DE", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }); } catch { return ""; } };
 function zeitKurz(t) {
@@ -299,9 +300,50 @@ async function renderFreigaben() {
 }
 
 /* =========================== Investment (FULL) =========================== */
+/* --- Depot-Ansichten: Paper (Alpaca-Sim) + echtes Depot (manuell). Beide read-only. --- */
+const KLASSE_LABEL = { aktie: "Aktien", etf: "ETF", krypto: "Krypto" };
+function gruppenChips(gruppen, cur) {
+  const eintr = Object.entries(gruppen || {});
+  if (!eintr.length) return "";
+  return `<div class="v2-chips" style="margin:6px 0 10px">` + eintr.map(([k, g]) => {
+    const up = (g.gv_abs || 0) >= 0;
+    return `<span class="v2-chip"><b>${esc(KLASSE_LABEL[k] || k)}</b> ${geld(g.wert, cur)} <small style="color:${up ? "var(--v2-green)" : "var(--v2-red)"}">${up ? "+" : ""}${geld(g.gv_abs, cur)}</small></span>`;
+  }).join("") + `</div>`;
+}
+function depotTable(positionen, cur, removable) {
+  const rows = (positionen || []).map(p => {
+    const gv = p.gv_abs, col = gv == null ? "var(--v2-muted)" : (gv >= 0 ? "var(--v2-green)" : "var(--v2-red)");
+    const wert = p.wert == null ? "<i title='Kurs nicht abrufbar'>Kurs fehlt</i>" : geld(p.wert, cur);
+    const gvTxt = gv == null ? "–" : `${gv >= 0 ? "+" : ""}${geld(gv, cur)} <small>(${p.gv_pct >= 0 ? "+" : ""}${num(p.gv_pct, 1)}%)</small>`;
+    const x = removable ? `<td><button class="chip-x" data-act="depot-remove" data-id="${esc(p.id)}" title="Entfernen">✕</button></td>` : "";
+    return `<tr><td><span class="v2-chip">${esc(KLASSE_LABEL[p.klasse] || p.klasse)}</span></td><td><b>${esc(p.symbol)}</b></td><td>${num(p.stueck, 4)}</td><td>${geld(p.einstand_preis, cur)}</td><td>${wert}</td><td style="color:${col}">${gvTxt}</td>${x}</tr>`;
+  }).join("") || `<tr><td colspan="${removable ? 7 : 6}" class="v2-empty">Keine Positionen.</td></tr>`;
+  return `<table class="v2-table"><thead><tr><th>Klasse</th><th>Symbol</th><th>Stück</th><th>Einstand</th><th>Wert</th><th>G/V</th>${removable ? "<th></th>" : ""}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+function depotPaperTile(pf) {
+  if (!pf || !pf.verfuegbar)
+    return tile("💼 Paper-Depot (Alpaca-Sim)", emptyRow((pf && pf.grund) || "Paper-Konto nicht verbunden."), "w6");
+  const k = pf.konto || {}, cur = k.waehrung || "USD", up = (k.tag_abs || 0) >= 0;
+  const head = `<div class="v2-kpi">${geld(k.gesamtwert, cur)} <span class="delta ${up ? "up" : "down"}">${up ? "↗" : "↘"} ${geld(k.tag_abs, cur)} (${num(k.tag_pct, 2)}%)</span></div><div class="v2-sub">Cash ${geld(k.cash, cur)} · Kaufkraft ${geld(k.kaufkraft, cur)} · Positionen ${geld(k.positionswert, cur)}</div>`;
+  return tile("💼 Paper-Depot (Alpaca-Sim)", head + gruppenChips(pf.gruppen, cur) + depotTable(pf.positionen, cur, false), "w6");
+}
+function depotEchtTile(dp) {
+  const s = (dp && dp.summe) || {}, cur = s.waehrung || "USD", up = (s.gv_abs || 0) >= 0;
+  const head = `<div class="v2-kpi">${geld(s.gesamtwert, cur)} <span class="delta ${up ? "up" : "down"}">${up ? "↗" : "↘"} ${geld(s.gv_abs, cur)} (${num(s.gv_pct, 2)}%)</span></div><div class="v2-sub">Einstand ${geld(s.einstand, cur)}${s.unbewertet ? " · " + s.unbewertet + " ohne Kurs" : ""} · Bewertung in ${esc(cur)}</div>`;
+  const form = `<div class="v2-depot-form" style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0">
+      <select id="dep-klasse" class="v2-inp"><option value="aktie">Aktie</option><option value="etf">ETF</option><option value="krypto">Krypto</option></select>
+      <input id="dep-sym" class="v2-inp" placeholder="Symbol (AAPL)" style="width:110px">
+      <input id="dep-id" class="v2-inp" placeholder="Kurs-Id (Krypto: bitcoin)" style="width:150px">
+      <input id="dep-stueck" class="v2-inp" type="number" step="any" placeholder="Stück" style="width:90px">
+      <input id="dep-preis" class="v2-inp" type="number" step="any" placeholder="Einstand/Stück" style="width:130px">
+      <button class="v2-btn" data-act="depot-add">+ Hinzufügen</button>
+    </div>`;
+  return tile("🏦 Echtes Depot (manuell)", head + form + depotTable((dp && dp.positionen) || [], cur, true), "w6");
+}
 RENDER.investment = renderInvestment;
 async function renderInvestment() {
-  [INVEST, LOOP] = await Promise.all([jget("/api/investment"), jget("/api/investment/loop")]);
+  let PF = null, DP = null;
+  [INVEST, LOOP, PF, DP] = await Promise.all([jget("/api/investment"), jget("/api/investment/loop"), jget("/api/investment/portfolio"), jget("/api/investment/depot")]);
   INVEST = INVEST || {}; LOOP = LOOP || {}; _VERLAUF = LOOP.verlauf || [];
   const i = INVEST, g = (LOOP.kennzahlen && LOOP.kennzahlen.gesamt) || {}, mk = LOOP.insider_kontrolle;
   const sc = i.scorecard || {}, h = i.historie || {}, jt = h.je_tabelle || {};
@@ -332,6 +374,8 @@ async function renderInvestment() {
       ${kpiTile("Track-Record", scText.split(" ")[0] || "–", null, scText)}
       ${kpiTile("Richtungsquote", g.n ? pct(g.richtungsquote) : "–", g.n ? { up: (g.anteil_besser_baseline || 0) >= .5, text: pct(g.anteil_besser_baseline) } : null, `n=${g.n || 0} · MAE ${num(g.mae_pct)} vs ${num(g.baseline_mae_pct)}`, sparkFromVerlauf(LOOP.verlauf))}
       ${kpiTile("Watchlist", String((i.watchlist || []).length), null, "beobachtete Werte")}
+      ${depotPaperTile(PF)}
+      ${depotEchtTile(DP)}
       ${tile("Watchlist verwalten", `<div style="margin-bottom:10px" class="v2-inv-search"><input id="inv-sym" placeholder="Aktie/Krypto suchen & hinzufügen…" autocomplete="off"><div id="inv-suggest" class="v2-suggest"></div></div><div class="v2-chips">${wl}</div>`, "w6")}
       ${tile("Provider", `<div class="v2-chips">${prov || "–"}</div><div class="v2-sub" style="margin-top:10px">Historie: ${esc(histText)}</div>`, "w6")}
       ${tile("Lern-Loop · Fehler-Verlauf", `<div class="v2-sub">${(LOOP.panel || {}).symbole || 0} Werte · ${(LOOP.panel || {}).snapshots || 0} Snapshots · Modell ${esc(LOOP.modell_version || "")}</div>${chartMount()}`, "w8")}
@@ -661,6 +705,17 @@ async function handleAct(act, el) {
     case "inv-add": await jpost("/api/investment/watchlist", { symbol: id, asset: asset || "aktie" }); return renderInvestment();
     case "inv-remove": await jpost("/api/investment/watchlist/remove", { symbol: id }); return renderInvestment();
     case "inv-detail": return invDetail(id, asset);
+    case "depot-add": {
+      const sym = (($("#dep-sym") || {}).value || "").trim();
+      if (!sym) { flash("Symbol fehlt."); return; }
+      const kl = ($("#dep-klasse") || {}).value || "aktie";
+      const r = await jpost("/api/investment/depot/add", { symbol: sym, klasse: kl,
+        stueck: ($("#dep-stueck") || {}).value || 0, einstand_preis: ($("#dep-preis") || {}).value || 0,
+        kurs_id: (($("#dep-id") || {}).value || "").trim() });
+      flash(r && r.ok ? `„${sym.toUpperCase()}" ergänzt.` : "Fehler beim Hinzufügen.");
+      return renderInvestment();
+    }
+    case "depot-remove": await jpost("/api/investment/depot/remove", { id }); return renderInvestment();
     case "cutter-job": { const p = ($("#cut-projekt") || {}).value || "", n = ($("#cut-note") || {}).value || "", msg = $("#cut-msg"); if (!p.trim()) { if (msg) { msg.textContent = "Ordnername ist Pflicht."; msg.className = "v2-msg err"; } return; } const r = await jpost("/api/cutter/job", { projekt: p.trim(), note: n.trim() }); if (msg) { msg.textContent = r && r.ok ? `Job „${p}" in Warteschlange.` : "Fehler: " + ((r && (r.hinweis || r.fehler)) || "unbekannt"); msg.className = "v2-msg " + (r && r.ok ? "ok" : "err"); } if (r && r.ok) renderCutter(); return; }
     case "brain-suchen": { const q = ($("#brain-q") || {}).value || ""; const d = await jget("/api/brain?q=" + encodeURIComponent(q)) || {}; const box = $("#brain-results"); if (box) box.innerHTML = (d.items || []).map(e => `<div class="v2-card"><div class="v2-card-h"><b>${esc(e.titel || (e.text || "").slice(0, 50))}</b></div><div class="v2-desc">${esc(e.text)}</div></div>`).join("") || emptyRow("Keine Treffer."); return; }
     case "brain-merken": { const inp = $("#brain-note"); const v = (inp && inp.value || "").trim(); if (!v) return; await jpost("/api/brain", { text: v }); if (inp) inp.value = ""; return renderWissen(); }

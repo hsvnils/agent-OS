@@ -17,6 +17,25 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 12:55] — Claude Code
+- **Was:** Depot-/Portfolio-Ansicht gebaut (CEO sah bisher seine Bestaende nicht). Zwei getrennte Ansichten
+  in der LUNA-OS-Investment-App: (1) **Paper-Depot (Alpaca-Sim)** — Gesamtwert/Cash/Kaufkraft + Positionen
+  nach Aktien/ETF/Krypto gruppiert mit Einstand, Wert und G/V (live aus dem Paper-Konto, read-only); (2)
+  **Echtes Depot (manuell)** — CEO traegt reale Positionen ein (Symbol/Klasse/Stueck/Einstand, bei Krypto
+  CoinGecko-Id), live bewertet ueber die vorhandenen Marktdaten (Finnhub/CoinGecko), Positionen ohne Kurs
+  als „unbewertet". Neu: `investment/portfolio.py` (paper_portfolio/real_portfolio), `real_depot`-Tabelle im
+  InvestmentStore (real_add/real_remove/real_holdings, event-sourced), Endpunkte
+  `/api/investment/portfolio` (GET) + `/api/investment/depot` (GET/add/remove), Depot-Kacheln + Formular in
+  app-v2.js, `.v2-inp`-Styles. Tests `test_investment_portfolio.py` (7, gruen). Backend end-to-end gegen das
+  echte Alpaca-Paper-Konto verifiziert; Frontend im Browser-Preview verifiziert (Add/Bewertung/Remove).
+- **Warum:** CEO-Auftrag „aktuell kann ich gar nicht sehen, was in meinem Portfolio ist / zu welchem Wert".
+  Fork „beides getrennt" (Paper jetzt + echtes Depot manuell). Read-only/manuell -> kein CEO-Tor; echte
+  Broker-/Exchange-Anbindung bleibt spaeterer Schritt (= CEO-Tor, Credentials).
+- **Betroffen:** orchestrator/investment/portfolio.py (neu), orchestrator/investment/store.py,
+  orchestrator/channels/web/app.py, orchestrator/channels/web/static/app-v2.js,
+  orchestrator/channels/web/static/style-v2.css, orchestrator/channels/web/static/index-v2.html (Cache v19/css v9),
+  orchestrator/tests/test_investment_portfolio.py (neu)
+
 ## [2026-07-09 12:30] — Claude Code
 - **Was:** Re-Check „Graphify" auf CEO-Nachfrage. Register-first geklaert: CEO meint dasselbe
   `safishamsi/graphify` (bereits am 2026-07-04 bewertet). Ergebnis: Bewertung gilt unveraendert, kein neuer

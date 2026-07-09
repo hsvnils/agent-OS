@@ -16,7 +16,7 @@ from pathlib import Path
 from ..governance.leak_guard import redact
 
 TABELLEN = ("watchlist", "screening", "forecasts", "actuals", "scorecard", "suggestions", "mode",
-            "positions", "insider_signals")
+            "positions", "insider_signals", "real_depot")
 MODI = ("advisory", "paper", "live")
 
 
@@ -82,6 +82,30 @@ class InvestmentStore:
                 stand.pop(sym, None)
             else:
                 stand[sym] = {"symbol": sym, "asset": e.get("asset", "aktie")}
+        return list(stand.values())
+
+    # -- real_depot (manuell gepflegte ECHTE Bestaende des CEO; getrennt vom Paper-Konto) --
+    def real_add(self, symbol: str, *, klasse: str = "aktie", stueck: float = 0.0,
+                 einstand_preis: float = 0.0, kurs_id: str = "", waehrung: str = "USD") -> str:
+        """Fuegt eine reale Position hinzu. kurs_id = CoinGecko-Id bei Krypto, sonst Ticker (leer = Symbol)."""
+        return self.add("real_depot", {"symbol": symbol.upper(), "klasse": klasse, "stueck": stueck,
+                                        "einstand_preis": einstand_preis, "waehrung": waehrung.upper(),
+                                        "kurs_id": (kurs_id or symbol).strip(), "aktion": "add"})
+
+    def real_remove(self, eintrag_id: str) -> str:
+        return self.add("real_depot", {"ref": eintrag_id, "aktion": "remove"})
+
+    def real_holdings(self) -> list[dict]:
+        """Gefalteter Stand der realen Bestaende: hinzugefuegte, nicht wieder entfernte Positionen."""
+        stand: dict[str, dict] = {}
+        for e in self.list("real_depot"):
+            if e.get("aktion") == "remove":
+                stand.pop(e.get("ref"), None)
+            else:
+                stand[e.get("id")] = {"id": e.get("id"), "symbol": e.get("symbol"),
+                                      "klasse": e.get("klasse", "aktie"), "stueck": e.get("stueck", 0.0),
+                                      "einstand_preis": e.get("einstand_preis", 0.0),
+                                      "waehrung": e.get("waehrung", "USD"), "kurs_id": e.get("kurs_id", "")}
         return list(stand.values())
 
     # -- forecasts/actuals/scorecard --

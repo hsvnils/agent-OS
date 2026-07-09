@@ -816,6 +816,13 @@ def _investment_engine():
     return InvestmentEngine(md, inv_store, brain=brain.merken)
 
 
+def _paper_broker():
+    """Alpaca-Paper-Broker aus den .env-Keys (Capability). Read-only genutzt; inert ohne Keys."""
+    from ...investment.broker import AlpacaPaperBroker
+    s = _secrets_dict()
+    return AlpacaPaperBroker(s.get("ALPACA_API_KEY", ""), s.get("ALPACA_API_SECRET", ""))
+
+
 def _letzte_shortlist():
     scr = inv_store.list("screening")
     return scr[-1].get("shortlist", []) if scr else []
@@ -1332,6 +1339,51 @@ async def investment_watchlist_remove(request: Request):
     inv_store.watchlist_remove(sym)
     _changelog("CIO", f"Watchlist entfernt: {sym.upper()}", "CEO ueber LUNA-OS", "investment")
     return JSONResponse({"ok": True, "investment": investment()})
+
+
+# -- Depot-Ansichten: Paper (Alpaca-Sim) + echtes Depot (manuell). Beide read-only, keine Order. --
+@app.get("/api/investment/portfolio")
+async def investment_portfolio():
+    """Paper-Depot: Gesamtwert + Positionen (Aktien/ETF/Krypto) aus dem Alpaca-Paper-Konto."""
+    from ...investment.portfolio import paper_portfolio
+    return JSONResponse(await asyncio.to_thread(paper_portfolio, _paper_broker()))
+
+
+@app.get("/api/investment/depot")
+async def investment_depot():
+    """Echtes Depot: manuell gepflegte reale Bestaende, live bewertet ueber Marktdaten."""
+    from ...investment.portfolio import real_portfolio
+    market = _investment_engine().market
+    holdings = inv_store.real_holdings()
+    return JSONResponse(await asyncio.to_thread(real_portfolio, holdings, market))
+
+
+@app.post("/api/investment/depot/add")
+async def investment_depot_add(request: Request):
+    body = await _json(request)
+    sym = (body.get("symbol") or "").strip()
+    if not sym:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "kein Symbol")
+    klasse = (body.get("klasse") or "aktie").strip().lower()
+    if klasse not in ("aktie", "etf", "krypto"):
+        klasse = "aktie"
+    rid = inv_store.real_add(sym, klasse=klasse, stueck=_inum(body.get("stueck")),
+                             einstand_preis=_inum(body.get("einstand_preis")),
+                             kurs_id=(body.get("kurs_id") or "").strip(),
+                             waehrung=(body.get("waehrung") or "USD").strip())
+    _changelog("CIO", f"Echtes Depot: Position ergaenzt {sym.upper()} ({klasse})", "CEO ueber LUNA-OS", "investment")
+    return JSONResponse({"ok": True, "id": rid})
+
+
+@app.post("/api/investment/depot/remove")
+async def investment_depot_remove(request: Request):
+    body = await _json(request)
+    eid = (body.get("id") or "").strip()
+    if not eid:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "keine id")
+    inv_store.real_remove(eid)
+    _changelog("CIO", f"Echtes Depot: Position entfernt {eid}", "CEO ueber LUNA-OS", "investment")
+    return JSONResponse({"ok": True})
 
 
 @app.get("/api/lagebild")
