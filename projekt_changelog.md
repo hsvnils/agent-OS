@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-10 14:30] — Head of Agents
+- **Was:** CDO-Charta ergaenzt (nach Diff-Vorlage + CEO-Bestaetigung, AGENTS.md 3.3): (1) Verantwortlichkeit
+  „Leistungsbericht des Systems (woechentlich)" (Ampel-Bericht aus den Ereignis-Protokollen,
+  `core/performance_agent.py`, regelbasiert, Grundlage statt Beschluss); (2) Aufgabenkatalog-Punkt
+  „Woechentlichen Leistungsbericht sichten (montags), Auffaelligkeiten an den HoA melden".
+- **Warum:** Zuordnung des neuen Leistungs-Agenten zum CDO-Mandat; CEO bestaetigte den vorgelegten Diff
+  („Klingt gut", 2026-07-10).
+- **Betroffen:** agents/11_cdo.md
+
 ## [2026-07-10 14:15] — Claude Code
 - **Was:** **Leistungs-Agent (MVP) gebaut** — `core/performance_agent.py`, regelbasiert/kostenlos (kein LLM),
   beurteilt woechentlich die Leistungsfaehigkeit des Systems aus vorhandenen Event-Stores: **Ergebnis-Qualitaet**
