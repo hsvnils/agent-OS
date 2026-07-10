@@ -361,6 +361,19 @@ def cutter_queue():
     return {"jobs": [j for j in cutter_store.list(limit=100) if j.get("status") == "queued"]}
 
 
+@app.get("/api/performance")
+def performance():
+    """Woechentlicher Leistungsbericht (CDO, regelbasiert, kein LLM): Freigabequoten, Pipeline-Erfolg,
+    Durchsatz, Kosten -- aktuelle Woche vs. Vorwoche, mit Ampeln. Liest nur vorhandene Event-Stores."""
+    from ...core.aktivitaet import Aktivitaet
+    from ...core.kosten import KostenStore
+    from ...core.performance_agent import PerformanceAgent
+    agent = PerformanceAgent(reels=reel_store, antraege=antraege, cutter=cutter_store,
+                             aktivitaet=Aktivitaet(ROOT / "aktivitaet" / "log.jsonl"),
+                             kosten=KostenStore(ROOT / "finance" / "kosten-log.jsonl"))
+    return JSONResponse(agent.bericht())
+
+
 @app.post("/api/cutter/report")
 async def cutter_report(request: Request):
     """Der Mac-Cutter meldet Job-Status. Mit job_id -> vorhandene Zeile (aus /queue) aktualisieren;

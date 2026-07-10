@@ -17,6 +17,27 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-10 14:15] — Claude Code
+- **Was:** **Leistungs-Agent (MVP) gebaut** — `core/performance_agent.py`, regelbasiert/kostenlos (kein LLM),
+  beurteilt woechentlich die Leistungsfaehigkeit des Systems aus vorhandenen Event-Stores: **Ergebnis-Qualitaet**
+  (CEO-Freigabequoten bei Reels + Antraegen — sinkende Quote = System produziert am CEO vorbei),
+  **Zuverlaessigkeit** (Pipeline-Erfolg Reels/Cutter), **Durchsatz** (Aktivitaets-Log, Top-Akteure),
+  **Kosten** (EUR/Woche aus KostenStore) — je aktuelle Woche vs. Vorwoche, mit transparenten **Ampeln**
+  (Freigabequote >=70/40 %, Pipeline >=90/70 %, Fehler 0/<=2) und Gesamt-Ampel (= schlechteste belegte;
+  ohne Daten bewusst KEIN gruen). (1) **Telegram:** Wochenbericht montags ~09:00 im Briefing-Loop
+  (Agenda-Dedup `performance`; abschaltbar PERFORMANCE_REPORT_ENABLED=0; Cutter-Daten aus dem lokalen
+  Job-Cache, kein Supabase-Zugriff im Bot). (2) **Web:** `GET /api/performance` + neuer System-Tab
+  **„Leistung"** (Default-Tab) mit Ampeln/Trends + erklaerter Schwellen-Legende. Tests 7 gruen (Fenster,
+  Quoten, Ampeln, leere Stores, Text); Endpoint-Smoke + Browser verifiziert. Cache v29.
+  **Offen: CDO-Charta-Diff** (Zuordnung Leistungsbericht zum CDO-Mandat) liegt dem CEO zur Bestaetigung vor —
+  Charta wird erst nach ausdruecklicher Freigabe geaendert (AGENTS.md 3.3).
+- **Warum:** CEO-Frage „Agent, der die Leistungsfaehigkeit des Systems beurteilt?" — Bestand geprueft
+  (systemcheck=laeuft-es, CFO=Kosten, Lern-Loop=nur Investment; niemand bewertete quer). Scope „MVP
+  Wochenbericht" vom CEO gewaehlt.
+- **Betroffen:** orchestrator/core/performance_agent.py (neu), orchestrator/tests/test_performance_agent.py
+  (neu), orchestrator/channels/telegram/bot.py, orchestrator/channels/web/app.py,
+  orchestrator/channels/web/static/app-v2.js, orchestrator/channels/web/static/index-v2.html
+
 ## [2026-07-10 13:30] — Claude Code
 - **Was:** Clip-Brain Stufe 1 **beschleunigt + Bugfix**, ausgeloest vom zweiten NAS-Lauf (100 Clips, 0 Fehler,
   aber **~16-18 s je Clip** -> Restarchiv waere ~5 h gewesen). (1) **Ein Dekode statt zwei**: alle

@@ -470,6 +470,20 @@ def _start_content_feed_loop(ctx, secrets) -> None:
     threading.Thread(target=loop, daemon=True, name="content-feed-loop").start()
 
 
+def _leistungsbericht(ctx) -> str:
+    """Woechentlicher Leistungsbericht (CDO, regelbasiert). Reels/Cutter-Daten kommen aus den geteilten
+    Dateien (Reel-Log bzw. lokaler Cutter-Job-Cache, den die Web-App pflegt) -- kein Supabase-Zugriff."""
+    from ...core.content_store import CUTTER_FELDER, ContentStore
+    from ...core.performance_agent import PerformanceAgent
+    from ...core.reel_store import ReelStore
+    agent = PerformanceAgent(
+        reels=ReelStore(ROOT / "reel_freigabe" / "log.jsonl"),
+        antraege=ctx.antraege,
+        cutter=ContentStore(None, "luna_cutter_jobs", CUTTER_FELDER, ROOT / "cutter_ops" / "jobs_cache.jsonl"),
+        aktivitaet=ctx.aktivitaet, kosten=ctx.kosten)
+    return agent.als_text()
+
+
 def _start_briefing_loop(ctx, notify) -> None:
     """Morgen-Briefing 08:00 + Abend-Briefing 20:00 (Europe/Berlin). Token-frugal (regelbasiert)."""
     import threading
@@ -520,6 +534,20 @@ def _start_briefing_loop(ctx, notify) -> None:
                     notify(text, abteilung="LUNA-Briefing", kategorie="briefing", quelle="briefing",
                            dedup_stunden=0)
                     ctx.agenda.markiere_briefing(art, datum)
+                # Woechentlicher Leistungsbericht (CDO): Montag ~09:00, regelbasiert/kostenlos.
+                # Abschaltbar mit PERFORMANCE_REPORT_ENABLED=0 (Default: an).
+                if (jetzt.weekday() == 0 and jetzt.hour == 9
+                        and (ctx.secret_dict or {}).get("PERFORMANCE_REPORT_ENABLED", "1").strip().lower()
+                        not in ("0", "false", "no", "off")
+                        and not ctx.agenda.briefing_gesendet("performance", datum)):
+                    try:
+                        text = _leistungsbericht(ctx)
+                        if text:
+                            notify(text, abteilung="CDO", kategorie="performance", quelle="performance",
+                                   dedup_stunden=0)
+                    except Exception as exc:
+                        print(f"[briefing] Leistungsbericht-Fehler: {exc}", flush=True)
+                    ctx.agenda.markiere_briefing("performance", datum)
             except Exception as exc:
                 print(f"[briefing] Fehler: {exc}", flush=True)
             time.sleep(300)  # alle 5 min pruefen

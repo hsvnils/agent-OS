@@ -701,15 +701,40 @@ async function renderAgents() {
 
 /* =========================== System (Sub-Tabs) =========================== */
 RENDER.system = renderSystem;
+const AMPEL_FARBE = { gruen: "var(--v2-green)", gelb: "var(--v2-amber)", rot: "var(--v2-red)" };
+const ampelDot = (a) => `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${AMPEL_FARBE[a] || "var(--v2-line)"};margin-right:8px"></span>`;
+function leistungHtml(p) {
+  if (!p) return emptyRow("Leistungsbericht nicht verfügbar.");
+  const w = p.woche || {}, v = p.vorwoche || {};
+  const pct = (q) => q == null ? "keine Entscheidungen" : Math.round(q * 100) + " %";
+  const delta = (a, b, einheit = "") => (a == null || b == null) ? "" : ` · Vorwoche ${b}${einheit} ${a > b ? "↗" : a < b ? "↘" : "→"}`;
+  const zeile = (ampel, titel, text) => `<div class="v2-list-row">${ampelDot(ampel)}<div class="grow"><b>${esc(titel)}</b><small>${text}</small></div></div>`;
+  const ampelLbl = { gruen: "Grün", gelb: "Gelb", rot: "Rot" };
+  let h = `<div class="v2-kpi" style="margin-bottom:6px">${ampelDot(p.gesamt)} Gesamt: ${esc(ampelLbl[p.gesamt] || "keine Daten")} <span class="v2-sub" style="font-size:13px">(letzte ${p.fenster_tage} Tage vs. Vorwoche)</span></div>`;
+  if (w.reels) h += zeile(p.ampeln.reel_qualitaet, "Reels — Qualität (deine Freigaben)",
+    `${w.reels.erstellt} erstellt${delta(w.reels.erstellt, (v.reels || {}).erstellt)} · Freigabequote ${pct(w.reels.freigabequote)} (${w.reels.freigegeben} frei / ${w.reels.abgelehnt} abgelehnt) · ${w.reels.gepostet} gepostet · ${w.reels.fehler} Fehler`);
+  if (w.antraege) h += zeile(p.ampeln.antrag_qualitaet, "Anträge — Qualität",
+    `${w.antraege.eingereicht} neu${delta(w.antraege.eingereicht, (v.antraege || {}).eingereicht)} · Freigabequote ${pct(w.antraege.freigabequote)} · ${w.antraege.erledigt} erledigt`);
+  if (w.cutter) h += zeile(p.ampeln.pipeline, "Cutter-Pipeline — Zuverlässigkeit",
+    `${w.cutter.jobs} Jobs · Erfolg ${w.cutter.erfolgsquote == null ? "keine Jobs" : Math.round(w.cutter.erfolgsquote * 100) + " %"} (${w.cutter.done} ok / ${w.cutter.failed} Fehler)`);
+  if (w.aktivitaet) h += zeile(null, "Durchsatz",
+    `${w.aktivitaet.aktionen} Aktionen${delta(w.aktivitaet.aktionen, (v.aktivitaet || {}).aktionen)} · aktiv: ${Object.entries(w.aktivitaet.top_akteure || {}).slice(0, 3).map(([k, n]) => `${esc(k)} (${n})`).join(", ") || "—"}`);
+  if (w.kosten) h += zeile(null, "Kosten (Token/API)",
+    `${(w.kosten.eur).toFixed(2)} € · ${w.kosten.aufrufe} Aufrufe${delta(w.kosten.eur, (v.kosten || {}).eur, " €")}`);
+  h += zeile(p.ampeln.fehler, "Fehler gesamt", String(p.fehler_gesamt));
+  h += `<div class="v2-sub" style="margin-top:10px">Ampeln: Freigabequote ≥70 % grün / ≥40 % gelb · Pipeline-Erfolg ≥90 % grün / ≥70 % gelb · Fehler 0 grün / ≤2 gelb. Regelbasiert aus den Ereignis-Protokollen — kein LLM, keine Kosten. Wochenbericht kommt montags 9:00 per Telegram.</div>`;
+  return h;
+}
 async function renderSystem() {
-  const sub = SUBTAB.system || "research";
+  const sub = SUBTAB.system || "leistung";
   STATE = await jget("/api/state") || STATE;
   let body;
+  if (sub === "leistung") body = leistungHtml(await jget("/api/performance"));
   if (sub === "research") body = (STATE.research || []).map(r => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(firstOf(r, ["status", "abteilung"], ""))}</span><div class="grow"><b>${esc(firstOf(r, ["frage", "titel"], ""))}</b>${r.id ? `<small>${esc(r.id)}</small>` : ""}</div></div>`).join("") || emptyRow("Keine Research-Tickets.");
   if (sub === "meldungen") body = (STATE.meldungen || []).map(m => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(m.abteilung || "")}</span><div class="grow"><b>${esc(m.text)}</b><small>${esc(zeitKurz(m.ts))}</small></div></div>`).join("") || emptyRow("Keine Meldungen.");
   if (sub === "aktivitaet") body = (STATE.aktivitaet || []).map(a => `<div class="v2-list-row"><span class="v2-badge live">Live</span><div class="grow"><b>${esc(a.akteur || "")}</b> ${esc(a.aktion || "")}<small>${esc(zeitKurz(a.ts))}</small></div></div>`).join("") || emptyRow("Keine Aktivität.");
   if (sub === "finanzen") { const f = STATE.finance || {}; body = `<div class="v2-kv"><span>Monatsbudget</span><b>${esc(f.monatsbudget || "unbekannt")}</b></div><div class="v2-kv"><span>Offene Aufträge</span><b>${(STATE.antraege || []).length}</b></div><div class="v2-kv"><span>Offene Research-Tickets</span><b>${(STATE.research || []).length}</b></div>`; }
-  $("#v2-app").innerHTML = secHead("System") + tabs("system", [["research", "Research"], ["meldungen", "Meldungen"], ["aktivitaet", "Aktivität"], ["finanzen", "Finanzen"]]) + `<div class="v2-tile w12">${body}</div>`;
+  $("#v2-app").innerHTML = secHead("System") + tabs("system", [["leistung", "Leistung"], ["research", "Research"], ["meldungen", "Meldungen"], ["aktivitaet", "Aktivität"], ["finanzen", "Finanzen"]]) + `<div class="v2-tile w12">${body}</div>`;
 }
 
 /* =========================== Team =========================== */
