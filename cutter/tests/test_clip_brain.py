@@ -50,7 +50,7 @@ class TestFormatUndScore(unittest.TestCase):
     def test_score_guter_clip(self):
         q = cb.qualitaets_score({"breite": 1080, "hoehe": 1920, "dauer": 10, "hat_audio": True,
                                  "lufs": -16.0, "stille_sek": 0.0, "schwarz_sek": 0.0,
-                                 "schaerfe_yavg": 9.0})
+                                 "schaerfe_yavg": 30.0})
         self.assertGreaterEqual(q["gesamt"], 90)
         self.assertEqual(q["teil"]["aufloesung"], 1.0)
 
@@ -63,6 +63,35 @@ class TestFormatUndScore(unittest.TestCase):
     def test_score_grenzen_und_neutral(self):
         q = cb.qualitaets_score({"dauer": 5})            # alles unbekannt -> weder 0 noch 100
         self.assertTrue(0 < q["gesamt"] < 100)
+
+    def test_schaerfe_relativ_zum_median(self):
+        """Kantenenergie hat keinen Absolut-Massstab -> relativ zum Archiv-Median."""
+        self.assertEqual(cb._score_schaerfe(5.0, 20.0), 0.2)      # 0.25x Median -> matschig
+        self.assertEqual(cb._score_schaerfe(40.0, 20.0), 1.0)     # 2x Median -> knackig
+        mitte = cb._score_schaerfe(20.0, 20.0)                    # Median selbst -> Mittelfeld
+        self.assertTrue(0.4 < mitte < 0.7)
+        # Ohne Median greift die (an echtem Material geeichte) Absolut-Skala
+        self.assertEqual(cb._score_schaerfe(30.0), 1.0)
+        self.assertEqual(cb._score_schaerfe(2.0), 0.2)
+
+    def test_bewerte_index_spreizt(self):
+        """Archivweite Neubewertung: gleiche Technik, nur Schaerfe unterschiedlich -> Noten spreizen."""
+        basis = {"breite": 1920, "hoehe": 1080, "dauer": 10, "hat_audio": True, "lufs": -14.0,
+                 "stille_sek": 0.0, "schwarz_sek": 0.0}
+        index = {"clips": {str(i): {**basis, "schaerfe_yavg": y}
+                           for i, y in enumerate([5, 10, 15, 20, 25, 40])}}
+        cb.bewerte_index(index)
+        self.assertEqual(index["median_schaerfe"], 17.5)
+        noten = [k["qualitaet"] for k in index["clips"].values()]
+        self.assertLess(noten[0], noten[-1])                      # unscharf < scharf
+        self.assertGreater(max(noten) - min(noten), 10)           # echte Spreizung
+
+    def test_bewerte_index_kleines_archiv(self):
+        """Unter 5 Messwerten kein Median -> Absolut-Skala, kein Absturz."""
+        index = {"clips": {"a": {"breite": 1920, "hoehe": 1080, "dauer": 5, "schaerfe_yavg": 30.0}}}
+        cb.bewerte_index(index)
+        self.assertIsNone(index["median_schaerfe"])
+        self.assertGreater(index["clips"]["a"]["qualitaet"], 0)
 
 
 class TestArchivIndex(unittest.TestCase):

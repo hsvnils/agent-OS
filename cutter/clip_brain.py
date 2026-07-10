@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import statistics
 import subprocess
 import sys
 import time
@@ -84,15 +85,28 @@ def _score_aufloesung(breite: int, hoehe: int) -> float:
     return 0.15
 
 
-def _score_schaerfe(yavg: float | None) -> float:
-    """Kantenenergie -> 0..1. Heuristisch (unter ~2 matschig, ab ~8 knackig). None -> neutral."""
+def _score_schaerfe(yavg: float | None, median: float | None = None) -> float:
+    """Kantenenergie -> 0..1.
+
+    Kantenenergie hat KEINEN universellen Massstab (haengt von Motiv/Kontrast ab). Darum bewerten wir
+    **relativ zum Archiv-Median**, sobald der bekannt ist: halb so scharf wie der Median -> 0.2,
+    Median -> ~0.56, ab 1.6x Median -> 1.0. Ohne Median (kleines Archiv) greift eine grosszuegige
+    Absolut-Skala, die an echtem Material geeicht ist (real gemessen: ~9-38, synthetisch: ~0-6).
+    """
     if yavg is None:
         return 0.5
-    if yavg <= 2.0:
+    if median and median > 0:
+        v = yavg / median
+        if v <= 0.5:
+            return 0.2
+        if v >= 1.6:
+            return 1.0
+        return round(0.2 + 0.8 * (v - 0.5) / 1.1, 3)
+    if yavg <= 4.0:
         return 0.2
-    if yavg >= 8.0:
+    if yavg >= 25.0:
         return 1.0
-    return round(0.2 + 0.8 * (yavg - 2.0) / 6.0, 3)
+    return round(0.2 + 0.8 * (yavg - 4.0) / 21.0, 3)
 
 
 def _score_ton(hat_audio: bool, lufs: float | None) -> float:
@@ -108,14 +122,18 @@ def _score_ton(hat_audio: bool, lufs: float | None) -> float:
     return round(0.2 + 0.8 * (lufs + 35) / 17.0, 3)
 
 
-def qualitaets_score(k: dict) -> dict:
-    """Transparente Gesamtnote 0..100 aus Teil-Scores. Gibt {gesamt, teil:{...}} zurueck."""
+def qualitaets_score(k: dict, *, median_schaerfe: float | None = None) -> dict:
+    """Transparente Gesamtnote 0..100 aus Teil-Scores. Gibt {gesamt, teil:{...}} zurueck.
+
+    Objektive Maengel (Aufloesung, Stille, Schwarzbild, Ton) werden **absolut** bewertet -> schlechte Clips
+    bleiben schlecht. Nur die **Schaerfe** wird relativ zum Archiv bewertet (siehe `_score_schaerfe`).
+    """
     dauer = max(0.1, float(k.get("dauer") or 0.1))
     stille = min(1.0, float(k.get("stille_sek") or 0.0) / dauer)
     schwarz = min(1.0, float(k.get("schwarz_sek") or 0.0) / dauer)
     teil = {
         "aufloesung": _score_aufloesung(k.get("breite") or 0, k.get("hoehe") or 0),
-        "schaerfe": _score_schaerfe(k.get("schaerfe_yavg")),
+        "schaerfe": _score_schaerfe(k.get("schaerfe_yavg"), median_schaerfe),
         "ton": _score_ton(bool(k.get("hat_audio")), k.get("lufs")),
         "stille": round(1.0 - stille, 3),
         "schwarz": round(1.0 - schwarz, 3),
@@ -206,7 +224,21 @@ def _messe_schaerfe(pfad: Path) -> float | None:
     return _parse_yavg(txt)
 
 
-def analysiere_clip(pfad: Path, *, mit_szenen: bool = True) -> dict | None:
+def bewerte_index(index: dict) -> int:
+    """Rechnet die Qualitaets-Noten ALLER Clips neu -- relativ zum Archiv-Median der Schaerfe.
+    Rein rechnerisch (kein ffmpeg), daher billig. Gibt die Anzahl bewerteter Clips zurueck."""
+    karten = index.get("clips") or {}
+    werte = [k["schaerfe_yavg"] for k in karten.values() if k.get("schaerfe_yavg")]
+    median = statistics.median(werte) if len(werte) >= 5 else None   # zu kleines Archiv -> Absolut-Skala
+    index["median_schaerfe"] = round(median, 3) if median else None
+    for k in karten.values():
+        q = qualitaets_score(k, median_schaerfe=median)
+        k["qualitaet"] = q["gesamt"]
+        k["qualitaet_teil"] = q["teil"]
+    return len(karten)
+
+
+def analysiere_clip(pfad: Path, *, mit_szenen: bool = False) -> dict | None:
     """Vollstaendige Clip-Karte (Stufe 1). None, wenn der Clip nicht lesbar ist."""
     tech = _ffprobe(pfad)
     if not tech or tech["dauer"] <= 0:
@@ -251,7 +283,7 @@ def _signatur(pfad: Path) -> list:
 
 
 def baue_archiv_index(source, index_pfad, *, limit: int = 0, neu: bool = False,
-                      mit_szenen: bool = True) -> dict:
+                      mit_szenen: bool = False) -> dict:
     """Analysiert alle Clips aller Spielordner (Stufe 1) und schreibt den persistenten Index.
 
     Unveraenderte, bereits analysierte Clips werden uebersprungen (Signatur-Cache).
@@ -291,10 +323,12 @@ def baue_archiv_index(source, index_pfad, *, limit: int = 0, neu: bool = False,
                            "sig": sig, "stufe": 1, "ts": time.time()}
             analysiert += 1
 
+    bewerte_index(index)                               # Noten archivweit neu (relativ zur Schaerfe-Verteilung)
     index["stand"] = time.time()
     _speichere_index(index_pfad, index)
     return {"ok": True, "gesamt": len(karten), "analysiert": analysiert,
-            "uebersprungen": uebersprungen, "offen": offen, "fehler": fehler, "datei": str(index_pfad)}
+            "uebersprungen": uebersprungen, "offen": offen, "fehler": fehler,
+            "median_schaerfe": index.get("median_schaerfe"), "datei": str(index_pfad)}
 
 
 def main(argv=None) -> int:
@@ -303,9 +337,18 @@ def main(argv=None) -> int:
     p.add_argument("--index", required=True, help="Ziel-Datei des Clip-Index (JSON).")
     p.add_argument("--limit", type=int, default=0, help="Max. NEUE Clips je Lauf (0 = alle). Resumable.")
     p.add_argument("--neu", action="store_true", help="Alles neu messen (Cache ignorieren).")
-    p.add_argument("--ohne-szenen", action="store_true", help="Szenen-Analyse ueberspringen (schneller).")
+    p.add_argument("--mit-szenen", action="store_true",
+                   help="Szenen-Analyse mitlaufen lassen (langsam; bei Einzelaufnahmen meist 0 Szenen).")
+    p.add_argument("--nur-bewerten", action="store_true",
+                   help="Nur die Noten neu berechnen (kein ffmpeg) -- z. B. nach Gewichts-Aenderung.")
     a = p.parse_args(argv)
-    res = baue_archiv_index(a.source, a.index, limit=a.limit, neu=a.neu, mit_szenen=not a.ohne_szenen)
+    if a.nur_bewerten:
+        index = _lade_index(Path(a.index))
+        n = bewerte_index(index)
+        _speichere_index(Path(a.index), index)
+        res = {"ok": True, "bewertet": n, "median_schaerfe": index.get("median_schaerfe"), "datei": a.index}
+    else:
+        res = baue_archiv_index(a.source, a.index, limit=a.limit, neu=a.neu, mit_szenen=a.mit_szenen)
     print(json.dumps(res, ensure_ascii=False, indent=2))
     return 0 if res.get("ok") else 1
 

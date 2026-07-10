@@ -42,18 +42,30 @@ Beschreibung** speichern. Das loest Stufe 3.
 - **Resumable** (`--limit N`): nachts N neue Clips, bis das Archiv durch ist.
 - **Graceful**: Metriken, die der ffmpeg-Build nicht kann, werden **uebersprungen** (Wert `None`), nicht geraten.
 - Messungen: `ebur128` (Lautheit), `silencedetect` (Stille), `blackdetect` (Schwarzbild),
-  `edgedetect`+`signalstats` (Schaerfe-Proxy), Szenendichte.
+  `edgedetect`+`signalstats` (Schaerfe-Proxy). Szenen-Analyse ist **standardmaessig AUS**
+  (`--mit-szenen` schaltet sie an) -- bei Fan-Einzelaufnahmen liefert sie fast immer 0 und ist der
+  teuerste Schritt.
 - **Qualitaets-Score 0-100**, gewichtet: Aufloesung .35, Schaerfe .25, Stille .15, Schwarzbild .15, Ton .10 —
   jede **Teilnote wird mitgespeichert**, damit man sieht, *warum* ein Clip schlecht bewertet ist.
+- **Schaerfe wird RELATIV zum Archiv-Median bewertet** (Kantenenergie hat keinen universellen Massstab).
+  Der Median steht im Index (`median_schaerfe`) und verfeinert sich, je mehr Clips indiziert sind. Objektive
+  Maengel (Aufloesung, Stille, Schwarzbild, Ton) bleiben **absolut** bewertet -> Schrott bleibt Schrott.
+  Nach jedem Lauf werden ALLE Noten neu gerechnet (billig, kein ffmpeg); `--nur-bewerten` macht das separat.
 
-Verifiziert an echten Videos: 1080x1920/Ton/scharf -> **90**; 320x240/stumm/schwarz -> **12**.
-Analyse ~0,3-0,8 s je Clip.
+**An echtem Material geeicht (2026-07-09, erste 10 Clips des NAS-Archivs):** Schaerfe real ~9-38 (Median 18,7),
+synthetische Testvideos nur ~0-6 -> die urspruengliche Absolut-Skala (2-8) saettigte und **spreizte nicht**
+(alle Clips 89-100). Mit Relativ-Bewertung: **69-100**, Rangfolge plausibel (scharf+1080p oben, weich+720p unten).
+Ein bewusst schlechter Testclip (320x240, stumm, schwarz) bleibt bei **12**.
 
-**Nachtlauf auf der NAS** (Code liegt per Mount schon im Container, **kein Neustart noetig**):
+Archiv-Stand: **1.185 Clips**. Auffaellig: **~80 % liegen quer (16:9)** -> fuer 9:16-Reels muss der Grossteil
+beschnitten werden.
+
+**Nachtlauf auf der NAS** (Code liegt per Mount schon im Container, **kein Neustart noetig**; `docker` braucht
+auf der Synology `sudo`):
 
 ```
-docker exec luna-os python -m cutter.clip_brain \
-  --source /reelsrc --index /app/reel_work/state/clip_brain.json --limit 300
+ssh -t luna-nas 'sudo /usr/local/bin/docker exec luna-os python -m cutter.clip_brain \
+  --source /reelsrc --index /app/reel_work/state/clip_brain.json --limit 300'
 ```
 
 ### Stufe 2 — Transkript (gratis, CPU-hungrig)

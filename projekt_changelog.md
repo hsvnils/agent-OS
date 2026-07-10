@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-10 12:40] — Claude Code
+- **Was:** Clip-Brain Stufe 1 **an echtem Material nachkalibriert** (erster NAS-Lauf: 10/1185 Clips, 0 Fehler).
+  Zwei Befunde aus den echten Daten: (1) **Qualitaets-Score saettigte** (alle Clips 89-100, unbrauchbar als
+  Filter) — die Schaerfe-Schwellen waren an **synthetischen** Testvideos geeicht (dort YAVG ~0-6, real ~9-38);
+  (2) **Szenen-Analyse liefert bei Fan-Einzelaufnahmen fast immer 0** und ist der teuerste Schritt.
+  Fixes: Schaerfe wird jetzt **relativ zum Archiv-Median** bewertet (`median_schaerfe` im Index, verfeinert sich
+  mit dem Archiv); objektive Maengel (Aufloesung/Stille/Schwarzbild/Ton) bleiben absolut -> Schrott bleibt
+  Schrott. Neue `bewerte_index()` rechnet nach jedem Lauf ALLE Noten neu (billig, kein ffmpeg), CLI
+  `--nur-bewerten`. Szenen-Analyse jetzt **standardmaessig AUS** (`--mit-szenen` opt-in). Ergebnis an den
+  echten 10 Clips: Spreizung **69-100** statt 89-100, Rangfolge plausibel; schlechter Testclip weiterhin 12.
+  Tests 13 gruen (+3: Relativ-Schaerfe, Spreizung, kleines Archiv). Nebenbefund dokumentiert: **~80 % des
+  Archivs liegt quer (16:9)** -> Grossteil muss fuer 9:16-Reels beschnitten werden.
+- **Warum:** Der erste echte Lauf hat gezeigt, dass die Note nicht diskriminiert. Ohne Kalibrierung waere der
+  Qualitaetsfilter wertlos gewesen.
+- **Betroffen:** cutter/clip_brain.py, cutter/tests/test_clip_brain.py, docs/video-brain-plan.md
+
 ## [2026-07-09 22:00] — Claude Code
 - **Was:** **Video-Second-Brain, Stufe 1 gebaut** (`cutter/clip_brain.py`) — persistenter, archivweiter
   Clip-Index mit Technik (Aufloesung, **Format hoch/quer/quadrat**, Dauer, fps, Codec, Ton) und Qualitaet
