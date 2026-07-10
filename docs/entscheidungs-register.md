@@ -52,6 +52,7 @@
 | **Bild->3D-Mesh (Meshy / Tripo) + Talking-Portrait (LivePortrait, lokal)** | 2026-07-05 | **NICHT GEWAEHLT** (Alternativen) | Meshy/Tripo: statisches Mesh ohne Gesichts-Rig (Lip-Sync fehlt); LivePortrait: gratis/bildtreu, aber Vorab-Render statt Live + Einrichtungsaufwand -- CEO waehlte 2D-Living-Portrait |
 | **Echtes Trading: Broker-/Exchange-Anbindung** (IBKR / Alpaca-Live / Kraken / Bitpanda; TR/Scalable ohne API) | 2026-07-09 | **ZURUECKGESTELLT** -- CEO waehlt „LUNA beraet, ich handle selbst" (manuelles Ledger); keine API-Anbindung vorerst | Optionen bewertet als Rueckfall fuer spaetere API-Ausfuehrung; Anbindung = CEO-Tor |
 | **Cutter-Umbau (eigener Worker) + Manueller Cutter** (Reels nach Thema/Spiel/Laenge; Ablehnen->neu; Min 15s) | 2026-07-09 | **ZURUECKGESTELLT bis MACO470** -- erster Wurf gebaut + revertiert (nicht deployt); finaler Bau als Queue-Worker auf dem MACO470 | Plan: `docs/cutter-worker-plan.md`; Referenz-Commits 5001c61/57b4065 |
+| **Video-Second-Brain** (durchsuchbares Clip-Gedaechtnis: Technik/Qualitaet/Transkript/KI-Beschreibung) | 2026-07-09 | **STUFE 1 UMGESETZT** (gratis, kein LLM: `cutter/clip_brain.py`); Stufen 2-5 geplant, Bau auf dem MACO470; Stufe 3 = CEO-Tor (Gemini-Kosten) | Plan: `docs/video-brain-plan.md`. Erkenntnis: Gemini-Proxy behaelt Ton -> Pyro/Fangesang machbar, Blocker war nur das 8-Wort-Tag-Vokabular |
 
 ---
 

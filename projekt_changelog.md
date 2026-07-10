@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-09 22:00] — Claude Code
+- **Was:** **Video-Second-Brain, Stufe 1 gebaut** (`cutter/clip_brain.py`) — persistenter, archivweiter
+  Clip-Index mit Technik (Aufloesung, **Format hoch/quer/quadrat**, Dauer, fps, Codec, Ton) und Qualitaet
+  (Lautheit `ebur128`, Stille `silencedetect`, Schwarzbild `blackdetect`, Schaerfe-Proxy
+  `edgedetect`+`signalstats`, Szenendichte) sowie einem transparenten **Qualitaets-Score 0-100** inkl.
+  Teilnoten. **Gratis, kein LLM, kein Upload.** Signatur-Cache (jeder Clip genau einmal), **resumable**
+  (`--limit`), graceful (fehlende ffmpeg-Filter -> Wert `None` statt geraten). Nur echte Spielordner werden
+  indiziert. Additiv: die Reel-Pipeline bleibt unberuehrt. Tests: 10 gruen (Parser/Score/Cache+Limit) **plus
+  echte End-to-End-Pruefung** an erzeugten Videos (1080x1920/Ton/scharf -> 90; 320x240/stumm/schwarz -> 12;
+  ~0,3-0,8 s je Clip) und ein echter Archiv-Durchlauf (Limit/Resume/Cache/Ordner-Filter bestaetigt).
+  **Bewusst NICHT gemessen:** Verwacklung (`vidstabdetect` fehlt im Build). Plan fuer Stufen 2-5
+  (Transkript / KI-Beschreibung+erweiterte Tags / Clip-Archiv-App / Cutter-Anbindung) dokumentiert; Bau auf
+  dem MACO470, Stufe 3 = CEO-Tor (Gemini-Kosten, CFO-Kostenvoranschlag).
+  **Erkenntnis:** der Gemini-360p-Proxy behaelt den **Ton** -> Pyro/Fangesang sind erkennbar; Blocker war nur
+  das 8-Wort-Tag-Vokabular (korrigiert meine fruehere Einschaetzung).
+- **Warum:** CEO: Videoinhalte scannen/transkribieren, um mit Qualitaets- und Formatkriterien gezielt die
+  richtigen Clips zu finden — „Second Brain fuer Videos". Vorgehen gewaehlt: Plan + Stufe 1 jetzt (gratis).
+- **Betroffen:** cutter/clip_brain.py (neu), cutter/tests/test_clip_brain.py (neu),
+  docs/video-brain-plan.md (neu), docs/entscheidungs-register.md, projekt_changelog.md
+
 ## [2026-07-09 21:20] — Claude Code
 - **Was:** Cutter-Erweiterung (manueller Cutter + NAS-Variante, commits 5001c61/57b4065) **revertiert** — war
   nicht deployt. CEO-Entscheidung: Manueller Cutter + Umbau auf eigenen Cutter-Worker werden **final erst
