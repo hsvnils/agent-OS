@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-10 13:30] — Claude Code
+- **Was:** Clip-Brain Stufe 1 **beschleunigt + Bugfix**, ausgeloest vom zweiten NAS-Lauf (100 Clips, 0 Fehler,
+  aber **~16-18 s je Clip** -> Restarchiv waere ~5 h gewesen). (1) **Ein Dekode statt zwei**: alle
+  Video-Messungen (Schwarzbild + Schaerfe) laufen jetzt in EINEM ffmpeg-Aufruf per `split`, Audio im selben
+  Aufruf (`_messe_alles` ersetzt `_messe_ton_und_schwarz` + `_messe_schaerfe`). Gemessen: 1,47 s -> 0,85 s je
+  30-s-Clip, **Werte bitidentisch verifiziert**. (2) **Analyse-Fenster 30 s -> 15 s** (`analyse_sek` in der
+  Karte). (3) **BUGFIX:** Stille-/Schwarzbild-**Anteile** wurden durch die volle Cliplaenge geteilt, obwohl nur
+  im Fenster gemessen -> lange Clips systematisch zu gut bewertet. Jetzt wird aufs **Analyse-Fenster** normiert
+  (Rueckfall auf `dauer` fuer Altbestand). (4) **`ANALYSE_VERSION`**: alte Karten werden beim naechsten Lauf
+  automatisch neu vermessen -- inkrementell, ohne den Index wegzuwerfen.
+  **Geprueft und verworfen:** `-skip_frame nokey` (Keyframe-only-Dekode) -- unser Material hat teils nur EINEN
+  Keyframe je Clip, Schaerfe aus einem Einzelbild waere Zufall. Tests 14 (+1 fuer die Fenster-Normierung),
+  61 Cutter-Tests gruen.
+- **Warum:** Laufzeit auf der NAS war der Engpass; die Messung deckte zusaetzlich den Normierungs-Bug auf.
+- **Betroffen:** cutter/clip_brain.py, cutter/tests/test_clip_brain.py, docs/video-brain-plan.md
+
 ## [2026-07-10 12:40] — Claude Code
 - **Was:** Clip-Brain Stufe 1 **an echtem Material nachkalibriert** (erster NAS-Lauf: 10/1185 Clips, 0 Fehler).
   Zwei Befunde aus den echten Daten: (1) **Qualitaets-Score saettigte** (alle Clips 89-100, unbrauchbar als

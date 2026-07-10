@@ -31,7 +31,8 @@ from . import ffmpeg_ops as fo
 from . import reel_source as rq
 
 INDEX_VERSION = 1
-_MAX_ANALYSE_SEK = 30          # nur die ersten 30 s je Clip analysieren -> beschraenkt die Rechenzeit
+ANALYSE_VERSION = 2            # aendert sich, wenn die Messung anders arbeitet -> Clips werden neu vermessen
+_MAX_ANALYSE_SEK = 15          # nur die ersten 15 s je Clip analysieren -> beschraenkt die Rechenzeit
 
 
 # ---------------------------------------------------------------- Parser (rein, gut testbar)
@@ -128,9 +129,10 @@ def qualitaets_score(k: dict, *, median_schaerfe: float | None = None) -> dict:
     Objektive Maengel (Aufloesung, Stille, Schwarzbild, Ton) werden **absolut** bewertet -> schlechte Clips
     bleiben schlecht. Nur die **Schaerfe** wird relativ zum Archiv bewertet (siehe `_score_schaerfe`).
     """
-    dauer = max(0.1, float(k.get("dauer") or 0.1))
-    stille = min(1.0, float(k.get("stille_sek") or 0.0) / dauer)
-    schwarz = min(1.0, float(k.get("schwarz_sek") or 0.0) / dauer)
+    # Bezugsgroesse ist das ANALYSE-FENSTER, nicht die volle Cliplaenge (sonst werden Anteile unterschaetzt).
+    fenster = max(0.1, float(k.get("analyse_sek") or k.get("dauer") or 0.1))
+    stille = min(1.0, float(k.get("stille_sek") or 0.0) / fenster)
+    schwarz = min(1.0, float(k.get("schwarz_sek") or 0.0) / fenster)
     teil = {
         "aufloesung": _score_aufloesung(k.get("breite") or 0, k.get("hoehe") or 0),
         "schaerfe": _score_schaerfe(k.get("schaerfe_yavg"), median_schaerfe),
@@ -185,43 +187,58 @@ def _ffprobe(pfad: Path) -> dict | None:
             "format": format_label(breite, hoehe)}
 
 
-def _messe_ton_und_schwarz(pfad: Path, hat_audio: bool) -> dict:
-    """EIN ffmpeg-Durchlauf: Lautheit (ebur128) + Stille (silencedetect) + Schwarzbild (blackdetect)."""
-    vf, af = [], []
-    if fo.hat_filter("blackdetect"):
-        vf.append("blackdetect=d=0.2:pix_th=0.10")
-    if hat_audio and fo.hat_filter("ebur128"):
-        af.append("ebur128=peak=true")
-    if hat_audio and fo.hat_filter("silencedetect"):
-        af.append("silencedetect=n=-32dB:d=0.6")
-    if not vf and not af:
+_SHARP_KETTE = "fps=1,scale=-2:360,edgedetect,signalstats,metadata=mode=print:file=-"
+_BLACK_FILTER = "blackdetect=d=0.2:pix_th=0.10"
+
+
+def _messe_alles(pfad: Path, hat_audio: bool) -> dict:
+    """EIN ffmpeg-Durchlauf fuer alle Messungen -> das Video wird nur **einmal** dekodiert.
+
+    Video (split): Schwarzbild (`blackdetect`) + Schaerfe (`edgedetect`+`signalstats` auf 1 Bild/s, 360p).
+    Audio: Lautheit (`ebur128`) + Stille (`silencedetect`).
+    Fehlt ein Filter im ffmpeg-Build, entfaellt genau dieser Zweig (Wert bleibt None).
+    """
+    kann_black = fo.hat_filter("blackdetect")
+    kann_sharp = fo.hat_filter("edgedetect") and fo.hat_filter("signalstats")
+    kann_ton = hat_audio and fo.hat_filter("ebur128")
+    kann_stille = hat_audio and fo.hat_filter("silencedetect")
+    if not (kann_black or kann_sharp or kann_ton or kann_stille):
         return {}
+
     cmd = ["ffmpeg", "-hide_banner", "-nostats", "-t", str(_MAX_ANALYSE_SEK), "-i", str(pfad)]
-    if vf:
-        cmd += ["-vf", ",".join(vf)]
+    zweige: list[str] = []
+    ausgaben: list[str] = []
+    if kann_black and kann_sharp:                       # ein Dekode, zwei Auswertungen
+        zweige.append("[0:v]split=2[bd][sh]")
+        zweige.append(f"[bd]{_BLACK_FILTER}[o1]")
+        zweige.append(f"[sh]{_SHARP_KETTE}[o2]")
+        ausgaben += ["-map", "[o1]", "-f", "null", "-", "-map", "[o2]", "-f", "null", "-"]
+    elif kann_black:
+        zweige.append(f"[0:v]{_BLACK_FILTER}[o1]")
+        ausgaben += ["-map", "[o1]", "-f", "null", "-"]
+    elif kann_sharp:
+        zweige.append(f"[0:v]{_SHARP_KETTE}[o2]")
+        ausgaben += ["-map", "[o2]", "-f", "null", "-"]
+    if zweige:
+        cmd += ["-filter_complex", ";".join(zweige)]
+
+    af = ([("ebur128=peak=true") ] if kann_ton else []) + (["silencedetect=n=-32dB:d=0.6"] if kann_stille else [])
     if af:
-        cmd += ["-af", ",".join(af)]
-    else:
-        cmd += ["-an"]
-    cmd += ["-f", "null", "-"]
-    txt = _lauf(cmd)
+        ausgaben += ["-map", "0:a?", "-af", ",".join(af), "-f", "null", "-"]
+    if not zweige:                                      # nur Audio -> Video gar nicht erst dekodieren
+        cmd += ["-vn"]
+    txt = _lauf(cmd + ausgaben)
+
     out: dict = {}
-    if vf:
+    if kann_black:
         out["schwarz_sek"] = round(_parse_schwarz(txt), 2)
-    if af:
+    if kann_sharp:
+        out["schaerfe_yavg"] = _parse_yavg(txt)
+    if kann_ton:
         out["lufs"] = _parse_lufs(txt)
+    if kann_stille:
         out["stille_sek"] = round(_parse_stille(txt), 2)
     return out
-
-
-def _messe_schaerfe(pfad: Path) -> float | None:
-    """Schaerfe-Proxy: 1 Bild/s, 360p, Kantenerkennung -> mittlere Kantenenergie (YAVG)."""
-    if not (fo.hat_filter("edgedetect") and fo.hat_filter("signalstats")):
-        return None
-    txt = _lauf(["ffmpeg", "-hide_banner", "-nostats", "-t", str(_MAX_ANALYSE_SEK), "-i", str(pfad),
-                 "-vf", "fps=1,scale=-2:360,edgedetect,signalstats,metadata=mode=print:file=-",
-                 "-an", "-f", "null", "-"])
-    return _parse_yavg(txt)
 
 
 def bewerte_index(index: dict) -> int:
@@ -243,10 +260,10 @@ def analysiere_clip(pfad: Path, *, mit_szenen: bool = False) -> dict | None:
     tech = _ffprobe(pfad)
     if not tech or tech["dauer"] <= 0:
         return None
-    mess = _messe_ton_und_schwarz(pfad, tech["hat_audio"])
-    schaerfe = _messe_schaerfe(pfad)
+    mess = _messe_alles(pfad, tech["hat_audio"])
     szenen = len(fo.szenen_zeiten(pfad)) if mit_szenen else None
-    k = {**tech, **mess, "schaerfe_yavg": schaerfe}
+    # Stille/Schwarzbild werden nur im Analyse-Fenster gemessen -> Anteile muessen darauf normiert werden.
+    k = {**tech, **mess, "analyse_sek": round(min(tech["dauer"], _MAX_ANALYSE_SEK), 2)}
     if szenen is not None:
         k["szenen"] = szenen
         k["szenendichte"] = round(min(1.0, szenen / max(1.0, tech["dauer"] / 3.0)), 3)
@@ -309,7 +326,8 @@ def baue_archiv_index(source, index_pfad, *, limit: int = 0, neu: bool = False,
             except OSError:
                 continue
             alt = karten.get(key)
-            if alt and alt.get("sig") == sig and alt.get("stufe", 0) >= 1:
+            # Ueberspringen nur, wenn Datei unveraendert UND mit der aktuellen Mess-Version vermessen.
+            if alt and alt.get("sig") == sig and alt.get("av") == ANALYSE_VERSION:
                 uebersprungen += 1
                 continue
             if limit and analysiert >= limit:           # Rest bleibt fuer den naechsten Lauf
@@ -320,7 +338,7 @@ def baue_archiv_index(source, index_pfad, *, limit: int = 0, neu: bool = False,
                 fehler += 1
                 continue
             karten[key] = {**karte, "pfad": key, "spiel": spiel_dir.name, "datei": pfad.name,
-                           "sig": sig, "stufe": 1, "ts": time.time()}
+                           "sig": sig, "stufe": 1, "av": ANALYSE_VERSION, "ts": time.time()}
             analysiert += 1
 
     bewerte_index(index)                               # Noten archivweit neu (relativ zur Schaerfe-Verteilung)

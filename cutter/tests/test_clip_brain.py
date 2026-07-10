@@ -64,6 +64,16 @@ class TestFormatUndScore(unittest.TestCase):
         q = cb.qualitaets_score({"dauer": 5})            # alles unbekannt -> weder 0 noch 100
         self.assertTrue(0 < q["gesamt"] < 100)
 
+    def test_anteile_beziehen_sich_aufs_analyse_fenster(self):
+        """Stille/Schwarzbild werden nur im Fenster gemessen -> Anteil muss aufs Fenster normiert sein."""
+        q = cb.qualitaets_score({"breite": 1920, "hoehe": 1080, "dauer": 60.0, "analyse_sek": 15.0,
+                                 "hat_audio": True, "lufs": -14.0, "stille_sek": 10.0,
+                                 "schwarz_sek": 0.0, "schaerfe_yavg": 20.0})
+        self.assertAlmostEqual(q["teil"]["stille"], round(1 - 10 / 15, 3))     # 2/3 still, nicht 1/6
+        # Altbestand ohne analyse_sek -> Rueckfall auf die volle Dauer (kein Absturz)
+        q2 = cb.qualitaets_score({"dauer": 60.0, "stille_sek": 10.0})
+        self.assertAlmostEqual(q2["teil"]["stille"], round(1 - 10 / 60, 3))
+
     def test_schaerfe_relativ_zum_median(self):
         """Kantenenergie hat keinen Absolut-Massstab -> relativ zum Archiv-Median."""
         self.assertEqual(cb._score_schaerfe(5.0, 20.0), 0.2)      # 0.25x Median -> matschig

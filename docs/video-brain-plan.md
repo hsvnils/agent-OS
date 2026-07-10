@@ -45,6 +45,13 @@ Beschreibung** speichern. Das loest Stufe 3.
   `edgedetect`+`signalstats` (Schaerfe-Proxy). Szenen-Analyse ist **standardmaessig AUS**
   (`--mit-szenen` schaltet sie an) -- bei Fan-Einzelaufnahmen liefert sie fast immer 0 und ist der
   teuerste Schritt.
+- **Ein Dekode je Clip**: alle Video-Messungen laufen in EINEM ffmpeg-Aufruf (`split` -> Schwarzbild +
+  Schaerfe), Audio im selben Aufruf. Analyse-Fenster: die ersten **15 s** (`analyse_sek` steht in der Karte).
+  Stille-/Schwarzbild-Anteile werden **auf dieses Fenster** normiert, nicht auf die volle Cliplaenge.
+- **`ANALYSE_VERSION`**: aendert sich die Messung, werden alte Karten beim naechsten Lauf automatisch neu
+  vermessen (inkrementell, resumable) -- der Index muss nicht weggeworfen werden.
+- **Kein `-skip_frame nokey`**: geprueft und verworfen -- unser Material hat teils nur EINEN Keyframe je Clip
+  (Schaerfe aus einem Einzelbild waere Zufall).
 - **Qualitaets-Score 0-100**, gewichtet: Aufloesung .35, Schaerfe .25, Stille .15, Schwarzbild .15, Ton .10 —
   jede **Teilnote wird mitgespeichert**, damit man sieht, *warum* ein Clip schlecht bewertet ist.
 - **Schaerfe wird RELATIV zum Archiv-Median bewertet** (Kantenenergie hat keinen universellen Massstab).
@@ -59,6 +66,10 @@ Ein bewusst schlechter Testclip (320x240, stumm, schwarz) bleibt bei **12**.
 
 Archiv-Stand: **1.185 Clips**. Auffaellig: **~80 % liegen quer (16:9)** -> fuer 9:16-Reels muss der Grossteil
 beschnitten werden.
+
+**Laufzeit (NAS, gemessen):** erster Lauf ~16-18 s je Clip (2 Video-Dekodes, 30-s-Fenster) -> 1.075 offene
+Clips waeren ~5 h gewesen. Nach der Optimierung (1 Dekode + 15-s-Fenster, Werte identisch verifiziert):
+**etwa halbe Zeit**, Richtung ~2,5 h fuers Restarchiv. Nachtlauf mit `--limit 300` -> in ~4 Naechten durch.
 
 **Nachtlauf auf der NAS** (Code liegt per Mount schon im Container, **kein Neustart noetig**; `docker` braucht
 auf der Synology `sudo`):
