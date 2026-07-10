@@ -361,17 +361,35 @@ def cutter_queue():
     return {"jobs": [j for j in cutter_store.list(limit=100) if j.get("status") == "queued"]}
 
 
-@app.get("/api/performance")
-def performance():
-    """Woechentlicher Leistungsbericht (CDO, regelbasiert, kein LLM): Freigabequoten, Pipeline-Erfolg,
-    Durchsatz, Kosten -- aktuelle Woche vs. Vorwoche, mit Ampeln. Liest nur vorhandene Event-Stores."""
+def _performance_agent():
     from ...core.aktivitaet import Aktivitaet
     from ...core.kosten import KostenStore
+    from ...core.nutzung import NutzungStore
     from ...core.performance_agent import PerformanceAgent
-    agent = PerformanceAgent(reels=reel_store, antraege=antraege, cutter=cutter_store,
-                             aktivitaet=Aktivitaet(ROOT / "aktivitaet" / "log.jsonl"),
-                             kosten=KostenStore(ROOT / "finance" / "kosten-log.jsonl"))
-    return JSONResponse(agent.bericht())
+    return PerformanceAgent(reels=reel_store, antraege=antraege, cutter=cutter_store,
+                            aktivitaet=Aktivitaet(ROOT / "aktivitaet" / "log.jsonl"),
+                            kosten=KostenStore(ROOT / "finance" / "kosten-log.jsonl"),
+                            nutzung=NutzungStore(ROOT / "nutzung" / "log.jsonl"))
+
+
+@app.get("/api/performance")
+def performance(wochen: int = 8):
+    """Woechentlicher Leistungsbericht (CDO, regelbasiert, kein LLM): Freigabequoten, Pipeline-Erfolg,
+    Durchsatz, Kosten, Reaktionszeiten, Nutzung/Feature-Friedhof -- Woche vs. Vorwoche + Wochen-Historie."""
+    agent = _performance_agent()
+    b = agent.bericht()
+    b["historie"] = agent.historie(wochen=max(2, min(26, int(wochen))))
+    return JSONResponse(b)
+
+
+@app.post("/api/nutzung")
+async def nutzung_log(request: Request):
+    """App-Oeffnung protokollieren (Feature-Friedhof; nur ts+app+user, CEO-gewollt 2026-07-10)."""
+    from ...core.nutzung import NutzungStore
+    body = await _json(request)
+    NutzungStore(ROOT / "nutzung" / "log.jsonl").log((body or {}).get("app") or "",
+                                                     user=_pref_user(request) or "")
+    return JSONResponse({"ok": True})
 
 
 @app.post("/api/cutter/report")

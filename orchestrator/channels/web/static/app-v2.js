@@ -114,6 +114,7 @@ function go(id, sub) {
   AKTIV = id; if (sub) SUBTAB[id] = sub;
   document.querySelectorAll("#v2-nav button").forEach(b => b.classList.toggle("active", b.dataset.go === id));
   $("#v2-app").innerHTML = `<div class="v2-empty">Lade …</div>`;
+  jpost("/api/nutzung", { app: id });   // Feature-Friedhof: App-Oeffnung zaehlen (fire-and-forget)
   (RENDER[id] || renderDash)();
 }
 
@@ -719,10 +720,27 @@ function leistungHtml(p) {
     `${w.cutter.jobs} Jobs · Erfolg ${w.cutter.erfolgsquote == null ? "keine Jobs" : Math.round(w.cutter.erfolgsquote * 100) + " %"} (${w.cutter.done} ok / ${w.cutter.failed} Fehler)`);
   if (w.aktivitaet) h += zeile(null, "Durchsatz",
     `${w.aktivitaet.aktionen} Aktionen${delta(w.aktivitaet.aktionen, (v.aktivitaet || {}).aktionen)} · aktiv: ${Object.entries(w.aktivitaet.top_akteure || {}).slice(0, 3).map(([k, n]) => `${esc(k)} (${n})`).join(", ") || "—"}`);
-  if (w.kosten) h += zeile(null, "Kosten (Token/API)",
-    `${(w.kosten.eur).toFixed(2)} € · ${w.kosten.aufrufe} Aufrufe${delta(w.kosten.eur, (v.kosten || {}).eur, " €")}`);
+  if (w.kosten) {
+    const treiber = Object.entries(w.kosten.top_quellen || {}).map(([q, e2]) => `${esc(q)} ${e2.toFixed(2)} €`).join(", ");
+    h += zeile(null, "Kosten (Token/API)",
+      `${(w.kosten.eur).toFixed(2)} € · ${w.kosten.aufrufe} Aufrufe${delta(w.kosten.eur, (v.kosten || {}).eur, " €")}${treiber ? " · Treiber: " + treiber : ""}`);
+  }
+  const rz = w.reaktionszeiten || {};
+  const rzTeile = [rz.cutter_h != null ? `Cutter ${rz.cutter_h.toFixed(1)} h` : null,
+    rz.antrag_h != null ? `Anträge ${rz.antrag_h.toFixed(1)} h` : null,
+    rz.reel_entscheidung_h != null ? `Reel-Entscheidung ${rz.reel_entscheidung_h.toFixed(1)} h` : null].filter(Boolean);
+  if (rzTeile.length) h += zeile(null, "Reaktionszeiten (Median, abgeschlossene Vorgänge)", rzTeile.join(" · "));
+  if (w.nutzung) {
+    const topApps = Object.entries(w.nutzung.je_app || {}).slice(0, 4).map(([a, n]) => `${esc(a)} (${n})`).join(", ");
+    h += zeile(null, "Nutzung (App-Öffnungen)", `${w.nutzung.oeffnungen} diese Woche${topApps ? " · meist: " + topApps : ""}`);
+  }
+  if (p.friedhof && p.friedhof.length) h += zeile("gelb", `Feature-Friedhof (> ${p.friedhof_tage} Tage nicht geöffnet)`, p.friedhof.map(esc).join(", "));
   h += zeile(p.ampeln.fehler, "Fehler gesamt", String(p.fehler_gesamt));
-  h += `<div class="v2-sub" style="margin-top:10px">Ampeln: Freigabequote ≥70 % grün / ≥40 % gelb · Pipeline-Erfolg ≥90 % grün / ≥70 % gelb · Fehler 0 grün / ≤2 gelb. Regelbasiert aus den Ereignis-Protokollen — kein LLM, keine Kosten. Wochenbericht kommt montags 9:00 per Telegram.</div>`;
+  if (p.historie && p.historie.length) {
+    const rows = p.historie.map(hh => `<tr><td><b>${esc(hh.label)}</b></td><td>${hh.reels_erstellt}</td><td>${hh.freigabequote == null ? "–" : Math.round(hh.freigabequote * 100) + " %"}</td><td style="color:${hh.fehler ? "var(--v2-red)" : "var(--v2-muted)"}">${hh.fehler}</td><td>${hh.aktionen}</td><td>${(hh.kosten_eur || 0).toFixed(2)} €</td></tr>`).join("");
+    h += `<div class="v2-sub" style="margin:14px 0 4px"><b>Verlauf (${p.historie.length} Wochen)</b></div><table class="v2-table"><thead><tr><th>Woche</th><th>Reels</th><th>Freigabequote</th><th>Fehler</th><th>Aktionen</th><th>Kosten</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+  h += `<div class="v2-sub" style="margin-top:10px">Ampeln: Freigabequote ≥70 % grün / ≥40 % gelb · Pipeline-Erfolg ≥90 % grün / ≥70 % gelb · Fehler 0 grün / ≤2 gelb. Regelbasiert aus den Ereignis-Protokollen — kein LLM, keine Kosten. Wochenbericht kommt montags 9:00 per Telegram. Nutzung zählt nur App-Öffnungen (ts + App).</div>`;
   return h;
 }
 async function renderSystem() {

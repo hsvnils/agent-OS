@@ -474,13 +474,15 @@ def _leistungsbericht(ctx) -> str:
     """Woechentlicher Leistungsbericht (CDO, regelbasiert). Reels/Cutter-Daten kommen aus den geteilten
     Dateien (Reel-Log bzw. lokaler Cutter-Job-Cache, den die Web-App pflegt) -- kein Supabase-Zugriff."""
     from ...core.content_store import CUTTER_FELDER, ContentStore
+    from ...core.nutzung import NutzungStore
     from ...core.performance_agent import PerformanceAgent
     from ...core.reel_store import ReelStore
     agent = PerformanceAgent(
         reels=ReelStore(ROOT / "reel_freigabe" / "log.jsonl"),
         antraege=ctx.antraege,
         cutter=ContentStore(None, "luna_cutter_jobs", CUTTER_FELDER, ROOT / "cutter_ops" / "jobs_cache.jsonl"),
-        aktivitaet=ctx.aktivitaet, kosten=ctx.kosten)
+        aktivitaet=ctx.aktivitaet, kosten=ctx.kosten,
+        nutzung=NutzungStore(ROOT / "nutzung" / "log.jsonl"))
     return agent.als_text()
 
 

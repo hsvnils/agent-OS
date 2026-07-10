@@ -35,36 +35,48 @@ class FakeAktivitaet:
         return [e for e in self._evs if e["ts"] >= start.isoformat(timespec="seconds")]
 
 
+class FakeNutzung:
+    def __init__(self, events):
+        self._evs = events
+
+    def _events(self):
+        return self._evs
+
+
 def _agent() -> PerformanceAgent:
     reels = FakeEvents([
-        {"typ": "einreichen", "id": "a", "ts": _iso(1)},
-        {"typ": "einreichen", "id": "b", "ts": _iso(2)},
-        {"typ": "status", "id": "a", "status": "freigegeben", "ts": _iso(1)},
+        {"typ": "einreichen", "id": "a", "ts": _iso(1.5)},
+        {"typ": "einreichen", "id": "b", "ts": _iso(2.5)},
+        {"typ": "status", "id": "a", "status": "freigegeben", "ts": _iso(1)},   # 12 h nach Einreichen
         {"typ": "status", "id": "a", "status": "gepostet", "ts": _iso(1)},
-        {"typ": "status", "id": "b", "status": "abgelehnt", "ts": _iso(2)},
+        {"typ": "status", "id": "b", "status": "abgelehnt", "ts": _iso(2)},     # 12 h nach Einreichen
         {"typ": "einreichen", "id": "alt", "ts": _iso(10)},          # Vorwoche
         {"typ": "status", "id": "alt", "status": "freigegeben", "ts": _iso(10)},
         {"typ": "einreichen", "id": "uralt", "ts": _iso(30)},        # ausserhalb beider Fenster
     ])
     antraege = FakeEvents([
-        {"event": "eingereicht", "ts": _iso(3)},
-        {"event": "freigegeben", "ts": _iso(3)},
-        {"event": "eingereicht", "ts": _iso(4)},
-        {"event": "abgelehnt", "ts": _iso(4)},
-        {"event": "erledigt", "ts": _iso(2)},
+        {"event": "eingereicht", "antrag_id": "x", "ts": _iso(3)},
+        {"event": "freigegeben", "antrag_id": "x", "ts": _iso(3)},
+        {"event": "eingereicht", "antrag_id": "y", "ts": _iso(4)},
+        {"event": "abgelehnt", "antrag_id": "y", "ts": _iso(4)},
+        {"event": "erledigt", "antrag_id": "x", "ts": _iso(2)},      # 24 h nach Einreichen
     ])
     cutter = FakeCutter([
-        {"status": "done", "updated_at": _iso(1)},
-        {"status": "done", "updated_at": _iso(2)},
-        {"status": "failed", "updated_at": _iso(3)},
-        {"status": "done", "updated_at": _iso(12)},                  # Vorwoche
-        {"status": "queued", "updated_at": _iso(1)},                 # zaehlt nicht als done/failed
+        {"status": "done", "created_at": _iso(1.5), "updated_at": _iso(1)},     # 12 h
+        {"status": "done", "created_at": _iso(2.25), "updated_at": _iso(2)},    # 6 h -> Median 9 h
+        {"status": "failed", "created_at": _iso(3), "updated_at": _iso(3)},
+        {"status": "done", "created_at": _iso(12), "updated_at": _iso(12)},     # Vorwoche
+        {"status": "queued", "created_at": _iso(1), "updated_at": _iso(1)},     # zaehlt nicht
     ])
     akt = FakeAktivitaet([{"ts": _iso(1), "akteur": "HoA"}, {"ts": _iso(2), "akteur": "HoA"},
                           {"ts": _iso(3), "akteur": "CIO"}, {"ts": _iso(9), "akteur": "HoA"}])
-    kosten = FakeEvents([{"ts": _iso(1), "eur": 0.5}, {"ts": _iso(2), "eur": 0.25},
-                         {"ts": _iso(9), "eur": 2.0}])
-    return PerformanceAgent(reels=reels, antraege=antraege, cutter=cutter, aktivitaet=akt, kosten=kosten)
+    kosten = FakeEvents([{"ts": _iso(1), "eur": 0.5, "quelle": "hoa"},
+                         {"ts": _iso(2), "eur": 0.25, "quelle": "web"},
+                         {"ts": _iso(9), "eur": 2.0, "quelle": "hoa"}])
+    nutzung = FakeNutzung([{"ts": _iso(1), "app": "investment"}, {"ts": _iso(2), "app": "investment"},
+                           {"ts": _iso(3), "app": "cutter"}, {"ts": _iso(40), "app": "wissen"}])
+    return PerformanceAgent(reels=reels, antraege=antraege, cutter=cutter, aktivitaet=akt, kosten=kosten,
+                            nutzung=nutzung, apps=("investment", "cutter", "wissen", "team"))
 
 
 class TestBericht(unittest.TestCase):
@@ -101,6 +113,40 @@ class TestBericht(unittest.TestCase):
         self.assertEqual(amp["pipeline"], "rot")           # 66,7 % < 70 %
         self.assertEqual(amp["fehler"], "gelb")            # 0 Reel-Fehler + 1 failed
         self.assertEqual(self.b["gesamt"], "rot")          # schlechteste belegte Ampel
+
+    def test_reaktionszeiten(self):
+        rz = self.b["woche"]["reaktionszeiten"]
+        self.assertEqual(rz["cutter_h"], 9.0)              # Median aus 12 h und 6 h
+        self.assertEqual(rz["antrag_h"], 24.0)
+        self.assertEqual(rz["reel_entscheidung_h"], 12.0)
+
+    def test_kosten_treiber(self):
+        top = self.b["woche"]["kosten"]["top_quellen"]
+        self.assertEqual(top, {"hoa": 0.5, "web": 0.25})   # nur Woche, nach EUR sortiert
+
+    def test_nutzung_und_friedhof(self):
+        n = self.b["woche"]["nutzung"]
+        self.assertEqual(n["oeffnungen"], 3)               # wissen (40 Tage alt) nicht in der Woche
+        self.assertEqual(n["je_app"]["investment"], 2)
+        self.assertEqual(self.b["friedhof"], ["team", "wissen"])   # > 28 Tage nicht geoeffnet
+
+    def test_friedhof_ohne_nutzungsdaten(self):
+        b = PerformanceAgent(nutzung=FakeNutzung([])).bericht(jetzt=JETZT)
+        self.assertIsNone(b["friedhof"])                   # keine Daten -> nichts faelschlich brachliegend
+
+    def test_friedhof_junges_logging(self):
+        """Logging juenger als 28 Tage -> KEIN Friedhof (sonst waere anfangs alles 'brachliegend')."""
+        b = PerformanceAgent(nutzung=FakeNutzung([{"ts": _iso(2), "app": "investment"}]),
+                             apps=("investment", "team")).bericht(jetzt=JETZT)
+        self.assertIsNone(b["friedhof"])
+
+    def test_historie(self):
+        h = _agent().historie(wochen=3, jetzt=JETZT)
+        self.assertEqual(len(h), 3)
+        self.assertEqual(h[-1]["reels_erstellt"], 2)       # juengste Woche zuletzt
+        self.assertEqual(h[-2]["reels_erstellt"], 1)       # Vorwoche
+        self.assertEqual(h[-1]["fehler"], 1)
+        self.assertEqual(h[-1]["kosten_eur"], 0.75)
 
     def test_leere_stores_kein_absturz(self):
         b = PerformanceAgent().bericht(jetzt=JETZT)

@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-10 15:15] — Claude Code
+- **Was:** **Leistungs-Agent Ausbau (alle 4 vom CEO gewaehlten Stufen).** (1) **Wochen-Historie**:
+  `historie(wochen=8)` berechnet die letzten Wochenfenster rueckwirkend aus den Event-Zeitstempeln (keine
+  Persistenz noetig) -> Verlaufs-Tabelle im Leistung-Tab (`/api/performance?wochen=N`). (2) **Reaktionszeiten**
+  (Median, nur abgeschlossene Vorgaenge): Cutter angelegt->fertig, Antraege eingereicht->erledigt, Reels
+  eingereicht->CEO-Entscheidung (erste Entscheidung zaehlt). (3) **Kosten-Treiber**: Top-3-Kostenquellen der
+  Woche (je `quelle` aus dem KostenStore) statt nur Gesamtsumme. (4) **Feature-Friedhof** (CEO-gewollte,
+  minimale Datenerfassung): neuer `core/nutzung.py` (NutzungStore, loggt NUR ts+App+User), Beacon in `go()`
+  (`POST /api/nutzung`, fire-and-forget) -> Nutzungs-Zeile (App-Oeffnungen, meistgenutzte) + Friedhof-Zeile
+  (Apps > 28 Tage nicht geoeffnet). **Fairness-Guard** (vom Smoke-Test aufgedeckt): solange das Logging
+  selbst juenger als 28 Tage ist, wird KEIN Friedhof gemeldet — sonst waere anfangs alles faelschlich
+  „brachliegend". Alles auch im Montags-Telegram-Text. Tests 13 gruen (+6); Browser verifiziert (Beacon
+  zaehlt live, Verlauf 8 Wochen rendert). Cache v30.
+- **Warum:** CEO: „lass uns weiter ausbauen" — alle vier Ausbaustufen gewaehlt, inkl. ausdruecklichem OK
+  fuer das Nutzungs-Logging.
+- **Betroffen:** orchestrator/core/performance_agent.py, orchestrator/core/nutzung.py (neu),
+  orchestrator/channels/web/app.py, orchestrator/channels/telegram/bot.py,
+  orchestrator/channels/web/static/app-v2.js, orchestrator/channels/web/static/index-v2.html,
+  orchestrator/tests/test_performance_agent.py
+
 ## [2026-07-10 14:30] — Head of Agents
 - **Was:** CDO-Charta ergaenzt (nach Diff-Vorlage + CEO-Bestaetigung, AGENTS.md 3.3): (1) Verantwortlichkeit
   „Leistungsbericht des Systems (woechentlich)" (Ampel-Bericht aus den Ereignis-Protokollen,
