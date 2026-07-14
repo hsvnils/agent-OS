@@ -1,5 +1,10 @@
 # Cutter-Umbau + Manueller Cutter — Plan (zurueckgestellt bis MACO470)
 
+> **UPDATE 2026-07-14: Der MACO470 ist da.** Die Umsetzung laeuft jetzt nach **`docs/maco470-roadmap.md`**.
+> Abweichung: Der Punkt „Automatik einfalten" (Nightly-Reel als Queue-Job, Umsetzungsschritt 5) **entfaellt**
+> — die naechtliche Automatik bleibt dauerhaft auf der NAS (Begruendung: Trainingslager-Betrieb, siehe
+> Roadmap-Entscheidung E1). Der Rest dieses Plans (Queue-Worker, manueller Cutter, Min 15 s) gilt weiter.
+
 > **Status: ZURUECKGESTELLT (CEO-Entscheidung 2026-07-09).** Wird **final gebaut, sobald der MACO470
 > eingetroffen ist** — dann laeuft die ganze Videoverarbeitung ohnehin auf dem MACO470 statt auf der NAS.
 > Bis dahin bleibt alles wie es ist (kein manueller Cutter, Automatik-Reel unveraendert per Nightly).

@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-14 11:30] — Claude Code
+- **Was:** **MACO470-Roadmap angelegt** (`docs/maco470-roadmap.md`, lebendes Dokument) — der AOOSTAR
+  MACO470 (AMD-Mini-PC) ist eingetroffen; **in ~4 Tagen Trainingslager, der Rechner faehrt mit**.
+  Kern-Entscheidungen (CEO-Planungsrunde): Ubuntu-Neuinstallation; Clip-Quelle per SMB-Mount (kein
+  Dropbox); im Camp nur manuell uebergebenes Vor-Ort-Material; **E1: Nightly-Reel + clip_brain-Scan
+  bleiben DAUERHAFT auf der NAS** (uebersteuert „Automatik einfalten" aus cutter-worker-plan.md —
+  Hinweisblock dort ergaenzt); E2: MACO470 = einziger Queue-Consumer (Worker mit Queue- + Inbox-Zweig);
+  E3: eigene Least-Privilege-Zugaenge (LUNA-OS-Team-User `maco470-worker`, SMB-User `maco470` nur-lesen,
+  CISO-Fall-B); E4: Mac-watch verliert Queue-Polling per `CUTTER_QUEUE_POLL=0`; E5: Deploy per git pull
+  (`deploy/sync-to-maco.sh`). Phasen: Camp-Sprint Tag 1-4 (Stick/ISO+Worker-Code -> Ubuntu+SSH ->
+  Worker live+Camp-Test -> Puffer/Checkliste), danach M3-Rest (SMB), M5 (Video-Brain Stufe 2 Whisper,
+  Stufe 3 Gemini = CEO-Tor, Stufen 4/5), M6 (lokales LLM, Gate = Specs-PDF). **Nur Doku — noch keine
+  Umsetzung** (CEO: erst Roadmap anlegen; USB-Stick besorgt der CEO).
+- **Warum:** CEO-Auftrag: technische Landschaft sichten und MACO470-Integrationsplan als Roadmap anlegen.
+- **Betroffen:** docs/maco470-roadmap.md (neu), docs/cutter-worker-plan.md (Update-Hinweis),
+  docs/entscheidungs-register.md
+
 ## [2026-07-10 15:15] — Claude Code
 - **Was:** **Leistungs-Agent Ausbau (alle 4 vom CEO gewaehlten Stufen).** (1) **Wochen-Historie**:
   `historie(wochen=8)` berechnet die letzten Wochenfenster rueckwirkend aus den Event-Zeitstempeln (keine
