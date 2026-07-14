@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-14 16:40] — Claude Code
+- **Was:** MACO470-Roadmap: **OS-Entscheidung revidiert** (CEO): **Windows 11 Pro bleibt**, der Worker
+  laeuft im **WSL2-Ubuntu** (statt Ubuntu-Neuinstallation). Gruende: CEO gewinnt einen Windows-Rechner
+  (sonst nur Apple), kein USB-Stick noetig (schnellster Weg zum Camp), WSL2 statt Hyper-V wegen
+  dynamischem RAM (32 GB verloetet, muessen spaeter auch das Windows-native LLM tragen). Roadmap
+  angepasst: Tag 1 = Windows vorbereiten (OpenSSH, Energie, Update-Nachtfenster, Auto-Login,
+  FritzBox-Reservierung), Tag 2 = WSL2+systemd+Repo, SMB via drvfs statt cifs, Autostart-Kette
+  Auto-Login+geplante Aufgabe, M6-Serving Windows-nativ (Vulkan/iGPU; WSL-RAM-Cap via .wslconfig).
+  Bekannte Haken dokumentiert (Update-Neustarts, Auto-Login).
+- **Warum:** CEO-Frage nach Windows-Erhalt; Abwaegung WSL2 vs. Hyper-V (RAM-Overhead) -> CEO waehlte WSL2.
+- **Betroffen:** docs/maco470-roadmap.md
+
 ## [2026-07-14 16:05] — Claude Code
 - **Was:** MACO470-Specs ausgewertet und in die Roadmap eingetragen (`docs/maco470-specs.pdf` abgelegt).
   Kernpunkte: AMD Ryzen AI 9 HX 470 (12C/24T Zen-5) -> Video-Worker exzellent; **32 GB LPDDR5X VERLOETET,

@@ -33,9 +33,15 @@ MacBook (Dev, Voice, Runner)      NAS DS923+ (24/7, zuhause)           MACO470 (
                                                                          - spaeter: whisper, Gemini, LLM
 ```
 
-**Feste CEO-Entscheidungen (2026-07-14):** Ubuntu-Neuinstallation (Windows weg) · lokales LLM ja, als
-eigene spaete Phase · Clip-Quelle per **SMB-Mount** von der NAS (kein Dropbox-Client) · im Trainingslager
-schneidet der MACO470 **nur manuell uebergebenes Vor-Ort-Material**, die NAS arbeitet zuhause normal weiter.
+**Feste CEO-Entscheidungen (2026-07-14, OS-Punkt abends revidiert):** **Windows 11 Pro BLEIBT** — der
+Worker laeuft im **WSL2-Ubuntu** (Begruendung: CEO hat sonst nur Apple-Geraete und gewinnt so einen
+Windows-Rechner; WSL2 statt Hyper-V-VM wegen dynamischem RAM — die 32 GB sind verloetet und muessen
+spaeter auch das lokale LLM tragen; kein USB-Stick noetig = schnellster Weg zum Camp) · lokales LLM ja,
+als eigene spaete Phase (laeuft dann **Windows-nativ** mit Vulkan auf der iGPU) · Clip-Quelle per
+**SMB** von der NAS (kein Dropbox-Client) · im Trainingslager schneidet der MACO470 **nur manuell
+uebergebenes Vor-Ort-Material**, die NAS arbeitet zuhause normal weiter.
+**Bekannte WSL2-Haken (akzeptiert):** Autostart braucht Windows-Auto-Login + geplante Aufgabe;
+Windows-Update-Neustarts werden in ein Nachtfenster gelegt; SMB laeuft ueber den Windows-Umweg (drvfs).
 
 ---
 
@@ -79,9 +85,12 @@ Konsequenz: **git push wird Teil des Deploys.** NAS-Deploy bleibt unveraendert t
 ## Camp-Sprint (Tag 1–4 vor Abreise)
 
 ### Tag 1 — Vorbereitung + Worker-Code — Status: OFFEN
-1. **USB-Stick >= 8 GB besorgen** (~6 EUR, lokal kaufen; CEO-Tor Geld trivial, Changelog). *(CEO)*
-2. Am MacBook: **Ubuntu Server 24.04 LTS ISO** laden (ubuntu.com/download/server, ~2,7 GB) +
-   **balenaEtcher** (gratis, grafisch) -> Stick flashen („Flash from file" -> ISO -> Stick -> Flash). *(CEO)*
+1. ~~USB-Stick/ISO~~ **ENTFAELLT** (OS-Entscheidung: Windows bleibt + WSL2 — keine Installationsmedien noetig).
+2. **Windows vorbereiten** *(CEO, mit Claude-Anleitung)*: Rechnername `maco470`; **OpenSSH-Server**
+   aktivieren (Einstellungen -> System -> Optionale Features) fuer SSH vom MacBook; Energie: nie
+   schlafen (Netzbetrieb); Windows-Update: Nutzungszeit so legen, dass Neustarts nachts ~04:30 passieren
+   (nach dem NAS-Reel-Job waere egal — der laeuft ja auf der NAS); **Auto-Login** aktivieren (netplwiz)
+   fuer den unbeaufsichtigten Autostart; FritzBox: DHCP-Reservierung (feste IP notieren).
 3. **Worker-Code bauen** (auf dem MacBook, ohne MACO470 testbar): *(Claude)*
    - `cutter/reel_select.py`: Thema „Torjubel" (`tor`,`jubel`) + `thema_by_name()` + `MANUELLE_THEMEN`
    - `cutter/reel_daily.py`: `lauf(thema_name, alle_spiele, min_dauer=15)` + CLI (Logik der revertierten
@@ -94,22 +103,25 @@ Konsequenz: **git push wird Teil des Deploys.** NAS-Deploy bleibt unveraendert t
      Min-Max-Laenge), Reels-Ablehnen -> Rueckfrage „neues erstellen?" -> `{neu:true}`
    - `deploy/sync-to-maco.sh` · Tests · Changelog · Commit/Push
 
-### Tag 2 — Ubuntu + Zugriff — Status: OFFEN
-1. Ubuntu Server 24.04 installieren: Boot vom Stick (AOOSTAR: Boot-Menue **F7**/Entf), Tastatur German,
-   LAN-Kabel, ganze Platte (Windows wird ueberschrieben — gewollt), User `luna`, Hostname `maco470`,
-   **„Install OpenSSH server" ANHAKEN**. Danach Stick ziehen, Neustart.
-2. **BIOS: „Restore on AC Power Loss = Power On"** (headless-Betrieb, Stromausfall-Recovery).
-3. **FritzBox**: Heimnetz -> Netzwerk -> `maco470` -> „immer die gleiche IPv4-Adresse zuweisen". IP notieren.
-4. Vom MacBook: `ssh-keygen -t ed25519 -f ~/.ssh/maco470` + `ssh-copy-id`, `~/.ssh/config`-Eintrag
-   `Host maco470`; danach Haertung (`PasswordAuthentication no`, `PermitRootLogin no`).
-5. Pakete: `sudo apt install -y git python3-venv python3-pip ffmpeg cifs-utils build-essential cmake
-   avahi-daemon` (avahi -> im Camp als `maco470.local` findbar). Suspend maskieren
-   (`systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target`).
-6. Repo klonen (`git clone https://github.com/hsvnils/agent-OS.git ~/ki-unternehmen`), `.venv` anlegen,
+### Tag 2 — WSL2-Ubuntu + Zugriff — Status: OFFEN
+1. **WSL2 installieren** (PowerShell als Administrator): `wsl --install -d Ubuntu-24.04` -> Neustart ->
+   Ubuntu-User `luna` anlegen. Danach in der Ubuntu-Shell **systemd aktivieren**:
+   `/etc/wsl.conf` mit `[boot]\nsystemd=true`, dann `wsl --shutdown` (einmalig) und neu oeffnen.
+2. **BIOS: „Restore on AC Power Loss = Power On"** (Stromausfall-Recovery; AOOSTAR-BIOS via Entf beim Start).
+3. **SSH vom MacBook**: Ziel ist der Windows-OpenSSH-Dienst (Tag 1), von dort per `wsl` in Ubuntu.
+   MacBook: `ssh-keygen -t ed25519 -f ~/.ssh/maco470` + Key in Windows `authorized_keys`;
+   `~/.ssh/config`-Eintrag `Host maco470` (HostName = feste IP).
+4. Pakete im WSL-Ubuntu: `sudo apt update && sudo apt install -y git python3-venv python3-pip ffmpeg
+   build-essential cmake`. (Kein avahi/cifs-utils noetig — mDNS macht Windows, SMB laeuft ueber drvfs.)
+5. Repo klonen (`git clone https://github.com/hsvnils/agent-OS.git ~/ki-unternehmen`), `.venv` anlegen,
    `pytest cutter/tests` gruen.
-7. **Minimal-`.env`** (`~/ki-unternehmen/orchestrator/.env`, NUR das Noetige — Least Privilege):
+6. **Minimal-`.env`** (`~/ki-unternehmen/orchestrator/.env`, NUR das Noetige — Least Privilege):
    `LUNA_OS_URL=https://os.hanserautisch.synology.me` · `LUNA_OS_USER=maco470-worker` + neues Passwort
-   (Team-User vorher anlegen, E3) · `REEL_SOURCE=/mnt/nas-clips` · `REEL_OUTBOX`/`REEL_STATE` lokal.
+   (Team-User vorher anlegen, E3) · `REEL_SOURCE=/mnt/nas-clips` · `REEL_OUTBOX`/`REEL_STATE` lokal (ext4,
+   NICHT unter /mnt/c — Performance).
+7. **Autostart-Kette**: Windows-Auto-Login (Tag 1) + geplante Aufgabe „Bei Anmeldung":
+   `wsl -d Ubuntu-24.04 --exec /bin/true` haelt die Instanz mit systemd am Leben -> der
+   cutter-worker-Service (Tag 3) startet darin automatisch.
 
 ### Tag 3 — Worker live + Ende-zu-Ende-Test — Status: OFFEN
 1. systemd-Service `/etc/systemd/system/cutter-worker.service` (User luna, WorkingDir Repo,
@@ -120,9 +132,10 @@ Konsequenz: **git push wird Teil des Deploys.** NAS-Deploy bleibt unveraendert t
    `scp -r <ordner> maco470:~/CutterInbox/test1/` -> Reel entsteht, Telegram-Meldung kommt, Reel erscheint
    in LUNA-OS zur Freigabe (Einreichen ueber die externe HTTPS-URL — funktioniert auch vom Camp-WLAN).
 4. Web-Test manueller Themen-Reel (braucht SMB; sonst Tag 4 / nach dem Camp).
-5. Falls Zeit — **SMB-Mount**: DSM-User `maco470` (nur lesen, nur Medien-Freigabe); fstab-cifs mit
-   `credentials=/etc/cifs/nas-clips.cred,ro,uid=1000,gid=1000,iocharset=utf8,vers=3.0,noserverino,soft,nofail,_netdev,x-systemd.automount,x-systemd.idle-timeout=60`
-   -> bootet im Camp ohne NAS sauber, mountet zuhause automatisch. Umlaut-Check der Spielordner!
+5. Falls Zeit — **SMB via drvfs**: DSM-User `maco470` (nur lesen, nur Medien-Freigabe) anlegen;
+   Zugangsdaten in der Windows-Anmeldeinformationsverwaltung hinterlegen; im WSL-Ubuntu per fstab-Zeile
+   `\\192.168.178.129\SocialMediaTeam\Dropbox-Medien\Dateianfragen /mnt/nas-clips drvfs ro,noatime,uid=1000,gid=1000,nofail 0 0`
+   (nofail -> bootet im Camp ohne NAS sauber). Umlaut-Check der Spielordner!
 
 ### Tag 4 — Puffer + Abreise — Status: OFFEN
 Reboot-Test ohne LAN-Kabel (nofail greift), `journalctl -u cutter-worker` sauber, Checkliste unten.
@@ -131,7 +144,8 @@ Reboot-Test ohne LAN-Kabel (nofail greift), `journalctl -u cutter-worker` sauber
 
 **Abreise:** `sudo poweroff` · Netzteil + LAN-Kabel einpacken · Camp-Netz planen (MacBook-Hotspot reicht;
 MACO470 + MacBook ins selbe Netz) · zuhause nichts umstellen (NAS-Automatik laeuft weiter, E1).
-**Im Camp:** MACO470 booten, per `maco470.local` erreichbar (avahi) · Vor-Ort-Material: iPhone -> MacBook ->
+**Im Camp:** MACO470 booten (Auto-Login startet WSL + Worker), per `maco470.local` erreichbar
+(Windows-mDNS) · Vor-Ort-Material: iPhone -> MacBook ->
 `scp -r <ordner> maco470:~/CutterInbox/<name>/` (oder USB) -> Worker schneidet, meldet per Telegram ·
 mit Internet funktionieren Queue + Einreichen ueber die externe URL; ohne Internet bleiben fertige Reels
 in der Outbox liegen (erwartet) · SMB fehlt im Camp -> keine Themen-Reels aus dem Archiv (erwartet).
@@ -154,9 +168,10 @@ in der Outbox liegen (erwartet) · SMB fehlt im Camp -> keine Themen-Reels aus d
   — Kandidaten: **gpt-oss-20b** (~13 GB), **Qwen3-Coder-30B-A3B** (MoE, nur ~3,3B aktiv -> flott, ~18 GB
   Q4, knapp aber realistisch), Mistral-Small-24B. Das reicht fuer LUNAs Gehirn (Chat/Routing/Fachagenten)
   und einfache Execution-Aufgaben; fuer die 120B-Klasse bleibt spaeter die **Oculink-eGPU** oder separate
-  Hardware. Serving: Ollama (einfachster Betrieb) vs. llama.cpp-Server (Radeon-iGPU: **Vulkan** oft
-  robuster als ROCm) — mit kleinem Modell benchmarken, iGPU-Speicherzuteilung im BIOS beachten (teilt
-  sich die 32 GB mit dem System). Anbindung Chat/Fachagenten trivial ueber den vorhandenen
+  Hardware. Serving laeuft **Windows-nativ** (OS-Entscheidung: Windows+WSL2): Ollama-Windows oder
+  LM Studio mit **Vulkan** auf der Radeon-iGPU (unter Windows gut unterstuetzt; WSL2 hat keinen
+  brauchbaren iGPU-Zugriff) — mit kleinem Modell benchmarken, iGPU-Speicherzuteilung im BIOS beachten
+  (teilt sich die 32 GB mit System und WSL — WSL-RAM-Cap via `.wslconfig` setzen, z. B. 8 GB). Anbindung Chat/Fachagenten trivial ueber den vorhandenen
   OpenAI-kompatiblen FallbackBackend (`base_url=http://maco470:11434/v1`); **Execution** braucht den
   Nicht-CLI-Ausfuehrungs-Agenten (separates Vorhaben, ROADMAP). Nur LAN binden, keine
   FritzBox-Portfreigabe (CISO-Notiz).
@@ -175,8 +190,8 @@ in der Outbox liegen (erwartet) · SMB fehlt im Camp -> keine Themen-Reels aus d
 
 | Phase | Inhalt | Status |
 |---|---|---|
-| Tag 1 | Stick/ISO + Worker-Code | OFFEN |
-| Tag 2 | Ubuntu + SSH + Repo | OFFEN |
+| Tag 1 | Windows vorbereiten (SSH/Energie/Auto-Login) + Worker-Code | OFFEN |
+| Tag 2 | WSL2-Ubuntu + SSH-Kette + Repo | OFFEN |
 | Tag 3 | Worker live + Camp-Test (+ SMB falls Zeit) | OFFEN |
 | Tag 4 | Puffer + Abreise-Checkliste | OFFEN |
 | M3-Rest | SMB finalisieren + Themen-Reels E2E | OFFEN (nach Camp) |
