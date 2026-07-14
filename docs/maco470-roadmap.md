@@ -6,9 +6,20 @@
 > **Zeitdruck:** In ~4 Tagen (ca. 2026-07-18) geht es ins **Trainingslager — der MACO470 faehrt mit** und
 > muss dort Vor-Ort-Material schneiden koennen. Deshalb zuerst der Camp-Sprint, alles andere danach.
 
+## Hardware (aus `docs/maco470-specs.pdf`, abgelegt 2026-07-14)
+
+**AOOSTAR MACO470 (Modell Maco-L):** AMD **Ryzen AI 9 HX 470** (12 Kerne / 24 Threads, bis 5,2 GHz, Zen-5-
+Klasse mit Radeon-iGPU) · **32 GB LPDDR5X-8000, VERLOETET** (nie aufruestbar) · **kein NPU** laut Datenblatt ·
+M.2 NVMe x3 (bis 4 TB) · **2x 2,5-GbE-LAN**, Wi-Fi 7 · USB4 x2 · **Oculink (PCIe 4.0 x4)** = spaetere
+eGPU-Option · 120-W-Netzteil (DC 5525 — **fuers Camp einpacken!**).
+
+**Einordnung:** Fuer den **Video-Worker exzellent** (12 schnelle Kerne: ffmpeg/Whisper deutlich flotter als
+NAS und MacBook-Nebenlast). Fuer das **lokale LLM (M6)** setzt der verloetete 32-GB-Speicher die Grenze —
+Details im M6-Gate unten; die 120B-Klasse aus der ROADMAP ist damit NICHT machbar, die 7-30B-Klasse gut.
+
 ## Zielbild
 
-Der **AOOSTAR MACO470** (AMD-Mini-PC; Specs-PDF folgt unter `docs/maco470-specs.pdf`) wird:
+Der **AOOSTAR MACO470** wird:
 1. der **einzige Queue-Consumer** fuer manuelle Cutter-/Reel-Jobs (der grosse, vertagte Cutter-Worker),
 2. die Maschine fuer **schwere Video-Brain-Stufen** (Whisper-Transkripte, spaeter Gemini-Tagging),
 3. in einer spaeten Phase **lokaler LLM-Host** (LUNAs Gehirn/Execution ohne Cloud-Guthaben).
@@ -137,12 +148,18 @@ in der Outbox liegen (erwartet) · SMB fehlt im Camp -> keine Themen-Reels aus d
   (Gemini: TAG_VOKABULAR + `pyro`,`gesang`,… + 1-2-Satz-Beschreibung) **hinter CEO-Tor** mit
   CFO-Kostenvoranschlag (~6–18 EUR einmalig). **Stufen 4/5** (Clip-Archiv-App mit Supabase-`clips`-Tabelle,
   Cutter fragt Archiv) nach `docs/video-brain-plan.md`; Index-Zusammenfuehrung ueber die LUNA-OS-API.
-- **M6 — Lokales LLM (Entscheidungs-Gate):** Specs-PDF auswerten (RAM -> Modellklasse: 32 GB ~7-20B ·
-  64 GB ~30-70B · 96-128 GB unified -> GPT-OSS-120B-Klasse laut ROADMAP). Serving: Ollama (einfachster
-  Betrieb) vs. llama.cpp-Server (AMD-iGPU: **Vulkan** oft robuster als ROCm) — am Gate benchmarken.
-  Anbindung Chat/Fachagenten trivial ueber den vorhandenen OpenAI-kompatiblen FallbackBackend
-  (`base_url=http://maco470:11434/v1`); **Execution** braucht den Nicht-CLI-Ausfuehrungs-Agenten
-  (separates Vorhaben, ROADMAP). Nur LAN binden, keine FritzBox-Portfreigabe (CISO-Notiz).
+- **M6 — Lokales LLM (Gate am 2026-07-14 mit Specs aufgeloest):** 32 GB verloetet + kein NPU heisst
+  **ehrlich**: Die in der ROADMAP anvisierte GPT-OSS-**120B**-Klasse ist auf DIESEM Geraet nicht machbar
+  (braeuchte 64-128 GB). Realistisch und gut: **~7-14B komfortabel** (Q4, 4-9 GB), **~20-30B machbar**
+  — Kandidaten: **gpt-oss-20b** (~13 GB), **Qwen3-Coder-30B-A3B** (MoE, nur ~3,3B aktiv -> flott, ~18 GB
+  Q4, knapp aber realistisch), Mistral-Small-24B. Das reicht fuer LUNAs Gehirn (Chat/Routing/Fachagenten)
+  und einfache Execution-Aufgaben; fuer die 120B-Klasse bleibt spaeter die **Oculink-eGPU** oder separate
+  Hardware. Serving: Ollama (einfachster Betrieb) vs. llama.cpp-Server (Radeon-iGPU: **Vulkan** oft
+  robuster als ROCm) — mit kleinem Modell benchmarken, iGPU-Speicherzuteilung im BIOS beachten (teilt
+  sich die 32 GB mit dem System). Anbindung Chat/Fachagenten trivial ueber den vorhandenen
+  OpenAI-kompatiblen FallbackBackend (`base_url=http://maco470:11434/v1`); **Execution** braucht den
+  Nicht-CLI-Ausfuehrungs-Agenten (separates Vorhaben, ROADMAP). Nur LAN binden, keine
+  FritzBox-Portfreigabe (CISO-Notiz).
 
 ## Fallstricke (beim Bau beachten)
 

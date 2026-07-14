@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-07-14 16:05] — Claude Code
+- **Was:** MACO470-Specs ausgewertet und in die Roadmap eingetragen (`docs/maco470-specs.pdf` abgelegt).
+  Kernpunkte: AMD Ryzen AI 9 HX 470 (12C/24T Zen-5) -> Video-Worker exzellent; **32 GB LPDDR5X VERLOETET,
+  kein NPU** -> M6-Gate aufgeloest: lokales LLM in der **7-30B-Klasse** (gpt-oss-20b, Qwen3-Coder-30B-A3B,
+  Mistral-Small-24B), die ROADMAP-120B-Klasse ist auf diesem Geraet NICHT machbar (spaeter Oculink-eGPU
+  als Option); 2x 2,5-GbE, Wi-Fi 7, 120-W-Netzteil (Camp-Checkliste).
+- **Warum:** CEO hat das Specs-PDF geliefert (M0-Punkt der MACO470-Roadmap).
+- **Betroffen:** docs/maco470-specs.pdf (neu), docs/maco470-roadmap.md
+
 ## [2026-07-14 11:30] — Claude Code
 - **Was:** **MACO470-Roadmap angelegt** (`docs/maco470-roadmap.md`, lebendes Dokument) — der AOOSTAR
   MACO470 (AMD-Mini-PC) ist eingetroffen; **in ~4 Tagen Trainingslager, der Rechner faehrt mit**.
