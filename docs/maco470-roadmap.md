@@ -24,8 +24,16 @@ sudo); die frueheren NAS-Zahlen (100 echte, meist kuerzere Clips in ~7 min = ~4,
 einen deutlichen Vorsprung nahe. WSL sieht 24 Threads und ~14 GB RAM (WSL-Default = halber Host-RAM;
 per `.wslconfig` anpassbar, spaeter gegen das Windows-native LLM abwaegen).
 
-**Offen:** Team-User `maco470-worker` + `.env` · Worker-Code · systemd-Service + Autostart-Kette ·
-SMB-Mount (drvfs).
+**Worker (2026-08-10):** `cutter/worker.py` gebaut + auf dem MACO470 deployt (`deploy/sync-to-maco.sh`),
+**71 Cutter-Tests dort gruen**. systemd-Dienst `cutter-worker` angelegt + `enable`d (noch nicht gestartet).
+`.env` mit Platzhalter-Passwort angelegt. **Camp-Modus verifiziert:** 5 Clips in `~/CutterInbox/camptest`
+-> fertiges 16-s-Reel in **14 s**; die Bridge-401 (Platzhalter-Passwort) hat den Lauf **nicht** gestoppt —
+genau das gewuenschte Offline-Verhalten.
+
+**Offen (braucht den CEO):** (1) LUNA-OS-Team-User `maco470-worker` anlegen (NAS, sudo) + Passwort in die
+`.env` des MACO470 -> danach Queue-Betrieb; (2) Mac-Watcher auf `CUTTER_QUEUE_POLL=0` umstellen **bevor**
+der Worker-Dienst startet; (3) Autostart-Kette (Auto-Login + geplante Aufgabe, die WSL startet);
+(4) SMB-Mount (drvfs) fuer Themen-Reels aus dem NAS-Archiv.
 
 ## Hardware (aus `docs/maco470-specs.pdf`, abgelegt 2026-07-14)
 
@@ -212,7 +220,8 @@ in der Outbox liegen (erwartet) · SMB fehlt im Camp -> keine Themen-Reels aus d
 | Phase | Inhalt | Status |
 |---|---|---|
 | Tag 1 | Windows vorbereiten (SSH/Energie/Auto-Login) | **ERLEDIGT 2026-08-10** |
-| Tag 1 | Worker-Code (`cutter/worker.py` etc.) | OFFEN |
+| Tag 1 | Worker-Code (`cutter/worker.py` etc.) | **ERLEDIGT 2026-08-10** |
+| Tag 3 | Dienst + Camp-Test (lokale Inbox) | **ERLEDIGT 2026-08-10** (Queue-Teil offen: .env-Passwort) |
 | Tag 2 | WSL2-Ubuntu + SSH-Kette + Repo + Tests | **ERLEDIGT 2026-08-10** |
 | Tag 3 | Worker live + Camp-Test (+ SMB falls Zeit) | OFFEN |
 | Tag 4 | Puffer + Abreise-Checkliste | OFFEN |

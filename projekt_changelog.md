@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-08-10 11:50] — Claude Code
+- **Was:** **Worker auf dem MACO470 in Betrieb genommen** (Tag-3-Teil). Deploy per
+  `deploy/sync-to-maco.sh --no-restart` (push -> git pull im WSL-Ubuntu) -> **71 Cutter-Tests dort gruen**.
+  systemd-Dienst `cutter-worker` angelegt + aktiviert (User luna, Restart=always, network-online),
+  Arbeitsordner (`~/CutterInbox|CutterOutbox|ReelOutbox|ReelState`) erstellt, `.env` mit Platzhalter-
+  Passwort (chmod 600, gitignored). **Camp-Modus verifiziert:** 5 Clips -> fertiges 16-s-Reel in **14 s**;
+  die Bridge-401 (Platzhalter) hat den Lauf **nicht** unterbrochen = gewuenschtes Offline-Verhalten.
+  Nebenbefund aus dem ersten Testlauf: der Stabilitaets-Check (`_stabil`) greift korrekt — frisch
+  geschriebene Clips werden erst nach dem Ruhe-Fenster geschnitten. Testdaten wieder entfernt.
+  **Offen (CEO):** Team-User `maco470-worker` + Passwort in die `.env` (dann Queue-Betrieb),
+  `CUTTER_QUEUE_POLL=0` am Mac **vor** dem Dienststart, Autostart-Kette, SMB-Mount.
+- **Warum:** MACO470-Roadmap, Inbetriebnahme des Cutter-Workers.
+- **Betroffen:** docs/maco470-roadmap.md (Status/IST-Stand); Maschinen-Setup auf dem MACO470
+  (systemd-Unit, .env, Ordner) liegt ausserhalb des Repos
+
 ## [2026-08-10 11:45] — Claude Code
 - **Was:** **Cutter-Worker + manueller Cutter gebaut** (Camp-Sprint Tag 1, Code-Teil; setzt
   `docs/cutter-worker-plan.md` um, ohne Punkt 5 = E1). (1) **Neu `cutter/worker.py`**: ein Prozess, zwei
