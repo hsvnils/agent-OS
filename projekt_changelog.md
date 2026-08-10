@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-08-10 11:10] — Claude Code
+- **Was:** **MACO470 eingerichtet — Camp-Sprint Tag 1 (Windows-Teil) + Tag 2 komplett erledigt.**
+  Windows 11 Pro bleibt (Rechnername `maco470`, feste IP 192.168.178.184 per FritzBox, Energie/
+  Auto-Login/Update-Fenster durch den CEO gesetzt). **SSH-Bruecke MacBook -> MACO470 steht**:
+  OpenSSH-Server aktiviert (CEO, Admin-PowerShell), Key `~/.ssh/maco470` erzeugt, in Windows
+  `administrators_authorized_keys` gelegt + icacls-Rechte (sprachunabhaengige SIDs S-1-5-32-544/S-1-5-18),
+  `~/.ssh/config`-Eintrag `Host maco470` -> `ssh maco470` ohne Passwort. Danach **per SSH ferngesteuert**:
+  WSL2 + **Ubuntu 24.04** installiert, Benutzer `luna` (Default, NOPASSWD-sudo), **systemd aktiviert**
+  (`/etc/wsl.conf`), Pakete (git 2.43, **Python 3.12.3**, **ffmpeg 6.1.1**, build-essential, cmake),
+  Repo geklont + venv -> **62 Cutter-Tests gruen**. Benchmark: clip_brain 30-s-1080p-Clip in **0,92 s**
+  (MacBook 0,64 s; direkter NAS-Vergleich steht aus — braucht sudo). Roadmap-Status + IST-Stand
+  dokumentiert. **Nebenbefund:** Der CEO hat bereits **Ollama** installiert (Windows, Port 11434, LAN)
+  mit **qwen3:30b-a3b** (tools+thinking -> Kandidat fuer LUNAs Gehirn) und gemma3:27b — Vorgriff auf M6.
+  Kein Docker auf dem MACO470 (bewusst: WSL2 isoliert bereits, spart RAM fuer das LLM).
+- **Warum:** MACO470-Roadmap, Camp-Sprint (Trainingslager). Docker-Frage des CEO beantwortet (nicht noetig).
+- **Betroffen:** docs/maco470-roadmap.md, projekt_changelog.md (Maschinen-Setup selbst ist ausserhalb des
+  Repos: Windows/WSL auf dem MACO470, `~/.ssh/config` + Key auf dem MacBook)
+
 ## [2026-07-14 16:40] — Claude Code
 - **Was:** MACO470-Roadmap: **OS-Entscheidung revidiert** (CEO): **Windows 11 Pro bleibt**, der Worker
   laeuft im **WSL2-Ubuntu** (statt Ubuntu-Neuinstallation). Gruende: CEO gewinnt einen Windows-Rechner

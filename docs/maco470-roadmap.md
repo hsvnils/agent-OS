@@ -6,6 +6,27 @@
 > **Zeitdruck:** In ~4 Tagen (ca. 2026-07-18) geht es ins **Trainingslager — der MACO470 faehrt mit** und
 > muss dort Vor-Ort-Material schneiden koennen. Deshalb zuerst der Camp-Sprint, alles andere danach.
 
+## IST-Stand der Einrichtung (2026-08-10)
+
+**Fertig:** Windows 11 Pro (Build 26200) mit Rechnername `maco470`, feste IP **192.168.178.184**
+(FritzBox-Reservierung), Energie/Auto-Login/Update-Fenster gesetzt · **OpenSSH-Server aktiv**, Key-Login
+vom MacBook (`ssh maco470`, Key `~/.ssh/maco470`, User `nils`, Windows-`administrators_authorized_keys`
+mit icacls-Rechten) · **WSL2 + Ubuntu 24.04** installiert, Benutzer `luna` (Default, NOPASSWD-sudo),
+**systemd aktiv** · Pakete: git 2.43, **Python 3.12.3**, **ffmpeg 6.1.1**, build-essential, cmake ·
+Repo geklont (`~/ki-unternehmen`, https, public), `.venv` + pytest -> **62 Cutter-Tests gruen**.
+**Bereits vom CEO installiert (Vorgriff auf M6):** **Ollama** auf Windows (Port 11434, im LAN erreichbar)
+mit **qwen3:30b-a3b** (MoE, kann *tools*+*thinking* -> der Kandidat fuer LUNAs Gehirn) und **gemma3:27b**
+(nur completion). Beide Q4_K_M, ~17-18 GB.
+
+**Gemessen:** clip_brain-Analyse eines 30-s-1080p-Testclips = **0,92 s** auf dem MACO470 (MacBook zum
+Vergleich 0,64 s beim identischen Clip). Direkter NAS-Vergleich mit demselben Clip steht aus (braucht
+sudo); die frueheren NAS-Zahlen (100 echte, meist kuerzere Clips in ~7 min = ~4,2 s/Clip) legen aber
+einen deutlichen Vorsprung nahe. WSL sieht 24 Threads und ~14 GB RAM (WSL-Default = halber Host-RAM;
+per `.wslconfig` anpassbar, spaeter gegen das Windows-native LLM abwaegen).
+
+**Offen:** Team-User `maco470-worker` + `.env` · Worker-Code · systemd-Service + Autostart-Kette ·
+SMB-Mount (drvfs).
+
 ## Hardware (aus `docs/maco470-specs.pdf`, abgelegt 2026-07-14)
 
 **AOOSTAR MACO470 (Modell Maco-L):** AMD **Ryzen AI 9 HX 470** (12 Kerne / 24 Threads, bis 5,2 GHz, Zen-5-
@@ -190,8 +211,9 @@ in der Outbox liegen (erwartet) · SMB fehlt im Camp -> keine Themen-Reels aus d
 
 | Phase | Inhalt | Status |
 |---|---|---|
-| Tag 1 | Windows vorbereiten (SSH/Energie/Auto-Login) + Worker-Code | OFFEN |
-| Tag 2 | WSL2-Ubuntu + SSH-Kette + Repo | OFFEN |
+| Tag 1 | Windows vorbereiten (SSH/Energie/Auto-Login) | **ERLEDIGT 2026-08-10** |
+| Tag 1 | Worker-Code (`cutter/worker.py` etc.) | OFFEN |
+| Tag 2 | WSL2-Ubuntu + SSH-Kette + Repo + Tests | **ERLEDIGT 2026-08-10** |
 | Tag 3 | Worker live + Camp-Test (+ SMB falls Zeit) | OFFEN |
 | Tag 4 | Puffer + Abreise-Checkliste | OFFEN |
 | M3-Rest | SMB finalisieren + Themen-Reels E2E | OFFEN (nach Camp) |
