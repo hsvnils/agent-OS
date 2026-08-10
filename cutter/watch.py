@@ -83,14 +83,18 @@ def loop(inbox: Path, outbox: Path, *, intervall: float = 15.0, ruhe_sek: float 
     token = env.get("TELEGRAM_BOT_TOKEN", "")
     chat = env.get("TELEGRAM_ALLOWED_CHAT_ID", "")
     bridge = LunaBridge.from_env(env)   # K5: Status/Queue via LUNA-OS-API (nur wenn LUNA_OS_URL+Passwort da)
+    # Queue-Polling abschaltbar: seit dem MACO470 ist DESSEN Worker der einzige Queue-Consumer
+    # (nie zwei Poller!). Mit CUTTER_QUEUE_POLL=0 bleibt hier nur die lokale Inbox + Status-Melden aktiv.
+    queue_poll = str(env.get("CUTTER_QUEUE_POLL", "1")).strip().lower() not in ("0", "false", "no", "off")
     print(f"Cutter-Watcher aktiv. Inbox: {inbox}  ->  Outbox: {outbox}"
           + (" | Telegram-Meldung: an" if token and chat else "")
-          + (" | LUNA-OS-Bruecke: an" if bridge.aktiv() else ""), flush=True)
+          + (" | LUNA-OS-Bruecke: an" if bridge.aktiv() else "")
+          + ("" if queue_poll else " | Queue-Polling: AUS (MACO470 uebernimmt)"), flush=True)
     print("Lege Clips in einen Unterordner der Inbox -- der Schnitt startet automatisch.", flush=True)
     while True:
         try:
             # K5: von LUNA-OS angestossene Jobs zuerst (auch wenn der Ordner schon einen Marker hat).
-            for job in (bridge.offene_jobs() if bridge.aktiv() else []):
+            for job in (bridge.offene_jobs() if (queue_poll and bridge.aktiv()) else []):
                 projekt = inbox / (job.get("projekt") or "")
                 if projekt.is_dir():
                     _verarbeite(projekt, outbox, ziel_dauer, token, chat, bridge, job.get("id", ""))

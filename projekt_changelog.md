@@ -17,6 +17,34 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-08-10 11:45] — Claude Code
+- **Was:** **Cutter-Worker + manueller Cutter gebaut** (Camp-Sprint Tag 1, Code-Teil; setzt
+  `docs/cutter-worker-plan.md` um, ohne Punkt 5 = E1). (1) **Neu `cutter/worker.py`**: ein Prozess, zwei
+  Quellen — **Queue** (`/api/cutter/queue`: `note`-JSON `typ=reel` -> Themen-Reel via `reel_daily.lauf`,
+  sofortiges `melden(running)` = De-facto-Claim, danach `reel_einreichen` zur CEO-Freigabe; sonst
+  Ordner-Job) und **lokale Inbox** (`~/CutterInbox`, Camp-Betrieb, offline-robust: Bridge-Fehler werden
+  geschluckt, fertige Reels bleiben in der Outbox). Nutzt `watch.py`-Bausteine (`_verarbeite`, `_stabil`,
+  MARKER) statt Duplikat. (2) **`reel_daily.lauf`** um `thema_name`/`alle_spiele`/`min_dauer=15` erweitert
+  (+ CLI `--thema/--alle-spiele/--min-dauer`); zu kurze Reels werden mit `zu_kurz`-Bericht **nicht**
+  eingereicht; unbekannter Spielordner -> klare Fehlermeldung mit Vorschlagsliste. (3) **`reel_select`**:
+  Thema „Torjubel" + `thema_by_name()` + `MANUELLE_THEMEN`. (4) **`watch.py`**: Schalter
+  `CUTTER_QUEUE_POLL=0` (E4 — nie zwei Queue-Poller; lokale Mac-Inbox bleibt aktiv). (5) **Web**:
+  `POST /api/cutter/reel` reiht **nur ein** (kein Bauen im Web-Prozess), `POST /api/reel/{id}/ablehnen
+  {neu:true}` fordert Ersatz-Reel an; Cutter-App mit Formular (Thema/Einzelspiel-Overall/Min-Max),
+  Reels-Ablehnen mit Rueckfrage. Cache v31. (6) **`deploy/sync-to-maco.sh`** (E5: push -> git pull ->
+  systemctl restart).
+  **Verifiziert:** 71 Cutter- + 22 Orchestrator-Tests gruen (9 neue Worker-Tests: Job-Erkennung,
+  Parameter-Durchreichung, zu-kurz, Absturz-Fang, Offline-Einreichen); **echter E2E-Lauf** gegen ein
+  generiertes 8-Clip-Archiv: Overall-Reel 27,6 s aus BEIDEN Spielen, Einzelspiel 18,4 s mit korrektem
+  `#HSVStPauli`-Hashtag, Mindestlaenge lehnt 4,6 s ab, unbekannter Ordner sauber; **Vertragstest
+  Web<->Worker** (note-JSON schreiben/lesen) gruen. Web-Formular nur funktional geprueft (zwei
+  Chrome-Instanzen verbunden -> visueller Browser-Check steht aus).
+- **Warum:** MACO470-Roadmap, Camp-Sprint Tag 1 (Worker-Code) — CEO-Freigabe „mach gerne weiter".
+- **Betroffen:** cutter/worker.py (neu), cutter/tests/test_worker.py (neu), cutter/reel_daily.py,
+  cutter/reel_select.py, cutter/watch.py, orchestrator/channels/web/app.py,
+  orchestrator/channels/web/static/app-v2.js, orchestrator/channels/web/static/index-v2.html,
+  deploy/sync-to-maco.sh (neu)
+
 ## [2026-08-10 11:10] — Claude Code
 - **Was:** **MACO470 eingerichtet — Camp-Sprint Tag 1 (Windows-Teil) + Tag 2 komplett erledigt.**
   Windows 11 Pro bleibt (Rechnername `maco470`, feste IP 192.168.178.184 per FritzBox, Energie/

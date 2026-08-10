@@ -355,9 +355,42 @@ async def cutter_job(request: Request):
     return JSONResponse({**r, "jobs": cutter_store.list(limit=100)})
 
 
+def _reel_job_einreihen(*, thema: str = "", spiel: str = "", alle_spiele: bool = False,
+                        min_dauer: float = 15.0, max_dauer: float = 45.0) -> dict:
+    """Legt einen manuellen Themen-Reel-Job in die Queue. **Der Web-Prozess baut NICHT selbst** — das macht
+    der Cutter-Worker (MACO470). Parameter stecken als JSON im `note`-Feld (Job-Schema bleibt unangetastet).
+    Mindestlaenge nie unter 15 s (globale Regel)."""
+    min_d = max(15.0, float(min_dauer or 15))
+    max_d = max(min_d, float(max_dauer or 45))
+    ziel = "alle Spiele" if alle_spiele else (spiel or "?")
+    note = json.dumps({"typ": "reel", "thema": (thema or None),
+                       "spiel": (None if alle_spiele else (spiel or None)), "alle_spiele": bool(alle_spiele),
+                       "min_dauer": min_d, "max_dauer": max_d}, ensure_ascii=False)
+    return cutter_store.add({"id": uuid.uuid4().hex, "projekt": f"🎬 Reel · {thema or 'Auto'} · {ziel}"[:200],
+                             "note": note[:500], "status": "queued", "quelle": "luna-os"})
+
+
+@app.post("/api/cutter/reel")
+async def cutter_reel(request: Request):
+    """Manuellen Themen-Reel anfordern (Thema, Einzelspiel/alle Spiele, Min-/Max-Laenge) -> Job in die Queue."""
+    d = await _json(request)
+    thema = (d.get("thema") or "").strip()
+    alle = bool(d.get("alle_spiele"))
+    spiel = (d.get("spiel") or "").strip()
+    if not alle and not spiel:
+        return JSONResponse({"ok": False, "hinweis": "Spielordner-Namen angeben oder 'alle Spiele' waehlen."})
+    r = _reel_job_einreihen(thema=thema, spiel=spiel, alle_spiele=alle,
+                            min_dauer=_inum(d.get("min_dauer")) or 15,
+                            max_dauer=_inum(d.get("max_dauer")) or 45)
+    if r.get("ok"):
+        _changelog("Cutter", f"Manueller Reel-Auftrag: {thema or 'Auto'} ({'alle Spiele' if alle else spiel})",
+                   "CEO ueber LUNA-OS", "cutter")
+    return JSONResponse({**r, "jobs": cutter_store.list(limit=100)})
+
+
 @app.get("/api/cutter/queue")
 def cutter_queue():
-    """Vom Mac-Watcher gepollt: offene (queued) Jobs."""
+    """Vom Cutter-Worker (MACO470) gepollt: offene (queued) Jobs."""
     return {"jobs": [j for j in cutter_store.list(limit=100) if j.get("status") == "queued"]}
 
 
@@ -1230,9 +1263,23 @@ def reel_posten(rid: str, hintergrund: BackgroundTasks):
 
 
 @app.post("/api/reel/{rid}/ablehnen")
-def reel_ablehnen(rid: str):
-    """CEO-Ablehnung -> Status 'abgelehnt' (wird nicht gepostet)."""
-    return JSONResponse({"ok": reel_store.status_setzen(rid, "abgelehnt")})
+async def reel_ablehnen(rid: str, request: Request):
+    """CEO-Ablehnung -> Status 'abgelehnt' (wird nicht gepostet). Mit `{neu:true}` wird gleich ein NEUER
+    Reel-Job (gleiches Thema/Spiel) in die Queue gelegt -> der Worker baut einen Ersatz."""
+    body = await _json(request)
+    ok = reel_store.status_setzen(rid, "abgelehnt")
+    neu_job = False
+    if ok and bool((body or {}).get("neu")):
+        r = reel_store.holen(rid) or {}
+        spiele = r.get("spiele") or []
+        einzel = spiele[0] if (len(spiele) == 1 and spiele[0] not in ("alle Spiele", "?", "")) else ""
+        job = _reel_job_einreihen(thema=(r.get("thema") or ""), spiel=einzel, alle_spiele=(not einzel),
+                                  min_dauer=15, max_dauer=(_inum(r.get("dauer_sek")) or 45))
+        neu_job = bool(job.get("ok"))
+        if neu_job:
+            _changelog("Cutter", f"Reel abgelehnt -> Ersatz angefordert ({r.get('thema') or 'Auto'})",
+                       "CEO ueber LUNA-OS", "cutter")
+    return JSONResponse({"ok": ok, "neu_job": neu_job})
 
 
 def _radar_kompakt(k: dict) -> dict:
