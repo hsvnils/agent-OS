@@ -3,8 +3,10 @@
 > **Lebendes Dokument.** Status je Phase wird hier gepflegt. Uebersteuert Teile von
 > `docs/cutter-worker-plan.md` (siehe Entscheidung E1). Angelegt 2026-07-14 nach CEO-Planungsrunde.
 >
-> **Zeitdruck:** In ~4 Tagen (ca. 2026-07-18) geht es ins **Trainingslager — der MACO470 faehrt mit** und
-> muss dort Vor-Ort-Material schneiden koennen. Deshalb zuerst der Camp-Sprint, alles andere danach.
+> **Trainingslager: erledigt/gestrichen (CEO, 2026-08-12).** Der urspruengliche „Camp-Sprint" hat seinen
+> Zweck erfuellt — der MACO470 ist eingerichtet und der Worker laeuft. Der **Camp-Modus bleibt als Funktion
+> erhalten** (lokale `~/CutterInbox` fuer Material, das nicht auf der NAS liegt — funktioniert auch ohne
+> Internet). Neue Prioritaet: **SMB-Mount**, danach **Video-Brain (M5)** und **lokales LLM (M6)**.
 
 ## IST-Stand der Einrichtung (2026-08-10)
 
@@ -37,11 +39,13 @@ AUS (MACO470 uebernimmt)"); systemd-Dienst `cutter-worker` **gestartet und aktiv
 geholt, in **11 s** ein 12,8-s-Reel aus 4 Clips gebaut und den Status **`done`** samt Clips/Dauer/Groesse
 zurueckgemeldet. Testdaten entfernt.
 
-**Offen:** (1) **Autostart-Kette** (Windows-Auto-Login + geplante Aufgabe, die WSL nach dem Booten
-startet) — ohne sie laeuft der Worker erst nach einer manuellen Anmeldung; (2) **SMB-Mount** (drvfs) fuer
-Themen-Reels aus dem NAS-Archiv (51 Ordner unter `/volume1/SocialMediaTeam/Dropbox-Medien/Dateianfragen`);
-(3) **Passwort-Haerte**: das aktuelle Worker-Passwort ist rein numerisch/kurz — bei oeffentlich
-erreichbarem LUNA-OS ersetzen.
+**Autostart erledigt (2026-08-12):** Windows-Aufgabe `LUNA-WSL-Autostart` (bei Anmeldung ->
+`wsl.exe -d Ubuntu-24.04 --exec /bin/true`) startet die WSL-Instanz; systemd bringt `cutter-worker`
+automatisch mit hoch. **Getestet:** `wsl --shutdown` -> Aufgabe ausgeloest -> Worker war ohne Zutun
+wieder `active`. Passwort am 2026-08-12 durch ein starkes ersetzt.
+
+**Offen:** **SMB-Mount** (drvfs) fuer Themen-Reels aus dem NAS-Archiv (51 Ordner unter
+`/volume1/SocialMediaTeam/Dropbox-Medien/Dateianfragen`) — braucht einen DSM-Benutzer mit Nur-Lese-Recht.
 
 ## Hardware (aus `docs/maco470-specs.pdf`, abgelegt 2026-07-14)
 
@@ -177,18 +181,19 @@ Konsequenz: **git push wird Teil des Deploys.** NAS-Deploy bleibt unveraendert t
 ### Tag 4 — Puffer + Abreise — Status: OFFEN
 Reboot-Test ohne LAN-Kabel (nofail greift), `journalctl -u cutter-worker` sauber, Checkliste unten.
 
-## Trainingslager-Checkliste
+## Mobil-/Offline-Betrieb (frueher „Trainingslager-Checkliste")
 
-**Abreise:** `sudo poweroff` · Netzteil + LAN-Kabel einpacken · Camp-Netz planen (MacBook-Hotspot reicht;
-MACO470 + MacBook ins selbe Netz) · zuhause nichts umstellen (NAS-Automatik laeuft weiter, E1).
-**Im Camp:** MACO470 booten (Auto-Login startet WSL + Worker), per `maco470.local` erreichbar
-(Windows-mDNS) · Vor-Ort-Material: iPhone -> MacBook ->
-`scp -r <ordner> maco470:~/CutterInbox/<name>/` (oder USB) -> Worker schneidet, meldet per Telegram ·
-mit Internet funktionieren Queue + Einreichen ueber die externe URL; ohne Internet bleiben fertige Reels
-in der Outbox liegen (erwartet) · SMB fehlt im Camp -> keine Themen-Reels aus dem Archiv (erwartet).
-**Rueckkehr:** LAN-Kabel rein, booten, `ls /mnt/nas-clips` (Automount), `systemctl status cutter-worker`.
+Bleibt als **Funktion** erhalten, auch wenn das Camp durch ist — nuetzlich fuer jedes Material, das nicht
+im NAS-Archiv liegt:
+- MACO470 mitnehmen (Netzteil + LAN-Kabel), im fremden Netz per `maco470.local` erreichbar (Windows-mDNS);
+  Auto-Login startet WSL + Worker selbsttaetig.
+- Material uebergeben: `scp -r <ordner> maco470:~/CutterInbox/<name>/` (oder USB) -> der Worker schneidet
+  automatisch, sobald der Ordner „ruhig" ist, und meldet per Telegram.
+- **Mit** Internet: Queue + Einreichen laufen ueber die externe URL. **Ohne** Internet: der Schnitt laeuft
+  trotzdem, fertige Reels bleiben in der Outbox (verifiziert 2026-08-10).
+- Ohne NAS-Verbindung gibt es keine Themen-Reels aus dem Archiv (erwartet — dafuer braucht es den SMB-Mount).
 
-## Nach dem Camp
+## Weiterer Ausbau
 
 - **M3-Rest — SMB finalisieren** (falls im Sprint nicht geschafft) -> manuelle Themen-Reels
   („Torjubel ueber alle Spiele") voll nutzbar.
@@ -227,12 +232,12 @@ in der Outbox liegen (erwartet) · SMB fehlt im Camp -> keine Themen-Reels aus d
 
 | Phase | Inhalt | Status |
 |---|---|---|
-| Tag 1 | Windows vorbereiten (SSH/Energie/Auto-Login) | **ERLEDIGT 2026-08-10** |
-| Tag 1 | Worker-Code (`cutter/worker.py` etc.) | **ERLEDIGT 2026-08-10** |
-| Tag 3 | Dienst + Camp-Test (lokale Inbox) | **ERLEDIGT 2026-08-10** (Queue-Teil offen: .env-Passwort) |
-| Tag 2 | WSL2-Ubuntu + SSH-Kette + Repo + Tests | **ERLEDIGT 2026-08-10** |
-| Tag 3 | Worker live + Camp-Test (+ SMB falls Zeit) | OFFEN |
-| Tag 4 | Puffer + Abreise-Checkliste | OFFEN |
-| M3-Rest | SMB finalisieren + Themen-Reels E2E | OFFEN (nach Camp) |
-| M5 | Video-Brain Stufe 2 (Whisper) / 3 (Gemini, CEO-Tor) / 4-5 (Archiv-App) | OFFEN (nach Camp) |
-| M6 | Lokales LLM (Gate: Specs-PDF) | OFFEN (nach Camp) |
+| M1 | Windows vorbereiten (Rechnername/SSH/Energie/Auto-Login/feste IP) | **ERLEDIGT 2026-08-10** |
+| M2 | WSL2-Ubuntu + systemd + SSH-Kette + Repo + Tests | **ERLEDIGT 2026-08-10** |
+| M4a | Worker-Code (`cutter/worker.py`, Themen-Reels, Web-UI, E4-Schalter) | **ERLEDIGT 2026-08-10** |
+| M4b | Dienst + Offline-/Inbox-Modus verifiziert | **ERLEDIGT 2026-08-10** |
+| M4c | Queue-Betrieb live (Maschinen-Konto, Mac-Poll aus, E2E-Test) | **ERLEDIGT 2026-08-12** |
+| M4d | Autostart-Kette (Windows-Aufgabe -> WSL -> systemd) | **ERLEDIGT 2026-08-12** |
+| **M3** | **SMB-Mount (drvfs) + Themen-Reels Ende-zu-Ende** | **NAECHSTER SCHRITT** (braucht DSM-Benutzer) |
+| M5 | Video-Brain: Stufe 2 (Whisper) / 3 (Gemini, CEO-Tor) / 4-5 (Archiv-App) | OFFEN |
+| M6 | Lokales LLM (Ollama laeuft bereits mit qwen3:30b-a3b — Anbindung offen) | OFFEN |

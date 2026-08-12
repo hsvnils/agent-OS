@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-08-12 15:35] — Claude Code
+- **Was:** (1) **Autostart-Kette eingerichtet + getestet**: Windows-Aufgabe `LUNA-WSL-Autostart`
+  (bei Anmeldung -> `wsl.exe -d Ubuntu-24.04 --exec /bin/true`) startet die WSL-Instanz, systemd bringt
+  `cutter-worker` mit hoch. **Ehrlich verifiziert:** `wsl --shutdown` (kompletter Stopp) -> Aufgabe
+  ausgeloest -> Worker ohne Zutun wieder `active`. (2) **Trainingslager gestrichen** (CEO: durch) —
+  Roadmap umgebaut: Camp-Sprint-Struktur ersetzt durch M-Phasen mit echtem Status; die
+  „Trainingslager-Checkliste" wird zur **Mobil-/Offline-Betrieb**-Anleitung (Funktion bleibt: lokale
+  Inbox schneidet auch ohne Internet). Neue Prioritaet: **M3 SMB-Mount** als naechster Schritt, danach
+  M5 (Video-Brain) und M6 (lokales LLM). (3) Worker nach dem Passwortwechsel des CEO geprueft: laeuft,
+  keine 401 mehr (die letzte stammte vom Prozess vor dem Neustart).
+- **Warum:** CEO: „Trainingslager ist durch, kann gestrichen werden. Weiter gehts."
+- **Betroffen:** docs/maco470-roadmap.md; Windows-Aufgabenplanung auf dem MACO470 (ausserhalb des Repos)
+
 ## [2026-08-12 15:25] — Claude Code
 - **Was:** **Cutter-Worker auf dem MACO470 ist LIVE — kompletter Weg Ende-zu-Ende verifiziert.**
   Maschinen-Konto `maco470-worker` (Rolle content, Modul content_ops) auf der NAS angelegt (CEO),
