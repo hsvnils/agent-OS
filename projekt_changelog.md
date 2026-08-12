@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-08-12 15:25] — Claude Code
+- **Was:** **Cutter-Worker auf dem MACO470 ist LIVE — kompletter Weg Ende-zu-Ende verifiziert.**
+  Maschinen-Konto `maco470-worker` (Rolle content, Modul content_ops) auf der NAS angelegt (CEO),
+  Passwort in der MACO470-`.env`. **Reihenfolge eingehalten (E4):** erst Mac-Watcher auf
+  `CUTTER_QUEUE_POLL=0` umgestellt + neu geladen (Log: „Queue-Polling: AUS (MACO470 uebernimmt)"),
+  **dann** `systemctl start cutter-worker` — nie zwei Poller. **E2E-Test:** Job per LUNA-OS-API
+  eingereiht -> MACO470 holte ihn binnen 20 s, baute in **11 s** ein 12,8-s-Reel aus 4 Clips und meldete
+  **`done`** inkl. Clips/Dauer/Groesse zurueck (in `/api/cutter` sichtbar). Vorher bereits der Camp-Modus
+  (lokale Inbox, ohne Bridge) verifiziert. Testdaten auf beiden Seiten entfernt.
+  **Offen:** Autostart-Kette (ohne sie startet der Worker erst nach manueller Windows-Anmeldung),
+  SMB-Mount fuer Themen-Reels (51 Ordner im NAS-Archiv), **Passwort-Haerte** (aktuell rein numerisch/kurz
+  bei oeffentlich erreichbarem LUNA-OS -> ersetzen empfohlen).
+- **Warum:** MACO470-Roadmap: Worker in Produktion nehmen (Queue-Betrieb).
+- **Betroffen:** docs/maco470-roadmap.md; orchestrator/.env (Mac, nicht im Git) + MACO470-Setup
+
 ## [2026-08-10 11:50] — Claude Code
 - **Was:** **Worker auf dem MACO470 in Betrieb genommen** (Tag-3-Teil). Deploy per
   `deploy/sync-to-maco.sh --no-restart` (push -> git pull im WSL-Ubuntu) -> **71 Cutter-Tests dort gruen**.

@@ -30,10 +30,18 @@ per `.wslconfig` anpassbar, spaeter gegen das Windows-native LLM abwaegen).
 -> fertiges 16-s-Reel in **14 s**; die Bridge-401 (Platzhalter-Passwort) hat den Lauf **nicht** gestoppt —
 genau das gewuenschte Offline-Verhalten.
 
-**Offen (braucht den CEO):** (1) LUNA-OS-Team-User `maco470-worker` anlegen (NAS, sudo) + Passwort in die
-`.env` des MACO470 -> danach Queue-Betrieb; (2) Mac-Watcher auf `CUTTER_QUEUE_POLL=0` umstellen **bevor**
-der Worker-Dienst startet; (3) Autostart-Kette (Auto-Login + geplante Aufgabe, die WSL startet);
-(4) SMB-Mount (drvfs) fuer Themen-Reels aus dem NAS-Archiv.
+**LIVE seit 2026-08-12:** Maschinen-Konto `maco470-worker` (Rolle content, Modul content_ops) angelegt,
+Passwort in der `.env`; Mac-Watcher auf `CUTTER_QUEUE_POLL=0` umgestellt (Log bestaetigt „Queue-Polling:
+AUS (MACO470 uebernimmt)"); systemd-Dienst `cutter-worker` **gestartet und aktiv**.
+**Ende-zu-Ende verifiziert:** Job ueber die LUNA-OS-API eingereiht -> der MACO470 hat ihn binnen 20 s
+geholt, in **11 s** ein 12,8-s-Reel aus 4 Clips gebaut und den Status **`done`** samt Clips/Dauer/Groesse
+zurueckgemeldet. Testdaten entfernt.
+
+**Offen:** (1) **Autostart-Kette** (Windows-Auto-Login + geplante Aufgabe, die WSL nach dem Booten
+startet) — ohne sie laeuft der Worker erst nach einer manuellen Anmeldung; (2) **SMB-Mount** (drvfs) fuer
+Themen-Reels aus dem NAS-Archiv (51 Ordner unter `/volume1/SocialMediaTeam/Dropbox-Medien/Dateianfragen`);
+(3) **Passwort-Haerte**: das aktuelle Worker-Passwort ist rein numerisch/kurz — bei oeffentlich
+erreichbarem LUNA-OS ersetzen.
 
 ## Hardware (aus `docs/maco470-specs.pdf`, abgelegt 2026-07-14)
 
