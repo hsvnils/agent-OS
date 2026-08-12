@@ -44,8 +44,13 @@ zurueckgemeldet. Testdaten entfernt.
 automatisch mit hoch. **Getestet:** `wsl --shutdown` -> Aufgabe ausgeloest -> Worker war ohne Zutun
 wieder `active`. Passwort am 2026-08-12 durch ein starkes ersetzt.
 
-**Offen:** **SMB-Mount** (drvfs) fuer Themen-Reels aus dem NAS-Archiv (51 Ordner unter
-`/volume1/SocialMediaTeam/Dropbox-Medien/Dateianfragen`) — braucht einen DSM-Benutzer mit Nur-Lese-Recht.
+**SMB + erstes echtes Themen-Reel (2026-08-12): ERLEDIGT.** Mount laeuft **nativ per CIFS** (nicht drvfs —
+siehe E6), read-only auf `//192.168.178.129/SocialMediaTeam` -> `/mnt/nas-clips`; `REEL_SOURCE` zeigt auf
+`/mnt/nas-clips/Dropbox-Medien/Dateianfragen` (50 Ordner, davon **35 als Spielordner erkannt**).
+**Umlaute korrekt** (`HSV vs Köln`, `Krüll Volvo X HSV`), Videos ueber SMB per ffprobe lesbar.
+**Erstes echtes Reel Ende-zu-Ende:** Auftrag „Torjubel / HSV 3vs2 SVW - Nordderby" -> Worker indizierte
+154 Dateien (95 verwertbare Clips), waehlte 8 aus, schnitt **36,6 s** und reichte zur CEO-Freigabe ein;
+Caption inkl. automatischem `#HSVSVW`. Gesamtdauer **~4,5 Minuten**.
 
 ## Hardware (aus `docs/maco470-specs.pdf`, abgelegt 2026-07-14)
 
@@ -97,6 +102,12 @@ Worker (Claiming-Komplexitaet). Die NAS liest die Clips ausserdem lokal (kein SM
 liegt bei den Web-Daten (`/app/reel_work/state/`), wo die spaetere Clip-Archiv-App ihn braucht.
 
 ### E2 — MACO470 = einziger Queue-Consumer (manuelle Jobs + Camp-Inbox)
+> **Teil-Korrektur nach dem ersten echten Lauf (2026-08-12):** Die Annahme „eigener Index reicht, auch
+> ueber SMB" gilt **nur fuer Einzelspiele**. Gemessen: 154 Dateien eines Spielordners -> ~1 Min Indizieren,
+> Gesamtlauf ~4,5 Min (akzeptabel). Fuer **„alle Spiele"** (35 Ordner, mehrere tausend Clips) waere das
+> **zu langsam**. -> **Naechster Ausbauschritt:** den auf der NAS bereits naechtlich gepflegten
+> **clip_brain-Index** anzapfen (`/app/reel_work/state/clip_brain.json`, enthaelt Aufloesung/Dauer/
+> Qualitaet je Clip) statt alles neu zu messen — z. B. per LUNA-OS-API abrufbar machen.
 Der neue `cutter/worker.py` pollt `GET /api/cutter/queue` und bearbeitet (a) manuelle Themen-Reel-Jobs
 (Parameter als JSON im `note`-Feld, `typ=="reel"`) und (b) die lokale `~/CutterInbox` (Camp-Modus).
 Fuer Themen-Reels braucht er den clip_brain-Index **nicht**: `reel_daily.lauf` baut seinen eigenen
@@ -120,6 +131,22 @@ Repo ist public; der MACO470 hat (anders als die NAS) keine schuetzenswerten Liv
 gitignored. Deploy-Weg: MacBook pusht, MACO470 zieht — Mini-Skript `deploy/sync-to-maco.sh`
 (push -> `ssh maco470 'cd ~/ki-unternehmen && git pull'` -> `sudo systemctl restart cutter-worker`).
 Konsequenz: **git push wird Teil des Deploys.** NAS-Deploy bleibt unveraendert tar-over-ssh.
+**Merke (2026-08-12 schmerzhaft gelernt):** Web-Aenderungen (z. B. `POST /api/cutter/reel`) laufen auf der
+**NAS** — nach dem MACO470-Deploy also NICHT den `sync-to-nas.sh` + `docker restart luna-os` vergessen,
+sonst antwortet der neue Endpunkt mit `404 Not Found`.
+
+### E6 — SMB nativ per CIFS statt drvfs (revidiert 2026-08-12)
+Der urspruengliche Plan (Windows-Anmeldespeicher + `drvfs`-Mount) **funktioniert nicht ueber SSH**:
+`cmdkey` scheitert in einer SSH-Sitzung mit „Von dieser Anmeldesitzung koennen keine Anmeldeinformationen
+gespeichert werden" (Netzwerk-Logon hat keinen Zugriff auf den Credential-Store des Benutzers). Ausserdem
+waere ein im Explorer verbundenes Laufwerk **sessiongebunden** — der Dienst saehe es nie.
+**Loesung:** WSL2 bringt ein funktionierendes **CIFS-Kernelmodul** mit -> nativer Mount mit
+`cifs-utils` + Credentials-Datei (`/etc/cifs-nas.cred`, chmod 600), voellig unabhaengig von
+Windows-Sitzungen. fstab-Optionen wie geplant (`ro,nofail,x-systemd.automount,soft,iocharset=utf8,
+noserverino,vers=3.0,uid=1000`).
+**Stolperfalle:** Steht der `x-systemd.automount`-Eintrag schon in der fstab, bevor die Credentials
+existieren, blockiert die fehlgeschlagene Automount-Unit den Pfad — Symptom `mount error: No such device`.
+Fix: `systemctl stop 'mnt-nas\x2dclips.automount'`, dann normal mounten.
 
 ---
 
@@ -238,6 +265,7 @@ im NAS-Archiv liegt:
 | M4b | Dienst + Offline-/Inbox-Modus verifiziert | **ERLEDIGT 2026-08-10** |
 | M4c | Queue-Betrieb live (Maschinen-Konto, Mac-Poll aus, E2E-Test) | **ERLEDIGT 2026-08-12** |
 | M4d | Autostart-Kette (Windows-Aufgabe -> WSL -> systemd) | **ERLEDIGT 2026-08-12** |
-| **M3** | **SMB-Mount (drvfs) + Themen-Reels Ende-zu-Ende** | **NAECHSTER SCHRITT** (braucht DSM-Benutzer) |
+| M3 | SMB-Mount (nativ CIFS) + erstes echtes Themen-Reel E2E | **ERLEDIGT 2026-08-12** |
+| **M4e** | **clip_brain-Index anzapfen** -> „alle Spiele"-Reels in Sekunden statt Stunden | **NAECHSTER SCHRITT** |
 | M5 | Video-Brain: Stufe 2 (Whisper) / 3 (Gemini, CEO-Tor) / 4-5 (Archiv-App) | OFFEN |
 | M6 | Lokales LLM (Ollama laeuft bereits mit qwen3:30b-a3b — Anbindung offen) | OFFEN |

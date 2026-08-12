@@ -17,6 +17,33 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-08-12 16:10] — Claude Code
+- **Was:** **M3 erledigt — NAS-Archiv am MACO470 + erstes echtes Themen-Reel Ende-zu-Ende.**
+  (1) **SMB nativ per CIFS statt drvfs (E6, revidiert):** `cmdkey` funktioniert **nicht** ueber SSH
+  („Von dieser Anmeldesitzung koennen keine Anmeldeinformationen gespeichert werden") und ein
+  Explorer-Laufwerk waere sessiongebunden — der Dienst saehe es nie. WSL2 bringt aber ein funktionierendes
+  **CIFS-Kernelmodul** mit: `cifs-utils` installiert, Credentials-Datei `/etc/cifs-nas.cred` (chmod 600),
+  fstab mit `ro,nofail,x-systemd.automount,soft,iocharset=utf8,noserverino,vers=3.0,uid=1000`.
+  **Stolperfalle dokumentiert:** steht der automount-Eintrag vor den Credentials in der fstab, blockiert die
+  fehlgeschlagene Unit den Pfad (`No such device`) -> Unit stoppen, dann mounten.
+  (2) **DSM-Benutzer `maco470`** (nur Lesen auf `SocialMediaTeam`, nur SMB) vom CEO angelegt — der zuvor
+  vermutete „Zugriff" war der interaktive Explorer-Zugriff des CEO, kein Dienst-Konto (Diagnose: Fehler 13,
+  Konto fehlte in der NAS-Benutzerliste).
+  (3) **Verifiziert:** 50 Ordner sichtbar, **35 als Spielordner erkannt**, **Umlaute korrekt**
+  (`HSV vs Köln`, `Krüll Volvo X HSV`), Videos ueber SMB per ffprobe lesbar; `REEL_SOURCE` auf
+  `/mnt/nas-clips/Dropbox-Medien/Dateianfragen` umgestellt.
+  (4) **Erstes echtes Reel:** Auftrag „Torjubel / HSV 3vs2 SVW - Nordderby" -> 154 Dateien indiziert
+  (95 verwertbare Clips) -> 8 Clips ausgewaehlt -> **36,6 s** geschnitten -> zur CEO-Freigabe eingereicht
+  (Caption automatisch mit `#HSVSVW`), Job-Status `done`. Gesamtdauer **~4,5 Min**.
+  (5) **Eigenes Versaeumnis:** Der Web-Endpunkt `/api/cutter/reel` lag nur lokal — auf der NAS kam
+  `404 Not Found`, bis `sync-to-nas.sh` + Container-Neustart (CEO) lief. In E5 als Merksatz ergaenzt.
+  (6) **E2 teil-korrigiert:** eigener Index reicht **nur fuer Einzelspiele**; fuer „alle Spiele"
+  (35 Ordner) waere er zu langsam -> naechster Schritt **M4e: den naechtlichen clip_brain-Index der NAS
+  anzapfen** statt neu zu messen.
+- **Warum:** MACO470-Roadmap M3 (Archiv-Zugriff) + erster Praxistest der Themen-Reels.
+- **Betroffen:** docs/maco470-roadmap.md; MACO470-Setup (cifs-utils, /etc/cifs-nas.cred, fstab, .env) und
+  DSM-Benutzer liegen ausserhalb des Repos
+
 ## [2026-08-12 15:35] — Claude Code
 - **Was:** (1) **Autostart-Kette eingerichtet + getestet**: Windows-Aufgabe `LUNA-WSL-Autostart`
   (bei Anmeldung -> `wsl.exe -d Ubuntu-24.04 --exec /bin/true`) startet die WSL-Instanz, systemd bringt
