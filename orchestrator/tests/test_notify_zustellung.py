@@ -6,6 +6,7 @@ proaktive Meldung zugestellt, 1106 Stueck stapelten sich in der Outbox. Nach aus
 Die Meldungen wurden brav erzeugt, nur nie verschickt. Genau diese Stille pruefen die Tests hier.
 """
 import ast
+import builtins
 import pathlib
 import tempfile
 import unittest
@@ -17,40 +18,56 @@ BOT = pathlib.Path(__file__).resolve().parents[1] / "channels" / "telegram" / "b
 
 
 class TestKeineUndefiniertenNamen(unittest.TestCase):
-    """Jede Funktion in bot.py muss die Namen, die sie liest, auch selbst binden (oder aus dem Modul
-    beziehen). Der teuerste Fehler dieses Projekts war genau so ein freier Name in einem try-Block."""
+    """`main()` muss jeden Namen, den es liest, auch binden -- sonst schluckt der `except` im Zustellblock
+    einen NameError und LUNA verstummt lautlos.
 
-    def _modul(self):
-        return ast.parse(BOT.read_text("utf-8"))
+    Der Fehler kam **zweimal hintereinander**: erst `tz`, nach dessen Reparatur `datetime` (beide werden
+    in bot.py nur innerhalb anderer Funktionen importiert). Deshalb prueft dieser Test nicht mehr einzelne
+    Namen, sondern **alle freien Namen** von `main()` gegen Modul-Ebene und Builtins.
+    """
 
-    def _gebunden(self, fn) -> set:
-        namen = set(a.arg for a in fn.args.args + fn.args.kwonlyargs)
-        for x in ast.walk(fn):
+    SCOPE_KNOTEN = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)
+
+    def _im_scope(self, rumpf):
+        """Knoten dieses Geltungsbereichs -- **ohne** in verschachtelte Funktionen/Klassen abzusteigen.
+
+        `ast.walk` taugt hier nicht: Es steigt in jeden Funktionsrumpf hinab und haette die
+        `from datetime import datetime`-Zeilen der anderen Funktionen als modulweit gezaehlt -- der Test
+        waere gruen geblieben, obwohl `main()` genau daran scheiterte."""
+        for st in rumpf:
+            yield st
+            if isinstance(st, self.SCOPE_KNOTEN):
+                continue                      # eigener Geltungsbereich -> nicht hineinsteigen
+            for kind in ast.iter_child_nodes(st):
+                yield from self._im_scope([kind])
+
+    def _bindungen(self, rumpf) -> set:
+        namen: set[str] = set()
+        for x in self._im_scope(rumpf):
             if isinstance(x, (ast.Import, ast.ImportFrom)):
                 namen.update((a.asname or a.name).split(".")[0] for a in x.names)
             elif isinstance(x, ast.Name) and isinstance(x.ctx, (ast.Store, ast.Del)):
                 namen.add(x.id)
-            elif isinstance(x, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                namen.add(x.name)
+            elif isinstance(x, self.SCOPE_KNOTEN):
+                namen.add(getattr(x, "name", ""))
             elif isinstance(x, (ast.Global, ast.Nonlocal)):
                 namen.update(x.names)
             elif isinstance(x, ast.ExceptHandler) and x.name:
                 namen.add(x.name)
         return namen
 
-    def test_main_bindet_tz(self):
-        modul = self._modul()
-        modulweit = {n.id for x in modul.body if isinstance(x, ast.Assign)      # nur echte Modul-Ebene
-                     for n in ast.walk(x.targets[0]) if isinstance(n, ast.Name)}
-        for fn in modul.body:
-            if isinstance(fn, ast.FunctionDef) and fn.name == "main":
-                nutzt_tz = any(isinstance(x, ast.Name) and x.id == "tz" for x in ast.walk(fn))
-                self.assertTrue(nutzt_tz, "Zustellblock benutzt tz nicht mehr -- Test anpassen.")
-                self.assertIn("tz", self._gebunden(fn) | modulweit,
-                              "main() liest 'tz', bindet es aber nicht -> NameError verschluckt "
-                              "saemtliche proaktiven Meldungen.")
-                return
-        self.fail("main() nicht gefunden")
+    def test_main_bindet_alle_gelesenen_namen(self):
+        modul = ast.parse(BOT.read_text("utf-8"))
+        main = next((f for f in modul.body if isinstance(f, ast.FunctionDef) and f.name == "main"), None)
+        self.assertIsNotNone(main, "main() nicht gefunden")
+
+        args = main.args
+        eigene = {a.arg for a in args.args + args.posonlyargs + args.kwonlyargs}
+        gebunden = (self._bindungen(main.body) | self._bindungen(modul.body) | eigene | set(dir(builtins)))
+        gelesen = {x.id for x in self._im_scope(main.body)
+                   if isinstance(x, ast.Name) and isinstance(x.ctx, ast.Load)}
+        frei = sorted(gelesen - gebunden)
+        self.assertEqual(frei, [], f"main() liest ungebundene Namen -> NameError im Zustellblock: {frei}")
 
 
 class TestOutboxLawine(unittest.TestCase):

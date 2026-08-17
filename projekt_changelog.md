@@ -17,6 +17,25 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-08-17 15:15] — Claude Code
+- **Was:** **Derselbe Fehler ein zweites Mal — `datetime` fehlte ebenfalls in `main()`.** Das Container-Log
+  (CEO per `ssh -t` geholt) zeigte nach dem `tz`-Fix sofort die naechste Zeile: `[notify] Zustell-Fehler:
+  name 'datetime' is not defined`. In `bot.py` wird `datetime` **nur innerhalb einzelner Funktionen**
+  importiert, nie modulweit -> `main()` lief in denselben verschluckten NameError.
+  **Fix:** `from datetime import datetime` auf Modulebene.
+- **Was (2):** **Der Regressionstest taugte nichts und ist jetzt scharf.** Er prueft nicht mehr nur `tz`,
+  sondern **alle freien Namen** von `main()` gegen Modulebene + Builtins. Zwei eigene Fehler dabei
+  gefunden und behoben: (a) `ast.walk` steigt in **jeden** Funktionsrumpf hinab -> die `datetime`-Importe
+  der anderen Funktionen galten faelschlich als modulweit; (b) der ersetzende Walker stieg trotzdem in
+  Scope-Knoten ab. Erst danach ist der Test **nachweislich** rot, wenn man den `datetime`-Import ODER die
+  `tz`-Zuweisung entfernt (beides einzeln verifiziert).
+- **Was (3):** Korrektur einer eigenen Fehldiagnose: Ich hatte aus einem `getUpdates`-Test ohne
+  `409 Conflict` geschlossen, der Bot-Prozess laufe nicht. Das Log widerlegt es — der Bot lief durchgehend
+  („Up 9 minutes", alle Loops aktiv, Betriebs-Wacht gestartet); nur die Zustellung scheiterte.
+- **Warum:** Ohne diesen zweiten Fix waere die Betriebs-Wacht weiterhin stumm geblieben — der Waechter
+  haette den naechsten Ausfall gemeldet, aber niemanden erreicht.
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_notify_zustellung.py`
+
 ## [2026-08-17 14:50] — Claude Code
 - **Was:** **Der teuerste stille Fehler bisher: seit dem 09.07. wurde KEINE proaktive Meldung zugestellt.**
   In `main()` (bot.py) benutzte der Zustellblock die Variable `tz`, die dort **nie zugewiesen** war
