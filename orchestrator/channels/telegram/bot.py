@@ -1214,17 +1214,21 @@ def main() -> None:
     offset = 0
     _last_poll = 0.0
     tz = _tz_berlin()          # wurde hier vergessen -> NameError im Zustellblock (siehe _tz_berlin)
-    if ctx.notifications is not None:              # Nachzustellungs-Lawine verhindern (siehe verwerfe_alte)
+    try:                                           # Nachzustellungs-Lawine verhindern (siehe verwerfe_alte)
         # 3 Stunden: Nach einer Zustellstoerung ist nur noch das Aktuelle handlungsrelevant -- alles
         # Aeltere steht weiterhin in notifications/log.jsonl und ist ueber LUNA abrufbar. Beim ersten Start
         # nach der Reparatur haetten 24 h sonst 58 Meldungen am Stueck ausgeloest.
-        _liegengeblieben = ctx.notifications.verwerfe_alte(stunden=3)
-        if _liegengeblieben:
-            print(f"[notify] {_liegengeblieben} Meldungen aelter als 24 h verworfen.", flush=True)
-            ctx.notifications.enqueue(
-                f"{_liegengeblieben} ältere Meldungen habe ich verworfen — sie lagen in der Outbox, "
-                f"weil die Zustellung gestört war. Ab jetzt kommen Meldungen wieder normal an.",
-                abteilung="LUNA", kategorie="info", quelle="notify-reparatur", dedup_stunden=0)
+        # Alles hier ist Komfort: **nichts davon darf den Bot am Starten hindern** -> breiter Fang.
+        if ctx.notifications is not None:
+            _liegengeblieben = ctx.notifications.verwerfe_alte(stunden=3)
+            if _liegengeblieben:
+                print(f"[notify] {_liegengeblieben} Meldungen aelter als 3 h verworfen.", flush=True)
+                ctx.notifications.enqueue(
+                    f"{_liegengeblieben} ältere Meldungen habe ich verworfen — sie lagen in der Outbox, "
+                    f"weil die Zustellung gestört war. Ab jetzt kommen Meldungen wieder normal an.",
+                    abteilung="LUNA", kategorie="info", quelle="notify-reparatur", dedup_stunden=0)
+    except Exception as exc:
+        print(f"[notify] Outbox-Aufraeumen uebersprungen: {exc}", flush=True)
     crm_sync = None
     if getattr(ctx, "crm", None) is not None and getattr(ctx.crm, "projektor", None) is not None:
         from ...core.crm_sync import CrmSync
