@@ -851,6 +851,20 @@ def _alert_erlaubt(cfg: dict, kategorie: str) -> bool:
     return bool(cfg.get(key, True)) if key else True
 
 
+def _tz_berlin():
+    """Europe/Berlin oder None (dann rechnet der Aufrufer in Systemzeit). Bewusst modulweit:
+
+    In `main()` fehlte die Zuweisung, waehrend der Zustellblock `tz` benutzte -> **NameError bei jedem
+    Poll**, gefangen vom umgebenden `except`. Folge: Zwischen dem 09.07. und dem 17.08.2026 wurde
+    **keine einzige** proaktive Meldung zugestellt (1106 Stueck blieben in der Outbox liegen), waehrend
+    nach aussen alles normal aussah."""
+    try:
+        from zoneinfo import ZoneInfo
+        return ZoneInfo("Europe/Berlin")
+    except Exception:
+        return None
+
+
 def _in_ruhezeit(cfg: dict, stunde: int) -> bool:
     """„Nicht stoeren"-Fenster aktiv? Unterstuetzt Fenster ueber Mitternacht (z. B. 22->7)."""
     von, bis = cfg.get("ruhezeit_von"), cfg.get("ruhezeit_bis")
@@ -1199,6 +1213,18 @@ def main() -> None:
         print("Security-Audit-Loop aktiv (taeglich 04:00, regelbasiert, L1-Meldung).", flush=True)
     offset = 0
     _last_poll = 0.0
+    tz = _tz_berlin()          # wurde hier vergessen -> NameError im Zustellblock (siehe _tz_berlin)
+    if ctx.notifications is not None:              # Nachzustellungs-Lawine verhindern (siehe verwerfe_alte)
+        # 3 Stunden: Nach einer Zustellstoerung ist nur noch das Aktuelle handlungsrelevant -- alles
+        # Aeltere steht weiterhin in notifications/log.jsonl und ist ueber LUNA abrufbar. Beim ersten Start
+        # nach der Reparatur haetten 24 h sonst 58 Meldungen am Stueck ausgeloest.
+        _liegengeblieben = ctx.notifications.verwerfe_alte(stunden=3)
+        if _liegengeblieben:
+            print(f"[notify] {_liegengeblieben} Meldungen aelter als 24 h verworfen.", flush=True)
+            ctx.notifications.enqueue(
+                f"{_liegengeblieben} ältere Meldungen habe ich verworfen — sie lagen in der Outbox, "
+                f"weil die Zustellung gestört war. Ab jetzt kommen Meldungen wieder normal an.",
+                abteilung="LUNA", kategorie="info", quelle="notify-reparatur", dedup_stunden=0)
     crm_sync = None
     if getattr(ctx, "crm", None) is not None and getattr(ctx.crm, "projektor", None) is not None:
         from ...core.crm_sync import CrmSync

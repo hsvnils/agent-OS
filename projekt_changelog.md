@@ -17,6 +17,34 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-08-17 14:50] — Claude Code
+- **Was:** **Der teuerste stille Fehler bisher: seit dem 09.07. wurde KEINE proaktive Meldung zugestellt.**
+  In `main()` (bot.py) benutzte der Zustellblock die Variable `tz`, die dort **nie zugewiesen** war
+  (`tz` wird nur in den einzelnen Loop-Funktionen gesetzt). Der `NameError` landete im umgebenden `except`
+  -> bei **jedem** Poll still verschluckt. Aussenwirkung: Meldungen wurden brav erzeugt, aber nie
+  gesendet — **1106 Stueck** lagen in der Outbox (zuletzt zugestellt 2026-07-09). Betroffen war alles
+  Proaktive: Briefings, CFO, CISO, CIO/Investment, Watcher — **und die neue Betriebs-Wacht**, deren erste
+  Meldung („Kein neues Reel") ebenfalls liegen blieb.
+  (1) **Fix:** `_tz_berlin()` modulweit + `tz = _tz_berlin()` in `main()`.
+  (2) **Lawinenschutz:** `Notifications.verwerfe_alte()` haengt beim Start alles aelter als **3 Stunden**
+  ab (sonst waeren 58 Meldungen am Stueck rausgegangen) und meldet dem CEO **eine** Zusammenfassung.
+  (3) **Regressionstest** `test_notify_zustellung.py`: prueft per AST, dass `main()` jeden Namen bindet,
+  den es liest (verifiziert — Test schlaegt fehl, sobald die Zeile wieder verschwindet), plus Tests fuer
+  `verwerfe_alte`.
+- **Was (2):** **Testsuite schrieb in echte Daten.** `test_investment_settings.TestSettingsEndpoint` fuhr
+  ueber `TestClient` gegen die echte App, deren Stores am echten Repo haengen -> jeder Testlauf erzeugte
+  echte Zeilen in `investment/log.jsonl` **und** echte „CEO — Einstellungen geaendert"-Eintraege im
+  Projekt-Changelog. Der CEO hatte diese Aenderungen nie gemacht; ich hatte sie ihm faelschlich als
+  „lokale LUNA-OS-Instanz" gemeldet — **meine Fehldiagnose**. Test lenkt jetzt Store + Changelog auf ein
+  Temp-Verzeichnis um; neuer Wach-Test prueft, dass die echte Datei unberuehrt bleibt. Die 6 falschen
+  Changelog-Eintraege und 27 Testzeilen im lokalen Investment-Log wurden entfernt (NAS war nie betroffen —
+  `sync-to-nas.sh` schuetzt beide Dateien).
+- **Warum:** Aufgefallen bei der Abnahme der Betriebs-Wacht: Ihre Meldung stand in der Outbox, aber es gab
+  seit dem 09.07. kein einziges `sent`-Ereignis mehr.
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`, `orchestrator/core/notifications.py`,
+  `orchestrator/tests/test_notify_zustellung.py` (neu), `orchestrator/tests/test_investment_settings.py`,
+  `projekt_changelog.md`, lokal `investment/log.jsonl`
+
 ## [2026-08-17 14:05] — Claude Code
 - **Was:** **Betriebs-Wacht gebaut** (`orchestrator/core/betriebswacht.py`) — der Waechter, der die stillen
   Ausfaelle vom August meldet, statt sie tagelang unbemerkt zu lassen. Vier regelbasierte Pruefungen
@@ -39,26 +67,6 @@ Eintragsformat:
 - **Betroffen:** `orchestrator/core/betriebswacht.py` (neu), `orchestrator/tests/test_betriebswacht.py` (neu),
   `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`,
   `orchestrator/core/reel_store.py`, `deploy/sync-to-nas.sh`
-
-## [2026-08-17 13:29] — CEO
-- **Was:** Einstellungen geaendert: briefing_morgen_stunde, depot_alerts, depot_stop_pct, ruhezeit_bis
-- **Warum:** CEO ueber LUNA-OS
-- **Betroffen:** settings
-
-## [2026-08-17 13:29] — CEO
-- **Was:** Einstellungen geaendert: briefing_morgen_stunde, depot_alerts, depot_stop_pct, ruhezeit_bis, ruhezeit_von
-- **Warum:** CEO ueber LUNA-OS
-- **Betroffen:** settings
-
-## [2026-08-17 13:29] — CEO
-- **Was:** Einstellungen geaendert: briefing_morgen_stunde, depot_alerts, depot_stop_pct, ruhezeit_bis
-- **Warum:** CEO ueber LUNA-OS
-- **Betroffen:** settings
-
-## [2026-08-17 13:29] — CEO
-- **Was:** Einstellungen geaendert: briefing_morgen_stunde, depot_alerts, depot_stop_pct, ruhezeit_bis, ruhezeit_von
-- **Warum:** CEO ueber LUNA-OS
-- **Betroffen:** settings
 
 ## [2026-08-17 13:30] — Claude Code
 - **Was:** **Zwei stille Ausfaelle gefunden und behoben — 24/7-Betrieb war in Wahrheit keiner.**

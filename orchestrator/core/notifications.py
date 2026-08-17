@@ -54,6 +54,25 @@ class Notifications:
     def mark_sent(self, nid: str) -> None:
         self._append({"ts": _now(), "id": nid, "typ": "sent"})
 
+    def verwerfe_alte(self, stunden: float = 24) -> int:
+        """Nicht zugestellte Meldungen aelter als `stunden` still abhaken; gibt die Anzahl zurueck.
+
+        Schutz vor einer Nachzustellungs-Lawine: War die Zustellung laenger gestoert (2026: fuenf Wochen
+        durch einen NameError), lagen ueber 1100 Meldungen in der Outbox. Ohne diesen Filter haette der
+        CEO sie nach der Reparatur alle einzeln bekommen -- wochenalt und wertlos."""
+        grenze = datetime.now() - timedelta(hours=stunden)
+        alt = []
+        for e in self.pending():
+            try:
+                zu_alt = datetime.fromisoformat(e["ts"]) < grenze
+            except (ValueError, KeyError):
+                zu_alt = True                      # unlesbarer Zeitstempel -> sicher nicht mehr aktuell
+            if zu_alt:
+                alt.append(e["id"])
+        for nid in alt:
+            self.mark_sent(nid)
+        return len(alt)
+
     # -- intern --
 
     def _kuerzlich(self, text: str, stunden: float) -> bool:

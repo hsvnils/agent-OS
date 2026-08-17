@@ -31,10 +31,37 @@ class TestSettingsStore(unittest.TestCase):
 
 
 class TestSettingsEndpoint(unittest.TestCase):
+    """**Der Endpunkt darf im Test nie die echten Repo-Daten anfassen.**
+
+    Die Web-App bindet ihre Stores beim Import an das echte Repo-Verzeichnis. Ohne die Umlenkung unten
+    schrieb dieser Test bei jedem Lauf echte Zeilen nach `investment/log.jsonl` **und** echte Eintraege
+    „CEO — Einstellungen geaendert" in `projekt_changelog.md` (aufgefallen 2026-08-17: der CEO hatte diese
+    Aenderungen nie gemacht). Auf der NAS haette ein Testlauf damit Produktionsdaten verfaelscht.
+    """
+
     def setUp(self):
         from fastapi.testclient import TestClient
-        from orchestrator.channels.web.app import app
-        self.c = TestClient(app)
+
+        from orchestrator.channels.web import app as webapp
+        from orchestrator.investment.store import InvestmentStore
+        self._tmp = tempfile.TemporaryDirectory()
+        self._orig_store, self._orig_changelog = webapp.inv_store, webapp._changelog
+        webapp.inv_store = InvestmentStore(Path(self._tmp.name) / "log.jsonl")
+        webapp._changelog = lambda *a, **k: None          # kein Eintrag ins echte Projekt-Changelog
+        self.c = TestClient(webapp.app)
+
+    def tearDown(self):
+        from orchestrator.channels.web import app as webapp
+        webapp.inv_store, webapp._changelog = self._orig_store, self._orig_changelog
+        self._tmp.cleanup()
+
+    def test_schreibt_nicht_ins_echte_repo(self):
+        """Wach-Test gegen den Rueckfall: nach einem POST darf die echte Log-Datei unveraendert sein."""
+        from orchestrator.channels.web import app as webapp
+        echt = webapp.ROOT / "investment" / "log.jsonl"
+        vorher = echt.stat().st_mtime_ns if echt.exists() else None
+        self.c.post("/api/settings", json={"settings": {"depot_stop_pct": "11"}})
+        self.assertEqual(echt.stat().st_mtime_ns if echt.exists() else None, vorher)
 
     def test_get_und_coercion(self):
         r = self.c.get("/api/settings")
