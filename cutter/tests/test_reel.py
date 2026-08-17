@@ -1,5 +1,6 @@
 """Tests fuer die Reel-Pipeline-Auswahl (Stufe B) -- reine Logik, kein ffmpeg noetig."""
 import json
+import shutil
 import tempfile
 import time
 import unittest
@@ -150,6 +151,44 @@ class TestSpielRotation(unittest.TestCase):
     def test_leere_liste(self):
         with tempfile.TemporaryDirectory() as d:
             self.assertIsNone(rd.waehle_spiel([], Path(d) / "used_games.jsonl", seed="x"))
+
+
+class TestSpielordnerFilter(unittest.TestCase):
+    """Ordner ohne Videodatei duerfen nicht in die Rotation -- sonst blockieren sie sie dauerhaft:
+    sie werden nie erfolgreich genutzt, bleiben also „nie genutzt" und stehen jede Nacht wieder vorn."""
+
+    def _quelle(self):
+        d = Path(tempfile.mkdtemp())
+        (d / "HSV vs FCB - 2026-05-01").mkdir()
+        (d / "HSV vs FCB - 2026-05-01" / "a.mp4").write_bytes(b"x")
+        (d / "HSV vs SVW - 2026-05-08").mkdir()                      # komplett leer
+        (d / "HSV vs BVB - 2026-05-15").mkdir()
+        (d / "HSV vs BVB - 2026-05-15" / "foto.jpeg").write_bytes(b"x")   # nur Fotos
+        (d / "Kein Spiel").mkdir()
+        (d / "Kein Spiel" / "b.mp4").write_bytes(b"x")               # Heuristik: kein Spielordner
+        return d
+
+    def test_leere_und_fotoordner_fliegen_raus(self):
+        d = self._quelle()
+        try:
+            self.assertEqual(rd._spielordner(d, None), ["HSV vs FCB - 2026-05-01"])
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
+    def test_abschaltbar(self):
+        d = self._quelle()
+        try:
+            self.assertEqual(len(rd._spielordner(d, None, nur_mit_video=False)), 3)
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
+    def test_allowlist_filtert_ebenfalls_leere(self):
+        d = self._quelle()
+        try:
+            allow = {"HSV vs FCB - 2026-05-01", "HSV vs SVW - 2026-05-08"}
+            self.assertEqual(rd._spielordner(d, allow), ["HSV vs FCB - 2026-05-01"])
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
 
 
 if __name__ == "__main__":

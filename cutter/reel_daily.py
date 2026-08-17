@@ -28,6 +28,8 @@ import time
 from datetime import date
 from pathlib import Path
 
+from . import ffmpeg_ops as fo
+from . import melden
 from . import reel_select as rs
 from . import reel_source as rq
 from .pipeline import schneide_ordner
@@ -64,18 +66,26 @@ def _lade_allowlist(state: Path) -> set | None:
     return namen or None
 
 
-def _spielordner(source: Path, allowlist: set | None) -> list[str]:
+def _spielordner(source: Path, allowlist: set | None, *, nur_mit_video: bool = True) -> list[str]:
     """Namen aller in Frage kommenden Spielordner in `source` (sortiert). Ist `allowlist` gesetzt, zaehlen
-    nur diese Ordner; sonst die per `ist_spielordner` erkannten. Nur der Ordner-SCAN, kein ffprobe -> schnell."""
+    nur diese Ordner; sonst die per `ist_spielordner` erkannten. Nur der Ordner-SCAN, kein ffprobe -> schnell.
+
+    `nur_mit_video` (Default) laesst Ordner **ohne** Videodatei weg. Grund: Die Rotation in `waehle_spiel`
+    stellt nie genutzte Spiele nach vorn -- ein leerer oder reiner Foto-Ordner wird also gewaehlt, liefert
+    0 Clips, der Lauf bricht ab und der Ordner bleibt „nie genutzt". Er blockiert damit **jede folgende
+    Nacht** aufs Neue (beobachtet 11./12.08.2026: „HSV 5 vs Braunschweig 3" leer, „B04 vs HSV" nur Fotos)."""
     if not source.exists():
         return []
     namen: list[str] = []
     for d in sorted(p for p in source.iterdir() if p.is_dir()):
         if allowlist is not None:
-            if d.name in allowlist:
-                namen.append(d.name)
-        elif rq.ist_spielordner(d.name):
-            namen.append(d.name)
+            if d.name not in allowlist:
+                continue
+        elif not rq.ist_spielordner(d.name):
+            continue
+        if nur_mit_video and not fo.clips_im_ordner(d):     # nur Ordner-Listing, kein ffprobe
+            continue
+        namen.append(d.name)
     return namen
 
 
@@ -222,6 +232,25 @@ def _einreichen(res: dict) -> dict:
     return {"eingereicht": bool(r and r.get("ok")), "reel_id": (r or {}).get("id")}
 
 
+def _melde_fehlschlag(res: dict) -> bool:
+    """Meldet einen ergebnislosen naechtlichen Lauf per Telegram. Best-effort -- wirft nie.
+
+    Ohne diese Meldung faellt ein Ausfall erst bei einer Pruefung auf: der Lauf schreibt seinen Fehler nur
+    nach stdout, und der DSM-Zeitplan verschluckt ihn (so blieben 11./12.08.2026 unbemerkt ohne Reel)."""
+    try:
+        from .pipeline import _lade_env
+        env = _lade_env()
+        token = os.environ.get("TELEGRAM_BOT_TOKEN") or env.get("TELEGRAM_BOT_TOKEN", "")
+        chat = os.environ.get("TELEGRAM_ALLOWED_CHAT_ID") or env.get("TELEGRAM_ALLOWED_CHAT_ID", "")
+        if not (token and chat):
+            return False
+        grund = str(res.get("fehler") or res.get("hinweis") or "unbekannt")
+        zusatz = f" ({res.get('dauer_sek'):.0f}s statt Mindestlaenge)" if res.get("zu_kurz") else ""
+        return melden.sende_text(token, chat, f"🎬 Naechtliches Reel: kein Reel entstanden{zusatz} — {grund}")
+    except Exception:
+        return False
+
+
 def _pfad(cli: str | None, env_key: str, fallback: str) -> Path:
     return Path(cli).expanduser() if cli else Path(os.environ.get(env_key, fallback)).expanduser()
 
@@ -264,6 +293,8 @@ def main(argv=None) -> int:
                alle_spiele=a.alle_spiele, min_dauer=a.min_dauer)
     if a.einreichen and res.get("ok"):
         res.update(_einreichen(res))
+    elif a.einreichen:
+        _melde_fehlschlag(res)          # Stille ist der zweite Fehler: der naechtliche Lauf muss sich melden
     print(json.dumps(res, ensure_ascii=False, indent=2))
     return 0 if res.get("ok") else 1
 

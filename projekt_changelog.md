@@ -17,6 +17,32 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-08-17 13:30] — Claude Code
+- **Was:** **Zwei stille Ausfaelle gefunden und behoben — 24/7-Betrieb war in Wahrheit keiner.**
+  (1) **MACO470 lief nicht durch.** Der Autostart-„Test" vom 12.08. war verfaelscht: jeder Pruefbefehl vom
+  MacBook startet WSL selbst. Harte Messung am 17.08. (Windows lief seit dem 12.08. durch, Benutzer
+  angemeldet): nur **1 WSL-Boot** und **3** Worker-Starts in 5 Tagen, beim Zugriff war der Dienst **tot**.
+  Ursache: WSL2 beendet die VM, sobald keine Client-Sitzung offen ist; `--exec /bin/true` haelt sie nicht,
+  `.wslconfig` mit `vmIdleTimeout=-1` genuegte ebenfalls nicht. **Fix:** Windows-Aufgabe
+  **`LUNA-WSL-Keepalive`** haelt eine Dauer-Sitzung (`--exec /usr/bin/sleep infinity`) und wiederholt sich
+  alle 5 Minuten (Selbstheilung, keine Doppelstarts). **Offen/CEO:** Aufgabe ist „Nur interaktiv" und
+  Auto-Login ist aus -> nach unbeaufsichtigtem Neustart startet nichts.
+  (2) **Naechtliches Reel faellt seit dem 11.08. reihenweise aus** (11., 12., 15., 16., 17.08. ohne Reel).
+  Ursache: `waehle_spiel` stellt nie genutzte Spiele nach vorn — **6 der 35 Spielordner enthalten kein
+  Video** (leer oder nur Fotos). So ein Ordner liefert 0 Clips, der Lauf bricht ab, der Ordner bleibt „nie
+  genutzt" und steht **jede folgende Nacht wieder vorn** = Dauerblockade. Nachgerechnet: 15.08.
+  „HSV Frauen vs SVW", 16.08. „KSC vs HSV", 17.08. + 18.08. „HSV vs TSG" — alle 0 Videodateien.
+  **Fix:** `_spielordner(..., nur_mit_video=True)` filtert videolose Ordner vor der Rotation weg.
+  (3) **Stille war der zweite Fehler:** Der naechtliche Lauf meldete Fehlschlaege nur nach stdout.
+  Neu `_melde_fehlschlag()` -> Telegram-Hinweis, wenn kein Reel entsteht.
+  (4) **Doku:** MACO470-Zugaenge (`maco470-worker`, DSM-`maco470`) in `governance/zugriffs-policy.md`
+  nachgetragen (E3 war bei der Anlage versaeumt worden); M4d in der Roadmap von „ERLEDIGT" auf
+  „TEILWEISE" korrigiert.
+- **Warum:** CEO-Auftrag: MacBook nur Entwicklung, NAS und MACO470 tragen den Betrieb 24/7.
+- **Betroffen:** `cutter/reel_daily.py`, `cutter/tests/test_reel.py` (74 Tests gruen),
+  `docs/maco470-roadmap.md`, `governance/zugriffs-policy.md`, MACO470 (`.wslconfig`, Aufgabe
+  `LUNA-WSL-Keepalive`)
+
 ## [2026-08-12 16:10] — Claude Code
 - **Was:** **M3 erledigt — NAS-Archiv am MACO470 + erstes echtes Themen-Reel Ende-zu-Ende.**
   (1) **SMB nativ per CIFS statt drvfs (E6, revidiert):** `cmdkey` funktioniert **nicht** ueber SSH

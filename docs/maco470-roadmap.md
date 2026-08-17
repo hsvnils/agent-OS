@@ -39,10 +39,21 @@ AUS (MACO470 uebernimmt)"); systemd-Dienst `cutter-worker` **gestartet und aktiv
 geholt, in **11 s** ein 12,8-s-Reel aus 4 Clips gebaut und den Status **`done`** samt Clips/Dauer/Groesse
 zurueckgemeldet. Testdaten entfernt.
 
-**Autostart erledigt (2026-08-12):** Windows-Aufgabe `LUNA-WSL-Autostart` (bei Anmeldung ->
-`wsl.exe -d Ubuntu-24.04 --exec /bin/true`) startet die WSL-Instanz; systemd bringt `cutter-worker`
-automatisch mit hoch. **Getestet:** `wsl --shutdown` -> Aufgabe ausgeloest -> Worker war ohne Zutun
-wieder `active`. Passwort am 2026-08-12 durch ein starkes ersetzt.
+**Autostart (2026-08-12), am 2026-08-17 als UNZUREICHEND widerlegt:** Windows-Aufgabe `LUNA-WSL-Autostart`
+(bei Anmeldung -> `wsl.exe -d Ubuntu-24.04 --exec /bin/true`) startet die WSL-Instanz; systemd bringt
+`cutter-worker` mit hoch. Der damalige „Test" war **verfaelscht**: jeder Pruefbefehl vom MacBook
+(`ssh maco470 "wsl -d … "`) startet WSL selbst — der Worker sah deshalb immer `active` aus.
+**Messung 2026-08-17** (Windows lief seit dem 12.08. durch, Benutzer angemeldet): seit dem 12.08. gab es
+nur **1 WSL-Boot** und **3** Worker-Starts, und beim Zugriff war der Dienst tot. Ursache: WSL2 beendet die
+VM, sobald keine Client-Sitzung mehr offen ist; ein `--exec /bin/true` haelt sie **nicht**. Auch
+`.wslconfig` mit `[experimental] vmIdleTimeout=-1` (am 12.08. gesetzt) genuegte nicht.
+**Behoben 2026-08-17:** Aufgabe **`LUNA-WSL-Keepalive`** haelt eine **Dauer-Sitzung**
+(`wsl.exe -d Ubuntu-24.04 --exec /usr/bin/sleep infinity`) und wiederholt sich **alle 5 Minuten** —
+laeuft die Sitzung noch, startet keine zweite; ist sie gestorben, kommt sie binnen 5 Minuten zurueck
+(Selbstheilung). **Restrisiko (CEO-Aufgabe):** Die Aufgabe ist „Nur interaktiv" und **Auto-Login ist aus**
+(`AutoAdminLogon=0`) — nach einem Neustart ohne Anmeldung startet nichts. Fix: im Aufgabenplaner
+„Unabhaengig von der Benutzeranmeldung ausfuehren" (braucht das Windows-Passwort) **oder** Auto-Login
+per `netplwiz`. Passwort am 2026-08-12 durch ein starkes ersetzt.
 
 **SMB + erstes echtes Themen-Reel (2026-08-12): ERLEDIGT.** Mount laeuft **nativ per CIFS** (nicht drvfs —
 siehe E6), read-only auf `//192.168.178.129/SocialMediaTeam` -> `/mnt/nas-clips`; `REEL_SOURCE` zeigt auf
@@ -253,6 +264,10 @@ im NAS-Archiv liegt:
 - **Umlaute ueber CIFS (NFC/NFD)** beim Spielordner-Matching — ggf. `unicodedata.normalize("NFC", …)` in
   `reel_daily`/`reel_source`.
 - **Nie zwei Queue-Poller** (E4-Reihenfolge einhalten).
+- **Spielordner ohne Video blockieren die Rotation dauerhaft** (gefunden 2026-08-17): `waehle_spiel` stellt
+  nie genutzte Spiele nach vorn; ein leerer Ordner liefert 0 Clips, der Lauf bricht ab, der Ordner bleibt
+  „nie genutzt" — und ist in der naechsten Nacht wieder vorn. So fielen 11./12. und 15.–17.08. aus
+  (6 der 35 Ordner enthalten kein Video). Fix: `_spielordner(..., nur_mit_video=True)` filtert sie vorher weg.
 - `.env` bleibt pro Maschine, nie syncen (gitignored; NAS-Sync excludiert sie ohnehin).
 
 ## Status-Uebersicht
@@ -264,7 +279,7 @@ im NAS-Archiv liegt:
 | M4a | Worker-Code (`cutter/worker.py`, Themen-Reels, Web-UI, E4-Schalter) | **ERLEDIGT 2026-08-10** |
 | M4b | Dienst + Offline-/Inbox-Modus verifiziert | **ERLEDIGT 2026-08-10** |
 | M4c | Queue-Betrieb live (Maschinen-Konto, Mac-Poll aus, E2E-Test) | **ERLEDIGT 2026-08-12** |
-| M4d | Autostart-Kette (Windows-Aufgabe -> WSL -> systemd) | **ERLEDIGT 2026-08-12** |
+| M4d | Autostart-Kette (Windows-Aufgabe -> WSL -> systemd) | **TEILWEISE** — Keepalive-Dauersitzung seit 2026-08-17; **offen: unbeaufsichtigter Neustart** (Auto-Login/Passwort = CEO) |
 | M3 | SMB-Mount (nativ CIFS) + erstes echtes Themen-Reel E2E | **ERLEDIGT 2026-08-12** |
 | **M4e** | **clip_brain-Index anzapfen** -> „alle Spiele"-Reels in Sekunden statt Stunden | **NAECHSTER SCHRITT** |
 | M5 | Video-Brain: Stufe 2 (Whisper) / 3 (Gemini, CEO-Tor) / 4-5 (Archiv-App) | OFFEN |
