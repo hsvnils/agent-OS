@@ -69,6 +69,7 @@ TAR_EXCLUDES=(
   --exclude='./investment/log.jsonl'
   --exclude='./investment/features.jsonl'
   --exclude='./approvals/log.jsonl'
+  --exclude='./cutter_ops'          # Job-Cache + Worker-Herzschlag (schreibt die Web-App auf der NAS)
   --exclude='./entwicklung'
   --exclude='./orchestrator/channels/voice/selected_voice.json'
   # --- Git + virtuelle Umgebungen + Worktrees ---

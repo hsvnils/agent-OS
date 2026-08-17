@@ -12,6 +12,7 @@ import os
 import secrets
 import time
 import uuid
+from datetime import datetime
 from functools import partial
 from pathlib import Path
 
@@ -388,9 +389,25 @@ async def cutter_reel(request: Request):
     return JSONResponse({**r, "jobs": cutter_store.list(limit=100)})
 
 
+WORKER_HERZ = ROOT / "cutter_ops" / "worker_herzschlag.json"
+
+
+def _herzschlag(user: str) -> None:
+    """Lebenszeichen des Cutter-Workers festhalten. Nur dieser Endpunkt wird vom Worker gepollt (die
+    Weboberflaeche nutzt `/api/cutter`) -- der Zeitstempel ist damit ein echter Herzschlag und nicht bloss
+    „irgendwer hat die Seite offen". Die Betriebs-Wacht schlaegt Alarm, wenn er veraltet."""
+    try:
+        WORKER_HERZ.parent.mkdir(parents=True, exist_ok=True)
+        WORKER_HERZ.write_text(json.dumps({"ts": datetime.now().isoformat(timespec="seconds"),
+                                           "user": user or ""}), "utf-8")
+    except OSError:
+        pass                                    # ein fehlender Herzschlag darf den Worker nie ausbremsen
+
+
 @app.get("/api/cutter/queue")
-def cutter_queue():
+def cutter_queue(request: Request):
     """Vom Cutter-Worker (MACO470) gepollt: offene (queued) Jobs."""
+    _herzschlag(_pref_user(request))
     return {"jobs": [j for j in cutter_store.list(limit=100) if j.get("status") == "queued"]}
 
 

@@ -1045,6 +1045,56 @@ def _start_investment_loop(ctx, secrets) -> None:
     print("Investment-Loop aktiv (" + "; ".join(aktive) + ").", flush=True)
 
 
+def _start_betriebswacht_loop(ctx, notify, secrets) -> None:
+    """Betriebs-Wacht: prueft alle 15 Minuten, ob die 24/7-Maschinen wirklich arbeiten.
+
+    Regelbasiert und kostenlos (kein LLM). Meldet Queue-Stau, haengende Jobs, einen stummen Cutter-Worker
+    und ausgebliebene naechtliche Reels -- genau die vier stillen Ausfaelle, die im August 2026 tagelang
+    unbemerkt blieben. Abschaltbar mit `BETRIEBSWACHT_ENABLED=0`; respektiert die Notbremse.
+    """
+    import threading
+    import time
+
+    from ...core.betriebswacht import pruefe
+    from ...core.content_store import CUTTER_FELDER, ContentStore
+    from ...core.reel_store import ReelStore
+
+    if notify is None or str(secrets.get("BETRIEBSWACHT_ENABLED", "1")).strip().lower() in ("0", "false",
+                                                                                            "no", "off"):
+        return
+
+    def _herzschlag():
+        """Zeitstempel des letzten Queue-Abrufs (schreibt die Web-App). Fehlt er -> None = keine Pruefung."""
+        try:
+            p = ROOT / "cutter_ops" / "worker_herzschlag.json"
+            return json.loads(p.read_text("utf-8")).get("ts") if p.exists() else None
+        except (OSError, ValueError):
+            return None
+
+    def _letztes_reel():
+        try:
+            return ReelStore(ROOT / "reel_freigabe" / "log.jsonl").zuletzt_eingereicht()
+        except Exception:
+            return None
+
+    def loop():
+        time.sleep(120)                      # dem Bot Zeit zum Hochfahren lassen
+        cutter = ContentStore(None, "luna_cutter_jobs", CUTTER_FELDER,
+                              ROOT / "cutter_ops" / "jobs_cache.jsonl")   # nur lokaler Cache, kein Supabase
+        while True:
+            try:
+                if ctx.watch is None or not ctx.watch.store.paused():
+                    for b in pruefe(jobs=cutter.list(limit=100), herzschlag=_herzschlag(),
+                                    letztes_reel=_letztes_reel()):
+                        notify(b["text"], abteilung="Betriebs-Wacht", kategorie="fehler",
+                               quelle="betriebswacht", detail=b["detail"][:1800])
+            except Exception as exc:
+                print(f"[wacht] Fehler: {exc}", flush=True)
+            time.sleep(900)
+
+    threading.Thread(target=loop, daemon=True, name="betriebswacht-loop").start()
+
+
 def _start_cfo_loop(ctx, notify) -> None:
     """CFO-Kostenpruefung 1x taeglich nachts (03:00 DE): Freeware-/Abo-/Token-Sparpotenziale -> Push.
 
@@ -1132,6 +1182,10 @@ def main() -> None:
     print("Briefing-Loop aktiv (Morgen 08:00 + Abend 20:00, Europe/Berlin).", flush=True)
     _start_cfo_loop(ctx, ctx.notifications.enqueue)
     print("CFO-Kostenloop aktiv (taeglich 03:00, Freeware/Abos/Token-Sparpotenziale).", flush=True)
+    _start_betriebswacht_loop(ctx, ctx.notifications.enqueue, secrets)
+    if str(secrets.get("BETRIEBSWACHT_ENABLED", "1")).strip().lower() not in ("0", "false", "no", "off"):
+        print("Betriebs-Wacht aktiv (alle 15 min: Queue-Stau, haengende Jobs, stummer Worker, kein Reel).",
+              flush=True)
     _start_selfdev_loop(ctx, secrets)
     if secrets.get("SELF_DEV_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Self-Dev-Loop aktiv (taeglich 09:00, 1 Bereich -> Antrag mit Freigabe-Push).", flush=True)

@@ -82,3 +82,12 @@ class ReelStore:
 
     def holen(self, rid: str) -> dict | None:
         return self._falten().get(rid)
+
+    def zuletzt_eingereicht(self) -> str | None:
+        """Zeitstempel des zuletzt **eingereichten** Reels (None, wenn es keines gibt).
+
+        Bewusst nicht ueber `liste()`: dort ueberschreibt eine spaetere Statusaenderung (freigegeben,
+        gepostet) das `ts`. Fuer die Betriebs-Wacht zaehlt aber, wann zuletzt ein Reel **entstanden** ist --
+        sonst wuerde die Freigabe eines alten Reels einen ausgefallenen Nachtlauf verdecken."""
+        stempel = [e.get("ts") for e in self._events() if e.get("typ") == "einreichen" and e.get("ts")]
+        return max(stempel) if stempel else None

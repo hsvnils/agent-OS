@@ -17,6 +17,49 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-08-17 14:05] — Claude Code
+- **Was:** **Betriebs-Wacht gebaut** (`orchestrator/core/betriebswacht.py`) — der Waechter, der die stillen
+  Ausfaelle vom August meldet, statt sie tagelang unbemerkt zu lassen. Vier regelbasierte Pruefungen
+  (kostenlos, kein LLM): **Queue steht** (`queued`-Auftrag aelter als 30 Min), **Job haengt**
+  (`running` aelter als 90 Min), **Worker stumm** (letzter Queue-Abruf aelter als 20 Min),
+  **kein Reel** (letztes eingereichtes Reel aelter als 30 Stunden).
+  (1) **Herzschlag:** `GET /api/cutter/queue` schreibt jetzt `cutter_ops/worker_herzschlag.json`. Nur der
+  Worker pollt diesen Endpunkt (die Weboberflaeche nutzt `/api/cutter`) -> echter Lebensbeweis, nicht bloss
+  „jemand hat die Seite offen". Fehlt die Datei, entfaellt die Pruefung stillschweigend (kein Fehlalarm).
+  (2) **Schleife** `_start_betriebswacht_loop` im Bot (alle 15 Min, `BETRIEBSWACHT_ENABLED=0` schaltet ab,
+  respektiert die Notbremse). Meldetexte sind **konstant**, Variables steckt im `detail` — sonst greift die
+  Dedup der `Notifications` nicht und dieselbe Warnung kaeme alle 15 Minuten neu.
+  (3) **`ReelStore.zuletzt_eingereicht()`** neu: `liste()` haette den Zeitstempel verfaelscht, weil eine
+  spaetere Freigabe das `ts` ueberschreibt — die Freigabe eines alten Reels haette einen ausgefallenen
+  Nachtlauf verdeckt.
+  (4) `deploy/sync-to-nas.sh` schuetzt `cutter_ops/` (Job-Cache + Herzschlag sind NAS-Live-Daten).
+  **14 neue Tests**, Suite 731 (4 Fehlschlaege in `test_watch`/`test_notifications` bestehen unabhaengig
+  von dieser Aenderung bereits vorher — nicht angefasst).
+- **Warum:** CEO-Auftrag nach den zwei stillen Ausfaellen: „Baue erstmal den Waechter."
+- **Betroffen:** `orchestrator/core/betriebswacht.py` (neu), `orchestrator/tests/test_betriebswacht.py` (neu),
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`,
+  `orchestrator/core/reel_store.py`, `deploy/sync-to-nas.sh`
+
+## [2026-08-17 13:29] — CEO
+- **Was:** Einstellungen geaendert: briefing_morgen_stunde, depot_alerts, depot_stop_pct, ruhezeit_bis
+- **Warum:** CEO ueber LUNA-OS
+- **Betroffen:** settings
+
+## [2026-08-17 13:29] — CEO
+- **Was:** Einstellungen geaendert: briefing_morgen_stunde, depot_alerts, depot_stop_pct, ruhezeit_bis, ruhezeit_von
+- **Warum:** CEO ueber LUNA-OS
+- **Betroffen:** settings
+
+## [2026-08-17 13:29] — CEO
+- **Was:** Einstellungen geaendert: briefing_morgen_stunde, depot_alerts, depot_stop_pct, ruhezeit_bis
+- **Warum:** CEO ueber LUNA-OS
+- **Betroffen:** settings
+
+## [2026-08-17 13:29] — CEO
+- **Was:** Einstellungen geaendert: briefing_morgen_stunde, depot_alerts, depot_stop_pct, ruhezeit_bis, ruhezeit_von
+- **Warum:** CEO ueber LUNA-OS
+- **Betroffen:** settings
+
 ## [2026-08-17 13:30] — Claude Code
 - **Was:** **Zwei stille Ausfaelle gefunden und behoben — 24/7-Betrieb war in Wahrheit keiner.**
   (1) **MACO470 lief nicht durch.** Der Autostart-„Test" vom 12.08. war verfaelscht: jeder Pruefbefehl vom
