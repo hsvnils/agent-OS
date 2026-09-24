@@ -31,6 +31,8 @@
 | `google_workspace` (gmail, calendar, drive, sheets) | Zugriff auf das Google-Konto `hanserautisch@gmail.com` fuer LUNA: Mails/Termine/Dateien/Sheets lesen; Senden/Aendern/Schreiben nur gated. | **hoa (LUNA)** | **LIVE** seit 2026-06-25 (OAuth-Credentials in `.env`, Mac + NAS; Mac+Container-Live-Test OK) |
 | `luna_os_api` (Konto `maco470-worker`) | Maschinen-Konto des Cutter-Workers auf dem MACO470: Queue lesen (`/api/cutter/queue`), Job-Status melden, fertige Reels zur CEO-Freigabe einreichen. Rolle `content`, Modul `content_ops` — **kein** CEO-Konto, jederzeit revozierbar. | **cutter-worker (MACO470)** | **LIVE** seit 2026-08-12 (Passwort nur in der `.env` des MACO470) |
 | `nas_smb_archiv` (DSM-Konto `maco470`) | **Nur-Lese**-Zugriff per SMB/CIFS auf die Freigabe `SocialMediaTeam` (Rohclip-Archiv), gemountet als `/mnt/nas-clips`. Nur SMB, kein DSM-Login, kein Schreibrecht. | **cutter-worker (MACO470)** | **LIVE** seit 2026-08-12 (Credentials in `/etc/cifs-nas.cred`, chmod 600) |
+| `nas_ssh_deploy` (SSH-Schluessel `maco470-deploy-nas`) | Deploy-Weg MACO470 -> NAS (`deploy/sync-to-nas.sh`, tar-over-ssh als Benutzer `nilskrueger`). **Eingeschraenkt auf die feste IP 192.168.178.184** (`from=`-Option in `authorized_keys`) — von anderen Adressen wertlos. Container-Neustart bleibt beim CEO (sudo). | **Claude Code auf dem MACO470** | **LIVE** seit 2026-09-24 (privater Schluessel nur in `/home/luna/.ssh/luna-nas`, chmod 600) |
+| `github_push` (Deploy-Key `maco470-deploy-github`) | Push-Recht auf das Repo `hsvnils/agent-OS` vom MACO470 aus. Bewusst **Deploy-Key statt Token**: nur dieses eine Repo, kein Zugriff auf andere Repos oder das GitHub-Konto, jederzeit einzeln loeschbar. Holen laeuft weiter anonym per HTTPS. | **Claude Code auf dem MACO470** | **wartet auf Eintrag durch den CEO** (2026-09-24) |
 
 > **Google-Sicherheitsmodell (CEO 2026-06-25): Lesen frei, Schreiben/Senden/Aendern nur nach Bestaetigung.**
 > Read-Tools (mail_suchen/lesen, kalender_agenda, drive_suchen/lesen, tabelle_lesen) laufen direkt.
@@ -83,3 +85,5 @@
 | 2026-08-12 | `luna_os_api` | cutter-worker (MACO470) | **live** (Maschinen-Konto `maco470-worker` statt CEO-Zugang) | CEO (MACO470-Roadmap E3, 2026-07-14) |
 | 2026-08-12 | `nas_smb_archiv` | cutter-worker (MACO470) | **live** (DSM-Konto `maco470`, nur Lesen, nur SMB) | CEO (Konto selbst angelegt) |
 | 2026-08-17 | — | — | beide Zugaenge **nachdokumentiert** (bei der Anlage am 12.08. versaeumt, E3 verlangt sie) | HoA (Pflege) |
+| 2026-09-24 | `nas_ssh_deploy` | Claude Code (MACO470) | **live** (ed25519, `from=`-Bindung an 192.168.178.184) | CEO (ausdruecklich am 2026-09-24) |
+| 2026-09-24 | `github_push` | Claude Code (MACO470) | vorbereitet (Deploy-Key erzeugt, Push-Remote auf SSH); **Eintrag bei GitHub = CEO** | CEO (ausdruecklich am 2026-09-24) |

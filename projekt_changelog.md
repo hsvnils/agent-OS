@@ -17,6 +17,30 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-24 15:30] — Claude Code
+- **Was:** **Arbeitsplatz-Umzug aufs MACO470 vorbereitet + zwei Zugaenge eingerichtet (CEO-Freigabe).**
+  (1) **Claude Code 2.1.281** im WSL-Ubuntu des MACO470 installiert (`/home/luna/.local/bin/claude`,
+  PATH in `.bashrc` + `.profile`); Projekt-Gedaechtnis (36 Dateien) vom MacBook uebertragen nach
+  `~/.claude/projects/-home-luna-ki-unternehmen/memory/`.
+  (2) **`nas_ssh_deploy` LIVE:** ed25519-Schluessel `maco470-deploy-nas` in WSL erzeugt, oeffentlicher Teil
+  in `~/.ssh/authorized_keys` der NAS — **mit `from="192.168.178.184"`-Bindung** (Least Privilege: von
+  jeder anderen Adresse wertlos; WSL2 geht ueber die Windows-Host-IP raus). Verifiziert: SSH-Login und
+  Schreibrecht auf `/volume1/docker/ki-unternehmen` -> `deploy/sync-to-nas.sh` laeuft vom MACO470.
+  Container-Neustart bleibt CEO (sudo).
+  (3) **`github_push` vorbereitet:** **Deploy-Key statt Token** — nur dieses eine Repo, kein Zugriff auf
+  Konto oder andere Repos, einzeln loeschbar, und **kein Geheimnis geht durch fremde Hand**. Push-Remote
+  auf `git@github.com:hsvnils/agent-OS.git` umgestellt, **Fetch bleibt HTTPS/anonym** -> `git pull`
+  funktioniert schon jetzt. **Offen: Eintrag des oeffentlichen Schluessels bei GitHub durch den CEO.**
+  (4) **Fund:** Zwei Commits vom 17.08. (`5f6f2e2`, `f29f6e4`) waren **nie gepusht** — damals lief nur
+  `sync-to-nas.sh` (tar, kein Git). Die NAS hatte den Code, GitHub nicht; der MACO470 meldete deshalb
+  „Already up to date". Per `sync-to-maco.sh` nachgeholt, beide Repos stehen jetzt auf `f29f6e4`.
+  (5) **Geprueft, nicht geraten:** WSL laeuft seit 20.09. durch, `cutter-worker` aktiv, naechtliche Reels
+  **taeglich lueckenlos** (20.-24.09.), Telegram-Zustellung intakt (0 offene Meldungen).
+- **Warum:** CEO will kuenftig vom MACO470 aus arbeiten; Zugaenge am 2026-09-24 ausdruecklich freigegeben.
+- **Betroffen:** `governance/zugriffs-policy.md` (zwei neue Capabilities + Historie), MACO470
+  (`~/.ssh/{luna-nas,github,config}`, Claude-Code-Installation, Gedaechtnis), NAS
+  (`~/.ssh/authorized_keys` + Backup), GitHub (Push-Remote)
+
 ## [2026-08-17 15:15] — Claude Code
 - **Was:** **Derselbe Fehler ein zweites Mal — `datetime` fehlte ebenfalls in `main()`.** Das Container-Log
   (CEO per `ssh -t` geholt) zeigte nach dem `tz`-Fix sofort die naechste Zeile: `[notify] Zustell-Fehler:
