@@ -28,7 +28,7 @@
 | 14 | Freie Visualisierung (MindMap/Graph/Chart) | ✅ umgesetzt 2026-06-26 |
 | 15 | Cutter Agent (Video-Schnitt, lokal auf dem Mac) | ✅ V1+V2 live 2026-06-27 — funktioniert. **Video-KI Opt-in-Pilot 2026-07-03** (`cutter/gemini_video.py`, `--video-ki`/`CUTTER_VIDEO_KI=1`, Default AUS): Gemini sieht die Clips an (statt nur Transkript) fuer die Reihenfolge — Aktivieren = CEO-Tor (Clips zu Google, Paid-Tier). **Szenenbewusster B-Roll-Schnitt 2026-07-03** (`ffmpeg_ops.szenen_zeiten`, Default AN, lokal/gratis via ffmpeg -- kein OpenCV; `--ohne-szenen`/`CUTTER_SZENEN=0`): B-Roll-Ausschnitt auf die laengste Szene statt blind „ab 20 %". Weiteres „intelligenter machen" = Backlog |
 | 16 | **LUNA-OS (Browser-Arbeitsoberflaeche)** | ✅ **VOLL LIVE 2026-06-27** -- LAN + **HTTPS extern** (`https://os.hanserautisch.synology.me`, ein Lesezeichen ueberall), Login, Mond-Orb/Chat, agentisches Mehr-Info, Detailansicht, Mobil, echte Umlaute, futuristisches Design, Sprach-Kontextbefehle |
-| 17 | **LUNA bedient den Rechner / Live-Co-Working** (Computer-Use; paralleles Arbeiten im Gespraech -- ich sehe, sie setzt um, justiert per Sprache, schlaegt vor; z. B. XMind/Mail) | 🔲 geplant (Backlog) |
+| 17 | **LUNA bedient den Rechner / Live-Co-Working** (Computer-Use; paralleles Arbeiten im Gespraech -- ich sehe, sie setzt um, justiert per Sprache, schlaegt vor; z. B. XMind/Mail) | 🔄 **Umbau auf Windows (MACO470) aufgenommen 2026-09-25** — macOS-MVP (M1–M4, M5/M6 teilweise) bleibt Referenz; Plan W1–W7 im Abschnitt |
 | 18 | **HCC -> LUNA-OS Konsolidierung** (EIN System = LUNA-OS; nilshubv2/Worker stillgelegt; Supabase = DB; content_ops/CRM/Team/Cutter als LUNA-OS-Apps; Team-Auth/Rollen) | ✅ **K0-K6 KOMPLETT 2026-07-02** -- nur noch 10 LUNA-Tabellen, Vercel/Worker weg; `HCC_INTEGRATION_ROADMAP.md` |
 | 19 | **CRM-Akte: Mail-Tracking** (Gmail-Mails je Unternehmen in die CRM-Akte) | ✅ **gebaut 2026-07-03** (`core/crm_mail.py`, quelle='mail', L1-Loop im Bot-Poll; luna-telegram-Neustart fuer den Tick) |
 | 20 | **Kanaluebergreifende Nachrichten-Timeline** (Instagram/Mail/Telegram chronologisch) | ✅ **gebaut 2026-07-03** (`CrmStore.timeline`, `/api/crm/timeline`, LUNA-OS-App „Timeline" mit Kanal-Badges) |
@@ -321,7 +321,7 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   keine Trades/Geldbewegungen** -- alles Geld-/Recht-relevante bleibt CEO-/Mensch-Tor (AGENTS.md 4). Nur
   Vorschlaege; Ausfuehrung nie autonom.
 
-### Phase 17 — LUNA bedient den Rechner / Live-Co-Working am Rechner — GEPLANT (Backlog)
+### Phase 17 — LUNA bedient den Rechner / Live-Co-Working am Rechner — UMBAU AUF WINDOWS (CEO 2026-09-25)
 - **Ziel:** Auf **ausdrueckliche CEO-Anweisung** kann LUNA den Rechner des CEO **bedienen** -- Apps oeffnen
   und steuern, klicken, tippen, Workflows/Dateiaktionen ausfuehren („mach X in App Y", „lade das hoch",
   „raeum den Ordner auf"). Wie ein Assistent, der Maus/Tastatur uebernimmt.
@@ -347,6 +347,38 @@ den CEO ueber den Head of Agents (HoA) informiert und an den richtigen Stellen u
   Aktivitaetsprotokoll (adc5). Voller Rechnerzugriff = hohes Risiko -> strenge Bestaetigungen, Sandbox/
   eingeschraenkter Scope wo moeglich.
 - **GATE:** sehr stark (Kontrolle ueber den Rechner). **Kosten:** ggf. Modellzugang (Computer-Use-Modell).
+
+#### Umbau auf Windows / MACO470 (aufgenommen 2026-09-25, CEO-Entscheidung) — Status: GEPLANT
+- **Anlass:** LUNA wird seit 2026-09-25 **nicht mehr am MacBook** entwickelt; Werkbank ist der MACO470
+  (Windows 11 + WSL2). Der macOS-MVP unten laeuft dort nicht (4 Tests: `plan() erfordert macOS`). CEO-Wahl
+  zwischen „umbauen" und „einstellen": **umbauen**.
+- **Ehrlicher Ist-Stand:** Der Mac-MVP kam ueber Entwicklungstests nicht hinaus — **8 Aktionen** im Protokoll
+  (29.06. + 08.07.), davon **3 fehlgeschlagen**, seit 08.07. keine Nutzung; ueber NAS/Telegram nie, weil die
+  Bruecke fehlt.
+- **Bleibt (plattformneutral):** `runner/computer_use.py` (Loop sehen->entscheiden->handeln, Gefahr-/Konfidenz-
+  Stopp), `runner/xmind.py` (Dateiformat), `runner/vision.py` (Gemini), die **Tor-Logik** des Aktuators
+  (Allowlist, Vorschau/Bestaetigung, Not-Aus, Audit).
+- **Neu fuer Windows:**
+  - **W1 Windows-Laufzeit.** Die Steuerung muss **unter Windows selbst** laufen, nicht im WSL (von dort ist
+    der Windows-Desktop nicht bedienbar). Eigene Python-Umgebung auf der Windows-Seite, als Prozess in der
+    **angemeldeten Sitzung** (Desktop-Zugriff braucht sie) -> haengt am offenen Auto-Login-Thema des MACO470.
+    Repo-Zugriff entscheiden: `\\wsl$\Ubuntu-24.04\home\luna\ki-unternehmen` oder eigener Klon.
+  - **W2 Wahrnehmung:** vordere App/Fenster, laufende und installierte Apps (Windows-APIs statt osascript/
+    System Events; Kandidaten: UI Automation / pywinauto — zu pruefen).
+  - **W3 Aktuator:** App oeffnen, Text tippen, Tasten — mit der **bestehenden Tor-Logik**.
+  - **W4 Bildschirmfoto auf Anfrage** (ersetzt `capturePNG` des Swift-Orbs) -> schliesst den M6-Loop.
+  - **W5 Oberflaeche:** den Swift-Orb (768 Zeilen) **nicht** 1:1 nachbauen, sondern zuerst pruefen, ob
+    LUNA-OS im Browser + Sprachkanal reicht; ein Tray-Icon nur, wenn wirklich noetig.
+  - **W6 Bruecke** LUNA (NAS) -> Windows-Runner (war am Mac schon offen).
+  - **W7 Sandbox-Policy scharf schalten:** Phase 25 (Blaupause fertig) wartet auf Phase 17 — der
+    Windows-Runner setzt die Policy **von Anfang an** durch, statt sie nachzuruesten.
+- **Governance (unveraendert HART) + neu zu beachten:** Auf dem MACO470 liegt seit 2026-09-25 die **volle
+  `.env` inkl. CEO-Konto** -> Allowlist fuer Apps/Ordner eng halten; Not-Aus und Audit ab dem ersten Schritt.
+- **Offene Entscheidungen (CEO):** (a) Sprachkanal (Pipecat, bisher am Mac) auf den MACO470 umziehen —
+  sitzt der CEO mit Mikrofon/Lautsprecher am MACO? (b) Tray-Oberflaeche ja/nein (W5).
+- **Tests:** die 4 macOS-Tests bekommen Windows-Gegenstuecke; ohne Gegenprobe (Test wird rot, wenn der Fehler
+  wieder drin ist) gilt kein Schritt als fertig.
+- **Mac-Code** bleibt als Referenz im Repo, bis die Windows-Fassung ihn abloest.
 
 #### MVP-Status „LUNA am Mac" (Stand 2026-06-29)
 - ✅ **M1–M4 umgesetzt:** nativer Menueleisten-Orb (`mac/LunaOrb/`, Swift-`.app`), On-Screen-Awareness

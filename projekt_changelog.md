@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 10:15] — Claude Code (MACO470)
+- **Was:** **Phase 17 als Windows-Umbau aufgenommen** (CEO-Entscheidung „umbauen" statt „einstellen").
+  ROADMAP: Status-Tabelle + Ueberschrift + neuer Abschnitt „Umbau auf Windows / MACO470" mit Plan **W1–W7**
+  (Windows-Laufzeit in der angemeldeten Sitzung statt WSL, Wahrnehmung, Aktuator mit bestehender Tor-Logik,
+  Bildschirmfoto, Oberflaeche erst pruefen statt Swift-Orb nachbauen, NAS-Bruecke, **Phase-25-Sandbox von
+  Anfang an durchsetzen**). Ehrlicher Ist-Stand festgehalten: Mac-MVP kam ueber 8 Test-Aktionen (3
+  fehlgeschlagen) nicht hinaus. Status-Tabelle war schon vorher veraltet („geplant", obwohl M1–M4 gebaut)
+  — mitkorrigiert. Kein Code geaendert.
+- **Warum:** LUNA wird nicht mehr am MacBook entwickelt; der macOS-MVP laeuft auf dem MACO470 nicht.
+- **Betroffen:** `ROADMAP.md`
+
 ## [2026-09-25 09:35] — Claude Code (MACO470)
 - **Was:** **MACO470 ist jetzt die volle LUNA-Werkbank — das MacBook wird fuer LUNA nicht mehr genutzt.**
   (1) **Volle `.env` auf dem MACO470** (CEO-Entscheidung: „der darf auf dem MACO ruhig CEO-Konto sein"):
