@@ -284,3 +284,4 @@ im NAS-Archiv liegt:
 | **M4e** | **clip_brain-Index anzapfen** -> „alle Spiele"-Reels in Sekunden statt Stunden | **NAECHSTER SCHRITT** |
 | M5 | Video-Brain: Stufe 2 (Whisper) / 3 (Gemini, CEO-Tor) / 4-5 (Archiv-App) | OFFEN |
 | M6 | Lokales LLM (Ollama laeuft bereits mit qwen3:30b-a3b — Anbindung offen) | OFFEN |
+| **Umzug** | **Werkbank MacBook -> MACO470:** Claude Code, volle `.env` (CEO-Konto), NAS-Deploy + GitHub-Push, Backup-Timer `luna-backup.timer` 03:20, Mac-Watcher aus | **ERLEDIGT 2026-09-25** |

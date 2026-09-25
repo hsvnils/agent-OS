@@ -17,6 +17,31 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 09:55] — Claude Code (MACO470)
+- **Was:** **Umzug MacBook -> MACO470 abgeschlossen** (CEO: „mach was noetig ist, ohne etwas kaputt zu machen").
+  Grundsatz: erst das Neue einrichten und mit echtem Lauf beweisen, dann das Alte abschalten.
+  (1) **Backup-Skript hatte einen Datenverlust-Fehler (bestand auch am Mac):** Bei nicht erreichbarer NAS legte
+  es einen **leeren** Ordner an, meldete Exit 0 — und die Aufbewahrung loeschte **trotzdem die aeltesten guten
+  Staende**, mit der falschen Meldung „neuestes hat die volle Historie". 30 Naechte ohne NAS = alle echten
+  Backups weg. **Mit dem alten Skript nachgestellt:** 2 von 31 guten Staenden geloescht, 1 leerer Ordner, Exit 0.
+  **Fix in `deploy/backup-from-nas.sh`:** leerer Lauf ODER geschrumpfte Historie (Stores sind append-only)
+  -> nichts rotieren, leeren Ordner entfernen, Exit 1, Telegram-Meldung (Token aus der Repo-`.env`, falls
+  vorhanden; `BACKUP_MELDEN=0` fuer Tests). Dazu `ssh -n` (der Aufruf frass sonst die Standardeingabe).
+  **Gegenproben:** NAS weg -> Exit 1, alle 31 Staende bleiben; Historie geschrumpft -> Exit 1, alter Stand
+  bleibt; Erfolg -> Aufbewahrung greift weiter (31+1 -> 30).
+  (2) **Backup laeuft jetzt auf dem MACO470:** systemd `luna-backup.timer` taeglich 03:20 (`Persistent=true`
+  holt verpasste Laeufe nach), Ziel `/home/luna/LUNA-Backups`. Echter Lauf ueber systemd: **success, 10 Stores,
+  51.819 Events**.
+  (3) **Mac-Backup bleibt als zweite, unabhaengige Kopie** (launchd 03:00), jetzt mit dem reparierten Skript;
+  alte Fassung gesichert als `~/LUNA-Backups/backup-from-nas.sh.alt-20260925`. Echter Lauf am Mac: 10 Stores,
+  51.819 Events — identisch mit dem MACO.
+  (4) **Mac-Watcher `com.hanserautisch.cutter.watch` abgeschaltet** (bootout + dauerhaft `disable`, plist bleibt
+  fuer den Rueckweg). Inbox geprueft: nur zwei erledigte Testordner vom 27.06. Gegenprobe: MACO-Worker pollt
+  unveraendert (Herzschlag 9 s alt, Konto `ceo`).
+- **Warum:** LUNA wird nicht mehr am MacBook entwickelt; das Backup darf nicht mehr davon abhaengen, ob der Mac laeuft.
+- **Betroffen:** `deploy/backup-from-nas.sh`, `docs/maco470-roadmap.md`; MACO470 (`/etc/systemd/system/luna-backup.{service,timer}`),
+  MacBook (launchd-Watcher deaktiviert, Backup-Skript ersetzt)
+
 ## [2026-09-25 10:25] — Claude Code (MACO470)
 - **Was:** `PHASE17_PLAN.md` als **historisch** markiert (macOS-MVP) mit Verweis auf den Windows-Umbauplan
   W1–W7 in `ROADMAP.md`. Sonst gaebe es zwei widerspruechliche massgebliche Quellen fuer Phase 17.
