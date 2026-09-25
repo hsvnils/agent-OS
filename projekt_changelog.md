@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 14:49] — Claude Code (MACO470)
+- **Was:** Etappe 3b Baustein 1 verifiziert (CEO setzte `OLLAMA_CONTEXT_LENGTH=32768`, `OLLAMA_FLASH_ATTENTION=1`,
+  `OLLAMA_KV_CACHE_TYPE=q8_0`): KV-Kompression greift, 32.768 Token fuer 20,5 GB; 7,2 GB verfuegbar. Dabei **BF-21**
+  gefunden und behoben: verwaister `llama-server.exe` (PID 27788, Eltern-Prozess weg) hielt 20,7 GB -> beendet (nach
+  Pruefung: Name + fehlender Eltern-Prozess). Probelauf lange Unterhaltung: 11 von 12 Aufrufen lokal, 1 Zeitlimit ->
+  Gemini, Kuerzungsschutz nie ausgeloest, Antworten korrekt.
+- **Warum:** CEO-Go „Go fuer 3b", Rueckmeldung „Erledigt".
+- **Betroffen:** Windows-Einstellungen MACO470 (CEO), Prozess PID 27788 (beendet), `docs/bekannte-fehler.md`,
+  `LOKALES_LLM_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-25 14:20] — Claude Code (MACO470)
 - **Was:** `LOKALES_LLM_ROADMAP.md` **Etappe 3b (Kontext-Management)** angelegt und Bausteine 2+3 gebaut (Branch
   `ai/kontext-management`, nicht gemergt): neues `orchestrator/core/kontext.py` — Verlauf wird vor jedem Modellaufruf

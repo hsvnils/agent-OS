@@ -4,8 +4,8 @@
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/lokales-llm`
 - Basiscommit: `01e9919`
-- Naechster Schritt: Go fuer Etappe 2 (`LOCAL_LLM_FACHAGENTEN=zuerst`) einholen; offen: BF-19 (DSM-Proxy-Timeout),
-  BF-20 (Schwaerzung), Kontext 32768, MacBook-Gegenprobe Firewall, 7-Tage-Beobachtung Chat bis 2026-10-02.
+- Naechster Schritt: CEO-Go fuer Merge + Deploy + Neustart von Etappe 3b; danach `.wslconfig` `memory=8GB`
+  (unterbricht WSL); danach Etappe 2.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -207,9 +207,18 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
   (KV-Cache halb so gross -> 32.768 Token etwa zum RAM-Preis von heute 16.384; ob die Radeon-iGPU das unterstuetzt,
   zeigt die Messung — sonst ignoriert Ollama es, 32.768 bleibt auch ohne gefahrlos: ~3,9 GB frei).
   Spaeter, zuletzt (unterbricht WSL): `.wslconfig` `memory=8GB`.
+- Baustein 1 Ergebnis (2026-09-25 14:22): gesetzt vom CEO; **KV-Cache-Kompression greift** — Modell mit 32.768 Token
+  braucht 20,5 GB (vorher 20,4 GB bei 16.384); volle Werkzeugliste 11.837 Token, richtiges Werkzeug. Verfuegbar mit
+  geladenem Modell: **7,2 GB** (vorher 5,5 GB). Stolperstein BF-21: verwaister `llama-server.exe` vom alten Ollama
+  hielt 20,7 GB -> beendet.
 - Baustein 2 (Code): Verlauf automatisch verdichten, bevor das Fenster voll ist — alte Werkzeug-Ergebnisse durch
   Kurzfassungen ersetzen, bei Bedarf die aeltesten Wechsel gleitend entfernen; kein zusaetzlicher LLM-Aufruf.
 - Baustein 3 (Code): Nach einer Pause (Standard 2 h) neue Sitzung mit kurzer Notiz zur letzten Unterhaltung.
+- Probelauf 2026-09-25 (MACO470, Test-Ablagen, 8 CEO-Nachrichten, 12 Modellaufrufe): **11 von 12 lokal**, 1 Aufruf
+  lief in das 300-s-Zeitlimit (Denkschleife) -> Gemini uebernahm nahtlos; Kuerzungsschutz **nie** ausgeloest;
+  Prompt max. 15.739 Token von 32.768; Verlauf nach 8 Nachrichten ~1.800 Token (Budget 11.668) -> Verdichten war noch
+  nicht noetig. Antworten inhaltlich korrekt (15 Antraege, Verteilung, Budget 100 EUR, Zusammenfassung). Dauer je
+  Nachricht 36-135 s, einmal 220 s. Auffaellig: LUNA siezt lokal gelegentlich („Ihnen").
 - Gate: Tests gruen; Messung Speicherbedarf bei 32.768; Probelauf mit langer Unterhaltung (>= 8 Nachrichten mit
   Werkzeugen) bleibt vollstaendig lokal, kein Kuerzungsschutz-Treffer.
 - Verifikation: `/api/ps` -> `context_length` 32768 und Groesse notiert; Probelauf-Protokoll: jede Antwort
