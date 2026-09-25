@@ -11,8 +11,9 @@
 `scripts/doku_check.py` liest die Codebloecke ```` ```doku-check:...``` ```` unten und vergleicht sie mit dem
 Code. Er laeuft mit der Testsuite (`orchestrator/tests/test_doku_check.py`) und schlaegt fehl, wenn
 
-- im Code ein externer Host, eine Supabase-Tabelle oder ein lokaler Speicher auftaucht, der hier fehlt, oder
-- hier etwas steht, das im Code nicht mehr vorkommt.
+- im Code ein externer Host, eine Supabase-Tabelle oder ein lokaler Speicher auftaucht, der hier fehlt,
+- hier etwas steht, das im Code nicht mehr vorkommt, oder
+- ein Speicher nicht vom Deploy ausgenommen ist oder weder gesichert wird noch unter `ohne-backup` steht.
 
 Nachtragen: `python3 scripts/doku_check.py --liste` zeigt die Ist-Mengen mit Fundstellen.
 
@@ -148,8 +149,8 @@ ai_intel_items
 
 Pfade relativ zum Repo-Root; auf der NAS `/volume1/docker/ki-unternehmen`, in **beiden** Containern als
 `/app` gemountet. „Deploy-Schutz" = von `deploy/sync-to-nas.sh` ausgenommen; „Backup" = in der Liste von
-`deploy/backup-from-nas.sh`. Luecken siehe `docs/bekannte-fehler.md` (BF-04; BF-03 behoben 2026-09-25); `scripts/doku_check.py`
-zeigt sie als Hinweis.
+`deploy/backup-from-nas.sh`. Seit 2026-09-25 (BF-03/BF-04) ist jede Luecke ein Fehler im Doku-Check; bewusst
+ungesicherte Speicher stehen im Block `ohne-backup` unten.
 
 | Speicher | Schreibt | Liest | Deploy-Schutz | Backup |
 |---|---|---|---|---|
@@ -162,19 +163,19 @@ zeigt sie als Hinweis.
 | `brain/log.jsonl` | Bot, Web | dito | ja | ja |
 | `finance/kosten-log.jsonl` | Bot (Kostenlauf 03:00) | Bot, Web | ja | ja |
 | `investment/log.jsonl` | Bot, Web | dito | ja | ja |
-| `investment/features.jsonl` | Bot | Web | ja | **nein** |
-| `approvals/log.jsonl` | Bot | Bot | ja | **nein** |
-| `trajektorien/log.jsonl`, `social/log.jsonl` | Bot | Bot | ja | **nein** |
-| `entwicklung/roadmap.jsonl` | Bot, Web, Voice | Web | ja | **nein** |
-| `ig_inbox/log.jsonl` | Bot (Radar), Web (Webhook) | dito | ja | **nein** |
-| `reel_freigabe/log.jsonl` + `<id>.mp4` | Web (`/api/reel/einreichen`) | Web, Betriebs-Wacht | ja | **nein** |
+| `investment/features.jsonl` | Bot | Web | ja | ja |
+| `approvals/log.jsonl` | Bot | Bot | ja | ja |
+| `trajektorien/log.jsonl`, `social/log.jsonl` | Bot | Bot | ja | ja |
+| `entwicklung/roadmap.jsonl` | Bot, Web, Voice | Web | ja | ja |
+| `ig_inbox/log.jsonl` | Bot (Radar), Web (Webhook) | dito | ja | ja |
+| `reel_freigabe/log.jsonl` + `<id>.mp4` | Web (`/api/reel/einreichen`) | Web, Betriebs-Wacht | ja | Log ja, Videos bewusst nein (CEO) |
 | `cutter_ops/jobs_cache.jsonl` | Web | Bot | ja | nein (Cache von Supabase) |
 | `cutter_ops/worker_herzschlag.json` | Web bei jedem `GET /api/cutter/queue` | Betriebs-Wacht | ja | nein (fluechtig) |
-| `crm/log.jsonl` | Bot, Web | dito | ja | **nein** |
+| `crm/log.jsonl` | Bot, Web | dito | ja | ja |
 | `content_ops/*_cache.jsonl` (5 Dateien) | Web, Content-Feed | dito | ja | nein (Cache von Supabase) |
-| `nutzung/log.jsonl` | Web (`/api/nutzung`) | Leistungsbericht | ja | **nein** |
+| `nutzung/log.jsonl` | Web (`/api/nutzung`) | Leistungsbericht | ja | ja |
 | `orchestrator/memory/log.jsonl` | Bot, Voice | dito | ja | ja |
-| `orchestrator/state/instagram_token.json` (**Secret**) | `governance/instagram_token.py` | dito | ja | nein |
+| `orchestrator/state/instagram_token.json` (**Secret**) | `governance/instagram_token.py` | dito | ja | bewusst nein (CEO) |
 | `projekt_changelog.md`, `finance/budget.md` | Bot, Web, Agenten | alle | ja | Git |
 
 ```doku-check:speicher
@@ -203,6 +204,18 @@ content_ops/ideas_cache.jsonl
 content_ops/sources_cache.jsonl
 content_ops/trends_cache.jsonl
 nutzung/log.jsonl
+```
+
+Bewusst ohne Backup (Caches, die aus Supabase neu entstehen, und fluechtige Zustaende):
+
+```doku-check:ohne-backup
+content_ops/aiinbox_cache.jsonl
+content_ops/drafts_cache.jsonl
+content_ops/ideas_cache.jsonl
+content_ops/sources_cache.jsonl
+content_ops/trends_cache.jsonl
+cutter_ops/jobs_cache.jsonl         # Cache von luna_cutter_jobs
+cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
 ```
 
 **MACO470** (WSL, Benutzer `luna`): `~/CutterInbox`, `~/CutterOutbox`, `~/ReelOutbox/<datum>/`,

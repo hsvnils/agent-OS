@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 12:50] — Claude Code (MACO470)
+- **Was:** `BETRIEBSLUECKEN_ROADMAP.md` Etappen 1+2 nach `main` gemergt und gepusht (`45af4a7`). **Etappe 3
+  (BF-04) umgesetzt** auf `ai/betriebsluecken` in einem eigenen Worktree (`.worktrees/betriebsluecken`), damit der
+  Hauptordner auf `main` bleibt — der Backup-Timer laeuft aus dem Hauptordner. `deploy/backup-from-nas.sh`
+  sichert 9 weitere append-only Stores; `scripts/doku_check.py` prueft Deploy-Schutz und Backup jetzt
+  **blockierend**, bewusste Ausnahmen (Caches, Herzschlag) stehen im neuen Block `ohne-backup` in
+  `docs/datenfluesse.md`; Gegenprobe-Test ergaenzt. Tests 798 passed, 0 failed. Probelauf und Merge offen.
+- **Warum:** CEO-Go „Go fuer merge und push, dann etappe 3".
+- **Betroffen:** `deploy/backup-from-nas.sh`, `scripts/doku_check.py`, `orchestrator/tests/test_doku_check.py`,
+  `docs/datenfluesse.md`, `BETRIEBSLUECKEN_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-25 11:41] — Claude Code (MACO470)
 - **Was:** `BETRIEBSLUECKEN_ROADMAP.md` **Etappen 1 + 2 umgesetzt und verifiziert** (auf `ai/betriebsluecken`,
   nicht gemergt/gepusht). (1) BF-01: Mock-Datum in `MockGitHubWatch` und `test_watch.py` relativ zu heute ->

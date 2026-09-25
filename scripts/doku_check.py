@@ -8,6 +8,8 @@ Prueft:
                   jeder dort gefuehrte Host kommt im Code noch vor.
   3. Tabellen  -- dasselbe fuer Supabase-Tabellen.
   4. Speicher  -- dasselbe fuer lokale JSON/JSONL-Stores unter ROOT.
+  5. Schutz    -- jeder Speicher ist vom Deploy ausgenommen (`deploy/sync-to-nas.sh`) und wird gesichert
+                  (`deploy/backup-from-nas.sh`) oder steht bewusst im Block ```doku-check:ohne-backup```.
 
 Die Soll-Listen stehen maschinenlesbar in `docs/datenfluesse.md` in Codebloecken ```doku-check:<name>```.
 
@@ -146,19 +148,21 @@ def pruefe_datenfluesse() -> list[str]:
     return fehler
 
 
-def hinweise_speicher() -> list[str]:
-    """Nicht-blockierende Hinweise: Live-Speicher ohne Deploy-Schutz bzw. ohne Backup (siehe bekannte-fehler.md)."""
+def pruefe_speicherschutz() -> list[str]:
+    """Live-Speicher ohne Deploy-Schutz oder ohne Backup (seit 2026-09-25 blockierend, BF-03/BF-04)."""
     sync = (ROOT / "deploy" / "sync-to-nas.sh").read_text(encoding="utf-8")
     backup = (ROOT / "deploy" / "backup-from-nas.sh").read_text(encoding="utf-8")
     geschuetzt = set(re.findall(r"--exclude='\./([^'*]+)'", sync))
     gesichert = set(re.findall(r"^\s+([a-z_/.-]+\.jsonl?)\s*$", backup, re.M))
+    ohne_backup = soll_mengen(DOKU.read_text(encoding="utf-8")).get("ohne-backup", set()) if DOKU.exists() else set()
     out = []
     for s in sorted(ist_mengen()["speicher"]):
         ordner = s.split("/")[0]
         if s not in geschuetzt and ordner not in geschuetzt:
             out.append(f"Deploy-Schutz fehlt: {s} (sync-to-nas.sh wuerde eine lokale Kopie auf die NAS schieben)")
-        if s not in gesichert:
-            out.append(f"kein Backup: {s}")
+        if s not in gesichert and s not in ohne_backup:
+            out.append(f"kein Backup: {s} -> in deploy/backup-from-nas.sh aufnehmen (nur append-only!) oder "
+                       f"bewusst unter ohne-backup in docs/datenfluesse.md eintragen")
     return out
 
 
@@ -169,12 +173,7 @@ def main(argv: list[str]) -> int:
             for w, dateien in sorted(werte.items()):
                 print(f"{w:45s} # {', '.join(sorted(dateien)[:3])}")
         return 0
-    fehler = pruefe_roadmaps() + pruefe_datenfluesse()
-    hinweise = hinweise_speicher()
-    if hinweise:
-        print(f"Hinweise (blockieren nicht, Stand siehe docs/bekannte-fehler.md): {len(hinweise)}")
-        for h in hinweise:
-            print(f"  ~ {h}")
+    fehler = pruefe_roadmaps() + pruefe_datenfluesse() + pruefe_speicherschutz()
     if fehler:
         print(f"Doku-Check: {len(fehler)} Abweichung(en)")
         for f in fehler:

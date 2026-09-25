@@ -4,8 +4,8 @@
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/betriebsluecken`
 - Basiscommit: `ba77909`
-- Naechster Schritt: Etappen 1+2 sind auf dem Branch verifiziert (Commit lokal, nicht gepusht) -> CEO-Go fuer
-  Merge nach `main` + Push einholen; danach Go fuer Etappe 3 (Backup).
+- Naechster Schritt: Etappe 3 umgesetzt -> CEO-Go fuer den Probelauf (liest Live-Daten von der NAS in ein
+  Wegwerf-Verzeichnis), danach Go fuer den Merge.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -88,7 +88,9 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
 
 ### Etappe 3: Backup vervollstaendigen (BF-04)
 
-- Status: geplant
+- Status: umgesetzt (2026-09-25, Branch, im Worktree `.worktrees/betriebsluecken`) — 9 Eintraege in `FILES`,
+  Doku-Check prueft Deploy-Schutz/Backup jetzt blockierend (Ausnahmen: Block `ohne-backup`); Tests 798 passed.
+  Offen: Probelauf (Go), Merge (Go), Timer-Lauf 03:20.
 - Ziel / Scope: `FILES` in `deploy/backup-from-nas.sh` um die sieben append-only Stores erweitern
   (`crm/log.jsonl`, `ig_inbox/log.jsonl`, `reel_freigabe/log.jsonl`, `approvals/log.jsonl`,
   `investment/features.jsonl`, `trajektorien/log.jsonl`, `nutzung/log.jsonl`) plus die heute fehlenden, aber

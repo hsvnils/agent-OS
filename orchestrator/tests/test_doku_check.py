@@ -23,7 +23,8 @@ class TestDokuCheck(unittest.TestCase):
         self.dc = _lade()
 
     def test_1_repo_ist_konsistent(self):
-        self.assertEqual(self.dc.pruefe_roadmaps() + self.dc.pruefe_datenfluesse(), [])
+        self.assertEqual(self.dc.pruefe_roadmaps() + self.dc.pruefe_datenfluesse()
+                         + self.dc.pruefe_speicherschutz(), [])
 
     def test_2_gegenprobe_fehlender_host_wird_gemeldet(self):
         text = (ROOT / "docs" / "datenfluesse.md").read_text(encoding="utf-8")
@@ -42,6 +43,17 @@ class TestDokuCheck(unittest.TestCase):
         with mock.patch.object(self.dc, "DOKU", tmp):
             fehler = self.dc.pruefe_datenfluesse()
         self.assertTrue(any("gibt_es_nicht" in f and "nicht mehr vor" in f for f in fehler), fehler)
+
+    def test_3b_gegenprobe_speicher_ohne_backup_wird_gemeldet(self):
+        text = (ROOT / "docs" / "datenfluesse.md").read_text(encoding="utf-8")
+        zeile = "content_ops/trends_cache.jsonl\n"
+        self.assertIn("```doku-check:ohne-backup\n", text)
+        tmp = Path(tempfile.mkdtemp()) / "datenfluesse.md"
+        teil = text.split("```doku-check:ohne-backup\n", 1)
+        tmp.write_text(teil[0] + "```doku-check:ohne-backup\n" + teil[1].replace(zeile, "", 1), encoding="utf-8")
+        with mock.patch.object(self.dc, "DOKU", tmp):
+            fehler = self.dc.pruefe_speicherschutz()
+        self.assertTrue(any("kein Backup: content_ops/trends_cache.jsonl" in f for f in fehler), fehler)
 
     def test_4_gegenprobe_roadmap_ohne_header_und_verzeichnis(self):
         d = Path(tempfile.mkdtemp())

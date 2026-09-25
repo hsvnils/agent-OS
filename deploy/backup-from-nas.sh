@@ -32,6 +32,18 @@ FILES=(
   brain/log.jsonl
   finance/kosten-log.jsonl
   orchestrator/memory/log.jsonl
+  # 2026-09-25 (BF-04): weitere append-only Stores. Nur append-only hierher -- der Schrumpf-Check unten
+  # summiert alle JSONL-Zeilen. Fehlende Dateien ueberspringt der Abruf. Bewusst NICHT: Caches/Herzschlag
+  # (docs/datenfluesse.md, Block ohne-backup), Reel-Videos + Instagram-Token (CEO 2026-09-25).
+  crm/log.jsonl
+  ig_inbox/log.jsonl
+  reel_freigabe/log.jsonl
+  approvals/log.jsonl
+  investment/features.jsonl
+  trajektorien/log.jsonl
+  social/log.jsonl
+  entwicklung/roadmap.jsonl
+  nutzung/log.jsonl
 )
 
 mkdir -p "$DEST"
