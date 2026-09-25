@@ -22,6 +22,7 @@ Tabelle fort.
 
 | ID | Symptom | Ursache | Umgehung / naechster Schritt | Seit |
 |---|---|---|---|---|
+| BF-18 | Chat (Telegram + Web) antwortet nur „Es gab gerade einen technischen Fehler …" | **Anthropic-API-Schluessel ungueltig** (`401 authentication_error`, gleicher Schluessel auf NAS und MACO470); 401 zaehlt im `ModelRouter` nicht als Fallback-Grund -> Gemini springt nicht ein; die Ausnahme wird nirgends protokolliert | Letzte erfolgreiche Chat-Antwort laut Kostenlog: 2026-07-08 (Gemini), Anthropic zuletzt 2026-07-06. Alter und neuer Router scheitern identisch (nachgestellt 2026-09-25) — nicht durch den M6-Deploy verursacht. Loesung offen (CEO): neuer Schluessel und/oder 401 als Fallback-Grund und/oder lokal zuerst im Chat | 2026-09-25 |
 | BF-02 | Nach einem Neustart des MACO470 ohne Anmeldung startet nichts (Worker, Backup-Timer) | Windows-Aufgabe „Nur interaktiv", `AutoAdminLogon=0` | „Unabhaengig von der Anmeldung ausfuehren" oder Auto-Login — **CEO-Aufgabe** (Passwort) | 2026-08-17, MR |
 | BF-05 | Intermittierend „alle Anbieter erschoepft" | Gemini-Gratis-Rate-Limit unter Last | zurueckgestellt; lokales LLM (M6) soll es loesen | 2026-07-08, CL:699 |
 | BF-06 | Instagram liefert nicht alle Threads; eine Marken-DM kam nie an | `me/conversations` nur mit `limit=1` stabil; Webhook-Zustellung ungeklaert | Thread fuer Thread blaettern (`0b87833`); Meta-Grenze bleibt; Thema vom CEO abgehakt | 2026-07, CL:892, 981 |

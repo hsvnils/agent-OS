@@ -4,8 +4,8 @@
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/lokales-llm`
 - Basiscommit: `01e9919`
-- Naechster Schritt: CEO-Go fuer Merge + Push + Deploy von Etappe 1 (Deploy ohne Schalter = keine Wirkung);
-  danach Etappe 2 (`LOCAL_LLM_FACHAGENTEN=zuerst`). Offen: Firewall-Gegenprobe vom MacBook.
+- Naechster Schritt: CEO-Entscheidung zu BF-18 (Chat kaputt seit Juli: neuer Anthropic-Schluessel, 401 als
+  Fallback-Grund, lokal zuerst im Chat); danach Etappe 2.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -115,11 +115,14 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
 
 ### Etappe 1: Lokaler Provider im Code (ohne Wirkung bis zur Aktivierung)
 
-- Status: umgesetzt (2026-09-25, Branch; Merge + Deploy offen) — `core/lokal_llm.py`; Schalter je Bereich
+- Status: deployt (2026-09-25) — `core/lokal_llm.py`; Schalter je Bereich
   `LOCAL_LLM_FACHAGENTEN` / `LOCAL_LLM_CHAT` = `zuerst|zuletzt|aus` (ersetzt das geplante `LOCAL_LLM_FUER`), Timeout
   300 s, max_tokens 4096, keine Wiederholungen. Tests 809 passed / 0 failed (11 neue, 4 Gegenproben rot wie erwartet).
   Live-Probe Fachagenten-Pfad gegen Ollama: 98 s, saubere deutsche Antwort, Claude-CLI nicht aufgerufen.
   Gesundheits-Check nur in `self_maintenance` (meldet proaktiv, Dedup) — Betriebs-Wacht bewusst nicht doppelt.
+  **Deployt 2026-09-25** (Merge `271c3e9`, `sync-to-nas.sh --no-restart`, 362 Dateien, keine `.env`; Neustart beider
+  Container durch den CEO; Web 401/200 wie erwartet). Chat-Probe zeigte BF-18 (Anthropic-Schluessel ungueltig,
+  seit Juli, unabhaengig von dieser Etappe).
   Verhaltensaenderung auch ohne Schalter: Verbindungsfehler/Timeouts bei Anthropic loesen jetzt den Fallback aus;
   leere Fallback-Antworten gelten als Fehler (naechster Anbieter statt leerem Text).
 - Ziel / Scope: neue `.env`-Schluessel `LOCAL_LLM_BASE_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_TIMEOUT` (Standard

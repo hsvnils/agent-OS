@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 14:00] — Claude Code (MACO470)
+- **Was:** `LOKALES_LLM_ROADMAP.md` Etappe 1 **deployt**: Merge + Push `271c3e9`, `deploy/sync-to-nas.sh --no-restart`
+  (Probelauf: 362 Dateien, keine `.env`, keine Live-Daten), Neustart beider Container durch den CEO; Web antwortet
+  401 ohne / 200 mit Login. Ohne `LOCAL_LLM_*`-Schalter keine Nutzung des lokalen Modells.
+  **Neuer Befund BF-18:** CEO-Test „Hallo" in Telegram -> „technischer Fehler". Ursache nachgestellt: der
+  Anthropic-API-Schluessel ist ungueltig (401), identisch auf NAS und MACO470; 401 loest keinen Fallback aus.
+  Letzte erfolgreiche Chat-Antwort laut Kostenlog 2026-07-08 -> Chat ist seit Juli ausgefallen, nicht durch diesen
+  Deploy (alter und neuer Router scheitern identisch). Nichts repariert (Workflow E6), Entscheidung beim CEO.
+- **Warum:** CEO-Go „Go fuer alle drei" (Merge, Push, Deploy); Rueckmeldung Chat-Fehler.
+- **Betroffen:** NAS-Code (Deploy), `docs/bekannte-fehler.md`, `LOKALES_LLM_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-25 13:47] — Claude Code (MACO470)
 - **Was:** `LOKALES_LLM_ROADMAP.md` **Etappe 0 verifiziert** (vom CEO am Windows-Rechner ausgefuehrt): Firewall-Regel
   „Ollama API" nur noch fuer NAS + WSL-Netz, `OLLAMA_CONTEXT_LENGTH=16384`, `OLLAMA_KEEP_ALIVE=30m`. Pruefungen: NAS
