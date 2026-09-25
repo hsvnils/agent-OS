@@ -29,6 +29,7 @@ Tabelle fort.
 | BF-10 | `docs/maco470-roadmap.md` Zeile 101 nennt noch „drvfs" | Text vor E6 geschrieben | Tatsaechlich CIFS (`findmnt /mnt/nas-clips`, E6). Bei naechster Aenderung der Datei korrigieren. | 2026-09-25 |
 | BF-11 | Einbrennen von Untertiteln und Verwacklungsmessung nicht moeglich | ffmpeg-Build ohne `libass` bzw. `vidstabdetect` | Einschraenkung; Untertitel sind ohnehin standardmaessig aus | CL:3350, 466 |
 | BF-12 | Noch nicht verifiziert: Umlaute NFC/NFD ueber CIFS, Body-Limit des Reverse-Proxys fuer grosse Reels, OUTBOX muss lokal liegen | – | beim naechsten Auftreten pruefen | MR:259-265 |
+| BF-17 | Ollama ueber die OpenAI-Schnittstelle (`/v1`) waehlt bei LUNAs Werkzeugliste das falsche Werkzeug, ohne Fehler | Server-Kontextfenster 4.096; `/v1` kann es nicht pro Aufruf setzen -> Prompt still auf 2.050 von ~11.800 Token gekuerzt | vor jeder Nutzung `OLLAMA_CONTEXT_LENGTH>=16384` am Server (`LOKALES_LLM_ROADMAP.md` Etappe 0); Pruefung: `prompt_tokens` in der Antwort | 2026-09-25 |
 
 ## Umgehung aktiv
 

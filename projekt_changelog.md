@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 13:18] — Claude Code (MACO470)
+- **Was:** Roadmap `LOKALES_LLM_ROADMAP.md` (M6) nach Workflow angelegt (Status geplant, Etappen 0-4), im
+  Roadmap-Verzeichnis registriert. Analyse mit Messungen an Ollama 0.34 auf dem MACO470 (nur Inferenz-Aufrufe,
+  keine Einstellung geaendert): `qwen3:30b-a3b` waehlt mit allen 97 Werkzeugen 3/3 richtig, braucht aber 25-55 s je
+  Aufruf (Denkschritte nicht abschaltbar); Prompt-Cache wirkt (48 s -> 0,2 s). Kritischer Befund BF-17: ueber `/v1`
+  wird die Werkzeugliste beim Server-Kontext 4.096 still gekuerzt -> falsches Werkzeug. Ollama ist im LAN ohne
+  Anmeldung erreichbar (CISO-Thema, Etappe 0). Register-Eintrag zur Modellbewertung.
+- **Warum:** CEO-Wahl „Lokales LLM" als naechste Funktion.
+- **Betroffen:** `LOKALES_LLM_ROADMAP.md` (neu), `ROADMAP.md`, `docs/bekannte-fehler.md`,
+  `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-25 13:01] — Claude Code (MACO470)
 - **Was:** Aufgeraeumt nach `BETRIEBSLUECKEN_ROADMAP.md` (F3): Etappe 4 gemergt + gepusht (`1d6db78`; die lokale
   `orchestrator/memory/log.jsonl` im Hauptordner vorher gesichert und zurueckgelegt). Worktree

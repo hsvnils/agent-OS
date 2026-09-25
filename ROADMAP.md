@@ -64,6 +64,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 
 | Roadmap | Thema | Art |
 |---|---|---|
+| `LOKALES_LLM_ROADMAP.md` | Lokales LLM (M6): Ollama auf dem MACO470 fuer Jobs + Chat-Fallback | geplant (2026-09-25) |
 | `BETRIEBSLUECKEN_ROADMAP.md` | Betriebsluecken schliessen (BF-01/03/04/08) | in Umsetzung (Etappen 1+2 verifiziert) |
 | `INVESTMENT_ROADMAP.md` | Investment-Abteilung (CIO) | Bestand (vor Workflow) |
 | `HCC_INTEGRATION_ROADMAP.md` | HCC -> LUNA-OS Konsolidierung (K0-K6) | Bestand (vor Workflow) |
