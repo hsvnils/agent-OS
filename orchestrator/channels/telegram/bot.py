@@ -63,7 +63,7 @@ def _build_ctx(cfg: dict, secrets: dict):
     backend = FallbackBackend(
         AgentSdkBackend(cfg["models"], cfg["effort"], gate=CeoGate(),
                         max_turns=cfg["run"].get("max_turns", 4)),
-        fallbacks=_fallbacks(secrets, cfg))
+        fallbacks=_fallbacks(secrets, cfg, bereich="fachagenten"))
     # Antrag adc5: zentrales Aktivitaetsprotokoll. Der Changelog-Callback ist die zentrale Engstelle
     # (Antrags-Lebenszyklus, Execution, Charta) -- jeder Changelog-Eintrag wird zusaetzlich strukturiert
     # ins Protokoll geschrieben, ohne jeden Agenten einzeln zu instrumentieren.
@@ -1152,16 +1152,19 @@ def _start_cfo_loop(ctx, notify) -> None:
     threading.Thread(target=loop, daemon=True, name="cfo-loop").start()
 
 
-def _fallbacks(secrets: dict, cfg: dict) -> list[dict]:
-    """Chat-Fallbacks in Reihenfolge: Gemini (Gratis-Tier) zuerst, dann OpenAI. Nur mit gesetztem Key."""
+def _fallbacks(secrets: dict, cfg: dict, bereich: str = "chat") -> list[dict]:
+    """Fallbacks in Reihenfolge: Gemini (Gratis-Tier), dann OpenAI -- nur mit gesetztem Key. Dazu optional das
+    lokale LLM (`core/lokal_llm.py`, M6): je Bereich per .env `zuerst` (vor Anthropic) oder `zuletzt`."""
+    from ...core.lokal_llm import eintrag
     from ...core.model_router import GEMINI_BASE_URL
     v = cfg.get("voice", {})
+    lokal = eintrag(secrets, bereich)
     return [
         {"name": "gemini", "key": secrets.get("GEMINI_API_KEY", ""), "base_url": GEMINI_BASE_URL,
          "model": v.get("gemini_model", "gemini-2.5-flash")},
         {"name": "openai", "key": secrets.get("OPENAI_API_KEY", ""), "base_url": None,
          "model": v.get("openai_model", "gpt-4o-mini")},
-    ]
+    ] + ([lokal] if lokal else [])
 
 
 def main() -> None:

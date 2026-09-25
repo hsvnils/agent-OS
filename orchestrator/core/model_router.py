@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import json
 
+from .lokal_llm import ohne_denktext
+
 
 # -- Block-Helfer: lesen sowohl Anthropic-SDK-Objekte als auch dicts --
 
@@ -49,10 +51,12 @@ class _Norm:
 
 
 def _ist_fallback_fehler(exc: Exception) -> bool:
-    s = str(exc).lower()
+    s = f"{exc.__class__.__name__} {exc}".lower()
     return any(w in s for w in ("credit", "balance", "insufficient", "rate", "overloaded",
                                 "429", "529", "quota", "too low", "usage limit", "usage limits",
-                                "reached your", "regain access", "limit"))
+                                "reached your", "regain access", "limit",
+                                # Anbieter nicht erreichbar -> naechster Anbieter statt Abbruch (M6, 2026-09-25)
+                                "connection", "timeout", "timed out"))
 
 
 # Gemini ist OpenAI-kompatibel erreichbar -> dieselbe Uebersetzung wie OpenAI nutzen.
@@ -60,7 +64,10 @@ GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 
 class ModelRouter:
-    """Anthropic zuerst; bei Engpass/Limit der Reihe nach durch die Fallbacks (OpenAI-kompatibel: OpenAI, Gemini)."""
+    """Anthropic zuerst; bei Engpass/Limit der Reihe nach durch die Fallbacks (OpenAI-kompatibel: OpenAI, Gemini).
+
+    Fallbacks mit `zuerst=True` (lokales LLM, `core/lokal_llm.py`) werden VOR Anthropic gefragt -- scheitern sie,
+    geht es normal weiter (Anthropic, dann die uebrigen Fallbacks)."""
 
     def __init__(self, anthropic_client, *, anthropic_model: str, fallbacks: list[dict] | None = None,
                  max_tokens: int = 1024):
@@ -71,16 +78,22 @@ class ModelRouter:
         self.max_tokens = max_tokens
 
     def create(self, *, system: str, tools: list, messages: list) -> _Norm:
+        for fb in [f for f in self.fallbacks if f.get("zuerst")]:
+            try:
+                return self._kompatibel(fb, system, tools, messages)
+            except Exception:
+                continue
+        danach = [f for f in self.fallbacks if not f.get("zuerst")]
         try:
             r = self.anthropic_client.messages.create(
                 model=self.anthropic_model, max_tokens=self.max_tokens, system=system,
                 tools=tools, messages=messages)
             return _Norm(r.content, getattr(r, "usage", None), self.anthropic_model, "anthropic")
         except Exception as exc:
-            if not (self.fallbacks and _ist_fallback_fehler(exc)):
+            if not (danach and _ist_fallback_fehler(exc)):
                 raise
             letzter = exc
-            for fb in self.fallbacks:
+            for fb in danach:
                 try:
                     return self._kompatibel(fb, system, tools, messages)
                 except Exception as e:
@@ -92,24 +105,34 @@ class ModelRouter:
 
     def _kompatibel(self, fb: dict, system: str, tools: list, messages: list) -> _Norm:
         import openai
-        client = openai.OpenAI(api_key=fb["key"], base_url=fb.get("base_url") or None)
+        client = openai.OpenAI(api_key=fb["key"], base_url=fb.get("base_url") or None, **_client_opts(fb))
         r = client.chat.completions.create(
-            model=fb["model"], max_tokens=self.max_tokens,
+            model=fb["model"], max_tokens=fb.get("max_tokens") or self.max_tokens,
             messages=_zu_openai_messages(system, messages),
             tools=_zu_openai_tools(tools) or None, tool_choice="auto")
         msg = r.choices[0].message
         bloecke: list = []
-        if msg.content:
-            bloecke.append({"type": "text", "text": msg.content})
+        text = ohne_denktext(msg.content)
+        if text:
+            bloecke.append({"type": "text", "text": text})
         for tc in (msg.tool_calls or []):
             try:
                 args = json.loads(tc.function.arguments or "{}")
             except json.JSONDecodeError:
                 args = {}
             bloecke.append({"type": "tool_use", "id": tc.id, "name": tc.function.name, "input": args})
+        if not bloecke:
+            # z. B. Denkschritte haben max_tokens aufgebraucht -> leere Antwort ist ein Fehler, kein Ergebnis.
+            raise RuntimeError(f"{fb.get('name', 'fallback')}: leere Antwort "
+                               f"(finish_reason={getattr(r.choices[0], 'finish_reason', '?')})")
         u = getattr(r, "usage", None)
         usage = _Usage(getattr(u, "prompt_tokens", 0) or 0, getattr(u, "completion_tokens", 0) or 0)
         return _Norm(bloecke, usage, fb["model"], fb.get("name", "fallback"))
+
+
+def _client_opts(fb: dict) -> dict:
+    """Optionale Client-Einstellungen je Anbieter (lokales LLM: langer Timeout, keine Wiederholungen)."""
+    return {k: fb[k] for k in ("timeout", "max_retries") if fb.get(k) is not None}
 
 
 def _zu_openai_tools(tools: list) -> list:

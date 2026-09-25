@@ -31,6 +31,8 @@ def register(secrets: dict | None = None) -> dict:
          "kosten": "GRATIS-Tier (aktiver Chat-Provider)"},
         {"name": "OpenAI (Fallback)", "aktiv": has("OPENAI_API_KEY"), "kategorie": "LLM",
          "kosten": "per Token -- aktuell ohne Guthaben"},
+        {"name": "Ollama (lokal, MACO470)", "aktiv": has("LOCAL_LLM_BASE_URL"), "kategorie": "LLM",
+         "kosten": "gratis (Strom) -- je Bereich zuerst/zuletzt (LOCAL_LLM_CHAT, LOCAL_LLM_FACHAGENTEN)"},
         {"name": "Brave Search", "aktiv": has("BRAVE_API_KEY"), "kategorie": "Recherche",
          "kosten": "Gratis-Kontingent"},
         {"name": "Google Workspace", "aktiv": has("GOOGLE_OAUTH_REFRESH_TOKEN"), "kategorie": "Office",

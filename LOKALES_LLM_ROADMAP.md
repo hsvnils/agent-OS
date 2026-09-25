@@ -1,18 +1,22 @@
 # Roadmap: Lokales LLM (M6) — LUNA mit Ollama auf dem MACO470
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/lokales-llm`
 - Basiscommit: `01e9919`
-- Naechster Schritt: Roadmap dem CEO vorlegen; bei Go zuerst Etappe 0 (Server-Einstellungen durch den CEO,
-  CISO-Freigabe), parallel moeglich Etappe 1 (Code, ohne Wirkung bis zur Aktivierung).
+- Naechster Schritt: CEO fuehrt Etappe 0 aus (PowerShell-Befehle aus dem Chat), danach Verifikation 0; parallel
+  Go fuer Merge + Deploy von Etappe 1 einholen (ohne Schalter keine Wirkung).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
 ## Ziel
 
-LUNA nutzt das lokale LLM auf dem MACO470 (Ollama, `qwen3:30b-a3b`) — zuerst fuer Hintergrund-Jobs, dann als
-Chat-Fallback. Wirkung: weniger Cloud-Kosten, **BF-05** („alle Anbieter erschoepft" beim Gemini-Gratis-Limit)
+**CEO-Vorgabe (2026-09-25):** Die API-Token-Nutzung Richtung Claude und ChatGPT so niedrig wie moeglich halten.
+Laengere Denkprozesse sind — vor allem nachts — unkritisch. Deshalb wird das lokale LLM je Bereich **zuerst**
+gefragt; die Cloud bleibt Fallback.
+
+LUNA nutzt das lokale LLM auf dem MACO470 (Ollama, `qwen3:30b-a3b`) — zuerst fuer Fachagenten und Hintergrund-Jobs,
+dann im Chat. Wirkung: weniger Cloud-Kosten, **BF-05** („alle Anbieter erschoepft" beim Gemini-Gratis-Limit)
 behoben, LUNA bleibt ohne Anthropic-Guthaben arbeitsfaehig.
 
 ## Register und bekannte Fehler (B3)
@@ -108,7 +112,13 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
 
 ### Etappe 1: Lokaler Provider im Code (ohne Wirkung bis zur Aktivierung)
 
-- Status: geplant
+- Status: umgesetzt (2026-09-25, Branch; Merge + Deploy offen) — `core/lokal_llm.py`; Schalter je Bereich
+  `LOCAL_LLM_FACHAGENTEN` / `LOCAL_LLM_CHAT` = `zuerst|zuletzt|aus` (ersetzt das geplante `LOCAL_LLM_FUER`), Timeout
+  300 s, max_tokens 4096, keine Wiederholungen. Tests 809 passed / 0 failed (11 neue, 4 Gegenproben rot wie erwartet).
+  Live-Probe Fachagenten-Pfad gegen Ollama: 98 s, saubere deutsche Antwort, Claude-CLI nicht aufgerufen.
+  Gesundheits-Check nur in `self_maintenance` (meldet proaktiv, Dedup) — Betriebs-Wacht bewusst nicht doppelt.
+  Verhaltensaenderung auch ohne Schalter: Verbindungsfehler/Timeouts bei Anthropic loesen jetzt den Fallback aus;
+  leere Fallback-Antworten gelten als Fehler (naechster Anbieter statt leerem Text).
 - Ziel / Scope: neue `.env`-Schluessel `LOCAL_LLM_BASE_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_TIMEOUT` (Standard
   120 s), `LOCAL_LLM_MAX_TOKENS` (Standard 4096) und `LOCAL_LLM_FUER` (`jobs`, `chat` oder leer = aus).
   - Fallback-Kette in `bot.py`/`web/app.py` um Eintrag „lokal" erweitern (Position je nach `LOCAL_LLM_FUER`).
@@ -130,7 +140,7 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
 ### Etappe 2: Hintergrund-Jobs auf lokal
 
 - Status: geplant
-- Ziel / Scope: `LOCAL_LLM_FUER=jobs` in der NAS-`.env`: FallbackBackend-Jobs (CFO 03:00, Content-Feed 07:00,
+- Ziel / Scope: `LOCAL_LLM_FACHAGENTEN=zuerst` in der NAS-`.env`: FallbackBackend-Jobs (CFO 03:00, Content-Feed 07:00,
   Self-Dev/Innovation 09:00) nutzen zuerst lokal, Cloud bleibt Fallback. Zusaetzlich Collab-Radar ueber
   `IG_ANALYSE_BASE_URL/_MODELL` (vorhandener Schalter).
 - Gate: je Job ein Lauf mit Ergebnis im erwarteten Format; Kostenlog zeigt `provider=lokal, eur=0`.
@@ -145,11 +155,12 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
 - Abhaengig von: Etappe 0 + 1 · Aufwand: klein · Risiko: niedrig
 - Freigaben: Etappe, `.env`-Aenderung auf der NAS + Neustart (CEO).
 
-### Etappe 3: Lokal als Chat-Fallback (BF-05)
+### Etappe 3: Lokal im Chat (BF-05)
 
 - Status: geplant
-- Ziel / Scope: `LOCAL_LLM_FUER=jobs,chat`: lokal wird **letzter** Fallback im Chat (nach Gemini, vor
-  „alle Anbieter erschoepft"). Langsam (~1–2 min), aber besser als ein Fehler.
+- Ziel / Scope: `LOCAL_LLM_CHAT=zuletzt` (Notnagel nach Gemini/OpenAI) **oder** — passend zur CEO-Vorgabe —
+  `LOCAL_LLM_CHAT=zuerst` (jede Chat-Nachricht erst lokal, ~1–2 min Antwortzeit, Cloud nur noch bei Ausfall).
+  Entscheidung beim Go fuer diese Etappe.
 - Gate: Test „Gemini 429 -> lokal antwortet"; 7 Tage Betrieb ohne „alle Anbieter erschoepft".
 - Verifikation: Unit-Test mit simuliertem Gemini-Rate-Limit -> Antwort von „lokal"; live 7 Tage:
   `aktivitaet/log.jsonl` und Chat-Antworten ohne „alle Anbieter erschoepft" (gefiltert auf den Zeitraum);

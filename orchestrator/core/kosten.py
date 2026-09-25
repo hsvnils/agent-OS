@@ -30,6 +30,8 @@ USD_TO_EUR = 0.92
 
 
 def _rate(modell: str) -> tuple[float, float]:
+    if _provider(modell) == "lokal":
+        return (0.0, 0.0)  # lokales LLM auf dem MACO470: keine Token-Kosten (nur Strom)
     return RATES_USD.get(modell, (1.0, 5.0))
 
 
@@ -108,4 +110,6 @@ def _provider(modell: str) -> str:
         return "anthropic"
     if m.startswith("gemini") or "gemini" in m:
         return "gemini"
+    if ":" in m or m.startswith("lokal"):
+        return "lokal"  # Ollama-Modellnamen haben ein Tag (z. B. qwen3:30b-a3b) -- core/lokal_llm.py
     return "?"

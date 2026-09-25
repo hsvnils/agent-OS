@@ -68,8 +68,10 @@ Kalendereinladung, Alpaca-Order (Paper), Git-Push eines Antrags-Branches.
 | Supabase (`SUPABASE_URL`, PostgREST) | `governance/supabase.py` — **nur auf der NAS** | Zeilen (Abschnitt 2) | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | lesen + schreiben |
 | LUNA-OS (`LUNA_OS_URL`) | `cutter/luna_bridge.py` (MACO470 -> NAS) | Queue, Status, Reels (Abschnitt 5) | `LUNA_OS_URL`, `LUNA_OS_USER`, `LUNA_OS_PASSWORD` | lesen + schreiben |
 | `esm.sh` | `channels/voice/static/app.js` (Browser) | – / JS-Module | – | lesen (Client) |
+| **Ollama (lokal)** `http://192.168.178.184:11434/v1` (MACO470, nur LAN) | `core/lokal_llm.py` ueber `core/model_router.py` (Chat) und `core/backends.py` (Fachagenten/Jobs) | Prompts, Kontext, Werkzeugliste / Antworten — **bleibt im Haus** | `LOCAL_LLM_BASE_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_CHAT`, `LOCAL_LLM_FACHAGENTEN`, `LOCAL_LLM_TIMEOUT`, `LOCAL_LLM_MAX_TOKENS` | lesen; je Bereich `zuerst`/`zuletzt`/`aus` |
 
-Nicht angebunden, obwohl erwaehnt: Ollama (nur geplant, M6), AgentOps (nur Key-Check/Dienste-Register).
+Nicht angebunden, obwohl erwaehnt: AgentOps (nur Key-Check/Dienste-Register). Ollama steht nicht im Doku-Check-Block, weil
+der Code es nur ueber die `.env`-Adresse (IP) anspricht.
 
 ```doku-check:hosts
 api.telegram.org
@@ -273,3 +275,4 @@ cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
 | Deploy MACO470 -> NAS | `deploy/sync-to-nas.sh` (tar ueber ssh, Schutzliste), Neustart per `sudo` durch den CEO | `deploy/sync-to-nas.sh` |
 | Code MACO470 -> GitHub | `git push` per Deploy-Key (nur dieses Repo); Fetch anonym per HTTPS; **Repo ist oeffentlich** | `git remote -v` |
 | LUNA -> GitHub | Tool `antrag_pushen` pusht Branch `antrag/<id>` | `core/hoa_tools.py` |
+| LUNA (NAS) -> lokales LLM (MACO470) | HTTP im LAN auf Port 11434 (Windows-Firewall: nur NAS + WSL, `LOKALES_LLM_ROADMAP.md` Etappe 0); Kontextfenster am Server >= 16384 (BF-17) | `core/lokal_llm.py` |

@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 13:27] — Claude Code (MACO470)
+- **Was:** `LOKALES_LLM_ROADMAP.md` **Etappe 1 umgesetzt** (Branch `ai/lokales-llm`, nicht gemergt/deployt): neues
+  `orchestrator/core/lokal_llm.py`; `ModelRouter` und `FallbackBackend` fragen einen Anbieter mit `zuerst=True`
+  vor Anthropic/Claude-CLI; Verbindungsfehler/Timeouts loesen den Fallback aus; Denktext wird entfernt, leere
+  Antworten gelten als Fehler; lokale Modelle kosten 0 EUR (`core/kosten.py`, Provider `lokal`); Health-Check in
+  `self_maintenance`; Eintrag im Dienste-Register. Schalter `LOCAL_LLM_FACHAGENTEN`/`LOCAL_LLM_CHAT`
+  (`zuerst|zuletzt|aus`), ohne Schalter bleibt die Kette unveraendert (Test). 11 neue Tests, 4 Gegenproben rot;
+  Suite 809 passed / 0 failed. Live-Probe gegen Ollama (Fachagenten-Pfad): 98 s, Claude-CLI nicht aufgerufen.
+  Etappe 0: PowerShell-Befehle an den CEO uebergeben (Firewall nur NAS + WSL, Kontext 16384, Keep-Alive 30m).
+  CEO-Vorgabe ins Register: API-Token minimieren, lokal zuerst.
+- **Warum:** CEO-Go „Go fuer 0 und 1" + Vorgabe „API-Token so niedrig wie moeglich, lange Denkzeiten unkritisch".
+- **Betroffen:** `orchestrator/core/lokal_llm.py` (neu), `orchestrator/core/model_router.py`,
+  `orchestrator/core/backends.py`, `orchestrator/core/kosten.py`, `orchestrator/core/self_maintenance.py`,
+  `orchestrator/governance/dienste_register.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_lokal_llm.py` (neu), `docs/datenfluesse.md`, `docs/entscheidungs-register.md`,
+  `LOKALES_LLM_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-25 13:18] — Claude Code (MACO470)
 - **Was:** Roadmap `LOKALES_LLM_ROADMAP.md` (M6) nach Workflow angelegt (Status geplant, Etappen 0-4), im
   Roadmap-Verzeichnis registriert. Analyse mit Messungen an Ollama 0.34 auf dem MACO470 (nur Inferenz-Aufrufe,

@@ -86,12 +86,19 @@ class FallbackBackend:
 
     def respond(self, agent_key: str, system_prompt: str, message: str, context: dict) -> str:
         sp = (system_prompt or "") + self._STIL
+        # Lokales LLM mit `zuerst=True` (core/lokal_llm.py) vor der Claude-CLI -- spart API-Token (CEO 2026-09-25).
+        for fb in [f for f in self.fallbacks if f.get("zuerst")]:
+            try:
+                return self._kompatibel(fb, agent_key, sp, message)
+            except Exception:
+                continue
+        danach = [f for f in self.fallbacks if not f.get("zuerst")]
         try:
             return self.primary.respond(agent_key, sp, message, context)
         except Exception as exc:
-            if not self.fallbacks:
+            if not danach:
                 raise
-            for fb in self.fallbacks:
+            for fb in danach:
                 try:
                     return self._kompatibel(fb, agent_key, sp, message)
                 except Exception:
@@ -100,9 +107,11 @@ class FallbackBackend:
 
     def _kompatibel(self, fb: dict, agent_key: str, system_prompt: str, message: str) -> str:
         import openai
-        client = openai.OpenAI(api_key=fb["key"], base_url=fb.get("base_url") or None)
+        from .lokal_llm import ohne_denktext
+        from .model_router import _client_opts
+        client = openai.OpenAI(api_key=fb["key"], base_url=fb.get("base_url") or None, **_client_opts(fb))
         r = client.chat.completions.create(
-            model=fb["model"], max_tokens=1024,
+            model=fb["model"], max_tokens=fb.get("max_tokens") or 1024,
             messages=[{"role": "system", "content": system_prompt or "Antworte als Fachagent knapp."},
                       {"role": "user", "content": message}])
         u = getattr(r, "usage", None)
@@ -112,7 +121,10 @@ class FallbackBackend:
                               getattr(u, "completion_tokens", 0) or 0, None)
             except Exception:
                 pass
-        return (r.choices[0].message.content or "").strip()
+        text = ohne_denktext(r.choices[0].message.content)
+        if not text:
+            raise RuntimeError(f"{fb.get('name', 'fallback')}: leere Antwort")
+        return text
 
 
 class AgentSdkBackend:

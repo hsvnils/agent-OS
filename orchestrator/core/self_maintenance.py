@@ -34,6 +34,9 @@ class SelfMaintenance:
             "" if s.get("TELEGRAM_BOT_TOKEN") else "Bot-Token/Chat-ID fehlt.")
         add("Web-Recherche (Brave)", bool(s.get("BRAVE_API_KEY")),
             "" if s.get("BRAVE_API_KEY") else "BRAVE_API_KEY fehlt -- Recherche/Watcher eingeschränkt.")
+        from .lokal_llm import aktiv, erreichbar
+        if aktiv(s):
+            add("Lokales LLM (Ollama, MACO470)", *erreichbar(s["LOCAL_LLM_BASE_URL"]))
         if self.google is not None:
             ok = self.google.verfuegbar()
             add("Google Workspace", ok, "" if ok else "OAuth-Credentials fehlen -- Mail/Kalender inaktiv.")

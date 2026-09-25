@@ -84,6 +84,7 @@
 | **MACO470 = Werkbank**, MacBook nicht mehr fuer LUNA; Backup auf dem MACO470, Mac-Backup bleibt Zweitkopie | 2026-09-25 | **BESCHLOSSEN** (CEO) | Nachtrag 2026-09-25 |
 | **E3 fuer den MACO470:** volle `.env`, Worker pollt als `ceo` | 2026-09-25 | **REVIDIERT** (CEO) | `governance/zugriffs-policy.md` |
 | **Phase 17 als Windows-Umbau (W1-W7)** statt einstellen | 2026-09-25 | **BESCHLOSSEN** (CEO) | `ROADMAP.md` Phase 17 |
+| **Ziel lokales LLM:** API-Token Richtung Claude/ChatGPT minimieren, lange Denkzeiten (v. a. nachts) akzeptiert -> lokal **zuerst**, Cloud als Fallback | 2026-09-25 | **BESCHLOSSEN** (CEO) | `LOKALES_LLM_ROADMAP.md`, `core/lokal_llm.py` |
 | **Ollama `qwen3:30b-a3b` auf dem MACO470** (Benchmark mit LUNAs 97 Werkzeugen) | 2026-09-25 | **TEILWEISE** | Tool-Wahl 3/3 richtig, aber 25-55 s je Aufruf (Denkschritte nicht abschaltbar) -> Hintergrund-Jobs + Chat-Fallback ja, Chat-Hauptmodell nein; nicht-denkende Variante als Option (CEO-Tor). `LOKALES_LLM_ROADMAP.md` |
 | **Backup-Umfang:** Reel-Videos (1,3 GB) und Instagram-Token (Secret) nicht ins NAS-Backup | 2026-09-25 | **VERWORFEN** (CEO) | Reels liegen bei Facebook, Rohmaterial im NAS-Clip-Archiv; Token erneuert sich selbst / aus `.env` neu seedbar, kein weiteres Secret auf dem Sicherungsziel (`BETRIEBSLUECKEN_ROADMAP.md`) |
 | **Doku-Standards:** Roadmap-Workflow, bekannte Fehler, Datenfluesse + Doku-Check, Register auch fuer eigene Entscheidungen | 2026-09-25 | **BESCHLOSSEN** (CEO) | `governance/roadmap-workflow.md`, `AGENTS.md` 6 |
