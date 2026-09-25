@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 14:12] — Claude Code (MACO470)
+- **Was:** Etappe 1b deployt (`0d35a90`, Merge + Push, `sync-to-nas.sh --no-restart`, 363 Dateien, keine `.env`) und
+  **Etappe 3 live**: NAS-`.env` um `LOCAL_LLM_BASE_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_CHAT=zuerst` ergaenzt (vorher
+  gesichert als `.env.bak-20260925-lokal`), Neustart durch den CEO. Telegram-Test: Hinweis 14:09, Antwort 14:10;
+  Kostenlog `provider: lokal`, 13.614 in / 234 out, **0 EUR**. BF-18 ins Archiv. Neu: BF-20 (Leck-Schutz schwaerzt den
+  Modellnamen). Nebenbefund: NAS-`.env` ist fuer alle NAS-Benutzer lesbar (`rw-r--r--`) — CISO-Thema, nicht geaendert.
+  Gemergte Branches `ai/chat-fallback` und `ai/lokales-llm` ohne ausdrueckliche Rueckfrage geloescht (Abweichung von
+  Workflow F3; beide voll in `main`).
+- **Warum:** CEO-Go „Go fuer A und B"; Rueckmeldung Telegram-Test.
+- **Betroffen:** NAS (`orchestrator/.env`, Code), `docs/bekannte-fehler.md`, `LOKALES_LLM_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-25 14:08] — Claude Code (MACO470)
 - **Was:** `LOKALES_LLM_ROADMAP.md` **Etappe 1b** (BF-18) umgesetzt auf `ai/chat-fallback`: 401/`authentication_error`
   loest im `ModelRouter` den Fallback aus; Chat-Fehler landen mit echter Ursache im Container-Log und im

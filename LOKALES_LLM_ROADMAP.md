@@ -4,8 +4,8 @@
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/lokales-llm`
 - Basiscommit: `01e9919`
-- Naechster Schritt: Etappe 1b mergen + deployen, `LOCAL_LLM_*` fuer den Chat in die NAS-`.env`, CEO startet die
-  Container neu, dann Telegram-Test (erwartet: „⏳"-Hinweis, dann lokale Antwort).
+- Naechster Schritt: Go fuer Etappe 2 (`LOCAL_LLM_FACHAGENTEN=zuerst`) einholen; offen: BF-19 (DSM-Proxy-Timeout),
+  BF-20 (Schwaerzung), Kontext 32768, MacBook-Gegenprobe Firewall, 7-Tage-Beobachtung Chat bis 2026-10-02.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -145,7 +145,7 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
 
 ### Etappe 1b: Chat-Fallback bei ungueltigem Schluessel + Kuerzungsschutz (BF-18, CEO-Go 2026-09-25)
 
-- Status: umgesetzt (2026-09-25, Branch `ai/chat-fallback`)
+- Status: deployt (2026-09-25, `0d35a90`)
 - Ziel / Scope: `401`/`authentication_error` gilt im `ModelRouter` als Fallback-Grund (Gemini springt ein);
   Chat-Fehler werden mit echter Ursache ins Container-Log und ins Aktivitaetsprotokoll geschrieben (Kategorie
   `fehler`); Telegram meldet „⏳ Ich denke lokal nach" wenn `LOCAL_LLM_CHAT=zuerst`; **Kuerzungsschutz**: meldet
@@ -177,7 +177,10 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
 
 ### Etappe 3: Lokal im Chat (BF-05)
 
-- Status: freigegeben (CEO 2026-09-25: `LOCAL_LLM_CHAT=zuerst`, vorgezogen vor Etappe 2)
+- Status: **verifiziert** (2026-09-25) — `LOCAL_LLM_CHAT=zuerst` in der NAS-`.env` (Sicherung
+  `.env.bak-20260925-lokal`), Neustart durch den CEO. Telegram-Test: Hinweis 14:09, lokale Antwort 14:10; Kostenlog
+  `quelle: chat, provider: lokal, in 13614, out 234, eur 0.0`; keine Chat-Fehler. Die 7-Tage-Beobachtung laeuft
+  (Gate). Befund BF-20 (Modellname im Kostenlog geschwaerzt).
 - Ziel / Scope: `LOCAL_LLM_CHAT=zuletzt` (Notnagel nach Gemini/OpenAI) **oder** — passend zur CEO-Vorgabe —
   `LOCAL_LLM_CHAT=zuerst` (jede Chat-Nachricht erst lokal, ~1–2 min Antwortzeit, Cloud nur noch bei Ausfall).
   Entscheidung beim Go fuer diese Etappe.
