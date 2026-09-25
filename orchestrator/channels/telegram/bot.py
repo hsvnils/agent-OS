@@ -1418,6 +1418,11 @@ def main() -> None:
                 continue
             conv = sessions.setdefault(chat_id, HoaConversation(
                 ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"], fallbacks=_fallbacks(secrets, cfg)))
+            from ...core.lokal_llm import eintrag as _lokal_eintrag
+            if (_lokal_eintrag(secrets, "chat") or {}).get("zuerst"):
+                # Lokales LLM zuerst: Antwort dauert 1-2 Minuten -> kurz Bescheid geben statt Funkstille.
+                _api(token, "sendMessage", {"chat_id": chat_id,
+                     "text": "⏳ Ich denke lokal nach — das dauert ein bis zwei Minuten."})
             try:
                 antwort = conv.respond(text)
             except Exception as exc:

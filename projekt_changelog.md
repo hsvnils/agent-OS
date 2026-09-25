@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 14:08] — Claude Code (MACO470)
+- **Was:** `LOKALES_LLM_ROADMAP.md` **Etappe 1b** (BF-18) umgesetzt auf `ai/chat-fallback`: 401/`authentication_error`
+  loest im `ModelRouter` den Fallback aus; Chat-Fehler landen mit echter Ursache im Container-Log und im
+  Aktivitaetsprotokoll; Telegram-Hinweis „⏳ Ich denke lokal nach" bei `LOCAL_LLM_CHAT=zuerst`; Kuerzungsschutz gegen
+  stilles Kuerzen durch Ollama (BF-17). Tests 813 passed / 0 failed, Gegenproben rot. Probelauf mit NAS-Konfiguration:
+  Gemini antwortet in 2,7 s statt 401-Fehler; lokal zuerst: 141 s (kalt) bzw. 28 s mit richtigem Werkzeug.
+  Neues Risiko BF-19 (Reverse-Proxy-Timeout 60 s fuer Web-Chat). Etappe 3 (Chat lokal zuerst) vorgezogen.
+- **Warum:** CEO-Go „Go fuer A und B" (A = 401-Fallback, B = Chat lokal zuerst).
+- **Betroffen:** `orchestrator/core/model_router.py`, `orchestrator/core/hoa_conversation.py`,
+  `orchestrator/core/lokal_llm.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_chat_fallback.py`
+  (neu), `orchestrator/tests/test_lokal_llm.py`, `docs/bekannte-fehler.md`, `LOKALES_LLM_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-25 14:00] — Claude Code (MACO470)
 - **Was:** `LOKALES_LLM_ROADMAP.md` Etappe 1 **deployt**: Merge + Push `271c3e9`, `deploy/sync-to-nas.sh --no-restart`
   (Probelauf: 362 Dateien, keine `.env`, keine Live-Daten), Neustart beider Container durch den CEO; Web antwortet

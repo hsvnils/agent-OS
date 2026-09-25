@@ -4,8 +4,8 @@
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/lokales-llm`
 - Basiscommit: `01e9919`
-- Naechster Schritt: CEO-Entscheidung zu BF-18 (Chat kaputt seit Juli: neuer Anthropic-Schluessel, 401 als
-  Fallback-Grund, lokal zuerst im Chat); danach Etappe 2.
+- Naechster Schritt: Etappe 1b mergen + deployen, `LOCAL_LLM_*` fuer den Chat in die NAS-`.env`, CEO startet die
+  Container neu, dann Telegram-Test (erwartet: „⏳"-Hinweis, dann lokale Antwort).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -143,6 +143,20 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
 - Abhaengig von: – (Code), Aktivierung erst nach Etappe 0 · Aufwand: mittel · Risiko: niedrig
 - Freigaben: Etappe, Merge, **Deploy auf die NAS + Neustart beider Container (CEO, sudo)**.
 
+### Etappe 1b: Chat-Fallback bei ungueltigem Schluessel + Kuerzungsschutz (BF-18, CEO-Go 2026-09-25)
+
+- Status: umgesetzt (2026-09-25, Branch `ai/chat-fallback`)
+- Ziel / Scope: `401`/`authentication_error` gilt im `ModelRouter` als Fallback-Grund (Gemini springt ein);
+  Chat-Fehler werden mit echter Ursache ins Container-Log und ins Aktivitaetsprotokoll geschrieben (Kategorie
+  `fehler`); Telegram meldet „⏳ Ich denke lokal nach" wenn `LOCAL_LLM_CHAT=zuerst`; **Kuerzungsschutz**: meldet
+  Ollama weniger als die Haelfte der geschaetzten Prompt-Token, wird die Antwort verworfen und der naechste
+  Anbieter gefragt (BF-17 kann sonst bei langem Verlauf wiederkehren).
+- Verifikation: Tests 813 passed / 0 failed (4 neue, Gegenproben rot); Probelauf mit NAS-Konfiguration: „Hallo"
+  -> Antwort in 2,7 s ueber Gemini (vorher 401-Fehler); mit `LOCAL_LLM_CHAT=zuerst`: „Hallo" 141 s lokal (kalt),
+  „Welche Antraege sind offen?" 28 s lokal mit Werkzeug `antraege_zeigen`; Schaetzung 14.634 vs. gemeldet 13.614.
+- Risiko: Prompt hat schon ohne Verlauf ~13.600 Token bei 16.384 Kontext -> nach wenigen Nachrichten greift der
+  Kuerzungsschutz und Gemini antwortet. Folgeschritt: `OLLAMA_CONTEXT_LENGTH=32768` (mehr RAM, ~+1,6 GB).
+
 ### Etappe 2: Hintergrund-Jobs auf lokal
 
 - Status: geplant
@@ -163,7 +177,7 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
 
 ### Etappe 3: Lokal im Chat (BF-05)
 
-- Status: geplant
+- Status: freigegeben (CEO 2026-09-25: `LOCAL_LLM_CHAT=zuerst`, vorgezogen vor Etappe 2)
 - Ziel / Scope: `LOCAL_LLM_CHAT=zuletzt` (Notnagel nach Gemini/OpenAI) **oder** — passend zur CEO-Vorgabe —
   `LOCAL_LLM_CHAT=zuerst` (jede Chat-Nachricht erst lokal, ~1–2 min Antwortzeit, Cloud nur noch bei Ausfall).
   Entscheidung beim Go fuer diese Etappe.

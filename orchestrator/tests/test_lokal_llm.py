@@ -155,6 +155,18 @@ class TestLokalLLM(unittest.TestCase):
         self.assertEqual(len(eintrag), 1)
         self.assertFalse(eintrag[0]["ok"])
 
+    def test_12_gekuerzter_prompt_geht_an_naechsten_anbieter(self):
+        # BF-17: Server kuerzt still -> meldet viel weniger prompt_tokens -> Antwort verwerfen, Cloud uebernimmt.
+        self.assertTrue(lokal_llm.gekuerzt(2050, 11800))
+        self.assertFalse(lokal_llm.gekuerzt(13614, 14634))
+        self.assertFalse(lokal_llm.gekuerzt(10, 50))                       # kleine Prompts nie markieren
+        anthro, aufrufe = _Anthro(), []
+        fb = lokal_llm.eintrag({**LOKAL, "LOCAL_LLM_CHAT": "zuerst"}, "chat")
+        viel = [{"role": "user", "content": "x" * 40000}]                  # ~11.400 Token geschaetzt, Fake meldet 10
+        with _fake_openai(["Antwort auf gekuerzter Basis"], aufrufe):
+            out = ModelRouter(anthro, anthropic_model="m", fallbacks=[fb]).create(system="s", tools=[], messages=viel)
+        self.assertEqual((out.provider, anthro.aufrufe), ("anthropic", 1))
+
 
 if __name__ == "__main__":
     unittest.main()

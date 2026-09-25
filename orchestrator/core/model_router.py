@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 
-from .lokal_llm import ohne_denktext
+from .lokal_llm import geschaetzte_tokens, gekuerzt, ohne_denktext
 
 
 # -- Block-Helfer: lesen sowohl Anthropic-SDK-Objekte als auch dicts --
@@ -56,7 +56,9 @@ def _ist_fallback_fehler(exc: Exception) -> bool:
                                 "429", "529", "quota", "too low", "usage limit", "usage limits",
                                 "reached your", "regain access", "limit",
                                 # Anbieter nicht erreichbar -> naechster Anbieter statt Abbruch (M6, 2026-09-25)
-                                "connection", "timeout", "timed out"))
+                                "connection", "timeout", "timed out",
+                                # Schluessel ungueltig/gesperrt -> Anbieter unbrauchbar, naechster (BF-18, 2026-09-25)
+                                "401", "authentication", "invalid x-api-key", "api key is invalid"))
 
 
 # Gemini ist OpenAI-kompatibel erreichbar -> dieselbe Uebersetzung wie OpenAI nutzen.
@@ -106,10 +108,17 @@ class ModelRouter:
     def _kompatibel(self, fb: dict, system: str, tools: list, messages: list) -> _Norm:
         import openai
         client = openai.OpenAI(api_key=fb["key"], base_url=fb.get("base_url") or None, **_client_opts(fb))
+        oa_messages, oa_tools = _zu_openai_messages(system, messages), _zu_openai_tools(tools)
         r = client.chat.completions.create(
             model=fb["model"], max_tokens=fb.get("max_tokens") or self.max_tokens,
-            messages=_zu_openai_messages(system, messages),
-            tools=_zu_openai_tools(tools) or None, tool_choice="auto")
+            messages=oa_messages, tools=oa_tools or None, tool_choice="auto")
+        u = getattr(r, "usage", None)
+        if fb.get("kuerzung_pruefen"):
+            geschaetzt = geschaetzte_tokens(oa_messages, oa_tools)
+            if gekuerzt(getattr(u, "prompt_tokens", 0) or 0, geschaetzt):
+                # Kontextfenster des Servers zu klein -> Werkzeugliste/Verlauf gekuerzt -> Antwort unzuverlaessig.
+                raise RuntimeError(f"{fb.get('name')}: Prompt vom Server gekuerzt ({getattr(u, 'prompt_tokens', 0)} "
+                                   f"statt ~{geschaetzt} Token) -- OLLAMA_CONTEXT_LENGTH erhoehen (BF-17)")
         msg = r.choices[0].message
         bloecke: list = []
         text = ohne_denktext(msg.content)
@@ -125,7 +134,6 @@ class ModelRouter:
             # z. B. Denkschritte haben max_tokens aufgebraucht -> leere Antwort ist ein Fehler, kein Ergebnis.
             raise RuntimeError(f"{fb.get('name', 'fallback')}: leere Antwort "
                                f"(finish_reason={getattr(r.choices[0], 'finish_reason', '?')})")
-        u = getattr(r, "usage", None)
         usage = _Usage(getattr(u, "prompt_tokens", 0) or 0, getattr(u, "completion_tokens", 0) or 0)
         return _Norm(bloecke, usage, fb["model"], fb.get("name", "fallback"))
 

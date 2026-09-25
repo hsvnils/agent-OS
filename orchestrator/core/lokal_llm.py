@@ -36,7 +36,20 @@ def eintrag(secrets: dict, bereich: str) -> dict | None:
         return None
     return {"name": "lokal", "key": s.get("LOCAL_LLM_KEY") or "lokal", "base_url": url, "model": modell,
             "zuerst": modus == "zuerst", "timeout": _zahl(s.get("LOCAL_LLM_TIMEOUT"), 300.0),
-            "max_tokens": int(_zahl(s.get("LOCAL_LLM_MAX_TOKENS"), 4096)), "max_retries": 0}
+            "max_tokens": int(_zahl(s.get("LOCAL_LLM_MAX_TOKENS"), 4096)), "max_retries": 0,
+            "kuerzung_pruefen": True}
+
+
+def geschaetzte_tokens(*teile) -> int:
+    """Grobe Token-Schaetzung (JSON-Zeichen / 3,5) -- nur um stilles Kuerzen durch den Server zu erkennen."""
+    import json
+    return int(sum(len(json.dumps(t, ensure_ascii=False, default=str)) for t in teile) / 3.5)
+
+
+def gekuerzt(gemeldet: int, geschaetzt: int) -> bool:
+    """Ollama kuerzt einen zu langen Prompt STILL (BF-17) und meldet dann deutlich weniger prompt_tokens, als
+    geschickt wurden (gemessen: 2.050 statt ~11.800). Weniger als die Haelfte der Schaetzung = gekuerzt."""
+    return geschaetzt > 2000 and 0 < gemeldet < geschaetzt * 0.5
 
 
 def aktiv(secrets: dict) -> bool:

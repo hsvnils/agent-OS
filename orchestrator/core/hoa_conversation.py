@@ -109,8 +109,10 @@ class HoaConversation:
                                                   messages=self.messages)
                     except Exception as exc2:
                         self.messages = []
+                        self._protokolliere_fehler(exc2)
                         return _fehlertext(exc2)
                 else:
+                    self._protokolliere_fehler(exc)
                     return _fehlertext(exc)
             self._erfasse_kosten(resp)
             self.messages.append({"role": "assistant", "content": resp.content})
@@ -129,6 +131,18 @@ class HoaConversation:
                                 "content": json.dumps(out, ensure_ascii=False)})
             self.messages.append({"role": "user", "content": results})
         return "Ich konnte das gerade nicht abschliessen -- bitte praezisiere kurz."
+
+    def _protokolliere_fehler(self, exc: Exception) -> None:
+        """Echte Ursache festhalten, statt sie hinter dem allgemeinen Fehlertext zu verstecken (BF-18: ein
+        ungueltiger API-Schluessel blieb so von Juli bis September unbemerkt). Container-Log + Aktivitaetsprotokoll."""
+        grund = f"{exc.__class__.__name__}: {str(exc)[:300]}"
+        print(f"[chat] Modellfehler: {grund}", flush=True)
+        akt = getattr(self.ctx, "aktivitaet", None)
+        if akt is not None:
+            try:
+                akt.log("LUNA-Chat", "Chat-Antwort fehlgeschlagen", kategorie="fehler", detail=grund)
+            except Exception:
+                pass
 
     def _repariere_verlauf(self) -> None:
         """Entfernt einen unvollstaendigen Tail: endet der Verlauf mit einem Assistant-tool_use ohne
