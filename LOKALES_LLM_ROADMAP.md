@@ -4,8 +4,8 @@
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/lokales-llm`
 - Basiscommit: `01e9919`
-- Naechster Schritt: CEO-Go fuer Merge + Deploy + Neustart von Etappe 3b; danach `.wslconfig` `memory=8GB`
-  (unterbricht WSL); danach Etappe 2.
+- Naechster Schritt: CEO-Entscheidung CEO-Tor „kleineres Modell" (z. B. `qwen3:14b`, ~9 GB) zum Testen; bis dahin
+  Chat ueber Gemini (0 EUR), Etappe 2 zurueckgestellt.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -177,7 +177,7 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
 
 ### Etappe 3: Lokal im Chat (BF-05)
 
-- Status: **verifiziert** (2026-09-25) — `LOCAL_LLM_CHAT=zuerst` in der NAS-`.env` (Sicherung
+- Status: **pausiert** (2026-09-25 abends, BF-22: RAM reicht fuer `qwen3:30b-a3b` nicht) — vorher verifiziert (2026-09-25) — `LOCAL_LLM_CHAT=zuerst` in der NAS-`.env` (Sicherung
   `.env.bak-20260925-lokal`), Neustart durch den CEO. Telegram-Test: Hinweis 14:09, lokale Antwort 14:10; Kostenlog
   `quelle: chat, provider: lokal, in 13614, out 234, eur 0.0`; keine Chat-Fehler. Die 7-Tage-Beobachtung laeuft
   (Gate). Befund BF-20 (Modellname im Kostenlog geschwaerzt).
@@ -219,6 +219,13 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
   Prompt max. 15.739 Token von 32.768; Verlauf nach 8 Nachrichten ~1.800 Token (Budget 11.668) -> Verdichten war noch
   nicht noetig. Antworten inhaltlich korrekt (15 Antraege, Verteilung, Budget 100 EUR, Zusammenfassung). Dauer je
   Nachricht 36-135 s, einmal 220 s. Auffaellig: LUNA siezt lokal gelegentlich („Ihnen").
+- **Live-Test 2026-09-25 21:24 (nach Deploy `0be8375`): gescheitert an RAM (BF-22).** Nach 30 min Pause neu geladenes
+  Modell -> Windows 0,1 GB verfuegbar, bis 44.000 Seiten/s Auslagerung; „Hallo" und Werkzeug-Aufruf von Gemini,
+  Antwort auf Frage 2 lokal nach ~4,5 min. Die 7,2 GB „verfuegbar" von 14:30 waren eine Momentaufnahme direkt nach
+  dem Laden. Aufschluesselung ohne Modell: 16,9 GB verfuegbar, ~12,7 GB Grundlast. Modell mit Grafik: 19,7 GB
+  Prozess + ~12 GB Grafikspeicher.
+- **Variante „nur CPU" gemessen und verworfen:** 34,6 GB geladen, Prompt 17 Tok/s (erster Aufruf 782 s), Antwort
+  5,7 Tok/s, Windows dauerhaft < 1 GB verfuegbar. Folge: `LOCAL_LLM_CHAT=aus` (CEO-Go), Modell entladen.
 - Gate: Tests gruen; Messung Speicherbedarf bei 32.768; Probelauf mit langer Unterhaltung (>= 8 Nachrichten mit
   Werkzeugen) bleibt vollstaendig lokal, kein Kuerzungsschutz-Treffer.
 - Verifikation: `/api/ps` -> `context_length` 32768 und Groesse notiert; Probelauf-Protokoll: jede Antwort

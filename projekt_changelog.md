@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 22:16] — Claude Code (MACO470)
+- **Was:** Etappe 3b deployt (Merge + Push `0be8375`, `sync-to-nas.sh --no-restart`, NAS-`.env` + `LOCAL_LLM_KONTEXT=32768`,
+  Sicherung `.env.bak-20260925-kontext`), Neustart CEO. **Live-Test gescheitert (BF-22):** RAM des MACO470 reicht fuer
+  `qwen3:30b-a3b` nicht (Auslagerung bis 350.000 Seiten/s; Antworten teils Gemini, teils lokal nach 4,5 min). Auf CEO-Go:
+  `LOCAL_LLM_CHAT=aus` in der NAS-`.env` (Sicherung `.env.bak-20260925-chat-aus`), Neustart CEO; Variante „nur CPU"
+  gemessen (34,6 GB, 782 s erster Aufruf) und verworfen; Modell entladen (Windows wieder 17,9 GB verfuegbar).
+  Register: 30B fuer diese Hardware VERWORFEN. Code (Kontext-Management, 401-Fallback) bleibt aktiv und gueltig.
+- **Warum:** CEO-Go „Go fuer 1 + 2" (Deploy/Neustart), danach „Go fuer 1 und 2" (Chat lokal pausieren, CPU-Test).
+- **Betroffen:** NAS (`orchestrator/.env`, Code), `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`,
+  `LOKALES_LLM_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-25 14:49] — Claude Code (MACO470)
 - **Was:** Etappe 3b Baustein 1 verifiziert (CEO setzte `OLLAMA_CONTEXT_LENGTH=32768`, `OLLAMA_FLASH_ATTENTION=1`,
   `OLLAMA_KV_CACHE_TYPE=q8_0`): KV-Kompression greift, 32.768 Token fuer 20,5 GB; 7,2 GB verfuegbar. Dabei **BF-21**
