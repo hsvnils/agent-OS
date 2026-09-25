@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 13:01] — Claude Code (MACO470)
+- **Was:** Aufgeraeumt nach `BETRIEBSLUECKEN_ROADMAP.md` (F3): Etappe 4 gemergt + gepusht (`1d6db78`; die lokale
+  `orchestrator/memory/log.jsonl` im Hauptordner vorher gesichert und zurueckgelegt). Worktree
+  `.worktrees/betriebsluecken` entfernt, lokale Branches `ai/doku-standards` und `ai/betriebsluecken` geloescht
+  (beide voll in `main`, nie auf GitHub). Einziger offener Punkt der Roadmap: Timer-Lauf 2026-09-26 03:20 pruefen.
+- **Warum:** CEO-Go „Go fuer merge und push" und „Go fuers Aufraeumen".
+- **Betroffen:** Git (Worktree, Branches), `projekt_changelog.md`
+
 ## [2026-09-25 12:57] — Claude Code (MACO470)
 - **Was:** Etappe 3 nach `main` gemergt und gepusht (`8e332e5`) -> erweitertes Backup ab 2026-09-26 03:20 live.
   **Etappe 4 (BF-08) umgesetzt und verifiziert** auf `ai/betriebsluecken`: `orchestrator/memory/log.jsonl` aus dem
