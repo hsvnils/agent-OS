@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 13:47] — Claude Code (MACO470)
+- **Was:** `LOKALES_LLM_ROADMAP.md` **Etappe 0 verifiziert** (vom CEO am Windows-Rechner ausgefuehrt): Firewall-Regel
+  „Ollama API" nur noch fuer NAS + WSL-Netz, `OLLAMA_CONTEXT_LENGTH=16384`, `OLLAMA_KEEP_ALIVE=30m`. Pruefungen: NAS
+  und WSL erreichen Ollama; volle Werkzeugliste ueber `/v1` kommt ungekuerzt an (11.837 statt 2.050 Token) und das
+  richtige Werkzeug wird gewaehlt. BF-17 -> „Umgehung aktiv"; Zugriffs-Policy um `lokal_llm` ergaenzt. Offen:
+  Gegenprobe vom MacBook (Ollama muss dort gesperrt sein).
+- **Warum:** CEO-Go „Go fuer 0 und 1", Rueckmeldung „erledigt".
+- **Betroffen:** `governance/zugriffs-policy.md`, `docs/bekannte-fehler.md`, `LOKALES_LLM_ROADMAP.md`,
+  `projekt_changelog.md` (Windows-Einstellungen am MACO470 durch den CEO)
+
 ## [2026-09-25 13:27] — Claude Code (MACO470)
 - **Was:** `LOKALES_LLM_ROADMAP.md` **Etappe 1 umgesetzt** (Branch `ai/lokales-llm`, nicht gemergt/deployt): neues
   `orchestrator/core/lokal_llm.py`; `ModelRouter` und `FallbackBackend` fragen einen Anbieter mit `zuerst=True`

@@ -4,8 +4,8 @@
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/lokales-llm`
 - Basiscommit: `01e9919`
-- Naechster Schritt: CEO fuehrt Etappe 0 aus (PowerShell-Befehle aus dem Chat), danach Verifikation 0; parallel
-  Go fuer Merge + Deploy von Etappe 1 einholen (ohne Schalter keine Wirkung).
+- Naechster Schritt: CEO-Go fuer Merge + Push + Deploy von Etappe 1 (Deploy ohne Schalter = keine Wirkung);
+  danach Etappe 2 (`LOCAL_LLM_FACHAGENTEN=zuerst`). Offen: Firewall-Gegenprobe vom MacBook.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -91,7 +91,10 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
 
 ### Etappe 0: Server absichern und einstellen (CEO am Windows-Rechner, CISO-Freigabe)
 
-- Status: geplant
+- Status: verifiziert (2026-09-25; Pruefung 3 vom MacBook steht noch aus) — Firewall `RemoteAddress`
+  = `192.168.178.129`, `172.16.0.0/12`; `OLLAMA_CONTEXT_LENGTH=16384`, `OLLAMA_KEEP_ALIVE=30m`. Pruefung 1 NAS ok,
+  2 WSL ok, 4: `prompt_tokens` **11.837** (vorher 2.050), Werkzeug **`antraege_zeigen`** richtig, `context_length`
+  16384, Entladen nach 30 min. Stolperstein: Ollama startete nach „Quit" erst beim zweiten Versuch.
 - Ziel / Scope: (a) **Windows-Firewall:** Port 11434 eingehend nur von der NAS (`192.168.178.129`), dem
   WSL-Netz und localhost; (b) Umgebungsvariable **`OLLAMA_CONTEXT_LENGTH=16384`**; (c) **`OLLAMA_KEEP_ALIVE=30m`**
   (Modell bleibt 30 min geladen, spart 30 s Ladezeit; danach wird RAM fuer den Cutter frei); Ollama neu starten.

@@ -29,7 +29,6 @@ Tabelle fort.
 | BF-10 | `docs/maco470-roadmap.md` Zeile 101 nennt noch „drvfs" | Text vor E6 geschrieben | Tatsaechlich CIFS (`findmnt /mnt/nas-clips`, E6). Bei naechster Aenderung der Datei korrigieren. | 2026-09-25 |
 | BF-11 | Einbrennen von Untertiteln und Verwacklungsmessung nicht moeglich | ffmpeg-Build ohne `libass` bzw. `vidstabdetect` | Einschraenkung; Untertitel sind ohnehin standardmaessig aus | CL:3350, 466 |
 | BF-12 | Noch nicht verifiziert: Umlaute NFC/NFD ueber CIFS, Body-Limit des Reverse-Proxys fuer grosse Reels, OUTBOX muss lokal liegen | – | beim naechsten Auftreten pruefen | MR:259-265 |
-| BF-17 | Ollama ueber die OpenAI-Schnittstelle (`/v1`) waehlt bei LUNAs Werkzeugliste das falsche Werkzeug, ohne Fehler | Server-Kontextfenster 4.096; `/v1` kann es nicht pro Aufruf setzen -> Prompt still auf 2.050 von ~11.800 Token gekuerzt | vor jeder Nutzung `OLLAMA_CONTEXT_LENGTH>=16384` am Server (`LOKALES_LLM_ROADMAP.md` Etappe 0); Pruefung: `prompt_tokens` in der Antwort | 2026-09-25 |
 
 ## Umgehung aktiv
 
@@ -40,6 +39,7 @@ Tabelle fort.
 | BF-14 | Facebook-Post scheitert trotz neuem Token in der `.env` | Token-Store (`orchestrator/state/instagram_token.json`) hat Vorrang vor dem `.env`-Seed | Store leeren, dann neu seeden | Gedaechtnis „Auto-Reel-Pipeline" |
 | BF-15 | Alte Log-Eintraege (vor 2026-06-25) sind kosmetisch verstuemmelt | frueherer `leak_guard` redigierte Flag-Werte wie `'1'` | nur kosmetisch; Fix `e3b06ca` wirkt fuer neue Eintraege | CL:3630 |
 | BF-16 | `app-v2.js` komplett lahmgelegt (zweimal) | gerades Anfuehrungszeichen in einem `"..."`-String | vor jedem Deploy `node --check` auf geaenderte JS-Dateien | `216759a`, `215ed41` |
+| BF-17 | Ollama ueber die OpenAI-Schnittstelle (`/v1`) waehlt bei LUNAs Werkzeugliste das falsche Werkzeug, ohne Fehler | Server-Kontextfenster 4.096; `/v1` kann es nicht pro Aufruf setzen -> Prompt still auf 2.050 von ~11.800 Token gekuerzt | `OLLAMA_CONTEXT_LENGTH=16384` am Server gesetzt (2026-09-25), Probe: 11.837 Token, richtiges Werkzeug. **Wird die Werkzeugliste deutlich laenger (> ~15.000 Token), Wert erhoehen.** Pruefung: `prompt_tokens` in der Antwort | 2026-09-25 |
 
 ## Lehren (Regeln, die aus Fehlern entstanden sind)
 
