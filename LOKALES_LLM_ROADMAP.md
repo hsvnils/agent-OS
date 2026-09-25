@@ -194,6 +194,30 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
 - Abhaengig von: Etappe 1 (+0) · Aufwand: klein · Risiko: niedrig
 - Freigaben: Etappe, `.env` + Neustart (CEO). Danach BF-05 -> Archiv.
 
+### Etappe 3b: Kontext-Management — LUNA fuehlt sich an wie ein normaler Chatbot (CEO-Go 2026-09-25)
+
+- Status: in Umsetzung
+- Ziel: Kein `/reset` mehr noetig, lange Unterhaltungen bleiben lokal. Die Unterhaltung wird nie „beendet",
+  sondern das Kontextbudget im Hintergrund verwaltet (wie bei ChatGPT/Claude). Keine LLM-Erkennung von
+  Gespraechsenden (kostet je Nachricht einen zusaetzlichen lokalen Aufruf und ist unzuverlaessig).
+- Analyse (gemessen 2026-09-25): Modell kann 262.144 Token; KV-Cache ~96 KB je Token (16.384 -> +1,2 GB gemessen);
+  Windows 29,6 GB, mit geladenem Modell 5,5 GB frei; WSL darf ohne Grenze bis 14 GB (Cutter-Worker). Fester Anteil
+  je Aufruf ~13.600 Token (davon ~12.000 Werkzeug-Beschreibungen); der Verlauf waechst v. a. durch Werkzeug-Ergebnisse.
+- Baustein 1 (CEO, Windows): `OLLAMA_CONTEXT_LENGTH=32768`, dazu `OLLAMA_FLASH_ATTENTION=1` + `OLLAMA_KV_CACHE_TYPE=q8_0`
+  (KV-Cache halb so gross -> 32.768 Token etwa zum RAM-Preis von heute 16.384; ob die Radeon-iGPU das unterstuetzt,
+  zeigt die Messung — sonst ignoriert Ollama es, 32.768 bleibt auch ohne gefahrlos: ~3,9 GB frei).
+  Spaeter, zuletzt (unterbricht WSL): `.wslconfig` `memory=8GB`.
+- Baustein 2 (Code): Verlauf automatisch verdichten, bevor das Fenster voll ist — alte Werkzeug-Ergebnisse durch
+  Kurzfassungen ersetzen, bei Bedarf die aeltesten Wechsel gleitend entfernen; kein zusaetzlicher LLM-Aufruf.
+- Baustein 3 (Code): Nach einer Pause (Standard 2 h) neue Sitzung mit kurzer Notiz zur letzten Unterhaltung.
+- Gate: Tests gruen; Messung Speicherbedarf bei 32.768; Probelauf mit langer Unterhaltung (>= 8 Nachrichten mit
+  Werkzeugen) bleibt vollstaendig lokal, kein Kuerzungsschutz-Treffer.
+- Verifikation: `/api/ps` -> `context_length` 32768 und Groesse notiert; Probelauf-Protokoll: jede Antwort
+  `provider=lokal`; live in Telegram: Kostenlog ueber einen Tag nur `provider: lokal` fuer `quelle: chat`.
+- Risiko / Rueckweg: RAM-Konkurrenz mit Schnittjobs -> WSL-Grenze; Verdichtung verliert Details alter
+  Werkzeug-Ergebnisse (LUNA kann sie erneut abrufen) -> Schalter/Budget per `.env`; `git revert`.
+- Freigaben: CEO-Go fuer 3b erteilt; Merge, Deploy, Neustart und `.wslconfig` je eigenes Go.
+
 ### Etappe 4 (optional, CEO-Tor): nicht-denkende Modellvariante
 
 - Status: geplant
