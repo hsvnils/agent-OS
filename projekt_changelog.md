@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 14:20] — Claude Code (MACO470)
+- **Was:** `LOKALES_LLM_ROADMAP.md` **Etappe 3b (Kontext-Management)** angelegt und Bausteine 2+3 gebaut (Branch
+  `ai/kontext-management`, nicht gemergt): neues `orchestrator/core/kontext.py` — Verlauf wird vor jedem Modellaufruf
+  unter ein Budget gebracht (alte Werkzeug-Ergebnisse gekuerzt, dann aelteste Wechsel gleitend entfernt; laufender
+  Wechsel bleibt vollstaendig), nach `CHAT_PAUSE_STUNDEN` (Standard 2) neue Sitzung mit Notiz zur letzten Unterhaltung;
+  Budget aus `LOCAL_LLM_KONTEXT` (Standard 32768). Kein zusaetzlicher LLM-Aufruf. 6 neue Tests, 3 Gegenproben rot,
+  Suite 819 passed / 0 failed. Baustein 1 (Windows: Kontext 32768, Flash-Attention, KV-Cache q8_0): Befehle an den CEO.
+- **Warum:** CEO: „LUNA via Telegram soll sich anfuehlen wie ein normaler Chatbot"; CEO-Go „Go fuer 3b".
+- **Betroffen:** `orchestrator/core/kontext.py` (neu), `orchestrator/core/hoa_conversation.py`,
+  `orchestrator/tests/test_kontext.py` (neu), `LOKALES_LLM_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-25 14:12] — Claude Code (MACO470)
 - **Was:** Etappe 1b deployt (`0d35a90`, Merge + Push, `sync-to-nas.sh --no-restart`, 363 Dateien, keine `.env`) und
   **Etappe 3 live**: NAS-`.env` um `LOCAL_LLM_BASE_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_CHAT=zuerst` ergaenzt (vorher

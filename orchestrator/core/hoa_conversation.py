@@ -7,6 +7,7 @@ injizierbar -> offline mit Mock testbar (ohne Kosten).
 from __future__ import annotations
 
 import json
+import time
 
 from .hoa_tools import ToolContext, run_tool, tool_specs
 from .model_router import bid, binput, bname, btext, btype
@@ -84,6 +85,15 @@ class HoaConversation:
         self.max_iter = max_tool_iterations
         self.tools = tool_specs()
         self.messages: list[dict] = []
+        # Etappe 3b (core/kontext.py): Verlauf unter dem Kontextbudget halten, nach Pause neu beginnen.
+        from .lokal_llm import _zahl, geschaetzte_tokens
+        s = getattr(ctx, "secret_dict", None) or {}
+        kontext = _zahl(s.get("LOCAL_LLM_KONTEXT"), 32768)
+        fix = geschaetzte_tokens(TEXT_SYSTEM_PROMPT, self.tools)
+        antwort = _zahl(s.get("LOCAL_LLM_MAX_TOKENS"), 4096)
+        self.verlauf_budget = max(int(kontext * 0.9 - fix - antwort), 0)
+        self.pause_stunden = _zahl(s.get("CHAT_PAUSE_STUNDEN"), 2)
+        self.letzte_nachricht: float | None = None
         if client is not None:
             anthropic_client = client
         else:
@@ -93,9 +103,18 @@ class HoaConversation:
         self.router = ModelRouter(anthropic_client, anthropic_model=model, fallbacks=fallbacks)
 
     def respond(self, user_text: str) -> str:
+        from .kontext import pausen_notiz, verdichte
+        jetzt = time.time()
+        if self.messages and self.letzte_nachricht and jetzt - self.letzte_nachricht > self.pause_stunden * 3600:
+            notiz = pausen_notiz(self.messages, self.pause_stunden)
+            self.messages = []
+            if notiz:
+                user_text = f"({notiz})\n\n{user_text}"
+        self.letzte_nachricht = jetzt
         self._repariere_verlauf()  # evtl. kaputten Tail (tool_use ohne tool_result) entfernen
         self.messages.append({"role": "user", "content": user_text})
         for _ in range(self.max_iter):
+            self.messages = verdichte(self.messages, self.verlauf_budget)
             try:
                 resp = self.router.create(system=TEXT_SYSTEM_PROMPT, tools=self.tools,
                                           messages=self.messages)
