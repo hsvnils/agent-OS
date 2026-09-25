@@ -4,6 +4,11 @@
 > Voller Vision-Text + Bausteine: `ROADMAP.md` -> „Phase 17". Dieses Dokument ist der **vereinbarte
 > MVP-Zuschnitt** (CEO-Entscheidungen 2026-06-28) und der GATE fuer den ersten Schritt.
 
+> **STAND 2026-09-25 — Dieses Dokument beschreibt den macOS-MVP und ist HISTORISCH.** LUNA wird nicht mehr
+> am MacBook entwickelt; Phase 17 wird auf **Windows (MACO470)** umgebaut. Massgeblicher Plan (W1–W7):
+> `ROADMAP.md` -> Phase 17 -> „Umbau auf Windows / MACO470". Die CEO-Vision (Abschnitt 1) und die
+> Governance gelten weiter; die Mac-Technik (osascript, Swift-Orb) dient nur noch als Referenz.
+
 ---
 
 ## 1. CEO-Vision (verbindlich, praezisiert 2026-06-28)

@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 10:25] — Claude Code (MACO470)
+- **Was:** `PHASE17_PLAN.md` als **historisch** markiert (macOS-MVP) mit Verweis auf den Windows-Umbauplan
+  W1–W7 in `ROADMAP.md`. Sonst gaebe es zwei widerspruechliche massgebliche Quellen fuer Phase 17.
+  CEO-Vision und Governance gelten unveraendert weiter.
+- **Warum:** Folge des Windows-Umbau-Beschlusses (Eintrag 10:15).
+- **Betroffen:** `PHASE17_PLAN.md`
+
 ## [2026-09-25 10:15] — Claude Code (MACO470)
 - **Was:** **Phase 17 als Windows-Umbau aufgenommen** (CEO-Entscheidung „umbauen" statt „einstellen").
   ROADMAP: Status-Tabelle + Ueberschrift + neuer Abschnitt „Umbau auf Windows / MACO470" mit Plan **W1–W7**
