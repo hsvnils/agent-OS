@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 12:52] — Claude Code (MACO470)
+- **Was:** Probelauf Etappe 3 (BF-04) nach CEO-Go: neues `backup-from-nas.sh` aus dem Worktree in ein
+  Wegwerf-Verzeichnis (`BACKUP_MELDEN=0`, nichts rotiert, `~/LUNA-Backups` unberuehrt) -> **17 Stores,
+  81.088 Events, Exit 0**; Zeilenzahl je Datei NAS vs. Probe: **17 von 17 gleich**. Wegwerf-Kopie geloescht.
+- **Warum:** CEO-Go „Go fuer Probelauf".
+- **Betroffen:** `BETRIEBSLUECKEN_ROADMAP.md`, `projekt_changelog.md` (keine Live-Daten veraendert)
+
 ## [2026-09-25 12:50] — Claude Code (MACO470)
 - **Was:** `BETRIEBSLUECKEN_ROADMAP.md` Etappen 1+2 nach `main` gemergt und gepusht (`45af4a7`). **Etappe 3
   (BF-04) umgesetzt** auf `ai/betriebsluecken` in einem eigenen Worktree (`.worktrees/betriebsluecken`), damit der

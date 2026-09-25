@@ -4,8 +4,8 @@
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/betriebsluecken`
 - Basiscommit: `ba77909`
-- Naechster Schritt: Etappe 3 umgesetzt -> CEO-Go fuer den Probelauf (liest Live-Daten von der NAS in ein
-  Wegwerf-Verzeichnis), danach Go fuer den Merge.
+- Naechster Schritt: Probelauf Etappe 3 bestanden -> CEO-Go fuer den Merge nach `main` (ab dann naechtlich live),
+  danach am Morgen den Timer-Lauf pruefen (Verifikation 3).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -90,7 +90,8 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
 
 - Status: umgesetzt (2026-09-25, Branch, im Worktree `.worktrees/betriebsluecken`) — 9 Eintraege in `FILES`,
   Doku-Check prueft Deploy-Schutz/Backup jetzt blockierend (Ausnahmen: Block `ohne-backup`); Tests 798 passed.
-  Offen: Probelauf (Go), Merge (Go), Timer-Lauf 03:20.
+  Probelauf 2026-09-25 12:52: **17 Stores, 81.088 Events, Exit 0; alle 17 Dateien zeilengleich mit der NAS**;
+  `~/LUNA-Backups` unberuehrt, Wegwerf-Kopie geloescht. Offen: Merge (Go), dann Timer-Lauf 03:20 pruefen.
 - Ziel / Scope: `FILES` in `deploy/backup-from-nas.sh` um die sieben append-only Stores erweitern
   (`crm/log.jsonl`, `ig_inbox/log.jsonl`, `reel_freigabe/log.jsonl`, `approvals/log.jsonl`,
   `investment/features.jsonl`, `trajektorien/log.jsonl`, `nutzung/log.jsonl`) plus die heute fehlenden, aber
