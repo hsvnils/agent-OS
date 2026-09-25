@@ -17,6 +17,29 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 10:37] — Claude Code (MACO470)
+- **Was:** **Doku-Standards eingefuehrt** (Branch `ai/doku-standards`, noch nicht committet/gemergt).
+  (1) **Roadmap-Workflow** `governance/roadmap-workflow.md` nach CEO-Vorlage, angepasst: Uebergabe per
+  Header-Feld „Naechster Schritt" statt eigener Handoff-Datei, Registrierung im neuen Roadmap-Verzeichnis in
+  `ROADMAP.md`, Etappen-Status `geplant -> umgesetzt -> deployt -> verifiziert` statt Deployment-Ledger,
+  Schutzbereiche dieses Projekts, Test-Gate statt CI, Commits auf dem Arbeitsbranch gehoeren zum Etappen-Go.
+  (2) **`docs/bekannte-fehler.md`** neu: Test-Baseline, 12 offene Punkte, Umgehungen, Lehren, Archiv.
+  Befund: die 4 roten Tests sind eine Zeitbombe in den Testdaten (festes Mock-Datum 2026-06-01, seit
+  2026-07-31 nicht mehr „neu") — kein Produktionsfehler. (3) **`docs/datenfluesse.md`** neu (Dienste,
+  Supabase-Tabellen, Stores, Zeitplaene, Geraete-Wege) + **`scripts/doku_check.py`** mit Test
+  `orchestrator/tests/test_doku_check.py` (inkl. Gegenproben): Abweichung Code <-> Doku macht die Suite rot.
+  (4) **Entscheidungs-Register** gilt jetzt auch fuer eigene Entscheidungen; 27 Index-Zeilen + Nachtrag
+  2026-06-25 bis 2026-09-25; MACO470-Zeile als teils revidiert markiert. (5) `AGENTS.md` 6 und 7: vier kurze
+  Pflichtregeln + Dateiuebersicht.
+  Neue Befunde ohne Fix (eigene Freigabe noetig): Deploy-Schutz fehlt fuer `crm/`, `content_ops/`, `nutzung/`
+  (BF-03), Backup deckt nur 10 von ~25 Stores (BF-04), `orchestrator/memory/log.jsonl` im oeffentlichen Repo
+  (BF-08, Inhalt harmlos).
+- **Warum:** CEO-Pruefung „Changelog, Entscheidungen, Roadmap-Playbook, bekannte Fehler, Datenfluesse?" —
+  Ergebnis: nur der Changelog war vollstaendig; CEO-Auftrag „Vorschlaege umsetzen".
+- **Betroffen:** `governance/roadmap-workflow.md` (neu), `docs/bekannte-fehler.md` (neu),
+  `docs/datenfluesse.md` (neu), `scripts/doku_check.py` (neu), `orchestrator/tests/test_doku_check.py` (neu),
+  `docs/entscheidungs-register.md`, `ROADMAP.md`, `AGENTS.md`, `projekt_changelog.md`
+
 ## [2026-09-25 09:55] — Claude Code (MACO470)
 - **Was:** **Umzug MacBook -> MACO470 abgeschlossen** (CEO: „mach was noetig ist, ohne etwas kaputt zu machen").
   Grundsatz: erst das Neue einrichten und mit echtem Lauf beweisen, dann das Alte abschalten.

@@ -233,6 +233,16 @@ Autonomie). Kostenvoranschlag des CFO und Budget-Check des HoA sind die **Vorber
   duplizieren.
 - **Read-only-Disziplin:** Agenten aendern nur die Dateien, fuer die sie zustaendig sind. Charten aendert
   ausschliesslich der Head of Agents (siehe 3.3).
+- **Roadmaps:** Jede neue Roadmap folgt verbindlich `governance/roadmap-workflow.md` — eine Roadmap ist ein
+  Plan, kein Auftrag; umgesetzt wird erst nach CEO-Go, und zwar pro Etappe.
+- **Entscheidungen:** Jede getroffene, verworfene, zurueckgestellte oder revidierte Entscheidung — zu externen
+  Tools/Ideen **und** zu eigener Architektur/Betrieb — kommt mit Datum und Begruendung in
+  `docs/entscheidungs-register.md`. Vor einer neuen Bewertung dort zuerst nachsehen.
+- **Bekannte Fehler:** Gefundene Fehler, Stolperfallen und Umgehungen (Symptom, Ursache, Status) stehen in
+  `docs/bekannte-fehler.md`, ebenso die Baseline bekannter roter Tests. Vor jeder Fehlersuche dort nachsehen.
+- **Datenfluesse:** Jede neue oder geaenderte Verbindung zu externen Diensten, Tabellen, Dateien oder
+  Schnittstellen wird im selben Commit in `docs/datenfluesse.md` nachgetragen. `scripts/doku_check.py`
+  (laeuft mit der Testsuite) meldet Abweichungen zwischen Code und Doku.
 
 ---
 
@@ -254,4 +264,10 @@ Autonomie). Kostenvoranschlag des CFO und Budget-Check des HoA sind die **Vorber
 | `governance/`             | Lebende Steuerungsdokumente (AGENTS.md untergeordnet).          |
 | `governance/orchestrierung.md` | Kanonische Orchestrierungslogik (HoA-Supervisor-Pattern).  |
 | `governance/organigramm.md` | Visuelle Hierarchie; verweist auf `agents/REGISTRY.md`.       |
+| `governance/roadmap-workflow.md` | Verbindlicher Ablauf fuer Roadmaps (Plan -> Go pro Etappe -> Abschluss). |
+| `ROADMAP.md`              | Master-Roadmap inkl. Roadmap-Verzeichnis aller Teil-Roadmaps.    |
+| `docs/entscheidungs-register.md` | Alle Entscheidungen (angenommen/verworfen) mit Begruendung. |
+| `docs/bekannte-fehler.md` | Bekannte Fehler, Stolperfallen, Umgehungen, Test-Baseline.       |
+| `docs/datenfluesse.md`    | Datenfluesse: externe Dienste, Tabellen, Dateien, Schnittstellen. |
+| `scripts/doku_check.py`   | Doku-Check (Roadmap-Header/-Verzeichnis, Datenfluss-Drift).      |
 | `docs/`                   | Eingefrorene Provenienz/Historie (Briefs, Bootstrap-/Build-Prompts). |

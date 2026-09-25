@@ -1,14 +1,18 @@
 # Recherche- & Entscheidungs-Register
 
-> **Zweck:** Ein dauerhaftes Gedaechtnis fuer **geprüfte externe Ideen, Tools, Repos, Modelle und Ansaetze**
-> -- mit **Datum, Entscheidung und Begruendung**. Wenn der CEO spaeter erneut nach etwas fragt, wird hier
-> zuerst geprueft: *Haben wir das schon bewertet? Was haben wir entschieden -- und warum?*
+> **Zweck:** Ein dauerhaftes Gedaechtnis fuer **gepruefte externe Ideen, Tools, Repos, Modelle und Ansaetze**
+> **und fuer eigene Entscheidungen** (Architektur, Betrieb, Geraete, Zugaenge, Prozesse) -- jeweils mit
+> **Datum, Entscheidung und Begruendung**, ausdruecklich auch fuer **abgelehnte** und **revidierte**
+> Entscheidungen. Wenn der CEO spaeter erneut nach etwas fragt, wird hier zuerst geprueft: *Haben wir das
+> schon bewertet? Was haben wir entschieden -- und warum?* (Pflicht laut `AGENTS.md` 6.)
 >
 > **So wird es gepflegt:**
 > - Jede substanzielle Bewertung (uebernehmen / teilweise / verworfen / spaeter) kommt als Eintrag hierher.
 > - Zuerst die **Index-Tabelle** aktualisieren, dann den **Detail-Eintrag** ergaenzen (neueste oben).
 > - Entscheidungs-Werte: **UEBERNEHMEN** · **TEILWEISE** (nur Teile/Muster) · **VERWORFEN** · **VALIDIERT**
->   (bestaetigt unseren Ist-Stand) · **SPAETER/OPTIONAL** · **REFERENZ** (nur als Vorbild).
+>   (bestaetigt unseren Ist-Stand) · **SPAETER/OPTIONAL** · **REFERENZ** (nur als Vorbild) ·
+>   **ZURUECKGESTELLT** · fuer eigene Entscheidungen **BESCHLOSSEN** · **REVIDIERT** (alte Entscheidung
+>   aufgehoben -- der alte Eintrag bleibt stehen und bekommt einen Verweis auf den neuen).
 > - ASCII-Konvention wie im ganzen Repo (ae/oe/ue/ss). Keine Secrets, kein Chat-Mitschnitt -- nur Sachstand.
 > - Umsetzung bleibt IMMER eigener GATE/CEO-Tor; dieses Register ist Entscheidungs-Doku, keine Freigabe.
 
@@ -53,11 +57,80 @@
 | **Echtes Trading: Broker-/Exchange-Anbindung** (IBKR / Alpaca-Live / Kraken / Bitpanda; TR/Scalable ohne API) | 2026-07-09 | **ZURUECKGESTELLT** -- CEO waehlt „LUNA beraet, ich handle selbst" (manuelles Ledger); keine API-Anbindung vorerst | Optionen bewertet als Rueckfall fuer spaetere API-Ausfuehrung; Anbindung = CEO-Tor |
 | **Cutter-Umbau (eigener Worker) + Manueller Cutter** (Reels nach Thema/Spiel/Laenge; Ablehnen->neu; Min 15s) | 2026-07-09 | **ZURUECKGESTELLT bis MACO470** -- erster Wurf gebaut + revertiert (nicht deployt); finaler Bau als Queue-Worker auf dem MACO470 | Plan: `docs/cutter-worker-plan.md`; Referenz-Commits 5001c61/57b4065 |
 | **Video-Second-Brain** (durchsuchbares Clip-Gedaechtnis: Technik/Qualitaet/Transkript/KI-Beschreibung) | 2026-07-09 | **STUFE 1 UMGESETZT** (gratis, kein LLM: `cutter/clip_brain.py`); Stufen 2-5 geplant, Bau auf dem MACO470; Stufe 3 = CEO-Tor (Gemini-Kosten) | Plan: `docs/video-brain-plan.md`. Erkenntnis: Gemini-Proxy behaelt Ton -> Pyro/Fangesang machbar, Blocker war nur das 8-Wort-Tag-Vokabular |
-| **MACO470-Integration** (AOOSTAR-Mini-PC: Ubuntu, Cutter-Worker, Video-Brain-Schwerarbeit, spaeter lokales LLM) | 2026-07-14 | **ROADMAP BESCHLOSSEN** (CEO): Camp-Sprint in 4 Tagen (Trainingslager!), SMB statt Dropbox, Nightly-Automatik bleibt NAS (E1), eigene Least-Privilege-Zugaenge (E3) | `docs/maco470-roadmap.md` (lebendes Dokument, uebersteuert Teile von cutter-worker-plan.md) |
+| **MACO470-Integration** (AOOSTAR-Mini-PC: Ubuntu, Cutter-Worker, Video-Brain-Schwerarbeit, spaeter lokales LLM) | 2026-07-14 | **ROADMAP BESCHLOSSEN** (CEO): Camp-Sprint in 4 Tagen (Trainingslager!), SMB statt Dropbox, Nightly-Automatik bleibt NAS (E1), eigene Least-Privilege-Zugaenge (E3) | `docs/maco470-roadmap.md` (lebendes Dokument, uebersteuert Teile von cutter-worker-plan.md) -- **teils REVIDIERT:** Windows 11 + WSL2 statt Ubuntu (2026-07-14), E3 fuer den MACO470 (2026-09-25), E6 CIFS (2026-08-12) -> Nachtrag 2026-09-25 |
+| **Palmier Pro** (Video-Editor) | 2026-06-27 | **VERWORFEN** | macOS-GUI-Editor, interaktiv, generiert nur neue Videos, keine Batch-Automatik |
+| **Root-Bypass `IS_SANDBOX=1`** fuer Execution | 2026-06-26 | **VERWORFEN** | schaltet autonome Code-Ausfuehrung als root frei -> stattdessen Non-root-Container |
+| **Gemini-Gratis-Tier als Chat-Fallback** | 2026-06-25 | **UEBERNEHMEN** | Anthropic gesperrt, OpenAI ohne Guthaben; Grenze siehe `docs/bekannte-fehler.md` BF-05 |
+| **Cutter-Stil:** Untertitel standardmaessig aus, randlos, weiches Ueberblenden | 2026-06-27 | **BESCHLOSSEN** (CEO) | `--mit-untertitel` bleibt Opt-in |
+| **Loop Engineering** (cobusgreyling) | 2026-06-28 | **TEILWEISE** (Konzepte, kein CLI-Import) | `governance/autonomie-stufen.md` |
+| **Modellwahl: LUNA/Fachagenten/Execution auf Sonnet 5**, Routing Haiku | 2026-06-30 | **BESCHLOSSEN** (CEO) | `orchestrator/config.toml` |
+| **CRM als File-Store (JSONL)**, kanalagnostisch | 2026-07-01 | **BESCHLOSSEN** | spaeter Write-through nach Supabase (`core/crm_projection.py`) |
+| **Konsolidierung: EIN System = LUNA-OS**, HCC stilllegen, Supabase primaer + NAS-Fallback | 2026-07-02 | **BESCHLOSSEN** (CEO) | `HCC_INTEGRATION_ROADMAP.md` (K0-K6 fertig) |
+| **Cutter-Bruecke ueber LUNA-OS-API** statt Supabase-Key auf Client-Geraeten | 2026-07-02 | **BESCHLOSSEN** | `cutter/luna_bridge.py` |
+| **Instagram/Meta-App-Review (GATE B)** | 2026-07-03/04 | **ZURUECKGESTELLT -> abgehakt** (CEO) | nicht proaktiv wieder vorschlagen |
+| **Investment:** Paper zuerst (Alpaca), Nacht-Handel nur Krypto, Autonomie erst nach Track-Record; Supabase erst wenn noetig | 2026-07-03/04 | **BESCHLOSSEN** / **ZURUECKGESTELLT** | `INVESTMENT_ROADMAP.md` |
+| **Reel-Pipeline:** 1-Tap-Freigabe, ein Spiel pro Reel, Originalton, Auto-Posten = CEO-Tor | 2026-07-07 | **BESCHLOSSEN** (CEO) | `docs/reel-pipeline-plan.md` |
+| **Entwicklungs-Roadmap nur nach CEO-Freigabe**, LUNA ohne Schreib-Tool | 2026-07-08 | **BESCHLOSSEN** | `core/entwicklungs_roadmap.py`; am 2026-07-09 geleert (8 veraltete Backfill-Eintraege) |
+| **Modell-Guthaben/Provider-Robustheit** | 2026-07-08 | **ZURUECKGESTELLT** -> lokales LLM (M6) | `ROADMAP.md` Backlog |
+| **Szenenanalyse im Clip-Brain** standardmaessig aus; `-skip_frame nokey` | 2026-07-10 | **VERWORFEN** | Szenen bei Fan-Aufnahmen fast immer 0, teuerster Schritt |
+| **Lokales LLM auf dem MACO470:** 7-30B ja, 120B-Klasse nein | 2026-07-14 | **BESCHLOSSEN** | 32 GB verloetet, kein NPU; `docs/maco470-roadmap.md` |
+| **MACO470: Windows 11 bleibt, Worker in WSL2** statt Ubuntu-Neuinstallation | 2026-07-14 | **REVIDIERT** (Ubuntu-Plan) | `docs/maco470-roadmap.md` |
+| **MACO470: kein Docker** | 2026-08-10 | **BESCHLOSSEN** | WSL2 isoliert bereits, spart RAM fuer das LLM |
+| **E6: SMB nativ per CIFS** statt drvfs | 2026-08-12 | **REVIDIERT** (drvfs-Plan) | `cmdkey` scheitert ueber SSH |
+| **Trainingslager-Sprint** | 2026-08-12 | **VERWORFEN** (erledigt) | Camp-Modus bleibt als Funktion |
+| **Geraete-Grundsatz:** MacBook nur Entwicklung, NAS + MACO470 tragen den Betrieb | 2026-08-17 | **BESCHLOSSEN** (CEO) | am 2026-09-25 weiter verschaerft (MACO470 = Werkbank) |
+| **Betriebs-Wacht + Lawinenschutz** (Meldungen > 3 h verwerfen) | 2026-08-17 | **UEBERNEHMEN** | regelbasiert, kein LLM |
+| **Zugaenge MACO470:** GitHub per Deploy-Key (nur dieses Repo), NAS-Key mit `from=`-Bindung | 2026-09-24 | **BESCHLOSSEN** (CEO) | `governance/zugriffs-policy.md` |
+| **MACO470 = Werkbank**, MacBook nicht mehr fuer LUNA; Backup auf dem MACO470, Mac-Backup bleibt Zweitkopie | 2026-09-25 | **BESCHLOSSEN** (CEO) | Nachtrag 2026-09-25 |
+| **E3 fuer den MACO470:** volle `.env`, Worker pollt als `ceo` | 2026-09-25 | **REVIDIERT** (CEO) | `governance/zugriffs-policy.md` |
+| **Phase 17 als Windows-Umbau (W1-W7)** statt einstellen | 2026-09-25 | **BESCHLOSSEN** (CEO) | `ROADMAP.md` Phase 17 |
+| **Doku-Standards:** Roadmap-Workflow, bekannte Fehler, Datenfluesse + Doku-Check, Register auch fuer eigene Entscheidungen | 2026-09-25 | **BESCHLOSSEN** (CEO) | `governance/roadmap-workflow.md`, `AGENTS.md` 6 |
 
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-09-25 — Nachtrag: Entscheidungen 2026-06-25 bis 2026-09-25
+
+**Was:** Das Register fuehrte bisher nur externe Tools/Ideen; eigene Entscheidungen standen verstreut in
+Changelog, Roadmaps und Uebergaben. Ab jetzt gehoeren beide hierher (`AGENTS.md` 6). Die Index-Zeilen oben mit
+Datum 2026-06-25 bis 2026-09-25 wurden aus den Quellen nachgetragen; die Begruendungen stehen dort wie folgt:
+
+- **Palmier Pro (VERWORFEN, 2026-06-27):** macOS-GUI-Editor, interaktiv, generiert nur neue Videos, keine
+  Batch-Automatik — passt nicht zur Cutter-Pipeline. (`projekt_changelog.md`, `ROADMAP.md` Phase 15)
+- **Root-Bypass (VERWORFEN, 2026-06-26):** `IS_SANDBOX=1` haette autonome Code-Ausfuehrung als root
+  freigeschaltet; stattdessen Non-root-Container. (Changelog)
+- **Sonnet 5 (BESCHLOSSEN, 2026-06-30):** „nahezu Opus-Qualitaet, guenstiger als Opus 4.8"; Routing bleibt
+  Haiku (kostenbewusst). (Changelog, `ca56937`)
+- **EIN System = LUNA-OS (BESCHLOSSEN, 2026-07-02):** eine Codebasis, LUNA als Gehirn und Gesicht; HCC
+  stillgelegt, Supabase primaer mit NAS-Fallback. (`HCC_INTEGRATION_ROADMAP.md`, `docs/HCC_K6_STILLLEGUNG.md`)
+- **Instagram/Meta (ZURUECKGESTELLT -> abgehakt, 2026-07-03/04):** CEO: „zu kompliziert"; nicht proaktiv
+  wieder vorschlagen. Das App-Review wurde am 2026-07-06 dennoch eingereicht; Ergebnis offen.
+- **Modell-Guthaben (ZURUECKGESTELLT, 2026-07-08):** „kein Blocker"; ein lokales LLM ohne Cloud-Guthaben und
+  Rate-Limit soll es spaeter loesen (M6).
+- **MACO470 Windows + WSL2 (REVIDIERT, 2026-07-14):** CEO behaelt einen Windows-Rechner, kein USB-Stick
+  noetig; WSL2 statt Hyper-V wegen dynamischem RAM (32 GB verloetet). (`docs/maco470-roadmap.md`)
+- **E6 CIFS (REVIDIERT, 2026-08-12):** Windows-Anmeldespeicher + drvfs funktioniert ueber SSH nicht.
+- **Geraete-Grundsatz (BESCHLOSSEN, 2026-08-17):** MacBook = Entwicklung; NAS + MACO470 = 24/7-Betrieb.
+- **Zugaenge MACO470 (BESCHLOSSEN, 2026-09-24):** Deploy-Key statt Token — „nur dieses eine Repo, kein
+  Geheimnis geht durch fremde Hand"; NAS-Key per `from="192.168.178.184"` gebunden (Least Privilege).
+- **MACO470 = Werkbank (BESCHLOSSEN, 2026-09-25):** CEO: „Ich will Luna nicht mehr am MacBook
+  weiterentwickeln." Backup laeuft dort (systemd 03:20), weil es nicht davon abhaengen darf, ob der Mac laeuft;
+  Mac-Backup bleibt als unabhaengige Zweitkopie (Abschalten = CEO-Wahl); Mac-Watcher abgeschaltet.
+- **E3 fuer den MACO470 (REVIDIERT, 2026-09-25):** CEO: „der darf auf dem MACO ruhig CEO-Konto sein" — volle
+  `.env`, Worker pollt als `ceo`, Konto `maco470-worker` ruht. Der urspruengliche E3-Eintrag (eigene
+  Least-Privilege-Konten) bleibt als Historie stehen.
+- **Phase 17 als Windows-Umbau (BESCHLOSSEN, 2026-09-25):** LUNA wird nicht mehr am MacBook entwickelt; der
+  macOS-MVP laeuft auf dem MACO470 nicht (dort 4 Tests uebersprungen). CEO: „umbauen" statt „einstellen".
+  Offen/zurueckgestellt: Sprachkanal auf dem MACO470, Tray-Oberflaeche. (`ROADMAP.md` Phase 17)
+- **Doku-Standards (BESCHLOSSEN, 2026-09-25):** Pruefung ergab: Changelog vorhanden, Register nur fuer externe
+  Ideen und seit 2026-07-14 ohne Nachtrag, kein Roadmap-Playbook, keine Fehler-Doku, keine Datenfluss-Doku.
+  CEO-Auftrag: alles umsetzen; Roadmap-Workflow nach CEO-Vorlage, an dieses Repo angepasst.
+
+**Offen zur Klaerung:** Welches Modell die DM-Analyse (Collab-Radar) nutzt — der Index fuehrt die Wahl als
+CEO-Tor, das Gedaechtnis nennt Haiku (`IG_ANALYSE_MODELL`). Beim naechsten Anfassen verifizieren und eintragen.
+
+**Quelle:** `projekt_changelog.md`, `ROADMAP.md`, `docs/maco470-roadmap.md`, Uebergaben 2026-07-03 bis 2026-09-24.
 
 ### 2026-07-09 — Echtes Trading: welchen Broker anbinden? (CEO-Frage)
 

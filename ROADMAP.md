@@ -56,6 +56,21 @@ Self-Dev, Investment-Screen, kuenftig content_ops-Fuetterung) werden nicht als E
 plus Autonomie-Treppe **L1→L2→L3** und Kostenrahmen je Loop. Verbindlich in `governance/autonomie-stufen.md`
 (Grundidee: „den Loop entwerfen, der den Agenten ansteuert", statt jeden Prompt von Hand; Osmani u. a., 2026).
 
+## Roadmap-Verzeichnis
+
+Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance/roadmap-workflow.md`
+(`<THEMA>_ROADMAP.md` im Root, Pflicht-Header, Go pro Etappe) und werden **hier eingetragen**;
+`scripts/doku_check.py` prueft, dass jede `*_ROADMAP.md` hier steht.
+
+| Roadmap | Thema | Art |
+|---|---|---|
+| `INVESTMENT_ROADMAP.md` | Investment-Abteilung (CIO) | Bestand (vor Workflow) |
+| `HCC_INTEGRATION_ROADMAP.md` | HCC -> LUNA-OS Konsolidierung (K0-K6) | Bestand (vor Workflow) |
+| `docs/maco470-roadmap.md` | Integration MACO470 (M1-M6) | Bestand (vor Workflow) |
+
+Aeltere Phasen-Plaene (`PHASE*_PLAN.md`, `CRM_PLAN.md`, `MEMORY_PLAN.md`, `ORCHESTRATOR_PLAN.md`,
+`docs/*-plan.md`) sind Umsetzungsplaene einzelner Phasen und bleiben als Bestand, wo sie sind.
+
 ---
 
 ## 1. Ziel & Leitprinzipien
