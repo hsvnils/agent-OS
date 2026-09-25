@@ -93,8 +93,10 @@ class MockGitHubWatch:
         self._repos = repos or {}
 
     def trending(self, topic, *, min_stars=500, aktiv_seit_tage=30, max_results=15):
+        # Relativ zu heute, damit das Demo-Repo dauerhaft als „neu" gilt (festes Datum lief am 2026-07-31 ab).
+        erstellt = (datetime.now(timezone.utc) - timedelta(days=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
         return self._repos.get(topic, [
             Repo(name=f"acme/{topic}-agent", url=f"https://github.com/acme/{topic}-agent",
-                 sterne=1200, beschreibung=f"Demo zu {topic}", erstellt="2026-06-01T00:00:00Z",
+                 sterne=1200, beschreibung=f"Demo zu {topic}", erstellt=erstellt,
                  topics=[topic]),
         ])[:max_results]

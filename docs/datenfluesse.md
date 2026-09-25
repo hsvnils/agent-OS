@@ -148,7 +148,7 @@ ai_intel_items
 
 Pfade relativ zum Repo-Root; auf der NAS `/volume1/docker/ki-unternehmen`, in **beiden** Containern als
 `/app` gemountet. „Deploy-Schutz" = von `deploy/sync-to-nas.sh` ausgenommen; „Backup" = in der Liste von
-`deploy/backup-from-nas.sh`. Luecken siehe `docs/bekannte-fehler.md` (BF-03, BF-04); `scripts/doku_check.py`
+`deploy/backup-from-nas.sh`. Luecken siehe `docs/bekannte-fehler.md` (BF-04; BF-03 behoben 2026-09-25); `scripts/doku_check.py`
 zeigt sie als Hinweis.
 
 | Speicher | Schreibt | Liest | Deploy-Schutz | Backup |
@@ -170,9 +170,9 @@ zeigt sie als Hinweis.
 | `reel_freigabe/log.jsonl` + `<id>.mp4` | Web (`/api/reel/einreichen`) | Web, Betriebs-Wacht | ja | **nein** |
 | `cutter_ops/jobs_cache.jsonl` | Web | Bot | ja | nein (Cache von Supabase) |
 | `cutter_ops/worker_herzschlag.json` | Web bei jedem `GET /api/cutter/queue` | Betriebs-Wacht | ja | nein (fluechtig) |
-| `crm/log.jsonl` | Bot, Web | dito | **nein** | **nein** |
-| `content_ops/*_cache.jsonl` (5 Dateien) | Web, Content-Feed | dito | **nein** | nein (Cache von Supabase) |
-| `nutzung/log.jsonl` | Web (`/api/nutzung`) | Leistungsbericht | **nein** | **nein** |
+| `crm/log.jsonl` | Bot, Web | dito | ja | **nein** |
+| `content_ops/*_cache.jsonl` (5 Dateien) | Web, Content-Feed | dito | ja | nein (Cache von Supabase) |
+| `nutzung/log.jsonl` | Web (`/api/nutzung`) | Leistungsbericht | ja | **nein** |
 | `orchestrator/memory/log.jsonl` | Bot, Voice | dito | ja | ja |
 | `orchestrator/state/instagram_token.json` (**Secret**) | `governance/instagram_token.py` | dito | ja | nein |
 | `projekt_changelog.md`, `finance/budget.md` | Bot, Web, Agenten | alle | ja | Git |

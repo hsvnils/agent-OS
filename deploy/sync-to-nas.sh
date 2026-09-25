@@ -73,6 +73,9 @@ TAR_EXCLUDES=(
   --exclude='./approvals/log.jsonl'
   --exclude='./cutter_ops'          # Job-Cache + Worker-Herzschlag (schreibt die Web-App auf der NAS)
   --exclude='./entwicklung'
+  --exclude='./crm'                 # CRM-Store + Sync-Cursor (Live-Daten, 2026-09-25 nachgezogen, BF-03)
+  --exclude='./content_ops'         # Content-Caches (schreibt die Web-App auf der NAS)
+  --exclude='./nutzung'             # Nutzungs-Log (Leistungsbericht)
   --exclude='./orchestrator/channels/voice/selected_voice.json'
   # --- Git + virtuelle Umgebungen + Worktrees ---
   --exclude='./.git'

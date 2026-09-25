@@ -1,10 +1,11 @@
 # Roadmap: Betriebsluecken schliessen (BF-01, BF-03, BF-04, BF-08)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/betriebsluecken`
 - Basiscommit: `ba77909`
-- Naechster Schritt: Roadmap dem CEO vorlegen; bei Go mit Etappe 1 (Test-Zeitbombe) beginnen.
+- Naechster Schritt: Etappen 1+2 sind auf dem Branch verifiziert (Commit lokal, nicht gepusht) -> CEO-Go fuer
+  Merge nach `main` + Push einholen; danach Go fuer Etappe 3 (Backup).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -48,7 +49,7 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
   oder nur in Git)
 - Umschreiben der Git-Historie (Inhalt harmlos; ein History-Rewrite eines oeffentlichen Repos waere
   unverhaeltnismaessig)
-- Sicherung der Reel-Videos (1,3 GB) und des Instagram-Tokens (Secret) — **CEO-Entscheidung**, siehe offene Fragen
+- Sicherung der Reel-Videos (1,3 GB) und des Instagram-Tokens (Secret) — CEO-Entscheidung 2026-09-25: **nein**
 - BF-02 (unbeaufsichtigter Neustart, CEO-Aufgabe), alle anderen Eintraege aus `docs/bekannte-fehler.md`
 - Schutzbereiche laut `governance/roadmap-workflow.md` B4
 
@@ -56,7 +57,8 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
 
 ### Etappe 1: Test-Zeitbombe entschaerfen (BF-01)
 
-- Status: geplant
+- Status: verifiziert (2026-09-25, auf dem Arbeitsbranch; Merge offen) — `orchestrator/tests`: 723 passed,
+  0 failed, 4 skipped; `cutter/tests`: 74 passed. Gegenprobe mit festem Datum: 4 failed, wie erwartet.
 - Ziel / Scope: Mock-Datum relativ zu heute setzen (heute minus 10 Tage) in `MockGitHubWatch` und
   `test_watch.py:31`. Nicht-Scope: Produktionslogik von `flag_fast_growers`.
 - Gate: beide Suiten, **0 rote Tests**; Doku-Check ok.
@@ -70,7 +72,9 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
 
 ### Etappe 2: Deploy-Schutz vervollstaendigen (BF-03)
 
-- Status: geplant
+- Status: verifiziert (2026-09-25, auf dem Arbeitsbranch; Merge offen) — Probedateien im Dry-Run vorher `3`,
+  nachher `0`; Doku-Check `Deploy-Schutz fehlt` = `0`. Probedateien geloescht. Kein Deploy noetig (Skript laeuft
+  auf dem MACO470).
 - Ziel / Scope: `--exclude='./crm'`, `--exclude='./content_ops'`, `--exclude='./nutzung'` in
   `deploy/sync-to-nas.sh`.
 - Gate: Dry-Run-Probe unten wie erwartet; Doku-Check ohne Hinweis „Deploy-Schutz fehlt"; Tests gruen.
@@ -133,7 +137,7 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
 1 -> 2 -> 3 -> 4 empfohlen (1 macht das Test-Gate fuer alle weiteren Etappen scharf: danach bedeutet jeder rote
 Test einen echten Fehler). Die Etappen sind technisch unabhaengig und einzeln abnehmbar.
 
-## Offene Fragen an den CEO
+## Fragen an den CEO (entschieden 2026-09-25: beide NEIN, wie empfohlen)
 
 1. **Reel-Videos (1,3 GB) mitsichern?** Vorschlag: nein — gepostete Reels liegen bei Facebook, Rohmaterial im
    NAS-Clip-Archiv.

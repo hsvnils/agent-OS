@@ -1,6 +1,7 @@
 """Self-Checks Phase 12 (Watch-Scheduler) -- offline, ohne Netz/Token, Mock-GitHub."""
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from orchestrator.core.antraege import Antraege
@@ -15,6 +16,8 @@ from orchestrator.governance.github_watch import MockGitHubWatch, Repo, flag_fas
 from orchestrator.governance.web_research import MockProvider, WebResearch
 
 ROOT = Path(__file__).resolve().parents[2]
+# „Neu" relativ zu heute (flag_fast_growers: neu_tage=60) -- ein festes Datum laeuft ab.
+NEU = (datetime.now(timezone.utc) - timedelta(days=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _store():
@@ -28,7 +31,7 @@ def _web():
 class TestWatch(unittest.TestCase):
     def test_1_fast_grower_erkennung(self):
         repos = [Repo(name="a/x", url="u1", sterne=1000, erstellt="2020-01-01T00:00:00Z"),
-                 Repo(name="a/y", url="u2", sterne=80, erstellt="2026-06-01T00:00:00Z")]
+                 Repo(name="a/y", url="u2", sterne=80, erstellt=NEU)]
         hist = {"a/x": 900}  # x ist um 100 gewachsen
         flagged = flag_fast_growers(repos, hist, min_zuwachs=50)
         namen = {r.name for r in flagged}

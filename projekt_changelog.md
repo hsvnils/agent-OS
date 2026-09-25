@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 11:41] — Claude Code (MACO470)
+- **Was:** `BETRIEBSLUECKEN_ROADMAP.md` **Etappen 1 + 2 umgesetzt und verifiziert** (auf `ai/betriebsluecken`,
+  nicht gemergt/gepusht). (1) BF-01: Mock-Datum in `MockGitHubWatch` und `test_watch.py` relativ zu heute ->
+  `orchestrator/tests` 723 passed / **0 failed** / 4 skipped, `cutter/tests` 74 passed; Gegenprobe mit festem
+  Datum: 4 failed. (2) BF-03: `sync-to-nas.sh` schliesst `crm`, `content_ops`, `nutzung` aus; Dry-Run-Probe
+  vorher 3, nachher 0 Probedateien im Paket (Probedateien geloescht). Test-Baseline, bekannte Fehler,
+  Datenfluesse, Roadmap-Status nachgezogen. CEO-Entscheidung: Reel-Videos und Instagram-Token **nicht** ins
+  Backup (Register).
+- **Warum:** CEO-Go „Go fuer 1 und 2, beide Fragen wie empfohlen NEIN".
+- **Betroffen:** `orchestrator/governance/github_watch.py`, `orchestrator/tests/test_watch.py`,
+  `deploy/sync-to-nas.sh`, `docs/bekannte-fehler.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`,
+  `BETRIEBSLUECKEN_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-25 11:34] — Claude Code (MACO470)
 - **Was:** Erste Roadmap nach `governance/roadmap-workflow.md` angelegt: `BETRIEBSLUECKEN_ROADMAP.md`
   (Status geplant, 4 Etappen: BF-01 Test-Zeitbombe, BF-03 Deploy-Schutz, BF-04 Backup, BF-08 Git-Hygiene),

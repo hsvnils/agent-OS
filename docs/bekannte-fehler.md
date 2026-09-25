@@ -8,11 +8,11 @@
 
 ## Test-Baseline (Massstab fuer das Test-Gate)
 
-Stand 2026-09-25 auf dem MACO470 (`.venv`, `python -m pytest`):
+Stand 2026-09-25 auf dem MACO470 (`.venv`, `python -m pytest`), nach Etappe 1 der `BETRIEBSLUECKEN_ROADMAP.md`:
 
 | Suite | Ergebnis | Erwartet rot / uebersprungen |
 |---|---|---|
-| `orchestrator/tests` | 714 bestanden, 4 rot, 4 uebersprungen | rot: BF-01 (4 Tests); uebersprungen: Phase 17 „plan() erfordert macOS" |
+| `orchestrator/tests` | 723 bestanden, 0 rot, 4 uebersprungen | uebersprungen: Phase 17 „plan() erfordert macOS" (BF-01 behoben 2026-09-25) |
 | `cutter/tests` | 74 bestanden | – |
 
 Regel: **Kein neuer roter Test.** Wer die Baseline aendert (Test repariert oder bewusst rot), schreibt diese
@@ -22,10 +22,8 @@ Tabelle fort.
 
 | ID | Symptom | Ursache | Umgehung / naechster Schritt | Seit |
 |---|---|---|---|---|
-| BF-01 | 4 rote Tests: `test_watch` test_1, test_2, test_7 und `test_notifications` test_4 | **Zeitbombe in den Testdaten:** Mock-Repos haben festes `erstellt="2026-06-01"` (`governance/github_watch.py` `MockGitHubWatch`, `tests/test_watch.py:31`); `flag_fast_growers` wertet „neu" relativ zu `datetime.now()` mit `neu_tage=60` -> seit **2026-07-31** gelten sie nicht mehr als neu. Kein Produktionsfehler. | Fix: Mock-Datum relativ setzen (heute minus 10 Tage). Bisher nicht beauftragt. | 2026-07-31 |
 | BF-02 | Nach einem Neustart des MACO470 ohne Anmeldung startet nichts (Worker, Backup-Timer) | Windows-Aufgabe „Nur interaktiv", `AutoAdminLogon=0` | „Unabhaengig von der Anmeldung ausfuehren" oder Auto-Login — **CEO-Aufgabe** (Passwort) | 2026-08-17, MR |
-| BF-03 | `deploy/sync-to-nas.sh` schuetzt `crm/`, `content_ops/`, `nutzung/` nicht | Schutzliste nicht nachgezogen, als die Stores dazukamen | Heute harmlos: auf dem MACO470 gibt es diese Ordner nicht (Dry-Run geprueft). Entsteht dort lokal eine Kopie (z. B. durch einen lokalen Testlauf der Web-App), **ueberschreibt der naechste Deploy die Live-Daten auf der NAS**. Fix: Excludes ergaenzen (eigene Freigabe). `scripts/doku_check.py` zeigt es als Hinweis. | gefunden 2026-09-25 |
-| BF-04 | Backup sichert nur 10 von ~25 Live-Speichern | Liste in `deploy/backup-from-nas.sh` nicht nachgezogen | Es fehlen u. a. `crm/`, `ig_inbox/`, `reel_freigabe/`, `approvals/`, `entwicklung/`, `investment/features.jsonl`, `trajektorien/`, `social/`, `nutzung/`, `orchestrator/state/instagram_token.json` (Caches von Supabase sind unkritisch). Fix: Liste erweitern (eigene Freigabe). | gefunden 2026-09-25 |
+| BF-04 | Backup sichert nur 10 von ~25 Live-Speichern | Liste in `deploy/backup-from-nas.sh` nicht nachgezogen | In Arbeit: `BETRIEBSLUECKEN_ROADMAP.md` Etappe 3; Reel-Videos und Instagram-Token bleiben bewusst draussen (CEO 2026-09-25). Es fehlen u. a. `crm/`, `ig_inbox/`, `reel_freigabe/`, `approvals/`, `entwicklung/`, `investment/features.jsonl`, `trajektorien/`, `social/`, `nutzung/`, `orchestrator/state/instagram_token.json` (Caches von Supabase sind unkritisch). Fix: Liste erweitern (eigene Freigabe). | gefunden 2026-09-25 |
 | BF-05 | Intermittierend „alle Anbieter erschoepft" | Gemini-Gratis-Rate-Limit unter Last | zurueckgestellt; lokales LLM (M6) soll es loesen | 2026-07-08, CL:699 |
 | BF-06 | Instagram liefert nicht alle Threads; eine Marken-DM kam nie an | `me/conversations` nur mit `limit=1` stabil; Webhook-Zustellung ungeklaert | Thread fuer Thread blaettern (`0b87833`); Meta-Grenze bleibt; Thema vom CEO abgehakt | 2026-07, CL:892, 981 |
 | BF-08 | `orchestrator/memory/log.jsonl` ist in Git eingecheckt, das Repo ist **oeffentlich** | vor `.gitignore`-Regel angelegt (`618c8ae`) | Inhalt heute: 2 harmlose Testeintraege vom 2026-06-23; die Live-Datei auf der NAS ist vom Deploy ausgenommen. Fix: aus dem Index nehmen + ignorieren (eigene Freigabe). | gefunden 2026-09-25 |
@@ -70,6 +68,8 @@ Tabelle fort.
 
 | ID | Symptom | Ursache | Fix | Datum / Beleg |
 |---|---|---|---|---|
+| BF-01 | 4 rote Tests (`test_watch` 1/2/7, `test_notifications` 4) | festes Mock-Datum `2026-06-01` in `MockGitHubWatch` und `test_watch.py`, seit 2026-07-31 nicht mehr „neu" (`neu_tage=60`) | Datum relativ zu heute (minus 10 Tage); Gegenprobe mit festem Datum: 4 rot (`BETRIEBSLUECKEN_ROADMAP.md` Etappe 1) | 2026-09-25 |
+| BF-03 | `deploy/sync-to-nas.sh` schuetzte `crm/`, `content_ops/`, `nutzung/` nicht (eine lokale Kopie haette Live-Daten ueberschrieben) | Schutzliste nicht nachgezogen | Excludes ergaenzt; Probe: 3 Probedateien vorher im Paket, nachher 0 (Etappe 2) | 2026-09-25 |
 | BF-A01 | Keine proaktiven Telegram-Meldungen, 1106 in der Outbox | `NameError` (`tz`, dann `datetime`) in `main()` von `bot.py`, vom `except` verschluckt | `cff0063`, `f29f6e4`, `5f6f2e2`; alte Meldungen >3 h verwerfen (Lawinenschutz) | 2026-08-17, CL:124-169 |
 | BF-A02 | Testlauf schrieb in echte Stores und Changelog | `TestSettingsEndpoint` gegen echte App | Temp-Verzeichnis, Daten bereinigt (`cff0063`) | 2026-08-17, CL:157 |
 | BF-A03 | Backup loeschte bei nicht erreichbarer NAS gute Staende, Exit 0 | leerer Lauf rotiert; `ssh` ohne `-n` | kein Rotieren bei leerem/geschrumpftem Lauf, Exit 1 + Telegram (`f3c093f`) | 2026-09-25, CL:23 |
