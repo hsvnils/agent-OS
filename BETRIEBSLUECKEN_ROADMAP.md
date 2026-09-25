@@ -4,8 +4,9 @@
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/betriebsluecken`
 - Basiscommit: `ba77909`
-- Naechster Schritt: Probelauf Etappe 3 bestanden -> CEO-Go fuer den Merge nach `main` (ab dann naechtlich live),
-  danach am Morgen den Timer-Lauf pruefen (Verifikation 3).
+- Naechster Schritt: CEO-Go fuer Merge von Etappe 4 (im Hauptordner vorher `orchestrator/memory/log.jsonl`
+  sichern und danach zuruecklegen, weil der Merge sie dort loescht); am 2026-09-26 Timer-Lauf pruefen
+  (Etappe 3, Verifikation 3), dann Status `abgeschlossen`.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -88,10 +89,10 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
 
 ### Etappe 3: Backup vervollstaendigen (BF-04)
 
-- Status: umgesetzt (2026-09-25, Branch, im Worktree `.worktrees/betriebsluecken`) — 9 Eintraege in `FILES`,
+- Status: deployt (Merge = live ab 2026-09-26 03:20; `verifiziert` nach Timer-Lauf) (2026-09-25, Branch, im Worktree `.worktrees/betriebsluecken`) — 9 Eintraege in `FILES`,
   Doku-Check prueft Deploy-Schutz/Backup jetzt blockierend (Ausnahmen: Block `ohne-backup`); Tests 798 passed.
   Probelauf 2026-09-25 12:52: **17 Stores, 81.088 Events, Exit 0; alle 17 Dateien zeilengleich mit der NAS**;
-  `~/LUNA-Backups` unberuehrt, Wegwerf-Kopie geloescht. Offen: Merge (Go), dann Timer-Lauf 03:20 pruefen.
+  `~/LUNA-Backups` unberuehrt, Wegwerf-Kopie geloescht. Gemergt `8e332e5` (CEO-Go). Offen: Timer-Lauf 2026-09-26 03:20 pruefen.
 - Ziel / Scope: `FILES` in `deploy/backup-from-nas.sh` um die sieben append-only Stores erweitern
   (`crm/log.jsonl`, `ig_inbox/log.jsonl`, `reel_freigabe/log.jsonl`, `approvals/log.jsonl`,
   `investment/features.jsonl`, `trajektorien/log.jsonl`, `nutzung/log.jsonl`) plus die heute fehlenden, aber
@@ -119,7 +120,8 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
 
 ### Etappe 4: Git-Hygiene (BF-08)
 
-- Status: geplant
+- Status: verifiziert (2026-09-25, Branch; Merge offen) — Dry-Run genau 1 Datei; versioniert `0`, ignoriert `3`,
+  lokal `da`; Tests 798 passed, Doku-Check ok; `core/memory.py` legt die Datei bei Bedarf selbst an.
 - Ziel / Scope: `git rm --cached orchestrator/memory/log.jsonl`; `.gitignore`: die Datei sowie `nutzung/` und
   `cutter_ops/` aufnehmen, den Kommentar in Zeile 27 berichtigen.
 - Gate: `git ls-files orchestrator/memory/log.jsonl` leer; `git check-ignore` greift fuer alle drei; Tests

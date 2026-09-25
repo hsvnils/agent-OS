@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 12:57] — Claude Code (MACO470)
+- **Was:** Etappe 3 nach `main` gemergt und gepusht (`8e332e5`) -> erweitertes Backup ab 2026-09-26 03:20 live.
+  **Etappe 4 (BF-08) umgesetzt und verifiziert** auf `ai/betriebsluecken`: `orchestrator/memory/log.jsonl` aus dem
+  Git-Index genommen (Datei lokal erhalten), `.gitignore` um die Datei sowie `nutzung/` und `cutter_ops/`
+  ergaenzt, falschen Kommentar berichtigt. Tests 798 passed, Doku-Check ok. BF-04 und BF-08 ins Archiv.
+- **Warum:** CEO-Go „Go fuer merge und push, dann etappe 4".
+- **Betroffen:** `.gitignore`, `orchestrator/memory/log.jsonl` (nur Git-Index), `docs/bekannte-fehler.md`,
+  `BETRIEBSLUECKEN_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-25 12:52] — Claude Code (MACO470)
 - **Was:** Probelauf Etappe 3 (BF-04) nach CEO-Go: neues `backup-from-nas.sh` aus dem Worktree in ein
   Wegwerf-Verzeichnis (`BACKUP_MELDEN=0`, nichts rotiert, `~/LUNA-Backups` unberuehrt) -> **17 Stores,

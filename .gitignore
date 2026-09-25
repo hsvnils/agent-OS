@@ -24,8 +24,14 @@ venv/
 orchestrator/logs/
 *.log
 
-# Agenten-Gedaechtnis: Dry-Run-Store nicht versionieren (kanonischer log.jsonl bleibt versioniert)
+# Agenten-Gedaechtnis: Live-Store und Dry-Run-Store nicht versionieren. Der Live-Store war bis 2026-09-25
+# versioniert (2 Testeintraege) -- das Repo ist oeffentlich, Gedaechtnis gehoert nicht hinein (BF-08).
+orchestrator/memory/log.jsonl
 orchestrator/memory/log_dryrun.jsonl
+
+# Live-Daten der Web-App auf der NAS (BF-08, 2026-09-25)
+nutzung/
+cutter_ops/
 
 # Live-Voice: lokale Stimmauswahl (Nutzerpraeferenz, kein Versionierungsbedarf)
 orchestrator/channels/voice/selected_voice.json
