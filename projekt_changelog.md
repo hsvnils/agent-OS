@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 11:34] — Claude Code (MACO470)
+- **Was:** Erste Roadmap nach `governance/roadmap-workflow.md` angelegt: `BETRIEBSLUECKEN_ROADMAP.md`
+  (Status geplant, 4 Etappen: BF-01 Test-Zeitbombe, BF-03 Deploy-Schutz, BF-04 Backup, BF-08 Git-Hygiene),
+  im Roadmap-Verzeichnis registriert. Nur Plan + read-only Analyse (NAS-Stores gemessen), nichts umgesetzt.
+  Neuer Befund dabei: der Backup-Timer laeuft direkt aus dem Arbeitsordner -> ausgecheckter Branch = naechtlich live.
+- **Warum:** CEO-Go „ja zu 2" (Befunde als Roadmap nach neuem Workflow).
+- **Betroffen:** `BETRIEBSLUECKEN_ROADMAP.md` (neu), `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-25 10:37] — Claude Code (MACO470)
 - **Was:** **Doku-Standards eingefuehrt** (Branch `ai/doku-standards`, noch nicht committet/gemergt).
   (1) **Roadmap-Workflow** `governance/roadmap-workflow.md` nach CEO-Vorlage, angepasst: Uebergabe per

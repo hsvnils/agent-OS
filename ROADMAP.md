@@ -64,6 +64,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 
 | Roadmap | Thema | Art |
 |---|---|---|
+| `BETRIEBSLUECKEN_ROADMAP.md` | Betriebsluecken schliessen (BF-01/03/04/08) | geplant (2026-09-25) |
 | `INVESTMENT_ROADMAP.md` | Investment-Abteilung (CIO) | Bestand (vor Workflow) |
 | `HCC_INTEGRATION_ROADMAP.md` | HCC -> LUNA-OS Konsolidierung (K0-K6) | Bestand (vor Workflow) |
 | `docs/maco470-roadmap.md` | Integration MACO470 (M1-M6) | Bestand (vor Workflow) |
