@@ -1,6 +1,12 @@
 # Secrets — NIE committen
 orchestrator/.env
 .env
+# Jede Variante der .env (Backups, Kopien, lokale Staende) -- nie ins OEFFENTLICHE Repo.
+# Anlass 2026-09-25: eine .env-Sicherung lag ungeschuetzt im Repo-Ordner.
+.env.*
+orchestrator/.env.*
+!.env.example
+!orchestrator/.env.example
 # Google OAuth (Phase 11) — Client-Secret + Token nie ins Repo
 client_secret*.json
 **/client_secret*.json

@@ -17,6 +17,33 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 09:35] — Claude Code (MACO470)
+- **Was:** **MACO470 ist jetzt die volle LUNA-Werkbank — das MacBook wird fuer LUNA nicht mehr genutzt.**
+  (1) **Volle `.env` auf dem MACO470** (CEO-Entscheidung: „der darf auf dem MACO ruhig CEO-Konto sein"):
+  die 39 Schluessel des MacBooks + die 5 MACO-eigenen Reel-/Cutter-Pfade, uebertragen ohne Anzeige,
+  chmod 600. **Revidiert E3 fuer den MACO470:** der Worker pollt jetzt als `ceo` (Herzschlag auf der NAS
+  bestaetigt: `"user": "ceo"`), das Maschinen-Konto `maco470-worker` ruht. Nebeneffekt: der Worker hat
+  jetzt Telegram und meldet fertige Reels (fehlte bisher). Gemini-Video (`CUTTER_VIDEO_KI=1`) greift wie
+  am Mac nur bei manuellen Ordner-Jobs — Themen-Reels und Nachtlauf rufen Gemini nie auf.
+  (2) **Eigener Fehler, sofort behoben:** Die Sicherung der alten Worker-`.env` lag zunaechst IM
+  Repo-Ordner — `git status` zeigte sie als untracked, **nicht ignoriert**. Ein `git add -A` haette das
+  Worker-Passwort ins **oeffentliche** Repo gepusht, `sync-to-nas.sh` haette sie auf die NAS kopiert.
+  Sicherung liegt jetzt ausserhalb (`~/env-backups/`, chmod 700/600).
+  (3) **Lueckenschluss grundsaetzlich:** `.gitignore` schuetzte nur die exakten Namen `.env`. Neu: jede
+  Variante (`.env.*`, `orchestrator/.env.*`) ist gesperrt, nur `.env.example` bleibt versioniert.
+  Gegenprobe mit Testdateien: Varianten geschuetzt, `.env.example` weiter versioniert. `sync-to-nas.sh`
+  schliesst Varianten ebenfalls aus (auch `.env.example` — liest zur Laufzeit niemand, geprueft).
+  (4) **`sync-to-nas.sh` lief nur auf macOS:** `--no-mac-metadata` gibt es nur bei bsdtar, GNU tar bricht
+  ab (`tar: Child returned status 1`). Meine Aussage vom 24.09. („Deploy einsatzbereit") stuetzte sich nur
+  auf SSH-Login + Schreibrecht und war damit **falsch**. Option jetzt abhaengig vom tar-Typ (sicher auch
+  mit leerem Array unter `set -u`). **Erster echter Deploy MACO470 -> NAS erfolgreich** (399 Dateien, keine
+  `.env` im Archiv, NAS-`.env` unberuehrt seit 07.07.).
+  (5) Venv: LUNA-Pakete in den Versionen aus `deploy/Dockerfile` nachinstalliert -> 722 Orchestrator-Tests
+  laufen (dieselben 4 roten wie am Mac); 4 uebersprungen = **Phase 17 nur auf macOS**.
+- **Warum:** CEO: „Ich will Luna nicht mehr am MacBook weiterentwickeln."
+- **Betroffen:** `.gitignore`, `deploy/sync-to-nas.sh`, `governance/zugriffs-policy.md`, MACO470
+  (`orchestrator/.env`, `~/env-backups/`, `.venv`)
+
 ## [2026-09-25 10:00] — Claude Code (erster Commit vom MACO470)
 - **Was:** **`github_push` LIVE — der MACO470 kann jetzt selbst pushen.** Der CEO hat den Deploy-Key
   `maco470-deploy-github` mit Schreibrecht bei GitHub eingetragen. Geprueft: Anmeldung

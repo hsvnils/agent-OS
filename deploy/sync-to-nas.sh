@@ -45,6 +45,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TAR_EXCLUDES=(
   # --- NAS-Live-Daten (Produktions-Datenquelle, LUNA schreibt sie live) ---
   --exclude='./orchestrator/.env'
+  --exclude='./orchestrator/.env.*'   # Varianten/Backups (auch .env.example -- liest zur Laufzeit niemand)
+  --exclude='./.env.*'
   --exclude='./.env'
   --exclude='./orchestrator/state'
   --exclude='./ig_inbox'
@@ -102,10 +104,15 @@ for arg in "$@"; do
   esac
 done
 
+# --no-mac-metadata gibt es NUR bei bsdtar (macOS). GNU tar (Linux/WSL, z. B. MACO470) kennt die Option
+# nicht und bricht ab ("tar: Child returned status 1") -- aufgefallen beim ersten Deploy vom MACO470.
+TAR_MAC_OPT=()
+tar --version 2>/dev/null | grep -q bsdtar && TAR_MAC_OPT=(--no-mac-metadata)
+
 # --- Dry-Run: nur lokal listen, was ins tar kaeme --------------------------
 if [[ "$DRY_RUN" == "1" ]]; then
   echo ">> DRY-RUN -- Dateien, die uebertragen wuerden (NAS wird NICHT angefasst):"
-  tar czf - --no-mac-metadata "${TAR_EXCLUDES[@]}" -C "$REPO_ROOT" . | tar tzf - | sort
+  tar czf - ${TAR_MAC_OPT[@]+"${TAR_MAC_OPT[@]}"} "${TAR_EXCLUDES[@]}" -C "$REPO_ROOT" . | tar tzf - | sort
   echo ">> DRY-RUN Ende."
   exit 0
 fi
@@ -115,7 +122,7 @@ echo ">> Code-Sync  ${REPO_ROOT}  ->  ${NAS_SSH}:${NAS_PATH}"
 # tar entpackt auf der NAS NUR die im Archiv enthaltenen (Code-)Dateien; Live-Daten
 # fehlen im Archiv -> bleiben unberuehrt. Nichts wird geloescht.
 # --no-mac-metadata: keine macOS-xattrs ins Archiv (sonst harmlose tar-Warnungen auf der NAS).
-tar czf - --no-mac-metadata "${TAR_EXCLUDES[@]}" -C "$REPO_ROOT" . \
+tar czf - ${TAR_MAC_OPT[@]+"${TAR_MAC_OPT[@]}"} "${TAR_EXCLUDES[@]}" -C "$REPO_ROOT" . \
   | ssh "$NAS_SSH" "tar xzf - -C ${NAS_PATH}"
 echo ">> Code-Sync fertig."
 
