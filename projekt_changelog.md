@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-25 10:00] — Claude Code (erster Commit vom MACO470)
+- **Was:** **`github_push` LIVE — der MACO470 kann jetzt selbst pushen.** Der CEO hat den Deploy-Key
+  `maco470-deploy-github` mit Schreibrecht bei GitHub eingetragen. Geprueft: Anmeldung
+  („Hi hsvnils/agent-OS!") und Schreibrecht per Probe-Push. Git-Identitaet im MACO-Repo gesetzt (wie am
+  MacBook). **Dieser Eintrag ist selbst der Beweis:** erster Commit, der auf dem MACO470 entstanden und
+  von dort gepusht wurde. Damit ist der Arbeitsplatz-Umzug technisch komplett: Claude Code + Gedaechtnis +
+  NAS-Deploy + GitHub-Push.
+- **Warum:** CEO-Freigabe vom 2026-09-24 („richte beides ein").
+- **Betroffen:** `governance/zugriffs-policy.md` (Status + Historie), MACO470-Repo-Konfiguration
+
 ## [2026-09-24 15:30] — Claude Code
 - **Was:** **Arbeitsplatz-Umzug aufs MACO470 vorbereitet + zwei Zugaenge eingerichtet (CEO-Freigabe).**
   (1) **Claude Code 2.1.281** im WSL-Ubuntu des MACO470 installiert (`/home/luna/.local/bin/claude`,
