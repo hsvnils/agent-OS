@@ -4,7 +4,7 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `ec1173c`
-- Naechster Schritt: CEO-Go fuer Etappe 1 (Backoffice-Modell messen) einholen.
+- Naechster Schritt: CEO beurteilt die 3 Proben (Etappe-1-Gate); danach Go fuer Etappe 2 (Warteschlange + Worker).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -76,7 +76,14 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
 
 ### Etappe 1: Backoffice-Modell bestimmen (Messung)
 
-- Status: geplant
+- Status: gemessen (2026-09-26 23:22-23:41), **CEO-Urteil zu 3 Proben offen** — `qwen3:14b`, native Ollama-API,
+  `num_ctx` 8192 je Anfrage (keine Windows-Aenderung), ohne Werkzeuge, Server weiter mit Flash-Attention + KV `q8_0`.
+  9 Auftraege (Recherche zusammenfassen, Mail-Entwurf, Antrag bewerten, je 3x): **kein Zeichensalat, keine
+  Wiederholungsschleife** (BF-23 trat hier nicht auf); 64-203 s je Auftrag, ~7 Tok/s; Modell 9,7 GB komplett auf der
+  Grafik; Windows verfuegbar **min 3,1 GB, Mittel 4,3 GB** (59 Messungen, keine Dauer-Auslagerung).
+  Qualitaet: Recherche-Zusammenfassung inhaltlich treu, ein wichtiger Punkt fehlte; Mail korrekt, aber in 3. Person
+  („Nils ist auf Dienstreise") statt aus Sicht des CEO; Antrags-Bewertung knapp und oberflaechlich, einmal mit englischen
+  Brocken („Approve", „Timeliness"). Automatische Pruefung: 1 Fehlalarm („kaum Deutsch" bei knappen Stichpunkten).
 - Uebernommen: Re-Test lokaler Modelle aus `WERKZEUGAUSWAHL_ROADMAP.md` Etappe 4 und Etappe 2 aus
   `LOKALES_LLM_ROADMAP.md` (beide abgeschlossen/verschoben am 2026-09-26).
 - Ziel / Scope: `qwen3:14b` fuer **Text-Aufgaben** ohne Werkzeugliste messen — mit und ohne KV-Kompression/Flash-Attention

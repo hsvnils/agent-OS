@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-26 23:42] — Claude Code (MACO470)
+- **Was:** `FRONTDESK_BACKOFFICE_ROADMAP.md` **Etappe 1 gemessen**: `qwen3:14b` mit 9 Text-Auftraegen (native API, 8k-Kontext,
+  ohne Werkzeuge): kein Zeichensalat, 64-203 s je Auftrag, RAM min 3,1 GB verfuegbar. Qualitaet brauchbar mit Maengeln
+  (3. Person im Mail-Entwurf, oberflaechliche Antragsbewertung, einmal englische Brocken). BF-23 eingegrenzt. Testdaten der
+  Recherche-Aufgabe waren erfundene Beispieltexte. CEO-Urteil zu 3 Proben offen.
+- **Warum:** CEO-Go „Go" fuer Etappe 1.
+- **Betroffen:** `FRONTDESK_BACKOFFICE_ROADMAP.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-09-26 23:21] — Claude Code (MACO470)
 - **Was:** `FRONTDESK_BACKOFFICE_ROADMAP.md` gestartet (Branch `ai/frontdesk-backoffice`): drei Grundsatzfragen vom CEO
   entschieden (Aufgaben auf Wunsch + grosse; Modell sofort bei freiem RAM sonst 01-06 Uhr; Meldung einzeln, nachts
