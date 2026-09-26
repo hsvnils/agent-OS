@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-26 23:11] — Claude Code (MACO470)
+- **Was:** **Baustelle „lokales LLM / Chat" abgeschlossen.** Werkzeugauswahl Etappe 3 live verifiziert: „Moin" 3.251 statt
+  13.103 Token (−75 %); Beobachtung bis 2026-10-03 (im Roadmap-Kopf). `LOKALES_LLM_ROADMAP.md` **abgeschlossen** mit Bilanz
+  (erreicht / nicht erreicht / uebergeben / geparkt). Werkzeugauswahl-Etappe 4 nach `FRONTDESK_BACKOFFICE_ROADMAP.md`
+  verschoben; Frontdesk/Backoffice bleibt geplantes, eigenes Vorhaben. Geparkt als BF-26 (NAS-`.env` lesbar) und BF-27
+  (Siezen). Merge + Push + Loeschen der erledigten Branches folgen.
+- **Warum:** CEO: „Ich will diese Baustelle erst abschliessen" + „Mach weiter" (Go fuer Aufraeumen, Merge, Push).
+- **Betroffen:** `LOKALES_LLM_ROADMAP.md`, `WERKZEUGAUSWAHL_ROADMAP.md`, `FRONTDESK_BACKOFFICE_ROADMAP.md`, `ROADMAP.md`,
+  `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-09-26 22:30] — Claude Code (MACO470)
 - **Was:** Werkzeugauswahl **Etappe 3 gestartet**: `WERKZEUGAUSWAHL=an` in der NAS-`.env` (Sicherung
   `.env.bak-20260926-werkzeugauswahl`); wirksam nach Neustart durch den CEO. Neue Roadmap `FRONTDESK_BACKOFFICE_ROADMAP.md`

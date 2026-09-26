@@ -4,7 +4,8 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/werkzeugauswahl`
 - Basiscommit: `3523a38`
-- Naechster Schritt: nach Deploy + Neustart: CEO-Go fuer Etappe 3 (`WERKZEUGAUSWAHL=an` in der NAS-`.env`, 7 Tage beobachten).
+- Naechster Schritt: **2026-10-03** Etappe 3 auswerten (Kostenlog `quelle: chat` Ø `in`-Token vorher/nachher, Anteil
+  „nachgeladen" im Aktivitaetsprotokoll, Kategorie `werkzeug`), dann Roadmap abschliessen. Bis dahin nichts zu tun.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -102,7 +103,8 @@ Werkzeug-Gruppen + Kern-Set, deterministische Vorauswahl (Schluesselwoerter, ohn
 
 ### Etappe 3: Live mit Gemini
 
-- Status: geplant
+- Status: **deployt, Beobachtung bis 2026-10-03** — `WERKZEUGAUSWAHL=an` seit 2026-09-26 ~23:05 (Sicherung
+  `.env.bak-20260926-werkzeugauswahl`, Neustart CEO). Erster Live-Wert: „Moin" **3.251 Token** statt 13.103 (−75 %).
 - Ziel / Scope: `WERKZEUGAUSWAHL=an` in der NAS-`.env`.
 - Gate: 7 Tage ohne Beschwerde „LUNA konnte X nicht"; Kostenlog: mittlere `in`-Token je Chat-Aufruf deutlich unter
   heute (~13.000-15.000).
@@ -113,7 +115,8 @@ Werkzeug-Gruppen + Kern-Set, deterministische Vorauswahl (Schluesselwoerter, ohn
 
 ### Etappe 4: Re-Test lokales Modell (zurueck zu `LOKALES_LLM_ROADMAP.md`)
 
-- Status: geplant
+- Status: **verschoben** nach `FRONTDESK_BACKOFFICE_ROADMAP.md` Etappe 1 (CEO 2026-09-26) — die Werkzeugauswahl gilt
+  nach Etappe 3 als abgeschlossen.
 - Ziel / Scope: `qwen3:14b` (und ggf. `qwen3:30b-a3b`) mit kleinem Prompt erneut messen: Speicher unter Last ueber
   >= 15 min, Antwortzeiten, Qualitaet (kein Zeichensalat, BF-23), plus Plausibilitaetsfilter fuer lokale Antworten
   (Wiederholungen/Zeichensalat -> naechster Anbieter). Bei Bestehen: `LOCAL_LLM_CHAT` wieder aktivieren.
@@ -137,5 +140,5 @@ Einmalig 0 EUR, laufend 0 EUR. Wirkung: weniger Token je Chat-Aufruf bei allen A
 
 ## Definition of Done
 
-Etappen 1–3 `verifiziert`: LUNA schickt im Mittel <= 5.000 Token Werkzeuge/Prompt, ohne dass Aufgaben scheitern.
+Etappen 1–3 `verifiziert` (Etappe 4 verschoben): LUNA schickt im Mittel <= 5.000 Token Werkzeuge/Prompt, ohne dass Aufgaben scheitern.
 Etappe 4 entscheidet, ob das lokale Modell zurueckkommt. Abnahme durch den CEO.

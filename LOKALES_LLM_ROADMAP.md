@@ -1,11 +1,10 @@
 # Roadmap: Lokales LLM (M6) — LUNA mit Ollama auf dem MACO470
 
-- Status: in Umsetzung
-- Stand: 2026-09-25
+- Status: abgeschlossen
+- Stand: 2026-09-26
 - Arbeitsbranch: `ai/lokales-llm`
 - Basiscommit: `01e9919`
-- Naechster Schritt: **pausiert** (CEO 2026-09-26): Chat bleibt bei Gemini-Gratis (Register); fortgesetzt wird nach
-  `WERKZEUGAUSWAHL_ROADMAP.md` (kleiner Prompt) mit einem Re-Test lokaler Modelle.
+- Naechster Schritt: keiner — abgeschlossen; Fortsetzung in `FRONTDESK_BACKOFFICE_ROADMAP.md`.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -18,6 +17,24 @@ gefragt; die Cloud bleibt Fallback.
 LUNA nutzt das lokale LLM auf dem MACO470 (Ollama, `qwen3:30b-a3b`) — zuerst fuer Fachagenten und Hintergrund-Jobs,
 dann im Chat. Wirkung: weniger Cloud-Kosten, **BF-05** („alle Anbieter erschoepft" beim Gemini-Gratis-Limit)
 behoben, LUNA bleibt ohne Anthropic-Guthaben arbeitsfaehig.
+
+## Abschluss-Bilanz (2026-09-26)
+
+**Erreicht und live:** Ollama auf dem MACO470 abgesichert (Firewall nur NAS + WSL, Kontext 32.768, KV-Kompression);
+lokaler Anbieter im Code mit Schaltern je Bereich (`LOCAL_LLM_CHAT`, `LOCAL_LLM_FACHAGENTEN`); Fallback bei ungueltigem
+Schluessel und Verbindungsfehlern; leere Antworten einmal wiederholt; Kuerzungsschutz (BF-17); Kontext-Management
+(Verdichten, Pause mit Notiz); Fehlerprotokoll im Chat; Kosten lokal 0 EUR. Der Chat funktioniert wieder (seit Juli
+kaputt, BF-18) — ueber Gemini-Gratis, 0 EUR.
+
+**Nicht erreicht:** LUNA-Chat lokal. `qwen3:30b-a3b` sprengt den RAM des MACO470 (BF-22, VERWORFEN), `qwen3:14b` lieferte
+Zeichensalat (BF-23, ZURUECKGESTELLT). Chat laeuft deshalb ueber Gemini (`LOCAL_LLM_CHAT=aus`).
+
+**Uebergeben:** Etappe 2 (Jobs lokal), der Re-Test lokaler Modelle und die Frage „welches Modell fuer den Hintergrund"
+gehen an `FRONTDESK_BACKOFFICE_ROADMAP.md` (Etappe 1). Etappe 4 (nicht-denkende Variante) entfaellt dort mit, weil
+Hintergrund-Aufgaben keine schnelle Antwort brauchen.
+
+**Offene Kleinigkeiten (geparkt):** Firewall-Gegenprobe vom MacBook; WSL-Obergrenze `.wslconfig` `memory=8GB` (erst
+noetig, wenn wieder ein Modell dauerhaft geladen wird); BF-19, BF-20, BF-21, BF-26, BF-27 in `docs/bekannte-fehler.md`.
 
 ## Register und bekannte Fehler (B3)
 

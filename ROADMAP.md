@@ -65,8 +65,8 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | Roadmap | Thema | Art |
 |---|---|---|
 | `FRONTDESK_BACKOFFICE_ROADMAP.md` | Gemini spricht im Chat, lokales LLM arbeitet Auftraege im Hintergrund ab | geplant (2026-09-26) |
-| `WERKZEUGAUSWAHL_ROADMAP.md` | Nur passende Werkzeuge je Nachricht (Prompt ~13.600 -> <= 5.000 Token) | in Umsetzung (Etappe 1 verifiziert) |
-| `LOKALES_LLM_ROADMAP.md` | Lokales LLM (M6): Ollama auf dem MACO470 fuer Jobs + Chat-Fallback | pausiert (2026-09-26) — Chat ueber Gemini-Gratis, Fortsetzung nach Werkzeugauswahl |
+| `WERKZEUGAUSWAHL_ROADMAP.md` | Nur passende Werkzeuge je Nachricht (Prompt ~13.600 -> <= 5.000 Token) | live, Beobachtung bis 2026-10-03 |
+| `LOKALES_LLM_ROADMAP.md` | Lokales LLM (M6): Ollama auf dem MACO470 fuer Jobs + Chat-Fallback | abgeschlossen (2026-09-26) — Rest in Frontdesk/Backoffice |
 | `BETRIEBSLUECKEN_ROADMAP.md` | Betriebsluecken schliessen (BF-01/03/04/08) | abgeschlossen (2026-09-26) |
 | `INVESTMENT_ROADMAP.md` | Investment-Abteilung (CIO) | Bestand (vor Workflow) |
 | `HCC_INTEGRATION_ROADMAP.md` | HCC -> LUNA-OS Konsolidierung (K0-K6) | Bestand (vor Workflow) |

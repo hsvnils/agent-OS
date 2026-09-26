@@ -4,7 +4,7 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `8d67ca1`
-- Naechster Schritt: Roadmap dem CEO vorlegen; zuerst die drei Grundsatzfragen (Abschnitt „Entscheidungen") klaeren.
+- Naechster Schritt: eigenes, spaeteres Vorhaben — bei CEO-Wunsch zuerst die drei Grundsatzfragen klaeren.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -67,6 +67,8 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
 ### Etappe 1: Backoffice-Modell bestimmen (Messung)
 
 - Status: geplant
+- Uebernommen: Re-Test lokaler Modelle aus `WERKZEUGAUSWAHL_ROADMAP.md` Etappe 4 und Etappe 2 aus
+  `LOKALES_LLM_ROADMAP.md` (beide abgeschlossen/verschoben am 2026-09-26).
 - Ziel / Scope: `qwen3:14b` fuer **Text-Aufgaben** ohne Werkzeugliste messen — mit und ohne KV-Kompression/Flash-Attention
   (BF-23 eingrenzen), Kontext 8k; drei typische Auftraege (Recherche zusammenfassen, Mail-Entwurf, Antrag bewerten),
   je 3 Laeufe; RAM-Verlauf ueber >= 15 min; Plausibilitaet (Wiederholungen, Zeichensalat, Sprache).
