@@ -1,10 +1,10 @@
 # Roadmap: Frontdesk/Backoffice — Gemini spricht, das lokale LLM arbeitet im Hintergrund
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/frontdesk-backoffice`
-- Basiscommit: `8d67ca1`
-- Naechster Schritt: eigenes, spaeteres Vorhaben — bei CEO-Wunsch zuerst die drei Grundsatzfragen klaeren.
+- Basiscommit: `ec1173c`
+- Naechster Schritt: CEO-Go fuer Etappe 1 (Backoffice-Modell messen) einholen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -39,7 +39,17 @@ Modell belastet den MACO470 nur, wenn Arbeit ansteht.
 - **RAM-Waechter:** Der NAS-Bot sieht den Speicher des MACO470 nicht; ein Worker **auf** dem MACO470 koennte vor dem
   Laden pruefen, ob genug frei ist (Messung per PowerShell wie in dieser Analyse).
 
-## Entscheidungen (vor Etappe 1, CEO)
+## Entscheidungen (CEO, 2026-09-26 — alle drei Vorschlaege uebernommen)
+
+- **Aufgaben:** auf ausdruecklichen Wunsch („bis morgen", „im Hintergrund", „ausfuehrlich") **und** wenn der Frontdesk
+  die Aufgabe als gross einstuft (Recherche-Zusammenfassungen, Entwuerfe, Analysen, Antrags-Bewertungen). Schnelles
+  bleibt sofort im Chat. Geld/Recht/Oeffentlichkeit: nur Entwuerfe.
+- **Zeitfenster:** sofort, wenn der MACO470 genug RAM frei hat (Waechter vor dem Laden), sonst 01:00-06:00; Modell nach
+  jedem Stapel entladen.
+- **Meldung:** tagsueber jedes Ergebnis einzeln per Telegram (kurz + „Details: #Axx"), nachts Erledigtes gebuendelt im
+  Morgen-Briefing.
+
+## Entscheidungen (Vorschlaege, Stand der Planung)
 
 1. **Welche Aufgaben gehen ins Backoffice?** Vorschlag: auf ausdruecklichen Wunsch („bis morgen", „im Hintergrund",
    „ausfuehrlich") oder wenn der Frontdesk die Aufgabe als gross einstuft — z. B. Recherche-Zusammenfassungen, Entwuerfe

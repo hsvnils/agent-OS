@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-26 23:21] — Claude Code (MACO470)
+- **Was:** `FRONTDESK_BACKOFFICE_ROADMAP.md` gestartet (Branch `ai/frontdesk-backoffice`): drei Grundsatzfragen vom CEO
+  entschieden (Aufgaben auf Wunsch + grosse; Modell sofort bei freiem RAM sonst 01-06 Uhr; Meldung einzeln, nachts
+  gebuendelt). Register-Eintrag BESCHLOSSEN.
+- **Warum:** CEO: „Frontdesk Backoffice" als naechstes Vorhaben, Antworten auf die Grundsatzfragen.
+- **Betroffen:** `FRONTDESK_BACKOFFICE_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-26 23:11] — Claude Code (MACO470)
 - **Was:** **Baustelle „lokales LLM / Chat" abgeschlossen.** Werkzeugauswahl Etappe 3 live verifiziert: „Moin" 3.251 statt
   13.103 Token (−75 %); Beobachtung bis 2026-10-03 (im Roadmap-Kopf). `LOKALES_LLM_ROADMAP.md` **abgeschlossen** mit Bilanz
