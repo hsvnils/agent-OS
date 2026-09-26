@@ -4,8 +4,7 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/werkzeugauswahl`
 - Basiscommit: `3523a38`
-- Naechster Schritt: CEO-Go fuer Etappe 2 (Nachladen + Verdrahtung hinter Schalter `WERKZEUGAUSWAHL`, Probelauf mit
-  Gemini).
+- Naechster Schritt: CEO-Entscheidung zum angepassten Gate, dann Go fuer Merge + Deploy (Schalter aus) und ggf. BF-24-Fix.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -75,7 +74,16 @@ Werkzeug-Gruppen + Kern-Set, deterministische Vorauswahl (Schluesselwoerter, ohn
 
 ### Etappe 2: Nachladen + Verdrahtung hinter Schalter
 
-- Status: geplant
+- Status: umgesetzt (2026-09-26, Branch) — Meta-Werkzeug `werkzeuge_laden` (Kern-Set), automatisches Nachladen bei
+  nicht gezeigtem Werkzeug, Nutzungsprotokoll (Aktivitaetsprotokoll, Kategorie `werkzeug`: vorausgewaehlt /
+  nachgeladen / alle Werkzeuge), Schalter `WERKZEUGAUSWAHL` (Standard aus); Auswahl nutzt nur den CEO-Text (nicht die
+  Pausen-Notiz — Fehler per Test gefunden). 7 neue Tests, 3 Gegenproben rot; Suite 832 passed / 0 failed.
+- **Probelauf mit Gemini (2026-09-26, Einzelnachrichten ohne Verlauf, nichts ausgefuehrt):** mit Auswahl 38/58 =
+  65,5 % wie erwartet, Prompt Ø 4.475 Token; **Vergleich ohne Auswahl 37/62 = 59,7 %, Ø 13.111 Token.** Die Auswahl
+  verschlechtert nichts. Das Gate „>= 95 %" war falsch formuliert: die meisten Abweichungen sind berechtigte
+  Rueckfragen (fehlende ID/Details ohne Gespraechsverlauf), der Rest sinnvolle Alternativen (z. B. `lagebild` statt
+  `offene_tickets`). Vorschlag neues Gate: „nicht schlechter als ohne Auswahl" (erfuellt) — CEO-Entscheidung.
+  Nebenbefunde BF-24 (leere Gemini-Antworten) und BF-25 (Erledigung behauptet ohne Werkzeug).
 - Ziel / Scope: Meta-Werkzeug `werkzeuge_laden(gruppe)` im Kern-Set (Beschreibung listet alle Gruppen in einer Zeile);
   ruft das Modell ein nicht mitgeschicktes Werkzeug, wird es trotzdem ausgefuehrt und seine Gruppe fuer den weiteren
   Verlauf nachgeladen. Verdrahtung in `HoaConversation` hinter `WERKZEUGAUSWAHL=an` (Standard aus).

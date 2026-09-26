@@ -94,6 +94,9 @@ class HoaConversation:
         self.verlauf_budget = max(int(kontext * 0.9 - fix - antwort), 0)
         self.pause_stunden = _zahl(s.get("CHAT_PAUSE_STUNDEN"), 2)
         self.letzte_nachricht: float | None = None
+        # WERKZEUGAUSWAHL_ROADMAP.md: nur Kern-Set + passende Gruppen zeigen (Schalter, Standard aus).
+        self.werkzeugauswahl = str(s.get("WERKZEUGAUSWAHL", "")).strip().lower() in ("an", "1", "true", "ja")
+        self.gruppen: set[str] = set()
         if client is not None:
             anthropic_client = client
         else:
@@ -105,18 +108,23 @@ class HoaConversation:
     def respond(self, user_text: str) -> str:
         from .kontext import pausen_notiz, verdichte
         jetzt = time.time()
+        ceo_text = user_text  # fuer die Werkzeugauswahl nur der CEO-Text, nicht die Pausen-Notiz
         if self.messages and self.letzte_nachricht and jetzt - self.letzte_nachricht > self.pause_stunden * 3600:
             notiz = pausen_notiz(self.messages, self.pause_stunden)
             self.messages = []
+            self.gruppen = set()
             if notiz:
                 user_text = f"({notiz})\n\n{user_text}"
         self.letzte_nachricht = jetzt
+        if self.werkzeugauswahl:
+            from .werkzeugauswahl import auswahl
+            _, self.gruppen = auswahl(ceo_text, self.gruppen)
         self._repariere_verlauf()  # evtl. kaputten Tail (tool_use ohne tool_result) entfernen
         self.messages.append({"role": "user", "content": user_text})
         for _ in range(self.max_iter):
             self.messages = verdichte(self.messages, self.verlauf_budget)
             try:
-                resp = self.router.create(system=TEXT_SYSTEM_PROMPT, tools=self.tools,
+                resp = self.router.create(system=TEXT_SYSTEM_PROMPT, tools=self._aktuelle_tools(),
                                           messages=self.messages)
             except Exception as exc:
                 # Kaputter Verlauf (z. B. 'tool_use ids ohne tool_result') -> Verlauf zuruecksetzen
@@ -124,7 +132,7 @@ class HoaConversation:
                 if self._ist_verlauf_fehler(exc):
                     self.messages = [{"role": "user", "content": user_text}]
                     try:
-                        resp = self.router.create(system=TEXT_SYSTEM_PROMPT, tools=self.tools,
+                        resp = self.router.create(system=TEXT_SYSTEM_PROMPT, tools=self._aktuelle_tools(),
                                                   messages=self.messages)
                     except Exception as exc2:
                         self.messages = []
@@ -141,15 +149,47 @@ class HoaConversation:
             # WICHTIG: JEDES tool_use bekommt ein tool_result -- auch bei Tool-Fehler. Sonst wird der
             # Verlauf ungueltig und die API lehnt jede weitere Nachricht ab (400).
             results = []
+            sichtbar = {t["name"] for t in self._aktuelle_tools()}
             for tu in tool_uses:
+                self._werkzeug_genutzt(bname(tu), sichtbar)
                 try:
                     out = run_tool(bname(tu), dict(binput(tu) or {}), self.ctx)
                 except Exception as exc:
                     out = {"ok": False, "fehler": f"Werkzeug '{bname(tu)}' fehlgeschlagen: {str(exc)[:240]}"}
+                if bname(tu) == "werkzeuge_laden" and out.get("ok"):
+                    self.gruppen.add(out["gruppe"])
                 results.append({"type": "tool_result", "tool_use_id": bid(tu),
                                 "content": json.dumps(out, ensure_ascii=False)})
             self.messages.append({"role": "user", "content": results})
         return "Ich konnte das gerade nicht abschliessen -- bitte praezisiere kurz."
+
+    def _aktuelle_tools(self) -> list[dict]:
+        """Alle Werkzeuge -- oder bei aktiver Werkzeugauswahl nur Kern-Set + geladene Gruppen."""
+        if not self.werkzeugauswahl:
+            return self.tools
+        from .werkzeugauswahl import auswahl, filtere
+        namen, _ = auswahl("", self.gruppen)
+        return filtere(self.tools, namen)
+
+    def _werkzeug_genutzt(self, name: str, sichtbar: set[str]) -> None:
+        """Nutzungsprotokoll (Aktivitaetsprotokoll, Kategorie 'werkzeug'): war das Werkzeug vorausgewaehlt oder
+        musste es nachgeladen werden? Ein nicht gezeigtes, aber gerufenes Werkzeug laedt seine Gruppe nach."""
+        if not self.werkzeugauswahl:
+            herkunft = "alle Werkzeuge"
+        elif name in sichtbar:
+            herkunft = "vorausgewaehlt"
+        else:
+            herkunft = "nachgeladen"
+            from .werkzeugauswahl import GRUPPEN, gruppe_von
+            g = gruppe_von(name)
+            if g in GRUPPEN:
+                self.gruppen.add(g)
+        akt = getattr(self.ctx, "aktivitaet", None)
+        if akt is not None:
+            try:
+                akt.log("LUNA-Chat", f"Werkzeug {name}", kategorie="werkzeug", detail=herkunft)
+            except Exception:
+                pass
 
     def _protokolliere_fehler(self, exc: Exception) -> None:
         """Echte Ursache festhalten, statt sie hinter dem allgemeinen Fehlertext zu verstecken (BF-18: ein

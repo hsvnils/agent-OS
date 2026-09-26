@@ -17,7 +17,7 @@ import re
 KERN = [
     "lagebild", "delegate", "melde_an_ceo", "meldung_details", "brain_suchen", "brain_merken",
     "recherche_beauftragen", "offene_tickets", "antraege_zeigen", "antrag_details", "antrag_stellen",
-    "notiz_hinzufuegen",
+    "notiz_hinzufuegen", "werkzeuge_laden",
 ]
 
 GRUPPEN: dict[str, dict[str, list[str]]] = {

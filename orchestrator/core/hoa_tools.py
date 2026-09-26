@@ -172,6 +172,9 @@ def tool_specs() -> list[dict]:
               "24 Stunden (Eintraege je Akteur/Kategorie).",
               {"akteur": _str("Optionaler Filter auf einen Agenten/eine Rolle (z. B. cfo, CEO, Researcher)."),
                "anzahl": _str("Wie viele Eintraege (Default 15).")}, []),
+        _spec("werkzeuge_laden", "Laedt eine Werkzeug-Gruppe nach, wenn dir fuer die Aufgabe ein Werkzeug fehlt "
+              "(du siehst nicht immer alle). Gruppen: " + _werkzeug_gruppen_text() + ".",
+              {"gruppe": _str("Name der Gruppe, z. B. 'kalender'.")}, ["gruppe"]),
         _spec("systemcheck", "IT-Selbstcheck: prueft sofort, ob alle Prozesse/Komponenten laufen (Keys, "
               "Google, Stores, Watcher-Heartbeat). Kostenlos.", {}, []),
         _spec("obsidian_export", "Schreibt den aktuellen Fachbereichs-Wissensstand und die offenen Tickets als "
@@ -895,6 +898,14 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                for x in offen_r] or ["- (keine)"]
         (vault / "Offene-Tickets.md").write_text("\n".join(ot), encoding="utf-8")
         return {"ok": True, "dateien": ["vault/Wissensstand.md", "vault/Offene-Tickets.md"]}
+
+    if name == "werkzeuge_laden":
+        from .werkzeugauswahl import GRUPPEN
+        g = str(args.get("gruppe", "")).strip().lower()
+        if g not in GRUPPEN:
+            return {"ok": False, "fehler": f"Unbekannte Gruppe '{g}'. Moeglich: {', '.join(GRUPPEN)}"}
+        return {"ok": True, "gruppe": g, "werkzeuge": GRUPPEN[g]["werkzeuge"],
+                "hinweis": "Die Werkzeuge stehen dir ab sofort zur Verfuegung."}
 
     if name == "systemcheck":
         from .self_maintenance import SelfMaintenance
@@ -1647,6 +1658,11 @@ def _str(desc: str) -> dict:
 
 def _bool(desc: str) -> dict:
     return {"type": "boolean", "description": desc}
+
+
+def _werkzeug_gruppen_text() -> str:
+    from .werkzeugauswahl import GRUPPEN
+    return "; ".join(f"{g} ({', '.join(d['werkzeuge'][:3])} ...)" for g, d in GRUPPEN.items())
 
 
 def _spec(name: str, desc: str, props: dict, required: list[str]) -> dict:

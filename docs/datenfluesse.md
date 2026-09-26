@@ -160,7 +160,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `research/log.jsonl` | Bot, Web | dito | ja | ja |
 | `notifications/log.jsonl` (Outbox) | Bot, Web | Bot stellt zu | ja | ja |
 | `agenda/log.jsonl` (auch Merker „Briefing gesendet") | Bot, Web | dito | ja | ja |
-| `aktivitaet/log.jsonl` | Bot, Web | dito | ja | ja |
+| `aktivitaet/log.jsonl` (auch Chat-Fehler, Kategorie `fehler`, und Werkzeug-Nutzung, Kategorie `werkzeug`) | Bot, Web | dito | ja | ja |
 | `watch/log.jsonl` (Notbremse, `last_run`) | Bot | Bot, Web | ja | ja |
 | `brain/log.jsonl` | Bot, Web | dito | ja | ja |
 | `finance/kosten-log.jsonl` | Bot (Kostenlauf 03:00) | Bot, Web | ja | ja |

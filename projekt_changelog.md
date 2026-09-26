@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-26 22:20] — Claude Code (MACO470)
+- **Was:** `WERKZEUGAUSWAHL_ROADMAP.md` **Etappe 2 umgesetzt** (Branch `ai/werkzeugauswahl`, nicht gemergt): Meta-Werkzeug
+  `werkzeuge_laden`, automatisches Nachladen, Nutzungsprotokoll (Kategorie `werkzeug`), Schalter `WERKZEUGAUSWAHL`
+  (Standard aus). Tests 832 passed / 0 failed. Probelauf Gemini mit vs. ohne Auswahl: 65,5 % vs. 59,7 % „wie erwartet",
+  Ø 4.475 vs. 13.111 Token -> Auswahl verschlechtert nichts; Gate „>= 95 %" als falsch formuliert erkannt (Rueckfragen
+  ohne Verlauf). Neu: BF-24 (leere Gemini-Antworten), BF-25 (Erledigung ohne Werkzeug behauptet).
+- **Warum:** CEO-Go „Go fuer Etappe 2".
+- **Betroffen:** `orchestrator/core/hoa_tools.py`, `orchestrator/core/hoa_conversation.py`, `orchestrator/core/werkzeugauswahl.py`,
+  `orchestrator/tests/test_werkzeugauswahl_chat.py` (neu), `WERKZEUGAUSWAHL_ROADMAP.md`, `docs/bekannte-fehler.md`,
+  `docs/datenfluesse.md`, `projekt_changelog.md`
+
 ## [2026-09-26 21:54] — Claude Code (MACO470)
 - **Was:** `WERKZEUGAUSWAHL_ROADMAP.md` **Etappe 1 verifiziert** (Branch `ai/werkzeugauswahl`, nicht gemergt, ohne Wirkung):
   neues `orchestrator/core/werkzeugauswahl.py` (Kern-Set 12 Werkzeuge + 11 Gruppen mit Stichwoertern, Auswahl ohne
