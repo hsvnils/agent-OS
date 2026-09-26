@@ -4,8 +4,8 @@
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/lokales-llm`
 - Basiscommit: `01e9919`
-- Naechster Schritt: CEO-Entscheidung CEO-Tor „kleineres Modell" (z. B. `qwen3:14b`, ~9 GB) zum Testen; bis dahin
-  Chat ueber Gemini (0 EUR), Etappe 2 zurueckgestellt.
+- Naechster Schritt: CEO-Entscheidung nach 14B-Test (Zeichensalat): weiter untersuchen, auf Gemini-Gratis setzen
+  oder Werkzeugliste verkleinern; bis dahin Chat ueber Gemini (0 EUR).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -226,6 +226,14 @@ lokal als Chat-Fallback, Kosten/Monitoring/Doku. Optional: nicht-denkende Modell
   Prozess + ~12 GB Grafikspeicher.
 - **Variante „nur CPU" gemessen und verworfen:** 34,6 GB geladen, Prompt 17 Tok/s (erster Aufruf 782 s), Antwort
   5,7 Tok/s, Windows dauerhaft < 1 GB verfuegbar. Folge: `LOCAL_LLM_CHAT=aus` (CEO-Go), Modell entladen.
+- **Test `qwen3:14b` (2026-09-26 11:38, CEO-Tor freigegeben, 9,3 GB):** komplett auf der Grafik (11,9 GB mit 32.768
+  Kontext), Speicher verfuegbar meist 1,3-3,5 GB (Grundlast heute hoeher: 11,9 GB verfuegbar vor dem Laden),
+  wenig Auslagerung. **Aber unbrauchbare Ausgaben:** in 5 von 10 lokalen Aufrufen Endlos-Wiederholungen („ich ich
+  ich ...") oder Zeichensalat („甦 \\Framework\\$\\$\\$"), jeweils mit gemeldeten `prompt_tokens = 0`; die uebrigen
+  Aufrufe waehlten Werkzeuge richtig. Vermutung (nicht bewiesen): Wiederverwendung des Prompt-Zwischenspeichers
+  zusammen mit komprimiertem KV-Cache (`q8_0`) + Flash-Attention auf der Radeon (Vulkan) — beim 30B trat das nicht auf.
+  Ausserdem: einmal „alle Anbieter erschoepft" (lokal gescheitert, Anthropic 401, Gemini gescheitert, OpenAI ohne
+  Guthaben). Modell entladen, Chat bleibt bei Gemini.
 - Gate: Tests gruen; Messung Speicherbedarf bei 32.768; Probelauf mit langer Unterhaltung (>= 8 Nachrichten mit
   Werkzeugen) bleibt vollstaendig lokal, kein Kuerzungsschutz-Treffer.
 - Verifikation: `/api/ps` -> `context_length` 32768 und Groesse notiert; Probelauf-Protokoll: jede Antwort

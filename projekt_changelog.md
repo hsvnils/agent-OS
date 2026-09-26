@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-26 11:49] — Claude Code (MACO470)
+- **Was:** `qwen3:14b` geladen (CEO-Tor freigegeben, 9,3 GB, kostenlos) und mit der langen Test-Unterhaltung + Speichermessung
+  geprueft: passt komplett auf die Grafik, aber 5 von 10 lokalen Antworten unbrauchbar (Wiederholungen/Zeichensalat,
+  BF-23). Modell entladen. Doku: Roadmap, bekannte Fehler (BF-23), Register (ZURUECKGESTELLT). Vorher: Doku-Push
+  `90bec3f`; Betriebsluecken-Roadmap abgeschlossen.
+- **Warum:** CEO-Go „Go fuer 1 und 2" (Test kleineres Modell, Push).
+- **Betroffen:** Ollama auf dem MACO470 (neues Modell `qwen3:14b`), `LOKALES_LLM_ROADMAP.md`, `docs/bekannte-fehler.md`,
+  `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-26 11:31] — Claude Code (MACO470)
 - **Was:** `BETRIEBSLUECKEN_ROADMAP.md` **abgeschlossen**: Etappe 3 verifiziert durch den echten Timer-Lauf 2026-09-26
   03:21 (`17 Stores, 81629 Events gesichert`, `Result=success`, Exit 0, kein Fehler, Ordner `2026-09-26_0321`, 21 MB).
