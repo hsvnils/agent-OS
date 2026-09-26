@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-26 21:54] — Claude Code (MACO470)
+- **Was:** `WERKZEUGAUSWAHL_ROADMAP.md` **Etappe 1 verifiziert** (Branch `ai/werkzeugauswahl`, nicht gemergt, ohne Wirkung):
+  neues `orchestrator/core/werkzeugauswahl.py` (Kern-Set 12 Werkzeuge + 11 Gruppen mit Stichwoertern, Auswahl ohne
+  LLM) und `orchestrator/tests/test_werkzeugauswahl.py` mit Testkatalog (64 CEO-Nachrichten). Ergebnis: 100 % Treffer
+  (erster Lauf 98,4 %, dann Stichwort `ticket` ergaenzt), im Mittel 4.412 statt ~13.600 Token. Gegenprobe rot.
+  Suite 825 passed / 0 failed. Register: Stichwort-Auswahl BESCHLOSSEN.
+- **Warum:** CEO-Go „Go fuer etappe 1".
+- **Betroffen:** `orchestrator/core/werkzeugauswahl.py` (neu), `orchestrator/tests/test_werkzeugauswahl.py` (neu),
+  `WERKZEUGAUSWAHL_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-26 12:04] — Claude Code (MACO470)
 - **Was:** (A) Gemini-Gratis als Standard fuer den Chat im Register festgehalten; `LOKALES_LLM_ROADMAP.md` pausiert.
   (C) Neue Roadmap `WERKZEUGAUSWAHL_ROADMAP.md` nach Workflow (Status geplant, 4 Etappen: Testkatalog + Gruppen,

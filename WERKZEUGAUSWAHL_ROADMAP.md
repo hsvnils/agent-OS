@@ -1,10 +1,11 @@
 # Roadmap: Werkzeugauswahl — nur passende Werkzeuge je Nachricht
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/werkzeugauswahl`
 - Basiscommit: `3523a38`
-- Naechster Schritt: Roadmap dem CEO vorlegen; bei Go mit Etappe 1 (Testkatalog + Gruppen) beginnen.
+- Naechster Schritt: CEO-Go fuer Etappe 2 (Nachladen + Verdrahtung hinter Schalter `WERKZEUGAUSWAHL`, Probelauf mit
+  Gemini).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -53,7 +54,12 @@ Werkzeug-Gruppen + Kern-Set, deterministische Vorauswahl (Schluesselwoerter, ohn
 
 ### Etappe 1: Testkatalog, Gruppen, Vorauswahl (ohne Wirkung)
 
-- Status: geplant
+- Status: **verifiziert** (2026-09-26, Branch `ai/werkzeugauswahl`) — `orchestrator/core/werkzeugauswahl.py`: Kern-Set
+  (12 Werkzeuge, ~1.500 Token) + 11 Gruppen (350-1.650 Token), alle 97 Werkzeuge genau einmal zugeordnet (Test).
+  Testkatalog 64 Nachrichten: **100 % Treffer, im Mittel 4.412 Token** (min 3.114, max 6.237) statt ~13.600.
+  Ehrlicher Hinweis: Der Katalog ist „im eigenen Saft" — erster Lauf 98,4 % (63/64), danach ein Stichwort ergaenzt
+  (`ticket`). Echte Trefferquote zeigt erst das Nutzungsprotokoll ab Etappe 2/3. Gegenprobe: ohne Kalender-Stichwoerter
+  91 % -> Test rot. Suite 825 passed / 0 failed.
 - Ziel / Scope: `core/werkzeugauswahl.py` mit Gruppen-Zuordnung aller 97 Werkzeuge, einem Kern-Set (immer dabei)
   und der Vorauswahl aus der CEO-Nachricht (+ bereits im Gespraech genutzte Gruppen bleiben geladen). Ein
   **Testkatalog** mit >= 50 typischen CEO-Nachrichten und erwarteten Werkzeugen (abgeleitet aus System-Prompt und
