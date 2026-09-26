@@ -66,6 +66,9 @@ class MockBackend:
         return f"[{agent_key}] Ergebnis zu: {message.strip()}"
 
 
+from .model_router import LeereAntwort, mit_wiederholung  # noqa: E402  (BF-24)
+
+
 class FallbackBackend:
     """Primaeres Backend (Claude-CLI) mit Fallback auf OpenAI-kompatible Anbieter (Gemini gratis, OpenAI).
 
@@ -89,7 +92,7 @@ class FallbackBackend:
         # Lokales LLM mit `zuerst=True` (core/lokal_llm.py) vor der Claude-CLI -- spart API-Token (CEO 2026-09-25).
         for fb in [f for f in self.fallbacks if f.get("zuerst")]:
             try:
-                return self._kompatibel(fb, agent_key, sp, message)
+                return mit_wiederholung(lambda: self._kompatibel(fb, agent_key, sp, message))
             except Exception:
                 continue
         danach = [f for f in self.fallbacks if not f.get("zuerst")]
@@ -100,7 +103,7 @@ class FallbackBackend:
                 raise
             for fb in danach:
                 try:
-                    return self._kompatibel(fb, agent_key, sp, message)
+                    return mit_wiederholung(lambda: self._kompatibel(fb, agent_key, sp, message))
                 except Exception:
                     continue
             raise exc
@@ -123,7 +126,7 @@ class FallbackBackend:
                 pass
         text = ohne_denktext(r.choices[0].message.content)
         if not text:
-            raise RuntimeError(f"{fb.get('name', 'fallback')}: leere Antwort")
+            raise LeereAntwort(f"{fb.get('name', 'fallback')}: leere Antwort")
         return text
 
 

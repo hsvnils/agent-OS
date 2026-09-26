@@ -72,6 +72,38 @@ class TestChatFallback(unittest.TestCase):
         self.assertEqual((e["akteur"], e["kategorie"]), ("LUNA-Chat", "fehler"))
         self.assertIn("RuntimeError: kaputt 500", e["detail"])
 
+    def test_4_leere_antwort_wird_einmal_wiederholt(self):
+        # BF-24: Gemini liefert gelegentlich nichts -> derselbe Anbieter bekommt genau einen zweiten Versuch.
+        antworten, aufrufe = ["", "Hallo CEO"], []
+
+        class _Client:
+            def __init__(self, *a, **kw):
+                self.chat = self.completions = self
+
+            def create(self, **kw):
+                aufrufe.append(1)
+                msg = types.SimpleNamespace(content=antworten.pop(0), tool_calls=None)
+                return types.SimpleNamespace(choices=[types.SimpleNamespace(message=msg, finish_reason="stop")],
+                                             usage=types.SimpleNamespace(prompt_tokens=1, completion_tokens=1))
+        mod = types.ModuleType("openai")
+        mod.OpenAI = _Client
+        gemini = {"name": "gemini", "key": "g", "base_url": None, "model": "gemini-2.5-flash"}
+        with mock.patch.dict(sys.modules, {"openai": mod}):
+            out = ModelRouter(_Anthro(AuthenticationError(FEHLER_401)), anthropic_model="m",
+                              fallbacks=[gemini]).create(system="s", tools=[], messages=[])
+        self.assertEqual((out.provider, btext(out.content[0]), len(aufrufe)), ("gemini", "Hallo CEO", 2))
+
+    def test_5_zweimal_leer_bleibt_fehler(self):
+        from orchestrator.core.model_router import LeereAntwort, mit_wiederholung
+        versuche = []
+
+        def leer():
+            versuche.append(1)
+            raise LeereAntwort("leer")
+        with self.assertRaises(LeereAntwort):
+            mit_wiederholung(leer)
+        self.assertEqual(len(versuche), 2)                                     # genau eine Wiederholung
+
 
 if __name__ == "__main__":
     unittest.main()

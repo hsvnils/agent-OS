@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-26 22:25] — Claude Code (MACO470)
+- **Was:** Gate der Werkzeugauswahl-Etappe 2 auf CEO-Entscheidung angepasst („nicht schlechter als ohne Auswahl", erfuellt) ->
+  Etappe 2 verifiziert. **BF-24 behoben:** leere Antwort eines Anbieters -> genau ein Wiederholungsversuch (`LeereAntwort`,
+  `mit_wiederholung` in `model_router.py`, genutzt von Chat und Fachagenten); 2 neue Tests, Gegenprobe rot, Suite 834 passed.
+  Merge, Push und Deploy mit Schalter aus folgen.
+- **Warum:** CEO-Go „Go fuer 1, 2 und 3".
+- **Betroffen:** `orchestrator/core/model_router.py`, `orchestrator/core/backends.py`, `orchestrator/tests/test_chat_fallback.py`,
+  `WERKZEUGAUSWAHL_ROADMAP.md`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-26 22:20] — Claude Code (MACO470)
 - **Was:** `WERKZEUGAUSWAHL_ROADMAP.md` **Etappe 2 umgesetzt** (Branch `ai/werkzeugauswahl`, nicht gemergt): Meta-Werkzeug
   `werkzeuge_laden`, automatisches Nachladen, Nutzungsprotokoll (Kategorie `werkzeug`), Schalter `WERKZEUGAUSWAHL`

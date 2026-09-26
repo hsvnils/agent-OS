@@ -50,6 +50,18 @@ class _Norm:
         self.provider = provider
 
 
+class LeereAntwort(RuntimeError):
+    """Anbieter lieferte weder Text noch Werkzeug-Aufruf (Gemini gelegentlich, BF-24) -- einmal wiederholen."""
+
+
+def mit_wiederholung(aufruf):
+    """Fuehrt `aufruf()` aus; bei leerer Antwort genau EIN weiterer Versuch beim selben Anbieter (BF-24)."""
+    try:
+        return aufruf()
+    except LeereAntwort:
+        return aufruf()
+
+
 def _ist_fallback_fehler(exc: Exception) -> bool:
     s = f"{exc.__class__.__name__} {exc}".lower()
     return any(w in s for w in ("credit", "balance", "insufficient", "rate", "overloaded",
@@ -82,7 +94,7 @@ class ModelRouter:
     def create(self, *, system: str, tools: list, messages: list) -> _Norm:
         for fb in [f for f in self.fallbacks if f.get("zuerst")]:
             try:
-                return self._kompatibel(fb, system, tools, messages)
+                return mit_wiederholung(lambda: self._kompatibel(fb, system, tools, messages))
             except Exception:
                 continue
         danach = [f for f in self.fallbacks if not f.get("zuerst")]
@@ -97,7 +109,7 @@ class ModelRouter:
             letzter = exc
             for fb in danach:
                 try:
-                    return self._kompatibel(fb, system, tools, messages)
+                    return mit_wiederholung(lambda: self._kompatibel(fb, system, tools, messages))
                 except Exception as e:
                     letzter = e
                     continue
@@ -132,7 +144,7 @@ class ModelRouter:
             bloecke.append({"type": "tool_use", "id": tc.id, "name": tc.function.name, "input": args})
         if not bloecke:
             # z. B. Denkschritte haben max_tokens aufgebraucht -> leere Antwort ist ein Fehler, kein Ergebnis.
-            raise RuntimeError(f"{fb.get('name', 'fallback')}: leere Antwort "
+            raise LeereAntwort(f"{fb.get('name', 'fallback')}: leere Antwort "
                                f"(finish_reason={getattr(r.choices[0], 'finish_reason', '?')})")
         usage = _Usage(getattr(u, "prompt_tokens", 0) or 0, getattr(u, "completion_tokens", 0) or 0)
         return _Norm(bloecke, usage, fb["model"], fb.get("name", "fallback"))

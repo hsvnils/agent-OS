@@ -4,7 +4,7 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/werkzeugauswahl`
 - Basiscommit: `3523a38`
-- Naechster Schritt: CEO-Entscheidung zum angepassten Gate, dann Go fuer Merge + Deploy (Schalter aus) und ggf. BF-24-Fix.
+- Naechster Schritt: nach Deploy + Neustart: CEO-Go fuer Etappe 3 (`WERKZEUGAUSWAHL=an` in der NAS-`.env`, 7 Tage beobachten).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -74,7 +74,8 @@ Werkzeug-Gruppen + Kern-Set, deterministische Vorauswahl (Schluesselwoerter, ohn
 
 ### Etappe 2: Nachladen + Verdrahtung hinter Schalter
 
-- Status: umgesetzt (2026-09-26, Branch) — Meta-Werkzeug `werkzeuge_laden` (Kern-Set), automatisches Nachladen bei
+- Status: **verifiziert** (2026-09-26; Gate vom CEO angepasst auf „nicht schlechter als ohne Auswahl", erfuellt: 65,5 % vs.
+  59,7 %) — deployt mit Schalter aus, dazu BF-24-Fix (leere Antwort -> ein Wiederholungsversuch) — Meta-Werkzeug `werkzeuge_laden` (Kern-Set), automatisches Nachladen bei
   nicht gezeigtem Werkzeug, Nutzungsprotokoll (Aktivitaetsprotokoll, Kategorie `werkzeug`: vorausgewaehlt /
   nachgeladen / alle Werkzeuge), Schalter `WERKZEUGAUSWAHL` (Standard aus); Auswahl nutzt nur den CEO-Text (nicht die
   Pausen-Notiz — Fehler per Test gefunden). 7 neue Tests, 3 Gegenproben rot; Suite 832 passed / 0 failed.
@@ -89,8 +90,9 @@ Werkzeug-Gruppen + Kern-Set, deterministische Vorauswahl (Schluesselwoerter, ohn
   Verlauf nachgeladen. Verdrahtung in `HoaConversation` hinter `WERKZEUGAUSWAHL=an` (Standard aus).
   Nutzungsprotokoll: welches Werkzeug wurde gerufen, war es vorausgewaehlt oder nachgeladen (Aktivitaetsprotokoll,
   Kategorie `werkzeug`).
-- Gate: Tests gruen (Schalter aus = identisches Verhalten; Nachladen; unbekanntes Werkzeug); Probelauf mit Gemini ueber
-  den Testkatalog: jede Nachricht fuehrt zum erwarteten Werkzeug.
+- Gate (angepasst, CEO 2026-09-26): Tests gruen; Probelauf mit Gemini ueber den Testkatalog **nicht schlechter als ohne
+  Auswahl** (Einzelnachrichten ohne Verlauf erzeugen berechtigte Rueckfragen; „jede Nachricht zum erwarteten Werkzeug"
+  war als Massstab ungeeignet).
 - Verifikation: Probelauf-Skript auf dem MACO470 mit Test-Ablagen -> erwartet >= 95 % richtige Werkzeuge, mittlerer
   Prompt <= 5.000 Token (aus `usage`).
 - Dry-Run: Probelauf ohne Live-Daten; `deploy/sync-to-nas.sh --dry-run` vor dem Deploy.
