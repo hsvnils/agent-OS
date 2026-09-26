@@ -4,7 +4,7 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `ec1173c`
-- Naechster Schritt: CEO beurteilt die 3 Proben (Etappe-1-Gate); danach Go fuer Etappe 2 (Warteschlange + Worker).
+- Naechster Schritt: Etappe 2 bauen (CEO-Go 2026-09-27).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -60,6 +60,16 @@ Modell belastet den MACO470 nur, wenn Arbeit ansteht.
 3. **Wie meldet es sich?** Vorschlag: jedes fertige Ergebnis einzeln per Telegram (kurz + „Details: #A12"), nachts
    erledigte gebuendelt im Morgen-Briefing.
 
+## Gegenpruefung und Datenschutz (CEO 2026-09-27)
+
+- **Stufe 1** Entwurf lokal (immer, 0 EUR) · **Stufe 2** Gemini liest Bewertungen/Analysen gegen und ergaenzt (0 EUR,
+  Gratis-Tier) · **Stufe 3** Vertiefung auf CEO-Wunsch (Recherche + Gemini; **Claude spaeter als eigenes CEO-Tor**:
+  neuer Schluessel, Guthaben, Budgetgrenze).
+- Messung 2026-09-27 01:39: waehrend einer Inferenz hatten Ollama/`llama-server` **nur lokale Verbindungen**
+  (4 Momentaufnahmen). Modelle sind reine Gewichtsdateien; ins Netz koennte nur Ollama selbst (Modell-Downloads,
+  Update-Pruefung). Firewall-Sperre fuer Ollama-Ausgang: **vorerst nicht** (CEO). Cloud-Stufen (Gemini/Claude) geben
+  Inhalte nach aussen — beim Gemini-Gratis-Tier ggf. zur Produktverbesserung (Bedingungen vor Ausbau pruefen).
+
 ## Scope
 
 Auftrags-Warteschlange, Backoffice-Worker mit RAM-Waechter und Zeitfenster, Frontdesk-Werkzeuge (Auftrag erteilen,
@@ -76,7 +86,8 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
 
 ### Etappe 1: Backoffice-Modell bestimmen (Messung)
 
-- Status: gemessen (2026-09-26 23:22-23:41), **CEO-Urteil zu 3 Proben offen** — `qwen3:14b`, native Ollama-API,
+- Status: **verifiziert** (CEO 2026-09-27: `qwen3:14b` als Backoffice-Modell akzeptiert, mit besseren Anweisungen —
+  Ich-Form als Nils, nur Deutsch, Bewertungsvorlagen — und Gemini als Gegenleser); gemessen 2026-09-26 23:22-23:41 — `qwen3:14b`, native Ollama-API,
   `num_ctx` 8192 je Anfrage (keine Windows-Aenderung), ohne Werkzeuge, Server weiter mit Flash-Attention + KV `q8_0`.
   9 Auftraege (Recherche zusammenfassen, Mail-Entwurf, Antrag bewerten, je 3x): **kein Zeichensalat, keine
   Wiederholungsschleife** (BF-23 trat hier nicht auf); 64-203 s je Auftrag, ~7 Tok/s; Modell 9,7 GB komplett auf der

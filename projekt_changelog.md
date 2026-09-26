@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 01:53] — Claude Code (MACO470)
+- **Was:** Frontdesk/Backoffice: CEO-Entscheidungen festgehalten — Gegenpruefung Stufe 1 lokal + Stufe 2 Gemini, Claude spaeter
+  (CEO-Tor); keine Firewall-Sperre fuer Ollama; `qwen3:14b` als Backoffice-Modell akzeptiert -> Etappe 1 verifiziert, Go fuer
+  Etappe 2. Netzmessung waehrend Inferenz: nur lokale Verbindungen.
+- **Warum:** CEO-Antworten „1 = Einverstanden, 2 = Erstmal nicht einbauen, 3 = Machen".
+- **Betroffen:** `FRONTDESK_BACKOFFICE_ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-26 23:42] — Claude Code (MACO470)
 - **Was:** `FRONTDESK_BACKOFFICE_ROADMAP.md` **Etappe 1 gemessen**: `qwen3:14b` mit 9 Text-Auftraegen (native API, 8k-Kontext,
   ohne Werkzeuge): kein Zeichensalat, 64-203 s je Auftrag, RAM min 3,1 GB verfuegbar. Qualitaet brauchbar mit Maengeln
