@@ -4,8 +4,8 @@
 - Stand: 2026-09-25
 - Arbeitsbranch: `ai/lokales-llm`
 - Basiscommit: `01e9919`
-- Naechster Schritt: CEO-Entscheidung nach 14B-Test (Zeichensalat): weiter untersuchen, auf Gemini-Gratis setzen
-  oder Werkzeugliste verkleinern; bis dahin Chat ueber Gemini (0 EUR).
+- Naechster Schritt: **pausiert** (CEO 2026-09-26): Chat bleibt bei Gemini-Gratis (Register); fortgesetzt wird nach
+  `WERKZEUGAUSWAHL_ROADMAP.md` (kleiner Prompt) mit einem Re-Test lokaler Modelle.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

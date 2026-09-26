@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-26 12:04] — Claude Code (MACO470)
+- **Was:** (A) Gemini-Gratis als Standard fuer den Chat im Register festgehalten; `LOKALES_LLM_ROADMAP.md` pausiert.
+  (C) Neue Roadmap `WERKZEUGAUSWAHL_ROADMAP.md` nach Workflow (Status geplant, 4 Etappen: Testkatalog + Gruppen,
+  Nachladen + Schalter, Live mit Gemini, Re-Test lokales Modell), registriert. Analyse: 97 Werkzeuge = ~12.058 Token,
+  klare Themengruppen, kein Nutzungsprotokoll vorhanden. Doku-Push `3523a38` auf CEO-Go.
+- **Warum:** CEO-Go „Go fuer A und C und push".
+- **Betroffen:** `WERKZEUGAUSWAHL_ROADMAP.md` (neu), `ROADMAP.md`, `LOKALES_LLM_ROADMAP.md`,
+  `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-26 11:49] — Claude Code (MACO470)
 - **Was:** `qwen3:14b` geladen (CEO-Tor freigegeben, 9,3 GB, kostenlos) und mit der langen Test-Unterhaltung + Speichermessung
   geprueft: passt komplett auf die Grafik, aber 5 von 10 lokalen Antworten unbrauchbar (Wiederholungen/Zeichensalat,
