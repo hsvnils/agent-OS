@@ -56,7 +56,7 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
 
 ### Etappe 1: Test-Zeitbombe entschaerfen (BF-01)
 
-- Status: verifiziert (2026-09-25, auf dem Arbeitsbranch; Merge offen) — `orchestrator/tests`: 723 passed,
+- Status: verifiziert (2026-09-25, gemergt `45af4a7`) — `orchestrator/tests`: 723 passed,
   0 failed, 4 skipped; `cutter/tests`: 74 passed. Gegenprobe mit festem Datum: 4 failed, wie erwartet.
 - Ziel / Scope: Mock-Datum relativ zu heute setzen (heute minus 10 Tage) in `MockGitHubWatch` und
   `test_watch.py:31`. Nicht-Scope: Produktionslogik von `flag_fast_growers`.
@@ -71,7 +71,7 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
 
 ### Etappe 2: Deploy-Schutz vervollstaendigen (BF-03)
 
-- Status: verifiziert (2026-09-25, auf dem Arbeitsbranch; Merge offen) — Probedateien im Dry-Run vorher `3`,
+- Status: verifiziert (2026-09-25, gemergt `45af4a7`) — Probedateien im Dry-Run vorher `3`,
   nachher `0`; Doku-Check `Deploy-Schutz fehlt` = `0`. Probedateien geloescht. Kein Deploy noetig (Skript laeuft
   auf dem MACO470).
 - Ziel / Scope: `--exclude='./crm'`, `--exclude='./content_ops'`, `--exclude='./nutzung'` in
@@ -119,7 +119,7 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
 
 ### Etappe 4: Git-Hygiene (BF-08)
 
-- Status: verifiziert (2026-09-25, Branch; Merge offen) — Dry-Run genau 1 Datei; versioniert `0`, ignoriert `3`,
+- Status: verifiziert (2026-09-25, gemergt `1d6db78`) — Dry-Run genau 1 Datei; versioniert `0`, ignoriert `3`,
   lokal `da`; Tests 798 passed, Doku-Check ok; `core/memory.py` legt die Datei bei Bedarf selbst an.
 - Ziel / Scope: `git rm --cached orchestrator/memory/log.jsonl`; `.gitignore`: die Datei sowie `nutzung/` und
   `cutter_ops/` aufnehmen, den Kommentar in Zeile 27 berichtigen.
