@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-26 22:27] — Claude Code (MACO470)
+- **Was:** Werkzeugauswahl Etappe 2 + BF-24-Fix **deployt** (`9446fb0`, Merge + Push, `sync-to-nas.sh --no-restart`, 369 Dateien,
+  keine `.env`; Schalter `WERKZEUGAUSWAHL` nicht gesetzt = aus), Neustart durch den CEO; Web 401/200. CEO-Idee
+  „Frontdesk/Backoffice" ins Register (SPAETER/OPTIONAL, eigene Roadmap geplant).
+- **Warum:** CEO-Go „Go fuer 1, 2 und 3"; CEO-Vorschlag Gemini als Kommunikation, lokales LLM im Hintergrund.
+- **Betroffen:** NAS-Code (Deploy), `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-26 22:25] — Claude Code (MACO470)
 - **Was:** Gate der Werkzeugauswahl-Etappe 2 auf CEO-Entscheidung angepasst („nicht schlechter als ohne Auswahl", erfuellt) ->
   Etappe 2 verifiziert. **BF-24 behoben:** leere Antwort eines Anbieters -> genau ein Wiederholungsversuch (`LeereAntwort`,
