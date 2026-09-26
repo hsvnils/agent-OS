@@ -1,0 +1,137 @@
+# Roadmap: Frontdesk/Backoffice — Gemini spricht, das lokale LLM arbeitet im Hintergrund
+
+- Status: geplant
+- Stand: 2026-09-26
+- Arbeitsbranch: `ai/frontdesk-backoffice`
+- Basiscommit: `8d67ca1`
+- Naechster Schritt: Roadmap dem CEO vorlegen; zuerst die drei Grundsatzfragen (Abschnitt „Entscheidungen") klaeren.
+- Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
+  aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
+
+## Ziel (CEO-Idee 2026-09-26)
+
+**Frontdesk:** Gemini (schnell, Gratis-Tier) spricht mit dem CEO in Telegram — versteht, fragt nach, erledigt Schnelles
+(Kalender, Mails lesen, Status) und nimmt groessere Aufgaben als **Auftrag** an („Auftrag #A12 angelegt, ich melde mich").
+**Backoffice:** Das lokale LLM auf dem MACO470 arbeitet die Auftraege **nacheinander im Hintergrund** ab — langsam ist
+ok, nachts ist ok — und meldet das Ergebnis per Telegram. Wirkung: kein Warten im Chat, keine API-Kosten, das lokale
+Modell belastet den MACO470 nur, wenn Arbeit ansteht.
+
+## Register und bekannte Fehler (B3)
+
+- Register: Idee Frontdesk/Backoffice (SPAETER/OPTIONAL, 2026-09-26); Gemini-Gratis als Chat-Standard (BESCHLOSSEN);
+  `qwen3:30b-a3b` auf dem MACO470 VERWORFEN (RAM), `qwen3:14b` ZURUECKGESTELLT (Zeichensalat); Werkzeugauswahl live.
+- Bekannte Fehler: BF-22 (RAM: ~12,7 GB Grundlast, 30B zu gross), BF-23 (14B-Zeichensalat, vermutlich KV-Kompression
+  + Flash-Attention + Prompt-Cache), BF-25 (Gemini behauptet Erledigungen ohne Werkzeug), BF-21 (verwaistes Modell nach
+  Ollama-Neustart), BF-02 (MACO470 nach unbeaufsichtigtem Neustart tot).
+
+## Analyse (Belege, 2026-09-26)
+
+- **Keine allgemeine Auftrags-Warteschlange im Bot.** `recherche_beauftragen` (`core/hoa_tools.py:602`) legt ein Ticket
+  an, recherchiert aber **synchron** im selben Aufruf. Hintergrund-Ablaeufe gibt es nur als feste Zeitplaene
+  (CFO 03:00, Content 07:00, Self-Dev 09:00 — `docs/datenfluesse.md` Abschnitt 4).
+- **Vorhandene Bausteine:** Outbox fuer proaktive Meldungen (`core/notifications.py`, `enqueue`, Zustellung im
+  Bot-Hauptloop, Dedup); Antraege-Store; `FallbackBackend` mit `LOCAL_LLM_FACHAGENTEN` (Text ohne Werkzeuge, lokal
+  zuerst — gebaut, nicht aktiv); Cutter-Muster: Warteschlange auf der NAS + Worker auf dem MACO470 ueber die LUNA-OS-API
+  (`cutter/luna_bridge.py`).
+- **Backoffice-Aufgaben brauchen keine 98 Werkzeuge:** Zusammenfassen, Entwerfen, Bewerten sind Text-Aufgaben -> kleiner
+  Kontext (4k-8k statt 32k) -> deutlich weniger RAM fuer den Kontext. Das macht `qwen3:14b` (9,3 GB) realistisch; 30B
+  bleibt wegen der Gewichte (18,6 GB) bei ~17 GB verfuegbar zu gross (BF-22).
+- **RAM-Waechter:** Der NAS-Bot sieht den Speicher des MACO470 nicht; ein Worker **auf** dem MACO470 koennte vor dem
+  Laden pruefen, ob genug frei ist (Messung per PowerShell wie in dieser Analyse).
+
+## Entscheidungen (vor Etappe 1, CEO)
+
+1. **Welche Aufgaben gehen ins Backoffice?** Vorschlag: auf ausdruecklichen Wunsch („bis morgen", „im Hintergrund",
+   „ausfuehrlich") oder wenn der Frontdesk die Aufgabe als gross einstuft — z. B. Recherche-Zusammenfassungen, Entwuerfe
+   (Mail, Content, Konzept), Antrags-Bewertungen, Analysen. Alles mit Geld/Recht/Oeffentlichkeit bleibt CEO-Tor:
+   das Backoffice liefert nur **Entwuerfe**.
+2. **Wann darf das Backoffice das Modell laden?** Vorschlag: sofort, wenn der MACO470 genug frei hat (RAM-Waechter),
+   sonst im Nachtfenster 01:00-06:00; das Modell nach jedem Stapel entladen.
+3. **Wie meldet es sich?** Vorschlag: jedes fertige Ergebnis einzeln per Telegram (kurz + „Details: #A12"), nachts
+   erledigte gebuendelt im Morgen-Briefing.
+
+## Scope
+
+Auftrags-Warteschlange, Backoffice-Worker mit RAM-Waechter und Zeitfenster, Frontdesk-Werkzeuge (Auftrag erteilen,
+Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fuer lokale Ergebnisse, Meldung per Outbox.
+
+## Nicht-Scope
+
+- Werkzeug-Aufrufe durch das Backoffice (es arbeitet mit Text; Werkzeuge bleiben beim Frontdesk) — spaeter moeglich
+- Execution/Code-Umsetzung (Claude-CLI), Vision/Video
+- Aenderung der CEO-Tore; Posten/Senden bleibt freigabepflichtig
+- Schutzbereiche laut `governance/roadmap-workflow.md` B4
+
+## Etappen
+
+### Etappe 1: Backoffice-Modell bestimmen (Messung)
+
+- Status: geplant
+- Ziel / Scope: `qwen3:14b` fuer **Text-Aufgaben** ohne Werkzeugliste messen — mit und ohne KV-Kompression/Flash-Attention
+  (BF-23 eingrenzen), Kontext 8k; drei typische Auftraege (Recherche zusammenfassen, Mail-Entwurf, Antrag bewerten),
+  je 3 Laeufe; RAM-Verlauf ueber >= 15 min; Plausibilitaet (Wiederholungen, Zeichensalat, Sprache).
+- Gate: 9/9 brauchbare Ergebnisse (CEO beurteilt 3 davon), Windows dauerhaft >= 3 GB verfuegbar, kein Zeichensalat.
+- Verifikation: Messprotokoll mit RAM-Verlauf; Stichprobe dem CEO vorgelegt.
+- Dry-Run: Messung nur auf dem MACO470, keine Live-Daten.
+- Risiko / Rueckweg: Windows-Einstellungen (KV/Flash-Attention) aendern den Chat nicht (lokal pausiert); zurueck per
+  Umgebungsvariable.
+- Abhaengig von: Entscheidungen · Aufwand: klein · Risiko: niedrig
+- Freigaben: Etappe; Windows-Einstellungen (CEO).
+
+### Etappe 2: Auftrags-Warteschlange + Backoffice-Worker
+
+- Status: geplant
+- Ziel / Scope: Store `auftraege/log.jsonl` auf der NAS (Status neu -> in_arbeit -> fertig/fehlgeschlagen, Ergebnis,
+  Dauer); Worker nach Cutter-Muster auf dem MACO470 (holt Auftraege ueber die LUNA-OS-API, prueft RAM + Zeitfenster,
+  laedt das Modell, arbeitet nacheinander, entlaedt, meldet Ergebnis zurueck); Plausibilitaetsfilter (bei Zeichensalat:
+  ein zweiter Versuch, sonst `fehlgeschlagen` + Meldung). Meldung ueber die Outbox.
+- Gate: Tests gruen; Probelauf mit 3 Test-Auftraegen Ende-zu-Ende (anlegen -> Worker -> Ergebnis -> Telegram-Meldung am
+  **Empfaenger** geprueft).
+- Verifikation: Auftrags-Store zeigt 3x `fertig`; Telegram-Nachrichten beim CEO angekommen; RAM-Protokoll ohne
+  Dauer-Auslagerung.
+- Risiko / Rueckweg: Worker-Dienst stoppen; Store bleibt als Protokoll. Neuer Store -> Deploy-Schutz + Backup +
+  `docs/datenfluesse.md` (Doku-Check erzwingt es).
+- Abhaengig von: 1 · Aufwand: mittel-gross · Risiko: mittel
+- Freigaben: Etappe; Deploy NAS + MACO470; neuer systemd-Dienst (CEO: sudo auf dem MACO470 hat Claude Code).
+
+### Etappe 3: Frontdesk-Werkzeuge + Ehrlichkeitsregel
+
+- Status: geplant
+- Ziel / Scope: Werkzeuge `auftrag_erteilen(aufgabe, art)` und `auftraege_zeigen`; System-Prompt-Regel: „Erledigt"
+  nur nach einem Werkzeug-Ergebnis im selben Zug, sonst „Auftrag angelegt"; optional Erkennung von
+  Erledigungs-Behauptungen ohne Werkzeug-Aufruf (BF-25) mit Nachfassen.
+- Gate: Probelauf mit Gemini: 10 typische „mach mal im Hintergrund"-Nachrichten -> jeweils Auftrag angelegt; 10
+  Erledigungs-Faelle -> Werkzeug wirklich aufgerufen.
+- Abhaengig von: 2 · Aufwand: mittel · Risiko: niedrig
+
+### Etappe 4: Bestehende Hintergrund-Jobs ueber das Backoffice
+
+- Status: geplant
+- Ziel / Scope: CFO-Lauf, Content-Feed, Self-Dev/Innovation als Auftraege an das Backoffice statt direkt an die Cloud.
+- Gate: eine Woche lang alle Jobs lokal erledigt oder sauber auf Gemini ausgewichen; Kostenlog ohne Cloud-Kosten.
+- Abhaengig von: 2 · Aufwand: klein-mittel · Risiko: niedrig
+
+### Etappe 5: Beobachtung und Abschluss
+
+- Status: geplant
+- Ziel / Scope: 7 Tage Betrieb; Auswertung Durchlaufzeiten, Fehlschlaege, RAM, CEO-Zufriedenheit.
+- Gate: CEO-Abnahme.
+
+## Reihenfolge
+
+Entscheidungen -> 1 -> 2 -> 3 -> 4 -> 5. Etappe 1 ist klein und klaert, ob es ueberhaupt ein brauchbares Backoffice-Modell gibt.
+
+## Kosten
+
+Einmalig 0 EUR, laufend Strom des MACO470. Einsparung: alle Hintergrund-Aufgaben ohne Cloud-Token.
+
+## Dokumentationspflichten
+
+`projekt_changelog.md`, Etappen-Status + `Naechster Schritt` hier, `ROADMAP.md` (Verzeichnis), `docs/datenfluesse.md`
+(neuer Store, neuer Worker, neue API-Endpunkte), `docs/bekannte-fehler.md` (BF-23/25), `docs/entscheidungs-register.md`,
+`governance/zugriffs-policy.md` (Worker-Zugriff), `LOKALES_LLM_ROADMAP.md` (Fortsetzung Etappe 2 dort).
+
+## Definition of Done
+
+Der CEO kann im Chat Auftraege erteilen, die ohne Cloud-Kosten im Hintergrund erledigt und zuverlaessig gemeldet werden;
+der MACO470 bleibt dabei bedienbar; Gemini behauptet keine Erledigungen mehr ohne Nachweis. Abnahme durch den CEO.

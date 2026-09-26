@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-26 22:30] — Claude Code (MACO470)
+- **Was:** Werkzeugauswahl **Etappe 3 gestartet**: `WERKZEUGAUSWAHL=an` in der NAS-`.env` (Sicherung
+  `.env.bak-20260926-werkzeugauswahl`); wirksam nach Neustart durch den CEO. Neue Roadmap `FRONTDESK_BACKOFFICE_ROADMAP.md`
+  (Status geplant, 3 Grundsatzfragen + 5 Etappen), registriert. Analyse: keine allgemeine Auftrags-Warteschlange im Bot
+  (`recherche_beauftragen` arbeitet synchron), Cutter-Muster (NAS-Warteschlange + MACO-Worker) als Vorbild,
+  Backoffice-Aufgaben ohne Werkzeugliste -> kleiner Kontext -> 14B realistisch.
+- **Warum:** CEO-Go „Go fuer Etappe 3 und Roadmap".
+- **Betroffen:** NAS `orchestrator/.env`, `FRONTDESK_BACKOFFICE_ROADMAP.md` (neu), `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-26 22:27] — Claude Code (MACO470)
 - **Was:** Werkzeugauswahl Etappe 2 + BF-24-Fix **deployt** (`9446fb0`, Merge + Push, `sync-to-nas.sh --no-restart`, 369 Dateien,
   keine `.env`; Schalter `WERKZEUGAUSWAHL` nicht gesetzt = aus), Neustart durch den CEO; Web 401/200. CEO-Idee
