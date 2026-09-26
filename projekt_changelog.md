@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-26 11:31] — Claude Code (MACO470)
+- **Was:** `BETRIEBSLUECKEN_ROADMAP.md` **abgeschlossen**: Etappe 3 verifiziert durch den echten Timer-Lauf 2026-09-26
+  03:21 (`17 Stores, 81629 Events gesichert`, `Result=success`, Exit 0, kein Fehler, Ordner `2026-09-26_0321`, 21 MB).
+  Status in `ROADMAP.md` nachgezogen. Doku-Push `90bec3f` auf CEO-Go. Download `qwen3:14b` fuer den Test gestartet
+  (CEO-Tor „neues Modell" freigegeben, `LOKALES_LLM_ROADMAP.md`).
+- **Warum:** geplante Verifikation 3 der Etappe 3; CEO-Go „Go fuer 1 und 2".
+- **Betroffen:** `BETRIEBSLUECKEN_ROADMAP.md`, `ROADMAP.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-09-25 22:16] — Claude Code (MACO470)
 - **Was:** Etappe 3b deployt (Merge + Push `0be8375`, `sync-to-nas.sh --no-restart`, NAS-`.env` + `LOCAL_LLM_KONTEXT=32768`,
   Sicherung `.env.bak-20260925-kontext`), Neustart CEO. **Live-Test gescheitert (BF-22):** RAM des MACO470 reicht fuer

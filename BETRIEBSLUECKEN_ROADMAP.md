@@ -1,12 +1,10 @@
 # Roadmap: Betriebsluecken schliessen (BF-01, BF-03, BF-04, BF-08)
 
-- Status: in Umsetzung
-- Stand: 2026-09-25
+- Status: abgeschlossen
+- Stand: 2026-09-26
 - Arbeitsbranch: `ai/betriebsluecken`
 - Basiscommit: `ba77909`
-- Naechster Schritt: CEO-Go fuer Merge von Etappe 4 (im Hauptordner vorher `orchestrator/memory/log.jsonl`
-  sichern und danach zuruecklegen, weil der Merge sie dort loescht); am 2026-09-26 Timer-Lauf pruefen
-  (Etappe 3, Verifikation 3), dann Status `abgeschlossen`.
+- Naechster Schritt: keiner — alle Etappen verifiziert (2026-09-26).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -89,7 +87,8 @@ BF-01, BF-03, BF-04 (nur append-only Stores + Hinweis-Logik im Doku-Check), BF-0
 
 ### Etappe 3: Backup vervollstaendigen (BF-04)
 
-- Status: deployt (Merge = live ab 2026-09-26 03:20; `verifiziert` nach Timer-Lauf) (2026-09-25, Branch, im Worktree `.worktrees/betriebsluecken`) — 9 Eintraege in `FILES`,
+- Status: **verifiziert** (2026-09-26) — Timer-Lauf 03:21: `17 Stores, 81629 Events gesichert`, `Result=success`,
+  Exit 0, kein `FEHLER`, neuer Ordner `2026-09-26_0321` (21 MB). Vorher: deployt durch Merge `8e332e5`.
   Doku-Check prueft Deploy-Schutz/Backup jetzt blockierend (Ausnahmen: Block `ohne-backup`); Tests 798 passed.
   Probelauf 2026-09-25 12:52: **17 Stores, 81.088 Events, Exit 0; alle 17 Dateien zeilengleich mit der NAS**;
   `~/LUNA-Backups` unberuehrt, Wegwerf-Kopie geloescht. Gemergt `8e332e5` (CEO-Go). Offen: Timer-Lauf 2026-09-26 03:20 pruefen.
