@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 02:07] — Claude Code (MACO470)
+- **Was:** `FRONTDESK_BACKOFFICE_ROADMAP.md` **Etappe 2 umgesetzt** (Branch `ai/frontdesk-backoffice`, nicht gemergt/deployt):
+  Auftrags-Store `orchestrator/core/auftraege.py`, LUNA-OS-Endpunkte `/api/backoffice/*`, Morgen-Briefing-Abschnitt,
+  Werkzeug `auftrag_details` (Gruppe `backoffice` in der Werkzeugauswahl), Worker `backoffice/worker.py` (RAM-Waechter,
+  Nachtfenster, Anweisungen je Art, Plausibilitaetsfilter, Gemini-Gegenlesen, Entladen), `deploy/backoffice-worker.service`,
+  Store in Deploy-Schutz/Backup/`.gitignore`/Datenfluesse. Eigenen Fehler gefunden: fehlender `timedelta`-Import im
+  Briefing-Loop -> behoben und Namens-Test auf ALLE Funktionen in Bot und Web-App erweitert (Gegenprobe rot).
+  Tests 854 passed / 0 failed. Probelauf Ende-zu-Ende mit echten Modellen: 3/3 fertig, Qualitaet verbessert.
+- **Warum:** CEO-Go „3 = Machen" (Etappe 2).
+- **Betroffen:** `orchestrator/core/auftraege.py` (neu), `orchestrator/channels/web/app.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/core/werkzeugauswahl.py`, `orchestrator/core/team_auth.py`,
+  `backoffice/` (neu), `deploy/backoffice-worker.service` (neu), `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`,
+  `.gitignore`, `orchestrator/tests/test_auftraege.py` (neu), `orchestrator/tests/test_notify_zustellung.py`,
+  `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `governance/roadmap-workflow.md`, `FRONTDESK_BACKOFFICE_ROADMAP.md`,
+  `projekt_changelog.md`
+
 ## [2026-09-27 01:53] — Claude Code (MACO470)
 - **Was:** Frontdesk/Backoffice: CEO-Entscheidungen festgehalten — Gegenpruefung Stufe 1 lokal + Stufe 2 Gemini, Claude spaeter
   (CEO-Tor); keine Firewall-Sperre fuer Ollama; `qwen3:14b` als Backoffice-Modell akzeptiert -> Etappe 1 verifiziert, Go fuer

@@ -4,7 +4,8 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `ec1173c`
-- Naechster Schritt: Etappe 2 bauen (CEO-Go 2026-09-27).
+- Naechster Schritt: CEO-Go fuer Merge + Push + NAS-Deploy (+ Neustart CEO) + Installation `backoffice-worker` auf dem
+  MACO470, dann Live-Test mit einem Test-Auftrag tagsueber (Telegram-Meldung am Empfaenger pruefen).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -110,7 +111,18 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
 
 ### Etappe 2: Auftrags-Warteschlange + Backoffice-Worker
 
-- Status: geplant
+- Status: umgesetzt (2026-09-27, Branch; Deploy + Live-Test offen) — `orchestrator/core/auftraege.py` (Store,
+  `backoffice/log.jsonl`), LUNA-OS `/api/backoffice/*` (Modul administration; Meldung tagsueber einzeln ueber die Outbox
+  mit vollem Ergebnis als Detail, 01-06 Uhr nur Briefing), Morgen-Briefing-Abschnitt, Werkzeug `auftrag_details`,
+  `backoffice/worker.py` (RAM-Waechter per PowerShell — funktioniert auch aus systemd, gemessen —, Anweisungen je Art,
+  Plausibilitaetsfilter + 1 Wiederholung, Gemini-Gegenlesen fuer Bewertung/Analyse, Entladen nach dem Stapel),
+  `deploy/backoffice-worker.service`. Neuer Store in Deploy-Schutz, Backup, `.gitignore`, Datenfluesse (Doku-Check hat
+  die Luecke gemeldet). Tests: 20 neue + erweiterter Namens-Test (alle Funktionen in Bot und Web-App; fand die
+  Fehlerklasse „fehlender Import im except" — Gegenprobe mit `timedelta` rot); Suite 854 passed / 0 failed.
+- **Probelauf Ende-zu-Ende (2026-09-27 02:01, MACO470, Test-App + echter Worker + echtes Modell + echtes Gemini, keine
+  Live-Daten):** 3/3 fertig in 314 s, Modell danach entladen, nachts korrekt keine Einzelmeldung. Qualitaet mit neuen
+  Anweisungen besser: Mail in Ich-Form mit Unterschrift, Bewertung mit allen 7 Pflichtpunkten, Gemini-Zweitmeinung
+  kritisch und hilfreich; Zusammenfassung liess erneut einen wichtigen Punkt weg (Tippfehler „unterstüzt").
 - Ziel / Scope: Store `auftraege/log.jsonl` auf der NAS (Status neu -> in_arbeit -> fertig/fehlgeschlagen, Ergebnis,
   Dauer); Worker nach Cutter-Muster auf dem MACO470 (holt Auftraege ueber die LUNA-OS-API, prueft RAM + Zeitfenster,
   laedt das Modell, arbeitet nacheinander, entlaedt, meldet Ergebnis zurueck); Plausibilitaetsfilter (bei Zeichensalat:

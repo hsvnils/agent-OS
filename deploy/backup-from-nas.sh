@@ -44,6 +44,7 @@ FILES=(
   social/log.jsonl
   entwicklung/roadmap.jsonl
   nutzung/log.jsonl
+  backoffice/log.jsonl
 )
 
 mkdir -p "$DEST"

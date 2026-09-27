@@ -108,7 +108,7 @@ ausschliesslich: read-only Analyse, die Roadmap-Datei selbst, ihr Eintrag im Roa
 - **E4 Doku fortschreiben.** Nach jedem produktiven Schritt Etappen-Status, `Naechster Schritt` und Changelog
   aktualisieren, bevor die naechste Etappe beginnt.
 - **E5 Test-Gate (statt CI).** Das Repo hat keine CI. Am Gate jeder Etappe laufen lokal beide Suiten
-  (`orchestrator/tests`, `cutter/tests`) und `scripts/doku_check.py`. Massstab ist die Baseline in
+  (`orchestrator/tests`, `cutter/tests`, `backoffice/tests`) und `scripts/doku_check.py`. Massstab ist die Baseline in
   `docs/bekannte-fehler.md`: **kein neuer roter Test**. Aendert eine Etappe die Baseline (Test repariert oder
   bewusst neu rot), wird sie dort fortgeschrieben.
 - **E6 Bei Abweichung stoppen.** Weicht ein Ergebnis von der Erwartung ab, wird gestoppt und gemeldet. Keine

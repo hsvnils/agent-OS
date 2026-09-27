@@ -89,3 +89,6 @@ reel_work/
 
 # Entwicklungs-Roadmap (aus freigegebenen Antraegen; Live-Daten auf der NAS, nie committen)
 entwicklung/
+
+# Backoffice-Auftraege (Live-Daten auf der NAS)
+backoffice/log.jsonl

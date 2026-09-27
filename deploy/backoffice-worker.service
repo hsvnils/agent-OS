@@ -1,0 +1,21 @@
+# systemd-Dienst fuer den LUNA-Backoffice-Worker auf dem MACO470 (FRONTDESK_BACKOFFICE_ROADMAP.md, Etappe 2).
+# Installation (einmalig, auf dem MACO470):
+#   sudo cp deploy/backoffice-worker.service /etc/systemd/system/ && sudo systemctl daemon-reload
+#   sudo systemctl enable --now backoffice-worker
+# Laeuft aus dem Arbeitsordner -> was dort ausgecheckt ist, laeuft (wie cutter-worker und luna-backup.timer).
+[Unit]
+Description=LUNA Backoffice-Worker (lokales LLM arbeitet Auftraege im Hintergrund ab)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=luna
+WorkingDirectory=/home/luna/ki-unternehmen
+ExecStart=/home/luna/ki-unternehmen/.venv/bin/python -m backoffice.worker
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

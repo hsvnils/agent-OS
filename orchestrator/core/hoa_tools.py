@@ -32,6 +32,7 @@ class ToolContext:
     secret_dict: dict | None = None      # geparste .env (Key->Wert) fuer Health-Checks (keine Ausgabe)
     kosten: object | None = None         # KostenStore (Token-/Kostenerfassung) oder None
     aktivitaet: object | None = None     # Aktivitaet (zentrales Agenten-Aktivitaetsprotokoll, adc5) oder None
+    backoffice: object | None = None     # AuftragStore (FRONTDESK_BACKOFFICE_ROADMAP.md) oder None
     visuals: list | None = None          # Phase 14: Ablage erzeugter Visualisierungen (SVG) zum Senden
     brain: object | None = None          # Second Brain (Wissensbasis) oder None
     trajektorien: object | None = None   # Phase 26: TrajektorienStore ("was hat funktioniert") oder None
@@ -179,6 +180,9 @@ def tool_specs() -> list[dict]:
               "Google, Stores, Watcher-Heartbeat). Kostenlos.", {}, []),
         _spec("obsidian_export", "Schreibt den aktuellen Fachbereichs-Wissensstand und die offenen Tickets als "
               "Markdown in den Obsidian-Vault (vault/). Kostenlos.", {}, []),
+        _spec("auftrag_details", "Zeigt einen Backoffice-Auftrag (Hintergrund-Arbeit des lokalen Modells): Aufgabe, "
+              "Status, das vollstaendige Ergebnis und ggf. die Zweitmeinung -- per voller ID oder kurzem Suffix "
+              "(z. B. '#3f2a').", {"auftrag_id": _str("Auftrags-ID oder Suffix.")}, ["auftrag_id"]),
         _spec("offene_tickets", "Zeigt ALLE offenen Tickets (Antraege + Research) abteilungsuebergreifend -- "
               "LUNAs aktiver Arbeitsstand. Geschlossene sind hier NICHT enthalten (liegen im Abteilungsarchiv).",
               {}, []),
@@ -743,6 +747,15 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"id": n["id"], "abteilung": n.get("abteilung", ""), "kategorie": n.get("kategorie", ""),
                 "ts": n.get("ts", ""), "text": redact(n.get("text", ""), sec),
                 "detail": redact(n.get("detail", "") or "(kein weiterer Hintergrund gespeichert)", sec)}
+
+    if name == "auftrag_details":
+        if ctx.backoffice is None:
+            return {"fehler": "Backoffice nicht verfuegbar."}
+        a = ctx.backoffice.get(str(args.get("auftrag_id", "")).strip())
+        if a is None:
+            return {"fehler": "Auftrag nicht gefunden (ID oder eindeutiges Suffix angeben)."}
+        return {k: a.get(k) for k in ("id", "kurz", "art", "aufgabe", "status", "ergebnis", "zweitmeinung",
+                                      "grund", "modell", "dauer_s") if a.get(k) is not None}
 
     if name == "offene_tickets":
         offen_a = [x for x in ctx.antraege.list()

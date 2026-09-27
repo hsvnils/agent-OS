@@ -14,6 +14,7 @@ Stand 2026-09-25 auf dem MACO470 (`.venv`, `python -m pytest`), nach Etappe 1 de
 |---|---|---|
 | `orchestrator/tests` | 723 bestanden, 0 rot, 4 uebersprungen | uebersprungen: Phase 17 „plan() erfordert macOS" (BF-01 behoben 2026-09-25) |
 | `cutter/tests` | 74 bestanden | – |
+| `backoffice/tests` | 8 bestanden (seit 2026-09-27) | – |
 
 Regel: **Kein neuer roter Test.** Wer die Baseline aendert (Test repariert oder bewusst rot), schreibt diese
 Tabelle fort.

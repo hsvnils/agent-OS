@@ -163,13 +163,16 @@ def _build_ctx(cfg: dict, secrets: dict):
                    notify=notifications.enqueue)
     from ...investment.approvals import ApprovalStore
     approvals = ApprovalStore(ROOT / "approvals" / "log.jsonl", secrets=secret_values)
+    from ...core.auftraege import AuftragStore
+    backoffice = AuftragStore(ROOT / "backoffice" / "log.jsonl", secrets=secret_values)
     return ToolContext(core=core, antraege=antraege, engine=engine,
                        finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=secret_values,
                        web=web, research=research, google=google, watch=watch,
                        notifications=notifications, agenda=agenda, secret_dict=secrets,
                        kosten=kosten, aktivitaet=aktivitaet, visuals=[],
                        brain=brain, insights=insights, investment=investment, crm=crm,
-                       trajektorien=trajektorien, social=social, approvals=approvals), secret_values
+                       trajektorien=trajektorien, social=social, approvals=approvals,
+                       backoffice=backoffice), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:
@@ -534,6 +537,17 @@ def _start_briefing_loop(ctx, notify) -> None:
                             text += "\n\n" + dz
                     except Exception as exc:
                         print(f"[briefing] Depot-Zeile-Fehler: {exc}", flush=True)
+                    # Backoffice: nachts erledigte Auftraege gebuendelt (CEO-Entscheidung 2026-09-26).
+                    if art == "morgen" and getattr(ctx, "backoffice", None) is not None:
+                        try:
+                            from datetime import timedelta
+                            from ...core.auftraege import briefing_zeilen
+                            _j = jetzt.replace(tzinfo=None) if tz else jetzt
+                            bz = briefing_zeilen(ctx.backoffice, _j - timedelta(hours=12))
+                            if bz:
+                                text += "\n\nNachts im Backoffice erledigt:\n" + "\n".join(f"  - {z}" for z in bz)
+                        except Exception as exc:
+                            print(f"[briefing] Backoffice-Fehler: {exc}", flush=True)
                     notify(text, abteilung="LUNA-Briefing", kategorie="briefing", quelle="briefing",
                            dedup_stunden=0)
                     ctx.agenda.markiere_briefing(art, datum)

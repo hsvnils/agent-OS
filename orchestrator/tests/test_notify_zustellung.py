@@ -69,6 +69,44 @@ class TestKeineUndefiniertenNamen(unittest.TestCase):
         frei = sorted(gelesen - gebunden)
         self.assertEqual(frei, [], f"main() liest ungebundene Namen -> NameError im Zustellblock: {frei}")
 
+    def _freie_namen(self, pfad) -> list[str]:
+        """Alle Funktionen einer Datei -- auch verschachtelte (z. B. `loop` in `_start_briefing_loop`) und Methoden --
+        auf gelesene, aber nirgends gebundene Namen pruefen (eigener Scope + umschliessende Funktionen + Modul +
+        Builtins). Anlass 2026-09-27: ein fehlender `timedelta`-Import im Briefing-Loop waere still im `except`
+        verschwunden; der main()-Test oben haette ihn nicht gesehen."""
+        modul = ast.parse(pathlib.Path(pfad).read_text("utf-8"))
+        basis = self._bindungen(modul.body) | set(dir(builtins))
+        fehler: list[str] = []
+
+        def funktionen(rumpf):
+            for x in self._im_scope(rumpf):
+                if isinstance(x, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    yield x, True
+                elif isinstance(x, ast.ClassDef):
+                    yield x, False
+
+        def pruefe(rumpf, umgebung, weg):
+            for f, ist_funktion in funktionen(rumpf):
+                if not ist_funktion:                     # Klassen: Methoden sehen den Klassen-Scope nicht
+                    pruefe(f.body, umgebung, weg + [f.name])
+                    continue
+                a = f.args
+                eigene = {x.arg for x in a.args + a.posonlyargs + a.kwonlyargs}
+                eigene |= {x.arg for x in (a.vararg, a.kwarg) if x is not None}
+                gebunden = self._bindungen(f.body) | eigene | umgebung
+                gelesen = {x.id for x in self._im_scope(f.body) if isinstance(x, ast.Name) and isinstance(x.ctx, ast.Load)}
+                fehler.extend(f"{'.'.join(weg + [f.name])}: {n}" for n in sorted(gelesen - gebunden))
+                pruefe(f.body, gebunden, weg + [f.name])
+
+        pruefe(modul.body, basis, [])
+        return fehler
+
+    def test_alle_funktionen_im_bot_binden_ihre_namen(self):
+        self.assertEqual(self._freie_namen(BOT), [], "ungebundene Namen -> NameError, oft still im except")
+
+    def test_alle_funktionen_der_web_app_binden_ihre_namen(self):
+        self.assertEqual(self._freie_namen(BOT.parents[1] / "web" / "app.py"), [])
+
 
 class TestOutboxLawine(unittest.TestCase):
     def _store(self, d):

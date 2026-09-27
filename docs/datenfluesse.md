@@ -176,6 +176,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `crm/log.jsonl` | Bot, Web | dito | ja | ja |
 | `content_ops/*_cache.jsonl` (5 Dateien) | Web, Content-Feed | dito | ja | nein (Cache von Supabase) |
 | `nutzung/log.jsonl` | Web (`/api/nutzung`) | Leistungsbericht | ja | ja |
+| `backoffice/log.jsonl` (Auftraege, append-only) | Web (`/api/backoffice/*`, Worker-Ergebnisse) | Web, Bot (Werkzeug `auftrag_details`, Morgen-Briefing) | ja | ja |
 | `orchestrator/memory/log.jsonl` | Bot, Voice | dito | ja | ja |
 | `orchestrator/state/instagram_token.json` (**Secret**) | `governance/instagram_token.py` | dito | ja | bewusst nein (CEO) |
 | `projekt_changelog.md`, `finance/budget.md` | Bot, Web, Agenten | alle | ja | Git |
@@ -206,6 +207,7 @@ content_ops/ideas_cache.jsonl
 content_ops/sources_cache.jsonl
 content_ops/trends_cache.jsonl
 nutzung/log.jsonl
+backoffice/log.jsonl
 ```
 
 Bewusst ohne Backup (Caches, die aus Supabase neu entstehen, und fluechtige Zustaende):
@@ -234,7 +236,8 @@ cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
   (CEO aus `.env` oder Team-Nutzer aus `luna_os_users`); ausgenommen nur `/api/webhook/*` (Meta, per
   Verify-Token/HMAC geprueft). Routen-Gruppen: Kern (`/api/state`, `/api/me`, `/api/events`, `/api/prefs`,
   `/api/settings`, …), Chat/Voice (`/api/chat`, `/api/tts`, `/api/sehen`, `/api/brain`), Antraege und
-  Entwicklungs-Roadmap, Cutter (`/api/cutter/*`, Maschine-zu-Maschine), Reels (`/api/reel/*`,
+  Entwicklungs-Roadmap, Cutter (`/api/cutter/*`, Maschine-zu-Maschine), Backoffice (`/api/backoffice/*`, Modul
+  administration, Maschine-zu-Maschine), Reels (`/api/reel/*`,
   **`/freigeben` postet auf Facebook**), CRM/Instagram, Content, Investment (inkl. `…/paper-order`).
 - **Voice-Server** (localhost:7860, WebRTC) und **Mac-Orb** (ruft `127.0.0.1:8765`) — nur am MacBook.
 
@@ -261,6 +264,7 @@ cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
 | NAS, DSM-Aufgabenplaner (root) | 03:30 | `docker exec luna-os python -m cutter.reel_daily --einreichen --schnell-index` |
 | MACO470, systemd `cutter-worker` | Dauerlauf, Poll 20 s | Cutter-Queue ueber LUNA-OS |
 | MACO470, systemd `luna-backup.timer` | 03:20 (`Persistent=true`) | `deploy/backup-from-nas.sh` |
+| MACO470, systemd `backoffice-worker` (`deploy/backoffice-worker.service`) | Poll alle 60 s | Backoffice-Auftraege mit lokalem LLM; laedt das Modell nur bei genug RAM (Tag 13 GB, 01-06 Uhr 11 GB), entlaedt nach dem Stapel |
 | MACO470, Windows-Aufgabe `LUNA-WSL-Keepalive` | Anmeldung + alle 5 min | haelt WSL am Leben (BF-07) |
 | MacBook, launchd `com.hanserautisch.investment-backup` | 03:00 | Zweit-Backup |
 
@@ -270,6 +274,7 @@ cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
 |---|---|---|
 | Clip-Archiv NAS -> MACO470 | SMB `//192.168.178.129/SocialMediaTeam` per **CIFS** read-only unter `/mnt/nas-clips` (Konto `maco470`, DSM nur-lesen) | `findmnt /mnt/nas-clips`; `docs/maco470-roadmap.md` E6 |
 | Cutter-Queue MACO470 <-> NAS | `cutter/luna_bridge.py`: `GET /api/cutter/queue` (zugleich Herzschlag), `POST /api/cutter/report`, `POST /api/reel/einreichen` (Reel als base64-JSON) | `cutter/luna_bridge.py` |
+| Backoffice MACO470 <-> NAS | `backoffice/worker.py` ueber `cutter/luna_bridge.py`: `GET /api/backoffice/naechster` (Auftrag wird `in_arbeit`), `POST /api/backoffice/ergebnis`; Modell ueber die **native** Ollama-API (`/api/chat`, `num_ctx` 8192, ohne Werkzeuge) auf `192.168.178.184:11434`; RAM-Messung per `powershell.exe` (Windows); Gegenlesen von Bewertungen/Analysen ueber Gemini | `backoffice/worker.py` |
 | Reel -> Facebook | Reel liegt in `reel_freigabe/` auf der NAS -> CEO gibt in LUNA-OS frei -> `governance/facebook_reels.py` | `channels/web/app.py` |
 | Backup NAS -> MACO470 | `ssh luna-nas "tar czf - <Liste>" \| tar xzf -` nach `~/LUNA-Backups/<stamp>`, 30 Staende; bei leerem Lauf Exit 1 + Telegram | `deploy/backup-from-nas.sh` |
 | Deploy MACO470 -> NAS | `deploy/sync-to-nas.sh` (tar ueber ssh, Schutzliste), Neustart per `sudo` durch den CEO | `deploy/sync-to-nas.sh` |

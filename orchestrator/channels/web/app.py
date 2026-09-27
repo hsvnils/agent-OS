@@ -22,6 +22,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 
 from ...core.antraege import Antraege
+from ...core.auftraege import ARTEN as AUFTRAG_ARTEN, AuftragStore, kurz_id
 from ...core.entwicklungs_roadmap import EntwicklungsRoadmap
 from ...core.brain import Brain
 from ...core.crm import CrmStore
@@ -47,6 +48,7 @@ antraege = Antraege(ROOT / "antraege" / "log.jsonl", changelog=_changelog,
 notifications = Notifications(ROOT / "notifications" / "log.jsonl")
 research = ResearchTickets(ROOT / "research" / "log.jsonl", changelog=_changelog)
 agenda = Agenda(ROOT / "agenda" / "log.jsonl")
+backoffice = AuftragStore(ROOT / "backoffice" / "log.jsonl")   # FRONTDESK_BACKOFFICE_ROADMAP.md
 brain = Brain(ROOT / "brain" / "log.jsonl")
 
 
@@ -455,6 +457,74 @@ async def cutter_report(request: Request):
         r = cutter_store.add({"id": uuid.uuid4().hex, "projekt": (d.get("projekt") or "")[:200],
                               "quelle": "mac", **felder})
     return JSONResponse(r)
+
+
+# -- Backoffice (FRONTDESK_BACKOFFICE_ROADMAP.md, Etappe 2): Warteschlange fuer das lokale LLM auf dem MACO470. ----
+# Der Backoffice-Worker holt Auftraege per /naechster und meldet per /ergebnis. Meldung an den CEO: tagsueber einzeln
+# (Outbox -> Telegram, voller Text per „zeig #xxxx"), zwischen 01 und 06 Uhr nur im Morgen-Briefing (CEO 2026-09-26).
+BACKOFFICE_NACHT = (1, 6)
+
+
+def _backoffice_nacht(jetzt: datetime | None = None) -> bool:
+    if jetzt is None:
+        try:
+            from zoneinfo import ZoneInfo
+            jetzt = datetime.now(ZoneInfo("Europe/Berlin"))
+        except Exception:
+            jetzt = datetime.now()
+    return BACKOFFICE_NACHT[0] <= jetzt.hour < BACKOFFICE_NACHT[1]
+
+
+@app.get("/api/backoffice")
+def backoffice_liste():
+    return {"auftraege": backoffice.list()[:100], "arten": list(AUFTRAG_ARTEN)}
+
+
+@app.post("/api/backoffice/auftrag")
+async def backoffice_auftrag(request: Request):
+    d = await _json(request)
+    try:
+        aid = backoffice.anlegen(d.get("aufgabe") or "", art=d.get("art") or "sonstiges",
+                                 von=_pref_user(request) or "CEO")
+    except ValueError as exc:
+        return JSONResponse({"ok": False, "hinweis": str(exc)})
+    return JSONResponse({"ok": True, "id": aid, "kurz": kurz_id(aid)})
+
+
+@app.get("/api/backoffice/naechster")
+def backoffice_naechster():
+    """Vom Backoffice-Worker gepollt: aeltesten offenen Auftrag holen (wird dabei in_arbeit)."""
+    backoffice.aufraeumen(stunden=2)
+    return {"auftrag": backoffice.naechster()}
+
+
+@app.post("/api/backoffice/ergebnis")
+async def backoffice_ergebnis(request: Request):
+    d = await _json(request)
+    aid = (d.get("id") or "").strip()
+    a = backoffice.get(aid) if aid else None
+    if a is None:
+        return JSONResponse({"ok": False, "hinweis": "Unbekannter Auftrag."})
+    meldung = "briefing" if _backoffice_nacht() else "einzeln"
+    titel = " ".join(a.get("aufgabe", "").split())[:80]
+    if d.get("ok"):
+        ergebnis = str(d.get("ergebnis") or "")
+        backoffice.fertig(a["id"], ergebnis=ergebnis, modell=str(d.get("modell") or ""),
+                          dauer_s=d.get("dauer_s") or 0, zweitmeinung=str(d.get("zweitmeinung") or ""),
+                          meldung=meldung)
+        text = f"Auftrag #{a['kurz']} erledigt: {titel}"
+        detail = ergebnis + (f"\n\n--- Zweitmeinung (Gemini) ---\n{d['zweitmeinung']}" if d.get("zweitmeinung") else "")
+    else:
+        backoffice.fehlschlag(a["id"], grund=str(d.get("grund") or "unbekannt"), meldung=meldung)
+        text = f"Auftrag #{a['kurz']} fehlgeschlagen: {titel} ({str(d.get('grund') or '')[:120]})"
+        detail = str(d.get("grund") or "")
+    if meldung == "einzeln":
+        try:
+            notifications.enqueue(text, abteilung="Backoffice", kategorie="backoffice", quelle="backoffice",
+                                  detail=detail[:8000], dedup_stunden=0)
+        except Exception:
+            pass
+    return JSONResponse({"ok": True, "meldung": meldung})
 
 
 # -- #2: Nutzer-Praeferenzen (pro Nutzer, geraeteuebergreifend) -- z. B. das Dashboard-Layout. --------

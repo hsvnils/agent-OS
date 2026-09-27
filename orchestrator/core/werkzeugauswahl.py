@@ -95,6 +95,10 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
         "stichwoerter": ["budget", "kosten", "geld", "euro", "eur", "ausgabe", "rechnung", "abo", "cfo", "finanz",
                          "token", "sparen", "guenstig", "preis", "teuer", "dienstleister", "modelle", "provider"],
     },
+    "backoffice": {
+        "werkzeuge": ["auftrag_details"],
+        "stichwoerter": ["auftrag", "backoffice", "hintergrund", "bis morgen", "ergebnis"],
+    },
     "gedaechtnis": {
         "werkzeuge": ["erfahrung_abrufen", "erfahrung_merken"],
         "stichwoerter": ["erfahrung", "wie haben wir", "frueher", "letztes mal", "bewaehrt", "gelernt", "lernen",
