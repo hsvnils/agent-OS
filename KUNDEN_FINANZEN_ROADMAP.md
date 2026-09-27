@@ -1,10 +1,10 @@
 # Roadmap: Kunden, Angebote, Rechnungen und Finanzen in LUNA-OS
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-09-27
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: CEO bestaetigt den Charta-Diff (CFO/CRO); danach Go fuer Etappe 1 (Fundament).
+- Naechster Schritt: Go fuer Merge, Push und Deploy von Etappe 1 (CEO startet danach die Container neu); dann Etappe 2.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -124,7 +124,15 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 1: Fundament — Buchhaltungs-Speicher, Nummernkreise, Ablage, Backup
 
-- Status: geplant
+- Status: umgesetzt auf `ai/kunden-finanzen`, Deploy offen (2026-09-27)
+- Ergebnis: `orchestrator/core/buchhaltung.py` (Hash-Kette, `vergebe_nummer` unter Dateisperre, `beleg_ablegen`,
+  `pruefe_kette`/`pruefe_belege`, `tagespruefung`), Bot-Loop 05:00 mit Alarm, Deploy-Schutz, Backup (Log + Beleg-Ordner +
+  Schrumpf-Check), `.gitignore`, Doku, Team-Modul `finanzen` (nur owner oder ausdruecklich zugeteilt). Tests: 12 neue,
+  Suite 815 gruen. Gegenproben rot wie erwartet: Hash-Pruefung aus -> Manipulation unerkannt; Sperre aus -> doppelte
+  Nummern; Backup mit weniger Belegen als der Vorstand -> Abbruch mit Exit 1. Backup-Probelauf gegen die echte NAS:
+  18 Stores, 0 Belege (auf der NAS gibt es noch keine Buchhaltung; Log + Belege werden ab der ersten Aufzeichnung
+  gesichert). Bekannte Grenze: das Abschneiden der **letzten** Zeile erkennt die Kette allein nicht -- das faengt der
+  Schrumpf-Check des Backups ab.
 - Ziel / Scope: `buchhaltung/log.jsonl` (append-only, Hash-Kette, Ereignistypen, Faltung wie Investment-Depot),
   Nummernkreis-Dienst (atomar, lueckenlos, je Jahr), Belegablage `buchhaltung/belege/<jahr>/` mit SHA-256, Ketten-Pruefung
   (taeglich + Alarm), Aufbewahrungsklassen; Deploy-Schutz, Backup inkl. Beleg-Ordner (+ Dateizaehlung im Schrumpf-Check),

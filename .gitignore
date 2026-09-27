@@ -32,6 +32,8 @@ orchestrator/memory/log_dryrun.jsonl
 # Live-Daten der Web-App auf der NAS (BF-08, 2026-09-25)
 nutzung/
 cutter_ops/
+# Buchhaltung (Hash-Kette + Belege, GoBD) -- Live-Daten auf der NAS, nie ins oeffentliche Repo
+buchhaltung/
 
 # Live-Voice: lokale Stimmauswahl (Nutzerpraeferenz, kein Versionierungsbedarf)
 orchestrator/channels/voice/selected_voice.json

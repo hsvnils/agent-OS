@@ -51,7 +51,8 @@ class TestRollenModule(unittest.TestCase):
         self.assertNotIn("team", erlaubte_apps({"role": "content", "allowed_modules": ["content_ops"]}))
 
     def test_module_fuer_rolle(self):
-        self.assertEqual(module_fuer_rolle("owner"), ["content_ops", "crm", "invest", "administration"])
+        self.assertEqual(module_fuer_rolle("owner"), ["content_ops", "crm", "invest", "administration", "finanzen"])
+        self.assertEqual(module_fuer_rolle("admin"), ["content_ops", "crm", "invest", "administration"])  # Finanzen nur owner
         self.assertEqual(module_fuer_rolle("content"), ["content_ops"])
         self.assertEqual(module_fuer_rolle("unbekannt"), ["content_ops"])
 

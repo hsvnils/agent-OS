@@ -45,6 +45,7 @@ FILES=(
   entwicklung/roadmap.jsonl
   nutzung/log.jsonl
   backoffice/log.jsonl
+  buchhaltung/log.jsonl
 )
 
 mkdir -p "$DEST"
@@ -55,9 +56,15 @@ for f in "${FILES[@]}"; do REMOTE_LIST="${REMOTE_LIST} ${f}"; done
 ssh -n -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH} && tar czf - \$(for f in ${REMOTE_LIST}; do [ -f \"\$f\" ] && echo \"\$f\"; done) 2>/dev/null" \
   | tar xzf - -C "$DEST" 2>/dev/null || true
 
+# Buchhaltungs-Belege (PDF/Fotos/XRechnung, KUNDEN_FINANZEN Etappe 1): ganzer Ordner, Dateien werden nie
+# geloescht -> Anzahl darf nur wachsen (Schrumpf-Check unten).
+ssh -n -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH} && [ -d buchhaltung/belege ] && tar czf - buchhaltung/belege 2>/dev/null" \
+  | tar xzf - -C "$DEST" 2>/dev/null || true
+BELEGE=$(find "$DEST/buchhaltung/belege" -type f 2>/dev/null | wc -l | tr -d ' ')
+
 FILES_OK=$(find "$DEST" -type f -name '*.jsonl' 2>/dev/null | wc -l | tr -d ' ')
 LINES=$(find "$DEST" -type f -name '*.jsonl' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ')
-echo ">> ${FILES_OK} Stores, ${LINES} Events gesichert."
+echo ">> ${FILES_OK} Stores, ${LINES} Events, ${BELEGE} Belege gesichert."
 
 # --- Fehlschlag laut machen (2026-09-25) ------------------------------------------------------------------
 # Frueher: NAS nicht erreichbar -> leerer Ordner, Exit 0 -- und die Aufbewahrung unten loeschte TROTZDEM den
@@ -81,6 +88,12 @@ PREV_LINES=0
 if [ "$FILES_OK" -eq 0 ]; then
   rm -rf -- "${DEST_BASE:?}/${STAMP:?}"
   melde "kein einziger Store gesichert (NAS erreichbar?). Alte Backups bleiben unangetastet."
+  exit 1
+fi
+PREV_BELEGE=0
+[ -n "$PREV" ] && PREV_BELEGE=$(find "$DEST_BASE/$PREV/buchhaltung/belege" -type f 2>/dev/null | wc -l | tr -d ' ')
+if [ "$BELEGE" -lt "$PREV_BELEGE" ]; then
+  melde "Buchhaltungs-Belege geschrumpft (${BELEGE} statt ${PREV_BELEGE}) - Belege duerfen nie verschwinden. Nichts rotiert, alle Staende bleiben."
   exit 1
 fi
 if [ "$LINES" -lt "$PREV_LINES" ]; then

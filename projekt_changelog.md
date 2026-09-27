@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 16:32] — Claude Code (MACO470)
+- **Was:** KUNDEN_FINANZEN Etappe 1 (Fundament) umgesetzt: Buchhaltungs-Speicher mit Hash-Kette, lueckenlose
+  Nummernkreise (K-/AP-, AN/AB/RE/ER-JJJJ-NNNN) unter Dateisperre, Beleg-Ablage mit SHA-256 und Aufbewahrungsfristen,
+  taegliche Integritaetspruefung 05:00 mit Alarm, Deploy-Schutz, Backup inkl. Beleg-Ordner und Schrumpf-Check,
+  Team-Modul `finanzen` (nur owner/zugeteilt). Noch ohne Oberflaeche.
+- **Warum:** CEO-Go „go fuer 1 und 2" (Etappe 1).
+- **Betroffen:** `orchestrator/core/buchhaltung.py`, `orchestrator/tests/test_buchhaltung.py`,
+  `orchestrator/tests/test_team_auth.py`, `orchestrator/core/team_auth.py`, `orchestrator/channels/telegram/bot.py`,
+  `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `.gitignore`, `docs/datenfluesse.md`, `AGENTS.md`,
+  `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-27 16:24] — Claude Code (MACO470, als Head of Agents auf CEO-Anweisung)
 - **Was:** **Charta-Aenderung CFO und CRO** genau wie im vorgelegten Diff: CFO erhaelt Buchhaltung (Kleinunternehmer, EUeR,
   Grenzwaechter, Jahres-Gewinnermittlung), Endzeichnung beim CEO statt Steuerberater, kein Festschreiben/Versenden/Loeschen
