@@ -28,6 +28,7 @@ from ...core.brain import Brain
 from ...core.crm import CrmStore
 from ...core.buchhaltung import Buchhaltung
 from ...core.kunden import DubletteFehler, KundenStore
+from ...core.angebote import AngebotStore, mail_text as angebot_mail_text
 from ...core.ig_inbox import IgInboxStore
 from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, CUTTER_FELDER, CUTTER_STATUSES,
                                    DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES, SOURCE_FELDER,
@@ -75,6 +76,31 @@ crm_store = CrmStore(ROOT / "crm" / "log.jsonl", changelog=_changelog, projektor
                      notify=notifications.enqueue)   # Phase 23<->21: Injection im DM-Webhook meldet an CISO
 buchhaltung = Buchhaltung((ROOT / "buchhaltung" / "log.jsonl").parent)   # Hash-Kette (KUNDEN_FINANZEN Etappe 1)
 kunden_store = KundenStore(buchhaltung)                                     # Firmen K-/Ansprechpartner AP- (Etappe 2)
+_GOOGLE = None
+
+
+def _google():
+    """Google Workspace fuer Angebote (Gmail-Entwurf mit Anhang, Kalender-Erinnerung) -- lazy, wie im Bot."""
+    global _GOOGLE
+    if _GOOGLE is None:
+        from ...governance.google_workspace import GoogleAuth, GoogleWorkspace
+        try:
+            from ..telegram.bot import _load_secrets
+            sec = _load_secrets()
+        except Exception:
+            sec = dict(os.environ)
+        _GOOGLE = GoogleWorkspace(GoogleAuth.from_env(env=sec),
+                                  standard_einladung=sec.get("GOOGLE_CALENDAR_DEFAULT_ATTENDEE", ""),
+                                  zeitzone=sec.get("GOOGLE_CALENDAR_TIMEZONE", "Europe/Berlin"))
+    return _GOOGLE
+
+
+def _firmendaten() -> dict:
+    """Eigene Firma (Briefkopf, Bank) -- liegt nur auf der NAS in buchhaltung/firmendaten.json (nie im Git)."""
+    try:
+        return json.loads((kunden_store.bh.dir / "firmendaten.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
 ig_inbox_store = IgInboxStore(ROOT / "ig_inbox" / "log.jsonl")   # Collab-Radar: Voll-Postfach-Archiv + KI-Analyse
 REEL_DIR = ROOT / "reel_freigabe"                                # Stufe C: eingereichte Reels (Video + Log)
 reel_store = ReelStore(REEL_DIR / "log.jsonl")
@@ -1308,6 +1334,164 @@ async def kunden_collab(nummer: str, request: Request):
     body = await _json(request)
     fn = kunden_store.collab_loesen if body.get("loesen") else kunden_store.collab_zuordnen
     return _kunden_aktion(lambda: fn(nummer, body.get("collab") or "", von=_von(request)))
+
+
+# -- Angebote (KUNDEN_FINANZEN Etappe 3; Modul crm) ----------------------------------------------------------------
+
+def _angebote() -> AngebotStore:
+    return AngebotStore(kunden_store.bh, kunden_store)
+
+
+@app.get("/api/crm/angebote")
+def angebote_liste(firma: str = ""):
+    return {"angebote": _angebote().liste(firma=firma)}
+
+
+@app.get("/api/crm/angebote/{nummer}")
+def angebot_detail(nummer: str):
+    a = _angebote().angebot(nummer)
+    if not a:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Angebotsnummer")
+    f = kunden_store.firma(a["firma"]) or {}
+    ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == a.get("ansprechpartner")), None)
+    return {"angebot": a, "firma": {k: f.get(k) for k in ("nummer", "name", "rechnungsmail", "collab")},
+            "ansprechpartner": ap, "mail_an": (ap or {}).get("mail") or f.get("rechnungsmail") or "",
+            "google": bool(_google().verfuegbar()), "firmendaten": bool(_firmendaten())}
+
+
+@app.post("/api/crm/angebote")
+async def angebot_anlegen(request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _angebote().anlegen(body.get("angebot") or {}, von=_von(request)))
+
+
+@app.post("/api/crm/angebote/{nummer}")
+async def angebot_aendern(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _angebote().aendern(nummer, body.get("angebot") or {}, von=_von(request)))
+
+
+@app.get("/api/crm/angebote/{nummer}/pdf")
+def angebot_pdf(nummer: str, archiv: int = 0):
+    """PDF-Vorschau (aktueller Stand) oder mit ?archiv=1 das zuletzt abgelegte (verschickte) PDF."""
+    st = _angebote()
+    a = st.angebot(nummer)
+    if not a:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Angebotsnummer")
+    if archiv:
+        if not a["pdfs"]:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "noch kein PDF abgelegt")
+        daten = (kunden_store.bh.dir / a["pdfs"][-1]["pfad"]).read_bytes()
+    else:
+        fd = _firmendaten()
+        if not fd:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Firmendaten fehlen (buchhaltung/firmendaten.json)")
+        try:
+            daten = st.pdf(a["nummer"], fd)
+        except ImportError:
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "PDF-Bibliothek fehlt -- Docker-Image neu bauen")
+    return Response(daten, media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="Angebot_{a["nummer"]}.pdf"'})
+
+
+def _angebot_pdf_ablegen(st: AngebotStore, a: dict, *, an: str, entwurf_id: str, von: str) -> dict:
+    return st.pdf_ablegen(a["nummer"], st.pdf(a["nummer"], _firmendaten()), an=an, entwurf_id=entwurf_id, von=von)
+
+
+@app.post("/api/crm/angebote/{nummer}/mailentwurf")
+async def angebot_mailentwurf(nummer: str, request: Request):
+    """PDF erzeugen + ablegen, Gmail-**Entwurf** mit Anhang anlegen. Senden macht der CEO in Gmail."""
+    body = await _json(request)
+    st = _angebote()
+
+    def tun():
+        a = st.angebot(nummer)
+        if not a:
+            raise KeyError(nummer)
+        if a["status"] != "entwurf":
+            raise ValueError(f"{a['nummer']} ist bereits {a['status']}.")
+        fd = _firmendaten()
+        if not fd:
+            raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
+        d = angebot_detail(a["nummer"])
+        an = (body.get("an") or d["mail_an"] or "").strip()
+        if not an:
+            raise ValueError("Keine Mail-Adresse: beim Ansprechpartner oder als Rechnungs-Mail der Firma eintragen.")
+        g = _google()
+        if not g.verfuegbar():
+            raise ValueError("Google ist nicht verbunden -- Mail-Entwurf nicht moeglich.")
+        pdf = st.pdf(a["nummer"], fd)
+        betreff, text = angebot_mail_text(a, d["firma"], d["ansprechpartner"], fd)
+        r = g.mail_entwurf(an, betreff, text, anhaenge=[(f"Angebot_{a['nummer']}.pdf", pdf, "application/pdf")])
+        if not r.get("ok"):
+            raise ValueError(r.get("hinweis") or "Gmail-Entwurf fehlgeschlagen.")
+        abl = st.pdf_ablegen(a["nummer"], pdf, an=an, entwurf_id=r.get("entwurf_id", ""), von=_von(request))
+        return {"an": an, "entwurf_id": r.get("entwurf_id"), "pdf": abl["pfad"]}
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/crm/angebote/{nummer}/versendet")
+async def angebot_versendet(nummer: str, request: Request):
+    """CEO hat das Angebot verschickt: Inhalt einfrieren, Kalender-Erinnerungen (Nachfassen, vor Ablauf), CRM-Stufe."""
+    from datetime import date as _date, timedelta as _td
+    st = _angebote()
+
+    def tun():
+        a = st.angebot(nummer)
+        if not a:
+            raise KeyError(nummer)
+        if a["status"] != "entwurf":
+            raise ValueError(f"{a['nummer']} ist bereits {a['status']}.")
+        hinweise = []
+        pdf = next((p["pfad"] for p in reversed(a["pdfs"]) if p.get("inhalt") == a["inhalt"]), "")
+        if not pdf:
+            if not _firmendaten():
+                raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
+            pdf = _angebot_pdf_ablegen(st, a, an="", entwurf_id="", von=_von(request))["pfad"]
+            if a["pdfs"]:
+                hinweise.append("Inhalt wurde nach dem letzten Mail-Entwurf geaendert -- aktueller Stand wurde abgelegt.")
+        heute = _date.fromisoformat(jetzt_iso()[:10])
+        name = (kunden_store.firma(a["firma"]) or {}).get("name", a["firma"])
+        termine, g = [], _google()
+        wuensche = [(heute + _td(days=int(a.get("nachfassen_tage") or 7)), f"Angebot {a['nummer']} nachfassen: {name}")]
+        ablauf = _date.fromisoformat(a["gueltig_bis"]) - _td(days=1)
+        if ablauf > heute and ablauf != wuensche[0][0]:
+            wuensche.append((ablauf, f"Angebot {a['nummer']} läuft morgen ab: {name}"))
+        for tag, titel in wuensche:
+            if not g.verfuegbar():
+                hinweise.append("Google nicht verbunden -- keine Kalender-Erinnerung angelegt.")
+                break
+            r = g.termin_anlegen(titel, f"{tag.isoformat()}T09:00:00", f"{tag.isoformat()}T09:15:00",
+                                 beschreibung=f"{a['nummer']} · {name} · {a.get('titel') or ''}\nLUNA-OS -> Angebote",
+                                 bestaetigt=True)
+            if r.get("ok"):
+                termine.append({"datum": tag.isoformat(), "titel": titel, "id": r.get("termin_id", "")})
+            else:
+                hinweise.append(f"Kalender: {r.get('hinweis') or 'Fehler'}")
+        st.status_setzen(a["nummer"], "versendet", termine=termine, pdf=pdf, von=_von(request))
+        for c in (kunden_store.firma(a["firma"]) or {}).get("collab", []):   # CRM-Stufe „angebot“
+            anzeige = next((f.get("firma") for f in crm_store.firmen() if (f.get("firma") or "").strip().lower() == c), c)
+            try:
+                crm_store.status_setzen(anzeige, "angebot")
+            except Exception:
+                hinweise.append(f"CRM-Stufe fuer {anzeige} nicht gesetzt.")
+        return {"termine": termine, "hinweise": hinweise}
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/crm/angebote/{nummer}/status")
+async def angebot_status(nummer: str, request: Request):
+    body = await _json(request)
+    ziel = (body.get("status") or "").strip()
+    if ziel not in ("angenommen", "abgelehnt"):
+        return {"ok": False, "hinweis": "Status muss angenommen oder abgelehnt sein."}
+    return _kunden_aktion(lambda: _angebote().status_setzen(nummer, ziel, grund=body.get("grund") or "",
+                                                            von=_von(request)))
+
+
+def jetzt_iso() -> str:
+    from ...core.buchhaltung import jetzt
+    return jetzt().isoformat()
 
 
 @app.post("/api/crm/sync")

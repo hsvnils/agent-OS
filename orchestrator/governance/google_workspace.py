@@ -160,14 +160,14 @@ class GoogleWorkspace:
         except Exception as exc:
             return _fehler(f"Gmail-Lesen fehlgeschlagen: {str(exc)[:160]}")
 
-    def mail_entwurf(self, an: str, betreff: str, text: str) -> dict:
-        """Sicher: legt einen Gmail-Entwurf an (sendet NICHT)."""
+    def mail_entwurf(self, an: str, betreff: str, text: str, *, anhaenge: list | None = None) -> dict:
+        """Sicher: legt einen Gmail-Entwurf an (sendet NICHT). `anhaenge` = [(dateiname, bytes, mime-typ)]."""
         if (g := self._guard()):
             return g
         try:
             svc = self.auth.service("gmail", "v1")
             draft = svc.users().drafts().create(
-                userId="me", body={"message": {"raw": _mime(an, betreff, text)}}).execute()
+                userId="me", body={"message": {"raw": _mime(an, betreff, text, anhaenge)}}).execute()
             return _ok(entwurf_id=draft.get("id"), hinweis="Entwurf angelegt (nicht gesendet).")
         except Exception as exc:
             return _fehler(f"Entwurf fehlgeschlagen: {str(exc)[:160]}")
@@ -406,11 +406,14 @@ def _dt(s: str):
         return None
 
 
-def _mime(an: str, betreff: str, text: str) -> str:
+def _mime(an: str, betreff: str, text: str, anhaenge: list | None = None) -> str:
     msg = EmailMessage()
     msg["To"] = an
     msg["Subject"] = betreff
     msg.set_content(text)
+    for name, daten, typ in anhaenge or []:                     # z. B. Angebots-PDF (KUNDEN_FINANZEN Etappe 3)
+        haupt, _, unter = (typ or "application/octet-stream").partition("/")
+        msg.add_attachment(daten, maintype=haupt, subtype=unter or "octet-stream", filename=name)
     return base64.urlsafe_b64encode(msg.as_bytes()).decode()
 
 
@@ -446,7 +449,9 @@ class MockGoogleWorkspace:
         return _ok(mail={"von": "a@test", "an": "luna@test", "betreff": "Betreff",
                          "datum": "2026-06-25", "text": "Mail-Text."})
 
-    def mail_entwurf(self, an, betreff, text):
+    def mail_entwurf(self, an, betreff, text, *, anhaenge=None):
+        self.entwuerfe = getattr(self, "entwuerfe", []) + [{"an": an, "betreff": betreff, "text": text,
+                                                            "anhaenge": [(n, len(d), t) for n, d, t in anhaenge or []]}]
         return _ok(entwurf_id="d1", hinweis="Entwurf angelegt (nicht gesendet).")
 
     def mail_senden(self, an, betreff, text, *, bestaetigt=False):

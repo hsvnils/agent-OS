@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 20:43] — Claude Code (MACO470)
+- **Was:** KUNDEN_FINANZEN Etappe 3 (Angebote) umgesetzt: Angebots-Store in der Buchhaltungs-Kette, PDF-Baustein
+  (`fpdf2` + DejaVu), Gmail-Entwurf mit PDF-Anhang, Kalender-Erinnerungen, CRM-Stufe „angebot", PDF-Ablage;
+  LUNA-OS V2 Sektion „Angebote" (Cache v33/v14). Docker-Image: `fpdf2==2.8.4` + `fonts-dejavu-core` (pip-audit ohne
+  Befund). Register: Schriftwahl.
+- **Warum:** CEO-Go „weiter gehts" (Etappe 3).
+- **Betroffen:** `orchestrator/core/{angebote,beleg_pdf}.py`, `orchestrator/governance/google_workspace.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/{app-v2.js,style-v2.css,index-v2.html}`,
+  `orchestrator/core/team_auth.py`, `orchestrator/tests/test_angebote.py`, `deploy/Dockerfile`, `docs/datenfluesse.md`,
+  `docs/entscheidungs-register.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-27 20:32] — Claude Code (MACO470)
 - **Was:** Zeitzonen-Korrektur der Buchhaltung (BF-32) und Firmendaten-Backup nach `main` gemergt (`05454bd`), gepusht,
   per `deploy/sync-to-nas.sh --no-restart` auf die NAS gebracht; Buchhaltungsdaten auf der NAS unveraendert.
