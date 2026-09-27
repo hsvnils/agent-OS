@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 15:11] — Claude Code (MACO470)
+- **Was:** Etappe 4 + BF-29 live: NAS-Deploy `25704bd`, Neustart CEO, Worker neu gestartet. Pruefung: Web 401/200, Worker aktiv
+  ohne Fehler, Meldung zu `#e037` zugestellt. Erster Nachtlauf der Agenten-Jobs ueber das Backoffice: 2026-09-28 02:00-04:00.
+- **Warum:** CEO: „Neustart ist durch".
+- **Betroffen:** NAS-Container, MACO470 `backoffice-worker`, `projekt_changelog.md`
+
 ## [2026-09-27 15:08] — Claude Code (MACO470)
 - **Was:** `FRONTDESK_BACKOFFICE_ROADMAP.md` **Etappe 4 umgesetzt** (Branch `ai/backoffice-etappe4`): Nacht-Jobs (Content 02:00,
   CFO 03:00, Self-Dev 04:00) schicken ihre Fachagenten-Aufrufe als stille Auftraege ans Backoffice (lokales Modell) und
