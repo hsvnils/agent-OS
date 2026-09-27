@@ -4,7 +4,7 @@
 - Stand: 2026-09-27
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Go fuer Merge, Push und Deploy von Etappe 1 (CEO startet danach die Container neu); dann Etappe 2.
+- Naechster Schritt: CEO startet die Container neu (Etappe 1 aktiv); danach Go fuer Etappe 2 (Kunden-App).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -124,7 +124,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 1: Fundament — Buchhaltungs-Speicher, Nummernkreise, Ablage, Backup
 
-- Status: umgesetzt auf `ai/kunden-finanzen`, Deploy offen (2026-09-27)
+- Status: gemergt (`65ee71a`), gepusht, auf die NAS deployt (2026-09-27); aktiv nach Container-Neustart
 - Ergebnis: `orchestrator/core/buchhaltung.py` (Hash-Kette, `vergebe_nummer` unter Dateisperre, `beleg_ablegen`,
   `pruefe_kette`/`pruefe_belege`, `tagespruefung`), Bot-Loop 05:00 mit Alarm, Deploy-Schutz, Backup (Log + Beleg-Ordner +
   Schrumpf-Check), `.gitignore`, Doku, Team-Modul `finanzen` (nur owner oder ausdruecklich zugeteilt). Tests: 12 neue,

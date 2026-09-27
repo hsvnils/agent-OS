@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 16:37] — Claude Code (MACO470)
+- **Was:** Etappe 1 (Kunden/Finanzen-Fundament) und Charta-Aenderung CFO/CRO nach `main` gemergt (`65ee71a`),
+  gepusht und per `deploy/sync-to-nas.sh --no-restart` auf die NAS gebracht; Suite 815 gruen, Doku-Check ok.
+  Branch `ai/kunden-finanzen` bleibt fuer Etappe 2 bestehen. Container-Neustart durch den CEO.
+- **Warum:** CEO-Go „go fuer merge, push und deploy".
+- **Betroffen:** `main`, NAS-Code, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-27 16:32] — Claude Code (MACO470)
 - **Was:** KUNDEN_FINANZEN Etappe 1 (Fundament) umgesetzt: Buchhaltungs-Speicher mit Hash-Kette, lueckenlose
   Nummernkreise (K-/AP-, AN/AB/RE/ER-JJJJ-NNNN) unter Dateisperre, Beleg-Ablage mit SHA-256 und Aufbewahrungsfristen,
