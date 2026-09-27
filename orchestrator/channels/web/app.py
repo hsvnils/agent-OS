@@ -26,6 +26,8 @@ from ...core.auftraege import ARTEN as AUFTRAG_ARTEN, AuftragStore, kurz_id
 from ...core.entwicklungs_roadmap import EntwicklungsRoadmap
 from ...core.brain import Brain
 from ...core.crm import CrmStore
+from ...core.buchhaltung import Buchhaltung
+from ...core.kunden import DubletteFehler, KundenStore
 from ...core.ig_inbox import IgInboxStore
 from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, CUTTER_FELDER, CUTTER_STATUSES,
                                    DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES, SOURCE_FELDER,
@@ -71,6 +73,8 @@ def _crm_projektor():
 
 crm_store = CrmStore(ROOT / "crm" / "log.jsonl", changelog=_changelog, projektor=_crm_projektor(),
                      notify=notifications.enqueue)   # Phase 23<->21: Injection im DM-Webhook meldet an CISO
+buchhaltung = Buchhaltung((ROOT / "buchhaltung" / "log.jsonl").parent)   # Hash-Kette (KUNDEN_FINANZEN Etappe 1)
+kunden_store = KundenStore(buchhaltung)                                     # Firmen K-/Ansprechpartner AP- (Etappe 2)
 ig_inbox_store = IgInboxStore(ROOT / "ig_inbox" / "log.jsonl")   # Collab-Radar: Voll-Postfach-Archiv + KI-Analyse
 REEL_DIR = ROOT / "reel_freigabe"                                # Stufe C: eingereichte Reels (Video + Log)
 reel_store = ReelStore(REEL_DIR / "log.jsonl")
@@ -1224,6 +1228,86 @@ def crm_timeline(firma: str = ""):
 def crm_todo_erledigen(todo_id: str):
     crm_store.todo_erledigen(todo_id)
     return JSONResponse({"ok": True})
+
+
+# -- Kunden-Stammdaten (KUNDEN_FINANZEN Etappe 2; Modul crm ueber den Pfad /api/crm) -----------------------------
+
+def _von(request: Request) -> str:
+    u = getattr(request.state, "user", None) or {}
+    return "LUNA-OS:" + (u.get("username") or "ceo")
+
+
+def _kunden_aktion(fn):
+    """Fachfehler als {ok: false, hinweis} (200), damit die Oberflaeche den Grund anzeigen kann."""
+    try:
+        return {"ok": True} | fn()
+    except DubletteFehler as exc:
+        return {"ok": False, "hinweis": str(exc), "dublette": exc.nummern}
+    except KeyError as exc:
+        return {"ok": False, "hinweis": f"Nicht gefunden: {exc.args[0] if exc.args else ''}"}
+    except ValueError as exc:
+        return {"ok": False, "hinweis": str(exc)}
+
+
+@app.get("/api/crm/kunden")
+def kunden_liste(suche: str = ""):
+    """Firmen mit Firmenkundennummer + Collab-Firmen, die noch keiner Nummer zugeordnet sind."""
+    zuordnung = kunden_store.collab_zuordnung()
+    ohne = [{"firma": f.get("firma"), "status": f.get("status"), "nachrichten": f.get("nachrichten"),
+             "quelle": f.get("quelle"), "letzter_kontakt": f.get("letzter_kontakt")}
+            for f in crm_store.firmen() if (f.get("firma") or "").strip().lower() not in zuordnung]
+    ohne.sort(key=lambda f: f.get("letzter_kontakt") or "", reverse=True)
+    return {"firmen": kunden_store.firmen(suche=suche), "collab_ohne_nummer": ohne}
+
+
+@app.get("/api/crm/kunden/{nummer}")
+def kunden_detail(nummer: str):
+    f = kunden_store.firma(nummer)
+    if not f:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Firmenkundennummer")
+    return {"firma": f}
+
+
+@app.post("/api/crm/kunden")
+async def kunden_anlegen(request: Request):
+    body = await _json(request)
+    collab = (body.get("collab") or "").strip()
+
+    def tun():
+        r = kunden_store.firma_anlegen(body.get("firma") or {}, von=_von(request),
+                                       trotz_dublette=bool(body.get("trotz_dublette")))
+        if collab:
+            kunden_store.collab_zuordnen(r["nummer"], collab, von=_von(request))
+        return r
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/crm/kunden/{nummer}")
+async def kunden_aendern(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: kunden_store.firma_aendern(nummer, body.get("firma") or {}, von=_von(request)))
+
+
+@app.post("/api/crm/kunden/{nummer}/ansprechpartner")
+async def kunden_ap_anlegen(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: kunden_store.ansprechpartner_anlegen(nummer, body.get("ansprechpartner") or {},
+                                                                        von=_von(request)))
+
+
+@app.post("/api/crm/ansprechpartner/{nummer}")
+async def kunden_ap_aendern(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: kunden_store.ansprechpartner_aendern(nummer, body.get("ansprechpartner") or {},
+                                                                        von=_von(request)))
+
+
+@app.post("/api/crm/kunden/{nummer}/collab")
+async def kunden_collab(nummer: str, request: Request):
+    """Collab-Firma zuordnen ({"collab": name}) oder loesen ({"collab": name, "loesen": true})."""
+    body = await _json(request)
+    fn = kunden_store.collab_loesen if body.get("loesen") else kunden_store.collab_zuordnen
+    return _kunden_aktion(lambda: fn(nummer, body.get("collab") or "", von=_von(request)))
 
 
 @app.post("/api/crm/sync")

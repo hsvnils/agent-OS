@@ -68,6 +68,7 @@ const SECTIONS = [
   { id: "devroadmap", icon: "🗺", label: "Roadmap", app: null },
   { id: "investment", icon: "📈", label: "Investment", app: "investment" },
   { id: "crm", icon: "🤝", label: "CRM", app: "crm" },
+  { id: "kunden", icon: "🏢", label: "Kunden", app: "kunden" },
   { id: "radar", icon: "🎯", label: "Radar", app: "crm" },
   { id: "content", icon: "✎", label: "Content", app: "trends" },
   { id: "cutter", icon: "🎬", label: "Cutter", app: "cutter" },
@@ -518,6 +519,107 @@ async function crmFirma(firma) {
   openModal(firma, (d && d.nachrichten || []).map(m => crmMsg(m, false)).join("") || emptyRow("Kein Verlauf."));
 }
 
+/* =========================== Kunden (Stammdaten, KUNDEN_FINANZEN Etappe 2) =========================== */
+// Firmen mit Firmenkundennummer K-…, Ansprechpartner mit AP-…; jede Änderung landet als Eintrag im Verlauf.
+const KUNDE_TYP = { kunde: "Kunde", lieferant: "Lieferant", partner: "Partner" };
+const FIRMA_FORM = [["name", "Firmenname *"], ["typ", "Typ", "typ"], ["strasse", "Straße und Hausnummer"], ["plz", "PLZ"], ["ort", "Ort"], ["land", "Land"],
+  ["rechnungsmail", "Rechnungs-Mail", "email"], ["telefon", "Telefon"], ["website", "Website"], ["ustid", "USt-IdNr."], ["steuernummer", "Steuernummer"],
+  ["zahlungsziel_tage", "Zahlungsziel (Tage)", "number"], ["notiz", "Notiz", "textarea"]];
+const AP_FORM = [["vorname", "Vorname"], ["nachname", "Nachname"], ["rolle", "Rolle / Position"], ["mail", "Mail", "email"], ["telefon", "Telefon"], ["notiz", "Notiz", "textarea"]];
+const FELD_LBL = Object.fromEntries([...FIRMA_FORM, ...AP_FORM].map(([k, l]) => [k, l.replace(" *", "")]).concat([["aktiv", "Aktiv"], ["collab", "Collab zugeordnet"], ["collab_entfernt", "Collab gelöst"], ["firma", "Firma"]]));
+let KUNDEN = { firmen: [], collab_ohne_nummer: [] }, KUNDEN_SUCHE = "", _kundenTimer = null;
+
+function formFelder(prefix, spec, werte = {}) {
+  return spec.map(([k, lbl, art]) => {
+    const v = werte[k] == null ? "" : String(werte[k]);
+    let inp;
+    if (art === "typ") inp = `<select id="${prefix}-${k}">${Object.entries(KUNDE_TYP).map(([id, l]) => `<option value="${id}" ${(v || "kunde") === id ? "selected" : ""}>${l}</option>`).join("")}</select>`;
+    else if (art === "textarea") inp = `<textarea id="${prefix}-${k}" rows="3" class="v2-inp">${esc(v)}</textarea>`;
+    else inp = `<input id="${prefix}-${k}" type="${art || "text"}" value="${esc(v)}" ${art === "number" ? 'min="0" max="365"' : ""}>`;
+    return `<label class="v2-feld"><small>${esc(lbl)}</small>${inp}</label>`;
+  }).join("");
+}
+function formWerte(prefix, spec) { const o = {}; spec.forEach(([k]) => { const e = $(`#${prefix}-${k}`); if (e) o[k] = e.value.trim(); }); return o; }
+function kundenMsg(id, text, ok) { const m = $("#" + id); if (m) { m.textContent = text; m.className = "v2-msg " + (ok ? "ok" : "err"); } }
+
+RENDER.kunden = renderKunden;
+async function renderKunden() {
+  const sub = SUBTAB.kunden || "firmen";
+  KUNDEN = await jget("/api/crm/kunden" + (KUNDEN_SUCHE ? "?suche=" + encodeURIComponent(KUNDEN_SUCHE) : "")) || { firmen: [], collab_ohne_nummer: [] };
+  const f = KUNDEN.firmen || [], c = KUNDEN.collab_ohne_nummer || [];
+  let body;
+  if (sub === "collab") {
+    body = tile("Collab-Firmen ohne Kundennummer", c.map(x => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(x.status || "")}</span><div class="grow"><b>${esc(x.firma)}</b><small>${esc(kanal[x.quelle] || x.quelle || "")} · ${x.nachrichten || 0} Nachr.${x.letzter_kontakt ? " · " + esc(zeitKurz(x.letzter_kontakt)) : ""}</small></div>
+      <button class="v2-btn" data-act="kunde-neu" data-id="${esc(x.firma)}">+ Als Firma anlegen</button><button class="v2-btn" data-act="kunde-collab-zu" data-id="${esc(x.firma)}">Zuordnen…</button></div>`).join("") || emptyRow("Alle Collab-Firmen haben eine Kundennummer."), "w12");
+  } else {
+    const rows = f.map(x => `<tr class="klick" data-act="kunde-detail" data-id="${esc(x.nummer)}"><td><b>${esc(x.nummer)}</b></td><td>${esc(x.name)}${x.aktiv ? "" : ` <span class="v2-badge neutral">inaktiv</span>`}</td><td>${esc(KUNDE_TYP[x.typ] || x.typ || "")}</td><td>${esc([x.plz, x.ort].filter(Boolean).join(" "))}</td><td>${x.ansprechpartner || 0}</td><td>${(x.collab || []).length ? "🤝" : ""}</td></tr>`).join("");
+    body = `${kpiTile("Firmen", String(f.filter(x => x.aktiv).length), null, "aktiv")}${kpiTile("Collab ohne Nummer", String(c.length), null, "noch zuzuordnen")}
+      ${tile(KUNDEN_SUCHE ? `Treffer für „${KUNDEN_SUCHE}"` : "Firmen", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Firma</th><th>Typ</th><th>Ort</th><th>Ansprechp.</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow(KUNDEN_SUCHE ? "Keine Treffer." : "Noch keine Firma angelegt — oben rechts „+ Neue Firma“."), "w12")}`;
+  }
+  const actions = `<input id="kunden-suche" class="v2-inp" placeholder="Suchen (Name, Nr., Ort, Ansprechpartner)…" value="${esc(KUNDEN_SUCHE)}" style="width:260px"><button class="v2-btn pri" data-act="kunde-neu">+ Neue Firma</button>`;
+  $("#v2-app").innerHTML = secHead("Kunden", actions) + tabs("kunden", [["firmen", "Firmen"], ["collab", `Collab ohne Nummer (${c.length})`]]) + `<div class="v2-grid">${body}</div>`;
+  const s = $("#kunden-suche");
+  if (s) {
+    s.addEventListener("input", () => { clearTimeout(_kundenTimer); _kundenTimer = setTimeout(() => { KUNDEN_SUCHE = s.value.trim(); renderKunden().then(() => { const n = $("#kunden-suche"); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }); }, 300); });
+  }
+}
+function kundeNeu(collab) {
+  openModal("Neue Firma", `<div class="v2-form">${collab ? `<div class="v2-sub">Wird mit der Collab-Firma <b>${esc(collab)}</b> verknüpft.</div>` : ""}${formFelder("kf", FIRMA_FORM, collab ? { name: collab, typ: "partner" } : {})}
+    <button class="v2-btn pri" data-act="kunde-anlegen" data-id="${esc(collab || "")}">Anlegen (Nummer wird vergeben)</button><div id="kf-msg" class="v2-msg"></div></div>`);
+}
+async function kundeAnlegen(collab, trotz) {
+  const firma = formWerte("kf", FIRMA_FORM);
+  const r = await jpost("/api/crm/kunden", { firma, collab: collab || "", trotz_dublette: !!trotz });
+  if (!r) return kundenMsg("kf-msg", "Keine Verbindung zum Server.", false);
+  if (!r.ok && r.dublette && confirm(r.hinweis + "\n\nTrotzdem als eigene Firma anlegen?")) return kundeAnlegen(collab, true);
+  if (!r.ok) return kundenMsg("kf-msg", r.hinweis || "Fehler.", false);
+  await renderKunden(); return kundeDetail(r.nummer, `${r.nummer} angelegt.`);
+}
+async function kundeDetail(nr, meldung) {
+  openModal(nr, `<div class="v2-empty">Lade…</div>`);
+  const d = await jget("/api/crm/kunden/" + encodeURIComponent(nr));
+  const f = d && d.firma; if (!f) return openModal(nr, emptyRow("Firma nicht gefunden."));
+  const aps = (f.ansprechpartner_liste || []).map(a => `<div class="v2-list-row"><span class="v2-badge ${a.aktiv ? "aktiv" : "neutral"}">${esc(a.nummer)}</span><div class="grow"><b>${esc([a.vorname, a.nachname].filter(Boolean).join(" "))}</b><small>${esc([a.rolle, a.mail, a.telefon].filter(Boolean).join(" · "))}</small></div><button class="v2-btn" data-act="kunde-ap-edit" data-id="${esc(a.nummer)}" data-val="${esc(f.nummer)}">Bearbeiten</button></div>`).join("") || emptyRow("Noch kein Ansprechpartner.");
+  const collab = (f.collab || []).map(c => `<div class="v2-list-row"><span>🤝</span><div class="grow"><b>${esc(c)}</b></div><button class="v2-btn" data-act="kunde-collab-los" data-id="${esc(f.nummer)}" data-val="${esc(c)}">Lösen</button></div>`).join("") || emptyRow("Keine Collab-Firma verknüpft.");
+  const verlauf = (f.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc({ firma_angelegt: "Angelegt", firma_geaendert: "Geändert", collab_zugeordnet: "Collab verknüpft", collab_geloest: "Collab gelöst" }[v.typ] || v.typ)}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")} · ${esc(Object.entries(v.felder || {}).filter(([k, w]) => w !== "" && w != null).map(([k, w]) => `${FELD_LBL[k] || k}: ${typeof w === "boolean" ? (w ? "ja" : "nein") : w}`).join(" · "))}</small></div></div>`).join("");
+  openModal(`${f.nummer} · ${f.name}`, `${meldung ? `<div class="v2-msg ok">${esc(meldung)}</div>` : ""}
+    <h3>Stammdaten</h3><div class="v2-form">${formFelder("ke", FIRMA_FORM, f)}
+    <label class="v2-modlbl"><input type="checkbox" id="ke-aktiv" ${f.aktiv ? "checked" : ""}> Aktiv (inaktive Firmen bleiben erhalten, nur ausgeblendet)</label>
+    <button class="v2-btn pri" data-act="kunde-speichern" data-id="${esc(f.nummer)}">Änderungen speichern</button><div id="ke-msg" class="v2-msg"></div></div>
+    <h3>Ansprechpartner</h3>${aps}<button class="v2-btn" data-act="kunde-ap-neu" data-id="${esc(f.nummer)}" style="margin-top:8px">+ Ansprechpartner</button><div id="kap-box"></div>
+    <h3>Collab-CRM</h3>${collab}
+    <h3>Verlauf</h3>${verlauf}`);
+}
+async function kundeSpeichern(nr) {
+  const firma = { ...formWerte("ke", FIRMA_FORM), aktiv: !!($("#ke-aktiv") || {}).checked };
+  const r = await jpost("/api/crm/kunden/" + encodeURIComponent(nr), { firma });
+  if (!r || !r.ok) return kundenMsg("ke-msg", (r && r.hinweis) || "Fehler.", false);
+  const n = Object.keys(r.geaendert || {}).length;
+  renderKunden(); return kundeDetail(nr, n ? `${n} Feld(er) geändert.` : "Keine Änderung.");
+}
+function kundeApForm(firmaNr, ap) {
+  const box = $("#kap-box"); if (!box) return;
+  box.innerHTML = `<div class="v2-form" style="margin-top:10px"><b>${ap ? esc(ap.nummer) + " bearbeiten" : "Neuer Ansprechpartner"}</b>${formFelder("kap", AP_FORM, ap || {})}
+    ${ap ? `<label class="v2-modlbl"><input type="checkbox" id="kap-aktiv" ${ap.aktiv ? "checked" : ""}> Aktiv</label>` : ""}
+    <button class="v2-btn pri" data-act="kunde-ap-speichern" data-id="${esc(ap ? ap.nummer : "")}" data-val="${esc(firmaNr)}">${ap ? "Speichern" : "Anlegen (Nummer wird vergeben)"}</button><div id="kap-msg" class="v2-msg"></div></div>`;
+  box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+async function kundeApSpeichern(apNr, firmaNr) {
+  const ansprechpartner = formWerte("kap", AP_FORM);
+  if (apNr) ansprechpartner.aktiv = !!($("#kap-aktiv") || {}).checked;
+  const r = apNr ? await jpost("/api/crm/ansprechpartner/" + encodeURIComponent(apNr), { ansprechpartner })
+    : await jpost(`/api/crm/kunden/${encodeURIComponent(firmaNr)}/ansprechpartner`, { ansprechpartner });
+  if (!r || !r.ok) return kundenMsg("kap-msg", (r && r.hinweis) || "Fehler.", false);
+  renderKunden(); return kundeDetail(firmaNr, apNr ? "Ansprechpartner gespeichert." : `${r.nummer} angelegt.`);
+}
+async function kundeCollabZu(collab) {
+  const f = (KUNDEN.firmen || []).filter(x => x.aktiv);
+  if (!f.length) return alert("Noch keine Firma angelegt — nutze „+ Als Firma anlegen“.");
+  openModal("Collab zuordnen", `<div class="v2-form"><div class="v2-sub">Collab-Firma <b>${esc(collab)}</b> einer bestehenden Firmenkundennummer zuordnen:</div>
+    <select id="kcz-nr">${f.map(x => `<option value="${esc(x.nummer)}">${esc(x.nummer)} · ${esc(x.name)}</option>`).join("")}</select>
+    <button class="v2-btn pri" data-act="kunde-collab-ok" data-id="${esc(collab)}">Zuordnen</button><div id="kcz-msg" class="v2-msg"></div></div>`);
+}
+
 /* =========================== Collab-Radar =========================== */
 RENDER.radar = renderCollabRadar;
 async function renderCollabRadar() {
@@ -817,6 +919,16 @@ async function handleAct(act, el) {
     case "crm-todo": await jpost(`/api/crm/todo/${id}/erledigen`); return renderCrm();
     case "crm-sync": { flash("⏳ synchronisiert…"); const r = await jpost("/api/crm/sync"); if (r && r.api_fehler) alert("Instagram-Sync-Fehler:\n" + r.api_fehler); else if (r && r.ok === false) alert("Sync nicht möglich:\n" + (r.hinweis || "unbekannt")); return renderCrm(); }
     case "crm-firma": return crmFirma(id);
+    case "kunde-neu": return kundeNeu(id || "");
+    case "kunde-anlegen": return kundeAnlegen(id || "");
+    case "kunde-detail": return kundeDetail(id);
+    case "kunde-speichern": return kundeSpeichern(id);
+    case "kunde-ap-neu": return kundeApForm(id, null);
+    case "kunde-ap-edit": { const d = await jget("/api/crm/kunden/" + encodeURIComponent(val)); const ap = d && d.firma && (d.firma.ansprechpartner_liste || []).find(a => a.nummer === id); return kundeApForm(val, ap); }
+    case "kunde-ap-speichern": return kundeApSpeichern(id, val);
+    case "kunde-collab-zu": return kundeCollabZu(id);
+    case "kunde-collab-ok": { const nr = ($("#kcz-nr") || {}).value; const r = await jpost(`/api/crm/kunden/${encodeURIComponent(nr)}/collab`, { collab: id }); if (!r || !r.ok) return kundenMsg("kcz-msg", (r && r.hinweis) || "Fehler.", false); await renderKunden(); return kundeDetail(nr, `${id} verknüpft.`); }
+    case "kunde-collab-los": { if (!confirm(`Verknüpfung mit „${val}“ lösen? (Der Verlauf bleibt erhalten.)`)) return; await jpost(`/api/crm/kunden/${encodeURIComponent(id)}/collab`, { collab: val, loesen: true }); await renderKunden(); return kundeDetail(id, "Verknüpfung gelöst."); }
     case "reel-freigeben": { const t = (($(`#cap-${id}`) || {}).value || "").trim(); flash("⏳ …"); await jpost(`/api/reel/${id}/freigeben`, { caption: t }); return renderReels(); }
     case "reel-ablehnen": {
       if (!confirm("Reel ablehnen? Es wird nicht gepostet.")) return;
