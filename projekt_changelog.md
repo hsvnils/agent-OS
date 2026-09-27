@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 14:39] — Claude Code (MACO470)
+- **Was:** BF-24-Fix gemergt, gepusht, deployt (`c2ef3c4`), Neustart CEO. Live verifiziert: „Merk dir, dass Thomas Berger unser
+  Steuerberater ist" -> `brain_merken` (Protokoll) und Eintrag im Second Brain vorhanden. Neuer Befund BF-29 (ID-Praefix `B-`
+  doppelt belegt: Backoffice + Second Brain), Vorschlag `BO-`.
+- **Warum:** CEO-Go „go fuer merge, push und deploy".
+- **Betroffen:** NAS-Code, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-09-27 14:24] — Claude Code (MACO470)
 - **Was:** Aufgeraeumt: 4 gemergte Branches geloescht (CEO-Go). **BF-24 analysiert und behoben** (Branch `ai/bf24-leere-antworten`):
   Ursache per Messreihe eingegrenzt (Einzelwerkzeug 0/15 leer, Betriebsliste 11/15; kein Einzelwerkzeug schuld; Ursache ist die
