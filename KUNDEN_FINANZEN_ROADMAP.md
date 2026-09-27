@@ -102,7 +102,8 @@ Mail-Entwurf mit Anhang; Export fuer Steuerberater/ELSTER.
 
 1. **Nummernformate:** wie vorgeschlagen (`K-00001`, `AP-00001`, `AN-/AB-/RE-/ER-JJJJ-NNNN`).
 2. **Firma fuer den Briefkopf:** Krueger Onlinehandel und Media, c/o Hanserautisch, Arthur-Soltau-Weg 7c, 22889 Tangstedt.
-   **Noch offen:** Steuernummer (Pflichtangabe § 34a UStDV) und Bankverbindung — spaetestens vor Etappe 3/5 erfragen.
+   Bankverbindung am 2026-09-27 geliefert und in `buchhaltung/firmendaten.json` auf der NAS abgelegt (nicht im Git).
+   **Noch offen:** Steuernummer (Pflichtangabe § 34a UStDV) — vor Etappe 5 (Rechnungen) noetig, fuer Angebote optional.
 3. **Zahlungseingaenge:** zum Start von Hand in LUNA-OS als bezahlt markieren; Kontoauszug-Import spaeter.
 4. **PDF:** `fpdf2` ins Docker-Image (einmaliger Neubau).
 5. **Kein Steuerberater:** einfache Gewinnermittlung aus den Einnahmen und Ausgaben des CEO -> Etappen 7 und 9 **schlank**
@@ -144,7 +145,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 2: Kunden (CRM-Stammdaten) in LUNA-OS
 
-- Status: gemergt (`b0f01bb`), gepusht, auf die NAS deployt (2026-09-27); Abnahme durch den CEO offen
+- Status: live und vom CEO abgenommen (2026-09-27); Zeitzonen-Korrektur (BF-32) auf dem Branch, Deploy offen
 - Ergebnis: `orchestrator/core/kunden.py` (Firmen `K-`, Ansprechpartner `AP-`, Aenderungen als Eintraege in der
   Hash-Kette, Verlauf je Feld, Dubletten-Warnung, Collab-Zuordnung eindeutig), API `/api/crm/kunden*` +
   `/api/crm/ansprechpartner/*` (Modul crm), LUNA-OS **V2** Sektion „Kunden" (Liste + Suche, Detail mit Stammdaten,
@@ -152,6 +153,9 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   entfernen" -> Entfernen von V1 als eigener Vorschlag). Tests: 10 neue, Suite 825 gruen; Gegenproben rot wie erwartet
   (Dubletten-/Existenzpruefung aus; Dubletten-Rueckfrage in der Oberflaeche aus). Oberflaeche im Headless-Chrome mit
   Beispieldaten durchgeklickt: Liste, Collab-Tab, Anlegen mit Dublette + Rueckfrage, Detail, Speichern, Ansprechpartner.
+- Abnahme 2026-09-27 (CEO): Firma `K-00001` und Ansprechpartner `AP-00001` in LUNA-OS V2 angelegt; auf der NAS geprueft:
+  Kette intakt, Akteur `LUNA-OS:ceo`. Dabei gefunden: Zeitstempel in UTC (BF-32) -> Buchhaltung schreibt jetzt deutsche Zeit
+  mit Zeitzone (Deploy offen).
 - Abweichung vom Plan: **keine Supabase-Projektion** -- die Kunden-App liest direkt aus der Kette auf der NAS; eine
   Kopie in Supabase braucht derzeit niemand (spart eine Migration). Nachruestbar, falls ein anderer Dienst die Daten braucht.
 - Hinweis Rechte: Kunden liegen im Modul crm -> auch Team-Nutzer mit crm-Modul sehen und bearbeiten Stammdaten

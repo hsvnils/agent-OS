@@ -140,6 +140,26 @@ class TestBelege(unittest.TestCase):
             _bh().beleg_ablegen(b"x", "a.pdf", art="quatsch")
 
 
+class TestZeitzone(unittest.TestCase):
+    """BF-32: Container laufen in UTC -- Zeitstempel und Nummern-Jahr muessen deutsche Zeit sein."""
+
+    def test_1_silvester_nach_mitternacht_neues_jahr(self):
+        from datetime import datetime as echt, timezone
+        from unittest import mock
+        utc = echt(2026, 12, 31, 23, 30, tzinfo=timezone.utc)                   # = 01.01.2027 00:30 in Deutschland
+        with mock.patch("orchestrator.core.buchhaltung.datetime") as dt:
+            dt.now.side_effect = lambda tz=None: utc.astimezone(tz) if tz else utc.replace(tzinfo=None)
+            bh = _bh()
+            self.assertEqual(bh.vergebe_nummer("RE"), "RE-2027-0001")
+            ev = bh.beleg_ablegen(b"x", "a.pdf")
+        self.assertEqual(ev["daten"]["jahr"], 2027)
+        self.assertEqual(ev["ts"], "2027-01-01T00:30:00+01:00")
+
+    def test_2_zeitstempel_mit_zeitzone(self):
+        ts = _bh().erfassen("notiz", {})["ts"]
+        self.assertRegex(ts, r"\+0[12]:00$")
+
+
 class TestModulFinanzen(unittest.TestCase):
     def test_1_nur_owner_oder_zugeteilt(self):
         from orchestrator.core.team_auth import hat_modul, modul_fuer_pfad, module_fuer_rolle

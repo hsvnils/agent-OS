@@ -178,6 +178,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `nutzung/log.jsonl` | Web (`/api/nutzung`) | Leistungsbericht | ja | ja |
 | `backoffice/log.jsonl` (Auftraege, append-only) | Web (`/api/backoffice/*`, Worker-Ergebnisse) | Web, Bot (Werkzeug `auftrag_details`, Morgen-Briefing) | ja | ja |
 | `buchhaltung/log.jsonl` (Hash-Kette: Nummern, Belege, spaeter Kunden/Angebote/Rechnungen) + `buchhaltung/belege/<jahr>/` | Web (Kunden-App: Firmen, Ansprechpartner, Collab-Zuordnung) | Bot (Integritaetspruefung 05:00), Web | ja | ja (Log + Beleg-Ordner, Schrumpf-Check) |
+| `buchhaltung/firmendaten.json` (eigene Firma: Briefkopf, Steuernummer, Bankverbindung; **nur NAS, nie im Git**) | CEO (Angabe), von Hand angelegt | ab Etappe 3: Angebote/Rechnungen (PDF) | ja | ja |
 | `orchestrator/memory/log.jsonl` | Bot, Voice | dito | ja | ja |
 | `orchestrator/state/instagram_token.json` (**Secret**) | `governance/instagram_token.py` | dito | ja | bewusst nein (CEO) |
 | `projekt_changelog.md`, `finance/budget.md` | Bot, Web, Agenten | alle | ja | Git |
