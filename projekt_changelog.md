@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 22:14] — Claude Code (MACO470)
+- **Was:** Etappe 3b nach `main` gemergt (`0e7f5b7`), gepusht und per `deploy/sync-to-nas.sh --no-restart` auf die NAS
+  gebracht; Suite 849 gruen, Doku-Check ok; Buchhaltungsdaten und Logo auf der NAS unveraendert. Aktiv nach
+  Container-Neustart (der Neustart davor lief noch mit altem Code).
+- **Warum:** CEO-Go „go fuer merge, push und deploy".
+- **Betroffen:** `main`, NAS-Code, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-27 21:51] — Claude Code (MACO470)
 - **Was:** KUNDEN_FINANZEN Etappe 3b: Preislisten-Generator des CEO in LUNA-OS uebernommen -- Leistungskatalog
   (`core/katalog.py`, nur NAS), Angebote mit Katalog-Positionen, Zuschlaegen und Paketrabatt, PDF im Hanserautisch-Look,

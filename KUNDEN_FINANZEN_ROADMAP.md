@@ -4,7 +4,7 @@
 - Stand: 2026-09-27
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Go fuer Merge/Push/Deploy von 3b (nur Neustart), dann Abnahme 3 + 3b in LUNA-OS; fuer 3c
+- Naechster Schritt: CEO startet die Container neu (3b aktiv), dann Abnahme 3 + 3b in LUNA-OS; fuer 3c
   liefert der CEO die Meta-Exporte (CSV). Steuernummer vor Etappe 5.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
@@ -189,7 +189,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 3b: Leistungskatalog + Hanserautisch-Angebot (aus dem Preislisten-Generator)
 
-- Status: umgesetzt auf `ai/kunden-finanzen`, Deploy offen (2026-09-27; kein Image-Neubau noetig)
+- Status: gemergt (`0e7f5b7`), gepusht, Code auf der NAS (2026-09-27); aktiv nach Container-Neustart
 - Ergebnis: `core/katalog.py` (18 Eintraege = 15 Formate + 3 Pakete, 6 Zuschlaege, Texte 1:1 aus dem Generator;
   `buchhaltung/katalog.json` nur NAS, Aenderungen als `katalog_geaendert` in der Kette, Speichern nur Modul finanzen),
   Angebote mit Katalog-Positionen, Zuschlaegen (Prozent auf die Summe aller Formate) und Paketrabatt (auf die
