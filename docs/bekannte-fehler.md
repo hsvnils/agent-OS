@@ -67,6 +67,9 @@ Tabelle fort.
 - **Gegenproben: danach den Python-Zwischencode loeschen** (`__pycache__`). Hat die Mutation dieselbe Laenge wie das
   Original (z. B. `if fremd:` -> `if False:`) und liegt im selben Sekundenfenster, nutzt Python den veralteten Bytecode
   weiter -> ein falscher roter Test (2026-09-27 reproduziert, `test_10_erfundene_jahreszahl_bf28`).
+- **Doku-Schritte ebenfalls stoppend ausfuehren:** 2026-09-27 brach ein Doku-Skript mit Syntaxfehler ab, die Kette
+  lief weiter und committete/pushte Code ohne Changelog-Eintrag (`28c1bb2`, Doku nachgetragen). Befehle mit `&&`
+  verketten bzw. `set -e`, nie mit `;` hinter einem Schritt, der scheitern kann.
 - **Test-Gate als eigener Schritt, der bei Rot anhaelt** — nie in einer Befehlskette mit Commit/Merge/Push, die bei Rot
   weiterlaeuft (2026-09-27 ist so ein Push trotz rotem Lauf passiert; der Code war korrekt, der Ablauf nicht).
 - **zsh:** kein `#`-Kommentar hinter kopierbaren Befehlen („Unbekanntes Argument: #").

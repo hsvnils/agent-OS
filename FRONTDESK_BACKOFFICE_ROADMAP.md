@@ -4,7 +4,7 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `ec1173c`
-- Naechster Schritt: CEO-Go fuer Merge + Push + NAS-Deploy + Neustart, dann Live-Test in Telegram; BF-24 gesondert untersuchen.
+- Naechster Schritt: CEO startet die Container neu, dann Live-Test 2 in Telegram (gleiche Nachricht wie 13:50).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -163,6 +163,11 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
   Korrigiert (keine Vorlage, Erkennung ohne Hilfsverb, ID-Existenzpruefung). 2. Lauf: **Hintergrund 9/10** ans
   Backoffice (2x per Nachfassen), 0 Erfindungen, 1 ehrliche Rueckfrage; **Erledigung 10/10 ehrlich** (7 Werkzeug,
   3 „technischer Fehler" durch leere Gemini-Antworten, BF-24).
+- **Live-Test 1 (2026-09-27 13:50, nach Deploy `73e5392`):** gescheitert — Gemini antwortete „Absolut, mache ich. Hier ist
+  die Auftrags-ID für den Entwurf:" (18 Token) **ohne Werkzeugaufruf**; kein Auftrag angelegt. Neue Spielart von BF-25
+  (Ankuendigung statt Behauptung). Korrektur (CEO-Go, `28c1bb2`): deterministisches Nachfassen bei ausdruecklichem
+  Hintergrund-Wunsch ohne `auftrag_erteilen` + Erkennung von Ankuendigungen ohne Tat (Doppelpunkt am Ende, „mache ich"/
+  „lege ich an"). 3 neue Tests (Live-Fall nachgestellt), Gegenprobe rot, Suite 866 passed. Deployt (Neustart CEO offen).
 - Ziel / Scope: Werkzeuge `auftrag_erteilen(aufgabe, art)` und `auftraege_zeigen`; System-Prompt-Regel: „Erledigt"
   nur nach einem Werkzeug-Ergebnis im selben Zug, sonst „Auftrag angelegt"; optional Erkennung von
   Erledigungs-Behauptungen ohne Werkzeug-Aufruf (BF-25) mit Nachfassen.

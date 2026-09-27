@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 14:00] — Claude Code (MACO470)
+- **Was:** Frontdesk-Korrektur nach gescheitertem Live-Test 1 (Gemini kuendigte die Auftrags-ID an, rief `auftrag_erteilen`
+  nicht auf): Nachfassen bei ausdruecklichem Hintergrund-Wunsch ohne Auftrag (eigene, klare Anweisung) und bei Ankuendigungen
+  ohne Werkzeug; 3 Tests, Gegenprobe rot, Suite 866 passed; gemergt + gepusht + deployt (`28c1bb2`). **Nachtrag:** diese
+  Doku sollte im selben Commit sein; das Doku-Skript brach ab, die Befehlskette lief trotzdem weiter -> Lehre in
+  `docs/bekannte-fehler.md`.
+- **Warum:** CEO-Go „go" nach Live-Test-Befund.
+- **Betroffen:** `orchestrator/core/hoa_conversation.py`, `orchestrator/tests/test_frontdesk.py`, NAS-Code,
+  `FRONTDESK_BACKOFFICE_ROADMAP.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-09-27 13:20] — Claude Code (MACO470)
 - **Was:** Backoffice **Etappe 3 umgesetzt** (Branch `ai/frontdesk-werkzeuge`): Frontdesk-Werkzeuge `auftrag_erteilen` (Kern-Set) +
   `auftraege_zeigen`, Auftrags-IDs `B-...`, System-Prompt mit Backoffice-/Ehrlichkeitsregel + Duzen, Nachfassen bei Behauptungen
