@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 22:18] — Claude Code (MACO470)
+- **Was:** Etappe 3b live geprueft (nach CEO-Neustart): V2 v34, Katalog 18 Eintraege/6 Zuschlaege, Preisliste-PDF aus dem
+  Live-System mit Logo, DejaVu-Schrift und Bankverbindung (ohne Buchhaltungseintrag). NAS `buchhaltung/firmendaten.json`:
+  Bankname „comdirect (BLZ 20041144)" -> „comdirect Bank" (Anzeige auf Kundendokumenten).
+- **Warum:** Verifikation beim Empfaenger; Bankname war vom Eintragen noch technisch formuliert.
+- **Betroffen:** NAS `buchhaltung/firmendaten.json`
+
 ## [2026-09-27 22:14] — Claude Code (MACO470)
 - **Was:** Etappe 3b nach `main` gemergt (`0e7f5b7`), gepusht und per `deploy/sync-to-nas.sh --no-restart` auf die NAS
   gebracht; Suite 849 gruen, Doku-Check ok; Buchhaltungsdaten und Logo auf der NAS unveraendert. Aktiv nach
