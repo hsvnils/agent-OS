@@ -177,7 +177,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `content_ops/*_cache.jsonl` (5 Dateien) | Web, Content-Feed | dito | ja | nein (Cache von Supabase) |
 | `nutzung/log.jsonl` | Web (`/api/nutzung`) | Leistungsbericht | ja | ja |
 | `backoffice/log.jsonl` (Auftraege, append-only) | Web (`/api/backoffice/*`, Worker-Ergebnisse) | Web, Bot (Werkzeug `auftrag_details`, Morgen-Briefing) | ja | ja |
-| `buchhaltung/log.jsonl` (Hash-Kette: Nummern, Belege, spaeter Kunden/Angebote/Rechnungen) + `buchhaltung/belege/<jahr>/` | Bot, Web (ab Etappe 2) | Bot (Integritaetspruefung 05:00), Web | ja | ja (Log + Beleg-Ordner, Schrumpf-Check) |
+| `buchhaltung/log.jsonl` (Hash-Kette: Nummern, Belege, spaeter Kunden/Angebote/Rechnungen) + `buchhaltung/belege/<jahr>/` | Web (Kunden-App: Firmen, Ansprechpartner, Collab-Zuordnung) | Bot (Integritaetspruefung 05:00), Web | ja | ja (Log + Beleg-Ordner, Schrumpf-Check) |
 | `orchestrator/memory/log.jsonl` | Bot, Voice | dito | ja | ja |
 | `orchestrator/state/instagram_token.json` (**Secret**) | `governance/instagram_token.py` | dito | ja | bewusst nein (CEO) |
 | `projekt_changelog.md`, `finance/budget.md` | Bot, Web, Agenten | alle | ja | Git |
@@ -239,7 +239,8 @@ cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
   Verify-Token/HMAC geprueft). Routen-Gruppen: Kern (`/api/state`, `/api/me`, `/api/events`, `/api/prefs`,
   `/api/settings`, …), Chat/Voice (`/api/chat`, `/api/tts`, `/api/sehen`, `/api/brain`), Antraege und
   Entwicklungs-Roadmap, Cutter (`/api/cutter/*`, Maschine-zu-Maschine), Backoffice (`/api/backoffice/*`, Modul
-  administration, Maschine-zu-Maschine), Reels (`/api/reel/*`,
+  administration, Maschine-zu-Maschine), Kunden-Stammdaten (`/api/crm/kunden*`, `/api/crm/ansprechpartner/*`,
+  Modul crm, schreibt in die Buchhaltungs-Kette), Reels (`/api/reel/*`,
   **`/freigeben` postet auf Facebook**), CRM/Instagram, Content, Investment (inkl. `…/paper-order`).
 - **Voice-Server** (localhost:7860, WebRTC) und **Mac-Orb** (ruft `127.0.0.1:8765`) — nur am MacBook.
 

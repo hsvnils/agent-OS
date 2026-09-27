@@ -4,7 +4,8 @@
 - Stand: 2026-09-27
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: CEO startet die Container neu (Etappe 1 aktiv); danach Go fuer Etappe 2 (Kunden-App).
+- Naechster Schritt: Go fuer Merge, Push und Deploy von Etappe 2; danach Abnahme in LUNA-OS V2 durch den CEO (eine Firma mit
+  zwei Ansprechpartnern anlegen).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -124,7 +125,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 1: Fundament — Buchhaltungs-Speicher, Nummernkreise, Ablage, Backup
 
-- Status: gemergt (`65ee71a`), gepusht, auf die NAS deployt (2026-09-27); aktiv nach Container-Neustart
+- Status: live (deployt 2026-09-27, Container-Neustart durch den CEO bestaetigt)
 - Ergebnis: `orchestrator/core/buchhaltung.py` (Hash-Kette, `vergebe_nummer` unter Dateisperre, `beleg_ablegen`,
   `pruefe_kette`/`pruefe_belege`, `tagespruefung`), Bot-Loop 05:00 mit Alarm, Deploy-Schutz, Backup (Log + Beleg-Ordner +
   Schrumpf-Check), `.gitignore`, Doku, Team-Modul `finanzen` (nur owner oder ausdruecklich zugeteilt). Tests: 12 neue,
@@ -143,7 +144,18 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 2: Kunden (CRM-Stammdaten) in LUNA-OS
 
-- Status: geplant
+- Status: umgesetzt auf `ai/kunden-finanzen`, Deploy offen (2026-09-27)
+- Ergebnis: `orchestrator/core/kunden.py` (Firmen `K-`, Ansprechpartner `AP-`, Aenderungen als Eintraege in der
+  Hash-Kette, Verlauf je Feld, Dubletten-Warnung, Collab-Zuordnung eindeutig), API `/api/crm/kunden*` +
+  `/api/crm/ansprechpartner/*` (Modul crm), LUNA-OS **V2** Sektion „Kunden" (Liste + Suche, Detail mit Stammdaten,
+  Ansprechpartnern, Collab-Verknuepfung und Verlauf, Formulare). Nur V2 (CEO 2026-09-27: „Ich nutze nur V2, V1 koennen wir
+  entfernen" -> Entfernen von V1 als eigener Vorschlag). Tests: 10 neue, Suite 825 gruen; Gegenproben rot wie erwartet
+  (Dubletten-/Existenzpruefung aus; Dubletten-Rueckfrage in der Oberflaeche aus). Oberflaeche im Headless-Chrome mit
+  Beispieldaten durchgeklickt: Liste, Collab-Tab, Anlegen mit Dublette + Rueckfrage, Detail, Speichern, Ansprechpartner.
+- Abweichung vom Plan: **keine Supabase-Projektion** -- die Kunden-App liest direkt aus der Kette auf der NAS; eine
+  Kopie in Supabase braucht derzeit niemand (spart eine Migration). Nachruestbar, falls ein anderer Dienst die Daten braucht.
+- Hinweis Rechte: Kunden liegen im Modul crm -> auch Team-Nutzer mit crm-Modul sehen und bearbeiten Stammdaten
+  (so im Plan vorgesehen). Loeschen gibt es nicht (Aufbewahrung), nur „inaktiv".
 - Ziel / Scope: Firmen mit **Firmenkundennummer** `K-…`, Typ (Kunde/Lieferant/Partner), Rechnungsanschrift,
   Steuernummer/USt-IdNr., Rechnungs-Mail, Zahlungsziel; **Ansprechpartner mit eigener Nummer** `AP-…` (Name, Rolle, Mail,
   Telefon), mehrere je Firma; Zuordnung/Zusammenfuehren bestehender Collab-Firmen (Instagram-Handle, Mail) zu einer Nummer;

@@ -259,6 +259,9 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
 .v2-form-row input { flex: 1; }
 .v2-mods { display: flex; flex-direction: column; gap: 5px; padding: 6px 0; }
 .v2-modlbl { font-size: 13px; color: var(--v2-muted); display: flex; gap: 7px; align-items: center; }
+.v2-feld { display: flex; flex-direction: column; gap: 4px; } .v2-feld small { color: var(--v2-muted); font-size: 12px; }
+.v2-form textarea { border: 1px solid var(--v2-line); border-radius: 10px; padding: 10px 13px; font: inherit; background: var(--v2-bg1); color: var(--v2-fg); resize: vertical; }
+.v2-table tr.klick { cursor: pointer; } .v2-table tr.klick:hover td { background: var(--v2-line-soft); }
 .v2-msg { font-size: 13px; min-height: 16px; } .v2-msg.ok { color: var(--v2-green); } .v2-msg.err { color: var(--v2-red); }
 
 /* Depot-Eingabefelder (echtes Depot: Position hinzufuegen) */

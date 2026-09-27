@@ -92,22 +92,46 @@ class Buchhaltung:
         with self._gesperrt():
             return self._anhaengen(typ, daten, von=von)
 
-    def vergebe_nummer(self, kreis: str, *, jahr: int | None = None, bezug: str = "", von: str = "") -> str:
-        """Naechste Nummer eines Nummernkreises -- atomar, lueckenlos, als eigener Eintrag protokolliert."""
+    def _naechste_nummer(self, kreis: str, jahr: int | None) -> tuple[str, int | None]:
+        """Naechste freie Nummer eines Kreises (nur innerhalb der Sperre aufrufen)."""
         kreis = (kreis or "").upper()
         if kreis not in KREISE_OHNE_JAHR and kreis not in KREISE_MIT_JAHR:
             raise ValueError(f"Unbekannter Nummernkreis: {kreis}")
+        vergeben = [e["daten"] for e in self._eintraege() if e["typ"] == "nummer" and e["daten"]["kreis"] == kreis]
+        if kreis in KREISE_OHNE_JAHR:
+            return f"{kreis}-{len(vergeben) + 1:0{KREISE_OHNE_JAHR[kreis]}d}", None
+        jahr = int(jahr or datetime.now().year)
+        n = 1 + sum(1 for d in vergeben if d.get("jahr") == jahr)
+        return f"{kreis}-{jahr}-{n:04d}", jahr
+
+    def vergebe_nummer(self, kreis: str, *, jahr: int | None = None, bezug: str = "", von: str = "") -> str:
+        """Naechste Nummer eines Nummernkreises -- atomar, lueckenlos, als eigener Eintrag protokolliert."""
         with self._gesperrt():
-            if kreis in KREISE_OHNE_JAHR:
-                n = 1 + sum(1 for e in self._eintraege() if e["typ"] == "nummer" and e["daten"]["kreis"] == kreis)
-                nummer = f"{kreis}-{n:0{KREISE_OHNE_JAHR[kreis]}d}"
-            else:
-                jahr = int(jahr or datetime.now().year)
-                n = 1 + sum(1 for e in self._eintraege() if e["typ"] == "nummer" and e["daten"]["kreis"] == kreis
-                            and e["daten"].get("jahr") == jahr)
-                nummer = f"{kreis}-{jahr}-{n:04d}"
-            self._anhaengen("nummer", {"kreis": kreis, "jahr": jahr, "nummer": nummer, "bezug": bezug}, von=von)
+            nummer, jahr = self._naechste_nummer(kreis, jahr)
+            self._anhaengen("nummer", {"kreis": kreis.upper(), "jahr": jahr, "nummer": nummer, "bezug": bezug}, von=von)
             return nummer
+
+    def mit_nummer(self, kreis: str, typ: str, daten: dict, *, jahr: int | None = None, bezug: str = "",
+                   von: str = "", pruefe=None) -> dict:
+        """Nummer vergeben **und** den fachlichen Eintrag (mit `daten["nummer"]`) unter derselben Sperre schreiben --
+        keine Nummer ohne Objekt. `pruefe(eintraege)` darf vorher (unter der Sperre) mit ValueError abbrechen."""
+        if not re.fullmatch(r"[a-z_]+", typ or ""):
+            raise ValueError(f"Ungueltiger Eintragstyp: {typ!r}")
+        with self._gesperrt():
+            if pruefe:
+                pruefe(self._eintraege())
+            nummer, jahr = self._naechste_nummer(kreis, jahr)
+            self._anhaengen("nummer", {"kreis": kreis.upper(), "jahr": jahr, "nummer": nummer, "bezug": bezug}, von=von)
+            return self._anhaengen(typ, {**daten, "nummer": nummer}, von=von)
+
+    def erfassen_geprueft(self, typ: str, daten: dict, *, von: str = "", pruefe=None) -> dict:
+        """Wie `erfassen`, aber `pruefe(eintraege)` laeuft unter der Sperre (z. B. Objekt existiert noch)."""
+        if not re.fullmatch(r"[a-z_]+", typ or ""):
+            raise ValueError(f"Ungueltiger Eintragstyp: {typ!r}")
+        with self._gesperrt():
+            if pruefe:
+                pruefe(self._eintraege())
+            return self._anhaengen(typ, daten, von=von)
 
     def beleg_ablegen(self, inhalt: bytes, dateiname: str, *, jahr: int | None = None, art: str = "beleg",
                       bezug: str = "", von: str = "") -> dict:

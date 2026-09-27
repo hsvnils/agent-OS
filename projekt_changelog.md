@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 16:47] — Claude Code (MACO470)
+- **Was:** KUNDEN_FINANZEN Etappe 2 umgesetzt: Kunden-Stammdaten (Firmen `K-00001`, Ansprechpartner `AP-00001`,
+  Verlauf aller Aenderungen in der Buchhaltungs-Kette, Collab-Firmen-Zuordnung), API `/api/crm/kunden*`, neue Sektion
+  „Kunden" in LUNA-OS V2 (Cache v32/v13). Buchhaltung: `mit_nummer`/`erfassen_geprueft` (Nummer und Objekt unter einer
+  Sperre). Keine Supabase-Projektion (Abweichung, in der Roadmap begruendet).
+- **Warum:** CEO-Go „go fuer etappe 2"; CEO nutzt nur UI V2.
+- **Betroffen:** `orchestrator/core/kunden.py`, `orchestrator/core/buchhaltung.py`, `orchestrator/core/team_auth.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/{app-v2.js,style-v2.css,index-v2.html}`,
+  `orchestrator/tests/test_kunden.py`, `docs/datenfluesse.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-27 16:37] — Claude Code (MACO470)
 - **Was:** Etappe 1 (Kunden/Finanzen-Fundament) und Charta-Aenderung CFO/CRO nach `main` gemergt (`65ee71a`),
   gepusht und per `deploy/sync-to-nas.sh --no-restart` auf die NAS gebracht; Suite 815 gruen, Doku-Check ok.
