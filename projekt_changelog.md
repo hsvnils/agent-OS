@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 12:42] — Claude Code (MACO470)
+- **Was:** Backoffice: Morgen-Briefing 2026-09-27 08:02 enthielt `#d868` unter „Nachts im Backoffice erledigt" und wurde
+  zugestellt -> Briefing-Weg verifiziert. **BF-28 behoben:** Worker-Anweisung enthaelt jetzt das heutige Datum und die Regel
+  „nichts erfinden, [Platzhalter], Aussagen nicht veraendern"; Plausibilitaetsfilter erkennt erfundene Jahreszahlen.
+  2 neue Tests, Gegenprobe rot, Suiten gruen.
+- **Warum:** CEO-Go „Go" (Datums-Fix + Tagtest).
+- **Betroffen:** `backoffice/worker.py`, `backoffice/tests/test_worker.py`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-09-27 02:31] — Claude Code (MACO470)
 - **Was:** Backoffice Etappe 2 **deployt**: Merge + Push `a7caaef`, `sync-to-nas.sh --no-restart` (377 Dateien, keine `.env`),
   Neustart CEO; Dienst `backoffice-worker` auf dem MACO470 installiert (`/etc/systemd/system/backoffice-worker.service`,

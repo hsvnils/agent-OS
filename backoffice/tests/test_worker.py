@@ -95,6 +95,18 @@ class TestWorker(unittest.TestCase):
         self.assertTrue(all(m["ok"] for m in b.meldungen))
         self.assertEqual(o.entladen_n, 1)
 
+    def test_9_datum_und_nichts_erfinden_in_der_anweisung(self):
+        m = w.nachrichten({"art": "entwurf", "aufgabe": "x"}, jetzt=datetime(2026, 9, 27, 12))
+        self.assertIn("Heute ist Sonntag, 27. September 2026.", m[0]["content"])
+        self.assertIn("Platzhalter", m[0]["content"])
+
+    def test_10_erfundene_jahreszahl_bf28(self):
+        jetzt = datetime(2026, 9, 27)
+        bf28 = GUT + " Die Belege sind bis Freitag, den 15.11.2024, hochgeladen."
+        self.assertIn("erfundene Jahreszahl 2024", w.plausibel(bf28, aufgabe="Mail an Thomas", jetzt=jetzt))
+        self.assertEqual(w.plausibel(GUT + " Stand Q3 2026, Plan 2027.", jetzt=jetzt), [])
+        self.assertEqual(w.plausibel(GUT + " Wie im Vertrag von 2019.", aufgabe="Vertrag 2019", jetzt=jetzt), [])
+
 
 if __name__ == "__main__":
     unittest.main()

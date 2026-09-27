@@ -47,6 +47,19 @@ ANWEISUNG = {
 }
 GEGENLESEN = ("bewertung", "analyse")
 
+WOCHENTAGE = ("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
+MONATE = ("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November",
+          "Dezember")
+# BF-28: das lokale Modell kennt das heutige Datum nicht und erfand „Freitag, den 15.11.2024".
+NICHTS_ERFINDEN = ("Erfinde keine Daten, Uhrzeiten, Zahlen, Namen oder Fakten, die nicht im Auftrag stehen — wenn etwas "
+                   "fehlt, setze einen Platzhalter in eckigen Klammern, z. B. [Datum]. Verändere keine Aussagen des "
+                   "Auftrags (was geplant ist, bleibt geplant).")
+
+
+def datum_text(jetzt: datetime | None = None) -> str:
+    jetzt = jetzt or datetime.now()
+    return f"Heute ist {WOCHENTAGE[jetzt.weekday()]}, {jetzt.day}. {MONATE[jetzt.month - 1]} {jetzt.year}."
+
 
 def _log(text: str) -> None:
     print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {text}", flush=True)
@@ -72,9 +85,15 @@ def darf_laden(verfuegbar_gb: float | None, *, geladen: bool, nacht: bool, schwe
     return False, f"nur {verfuegbar_gb:.1f} GB verfuegbar (< {schwelle:g} GB{' nachts' if nacht else ''})"
 
 
-def plausibel(text: str) -> list[str]:
-    """Probleme einer Modellantwort (leer = brauchbar). Bewusst grob: faengt Zeichensalat/Schleifen ab (BF-23)."""
+def plausibel(text: str, *, aufgabe: str = "", jetzt: datetime | None = None) -> list[str]:
+    """Probleme einer Modellantwort (leer = brauchbar). Bewusst grob: faengt Zeichensalat/Schleifen ab (BF-23) und
+    erfundene Jahreszahlen (BF-28: eine Jahreszahl, die weder im Auftrag steht noch dieses/naechstes Jahr ist)."""
     probleme = []
+    jahr = (jetzt or datetime.now()).year
+    erlaubt = {str(jahr), str(jahr + 1)} | set(re.findall(r"\b(?:19|20)\d\d\b", aufgabe))
+    fremd = sorted(set(re.findall(r"\b(?:19|20)\d\d\b", text)) - erlaubt)
+    if fremd:
+        probleme.append("erfundene Jahreszahl " + ", ".join(fremd))
     if len(text.split()) < 15:
         probleme.append("zu kurz")
     if re.search(r"\b(\w+)(?:\W+\1\b){4,}", text, re.I):
@@ -89,9 +108,9 @@ def plausibel(text: str) -> list[str]:
     return probleme
 
 
-def nachrichten(auftrag: dict) -> list[dict]:
+def nachrichten(auftrag: dict, jetzt: datetime | None = None) -> list[dict]:
     art = auftrag.get("art") if auftrag.get("art") in ANWEISUNG else "sonstiges"
-    return [{"role": "system", "content": SYSTEM + "\n\n" + ANWEISUNG[art]},
+    return [{"role": "system", "content": f"{SYSTEM} {datum_text(jetzt)} {NICHTS_ERFINDEN}\n\n{ANWEISUNG[art]}"},
             {"role": "user", "content": auftrag.get("aufgabe", "")}]
 
 
@@ -163,7 +182,7 @@ def verarbeite(auftrag: dict, ollama, gegenleser) -> dict:
         text, probleme = "", ["kein Versuch"]
         for _ in range(2):                                   # unbrauchbar -> genau ein zweiter Versuch
             text = ollama.antwort(nachrichten(auftrag))
-            probleme = plausibel(text)
+            probleme = plausibel(text, aufgabe=auftrag.get("aufgabe", ""))
             if not probleme:
                 break
         if probleme:
