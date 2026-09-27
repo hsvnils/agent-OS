@@ -130,7 +130,7 @@ class HoaConversation:
             _, self.gruppen = auswahl(ceo_text, self.gruppen)
         self._repariere_verlauf()  # evtl. kaputten Tail (tool_use ohne tool_result) entfernen
         self.messages.append({"role": "user", "content": user_text})
-        werkzeuge_im_zug, nachgefasst = 0, False
+        werkzeuge_im_zug, nachgefasst, genutzt = 0, False, set()
         for _ in range(self.max_iter):
             self.messages = verdichte(self.messages, self.verlauf_budget)
             try:
@@ -158,13 +158,18 @@ class HoaConversation:
                 antwort = _text(resp.content)
                 # BF-25: Erledigung behauptet, ohne in diesem Zug ein Werkzeug aufgerufen zu haben -> EINMAL nachfassen.
                 erfunden = unbekannte_auftrags_ids(antwort, getattr(self.ctx, "backoffice", None))
-                if not nachgefasst and ((werkzeuge_im_zug == 0 and behauptet_erledigung(antwort)) or erfunden):
+                # Ausdruecklicher Hintergrund-Wunsch des CEO, aber kein Auftrag angelegt (Live-Test 2026-09-27 13:50:
+                # „Absolut, mache ich. Hier ist die Auftrags-ID:" -- ohne Werkzeugaufruf) -> deterministisch nachfassen.
+                wunsch = wunsch_hintergrund(ceo_text) and "auftrag_erteilen" not in genutzt
+                ohne_tat = werkzeuge_im_zug == 0 and (behauptet_erledigung(antwort) or kuendigt_an(antwort))
+                if not nachgefasst and (wunsch or ohne_tat or erfunden):
                     nachgefasst = True
                     self._ehrlichkeit_protokollieren(antwort)
-                    self.messages.append({"role": "user", "content": NACHFASSEN})
+                    self.messages.append({"role": "user", "content": NACHFASSEN_AUFTRAG if wunsch else NACHFASSEN})
                     continue
                 return antwort
             werkzeuge_im_zug += len(tool_uses)
+            genutzt.update(bname(tu) for tu in tool_uses)
             # WICHTIG: JEDES tool_use bekommt ein tool_result -- auch bei Tool-Fehler. Sonst wird der
             # Verlauf ungueltig und die API lehnt jede weitere Nachricht ab (400).
             results = []
@@ -283,6 +288,30 @@ def behauptet_erledigung(text: str) -> bool:
         if s.endswith("?") or re.match(r"(?i)(soll|kann|darf|m(?:oe|ö)chtest|willst|wenn|sobald|falls)\b", s):
             continue
         if _BEHAUPTUNG.search(s):
+            return True
+    return False
+
+
+NACHFASSEN_AUFTRAG = ("(Systemhinweis, nicht vom CEO: Der CEO will das ausdruecklich im Hintergrund erledigt haben. Rufe "
+                      "JETZT das Werkzeug 'auftrag_erteilen' auf und nenne danach die Kurz-ID aus dessen Ergebnis.)")
+_WUNSCH = re.compile(r"\b(?:im hintergrund|bis morgen|ausf(?:ue|ü)hrlich|in ruhe|lass dir zeit|ans backoffice)\b", re.I)
+_ANKUENDIGUNG = re.compile(r"\b(?:mache ich|erledige ich|lege ich|k(?:ue|ü)mmere mich|leite ich|gebe ich|trage ich|"
+                          r"notiere ich|schicke ich|sende ich|erstelle ich|merke ich)\b", re.I)
+
+
+def wunsch_hintergrund(text: str) -> bool:
+    """Hat der CEO ausdruecklich Hintergrund-Arbeit verlangt? (CEO-Entscheidung: 'auf Wunsch' -> Backoffice)"""
+    return bool(_WUNSCH.search(text or ""))
+
+
+def kuendigt_an(text: str) -> bool:
+    """Kuendigt die Antwort eine Handlung an, ohne sie auszufuehren? Endet sie mit ':' (Werkzeugaufruf
+    angekuendigt, aber nicht abgeschickt) oder enthaelt eine Aussage wie 'mache ich'/'lege ich an'."""
+    t = (text or "").strip()
+    if t.endswith(":"):
+        return True
+    for satz in re.split(r"(?<=[.!\n])\s+", t):
+        if not satz.strip().endswith("?") and _ANKUENDIGUNG.search(satz):
             return True
     return False
 

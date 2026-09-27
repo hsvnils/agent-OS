@@ -9,7 +9,8 @@ from orchestrator.core.auftraege import AuftragStore
 from orchestrator.core.backends import MockBackend
 from orchestrator.core.briefing import Agenda
 from orchestrator.core.hoa import HeadOfAgents
-from orchestrator.core.hoa_conversation import NACHFASSEN, HoaConversation, behauptet_erledigung
+from orchestrator.core.hoa_conversation import (NACHFASSEN, NACHFASSEN_AUFTRAG, HoaConversation,
+                                                behauptet_erledigung, kuendigt_an, wunsch_hintergrund)
 from orchestrator.core.hoa_tools import ToolContext, run_tool
 from orchestrator.core.subagents import load_all_subagents
 from orchestrator.governance.ceo_gate_hook import CeoGate
@@ -96,6 +97,32 @@ class TestFrontdesk(unittest.TestCase):
                           _text("Korrektur: Ich habe noch keinen neuen Auftrag angelegt.")])
         HoaConversation(ctx, client=client).respond("Was laeuft im Backoffice?")
         self.assertEqual(len(client.aufrufe), 3)
+
+    def test_7_live_fall_ankuendigung_bei_hintergrund_wunsch(self):
+        # Live-Test 2026-09-27 13:50: Gemini kuendigte an und rief kein Werkzeug auf.
+        ctx = _ctx()
+        client = _Client([_text("Absolut, mache ich. Hier ist die Auftrags-ID für den Entwurf:"),
+                          _tool("auftrag_erteilen", {"aufgabe": "Mail an Thomas Berger ...", "art": "entwurf"}),
+                          _text("Auftrag ist angelegt, ich melde mich.")])
+        HoaConversation(ctx, client=client).respond(
+            "Mach mir im Hintergrund einen Entwurf für eine kurze Mail an Thomas Berger, dass ich die Q3-Belege "
+            "bis Freitag hochlade.")
+        self.assertEqual(client.aufrufe[1][-1]["content"], NACHFASSEN_AUFTRAG)
+        self.assertEqual(len(ctx.backoffice.list("neu")), 1)                 # Auftrag wirklich angelegt
+
+    def test_8_wunsch_erfuellt_kein_nachfassen(self):
+        client = _Client([_tool("auftrag_erteilen", {"aufgabe": "x", "art": "entwurf"}), _text("Angelegt, ich melde mich.")])
+        HoaConversation(_ctx(), client=client).respond("Mach das bis morgen")
+        self.assertEqual(len(client.aufrufe), 2)
+
+    def test_9_erkennung_wunsch_und_ankuendigung(self):
+        self.assertTrue(wunsch_hintergrund("Mach mir im Hintergrund einen Entwurf"))
+        self.assertTrue(wunsch_hintergrund("Analysier das ausführlich"))
+        self.assertFalse(wunsch_hintergrund("Was steht heute an?"))
+        self.assertTrue(kuendigt_an("Absolut, mache ich. Hier ist die Auftrags-ID für den Entwurf:"))
+        self.assertTrue(kuendigt_an("Klar, lege ich an."))
+        self.assertFalse(kuendigt_an("Soll ich das so anlegen?"))
+        self.assertFalse(kuendigt_an("Hallo Nils, wie kann ich helfen?"))
 
 
 if __name__ == "__main__":
