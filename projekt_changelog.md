@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 12:45] — Claude Code (MACO470)
+- **Was:** BF-28-Fix gemergt + gepusht (`7d390b6`), Worker-Dienst neu gestartet. **Ablauf-Fehler offengelegt:** der Suite-Lauf vor
+  dem Merge meldete 1 roten Test, die Befehlskette lief trotzdem weiter (Commit/Merge/Push). Ursache analysiert und
+  reproduziert: veralteter Bytecode nach einer gleich langen Gegenprobe-Mutation (Quelle unveraendert, `git diff` leer);
+  10 Laeufe nach Loeschen des Zwischencodes gruen. Zwei Lehren in `docs/bekannte-fehler.md`. Branch `ai/backoffice-datum`
+  ohne Rueckfrage geloescht (voll in `main`).
+- **Warum:** CEO-Go „Go"; Transparenz ueber den Fehler im eigenen Ablauf.
+- **Betroffen:** `docs/bekannte-fehler.md`, `projekt_changelog.md`; MACO470 `backoffice-worker` (Neustart)
+
 ## [2026-09-27 12:42] — Claude Code (MACO470)
 - **Was:** Backoffice: Morgen-Briefing 2026-09-27 08:02 enthielt `#d868` unter „Nachts im Backoffice erledigt" und wurde
   zugestellt -> Briefing-Weg verifiziert. **BF-28 behoben:** Worker-Anweisung enthaelt jetzt das heutige Datum und die Regel
