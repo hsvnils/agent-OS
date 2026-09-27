@@ -25,8 +25,15 @@ import re
 from contextlib import contextmanager
 from datetime import date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 GENESIS = "0" * 64
+TZ = ZoneInfo("Europe/Berlin")   # Container laufen in UTC (BF-32): Zeitstempel und Nummern-Jahr immer deutsche Zeit
+
+
+def jetzt() -> datetime:
+    """Aktuelle deutsche Zeit mit Zeitzone -- massgeblich fuer Zeitstempel, Belegjahr und Nummernkreis-Jahr."""
+    return datetime.now(TZ)
 KREISE_OHNE_JAHR = {"K": 5, "AP": 5}                      # Stammdaten: fortlaufend ueber alle Jahre
 KREISE_MIT_JAHR = ("AN", "AB", "RE", "ER")                # Belege: je Jahr neu, 4-stellig
 AUFBEWAHRUNG_JAHRE = {"beleg": 8, "aufzeichnung": 10, "geschaeftsbrief": 6}
@@ -77,7 +84,7 @@ class Buchhaltung:
         """Neuen Eintrag an die Kette haengen (nur innerhalb der Sperre aufrufen)."""
         eintraege = self._eintraege()
         prev = eintraege[-1]["hash"] if eintraege else GENESIS
-        ev = {"seq": len(eintraege) + 1, "ts": datetime.now().isoformat(timespec="seconds"), "typ": typ,
+        ev = {"seq": len(eintraege) + 1, "ts": jetzt().isoformat(timespec="seconds"), "typ": typ,
               "von": von, "daten": daten, "prev": prev}
         ev["hash"] = _hash(prev, ev)
         with self.log.open("a", encoding="utf-8") as fh:
@@ -100,7 +107,7 @@ class Buchhaltung:
         vergeben = [e["daten"] for e in self._eintraege() if e["typ"] == "nummer" and e["daten"]["kreis"] == kreis]
         if kreis in KREISE_OHNE_JAHR:
             return f"{kreis}-{len(vergeben) + 1:0{KREISE_OHNE_JAHR[kreis]}d}", None
-        jahr = int(jahr or datetime.now().year)
+        jahr = int(jahr or jetzt().year)
         n = 1 + sum(1 for d in vergeben if d.get("jahr") == jahr)
         return f"{kreis}-{jahr}-{n:04d}", jahr
 
@@ -138,7 +145,7 @@ class Buchhaltung:
         """Datei unveraendert ablegen (PDF, Foto, XRechnung ...), Hash + Aufbewahrungsfrist protokollieren."""
         if art not in AUFBEWAHRUNG_JAHRE:
             raise ValueError(f"Unbekannte Aufbewahrungsart: {art}")
-        jahr = int(jahr or datetime.now().year)
+        jahr = int(jahr or jetzt().year)
         sha = hashlib.sha256(inhalt).hexdigest()
         sicher = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(dateiname).name)[-80:] or "beleg"
         rel = Path("belege") / str(jahr) / f"{sha[:16]}-{sicher}"

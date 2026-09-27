@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 20:28] — Claude Code (MACO470)
+- **Was:** Abnahme Etappe 2 auf der NAS geprueft (K-00001, AP-00001, Kette intakt). Neuer bekannter Fehler BF-32:
+  Container laufen in UTC. Buchhaltung schreibt jetzt deutsche Zeit mit Zeitzone und nimmt Nummern-/Belegjahr daraus
+  (Silvester-Test + Gegenprobe). Suite 827 gruen.
+- **Warum:** CEO-Abnahme Etappe 2; Befund bei der Pruefung.
+- **Betroffen:** `orchestrator/core/buchhaltung.py`, `orchestrator/tests/test_buchhaltung.py`, `docs/bekannte-fehler.md`,
+  `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-27 17:17] — Claude Code (MACO470)
 - **Was:** Firmendaten fuer Briefkopf und Bankverbindung (vom CEO geliefert, IBAN-Pruefsumme geprueft) als
   `buchhaltung/firmendaten.json` **nur auf der NAS** abgelegt (Rechte 600, vom Deploy ausgenommen, gitignored);
