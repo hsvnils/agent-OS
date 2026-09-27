@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 21:51] — Claude Code (MACO470)
+- **Was:** KUNDEN_FINANZEN Etappe 3b: Preislisten-Generator des CEO in LUNA-OS uebernommen -- Leistungskatalog
+  (`core/katalog.py`, nur NAS), Angebote mit Katalog-Positionen, Zuschlaegen und Paketrabatt, PDF im Hanserautisch-Look,
+  Preisliste als PDF, Tabs Katalog/Preisliste (Cache v34/v15). Logo nach NAS `buchhaltung/logo.jpg` (Pruefsumme
+  verglichen); Katalog + Logo ins Backup. Fehler behoben: deutscher Tausenderpunkt („1.600“) wurde als Dezimalpunkt
+  gelesen. Roadmap: Etappen 3b und 3c (Social-Kennzahlen) aufgenommen. Register ergaenzt.
+- **Warum:** CEO: Generator mit den Angeboten verbinden, Hanserautisch-Look, Zuschlaege wie im Generator,
+  Tangstedt/14 Tage; Social-Zahlen speichern und nutzen (3c, wartet auf Exporte).
+- **Betroffen:** `orchestrator/core/{katalog,angebote,beleg_pdf}.py`, `orchestrator/channels/web/app.py`,
+  `orchestrator/channels/web/static/{app-v2.js,style-v2.css,index-v2.html}`, `orchestrator/tests/{test_katalog,test_angebote}.py`,
+  `deploy/backup-from-nas.sh`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`, `KUNDEN_FINANZEN_ROADMAP.md`,
+  NAS `buchhaltung/logo.jpg`
+
 ## [2026-09-27 20:53] — Claude Code (MACO470)
 - **Was:** Etappe 3 (Angebote) nach `main` gemergt (`0a0c08c`), gepusht und per `deploy/sync-to-nas.sh --no-restart`
   auf die NAS gebracht (inkl. neuem `deploy/Dockerfile`); Suite 838 gruen, Doku-Check ok. Aktiv erst nach Image-Neubau

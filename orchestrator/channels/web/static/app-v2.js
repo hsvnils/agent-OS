@@ -622,32 +622,45 @@ async function kundeCollabZu(collab) {
     <button class="v2-btn pri" data-act="kunde-collab-ok" data-id="${esc(collab)}">Zuordnen</button><div id="kcz-msg" class="v2-msg"></div></div>`);
 }
 
-/* =========================== Angebote (KUNDEN_FINANZEN Etappe 3) =========================== */
-// Angebot AN-JJJJ-NNNN zu Firma + Ansprechpartner; PDF, Gmail-Entwurf mit Anhang (Senden = CEO), Kalender-Erinnerungen.
+/* =========================== Angebote (KUNDEN_FINANZEN Etappe 3 + 3b) =========================== */
+// Angebot AN-JJJJ-NNNN zu Firma + Ansprechpartner; Positionen aus dem Leistungskatalog, Zuschläge + Paketrabatt,
+// PDF im Hanserautisch-Look, Gmail-Entwurf mit Anhang (Senden = CEO), Kalender-Erinnerungen; Katalog + Preisliste.
 const AN_STATUS = { entwurf: ["Entwurf", "neutral"], versendet: ["Versendet", "wartet"], angenommen: ["Angenommen", "ok"], abgelehnt: ["Abgelehnt", "err"], abgelaufen: ["Abgelaufen", "err"] };
 const anBadge = (st) => { const [l, c] = AN_STATUS[st] || [st, "neutral"]; return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
 const cent2eur = (c) => (Number(c || 0) / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
 const cent2feld = (c) => (Number(c || 0) / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const heuteIso = (plus = 0) => { const d = new Date(); d.setDate(d.getDate() + plus); return d.toLocaleDateString("sv-SE"); };
-let AN_FIRMEN = [];
+const zahl = (t) => { t = String(t || "").replace(/[€\s]/g, ""); if (t.includes(",")) t = t.replace(/\./g, "").replace(",", "."); else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ""); const n = Number(t); return isFinite(n) ? n : NaN; };
+const pz = (p) => String(p).replace(".", ",");
+let AN_FIRMEN = [], KATALOG = null, KAT_DARF = false;
+async function katalogLaden(neu) { if (!KATALOG || neu) { const d = await jget("/api/crm/katalog"); KATALOG = d && d.katalog; KAT_DARF = !!(d && d.darf_aendern); } return KATALOG; }
+const katItem = (id) => { for (const g of (KATALOG && KATALOG.gruppen) || []) for (const it of g.items) if (it.id === id) return [it, g]; return [null, null]; };
 
 RENDER.angebote = renderAngebote;
 async function renderAngebote() {
   const sub = SUBTAB.angebote || "offen";
+  if (sub === "katalog") return renderKatalog();
+  if (sub === "preisliste") return renderPreisliste();
   const d = await jget("/api/crm/angebote") || {};
   const alle = d.angebote || [];
   const offen = alle.filter(a => ["entwurf", "versendet"].includes(a.anzeige_status));
   const liste = sub === "offen" ? offen : alle;
   const jahr = String(new Date().getFullYear());
   const summe = (l) => l.reduce((s, a) => s + (a.summe_cent || 0), 0);
+  const angen = alle.filter(a => a.status === "angenommen" && a.datum.startsWith(jahr));
   const rows = liste.map(a => `<tr class="klick" data-act="an-detail" data-id="${esc(a.nummer)}"><td><b>${esc(a.nummer)}</b></td><td>${esc(a.firma_name || a.firma)}</td><td>${esc(a.titel || "")}</td><td>${esc(new Date(a.datum).toLocaleDateString("de-DE"))}</td><td style="text-align:right">${cent2eur(a.summe_cent)}</td><td>${anBadge(a.anzeige_status)}</td></tr>`).join("");
   const body = `${kpiTile("Offene Angebote", String(offen.length), null, cent2eur(summe(offen)))}${kpiTile("Versendet", String(alle.filter(a => a.anzeige_status === "versendet").length), null, "warten auf Antwort")}
-    ${kpiTile("Angenommen " + jahr, String(alle.filter(a => a.status === "angenommen" && a.datum.startsWith(jahr)).length), null, cent2eur(summe(alle.filter(a => a.status === "angenommen" && a.datum.startsWith(jahr)))))}
+    ${kpiTile("Angenommen " + jahr, String(angen.length), null, cent2eur(summe(angen)))}
     ${tile(sub === "offen" ? "Offene Angebote" : "Alle Angebote", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Firma</th><th>Titel</th><th>Datum</th><th style="text-align:right">Summe</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow(sub === "offen" ? "Keine offenen Angebote — oben rechts „+ Neues Angebot“." : "Noch kein Angebot."), "w12")}`;
-  $("#v2-app").innerHTML = secHead("Angebote", `<button class="v2-btn pri" data-act="an-neu">+ Neues Angebot</button>`) + tabs("angebote", [["offen", "Offen"], ["alle", "Alle"]]) + `<div class="v2-grid">${body}</div>`;
+  $("#v2-app").innerHTML = anKopf() + `<div class="v2-grid">${body}</div>`;
 }
+const anKopf = () => secHead("Angebote", `<button class="v2-btn pri" data-act="an-neu">+ Neues Angebot</button>`) + tabs("angebote", [["offen", "Offen"], ["alle", "Alle"], ["katalog", "Katalog"], ["preisliste", "Preisliste"]]);
+
+/* ---------- Editor ---------- */
 function anPosZeile(p = {}) {
-  return `<div class="v2-an-pos"><textarea class="v2-inp an-p-beschreibung" rows="2" placeholder="Beschreibung">${esc(p.beschreibung || "")}</textarea>
+  return `<div class="v2-an-pos" data-katalog="${esc(p.katalog_id || "")}" data-gruppe="${esc(p.gruppe || "")}" data-farbe="${esc(p.gruppe_farbe || "")}">
+    <div class="v2-an-text"><textarea class="v2-inp an-p-beschreibung" rows="1" placeholder="Leistung">${esc(p.beschreibung || "")}</textarea>
+      <input class="v2-inp an-p-detail" value="${esc(p.detail || "")}" placeholder="Detail (Reichweite, Hinweis) – optional"></div>
     <input class="v2-inp an-p-menge" value="${esc(p.menge != null ? String(p.menge).replace(".", ",") : "1")}" placeholder="Menge" inputmode="decimal">
     <input class="v2-inp an-p-einheit" value="${esc(p.einheit || "")}" placeholder="Einheit">
     <input class="v2-inp an-p-preis" value="${p.einzelpreis_cent != null ? cent2feld(p.einzelpreis_cent) : ""}" placeholder="Einzelpreis €" inputmode="decimal">
@@ -655,28 +668,39 @@ function anPosZeile(p = {}) {
 }
 async function anEditor(nummer, firmaVorwahl) {
   openModal(nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-empty">Lade…</div>`);
-  const [k, d] = await Promise.all([jget("/api/crm/kunden"), nummer ? jget("/api/crm/angebote/" + encodeURIComponent(nummer)) : Promise.resolve(null)]);
+  const [k, d] = await Promise.all([jget("/api/crm/kunden"), nummer ? jget("/api/crm/angebote/" + encodeURIComponent(nummer)) : Promise.resolve(null), katalogLaden()]);
   AN_FIRMEN = ((k && k.firmen) || []).filter(f => f.aktiv);
   if (!AN_FIRMEN.length) return openModal("Neues Angebot", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."));
-  const a = (d && d.angebot) || { firma: firmaVorwahl || AN_FIRMEN[0].nummer, datum: heuteIso(), gueltig_bis: heuteIso(30), nachfassen_tage: 7, positionen: [{}] };
+  const a = (d && d.angebot) || { firma: firmaVorwahl || AN_FIRMEN[0].nummer, datum: heuteIso(), gueltig_bis: heuteIso(14), nachfassen_tage: 7, positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch" };
+  const b = a.bloecke || {};
   const firmaOpt = AN_FIRMEN.map(f => `<option value="${esc(f.nummer)}" ${f.nummer === a.firma ? "selected" : ""}>${esc(f.nummer)} · ${esc(f.name)}</option>`).join("");
+  const katOpt = ((KATALOG && KATALOG.gruppen) || []).map(g => `<optgroup label="${esc(g.name)}">${g.items.filter(it => it.aktiv).map(it => `<option value="${esc(it.id)}">${esc(it.name)} — ${cent2eur(it.preis_cent)}${it.einheit ? " / " + esc(it.einheit) : ""}</option>`).join("")}</optgroup>`).join("");
+  const gewaehlt = new Set((a.zuschlaege || []).map(z => z.id));
+  const zuListe = [...((KATALOG && KATALOG.zuschlaege) || []), ...(a.zuschlaege || []).filter(z => !((KATALOG && KATALOG.zuschlaege) || []).some(k => k.id === z.id))];
+  const zuHtml = zuListe.map(z => { const alt = (a.zuschlaege || []).find(x => x.id === z.id); const pr = alt ? alt.prozent : z.prozent;
+    return `<label class="v2-modlbl"><input type="checkbox" class="an-zu" value="${esc(z.id)}" data-name="${esc(z.name)}" data-prozent="${esc(String(pr))}" ${gewaehlt.has(z.id) ? "checked" : ""}> +${esc(pz(pr))} % ${esc(z.name)}</label>`; }).join("");
   openModal(nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-form">
     <label class="v2-feld"><small>Firma *</small><select id="an-firma">${firmaOpt}</select></label>
     <label class="v2-feld"><small>Ansprechpartner</small><select id="an-ap"></select></label>
-    <label class="v2-feld"><small>Titel / Betreff</small><input id="an-titel" value="${esc(a.titel || "")}" placeholder="z. B. Kampagne Herbst"></label>
+    <label class="v2-feld"><small>Titel / Untertitel (leer = „${esc(b.untertitel || (KATALOG && KATALOG.texte.untertitel) || "")}“)</small><input id="an-titel" value="${esc(a.titel || "")}" placeholder="z. B. Kampagne Herbst"></label>
     <div class="v2-an-zeile"><label class="v2-feld"><small>Datum</small><input id="an-datum" type="date" value="${esc(a.datum)}"></label>
       <label class="v2-feld"><small>Gültig bis</small><input id="an-gueltig" type="date" value="${esc(a.gueltig_bis)}"></label>
       <label class="v2-feld"><small>Nachfassen nach (Tagen)</small><input id="an-nachfassen" type="number" min="1" max="90" value="${esc(String(a.nachfassen_tage || 7))}"></label></div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Layout</small><select id="an-layout"><option value="hanserautisch" ${a.layout !== "standard" ? "selected" : ""}>Hanserautisch</option><option value="standard" ${a.layout === "standard" ? "selected" : ""}>Schlicht (DIN)</option></select></label>
+      <label class="v2-modlbl"><input type="checkbox" id="an-zeige-kalk" ${b.zeige_kalkulation !== false ? "checked" : ""}> „So kalkulieren wir“</label>
+      <label class="v2-modlbl"><input type="checkbox" id="an-zeige-kz" ${b.zeige_kennzahlen !== false ? "checked" : ""}> Kennzahlen</label></div>
     <small class="v2-sub">Positionen (Preise ohne Umsatzsteuer, Kleinunternehmer § 19 UStG)</small>
-    <div id="an-pos">${(a.positionen || [{}]).map(anPosZeile).join("")}</div>
-    <button class="v2-btn" data-act="an-pos-neu">+ Position</button>
-    <div class="v2-kv"><span>Summe</span><b id="an-summe">–</b></div>
-    <label class="v2-feld"><small>Einleitung (leer = Standardtext mit Anrede)</small><textarea id="an-einleitung" rows="3" class="v2-inp">${esc(a.einleitung || "")}</textarea></label>
-    <label class="v2-feld"><small>Schluss (leer = Standardtext mit Gruß)</small><textarea id="an-schluss" rows="3" class="v2-inp">${esc(a.schluss || "")}</textarea></label>
+    <div class="v2-an-kat"><select id="an-kat" class="v2-inp"><option value="">Aus Katalog wählen …</option>${katOpt}</select><button class="v2-btn" data-act="an-kat-neu">+ Aus Katalog</button><button class="v2-btn" data-act="an-pos-neu">+ Freie Position</button></div>
+    <div id="an-pos">${(a.positionen || []).map(anPosZeile).join("")}</div>
+    ${zuHtml ? `<small class="v2-sub">Zuschläge (Prozent auf die Summe aller Formate)</small><div class="v2-mods" id="an-zu-box">${zuHtml}</div>` : ""}
+    <label class="v2-feld"><small>Paketrabatt in % (0–${esc(String((KATALOG && KATALOG.rabatt_max) || 30))}, nur gegen Laufzeit oder Volumen)</small><input id="an-rabatt" type="number" min="0" max="${esc(String((KATALOG && KATALOG.rabatt_max) || 30))}" step="0.5" value="${esc(String(a.rabatt_prozent || 0))}"></label>
+    <div id="an-summe-box" class="v2-an-summen"></div>
+    <label class="v2-feld"><small>Einleitung (leer = Standardtext)</small><textarea id="an-einleitung" rows="3" class="v2-inp">${esc(a.einleitung || "")}</textarea></label>
+    <label class="v2-feld"><small>Schluss (nur schlichtes Layout; leer = Standardtext mit Gruß)</small><textarea id="an-schluss" rows="2" class="v2-inp">${esc(a.schluss || "")}</textarea></label>
     <button class="v2-btn pri" data-act="an-speichern" data-id="${esc(nummer || "")}">${nummer ? "Änderungen speichern" : "Anlegen (Nummer wird vergeben)"}</button><div id="an-msg" class="v2-msg"></div></div>`);
   await anApListe(a.ansprechpartner || "");
   $("#an-firma").addEventListener("change", () => anApListe(""));
-  $("#an-pos").addEventListener("input", anSumme); anSumme();
+  const box = $("#v2-modal .v2-form"); box.addEventListener("input", anSumme); box.addEventListener("change", anSumme); anSumme();
 }
 async function anApListe(vorwahl) {
   const nr = ($("#an-firma") || {}).value; const sel = $("#an-ap"); if (!sel || !nr) return;
@@ -684,29 +708,49 @@ async function anApListe(vorwahl) {
   const aps = ((d && d.firma && d.firma.ansprechpartner_liste) || []).filter(x => x.aktiv || x.nummer === vorwahl);
   sel.innerHTML = `<option value="">— keiner —</option>` + aps.map(x => `<option value="${esc(x.nummer)}" ${x.nummer === vorwahl ? "selected" : ""}>${esc(x.nummer)} · ${esc([x.vorname, x.nachname].filter(Boolean).join(" "))}${x.mail ? " · " + esc(x.mail) : ""}</option>`).join("");
 }
-const zahl = (t) => { t = String(t || "").replace(/[€\s]/g, ""); if (t.includes(",")) t = t.replace(/\./g, "").replace(",", "."); const n = Number(t); return isFinite(n) ? n : NaN; };
-function anPositionen() {
-  return [...document.querySelectorAll("#an-pos .v2-an-pos")].map(z => ({ beschreibung: $(".an-p-beschreibung", z).value.trim(), menge: $(".an-p-menge", z).value.trim(), einheit: $(".an-p-einheit", z).value.trim(), einzelpreis: $(".an-p-preis", z).value.trim() }))
-    .filter(p => p.beschreibung || p.einzelpreis);
+function anKatNeu() {
+  const id = ($("#an-kat") || {}).value; if (!id) return;
+  const [it, g] = katItem(id); if (!it) return;
+  $("#an-pos").insertAdjacentHTML("beforeend", anPosZeile({ beschreibung: it.name, detail: [it.basis, it.hinweis].filter(Boolean).join(" · "), menge: 1, einheit: it.einheit, einzelpreis_cent: it.preis_cent, katalog_id: it.id, gruppe: g.name, gruppe_farbe: g.farbe }));
+  $("#an-kat").value = ""; anSumme();
 }
+function anPositionen() {
+  return [...document.querySelectorAll("#an-pos .v2-an-pos")].map(z => ({ beschreibung: $(".an-p-beschreibung", z).value.trim(), detail: $(".an-p-detail", z).value.trim(), menge: $(".an-p-menge", z).value.trim(), einheit: $(".an-p-einheit", z).value.trim(), einzelpreis: $(".an-p-preis", z).value.trim(),
+    katalog_id: z.dataset.katalog || "", gruppe: z.dataset.gruppe || "", gruppe_farbe: z.dataset.farbe || "" })).filter(p => p.beschreibung || p.einzelpreis);
+}
+const anZuschlaege = () => [...document.querySelectorAll(".an-zu:checked")].map(e => ({ id: e.value, name: e.dataset.name, prozent: Number(e.dataset.prozent) }));
 function anSumme() {
-  const s = anPositionen().reduce((acc, p) => acc + Math.round(zahl(p.menge) * zahl(p.einzelpreis) * 100), 0);
-  const e = $("#an-summe"); if (e) e.textContent = isFinite(s) ? cent2eur(s) : "Eingabe prüfen";
+  const box = $("#an-summe-box"); if (!box) return;
+  const formate = anPositionen().reduce((acc, p) => acc + Math.round(zahl(p.menge) * zahl(p.einzelpreis) * 100), 0);
+  if (!isFinite(formate)) { box.innerHTML = `<div class="v2-kv"><span>Summe</span><b>Eingabe prüfen</b></div>`; return; }
+  const zu = anZuschlaege().map(z => [z.name, z.prozent, Math.round(formate * z.prozent / 100)]);
+  const zwischen = formate + zu.reduce((s, z) => s + z[2], 0);
+  const r = Number(($("#an-rabatt") || {}).value || 0), rb = Math.round(zwischen * r / 100);
+  box.innerHTML = `<div class="v2-kv"><span>Summe Formate</span><b>${cent2eur(formate)}</b></div>` + zu.map(z => `<div class="v2-kv"><span>${esc(z[0])} (+${esc(pz(z[1]))} %)</span><b>${cent2eur(z[2])}</b></div>`).join("")
+    + (r ? `<div class="v2-kv"><span>Paketrabatt (${esc(pz(r))} %)</span><b>−${cent2eur(rb)}</b></div>` : "") + `<div class="v2-kv"><span><b>Gesamtbetrag</b></span><b>${cent2eur(zwischen - rb)}</b></div>`;
 }
 async function anSpeichern(nummer) {
   const angebot = { firma: $("#an-firma").value, ansprechpartner: $("#an-ap").value, titel: $("#an-titel").value.trim(), datum: $("#an-datum").value, gueltig_bis: $("#an-gueltig").value,
-    nachfassen_tage: $("#an-nachfassen").value, einleitung: $("#an-einleitung").value.trim(), schluss: $("#an-schluss").value.trim(), positionen: anPositionen() };
+    nachfassen_tage: $("#an-nachfassen").value, einleitung: $("#an-einleitung").value.trim(), schluss: $("#an-schluss").value.trim(), positionen: anPositionen(),
+    zuschlaege: anZuschlaege(), rabatt_prozent: ($("#an-rabatt") || {}).value || 0, layout: $("#an-layout").value,
+    zeige_kalkulation: $("#an-zeige-kalk").checked, zeige_kennzahlen: $("#an-zeige-kz").checked };
   const r = nummer ? await jpost("/api/crm/angebote/" + encodeURIComponent(nummer), { angebot }) : await jpost("/api/crm/angebote", { angebot });
   if (!r || !r.ok) return kundenMsg("an-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
   const nr = nummer || r.nummer; if (AKTIV === "angebote") renderAngebote();
   return anDetail(nr, nummer ? (r.geaendert && r.geaendert.length ? "Gespeichert." : "Keine Änderung.") : `${nr} angelegt.`);
 }
+
+/* ---------- Detail ---------- */
 async function anDetail(nr, meldung, fehler) {
   openModal(nr, `<div class="v2-empty">Lade…</div>`);
   const d = await jget("/api/crm/angebote/" + encodeURIComponent(nr));
   const a = d && d.angebot; if (!a) return openModal(nr, emptyRow("Angebot nicht gefunden."));
-  const ap = d.ansprechpartner;
-  const pos = a.positionen.map((p, i) => `<tr><td>${i + 1}</td><td style="white-space:pre-wrap">${esc(p.beschreibung)}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${cent2eur(p.gesamt_cent)}</td></tr>`).join("");
+  const ap = d.ansprechpartner, sm = a.summen || { formate_cent: a.summe_cent, zuschlaege: [], rabatt: null, gesamt_cent: a.summe_cent };
+  const pos = a.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${cent2eur(p.gesamt_cent)}</td></tr>`).join("");
+  const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Formate</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
+    + sm.zuschlaege.map(([n, p, c]) => `<tr><td></td><td>${esc(n)} (+${esc(pz(p))} %)</td><td></td><td style="text-align:right">${cent2eur(c)}</td></tr>`).join("")
+    + (sm.rabatt ? `<tr><td></td><td>Paketrabatt (${esc(pz(sm.rabatt[0]))} %)</td><td></td><td style="text-align:right">−${cent2eur(sm.rabatt[1])}</td></tr>` : "")
+    + `<tr><td></td><td><b>Gesamtbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
   const termine = (a.versendet_termine || []).map(t => `<div class="v2-list-row"><span>📅</span><div class="grow"><b>${esc(t.titel)}</b><small>${esc(new Date(t.datum).toLocaleDateString("de-DE"))}, 09:00</small></div></div>`).join("");
   const pdfs = (a.pdfs || []).map(p => `<div class="v2-list-row"><span>📎</span><div class="grow"><b>${esc(p.pfad.split("/").pop())}</b><small>${esc(zeit(p.ts))}${p.an ? " · Mail-Entwurf an " + esc(p.an) : ""}${p.inhalt === a.inhalt ? "" : " · älterer Stand"}</small></div></div>`).join("");
   let aktionen = `<a class="v2-btn" href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 PDF ansehen</a>`;
@@ -723,12 +767,95 @@ async function anDetail(nr, meldung, fehler) {
     <div class="v2-kv"><span>Ansprechpartner</span><b>${ap ? esc(ap.nummer + " · " + [ap.vorname, ap.nachname].filter(Boolean).join(" ")) : "—"}</b></div>
     <div class="v2-kv"><span>Mail an</span><b>${esc(d.mail_an || "— keine Adresse —")}</b></div>
     <div class="v2-kv"><span>Datum / gültig bis</span><b>${esc(new Date(a.datum).toLocaleDateString("de-DE"))} / ${esc(new Date(a.gueltig_bis).toLocaleDateString("de-DE"))}</b></div>
+    <div class="v2-kv"><span>Layout</span><b>${a.layout === "standard" ? "Schlicht (DIN)" : "Hanserautisch"}</b></div>
     ${a.titel ? `<div class="v2-kv"><span>Titel</span><b>${esc(a.titel)}</b></div>` : ""}
     <div class="v2-card-actions" style="flex-wrap:wrap;margin:12px 0">${aktionen}</div>
     ${d.firmendaten ? "" : `<div class="v2-msg err">Firmendaten fehlen auf der NAS — PDF nicht möglich.</div>`}
-    <h3>Positionen</h3><table class="v2-table"><tbody>${pos}</tbody><tfoot><tr><td></td><td><b>Gesamtbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(a.summe_cent)}</b></td></tr></tfoot></table>
+    <h3>Positionen</h3><table class="v2-table"><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
     ${termine ? `<h3>Erinnerungen</h3>${termine}` : ""}${pdfs ? `<h3>Abgelegte PDFs</h3>${pdfs}` : ""}
     <h3>Verlauf</h3>${verlauf}`);
+}
+
+/* ---------- Katalog (Preise pflegen, nur mit Modul Finanzen) ---------- */
+async function renderKatalog(ausCache) {
+  const k = ausCache ? KATALOG : await katalogLaden(true);
+  if (!k) { $("#v2-app").innerHTML = anKopf() + emptyRow("Katalog nicht erreichbar."); return; }
+  const ro = KAT_DARF ? "" : "disabled";
+  const grp = k.gruppen.map((g, gi) => tile(g.name, `<div class="v2-kat-liste">${g.items.map(it => `<div class="v2-kat-zeile" data-gi="${gi}" data-id="${esc(it.id)}">
+      <input class="v2-inp kat-name" value="${esc(it.name)}" ${ro}><input class="v2-inp kat-basis" value="${esc(it.basis)}" placeholder="Basis (Reichweite)" ${ro}>
+      <input class="v2-inp kat-hinweis" value="${esc(it.hinweis)}" placeholder="Hinweis" ${ro}><input class="v2-inp kat-preis" value="${cent2feld(it.preis_cent)}" inputmode="decimal" ${ro}>
+      <input class="v2-inp kat-einheit" value="${esc(it.einheit)}" placeholder="Einheit" ${ro}><label class="v2-modlbl"><input type="checkbox" class="kat-aktiv" ${it.aktiv ? "checked" : ""} ${ro}> aktiv</label></div>`).join("")}</div>
+      ${KAT_DARF ? `<button class="v2-btn" data-act="kat-neu" data-id="${gi}">+ Format</button>` : ""}`, "w12")).join("");
+  const zu = tile("Zuschläge", `${k.zuschlaege.map(z => `<div class="v2-kat-zu" data-id="${esc(z.id)}"><input class="v2-inp zu-name" value="${esc(z.name)}" ${ro}><input class="v2-inp zu-prozent" value="${esc(pz(z.prozent))}" inputmode="decimal" ${ro}><input class="v2-inp zu-info" value="${esc(z.info)}" placeholder="Erklärung" ${ro}></div>`).join("")}`, "w12");
+  const t = k.texte, ta = (id, v, rows = 3) => `<textarea id="kt-${id}" rows="${rows}" class="v2-inp" ${ro}>${esc(v || "")}</textarea>`;
+  const texte = tile("Textbausteine (Angebot + Preisliste)", `<div class="v2-form">
+    <label class="v2-feld"><small>Untertitel</small><input id="kt-untertitel" value="${esc(t.untertitel)}" ${ro}></label>
+    <label class="v2-feld"><small>Einleitung</small>${ta("intro", t.intro)}</label>
+    <label class="v2-feld"><small>Überschrift Kalkulation</small><input id="kt-kalkulation_titel" value="${esc(t.kalkulation_titel)}" ${ro}></label>
+    ${[0, 1, 2].map(i => `<label class="v2-feld"><small>Kalkulation, Absatz ${i + 1} (Text vor dem ersten Doppelpunkt wird fett)</small>${ta("kalk" + i, (t.kalkulation || [])[i])}</label>`).join("")}
+    <label class="v2-feld"><small>Rechenbeispiel</small>${ta("kalkulation_beispiel", t.kalkulation_beispiel, 2)}</label>
+    <small class="v2-sub">Kennzahlen (bis Etappe 3c von Hand; danach aus deinen Meta-Exporten)</small>
+    <div class="v2-an-zeile">${[0, 1, 2, 3].map(i => `<div class="v2-feld"><input id="kt-kzw${i}" value="${esc(((t.kennzahlen || [])[i] || [])[0] || "")}" placeholder="Wert" ${ro}><input id="kt-kzl${i}" value="${esc(((t.kennzahlen || [])[i] || [])[1] || "")}" placeholder="Beschriftung" ${ro}></div>`).join("")}</div>
+    <label class="v2-feld"><small>Datenbasis-Hinweis</small>${ta("kennzahlen_quelle", t.kennzahlen_quelle)}</label>
+    <label class="v2-feld"><small>Einleitung „Zusätzliche Leistungen“ (Preisliste)</small>${ta("zuschlaege_info", t.zuschlaege_info, 2)}</label>
+    <label class="v2-feld"><small>Fußtext</small>${ta("fuss", t.fuss)}</label>
+    <label class="v2-feld"><small>Kontakt (Fußzeile)</small><input id="kt-kontakt" value="${esc(t.kontakt)}" ${ro}></label></div>`, "w12");
+  const aktion = KAT_DARF ? `<span id="kat-msg" class="v2-msg"></span><button class="v2-btn pri" data-act="kat-speichern">Katalog speichern</button>` : `<span class="v2-sub">Nur ansehen — Preise ändert der Owner (Modul Finanzen).</span>`;
+  $("#v2-app").innerHTML = anKopf() + `<div class="v2-card-actions" style="justify-content:flex-end;margin-bottom:10px">${aktion}</div><div class="v2-grid">${grp}${zu}${texte}</div>`;
+}
+function katalogAusForm() {
+  const k = JSON.parse(JSON.stringify(KATALOG));
+  k.gruppen.forEach(g => g.items = []);
+  document.querySelectorAll(".v2-kat-zeile").forEach(z => {
+    const g = k.gruppen[Number(z.dataset.gi)];
+    g.items.push({ id: z.dataset.id, name: $(".kat-name", z).value.trim(), basis: $(".kat-basis", z).value.trim(), hinweis: $(".kat-hinweis", z).value.trim(),
+      preis_cent: Math.round(zahl($(".kat-preis", z).value) * 100), einheit: $(".kat-einheit", z).value.trim(), aktiv: $(".kat-aktiv", z).checked });
+  });
+  k.zuschlaege = [...document.querySelectorAll(".v2-kat-zu")].map(z => ({ id: z.dataset.id, name: $(".zu-name", z).value.trim(), prozent: zahl($(".zu-prozent", z).value), info: $(".zu-info", z).value.trim() }));
+  const v = (id) => ($("#kt-" + id) || {}).value || "";
+  k.texte = { untertitel: v("untertitel"), intro: v("intro"), kalkulation_titel: v("kalkulation_titel"), kalkulation: [0, 1, 2].map(i => v("kalk" + i)).filter(x => x.trim()),
+    kalkulation_beispiel: v("kalkulation_beispiel"), kennzahlen: [0, 1, 2, 3].map(i => [v("kzw" + i), v("kzl" + i)]).filter(x => x[0].trim()),
+    kennzahlen_quelle: v("kennzahlen_quelle"), zuschlaege_info: v("zuschlaege_info"), fuss: v("fuss"), kontakt: v("kontakt") };
+  return k;
+}
+async function katalogSpeichern() {
+  const k = katalogAusForm();
+  const bad = k.gruppen.flatMap(g => g.items).find(it => !isFinite(it.preis_cent) || it.preis_cent < 0);
+  if (bad) return kundenMsg("kat-msg", `Preis bei „${bad.name}“ prüfen.`, false);
+  const r = await jpost("/api/crm/katalog", { katalog: k });
+  if (!r || !r.ok) return kundenMsg("kat-msg", (r && r.hinweis) || "Fehler.", false);
+  const n = Object.keys(r.preise || {}).length;
+  await renderKatalog(); kundenMsg("kat-msg", r.geaendert === false ? "Keine Änderung." : `Gespeichert${n ? ` · ${n} Preis(e) geändert` : ""}. Bestehende Angebote bleiben unverändert.`, true);
+}
+function katalogFormatNeu(gi) {
+  const name = prompt("Name des neuen Formats:", ""); if (!name) return;
+  KATALOG = katalogAusForm();
+  const basisId = name.toLowerCase().replace(/[äÄ]/g, "ae").replace(/[öÖ]/g, "oe").replace(/[üÜ]/g, "ue").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 24) || "format";
+  const ids = new Set(KATALOG.gruppen.flatMap(g => g.items.map(i => i.id))); let id = basisId, n = 2; while (ids.has(id)) id = `${basisId}_${n++}`;
+  KATALOG.gruppen[gi].items.push({ id, name, basis: "", hinweis: "", preis_cent: 0, einheit: "", aktiv: true });
+  const scroll = window.scrollY;
+  renderKatalog(true).then(() => { window.scrollTo(0, scroll); kundenMsg("kat-msg", "Neues Format ergänzt — Preis eintragen und speichern.", true); });
+}
+
+/* ---------- Preisliste ---------- */
+async function renderPreisliste() {
+  const [k, kd] = await Promise.all([katalogLaden(true), jget("/api/crm/kunden")]);
+  if (!k) { $("#v2-app").innerHTML = anKopf() + emptyRow("Katalog nicht erreichbar."); return; }
+  const firmen = ((kd && kd.firmen) || []).filter(f => f.aktiv);
+  const wahl = k.gruppen.map(g => `<div class="v2-feld"><small style="color:${g.farbe === "rot" ? "var(--v2-red)" : "var(--v2-accent)"}"><b>${esc(g.name)}</b></small>${g.items.filter(it => it.aktiv).map(it => `<label class="v2-modlbl"><input type="checkbox" class="pl-id" value="${esc(it.id)}" checked> ${esc(it.name)} — ${cent2eur(it.preis_cent)}${it.einheit ? " / " + esc(it.einheit) : ""}</label>`).join("")}</div>`).join("");
+  const form = `<div class="v2-form"><label class="v2-feld"><small>Empfänger (optional)</small><select id="pl-firma"><option value="">— ohne Empfänger —</option>${firmen.map(f => `<option value="${esc(f.nummer)}">${esc(f.nummer)} · ${esc(f.name)}</option>`).join("")}</select></label>
+    <label class="v2-feld"><small>Ansprechpartner</small><select id="pl-ap"><option value="">— keiner —</option></select></label>
+    <button class="v2-btn pri" data-act="pl-pdf">📄 Preisliste als PDF</button>
+    <small class="v2-sub">Ohne Nummer und ohne Buchhaltungseintrag. Zuschläge erscheinen als „Zusätzliche Leistungen“.</small></div>`;
+  $("#v2-app").innerHTML = anKopf() + `<div class="v2-grid">${tile("Preisliste erstellen", form, "w5")}${tile("Formate", `<div class="v2-form">${wahl}</div>`, "w7")}</div>`;
+  $("#pl-firma").addEventListener("change", async () => { const nr = $("#pl-firma").value; const sel = $("#pl-ap"); sel.innerHTML = `<option value="">— keiner —</option>`; if (!nr) return;
+    const d = await jget("/api/crm/kunden/" + encodeURIComponent(nr)); sel.innerHTML += ((d && d.firma && d.firma.ansprechpartner_liste) || []).filter(x => x.aktiv).map(x => `<option value="${esc(x.nummer)}">${esc(x.nummer)} · ${esc([x.vorname, x.nachname].filter(Boolean).join(" "))}</option>`).join(""); });
+}
+function preislistePdf() {
+  const ids = [...document.querySelectorAll(".pl-id:checked")].map(e => e.value);
+  if (!ids.length) return alert("Mindestens ein Format auswählen.");
+  const q = new URLSearchParams({ ids: ids.join(","), firma: ($("#pl-firma") || {}).value || "", ap: ($("#pl-ap") || {}).value || "" });
+  window.open("/api/crm/katalog/preisliste.pdf?" + q.toString(), "_blank", "noopener");
 }
 
 /* =========================== Collab-Radar =========================== */
@@ -1034,7 +1161,11 @@ async function handleAct(act, el) {
     case "an-detail": return anDetail(id);
     case "an-bearbeiten": return anEditor(id);
     case "an-pos-neu": { $("#an-pos").insertAdjacentHTML("beforeend", anPosZeile()); return anSumme(); }
-    case "an-pos-weg": { const z = el.closest(".v2-an-pos"); if (z && document.querySelectorAll("#an-pos .v2-an-pos").length > 1) z.remove(); return anSumme(); }
+    case "an-kat-neu": return anKatNeu();
+    case "kat-speichern": return katalogSpeichern();
+    case "kat-neu": return katalogFormatNeu(Number(id));
+    case "pl-pdf": return preislistePdf();
+    case "an-pos-weg": { const z = el.closest(".v2-an-pos"); if (z) z.remove(); return anSumme(); }
     case "an-speichern": return anSpeichern(id);
     case "an-mail": { flash("⏳ erstellt…"); const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/mailentwurf`, {}); return anDetail(id, r && r.ok ? `Gmail-Entwurf an ${r.an} mit PDF angelegt — in Gmail prüfen und selbst senden. Danach hier „Als versendet markieren“.` : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "an-versendet": {

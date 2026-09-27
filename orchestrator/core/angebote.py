@@ -15,12 +15,19 @@ import hashlib
 import json
 from datetime import date, timedelta
 
-from .beleg_pdf import HINWEIS_19, beleg_pdf, cent, datum_de, eur, menge, positions_summe
+from pathlib import Path
+
+from .beleg_pdf import (HINWEIS_19, beleg_pdf, cent, datum_de, eur, hanserautisch_pdf, menge, menge_text,
+                        positions_summe)
 from .buchhaltung import Buchhaltung, jetzt
 from .kunden import KundenStore
 
 STATUS = ("entwurf", "versendet", "angenommen", "abgelehnt")
-KOPF_FELDER = ("firma", "ansprechpartner", "titel", "datum", "gueltig_bis", "einleitung", "schluss", "nachfassen_tage")
+KOPF_FELDER = ("firma", "ansprechpartner", "titel", "datum", "gueltig_bis", "einleitung", "schluss", "nachfassen_tage",
+               "zuschlaege", "rabatt_prozent", "layout", "bloecke")          # die letzten vier: Etappe 3b
+LAYOUTS = ("hanserautisch", "standard")
+GUELTIG_TAGE = 14                                                           # CEO 2026-09-27 (wie im Generator)
+ORT = "Tangstedt"
 MAX_POSITIONEN = 60
 _MAX = 4000
 
@@ -51,8 +58,14 @@ def _positionen(roh) -> list[dict]:
             raise ValueError(f"Position {i}: {exc}") from None
         if ep < 0:
             raise ValueError(f"Position {i}: negativer Preis.")
-        out.append({"beschreibung": text, "menge": format(m, "f"), "einheit": str(p.get("einheit") or "").strip()[:30],
-                    "einzelpreis_cent": ep})
+        pos = {"beschreibung": text, "menge": format(m, "f"), "einheit": str(p.get("einheit") or "").strip()[:30],
+               "einzelpreis_cent": ep}
+        for k, n in (("detail", 600), ("katalog_id", 30), ("gruppe", 60)):   # Etappe 3b: aus dem Leistungskatalog
+            if str(p.get(k) or "").strip():
+                pos[k] = str(p[k]).strip()[:n]
+        if p.get("gruppe_farbe") == "rot":
+            pos["gruppe_farbe"] = "rot"
+        out.append(pos)
     return out
 
 
@@ -64,6 +77,22 @@ def _kopf(daten: dict) -> dict:
         v = daten[k]
         if k in ("datum", "gueltig_bis"):
             out[k] = _iso(v, "Datum" if k == "datum" else "Gueltig bis")
+        elif k == "zuschlaege":
+            out[k] = _zuschlaege(v)
+        elif k == "rabatt_prozent":
+            try:
+                r = float(str(v or 0).replace(",", "."))
+            except ValueError:
+                raise ValueError("Rabatt: Zahl in Prozent.") from None
+            if not 0 <= r <= 90:
+                raise ValueError("Rabatt: 0 bis 90 Prozent.")
+            out[k] = round(r, 2)
+        elif k == "layout":
+            if v not in LAYOUTS:
+                raise ValueError(f"Layout muss einer von {', '.join(LAYOUTS)} sein.")
+            out[k] = v
+        elif k == "bloecke":
+            out[k] = _bloecke(v)
         elif k == "nachfassen_tage":
             try:
                 n = int(v)
@@ -81,6 +110,66 @@ def _kopf(daten: dict) -> dict:
     return out
 
 
+def _zuschlaege(roh) -> list[dict]:
+    if not isinstance(roh, list):
+        raise ValueError("Zuschlaege: Liste erwartet.")
+    out, ids = [], set()
+    for z in roh[:12]:
+        if not isinstance(z, dict):
+            raise ValueError("Zuschlag ungueltig.")
+        try:
+            pr = float(str(z.get("prozent")).replace(",", "."))
+        except ValueError:
+            raise ValueError("Zuschlag: Prozent fehlt.") from None
+        name = str(z.get("name") or "").strip()[:120]
+        if not name or not 0 < pr <= 200:
+            raise ValueError("Zuschlag: Name und 0-200 Prozent noetig.")
+        zid = str(z.get("id") or name).strip()[:30]
+        if zid in ids:
+            continue
+        ids.add(zid)
+        out.append({"id": zid, "name": name, "prozent": round(pr, 2)})
+    return out
+
+
+def _bloecke(roh) -> dict:
+    """Textbausteine des Hanserautisch-Layouts -- beim Anlegen aus dem Katalog kopiert (eingefroren)."""
+    if not isinstance(roh, dict):
+        raise ValueError("Textbausteine ungueltig.")
+    t = lambda x, n=2000: str(x if x is not None else "").strip()[:n]
+    return {"untertitel": t(roh.get("untertitel"), 80), "intro": t(roh.get("intro")),
+            "kalkulation_titel": t(roh.get("kalkulation_titel"), 120),
+            "kalkulation": [t(x, 1500) for x in (roh.get("kalkulation") or []) if t(x)][:6],
+            "kalkulation_beispiel": t(roh.get("kalkulation_beispiel"), 400),
+            "kennzahlen": [[t(a, 20), t(b, 60)] for a, b in (roh.get("kennzahlen") or []) if t(a)][:6],
+            "kennzahlen_quelle": t(roh.get("kennzahlen_quelle"), 800), "fuss": t(roh.get("fuss")),
+            "kontakt": t(roh.get("kontakt"), 120),
+            "zeige_kalkulation": roh.get("zeige_kalkulation", True) is not False,
+            "zeige_kennzahlen": roh.get("zeige_kennzahlen", True) is not False}
+
+
+def summen(positionen: list[dict], zuschlaege: list[dict], rabatt_prozent: float) -> dict:
+    """Summe Formate + Zuschlaege (Prozent auf die Summe aller Formate, wie im Generator) - Paketrabatt, in Cent."""
+    from decimal import ROUND_HALF_UP, Decimal
+    rund = lambda d: int(d.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    formate = sum(positions_summe(p["menge"], p["einzelpreis_cent"]) for p in positionen)
+    zu = [(z["name"], z["prozent"], rund(Decimal(formate) * Decimal(str(z["prozent"])) / 100)) for z in zuschlaege]
+    zwischen = formate + sum(c for _, _, c in zu)
+    rabatt = (rabatt_prozent, rund(Decimal(zwischen) * Decimal(str(rabatt_prozent)) / 100)) if rabatt_prozent else None
+    return {"formate_cent": formate, "zuschlaege": zu, "rabatt": rabatt,
+            "gesamt_cent": zwischen - (rabatt[1] if rabatt else 0)}
+
+
+def anrede_moin(ap: dict | None, firma_name: str) -> str:
+    """Wie im Generator: „Moin Anna,“ bzw. „Moin Herr Muster,“ oder „Moin liebes Team von …,“."""
+    vor, nach = ((ap or {}).get("vorname") or "").strip(), ((ap or {}).get("nachname") or "").strip()
+    if vor and not vor.lower().rstrip(".") in ("herr", "frau", "dr", "prof"):
+        return f"Moin {vor.split()[0]},"
+    if vor or nach:
+        return f"Moin {' '.join(x for x in (vor, nach) if x)},"
+    return f"Moin liebes Team von {firma_name}," if firma_name else "Moin,"
+
+
 def inhalt_hash(a: dict) -> str:
     """Hash des druckrelevanten Inhalts (welcher Stand ging raus?)."""
     teil = {k: a.get(k) for k in KOPF_FELDER if k != "nachfassen_tage"} | {"positionen": a.get("positionen")}
@@ -88,9 +177,10 @@ def inhalt_hash(a: dict) -> str:
 
 
 class AngebotStore:
-    def __init__(self, bh: Buchhaltung, kunden: KundenStore):
+    def __init__(self, bh: Buchhaltung, kunden: KundenStore, katalog=None):
         self.bh = bh
         self.kunden = kunden
+        self.katalog = katalog                                  # Etappe 3b: Textbausteine fuer neue Angebote
 
     # -- Faltung -------------------------------------------------------------------------------------------------
 
@@ -128,11 +218,12 @@ class AngebotStore:
     def _anreichern(a: dict, heute: date | None = None) -> dict:
         heute = heute or jetzt().date()
         pos = [p | {"gesamt_cent": positions_summe(p["menge"], p["einzelpreis_cent"])} for p in a["positionen"]]
+        sm = summen(a["positionen"], a.get("zuschlaege") or [], a.get("rabatt_prozent") or 0)
         anzeige = a["status"]
         if anzeige == "versendet" and a.get("gueltig_bis") and date.fromisoformat(a["gueltig_bis"]) < heute:
             anzeige = "abgelaufen"
-        return a | {"positionen": pos, "summe_cent": sum(p["gesamt_cent"] for p in pos), "anzeige_status": anzeige,
-                    "inhalt": inhalt_hash(a)}
+        return a | {"positionen": pos, "summe_cent": sm["gesamt_cent"], "summen": sm, "anzeige_status": anzeige,
+                    "layout": a.get("layout") or "standard", "inhalt": inhalt_hash(a)}
 
     # -- Lesen ---------------------------------------------------------------------------------------------------
 
@@ -165,9 +256,13 @@ class AngebotStore:
         if not isinstance(daten, dict):
             raise ValueError("Ungueltige Eingabe.")
         heute = jetzt().date()
-        kopf = {"datum": heute.isoformat(), "gueltig_bis": (heute + timedelta(days=30)).isoformat(),
-                "nachfassen_tage": 7, "ansprechpartner": "", "titel": "", "einleitung": "", "schluss": ""}
+        kopf = {"datum": heute.isoformat(), "gueltig_bis": (heute + timedelta(days=GUELTIG_TAGE)).isoformat(),
+                "nachfassen_tage": 7, "ansprechpartner": "", "titel": "", "einleitung": "", "schluss": "",
+                "zuschlaege": [], "rabatt_prozent": 0, "layout": "hanserautisch" if self.katalog else "standard"}
         kopf.update(_kopf(daten))
+        if kopf["layout"] == "hanserautisch" and "bloecke" not in kopf:
+            kopf["bloecke"] = _bloecke(self.katalog.laden()["texte"] if self.katalog else {})
+        _schalter(kopf, daten)
         if kopf["gueltig_bis"] < kopf["datum"]:
             raise ValueError("Gueltig bis liegt vor dem Angebotsdatum.")
         pos = _positionen(daten.get("positionen"))
@@ -181,6 +276,7 @@ class AngebotStore:
         if not isinstance(daten, dict):
             raise ValueError("Ungueltige Eingabe.")
         neu = _kopf(daten)
+        schalter = {k: daten[k] for k in ("zeige_kalkulation", "zeige_kennzahlen") if k in daten}
         if "positionen" in daten:
             neu["positionen"] = _positionen(daten["positionen"])
         diff: dict = {}
@@ -191,6 +287,11 @@ class AngebotStore:
                 raise KeyError(nummer)
             if a["status"] != "entwurf":
                 raise ValueError(f"{nummer} ist {a['status']} und kann nicht mehr geaendert werden.")
+            if schalter or (neu.get("layout") == "hanserautisch" and not a.get("bloecke") and "bloecke" not in neu):
+                basis = {"bloecke": neu.get("bloecke") or a.get("bloecke")
+                         or _bloecke(self.katalog.laden()["texte"] if self.katalog else {})}
+                _schalter(basis, schalter)
+                neu["bloecke"] = basis["bloecke"]
             diff.update({k: v for k, v in neu.items() if a.get(k) != v})
             rest = a | diff
             if rest["gueltig_bis"] < rest["datum"]:
@@ -212,6 +313,8 @@ class AngebotStore:
             raise KeyError(nummer)
         f = self.kunden.firma(a["firma"]) or {}
         ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == a.get("ansprechpartner")), None)
+        if a["layout"] == "hanserautisch":
+            return self._pdf_hanserautisch(a, f, ap, firmendaten)
         ap_name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
         empfaenger = [f.get("name", ""), f"z. Hd. {ap_name}" if ap_name else "", f.get("strasse", ""),
                       f"{f.get('plz') or ''} {f.get('ort') or ''}".strip(),
@@ -226,7 +329,27 @@ class AngebotStore:
             infos=[("Datum", datum_de(a["datum"])), ("Gültig bis", datum_de(a["gueltig_bis"])),
                    ("Kundennummer", a["firma"]), ("Ansprechpartner", a.get("ansprechpartner", ""))],
             einleitung=einleitung, positionen=a["positionen"], summe_cent=a["summe_cent"],
+            summen_zeilen=_summen_zeilen(a["summen"]),
             hinweise=[HINWEIS_19, f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."], schluss=schluss)
+
+    def _pdf_hanserautisch(self, a: dict, f: dict, ap: dict | None, firmendaten: dict) -> bytes:
+        b = a.get("bloecke") or _bloecke({})
+        gruppen: dict[str, tuple] = {}
+        for p in a["positionen"]:
+            g = gruppen.setdefault(p.get("gruppe") or "Leistungen", (p.get("gruppe") or "Leistungen",
+                                                                      p.get("gruppe_farbe", "blau"), []))
+            g[2].append({"name": p["beschreibung"], "detail": p.get("detail", ""), "menge": p["menge"],
+                         "einheit": p.get("einheit", "") if p.get("einheit", "").lower() == "monat" else "",
+                         "betrag_cent": p["gesamt_cent"]})
+        return hanserautisch_pdf(
+            art="Angebot", nummer=a["nummer"], firma=firmendaten, logo=self.bh.dir / "logo.jpg",
+            empfaenger=_empfaenger(f, ap), untertitel=a.get("titel") or b.get("untertitel", ""),
+            infos=[f"{ORT}, den {datum_de(a['datum'])}", f"Gültig bis: {datum_de(a['gueltig_bis'])}",
+                   f"Angebot: {a['nummer']}", f"Kundennummer: {a['firma']}"],
+            anrede=anrede_moin(ap, f.get("name", "")), einleitung=a.get("einleitung") or b.get("intro", ""),
+            texte=b, zeige_kalkulation=b.get("zeige_kalkulation", True), zeige_kennzahlen=b.get("zeige_kennzahlen", True),
+            gruppen=list(gruppen.values()), summen=a["summen"], zuschlag_liste=None,
+            fuss_zusatz=f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}.")
 
     def pdf_ablegen(self, nummer: str, pdf: bytes, *, an: str = "", entwurf_id: str = "", von: str = "") -> dict:
         a = self.angebot(nummer)
@@ -265,6 +388,54 @@ class AngebotStore:
 
 class _Nichts(Exception):
     pass
+
+
+def _schalter(kopf: dict, daten: dict) -> None:
+    """„So kalkulieren wir“/Kennzahlen im Hanserautisch-Layout ein- oder ausblenden."""
+    if kopf.get("bloecke") is None:
+        return
+    for k in ("zeige_kalkulation", "zeige_kennzahlen"):
+        if k in daten:
+            kopf["bloecke"] = {**kopf["bloecke"], k: bool(daten[k])}
+
+
+def _summen_zeilen(sm: dict) -> list[tuple[str, int]] | None:
+    """Zwischenzeilen fuer das Standard-PDF, nur wenn es Zuschlaege oder Rabatt gibt."""
+    if not (sm["zuschlaege"] or sm["rabatt"]):
+        return None
+    zeilen = [("Summe Formate", sm["formate_cent"])]
+    zeilen += [(f"{n} (+{menge_text(pr)} %)", c) for n, pr, c in sm["zuschlaege"]]
+    if sm["rabatt"]:
+        zeilen.append((f"Paketrabatt ({menge_text(sm['rabatt'][0])} %)", -sm["rabatt"][1]))
+    return zeilen
+
+
+def _empfaenger(f: dict, ap: dict | None) -> list[str]:
+    name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
+    land = f.get("land", "") if (f.get("land") or "").lower() not in ("", "deutschland", "de") else ""
+    return [f.get("name", ""), name, f.get("strasse", ""), f"{f.get('plz') or ''} {f.get('ort') or ''}".strip(), land]
+
+
+def preisliste_pdf(katalog: dict, firmendaten: dict, *, logo: Path | None, ids: list[str] | None = None,
+                   firma: dict | None = None, ap: dict | None = None) -> bytes:
+    """Preisliste aus dem Katalog (ohne Nummer, ohne Buchhaltungseintrag). `ids` = Auswahl, sonst alle aktiven."""
+    t = katalog["texte"]
+    gruppen = []
+    for g in katalog["gruppen"]:
+        posten = [{"name": it["name"], "detail": " · ".join(x for x in (it["basis"], it["hinweis"]) if x), "menge": None,
+                   "einheit": it["einheit"], "betrag_cent": it["preis_cent"]}
+                  for it in g["items"] if it["aktiv"] and (ids is None or it["id"] in ids)]
+        gruppen.append((g["name"], g["farbe"], posten))
+    if not any(p for _, _, p in gruppen):
+        raise ValueError("Keine Formate ausgewaehlt.")
+    heute = jetzt().date()
+    return hanserautisch_pdf(
+        art="Preisliste", nummer=None, firma=firmendaten, logo=logo,
+        empfaenger=_empfaenger(firma, ap) if firma else [], untertitel=t.get("untertitel", ""),
+        infos=[f"{ORT}, den {datum_de(heute.isoformat())}"],
+        anrede=anrede_moin(ap, (firma or {}).get("name", "")) if firma else "Moin,", einleitung=t.get("intro", ""),
+        texte=t, zeige_kalkulation=True, zeige_kennzahlen=True, gruppen=gruppen, summen=None,
+        zuschlag_liste=katalog["zuschlaege"], fuss_zusatz="Preisliste freibleibend, Angebote individuell.")
 
 
 def mail_text(a: dict, firma: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:

@@ -33,6 +33,9 @@ class TestGeld(unittest.TestCase):
     def test_1_parsen_und_format(self):
         self.assertEqual([cent(x) for x in ("1.234,50", "1234.50", "1234,5", 12, 12.345, "0,005")],
                          [123450, 123450, 123450, 1200, 1235, 1])
+        # deutscher Tausenderpunkt ohne Komma (Befund Etappe 3b): „1.600“ ist 1.600 €, „1.5“/„1.50“ bleiben Dezimal
+        self.assertEqual([cent(x) for x in ("1.600", "12.345.678", "1.5", "1.50", "1.6000")],
+                         [160000, 1234567800, 150, 150, 160])
         self.assertEqual(eur(123450), "1.234,50 €")
         self.assertEqual(eur(-5), "-0,05 €")
         self.assertEqual(positions_summe("1.5", 8000), 12000)
@@ -55,7 +58,7 @@ class TestAngebotStore(unittest.TestCase):
         self.assertEqual([p["gesamt_cent"] for p in a["positionen"]], [90000, 12000])
         self.assertEqual(a["summe_cent"], 102000)
         self.assertEqual((a["status"], a["nachfassen_tage"]), ("entwurf", 7))
-        self.assertEqual(a["gueltig_bis"], (date.fromisoformat(a["datum"]) + timedelta(days=30)).isoformat())
+        self.assertEqual(a["gueltig_bis"], (date.fromisoformat(a["datum"]) + timedelta(days=14)).isoformat())
         self.assertEqual(st.liste()[0]["firma_name"], "Brand X GmbH")
         self.assertEqual(bh.pruefe_kette(), [])
 

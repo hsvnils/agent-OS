@@ -47,6 +47,8 @@ FILES=(
   backoffice/log.jsonl
   buchhaltung/log.jsonl
   buchhaltung/firmendaten.json   # Briefkopf + Bankverbindung (nur NAS, nie im Git; kein JSONL -> nicht im Zeilen-Check)
+  buchhaltung/katalog.json       # Leistungskatalog/Preise (Etappe 3b; Aenderungen zusaetzlich in der Kette)
+  buchhaltung/logo.jpg           # Logo fuer Angebote/Preisliste
 )
 
 mkdir -p "$DEST"
