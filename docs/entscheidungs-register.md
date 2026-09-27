@@ -96,6 +96,7 @@
 | **Backoffice-Modell `qwen3:14b`** (Text-Auftraege, native API, 8k) mit besseren Anweisungen + Gemini als Gegenleser | 2026-09-27 | **BESCHLOSSEN** (CEO) | 9/9 ohne Zeichensalat, RAM ok; Qualitaet fuer Entwuerfe brauchbar, fuer Urteile schwach -> Gegenlesen |
 | **Claude-API als Gegenpruefung/Vertiefung** | 2026-09-27 | **ZURUECKGESTELLT** (CEO) -> spaeter eigenes CEO-Tor | braucht neuen Schluessel (BF-18) + Guthaben + Budgetgrenze |
 | **Firewall-Sperre ausgehender Verbindungen fuer Ollama** | 2026-09-27 | **ZURUECKGESTELLT** (CEO: „erstmal nicht") | Messung zeigte nur lokale Verbindungen waehrend der Inferenz |
+| **Workflow F3:** gemergte Arbeitsbranches darf der Agent ohne Rueckfrage lokal loeschen (vorher `merge-base --is-ancestor`) | 2026-09-27 | **REVIDIERT** (CEO) | vorher: Loeschen nur auf Auftrag; dreimal versehentlich ohne Rueckfrage geloescht, jeweils gemergt |
 | **Backup-Umfang:** Reel-Videos (1,3 GB) und Instagram-Token (Secret) nicht ins NAS-Backup | 2026-09-25 | **VERWORFEN** (CEO) | Reels liegen bei Facebook, Rohmaterial im NAS-Clip-Archiv; Token erneuert sich selbst / aus `.env` neu seedbar, kein weiteres Secret auf dem Sicherungsziel (`BETRIEBSLUECKEN_ROADMAP.md`) |
 | **Doku-Standards:** Roadmap-Workflow, bekannte Fehler, Datenfluesse + Doku-Check, Register auch fuer eigene Entscheidungen | 2026-09-25 | **BESCHLOSSEN** (CEO) | `governance/roadmap-workflow.md`, `AGENTS.md` 6 |
 

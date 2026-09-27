@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 14:41] — Claude Code (MACO470)
+- **Was:** BF-29 behoben: Backoffice-Auftraege heissen jetzt `BO-...` (Second Brain behaelt `B-...`), Prompt + ID-Erkennung angepasst.
+  Workflow F3 geaendert: vollstaendig gemergte Arbeitsbranches darf der Agent ohne Rueckfrage lokal loeschen (Register: REVIDIERT).
+- **Warum:** CEO-Go „Go fuer 1 und 2".
+- **Betroffen:** `orchestrator/core/auftraege.py`, `orchestrator/core/hoa_conversation.py`, `orchestrator/tests/test_frontdesk.py`,
+  `governance/roadmap-workflow.md`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-27 14:39] — Claude Code (MACO470)
 - **Was:** BF-24-Fix gemergt, gepusht, deployt (`c2ef3c4`), Neustart CEO. Live verifiziert: „Merk dir, dass Thomas Berger unser
   Steuerberater ist" -> `brain_merken` (Protokoll) und Eintrag im Second Brain vorhanden. Neuer Befund BF-29 (ID-Praefix `B-`

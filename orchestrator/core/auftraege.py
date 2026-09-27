@@ -40,8 +40,8 @@ class AuftragStore:
         if not aufgabe:
             raise ValueError("Leerer Auftrag.")
         art = art if art in ARTEN else "sonstiges"
-        # B = Backoffice -- Antraege heissen A-..., beide Formate sonst zum Verwechseln aehnlich.
-        aid = "B-" + datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:4]
+        # BO = Backoffice -- Antraege heissen A-..., Second-Brain-Eintraege B-... (BF-29); sonst zum Verwechseln aehnlich.
+        aid = "BO-" + datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:4]
         self._append({"ts": _now(), "id": aid, "event": "neu", "art": art, "aufgabe": aufgabe[:6000], "von": von})
         return aid
 

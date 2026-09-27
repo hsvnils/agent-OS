@@ -39,7 +39,7 @@ TEXT_SYSTEM_PROMPT = (
     "EHRLICHKEIT: Sag nie 'erledigt/eingetragen/gemerkt/gesendet', ohne in DIESER Antwort das passende Werkzeug "
     "erfolgreich aufgerufen zu haben. "
     "Duze den CEO (Nils) immer. "
-    "IDs unterscheiden: ein '#xxxx' ist eine MELDUNGS-ID ('meldung_details') oder eine Auftrags-Kurz-ID; ein 'B-...' "
+    "IDs unterscheiden: ein '#xxxx' ist eine MELDUNGS-ID ('meldung_details') oder eine Auftrags-Kurz-ID; ein 'BO-...' "
     "ist ein BACKOFFICE-AUFTRAG ('auftrag_details'); ein 'A-...' ist eine "
     "ANTRAGS-ID ('antrag_details' zeigt ihn, 'antrag_freigeben'/'antrag_ablehnen' entscheiden). Sagt der CEO "
     "'freigegeben'/'ist freigegeben'/'genehmigt'/'freigeben', beziehe das auf den zuletzt von dir gemeldeten "
@@ -277,7 +277,7 @@ _ERLEDIGT = (r"eingetragen|notiert|gespeichert|angelegt|gesendet|verschickt|erle
              r"aktualisiert|gel(?:oe|ö)scht|verschoben|abgesagt|freigegeben|beauftragt")
 # Jedes Erledigt-Wort in einer Aussage zaehlt -- auch ohne Hilfsverb ("Auftrag B-3f2a angelegt", Probelauf 2026-09-27).
 _BEHAUPTUNG = re.compile(rf"\b(?:{_ERLEDIGT})\b", re.I)
-_AUFTRAGS_ID = re.compile(r"(?:#|\bB-)(?:\d{8}-\d{6}-)?([0-9a-f]{4})\b", re.I)
+_AUFTRAGS_ID = re.compile(r"(?:#|\bBO?-)(?:\d{8}-\d{6}-)?([0-9a-f]{4})\b", re.I)
 
 
 def behauptet_erledigung(text: str) -> bool:

@@ -1,7 +1,7 @@
 # Roadmap-Workflow
 
 - Status: verbindlich
-- Stand: 2026-09-25
+- Stand: 2026-09-27
 - Arbeitsbranch: `ai/doku-standards`
 - Hinweis: Diese Datei beschreibt den verbindlichen Ablauf fuer Roadmaps. Sie ist selbst keine Roadmap und
   aktiviert keine Arbeit. `AGENTS.md` bleibt uebergeordnet; bei Widerspruch gilt `AGENTS.md`.
@@ -121,8 +121,10 @@ ausschliesslich: read-only Analyse, die Roadmap-Datei selbst, ihr Eintrag im Roa
   erledigte Etappen als abgeschlossen markieren; Status in `ROADMAP.md` nachziehen.
 - **F2 Folgethemen.** Offene Folgethemen ausdruecklich in der Roadmap nennen (oder als neue Roadmap/Backlog in
   `ROADMAP.md` eintragen).
-- **F3 Integration.** Push, Merge nach `main`, Deploy und Loeschen des Arbeitsbranches nur nach ausdruecklichem
-  Auftrag (D4). Nach einem Code-Merge werden Deploy-Befehl und noetiger Neustart ausdruecklich benannt.
+- **F3 Integration.** Push, Merge nach `main` und Deploy nur nach ausdruecklichem Auftrag (D4). Nach einem Code-Merge
+  werden Deploy-Befehl und noetiger Neustart ausdruecklich benannt. **Arbeitsbranches, die vollstaendig in `main`
+  enthalten sind** (Pruefung `git merge-base --is-ancestor <branch> main`), darf der Agent ohne Rueckfrage lokal
+  loeschen (CEO 2026-09-27); nicht gemergte Branches und Branches auf GitHub nie ohne Auftrag.
 
 ## Pflicht-Header (Vorlage)
 

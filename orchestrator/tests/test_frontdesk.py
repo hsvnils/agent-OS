@@ -48,7 +48,7 @@ class TestFrontdesk(unittest.TestCase):
         ctx = _ctx()
         r = run_tool("auftrag_erteilen", {"aufgabe": "Fasse den Artikel zusammen: ...", "art": "zusammenfassung"}, ctx)
         self.assertTrue(r["ok"])
-        self.assertTrue(r["id"].startswith("B-"))                          # nicht mit Antraegen (A-...) verwechselbar
+        self.assertTrue(r["id"].startswith("BO-"))                         # nicht mit Antraegen (A-) / Brain (B-) verwechselbar
         self.assertIn(f"#{r['kurz']}", r["hinweis"])
         liste = run_tool("auftraege_zeigen", {}, ctx)["auftraege"]
         self.assertEqual((liste[0]["kurz"], liste[0]["status"]), (r["kurz"], "neu"))
