@@ -64,6 +64,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 
 | Roadmap | Thema | Art |
 |---|---|---|
+| `KUNDEN_FINANZEN_ROADMAP.md` | Kunden (CRM-Stammdaten), Angebote, Beauftragung, Rechnungen, Belege, Finanzen/EUeR in LUNA-OS | geplant (2026-09-27) |
 | `FRONTDESK_BACKOFFICE_ROADMAP.md` | Gemini spricht im Chat, lokales LLM arbeitet Auftraege im Hintergrund ab | in Umsetzung (Etappen 1-3 verifiziert) |
 | `WERKZEUGAUSWAHL_ROADMAP.md` | Nur passende Werkzeuge je Nachricht (Prompt ~13.600 -> <= 5.000 Token) | live, Beobachtung bis 2026-10-03 |
 | `LOKALES_LLM_ROADMAP.md` | Lokales LLM (M6): Ollama auf dem MACO470 fuer Jobs + Chat-Fallback | abgeschlossen (2026-09-26) — Rest in Frontdesk/Backoffice |

@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 15:29] — Claude Code (MACO470)
+- **Was:** Roadmap `KUNDEN_FINANZEN_ROADMAP.md` angelegt (Status geplant, 9 Etappen: Fundament, Kunden, Angebote, Beauftragung,
+  Ausgangsrechnungen, Belege, Zahlungen/EUeR-Journal, Finanz-Cockpit, Jahresabschluss/Export), registriert. CEO-Vorgaben:
+  Kleinunternehmer § 19, Eigenbau, Prozess Angebot -> Beauftragung -> Rechnung mit CRM verknuepft, Kunden + Lieferanten,
+  Eingangsrechnungen, EUeR + laufende Kennzahlen, detailliert; Firmenkundennummer + Ansprechpartner-Nummer; Oberflaeche
+  LUNA-OS im Web (nicht Telegram). Analyse: Code (CRM ohne Nummern/Adressen, keine PDF-Bibliothek, keine Mail-Anhaenge,
+  Backup ohne Beleg-Ordner) und Rechtsrahmen mit Quellen: gesetze-im-internet.de (§ 19 UStG, § 34a UStDV, § 27 UStG,
+  § 147 AO, §§ 6, 11 EStG), BMF (E-Rechnung FAQ, BMF-Schreiben 15.10.2025 E-Rechnung, GoBD-Aenderung 14.07.2025),
+  Haufe (Kleinunternehmer-Anwendungsschreiben, UStAE 14.7a, BEG IV), IHK Stuttgart/Koeln/Wiesbaden/Darmstadt/Hamburg,
+  ELSTER (Anlage EUeR). Offene Punkte als [?] markiert. Nichts umgesetzt.
+- **Warum:** CEO-Wunsch: CRM, Rechnungswesen, Angebote, Finanzen; Antworten zu Steuerstatus/Umsetzung/Kunden/Start.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md` (neu), `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-27 15:11] — Claude Code (MACO470)
 - **Was:** Etappe 4 + BF-29 live: NAS-Deploy `25704bd`, Neustart CEO, Worker neu gestartet. Pruefung: Web 401/200, Worker aktiv
   ohne Fehler, Meldung zu `#e037` zugestellt. Erster Nachtlauf der Agenten-Jobs ueber das Backoffice: 2026-09-28 02:00-04:00.

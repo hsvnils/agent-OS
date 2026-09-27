@@ -1,0 +1,214 @@
+# Roadmap: Kunden, Angebote, Rechnungen und Finanzen in LUNA-OS
+
+- Status: geplant
+- Stand: 2026-09-27
+- Arbeitsbranch: `ai/kunden-finanzen`
+- Basiscommit: `649a974`
+- Naechster Schritt: Roadmap dem CEO vorlegen; offene Grundsatzfragen (Abschnitt „Entscheidungen") klaeren, dann Go fuer
+  Etappe 1.
+- Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
+  aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
+
+## Ziel (CEO, 2026-09-27)
+
+Ein durchgehender, detaillierter Geschaeftsprozess **in LUNA-OS im Web** (nicht primaer ueber Telegram):
+
+**Kunde (CRM) -> Angebot -> Beauftragung -> Rechnung -> Zahlung -> Finanzen/EUeR.**
+
+- **CRM** fuer Kooperationspartner **und** weitere Kunden sowie Lieferanten. **Jede Firma hat eine Firmenkundennummer,
+  jeder Ansprechpartner eine eigene Ansprechpartner-Nummer.**
+- **Angebote** erstellen, ablegen, nachfassen (Kalender-Erinnerungen); aus einem angenommenen Angebot wird eine
+  **Beauftragung** (Auftragsbestaetigung), daraus die **Rechnung** — alles verknuepft mit Kunde und Ansprechpartner.
+- **Rechnungen** mit fortlaufender Rechnungsnummer, abgelegt und sortiert; **Eingangsrechnungen** fuer Einkaeufe der Firma.
+- **Finanzen:** das Jahr ueber die wichtigsten Zahlen sehen; am Jahresende direkt die **EUeR** machen (lassen).
+- Steuerlich: **Kleinunternehmer nach § 19 UStG**, Gewinnermittlung per EUeR. **Eigenbau**, keine Fremdsoftware.
+
+## Register und bekannte Fehler (B3)
+
+- Register: „CRM als File-Store (JSONL), kanalagnostisch" (BESCHLOSSEN 2026-07-01) — wird hier erweitert, nicht ersetzt.
+  Zu Buchhaltungssoftware, Rechnungen, Angeboten gibt es **keine** Vorentscheidung.
+- Bekannte Fehler: keine direkt betroffen; zu beachten: Doku-Check-Pflichten fuer neue Speicher (BF-03/BF-04-Lehre),
+  Deploy-Schutz, Backup.
+
+## Analyse (Belege, 2026-09-27)
+
+### Bestand im Code
+
+- **CRM** (`orchestrator/core/crm.py`): append-only JSONL `crm/log.jsonl`, Write-through nach Supabase `crm_companies`,
+  `crm_messages`, `crm_todos`. **Kein eigenes Firmen-Objekt:** Identitaet ist nur der Anzeigename (`_key = name.lower()`),
+  keine Nummer, keine Adresse, keine Ansprechpartner, keine Aliase (Instagram-Handle und Mail-Absender derselben Firma
+  bleiben getrennt). Pipeline-Stufen `neu|in_gespraech|angebot|vereinbart|abgelehnt` sind kooperationsspezifisch.
+  Oberflaeche: LUNA-OS V2 `renderCrm` (Pipeline/Timeline), Schreib-API nur fuer Status und To-dos.
+- **Finanzen heute:** nur KI-Kosten (`core/kosten.py`, `finance/kosten-log.jsonl`) und Monatsbudget. Keine Einnahmen,
+  Ausgaben, Belege. Investment-Depot (`investment/store.py`) ist ein gutes **Vorbild fuer ein Hauptbuch**: Buchungen als
+  Ereignisse, Korrektur nur per Storno-Ereignis mit Bezug, Bestand per Faltung.
+- **Keine PDF-Bibliothek** (Docker-Image und `.venv`), kein PDF-Code. **Mail-Anhaenge** gehen nicht (`google_workspace._mime`
+  nur Text). Kalender: `termin_anlegen` ohne Erinnerungs-/Ganztags-Option. Drive: nur Textdateien.
+- **Backup** sichert nur einzeln gelistete JSONL-Dateien, keine Beleg-Ordner. `finance/` ist vom Deploy nur teilweise
+  ausgenommen -> neues Verzeichnis `buchhaltung/` statt `finance/`.
+- **LUNA-OS:** neue App = Eintrag in `SECTIONS` + `RENDER.<id>` (`static/app-v2.js`); Rechte ueber Module
+  (`core/team_auth.py`) — ein neues Modul `finanzen` darf standardmaessig nur der Owner sehen.
+- **Mandate:** CRO = Umsatz, Vertrieb, Angebots-Entwurf („Lead -> Angebot -> CEO-Freigabe"); CFO = Kosten, Budget,
+  Finanzberichte, ausdruecklich **keine Buchungen autonom**; CLO = Vertragsentwuerfe. Buchhaltung/EUeR stehen in keinem
+  Mandat -> Charta-Erweiterung CFO (nur HoA auf CEO-Anweisung, mit Diff).
+
+### Rechtsrahmen (Recherche 2026-09-27, Quellen im Changelog-Eintrag; [?] = vor Umsetzung gegenpruefen)
+
+- **§ 19 UStG ab 2025:** Grenzen 25.000 EUR Vorjahr / **100.000 EUR laufendes Jahr — bei Ueberschreiten endet der Status
+  sofort**. Umsatzsteuer darf **nie** ausgewiesen werden (sonst geschuldet nach § 14c). Pflicht-Hinweis auf die
+  Steuerbefreiung (UStAE 14.7a).
+- **Rechnung:** vereinfachte Rechnung nach **§ 34a UStDV** (Name/Anschrift beider Seiten, Steuernummer oder USt-IdNr.,
+  Ausstellungsdatum, Menge/Art der Leistung, Entgelt + Befreiungshinweis). Rechnungsnummer und Leistungsdatum sind dort nicht
+  Pflicht — **wir fuehren sie trotzdem** (GoBD-Nachvollziehbarkeit, sofortiger Wechsel bei Grenzueberschreitung).
+- **E-Rechnung:** Kleinunternehmer duerfen **dauerhaft PDF** ausstellen (§ 34a S. 2 UStDV, BMF 15.10.2025), muessen aber seit
+  2025 **E-Rechnungen empfangen** koennen (XRechnung/ZUGFeRD ab Profil EN16931 [?]); XML im Original aufbewahren.
+- **GoBD** (BMF 28.11.2019, 2. Aenderung 14.07.2025): Unveraenderbarkeit ab Erfassung, Korrekturen protokolliert und
+  erkennbar, Verfahrensdokumentation Pflicht, Datenzugriff der Finanzverwaltung (§ 147 Abs. 6 AO). Eigenbau zulaessig,
+  Verantwortung beim Steuerpflichtigen.
+- **Aufbewahrung** (BEG IV): Belege **8 Jahre**, Aufzeichnungen/Journal 10 Jahre, Geschaeftsbriefe (angenommene Angebote,
+  Auftragsbestaetigungen) 6 Jahre; Frist ab Ende des Kalenderjahres.
+- **EUeR:** Zufluss-/Abflussprinzip (Zahlungsdatum), 10-Tage-Regel fuer wiederkehrende Zahlungen um den Jahreswechsel [?],
+  GWG bis 800 EUR (beim Kleinunternehmer Brutto-Anschaffungskosten gegen die Netto-Grenze pruefen), Sammelposten 250-1.000
+  EUR, AfA, Anlageverzeichnis; Abgabe elektronisch ueber ELSTER (Zeilennummern jaehrlich aus der Anleitung [?]).
+
+## Scope
+
+LUNA-OS-Apps **Kunden** (CRM-Stammdaten), **Angebote & Auftraege**, **Rechnungen**, **Belege/Eingangsrechnungen**,
+**Finanzen** (Cockpit + EUeR); GoBD-faehiger Buchhaltungs-Speicher; PDF-Erzeugung; Ablage/Backup; Kalender-Erinnerungen;
+Mail-Entwurf mit Anhang; Export fuer Steuerberater/ELSTER.
+
+## Nicht-Scope
+
+- Automatischer Versand ohne CEO-Freigabe, Zahlungen ausloesen, Bankzugang per API (spaeter hoechstens eigenes CEO-Tor)
+- Direkte ELSTER-Uebermittlung (ERiC) — Export als Eingabehilfe/CSV
+- Regelbesteuerung/Umsatzsteuer-Voranmeldung (erst wenn die Kleinunternehmer-Grenze reisst — dann eigene Roadmap)
+- LUNA-Chat-/Telegram-Werkzeuge (CEO: zuerst LUNA-OS im Web; spaeter optional)
+- Schutzbereiche laut `governance/roadmap-workflow.md` B4
+
+## Grundsaetze (gelten fuer alle Etappen)
+
+- **Nummern:** Firmen `K-00001` (Firmenkundennummer, fortlaufend, nie wiederverwendet), Ansprechpartner `AP-00001`,
+  Lieferanten ebenfalls mit Firmennummer (Typ „Lieferant"), Angebote `AN-2026-0001`, Auftraege `AB-2026-0001`, Rechnungen
+  `RE-2026-0001`, Eingangsbelege `ER-2026-0001` (Nummernkreise je Jahr, lueckenlos, atomar vergeben). Format = CEO-Entscheidung.
+- **Unveraenderbarkeit:** Buchhaltungs-Speicher append-only mit **Hash-Kette** (jeder Eintrag enthaelt den Hash des
+  vorigen); Belege (PDF/XML) mit SHA-256 im Eintrag; **Festschreiben** einer Rechnung vergibt die Nummer und friert
+  PDF + Daten ein; Korrektur nur per Storno-/Korrekturrechnung. Taegliche Pruefung der Kette (Manipulationsalarm).
+- **Entwurf vs. festgeschrieben:** LUNA-OS erlaubt Entwuerfe frei zu bearbeiten; Festschreiben, Versand (Mail) und
+  Loeschen sind Aktionen des CEO (Recht/Geld/Oeffentlichkeit).
+- **Rechte:** neues Team-Modul `finanzen` (nur Owner/ausdruecklich freigegeben); Kunden/Angebote im Modul `crm`.
+- **Kleinunternehmer-Waechter:** laufender Jahresumsatz gegen 100.000 EUR (Warnung ab 80 %), Vorjahr gegen 25.000 EUR.
+
+## Entscheidungen (CEO, vor Etappe 1)
+
+1. **Nummernformate** (Vorschlag oben) — so uebernehmen oder anpassen?
+2. **Firmendaten fuer den Briefkopf:** Name, Anschrift, Steuernummer, Bankverbindung, Kontakt (liefert der CEO).
+3. **Zahlungseingaenge:** in LUNA-OS von Hand als bezahlt markieren (Start) — oder Kontoauszug-CSV-Import (spaetere Etappe)?
+4. **PDF-Bibliothek** `fpdf2` (reines Python, frei, klein) ins Docker-Image aufnehmen (Neubau des Images) — ok?
+5. **Steuerberater-Pruefung** der Verfahrensdokumentation und der EUeR-Zuordnung (empfohlen, kostet Beratung = CEO-Tor):
+   vor Echtbetrieb oder spaeter?
+6. **Charta-Erweiterungen** (CFO: Buchhaltungsentwuerfe/EUeR-Vorbereitung; CRO: Angebote/Auftraege) — Diff wird vorgelegt.
+
+## Etappen
+
+Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Verifikation in LUNA-OS durch den CEO.
+
+### Etappe 1: Fundament — Buchhaltungs-Speicher, Nummernkreise, Ablage, Backup
+
+- Status: geplant
+- Ziel / Scope: `buchhaltung/log.jsonl` (append-only, Hash-Kette, Ereignistypen, Faltung wie Investment-Depot),
+  Nummernkreis-Dienst (atomar, lueckenlos, je Jahr), Belegablage `buchhaltung/belege/<jahr>/` mit SHA-256, Ketten-Pruefung
+  (taeglich + Alarm), Aufbewahrungsklassen; Deploy-Schutz, Backup inkl. Beleg-Ordner (+ Dateizaehlung im Schrumpf-Check),
+  `.gitignore`, `docs/datenfluesse.md`; Team-Modul `finanzen`.
+- Gate: Tests gruen; Gegenprobe: eine manipulierte Zeile wird erkannt; zwei gleichzeitige Nummernvergaben ergeben keine
+  Doppelung/Luecke; Backup-Probelauf sichert Log + Belege.
+- Aufwand: mittel · Risiko: niedrig (noch keine Oberflaeche, keine echten Daten)
+
+### Etappe 2: Kunden (CRM-Stammdaten) in LUNA-OS
+
+- Status: geplant
+- Ziel / Scope: Firmen mit **Firmenkundennummer** `K-…`, Typ (Kunde/Lieferant/Partner), Rechnungsanschrift,
+  Steuernummer/USt-IdNr., Rechnungs-Mail, Zahlungsziel; **Ansprechpartner mit eigener Nummer** `AP-…` (Name, Rolle, Mail,
+  Telefon), mehrere je Firma; Zuordnung/Zusammenfuehren bestehender Collab-Firmen (Instagram-Handle, Mail) zu einer Nummer;
+  LUNA-OS-App „Kunden": Liste, Suche, Detail, Formular Anlegen/Bearbeiten (Aenderungen als Ereignisse mit Verlauf);
+  Supabase-Projektion erweitern.
+- Gate: CEO legt in LUNA-OS eine Firma mit zwei Ansprechpartnern an, Nummern fortlaufend; bestehende Collab-Firmen bleiben
+  sichtbar und zuordenbar.
+- Aufwand: mittel · Risiko: niedrig-mittel (Migration des bestehenden CRM)
+
+### Etappe 3: Angebote
+
+- Status: geplant
+- Ziel / Scope: Angebot zu Firma + Ansprechpartner, Positionen (Menge, Einheit, Einzelpreis, Summe), Gueltigkeit,
+  Bedingungen/Textbausteine, Kleinunternehmer-Hinweis; Status (Entwurf, versendet, angenommen, abgelehnt, abgelaufen);
+  PDF; Versand als **Gmail-Entwurf mit Anhang** (Senden = CEO); Kalender-Erinnerung zum Nachfassen und vor Ablauf; CRM-Stufe
+  „angebot" automatisch; Ablage + Aufbewahrung (angenommene Angebote 6 Jahre).
+- Gate: Angebot anlegen -> PDF pruefen (CEO) -> Mail-Entwurf mit Anhang in Gmail -> Erinnerung im Kalender.
+
+### Etappe 4: Beauftragung (Auftragsbestaetigung)
+
+- Status: geplant
+- Ziel / Scope: angenommenes Angebot -> Auftrag `AB-…` (uebernimmt Positionen, Leistungszeitraum), optional PDF
+  Auftragsbestaetigung, CRM-Stufe „vereinbart", Verknuepfung Angebot <-> Auftrag.
+- Gate: durchgaengige Verknuepfung sichtbar in LUNA-OS.
+
+### Etappe 5: Ausgangsrechnungen
+
+- Status: geplant
+- Ziel / Scope: Rechnung aus Auftrag (oder frei), Pflichtangaben § 34a UStDV + Nummer + Leistungsdatum + fester
+  Befreiungshinweis, **kein USt-Feld** (Schutz vor § 14c); Festschreiben (Nummer, eingefrorenes PDF, Hash); Storno- und
+  Korrekturrechnung; Versand als Mail-Entwurf mit Anhang; Zahlungsziel, offene Posten, Erinnerung bei Faelligkeit;
+  Ablage nach Jahr/Kunde; Kleinunternehmer-Waechter.
+- Gate: Rechnung festschreiben -> nicht mehr aenderbar (Gegenprobe) -> Storno erzeugt Gegenbeleg; Nummern lueckenlos;
+  Steuerberater-Muster (Entscheidung 5).
+
+### Etappe 6: Eingangsrechnungen und Belege
+
+- Status: geplant
+- Ziel / Scope: Upload in LUNA-OS (PDF/Foto), **E-Rechnungen (XRechnung/ZUGFeRD) einlesen und lesbar anzeigen**, Original
+  unveraendert archivieren; Lieferant, Datum, Betrag, Kategorie (EUeR-Zuordnung), Zahlungsdatum; optional Eingang aus
+  Gmail-Anhaengen.
+- Gate: je ein PDF-, Foto- und XRechnungs-Beleg korrekt erfasst und archiviert (Hash).
+
+### Etappe 7: Zahlungen und EUeR-Journal
+
+- Status: geplant
+- Ziel / Scope: Zahlungen erfassen (Rechnung bezahlt / Beleg bezahlt, Teilzahlungen), Journal nach Zahlungsdatum,
+  10-Tage-Regel, Kategorien -> Zeilen der Anlage EUeR, Anlageverzeichnis mit AfA/GWG/Sammelposten; (optional spaeter:
+  Kontoauszug-CSV-Import, Entscheidung 3).
+- Gate: Probejahr mit Testdaten ergibt nachvollziehbare EUeR-Summen (Abgleich von Hand).
+
+### Etappe 8: Finanz-Cockpit in LUNA-OS
+
+- Status: geplant
+- Ziel / Scope: Einnahmen, Ausgaben, Gewinn (Monat/Quartal/Jahr, Vorjahresvergleich), offene Posten, Top-Kunden,
+  Ausgaben je Kategorie, Kleinunternehmer-Grenze als Balken, KI-Kosten eingebunden; detaillierte Drill-downs.
+- Gate: CEO-Abnahme der Zahlen gegen die Rohdaten.
+
+### Etappe 9: Jahresabschluss und Export
+
+- Status: geplant
+- Ziel / Scope: EUeR-Uebersicht je Zeile (Eingabehilfe fuer ELSTER), Export aller Journal-/Stammdaten maschinenlesbar
+  (Datenzugriff § 147 Abs. 6 AO) + Belege, Steuerberater-Paket, **Verfahrensdokumentation**
+  (`docs/verfahrensdokumentation-buchhaltung.md`).
+- Gate: Export vollstaendig (Stichprobe), Verfahrensdokumentation vom CEO (ggf. Steuerberater) abgenommen.
+
+## Reihenfolge
+
+1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9. Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst
+erfasst werden sollen. Jede Etappe ist fuer sich nutzbar.
+
+## Kosten
+
+Software 0 EUR (Eigenbau, freie Bibliotheken). Optional: Steuerberater-Pruefung (CEO-Tor).
+
+## Dokumentationspflichten
+
+`projekt_changelog.md`, Etappen-Status hier, `ROADMAP.md`, `docs/datenfluesse.md` (neue Speicher, Tabellen, Endpunkte),
+`docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `AGENTS.md` 7 (neue Dateien), Verfahrensdokumentation,
+Charten (nur ueber HoA auf CEO-Anweisung).
+
+## Definition of Done
+
+Der CEO fuehrt in LUNA-OS einen kompletten Fall durch — Firma + Ansprechpartner anlegen, Angebot, Beauftragung, Rechnung,
+Zahlung — erfasst Eingangsrechnungen, sieht die Kennzahlen live und erhaelt zum Jahresende eine EUeR-Uebersicht samt
+Export; Verfahrensdokumentation liegt vor. Abnahme durch den CEO.
