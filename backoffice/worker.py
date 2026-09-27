@@ -194,15 +194,27 @@ def verarbeite(auftrag: dict, ollama, gegenleser) -> dict:
         return {"id": auftrag["id"], "ok": False, "grund": f"{type(exc).__name__}: {str(exc)[:200]}"}
 
 
+_zuletzt_gewartet: list[bool] = [False]   # Zustand fuer den Warte-Hinweis (einmal je Wechsel, kein Dauerlog)
+
+
 def durchlauf(bridge, ollama, gegenleser, *, messen=verfuegbar_gb, jetzt=None, schwelle_tag=13.0,
-              schwelle_nacht=11.0) -> int:
-    """Warteschlange leer arbeiten (sofern Laden erlaubt). Gibt die Zahl erledigter Auftraege zurueck."""
+              schwelle_nacht=11.0, offene=None) -> int:
+    """Warteschlange leer arbeiten (sofern Laden erlaubt). Gibt die Zahl erledigter Auftraege zurueck.
+    Wartet der Worker wegen zu wenig RAM, obwohl Auftraege anstehen, steht das EINMAL im Protokoll (2026-09-27:
+    ein Tagtest blieb wortlos liegen, weil nur 10,6 GB frei waren)."""
     n = 0
     geladen = ollama.geladen()
     erlaubt, grund = darf_laden(None if geladen else messen(), geladen=geladen, nacht=ist_nacht(jetzt),
                                 schwelle_tag=schwelle_tag, schwelle_nacht=schwelle_nacht)
     if not erlaubt:
+        anzahl = offene() if offene else None
+        if anzahl and not _zuletzt_gewartet[0]:
+            _log(f"Wartet: {anzahl} Auftrag/Auftraege offen, aber {grund} — spaetestens ab {NACHT[0]}:00 Uhr.")
+            _zuletzt_gewartet[0] = True
         return 0
+    if _zuletzt_gewartet[0]:
+        _log(f"Speicher reicht wieder ({grund}) — arbeite die Warteschlange ab.")
+        _zuletzt_gewartet[0] = False
     while True:
         r = bridge._req("/api/backoffice/naechster")
         auftrag = (r or {}).get("auftrag")
@@ -219,6 +231,11 @@ def durchlauf(bridge, ollama, gegenleser, *, messen=verfuegbar_gb, jetzt=None, s
     return n
 
 
+def _offene(bridge) -> int:
+    r = bridge._req("/api/backoffice") or {}
+    return sum(1 for a in r.get("auftraege", []) if a.get("status") == "neu")
+
+
 def loop(*, intervall: float = 60.0, einmal: bool = False) -> None:
     env = _lade_env()
     bridge = LunaBridge.from_env(env)
@@ -231,7 +248,7 @@ def loop(*, intervall: float = 60.0, einmal: bool = False) -> None:
         try:
             if bridge.aktiv():
                 durchlauf(bridge, ollama, lambda a, e: gemini_gegenlesen(env, a, e),
-                          schwelle_tag=tag, schwelle_nacht=nacht)
+                          schwelle_tag=tag, schwelle_nacht=nacht, offene=lambda: _offene(bridge))
         except Exception as exc:                             # nie den Worker mitreissen
             _log(f"Schleifen-Fehler: {exc}")
         if einmal:

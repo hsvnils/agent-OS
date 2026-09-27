@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 13:02] — Claude Code (MACO470)
+- **Was:** Backoffice-Tagtest: RAM-Waechter hielt `#a59b` zu Recht zurueck (10,6 GB < 13 GB). Meldeweg per klar markiertem
+  **simuliertem** Ergebnis getestet (CEO-Go): Einzelmeldung zugestellt. Worker schreibt jetzt EINEN Protokoll-Hinweis, wenn er
+  wegen RAM wartet, und einen, wenn es weitergeht (Test + Gegenprobe; Zwischencode danach geloescht; Test-Gate als eigener,
+  stoppender Schritt: 857 passed / 0 failed).
+- **Warum:** CEO-Go „go" (Weg A + Warte-Hinweis).
+- **Betroffen:** NAS `backoffice/log.jsonl` (`#a59b` simuliert fertig), `notifications/log.jsonl`, `backoffice/worker.py`,
+  `backoffice/tests/test_worker.py`, `FRONTDESK_BACKOFFICE_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-27 12:45] — Claude Code (MACO470)
 - **Was:** BF-28-Fix gemergt + gepusht (`7d390b6`), Worker-Dienst neu gestartet. **Ablauf-Fehler offengelegt:** der Suite-Lauf vor
   dem Merge meldete 1 roten Test, die Befehlskette lief trotzdem weiter (Commit/Merge/Push). Ursache analysiert und

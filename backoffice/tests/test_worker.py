@@ -107,6 +107,22 @@ class TestWorker(unittest.TestCase):
         self.assertEqual(w.plausibel(GUT + " Stand Q3 2026, Plan 2027.", jetzt=jetzt), [])
         self.assertEqual(w.plausibel(GUT + " Wie im Vertrag von 2019.", aufgabe="Vertrag 2019", jetzt=jetzt), [])
 
+    def test_11_warten_wird_einmal_protokolliert(self):
+        from unittest import mock
+        w._zuletzt_gewartet[0] = False
+        b = FakeBridge([{"id": "A-8", "kurz": "8", "art": "entwurf", "aufgabe": "x"}])
+        with mock.patch.object(w, "_log") as log:
+            for _ in range(3):                                           # dreimal zu wenig RAM -> nur EIN Eintrag
+                w.durchlauf(b, FakeOllama([GUT]), lambda a, e: "", messen=lambda: 10.6,
+                            jetzt=datetime(2026, 9, 27, 13), offene=lambda: 1)
+            texte = [c.args[0] for c in log.call_args_list]
+            self.assertEqual(len([t for t in texte if t.startswith("Wartet")]), 1)
+            self.assertIn("10.6 GB", texte[0])
+            w.durchlauf(b, FakeOllama([GUT]), lambda a, e: "", messen=lambda: 16.0,
+                        jetzt=datetime(2026, 9, 27, 13), offene=lambda: 1)
+            self.assertTrue(any(t.startswith("Speicher reicht wieder") for t in [c.args[0] for c in log.call_args_list]))
+        self.assertFalse(w._zuletzt_gewartet[0])
+
 
 if __name__ == "__main__":
     unittest.main()

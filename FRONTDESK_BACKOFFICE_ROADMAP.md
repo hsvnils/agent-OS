@@ -4,8 +4,8 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `ec1173c`
-- Naechster Schritt: 2026-09-27 08:00 pruefen, ob `#d868` im Morgen-Briefing steht; CEO-Entscheidung zum Datums-Fix; Tagtest
-  (nach 06:00) fuer die Telegram-Einzelmeldung am Empfaenger.
+- Naechster Schritt: CEO bestaetigt Telegram-Empfang von `#5c68` und die Abrufe „zeig #5c68" / „zeig Auftrag #a59b" -> dann
+  Etappe 2 verifiziert; danach Go fuer Etappe 3 (Frontdesk-Werkzeuge + Ehrlichkeitsregel).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -130,6 +130,14 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
   statt „lade bis Freitag hoch"). Ursache: kennt das heutige Datum nicht. Vorschlag (CEO-Entscheidung): aktuelles
   Datum in die Anweisung + Regel „keine Daten/Zahlen/Fakten erfinden, [Platzhalter] setzen".
 - Hinweis: Zeitstempel/IDs auf der NAS sind UTC (Container), z. B. `A-20260927-002737` = 02:27 Ortszeit.
+- **Briefing-Weg verifiziert:** Morgen-Briefing 2026-09-27 08:02 enthielt `#d868` unter „Nachts im Backoffice erledigt"
+  und wurde zugestellt (`sent`).
+- **BF-28 behoben** (`7d390b6`): Datum + „nichts erfinden" in der Anweisung, Pruefung fremder Jahreszahlen.
+- **Tagtest 2026-09-27 12:45:** Test-Auftrag `#a59b` wurde vom RAM-Waechter **zu Recht** zurueckgehalten (nur 10,6 GB
+  verfuegbar, Schwelle 13 GB) — tagsueber mit laufendem Desktop wartet das Backoffice realistisch oft bis zur Nacht.
+  Das Warten war unsichtbar -> jetzt ein Protokoll-Hinweis je Zustandswechsel. Meldeweg per **simuliertem** Ergebnis
+  (klar markiert, CEO-Go) getestet: Einzelmeldung `N-…-5c68` um 13:00 zugestellt (`sent`); Empfang + Abruf beim CEO
+  bestaetigen.
 - Ziel / Scope: Store `auftraege/log.jsonl` auf der NAS (Status neu -> in_arbeit -> fertig/fehlgeschlagen, Ergebnis,
   Dauer); Worker nach Cutter-Muster auf dem MACO470 (holt Auftraege ueber die LUNA-OS-API, prueft RAM + Zeitfenster,
   laedt das Modell, arbeitet nacheinander, entlaedt, meldet Ergebnis zurueck); Plausibilitaetsfilter (bei Zeichensalat:
