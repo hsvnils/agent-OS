@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 16:48] — Claude Code (MACO470)
+- **Was:** Etappe 2 (Kunden-Stammdaten) nach `main` gemergt (`b0f01bb`), gepusht und per
+  `deploy/sync-to-nas.sh --no-restart` auf die NAS gebracht; Suite 825 gruen, Doku-Check ok. Container-Neustart
+  und Abnahme durch den CEO.
+- **Warum:** CEO-Go „go" (Merge, Push, Deploy Etappe 2).
+- **Betroffen:** `main`, NAS-Code, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-27 16:47] — Claude Code (MACO470)
 - **Was:** KUNDEN_FINANZEN Etappe 2 umgesetzt: Kunden-Stammdaten (Firmen `K-00001`, Ansprechpartner `AP-00001`,
   Verlauf aller Aenderungen in der Buchhaltungs-Kette, Collab-Firmen-Zuordnung), API `/api/crm/kunden*`, neue Sektion

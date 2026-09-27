@@ -4,8 +4,8 @@
 - Stand: 2026-09-27
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Go fuer Merge, Push und Deploy von Etappe 2; danach Abnahme in LUNA-OS V2 durch den CEO (eine Firma mit
-  zwei Ansprechpartnern anlegen).
+- Naechster Schritt: CEO startet die Container neu und nimmt Etappe 2 in LUNA-OS V2 ab (eine Firma mit zwei
+  Ansprechpartnern anlegen); vor Etappe 3 Steuernummer und Bankverbindung erfragen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -144,7 +144,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 2: Kunden (CRM-Stammdaten) in LUNA-OS
 
-- Status: umgesetzt auf `ai/kunden-finanzen`, Deploy offen (2026-09-27)
+- Status: gemergt (`b0f01bb`), gepusht, auf die NAS deployt (2026-09-27); Abnahme durch den CEO offen
 - Ergebnis: `orchestrator/core/kunden.py` (Firmen `K-`, Ansprechpartner `AP-`, Aenderungen als Eintraege in der
   Hash-Kette, Verlauf je Feld, Dubletten-Warnung, Collab-Zuordnung eindeutig), API `/api/crm/kunden*` +
   `/api/crm/ansprechpartner/*` (Modul crm), LUNA-OS **V2** Sektion „Kunden" (Liste + Suche, Detail mit Stammdaten,
