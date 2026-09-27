@@ -145,7 +145,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 2: Kunden (CRM-Stammdaten) in LUNA-OS
 
-- Status: live und vom CEO abgenommen (2026-09-27); Zeitzonen-Korrektur (BF-32) auf dem Branch, Deploy offen
+- Status: abgeschlossen -- live, vom CEO abgenommen (2026-09-27); Zeitzonen-Korrektur (BF-32) deployt (`05454bd`)
 - Ergebnis: `orchestrator/core/kunden.py` (Firmen `K-`, Ansprechpartner `AP-`, Aenderungen als Eintraege in der
   Hash-Kette, Verlauf je Feld, Dubletten-Warnung, Collab-Zuordnung eindeutig), API `/api/crm/kunden*` +
   `/api/crm/ansprechpartner/*` (Modul crm), LUNA-OS **V2** Sektion „Kunden" (Liste + Suche, Detail mit Stammdaten,
@@ -155,7 +155,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   Beispieldaten durchgeklickt: Liste, Collab-Tab, Anlegen mit Dublette + Rueckfrage, Detail, Speichern, Ansprechpartner.
 - Abnahme 2026-09-27 (CEO): Firma `K-00001` und Ansprechpartner `AP-00001` in LUNA-OS V2 angelegt; auf der NAS geprueft:
   Kette intakt, Akteur `LUNA-OS:ceo`. Dabei gefunden: Zeitstempel in UTC (BF-32) -> Buchhaltung schreibt jetzt deutsche Zeit
-  mit Zeitzone (Deploy offen).
+  mit Zeitzone (deployt `05454bd`).
 - Abweichung vom Plan: **keine Supabase-Projektion** -- die Kunden-App liest direkt aus der Kette auf der NAS; eine
   Kopie in Supabase braucht derzeit niemand (spart eine Migration). Nachruestbar, falls ein anderer Dienst die Daten braucht.
 - Hinweis Rechte: Kunden liegen im Modul crm -> auch Team-Nutzer mit crm-Modul sehen und bearbeiten Stammdaten

@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 20:32] — Claude Code (MACO470)
+- **Was:** Zeitzonen-Korrektur der Buchhaltung (BF-32) und Firmendaten-Backup nach `main` gemergt (`05454bd`), gepusht,
+  per `deploy/sync-to-nas.sh --no-restart` auf die NAS gebracht; Buchhaltungsdaten auf der NAS unveraendert.
+  Suite 827 gruen, Doku-Check ok. Etappe 2 abgeschlossen. Container-Neustart durch den CEO.
+- **Warum:** CEO-Go „Go fuer merge, push und deploy".
+- **Betroffen:** `main`, NAS-Code, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-27 20:28] — Claude Code (MACO470)
 - **Was:** Abnahme Etappe 2 auf der NAS geprueft (K-00001, AP-00001, Kette intakt). Neuer bekannter Fehler BF-32:
   Container laufen in UTC. Buchhaltung schreibt jetzt deutsche Zeit mit Zeitzone und nimmt Nummern-/Belegjahr daraus
