@@ -53,7 +53,7 @@ Kalendereinladung, Alpaca-Order (Paper), Git-Push eines Antrags-Branches.
 |---|---|---|---|---|
 | `api.telegram.org` | `channels/telegram/bot.py`, `cutter/melden.py`, `deploy/backup-from-nas.sh` | Chat, Push-Meldungen, Reels (bis 50 MB) / Updates, Sprachdateien | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_ID` | senden, nur an den CEO-Chat |
 | `graph.facebook.com` (+ Meta-Upload-Host) | `governance/instagram.py`, `instagram_token.py`, `core/social_kit.py`, `governance/facebook_reels.py` | DMs, Insights, Token-Tausch / **Reel-Video + Caption** | `INSTAGRAM_*` | lesen; **veroeffentlicht** nur nach `/api/reel/{id}/freigeben` |
-| `www.googleapis.com`, `oauth2.googleapis.com` | `governance/google_workspace.py`, `core/crm_mail.py` | Gmail, Kalender, Drive, Sheets | `GOOGLE_OAUTH_*`, `GOOGLE_CALENDAR_*` | lesen frei; senden/aendern nur mit `bestaetigt=True` |
+| `www.googleapis.com`, `oauth2.googleapis.com` | `governance/google_workspace.py`, `core/crm_mail.py`; seit Etappe 3 auch die Web-App (`/api/crm/angebote/*`: Gmail-**Entwurf** mit Angebots-PDF, Kalender-Erinnerungen Nachfassen/Ablauf) | Gmail, Kalender, Drive, Sheets; Angebots-PDF + Kundenname/-Mail im Entwurf | `GOOGLE_OAUTH_*`, `GOOGLE_CALENDAR_*` | lesen frei; senden/aendern nur mit `bestaetigt=True`; Angebote nur als Entwurf (Senden = CEO in Gmail) |
 | Anthropic (SDK) | `core/hoa_conversation.py`, `core/backends.py`, `core/execution_live.py`, `governance/web_research.py`, `core/ig_analyse.py` | Prompts, Kontext, DM-Inhalte / Antworten | `ANTHROPIC_API_KEY` | lesen; Execution schreibt Code in `.worktrees/` |
 | `generativelanguage.googleapis.com` | `core/model_router.py` (Fallback), `cutter/gemini_video.py`, `cutter/reel_tag.py`, `core/ig_analyse.py` | Prompts, Screenshots, **Videoclips** (nur mit `CUTTER_VIDEO_KI=1`) | `GEMINI_API_KEY` | lesen; Upload zu Google |
 | OpenAI (SDK) | Fallback in `core/model_router.py`, `core/ig_analyse.py` | Prompts | `OPENAI_API_KEY`, `IG_ANALYSE_*` | lesen |
@@ -177,8 +177,8 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `content_ops/*_cache.jsonl` (5 Dateien) | Web, Content-Feed | dito | ja | nein (Cache von Supabase) |
 | `nutzung/log.jsonl` | Web (`/api/nutzung`) | Leistungsbericht | ja | ja |
 | `backoffice/log.jsonl` (Auftraege, append-only) | Web (`/api/backoffice/*`, Worker-Ergebnisse) | Web, Bot (Werkzeug `auftrag_details`, Morgen-Briefing) | ja | ja |
-| `buchhaltung/log.jsonl` (Hash-Kette: Nummern, Belege, spaeter Kunden/Angebote/Rechnungen) + `buchhaltung/belege/<jahr>/` | Web (Kunden-App: Firmen, Ansprechpartner, Collab-Zuordnung) | Bot (Integritaetspruefung 05:00), Web | ja | ja (Log + Beleg-Ordner, Schrumpf-Check) |
-| `buchhaltung/firmendaten.json` (eigene Firma: Briefkopf, Steuernummer, Bankverbindung; **nur NAS, nie im Git**) | CEO (Angabe), von Hand angelegt | ab Etappe 3: Angebote/Rechnungen (PDF) | ja | ja |
+| `buchhaltung/log.jsonl` (Hash-Kette: Nummern, Kunden, Angebote, Belege; spaeter Rechnungen) + `buchhaltung/belege/<jahr>/` (u. a. Angebots-PDFs) | Web (Kunden- und Angebots-App) | Bot (Integritaetspruefung 05:00), Web | ja | ja (Log + Beleg-Ordner, Schrumpf-Check) |
+| `buchhaltung/firmendaten.json` (eigene Firma: Briefkopf, Steuernummer, Bankverbindung; **nur NAS, nie im Git**) | CEO (Angabe), von Hand angelegt | Web: Angebots-PDF (Briefkopf, Fusszeile mit Bank) | ja | ja |
 | `orchestrator/memory/log.jsonl` | Bot, Voice | dito | ja | ja |
 | `orchestrator/state/instagram_token.json` (**Secret**) | `governance/instagram_token.py` | dito | ja | bewusst nein (CEO) |
 | `projekt_changelog.md`, `finance/budget.md` | Bot, Web, Agenten | alle | ja | Git |
@@ -241,7 +241,8 @@ cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
   `/api/settings`, …), Chat/Voice (`/api/chat`, `/api/tts`, `/api/sehen`, `/api/brain`), Antraege und
   Entwicklungs-Roadmap, Cutter (`/api/cutter/*`, Maschine-zu-Maschine), Backoffice (`/api/backoffice/*`, Modul
   administration, Maschine-zu-Maschine), Kunden-Stammdaten (`/api/crm/kunden*`, `/api/crm/ansprechpartner/*`,
-  Modul crm, schreibt in die Buchhaltungs-Kette), Reels (`/api/reel/*`,
+  Modul crm, schreibt in die Buchhaltungs-Kette), Angebote (`/api/crm/angebote*`, Modul crm: PDF, Gmail-Entwurf,
+  Kalender), Reels (`/api/reel/*`,
   **`/freigeben` postet auf Facebook**), CRM/Instagram, Content, Investment (inkl. `…/paper-order`).
 - **Voice-Server** (localhost:7860, WebRTC) und **Mac-Orb** (ruft `127.0.0.1:8765`) — nur am MacBook.
 
