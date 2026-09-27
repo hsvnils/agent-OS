@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 16:24] — Claude Code (MACO470, als Head of Agents auf CEO-Anweisung)
+- **Was:** **Charta-Aenderung CFO und CRO** genau wie im vorgelegten Diff: CFO erhaelt Buchhaltung (Kleinunternehmer, EUeR,
+  Grenzwaechter, Jahres-Gewinnermittlung), Endzeichnung beim CEO statt Steuerberater, kein Festschreiben/Versenden/Loeschen
+  von Rechnungen/Belegen, Zugriff `buchhaltung/`; CRO erhaelt Kundenstammdaten (Firmenkunden- und Ansprechpartner-Nummern),
+  Angebots-/Auftrags-Entwuerfe, kein Selbstversand, Workflow Angebot -> Beauftragung -> Rechnung.
+- **Warum:** CEO-Bestaetigung „go fuer 1 und 2" (1 = Charta-Diff), AGENTS.md 3.3.
+- **Betroffen:** `agents/03_cfo.md`, `agents/04_cro.md`, `projekt_changelog.md`
+
 ## [2026-09-27 16:15] — Claude Code (MACO470)
 - **Was:** CEO-Entscheidungen zur Kunden/Finanzen-Roadmap eingetragen (Nummernformate, Briefkopf-Anschrift, Zahlungen von Hand,
   `fpdf2`, kein Steuerberater -> Etappen 7/9 schlank, Charta-Erweiterung CFO/CRO per Diff). Offen: Steuernummer, Bankverbindung.
