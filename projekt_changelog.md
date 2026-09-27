@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 02:31] — Claude Code (MACO470)
+- **Was:** Backoffice Etappe 2 **deployt**: Merge + Push `a7caaef`, `sync-to-nas.sh --no-restart` (377 Dateien, keine `.env`),
+  Neustart CEO; Dienst `backoffice-worker` auf dem MACO470 installiert (`/etc/systemd/system/backoffice-worker.service`,
+  enabled + active). Live-Test Nachtweg: Test-Auftrag `#d868` in 62 s erledigt, fuers Briefing vorgemerkt, Modell entladen.
+  Neuer Befund BF-28 (Modell erfindet Datum). Offen: Briefing-Pruefung 08:00, Tagtest Einzelmeldung.
+- **Warum:** CEO-Go „go fuer 1-3" (Merge/Push, Deploy + Neustart, Worker-Dienst).
+- **Betroffen:** NAS-Code, MACO470 systemd (`backoffice-worker`), NAS `backoffice/log.jsonl` (1 Test-Auftrag),
+  `FRONTDESK_BACKOFFICE_ROADMAP.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-09-27 02:07] — Claude Code (MACO470)
 - **Was:** `FRONTDESK_BACKOFFICE_ROADMAP.md` **Etappe 2 umgesetzt** (Branch `ai/frontdesk-backoffice`, nicht gemergt/deployt):
   Auftrags-Store `orchestrator/core/auftraege.py`, LUNA-OS-Endpunkte `/api/backoffice/*`, Morgen-Briefing-Abschnitt,
