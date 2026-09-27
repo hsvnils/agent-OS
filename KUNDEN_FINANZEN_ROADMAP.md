@@ -4,8 +4,8 @@
 - Stand: 2026-09-27
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: CEO startet die Container neu und nimmt Etappe 2 in LUNA-OS V2 ab (eine Firma mit zwei
-  Ansprechpartnern anlegen); vor Etappe 3 Steuernummer und Bankverbindung erfragen.
+- Naechster Schritt: CEO baut das Image neu (`docker compose up -d --build`), dann Abnahme Etappe 3: Angebot anlegen ->
+  PDF pruefen -> Gmail-Entwurf mit Anhang -> als versendet markieren -> Erinnerung im Kalender. Steuernummer vor Etappe 5.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -171,7 +171,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 3: Angebote
 
-- Status: umgesetzt auf `ai/kunden-finanzen`, Deploy offen (2026-09-27) -- braucht **Neubau des Docker-Images**
+- Status: gemergt (`0a0c08c`), gepusht, Code auf der NAS (2026-09-27); aktiv nach **Image-Neubau** durch den CEO
 - Ergebnis: `orchestrator/core/angebote.py` (AN-Nummer aus dem Angebotsjahr, Positionen in Cent, Status entwurf ->
   versendet -> angenommen/abgelehnt, „abgelaufen" abgeleitet, Inhalt nach „versendet" eingefroren), `core/beleg_pdf.py`
   (PDF nach DIN 5008 mit Briefkopf, § 19-Hinweis, Bank in der Fusszeile, Tabellenkopf auf Folgeseiten; wiederverwendbar

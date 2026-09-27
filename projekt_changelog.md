@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 20:53] — Claude Code (MACO470)
+- **Was:** Etappe 3 (Angebote) nach `main` gemergt (`0a0c08c`), gepusht und per `deploy/sync-to-nas.sh --no-restart`
+  auf die NAS gebracht (inkl. neuem `deploy/Dockerfile`); Suite 838 gruen, Doku-Check ok. Aktiv erst nach Image-Neubau
+  durch den CEO (der Neustart davor lief noch mit altem Code). Roadmap-Kopf „Naechster Schritt" nachgezogen (stand
+  noch auf Etappe 2).
+- **Warum:** CEO-Go „Merge, Push und deploy".
+- **Betroffen:** `main`, NAS-Code, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-27 20:43] — Claude Code (MACO470)
 - **Was:** KUNDEN_FINANZEN Etappe 3 (Angebote) umgesetzt: Angebots-Store in der Buchhaltungs-Kette, PDF-Baustein
   (`fpdf2` + DejaVu), Gmail-Entwurf mit PDF-Anhang, Kalender-Erinnerungen, CRM-Stufe „angebot", PDF-Ablage;
