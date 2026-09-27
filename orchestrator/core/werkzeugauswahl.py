@@ -17,7 +17,7 @@ import re
 KERN = [
     "lagebild", "delegate", "melde_an_ceo", "meldung_details", "brain_suchen", "brain_merken",
     "recherche_beauftragen", "offene_tickets", "antraege_zeigen", "antrag_details", "antrag_stellen",
-    "notiz_hinzufuegen", "werkzeuge_laden",
+    "notiz_hinzufuegen", "werkzeuge_laden", "auftrag_erteilen",
 ]
 
 GRUPPEN: dict[str, dict[str, list[str]]] = {
@@ -96,8 +96,9 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
                          "token", "sparen", "guenstig", "preis", "teuer", "dienstleister", "modelle", "provider"],
     },
     "backoffice": {
-        "werkzeuge": ["auftrag_details"],
-        "stichwoerter": ["auftrag", "backoffice", "hintergrund", "bis morgen", "ergebnis"],
+        "werkzeuge": ["auftrag_details", "auftraege_zeigen"],
+        "stichwoerter": ["auftrag", "auftraeg", "backoffice", "hintergrund", "bis morgen", "ergebnis", "in ruhe",
+                         "ausfuehrlich"],
     },
     "gedaechtnis": {
         "werkzeuge": ["erfahrung_abrufen", "erfahrung_merken"],

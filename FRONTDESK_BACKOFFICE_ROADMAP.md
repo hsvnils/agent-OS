@@ -4,7 +4,7 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `ec1173c`
-- Naechster Schritt: CEO-Go fuer Etappe 3 (Frontdesk-Werkzeuge `auftrag_erteilen`/`auftraege_zeigen` + Ehrlichkeitsregel, BF-25).
+- Naechster Schritt: CEO-Go fuer Merge + Push + NAS-Deploy + Neustart, dann Live-Test in Telegram; BF-24 gesondert untersuchen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -152,7 +152,17 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
 
 ### Etappe 3: Frontdesk-Werkzeuge + Ehrlichkeitsregel
 
-- Status: geplant
+- Status: umgesetzt (2026-09-27, Branch `ai/frontdesk-werkzeuge`; Merge/Deploy/Live-Test offen) — Werkzeuge
+  `auftrag_erteilen` (Kern-Set, immer sichtbar) und `auftraege_zeigen`; Auftrags-IDs jetzt `B-...` (Antraege sind `A-...`,
+  gleiches Format -> Verwechslungsgefahr); System-Prompt: Backoffice-Regel, Ehrlichkeitsregel, Duzen (BF-27);
+  Nachfassen (einmal), wenn eine Erledigung ohne Werkzeug behauptet oder eine nicht existierende Auftrags-ID genannt
+  wird; Protokoll Kategorie `ehrlichkeit`. Werkzeugauswahl-Gate knapp gerissen (5.252 Token) -> Beschreibungen
+  gekuerzt -> 64/64, Ø 4.835. Tests 863 passed / 0 failed.
+- **Probelauf Gemini (2026-09-27, Wegwerf-Ablagen):** 1. Lauf: Hintergrund 4/10 — **4x „Auftrag angelegt" mit
+  erfundener ID ohne Werkzeug** (Ursache: woertliche Antwort-Vorlage im Prompt + Erkennung nur mit Hilfsverb).
+  Korrigiert (keine Vorlage, Erkennung ohne Hilfsverb, ID-Existenzpruefung). 2. Lauf: **Hintergrund 9/10** ans
+  Backoffice (2x per Nachfassen), 0 Erfindungen, 1 ehrliche Rueckfrage; **Erledigung 10/10 ehrlich** (7 Werkzeug,
+  3 „technischer Fehler" durch leere Gemini-Antworten, BF-24).
 - Ziel / Scope: Werkzeuge `auftrag_erteilen(aufgabe, art)` und `auftraege_zeigen`; System-Prompt-Regel: „Erledigt"
   nur nach einem Werkzeug-Ergebnis im selben Zug, sonst „Auftrag angelegt"; optional Erkennung von
   Erledigungs-Behauptungen ohne Werkzeug-Aufruf (BF-25) mit Nachfassen.

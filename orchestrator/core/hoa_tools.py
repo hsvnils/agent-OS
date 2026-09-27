@@ -180,6 +180,14 @@ def tool_specs() -> list[dict]:
               "Google, Stores, Watcher-Heartbeat). Kostenlos.", {}, []),
         _spec("obsidian_export", "Schreibt den aktuellen Fachbereichs-Wissensstand und die offenen Tickets als "
               "Markdown in den Obsidian-Vault (vault/). Kostenlos.", {}, []),
+        _spec("auftrag_erteilen", "Gibt eine groessere Aufgabe als Auftrag ans Backoffice (arbeitet im Hintergrund, "
+              "meldet sich selbst). Ergebnis ist ein Entwurf.",
+              {"aufgabe": _str("Vollstaendige Aufgabe mit allen noetigen Inhalten (Backoffice sieht den Chat nicht)."),
+               "art": {"type": "string", "enum": ["zusammenfassung", "entwurf", "bewertung", "analyse", "sonstiges"],
+                       "description": "Art des Auftrags."}}, ["aufgabe", "art"]),
+        _spec("auftraege_zeigen", "Listet die Backoffice-Auftraege (neueste zuerst) mit Status "
+              "(neu/in_arbeit/fertig/fehlgeschlagen).",
+              {"status": _str("Optional: neu | in_arbeit | fertig | fehlgeschlagen.")}, []),
         _spec("auftrag_details", "Zeigt einen Backoffice-Auftrag (Hintergrund-Arbeit des lokalen Modells): Aufgabe, "
               "Status, das vollstaendige Ergebnis und ggf. die Zweitmeinung -- per voller ID oder kurzem Suffix "
               "(z. B. '#3f2a').", {"auftrag_id": _str("Auftrags-ID oder Suffix.")}, ["auftrag_id"]),
@@ -747,6 +755,28 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"id": n["id"], "abteilung": n.get("abteilung", ""), "kategorie": n.get("kategorie", ""),
                 "ts": n.get("ts", ""), "text": redact(n.get("text", ""), sec),
                 "detail": redact(n.get("detail", "") or "(kein weiterer Hintergrund gespeichert)", sec)}
+
+    if name == "auftrag_erteilen":
+        if ctx.backoffice is None:
+            return {"ok": False, "fehler": "Backoffice nicht verfuegbar."}
+        try:
+            aid = ctx.backoffice.anlegen(str(args.get("aufgabe", "")), art=str(args.get("art", "sonstiges")),
+                                         von="CEO (per LUNA)")
+        except ValueError as exc:
+            return {"ok": False, "fehler": str(exc)}
+        kurz = aid.split("-")[-1]
+        return {"ok": True, "id": aid, "kurz": kurz,
+                "hinweis": (f"Sag dem CEO: Auftrag #{kurz} ist angelegt. Das Backoffice meldet sich tagsueber per "
+                            f"Telegram, nachts erledigte Auftraege stehen im Morgen-Briefing; ist der MACO470 "
+                            f"gerade ausgelastet, wird es spaetestens nachts erledigt. Nichts als erledigt melden.")}
+
+    if name == "auftraege_zeigen":
+        if ctx.backoffice is None:
+            return {"fehler": "Backoffice nicht verfuegbar."}
+        status = str(args.get("status") or "").strip() or None
+        return {"auftraege": [{"kurz": a["kurz"], "art": a.get("art"), "status": a.get("status"),
+                               "aufgabe": " ".join(a.get("aufgabe", "").split())[:100]}
+                              for a in ctx.backoffice.list(status)[:15]]}
 
     if name == "auftrag_details":
         if ctx.backoffice is None:
@@ -1675,7 +1705,7 @@ def _bool(desc: str) -> dict:
 
 def _werkzeug_gruppen_text() -> str:
     from .werkzeugauswahl import GRUPPEN
-    return "; ".join(f"{g} ({', '.join(d['werkzeuge'][:3])} ...)" for g, d in GRUPPEN.items())
+    return ", ".join(GRUPPEN)
 
 
 def _spec(name: str, desc: str, props: dict, required: list[str]) -> dict:

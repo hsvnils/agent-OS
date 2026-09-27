@@ -7,6 +7,7 @@ injizierbar -> offline mit Mock testbar (ohne Kosten).
 from __future__ import annotations
 
 import json
+import re
 import time
 
 from .hoa_tools import ToolContext, run_tool, tool_specs
@@ -31,7 +32,15 @@ TEXT_SYSTEM_PROMPT = (
     "'innovation_scouting'/'selbstentwicklung' (Vorschlag als Antrag), 'briefing_jetzt', 'notiz_hinzufuegen', "
     "'systemcheck', 'autonomie_pausieren' (Notbremse). Um dich proaktiv beim CEO zu melden: 'melde_an_ceo' "
     "(Feld 'abteilung' setzen, 'detail' fuer Rueckfragen). "
-    "IDs unterscheiden: ein '#xxxx' ist eine MELDUNGS-ID ('meldung_details'); ein 'A-...' ist eine "
+    "BACKOFFICE: Groessere Aufgaben (Zusammenfassungen, Entwuerfe, Analysen, Bewertungen) oder 'im Hintergrund'/"
+    "'bis morgen'/'ausfuehrlich' -> Werkzeug 'auftrag_erteilen' AUFRUFEN; danach die Kurz-ID aus dessen Ergebnis "
+    "nennen -- nie eine ausgedachte ID. "
+    "Schnelles erledigst du sofort. "
+    "EHRLICHKEIT: Sag nie 'erledigt/eingetragen/gemerkt/gesendet', ohne in DIESER Antwort das passende Werkzeug "
+    "erfolgreich aufgerufen zu haben. "
+    "Duze den CEO (Nils) immer. "
+    "IDs unterscheiden: ein '#xxxx' ist eine MELDUNGS-ID ('meldung_details') oder eine Auftrags-Kurz-ID; ein 'B-...' "
+    "ist ein BACKOFFICE-AUFTRAG ('auftrag_details'); ein 'A-...' ist eine "
     "ANTRAGS-ID ('antrag_details' zeigt ihn, 'antrag_freigeben'/'antrag_ablehnen' entscheiden). Sagt der CEO "
     "'freigegeben'/'ist freigegeben'/'genehmigt'/'freigeben', beziehe das auf den zuletzt von dir gemeldeten "
     "oder besprochenen Antrag (steht im Verlauf der proaktiven Meldungen); bei Unklarheit schau in "
@@ -121,6 +130,7 @@ class HoaConversation:
             _, self.gruppen = auswahl(ceo_text, self.gruppen)
         self._repariere_verlauf()  # evtl. kaputten Tail (tool_use ohne tool_result) entfernen
         self.messages.append({"role": "user", "content": user_text})
+        werkzeuge_im_zug, nachgefasst = 0, False
         for _ in range(self.max_iter):
             self.messages = verdichte(self.messages, self.verlauf_budget)
             try:
@@ -145,7 +155,16 @@ class HoaConversation:
             self.messages.append({"role": "assistant", "content": resp.content})
             tool_uses = [b for b in resp.content if btype(b) == "tool_use"]
             if not tool_uses:
-                return _text(resp.content)
+                antwort = _text(resp.content)
+                # BF-25: Erledigung behauptet, ohne in diesem Zug ein Werkzeug aufgerufen zu haben -> EINMAL nachfassen.
+                erfunden = unbekannte_auftrags_ids(antwort, getattr(self.ctx, "backoffice", None))
+                if not nachgefasst and ((werkzeuge_im_zug == 0 and behauptet_erledigung(antwort)) or erfunden):
+                    nachgefasst = True
+                    self._ehrlichkeit_protokollieren(antwort)
+                    self.messages.append({"role": "user", "content": NACHFASSEN})
+                    continue
+                return antwort
+            werkzeuge_im_zug += len(tool_uses)
             # WICHTIG: JEDES tool_use bekommt ein tool_result -- auch bei Tool-Fehler. Sonst wird der
             # Verlauf ungueltig und die API lehnt jede weitere Nachricht ab (400).
             results = []
@@ -162,6 +181,15 @@ class HoaConversation:
                                 "content": json.dumps(out, ensure_ascii=False)})
             self.messages.append({"role": "user", "content": results})
         return "Ich konnte das gerade nicht abschliessen -- bitte praezisiere kurz."
+
+    def _ehrlichkeit_protokollieren(self, antwort: str) -> None:
+        akt = getattr(self.ctx, "aktivitaet", None)
+        if akt is not None:
+            try:
+                akt.log("LUNA-Chat", "Erledigung ohne Werkzeug behauptet -> nachgefasst", kategorie="ehrlichkeit",
+                        detail=antwort[:300])
+            except Exception:
+                pass
 
     def _aktuelle_tools(self) -> list[dict]:
         """Alle Werkzeuge -- oder bei aktiver Werkzeugauswahl nur Kern-Set + geladene Gruppen."""
@@ -235,6 +263,35 @@ class HoaConversation:
         # z. B. Anthropic-'usage limit' ist auch ein 400/invalid_request, aber KEIN Verlaufsproblem.
         s = str(exc).lower()
         return "tool_result" in s or "tool_use" in s
+
+
+NACHFASSEN = ("(Systemhinweis, nicht vom CEO: Du hast gerade eine Erledigung behauptet, aber in dieser Antwort kein "
+              "Werkzeug aufgerufen. Rufe jetzt das passende Werkzeug auf -- oder korrigiere deine Aussage ehrlich.)")
+
+_ERLEDIGT = (r"eingetragen|notiert|gespeichert|angelegt|gesendet|verschickt|erledigt|gemerkt|hinzugef(?:ue|ü)gt|"
+             r"aktualisiert|gel(?:oe|ö)scht|verschoben|abgesagt|freigegeben|beauftragt")
+# Jedes Erledigt-Wort in einer Aussage zaehlt -- auch ohne Hilfsverb ("Auftrag B-3f2a angelegt", Probelauf 2026-09-27).
+_BEHAUPTUNG = re.compile(rf"\b(?:{_ERLEDIGT})\b", re.I)
+_AUFTRAGS_ID = re.compile(r"(?:#|\bB-)(?:\d{8}-\d{6}-)?([0-9a-f]{4})\b", re.I)
+
+
+def behauptet_erledigung(text: str) -> bool:
+    """Klingt die Antwort nach einer vollzogenen Handlung ('habe ich eingetragen', 'ist gespeichert')? (BF-25)
+    Fragen ('Soll ich ... eintragen?') und Infinitive zaehlen nicht."""
+    for satz in re.split(r"(?<=[.!\n])\s+", text or ""):
+        s = satz.strip()
+        if s.endswith("?") or re.match(r"(?i)(soll|kann|darf|m(?:oe|ö)chtest|willst|wenn|sobald|falls)\b", s):
+            continue
+        if _BEHAUPTUNG.search(s):
+            return True
+    return False
+
+
+def unbekannte_auftrags_ids(text: str, store) -> list[str]:
+    """Auftrags-Kurz-IDs, die in der Antwort vorkommen, im Backoffice aber nicht existieren (erfundene IDs)."""
+    if store is None or "auftrag" not in (text or "").lower():
+        return []
+    return [k for k in _AUFTRAGS_ID.findall(text) if store.get(k) is None]
 
 
 def _text(content) -> str:

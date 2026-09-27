@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 13:20] — Claude Code (MACO470)
+- **Was:** Backoffice **Etappe 3 umgesetzt** (Branch `ai/frontdesk-werkzeuge`): Frontdesk-Werkzeuge `auftrag_erteilen` (Kern-Set) +
+  `auftraege_zeigen`, Auftrags-IDs `B-...`, System-Prompt mit Backoffice-/Ehrlichkeitsregel + Duzen, Nachfassen bei Behauptungen
+  ohne Werkzeug und erfundenen Auftrags-IDs. Gemini-Probelauf nach Korrektur: Hintergrund 9/10, Erledigung 10/10 ehrlich
+  (erster Lauf deckte 4 erfundene „Auftrag angelegt" auf — Ursache im eigenen Prompt). BF-25 + BF-27 ins Archiv, BF-24 wieder
+  offen. Tests 863 passed / 0 failed. Frage des CEO beantwortet: Nacht-Jobs (CFO, Content, Self-Dev, Researcher) laufen noch
+  nicht ueber das Backoffice -> Etappe 4.
+- **Warum:** CEO-Go „Go fuer Etappe 3".
+- **Betroffen:** `orchestrator/core/hoa_tools.py`, `orchestrator/core/hoa_conversation.py`, `orchestrator/core/auftraege.py`,
+  `orchestrator/core/werkzeugauswahl.py`, `orchestrator/tests/test_frontdesk.py` (neu), `FRONTDESK_BACKOFFICE_ROADMAP.md`,
+  `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-09-27 13:07] — Claude Code (MACO470)
 - **Was:** Backoffice **Etappe 2 verifiziert**: CEO bestaetigt per Screenshot den Empfang der Einzelmeldung (13:01) und beide
   Abrufe („zeig #5c68", „zeig Auftrag #a59b" ueber das neue Werkzeug `auftrag_details`, Werkzeugauswahl griff).
