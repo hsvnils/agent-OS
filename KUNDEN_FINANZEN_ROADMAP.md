@@ -102,7 +102,8 @@ Mail-Entwurf mit Anhang; Export fuer Steuerberater/ELSTER.
 
 1. **Nummernformate:** wie vorgeschlagen (`K-00001`, `AP-00001`, `AN-/AB-/RE-/ER-JJJJ-NNNN`).
 2. **Firma fuer den Briefkopf:** Krueger Onlinehandel und Media, c/o Hanserautisch, Arthur-Soltau-Weg 7c, 22889 Tangstedt.
-   **Noch offen:** Steuernummer (Pflichtangabe § 34a UStDV) und Bankverbindung — spaetestens vor Etappe 3/5 erfragen.
+   Bankverbindung am 2026-09-27 geliefert und in `buchhaltung/firmendaten.json` auf der NAS abgelegt (nicht im Git).
+   **Noch offen:** Steuernummer (Pflichtangabe § 34a UStDV) — vor Etappe 5 (Rechnungen) noetig, fuer Angebote optional.
 3. **Zahlungseingaenge:** zum Start von Hand in LUNA-OS als bezahlt markieren; Kontoauszug-Import spaeter.
 4. **PDF:** `fpdf2` ins Docker-Image (einmaliger Neubau).
 5. **Kein Steuerberater:** einfache Gewinnermittlung aus den Einnahmen und Ausgaben des CEO -> Etappen 7 und 9 **schlank**

@@ -46,6 +46,7 @@ FILES=(
   nutzung/log.jsonl
   backoffice/log.jsonl
   buchhaltung/log.jsonl
+  buchhaltung/firmendaten.json   # Briefkopf + Bankverbindung (nur NAS, nie im Git; kein JSONL -> nicht im Zeilen-Check)
 )
 
 mkdir -p "$DEST"
