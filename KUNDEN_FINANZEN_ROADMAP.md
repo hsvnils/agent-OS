@@ -4,8 +4,7 @@
 - Stand: 2026-09-27
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Roadmap dem CEO vorlegen; offene Grundsatzfragen (Abschnitt „Entscheidungen") klaeren, dann Go fuer
-  Etappe 1.
+- Naechster Schritt: CEO bestaetigt den Charta-Diff (CFO/CRO); danach Go fuer Etappe 1 (Fundament).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -98,7 +97,18 @@ Mail-Entwurf mit Anhang; Export fuer Steuerberater/ELSTER.
 - **Rechte:** neues Team-Modul `finanzen` (nur Owner/ausdruecklich freigegeben); Kunden/Angebote im Modul `crm`.
 - **Kleinunternehmer-Waechter:** laufender Jahresumsatz gegen 100.000 EUR (Warnung ab 80 %), Vorjahr gegen 25.000 EUR.
 
-## Entscheidungen (CEO, vor Etappe 1)
+## Entscheidungen (CEO, 2026-09-27)
+
+1. **Nummernformate:** wie vorgeschlagen (`K-00001`, `AP-00001`, `AN-/AB-/RE-/ER-JJJJ-NNNN`).
+2. **Firma fuer den Briefkopf:** Krueger Onlinehandel und Media, c/o Hanserautisch, Arthur-Soltau-Weg 7c, 22889 Tangstedt.
+   **Noch offen:** Steuernummer (Pflichtangabe § 34a UStDV) und Bankverbindung — spaetestens vor Etappe 3/5 erfragen.
+3. **Zahlungseingaenge:** zum Start von Hand in LUNA-OS als bezahlt markieren; Kontoauszug-Import spaeter.
+4. **PDF:** `fpdf2` ins Docker-Image (einmaliger Neubau).
+5. **Kein Steuerberater:** einfache Gewinnermittlung aus den Einnahmen und Ausgaben des CEO -> Etappen 7 und 9 **schlank**
+   (AfA/Anlageverzeichnis nur bei Bedarf, kurze Verfahrensdokumentation).
+6. **Charta-Erweiterungen CFO/CRO:** ja — Diff wird vorgelegt, Anwendung erst nach Bestaetigung (AGENTS.md 3.3).
+
+## Entscheidungen (Vorschlaege, Stand der Planung)
 
 1. **Nummernformate** (Vorschlag oben) — so uebernehmen oder anpassen?
 2. **Firmendaten fuer den Briefkopf:** Name, Anschrift, Steuernummer, Bankverbindung, Kontakt (liefert der CEO).

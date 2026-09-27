@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 16:15] — Claude Code (MACO470)
+- **Was:** CEO-Entscheidungen zur Kunden/Finanzen-Roadmap eingetragen (Nummernformate, Briefkopf-Anschrift, Zahlungen von Hand,
+  `fpdf2`, kein Steuerberater -> Etappen 7/9 schlank, Charta-Erweiterung CFO/CRO per Diff). Offen: Steuernummer, Bankverbindung.
+- **Warum:** CEO-Antworten 1-6.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-27 15:29] — Claude Code (MACO470)
 - **Was:** Roadmap `KUNDEN_FINANZEN_ROADMAP.md` angelegt (Status geplant, 9 Etappen: Fundament, Kunden, Angebote, Beauftragung,
   Ausgangsrechnungen, Belege, Zahlungen/EUeR-Journal, Finanz-Cockpit, Jahresabschluss/Export), registriert. CEO-Vorgaben:
