@@ -436,6 +436,39 @@ def _start_security_loop(ctx, secrets) -> None:
     threading.Thread(target=loop, daemon=True, name="security-loop").start()
 
 
+def _start_buchhaltung_loop(ctx) -> None:
+    """KUNDEN_FINANZEN Etappe 1: taeglich 05:00 (DE) Hash-Kette + Belege der Buchhaltung pruefen, Alarm bei Befund.
+
+    Regelbasiert, kein LLM. Laeuft nur, wenn es schon Aufzeichnungen gibt; aendert nie etwas (nur melden).
+    """
+    import threading
+    import time
+    from datetime import datetime
+
+    from ...core.buchhaltung import Buchhaltung, tagespruefung
+    log = ROOT / "buchhaltung" / "log.jsonl"
+    tz = _tz_berlin()
+
+    def loop():
+        time.sleep(120)
+        while True:
+            try:
+                jetzt = datetime.now(tz) if tz else datetime.now()
+                datum = jetzt.strftime("%Y-%m-%d")
+                if jetzt.hour == 5 and log.exists() and not ctx.agenda.briefing_gesendet("buchhaltung-pruefung", datum):
+                    alarm = tagespruefung(Buchhaltung(log.parent))
+                    if alarm:
+                        ctx.notifications.enqueue(alarm, abteilung="CFO", kategorie="fehler", quelle="buchhaltung",
+                                                  nach_briefing=False)
+                    ctx.agenda.markiere_briefing("buchhaltung-pruefung", datum)
+            except Exception as exc:
+                print(f"[buchhaltung] Fehler: {exc}", flush=True)
+            time.sleep(300)
+
+    if ctx.agenda is not None and ctx.notifications is not None:
+        threading.Thread(target=loop, daemon=True, name="buchhaltung-loop").start()
+
+
 def _start_content_feed_loop(ctx, secrets) -> None:
     """K3: geplanter Content-Feed-Loop -- 1x taeglich 07:00 (DE) volle Pipeline Trends->Ideen->Drafts.
 
@@ -1249,6 +1282,7 @@ def main() -> None:
     _start_security_loop(ctx, secrets)  # Phase 21: nur aktiv mit SECURITY_AUDIT_ENABLED=1
     if secrets.get("SECURITY_AUDIT_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Security-Audit-Loop aktiv (taeglich 04:00, regelbasiert, L1-Meldung).", flush=True)
+    _start_buchhaltung_loop(ctx)  # KUNDEN_FINANZEN Etappe 1: Integritaetspruefung 05:00, nur melden
     offset = 0
     _last_poll = 0.0
     tz = _tz_berlin()          # wurde hier vergessen -> NameError im Zustellblock (siehe _tz_berlin)

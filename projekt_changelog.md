@@ -17,6 +17,44 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 16:32] — Claude Code (MACO470)
+- **Was:** KUNDEN_FINANZEN Etappe 1 (Fundament) umgesetzt: Buchhaltungs-Speicher mit Hash-Kette, lueckenlose
+  Nummernkreise (K-/AP-, AN/AB/RE/ER-JJJJ-NNNN) unter Dateisperre, Beleg-Ablage mit SHA-256 und Aufbewahrungsfristen,
+  taegliche Integritaetspruefung 05:00 mit Alarm, Deploy-Schutz, Backup inkl. Beleg-Ordner und Schrumpf-Check,
+  Team-Modul `finanzen` (nur owner/zugeteilt). Noch ohne Oberflaeche.
+- **Warum:** CEO-Go „go fuer 1 und 2" (Etappe 1).
+- **Betroffen:** `orchestrator/core/buchhaltung.py`, `orchestrator/tests/test_buchhaltung.py`,
+  `orchestrator/tests/test_team_auth.py`, `orchestrator/core/team_auth.py`, `orchestrator/channels/telegram/bot.py`,
+  `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `.gitignore`, `docs/datenfluesse.md`, `AGENTS.md`,
+  `KUNDEN_FINANZEN_ROADMAP.md`
+
+## [2026-09-27 16:24] — Claude Code (MACO470, als Head of Agents auf CEO-Anweisung)
+- **Was:** **Charta-Aenderung CFO und CRO** genau wie im vorgelegten Diff: CFO erhaelt Buchhaltung (Kleinunternehmer, EUeR,
+  Grenzwaechter, Jahres-Gewinnermittlung), Endzeichnung beim CEO statt Steuerberater, kein Festschreiben/Versenden/Loeschen
+  von Rechnungen/Belegen, Zugriff `buchhaltung/`; CRO erhaelt Kundenstammdaten (Firmenkunden- und Ansprechpartner-Nummern),
+  Angebots-/Auftrags-Entwuerfe, kein Selbstversand, Workflow Angebot -> Beauftragung -> Rechnung.
+- **Warum:** CEO-Bestaetigung „go fuer 1 und 2" (1 = Charta-Diff), AGENTS.md 3.3.
+- **Betroffen:** `agents/03_cfo.md`, `agents/04_cro.md`, `projekt_changelog.md`
+
+## [2026-09-27 16:15] — Claude Code (MACO470)
+- **Was:** CEO-Entscheidungen zur Kunden/Finanzen-Roadmap eingetragen (Nummernformate, Briefkopf-Anschrift, Zahlungen von Hand,
+  `fpdf2`, kein Steuerberater -> Etappen 7/9 schlank, Charta-Erweiterung CFO/CRO per Diff). Offen: Steuernummer, Bankverbindung.
+- **Warum:** CEO-Antworten 1-6.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
+## [2026-09-27 15:29] — Claude Code (MACO470)
+- **Was:** Roadmap `KUNDEN_FINANZEN_ROADMAP.md` angelegt (Status geplant, 9 Etappen: Fundament, Kunden, Angebote, Beauftragung,
+  Ausgangsrechnungen, Belege, Zahlungen/EUeR-Journal, Finanz-Cockpit, Jahresabschluss/Export), registriert. CEO-Vorgaben:
+  Kleinunternehmer § 19, Eigenbau, Prozess Angebot -> Beauftragung -> Rechnung mit CRM verknuepft, Kunden + Lieferanten,
+  Eingangsrechnungen, EUeR + laufende Kennzahlen, detailliert; Firmenkundennummer + Ansprechpartner-Nummer; Oberflaeche
+  LUNA-OS im Web (nicht Telegram). Analyse: Code (CRM ohne Nummern/Adressen, keine PDF-Bibliothek, keine Mail-Anhaenge,
+  Backup ohne Beleg-Ordner) und Rechtsrahmen mit Quellen: gesetze-im-internet.de (§ 19 UStG, § 34a UStDV, § 27 UStG,
+  § 147 AO, §§ 6, 11 EStG), BMF (E-Rechnung FAQ, BMF-Schreiben 15.10.2025 E-Rechnung, GoBD-Aenderung 14.07.2025),
+  Haufe (Kleinunternehmer-Anwendungsschreiben, UStAE 14.7a, BEG IV), IHK Stuttgart/Koeln/Wiesbaden/Darmstadt/Hamburg,
+  ELSTER (Anlage EUeR). Offene Punkte als [?] markiert. Nichts umgesetzt.
+- **Warum:** CEO-Wunsch: CRM, Rechnungswesen, Angebote, Finanzen; Antworten zu Steuerstatus/Umsetzung/Kunden/Start.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md` (neu), `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-27 15:11] — Claude Code (MACO470)
 - **Was:** Etappe 4 + BF-29 live: NAS-Deploy `25704bd`, Neustart CEO, Worker neu gestartet. Pruefung: Web 401/200, Worker aktiv
   ohne Fehler, Meldung zu `#e037` zugestellt. Erster Nachtlauf der Agenten-Jobs ueber das Backoffice: 2026-09-28 02:00-04:00.

@@ -177,6 +177,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `content_ops/*_cache.jsonl` (5 Dateien) | Web, Content-Feed | dito | ja | nein (Cache von Supabase) |
 | `nutzung/log.jsonl` | Web (`/api/nutzung`) | Leistungsbericht | ja | ja |
 | `backoffice/log.jsonl` (Auftraege, append-only) | Web (`/api/backoffice/*`, Worker-Ergebnisse) | Web, Bot (Werkzeug `auftrag_details`, Morgen-Briefing) | ja | ja |
+| `buchhaltung/log.jsonl` (Hash-Kette: Nummern, Belege, spaeter Kunden/Angebote/Rechnungen) + `buchhaltung/belege/<jahr>/` | Bot, Web (ab Etappe 2) | Bot (Integritaetspruefung 05:00), Web | ja | ja (Log + Beleg-Ordner, Schrumpf-Check) |
 | `orchestrator/memory/log.jsonl` | Bot, Voice | dito | ja | ja |
 | `orchestrator/state/instagram_token.json` (**Secret**) | `governance/instagram_token.py` | dito | ja | bewusst nein (CEO) |
 | `projekt_changelog.md`, `finance/budget.md` | Bot, Web, Agenten | alle | ja | Git |
@@ -208,6 +209,7 @@ content_ops/sources_cache.jsonl
 content_ops/trends_cache.jsonl
 nutzung/log.jsonl
 backoffice/log.jsonl
+buchhaltung/log.jsonl
 ```
 
 Bewusst ohne Backup (Caches, die aus Supabase neu entstehen, und fluechtige Zustaende):

@@ -21,12 +21,13 @@ import os
 
 # -- Module + Rollen ---------------------------------------------------------
 
-MODULE = ("content_ops", "crm", "invest", "administration")
+MODULE = ("content_ops", "crm", "invest", "administration", "finanzen")
 MODUL_LABELS = {
     "content_ops": "Content (Trends/Ideen/Drafts/Quellen/AI-Inbox)",
     "crm": "Collab-CRM",
     "invest": "Investment",
     "administration": "Administration (Auftraege/Chat/System)",
+    "finanzen": "Finanzen (Kunden/Angebote/Rechnungen/Belege/EUeR)",
 }
 # Welche LUNA-OS-App gehoert zu welchem Modul (SSOT fuer die Frontend-Sichtbarkeit).
 APP_MODUL = {
@@ -42,7 +43,7 @@ APP_MODUL = {
 # Sinnvolle Voreinstellung je Rolle, wenn beim Anlegen keine Module angegeben werden.
 ROLLE_STANDARD_MODULE = {
     "owner": list(MODULE),
-    "admin": list(MODULE),
+    "admin": [m for m in MODULE if m != "finanzen"],   # Finanzen: nur owner oder ausdruecklich zugeteilt (Etappe 1)
     "team": ["content_ops", "crm"],
     "content": ["content_ops"],
     "viewer": ["content_ops"],
@@ -180,6 +181,7 @@ _MODUL_PFADE = {
     "content_ops": ("/api/trends", "/api/ideas", "/api/drafts", "/api/sources", "/api/ai-inbox", "/api/cutter"),
     "crm": ("/api/crm",),
     "invest": ("/api/investment",),
+    "finanzen": ("/api/buchhaltung", "/api/finanzen"),
 }
 # Administrative Aktionen (nur owner/admin bzw. administration-Modul).
 _ADMIN_POST_PREFIXE = ("/api/antraege/",)
