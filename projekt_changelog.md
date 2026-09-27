@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 14:24] — Claude Code (MACO470)
+- **Was:** Aufgeraeumt: 4 gemergte Branches geloescht (CEO-Go). **BF-24 analysiert und behoben** (Branch `ai/bf24-leere-antworten`):
+  Ursache per Messreihe eingegrenzt (Einzelwerkzeug 0/15 leer, Betriebsliste 11/15; kein Einzelwerkzeug schuld; Ursache ist die
+  **Reihenfolge** der Werkzeuge, nativ bestaetigt: leerer Kandidat mit STOP). Wiederholung bei leerer Antwort jetzt mit anderer
+  Reihenfolge statt identisch. Messung mit echtem Gemini: 0/20 endgueltig leer. Tests gruen, Gegenprobe rot.
+- **Warum:** CEO-Go „Go fuer aufraeumen und BF-24".
+- **Betroffen:** Git-Branches, `orchestrator/core/model_router.py`, `orchestrator/tests/test_chat_fallback.py`,
+  `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-09-27 14:04] — Claude Code (MACO470)
 - **Was:** Backoffice **Etappe 3 verifiziert**: Live-Test 2 in Telegram — LUNA legte den Hintergrund-Auftrag wirklich an
   (`auftrag_erteilen`, echte ID `#e037`), Worker protokolliert das Warten auf RAM (12,0 < 13 GB). Roadmap + Verzeichnis

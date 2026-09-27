@@ -94,7 +94,7 @@ class ModelRouter:
     def create(self, *, system: str, tools: list, messages: list) -> _Norm:
         for fb in [f for f in self.fallbacks if f.get("zuerst")]:
             try:
-                return mit_wiederholung(lambda: self._kompatibel(fb, system, tools, messages))
+                return self._mit_varianten(fb, system, tools, messages)
             except Exception:
                 continue
         danach = [f for f in self.fallbacks if not f.get("zuerst")]
@@ -109,11 +109,25 @@ class ModelRouter:
             letzter = exc
             for fb in danach:
                 try:
-                    return mit_wiederholung(lambda: self._kompatibel(fb, system, tools, messages))
+                    return self._mit_varianten(fb, system, tools, messages)
                 except Exception as e:
                     letzter = e
                     continue
             raise letzter
+
+    def _mit_varianten(self, fb: dict, system: str, tools: list, messages: list) -> _Norm:
+        """Leere Antwort -> NICHT identisch wiederholen, sondern mit anderer Werkzeug-Reihenfolge (BF-24): Gemini
+        liefert bei manchen Reihenfolgen reproduzierbar einen komplett leeren Kandidaten (nativ: finishReason=STOP ohne
+        Teile, 0 Token; gemessen 2026-09-27: dieselben 14 Werkzeuge 3/5 leer in Betriebs-, 0/5 in anderer Reihenfolge)."""
+        varianten = ([tools, list(reversed(tools)), sorted(tools, key=lambda t: t.get("name", ""))] if tools
+                     else [tools, tools])                       # ohne Werkzeuge: einmal identisch wiederholen
+        letzter: Exception | None = None
+        for v in varianten:
+            try:
+                return self._kompatibel(fb, system, v, messages)
+            except LeereAntwort as exc:
+                letzter = exc
+        raise letzter
 
     # -- OpenAI-kompatibler Fallback (OpenAI, Gemini) --
 

@@ -104,6 +104,31 @@ class TestChatFallback(unittest.TestCase):
             mit_wiederholung(leer)
         self.assertEqual(len(versuche), 2)                                     # genau eine Wiederholung
 
+    def test_6_leere_antwort_andere_werkzeug_reihenfolge(self):
+        # BF-24: Gemini ist bei bestimmten Reihenfolgen leer -> zweiter Versuch mit umgedrehter Reihenfolge.
+        gesehen = []
+
+        class _Client:
+            def __init__(self, *a, **kw):
+                self.chat = self.completions = self
+
+            def create(self, **kw):
+                erste = kw["tools"][0]["function"]["name"]
+                gesehen.append(erste)
+                text = "" if erste == "a" else "Hallo CEO"
+                msg = types.SimpleNamespace(content=text, tool_calls=None)
+                return types.SimpleNamespace(choices=[types.SimpleNamespace(message=msg, finish_reason="stop")],
+                                             usage=types.SimpleNamespace(prompt_tokens=1, completion_tokens=1))
+        mod = types.ModuleType("openai")
+        mod.OpenAI = _Client
+        tools = [{"name": "a", "description": "", "input_schema": {"type": "object", "properties": {}}},
+                 {"name": "b", "description": "", "input_schema": {"type": "object", "properties": {}}}]
+        gemini = {"name": "gemini", "key": "g", "base_url": None, "model": "gemini-2.5-flash"}
+        with mock.patch.dict(sys.modules, {"openai": mod}):
+            out = ModelRouter(_Anthro(AuthenticationError(FEHLER_401)), anthropic_model="m",
+                              fallbacks=[gemini]).create(system="s", tools=tools, messages=[])
+        self.assertEqual((btext(out.content[0]), gesehen), ("Hallo CEO", ["a", "b"]))
+
 
 if __name__ == "__main__":
     unittest.main()
