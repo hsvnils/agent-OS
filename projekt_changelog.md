@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 13:07] — Claude Code (MACO470)
+- **Was:** Backoffice **Etappe 2 verifiziert**: CEO bestaetigt per Screenshot den Empfang der Einzelmeldung (13:01) und beide
+  Abrufe („zeig #5c68", „zeig Auftrag #a59b" ueber das neue Werkzeug `auftrag_details`, Werkzeugauswahl griff).
+- **Warum:** Gate der Etappe 2 (Wirkung am Empfaenger).
+- **Betroffen:** `FRONTDESK_BACKOFFICE_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-27 13:02] — Claude Code (MACO470)
 - **Was:** Backoffice-Tagtest: RAM-Waechter hielt `#a59b` zu Recht zurueck (10,6 GB < 13 GB). Meldeweg per klar markiertem
   **simuliertem** Ergebnis getestet (CEO-Go): Einzelmeldung zugestellt. Worker schreibt jetzt EINEN Protokoll-Hinweis, wenn er

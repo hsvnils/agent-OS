@@ -4,8 +4,7 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `ec1173c`
-- Naechster Schritt: CEO bestaetigt Telegram-Empfang von `#5c68` und die Abrufe „zeig #5c68" / „zeig Auftrag #a59b" -> dann
-  Etappe 2 verifiziert; danach Go fuer Etappe 3 (Frontdesk-Werkzeuge + Ehrlichkeitsregel).
+- Naechster Schritt: CEO-Go fuer Etappe 3 (Frontdesk-Werkzeuge `auftrag_erteilen`/`auftraege_zeigen` + Ehrlichkeitsregel, BF-25).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -111,8 +110,8 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
 
 ### Etappe 2: Auftrags-Warteschlange + Backoffice-Worker
 
-- Status: **deployt** (2026-09-27 ~02:10: Merge `a7caaef`, NAS-Deploy + Neustart CEO, Dienst `backoffice-worker` auf dem
-  MACO470 `enabled`/`active`); Live-Test Nachtweg bestanden (siehe unten); offen: Briefing 08:00 und Tagtest — `orchestrator/core/auftraege.py` (Store,
+- Status: **verifiziert** (2026-09-27 13:06) — Nachtweg (echter Worker, Briefing 08:02 zugestellt) und Tagweg (Einzelmeldung
+  13:01 beim CEO angekommen, Abruf per „zeig #5c68" und „zeig Auftrag #a59b" korrekt; Screenshot CEO) bestanden.
   `backoffice/log.jsonl`), LUNA-OS `/api/backoffice/*` (Modul administration; Meldung tagsueber einzeln ueber die Outbox
   mit vollem Ergebnis als Detail, 01-06 Uhr nur Briefing), Morgen-Briefing-Abschnitt, Werkzeug `auftrag_details`,
   `backoffice/worker.py` (RAM-Waechter per PowerShell — funktioniert auch aus systemd, gemessen —, Anweisungen je Art,
@@ -136,8 +135,8 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
 - **Tagtest 2026-09-27 12:45:** Test-Auftrag `#a59b` wurde vom RAM-Waechter **zu Recht** zurueckgehalten (nur 10,6 GB
   verfuegbar, Schwelle 13 GB) — tagsueber mit laufendem Desktop wartet das Backoffice realistisch oft bis zur Nacht.
   Das Warten war unsichtbar -> jetzt ein Protokoll-Hinweis je Zustandswechsel. Meldeweg per **simuliertem** Ergebnis
-  (klar markiert, CEO-Go) getestet: Einzelmeldung `N-…-5c68` um 13:00 zugestellt (`sent`); Empfang + Abruf beim CEO
-  bestaetigen.
+  (klar markiert, CEO-Go) getestet: Einzelmeldung `N-…-5c68` um 13:00 zugestellt (`sent`); Empfang + beide Abrufe vom CEO
+  per Screenshot bestaetigt (13:06).
 - Ziel / Scope: Store `auftraege/log.jsonl` auf der NAS (Status neu -> in_arbeit -> fertig/fehlgeschlagen, Ergebnis,
   Dauer); Worker nach Cutter-Muster auf dem MACO470 (holt Auftraege ueber die LUNA-OS-API, prueft RAM + Zeitfenster,
   laedt das Modell, arbeitet nacheinander, entlaedt, meldet Ergebnis zurueck); Plausibilitaetsfilter (bei Zeichensalat:
