@@ -89,11 +89,11 @@ class TestWorker(unittest.TestCase):
         b = FakeBridge([{"id": "A-6", "kurz": "6", "art": "entwurf", "aufgabe": "x"},
                         {"id": "A-7", "kurz": "7", "art": "zusammenfassung", "aufgabe": "y"}])
         o = FakeOllama([GUT, GUT])
-        n = w.durchlauf(b, o, lambda a, e: "", messen=lambda: 16.0, jetzt=datetime(2026, 9, 27, 14))
+        n = w.durchlauf(b, o, lambda a, e: "", messen=lambda: 16.0, jetzt=datetime(2026, 9, 27, 14), nachlauf_s=0)
         self.assertEqual(n, 2)
         self.assertEqual([m["id"] for m in b.meldungen], ["A-6", "A-7"])
         self.assertTrue(all(m["ok"] for m in b.meldungen))
-        self.assertEqual(o.entladen_n, 1)
+        self.assertEqual(o.entladen_n, 0)            # kein ausdrueckliches Entladen mehr -> Ollama-keep_alive (2 min)
 
     def test_9_datum_und_nichts_erfinden_in_der_anweisung(self):
         m = w.nachrichten({"art": "entwurf", "aufgabe": "x"}, jetzt=datetime(2026, 9, 27, 12))
@@ -119,9 +119,48 @@ class TestWorker(unittest.TestCase):
             self.assertEqual(len([t for t in texte if t.startswith("Wartet")]), 1)
             self.assertIn("10.6 GB", texte[0])
             w.durchlauf(b, FakeOllama([GUT]), lambda a, e: "", messen=lambda: 16.0,
-                        jetzt=datetime(2026, 9, 27, 13), offene=lambda: 1)
+                        jetzt=datetime(2026, 9, 27, 13), offene=lambda: 1, nachlauf_s=0)
             self.assertTrue(any(t.startswith("Speicher reicht wieder") for t in [c.args[0] for c in log.call_args_list]))
         self.assertFalse(w._zuletzt_gewartet[0])
+
+    def test_12_job_auftrag_roh(self):
+        # Etappe 4: eigener System-Prompt, kurze Formatantworten erlaubt, kein Gegenlesen.
+        a = {"id": "BO-1", "art": "roh", "system": "Du bist der CFO. Antworte im Format KOSTEN: ...", "aufgabe": "Idee X"}
+        m = w.nachrichten(a, jetzt=datetime(2026, 9, 27, 3))
+        self.assertTrue(m[0]["content"].startswith("Du bist der CFO."))
+        self.assertIn("27. September 2026", m[0]["content"])
+        gelesen = []
+        r = w.verarbeite(a, FakeOllama(["KOSTEN: ~0 EUR einmalig"]), lambda x, e: gelesen.append(1) or "z")
+        self.assertEqual((r["ok"], r["zweitmeinung"], gelesen), (True, "", []))
+
+    def test_13_nachlauf_haelt_modell_fuer_folgeauftrag(self):
+        class Bruecke(FakeBridge):
+            def __init__(self):
+                super().__init__([{"id": "BO-2", "kurz": "2", "art": "roh", "aufgabe": "a"}])
+                self.runde = 0
+
+            def _req(self, pfad, method="GET", data=None, timeout=None):
+                # Nach dem ersten Auftrag ist die Schlange kurz leer; der Folgeauftrag kommt GENAU EINMAL spaeter.
+                if pfad == "/api/backoffice/naechster" and not self.auftraege:
+                    self.runde += 1
+                    if self.runde == 2:
+                        self.auftraege.append({"id": "BO-3", "kurz": "3", "art": "roh", "aufgabe": "b"})
+                return super()._req(pfad, method, data, timeout)
+        b, o, geschlafen = Bruecke(), FakeOllama(["eins", "zwei"]), []
+        n = w.durchlauf(b, o, lambda a, e: "", messen=lambda: 16.0, jetzt=datetime(2026, 9, 27, 2),
+                        nachlauf_s=90, takt_s=10, schlaf=geschlafen.append)
+        self.assertEqual((n, o.entladen_n), (2, 0))                         # beide erledigt, Modell blieb geladen
+        self.assertTrue(geschlafen)                                         # dazwischen kurz gewartet
+
+    def test_14_leere_huelle_ist_fehler_und_keep_alive_gesetzt(self):
+        o = w.Ollama("http://x", "qwen3:14b")
+        gesendet = []
+        o._post = lambda pfad, body, timeout=None: gesendet.append(body) or {"model": "", "done": False, "message": {"content": ""}}
+        with self.assertRaises(RuntimeError):
+            o.antwort([{"role": "user", "content": "x"}])
+        self.assertEqual(gesendet[0]["keep_alive"], w.KEEP_ALIVE)
+        o._post = lambda pfad, body, timeout=None: {"model": "qwen3:14b", "done": True, "message": {"content": "<think>x</think>OK"}}
+        self.assertEqual(o.antwort([]), "OK")
 
 
 if __name__ == "__main__":

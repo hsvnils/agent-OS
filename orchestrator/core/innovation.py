@@ -74,7 +74,10 @@ class InnovationPipeline:
             "(3-5 Saetze):\n\n" + erg.idee)
         erg.kostenvoranschlag = self._frag("cfo", _CFO_PROMPT + erg.idee)
 
-        # 4. Antrag -- entscheidungsreif buendeln (Phase 6). Keine Ausfuehrung.
+        # 4. Antrag -- entscheidungsreif buendeln (Phase 6). Keine Ausfuehrung. Ohne echte Idee (Modellfehler)
+        #    KEIN Antrag -- sonst stuende der Fehlertext als Antragstitel beim CEO (Befund 2026-09-27).
+        if erg.idee.startswith(_NICHT_VERFUEGBAR):
+            return erg
         if self.antraege is not None:
             von = ("Unternehmensberater (Innovation)" if abteilung == "berater"
                    else f"{abteilung} (Selbst-Entwicklung)")
@@ -137,14 +140,18 @@ class InnovationPipeline:
         try:
             out = self.core.backend.respond(agent_key, system_prompt, prompt, {})
         except Exception as exc:  # Modell-/Backend-Fehler nicht durchreichen
-            return f"(nicht verfügbar — Modell/Backend-Fehler: {str(exc)[:120]})"
+            return f"{_NICHT_VERFUEGBAR} — Modell/Backend-Fehler: {str(exc)[:120]})"
         return redact(out, self.secrets)
+
+
+_NICHT_VERFUEGBAR = "(nicht verfügbar"
 
 
 def _titel(idee: str) -> str:
     """Erste nicht-leere Zeile als Kurztitel (max. 80 Zeichen), ohne Markdown."""
     for line in (idee or "").splitlines():
         line = _strip_md(line)
+        line = re.sub(r"(?i)^titel\s*:\s*", "", line)   # lokales Modell schreibt gern 'TITEL: ...' (2026-09-27)
         if line:
             return line[:80]
     return "Innovations-Vorschlag"

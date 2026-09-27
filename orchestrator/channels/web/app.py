@@ -505,7 +505,7 @@ async def backoffice_ergebnis(request: Request):
     a = backoffice.get(aid) if aid else None
     if a is None:
         return JSONResponse({"ok": False, "hinweis": "Unbekannter Auftrag."})
-    meldung = "briefing" if _backoffice_nacht() else "einzeln"
+    meldung = "keine" if a.get("stumm") else ("briefing" if _backoffice_nacht() else "einzeln")
     titel = " ".join(a.get("aufgabe", "").split())[:80]
     if d.get("ok"):
         ergebnis = str(d.get("ergebnis") or "")

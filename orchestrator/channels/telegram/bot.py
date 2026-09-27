@@ -19,6 +19,7 @@ from datetime import datetime            # modulweit: main() braucht es im Zuste
 from functools import partial
 from pathlib import Path
 
+from ...core.hintergrund import hintergrund_modus   # Etappe 4: Nacht-Jobs ueber das Backoffice
 from ...core.telegram_format import fuer_telegram
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -60,10 +61,12 @@ def _build_ctx(cfg: dict, secrets: dict):
     from ...governance.leak_guard import is_redactable_secret
     secret_values = [v for v in secrets.values() if is_redactable_secret(v)]
     # Fachagenten-Backend: Claude-CLI mit Gemini/OpenAI-Fallback (greift bei Anthropic-Sperre/Limit).
+    from ...core.auftraege import AuftragStore
     backend = FallbackBackend(
         AgentSdkBackend(cfg["models"], cfg["effort"], gate=CeoGate(),
                         max_turns=cfg["run"].get("max_turns", 4)),
-        fallbacks=_fallbacks(secrets, cfg, bereich="fachagenten"))
+        fallbacks=_fallbacks(secrets, cfg, bereich="fachagenten"),
+        backoffice=AuftragStore(ROOT / "backoffice" / "log.jsonl", secrets=secret_values))   # Etappe 4, nur Hintergrund
     # Antrag adc5: zentrales Aktivitaetsprotokoll. Der Changelog-Callback ist die zentrale Engstelle
     # (Antrags-Lebenszyklus, Execution, Charta) -- jeder Changelog-Eintrag wird zusaetzlich strukturiert
     # ins Protokoll geschrieben, ohne jeden Agenten einzeln zu instrumentieren.
@@ -373,12 +376,13 @@ def _start_selfdev_loop(ctx, secrets) -> None:
             try:
                 jetzt = datetime.now(tz) if tz else datetime.now()
                 datum = jetzt.strftime("%Y-%m-%d")
-                if jetzt.hour == 9 and not ctx.agenda.briefing_gesendet("selfdev", datum) \
-                        and not ctx.watch.store.paused():
+                if jetzt.hour == 4 and not ctx.agenda.briefing_gesendet("selfdev", datum) \
+                        and not ctx.watch.store.paused():   # 04:00 statt 09:00 (Backoffice-Nachtfenster, CEO 2026-09-27)
                     # Abwechselnd: gerade Tage = interne Luecken-/Mandatsanalyse (proaktive Vorschlaege aus
                     # dem System), ungerade = externe Web-Entwicklungen.
                     modus = "intern" if jetzt.day % 2 == 0 else "extern"
-                    sd.vorschlag_fuer(next(depts), modus=modus)   # erzeugt Antrag + Freigabe-Push
+                    with hintergrund_modus():                     # lokal ueber das Backoffice, Meldung ins Briefing
+                        sd.vorschlag_fuer(next(depts), modus=modus)   # erzeugt Antrag + Freigabe-Push
                     ctx.agenda.markiere_briefing("selfdev", datum)
             except Exception as exc:
                 print(f"[selfdev] Fehler: {exc}", flush=True)
@@ -464,8 +468,10 @@ def _start_content_feed_loop(ctx, secrets) -> None:
             try:
                 jetzt = datetime.now(tz) if tz else datetime.now()
                 datum = jetzt.strftime("%Y-%m-%d")
-                if jetzt.hour == 7 and not ctx.agenda.briefing_gesendet("content-feed", datum):
-                    feed.pipeline_lauf(max_pro_stufe=5)   # pausen-bewusst; meldet neue Kandidaten je Stufe
+                if jetzt.hour == 2 and not ctx.agenda.briefing_gesendet("content-feed", datum):
+                    # 02:00 statt 07:00 (Backoffice-Nachtfenster, CEO 2026-09-27); Meldungen ins Morgen-Briefing.
+                    with hintergrund_modus():
+                        feed.pipeline_lauf(max_pro_stufe=5)   # pausen-bewusst; meldet neue Kandidaten je Stufe
                     ctx.agenda.markiere_briefing("content-feed", datum)
             except Exception as exc:
                 print(f"[content-feed] Fehler: {exc}", flush=True)
@@ -537,6 +543,18 @@ def _start_briefing_loop(ctx, notify) -> None:
                             text += "\n\n" + dz
                     except Exception as exc:
                         print(f"[briefing] Depot-Zeile-Fehler: {exc}", flush=True)
+                    # Nachts von den Agenten-Jobs erzeugte Meldungen (Etappe 4) gebuendelt statt Nachtnachrichten.
+                    if art == "morgen" and ctx.notifications is not None:
+                        try:
+                            nacht = ctx.notifications.fuer_briefing()
+                            if nacht:
+                                zeilen = [f"  - {(n.get('abteilung') or n.get('quelle') or 'LUNA')}: {n['text']}  "
+                                          f"(#{n['id'].split('-')[-1]})" for n in nacht]
+                                text += "\n\nNachts von den Agenten (Details: „zeig #xxxx\"):\n" + "\n".join(zeilen)
+                                for n in nacht:
+                                    ctx.notifications.mark_sent(n["id"])
+                        except Exception as exc:
+                            print(f"[briefing] Nacht-Meldungen-Fehler: {exc}", flush=True)
                     # Backoffice: nachts erledigte Auftraege gebuendelt (CEO-Entscheidung 2026-09-26).
                     if art == "morgen" and getattr(ctx, "backoffice", None) is not None:
                         try:
@@ -1150,14 +1168,16 @@ def _start_cfo_loop(ctx, notify) -> None:
                 datum = jetzt.strftime("%Y-%m-%d")
                 paused = ctx.watch is not None and ctx.watch.store.paused()
                 if jetzt.hour == 3 and not ctx.agenda.briefing_gesendet("cfo-kosten", datum) and not paused:
-                    res = run_tool("kosten_optimierung", {}, ctx)
+                    with hintergrund_modus():                 # lokal ueber das Backoffice (Etappe 4)
+                        res = run_tool("kosten_optimierung", {}, ctx)
                     stat = ctx.kosten.monat() if ctx.kosten is not None else {}
                     kopf = (f"Laufende Modellkosten {stat.get('monat', '')}: ca. {stat.get('gesamt_eur', 0)} EUR "
                             f"(je Provider: {stat.get('je_provider', {})}).\n\n" if stat else "")
                     if res.get("ok"):
                         notify("Tägliche Kostenprüfung — Vorschläge liegen vor.",
                                abteilung="CFO/Finance", kategorie="kosten", quelle="cfo-loop",
-                               detail=(kopf + str(res.get("vorschlaege", "")))[:1800], dedup_stunden=0)
+                               detail=(kopf + str(res.get("vorschlaege", "")))[:1800], dedup_stunden=0,
+                               nach_briefing=True)
                     ctx.agenda.markiere_briefing("cfo-kosten", datum)
             except Exception as exc:
                 print(f"[cfo] Fehler: {exc}", flush=True)
@@ -1316,7 +1336,7 @@ def main() -> None:
                 _cfg = ctx.investment.store.settings() if getattr(ctx, "investment", None) else {}
                 _stunde = (datetime.now(tz) if tz else datetime.now()).hour
                 # "Nicht stoeren" aktiv -> leere Liste, Pushes bleiben pending und kommen nach dem Fenster.
-                _pending = [] if _in_ruhezeit(_cfg, _stunde) else ctx.notifications.pending()[:10]
+                _pending = [] if _in_ruhezeit(_cfg, _stunde) else ctx.notifications.zustellbar()[:10]
                 for n in _pending:
                     if not _alert_erlaubt(_cfg, n.get("kategorie")):
                         ctx.notifications.mark_sent(n["id"])   # Kategorie abgeschaltet -> still verwerfen

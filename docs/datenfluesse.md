@@ -247,11 +247,12 @@ cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
 |---|---|---|
 | alle 6 h | Watch: GitHub + eine Abteilung (Brave) + IT-Selbstcheck | `WATCH_INTERVAL_HOURS` |
 | 02:00 | Nacht-Krypto (Paper) | `INV_AUTO_TRADE` |
-| 03:00 | CFO-Kostenlauf | – |
+| 03:00 | CFO-Kostenlauf (ueber das Backoffice, Meldung ins Morgen-Briefing) | – |
 | 04:00 | Security-Audit | `SECURITY_AUDIT_ENABLED` |
-| 07:00 | Content-Feed; Merkmals-Snapshot | `CONTENT_FEED_ENABLED`; `INV_FEATURE_LOOP` |
+| 02:00 | Content-Feed (ueber das Backoffice, Meldungen ins Morgen-Briefing; bis 2026-09-27: 07:00) | `CONTENT_FEED_ENABLED` |
+| 07:00 | Merkmals-Snapshot | `INV_FEATURE_LOOP` |
 | 08:00 / 20:00 | Briefings | Einstellungen |
-| 09:00 | Self-Dev (nur Vorschlaege) | `SELF_DEV_ENABLED` |
+| 04:00 | Self-Dev (nur Vorschlaege; ueber das Backoffice, Meldung ins Morgen-Briefing; bis 2026-09-27: 09:00) | `SELF_DEV_ENABLED` |
 | Mo 09:00 | Leistungsbericht, Prognosen | – |
 | werktags 15:00 / 16:00 | Auto-Paper-Trade / Markt-Screen | `INV_AUTO_TRADE` / `INVESTMENT_AUTO_SCREEN` |
 | ~10 min | Depot-/Exit-Monitor | `INV_MONITOR` |

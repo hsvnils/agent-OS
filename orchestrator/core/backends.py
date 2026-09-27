@@ -5,6 +5,8 @@
 """
 from __future__ import annotations
 
+import time
+
 from typing import Callable, Protocol
 
 
@@ -81,14 +83,24 @@ class FallbackBackend:
     _STIL = ("\n\nStil deiner Antwort: korrektes Deutsch mit echten Umlauten (ä, ö, ü, ß) -- niemals "
              "ae/oe/ue/ss. Reiner Fliesstext ohne Markdown: KEINE Sternchen (**, *), KEINE Rauten (#).")
 
-    def __init__(self, primary: "Backend", *, fallbacks: list[dict] | None = None, on_usage=None):
+    def __init__(self, primary: "Backend", *, fallbacks: list[dict] | None = None, on_usage=None,
+                 backoffice=None, backoffice_timeout: float = 1200, backoffice_takt: float = 10):
         self.primary = primary
+        # Etappe 4: im Hintergrund-Modus (core/hintergrund.py) zuerst als stiller Auftrag ans Backoffice (AuftragStore).
+        self.backoffice, self.backoffice_timeout, self.backoffice_takt = backoffice, backoffice_timeout, backoffice_takt
+        self._schlaf = time.sleep
         self.fallbacks = [f for f in (fallbacks or []) if f.get("key")]
         # on_usage(agent_key, modell, input_tokens, output_tokens, kosten_usd|None) -- CFO-Erfassung (Finance 2.5).
         self.on_usage = on_usage
 
     def respond(self, agent_key: str, system_prompt: str, message: str, context: dict) -> str:
         sp = (system_prompt or "") + self._STIL
+        from .hintergrund import aktiv
+        if self.backoffice is not None and aktiv():
+            try:
+                return self._ueber_backoffice(agent_key, sp, message)
+            except Exception as exc:               # Backoffice aus/zu langsam/unbrauchbar -> normaler Weg (Cloud)
+                print(f"[backoffice] {agent_key}: {str(exc)[:160]} -> Fallback", flush=True)
         # Lokales LLM mit `zuerst=True` (core/lokal_llm.py) vor der Claude-CLI -- spart API-Token (CEO 2026-09-25).
         for fb in [f for f in self.fallbacks if f.get("zuerst")]:
             try:
@@ -107,6 +119,26 @@ class FallbackBackend:
                 except Exception:
                     continue
             raise exc
+
+    def _ueber_backoffice(self, agent_key: str, system_prompt: str, message: str) -> str:
+        """Stiller Job-Auftrag ans Backoffice; wartet auf das Ergebnis (RAM-Waechter + Nachtfenster im Worker)."""
+        aid = self.backoffice.anlegen(message, art="roh", von=f"Job ({agent_key})", system=system_prompt,
+                                      zweck=f"job:{agent_key}", stumm=True)
+        start = time.monotonic()
+        while time.monotonic() - start < self.backoffice_timeout:
+            a = self.backoffice.get(aid) or {}
+            if a.get("status") == "fertig" and a.get("ergebnis"):
+                if self.on_usage:
+                    try:
+                        self.on_usage(agent_key, a.get("modell") or "backoffice", 0, 0, 0.0)
+                    except Exception:
+                        pass
+                return a["ergebnis"]
+            if a.get("status") == "fehlgeschlagen":
+                raise RuntimeError(f"Backoffice-Auftrag {aid} fehlgeschlagen: {a.get('grund', '')}")
+            self._schlaf(self.backoffice_takt)
+        self.backoffice.fehlschlag(aid, grund="Zeitlimit -- Job nutzte den Cloud-Fallback", meldung="keine")
+        raise TimeoutError(f"Backoffice-Auftrag {aid}: kein Ergebnis nach {self.backoffice_timeout:.0f} s")
 
     def _kompatibel(self, fb: dict, agent_key: str, system_prompt: str, message: str) -> str:
         import openai

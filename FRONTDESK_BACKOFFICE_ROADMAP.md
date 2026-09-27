@@ -4,8 +4,8 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `ec1173c`
-- Naechster Schritt: CEO-Entscheidung, was als Naechstes kommt: Etappe 4 (Nacht-Jobs uebers Backoffice) oder BF-24
-  (leere Gemini-Antworten); Branch-Aufraeumen freigeben.
+- Naechster Schritt: 2026-09-28 Morgen-Briefing pruefen (Nacht-Jobs 02:00/03:00/04:00 lokal? Meldungen gebuendelt?), dann
+  7 Tage Beobachtung (Etappe 5).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -182,7 +182,21 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
 
 ### Etappe 4: Bestehende Hintergrund-Jobs ueber das Backoffice
 
-- Status: geplant
+- Status: **deployt** (2026-09-27; erster Nachtlauf 2026-09-28 02:00-04:00, Beobachtung 7 Tage) — CEO-Entscheidungen:
+  Content-Feed 07:00 -> **02:00**, Self-Dev 09:00 -> **04:00**, CFO bleibt 03:00; nachts erzeugte Job-Meldungen gebuendelt
+  ins **Morgen-Briefing**. Umsetzung: `core/hintergrund.py` (Hintergrund-Modus je Job-Thread); `FallbackBackend` schickt im
+  Hintergrund-Modus Fachagenten-Aufrufe als **stillen Auftrag** (`art=roh`, eigener System-Prompt, `stumm`) ans Backoffice und
+  wartet (Takt 10 s, Zeitlimit 20 min -> Cloud-Fallback, Auftrag abgehakt); interaktive Aufrufe unveraendert.
+  `Notifications`: Meldungen aus dem Hintergrund-Modus `nach_briefing`, werden nicht sofort zugestellt, nicht vom
+  Lawinenschutz verworfen, erscheinen morgens unter „Nachts von den Agenten". Worker: Job-Auftraege ohne Mindestlaenge und
+  ohne Gegenlesen, 90 s Nachlauf fuer Job-Serien, **keep_alive 2 min statt ausdruecklichem Entladen** (ein ausdrueckliches
+  Entladen brach im Probelauf eine laufende Anfrage ab -> leere Huelle), leere Huellen als eigener Fehler. Innovation: ohne
+  echte Idee **kein Antrag** mehr (vorher Antrag mit Fehlertext als Titel; revidiert frueheres Verhalten), Titel ohne
+  „TITEL:". Tests: 20+ neu/angepasst, Gegenproben rot.
+- **Probelauf (2026-09-27 15:03, echtes lokales Modell, Wegwerf-Ablage):** Content-Idee (TITEL/IDEE/FORMAT), Innovations-Idee
+  und CFO-Kostenvoranschlag (Zeile `KOSTEN:`) **alle lokal, alle Formate zerlegbar**, 66-99 s je Aufruf. Erster Versuch war
+  durch einen parallelen Worker gestoert (s. o.) — dabei erledigte der echte Worker den Chat-Auftrag `#e037` (Meldung
+  zugestellt).
 - Ziel / Scope: CFO-Lauf, Content-Feed, Self-Dev/Innovation als Auftraege an das Backoffice statt direkt an die Cloud.
 - Gate: eine Woche lang alle Jobs lokal erledigt oder sauber auf Gemini ausgewichen; Kostenlog ohne Cloud-Kosten.
 - Abhaengig von: 2 · Aufwand: klein-mittel · Risiko: niedrig

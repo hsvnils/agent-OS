@@ -24,6 +24,7 @@ from cutter.pipeline import _lade_env
 
 POWERSHELL = "/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/powershell.exe"
 NACHT = (1, 6)
+KEEP_ALIVE = "2m"
 
 SYSTEM = ("Du bist das Backoffice von LUNA, der Assistentin des CEO Nils Krüger. Du erledigst Aufträge gründlich, "
           "sachlich und vollständig. Schreibe ausschließlich Deutsch mit korrekten Umlauten (ä, ö, ü, ß) — keine "
@@ -85,7 +86,7 @@ def darf_laden(verfuegbar_gb: float | None, *, geladen: bool, nacht: bool, schwe
     return False, f"nur {verfuegbar_gb:.1f} GB verfuegbar (< {schwelle:g} GB{' nachts' if nacht else ''})"
 
 
-def plausibel(text: str, *, aufgabe: str = "", jetzt: datetime | None = None) -> list[str]:
+def plausibel(text: str, *, aufgabe: str = "", jetzt: datetime | None = None, mindestwoerter: int = 15) -> list[str]:
     """Probleme einer Modellantwort (leer = brauchbar). Bewusst grob: faengt Zeichensalat/Schleifen ab (BF-23) und
     erfundene Jahreszahlen (BF-28: eine Jahreszahl, die weder im Auftrag steht noch dieses/naechstes Jahr ist)."""
     probleme = []
@@ -94,7 +95,7 @@ def plausibel(text: str, *, aufgabe: str = "", jetzt: datetime | None = None) ->
     fremd = sorted(set(re.findall(r"\b(?:19|20)\d\d\b", text)) - erlaubt)
     if fremd:
         probleme.append("erfundene Jahreszahl " + ", ".join(fremd))
-    if len(text.split()) < 15:
+    if len(text.split()) < mindestwoerter:
         probleme.append("zu kurz")
     if re.search(r"\b(\w+)(?:\W+\1\b){4,}", text, re.I):
         probleme.append("Wort-Wiederholungsschleife")
@@ -109,6 +110,10 @@ def plausibel(text: str, *, aufgabe: str = "", jetzt: datetime | None = None) ->
 
 
 def nachrichten(auftrag: dict, jetzt: datetime | None = None) -> list[dict]:
+    if auftrag.get("art") == "roh":
+        # Job-Auftrag (Etappe 4): der Job bringt seinen eigenen System-Prompt (Charta + Stil) und sein Antwortformat mit.
+        system = (auftrag.get("system") or SYSTEM) + f"\n\n{datum_text(jetzt)} {NICHTS_ERFINDEN}"
+        return [{"role": "system", "content": system}, {"role": "user", "content": auftrag.get("aufgabe", "")}]
     art = auftrag.get("art") if auftrag.get("art") in ANWEISUNG else "sonstiges"
     return [{"role": "system", "content": f"{SYSTEM} {datum_text(jetzt)} {NICHTS_ERFINDEN}\n\n{ANWEISUNG[art]}"},
             {"role": "user", "content": auftrag.get("aufgabe", "")}]
@@ -143,8 +148,12 @@ class Ollama:
             return False
 
     def antwort(self, messages: list[dict]) -> str:
-        d = self._post("/api/chat", {"model": self.modell, "stream": False, "keep_alive": "5m",
+        # keep_alive statt ausdruecklichem Entladen: Ollama entlaedt nach 2 min Leerlauf selbst und NIE mitten in einer
+        # laufenden Anfrage (2026-09-27: ein ausdrueckliches Entladen brach eine parallele Anfrage ab -> leere Huelle).
+        d = self._post("/api/chat", {"model": self.modell, "stream": False, "keep_alive": KEEP_ALIVE,
                                      "options": {"num_ctx": self.kontext}, "messages": messages})
+        if not d.get("done") or not d.get("model"):
+            raise RuntimeError("Ollama-Antwort abgebrochen (leere Huelle, done=false) -- Modell entladen/neu gestartet?")
         return re.sub(r"<think>.*?</think>\s*", "", (d.get("message") or {}).get("content", ""), flags=re.S).strip()
 
     def entladen(self) -> None:
@@ -182,7 +191,8 @@ def verarbeite(auftrag: dict, ollama, gegenleser) -> dict:
         text, probleme = "", ["kein Versuch"]
         for _ in range(2):                                   # unbrauchbar -> genau ein zweiter Versuch
             text = ollama.antwort(nachrichten(auftrag))
-            probleme = plausibel(text, aufgabe=auftrag.get("aufgabe", ""))
+            probleme = plausibel(text, aufgabe=auftrag.get("aufgabe", "") + " " + (auftrag.get("system") or ""),
+                                 mindestwoerter=1 if auftrag.get("art") == "roh" else 15)
             if not probleme:
                 break
         if probleme:
@@ -198,7 +208,7 @@ _zuletzt_gewartet: list[bool] = [False]   # Zustand fuer den Warte-Hinweis (einm
 
 
 def durchlauf(bridge, ollama, gegenleser, *, messen=verfuegbar_gb, jetzt=None, schwelle_tag=13.0,
-              schwelle_nacht=11.0, offene=None) -> int:
+              schwelle_nacht=11.0, offene=None, nachlauf_s: float = 90, takt_s: float = 10, schlaf=time.sleep) -> int:
     """Warteschlange leer arbeiten (sofern Laden erlaubt). Gibt die Zahl erledigter Auftraege zurueck.
     Wartet der Worker wegen zu wenig RAM, obwohl Auftraege anstehen, steht das EINMAL im Protokoll (2026-09-27:
     ein Tagtest blieb wortlos liegen, weil nur 10,6 GB frei waren)."""
@@ -218,6 +228,15 @@ def durchlauf(bridge, ollama, gegenleser, *, messen=verfuegbar_gb, jetzt=None, s
     while True:
         r = bridge._req("/api/backoffice/naechster")
         auftrag = (r or {}).get("auftrag")
+        if not auftrag and n:
+            # Nachlauf: Job-Serien (z. B. Content-Feed, 10 Aufrufe nacheinander) schicken den naechsten Auftrag erst,
+            # wenn das vorige Ergebnis da ist -> kurz warten statt das Modell jedes Mal neu zu laden (Etappe 4).
+            gewartet = 0.0
+            while not auftrag and gewartet < nachlauf_s:
+                schlaf(takt_s)
+                gewartet += takt_s
+                r = bridge._req("/api/backoffice/naechster")
+                auftrag = (r or {}).get("auftrag")
         if not auftrag:
             break
         _log(f"Auftrag #{auftrag.get('kurz')} ({auftrag.get('art')}) — {grund}")
@@ -226,8 +245,8 @@ def durchlauf(bridge, ollama, gegenleser, *, messen=verfuegbar_gb, jetzt=None, s
         _log(f"Auftrag #{auftrag.get('kurz')} -> {'fertig' if daten['ok'] else 'fehlgeschlagen: ' + daten['grund']}")
         n += 1
     if n:
-        ollama.entladen()                                    # CEO: nach dem Stapel entladen (BF-22)
-        _log(f"{n} Auftrag/Auftraege erledigt, Modell entladen.")
+        # CEO: nach dem Stapel entladen (BF-22) -- uebernimmt Ollama selbst nach KEEP_ALIVE Leerlauf (siehe antwort()).
+        _log(f"{n} Auftrag/Auftraege erledigt, Modell wird nach {KEEP_ALIVE} Leerlauf entladen.")
     return n
 
 

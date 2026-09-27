@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 15:08] — Claude Code (MACO470)
+- **Was:** `FRONTDESK_BACKOFFICE_ROADMAP.md` **Etappe 4 umgesetzt** (Branch `ai/backoffice-etappe4`): Nacht-Jobs (Content 02:00,
+  CFO 03:00, Self-Dev 04:00) schicken ihre Fachagenten-Aufrufe als stille Auftraege ans Backoffice (lokales Modell) und
+  fallen nach 20 min auf die Cloud zurueck; nachts erzeugte Meldungen gehen gebuendelt ins Morgen-Briefing. Worker:
+  Job-Auftraege, Nachlauf, keep_alive statt Entladen, leere Huellen erkannt. Innovation: kein Antrag ohne echte Idee,
+  Titel ohne „TITEL:". Probelauf mit echtem Modell: 3/3 Job-Formate lokal zerlegbar. BF-30/BF-31 (behoben), Register,
+  Datenfluesse (Zeitplaene) nachgezogen.
+- **Warum:** CEO-Go „dann etappe 4" + Antworten (Nacht-Uhrzeiten, Meldungen ins Briefing).
+- **Betroffen:** `orchestrator/core/hintergrund.py` (neu), `orchestrator/core/backends.py`, `orchestrator/core/notifications.py`,
+  `orchestrator/core/auftraege.py`, `orchestrator/core/innovation.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/channels/web/app.py`, `backoffice/worker.py`, Tests (`test_backoffice_jobs.py` neu, `test_worker.py`,
+  `test_innovation.py`), `FRONTDESK_BACKOFFICE_ROADMAP.md`, `docs/*`, `projekt_changelog.md`
+
 ## [2026-09-27 14:41] — Claude Code (MACO470)
 - **Was:** BF-29 behoben: Backoffice-Auftraege heissen jetzt `BO-...` (Second Brain behaelt `B-...`), Prompt + ID-Erkennung angepasst.
   Workflow F3 geaendert: vollstaendig gemergte Arbeitsbranches darf der Agent ohne Rueckfrage lokal loeschen (Register: REVIDIERT).

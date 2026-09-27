@@ -52,7 +52,9 @@ class TestInnovation(unittest.TestCase):
         erg = InnovationPipeline(core, web=_web(),
                                  antraege=Antraege(Path(tempfile.mkdtemp()) / "a.jsonl")).run()
         self.assertIn("nicht verfügbar", erg.idee)
-        self.assertIsNotNone(erg.antrag_id)  # Antrag entsteht trotzdem (mit Hinweis)
+        # Revidiert 2026-09-27 (FRONTDESK_BACKOFFICE_ROADMAP Etappe 4): ohne echte Idee KEIN Antrag -- vorher entstand ein
+        # Antrag mit dem Fehlertext als Titel, der dem CEO zur Freigabe vorgelegt wurde.
+        self.assertIsNone(erg.antrag_id)
 
     def test_4_leck_schutz(self):
         secret = "sk-ant-INNOSECRET-1"
@@ -75,6 +77,12 @@ class TestInnovation(unittest.TestCase):
     def test_6_titel_helfer(self):
         self.assertEqual(_titel("# Mein Titel\nNutzen..."), "Mein Titel")
         self.assertEqual(_titel(""), "Innovations-Vorschlag")
+
+    def test_titel_ohne_label(self):
+        from orchestrator.core.innovation import _titel
+        self.assertEqual(_titel("TITEL: Kollaborative KI-Agenten\nIDEE: ..."), "Kollaborative KI-Agenten")
+        self.assertEqual(_titel("**Titel:** Besseres Logging"), "Besseres Logging")
+        self.assertEqual(_titel("Besseres Logging"), "Besseres Logging")
 
 
 if __name__ == "__main__":

@@ -16,8 +16,9 @@ from pathlib import Path
 from ..governance.leak_guard import redact
 
 STATUSES = ("neu", "in_arbeit", "fertig", "fehlgeschlagen")
-ARTEN = ("zusammenfassung", "entwurf", "bewertung", "analyse", "sonstiges")
-_FELDER = ("art", "aufgabe", "von", "ergebnis", "zweitmeinung", "modell", "dauer_s", "grund", "meldung")
+ARTEN = ("zusammenfassung", "entwurf", "bewertung", "analyse", "sonstiges", "roh")   # roh = Job-Auftrag mit eigenem System-Prompt
+_FELDER = ("art", "aufgabe", "von", "ergebnis", "zweitmeinung", "modell", "dauer_s", "grund", "meldung", "system", "zweck",
+           "stumm")
 
 
 def _now() -> str:
@@ -35,14 +36,17 @@ class AuftragStore:
 
     # -- Schreiben -------------------------------------------------------------------------------------------------
 
-    def anlegen(self, aufgabe: str, *, art: str = "sonstiges", von: str = "CEO") -> str:
+    def anlegen(self, aufgabe: str, *, art: str = "sonstiges", von: str = "CEO", system: str = "", zweck: str = "",
+                stumm: bool = False) -> str:
+        """`stumm`: Job-internes Ergebnis (Etappe 4) -- keine Meldung an den CEO, der Job verarbeitet es selbst."""
         aufgabe = (aufgabe or "").strip()
         if not aufgabe:
             raise ValueError("Leerer Auftrag.")
         art = art if art in ARTEN else "sonstiges"
         # BO = Backoffice -- Antraege heissen A-..., Second-Brain-Eintraege B-... (BF-29); sonst zum Verwechseln aehnlich.
         aid = "BO-" + datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:4]
-        self._append({"ts": _now(), "id": aid, "event": "neu", "art": art, "aufgabe": aufgabe[:6000], "von": von})
+        self._append({"ts": _now(), "id": aid, "event": "neu", "art": art, "aufgabe": aufgabe[:12000], "von": von,
+                      "system": system[:8000] or None, "zweck": zweck or None, "stumm": True if stumm else None})
         return aid
 
     def naechster(self) -> dict | None:

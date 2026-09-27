@@ -27,15 +27,21 @@ class Notifications:
         self.secrets = secrets or []
 
     def enqueue(self, text: str, *, abteilung: str = "", kategorie: str = "info", quelle: str = "",
-                detail: str = "", dedup_stunden: float = 12) -> str | None:
+                detail: str = "", dedup_stunden: float = 12, nach_briefing: bool | None = None) -> str | None:
         """Nachricht in die Outbox legen. `abteilung` = Absender (wird vorangestellt); `detail` =
         Hintergrund fuer Rueckfragen (meldung_details). Gibt die ID zurueck (None bei leer/Duplikat)."""
         text = (text or "").strip()
         if not text or self._kuerzlich(text, dedup_stunden):
             return None
+        if nach_briefing is None:                  # Job im Hintergrund-Modus -> ins Morgen-Briefing (Etappe 4)
+            from .hintergrund import aktiv
+            nach_briefing = aktiv()
         nid = "N-" + datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:4]
-        self._append({"ts": _now(), "id": nid, "typ": "queued", "abteilung": abteilung,
-                      "kategorie": kategorie, "quelle": quelle, "text": text, "detail": detail})
+        ev = {"ts": _now(), "id": nid, "typ": "queued", "abteilung": abteilung,
+              "kategorie": kategorie, "quelle": quelle, "text": text, "detail": detail}
+        if nach_briefing:
+            ev["nach_briefing"] = True
+        self._append(ev)
         return nid
 
     def get(self, id_oder_suffix: str) -> dict | None:
@@ -51,6 +57,14 @@ class Notifications:
         return [e for e in self._events()
                 if e.get("typ") == "queued" and e.get("id") not in gesendet]
 
+    def zustellbar(self) -> list[dict]:
+        """Sofort zuzustellende Meldungen (ohne die fuers Morgen-Briefing zurueckgehaltenen)."""
+        return [e for e in self.pending() if not e.get("nach_briefing")]
+
+    def fuer_briefing(self) -> list[dict]:
+        """Nachts von Jobs erzeugte, zurueckgehaltene Meldungen (kommen ins Morgen-Briefing)."""
+        return [e for e in self.pending() if e.get("nach_briefing")]
+
     def mark_sent(self, nid: str) -> None:
         self._append({"ts": _now(), "id": nid, "typ": "sent"})
 
@@ -63,6 +77,8 @@ class Notifications:
         grenze = datetime.now() - timedelta(hours=stunden)
         alt = []
         for e in self.pending():
+            if e.get("nach_briefing"):
+                continue                           # wartet bewusst aufs Morgen-Briefing, nicht verwerfen
             try:
                 zu_alt = datetime.fromisoformat(e["ts"]) < grenze
             except (ValueError, KeyError):
