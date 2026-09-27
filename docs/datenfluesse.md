@@ -179,6 +179,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `backoffice/log.jsonl` (Auftraege, append-only) | Web (`/api/backoffice/*`, Worker-Ergebnisse) | Web, Bot (Werkzeug `auftrag_details`, Morgen-Briefing) | ja | ja |
 | `buchhaltung/log.jsonl` (Hash-Kette: Nummern, Kunden, Angebote, Belege; spaeter Rechnungen) + `buchhaltung/belege/<jahr>/` (u. a. Angebots-PDFs) | Web (Kunden- und Angebots-App) | Bot (Integritaetspruefung 05:00), Web | ja | ja (Log + Beleg-Ordner, Schrumpf-Check) |
 | `buchhaltung/firmendaten.json` (eigene Firma: Briefkopf, Steuernummer, Bankverbindung; **nur NAS, nie im Git**) | CEO (Angabe), von Hand angelegt | Web: Angebots-PDF (Briefkopf, Fusszeile mit Bank) | ja | ja |
+| `buchhaltung/katalog.json` (Leistungskatalog: Formate, Pakete, Zuschlaege, Textbausteine; **nur NAS**) + `buchhaltung/logo.jpg` | Web (`POST /api/crm/katalog`, nur Modul finanzen; Aenderung zusaetzlich als `katalog_geaendert` in der Kette) | Web: Angebots-Editor, Angebots-PDF, Preisliste (`/api/crm/katalog/preisliste.pdf`) | ja | ja |
 | `orchestrator/memory/log.jsonl` | Bot, Voice | dito | ja | ja |
 | `orchestrator/state/instagram_token.json` (**Secret**) | `governance/instagram_token.py` | dito | ja | bewusst nein (CEO) |
 | `projekt_changelog.md`, `finance/budget.md` | Bot, Web, Agenten | alle | ja | Git |
@@ -242,7 +243,7 @@ cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
   Entwicklungs-Roadmap, Cutter (`/api/cutter/*`, Maschine-zu-Maschine), Backoffice (`/api/backoffice/*`, Modul
   administration, Maschine-zu-Maschine), Kunden-Stammdaten (`/api/crm/kunden*`, `/api/crm/ansprechpartner/*`,
   Modul crm, schreibt in die Buchhaltungs-Kette), Angebote (`/api/crm/angebote*`, Modul crm: PDF, Gmail-Entwurf,
-  Kalender), Reels (`/api/reel/*`,
+  Kalender), Katalog/Preisliste (`/api/crm/katalog*`, Speichern nur Modul finanzen), Reels (`/api/reel/*`,
   **`/freigeben` postet auf Facebook**), CRM/Instagram, Content, Investment (inkl. `…/paper-order`).
 - **Voice-Server** (localhost:7860, WebRTC) und **Mac-Orb** (ruft `127.0.0.1:8765`) — nur am MacBook.
 

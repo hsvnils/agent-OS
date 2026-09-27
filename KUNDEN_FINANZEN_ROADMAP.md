@@ -4,8 +4,8 @@
 - Stand: 2026-09-27
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: CEO baut das Image neu (`docker compose up -d --build`), dann Abnahme Etappe 3: Angebot anlegen ->
-  PDF pruefen -> Gmail-Entwurf mit Anhang -> als versendet markieren -> Erinnerung im Kalender. Steuernummer vor Etappe 5.
+- Naechster Schritt: Go fuer Merge/Push/Deploy von 3b (nur Neustart), dann Abnahme 3 + 3b in LUNA-OS; fuer 3c
+  liefert der CEO die Meta-Exporte (CSV). Steuernummer vor Etappe 5.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -171,7 +171,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 3: Angebote
 
-- Status: gemergt (`0a0c08c`), gepusht, Code auf der NAS (2026-09-27); aktiv nach **Image-Neubau** durch den CEO
+- Status: live (Image neu gebaut 2026-09-27); Abnahme durch den CEO offen
 - Ergebnis: `orchestrator/core/angebote.py` (AN-Nummer aus dem Angebotsjahr, Positionen in Cent, Status entwurf ->
   versendet -> angenommen/abgelehnt, „abgelaufen" abgeleitet, Inhalt nach „versendet" eingefroren), `core/beleg_pdf.py`
   (PDF nach DIN 5008 mit Briefkopf, § 19-Hinweis, Bank in der Fusszeile, Tabellenkopf auf Folgeseiten; wiederverwendbar
@@ -186,6 +186,37 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   PDF; Versand als **Gmail-Entwurf mit Anhang** (Senden = CEO); Kalender-Erinnerung zum Nachfassen und vor Ablauf; CRM-Stufe
   „angebot" automatisch; Ablage + Aufbewahrung (angenommene Angebote 6 Jahre).
 - Gate: Angebot anlegen -> PDF pruefen (CEO) -> Mail-Entwurf mit Anhang in Gmail -> Erinnerung im Kalender.
+
+### Etappe 3b: Leistungskatalog + Hanserautisch-Angebot (aus dem Preislisten-Generator)
+
+- Status: umgesetzt auf `ai/kunden-finanzen`, Deploy offen (2026-09-27; kein Image-Neubau noetig)
+- Ergebnis: `core/katalog.py` (18 Eintraege = 15 Formate + 3 Pakete, 6 Zuschlaege, Texte 1:1 aus dem Generator;
+  `buchhaltung/katalog.json` nur NAS, Aenderungen als `katalog_geaendert` in der Kette, Speichern nur Modul finanzen),
+  Angebote mit Katalog-Positionen, Zuschlaegen (Prozent auf die Summe aller Formate) und Paketrabatt (auf die
+  Zwischensumme), Cent-genau und beim Anlegen eingefroren (Preise + Textbausteine); Standard 14 Tage, „Tangstedt, den";
+  `beleg_pdf.hanserautisch_pdf` (Logo `buchhaltung/logo.jpg`, Farbbalken, „Moin"-Anrede, „So kalkulieren wir",
+  Kennzahlen, Gruppen, Summenblock, Fusstext) + Preisliste (`/api/crm/katalog/preisliste.pdf`); schlichtes Layout
+  bleibt waehlbar. LUNA-OS V2: Editor „Aus Katalog", Zuschlaege/Rabatt mit Live-Summe, Layout-Schalter; Tabs „Katalog"
+  (Preise/Texte pflegen, Formate ergaenzen) und „Preisliste". Befund: „1.600" wurde als 1,60 € gelesen -> deutscher
+  Tausenderpunkt wird jetzt erkannt (Server + Browser). Tests: 11 neue, Suite 849 gruen; Gegenprobe (Rabatt auf
+  Formate statt Zwischensumme) rot; PDFs gesichtet; Oberflaeche im Headless-Chrome durchgeklickt.
+- Herkunft: Preislisten-Generator des CEO (Claude-Chat-Artefakt, JSX; 17 Formate + 3 Pakete, 6 Zuschlaege, Rabatt,
+  Hanserautisch-Layout). CEO-Entscheidungen 2026-09-27: mit den Angeboten verbinden; **Hanserautisch-Look**;
+  Zuschlaege **wie im Generator** (Prozent auf die Summe aller Formate); Standard **Tangstedt, 14 Tage**.
+- Ziel / Scope: Leistungskatalog (Formate, Pakete, Zuschlaege, Textbausteine) nur auf der NAS, in LUNA-OS pflegbar,
+  Aenderungen protokolliert; Angebots-Editor „Aus Katalog hinzufuegen", Zuschlaege + Paketrabatt als eigene Zeilen
+  (Cent-genau, beim Anlegen eingefroren); PDF im Hanserautisch-Look (Logo, Blau/Rot-Balken, „Moin"-Anrede,
+  „So kalkulieren wir", Kennzahlen, Fusstext) mit Angebotsnummer, Kundennummer und Bank; **Preisliste** als eigenes PDF
+  (ohne Nummer, ohne Buchhaltungseintrag).
+- Gate: CEO erstellt ein Angebot aus dem Katalog mit Zuschlag + Rabatt, prueft PDF und Preisliste.
+
+### Etappe 3c: Social-Media-Kennzahlen speichern und nutzen
+
+- Status: geplant (CEO-Wunsch 2026-09-27) -- wartet auf die Meta-Business-Suite-Exporte des CEO
+- Ziel / Scope: Meta-Exporte (Instagram/Facebook/Stories, CSV) in LUNA-OS hochladen, dauerhaft speichern (NAS, Backup);
+  Auswertung (Median 90 Tage je Format, Follower, Aufrufe, Interaktionen, Verlauf); Werte fliessen in Katalog-Basis
+  („Ø 37.000 Aufrufe je Reel") und die Kennzahlen im Angebot/Preisliste statt fester Zahlen.
+- Gate: Export hochladen -> Auswertung in LUNA-OS stimmt mit der Meta Business Suite ueberein -> Angebot zeigt die Werte.
 
 ### Etappe 4: Beauftragung (Auftragsbestaetigung)
 

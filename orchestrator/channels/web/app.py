@@ -28,7 +28,8 @@ from ...core.brain import Brain
 from ...core.crm import CrmStore
 from ...core.buchhaltung import Buchhaltung
 from ...core.kunden import DubletteFehler, KundenStore
-from ...core.angebote import AngebotStore, mail_text as angebot_mail_text
+from ...core.angebote import AngebotStore, mail_text as angebot_mail_text, preisliste_pdf
+from ...core.katalog import Katalog
 from ...core.ig_inbox import IgInboxStore
 from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, CUTTER_FELDER, CUTTER_STATUSES,
                                    DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES, SOURCE_FELDER,
@@ -1339,7 +1340,45 @@ async def kunden_collab(nummer: str, request: Request):
 # -- Angebote (KUNDEN_FINANZEN Etappe 3; Modul crm) ----------------------------------------------------------------
 
 def _angebote() -> AngebotStore:
-    return AngebotStore(kunden_store.bh, kunden_store)
+    return AngebotStore(kunden_store.bh, kunden_store, Katalog(kunden_store.bh))
+
+
+@app.get("/api/crm/katalog")
+def katalog_lesen(request: Request):
+    """Leistungskatalog (Formate, Pakete, Zuschlaege, Texte) fuer Angebots-Editor und Preisliste (Etappe 3b)."""
+    k = Katalog(kunden_store.bh)
+    u = getattr(request.state, "user", None) or _ceo_user()
+    return {"katalog": k.laden(), "gespeichert": k.pfad.exists(), "darf_aendern": hat_modul(u, "finanzen")}
+
+
+@app.post("/api/crm/katalog")
+async def katalog_speichern(request: Request):
+    """Katalog speichern -- Preise sind Geschaeftsdaten: nur mit Modul finanzen (Owner)."""
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if not hat_modul(u, "finanzen"):
+        return {"ok": False, "hinweis": "Preise aendern darf nur, wer das Modul Finanzen hat."}
+    body = await _json(request)
+    return _kunden_aktion(lambda: Katalog(kunden_store.bh).speichern(body.get("katalog") or {}, von=_von(request)))
+
+
+@app.get("/api/crm/katalog/preisliste.pdf")
+def katalog_preisliste(ids: str = "", firma: str = "", ap: str = ""):
+    """Preisliste im Hanserautisch-Look (ohne Nummer, ohne Buchhaltungseintrag)."""
+    fd = _firmendaten()
+    if not fd:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Firmendaten fehlen (buchhaltung/firmendaten.json)")
+    f = kunden_store.firma(firma) if firma else None
+    a = next((x for x in (f or {}).get("ansprechpartner_liste", []) if x["nummer"] == ap.strip().upper()), None)
+    auswahl = [i for i in ids.split(",") if i.strip()] or None
+    try:
+        daten = preisliste_pdf(Katalog(kunden_store.bh).laden(), fd, logo=kunden_store.bh.dir / "logo.jpg",
+                               ids=auswahl, firma=f, ap=a)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc))
+    except ImportError:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "PDF-Bibliothek fehlt -- Docker-Image neu bauen")
+    name = "Preisliste_Hanserautisch" + (f"_{f['nummer']}" if f else "") + ".pdf"
+    return Response(daten, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{name}"'})
 
 
 @app.get("/api/crm/angebote")

@@ -261,9 +261,16 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
 .v2-modlbl { font-size: 13px; color: var(--v2-muted); display: flex; gap: 7px; align-items: center; }
 .v2-feld { display: flex; flex-direction: column; gap: 4px; } .v2-feld small { color: var(--v2-muted); font-size: 12px; }
 .v2-form textarea { border: 1px solid var(--v2-line); border-radius: 10px; padding: 10px 13px; font: inherit; background: var(--v2-bg1); color: var(--v2-fg); resize: vertical; }
-.v2-an-pos { display: grid; grid-template-columns: 1fr 70px 80px 100px auto; gap: 6px; align-items: start; margin-bottom: 6px; }
+.v2-an-pos { display: grid; grid-template-columns: 1fr 64px 76px 100px auto; gap: 6px; align-items: start; margin-bottom: 8px; }
+.v2-an-text { display: flex; flex-direction: column; gap: 4px; } .v2-an-text .an-p-detail { font-size: 12px; }
+.v2-an-kat { display: flex; gap: 6px; flex-wrap: wrap; } .v2-an-kat select { flex: 1; min-width: 200px; }
+.v2-an-summen { border-top: 1px solid var(--v2-line-soft); padding-top: 6px; }
+.v2-kat-liste { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.v2-kat-zeile { display: grid; grid-template-columns: 1.3fr 1.3fr 1.6fr 90px 70px auto; gap: 6px; align-items: center; }
+.v2-kat-zu { display: grid; grid-template-columns: 1.5fr 70px 2fr; gap: 6px; margin-bottom: 6px; }
+@media (max-width: 760px) { .v2-kat-zeile, .v2-kat-zu { grid-template-columns: 1fr 1fr; } }
 .v2-an-zeile { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-@media (max-width: 560px) { .v2-an-pos { grid-template-columns: 1fr 1fr; } .v2-an-pos textarea { grid-column: 1 / -1; } .v2-an-zeile { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .v2-an-pos { grid-template-columns: 1fr 1fr; } .v2-an-pos .v2-an-text { grid-column: 1 / -1; } .v2-an-zeile { grid-template-columns: 1fr; } }
 a.v2-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .v2-table tr.klick { cursor: pointer; } .v2-table tr.klick:hover td { background: var(--v2-line-soft); }
 .v2-msg { font-size: 13px; min-height: 16px; } .v2-msg.ok { color: var(--v2-green); } .v2-msg.err { color: var(--v2-red); }
