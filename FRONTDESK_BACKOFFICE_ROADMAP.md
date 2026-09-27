@@ -4,7 +4,8 @@
 - Stand: 2026-09-26
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `ec1173c`
-- Naechster Schritt: CEO startet die Container neu, dann Live-Test 2 in Telegram (gleiche Nachricht wie 13:50).
+- Naechster Schritt: CEO-Entscheidung, was als Naechstes kommt: Etappe 4 (Nacht-Jobs uebers Backoffice) oder BF-24
+  (leere Gemini-Antworten); Branch-Aufraeumen freigeben.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -152,7 +153,7 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
 
 ### Etappe 3: Frontdesk-Werkzeuge + Ehrlichkeitsregel
 
-- Status: umgesetzt (2026-09-27, Branch `ai/frontdesk-werkzeuge`; Merge/Deploy/Live-Test offen) — Werkzeuge
+- Status: **verifiziert** (2026-09-27 14:03) — deployt `73e5392` + Korrektur `28c1bb2`; Live-Test 2 bestanden (unten) — Werkzeuge
   `auftrag_erteilen` (Kern-Set, immer sichtbar) und `auftraege_zeigen`; Auftrags-IDs jetzt `B-...` (Antraege sind `A-...`,
   gleiches Format -> Verwechslungsgefahr); System-Prompt: Backoffice-Regel, Ehrlichkeitsregel, Duzen (BF-27);
   Nachfassen (einmal), wenn eine Erledigung ohne Werkzeug behauptet oder eine nicht existierende Auftrags-ID genannt
@@ -167,7 +168,11 @@ Status), Regel gegen falsche Erledigungs-Behauptungen, Plausibilitaetsfilter fue
   die Auftrags-ID für den Entwurf:" (18 Token) **ohne Werkzeugaufruf**; kein Auftrag angelegt. Neue Spielart von BF-25
   (Ankuendigung statt Behauptung). Korrektur (CEO-Go, `28c1bb2`): deterministisches Nachfassen bei ausdruecklichem
   Hintergrund-Wunsch ohne `auftrag_erteilen` + Erkennung von Ankuendigungen ohne Tat (Doppelpunkt am Ende, „mache ich"/
-  „lege ich an"). 3 neue Tests (Live-Fall nachgestellt), Gegenprobe rot, Suite 866 passed. Deployt (Neustart CEO offen).
+  „lege ich an"). 3 neue Tests (Live-Fall nachgestellt), Gegenprobe rot, Suite 866 passed. Deployt, Neustart CEO.
+- **Live-Test 2 (2026-09-27 14:02):** gleiche Nachricht -> LUNA ruft `auftrag_erteilen` direkt auf (Protokoll
+  „vorausgewaehlt", kein Nachfassen noetig), antwortet „Auftrag #e037 ist angelegt" mit **echter** ID
+  (`B-20260927-120256-e037`). Worker-Protokoll 14:03: „Wartet: 1 Auftrag offen, aber nur 12.0 GB verfuegbar (< 13 GB)
+  — spaetestens ab 1:00 Uhr." Ergebnis kommt ueber den in Etappe 2 verifizierten Meldeweg.
 - Ziel / Scope: Werkzeuge `auftrag_erteilen(aufgabe, art)` und `auftraege_zeigen`; System-Prompt-Regel: „Erledigt"
   nur nach einem Werkzeug-Ergebnis im selben Zug, sonst „Auftrag angelegt"; optional Erkennung von
   Erledigungs-Behauptungen ohne Werkzeug-Aufruf (BF-25) mit Nachfassen.

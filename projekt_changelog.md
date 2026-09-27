@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-27 14:04] — Claude Code (MACO470)
+- **Was:** Backoffice **Etappe 3 verifiziert**: Live-Test 2 in Telegram — LUNA legte den Hintergrund-Auftrag wirklich an
+  (`auftrag_erteilen`, echte ID `#e037`), Worker protokolliert das Warten auf RAM (12,0 < 13 GB). Roadmap + Verzeichnis
+  nachgezogen.
+- **Warum:** Gate der Etappe 3 (Live-Test am Empfaenger).
+- **Betroffen:** `FRONTDESK_BACKOFFICE_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-27 14:00] — Claude Code (MACO470)
 - **Was:** Frontdesk-Korrektur nach gescheitertem Live-Test 1 (Gemini kuendigte die Auftrags-ID an, rief `auftrag_erteilen`
   nicht auf): Nachfassen bei ausdruecklichem Hintergrund-Wunsch ohne Auftrag (eigene, klare Anweisung) und bei Ankuendigungen
