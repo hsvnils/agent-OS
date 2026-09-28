@@ -4,8 +4,9 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Deploy Etappe 11; Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung
-  durchspielen, eine gemischte Rechnung aufteilen). Offen danach nur Etappe 3c (wartet auf Meta-Exporte). Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
+- Naechster Schritt: Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
+  gemischte Rechnung aufteilen); Deploy + Abnahme Etappe 12 (Barter-Deal einmal von Angebot bis Ware-Eingang
+  durchspielen). Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -358,6 +359,68 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   Position inkl. **„privat – nicht absetzbar“** (§ 12 EStG), Summenkontrolle, „Differenz als Position“ (Versand/Rabatt);
   GWG-Grenze und Anlagegut (Nutzungsdauer) je Position; Zahlungen anteilig je Position (centgenau), Privatanteil im
   Journal sichtbar, zaehlt nicht in EUeR/Cockpit/AfA; Export-Spalte „Aufteilung“. Tests + Gegenprobe; Browser-Test.
+
+### Etappe 12: Barter-Deals (Leistung gegen Ware)
+
+- Status: umgesetzt (CEO-Go 2026-09-28 „Go für Etappe 12“; kein Steuerberater -> Zweifelsfaelle als Hinweis in LUNA-OS),
+  Deploy + Abnahme offen
+- Ergebnis: Feld „Gegenleistung in Ware“ (Text + Wert) in Angebot, Auftragsbestaetigung (uebernommen) und Rechnung
+  (Editor, Detail, PDF: „Gegenleistung: X in Ware ... und Y in Geld“ bzw. Rechnung mit beziffertem Entgelt
+  „davon Sachleistung (tauschaehnlicher Umsatz) ... in Geld zu zahlen“); Rechnung: Geldteil und Warenteil getrennt,
+  „bezahlt“ erst mit Geld **und** Ware; „📦 Ware erhalten“ (Wert laut Marke + eigener Nachweis, der Nachweis zaehlt;
+  Verwendung Content = Einnahme + gleiche Anschaffung GWG/Anlage/Verbrauch, privat = nur Einnahme, Leihgabe = nichts;
+  Nachweis-Dateien als Beleg; Storno); Mahnung nur Geldteil; To-do „Ware zu RE erhalten?“; Journal/EUeR (Einnahme
+  „Sachleistungen (Barter)“ in Zeile 12, Anlagegut aus Barter mit AfA), KU-Grenze mit vollem Rechnungswert; spaetere
+  Privatnutzung/Verkauf als Eigenbeleg „Verkauf oder private Weiternutzung“ -> EUeR Zeile 19/Kz 102, nicht zur KU-Grenze;
+  Export-Spalten Warenwert/Ware erhalten. Tests (Roadmap-Verifikation) + Gegenprobe; Browser-Test.
+- Hintergrund (Recherche 2026-09-28, amtliche Quellen; [?] = nur Schlussfolgerung, Steuerberater-Frage):
+  - **Einnahme:** Behaltene Produkte sind Betriebseinnahmen, anzusetzen mit dem **ueblichen Endpreis am Abgabeort
+    abzueglich ueblicher Preisnachlaesse** (§ 8 Abs. 2 EStG; Leitfaden Hessen 06/2026 S. 2-3, FAQ Bayern S. 3/8,
+    Steuerguide BW 2025, finanzamt.nrw.de/influencer); Zufluss bei Erhalt bzw. wenn sie behalten werden duerfen
+    (§ 11 EStG). **Leihgabe/Rueckgabe = keine Einnahme** (Hessen: nur „wenn Sie das Produkt ... behalten duerfen“).
+  - **Umsatzsteuer/§ 19:** tauschaehnlicher Umsatz (§ 3 Abs. 12 UStG), Wert der Gegenleistung als Entgelt (§ 10 Abs. 2
+    UStG, UStAE 10.5: Aufwand der Marke, sonst Schaetzung) -> **zaehlt zum Gesamtumsatz der Kleinunternehmer-Grenze**
+    (§ 19 Abs. 1/2 UStG). Default: derselbe Wert wie oben; optional abweichender „USt-Wert“ [?].
+  - **EUeR:** Zeile 12 / Kz 111 (alle Einnahmen des Kleinunternehmers, Anleitung 2026).
+  - **Danach:** betriebliche Nutzung -> Anschaffung in gleicher Hoehe als GWG (Zeile 37) bzw. AfA (Hessen S. 3:
+    „Wertverzehr ... als Betriebsausgabe“; gleiche Hoehe [?]); spaetere Privatnutzung -> **Entnahme zum Teilwert**,
+    einnahmeerhoehend (Hessen S. 3, § 6 Abs. 1 Nr. 4 EStG; Zeile 19/Kz 102 bzw. 21/Kz 108); sofort privat -> Einnahme,
+    keine Ausgabe [?]; Verkauf -> Erloes Zeile 19 (Anlagevermoegen) bzw. 12.
+  - **Rechnung:** Pflicht bei Unternehmer-Kunden binnen 6 Monaten (§ 14 Abs. 2 Satz 2 Nr. 1 UStG), Pflichtangaben
+    § 34a UStDV mit beziffertem Entgelt (Sachwert + Geld) und § 19-Hinweis; keine Sonderformel vorgeschrieben.
+  - **Keine Bagatell-Ausnahme** fuer Barter: § 37b-Pauschalierung der Marke gilt nur fuer Zusatzgeschenke, nicht fuer
+    die vereinbarte Gegenleistung; fuer echte Zusatzgeschenke Feld „Marke hat pauschal versteuert (§ 37b)“.
+  - **Nachweis:** Vertrag/Mail, Lieferschein bzw. Wertangabe der Marke, datierter Shop-Screenshot, Eingangsdatum,
+    Link zum Post, ggf. Rueckversandbeleg.
+- Ziel / Scope:
+  - **Angebot und Auftragsbestaetigung:** je Position oder fuer den ganzen Deal eine Gegenleistung „in Ware“ mit
+    Warenbezeichnung und Warenwert; Mischformen (Geld + Ware); das PDF zeigt klar „Gegenleistung: Produkte im Wert
+    von X EUR (Sachleistung)“ und den Geldteil getrennt.
+  - **Rechnung:** weist den vollen Wert aus (Geld- und Sachteil), zahlbar ist nur der Geldteil; Hinweis, dass der
+    Sachteil durch Lieferung der Ware ausgeglichen wird; Pflichtangaben § 34a UStDV / § 19-Hinweis wie gehabt [?].
+  - **„Zahlung“ in Ware:** neuer Vorgang „Ware erhalten“ (Datum, Bezeichnung, Wert, Nachweis wie Foto/Screenshot
+    des Shop-Preises/Lieferschein als Beleg) -> Einnahme im Journal (Kategorie Barter/Sachleistung), zaehlt zur
+    Kleinunternehmer-Grenze; offene Sachleistung erscheint unter „bekommen wir“ und in den To-dos.
+  - **Verwendung der Ware:** beim Erhalt „betrieblich fuer Content“ (Standard, CEO) / „privat“ / „Leihgabe, geht
+    zurueck“ -> automatische Gegenbuchung (GWG/Anlage) bzw. keine; spaeter „privat weiter genutzt“ (Entnahme zum
+    Teilwert) oder „verkauft“ (Erloes) als eigener Vorgang; Korrektur per Storno.
+  - **Mahnwesen:** gemahnt wird nur der Geldteil; ausbleibende Ware als To-do „Ware nachfordern“ (kein Zins).
+  - **Cockpit/EUeR/Export:** Barter-Einnahmen und -Ausgaben sichtbar getrennt, Drill-down, Export-Spalten; EUeR-Zeile
+    fuer Kleinunternehmer vermutlich Zeile 12 [?].
+  - **Collab-CRM:** Deals mit Marken sind oft Barter -> Kennzeichnung am Kunden/Deal [?].
+- Entscheidungen (CEO 2026-09-28): (1) Warenwert = **Preisangabe der Marke UND eigener Nachweis** (Shop-Screenshot/
+  Lieferschein als Beleg); (2) Standard-Verwendung der Ware = **betrieblich fuer Content**; (3) **Rechnung auch bei
+  reinem Barter: ja**.
+- Gate: ein Probe-Deal (Geld + Ware) laeuft von Angebot bis EUeR durch; Summen je Belegart von Hand nachgerechnet;
+  Wert der Ware zaehlt in Journal, EUeR und Kleinunternehmer-Grenze; privat behaltene Ware erzeugt keine Ausgabe;
+  Tests + Gegenprobe; CEO-Abnahme der PDFs.
+- Verifikation (vorab): `pytest -q orchestrator` gruen; Probe-Deal 500 EUR Geld + Ware 300 EUR: Rechnung 800 EUR,
+  offen 500 EUR; nach Geldeingang + „Ware erhalten (betrieblich, GWG)“: Einnahmen 800 EUR, Ausgaben 300 EUR,
+  KU-Umsatz +800 EUR; Variante „privat“: Einnahmen 800 EUR, Ausgaben 0 EUR.
+- Risiko: steuerliche Einordnung -> vorab recherchieren, Zweifelsfaelle als Steuerberater-Frage markieren;
+  bestehende Belege bleiben unveraendert (neue Felder sind optional, additive Ereignisse).
+- Dokumentation: Changelog, Roadmap-Status, `ROADMAP.md`, Entscheidungs-Register (Wertermittlung, Verwendung),
+  `docs/datenfluesse.md`, Verfahrensdokumentation (Tauschgeschaefte).
 
 ## Reihenfolge
 

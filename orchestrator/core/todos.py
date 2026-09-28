@@ -190,8 +190,15 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
         for m in MahnStore._falte(e).values():
             mahn.setdefault(m["rechnung"], []).append(m)
         for r in rechnungen.values():
-            if r["status"] == "offen" and r.get("art") != "storno" and r.get("faellig_am", "9") < h:
-                wer = f"{firmen.get(r['firma'], r['firma'])} · {eur(r['summe_cent'] - r['bezahlt_cent'])} offen"
+            if (r["status"] == "offen" and r.get("art") != "storno" and r.get("ware_cent")   # Etappe 12: Barter-Ware
+                    and not r.get("ware_erhalten")):
+                out.append(_todo(f"re-ware:{r['nummer']}", "Rechnungen", "📦",
+                                 f"Ware zu {r['nummer']} erhalten?", f"{firmen.get(r['firma'], r['firma'])} · "
+                                 f"{(r.get('ware') or {}).get('text', '')} ({eur(r['ware_cent'])}) · „Ware erhalten“ "
+                                 "erfassen oder nachfordern", "re-detail", r["nummer"], r.get("faellig_am", ""), h))
+            if (r["status"] == "offen" and r.get("art") != "storno" and r.get("faellig_am", "9") < h
+                    and r["geld_cent"] - r["bezahlt_cent"] > 0):
+                wer = f"{firmen.get(r['firma'], r['firma'])} · {eur(r['geld_cent'] - r['bezahlt_cent'])} offen"
                 ms = sorted(mahn.get(r["nummer"], []), key=lambda m: m["stufe"])
                 if not ms:                                   # Etappe 10: naechster Schritt im Mahnverfahren
                     t = (f"Rechnung {r['nummer']} überfällig", f"{wer}; 1. Mahnung erstellen oder Zahlung erfassen", r["faellig_am"])

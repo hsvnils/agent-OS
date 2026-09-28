@@ -17,6 +17,26 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 19:46] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 12 Barter-Deals: Gegenleistung in Ware in Angebot/Auftrag/Rechnung (Editor, Detail, PDF), Rechnung mit Geld- und Warenteil, „Ware erhalten“ (Wert Marke + eigener Nachweis, Verwendung Content/privat/Leihgabe, Nachweis-Dateien, Storno), Journal/EUeR/AfA/Export, KU-Grenze, Mahnung nur Geldteil, To-do fuer ausstehende Ware, Eigenbeleg „Verkauf oder private Weiternutzung“ (EUeR Zeile 19). UI-Cache app v58.
+- **Warum:** CEO-Go fuer Etappe 12 mit den Entscheidungen (Wert: beides, Standard Content, Rechnung auch bei reinem Barter).
+- **Betroffen:** `orchestrator/core/angebote.py`, `beauftragung.py`, `rechnungen.py`, `finanzen.py`, `mahnungen.py`, `todos.py`, `jahresabschluss.py`, `euer_zeilen.py`, `eingangsbelege.py`, `eigenbelege.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_barter.py` (neu), `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
+## [2026-09-28 19:27] — Claude Code
+- **Was:** Etappe 12 (Barter-Deals): steuerliche Einordnung aus amtlichen Quellen in die Roadmap uebernommen (Einnahme zum ueblichen Endpreis bei Erhalt, Leihgabe keine Einnahme, tauschaehnlicher Umsatz zaehlt zur KU-Grenze, EUeR Zeile 12, Entnahme zum Teilwert bei spaeterer Privatnutzung, Rechnungspflicht bei Unternehmer-Kunden, keine Bagatell-Ausnahme); Scope „Verwendung der Ware“ angepasst. Keine Code-Aenderung.
+- **Warum:** Recherche vor dem Bau (Roadmap-Workflow B1/B3).
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`
+
+## [2026-09-28 19:18] — Claude Code
+- **Was:** Etappe 12 (Barter-Deals): CEO-Entscheidungen eingetragen (Warenwert = Markenangabe + eigener Nachweis, Standard-Verwendung betrieblich fuer Content, Rechnung auch bei reinem Barter); steuerliche Recherche (amtliche Quellen) gestartet, read-only.
+- **Warum:** CEO-Antworten auf die drei offenen Entscheidungen.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `docs/entscheidungs-register.md`
+
+## [2026-09-28 19:09] — Claude Code
+- **Was:** KUNDEN_FINANZEN_ROADMAP: Etappe 12 „Barter-Deals (Leistung gegen Ware)“ geplant -- Scope ueber alle Belegarten (Angebot, Auftrag, Rechnung, Ware erhalten als Einnahme, Verwendung der Ware, Mahnwesen nur Geldteil, Cockpit/EUeR/Export, Collab-CRM), steuerlicher Hintergrund mit [?]-Markern, drei offene CEO-Entscheidungen, Gate und Verifikation. Keine Code-Aenderung.
+- **Warum:** CEO: „Barter Deals in Angeboten und allen folgenden Belegarten aufführen“ -- aufnehmen.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-09-28 17:47] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 11: Positionen werden beim Einlesen erkannt (E-Rechnung exakt inkl. Brutto-Umrechnung, PDF/OCR-Zeilenregel, Backoffice-KI je Position mit Kategorie); Beleg „In Positionen aufteilen“ mit Kategorie je Position inkl. „privat – nicht absetzbar“, Summenkontrolle, „Differenz als Position“; GWG/Anlage je Position; Zahlungen anteilig, Privatanteil sichtbar aber ohne Wirkung auf EUeR/Cockpit/AfA; Export-Spalte „Aufteilung“; Verfahrensdokumentation um Mahnwesen und Aufteilung ergaenzt. UI-Cache app v57 / style v25.
 - **Warum:** CEO: gemischte Rechnungen (z. B. Amazon) sauber behandeln; Positionen beim Scannen erkennen und einzeln auffuehren.

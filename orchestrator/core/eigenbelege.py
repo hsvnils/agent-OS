@@ -119,8 +119,10 @@ def einnahmen_cent(eintraege: list[dict], jahr: int) -> int:
     """Umsatz ausserhalb eigener Rechnungen (fuer den Kleinunternehmer-Waechter): Eigenbeleg-Einnahmen nach Datum +
     gebuchte Gutschriften (z. B. Facebook-Monetarisierung) nach Gutschriftsdatum."""
     eigen = sum(x["betrag_cent"] for x in EigenbelegStore._falte(eintraege).values()
-                if x["art"] == "einnahme" and x["status"] == "gebucht" and x["datum"][:4] == str(jahr))
+                if x["art"] == "einnahme" and x["status"] == "gebucht" and x["datum"][:4] == str(jahr)
+                and x.get("kategorie") != "anlage_abgang")          # Anlagevermoegen zaehlt nicht (§ 19 Abs. 2 UStG)
     gutschriften = sum(f["betrag_cent"] for f in (x.get("felder") or {} for x in EingangStore._falte(eintraege).values()
                                                    if x["status"] == "gebucht")
-                       if f.get("art") == "einnahme" and str(f.get("rechnungsdatum", ""))[:4] == str(jahr))
+                       if f.get("art") == "einnahme" and str(f.get("rechnungsdatum", ""))[:4] == str(jahr)
+                       and f.get("kategorie") != "anlage_abgang")
     return eigen + gutschriften

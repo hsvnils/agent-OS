@@ -39,7 +39,11 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 4. **Korrektur** nur per **Stornorechnung** (eigene Nummer, negativer Betrag, Bezug auf das Original) und ggf.
    neuer Rechnung.
 5. **Zahlungseingang** wird von Hand erfasst (Datum laut Kontoauszug, Teilzahlungen moeglich).
-6. **Mahnwesen**: Die 1. Mahnung stoesst der Inhaber an; nach Fristablauf fragt LUNA per Telegram nach der 2. bzw.
+6. **Barter (Tausch Leistung gegen Ware)**: Angebot, Auftrag und Rechnung weisen die Gegenleistung in Ware mit Wert
+   aus. Der Ware-Eingang wird mit Datum, Wert (eigener Nachweis, sonst Angabe der Marke) und Nachweis-Dateien gebucht;
+   er ist eine Betriebseinnahme zum ueblichen Endpreis und zaehlt zur Kleinunternehmer-Grenze. Fuer Content genutzte
+   Ware ist zugleich eine Anschaffung (GWG/Anlage), privat behaltene nur Einnahme, Leihgaben werden nur dokumentiert.
+7. **Mahnwesen**: Die 1. Mahnung stoesst der Inhaber an; nach Fristablauf fragt LUNA per Telegram nach der 2. bzw.
    letzten Mahnung und versendet erst nach Bestaetigung. Verzugszinsen ab Faelligkeit (Basiszinssatz + 9 bzw. 5
    Prozentpunkte, taggenau), Verzugspauschale 40 EUR (Unternehmer) bzw. 2,50 EUR je Mahnung (Verbraucher). Mahnungen
    `MA-JJJJ-NNNN` werden wie Rechnungen unveraenderbar abgelegt.
@@ -120,3 +124,4 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 |---|---|---|
 | 2026-09-28 | Erstfassung (KUNDEN_FINANZEN Etappe 9) | Claude Code, Abnahme durch den Inhaber offen |
 | 2026-09-28 | Mahnwesen (Etappe 10) und Aufteilung gemischter Rechnungen (Etappe 11) ergaenzt | Claude Code |
+| 2026-09-28 | Barter-Deals (Etappe 12) ergaenzt | Claude Code |
