@@ -80,6 +80,14 @@ kunden_store = KundenStore(buchhaltung)                                     # Fi
 _GOOGLE = None
 
 
+def _google_secrets() -> dict:
+    try:
+        from ..telegram.bot import _load_secrets
+        return _load_secrets()
+    except Exception:
+        return dict(os.environ)
+
+
 def _google():
     """Google Workspace fuer Angebote (Gmail-Entwurf mit Anhang, Kalender-Erinnerung) -- lazy, wie im Bot."""
     global _GOOGLE
@@ -95,6 +103,7 @@ def _google():
                                   zeitzone=sec.get("GOOGLE_CALENDAR_TIMEZONE", "Europe/Berlin"),
                                   kalender_id=sec.get("GOOGLE_CALENDAR_ID", ""),
                                   lese_kalender=sec.get("GOOGLE_CALENDAR_LESEN", ""))
+        _GOOGLE.konto_adresse = sec.get("GOOGLE_ACCOUNT_EMAIL", "")
     return _GOOGLE
 
 
@@ -1491,16 +1500,77 @@ async def angebot_versendet(nummer: str, request: Request):
             pdf = _angebot_pdf_ablegen(st, a, an="", entwurf_id="", von=_von(request))["pfad"]
             if a["pdfs"]:
                 hinweise.append("Inhalt wurde nach dem letzten Mail-Entwurf geaendert -- aktueller Stand wurde abgelegt.")
-        termine, fehler = _angebot_erinnerungen(a, _date.fromisoformat(jetzt_iso()[:10]))
-        hinweise += fehler
-        st.status_setzen(a["nummer"], "versendet", termine=termine, pdf=pdf, von=_von(request))
-        for c in (kunden_store.firma(a["firma"]) or {}).get("collab", []):   # CRM-Stufe „angebot“
-            anzeige = next((f.get("firma") for f in crm_store.firmen() if (f.get("firma") or "").strip().lower() == c), c)
-            try:
-                crm_store.status_setzen(anzeige, "angebot")
-            except Exception:
-                hinweise.append(f"CRM-Stufe fuer {anzeige} nicht gesetzt.")
-        return {"termine": termine, "hinweise": hinweise}
+        termine, weitere = _als_versendet(st, a, pdf=pdf, von=_von(request))
+        return {"termine": termine, "hinweise": hinweise + weitere}
+    return _kunden_aktion(tun)
+
+
+def _als_versendet(st: AngebotStore, a: dict, *, pdf: str, von: str, mail: dict | None = None) -> tuple[list, list]:
+    """Gemeinsam fuer „Als versendet markieren" und „Jetzt senden": Erinnerungen, Status (friert ein), CRM-Stufe."""
+    from datetime import date as _date
+    termine, hinweise = _angebot_erinnerungen(a, _date.fromisoformat(jetzt_iso()[:10]))
+    st.status_setzen(a["nummer"], "versendet", termine=termine, pdf=pdf, mail=mail, von=von)
+    for c in (kunden_store.firma(a["firma"]) or {}).get("collab", []):   # CRM-Stufe „angebot“
+        anzeige = next((f.get("firma") for f in crm_store.firmen() if (f.get("firma") or "").strip().lower() == c), c)
+        try:
+            crm_store.status_setzen(anzeige, "angebot")
+        except Exception:
+            hinweise.append(f"CRM-Stufe fuer {anzeige} nicht gesetzt.")
+    return termine, hinweise
+
+
+ABSENDER_NAME = "Hanserautisch – LUNA"
+
+
+@app.get("/api/crm/angebote/{nummer}/versandvorschau")
+def angebot_versandvorschau(nummer: str):
+    """Was „Jetzt senden" verschicken wuerde: Empfaenger, Betreff, Text, PDF (vom CEO in LUNA-OS anpassbar)."""
+    d = angebot_detail(nummer)
+    a = d["angebot"]
+    betreff, text = angebot_mail_text(a, d["firma"], d["ansprechpartner"], _firmendaten())
+    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": f"Angebot_{a['nummer']}.pdf",
+            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": d["google"],
+            "status": a["status"]}
+
+
+@app.post("/api/crm/angebote/{nummer}/senden")
+async def angebot_senden(nummer: str, request: Request):
+    """Angebot aus LUNAs Google-Konto an den Kunden senden -- Oeffentlichkeit = CEO-Tor: nur mit Modul finanzen (Owner)
+    und nur mit ausdruecklicher Bestaetigung aus der Vorschau. Danach automatisch „versendet" (Erinnerungen, CRM)."""
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if not hat_modul(u, "finanzen"):
+        return {"ok": False, "hinweis": "Angebote an Kunden senden darf nur der CEO (Modul Finanzen)."}
+    body = await _json(request)
+    st = _angebote()
+
+    def tun():
+        if body.get("bestaetigt") is not True:
+            raise ValueError("Senden braucht die ausdrueckliche Bestaetigung aus der Vorschau.")
+        a = st.angebot(nummer)
+        if not a:
+            raise KeyError(nummer)
+        if a["status"] != "entwurf":
+            raise ValueError(f"{a['nummer']} ist bereits {a['status']}.")
+        an = (body.get("an") or "").strip()
+        betreff, text = (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
+        if not an or "@" not in an or not betreff or not text:
+            raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
+        fd = _firmendaten()
+        if not fd:
+            raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
+        g = _google()
+        if not g.verfuegbar():
+            raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
+        pdf = st.pdf(a["nummer"], fd)
+        r = g.mail_senden(an, betreff, text, bestaetigt=True, absender_name=ABSENDER_NAME,
+                          anhaenge=[(f"Angebot_{a['nummer']}.pdf", pdf, "application/pdf")])
+        if not r.get("ok"):
+            raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
+        abl = st.pdf_ablegen(a["nummer"], pdf, an=an, entwurf_id="", von=_von(request))   # genau das gesendete PDF
+        mail = {"an": an, "message_id": r.get("id", ""), "thread_id": r.get("thread_id", ""), "betreff": betreff}
+        termine, hinweise = _als_versendet(st, st.angebot(a["nummer"]), pdf=abl["pfad"], von=_von(request), mail=mail)
+        return {"an": an, "termine": termine, "hinweise": hinweise}
     return _kunden_aktion(tun)
 
 

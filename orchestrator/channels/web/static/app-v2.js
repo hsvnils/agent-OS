@@ -803,12 +803,15 @@ async function anDetail(nr, meldung, fehler) {
   const pdfs = (a.pdfs || []).map(p => `<div class="v2-list-row"><span>📎</span><div class="grow"><b>${esc(p.pfad.split("/").pop())}</b><small>${esc(zeit(p.ts))}${p.an ? " · Mail-Entwurf an " + esc(p.an) : ""}${p.inhalt === a.inhalt ? "" : " · älterer Stand"}</small></div></div>`).join("");
   let aktionen = `<a class="v2-btn" href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 PDF ansehen</a>`;
   if (a.status === "entwurf") aktionen += `<button class="v2-btn" data-act="an-bearbeiten" data-id="${esc(nr)}">✎ Bearbeiten</button>
-    <button class="v2-btn pri" data-act="an-mail" data-id="${esc(nr)}" ${d.google ? "" : "disabled title=\"Google nicht verbunden\""}>✉️ Gmail-Entwurf mit PDF</button>
-    <button class="v2-btn" data-act="an-versendet" data-id="${esc(nr)}">✔ Als versendet markieren</button>`;
+    <button class="v2-btn pri" data-act="an-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled title=\"Google nicht verbunden\""}>✉️ Senden …</button>
+    <button class="v2-btn" data-act="an-versendet" data-id="${esc(nr)}" title="Nur wenn du das Angebot auf anderem Weg verschickt hast">✔ Anderweitig versendet</button>`;
   if (a.status === "versendet") aktionen += `<button class="v2-btn ok" data-act="an-status" data-id="${esc(nr)}" data-val="angenommen">Angenommen</button><button class="v2-btn" data-act="an-status" data-id="${esc(nr)}" data-val="abgelehnt">Abgelehnt</button>`
     + ((a.versendet_termine || []).length < 2 ? `<button class="v2-btn" data-act="an-erinnerungen" data-id="${esc(nr)}" title="Fehlende Kalender-Erinnerungen anlegen">📅 Erinnerungen nachholen</button>` : "");
   if ((a.pdfs || []).length) aktionen += `<a class="v2-btn" href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf?archiv=1" target="_blank" rel="noopener">📎 Abgelegtes PDF</a>`;
-  const verlaufLbl = { angebot_angelegt: "Angelegt", angebot_geaendert: "Geändert", angebot_pdf_abgelegt: "PDF abgelegt", angebot_status: "Status", angebot_erinnerungen: "Erinnerungen nachgeholt" };
+  const verlaufLbl = { angebot_angelegt: "Angelegt", angebot_geaendert: "Geändert", angebot_pdf_abgelegt: "PDF abgelegt", angebot_status: "Status", angebot_erinnerungen: "Erinnerungen nachgeholt", angebot_antwort: "Antwort vom Kunden" };
+  const vm = a.versendet_mail;
+  const gesendet = vm ? `<div class="v2-list-row"><span>✉️</span><div class="grow"><b>Gesendet an ${esc(vm.an)}</b><small>${esc(zeit(a.versendet_am))} · aus LUNAs Konto · „${esc(vm.betreff || "")}“</small></div></div>` : "";
+  const antworten = (a.antworten || []).slice().reverse().map(x => `<div class="v2-list-row"><span>💬</span><div class="grow"><b>${esc(x.von)}</b><small>${esc(x.datum || zeit(x.ts))}</small><div style="white-space:pre-wrap;margin-top:4px">${esc(x.vorschau || "")}</div></div></div>`).join("");
   const verlauf = (a.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(verlaufLbl[v.typ] || v.typ)}${v.status ? ": " + esc((AN_STATUS[v.status] || [v.status])[0]) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.an ? " · an " + esc(v.an) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
     <div class="v2-card-actions" style="flex-wrap:wrap;margin:8px 0 14px">${aktionen}</div>
@@ -821,11 +824,41 @@ async function anDetail(nr, meldung, fehler) {
     <div class="v2-kv"><span>Layout</span><b>${a.layout === "standard" ? "Schlicht (DIN)" : "Hanserautisch"}</b></div>
     ${a.titel ? `<div class="v2-kv"><span>Titel</span><b>${esc(a.titel)}</b></div>` : ""}
     ${d.firmendaten ? "" : `<div class="v2-msg err">Firmendaten fehlen auf der NAS — PDF nicht möglich.</div>`}
+    ${gesendet ? `<h3>Versand</h3>${gesendet}` : ""}${antworten ? `<h3>Antworten (${(a.antworten || []).length})</h3>${antworten}` : ""}
     ${termine ? `<h3>Erinnerungen</h3>${termine}` : ""}${pdfs ? `<h3>Abgelegte PDFs</h3>${pdfs}` : ""}
     <h3>Verlauf</h3>${verlauf}
     </div><div>
+    <div id="an-senden-box"></div>
     <h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
     </div></div>`, true);
+}
+
+/* ---------- Senden aus LUNAs Konto (CEO-Klick, mit Vorschau) ---------- */
+async function anSendenVorschau(nr) {
+  const box = $("#an-senden-box"); if (!box) return;
+  box.innerHTML = `<div class="v2-empty">Lade Vorschau…</div>`;
+  const v = await jget(`/api/crm/angebote/${encodeURIComponent(nr)}/versandvorschau`);
+  if (!v) { box.innerHTML = emptyRow("Vorschau nicht verfügbar."); return; }
+  box.innerHTML = `<h3>Angebot senden</h3><div class="v2-form v2-an-senden">
+    <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
+    <label class="v2-feld"><small>An *</small><input id="as-an" type="email" value="${esc(v.an || "")}" placeholder="kunde@firma.de"></label>
+    <label class="v2-feld"><small>Betreff *</small><input id="as-betreff" value="${esc(v.betreff)}"></label>
+    <label class="v2-feld"><small>Text * (Signatur anpassbar)</small><textarea id="as-text" class="v2-inp" rows="10">${esc(v.text)}</textarea></label>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="an-senden-jetzt" data-id="${esc(nr)}">✉️ Jetzt senden</button><button class="v2-btn" data-act="an-senden-abbruch">Abbrechen</button></div>
+    <div id="as-msg" class="v2-msg"></div>
+    <small class="v2-sub">Geht aus LUNAs Google-Konto raus. Danach ist das Angebot „versendet“ (nicht mehr änderbar), die Erinnerungen werden angelegt, Antworten des Kunden erscheinen hier und kommen per Telegram.</small></div>`;
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+async function anSendenJetzt(nr) {
+  const an = $("#as-an").value.trim(), betreff = $("#as-betreff").value.trim(), text = $("#as-text").value.trim();
+  if (!an || !an.includes("@")) return kundenMsg("as-msg", "Bitte eine gültige Empfänger-Adresse eintragen.", false);
+  if (!confirm(`Angebot ${nr} jetzt an ${an} senden?\n\nDas lässt sich nicht zurückholen.`)) return;
+  const b = $('[data-act="an-senden-jetzt"]'); if (b) { b.disabled = true; b.textContent = "⏳ sendet…"; }
+  const r = await jpost(`/api/crm/angebote/${encodeURIComponent(nr)}/senden`, { an, betreff, text, bestaetigt: true });
+  if (!r || !r.ok) { if (b) { b.disabled = false; b.textContent = "✉️ Jetzt senden"; } return kundenMsg("as-msg", (r && r.hinweis) || "Senden fehlgeschlagen.", false); }
+  if (AKTIV === "angebote") renderAngebote();
+  return anDetail(nr, [`Gesendet an ${r.an}.`, ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n"));
 }
 
 /* ---------- Katalog (Preise pflegen, nur mit Modul Finanzen) ---------- */
@@ -1222,11 +1255,14 @@ async function handleAct(act, el) {
     case "an-speichern": return anSpeichern(id);
     case "an-mail": { flash("⏳ erstellt…"); const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/mailentwurf`, {}); return anDetail(id, r && r.ok ? `Gmail-Entwurf an ${r.an} mit PDF angelegt — in Gmail prüfen und selbst senden. Danach hier „Als versendet markieren“.` : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "an-versendet": {
-      if (!confirm("Hast du das Angebot verschickt? Danach ist es nicht mehr änderbar, und die Kalender-Erinnerungen werden angelegt.")) return;
+      if (!confirm("Hast du das Angebot auf anderem Weg verschickt (nicht über „Senden“)? Danach ist es nicht mehr änderbar, und die Kalender-Erinnerungen werden angelegt.")) return;
       flash("⏳ …"); const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/versendet`, {});
       if (AKTIV === "angebote") renderAngebote();
       return anDetail(id, r && r.ok ? ["Als versendet markiert.", ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
+    case "an-senden": return anSendenVorschau(id);
+    case "an-senden-jetzt": return anSendenJetzt(id);
+    case "an-senden-abbruch": { const bx = $("#an-senden-box"); if (bx) bx.innerHTML = ""; return; }
     case "an-erinnerungen": {
       flash("⏳ …"); const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/erinnerungen`, {});
       return anDetail(id, r && r.ok ? [...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n") || "Erledigt." : ((r && r.hinweis) || "Fehler."), !(r && r.ok) || !(r.termine || []).length && (r.hinweise || []).some(h => h.startsWith("Kalender") || h.startsWith("Google")));

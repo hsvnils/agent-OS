@@ -4,8 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: CEO startet die Container neu; dann Verifikation (Telegram-Agenda, Briefing, Angebots-Erinnerung
-  in LUNAs Kalender) und Go fuer Etappe 4 (Angebote aus LUNAs Konto senden).
+- Naechster Schritt: CEO startet die Container neu; Test-Angebot an die Privatadresse des CEO senden, darauf antworten,
+  Meldung + Anzeige pruefen -> Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -91,14 +91,16 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 
 ### Etappe 2: Umschalten auf das LUNA-Konto
 
-- Status: in Umsetzung (CEO-Go 2026-09-28) -- Zugang umgeschaltet, Container-Neustart durch den CEO offen
+- Status: abgeschlossen (2026-09-28) -- verifiziert beim Empfaenger
 - Ergebnis bisher: CEO hat mit **luna.hanserautisch@gmail.com** zugestimmt (Skript prueft jetzt das Konto mit
   `--erwartet`); Token in `.env` MACO470 (Sicherung `~/env-backups/`) + NAS, Pruefsummen gleich. `.env` beide:
   `GOOGLE_CALENDAR_DEFAULT_ATTENDEE` entfernt (CEO hat LUNAs Kalender direkt im iPhone, keine iCloud-Einladung mehr),
   `GOOGLE_ACCOUNT_EMAIL=luna.hanserautisch@gmail.com` (CRM erkennt ein-/ausgehend). Live geprueft: Gmail-Profil = LUNA,
   Kalender = LUNAs eigener, Selbstcheck gruen. Nach dem Neustart (CEO): Telegram-Test legte den Termin **in LUNAs
   Kalender** an (Umschaltung ok), aber am 16.05.2024 -> BF-35 (Chat kannte das Datum nicht) behoben, Deploy + Neustart
-  + Wiederholung des Tests offen.
+  + Wiederholung des Tests offen. **Verifikation 2026-09-28 11:09:** nach Neustart nennt der Chat „Dienstag, 29. September
+  2026", Termin „LUNA-Konto-Test 2" liegt in LUNAs Kalender (im iPhone des CEO sichtbar). LUNAs „geloescht" um 11:03 war
+  echt (Aktivitaetsprotokoll `termin_loeschen` + Google-Status `cancelled` zur selben Zeit).
 - Ziel / Scope: `deploy/google_oauth_neu.py` mit dem LUNA-Konto (Token nur in die `.env` MACO470 + NAS),
   Selbstcheck gruen, Telegram-Werkzeuge + Briefing + Watcher gegen das neue Konto pruefen.
 - Gate: Briefing, Agenda und LUNA-Suche laufen; Selbstcheck meldet keinen Fehler.
@@ -110,14 +112,23 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 
 ### Etappe 4: Angebots-Versand nach Entscheidung 2
 
-- Status: geplant
+- Status: umgesetzt (CEO-Go 2026-09-28), Deploy + Test mit der Privatadresse des CEO offen
+- Ergebnis: LUNA-OS „✉️ Senden …" -> Vorschau (Absender „Hanserautisch – LUNA <luna.hanserautisch@gmail.com>",
+  Empfaenger/Betreff/Text anpassbar, PDF-Link) -> „Jetzt senden" + Rueckfrage -> `POST .../senden` (nur Modul finanzen,
+  nur mit `bestaetigt`), Gmail-Versand mit PDF-Anhang, genau dieses PDF abgelegt, dann automatisch „versendet"
+  (Erinnerungen in LUNAs Kalender, CRM-Stufe, Mail-/Thread-ID gespeichert). Bot prueft alle 15 min die Mailverlaeufe
+  gesendeter Angebote (bis 60 Tage), neue Kundenantworten -> Eintrag `angebot_antwort` (Dedup) + Telegram-Meldung;
+  Detail zeigt Versand und Antworten. „Gmail-Entwurf" ersetzt, „Anderweitig versendet" bleibt fuer andere Wege.
+  Tests + Gegenproben (Rechte, Dedup), Suite 859 gruen; Oberflaeche im Headless-Chrome geprueft.
 - Ziel / Scope: Knopf „Jetzt senden" in LUNA-OS (CEO-Klick = Freigabe, Vorschau von Empfaenger/Betreff/Text/PDF),
   Versand aus dem LUNA-Konto, Status „versendet" automatisch, Antworten des Kunden dem Angebot zuordnen und melden.
 - Gate: Test-Angebot an eine eigene Adresse, PDF-Anhang korrekt, Status/Verlauf stimmen.
 
 ### Etappe 5: Alten Zugang widerrufen + Abschluss
 
-- Status: geplant
+- Status: abgeschlossen (2026-09-28) -- CEO hat „LUNA" in hanserautisch@gmail.com entfernt; geprueft: alter Token ->
+  `invalid_grant`, neuer (LUNA-Konto) funktioniert. Doku nachgezogen: `governance/zugriffs-policy.md`,
+  `deploy/google-oauth-setup.md`, `docs/datenfluesse.md`, `ROADMAP.md`; Code-Standard `GOOGLE_ACCOUNT_EMAIL` -> LUNA.
 - Ziel / Scope: CEO entfernt „LUNA" unter myaccount.google.com -> Sicherheit -> Drittanbieter-Zugriff im Konto
   hanserautisch@gmail.com; Doku (`deploy/google-oauth-setup.md`, `docs/datenfluesse.md`, Zugriffs-Policy) aktualisieren.
 - Gate: alter Token ist ungueltig, alles laeuft ueber das LUNA-Konto.

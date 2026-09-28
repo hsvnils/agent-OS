@@ -204,6 +204,11 @@ class AngebotStore:
                 a = out[d["nummer"]]
                 a["pdfs"].append({k: d.get(k) for k in ("pfad", "sha256", "inhalt", "entwurf_id", "an")} | {"ts": e["ts"]})
                 a["verlauf"].append(spur | {"an": d.get("an", "")})
+            elif t == "angebot_antwort":                     # Kundenantwort im Mailverlauf (Etappe 4 Google-Konto)
+                a = out[d["nummer"]]
+                a.setdefault("antworten", []).append({k: d.get(k) for k in ("message_id", "von", "datum", "vorschau")}
+                                                     | {"ts": e["ts"]})
+                a["verlauf"].append(spur | {"an": d.get("von", "")})
             elif t == "angebot_erinnerungen":                # nachgeholte Kalender-Erinnerungen (BF-33)
                 a = out[d["nummer"]]
                 a["versendet_termine"] = a.get("versendet_termine", []) + d.get("termine", [])
@@ -212,7 +217,7 @@ class AngebotStore:
                 a = out[d["nummer"]]
                 a["status"] = d["status"]
                 a[d["status"] + "_am"] = e["ts"]
-                for k in ("termine", "grund", "pdf"):
+                for k in ("termine", "grund", "pdf", "mail"):
                     if d.get(k):
                         a[f"{d['status']}_{k}"] = d[k]
                 a["verlauf"].append(spur | {"status": d["status"], "grund": d.get("grund", "")})
@@ -378,8 +383,29 @@ class AngebotStore:
                 raise ValueError(f"{nummer} ist {a['status']} -- Erinnerungen nur fuer versendete Angebote.")
         self.bh.erfassen_geprueft("angebot_erinnerungen", {"nummer": nummer, "termine": termine}, von=von, pruefe=pruefe)
 
+    def antwort_erfassen(self, nummer: str, nachricht: dict, *, von: str = "LUNA-Mail") -> bool:
+        """Kundenantwort einmalig protokollieren (Dedup ueber die Gmail-Message-ID). True = neu."""
+        nummer = (nummer or "").strip().upper()
+        mid = str(nachricht.get("id") or "")
+
+        def pruefe(eintraege):
+            a = self._falte(eintraege).get(nummer)
+            if not a:
+                raise KeyError(nummer)
+            if any(x.get("message_id") == mid for x in a.get("antworten", [])):
+                raise _Nichts()
+        try:
+            self.bh.erfassen_geprueft("angebot_antwort", {"nummer": nummer, "message_id": mid,
+                                                          "von": str(nachricht.get("von") or "")[:200],
+                                                          "datum": str(nachricht.get("datum") or "")[:80],
+                                                          "vorschau": str(nachricht.get("vorschau") or "")[:500]},
+                                      von=von, pruefe=pruefe)
+        except _Nichts:
+            return False
+        return True
+
     def status_setzen(self, nummer: str, status: str, *, grund: str = "", termine: list | None = None,
-                      pdf: str = "", von: str = "") -> dict:
+                      pdf: str = "", mail: dict | None = None, von: str = "") -> dict:
         nummer = (nummer or "").strip().upper()
         erlaubt = {"entwurf": ("versendet",), "versendet": ("angenommen", "abgelehnt"),
                    "angenommen": (), "abgelehnt": ()}
@@ -398,6 +424,8 @@ class AngebotStore:
             daten["termine"] = termine
         if pdf:
             daten["pdf"] = pdf
+        if mail:
+            daten["mail"] = mail                                 # {an, message_id, thread_id} beim Versand aus LUNA-OS
         self.bh.erfassen_geprueft("angebot_status", daten, von=von, pruefe=pruefe)
         return {"status": status}
 
@@ -452,6 +480,36 @@ def preisliste_pdf(katalog: dict, firmendaten: dict, *, logo: Path | None, ids: 
         anrede=anrede_moin(ap, (firma or {}).get("name", "")) if firma else "Moin,", einleitung=t.get("intro", ""),
         texte=t, zeige_kalkulation=True, zeige_kennzahlen=True, gruppen=gruppen, summen=None,
         zuschlag_liste=katalog["zuschlaege"], fuss_zusatz="Preisliste freibleibend, Angebote individuell.")
+
+
+def antworten_pruefen(st: "AngebotStore", google, *, eigene_adresse: str = "", notify=None, tage: int = 60) -> int:
+    """Mailverlaeufe gesendeter Angebote auf Kundenantworten pruefen, neue protokollieren und dem CEO melden.
+    Laeuft im 15-Minuten-Poll des Bots. Rueckgabe: Anzahl neuer Antworten."""
+    from datetime import timedelta
+    grenze = (jetzt() - timedelta(days=tage)).isoformat()
+    eigen = (eigene_adresse or "").strip().lower()
+    neu = 0
+    for a in st._falte(st.bh.eintraege()).values():
+        mail = a.get("versendet_mail") or {}
+        if not mail.get("thread_id") or a["status"] not in ("versendet", "angenommen") \
+                or str(a.get("versendet_am") or "") < grenze:
+            continue
+        r = google.thread_lesen(mail["thread_id"])
+        if not r.get("ok"):
+            continue
+        for m in r.get("nachrichten", []):
+            if m.get("gesendet") or (eigen and eigen in str(m.get("von") or "").lower()):
+                continue
+            if st.antwort_erfassen(a["nummer"], m):
+                neu += 1
+                if notify:
+                    try:
+                        notify(f"✉️ Antwort auf Angebot {a['nummer']} von {m.get('von', '')}: "
+                               f"{str(m.get('vorschau') or '')[:160]}", abteilung="CRO", kategorie="crm",
+                               quelle="angebote", detail=f"LUNA-OS -> Angebote -> {a['nummer']}")
+                    except Exception:
+                        pass
+    return neu
 
 
 def mail_text(a: dict, firma: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:

@@ -105,6 +105,7 @@ class GoogleWorkspace:
         # Welcher Kalender: `primary` = der eigene des angemeldeten Kontos. Mit LUNAs eigenem Google-Konto
         # (LUNA_GOOGLE_KONTO_ROADMAP.md) ist das der **freigegebene Kalender des CEO**, z. B. seine Gmail-Adresse.
         self.kalender_id = (kalender_id or os.environ.get("GOOGLE_CALENDAR_ID") or "primary").strip()
+        self.konto_adresse = ""                          # optional gesetzt (Absender-Kopfzeile), sonst aus der Umgebung
         # Zusaetzliche Kalender **nur zum Lesen** (Agenda/Briefing, Kollisionen) -- z. B. der fuer LUNA freigegebene
         # Kalender des CEO. Geschrieben wird nur in `kalender_id` (CEO 2026-09-28).
         roh = lese_kalender if lese_kalender is not None else os.environ.get("GOOGLE_CALENDAR_LESEN", "")
@@ -182,8 +183,9 @@ class GoogleWorkspace:
         except Exception as exc:
             return _fehler(f"Entwurf fehlgeschlagen: {str(exc)[:160]}")
 
-    def mail_senden(self, an: str, betreff: str, text: str, *, bestaetigt: bool = False) -> dict:
-        """Gated: ohne bestaetigt=True nur Vorschau (Mensch-Tor)."""
+    def mail_senden(self, an: str, betreff: str, text: str, *, bestaetigt: bool = False,
+                    anhaenge: list | None = None, absender_name: str = "") -> dict:
+        """Gated: ohne bestaetigt=True nur Vorschau (Mensch-Tor). Rueckgabe mit `thread_id` (fuer Antworten)."""
         if (g := self._guard()):
             return g
         if not bestaetigt:
@@ -193,10 +195,33 @@ class GoogleWorkspace:
         try:
             svc = self.auth.service("gmail", "v1")
             sent = svc.users().messages().send(
-                userId="me", body={"raw": _mime(an, betreff, text)}).execute()
-            return _ok(gesendet=True, id=sent.get("id"))
+                userId="me", body={"raw": _mime(an, betreff, text, anhaenge, absender=self._absender(absender_name))}).execute()
+            return _ok(gesendet=True, id=sent.get("id"), thread_id=sent.get("threadId", ""))
         except Exception as exc:
             return _fehler(f"Senden fehlgeschlagen: {str(exc)[:160]}")
+
+    def _absender(self, name: str) -> str:
+        """From-Kopfzeile mit Anzeigename (Adresse = angemeldetes Konto, aus GOOGLE_ACCOUNT_EMAIL)."""
+        adresse = (os.environ.get("GOOGLE_ACCOUNT_EMAIL") or self.konto_adresse or "").strip()
+        return f"{name} <{adresse}>" if name and adresse else ""
+
+    def thread_lesen(self, thread_id: str) -> dict:
+        """Nachrichten eines Mailverlaufs (Kopfdaten + Vorschau) -- z. B. Antworten auf ein gesendetes Angebot."""
+        if (g := self._guard()):
+            return g
+        try:
+            svc = self.auth.service("gmail", "v1")
+            t = svc.users().threads().get(userId="me", id=thread_id, format="metadata",
+                                          metadataHeaders=["From", "Subject", "Date"]).execute()
+            out = []
+            for m in t.get("messages", []):
+                h = {x.get("name", "").lower(): x.get("value", "") for x in (m.get("payload") or {}).get("headers", [])}
+                out.append({"id": m.get("id"), "von": h.get("from", ""), "betreff": h.get("subject", ""),
+                            "datum": h.get("date", ""), "vorschau": m.get("snippet", ""),
+                            "gesendet": "SENT" in (m.get("labelIds") or [])})
+            return _ok(nachrichten=out)
+        except Exception as exc:
+            return _fehler(f"Mailverlauf-Abruf fehlgeschlagen: {str(exc)[:160]}")
 
     # ---------------- Kalender ----------------
 
@@ -439,8 +464,10 @@ def _dt(s: str):
         return None
 
 
-def _mime(an: str, betreff: str, text: str, anhaenge: list | None = None) -> str:
+def _mime(an: str, betreff: str, text: str, anhaenge: list | None = None, absender: str = "") -> str:
     msg = EmailMessage()
+    if absender:
+        msg["From"] = absender
     msg["To"] = an
     msg["Subject"] = betreff
     msg.set_content(text)
@@ -487,12 +514,16 @@ class MockGoogleWorkspace:
                                                             "anhaenge": [(n, len(d), t) for n, d, t in anhaenge or []]}]
         return _ok(entwurf_id="d1", hinweis="Entwurf angelegt (nicht gesendet).")
 
-    def mail_senden(self, an, betreff, text, *, bestaetigt=False):
+    def mail_senden(self, an, betreff, text, *, bestaetigt=False, anhaenge=None, absender_name=""):
         if not bestaetigt:
             return {"ok": False, "bestaetigung_noetig": True,
                     "vorschau": {"an": an, "betreff": betreff, "text": text}}
-        self.gesendet.append({"an": an, "betreff": betreff})
-        return _ok(gesendet=True, id="s1")
+        self.gesendet.append({"an": an, "betreff": betreff, "text": text, "absender_name": absender_name,
+                              "anhaenge": [(n, len(d), t) for n, d, t in anhaenge or []]})
+        return _ok(gesendet=True, id=f"s{len(self.gesendet)}", thread_id=f"t{len(self.gesendet)}")
+
+    def thread_lesen(self, thread_id):
+        return _ok(nachrichten=list(getattr(self, "threads", {}).get(thread_id, [])))
 
     def kalender_agenda(self, tage=7, max_results=20):
         return _ok(termine=[{"id": "e1", "titel": "Demo", "start": "2026-06-26T10:00:00",

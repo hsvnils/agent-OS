@@ -17,6 +17,30 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 11:37] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 4: Angebote aus LUNAs Google-Konto senden (Vorschau, CEO-Klick,
+  nur Modul finanzen, PDF-Anhang, Absender „Hanserautisch – LUNA"), danach automatisch versendet; Kundenantworten im
+  Mailverlauf werden im 15-min-Poll erkannt, am Angebot gezeigt und per Telegram gemeldet. `google_workspace`:
+  `mail_senden(anhaenge, absender_name)` mit `thread_id`, `thread_lesen`. Cache v39. Tests + Gegenproben, Suite 859 gruen.
+- **Warum:** CEO-Go „Go fuer Etappe 4".
+- **Betroffen:** `orchestrator/governance/google_workspace.py`, `orchestrator/core/angebote.py`,
+  `orchestrator/channels/{web/app.py,telegram/bot.py}`, `orchestrator/channels/web/static/{app-v2.js,index-v2.html}`,
+  `orchestrator/tests/test_angebote.py`, `docs/datenfluesse.md`, `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
+## [2026-09-28 11:31] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 5 abgeschlossen: CEO hat LUNAs Zugang in hanserautisch@gmail.com
+  widerrufen; alter Token geprueft -> `invalid_grant`, LUNA-Konto funktioniert. Zugriffs-Policy (Historie), Setup-Anleitung,
+  Roadmap-Verzeichnis aktualisiert; Standard `GOOGLE_ACCOUNT_EMAIL` im Bot auf LUNAs Adresse.
+- **Warum:** CEO-Meldung „Erledigt" (Screenshot verknuepfte Apps ohne LUNA).
+- **Betroffen:** `governance/zugriffs-policy.md`, `deploy/google-oauth-setup.md`, `ROADMAP.md`, `LUNA_GOOGLE_KONTO_ROADMAP.md`,
+  `orchestrator/channels/telegram/bot.py`
+
+## [2026-09-28 11:10] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 2 abgeschlossen und beim Empfaenger verifiziert: Chat nennt das richtige
+  Datum, Termin liegt in LUNAs Kalender (iPhone des CEO); LUNAs Loeschung des 2024-Termins war echt (Protokoll + Google).
+- **Warum:** CEO-Screenshot nach Neustart.
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
 ## [2026-09-28 11:05] — Claude Code (MACO470)
 - **Was:** BF-35 behoben: Chat bekommt bei jeder Nachricht das aktuelle Datum (Wochentag, Datum, Uhrzeit Europe/Berlin)
   in der Systemanweisung (`system_prompt()`); Termin-Werkzeuge weisen Starts in der Vergangenheit zurueck. Tests
