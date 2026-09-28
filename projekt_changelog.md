@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 09:28] — Claude Code (MACO470)
+- **Was:** Angebots-Detail ebenfalls ganzseitig (Aktionen oben, Infos/Verlauf links, Positionen rechts; Cache v36/v17).
+  Regel „Belege immer ganzseitig" in `UI.md` 11 festgehalten. Roadmap Etappe 6 um **PDF-Scan** erweitert (Rechnungen
+  hochladen -> auslesen -> ablegen -> verarbeiten, Werte nur als Vorschlag, lokal bevorzugt).
+- **Warum:** CEO 2026-09-28: fuer Angebote, Belege usw. IMMER die grosse Flaeche nutzen; PDF-Scan fuer Rechnungen notieren.
+- **Betroffen:** `orchestrator/channels/web/static/{app-v2.js,style-v2.css,index-v2.html}`, `UI.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-28 09:14] — Claude Code (MACO470)
 - **Was:** Editor-Ueberarbeitung (ganzseitig, Loeschen, Firmensuche) nach `main` gemergt, gepusht, per
   `deploy/sync-to-nas.sh --no-restart` auf die NAS gebracht; live geprueft (V2 v35 wird ausgeliefert). Nur statische

@@ -241,7 +241,14 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 - Ziel / Scope: Upload in LUNA-OS (PDF/Foto), **E-Rechnungen (XRechnung/ZUGFeRD) einlesen und lesbar anzeigen**, Original
   unveraendert archivieren; Lieferant, Datum, Betrag, Kategorie (EUeR-Zuordnung), Zahlungsdatum; optional Eingang aus
   Gmail-Anhaengen.
-- Gate: je ein PDF-, Foto- und XRechnungs-Beleg korrekt erfasst und archiviert (Hash).
+- **PDF-Scan (CEO-Wunsch 2026-09-28):** CEO laedt Rechnungen/Belege (PDF, Scan, Handyfoto) in LUNA-OS hoch; LUNA
+  **digitalisiert** sie (Text/Werte auslesen: Lieferant, Rechnungsnummer, Datum, Betrag, Leistung), **sortiert** sie weg
+  (Ablage je Jahr mit ER-Nummer, Lieferant im Kundenstamm als Typ „Lieferant“) und **verarbeitet** sie (Vorschlag fuer
+  EUeR-Kategorie und Zahlungsdatum). Erkannte Werte sind **Vorschlaege** -- der CEO bestaetigt vor dem Buchen. Auslesen
+  bevorzugt lokal (Backoffice-LLM/OCR auf dem MACO470), Cloud nur mit Freigabe (Belege enthalten Geschaeftsdaten);
+  Mehrfach-Upload moeglich. Oberflaeche ganzseitig (siehe UI.md 11).
+- Gate: je ein PDF-, Foto- und XRechnungs-Beleg korrekt erfasst und archiviert (Hash); ein gescanntes Papier-PDF wird
+  richtig ausgelesen und nach Bestaetigung abgelegt.
 
 ### Etappe 7: Zahlungen und EUeR-Journal
 

@@ -686,10 +686,10 @@ async function firmaWaehlen(nr) {
   await anApListe("");
 }
 async function anEditor(nummer, firmaVorwahl) {
-  openModal(nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-empty">Lade…</div>`);
+  openModal(nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-empty">Lade…</div>`, true);
   const [k, d] = await Promise.all([jget("/api/crm/kunden"), nummer ? jget("/api/crm/angebote/" + encodeURIComponent(nummer)) : Promise.resolve(null), katalogLaden()]);
   AN_FIRMEN = ((k && k.firmen) || []).filter(f => f.aktiv);
-  if (!AN_FIRMEN.length) return openModal("Neues Angebot", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."));
+  if (!AN_FIRMEN.length) return openModal("Neues Angebot", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."), true);
   const a = (d && d.angebot) || { firma: firmaVorwahl || AN_FIRMEN[0].nummer, datum: heuteIso(), gueltig_bis: heuteIso(14), nachfassen_tage: 7, positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch" };
   const b = a.bloecke || {};
   const fa = AN_FIRMEN.find(f => f.nummer === a.firma);
@@ -790,9 +790,9 @@ async function anSpeichern(nummer) {
 
 /* ---------- Detail ---------- */
 async function anDetail(nr, meldung, fehler) {
-  openModal(nr, `<div class="v2-empty">Lade…</div>`);
+  openModal(nr, `<div class="v2-empty">Lade…</div>`, true);
   const d = await jget("/api/crm/angebote/" + encodeURIComponent(nr));
-  const a = d && d.angebot; if (!a) return openModal(nr, emptyRow("Angebot nicht gefunden."));
+  const a = d && d.angebot; if (!a) return openModal(nr, emptyRow("Angebot nicht gefunden."), true);
   const ap = d.ansprechpartner, sm = a.summen || { formate_cent: a.summe_cent, zuschlaege: [], rabatt: null, gesamt_cent: a.summe_cent };
   const pos = a.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${cent2eur(p.gesamt_cent)}</td></tr>`).join("");
   const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Formate</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
@@ -810,6 +810,8 @@ async function anDetail(nr, meldung, fehler) {
   const verlaufLbl = { angebot_angelegt: "Angelegt", angebot_geaendert: "Geändert", angebot_pdf_abgelegt: "PDF abgelegt", angebot_status: "Status" };
   const verlauf = (a.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(verlaufLbl[v.typ] || v.typ)}${v.status ? ": " + esc((AN_STATUS[v.status] || [v.status])[0]) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.an ? " · an " + esc(v.an) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
+    <div class="v2-card-actions" style="flex-wrap:wrap;margin:8px 0 14px">${aktionen}</div>
+    <div class="v2-an-detail"><div>
     <div class="v2-kv"><span>Status</span>${anBadge(a.anzeige_status)}</div>
     <div class="v2-kv"><span>Firma</span><b>${esc(a.firma)} · ${esc(d.firma.name || "")}</b></div>
     <div class="v2-kv"><span>Ansprechpartner</span><b>${ap ? esc(ap.nummer + " · " + [ap.vorname, ap.nachname].filter(Boolean).join(" ")) : "—"}</b></div>
@@ -817,11 +819,12 @@ async function anDetail(nr, meldung, fehler) {
     <div class="v2-kv"><span>Datum / gültig bis</span><b>${esc(new Date(a.datum).toLocaleDateString("de-DE"))} / ${esc(new Date(a.gueltig_bis).toLocaleDateString("de-DE"))}</b></div>
     <div class="v2-kv"><span>Layout</span><b>${a.layout === "standard" ? "Schlicht (DIN)" : "Hanserautisch"}</b></div>
     ${a.titel ? `<div class="v2-kv"><span>Titel</span><b>${esc(a.titel)}</b></div>` : ""}
-    <div class="v2-card-actions" style="flex-wrap:wrap;margin:12px 0">${aktionen}</div>
     ${d.firmendaten ? "" : `<div class="v2-msg err">Firmendaten fehlen auf der NAS — PDF nicht möglich.</div>`}
-    <h3>Positionen</h3><table class="v2-table"><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
     ${termine ? `<h3>Erinnerungen</h3>${termine}` : ""}${pdfs ? `<h3>Abgelegte PDFs</h3>${pdfs}` : ""}
-    <h3>Verlauf</h3>${verlauf}`);
+    <h3>Verlauf</h3>${verlauf}
+    </div><div>
+    <h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
+    </div></div>`, true);
 }
 
 /* ---------- Katalog (Preise pflegen, nur mit Modul Finanzen) ---------- */
