@@ -466,18 +466,16 @@ def _start_buchhaltung_loop(ctx) -> None:
                     if alarm:
                         ctx.notifications.enqueue(alarm, abteilung="CFO", kategorie="fehler", quelle="buchhaltung",
                                                   nach_briefing=False)
-                    # Etappe 5: ueberfaellige Rechnungen einmal taeglich melden (nur lesen, nichts buchen)
+                    # CFO-Finanzcheck (CEO 2026-09-28): ist alles erfasst und laeuft? Faellige Luecken gebuendelt
+                    # melden (u. a. ueberfaellige Rechnungen, Belege, Euro-Betrag, Monatsabgleich, fehlende
+                    # wiederkehrende Posten, KU-Grenze). Nur lesen, nie buchen; dieselben Punkte stehen auf der Hauptseite.
                     from ...core.kunden import KundenStore
-                    from ...core.rechnungen import RechnungStore, ueberfaellige
+                    from ...core.todos import cfo_meldung, geschaefts_todos
                     _bh = Buchhaltung(log.parent)
-                    _ue = ueberfaellige(RechnungStore(_bh, KundenStore(_bh)))
-                    if _ue:
-                        from ...core.beleg_pdf import eur as _eur
-                        ctx.notifications.enqueue(
-                            f"🧾 {len(_ue)} Rechnung(en) ueberfaellig: " + ", ".join(
-                                f"{r['nummer']} ({_eur(r['summe_cent'] - r['bezahlt_cent'])}, faellig {r['faellig_am']})"
-                                for r in _ue[:5]), abteilung="CFO", kategorie="finanzen", quelle="rechnungen",
-                            detail="LUNA-OS -> Rechnungen")
+                    _text = cfo_meldung(geschaefts_todos(_bh, KundenStore(_bh), crm=False))
+                    if _text:
+                        ctx.notifications.enqueue(_text, abteilung="CFO", kategorie="finanzen", quelle="finanzcheck",
+                                                  detail="LUNA-OS -> Hauptseite -> Zu erledigen", dedup_stunden=20)
                     ctx.agenda.markiere_briefing("buchhaltung-pruefung", datum)
             except Exception as exc:
                 print(f"[buchhaltung] Fehler: {exc}", flush=True)
@@ -1378,11 +1376,16 @@ def main() -> None:
                         from ...core.eingangsbelege import EingangStore, mail_eingang_pruefen
                         from ...core.auftraege import AuftragStore
                         _abs = [x for x in str(secrets.get("BELEG_ABSENDER", "hsvnils@icloud.com,hanserautisch@gmail.com,"
-                                                                          "nils@hanserautisch.de")).split(",") if x.strip()]
+                                                                          "nils@hanserautisch.de,moin@hanserautisch.de")).split(",") if x.strip()]
                         mail_eingang_pruefen(EingangStore(_bh), ctx.google, absender=_abs,
                                              backoffice=AuftragStore(ROOT / "backoffice" / "log.jsonl", secrets=ctx.leak_secrets),
                                              notify=(ctx.notifications.enqueue if ctx.notifications else None),
                                              gesehen=_BELEG_MAILS_GESEHEN)
+                        # Fremdwaehrung (z. B. Meta in USD): KI-Vorschlaege holen, dann Kalender „Euro-Betrag eintragen“
+                        from ...core.eingangsbelege import fremdwaehrung_erinnern, llm_ergebnisse_uebernehmen
+                        llm_ergebnisse_uebernehmen(EingangStore(_bh), AuftragStore(ROOT / "backoffice" / "log.jsonl",
+                                                                                   secrets=ctx.leak_secrets))
+                        fremdwaehrung_erinnern(EingangStore(_bh), ctx.google)
                     except Exception as exc:
                         print(f"[beleg-sicherung] {exc}", flush=True)
                 # Instagram-DM-Poll: opt-in INSTAGRAM_DM_POLL=1. Token selbst-erneuernd (INSTAGRAM_USER_TOKEN
@@ -1475,6 +1478,30 @@ def main() -> None:
                     cbchat = str((((cb.get("message") or {}).get("chat")) or {}).get("id", ""))
                     if allowed and cbchat != allowed:
                         _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "Nicht autorisiert."})
+                    elif data.startswith("eur:"):                  # Euro-Betrag buchen (Vorschau oben) -- nur nach ✅
+                        _, nr, c, datum, ent = data.split(":", 4)
+                        mid = (cb.get("message") or {}).get("message_id")
+                        if ent == "y":
+                            from ...core.buchhaltung import Buchhaltung as _BH
+                            from ...core.eingangsbelege import EingangStore as _ES, euro_buchen
+                            from ...core.erinnerungen import erledigte_entfernen
+                            _bh = _BH(ROOT / "buchhaltung")
+                            try:
+                                r = euro_buchen(_ES(_bh), nr, int(c), datum)
+                                weg = erledigte_entfernen(_bh, ctx.google, von="Telegram:CEO")
+                                from ...core.beleg_pdf import eur as _eur
+                                res = (f"✅ Gebucht: {nr} · {_eur(r['betrag_cent'])} · "
+                                       f"{'Geldeingang' if r['art'] == 'einnahme' else 'Zahlung'} am {datum[8:10]}.{datum[5:7]}.{datum[:4]}"
+                                       + (" · Kalender-Erinnerung gelöscht" if weg else ""))
+                            except (ValueError, KeyError) as exc:
+                                res = f"⚠️ Nicht gebucht: {exc}"
+                        else:
+                            res = "❌ Abgebrochen -- nichts gebucht."
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "OK"})
+                        if mid:
+                            _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
+                                                            "reply_markup": json.dumps({"inline_keyboard": []}),
+                                                            "text": fuer_telegram(res)})
                     elif data.startswith("apv:") and getattr(ctx, "approvals", None) is not None:
                         _, aid, ent = data.split(":", 2)
                         apv = ctx.approvals.get(aid)
@@ -1537,6 +1564,22 @@ def main() -> None:
                     _api(token, "sendMessage", {"chat_id": chat_id,
                          "text": "Das war keine Zahl — Freigabe abgebrochen. Frag gern neu."})
                 continue
+            # Euro-Betrag zu einem Beleg in Fremdwaehrung (z. B. „Facebook 241,80“) -> Vorschau mit ✅/❌ (CEO 2026-09-28)
+            try:
+                if (ROOT / "buchhaltung" / "log.jsonl").exists():
+                    from ...core.buchhaltung import Buchhaltung as _BH
+                    from ...core.eingangsbelege import EingangStore as _ES, euro_vorschau, euro_zuordnen, offene_fremdwaehrung
+                    _st = _ES(_BH(ROOT / "buchhaltung"))
+                    _z = euro_zuordnen(text, offene_fremdwaehrung(_st))
+                    if _z:
+                        _cb = f"eur:{_z['nummer']}:{_z['betrag_cent']}:{_z['datum']}"
+                        kb = {"inline_keyboard": [[{"text": "✅ Buchen", "callback_data": _cb + ":y"},
+                                                   {"text": "❌ Abbrechen", "callback_data": _cb + ":n"}]]}
+                        _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(euro_vorschau(_z)),
+                                                    "reply_markup": json.dumps(kb)})
+                        continue
+            except Exception as exc:
+                print(f"[euro] Zuordnung: {exc}", flush=True)
             if text.strip().lower() in ("/reset", "/neu", "/start"):
                 sessions.pop(chat_id, None)
                 _api(token, "sendMessage", {"chat_id": chat_id,

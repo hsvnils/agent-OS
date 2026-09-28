@@ -40,8 +40,8 @@ let STATE = {}, OVERVIEW = {}, LOOP = {}, INVEST = {};
 let AKTIV = "dash", SUBTAB = {};
 
 /* Dashboard-Bearbeiten (wie V1): Widget-Reihenfolge + ausgeblendete, pro Nutzer in PREFS.v2_dashboard. */
-const DASH2_DEFAULT = ["freigaben", "loop", "budget", "trefferquote", "provider", "compliance", "live", "schritte", "meldungen", "research"];
-const DASH2_TITEL = { budget: "Monatsbudget", trefferquote: "Prognose-Trefferquote", freigaben: "Offene Freigaben", provider: "Provider verbunden", loop: "Investment · Lern-Loop", compliance: "Compliance-Puls", live: "Live-Aktivität", schritte: "Erste Schritte", meldungen: "Meldungen", research: "Research-Tickets" };
+const DASH2_DEFAULT = ["todos", "freigaben", "loop", "budget", "trefferquote", "provider", "compliance", "live", "schritte", "meldungen", "research"];
+const DASH2_TITEL = { todos: "Zu erledigen", budget: "Monatsbudget", trefferquote: "Prognose-Trefferquote", freigaben: "Offene Freigaben", provider: "Provider verbunden", loop: "Investment · Lern-Loop", compliance: "Compliance-Puls", live: "Live-Aktivität", schritte: "Erste Schritte", meldungen: "Meldungen", research: "Research-Tickets" };
 let DASH2 = { order: [...DASH2_DEFAULT], hidden: [] };
 let EDIT2 = false, DRAG2 = null;
 let _VERLAUF = [], _trendRO = null;
@@ -49,6 +49,7 @@ let _VERLAUF = [], _trendRO = null;
 function normDash2(l) {
   l = l || {}; const hidden = (Array.isArray(l.hidden) ? l.hidden : []).filter(id => DASH2_DEFAULT.includes(id));
   const order = (Array.isArray(l.order) ? l.order : []).filter(id => DASH2_DEFAULT.includes(id));
+  if (!order.includes("todos")) order.unshift("todos");             // neu (2026-09-28): ganz nach oben
   DASH2_DEFAULT.forEach(id => { if (!order.includes(id)) order.push(id); });
   return { order, hidden };
 }
@@ -192,7 +193,7 @@ function openModal(title, html, breit = false) {   // breit = ganze Seite (z. B.
   m.innerHTML = `<div class="v2-modal-back" data-modal-close></div><div class="v2-modal-card${breit ? " breit" : ""}"><header><b>${esc(title)}</b><button class="v2-icon" data-modal-close>✕</button></header><div class="v2-modal-body">${html}</div></div>`;
   m.hidden = false;
 }
-function closeModal() { const m = $("#v2-modal"); if (m) m.hidden = true; }
+function closeModal() { const m = $("#v2-modal"); if (m && !m.hidden) { m.hidden = true; if (AKTIV === "dash") renderDash(); } }   // To-dos neu laden
 
 /* Fehler-Verlauf-Chart (LUNA vs. Baseline): breiten-bewusst gerendert -> KEINE Streckung.
    viewBox-Breite = Container-Pixelbreite -> 1:1-Abbildung (Achsen/Text unverzerrt). ResizeObserver wie V1. */
@@ -249,7 +250,9 @@ function dash2Tray(W) {
   return `<div class="v2-tray"><b>Ausgeblendet:</b> ${hid.length ? hid.map(id => `<button class="v2-btn" data-wadd2="${id}">＋ ${esc(DASH2_TITEL[id])}</button>`).join("") : `<span class="v2-sub">nichts ausgeblendet</span>`}</div>`;
 }
 async function renderDash() {
-  [STATE, OVERVIEW, LOOP] = await Promise.all([jget("/api/state"), jget("/api/overview"), jget("/api/investment/loop")]);
+  let TODOS;
+  [STATE, OVERVIEW, LOOP, TODOS] = await Promise.all([jget("/api/state"), jget("/api/overview"), jget("/api/investment/loop"), jget("/api/todos")]);
+  TODOS = TODOS || { todos: [], anzahl: 0, dringend: 0 };
   STATE = STATE || {}; OVERVIEW = OVERVIEW || {}; LOOP = LOOP || {}; _VERLAUF = LOOP.verlauf || [];
   const g = (LOOP.kennzahlen && LOOP.kennzahlen.gesamt) || {};
   const antraege = STATE.antraege || [], provs = OVERVIEW.providers || [];
@@ -277,6 +280,7 @@ async function renderDash() {
   const miniList = (arr, keys, sub) => arr.slice(0, 2).map(x => `<div class="v2-mini"><b>${esc(String(firstOf(x, keys, "—")).slice(0, 54))}</b>${sub ? `<small>${esc(String(firstOf(x, sub, "")).slice(0, 40))}</small>` : ""}</div>`).join("") || `<div class="v2-sub">nichts offen</div>`;
 
   const W = {
+    todos: { span: "w12", link: null, aria: `Zu erledigen: ${TODOS.anzahl}`, html: todosInner(TODOS) },
     freigaben: { span: "w4 tall", link: null, aria: `Offene Freigaben: ${antraege.length}`, html: freigInner },
     loop: { span: "w8 tall", link: "go:investment", aria: `Investment Lern-Loop, Richtungsquote ${g.n ? pct(g.richtungsquote) : "keine Daten"}`, html: `<div class="v2-kpi">${g.n ? pct(g.richtungsquote) : "–"} <span class="delta ${(g.anteil_besser_baseline || 0) >= .5 ? "up" : "down"}">${g.n ? pct(g.anteil_besser_baseline) + " schlägt Baseline" : ""}</span></div><div class="v2-sub">Richtungsquote · MAE ${num(g.mae_pct)} vs Baseline ${num(g.baseline_mae_pct)} · n=${g.n || 0}</div>${chartMount()}` },
     budget: { span: "", link: null, aria: `Monatsbudget ${budget}`, html: kpiInner(String(budget), null, "aus finance/budget.md") },
@@ -296,6 +300,23 @@ async function renderDash() {
     <div class="v2-grid ${EDIT2 ? "editing" : ""}">${order.map(id => dashTile(id, W[id])).join("")}</div>
     ${EDIT2 ? dash2Tray(W) : ""}`;
   mountTrends();
+}
+/* To-dos des Tagesbetriebs (Belege, Rechnungen, Angebote, Aufträge, CRM, Reels) -- zusammengefasst je Bereich.
+   Erledigt wird durch die eigentliche Arbeit („Öffnen“) oder direkt („✓ …“); LUNA löscht dazugehörige Kalendertermine. */
+function todosInner(d) {
+  const liste = d.todos || [];
+  if (!liste.length) return `<div class="v2-check done" style="border:none"><span class="mark">✓</span>Alles erledigt — nichts offen im Tagesbetrieb.</div>`;
+  const gruppen = {}; liste.forEach(t => (gruppen[t.bereich] = gruppen[t.bereich] || []).push(t));
+  const zeile = (t) => `<div class="v2-list-row"><span>${t.icon}</span><div class="grow"><b>${esc(t.titel)}</b><small>${esc(t.detail || "")}</small></div>
+    ${t.faellig ? `<span class="v2-badge ${t.dringend ? "err" : "neutral"}">${t.dringend ? (t.faellig < heuteIso() ? "überfällig" : "heute") : esc(datumDe(t.faellig))}</span>` : ""}
+    ${t.erledigen ? `<button class="v2-btn ok sm" data-act="todo-erledigen" data-val="${esc(t.erledigen.pfad)}" data-schluessel="${esc(t.erledigen.schluessel || "")}">${esc(t.erledigen.label)}</button>` : ""}
+    <button class="v2-btn sm" data-act="todo-oeffnen" data-val="${esc(t.act)}" data-id="${esc(t.act_id || "")}">Öffnen ›</button></div>`;
+  const bloecke = Object.entries(gruppen).map(([b, ts]) => {
+    const dr = ts.filter(t => t.dringend).length;
+    return `<details class="v2-todo-gruppe" ${dr || Object.keys(gruppen).length === 1 ? "open" : ""}><summary><b>${esc(ts[0].icon)} ${esc(b)}</b> <span class="v2-badge ${dr ? "err" : "neutral"}">${ts.length}${dr ? ` · ${dr} fällig` : ""}</span></summary>${ts.map(zeile).join("")}</details>`;
+  }).join("");
+  return `<div class="v2-kpi">${d.anzahl} <span class="delta ${d.dringend ? "down" : "up"}">${d.dringend ? d.dringend + " heute fällig/überfällig" : "nichts dringend"}</span></div>
+    <div class="v2-sub">Tagesbetrieb — Freigaben für die Weiterentwicklung stehen separat.</div><div class="v2-todo-liste">${bloecke}</div>`;
 }
 function sparkFromVerlauf(verlauf) {
   const v = (verlauf || []).slice(-28); if (!v.length) return "";
@@ -1207,17 +1228,17 @@ function reBezahltForm(nr) {
 const BL_STATUS = { zu_pruefen: ["Zu prüfen", "wartet"], gebucht: ["Gebucht", "ok"], verworfen: ["Verworfen", "neutral"] };
 const blBadge = (st) => { const [l, c] = BL_STATUS[st] || [st, "neutral"]; return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
 const TQ = { "xml": "E-Rechnung (XML)", "pdf-text": "PDF-Text", "ocr": "Texterkennung (Scan/Foto)", "leer": "kein Text erkannt" };
-let BL_KAT = {};
+let BL_KAT = {}, BL_KAT_EIN = {};
 RENDER.belege = renderBelege;
 async function renderBelege(meldung) {
   const sub = SUBTAB.belege || "pruefen";
   const d = await jget("/api/finanzen/belege") || { belege: [], kategorien: {} };
-  BL_KAT = d.kategorien || {};
+  BL_KAT = d.kategorien || {}; BL_KAT_EIN = d.kategorien_einnahme || {};
   const alle = d.belege || [];
   const liste = sub === "pruefen" ? alle.filter(b => b.status === "zu_pruefen") : sub === "gebucht" ? alle.filter(b => b.status === "gebucht") : alle;
   const jahr = String(new Date().getFullYear());
-  const gebuchtJahr = alle.filter(b => b.status === "gebucht" && String(b.rechnungsdatum || "").startsWith(jahr));
-  const rows = liste.map(b => `<tr class="klick" data-act="bl-detail" data-id="${esc(b.nummer)}"><td><b>${esc(b.nummer)}</b>${b.quelle === "mail" ? " ✉️" : ""}${b.e_rechnung ? " <small>E-Rechnung</small>" : ""}</td><td>${esc(b.lieferant || b.dateiname)}</td><td>${esc(datumDe(b.rechnungsdatum))}</td><td style="text-align:right">${b.betrag_cent != null ? cent2eur(b.betrag_cent) : "–"}</td><td>${esc(BL_KAT[b.kategorie] || "")}</td><td>${blBadge(b.status)}${b.bezahlt_am ? " 💶" : b.bezahlt_cent ? " <small>teilw. bezahlt</small>" : ""}</td></tr>`).join("");
+  const gebuchtJahr = alle.filter(b => b.status === "gebucht" && b.art !== "einnahme" && String(b.rechnungsdatum || "").startsWith(jahr));
+  const rows = liste.map(b => `<tr class="klick" data-act="bl-detail" data-id="${esc(b.nummer)}"><td><b>${esc(b.nummer)}</b>${b.quelle === "mail" ? " ✉️" : ""}${b.e_rechnung ? " <small>E-Rechnung</small>" : ""}</td><td>${esc(b.lieferant || b.dateiname)}</td><td>${esc(datumDe(b.rechnungsdatum))}</td><td style="text-align:right${b.art === "einnahme" ? ";color:var(--v2-green)" : ""}">${b.betrag_cent != null ? (b.art === "einnahme" ? "+" : "") + cent2eur(b.betrag_cent) : "–"}</td><td>${b.art === "einnahme" ? "Gutschrift (Einnahme)" : esc(BL_KAT[b.kategorie] || "")}</td><td>${blBadge(b.status)}${b.bezahlt_am ? " 💶" : b.bezahlt_cent ? " <small>teilw. bezahlt</small>" : ""}</td></tr>`).join("");
   const upload = `<div class="v2-bl-drop" id="bl-drop"><b>Rechnungen hierher ziehen</b><small>PDF, E-Rechnung (XML), Foto · bis 15 MB · mehrere auf einmal</small>
     <div class="v2-card-actions" style="justify-content:center"><label class="v2-btn pri">📄 Dateien wählen<input id="bl-datei" type="file" multiple accept=".pdf,.xml,image/*" hidden></label>
     <label class="v2-btn">📷 Foto aufnehmen<input id="bl-kamera" type="file" accept="image/*" capture="environment" hidden></label></div>
@@ -1265,15 +1286,16 @@ async function blDetail(nr, meldung, fehler) {
   openModal(nr, `<div class="v2-empty">Lade…</div>`, true);
   const d = await jget("/api/finanzen/belege/" + encodeURIComponent(nr));
   const b = d && d.beleg; if (!b) return openModal(nr, emptyRow("Beleg nicht gefunden."), true);
-  BL_KAT = d.kategorien || BL_KAT;
+  BL_KAT = d.kategorien || BL_KAT; BL_KAT_EIN = d.kategorien_einnahme || BL_KAT_EIN;
   const f = Object.keys(b.felder || {}).length ? b.felder : null, v = b.vorschlag || {};
+  const art = (f ? f.art : v.art) || "ausgabe", ein = art === "einnahme";
   const w = (k) => f ? (k === "betrag" ? cent2feld(f.betrag_cent) : f[k] || "") : (v[k] || "");
   const src = `/api/finanzen/belege/${encodeURIComponent(nr)}/datei`;
   const vorschau = (b.mime || "").startsWith("image/") ? `<img src="${src}" alt="Beleg" class="v2-bl-bild">`
     : b.mime === "application/pdf" ? `<iframe src="${src}" class="v2-bl-pdf" title="Beleg"></iframe>` : `<pre class="v2-mail-text">${esc(b.text || "")}</pre>`;
   const quelle = { "e-rechnung": "E-Rechnung (exakt)", regeln: "Schnell-Erkennung", backoffice: "LUNA-Backoffice (lokale KI)" }[v.quelle] || v.quelle || "";
   const kiLaeuft = !f && v.quelle !== "backoffice" && v.quelle !== "e-rechnung" && ["neu", "in_arbeit"].includes(d.ki_status);
-  const katOpt = Object.entries(BL_KAT).map(([k, l]) => `<option value="${esc(k)}" ${w("kategorie") === k ? "selected" : ""}>${esc(l)}</option>`).join("");
+  const katOpt = Object.entries(ein ? BL_KAT_EIN : BL_KAT).map(([k, l]) => `<option value="${esc(k)}" ${w("kategorie") === k ? "selected" : ""}>${esc(l)}</option>`).join("");
   const lief = (d.lieferanten || []).map(l => `<option value="${esc(l.name)}">`).join("");
   const gesperrt = b.status === "verworfen" ? "disabled" : "";
   const lbl = { eingang_angelegt: "Eingegangen", eingang_vorschlag: "Vorschlag", eingang_gebucht: "Gebucht", eingang_bezahlt: "Zahlung", eingang_zahlung_storniert: "Zahlung storniert", eingang_verworfen: "Verworfen" };
@@ -1289,8 +1311,10 @@ async function blDetail(nr, meldung, fehler) {
       <div class="v2-kv"><span>Status</span>${blBadge(b.status)}${b.bezahlt_am ? ` <span class="v2-badge ok">bezahlt ${esc(datumDe(b.bezahlt_am))}</span>` : b.bezahlt_cent ? ` <span class="v2-badge wartet">teilweise bezahlt · offen ${esc(cent2eur(rest))}</span>` : ""}</div>
       ${!f ? `<div class="v2-kv"><span>Vorschlag von</span><b>${esc(quelle)}${kiLaeuft ? " · KI liest noch …" : ""}</b></div>` : ""}
       ${kiLaeuft ? `<button class="v2-btn" data-act="bl-detail" data-id="${esc(nr)}">🔄 KI-Vorschlag abholen</button>` : ""}
+      ${!f && v.waehrung && v.waehrung !== "EUR" ? `<div class="v2-msg err" style="margin:8px 0">Betrag in ${esc(v.waehrung)}: ${esc(v.betrag_fremd || "?")}. Bitte den <b>Euro-Betrag</b> eintragen, der auf dem Konto angekommen bzw. abgebucht worden ist (Kontoauszug) — nur der zählt in der EÜR.</div>` : ""}
       <h3>${f ? "Gebucht (korrigierbar)" : "Prüfen & buchen"}</h3><div class="v2-form">
-        <label class="v2-feld"><small>Lieferant *</small><input id="bl-lieferant" list="bl-lieferanten" value="${esc(w("lieferant"))}" ${gesperrt}><datalist id="bl-lieferanten">${lief}</datalist></label>
+        <label class="v2-feld"><small>Art *</small><select id="bl-art" ${gesperrt}><option value="ausgabe" ${ein ? "" : "selected"}>Ausgabe — wir zahlen (Eingangsrechnung)</option><option value="einnahme" ${ein ? "selected" : ""}>Einnahme — wir bekommen Geld (Gutschrift, z. B. Facebook-Monetarisierung)</option></select></label>
+        <label class="v2-feld"><small id="bl-lief-lbl">${ein ? "Von (Aussteller der Gutschrift) *" : "Lieferant *"}</small><input id="bl-lieferant" list="bl-lieferanten" value="${esc(w("lieferant"))}" ${gesperrt}><datalist id="bl-lieferanten">${lief}</datalist></label>
         <label class="v2-modlbl"><input type="checkbox" id="bl-lief-anlegen" ${f && f.lieferant_firma ? "" : "checked"} ${gesperrt}> im Kundenstamm als Lieferant führen</label>
         <div class="v2-an-zeile"><label class="v2-feld"><small>Rechnungsnummer</small><input id="bl-nr" value="${esc(w("rechnungsnummer"))}" ${gesperrt}></label>
           <label class="v2-feld"><small>Rechnungsdatum *</small><input id="bl-datum" type="date" value="${esc(w("rechnungsdatum"))}" ${gesperrt}></label>
@@ -1299,16 +1323,21 @@ async function blDetail(nr, meldung, fehler) {
           <label class="v2-feld" style="grid-column: span 2"><small>Kategorie (EÜR) *</small><select id="bl-kat" ${gesperrt}><option value="">— wählen —</option>${katOpt}</select></label></div>
         <label class="v2-feld" id="bl-nd-feld" ${w("kategorie") === "anlage" ? "" : "hidden"}><small>Nutzungsdauer in Jahren * (Computer/Software: 1 = sofort voll absetzbar · Foto/Video-Technik: 7)</small><input id="bl-nd" type="number" min="1" max="50" value="${esc(String((f && f.nutzungsdauer_jahre) || ""))}" ${gesperrt}></label>
         <label class="v2-feld"><small>Leistung / was wurde gekauft</small><input id="bl-leistung" value="${esc(w("leistung"))}" ${gesperrt}></label>
-        <label class="v2-feld"><small>Notiz</small><input id="bl-notiz" value="${esc(f ? f.notiz || "" : "")}" ${gesperrt}></label>
+        <label class="v2-feld"><small>Notiz</small><input id="bl-notiz" value="${esc(f ? f.notiz || "" : v.betrag_fremd ? `${v.betrag_fremd} ${v.waehrung} laut Beleg` : "")}" ${gesperrt}></label>
         ${b.status !== "verworfen" ? `<div class="v2-card-actions"><button class="v2-btn pri" data-act="bl-buchen" data-id="${esc(nr)}">✔ ${f ? "Korrektur buchen" : "Buchen"}</button>
-          ${f && rest !== 0 ? `<button class="v2-btn ok" data-act="bl-bezahlt-form" data-id="${esc(nr)}">💶 Zahlung erfassen</button>` : ""}
+          ${f && rest !== 0 ? `<button class="v2-btn ok" data-act="bl-bezahlt-form" data-id="${esc(nr)}">💶 ${ein ? "Geldeingang erfassen" : "Zahlung erfassen"}</button>` : ""}
           ${!f ? `<button class="v2-btn" data-act="bl-verwerfen" data-id="${esc(nr)}">Kein Beleg / verwerfen</button>` : ""}</div>` : `<div class="v2-msg">Verworfen: ${esc(b.grund || "")}</div>`}
         <div id="bl-form-msg" class="v2-msg"></div></div>
       <div id="bl-aktion-box"></div>
       ${zahlungen ? `<h3>Zahlungen</h3>${zahlungen}` : ""}
+      ${ein ? `<div class="v2-msg" style="margin:8px 0">Gutschrift = Einnahme: zählt zum Umsatz und zur Kleinunternehmer-Grenze. Achtung: Weist die Gutschrift <b>Umsatzsteuer</b> aus, kannst du sie dem Finanzamt schulden (§ 14c UStG), solange du nicht widersprichst — dann dem Aussteller widersprechen und im Konto „Kleinunternehmer“ hinterlegen.</div>` : ""}
       <small class="v2-sub">Kleinunternehmer: Der Bruttobetrag ist die Ausgabe (kein Vorsteuerabzug). Über 800 € ist es kein geringwertiges Wirtschaftsgut, sondern ein Anlagegut (Abschreibung). Das Original bleibt unverändert archiviert.</small>
     </div></div>`, true);
   const kt = $("#bl-kat"); if (kt) kt.addEventListener("change", () => { const nd = $("#bl-nd-feld"); if (nd) nd.hidden = kt.value !== "anlage"; });
+  const at = $("#bl-art"); if (at && kt) at.addEventListener("change", () => {              // Kategorien je Art umschalten
+    const e = at.value === "einnahme", liste = e ? BL_KAT_EIN : BL_KAT;
+    kt.innerHTML = (e ? "" : `<option value="">— wählen —</option>`) + Object.entries(liste).map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join("");
+    $("#bl-lief-lbl").textContent = e ? "Von (Aussteller der Gutschrift) *" : "Lieferant *"; kt.dispatchEvent(new Event("change")); });
 }
 function blBezahltForm(nr) {
   const box = $("#bl-aktion-box"); if (!box) return;
@@ -1322,14 +1351,14 @@ function blBezahltForm(nr) {
 }
 async function blBuchen(nr, trotz) {
   const felder = { lieferant: $("#bl-lieferant").value.trim(), rechnungsnummer: $("#bl-nr").value.trim(), rechnungsdatum: $("#bl-datum").value, faellig_am: $("#bl-faellig").value,
-    betrag: $("#bl-betrag").value.trim(), kategorie: $("#bl-kat").value, leistung: $("#bl-leistung").value.trim(), notiz: $("#bl-notiz").value.trim(), trotz_doppelt: !!trotz,
+    betrag: $("#bl-betrag").value.trim(), kategorie: $("#bl-kat").value, leistung: $("#bl-leistung").value.trim(), notiz: $("#bl-notiz").value.trim(), trotz_doppelt: !!trotz, art: $("#bl-art").value,
     nutzungsdauer_jahre: $("#bl-kat").value === "anlage" ? $("#bl-nd").value : "" };
   const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(nr)}/buchen`, { felder, lieferant_anlegen: $("#bl-lief-anlegen").checked });
   if (!r) return kundenMsg("bl-form-msg", "Keine Verbindung zum Server.", false);
   if (!r.ok && /schon als/.test(r.hinweis || "") && confirm(r.hinweis + "\n\nTrotzdem buchen?")) return blBuchen(nr, true);
   if (!r.ok) return kundenMsg("bl-form-msg", r.hinweis || "Fehler.", false);
   if (AKTIV === "belege") renderBelege();
-  return blDetail(nr, `Gebucht: ${r.felder.lieferant} · ${cent2eur(r.felder.betrag_cent)} · ${BL_KAT[r.felder.kategorie] || r.felder.kategorie}`);
+  return blDetail(nr, `Gebucht: ${r.felder.lieferant} · ${cent2eur(r.felder.betrag_cent)} · ${r.felder.art === "einnahme" ? "Einnahme (Gutschrift)" : BL_KAT[r.felder.kategorie] || r.felder.kategorie}`);
 }
 
 /* =========================== Finanzen (KUNDEN_FINANZEN Etappe 7) =========================== */
@@ -1368,7 +1397,7 @@ function finUebersicht(u) {
     <small class="v2-sub">${anteil} % von 100.000 € · Rechnungen nach Rechnungsdatum + Einnahmen ohne Rechnung${w.vorjahr_ueberschritten ? " · ⚠️ Vorjahr über 25.000 €!" : ""}</small>`;
   const stufe = (icon, titel, anzahl, cent, ziel) => `<div class="v2-fin-stufe klick" data-tab="${ziel}"><span>${icon}</span><div><b>${esc(titel)}</b><small>${anzahl}${cent != null ? " · " + esc(cent2eur(cent)) : ""}</small></div></div>`;
   const pipeline = `<div class="v2-fin-pipeline">${stufe("📄", "Angebote offen", p.angebote_anzahl, p.angebote_cent, "angebote:offen")}${stufe("🤝", "Aufträge ohne Rechnung", p.auftraege_anzahl, p.auftraege_cent, "angebote:auftraege")}${stufe("✎", "Rechnungsentwürfe", p.rechnung_entwuerfe, null, "rechnungen:entwuerfe")}${stufe("⏳", "Offene Rechnungen", f.anzahl, f.summe_cent, "rechnungen:offen")}</div>`;
-  const posten = (liste, act) => liste.slice(0, 6).map(x => `<div class="v2-list-row klick" data-act="${act}" data-id="${esc(x.nummer)}"><span class="v2-badge ${x.ueberfaellig ? "err" : "neutral"}">${x.ueberfaellig ? "überfällig" : x.faellig_am ? esc(datumDe(x.faellig_am)) : "offen"}</span><div class="grow"><b>${esc(x.gegenpartei || x.nummer)}</b><small>${esc(x.nummer)}</small></div><b>${esc(cent2eur(x.offen_cent))}</b></div>`).join("");
+  const posten = (liste, act) => liste.slice(0, 6).map(x => `<div class="v2-list-row klick" data-act="${x.act || act}" data-id="${esc(x.nummer)}"><span class="v2-badge ${x.ueberfaellig ? "err" : "neutral"}">${x.ueberfaellig ? "überfällig" : x.faellig_am ? esc(datumDe(x.faellig_am)) : "offen"}</span><div class="grow"><b>${esc(x.gegenpartei || x.nummer)}</b><small>${esc(x.nummer)}</small></div><b>${esc(cent2eur(x.offen_cent))}</b></div>`).join("");
   const todos = [
     u.belege_zu_pruefen ? `<div class="v2-list-row klick" data-tab="belege:pruefen"><span>📥</span><div class="grow"><b>${u.belege_zu_pruefen} Beleg(e) prüfen und buchen</b></div><span>›</span></div>` : "",
     f.ueberfaellig ? `<div class="v2-list-row klick" data-tab="rechnungen:offen"><span>⚠️</span><div class="grow"><b>${f.ueberfaellig} Rechnung(en) überfällig</b><small>nachfassen oder Zahlung erfassen</small></div><span>›</span></div>` : "",
@@ -1801,6 +1830,15 @@ async function handleAct(act, el) {
       if (AKTIV === "finanzen") renderFinanzen(); if (AKTIV === "belege") renderBelege(); if (AKTIV === "rechnungen") renderRechnungen();
       const ok = !!(r && r.ok), m = ok ? "Zahlung storniert — sie bleibt sichtbar, zählt aber nicht mehr." : ((r && r.hinweis) || "Fehler.");
       return act === "re-zahlung-storno" ? reDetail(id, m, !ok) : blDetail(id, m, !ok);
+    }
+    case "todo-oeffnen": {
+      if (val.startsWith("go:")) { const [, s, t] = val.split(":"); return go(s, t); }
+      return handleAct(val, el);
+    }
+    case "todo-erledigen": {
+      el.disabled = true; const r = await jpost(val, el.dataset.schluessel ? { schluessel: el.dataset.schluessel } : {});
+      if (!r || r.ok === false) { el.disabled = false; return alert((r && r.hinweis) || "Fehler."); }
+      return renderDash();
     }
     case "eb-neu": return ebNeu(val);
     case "eb-speichern": return ebSpeichern(val);

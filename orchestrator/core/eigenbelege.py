@@ -14,9 +14,8 @@ from datetime import date
 
 from .beleg_pdf import cent
 from .buchhaltung import Buchhaltung, jetzt
-from .eingangsbelege import KATEGORIEN
+from .eingangsbelege import EINNAHME_KATEGORIEN, KATEGORIEN, EingangStore
 
-EINNAHME_KATEGORIEN = {"umsatz": "Betriebseinnahmen (Kleinunternehmer)"}
 ARTEN = ("einnahme", "ausgabe")
 
 
@@ -117,6 +116,11 @@ class EigenbelegStore:
 
 
 def einnahmen_cent(eintraege: list[dict], jahr: int) -> int:
-    """Sonstige Betriebseinnahmen eines Jahres (fuer den Kleinunternehmer-Waechter: zaehlt zum Umsatz)."""
-    return sum(x["betrag_cent"] for x in EigenbelegStore._falte(eintraege).values()
-               if x["art"] == "einnahme" and x["status"] == "gebucht" and x["datum"][:4] == str(jahr))
+    """Umsatz ausserhalb eigener Rechnungen (fuer den Kleinunternehmer-Waechter): Eigenbeleg-Einnahmen nach Datum +
+    gebuchte Gutschriften (z. B. Facebook-Monetarisierung) nach Gutschriftsdatum."""
+    eigen = sum(x["betrag_cent"] for x in EigenbelegStore._falte(eintraege).values()
+                if x["art"] == "einnahme" and x["status"] == "gebucht" and x["datum"][:4] == str(jahr))
+    gutschriften = sum(f["betrag_cent"] for f in (x.get("felder") or {} for x in EingangStore._falte(eintraege).values()
+                                                   if x["status"] == "gebucht")
+                       if f.get("art") == "einnahme" and str(f.get("rechnungsdatum", ""))[:4] == str(jahr))
+    return eigen + gutschriften

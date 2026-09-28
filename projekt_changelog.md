@@ -17,6 +17,36 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 19:40] — Claude Code
+- **Was:** Euro-Betrag per Telegram: der CEO schickt z. B. „Facebook 241,80“ (auch mit Belegnummer/Datum, auch als Sprachnachricht); LUNA ordnet regelbasiert dem offenen Fremdwaehrungs-Beleg zu, zeigt Vorschau mit ✅ Buchen / ❌ Abbrechen und bucht erst nach dem Klick (Beleg + Geldeingang), loescht danach die Kalender-Erinnerung; das To-do verschwindet, der CFO fasst nicht mehr nach. Fragen und mehrdeutige Nachrichten gehen normal an den Chat.
+- **Warum:** CEO-Wunsch: Euro-Summe der Facebook-Zahlung per Telegram zuordnen.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_euro_telegram.py` (neu), `docs/entscheidungs-register.md`, `docs/datenfluesse.md`
+
+## [2026-09-28 19:05] — Head of Agents (umgesetzt durch Claude Code)
+- **Was:** Charta CFO erweitert: Finanz-Vollstaendigkeit ueberwachen und den CEO bei Fehlendem erinnern (Auftrag, Aufgabenkatalog: taeglicher Finanzcheck 05:00 + Monatsabgleich-Erinnerung, Workflow Finanzcheck); ausdruecklich nur melden, nie buchen/bestaetigen.
+- **Warum:** CEO-Anweisung („Die Finanzagents muessen immer im Blick haben, dass alles eingetragen ist und laeuft“); Diff vorgelegt, vom CEO freigegeben („Charta Erweiterung freigegeben“), AGENTS.md 3.3.
+- **Betroffen:** `agents/03_cfo.md`
+
+## [2026-09-28 18:55] — Claude Code
+- **Was:** CFO-Finanzcheck: taeglich 05:00 (regelbasiert) prueft der CFO, ob alles eingetragen ist und laeuft -- Monatsabgleich mit dem Kontoauszug, fehlende wiederkehrende Posten, Offen-Gebliebenes (Zahlung, Gutschrift, Auftrag ohne Rechnung, Entwurf, ungepruefter Beleg), faellige Posten, KU-Grenze; Punkte auf der Hauptseite („✓ Abgeglichen“ / „✓ Kommt diesen Monat nicht“, protokolliert) und gebuendelt per Telegram, nur wenn etwas faellig ist; ersetzt die Einzelmeldung ueberfaelliger Rechnungen. Charta-Erweiterung CFO als Diff vorgelegt (noch NICHT angewendet). UI-Cache app v50.
+- **Warum:** CEO: Die Finanzagenten muessen im Blick haben, dass alles eingetragen ist und laeuft, und bei Fehlendem erinnern.
+- **Betroffen:** `orchestrator/core/todos.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/telegram/bot.py`, `static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_todos.py`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`
+
+## [2026-09-28 18:20] — Claude Code
+- **Was:** Hauptseite von LUNA-OS V2: neue Kachel „Zu erledigen“ ganz oben -- alle offenen To-dos des Tagesbetriebs, je Bereich zusammengefasst (Belege pruefen/Euro-Betrag eintragen/bezahlen, ueberfaellige Rechnungen, Rechnungsentwuerfe, Angebote nachfassen/abgelaufen, erledigte Auftraege ohne Rechnung, CRM-To-dos, Reels zur Freigabe), faellige rot; „Oeffnen“ fuehrt an die Stelle, „✓ Nachgefasst“/„✓ Erledigt“ direkt. Freigaben/Antraege bleiben separat. Nachgefasst loescht den Nachfass-Termin (auch heute/vergangen); Hauptseite laedt nach dem Schliessen eines Detailfensters neu. UI-Cache app v49 / style v22.
+- **Warum:** CEO: offene To-dos gesammelt auf der Hauptseite; beim Erledigen muss der Kalendereintrag weg.
+- **Betroffen:** `orchestrator/core/todos.py` (neu), `orchestrator/core/angebote.py`, `orchestrator/core/erinnerungen.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `index-v2.html`, `orchestrator/tests/test_todos.py` (neu), `docs/entscheidungs-register.md`, `docs/datenfluesse.md`
+
+## [2026-09-28 17:40] — Claude Code
+- **Was:** Belege in Fremdwaehrung (z. B. Meta-Auszahlung in USD): LUNA legt einmalig einen Kalendertermin „💶 Euro-Betrag eintragen“ an (Rechnungsdatum + 7 Tage, 09:00; liegt das zurueck: morgen) -- im 15-min-Poll und direkt nach dem Upload; nach Buchen/Verwerfen loescht LUNA ihn selbst (sofort und nachholend). KI-Vorschlaege werden jetzt auch im Poll uebernommen.
+- **Warum:** CEO-Wunsch: an das Eintragen des Euro-Betrags erinnert werden.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/core/erinnerungen.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `orchestrator/tests/test_erinnerungen.py`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
+## [2026-09-28 17:15] — Claude Code
+- **Was:** Belege koennen Einnahmen sein (Gutschrift, z. B. Facebook-Monetarisierung): Art beim Buchen, Journal/EUeR als Einnahme, offene Gutschriften unter „bekommen wir“, KU-Waechter zaehlt sie. Erkennung Meta-Zahlungsavis (Payment Number/Date englisch, USD -> Euro-Betrag vom Kontoauszug eintragen, Hinweis § 14c). BF-37: Beleg-Mails auch aus dem Spam, nur mit bestandener DKIM/DMARC-Pruefung (`absender_echt`), danach aus dem Spam geholt; moin@hanserautisch.de in die Standard-Absenderliste. UI-Cache app v48.
+- **Warum:** CEO: Facebook-Verguetungen per Mail weiterleiten; weitergeleitete Meta-Mail wurde nicht uebernommen.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/core/eigenbelege.py`, `orchestrator/core/finanzen.py`, `orchestrator/governance/google_workspace.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `index-v2.html`, Tests `test_eingangsbelege.py`/`test_finanzen.py`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-28 16:30] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 7 umgesetzt: Journal nach Zahlungsdatum, EUeR je Position, Anlageverzeichnis mit AfA, Eigenbelege (EB-Nummernkreis) fuer Zahlungen ohne Rechnung, Teilzahlungen und Zahlungs-Storno fuer Rechnungen/Belege, 10-Tage-Regel, GWG-Grenze 800 €, Nutzungsdauer fuer Anlagegueter, Kleinunternehmer-Waechter inkl. Eigenbeleg-Einnahmen. Neuer LUNA-OS-Bereich „💶 Finanzen“ (Uebersicht, Journal + CSV, EUeR, Anlagen). Fix: Stornorechnung zaehlte nicht als „Auftrag abgerechnet“. UI-Cache app v46 / style v21.
 - **Warum:** CEO-Go Etappe 7 + Wunsch nach einem Finanzbereich mit guter Uebersicht ueber alles.

@@ -2,6 +2,7 @@
 protokollierte, kommende Termine; idempotent; von Hand geloeschte gelten als erledigt; Fehler -> spaeter erneut."""
 import unittest
 from datetime import timedelta
+from unittest import mock
 
 from orchestrator.core.buchhaltung import jetzt
 from orchestrator.core.erinnerungen import erledigte_entfernen, faellige_loeschungen
@@ -63,6 +64,35 @@ class TestErinnerungen(unittest.TestCase):
         self.assertEqual(g.geloescht, [])
         self.assertEqual([x["id"] for x in erledigte_entfernen(bh, g)], ["f1"])        # 503 -> naechster Lauf
         self.assertEqual(g.geloescht, ["f1"])                                          # f3 (offen) bleibt
+
+    def test_2b_fremdwaehrung_euro_betrag_erinnern(self):
+        """CEO 2026-09-28: Beleg in USD -> Termin „Euro-Betrag eintragen“ RG-Datum + 7 Tage; weg, sobald gebucht."""
+        from orchestrator.core.eingangsbelege import EingangStore, fremdwaehrung_erinnern
+        from orchestrator.governance.google_workspace import MockGoogleWorkspace
+        from orchestrator.tests.test_eingangsbelege import _pdf
+        bh, *_ = _stores()
+        eb, g = EingangStore(bh), MockGoogleWorkspace()
+        heute = jetzt().date()
+        meta = (f"Meta Platforms Ireland Ltd.\nREMITTANCE\nPayment Number: 2916\nPayment Date: "
+                f"{heute.day:02d}-{heute.strftime('%b')}-{heute.year}\nPayment Currency: USD\nTotal: $282.37")
+        nr = eb.aufnehmen(_pdf(meta), "meta.pdf")["nummer"]
+        alt = eb.aufnehmen(_pdf("Druckerei\nRechnung\nGesamt 10,00 EUR " + "x" * 30), "d.pdf")["nummer"]   # Euro: nichts
+        self.assertEqual(fremdwaehrung_erinnern(eb, g), [nr])
+        self.assertEqual(g.termine[0]["start"], f"{(heute + timedelta(days=7)).isoformat()}T09:00:00")
+        self.assertIn("282,37 USD", g.termine[0]["titel"])
+        self.assertEqual(fremdwaehrung_erinnern(eb, g), [])                            # nur einmal
+        self.assertEqual(erledigte_entfernen(bh, _Kalender()), [])                     # noch offen -> bleibt
+        eb.buchen(nr, {"lieferant": "Meta", "rechnungsdatum": heute.isoformat(), "betrag": "241,80", "kategorie": "umsatz",
+                       "art": "einnahme"})
+        k = _Kalender()
+        self.assertEqual([x["bezug"] for x in erledigte_entfernen(bh, k)], [nr])        # Euro eingetragen -> weg
+        self.assertNotIn(alt, [x["bezug"] for x in faellige_loeschungen(bh.eintraege())])
+        with mock.patch("orchestrator.core.eingangsbelege.jetzt", return_value=jetzt()):
+            vergangen = eb.aufnehmen(_pdf(meta.replace("2916", "7777").replace(str(heute.year), str(heute.year - 1))),
+                                     "alt.pdf")["nummer"]
+        fremdwaehrung_erinnern(eb, g)
+        self.assertEqual(g.termine[-1]["start"], f"{(heute + timedelta(days=1)).isoformat()}T09:00:00")   # zurueck -> morgen
+        self.assertIn(vergangen, g.termine[-1]["titel"])
 
     def test_3_ohne_google_nichts(self):
         bh, *_ = _stores()

@@ -215,6 +215,10 @@ class AngebotStore:
                                             "mail_von": d.get("von", ""), "vorschau": d.get("vorschau", "")})
             elif t == "angebot_mail_archiviert":             # Original-Mail (.eml) als Geschaeftsbrief abgelegt
                 out[d["nummer"]].setdefault("mail_archiv", {})[d["message_id"]] = {k: d.get(k) for k in ("pfad", "richtung")}
+            elif t == "angebot_nachgefasst":                 # CEO hat nachgefasst (Hauptseite) -> Nachfass-Termin weg
+                a = out[d["nummer"]]
+                a["nachgefasst_am"] = e["ts"]
+                a["verlauf"].append(spur | {"grund": d.get("notiz", "")})
             elif t == "angebot_erinnerungen":                # nachgeholte Kalender-Erinnerungen (BF-33)
                 a = out[d["nummer"]]
                 a["versendet_termine"] = a.get("versendet_termine", []) + d.get("termine", [])
@@ -427,6 +431,22 @@ class AngebotStore:
         except _Nichts:
             return False
         return True
+
+    def nachgefasst(self, nummer: str, *, notiz: str = "", von: str = "") -> dict:
+        """Nachfassen erledigt (To-do auf der Hauptseite) -- der Nachfass-Termin wird danach aus dem Kalender geloescht."""
+        nummer = (nummer or "").strip().upper()
+
+        def pruefe(eintraege):
+            a = self._falte(eintraege).get(nummer)
+            if not a:
+                raise KeyError(nummer)
+            if a["status"] != "versendet":
+                raise ValueError(f"{nummer} ist {a['status']} -- nachfassen nur bei versendeten Angeboten.")
+            if a.get("nachgefasst_am"):
+                raise ValueError(f"{nummer} ist schon als nachgefasst markiert.")
+        self.bh.erfassen_geprueft("angebot_nachgefasst", {"nummer": nummer, "notiz": str(notiz or "").strip()[:300]},
+                                  von=von, pruefe=pruefe)
+        return {"nachgefasst": nummer}
 
     def status_setzen(self, nummer: str, status: str, *, grund: str = "", termine: list | None = None,
                       pdf: str = "", mail: dict | None = None, von: str = "") -> dict:

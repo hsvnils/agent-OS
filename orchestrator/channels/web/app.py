@@ -1708,7 +1708,8 @@ def _lieferanten() -> list[dict]:
 def belege_liste():
     st = _eingang()
     _eb.llm_ergebnisse_uebernehmen(st, backoffice)
-    return {"belege": st.liste(), "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()}}
+    return {"belege": st.liste(), "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()},
+            "kategorien_einnahme": _eb.EINNAHME_KATEGORIEN}
 
 
 @app.get("/api/finanzen/belege/{nummer}")
@@ -1720,7 +1721,8 @@ def beleg_detail(nummer: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Beleg")
     llm = backoffice.get(x["llm_auftrag"]) if x.get("llm_auftrag") else None
     return {"beleg": {k: v for k, v in x.items() if k != "text"} | {"text": (x.get("text") or "")[:4000]},
-            "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()}, "lieferanten": _lieferanten(),
+            "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()}, "kategorien_einnahme": _eb.EINNAHME_KATEGORIEN,
+            "lieferanten": _lieferanten(),
             "ki_status": (llm or {}).get("status", "")}
 
 
@@ -1755,6 +1757,10 @@ async def belege_hochladen(request: Request):
             ergebnisse.append({"name": name, "ok": True} | {k: r.get(k) for k in ("nummer", "doppelt", "text_quelle")})
         except (ValueError, TypeError) as exc:
             ergebnisse.append({"name": name, "ok": False, "hinweis": str(exc)[:200]})
+    try:                                                    # Fremdwaehrung -> Kalender „Euro-Betrag eintragen“
+        _eb.fremdwaehrung_erinnern(st, _google())
+    except Exception:
+        pass
     return {"ok": any(e["ok"] for e in ergebnisse), "ergebnisse": ergebnisse}
 
 
@@ -1770,7 +1776,7 @@ async def beleg_buchen(nummer: str, request: Request):
             felder["lieferant_firma"] = vorhanden["nummer"] if vorhanden else kunden_store.firma_anlegen(
                 {"name": name, "typ": "lieferant"}, von=_von(request))["nummer"]
         return _eingang().buchen(nummer, felder, von=_von(request))
-    return _kunden_aktion(tun)
+    return _kunden_aktion(_mit_aufraeumen(tun, _von(request)))
 
 
 @app.post("/api/finanzen/belege/{nummer}/bezahlt")
@@ -1793,6 +1799,54 @@ def _index(body: dict) -> int:
         return int(body.get("index"))
     except (TypeError, ValueError):
         raise ValueError("Zahlung fehlt.") from None
+
+
+# -- To-dos fuer die Hauptseite (CEO 2026-09-28): Tagesbetrieb gesammelt; Antraege/Freigaben bewusst NICHT hier ------
+
+@app.get("/api/todos")
+def todos_liste(request: Request):
+    from ...core.todos import geschaefts_todos
+    u = getattr(request.state, "user", None) or _ceo_user()
+    out = geschaefts_todos(kunden_store.bh, kunden_store, finanzen=hat_modul(u, "finanzen"), crm=hat_modul(u, "crm"))
+    heute = jetzt_iso()[:10]
+    if hat_modul(u, "crm"):
+        for t in crm_store.todos():
+            f = str(t.get("faellig") or "")[:10]
+            out.append({"id": f"crm:{t['id']}", "bereich": "CRM", "icon": "🤝", "titel": t.get("vorschlag") or "To-do",
+                        "detail": t.get("firma") or "", "act": "go:crm", "act_id": "", "faellig": f,
+                        "dringend": bool(f) and f <= heute,
+                        "erledigen": {"pfad": f"/api/crm/todo/{t['id']}/erledigen", "label": "✓ Erledigt"}})
+    if hat_modul(u, "content_ops"):
+        wartet = reel_store.liste(status="wartet")
+        if wartet:
+            out.append({"id": "reels", "bereich": "Content", "icon": "🎬", "titel": f"{len(wartet)} Reel(s) zur Freigabe",
+                        "detail": "prüfen, Caption anpassen, freigeben oder ablehnen", "act": "go:reel", "act_id": "",
+                        "faellig": "", "dringend": False, "erledigen": None})
+    out.sort(key=lambda t: (not t["dringend"], t["faellig"] or "9999", t["titel"]))
+    return {"todos": out, "anzahl": len(out), "dringend": sum(1 for t in out if t["dringend"])}
+
+
+@app.post("/api/finanzen/hinweis-quittieren")
+async def finanz_hinweis_quittieren(request: Request):
+    """CFO-Finanzcheck: „✓ Abgeglichen“ (Monat) / „✓ Kommt diesen Monat nicht“ (wiederkehrender Posten) -- protokolliert."""
+    import re as _re
+    from ...core.todos import QUITTUNG
+    body = await _json(request)
+    sl = str(body.get("schluessel") or "").strip().lower()[:160]
+
+    def tun():
+        if not _re.fullmatch(r"(monat:\d{4}-\d{2}|fehlt:.{1,120}:\d{4}-\d{2})", sl):
+            raise ValueError("Unbekannter Hinweis.")
+        kunden_store.bh.erfassen(QUITTUNG, {"schluessel": sl}, von=_von(request))
+        return {"quittiert": sl}
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/crm/angebote/{nummer}/nachgefasst")
+async def angebot_nachgefasst(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(_mit_aufraeumen(lambda: _angebote().nachgefasst(nummer, notiz=body.get("notiz") or "",
+                                                                          von=_von(request)), _von(request)))
 
 
 # -- Finanzen: Uebersicht, Journal, EUeR, Anlagen, Eigenbelege (KUNDEN_FINANZEN Etappe 7; Modul finanzen) -----------
@@ -1848,7 +1902,8 @@ async def eigenbeleg_stornieren(nummer: str, request: Request):
 @app.post("/api/finanzen/belege/{nummer}/verwerfen")
 async def beleg_verwerfen(nummer: str, request: Request):
     body = await _json(request)
-    return _kunden_aktion(lambda: _eingang().verwerfen(nummer, body.get("grund") or "", von=_von(request)))
+    return _kunden_aktion(_mit_aufraeumen(lambda: _eingang().verwerfen(nummer, body.get("grund") or "", von=_von(request)),
+                                          _von(request)))
 
 
 @app.post("/api/finanzen/belege/{nummer}/neu-auslesen")

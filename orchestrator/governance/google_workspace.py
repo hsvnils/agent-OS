@@ -377,6 +377,18 @@ class GoogleWorkspace:
         except Exception as exc:
             return _fehler(f"Mail markieren fehlgeschlagen: {str(exc)[:160]}")
 
+    def mail_aus_spam(self, message_id: str) -> dict:
+        """Eigene, gepruefte Beleg-Mail aus dem Spam in den Posteingang holen (benigne -- nicht gated)."""
+        if (g := self._guard()):
+            return g
+        try:
+            svc = self.auth.service("gmail", "v1")
+            svc.users().messages().modify(userId="me", id=message_id,
+                                          body={"removeLabelIds": ["SPAM"], "addLabelIds": ["INBOX"]}).execute()
+            return _ok(verschoben=True)
+        except Exception as exc:
+            return _fehler(f"Aus Spam holen fehlgeschlagen: {str(exc)[:160]}")
+
     # ---------------- Drive ----------------
 
     def drive_suchen(self, query: str, max_results: int = 10) -> dict:

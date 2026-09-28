@@ -181,12 +181,23 @@ class _Google:
     def verfuegbar(self): return True
     def mail_suchen(self, q, max_results=10):
         self.q = q
-        return {"ok": True, "mails": [{"id": mid, "von": von} for mid, (von, _) in self.mails.items()]}
+        return {"ok": True, "mails": [{"id": mid, "von": x[0]} for mid, x in self.mails.items()]}
+    def mail_aus_spam(self, mid):
+        self.aus_spam = getattr(self, "aus_spam", []) + [mid]
+        return {"ok": True}
     def mail_roh(self, mid):
         self.abrufe += 1
         from email.message import EmailMessage
-        von, anh = self.mails[mid]
-        m = EmailMessage(); m["From"] = von; m["Subject"] = "Fwd: Rechnung"; m.set_content("siehe Anhang")
+        von, anh = self.mails[mid][:2]
+        auth = self.mails[mid][2] if len(self.mails[mid]) > 2 else "echt"
+        m = EmailMessage()
+        dom = von.split("@")[-1].rstrip(">")
+        if auth == "echt":                                   # so setzt mx.google.com den Kopf beim Empfang
+            m["Authentication-Results"] = f"mx.google.com; dkim=pass header.i=@{dom}; spf=pass; dmarc=pass header.from={dom}"
+        elif auth == "gefaelscht":                           # Kopf ohne Nachweis (bzw. vom Absender selbst gesetzt, unten)
+            m["Authentication-Results"] = f"mx.google.com; dkim=fail header.i=@{dom}; spf=softfail; dmarc=fail header.from={dom}"
+            m["X-Fake"] = "1"
+        m["From"] = von; m["Subject"] = "Fwd: Rechnung"; m.set_content("siehe Anhang")
         for name, daten in anh:
             m.add_attachment(daten, maintype="application", subtype="octet-stream", filename=name)
         return {"ok": True, "roh": m.as_bytes()}
@@ -211,6 +222,23 @@ class TestAnbindungen(unittest.TestCase):
         self.assertEqual(len(meldungen), 1)
         self.assertEqual(mail_eingang_pruefen(st, g, absender=["hsvnils@icloud.com"]), [])   # idempotent
         self.assertEqual(g.abrufe, 1)                                                    # m1 einmal, m2 (fremd) nie geladen
+        self.assertIn("in:anywhere -in:trash", g.q)                                      # auch im Spam suchen (BF-37)
+        self.assertEqual(g.aus_spam, ["m1"])
+
+    def test_1c_gefaelschter_absender_wird_abgewiesen(self):
+        """BF-37: Spam wird mitdurchsucht -> nur Mails mit bestandener DKIM/DMARC-Pruefung der eigenen Domain zaehlen."""
+        from orchestrator.core.eingangsbelege import absender_echt, mail_eingang_pruefen
+        st = _store()
+        g = _Google({"f1": ("Nils <hsvnils@icloud.com>", [("Rechnung.pdf", _pdf("Falsch " * 20))], "gefaelscht"),
+                     "f2": ("Nils <hsvnils@icloud.com>", [("Rechnung.pdf", _pdf("Ohne " * 20))], "ohne")})
+        self.assertEqual(mail_eingang_pruefen(st, g, absender=["hsvnils@icloud.com"]), [])
+        roh = lambda auth, von="moin@hanserautisch.de": (f"Authentication-Results: {auth}\nFrom: {von}\n\nx").encode()
+        ok = "mx.google.com; dkim=pass header.i=@hanserautisch.de header.s=k; spf=pass; dmarc=pass (p=NONE) header.from=hanserautisch.de"
+        self.assertTrue(absender_echt(roh(ok), ["moin@hanserautisch.de"]))
+        self.assertFalse(absender_echt(roh(ok), ["nils@hanserautisch.de"]))            # Adresse nicht auf der Liste
+        self.assertFalse(absender_echt(roh(ok.replace("hanserautisch.de", "evilhanserautisch.de")), ["moin@hanserautisch.de"]))
+        self.assertFalse(absender_echt(roh("evil.example; dkim=pass header.i=@hanserautisch.de"), ["moin@hanserautisch.de"]))
+        self.assertFalse(absender_echt(f"From: moin@hanserautisch.de\n\nx".encode(), ["moin@hanserautisch.de"]))
 
     def test_1b_apple_mail_weiterleitung_inline_verschachtelt(self):
         """BF-36: Apple Mail leitet die PDF als inline-Teil in multipart/alternative > multipart/mixed weiter;
