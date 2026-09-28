@@ -1364,67 +1364,98 @@ async function blBuchen(nr, trotz) {
 /* =========================== Finanzen (KUNDEN_FINANZEN Etappe 7) =========================== */
 // Übersicht über alles (Kennzahlen, Monatsverlauf, offene Posten, Pipeline, To-dos), Journal nach Zahlungsdatum,
 // EÜR, Anlageverzeichnis und Buchungen ohne Beleg (Eigenbelege, z. B. Plattform-Auszahlungen).
-let FIN_JAHR = 0, FIN_KAT = null;
-const FIN_ACT = { rechnung: "re-detail", beleg: "bl-detail", eigenbeleg: "eb-detail" };
+let FIN_JAHR = 0, FIN_KAT = null, FIN_ZEIT = "jahr";
+const FIN_ACT = { rechnung: "re-detail", beleg: "bl-detail", eigenbeleg: "eb-detail", afa: "bl-detail" };
+const FIN_MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+const finZeitName = (z, j) => z === "jahr" ? String(j) : z[0] === "q" ? `Q${z[1]} ${j}` : `${FIN_MONATE[Number(z.slice(1)) - 1]} ${j}`;
 function finDelta(jetzt, vor, weniger_ist_gut) {
   if (!vor) return null; const p = Math.round((jetzt - vor) / Math.abs(vor) * 100);
   return { up: weniger_ist_gut ? p <= 0 : p >= 0, text: (p >= 0 ? "+" : "") + p + " % zum Vorjahr" };
 }
+// Kennzahl-Kachel, die per Klick die Buchungen dahinter zeigt (Drill-down, Etappe 8)
+function finKpi(title, big, delta, sub, drill) {
+  const d = delta ? `<span class="delta ${delta.up ? "up" : "down"}">${delta.up ? "↗" : "↘"} ${esc(delta.text)}</span>` : "";
+  return `<div class="v2-tile klick" data-act="fin-drill" data-val="${esc(drill)}" title="Klicken: Buchungen dahinter anzeigen"><div class="v2-tile-h"><span class="t">${esc(title)}</span><span class="v2-tile-tools"><span class="dots">›</span></span></div><div class="v2-kpi">${esc(big)} ${d}</div>${sub ? `<div class="v2-sub">${esc(sub)}</div>` : ""}</div>`;
+}
 RENDER.finanzen = renderFinanzen;
 async function renderFinanzen(meldung) {
   const sub = SUBTAB.finanzen || "uebersicht";
-  const u = await jget("/api/finanzen/uebersicht" + (FIN_JAHR ? "?jahr=" + FIN_JAHR : ""));
+  const u = await jget(`/api/finanzen/uebersicht?zeitraum=${FIN_ZEIT}` + (FIN_JAHR ? "&jahr=" + FIN_JAHR : ""));
   if (!u) { $("#v2-app").innerHTML = secHead("Finanzen") + emptyRow("Finanzen nicht erreichbar (Modul „Finanzen“ nötig)."); return; }
   FIN_JAHR = u.jahr;
   const jahrWahl = `<select id="fin-jahr" class="v2-inp" style="width:auto">${u.jahre.map(j => `<option ${j === u.jahr ? "selected" : ""}>${j}</option>`).join("")}</select>`;
-  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : finUebersicht(u);
-  $("#v2-app").innerHTML = secHead("Finanzen " + u.jahr, `${jahrWahl}<button class="v2-btn" data-act="eb-neu" data-val="ausgabe">− Ausgabe ohne Beleg</button><button class="v2-btn pri" data-act="eb-neu" data-val="einnahme">+ Einnahme ohne Rechnung</button>`)
+  const zeitWahl = sub === "uebersicht" ? `<select id="fin-zeit" class="v2-inp" style="width:auto"><option value="jahr">Ganzes Jahr</option>${[1, 2, 3, 4].map(q => `<option value="q${q}">Q${q}</option>`).join("")}${FIN_MONATE.map((m, i) => `<option value="m${String(i + 1).padStart(2, "0")}">${m}</option>`).join("")}</select>` : "";
+  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : await finUebersicht(u);
+  $("#v2-app").innerHTML = secHead("Finanzen " + (sub === "uebersicht" ? finZeitName(u.zeitraum, u.jahr) : u.jahr), `${jahrWahl}${zeitWahl}<button class="v2-btn" data-act="eb-neu" data-val="ausgabe">− Ausgabe ohne Beleg</button><button class="v2-btn pri" data-act="eb-neu" data-val="einnahme">+ Einnahme ohne Rechnung</button>`)
     + tabs("finanzen", [["uebersicht", "Übersicht"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"]])
     + (meldung ? `<div class="v2-msg ok" style="margin-bottom:12px">${esc(meldung)}</div>` : "") + `<div class="v2-grid">${body}</div>`;
   $("#fin-jahr").addEventListener("change", e => { FIN_JAHR = Number(e.target.value); renderFinanzen(); });
+  const zw = $("#fin-zeit"); if (zw) { zw.value = u.zeitraum; zw.addEventListener("change", e => { FIN_ZEIT = e.target.value; renderFinanzen(); }); }
 }
-function finUebersicht(u) {
+async function finUebersicht(u) {
   const k = u.kennzahlen, v = u.vorjahr, f = u.forderungen, vb = u.verbindlichkeiten, p = u.pipeline, w = u.waechter;
-  const max = Math.max(1, ...u.monate.map(m => Math.max(Math.abs(m.einnahmen_cent), Math.abs(m.ausgaben_cent))));
+  const zn = finZeitName(u.zeitraum, u.jahr), dz = `zeitraum=${u.zeitraum}`;
+  const ki = await jget("/api/finanzen/ki-kosten?jahr=" + u.jahr) || { monate_eur: [], gesamt_eur: 0, je_provider: {} };
+  const max = Math.max(1, ...u.monate.map(m => Math.max(Math.abs(m.einnahmen_cent), Math.abs(m.ausgaben_cent), Math.abs(m.vj_einnahmen_cent), Math.abs(m.vj_ausgaben_cent))));
   const h = (c) => Math.max(0, Math.round(c / max * 100));
-  const monate = `<div class="v2-fin-monate">${u.monate.map(m => `<div class="v2-fin-monat" title="${esc(m.monat)}: Einnahmen ${esc(cent2eur(m.einnahmen_cent))} · Ausgaben ${esc(cent2eur(m.ausgaben_cent))}"><div class="v2-fin-saeulen"><i class="e" style="height:${h(m.einnahmen_cent)}%"></i><i class="a" style="height:${h(m.ausgaben_cent)}%"></i></div><small>${esc(m.monat)}</small></div>`).join("")}</div>
-    <div class="v2-legend"><span><i style="background:var(--v2-green)"></i>Einnahmen</span><span><i style="background:var(--v2-red)"></i>Ausgaben (abziehbar)</span>${u.afa_cent ? `<span>+ Abschreibung ${esc(cent2eur(u.afa_cent))} im Jahr</span>` : ""}</div>`;
+  const aktivM = (m) => u.zeitraum === "jahr" || (u.zeitraum[0] === "q" ? Math.ceil(m.nr / 3) === Number(u.zeitraum[1]) : Number(u.zeitraum.slice(1)) === m.nr);
+  const monate = `<div class="v2-fin-monate">${u.monate.map(m => `<div class="v2-fin-monat klick${aktivM(m) ? "" : " blass"}" data-act="fin-drill" data-val="zeitraum=m${String(m.nr).padStart(2, "0")}" title="${esc(m.monat)}: Einnahmen ${esc(cent2eur(m.einnahmen_cent))} · Ausgaben ${esc(cent2eur(m.ausgaben_cent))} · Vorjahr ${esc(cent2eur(m.vj_einnahmen_cent))} / ${esc(cent2eur(m.vj_ausgaben_cent))}"><div class="v2-fin-saeulen"><i class="ve" style="height:${h(m.vj_einnahmen_cent)}%"></i><i class="e" style="height:${h(m.einnahmen_cent)}%"></i><i class="va" style="height:${h(m.vj_ausgaben_cent)}%"></i><i class="a" style="height:${h(m.ausgaben_cent)}%"></i></div><small>${esc(m.monat)}</small></div>`).join("")}</div>
+    <div class="v2-legend"><span><i style="background:var(--v2-green)"></i>Einnahmen</span><span><i style="background:var(--v2-red)"></i>Ausgaben (absetzbar, inkl. Abschreibung)</span><span><i style="background:var(--v2-line)"></i>blass = Vorjahr</span></div><small class="v2-sub">Monat anklicken: Buchungen dahinter.</small>`;
+  const qrow = (q) => `<tr class="klick" data-act="fin-drill" data-val="zeitraum=${q.quartal}"><td><b>${q.quartal.toUpperCase()}</b></td><td style="text-align:right">${esc(cent2eur(q.einnahmen_cent))}</td><td style="text-align:right">${esc(cent2eur(q.ausgaben_cent))}</td><td style="text-align:right"><b>${esc(cent2eur(q.gewinn_cent))}</b></td><td style="text-align:right"><small>${esc(cent2eur(q.vj_gewinn_cent))}</small></td><td style="text-align:right">${q.vj_gewinn_cent ? (d => `<span class="v2-badge ${d >= 0 ? "ok" : "err"}">${d >= 0 ? "+" : ""}${esc(cent2eur(d))}</span>`)(q.gewinn_cent - q.vj_gewinn_cent) : ""}</td></tr>`;
+  const quartale = `<table class="v2-table"><thead><tr><th></th><th style="text-align:right">Einnahmen</th><th style="text-align:right">Ausgaben</th><th style="text-align:right">Gewinn</th><th style="text-align:right">Gewinn Vorjahr</th><th style="text-align:right">Veränderung</th></tr></thead><tbody>${u.quartale.map(qrow).join("")}</tbody></table>`;
   const kmax = Math.max(1, ...u.kategorien.map(x => Math.abs(x.betrag_cent)));
-  const kat = u.kategorien.length ? u.kategorien.map(x => `<div class="v2-fin-hbar"><span>${esc(x.name)}</span><div><i style="width:${Math.max(2, Math.round(Math.abs(x.betrag_cent) / kmax * 100))}%"></i></div><b>${esc(cent2eur(x.betrag_cent))}</b></div>`).join("") : emptyRow("Noch keine Ausgaben in diesem Jahr.");
-  const kunden = u.kunden.length ? u.kunden.map((x, i) => `<div class="v2-list-row"><span>${i + 1}.</span><div class="grow"><b>${esc(x.name)}</b></div><b>${esc(cent2eur(x.betrag_cent))}</b></div>`).join("") : emptyRow("Noch keine Einnahmen in diesem Jahr.");
+  const kat = u.kategorien.length ? u.kategorien.map(x => `<div class="v2-fin-hbar klick" data-act="fin-drill" data-val="${dz}&art=ausgabe&kategorie=${esc(x.kategorie)}"><span>${esc(x.name)}</span><div><i style="width:${Math.max(2, Math.round(Math.abs(x.betrag_cent) / kmax * 100))}%"></i></div><b>${esc(cent2eur(x.betrag_cent))}</b></div>`).join("") : emptyRow("Keine Ausgaben in diesem Zeitraum.");
+  const kunden = u.kunden.length ? u.kunden.map((x, i) => `<div class="v2-list-row klick" data-act="fin-drill" data-val="${dz}&art=einnahme&gegenpartei=${encodeURIComponent(x.name)}"><span>${i + 1}.</span><div class="grow"><b>${esc(x.name)}</b></div><b>${esc(cent2eur(x.betrag_cent))}</b></div>`).join("") : emptyRow("Keine Einnahmen in diesem Zeitraum.");
   const anteil = Math.min(100, Math.round((w.anteil || 0) * 100));
+  const hr = u.hochrechnung_cent, hrA = hr ? Math.round(hr / 10000000 * 100) : 0;
   const grenze = `<div class="v2-kpi">${esc(cent2eur(w.umsatz_cent || 0))}</div><div class="v2-re-balken"><i style="width:${anteil}%;background:${w.ueberschritten ? "var(--v2-red)" : w.warnung ? "#e8a200" : "var(--v2-accent)"}"></i></div>
-    <small class="v2-sub">${anteil} % von 100.000 € · Rechnungen nach Rechnungsdatum + Einnahmen ohne Rechnung${w.vorjahr_ueberschritten ? " · ⚠️ Vorjahr über 25.000 €!" : ""}</small>`;
+    <small class="v2-sub">${anteil} % von 100.000 € · Rechnungen nach Rechnungsdatum + Einnahmen ohne Rechnung${w.vorjahr_ueberschritten ? " · ⚠️ Vorjahr über 25.000 €!" : ""}</small>
+    ${hr ? `<div class="v2-kv" style="margin-top:10px"><span>Hochrechnung Jahresende</span><b class="${hrA >= 80 ? "v2-rot" : ""}">${esc(cent2eur(hr))} (${hrA} %)</b></div><small class="v2-sub">wenn es im bisherigen Tempo weitergeht</small>` : ""}`;
   const stufe = (icon, titel, anzahl, cent, ziel) => `<div class="v2-fin-stufe klick" data-tab="${ziel}"><span>${icon}</span><div><b>${esc(titel)}</b><small>${anzahl}${cent != null ? " · " + esc(cent2eur(cent)) : ""}</small></div></div>`;
   const pipeline = `<div class="v2-fin-pipeline">${stufe("📄", "Angebote offen", p.angebote_anzahl, p.angebote_cent, "angebote:offen")}${stufe("🤝", "Aufträge ohne Rechnung", p.auftraege_anzahl, p.auftraege_cent, "angebote:auftraege")}${stufe("✎", "Rechnungsentwürfe", p.rechnung_entwuerfe, null, "rechnungen:entwuerfe")}${stufe("⏳", "Offene Rechnungen", f.anzahl, f.summe_cent, "rechnungen:offen")}</div>`;
   const posten = (liste, act) => liste.slice(0, 6).map(x => `<div class="v2-list-row klick" data-act="${x.act || act}" data-id="${esc(x.nummer)}"><span class="v2-badge ${x.ueberfaellig ? "err" : "neutral"}">${x.ueberfaellig ? "überfällig" : x.faellig_am ? esc(datumDe(x.faellig_am)) : "offen"}</span><div class="grow"><b>${esc(x.gegenpartei || x.nummer)}</b><small>${esc(x.nummer)}</small></div><b>${esc(cent2eur(x.offen_cent))}</b></div>`).join("");
-  const todos = [
-    u.belege_zu_pruefen ? `<div class="v2-list-row klick" data-tab="belege:pruefen"><span>📥</span><div class="grow"><b>${u.belege_zu_pruefen} Beleg(e) prüfen und buchen</b></div><span>›</span></div>` : "",
-    f.ueberfaellig ? `<div class="v2-list-row klick" data-tab="rechnungen:offen"><span>⚠️</span><div class="grow"><b>${f.ueberfaellig} Rechnung(en) überfällig</b><small>nachfassen oder Zahlung erfassen</small></div><span>›</span></div>` : "",
-    vb.ueberfaellig ? `<div class="v2-list-row klick" data-tab="belege:gebucht"><span>💸</span><div class="grow"><b>${vb.ueberfaellig} Eingangsrechnung(en) fällig</b><small>bezahlen und als bezahlt markieren</small></div><span>›</span></div>` : "",
-    p.auftraege_anzahl ? `<div class="v2-list-row klick" data-tab="angebote:auftraege"><span>🧾</span><div class="grow"><b>${p.auftraege_anzahl} Auftrag/Aufträge noch ohne Rechnung</b></div><span>›</span></div>` : "",
-  ].join("") || emptyRow("Alles erledigt 🎉");
+  const mNow = new Date().getMonth(), kiMax = Math.max(0.01, ...ki.monate_eur);
+  const kiHtml = `<div class="v2-kpi">${esc(geld(ki.monate_eur[mNow] || 0, "EUR"))} <span class="v2-sub" style="font-size:12px">diesen Monat · Budget ${esc(ki.budget || "–")}</span></div>
+    <div class="v2-spark">${ki.monate_eur.map((x, i) => `<i class="${i === mNow ? "a" : ""}" style="height:${Math.max(4, Math.round(x / kiMax * 100))}%" title="${esc(FIN_MONATE[i])}: ${esc(geld(x, "EUR"))}"></i>`).join("")}</div>
+    <div class="v2-sub">${u.jahr}: ${esc(geld(ki.gesamt_eur, "EUR"))} · ${Object.entries(ki.je_provider).map(([k2, x]) => `${esc(k2)} ${esc(geld(x, "EUR"))}`).join(" · ") || "keine Aufrufe"}</div>
+    <small class="v2-sub">Verbrauch geschätzt aus den Token-Zählern — die Rechnung des Anbieters kommt als Beleg in die EÜR.</small>`;
   const zeilen = u.letzte.length ? finTabelle(u.letzte, false) : emptyRow("Noch keine Zahlungen erfasst — in Rechnungen/Belegen „💶 Zahlung erfassen“ oder oben eine Einnahme/Ausgabe ohne Beleg.");
-  return `${kpiTile("Einnahmen", cent2eur(k.einnahmen_cent), finDelta(k.einnahmen_cent, v.einnahmen_cent), "nach Zahlungseingang")}
-    ${kpiTile("Ausgaben", cent2eur(k.ausgaben_cent), finDelta(k.ausgaben_cent, v.ausgaben_cent, true), "abziehbar, inkl. Abschreibung")}
-    ${kpiTile("Gewinn", cent2eur(k.gewinn_cent), finDelta(k.gewinn_cent, v.gewinn_cent), "Einnahmen − Ausgaben (EÜR)")}
+  const vjText = u.zeitraum === "jahr" ? "Vorjahr" : "Vorjahreszeitraum";
+  return `${finKpi("Einnahmen " + zn, cent2eur(k.einnahmen_cent), finDelta(k.einnahmen_cent, v.einnahmen_cent), `${vjText}: ${cent2eur(v.einnahmen_cent)}`, `${dz}&art=einnahme`)}
+    ${finKpi("Ausgaben " + zn, cent2eur(k.ausgaben_cent), finDelta(k.ausgaben_cent, v.ausgaben_cent, true), `absetzbar, inkl. Abschreibung · ${vjText}: ${cent2eur(v.ausgaben_cent)}`, `${dz}&art=ausgabe`)}
+    ${finKpi("Gewinn " + zn, cent2eur(k.gewinn_cent), finDelta(k.gewinn_cent, v.gewinn_cent), `${vjText}: ${cent2eur(v.gewinn_cent)}`, dz)}
     ${kpiTile("Offen: bekommen wir", cent2eur(f.summe_cent), null, `${f.anzahl} Rechnung(en)${f.ueberfaellig ? ", " + f.ueberfaellig + " überfällig" : ""} · wir zahlen noch ${cent2eur(vb.summe_cent)}`)}
     ${tile("Monatsverlauf " + u.jahr, monate, "w8")}
     ${tile("Kleinunternehmer-Grenze " + u.jahr, grenze, "w4")}
+    ${tile("Quartale " + u.jahr, quartale, "w8")}
+    ${tile("KI-Kosten " + u.jahr, kiHtml, "w4")}
     ${tile("Vom Angebot zum Geld", pipeline, "w12")}
-    ${tile("Zu erledigen", todos, "w4")}
-    ${tile("Wir bekommen (" + f.anzahl + ")", posten(f.liste, "re-detail") || emptyRow("Keine offenen Rechnungen."), "w4")}
-    ${tile("Wir zahlen (" + vb.anzahl + ")", posten(vb.liste, "bl-detail") || emptyRow("Keine offenen Eingangsrechnungen."), "w4")}
-    ${tile("Ausgaben nach Kategorie", kat, "w6")}
-    ${tile("Top-Kunden " + u.jahr, kunden, "w6")}
+    ${tile("Wir bekommen (" + f.anzahl + ")", posten(f.liste, "re-detail") || emptyRow("Keine offenen Rechnungen."), "w6")}
+    ${tile("Wir zahlen (" + vb.anzahl + ")", posten(vb.liste, "bl-detail") || emptyRow("Keine offenen Eingangsrechnungen."), "w6")}
+    ${tile("Ausgaben nach Kategorie · " + zn, kat, "w6")}
+    ${tile("Top-Kunden · " + zn, kunden, "w6")}
     ${tile("Letzte Zahlungen", zeilen, "w12")}`;
 }
+// Drill-down: die Buchungen hinter einer Zahl; die Summe muss der Kachel entsprechen (Abnahme gegen Rohdaten)
+async function finDrill(query) {
+  openModal("Buchungen", `<div class="v2-empty">Lade…</div>`, true);
+  const d = await jget(`/api/finanzen/posten?jahr=${FIN_JAHR}&${query}`);
+  if (!d || !d.kennzahlen) return openModal("Buchungen", emptyRow("Nicht verfügbar."), true);
+  const q = new URLSearchParams(query), k = d.kennzahlen;
+  const teile = [finZeitName(q.get("zeitraum") || "jahr", d.jahr), q.get("art") === "einnahme" ? "Einnahmen" : q.get("art") === "ausgabe" ? "Ausgaben" : "Einnahmen und Ausgaben",
+    q.get("kategorie") ? (d.zeilen[0] || {}).position || q.get("kategorie") : "", q.get("gegenpartei") || ""].filter(Boolean);
+  const summe = `<div class="v2-an-zeile" style="margin:6px 0 12px">${q.get("art") !== "ausgabe" ? `<div class="v2-kv"><span>Einnahmen (zählen)</span><b style="color:var(--v2-green)">${esc(cent2eur(k.einnahmen_cent))}</b></div>` : ""}
+    ${q.get("art") !== "einnahme" ? `<div class="v2-kv"><span>Ausgaben (absetzbar)</span><b style="color:var(--v2-red)">${esc(cent2eur(k.ausgaben_cent))}</b></div>` : ""}
+    ${!q.get("art") ? `<div class="v2-kv"><span>Gewinn</span><b>${esc(cent2eur(k.gewinn_cent))}</b></div>` : ""}</div>`;
+  openModal(teile.join(" · "), summe + (d.zeilen.length ? finTabelle(d.zeilen, true) : emptyRow("Keine Buchungen in diesem Zeitraum."))
+    + `<small class="v2-sub">Zeile anklicken: Rechnung/Beleg öffnen. Stornierte Zahlungen sind durchgestrichen und zählen nicht; Abschreibung erscheint monatlich.</small>`, true);
+}
 function finTabelle(zeilen, summe) {
-  const rows = zeilen.map(z => `<tr class="klick${z.storniert ? " v2-fin-storno" : ""}" data-act="${FIN_ACT[z.quelle]}" data-id="${esc(z.bezug)}"><td>${esc(datumDe(z.datum))}${z.zuordnung_jahr ? ` <small title="10-Tage-Regel">→ ${esc(z.zuordnung_jahr)}</small>` : ""}</td><td><b>${esc(z.bezug)}</b></td><td>${esc(z.gegenpartei || "")}</td><td>${esc(z.text || "")}${z.storniert ? ` <span class="v2-badge err">storniert</span>` : ""}</td><td><small>${esc(z.position)}</small></td>
-    <td style="text-align:right;color:var(--v2-green)">${z.art === "einnahme" ? esc(cent2eur(z.betrag_cent)) : ""}</td><td style="text-align:right;color:var(--v2-red)">${z.art === "ausgabe" ? esc(cent2eur(z.betrag_cent)) : ""}</td>${summe ? `<td style="text-align:right">${z.art === "ausgabe" && z.abziehbar_cent !== z.betrag_cent && !z.storniert ? esc(cent2eur(z.abziehbar_cent)) : ""}</td>` : ""}</tr>`).join("");
-  const gueltig = zeilen.filter(z => !z.storniert), s = (a) => gueltig.filter(z => z.art === a).reduce((x, z) => x + z.betrag_cent, 0);
-  const fuss = summe ? `<tfoot><tr><td></td><td></td><td></td><td><b>Summe</b></td><td></td><td style="text-align:right"><b>${esc(cent2eur(s("einnahme")))}</b></td><td style="text-align:right"><b>${esc(cent2eur(s("ausgabe")))}</b></td><td></td></tr></tfoot>` : "";
-  return `<div class="v2-tab-scroll"><table class="v2-table"><thead><tr><th>Bezahlt am</th><th>Beleg</th><th>Gegenpartei</th><th>Wofür</th><th>Position (EÜR)</th><th style="text-align:right">Einnahme</th><th style="text-align:right">Ausgabe</th>${summe ? `<th style="text-align:right" title="Abweichend absetzbar: Bewirtung 70 %, Anlagen über AfA">davon absetzbar</th>` : ""}</tr></thead><tbody>${rows}</tbody>${fuss}</table></div>`;
+  const rows = zeilen.map(z => `<tr class="klick${z.storniert ? " v2-fin-storno" : ""}" data-act="${FIN_ACT[z.quelle]}" data-id="${esc(z.bezug)}"><td>${z.quelle === "afa" ? esc(z.datum.slice(5, 7) + "/" + z.datum.slice(0, 4)) : esc(datumDe(z.datum))}${z.zuordnung_jahr ? ` <small title="10-Tage-Regel">→ ${esc(z.zuordnung_jahr)}</small>` : ""}</td><td><b>${esc(z.bezug)}</b></td><td>${esc(z.gegenpartei || "")}</td><td>${esc(z.text || "")}${z.storniert ? ` <span class="v2-badge err">storniert</span>` : ""}</td><td><small>${esc(z.position)}</small></td>
+    <td style="text-align:right;color:var(--v2-green)">${z.art === "einnahme" ? esc(cent2eur(z.betrag_cent)) : ""}</td><td style="text-align:right;color:var(--v2-red)">${z.art === "ausgabe" && z.quelle !== "afa" ? esc(cent2eur(z.betrag_cent)) : ""}</td>${summe ? `<td style="text-align:right">${z.art === "ausgabe" && !z.storniert ? esc(cent2eur(z.abziehbar_cent)) : ""}</td>` : ""}</tr>`).join("");
+  const gueltig = zeilen.filter(z => !z.storniert), s = (a, feld) => gueltig.filter(z => z.art === a).reduce((x, z) => x + z[feld], 0);
+  const fuss = summe ? `<tfoot><tr><td></td><td></td><td></td><td><b>Summe</b></td><td></td><td style="text-align:right"><b>${esc(cent2eur(s("einnahme", "betrag_cent")))}</b></td><td style="text-align:right"><b>${esc(cent2eur(s("ausgabe", "betrag_cent")))}</b></td><td style="text-align:right"><b>${esc(cent2eur(s("ausgabe", "abziehbar_cent")))}</b></td></tr></tfoot>` : "";
+  return `<div class="v2-tab-scroll"><table class="v2-table"><thead><tr><th>Bezahlt am</th><th>Beleg</th><th>Gegenpartei</th><th>Wofür</th><th>Position (EÜR)</th><th style="text-align:right">Einnahme</th><th style="text-align:right">Zahlung</th>${summe ? `<th style="text-align:right" title="Was in der EÜR zählt: Bewirtung 70 %, Anlagen über die monatliche Abschreibung">absetzbar</th>` : ""}</tr></thead><tbody>${rows}</tbody>${fuss}</table></div>`;
 }
 async function finJournal(jahr) {
   const d = await jget("/api/finanzen/journal?jahr=" + jahr) || { zeilen: [] };
@@ -1840,6 +1871,7 @@ async function handleAct(act, el) {
       if (!r || r.ok === false) { el.disabled = false; return alert((r && r.hinweis) || "Fehler."); }
       return renderDash();
     }
+    case "fin-drill": return finDrill(val);
     case "eb-neu": return ebNeu(val);
     case "eb-speichern": return ebSpeichern(val);
     case "eb-detail": return ebDetail(id);

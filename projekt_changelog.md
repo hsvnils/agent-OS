@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 20:30] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 8 (Finanz-Cockpit): Zeitraum-Wahl Jahr/Quartal/Monat mit Vorjahresvergleich, Drill-down auf jede Zahl (Kennzahlen, Monate, Quartale, Kategorien, Kunden -> Buchungsliste mit Summe = Kachel), Quartalstabelle, Vorjahr im Monatsverlauf, Abschreibung monatsgenau (laufendes Jahr nur bis heute), Hochrechnung Jahresumsatz, KI-Kosten-Kachel (Verbrauch geschaetzt, gegen Budget, nicht in der EUeR). UI-Cache app v51 / style v24.
+- **Warum:** CEO-Go fuer Etappe 8.
+- **Betroffen:** `orchestrator/core/finanzen.py`, `orchestrator/core/kosten.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `index-v2.html`, `orchestrator/tests/test_finanzen.py`, `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-28 19:40] — Claude Code
 - **Was:** Euro-Betrag per Telegram: der CEO schickt z. B. „Facebook 241,80“ (auch mit Belegnummer/Datum, auch als Sprachnachricht); LUNA ordnet regelbasiert dem offenen Fremdwaehrungs-Beleg zu, zeigt Vorschau mit ✅ Buchen / ❌ Abbrechen und bucht erst nach dem Klick (Beleg + Geldeingang), loescht danach die Kalender-Erinnerung; das To-do verschwindet, der CFO fasst nicht mehr nach. Fragen und mehrdeutige Nachrichten gehen normal an den Chat.
 - **Warum:** CEO-Wunsch: Euro-Summe der Facebook-Zahlung per Telegram zuordnen.

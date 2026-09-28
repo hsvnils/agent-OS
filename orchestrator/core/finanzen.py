@@ -46,6 +46,20 @@ POSITIONEN = {                                               # Anzeige-Texte (LU
     "sonstiges": "Übrige unbeschränkt abziehbare Betriebsausgaben",
 }
 BEWIRTUNG_ANTEIL = 0.7
+ZEITRAEUME = {"jahr": range(1, 13), "q1": range(1, 4), "q2": range(4, 7), "q3": range(7, 10), "q4": range(10, 13),
+              **{f"m{m:02d}": range(m, m + 1) for m in range(1, 13)}}
+
+
+def monate_von(zeitraum: str) -> set[int]:
+    if zeitraum not in ZEITRAEUME:
+        raise ValueError("Zeitraum muss jahr, q1-q4 oder m01-m12 sein.")
+    return set(ZEITRAEUME[zeitraum])
+
+
+def kennzahlen(zeilen: list[dict]) -> dict:
+    ein = sum(z["abziehbar_cent"] for z in zeilen if z["art"] == "einnahme" and not z["storniert"])
+    aus = sum(z["abziehbar_cent"] for z in zeilen if z["art"] == "ausgabe" and not z["storniert"])
+    return {"einnahmen_cent": ein, "ausgaben_cent": aus, "gewinn_cent": ein - aus}
 MONATE = ("Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez")
 
 
@@ -99,6 +113,8 @@ class Finanzen:
                            "quelle": "eigenbeleg"})
         for z in zeilen:
             z["jahr"] = int(z.get("zuordnung_jahr") or z["datum"][:4])
+            # Monat im Zuordnungsjahr (10-Tage-Regel: Januar-Zahlung fuers Vorjahr -> Dezember, umgekehrt Januar)
+            z["monat"] = int(z["datum"][5:7]) if int(z["datum"][:4]) == z["jahr"] else (12 if z["datum"][:4] > str(z["jahr"]) else 1)
             z["abziehbar_cent"] = 0 if z["storniert"] else (
                 z["betrag_cent"] if z["art"] == "einnahme" else _abziehbar(z["kategorie"], z["betrag_cent"]))
             z["position"] = POSITIONEN.get(z["kategorie"], POSITIONEN["sonstiges"])
@@ -117,6 +133,58 @@ class Finanzen:
             return ak
         monate = (jahr - anschaffung.year) * 12 + (12 - anschaffung.month + 1)
         return min(ak, round(ak * monate / (nd * 12)))
+
+    @staticmethod
+    def _afa_bis_monat(ak: int, an: date, nd: int, jahr: int, monat: int) -> int:
+        """Kumulierte AfA bis Ende (jahr, monat) -- monatsgenau; zum Dezember identisch mit `_afa_bis`."""
+        if (jahr, monat) < (an.year, an.month):
+            return 0
+        if nd <= 1:
+            return ak                                            # voll im Anschaffungsmonat
+        monate = (jahr - an.year) * 12 + monat - an.month + 1
+        return min(ak, round(ak * monate / (nd * 12)))
+
+    def afa_zeilen(self, jahr: int, st: dict | None = None) -> list[dict]:
+        """Abschreibung als Monatszeilen (fuer Monats-/Quartalszahlen und Drill-down); Summe = AfA des Jahres.
+        Im laufenden Jahr nur bis zum aktuellen Monat (Stand „bisher“ -- keine Abschreibung fuer Monate, die noch kommen)."""
+        st = st or self._stand()
+        heute = jetzt().date()
+        bis_monat = 12 if jahr < heute.year else heute.month if jahr == heute.year else 0
+        out = []
+        for x in st["belege"].values():
+            f = x.get("felder") or {}
+            if x["status"] != "gebucht" or f.get("kategorie") != "anlage" or not f.get("rechnungsdatum"):
+                continue
+            ak, nd = abs(int(f["betrag_cent"])), int(f.get("nutzungsdauer_jahre") or 1)
+            an = date.fromisoformat(f["rechnungsdatum"])
+            vorher = self._afa_bis_monat(ak, an, nd, jahr - 1, 12)
+            for m in range(1, bis_monat + 1):
+                bis = self._afa_bis_monat(ak, an, nd, jahr, m)
+                if bis > vorher:
+                    out.append({"datum": f"{jahr}-{m:02d}-01", "jahr": jahr, "monat": m, "art": "ausgabe",
+                                "betrag_cent": 0, "abziehbar_cent": bis - vorher, "kategorie": "anlage",
+                                "position": POSITIONEN["anlage"], "bezug": x["nummer"], "index": None,
+                                "gegenpartei": f.get("lieferant", ""),
+                                "text": f"Abschreibung {m:02d}/{jahr}: {f.get('leistung') or f.get('lieferant', '')}",
+                                "zuordnung_jahr": None, "storniert": False, "storno_grund": "", "quelle": "afa"})
+                vorher = bis
+        return out
+
+    def posten(self, jahr: int, zeitraum: str = "jahr", *, art: str = "", kategorie: str = "", gegenpartei: str = "",
+               st: dict | None = None) -> list[dict]:
+        """Alle Zeilen, die eine Kennzahl ergeben (Zahlungen + monatliche AfA) -- Grundlage fuer jede Zahl im Cockpit und
+        fuer den Drill-down. Summe der `abziehbar_cent` (ohne Stornos) = die angezeigte Zahl."""
+        st = st or self._stand()
+        monate = monate_von(zeitraum)
+        z = self.journal(jahr, st) + self.afa_zeilen(jahr, st)
+        z = [x for x in z if x["monat"] in monate]
+        if art:
+            z = [x for x in z if x["art"] == art]
+        if kategorie:
+            z = [x for x in z if x["kategorie"] == kategorie]
+        if gegenpartei:
+            z = [x for x in z if (x["gegenpartei"] or "ohne Kunde").lower() == gegenpartei.lower()]
+        return sorted(z, key=lambda x: (x["datum"], x["bezug"], x["index"] or 0))
 
     def anlagen(self, jahr: int, st: dict | None = None) -> list[dict]:
         st = st or self._stand()
@@ -140,15 +208,12 @@ class Finanzen:
 
     def euer(self, jahr: int, st: dict | None = None) -> dict:
         st = st or self._stand()
-        j = [z for z in self.journal(jahr, st) if not z["storniert"]]
+        j = [z for z in self.posten(jahr, st=st) if not z["storniert"]]
         einnahmen = sum(z["betrag_cent"] for z in j if z["art"] == "einnahme")
         pos: dict[str, int] = {}
         for z in j:
-            if z["art"] == "ausgabe" and z["kategorie"] != "anlage":
+            if z["art"] == "ausgabe" and z["abziehbar_cent"]:
                 pos[z["kategorie"]] = pos.get(z["kategorie"], 0) + z["abziehbar_cent"]
-        afa = sum(a["afa_jahr_cent"] for a in self.anlagen(jahr, st))
-        if afa:
-            pos["anlage"] = afa
         bew_voll = sum(z["betrag_cent"] for z in j if z["art"] == "ausgabe" and z["kategorie"] == "bewirtung")
         ausgaben = sum(pos.values())
         return {"jahr": jahr, "einnahmen_cent": einnahmen, "ausgaben_cent": ausgaben, "gewinn_cent": einnahmen - ausgaben,
@@ -161,19 +226,26 @@ class Finanzen:
 
     # -- Uebersicht ----------------------------------------------------------------------------------------------
 
-    def uebersicht(self, jahr: int | None = None) -> dict:
+    def uebersicht(self, jahr: int | None = None, zeitraum: str = "jahr") -> dict:
         heute = jetzt().date()
         jahr = int(jahr or heute.year)
+        ms = monate_von(zeitraum)
         st = self._stand()
         e, firmen = st["e"], st["firmen"]
-        eu = self.euer(jahr, st)
-        vj = self.euer(jahr - 1, st)
         journal = self.journal(None, st)
-        j = [z for z in journal if z["jahr"] == jahr and not z["storniert"]]
-        monate = [{"monat": MONATE[m], "einnahmen_cent": 0, "ausgaben_cent": 0} for m in range(12)]
-        for z in j:
-            m = int(z["datum"][5:7]) - 1 if int(z["datum"][:4]) == jahr else (11 if z["datum"][:4] > str(jahr) else 0)
-            monate[m]["einnahmen_cent" if z["art"] == "einnahme" else "ausgaben_cent"] += z["abziehbar_cent"]
+        p, pv = self.posten(jahr, st=st), self.posten(jahr - 1, st=st)
+        j = [z for z in p if z["monat"] in ms and not z["storniert"]]
+        monate = []
+        for m in range(1, 13):
+            k, kv = kennzahlen([z for z in p if z["monat"] == m]), kennzahlen([z for z in pv if z["monat"] == m])
+            monate.append({"monat": MONATE[m - 1], "nr": m, "einnahmen_cent": k["einnahmen_cent"],
+                           "ausgaben_cent": k["ausgaben_cent"], "vj_einnahmen_cent": kv["einnahmen_cent"],
+                           "vj_ausgaben_cent": kv["ausgaben_cent"]})
+        quartale = []
+        for q in range(1, 5):
+            k = kennzahlen([z for z in p if z["monat"] in monate_von(f"q{q}")])
+            kv = kennzahlen([z for z in pv if z["monat"] in monate_von(f"q{q}")])
+            quartale.append({"quartal": f"q{q}"} | k | {"vj_gewinn_cent": kv["gewinn_cent"], "vj_einnahmen_cent": kv["einnahmen_cent"]})
         # offene Posten
         forder = []
         for r in st["rechnungen"].values():
@@ -200,8 +272,17 @@ class Finanzen:
                             for a in auftraege)
         entwuerfe = RechnungStore._falte(e)[0]
         rs = RechnungStore(self.bh, self.kunden)
-        kategorien = [{"kategorie": p["kategorie"], "name": POSITIONEN[p["kategorie"]], "betrag_cent": p["betrag_cent"]}
-                      for p in eu["ausgaben"]]
+        je_kat: dict[str, int] = {}
+        for z in j:
+            if z["art"] == "ausgabe" and z["abziehbar_cent"]:
+                je_kat[z["kategorie"]] = je_kat.get(z["kategorie"], 0) + z["abziehbar_cent"]
+        kategorien = sorted(({"kategorie": k, "name": POSITIONEN.get(k, k), "betrag_cent": v} for k, v in je_kat.items()),
+                            key=lambda x: -x["betrag_cent"])
+        w = rs.waechter(jahr=jahr, rechnungen=st["rechnungen"], eintraege=e)
+        hochrechnung = None
+        if jahr == heute.year and w["umsatz_cent"]:
+            tage = (heute - date(jahr, 1, 1)).days + 1
+            hochrechnung = round(w["umsatz_cent"] * (366 if jahr % 4 == 0 else 365) / tage)
         kunden_umsatz: dict[str, int] = {}
         for z in j:
             if z["art"] == "einnahme":
@@ -209,10 +290,11 @@ class Finanzen:
         jahre = sorted({z["jahr"] for z in journal} | {heute.year, jahr}, reverse=True)
         return {
             "jahr": jahr, "stand": heute.isoformat(), "jahre": jahre,
-            "kennzahlen": {k: eu[k] for k in ("einnahmen_cent", "ausgaben_cent", "gewinn_cent")},
-            "vorjahr": {k: vj[k] for k in ("einnahmen_cent", "ausgaben_cent", "gewinn_cent")},
-            "afa_cent": next((p["betrag_cent"] for p in eu["ausgaben"] if p["kategorie"] == "anlage"), 0),
-            "monate": monate, "kategorien": kategorien,
+            "zeitraum": zeitraum,
+            "kennzahlen": kennzahlen(j),
+            "vorjahr": kennzahlen([z for z in pv if z["monat"] in ms]),
+            "afa_cent": sum(z["abziehbar_cent"] for z in j if z["quelle"] == "afa"),
+            "monate": monate, "quartale": quartale, "kategorien": kategorien, "hochrechnung_cent": hochrechnung,
             "kunden": sorted(({"name": k, "betrag_cent": v} for k, v in kunden_umsatz.items()), key=lambda k: -k["betrag_cent"])[:5],
             "forderungen": {"summe_cent": sum(x["offen_cent"] for x in forder), "anzahl": len(forder),
                             "ueberfaellig": sum(1 for x in forder if x["ueberfaellig"]),
@@ -224,7 +306,7 @@ class Finanzen:
                          "auftraege_anzahl": len(auftraege), "auftraege_cent": auftrag_summe,
                          "rechnung_entwuerfe": len(entwuerfe)},
             "belege_zu_pruefen": zu_pruefen,
-            "waechter": rs.waechter(jahr=jahr, rechnungen=st["rechnungen"], eintraege=e),
+            "waechter": w,
             "letzte": [z for z in reversed(journal)][:8],
         }
 

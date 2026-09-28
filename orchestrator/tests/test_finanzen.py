@@ -73,8 +73,12 @@ class TestProbejahr(unittest.TestCase):
         self.assertEqual(eu["gewinn_cent"], 177050 - 192233)                                  # -151,83
         self.assertEqual(eu["bewirtung_nicht_abziehbar_cent"], 3000)
         # Folgejahr: nur das Hosting (10-Tage-Regel) + AfA Kamera 12/36 = 400,00
-        eu2 = self.f.euer(VJ + 1)
+        with mock.patch("orchestrator.core.finanzen.jetzt", return_value=jetzt().replace(year=VJ + 1, month=12, day=31)):
+            eu2 = self.f.euer(VJ + 1)                                                        # Jahresende: volle AfA
         self.assertEqual({p["kategorie"]: p["betrag_cent"] for p in eu2["ausgaben"]}, {"software": 1200, "anlage": 40000})
+        with mock.patch("orchestrator.core.finanzen.jetzt", return_value=jetzt().replace(year=VJ + 1, month=9, day=15)):
+            eu2 = self.f.euer(VJ + 1)                                                        # laufend: bis September 9/36
+        self.assertEqual({p["kategorie"]: p["betrag_cent"] for p in eu2["ausgaben"]}, {"software": 1200, "anlage": 30000})
 
     def test_2_journal_zeigt_stornos_zaehlt_sie_nicht(self):
         ids = self._probejahr()
@@ -183,6 +187,46 @@ class TestProbejahr(unittest.TestCase):
         z = self.f.journal(VJ)[0]
         self.assertEqual((z["art"], z["gegenpartei"], z["position"][:17]), ("einnahme", "Meta Platforms Ireland", "Betriebseinnahmen"))
 
+    def test_8_cockpit_zeitraeume_und_drilldown_stimmen(self):
+        """Etappe 8, Gate „Zahlen gegen Rohdaten“: jede Kennzahl = Summe ihrer Posten; Monate/Quartale = Jahr."""
+        from orchestrator.core.finanzen import kennzahlen
+        self._probejahr()
+        eu = self.f.euer(VJ)
+        with mock.patch("orchestrator.core.finanzen.jetzt", return_value=jetzt().replace(year=VJ, month=12, day=31)):
+            u = self.f.uebersicht(VJ)
+            q3 = self.f.uebersicht(VJ, "q3")
+            m09 = self.f.uebersicht(VJ, "m09")
+        jahr = u["kennzahlen"]
+        self.assertEqual((jahr["einnahmen_cent"], jahr["ausgaben_cent"]), (eu["einnahmen_cent"], eu["ausgaben_cent"]))
+        self.assertEqual(sum(m["ausgaben_cent"] for m in u["monate"]), eu["ausgaben_cent"])      # AfA monatlich, Summe = Jahr
+        self.assertEqual(sum(q["gewinn_cent"] for q in u["quartale"]), eu["gewinn_cent"])
+        for zr, ueb in (("jahr", u), ("q3", q3), ("m09", m09)):
+            self.assertEqual(kennzahlen(self.f.posten(VJ, zr)), ueb["kennzahlen"], zr)
+        # September: Laptop ND 1 (voll im Monat) + Kamera 1.200/36 (Sep) = 1.500,00 + 33,33
+        self.assertEqual(m09["kennzahlen"]["ausgaben_cent"], 150000 + 3333)
+        self.assertEqual(sum(z["abziehbar_cent"] for z in self.f.posten(VJ, art="ausgabe", kategorie="anlage")), 163333)
+        kunde = self.f.posten(VJ, art="einnahme", gegenpartei="google ireland")
+        self.assertEqual([z["betrag_cent"] for z in kunde], [25050])
+        with self.assertRaises(ValueError):
+            self.f.posten(VJ, "q5")
+        # laufendes Jahr: Abschreibung nur bis zum aktuellen Monat (keine Vorwegnahme kuenftiger Monate)
+        with mock.patch("orchestrator.core.finanzen.jetzt", return_value=jetzt().replace(year=VJ, month=10, day=15)):
+            afa = [z["monat"] for z in self.f.posten(VJ, kategorie="anlage") if z["quelle"] == "afa"]
+        self.assertEqual(max(afa), 10)
+
+    def test_9_ki_kosten_jahr(self):
+        import tempfile
+        from pathlib import Path
+        from orchestrator.core.kosten import KostenStore
+        ks = KostenStore(Path(tempfile.mkdtemp()) / "k.jsonl")
+        for ts, eur in (("2026-01-05T10:00:00", 1.5), ("2026-01-20T10:00:00", 0.25), ("2026-09-01T10:00:00", 2.0),
+                        ("2025-12-31T23:00:00", 9.0)):
+            ks._append({"ts": ts, "quelle": "chat", "modell": "x", "provider": "gemini" if eur < 2 else "anthropic",
+                        "in": 1, "out": 1, "eur": eur})
+        j = ks.jahr(2026)
+        self.assertEqual((j["monate_eur"][0], j["monate_eur"][8], j["gesamt_eur"]), (1.75, 2.0, 3.75))
+        self.assertEqual(list(j["je_provider"]), ["anthropic", "gemini"])
+
 
 class TestFinanzenApi(ApiBasis):
     def test_a1_ablauf(self):
@@ -201,6 +245,11 @@ class TestFinanzenApi(ApiBasis):
                                     json={"grund": "Test"}).json()["ok"])
         self.assertEqual(self.c.get("/api/finanzen/euer").json()["einnahmen_cent"], 0)
         self.assertIn("ausgabe", self.c.get("/api/finanzen/eigenbelege").json()["kategorien"])
+        p = self.c.get("/api/finanzen/posten?zeitraum=jahr&art=einnahme").json()
+        self.assertEqual(p["kennzahlen"]["einnahmen_cent"], 0)                               # storniert zaehlt nicht
+        self.assertEqual(self.c.get("/api/finanzen/posten?zeitraum=q9").status_code, 400)
+        self.assertEqual(self.c.get("/api/finanzen/uebersicht?zeitraum=m13").status_code, 400)
+        self.assertIn("budget", self.c.get("/api/finanzen/ki-kosten").json())
         self.assertFalse(self.c.post("/api/finanzen/belege/ER-1999-0001/zahlung-stornieren",
                                      json={"index": "x", "grund": "g"}).json()["ok"])
 
