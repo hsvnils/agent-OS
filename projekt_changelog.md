@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 10:36] — Claude Code (MACO470)
+- **Was:** Befund aus CEO-Screenshot: LUNA-App in Google Cloud ist „In Produktion" -> BF-33-Ursache „Testmodus-Verfall"
+  ausgeschlossen (in `docs/bekannte-fehler.md` + Roadmap Etappe 0 vermerkt). Feste Regel: mit dem CEO immer Deutsch.
+- **Warum:** Etappe 0 der `LUNA_GOOGLE_KONTO_ROADMAP.md`; CEO-Hinweis „IMMER nur Deutsch".
+- **Betroffen:** `docs/bekannte-fehler.md`, `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
 ## [2026-09-28 10:24] — Claude Code (MACO470)
 - **Was:** CEO-Entscheidungen in `LUNA_GOOGLE_KONTO_ROADMAP.md` eingetragen: Konto `luna.hanserautisch@gmail.com`,
   Angebote sendet LUNA nach CEO-Klick aus ihrem Konto, komplette Mail-Weiterleitung.

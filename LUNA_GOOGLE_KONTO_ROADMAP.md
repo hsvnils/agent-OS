@@ -70,7 +70,8 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 - Status: geplant
 - Ziel / Scope: Gmail-Konto anlegen, Zwei-Faktor-Anmeldung, Wiederherstellung auf den CEO; im Google-Cloud-Projekt der
   LUNA-App das Konto als Testnutzer eintragen oder die App auf „In Produktion" stellen (sonst verfaellt der Zugang im
-  Testmodus nach 7 Tagen). Anleitung Schritt fuer Schritt liefert Claude Code.
+  Testmodus nach 7 Tagen). Anleitung Schritt fuer Schritt liefert Claude Code. **Befund 2026-09-28:** App steht
+  bereits auf „In Produktion" (Nutzertyp Extern, 1 von 100 Nutzern) -- kein Testnutzer-Eintrag noetig.
 - Gate: CEO kann sich im neuen Konto anmelden.
 
 ### Etappe 1: Kalender teilen + Kalender-ID konfigurierbar
