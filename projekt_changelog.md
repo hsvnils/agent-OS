@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 12:20] — Claude Code (MACO470)
+- **Was:** Angebots-Mails vollstaendig nachverfolgt: gesendete Mails und Kundenantworten als Original (.eml) in der
+  Buchhaltung archiviert (Geschaeftsbrief, Nachholen fuer bereits erfasste), im Verlauf eingeklappt und aufklappbar
+  (Von/An/Datum/Betreff/Text/Anhaenge); `google_workspace.mail_roh`, `angebote.mail_lesen/mail_archivieren`,
+  `GET /api/crm/angebote/<nr>/mail/<id>`. Cache v40/v18. Tests + Gegenprobe, Suite 861 gruen.
+- **Warum:** CEO nach dem Test mit AN-2026-0002: Mails und Antworten korrekt tracken, im Verlauf minimiert, aufklappbar.
+- **Betroffen:** `orchestrator/governance/google_workspace.py`, `orchestrator/core/angebote.py`,
+  `orchestrator/channels/web/{app.py,static/app-v2.js,static/style-v2.css,static/index-v2.html}`,
+  `orchestrator/tests/test_angebote.py`, `docs/datenfluesse.md`, `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
 ## [2026-09-28 11:37] — Claude Code (MACO470)
 - **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 4: Angebote aus LUNAs Google-Konto senden (Vorschau, CEO-Klick,
   nur Modul finanzen, PDF-Anhang, Absender „Hanserautisch – LUNA"), danach automatisch versendet; Kundenantworten im

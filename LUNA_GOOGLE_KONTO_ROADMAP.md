@@ -120,6 +120,11 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
   gesendeter Angebote (bis 60 Tage), neue Kundenantworten -> Eintrag `angebot_antwort` (Dedup) + Telegram-Meldung;
   Detail zeigt Versand und Antworten. „Gmail-Entwurf" ersetzt, „Anderweitig versendet" bleibt fuer andere Wege.
   Tests + Gegenproben (Rechte, Dedup), Suite 859 gruen; Oberflaeche im Headless-Chrome geprueft.
+- Nachbesserung nach CEO-Test 2026-09-28 (AN-2026-0002 an die Privatadresse gesendet, Antwort kam an): gesendete Mails
+  und Kundenantworten werden als **Original (.eml) archiviert** (Geschaeftsbrief, 6 Jahre, Ereignis
+  `angebot_mail_archiviert`, Nachholen fuer schon erfasste Mails) und stehen im **Verlauf eingeklappt**, aufklappbar mit
+  Von/An/Datum/Betreff/Text/Anhaengen (`GET /api/crm/angebote/<nr>/mail/<id>`, laedt erst beim Aufklappen). Tests +
+  Gegenprobe, Suite 861 gruen.
 - Ziel / Scope: Knopf „Jetzt senden" in LUNA-OS (CEO-Klick = Freigabe, Vorschau von Empfaenger/Betreff/Text/PDF),
   Versand aus dem LUNA-Konto, Status „versendet" automatisch, Antworten des Kunden dem Angebot zuordnen und melden.
 - Gate: Test-Angebot an eine eigene Adresse, PDF-Anhang korrekt, Status/Verlauf stimmen.

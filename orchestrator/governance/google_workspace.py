@@ -205,6 +205,17 @@ class GoogleWorkspace:
         adresse = (os.environ.get("GOOGLE_ACCOUNT_EMAIL") or self.konto_adresse or "").strip()
         return f"{name} <{adresse}>" if name and adresse else ""
 
+    def mail_roh(self, message_id: str) -> dict:
+        """Original-Mail (RFC 822, inkl. Anhaenge) als Bytes -- zum unveraenderten Archivieren (.eml)."""
+        if (g := self._guard()):
+            return g
+        try:
+            svc = self.auth.service("gmail", "v1")
+            m = svc.users().messages().get(userId="me", id=message_id, format="raw").execute()
+            return _ok(roh=base64.urlsafe_b64decode(m.get("raw", "")))
+        except Exception as exc:
+            return _fehler(f"Mail-Abruf fehlgeschlagen: {str(exc)[:160]}")
+
     def thread_lesen(self, thread_id: str) -> dict:
         """Nachrichten eines Mailverlaufs (Kopfdaten + Vorschau) -- z. B. Antworten auf ein gesendetes Angebot."""
         if (g := self._guard()):
@@ -524,6 +535,26 @@ class MockGoogleWorkspace:
 
     def thread_lesen(self, thread_id):
         return _ok(nachrichten=list(getattr(self, "threads", {}).get(thread_id, [])))
+
+    def mail_roh(self, message_id):
+        """Baut eine .eml aus den Testdaten (gesendete Mails s1.. oder Thread-Nachrichten)."""
+        from email.message import EmailMessage as _E
+        m = _E()
+        for i, g in enumerate(self.gesendet, 1):
+            if f"s{i}" == message_id:
+                m["From"], m["To"], m["Subject"] = "Hanserautisch – LUNA <luna@test>", g["an"], g["betreff"]
+                m.set_content(g["text"])
+                for n, _, t in g["anhaenge"]:
+                    m.add_attachment(b"%PDF-test", maintype="application", subtype="pdf", filename=n)
+                return _ok(roh=m.as_bytes())
+        for nachrichten in getattr(self, "threads", {}).values():
+            for x in nachrichten:
+                if x["id"] == message_id:
+                    m["From"], m["To"], m["Subject"] = x.get("von", ""), "luna@test", "Re: Angebot"
+                    m["Date"] = x.get("datum", "")
+                    m.set_content(x.get("text") or x.get("vorschau", ""))
+                    return _ok(roh=m.as_bytes())
+        return _fehler("unbekannte Mail")
 
     def kalender_agenda(self, tage=7, max_results=20):
         return _ok(termine=[{"id": "e1", "titel": "Demo", "start": "2026-06-26T10:00:00",

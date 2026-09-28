@@ -809,10 +809,13 @@ async function anDetail(nr, meldung, fehler) {
     + ((a.versendet_termine || []).length < 2 ? `<button class="v2-btn" data-act="an-erinnerungen" data-id="${esc(nr)}" title="Fehlende Kalender-Erinnerungen anlegen">📅 Erinnerungen nachholen</button>` : "");
   if ((a.pdfs || []).length) aktionen += `<a class="v2-btn" href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf?archiv=1" target="_blank" rel="noopener">📎 Abgelegtes PDF</a>`;
   const verlaufLbl = { angebot_angelegt: "Angelegt", angebot_geaendert: "Geändert", angebot_pdf_abgelegt: "PDF abgelegt", angebot_status: "Status", angebot_erinnerungen: "Erinnerungen nachgeholt", angebot_antwort: "Antwort vom Kunden" };
-  const vm = a.versendet_mail;
-  const gesendet = vm ? `<div class="v2-list-row"><span>✉️</span><div class="grow"><b>Gesendet an ${esc(vm.an)}</b><small>${esc(zeit(a.versendet_am))} · aus LUNAs Konto · „${esc(vm.betreff || "")}“</small></div></div>` : "";
-  const antworten = (a.antworten || []).slice().reverse().map(x => `<div class="v2-list-row"><span>💬</span><div class="grow"><b>${esc(x.von)}</b><small>${esc(x.datum || zeit(x.ts))}</small><div style="white-space:pre-wrap;margin-top:4px">${esc(x.vorschau || "")}</div></div></div>`).join("");
-  const verlauf = (a.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(verlaufLbl[v.typ] || v.typ)}${v.status ? ": " + esc((AN_STATUS[v.status] || [v.status])[0]) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.an ? " · an " + esc(v.an) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
+  const anzAntworten = (a.antworten || []).length;
+  const verlauf = (a.verlauf || []).slice().reverse().map(v => {
+    const kopf = `<b>${esc(verlaufLbl[v.typ] || v.typ)}${v.status ? ": " + esc((AN_STATUS[v.status] || [v.status])[0]) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.an ? " · an " + esc(v.an) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small>`;
+    if (!v.mail_id) return `<div class="v2-list-row"><div class="grow">${kopf}</div></div>`;
+    const titel = v.richtung === "ein" ? `💬 Antwort von ${esc(v.mail_von || "")}` : `✉️ Gesendet an ${esc(v.mail_an || "")}${v.betreff ? " · „" + esc(v.betreff) + "“" : ""}`;
+    return `<details class="v2-mail" data-nr="${esc(nr)}" data-mid="${esc(v.mail_id)}"><summary><div class="grow"><b>${titel}</b><small>${esc(zeit(v.ts))}${v.vorschau ? " · " + esc(v.vorschau.slice(0, 90)) : ""}${v.status ? " · Status: " + esc((AN_STATUS[v.status] || [v.status])[0]) : ""}</small></div></summary><div class="v2-mail-inhalt">Lade Mail…</div></details>`;
+  }).join("");
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
     <div class="v2-card-actions" style="flex-wrap:wrap;margin:8px 0 14px">${aktionen}</div>
     <div class="v2-an-detail"><div>
@@ -824,14 +827,27 @@ async function anDetail(nr, meldung, fehler) {
     <div class="v2-kv"><span>Layout</span><b>${a.layout === "standard" ? "Schlicht (DIN)" : "Hanserautisch"}</b></div>
     ${a.titel ? `<div class="v2-kv"><span>Titel</span><b>${esc(a.titel)}</b></div>` : ""}
     ${d.firmendaten ? "" : `<div class="v2-msg err">Firmendaten fehlen auf der NAS — PDF nicht möglich.</div>`}
-    ${gesendet ? `<h3>Versand</h3>${gesendet}` : ""}${antworten ? `<h3>Antworten (${(a.antworten || []).length})</h3>${antworten}` : ""}
+    ${anzAntworten ? `<div class="v2-kv"><span>Antworten vom Kunden</span><b>💬 ${anzAntworten} (im Verlauf)</b></div>` : ""}
     ${termine ? `<h3>Erinnerungen</h3>${termine}` : ""}${pdfs ? `<h3>Abgelegte PDFs</h3>${pdfs}` : ""}
-    <h3>Verlauf</h3>${verlauf}
+    <h3>Verlauf <small class="v2-sub">Mails zum Aufklappen</small></h3>${verlauf}
     </div><div>
     <div id="an-senden-box"></div>
     <h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
     </div></div>`, true);
 }
+
+/* ---------- Mails im Verlauf: erst beim Aufklappen laden ---------- */
+document.addEventListener("toggle", async (e) => {
+  const d = e.target; if (!(d instanceof HTMLElement) || !d.matches("details.v2-mail") || !d.open || d.dataset.geladen) return;
+  d.dataset.geladen = "1";
+  const box = d.querySelector(".v2-mail-inhalt");
+  const m = await jget(`/api/crm/angebote/${encodeURIComponent(d.dataset.nr)}/mail/${encodeURIComponent(d.dataset.mid)}`);
+  if (!m) { box.textContent = "Mail nicht abrufbar."; delete d.dataset.geladen; return; }
+  box.innerHTML = `<div class="v2-kv"><span>Von</span><b>${esc(m.von)}</b></div><div class="v2-kv"><span>An</span><b>${esc(m.an)}</b></div>
+    <div class="v2-kv"><span>Datum</span><b>${esc(m.datum)}</b></div><div class="v2-kv"><span>Betreff</span><b>${esc(m.betreff)}</b></div>
+    ${(m.anhaenge || []).length ? `<div class="v2-kv"><span>Anhänge</span><b>📎 ${m.anhaenge.map(esc).join(", ")}</b></div>` : ""}
+    <pre class="v2-mail-text">${esc(m.text || "(kein Text)")}</pre><small class="v2-sub">${m.archiviert ? "Original archiviert (Aufbewahrung 6 Jahre)" : "Noch nicht archiviert — wird beim nächsten Abgleich abgelegt"}</small>`;
+}, true);
 
 /* ---------- Senden aus LUNAs Konto (CEO-Klick, mit Vorschau) ---------- */
 async function anSendenVorschau(nr) {

@@ -273,6 +273,14 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
 .v2-an-pos .an-p-gesamt { padding-top: 9px; font-weight: 700; white-space: nowrap; }
 .v2-an-pos .an-p-menge, .v2-an-pos .an-p-preis { text-align: right; }
 .v2-an-weg { padding: 8px 0; justify-content: center; }
+.v2-mail { border-bottom: 1px solid var(--v2-line-soft); }
+.v2-mail > summary { display: flex; gap: 8px; align-items: center; padding: 10px 2px; cursor: pointer; list-style: none; }
+.v2-mail > summary::-webkit-details-marker { display: none; }
+.v2-mail > summary::before { content: "▸"; color: var(--v2-muted); transition: transform .15s; }
+.v2-mail[open] > summary::before { transform: rotate(90deg); }
+.v2-mail > summary small { display: block; color: var(--v2-muted); }
+.v2-mail-inhalt { padding: 4px 4px 14px 20px; }
+.v2-mail-text { white-space: pre-wrap; font: inherit; font-size: 13px; background: var(--v2-bg1); border-radius: 10px; padding: 10px 12px; margin: 8px 0; max-height: 420px; overflow: auto; }
 .v2-auto-feld { position: relative; }
 .v2-auto { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; margin-top: 4px; background: var(--v2-card-solid); border: 1px solid var(--v2-line);
   border-radius: 12px; box-shadow: var(--v2-shadow-hi); max-height: 320px; overflow-y: auto; }
