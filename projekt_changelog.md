@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 11:10] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 2 abgeschlossen und beim Empfaenger verifiziert: Chat nennt das richtige
+  Datum, Termin liegt in LUNAs Kalender (iPhone des CEO); LUNAs Loeschung des 2024-Termins war echt (Protokoll + Google).
+- **Warum:** CEO-Screenshot nach Neustart.
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
 ## [2026-09-28 11:05] — Claude Code (MACO470)
 - **Was:** BF-35 behoben: Chat bekommt bei jeder Nachricht das aktuelle Datum (Wochentag, Datum, Uhrzeit Europe/Berlin)
   in der Systemanweisung (`system_prompt()`); Termin-Werkzeuge weisen Starts in der Vergangenheit zurueck. Tests
