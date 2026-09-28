@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 10:49] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` auf vollstaendige Trennung umgestellt: keine Mail-Weiterleitung (Etappe 3
+  verworfen), keine Kalender-Freigabe des CEO (Lese-Funktion bleibt ungenutzt), Cloud-Projekt bleibt beim CEO;
+  Etappe 1 abgeschlossen. Register: Trennung beschlossen (revidiert die Weiterleitung).
+- **Warum:** CEO: „ALLES was mit Luna zu tun hat, soll in ihrem Konto passieren, nicht im hanserautisch@gmail.com".
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-28 10:47] — Claude Code (MACO470)
 - **Was:** Etappe 1 (`LUNA_GOOGLE_KONTO_ROADMAP.md`): Lese-Kalender (`GOOGLE_CALENDAR_LESEN`) -- LUNA schreibt nur in ihren
   Kalender, liest den des CEO fuer Briefing/Kollisionen mit; Agenda mischt beide, markiert die Herkunft, Hinweis statt
