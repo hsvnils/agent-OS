@@ -60,6 +60,16 @@ def monate_von(zeitraum: str) -> set[int]:
     return set(ZEITRAEUME[zeitraum])
 
 
+VERLUSTVORTRAG = "verlustvortrag_erfasst"
+
+
+def verlustvortrag(eintraege: list[dict], aus_jahr: int) -> int | None:
+    """Verbleibender Verlust aus `aus_jahr` (Angabe des CEO, z. B. aus der EUeR/dem Bescheid des Vorjahres) -- die letzte
+    Angabe gilt. Kein Teil der EUeR: das Finanzamt verrechnet ihn nach § 10d EStG mit spaeteren Gewinnen."""
+    w = [e["daten"] for e in eintraege if e["typ"] == VERLUSTVORTRAG and int(e["daten"].get("jahr", 0)) == int(aus_jahr)]
+    return int(w[-1]["betrag_cent"]) if w else None
+
+
 def kennzahlen(zeilen: list[dict]) -> dict:
     ein = sum(z["abziehbar_cent"] for z in zeilen if z["art"] == "einnahme" and not z["storniert"])
     aus = sum(z["abziehbar_cent"] for z in zeilen if z["art"] == "ausgabe" and not z["storniert"])
@@ -338,6 +348,7 @@ class Finanzen:
         return {
             "jahr": jahr, "stand": heute.isoformat(), "jahre": jahre,
             "zeitraum": zeitraum,
+            "verlustvortrag": vv_info(verlustvortrag(e, jahr - 1), jahr - 1, kennzahlen(p)["gewinn_cent"]),
             "kennzahlen": kennzahlen(j),
             "vorjahr": kennzahlen([z for z in pv if z["monat"] in ms]),
             "afa_cent": sum(z["abziehbar_cent"] for z in j if z["quelle"] == "afa"),
@@ -356,6 +367,15 @@ class Finanzen:
             "waechter": w,
             "letzte": [z for z in reversed(journal)][:8],
         }
+
+
+def vv_info(vv: int | None, aus_jahr: int, gewinn_cent: int) -> dict | None:
+    """Verlustvortrag gegen den Gewinn des Folgejahres: wie viel ist schon „aufgebraucht“, wie viel bleibt."""
+    if vv is None:
+        return None
+    verrechnet = min(vv, max(gewinn_cent, 0))
+    return {"aus_jahr": aus_jahr, "betrag_cent": vv, "gewinn_cent": gewinn_cent, "verrechnet_cent": verrechnet,
+            "verbleibend_cent": vv - verrechnet}
 
 
 def journal_csv(zeilen: list[dict]) -> str:

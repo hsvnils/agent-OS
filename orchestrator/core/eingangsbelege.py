@@ -37,13 +37,17 @@ KATEGORIEN = {
     "software": ("Software, Abos, Hosting", ("software", "abo", "subscription", "lizenz", "hosting", "cloud", "adobe", "canva", "google", "apple", "microsoft", "openai", "anthropic", "domain")),
     "werbung": ("Werbung / Marketing", ("werbung", "anzeige", "ads", "marketing", "kampagne", "promotion", "sponsor")),
     "telekommunikation": ("Telefon / Internet", ("telefon", "mobilfunk", "internet", "telekom", "vodafone", "o2", "1&1")),
-    "buero": ("Bürobedarf / Porto", ("büro", "buero", "papier", "porto", "briefmarke", "paketmarke", "deutsche post")),
+    "buero": ("Arbeitsmittel & Zubehör (Kabel, Speicherkarten, Büro, Versand, Requisiten)",
+              ("büro", "buero", "papier", "porto", "briefmarke", "paketmarke", "deutsche post", "kabel", "adapter",
+               "speicherkarte", "sd-karte", "versandbeutel", "versandtasche", "panzerglas", "schutzfolie")),
     "reise": ("Reisekosten", ("bahn", "db fernverkehr", "hotel", "flug", "übernachtung", "ticket", "reise")),
     "fahrzeug": ("Fahrzeugkosten", ("tank", "kraftstoff", "benzin", "diesel", "parken", "werkstatt", "kfz")),
     "bewirtung": ("Bewirtung (70 % absetzbar)", ("restaurant", "bewirtung", "gastronomie", "café", "cafe")),
     "fortbildung": ("Fortbildung / Fachliteratur", ("seminar", "kurs", "fortbildung", "buch", "schulung", "konferenz")),
-    "gwg": ("Geringwertiges Wirtschaftsgut (bis 800 € netto)", ("kamera", "mikrofon", "objektiv", "stativ", "monitor", "tastatur", "cage", "gimbal", "akku", "speicherkarte", "smallrig", "rode", "sony alpha")),
-    "anlage": ("Anlagegut > 800 € (Abschreibung)", ("laptop", "macbook", "computer", "pc ", "iphone", "server", "nas")),
+    "gwg": ("Technik & Equipment bis 800 € (Kamera, Licht, Ton, Streaming – GWG)",
+            ("kamera", "mikrofon", "objektiv", "stativ", "monitor", "tastatur", "cage", "gimbal", "akku", "smallrig", "rode",
+             "sony alpha", "key light", "stream deck", "elgato", "capture", "streambox", "headset", "softbox", "ringlicht")),
+    "anlage": ("Technik & Geräte über 800 € (Abschreibung)", ("laptop", "macbook", "computer", "pc ", "iphone", "server", "nas")),
     "gebuehren": ("Gebühren, Beiträge, Versicherungen", ("gebühr", "gebuehr", "beitrag", "versicherung", "ihk", "kontoführung")),
     "sonstiges": ("Sonstiges", ()),
 }
@@ -279,12 +283,30 @@ _POS_NICHT = re.compile(r"(?i)summe|gesamt|zwischensumme|netto|brutto|mwst|ust\b
 def positionen_regeln(text: str) -> list[dict]:
     """Positionszeilen aus PDF-/OCR-Text: Zeile mit Artikeltext und Betrag; der letzte Betrag der Zeile ist der
     Zeilenbetrag (brutto, wie auf Verbraucher-/Shop-Rechnungen). Summen-, Steuer- und Zahlungszeilen fallen raus."""
-    out = []
-    for z in (text or "").splitlines():
+    out, puffer = [], []
+    for z in (text or "").replace("\xa0", " ").splitlines():
         z = z.strip()
         b = _POS_BETRAG.findall(z)
-        if not b or _POS_NICHT.search(z):
+        if re.match(r"(?i)^(asin|sku)\b", z):                 # Artikelnummer unter dem Text (Amazon) -- Text behalten
             continue
+        if _POS_NICHT.search(z) or re.match(r"(?i)^(beschreibung|menge|pos\.?|artikel|\(?(ohne|inkl)\.)", z) or ":" in z:
+            puffer = []                                      # Kopf-, Summen-, Adress- oder Feldzeile: kein Artikeltext
+            continue
+        if not b:
+            if len(re.findall(r"[A-Za-zÄÖÜäöüß]", z)) >= 3:
+                puffer = puffer if len(puffer) >= 3 else puffer + [z]   # mehrzeiliger Artikeltext: Anfang = Produktname
+            continue
+        if len(re.findall(r"[A-Za-zÄÖÜäöüß]", z[:z.find(b[0])])) < 3 and puffer:   # reine Zahlenzeile unter dem Text
+            t = re.sub(r"\s*\|\s*B0\w+\s*$", "", " ".join(puffer)).strip()
+            puffer = []
+            try:
+                c = cent(b[-1])
+            except ValueError:
+                continue
+            if c:
+                out.append({"text": t[:200], "betrag": eur(c).replace(" €", "")})
+            continue
+        puffer = []
         vorne = z[:z.find(b[0])]
         t = re.sub(r"^\d{1,3}[.)]?\s+", "", vorne).strip()                        # Positionsnummer
         for _ in range(3):                                                         # Menge, Einheit, Steuersatz hinten
@@ -346,6 +368,14 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
         v["lieferant"] = re.split(r"\s+[·|•]\s+", zeilen[0])[0][:120]      # Absenderzeile "Firma · Strasse · Ort"
     if not v.get("waehrung"):                                   # Fremdwaehrung: Euro-Betrag kommt vom Konto
         v["positionen"] = positionen_regeln(t)
+    # Sammel-PDF mit mehreren Rechnungen (Amazon: eine je Verkaeufer): Zahlbetraege aller Rechnungen addieren
+    zahl = []
+    for teil in re.split(r"Rechnungsdetails", t.replace("\xa0", " "))[1:]:
+        m = re.search(r"Zahlbetrag\s*(-?\d{1,3}(?:\.\d{3})*,\d{2})", teil)
+        if m:
+            zahl.append(cent(m.group(1)))
+    if len(zahl) >= 2 and not v.get("waehrung"):
+        v["betrag"] = eur(sum(zahl)).replace(" €", "")
     if e_rechnung:
         v.update({k: e_rechnung[k] for k in ("lieferant", "rechnungsnummer", "rechnungsdatum", "betrag", "faellig_am", "leistung",
                                               "positionen") if e_rechnung.get(k)})

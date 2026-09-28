@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 20:56] — Claude Code
+- **Was:** Verlustvortrag im Finanzbereich (Eingabe im Jahresabschluss, Anzeige „noch verrechenbar“ in Uebersicht/Jahresabschluss, nicht in der EUeR); Kategorienamen fuer Content Creator (Technik & Equipment bis/ueber 800 €, Arbeitsmittel & Zubehoer); Positionserkennung fuer Amazon-Rechnungen (mehrzeilige Artikeltexte, geschuetzte Leerzeichen, ASIN-Zeilen, Sammel-PDF = Summe der Zahlbetraege); CFO-Hinweis „wiederkehrend fehlt“ nur bei aehnlichen Betraegen. UI-Cache app v59.
+- **Warum:** CEO-Entscheidungen zum Uebertrag (Kategorien, Verlustvortrag) + Erkenntnisse aus den 35 Amazon-Rechnungen.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `finanzen.py`, `jahresabschluss.py`, `todos.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_uebertrag_folgen.py` (neu), `docs/entscheidungs-register.md`, `docs/datenfluesse.md`
+
 ## [2026-09-28 20:53] — Claude Code
 - **Was:** Uebertrag 2026 ins Live-Kassenbuch (CEO-Go „Los gehts“), nach Probelauf gegen eine Kopie: 29 Belege aus dem Ordner LUNA-Uebertrag hochgeladen, gebucht (mit Positionen/Kategorien, Katzenbrunnen-Filter 19,24 EUR als privat) und bezahlt (ER-2026-0004 bis -0032), 4 Eigenbelege fuer fehlende Belege (EB-2026-0001 TeamClash Firmenevent 330,00, -0002 Fiverr Logo 96,09, -0003 Kabelmanagement 26,59, -0004 Elgato 435,00), Apple ER-2026-0003 gebucht (99,00, 23.05.2026). Betraege laut Rechnung (Excel-Abweichungen korrigiert). Verlustvortrag 2025 (2.622,59) bewusst NICHT als Ausgabe. Kundenrechnungen (Hands of God, Kiezalm) macht der CEO selbst. Ergebnis: Ausgaben 2026 2.179,16 EUR, Kette intakt.
 - **Warum:** CEO: Excel-Bestand + Belegordner in LUNA uebernehmen und buchen.

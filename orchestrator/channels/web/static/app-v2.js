@@ -1545,6 +1545,7 @@ async function finUebersicht(u) {
     ${kpiTile("Offen: bekommen wir", cent2eur(f.summe_cent), null, `${f.anzahl} Rechnung(en)${f.ueberfaellig ? ", " + f.ueberfaellig + " überfällig" : ""} · wir zahlen noch ${cent2eur(vb.summe_cent)}`)}
     ${tile("Monatsverlauf " + u.jahr, monate, "w8")}
     ${tile("Kleinunternehmer-Grenze " + u.jahr, grenze, "w4")}
+    ${u.verlustvortrag ? tile("Verlustvortrag aus " + u.verlustvortrag.aus_jahr, vvHtml(u.verlustvortrag), "w4") : ""}
     ${tile("Quartale " + u.jahr, quartale, "w8")}
     ${tile("KI-Kosten " + u.jahr, kiHtml, "w4")}
     ${tile("Vom Angebot zum Geld", pipeline, "w12")}
@@ -1553,6 +1554,11 @@ async function finUebersicht(u) {
     ${tile("Ausgaben nach Kategorie · " + zn, kat, "w6")}
     ${tile("Top-Kunden · " + zn, kunden, "w6")}
     ${tile("Letzte Zahlungen", zeilen, "w12")}`;
+}
+function vvHtml(v) {
+  return `<div class="v2-kpi">${esc(cent2eur(v.verbleibend_cent))} <span class="v2-sub" style="font-size:12px">noch verrechenbar</span></div>
+    <div class="v2-re-balken"><i style="width:${v.betrag_cent ? Math.round(v.verrechnet_cent / v.betrag_cent * 100) : 0}%;background:var(--v2-green)"></i></div>
+    <small class="v2-sub">Verlust ${v.aus_jahr}: ${esc(cent2eur(v.betrag_cent))} · Gewinn ${v.aus_jahr + 1} bisher ${esc(cent2eur(v.gewinn_cent))} · davon verrechnet ${esc(cent2eur(v.verrechnet_cent))}. Das Finanzamt verrechnet den Verlust automatisch mit dem Gewinn (§ 10d EStG) — er gehört nicht in die Anlage EÜR.</small>`;
 }
 // Drill-down: die Buchungen hinter einer Zahl; die Summe muss der Kachel entsprechen (Abnahme gegen Rohdaten)
 async function finDrill(query) {
@@ -1607,6 +1613,8 @@ async function finAbschluss(jahr) {
     + tile(`Export ${jahr}`, `<div class="v2-sub" style="line-height:1.6">Ein ZIP für Finanzamt oder Steuerberater: alle Tabellen (CSV + index.xml nach dem Beschreibungsstandard), das unveränderbare Kassenbuch mit Prüfergebnis, alle Belege im Original und die EÜR als PDF.</div>
       <div class="v2-card-actions" style="margin-top:12px"><a class="v2-btn pri" href="/api/finanzen/abschluss/export?jahr=${jahr}">⬇ Export ${jahr} (ZIP)</a><a class="v2-btn" href="/api/finanzen/abschluss/euer.pdf?jahr=${jahr}" target="_blank" rel="noopener">📄 EÜR ${jahr} als PDF</a></div>
       <small class="v2-sub">Geht nur an dich (Download), nichts wird verschickt.</small>`, "w6")
+    + tile(`Verlustvortrag aus ${jahr - 1}`, (d.verlustvortrag ? vvHtml(d.verlustvortrag) : `<div class="v2-sub">Kein Verlustvortrag aus ${jahr - 1} erfasst. Hattest du ${jahr - 1} einen Verlust, trag ihn hier ein (Betrag aus deiner EÜR bzw. dem Steuerbescheid).</div>`)
+      + `<div class="v2-card-actions" style="margin-top:8px"><button class="v2-btn sm" data-act="fin-vv" data-val="${jahr - 1}">${d.verlustvortrag ? "Ändern" : "Verlustvortrag eintragen"}</button></div>`, "w12")
     + tile(`EÜR ${jahr} für ELSTER — Anlage EÜR`, `<div class="v2-msg" style="margin-bottom:8px">${esc(eu.zeilen_hinweis)}</div>` + tab
       + `<small class="v2-sub">Nur die Zeilen mit Betrag eintragen. Kleinunternehmer: alle Beträge brutto. Das ist eine Eingabehilfe — die Verantwortung für die Erklärung bleibt bei dir.</small>`, "w12");
 }
@@ -2017,6 +2025,12 @@ async function handleAct(act, el) {
       return renderDash();
     }
     case "fin-drill": return finDrill(val);
+    case "fin-vv": {
+      const betrag = prompt(`Verbleibender Verlust aus ${val} in € (z. B. 2.622,59):`, ""); if (betrag === null) return;
+      const r = await jpost("/api/finanzen/verlustvortrag", { jahr: Number(val), betrag, notiz: "per LUNA-OS" });
+      if (!r || !r.ok) return alert((r && r.hinweis) || "Fehler.");
+      return renderFinanzen(`Verlustvortrag ${val}: ${cent2eur(r.betrag_cent)} gespeichert.`);
+    }
     case "eb-neu": return ebNeu(val);
     case "eb-speichern": return ebSpeichern(val);
     case "eb-detail": return ebDetail(id);

@@ -91,19 +91,25 @@ def finanzcheck(e: list[dict], heute: date, *, rechnungen: dict | None = None) -
                                                                "schluessel": f"monat:{mon}", "label": "✓ Abgeglichen"}))
     # 2) wiederkehrende Posten: in beiden Vormonaten da, in diesem Monat (ab dem 10.) nicht
     if heute.day >= 10:
-        je_monat: dict[str, set] = {}
+        je_monat: dict[str, dict] = {}                      # {JJJJ-MM: {(art, wer): Summe}}
+        def merke(mon, art, wer, c):
+            k = (art, wer.strip())
+            je_monat.setdefault(mon, {})[k] = je_monat.get(mon, {}).get(k, 0) + abs(int(c or 0))
         for x in EingangStore._falte(e).values():
             f = x.get("felder") or {}
             if x["status"] == "gebucht" and f.get("lieferant"):
-                je_monat.setdefault(str(f.get("rechnungsdatum", ""))[:7], set()).add(
-                    ("einnahme" if f.get("art") == "einnahme" else "ausgabe", f["lieferant"].strip()))
+                merke(str(f.get("rechnungsdatum", ""))[:7], "einnahme" if f.get("art") == "einnahme" else "ausgabe",
+                      f["lieferant"], f.get("betrag_cent"))
         for x in EigenbelegStore._falte(e).values():
             if x["status"] == "gebucht" and x.get("gegenpartei"):
-                je_monat.setdefault(x["datum"][:7], set()).add((x["art"], x["gegenpartei"].strip()))
+                merke(x["datum"][:7], x["art"], x["gegenpartei"], x["betrag_cent"])
         m0, m1, m2 = _monat(heute), _monat(heute, 1), _monat(heute, 2)
-        dieser = {w.lower() for _, w in je_monat.get(m0, set())}
-        for art, wer in sorted(je_monat.get(m1, set())):
-            if wer.lower() in {w.lower() for _, w in je_monat.get(m2, set())} and wer.lower() not in dieser:
+        dieser = {w.lower() for _, w in je_monat.get(m0, {})}
+        vor2 = {(a, w.lower()): c for (a, w), c in je_monat.get(m2, {}).items()}
+        for (art, wer), c1 in sorted(je_monat.get(m1, {}).items()):
+            c2 = vor2.get((art, wer.lower()))
+            aehnlich = c2 is not None and abs(c1 - c2) <= 0.25 * max(c1, c2)   # Abo-artig, nicht Amazon-Einkaeufe
+            if aehnlich and wer.lower() not in dieser:
                 sl = f"fehlt:{wer.lower()}:{m0}"
                 if sl not in quittiert:
                     out.append(_todo(sl, "Finanzen", "🔁", f"{wer}: {'Einnahme' if art == 'einnahme' else 'Rechnung'} "
