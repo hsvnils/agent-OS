@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 15:40] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappen 4, 5 und 6 als abgeschlossen/abgenommen eingetragen; Live-Pruefung: ER-2026-0001 (Calumet) korrekt gebucht und bezahlt, Kette intakt; erledigte Kalender-Erinnerungen (AN-2026-0001 x2, RE-2026-0001) von LUNA geloescht und protokolliert.
+- **Warum:** CEO: „Rechnung geprueft, gebucht und als bezahlt markiert“.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-09-28 15:10] — Claude Code
 - **Was:** LUNA loescht kommende Kalender-Erinnerungen erledigter Vorgaenge selbststaendig: Angebot angenommen/abgelehnt -> Nachfass-/Ablauf-Termine, Rechnung bezahlt/storniert -> Faelligkeits-Termin. Sofort beim Statuswechsel in LUNA-OS (Hinweis in der Oberflaeche) und nachholend im 15-min-Poll des Bots (raeumt auch AN-2026-0001 nachtraeglich auf). Nur eigene, protokollierte Termine; jede Loeschung im Kassenbuch. Mock-Kalender vergibt eindeutige IDs und merkt Loeschungen. UI-Cache v44.
 - **Warum:** CEO-Auftrag -- Nachfass-Termin von AN-2026-0001 stand nach Annahme noch im Kalender.

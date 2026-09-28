@@ -1,11 +1,11 @@
 # Roadmap: Kunden, Angebote, Rechnungen und Finanzen in LUNA-OS
 
 - Status: in Umsetzung
-- Stand: 2026-09-27
+- Stand: 2026-09-28
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: CEO baut das Image neu; Abnahme Etappe 6 (je ein PDF, Foto und ggf. E-Rechnung hochladen, eine Rechnung
-  an LUNA weiterleiten, buchen); danach Go fuer Etappe 7 (Zahlungen + EUeR-Journal).
+- Naechster Schritt: CEO-Go fuer Etappe 7 (Zahlungen + EUeR-Journal). Offen aus Etappe 6: Live-Probe der OCR mit einem
+  fotografierten Beleg (Weg ist gebaut und getestet, echte Probe steht aus).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -225,7 +225,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 4: Beauftragung (Auftragsbestaetigung)
 
-- Status: umgesetzt (CEO-Go 2026-09-28), Deploy + Abnahme offen
+- Status: abgeschlossen -- live, vom CEO abgenommen 2026-09-28 („Auftragsbestaetigung sieht top aus“)
 - Ergebnis: `core/beauftragung.py` (`AuftragBuch`): Auftrag `AB-JJJJ-NNNN` nur aus **angenommenem** Angebot, genau einer je
   Angebot (Pruefung unter der Sperre, Inhalt per Funktion an `mit_nummer` -- neu in `buchhaltung.py`), uebernimmt
   Positionen/Zuschlaege/Rabatt/Texte eingefroren + Leistungszeitraum/Notiz; Status beauftragt -> erledigt/storniert;
@@ -240,7 +240,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 5: Ausgangsrechnungen
 
-- Status: umgesetzt (CEO-Go 2026-09-28 „weiter gehts"), Deploy + Abnahme offen
+- Status: abgeschlossen -- live, vom CEO abgenommen 2026-09-28 („Rechnung getestet, sieht alles gut aus“)
 - Ergebnis: `core/rechnungen.py` (`RechnungStore`): Entwurf **ohne Nummer** (frei oder aus Auftrag, aenderbar/verwerfbar)
   -> **Festschreiben** ueber neues `Buchhaltung.festschreiben` (Nummer `RE-JJJJ-NNNN` + PDF + Eintrag in EINEM gesperrten
   Schritt; Fehlversuche verbrauchen keine Nummer, lueckenlos auch parallel) -> Senden (genau das archivierte PDF, nur
@@ -261,7 +261,10 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 6: Eingangsrechnungen und Belege
 
-- Status: umgesetzt (CEO-Go 2026-09-28 „weiter gehts"), Deploy mit **Image-Neubau** + Abnahme offen
+- Status: abgeschlossen -- live (Image neu gebaut), vom CEO abgenommen 2026-09-28 mit der ersten echten Eingangsrechnung
+  ER-2026-0001 (Calumet, per Mail an LUNA weitergeleitet, gebucht, bezahlt). Dabei BF-36 behoben (Apple-Mail-Anhaenge
+  inline/verschachtelt) und der Regel-Vorschlag geschaerft. Zusatz (CEO): erledigte Kalender-Erinnerungen von Angeboten
+  und Rechnungen loescht LUNA selbststaendig (`core/erinnerungen.py`). OCR-Live-Probe mit Foto steht noch aus.
 - Ergebnis: `core/eingangsbelege.py`: Aufnahme mit Beleg-Nr. `ER-JJJJ-NNNN` + Original (8 Jahre) atomar
   (`Buchhaltung.festschreiben`), doppelte Dateien erkannt; Auslesen lokal: XRechnung UBL/CII + ZUGFeRD-XML im PDF
   (defusedxml, exakt), PDF-Text (`pypdf`), OCR (`tesseract`/`pdftoppm`); Sofort-Vorschlag nach Regeln + genauerer
