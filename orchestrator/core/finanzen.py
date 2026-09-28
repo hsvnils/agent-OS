@@ -35,7 +35,7 @@ POSITIONEN = {                                               # Anzeige-Texte (LU
     "software": "Laufende EDV-Kosten (Software, Abos, Hosting)",
     "werbung": "Werbekosten",
     "telekommunikation": "Aufwendungen für Telekommunikation",
-    "buero": "Übrige Betriebsausgaben: Bürobedarf, Porto",
+    "buero": "Arbeitsmittel (Bürobedarf, Porto, Fachliteratur)",
     "reise": "Reisekosten (Übernachtung, Reisenebenkosten)",
     "fahrzeug": "Kraftfahrzeugkosten und andere Fahrtkosten",
     "bewirtung": "Bewirtungsaufwendungen (abziehbarer Teil 70 %)",

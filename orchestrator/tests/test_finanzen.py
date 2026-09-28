@@ -27,7 +27,8 @@ def _beleg(eb: EingangStore, text: str, betrag: str, kategorie: str, datum: str,
     return nr
 
 
-class TestProbejahr(unittest.TestCase):
+class ProbejahrBasis:
+    """Setup + Probejahr (auch fuer test_jahresabschluss) -- ohne eigene Tests, damit nichts doppelt laeuft."""
     def setUp(self):
         self.bh, self.ks, _, self.k, self.ap = _stores()
         self.rs, self.eb, self.eig = RechnungStore(self.bh, self.ks), EingangStore(self.bh), EigenbelegStore(self.bh)
@@ -61,6 +62,8 @@ class TestProbejahr(unittest.TestCase):
         eb.bezahlt(b6, d("05-02"), betrag="100")                                               # -100,00 (Teilzahlung)
         return {"r1": r1, "r2": r2, "b3": b3, "b4": b4, "b5": b5, "b6": b6}
 
+
+class TestProbejahr(ProbejahrBasis, unittest.TestCase):
     def test_1_euer_summen_von_hand(self):
         self._probejahr()
         eu = self.f.euer(VJ)

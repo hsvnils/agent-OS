@@ -4,8 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Deploy Etappe 8; Abnahme Etappen 7 + 8 (Finanzbereich pruefen, Zahlen per Klick gegen die
-  Buchungen abgleichen, Meta-Euro-Betrag per Telegram buchen); danach Go fuer Etappe 9 (Jahresabschluss + Export). Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
+- Naechster Schritt: Deploy Etappe 9; Abnahme (Export-ZIP ansehen, EUeR-PDF, Verfahrensdokumentation lesen und
+  freigeben). Danach ist die Roadmap bis auf Etappe 3c (Social-Kennzahlen, wartet auf Meta-Exporte) abgeschlossen. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -289,7 +289,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 7: Zahlungen und EUeR-Journal
 
-- Status: umgesetzt (CEO-Go 2026-09-28 „leg los“ + Wunsch „Finanzbereich mit guter Uebersicht ueber alles“), Deploy + Abnahme offen
+- Status: abgeschlossen -- live, vom CEO abgenommen 2026-09-28 („sieht gut aus“); offene Praxisprobe: Meta-Euro-Betrag per Telegram
 - Ergebnis: `core/finanzen.py` (Journal nach Zahlungsdatum, EUeR je Position, Anlageverzeichnis mit AfA, Uebersicht),
   `core/eigenbelege.py` (Eigenbelege `EB-JJJJ-NNNN` fuer Zahlungen ohne eigene Rechnung, Storno mit Grund, 10-Tage-Regel),
   Teilzahlungen + Zahlungs-Storno fuer Rechnungen und Belege, GWG-Grenze 800 €, Anlagegut mit Nutzungsdauer,
@@ -306,7 +306,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 8: Finanz-Cockpit in LUNA-OS
 
-- Status: umgesetzt (CEO-Go 2026-09-28 „Lass uns schon mal mit Etappe 8 weitermachen“), Deploy + Abnahme offen
+- Status: abgeschlossen -- live, vom CEO abgenommen 2026-09-28 („Neustart erledigt, sieht gut aus, weiter mit Etappe 9“)
 - Ergebnis: Zeitraum-Wahl (Jahr, Q1-Q4, Monat) mit Vorjahreszeitraum; jede Kennzahl, jeder Monat, jedes Quartal, jede
   Kategorie und jeder Kunde per Klick als Buchungsliste (Drill-down, `GET /api/finanzen/posten`; Summe = Kachel);
   Quartalstabelle mit Vorjahr + Veraenderung; Monatsverlauf mit Vorjahr (blass); Abschreibung monatsgenau (Monate/
@@ -320,7 +320,15 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 9: Jahresabschluss und Export
 
-- Status: geplant
+- Status: umgesetzt (CEO-Go 2026-09-28 „weiter mit Etappe 9“), Deploy + Abnahme offen (inkl. Verfahrensdokumentation)
+- Ergebnis: `core/jahresabschluss.py` + `core/euer_zeilen.py`: Abschluss-Pruefung (Kette/Belege, Monatsabgleich, Belege
+  gebucht, Entwuerfe, offene Posten), EUeR je **Zeile und ELSTER-Kennzahl** der Anlage EUeR (2024/2025 und 2026 aus den
+  BMF-Vordrucken belegt; 2026 ab Zeile 27 verschoben; Summen/Gewinn rechnet ELSTER), EUeR als PDF, **Export-ZIP**
+  (Tabellen als CSV + `index.xml` nach dem Beschreibungsstandard mit DTD, vollstaendige Hash-Kette + Pruefergebnis,
+  alle Belege des Jahres im Original, EUeR-PDF, LIESMICH). LUNA-OS: Reiter „Jahresabschluss“. Verfahrensdokumentation
+  `docs/verfahrensdokumentation-buchhaltung.md` (Entwurf, Abnahme durch den CEO offen). Monatsabgleich beginnt jetzt
+  beim fruehesten Beleg-/Zahlungsdatum (nachgetragene Belege). Tests (Export vollstaendig: Stichprobe Journal = EUeR,
+  Hashes der Belege, index.xml passt zu den CSV-Koepfen) + Gegenproben; Browser-Test + PDF gesichtet.
 - Ziel / Scope: EUeR-Uebersicht je Zeile (Eingabehilfe fuer ELSTER), Export aller Journal-/Stammdaten maschinenlesbar
   (Datenzugriff § 147 Abs. 6 AO) + Belege, Steuerberater-Paket, **Verfahrensdokumentation**
   (`docs/verfahrensdokumentation-buchhaltung.md`).

@@ -43,6 +43,23 @@ def _monat(d: date, minus: int = 0) -> str:
     return f"{j}-{m:02d}"
 
 
+def beginn_buchhaltung(e: list[dict]) -> str:
+    """Erster Monat mit Finanzdaten (JJJJ-MM): fruehestes Beleg-/Zahlungsdatum, nicht der Erfassungszeitpunkt --
+    nachgetragene Belege frueherer Monate sollen den Monatsabgleich fuer diese Monate ausloesen."""
+    monate = []
+    for x in e:
+        if not str(x["typ"]).startswith(("rechnung_", "eingang_", "eigenbeleg_")):
+            continue
+        d = x["daten"]
+        monate.append(x["ts"][:7])
+        for k in ("datum", "rechnungsdatum"):
+            if len(str(d.get(k) or "")) >= 7:
+                monate.append(str(d[k])[:7])
+        if len(str((d.get("felder") or {}).get("rechnungsdatum") or "")) >= 7:
+            monate.append(d["felder"]["rechnungsdatum"][:7])
+    return min(monate) if monate else ""
+
+
 def finanzcheck(e: list[dict], heute: date, *, rechnungen: dict | None = None) -> list[dict]:
     """CFO-Finanzcheck (Vollstaendigkeit): Monatsabgleich mit dem Kontoauszug, fehlende wiederkehrende Posten,
     Kleinunternehmer-Grenze. Nur melden -- nie buchen."""
@@ -53,7 +70,7 @@ def finanzcheck(e: list[dict], heute: date, *, rechnungen: dict | None = None) -
     finanz = [x for x in e if str(x["typ"]).startswith(("rechnung_", "eingang_", "eigenbeleg_"))]
     # 1) Monatsabgleich: jeder abgeschlossene Monat seit Beginn der Buchhaltung (hoechstens die letzten 3)
     if finanz:
-        start = finanz[0]["ts"][:7]
+        start = beginn_buchhaltung(e)
         for i in (3, 2, 1):
             mon = _monat(heute, i)
             if mon < start or f"monat:{mon}" in quittiert:
