@@ -1531,9 +1531,20 @@ def rechnung_detail(kennung: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Rechnung/Entwurf")
     f = kunden_store.firma(r["firma"]) or {}
     ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == r.get("ansprechpartner")), None)
-    return {"rechnung": r, "firma": {k: f.get(k) for k in ("nummer", "name", "rechnungsmail")}, "ansprechpartner": ap,
-            "mail_an": f.get("rechnungsmail") or (ap or {}).get("mail") or "", "google": bool(_google().verfuegbar()),
-            "firmendaten": bool(_firmendaten()), "steuernummer": bool(_firmendaten().get("steuernummer"))}
+    from ...core.mahnungen import MahnStore
+    ms = MahnStore(kunden_store.bh, kunden_store)
+    mahn = [{k: m.get(k) for k in ("nummer", "stufe", "datum", "frist", "summe_cent", "versendet_am", "mail")}
+            for m in ms.fuer_rechnung(r.get("nummer", ""))] if r.get("nummer") else []
+    try:
+        naechste = ms.berechnen(r["nummer"]) if r.get("nummer") else None
+        mahnbar = ""
+    except (ValueError, KeyError) as exc:
+        naechste, mahnbar = None, str(exc)
+    return {"rechnung": r, "firma": {k: f.get(k) for k in ("nummer", "name", "rechnungsmail", "verbraucher")},
+            "ansprechpartner": ap, "mail_an": f.get("rechnungsmail") or (ap or {}).get("mail") or "",
+            "google": bool(_google().verfuegbar()), "firmendaten": bool(_firmendaten()),
+            "steuernummer": bool(_firmendaten().get("steuernummer")), "mahnungen": mahn,
+            "naechste_mahnung": naechste, "nicht_mahnbar": mahnbar}
 
 
 @app.post("/api/finanzen/rechnungen")
@@ -1665,13 +1676,76 @@ async def rechnung_senden(nummer: str, request: Request):
     return _kunden_aktion(tun)
 
 
+# -- Mahnungen (KUNDEN_FINANZEN Etappe 10; Modul finanzen) -------------------------------------------------------
+
+def _mahn():
+    from ...core.mahnungen import MahnStore
+    return MahnStore(kunden_store.bh, kunden_store)
+
+
+@app.get("/api/finanzen/rechnungen/{nummer}/mahnung-vorschau")
+def mahnung_vorschau(nummer: str, frist_tage: int = 7):
+    return _kunden_aktion(lambda: _mahn().berechnen(nummer, frist_tage=frist_tage))
+
+
+@app.post("/api/finanzen/rechnungen/{nummer}/mahnung")
+async def mahnung_erstellen(nummer: str, request: Request):
+    """Mahnung festschreiben (Nummer MA-, PDF). Versand danach getrennt mit Vorschau."""
+    body = await _json(request)
+
+    def tun():
+        if body.get("bestaetigt") is not True:
+            raise ValueError("Mahnung erstellen braucht die Bestaetigung aus der Vorschau.")
+        fd = _firmendaten()
+        if not fd:
+            raise ValueError("Firmendaten fehlen.")
+        return _mahn().erstellen(nummer, fd, frist_tage=int(body.get("frist_tage") or 7), von=_von(request))
+    return _kunden_aktion(tun)
+
+
+@app.get("/api/finanzen/mahnungen/{nummer}/pdf")
+def mahnung_pdf(nummer: str):
+    m = _mahn().get(nummer)
+    if not m:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Mahnung")
+    return Response((kunden_store.bh.dir / m["belege"][0]["pfad"]).read_bytes(), media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="Mahnung_{m["nummer"]}.pdf"'})
+
+
+@app.get("/api/finanzen/mahnungen/{nummer}/versandvorschau")
+def mahnung_versandvorschau(nummer: str):
+    from ...core.mahnungen import empfaenger, mahnung_mail_text
+    m = _mahn().get(nummer)
+    if not m:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Mahnung")
+    an, ap = empfaenger(kunden_store, m["firma"])
+    betreff, text = mahnung_mail_text(m, ap, _firmendaten())
+    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    return {"an": an, "betreff": betreff, "text": text, "pdf": f"Mahnung_{m['nummer']}.pdf",
+            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": bool(_google().verfuegbar())}
+
+
+@app.post("/api/finanzen/mahnungen/{nummer}/senden")
+async def mahnung_senden(nummer: str, request: Request):
+    from ...core.mahnungen import senden
+    body = await _json(request)
+
+    def tun():
+        if body.get("bestaetigt") is not True:
+            raise ValueError("Senden braucht die ausdrueckliche Bestaetigung aus der Vorschau.")
+        return senden(_mahn(), _google(), nummer, an=(body.get("an") or "").strip(),
+                      betreff=(body.get("betreff") or "").strip(), text=(body.get("text") or "").strip(),
+                      von=_von(request), absender_name=ABSENDER_NAME)
+    return _kunden_aktion(tun)
+
+
 @app.post("/api/finanzen/rechnungen/{nummer}/bezahlt")
 async def rechnung_bezahlt(nummer: str, request: Request):
     body = await _json(request)
     return _kunden_aktion(_mit_aufraeumen(
         lambda: _rechnungen().bezahlt(nummer, datum=body.get("datum") or "", betrag=body.get("betrag"),
                                       notiz=body.get("notiz") or "", zuordnung_jahr=body.get("zuordnung_jahr"),
-                                      von=_von(request)), _von(request)))
+                                      nebenforderung=body.get("nebenforderung"), von=_von(request)), _von(request)))
 
 
 @app.post("/api/finanzen/rechnungen/{nummer}/zahlung-stornieren")

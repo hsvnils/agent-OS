@@ -1386,6 +1386,28 @@ def main() -> None:
                         llm_ergebnisse_uebernehmen(EingangStore(_bh), AuftragStore(ROOT / "backoffice" / "log.jsonl",
                                                                                    secrets=ctx.leak_secrets))
                         fremdwaehrung_erinnern(EingangStore(_bh), ctx.google)
+                        # Etappe 10: Frist einer Mahnung abgelaufen -> naechste Stufe per Telegram anfragen (1x taeglich,
+                        # 08-20 Uhr); gesendet wird nur nach ✅ des CEO (Geld/Recht nie autonom)
+                        if 8 <= _j.hour < 20 and ctx.agenda is not None and allowed:
+                            from ...core.kunden import KundenStore as _KS
+                            from ...core.mahnungen import MahnStore, folgemahnung_frage
+                            _ks = _KS(_bh)
+                            for _f in MahnStore(_bh, _ks).faellige_folgemahnungen():
+                                _schl = f"mahnfrage:{_f['rechnung']}:{_f['stufe']}"
+                                if ctx.agenda.briefing_gesendet(_schl, _j.date().isoformat()):
+                                    continue
+                                try:
+                                    _v = MahnStore(_bh, _ks).berechnen(_f["rechnung"])
+                                except (ValueError, KeyError) as _exc:
+                                    print(f"[mahnung] {_f['rechnung']}: {_exc}", flush=True)
+                                    continue
+                                _cb = f"mah:{_f['rechnung']}:{_f['stufe']}"
+                                _kb = {"inline_keyboard": [[{"text": "✅ Senden", "callback_data": _cb + ":y"},
+                                                            {"text": "❌ Nicht senden", "callback_data": _cb + ":n"}]]}
+                                _name = (_ks.firma(_v["firma"]) or {}).get("name", _v["firma"])
+                                if _api(token, "sendMessage", {"chat_id": allowed, "text": fuer_telegram(folgemahnung_frage(_v, _name)),
+                                                               "reply_markup": json.dumps(_kb)}).get("ok"):
+                                    ctx.agenda.markiere_briefing(_schl, _j.date().isoformat())
                     except Exception as exc:
                         print(f"[beleg-sicherung] {exc}", flush=True)
                 # Instagram-DM-Poll: opt-in INSTAGRAM_DM_POLL=1. Token selbst-erneuernd (INSTAGRAM_USER_TOKEN
@@ -1478,6 +1500,30 @@ def main() -> None:
                     cbchat = str((((cb.get("message") or {}).get("chat")) or {}).get("id", ""))
                     if allowed and cbchat != allowed:
                         _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "Nicht autorisiert."})
+                    elif data.startswith("mah:"):                  # Folgemahnung (Etappe 10) -- nur nach ✅ des CEO
+                        _, re_nr, stufe, ent = data.split(":", 3)
+                        mid = (cb.get("message") or {}).get("message_id")
+                        from ...core.buchhaltung import Buchhaltung as _BH
+                        from ...core.kunden import KundenStore as _KS
+                        from ...core.mahnungen import MahnStore, STUFEN, folgemahnung_senden
+                        _bh = _BH(ROOT / "buchhaltung")
+                        if ent == "y":
+                            try:
+                                _fd = json.loads((ROOT / "buchhaltung" / "firmendaten.json").read_text(encoding="utf-8"))
+                                r = folgemahnung_senden(_bh, _KS(_bh), ctx.google, re_nr, int(stufe), _fd, von="Telegram:CEO")
+                                from ...core.beleg_pdf import eur as _eur
+                                res = (f"✅ {STUFEN[int(stufe)]} {r['nummer']} an {r['an']} gesendet · {_eur(r['summe_cent'])}"
+                                       f" · Frist {r['frist'][8:10]}.{r['frist'][5:7]}.{r['frist'][:4]}")
+                            except (ValueError, KeyError, OSError) as exc:
+                                res = f"⚠️ Nicht gesendet: {exc}"
+                        else:
+                            MahnStore(_bh, _KS(_bh)).aussetzen(re_nr, int(stufe), "per Telegram abgelehnt", von="Telegram:CEO")
+                            res = f"❌ {STUFEN[int(stufe)]} zu {re_nr} nicht gesendet -- LUNA fragt dafuer nicht mehr (in LUNA-OS weiter moeglich)."
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "OK"})
+                        if mid:
+                            _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
+                                                            "reply_markup": json.dumps({"inline_keyboard": []}),
+                                                            "text": fuer_telegram(res)})
                     elif data.startswith("eur:"):                  # Euro-Betrag buchen (Vorschau oben) -- nur nach ✅
                         _, nr, c, datum, ent = data.split(":", 4)
                         mid = (cb.get("message") or {}).get("message_id")

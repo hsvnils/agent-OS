@@ -549,7 +549,7 @@ async function crmFirma(firma) {
 const KUNDE_TYP = { kunde: "Kunde", lieferant: "Lieferant", partner: "Partner" };
 const FIRMA_FORM = [["name", "Firmenname *"], ["typ", "Typ", "typ"], ["strasse", "Straße und Hausnummer"], ["plz", "PLZ"], ["ort", "Ort"], ["land", "Land"],
   ["rechnungsmail", "Rechnungs-Mail", "email"], ["telefon", "Telefon"], ["website", "Website"], ["ustid", "USt-IdNr."], ["steuernummer", "Steuernummer"],
-  ["zahlungsziel_tage", "Zahlungsziel (Tage)", "number"], ["notiz", "Notiz", "textarea"]];
+  ["zahlungsziel_tage", "Zahlungsziel (Tage)", "number"], ["verbraucher", "Privatperson (Verbraucher)?", "janein"], ["notiz", "Notiz", "textarea"]];
 const AP_FORM = [["vorname", "Vorname"], ["nachname", "Nachname"], ["rolle", "Rolle / Position"], ["mail", "Mail", "email"], ["telefon", "Telefon"], ["notiz", "Notiz", "textarea"]];
 const FELD_LBL = Object.fromEntries([...FIRMA_FORM, ...AP_FORM].map(([k, l]) => [k, l.replace(" *", "")]).concat([["aktiv", "Aktiv"], ["collab", "Collab zugeordnet"], ["collab_entfernt", "Collab gelöst"], ["firma", "Firma"]]));
 let KUNDEN = { firmen: [], collab_ohne_nummer: [] }, KUNDEN_SUCHE = "", _kundenTimer = null;
@@ -560,6 +560,7 @@ function formFelder(prefix, spec, werte = {}) {
     let inp;
     if (art === "typ") inp = `<select id="${prefix}-${k}">${Object.entries(KUNDE_TYP).map(([id, l]) => `<option value="${id}" ${(v || "kunde") === id ? "selected" : ""}>${l}</option>`).join("")}</select>`;
     else if (art === "textarea") inp = `<textarea id="${prefix}-${k}" rows="3" class="v2-inp">${esc(v)}</textarea>`;
+    else if (art === "janein") inp = `<select id="${prefix}-${k}"><option value="nein">nein — Firma / Unternehmer</option><option value="ja" ${v === "true" || v === "ja" ? "selected" : ""}>ja — Privatperson</option></select>`;
     else inp = `<input id="${prefix}-${k}" type="${art || "text"}" value="${esc(v)}" ${art === "number" ? 'min="0" max="365"' : ""}>`;
     return `<label class="v2-feld"><small>${esc(lbl)}</small>${inp}</label>`;
   }).join("");
@@ -1174,12 +1175,17 @@ async function reDetail(id, meldung, fehler) {
     if (r.art !== "storno") aktionen += `<button class="v2-btn pri" data-act="re-senden" data-id="${esc(r.nummer)}" ${d.google ? "" : "disabled"}>✉️ Senden …</button>`;
     else aktionen += `<button class="v2-btn" data-act="re-senden" data-id="${esc(r.nummer)}" ${d.google ? "" : "disabled"}>✉️ Storno senden …</button>`;
     if (r.status === "offen") aktionen += `<button class="v2-btn ok" data-act="re-bezahlt-form" data-id="${esc(r.nummer)}">💶 Zahlung erfassen</button><button class="v2-btn" data-act="re-storno" data-id="${esc(r.nummer)}">Stornieren …</button>`;
+    if (d.naechste_mahnung) aktionen += `<button class="v2-btn danger" data-act="ma-form" data-id="${esc(r.nummer)}">⚠️ ${esc(d.naechste_mahnung.titel)} erstellen …</button>`;
   }
   if (r.auftrag) aktionen += `<button class="v2-btn" data-act="ab-detail" data-id="${esc(r.auftrag)}">↩ Auftrag ${esc(r.auftrag)}</button>`;
   if (r.bezug) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.bezug)}">↩ Original ${esc(r.bezug)}</button>`;
   if (r.storniert_durch) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.storniert_durch)}">Storno ${esc(r.storniert_durch)}</button>`;
-  const zahlungen = (r.zahlungen || []).map((z, i) => `<div class="v2-list-row${z.storniert ? " v2-fin-storno" : ""}"><span>💶</span><div class="grow"><b>${cent2eur(z.betrag_cent)}</b><small>${esc(datumDe(z.datum))}${z.zuordnung_jahr ? " · zugeordnet " + esc(z.zuordnung_jahr) : ""}${z.notiz ? " · " + esc(z.notiz) : ""}${z.storniert ? " · storniert: " + esc(z.storno_grund || "") : ""}</small></div>${!z.storniert && r.status !== "storniert" ? `<button class="v2-btn" data-act="re-zahlung-storno" data-id="${esc(r.nummer)}" data-val="${i}" title="Falsch erfasste Zahlung zurücknehmen">↶</button>` : ""}</div>`).join("");
+  const MSTUFE = { 1: "1. Mahnung", 2: "2. Mahnung", 3: "Letzte Mahnung" };
+  const mahnungen = (d.mahnungen || []).map(m => `<div class="v2-list-row"><span>⚠️</span><div class="grow"><b>${esc(MSTUFE[m.stufe])} ${esc(m.nummer)} · ${cent2eur(m.summe_cent)}</b><small>${esc(datumDe(m.datum))} · Frist ${esc(datumDe(m.frist))} · ${m.versendet_am ? "✉️ gesendet an " + esc((m.mail || {}).an || "") : "noch nicht gesendet"}</small></div>
+    <a class="v2-btn sm" href="/api/finanzen/mahnungen/${encodeURIComponent(m.nummer)}/pdf" target="_blank" rel="noopener">📄</a>${m.versendet_am ? "" : `<button class="v2-btn pri sm" data-act="ma-senden" data-id="${esc(m.nummer)}">✉️ Senden …</button>`}</div>`).join("");
+  const zahlungen = (r.zahlungen || []).map((z, i) => `<div class="v2-list-row${z.storniert ? " v2-fin-storno" : ""}"><span>💶</span><div class="grow"><b>${cent2eur(z.betrag_cent)}${z.nebenforderung_cent ? " + " + cent2eur(z.nebenforderung_cent) + " Zinsen/Kosten" : ""}</b><small>${esc(datumDe(z.datum))}${z.zuordnung_jahr ? " · zugeordnet " + esc(z.zuordnung_jahr) : ""}${z.notiz ? " · " + esc(z.notiz) : ""}${z.storniert ? " · storniert: " + esc(z.storno_grund || "") : ""}</small></div>${!z.storniert && r.status !== "storniert" ? `<button class="v2-btn" data-act="re-zahlung-storno" data-id="${esc(r.nummer)}" data-val="${i}" title="Falsch erfasste Zahlung zurücknehmen">↶</button>` : ""}</div>`).join("");
   const lbl = { rechnung_entwurf: "Entwurf angelegt", rechnung_entwurf_geaendert: "Entwurf geändert", rechnung_festgeschrieben: "Festgeschrieben", rechnung_versendet: "Gesendet", rechnung_bezahlt: "Zahlung", rechnung_zahlung_storniert: "Zahlung storniert" };
+  RE_DETAIL = d;
   const verlauf = (r.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(lbl[v.typ] || v.typ)}${v.mail_an ? " an " + esc(v.mail_an) : ""}${v.betrag_cent ? " " + cent2eur(v.betrag_cent) : ""}${v.storno ? " — storniert durch " + esc(v.storno) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
   const titel = entwurf ? `Rechnungs-Entwurf · ${d.firma.name || r.firma}` : `${r.nummer} · ${d.firma.name || r.firma}`;
   openModal(titel, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
@@ -1194,6 +1200,7 @@ async function reDetail(id, meldung, fehler) {
     ${!entwurf && r.art !== "storno" ? `<div class="v2-kv"><span>Bezahlt / offen</span><b>${cent2eur(r.bezahlt_cent || 0)} / ${cent2eur(r.summe_cent - (r.bezahlt_cent || 0))}</b></div>` : ""}
     ${r.versendet_mail ? `<div class="v2-kv"><span>Gesendet</span><b>✉️ ${esc(r.versendet_mail.an)} · ${esc(zeit(r.versendet_am))}</b></div>` : ""}
     ${zahlungen ? `<h3>Zahlungen</h3>${zahlungen}` : ""}
+    ${mahnungen ? `<h3>Mahnungen</h3>${mahnungen}` : ""}
     <h3>Verlauf</h3>${verlauf}
     </div><div>
     <div id="re-aktion-box"></div>
@@ -1213,12 +1220,44 @@ async function reSendenVorschau(nr) {
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="re-senden-jetzt" data-id="${esc(nr)}">✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="res-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+let RE_DETAIL = null;
+// Mahnung (Etappe 10): Vorschau mit Frist -> festschreiben (MA-Nummer, PDF) -> Versand mit Vorschau
+async function maForm(nr, frist) {
+  const box = $("#re-aktion-box"); if (!box) return;
+  frist = frist || 7;
+  const v = await jget(`/api/finanzen/rechnungen/${encodeURIComponent(nr)}/mahnung-vorschau?frist_tage=${frist}`);
+  if (!v || !v.ok) { box.innerHTML = `<div class="v2-msg err">${esc((v && v.hinweis) || "Keine Vorschau möglich.")}</div>`; return; }
+  const zins = (v.zins_abschnitte || []).map(a => `<tr><td><small>Verzugszinsen ${String(a.satz).replace(".", ",")} % p. a. auf ${cent2eur(a.offen_cent)}, ${datumDe(a.von)}–${datumDe(a.bis)} (${a.tage} Tage)</small></td><td style="text-align:right">${cent2eur(a.cent)}</td></tr>`).join("");
+  box.innerHTML = `<h3>${esc(v.titel)} zu ${esc(nr)}</h3><div class="v2-form" style="max-width:560px">
+    <label class="v2-feld"><small>Zahlungsfrist (Tage ab heute)</small><input id="ma-frist" type="number" min="1" max="60" value="${frist}"></label>
+    <table class="v2-table"><tbody><tr><td>Offener Rechnungsbetrag (fällig ${esc(datumDe(v.faellig_am))})</td><td style="text-align:right">${cent2eur(v.offen_cent)}</td></tr>${zins}
+      <tr><td>${esc(v.gebuehr_text)}</td><td style="text-align:right">${cent2eur(v.gebuehr_cent)}</td></tr>
+      <tr><td><b>Gesamt, zahlbar bis ${esc(datumDe(v.frist))}</b></td><td style="text-align:right"><b>${cent2eur(v.summe_cent)}</b></td></tr></tbody></table>
+    <small class="v2-sub">${v.verbraucher ? "Privatkunde: 5 Prozentpunkte über dem Basiszinssatz, 2,50 € Mahnkosten je Mahnung." : "Firmenkunde: 9 Prozentpunkte über dem Basiszinssatz, einmalig 40 € Verzugspauschale."} Danach weitere ${cent2eur(v.tageszins_cent)} Zinsen pro Tag.${v.stufe < 3 ? " Läuft die Frist ohne Zahlung ab, fragt LUNA dich per Telegram nach der nächsten Stufe." : ""}</small>
+    <div class="v2-card-actions"><button class="v2-btn danger" data-act="ma-erstellen" data-id="${esc(nr)}">⚠️ ${esc(v.titel)} festschreiben</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="ma-msg" class="v2-msg"></div></div>`;
+  $("#ma-frist").addEventListener("change", e => maForm(nr, Number(e.target.value) || 7));
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+async function maSendenVorschau(ma) {
+  const box = $("#re-aktion-box"); if (!box) return;
+  const v = await jget(`/api/finanzen/mahnungen/${encodeURIComponent(ma)}/versandvorschau`);
+  if (!v) { box.innerHTML = emptyRow("Vorschau nicht verfügbar."); return; }
+  box.innerHTML = `<h3>Mahnung ${esc(ma)} senden</h3><div class="v2-form">
+    <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
+    <label class="v2-feld"><small>An *</small><input id="mas-an" type="email" value="${esc(v.an || "")}"></label>
+    <label class="v2-feld"><small>Betreff *</small><input id="mas-betreff" value="${esc(v.betreff)}"></label>
+    <label class="v2-feld"><small>Text *</small><textarea id="mas-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/mahnungen/${encodeURIComponent(ma)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ma-senden-jetzt" data-id="${esc(ma)}" ${v.google ? "" : "disabled"}>✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="mas-msg" class="v2-msg"></div></div>`;
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 function reBezahltForm(nr) {
   const box = $("#re-aktion-box"); if (!box) return;
   box.innerHTML = `<h3>Zahlung erfassen</h3><div class="v2-form" style="max-width:420px">
     <div class="v2-an-zeile"><label class="v2-feld"><small>Zahlungsdatum</small><input id="rez-datum" type="date" value="${heuteIso()}"></label>
       <label class="v2-feld"><small>Betrag (leer = offener Rest)</small><input id="rez-betrag" inputmode="decimal" placeholder="z. B. 1.020,00"></label></div>
     <label class="v2-feld"><small>Notiz</small><input id="rez-notiz" placeholder="z. B. Überweisung comdirect"></label><div id="rez-zuord"></div>
+    ${RE_DETAIL && (RE_DETAIL.mahnungen || []).length ? `<label class="v2-feld"><small>Zusätzlich gezahlte Verzugszinsen/Mahnkosten (€)</small><input id="rez-neben" inputmode="decimal" placeholder="z. B. 45,80"></label>` : ""}
     <div class="v2-card-actions"><button class="v2-btn ok" data-act="re-bezahlt" data-id="${esc(nr)}">💶 Zahlung buchen</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="rez-msg" class="v2-msg"></div></div>`;
   zehnTageVerdrahten("rez-datum", "rez-zuord");
 }
@@ -1922,8 +1961,22 @@ async function handleAct(act, el) {
       if (AKTIV === "rechnungen") renderRechnungen(); return reDetail(id, `An ${r.an} gesendet.`);
     }
     case "re-bezahlt-form": return reBezahltForm(id);
+    case "ma-form": return maForm(id);
+    case "ma-erstellen": {
+      const frist = Number(($("#ma-frist") || {}).value) || 7;
+      const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/mahnung`, { frist_tage: frist, bestaetigt: true });
+      if (!r || !r.ok) return kundenMsg("ma-msg", (r && r.hinweis) || "Fehler.", false);
+      if (AKTIV === "rechnungen") renderRechnungen();
+      await reDetail(id, `${r.nummer} festgeschrieben — jetzt prüfen und senden.`); return maSendenVorschau(r.nummer);
+    }
+    case "ma-senden": return maSendenVorschau(id);
+    case "ma-senden-jetzt": {
+      const r = await jpost(`/api/finanzen/mahnungen/${encodeURIComponent(id)}/senden`, { an: $("#mas-an").value.trim(), betreff: $("#mas-betreff").value.trim(), text: $("#mas-text").value, bestaetigt: true });
+      if (!r || !r.ok) return kundenMsg("mas-msg", (r && r.hinweis) || "Fehler.", false);
+      return reDetail(RE_DETAIL && RE_DETAIL.rechnung ? RE_DETAIL.rechnung.nummer : id, `Mahnung ${id} an ${r.an} gesendet.`);
+    }
     case "re-bezahlt": {
-      const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/bezahlt`, { datum: $("#rez-datum").value, betrag: $("#rez-betrag").value.trim() || null, notiz: $("#rez-notiz").value.trim(), zuordnung_jahr: zehnTageWert("rez-zuord") });
+      const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/bezahlt`, { datum: $("#rez-datum").value, betrag: $("#rez-betrag").value.trim() || null, notiz: $("#rez-notiz").value.trim(), zuordnung_jahr: zehnTageWert("rez-zuord"), nebenforderung: ($("#rez-neben") || {}).value || null });
       if (!r || !r.ok) return kundenMsg("rez-msg", (r && r.hinweis) || "Fehler.", false);
       if (AKTIV === "rechnungen") renderRechnungen(); return reDetail(id, [r.rest_cent > 0 ? `Zahlung ${cent2eur(r.betrag_cent)} gebucht — offen: ${cent2eur(r.rest_cent)}.` : "Vollständig bezahlt.", ...(r.hinweise || [])].join("\n"));
     }

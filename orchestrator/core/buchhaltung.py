@@ -35,7 +35,7 @@ def jetzt() -> datetime:
     """Aktuelle deutsche Zeit mit Zeitzone -- massgeblich fuer Zeitstempel, Belegjahr und Nummernkreis-Jahr."""
     return datetime.now(TZ)
 KREISE_OHNE_JAHR = {"K": 5, "AP": 5}                      # Stammdaten: fortlaufend ueber alle Jahre
-KREISE_MIT_JAHR = ("AN", "AB", "RE", "ER", "EB")          # Belege: je Jahr neu, 4-stellig (EB = Eigenbeleg)
+KREISE_MIT_JAHR = ("AN", "AB", "RE", "ER", "EB", "MA")    # je Jahr neu, 4-stellig (EB = Eigenbeleg, MA = Mahnung)
 AUFBEWAHRUNG_JAHRE = {"beleg": 8, "aufzeichnung": 10, "geschaeftsbrief": 6}
 
 

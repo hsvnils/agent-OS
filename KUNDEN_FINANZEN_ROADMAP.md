@@ -4,8 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Deploy Etappe 9; Abnahme (Export-ZIP ansehen, EUeR-PDF, Verfahrensdokumentation lesen und
-  freigeben). Danach ist die Roadmap bis auf Etappe 3c (Social-Kennzahlen, wartet auf Meta-Exporte) abgeschlossen. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
+- Naechster Schritt: Deploy Etappe 10 (Mahnwesen); Abnahme Etappen 9 + 10 (Export/PDF, Verfahrensdokumentation freigeben,
+  Mahnung einmal durchspielen). Offen danach nur Etappe 3c (Social-Kennzahlen, wartet auf Meta-Exporte). Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -333,6 +333,21 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   (Datenzugriff § 147 Abs. 6 AO) + Belege, Steuerberater-Paket, **Verfahrensdokumentation**
   (`docs/verfahrensdokumentation-buchhaltung.md`).
 - Gate: Export vollstaendig (Stichprobe), Verfahrensdokumentation vom CEO (ggf. Steuerberater) abgenommen.
+
+### Etappe 10: Mahnwesen
+
+- Status: umgesetzt (CEO-Wunsch 2026-09-28 mit Entscheidungen, s. u.), Deploy + Abnahme offen
+- Entscheidungen (CEO 2026-09-28): 1. Mahnung stoesst der CEO an (Frist waehlbar); 2. und 3. Mahnung bereitet LUNA nach
+  Fristablauf vor und fragt per Telegram (✅ Senden / ❌ Nicht senden) -- **kein autonomer Versand** (AGENTS.md 4);
+  Firmen: **40 EUR Verzugspauschale** einmal je Rechnung (§ 288 Abs. 5 BGB) statt 15 EUR je Mahnung (rechtlich
+  angreifbar), Privatkunden: 2,50 EUR tatsaechliche Kosten je Mahnung; **Verzugszinsen ab Faelligkeit**, Basiszinssatz +
+  9 (Firma) bzw. 5 (Privat) Prozentpunkte, taggenau je Halbjahr.
+- Ergebnis: `core/mahnungen.py` (Nummern `MA-JJJJ-NNNN`, PDF als Geschaeftsbrief, Basiszinssaetze 2023-2026 von der
+  Bundesbank belegt, act/act), Kundenfeld „Privatperson (Verbraucher)“, Zahlung mit zusaetzlichen Zinsen/Kosten
+  (Journal als eigene Einnahme; EUeR Zeile 12 inkl., nachrichtlich Zeile 13/Kz 119; zaehlt nicht zum § 19-Umsatz),
+  LUNA-OS: Mahnung in der Rechnungsansicht (Vorschau mit Frist -> festschreiben -> senden), To-dos zeigen den
+  naechsten Schritt, CFO-Finanzcheck erinnert an fehlenden Basiszinssatz (naechster: 01.01.2027). Tests (Zinsen von Hand,
+  Stufen, Verbraucher, Zahlung, Telegram-Versand) + Gegenprobe.
 
 ## Reihenfolge
 

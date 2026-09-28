@@ -30,12 +30,15 @@ _T = {
     "bewirtung": ("Bewirtungsaufwendungen, Spalte „abziehbar“ (70 %)", "175"),
     "bewirtung_nicht_abziehbar": ("Bewirtungsaufwendungen, Spalte „nicht abziehbar“ (30 %)", "165"),
     "fahrzeug": ("Sonstige tatsächliche Fahrtkosten ohne AfA und Zinsen (betriebliches Kfz, Treibstoff, ÖPNV)", "146"),
+    # Anleitung Zeile 12/13 (2025 und 2026 wortgleich): Kleinunternehmer tragen ALLE Betriebseinnahmen in Zeile 12 ein,
+    # nicht steuerbare (z. B. Verzugszinsen, Mahnkosten = Schadensersatz, UStAE 1.3 Abs. 6) zusaetzlich nachrichtlich in 13
+    "nebenforderung": ("davon nicht steuerbare Umsätze (nachrichtlich): Verzugszinsen, Mahnkosten, Verzugspauschale", "119"),
 }
-_Z2025 = {"umsatz": "12", "wareneinkauf": "27", "fremdleistungen": "29", "anlage": "33", "gwg": "36",
+_Z2025 = {"umsatz": "12", "nebenforderung": "13", "wareneinkauf": "27", "fremdleistungen": "29", "anlage": "33", "gwg": "36",
           "telekommunikation": "43", "reise": "44", "fortbildung": "45", "gebuehren": "49", "software": "50",
           "buero": "51", "werbung": "54", "sonstiges": "60", "bewirtung": "63", "bewirtung_nicht_abziehbar": "63",
           "fahrzeug": "70"}
-_Z2026 = {"umsatz": "12", "wareneinkauf": "29", "fremdleistungen": "30", "anlage": "34", "gwg": "37",
+_Z2026 = {"umsatz": "12", "nebenforderung": "13", "wareneinkauf": "29", "fremdleistungen": "30", "anlage": "34", "gwg": "37",
           "telekommunikation": "44", "reise": "45", "fortbildung": "46", "gebuehren": "50", "software": "51",
           "buero": "52", "werbung": "55", "sonstiges": "61", "bewirtung": "64", "bewirtung_nicht_abziehbar": "64",
           "fahrzeug": "71"}
