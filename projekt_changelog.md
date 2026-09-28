@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 20:53] — Claude Code
+- **Was:** Uebertrag 2026 ins Live-Kassenbuch (CEO-Go „Los gehts“), nach Probelauf gegen eine Kopie: 29 Belege aus dem Ordner LUNA-Uebertrag hochgeladen, gebucht (mit Positionen/Kategorien, Katzenbrunnen-Filter 19,24 EUR als privat) und bezahlt (ER-2026-0004 bis -0032), 4 Eigenbelege fuer fehlende Belege (EB-2026-0001 TeamClash Firmenevent 330,00, -0002 Fiverr Logo 96,09, -0003 Kabelmanagement 26,59, -0004 Elgato 435,00), Apple ER-2026-0003 gebucht (99,00, 23.05.2026). Betraege laut Rechnung (Excel-Abweichungen korrigiert). Verlustvortrag 2025 (2.622,59) bewusst NICHT als Ausgabe. Kundenrechnungen (Hands of God, Kiezalm) macht der CEO selbst. Ergebnis: Ausgaben 2026 2.179,16 EUR, Kette intakt.
+- **Warum:** CEO: Excel-Bestand + Belegordner in LUNA uebernehmen und buchen.
+- **Betroffen:** Live-Kassenbuch NAS (`buchhaltung/log.jsonl`, `buchhaltung/belege/2026/`), Kundenstamm (Lieferanten Amazon.de, J. Führ GmbH, Adlerfokus GmbH, Apple Distribution International); keine Repo-Dateien ausser diesem Eintrag
+
 ## [2026-09-28 19:56] — Claude Code
 - **Was:** Einmalig auf CEO-Auftrag: Apple-Auftragsbestaetigung W1544208136 (Apple Developer Programm, 99,00 EUR, 23.05.2026; Mail ohne PDF-Anhang, an LUNA weitergeleitet) als Belegersatz-PDF aus dem Mailinhalt erzeugt und ueber LUNA-OS hochgeladen -> Beleg ER-2026-0003 (Status zu pruefen; Buchung macht der CEO). Keine Code-Aenderung.
 - **Warum:** CEO: „Die Mail der Auftragsbestaetigung von Apple ... als RG bitte einmalig einfach anlegen“.
