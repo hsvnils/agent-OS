@@ -124,7 +124,8 @@ class TestAngebotStore(unittest.TestCase):
         self.assertTrue(pdf.startswith(b"%PDF"))
 
 
-class TestAngebotApi(unittest.TestCase):
+class ApiBasis(unittest.TestCase):
+    """Gemeinsames Setup (Mock-Google, Firmendaten, Collab) fuer Angebots- und Auftrags-API-Tests."""
     def setUp(self):
         from fastapi.testclient import TestClient
         from orchestrator.channels.web import app as webapp
@@ -150,6 +151,8 @@ class TestAngebotApi(unittest.TestCase):
         self.assertTrue(r["ok"], r)
         return r["nummer"]
 
+
+class TestAngebotApi(ApiBasis):
     def test_1_ablauf_bis_versendet(self):
         nr = self._neu()
         pdf = self.c.get(f"/api/crm/angebote/{nr}/pdf")

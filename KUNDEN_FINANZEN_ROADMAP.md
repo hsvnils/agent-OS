@@ -4,8 +4,8 @@
 - Stand: 2026-09-27
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Go fuer Etappe 4 (Beauftragung) oder 3c (Social-Kennzahlen, sobald die Meta-Exporte als CSV da
-  sind). Beim naechsten Angebot den Gmail-Entwurf mit Anhang live pruefen. Steuernummer liegt vor.
+- Naechster Schritt: CEO startet die Container neu; Abnahme Etappe 4 (Auftrag aus AN-2026-0002 anlegen, PDF,
+  optional senden); danach Go fuer Etappe 5 (Rechnungen).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -225,7 +225,15 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 4: Beauftragung (Auftragsbestaetigung)
 
-- Status: geplant
+- Status: umgesetzt (CEO-Go 2026-09-28), Deploy + Abnahme offen
+- Ergebnis: `core/beauftragung.py` (`AuftragBuch`): Auftrag `AB-JJJJ-NNNN` nur aus **angenommenem** Angebot, genau einer je
+  Angebot (Pruefung unter der Sperre, Inhalt per Funktion an `mit_nummer` -- neu in `buchhaltung.py`), uebernimmt
+  Positionen/Zuschlaege/Rabatt/Texte eingefroren + Leistungszeitraum/Notiz; Status beauftragt -> erledigt/storniert;
+  Verknuepfung in beide Richtungen (Angebot zeigt `auftrag`); CRM-Stufe „vereinbart"; PDF „Auftragsbestaetigung"
+  (Hanserautisch/schlicht; lange Titel schrumpfen automatisch) + Senden aus LUNAs Konto (nur CEO, Mail als .eml
+  archiviert). LUNA-OS V2: Bereich „Angebote & Auftraege", Tab „Auftraege", Knopf „Auftrag anlegen" bzw.
+  „Angenommen + Auftrag anlegen", ganzseitiges Auftrags-Detail. Tests + Gegenprobe (ein Auftrag je Angebot); Headless-
+  Chrome-Klicktest; Test-Basisklasse `ApiBasis` (keine doppelten Testlaeufe).
 - Ziel / Scope: angenommenes Angebot -> Auftrag `AB-…` (uebernimmt Positionen, Leistungszeitraum), optional PDF
   Auftragsbestaetigung, CRM-Stufe „vereinbart", Verknuepfung Angebot <-> Auftrag.
 - Gate: durchgaengige Verknuepfung sichtbar in LUNA-OS.

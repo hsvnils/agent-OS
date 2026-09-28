@@ -341,7 +341,11 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
         pdf.cell(95, 5, T(z), new_x="LMARGIN", new_y="NEXT")
     y_links = pdf.get_y()
     pdf.set_xy(120, y)
-    pdf.set_font(S, "B", 20)
+    groesse = 20.0
+    pdf.set_font(S, "B", groesse)
+    while groesse > 12 and pdf.get_string_width(T(art)) > B - 100:     # z. B. „Auftragsbestätigung“ passt nicht in 20 pt
+        groesse -= 1
+        pdf.set_font(S, "B", groesse)
     pdf.cell(B - 100, 9, T(art), align="R", new_x="LMARGIN", new_y="NEXT")
     pdf.set_font(S, size=9.5)
     farbe((85, 85, 85))

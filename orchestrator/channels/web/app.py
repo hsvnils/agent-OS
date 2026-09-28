@@ -30,6 +30,7 @@ from ...core.buchhaltung import Buchhaltung
 from ...core.kunden import DubletteFehler, KundenStore
 from ...core.angebote import AngebotStore, mail_lesen, mail_text as angebot_mail_text, preisliste_pdf
 from ...core.katalog import Katalog
+from ...core.beauftragung import AuftragBuch, auftrag_mail_text
 from ...core.ig_inbox import IgInboxStore
 from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, CUTTER_FELDER, CUTTER_STATUSES,
                                    DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES, SOURCE_FELDER,
@@ -1352,6 +1353,143 @@ async def kunden_collab(nummer: str, request: Request):
 
 def _angebote() -> AngebotStore:
     return AngebotStore(kunden_store.bh, kunden_store, Katalog(kunden_store.bh))
+
+
+# -- Beauftragung / Auftragsbestaetigung (KUNDEN_FINANZEN Etappe 4; Modul crm) -----------------------------------
+
+def _auftraege() -> AuftragBuch:
+    return AuftragBuch(kunden_store.bh, kunden_store, _angebote())
+
+
+@app.get("/api/crm/auftraege")
+def auftraege_liste():
+    return {"auftraege": _auftraege().liste()}
+
+
+@app.get("/api/crm/auftraege/{nummer}")
+def auftrag_detail(nummer: str):
+    a = _auftraege().auftrag(nummer)
+    if not a:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Auftragsnummer")
+    f = kunden_store.firma(a["firma"]) or {}
+    ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == a.get("ansprechpartner")), None)
+    return {"auftrag": a, "firma": {k: f.get(k) for k in ("nummer", "name", "rechnungsmail")}, "ansprechpartner": ap,
+            "mail_an": (ap or {}).get("mail") or f.get("rechnungsmail") or "", "google": bool(_google().verfuegbar()),
+            "firmendaten": bool(_firmendaten())}
+
+
+@app.post("/api/crm/angebote/{nummer}/auftrag")
+async def auftrag_aus_angebot(nummer: str, request: Request):
+    """Auftrag AB- aus einem angenommenen Angebot; mit {"annehmen": true} wird ein versendetes Angebot vorher angenommen."""
+    body = await _json(request)
+    st = _angebote()
+
+    def tun():
+        a = st.angebot(nummer)
+        if not a:
+            raise KeyError(nummer)
+        if body.get("annehmen") and a["status"] == "versendet":
+            st.status_setzen(a["nummer"], "angenommen", grund=body.get("grund") or "Auftrag angelegt", von=_von(request))
+        r = _auftraege().aus_angebot(a["nummer"], leistung_von=body.get("leistung_von") or "",
+                                    leistung_bis=body.get("leistung_bis") or "", notiz=body.get("notiz") or "",
+                                    von=_von(request))
+        hinweise = []
+        for c in (kunden_store.firma(a["firma"]) or {}).get("collab", []):      # CRM-Stufe „vereinbart“
+            anzeige = next((f.get("firma") for f in crm_store.firmen() if (f.get("firma") or "").strip().lower() == c), c)
+            try:
+                crm_store.status_setzen(anzeige, "vereinbart")
+            except Exception:
+                hinweise.append(f"CRM-Stufe fuer {anzeige} nicht gesetzt.")
+        return r | {"hinweise": hinweise}
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/crm/auftraege/{nummer}")
+async def auftrag_aendern(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _auftraege().aendern(nummer, body.get("auftrag") or {}, von=_von(request)))
+
+
+@app.post("/api/crm/auftraege/{nummer}/status")
+async def auftrag_status(nummer: str, request: Request):
+    body = await _json(request)
+    ziel = (body.get("status") or "").strip()
+    if ziel not in ("erledigt", "storniert"):
+        return {"ok": False, "hinweis": "Status muss erledigt oder storniert sein."}
+    return _kunden_aktion(lambda: _auftraege().status_setzen(nummer, ziel, grund=body.get("grund") or "",
+                                                             von=_von(request)))
+
+
+@app.get("/api/crm/auftraege/{nummer}/pdf")
+def auftrag_pdf(nummer: str, archiv: int = 0):
+    ab = _auftraege()
+    a = ab.auftrag(nummer)
+    if not a:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Auftragsnummer")
+    if archiv:
+        if not a["pdfs"]:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "noch kein PDF abgelegt")
+        daten = (kunden_store.bh.dir / a["pdfs"][-1]["pfad"]).read_bytes()
+    else:
+        fd = _firmendaten()
+        if not fd:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Firmendaten fehlen (buchhaltung/firmendaten.json)")
+        daten = ab.pdf(a["nummer"], fd)
+    return Response(daten, media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="Auftragsbestaetigung_{a["nummer"]}.pdf"'})
+
+
+@app.get("/api/crm/auftraege/{nummer}/versandvorschau")
+def auftrag_versandvorschau(nummer: str):
+    d = auftrag_detail(nummer)
+    betreff, text = auftrag_mail_text(d["auftrag"], d["ansprechpartner"], _firmendaten())
+    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": f"Auftragsbestaetigung_{d['auftrag']['nummer']}.pdf",
+            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": d["google"]}
+
+
+@app.post("/api/crm/auftraege/{nummer}/senden")
+async def auftrag_senden(nummer: str, request: Request):
+    """Auftragsbestaetigung aus LUNAs Konto senden -- wie Angebote: nur CEO (Modul finanzen), nur mit Bestaetigung."""
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if not hat_modul(u, "finanzen"):
+        return {"ok": False, "hinweis": "Auftragsbestaetigungen senden darf nur der CEO (Modul Finanzen)."}
+    body = await _json(request)
+    ab = _auftraege()
+
+    def tun():
+        if body.get("bestaetigt") is not True:
+            raise ValueError("Senden braucht die ausdrueckliche Bestaetigung aus der Vorschau.")
+        a = ab.auftrag(nummer)
+        if not a:
+            raise KeyError(nummer)
+        if a["status"] == "storniert":
+            raise ValueError(f"{a['nummer']} ist storniert.")
+        an = (body.get("an") or "").strip()
+        betreff, text = (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
+        if not an or "@" not in an or not betreff or not text:
+            raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
+        fd = _firmendaten()
+        if not fd:
+            raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
+        g = _google()
+        if not g.verfuegbar():
+            raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
+        pdf = ab.pdf(a["nummer"], fd)
+        r = g.mail_senden(an, betreff, text, bestaetigt=True, absender_name=ABSENDER_NAME,
+                          anhaenge=[(f"Auftragsbestaetigung_{a['nummer']}.pdf", pdf, "application/pdf")])
+        if not r.get("ok"):
+            raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
+        ab.pdf_ablegen(a["nummer"], pdf, an=an, von=_von(request))
+        ab.status_setzen(a["nummer"], "gesendet", mail={"an": an, "message_id": r.get("id", ""),
+                                                        "thread_id": r.get("thread_id", ""), "betreff": betreff},
+                         von=_von(request))
+        roh = g.mail_roh(r["id"]) if r.get("id") else {}
+        if roh.get("ok"):                                          # Original-Mail als Geschaeftsbrief archivieren
+            kunden_store.bh.beleg_ablegen(roh["roh"], f"Mail_{a['nummer']}_aus_{r['id']}.eml", jahr=int(a["datum"][:4]),
+                                          art="geschaeftsbrief", bezug=a["nummer"], von=_von(request))
+        return {"an": an}
+    return _kunden_aktion(tun)
 
 
 @app.get("/api/crm/katalog")
