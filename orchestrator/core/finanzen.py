@@ -30,6 +30,8 @@ from .rechnungen import RechnungStore
 
 POSITIONEN = {                                               # Anzeige-Texte (LUNA-OS) -> echte Umlaute
     "umsatz": "Betriebseinnahmen als umsatzsteuerlicher Kleinunternehmer",
+    "barter": "Betriebseinnahmen: Sachleistungen (Barter, Wert der Ware)",
+    "anlage_abgang": "Verkauf/private Entnahme von Anlagegütern inkl. GWG (Erlös bzw. Teilwert)",
     "nebenforderung": "Betriebseinnahmen: Verzugszinsen/Mahnkosten (nicht umsatzsteuerbar)",
     "wareneinkauf": "Waren, Roh- und Hilfsstoffe",
     "fremdleistungen": "Bezogene Fremdleistungen",
@@ -105,6 +107,19 @@ class Finanzen:
                                "text": f"Zahlung Rechnung {r['nummer']}" + (f" -- {r['titel']}" if r.get("titel") else ""),
                                "zuordnung_jahr": z.get("zuordnung_jahr"), "storniert": bool(z.get("storniert")),
                                "storno_grund": z.get("storno_grund", ""), "quelle": "rechnung"})
+        for r in st["rechnungen"].values():                   # Etappe 12: Barter-Ware = Einnahme (+ Anschaffung)
+            kunde = st["firmen"].get(r.get("firma"), r.get("firma", ""))
+            for v in r.get("ware_vorgaenge") or []:
+                if v.get("verwendung") == "leihgabe":
+                    continue
+                basis = {"datum": v["datum"], "bezug": r["nummer"], "index": None, "gegenpartei": kunde,
+                         "zuordnung_jahr": None, "storniert": v["storniert"], "storno_grund": v.get("storno_grund", ""),
+                         "quelle": "ware"}
+                zeilen.append(basis | {"art": "einnahme", "betrag_cent": v["wert_cent"], "kategorie": "barter",
+                                       "text": f"Sachleistung (Barter) zu {r['nummer']}: {v.get('text', '')}"})
+                if v.get("verwendung") == "content":
+                    zeilen.append(basis | {"art": "ausgabe", "betrag_cent": v["wert_cent"], "kategorie": v["kategorie"],
+                                           "text": f"Barter-Ware für Content: {v.get('text', '')}"})
         for x in st["belege"].values():
             f = x.get("felder") or {}
             if not f:
@@ -210,6 +225,12 @@ class Finanzen:
                     yield (x, f, t.get("text") or f.get("leistung") or f.get("lieferant", ""), abs(int(t["betrag_cent"])),
                            int(t.get("nutzungsdauer_jahre") or f.get("nutzungsdauer_jahre") or 1),
                            date.fromisoformat(f["rechnungsdatum"]))
+        for r in st["rechnungen"].values():                   # Barter-Ware als Anlagegut (Etappe 12)
+            for v in r.get("ware_vorgaenge") or []:
+                if not v["storniert"] and v.get("verwendung") == "content" and v.get("kategorie") == "anlage":
+                    yield ({"nummer": r["nummer"], "bezahlt_am": v["datum"]},
+                           {"lieferant": st["firmen"].get(r.get("firma"), r.get("firma", ""))}, v.get("text", ""),
+                           int(v["wert_cent"]), int(v.get("nutzungsdauer_jahre") or 1), date.fromisoformat(v["datum"]))
 
     def anlagen(self, jahr: int, st: dict | None = None) -> list[dict]:
         st = st or self._stand()
@@ -231,6 +252,8 @@ class Finanzen:
         j = [z for z in self.posten(jahr, st=st) if not z["storniert"]]
         einnahmen = sum(z["betrag_cent"] for z in j if z["art"] == "einnahme")
         neben = sum(z["betrag_cent"] for z in j if z["art"] == "einnahme" and z["kategorie"] == "nebenforderung")
+        barter = sum(z["betrag_cent"] for z in j if z["art"] == "einnahme" and z["kategorie"] == "barter")
+        abgang = sum(z["betrag_cent"] for z in j if z["art"] == "einnahme" and z["kategorie"] == "anlage_abgang")
         pos: dict[str, int] = {}
         for z in j:
             if z["art"] == "ausgabe" and z["abziehbar_cent"]:
@@ -239,7 +262,8 @@ class Finanzen:
         ausgaben = sum(pos.values())
         return {"jahr": jahr, "einnahmen_cent": einnahmen, "ausgaben_cent": ausgaben, "gewinn_cent": einnahmen - ausgaben,
                 "einnahmen": [{"kategorie": k, "position": POSITIONEN[k], "betrag_cent": v} for k, v in (
-                    ("umsatz", einnahmen - neben), ("nebenforderung", neben)) if v or k == "umsatz"],
+                    ("umsatz", einnahmen - neben - barter - abgang), ("barter", barter), ("nebenforderung", neben),
+                    ("anlage_abgang", abgang)) if v or k == "umsatz"],
                 "ausgaben": sorted(({"kategorie": k, "position": POSITIONEN[k], "betrag_cent": v} for k, v in pos.items()),
                                    key=lambda p: -p["betrag_cent"]),
                 "bewirtung_nicht_abziehbar_cent": bew_voll - round(bew_voll * BEWIRTUNG_ANTEIL),
@@ -273,7 +297,8 @@ class Finanzen:
         for r in st["rechnungen"].values():
             if r["status"] == "offen" and r.get("art") != "storno":
                 forder.append({"nummer": r["nummer"], "act": "re-detail", "gegenpartei": firmen.get(r["firma"], r["firma"]),
-                               "offen_cent": r["summe_cent"] - r["bezahlt_cent"], "faellig_am": r.get("faellig_am", ""),
+                               "offen_cent": r["geld_cent"] - r["bezahlt_cent"] + (0 if r.get("ware_erhalten") else r.get("ware_cent", 0)),
+                               "faellig_am": r.get("faellig_am", ""),
                                "ueberfaellig": r.get("faellig_am", "9") < heute.isoformat()})
         verbind = []
         for x in st["belege"].values():

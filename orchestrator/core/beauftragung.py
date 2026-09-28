@@ -12,13 +12,13 @@ from __future__ import annotations
 
 from datetime import date
 
-from .angebote import AngebotStore, _bloecke, _empfaenger, anrede_moin, inhalt_hash, summen
+from .angebote import AngebotStore, _bloecke, _empfaenger, anrede_moin, inhalt_hash, summen, ware_hinweis
 from .beleg_pdf import HINWEIS_19, beleg_pdf, datum_de, eur, hanserautisch_pdf
 from .buchhaltung import Buchhaltung, jetzt
 from .kunden import KundenStore
 
 STATUS = ("beauftragt", "erledigt", "storniert")
-_UEBERNAHME = ("firma", "ansprechpartner", "titel", "positionen", "zuschlaege", "rabatt_prozent", "layout", "bloecke")
+_UEBERNAHME = ("firma", "ansprechpartner", "titel", "positionen", "zuschlaege", "rabatt_prozent", "layout", "bloecke", "ware")
 
 
 def _datum(v, feld: str) -> str:
@@ -71,7 +71,9 @@ class AuftragBuch:
         from .beleg_pdf import positions_summe
         pos = [p | {"gesamt_cent": positions_summe(p["menge"], p["einzelpreis_cent"])} for p in a["positionen"]]
         sm = summen(a["positionen"], a.get("zuschlaege") or [], a.get("rabatt_prozent") or 0)
-        return a | {"positionen": pos, "summen": sm, "summe_cent": sm["gesamt_cent"], "inhalt": inhalt_hash(a)}
+        w = min(int((a.get("ware") or {}).get("wert_cent") or 0), sm["gesamt_cent"])
+        return a | {"positionen": pos, "summen": sm, "summe_cent": sm["gesamt_cent"], "inhalt": inhalt_hash(a),
+                    "ware_cent": w, "geld_cent": sm["gesamt_cent"] - w}
 
     # -- Lesen ---------------------------------------------------------------------------------------------------
 
@@ -179,7 +181,7 @@ class AuftragBuch:
                     else f"bis {datum_de(lb)}" if lb else "")
         einleitung = (f"vielen Dank für Ihren Auftrag. Hiermit bestätigen wir die Beauftragung auf Grundlage unseres "
                       f"Angebots {a['angebot']}" + (f" für den Leistungszeitraum {zeitraum}" if zeitraum else "") + ".")
-        hinweise = [HINWEIS_19] + ([f"Anmerkung: {a['notiz']}"] if a.get("notiz") else [])
+        hinweise = [HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware")) + ([f"Anmerkung: {a['notiz']}"] if a.get("notiz") else [])
         if a.get("layout") == "hanserautisch":
             b = a.get("bloecke") or _bloecke({})
             gruppen: dict[str, tuple] = {}

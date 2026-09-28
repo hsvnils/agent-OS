@@ -1676,6 +1676,33 @@ async def rechnung_senden(nummer: str, request: Request):
     return _kunden_aktion(tun)
 
 
+@app.post("/api/finanzen/rechnungen/{nummer}/ware-erhalten")
+async def rechnung_ware_erhalten(nummer: str, request: Request):
+    """Etappe 12 (Barter): Ware als Gegenleistung erhalten -- Wert (Marke/eigener Nachweis), Verwendung, Nachweis-Dateien."""
+    import base64 as _b64
+    body = await _json(request)
+
+    def tun():
+        nachweise = []
+        for d in (body.get("nachweise") or [])[:5]:
+            try:
+                nachweise.append((_b64.b64decode(str(d.get("daten") or ""), validate=True), str(d.get("name") or "nachweis")))
+            except (ValueError, TypeError):
+                raise ValueError("Nachweis-Datei ungueltig.") from None
+        return _rechnungen().ware_erhalten(
+            nummer, datum=body.get("datum") or "", text=body.get("text") or "", wert_marke=body.get("wert_marke"),
+            wert_nachweis=body.get("wert_nachweis"), verwendung=body.get("verwendung") or "content",
+            kategorie=body.get("kategorie") or "", nutzungsdauer_jahre=body.get("nutzungsdauer_jahre"),
+            nachweise=nachweise, von=_von(request))
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/finanzen/rechnungen/{nummer}/ware-stornieren")
+async def rechnung_ware_stornieren(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _rechnungen().ware_stornieren(nummer, body.get("grund") or "", von=_von(request)))
+
+
 # -- Mahnungen (KUNDEN_FINANZEN Etappe 10; Modul finanzen) -------------------------------------------------------
 
 def _mahn():

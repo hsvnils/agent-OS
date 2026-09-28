@@ -15,7 +15,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, timedelta
 
-from .angebote import _bloecke, _empfaenger, _kopf, _positionen, anrede_moin, summen
+from .angebote import _bloecke, _empfaenger, _kopf, _positionen, anrede_moin, summen, ware_geld, ware_hinweis
 from .beleg_pdf import HINWEIS_19, beleg_pdf, cent, datum_de, eur, hanserautisch_pdf, positions_summe
 from .buchhaltung import Buchhaltung, jetzt
 from .eigenbelege import einnahmen_cent, zuordnung_pruefen
@@ -25,7 +25,8 @@ GRENZE_LAUFEND = 100_000_00     # Cent, § 19 Abs. 1 UStG (ab 2025): Ueberschrei
 GRENZE_VORJAHR = 25_000_00
 WARNSCHWELLE = 0.8
 FELDER = ("firma", "ansprechpartner", "titel", "leistung_von", "leistung_bis", "zahlungsziel_tage", "einleitung",
-          "layout", "bloecke", "zuschlaege", "rabatt_prozent")
+          "layout", "bloecke", "zuschlaege", "rabatt_prozent", "ware")
+VERWENDUNG = ("content", "privat", "leihgabe")         # Barter-Ware: betrieblich fuer Content (Standard) / privat / zurueck
 
 
 def _datum(v, feld):
@@ -42,7 +43,7 @@ def _entwurf_felder(daten: dict) -> dict:
     if not isinstance(daten, dict):
         raise ValueError("Ungueltige Eingabe.")
     out = _kopf({k: v for k, v in daten.items() if k in ("firma", "ansprechpartner", "titel", "einleitung", "layout",
-                                                          "bloecke", "zuschlaege", "rabatt_prozent")})
+                                                          "bloecke", "zuschlaege", "rabatt_prozent", "ware")})
     for k, f in (("leistung_von", "Leistung von"), ("leistung_bis", "Leistung bis")):
         if k in daten:
             out[k] = _datum(daten[k], f)
@@ -82,8 +83,10 @@ class RechnungStore:
                 entwuerfe.pop(d.get("entwurf_id"), None)
             elif t == "rechnung_festgeschrieben":
                 entwuerfe.pop(d.get("entwurf_id"), None)
+                w = max(0, min(int((d.get("ware") or {}).get("wert_cent") or 0), int(d.get("summe_cent") or 0)))
                 r = dict(d) | {"status": "storno" if d.get("art") == "storno" else "offen", "bezahlt_cent": 0,
-                               "zahlungen": [], "festgeschrieben_am": e["ts"], "verlauf": [spur]}
+                               "zahlungen": [], "festgeschrieben_am": e["ts"], "verlauf": [spur],
+                               "ware_cent": w, "geld_cent": int(d.get("summe_cent") or 0) - w, "ware_vorgaenge": []}
                 rechnungen[d["nummer"]] = r
                 if d.get("art") == "storno" and d.get("bezug") in rechnungen:
                     o = rechnungen[d["bezug"]]
@@ -100,19 +103,33 @@ class RechnungStore:
                 r["zahlungen"].append({k: d.get(k) for k in ("datum", "betrag_cent", "notiz", "zuordnung_jahr",
                                                              "nebenforderung_cent")})
                 r["bezahlt_cent"] += int(d.get("betrag_cent") or 0)
-                if r["status"] == "offen" and r["bezahlt_cent"] >= r["summe_cent"]:
-                    r["status"] = "bezahlt"
                 r["verlauf"].append(spur | {"betrag_cent": d.get("betrag_cent"), "datum": d.get("datum")})
             elif t == "rechnung_zahlung_storniert":          # Etappe 7: falsch erfasste Zahlung, Korrektur sichtbar
                 r = rechnungen[d["nummer"]]
                 z = r["zahlungen"][d["index"]]
                 z |= {"storniert": True, "storno_grund": d.get("grund", ""), "storniert_am": e["ts"]}
                 r["bezahlt_cent"] -= int(z.get("betrag_cent") or 0)
-                if r["status"] == "bezahlt" and r["bezahlt_cent"] < r["summe_cent"]:
-                    r["status"] = "offen"
                 r["verlauf"].append(spur | {"betrag_cent": -int(z.get("betrag_cent") or 0), "grund": d.get("grund", "")})
+            elif t == "rechnung_ware_erhalten":              # Etappe 12: Barter-Ware ist da (Einnahme)
+                r = rechnungen[d["nummer"]]
+                r["ware_vorgaenge"].append(dict(d) | {"ts": e["ts"], "storniert": False})
+                r["verlauf"].append(spur | {"betrag_cent": d.get("wert_cent"), "datum": d.get("datum")})
+            elif t == "rechnung_ware_storniert":
+                r = rechnungen[d["nummer"]]
+                for v in r["ware_vorgaenge"]:
+                    if not v["storniert"]:
+                        v |= {"storniert": True, "storno_grund": d.get("grund", ""), "storniert_am": e["ts"]}
+                r["verlauf"].append(spur | {"grund": d.get("grund", "")})
             elif t == "rechnung_erinnerung":
                 rechnungen[d["nummer"]]["erinnerung"] = d.get("termin")
+        for r in rechnungen.values():                        # bezahlt = Geldteil gezahlt UND Ware erhalten (Barter)
+            r.setdefault("ware_cent", 0)
+            r.setdefault("geld_cent", r.get("summe_cent", 0))
+            r.setdefault("ware_vorgaenge", [])
+            r["ware_erhalten"] = next((v for v in r["ware_vorgaenge"] if not v["storniert"]), None)
+            if r["status"] in ("offen", "bezahlt"):
+                r["status"] = ("bezahlt" if r["bezahlt_cent"] >= r["geld_cent"] and (not r["ware_cent"] or r["ware_erhalten"])
+                               else "offen")
         return entwuerfe, rechnungen
 
     @staticmethod
@@ -214,7 +231,7 @@ class RechnungStore:
         if auftrag.get("status") == "storniert":
             raise ValueError(f"{auftrag['nummer']} ist storniert.")
         daten = {k: auftrag.get(k) for k in ("firma", "ansprechpartner", "titel", "zuschlaege", "rabatt_prozent", "layout",
-                                              "bloecke", "leistung_von", "leistung_bis")}
+                                              "bloecke", "leistung_von", "leistung_bis", "ware")}
         daten["positionen"] = [{k: v for k, v in p.items() if k != "gesamt_cent"} for p in auftrag["positionen"]]
         daten |= {"auftrag": auftrag["nummer"], "angebot": auftrag.get("angebot", "")}
         return self.entwurf_anlegen({k: v for k, v in daten.items() if v not in (None,)}, von=von)
@@ -263,6 +280,7 @@ class RechnungStore:
                 raise ValueError("Leistungsdatum fehlt (Pflichtangabe).")
             if x["summe_cent"] <= 0:
                 raise ValueError("Rechnungsbetrag muss groesser als 0 sein.")
+            ware_geld(x["summe_cent"], x.get("ware"))                  # Warenwert nicht ueber der Summe
             w = self.waechter(x["summe_cent"], heute.year, rechnungen, eintraege)
             if w["vorjahr_ueberschritten"]:
                 raise ValueError(f"Vorjahresumsatz {eur(w['vorjahr_cent'])} liegt ueber 25.000 € -- Kleinunternehmer-"
@@ -305,6 +323,8 @@ class RechnungStore:
                 raise ValueError(f"{nummer} ist bereits {'eine Stornorechnung' if o.get('art') == 'storno' else 'storniert'}.")
             if o.get("bezahlt_cent"):
                 raise ValueError(f"{nummer} ist (teil)bezahlt -- erst die Zahlung klaeren (Rueckzahlung), dann stornieren.")
+            if o.get("ware_erhalten"):
+                raise ValueError(f"Zu {nummer} ist Ware als erhalten gebucht -- erst den Ware-Eingang stornieren.")
             original.update(o)
             pos = [p | {"einzelpreis_cent": -int(p["einzelpreis_cent"])} for p in o["positionen"]]
             kopf = {k: o.get(k) for k in FELDER} | {"positionen": pos, "art": "storno", "bezug": nummer, "grund": grund,
@@ -356,7 +376,9 @@ class RechnungStore:
                 raise KeyError(nummer)
             if r["status"] != "offen" or r.get("art") == "storno":
                 raise ValueError(f"{nummer} ist {r['status']} -- keine Zahlung erfassbar.")
-            rest["cent"] = r["summe_cent"] - r["bezahlt_cent"]
+            rest["cent"] = r["geld_cent"] - r["bezahlt_cent"]
+            if rest["cent"] <= 0:
+                raise ValueError(f"Der Geldteil von {nummer} ist bezahlt -- offen ist nur die Ware (\u201eWare erhalten\u201c erfassen).")
 
         # Betrag erst nach der Pruefung festlegen (offener Rest), deshalb zweistufig unter derselben Sperre
         with self.bh._gesperrt():
@@ -372,6 +394,69 @@ class RechnungStore:
                                | ({"zuordnung_jahr": zuordnung} if zuordnung else {})
                                | ({"nebenforderung_cent": neben} if neben else {}), von=von)
         return {"betrag_cent": b, "rest_cent": rest["cent"] - b, "nebenforderung_cent": neben}
+
+    def ware_erhalten(self, nummer: str, *, datum: str = "", text: str = "", wert_marke=None, wert_nachweis=None,
+                      verwendung: str = "content", kategorie: str = "", nutzungsdauer_jahre=None,
+                      nachweise: list[tuple[bytes, str]] | None = None, von: str = "") -> dict:
+        """Etappe 12 (Barter): Ware als Gegenleistung erhalten -> Einnahme zum ueblichen Endpreis (§ 8 Abs. 2 EStG).
+        Wert = eigener Nachweis (Shop-Preis), sonst Preisangabe der Marke (CEO: beides erfassen). Verwendung
+        „content“ (Standard) bucht die Ware zugleich als Anschaffung (GWG/Anlage/Verbrauch), „privat“ nur die Einnahme,
+        „leihgabe“ (geht zurueck) gar nichts -- dokumentiert wird immer."""
+        from .eingangsbelege import KATEGORIEN, _teil_pruefen
+        nummer = (nummer or "").strip().upper()
+        tag = _datum(datum, "Eingangsdatum") or jetzt().date().isoformat()
+        if tag > jetzt().date().isoformat():
+            raise ValueError("Eingangsdatum liegt in der Zukunft.")
+        if verwendung not in VERWENDUNG:
+            raise ValueError("Verwendung muss Content, privat oder Leihgabe sein.")
+        r = self._stand()[1].get(nummer)
+        if not r:
+            raise KeyError(nummer)
+        if r.get("art") == "storno" or r["status"] == "storniert":
+            raise ValueError(f"{nummer} ist storniert.")
+        if not r.get("ware_cent"):
+            raise ValueError(f"{nummer} hat keine Gegenleistung in Ware.")
+        if r.get("ware_erhalten"):
+            raise ValueError(f"Ware zu {nummer} ist bereits erfasst -- bei Fehlern erst stornieren.")
+        try:
+            marke = cent(wert_marke) if wert_marke not in (None, "") else r["ware_cent"]
+            nachweis = cent(wert_nachweis) if wert_nachweis not in (None, "") else 0
+        except ValueError:
+            raise ValueError("Warenwert ungueltig.") from None
+        wert = nachweis or marke
+        if wert <= 0:
+            raise ValueError("Warenwert muss groesser als 0 sein.")
+        d = {"nummer": nummer, "datum": tag, "text": str(text or (r.get("ware") or {}).get("text") or "").strip()[:300],
+             "wert_cent": wert, "wert_marke_cent": marke, "wert_nachweis_cent": nachweis, "verwendung": verwendung}
+        if verwendung == "content":
+            k = kategorie or ("gwg" if wert <= 80000 else "anlage")
+            if k not in KATEGORIEN:
+                raise ValueError("Bitte eine Kategorie fuer die Ware waehlen.")
+            t = _teil_pruefen({"text": d["text"], "betrag": eur(wert).replace(" €", ""), "kategorie": k,
+                               "nutzungsdauer_jahre": nutzungsdauer_jahre})
+            d["kategorie"] = k
+            if t.get("nutzungsdauer_jahre"):
+                d["nutzungsdauer_jahre"] = t["nutzungsdauer_jahre"]
+        d["nachweise"] = [{k: b["daten"][k] for k in ("pfad", "sha256")}
+                          for b in (self.bh.beleg_ablegen(inhalt, name, art="beleg", bezug=nummer, von=von)
+                                    for inhalt, name in (nachweise or []) if inhalt)]
+        self.bh.erfassen("rechnung_ware_erhalten", d, von=von)
+        return {"wert_cent": wert, "verwendung": verwendung, "kategorie": d.get("kategorie", "")}
+
+    def ware_stornieren(self, nummer: str, grund: str, *, von: str = "") -> dict:
+        nummer = (nummer or "").strip().upper()
+        grund = str(grund or "").strip()[:300]
+        if not grund:
+            raise ValueError("Bitte einen Grund angeben.")
+
+        def pruefe(eintraege):
+            r = self._falte(eintraege)[1].get(nummer)
+            if not r:
+                raise KeyError(nummer)
+            if not r.get("ware_erhalten"):
+                raise ValueError("Es ist kein Ware-Eingang erfasst.")
+        self.bh.erfassen_geprueft("rechnung_ware_storniert", {"nummer": nummer, "grund": grund}, von=von, pruefe=pruefe)
+        return {"storniert": True}
 
     def zahlung_stornieren(self, nummer: str, index: int, grund: str, *, von: str = "") -> dict:
         """Falsch erfasste Zahlung zuruecknehmen (Eintrag bleibt, Storno mit Grund daneben -- GoBD)."""
@@ -424,8 +509,12 @@ class RechnungStore:
             infos.append(f"Auftrag: {r['auftrag']}")
         einleitung = (f"hiermit stornieren wir die Rechnung {r['bezug']}. Grund: {r.get('grund', '')}" if storno else
                       r.get("einleitung") or "vielen Dank für Ihren Auftrag. Wir berechnen Ihnen folgende Leistungen:")
-        zahlung = ("" if storno else f"Bitte überweisen Sie den Rechnungsbetrag von {eur(r['summe_cent'])} bis zum "
-                   f"{datum_de(r['faellig_am'])} unter Angabe der Rechnungsnummer {r['nummer']} auf das unten genannte Konto.")
+        w, g = ware_geld(r["summe_cent"], r.get("ware")) if not storno else (0, r["summe_cent"])
+        zahlung = ("" if storno or not g else f"Bitte überweisen Sie {'den Geldanteil' if w else 'den Rechnungsbetrag'} von "
+                   f"{eur(g)} bis zum {datum_de(r['faellig_am'])} unter Angabe der Rechnungsnummer {r['nummer']} auf das "
+                   "unten genannte Konto.")
+        if not storno and w:
+            zahlung = " ".join(ware_hinweis(r["summe_cent"], r.get("ware"), rechnung=True) + ([zahlung] if zahlung else []))
         if r.get("layout") == "hanserautisch":
             b = r.get("bloecke") or _bloecke({})
             gruppen: dict[str, tuple] = {}

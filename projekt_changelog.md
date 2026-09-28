@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 19:46] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 12 Barter-Deals: Gegenleistung in Ware in Angebot/Auftrag/Rechnung (Editor, Detail, PDF), Rechnung mit Geld- und Warenteil, „Ware erhalten“ (Wert Marke + eigener Nachweis, Verwendung Content/privat/Leihgabe, Nachweis-Dateien, Storno), Journal/EUeR/AfA/Export, KU-Grenze, Mahnung nur Geldteil, To-do fuer ausstehende Ware, Eigenbeleg „Verkauf oder private Weiternutzung“ (EUeR Zeile 19). UI-Cache app v58.
+- **Warum:** CEO-Go fuer Etappe 12 mit den Entscheidungen (Wert: beides, Standard Content, Rechnung auch bei reinem Barter).
+- **Betroffen:** `orchestrator/core/angebote.py`, `beauftragung.py`, `rechnungen.py`, `finanzen.py`, `mahnungen.py`, `todos.py`, `jahresabschluss.py`, `euer_zeilen.py`, `eingangsbelege.py`, `eigenbelege.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_barter.py` (neu), `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
 ## [2026-09-28 19:27] — Claude Code
 - **Was:** Etappe 12 (Barter-Deals): steuerliche Einordnung aus amtlichen Quellen in die Roadmap uebernommen (Einnahme zum ueblichen Endpreis bei Erhalt, Leihgabe keine Einnahme, tauschaehnlicher Umsatz zaehlt zur KU-Grenze, EUeR Zeile 12, Entnahme zum Teilwert bei spaeterer Privatnutzung, Rechnungspflicht bei Unternehmer-Kunden, keine Bagatell-Ausnahme); Scope „Verwendung der Ware“ angepasst. Keine Code-Aenderung.
 - **Warum:** Recherche vor dem Bau (Roadmap-Workflow B1/B3).

@@ -48,7 +48,8 @@ KATEGORIEN = {
     "sonstiges": ("Sonstiges", ()),
 }
 # Gutschriften (z. B. Facebook-Monetarisierung: Meta stellt die Rechnung in unserem Namen aus) sind EINNAHMEN.
-EINNAHME_KATEGORIEN = {"umsatz": "Betriebseinnahmen (Kleinunternehmer)"}
+EINNAHME_KATEGORIEN = {"umsatz": "Betriebseinnahmen (Kleinunternehmer)",
+                       "anlage_abgang": "Verkauf oder private Weiternutzung eines Geräts/GWG (Erlös bzw. Teilwert)"}
 ARTEN = ("ausgabe", "einnahme")
 _GUTSCHRIFT = re.compile(r"(?i)gutschrift|self[- ]?billing|selbstfakturierung|credit\s+note|auszahlung|payout|monetarisierung|"
                          r"remittance|zahlungsavis|"

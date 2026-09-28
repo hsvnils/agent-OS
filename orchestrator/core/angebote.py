@@ -24,7 +24,7 @@ from .kunden import KundenStore
 
 STATUS = ("entwurf", "versendet", "angenommen", "abgelehnt")
 KOPF_FELDER = ("firma", "ansprechpartner", "titel", "datum", "gueltig_bis", "einleitung", "schluss", "nachfassen_tage",
-               "zuschlaege", "rabatt_prozent", "layout", "bloecke")          # die letzten vier: Etappe 3b
+               "zuschlaege", "rabatt_prozent", "layout", "bloecke", "ware")  # 3b; „ware“ = Barter (Etappe 12)
 LAYOUTS = ("hanserautisch", "standard")
 GUELTIG_TAGE = 14                                                           # CEO 2026-09-27 (wie im Generator)
 ORT = "Tangstedt"
@@ -93,6 +93,8 @@ def _kopf(daten: dict) -> dict:
             out[k] = v
         elif k == "bloecke":
             out[k] = _bloecke(v)
+        elif k == "ware":
+            out[k] = _ware(v)
         elif k == "nachfassen_tage":
             try:
                 n = int(v)
@@ -108,6 +110,47 @@ def _kopf(daten: dict) -> dict:
     if "ansprechpartner" in out:
         out["ansprechpartner"] = out["ansprechpartner"].upper()
     return out
+
+
+def _ware(roh) -> dict:
+    """Barter (Etappe 12): Teil der Gegenleistung in Ware -- {text, wert_cent}; leer = reines Geldgeschaeft."""
+    if not roh:
+        return {}
+    if not isinstance(roh, dict):
+        raise ValueError("Gegenleistung in Ware ungueltig.")
+    try:
+        w = int(roh["wert_cent"]) if "wert_cent" in roh and roh.get("wert") in (None, "") else cent(roh.get("wert") or 0)
+    except (ValueError, TypeError):
+        raise ValueError("Warenwert ungueltig.") from None
+    if w < 0:
+        raise ValueError("Warenwert darf nicht negativ sein.")
+    if not w:
+        return {}
+    text = str(roh.get("text") or "").strip()[:300]
+    if not text:
+        raise ValueError("Welche Ware? Bitte die Gegenleistung in Ware beschreiben.")
+    return {"text": text, "wert_cent": w}
+
+
+def ware_geld(summe_cent: int, ware: dict | None) -> tuple[int, int]:
+    """-> (Warenanteil, Geldanteil) in Cent; der Warenwert darf die Summe nicht uebersteigen."""
+    w = int((ware or {}).get("wert_cent") or 0)
+    if w > summe_cent:
+        raise ValueError(f"Warenwert {eur(w)} ist hoeher als die Gesamtsumme {eur(summe_cent)}.")
+    return w, summe_cent - w
+
+
+def ware_hinweis(summe_cent: int, ware: dict | None, *, rechnung: bool = False) -> list[str]:
+    """PDF-Text zur Gegenleistung in Ware (Angebot/Auftrag bzw. Rechnung mit beziffertem Entgelt, § 34a UStDV)."""
+    w, g = ware_geld(summe_cent, ware)
+    if not w:
+        return []
+    if rechnung:
+        return [f"Entgelt {eur(summe_cent)}, davon Sachleistung (tauschähnlicher Umsatz): {ware['text']} im Wert von "
+                f"{eur(w)}" + (f"; in Geld zu zahlen: {eur(g)}." if g else "; kein Geldbetrag zu zahlen – das Entgelt wird "
+                               "durch die Lieferung der Ware ausgeglichen.")]
+    return [f"Gegenleistung: {eur(w)} in Ware ({ware['text']})" + (f" und {eur(g)} in Geld." if g else
+                                                                   " – vollständig in Ware (Barter).")]
 
 
 def _zuschlaege(roh) -> list[dict]:
@@ -172,7 +215,8 @@ def anrede_moin(ap: dict | None, firma_name: str) -> str:
 
 def inhalt_hash(a: dict) -> str:
     """Hash des druckrelevanten Inhalts (welcher Stand ging raus?)."""
-    teil = {k: a.get(k) for k in KOPF_FELDER if k != "nachfassen_tage"} | {"positionen": a.get("positionen")}
+    teil = {k: a.get(k) for k in KOPF_FELDER                      # leeres „ware“ zaehlt nicht (alte Staende gleich)
+            if k != "nachfassen_tage" and (k != "ware" or a.get("ware"))} | {"positionen": a.get("positionen")}
     return hashlib.sha256(json.dumps(teil, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -244,7 +288,9 @@ class AngebotStore:
         anzeige = a["status"]
         if anzeige == "versendet" and a.get("gueltig_bis") and date.fromisoformat(a["gueltig_bis"]) < heute:
             anzeige = "abgelaufen"
+        w = min(int((a.get("ware") or {}).get("wert_cent") or 0), sm["gesamt_cent"])
         return a | {"positionen": pos, "summe_cent": sm["gesamt_cent"], "summen": sm, "anzeige_status": anzeige,
+                    "ware_cent": w, "geld_cent": sm["gesamt_cent"] - w,
                     "layout": a.get("layout") or "standard", "inhalt": inhalt_hash(a)}
 
     # -- Lesen ---------------------------------------------------------------------------------------------------
@@ -352,7 +398,8 @@ class AngebotStore:
                    ("Kundennummer", a["firma"]), ("Ansprechpartner", a.get("ansprechpartner", ""))],
             einleitung=einleitung, positionen=a["positionen"], summe_cent=a["summe_cent"],
             summen_zeilen=_summen_zeilen(a["summen"]),
-            hinweise=[HINWEIS_19, f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."], schluss=schluss)
+            hinweise=[HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
+            + [f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."], schluss=schluss)
 
     def _pdf_hanserautisch(self, a: dict, f: dict, ap: dict | None, firmendaten: dict) -> bytes:
         b = a.get("bloecke") or _bloecke({})
@@ -371,7 +418,8 @@ class AngebotStore:
             anrede=anrede_moin(ap, f.get("name", "")), einleitung=a.get("einleitung") or b.get("intro", ""),
             texte=b, zeige_kalkulation=b.get("zeige_kalkulation", True), zeige_kennzahlen=b.get("zeige_kennzahlen", True),
             gruppen=list(gruppen.values()), summen=a["summen"], zuschlag_liste=None,
-            fuss_zusatz=f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}.")
+            fuss_zusatz=" ".join(ware_hinweis(a["summe_cent"], a.get("ware"))
+                                 + [f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."]))
 
     def pdf_ablegen(self, nummer: str, pdf: bytes, *, an: str = "", entwurf_id: str = "", von: str = "") -> dict:
         a = self.angebot(nummer)

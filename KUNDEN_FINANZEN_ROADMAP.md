@@ -5,8 +5,8 @@
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
 - Naechster Schritt: Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
-  gemischte Rechnung aufteilen); Etappe 12 (Barter-Deals): Entscheidungen getroffen, steuerliche Recherche erledigt --
-  CEO-Go fuer den Bau einholen. Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
+  gemischte Rechnung aufteilen); Deploy + Abnahme Etappe 12 (Barter-Deal einmal von Angebot bis Ware-Eingang
+  durchspielen). Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -362,8 +362,17 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 12: Barter-Deals (Leistung gegen Ware)
 
-- Status: geplant (CEO-Wunsch 2026-09-28: „Barter Deals in Angeboten und allen folgenden Belegarten aufführen“) --
-  Umsetzung erst nach CEO-Go und Klaerung der offenen Entscheidungen unten
+- Status: umgesetzt (CEO-Go 2026-09-28 „Go für Etappe 12“; kein Steuerberater -> Zweifelsfaelle als Hinweis in LUNA-OS),
+  Deploy + Abnahme offen
+- Ergebnis: Feld „Gegenleistung in Ware“ (Text + Wert) in Angebot, Auftragsbestaetigung (uebernommen) und Rechnung
+  (Editor, Detail, PDF: „Gegenleistung: X in Ware ... und Y in Geld“ bzw. Rechnung mit beziffertem Entgelt
+  „davon Sachleistung (tauschaehnlicher Umsatz) ... in Geld zu zahlen“); Rechnung: Geldteil und Warenteil getrennt,
+  „bezahlt“ erst mit Geld **und** Ware; „📦 Ware erhalten“ (Wert laut Marke + eigener Nachweis, der Nachweis zaehlt;
+  Verwendung Content = Einnahme + gleiche Anschaffung GWG/Anlage/Verbrauch, privat = nur Einnahme, Leihgabe = nichts;
+  Nachweis-Dateien als Beleg; Storno); Mahnung nur Geldteil; To-do „Ware zu RE erhalten?“; Journal/EUeR (Einnahme
+  „Sachleistungen (Barter)“ in Zeile 12, Anlagegut aus Barter mit AfA), KU-Grenze mit vollem Rechnungswert; spaetere
+  Privatnutzung/Verkauf als Eigenbeleg „Verkauf oder private Weiternutzung“ -> EUeR Zeile 19/Kz 102, nicht zur KU-Grenze;
+  Export-Spalten Warenwert/Ware erhalten. Tests (Roadmap-Verifikation) + Gegenprobe; Browser-Test.
 - Hintergrund (Recherche 2026-09-28, amtliche Quellen; [?] = nur Schlussfolgerung, Steuerberater-Frage):
   - **Einnahme:** Behaltene Produkte sind Betriebseinnahmen, anzusetzen mit dem **ueblichen Endpreis am Abgabeort
     abzueglich ueblicher Preisnachlaesse** (§ 8 Abs. 2 EStG; Leitfaden Hessen 06/2026 S. 2-3, FAQ Bayern S. 3/8,

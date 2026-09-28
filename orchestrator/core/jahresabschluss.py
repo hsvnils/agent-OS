@@ -93,9 +93,12 @@ def euer_zeilen(f: Finanzen, jahr: int) -> dict:
     eu = f.euer(jahr)
     zeilen = []
     neben = sum(p["betrag_cent"] for p in eu["einnahmen"] if p["kategorie"] == "nebenforderung")
-    einnahmen = [{"kategorie": "umsatz", "position": POSITIONEN["umsatz"], "betrag_cent": eu["einnahmen_cent"]}]
-    if neben:                                   # Zeile 12 = alle Einnahmen, Zeile 13 nachrichtlich die nicht steuerbaren
+    abgang = sum(p["betrag_cent"] for p in eu["einnahmen"] if p["kategorie"] == "anlage_abgang")
+    einnahmen = [{"kategorie": "umsatz", "position": POSITIONEN["umsatz"], "betrag_cent": eu["einnahmen_cent"] - abgang}]
+    if neben:                                   # Zeile 12 = alle Einnahmen (auch Barter), 13 nachrichtlich nicht steuerbare
         einnahmen.append({"kategorie": "nebenforderung", "position": POSITIONEN["nebenforderung"], "betrag_cent": neben})
+    if abgang:                                  # Zeile 19: Verkauf/Entnahme von Anlagegütern inkl. GWG (Etappe 12)
+        einnahmen.append({"kategorie": "anlage_abgang", "position": POSITIONEN["anlage_abgang"], "betrag_cent": abgang})
     eu = eu | {"einnahmen": einnahmen}
     for p in eu["einnahmen"] + eu["ausgaben"]:
         z = zeile(jahr, p["kategorie"])
@@ -187,7 +190,7 @@ TABELLEN = {                                                 # Dateiname -> (Bes
                                [("Nummer", "text"), ("Art", "text"), ("Bezug", "text"), ("Rechnungsdatum", "datum"),
                                 ("Faellig", "datum"), ("Kunde_Nr", "text"), ("Kunde", "text"), ("Titel", "text"),
                                 ("Betrag", "zahl"), ("Bezahlt", "zahl"), ("Status", "text"), ("Datei", "text"),
-                                ("SHA256", "text")]),
+                                ("SHA256", "text"), ("Warenwert_Barter", "zahl"), ("Ware_erhalten", "datum")]),
     "eingangsbelege.csv": ("Eingangsbelege (Eingangsrechnungen, Gutschriften) mit Belegdatum oder Eingang im Jahr",
                            [("Nummer", "text"), ("Art", "text"), ("Eingang", "datum"), ("Belegdatum", "datum"),
                             ("Aussteller", "text"), ("Rechnungsnummer", "text"), ("Kategorie", "text"),
@@ -231,7 +234,8 @@ def export_zip(bh: Buchhaltung, kunden, jahr: int, firmendaten: dict) -> bytes:
         [r["nummer"], r.get("art", "rechnung"), r.get("bezug", ""), _d(r.get("rechnungsdatum")), _d(r.get("faellig_am")),
          r.get("firma", ""), (firmen.get(r.get("firma")) or {}).get("name", ""), r.get("titel", ""), _b(r["summe_cent"]),
          _b(r.get("bezahlt_cent", 0)), r["status"], (r.get("belege") or [{}])[0].get("pfad", ""),
-         (r.get("belege") or [{}])[0].get("sha256", "")]
+         (r.get("belege") or [{}])[0].get("sha256", ""), _b(r.get("ware_cent", 0)) if r.get("ware_cent") else "",
+         _d((r.get("ware_erhalten") or {}).get("datum"))]
         for r in sorted(rechnungen.values(), key=lambda r: r["nummer"]) if str(r.get("rechnungsdatum", ""))[:4] == str(jahr)]
     tabellen["eingangsbelege.csv"] = []
     for x in sorted(EingangStore._falte(e).values(), key=lambda x: x["nummer"]):
@@ -272,6 +276,8 @@ def export_zip(bh: Buchhaltung, kunden, jahr: int, firmendaten: dict) -> bytes:
         # z. B. Dezember-Rechnung im Januar erhalten) + alle Dateien, die im Jahr abgelegt wurden
         pfade = {r[11] for r in tabellen["ausgangsrechnungen.csv"] if r[11]}
         pfade |= {r[10] for r in tabellen["eingangsbelege.csv"] if r[10]}
+        pfade |= {n["pfad"] for r in rechnungen.values() for v in r.get("ware_vorgaenge") or []
+                  if str(v.get("datum", ""))[:4] == str(jahr) for n in v.get("nachweise") or []}
         pfade |= {b["daten"]["pfad"] for b in bh.eintraege("beleg") if str(b["daten"].get("jahr")) == str(jahr)}
         anzahl = 0
         for pf in sorted(pfade):

@@ -127,13 +127,15 @@ class MahnStore:
             raise ValueError("Die letzte Mahnung ist verschickt -- weiter nur ueber Mahnbescheid/Inkasso (CEO).")
         if not 1 <= int(frist_tage) <= 60:
             raise ValueError("Frist zwischen 1 und 60 Tagen.")
+        if r["geld_cent"] - r["bezahlt_cent"] <= 0:
+            raise ValueError(f"Der Geldteil von {rechnung} ist bezahlt -- offen ist nur die Ware (nicht mahnbar, nachfordern).")
         f = self.kunden.firma(r["firma"]) or {}
         verbraucher = bool(f.get("verbraucher"))
         zahlungen = [(z["datum"], int(z.get("betrag_cent") or 0)) for z in r.get("zahlungen", []) if not z.get("storniert")]
-        z = verzugszinsen(r["summe_cent"], zahlungen, r["faellig_am"], heute.isoformat(),
+        z = verzugszinsen(r["geld_cent"], zahlungen, r["faellig_am"], heute.isoformat(),
                           AUFSCHLAG_VERBRAUCHER if verbraucher else AUFSCHLAG_UNTERNEHMER)
         gebuehr = KOSTEN_VERBRAUCHER_CENT * stufe if verbraucher else PAUSCHALE_UNTERNEHMER_CENT
-        offen = r["summe_cent"] - r["bezahlt_cent"]
+        offen = r["geld_cent"] - r["bezahlt_cent"]         # Barter: nur der Geldteil
         tageszins = round(offen * z["abschnitte"][-1]["satz"] / 100 / tage_jahr(heute)) if z["abschnitte"] else 0
         return {"rechnung": rechnung, "stufe": stufe, "titel": STUFEN[stufe], "datum": heute.isoformat(),
                 "frist": (heute + timedelta(days=int(frist_tage))).isoformat(), "faellig_am": r["faellig_am"],
