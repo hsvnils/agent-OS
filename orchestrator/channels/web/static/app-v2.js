@@ -309,7 +309,7 @@ function todosInner(d) {
   const gruppen = {}; liste.forEach(t => (gruppen[t.bereich] = gruppen[t.bereich] || []).push(t));
   const zeile = (t) => `<div class="v2-list-row"><span>${t.icon}</span><div class="grow"><b>${esc(t.titel)}</b><small>${esc(t.detail || "")}</small></div>
     ${t.faellig ? `<span class="v2-badge ${t.dringend ? "err" : "neutral"}">${t.dringend ? (t.faellig < heuteIso() ? "überfällig" : "heute") : esc(datumDe(t.faellig))}</span>` : ""}
-    ${t.erledigen ? `<button class="v2-btn ok sm" data-act="todo-erledigen" data-val="${esc(t.erledigen.pfad)}">${esc(t.erledigen.label)}</button>` : ""}
+    ${t.erledigen ? `<button class="v2-btn ok sm" data-act="todo-erledigen" data-val="${esc(t.erledigen.pfad)}" data-schluessel="${esc(t.erledigen.schluessel || "")}">${esc(t.erledigen.label)}</button>` : ""}
     <button class="v2-btn sm" data-act="todo-oeffnen" data-val="${esc(t.act)}" data-id="${esc(t.act_id || "")}">Öffnen ›</button></div>`;
   const bloecke = Object.entries(gruppen).map(([b, ts]) => {
     const dr = ts.filter(t => t.dringend).length;
@@ -1836,7 +1836,7 @@ async function handleAct(act, el) {
       return handleAct(val, el);
     }
     case "todo-erledigen": {
-      el.disabled = true; const r = await jpost(val, {});
+      el.disabled = true; const r = await jpost(val, el.dataset.schluessel ? { schluessel: el.dataset.schluessel } : {});
       if (!r || r.ok === false) { el.disabled = false; return alert((r && r.hinweis) || "Fehler."); }
       return renderDash();
     }

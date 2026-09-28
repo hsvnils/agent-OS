@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 18:55] — Claude Code
+- **Was:** CFO-Finanzcheck: taeglich 05:00 (regelbasiert) prueft der CFO, ob alles eingetragen ist und laeuft -- Monatsabgleich mit dem Kontoauszug, fehlende wiederkehrende Posten, Offen-Gebliebenes (Zahlung, Gutschrift, Auftrag ohne Rechnung, Entwurf, ungepruefter Beleg), faellige Posten, KU-Grenze; Punkte auf der Hauptseite („✓ Abgeglichen“ / „✓ Kommt diesen Monat nicht“, protokolliert) und gebuendelt per Telegram, nur wenn etwas faellig ist; ersetzt die Einzelmeldung ueberfaelliger Rechnungen. Charta-Erweiterung CFO als Diff vorgelegt (noch NICHT angewendet). UI-Cache app v50.
+- **Warum:** CEO: Die Finanzagenten muessen im Blick haben, dass alles eingetragen ist und laeuft, und bei Fehlendem erinnern.
+- **Betroffen:** `orchestrator/core/todos.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/telegram/bot.py`, `static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_todos.py`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`
+
 ## [2026-09-28 18:20] — Claude Code
 - **Was:** Hauptseite von LUNA-OS V2: neue Kachel „Zu erledigen“ ganz oben -- alle offenen To-dos des Tagesbetriebs, je Bereich zusammengefasst (Belege pruefen/Euro-Betrag eintragen/bezahlen, ueberfaellige Rechnungen, Rechnungsentwuerfe, Angebote nachfassen/abgelaufen, erledigte Auftraege ohne Rechnung, CRM-To-dos, Reels zur Freigabe), faellige rot; „Oeffnen“ fuehrt an die Stelle, „✓ Nachgefasst“/„✓ Erledigt“ direkt. Freigaben/Antraege bleiben separat. Nachgefasst loescht den Nachfass-Termin (auch heute/vergangen); Hauptseite laedt nach dem Schliessen eines Detailfensters neu. UI-Cache app v49 / style v22.
 - **Warum:** CEO: offene To-dos gesammelt auf der Hauptseite; beim Erledigen muss der Kalendereintrag weg.

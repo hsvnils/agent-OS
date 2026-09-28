@@ -466,18 +466,16 @@ def _start_buchhaltung_loop(ctx) -> None:
                     if alarm:
                         ctx.notifications.enqueue(alarm, abteilung="CFO", kategorie="fehler", quelle="buchhaltung",
                                                   nach_briefing=False)
-                    # Etappe 5: ueberfaellige Rechnungen einmal taeglich melden (nur lesen, nichts buchen)
+                    # CFO-Finanzcheck (CEO 2026-09-28): ist alles erfasst und laeuft? Faellige Luecken gebuendelt
+                    # melden (u. a. ueberfaellige Rechnungen, Belege, Euro-Betrag, Monatsabgleich, fehlende
+                    # wiederkehrende Posten, KU-Grenze). Nur lesen, nie buchen; dieselben Punkte stehen auf der Hauptseite.
                     from ...core.kunden import KundenStore
-                    from ...core.rechnungen import RechnungStore, ueberfaellige
+                    from ...core.todos import cfo_meldung, geschaefts_todos
                     _bh = Buchhaltung(log.parent)
-                    _ue = ueberfaellige(RechnungStore(_bh, KundenStore(_bh)))
-                    if _ue:
-                        from ...core.beleg_pdf import eur as _eur
-                        ctx.notifications.enqueue(
-                            f"🧾 {len(_ue)} Rechnung(en) ueberfaellig: " + ", ".join(
-                                f"{r['nummer']} ({_eur(r['summe_cent'] - r['bezahlt_cent'])}, faellig {r['faellig_am']})"
-                                for r in _ue[:5]), abteilung="CFO", kategorie="finanzen", quelle="rechnungen",
-                            detail="LUNA-OS -> Rechnungen")
+                    _text = cfo_meldung(geschaefts_todos(_bh, KundenStore(_bh), crm=False))
+                    if _text:
+                        ctx.notifications.enqueue(_text, abteilung="CFO", kategorie="finanzen", quelle="finanzcheck",
+                                                  detail="LUNA-OS -> Hauptseite -> Zu erledigen", dedup_stunden=20)
                     ctx.agenda.markiere_briefing("buchhaltung-pruefung", datum)
             except Exception as exc:
                 print(f"[buchhaltung] Fehler: {exc}", flush=True)

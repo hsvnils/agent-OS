@@ -1826,6 +1826,22 @@ def todos_liste(request: Request):
     return {"todos": out, "anzahl": len(out), "dringend": sum(1 for t in out if t["dringend"])}
 
 
+@app.post("/api/finanzen/hinweis-quittieren")
+async def finanz_hinweis_quittieren(request: Request):
+    """CFO-Finanzcheck: „✓ Abgeglichen“ (Monat) / „✓ Kommt diesen Monat nicht“ (wiederkehrender Posten) -- protokolliert."""
+    import re as _re
+    from ...core.todos import QUITTUNG
+    body = await _json(request)
+    sl = str(body.get("schluessel") or "").strip().lower()[:160]
+
+    def tun():
+        if not _re.fullmatch(r"(monat:\d{4}-\d{2}|fehlt:.{1,120}:\d{4}-\d{2})", sl):
+            raise ValueError("Unbekannter Hinweis.")
+        kunden_store.bh.erfassen(QUITTUNG, {"schluessel": sl}, von=_von(request))
+        return {"quittiert": sl}
+    return _kunden_aktion(tun)
+
+
 @app.post("/api/crm/angebote/{nummer}/nachgefasst")
 async def angebot_nachgefasst(nummer: str, request: Request):
     body = await _json(request)
