@@ -4,7 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: Go fuer Etappe 1 (Kalender teilen + Kalender-ID konfigurierbar).
+- Naechster Schritt: CEO gibt seinen Kalender fuer luna.hanserautisch@gmail.com frei (Aenderungen vornehmen); dann
+  Go fuer Etappe 2 (Deploy + Umschalten auf das LUNA-Konto, ein Neustart fuer beides).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -76,7 +77,11 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 
 ### Etappe 1: Kalender teilen + Kalender-ID konfigurierbar
 
-- Status: geplant
+- Status: in Umsetzung (CEO-Go 2026-09-28) -- Code fertig auf `ai/luna-google-konto`, Freigabe durch den CEO offen
+- Ergebnis bisher: `GoogleWorkspace(kalender_id=...)` bzw. `GOOGLE_CALENDAR_ID` an allen 4 Kalender-Stellen (Standard
+  `primary`), Bot + Web reichen ihn durch; Test + Gegenprobe; Suite 852 gruen. Live geprueft: mit dem jetzigen Zugang
+  liefern `primary` und `hanserautisch@gmail.com` dieselben Termine. `GOOGLE_CALENDAR_ID=hanserautisch@gmail.com` in
+  der `.env` von MACO470 (Sicherung `~/env-backups/`) und NAS eingetragen -- wirkt erst nach Deploy + Neustart.
 - Ziel / Scope: CEO gibt seinen Kalender fuer das LUNA-Konto frei („Aenderungen an Terminen vornehmen");
   `GOOGLE_CALENDAR_ID` (Standard `primary`) an allen 4 Stellen statt fest `primary`; Einladung an die iCloud-Adresse
   bleibt.

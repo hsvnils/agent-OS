@@ -109,7 +109,8 @@ def _build_ctx(cfg: dict, secrets: dict):
     # GOOGLE_CALENDAR_DEFAULT_ATTENDEE wird bei jedem Termin automatisch eingeladen (z. B. private iCloud).
     google = GoogleWorkspace(GoogleAuth.from_env(env=secrets),
                              standard_einladung=secrets.get("GOOGLE_CALENDAR_DEFAULT_ATTENDEE", ""),
-                             zeitzone=secrets.get("GOOGLE_CALENDAR_TIMEZONE", "Europe/Berlin"))
+                             zeitzone=secrets.get("GOOGLE_CALENDAR_TIMEZONE", "Europe/Berlin"),
+                             kalender_id=secrets.get("GOOGLE_CALENDAR_ID", ""))
     # Proaktiver Notifier (Outbox) -- LUNA/Watcher melden sich unaufgefordert beim CEO.
     from ...core.notifications import Notifications
     notifications = Notifications(ROOT / "notifications" / "log.jsonl", secrets=secret_values)

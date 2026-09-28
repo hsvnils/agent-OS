@@ -92,7 +92,8 @@ def _google():
             sec = dict(os.environ)
         _GOOGLE = GoogleWorkspace(GoogleAuth.from_env(env=sec),
                                   standard_einladung=sec.get("GOOGLE_CALENDAR_DEFAULT_ATTENDEE", ""),
-                                  zeitzone=sec.get("GOOGLE_CALENDAR_TIMEZONE", "Europe/Berlin"))
+                                  zeitzone=sec.get("GOOGLE_CALENDAR_TIMEZONE", "Europe/Berlin"),
+                                  kalender_id=sec.get("GOOGLE_CALENDAR_ID", ""))
     return _GOOGLE
 
 

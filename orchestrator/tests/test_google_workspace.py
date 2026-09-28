@@ -93,6 +93,40 @@ class TestGoogleWorkspace(unittest.TestCase):
         self.assertEqual(body["end"]["timeZone"], "Europe/Berlin")
         self.assertEqual(body["attendees"], [{"email": "hsvnils@icloud.com"}])
 
+    def test_5d_kalender_id_konfigurierbar(self):
+        # LUNA_GOOGLE_KONTO_ROADMAP Etappe 1: mit LUNAs eigenem Konto zielt der Kalender auf den freigegebenen des CEO.
+        aufrufe = []
+
+        class _Req:
+            def execute(self):
+                return {"items": [], "id": "e1", "htmlLink": ""}
+
+        class _Events:
+            def list(self, **kw): aufrufe.append(("list", kw["calendarId"])); return _Req()
+            def insert(self, **kw): aufrufe.append(("insert", kw["calendarId"])); return _Req()
+            def patch(self, **kw): aufrufe.append(("patch", kw["calendarId"])); return _Req()
+            def delete(self, **kw): aufrufe.append(("delete", kw["calendarId"])); return _Req()
+
+        class _Svc:
+            def events(self): return _Events()
+
+        class _Auth:
+            def verfuegbar(self): return True
+            def service(self, api, version): return _Svc()
+
+        gw = GoogleWorkspace(_Auth(), kalender_id="ceo@example.com")
+        gw.kalender_agenda()
+        gw.termin_anlegen("T", "2026-10-05T09:00:00", "2026-10-05T09:15:00", bestaetigt=True)
+        gw.termin_aendern("e1", titel="X", bestaetigt=True)
+        gw.termin_loeschen("e1", bestaetigt=True)
+        self.assertEqual({k for _, k in aufrufe}, {"ceo@example.com"})
+        self.assertEqual({a for a, _ in aufrufe}, {"list", "insert", "patch", "delete"})
+        import os
+        from unittest import mock
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(GoogleWorkspace(_Auth()).kalender_id, "primary")        # Standard unveraendert
+            self.assertEqual(GoogleWorkspace(_Auth(), kalender_id="").kalender_id, "primary")
+
     def test_6_entwurf_ist_sicher(self):
         # Entwurf ist ohne Bestaetigung erlaubt (sendet nicht).
         r = run_tool("mail_entwurf", {"an": "x@test", "betreff": "B", "text": "T"}, _ctx())

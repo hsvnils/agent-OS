@@ -17,6 +17,7 @@ deckt der `MockGoogleWorkspace` die Tool-/Gating-Logik ab.
 from __future__ import annotations
 
 import base64
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
@@ -98,8 +99,11 @@ class GoogleWorkspace:
     """Gmail/Kalender/Drive/Sheets -- Lesen frei, Schreiben gated. Echte API (lazy)."""
 
     def __init__(self, auth: GoogleAuth, *, standard_einladung: str = "",
-                 zeitzone: str = "Europe/Berlin"):
+                 zeitzone: str = "Europe/Berlin", kalender_id: str | None = None):
         self.auth = auth
+        # Welcher Kalender: `primary` = der eigene des angemeldeten Kontos. Mit LUNAs eigenem Google-Konto
+        # (LUNA_GOOGLE_KONTO_ROADMAP.md) ist das der **freigegebene Kalender des CEO**, z. B. seine Gmail-Adresse.
+        self.kalender_id = (kalender_id or os.environ.get("GOOGLE_CALENDAR_ID") or "primary").strip()
         # Wird bei JEDEM Termin automatisch als Teilnehmer eingeladen (z. B. private iCloud-Adresse).
         self.standard_einladung = (standard_einladung or "").strip()
         # Pflicht fuer die Google Calendar API, wenn die ISO-Zeit keinen Offset traegt
@@ -197,7 +201,7 @@ class GoogleWorkspace:
             svc = self.auth.service("calendar", "v3")
             now = datetime.now(timezone.utc)
             resp = svc.events().list(
-                calendarId="primary", timeMin=now.isoformat(),
+                calendarId=self.kalender_id, timeMin=now.isoformat(),
                 timeMax=(now + timedelta(days=tage)).isoformat(),
                 singleEvents=True, orderBy="startTime", maxResults=max_results).execute()
             termine = [{"id": e.get("id"), "titel": e.get("summary", ""),
@@ -221,7 +225,7 @@ class GoogleWorkspace:
         try:
             svc = self.auth.service("calendar", "v3")
             body = self._event_body(titel, start, ende, ort, beschreibung, einladungen)
-            ev = svc.events().insert(calendarId="primary", body=body,
+            ev = svc.events().insert(calendarId=self.kalender_id, body=body,
                                      sendUpdates="all").execute()  # Einladungs-Mail rausschicken
             return _ok(termin_id=ev.get("id"), link=ev.get("htmlLink"), eingeladen=einladungen)
         except Exception as exc:
@@ -285,7 +289,7 @@ class GoogleWorkspace:
                 patch["start"] = {"dateTime": start, "timeZone": self.zeitzone}
             if ende:
                 patch["end"] = {"dateTime": ende, "timeZone": self.zeitzone}
-            ev = svc.events().patch(calendarId="primary", eventId=event_id, body=patch,
+            ev = svc.events().patch(calendarId=self.kalender_id, eventId=event_id, body=patch,
                                     sendUpdates="all").execute()
             return _ok(termin_id=ev.get("id"), link=ev.get("htmlLink"))
         except Exception as exc:
@@ -299,7 +303,7 @@ class GoogleWorkspace:
                     "hinweis": "Termin loeschen braucht CEO-Bestaetigung -- erneut mit bestaetigt=true."}
         try:
             svc = self.auth.service("calendar", "v3")
-            svc.events().delete(calendarId="primary", eventId=event_id, sendUpdates="all").execute()
+            svc.events().delete(calendarId=self.kalender_id, eventId=event_id, sendUpdates="all").execute()
             return _ok(geloescht=True)
         except Exception as exc:
             return _fehler(f"Termin loeschen fehlgeschlagen: {str(exc)[:160]}")

@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 10:41] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 1 (Code): Kalender-ID konfigurierbar (`GOOGLE_CALENDAR_ID`, Standard
+  `primary`) in `google_workspace.py`, Bot und Web; Test + Gegenprobe, Suite 852 gruen; live geprueft (gleiche Termine
+  ueber `hanserautisch@gmail.com`). `GOOGLE_CALENDAR_ID=hanserautisch@gmail.com` in `.env` MACO470 (Sicherung) + NAS
+  angehaengt. Register: Cloud-Projekt bleibt beim CEO-Konto.
+- **Warum:** CEO-Go „go fuer etappe 1"; CEO-Frage zum Projektumzug beantwortet.
+- **Betroffen:** `orchestrator/governance/google_workspace.py`, `orchestrator/channels/{telegram/bot.py,web/app.py}`,
+  `orchestrator/tests/test_google_workspace.py`, `docs/entscheidungs-register.md`, `LUNA_GOOGLE_KONTO_ROADMAP.md`,
+  `orchestrator/.env` (MACO470 + NAS, eine Zeile)
+
 ## [2026-09-28 10:37] — Claude Code (MACO470)
 - **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 0 abgeschlossen (CEO hat `luna.hanserautisch@gmail.com` mit
   Zwei-Faktor angelegt); Roadmap-Status „in Umsetzung".
