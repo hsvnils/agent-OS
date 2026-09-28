@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 10:45] — Claude Code (MACO470)
+- **Was:** Korrektur Etappe 1 (`LUNA_GOOGLE_KONTO_ROADMAP.md`): Termine kommen in **LUNAs eigenen Kalender**, nicht in den
+  des CEO. `GOOGLE_CALENDAR_ID=hanserautisch@gmail.com` wieder aus `.env` MACO470 + NAS entfernt (NAS wieder 66 Zeilen);
+  konfigurierbare Kalender-ID im Code bleibt (Standard = eigener Kalender). Roadmap angepasst, offene Frage ergaenzt.
+- **Warum:** CEO: „Die Eintraege sollen in LUNAs Konto angelegt werden ... genau wie Mails".
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`, `orchestrator/.env` (MACO470 + NAS, eine Zeile entfernt)
+
 ## [2026-09-28 10:41] — Claude Code (MACO470)
 - **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 1 (Code): Kalender-ID konfigurierbar (`GOOGLE_CALENDAR_ID`, Standard
   `primary`) in `google_workspace.py`, Bot und Web; Test + Gegenprobe, Suite 852 gruen; live geprueft (gleiche Termine

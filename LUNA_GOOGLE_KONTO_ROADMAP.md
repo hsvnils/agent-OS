@@ -4,8 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: CEO gibt seinen Kalender fuer luna.hanserautisch@gmail.com frei (Aenderungen vornehmen); dann
-  Go fuer Etappe 2 (Deploy + Umschalten auf das LUNA-Konto, ein Neustart fuer beides).
+- Naechster Schritt: CEO beantwortet, ob LUNA seine Termine lesen soll (Etappe 1, offen); dann Go fuer Etappe 2
+  (Deploy + Umschalten auf das LUNA-Konto, ein Neustart).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -38,7 +38,7 @@ kann." LUNA arbeitet kuenftig mit **eigenem** Gmail, Kalender, Drive und Sheets.
 
 ## Scope
 
-LUNA-Google-Konto anbinden (OAuth mit `deploy/google_oauth_neu.py`), Kalender des CEO geteilt nutzen
+LUNA-Google-Konto anbinden (OAuth mit `deploy/google_oauth_neu.py`), eigener LUNA-Kalender
 (`calendarId` konfigurierbar), Mail-Eingang ueber Weiterleitungsfilter, Angebots-Versand auf das neue Modell umstellen,
 Drive/Sheets im LUNA-Konto, alten Zugang auf hanserautisch@gmail.com widerrufen, Doku/Tests.
 
@@ -75,17 +75,19 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
   bereits auf „In Produktion" (Nutzertyp Extern, 1 von 100 Nutzern) -- kein Testnutzer-Eintrag noetig.
 - Gate: CEO kann sich im neuen Konto anmelden.
 
-### Etappe 1: Kalender teilen + Kalender-ID konfigurierbar
+### Etappe 1: Eigener LUNA-Kalender (Kalender-ID konfigurierbar)
 
-- Status: in Umsetzung (CEO-Go 2026-09-28) -- Code fertig auf `ai/luna-google-konto`, Freigabe durch den CEO offen
+- Status: in Umsetzung (CEO-Go 2026-09-28) -- Code fertig auf `ai/luna-google-konto`
+- **Korrektur CEO 2026-09-28:** Termine werden in **LUNAs eigenem Kalender** angelegt (wie Mails ueber ihr eigenes
+  Postfach) -- **nicht** im Kalender des CEO. Keine Freigabe des CEO-Kalenders noetig.
 - Ergebnis bisher: `GoogleWorkspace(kalender_id=...)` bzw. `GOOGLE_CALENDAR_ID` an allen 4 Kalender-Stellen (Standard
-  `primary`), Bot + Web reichen ihn durch; Test + Gegenprobe; Suite 852 gruen. Live geprueft: mit dem jetzigen Zugang
-  liefern `primary` und `hanserautisch@gmail.com` dieselben Termine. `GOOGLE_CALENDAR_ID=hanserautisch@gmail.com` in
-  der `.env` von MACO470 (Sicherung `~/env-backups/`) und NAS eingetragen -- wirkt erst nach Deploy + Neustart.
-- Ziel / Scope: CEO gibt seinen Kalender fuer das LUNA-Konto frei („Aenderungen an Terminen vornehmen");
-  `GOOGLE_CALENDAR_ID` (Standard `primary`) an allen 4 Stellen statt fest `primary`; Einladung an die iCloud-Adresse
-  bleibt.
-- Gate: Termin/Angebots-Erinnerung erscheint im Kalender des CEO (und im Apple-Kalender).
+  `primary` = eigener Kalender des angemeldeten Kontos, nach Etappe 2 also LUNAs); Test + Gegenprobe; Suite 852 gruen.
+  Ein zwischenzeitlich eingetragenes `GOOGLE_CALENDAR_ID=hanserautisch@gmail.com` wieder aus beiden `.env` entfernt.
+- Sichtbarkeit fuer den CEO: jeder Termin laedt wie bisher `GOOGLE_CALENDAR_DEFAULT_ATTENDEE` (iCloud) ein -> erscheint im
+  Apple-Kalender; optional gibt LUNA ihren Kalender fuer hanserautisch@gmail.com frei (Etappe 2).
+- Offen (CEO): Soll LUNA **deine** Termine weiter sehen (Morgen-Briefing „heute an", Termin-Kollisionen)? Dann Lese-
+  Freigabe deines Kalenders fuer LUNA + zweiter Kalender nur zum Lesen; sonst kennt LUNA nur ihre eigenen Termine.
+- Gate: nach Etappe 2 -- Angebots-Erinnerung liegt im LUNA-Kalender und erscheint per Einladung im Apple-Kalender.
 
 ### Etappe 2: Umschalten auf das LUNA-Konto
 
