@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 15:10] — Claude Code
+- **Was:** LUNA loescht kommende Kalender-Erinnerungen erledigter Vorgaenge selbststaendig: Angebot angenommen/abgelehnt -> Nachfass-/Ablauf-Termine, Rechnung bezahlt/storniert -> Faelligkeits-Termin. Sofort beim Statuswechsel in LUNA-OS (Hinweis in der Oberflaeche) und nachholend im 15-min-Poll des Bots (raeumt auch AN-2026-0001 nachtraeglich auf). Nur eigene, protokollierte Termine; jede Loeschung im Kassenbuch. Mock-Kalender vergibt eindeutige IDs und merkt Loeschungen. UI-Cache v44.
+- **Warum:** CEO-Auftrag -- Nachfass-Termin von AN-2026-0001 stand nach Annahme noch im Kalender.
+- **Betroffen:** `orchestrator/core/erinnerungen.py` (neu), `orchestrator/channels/web/app.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `orchestrator/governance/google_workspace.py` (Mock), `orchestrator/tests/test_erinnerungen.py` (neu), `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `governance/zugriffs-policy.md`
+
 ## [2026-09-28 14:40] — Claude Code
 - **Was:** Beleg-Mail-Eingang erkennt jetzt auch eingebettete (inline) und verschachtelte Anhaenge, wie Apple Mail sie beim Weiterleiten erzeugt (BF-36); Regel-Vorschlag fuer Eingangsrechnungen geschaerft (Belegnummer, Belegdatum, Lieferant ohne Adresse, Kategorie-Woerter).
 - **Warum:** Abnahme Etappe 6 -- vom CEO weitergeleitete Calumet-Rechnung (Kamera-Zubehoer) wurde nicht aufgenommen.

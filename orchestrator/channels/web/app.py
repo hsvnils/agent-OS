@@ -1290,6 +1290,23 @@ def _kunden_aktion(fn):
         return {"ok": False, "hinweis": str(exc)}
 
 
+def _mit_aufraeumen(fn, von: str = "LUNA"):
+    """Aktion ausfuehren und danach erledigte Kalender-Erinnerungen (Angebot angenommen/abgelehnt, Rechnung bezahlt/
+    storniert) sofort aus LUNAs Kalender loeschen. Fehler beim Aufraeumen blockieren die Aktion nie (Bot holt nach)."""
+    def tun():
+        r = fn()
+        try:
+            from ...core.erinnerungen import erledigte_entfernen
+            weg = erledigte_entfernen(kunden_store.bh, _google(), von=von)
+        except Exception:
+            weg = []
+        if weg:
+            r = dict(r) | {"hinweise": list(r.get("hinweise") or [])
+                           + [f"{len(weg)} Kalender-Erinnerung(en) entfernt ({', '.join(sorted({x['bezug'] for x in weg}))})."]}
+        return r
+    return tun
+
+
 @app.get("/api/crm/kunden")
 def kunden_liste(suche: str = ""):
     """Firmen mit Firmenkundennummer + Collab-Firmen, die noch keiner Nummer zugeordnet sind."""
@@ -1403,7 +1420,7 @@ async def auftrag_aus_angebot(nummer: str, request: Request):
             except Exception:
                 hinweise.append(f"CRM-Stufe fuer {anzeige} nicht gesetzt.")
         return r | {"hinweise": hinweise}
-    return _kunden_aktion(tun)
+    return _kunden_aktion(_mit_aufraeumen(tun, _von(request)))
 
 
 @app.post("/api/crm/auftraege/{nummer}")
@@ -1649,8 +1666,9 @@ async def rechnung_senden(nummer: str, request: Request):
 @app.post("/api/finanzen/rechnungen/{nummer}/bezahlt")
 async def rechnung_bezahlt(nummer: str, request: Request):
     body = await _json(request)
-    return _kunden_aktion(lambda: _rechnungen().bezahlt(nummer, datum=body.get("datum") or "", betrag=body.get("betrag"),
-                                                        notiz=body.get("notiz") or "", von=_von(request)))
+    return _kunden_aktion(_mit_aufraeumen(
+        lambda: _rechnungen().bezahlt(nummer, datum=body.get("datum") or "", betrag=body.get("betrag"),
+                                      notiz=body.get("notiz") or "", von=_von(request)), _von(request)))
 
 
 @app.post("/api/finanzen/rechnungen/{nummer}/stornieren")
@@ -1663,7 +1681,7 @@ async def rechnung_stornieren(nummer: str, request: Request):
             raise ValueError("Firmendaten fehlen.")
         return _rechnungen().stornieren(nummer, fd, grund=body.get("grund") or "", korrektur=bool(body.get("korrektur")),
                                         von=_von(request))
-    return _kunden_aktion(tun)
+    return _kunden_aktion(_mit_aufraeumen(tun, _von(request)))
 
 
 # -- Eingangsrechnungen / Belege (KUNDEN_FINANZEN Etappe 6; Modul finanzen) ---------------------------------------
@@ -2061,8 +2079,8 @@ async def angebot_status(nummer: str, request: Request):
     ziel = (body.get("status") or "").strip()
     if ziel not in ("angenommen", "abgelehnt"):
         return {"ok": False, "hinweis": "Status muss angenommen oder abgelehnt sein."}
-    return _kunden_aktion(lambda: _angebote().status_setzen(nummer, ziel, grund=body.get("grund") or "",
-                                                            von=_von(request)))
+    return _kunden_aktion(_mit_aufraeumen(lambda: _angebote().status_setzen(nummer, ziel, grund=body.get("grund") or "",
+                                                                            von=_von(request)), _von(request)))
 
 
 def jetzt_iso() -> str:
