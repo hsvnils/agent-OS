@@ -4,8 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: CEO beantwortet die offenen Entscheidungen (unten) und gibt Go fuer Etappe 0; Etappe 0 macht der
-  CEO selbst (Konto anlegen), danach Go je Etappe.
+- Naechster Schritt: Etappe 0 -- CEO legt `luna.hanserautisch@gmail.com` an (Anleitung im Chat 2026-09-28) und meldet
+  sich; danach Go fuer Etappe 1.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -51,16 +51,15 @@ Drive/Sheets im LUNA-Konto, alten Zugang auf hanserautisch@gmail.com widerrufen,
 - YouTube, Meta, sonstige Dienste von hanserautisch@gmail.com
 - Schutzbereiche laut `governance/roadmap-workflow.md` B4 (Token nur ueber das Skript in die `.env`)
 
-## Entscheidungen (offen, CEO)
+## Entscheidungen (CEO, 2026-09-28)
 
-1. **Name des Kontos**, z. B. `luna.hanserautisch@gmail.com` (Wiederherstellung: Handynummer/Mail des CEO).
-2. **Angebote verschicken** -- wie soll die Angebots-Mail zum Kunden gehen?
-   - a) **LUNA sendet aus ihrem Konto**, erst nach deinem Klick „Jetzt senden" in LUNA-OS (Absender z. B. „LUNA für
-     Hanserautisch"); Antworten landen bei LUNA und werden dir gemeldet.
-   - b) LUNA schickt **dir** die fertige Mail mit PDF, du leitest sie aus deinem Postfach weiter (Absender bleibt du).
-   - c) Entwurf im LUNA-Postfach, du sendest ihn selbst dort (Anmeldung im LUNA-Konto noetig).
-3. **Welche Mails soll LUNA sehen?** (Weiterleitungsfilter in hanserautisch@gmail.com) -- Vorschlag: Kooperations-/
-   Collab-Anfragen, Rechnungen/Belege (Etappe 6 PDF-Scan), Antworten auf Angebote. Alles andere bleibt privat.
+1. **Konto:** `luna.hanserautisch@gmail.com` (Wiederherstellung: Handynummer/Mail des CEO).
+2. **Angebote verschicken:** LUNA sendet **aus ihrem Konto**, erst nach dem Klick „Jetzt senden" des CEO in LUNA-OS
+   (mit Vorschau); Antworten landen bei LUNA und werden dem CEO gemeldet.
+3. **Mail-Eingang:** **komplette Weiterleitung** aller Mails von hanserautisch@gmail.com an LUNA (Gmail-Einstellung
+   „Weiterleitung", kein Filter). Hinweis: LUNA sieht damit weiterhin alle neuen Mails (auch Passwort-Resets) --
+   gewonnen ist, dass LUNA keinen Zugriff mehr **auf** das Hauptkonto hat (kein Archiv, kein Handeln als
+   hanserautisch, keine Verbindung zu YouTube/Meta-Logins, kein stiller Widerruf durch Aktionen am Hauptkonto).
 
 ## Etappen
 
@@ -92,16 +91,16 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 ### Etappe 3: Mail-Eingang ueber Weiterleitung
 
 - Status: geplant
-- Ziel / Scope: CEO legt die Gmail-Filter (Entscheidung 3) an; Gmail verlangt einen Bestaetigungscode an die
-  Zieladresse -- LUNA liest ihn aus ihrem Postfach. CRM-Mail-Tracking, Watcher und Briefing auf weitergeleitete Mails
+- Ziel / Scope: CEO richtet in hanserautisch@gmail.com die **komplette Weiterleitung** an LUNA ein (Entscheidung 3);
+  Gmail verlangt einen Bestaetigungscode an die Zieladresse -- LUNA liest ihn aus ihrem Postfach. CRM-Mail-Tracking, Watcher und Briefing auf weitergeleitete Mails
   pruefen (Originalabsender erhalten?).
-- Gate: eine weitergeleitete Collab-Anfrage landet im CRM der richtigen Firma.
+- Gate: eine weitergeleitete Collab-Anfrage landet im CRM der richtigen Firma; Briefing zeigt neue Mails.
 
 ### Etappe 4: Angebots-Versand nach Entscheidung 2
 
 - Status: geplant
-- Ziel / Scope: je nach Wahl a/b/c -- bei a) Knopf „Jetzt senden" (CEO-Klick = Freigabe, mit Vorschau), Antworten dem
-  Angebot zuordnen.
+- Ziel / Scope: Knopf „Jetzt senden" in LUNA-OS (CEO-Klick = Freigabe, Vorschau von Empfaenger/Betreff/Text/PDF),
+  Versand aus dem LUNA-Konto, Status „versendet" automatisch, Antworten des Kunden dem Angebot zuordnen und melden.
 - Gate: Test-Angebot an eine eigene Adresse, PDF-Anhang korrekt, Status/Verlauf stimmen.
 
 ### Etappe 5: Alten Zugang widerrufen + Abschluss

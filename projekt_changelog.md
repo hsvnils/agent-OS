@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 10:24] — Claude Code (MACO470)
+- **Was:** CEO-Entscheidungen in `LUNA_GOOGLE_KONTO_ROADMAP.md` eingetragen: Konto `luna.hanserautisch@gmail.com`,
+  Angebote sendet LUNA nach CEO-Klick aus ihrem Konto, komplette Mail-Weiterleitung.
+- **Warum:** CEO-Antworten 2026-09-28.
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
 ## [2026-09-28 10:19] — Claude Code (MACO470)
 - **Was:** Neue Roadmap `LUNA_GOOGLE_KONTO_ROADMAP.md` (geplant, 6 Etappen, 3 offene CEO-Entscheidungen) fuer ein
   eigenes Google-Konto von LUNA; in `ROADMAP.md` registriert; Entscheidung im Register. Nur Planung, keine Umsetzung.
