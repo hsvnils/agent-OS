@@ -33,16 +33,16 @@ ENDUNGEN = {".pdf": "application/pdf", ".xml": "application/xml", ".jpg": "image
 # EUeR-orientierte Kategorien (Zuordnung zu den ELSTER-Zeilen folgt in Etappe 7/9)
 KATEGORIEN = {
     "wareneinkauf": ("Wareneinkauf / Material", ("ware", "material", "einkauf", "druck", "merch", "textil", "shirt")),
-    "fremdleistungen": ("Fremdleistungen (Freelancer, Subunternehmer)", ("freelancer", "honorar", "dienstleistung", "schnitt", "fotograf", "video")),
+    "fremdleistungen": ("Fremdleistungen (Freelancer, Subunternehmer)", ("freelancer", "honorar", "dienstleistung", "schnitt", "fotograf", "videoproduktion")),
     "software": ("Software, Abos, Hosting", ("software", "abo", "subscription", "lizenz", "hosting", "cloud", "adobe", "canva", "google", "apple", "microsoft", "openai", "anthropic", "domain")),
     "werbung": ("Werbung / Marketing", ("werbung", "anzeige", "ads", "marketing", "kampagne", "promotion", "sponsor")),
     "telekommunikation": ("Telefon / Internet", ("telefon", "mobilfunk", "internet", "telekom", "vodafone", "o2", "1&1")),
-    "buero": ("Bürobedarf / Porto", ("büro", "buero", "papier", "porto", "versand", "dhl", "hermes", "deutsche post")),
+    "buero": ("Bürobedarf / Porto", ("büro", "buero", "papier", "porto", "briefmarke", "paketmarke", "deutsche post")),
     "reise": ("Reisekosten", ("bahn", "db fernverkehr", "hotel", "flug", "übernachtung", "ticket", "reise")),
     "fahrzeug": ("Fahrzeugkosten", ("tank", "kraftstoff", "benzin", "diesel", "parken", "werkstatt", "kfz")),
     "bewirtung": ("Bewirtung (70 % absetzbar)", ("restaurant", "bewirtung", "gastronomie", "café", "cafe")),
     "fortbildung": ("Fortbildung / Fachliteratur", ("seminar", "kurs", "fortbildung", "buch", "schulung", "konferenz")),
-    "gwg": ("Geringwertiges Wirtschaftsgut (bis 800 € netto)", ("kamera", "mikrofon", "objektiv", "stativ", "monitor", "tastatur")),
+    "gwg": ("Geringwertiges Wirtschaftsgut (bis 800 € netto)", ("kamera", "mikrofon", "objektiv", "stativ", "monitor", "tastatur", "cage", "gimbal", "akku", "speicherkarte", "smallrig", "rode", "sony alpha")),
     "anlage": ("Anlagegut > 800 € (Abschreibung)", ("laptop", "macbook", "computer", "pc ", "iphone", "server", "nas")),
     "gebuehren": ("Gebühren, Beiträge, Versicherungen", ("gebühr", "gebuehr", "beitrag", "versicherung", "ihk", "kontoführung")),
     "sonstiges": ("Sonstiges", ()),
@@ -191,11 +191,12 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
     v = {"lieferant": "", "rechnungsnummer": "", "rechnungsdatum": "", "betrag": "", "faellig_am": "", "leistung": "",
          "kategorie": kategorie_raten(t), "quelle": "regeln"}
     zeilen = [z.strip() for z in t.splitlines() if z.strip()]
-    m = re.search(r"(?i)(?:rechnungs?[- ]?(?:nummer|nr\.?)|rechnung\s+nr\.?|invoice\s+(?:no\.?|number)|beleg[- ]?nr\.?)"
+    m = re.search(r"(?i)(?:rechnungs?[- ]?(?:nummer|nr\.?)|rechnung\s+nr\.?|invoice\s+(?:no\.?|number)|beleg[- ]?(?:nummer|nr\.?))"
                   r"\s*[:#]?\s*([A-Z0-9][A-Z0-9\-/_.]{2,30})", t)
     if m:
         v["rechnungsnummer"] = m.group(1).rstrip(".")
-    m = re.search(r"(?i)(?:rechnungsdatum|datum|invoice\s+date|belegdatum)\s*[:]?\s*" + _DATUM, t) or re.search(_DATUM, t)
+    m = (re.search(r"(?i)(?:rechnungsdatum|invoice\s+date|belegdatum|leistungsdatum)\s*[:]?\s*" + _DATUM, t)
+         or re.search(r"(?i)(?<![a-zäöü])datum\s*[:]?\s*" + _DATUM, t) or re.search(_DATUM, t))
     if m:
         v["rechnungsdatum"] = _iso(t, *m.groups()[-3:])
     betraege = []
@@ -214,7 +215,7 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
         if werte:
             v["betrag"] = eur(max(werte)[0]).replace(" €", "")
     if zeilen:
-        v["lieferant"] = zeilen[0][:120]
+        v["lieferant"] = re.split(r"\s+[·|•]\s+", zeilen[0])[0][:120]      # Absenderzeile "Firma · Strasse · Ort"
     if e_rechnung:
         v.update({k: e_rechnung[k] for k in ("lieferant", "rechnungsnummer", "rechnungsdatum", "betrag", "faellig_am", "leistung")
                   if e_rechnung.get(k)})
@@ -482,17 +483,27 @@ def llm_ergebnisse_uebernehmen(st: EingangStore, backoffice) -> int:
 
 
 def anhaenge(roh: bytes) -> list[tuple[str, bytes]]:
-    """Anhaenge einer Mail (RFC 822) mit erlaubter Endung."""
+    """Anhaenge einer Mail (RFC 822) mit erlaubter Endung -- auch **inline** und verschachtelt (Apple Mail leitet
+    PDFs als `inline`-Teil in `multipart/alternative` weiter; `iter_attachments()` sieht die nicht, BF-36).
+    Eingebettete Bilder aus dem HTML (Logos, Signaturen: Content-ID oder < 20 KB) werden uebersprungen."""
     import email
     from email import policy
     m = email.message_from_bytes(roh, policy=policy.default)
     out = []
-    for teil in m.iter_attachments():
+    for teil in m.walk():
+        if teil.is_multipart():
+            continue
         name = teil.get_filename() or ""
-        if Path(name).suffix.lower() in ENDUNGEN:
-            daten = teil.get_payload(decode=True) or b""
-            if daten:
-                out.append((name, daten))
+        endung = Path(name).suffix.lower()
+        if endung not in ENDUNGEN:
+            continue
+        daten = teil.get_payload(decode=True) or b""
+        if not daten:
+            continue
+        if (ENDUNGEN[endung].startswith("image/") and teil.get_content_disposition() != "attachment"
+                and (teil.get("Content-ID") or len(daten) < 20_000)):
+            continue
+        out.append((name, daten))
     return out
 
 
