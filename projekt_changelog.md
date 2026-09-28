@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 19:18] — Claude Code
+- **Was:** Etappe 12 (Barter-Deals): CEO-Entscheidungen eingetragen (Warenwert = Markenangabe + eigener Nachweis, Standard-Verwendung betrieblich fuer Content, Rechnung auch bei reinem Barter); steuerliche Recherche (amtliche Quellen) gestartet, read-only.
+- **Warum:** CEO-Antworten auf die drei offenen Entscheidungen.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-28 19:09] — Claude Code
 - **Was:** KUNDEN_FINANZEN_ROADMAP: Etappe 12 „Barter-Deals (Leistung gegen Ware)“ geplant -- Scope ueber alle Belegarten (Angebot, Auftrag, Rechnung, Ware erhalten als Einnahme, Verwendung der Ware, Mahnwesen nur Geldteil, Cockpit/EUeR/Export, Collab-CRM), steuerlicher Hintergrund mit [?]-Markern, drei offene CEO-Entscheidungen, Gate und Verifikation. Keine Code-Aenderung.
 - **Warum:** CEO: „Barter Deals in Angeboten und allen folgenden Belegarten aufführen“ -- aufnehmen.

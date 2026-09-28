@@ -5,8 +5,8 @@
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
 - Naechster Schritt: Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
-  gemischte Rechnung aufteilen); Etappe 12 (Barter-Deals) ist geplant -- vor dem Bau die drei offenen Entscheidungen
-  mit dem CEO klaeren und CEO-Go einholen. Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
+  gemischte Rechnung aufteilen); Etappe 12 (Barter-Deals): Entscheidungen getroffen, steuerliche Recherche laeuft --
+  danach CEO-Go fuer den Bau einholen. Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -388,10 +388,9 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   - **Cockpit/EUeR/Export:** Barter-Einnahmen und -Ausgaben sichtbar getrennt, Drill-down, Export-Spalten; EUeR-Zeile
     fuer Kleinunternehmer vermutlich Zeile 12 [?].
   - **Collab-CRM:** Deals mit Marken sind oft Barter -> Kennzeichnung am Kunden/Deal [?].
-- Offene Entscheidungen (CEO, vor dem Bau): (1) Wie wird der Warenwert festgelegt -- Preisangabe der Marke, eigener
-  Nachweis (Shop-Screenshot) oder beides? (2) Standard-Verwendung der Ware (meist betrieblich fuer Content, privat,
-  gemischt)? (3) Sollen Angebote in reinem Barter ueberhaupt eine Rechnung ausloesen (empfohlen: ja, fuer die
-  Nachvollziehbarkeit) [?].
+- Entscheidungen (CEO 2026-09-28): (1) Warenwert = **Preisangabe der Marke UND eigener Nachweis** (Shop-Screenshot/
+  Lieferschein als Beleg); (2) Standard-Verwendung der Ware = **betrieblich fuer Content**; (3) **Rechnung auch bei
+  reinem Barter: ja**.
 - Gate: ein Probe-Deal (Geld + Ware) laeuft von Angebot bis EUeR durch; Summen je Belegart von Hand nachgerechnet;
   Wert der Ware zaehlt in Journal, EUeR und Kleinunternehmer-Grenze; privat behaltene Ware erzeugt keine Ausgabe;
   Tests + Gegenprobe; CEO-Abnahme der PDFs.
