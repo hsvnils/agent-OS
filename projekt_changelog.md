@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 10:56] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 2: LUNA auf ihr eigenes Google-Konto umgeschaltet (CEO-Zustimmung mit
+  luna.hanserautisch@gmail.com; `deploy/google_oauth_neu.py --erwartet` prueft das Konto vor dem Schreiben). `.env`
+  MACO470 + NAS: neuer Token (Pruefsummen gleich), `GOOGLE_CALENDAR_DEFAULT_ATTENDEE` entfernt,
+  `GOOGLE_ACCOUNT_EMAIL=luna.hanserautisch@gmail.com`. Live: Gmail/Kalender = LUNA, Selbstcheck gruen. Code-Stand
+  (Kalender-ID, BF-34) nach `main` gemergt + deployt (`657c70b`). Neustart durch den CEO offen.
+- **Warum:** CEO-Go „GO fuer Etappe 2"; CEO hat LUNAs Kalender direkt im iPhone (keine iCloud-Einladung noetig).
+- **Betroffen:** `deploy/google_oauth_neu.py`, `LUNA_GOOGLE_KONTO_ROADMAP.md`, `docs/datenfluesse.md`,
+  `orchestrator/.env` (MACO470 + NAS)
+
 ## [2026-09-28 10:49] — Claude Code (MACO470)
 - **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` auf vollstaendige Trennung umgestellt: keine Mail-Weiterleitung (Etappe 3
   verworfen), keine Kalender-Freigabe des CEO (Lese-Funktion bleibt ungenutzt), Cloud-Projekt bleibt beim CEO;
