@@ -467,6 +467,27 @@ def tool_specs() -> list[dict]:
     ]
 
 
+def _termin_in_vergangenheit(a: dict) -> str:
+    """BF-35: Termine mit einem Start in der Vergangenheit (Modell kannte das Datum nicht, erfand 2024) zurueckweisen --
+    mit dem richtigen heutigen Datum als Hinweis, damit das Modell korrigieren kann. Leer = in Ordnung."""
+    from datetime import datetime, timedelta
+    from .hoa_conversation import jetzt_berlin
+    start = str(a.get("start") or "").strip()
+    if not start:
+        return ""
+    try:
+        d = datetime.fromisoformat(start.replace("Z", "+00:00"))
+    except ValueError:
+        return f"Ungueltiges Datum „{start}“ -- Format JJJJ-MM-TTTHH:MM:SS."
+    jetzt = jetzt_berlin()
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=jetzt.tzinfo)
+    if d < jetzt - timedelta(hours=12):
+        return (f"Start {start} liegt in der Vergangenheit. Heute ist {jetzt:%d.%m.%Y} ({jetzt:%Y-%m-%d}). Datum pruefen "
+                f"und neu berechnen -- nicht eintragen. Frag den CEO, falls unklar.")
+    return ""
+
+
 def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
     args = args or {}
     sec = ctx.leak_secrets
@@ -1307,6 +1328,8 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                                      bestaetigt=bool(a.get("bestaetigt")))
             elif name == "kalender_agenda":
                 res = gw.kalender_agenda(tage=int(a.get("tage") or 7))
+            elif name in ("termin_anlegen", "termin_aendern") and (alt := _termin_in_vergangenheit(a)):
+                res = {"ok": False, "hinweis": alt}
             elif name == "termin_anlegen":
                 res = gw.termin_anlegen(a.get("titel", ""), a.get("start", ""), a.get("ende", ""),
                                         ort=a.get("ort", ""), bestaetigt=bool(a.get("bestaetigt")))

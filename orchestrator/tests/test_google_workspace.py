@@ -16,6 +16,10 @@ from orchestrator.governance.google_workspace import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
+# Relativ zu heute: feste Daten veralten (BF-01) und werden seit BF-35 als Vergangenheit abgewiesen.
+from datetime import datetime as _dt, timedelta as _td
+MORGEN_10 = (_dt.now() + _td(days=1)).strftime("%Y-%m-%dT10:00:00")
+MORGEN_11 = (_dt.now() + _td(days=1)).strftime("%Y-%m-%dT11:00:00")
 
 
 def _ctx(google=None, secrets=None):
@@ -63,8 +67,8 @@ class TestGoogleWorkspace(unittest.TestCase):
 
     def test_5_termin_und_tabelle_gated(self):
         ctx = _ctx()
-        t = run_tool("termin_anlegen", {"titel": "Call", "start": "2026-06-26T10:00:00",
-                                        "ende": "2026-06-26T11:00:00"}, ctx)
+        t = run_tool("termin_anlegen", {"titel": "Call", "start": MORGEN_10,
+                                        "ende": MORGEN_11}, ctx)
         self.assertTrue(t["bestaetigung_noetig"])
         self.assertEqual(ctx.google.termine, [])
         s = run_tool("tabelle_schreiben", {"spreadsheet_id": "s1", "bereich": "A1",
@@ -77,11 +81,11 @@ class TestGoogleWorkspace(unittest.TestCase):
         ctx = ToolContext(core=HeadOfAgents(MockBackend(), load_all_subagents(), gate=CeoGate()),
                           antraege=Antraege(Path(tempfile.mkdtemp()) / "a.jsonl"), engine=None,
                           finance_dir=ROOT / "finance", repo_root=ROOT, leak_secrets=[], google=gw)
-        vor = run_tool("termin_anlegen", {"titel": "Call", "start": "2026-06-26T10:00:00",
-                                          "ende": "2026-06-26T11:00:00"}, ctx)
+        vor = run_tool("termin_anlegen", {"titel": "Call", "start": MORGEN_10,
+                                          "ende": MORGEN_11}, ctx)
         self.assertIn("hsvnils@icloud.com", vor["vorschau"]["einladung"])
-        ok = run_tool("termin_anlegen", {"titel": "Call", "start": "2026-06-26T10:00:00",
-                                         "ende": "2026-06-26T11:00:00", "bestaetigt": True}, ctx)
+        ok = run_tool("termin_anlegen", {"titel": "Call", "start": MORGEN_10,
+                                         "ende": MORGEN_11, "bestaetigt": True}, ctx)
         self.assertEqual(ok["eingeladen"], ["hsvnils@icloud.com"])
 
     def test_5c_termin_body_hat_zeitzone(self):

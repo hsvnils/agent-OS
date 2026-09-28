@@ -96,7 +96,9 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
   `--erwartet`); Token in `.env` MACO470 (Sicherung `~/env-backups/`) + NAS, Pruefsummen gleich. `.env` beide:
   `GOOGLE_CALENDAR_DEFAULT_ATTENDEE` entfernt (CEO hat LUNAs Kalender direkt im iPhone, keine iCloud-Einladung mehr),
   `GOOGLE_ACCOUNT_EMAIL=luna.hanserautisch@gmail.com` (CRM erkennt ein-/ausgehend). Live geprueft: Gmail-Profil = LUNA,
-  Kalender = LUNAs eigener, Selbstcheck gruen.
+  Kalender = LUNAs eigener, Selbstcheck gruen. Nach dem Neustart (CEO): Telegram-Test legte den Termin **in LUNAs
+  Kalender** an (Umschaltung ok), aber am 16.05.2024 -> BF-35 (Chat kannte das Datum nicht) behoben, Deploy + Neustart
+  + Wiederholung des Tests offen.
 - Ziel / Scope: `deploy/google_oauth_neu.py` mit dem LUNA-Konto (Token nur in die `.env` MACO470 + NAS),
   Selbstcheck gruen, Telegram-Werkzeuge + Briefing + Watcher gegen das neue Konto pruefen.
 - Gate: Briefing, Agenda und LUNA-Suche laufen; Selbstcheck meldet keinen Fehler.
