@@ -88,6 +88,11 @@ def abschluss_check(bh: Buchhaltung, kunden, jahr: int, heute: date | None = Non
 
 # -- EUeR je Zeile ----------------------------------------------------------------------------------------------------
 
+def verlustvortrag_hinweis(bh: Buchhaltung, f: Finanzen, jahr: int) -> dict | None:
+    from .finanzen import verlustvortrag, vv_info
+    return vv_info(verlustvortrag(bh.eintraege(), jahr - 1), jahr - 1, f.euer(jahr)["gewinn_cent"])
+
+
 def euer_zeilen(f: Finanzen, jahr: int) -> dict:
     """EUeR des Jahres mit amtlicher Zeile je Position (Eingabehilfe fuer ELSTER)."""
     eu = f.euer(jahr)

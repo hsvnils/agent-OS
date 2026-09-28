@@ -2011,7 +2011,34 @@ def finanzen_abschluss(jahr: int = 0):
     from ...core import jahresabschluss as ja
     j = jahr or int(jetzt_iso()[:4])
     return {"jahr": j, "jahre": ja.jahre_mit_daten(kunden_store.bh),
-            "pruefung": ja.abschluss_check(kunden_store.bh, kunden_store, j), "euer": ja.euer_zeilen(_finanzen(), j)}
+            "pruefung": ja.abschluss_check(kunden_store.bh, kunden_store, j), "euer": ja.euer_zeilen(_finanzen(), j),
+            "verlustvortrag": ja.verlustvortrag_hinweis(kunden_store.bh, _finanzen(), j)}
+
+
+@app.post("/api/finanzen/verlustvortrag")
+async def finanzen_verlustvortrag(request: Request):
+    """Verbleibenden Verlust eines Jahres erfassen/korrigieren (neuer Eintrag, der letzte gilt; protokolliert)."""
+    from ...core.beleg_pdf import cent
+    from ...core.finanzen import VERLUSTVORTRAG
+    body = await _json(request)
+
+    def tun():
+        try:
+            jahr = int(body.get("jahr"))
+        except (TypeError, ValueError):
+            raise ValueError("Jahr fehlt.") from None
+        if not 2000 <= jahr < int(jetzt_iso()[:4]):
+            raise ValueError("Verlustvortrag nur fuer abgeschlossene Jahre.")
+        try:
+            c = cent(body.get("betrag") or 0)
+        except ValueError:
+            raise ValueError("Betrag ungueltig.") from None
+        if c < 0:
+            raise ValueError("Betrag als positive Zahl (Hoehe des Verlusts) angeben.")
+        kunden_store.bh.erfassen(VERLUSTVORTRAG, {"jahr": jahr, "betrag_cent": c, "notiz": str(body.get("notiz") or "")[:300]},
+                                 von=_von(request))
+        return {"jahr": jahr, "betrag_cent": c}
+    return _kunden_aktion(tun)
 
 
 @app.get("/api/finanzen/abschluss/export")
