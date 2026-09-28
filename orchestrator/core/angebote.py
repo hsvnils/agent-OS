@@ -207,7 +207,7 @@ class AngebotStore:
             elif t == "angebot_erinnerungen":                # nachgeholte Kalender-Erinnerungen (BF-33)
                 a = out[d["nummer"]]
                 a["versendet_termine"] = a.get("versendet_termine", []) + d.get("termine", [])
-                a["verlauf"].append(spur | {"felder": ["erinnerungen"]})
+                a["verlauf"].append(spur)
             elif t == "angebot_status":
                 a = out[d["nummer"]]
                 a["status"] = d["status"]

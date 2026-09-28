@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 09:51] — Claude Code (MACO470)
+- **Was:** Etappen 3 und 3b abgenommen (CEO, AN-2026-0001; Erinnerungen nach BF-33 nachgeholt, im Apple-Kalender
+  sichtbar). Verlauf zeigt „Erinnerungen nachgeholt" statt des technischen Namens (Cache v38). Roadmap aktualisiert;
+  offen: Gmail-Entwurf mit Anhang live pruefen.
+- **Warum:** CEO-Rueckmeldung mit Screenshot.
+- **Betroffen:** `orchestrator/channels/web/static/{app-v2.js,index-v2.html}`, `orchestrator/core/angebote.py`,
+  `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-28 09:42] — Claude Code (MACO470)
 - **Was:** BF-33 behoben: CEO hat den Google-Zugang neu bestaetigt (hanserautisch@gmail.com); neuer Refresh-Token per
   Kalender-Abruf getestet, in die `.env` von MACO470 (Sicherung `~/env-backups/`) und NAS geschrieben -- Pruefsummen
