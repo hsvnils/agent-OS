@@ -40,8 +40,8 @@ let STATE = {}, OVERVIEW = {}, LOOP = {}, INVEST = {};
 let AKTIV = "dash", SUBTAB = {};
 
 /* Dashboard-Bearbeiten (wie V1): Widget-Reihenfolge + ausgeblendete, pro Nutzer in PREFS.v2_dashboard. */
-const DASH2_DEFAULT = ["freigaben", "loop", "budget", "trefferquote", "provider", "compliance", "live", "schritte", "meldungen", "research"];
-const DASH2_TITEL = { budget: "Monatsbudget", trefferquote: "Prognose-Trefferquote", freigaben: "Offene Freigaben", provider: "Provider verbunden", loop: "Investment · Lern-Loop", compliance: "Compliance-Puls", live: "Live-Aktivität", schritte: "Erste Schritte", meldungen: "Meldungen", research: "Research-Tickets" };
+const DASH2_DEFAULT = ["todos", "freigaben", "loop", "budget", "trefferquote", "provider", "compliance", "live", "schritte", "meldungen", "research"];
+const DASH2_TITEL = { todos: "Zu erledigen", budget: "Monatsbudget", trefferquote: "Prognose-Trefferquote", freigaben: "Offene Freigaben", provider: "Provider verbunden", loop: "Investment · Lern-Loop", compliance: "Compliance-Puls", live: "Live-Aktivität", schritte: "Erste Schritte", meldungen: "Meldungen", research: "Research-Tickets" };
 let DASH2 = { order: [...DASH2_DEFAULT], hidden: [] };
 let EDIT2 = false, DRAG2 = null;
 let _VERLAUF = [], _trendRO = null;
@@ -49,6 +49,7 @@ let _VERLAUF = [], _trendRO = null;
 function normDash2(l) {
   l = l || {}; const hidden = (Array.isArray(l.hidden) ? l.hidden : []).filter(id => DASH2_DEFAULT.includes(id));
   const order = (Array.isArray(l.order) ? l.order : []).filter(id => DASH2_DEFAULT.includes(id));
+  if (!order.includes("todos")) order.unshift("todos");             // neu (2026-09-28): ganz nach oben
   DASH2_DEFAULT.forEach(id => { if (!order.includes(id)) order.push(id); });
   return { order, hidden };
 }
@@ -192,7 +193,7 @@ function openModal(title, html, breit = false) {   // breit = ganze Seite (z. B.
   m.innerHTML = `<div class="v2-modal-back" data-modal-close></div><div class="v2-modal-card${breit ? " breit" : ""}"><header><b>${esc(title)}</b><button class="v2-icon" data-modal-close>✕</button></header><div class="v2-modal-body">${html}</div></div>`;
   m.hidden = false;
 }
-function closeModal() { const m = $("#v2-modal"); if (m) m.hidden = true; }
+function closeModal() { const m = $("#v2-modal"); if (m && !m.hidden) { m.hidden = true; if (AKTIV === "dash") renderDash(); } }   // To-dos neu laden
 
 /* Fehler-Verlauf-Chart (LUNA vs. Baseline): breiten-bewusst gerendert -> KEINE Streckung.
    viewBox-Breite = Container-Pixelbreite -> 1:1-Abbildung (Achsen/Text unverzerrt). ResizeObserver wie V1. */
@@ -249,7 +250,9 @@ function dash2Tray(W) {
   return `<div class="v2-tray"><b>Ausgeblendet:</b> ${hid.length ? hid.map(id => `<button class="v2-btn" data-wadd2="${id}">＋ ${esc(DASH2_TITEL[id])}</button>`).join("") : `<span class="v2-sub">nichts ausgeblendet</span>`}</div>`;
 }
 async function renderDash() {
-  [STATE, OVERVIEW, LOOP] = await Promise.all([jget("/api/state"), jget("/api/overview"), jget("/api/investment/loop")]);
+  let TODOS;
+  [STATE, OVERVIEW, LOOP, TODOS] = await Promise.all([jget("/api/state"), jget("/api/overview"), jget("/api/investment/loop"), jget("/api/todos")]);
+  TODOS = TODOS || { todos: [], anzahl: 0, dringend: 0 };
   STATE = STATE || {}; OVERVIEW = OVERVIEW || {}; LOOP = LOOP || {}; _VERLAUF = LOOP.verlauf || [];
   const g = (LOOP.kennzahlen && LOOP.kennzahlen.gesamt) || {};
   const antraege = STATE.antraege || [], provs = OVERVIEW.providers || [];
@@ -277,6 +280,7 @@ async function renderDash() {
   const miniList = (arr, keys, sub) => arr.slice(0, 2).map(x => `<div class="v2-mini"><b>${esc(String(firstOf(x, keys, "—")).slice(0, 54))}</b>${sub ? `<small>${esc(String(firstOf(x, sub, "")).slice(0, 40))}</small>` : ""}</div>`).join("") || `<div class="v2-sub">nichts offen</div>`;
 
   const W = {
+    todos: { span: "w12", link: null, aria: `Zu erledigen: ${TODOS.anzahl}`, html: todosInner(TODOS) },
     freigaben: { span: "w4 tall", link: null, aria: `Offene Freigaben: ${antraege.length}`, html: freigInner },
     loop: { span: "w8 tall", link: "go:investment", aria: `Investment Lern-Loop, Richtungsquote ${g.n ? pct(g.richtungsquote) : "keine Daten"}`, html: `<div class="v2-kpi">${g.n ? pct(g.richtungsquote) : "–"} <span class="delta ${(g.anteil_besser_baseline || 0) >= .5 ? "up" : "down"}">${g.n ? pct(g.anteil_besser_baseline) + " schlägt Baseline" : ""}</span></div><div class="v2-sub">Richtungsquote · MAE ${num(g.mae_pct)} vs Baseline ${num(g.baseline_mae_pct)} · n=${g.n || 0}</div>${chartMount()}` },
     budget: { span: "", link: null, aria: `Monatsbudget ${budget}`, html: kpiInner(String(budget), null, "aus finance/budget.md") },
@@ -296,6 +300,23 @@ async function renderDash() {
     <div class="v2-grid ${EDIT2 ? "editing" : ""}">${order.map(id => dashTile(id, W[id])).join("")}</div>
     ${EDIT2 ? dash2Tray(W) : ""}`;
   mountTrends();
+}
+/* To-dos des Tagesbetriebs (Belege, Rechnungen, Angebote, Aufträge, CRM, Reels) -- zusammengefasst je Bereich.
+   Erledigt wird durch die eigentliche Arbeit („Öffnen“) oder direkt („✓ …“); LUNA löscht dazugehörige Kalendertermine. */
+function todosInner(d) {
+  const liste = d.todos || [];
+  if (!liste.length) return `<div class="v2-check done" style="border:none"><span class="mark">✓</span>Alles erledigt — nichts offen im Tagesbetrieb.</div>`;
+  const gruppen = {}; liste.forEach(t => (gruppen[t.bereich] = gruppen[t.bereich] || []).push(t));
+  const zeile = (t) => `<div class="v2-list-row"><span>${t.icon}</span><div class="grow"><b>${esc(t.titel)}</b><small>${esc(t.detail || "")}</small></div>
+    ${t.faellig ? `<span class="v2-badge ${t.dringend ? "err" : "neutral"}">${t.dringend ? (t.faellig < heuteIso() ? "überfällig" : "heute") : esc(datumDe(t.faellig))}</span>` : ""}
+    ${t.erledigen ? `<button class="v2-btn ok sm" data-act="todo-erledigen" data-val="${esc(t.erledigen.pfad)}">${esc(t.erledigen.label)}</button>` : ""}
+    <button class="v2-btn sm" data-act="todo-oeffnen" data-val="${esc(t.act)}" data-id="${esc(t.act_id || "")}">Öffnen ›</button></div>`;
+  const bloecke = Object.entries(gruppen).map(([b, ts]) => {
+    const dr = ts.filter(t => t.dringend).length;
+    return `<details class="v2-todo-gruppe" ${dr || Object.keys(gruppen).length === 1 ? "open" : ""}><summary><b>${esc(ts[0].icon)} ${esc(b)}</b> <span class="v2-badge ${dr ? "err" : "neutral"}">${ts.length}${dr ? ` · ${dr} fällig` : ""}</span></summary>${ts.map(zeile).join("")}</details>`;
+  }).join("");
+  return `<div class="v2-kpi">${d.anzahl} <span class="delta ${d.dringend ? "down" : "up"}">${d.dringend ? d.dringend + " heute fällig/überfällig" : "nichts dringend"}</span></div>
+    <div class="v2-sub">Tagesbetrieb — Freigaben für die Weiterentwicklung stehen separat.</div><div class="v2-todo-liste">${bloecke}</div>`;
 }
 function sparkFromVerlauf(verlauf) {
   const v = (verlauf || []).slice(-28); if (!v.length) return "";
@@ -1809,6 +1830,15 @@ async function handleAct(act, el) {
       if (AKTIV === "finanzen") renderFinanzen(); if (AKTIV === "belege") renderBelege(); if (AKTIV === "rechnungen") renderRechnungen();
       const ok = !!(r && r.ok), m = ok ? "Zahlung storniert — sie bleibt sichtbar, zählt aber nicht mehr." : ((r && r.hinweis) || "Fehler.");
       return act === "re-zahlung-storno" ? reDetail(id, m, !ok) : blDetail(id, m, !ok);
+    }
+    case "todo-oeffnen": {
+      if (val.startsWith("go:")) { const [, s, t] = val.split(":"); return go(s, t); }
+      return handleAct(val, el);
+    }
+    case "todo-erledigen": {
+      el.disabled = true; const r = await jpost(val, {});
+      if (!r || r.ok === false) { el.disabled = false; return alert((r && r.hinweis) || "Fehler."); }
+      return renderDash();
     }
     case "eb-neu": return ebNeu(val);
     case "eb-speichern": return ebSpeichern(val);

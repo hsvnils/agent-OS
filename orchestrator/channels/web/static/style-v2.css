@@ -441,3 +441,9 @@ a.v2-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .v2-fin-euer th { text-align: left; padding-top: 14px; color: var(--v2-muted); }
 .v2-fin-gewinn td { border-top: 2px solid var(--v2-line); font-size: 16px; }
 @media (max-width: 820px) { .v2-fin-pipeline { grid-template-columns: 1fr 1fr; } .v2-fin-stufe::after { display: none; } .v2-fin-hbar { grid-template-columns: 1fr 1fr auto; } }
+.v2-todo-liste { margin-top: 10px; }
+.v2-todo-gruppe { border-top: 1px solid var(--v2-line-soft); padding: 6px 0; }
+.v2-todo-gruppe summary { cursor: pointer; padding: 6px 0; list-style: none; display: flex; gap: 8px; align-items: center; }
+.v2-todo-gruppe summary::-webkit-details-marker { display: none; }
+.v2-todo-gruppe summary::before { content: "›"; color: var(--v2-faint); transition: transform .15s; display: inline-block; }
+.v2-todo-gruppe[open] summary::before { transform: rotate(90deg); }

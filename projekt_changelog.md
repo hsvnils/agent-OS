@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 18:20] — Claude Code
+- **Was:** Hauptseite von LUNA-OS V2: neue Kachel „Zu erledigen“ ganz oben -- alle offenen To-dos des Tagesbetriebs, je Bereich zusammengefasst (Belege pruefen/Euro-Betrag eintragen/bezahlen, ueberfaellige Rechnungen, Rechnungsentwuerfe, Angebote nachfassen/abgelaufen, erledigte Auftraege ohne Rechnung, CRM-To-dos, Reels zur Freigabe), faellige rot; „Oeffnen“ fuehrt an die Stelle, „✓ Nachgefasst“/„✓ Erledigt“ direkt. Freigaben/Antraege bleiben separat. Nachgefasst loescht den Nachfass-Termin (auch heute/vergangen); Hauptseite laedt nach dem Schliessen eines Detailfensters neu. UI-Cache app v49 / style v22.
+- **Warum:** CEO: offene To-dos gesammelt auf der Hauptseite; beim Erledigen muss der Kalendereintrag weg.
+- **Betroffen:** `orchestrator/core/todos.py` (neu), `orchestrator/core/angebote.py`, `orchestrator/core/erinnerungen.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `index-v2.html`, `orchestrator/tests/test_todos.py` (neu), `docs/entscheidungs-register.md`, `docs/datenfluesse.md`
+
 ## [2026-09-28 17:40] — Claude Code
 - **Was:** Belege in Fremdwaehrung (z. B. Meta-Auszahlung in USD): LUNA legt einmalig einen Kalendertermin „💶 Euro-Betrag eintragen“ an (Rechnungsdatum + 7 Tage, 09:00; liegt das zurueck: morgen) -- im 15-min-Poll und direkt nach dem Upload; nach Buchen/Verwerfen loescht LUNA ihn selbst (sofort und nachholend). KI-Vorschlaege werden jetzt auch im Poll uebernommen.
 - **Warum:** CEO-Wunsch: an das Eintragen des Euro-Betrags erinnert werden.

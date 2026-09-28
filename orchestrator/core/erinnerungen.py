@@ -5,6 +5,7 @@ Sobald der Vorgang erledigt ist, loescht LUNA die **noch kommenden** davon selbs
 
 - Angebot angenommen (Auftrag) oder abgelehnt -> Nachfass- und Ablauf-Termine weg,
 - Rechnung bezahlt oder storniert -> Faelligkeits-Termin weg,
+- Angebot als „nachgefasst“ markiert (Hauptseite) -> Nachfass-Termin weg (auch wenn er heute/vorbei ist),
 - Beleg in Fremdwaehrung gebucht (Euro-Betrag eingetragen) oder verworfen -> „Euro-Betrag eintragen“ weg.
 
 Geloescht werden **nur Termine, die LUNA selbst angelegt und im Kassenbuch mit ID protokolliert hat** -- nie fremde
@@ -30,6 +31,11 @@ def faellige_loeschungen(eintraege: list[dict], heute: str | None = None) -> lis
     weg = {e["daten"].get("id") for e in eintraege if e["typ"] == TYP}
     out = []
     for a in AngebotStore._falte(eintraege).values():
+        if a.get("status") == "versendet" and a.get("nachgefasst_am"):   # Hauptseite: nachgefasst -> auch heute/vergangen
+            for t in a.get("versendet_termine") or []:
+                if "nachfassen" in str(t.get("titel", "")):
+                    out.append({"bezug": a["nummer"], "id": t.get("id", ""), "datum": t.get("datum", ""),
+                                "titel": t.get("titel", ""), "grund": "nachgefasst", "auch_vergangen": True})
         if a.get("status") in ANGEBOT_ERLEDIGT:
             for t in a.get("versendet_termine") or []:
                 out.append({"bezug": a["nummer"], "id": t.get("id", ""), "datum": t.get("datum", ""),
@@ -44,7 +50,8 @@ def faellige_loeschungen(eintraege: list[dict], heute: str | None = None) -> lis
         if t and b.get("status") != "zu_pruefen":
             out.append({"bezug": b["nummer"], "id": t.get("id", ""), "datum": t.get("datum", ""),
                         "titel": t.get("titel", ""), "grund": f"Beleg {b['status']}"})
-    return [x for x in out if x["id"] and x["id"] not in weg and str(x["datum"]) >= heute]
+    return [{k: v for k, v in x.items() if k != "auch_vergangen"} for x in out
+            if x["id"] and x["id"] not in weg and (x.get("auch_vergangen") or str(x["datum"]) >= heute)]
 
 
 def erledigte_entfernen(bh: Buchhaltung, google, *, von: str = "LUNA") -> list[dict]:

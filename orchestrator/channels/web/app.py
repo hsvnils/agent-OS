@@ -1801,6 +1801,38 @@ def _index(body: dict) -> int:
         raise ValueError("Zahlung fehlt.") from None
 
 
+# -- To-dos fuer die Hauptseite (CEO 2026-09-28): Tagesbetrieb gesammelt; Antraege/Freigaben bewusst NICHT hier ------
+
+@app.get("/api/todos")
+def todos_liste(request: Request):
+    from ...core.todos import geschaefts_todos
+    u = getattr(request.state, "user", None) or _ceo_user()
+    out = geschaefts_todos(kunden_store.bh, kunden_store, finanzen=hat_modul(u, "finanzen"), crm=hat_modul(u, "crm"))
+    heute = jetzt_iso()[:10]
+    if hat_modul(u, "crm"):
+        for t in crm_store.todos():
+            f = str(t.get("faellig") or "")[:10]
+            out.append({"id": f"crm:{t['id']}", "bereich": "CRM", "icon": "🤝", "titel": t.get("vorschlag") or "To-do",
+                        "detail": t.get("firma") or "", "act": "go:crm", "act_id": "", "faellig": f,
+                        "dringend": bool(f) and f <= heute,
+                        "erledigen": {"pfad": f"/api/crm/todo/{t['id']}/erledigen", "label": "✓ Erledigt"}})
+    if hat_modul(u, "content_ops"):
+        wartet = reel_store.liste(status="wartet")
+        if wartet:
+            out.append({"id": "reels", "bereich": "Content", "icon": "🎬", "titel": f"{len(wartet)} Reel(s) zur Freigabe",
+                        "detail": "prüfen, Caption anpassen, freigeben oder ablehnen", "act": "go:reel", "act_id": "",
+                        "faellig": "", "dringend": False, "erledigen": None})
+    out.sort(key=lambda t: (not t["dringend"], t["faellig"] or "9999", t["titel"]))
+    return {"todos": out, "anzahl": len(out), "dringend": sum(1 for t in out if t["dringend"])}
+
+
+@app.post("/api/crm/angebote/{nummer}/nachgefasst")
+async def angebot_nachgefasst(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(_mit_aufraeumen(lambda: _angebote().nachgefasst(nummer, notiz=body.get("notiz") or "",
+                                                                          von=_von(request)), _von(request)))
+
+
 # -- Finanzen: Uebersicht, Journal, EUeR, Anlagen, Eigenbelege (KUNDEN_FINANZEN Etappe 7; Modul finanzen) -----------
 
 def _finanzen() -> Finanzen:
