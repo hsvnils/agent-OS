@@ -4,8 +4,7 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: Etappe 5 (CEO widerruft den alten Zugang in hanserautisch@gmail.com) kann sofort; Go fuer Etappe 4
-  (Angebote aus LUNAs Konto nach CEO-Klick senden).
+- Naechster Schritt: Go fuer Etappe 4 (Angebote aus LUNAs Konto nach CEO-Klick senden) -- danach Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -119,7 +118,9 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 
 ### Etappe 5: Alten Zugang widerrufen + Abschluss
 
-- Status: geplant
+- Status: abgeschlossen (2026-09-28) -- CEO hat „LUNA" in hanserautisch@gmail.com entfernt; geprueft: alter Token ->
+  `invalid_grant`, neuer (LUNA-Konto) funktioniert. Doku nachgezogen: `governance/zugriffs-policy.md`,
+  `deploy/google-oauth-setup.md`, `docs/datenfluesse.md`, `ROADMAP.md`; Code-Standard `GOOGLE_ACCOUNT_EMAIL` -> LUNA.
 - Ziel / Scope: CEO entfernt „LUNA" unter myaccount.google.com -> Sicherheit -> Drittanbieter-Zugriff im Konto
   hanserautisch@gmail.com; Doku (`deploy/google-oauth-setup.md`, `docs/datenfluesse.md`, Zugriffs-Policy) aktualisieren.
 - Gate: alter Token ist ungueltig, alles laeuft ueber das LUNA-Konto.

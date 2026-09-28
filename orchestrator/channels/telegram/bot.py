@@ -1326,7 +1326,7 @@ def main() -> None:
                         and (ctx.watch is None or not ctx.watch.store.paused()):
                     from ...core.crm_mail import CrmMailTracker
                     CrmMailTracker(crm=ctx.crm, google=ctx.google,
-                                   eigene_adresse=secrets.get("GOOGLE_ACCOUNT_EMAIL", "hanserautisch@gmail.com"),
+                                   eigene_adresse=secrets.get("GOOGLE_ACCOUNT_EMAIL", "luna.hanserautisch@gmail.com"),
                                    secrets=ctx.leak_secrets,
                                    notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
                 # Instagram-DM-Poll: opt-in INSTAGRAM_DM_POLL=1. Token selbst-erneuernd (INSTAGRAM_USER_TOKEN

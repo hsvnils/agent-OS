@@ -29,6 +29,12 @@ Lege ein neues Google-Konto an (z. B. `luna.hanserautisch@gmail.com`). **Dieses*
 **APIs & Dienste -> Anmeldedaten -> Anmeldedaten erstellen -> OAuth-Client-ID -> Anwendungstyp „Desktop".**
 JSON herunterladen (`client_secret.json`).
 
+> **Stand 2026-09-28:** LUNA nutzt ihr eigenes Konto `luna.hanserautisch@gmail.com` (`LUNA_GOOGLE_KONTO_ROADMAP.md`);
+> das Cloud-Projekt „LUNA" gehoert weiter dem CEO. Zugang erneuern/wechseln: auf dem MACO470
+> `.venv/bin/python deploy/google_oauth_neu.py --erwartet luna.hanserautisch@gmail.com` -- Link im Browser des MACO470
+> oeffnen, mit LUNAs Konto zustimmen; das Skript prueft das Konto und schreibt den Token in die `.env` von MACO470 + NAS
+> (ohne ihn anzuzeigen). Danach Container neu starten.
+
 ## Schritt 5 -- Einmalige Autorisierung -> Refresh-Token
 Auf dem Mac (oeffnet den Browser zur Zustimmung mit dem neuen Konto):
 ```sh
