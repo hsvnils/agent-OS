@@ -5,8 +5,8 @@
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
 - Naechster Schritt: Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
-  gemischte Rechnung aufteilen); Etappe 12 (Barter-Deals): Entscheidungen getroffen, steuerliche Recherche laeuft --
-  danach CEO-Go fuer den Bau einholen. Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
+  gemischte Rechnung aufteilen); Etappe 12 (Barter-Deals): Entscheidungen getroffen, steuerliche Recherche erledigt --
+  CEO-Go fuer den Bau einholen. Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -364,15 +364,25 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 - Status: geplant (CEO-Wunsch 2026-09-28: „Barter Deals in Angeboten und allen folgenden Belegarten aufführen“) --
   Umsetzung erst nach CEO-Go und Klaerung der offenen Entscheidungen unten
-- Hintergrund (vor Umsetzung gegenpruefen, [?] = noch nicht belegt): Ein Barter-Deal ist ein **tauschaehnlicher
-  Umsatz** -- statt Geld bekommen wir Ware (z. B. Produkte einer Marke fuer Content). Steuerlich ist der **Wert der
-  erhaltenen Ware eine Betriebseinnahme**, zugeflossen bei Erhalt [?]; massgeblich ist der uebliche Endpreis/
-  Marktwert am Tag des Erhalts [?]. Als Kleinunternehmer zaehlt der Wert auch zum **§ 19-Umsatz** (Bemessung nach dem
-  Wert der Gegenleistung, § 10 Abs. 2 UStG) [?] -- also zur 25.000/100.000-EUR-Grenze. Was danach mit der Ware passiert,
-  ist ein zweiter Vorgang: **betrieblich genutzt** -> Betriebsausgabe (GWG/Anlage/Verbrauch) in gleicher Hoehe,
-  **privat behalten** -> Einnahme bleibt, keine Ausgabe (Entnahme) [?], **weiterverkauft** -> Verkaufserloes ist
-  ebenfalls Einnahme [?]. Recherche (amtliche Quellen, BMF/Finanzverwaltung zu Influencer-Sachleistungen) ist Teil
-  dieser Etappe.
+- Hintergrund (Recherche 2026-09-28, amtliche Quellen; [?] = nur Schlussfolgerung, Steuerberater-Frage):
+  - **Einnahme:** Behaltene Produkte sind Betriebseinnahmen, anzusetzen mit dem **ueblichen Endpreis am Abgabeort
+    abzueglich ueblicher Preisnachlaesse** (§ 8 Abs. 2 EStG; Leitfaden Hessen 06/2026 S. 2-3, FAQ Bayern S. 3/8,
+    Steuerguide BW 2025, finanzamt.nrw.de/influencer); Zufluss bei Erhalt bzw. wenn sie behalten werden duerfen
+    (§ 11 EStG). **Leihgabe/Rueckgabe = keine Einnahme** (Hessen: nur „wenn Sie das Produkt ... behalten duerfen“).
+  - **Umsatzsteuer/§ 19:** tauschaehnlicher Umsatz (§ 3 Abs. 12 UStG), Wert der Gegenleistung als Entgelt (§ 10 Abs. 2
+    UStG, UStAE 10.5: Aufwand der Marke, sonst Schaetzung) -> **zaehlt zum Gesamtumsatz der Kleinunternehmer-Grenze**
+    (§ 19 Abs. 1/2 UStG). Default: derselbe Wert wie oben; optional abweichender „USt-Wert“ [?].
+  - **EUeR:** Zeile 12 / Kz 111 (alle Einnahmen des Kleinunternehmers, Anleitung 2026).
+  - **Danach:** betriebliche Nutzung -> Anschaffung in gleicher Hoehe als GWG (Zeile 37) bzw. AfA (Hessen S. 3:
+    „Wertverzehr ... als Betriebsausgabe“; gleiche Hoehe [?]); spaetere Privatnutzung -> **Entnahme zum Teilwert**,
+    einnahmeerhoehend (Hessen S. 3, § 6 Abs. 1 Nr. 4 EStG; Zeile 19/Kz 102 bzw. 21/Kz 108); sofort privat -> Einnahme,
+    keine Ausgabe [?]; Verkauf -> Erloes Zeile 19 (Anlagevermoegen) bzw. 12.
+  - **Rechnung:** Pflicht bei Unternehmer-Kunden binnen 6 Monaten (§ 14 Abs. 2 Satz 2 Nr. 1 UStG), Pflichtangaben
+    § 34a UStDV mit beziffertem Entgelt (Sachwert + Geld) und § 19-Hinweis; keine Sonderformel vorgeschrieben.
+  - **Keine Bagatell-Ausnahme** fuer Barter: § 37b-Pauschalierung der Marke gilt nur fuer Zusatzgeschenke, nicht fuer
+    die vereinbarte Gegenleistung; fuer echte Zusatzgeschenke Feld „Marke hat pauschal versteuert (§ 37b)“.
+  - **Nachweis:** Vertrag/Mail, Lieferschein bzw. Wertangabe der Marke, datierter Shop-Screenshot, Eingangsdatum,
+    Link zum Post, ggf. Rueckversandbeleg.
 - Ziel / Scope:
   - **Angebot und Auftragsbestaetigung:** je Position oder fuer den ganzen Deal eine Gegenleistung „in Ware“ mit
     Warenbezeichnung und Warenwert; Mischformen (Geld + Ware); das PDF zeigt klar „Gegenleistung: Produkte im Wert
@@ -382,8 +392,9 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   - **„Zahlung“ in Ware:** neuer Vorgang „Ware erhalten“ (Datum, Bezeichnung, Wert, Nachweis wie Foto/Screenshot
     des Shop-Preises/Lieferschein als Beleg) -> Einnahme im Journal (Kategorie Barter/Sachleistung), zaehlt zur
     Kleinunternehmer-Grenze; offene Sachleistung erscheint unter „bekommen wir“ und in den To-dos.
-  - **Verwendung der Ware:** beim Erhalt fragen „betrieblich / privat / Weiterverkauf“ -> automatische
-    Gegenbuchung (Betriebsausgabe mit GWG-/Anlage-Pruefung) bzw. nichts (privat); nachtraeglich aenderbar per Storno.
+  - **Verwendung der Ware:** beim Erhalt „betrieblich fuer Content“ (Standard, CEO) / „privat“ / „Leihgabe, geht
+    zurueck“ -> automatische Gegenbuchung (GWG/Anlage) bzw. keine; spaeter „privat weiter genutzt“ (Entnahme zum
+    Teilwert) oder „verkauft“ (Erloes) als eigener Vorgang; Korrektur per Storno.
   - **Mahnwesen:** gemahnt wird nur der Geldteil; ausbleibende Ware als To-do „Ware nachfordern“ (kein Zins).
   - **Cockpit/EUeR/Export:** Barter-Einnahmen und -Ausgaben sichtbar getrennt, Drill-down, Export-Spalten; EUeR-Zeile
     fuer Kleinunternehmer vermutlich Zeile 12 [?].

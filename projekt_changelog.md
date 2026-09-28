@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 19:27] — Claude Code
+- **Was:** Etappe 12 (Barter-Deals): steuerliche Einordnung aus amtlichen Quellen in die Roadmap uebernommen (Einnahme zum ueblichen Endpreis bei Erhalt, Leihgabe keine Einnahme, tauschaehnlicher Umsatz zaehlt zur KU-Grenze, EUeR Zeile 12, Entnahme zum Teilwert bei spaeterer Privatnutzung, Rechnungspflicht bei Unternehmer-Kunden, keine Bagatell-Ausnahme); Scope „Verwendung der Ware“ angepasst. Keine Code-Aenderung.
+- **Warum:** Recherche vor dem Bau (Roadmap-Workflow B1/B3).
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-28 19:18] — Claude Code
 - **Was:** Etappe 12 (Barter-Deals): CEO-Entscheidungen eingetragen (Warenwert = Markenangabe + eigener Nachweis, Standard-Verwendung betrieblich fuer Content, Rechnung auch bei reinem Barter); steuerliche Recherche (amtliche Quellen) gestartet, read-only.
 - **Warum:** CEO-Antworten auf die drei offenen Entscheidungen.
