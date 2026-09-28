@@ -148,18 +148,45 @@ class Buchhaltung:
         """Datei unveraendert ablegen (PDF, Foto, XRechnung ...), Hash + Aufbewahrungsfrist protokollieren."""
         if art not in AUFBEWAHRUNG_JAHRE:
             raise ValueError(f"Unbekannte Aufbewahrungsart: {art}")
+        with self._gesperrt():
+            return self._beleg_schreiben(inhalt, dateiname, jahr=jahr, art=art, bezug=bezug, von=von)
+
+    def _beleg_schreiben(self, inhalt: bytes, dateiname: str, *, jahr: int | None, art: str, bezug: str,
+                         von: str) -> dict:
+        """Datei ablegen + `beleg`-Eintrag (nur innerhalb der Sperre aufrufen)."""
+        if art not in AUFBEWAHRUNG_JAHRE:
+            raise ValueError(f"Unbekannte Aufbewahrungsart: {art}")
         jahr = int(jahr or jetzt().year)
         sha = hashlib.sha256(inhalt).hexdigest()
         sicher = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(dateiname).name)[-80:] or "beleg"
         rel = Path("belege") / str(jahr) / f"{sha[:16]}-{sicher}"
+        ziel = self.dir / rel
+        ziel.parent.mkdir(parents=True, exist_ok=True)
+        if not ziel.exists():
+            ziel.write_bytes(inhalt)
+        return self._anhaengen("beleg", {"pfad": str(rel), "sha256": sha, "groesse": len(inhalt),
+                                         "name": dateiname, "art": art, "jahr": jahr, "bezug": bezug,
+                                         "aufbewahren_bis": aufbewahren_bis(art, jahr).isoformat()}, von=von)
+
+    def festschreiben(self, kreis: str, typ: str, erzeuge, *, jahr: int | None = None, bezug: str = "",
+                      von: str = "", pruefe=None) -> dict:
+        """Nummer + Datei(en) + Eintrag in EINEM gesperrten Schritt (Rechnungen, Etappe 5): die Datei enthaelt die
+        Nummer, es darf aber keine Nummer ohne Datei und keine Datei ohne Nummer entstehen.
+        `erzeuge(nummer, eintraege) -> (daten, [(bytes, dateiname, art)])`; Belege werden vor dem Eintrag geschrieben,
+        ihre Pfade/SHA-256 stehen im Eintrag unter `belege`."""
+        if not re.fullmatch(r"[a-z_]+", typ or ""):
+            raise ValueError(f"Ungueltiger Eintragstyp: {typ!r}")
         with self._gesperrt():
-            ziel = self.dir / rel
-            ziel.parent.mkdir(parents=True, exist_ok=True)
-            if not ziel.exists():
-                ziel.write_bytes(inhalt)
-            return self._anhaengen("beleg", {"pfad": str(rel), "sha256": sha, "groesse": len(inhalt),
-                                             "name": dateiname, "art": art, "jahr": jahr, "bezug": bezug,
-                                             "aufbewahren_bis": aufbewahren_bis(art, jahr).isoformat()}, von=von)
+            eintraege = self._eintraege()
+            if pruefe:
+                pruefe(eintraege)
+            nummer, jahr = self._naechste_nummer(kreis, jahr)
+            daten, dateien = erzeuge(nummer, eintraege)           # darf mit ValueError abbrechen -> nichts geschrieben
+            belege = [self._beleg_schreiben(b, n, jahr=jahr, art=a, bezug=nummer, von=von)["daten"]
+                      for b, n, a in dateien]
+            self._anhaengen("nummer", {"kreis": kreis.upper(), "jahr": jahr, "nummer": nummer, "bezug": bezug}, von=von)
+            return self._anhaengen(typ, {**daten, "nummer": nummer,
+                                         "belege": [{"pfad": b["pfad"], "sha256": b["sha256"]} for b in belege]}, von=von)
 
     # -- Lesen und Pruefen -----------------------------------------------------------------------------------------
 

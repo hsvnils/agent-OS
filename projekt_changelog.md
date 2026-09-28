@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 13:16] — Claude Code (MACO470)
+- **Was:** KUNDEN_FINANZEN Etappe 5 (Ausgangsrechnungen): `core/rechnungen.py`, `Buchhaltung.festschreiben` (Nummer + PDF +
+  Eintrag atomar), Entwurf/Festschreiben/Senden/Zahlung/Storno, Pflichtangaben (Steuernummer, Leistungsdatum, § 19,
+  kein USt-Feld), Kleinunternehmer-Waechter, Faelligkeits-Erinnerung + taegliche Ueberfaellig-Meldung; API
+  `/api/finanzen/rechnungen*` (Modul finanzen); LUNA-OS Bereich „Rechnungen" (Cache v42/v19), „Rechnung erstellen" im
+  Auftrag. Tests + Gegenprobe, Suite gruen. Etappe 4 abgenommen (CEO: „Auftragsbestaetigung sieht top aus");
+  Etappe 6 LUNA-Google-Konto verifiziert (4 Belege in Drive).
+- **Warum:** CEO: „Neustart gemacht, Auftragsbestaetigung sieht top aus, weiter gehts".
+- **Betroffen:** `orchestrator/core/{rechnungen,buchhaltung}.py`, `orchestrator/channels/{web/app.py,telegram/bot.py}`,
+  `orchestrator/channels/web/static/{app-v2.js,style-v2.css,index-v2.html}`, `orchestrator/core/team_auth.py`,
+  `orchestrator/tests/test_rechnungen.py`, `docs/datenfluesse.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-28 12:50] — Claude Code (MACO470)
 - **Was:** KUNDEN_FINANZEN Etappe 4 (Beauftragung): `core/beauftragung.py`, Auftrag AB- aus angenommenem Angebot (einer je
   Angebot), Verknuepfung Angebot <-> Auftrag, CRM „vereinbart", PDF Auftragsbestaetigung + Senden aus LUNAs Konto,

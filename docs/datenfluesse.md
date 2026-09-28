@@ -245,7 +245,7 @@ cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
   Entwicklungs-Roadmap, Cutter (`/api/cutter/*`, Maschine-zu-Maschine), Backoffice (`/api/backoffice/*`, Modul
   administration, Maschine-zu-Maschine), Kunden-Stammdaten (`/api/crm/kunden*`, `/api/crm/ansprechpartner/*`,
   Modul crm, schreibt in die Buchhaltungs-Kette), Angebote (`/api/crm/angebote*`, Modul crm: PDF, Gmail-Entwurf,
-  Kalender), Katalog/Preisliste (`/api/crm/katalog*`, Speichern nur Modul finanzen), Auftraege (`/api/crm/auftraege*`, `POST /api/crm/angebote/<nr>/auftrag`; Senden nur Modul finanzen), Reels (`/api/reel/*`,
+  Kalender), Katalog/Preisliste (`/api/crm/katalog*`, Speichern nur Modul finanzen), Auftraege (`/api/crm/auftraege*`, `POST /api/crm/angebote/<nr>/auftrag`; Senden nur Modul finanzen), Rechnungen (`/api/finanzen/rechnungen*`, Modul finanzen: Entwurf, Festschreiben, Senden, Zahlung, Storno), Reels (`/api/reel/*`,
   **`/freigeben` postet auf Facebook**), CRM/Instagram, Content, Investment (inkl. `…/paper-order`).
 - **Voice-Server** (localhost:7860, WebRTC) und **Mac-Orb** (ruft `127.0.0.1:8765`) — nur am MacBook.
 

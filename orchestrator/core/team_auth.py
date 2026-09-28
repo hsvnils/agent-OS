@@ -39,6 +39,7 @@ APP_MODUL = {
     "research": "administration", "agenten": "administration", "lagebild": "administration",
     "wissen": "administration", "finance": "administration", "luna": "administration",
     "team": "administration",
+    "rechnungen": "finanzen",
 }
 # Sinnvolle Voreinstellung je Rolle, wenn beim Anlegen keine Module angegeben werden.
 ROLLE_STANDARD_MODULE = {

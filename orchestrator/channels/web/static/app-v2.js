@@ -70,6 +70,7 @@ const SECTIONS = [
   { id: "crm", icon: "🤝", label: "CRM", app: "crm" },
   { id: "kunden", icon: "🏢", label: "Kunden", app: "kunden" },
   { id: "angebote", icon: "📄", label: "Angebote", app: "angebote" },
+  { id: "rechnungen", icon: "🧾", label: "Rechnungen", app: "rechnungen" },
   { id: "radar", icon: "🎯", label: "Radar", app: "crm" },
   { id: "content", icon: "✎", label: "Content", app: "trends" },
   { id: "cutter", icon: "🎬", label: "Cutter", app: "cutter" },
@@ -669,6 +670,17 @@ function anPosZeile(p = {}) {
     <button class="v2-btn v2-an-weg" data-act="an-pos-weg" title="Position löschen" aria-label="Position löschen">🗑</button></div>`;
 }
 /* Firmen-Suche mit Vorschlägen (statt Dropdown) */
+function firmaSucheVerdrahten() {   // genutzt von Angebots- und Rechnungs-Editor
+  const such = $("#an-firma-suche"); if (!such) return;
+  such.addEventListener("input", () => { $("#an-firma").value = ""; $("#an-ap").innerHTML = `<option value="">— erst Firma wählen —</option>`; firmaListe(); });
+  such.addEventListener("focus", () => { if (!$("#an-firma").value) firmaListe(); });
+  such.addEventListener("keydown", (e) => {
+    const box = $("#an-firma-treffer"); const z = [...box.querySelectorAll(".v2-auto-z")]; const i = z.findIndex(x => x.classList.contains("aktiv"));
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (box.hidden) return firmaListe(); if (!z.length) return; z[i]?.classList.remove("aktiv"); z[(i + (e.key === "ArrowDown" ? 1 : -1) + z.length) % z.length].classList.add("aktiv"); }
+    else if (e.key === "Enter") { e.preventDefault(); const t = z[Math.max(i, 0)]; if (t) firmaWaehlen(t.dataset.id); }
+    else if (e.key === "Escape") { e.stopPropagation(); box.hidden = true; }
+  });
+}
 function firmaTreffer(q) {
   q = (q || "").trim().toLowerCase();
   return AN_FIRMEN.filter(f => !q || [f.nummer, f.name, f.ort, f.plz].filter(Boolean).join(" ").toLowerCase().includes(q)).slice(0, 8);
@@ -736,15 +748,7 @@ async function anEditor(nummer, firmaVorwahl) {
     </div>
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="an-speichern" data-id="${esc(nummer || "")}">${nummer ? "Änderungen speichern" : "Anlegen (Nummer wird vergeben)"}</button><div id="an-msg" class="v2-msg"></div></div></div>`, true);
   await anApListe(a.ansprechpartner || "");
-  const such = $("#an-firma-suche");
-  such.addEventListener("input", () => { $("#an-firma").value = ""; $("#an-ap").innerHTML = `<option value="">— erst Firma wählen —</option>`; firmaListe(); });
-  such.addEventListener("focus", () => { if (!$("#an-firma").value) firmaListe(); });
-  such.addEventListener("keydown", (e) => {
-    const box = $("#an-firma-treffer"); const z = [...box.querySelectorAll(".v2-auto-z")]; const i = z.findIndex(x => x.classList.contains("aktiv"));
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (box.hidden) return firmaListe(); if (!z.length) return; z[i]?.classList.remove("aktiv"); z[(i + (e.key === "ArrowDown" ? 1 : -1) + z.length) % z.length].classList.add("aktiv"); }
-    else if (e.key === "Enter") { e.preventDefault(); const t = z[Math.max(i, 0)]; if (t) firmaWaehlen(t.dataset.id); }
-    else if (e.key === "Escape") { e.stopPropagation(); box.hidden = true; }
-  });
+  firmaSucheVerdrahten();
   const box = $("#v2-modal .v2-form"); box.addEventListener("input", anSumme); box.addEventListener("change", anSumme); anSumme();
 }
 async function anApListe(vorwahl) {
@@ -880,6 +884,7 @@ async function abDetail(nr, meldung, fehler) {
   let aktionen = `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 Auftragsbestätigung (PDF)</a>
     <button class="v2-btn" data-act="an-detail" data-id="${esc(a.angebot)}">↩ Angebot ${esc(a.angebot)}</button>`;
   if (a.status !== "storniert") aktionen += `<button class="v2-btn pri" data-act="ab-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled"}>✉️ Senden …</button>`;
+  if (a.status !== "storniert" && darf("rechnungen")) aktionen += `<button class="v2-btn pri" data-act="ab-rechnung" data-id="${esc(nr)}">🧾 Rechnung erstellen</button>`;
   if (a.status === "beauftragt") aktionen += `<button class="v2-btn ok" data-act="ab-status" data-id="${esc(nr)}" data-val="erledigt">✔ Erledigt</button><button class="v2-btn" data-act="ab-status" data-id="${esc(nr)}" data-val="storniert">Stornieren</button>`;
   if ((a.pdfs || []).length) aktionen += `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf?archiv=1" target="_blank" rel="noopener">📎 Abgelegtes PDF</a>`;
   const lbl = { auftrag_angelegt: "Angelegt", auftrag_geaendert: "Geändert", auftrag_pdf_abgelegt: "PDF abgelegt", auftrag_status: "Status" };
@@ -1049,6 +1054,149 @@ function preislistePdf() {
   if (!ids.length) return alert("Mindestens ein Format auswählen.");
   const q = new URLSearchParams({ ids: ids.join(","), firma: ($("#pl-firma") || {}).value || "", ap: ($("#pl-ap") || {}).value || "" });
   window.open("/api/crm/katalog/preisliste.pdf?" + q.toString(), "_blank", "noopener");
+}
+
+/* =========================== Rechnungen (KUNDEN_FINANZEN Etappe 5, Modul Finanzen) =========================== */
+// Entwurf (ohne Nummer, frei aenderbar) -> Festschreiben (RE-Nummer + PDF, unveraenderlich) -> Senden -> Bezahlt.
+// Korrektur nur per Storno (eigene Nummer). Kleinunternehmer-Waechter blockiert > 100.000 EUR Jahresumsatz.
+const RE_STATUS = { entwurf: ["Entwurf", "neutral"], offen: ["Offen", "wartet"], bezahlt: ["Bezahlt", "ok"], storniert: ["Storniert", "neutral"], storno: ["Stornorechnung", "neutral"] };
+const reBadge = (r) => { const st = r.ueberfaellig ? "ueberfaellig" : r.status; const [l, c] = st === "ueberfaellig" ? ["Überfällig", "err"] : (RE_STATUS[st] || [st, "neutral"]); return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
+RENDER.rechnungen = renderRechnungen;
+async function renderRechnungen() {
+  const sub = SUBTAB.rechnungen || "offen";
+  const d = await jget("/api/finanzen/rechnungen") || { rechnungen: [], entwuerfe: [], waechter: {} };
+  const alle = d.rechnungen || [], w = d.waechter || {};
+  const offen = alle.filter(r => r.status === "offen");
+  const ueber = offen.filter(r => r.ueberfaellig);
+  const jahr = String(w.jahr || new Date().getFullYear());
+  const bezahlt = alle.filter(r => r.status === "bezahlt" && String(r.rechnungsdatum).startsWith(jahr));
+  const anteil = Math.min(100, Math.round((w.anteil || 0) * 100));
+  const balken = `<div class="v2-re-balken"><i style="width:${anteil}%;background:${w.ueberschritten ? "var(--v2-red)" : w.warnung ? "#e8a200" : "var(--v2-accent)"}"></i></div><small class="v2-sub">${anteil} % der Kleinunternehmer-Grenze (100.000 €)${w.vorjahr_ueberschritten ? " · ⚠️ Vorjahr über 25.000 €!" : ""}</small>`;
+  let liste = sub === "entwuerfe" ? null : (sub === "offen" ? offen : alle);
+  const rows = liste ? liste.map(r => `<tr class="klick" data-act="re-detail" data-id="${esc(r.nummer)}"><td><b>${esc(r.nummer)}</b>${r.art === "storno" ? " <small>Storno zu " + esc(r.bezug) + "</small>" : ""}</td><td>${esc(r.firma_name || r.firma)}</td><td>${esc(r.titel || "")}</td><td>${esc(datumDe(r.rechnungsdatum))}</td><td>${esc(datumDe(r.faellig_am))}</td><td style="text-align:right">${cent2eur(r.summe_cent)}</td><td>${reBadge(r)}${r.versendet ? " ✉️" : ""}</td></tr>`).join("")
+    : (d.entwuerfe || []).map(e => `<tr class="klick" data-act="re-detail" data-id="${esc(e.entwurf_id)}"><td><b>Entwurf</b> <small>${esc(e.entwurf_id)}</small></td><td>${esc(e.firma_name || e.firma)}</td><td>${esc(e.titel || "")}</td><td>${esc(e.auftrag || "")}</td><td></td><td style="text-align:right">${cent2eur(e.summe_cent)}</td><td>${reBadge({ status: "entwurf" })}</td></tr>`).join("");
+  const kopf = sub === "entwuerfe" ? "<th>Entwurf</th><th>Firma</th><th>Titel</th><th>Auftrag</th><th></th><th style=\"text-align:right\">Summe</th><th></th>" : "<th>Nr.</th><th>Firma</th><th>Titel</th><th>Datum</th><th>Fällig</th><th style=\"text-align:right\">Betrag</th><th>Status</th>";
+  const body = `${tile("Umsatz " + jahr, `<div class="v2-kpi">${esc(cent2eur(w.umsatz_cent || 0))}</div>${balken}`, "w4")}
+    ${kpiTile("Offen", String(offen.length), null, cent2eur(offen.reduce((x, r) => x + r.summe_cent - (r.bezahlt_cent || 0), 0)))}
+    ${kpiTile("Überfällig", String(ueber.length), null, ueber.length ? cent2eur(ueber.reduce((x, r) => x + r.summe_cent - (r.bezahlt_cent || 0), 0)) : "alles im Zeitplan")}
+    ${kpiTile("Bezahlt " + jahr, String(bezahlt.length), null, cent2eur(bezahlt.reduce((x, r) => x + r.summe_cent, 0)))}
+    ${tile(sub === "entwuerfe" ? "Entwürfe (noch ohne Nummer)" : sub === "offen" ? "Offene Rechnungen" : "Alle Rechnungen", rows ? `<table class="v2-table"><thead><tr>${kopf}</tr></thead><tbody>${rows}</tbody></table>` : emptyRow(sub === "entwuerfe" ? "Keine Entwürfe." : "Keine Rechnungen — aus einem Auftrag („🧾 Rechnung erstellen“) oder oben rechts „+ Neue Rechnung“."), "w12")}`;
+  $("#v2-app").innerHTML = secHead("Rechnungen", `<button class="v2-btn pri" data-act="re-neu">+ Neue Rechnung</button>`) + tabs("rechnungen", [["offen", "Offen"], ["alle", "Alle"], ["entwuerfe", `Entwürfe (${(d.entwuerfe || []).length})`]]) + `<div class="v2-grid">${body}</div>`;
+}
+async function reEditor(eid) {
+  openModal(eid ? `Rechnung ${eid} bearbeiten` : "Neue Rechnung", `<div class="v2-empty">Lade…</div>`, true);
+  const [k, d] = await Promise.all([jget("/api/crm/kunden"), eid ? jget("/api/finanzen/rechnungen/" + encodeURIComponent(eid)) : Promise.resolve(null), katalogLaden()]);
+  AN_FIRMEN = ((k && k.firmen) || []).filter(f => f.aktiv);
+  if (!AN_FIRMEN.length) return openModal("Neue Rechnung", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."), true);
+  const r = (d && d.rechnung) || { firma: "", positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch", leistung_von: heuteIso(), zahlungsziel_tage: "" };
+  const fa = AN_FIRMEN.find(f => f.nummer === r.firma);
+  const katOpt = ((KATALOG && KATALOG.gruppen) || []).map(g => `<optgroup label="${esc(g.name)}">${g.items.filter(it => it.aktiv).map(it => `<option value="${esc(it.id)}">${esc(it.name)} — ${cent2eur(it.preis_cent)}${it.einheit ? " / " + esc(it.einheit) : ""}</option>`).join("")}</optgroup>`).join("");
+  const gewaehlt = new Set((r.zuschlaege || []).map(z => z.id));
+  const zuListe = [...((KATALOG && KATALOG.zuschlaege) || []), ...(r.zuschlaege || []).filter(z => !((KATALOG && KATALOG.zuschlaege) || []).some(x => x.id === z.id))];
+  const zuHtml = zuListe.map(z => { const alt = (r.zuschlaege || []).find(x => x.id === z.id); const pr = alt ? alt.prozent : z.prozent;
+    return `<label class="v2-modlbl"><input type="checkbox" class="an-zu" value="${esc(z.id)}" data-name="${esc(z.name)}" data-prozent="${esc(String(pr))}" ${gewaehlt.has(z.id) ? "checked" : ""}> +${esc(pz(pr))} % ${esc(z.name)}</label>`; }).join("");
+  const rmax = esc(String((KATALOG && KATALOG.rabatt_max) || 30));
+  openModal(eid ? `Rechnungs-Entwurf ${eid}` : "Neue Rechnung", `<div class="v2-form v2-an-editor">
+    ${r.auftrag ? `<div class="v2-msg ok">Aus Auftrag ${esc(r.auftrag)} (Angebot ${esc(r.angebot || "")}) übernommen — Positionen bei Bedarf anpassen.</div>` : ""}
+    <div class="v2-an-kopf"><div class="v2-form">
+        <div class="v2-feld v2-auto-feld"><small>Firma * (Name, Kundennummer oder Ort tippen)</small>
+          <input id="an-firma-suche" class="v2-inp" autocomplete="off" placeholder="Firma suchen …" value="${fa ? esc(`${fa.name} (${fa.nummer})`) : ""}">
+          <input type="hidden" id="an-firma" value="${esc(fa ? fa.nummer : "")}"><div id="an-firma-treffer" class="v2-auto" hidden></div></div>
+        <label class="v2-feld"><small>Ansprechpartner</small><select id="an-ap"></select></label>
+        <label class="v2-feld"><small>Titel</small><input id="an-titel" value="${esc(r.titel || "")}" placeholder="z. B. Kampagne Herbst"></label></div>
+      <div class="v2-form">
+        <div class="v2-an-zeile"><label class="v2-feld"><small>Leistung von * (Leistungsdatum)</small><input id="re-von" type="date" value="${esc(r.leistung_von || "")}"></label>
+          <label class="v2-feld"><small>Leistung bis (bei Zeitraum)</small><input id="re-bis" type="date" value="${esc(r.leistung_bis || "")}"></label>
+          <label class="v2-feld"><small>Zahlungsziel (Tage)</small><input id="re-ziel" type="number" min="0" max="120" value="${esc(String(r.zahlungsziel_tage ?? ""))}" placeholder="Firma / 14"></label></div>
+        <label class="v2-feld"><small>Layout</small><select id="an-layout"><option value="hanserautisch" ${r.layout !== "standard" ? "selected" : ""}>Hanserautisch</option><option value="standard" ${r.layout === "standard" ? "selected" : ""}>Schlicht (DIN)</option></select></label></div></div>
+    <h3>Positionen <small class="v2-sub">ohne Umsatzsteuer (Kleinunternehmer § 19 UStG)</small></h3>
+    <div class="v2-an-kat"><select id="an-kat" class="v2-inp"><option value="">Aus Katalog wählen …</option>${katOpt}</select><button class="v2-btn" data-act="an-kat-neu">+ Aus Katalog</button><button class="v2-btn" data-act="an-pos-neu">+ Freie Position</button></div>
+    <div class="v2-an-pos v2-an-pos-kopf"><span>Leistung / Detail</span><span>Menge</span><span>Einheit</span><span>Einzelpreis</span><span>Gesamt</span><span></span></div>
+    <div id="an-pos">${(r.positionen || []).map(anPosZeile).join("")}</div>
+    <div id="an-pos-leer" class="v2-empty">Noch keine Position.</div>
+    <div class="v2-an-fuss"><div class="v2-form">${zuHtml ? `<small class="v2-sub">Zuschläge</small><div class="v2-mods">${zuHtml}</div>` : ""}
+        <label class="v2-feld"><small>Rabatt in % (0–${rmax})</small><input id="an-rabatt" type="number" min="0" max="${rmax}" step="0.5" value="${esc(String(r.rabatt_prozent || 0))}"></label></div>
+      <div id="an-summe-box" class="v2-an-summen"></div></div>
+    <label class="v2-feld"><small>Einleitung (leer = „vielen Dank für Ihren Auftrag. Wir berechnen Ihnen folgende Leistungen:“)</small><textarea id="an-einleitung" rows="2" class="v2-inp">${esc(r.einleitung || "")}</textarea></label>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="re-speichern" data-id="${esc(eid || "")}">${eid ? "Entwurf speichern" : "Entwurf anlegen (noch ohne Nummer)"}</button><div id="an-msg" class="v2-msg"></div></div></div>`, true);
+  await anApListe(r.ansprechpartner || "");
+  firmaSucheVerdrahten();
+  const box = $("#v2-modal .v2-form"); box.addEventListener("input", anSumme); box.addEventListener("change", anSumme); anSumme();
+}
+async function reSpeichern(eid) {
+  if (!$("#an-firma").value) { $("#an-firma-suche").focus(); return kundenMsg("an-msg", "Bitte eine Firma aus den Vorschlägen auswählen.", false); }
+  const rechnung = { firma: $("#an-firma").value, ansprechpartner: $("#an-ap").value, titel: $("#an-titel").value.trim(), leistung_von: $("#re-von").value, leistung_bis: $("#re-bis").value,
+    layout: $("#an-layout").value, einleitung: $("#an-einleitung").value.trim(), positionen: anPositionen(), zuschlaege: anZuschlaege(), rabatt_prozent: ($("#an-rabatt") || {}).value || 0 };
+  if ($("#re-ziel").value !== "") rechnung.zahlungsziel_tage = $("#re-ziel").value;
+  const r = eid ? await jpost("/api/finanzen/rechnungen/" + encodeURIComponent(eid), { rechnung }) : await jpost("/api/finanzen/rechnungen", { rechnung });
+  if (!r || !r.ok) return kundenMsg("an-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
+  if (AKTIV === "rechnungen") renderRechnungen();
+  return reDetail(eid || r.entwurf_id, eid ? "Entwurf gespeichert." : "Entwurf angelegt — prüfen, dann festschreiben.");
+}
+async function reDetail(id, meldung, fehler) {
+  openModal(id, `<div class="v2-empty">Lade…</div>`, true);
+  const d = await jget("/api/finanzen/rechnungen/" + encodeURIComponent(id));
+  const r = d && d.rechnung; if (!r) return openModal(id, emptyRow("Rechnung nicht gefunden."), true);
+  const entwurf = r.status === "entwurf", sm = r.summen, ap = d.ansprechpartner;
+  const pos = r.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${cent2eur(p.gesamt_cent)}</td></tr>`).join("");
+  const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Positionen</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
+    + sm.zuschlaege.map(([n, p, c]) => `<tr><td></td><td>${esc(n)} (+${esc(pz(p))} %)</td><td></td><td style="text-align:right">${cent2eur(c)}</td></tr>`).join("")
+    + (sm.rabatt ? `<tr><td></td><td>Rabatt (${esc(pz(sm.rabatt[0]))} %)</td><td></td><td style="text-align:right">−${cent2eur(Math.abs(sm.rabatt[1]))}</td></tr>` : "")
+    + `<tr><td></td><td><b>Rechnungsbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
+  let aktionen = `<a class="v2-btn" href="/api/finanzen/rechnungen/${encodeURIComponent(id)}/pdf" target="_blank" rel="noopener">📄 ${entwurf ? "PDF-Vorschau" : "Rechnung (PDF)"}</a>`;
+  if (entwurf) aktionen += `<button class="v2-btn" data-act="re-bearbeiten" data-id="${esc(id)}">✎ Bearbeiten</button>
+    <button class="v2-btn pri" data-act="re-festschreiben" data-id="${esc(id)}" ${d.steuernummer ? "" : "disabled title=\"Steuernummer fehlt\""}>🔒 Festschreiben (Nummer vergeben)</button>
+    <button class="v2-btn" data-act="re-verwerfen" data-id="${esc(id)}">Entwurf verwerfen</button>`;
+  else {
+    if (r.art !== "storno") aktionen += `<button class="v2-btn pri" data-act="re-senden" data-id="${esc(r.nummer)}" ${d.google ? "" : "disabled"}>✉️ Senden …</button>`;
+    else aktionen += `<button class="v2-btn" data-act="re-senden" data-id="${esc(r.nummer)}" ${d.google ? "" : "disabled"}>✉️ Storno senden …</button>`;
+    if (r.status === "offen") aktionen += `<button class="v2-btn ok" data-act="re-bezahlt-form" data-id="${esc(r.nummer)}">💶 Zahlung erfassen</button><button class="v2-btn" data-act="re-storno" data-id="${esc(r.nummer)}">Stornieren …</button>`;
+  }
+  if (r.auftrag) aktionen += `<button class="v2-btn" data-act="ab-detail" data-id="${esc(r.auftrag)}">↩ Auftrag ${esc(r.auftrag)}</button>`;
+  if (r.bezug) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.bezug)}">↩ Original ${esc(r.bezug)}</button>`;
+  if (r.storniert_durch) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.storniert_durch)}">Storno ${esc(r.storniert_durch)}</button>`;
+  const zahlungen = (r.zahlungen || []).map(z => `<div class="v2-list-row"><span>💶</span><div class="grow"><b>${cent2eur(z.betrag_cent)}</b><small>${esc(datumDe(z.datum))}${z.notiz ? " · " + esc(z.notiz) : ""}</small></div></div>`).join("");
+  const lbl = { rechnung_entwurf: "Entwurf angelegt", rechnung_entwurf_geaendert: "Entwurf geändert", rechnung_festgeschrieben: "Festgeschrieben", rechnung_versendet: "Gesendet", rechnung_bezahlt: "Zahlung" };
+  const verlauf = (r.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(lbl[v.typ] || v.typ)}${v.mail_an ? " an " + esc(v.mail_an) : ""}${v.betrag_cent ? " " + cent2eur(v.betrag_cent) : ""}${v.storno ? " — storniert durch " + esc(v.storno) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
+  const titel = entwurf ? `Rechnungs-Entwurf · ${d.firma.name || r.firma}` : `${r.nummer} · ${d.firma.name || r.firma}`;
+  openModal(titel, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
+    ${entwurf && !d.steuernummer ? `<div class="v2-msg err">Steuernummer fehlt in den Firmendaten — Festschreiben nicht möglich.</div>` : ""}
+    <div class="v2-card-actions" style="flex-wrap:wrap;margin:8px 0 14px">${aktionen}</div>
+    <div class="v2-an-detail"><div>
+    <div class="v2-kv"><span>Status</span>${reBadge(r)}</div>
+    ${entwurf ? `<div class="v2-kv"><span>Nummer</span><b>wird beim Festschreiben vergeben</b></div>` : `<div class="v2-kv"><span>Rechnungsdatum</span><b>${esc(datumDe(r.rechnungsdatum))}</b></div><div class="v2-kv"><span>Fällig am</span><b>${esc(datumDe(r.faellig_am))}</b></div>`}
+    <div class="v2-kv"><span>Firma</span><b>${esc(r.firma)} · ${esc(d.firma.name || "")}</b></div>
+    <div class="v2-kv"><span>Ansprechpartner</span><b>${ap ? esc(ap.nummer + " · " + [ap.vorname, ap.nachname].filter(Boolean).join(" ")) : "—"}</b></div>
+    <div class="v2-kv"><span>Leistung</span><b>${esc([datumDe(r.leistung_von), datumDe(r.leistung_bis)].filter(Boolean).join(" – ") || "— fehlt —")}</b></div>
+    ${!entwurf && r.art !== "storno" ? `<div class="v2-kv"><span>Bezahlt / offen</span><b>${cent2eur(r.bezahlt_cent || 0)} / ${cent2eur(r.summe_cent - (r.bezahlt_cent || 0))}</b></div>` : ""}
+    ${r.versendet_mail ? `<div class="v2-kv"><span>Gesendet</span><b>✉️ ${esc(r.versendet_mail.an)} · ${esc(zeit(r.versendet_am))}</b></div>` : ""}
+    ${zahlungen ? `<h3>Zahlungen</h3>${zahlungen}` : ""}
+    <h3>Verlauf</h3>${verlauf}
+    </div><div>
+    <div id="re-aktion-box"></div>
+    <h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
+    </div></div>`, true);
+}
+async function reSendenVorschau(nr) {
+  const box = $("#re-aktion-box"); if (!box) return;
+  const v = await jget(`/api/finanzen/rechnungen/${encodeURIComponent(nr)}/versandvorschau`);
+  if (!v) { box.innerHTML = emptyRow("Vorschau nicht verfügbar."); return; }
+  box.innerHTML = `<h3>Rechnung senden</h3><div class="v2-form">
+    <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
+    <label class="v2-feld"><small>An *</small><input id="res-an" type="email" value="${esc(v.an || "")}"></label>
+    <label class="v2-feld"><small>Betreff *</small><input id="res-betreff" value="${esc(v.betreff)}"></label>
+    <label class="v2-feld"><small>Text *</small><textarea id="res-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/rechnungen/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="re-senden-jetzt" data-id="${esc(nr)}">✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="res-msg" class="v2-msg"></div></div>`;
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function reBezahltForm(nr) {
+  const box = $("#re-aktion-box"); if (!box) return;
+  box.innerHTML = `<h3>Zahlung erfassen</h3><div class="v2-form" style="max-width:420px">
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Zahlungsdatum</small><input id="rez-datum" type="date" value="${heuteIso()}"></label>
+      <label class="v2-feld"><small>Betrag (leer = offener Rest)</small><input id="rez-betrag" inputmode="decimal" placeholder="z. B. 1.020,00"></label></div>
+    <label class="v2-feld"><small>Notiz</small><input id="rez-notiz" placeholder="z. B. Überweisung comdirect"></label>
+    <div class="v2-card-actions"><button class="v2-btn ok" data-act="re-bezahlt" data-id="${esc(nr)}">💶 Zahlung buchen</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="rez-msg" class="v2-msg"></div></div>`;
 }
 
 /* =========================== Collab-Radar =========================== */
@@ -1368,6 +1516,42 @@ async function handleAct(act, el) {
       if (AKTIV === "angebote") renderAngebote();
       return anDetail(id, r && r.ok ? ["Als versendet markiert.", ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
+    case "re-neu": return reEditor("");
+    case "re-detail": return reDetail(id);
+    case "re-bearbeiten": return reEditor(id);
+    case "re-speichern": return reSpeichern(id);
+    case "re-verwerfen": { if (!confirm("Entwurf verwerfen? (Er hatte noch keine Nummer.)")) return; const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/verwerfen`, {}); closeModal(); return AKTIV === "rechnungen" ? renderRechnungen() : null; }
+    case "re-festschreiben": {
+      if (!confirm("Rechnung festschreiben?\n\nSie bekommt jetzt ihre Rechnungsnummer und ist danach NICHT mehr änderbar (Korrektur nur per Storno).")) return;
+      flash("⏳ …"); const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/festschreiben`, { bestaetigt: true });
+      if (AKTIV === "rechnungen") renderRechnungen();
+      if (!r || !r.ok) return reDetail(id, (r && r.hinweis) || "Fehler.", true);
+      return reDetail(r.nummer, [`${r.nummer} festgeschrieben — fällig am ${datumDe(r.faellig_am)}.`, ...(r.hinweise || [])].join("\n"));
+    }
+    case "re-senden": return reSendenVorschau(id);
+    case "re-senden-jetzt": {
+      const an = $("#res-an").value.trim(); if (!an.includes("@")) return kundenMsg("res-msg", "Bitte eine gültige Empfänger-Adresse eintragen.", false);
+      if (!confirm(`${id} jetzt an ${an} senden?`)) return;
+      const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/senden`, { an, betreff: $("#res-betreff").value.trim(), text: $("#res-text").value.trim(), bestaetigt: true });
+      if (!r || !r.ok) return kundenMsg("res-msg", (r && r.hinweis) || "Senden fehlgeschlagen.", false);
+      if (AKTIV === "rechnungen") renderRechnungen(); return reDetail(id, `An ${r.an} gesendet.`);
+    }
+    case "re-bezahlt-form": return reBezahltForm(id);
+    case "re-bezahlt": {
+      const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/bezahlt`, { datum: $("#rez-datum").value, betrag: $("#rez-betrag").value.trim() || null, notiz: $("#rez-notiz").value.trim() });
+      if (!r || !r.ok) return kundenMsg("rez-msg", (r && r.hinweis) || "Fehler.", false);
+      if (AKTIV === "rechnungen") renderRechnungen(); return reDetail(id, r.rest_cent > 0 ? `Zahlung ${cent2eur(r.betrag_cent)} gebucht — offen: ${cent2eur(r.rest_cent)}.` : "Vollständig bezahlt.");
+    }
+    case "re-storno": {
+      const grund = prompt("Stornieren — Grund (erscheint auf der Stornorechnung):", ""); if (!grund) return;
+      const korrektur = confirm("Direkt einen Korrektur-Entwurf mit denselben Positionen anlegen?");
+      const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/stornieren`, { grund, korrektur });
+      if (AKTIV === "rechnungen") renderRechnungen();
+      if (!r || !r.ok) return reDetail(id, (r && r.hinweis) || "Fehler.", true);
+      return r.korrektur_entwurf ? reEditor(r.korrektur_entwurf) : reDetail(r.storno, `Stornorechnung ${r.storno} erstellt.`);
+    }
+    case "re-box-zu": { const bx = $("#re-aktion-box"); if (bx) bx.innerHTML = ""; return; }
+    case "ab-rechnung": { const r = await jpost(`/api/finanzen/rechnungen/aus-auftrag/${encodeURIComponent(id)}`, {}); if (!r || !r.ok) return abDetail(id, (r && r.hinweis) || "Fehler.", true); return reEditor(r.entwurf_id); }
     case "ab-neu": return abNeu(id, val === "annehmen");
     case "ab-anlegen": return abAnlegen(id, val === "annehmen");
     case "ab-detail": return abDetail(id);
