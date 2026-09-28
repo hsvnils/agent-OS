@@ -6,6 +6,7 @@ Danach: neuen Refresh-Token mit einem echten Kalender-Abruf pruefen, alte .env n
 .env des MACO470 und der NAS schreiben (Token nur ueber stdin, nie als Argument oder Ausgabe).
 
 Nutzung:  .venv/bin/python deploy/google_oauth_neu.py [--port 8799] [--ohne-nas]
+          .venv/bin/python deploy/google_oauth_neu.py --nur-nas   (Token aus der MACO470-.env auf die NAS uebertragen)
 """
 from __future__ import annotations
 
@@ -59,11 +60,27 @@ def _env_setzen(tok: str) -> None:
     tmp.replace(ENV)
 
 
+def nas_setzen(tok: str) -> bool:
+    """Token in die NAS-.env schreiben. ssh fuegt Argumente zu EINER Shell-Zeile zusammen -- mehrzeiliger Python-Code
+    zerfiel dabei (Befund 2026-09-28). Deshalb das Skript base64-kodiert als einzelnes Wort, der Token ueber stdin."""
+    import base64
+    code = base64.b64encode(_NAS_SKRIPT.encode()).decode()
+    r = subprocess.run(["ssh", "-o", "BatchMode=yes", "luna-nas",
+                        f"python3 -c \"import base64;exec(base64.b64decode('{code}'))\""],
+                       input=tok, text=True, capture_output=True, timeout=60)
+    print(r.stdout.strip() or f"FEHLER NAS: {r.stderr.strip()[:200]}")
+    return r.returncode == 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8799)
     ap.add_argument("--ohne-nas", action="store_true")
+    ap.add_argument("--nur-nas", action="store_true")
     a = ap.parse_args()
+    if a.nur_nas:
+        tok = _env_wert(SCHLUESSEL)
+        return 0 if tok and nas_setzen(tok) else 1
     cid, sec = _env_wert("GOOGLE_OAUTH_CLIENT_ID"), _env_wert("GOOGLE_OAUTH_CLIENT_SECRET")
     if not cid or not sec:
         print("FEHLER: GOOGLE_OAUTH_CLIENT_ID/SECRET fehlen in orchestrator/.env")
@@ -91,10 +108,7 @@ def main() -> int:
     _env_setzen(creds.refresh_token)
     print(f"MACO470-.env aktualisiert (Sicherung: {ziel})")
     if not a.ohne_nas:
-        r = subprocess.run(["ssh", "-o", "BatchMode=yes", "luna-nas", "python3", "-c", _NAS_SKRIPT],
-                           input=creds.refresh_token, text=True, capture_output=True, timeout=60)
-        print(r.stdout.strip() or f"FEHLER NAS: {r.stderr.strip()[:200]}")
-        if r.returncode:
+        if not nas_setzen(creds.refresh_token):
             return 1
     print("Fertig. Jetzt die NAS-Container neu starten.")
     return 0
