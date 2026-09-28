@@ -93,6 +93,77 @@ class TestGoogleWorkspace(unittest.TestCase):
         self.assertEqual(body["end"]["timeZone"], "Europe/Berlin")
         self.assertEqual(body["attendees"], [{"email": "hsvnils@icloud.com"}])
 
+    def test_5d_kalender_id_konfigurierbar(self):
+        # LUNA_GOOGLE_KONTO_ROADMAP Etappe 1: mit LUNAs eigenem Konto zielt der Kalender auf den freigegebenen des CEO.
+        aufrufe = []
+
+        class _Req:
+            def execute(self):
+                return {"items": [], "id": "e1", "htmlLink": ""}
+
+        class _Events:
+            def list(self, **kw): aufrufe.append(("list", kw["calendarId"])); return _Req()
+            def insert(self, **kw): aufrufe.append(("insert", kw["calendarId"])); return _Req()
+            def patch(self, **kw): aufrufe.append(("patch", kw["calendarId"])); return _Req()
+            def delete(self, **kw): aufrufe.append(("delete", kw["calendarId"])); return _Req()
+
+        class _Svc:
+            def events(self): return _Events()
+
+        class _Auth:
+            def verfuegbar(self): return True
+            def service(self, api, version): return _Svc()
+
+        gw = GoogleWorkspace(_Auth(), kalender_id="ceo@example.com")
+        gw.kalender_agenda()
+        gw.termin_anlegen("T", "2026-10-05T09:00:00", "2026-10-05T09:15:00", bestaetigt=True)
+        gw.termin_aendern("e1", titel="X", bestaetigt=True)
+        gw.termin_loeschen("e1", bestaetigt=True)
+        self.assertEqual({k for _, k in aufrufe}, {"ceo@example.com"})
+        self.assertEqual({a for a, _ in aufrufe}, {"list", "insert", "patch", "delete"})
+        import os
+        from unittest import mock
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(GoogleWorkspace(_Auth()).kalender_id, "primary")        # Standard unveraendert
+            self.assertEqual(GoogleWorkspace(_Auth(), kalender_id="").kalender_id, "primary")
+
+    def test_5e_lese_kalender_und_ganztags(self):
+        # CEO 2026-09-28: LUNA schreibt nur in ihren Kalender, liest seinen mit (Briefing, Kollisionen).
+        daten = {"luna": [{"id": "l1", "summary": "Angebot nachfassen", "start": {"dateTime": "2026-10-05T09:00:00+02:00"},
+                           "end": {"dateTime": "2026-10-05T09:15:00+02:00"}}],
+                 "ceo@example.com": [{"id": "c1", "summary": "Urlaub", "start": {"date": "2026-10-04"}, "end": {"date": "2026-10-06"}},
+                                     {"id": "c2", "summary": "Call", "start": {"dateTime": "2026-10-05T09:10:00+02:00"},
+                                      "end": {"dateTime": "2026-10-05T10:00:00+02:00"}}],
+                 "kaputt@example.com": None}
+        eingefuegt = []
+
+        class _Req:
+            def __init__(self, r): self.r = r
+            def execute(self):
+                if self.r is None:
+                    raise RuntimeError("notFound")
+                return self.r
+
+        class _Events:
+            def list(self, **kw): return _Req(None if daten[kw["calendarId"]] is None else {"items": daten[kw["calendarId"]]})
+            def insert(self, **kw): eingefuegt.append(kw["calendarId"]); return _Req({"id": "n1"})
+
+        class _Auth:
+            def verfuegbar(self): return True
+            def service(self, *a): return type("S", (), {"events": lambda self: _Events()})()
+
+        gw = GoogleWorkspace(_Auth(), kalender_id="luna", lese_kalender="ceo@example.com, kaputt@example.com, luna")
+        self.assertEqual(gw.lese_kalender, ["ceo@example.com", "kaputt@example.com"])      # eigener nicht doppelt
+        r = gw.kalender_agenda()
+        self.assertTrue(r["ok"])
+        self.assertEqual([t["id"] for t in r["termine"]], ["c1", "l1", "c2"])               # Ganztag + Uhrzeit sortierbar
+        self.assertEqual([t["kalender"] for t in r["termine"]], ["ceo@example.com", "eigen", "ceo@example.com"])
+        self.assertIn("kaputt@example.com", r["hinweise"][0])                                # Hinweis statt Ausfall
+        k = gw.kalender_kollisionen()
+        self.assertEqual([(x["a"], x["b"]) for x in k["kollisionen"]], [("Angebot nachfassen", "Call")])
+        gw.termin_anlegen("T", "2026-10-06T09:00:00", "2026-10-06T09:15:00", bestaetigt=True)
+        self.assertEqual(eingefuegt, ["luna"])                                               # geschrieben nur eigen
+
     def test_6_entwurf_ist_sicher(self):
         # Entwurf ist ohne Bestaetigung erlaubt (sendet nicht).
         r = run_tool("mail_entwurf", {"an": "x@test", "betreff": "B", "text": "T"}, _ctx())

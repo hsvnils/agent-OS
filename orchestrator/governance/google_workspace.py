@@ -17,6 +17,7 @@ deckt der `MockGoogleWorkspace` die Tool-/Gating-Logik ab.
 from __future__ import annotations
 
 import base64
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
@@ -98,8 +99,17 @@ class GoogleWorkspace:
     """Gmail/Kalender/Drive/Sheets -- Lesen frei, Schreiben gated. Echte API (lazy)."""
 
     def __init__(self, auth: GoogleAuth, *, standard_einladung: str = "",
-                 zeitzone: str = "Europe/Berlin"):
+                 zeitzone: str = "Europe/Berlin", kalender_id: str | None = None,
+                 lese_kalender: str | list | None = None):
         self.auth = auth
+        # Welcher Kalender: `primary` = der eigene des angemeldeten Kontos. Mit LUNAs eigenem Google-Konto
+        # (LUNA_GOOGLE_KONTO_ROADMAP.md) ist das der **freigegebene Kalender des CEO**, z. B. seine Gmail-Adresse.
+        self.kalender_id = (kalender_id or os.environ.get("GOOGLE_CALENDAR_ID") or "primary").strip()
+        # Zusaetzliche Kalender **nur zum Lesen** (Agenda/Briefing, Kollisionen) -- z. B. der fuer LUNA freigegebene
+        # Kalender des CEO. Geschrieben wird nur in `kalender_id` (CEO 2026-09-28).
+        roh = lese_kalender if lese_kalender is not None else os.environ.get("GOOGLE_CALENDAR_LESEN", "")
+        roh = roh.split(",") if isinstance(roh, str) else roh
+        self.lese_kalender = [k.strip() for k in roh if k and k.strip() and k.strip() != self.kalender_id]
         # Wird bei JEDEM Termin automatisch als Teilnehmer eingeladen (z. B. private iCloud-Adresse).
         self.standard_einladung = (standard_einladung or "").strip()
         # Pflicht fuer die Google Calendar API, wenn die ISO-Zeit keinen Offset traegt
@@ -191,22 +201,35 @@ class GoogleWorkspace:
     # ---------------- Kalender ----------------
 
     def kalender_agenda(self, tage: int = 7, max_results: int = 20) -> dict:
+        """Termine aus dem eigenen Kalender plus den Lese-Kalendern, zeitlich sortiert. Feld `kalender`:
+        „eigen“ (aenderbar) oder die ID eines Lese-Kalenders (nur lesen)."""
         if (g := self._guard()):
             return g
         try:
             svc = self.auth.service("calendar", "v3")
             now = datetime.now(timezone.utc)
-            resp = svc.events().list(
-                calendarId="primary", timeMin=now.isoformat(),
-                timeMax=(now + timedelta(days=tage)).isoformat(),
-                singleEvents=True, orderBy="startTime", maxResults=max_results).execute()
-            termine = [{"id": e.get("id"), "titel": e.get("summary", ""),
-                        "start": (e.get("start") or {}).get("dateTime") or (e.get("start") or {}).get("date"),
-                        "ende": (e.get("end") or {}).get("dateTime") or (e.get("end") or {}).get("date"),
-                        "ort": e.get("location", "")} for e in resp.get("items", [])]
-            return _ok(termine=termine)
+
+            def hole(kid):
+                resp = svc.events().list(
+                    calendarId=kid, timeMin=now.isoformat(), timeMax=(now + timedelta(days=tage)).isoformat(),
+                    singleEvents=True, orderBy="startTime", maxResults=max_results).execute()
+                return [{"id": e.get("id"), "titel": e.get("summary", ""),
+                         "start": (e.get("start") or {}).get("dateTime") or (e.get("start") or {}).get("date"),
+                         "ende": (e.get("end") or {}).get("dateTime") or (e.get("end") or {}).get("date"),
+                         "ort": e.get("location", ""), "kalender": "eigen" if kid == self.kalender_id else kid}
+                        for e in resp.get("items", [])]
+
+            termine = hole(self.kalender_id)
         except Exception as exc:
             return _fehler(f"Kalender-Abruf fehlgeschlagen: {str(exc)[:160]}")
+        hinweise = []
+        for kid in self.lese_kalender:
+            try:
+                termine += hole(kid)
+            except Exception as exc:                          # Lese-Kalender optional: Hinweis statt Ausfall
+                hinweise.append(f"Kalender {kid} nicht lesbar: {str(exc)[:120]}")
+        termine.sort(key=lambda t: _sortzeit(t.get("start")))
+        return _ok(termine=termine[:max_results], **({"hinweise": hinweise} if hinweise else {}))
 
     def termin_anlegen(self, titel: str, start: str, ende: str, *, ort: str = "",
                        beschreibung: str = "", bestaetigt: bool = False) -> dict:
@@ -221,7 +244,7 @@ class GoogleWorkspace:
         try:
             svc = self.auth.service("calendar", "v3")
             body = self._event_body(titel, start, ende, ort, beschreibung, einladungen)
-            ev = svc.events().insert(calendarId="primary", body=body,
+            ev = svc.events().insert(calendarId=self.kalender_id, body=body,
                                      sendUpdates="all").execute()  # Einladungs-Mail rausschicken
             return _ok(termin_id=ev.get("id"), link=ev.get("htmlLink"), eingeladen=einladungen)
         except Exception as exc:
@@ -256,8 +279,10 @@ class GoogleWorkspace:
             return ag
         evs = []
         for t in ag["termine"]:
+            if "T" not in str(t.get("start") or ""):          # ganztaegige Termine sind keine Kollision
+                continue
             s, e = _dt(t.get("start")), _dt(t.get("ende"))
-            if s and e:
+            if s and e and s.tzinfo and e.tzinfo:
                 evs.append((s, e, t.get("titel", "")))
         evs.sort()
         koll = []
@@ -285,7 +310,7 @@ class GoogleWorkspace:
                 patch["start"] = {"dateTime": start, "timeZone": self.zeitzone}
             if ende:
                 patch["end"] = {"dateTime": ende, "timeZone": self.zeitzone}
-            ev = svc.events().patch(calendarId="primary", eventId=event_id, body=patch,
+            ev = svc.events().patch(calendarId=self.kalender_id, eventId=event_id, body=patch,
                                     sendUpdates="all").execute()
             return _ok(termin_id=ev.get("id"), link=ev.get("htmlLink"))
         except Exception as exc:
@@ -299,7 +324,7 @@ class GoogleWorkspace:
                     "hinweis": "Termin loeschen braucht CEO-Bestaetigung -- erneut mit bestaetigt=true."}
         try:
             svc = self.auth.service("calendar", "v3")
-            svc.events().delete(calendarId="primary", eventId=event_id, sendUpdates="all").execute()
+            svc.events().delete(calendarId=self.kalender_id, eventId=event_id, sendUpdates="all").execute()
             return _ok(geloescht=True)
         except Exception as exc:
             return _fehler(f"Termin loeschen fehlgeschlagen: {str(exc)[:160]}")
@@ -398,6 +423,14 @@ class GoogleWorkspace:
 
 
 # ---------------- Helfer ----------------
+
+def _sortzeit(s: str) -> datetime:
+    """Vergleichbarer Zeitpunkt fuer Termine mit Uhrzeit (mit Zone) UND ganztaegige (nur Datum, ohne Zone)."""
+    d = _dt(s)
+    if d is None:
+        return datetime.max.replace(tzinfo=timezone.utc)
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
 
 def _dt(s: str):
     try:

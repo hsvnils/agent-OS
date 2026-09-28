@@ -17,6 +17,63 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 10:49] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` auf vollstaendige Trennung umgestellt: keine Mail-Weiterleitung (Etappe 3
+  verworfen), keine Kalender-Freigabe des CEO (Lese-Funktion bleibt ungenutzt), Cloud-Projekt bleibt beim CEO;
+  Etappe 1 abgeschlossen. Register: Trennung beschlossen (revidiert die Weiterleitung).
+- **Warum:** CEO: „ALLES was mit Luna zu tun hat, soll in ihrem Konto passieren, nicht im hanserautisch@gmail.com".
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`, `docs/entscheidungs-register.md`
+
+## [2026-09-28 10:47] — Claude Code (MACO470)
+- **Was:** Etappe 1 (`LUNA_GOOGLE_KONTO_ROADMAP.md`): Lese-Kalender (`GOOGLE_CALENDAR_LESEN`) -- LUNA schreibt nur in ihren
+  Kalender, liest den des CEO fuer Briefing/Kollisionen mit; Agenda mischt beide, markiert die Herkunft, Hinweis statt
+  Ausfall bei nicht lesbarem Kalender. BF-34 (Absturz bei gemischten Ganztags-/Uhrzeit-Terminen) behoben und
+  eingetragen. Tests + Gegenprobe, Suite 853 gruen.
+- **Warum:** CEO-Entscheidung „Ja, nur lesen".
+- **Betroffen:** `orchestrator/governance/google_workspace.py`, `orchestrator/channels/{telegram/bot.py,web/app.py}`,
+  `orchestrator/tests/test_google_workspace.py`, `docs/bekannte-fehler.md`, `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
+## [2026-09-28 10:45] — Claude Code (MACO470)
+- **Was:** Korrektur Etappe 1 (`LUNA_GOOGLE_KONTO_ROADMAP.md`): Termine kommen in **LUNAs eigenen Kalender**, nicht in den
+  des CEO. `GOOGLE_CALENDAR_ID=hanserautisch@gmail.com` wieder aus `.env` MACO470 + NAS entfernt (NAS wieder 66 Zeilen);
+  konfigurierbare Kalender-ID im Code bleibt (Standard = eigener Kalender). Roadmap angepasst, offene Frage ergaenzt.
+- **Warum:** CEO: „Die Eintraege sollen in LUNAs Konto angelegt werden ... genau wie Mails".
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`, `orchestrator/.env` (MACO470 + NAS, eine Zeile entfernt)
+
+## [2026-09-28 10:41] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 1 (Code): Kalender-ID konfigurierbar (`GOOGLE_CALENDAR_ID`, Standard
+  `primary`) in `google_workspace.py`, Bot und Web; Test + Gegenprobe, Suite 852 gruen; live geprueft (gleiche Termine
+  ueber `hanserautisch@gmail.com`). `GOOGLE_CALENDAR_ID=hanserautisch@gmail.com` in `.env` MACO470 (Sicherung) + NAS
+  angehaengt. Register: Cloud-Projekt bleibt beim CEO-Konto.
+- **Warum:** CEO-Go „go fuer etappe 1"; CEO-Frage zum Projektumzug beantwortet.
+- **Betroffen:** `orchestrator/governance/google_workspace.py`, `orchestrator/channels/{telegram/bot.py,web/app.py}`,
+  `orchestrator/tests/test_google_workspace.py`, `docs/entscheidungs-register.md`, `LUNA_GOOGLE_KONTO_ROADMAP.md`,
+  `orchestrator/.env` (MACO470 + NAS, eine Zeile)
+
+## [2026-09-28 10:37] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 0 abgeschlossen (CEO hat `luna.hanserautisch@gmail.com` mit
+  Zwei-Faktor angelegt); Roadmap-Status „in Umsetzung".
+- **Warum:** CEO-Meldung „Neues Konto steht, inkl. 2 Faktor".
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
+## [2026-09-28 10:36] — Claude Code (MACO470)
+- **Was:** Befund aus CEO-Screenshot: LUNA-App in Google Cloud ist „In Produktion" -> BF-33-Ursache „Testmodus-Verfall"
+  ausgeschlossen (in `docs/bekannte-fehler.md` + Roadmap Etappe 0 vermerkt). Feste Regel: mit dem CEO immer Deutsch.
+- **Warum:** Etappe 0 der `LUNA_GOOGLE_KONTO_ROADMAP.md`; CEO-Hinweis „IMMER nur Deutsch".
+- **Betroffen:** `docs/bekannte-fehler.md`, `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
+## [2026-09-28 10:24] — Claude Code (MACO470)
+- **Was:** CEO-Entscheidungen in `LUNA_GOOGLE_KONTO_ROADMAP.md` eingetragen: Konto `luna.hanserautisch@gmail.com`,
+  Angebote sendet LUNA nach CEO-Klick aus ihrem Konto, komplette Mail-Weiterleitung.
+- **Warum:** CEO-Antworten 2026-09-28.
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
+## [2026-09-28 10:19] — Claude Code (MACO470)
+- **Was:** Neue Roadmap `LUNA_GOOGLE_KONTO_ROADMAP.md` (geplant, 6 Etappen, 3 offene CEO-Entscheidungen) fuer ein
+  eigenes Google-Konto von LUNA; in `ROADMAP.md` registriert; Entscheidung im Register. Nur Planung, keine Umsetzung.
+- **Warum:** CEO 2026-09-28: „Luna braucht einfach ein eigenes Google-Konto".
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-28 09:51] — Claude Code (MACO470)
 - **Was:** Etappen 3 und 3b abgenommen (CEO, AN-2026-0001; Erinnerungen nach BF-33 nachgeholt, im Apple-Kalender
   sichtbar). Verlauf zeigt „Erinnerungen nachgeholt" statt des technischen Namens (Cache v38). Roadmap aktualisiert;
