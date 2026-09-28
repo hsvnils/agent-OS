@@ -3,3 +3,4 @@
 
 # Binaerformate nicht als Text behandeln (kein eol/diff-Mangling)
 *.xmind binary
+*.dtd -text
