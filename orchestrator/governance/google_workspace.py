@@ -427,6 +427,58 @@ class GoogleWorkspace:
         except Exception as exc:
             return _fehler(f"Datei anlegen fehlgeschlagen: {str(exc)[:160]}")
 
+    # -- interne Sicherung (Etappe 6 LUNA-Google-Konto): Belege ausser Haus in LUNAs eigenem Drive --
+    # Nicht gated: kein Teilen, keine Oeffentlichkeit -- nur Ablage im eigenen Konto (Scope drive.file = nur von LUNA
+    # angelegte Dateien/Ordner sichtbar).
+
+    def drive_ordner(self, pfad: list[str]) -> dict:
+        """Ordnerkette (z. B. ["LUNA-Buchhaltung", "Belege", "2026"]) finden oder anlegen; Rueckgabe `ordner_id`."""
+        if (g := self._guard()):
+            return g
+        try:
+            svc = self.auth.service("drive", "v3")
+            eltern = "root"
+            for name in pfad:
+                sicher = name.replace("\\", "\\\\").replace("'", "\\'")
+                q = (f"name = '{sicher}' and mimeType = 'application/vnd.google-apps.folder' and "
+                     f"'{eltern}' in parents and trashed = false")
+                treffer = svc.files().list(q=q, fields="files(id)", pageSize=1).execute().get("files", [])
+                if treffer:
+                    eltern = treffer[0]["id"]
+                else:
+                    eltern = svc.files().create(body={"name": name, "mimeType": "application/vnd.google-apps.folder",
+                                                      "parents": [eltern]}, fields="id").execute()["id"]
+            return _ok(ordner_id=eltern)
+        except Exception as exc:
+            return _fehler(f"Drive-Ordner fehlgeschlagen: {str(exc)[:160]}")
+
+    def drive_datei_vorhanden(self, name: str, ordner_id: str) -> dict:
+        if (g := self._guard()):
+            return g
+        try:
+            svc = self.auth.service("drive", "v3")
+            sicher = name.replace("\\", "\\\\").replace("'", "\\'")
+            f = svc.files().list(q=f"name = '{sicher}' and '{ordner_id}' in parents and trashed = false",
+                                 fields="files(id,md5Checksum)", pageSize=1).execute().get("files", [])
+            return _ok(datei=f[0] if f else None)
+        except Exception as exc:
+            return _fehler(f"Drive-Suche fehlgeschlagen: {str(exc)[:160]}")
+
+    def drive_datei_hochladen(self, inhalt: bytes, name: str, ordner_id: str,
+                              mime: str = "application/octet-stream") -> dict:
+        """Datei unveraendert hochladen; Rueckgabe `datei_id` + `md5` (von Google berechnet, zum Gegenpruefen)."""
+        if (g := self._guard()):
+            return g
+        try:
+            from googleapiclient.http import MediaInMemoryUpload
+            svc = self.auth.service("drive", "v3")
+            f = svc.files().create(body={"name": name, "parents": [ordner_id]},
+                                   media_body=MediaInMemoryUpload(inhalt, mimetype=mime, resumable=False),
+                                   fields="id,md5Checksum").execute()
+            return _ok(datei_id=f.get("id"), md5=f.get("md5Checksum", ""))
+        except Exception as exc:
+            return _fehler(f"Drive-Upload fehlgeschlagen: {str(exc)[:160]}")
+
     # ---------------- Sheets ----------------
 
     def tabelle_lesen(self, spreadsheet_id: str, bereich: str = "A1:Z100") -> dict:
@@ -592,6 +644,24 @@ class MockGoogleWorkspace:
         if not bestaetigt:
             return {"ok": False, "bestaetigung_noetig": True, "vorschau": {"name": name}}
         return _ok(datei_id="fneu", link="https://drive.test/fneu")
+
+    def drive_ordner(self, pfad):
+        self.drive = getattr(self, "drive", {"ordner": {}, "dateien": {}})
+        schluessel = "/".join(pfad)
+        self.drive["ordner"].setdefault(schluessel, f"ord{len(self.drive['ordner']) + 1}")
+        return _ok(ordner_id=self.drive["ordner"][schluessel])
+
+    def drive_datei_vorhanden(self, name, ordner_id):
+        self.drive = getattr(self, "drive", {"ordner": {}, "dateien": {}})
+        f = self.drive["dateien"].get((ordner_id, name))
+        return _ok(datei={"id": f["id"], "md5Checksum": f["md5"]} if f else None)
+
+    def drive_datei_hochladen(self, inhalt, name, ordner_id, mime="application/octet-stream"):
+        import hashlib as _h
+        self.drive = getattr(self, "drive", {"ordner": {}, "dateien": {}})
+        fid = f"d{len(self.drive['dateien']) + 1}"
+        self.drive["dateien"][(ordner_id, name)] = {"id": fid, "md5": _h.md5(inhalt).hexdigest(), "inhalt": inhalt}
+        return _ok(datei_id=fid, md5=_h.md5(inhalt).hexdigest())
 
     def drive_suchen(self, query, max_results=10):
         return _ok(dateien=[{"id": "f1", "name": f"Datei {query}", "typ": "text/plain",

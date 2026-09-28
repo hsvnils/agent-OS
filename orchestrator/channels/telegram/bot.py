@@ -1343,6 +1343,21 @@ def main() -> None:
                                           notify=(ctx.notifications.enqueue if ctx.notifications else None))
                     except Exception as exc:
                         print(f"[angebote] Antwort-Pruefung: {exc}", flush=True)
+                # LUNA_GOOGLE_KONTO Etappe 6: Belege ausser Haus in LUNAs Drive (+ taeglicher Stand ab 03:00).
+                if ctx.google is not None and (ROOT / "buchhaltung" / "log.jsonl").exists() \
+                        and (ctx.watch is None or not ctx.watch.store.paused()):
+                    try:
+                        from ...core.beleg_sicherung import belege_sichern, stand_sichern
+                        from ...core.buchhaltung import Buchhaltung, jetzt as _bh_jetzt
+                        _bh = Buchhaltung(ROOT / "buchhaltung")
+                        belege_sichern(_bh, ctx.google, notify=(ctx.notifications.enqueue if ctx.notifications else None))
+                        _j = _bh_jetzt()
+                        if _j.hour >= 3 and ctx.agenda is not None \
+                                and not ctx.agenda.briefing_gesendet("drive-stand", _j.date().isoformat()):
+                            if stand_sichern(_bh, ctx.google).get("ok"):
+                                ctx.agenda.markiere_briefing("drive-stand", _j.date().isoformat())
+                    except Exception as exc:
+                        print(f"[beleg-sicherung] {exc}", flush=True)
                 # Instagram-DM-Poll: opt-in INSTAGRAM_DM_POLL=1. Token selbst-erneuernd (INSTAGRAM_USER_TOKEN
                 # + INSTAGRAM_APP_SECRET -> permanenter Seiten-Token) oder statisch (INSTAGRAM_ACCESS_TOKEN).
                 # Manuell jederzeit via Tool `crm_dm_abrufen`.

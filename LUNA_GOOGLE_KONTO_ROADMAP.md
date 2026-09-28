@@ -4,7 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: Go fuer Etappe 6 (Belege ausser Haus in LUNAs Google Drive); Etappen 0-5 erledigt.
+- Naechster Schritt: CEO startet die Container neu; dann pruefen, dass die 4 vorhandenen Belege in LUNAs Drive liegen
+  (Pruefsummen) -> Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -140,7 +141,13 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 
 ### Etappe 6: Belege ausser Haus in LUNAs Google Drive
 
-- Status: geplant (CEO 2026-09-28: „plane das mit ein")
+- Status: umgesetzt (CEO-Go 2026-09-28), Deploy + Neustart + Pruefung in Drive offen
+- Ergebnis: `core/beleg_sicherung.py` -- `belege_sichern` (idempotent ueber `beleg_extern_kopiert`, vor Upload SHA-256
+  gegen die Kette, nach Upload Google-MD5 gegen die Datei, vorhandene Drive-Datei wird uebernommen statt doppelt, Fehler
+  -> Meldung), `stand_sichern` (taeglich ab 03:00: Kette, Katalog, Firmendaten). `google_workspace`: `drive_ordner`,
+  `drive_datei_vorhanden`, `drive_datei_hochladen` (intern, ungated: nur eigenes Konto, kein Teilen). Bot-Poll 15 min.
+  Tests + Gegenprobe (Pruefsumme), Suite 867 gruen.
+- Plan (CEO 2026-09-28: „plane das mit ein"):
 - Anlass: Belege (Angebots-PDFs, Original-Mails `.eml`, spaeter Rechnungen/Eingangsbelege) liegen auf der NAS und als
   Backup auf dem MACO470 -- beide im selben Haus (Brand/Diebstahl/Ueberspannung = beide weg).
 - Ziel / Scope: jeder neue Beleg aus `buchhaltung/belege/<jahr>/` wird zusaetzlich in **LUNAs Google Drive** kopiert
