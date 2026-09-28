@@ -179,7 +179,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `content_ops/*_cache.jsonl` (5 Dateien) | Web, Content-Feed | dito | ja | nein (Cache von Supabase) |
 | `nutzung/log.jsonl` | Web (`/api/nutzung`) | Leistungsbericht | ja | ja |
 | `backoffice/log.jsonl` (Auftraege, append-only) | Web (`/api/backoffice/*`, Worker-Ergebnisse) | Web, Bot (Werkzeug `auftrag_details`, Morgen-Briefing) | ja | ja |
-| `buchhaltung/log.jsonl` (Hash-Kette: Nummern, Kunden, Angebote, Belege; spaeter Rechnungen) + `buchhaltung/belege/<jahr>/` (u. a. Angebots-PDFs) | Web (Kunden- und Angebots-App) | Bot (Integritaetspruefung 05:00), Web | ja | ja (Log + Beleg-Ordner, Schrumpf-Check) |
+| `buchhaltung/log.jsonl` (Hash-Kette: Nummern, Kunden, Angebote, Belege; spaeter Rechnungen) + `buchhaltung/belege/<jahr>/` (Angebots-PDFs, Original-Mails `.eml` zu Angeboten) | Web (Kunden- und Angebots-App), Bot (Mail-Archiv/Antworten im 15-min-Poll) | Bot (Integritaetspruefung 05:00), Web | ja | ja (Log + Beleg-Ordner, Schrumpf-Check) |
 | `buchhaltung/firmendaten.json` (eigene Firma: Briefkopf, Steuernummer, Bankverbindung; **nur NAS, nie im Git**) | CEO (Angabe), von Hand angelegt | Web: Angebots-PDF (Briefkopf, Fusszeile mit Bank) | ja | ja |
 | `buchhaltung/katalog.json` (Leistungskatalog: Formate, Pakete, Zuschlaege, Textbausteine; **nur NAS**) + `buchhaltung/logo.jpg` | Web (`POST /api/crm/katalog`, nur Modul finanzen; Aenderung zusaetzlich als `katalog_geaendert` in der Kette) | Web: Angebots-Editor, Angebots-PDF, Preisliste (`/api/crm/katalog/preisliste.pdf`) | ja | ja |
 | `orchestrator/memory/log.jsonl` | Bot, Voice | dito | ja | ja |

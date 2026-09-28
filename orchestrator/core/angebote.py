@@ -208,7 +208,10 @@ class AngebotStore:
                 a = out[d["nummer"]]
                 a.setdefault("antworten", []).append({k: d.get(k) for k in ("message_id", "von", "datum", "vorschau")}
                                                      | {"ts": e["ts"]})
-                a["verlauf"].append(spur | {"an": d.get("von", "")})
+                a["verlauf"].append(spur | {"mail_id": d.get("message_id", ""), "richtung": "ein",
+                                            "mail_von": d.get("von", ""), "vorschau": d.get("vorschau", "")})
+            elif t == "angebot_mail_archiviert":             # Original-Mail (.eml) als Geschaeftsbrief abgelegt
+                out[d["nummer"]].setdefault("mail_archiv", {})[d["message_id"]] = {k: d.get(k) for k in ("pfad", "richtung")}
             elif t == "angebot_erinnerungen":                # nachgeholte Kalender-Erinnerungen (BF-33)
                 a = out[d["nummer"]]
                 a["versendet_termine"] = a.get("versendet_termine", []) + d.get("termine", [])
@@ -220,7 +223,10 @@ class AngebotStore:
                 for k in ("termine", "grund", "pdf", "mail"):
                     if d.get(k):
                         a[f"{d['status']}_{k}"] = d[k]
-                a["verlauf"].append(spur | {"status": d["status"], "grund": d.get("grund", "")})
+                m = d.get("mail") or {}
+                a["verlauf"].append(spur | {"status": d["status"], "grund": d.get("grund", "")}
+                                    | ({"mail_id": m.get("message_id", ""), "richtung": "aus", "mail_an": m.get("an", ""),
+                                        "betreff": m.get("betreff", "")} if m.get("message_id") else {}))
         return out
 
     @staticmethod
@@ -383,6 +389,21 @@ class AngebotStore:
                 raise ValueError(f"{nummer} ist {a['status']} -- Erinnerungen nur fuer versendete Angebote.")
         self.bh.erfassen_geprueft("angebot_erinnerungen", {"nummer": nummer, "termine": termine}, von=von, pruefe=pruefe)
 
+    def mail_archivieren(self, nummer: str, message_id: str, roh: bytes, *, richtung: str,
+                         von: str = "LUNA-Mail") -> bool:
+        """Original-Mail unveraendert als .eml ablegen (Geschaeftsbrief, 6 Jahre) und dem Angebot zuordnen. True = neu."""
+        a = self.angebot(nummer)
+        if not a:
+            raise KeyError(nummer)
+        if message_id in (a.get("mail_archiv") or {}):
+            return False
+        ev = self.bh.beleg_ablegen(roh, f"Mail_{a['nummer']}_{richtung}_{message_id}.eml", jahr=int(a["datum"][:4]),
+                                   art="geschaeftsbrief", bezug=a["nummer"], von=von)
+        self.bh.erfassen("angebot_mail_archiviert", {"nummer": a["nummer"], "message_id": message_id,
+                                                     "richtung": richtung, "pfad": ev["daten"]["pfad"],
+                                                     "sha256": ev["daten"]["sha256"]}, von=von)
+        return True
+
     def antwort_erfassen(self, nummer: str, nachricht: dict, *, von: str = "LUNA-Mail") -> bool:
         """Kundenantwort einmalig protokollieren (Dedup ueber die Gmail-Message-ID). True = neu."""
         nummer = (nummer or "").strip().upper()
@@ -489,10 +510,22 @@ def antworten_pruefen(st: "AngebotStore", google, *, eigene_adresse: str = "", n
     grenze = (jetzt() - timedelta(days=tage)).isoformat()
     eigen = (eigene_adresse or "").strip().lower()
     neu = 0
+    def archiviere(a, mid, richtung):
+        if not mid or mid in (a.get("mail_archiv") or {}):
+            return
+        r = google.mail_roh(mid)
+        if r.get("ok") and r.get("roh"):
+            st.mail_archivieren(a["nummer"], mid, r["roh"], richtung=richtung)
+
     for a in st._falte(st.bh.eintraege()).values():
         mail = a.get("versendet_mail") or {}
-        if not mail.get("thread_id") or a["status"] not in ("versendet", "angenommen") \
-                or str(a.get("versendet_am") or "") < grenze:
+        if not mail.get("thread_id"):
+            continue
+        # Archiv nachholen (gesendete Mail + bereits erfasste Antworten), unabhaengig vom Alter
+        archiviere(a, mail.get("message_id"), "aus")
+        for x in a.get("antworten", []):
+            archiviere(a, x.get("message_id"), "ein")
+        if a["status"] not in ("versendet", "angenommen") or str(a.get("versendet_am") or "") < grenze:
             continue
         r = google.thread_lesen(mail["thread_id"])
         if not r.get("ok"):
@@ -501,6 +534,7 @@ def antworten_pruefen(st: "AngebotStore", google, *, eigene_adresse: str = "", n
             if m.get("gesendet") or (eigen and eigen in str(m.get("von") or "").lower()):
                 continue
             if st.antwort_erfassen(a["nummer"], m):
+                archiviere(st.angebot(a["nummer"]), m.get("id"), "ein")
                 neu += 1
                 if notify:
                     try:
@@ -510,6 +544,25 @@ def antworten_pruefen(st: "AngebotStore", google, *, eigene_adresse: str = "", n
                     except Exception:
                         pass
     return neu
+
+
+def mail_lesen(roh: bytes) -> dict:
+    """Archivierte .eml fuer die Anzeige: Kopfdaten, Text (Klartext bevorzugt, sonst HTML ohne Tags), Anhangnamen."""
+    import email
+    import html as _html
+    import re as _re
+    from email import policy
+    m = email.message_from_bytes(roh, policy=policy.default)
+    teil = m.get_body(preferencelist=("plain", "html"))
+    text = ""
+    if teil is not None:
+        text = teil.get_content()
+        if teil.get_content_type() == "text/html":
+            text = _html.unescape(_re.sub(r"<[^>]+>", " ", _re.sub(r"(?is)<(script|style).*?</\1>", "", text)))
+            text = _re.sub(r"[ \t]+", " ", _re.sub(r"\n\s*\n+", "\n\n", text))
+    anhaenge = [p.get_filename() for p in m.iter_attachments() if p.get_filename()]
+    return {"von": str(m.get("From", "")), "an": str(m.get("To", "")), "datum": str(m.get("Date", "")),
+            "betreff": str(m.get("Subject", "")), "text": text.strip()[:20000], "anhaenge": anhaenge}
 
 
 def mail_text(a: dict, firma: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:

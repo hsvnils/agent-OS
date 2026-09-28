@@ -257,6 +257,50 @@ class TestAngebotApi(unittest.TestCase):
         self.assertEqual([x["message_id"] for x in a["antworten"]], ["m2"])
         self.assertEqual(st.bh.pruefe_kette(), [])
 
+    def test_7_mails_archiviert_und_im_verlauf_aufklappbar(self):
+        # CEO 2026-09-28: gesendete Mails + Kundenantworten korrekt tracken, im Verlauf eingeklappt, aufklappbar.
+        from orchestrator.core.angebote import antworten_pruefen
+        nr = self._neu()
+        self.c.post(f"/api/crm/angebote/{nr}/senden", json={"an": "privat@example.com", "betreff": "Angebot " + nr,
+                                                            "text": "Moin,\nanbei das Angebot.\nGruss", "bestaetigt": True})
+        a = self.c.get(f"/api/crm/angebote/{nr}").json()["angebot"]
+        self.assertEqual(a["mail_archiv"]["s1"]["richtung"], "aus")                      # sofort archiviert
+        m = self.c.get(f"/api/crm/angebote/{nr}/mail/s1").json()
+        self.assertEqual((m["archiviert"], m["an"], m["anhaenge"]), (True, "privat@example.com", [f"Angebot_{nr}.pdf"]))
+        self.assertIn("anbei das Angebot", m["text"])
+        v = [x for x in a["verlauf"] if x.get("mail_id")]
+        self.assertEqual((v[0]["richtung"], v[0]["mail_an"]), ("aus", "privat@example.com"))
+        self.g.threads = {"t1": [{"id": "m9", "von": "Nils <privat@example.com>", "datum": "Mon, 28 Sep 2026", "gesendet": False,
+                                  "vorschau": "Wir nehmen an", "text": "Wir nehmen das Angebot an.\nViele Gruesse\nNils"}]}
+        st = self.w._angebote()
+        self.assertEqual(antworten_pruefen(st, self.g, eigene_adresse="luna@test"), 1)
+        a = self.c.get(f"/api/crm/angebote/{nr}").json()["angebot"]
+        self.assertEqual(a["mail_archiv"]["m9"]["richtung"], "ein")
+        self.assertEqual([x["richtung"] for x in a["verlauf"] if x.get("mail_id")], ["aus", "ein"])
+        self.assertIn("Viele Gruesse", self.c.get(f"/api/crm/angebote/{nr}/mail/m9").json()["text"])
+        self.assertEqual(self.c.get(f"/api/crm/angebote/{nr}/mail/fremd").status_code, 404)     # nur eigene Mails
+        belege = [e["daten"] for e in st.bh.eintraege("beleg")]
+        self.assertEqual(sum(1 for b in belege if b["name"].endswith(".eml")), 2)
+        self.assertTrue(all(b["art"] == "geschaeftsbrief" for b in belege))
+        self.assertEqual((st.bh.pruefe_kette(), st.bh.pruefe_belege()), ([], []))
+        self.assertEqual(antworten_pruefen(st, self.g, eigene_adresse="luna@test"), 0)      # nichts doppelt
+        self.assertEqual(len(st.bh.eintraege("angebot_mail_archiviert")), 2)
+
+    def test_8_archiv_wird_nachgeholt(self):
+        # Antwort wurde vor dem Archiv-Update erfasst (nur Vorschau) -> naechster Abgleich legt die .eml nach.
+        from orchestrator.core.angebote import antworten_pruefen
+        nr = self._neu()
+        from unittest import mock
+        with mock.patch.object(self.g, "mail_roh", return_value={"ok": False}):
+            self.c.post(f"/api/crm/angebote/{nr}/senden", json={"an": "p@example.com", "betreff": "B", "text": "T", "bestaetigt": True})
+            self.g.threads = {"t1": [{"id": "m1", "von": "p@example.com", "gesendet": False, "vorschau": "ok"}]}
+            st = self.w._angebote()
+            antworten_pruefen(st, self.g, eigene_adresse="luna@test")
+        self.assertEqual(st.angebot(nr).get("mail_archiv"), None)
+        self.assertEqual(self.c.get(f"/api/crm/angebote/{nr}/mail/m1").json()["archiviert"], False)   # live aus Gmail
+        antworten_pruefen(st, self.g, eigene_adresse="luna@test")
+        self.assertEqual(set(st.angebot(nr)["mail_archiv"]), {"s1", "m1"})
+
     def test_4_rechte(self):
         from orchestrator.core.team_auth import erlaubte_apps, modul_fuer_pfad
         self.assertEqual(modul_fuer_pfad("POST", "/api/crm/angebote/AN-2026-0001/mailentwurf"), "crm")

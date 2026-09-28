@@ -28,7 +28,7 @@ from ...core.brain import Brain
 from ...core.crm import CrmStore
 from ...core.buchhaltung import Buchhaltung
 from ...core.kunden import DubletteFehler, KundenStore
-from ...core.angebote import AngebotStore, mail_text as angebot_mail_text, preisliste_pdf
+from ...core.angebote import AngebotStore, mail_lesen, mail_text as angebot_mail_text, preisliste_pdf
 from ...core.katalog import Katalog
 from ...core.ig_inbox import IgInboxStore
 from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, CUTTER_FELDER, CUTTER_STATUSES,
@@ -1534,6 +1534,25 @@ def angebot_versandvorschau(nummer: str):
             "status": a["status"]}
 
 
+@app.get("/api/crm/angebote/{nummer}/mail/{message_id}")
+def angebot_mail(nummer: str, message_id: str):
+    """Eine Mail zum Angebot (gesendet oder Kundenantwort) zum Aufklappen im Verlauf -- aus dem Archiv (.eml),
+    sonst live aus LUNAs Gmail (noch nicht archiviert)."""
+    a = _angebote().angebot(nummer)
+    if not a:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Angebotsnummer")
+    bekannt = {(a.get("versendet_mail") or {}).get("message_id")} | {x.get("message_id") for x in a.get("antworten", [])}
+    if message_id not in bekannt:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Mail gehoert nicht zu diesem Angebot")
+    arch = (a.get("mail_archiv") or {}).get(message_id)
+    if arch:
+        return mail_lesen((kunden_store.bh.dir / arch["pfad"]).read_bytes()) | {"archiviert": True}
+    r = _google().mail_roh(message_id)
+    if not r.get("ok"):
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, r.get("hinweis") or "Mail nicht abrufbar")
+    return mail_lesen(r["roh"]) | {"archiviert": False}
+
+
 @app.post("/api/crm/angebote/{nummer}/senden")
 async def angebot_senden(nummer: str, request: Request):
     """Angebot aus LUNAs Google-Konto an den Kunden senden -- Oeffentlichkeit = CEO-Tor: nur mit Modul finanzen (Owner)
@@ -1570,6 +1589,9 @@ async def angebot_senden(nummer: str, request: Request):
         abl = st.pdf_ablegen(a["nummer"], pdf, an=an, entwurf_id="", von=_von(request))   # genau das gesendete PDF
         mail = {"an": an, "message_id": r.get("id", ""), "thread_id": r.get("thread_id", ""), "betreff": betreff}
         termine, hinweise = _als_versendet(st, st.angebot(a["nummer"]), pdf=abl["pfad"], von=_von(request), mail=mail)
+        roh = g.mail_roh(mail["message_id"]) if mail["message_id"] else {}
+        if roh.get("ok"):                                         # Original-Mail sofort archivieren (sonst im Poll)
+            st.mail_archivieren(a["nummer"], mail["message_id"], roh["roh"], richtung="aus", von=_von(request))
         return {"an": an, "termine": termine, "hinweise": hinweise}
     return _kunden_aktion(tun)
 
