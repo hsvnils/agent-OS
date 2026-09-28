@@ -25,7 +25,7 @@ from .angebote import AngebotStore, summen
 from .beauftragung import AuftragBuch
 from .buchhaltung import Buchhaltung, jetzt
 from .eigenbelege import EINNAHME_KATEGORIEN, EigenbelegStore
-from .eingangsbelege import KATEGORIEN, EingangStore
+from .eingangsbelege import KATEGORIEN, PRIVAT, EingangStore, anteile, teile
 from .rechnungen import RechnungStore
 
 POSITIONEN = {                                               # Anzeige-Texte (LUNA-OS) -> echte Umlaute
@@ -45,6 +45,7 @@ POSITIONEN = {                                               # Anzeige-Texte (LU
     "anlage": "AfA auf bewegliche Wirtschaftsgüter",
     "gebuehren": "Beiträge, Gebühren, Abgaben und Versicherungen",
     "sonstiges": "Übrige unbeschränkt abziehbare Betriebsausgaben",
+    "privat": "Privatanteil – keine Betriebsausgabe",
 }
 BEWIRTUNG_ANTEIL = 0.7
 ZEITRAEUME = {"jahr": range(1, 13), "q1": range(1, 4), "q2": range(4, 7), "q3": range(7, 10), "q4": range(10, 13),
@@ -65,6 +66,8 @@ MONATE = ("Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt",
 
 
 def _abziehbar(kategorie: str, betrag: int) -> int:
+    if kategorie == PRIVAT:
+        return 0                                             # privater Teil einer gemischten Rechnung (§ 12 EStG)
     if kategorie == "anlage":
         return 0                                             # wirkt ueber die AfA
     if kategorie == "bewirtung":
@@ -106,13 +109,19 @@ class Finanzen:
             f = x.get("felder") or {}
             if not f:
                 continue
+            tl = teile(f) if (f.get("art") or "ausgabe") == "ausgabe" else [
+                {"text": f.get("leistung", ""), "betrag_cent": f.get("betrag_cent", 0), "kategorie": f.get("kategorie", "umsatz")}]
             for i, z in enumerate(x.get("zahlungen") or []):                  # Gutschrift = Einnahme (Geldeingang)
-                zeilen.append({"datum": z["datum"], "art": f.get("art") or "ausgabe", "betrag_cent": int(z.get("betrag_cent") or 0),
-                               "kategorie": f.get("kategorie", "sonstiges"), "bezug": x["nummer"], "index": i,
-                               "gegenpartei": f.get("lieferant", ""),
-                               "text": f.get("leistung") or f.get("rechnungsnummer") or x.get("dateiname", ""),
-                               "zuordnung_jahr": z.get("zuordnung_jahr"), "storniert": bool(z.get("storniert")),
-                               "storno_grund": z.get("storno_grund", ""), "quelle": "beleg"})
+                for t, anteil in zip(tl, anteile(int(z.get("betrag_cent") or 0), tl)):   # Etappe 11: je Position
+                    if not anteil and len(tl) > 1:
+                        continue
+                    zeilen.append({"datum": z["datum"], "art": f.get("art") or "ausgabe", "betrag_cent": anteil,
+                                   "kategorie": t["kategorie"], "bezug": x["nummer"], "index": i,
+                                   "gegenpartei": f.get("lieferant", ""),
+                                   "text": (t.get("text") if len(tl) > 1 else "") or f.get("leistung") or f.get("rechnungsnummer")
+                                   or x.get("dateiname", ""),
+                                   "zuordnung_jahr": z.get("zuordnung_jahr"), "storniert": bool(z.get("storniert")),
+                                   "storno_grund": z.get("storno_grund", ""), "quelle": "beleg"})
         for x in st["eigen"].values():
             zeilen.append({"datum": x["datum"], "art": x["art"], "betrag_cent": x["betrag_cent"], "kategorie": x["kategorie"],
                            "bezug": x["nummer"], "index": None, "gegenpartei": x.get("gegenpartei", ""),
@@ -159,12 +168,7 @@ class Finanzen:
         heute = jetzt().date()
         bis_monat = 12 if jahr < heute.year else heute.month if jahr == heute.year else 0
         out = []
-        for x in st["belege"].values():
-            f = x.get("felder") or {}
-            if x["status"] != "gebucht" or f.get("kategorie") != "anlage" or not f.get("rechnungsdatum"):
-                continue
-            ak, nd = abs(int(f["betrag_cent"])), int(f.get("nutzungsdauer_jahre") or 1)
-            an = date.fromisoformat(f["rechnungsdatum"])
+        for x, f, bez, ak, nd, an in self._anlage_teile(st):
             vorher = self._afa_bis_monat(ak, an, nd, jahr - 1, 12)
             for m in range(1, bis_monat + 1):
                 bis = self._afa_bis_monat(ak, an, nd, jahr, m)
@@ -173,7 +177,7 @@ class Finanzen:
                                 "betrag_cent": 0, "abziehbar_cent": bis - vorher, "kategorie": "anlage",
                                 "position": POSITIONEN["anlage"], "bezug": x["nummer"], "index": None,
                                 "gegenpartei": f.get("lieferant", ""),
-                                "text": f"Abschreibung {m:02d}/{jahr}: {f.get('leistung') or f.get('lieferant', '')}",
+                                "text": f"Abschreibung {m:02d}/{jahr}: {bez}",
                                 "zuordnung_jahr": None, "storniert": False, "storno_grund": "", "quelle": "afa"})
                 vorher = bis
         return out
@@ -194,19 +198,27 @@ class Finanzen:
             z = [x for x in z if (x["gegenpartei"] or "ohne Kunde").lower() == gegenpartei.lower()]
         return sorted(z, key=lambda x: (x["datum"], x["bezug"], x["index"] or 0))
 
+    @staticmethod
+    def _anlage_teile(st: dict):
+        """Anlagegueter: jede Position mit Kategorie „anlage“ (auch aus einer aufgeteilten Rechnung, Etappe 11)."""
+        for x in st["belege"].values():
+            f = x.get("felder") or {}
+            if x["status"] != "gebucht" or not f.get("rechnungsdatum") or (f.get("art") or "ausgabe") != "ausgabe":
+                continue
+            for t in teile(f):
+                if t["kategorie"] == "anlage":
+                    yield (x, f, t.get("text") or f.get("leistung") or f.get("lieferant", ""), abs(int(t["betrag_cent"])),
+                           int(t.get("nutzungsdauer_jahre") or f.get("nutzungsdauer_jahre") or 1),
+                           date.fromisoformat(f["rechnungsdatum"]))
+
     def anlagen(self, jahr: int, st: dict | None = None) -> list[dict]:
         st = st or self._stand()
         out = []
-        for x in st["belege"].values():
-            f = x.get("felder") or {}
-            if x["status"] != "gebucht" or f.get("kategorie") != "anlage" or not f.get("rechnungsdatum"):
-                continue
-            ak, nd = abs(int(f["betrag_cent"])), int(f.get("nutzungsdauer_jahre") or 1)
-            an = date.fromisoformat(f["rechnungsdatum"])
+        for x, f, bez, ak, nd, an in self._anlage_teile(st):
             if an.year > jahr:
                 continue
             bis, vor = self._afa_bis(ak, an, nd, jahr), self._afa_bis(ak, an, nd, jahr - 1)
-            out.append({"beleg": x["nummer"], "bezeichnung": f.get("leistung") or f.get("lieferant", ""),
+            out.append({"beleg": x["nummer"], "bezeichnung": bez,
                         "lieferant": f.get("lieferant", ""), "anschaffung": an.isoformat(), "ak_cent": ak,
                         "nutzungsdauer_jahre": nd, "afa_jahr_cent": bis - vor, "afa_bis_cent": bis,
                         "restwert_cent": ak - bis, "bezahlt": bool(x.get("bezahlt_am"))})

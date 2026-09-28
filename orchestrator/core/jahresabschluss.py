@@ -192,7 +192,7 @@ TABELLEN = {                                                 # Dateiname -> (Bes
                            [("Nummer", "text"), ("Art", "text"), ("Eingang", "datum"), ("Belegdatum", "datum"),
                             ("Aussteller", "text"), ("Rechnungsnummer", "text"), ("Kategorie", "text"),
                             ("Betrag", "zahl"), ("Bezahlt", "zahl"), ("Status", "text"), ("Datei", "text"),
-                            ("SHA256", "text")]),
+                            ("SHA256", "text"), ("Aufteilung", "text")]),
     "eigenbelege.csv": ("Eigenbelege (Zahlungen ohne eigene Rechnung) im Jahr",
                         [("Nummer", "text"), ("Art", "text"), ("Datum", "datum"), ("Kategorie", "text"), ("Text", "text"),
                          ("Gegenpartei", "text"), ("Referenz", "text"), ("Betrag", "zahl"), ("Status", "text"),
@@ -242,7 +242,9 @@ def export_zip(bh: Buchhaltung, kunden, jahr: int, firmendaten: dict) -> bytes:
             [x["nummer"], fe.get("art", "ausgabe"), _d(x["eingegangen"]), _d(fe.get("rechnungsdatum")), fe.get("lieferant", ""),
              fe.get("rechnungsnummer", ""), _kat_name(fe.get("kategorie", "")) if fe.get("kategorie") else "",
              _b(fe.get("betrag_cent")) if fe else "", _b(x.get("bezahlt_cent", 0)), x["status"],
-             (x.get("belege") or [{}])[0].get("pfad", ""), (x.get("belege") or [{}])[0].get("sha256", "")])
+             (x.get("belege") or [{}])[0].get("pfad", ""), (x.get("belege") or [{}])[0].get("sha256", ""),
+             " | ".join(f"{t['text']}: {_b(t['betrag_cent'])} ({'privat' if t['kategorie'] == 'privat' else _kat_name(t['kategorie'])})"
+                        for t in fe.get("aufteilung") or [])])
     tabellen["eigenbelege.csv"] = [
         [x["nummer"], x["art"], _d(x["datum"]), _kat_name(x["kategorie"]), x["text"], x.get("gegenpartei", ""),
          x.get("referenz", ""), _b(x["betrag_cent"]), x["status"], x.get("storno_grund", "")]

@@ -39,6 +39,10 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 4. **Korrektur** nur per **Stornorechnung** (eigene Nummer, negativer Betrag, Bezug auf das Original) und ggf.
    neuer Rechnung.
 5. **Zahlungseingang** wird von Hand erfasst (Datum laut Kontoauszug, Teilzahlungen moeglich).
+6. **Mahnwesen**: Die 1. Mahnung stoesst der Inhaber an; nach Fristablauf fragt LUNA per Telegram nach der 2. bzw.
+   letzten Mahnung und versendet erst nach Bestaetigung. Verzugszinsen ab Faelligkeit (Basiszinssatz + 9 bzw. 5
+   Prozentpunkte, taggenau), Verzugspauschale 40 EUR (Unternehmer) bzw. 2,50 EUR je Mahnung (Verbraucher). Mahnungen
+   `MA-JJJJ-NNNN` werden wie Rechnungen unveraenderbar abgelegt.
 
 ### 2.3 Eingangsseite
 1. **Belegeingang**: Upload in LUNA-OS (PDF, E-Rechnung XML, Foto) oder Weiterleitung an
@@ -49,6 +53,9 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    Betrag, Kategorie vor. **Der Inhaber prueft und bucht**. Belegarten: Ausgabe (Eingangsrechnung) oder
    Einnahme (Gutschrift, z. B. Plattform-Verguetung).
 4. **Fremdwaehrung**: Es zaehlt der Euro-Betrag laut Kontoauszug; der Fremdbetrag steht in der Notiz.
+   **Gemischte Rechnungen** (z. B. Amazon mit privaten Artikeln) werden in Positionen aufgeteilt; private Positionen
+   sind als „privat – nicht absetzbar“ gekennzeichnet und zaehlen nicht als Betriebsausgabe (§ 12 EStG). Die Summe der
+   Positionen muss dem Rechnungsbetrag entsprechen; Zahlungen werden anteilig verteilt.
 5. **Zahlung** (Abfluss/Zufluss) wird von Hand erfasst; falsch erfasste Zahlungen werden mit Grund storniert
    (bleiben sichtbar).
 6. **Eigenbelege** `EB-JJJJ-NNNN` fuer Zahlungen ohne eigenen Beleg (z. B. Kontogebuehren, Plattform-Auszahlungen
@@ -112,3 +119,4 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 | Datum | Aenderung | Wer |
 |---|---|---|
 | 2026-09-28 | Erstfassung (KUNDEN_FINANZEN Etappe 9) | Claude Code, Abnahme durch den Inhaber offen |
+| 2026-09-28 | Mahnwesen (Etappe 10) und Aufteilung gemischter Rechnungen (Etappe 11) ergaenzt | Claude Code |

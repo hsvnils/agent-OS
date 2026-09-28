@@ -1277,7 +1277,7 @@ async function renderBelege(meldung) {
   const liste = sub === "pruefen" ? alle.filter(b => b.status === "zu_pruefen") : sub === "gebucht" ? alle.filter(b => b.status === "gebucht") : alle;
   const jahr = String(new Date().getFullYear());
   const gebuchtJahr = alle.filter(b => b.status === "gebucht" && b.art !== "einnahme" && String(b.rechnungsdatum || "").startsWith(jahr));
-  const rows = liste.map(b => `<tr class="klick" data-act="bl-detail" data-id="${esc(b.nummer)}"><td><b>${esc(b.nummer)}</b>${b.quelle === "mail" ? " ✉️" : ""}${b.e_rechnung ? " <small>E-Rechnung</small>" : ""}</td><td>${esc(b.lieferant || b.dateiname)}</td><td>${esc(datumDe(b.rechnungsdatum))}</td><td style="text-align:right${b.art === "einnahme" ? ";color:var(--v2-green)" : ""}">${b.betrag_cent != null ? (b.art === "einnahme" ? "+" : "") + cent2eur(b.betrag_cent) : "–"}</td><td>${b.art === "einnahme" ? "Gutschrift (Einnahme)" : esc(BL_KAT[b.kategorie] || "")}</td><td>${blBadge(b.status)}${b.bezahlt_am ? " 💶" : b.bezahlt_cent ? " <small>teilw. bezahlt</small>" : ""}</td></tr>`).join("");
+  const rows = liste.map(b => `<tr class="klick" data-act="bl-detail" data-id="${esc(b.nummer)}"><td><b>${esc(b.nummer)}</b>${b.quelle === "mail" ? " ✉️" : ""}${b.e_rechnung ? " <small>E-Rechnung</small>" : ""}</td><td>${esc(b.lieferant || b.dateiname)}</td><td>${esc(datumDe(b.rechnungsdatum))}</td><td style="text-align:right${b.art === "einnahme" ? ";color:var(--v2-green)" : ""}">${b.betrag_cent != null ? (b.art === "einnahme" ? "+" : "") + cent2eur(b.betrag_cent) : "–"}</td><td>${b.art === "einnahme" ? "Gutschrift (Einnahme)" : b.aufgeteilt > 1 ? `aufgeteilt (${b.aufgeteilt})${b.teils_privat ? " · teils privat" : ""}` : esc(BL_KAT[b.kategorie] || "")}</td><td>${blBadge(b.status)}${b.bezahlt_am ? " 💶" : b.bezahlt_cent ? " <small>teilw. bezahlt</small>" : ""}</td></tr>`).join("");
   const upload = `<div class="v2-bl-drop" id="bl-drop"><b>Rechnungen hierher ziehen</b><small>PDF, E-Rechnung (XML), Foto · bis 15 MB · mehrere auf einmal</small>
     <div class="v2-card-actions" style="justify-content:center"><label class="v2-btn pri">📄 Dateien wählen<input id="bl-datei" type="file" multiple accept=".pdf,.xml,image/*" hidden></label>
     <label class="v2-btn">📷 Foto aufnehmen<input id="bl-kamera" type="file" accept="image/*" capture="environment" hidden></label></div>
@@ -1362,6 +1362,11 @@ async function blDetail(nr, meldung, fehler) {
           <label class="v2-feld" style="grid-column: span 2"><small>Kategorie (EÜR) *</small><select id="bl-kat" ${gesperrt}><option value="">— wählen —</option>${katOpt}</select></label></div>
         <label class="v2-feld" id="bl-nd-feld" ${w("kategorie") === "anlage" ? "" : "hidden"}><small>Nutzungsdauer in Jahren * (Computer/Software: 1 = sofort voll absetzbar · Foto/Video-Technik: 7)</small><input id="bl-nd" type="number" min="1" max="50" value="${esc(String((f && f.nutzungsdauer_jahre) || ""))}" ${gesperrt}></label>
         <label class="v2-feld"><small>Leistung / was wurde gekauft</small><input id="bl-leistung" value="${esc(w("leistung"))}" ${gesperrt}></label>
+        <div id="bl-pos-wrap" ${ein ? "hidden" : ""}><label class="v2-modlbl"><input type="checkbox" id="bl-pos-an" ${blPosStart(f, v).length > 1 ? "checked" : ""} ${gesperrt}> In Positionen aufteilen (z. B. private Artikel herausnehmen)</label>
+          <div id="bl-pos-block"><div class="v2-bl-pos v2-bl-pos-kopf"><span>Position</span><span>Betrag brutto</span><span>Kategorie</span><span>ND</span><span></span></div>
+          <div id="bl-pos">${blPosStart(f, v).map(blPosZeile).join("")}</div>
+          <div class="v2-card-actions"><button class="v2-btn sm" data-act="bl-pos-neu">+ Position</button><button class="v2-btn sm" data-act="bl-pos-diff">Differenz als Position</button></div>
+          <div id="bl-pos-summe" class="v2-sub"></div></div></div>
         <label class="v2-feld"><small>Notiz</small><input id="bl-notiz" value="${esc(f ? f.notiz || "" : v.betrag_fremd ? `${v.betrag_fremd} ${v.waehrung} laut Beleg` : "")}" ${gesperrt}></label>
         ${b.status !== "verworfen" ? `<div class="v2-card-actions"><button class="v2-btn pri" data-act="bl-buchen" data-id="${esc(nr)}">✔ ${f ? "Korrektur buchen" : "Buchen"}</button>
           ${f && rest !== 0 ? `<button class="v2-btn ok" data-act="bl-bezahlt-form" data-id="${esc(nr)}">💶 ${ein ? "Geldeingang erfassen" : "Zahlung erfassen"}</button>` : ""}
@@ -1372,11 +1377,43 @@ async function blDetail(nr, meldung, fehler) {
       ${ein ? `<div class="v2-msg" style="margin:8px 0">Gutschrift = Einnahme: zählt zum Umsatz und zur Kleinunternehmer-Grenze. Achtung: Weist die Gutschrift <b>Umsatzsteuer</b> aus, kannst du sie dem Finanzamt schulden (§ 14c UStG), solange du nicht widersprichst — dann dem Aussteller widersprechen und im Konto „Kleinunternehmer“ hinterlegen.</div>` : ""}
       <small class="v2-sub">Kleinunternehmer: Der Bruttobetrag ist die Ausgabe (kein Vorsteuerabzug). Über 800 € ist es kein geringwertiges Wirtschaftsgut, sondern ein Anlagegut (Abschreibung). Das Original bleibt unverändert archiviert.</small>
     </div></div>`, true);
-  const kt = $("#bl-kat"); if (kt) kt.addEventListener("change", () => { const nd = $("#bl-nd-feld"); if (nd) nd.hidden = kt.value !== "anlage"; });
+  const kt = $("#bl-kat"); if (kt) kt.addEventListener("change", () => { const nd = $("#bl-nd-feld"); if (nd) nd.hidden = kt.value !== "anlage" || blPosAktiv(); });
+  const pw = $("#bl-pos-wrap"); if (pw) { pw.addEventListener("input", blPosSync); pw.addEventListener("change", blPosSync); }
+  const bb = $("#bl-betrag"); if (bb) bb.addEventListener("input", blPosSync);
+  blPosSync();
   const at = $("#bl-art"); if (at && kt) at.addEventListener("change", () => {              // Kategorien je Art umschalten
     const e = at.value === "einnahme", liste = e ? BL_KAT_EIN : BL_KAT;
+    const pw2 = $("#bl-pos-wrap"); if (pw2) { pw2.hidden = e; if (e) $("#bl-pos-an").checked = false; blPosSync(); }
     kt.innerHTML = (e ? "" : `<option value="">— wählen —</option>`) + Object.entries(liste).map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join("");
     $("#bl-lief-lbl").textContent = e ? "Von (Aussteller der Gutschrift) *" : "Lieferant *"; kt.dispatchEvent(new Event("change")); });
+}
+// Etappe 11: Positionen einer Rechnung -- einzeln kategorisieren, private Artikel herausnehmen
+const blPosStart = (f, v) => f && f.aufteilung && f.aufteilung.length ? f.aufteilung.map(t => ({ text: t.text, betrag: cent2feld(t.betrag_cent), kategorie: t.kategorie, nutzungsdauer_jahre: t.nutzungsdauer_jahre }))
+  : !f && (v.positionen || []).length ? v.positionen.map(p => ({ text: p.text, betrag: p.betrag, kategorie: p.kategorie || v.kategorie || "" })) : [];
+function blPosZeile(p) {
+  p = p || {};
+  const opt = Object.entries(BL_KAT).map(([k, l]) => `<option value="${esc(k)}" ${p.kategorie === k ? "selected" : ""}>${esc(l)}</option>`).join("");
+  return `<div class="v2-bl-pos"><input class="bp-text" value="${esc(p.text || "")}" placeholder="Artikel / Leistung"><input class="bp-betrag" inputmode="decimal" value="${esc(p.betrag || "")}" placeholder="0,00">
+    <select class="bp-kat"><option value="">— Kategorie —</option><option value="privat" ${p.kategorie === "privat" ? "selected" : ""}>🏠 privat – nicht absetzbar</option>${opt}</select>
+    <input class="bp-nd" type="number" min="1" max="50" value="${esc(String(p.nutzungsdauer_jahre || ""))}" placeholder="Jahre" title="Nutzungsdauer (nur Anlagegut)"><button class="v2-icon" data-act="bl-pos-weg" title="Position entfernen">✕</button></div>`;
+}
+const blPosAktiv = () => !!($("#bl-pos-an") || {}).checked && !($("#bl-pos-wrap") || {}).hidden;
+const blPosWerte = () => [...document.querySelectorAll("#bl-pos .v2-bl-pos")].map(z => ({ text: $(".bp-text", z).value.trim(), betrag: $(".bp-betrag", z).value.trim(), kategorie: $(".bp-kat", z).value, nutzungsdauer_jahre: $(".bp-nd", z).value }));
+const feld2cent = (s) => {                         // „1.234,56“, „241,80“ und „241.80“ (Punkt als Dezimalzeichen)
+  let t = String(s || "").trim().replace(/[€\s]/g, "");
+  t = /^-?\d+\.\d{1,2}$/.test(t) ? t : t.replace(/\./g, "").replace(",", ".");
+  const n = Number(t); return t && isFinite(n) ? Math.round(n * 100) : 0;
+};
+function blPosSync() {
+  const an = blPosAktiv(), blk = $("#bl-pos-block"); if (!blk) return;
+  blk.hidden = !an;
+  const katFeld = $("#bl-kat") && $("#bl-kat").closest("label"); if (katFeld) katFeld.hidden = an;
+  const nd = $("#bl-nd-feld"); if (nd) nd.hidden = an || ($("#bl-kat") || {}).value !== "anlage";
+  document.querySelectorAll("#bl-pos .v2-bl-pos").forEach(z => { $(".bp-nd", z).style.visibility = $(".bp-kat", z).value === "anlage" ? "visible" : "hidden"; });
+  if (!an) return;
+  const w = blPosWerte(), summe = w.reduce((x, p) => x + feld2cent(p.betrag), 0), gesamt = feld2cent(($("#bl-betrag") || {}).value);
+  const privat = w.filter(p => p.kategorie === "privat").reduce((x, p) => x + feld2cent(p.betrag), 0), diff = gesamt - summe;
+  $("#bl-pos-summe").innerHTML = `Summe Positionen <b>${cent2eur(summe)}</b> · Rechnungsbetrag <b>${cent2eur(gesamt)}</b>${diff ? ` · <span style="color:var(--v2-red)">Differenz ${cent2eur(diff)}</span> (z. B. Versand, Rabatt)` : " · ✓ passt"}${privat ? ` · davon privat ${cent2eur(privat)} → absetzbar ${cent2eur(summe - privat)}` : ""}`;
 }
 function blBezahltForm(nr) {
   const box = $("#bl-aktion-box"); if (!box) return;
@@ -1392,6 +1429,7 @@ async function blBuchen(nr, trotz) {
   const felder = { lieferant: $("#bl-lieferant").value.trim(), rechnungsnummer: $("#bl-nr").value.trim(), rechnungsdatum: $("#bl-datum").value, faellig_am: $("#bl-faellig").value,
     betrag: $("#bl-betrag").value.trim(), kategorie: $("#bl-kat").value, leistung: $("#bl-leistung").value.trim(), notiz: $("#bl-notiz").value.trim(), trotz_doppelt: !!trotz, art: $("#bl-art").value,
     nutzungsdauer_jahre: $("#bl-kat").value === "anlage" ? $("#bl-nd").value : "" };
+  if (blPosAktiv()) felder.aufteilung = blPosWerte().filter(p => p.text || p.betrag);
   const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(nr)}/buchen`, { felder, lieferant_anlegen: $("#bl-lief-anlegen").checked });
   if (!r) return kundenMsg("bl-form-msg", "Keine Verbindung zum Server.", false);
   if (!r.ok && /schon als/.test(r.hinweis || "") && confirm(r.hinweis + "\n\nTrotzdem buchen?")) return blBuchen(nr, true);
@@ -1905,6 +1943,14 @@ async function handleAct(act, el) {
     case "bl-detail": return blDetail(id);
     case "bl-buchen": return blBuchen(id);
     case "bl-bezahlt-form": return blBezahltForm(id);
+    case "bl-pos-neu": { $("#bl-pos").insertAdjacentHTML("beforeend", blPosZeile({})); return blPosSync(); }
+    case "bl-pos-weg": { el.closest(".v2-bl-pos").remove(); return blPosSync(); }
+    case "bl-pos-diff": {
+      const w = blPosWerte(), diff = feld2cent(($("#bl-betrag") || {}).value) - w.reduce((x, p) => x + feld2cent(p.betrag), 0);
+      if (!diff) return;
+      $("#bl-pos").insertAdjacentHTML("beforeend", blPosZeile({ text: diff > 0 ? "Versand / Sonstiges" : "Rabatt", betrag: cent2feld(diff), kategorie: (w.find(p => p.kategorie && p.kategorie !== "privat") || {}).kategorie || "" }));
+      return blPosSync();
+    }
     case "bl-box-zu": { const bx = $("#bl-aktion-box"); if (bx) bx.innerHTML = ""; return; }
     case "bl-bezahlt": {
       const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/bezahlt`, { datum: $("#blz-datum").value, betrag: $("#blz-betrag").value.trim() || null, notiz: $("#blz-notiz").value.trim(), zuordnung_jahr: zehnTageWert("blz-zuord") });

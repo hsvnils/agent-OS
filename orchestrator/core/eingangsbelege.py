@@ -55,6 +55,52 @@ _GUTSCHRIFT = re.compile(r"(?i)gutschrift|self[- ]?billing|selbstfakturierung|cr
                          r"werbeeinnahmen|in\s+ihrem\s+namen|on\s+your\s+behalf")
 STATUS = ("zu_pruefen", "gebucht", "verworfen")
 GWG_GRENZE_CENT = 80000        # 800 €; beim Kleinunternehmer zaehlt der Bruttobetrag (kein Vorsteuerabzug)
+PRIVAT = "privat"              # Etappe 11: Position einer gemischten Rechnung, die nicht fuer die Firma war (§ 12 EStG)
+
+
+def _teil_pruefen(p: dict) -> dict:
+    """Eine Position der Aufteilung pruefen: Betrag, Kategorie (oder „privat“), GWG-Grenze, Nutzungsdauer bei Anlagen."""
+    try:
+        c = cent(p.get("betrag"))
+    except ValueError:
+        raise ValueError(f"Position „{p.get('text', '')}“: Betrag ungueltig.") from None
+    k = str(p.get("kategorie") or "").strip()
+    if k != PRIVAT and k not in KATEGORIEN:
+        raise ValueError(f"Position „{p.get('text', '')}“: bitte Kategorie oder „privat“ waehlen.")
+    t = {"text": str(p.get("text") or "").strip()[:200], "betrag_cent": c, "kategorie": k}
+    if k == "gwg" and abs(c) > GWG_GRENZE_CENT:
+        raise ValueError(f"{t['text'] or 'Position'}: ueber 800 € ist es kein geringwertiges Wirtschaftsgut -- bitte als "
+                         "Anlagegut buchen (Abschreibung ueber die Nutzungsdauer).")
+    if k == "anlage":
+        try:
+            t["nutzungsdauer_jahre"] = int(p.get("nutzungsdauer_jahre") or 0)
+        except (TypeError, ValueError):
+            t["nutzungsdauer_jahre"] = 0
+        if not 1 <= t["nutzungsdauer_jahre"] <= 50:
+            raise ValueError("Nutzungsdauer in Jahren angeben (Computer/Software: 1, Foto/Video-Technik: 7).")
+    return t
+
+
+def teile(f: dict) -> list[dict]:
+    """Positionen einer Buchung: die Aufteilung oder -- ohne Aufteilung -- der ganze Beleg als eine Position."""
+    if f.get("aufteilung"):
+        return f["aufteilung"]
+    return [{"text": f.get("leistung", ""), "betrag_cent": f.get("betrag_cent", 0), "kategorie": f.get("kategorie", "sonstiges"),
+             **({"nutzungsdauer_jahre": f["nutzungsdauer_jahre"]} if f.get("nutzungsdauer_jahre") else {})}]
+
+
+def anteile(betrag_cent: int, teile_: list[dict]) -> list[int]:
+    """Zahlung anteilig auf die Positionen verteilen (Rest-Cent auf die groesste Position) -- Summe bleibt exakt."""
+    gesamt = sum(t["betrag_cent"] for t in teile_)
+    if not gesamt:
+        return [0] * len(teile_)
+    roh = [betrag_cent * t["betrag_cent"] / gesamt for t in teile_]
+    out = [int(round(x)) for x in roh]
+    diff = betrag_cent - sum(out)
+    if diff:
+        i = max(range(len(teile_)), key=lambda j: abs(teile_[j]["betrag_cent"]))
+        out[i] += diff
+    return out
 
 
 # -- Auslesen -------------------------------------------------------------------------------------------------------
@@ -81,6 +127,35 @@ def _text(el, *pfad) -> str:
     return (x.text or "").strip() if x is not None and x.text else ""
 
 
+def _alle(el, name: str) -> list:
+    return [x for x in el.iter() if _lokal(x.tag) == name] if el is not None else []
+
+
+def _brutto(netto: str, prozent: str) -> str:
+    """E-Rechnungs-Positionen sind netto -- fuer den Kleinunternehmer zaehlt brutto (kein Vorsteuerabzug)."""
+    try:
+        c = cent(netto.replace(".", ","))
+        p = float((prozent or "0").replace(",", "."))
+    except ValueError:
+        return ""
+    return eur(round(c * (1 + p / 100))).replace(" €", "")
+
+
+def _e_positionen(root, art: str) -> list[dict]:
+    out = []
+    if art in ("Invoice", "CreditNote"):
+        for z in _alle(root, "InvoiceLine") + _alle(root, "CreditNoteLine"):
+            out.append({"text": _text(z, "Item", "Name"),
+                        "betrag": _brutto(_text(z, "LineExtensionAmount"), _text(z, "Item", "ClassifiedTaxCategory", "Percent"))})
+    else:
+        for z in _alle(root, "IncludedSupplyChainTradeLineItem"):
+            s = _finde(z, "SpecifiedLineTradeSettlement")
+            out.append({"text": _text(z, "SpecifiedTradeProduct", "Name"),
+                        "betrag": _brutto(_text(s, "SpecifiedTradeSettlementLineMonetarySummation", "LineTotalAmount"),
+                                          _text(s, "ApplicableTradeTax", "RateApplicablePercent")) if s is not None else ""})
+    return [p for p in out if p["text"] and p["betrag"]]
+
+
 def e_rechnung_lesen(xml: bytes) -> dict | None:
     """XRechnung/ZUGFeRD (UBL oder CII) -> Felder. None, wenn keine E-Rechnung."""
     try:
@@ -98,7 +173,7 @@ def e_rechnung_lesen(xml: bytes) -> dict | None:
         return {"format": "XRechnung (UBL)", "lieferant": lieferant, "rechnungsnummer": _text(root, "ID"),
                 "rechnungsdatum": _text(root, "IssueDate"), "faellig_am": _text(root, "DueDate"),
                 "betrag": betrag.replace(".", ",") if betrag else "", "waehrung": waehrung,
-                "leistung": _text(root, "InvoiceLine", "Item", "Name")}
+                "leistung": _text(root, "InvoiceLine", "Item", "Name"), "positionen": _e_positionen(root, art)}
     if art == "CrossIndustryInvoice":                    # CII (ZUGFeRD/Factur-X/XRechnung-CII)
         def d(s):
             s = (s or "").strip()
@@ -114,7 +189,8 @@ def e_rechnung_lesen(xml: bytes) -> dict | None:
                                       "DateTimeString")) if tx is not None else "",
                 "betrag": betrag.replace(".", ",") if betrag else "",
                 "waehrung": _text(tx, "ApplicableHeaderTradeSettlement", "InvoiceCurrencyCode") if tx is not None else "EUR",
-                "leistung": _text(tx, "IncludedSupplyChainTradeLineItem", "SpecifiedTradeProduct", "Name") if tx is not None else ""}
+                "leistung": _text(tx, "IncludedSupplyChainTradeLineItem", "SpecifiedTradeProduct", "Name") if tx is not None else "",
+                "positionen": _e_positionen(root, art)}
     return None
 
 
@@ -194,6 +270,35 @@ def kategorie_raten(text: str) -> str:
     return beste[1] if beste[0] > 0 else "sonstiges"
 
 
+_POS_BETRAG = re.compile(r"-?\d{1,3}(?:\.\d{3})*,\d{2}")
+_POS_NICHT = re.compile(r"(?i)summe|gesamt|zwischensumme|netto|brutto|mwst|ust\b|umsatzsteuer|steuer|rechnungsbetrag|"
+                        r"zu zahlen|zahlbar|total|bezahlt|zahlung|betrag|saldo|guthaben|iban|konto|seite \d")
+
+
+def positionen_regeln(text: str) -> list[dict]:
+    """Positionszeilen aus PDF-/OCR-Text: Zeile mit Artikeltext und Betrag; der letzte Betrag der Zeile ist der
+    Zeilenbetrag (brutto, wie auf Verbraucher-/Shop-Rechnungen). Summen-, Steuer- und Zahlungszeilen fallen raus."""
+    out = []
+    for z in (text or "").splitlines():
+        z = z.strip()
+        b = _POS_BETRAG.findall(z)
+        if not b or _POS_NICHT.search(z):
+            continue
+        vorne = z[:z.find(b[0])]
+        t = re.sub(r"^\d{1,3}[.)]?\s+", "", vorne).strip()                        # Positionsnummer
+        for _ in range(3):                                                         # Menge, Einheit, Steuersatz hinten
+            t = re.sub(r"\s+(\d{1,3}([.,]\d+)?\s*(Stk\.?|St\.?|x|%|€|EUR)?)$", "", t, flags=re.I).strip()
+        if len(re.findall(r"[A-Za-zÄÖÜäöüß]", t)) < 3:
+            continue
+        try:
+            c = cent(b[-1])
+        except ValueError:
+            continue
+        if c:
+            out.append({"text": t[:200], "betrag": eur(c).replace(" €", "")})
+    return out[:40]
+
+
 def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
     """Schneller Vorschlag ohne KI. E-Rechnungs-Felder haben Vorrang (exakt)."""
     t = text or ""
@@ -238,9 +343,11 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
             v["leistung"] = f"{'Auszahlung' if gutschrift else 'Kauf'} {v['betrag_fremd']} {waehrung}"
     if zeilen:
         v["lieferant"] = re.split(r"\s+[·|•]\s+", zeilen[0])[0][:120]      # Absenderzeile "Firma · Strasse · Ort"
+    if not v.get("waehrung"):                                   # Fremdwaehrung: Euro-Betrag kommt vom Konto
+        v["positionen"] = positionen_regeln(t)
     if e_rechnung:
-        v.update({k: e_rechnung[k] for k in ("lieferant", "rechnungsnummer", "rechnungsdatum", "betrag", "faellig_am", "leistung")
-                  if e_rechnung.get(k)})
+        v.update({k: e_rechnung[k] for k in ("lieferant", "rechnungsnummer", "rechnungsdatum", "betrag", "faellig_am", "leistung",
+                                              "positionen") if e_rechnung.get(k)})
         v["quelle"] = "e-rechnung"
     return v
 
@@ -248,7 +355,10 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
 LLM_SYSTEM = (
     "Du liest den Text einer Rechnung oder Gutschrift und antwortest NUR mit einem JSON-Objekt, ohne Erklaerung, mit genau "
     'diesen Feldern: {"art": "ausgabe", "lieferant": "", "rechnungsnummer": "", "rechnungsdatum": "JJJJ-MM-TT", '
-    '"betrag": "123,45", "faellig_am": "JJJJ-MM-TT", "leistung": "kurz, worum es geht", "kategorie": ""}. '
+    '"betrag": "123,45", "faellig_am": "JJJJ-MM-TT", "leistung": "kurz, worum es geht", "kategorie": "", '
+    '"positionen": [{"text": "Artikel", "betrag": "12,34", "kategorie": ""}]}. '
+    "positionen = jede einzelne Rechnungsposition mit ihrem Gesamtbetrag BRUTTO (inkl. Umsatzsteuer), Versandkosten "
+    "als eigene Position, Rabatte negativ, je Position die passende kategorie (wie unten); keine Summen- oder Steuerzeilen. "
     "art = \"einnahme\", wenn WIR Geld bekommen (Gutschrift, Auszahlung, Monetarisierung, Vergütung, die der Aussteller in "
     "unserem Namen abrechnet), sonst \"ausgabe\". lieferant = das Unternehmen, das die Rechnung/Gutschrift ausgestellt hat. "
     "betrag = Endbetrag brutto im deutschen Format, NUR wenn er in Euro angegeben ist; bei anderer Waehrung betrag leer lassen "
@@ -283,6 +393,17 @@ def vorschlag_llm(antwort: str) -> dict | None:
         v |= {"waehrung": wg, "betrag_fremd": str(roh.get("betrag_fremd") or roh.get("betrag") or "").strip()[:20], "betrag": ""}
     art = str(roh.get("art") or "").strip().lower()
     v["art"] = art if art in ARTEN else "ausgabe"
+    pos = []
+    for p in roh.get("positionen") or []:
+        if isinstance(p, dict) and str(p.get("text") or "").strip():
+            try:
+                k = str(p.get("kategorie") or "").strip().lower()
+                pos.append({"text": str(p["text"]).strip()[:200], "betrag": eur(cent(p.get("betrag"))).replace(" €", "")}
+                           | ({"kategorie": k} if k in KATEGORIEN else {}))
+            except (ValueError, TypeError):
+                continue
+    if pos and not v.get("waehrung"):
+        v["positionen"] = pos[:40]
     k = str(roh.get("kategorie") or "").strip().lower()
     v["kategorie"] = "umsatz" if v["art"] == "einnahme" else (k if k in KATEGORIEN else "")
     return v
@@ -352,6 +473,8 @@ class EingangStore:
                         "kategorie": f.get("kategorie") or v.get("kategorie", ""), "bezahlt_am": x.get("bezahlt_am", ""),
                         "art": f.get("art") or v.get("art") or "ausgabe",
                         "bezahlt_cent": x.get("bezahlt_cent", 0), "faellig_am": f.get("faellig_am", ""),
+                        "aufgeteilt": len(f.get("aufteilung") or []),
+                        "teils_privat": any(t["kategorie"] == PRIVAT for t in f.get("aufteilung") or []),
                         "e_rechnung": bool(x.get("e_rechnung"))})
         return sorted(out, key=lambda x: x["nummer"], reverse=True)
 
@@ -433,20 +556,33 @@ class EingangStore:
         f["art"] = str(felder.get("art") or "ausgabe").strip()
         if f["art"] not in ARTEN:
             raise ValueError("Art muss Ausgabe oder Einnahme (Gutschrift) sein.")
+        aufteilung = felder.get("aufteilung") or []
+        if aufteilung and f["art"] == "einnahme":
+            raise ValueError("Gutschriften werden nicht aufgeteilt.")
+        if aufteilung:                                           # Etappe 11: Positionen, auch „privat“
+            teile_ = [_teil_pruefen(p) for p in aufteilung]
+            summe = sum(t["betrag_cent"] for t in teile_)
+            if summe != f["betrag_cent"]:
+                raise ValueError(f"Summe der Positionen {eur(summe)} passt nicht zum Rechnungsbetrag {eur(f['betrag_cent'])} "
+                                 "-- Versand/Rabatt als eigene Position ergaenzen.")
+            betrieb = [t for t in teile_ if t["kategorie"] != PRIVAT]
+            if not betrieb:
+                raise ValueError("Alles privat -- das ist kein Betriebsbeleg: bitte „Kein Beleg / verwerfen“.")
+            if len(teile_) == 1:                                   # eine Position = ganz normale Buchung
+                felder = felder | {"kategorie": teile_[0]["kategorie"],
+                                   "nutzungsdauer_jahre": teile_[0].get("nutzungsdauer_jahre")}
+            else:
+                f["aufteilung"] = teile_
+                felder = felder | {"kategorie": max(betrieb, key=lambda t: abs(t["betrag_cent"]))["kategorie"]}
         k = str(felder.get("kategorie") or ("umsatz" if f["art"] == "einnahme" else "")).strip()
         if k not in (EINNAHME_KATEGORIEN if f["art"] == "einnahme" else KATEGORIEN):
             raise ValueError("Bitte eine Kategorie waehlen.")
         f["kategorie"] = k
-        if k == "gwg" and abs(f["betrag_cent"]) > GWG_GRENZE_CENT:
-            raise ValueError("Ueber 800 € ist es kein geringwertiges Wirtschaftsgut -- bitte als Anlagegut buchen "
-                             "(Abschreibung ueber die Nutzungsdauer).")
-        if k == "anlage":
-            try:
-                f["nutzungsdauer_jahre"] = int(felder.get("nutzungsdauer_jahre") or 0)
-            except (TypeError, ValueError):
-                f["nutzungsdauer_jahre"] = 0
-            if not 1 <= f["nutzungsdauer_jahre"] <= 50:
-                raise ValueError("Nutzungsdauer in Jahren angeben (Computer/Software: 1, Foto/Video-Technik: 7).")
+        if "aufteilung" not in f and f["art"] == "ausgabe":
+            ganz = _teil_pruefen({"text": f["leistung"], "betrag": eur(f["betrag_cent"]).replace(" €", ""), "kategorie": k,
+                                  "nutzungsdauer_jahre": felder.get("nutzungsdauer_jahre")})
+            if ganz.get("nutzungsdauer_jahre"):
+                f["nutzungsdauer_jahre"] = ganz["nutzungsdauer_jahre"]
         doppelt: list = []
 
         def pruefe(eintraege):

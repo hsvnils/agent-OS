@@ -4,8 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Deploy Etappe 10 (Mahnwesen); Abnahme Etappen 9 + 10 (Export/PDF, Verfahrensdokumentation freigeben,
-  Mahnung einmal durchspielen). Offen danach nur Etappe 3c (Social-Kennzahlen, wartet auf Meta-Exporte). Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
+- Naechster Schritt: Deploy Etappe 11; Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung
+  durchspielen, eine gemischte Rechnung aufteilen). Offen danach nur Etappe 3c (wartet auf Meta-Exporte). Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -348,6 +348,16 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   LUNA-OS: Mahnung in der Rechnungsansicht (Vorschau mit Frist -> festschreiben -> senden), To-dos zeigen den
   naechsten Schritt, CFO-Finanzcheck erinnert an fehlenden Basiszinssatz (naechster: 01.01.2027). Tests (Zinsen von Hand,
   Stufen, Verbraucher, Zahlung, Telegram-Versand) + Gegenprobe.
+
+### Etappe 11: Positionen erkennen und Belege aufteilen
+
+- Status: umgesetzt (CEO-Wunsch 2026-09-28: „Belege beim Scannen so anlegen, dass die Positionen auch erkannt und
+  einzeln aufgefuehrt werden“, Anlass: gemischte Amazon-Rechnungen mit privaten Artikeln), Deploy + Abnahme offen
+- Ergebnis: Positionen aus E-Rechnungen (UBL/CII, netto + Steuersatz -> brutto), aus PDF-/OCR-Text (Zeilenregel) und
+  ueber das Backoffice-Modell (je Position mit Kategorie); Buchungsmaske „In Positionen aufteilen“ mit Kategorie je
+  Position inkl. **„privat – nicht absetzbar“** (§ 12 EStG), Summenkontrolle, „Differenz als Position“ (Versand/Rabatt);
+  GWG-Grenze und Anlagegut (Nutzungsdauer) je Position; Zahlungen anteilig je Position (centgenau), Privatanteil im
+  Journal sichtbar, zaehlt nicht in EUeR/Cockpit/AfA; Export-Spalte „Aufteilung“. Tests + Gegenprobe; Browser-Test.
 
 ## Reihenfolge
 
