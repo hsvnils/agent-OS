@@ -204,6 +204,10 @@ class AngebotStore:
                 a = out[d["nummer"]]
                 a["pdfs"].append({k: d.get(k) for k in ("pfad", "sha256", "inhalt", "entwurf_id", "an")} | {"ts": e["ts"]})
                 a["verlauf"].append(spur | {"an": d.get("an", "")})
+            elif t == "angebot_erinnerungen":                # nachgeholte Kalender-Erinnerungen (BF-33)
+                a = out[d["nummer"]]
+                a["versendet_termine"] = a.get("versendet_termine", []) + d.get("termine", [])
+                a["verlauf"].append(spur | {"felder": ["erinnerungen"]})
             elif t == "angebot_status":
                 a = out[d["nummer"]]
                 a["status"] = d["status"]
@@ -361,6 +365,18 @@ class AngebotStore:
         self.bh.erfassen("angebot_pdf_abgelegt", {"nummer": a["nummer"], "pfad": d["pfad"], "sha256": d["sha256"],
                                                    "inhalt": a["inhalt"], "an": an, "entwurf_id": entwurf_id}, von=von)
         return {"pfad": d["pfad"], "sha256": d["sha256"]}
+
+    def erinnerungen_ergaenzen(self, nummer: str, termine: list[dict], *, von: str = "") -> None:
+        """Nachgeholte Kalender-Erinnerungen protokollieren (nur fuer versendete Angebote)."""
+        nummer = (nummer or "").strip().upper()
+
+        def pruefe(eintraege):
+            a = self._falte(eintraege).get(nummer)
+            if not a:
+                raise KeyError(nummer)
+            if a["status"] != "versendet":
+                raise ValueError(f"{nummer} ist {a['status']} -- Erinnerungen nur fuer versendete Angebote.")
+        self.bh.erfassen_geprueft("angebot_erinnerungen", {"nummer": nummer, "termine": termine}, von=von, pruefe=pruefe)
 
     def status_setzen(self, nummer: str, status: str, *, grund: str = "", termine: list | None = None,
                       pdf: str = "", von: str = "") -> dict:
