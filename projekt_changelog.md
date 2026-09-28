@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 13:39] — Claude Code (MACO470)
+- **Was:** KUNDEN_FINANZEN Etappe 6 (Eingangsrechnungen/Belege mit PDF-Scan): `core/eingangsbelege.py` (Aufnahme ER-,
+  E-Rechnung UBL/CII/ZUGFeRD, PDF-Text, OCR, Regel- + Backoffice-Vorschlag, Buchen/Bezahlt/Verwerfen, Mail-Eingang nur
+  von CEO-Adressen), API `/api/finanzen/belege*`, Bot-Poll, LUNA-OS Bereich „Belege" (Cache v43/v20). Dockerfile:
+  `pypdf==6.19.0`, `tesseract-ocr(-deu)`, `poppler-utils` (Image-Neubau). Etappe 5 abgenommen. Register ergaenzt.
+- **Warum:** CEO: „Neustart gemacht, Rechnung getestet, sieht alles gut aus. Weiter gehts".
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/channels/{web/app.py,telegram/bot.py}`,
+  `orchestrator/channels/web/static/{app-v2.js,style-v2.css,index-v2.html}`, `orchestrator/core/team_auth.py`,
+  `orchestrator/tests/test_eingangsbelege.py`, `deploy/Dockerfile`, `docs/{datenfluesse,entscheidungs-register}.md`,
+  `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-28 13:16] — Claude Code (MACO470)
 - **Was:** KUNDEN_FINANZEN Etappe 5 (Ausgangsrechnungen): `core/rechnungen.py`, `Buchhaltung.festschreiben` (Nummer + PDF +
   Eintrag atomar), Entwurf/Festschreiben/Senden/Zahlung/Storno, Pflichtangaben (Steuernummer, Leistungsdatum, § 19,

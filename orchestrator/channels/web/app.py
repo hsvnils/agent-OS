@@ -32,6 +32,7 @@ from ...core.angebote import AngebotStore, mail_lesen, mail_text as angebot_mail
 from ...core.katalog import Katalog
 from ...core.beauftragung import AuftragBuch, auftrag_mail_text
 from ...core.rechnungen import RechnungStore, rechnung_mail_text
+from ...core import eingangsbelege as _eb
 from ...core.ig_inbox import IgInboxStore
 from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, CUTTER_FELDER, CUTTER_STATUSES,
                                    DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES, SOURCE_FELDER,
@@ -1663,6 +1664,102 @@ async def rechnung_stornieren(nummer: str, request: Request):
         return _rechnungen().stornieren(nummer, fd, grund=body.get("grund") or "", korrektur=bool(body.get("korrektur")),
                                         von=_von(request))
     return _kunden_aktion(tun)
+
+
+# -- Eingangsrechnungen / Belege (KUNDEN_FINANZEN Etappe 6; Modul finanzen) ---------------------------------------
+
+def _eingang() -> _eb.EingangStore:
+    return _eb.EingangStore(kunden_store.bh)
+
+
+def _lieferanten() -> list[dict]:
+    return [{"nummer": f["nummer"], "name": f["name"]} for f in kunden_store.firmen() if f.get("typ") == "lieferant" and f["aktiv"]]
+
+
+@app.get("/api/finanzen/belege")
+def belege_liste():
+    st = _eingang()
+    _eb.llm_ergebnisse_uebernehmen(st, backoffice)
+    return {"belege": st.liste(), "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()}}
+
+
+@app.get("/api/finanzen/belege/{nummer}")
+def beleg_detail(nummer: str):
+    st = _eingang()
+    _eb.llm_ergebnisse_uebernehmen(st, backoffice)
+    x = st.get(nummer)
+    if not x:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Beleg")
+    llm = backoffice.get(x["llm_auftrag"]) if x.get("llm_auftrag") else None
+    return {"beleg": {k: v for k, v in x.items() if k != "text"} | {"text": (x.get("text") or "")[:4000]},
+            "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()}, "lieferanten": _lieferanten(),
+            "ki_status": (llm or {}).get("status", "")}
+
+
+@app.get("/api/finanzen/belege/{nummer}/datei")
+def beleg_datei(nummer: str):
+    x = _eingang().get(nummer)
+    if not x:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Beleg")
+    mime = x.get("mime") or "application/octet-stream"
+    kopf = {"Content-Disposition": f'inline; filename="{x["dateiname"]}"', "X-Content-Type-Options": "nosniff"}
+    if mime != "application/pdf":                  # Chrome zeigt PDFs in einer Sandbox nicht an; XML/Bilder abschotten
+        kopf["Content-Security-Policy"] = "sandbox"
+    return Response((kunden_store.bh.dir / x["belege"][0]["pfad"]).read_bytes(), media_type=mime, headers=kopf)
+
+
+@app.post("/api/finanzen/belege/hochladen")
+async def belege_hochladen(request: Request):
+    """Dateien als Base64 im JSON (kein Multipart noetig); je Datei auslesen, ablegen, KI-Vorschlag anfordern."""
+    import base64 as _b64
+    body = await _json(request)
+    dateien = body.get("dateien") or []
+    if not isinstance(dateien, list) or not dateien or len(dateien) > 10:
+        return {"ok": False, "hinweis": "1 bis 10 Dateien je Upload."}
+    st, ergebnisse = _eingang(), []
+    for d in dateien:
+        name = str((d or {}).get("name") or "beleg")
+        try:
+            daten = _b64.b64decode(str(d.get("daten") or ""), validate=True)
+            r = st.aufnehmen(daten, name, quelle="upload", von=_von(request))
+            if not r.get("doppelt"):
+                _eb.llm_beauftragen(st, backoffice, r["nummer"])
+            ergebnisse.append({"name": name, "ok": True} | {k: r.get(k) for k in ("nummer", "doppelt", "text_quelle")})
+        except (ValueError, TypeError) as exc:
+            ergebnisse.append({"name": name, "ok": False, "hinweis": str(exc)[:200]})
+    return {"ok": any(e["ok"] for e in ergebnisse), "ergebnisse": ergebnisse}
+
+
+@app.post("/api/finanzen/belege/{nummer}/buchen")
+async def beleg_buchen(nummer: str, request: Request):
+    body = await _json(request)
+
+    def tun():
+        felder = dict(body.get("felder") or {})
+        if body.get("lieferant_anlegen") and not felder.get("lieferant_firma") and felder.get("lieferant"):
+            name = str(felder["lieferant"]).strip()
+            vorhanden = next((f for f in kunden_store.firmen() if f["name"].strip().lower() == name.lower()), None)
+            felder["lieferant_firma"] = vorhanden["nummer"] if vorhanden else kunden_store.firma_anlegen(
+                {"name": name, "typ": "lieferant"}, von=_von(request))["nummer"]
+        return _eingang().buchen(nummer, felder, von=_von(request))
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/finanzen/belege/{nummer}/bezahlt")
+async def beleg_bezahlt(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _eingang().bezahlt(nummer, body.get("datum") or "", von=_von(request)))
+
+
+@app.post("/api/finanzen/belege/{nummer}/verwerfen")
+async def beleg_verwerfen(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _eingang().verwerfen(nummer, body.get("grund") or "", von=_von(request)))
+
+
+@app.post("/api/finanzen/belege/{nummer}/neu-auslesen")
+async def beleg_neu_auslesen(nummer: str, request: Request):
+    return _kunden_aktion(lambda: {"auftrag": _eb.llm_beauftragen(_eingang(), backoffice, nummer.upper())})
 
 
 @app.get("/api/crm/katalog")

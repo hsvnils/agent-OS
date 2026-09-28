@@ -4,8 +4,8 @@
 - Stand: 2026-09-27
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: CEO startet die Container neu; Abnahme Etappe 5 (Test-Rechnung aus AB-2026-0001 festschreiben,
-  PDF pruefen, stornieren); danach Go fuer Etappe 6 (Eingangsrechnungen + PDF-Scan).
+- Naechster Schritt: CEO baut das Image neu; Abnahme Etappe 6 (je ein PDF, Foto und ggf. E-Rechnung hochladen, eine Rechnung
+  an LUNA weiterleiten, buchen); danach Go fuer Etappe 7 (Zahlungen + EUeR-Journal).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -261,7 +261,17 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 6: Eingangsrechnungen und Belege
 
-- Status: geplant
+- Status: umgesetzt (CEO-Go 2026-09-28 „weiter gehts"), Deploy mit **Image-Neubau** + Abnahme offen
+- Ergebnis: `core/eingangsbelege.py`: Aufnahme mit Beleg-Nr. `ER-JJJJ-NNNN` + Original (8 Jahre) atomar
+  (`Buchhaltung.festschreiben`), doppelte Dateien erkannt; Auslesen lokal: XRechnung UBL/CII + ZUGFeRD-XML im PDF
+  (defusedxml, exakt), PDF-Text (`pypdf`), OCR (`tesseract`/`pdftoppm`); Sofort-Vorschlag nach Regeln + genauerer
+  Vorschlag ueber das Backoffice-Modell (MACO470, `roh`-Auftrag, stumm, beim Lesen uebernommen); CEO bucht (Lieferant,
+  Nr., Datum, Faelligkeit, Betrag brutto, EUeR-Kategorie aus 14, Leistung, Notiz; Korrektur = neuer Eintrag; doppelte
+  Rechnungsnummer je Lieferant erkannt), Lieferant im Kundenstamm (Typ Lieferant), bezahlt, verwerfen (Datei bleibt).
+  Mail-Eingang: an luna.hanserautisch@gmail.com weitergeleitete Anhaenge werden im 15-min-Poll uebernommen (nur eigene
+  Absender, doppelt geprueft). LUNA-OS V2: Bereich „📥 Belege" (Ziehen, Auswahl, Kamera; grosse Fotos im Browser
+  verkleinert; ganzseitige Pruefansicht Original | Formular). Tests (13) + Gegenproben (XML-Bombe, Doppelt, Absender);
+  Headless-Chrome-Klicktest. OCR selbst erst im neuen Image pruefbar (lokal kein tesseract).
 - Ziel / Scope: Upload in LUNA-OS (PDF/Foto), **E-Rechnungen (XRechnung/ZUGFeRD) einlesen und lesbar anzeigen**, Original
   unveraendert archivieren; Lieferant, Datum, Betrag, Kategorie (EUeR-Zuordnung), Zahlungsdatum; optional Eingang aus
   Gmail-Anhaengen.
