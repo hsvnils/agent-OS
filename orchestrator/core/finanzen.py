@@ -30,6 +30,7 @@ from .rechnungen import RechnungStore
 
 POSITIONEN = {                                               # Anzeige-Texte (LUNA-OS) -> echte Umlaute
     "umsatz": "Betriebseinnahmen als umsatzsteuerlicher Kleinunternehmer",
+    "nebenforderung": "Betriebseinnahmen: Verzugszinsen/Mahnkosten (nicht umsatzsteuerbar)",
     "wareneinkauf": "Waren, Roh- und Hilfsstoffe",
     "fremdleistungen": "Bezogene Fremdleistungen",
     "software": "Laufende EDV-Kosten (Software, Abos, Hosting)",
@@ -88,6 +89,13 @@ class Finanzen:
         zeilen = []
         for r in st["rechnungen"].values():
             for i, z in enumerate(r.get("zahlungen") or []):
+                if z.get("nebenforderung_cent"):              # Etappe 10: gezahlte Verzugszinsen/Mahnkosten
+                    zeilen.append({"datum": z["datum"], "art": "einnahme", "betrag_cent": int(z["nebenforderung_cent"]),
+                                   "kategorie": "nebenforderung", "bezug": r["nummer"], "index": i,
+                                   "gegenpartei": st["firmen"].get(r.get("firma"), r.get("firma", "")),
+                                   "text": f"Verzugszinsen/Mahnkosten zu Rechnung {r['nummer']}",
+                                   "zuordnung_jahr": z.get("zuordnung_jahr"), "storniert": bool(z.get("storniert")),
+                                   "storno_grund": z.get("storno_grund", ""), "quelle": "rechnung"})
                 zeilen.append({"datum": z["datum"], "art": "einnahme", "betrag_cent": int(z.get("betrag_cent") or 0),
                                "kategorie": "umsatz", "bezug": r["nummer"], "index": i,
                                "gegenpartei": st["firmen"].get(r.get("firma"), r.get("firma", "")),
@@ -210,6 +218,7 @@ class Finanzen:
         st = st or self._stand()
         j = [z for z in self.posten(jahr, st=st) if not z["storniert"]]
         einnahmen = sum(z["betrag_cent"] for z in j if z["art"] == "einnahme")
+        neben = sum(z["betrag_cent"] for z in j if z["art"] == "einnahme" and z["kategorie"] == "nebenforderung")
         pos: dict[str, int] = {}
         for z in j:
             if z["art"] == "ausgabe" and z["abziehbar_cent"]:
@@ -217,7 +226,8 @@ class Finanzen:
         bew_voll = sum(z["betrag_cent"] for z in j if z["art"] == "ausgabe" and z["kategorie"] == "bewirtung")
         ausgaben = sum(pos.values())
         return {"jahr": jahr, "einnahmen_cent": einnahmen, "ausgaben_cent": ausgaben, "gewinn_cent": einnahmen - ausgaben,
-                "einnahmen": [{"kategorie": "umsatz", "position": POSITIONEN["umsatz"], "betrag_cent": einnahmen}],
+                "einnahmen": [{"kategorie": k, "position": POSITIONEN[k], "betrag_cent": v} for k, v in (
+                    ("umsatz", einnahmen - neben), ("nebenforderung", neben)) if v or k == "umsatz"],
                 "ausgaben": sorted(({"kategorie": k, "position": POSITIONEN[k], "betrag_cent": v} for k, v in pos.items()),
                                    key=lambda p: -p["betrag_cent"]),
                 "bewirtung_nicht_abziehbar_cent": bew_voll - round(bew_voll * BEWIRTUNG_ANTEIL),

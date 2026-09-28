@@ -92,6 +92,11 @@ def euer_zeilen(f: Finanzen, jahr: int) -> dict:
     """EUeR des Jahres mit amtlicher Zeile je Position (Eingabehilfe fuer ELSTER)."""
     eu = f.euer(jahr)
     zeilen = []
+    neben = sum(p["betrag_cent"] for p in eu["einnahmen"] if p["kategorie"] == "nebenforderung")
+    einnahmen = [{"kategorie": "umsatz", "position": POSITIONEN["umsatz"], "betrag_cent": eu["einnahmen_cent"]}]
+    if neben:                                   # Zeile 12 = alle Einnahmen, Zeile 13 nachrichtlich die nicht steuerbaren
+        einnahmen.append({"kategorie": "nebenforderung", "position": POSITIONEN["nebenforderung"], "betrag_cent": neben})
+    eu = eu | {"einnahmen": einnahmen}
     for p in eu["einnahmen"] + eu["ausgaben"]:
         z = zeile(jahr, p["kategorie"])
         zeilen.append({"art": "einnahme" if p in eu["einnahmen"] else "ausgabe", "kategorie": p["kategorie"],

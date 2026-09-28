@@ -111,6 +111,15 @@ def finanzcheck(e: list[dict], heute: date, *, rechnungen: dict | None = None) -
                                      "LUNA weiterleiten oder bestätigen, dass diesen Monat nichts kommt", "go:belege:alle",
                                      "", f"{m0}-10", h, {"pfad": "/api/finanzen/hinweis-quittieren", "schluessel": sl,
                                                           "label": "✓ Kommt diesen Monat nicht"}))
+    # 2b) Basiszinssatz fuer das naechste Halbjahr fehlt -> Mahnungen wuerden sonst nicht rechnen (Etappe 10)
+    from .mahnungen import BASISZINS_BEKANNT_BIS
+    grenze = date.fromisoformat(BASISZINS_BEKANNT_BIS)
+    if heute >= grenze - timedelta(days=10):
+        out.append(_todo(f"basiszins:{BASISZINS_BEKANNT_BIS}", "Finanzen", "📈",
+                         f"Basiszinssatz ab {(grenze + timedelta(days=1)).strftime('%d.%m.%Y')} nachtragen",
+                         "die Bundesbank veröffentlicht ihn Ende Dezember/Juni -- ohne ihn rechnet LUNA keine Verzugszinsen "
+                         "(Mahnungen gesperrt); Claude Code/HoA trägt ihn in core/mahnungen.py ein", "go:finanzen", "",
+                         (grenze + timedelta(days=1)).isoformat(), h))
     # 3) Kleinunternehmer-Grenze ab 80 %
     from .eigenbelege import einnahmen_cent
     rechnungen = rechnungen if rechnungen is not None else RechnungStore._falte(e)[1]
@@ -176,11 +185,27 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                                      f"{wer} · {eur(abs(f['betrag_cent'] - x.get('bezahlt_cent', 0)))} offen",
                                      "bl-detail", x["nummer"], fae, h))
         entwuerfe, rechnungen = RechnungStore._falte(e)
+        from .mahnungen import MahnStore, STUFEN
+        mahn: dict[str, list] = {}
+        for m in MahnStore._falte(e).values():
+            mahn.setdefault(m["rechnung"], []).append(m)
         for r in rechnungen.values():
             if r["status"] == "offen" and r.get("art") != "storno" and r.get("faellig_am", "9") < h:
-                out.append(_todo(f"re-ueber:{r['nummer']}", "Rechnungen", "⚠️", f"Rechnung {r['nummer']} überfällig",
-                                 f"{firmen.get(r['firma'], r['firma'])} · {eur(r['summe_cent'] - r['bezahlt_cent'])} offen; "
-                                 "nachfassen oder Zahlung erfassen", "re-detail", r["nummer"], r["faellig_am"], h))
+                wer = f"{firmen.get(r['firma'], r['firma'])} · {eur(r['summe_cent'] - r['bezahlt_cent'])} offen"
+                ms = sorted(mahn.get(r["nummer"], []), key=lambda m: m["stufe"])
+                if not ms:                                   # Etappe 10: naechster Schritt im Mahnverfahren
+                    t = (f"Rechnung {r['nummer']} überfällig", f"{wer}; 1. Mahnung erstellen oder Zahlung erfassen", r["faellig_am"])
+                elif not ms[-1].get("versendet_am"):
+                    t = (f"{STUFEN[ms[-1]['stufe']]} {ms[-1]['nummer']} senden", wer, h)
+                elif ms[-1]["frist"] >= h:
+                    t = (f"{STUFEN[ms[-1]['stufe']]} zu {r['nummer']} läuft", f"{wer}; Frist bis {ms[-1]['frist'][8:10]}."
+                         f"{ms[-1]['frist'][5:7]}.", ms[-1]["frist"])
+                elif ms[-1]["stufe"] < 3:
+                    t = (f"Frist der {STUFEN[ms[-1]['stufe']]} zu {r['nummer']} abgelaufen",
+                         f"{wer}; LUNA fragt per Telegram nach der {STUFEN[ms[-1]['stufe'] + 1]}", h)
+                else:
+                    t = (f"Letzte Mahnung zu {r['nummer']} abgelaufen", f"{wer}; Mahnbescheid oder Inkasso prüfen", h)
+                out.append(_todo(f"re-ueber:{r['nummer']}", "Rechnungen", "⚠️", t[0], t[1], "re-detail", r["nummer"], t[2], h))
         for eid, x in entwuerfe.items():
             out.append(_todo(f"re-entwurf:{eid}", "Rechnungen", "✎", "Rechnungsentwurf festschreiben",
                              f"{firmen.get(x.get('firma'), x.get('firma', ''))} · {x.get('titel') or eid}", "re-detail", eid,

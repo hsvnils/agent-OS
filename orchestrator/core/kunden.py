@@ -17,7 +17,7 @@ from .crm import _key as _crm_key   # gleicher Schluessel wie im Collab-CRM
 
 TYPEN = ("kunde", "lieferant", "partner")
 FIRMA_FELDER = ("name", "typ", "strasse", "plz", "ort", "land", "ustid", "steuernummer", "rechnungsmail", "telefon",
-                "website", "zahlungsziel_tage", "notiz", "aktiv")
+                "website", "zahlungsziel_tage", "notiz", "aktiv", "verbraucher")
 AP_FELDER = ("vorname", "nachname", "rolle", "mail", "telefon", "notiz", "aktiv")
 _MAIL = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 _MAX = 500
@@ -37,6 +37,8 @@ def _bereinige(daten: dict, felder: tuple[str, ...]) -> dict:
             continue
         if k == "aktiv":
             out[k] = bool(v)
+        elif k == "verbraucher":                          # Privatperson (§ 13 BGB) -> Mahnung: 5 statt 9 Punkte, keine 40 €
+            out[k] = v is True or str(v).strip().lower() in ("1", "true", "ja", "on")
         elif k == "zahlungsziel_tage":
             if v in (None, ""):
                 out[k] = None

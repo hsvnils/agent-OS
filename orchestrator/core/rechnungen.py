@@ -97,7 +97,8 @@ class RechnungStore:
                 r["verlauf"].append(spur | {"mail_an": (d.get("mail") or {}).get("an", "")})
             elif t == "rechnung_bezahlt":
                 r = rechnungen[d["nummer"]]
-                r["zahlungen"].append({k: d.get(k) for k in ("datum", "betrag_cent", "notiz", "zuordnung_jahr")})
+                r["zahlungen"].append({k: d.get(k) for k in ("datum", "betrag_cent", "notiz", "zuordnung_jahr",
+                                                             "nebenforderung_cent")})
                 r["bezahlt_cent"] += int(d.get("betrag_cent") or 0)
                 if r["status"] == "offen" and r["bezahlt_cent"] >= r["summe_cent"]:
                     r["status"] = "bezahlt"
@@ -333,13 +334,20 @@ class RechnungStore:
         self.bh.erfassen_geprueft("rechnung_versendet", {"nummer": nummer, "mail": mail}, von=von, pruefe=pruefe)
 
     def bezahlt(self, nummer: str, *, datum: str, betrag: str | int | None = None, notiz: str = "",
-                zuordnung_jahr=None, von: str = "") -> dict:
-        """Zahlungseingang von Hand (CEO-Entscheidung 3). Ohne Betrag = offener Rest. `zuordnung_jahr` = 10-Tage-Regel."""
+                zuordnung_jahr=None, nebenforderung=None, von: str = "") -> dict:
+        """Zahlungseingang von Hand (CEO-Entscheidung 3). Ohne Betrag = offener Rest. `zuordnung_jahr` = 10-Tage-Regel.
+        `nebenforderung` (Etappe 10): zusaetzlich gezahlte Verzugszinsen/Mahnkosten -- nur bei gemahnten Rechnungen."""
         nummer = (nummer or "").strip().upper()
         tag = _datum(datum, "Zahlungsdatum") or jetzt().date().isoformat()
         if tag > jetzt().date().isoformat():
             raise ValueError("Zahlungsdatum liegt in der Zukunft.")
         zuordnung = zuordnung_pruefen(tag, zuordnung_jahr)
+        try:
+            neben = cent(nebenforderung) if nebenforderung not in (None, "", 0, "0") else 0
+        except ValueError:
+            raise ValueError("Betrag Zinsen/Mahnkosten ungueltig.") from None
+        if neben < 0:
+            raise ValueError("Betrag Zinsen/Mahnkosten darf nicht negativ sein.")
         rest: dict = {}
 
         def pruefe(eintraege):
@@ -353,13 +361,17 @@ class RechnungStore:
         # Betrag erst nach der Pruefung festlegen (offener Rest), deshalb zweistufig unter derselben Sperre
         with self.bh._gesperrt():
             pruefe(self.bh._eintraege())
+            if neben and not any(e["typ"] == "mahnung_erstellt" and e["daten"].get("rechnung") == nummer
+                                 for e in self.bh._eintraege()):
+                raise ValueError("Zinsen/Mahnkosten gibt es nur bei gemahnten Rechnungen.")
             b = rest["cent"] if betrag in (None, "") else cent(betrag)
             if b <= 0 or b > rest["cent"]:
                 raise ValueError(f"Betrag muss zwischen 0,01 € und dem offenen Rest {eur(rest['cent'])} liegen.")
             self.bh._anhaengen("rechnung_bezahlt", {"nummer": nummer, "datum": tag, "betrag_cent": b,
                                                      "notiz": str(notiz or "").strip()[:300]}
-                               | ({"zuordnung_jahr": zuordnung} if zuordnung else {}), von=von)
-        return {"betrag_cent": b, "rest_cent": rest["cent"] - b}
+                               | ({"zuordnung_jahr": zuordnung} if zuordnung else {})
+                               | ({"nebenforderung_cent": neben} if neben else {}), von=von)
+        return {"betrag_cent": b, "rest_cent": rest["cent"] - b, "nebenforderung_cent": neben}
 
     def zahlung_stornieren(self, nummer: str, index: int, grund: str, *, von: str = "") -> dict:
         """Falsch erfasste Zahlung zuruecknehmen (Eintrag bleibt, Storno mit Grund daneben -- GoBD)."""
