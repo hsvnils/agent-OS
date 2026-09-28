@@ -4,7 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: Go fuer Etappe 2 (Deploy, Umschalten auf das LUNA-Konto per Google-Link, ein Neustart).
+- Naechster Schritt: CEO startet die Container neu; dann Verifikation (Telegram-Agenda, Briefing, Angebots-Erinnerung
+  in LUNAs Kalender) und Go fuer Etappe 4 (Angebote aus LUNAs Konto senden).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -90,7 +91,12 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 
 ### Etappe 2: Umschalten auf das LUNA-Konto
 
-- Status: geplant
+- Status: in Umsetzung (CEO-Go 2026-09-28) -- Zugang umgeschaltet, Container-Neustart durch den CEO offen
+- Ergebnis bisher: CEO hat mit **luna.hanserautisch@gmail.com** zugestimmt (Skript prueft jetzt das Konto mit
+  `--erwartet`); Token in `.env` MACO470 (Sicherung `~/env-backups/`) + NAS, Pruefsummen gleich. `.env` beide:
+  `GOOGLE_CALENDAR_DEFAULT_ATTENDEE` entfernt (CEO hat LUNAs Kalender direkt im iPhone, keine iCloud-Einladung mehr),
+  `GOOGLE_ACCOUNT_EMAIL=luna.hanserautisch@gmail.com` (CRM erkennt ein-/ausgehend). Live geprueft: Gmail-Profil = LUNA,
+  Kalender = LUNAs eigener, Selbstcheck gruen.
 - Ziel / Scope: `deploy/google_oauth_neu.py` mit dem LUNA-Konto (Token nur in die `.env` MACO470 + NAS),
   Selbstcheck gruen, Telegram-Werkzeuge + Briefing + Watcher gegen das neue Konto pruefen.
 - Gate: Briefing, Agenda und LUNA-Suche laufen; Selbstcheck meldet keinen Fehler.

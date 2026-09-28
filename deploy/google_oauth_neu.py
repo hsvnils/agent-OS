@@ -77,6 +77,7 @@ def main() -> int:
     ap.add_argument("--port", type=int, default=8799)
     ap.add_argument("--ohne-nas", action="store_true")
     ap.add_argument("--nur-nas", action="store_true")
+    ap.add_argument("--erwartet", default="", help="Nur dieses Google-Konto akzeptieren (z. B. luna.hanserautisch@gmail.com)")
     a = ap.parse_args()
     if a.nur_nas:
         tok = _env_wert(SCHLUESSEL)
@@ -101,6 +102,12 @@ def main() -> int:
     build("calendar", "v3", credentials=creds, cache_discovery=False).events().list(
         calendarId="primary", maxResults=1).execute()
     print("Test: Kalender-Abruf mit neuem Zugang ok")
+    konto = build("gmail", "v1", credentials=creds, cache_discovery=False).users().getProfile(userId="me").execute()
+    konto = (konto.get("emailAddress") or "").lower()
+    print(f"Angemeldetes Konto: {konto}")
+    if a.erwartet and konto != a.erwartet.lower():
+        print(f"ABBRUCH: erwartet {a.erwartet} -- nichts geaendert. Bitte mit dem richtigen Konto erneut bestaetigen.")
+        return 2
     ziel = Path.home() / "env-backups" / f"orchestrator.env.{datetime.now():%Y%m%d-%H%M%S}.vor-google-neu"
     ziel.parent.mkdir(exist_ok=True)
     shutil.copy2(ENV, ziel)
