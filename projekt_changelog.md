@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 10:19] — Claude Code (MACO470)
+- **Was:** Neue Roadmap `LUNA_GOOGLE_KONTO_ROADMAP.md` (geplant, 6 Etappen, 3 offene CEO-Entscheidungen) fuer ein
+  eigenes Google-Konto von LUNA; in `ROADMAP.md` registriert; Entscheidung im Register. Nur Planung, keine Umsetzung.
+- **Warum:** CEO 2026-09-28: „Luna braucht einfach ein eigenes Google-Konto".
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-28 09:51] — Claude Code (MACO470)
 - **Was:** Etappen 3 und 3b abgenommen (CEO, AN-2026-0001; Erinnerungen nach BF-33 nachgeholt, im Apple-Kalender
   sichtbar). Verlauf zeigt „Erinnerungen nachgeholt" statt des technischen Namens (Cache v38). Roadmap aktualisiert;
