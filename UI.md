@@ -218,5 +218,8 @@ ein **helles, glasiges, dashboard-/sektionsbasiertes** Design (Vorbild: „Flux"
 - **Struktur V2:** Top-Nav (Icon-Reihe + Aktions-Pills + Sprache/Theme/Avatar) statt Sidebar; Kachel-Grid
   (`--v2-radius`-Glaskarten) fuers Dashboard; Apps werden **geroutete Voll-Sektionen** in `#v2-app` statt
   Fenster. Helles Default-Theme; Dunkel-Variante `html.v2-dark` optional.
+- **Belege ganzseitig (CEO 2026-09-28):** Angebote, Auftraege, Rechnungen, Belege und alle weiteren Buchhaltungs-Ansichten
+  (Editor **und** Detail) oeffnen immer ueber die ganze Flaeche (`openModal(titel, html, true)` -> `.v2-modal-card.breit`),
+  mehrspaltig auf breiten Bildschirmen. Stammdaten wie Kunden duerfen in der schmalen Seitenleiste bleiben.
 - **Neue Funktion in V2:** als Kachel (Dashboard) und/oder als Sektion; nur `--v2-*`-Tokens/`.v2-*`-Komponenten
   (`.v2-tile`, `.v2-kpi`, `.v2-badge`, `.v2-table`, Gauge) verwenden; Daten ueber vorhandene `/api/...`-Endpunkte.
