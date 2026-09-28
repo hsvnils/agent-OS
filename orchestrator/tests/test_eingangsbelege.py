@@ -92,6 +92,16 @@ class TestAuslesen(unittest.TestCase):
         self.assertEqual(kategorie_raten("Adobe Creative Cloud Abo"), "software")
         self.assertEqual(kategorie_raten("irgendwas"), "sonstiges")
 
+    def test_4b_regel_vorschlag_shop_rechnung(self):
+        """Echter Aufbau (Calumet): Absenderzeile mit ·, Belegnummer, Auftragsdatum VOR Belegdatum, Zusteller DHL."""
+        t = ("Photo Video Shop GmbH · Friesenweg 12 · 22763 Hamburg\nPhoto Video Shop GmbH\nRechnung\n"
+             "Auftragsdatum: 21.09.2026\nBelegdatum: 22.09.2026\nBelegnummer: RG143556\nZusteller: DHL\nVersandart: DE\n"
+             "1 SmallRig Cage Kit 4336 für Sony Alpha 6700 1 Stk. 19,0 % 51,92 € 51,92 €\n"
+             "Gesamtbetrag (netto) 43,63 €\nGesamtbetrag (brutto) 51,92 €\n")
+        v = vorschlag_regeln(t)
+        self.assertEqual((v["lieferant"], v["rechnungsnummer"], v["rechnungsdatum"], v["betrag"], v["kategorie"]),
+                         ("Photo Video Shop GmbH", "RG143556", "2026-09-22", "51,92", "gwg"))
+
     def test_5_llm_antwort_tolerant(self):
         v = vorschlag_llm('Hier: {"lieferant": "Druckerei Nord", "rechnungsnummer": "DN-1", "rechnungsdatum": "2026-09-12", '
                           '"betrag": "1190", "faellig_am": "gestern", "leistung": "T-Shirts", "kategorie": "wareneinkauf"} fertig')
@@ -201,6 +211,26 @@ class TestAnbindungen(unittest.TestCase):
         self.assertEqual(len(meldungen), 1)
         self.assertEqual(mail_eingang_pruefen(st, g, absender=["hsvnils@icloud.com"]), [])   # idempotent
         self.assertEqual(g.abrufe, 1)                                                    # m1 einmal, m2 (fremd) nie geladen
+
+    def test_1b_apple_mail_weiterleitung_inline_verschachtelt(self):
+        """BF-36: Apple Mail leitet die PDF als inline-Teil in multipart/alternative > multipart/mixed weiter;
+        Logos aus dem HTML (Content-ID/klein) sind keine Belege."""
+        from email.mime.application import MIMEApplication
+        from email.mime.image import MIMEImage
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from orchestrator.core.eingangsbelege import anhaenge
+        pdf = _pdf(TEXT)
+        aussen, innen = MIMEMultipart("alternative"), MIMEMultipart("mixed")
+        innen.attach(MIMEText("<p>Weitergeleitet</p>", "html"))
+        logo = MIMEImage(b"\xff\xd8\xff" + b"0" * 5000, "jpeg")
+        logo.add_header("Content-Disposition", "inline", filename="logo.jpg"); logo.add_header("Content-ID", "<l1>")
+        innen.attach(logo)
+        teil = MIMEApplication(pdf, "pdf")
+        teil.add_header("Content-Disposition", "inline", filename="Calumet - Rechnung RG1.pdf")
+        innen.attach(teil)
+        aussen.attach(innen)
+        self.assertEqual(anhaenge(aussen.as_bytes()), [("Calumet - Rechnung RG1.pdf", pdf)])
 
     def test_2_backoffice_ergebnis_wird_uebernommen(self):
         from orchestrator.core.auftraege import AuftragStore

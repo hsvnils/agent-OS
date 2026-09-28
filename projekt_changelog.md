@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 14:40] — Claude Code
+- **Was:** Beleg-Mail-Eingang erkennt jetzt auch eingebettete (inline) und verschachtelte Anhaenge, wie Apple Mail sie beim Weiterleiten erzeugt (BF-36); Regel-Vorschlag fuer Eingangsrechnungen geschaerft (Belegnummer, Belegdatum, Lieferant ohne Adresse, Kategorie-Woerter).
+- **Warum:** Abnahme Etappe 6 -- vom CEO weitergeleitete Calumet-Rechnung (Kamera-Zubehoer) wurde nicht aufgenommen.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/tests/test_eingangsbelege.py`, `docs/bekannte-fehler.md`
+
 ## [2026-09-28 13:39] — Claude Code (MACO470)
 - **Was:** KUNDEN_FINANZEN Etappe 6 (Eingangsrechnungen/Belege mit PDF-Scan): `core/eingangsbelege.py` (Aufnahme ER-,
   E-Rechnung UBL/CII/ZUGFeRD, PDF-Text, OCR, Regel- + Backoffice-Vorschlag, Buchen/Bezahlt/Verwerfen, Mail-Eingang nur
