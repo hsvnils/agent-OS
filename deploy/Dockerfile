@@ -5,9 +5,11 @@ FROM python:3.12-slim
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git ca-certificates ffmpeg fonts-dejavu-core \
+    tesseract-ocr tesseract-ocr-deu poppler-utils \
  && rm -rf /var/lib/apt/lists/*
 # ffmpeg: Reel-Pipeline (Schnitt) auf der NAS -- ersetzt den Mac-Cutter fuer den naechtlichen Reel-Job.
 # fonts-dejavu-core: Schrift mit €/Gedankenstrich fuer Angebots-/Rechnungs-PDFs (KUNDEN_FINANZEN Etappe 3).
+# tesseract-ocr(+deu) + poppler-utils: Texterkennung fuer Belege (Fotos/Scans), lokal (KUNDEN_FINANZEN Etappe 6).
 
 # Laufzeit-Abhaengigkeiten des Telegram-Kanals:
 #  - claude-agent-sdk: delegate + Execution-Engine (gebundelte CLI, Linux-Build)
@@ -17,12 +19,13 @@ RUN apt-get update \
 #  - openai: Multi-Provider-Fallback fuer den Chat (Anthropic zuerst, OpenAI bei Engpass)
 #  - pip-audit: Dependency-CVE-Scan fuer den Cybersecurity-Agent (Phase 21, sicherheits_audit)
 #  - fpdf2: PDF fuer Angebote/Rechnungen (KUNDEN_FINANZEN Etappe 3, CEO-Freigabe 2026-09-27)
+#  - pypdf: PDF-Text + ZUGFeRD-Anhang aus Eingangsrechnungen lesen (Etappe 6; 6.19.0 ohne bekannte Luecken)
 # pip selbst aktuell halten: das Base-Image bundlet pip 25.0.1 -> mehrere CVEs
 # (u. a. PYSEC-2026-196, CVE-2025-8869). >=26.1.2 deckt alle bekannten Funde ab.
 RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.2"
 RUN pip install --no-cache-dir "claude-agent-sdk==0.2.107" "anthropic==0.111.0" \
     "google-api-python-client==2.149.0" "google-auth==2.35.0" "tzdata" "openai" \
-    "fastapi==0.138.0" "uvicorn==0.49.0" "pip-audit==2.10.1" "fpdf2==2.8.4"
+    "fastapi==0.138.0" "uvicorn==0.49.0" "pip-audit==2.10.1" "fpdf2==2.8.4" "pypdf==6.19.0"
 
 ENV PYTHONUNBUFFERED=1
 # Git-Identitaet + safe.directory SYSTEMWEIT (/etc/gitconfig) -- gilt fuer JEDEN User, auch den

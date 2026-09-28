@@ -71,6 +71,7 @@ const SECTIONS = [
   { id: "kunden", icon: "🏢", label: "Kunden", app: "kunden" },
   { id: "angebote", icon: "📄", label: "Angebote", app: "angebote" },
   { id: "rechnungen", icon: "🧾", label: "Rechnungen", app: "rechnungen" },
+  { id: "belege", icon: "📥", label: "Belege", app: "belege" },
   { id: "radar", icon: "🎯", label: "Radar", app: "crm" },
   { id: "content", icon: "✎", label: "Content", app: "trends" },
   { id: "cutter", icon: "🎬", label: "Cutter", app: "cutter" },
@@ -1199,6 +1200,119 @@ function reBezahltForm(nr) {
     <div class="v2-card-actions"><button class="v2-btn ok" data-act="re-bezahlt" data-id="${esc(nr)}">💶 Zahlung buchen</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="rez-msg" class="v2-msg"></div></div>`;
 }
 
+/* =========================== Belege / Eingangsrechnungen (KUNDEN_FINANZEN Etappe 6) =========================== */
+// Hochladen (Ziehen, Auswahl, Kamera) oder an LUNA weiterleiten -> lokal auslesen -> Vorschlag -> CEO bucht.
+const BL_STATUS = { zu_pruefen: ["Zu prüfen", "wartet"], gebucht: ["Gebucht", "ok"], verworfen: ["Verworfen", "neutral"] };
+const blBadge = (st) => { const [l, c] = BL_STATUS[st] || [st, "neutral"]; return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
+const TQ = { "xml": "E-Rechnung (XML)", "pdf-text": "PDF-Text", "ocr": "Texterkennung (Scan/Foto)", "leer": "kein Text erkannt" };
+let BL_KAT = {};
+RENDER.belege = renderBelege;
+async function renderBelege(meldung) {
+  const sub = SUBTAB.belege || "pruefen";
+  const d = await jget("/api/finanzen/belege") || { belege: [], kategorien: {} };
+  BL_KAT = d.kategorien || {};
+  const alle = d.belege || [];
+  const liste = sub === "pruefen" ? alle.filter(b => b.status === "zu_pruefen") : sub === "gebucht" ? alle.filter(b => b.status === "gebucht") : alle;
+  const jahr = String(new Date().getFullYear());
+  const gebuchtJahr = alle.filter(b => b.status === "gebucht" && String(b.rechnungsdatum || "").startsWith(jahr));
+  const rows = liste.map(b => `<tr class="klick" data-act="bl-detail" data-id="${esc(b.nummer)}"><td><b>${esc(b.nummer)}</b>${b.quelle === "mail" ? " ✉️" : ""}${b.e_rechnung ? " <small>E-Rechnung</small>" : ""}</td><td>${esc(b.lieferant || b.dateiname)}</td><td>${esc(datumDe(b.rechnungsdatum))}</td><td style="text-align:right">${b.betrag_cent != null ? cent2eur(b.betrag_cent) : "–"}</td><td>${esc(BL_KAT[b.kategorie] || "")}</td><td>${blBadge(b.status)}${b.bezahlt_am ? " 💶" : ""}</td></tr>`).join("");
+  const upload = `<div class="v2-bl-drop" id="bl-drop"><b>Rechnungen hierher ziehen</b><small>PDF, E-Rechnung (XML), Foto · bis 15 MB · mehrere auf einmal</small>
+    <div class="v2-card-actions" style="justify-content:center"><label class="v2-btn pri">📄 Dateien wählen<input id="bl-datei" type="file" multiple accept=".pdf,.xml,image/*" hidden></label>
+    <label class="v2-btn">📷 Foto aufnehmen<input id="bl-kamera" type="file" accept="image/*" capture="environment" hidden></label></div>
+    <small class="v2-sub">Oder Rechnungen per Mail an <b>luna.hanserautisch@gmail.com</b> weiterleiten — LUNA übernimmt sie automatisch (nur von deinen Adressen).</small>
+    <div id="bl-msg" class="v2-msg" style="white-space:pre-wrap">${meldung ? esc(meldung) : ""}</div></div>`;
+  const body = `${tile("Beleg hinzufügen", upload, "w12")}
+    ${kpiTile("Zu prüfen", String(alle.filter(b => b.status === "zu_pruefen").length), null, "warten auf dich")}
+    ${kpiTile("Ausgaben " + jahr, cent2eur(gebuchtJahr.reduce((x, b) => x + (b.betrag_cent || 0), 0)), null, `${gebuchtJahr.length} gebuchte Belege`)}
+    ${kpiTile("Unbezahlt", String(alle.filter(b => b.status === "gebucht" && !b.bezahlt_am).length), null, "gebucht, noch offen")}
+    ${tile(sub === "pruefen" ? "Zu prüfen" : sub === "gebucht" ? "Gebucht" : "Alle Belege", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Lieferant / Datei</th><th>Datum</th><th style="text-align:right">Betrag</th><th>Kategorie</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow(sub === "pruefen" ? "Nichts zu prüfen." : "Noch keine Belege."), "w12")}`;
+  $("#v2-app").innerHTML = secHead("Belege & Eingangsrechnungen") + tabs("belege", [["pruefen", "Zu prüfen"], ["gebucht", "Gebucht"], ["alle", "Alle"]]) + `<div class="v2-grid">${body}</div>`;
+  const drop = $("#bl-drop");
+  ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("aktiv"); }));
+  ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("aktiv"); }));
+  drop.addEventListener("drop", e => blHochladen([...e.dataTransfer.files]));
+  $("#bl-datei").addEventListener("change", e => blHochladen([...e.target.files]));
+  $("#bl-kamera").addEventListener("change", e => blHochladen([...e.target.files]));
+}
+function blLesen(datei) {                        // -> {name, daten: base64}; grosse Fotos im Browser verkleinern
+  return new Promise((ok, nein) => {
+    const alsB64 = (blob, name) => { const r = new FileReader(); r.onload = () => ok({ name, daten: String(r.result).split(",")[1] }); r.onerror = nein; r.readAsDataURL(blob); };
+    if (/^image\/(jpeg|png|webp)$/.test(datei.type) && datei.size > 2500000) {
+      const img = new Image(), url = URL.createObjectURL(datei);
+      img.onload = () => { const f = Math.min(1, 2400 / Math.max(img.width, img.height)); const c = document.createElement("canvas"); c.width = Math.round(img.width * f); c.height = Math.round(img.height * f);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); c.toBlob(b => alsB64(b, datei.name.replace(/\.\w+$/, "") + ".jpg"), "image/jpeg", 0.88); };
+      img.onerror = () => { URL.revokeObjectURL(url); alsB64(datei, datei.name); };
+      img.src = url;
+    } else alsB64(datei, datei.name);
+  });
+}
+async function blHochladen(dateien) {
+  if (!dateien.length) return;
+  const msg = $("#bl-msg"); if (msg) { msg.className = "v2-msg"; msg.textContent = `⏳ ${dateien.length} Datei(en) werden ausgelesen …`; }
+  const zeilen = [];
+  for (let i = 0; i < dateien.length; i += 5) {                      // in kleinen Paketen senden
+    const paket = await Promise.all(dateien.slice(i, i + 5).map(blLesen));
+    const r = await jpost("/api/finanzen/belege/hochladen", { dateien: paket });
+    if (!r) { zeilen.push("Upload fehlgeschlagen (Verbindung oder Datei zu groß)."); continue; }
+    (r.ergebnisse || []).forEach(e => zeilen.push(e.ok ? (e.doppelt ? `${e.name}: schon vorhanden als ${e.nummer}` : `${e.name} → ${e.nummer} (${TQ[e.text_quelle] || e.text_quelle})`) : `${e.name}: ${e.hinweis}`));
+  }
+  SUBTAB.belege = "pruefen";
+  return renderBelege(zeilen.join("\n"));
+}
+async function blDetail(nr, meldung, fehler) {
+  openModal(nr, `<div class="v2-empty">Lade…</div>`, true);
+  const d = await jget("/api/finanzen/belege/" + encodeURIComponent(nr));
+  const b = d && d.beleg; if (!b) return openModal(nr, emptyRow("Beleg nicht gefunden."), true);
+  BL_KAT = d.kategorien || BL_KAT;
+  const f = Object.keys(b.felder || {}).length ? b.felder : null, v = b.vorschlag || {};
+  const w = (k) => f ? (k === "betrag" ? cent2feld(f.betrag_cent) : f[k] || "") : (v[k] || "");
+  const src = `/api/finanzen/belege/${encodeURIComponent(nr)}/datei`;
+  const vorschau = (b.mime || "").startsWith("image/") ? `<img src="${src}" alt="Beleg" class="v2-bl-bild">`
+    : b.mime === "application/pdf" ? `<iframe src="${src}" class="v2-bl-pdf" title="Beleg"></iframe>` : `<pre class="v2-mail-text">${esc(b.text || "")}</pre>`;
+  const quelle = { "e-rechnung": "E-Rechnung (exakt)", regeln: "Schnell-Erkennung", backoffice: "LUNA-Backoffice (lokale KI)" }[v.quelle] || v.quelle || "";
+  const kiLaeuft = !f && v.quelle !== "backoffice" && v.quelle !== "e-rechnung" && ["neu", "in_arbeit"].includes(d.ki_status);
+  const katOpt = Object.entries(BL_KAT).map(([k, l]) => `<option value="${esc(k)}" ${w("kategorie") === k ? "selected" : ""}>${esc(l)}</option>`).join("");
+  const lief = (d.lieferanten || []).map(l => `<option value="${esc(l.name)}">`).join("");
+  const gesperrt = b.status === "verworfen" ? "disabled" : "";
+  const lbl = { eingang_angelegt: "Eingegangen", eingang_vorschlag: "Vorschlag", eingang_gebucht: "Gebucht", eingang_bezahlt: "Bezahlt", eingang_verworfen: "Verworfen" };
+  const verlauf = (b.verlauf || []).slice().reverse().map(x => `<div class="v2-list-row"><div class="grow"><b>${esc(lbl[x.typ] || x.typ)}${x.quelle ? " (" + esc(x.quelle) + ")" : ""}${x.datum ? " " + esc(datumDe(x.datum)) : ""}</b><small>${esc(zeit(x.ts))} · ${esc(x.von || "")}${x.grund ? " · " + esc(x.grund) : ""}</small></div></div>`).join("");
+  openModal(`${nr} · ${b.dateiname}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
+    <div class="v2-an-detail"><div>
+      ${vorschau}
+      <div class="v2-kv"><span>Eingang</span><b>${esc(zeit(b.eingegangen))} · ${b.quelle === "mail" ? "per Mail" : "Upload"} · ${esc(TQ[b.text_quelle] || b.text_quelle)}</b></div>
+      <h3>Verlauf</h3>${verlauf}
+    </div><div>
+      <div class="v2-kv"><span>Status</span>${blBadge(b.status)}${b.bezahlt_am ? ` <span class="v2-badge ok">bezahlt ${esc(datumDe(b.bezahlt_am))}</span>` : ""}</div>
+      ${!f ? `<div class="v2-kv"><span>Vorschlag von</span><b>${esc(quelle)}${kiLaeuft ? " · KI liest noch …" : ""}</b></div>` : ""}
+      ${kiLaeuft ? `<button class="v2-btn" data-act="bl-detail" data-id="${esc(nr)}">🔄 KI-Vorschlag abholen</button>` : ""}
+      <h3>${f ? "Gebucht (korrigierbar)" : "Prüfen & buchen"}</h3><div class="v2-form">
+        <label class="v2-feld"><small>Lieferant *</small><input id="bl-lieferant" list="bl-lieferanten" value="${esc(w("lieferant"))}" ${gesperrt}><datalist id="bl-lieferanten">${lief}</datalist></label>
+        <label class="v2-modlbl"><input type="checkbox" id="bl-lief-anlegen" ${f && f.lieferant_firma ? "" : "checked"} ${gesperrt}> im Kundenstamm als Lieferant führen</label>
+        <div class="v2-an-zeile"><label class="v2-feld"><small>Rechnungsnummer</small><input id="bl-nr" value="${esc(w("rechnungsnummer"))}" ${gesperrt}></label>
+          <label class="v2-feld"><small>Rechnungsdatum *</small><input id="bl-datum" type="date" value="${esc(w("rechnungsdatum"))}" ${gesperrt}></label>
+          <label class="v2-feld"><small>Fällig am</small><input id="bl-faellig" type="date" value="${esc(w("faellig_am"))}" ${gesperrt}></label></div>
+        <div class="v2-an-zeile"><label class="v2-feld"><small>Betrag brutto (€) *</small><input id="bl-betrag" inputmode="decimal" value="${esc(w("betrag"))}" ${gesperrt}></label>
+          <label class="v2-feld" style="grid-column: span 2"><small>Kategorie (EÜR) *</small><select id="bl-kat" ${gesperrt}><option value="">— wählen —</option>${katOpt}</select></label></div>
+        <label class="v2-feld"><small>Leistung / was wurde gekauft</small><input id="bl-leistung" value="${esc(w("leistung"))}" ${gesperrt}></label>
+        <label class="v2-feld"><small>Notiz</small><input id="bl-notiz" value="${esc(f ? f.notiz || "" : "")}" ${gesperrt}></label>
+        ${b.status !== "verworfen" ? `<div class="v2-card-actions"><button class="v2-btn pri" data-act="bl-buchen" data-id="${esc(nr)}">✔ ${f ? "Korrektur buchen" : "Buchen"}</button>
+          ${f && !b.bezahlt_am ? `<button class="v2-btn ok" data-act="bl-bezahlt" data-id="${esc(nr)}">💶 Bezahlt</button>` : ""}
+          ${!f ? `<button class="v2-btn" data-act="bl-verwerfen" data-id="${esc(nr)}">Kein Beleg / verwerfen</button>` : ""}</div>` : `<div class="v2-msg">Verworfen: ${esc(b.grund || "")}</div>`}
+        <div id="bl-form-msg" class="v2-msg"></div></div>
+      <small class="v2-sub">Kleinunternehmer: Der Bruttobetrag ist die Ausgabe (kein Vorsteuerabzug). Das Original bleibt unverändert archiviert.</small>
+    </div></div>`, true);
+}
+async function blBuchen(nr, trotz) {
+  const felder = { lieferant: $("#bl-lieferant").value.trim(), rechnungsnummer: $("#bl-nr").value.trim(), rechnungsdatum: $("#bl-datum").value, faellig_am: $("#bl-faellig").value,
+    betrag: $("#bl-betrag").value.trim(), kategorie: $("#bl-kat").value, leistung: $("#bl-leistung").value.trim(), notiz: $("#bl-notiz").value.trim(), trotz_doppelt: !!trotz };
+  const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(nr)}/buchen`, { felder, lieferant_anlegen: $("#bl-lief-anlegen").checked });
+  if (!r) return kundenMsg("bl-form-msg", "Keine Verbindung zum Server.", false);
+  if (!r.ok && /schon als/.test(r.hinweis || "") && confirm(r.hinweis + "\n\nTrotzdem buchen?")) return blBuchen(nr, true);
+  if (!r.ok) return kundenMsg("bl-form-msg", r.hinweis || "Fehler.", false);
+  if (AKTIV === "belege") renderBelege();
+  return blDetail(nr, `Gebucht: ${r.felder.lieferant} · ${cent2eur(r.felder.betrag_cent)} · ${BL_KAT[r.felder.kategorie] || r.felder.kategorie}`);
+}
+
 /* =========================== Collab-Radar =========================== */
 RENDER.radar = renderCollabRadar;
 async function renderCollabRadar() {
@@ -1516,6 +1630,10 @@ async function handleAct(act, el) {
       if (AKTIV === "angebote") renderAngebote();
       return anDetail(id, r && r.ok ? ["Als versendet markiert.", ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
+    case "bl-detail": return blDetail(id);
+    case "bl-buchen": return blBuchen(id);
+    case "bl-bezahlt": { const datum = prompt("Bezahlt am (JJJJ-MM-TT):", heuteIso()); if (datum === null) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/bezahlt`, { datum }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Als bezahlt markiert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
+    case "bl-verwerfen": { const grund = prompt("Warum ist das kein Beleg? (z. B. versehentlich hochgeladen)", ""); if (!grund) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/verwerfen`, { grund }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Verworfen — die Datei bleibt archiviert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "re-neu": return reEditor("");
     case "re-detail": return reDetail(id);
     case "re-bearbeiten": return reEditor(id);

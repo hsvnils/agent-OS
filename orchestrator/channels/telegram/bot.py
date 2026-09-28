@@ -439,6 +439,9 @@ def _start_security_loop(ctx, secrets) -> None:
     threading.Thread(target=loop, daemon=True, name="security-loop").start()
 
 
+_BELEG_MAILS_GESEHEN: set = set()      # Mail-IDs ohne verwertbaren Anhang nicht bei jedem Poll neu laden
+
+
 def _start_buchhaltung_loop(ctx) -> None:
     """KUNDEN_FINANZEN Etappe 1: taeglich 05:00 (DE) Hash-Kette + Belege der Buchhaltung pruefen, Alarm bei Befund.
 
@@ -1368,6 +1371,15 @@ def main() -> None:
                                 and not ctx.agenda.briefing_gesendet("drive-stand", _j.date().isoformat()):
                             if stand_sichern(_bh, ctx.google).get("ok"):
                                 ctx.agenda.markiere_briefing("drive-stand", _j.date().isoformat())
+                        # KUNDEN_FINANZEN Etappe 6: vom CEO an LUNA weitergeleitete Belege uebernehmen
+                        from ...core.eingangsbelege import EingangStore, mail_eingang_pruefen
+                        from ...core.auftraege import AuftragStore
+                        _abs = [x for x in str(secrets.get("BELEG_ABSENDER", "hsvnils@icloud.com,hanserautisch@gmail.com,"
+                                                                          "nils@hanserautisch.de")).split(",") if x.strip()]
+                        mail_eingang_pruefen(EingangStore(_bh), ctx.google, absender=_abs,
+                                             backoffice=AuftragStore(ROOT / "backoffice" / "log.jsonl", secrets=ctx.leak_secrets),
+                                             notify=(ctx.notifications.enqueue if ctx.notifications else None),
+                                             gesehen=_BELEG_MAILS_GESEHEN)
                     except Exception as exc:
                         print(f"[beleg-sicherung] {exc}", flush=True)
                 # Instagram-DM-Poll: opt-in INSTAGRAM_DM_POLL=1. Token selbst-erneuernd (INSTAGRAM_USER_TOKEN
