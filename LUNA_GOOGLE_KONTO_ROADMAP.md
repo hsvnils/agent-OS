@@ -4,8 +4,7 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: CEO gibt seinen Kalender fuer luna.hanserautisch@gmail.com mit „Alle Termindetails sehen" frei
-  (nur lesen); dann Go fuer Etappe 2 (Deploy, Umschalten auf das LUNA-Konto, `GOOGLE_CALENDAR_LESEN` setzen, ein Neustart).
+- Naechster Schritt: Go fuer Etappe 2 (Deploy, Umschalten auf das LUNA-Konto per Google-Link, ein Neustart).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -39,7 +38,7 @@ kann." LUNA arbeitet kuenftig mit **eigenem** Gmail, Kalender, Drive und Sheets.
 ## Scope
 
 LUNA-Google-Konto anbinden (OAuth mit `deploy/google_oauth_neu.py`), eigener LUNA-Kalender
-(`calendarId` konfigurierbar), Mail-Eingang ueber Weiterleitungsfilter, Angebots-Versand auf das neue Modell umstellen,
+(`calendarId` konfigurierbar), eigenes LUNA-Postfach (keine Weiterleitung), Angebots-Versand auf das neue Modell umstellen,
 Drive/Sheets im LUNA-Konto, alten Zugang auf hanserautisch@gmail.com widerrufen, Doku/Tests.
 
 ## Nicht-Scope
@@ -56,10 +55,14 @@ Drive/Sheets im LUNA-Konto, alten Zugang auf hanserautisch@gmail.com widerrufen,
 1. **Konto:** `luna.hanserautisch@gmail.com` (Wiederherstellung: Handynummer/Mail des CEO).
 2. **Angebote verschicken:** LUNA sendet **aus ihrem Konto**, erst nach dem Klick „Jetzt senden" des CEO in LUNA-OS
    (mit Vorschau); Antworten landen bei LUNA und werden dem CEO gemeldet.
-3. **Mail-Eingang:** **komplette Weiterleitung** aller Mails von hanserautisch@gmail.com an LUNA (Gmail-Einstellung
-   „Weiterleitung", kein Filter). Hinweis: LUNA sieht damit weiterhin alle neuen Mails (auch Passwort-Resets) --
-   gewonnen ist, dass LUNA keinen Zugriff mehr **auf** das Hauptkonto hat (kein Archiv, kein Handeln als
-   hanserautisch, keine Verbindung zu YouTube/Meta-Logins, kein stiller Widerruf durch Aktionen am Hauptkonto).
+3. ~~Mail-Eingang: komplette Weiterleitung~~ -- **revidiert (CEO 2026-09-28): keine Weiterleitung.** „ALLES was mit Luna
+   zu tun hat, soll in ihrem Konto passieren, nicht im hanserautisch@gmail.com." LUNA bekommt nur Mails, die direkt an
+   `luna.hanserautisch@gmail.com` gehen.
+4. **Kalender:** nur LUNAs eigener -- keine Freigabe des CEO-Kalenders (auch nicht zum Lesen). Der CEO sieht LUNAs Termine
+   per Einladung an seine iCloud-Adresse oder indem er LUNAs Konto in der Apple-Kalender-App hinzufuegt; will LUNA einen
+   Termin des CEO kennen, laedt er sie ein.
+5. **Cloud-Projekt „LUNA"** (Anmelde-App) bleibt beim CEO-Konto (menschliche Kontrolle, keine Daten).
+6. **Vollstaendige Trennung:** nach der Umschaltung hat LUNA keinerlei Zugriff mehr auf hanserautisch@gmail.com.
 
 ## Etappen
 
@@ -77,36 +80,25 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 
 ### Etappe 1: Eigener LUNA-Kalender (Kalender-ID konfigurierbar)
 
-- Status: in Umsetzung (CEO-Go 2026-09-28) -- Code fertig auf `ai/luna-google-konto`
-- **Korrektur CEO 2026-09-28:** Termine werden in **LUNAs eigenem Kalender** angelegt (wie Mails ueber ihr eigenes
-  Postfach) -- **nicht** im Kalender des CEO. Keine Freigabe des CEO-Kalenders noetig.
-- Ergebnis bisher: `GoogleWorkspace(kalender_id=...)` bzw. `GOOGLE_CALENDAR_ID` an allen 4 Kalender-Stellen (Standard
-  `primary` = eigener Kalender des angemeldeten Kontos, nach Etappe 2 also LUNAs); Test + Gegenprobe; Suite 852 gruen.
-  Ein zwischenzeitlich eingetragenes `GOOGLE_CALENDAR_ID=hanserautisch@gmail.com` wieder aus beiden `.env` entfernt.
-- Sichtbarkeit fuer den CEO: jeder Termin laedt wie bisher `GOOGLE_CALENDAR_DEFAULT_ATTENDEE` (iCloud) ein -> erscheint im
-  Apple-Kalender; optional gibt LUNA ihren Kalender fuer hanserautisch@gmail.com frei (Etappe 2).
-- **Entscheidung CEO 2026-09-28:** LUNA **liest** den Kalender des CEO mit (Briefing, Kollisionen), schreibt aber nur in
-  ihren eigenen. Umgesetzt: `GOOGLE_CALENDAR_LESEN` (Kalender nur zum Lesen, kommagetrennt), Agenda mischt eigene + Lese-
-  Termine (Feld `kalender`), ein nicht lesbarer Lese-Kalender gibt einen Hinweis statt Ausfall. Nebenbei BF-34 behoben
-  (Ganztags- + Uhrzeit-Termine gemischt). Test + Gegenprobe, Suite 853 gruen. CEO gibt seinen Kalender fuer LUNA mit
-  „Alle Termindetails sehen" frei; `GOOGLE_CALENDAR_LESEN=hanserautisch@gmail.com` kommt erst in Etappe 2 in die `.env`
-  (vorher waeren die Termine doppelt, weil der Zugang noch das CEO-Konto ist).
-- Gate: nach Etappe 2 -- Angebots-Erinnerung liegt im LUNA-Kalender und erscheint per Einladung im Apple-Kalender.
+- Status: abgeschlossen (Code, 2026-09-28) -- wirkt mit der Umschaltung in Etappe 2
+- Ergebnis: Kalender-ID konfigurierbar (`GOOGLE_CALENDAR_ID`, Standard `primary` = eigener Kalender des angemeldeten
+  Kontos -> nach Etappe 2 LUNAs). **Kein** `.env`-Eintrag noetig. Zwischenstaende korrigiert: Eintrag
+  `GOOGLE_CALENDAR_ID=hanserautisch@gmail.com` wieder entfernt; die gebaute Lese-Funktion `GOOGLE_CALENDAR_LESEN` bleibt
+  **ungenutzt** (ohne Eintrag wirkungslos). BF-34 (Ganztags-/Uhrzeit-Termine gemischt) behoben. Tests + Gegenproben,
+  Suite 853 gruen.
+- Gate: nach Etappe 2 -- Angebots-Erinnerung liegt in LUNAs Kalender und erscheint per Einladung im Apple-Kalender.
 
 ### Etappe 2: Umschalten auf das LUNA-Konto
 
 - Status: geplant
 - Ziel / Scope: `deploy/google_oauth_neu.py` mit dem LUNA-Konto (Token nur in die `.env` MACO470 + NAS),
-  `GOOGLE_CALENDAR_LESEN=hanserautisch@gmail.com` in beide `.env`, Selbstcheck gruen, Telegram-Werkzeuge + Briefing + Watcher gegen das neue Konto pruefen.
+  Selbstcheck gruen, Telegram-Werkzeuge + Briefing + Watcher gegen das neue Konto pruefen.
 - Gate: Briefing, Agenda und LUNA-Suche laufen; Selbstcheck meldet keinen Fehler.
 
-### Etappe 3: Mail-Eingang ueber Weiterleitung
+### Etappe 3: ~~Mail-Eingang ueber Weiterleitung~~
 
-- Status: geplant
-- Ziel / Scope: CEO richtet in hanserautisch@gmail.com die **komplette Weiterleitung** an LUNA ein (Entscheidung 3);
-  Gmail verlangt einen Bestaetigungscode an die Zieladresse -- LUNA liest ihn aus ihrem Postfach. CRM-Mail-Tracking, Watcher und Briefing auf weitergeleitete Mails
-  pruefen (Originalabsender erhalten?).
-- Gate: eine weitergeleitete Collab-Anfrage landet im CRM der richtigen Firma; Briefing zeigt neue Mails.
+- Status: verworfen (CEO 2026-09-28, keine Weiterleitung) -- CRM-Mail-Tracking, Briefing und Watcher arbeiten nach
+  Etappe 2 mit LUNAs eigenem Postfach.
 
 ### Etappe 4: Angebots-Versand nach Entscheidung 2
 
