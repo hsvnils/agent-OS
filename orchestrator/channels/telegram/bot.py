@@ -1478,6 +1478,30 @@ def main() -> None:
                     cbchat = str((((cb.get("message") or {}).get("chat")) or {}).get("id", ""))
                     if allowed and cbchat != allowed:
                         _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "Nicht autorisiert."})
+                    elif data.startswith("eur:"):                  # Euro-Betrag buchen (Vorschau oben) -- nur nach ✅
+                        _, nr, c, datum, ent = data.split(":", 4)
+                        mid = (cb.get("message") or {}).get("message_id")
+                        if ent == "y":
+                            from ...core.buchhaltung import Buchhaltung as _BH
+                            from ...core.eingangsbelege import EingangStore as _ES, euro_buchen
+                            from ...core.erinnerungen import erledigte_entfernen
+                            _bh = _BH(ROOT / "buchhaltung")
+                            try:
+                                r = euro_buchen(_ES(_bh), nr, int(c), datum)
+                                weg = erledigte_entfernen(_bh, ctx.google, von="Telegram:CEO")
+                                from ...core.beleg_pdf import eur as _eur
+                                res = (f"✅ Gebucht: {nr} · {_eur(r['betrag_cent'])} · "
+                                       f"{'Geldeingang' if r['art'] == 'einnahme' else 'Zahlung'} am {datum[8:10]}.{datum[5:7]}.{datum[:4]}"
+                                       + (" · Kalender-Erinnerung gelöscht" if weg else ""))
+                            except (ValueError, KeyError) as exc:
+                                res = f"⚠️ Nicht gebucht: {exc}"
+                        else:
+                            res = "❌ Abgebrochen -- nichts gebucht."
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "OK"})
+                        if mid:
+                            _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
+                                                            "reply_markup": json.dumps({"inline_keyboard": []}),
+                                                            "text": fuer_telegram(res)})
                     elif data.startswith("apv:") and getattr(ctx, "approvals", None) is not None:
                         _, aid, ent = data.split(":", 2)
                         apv = ctx.approvals.get(aid)
@@ -1540,6 +1564,22 @@ def main() -> None:
                     _api(token, "sendMessage", {"chat_id": chat_id,
                          "text": "Das war keine Zahl — Freigabe abgebrochen. Frag gern neu."})
                 continue
+            # Euro-Betrag zu einem Beleg in Fremdwaehrung (z. B. „Facebook 241,80“) -> Vorschau mit ✅/❌ (CEO 2026-09-28)
+            try:
+                if (ROOT / "buchhaltung" / "log.jsonl").exists():
+                    from ...core.buchhaltung import Buchhaltung as _BH
+                    from ...core.eingangsbelege import EingangStore as _ES, euro_vorschau, euro_zuordnen, offene_fremdwaehrung
+                    _st = _ES(_BH(ROOT / "buchhaltung"))
+                    _z = euro_zuordnen(text, offene_fremdwaehrung(_st))
+                    if _z:
+                        _cb = f"eur:{_z['nummer']}:{_z['betrag_cent']}:{_z['datum']}"
+                        kb = {"inline_keyboard": [[{"text": "✅ Buchen", "callback_data": _cb + ":y"},
+                                                   {"text": "❌ Abbrechen", "callback_data": _cb + ":n"}]]}
+                        _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(euro_vorschau(_z)),
+                                                    "reply_markup": json.dumps(kb)})
+                        continue
+            except Exception as exc:
+                print(f"[euro] Zuordnung: {exc}", flush=True)
             if text.strip().lower() in ("/reset", "/neu", "/start"):
                 sessions.pop(chat_id, None)
                 _api(token, "sendMessage", {"chat_id": chat_id,

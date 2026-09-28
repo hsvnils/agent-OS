@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 19:40] — Claude Code
+- **Was:** Euro-Betrag per Telegram: der CEO schickt z. B. „Facebook 241,80“ (auch mit Belegnummer/Datum, auch als Sprachnachricht); LUNA ordnet regelbasiert dem offenen Fremdwaehrungs-Beleg zu, zeigt Vorschau mit ✅ Buchen / ❌ Abbrechen und bucht erst nach dem Klick (Beleg + Geldeingang), loescht danach die Kalender-Erinnerung; das To-do verschwindet, der CFO fasst nicht mehr nach. Fragen und mehrdeutige Nachrichten gehen normal an den Chat.
+- **Warum:** CEO-Wunsch: Euro-Summe der Facebook-Zahlung per Telegram zuordnen.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_euro_telegram.py` (neu), `docs/entscheidungs-register.md`, `docs/datenfluesse.md`
+
 ## [2026-09-28 19:05] — Head of Agents (umgesetzt durch Claude Code)
 - **Was:** Charta CFO erweitert: Finanz-Vollstaendigkeit ueberwachen und den CEO bei Fehlendem erinnern (Auftrag, Aufgabenkatalog: taeglicher Finanzcheck 05:00 + Monatsabgleich-Erinnerung, Workflow Finanzcheck); ausdruecklich nur melden, nie buchen/bestaetigen.
 - **Warum:** CEO-Anweisung („Die Finanzagents muessen immer im Blick haben, dass alles eingetragen ist und laeuft“); Diff vorgelegt, vom CEO freigegeben („Charta Erweiterung freigegeben“), AGENTS.md 3.3.

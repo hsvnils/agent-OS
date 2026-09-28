@@ -629,6 +629,102 @@ def fremdwaehrung_erinnern(st: EingangStore, google, heute: date | None = None) 
     return neu
 
 
+# -- Euro-Betrag per Telegram (CEO 2026-09-28) -----------------------------------------------------------------------
+# „Facebook 241,80“ / „ER-2026-0002 241,80 € am 26.09.“ -> Vorschau mit Knoepfen -> bei ✅ buchen + Geldeingang erfassen.
+# Regelbasiert (kein Raten durch ein Modell); gebucht wird erst nach dem Klick des CEO.
+
+_ALIASE = {"meta": ("meta", "facebook", "fb", "instagram", "insta")}
+
+
+def offene_fremdwaehrung(st: EingangStore) -> list[dict]:
+    return [x for x in st._falte(st.bh.eintraege()).values()
+            if x["status"] == "zu_pruefen" and (x.get("vorschlag") or {}).get("waehrung") not in (None, "", "EUR")]
+
+
+def euro_zuordnen(text: str, offene: list[dict], heute: date | None = None) -> dict | None:
+    """Nachricht -> {nummer, betrag_cent, datum, beleg} oder None (dann normaler Chat)."""
+    if not offene or not text:
+        return None
+    heute = heute or jetzt().date()
+    t = text.strip()
+    if "?" in t:                                                 # Fragen sind nie ein Buchungsauftrag
+        return None
+    nr = re.search(r"(?i)\bER-\d{4}-\d{4}\b", t)
+    rest = re.sub(r"(?i)\bER-\d{4}-\d{4}\b", " ", t)
+    datum = ""
+    m = re.search(r"\b(\d{1,2})\.(\d{1,2})\.(\d{2,4})?", rest)
+    if m:
+        jahr = m.group(3) or str(heute.year)
+        datum = _iso("", m.group(1), m.group(2), jahr)
+        if datum and datum > heute.isoformat() and not m.group(3):
+            datum = _iso("", m.group(1), m.group(2), str(heute.year - 1))
+        rest = rest[:m.start()] + " " + rest[m.end():]
+    betraege = re.findall(r"(?<![\w.,])(\d{1,3}(?:\.\d{3})*,\d{1,2}|\d+(?:[.,]\d{1,2})?)(?![\w.,])\s*(€|eur\b|euro\b)?",
+                          rest, re.I)
+    mit_euro = [b for b, w in betraege if w]
+    kandidaten = mit_euro or [b for b, _ in betraege if re.search(r"[.,]\d{1,2}$", b)]   # 2026 ist kein Betrag
+    if len(kandidaten) != 1:
+        return None
+    try:
+        betrag = cent(kandidaten[0])
+    except ValueError:
+        return None
+    if betrag <= 0:
+        return None
+    beleg = None
+    if nr:
+        beleg = next((x for x in offene if x["nummer"] == nr.group(0).upper()), None)
+    else:
+        klein, treffer = rest.lower(), []
+        for x in offene:
+            name = str((x.get("vorschlag") or {}).get("lieferant") or "").lower()
+            woerter = {w for w in re.findall(r"[a-zäöüß]{4,}", name)} - {"ireland", "limited", "gmbh", "platforms"}
+            for k, al in _ALIASE.items():
+                if k in name:
+                    woerter |= set(al)
+            if any(re.search(rf"\b{re.escape(w)}\b", klein) for w in woerter):
+                treffer.append(x)
+        if len(treffer) > 1:
+            return None                                          # mehrdeutig -> Belegnummer noetig
+        beleg = treffer[0] if treffer else None
+        if beleg is None and len(offene) == 1 and (mit_euro or re.search(r"(?i)konto|eingegangen|gutgeschrieben", rest)):
+            beleg = offene[0]
+    if beleg is None:
+        return None
+    return {"nummer": beleg["nummer"], "betrag_cent": betrag, "datum": datum or heute.isoformat(), "beleg": beleg,
+            "datum_angegeben": bool(datum)}
+
+
+def euro_vorschau(z: dict) -> str:
+    v = z["beleg"].get("vorschlag") or {}
+    ein = v.get("art") == "einnahme"
+    return (f"💶 {z['nummer']} · {v.get('lieferant') or z['beleg'].get('dateiname', '')}\n"
+            f"{v.get('betrag_fremd', '?')} {v.get('waehrung', '')} → {eur(z['betrag_cent'])}\n"
+            f"Als {'Einnahme' if ein else 'Ausgabe'} buchen und {'Geldeingang' if ein else 'Zahlung'} am "
+            f"{date.fromisoformat(z['datum']).strftime('%d.%m.%Y')} erfassen?"
+            + ("" if z["datum_angegeben"] else "\n(Anderes Datum? Schick z. B. „241,80 am 26.09.“)"))
+
+
+def euro_buchen(st: EingangStore, nummer: str, betrag_cent: int, datum: str, *, von: str = "Telegram:CEO") -> dict:
+    """Nach ✅ des CEO: Beleg mit den erkannten Feldern + Euro-Betrag buchen und die Zahlung erfassen."""
+    x = st.get(nummer)
+    if not x or x["status"] != "zu_pruefen":
+        raise ValueError(f"{nummer} ist nicht mehr offen -- schon gebucht oder verworfen.")
+    v = x.get("vorschlag") or {}
+    ein = v.get("art") == "einnahme"
+    kat = "umsatz" if ein else v.get("kategorie")
+    if not kat or not v.get("lieferant"):
+        raise ValueError(f"{nummer}: Lieferant/Kategorie nicht erkannt -- bitte in LUNA-OS buchen.")
+    st.buchen(nummer, {"art": "einnahme" if ein else "ausgabe", "lieferant": v["lieferant"],
+                       "rechnungsnummer": v.get("rechnungsnummer", ""), "rechnungsdatum": v.get("rechnungsdatum") or datum,
+                       "betrag": eur(betrag_cent).replace(" €", ""), "kategorie": kat,
+                       "leistung": v.get("leistung", ""),
+                       "notiz": f"{v.get('betrag_fremd', '?')} {v.get('waehrung', '')} laut Beleg; Euro-Betrag per Telegram"},
+              von=von)
+    st.bezahlt(nummer, datum, von=von)
+    return {"nummer": nummer, "betrag_cent": betrag_cent, "datum": datum, "art": "einnahme" if ein else "ausgabe"}
+
+
 def absender_echt(roh: bytes, absender: list[str]) -> bool:
     """Absender ist einer der eigenen UND von Gmail bestaetigt: im obersten `Authentication-Results`-Kopf (den setzt
     mx.google.com beim Empfang) besteht DMARC oder DKIM fuer genau die Domain der Absenderadresse. Faelschungen des
