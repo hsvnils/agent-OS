@@ -4,8 +4,8 @@
 - Stand: 2026-09-27
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: CEO startet die Container neu; Abnahme Etappe 4 (Auftrag aus AN-2026-0002 anlegen, PDF,
-  optional senden); danach Go fuer Etappe 5 (Rechnungen).
+- Naechster Schritt: CEO startet die Container neu; Abnahme Etappe 5 (Test-Rechnung aus AB-2026-0001 festschreiben,
+  PDF pruefen, stornieren); danach Go fuer Etappe 6 (Eingangsrechnungen + PDF-Scan).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -240,7 +240,18 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 5: Ausgangsrechnungen
 
-- Status: geplant
+- Status: umgesetzt (CEO-Go 2026-09-28 „weiter gehts"), Deploy + Abnahme offen
+- Ergebnis: `core/rechnungen.py` (`RechnungStore`): Entwurf **ohne Nummer** (frei oder aus Auftrag, aenderbar/verwerfbar)
+  -> **Festschreiben** ueber neues `Buchhaltung.festschreiben` (Nummer `RE-JJJJ-NNNN` + PDF + Eintrag in EINEM gesperrten
+  Schritt; Fehlversuche verbrauchen keine Nummer, lueckenlos auch parallel) -> Senden (genau das archivierte PDF, nur
+  Modul finanzen) -> Zahlung von Hand (Teil-/Restzahlung). **Storno** = Stornorechnung mit eigener Nummer (negativ,
+  Bezug + Grund), optional Korrektur-Entwurf; bezahlte Rechnungen nicht stornierbar. Pflicht: Steuernummer +
+  Leistungsdatum, kein USt-Feld. **Kleinunternehmer-Waechter** blockiert > 100.000 € Jahresumsatz bzw. Vorjahr > 25.000 €,
+  Warnung ab 80 %. Faelligkeits-Erinnerung in LUNAs Kalender, taeglich 05:00 Meldung ueberfaelliger Rechnungen.
+  LUNA-OS V2: Bereich „🧾 Rechnungen" (Modul finanzen, Offen/Alle/Entwuerfe, Umsatz-Balken), ganzseitiger Editor +
+  Detail, Knopf „🧾 Rechnung erstellen" im Auftrag. Tests (11) + Gegenprobe (Nummer vor der Pruefung -> 5 rot); PDFs
+  gesichtet; Headless-Chrome-Klicktest. Abweichung: Versand direkt aus LUNAs Konto statt Mail-Entwurf (CEO-Entscheidung
+  LUNA-Google-Konto).
 - Ziel / Scope: Rechnung aus Auftrag (oder frei), Pflichtangaben § 34a UStDV + Nummer + Leistungsdatum + fester
   Befreiungshinweis, **kein USt-Feld** (Schutz vor § 14c); Festschreiben (Nummer, eingefrorenes PDF, Hash); Storno- und
   Korrekturrechnung; Versand als Mail-Entwurf mit Anhang; Zahlungsziel, offene Posten, Erinnerung bei Faelligkeit;

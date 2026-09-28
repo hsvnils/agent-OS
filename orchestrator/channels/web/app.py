@@ -31,6 +31,7 @@ from ...core.kunden import DubletteFehler, KundenStore
 from ...core.angebote import AngebotStore, mail_lesen, mail_text as angebot_mail_text, preisliste_pdf
 from ...core.katalog import Katalog
 from ...core.beauftragung import AuftragBuch, auftrag_mail_text
+from ...core.rechnungen import RechnungStore, rechnung_mail_text
 from ...core.ig_inbox import IgInboxStore
 from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, CUTTER_FELDER, CUTTER_STATUSES,
                                    DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES, SOURCE_FELDER,
@@ -1489,6 +1490,178 @@ async def auftrag_senden(nummer: str, request: Request):
             kunden_store.bh.beleg_ablegen(roh["roh"], f"Mail_{a['nummer']}_aus_{r['id']}.eml", jahr=int(a["datum"][:4]),
                                           art="geschaeftsbrief", bezug=a["nummer"], von=_von(request))
         return {"an": an}
+    return _kunden_aktion(tun)
+
+
+# -- Ausgangsrechnungen (KUNDEN_FINANZEN Etappe 5; Modul finanzen ueber den Pfad /api/finanzen) -----------------
+
+def _rechnungen() -> RechnungStore:
+    return RechnungStore(kunden_store.bh, kunden_store, Katalog(kunden_store.bh))
+
+
+@app.get("/api/finanzen/rechnungen")
+def rechnungen_liste(jahr: int = 0):
+    return _rechnungen().uebersicht(jahr or None)
+
+
+@app.get("/api/finanzen/rechnungen/{kennung}")
+def rechnung_detail(kennung: str):
+    r = _rechnungen().get(kennung)
+    if not r:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Rechnung/Entwurf")
+    f = kunden_store.firma(r["firma"]) or {}
+    ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == r.get("ansprechpartner")), None)
+    return {"rechnung": r, "firma": {k: f.get(k) for k in ("nummer", "name", "rechnungsmail")}, "ansprechpartner": ap,
+            "mail_an": f.get("rechnungsmail") or (ap or {}).get("mail") or "", "google": bool(_google().verfuegbar()),
+            "firmendaten": bool(_firmendaten()), "steuernummer": bool(_firmendaten().get("steuernummer"))}
+
+
+@app.post("/api/finanzen/rechnungen")
+async def rechnung_entwurf_neu(request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _rechnungen().entwurf_anlegen(body.get("rechnung") or {}, von=_von(request)))
+
+
+@app.post("/api/finanzen/rechnungen/aus-auftrag/{nummer}")
+async def rechnung_aus_auftrag(nummer: str, request: Request):
+    def tun():
+        a = _auftraege().auftrag(nummer)
+        if not a:
+            raise KeyError(nummer)
+        return _rechnungen().entwurf_aus_auftrag(a, von=_von(request))
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/finanzen/rechnungen/{eid}")
+async def rechnung_entwurf_aendern(eid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _rechnungen().entwurf_aendern(eid, body.get("rechnung") or {}, von=_von(request)))
+
+
+@app.post("/api/finanzen/rechnungen/{eid}/verwerfen")
+async def rechnung_entwurf_verwerfen(eid: str, request: Request):
+    return _kunden_aktion(lambda: _rechnungen().entwurf_verwerfen(eid, von=_von(request)))
+
+
+@app.get("/api/finanzen/rechnungen/{kennung}/pdf")
+def rechnung_pdf(kennung: str):
+    rs = _rechnungen()
+    r = rs.get(kennung)
+    if not r:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Rechnung/Entwurf")
+    if r.get("status") == "entwurf":
+        fd = _firmendaten()
+        if not fd:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Firmendaten fehlen")
+        daten, name = rs.vorschau_pdf(kennung, fd), f"Rechnung_Entwurf_{kennung}.pdf"
+    else:
+        daten = (kunden_store.bh.dir / r["belege"][0]["pfad"]).read_bytes()        # das festgeschriebene Original
+        name = Path(r["belege"][0]["pfad"]).name.split("-", 1)[-1]
+    return Response(daten, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{name}"'})
+
+
+@app.post("/api/finanzen/rechnungen/{eid}/festschreiben")
+async def rechnung_festschreiben(eid: str, request: Request):
+    """Nummer + PDF + unveraenderlicher Eintrag; danach Kalender-Erinnerung zur Faelligkeit (LUNAs Kalender)."""
+    body = await _json(request)
+    rs = _rechnungen()
+
+    def tun():
+        if body.get("bestaetigt") is not True:
+            raise ValueError("Festschreiben braucht die ausdrueckliche Bestaetigung (danach nicht mehr aenderbar).")
+        fd = _firmendaten()
+        if not fd:
+            raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
+        r = rs.festschreiben(eid, fd, von=_von(request))
+        hinweise = []
+        if r.get("warnung"):
+            w = r["waechter"]
+            hinweise.append(f"Kleinunternehmer-Grenze: {round(w['anteil'] * 100)} % von 100.000 € erreicht.")
+        g = _google()
+        if g.verfuegbar():
+            x = rs.get(r["nummer"])
+            name = (kunden_store.firma(x["firma"]) or {}).get("name", x["firma"])
+            t = g.termin_anlegen(f"Rechnung {r['nummer']} fällig: {name}", f"{r['faellig_am']}T09:00:00",
+                                 f"{r['faellig_am']}T09:15:00", beschreibung=f"{r['nummer']} · {eur_text(x['summe_cent'])}",
+                                 bestaetigt=True)
+            if t.get("ok"):
+                rs.erinnerung_merken(r["nummer"], {"datum": r["faellig_am"], "id": t.get("termin_id", "")}, von=_von(request))
+            else:
+                hinweise.append(f"Kalender: {t.get('hinweis') or 'Fehler'}")
+        return {"nummer": r["nummer"], "faellig_am": r["faellig_am"], "hinweise": hinweise}
+    return _kunden_aktion(tun)
+
+
+def eur_text(c: int) -> str:
+    from ...core.beleg_pdf import eur
+    return eur(c)
+
+
+@app.get("/api/finanzen/rechnungen/{nummer}/versandvorschau")
+def rechnung_versandvorschau(nummer: str):
+    d = rechnung_detail(nummer)
+    r = d["rechnung"]
+    if r.get("status") == "entwurf":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Erst festschreiben, dann senden.")
+    betreff, text = rechnung_mail_text(r, d["ansprechpartner"], _firmendaten())
+    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": Path(r["belege"][0]["pfad"]).name.split("-", 1)[-1],
+            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": d["google"]}
+
+
+@app.post("/api/finanzen/rechnungen/{nummer}/senden")
+async def rechnung_senden(nummer: str, request: Request):
+    """Festgeschriebene Rechnung (genau das archivierte PDF) aus LUNAs Konto senden -- nur mit Bestaetigung."""
+    body = await _json(request)
+    rs = _rechnungen()
+
+    def tun():
+        if body.get("bestaetigt") is not True:
+            raise ValueError("Senden braucht die ausdrueckliche Bestaetigung aus der Vorschau.")
+        r = rs.get(nummer)
+        if not r or r.get("status") == "entwurf":
+            raise KeyError(nummer)
+        an = (body.get("an") or "").strip()
+        betreff, text = (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
+        if not an or "@" not in an or not betreff or not text:
+            raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
+        g = _google()
+        if not g.verfuegbar():
+            raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
+        pfad = r["belege"][0]["pfad"]
+        pdf = (kunden_store.bh.dir / pfad).read_bytes()
+        s = g.mail_senden(an, betreff, text, bestaetigt=True, absender_name=ABSENDER_NAME,
+                          anhaenge=[(Path(pfad).name.split("-", 1)[-1], pdf, "application/pdf")])
+        if not s.get("ok"):
+            raise ValueError(s.get("hinweis") or "Senden fehlgeschlagen.")
+        rs.versendet(r["nummer"], {"an": an, "message_id": s.get("id", ""), "thread_id": s.get("thread_id", ""),
+                                   "betreff": betreff}, von=_von(request))
+        roh = g.mail_roh(s["id"]) if s.get("id") else {}
+        if roh.get("ok"):
+            kunden_store.bh.beleg_ablegen(roh["roh"], f"Mail_{r['nummer']}_aus_{s['id']}.eml",
+                                          jahr=int(r["rechnungsdatum"][:4]), art="geschaeftsbrief", bezug=r["nummer"],
+                                          von=_von(request))
+        return {"an": an}
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/finanzen/rechnungen/{nummer}/bezahlt")
+async def rechnung_bezahlt(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _rechnungen().bezahlt(nummer, datum=body.get("datum") or "", betrag=body.get("betrag"),
+                                                        notiz=body.get("notiz") or "", von=_von(request)))
+
+
+@app.post("/api/finanzen/rechnungen/{nummer}/stornieren")
+async def rechnung_stornieren(nummer: str, request: Request):
+    body = await _json(request)
+
+    def tun():
+        fd = _firmendaten()
+        if not fd:
+            raise ValueError("Firmendaten fehlen.")
+        return _rechnungen().stornieren(nummer, fd, grund=body.get("grund") or "", korrektur=bool(body.get("korrektur")),
+                                        von=_von(request))
     return _kunden_aktion(tun)
 
 

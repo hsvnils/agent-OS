@@ -273,6 +273,7 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
 .v2-an-pos .an-p-gesamt { padding-top: 9px; font-weight: 700; white-space: nowrap; }
 .v2-an-pos .an-p-menge, .v2-an-pos .an-p-preis { text-align: right; }
 .v2-an-weg { padding: 8px 0; justify-content: center; }
+.v2-re-balken { height: 8px; border-radius: 6px; background: var(--v2-line-soft); overflow: hidden; margin: 8px 0 4px; } .v2-re-balken i { display: block; height: 100%; }
 .v2-mail { border-bottom: 1px solid var(--v2-line-soft); }
 .v2-mail > summary { display: flex; gap: 8px; align-items: center; padding: 10px 2px; cursor: pointer; list-style: none; }
 .v2-mail > summary::-webkit-details-marker { display: none; }

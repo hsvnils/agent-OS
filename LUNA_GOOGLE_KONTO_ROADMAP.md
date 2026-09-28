@@ -1,11 +1,10 @@
 # Roadmap: Eigenes Google-Konto fuer LUNA
 
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: CEO startet die Container neu; dann pruefen, dass die 4 vorhandenen Belege in LUNAs Drive liegen
-  (Pruefsummen) -> Roadmap abschliessen.
+- Naechster Schritt: keiner -- alle Etappen erledigt (Etappe 3 verworfen). Roadmap abgeschlossen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -141,7 +140,7 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 
 ### Etappe 6: Belege ausser Haus in LUNAs Google Drive
 
-- Status: umgesetzt (CEO-Go 2026-09-28), Deploy + Neustart + Pruefung in Drive offen
+- Status: abgeschlossen (2026-09-28) -- nach Neustart alle 4 Belege in LUNAs Drive (`beleg_extern_kopiert`, Pruefsummen)
 - Ergebnis: `core/beleg_sicherung.py` -- `belege_sichern` (idempotent ueber `beleg_extern_kopiert`, vor Upload SHA-256
   gegen die Kette, nach Upload Google-MD5 gegen die Datei, vorhandene Drive-Datei wird uebernommen statt doppelt, Fehler
   -> Meldung), `stand_sichern` (taeglich ab 03:00: Kette, Katalog, Firmendaten). `google_workspace`: `drive_ordner`,

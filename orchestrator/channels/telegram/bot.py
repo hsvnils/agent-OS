@@ -463,6 +463,18 @@ def _start_buchhaltung_loop(ctx) -> None:
                     if alarm:
                         ctx.notifications.enqueue(alarm, abteilung="CFO", kategorie="fehler", quelle="buchhaltung",
                                                   nach_briefing=False)
+                    # Etappe 5: ueberfaellige Rechnungen einmal taeglich melden (nur lesen, nichts buchen)
+                    from ...core.kunden import KundenStore
+                    from ...core.rechnungen import RechnungStore, ueberfaellige
+                    _bh = Buchhaltung(log.parent)
+                    _ue = ueberfaellige(RechnungStore(_bh, KundenStore(_bh)))
+                    if _ue:
+                        from ...core.beleg_pdf import eur as _eur
+                        ctx.notifications.enqueue(
+                            f"🧾 {len(_ue)} Rechnung(en) ueberfaellig: " + ", ".join(
+                                f"{r['nummer']} ({_eur(r['summe_cent'] - r['bezahlt_cent'])}, faellig {r['faellig_am']})"
+                                for r in _ue[:5]), abteilung="CFO", kategorie="finanzen", quelle="rechnungen",
+                            detail="LUNA-OS -> Rechnungen")
                     ctx.agenda.markiere_briefing("buchhaltung-pruefung", datum)
             except Exception as exc:
                 print(f"[buchhaltung] Fehler: {exc}", flush=True)
