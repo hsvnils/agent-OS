@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 17:40] — Claude Code
+- **Was:** Belege in Fremdwaehrung (z. B. Meta-Auszahlung in USD): LUNA legt einmalig einen Kalendertermin „💶 Euro-Betrag eintragen“ an (Rechnungsdatum + 7 Tage, 09:00; liegt das zurueck: morgen) -- im 15-min-Poll und direkt nach dem Upload; nach Buchen/Verwerfen loescht LUNA ihn selbst (sofort und nachholend). KI-Vorschlaege werden jetzt auch im Poll uebernommen.
+- **Warum:** CEO-Wunsch: an das Eintragen des Euro-Betrags erinnert werden.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/core/erinnerungen.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `orchestrator/tests/test_erinnerungen.py`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-28 17:15] — Claude Code
 - **Was:** Belege koennen Einnahmen sein (Gutschrift, z. B. Facebook-Monetarisierung): Art beim Buchen, Journal/EUeR als Einnahme, offene Gutschriften unter „bekommen wir“, KU-Waechter zaehlt sie. Erkennung Meta-Zahlungsavis (Payment Number/Date englisch, USD -> Euro-Betrag vom Kontoauszug eintragen, Hinweis § 14c). BF-37: Beleg-Mails auch aus dem Spam, nur mit bestandener DKIM/DMARC-Pruefung (`absender_echt`), danach aus dem Spam geholt; moin@hanserautisch.de in die Standard-Absenderliste. UI-Cache app v48.
 - **Warum:** CEO: Facebook-Verguetungen per Mail weiterleiten; weitergeleitete Meta-Mail wurde nicht uebernommen.

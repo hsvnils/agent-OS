@@ -4,7 +4,8 @@ LUNA legt beim Versand Erinnerungen in ihrem Kalender an: Angebot nachfassen / l
 Sobald der Vorgang erledigt ist, loescht LUNA die **noch kommenden** davon selbststaendig:
 
 - Angebot angenommen (Auftrag) oder abgelehnt -> Nachfass- und Ablauf-Termine weg,
-- Rechnung bezahlt oder storniert -> Faelligkeits-Termin weg.
+- Rechnung bezahlt oder storniert -> Faelligkeits-Termin weg,
+- Beleg in Fremdwaehrung gebucht (Euro-Betrag eingetragen) oder verworfen -> „Euro-Betrag eintragen“ weg.
 
 Geloescht werden **nur Termine, die LUNA selbst angelegt und im Kassenbuch mit ID protokolliert hat** -- nie fremde
 Eintraege. Vergangene Termine bleiben als Historie stehen. Jede Loeschung wird protokolliert
@@ -15,6 +16,7 @@ from __future__ import annotations
 
 from .angebote import AngebotStore
 from .buchhaltung import Buchhaltung, jetzt
+from .eingangsbelege import EingangStore
 from .rechnungen import RechnungStore
 
 TYP = "kalender_erinnerung_entfernt"
@@ -37,6 +39,11 @@ def faellige_loeschungen(eintraege: list[dict], heute: str | None = None) -> lis
         if r.get("status") in RECHNUNG_ERLEDIGT and t:
             out.append({"bezug": r["nummer"], "id": t.get("id", ""), "datum": t.get("datum", ""),
                         "titel": f"Rechnung {r['nummer']} fällig", "grund": f"Rechnung {r['status']}"})
+    for b in EingangStore._falte(eintraege).values():               # Fremdwaehrung: Euro-Betrag ist eingetragen
+        t = b.get("erinnerung") or {}
+        if t and b.get("status") != "zu_pruefen":
+            out.append({"bezug": b["nummer"], "id": t.get("id", ""), "datum": t.get("datum", ""),
+                        "titel": t.get("titel", ""), "grund": f"Beleg {b['status']}"})
     return [x for x in out if x["id"] and x["id"] not in weg and str(x["datum"]) >= heute]
 
 

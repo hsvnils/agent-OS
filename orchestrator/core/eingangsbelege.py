@@ -310,6 +310,8 @@ class EingangStore:
                 x["verlauf"].append(spur | {"quelle": d["vorschlag"].get("quelle", "")})
             elif t == "eingang_llm_auftrag":
                 out[d["nummer"]]["llm_auftrag"] = d["auftrag_id"]
+            elif t == "eingang_erinnerung":                  # Kalender: Euro-Betrag nachtragen (Fremdwaehrung)
+                out[d["nummer"]]["erinnerung"] = d["termin"]
             elif t == "eingang_gebucht":
                 x = out[d["nummer"]]
                 x["felder"], x["status"] = d["felder"], "gebucht"
@@ -397,6 +399,9 @@ class EingangStore:
 
     def llm_auftrag_merken(self, nummer: str, auftrag_id: str) -> None:
         self.bh.erfassen("eingang_llm_auftrag", {"nummer": nummer, "auftrag_id": auftrag_id}, von="LUNA-Belege")
+
+    def erinnerung_merken(self, nummer: str, termin: dict) -> None:
+        self.bh.erfassen("eingang_erinnerung", {"nummer": nummer, "termin": termin}, von="LUNA-Belege")
 
     def vorschlag_ergaenzen(self, nummer: str, vorschlag: dict) -> None:
         self.bh.erfassen("eingang_vorschlag", {"nummer": nummer, "vorschlag": vorschlag}, von="LUNA-Belege")
@@ -587,6 +592,41 @@ def anhaenge(roh: bytes) -> list[tuple[str, bytes]]:
             continue
         out.append((name, daten))
     return out
+
+
+FREMDWAEHRUNG_TAGE = 7          # CEO 2026-09-28: bis dahin ist der Euro-Betrag auf dem Konto
+
+
+def fremdwaehrung_erinnern(st: EingangStore, google, heute: date | None = None) -> list[str]:
+    """Belege in Fremdwaehrung (z. B. Meta-Auszahlung in USD) brauchen den Euro-Betrag vom Kontoauszug: LUNA legt dafuer
+    einmalig einen Termin in ihrem Kalender an (Rechnungsdatum + 7 Tage, 09:00; liegt das zurueck: morgen). Geloescht
+    wird er von `erinnerungen.erledigte_entfernen`, sobald der Beleg gebucht oder verworfen ist. Rueckgabe: Belegnummern."""
+    from datetime import timedelta
+    if google is None or not google.verfuegbar():
+        return []
+    heute = heute or jetzt().date()
+    neu = []
+    for x in st._falte(st.bh.eintraege()).values():
+        v = x.get("vorschlag") or {}
+        if x["status"] != "zu_pruefen" or x.get("erinnerung") or not v.get("waehrung") or v["waehrung"] == "EUR":
+            continue
+        try:
+            basis = date.fromisoformat(v.get("rechnungsdatum") or x["eingegangen"][:10])
+        except ValueError:
+            basis = heute
+        tag = basis + timedelta(days=FREMDWAEHRUNG_TAGE)
+        if tag <= heute:
+            tag = heute + timedelta(days=1)
+        wer = v.get("lieferant") or x.get("dateiname", "")
+        titel = f"💶 Euro-Betrag eintragen: {x['nummer']} {wer} ({v.get('betrag_fremd', '?')} {v['waehrung']})"
+        r = google.termin_anlegen(titel, f"{tag.isoformat()}T09:00:00", f"{tag.isoformat()}T09:15:00",
+                                  beschreibung=f"Betrag laut Beleg: {v.get('betrag_fremd', '?')} {v['waehrung']}. Den auf dem "
+                                               "Konto eingegangenen bzw. abgebuchten Euro-Betrag (Kontoauszug) eintragen und "
+                                               "buchen.\nLUNA-OS -> Belege -> " + x["nummer"], bestaetigt=True)
+        if r.get("ok"):
+            st.erinnerung_merken(x["nummer"], {"datum": tag.isoformat(), "id": r.get("termin_id", ""), "titel": titel})
+            neu.append(x["nummer"])
+    return neu
 
 
 def absender_echt(roh: bytes, absender: list[str]) -> bool:

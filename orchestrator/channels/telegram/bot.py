@@ -1383,6 +1383,11 @@ def main() -> None:
                                              backoffice=AuftragStore(ROOT / "backoffice" / "log.jsonl", secrets=ctx.leak_secrets),
                                              notify=(ctx.notifications.enqueue if ctx.notifications else None),
                                              gesehen=_BELEG_MAILS_GESEHEN)
+                        # Fremdwaehrung (z. B. Meta in USD): KI-Vorschlaege holen, dann Kalender „Euro-Betrag eintragen“
+                        from ...core.eingangsbelege import fremdwaehrung_erinnern, llm_ergebnisse_uebernehmen
+                        llm_ergebnisse_uebernehmen(EingangStore(_bh), AuftragStore(ROOT / "backoffice" / "log.jsonl",
+                                                                                   secrets=ctx.leak_secrets))
+                        fremdwaehrung_erinnern(EingangStore(_bh), ctx.google)
                     except Exception as exc:
                         print(f"[beleg-sicherung] {exc}", flush=True)
                 # Instagram-DM-Poll: opt-in INSTAGRAM_DM_POLL=1. Token selbst-erneuernd (INSTAGRAM_USER_TOKEN

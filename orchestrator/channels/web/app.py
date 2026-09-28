@@ -1757,6 +1757,10 @@ async def belege_hochladen(request: Request):
             ergebnisse.append({"name": name, "ok": True} | {k: r.get(k) for k in ("nummer", "doppelt", "text_quelle")})
         except (ValueError, TypeError) as exc:
             ergebnisse.append({"name": name, "ok": False, "hinweis": str(exc)[:200]})
+    try:                                                    # Fremdwaehrung -> Kalender „Euro-Betrag eintragen“
+        _eb.fremdwaehrung_erinnern(st, _google())
+    except Exception:
+        pass
     return {"ok": any(e["ok"] for e in ergebnisse), "ergebnisse": ergebnisse}
 
 
@@ -1772,7 +1776,7 @@ async def beleg_buchen(nummer: str, request: Request):
             felder["lieferant_firma"] = vorhanden["nummer"] if vorhanden else kunden_store.firma_anlegen(
                 {"name": name, "typ": "lieferant"}, von=_von(request))["nummer"]
         return _eingang().buchen(nummer, felder, von=_von(request))
-    return _kunden_aktion(tun)
+    return _kunden_aktion(_mit_aufraeumen(tun, _von(request)))
 
 
 @app.post("/api/finanzen/belege/{nummer}/bezahlt")
@@ -1850,7 +1854,8 @@ async def eigenbeleg_stornieren(nummer: str, request: Request):
 @app.post("/api/finanzen/belege/{nummer}/verwerfen")
 async def beleg_verwerfen(nummer: str, request: Request):
     body = await _json(request)
-    return _kunden_aktion(lambda: _eingang().verwerfen(nummer, body.get("grund") or "", von=_von(request)))
+    return _kunden_aktion(_mit_aufraeumen(lambda: _eingang().verwerfen(nummer, body.get("grund") or "", von=_von(request)),
+                                          _von(request)))
 
 
 @app.post("/api/finanzen/belege/{nummer}/neu-auslesen")
