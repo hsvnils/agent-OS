@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 09:42] — Claude Code (MACO470)
+- **Was:** BF-33 behoben: CEO hat den Google-Zugang neu bestaetigt (hanserautisch@gmail.com); neuer Refresh-Token per
+  Kalender-Abruf getestet, in die `.env` von MACO470 (Sicherung `~/env-backups/`) und NAS geschrieben -- Pruefsummen
+  identisch, Gmail + Kalender ok. `deploy/google_oauth_neu.py` repariert: NAS-Schritt zerfiel, weil ssh mehrzeiligen
+  Python-Code in eine Shell-Zeile packte -> Skript jetzt base64-kodiert, neue Option `--nur-nas`. Temporaere
+  `.env`-Kopie auf der NAS wieder entfernt. Erster Versuch scheiterte an `access_denied`/altem Link (Port bereits zu).
+- **Warum:** CEO-Go „Go fuer 1-3" (BF-33).
+- **Betroffen:** `deploy/google_oauth_neu.py`, `orchestrator/.env` (MACO470 + NAS, nur Token)
+
 ## [2026-09-28 09:35] — Claude Code (MACO470)
 - **Was:** BF-33 (Google `invalid_grant`, stiller Ausfall von Gmail + Kalender): (1) `deploy/google_oauth_neu.py` --
   Google-Zugang auf dem MACO470 neu verbinden, Token nur in die `.env` (MACO470 + NAS), alte `.env` nach
