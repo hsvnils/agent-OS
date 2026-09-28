@@ -5,7 +5,7 @@
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
 - Naechster Schritt: Go fuer Etappe 4 (Beauftragung) oder 3c (Social-Kennzahlen, sobald die Meta-Exporte als CSV da
-  sind). Beim naechsten Angebot den Gmail-Entwurf mit Anhang live pruefen. Steuernummer vor Etappe 5.
+  sind). Beim naechsten Angebot den Gmail-Entwurf mit Anhang live pruefen. Steuernummer liegt vor.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -103,7 +103,8 @@ Mail-Entwurf mit Anhang; Export fuer Steuerberater/ELSTER.
 1. **Nummernformate:** wie vorgeschlagen (`K-00001`, `AP-00001`, `AN-/AB-/RE-/ER-JJJJ-NNNN`).
 2. **Firma fuer den Briefkopf:** Krueger Onlinehandel und Media, c/o Hanserautisch, Arthur-Soltau-Weg 7c, 22889 Tangstedt.
    Bankverbindung am 2026-09-27 geliefert und in `buchhaltung/firmendaten.json` auf der NAS abgelegt (nicht im Git).
-   **Noch offen:** Steuernummer (Pflichtangabe § 34a UStDV) — vor Etappe 5 (Rechnungen) noetig, fuer Angebote optional.
+   Steuernummer (Pflichtangabe § 34a UStDV) am 2026-09-28 geliefert und in `buchhaltung/firmendaten.json` auf der NAS
+   eingetragen (nicht im Git); erscheint in der Fusszeile aller Dokumente (live geprueft).
 3. **Zahlungseingaenge:** zum Start von Hand in LUNA-OS als bezahlt markieren; Kontoauszug-Import spaeter.
 4. **PDF:** `fpdf2` ins Docker-Image (einmaliger Neubau).
 5. **Kein Steuerberater:** einfache Gewinnermittlung aus den Einnahmen und Ausgaben des CEO -> Etappen 7 und 9 **schlank**

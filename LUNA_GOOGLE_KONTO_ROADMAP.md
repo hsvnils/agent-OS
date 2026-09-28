@@ -4,8 +4,7 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: CEO startet die Container neu; Test-Angebot an die Privatadresse des CEO senden, darauf antworten,
-  Meldung + Anzeige pruefen -> Roadmap abschliessen.
+- Naechster Schritt: Go fuer Etappe 6 (Belege ausser Haus in LUNAs Google Drive); Etappen 0-5 erledigt.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -112,7 +111,8 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 
 ### Etappe 4: Angebots-Versand nach Entscheidung 2
 
-- Status: umgesetzt (CEO-Go 2026-09-28), Deploy + Test mit der Privatadresse des CEO offen
+- Status: abgeschlossen (2026-09-28) -- CEO-Test mit AN-2026-0002 an die Privatadresse: gesendet, Antwort erkannt,
+  gemeldet, beide Mails archiviert und im Verlauf aufklappbar
 - Ergebnis: LUNA-OS „✉️ Senden …" -> Vorschau (Absender „Hanserautisch – LUNA <luna.hanserautisch@gmail.com>",
   Empfaenger/Betreff/Text anpassbar, PDF-Link) -> „Jetzt senden" + Rueckfrage -> `POST .../senden` (nur Modul finanzen,
   nur mit `bestaetigt`), Gmail-Versand mit PDF-Anhang, genau dieses PDF abgelegt, dann automatisch „versendet"
@@ -137,3 +137,18 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 - Ziel / Scope: CEO entfernt „LUNA" unter myaccount.google.com -> Sicherheit -> Drittanbieter-Zugriff im Konto
   hanserautisch@gmail.com; Doku (`deploy/google-oauth-setup.md`, `docs/datenfluesse.md`, Zugriffs-Policy) aktualisieren.
 - Gate: alter Token ist ungueltig, alles laeuft ueber das LUNA-Konto.
+
+### Etappe 6: Belege ausser Haus in LUNAs Google Drive
+
+- Status: geplant (CEO 2026-09-28: „plane das mit ein")
+- Anlass: Belege (Angebots-PDFs, Original-Mails `.eml`, spaeter Rechnungen/Eingangsbelege) liegen auf der NAS und als
+  Backup auf dem MACO470 -- beide im selben Haus (Brand/Diebstahl/Ueberspannung = beide weg).
+- Ziel / Scope: jeder neue Beleg aus `buchhaltung/belege/<jahr>/` wird zusaetzlich in **LUNAs Google Drive** kopiert
+  (Ordner `LUNA-Buchhaltung/Belege/<jahr>/`, Scope `drive.file` vorhanden, kostenlos, 15 GB); Abgleich im 15-min-Poll
+  des Bots, idempotent (Ereignis `beleg_extern_kopiert` mit Drive-Datei-ID + Pruefsumme; Drive-`md5Checksum` gegen die
+  lokale Datei geprueft); Bestand (aktuell 4 Dateien) wird nachgeholt; Drive-Kopien werden nie automatisch geloescht;
+  Hinweis/Alarm, wenn die Kopie scheitert; `buchhaltung/katalog.json`, `firmendaten.json` und die Kette (`log.jsonl`)
+  optional mit (taeglich als Stand).
+- Nicht-Scope: Loeschen/Aufraeumen in Drive (CEO-Tor), Zugriff des CEO-Kontos auf den Drive-Ordner (bei Bedarf teilt ihn
+  der CEO selbst aus LUNAs Konto).
+- Gate: alle vorhandenen Belege liegen in Drive mit gleicher Pruefsumme; ein neuer Beleg erscheint innerhalb von 15 min.
