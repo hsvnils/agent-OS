@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 19:05] — Head of Agents (umgesetzt durch Claude Code)
+- **Was:** Charta CFO erweitert: Finanz-Vollstaendigkeit ueberwachen und den CEO bei Fehlendem erinnern (Auftrag, Aufgabenkatalog: taeglicher Finanzcheck 05:00 + Monatsabgleich-Erinnerung, Workflow Finanzcheck); ausdruecklich nur melden, nie buchen/bestaetigen.
+- **Warum:** CEO-Anweisung („Die Finanzagents muessen immer im Blick haben, dass alles eingetragen ist und laeuft“); Diff vorgelegt, vom CEO freigegeben („Charta Erweiterung freigegeben“), AGENTS.md 3.3.
+- **Betroffen:** `agents/03_cfo.md`
+
 ## [2026-09-28 18:55] — Claude Code
 - **Was:** CFO-Finanzcheck: taeglich 05:00 (regelbasiert) prueft der CFO, ob alles eingetragen ist und laeuft -- Monatsabgleich mit dem Kontoauszug, fehlende wiederkehrende Posten, Offen-Gebliebenes (Zahlung, Gutschrift, Auftrag ohne Rechnung, Entwurf, ungepruefter Beleg), faellige Posten, KU-Grenze; Punkte auf der Hauptseite („✓ Abgeglichen“ / „✓ Kommt diesen Monat nicht“, protokolliert) und gebuendelt per Telegram, nur wenn etwas faellig ist; ersetzt die Einzelmeldung ueberfaelliger Rechnungen. Charta-Erweiterung CFO als Diff vorgelegt (noch NICHT angewendet). UI-Cache app v50.
 - **Warum:** CEO: Die Finanzagenten muessen im Blick haben, dass alles eingetragen ist und laeuft, und bei Fehlendem erinnern.
