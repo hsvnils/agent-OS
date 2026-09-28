@@ -4,7 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: Go fuer Etappe 4 (Angebote aus LUNAs Konto nach CEO-Klick senden) -- danach Roadmap abschliessen.
+- Naechster Schritt: CEO startet die Container neu; Test-Angebot an die Privatadresse des CEO senden, darauf antworten,
+  Meldung + Anzeige pruefen -> Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -111,7 +112,14 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 
 ### Etappe 4: Angebots-Versand nach Entscheidung 2
 
-- Status: geplant
+- Status: umgesetzt (CEO-Go 2026-09-28), Deploy + Test mit der Privatadresse des CEO offen
+- Ergebnis: LUNA-OS „✉️ Senden …" -> Vorschau (Absender „Hanserautisch – LUNA <luna.hanserautisch@gmail.com>",
+  Empfaenger/Betreff/Text anpassbar, PDF-Link) -> „Jetzt senden" + Rueckfrage -> `POST .../senden` (nur Modul finanzen,
+  nur mit `bestaetigt`), Gmail-Versand mit PDF-Anhang, genau dieses PDF abgelegt, dann automatisch „versendet"
+  (Erinnerungen in LUNAs Kalender, CRM-Stufe, Mail-/Thread-ID gespeichert). Bot prueft alle 15 min die Mailverlaeufe
+  gesendeter Angebote (bis 60 Tage), neue Kundenantworten -> Eintrag `angebot_antwort` (Dedup) + Telegram-Meldung;
+  Detail zeigt Versand und Antworten. „Gmail-Entwurf" ersetzt, „Anderweitig versendet" bleibt fuer andere Wege.
+  Tests + Gegenproben (Rechte, Dedup), Suite 859 gruen; Oberflaeche im Headless-Chrome geprueft.
 - Ziel / Scope: Knopf „Jetzt senden" in LUNA-OS (CEO-Klick = Freigabe, Vorschau von Empfaenger/Betreff/Text/PDF),
   Versand aus dem LUNA-Konto, Status „versendet" automatisch, Antworten des Kunden dem Angebot zuordnen und melden.
 - Gate: Test-Angebot an eine eigene Adresse, PDF-Anhang korrekt, Status/Verlauf stimmen.

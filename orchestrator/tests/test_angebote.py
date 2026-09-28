@@ -211,6 +211,52 @@ class TestAngebotApi(unittest.TestCase):
         self.c.post(f"/api/crm/angebote/{nr}/status", json={"status": "abgelehnt"})
         self.assertFalse(self.c.post(f"/api/crm/angebote/{nr}/erinnerungen").json()["ok"])
 
+    def test_5_senden_aus_luna_konto(self):
+        # LUNA_GOOGLE_KONTO Etappe 4: Senden nur mit Bestaetigung + Modul finanzen; danach versendet, PDF abgelegt.
+        nr = self._neu()
+        v = self.c.get(f"/api/crm/angebote/{nr}/versandvorschau").json()
+        self.assertEqual((v["an"], v["pdf"]), ("anna@brandx.de", f"Angebot_{nr}.pdf"))
+        self.assertIn("1.020,00 €", v["text"])
+        roh = {"an": "privat@example.com", "betreff": v["betreff"], "text": v["text"] + "\nGruss"}
+        self.assertFalse(self.c.post(f"/api/crm/angebote/{nr}/senden", json=roh).json()["ok"])     # ohne bestaetigt
+        self.assertEqual(self.g.gesendet, [])
+        from unittest import mock
+        with mock.patch.object(self.w, "hat_modul", return_value=False):
+            r = self.c.post(f"/api/crm/angebote/{nr}/senden", json=roh | {"bestaetigt": True}).json()
+        self.assertIn("nur der CEO", r["hinweis"])
+        self.assertEqual(self.g.gesendet, [])
+        self.assertFalse(self.c.post(f"/api/crm/angebote/{nr}/senden", json=roh | {"an": "kaputt", "bestaetigt": True}).json()["ok"])
+        r = self.c.post(f"/api/crm/angebote/{nr}/senden", json=roh | {"bestaetigt": True}).json()
+        self.assertTrue(r["ok"], r)
+        m = self.g.gesendet[0]
+        self.assertEqual((m["an"], m["anhaenge"][0][0], m["absender_name"]), ("privat@example.com", f"Angebot_{nr}.pdf",
+                                                                             "Hanserautisch – LUNA"))
+        self.assertTrue(m["text"].endswith("Gruss"))                                    # angepasster Text geht raus
+        a = self.c.get(f"/api/crm/angebote/{nr}").json()["angebot"]
+        self.assertEqual((a["status"], a["versendet_mail"]["thread_id"], a["pdfs"][-1]["an"]), ("versendet", "t1", "privat@example.com"))
+        self.assertEqual(len(a["versendet_termine"]), 2)
+        self.assertEqual(self.w.crm_store.firmen()[0]["status"], "angebot")
+        self.assertFalse(self.c.post(f"/api/crm/angebote/{nr}/senden", json=roh | {"bestaetigt": True}).json()["ok"])  # nur einmal
+        self.assertEqual(len(self.g.gesendet), 1)
+
+    def test_6_kundenantwort_erkennen_und_melden(self):
+        from orchestrator.core.angebote import antworten_pruefen
+        nr = self._neu()
+        self.c.post(f"/api/crm/angebote/{nr}/senden", json={"an": "privat@example.com", "betreff": "B", "text": "T", "bestaetigt": True})
+        self.g.threads = {"t1": [{"id": "m1", "von": "Hanserautisch – LUNA <luna@x.de>", "gesendet": True, "vorschau": "Angebot"},
+                                 {"id": "m2", "von": "Nils <privat@example.com>", "datum": "Mon, 28 Sep 2026", "gesendet": False,
+                                  "vorschau": "Klingt gut, machen wir!"}]}
+        meldungen = []
+        st = self.w._angebote()
+        self.assertEqual(antworten_pruefen(st, self.g, eigene_adresse="luna@x.de", notify=lambda t, **k: meldungen.append(t)), 1)
+        self.assertEqual(antworten_pruefen(st, self.g, eigene_adresse="luna@x.de", notify=lambda t, **k: meldungen.append(t)), 0)  # Dedup
+        self.assertEqual(len(meldungen), 1)
+        self.assertIn(nr, meldungen[0])
+        self.assertIn("Klingt gut", meldungen[0])
+        a = self.c.get(f"/api/crm/angebote/{nr}").json()["angebot"]
+        self.assertEqual([x["message_id"] for x in a["antworten"]], ["m2"])
+        self.assertEqual(st.bh.pruefe_kette(), [])
+
     def test_4_rechte(self):
         from orchestrator.core.team_auth import erlaubte_apps, modul_fuer_pfad
         self.assertEqual(modul_fuer_pfad("POST", "/api/crm/angebote/AN-2026-0001/mailentwurf"), "crm")

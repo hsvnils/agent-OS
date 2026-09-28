@@ -112,6 +112,7 @@ def _build_ctx(cfg: dict, secrets: dict):
                              zeitzone=secrets.get("GOOGLE_CALENDAR_TIMEZONE", "Europe/Berlin"),
                              kalender_id=secrets.get("GOOGLE_CALENDAR_ID", ""),
                              lese_kalender=secrets.get("GOOGLE_CALENDAR_LESEN", ""))
+    google.konto_adresse = secrets.get("GOOGLE_ACCOUNT_EMAIL", "")
     # Proaktiver Notifier (Outbox) -- LUNA/Watcher melden sich unaufgefordert beim CEO.
     from ...core.notifications import Notifications
     notifications = Notifications(ROOT / "notifications" / "log.jsonl", secrets=secret_values)
@@ -1329,6 +1330,19 @@ def main() -> None:
                                    eigene_adresse=secrets.get("GOOGLE_ACCOUNT_EMAIL", "luna.hanserautisch@gmail.com"),
                                    secrets=ctx.leak_secrets,
                                    notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
+                # LUNA_GOOGLE_KONTO Etappe 4: Kundenantworten auf gesendete Angebote erkennen und melden.
+                if ctx.google is not None and (ROOT / "buchhaltung" / "log.jsonl").exists() \
+                        and (ctx.watch is None or not ctx.watch.store.paused()):
+                    try:
+                        from ...core.angebote import AngebotStore, antworten_pruefen
+                        from ...core.buchhaltung import Buchhaltung
+                        from ...core.kunden import KundenStore
+                        _bh = Buchhaltung(ROOT / "buchhaltung")
+                        antworten_pruefen(AngebotStore(_bh, KundenStore(_bh)), ctx.google,
+                                          eigene_adresse=secrets.get("GOOGLE_ACCOUNT_EMAIL", "luna.hanserautisch@gmail.com"),
+                                          notify=(ctx.notifications.enqueue if ctx.notifications else None))
+                    except Exception as exc:
+                        print(f"[angebote] Antwort-Pruefung: {exc}", flush=True)
                 # Instagram-DM-Poll: opt-in INSTAGRAM_DM_POLL=1. Token selbst-erneuernd (INSTAGRAM_USER_TOKEN
                 # + INSTAGRAM_APP_SECRET -> permanenter Seiten-Token) oder statisch (INSTAGRAM_ACCESS_TOKEN).
                 # Manuell jederzeit via Tool `crm_dm_abrufen`.
