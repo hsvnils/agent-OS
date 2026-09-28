@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 09:14] — Claude Code (MACO470)
+- **Was:** Editor-Ueberarbeitung (ganzseitig, Loeschen, Firmensuche) nach `main` gemergt, gepusht, per
+  `deploy/sync-to-nas.sh --no-restart` auf die NAS gebracht; live geprueft (V2 v35 wird ausgeliefert). Nur statische
+  Dateien -> kein Container-Neustart noetig. Suite 849 gruen.
+- **Warum:** CEO sah die Aenderung nicht (war noch nicht deployt) -> als Go gewertet.
+- **Betroffen:** `main`, NAS-Code
+
 ## [2026-09-28 09:11] — Claude Code (MACO470)
 - **Was:** Angebots-Editor in LUNA-OS V2 ueberarbeitet: ganzseitig statt schmaler Seitenleiste (Kopf zweispaltig,
   Positionen als Tabelle mit Gesamt je Zeile, Zuschlaege/Rabatt neben der Summe), Loeschen-Knopf je Position immer
