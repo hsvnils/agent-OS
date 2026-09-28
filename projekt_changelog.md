@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 16:30] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 7 umgesetzt: Journal nach Zahlungsdatum, EUeR je Position, Anlageverzeichnis mit AfA, Eigenbelege (EB-Nummernkreis) fuer Zahlungen ohne Rechnung, Teilzahlungen und Zahlungs-Storno fuer Rechnungen/Belege, 10-Tage-Regel, GWG-Grenze 800 €, Nutzungsdauer fuer Anlagegueter, Kleinunternehmer-Waechter inkl. Eigenbeleg-Einnahmen. Neuer LUNA-OS-Bereich „💶 Finanzen“ (Uebersicht, Journal + CSV, EUeR, Anlagen). Fix: Stornorechnung zaehlte nicht als „Auftrag abgerechnet“. UI-Cache app v46 / style v21.
+- **Warum:** CEO-Go Etappe 7 + Wunsch nach einem Finanzbereich mit guter Uebersicht ueber alles.
+- **Betroffen:** `orchestrator/core/finanzen.py` (neu), `orchestrator/core/eigenbelege.py` (neu), `orchestrator/core/eingangsbelege.py`, `orchestrator/core/rechnungen.py`, `orchestrator/core/buchhaltung.py` (Kreis EB), `orchestrator/core/team_auth.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `index-v2.html`, `orchestrator/tests/test_finanzen.py` (neu), `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-28 15:40] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappen 4, 5 und 6 als abgeschlossen/abgenommen eingetragen; Live-Pruefung: ER-2026-0001 (Calumet) korrekt gebucht und bezahlt, Kette intakt; erledigte Kalender-Erinnerungen (AN-2026-0001 x2, RE-2026-0001) von LUNA geloescht und protokolliert.
 - **Warum:** CEO: „Rechnung geprueft, gebucht und als bezahlt markiert“.

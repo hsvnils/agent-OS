@@ -18,6 +18,7 @@ from datetime import date, timedelta
 from .angebote import _bloecke, _empfaenger, _kopf, _positionen, anrede_moin, summen
 from .beleg_pdf import HINWEIS_19, beleg_pdf, cent, datum_de, eur, hanserautisch_pdf, positions_summe
 from .buchhaltung import Buchhaltung, jetzt
+from .eigenbelege import einnahmen_cent, zuordnung_pruefen
 from .kunden import KundenStore
 
 GRENZE_LAUFEND = 100_000_00     # Cent, § 19 Abs. 1 UStG (ab 2025): Ueberschreiten beendet den Status sofort
@@ -96,11 +97,19 @@ class RechnungStore:
                 r["verlauf"].append(spur | {"mail_an": (d.get("mail") or {}).get("an", "")})
             elif t == "rechnung_bezahlt":
                 r = rechnungen[d["nummer"]]
-                r["zahlungen"].append({k: d.get(k) for k in ("datum", "betrag_cent", "notiz")})
+                r["zahlungen"].append({k: d.get(k) for k in ("datum", "betrag_cent", "notiz", "zuordnung_jahr")})
                 r["bezahlt_cent"] += int(d.get("betrag_cent") or 0)
                 if r["status"] == "offen" and r["bezahlt_cent"] >= r["summe_cent"]:
                     r["status"] = "bezahlt"
                 r["verlauf"].append(spur | {"betrag_cent": d.get("betrag_cent"), "datum": d.get("datum")})
+            elif t == "rechnung_zahlung_storniert":          # Etappe 7: falsch erfasste Zahlung, Korrektur sichtbar
+                r = rechnungen[d["nummer"]]
+                z = r["zahlungen"][d["index"]]
+                z |= {"storniert": True, "storno_grund": d.get("grund", ""), "storniert_am": e["ts"]}
+                r["bezahlt_cent"] -= int(z.get("betrag_cent") or 0)
+                if r["status"] == "bezahlt" and r["bezahlt_cent"] < r["summe_cent"]:
+                    r["status"] = "offen"
+                r["verlauf"].append(spur | {"betrag_cent": -int(z.get("betrag_cent") or 0), "grund": d.get("grund", "")})
             elif t == "rechnung_erinnerung":
                 rechnungen[d["nummer"]]["erinnerung"] = d.get("termin")
         return entwuerfe, rechnungen
@@ -116,20 +125,27 @@ class RechnungStore:
 
     # -- Lesen ---------------------------------------------------------------------------------------------------
 
-    def umsatz(self, jahr: int, rechnungen: dict | None = None) -> int:
-        rechnungen = rechnungen if rechnungen is not None else self._stand()[1]
-        return sum(r["summe_cent"] for r in rechnungen.values() if str(r.get("rechnungsdatum", ""))[:4] == str(jahr))
+    def umsatz(self, jahr: int, rechnungen: dict | None = None, eintraege: list | None = None) -> int:
+        """Umsatz fuer § 19 UStG: Rechnungen nach Rechnungsdatum + Einnahmen aus Eigenbelegen (z. B. Plattform-
+        Auszahlungen ohne eigene Rechnung, Etappe 7). Ohne Argumente wird das Kassenbuch gelesen."""
+        if rechnungen is None:
+            eintraege = self.bh.eintraege() if eintraege is None else eintraege
+            rechnungen = self._falte(eintraege)[1]
+        sonst = einnahmen_cent(eintraege, jahr) if eintraege is not None else 0
+        return sonst + sum(r["summe_cent"] for r in rechnungen.values() if str(r.get("rechnungsdatum", ""))[:4] == str(jahr))
 
-    def waechter(self, zusatz_cent: int = 0, jahr: int | None = None, rechnungen: dict | None = None) -> dict:
+    def waechter(self, zusatz_cent: int = 0, jahr: int | None = None, rechnungen: dict | None = None,
+                 eintraege: list | None = None) -> dict:
         jahr = jahr or jetzt().year
-        lauf = self.umsatz(jahr, rechnungen) + zusatz_cent
-        vor = self.umsatz(jahr - 1, rechnungen)
+        lauf = self.umsatz(jahr, rechnungen, eintraege) + zusatz_cent
+        vor = self.umsatz(jahr - 1, rechnungen, eintraege)
         return {"jahr": jahr, "umsatz_cent": lauf, "vorjahr_cent": vor, "grenze_cent": GRENZE_LAUFEND,
                 "anteil": round(lauf / GRENZE_LAUFEND, 4), "warnung": lauf >= GRENZE_LAUFEND * WARNSCHWELLE,
                 "ueberschritten": lauf > GRENZE_LAUFEND, "vorjahr_ueberschritten": vor > GRENZE_VORJAHR}
 
     def uebersicht(self, jahr: int | None = None) -> dict:
-        entwuerfe, rechnungen = self._stand()
+        eintraege = self.bh.eintraege()
+        entwuerfe, rechnungen = self._falte(eintraege)
         firmen = {f["nummer"]: f["name"] for f in self.kunden.firmen()}
         heute = jetzt().date().isoformat()
         liste = []
@@ -145,7 +161,7 @@ class RechnungStore:
         return {"rechnungen": sorted(liste, key=lambda x: x["nummer"], reverse=True),
                 "entwuerfe": [{k: x.get(k) for k in ("entwurf_id", "firma", "titel", "auftrag", "summe_cent", "angelegt")}
                               | {"firma_name": firmen.get(x["firma"], "")} for x in ents],
-                "waechter": self.waechter(rechnungen=rechnungen)}
+                "waechter": self.waechter(rechnungen=rechnungen, eintraege=eintraege)}
 
     def get(self, kennung: str) -> dict | None:
         k = (kennung or "").strip()
@@ -246,7 +262,7 @@ class RechnungStore:
                 raise ValueError("Leistungsdatum fehlt (Pflichtangabe).")
             if x["summe_cent"] <= 0:
                 raise ValueError("Rechnungsbetrag muss groesser als 0 sein.")
-            w = self.waechter(x["summe_cent"], heute.year, rechnungen)
+            w = self.waechter(x["summe_cent"], heute.year, rechnungen, eintraege)
             if w["vorjahr_ueberschritten"]:
                 raise ValueError(f"Vorjahresumsatz {eur(w['vorjahr_cent'])} liegt ueber 25.000 € -- Kleinunternehmer-"
                                  "Regelung gilt dieses Jahr nicht. Nicht festgeschrieben; bitte klaeren.")
@@ -317,12 +333,13 @@ class RechnungStore:
         self.bh.erfassen_geprueft("rechnung_versendet", {"nummer": nummer, "mail": mail}, von=von, pruefe=pruefe)
 
     def bezahlt(self, nummer: str, *, datum: str, betrag: str | int | None = None, notiz: str = "",
-                von: str = "") -> dict:
-        """Zahlungseingang von Hand (CEO-Entscheidung 3). Ohne Betrag = offener Rest."""
+                zuordnung_jahr=None, von: str = "") -> dict:
+        """Zahlungseingang von Hand (CEO-Entscheidung 3). Ohne Betrag = offener Rest. `zuordnung_jahr` = 10-Tage-Regel."""
         nummer = (nummer or "").strip().upper()
         tag = _datum(datum, "Zahlungsdatum") or jetzt().date().isoformat()
         if tag > jetzt().date().isoformat():
             raise ValueError("Zahlungsdatum liegt in der Zukunft.")
+        zuordnung = zuordnung_pruefen(tag, zuordnung_jahr)
         rest: dict = {}
 
         def pruefe(eintraege):
@@ -340,8 +357,30 @@ class RechnungStore:
             if b <= 0 or b > rest["cent"]:
                 raise ValueError(f"Betrag muss zwischen 0,01 € und dem offenen Rest {eur(rest['cent'])} liegen.")
             self.bh._anhaengen("rechnung_bezahlt", {"nummer": nummer, "datum": tag, "betrag_cent": b,
-                                                     "notiz": str(notiz or "").strip()[:300]}, von=von)
+                                                     "notiz": str(notiz or "").strip()[:300]}
+                               | ({"zuordnung_jahr": zuordnung} if zuordnung else {}), von=von)
         return {"betrag_cent": b, "rest_cent": rest["cent"] - b}
+
+    def zahlung_stornieren(self, nummer: str, index: int, grund: str, *, von: str = "") -> dict:
+        """Falsch erfasste Zahlung zuruecknehmen (Eintrag bleibt, Storno mit Grund daneben -- GoBD)."""
+        nummer = (nummer or "").strip().upper()
+        grund = str(grund or "").strip()[:300]
+        if not grund:
+            raise ValueError("Bitte einen Grund angeben.")
+
+        def pruefe(eintraege):
+            r = self._falte(eintraege)[1].get(nummer)
+            if not r:
+                raise KeyError(nummer)
+            if not isinstance(index, int) or not 0 <= index < len(r["zahlungen"]):
+                raise ValueError("Diese Zahlung gibt es nicht.")
+            if r["zahlungen"][index].get("storniert"):
+                raise ValueError("Diese Zahlung ist bereits storniert.")
+            if r["status"] == "storniert":
+                raise ValueError(f"{nummer} ist storniert.")
+        self.bh.erfassen_geprueft("rechnung_zahlung_storniert", {"nummer": nummer, "index": index, "grund": grund},
+                                  von=von, pruefe=pruefe)
+        return {"storniert": index}
 
     def erinnerung_merken(self, nummer: str, termin: dict, *, von: str = "") -> None:
         self.bh.erfassen("rechnung_erinnerung", {"nummer": nummer, "termin": termin}, von=von)
