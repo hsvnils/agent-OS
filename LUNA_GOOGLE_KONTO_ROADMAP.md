@@ -4,8 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: CEO beantwortet, ob LUNA seine Termine lesen soll (Etappe 1, offen); dann Go fuer Etappe 2
-  (Deploy + Umschalten auf das LUNA-Konto, ein Neustart).
+- Naechster Schritt: CEO gibt seinen Kalender fuer luna.hanserautisch@gmail.com mit „Alle Termindetails sehen" frei
+  (nur lesen); dann Go fuer Etappe 2 (Deploy, Umschalten auf das LUNA-Konto, `GOOGLE_CALENDAR_LESEN` setzen, ein Neustart).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -85,15 +85,19 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
   Ein zwischenzeitlich eingetragenes `GOOGLE_CALENDAR_ID=hanserautisch@gmail.com` wieder aus beiden `.env` entfernt.
 - Sichtbarkeit fuer den CEO: jeder Termin laedt wie bisher `GOOGLE_CALENDAR_DEFAULT_ATTENDEE` (iCloud) ein -> erscheint im
   Apple-Kalender; optional gibt LUNA ihren Kalender fuer hanserautisch@gmail.com frei (Etappe 2).
-- Offen (CEO): Soll LUNA **deine** Termine weiter sehen (Morgen-Briefing „heute an", Termin-Kollisionen)? Dann Lese-
-  Freigabe deines Kalenders fuer LUNA + zweiter Kalender nur zum Lesen; sonst kennt LUNA nur ihre eigenen Termine.
+- **Entscheidung CEO 2026-09-28:** LUNA **liest** den Kalender des CEO mit (Briefing, Kollisionen), schreibt aber nur in
+  ihren eigenen. Umgesetzt: `GOOGLE_CALENDAR_LESEN` (Kalender nur zum Lesen, kommagetrennt), Agenda mischt eigene + Lese-
+  Termine (Feld `kalender`), ein nicht lesbarer Lese-Kalender gibt einen Hinweis statt Ausfall. Nebenbei BF-34 behoben
+  (Ganztags- + Uhrzeit-Termine gemischt). Test + Gegenprobe, Suite 853 gruen. CEO gibt seinen Kalender fuer LUNA mit
+  „Alle Termindetails sehen" frei; `GOOGLE_CALENDAR_LESEN=hanserautisch@gmail.com` kommt erst in Etappe 2 in die `.env`
+  (vorher waeren die Termine doppelt, weil der Zugang noch das CEO-Konto ist).
 - Gate: nach Etappe 2 -- Angebots-Erinnerung liegt im LUNA-Kalender und erscheint per Einladung im Apple-Kalender.
 
 ### Etappe 2: Umschalten auf das LUNA-Konto
 
 - Status: geplant
-- Ziel / Scope: `deploy/google_oauth_neu.py` mit dem LUNA-Konto (Token nur in die `.env` MACO470 + NAS), Selbstcheck
-  gruen, Telegram-Werkzeuge + Briefing + Watcher gegen das neue Konto pruefen.
+- Ziel / Scope: `deploy/google_oauth_neu.py` mit dem LUNA-Konto (Token nur in die `.env` MACO470 + NAS),
+  `GOOGLE_CALENDAR_LESEN=hanserautisch@gmail.com` in beide `.env`, Selbstcheck gruen, Telegram-Werkzeuge + Briefing + Watcher gegen das neue Konto pruefen.
 - Gate: Briefing, Agenda und LUNA-Suche laufen; Selbstcheck meldet keinen Fehler.
 
 ### Etappe 3: Mail-Eingang ueber Weiterleitung

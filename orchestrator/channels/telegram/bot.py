@@ -110,7 +110,8 @@ def _build_ctx(cfg: dict, secrets: dict):
     google = GoogleWorkspace(GoogleAuth.from_env(env=secrets),
                              standard_einladung=secrets.get("GOOGLE_CALENDAR_DEFAULT_ATTENDEE", ""),
                              zeitzone=secrets.get("GOOGLE_CALENDAR_TIMEZONE", "Europe/Berlin"),
-                             kalender_id=secrets.get("GOOGLE_CALENDAR_ID", ""))
+                             kalender_id=secrets.get("GOOGLE_CALENDAR_ID", ""),
+                             lese_kalender=secrets.get("GOOGLE_CALENDAR_LESEN", ""))
     # Proaktiver Notifier (Outbox) -- LUNA/Watcher melden sich unaufgefordert beim CEO.
     from ...core.notifications import Notifications
     notifications = Notifications(ROOT / "notifications" / "log.jsonl", secrets=secret_values)

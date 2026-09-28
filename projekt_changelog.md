@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 10:47] — Claude Code (MACO470)
+- **Was:** Etappe 1 (`LUNA_GOOGLE_KONTO_ROADMAP.md`): Lese-Kalender (`GOOGLE_CALENDAR_LESEN`) -- LUNA schreibt nur in ihren
+  Kalender, liest den des CEO fuer Briefing/Kollisionen mit; Agenda mischt beide, markiert die Herkunft, Hinweis statt
+  Ausfall bei nicht lesbarem Kalender. BF-34 (Absturz bei gemischten Ganztags-/Uhrzeit-Terminen) behoben und
+  eingetragen. Tests + Gegenprobe, Suite 853 gruen.
+- **Warum:** CEO-Entscheidung „Ja, nur lesen".
+- **Betroffen:** `orchestrator/governance/google_workspace.py`, `orchestrator/channels/{telegram/bot.py,web/app.py}`,
+  `orchestrator/tests/test_google_workspace.py`, `docs/bekannte-fehler.md`, `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
 ## [2026-09-28 10:45] — Claude Code (MACO470)
 - **Was:** Korrektur Etappe 1 (`LUNA_GOOGLE_KONTO_ROADMAP.md`): Termine kommen in **LUNAs eigenen Kalender**, nicht in den
   des CEO. `GOOGLE_CALENDAR_ID=hanserautisch@gmail.com` wieder aus `.env` MACO470 + NAS entfernt (NAS wieder 66 Zeilen);
