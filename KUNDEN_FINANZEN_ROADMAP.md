@@ -4,8 +4,9 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Deploy Etappe 11; Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung
-  durchspielen, eine gemischte Rechnung aufteilen). Offen danach nur Etappe 3c (wartet auf Meta-Exporte). Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
+- Naechster Schritt: Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
+  gemischte Rechnung aufteilen); Etappe 12 (Barter-Deals) ist geplant -- vor dem Bau die drei offenen Entscheidungen
+  mit dem CEO klaeren und CEO-Go einholen. Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -358,6 +359,49 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   Position inkl. **„privat – nicht absetzbar“** (§ 12 EStG), Summenkontrolle, „Differenz als Position“ (Versand/Rabatt);
   GWG-Grenze und Anlagegut (Nutzungsdauer) je Position; Zahlungen anteilig je Position (centgenau), Privatanteil im
   Journal sichtbar, zaehlt nicht in EUeR/Cockpit/AfA; Export-Spalte „Aufteilung“. Tests + Gegenprobe; Browser-Test.
+
+### Etappe 12: Barter-Deals (Leistung gegen Ware)
+
+- Status: geplant (CEO-Wunsch 2026-09-28: „Barter Deals in Angeboten und allen folgenden Belegarten aufführen“) --
+  Umsetzung erst nach CEO-Go und Klaerung der offenen Entscheidungen unten
+- Hintergrund (vor Umsetzung gegenpruefen, [?] = noch nicht belegt): Ein Barter-Deal ist ein **tauschaehnlicher
+  Umsatz** -- statt Geld bekommen wir Ware (z. B. Produkte einer Marke fuer Content). Steuerlich ist der **Wert der
+  erhaltenen Ware eine Betriebseinnahme**, zugeflossen bei Erhalt [?]; massgeblich ist der uebliche Endpreis/
+  Marktwert am Tag des Erhalts [?]. Als Kleinunternehmer zaehlt der Wert auch zum **§ 19-Umsatz** (Bemessung nach dem
+  Wert der Gegenleistung, § 10 Abs. 2 UStG) [?] -- also zur 25.000/100.000-EUR-Grenze. Was danach mit der Ware passiert,
+  ist ein zweiter Vorgang: **betrieblich genutzt** -> Betriebsausgabe (GWG/Anlage/Verbrauch) in gleicher Hoehe,
+  **privat behalten** -> Einnahme bleibt, keine Ausgabe (Entnahme) [?], **weiterverkauft** -> Verkaufserloes ist
+  ebenfalls Einnahme [?]. Recherche (amtliche Quellen, BMF/Finanzverwaltung zu Influencer-Sachleistungen) ist Teil
+  dieser Etappe.
+- Ziel / Scope:
+  - **Angebot und Auftragsbestaetigung:** je Position oder fuer den ganzen Deal eine Gegenleistung „in Ware“ mit
+    Warenbezeichnung und Warenwert; Mischformen (Geld + Ware); das PDF zeigt klar „Gegenleistung: Produkte im Wert
+    von X EUR (Sachleistung)“ und den Geldteil getrennt.
+  - **Rechnung:** weist den vollen Wert aus (Geld- und Sachteil), zahlbar ist nur der Geldteil; Hinweis, dass der
+    Sachteil durch Lieferung der Ware ausgeglichen wird; Pflichtangaben § 34a UStDV / § 19-Hinweis wie gehabt [?].
+  - **„Zahlung“ in Ware:** neuer Vorgang „Ware erhalten“ (Datum, Bezeichnung, Wert, Nachweis wie Foto/Screenshot
+    des Shop-Preises/Lieferschein als Beleg) -> Einnahme im Journal (Kategorie Barter/Sachleistung), zaehlt zur
+    Kleinunternehmer-Grenze; offene Sachleistung erscheint unter „bekommen wir“ und in den To-dos.
+  - **Verwendung der Ware:** beim Erhalt fragen „betrieblich / privat / Weiterverkauf“ -> automatische
+    Gegenbuchung (Betriebsausgabe mit GWG-/Anlage-Pruefung) bzw. nichts (privat); nachtraeglich aenderbar per Storno.
+  - **Mahnwesen:** gemahnt wird nur der Geldteil; ausbleibende Ware als To-do „Ware nachfordern“ (kein Zins).
+  - **Cockpit/EUeR/Export:** Barter-Einnahmen und -Ausgaben sichtbar getrennt, Drill-down, Export-Spalten; EUeR-Zeile
+    fuer Kleinunternehmer vermutlich Zeile 12 [?].
+  - **Collab-CRM:** Deals mit Marken sind oft Barter -> Kennzeichnung am Kunden/Deal [?].
+- Offene Entscheidungen (CEO, vor dem Bau): (1) Wie wird der Warenwert festgelegt -- Preisangabe der Marke, eigener
+  Nachweis (Shop-Screenshot) oder beides? (2) Standard-Verwendung der Ware (meist betrieblich fuer Content, privat,
+  gemischt)? (3) Sollen Angebote in reinem Barter ueberhaupt eine Rechnung ausloesen (empfohlen: ja, fuer die
+  Nachvollziehbarkeit) [?].
+- Gate: ein Probe-Deal (Geld + Ware) laeuft von Angebot bis EUeR durch; Summen je Belegart von Hand nachgerechnet;
+  Wert der Ware zaehlt in Journal, EUeR und Kleinunternehmer-Grenze; privat behaltene Ware erzeugt keine Ausgabe;
+  Tests + Gegenprobe; CEO-Abnahme der PDFs.
+- Verifikation (vorab): `pytest -q orchestrator` gruen; Probe-Deal 500 EUR Geld + Ware 300 EUR: Rechnung 800 EUR,
+  offen 500 EUR; nach Geldeingang + „Ware erhalten (betrieblich, GWG)“: Einnahmen 800 EUR, Ausgaben 300 EUR,
+  KU-Umsatz +800 EUR; Variante „privat“: Einnahmen 800 EUR, Ausgaben 0 EUR.
+- Risiko: steuerliche Einordnung -> vorab recherchieren, Zweifelsfaelle als Steuerberater-Frage markieren;
+  bestehende Belege bleiben unveraendert (neue Felder sind optional, additive Ereignisse).
+- Dokumentation: Changelog, Roadmap-Status, `ROADMAP.md`, Entscheidungs-Register (Wertermittlung, Verwendung),
+  `docs/datenfluesse.md`, Verfahrensdokumentation (Tauschgeschaefte).
 
 ## Reihenfolge
 

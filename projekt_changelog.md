@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 19:09] — Claude Code
+- **Was:** KUNDEN_FINANZEN_ROADMAP: Etappe 12 „Barter-Deals (Leistung gegen Ware)“ geplant -- Scope ueber alle Belegarten (Angebot, Auftrag, Rechnung, Ware erhalten als Einnahme, Verwendung der Ware, Mahnwesen nur Geldteil, Cockpit/EUeR/Export, Collab-CRM), steuerlicher Hintergrund mit [?]-Markern, drei offene CEO-Entscheidungen, Gate und Verifikation. Keine Code-Aenderung.
+- **Warum:** CEO: „Barter Deals in Angeboten und allen folgenden Belegarten aufführen“ -- aufnehmen.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-09-28 17:47] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 11: Positionen werden beim Einlesen erkannt (E-Rechnung exakt inkl. Brutto-Umrechnung, PDF/OCR-Zeilenregel, Backoffice-KI je Position mit Kategorie); Beleg „In Positionen aufteilen“ mit Kategorie je Position inkl. „privat – nicht absetzbar“, Summenkontrolle, „Differenz als Position“; GWG/Anlage je Position; Zahlungen anteilig, Privatanteil sichtbar aber ohne Wirkung auf EUeR/Cockpit/AfA; Export-Spalte „Aufteilung“; Verfahrensdokumentation um Mahnwesen und Aufteilung ergaenzt. UI-Cache app v57 / style v25.
 - **Warum:** CEO: gemischte Rechnungen (z. B. Amazon) sauber behandeln; Positionen beim Scannen erkennen und einzeln auffuehren.
