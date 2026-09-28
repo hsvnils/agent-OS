@@ -1856,8 +1856,31 @@ def _finanzen() -> Finanzen:
 
 
 @app.get("/api/finanzen/uebersicht")
-def finanzen_uebersicht(jahr: int = 0):
-    return _finanzen().uebersicht(jahr or None)
+def finanzen_uebersicht(jahr: int = 0, zeitraum: str = "jahr"):
+    try:
+        return _finanzen().uebersicht(jahr or None, zeitraum or "jahr")
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc))
+
+
+@app.get("/api/finanzen/posten")
+def finanzen_posten(jahr: int = 0, zeitraum: str = "jahr", art: str = "", kategorie: str = "", gegenpartei: str = ""):
+    """Drill-down (Etappe 8): die Zeilen hinter einer Zahl im Cockpit; `summe_cent` = die angezeigte Zahl."""
+    from ...core.finanzen import kennzahlen
+    j = jahr or int(jetzt_iso()[:4])
+    try:
+        z = _finanzen().posten(j, zeitraum or "jahr", art=art, kategorie=kategorie, gegenpartei=gegenpartei)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc))
+    return {"jahr": j, "zeitraum": zeitraum, "zeilen": z, "kennzahlen": kennzahlen(z)}
+
+
+@app.get("/api/finanzen/ki-kosten")
+def finanzen_ki_kosten(jahr: int = 0):
+    """KI-Verbrauch (geschaetzt) je Monat/Anbieter + Monatsbudget -- nur Anzeige, nicht in der EUeR."""
+    from ...core.kosten import KostenStore
+    j = jahr or int(jetzt_iso()[:4])
+    return KostenStore(ROOT / "finance" / "kosten-log.jsonl").jahr(j) | {"budget": _budget()}
 
 
 @app.get("/api/finanzen/journal")

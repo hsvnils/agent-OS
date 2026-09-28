@@ -4,8 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Deploy + Abnahme Etappe 7 (Finanzbereich in LUNA-OS pruefen, eine Einnahme ohne Rechnung buchen);
-  danach Go fuer Etappe 8. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
+- Naechster Schritt: Deploy Etappe 8; Abnahme Etappen 7 + 8 (Finanzbereich pruefen, Zahlen per Klick gegen die
+  Buchungen abgleichen, Meta-Euro-Betrag per Telegram buchen); danach Go fuer Etappe 9 (Jahresabschluss + Export). Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -306,7 +306,14 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 8: Finanz-Cockpit in LUNA-OS
 
-- Status: geplant
+- Status: umgesetzt (CEO-Go 2026-09-28 „Lass uns schon mal mit Etappe 8 weitermachen“), Deploy + Abnahme offen
+- Ergebnis: Zeitraum-Wahl (Jahr, Q1-Q4, Monat) mit Vorjahreszeitraum; jede Kennzahl, jeder Monat, jedes Quartal, jede
+  Kategorie und jeder Kunde per Klick als Buchungsliste (Drill-down, `GET /api/finanzen/posten`; Summe = Kachel);
+  Quartalstabelle mit Vorjahr + Veraenderung; Monatsverlauf mit Vorjahr (blass); Abschreibung monatsgenau (Monate/
+  Quartale addieren sich exakt zum Jahr; im laufenden Jahr nur bis zum aktuellen Monat); Hochrechnung Jahresumsatz fuer
+  die KU-Grenze; KI-Kosten (Verbrauch geschaetzt je Monat/Anbieter gegen das Monatsbudget, bewusst nicht in der EUeR --
+  die Anbieter-Rechnung ist der Beleg). Tests (Kennzahl = Summe ihrer Posten fuer Jahr/Quartal/Monat) + Gegenprobe;
+  Headless-Chrome-Test mit echten API-Daten.
 - Ziel / Scope: Einnahmen, Ausgaben, Gewinn (Monat/Quartal/Jahr, Vorjahresvergleich), offene Posten, Top-Kunden,
   Ausgaben je Kategorie, Kleinunternehmer-Grenze als Balken, KI-Kosten eingebunden; detaillierte Drill-downs.
 - Gate: CEO-Abnahme der Zahlen gegen die Rohdaten.

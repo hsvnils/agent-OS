@@ -82,6 +82,22 @@ class KostenStore:
         return {"monat": ym, "gesamt_eur": round(gesamt, 2), "je_quelle": je_quelle,
                 "je_agent": je_agent, "je_provider": je_provider}
 
+    def jahr(self, jahr: int) -> dict:
+        """KI-Verbrauch eines Jahres je Monat und je Anbieter (Finanz-Cockpit, Etappe 8) -- geschaetzt aus den Token-
+        Zaehlern; die echte Ausgabe ist die Rechnung des Anbieters (Beleg), deshalb nicht in der EUeR."""
+        monate = [0.0] * 12
+        je_provider: dict[str, float] = {}
+        for e in self._events():
+            ts = str(e.get("ts", ""))
+            if not ts.startswith(f"{jahr}-"):
+                continue
+            eur = float(e.get("eur", 0.0) or 0.0)
+            monate[int(ts[5:7]) - 1] += eur
+            p = e.get("provider", "?")
+            je_provider[p] = je_provider.get(p, 0.0) + eur
+        return {"jahr": jahr, "monate_eur": [round(x, 2) for x in monate], "gesamt_eur": round(sum(monate), 2),
+                "je_provider": {k: round(v, 2) for k, v in sorted(je_provider.items(), key=lambda x: -x[1])}}
+
     def _append(self, event: dict) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         line = redact(json.dumps(event, ensure_ascii=False), self.secrets)
