@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 19:56] — Claude Code
+- **Was:** Einmalig auf CEO-Auftrag: Apple-Auftragsbestaetigung W1544208136 (Apple Developer Programm, 99,00 EUR, 23.05.2026; Mail ohne PDF-Anhang, an LUNA weitergeleitet) als Belegersatz-PDF aus dem Mailinhalt erzeugt und ueber LUNA-OS hochgeladen -> Beleg ER-2026-0003 (Status zu pruefen; Buchung macht der CEO). Keine Code-Aenderung.
+- **Warum:** CEO: „Die Mail der Auftragsbestaetigung von Apple ... als RG bitte einmalig einfach anlegen“.
+- **Betroffen:** Live-Kassenbuch NAS (`buchhaltung/log.jsonl`, `buchhaltung/belege/2026/`), keine Repo-Dateien ausser diesem Eintrag
+
 ## [2026-09-28 19:46] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 12 Barter-Deals: Gegenleistung in Ware in Angebot/Auftrag/Rechnung (Editor, Detail, PDF), Rechnung mit Geld- und Warenteil, „Ware erhalten“ (Wert Marke + eigener Nachweis, Verwendung Content/privat/Leihgabe, Nachweis-Dateien, Storno), Journal/EUeR/AfA/Export, KU-Grenze, Mahnung nur Geldteil, To-do fuer ausstehende Ware, Eigenbeleg „Verkauf oder private Weiternutzung“ (EUeR Zeile 19). UI-Cache app v58.
 - **Warum:** CEO-Go fuer Etappe 12 mit den Entscheidungen (Wert: beides, Standard Content, Rechnung auch bei reinem Barter).
