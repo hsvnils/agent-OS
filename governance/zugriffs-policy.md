@@ -39,6 +39,8 @@
 > Read-Tools (mail_suchen/lesen, kalender_agenda, drive_suchen/lesen, tabelle_lesen) laufen direkt.
 > Write-Tools (mail_senden, termin_anlegen, tabelle_schreiben) liefern OHNE `bestaetigt=true` nur eine
 > **Vorschau** und werden erst nach ausdruecklicher CEO-Bestaetigung ausgefuehrt (Mensch-Tor, AGENTS.md 4).
+> **Ausnahme (CEO 2026-09-28):** LUNAs **eigene**, im Kassenbuch protokollierte Erinnerungen zu erledigten Angeboten/
+> Rechnungen loescht sie ohne Rueckfrage (`core/erinnerungen.py`); fremde Termine bleiben gated.
 > `mail_entwurf` ist sicher (legt nur einen Entwurf an, sendet nicht). Least-Privilege ueber OAuth-Scopes
 > (CISO autorisiert); Credentials NUR in `orchestrator/.env` (separates Konto), Refresh-Token nie im Repo.
 > **Go-Live:** OAuth-Setup laut `deploy/google-oauth-setup.md`; ohne Credentials -> Fall-B-Hinweis (CEO-Tor).

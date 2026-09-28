@@ -559,6 +559,7 @@ class MockGoogleWorkspace:
     def __init__(self, standard_einladung: str = ""):
         self.gesendet: list[dict] = []
         self.termine: list[dict] = []
+        self.geloeschte_termine: list[str] = []
         self.standard_einladung = (standard_einladung or "").strip()
 
     def verfuegbar(self) -> bool:
@@ -618,7 +619,8 @@ class MockGoogleWorkspace:
             return {"ok": False, "bestaetigung_noetig": True,
                     "vorschau": {"titel": titel, "start": start, "ende": ende, "einladung": einladungen}}
         self.termine.append({"titel": titel, "start": start, "einladung": einladungen})
-        return _ok(termin_id="e2", link="https://cal.test/e2", eingeladen=einladungen)
+        tid = f"e{len(self.termine) + 1}"
+        return _ok(termin_id=tid, link=f"https://cal.test/{tid}", eingeladen=einladungen)
 
     def neue_mails(self, max_results=10):
         return _ok(mails=[{"id": "m9", "von": "chef@firma.test", "betreff": "Wichtig: Angebot",
@@ -635,6 +637,7 @@ class MockGoogleWorkspace:
     def termin_loeschen(self, event_id, *, bestaetigt=False):
         if not bestaetigt:
             return {"ok": False, "bestaetigung_noetig": True, "vorschau": {"event_id": event_id}}
+        self.geloeschte_termine.append(event_id)
         return _ok(geloescht=True)
 
     def mail_markieren(self, message_id, *, gelesen=True):

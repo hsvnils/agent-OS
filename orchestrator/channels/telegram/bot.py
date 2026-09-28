@@ -1366,6 +1366,9 @@ def main() -> None:
                         from ...core.buchhaltung import Buchhaltung, jetzt as _bh_jetzt
                         _bh = Buchhaltung(ROOT / "buchhaltung")
                         belege_sichern(_bh, ctx.google, notify=(ctx.notifications.enqueue if ctx.notifications else None))
+                        # CEO 2026-09-28: Nachfass-/Faelligkeits-Termine erledigter Angebote/Rechnungen nachholend loeschen
+                        from ...core.erinnerungen import erledigte_entfernen
+                        erledigte_entfernen(_bh, ctx.google)
                         _j = _bh_jetzt()
                         if _j.hour >= 3 and ctx.agenda is not None \
                                 and not ctx.agenda.briefing_gesendet("drive-stand", _j.date().isoformat()):

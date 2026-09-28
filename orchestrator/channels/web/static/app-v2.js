@@ -1658,7 +1658,7 @@ async function handleAct(act, el) {
     case "re-bezahlt": {
       const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/bezahlt`, { datum: $("#rez-datum").value, betrag: $("#rez-betrag").value.trim() || null, notiz: $("#rez-notiz").value.trim() });
       if (!r || !r.ok) return kundenMsg("rez-msg", (r && r.hinweis) || "Fehler.", false);
-      if (AKTIV === "rechnungen") renderRechnungen(); return reDetail(id, r.rest_cent > 0 ? `Zahlung ${cent2eur(r.betrag_cent)} gebucht — offen: ${cent2eur(r.rest_cent)}.` : "Vollständig bezahlt.");
+      if (AKTIV === "rechnungen") renderRechnungen(); return reDetail(id, [r.rest_cent > 0 ? `Zahlung ${cent2eur(r.betrag_cent)} gebucht — offen: ${cent2eur(r.rest_cent)}.` : "Vollständig bezahlt.", ...(r.hinweise || [])].join("\n"));
     }
     case "re-storno": {
       const grund = prompt("Stornieren — Grund (erscheint auf der Stornorechnung):", ""); if (!grund) return;
@@ -1666,7 +1666,7 @@ async function handleAct(act, el) {
       const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/stornieren`, { grund, korrektur });
       if (AKTIV === "rechnungen") renderRechnungen();
       if (!r || !r.ok) return reDetail(id, (r && r.hinweis) || "Fehler.", true);
-      return r.korrektur_entwurf ? reEditor(r.korrektur_entwurf) : reDetail(r.storno, `Stornorechnung ${r.storno} erstellt.`);
+      return r.korrektur_entwurf ? reEditor(r.korrektur_entwurf) : reDetail(r.storno, [`Stornorechnung ${r.storno} erstellt.`, ...(r.hinweise || [])].join("\n"));
     }
     case "re-box-zu": { const bx = $("#re-aktion-box"); if (bx) bx.innerHTML = ""; return; }
     case "ab-rechnung": { const r = await jpost(`/api/finanzen/rechnungen/aus-auftrag/${encodeURIComponent(id)}`, {}); if (!r || !r.ok) return abDetail(id, (r && r.hinweis) || "Fehler.", true); return reEditor(r.entwurf_id); }
@@ -1694,7 +1694,7 @@ async function handleAct(act, el) {
       const grund = prompt(val === "angenommen" ? "Angenommen — Notiz (optional, z. B. „per Mail vom …“):" : "Abgelehnt — Grund (optional):", ""); if (grund === null) return;
       const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/status`, { status: val, grund });
       if (AKTIV === "angebote") renderAngebote();
-      return anDetail(id, r && r.ok ? (val === "angenommen" ? "Angenommen." : "Abgelehnt.") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
+      return anDetail(id, r && r.ok ? [val === "angenommen" ? "Angenommen." : "Abgelehnt.", ...(r.hinweise || [])].join("\n") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
     case "kunde-neu": return kundeNeu(id || "");
     case "kunde-anlegen": return kundeAnlegen(id || "");
