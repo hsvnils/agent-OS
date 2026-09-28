@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 12:43] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 6: Belege ausser Haus in LUNAs Google Drive (`core/beleg_sicherung.py`,
+  Drive-Funktionen in `google_workspace`, Bot-Poll 15 min + Tagesstand ab 03:00). Idempotent, Pruefsummen vor/nach dem
+  Upload, nie loeschen. Tests + Gegenprobe, Suite 867 gruen.
+- **Warum:** CEO: „Erst Etappe 6 und danach direkt Etappe 4".
+- **Betroffen:** `orchestrator/core/beleg_sicherung.py`, `orchestrator/governance/google_workspace.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_beleg_sicherung.py`, `docs/datenfluesse.md`,
+  `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
 ## [2026-09-28 12:40] — Claude Code (MACO470)
 - **Was:** Steuernummer des CEO (Finanzamt, fuer Einkommensteuer/EUeR) in `buchhaltung/firmendaten.json` **nur auf der NAS**
   eingetragen (Formatpruefung, Uebergabe per stdin, Nummer steht nicht im Repo); live geprueft: erscheint in der Fusszeile
