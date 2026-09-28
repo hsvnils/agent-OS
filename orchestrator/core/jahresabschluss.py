@@ -65,10 +65,11 @@ def abschluss_check(bh: Buchhaltung, kunden, jahr: int, heute: date | None = Non
     ende = min(12, heute.month - 1) if jahr == heute.year else 12
     quittiert = {x["daten"].get("schluessel") for x in e if x["typ"] == QUITTUNG}
     start = beginn_buchhaltung(e) or f"{jahr}-13"
-    offen = [f"{jahr}-{m:02d}" for m in range(1, ende + 1)
-             if f"{jahr}-{m:02d}" >= start and f"monat:{jahr}-{m:02d}" not in quittiert]
+    faellig = [f"{jahr}-{m:02d}" for m in range(1, ende + 1) if f"{jahr}-{m:02d}" >= start]
+    offen = [m for m in faellig if f"monat:{m}" not in quittiert]
     p(not offen, True, "Alle Monate mit dem Kontoauszug abgeglichen",
-      ("offen: " + ", ".join(f"{x[5:]}/{x[:4]}" for x in offen)) if offen else "bestätigt", "finanzen:uebersicht")
+      ("offen: " + ", ".join(f"{x[5:]}/{x[:4]}" for x in offen)) if offen
+      else f"{len(faellig)} Monat(e) bestätigt" if faellig else "noch kein abgeschlossener Monat", "finanzen:uebersicht")
     belege = EingangStore._falte(e)
     zp = [x["nummer"] for x in belege.values() if x["status"] == "zu_pruefen"]
     p(not zp, True, "Alle Belege geprüft und gebucht", ", ".join(zp[:6]) + (" …" if len(zp) > 6 else ""), "belege:pruefen")
