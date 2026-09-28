@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 11:05] — Claude Code (MACO470)
+- **Was:** BF-35 behoben: Chat bekommt bei jeder Nachricht das aktuelle Datum (Wochentag, Datum, Uhrzeit Europe/Berlin)
+  in der Systemanweisung (`system_prompt()`); Termin-Werkzeuge weisen Starts in der Vergangenheit zurueck. Tests
+  (`test_chat_datum.py`) + Gegenproben; `test_google_workspace.py` Tests 5/5b auf relative Daten. Suite 857 gruen.
+  Umschaltung bestaetigt: Test-Termin landete in LUNAs Kalender (aber 16.05.2024).
+- **Warum:** CEO-Screenshot vom Telegram-Test („morgen, 16. Mai 2024").
+- **Betroffen:** `orchestrator/core/{hoa_conversation,hoa_tools}.py`, `orchestrator/tests/{test_chat_datum,test_google_workspace}.py`,
+  `docs/bekannte-fehler.md`, `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
 ## [2026-09-28 10:56] — Claude Code (MACO470)
 - **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 2: LUNA auf ihr eigenes Google-Konto umgeschaltet (CEO-Zustimmung mit
   luna.hanserautisch@gmail.com; `deploy/google_oauth_neu.py --erwartet` prueft das Konto vor dem Schreiben). `.env`

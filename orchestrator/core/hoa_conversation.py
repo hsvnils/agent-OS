@@ -134,7 +134,7 @@ class HoaConversation:
         for _ in range(self.max_iter):
             self.messages = verdichte(self.messages, self.verlauf_budget)
             try:
-                resp = self.router.create(system=TEXT_SYSTEM_PROMPT, tools=self._aktuelle_tools(),
+                resp = self.router.create(system=system_prompt(), tools=self._aktuelle_tools(),
                                           messages=self.messages)
             except Exception as exc:
                 # Kaputter Verlauf (z. B. 'tool_use ids ohne tool_result') -> Verlauf zuruecksetzen
@@ -142,7 +142,7 @@ class HoaConversation:
                 if self._ist_verlauf_fehler(exc):
                     self.messages = [{"role": "user", "content": user_text}]
                     try:
-                        resp = self.router.create(system=TEXT_SYSTEM_PROMPT, tools=self._aktuelle_tools(),
+                        resp = self.router.create(system=system_prompt(), tools=self._aktuelle_tools(),
                                                   messages=self.messages)
                     except Exception as exc2:
                         self.messages = []
@@ -325,6 +325,28 @@ def unbekannte_auftrags_ids(text: str, store) -> list[str]:
 
 def _text(content) -> str:
     return " ".join(btext(b) for b in content if btype(b) == "text").strip()
+
+
+_WOCHENTAGE = ("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
+
+
+def jetzt_berlin():
+    from datetime import datetime
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("Europe/Berlin"))
+    except Exception:
+        return datetime.now()
+
+
+def system_prompt(jetzt=None) -> str:
+    """Fester Prompt + aktuelles Datum. Ohne Datum rechnete das Modell „morgen" von seinem Trainingsstand aus und trug
+    einen Termin am 16.05.2024 ein (BF-35, 2026-09-28)."""
+    j = jetzt or jetzt_berlin()
+    return (TEXT_SYSTEM_PROMPT + f" JETZT: Heute ist {_WOCHENTAGE[j.weekday()]}, der {j:%d.%m.%Y}, {j:%H:%M} Uhr "
+            f"(Europe/Berlin). Rechne 'heute', 'morgen', 'Freitag', 'naechste Woche' immer von diesem Datum aus und "
+            f"gib Termine/Zeiten an Werkzeuge immer mit vollem Datum im Format {j:%Y}-MM-TTTHH:MM:SS an. Nenne dem CEO "
+            f"Datum mit Wochentag, damit er es pruefen kann.")
 
 
 def _fehlertext(exc: Exception) -> str:
