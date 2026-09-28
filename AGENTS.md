@@ -270,5 +270,6 @@ Autonomie). Kostenvoranschlag des CFO und Budget-Check des HoA sind die **Vorber
 | `docs/entscheidungs-register.md` | Alle Entscheidungen (angenommen/verworfen) mit Begruendung. |
 | `docs/bekannte-fehler.md` | Bekannte Fehler, Stolperfallen, Umgehungen, Test-Baseline.       |
 | `docs/datenfluesse.md`    | Datenfluesse: externe Dienste, Tabellen, Dateien, Schnittstellen. |
+| `docs/verfahrensdokumentation-buchhaltung.md` | Verfahrensdokumentation der Buchhaltung (GoBD). |
 | `scripts/doku_check.py`   | Doku-Check (Roadmap-Header/-Verzeichnis, Datenfluss-Drift).      |
 | `docs/`                   | Eingefrorene Provenienz/Historie (Briefs, Bootstrap-/Build-Prompts). |

@@ -8,13 +8,13 @@
 
 ## Test-Baseline (Massstab fuer das Test-Gate)
 
-Stand 2026-09-25 auf dem MACO470 (`.venv`, `python -m pytest`), nach Etappe 1 der `BETRIEBSLUECKEN_ROADMAP.md`:
+Stand 2026-09-28 auf dem MACO470 (`.venv`, `python -m pytest`), nach KUNDEN_FINANZEN Etappe 9 (vorher 2026-09-25: 723/74/8):
 
 | Suite | Ergebnis | Erwartet rot / uebersprungen |
 |---|---|---|
-| `orchestrator/tests` | 723 bestanden, 0 rot, 4 uebersprungen | uebersprungen: Phase 17 „plan() erfordert macOS" (BF-01 behoben 2026-09-25) |
+| `orchestrator/tests` | 917 bestanden, 0 rot, 4 uebersprungen (BF-38: einmal 1 rot, nicht reproduzierbar) | uebersprungen: Phase 17 „plan() erfordert macOS" (BF-01 behoben 2026-09-25) |
 | `cutter/tests` | 74 bestanden | – |
-| `backoffice/tests` | 8 bestanden (seit 2026-09-27) | – |
+| `backoffice/tests` | 14 bestanden | – |
 
 Regel: **Kein neuer roter Test.** Wer die Baseline aendert (Test repariert oder bewusst rot), schreibt diese
 Tabelle fort.
@@ -29,6 +29,7 @@ Tabelle fort.
 | BF-22 | MACO470 lagert massiv aus (bis 350.000 Seiten/s), LUNA-Antworten lokal 4-13 min oder Gemini springt ein | `qwen3:30b-a3b` belegt mit Grafik-Auslagerung ~32 GB (19,7 GB Prozess + ~12 GB Grafikspeicher aus dem RAM) bei 29,6 GB RAM und ~12,7 GB Grundlast (Programme, Kernel, Bildschirm); nur CPU: 34,6 GB | Chat lokal pausiert (`LOCAL_LLM_CHAT=aus`, 2026-09-25 21:4x), Modell entladen. Loesung: kleineres Modell testen (CEO-Tor) — siehe `LOKALES_LLM_ROADMAP.md` Etappe 3b | 2026-09-25 |
 | BF-23 | Lokales `qwen3:14b` liefert Endlos-Wiederholungen oder Zeichensalat | vermutlich Prompt-Cache-Wiederverwendung + KV-Cache `q8_0` + Flash-Attention auf Vulkan (Radeon 890M); auffaellig: `prompt_tokens = 0` bei genau diesen Antworten | nicht behoben; Modell nicht im Einsatz. Eingrenzung 2026-09-26: bei 9 Text-Auftraegen ueber die **native** API mit 8k-Kontext und ohne Werkzeuge trat es **nicht** auf (gleiche Server-Einstellungen) -> vermutlich an `/v1` + lange Werkzeugliste + Prompt-Cache gebunden. Offene Luecke: LUNA prueft lokale Antworten nicht auf Plausibilitaet | 2026-09-26 |
 | BF-26 | `orchestrator/.env` auf der NAS ist fuer alle NAS-Benutzer lesbar (`rw-r--r--`) | Dateirechte nie eingeschraenkt | CISO-Thema, nicht geaendert; Fix-Idee: `chmod 600` (Container-Benutzer muss weiter lesen koennen — vorher pruefen) | 2026-09-25 |
+| BF-38 | Testsuite einmal mit **1 rotem Test** (929 bestanden), danach 16 Laeufe in Folge gruen; welcher Test, ist nicht erfasst | unbekannt -- vermutlich zeit- oder reihenfolgeabhaengig (viele Tests rechnen mit `jetzt()`) | Beim naechsten Auftreten **Testnamen und Uhrzeit notieren** (`pytest -q ... \| grep FAILED`) und hier eintragen | 2026-09-28 |
 | BF-02 | Nach einem Neustart des MACO470 ohne Anmeldung startet nichts (Worker, Backup-Timer) | Windows-Aufgabe „Nur interaktiv", `AutoAdminLogon=0` | „Unabhaengig von der Anmeldung ausfuehren" oder Auto-Login — **CEO-Aufgabe** (Passwort) | 2026-08-17, MR |
 | BF-05 | Intermittierend „alle Anbieter erschoepft" | Gemini-Gratis-Rate-Limit unter Last | zurueckgestellt; lokales LLM (M6) soll es loesen | 2026-07-08, CL:699 |
 | BF-06 | Instagram liefert nicht alle Threads; eine Marken-DM kam nie an | `me/conversations` nur mit `limit=1` stabil; Webhook-Zustellung ungeklaert | Thread fuer Thread blaettern (`0b87833`); Meta-Grenze bleibt; Thema vom CEO abgehakt | 2026-07, CL:892, 981 |

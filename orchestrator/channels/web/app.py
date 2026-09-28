@@ -1904,6 +1904,33 @@ def finanzen_anlagen(jahr: int = 0):
     return {"jahr": j, "anlagen": _finanzen().anlagen(j)}
 
 
+@app.get("/api/finanzen/abschluss")
+def finanzen_abschluss(jahr: int = 0):
+    """Etappe 9: Abschluss-Pruefung + EUeR je amtlicher Zeile (Eingabehilfe fuer ELSTER)."""
+    from ...core import jahresabschluss as ja
+    j = jahr or int(jetzt_iso()[:4])
+    return {"jahr": j, "jahre": ja.jahre_mit_daten(kunden_store.bh),
+            "pruefung": ja.abschluss_check(kunden_store.bh, kunden_store, j), "euer": ja.euer_zeilen(_finanzen(), j)}
+
+
+@app.get("/api/finanzen/abschluss/export")
+def finanzen_export(jahr: int = 0):
+    """Export fuer Finanzamt/Steuerberater (ZIP: Tabellen + index.xml, Kassenbuch, Belege, EUeR-PDF)."""
+    from ...core.jahresabschluss import export_zip
+    j = jahr or int(jetzt_iso()[:4])
+    daten = export_zip(kunden_store.bh, kunden_store, j, _firmendaten() or {})
+    return Response(daten, media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="Buchhaltung_{j}.zip"'})
+
+
+@app.get("/api/finanzen/abschluss/euer.pdf")
+def finanzen_euer_pdf(jahr: int = 0):
+    from ...core.jahresabschluss import euer_pdf
+    j = jahr or int(jetzt_iso()[:4])
+    return Response(euer_pdf(_finanzen(), j, _firmendaten() or {}), media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="EUER_{j}.pdf"'})
+
+
 @app.get("/api/finanzen/eigenbelege")
 def eigenbelege_liste():
     return {"eigenbelege": EigenbelegStore(kunden_store.bh).liste(), "kategorien": KATEGORIE_NAMEN}

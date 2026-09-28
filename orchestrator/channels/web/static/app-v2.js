@@ -1385,9 +1385,9 @@ async function renderFinanzen(meldung) {
   FIN_JAHR = u.jahr;
   const jahrWahl = `<select id="fin-jahr" class="v2-inp" style="width:auto">${u.jahre.map(j => `<option ${j === u.jahr ? "selected" : ""}>${j}</option>`).join("")}</select>`;
   const zeitWahl = sub === "uebersicht" ? `<select id="fin-zeit" class="v2-inp" style="width:auto"><option value="jahr">Ganzes Jahr</option>${[1, 2, 3, 4].map(q => `<option value="q${q}">Q${q}</option>`).join("")}${FIN_MONATE.map((m, i) => `<option value="m${String(i + 1).padStart(2, "0")}">${m}</option>`).join("")}</select>` : "";
-  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : await finUebersicht(u);
+  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : sub === "abschluss" ? await finAbschluss(u.jahr) : await finUebersicht(u);
   $("#v2-app").innerHTML = secHead("Finanzen " + (sub === "uebersicht" ? finZeitName(u.zeitraum, u.jahr) : u.jahr), `${jahrWahl}${zeitWahl}<button class="v2-btn" data-act="eb-neu" data-val="ausgabe">− Ausgabe ohne Beleg</button><button class="v2-btn pri" data-act="eb-neu" data-val="einnahme">+ Einnahme ohne Rechnung</button>`)
-    + tabs("finanzen", [["uebersicht", "Übersicht"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"]])
+    + tabs("finanzen", [["uebersicht", "Übersicht"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"], ["abschluss", "Jahresabschluss"]])
     + (meldung ? `<div class="v2-msg ok" style="margin-bottom:12px">${esc(meldung)}</div>` : "") + `<div class="v2-grid">${body}</div>`;
   $("#fin-jahr").addEventListener("change", e => { FIN_JAHR = Number(e.target.value); renderFinanzen(); });
   const zw = $("#fin-zeit"); if (zw) { zw.value = u.zeitraum; zw.addEventListener("change", e => { FIN_ZEIT = e.target.value; renderFinanzen(); }); }
@@ -1472,6 +1472,25 @@ async function finEuer(jahr) {
     <tr class="v2-fin-gewinn"><td><b>${e.gewinn_cent >= 0 ? "Gewinn" : "Verlust"}</b></td><td style="text-align:right"><b>${esc(cent2eur(e.gewinn_cent))}</b></td></tr></tbody></table>`;
   return tile("Einnahmen-Überschuss-Rechnung " + jahr, tab + `<small class="v2-sub">${esc(e.hinweis)}${e.bewirtung_nicht_abziehbar_cent ? ` Nicht abziehbarer Bewirtungsanteil (30 %): ${esc(cent2eur(e.bewirtung_nicht_abziehbar_cent))}.` : ""} Stand: vorläufig, bis das Jahr abgeschlossen ist.</small>`, "w8")
     + tile("So entsteht die Zahl", `<div class="v2-sub" style="line-height:1.6">Gezählt wird, wann Geld <b>geflossen</b> ist (Zahlungsdatum), nicht das Rechnungsdatum.<br>Als Kleinunternehmer ist der <b>Bruttobetrag</b> die Ausgabe.<br>Bewirtung zählt zu 70 %.<br>Geräte über 800 € werden über die Nutzungsdauer <b>abgeschrieben</b> (Reiter „Anlagen“); Computer und Software dürfen sofort voll abgesetzt werden.</div>`, "w4");
+}
+// Jahresabschluss (Etappe 9): Prüfung vor der Steuererklärung, EÜR je Zeile für ELSTER, Export und PDF
+async function finAbschluss(jahr) {
+  const d = await jget("/api/finanzen/abschluss?jahr=" + jahr);
+  if (!d) return emptyRow("Jahresabschluss nicht verfügbar.");
+  const pr = d.pruefung, eu = d.euer, offenPflicht = pr.filter(p => !p.ok && p.pflicht).length;
+  const pruef = pr.map(p => `<div class="v2-list-row${p.ziel ? " klick" : ""}" ${p.ziel ? `data-tab="${esc(p.ziel)}"` : ""}><span class="v2-badge ${p.ok ? "ok" : p.pflicht ? "err" : "wartet"}">${p.ok ? "✓" : p.pflicht ? "offen" : "Hinweis"}</span><div class="grow"><b>${esc(p.text)}</b>${p.detail ? `<small>${esc(p.detail)}</small>` : ""}</div>${p.ziel ? "<span>›</span>" : ""}</div>`).join("");
+  const zeile = (z, t, c, fett, kz) => `<tr><td style="width:70px">${z ? `<span class="v2-badge neutral">${esc(z)}</span>` : "<small>–</small>"}</td><td style="width:70px">${kz ? `<small>Kz ${esc(kz)}</small>` : ""}</td><td>${fett ? "<b>" + esc(t) + "</b>" : esc(t)}</td><td style="text-align:right">${fett ? "<b>" + esc(cent2eur(c)) + "</b>" : esc(cent2eur(c))}</td></tr>`;
+  const ein = eu.zeilen.filter(z => z.art === "einnahme"), aus = eu.zeilen.filter(z => z.art !== "einnahme");   // in Formular-Reihenfolge
+  const tab = `<table class="v2-table v2-fin-euer"><thead><tr><th>Zeile</th><th>Kennzahl</th><th>Position (Anlage EÜR)</th><th style="text-align:right">Eintragen</th></tr></thead><tbody>
+    ${ein.map(z => zeile(z.zeile, z.amtlich || z.position, z.betrag_cent, false, z.kz)).join("")}
+    ${aus.map(z => zeile(z.zeile, z.amtlich || z.position, z.betrag_cent, false, z.kz)).join("")}
+    <tr class="v2-fin-gewinn"><td></td><td></td><td><b>${eu.gewinn_cent >= 0 ? "Gewinn" : "Verlust"}</b> <small>(ELSTER rechnet die Summen selbst)</small></td><td style="text-align:right"><b>${esc(cent2eur(eu.gewinn_cent))}</b></td></tr></tbody></table>`;
+  return tile(`Vor der Steuererklärung ${jahr}`, (offenPflicht ? `<div class="v2-msg err" style="margin-bottom:8px">${offenPflicht} Punkt(e) noch offen — erst klären, dann Export und ELSTER.</div>` : `<div class="v2-msg ok" style="margin-bottom:8px">Alles Nötige erledigt.</div>`) + pruef, "w6")
+    + tile(`Export ${jahr}`, `<div class="v2-sub" style="line-height:1.6">Ein ZIP für Finanzamt oder Steuerberater: alle Tabellen (CSV + index.xml nach dem Beschreibungsstandard), das unveränderbare Kassenbuch mit Prüfergebnis, alle Belege im Original und die EÜR als PDF.</div>
+      <div class="v2-card-actions" style="margin-top:12px"><a class="v2-btn pri" href="/api/finanzen/abschluss/export?jahr=${jahr}">⬇ Export ${jahr} (ZIP)</a><a class="v2-btn" href="/api/finanzen/abschluss/euer.pdf?jahr=${jahr}" target="_blank" rel="noopener">📄 EÜR ${jahr} als PDF</a></div>
+      <small class="v2-sub">Geht nur an dich (Download), nichts wird verschickt.</small>`, "w6")
+    + tile(`EÜR ${jahr} für ELSTER — Anlage EÜR`, `<div class="v2-msg" style="margin-bottom:8px">${esc(eu.zeilen_hinweis)}</div>` + tab
+      + `<small class="v2-sub">Nur die Zeilen mit Betrag eintragen. Kleinunternehmer: alle Beträge brutto. Das ist eine Eingabehilfe — die Verantwortung für die Erklärung bleibt bei dir.</small>`, "w12");
 }
 async function finAnlagen(jahr) {
   const d = await jget("/api/finanzen/anlagen?jahr=" + jahr) || { anlagen: [] };
