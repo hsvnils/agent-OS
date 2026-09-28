@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 09:11] — Claude Code (MACO470)
+- **Was:** Angebots-Editor in LUNA-OS V2 ueberarbeitet: ganzseitig statt schmaler Seitenleiste (Kopf zweispaltig,
+  Positionen als Tabelle mit Gesamt je Zeile, Zuschlaege/Rabatt neben der Summe), Loeschen-Knopf je Position immer
+  sichtbar (war in der schmalen Ansicht rechts abgeschnitten), Firmenwahl als Suchfeld mit Vorschlaegen (Name,
+  Kundennummer, Ort; Pfeiltasten/Enter) statt Dropdown; Speichern ohne gewaehlte Firma mit Hinweis. Cache v35/v16.
+  Headless-Chrome-Klicktest bei 1280 px ohne Fehler.
+- **Warum:** CEO-Rueckmeldung mit Screenshot (Platz besser nutzen, Positionen loeschen, Firmensuche mit Autofill).
+- **Betroffen:** `orchestrator/channels/web/static/{app-v2.js,style-v2.css,index-v2.html}`
+
 ## [2026-09-27 22:18] — Claude Code (MACO470)
 - **Was:** Etappe 3b live geprueft (nach CEO-Neustart): V2 v34, Katalog 18 Eintraege/6 Zuschlaege, Preisliste-PDF aus dem
   Live-System mit Logo, DejaVu-Schrift und Bankverbindung (ohne Buchhaltungseintrag). NAS `buchhaltung/firmendaten.json`:

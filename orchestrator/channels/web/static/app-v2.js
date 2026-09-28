@@ -184,9 +184,9 @@ function tabs(sec, list) {
   return `<div class="v2-tabs">${list.map(([id, lbl]) => `<button class="${id === cur ? "active" : ""}" data-tab="${sec}:${id}">${esc(lbl)}</button>`).join("")}</div>`;
 }
 /* Detail-Overlay (ersetzt WinBox-Fenster) */
-function openModal(title, html) {
+function openModal(title, html, breit = false) {   // breit = ganze Seite (z. B. Angebots-Editor)
   let m = $("#v2-modal"); if (!m) { m = document.createElement("div"); m.id = "v2-modal"; document.body.appendChild(m); }
-  m.innerHTML = `<div class="v2-modal-back" data-modal-close></div><div class="v2-modal-card"><header><b>${esc(title)}</b><button class="v2-icon" data-modal-close>✕</button></header><div class="v2-modal-body">${html}</div></div>`;
+  m.innerHTML = `<div class="v2-modal-back" data-modal-close></div><div class="v2-modal-card${breit ? " breit" : ""}"><header><b>${esc(title)}</b><button class="v2-icon" data-modal-close>✕</button></header><div class="v2-modal-body">${html}</div></div>`;
   m.hidden = false;
 }
 function closeModal() { const m = $("#v2-modal"); if (m) m.hidden = true; }
@@ -659,12 +659,31 @@ const anKopf = () => secHead("Angebote", `<button class="v2-btn pri" data-act="a
 /* ---------- Editor ---------- */
 function anPosZeile(p = {}) {
   return `<div class="v2-an-pos" data-katalog="${esc(p.katalog_id || "")}" data-gruppe="${esc(p.gruppe || "")}" data-farbe="${esc(p.gruppe_farbe || "")}">
-    <div class="v2-an-text"><textarea class="v2-inp an-p-beschreibung" rows="1" placeholder="Leistung">${esc(p.beschreibung || "")}</textarea>
+    <div class="v2-an-text"><input class="v2-inp an-p-beschreibung" value="${esc(p.beschreibung || "")}" placeholder="Leistung">
       <input class="v2-inp an-p-detail" value="${esc(p.detail || "")}" placeholder="Detail (Reichweite, Hinweis) – optional"></div>
-    <input class="v2-inp an-p-menge" value="${esc(p.menge != null ? String(p.menge).replace(".", ",") : "1")}" placeholder="Menge" inputmode="decimal">
-    <input class="v2-inp an-p-einheit" value="${esc(p.einheit || "")}" placeholder="Einheit">
-    <input class="v2-inp an-p-preis" value="${p.einzelpreis_cent != null ? cent2feld(p.einzelpreis_cent) : ""}" placeholder="Einzelpreis €" inputmode="decimal">
-    <button class="v2-btn" data-act="an-pos-weg" title="Position entfernen">✕</button></div>`;
+    <input class="v2-inp an-p-menge" value="${esc(p.menge != null ? String(p.menge).replace(".", ",") : "1")}" placeholder="Menge" inputmode="decimal" aria-label="Menge">
+    <input class="v2-inp an-p-einheit" value="${esc(p.einheit || "")}" placeholder="Einheit" aria-label="Einheit">
+    <input class="v2-inp an-p-preis" value="${p.einzelpreis_cent != null ? cent2feld(p.einzelpreis_cent) : ""}" placeholder="Einzelpreis €" inputmode="decimal" aria-label="Einzelpreis">
+    <span class="an-p-gesamt">–</span>
+    <button class="v2-btn v2-an-weg" data-act="an-pos-weg" title="Position löschen" aria-label="Position löschen">🗑</button></div>`;
+}
+/* Firmen-Suche mit Vorschlägen (statt Dropdown) */
+function firmaTreffer(q) {
+  q = (q || "").trim().toLowerCase();
+  return AN_FIRMEN.filter(f => !q || [f.nummer, f.name, f.ort, f.plz].filter(Boolean).join(" ").toLowerCase().includes(q)).slice(0, 8);
+}
+function firmaListe() {
+  const box = $("#an-firma-treffer"); if (!box) return;
+  const t = firmaTreffer($("#an-firma-suche").value);
+  box.innerHTML = t.length ? t.map((f, i) => `<button type="button" class="v2-auto-z${i === 0 ? " aktiv" : ""}" data-act="an-firma-wahl" data-id="${esc(f.nummer)}"><b>${esc(f.name)}</b><small>${esc(f.nummer)}${f.ort ? " · " + esc(f.ort) : ""}</small></button>`).join("")
+    : `<div class="v2-auto-leer">Keine Firma gefunden — unter „🏢 Kunden“ anlegen.</div>`;
+  box.hidden = false;
+}
+async function firmaWaehlen(nr) {
+  const f = AN_FIRMEN.find(x => x.nummer === nr); if (!f) return;
+  $("#an-firma").value = f.nummer; $("#an-firma-suche").value = `${f.name} (${f.nummer})`;
+  const box = $("#an-firma-treffer"); if (box) box.hidden = true;
+  await anApListe("");
 }
 async function anEditor(nummer, firmaVorwahl) {
   openModal(nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-empty">Lade…</div>`);
@@ -673,37 +692,63 @@ async function anEditor(nummer, firmaVorwahl) {
   if (!AN_FIRMEN.length) return openModal("Neues Angebot", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."));
   const a = (d && d.angebot) || { firma: firmaVorwahl || AN_FIRMEN[0].nummer, datum: heuteIso(), gueltig_bis: heuteIso(14), nachfassen_tage: 7, positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch" };
   const b = a.bloecke || {};
-  const firmaOpt = AN_FIRMEN.map(f => `<option value="${esc(f.nummer)}" ${f.nummer === a.firma ? "selected" : ""}>${esc(f.nummer)} · ${esc(f.name)}</option>`).join("");
+  const fa = AN_FIRMEN.find(f => f.nummer === a.firma);
   const katOpt = ((KATALOG && KATALOG.gruppen) || []).map(g => `<optgroup label="${esc(g.name)}">${g.items.filter(it => it.aktiv).map(it => `<option value="${esc(it.id)}">${esc(it.name)} — ${cent2eur(it.preis_cent)}${it.einheit ? " / " + esc(it.einheit) : ""}</option>`).join("")}</optgroup>`).join("");
   const gewaehlt = new Set((a.zuschlaege || []).map(z => z.id));
   const zuListe = [...((KATALOG && KATALOG.zuschlaege) || []), ...(a.zuschlaege || []).filter(z => !((KATALOG && KATALOG.zuschlaege) || []).some(k => k.id === z.id))];
   const zuHtml = zuListe.map(z => { const alt = (a.zuschlaege || []).find(x => x.id === z.id); const pr = alt ? alt.prozent : z.prozent;
     return `<label class="v2-modlbl"><input type="checkbox" class="an-zu" value="${esc(z.id)}" data-name="${esc(z.name)}" data-prozent="${esc(String(pr))}" ${gewaehlt.has(z.id) ? "checked" : ""}> +${esc(pz(pr))} % ${esc(z.name)}</label>`; }).join("");
-  openModal(nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-form">
-    <label class="v2-feld"><small>Firma *</small><select id="an-firma">${firmaOpt}</select></label>
-    <label class="v2-feld"><small>Ansprechpartner</small><select id="an-ap"></select></label>
-    <label class="v2-feld"><small>Titel / Untertitel (leer = „${esc(b.untertitel || (KATALOG && KATALOG.texte.untertitel) || "")}“)</small><input id="an-titel" value="${esc(a.titel || "")}" placeholder="z. B. Kampagne Herbst"></label>
-    <div class="v2-an-zeile"><label class="v2-feld"><small>Datum</small><input id="an-datum" type="date" value="${esc(a.datum)}"></label>
-      <label class="v2-feld"><small>Gültig bis</small><input id="an-gueltig" type="date" value="${esc(a.gueltig_bis)}"></label>
-      <label class="v2-feld"><small>Nachfassen nach (Tagen)</small><input id="an-nachfassen" type="number" min="1" max="90" value="${esc(String(a.nachfassen_tage || 7))}"></label></div>
-    <div class="v2-an-zeile"><label class="v2-feld"><small>Layout</small><select id="an-layout"><option value="hanserautisch" ${a.layout !== "standard" ? "selected" : ""}>Hanserautisch</option><option value="standard" ${a.layout === "standard" ? "selected" : ""}>Schlicht (DIN)</option></select></label>
-      <label class="v2-modlbl"><input type="checkbox" id="an-zeige-kalk" ${b.zeige_kalkulation !== false ? "checked" : ""}> „So kalkulieren wir“</label>
-      <label class="v2-modlbl"><input type="checkbox" id="an-zeige-kz" ${b.zeige_kennzahlen !== false ? "checked" : ""}> Kennzahlen</label></div>
-    <small class="v2-sub">Positionen (Preise ohne Umsatzsteuer, Kleinunternehmer § 19 UStG)</small>
+  const rmax = esc(String((KATALOG && KATALOG.rabatt_max) || 30));
+  openModal(nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-form v2-an-editor">
+    <div class="v2-an-kopf">
+      <div class="v2-form">
+        <div class="v2-feld v2-auto-feld"><small>Firma * (Name, Kundennummer oder Ort tippen)</small>
+          <input id="an-firma-suche" class="v2-inp" autocomplete="off" placeholder="Firma suchen …" value="${fa ? esc(`${fa.name} (${fa.nummer})`) : ""}">
+          <input type="hidden" id="an-firma" value="${esc(fa ? fa.nummer : "")}"><div id="an-firma-treffer" class="v2-auto" hidden></div></div>
+        <label class="v2-feld"><small>Ansprechpartner</small><select id="an-ap"></select></label>
+        <label class="v2-feld"><small>Titel / Untertitel (leer = „${esc(b.untertitel || (KATALOG && KATALOG.texte.untertitel) || "")}“)</small><input id="an-titel" value="${esc(a.titel || "")}" placeholder="z. B. Kampagne Herbst"></label>
+      </div>
+      <div class="v2-form">
+        <div class="v2-an-zeile"><label class="v2-feld"><small>Datum</small><input id="an-datum" type="date" value="${esc(a.datum)}"></label>
+          <label class="v2-feld"><small>Gültig bis</small><input id="an-gueltig" type="date" value="${esc(a.gueltig_bis)}"></label>
+          <label class="v2-feld"><small>Nachfassen nach (Tagen)</small><input id="an-nachfassen" type="number" min="1" max="90" value="${esc(String(a.nachfassen_tage || 7))}"></label></div>
+        <div class="v2-an-zeile"><label class="v2-feld"><small>Layout</small><select id="an-layout"><option value="hanserautisch" ${a.layout !== "standard" ? "selected" : ""}>Hanserautisch</option><option value="standard" ${a.layout === "standard" ? "selected" : ""}>Schlicht (DIN)</option></select></label>
+          <label class="v2-modlbl"><input type="checkbox" id="an-zeige-kalk" ${b.zeige_kalkulation !== false ? "checked" : ""}> „So kalkulieren wir“</label>
+          <label class="v2-modlbl"><input type="checkbox" id="an-zeige-kz" ${b.zeige_kennzahlen !== false ? "checked" : ""}> Kennzahlen</label></div>
+      </div>
+    </div>
+    <h3>Positionen <small class="v2-sub">Preise ohne Umsatzsteuer (Kleinunternehmer § 19 UStG)</small></h3>
     <div class="v2-an-kat"><select id="an-kat" class="v2-inp"><option value="">Aus Katalog wählen …</option>${katOpt}</select><button class="v2-btn" data-act="an-kat-neu">+ Aus Katalog</button><button class="v2-btn" data-act="an-pos-neu">+ Freie Position</button></div>
+    <div class="v2-an-pos v2-an-pos-kopf"><span>Leistung / Detail</span><span>Menge</span><span>Einheit</span><span>Einzelpreis</span><span>Gesamt</span><span></span></div>
     <div id="an-pos">${(a.positionen || []).map(anPosZeile).join("")}</div>
-    ${zuHtml ? `<small class="v2-sub">Zuschläge (Prozent auf die Summe aller Formate)</small><div class="v2-mods" id="an-zu-box">${zuHtml}</div>` : ""}
-    <label class="v2-feld"><small>Paketrabatt in % (0–${esc(String((KATALOG && KATALOG.rabatt_max) || 30))}, nur gegen Laufzeit oder Volumen)</small><input id="an-rabatt" type="number" min="0" max="${esc(String((KATALOG && KATALOG.rabatt_max) || 30))}" step="0.5" value="${esc(String(a.rabatt_prozent || 0))}"></label>
-    <div id="an-summe-box" class="v2-an-summen"></div>
-    <label class="v2-feld"><small>Einleitung (leer = Standardtext)</small><textarea id="an-einleitung" rows="3" class="v2-inp">${esc(a.einleitung || "")}</textarea></label>
-    <label class="v2-feld"><small>Schluss (nur schlichtes Layout; leer = Standardtext mit Gruß)</small><textarea id="an-schluss" rows="2" class="v2-inp">${esc(a.schluss || "")}</textarea></label>
-    <button class="v2-btn pri" data-act="an-speichern" data-id="${esc(nummer || "")}">${nummer ? "Änderungen speichern" : "Anlegen (Nummer wird vergeben)"}</button><div id="an-msg" class="v2-msg"></div></div>`);
+    <div id="an-pos-leer" class="v2-empty">Noch keine Position — „Aus Katalog“ oder „Freie Position“.</div>
+    <div class="v2-an-fuss">
+      <div class="v2-form">
+        ${zuHtml ? `<small class="v2-sub">Zuschläge (Prozent auf die Summe aller Formate)</small><div class="v2-mods" id="an-zu-box">${zuHtml}</div>` : ""}
+        <label class="v2-feld"><small>Paketrabatt in % (0–${rmax}, nur gegen Laufzeit oder Volumen)</small><input id="an-rabatt" type="number" min="0" max="${rmax}" step="0.5" value="${esc(String(a.rabatt_prozent || 0))}"></label>
+      </div>
+      <div id="an-summe-box" class="v2-an-summen"></div>
+    </div>
+    <div class="v2-an-kopf">
+      <label class="v2-feld"><small>Einleitung (leer = Standardtext)</small><textarea id="an-einleitung" rows="3" class="v2-inp">${esc(a.einleitung || "")}</textarea></label>
+      <label class="v2-feld"><small>Schluss (nur schlichtes Layout; leer = Standardtext mit Gruß)</small><textarea id="an-schluss" rows="3" class="v2-inp">${esc(a.schluss || "")}</textarea></label>
+    </div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="an-speichern" data-id="${esc(nummer || "")}">${nummer ? "Änderungen speichern" : "Anlegen (Nummer wird vergeben)"}</button><div id="an-msg" class="v2-msg"></div></div></div>`, true);
   await anApListe(a.ansprechpartner || "");
-  $("#an-firma").addEventListener("change", () => anApListe(""));
+  const such = $("#an-firma-suche");
+  such.addEventListener("input", () => { $("#an-firma").value = ""; $("#an-ap").innerHTML = `<option value="">— erst Firma wählen —</option>`; firmaListe(); });
+  such.addEventListener("focus", () => { if (!$("#an-firma").value) firmaListe(); });
+  such.addEventListener("keydown", (e) => {
+    const box = $("#an-firma-treffer"); const z = [...box.querySelectorAll(".v2-auto-z")]; const i = z.findIndex(x => x.classList.contains("aktiv"));
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (box.hidden) return firmaListe(); if (!z.length) return; z[i]?.classList.remove("aktiv"); z[(i + (e.key === "ArrowDown" ? 1 : -1) + z.length) % z.length].classList.add("aktiv"); }
+    else if (e.key === "Enter") { e.preventDefault(); const t = z[Math.max(i, 0)]; if (t) firmaWaehlen(t.dataset.id); }
+    else if (e.key === "Escape") { e.stopPropagation(); box.hidden = true; }
+  });
   const box = $("#v2-modal .v2-form"); box.addEventListener("input", anSumme); box.addEventListener("change", anSumme); anSumme();
 }
 async function anApListe(vorwahl) {
-  const nr = ($("#an-firma") || {}).value; const sel = $("#an-ap"); if (!sel || !nr) return;
+  const nr = ($("#an-firma") || {}).value; const sel = $("#an-ap"); if (!sel) return;
+  if (!nr) { sel.innerHTML = `<option value="">— erst Firma wählen —</option>`; return; }
   const d = await jget("/api/crm/kunden/" + encodeURIComponent(nr));
   const aps = ((d && d.firma && d.firma.ansprechpartner_liste) || []).filter(x => x.aktiv || x.nummer === vorwahl);
   sel.innerHTML = `<option value="">— keiner —</option>` + aps.map(x => `<option value="${esc(x.nummer)}" ${x.nummer === vorwahl ? "selected" : ""}>${esc(x.nummer)} · ${esc([x.vorname, x.nachname].filter(Boolean).join(" "))}${x.mail ? " · " + esc(x.mail) : ""}</option>`).join("");
@@ -721,6 +766,8 @@ function anPositionen() {
 const anZuschlaege = () => [...document.querySelectorAll(".an-zu:checked")].map(e => ({ id: e.value, name: e.dataset.name, prozent: Number(e.dataset.prozent) }));
 function anSumme() {
   const box = $("#an-summe-box"); if (!box) return;
+  document.querySelectorAll("#an-pos .v2-an-pos").forEach(z => { const c = Math.round(zahl($(".an-p-menge", z).value) * zahl($(".an-p-preis", z).value) * 100); $(".an-p-gesamt", z).textContent = isFinite(c) ? cent2eur(c) : "–"; });
+  const leer = $("#an-pos-leer"); if (leer) leer.hidden = !!document.querySelector("#an-pos .v2-an-pos");
   const formate = anPositionen().reduce((acc, p) => acc + Math.round(zahl(p.menge) * zahl(p.einzelpreis) * 100), 0);
   if (!isFinite(formate)) { box.innerHTML = `<div class="v2-kv"><span>Summe</span><b>Eingabe prüfen</b></div>`; return; }
   const zu = anZuschlaege().map(z => [z.name, z.prozent, Math.round(formate * z.prozent / 100)]);
@@ -730,6 +777,7 @@ function anSumme() {
     + (r ? `<div class="v2-kv"><span>Paketrabatt (${esc(pz(r))} %)</span><b>−${cent2eur(rb)}</b></div>` : "") + `<div class="v2-kv"><span><b>Gesamtbetrag</b></span><b>${cent2eur(zwischen - rb)}</b></div>`;
 }
 async function anSpeichern(nummer) {
+  if (!$("#an-firma").value) { $("#an-firma-suche").focus(); return kundenMsg("an-msg", "Bitte eine Firma aus den Vorschlägen auswählen.", false); }
   const angebot = { firma: $("#an-firma").value, ansprechpartner: $("#an-ap").value, titel: $("#an-titel").value.trim(), datum: $("#an-datum").value, gueltig_bis: $("#an-gueltig").value,
     nachfassen_tage: $("#an-nachfassen").value, einleitung: $("#an-einleitung").value.trim(), schluss: $("#an-schluss").value.trim(), positionen: anPositionen(),
     zuschlaege: anZuschlaege(), rabatt_prozent: ($("#an-rabatt") || {}).value || 0, layout: $("#an-layout").value,
@@ -1162,6 +1210,7 @@ async function handleAct(act, el) {
     case "an-bearbeiten": return anEditor(id);
     case "an-pos-neu": { $("#an-pos").insertAdjacentHTML("beforeend", anPosZeile()); return anSumme(); }
     case "an-kat-neu": return anKatNeu();
+    case "an-firma-wahl": return firmaWaehlen(id);
     case "kat-speichern": return katalogSpeichern();
     case "kat-neu": return katalogFormatNeu(Number(id));
     case "pl-pdf": return preislistePdf();
@@ -1366,6 +1415,7 @@ function connectSSE() { try { const es = new EventSource("/api/events"); es.onme
 
 /* =========================== Events + Boot =========================== */
 document.addEventListener("click", (e) => {
+  const at = $("#an-firma-treffer"); if (at && !at.hidden && !e.target.closest(".v2-auto-feld")) at.hidden = true;
   const ed = e.target.closest("[data-editdash]"); if (ed) { EDIT2 = !EDIT2; renderDash(); return; }
   const wh2 = e.target.closest("[data-whide2]"); if (wh2) { hideW2(wh2.dataset.whide2); return; }
   const wa2 = e.target.closest("[data-wadd2]"); if (wa2) { showW2(wa2.dataset.wadd2); return; }
