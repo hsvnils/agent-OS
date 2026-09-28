@@ -84,8 +84,8 @@ class Finanzen:
             f = x.get("felder") or {}
             if not f:
                 continue
-            for i, z in enumerate(x.get("zahlungen") or []):
-                zeilen.append({"datum": z["datum"], "art": "ausgabe", "betrag_cent": int(z.get("betrag_cent") or 0),
+            for i, z in enumerate(x.get("zahlungen") or []):                  # Gutschrift = Einnahme (Geldeingang)
+                zeilen.append({"datum": z["datum"], "art": f.get("art") or "ausgabe", "betrag_cent": int(z.get("betrag_cent") or 0),
                                "kategorie": f.get("kategorie", "sonstiges"), "bezug": x["nummer"], "index": i,
                                "gegenpartei": f.get("lieferant", ""),
                                "text": f.get("leistung") or f.get("rechnungsnummer") or x.get("dateiname", ""),
@@ -178,14 +178,15 @@ class Finanzen:
         forder = []
         for r in st["rechnungen"].values():
             if r["status"] == "offen" and r.get("art") != "storno":
-                forder.append({"nummer": r["nummer"], "gegenpartei": firmen.get(r["firma"], r["firma"]),
+                forder.append({"nummer": r["nummer"], "act": "re-detail", "gegenpartei": firmen.get(r["firma"], r["firma"]),
                                "offen_cent": r["summe_cent"] - r["bezahlt_cent"], "faellig_am": r.get("faellig_am", ""),
                                "ueberfaellig": r.get("faellig_am", "9") < heute.isoformat()})
         verbind = []
         for x in st["belege"].values():
             f = x.get("felder") or {}
             if x["status"] == "gebucht" and f.get("betrag_cent") and x["bezahlt_cent"] != f["betrag_cent"]:
-                verbind.append({"nummer": x["nummer"], "gegenpartei": f.get("lieferant", ""),
+                (forder if f.get("art") == "einnahme" else verbind).append({"nummer": x["nummer"], "act": "bl-detail",
+                                "gegenpartei": f.get("lieferant", ""),
                                 "offen_cent": f["betrag_cent"] - x["bezahlt_cent"], "faellig_am": f.get("faellig_am", ""),
                                 "ueberfaellig": bool(f.get("faellig_am")) and f["faellig_am"] < heute.isoformat()})
         zu_pruefen = sum(1 for x in st["belege"].values() if x["status"] == "zu_pruefen")

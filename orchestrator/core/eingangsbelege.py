@@ -47,6 +47,12 @@ KATEGORIEN = {
     "gebuehren": ("Gebühren, Beiträge, Versicherungen", ("gebühr", "gebuehr", "beitrag", "versicherung", "ihk", "kontoführung")),
     "sonstiges": ("Sonstiges", ()),
 }
+# Gutschriften (z. B. Facebook-Monetarisierung: Meta stellt die Rechnung in unserem Namen aus) sind EINNAHMEN.
+EINNAHME_KATEGORIEN = {"umsatz": "Betriebseinnahmen (Kleinunternehmer)"}
+ARTEN = ("ausgabe", "einnahme")
+_GUTSCHRIFT = re.compile(r"(?i)gutschrift|self[- ]?billing|selbstfakturierung|credit\s+note|auszahlung|payout|monetarisierung|"
+                         r"remittance|zahlungsavis|"
+                         r"werbeeinnahmen|in\s+ihrem\s+namen|on\s+your\s+behalf")
 STATUS = ("zu_pruefen", "gebucht", "verworfen")
 GWG_GRENZE_CENT = 80000        # 800 €; beim Kleinunternehmer zaehlt der Bruttobetrag (kein Vorsteuerabzug)
 
@@ -169,6 +175,8 @@ def auslesen(daten: bytes, dateiname: str) -> dict:
 
 _BETRAG = r"(-?\d{1,3}(?:\.\d{3})*,\d{2}|-?\d+,\d{2}|-?\d+\.\d{2})"
 _DATUM = r"(\d{1,2})\.(\d{1,2})\.(\d{2,4})"
+_MONATE_EN = {m: i + 1 for i, m in enumerate(("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"))}
+_DATUM_EN = r"(\d{1,2})[-\s]([A-Za-z]{3})[a-z]*[-\s,]+(\d{4})"                 # 25-Sep-2026 (Meta, englische Belege)
 
 
 def _iso(t: str, tag: str, monat: str, jahr: str) -> str:
@@ -189,10 +197,13 @@ def kategorie_raten(text: str) -> str:
 def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
     """Schneller Vorschlag ohne KI. E-Rechnungs-Felder haben Vorrang (exakt)."""
     t = text or ""
+    gutschrift = bool(_GUTSCHRIFT.search(t))
     v = {"lieferant": "", "rechnungsnummer": "", "rechnungsdatum": "", "betrag": "", "faellig_am": "", "leistung": "",
-         "kategorie": kategorie_raten(t), "quelle": "regeln"}
+         "art": "einnahme" if gutschrift else "ausgabe", "kategorie": "umsatz" if gutschrift else kategorie_raten(t),
+         "quelle": "regeln"}
     zeilen = [z.strip() for z in t.splitlines() if z.strip()]
-    m = re.search(r"(?i)(?:rechnungs?[- ]?(?:nummer|nr\.?)|rechnung\s+nr\.?|invoice\s+(?:no\.?|number)|beleg[- ]?(?:nummer|nr\.?))"
+    m = re.search(r"(?i)(?:rechnungs?[- ]?(?:nummer|nr\.?)|rechnung\s+nr\.?|invoice\s+(?:no\.?|number)|payment\s+(?:no\.?|number)|"
+                  r"beleg[- ]?(?:nummer|nr\.?))"
                   r"\s*[:#]?\s*([A-Z0-9][A-Z0-9\-/_.]{2,30})", t)
     if m:
         v["rechnungsnummer"] = m.group(1).rstrip(".")
@@ -200,6 +211,10 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
          or re.search(r"(?i)(?<![a-zäöü])datum\s*[:]?\s*" + _DATUM, t) or re.search(_DATUM, t))
     if m:
         v["rechnungsdatum"] = _iso(t, *m.groups()[-3:])
+    else:
+        m = (re.search(r"(?i)(?:payment|invoice|remittance)\s+date\s*:?\s*" + _DATUM_EN, t) or re.search(_DATUM_EN, t))
+        if m and m.group(2).lower()[:3] in _MONATE_EN:
+            v["rechnungsdatum"] = _iso(t, m.group(1), str(_MONATE_EN[m.group(2).lower()[:3]]), m.group(3))
     betraege = []
     for z in zeilen:
         if re.search(r"(?i)(gesamt|rechnungsbetrag|zu zahlen|endbetrag|summe|total|brutto|zahlbetrag)", z):
@@ -215,6 +230,12 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
                 continue
         if werte:
             v["betrag"] = eur(max(werte)[0]).replace(" €", "")
+    w = re.search(r"(?i)(?:currency|w[aä]hrung)\s*:?\s*([A-Z]{3})\b", t)
+    waehrung = w.group(1).upper() if w else ("USD" if re.search(r"\$\s?\d|\bUSD\b", t) and "€" not in t and "EUR" not in t else "")
+    if waehrung and waehrung != "EUR":                       # EUeR zaehlt den Euro-Betrag, der aufs Konto kam
+        v |= {"waehrung": waehrung, "betrag_fremd": v["betrag"], "betrag": ""}
+        if v["betrag_fremd"]:
+            v["leistung"] = f"{'Auszahlung' if gutschrift else 'Kauf'} {v['betrag_fremd']} {waehrung}"
     if zeilen:
         v["lieferant"] = re.split(r"\s+[·|•]\s+", zeilen[0])[0][:120]      # Absenderzeile "Firma · Strasse · Ort"
     if e_rechnung:
@@ -225,10 +246,13 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
 
 
 LLM_SYSTEM = (
-    "Du liest den Text einer Eingangsrechnung und antwortest NUR mit einem JSON-Objekt, ohne Erklaerung, mit genau diesen "
-    'Feldern: {"lieferant": "", "rechnungsnummer": "", "rechnungsdatum": "JJJJ-MM-TT", "betrag": "123,45", '
-    '"faellig_am": "JJJJ-MM-TT", "leistung": "kurz, was gekauft wurde", "kategorie": ""}. '
-    "betrag = Endbetrag, den wir zahlen muessen (brutto, deutsches Format). kategorie ist genau einer von: "
+    "Du liest den Text einer Rechnung oder Gutschrift und antwortest NUR mit einem JSON-Objekt, ohne Erklaerung, mit genau "
+    'diesen Feldern: {"art": "ausgabe", "lieferant": "", "rechnungsnummer": "", "rechnungsdatum": "JJJJ-MM-TT", '
+    '"betrag": "123,45", "faellig_am": "JJJJ-MM-TT", "leistung": "kurz, worum es geht", "kategorie": ""}. '
+    "art = \"einnahme\", wenn WIR Geld bekommen (Gutschrift, Auszahlung, Monetarisierung, Vergütung, die der Aussteller in "
+    "unserem Namen abrechnet), sonst \"ausgabe\". lieferant = das Unternehmen, das die Rechnung/Gutschrift ausgestellt hat. "
+    "betrag = Endbetrag brutto im deutschen Format, NUR wenn er in Euro angegeben ist; bei anderer Waehrung betrag leer lassen "
+    "und stattdessen \"waehrung\" (z. B. USD) und \"betrag_fremd\" (z. B. 282,37) angeben. kategorie: bei einnahme immer \"umsatz\", bei ausgabe genau einer von: "
     + ", ".join(KATEGORIEN) + ". Steht ein Wert nicht im Text, leerer String. Nichts erfinden, nichts schaetzen.")
 
 
@@ -254,8 +278,13 @@ def vorschlag_llm(antwort: str) -> dict | None:
         v["betrag"] = eur(abs(cent(roh.get("betrag")))).replace(" €", "") if str(roh.get("betrag") or "").strip() else ""
     except ValueError:
         v["betrag"] = ""
+    wg = str(roh.get("waehrung") or "").strip().upper()[:3]
+    if wg and wg != "EUR":
+        v |= {"waehrung": wg, "betrag_fremd": str(roh.get("betrag_fremd") or roh.get("betrag") or "").strip()[:20], "betrag": ""}
+    art = str(roh.get("art") or "").strip().lower()
+    v["art"] = art if art in ARTEN else "ausgabe"
     k = str(roh.get("kategorie") or "").strip().lower()
-    v["kategorie"] = k if k in KATEGORIEN else ""
+    v["kategorie"] = "umsatz" if v["art"] == "einnahme" else (k if k in KATEGORIEN else "")
     return v
 
 
@@ -319,6 +348,7 @@ class EingangStore:
                         "rechnungsdatum": f.get("rechnungsdatum") or v.get("rechnungsdatum", ""),
                         "betrag_cent": f.get("betrag_cent") if f else (_cent_oder_none(v.get("betrag"))),
                         "kategorie": f.get("kategorie") or v.get("kategorie", ""), "bezahlt_am": x.get("bezahlt_am", ""),
+                        "art": f.get("art") or v.get("art") or "ausgabe",
                         "bezahlt_cent": x.get("bezahlt_cent", 0), "faellig_am": f.get("faellig_am", ""),
                         "e_rechnung": bool(x.get("e_rechnung"))})
         return sorted(out, key=lambda x: x["nummer"], reverse=True)
@@ -395,8 +425,11 @@ class EingangStore:
             raise ValueError("Betrag fehlt oder ist ungueltig.") from None
         if f["betrag_cent"] == 0:
             raise ValueError("Betrag darf nicht 0 sein.")
-        k = str(felder.get("kategorie") or "").strip()
-        if k not in KATEGORIEN:
+        f["art"] = str(felder.get("art") or "ausgabe").strip()
+        if f["art"] not in ARTEN:
+            raise ValueError("Art muss Ausgabe oder Einnahme (Gutschrift) sein.")
+        k = str(felder.get("kategorie") or ("umsatz" if f["art"] == "einnahme" else "")).strip()
+        if k not in (EINNAHME_KATEGORIEN if f["art"] == "einnahme" else KATEGORIEN):
             raise ValueError("Bitte eine Kategorie waehlen.")
         f["kategorie"] = k
         if k == "gwg" and abs(f["betrag_cent"]) > GWG_GRENZE_CENT:
@@ -556,6 +589,26 @@ def anhaenge(roh: bytes) -> list[tuple[str, bytes]]:
     return out
 
 
+def absender_echt(roh: bytes, absender: list[str]) -> bool:
+    """Absender ist einer der eigenen UND von Gmail bestaetigt: im obersten `Authentication-Results`-Kopf (den setzt
+    mx.google.com beim Empfang) besteht DMARC oder DKIM fuer genau die Domain der Absenderadresse. Faelschungen des
+    From-Kopfes (Phishing mit Anhang) fallen so durch -- auch wenn Gmail sie in den Spam gelegt hat."""
+    import email
+    from email import policy
+    from email.utils import parseaddr
+    m = email.message_from_bytes(roh, policy=policy.default)
+    von = parseaddr(str(m.get("From", "")))[1].lower()
+    if von not in absender:
+        return False
+    dom = re.escape(von.rsplit("@", 1)[-1])
+    kopf = (m.get_all("Authentication-Results") or [""])[0]
+    kopf = re.sub(r"\s+", " ", str(kopf).lower())
+    if not kopf.startswith("mx.google.com"):
+        return False
+    return bool(re.search(rf"dmarc=pass [^;]*header\.from={dom}(?![\w.-])", kopf)
+                or re.search(rf"dkim=pass [^;]*header\.i=@(?:[\w-]+\.)*{dom}(?![\w.-])", kopf))
+
+
 def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backoffice=None, notify=None,
                          gesehen: set | None = None, tage: int = 30) -> list[str]:
     """Belege, die der CEO an LUNAs Adresse weiterleitet, automatisch aufnehmen -- **nur von den eigenen Absendern**
@@ -563,7 +616,7 @@ def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backo
     absender = [a.strip().lower() for a in absender if a and "@" in a]
     if not absender or google is None or not google.verfuegbar():
         return []
-    q = f"has:attachment newer_than:{tage}d from:({' OR '.join(absender)})"
+    q = f"in:anywhere -in:trash has:attachment newer_than:{tage}d from:({' OR '.join(absender)})"   # auch Spam (BF-37)
     r = google.mail_suchen(q, max_results=20)
     if not r.get("ok"):
         return []
@@ -581,6 +634,9 @@ def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backo
         if not roh.get("ok"):
             gesehen.discard(mid)
             continue
+        if not absender_echt(roh["roh"], absender):             # gefaelschter Absender -> nie uebernehmen
+            continue
+        vorher = len(neu)
         for name, daten in anhaenge(roh["roh"]):
             try:
                 res = st.aufnehmen(daten, name, quelle="mail", mail_id=mid, von="LUNA-Mail")
@@ -590,6 +646,11 @@ def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backo
                 continue
             neu.append(res["nummer"])
             llm_beauftragen(st, backoffice, res["nummer"])
+        if len(neu) > vorher and hasattr(google, "mail_aus_spam"):   # Gmail lernt: eigene Beleg-Mails sind kein Spam
+            try:
+                google.mail_aus_spam(mid)
+            except Exception:
+                pass
     if neu and notify:
         try:
             notify(f"📥 {len(neu)} Beleg(e) aus deiner Mail an LUNA übernommen: {', '.join(neu)} -- in LUNA-OS prüfen "

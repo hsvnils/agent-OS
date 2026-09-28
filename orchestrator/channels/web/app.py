@@ -1708,7 +1708,8 @@ def _lieferanten() -> list[dict]:
 def belege_liste():
     st = _eingang()
     _eb.llm_ergebnisse_uebernehmen(st, backoffice)
-    return {"belege": st.liste(), "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()}}
+    return {"belege": st.liste(), "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()},
+            "kategorien_einnahme": _eb.EINNAHME_KATEGORIEN}
 
 
 @app.get("/api/finanzen/belege/{nummer}")
@@ -1720,7 +1721,8 @@ def beleg_detail(nummer: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Beleg")
     llm = backoffice.get(x["llm_auftrag"]) if x.get("llm_auftrag") else None
     return {"beleg": {k: v for k, v in x.items() if k != "text"} | {"text": (x.get("text") or "")[:4000]},
-            "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()}, "lieferanten": _lieferanten(),
+            "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()}, "kategorien_einnahme": _eb.EINNAHME_KATEGORIEN,
+            "lieferanten": _lieferanten(),
             "ki_status": (llm or {}).get("status", "")}
 
 

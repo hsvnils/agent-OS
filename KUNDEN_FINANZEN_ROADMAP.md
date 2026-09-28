@@ -297,6 +297,8 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   Vorjahr, Monatsverlauf, KU-Grenze, Pipeline Angebot -> Geld, offene Posten, To-dos, Kategorien, Top-Kunden, letzte
   Zahlungen), Journal (+ CSV), EUeR, Anlagen; Jahreswahl. Probejahr von Hand nachgerechnet (Tests + Gegenproben);
   Headless-Chrome-Klicktest mit echten API-Daten. Amtliche EUeR-Zeilennummern bewusst erst in Etappe 9.
+  Nachtrag (CEO, Facebook-Monetarisierung): Belegart „Einnahme (Gutschrift)“, Meta-Zahlungsavis (englisch, USD)
+  erkannt, Fremdwaehrung -> Euro-Betrag vom Kontoauszug; Beleg-Mails auch aus dem Spam mit DKIM/DMARC-Pruefung (BF-37).
 - Ziel / Scope: Zahlungen erfassen (Rechnung bezahlt / Beleg bezahlt, Teilzahlungen), Journal nach Zahlungsdatum,
   10-Tage-Regel, Kategorien -> Zeilen der Anlage EUeR, Anlageverzeichnis mit AfA/GWG/Sammelposten; (optional spaeter:
   Kontoauszug-CSV-Import, Entscheidung 3).

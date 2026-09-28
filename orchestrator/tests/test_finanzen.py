@@ -153,6 +153,36 @@ class TestProbejahr(unittest.TestCase):
         self.assertEqual((x["bezahlt_cent"], x["bezahlt_am"]), (5192, d("09-22")))
         self.assertEqual(self.f.euer(VJ)["ausgaben_cent"], 5192)
 
+    def test_7_gutschrift_facebook_ist_einnahme(self):
+        from orchestrator.core.eingangsbelege import vorschlag_llm, vorschlag_regeln
+        text = ("Meta Platforms Ireland Limited\nGutschrift (Selbstfakturierung)\nFacebook-Monetarisierung August\n"
+                "Belegnummer: FB-2025-0815\nBelegdatum: 05.09.2025\nGesamtbetrag 312,40 EUR")
+        v = vorschlag_regeln(text)
+        self.assertEqual((v["art"], v["kategorie"], v["betrag"]), ("einnahme", "umsatz", "312,40"))
+        self.assertEqual(vorschlag_regeln("Druckerei Nord\nRechnung\nGesamt 10,00 EUR")["art"], "ausgabe")
+        self.assertEqual(vorschlag_llm('{"art": "einnahme", "kategorie": "werbung", "betrag": "5"}')["kategorie"], "umsatz")
+        self.assertEqual(vorschlag_llm('{"art": "quatsch", "kategorie": "werbung"}')["art"], "ausgabe")
+        meta = ("Meta Platforms Ireland Ltd.\nREMITTANCE\nPayee: Nils Krüger\nPayment Number: 29163590826663755\n"
+                "Payment Date: 25-Sep-2026\nPayment Currency: USD\nPayment Amount: 282.37\nTotal: $282.37")
+        m = vorschlag_regeln(meta)                                                      # echtes Zahlungsavis (gekuerzt)
+        self.assertEqual((m["art"], m["rechnungsnummer"], m["rechnungsdatum"], m["betrag"], m["waehrung"], m["betrag_fremd"]),
+                         ("einnahme", "29163590826663755", "2026-09-25", "", "USD", "282,37"))
+        self.assertEqual(vorschlag_llm('{"art": "einnahme", "waehrung": "USD", "betrag": "282,37"}')["betrag"], "")
+        nr = _beleg(self.eb, "Meta Platforms Ireland", "312,40", "umsatz", d("09-05"), art="einnahme")
+        with self.assertRaises(ValueError):                                                  # Einnahme ist kein GWG
+            self.eb.buchen(nr, {"lieferant": "Meta", "rechnungsdatum": d("09-05"), "betrag": "1", "kategorie": "gwg",
+                                "art": "einnahme"})
+        with mock.patch("orchestrator.core.finanzen.jetzt", return_value=jetzt().replace(year=VJ, month=12, day=31)):
+            u = self.f.uebersicht(VJ)
+        self.assertEqual((u["forderungen"]["summe_cent"], u["verbindlichkeiten"]["summe_cent"]), (31240, 0))
+        self.assertEqual(u["forderungen"]["liste"][0]["act"], "bl-detail")
+        self.assertEqual(self.rs.umsatz(VJ, eintraege=self.bh.eintraege()), 31240)          # KU-Grenze zaehlt mit
+        self.eb.bezahlt(nr, d("09-20"))                                                      # Geldeingang
+        eu = self.f.euer(VJ)
+        self.assertEqual((eu["einnahmen_cent"], eu["ausgaben_cent"]), (31240, 0))
+        z = self.f.journal(VJ)[0]
+        self.assertEqual((z["art"], z["gegenpartei"], z["position"][:17]), ("einnahme", "Meta Platforms Ireland", "Betriebseinnahmen"))
+
 
 class TestFinanzenApi(ApiBasis):
     def test_a1_ablauf(self):

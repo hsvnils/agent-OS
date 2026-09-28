@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 17:15] — Claude Code
+- **Was:** Belege koennen Einnahmen sein (Gutschrift, z. B. Facebook-Monetarisierung): Art beim Buchen, Journal/EUeR als Einnahme, offene Gutschriften unter „bekommen wir“, KU-Waechter zaehlt sie. Erkennung Meta-Zahlungsavis (Payment Number/Date englisch, USD -> Euro-Betrag vom Kontoauszug eintragen, Hinweis § 14c). BF-37: Beleg-Mails auch aus dem Spam, nur mit bestandener DKIM/DMARC-Pruefung (`absender_echt`), danach aus dem Spam geholt; moin@hanserautisch.de in die Standard-Absenderliste. UI-Cache app v48.
+- **Warum:** CEO: Facebook-Verguetungen per Mail weiterleiten; weitergeleitete Meta-Mail wurde nicht uebernommen.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/core/eigenbelege.py`, `orchestrator/core/finanzen.py`, `orchestrator/governance/google_workspace.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `index-v2.html`, Tests `test_eingangsbelege.py`/`test_finanzen.py`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-28 16:30] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 7 umgesetzt: Journal nach Zahlungsdatum, EUeR je Position, Anlageverzeichnis mit AfA, Eigenbelege (EB-Nummernkreis) fuer Zahlungen ohne Rechnung, Teilzahlungen und Zahlungs-Storno fuer Rechnungen/Belege, 10-Tage-Regel, GWG-Grenze 800 €, Nutzungsdauer fuer Anlagegueter, Kleinunternehmer-Waechter inkl. Eigenbeleg-Einnahmen. Neuer LUNA-OS-Bereich „💶 Finanzen“ (Uebersicht, Journal + CSV, EUeR, Anlagen). Fix: Stornorechnung zaehlte nicht als „Auftrag abgerechnet“. UI-Cache app v46 / style v21.
 - **Warum:** CEO-Go Etappe 7 + Wunsch nach einem Finanzbereich mit guter Uebersicht ueber alles.

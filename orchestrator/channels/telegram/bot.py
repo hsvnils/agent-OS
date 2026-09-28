@@ -1378,7 +1378,7 @@ def main() -> None:
                         from ...core.eingangsbelege import EingangStore, mail_eingang_pruefen
                         from ...core.auftraege import AuftragStore
                         _abs = [x for x in str(secrets.get("BELEG_ABSENDER", "hsvnils@icloud.com,hanserautisch@gmail.com,"
-                                                                          "nils@hanserautisch.de")).split(",") if x.strip()]
+                                                                          "nils@hanserautisch.de,moin@hanserautisch.de")).split(",") if x.strip()]
                         mail_eingang_pruefen(EingangStore(_bh), ctx.google, absender=_abs,
                                              backoffice=AuftragStore(ROOT / "backoffice" / "log.jsonl", secrets=ctx.leak_secrets),
                                              notify=(ctx.notifications.enqueue if ctx.notifications else None),
