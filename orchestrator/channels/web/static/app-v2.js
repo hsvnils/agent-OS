@@ -640,6 +640,7 @@ RENDER.angebote = renderAngebote;
 async function renderAngebote() {
   const sub = SUBTAB.angebote || "offen";
   if (sub === "katalog") return renderKatalog();
+  if (sub === "auftraege") return renderAuftraege();
   if (sub === "preisliste") return renderPreisliste();
   const d = await jget("/api/crm/angebote") || {};
   const alle = d.angebote || [];
@@ -654,7 +655,7 @@ async function renderAngebote() {
     ${tile(sub === "offen" ? "Offene Angebote" : "Alle Angebote", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Firma</th><th>Titel</th><th>Datum</th><th style="text-align:right">Summe</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow(sub === "offen" ? "Keine offenen Angebote — oben rechts „+ Neues Angebot“." : "Noch kein Angebot."), "w12")}`;
   $("#v2-app").innerHTML = anKopf() + `<div class="v2-grid">${body}</div>`;
 }
-const anKopf = () => secHead("Angebote", `<button class="v2-btn pri" data-act="an-neu">+ Neues Angebot</button>`) + tabs("angebote", [["offen", "Offen"], ["alle", "Alle"], ["katalog", "Katalog"], ["preisliste", "Preisliste"]]);
+const anKopf = () => secHead("Angebote & Aufträge", `<button class="v2-btn pri" data-act="an-neu">+ Neues Angebot</button>`) + tabs("angebote", [["offen", "Offen"], ["alle", "Alle"], ["auftraege", "Aufträge"], ["katalog", "Katalog"], ["preisliste", "Preisliste"]]);
 
 /* ---------- Editor ---------- */
 function anPosZeile(p = {}) {
@@ -805,13 +806,16 @@ async function anDetail(nr, meldung, fehler) {
   if (a.status === "entwurf") aktionen += `<button class="v2-btn" data-act="an-bearbeiten" data-id="${esc(nr)}">✎ Bearbeiten</button>
     <button class="v2-btn pri" data-act="an-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled title=\"Google nicht verbunden\""}>✉️ Senden …</button>
     <button class="v2-btn" data-act="an-versendet" data-id="${esc(nr)}" title="Nur wenn du das Angebot auf anderem Weg verschickt hast">✔ Anderweitig versendet</button>`;
+  if (a.auftrag) aktionen += `<button class="v2-btn ok" data-act="ab-detail" data-id="${esc(a.auftrag)}">📋 Auftrag ${esc(a.auftrag)}</button>`;
+  else if (a.status === "angenommen") aktionen += `<button class="v2-btn pri" data-act="ab-neu" data-id="${esc(nr)}">📋 Auftrag anlegen</button>`;
+  else if (a.status === "versendet") aktionen += `<button class="v2-btn pri" data-act="ab-neu" data-id="${esc(nr)}" data-val="annehmen">📋 Angenommen + Auftrag anlegen</button>`;
   if (a.status === "versendet") aktionen += `<button class="v2-btn ok" data-act="an-status" data-id="${esc(nr)}" data-val="angenommen">Angenommen</button><button class="v2-btn" data-act="an-status" data-id="${esc(nr)}" data-val="abgelehnt">Abgelehnt</button>`
     + ((a.versendet_termine || []).length < 2 ? `<button class="v2-btn" data-act="an-erinnerungen" data-id="${esc(nr)}" title="Fehlende Kalender-Erinnerungen anlegen">📅 Erinnerungen nachholen</button>` : "");
   if ((a.pdfs || []).length) aktionen += `<a class="v2-btn" href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf?archiv=1" target="_blank" rel="noopener">📎 Abgelegtes PDF</a>`;
-  const verlaufLbl = { angebot_angelegt: "Angelegt", angebot_geaendert: "Geändert", angebot_pdf_abgelegt: "PDF abgelegt", angebot_status: "Status", angebot_erinnerungen: "Erinnerungen nachgeholt", angebot_antwort: "Antwort vom Kunden" };
+  const verlaufLbl = { auftrag_angelegt: "Auftrag angelegt", angebot_angelegt: "Angelegt", angebot_geaendert: "Geändert", angebot_pdf_abgelegt: "PDF abgelegt", angebot_status: "Status", angebot_erinnerungen: "Erinnerungen nachgeholt", angebot_antwort: "Antwort vom Kunden" };
   const anzAntworten = (a.antworten || []).length;
   const verlauf = (a.verlauf || []).slice().reverse().map(v => {
-    const kopf = `<b>${esc(verlaufLbl[v.typ] || v.typ)}${v.status ? ": " + esc((AN_STATUS[v.status] || [v.status])[0]) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.an ? " · an " + esc(v.an) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small>`;
+    const kopf = `<b>${esc(verlaufLbl[v.typ] || v.typ)}${v.status ? ": " + esc((AN_STATUS[v.status] || [v.status])[0]) : ""}${v.auftrag ? " " + esc(v.auftrag) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.an ? " · an " + esc(v.an) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small>`;
     if (!v.mail_id) return `<div class="v2-list-row"><div class="grow">${kopf}</div></div>`;
     const titel = v.richtung === "ein" ? `💬 Antwort von ${esc(v.mail_von || "")}` : `✉️ Gesendet an ${esc(v.mail_an || "")}${v.betreff ? " · „" + esc(v.betreff) + "“" : ""}`;
     return `<details class="v2-mail" data-nr="${esc(nr)}" data-mid="${esc(v.mail_id)}"><summary><div class="grow"><b>${titel}</b><small>${esc(zeit(v.ts))}${v.vorschau ? " · " + esc(v.vorschau.slice(0, 90)) : ""}${v.status ? " · Status: " + esc((AN_STATUS[v.status] || [v.status])[0]) : ""}</small></div></summary><div class="v2-mail-inhalt">Lade Mail…</div></details>`;
@@ -834,6 +838,94 @@ async function anDetail(nr, meldung, fehler) {
     <div id="an-senden-box"></div>
     <h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
     </div></div>`, true);
+}
+
+/* ---------- Auftraege (Beauftragung, KUNDEN_FINANZEN Etappe 4) ---------- */
+const AB_STATUS = { beauftragt: ["Beauftragt", "wartet"], erledigt: ["Erledigt", "ok"], storniert: ["Storniert", "err"] };
+const abBadge = (st) => { const [l, c] = AB_STATUS[st] || [st, "neutral"]; return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
+const datumDe = (d) => d ? new Date(d).toLocaleDateString("de-DE") : "";
+async function renderAuftraege() {
+  const d = await jget("/api/crm/auftraege") || {};
+  const l = d.auftraege || [];
+  const offen = l.filter(a => a.status === "beauftragt");
+  const rows = l.map(a => `<tr class="klick" data-act="ab-detail" data-id="${esc(a.nummer)}"><td><b>${esc(a.nummer)}</b></td><td>${esc(a.firma_name || a.firma)}</td><td>${esc(a.titel || "")}</td><td>${esc(a.angebot)}</td><td>${esc([datumDe(a.leistung_von), datumDe(a.leistung_bis)].filter(Boolean).join(" – "))}</td><td style="text-align:right">${cent2eur(a.summe_cent)}</td><td>${abBadge(a.status)}</td></tr>`).join("");
+  const body = `${kpiTile("Offene Aufträge", String(offen.length), null, cent2eur(offen.reduce((x, a) => x + (a.summe_cent || 0), 0)))}${kpiTile("Erledigt", String(l.filter(a => a.status === "erledigt").length), null, "bereit für die Rechnung")}
+    ${tile("Aufträge", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Firma</th><th>Titel</th><th>Angebot</th><th>Leistung</th><th style="text-align:right">Summe</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow("Noch kein Auftrag — entsteht aus einem angenommenen Angebot („📋 Auftrag anlegen“)."), "w12")}`;
+  $("#v2-app").innerHTML = anKopf() + `<div class="v2-grid">${body}</div>`;
+}
+function abNeu(angebotNr, annehmen) {
+  openModal(`Auftrag aus ${angebotNr}`, `<div class="v2-form" style="max-width:640px">
+    ${annehmen ? `<div class="v2-msg">Das Angebot wird dabei als <b>angenommen</b> markiert.</div>` : ""}
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Leistung von</small><input id="ab-von" type="date"></label>
+      <label class="v2-feld"><small>Leistung bis</small><input id="ab-bis" type="date"></label></div>
+    <label class="v2-feld"><small>Notiz (erscheint auf der Auftragsbestätigung)</small><textarea id="ab-notiz" rows="3" class="v2-inp"></textarea></label>
+    <button class="v2-btn pri" data-act="ab-anlegen" data-id="${esc(angebotNr)}" data-val="${annehmen ? "annehmen" : ""}">📋 Auftrag anlegen (Nummer wird vergeben)</button><div id="ab-msg" class="v2-msg"></div></div>`, true);
+}
+async function abAnlegen(angebotNr, annehmen) {
+  const r = await jpost(`/api/crm/angebote/${encodeURIComponent(angebotNr)}/auftrag`, { annehmen: !!annehmen, leistung_von: $("#ab-von").value, leistung_bis: $("#ab-bis").value, notiz: $("#ab-notiz").value.trim() });
+  if (!r || !r.ok) return kundenMsg("ab-msg", (r && r.hinweis) || "Fehler.", false);
+  if (AKTIV === "angebote") renderAngebote();
+  return abDetail(r.nummer, [`${r.nummer} angelegt.`, ...(r.hinweise || [])].join("\n"));
+}
+async function abDetail(nr, meldung, fehler) {
+  openModal(nr, `<div class="v2-empty">Lade…</div>`, true);
+  const d = await jget("/api/crm/auftraege/" + encodeURIComponent(nr));
+  const a = d && d.auftrag; if (!a) return openModal(nr, emptyRow("Auftrag nicht gefunden."), true);
+  const ap = d.ansprechpartner, sm = a.summen;
+  const pos = a.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${cent2eur(p.gesamt_cent)}</td></tr>`).join("");
+  const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Formate</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
+    + sm.zuschlaege.map(([n, p, c]) => `<tr><td></td><td>${esc(n)} (+${esc(pz(p))} %)</td><td></td><td style="text-align:right">${cent2eur(c)}</td></tr>`).join("")
+    + (sm.rabatt ? `<tr><td></td><td>Paketrabatt (${esc(pz(sm.rabatt[0]))} %)</td><td></td><td style="text-align:right">−${cent2eur(sm.rabatt[1])}</td></tr>` : "")
+    + `<tr><td></td><td><b>Gesamtbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
+  let aktionen = `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 Auftragsbestätigung (PDF)</a>
+    <button class="v2-btn" data-act="an-detail" data-id="${esc(a.angebot)}">↩ Angebot ${esc(a.angebot)}</button>`;
+  if (a.status !== "storniert") aktionen += `<button class="v2-btn pri" data-act="ab-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled"}>✉️ Senden …</button>`;
+  if (a.status === "beauftragt") aktionen += `<button class="v2-btn ok" data-act="ab-status" data-id="${esc(nr)}" data-val="erledigt">✔ Erledigt</button><button class="v2-btn" data-act="ab-status" data-id="${esc(nr)}" data-val="storniert">Stornieren</button>`;
+  if ((a.pdfs || []).length) aktionen += `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf?archiv=1" target="_blank" rel="noopener">📎 Abgelegtes PDF</a>`;
+  const lbl = { auftrag_angelegt: "Angelegt", auftrag_geaendert: "Geändert", auftrag_pdf_abgelegt: "PDF abgelegt", auftrag_status: "Status" };
+  const verlauf = (a.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(lbl[v.typ] || v.typ)}${v.status ? ": " + esc(v.status === "gesendet" ? "Gesendet an " + (v.mail_an || "") : (AB_STATUS[v.status] || [v.status])[0]) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
+  const bearbeitbar = a.status === "beauftragt";
+  openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
+    <div class="v2-card-actions" style="flex-wrap:wrap;margin:8px 0 14px">${aktionen}</div>
+    <div class="v2-an-detail"><div>
+    <div class="v2-kv"><span>Status</span>${abBadge(a.status)}</div>
+    <div class="v2-kv"><span>Angebot</span><b>${esc(a.angebot)}</b></div>
+    <div class="v2-kv"><span>Firma</span><b>${esc(a.firma)} · ${esc(d.firma.name || "")}</b></div>
+    <div class="v2-kv"><span>Ansprechpartner</span><b>${ap ? esc(ap.nummer + " · " + [ap.vorname, ap.nachname].filter(Boolean).join(" ")) : "—"}</b></div>
+    <div class="v2-kv"><span>Beauftragt am</span><b>${esc(datumDe(a.datum))}</b></div>
+    ${a.gesendet_mail ? `<div class="v2-kv"><span>Bestätigung gesendet</span><b>✉️ ${esc(a.gesendet_mail.an)} · ${esc(zeit(a.gesendet_am))}</b></div>` : ""}
+    <h3>Leistung</h3><div class="v2-form">
+      <div class="v2-an-zeile"><label class="v2-feld"><small>von</small><input id="abe-von" type="date" value="${esc(a.leistung_von || "")}" ${bearbeitbar ? "" : "disabled"}></label>
+        <label class="v2-feld"><small>bis</small><input id="abe-bis" type="date" value="${esc(a.leistung_bis || "")}" ${bearbeitbar ? "" : "disabled"}></label></div>
+      <label class="v2-feld"><small>Notiz</small><textarea id="abe-notiz" rows="2" class="v2-inp" ${bearbeitbar ? "" : "disabled"}>${esc(a.notiz || "")}</textarea></label>
+      ${bearbeitbar ? `<button class="v2-btn" data-act="ab-speichern" data-id="${esc(nr)}">Speichern</button><div id="abe-msg" class="v2-msg"></div>` : ""}</div>
+    <h3>Verlauf</h3>${verlauf}
+    </div><div>
+    <div id="ab-senden-box"></div>
+    <h3>Positionen <small class="v2-sub">aus ${esc(a.angebot)} übernommen</small></h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
+    </div></div>`, true);
+}
+async function abSendenVorschau(nr) {
+  const box = $("#ab-senden-box"); if (!box) return;
+  const v = await jget(`/api/crm/auftraege/${encodeURIComponent(nr)}/versandvorschau`);
+  if (!v) { box.innerHTML = emptyRow("Vorschau nicht verfügbar."); return; }
+  box.innerHTML = `<h3>Auftragsbestätigung senden</h3><div class="v2-form">
+    <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
+    <label class="v2-feld"><small>An *</small><input id="abs-an" type="email" value="${esc(v.an || "")}"></label>
+    <label class="v2-feld"><small>Betreff *</small><input id="abs-betreff" value="${esc(v.betreff)}"></label>
+    <label class="v2-feld"><small>Text *</small><textarea id="abs-text" class="v2-inp" rows="9">${esc(v.text)}</textarea></label>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ab-senden-jetzt" data-id="${esc(nr)}">✉️ Jetzt senden</button><button class="v2-btn" data-act="ab-senden-abbruch">Abbrechen</button></div>
+    <div id="abs-msg" class="v2-msg"></div></div>`;
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+async function abSendenJetzt(nr) {
+  const an = $("#abs-an").value.trim();
+  if (!an || !an.includes("@")) return kundenMsg("abs-msg", "Bitte eine gültige Empfänger-Adresse eintragen.", false);
+  if (!confirm(`Auftragsbestätigung ${nr} jetzt an ${an} senden?`)) return;
+  const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(nr)}/senden`, { an, betreff: $("#abs-betreff").value.trim(), text: $("#abs-text").value.trim(), bestaetigt: true });
+  if (!r || !r.ok) return kundenMsg("abs-msg", (r && r.hinweis) || "Senden fehlgeschlagen.", false);
+  return abDetail(nr, `Auftragsbestätigung an ${r.an} gesendet.`);
 }
 
 /* ---------- Mails im Verlauf: erst beim Aufklappen laden ---------- */
@@ -1275,6 +1367,19 @@ async function handleAct(act, el) {
       flash("⏳ …"); const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/versendet`, {});
       if (AKTIV === "angebote") renderAngebote();
       return anDetail(id, r && r.ok ? ["Als versendet markiert.", ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
+    }
+    case "ab-neu": return abNeu(id, val === "annehmen");
+    case "ab-anlegen": return abAnlegen(id, val === "annehmen");
+    case "ab-detail": return abDetail(id);
+    case "ab-senden": return abSendenVorschau(id);
+    case "ab-senden-jetzt": return abSendenJetzt(id);
+    case "ab-senden-abbruch": { const bx = $("#ab-senden-box"); if (bx) bx.innerHTML = ""; return; }
+    case "ab-speichern": { const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}`, { auftrag: { leistung_von: $("#abe-von").value, leistung_bis: $("#abe-bis").value, notiz: $("#abe-notiz").value.trim() } }); if (!r || !r.ok) return kundenMsg("abe-msg", (r && r.hinweis) || "Fehler.", false); return abDetail(id, r.geaendert && r.geaendert.length ? "Gespeichert." : "Keine Änderung."); }
+    case "ab-status": {
+      const grund = prompt(val === "erledigt" ? "Erledigt — Notiz (optional):" : "Stornieren — Grund:", ""); if (grund === null) return;
+      const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/status`, { status: val, grund });
+      if (AKTIV === "angebote") renderAngebote();
+      return abDetail(id, r && r.ok ? (val === "erledigt" ? "Als erledigt markiert — bereit für die Rechnung." : "Storniert.") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
     case "an-senden": return anSendenVorschau(id);
     case "an-senden-jetzt": return anSendenJetzt(id);

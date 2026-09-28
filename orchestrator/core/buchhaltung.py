@@ -118,15 +118,18 @@ class Buchhaltung:
             self._anhaengen("nummer", {"kreis": kreis.upper(), "jahr": jahr, "nummer": nummer, "bezug": bezug}, von=von)
             return nummer
 
-    def mit_nummer(self, kreis: str, typ: str, daten: dict, *, jahr: int | None = None, bezug: str = "",
+    def mit_nummer(self, kreis: str, typ: str, daten, *, jahr: int | None = None, bezug: str = "",
                    von: str = "", pruefe=None) -> dict:
         """Nummer vergeben **und** den fachlichen Eintrag (mit `daten["nummer"]`) unter derselben Sperre schreiben --
-        keine Nummer ohne Objekt. `pruefe(eintraege)` darf vorher (unter der Sperre) mit ValueError abbrechen."""
+        keine Nummer ohne Objekt. `pruefe(eintraege)` darf vorher (unter der Sperre) mit ValueError abbrechen.
+        `daten` darf eine Funktion `(eintraege) -> dict` sein -- dann entsteht der Inhalt erst unter der Sperre."""
         if not re.fullmatch(r"[a-z_]+", typ or ""):
             raise ValueError(f"Ungueltiger Eintragstyp: {typ!r}")
         with self._gesperrt():
             if pruefe:
                 pruefe(self._eintraege())
+            if callable(daten):
+                daten = daten(self._eintraege())
             nummer, jahr = self._naechste_nummer(kreis, jahr)
             self._anhaengen("nummer", {"kreis": kreis.upper(), "jahr": jahr, "nummer": nummer, "bezug": bezug}, von=von)
             return self._anhaengen(typ, {**daten, "nummer": nummer}, von=von)

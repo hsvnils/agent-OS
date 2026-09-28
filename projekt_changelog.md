@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 12:50] — Claude Code (MACO470)
+- **Was:** KUNDEN_FINANZEN Etappe 4 (Beauftragung): `core/beauftragung.py`, Auftrag AB- aus angenommenem Angebot (einer je
+  Angebot), Verknuepfung Angebot <-> Auftrag, CRM „vereinbart", PDF Auftragsbestaetigung + Senden aus LUNAs Konto,
+  LUNA-OS Tab „Auftraege" (Cache v41). `Buchhaltung.mit_nummer` akzeptiert eine Daten-Funktion (Inhalt unter der Sperre).
+  Hanserautisch-PDF: lange Titel schrumpfen. Tests + Gegenprobe, Suite gruen.
+- **Warum:** CEO: „Erst Etappe 6 und danach direkt Etappe 4".
+- **Betroffen:** `orchestrator/core/{beauftragung,angebote,buchhaltung,beleg_pdf}.py`, `orchestrator/channels/web/app.py`,
+  `orchestrator/channels/web/static/{app-v2.js,index-v2.html}`, `orchestrator/tests/{test_beauftragung,test_angebote}.py`,
+  `docs/datenfluesse.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-28 12:43] — Claude Code (MACO470)
 - **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 6: Belege ausser Haus in LUNAs Google Drive (`core/beleg_sicherung.py`,
   Drive-Funktionen in `google_workspace`, Bot-Poll 15 min + Tagesstand ab 03:00). Idempotent, Pruefsummen vor/nach dem

@@ -194,6 +194,9 @@ class AngebotStore:
                 out[d["nummer"]] = {**{k: d.get(k) for k in KOPF_FELDER}, "nummer": d["nummer"],
                                     "positionen": d["positionen"], "status": "entwurf", "angelegt": e["ts"],
                                     "pdfs": [], "verlauf": [spur]}
+            elif t == "auftrag_angelegt" and d.get("angebot") in out:     # Verknuepfung Angebot -> Auftrag (AB-)
+                out[d["angebot"]]["auftrag"] = d["nummer"]
+                out[d["angebot"]]["verlauf"].append(spur | {"auftrag": d["nummer"]})
             elif d.get("nummer") not in out:
                 continue
             elif t == "angebot_geaendert":
