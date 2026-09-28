@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 17:47] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 11: Positionen werden beim Einlesen erkannt (E-Rechnung exakt inkl. Brutto-Umrechnung, PDF/OCR-Zeilenregel, Backoffice-KI je Position mit Kategorie); Beleg „In Positionen aufteilen“ mit Kategorie je Position inkl. „privat – nicht absetzbar“, Summenkontrolle, „Differenz als Position“; GWG/Anlage je Position; Zahlungen anteilig, Privatanteil sichtbar aber ohne Wirkung auf EUeR/Cockpit/AfA; Export-Spalte „Aufteilung“; Verfahrensdokumentation um Mahnwesen und Aufteilung ergaenzt. UI-Cache app v57 / style v25.
+- **Warum:** CEO: gemischte Rechnungen (z. B. Amazon) sauber behandeln; Positionen beim Scannen erkennen und einzeln auffuehren.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/core/finanzen.py`, `orchestrator/core/jahresabschluss.py`, `static/app-v2.js`, `static/style-v2.css`, `index-v2.html`, `orchestrator/tests/test_aufteilung.py` (neu), `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
 ## [2026-09-28 17:35] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 10 Mahnwesen: Mahnung aus ueberfaelliger Rechnung (Vorschau mit Frist -> festschreiben MA-JJJJ-NNNN mit PDF -> senden aus LUNAs Konto), 2./3. Mahnung nach Fristablauf per Telegram-Vorschau mit ✅/❌ (Versand nur nach Tipp), Verzugszinsen ab Faelligkeit taggenau (Basiszinssatz 2023-2026 von der Bundesbank + 9/5 Punkte), 40 EUR Pauschale (Firma) bzw. 2,50 EUR je Mahnung (Privat), Kundenfeld „Privatperson“, Zahlung inkl. Zinsen/Kosten (Journal, EUeR Zeile 12 + nachrichtlich 13), To-dos mit naechstem Mahnschritt, CFO-Hinweis bei fehlendem Basiszinssatz. Backup-Skript: Kommentar zu firmendaten.json in eigene Zeile (Doku-Check erkennt die Sicherung). UI-Cache app v55.
 - **Warum:** CEO-Wunsch Mahnungen; Entscheidungen per Rueckfrage (Telegram statt autonom, 40-EUR-Pauschale statt 15 EUR je Mahnung, Zinsen ab Faelligkeit).
