@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 12:36] — Claude Code (MACO470)
+- **Was:** Etappe 4 (`LUNA_GOOGLE_KONTO_ROADMAP.md`) beim Empfaenger verifiziert (AN-2026-0002: Antwort erfasst +
+  gemeldet, beide Mails nach Neustart als .eml archiviert). Neue Etappe 6 geplant: Belege ausser Haus in LUNAs Google
+  Drive (Kopie der NAS-Belege, idempotent, Pruefsummen-Abgleich).
+- **Warum:** CEO: „Neustart erledigt, plane das mit ein".
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-09-28 12:20] — Claude Code (MACO470)
 - **Was:** Angebots-Mails vollstaendig nachverfolgt: gesendete Mails und Kundenantworten als Original (.eml) in der
   Buchhaltung archiviert (Geschaeftsbrief, Nachholen fuer bereits erfasste), im Verlauf eingeklappt und aufklappbar
