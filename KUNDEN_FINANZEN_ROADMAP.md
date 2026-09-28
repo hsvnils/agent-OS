@@ -4,8 +4,8 @@
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: CEO-Go fuer Etappe 7 (Zahlungen + EUeR-Journal). Offen aus Etappe 6: Live-Probe der OCR mit einem
-  fotografierten Beleg (Weg ist gebaut und getestet, echte Probe steht aus).
+- Naechster Schritt: Deploy + Abnahme Etappe 7 (Finanzbereich in LUNA-OS pruefen, eine Einnahme ohne Rechnung buchen);
+  danach Go fuer Etappe 8. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -289,7 +289,14 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 7: Zahlungen und EUeR-Journal
 
-- Status: geplant
+- Status: umgesetzt (CEO-Go 2026-09-28 „leg los“ + Wunsch „Finanzbereich mit guter Uebersicht ueber alles“), Deploy + Abnahme offen
+- Ergebnis: `core/finanzen.py` (Journal nach Zahlungsdatum, EUeR je Position, Anlageverzeichnis mit AfA, Uebersicht),
+  `core/eigenbelege.py` (Eigenbelege `EB-JJJJ-NNNN` fuer Zahlungen ohne eigene Rechnung, Storno mit Grund, 10-Tage-Regel),
+  Teilzahlungen + Zahlungs-Storno fuer Rechnungen und Belege, GWG-Grenze 800 €, Anlagegut mit Nutzungsdauer,
+  Kleinunternehmer-Waechter zaehlt Eigenbeleg-Einnahmen mit. LUNA-OS V2 „💶 Finanzen“: Uebersicht (Kennzahlen mit
+  Vorjahr, Monatsverlauf, KU-Grenze, Pipeline Angebot -> Geld, offene Posten, To-dos, Kategorien, Top-Kunden, letzte
+  Zahlungen), Journal (+ CSV), EUeR, Anlagen; Jahreswahl. Probejahr von Hand nachgerechnet (Tests + Gegenproben);
+  Headless-Chrome-Klicktest mit echten API-Daten. Amtliche EUeR-Zeilennummern bewusst erst in Etappe 9.
 - Ziel / Scope: Zahlungen erfassen (Rechnung bezahlt / Beleg bezahlt, Teilzahlungen), Journal nach Zahlungsdatum,
   10-Tage-Regel, Kategorien -> Zeilen der Anlage EUeR, Anlageverzeichnis mit AfA/GWG/Sammelposten; (optional spaeter:
   Kontoauszug-CSV-Import, Entscheidung 3).

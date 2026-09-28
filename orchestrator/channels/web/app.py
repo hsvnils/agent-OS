@@ -33,6 +33,8 @@ from ...core.katalog import Katalog
 from ...core.beauftragung import AuftragBuch, auftrag_mail_text
 from ...core.rechnungen import RechnungStore, rechnung_mail_text
 from ...core import eingangsbelege as _eb
+from ...core.eigenbelege import EigenbelegStore
+from ...core.finanzen import KATEGORIE_NAMEN, Finanzen, journal_csv
 from ...core.ig_inbox import IgInboxStore
 from ...core.content_store import (AIINTEL_FELDER, AIINTEL_RECS, ContentStore, CUTTER_FELDER, CUTTER_STATUSES,
                                    DRAFT_FELDER, DRAFT_STATUSES, IDEA_FELDER, IDEA_STATUSES, SOURCE_FELDER,
@@ -1668,7 +1670,15 @@ async def rechnung_bezahlt(nummer: str, request: Request):
     body = await _json(request)
     return _kunden_aktion(_mit_aufraeumen(
         lambda: _rechnungen().bezahlt(nummer, datum=body.get("datum") or "", betrag=body.get("betrag"),
-                                      notiz=body.get("notiz") or "", von=_von(request)), _von(request)))
+                                      notiz=body.get("notiz") or "", zuordnung_jahr=body.get("zuordnung_jahr"),
+                                      von=_von(request)), _von(request)))
+
+
+@app.post("/api/finanzen/rechnungen/{nummer}/zahlung-stornieren")
+async def rechnung_zahlung_stornieren(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _rechnungen().zahlung_stornieren(nummer, _index(body), body.get("grund") or "",
+                                                                   von=_von(request)))
 
 
 @app.post("/api/finanzen/rechnungen/{nummer}/stornieren")
@@ -1766,7 +1776,73 @@ async def beleg_buchen(nummer: str, request: Request):
 @app.post("/api/finanzen/belege/{nummer}/bezahlt")
 async def beleg_bezahlt(nummer: str, request: Request):
     body = await _json(request)
-    return _kunden_aktion(lambda: _eingang().bezahlt(nummer, body.get("datum") or "", von=_von(request)))
+    return _kunden_aktion(lambda: _eingang().bezahlt(nummer, body.get("datum") or "", betrag=body.get("betrag"),
+                                                     zuordnung_jahr=body.get("zuordnung_jahr"),
+                                                     notiz=body.get("notiz") or "", von=_von(request)))
+
+
+@app.post("/api/finanzen/belege/{nummer}/zahlung-stornieren")
+async def beleg_zahlung_stornieren(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _eingang().zahlung_stornieren(nummer, _index(body), body.get("grund") or "",
+                                                                von=_von(request)))
+
+
+def _index(body: dict) -> int:
+    try:
+        return int(body.get("index"))
+    except (TypeError, ValueError):
+        raise ValueError("Zahlung fehlt.") from None
+
+
+# -- Finanzen: Uebersicht, Journal, EUeR, Anlagen, Eigenbelege (KUNDEN_FINANZEN Etappe 7; Modul finanzen) -----------
+
+def _finanzen() -> Finanzen:
+    return Finanzen(kunden_store.bh, kunden_store)
+
+
+@app.get("/api/finanzen/uebersicht")
+def finanzen_uebersicht(jahr: int = 0):
+    return _finanzen().uebersicht(jahr or None)
+
+
+@app.get("/api/finanzen/journal")
+def finanzen_journal(jahr: int = 0, format: str = ""):
+    j = jetzt_iso()[:4]
+    zeilen = _finanzen().journal(jahr or int(j))
+    if format == "csv":
+        return Response("\ufeff" + journal_csv(zeilen), media_type="text/csv; charset=utf-8",
+                        headers={"Content-Disposition": f'attachment; filename="Journal_{jahr or j}.csv"'})
+    return {"jahr": jahr or int(j), "zeilen": zeilen}
+
+
+@app.get("/api/finanzen/euer")
+def finanzen_euer(jahr: int = 0):
+    return _finanzen().euer(jahr or int(jetzt_iso()[:4]))
+
+
+@app.get("/api/finanzen/anlagen")
+def finanzen_anlagen(jahr: int = 0):
+    j = jahr or int(jetzt_iso()[:4])
+    return {"jahr": j, "anlagen": _finanzen().anlagen(j)}
+
+
+@app.get("/api/finanzen/eigenbelege")
+def eigenbelege_liste():
+    return {"eigenbelege": EigenbelegStore(kunden_store.bh).liste(), "kategorien": KATEGORIE_NAMEN}
+
+
+@app.post("/api/finanzen/eigenbelege")
+async def eigenbeleg_anlegen(request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: EigenbelegStore(kunden_store.bh).anlegen(body.get("buchung") or {}, von=_von(request)))
+
+
+@app.post("/api/finanzen/eigenbelege/{nummer}/stornieren")
+async def eigenbeleg_stornieren(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: EigenbelegStore(kunden_store.bh).stornieren(nummer, body.get("grund") or "",
+                                                                              von=_von(request)))
 
 
 @app.post("/api/finanzen/belege/{nummer}/verwerfen")

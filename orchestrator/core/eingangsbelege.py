@@ -48,6 +48,7 @@ KATEGORIEN = {
     "sonstiges": ("Sonstiges", ()),
 }
 STATUS = ("zu_pruefen", "gebucht", "verworfen")
+GWG_GRENZE_CENT = 80000        # 800 €; beim Kleinunternehmer zaehlt der Bruttobetrag (kein Vorsteuerabzug)
 
 
 # -- Auslesen -------------------------------------------------------------------------------------------------------
@@ -285,14 +286,27 @@ class EingangStore:
                 x["felder"], x["status"] = d["felder"], "gebucht"
                 x["gebucht_am"] = e["ts"]
                 x["verlauf"].append(spur | {"felder": sorted(d["felder"])})
-            elif t == "eingang_bezahlt":
+            elif t == "eingang_bezahlt":                     # betrag_cent fehlt bei Alt-Eintraegen = voller Betrag
                 x = out[d["nummer"]]
-                x["bezahlt_am"] = d["datum"]
-                x["verlauf"].append(spur | {"datum": d["datum"]})
+                x.setdefault("zahlungen", []).append({k: d.get(k) for k in ("datum", "betrag_cent", "zuordnung_jahr", "notiz")})
+                x["verlauf"].append(spur | {"datum": d["datum"], "betrag_cent": d.get("betrag_cent")})
+            elif t == "eingang_zahlung_storniert":
+                x = out[d["nummer"]]
+                x["zahlungen"][d["index"]] |= {"storniert": True, "storno_grund": d.get("grund", ""), "storniert_am": e["ts"]}
+                x["verlauf"].append(spur | {"grund": d.get("grund", "")})
             elif t == "eingang_verworfen":
                 x = out[d["nummer"]]
                 x["status"], x["grund"] = "verworfen", d.get("grund", "")
                 x["verlauf"].append(spur | {"grund": d.get("grund", "")})
+        for x in out.values():                               # Zahlstand aus Buchung + Zahlungen (Etappe 7)
+            gesamt = (x.get("felder") or {}).get("betrag_cent")
+            zs = x.setdefault("zahlungen", [])
+            for z in zs:
+                if z.get("betrag_cent") is None:
+                    z["betrag_cent"] = gesamt or 0
+            gueltig = [z for z in zs if not z.get("storniert")]
+            x["bezahlt_cent"] = sum(z["betrag_cent"] for z in gueltig)
+            x["bezahlt_am"] = gueltig[-1]["datum"] if gesamt and gueltig and abs(x["bezahlt_cent"]) >= abs(gesamt) else ""
         return out
 
     def liste(self) -> list[dict]:
@@ -305,6 +319,7 @@ class EingangStore:
                         "rechnungsdatum": f.get("rechnungsdatum") or v.get("rechnungsdatum", ""),
                         "betrag_cent": f.get("betrag_cent") if f else (_cent_oder_none(v.get("betrag"))),
                         "kategorie": f.get("kategorie") or v.get("kategorie", ""), "bezahlt_am": x.get("bezahlt_am", ""),
+                        "bezahlt_cent": x.get("bezahlt_cent", 0), "faellig_am": f.get("faellig_am", ""),
                         "e_rechnung": bool(x.get("e_rechnung"))})
         return sorted(out, key=lambda x: x["nummer"], reverse=True)
 
@@ -384,6 +399,16 @@ class EingangStore:
         if k not in KATEGORIEN:
             raise ValueError("Bitte eine Kategorie waehlen.")
         f["kategorie"] = k
+        if k == "gwg" and abs(f["betrag_cent"]) > GWG_GRENZE_CENT:
+            raise ValueError("Ueber 800 € ist es kein geringwertiges Wirtschaftsgut -- bitte als Anlagegut buchen "
+                             "(Abschreibung ueber die Nutzungsdauer).")
+        if k == "anlage":
+            try:
+                f["nutzungsdauer_jahre"] = int(felder.get("nutzungsdauer_jahre") or 0)
+            except (TypeError, ValueError):
+                f["nutzungsdauer_jahre"] = 0
+            if not 1 <= f["nutzungsdauer_jahre"] <= 50:
+                raise ValueError("Nutzungsdauer in Jahren angeben (Computer/Software: 1, Foto/Video-Technik: 7).")
         doppelt: list = []
 
         def pruefe(eintraege):
@@ -403,24 +428,48 @@ class EingangStore:
         self.bh.erfassen_geprueft("eingang_gebucht", {"nummer": nummer, "felder": f}, von=von, pruefe=pruefe)
         return {"nummer": nummer, "felder": f}
 
-    def bezahlt(self, nummer: str, datum: str, *, von: str = "") -> dict:
+    def bezahlt(self, nummer: str, datum: str, *, betrag=None, zuordnung_jahr=None, notiz: str = "",
+                von: str = "") -> dict:
+        """Zahlung (Abfluss) erfassen; ohne Betrag = offener Rest, sonst Teilzahlung. `zuordnung_jahr` = 10-Tage-Regel."""
+        from .eigenbelege import datum_pruefen, zuordnung_pruefen
         nummer = (nummer or "").strip().upper()
-        tag = (datum or jetzt().date().isoformat())[:10]
-        try:
-            date.fromisoformat(tag)
-        except ValueError:
-            raise ValueError("Zahlungsdatum ungueltig.") from None
-        if tag > jetzt().date().isoformat():
-            raise ValueError("Zahlungsdatum liegt in der Zukunft.")
+        tag = datum_pruefen(datum)
+        zuordnung = zuordnung_pruefen(tag, zuordnung_jahr)
+        with self.bh._gesperrt():
+            x = self._falte(self.bh._eintraege()).get(nummer)
+            if not x:
+                raise KeyError(nummer)
+            if x["status"] != "gebucht":
+                raise ValueError("Erst buchen, dann als bezahlt markieren.")
+            gesamt = x["felder"]["betrag_cent"]
+            rest = gesamt - x["bezahlt_cent"]
+            if rest == 0:
+                raise ValueError(f"{nummer} ist bereits vollstaendig bezahlt.")
+            b = rest if betrag in (None, "") else cent(betrag) * (1 if gesamt > 0 else -1)
+            if not 0 < b / (1 if gesamt > 0 else -1) <= abs(rest):
+                raise ValueError(f"Betrag muss zwischen 0,01 € und dem offenen Rest {eur(abs(rest))} liegen.")
+            self.bh._anhaengen("eingang_bezahlt", {"nummer": nummer, "datum": tag, "betrag_cent": b,
+                                                    "notiz": str(notiz or "").strip()[:300]}
+                               | ({"zuordnung_jahr": zuordnung} if zuordnung else {}), von=von)
+        return {"bezahlt_am": tag if b == rest else "", "betrag_cent": b, "rest_cent": rest - b}
+
+    def zahlung_stornieren(self, nummer: str, index: int, grund: str, *, von: str = "") -> dict:
+        nummer = (nummer or "").strip().upper()
+        grund = str(grund or "").strip()[:300]
+        if not grund:
+            raise ValueError("Bitte einen Grund angeben.")
 
         def pruefe(eintraege):
             x = self._falte(eintraege).get(nummer)
             if not x:
                 raise KeyError(nummer)
-            if x["status"] != "gebucht":
-                raise ValueError("Erst buchen, dann als bezahlt markieren.")
-        self.bh.erfassen_geprueft("eingang_bezahlt", {"nummer": nummer, "datum": tag}, von=von, pruefe=pruefe)
-        return {"bezahlt_am": tag}
+            if not isinstance(index, int) or not 0 <= index < len(x["zahlungen"]):
+                raise ValueError("Diese Zahlung gibt es nicht.")
+            if x["zahlungen"][index].get("storniert"):
+                raise ValueError("Diese Zahlung ist bereits storniert.")
+        self.bh.erfassen_geprueft("eingang_zahlung_storniert", {"nummer": nummer, "index": index, "grund": grund},
+                                  von=von, pruefe=pruefe)
+        return {"storniert": index}
 
     def verwerfen(self, nummer: str, grund: str, *, von: str = "") -> dict:
         nummer = (nummer or "").strip().upper()

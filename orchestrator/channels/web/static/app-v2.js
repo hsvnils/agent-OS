@@ -70,6 +70,7 @@ const SECTIONS = [
   { id: "crm", icon: "🤝", label: "CRM", app: "crm" },
   { id: "kunden", icon: "🏢", label: "Kunden", app: "kunden" },
   { id: "angebote", icon: "📄", label: "Angebote", app: "angebote" },
+  { id: "finanzen", icon: "💶", label: "Finanzen", app: "finanzen" },
   { id: "rechnungen", icon: "🧾", label: "Rechnungen", app: "rechnungen" },
   { id: "belege", icon: "📥", label: "Belege", app: "belege" },
   { id: "radar", icon: "🎯", label: "Radar", app: "crm" },
@@ -1156,8 +1157,8 @@ async function reDetail(id, meldung, fehler) {
   if (r.auftrag) aktionen += `<button class="v2-btn" data-act="ab-detail" data-id="${esc(r.auftrag)}">↩ Auftrag ${esc(r.auftrag)}</button>`;
   if (r.bezug) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.bezug)}">↩ Original ${esc(r.bezug)}</button>`;
   if (r.storniert_durch) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.storniert_durch)}">Storno ${esc(r.storniert_durch)}</button>`;
-  const zahlungen = (r.zahlungen || []).map(z => `<div class="v2-list-row"><span>💶</span><div class="grow"><b>${cent2eur(z.betrag_cent)}</b><small>${esc(datumDe(z.datum))}${z.notiz ? " · " + esc(z.notiz) : ""}</small></div></div>`).join("");
-  const lbl = { rechnung_entwurf: "Entwurf angelegt", rechnung_entwurf_geaendert: "Entwurf geändert", rechnung_festgeschrieben: "Festgeschrieben", rechnung_versendet: "Gesendet", rechnung_bezahlt: "Zahlung" };
+  const zahlungen = (r.zahlungen || []).map((z, i) => `<div class="v2-list-row${z.storniert ? " v2-fin-storno" : ""}"><span>💶</span><div class="grow"><b>${cent2eur(z.betrag_cent)}</b><small>${esc(datumDe(z.datum))}${z.zuordnung_jahr ? " · zugeordnet " + esc(z.zuordnung_jahr) : ""}${z.notiz ? " · " + esc(z.notiz) : ""}${z.storniert ? " · storniert: " + esc(z.storno_grund || "") : ""}</small></div>${!z.storniert && r.status !== "storniert" ? `<button class="v2-btn" data-act="re-zahlung-storno" data-id="${esc(r.nummer)}" data-val="${i}" title="Falsch erfasste Zahlung zurücknehmen">↶</button>` : ""}</div>`).join("");
+  const lbl = { rechnung_entwurf: "Entwurf angelegt", rechnung_entwurf_geaendert: "Entwurf geändert", rechnung_festgeschrieben: "Festgeschrieben", rechnung_versendet: "Gesendet", rechnung_bezahlt: "Zahlung", rechnung_zahlung_storniert: "Zahlung storniert" };
   const verlauf = (r.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(lbl[v.typ] || v.typ)}${v.mail_an ? " an " + esc(v.mail_an) : ""}${v.betrag_cent ? " " + cent2eur(v.betrag_cent) : ""}${v.storno ? " — storniert durch " + esc(v.storno) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
   const titel = entwurf ? `Rechnungs-Entwurf · ${d.firma.name || r.firma}` : `${r.nummer} · ${d.firma.name || r.firma}`;
   openModal(titel, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
@@ -1196,8 +1197,9 @@ function reBezahltForm(nr) {
   box.innerHTML = `<h3>Zahlung erfassen</h3><div class="v2-form" style="max-width:420px">
     <div class="v2-an-zeile"><label class="v2-feld"><small>Zahlungsdatum</small><input id="rez-datum" type="date" value="${heuteIso()}"></label>
       <label class="v2-feld"><small>Betrag (leer = offener Rest)</small><input id="rez-betrag" inputmode="decimal" placeholder="z. B. 1.020,00"></label></div>
-    <label class="v2-feld"><small>Notiz</small><input id="rez-notiz" placeholder="z. B. Überweisung comdirect"></label>
+    <label class="v2-feld"><small>Notiz</small><input id="rez-notiz" placeholder="z. B. Überweisung comdirect"></label><div id="rez-zuord"></div>
     <div class="v2-card-actions"><button class="v2-btn ok" data-act="re-bezahlt" data-id="${esc(nr)}">💶 Zahlung buchen</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="rez-msg" class="v2-msg"></div></div>`;
+  zehnTageVerdrahten("rez-datum", "rez-zuord");
 }
 
 /* =========================== Belege / Eingangsrechnungen (KUNDEN_FINANZEN Etappe 6) =========================== */
@@ -1215,7 +1217,7 @@ async function renderBelege(meldung) {
   const liste = sub === "pruefen" ? alle.filter(b => b.status === "zu_pruefen") : sub === "gebucht" ? alle.filter(b => b.status === "gebucht") : alle;
   const jahr = String(new Date().getFullYear());
   const gebuchtJahr = alle.filter(b => b.status === "gebucht" && String(b.rechnungsdatum || "").startsWith(jahr));
-  const rows = liste.map(b => `<tr class="klick" data-act="bl-detail" data-id="${esc(b.nummer)}"><td><b>${esc(b.nummer)}</b>${b.quelle === "mail" ? " ✉️" : ""}${b.e_rechnung ? " <small>E-Rechnung</small>" : ""}</td><td>${esc(b.lieferant || b.dateiname)}</td><td>${esc(datumDe(b.rechnungsdatum))}</td><td style="text-align:right">${b.betrag_cent != null ? cent2eur(b.betrag_cent) : "–"}</td><td>${esc(BL_KAT[b.kategorie] || "")}</td><td>${blBadge(b.status)}${b.bezahlt_am ? " 💶" : ""}</td></tr>`).join("");
+  const rows = liste.map(b => `<tr class="klick" data-act="bl-detail" data-id="${esc(b.nummer)}"><td><b>${esc(b.nummer)}</b>${b.quelle === "mail" ? " ✉️" : ""}${b.e_rechnung ? " <small>E-Rechnung</small>" : ""}</td><td>${esc(b.lieferant || b.dateiname)}</td><td>${esc(datumDe(b.rechnungsdatum))}</td><td style="text-align:right">${b.betrag_cent != null ? cent2eur(b.betrag_cent) : "–"}</td><td>${esc(BL_KAT[b.kategorie] || "")}</td><td>${blBadge(b.status)}${b.bezahlt_am ? " 💶" : b.bezahlt_cent ? " <small>teilw. bezahlt</small>" : ""}</td></tr>`).join("");
   const upload = `<div class="v2-bl-drop" id="bl-drop"><b>Rechnungen hierher ziehen</b><small>PDF, E-Rechnung (XML), Foto · bis 15 MB · mehrere auf einmal</small>
     <div class="v2-card-actions" style="justify-content:center"><label class="v2-btn pri">📄 Dateien wählen<input id="bl-datei" type="file" multiple accept=".pdf,.xml,image/*" hidden></label>
     <label class="v2-btn">📷 Foto aufnehmen<input id="bl-kamera" type="file" accept="image/*" capture="environment" hidden></label></div>
@@ -1274,7 +1276,9 @@ async function blDetail(nr, meldung, fehler) {
   const katOpt = Object.entries(BL_KAT).map(([k, l]) => `<option value="${esc(k)}" ${w("kategorie") === k ? "selected" : ""}>${esc(l)}</option>`).join("");
   const lief = (d.lieferanten || []).map(l => `<option value="${esc(l.name)}">`).join("");
   const gesperrt = b.status === "verworfen" ? "disabled" : "";
-  const lbl = { eingang_angelegt: "Eingegangen", eingang_vorschlag: "Vorschlag", eingang_gebucht: "Gebucht", eingang_bezahlt: "Bezahlt", eingang_verworfen: "Verworfen" };
+  const lbl = { eingang_angelegt: "Eingegangen", eingang_vorschlag: "Vorschlag", eingang_gebucht: "Gebucht", eingang_bezahlt: "Zahlung", eingang_zahlung_storniert: "Zahlung storniert", eingang_verworfen: "Verworfen" };
+  const rest = f ? f.betrag_cent - (b.bezahlt_cent || 0) : 0;
+  const zahlungen = (b.zahlungen || []).map((z, i) => `<div class="v2-list-row${z.storniert ? " v2-fin-storno" : ""}"><span>💶</span><div class="grow"><b>${cent2eur(z.betrag_cent)}</b><small>${esc(datumDe(z.datum))}${z.zuordnung_jahr ? " · zugeordnet " + esc(z.zuordnung_jahr) : ""}${z.notiz ? " · " + esc(z.notiz) : ""}${z.storniert ? " · storniert: " + esc(z.storno_grund || "") : ""}</small></div>${!z.storniert ? `<button class="v2-btn" data-act="bl-zahlung-storno" data-id="${esc(nr)}" data-val="${i}" title="Falsch erfasste Zahlung zurücknehmen">↶</button>` : ""}</div>`).join("");
   const verlauf = (b.verlauf || []).slice().reverse().map(x => `<div class="v2-list-row"><div class="grow"><b>${esc(lbl[x.typ] || x.typ)}${x.quelle ? " (" + esc(x.quelle) + ")" : ""}${x.datum ? " " + esc(datumDe(x.datum)) : ""}</b><small>${esc(zeit(x.ts))} · ${esc(x.von || "")}${x.grund ? " · " + esc(x.grund) : ""}</small></div></div>`).join("");
   openModal(`${nr} · ${b.dateiname}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
     <div class="v2-an-detail"><div>
@@ -1282,7 +1286,7 @@ async function blDetail(nr, meldung, fehler) {
       <div class="v2-kv"><span>Eingang</span><b>${esc(zeit(b.eingegangen))} · ${b.quelle === "mail" ? "per Mail" : "Upload"} · ${esc(TQ[b.text_quelle] || b.text_quelle)}</b></div>
       <h3>Verlauf</h3>${verlauf}
     </div><div>
-      <div class="v2-kv"><span>Status</span>${blBadge(b.status)}${b.bezahlt_am ? ` <span class="v2-badge ok">bezahlt ${esc(datumDe(b.bezahlt_am))}</span>` : ""}</div>
+      <div class="v2-kv"><span>Status</span>${blBadge(b.status)}${b.bezahlt_am ? ` <span class="v2-badge ok">bezahlt ${esc(datumDe(b.bezahlt_am))}</span>` : b.bezahlt_cent ? ` <span class="v2-badge wartet">teilweise bezahlt · offen ${esc(cent2eur(rest))}</span>` : ""}</div>
       ${!f ? `<div class="v2-kv"><span>Vorschlag von</span><b>${esc(quelle)}${kiLaeuft ? " · KI liest noch …" : ""}</b></div>` : ""}
       ${kiLaeuft ? `<button class="v2-btn" data-act="bl-detail" data-id="${esc(nr)}">🔄 KI-Vorschlag abholen</button>` : ""}
       <h3>${f ? "Gebucht (korrigierbar)" : "Prüfen & buchen"}</h3><div class="v2-form">
@@ -1293,24 +1297,174 @@ async function blDetail(nr, meldung, fehler) {
           <label class="v2-feld"><small>Fällig am</small><input id="bl-faellig" type="date" value="${esc(w("faellig_am"))}" ${gesperrt}></label></div>
         <div class="v2-an-zeile"><label class="v2-feld"><small>Betrag brutto (€) *</small><input id="bl-betrag" inputmode="decimal" value="${esc(w("betrag"))}" ${gesperrt}></label>
           <label class="v2-feld" style="grid-column: span 2"><small>Kategorie (EÜR) *</small><select id="bl-kat" ${gesperrt}><option value="">— wählen —</option>${katOpt}</select></label></div>
+        <label class="v2-feld" id="bl-nd-feld" ${w("kategorie") === "anlage" ? "" : "hidden"}><small>Nutzungsdauer in Jahren * (Computer/Software: 1 = sofort voll absetzbar · Foto/Video-Technik: 7)</small><input id="bl-nd" type="number" min="1" max="50" value="${esc(String((f && f.nutzungsdauer_jahre) || ""))}" ${gesperrt}></label>
         <label class="v2-feld"><small>Leistung / was wurde gekauft</small><input id="bl-leistung" value="${esc(w("leistung"))}" ${gesperrt}></label>
         <label class="v2-feld"><small>Notiz</small><input id="bl-notiz" value="${esc(f ? f.notiz || "" : "")}" ${gesperrt}></label>
         ${b.status !== "verworfen" ? `<div class="v2-card-actions"><button class="v2-btn pri" data-act="bl-buchen" data-id="${esc(nr)}">✔ ${f ? "Korrektur buchen" : "Buchen"}</button>
-          ${f && !b.bezahlt_am ? `<button class="v2-btn ok" data-act="bl-bezahlt" data-id="${esc(nr)}">💶 Bezahlt</button>` : ""}
+          ${f && rest !== 0 ? `<button class="v2-btn ok" data-act="bl-bezahlt-form" data-id="${esc(nr)}">💶 Zahlung erfassen</button>` : ""}
           ${!f ? `<button class="v2-btn" data-act="bl-verwerfen" data-id="${esc(nr)}">Kein Beleg / verwerfen</button>` : ""}</div>` : `<div class="v2-msg">Verworfen: ${esc(b.grund || "")}</div>`}
         <div id="bl-form-msg" class="v2-msg"></div></div>
-      <small class="v2-sub">Kleinunternehmer: Der Bruttobetrag ist die Ausgabe (kein Vorsteuerabzug). Das Original bleibt unverändert archiviert.</small>
+      <div id="bl-aktion-box"></div>
+      ${zahlungen ? `<h3>Zahlungen</h3>${zahlungen}` : ""}
+      <small class="v2-sub">Kleinunternehmer: Der Bruttobetrag ist die Ausgabe (kein Vorsteuerabzug). Über 800 € ist es kein geringwertiges Wirtschaftsgut, sondern ein Anlagegut (Abschreibung). Das Original bleibt unverändert archiviert.</small>
     </div></div>`, true);
+  const kt = $("#bl-kat"); if (kt) kt.addEventListener("change", () => { const nd = $("#bl-nd-feld"); if (nd) nd.hidden = kt.value !== "anlage"; });
+}
+function blBezahltForm(nr) {
+  const box = $("#bl-aktion-box"); if (!box) return;
+  box.innerHTML = `<h3>Zahlung erfassen</h3><div class="v2-form" style="max-width:420px">
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Bezahlt am</small><input id="blz-datum" type="date" value="${heuteIso()}"></label>
+      <label class="v2-feld"><small>Betrag (leer = offener Rest)</small><input id="blz-betrag" inputmode="decimal" placeholder="Rest"></label></div>
+    <label class="v2-feld"><small>Notiz</small><input id="blz-notiz" placeholder="z. B. PayPal, Kreditkarte"></label><div id="blz-zuord"></div>
+    <div class="v2-card-actions"><button class="v2-btn ok" data-act="bl-bezahlt" data-id="${esc(nr)}">💶 Zahlung buchen</button><button class="v2-btn" data-act="bl-box-zu">Abbrechen</button></div><div id="blz-msg" class="v2-msg"></div></div>`;
+  zehnTageVerdrahten("blz-datum", "blz-zuord");
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 async function blBuchen(nr, trotz) {
   const felder = { lieferant: $("#bl-lieferant").value.trim(), rechnungsnummer: $("#bl-nr").value.trim(), rechnungsdatum: $("#bl-datum").value, faellig_am: $("#bl-faellig").value,
-    betrag: $("#bl-betrag").value.trim(), kategorie: $("#bl-kat").value, leistung: $("#bl-leistung").value.trim(), notiz: $("#bl-notiz").value.trim(), trotz_doppelt: !!trotz };
+    betrag: $("#bl-betrag").value.trim(), kategorie: $("#bl-kat").value, leistung: $("#bl-leistung").value.trim(), notiz: $("#bl-notiz").value.trim(), trotz_doppelt: !!trotz,
+    nutzungsdauer_jahre: $("#bl-kat").value === "anlage" ? $("#bl-nd").value : "" };
   const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(nr)}/buchen`, { felder, lieferant_anlegen: $("#bl-lief-anlegen").checked });
   if (!r) return kundenMsg("bl-form-msg", "Keine Verbindung zum Server.", false);
   if (!r.ok && /schon als/.test(r.hinweis || "") && confirm(r.hinweis + "\n\nTrotzdem buchen?")) return blBuchen(nr, true);
   if (!r.ok) return kundenMsg("bl-form-msg", r.hinweis || "Fehler.", false);
   if (AKTIV === "belege") renderBelege();
   return blDetail(nr, `Gebucht: ${r.felder.lieferant} · ${cent2eur(r.felder.betrag_cent)} · ${BL_KAT[r.felder.kategorie] || r.felder.kategorie}`);
+}
+
+/* =========================== Finanzen (KUNDEN_FINANZEN Etappe 7) =========================== */
+// Übersicht über alles (Kennzahlen, Monatsverlauf, offene Posten, Pipeline, To-dos), Journal nach Zahlungsdatum,
+// EÜR, Anlageverzeichnis und Buchungen ohne Beleg (Eigenbelege, z. B. Plattform-Auszahlungen).
+let FIN_JAHR = 0, FIN_KAT = null;
+const FIN_ACT = { rechnung: "re-detail", beleg: "bl-detail", eigenbeleg: "eb-detail" };
+function finDelta(jetzt, vor, weniger_ist_gut) {
+  if (!vor) return null; const p = Math.round((jetzt - vor) / Math.abs(vor) * 100);
+  return { up: weniger_ist_gut ? p <= 0 : p >= 0, text: (p >= 0 ? "+" : "") + p + " % zum Vorjahr" };
+}
+RENDER.finanzen = renderFinanzen;
+async function renderFinanzen(meldung) {
+  const sub = SUBTAB.finanzen || "uebersicht";
+  const u = await jget("/api/finanzen/uebersicht" + (FIN_JAHR ? "?jahr=" + FIN_JAHR : ""));
+  if (!u) { $("#v2-app").innerHTML = secHead("Finanzen") + emptyRow("Finanzen nicht erreichbar (Modul „Finanzen“ nötig)."); return; }
+  FIN_JAHR = u.jahr;
+  const jahrWahl = `<select id="fin-jahr" class="v2-inp" style="width:auto">${u.jahre.map(j => `<option ${j === u.jahr ? "selected" : ""}>${j}</option>`).join("")}</select>`;
+  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : finUebersicht(u);
+  $("#v2-app").innerHTML = secHead("Finanzen " + u.jahr, `${jahrWahl}<button class="v2-btn" data-act="eb-neu" data-val="ausgabe">− Ausgabe ohne Beleg</button><button class="v2-btn pri" data-act="eb-neu" data-val="einnahme">+ Einnahme ohne Rechnung</button>`)
+    + tabs("finanzen", [["uebersicht", "Übersicht"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"]])
+    + (meldung ? `<div class="v2-msg ok" style="margin-bottom:12px">${esc(meldung)}</div>` : "") + `<div class="v2-grid">${body}</div>`;
+  $("#fin-jahr").addEventListener("change", e => { FIN_JAHR = Number(e.target.value); renderFinanzen(); });
+}
+function finUebersicht(u) {
+  const k = u.kennzahlen, v = u.vorjahr, f = u.forderungen, vb = u.verbindlichkeiten, p = u.pipeline, w = u.waechter;
+  const max = Math.max(1, ...u.monate.map(m => Math.max(Math.abs(m.einnahmen_cent), Math.abs(m.ausgaben_cent))));
+  const h = (c) => Math.max(0, Math.round(c / max * 100));
+  const monate = `<div class="v2-fin-monate">${u.monate.map(m => `<div class="v2-fin-monat" title="${esc(m.monat)}: Einnahmen ${esc(cent2eur(m.einnahmen_cent))} · Ausgaben ${esc(cent2eur(m.ausgaben_cent))}"><div class="v2-fin-saeulen"><i class="e" style="height:${h(m.einnahmen_cent)}%"></i><i class="a" style="height:${h(m.ausgaben_cent)}%"></i></div><small>${esc(m.monat)}</small></div>`).join("")}</div>
+    <div class="v2-legend"><span><i style="background:var(--v2-green)"></i>Einnahmen</span><span><i style="background:var(--v2-red)"></i>Ausgaben (abziehbar)</span>${u.afa_cent ? `<span>+ Abschreibung ${esc(cent2eur(u.afa_cent))} im Jahr</span>` : ""}</div>`;
+  const kmax = Math.max(1, ...u.kategorien.map(x => Math.abs(x.betrag_cent)));
+  const kat = u.kategorien.length ? u.kategorien.map(x => `<div class="v2-fin-hbar"><span>${esc(x.name)}</span><div><i style="width:${Math.max(2, Math.round(Math.abs(x.betrag_cent) / kmax * 100))}%"></i></div><b>${esc(cent2eur(x.betrag_cent))}</b></div>`).join("") : emptyRow("Noch keine Ausgaben in diesem Jahr.");
+  const kunden = u.kunden.length ? u.kunden.map((x, i) => `<div class="v2-list-row"><span>${i + 1}.</span><div class="grow"><b>${esc(x.name)}</b></div><b>${esc(cent2eur(x.betrag_cent))}</b></div>`).join("") : emptyRow("Noch keine Einnahmen in diesem Jahr.");
+  const anteil = Math.min(100, Math.round((w.anteil || 0) * 100));
+  const grenze = `<div class="v2-kpi">${esc(cent2eur(w.umsatz_cent || 0))}</div><div class="v2-re-balken"><i style="width:${anteil}%;background:${w.ueberschritten ? "var(--v2-red)" : w.warnung ? "#e8a200" : "var(--v2-accent)"}"></i></div>
+    <small class="v2-sub">${anteil} % von 100.000 € · Rechnungen nach Rechnungsdatum + Einnahmen ohne Rechnung${w.vorjahr_ueberschritten ? " · ⚠️ Vorjahr über 25.000 €!" : ""}</small>`;
+  const stufe = (icon, titel, anzahl, cent, ziel) => `<div class="v2-fin-stufe klick" data-tab="${ziel}"><span>${icon}</span><div><b>${esc(titel)}</b><small>${anzahl}${cent != null ? " · " + esc(cent2eur(cent)) : ""}</small></div></div>`;
+  const pipeline = `<div class="v2-fin-pipeline">${stufe("📄", "Angebote offen", p.angebote_anzahl, p.angebote_cent, "angebote:offen")}${stufe("🤝", "Aufträge ohne Rechnung", p.auftraege_anzahl, p.auftraege_cent, "angebote:auftraege")}${stufe("✎", "Rechnungsentwürfe", p.rechnung_entwuerfe, null, "rechnungen:entwuerfe")}${stufe("⏳", "Offene Rechnungen", f.anzahl, f.summe_cent, "rechnungen:offen")}</div>`;
+  const posten = (liste, act) => liste.slice(0, 6).map(x => `<div class="v2-list-row klick" data-act="${act}" data-id="${esc(x.nummer)}"><span class="v2-badge ${x.ueberfaellig ? "err" : "neutral"}">${x.ueberfaellig ? "überfällig" : x.faellig_am ? esc(datumDe(x.faellig_am)) : "offen"}</span><div class="grow"><b>${esc(x.gegenpartei || x.nummer)}</b><small>${esc(x.nummer)}</small></div><b>${esc(cent2eur(x.offen_cent))}</b></div>`).join("");
+  const todos = [
+    u.belege_zu_pruefen ? `<div class="v2-list-row klick" data-tab="belege:pruefen"><span>📥</span><div class="grow"><b>${u.belege_zu_pruefen} Beleg(e) prüfen und buchen</b></div><span>›</span></div>` : "",
+    f.ueberfaellig ? `<div class="v2-list-row klick" data-tab="rechnungen:offen"><span>⚠️</span><div class="grow"><b>${f.ueberfaellig} Rechnung(en) überfällig</b><small>nachfassen oder Zahlung erfassen</small></div><span>›</span></div>` : "",
+    vb.ueberfaellig ? `<div class="v2-list-row klick" data-tab="belege:gebucht"><span>💸</span><div class="grow"><b>${vb.ueberfaellig} Eingangsrechnung(en) fällig</b><small>bezahlen und als bezahlt markieren</small></div><span>›</span></div>` : "",
+    p.auftraege_anzahl ? `<div class="v2-list-row klick" data-tab="angebote:auftraege"><span>🧾</span><div class="grow"><b>${p.auftraege_anzahl} Auftrag/Aufträge noch ohne Rechnung</b></div><span>›</span></div>` : "",
+  ].join("") || emptyRow("Alles erledigt 🎉");
+  const zeilen = u.letzte.length ? finTabelle(u.letzte, false) : emptyRow("Noch keine Zahlungen erfasst — in Rechnungen/Belegen „💶 Zahlung erfassen“ oder oben eine Einnahme/Ausgabe ohne Beleg.");
+  return `${kpiTile("Einnahmen", cent2eur(k.einnahmen_cent), finDelta(k.einnahmen_cent, v.einnahmen_cent), "nach Zahlungseingang")}
+    ${kpiTile("Ausgaben", cent2eur(k.ausgaben_cent), finDelta(k.ausgaben_cent, v.ausgaben_cent, true), "abziehbar, inkl. Abschreibung")}
+    ${kpiTile("Gewinn", cent2eur(k.gewinn_cent), finDelta(k.gewinn_cent, v.gewinn_cent), "Einnahmen − Ausgaben (EÜR)")}
+    ${kpiTile("Offen: bekommen wir", cent2eur(f.summe_cent), null, `${f.anzahl} Rechnung(en)${f.ueberfaellig ? ", " + f.ueberfaellig + " überfällig" : ""} · wir zahlen noch ${cent2eur(vb.summe_cent)}`)}
+    ${tile("Monatsverlauf " + u.jahr, monate, "w8")}
+    ${tile("Kleinunternehmer-Grenze " + u.jahr, grenze, "w4")}
+    ${tile("Vom Angebot zum Geld", pipeline, "w12")}
+    ${tile("Zu erledigen", todos, "w4")}
+    ${tile("Wir bekommen (" + f.anzahl + ")", posten(f.liste, "re-detail") || emptyRow("Keine offenen Rechnungen."), "w4")}
+    ${tile("Wir zahlen (" + vb.anzahl + ")", posten(vb.liste, "bl-detail") || emptyRow("Keine offenen Eingangsrechnungen."), "w4")}
+    ${tile("Ausgaben nach Kategorie", kat, "w6")}
+    ${tile("Top-Kunden " + u.jahr, kunden, "w6")}
+    ${tile("Letzte Zahlungen", zeilen, "w12")}`;
+}
+function finTabelle(zeilen, summe) {
+  const rows = zeilen.map(z => `<tr class="klick${z.storniert ? " v2-fin-storno" : ""}" data-act="${FIN_ACT[z.quelle]}" data-id="${esc(z.bezug)}"><td>${esc(datumDe(z.datum))}${z.zuordnung_jahr ? ` <small title="10-Tage-Regel">→ ${esc(z.zuordnung_jahr)}</small>` : ""}</td><td><b>${esc(z.bezug)}</b></td><td>${esc(z.gegenpartei || "")}</td><td>${esc(z.text || "")}${z.storniert ? ` <span class="v2-badge err">storniert</span>` : ""}</td><td><small>${esc(z.position)}</small></td>
+    <td style="text-align:right;color:var(--v2-green)">${z.art === "einnahme" ? esc(cent2eur(z.betrag_cent)) : ""}</td><td style="text-align:right;color:var(--v2-red)">${z.art === "ausgabe" ? esc(cent2eur(z.betrag_cent)) : ""}</td>${summe ? `<td style="text-align:right">${z.art === "ausgabe" && z.abziehbar_cent !== z.betrag_cent && !z.storniert ? esc(cent2eur(z.abziehbar_cent)) : ""}</td>` : ""}</tr>`).join("");
+  const gueltig = zeilen.filter(z => !z.storniert), s = (a) => gueltig.filter(z => z.art === a).reduce((x, z) => x + z.betrag_cent, 0);
+  const fuss = summe ? `<tfoot><tr><td></td><td></td><td></td><td><b>Summe</b></td><td></td><td style="text-align:right"><b>${esc(cent2eur(s("einnahme")))}</b></td><td style="text-align:right"><b>${esc(cent2eur(s("ausgabe")))}</b></td><td></td></tr></tfoot>` : "";
+  return `<div class="v2-tab-scroll"><table class="v2-table"><thead><tr><th>Bezahlt am</th><th>Beleg</th><th>Gegenpartei</th><th>Wofür</th><th>Position (EÜR)</th><th style="text-align:right">Einnahme</th><th style="text-align:right">Ausgabe</th>${summe ? `<th style="text-align:right" title="Abweichend absetzbar: Bewirtung 70 %, Anlagen über AfA">davon absetzbar</th>` : ""}</tr></thead><tbody>${rows}</tbody>${fuss}</table></div>`;
+}
+async function finJournal(jahr) {
+  const d = await jget("/api/finanzen/journal?jahr=" + jahr) || { zeilen: [] };
+  const inhalt = d.zeilen.length ? finTabelle(d.zeilen, true) : emptyRow("Keine Zahlungen in " + jahr + ".");
+  return tile("Journal " + jahr + " — alle Zahlungen nach Zahlungsdatum", inhalt + `<div class="v2-card-actions" style="margin-top:10px"><a class="v2-btn" href="/api/finanzen/journal?jahr=${jahr}&format=csv">⬇ Als CSV (Excel/Numbers)</a><small class="v2-sub">Stornierte Zahlungen bleiben sichtbar, zählen aber nicht. „→ Jahr“ = 10-Tage-Regel.</small></div>`, "w12");
+}
+async function finEuer(jahr) {
+  const e = await jget("/api/finanzen/euer?jahr=" + jahr);
+  if (!e) return emptyRow("EÜR nicht verfügbar.");
+  const zeile = (name, c, fett) => `<tr><td>${fett ? "<b>" + esc(name) + "</b>" : esc(name)}</td><td style="text-align:right">${fett ? "<b>" + esc(cent2eur(c)) + "</b>" : esc(cent2eur(c))}</td></tr>`;
+  const tab = `<table class="v2-table v2-fin-euer"><tbody>
+    <tr><th colspan="2">Betriebseinnahmen</th></tr>${e.einnahmen.map(x => zeile(x.position, x.betrag_cent)).join("")}${zeile("Summe Betriebseinnahmen", e.einnahmen_cent, true)}
+    <tr><th colspan="2">Betriebsausgaben</th></tr>${e.ausgaben.length ? e.ausgaben.map(x => zeile(x.position, x.betrag_cent)).join("") : `<tr><td colspan="2"><small>keine</small></td></tr>`}${zeile("Summe Betriebsausgaben", e.ausgaben_cent, true)}
+    <tr class="v2-fin-gewinn"><td><b>${e.gewinn_cent >= 0 ? "Gewinn" : "Verlust"}</b></td><td style="text-align:right"><b>${esc(cent2eur(e.gewinn_cent))}</b></td></tr></tbody></table>`;
+  return tile("Einnahmen-Überschuss-Rechnung " + jahr, tab + `<small class="v2-sub">${esc(e.hinweis)}${e.bewirtung_nicht_abziehbar_cent ? ` Nicht abziehbarer Bewirtungsanteil (30 %): ${esc(cent2eur(e.bewirtung_nicht_abziehbar_cent))}.` : ""} Stand: vorläufig, bis das Jahr abgeschlossen ist.</small>`, "w8")
+    + tile("So entsteht die Zahl", `<div class="v2-sub" style="line-height:1.6">Gezählt wird, wann Geld <b>geflossen</b> ist (Zahlungsdatum), nicht das Rechnungsdatum.<br>Als Kleinunternehmer ist der <b>Bruttobetrag</b> die Ausgabe.<br>Bewirtung zählt zu 70 %.<br>Geräte über 800 € werden über die Nutzungsdauer <b>abgeschrieben</b> (Reiter „Anlagen“); Computer und Software dürfen sofort voll abgesetzt werden.</div>`, "w4");
+}
+async function finAnlagen(jahr) {
+  const d = await jget("/api/finanzen/anlagen?jahr=" + jahr) || { anlagen: [] };
+  const rows = d.anlagen.map(a => `<tr class="klick" data-act="bl-detail" data-id="${esc(a.beleg)}"><td><b>${esc(a.bezeichnung)}</b><br><small>${esc(a.beleg)} · ${esc(a.lieferant)}</small></td><td>${esc(datumDe(a.anschaffung))}</td><td style="text-align:right">${esc(cent2eur(a.ak_cent))}</td><td style="text-align:right">${a.nutzungsdauer_jahre} J.</td><td style="text-align:right">${esc(cent2eur(a.afa_jahr_cent))}</td><td style="text-align:right">${esc(cent2eur(a.restwert_cent))}</td></tr>`).join("");
+  return tile("Anlageverzeichnis " + jahr, rows ? `<table class="v2-table"><thead><tr><th>Gegenstand</th><th>Angeschafft</th><th style="text-align:right">Kosten</th><th style="text-align:right">Nutzung</th><th style="text-align:right">Abschreibung ${jahr}</th><th style="text-align:right">Restwert 31.12.</th></tr></thead><tbody>${rows}</tbody></table>`
+    : emptyRow("Keine Anlagegüter. Geräte über 800 € beim Buchen eines Belegs als „Anlagegut > 800 €“ mit Nutzungsdauer erfassen."), "w12");
+}
+function zehnTageVerdrahten(datumId, boxId) {   // 10-Tage-Regel: Auswahl nur zwischen 22.12. und 10.01.
+  const el = $("#" + datumId), box = $("#" + boxId); if (!el || !box) return;
+  const upd = () => { const [y, m, d] = String(el.value).split("-").map(Number); const fenster = (m === 12 && d >= 22) || (m === 1 && d <= 10);
+    const n = m === 12 ? y + 1 : y - 1;
+    box.innerHTML = fenster ? `<label class="v2-feld"><small>Gehört wirtschaftlich zum Jahr (10-Tage-Regel: nur regelmäßige Zahlungen wie Abos, Miete)</small><select id="${boxId}-jahr"><option value="">${y} (Jahr der Zahlung)</option><option value="${n}">${n}</option></select></label>` : ""; };
+  el.addEventListener("change", upd); upd();
+}
+const zehnTageWert = (boxId) => { const s = $("#" + boxId + "-jahr"); return s ? s.value : ""; };
+async function ebNeu(art) {
+  if (!FIN_KAT) FIN_KAT = ((await jget("/api/finanzen/eigenbelege")) || {}).kategorien || { einnahme: {}, ausgabe: {} };
+  const kat = Object.entries(FIN_KAT[art] || {});
+  openModal(art === "einnahme" ? "Einnahme ohne eigene Rechnung" : "Ausgabe ohne Beleg", `<div class="v2-form" style="max-width:620px">
+    <div class="v2-msg">${art === "einnahme" ? "Zum Beispiel Auszahlungen von YouTube, Instagram oder anderen Plattformen – Geld, für das du keine eigene Rechnung schreibst. Zählt zum Umsatz (Kleinunternehmer-Grenze)." : "Nur wenn es wirklich keinen Beleg gibt (z. B. Kontoführungsgebühr, Parkautomat). Rechnungen bitte unter „📥 Belege“ hochladen."} LUNA vergibt eine Eigenbeleg-Nummer (EB-…); korrigieren geht nur per Storno.</div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>${art === "einnahme" ? "Eingegangen am *" : "Bezahlt am *"}</small><input id="eb-datum" type="date" value="${heuteIso()}"></label>
+      <label class="v2-feld"><small>Betrag (€) *</small><input id="eb-betrag" inputmode="decimal" placeholder="z. B. 250,50"></label>
+      <label class="v2-feld"><small>Kategorie *</small><select id="eb-kat">${kat.length > 1 ? `<option value="">— wählen —</option>` : ""}${kat.map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join("")}</select></label></div>
+    <label class="v2-feld"><small>Wofür? *</small><input id="eb-text" placeholder="${art === "einnahme" ? "z. B. YouTube-Auszahlung September" : "z. B. Kontoführungsgebühr Oktober"}"></label>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>${art === "einnahme" ? "Von wem" : "An wen"}</small><input id="eb-gegen" placeholder="z. B. Google Ireland Ltd."></label>
+      <label class="v2-feld"><small>Referenz (Kontoauszug, Transaktions-ID)</small><input id="eb-ref"></label></div>
+    <div id="eb-zuord"></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="eb-speichern" data-val="${esc(art)}">✔ Buchen</button><button class="v2-btn" data-modal-close>Abbrechen</button></div><div id="eb-msg" class="v2-msg"></div></div>`, false);
+  zehnTageVerdrahten("eb-datum", "eb-zuord");
+}
+async function ebSpeichern(art) {
+  const buchung = { art, datum: $("#eb-datum").value, betrag: $("#eb-betrag").value.trim(), kategorie: $("#eb-kat").value, text: $("#eb-text").value.trim(),
+    gegenpartei: $("#eb-gegen").value.trim(), referenz: $("#eb-ref").value.trim(), zuordnung_jahr: zehnTageWert("eb-zuord") };
+  const r = await jpost("/api/finanzen/eigenbelege", { buchung });
+  if (!r || !r.ok) return kundenMsg("eb-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
+  closeModal(); FIN_JAHR = Number(buchung.zuordnung_jahr || buchung.datum.slice(0, 4)) || FIN_JAHR;
+  if (AKTIV === "finanzen") return renderFinanzen(`${r.nummer} gebucht: ${buchung.text} · ${buchung.betrag} €`);
+  return go("finanzen");
+}
+async function ebDetail(nr, meldung, fehler) {
+  const d = await jget("/api/finanzen/eigenbelege") || { eigenbelege: [], kategorien: {} };
+  const x = (d.eigenbelege || []).find(e => e.nummer === nr); if (!x) return openModal(nr, emptyRow("Eigenbeleg nicht gefunden."));
+  const kat = ((d.kategorien || {})[x.art] || {})[x.kategorie] || x.kategorie;
+  openModal(`${nr} · ${x.art === "einnahme" ? "Einnahme" : "Ausgabe"} ohne Beleg`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}">${esc(meldung)}</div>` : ""}
+    <div class="v2-kv"><span>Status</span>${x.status === "storniert" ? `<span class="v2-badge err">storniert</span>` : `<span class="v2-badge ok">gebucht</span>`}</div>
+    <div class="v2-kv"><span>${x.art === "einnahme" ? "Eingegangen am" : "Bezahlt am"}</span><b>${esc(datumDe(x.datum))}${x.zuordnung_jahr ? " · zugeordnet " + esc(x.zuordnung_jahr) + " (10-Tage-Regel)" : ""}</b></div>
+    <div class="v2-kv"><span>Betrag</span><b>${esc(cent2eur(x.betrag_cent))}</b></div>
+    <div class="v2-kv"><span>Kategorie</span><b>${esc(kat)}</b></div>
+    <div class="v2-kv"><span>Wofür</span><b>${esc(x.text)}</b></div>
+    ${x.gegenpartei ? `<div class="v2-kv"><span>${x.art === "einnahme" ? "Von" : "An"}</span><b>${esc(x.gegenpartei)}</b></div>` : ""}
+    ${x.referenz ? `<div class="v2-kv"><span>Referenz</span><b>${esc(x.referenz)}</b></div>` : ""}
+    <div class="v2-kv"><span>Erfasst</span><b>${esc(zeit(x.angelegt))} · ${esc(x.von || "")}</b></div>
+    ${x.status === "storniert" ? `<div class="v2-kv"><span>Storniert</span><b>${esc(zeit(x.storniert_am))} · ${esc(x.storno_grund)}</b></div>` : `<div class="v2-card-actions"><button class="v2-btn" data-act="eb-storno" data-id="${esc(nr)}">↶ Stornieren …</button></div>`}`);
 }
 
 /* =========================== Collab-Radar =========================== */
@@ -1632,7 +1786,31 @@ async function handleAct(act, el) {
     }
     case "bl-detail": return blDetail(id);
     case "bl-buchen": return blBuchen(id);
-    case "bl-bezahlt": { const datum = prompt("Bezahlt am (JJJJ-MM-TT):", heuteIso()); if (datum === null) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/bezahlt`, { datum }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Als bezahlt markiert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
+    case "bl-bezahlt-form": return blBezahltForm(id);
+    case "bl-box-zu": { const bx = $("#bl-aktion-box"); if (bx) bx.innerHTML = ""; return; }
+    case "bl-bezahlt": {
+      const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/bezahlt`, { datum: $("#blz-datum").value, betrag: $("#blz-betrag").value.trim() || null, notiz: $("#blz-notiz").value.trim(), zuordnung_jahr: zehnTageWert("blz-zuord") });
+      if (!r || !r.ok) return kundenMsg("blz-msg", (r && r.hinweis) || "Fehler.", false);
+      if (AKTIV === "belege") renderBelege(); if (AKTIV === "finanzen") renderFinanzen();
+      return blDetail(id, r.rest_cent ? `Zahlung ${cent2eur(Math.abs(r.betrag_cent))} gebucht — offen: ${cent2eur(Math.abs(r.rest_cent))}.` : "Vollständig bezahlt.");
+    }
+    case "bl-zahlung-storno": case "re-zahlung-storno": {
+      const grund = prompt("Zahlung zurücknehmen — Grund (z. B. „falsches Datum“, „Rücklastschrift“):", ""); if (!grund) return;
+      const pfad = act === "re-zahlung-storno" ? "rechnungen" : "belege";
+      const r = await jpost(`/api/finanzen/${pfad}/${encodeURIComponent(id)}/zahlung-stornieren`, { index: Number(val), grund });
+      if (AKTIV === "finanzen") renderFinanzen(); if (AKTIV === "belege") renderBelege(); if (AKTIV === "rechnungen") renderRechnungen();
+      const ok = !!(r && r.ok), m = ok ? "Zahlung storniert — sie bleibt sichtbar, zählt aber nicht mehr." : ((r && r.hinweis) || "Fehler.");
+      return act === "re-zahlung-storno" ? reDetail(id, m, !ok) : blDetail(id, m, !ok);
+    }
+    case "eb-neu": return ebNeu(val);
+    case "eb-speichern": return ebSpeichern(val);
+    case "eb-detail": return ebDetail(id);
+    case "eb-storno": {
+      const grund = prompt("Eigenbeleg stornieren — Grund:", ""); if (!grund) return;
+      const r = await jpost(`/api/finanzen/eigenbelege/${encodeURIComponent(id)}/stornieren`, { grund });
+      if (AKTIV === "finanzen") renderFinanzen();
+      return ebDetail(id, r && r.ok ? "Storniert — bleibt im Journal sichtbar, zählt aber nicht." : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
+    }
     case "bl-verwerfen": { const grund = prompt("Warum ist das kein Beleg? (z. B. versehentlich hochgeladen)", ""); if (!grund) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/verwerfen`, { grund }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Verworfen — die Datei bleibt archiviert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "re-neu": return reEditor("");
     case "re-detail": return reDetail(id);
@@ -1656,7 +1834,7 @@ async function handleAct(act, el) {
     }
     case "re-bezahlt-form": return reBezahltForm(id);
     case "re-bezahlt": {
-      const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/bezahlt`, { datum: $("#rez-datum").value, betrag: $("#rez-betrag").value.trim() || null, notiz: $("#rez-notiz").value.trim() });
+      const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/bezahlt`, { datum: $("#rez-datum").value, betrag: $("#rez-betrag").value.trim() || null, notiz: $("#rez-notiz").value.trim(), zuordnung_jahr: zehnTageWert("rez-zuord") });
       if (!r || !r.ok) return kundenMsg("rez-msg", (r && r.hinweis) || "Fehler.", false);
       if (AKTIV === "rechnungen") renderRechnungen(); return reDetail(id, [r.rest_cent > 0 ? `Zahlung ${cent2eur(r.betrag_cent)} gebucht — offen: ${cent2eur(r.rest_cent)}.` : "Vollständig bezahlt.", ...(r.hinweise || [])].join("\n"));
     }

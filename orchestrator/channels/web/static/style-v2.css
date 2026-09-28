@@ -419,3 +419,25 @@ a.v2-btn { text-decoration: none; display: inline-flex; align-items: center; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* Finanzen (KUNDEN_FINANZEN Etappe 7) */
+.v2-tab-scroll { overflow-x: auto; }
+.v2-fin-monate { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; height: 170px; align-items: end; margin-top: 10px; }
+.v2-fin-monat { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+.v2-fin-monat small { color: var(--v2-faint); font-size: 11px; }
+.v2-fin-saeulen { flex: 1; width: 100%; display: flex; gap: 2px; align-items: flex-end; justify-content: center; border-bottom: 1px solid var(--v2-line); }
+.v2-fin-saeulen i { width: 42%; max-width: 16px; border-radius: 3px 3px 0 0; min-height: 1px; }
+.v2-fin-saeulen i.e { background: var(--v2-green); } .v2-fin-saeulen i.a { background: var(--v2-red); }
+.v2-fin-hbar { display: grid; grid-template-columns: minmax(120px, 2fr) 3fr auto; gap: 10px; align-items: center; padding: 6px 0; font-size: 13px; border-top: 1px solid var(--v2-line-soft); }
+.v2-fin-hbar div { height: 8px; border-radius: 6px; background: var(--v2-line-soft); overflow: hidden; }
+.v2-fin-hbar i { display: block; height: 100%; background: var(--v2-red); border-radius: 6px; }
+.v2-fin-pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.v2-fin-stufe { display: flex; gap: 10px; align-items: center; padding: 12px; border: 1px solid var(--v2-line-soft); border-radius: 12px; cursor: pointer; position: relative; }
+.v2-fin-stufe:hover { border-color: var(--v2-accent); }
+.v2-fin-stufe > span { font-size: 22px; } .v2-fin-stufe small { display: block; color: var(--v2-muted); }
+.v2-fin-stufe:not(:last-child)::after { content: "›"; position: absolute; right: -9px; color: var(--v2-faint); font-size: 18px; }
+.v2-fin-storno td, .v2-list-row.v2-fin-storno .grow { text-decoration: line-through; opacity: .55; }
+.v2-fin-storno .v2-badge { text-decoration: none; }
+.v2-fin-euer th { text-align: left; padding-top: 14px; color: var(--v2-muted); }
+.v2-fin-gewinn td { border-top: 2px solid var(--v2-line); font-size: 16px; }
+@media (max-width: 820px) { .v2-fin-pipeline { grid-template-columns: 1fr 1fr; } .v2-fin-stufe::after { display: none; } .v2-fin-hbar { grid-template-columns: 1fr 1fr auto; } }
