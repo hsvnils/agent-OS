@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 10:37] — Claude Code (MACO470)
+- **Was:** `LUNA_GOOGLE_KONTO_ROADMAP.md` Etappe 0 abgeschlossen (CEO hat `luna.hanserautisch@gmail.com` mit
+  Zwei-Faktor angelegt); Roadmap-Status „in Umsetzung".
+- **Warum:** CEO-Meldung „Neues Konto steht, inkl. 2 Faktor".
+- **Betroffen:** `LUNA_GOOGLE_KONTO_ROADMAP.md`
+
 ## [2026-09-28 10:36] — Claude Code (MACO470)
 - **Was:** Befund aus CEO-Screenshot: LUNA-App in Google Cloud ist „In Produktion" -> BF-33-Ursache „Testmodus-Verfall"
   ausgeschlossen (in `docs/bekannte-fehler.md` + Roadmap Etappe 0 vermerkt). Feste Regel: mit dem CEO immer Deutsch.

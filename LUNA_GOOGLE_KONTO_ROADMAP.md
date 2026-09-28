@@ -1,11 +1,10 @@
 # Roadmap: Eigenes Google-Konto fuer LUNA
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-09-28
 - Arbeitsbranch: `ai/luna-google-konto`
 - Basiscommit: `cccda42`
-- Naechster Schritt: Etappe 0 -- CEO legt `luna.hanserautisch@gmail.com` an (Anleitung im Chat 2026-09-28) und meldet
-  sich; danach Go fuer Etappe 1.
+- Naechster Schritt: Go fuer Etappe 1 (Kalender teilen + Kalender-ID konfigurierbar).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -67,7 +66,8 @@ Jede Etappe: Tests + Gegenprobe, Probelauf, CEO-Go, Deploy, Verifikation beim Em
 
 ### Etappe 0: Konto anlegen (CEO)
 
-- Status: geplant
+- Status: abgeschlossen (2026-09-28) -- CEO: `luna.hanserautisch@gmail.com` angelegt, Zwei-Faktor aktiv, smarte
+  Funktionen deaktiviert
 - Ziel / Scope: Gmail-Konto anlegen, Zwei-Faktor-Anmeldung, Wiederherstellung auf den CEO; im Google-Cloud-Projekt der
   LUNA-App das Konto als Testnutzer eintragen oder die App auf „In Produktion" stellen (sonst verfaellt der Zugang im
   Testmodus nach 7 Tagen). Anleitung Schritt fuer Schritt liefert Claude Code. **Befund 2026-09-28:** App steht
