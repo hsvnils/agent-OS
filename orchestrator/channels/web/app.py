@@ -1489,24 +1489,8 @@ async def angebot_versendet(nummer: str, request: Request):
             pdf = _angebot_pdf_ablegen(st, a, an="", entwurf_id="", von=_von(request))["pfad"]
             if a["pdfs"]:
                 hinweise.append("Inhalt wurde nach dem letzten Mail-Entwurf geaendert -- aktueller Stand wurde abgelegt.")
-        heute = _date.fromisoformat(jetzt_iso()[:10])
-        name = (kunden_store.firma(a["firma"]) or {}).get("name", a["firma"])
-        termine, g = [], _google()
-        wuensche = [(heute + _td(days=int(a.get("nachfassen_tage") or 7)), f"Angebot {a['nummer']} nachfassen: {name}")]
-        ablauf = _date.fromisoformat(a["gueltig_bis"]) - _td(days=1)
-        if ablauf > heute and ablauf != wuensche[0][0]:
-            wuensche.append((ablauf, f"Angebot {a['nummer']} läuft morgen ab: {name}"))
-        for tag, titel in wuensche:
-            if not g.verfuegbar():
-                hinweise.append("Google nicht verbunden -- keine Kalender-Erinnerung angelegt.")
-                break
-            r = g.termin_anlegen(titel, f"{tag.isoformat()}T09:00:00", f"{tag.isoformat()}T09:15:00",
-                                 beschreibung=f"{a['nummer']} · {name} · {a.get('titel') or ''}\nLUNA-OS -> Angebote",
-                                 bestaetigt=True)
-            if r.get("ok"):
-                termine.append({"datum": tag.isoformat(), "titel": titel, "id": r.get("termin_id", "")})
-            else:
-                hinweise.append(f"Kalender: {r.get('hinweis') or 'Fehler'}")
+        termine, fehler = _angebot_erinnerungen(a, _date.fromisoformat(jetzt_iso()[:10]))
+        hinweise += fehler
         st.status_setzen(a["nummer"], "versendet", termine=termine, pdf=pdf, von=_von(request))
         for c in (kunden_store.firma(a["firma"]) or {}).get("collab", []):   # CRM-Stufe „angebot“
             anzeige = next((f.get("firma") for f in crm_store.firmen() if (f.get("firma") or "").strip().lower() == c), c)
@@ -1514,6 +1498,57 @@ async def angebot_versendet(nummer: str, request: Request):
                 crm_store.status_setzen(anzeige, "angebot")
             except Exception:
                 hinweise.append(f"CRM-Stufe fuer {anzeige} nicht gesetzt.")
+        return {"termine": termine, "hinweise": hinweise}
+    return _kunden_aktion(tun)
+
+
+def _angebot_erinnerungen(a: dict, basis, *, nur_fehlende: bool = False) -> tuple[list, list]:
+    """Kalender-Erinnerungen 09:00: Nachfassen (basis + N Tage) und Tag vor Ablauf. Rueckgabe (termine, hinweise).
+    `nur_fehlende`: bereits angelegte (gleicher Titel) auslassen; Tage in der Vergangenheit auf heute ziehen."""
+    from datetime import date as _date, timedelta as _td
+    heute = _date.fromisoformat(jetzt_iso()[:10])
+    name = (kunden_store.firma(a["firma"]) or {}).get("name", a["firma"])
+    wuensche = [(max(basis + _td(days=int(a.get("nachfassen_tage") or 7)), heute),
+                 f"Angebot {a['nummer']} nachfassen: {name}")]
+    ablauf = _date.fromisoformat(a["gueltig_bis"]) - _td(days=1)
+    if ablauf > heute and ablauf != wuensche[0][0]:
+        wuensche.append((ablauf, f"Angebot {a['nummer']} läuft morgen ab: {name}"))
+    if nur_fehlende:
+        da = {t.get("titel") for t in a.get("versendet_termine") or []}
+        wuensche = [w for w in wuensche if w[1] not in da]
+    termine, hinweise, g = [], [], _google()
+    for tag, titel in wuensche:
+        if not g.verfuegbar():
+            hinweise.append("Google nicht verbunden -- keine Kalender-Erinnerung angelegt.")
+            break
+        r = g.termin_anlegen(titel, f"{tag.isoformat()}T09:00:00", f"{tag.isoformat()}T09:15:00",
+                             beschreibung=f"{a['nummer']} · {name} · {a.get('titel') or ''}\nLUNA-OS -> Angebote",
+                             bestaetigt=True)
+        if r.get("ok"):
+            termine.append({"datum": tag.isoformat(), "titel": titel, "id": r.get("termin_id", "")})
+        else:
+            hinweise.append(f"Kalender: {r.get('hinweis') or 'Fehler'}")
+    return termine, hinweise
+
+
+@app.post("/api/crm/angebote/{nummer}/erinnerungen")
+async def angebot_erinnerungen_nachholen(nummer: str, request: Request):
+    """Fehlende Kalender-Erinnerungen eines versendeten Angebots nachholen (z. B. nach Google-Ausfall, BF-33)."""
+    from datetime import date as _date
+    st = _angebote()
+
+    def tun():
+        a = st.angebot(nummer)
+        if not a:
+            raise KeyError(nummer)
+        if a["status"] != "versendet":
+            raise ValueError(f"{a['nummer']} ist {a['status']} -- Erinnerungen nur fuer versendete Angebote.")
+        basis = _date.fromisoformat(str(a.get("versendet_am") or jetzt_iso())[:10])
+        termine, hinweise = _angebot_erinnerungen(a, basis, nur_fehlende=True)
+        if termine:
+            st.erinnerungen_ergaenzen(a["nummer"], termine, von=_von(request))
+        elif not hinweise:
+            hinweise.append("Alle Erinnerungen sind bereits im Kalender.")
         return {"termine": termine, "hinweise": hinweise}
     return _kunden_aktion(tun)
 

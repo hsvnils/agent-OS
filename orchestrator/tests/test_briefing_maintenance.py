@@ -64,6 +64,19 @@ class TestBriefingMaintenance(unittest.TestCase):
         self.assertTrue(nb.pending())
         self.assertEqual(nb.pending()[0]["abteilung"], "IT/Self-Maintenance")
 
+    def test_5b_google_echter_abruf_statt_nur_credentials(self):
+        # BF-33: invalid_grant fiel nicht auf, weil nur verfuegbar() geprueft wurde
+        class G:
+            def __init__(self, antwort): self.antwort = antwort
+            def verfuegbar(self): return True
+            def kalender_agenda(self, **kw): return self.antwort
+        kaputt = G({"ok": False, "hinweis": "Kalender-Abruf fehlgeschlagen: ('invalid_grant: Bad Request', {})"})
+        g = [c for c in SelfMaintenance(google=kaputt).pruefe() if c["komponente"] == "Google Workspace"][0]
+        self.assertFalse(g["ok"])
+        self.assertIn("google_oauth_neu.py", g["hinweis"])
+        heil = [c for c in SelfMaintenance(google=G({"ok": True, "termine": []})).pruefe() if c["komponente"] == "Google Workspace"]
+        self.assertTrue(heil[0]["ok"])
+
     def test_6_meldung_details_und_abteilung(self):
         nb = Notifications(Path(tempfile.mkdtemp()) / "n.jsonl")
         ctx = _ctx(notifications=nb)

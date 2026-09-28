@@ -38,8 +38,7 @@ class SelfMaintenance:
         if aktiv(s):
             add("Lokales LLM (Ollama, MACO470)", *erreichbar(s["LOCAL_LLM_BASE_URL"]))
         if self.google is not None:
-            ok = self.google.verfuegbar()
-            add("Google Workspace", ok, "" if ok else "OAuth-Credentials fehlen -- Mail/Kalender inaktiv.")
+            add("Google Workspace", *self._google())
         if self.repo_root is not None:
             ok = self._schreibbar(self.repo_root)
             add("Daten-Stores beschreibbar", ok, "" if ok else "Repo-Verzeichnis nicht beschreibbar.")
@@ -61,6 +60,23 @@ class SelfMaintenance:
         return probleme
 
     # -- intern --
+
+    def _google(self) -> tuple[bool, str]:
+        """Nicht nur „Credentials vorhanden“, sondern ein echter Abruf (BF-33: ein von Google abgelehnter Token
+        fiel wochenlang niemandem auf, weil nur `verfuegbar()` geprueft wurde)."""
+        if not self.google.verfuegbar():
+            return False, "OAuth-Credentials fehlen -- Mail/Kalender inaktiv."
+        try:
+            r = self.google.kalender_agenda(tage=1, max_results=1)
+        except Exception as exc:                                     # Netz o. ae. -- nicht als Ausfall werten
+            return True, f"Pruefung nicht moeglich: {str(exc)[:80]}"
+        if r.get("ok"):
+            return True, ""
+        h = str(r.get("hinweis") or "")
+        if "invalid_grant" in h:
+            return False, ("Google lehnt LUNAs Zugang ab (invalid_grant) -- Mail, Kalender und Angebots-Erinnerungen "
+                           "gehen nicht. Neu verbinden: deploy/google_oauth_neu.py auf dem MACO470.")
+        return False, f"Google-Abruf fehlgeschlagen: {h[:120]}"
 
     def _schreibbar(self, pfad: Path) -> bool:
         try:

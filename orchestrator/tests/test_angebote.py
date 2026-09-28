@@ -193,6 +193,24 @@ class TestAngebotApi(unittest.TestCase):
         self.assertFalse(self.c.post(f"/api/crm/angebote/{nr}/status", json={"status": "quatsch"}).json()["ok"])
         self.assertEqual(self.c.get("/api/crm/angebote/AN-2026-0999").status_code, 404)
 
+    def test_3b_erinnerungen_nach_google_ausfall_nachholen(self):
+        # BF-33: invalid_grant beim Versenden -> Status trotzdem versendet, Erinnerungen spaeter nachholen
+        nr = self._neu()
+        kaputt = {"ok": False, "hinweis": "Termin anlegen fehlgeschlagen: ('invalid_grant: Bad Request', {})"}
+        from unittest import mock
+        with mock.patch.object(self.g, "termin_anlegen", return_value=kaputt):
+            v = self.c.post(f"/api/crm/angebote/{nr}/versendet").json()
+        self.assertEqual((v["ok"], v["termine"], len(v["hinweise"])), (True, [], 2))
+        r = self.c.post(f"/api/crm/angebote/{nr}/erinnerungen").json()
+        self.assertEqual(len(r["termine"]), 2, r)
+        a = self.c.get(f"/api/crm/angebote/{nr}").json()["angebot"]
+        self.assertEqual(len(a["versendet_termine"]), 2)
+        r = self.c.post(f"/api/crm/angebote/{nr}/erinnerungen").json()
+        self.assertEqual((r["termine"], r["hinweise"]), ([], ["Alle Erinnerungen sind bereits im Kalender."]))
+        self.assertEqual(len(self.g.termine), 2)                                     # nichts doppelt
+        self.c.post(f"/api/crm/angebote/{nr}/status", json={"status": "abgelehnt"})
+        self.assertFalse(self.c.post(f"/api/crm/angebote/{nr}/erinnerungen").json()["ok"])
+
     def test_4_rechte(self):
         from orchestrator.core.team_auth import erlaubte_apps, modul_fuer_pfad
         self.assertEqual(modul_fuer_pfad("POST", "/api/crm/angebote/AN-2026-0001/mailentwurf"), "crm")

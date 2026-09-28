@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-28 09:35] — Claude Code (MACO470)
+- **Was:** BF-33 (Google `invalid_grant`, stiller Ausfall von Gmail + Kalender): (1) `deploy/google_oauth_neu.py` --
+  Google-Zugang auf dem MACO470 neu verbinden, Token nur in die `.env` (MACO470 + NAS), alte `.env` nach
+  `~/env-backups/`; `google-auth-oauthlib` nur in die lokale `.venv`. (2) Knopf/Endpunkt „📅 Erinnerungen nachholen“
+  (`POST /api/crm/angebote/<nr>/erinnerungen`, Ereignis `angebot_erinnerungen`, nichts doppelt; Cache v37). (3) Selbstcheck
+  prueft Google mit echtem Abruf statt nur „Credentials vorhanden“ und meldet `invalid_grant`. Tests + Gegenprobe;
+  Suite 851 gruen; `accounts.google.com` in `docs/datenfluesse.md`.
+- **Warum:** CEO-Screenshot (Kalender-Fehler beim Versenden von AN-2026-0001), CEO-Go „Go fuer 1-3“.
+- **Betroffen:** `deploy/google_oauth_neu.py`, `orchestrator/core/{self_maintenance,angebote}.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/{app-v2.js,index-v2.html}`,
+  `orchestrator/tests/{test_briefing_maintenance,test_angebote}.py`, `docs/{bekannte-fehler,datenfluesse}.md`
+
 ## [2026-09-28 09:28] — Claude Code (MACO470)
 - **Was:** Angebots-Detail ebenfalls ganzseitig (Aktionen oben, Infos/Verlauf links, Positionen rechts; Cache v36/v17).
   Regel „Belege immer ganzseitig" in `UI.md` 11 festgehalten. Roadmap Etappe 6 um **PDF-Scan** erweitert (Rechnungen
