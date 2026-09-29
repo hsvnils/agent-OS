@@ -10,6 +10,9 @@ Prueft:
   4. Speicher  -- dasselbe fuer lokale JSON/JSONL-Stores unter ROOT.
   5. Schutz    -- jeder Speicher ist vom Deploy ausgenommen (`deploy/sync-to-nas.sh`) und wird gesichert
                   (`deploy/backup-from-nas.sh`) oder steht bewusst im Block ```doku-check:ohne-backup```.
+  6. Changelog -- jeder Eintrag in `projekt_changelog.md` hat das Pflichtformat (AGENTS.md 3.2: Kopf
+                  `## [JJJJ-MM-TT HH:MM] — Akteur`, Was/Warum/Betroffen mit Inhalt), liegt nicht in der Zukunft
+                  (BF-09: geschaetzte Uhrzeiten) und steht ab `CHANGELOG_REIHENFOLGE_AB` neueste zuerst.
 
 Die Soll-Listen stehen maschinenlesbar in `docs/datenfluesse.md` in Codebloecken ```doku-check:<name>```.
 
@@ -42,6 +45,14 @@ RE_TABELLE = re.compile(
     r"""(?:\.(?:select|insert|upsert|update|delete)\(\s*|ContentStore\([^,()]+,\s*|TABELLE\s*=\s*)["']([a-z][a-z0-9_]+)["']""")
 RE_SPEICHER = re.compile(r"""ROOT\s*/\s*["']([a-z_]+)["']\s*/\s*["']([^"']+\.jsonl?)["']""")
 RE_BLOCK = re.compile(r"```doku-check:([a-z-]+)\n(.*?)```", re.S)
+
+CHANGELOG = ROOT / "projekt_changelog.md"
+RE_CL_KOPF = re.compile(r"^## \[(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})\] — (\S.*)$")
+CL_FELDER = ("Was", "Warum", "Betroffen")
+# Aeltere Eintraege haben geschaetzte Uhrzeiten (BF-09, 5 Reihenfolge-Abweichungen bis 2026-09-28) -- die Historie wird
+# nicht umgeschrieben; die Reihenfolge gilt ab diesem Datum (BETRIEB_ROADMAP Etappe 2).
+CHANGELOG_REIHENFOLGE_AB = "2026-09-29"
+CL_TOLERANZ_MIN = 10          # so viele Minuten „in der Zukunft“ sind noch Uhr-Toleranz
 
 
 def _code_dateien():
@@ -166,6 +177,48 @@ def pruefe_speicherschutz() -> list[str]:
     return out
 
 
+def pruefe_changelog(text: str | None = None, jetzt=None) -> list[str]:
+    """Changelog-Pflichtformat, keine Zukunftszeiten, neueste zuerst (ab Stichtag)."""
+    from datetime import datetime, timedelta
+    if text is None:
+        text = CHANGELOG.read_text(encoding="utf-8") if CHANGELOG.exists() else ""
+    if "## Eintraege\n" not in text:
+        return ["Changelog: Abschnitt „## Eintraege“ fehlt"]
+    if jetzt is None:
+        try:
+            from zoneinfo import ZoneInfo
+            jetzt = datetime.now(ZoneInfo("Europe/Berlin")).replace(tzinfo=None)
+        except Exception:
+            jetzt = datetime.now()
+    grenze = jetzt + timedelta(minutes=CL_TOLERANZ_MIN)
+    out, vorher = [], None
+    for block in re.split(r"(?m)^(?=## )", text.split("## Eintraege\n", 1)[1]):
+        if not block.startswith("## "):
+            continue
+        kopf = block.splitlines()[0]
+        m = RE_CL_KOPF.match(kopf)
+        if not m:
+            out.append(f"Changelog: Kopf nicht im Format „## [JJJJ-MM-TT HH:MM] — Akteur“: {kopf[:70]}")
+            continue
+        try:
+            zeit = datetime.strptime(f"{m.group(1)} {m.group(2)}", "%Y-%m-%d %H:%M")
+        except ValueError:
+            out.append(f"Changelog: ungueltiges Datum/Uhrzeit: {kopf[:70]}")
+            continue
+        fehlend = [f for f in CL_FELDER if not re.search(rf"(?m)^- \*\*{f}:\*\*[ \t]*\S", block)]   # Inhalt in derselben Zeile
+        if fehlend:
+            out.append(f"Changelog {m.group(1)} {m.group(2)}: Feld(er) fehlen oder leer: {', '.join(fehlend)}")
+        if zeit > grenze:
+            out.append(f"Changelog {m.group(1)} {m.group(2)}: liegt in der Zukunft -- echte Uhrzeit nehmen "
+                       f"(TZ=Europe/Berlin date), nicht schaetzen (BF-09)")
+        if m.group(1) >= CHANGELOG_REIHENFOLGE_AB and vorher is not None and zeit > vorher[0]:
+            out.append(f"Changelog {m.group(1)} {m.group(2)}: steht unter dem aelteren Eintrag {vorher[1]} -- "
+                       "neue Eintraege gehoeren nach oben (direkt unter „## Eintraege“)")
+        if vorher is None or zeit < vorher[0]:
+            vorher = (zeit, f"{m.group(1)} {m.group(2)}")
+    return out
+
+
 def main(argv: list[str]) -> int:
     if "--liste" in argv:
         for name, werte in ist_mengen().items():
@@ -173,7 +226,7 @@ def main(argv: list[str]) -> int:
             for w, dateien in sorted(werte.items()):
                 print(f"{w:45s} # {', '.join(sorted(dateien)[:3])}")
         return 0
-    fehler = pruefe_roadmaps() + pruefe_datenfluesse() + pruefe_speicherschutz()
+    fehler = pruefe_roadmaps() + pruefe_datenfluesse() + pruefe_speicherschutz() + pruefe_changelog()
     if fehler:
         print(f"Doku-Check: {len(fehler)} Abweichung(en)")
         for f in fehler:

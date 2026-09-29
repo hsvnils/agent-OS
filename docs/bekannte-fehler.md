@@ -12,7 +12,7 @@ Stand 2026-09-28 auf dem MACO470 (`.venv`, `python -m pytest`), nach KUNDEN_FINA
 
 | Suite | Ergebnis | Erwartet rot / uebersprungen |
 |---|---|---|
-| `orchestrator/tests` | 984 bestanden (2026-09-29, nach BETRIEB Etappe 1), 0 rot, 4 uebersprungen (BF-38: einmal 1 rot, nicht reproduzierbar) | uebersprungen: Phase 17 „plan() erfordert macOS" (BF-01 behoben 2026-09-25) |
+| `orchestrator/tests` | 985 bestanden (2026-09-29, nach BETRIEB Etappe 2), 0 rot, 4 uebersprungen (BF-38: einmal 1 rot, nicht reproduzierbar) | uebersprungen: Phase 17 „plan() erfordert macOS" (BF-01 behoben 2026-09-25) |
 | `cutter/tests` | 74 bestanden | – |
 | `backoffice/tests` | 14 bestanden | – |
 
@@ -32,7 +32,7 @@ Tabelle fort.
 | BF-02 | Nach einem Neustart des MACO470 ohne Anmeldung startet nichts (Worker, Backup-Timer) | Windows-Aufgabe „Nur interaktiv", `AutoAdminLogon=0` | „Unabhaengig von der Anmeldung ausfuehren" oder Auto-Login — **CEO-Aufgabe** (Passwort) | 2026-08-17, MR |
 | BF-05 | Intermittierend „alle Anbieter erschoepft" | Gemini-Gratis-Rate-Limit unter Last | zurueckgestellt; lokales LLM (M6) soll es loesen | 2026-07-08, CL:699 |
 | BF-06 | Instagram liefert nicht alle Threads; eine Marken-DM kam nie an | `me/conversations` nur mit `limit=1` stabil; Webhook-Zustellung ungeklaert | Thread fuer Thread blaettern (`0b87833`); Meta-Grenze bleibt; Thema vom CEO abgehakt | 2026-07, CL:892, 981 |
-| BF-09 | Uhrzeiten in Changelog-Koepfen stimmen nicht mit den Commits ueberein (z. B. Eintrag „10:25", Commit `466dcff` um 09:38) | Zeit geschaetzt statt abgelesen | Reihenfolge der Eintraege ist massgeblich und stimmt; alte Eintraege werden nicht umgeschrieben. Kuenftig Zeit per `date '+%Y-%m-%d %H:%M'` holen. | 2026-09-25 |
+| BF-09 | Uhrzeiten in Changelog-Koepfen stimmen nicht mit den Commits ueberein (z. B. Eintrag „10:25", Commit `466dcff` um 09:38) | Zeit geschaetzt statt abgelesen | Reihenfolge der Eintraege ist massgeblich und stimmt; alte Eintraege werden nicht umgeschrieben. Kuenftig Zeit per `date '+%Y-%m-%d %H:%M'` holen. -- seit 2026-09-29 prueft `scripts/doku_check.py` Format, Zukunftszeiten und Reihenfolge (ab 29.09.) automatisch | 2026-09-25 |
 | BF-10 | `docs/maco470-roadmap.md` Zeile 101 nennt noch „drvfs" | Text vor E6 geschrieben | Tatsaechlich CIFS (`findmnt /mnt/nas-clips`, E6). Bei naechster Aenderung der Datei korrigieren. | 2026-09-25 |
 | BF-11 | Einbrennen von Untertiteln und Verwacklungsmessung nicht moeglich | ffmpeg-Build ohne `libass` bzw. `vidstabdetect` | Einschraenkung; Untertitel sind ohnehin standardmaessig aus | CL:3350, 466 |
 | BF-12 | Noch nicht verifiziert: Umlaute NFC/NFD ueber CIFS, Body-Limit des Reverse-Proxys fuer grosse Reels, OUTBOX muss lokal liegen | – | beim naechsten Auftreten pruefen | MR:259-265 |
