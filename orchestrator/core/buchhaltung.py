@@ -34,7 +34,7 @@ TZ = ZoneInfo("Europe/Berlin")   # Container laufen in UTC (BF-32): Zeitstempel 
 def jetzt() -> datetime:
     """Aktuelle deutsche Zeit mit Zeitzone -- massgeblich fuer Zeitstempel, Belegjahr und Nummernkreis-Jahr."""
     return datetime.now(TZ)
-KREISE_OHNE_JAHR = {"K": 5, "L": 5, "P": 5, "AP": 5}      # Stammdaten (K Kunde, L Lieferant, P Partner): fortlaufend
+KREISE_OHNE_JAHR = {"K": 5, "L": 5, "P": 5, "AP": 5, "ABO": 5}   # Stammdaten (K/L/P), Abos (Etappe 15): fortlaufend
 KREISE_MIT_JAHR = ("AN", "AB", "RE", "ER", "EB", "MA")    # je Jahr neu, 4-stellig (EB = Eigenbeleg, MA = Mahnung)
 AUFBEWAHRUNG_JAHRE = {"beleg": 8, "aufzeichnung": 10, "geschaeftsbrief": 6}
 

@@ -20,12 +20,14 @@ from pathlib import Path
 from .beleg_pdf import (HINWEIS_19, beleg_pdf, cent, datum_de, eur, hanserautisch_pdf, menge, menge_text,
                         positions_summe)
 from .buchhaltung import Buchhaltung, jetzt
+from .katalog import OMR, kalkulation_texte, tkp_preis
 from .kunden import KundenStore
 
 STATUS = ("entwurf", "versendet", "angenommen", "abgelehnt")
 KOPF_FELDER = ("firma", "ansprechpartner", "titel", "datum", "gueltig_bis", "einleitung", "schluss", "nachfassen_tage",
                "zuschlaege", "rabatt_prozent", "layout", "bloecke", "ware")  # 3b; „ware“ = Barter (Etappe 12)
 LAYOUTS = ("hanserautisch", "standard")
+SCHALTER = ("zeige_kalkulation", "zeige_kennzahlen", "tkp_zeigen", "omr_zeigen")
 GUELTIG_TAGE = 14                                                           # CEO 2026-09-27 (wie im Generator)
 ORT = "Tangstedt"
 MAX_POSITIONEN = 60
@@ -60,6 +62,22 @@ def _positionen(roh) -> list[dict]:
             raise ValueError(f"Position {i}: negativer Preis.")
         pos = {"beschreibung": text, "menge": format(m, "f"), "einheit": str(p.get("einheit") or "").strip()[:30],
                "einzelpreis_cent": ep}
+        if p.get("kontakte") not in (None, "", 0, "0") and (p.get("tkp_cent") or p.get("tkp")):   # Etappe 16: TKP
+            try:
+                kontakte = int(p["kontakte"])
+                tkp = int(p["tkp_cent"]) if p.get("tkp_cent") else cent(p.get("tkp"))
+                prod = int(p.get("produktion_cent") or 0)
+            except (TypeError, ValueError):
+                raise ValueError(f"Position {i}: Kontakte/TKP ungueltig.") from None
+            if not (0 < kontakte <= 100_000_000 and 100 <= tkp <= 50_000 and 0 <= prod <= 10_000_000):
+                raise ValueError(f"Position {i}: TKP zwischen 1 und 500 €, Kontakte/Produktion im Rahmen.")
+            pos |= {"kontakte": kontakte, "tkp_cent": tkp, "produktion_cent": prod,
+                    "einzelpreis_cent": tkp_preis(kontakte, tkp, prod)}               # Preis folgt immer dem TKP
+            for k in ("tkp_min_cent", "tkp_max_cent"):
+                if str(p.get(k) or "").isdigit():
+                    pos[k] = int(p[k])
+            if str(p.get("omr") or "") in OMR["werte"]:
+                pos["omr"] = p["omr"]
         for k, n in (("detail", 600), ("katalog_id", 30), ("gruppe", 60)):   # Etappe 3b: aus dem Leistungskatalog
             if str(p.get(k) or "").strip():
                 pos[k] = str(p[k]).strip()[:n]
@@ -188,7 +206,10 @@ def _bloecke(roh) -> dict:
             "kennzahlen_quelle": t(roh.get("kennzahlen_quelle"), 800), "fuss": t(roh.get("fuss")),
             "kontakt": t(roh.get("kontakt"), 120),
             "zeige_kalkulation": roh.get("zeige_kalkulation", True) is not False,
-            "zeige_kennzahlen": roh.get("zeige_kennzahlen", True) is not False}
+            "zeige_kennzahlen": roh.get("zeige_kennzahlen", True) is not False,
+            # Etappe 16: Rechnung Kontakte x TKP und OMR-Vergleich (mit Link) je Angebot an-/abwaehlbar
+            "tkp_zeigen": roh.get("tkp_zeigen", True) is not False,
+            "omr_zeigen": roh.get("omr_zeigen", False) is True}
 
 
 def summen(positionen: list[dict], zuschlaege: list[dict], rabatt_prozent: float) -> dict:
@@ -344,7 +365,7 @@ class AngebotStore:
         if not isinstance(daten, dict):
             raise ValueError("Ungueltige Eingabe.")
         neu = _kopf(daten)
-        schalter = {k: daten[k] for k in ("zeige_kalkulation", "zeige_kennzahlen") if k in daten}
+        schalter = {k: daten[k] for k in SCHALTER if k in daten}
         if "positionen" in daten:
             neu["positionen"] = _positionen(daten["positionen"])
         diff: dict = {}
@@ -416,7 +437,10 @@ class AngebotStore:
             infos=[f"{ORT}, den {datum_de(a['datum'])}", f"Gültig bis: {datum_de(a['gueltig_bis'])}",
                    f"Angebot: {a['nummer']}", f"Kundennummer: {a['firma']}"],
             anrede=anrede_moin(ap, f.get("name", "")), einleitung=a.get("einleitung") or b.get("intro", ""),
-            texte=b, zeige_kalkulation=b.get("zeige_kalkulation", True), zeige_kennzahlen=b.get("zeige_kennzahlen", True),
+            texte=kalkulation_texte(b, formate=a["positionen"], tkp_zeigen=b.get("tkp_zeigen", True),
+                                    omr_zeigen=b.get("omr_zeigen", False)),
+            zeige_kalkulation=b.get("zeige_kalkulation", True) or b.get("omr_zeigen", False),
+            zeige_kennzahlen=b.get("zeige_kennzahlen", True),
             gruppen=list(gruppen.values()), summen=a["summen"], zuschlag_liste=None,
             fuss_zusatz=" ".join(ware_hinweis(a["summe_cent"], a.get("ware"))
                                  + [f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."]))
@@ -530,7 +554,7 @@ def _schalter(kopf: dict, daten: dict) -> None:
     """„So kalkulieren wir“/Kennzahlen im Hanserautisch-Layout ein- oder ausblenden."""
     if kopf.get("bloecke") is None:
         return
-    for k in ("zeige_kalkulation", "zeige_kennzahlen"):
+    for k in SCHALTER:
         if k in daten:
             kopf["bloecke"] = {**kopf["bloecke"], k: bool(daten[k])}
 
@@ -570,7 +594,10 @@ def preisliste_pdf(katalog: dict, firmendaten: dict, *, logo: Path | None, ids: 
         empfaenger=_empfaenger(firma, ap) if firma else [], untertitel=t.get("untertitel", ""),
         infos=[f"{ORT}, den {datum_de(heute.isoformat())}"],
         anrede=anrede_moin(ap, (firma or {}).get("name", "")) if firma else "Moin,", einleitung=t.get("intro", ""),
-        texte=t, zeige_kalkulation=True, zeige_kennzahlen=True, gruppen=gruppen, summen=None,
+        texte=kalkulation_texte(t, formate=[it for g in katalog["gruppen"] for it in g["items"]
+                                            if it["aktiv"] and (ids is None or it["id"] in ids)],
+                                omr_zeigen=True, spanne=True),
+        zeige_kalkulation=True, zeige_kennzahlen=True, gruppen=gruppen, summen=None,
         zuschlag_liste=katalog["zuschlaege"], fuss_zusatz="Preisliste freibleibend, Angebote individuell.")
 
 

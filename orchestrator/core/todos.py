@@ -108,7 +108,11 @@ def finanzcheck(e: list[dict], heute: date, *, rechnungen: dict | None = None) -
         m0, m1, m2 = _monat(heute), _monat(heute, 1), _monat(heute, 2)
         dieser = {w.lower() for _, w in je_monat.get(m0, {})}
         vor2 = {(a, w.lower()): c for (a, w), c in je_monat.get(m2, {}).items()}
+        from .abos import AboStore as _Abos                 # Firmen mit Abo: das Abo meldet selbst (Etappe 15)
+        abofirmen = {a["firma"].lower() for a in _Abos._falte(e).values() if a["status"] == "aktiv" and a.get("firma")}
         for (art, wer), c1 in sorted(je_monat.get(m1, {}).items()):
+            if wer.lower() in abofirmen:
+                continue
             c2 = vor2.get((art, wer.lower()))
             aehnlich = c2 is not None and abs(c1 - c2) <= 0.25 * max(c1, c2)   # Abo-artig, nicht Amazon-Einkaeufe
             if aehnlich and wer.lower() not in dieser:
@@ -119,6 +123,33 @@ def finanzcheck(e: list[dict], heute: date, *, rechnungen: dict | None = None) -
                                      "LUNA weiterleiten oder bestätigen, dass diesen Monat nichts kommt", "go:belege:alle",
                                      "", f"{m0}-10", h, {"pfad": "/api/finanzen/hinweis-quittieren", "schluessel": sl,
                                                           "label": "✓ Kommt diesen Monat nicht"}))
+    # 2a) Abos (Etappe 15): faellig und nicht automatisch -> buchen?; Beleg per Mail ueberfaellig; Kuendigung naht
+    from .abos import KARENZ_TAGE, AboStore, kuendigung_faellig, offene
+    for o in offene(e, heute):
+        if o["beleg"] or o["auto"]:
+            continue                                        # erledigt der 05:00-Lauf (Beleg vermerken / buchen)
+        betrag = f"{o['betrag_cent'] / 100:.2f}".replace(".", ",") + " €"
+        if o["beleg_per_mail"]:
+            frist = (date.fromisoformat(o["faellig"]) + timedelta(days=KARENZ_TAGE)).isoformat()
+            if frist <= h:
+                out.append(_todo(f"abo-beleg:{o['abo']}:{o['faellig']}", "Finanzen", "🔁",
+                                 f"{o['bezeichnung']}: Beleg zum {date.fromisoformat(o['faellig']).strftime('%d.%m.')} fehlt",
+                                 f"{o['abo']} · {betrag} · an LUNA weiterleiten, hochladen oder ohne Beleg buchen",
+                                 "abo-detail", o["abo"], frist, h,
+                                 {"pfad": f"/api/finanzen/abos/{o['abo']}/buchen", "schluessel": o["faellig"],
+                                  "label": "Ohne Beleg buchen"}))
+        else:
+            out.append(_todo(f"abo:{o['abo']}:{o['faellig']}", "Finanzen", "🔁",
+                             f"{o['bezeichnung']} fällig am {date.fromisoformat(o['faellig']).strftime('%d.%m.%Y')} – buchen?",
+                             f"{o['abo']} · {betrag}", "abo-detail", o["abo"], o["faellig"], h,
+                             {"pfad": f"/api/finanzen/abos/{o['abo']}/buchen", "schluessel": o["faellig"],
+                              "label": "✓ Buchen"}))
+    for a in AboStore._falte(e).values():
+        if (stichtag := kuendigung_faellig(a, heute)):
+            out.append(_todo(f"abo-kuendigung:{a['nummer']}:{stichtag}", "Finanzen", "✂️",
+                             f"{a['bezeichnung']}: kündigen bis {date.fromisoformat(stichtag).strftime('%d.%m.%Y')}?",
+                             f"{a['nummer']} · endet {date.fromisoformat(a['ende']).strftime('%d.%m.%Y')} · sonst verlängert "
+                             "es sich ggf.", "abo-detail", a["nummer"], stichtag, h))
     # 2b) Basiszinssatz fuer das naechste Halbjahr fehlt -> Mahnungen wuerden sonst nicht rechnen (Etappe 10)
     from .mahnungen import BASISZINS_BEKANNT_BIS
     grenze = date.fromisoformat(BASISZINS_BEKANNT_BIS)

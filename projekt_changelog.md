@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 12:57] — Claude Code
+- **Was:** Facebook-Euro-Betrag per Telegram geprueft: ER-2026-0002 um 09:30 mit 246,38 EUR gebucht und bezahlt
+  („Telegram:CEO“), Kalender-Erinnerung selbst geloescht -- Telegram-Strecke funktioniert. KUNDEN_FINANZEN Etappe 15
+  (Abos: Vorlagen `ABO-`, Turnus, automatisch buchen per Haken, Mail-Beleg-Abgleich, To-dos „faellig/Beleg fehlt/kuendigen“,
+  Reiter Finanzen -> Abos) und Etappe 16 (TKP-Kalkulation: Kontakte x TKP + Produktion, Spannen, OMR-Vergleich mit Link,
+  Community-Fit im Angebot, Rechnung/OMR per Haken, Preisliste mit Spanne; Story 600 -> 780 EUR, uebrige Preise gleich)
+  umgesetzt, noch nicht deployt. Tests `test_abos.py` (6), `test_tkp.py` (5) + 17 Gegenproben (2 zunaechst ohne Wirkung
+  wegen doppelter Sicherung -> ein Test ergaenzt), `test_katalog.py` an die TKP-Rechnung angepasst; Suite 992 gruen;
+  Browser-Test; Angebots-PDF gesichtet (Quellenzeile gekuerzt, lief ueber den Kasten).
+- **Warum:** CEO 2026-09-29 „1 Automatisch buchen als Option ... 2 Vorschlaege der OMR anzeigen ... mit Link ... 3 Nimm
+  erstmal deine Rechnung 4 an- und abwaehlen ... Du hast dann das Go fuer beide Etappen.“
+- **Betroffen:** `orchestrator/core/abos.py` (neu), `katalog.py`, `angebote.py`, `beleg_pdf.py`, `todos.py`, `buchhaltung.py`,
+  `orchestrator/channels/web/app.py`, `static/app-v2.js`, `style-v2.css`, `index-v2.html`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_abos.py`, `test_tkp.py`, `test_katalog.py`, `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`,
+  `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `docs/datenfluesse.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
 ## [2026-09-29 12:36] — Claude Code
 - **Was:** Etappen 15 (wiederkehrende Zahlungen/Abos als manuelle Belege, Turnus waehlbar) und 16 (TKP-Kalkulation in
   Preisliste und Angeboten, Regler 20–30 EUR) als Plan in `KUNDEN_FINANZEN_ROADMAP.md`; Ist-Stand der Live-Preisliste

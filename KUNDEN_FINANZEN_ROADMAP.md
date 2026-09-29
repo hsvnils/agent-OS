@@ -4,7 +4,8 @@
 - Stand: 2026-09-29
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: CEO-Go fuer Etappen 15 (Abos) und 16 (TKP) steht aus (geplant 2026-09-29). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
+- Naechster Schritt: Etappen 15 (Abos) und 16 (TKP) deployen (Go), dann CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+  Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
   Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
@@ -526,8 +527,15 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 15: Wiederkehrende Zahlungen / Abos (manuelle Belege)
 
-- Status: geplant (CEO 2026-09-29: „Moeglichkeit zur Anlage wiederkehrender Abos mit Auswahl verschiedener Zahlungsturni
-  wie Monatlich, Jaehrlich usw (Manuelle Belege)“) -- Plan, kein Auftrag; Go steht aus.
+- Status: umgesetzt (CEO-Go 2026-09-29 „Du hast dann das Go fuer beide Etappen“), Deploy + Abnahme offen
+- Entscheidung (CEO 2026-09-29): **automatisch buchen als Option** -- Haken beim Anlegen/Bearbeiten; ohne Haken To-do mit
+  „✓ Buchen“; mit „Beleg kommt per Mail“ bucht LUNA nie selbst.
+- Ergebnis: `core/abos.py` (Kreis `ABO-`, Turnus woechentlich bis jaehrlich, Monatsende-sicher, Faelligkeit genau einmal
+  erledigt: gebucht/Beleg/uebersprungen, Abgleich mit gebuchten Belegen derselben Stammdaten-Nummer ±25 %, taeglicher Lauf
+  05:00 im Bot), To-dos auf der Hauptseite („faellig – buchen?“, „Beleg fehlt“ nach 10 Tagen, „kuendigen bis …“ 14 Tage
+  vorher; die Kuendigungs-Erinnerung laeuft als To-do statt Kalendertermin), CFO-Hinweis „wiederkehrend fehlt“ schweigt fuer
+  Firmen mit Abo; API `/api/finanzen/abos*`; LUNA-OS Reiter Finanzen -> Abos (Liste, Kosten je Monat/Jahr, Formular, Detail
+  mit Buchen/Ueberspringen/Beenden) und „Als Abo anlegen“ bei erkannten Abos. Tests `test_abos.py` (6) + 9 Gegenproben.
 - Bestand: Eigenbelege `EB-` (einzeln), Stammdaten mit Vertraegen (Etappe 14), Abo-Erkennung aus Belegen, CFO-Hinweis
   „wiederkehrend fehlt“. Es gibt keine Vorlage, die regelmaessig faellig wird.
 - Ziel / Scope:
@@ -555,8 +563,16 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 16: TKP-Kalkulation in Preisliste und Angeboten
 
-- Status: geplant (CEO 2026-09-29: „TKP Preis als Basis in den Angeboten ... einstellen koennen, welchen TKP zwischen 20
-  und 30 wir nehmen wollen. Gerne Ist-Stand und OMR-Beitrag mal abgleichen.“) -- Plan, kein Auftrag; Go steht aus.
+- Status: umgesetzt (CEO-Go 2026-09-29), Deploy + Abnahme offen
+- Entscheidungen (CEO 2026-09-29): (1) OMR-Vorschlaege im System anzeigen und im Angebot per Haken als Vergleich **mit Link**
+  zeigen; (2) Spannen/Produktion „erstmal deine Rechnung“; (3) Rechnung Kontakte x TKP im Angebot an-/abwaehlbar.
+- Ergebnis: `core/katalog.py` (`OMR`, `TKP_STANDARD`, `tkp_preis`, `kalkulation_texte`; Kataloge von vorher bekommen die
+  Startwerte: Post 52.000 Kontakte, TKP 20–30, 260 EUR Produktion; Story 34.000, 20–30, 100 EUR; Reel Standalone 37.000, 30–40,
+  490 EUR; Reel-Integration 37.000, 25–35, 125 EUR -- heutige Preise bleiben beim Minimum, nur Story 600 -> 780 EUR), Angebots-
+  Positionen mit TKP (Preis rechnet der Server nach, eingefroren), Schalter `tkp_zeigen`/`omr_zeigen`, PDF-Block mit Rechnung je
+  Format, OMR-Vergleich und klickbarem Quellen-Link, Preisliste mit Spanne 20–40 EUR + OMR; LUNA-OS: Katalog-Editor mit
+  TKP-Zeile je Format (Kontakte, TKP min/max, Produktion, OMR-Vergleich, Preisspanne), Angebots-Editor mit TKP je Position,
+  „Community-Fit“ (Standard/Mitte/oben) und zwei Haken. Tests `test_tkp.py` (5) + 8 Gegenproben, Browser-Test, PDF gesichtet.
 - Abgleich (Live-Katalog 2026-09-29 vs. OMR „Influencer Preisliste 2026“, Stand 08.05.2026 -- Instagram-Post 20–30 EUR,
   Story 20–50 EUR, Reel/TikTok 25–50 EUR, YouTube-Video 60–100 EUR TKP; Preis steigt u. a. mit Nische/Zielgruppen-Fit,
   Engagement, Content-Qualitaet, Nutzungsrechten, Exklusivitaet, Saison):

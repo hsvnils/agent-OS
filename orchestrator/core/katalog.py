@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 import re
+from decimal import ROUND_HALF_UP, Decimal
 
 from .buchhaltung import Buchhaltung
 
@@ -22,8 +23,85 @@ def _p(id_, name, basis, euro, hinweis="", einheit=""):
             "einheit": einheit, "aktiv": True}
 
 
+# Etappe 16 (CEO 2026-09-29): Reichweiten-Formate rechnen Kontakte x TKP / 1.000 + Produktion (gerundet auf 10 EUR);
+# der TKP wird je Angebot zwischen Minimum und Maximum gewaehlt („Community-Fit“). OMR-Werte = Vergleich fuer den Kunden.
+OMR = {"quelle": "OMR Reviews – Influencer-Preisliste 2026", "stand": "2026-05-08",
+       "url": "https://omr.com/de/reviews/contenthub/influencer-preisliste",
+       "werte": {"ig_post": {"name": "Instagram-Post", "min": 20, "max": 30},
+                 "ig_story": {"name": "Instagram-Story", "min": 20, "max": 50},
+                 "ig_reel": {"name": "Instagram-Reel / TikTok-Video", "min": 25, "max": 50},
+                 "yt_video": {"name": "YouTube-Video", "min": 60, "max": 100}}}
+# Startwerte (Ist-Stand 2026-09-29 zurueckgerechnet; Produktion so gewaehlt, dass die heutigen Preise beim Minimum bleiben,
+# Story steigt von 600 auf 780 EUR = TKP 20 statt ca. 15) -- im Katalog-Editor aenderbar.
+TKP_STANDARD = {
+    "feed": {"kontakte": 52000, "produktion_cent": 26000, "tkp_min_cent": 2000, "tkp_max_cent": 3000, "omr": "ig_post"},
+    "story": {"kontakte": 34000, "produktion_cent": 10000, "tkp_min_cent": 2000, "tkp_max_cent": 3000, "omr": "ig_story"},
+    "reel_solo": {"kontakte": 37000, "produktion_cent": 49000, "tkp_min_cent": 3000, "tkp_max_cent": 4000, "omr": "ig_reel"},
+    "reel_int": {"kontakte": 37000, "produktion_cent": 12500, "tkp_min_cent": 2500, "tkp_max_cent": 3500, "omr": "ig_reel"},
+}
+TKP_FELDER = ("kontakte", "produktion_cent", "tkp_min_cent", "tkp_max_cent", "omr")
+
+
+def tkp_preis(kontakte: int, tkp_cent: int, produktion_cent: int) -> int:
+    """Kontakte x TKP / 1.000 + Produktion, kaufmaennisch auf volle 10 EUR gerundet (Cent)."""
+    roh = Decimal(int(kontakte)) * int(tkp_cent) / 1000 + int(produktion_cent)
+    return int((roh / 1000).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * 1000)
+
+
+def _eur(c: int) -> str:
+    return f"{c / 100:,.0f}".replace(",", ".") + " €"
+
+
+def _tsd(n: int) -> str:
+    return f"{int(n):,}".replace(",", ".")
+
+
+def kalkulation_texte(texte: dict, *, formate: list[dict], tkp_zeigen: bool = True, omr_zeigen: bool = False,
+                      spanne: bool = False) -> dict:
+    """Texte fuer „So kalkulieren wir“ aus echten Werten: TKP-Absatz, Rechnung je Format und (optional) der OMR-Vergleich
+    mit Link. `formate` = Positionen (mit tkp_cent) oder Katalog-Formate (mit Spanne) samt kontakte/produktion_cent."""
+    t = dict(texte)
+    mit = [f for f in formate if f.get("kontakte") and (f.get("tkp_cent") or f.get("tkp_min_cent"))]
+    if not mit:
+        return t
+    name = lambda f: f.get("name") or f.get("beschreibung") or ""
+    if spanne:
+        lo, hi = min(f["tkp_min_cent"] for f in mit) // 100, max(f["tkp_max_cent"] for f in mit) // 100
+        satz = (f"2. TKP: Wie klassische Medien rechnen wir mit einem Preis pro 1.000 Kontakte – je nach Format und "
+                f"Passung zu Ihrer Zielgruppe {lo}–{hi} €.")
+    else:
+        einzeln = "; ".join(dict.fromkeys(f"{name(f)} {f['tkp_cent'] // 100} €" for f in mit))
+        satz = f"2. TKP: Wie klassische Medien rechnen wir mit einem Preis pro 1.000 Kontakte. In diesem Angebot: {einzeln}."
+    absaetze = list(t.get("kalkulation") or [])
+    i = next((n for n, a in enumerate(absaetze) if a.lstrip().startswith("2. TKP")), None)
+    if i is None:
+        absaetze.append(satz)
+    else:
+        absaetze[i] = satz
+    t.pop("kalkulation_link", None)
+    if omr_zeigen:
+        benutzt = [OMR["werte"][k] for k in dict.fromkeys(f.get("omr") for f in mit) if k in OMR["werte"]]
+        benutzt = benutzt or [OMR["werte"][k] for k in ("ig_post", "ig_story", "ig_reel")]
+        absaetze.append(f"Zum Vergleich: OMR nennt für den deutschen Markt (Stand {OMR['stand'][5:7]}/{OMR['stand'][:4]}) "
+                        + ", ".join(f"{w['name']} {w['min']}–{w['max']} €" for w in benutzt) + " TKP.")
+        t["kalkulation_link"] = [f"Quelle: {OMR['quelle']}", OMR["url"]]
+    t["kalkulation"] = absaetze[:7]
+    zeilen = []
+    for f in mit if tkp_zeigen else []:
+        tkp, prod = f.get("tkp_cent") or f["tkp_min_cent"], int(f.get("produktion_cent") or 0)
+        media = int(Decimal(f["kontakte"]) * tkp / 1000)
+        zeilen.append(f"{name(f)}: {_tsd(f['kontakte'])} Kontakte × {tkp // 100} € TKP = {_eur(media)} + {_eur(prod)} "
+                      f"Produktion ≈ {_eur(tkp_preis(f['kontakte'], tkp, prod))}")
+    t["kalkulation_beispiel"] = "\n".join(dict.fromkeys(zeilen))[:1200]
+    return t
+
+
 # Datenbasis laut Generator: Instagram/Facebook/Stories = Median der letzten 90 Tage aus den Meta-Suite-Exporten;
 # Kanaele ohne Export (X, TikTok, YouTube, Twitch, WhatsApp, App) = Stand laut Media-Kit, konservativ bepreist.
+def _mit_tkp(it: dict) -> dict:
+    return it | TKP_STANDARD.get(it["id"], {})
+
+
 STANDARD = {
     "gruppen": [
         {"name": "Instagram", "farbe": "blau", "items": [
@@ -140,9 +218,24 @@ def pruefe(k: dict) -> dict:
                 raise ValueError(f"{iid}: Preis ausserhalb des Rahmens.")
             if not _txt(it.get("name"), 120):
                 raise ValueError(f"{iid}: Name fehlt.")
-            items.append({"id": iid, "name": _txt(it.get("name"), 120), "basis": _txt(it.get("basis"), 200),
-                          "hinweis": _txt(it.get("hinweis"), 300), "preis_cent": preis,
-                          "einheit": _txt(it.get("einheit"), 20), "aktiv": it.get("aktiv", True) is not False})
+            eintrag = {"id": iid, "name": _txt(it.get("name"), 120), "basis": _txt(it.get("basis"), 200),
+                       "hinweis": _txt(it.get("hinweis"), 300), "preis_cent": preis,
+                       "einheit": _txt(it.get("einheit"), 20), "aktiv": it.get("aktiv", True) is not False}
+            if it.get("kontakte") not in (None, "", 0, "0"):             # Etappe 16: Preis = Kontakte x TKP + Produktion
+                try:
+                    tk = {k: int(it.get(k) or 0) for k in TKP_FELDER if k != "omr"}
+                except (TypeError, ValueError):
+                    raise ValueError(f"{iid}: Kontakte/TKP/Produktion muessen Zahlen sein.") from None
+                if not 0 < tk["kontakte"] <= 100_000_000:
+                    raise ValueError(f"{iid}: Kontakte ausserhalb des Rahmens.")
+                if not 100 <= tk["tkp_min_cent"] <= tk["tkp_max_cent"] <= 50_000:
+                    raise ValueError(f"{iid}: TKP-Spanne ungueltig (1–500 €, Minimum ≤ Maximum).")
+                if not 0 <= tk["produktion_cent"] <= 10_000_000:
+                    raise ValueError(f"{iid}: Produktion ausserhalb des Rahmens.")
+                omr = _txt(it.get("omr"), 20)
+                eintrag |= tk | {"omr": omr if omr in OMR["werte"] else "",
+                                 "preis_cent": tkp_preis(tk["kontakte"], tk["tkp_min_cent"], tk["produktion_cent"])}
+            items.append(eintrag)
         gruppen.append({"name": name, "farbe": "rot" if g.get("farbe") == "rot" else "blau", "items": items})
     if not ids:
         raise ValueError("Katalog ohne Formate.")
@@ -178,8 +271,14 @@ class Katalog:
 
     def laden(self) -> dict:
         try:
-            return pruefe(json.loads(self.pfad.read_text(encoding="utf-8")))
+            roh = json.loads(self.pfad.read_text(encoding="utf-8"))
         except (OSError, ValueError):
+            roh = copy.deepcopy(STANDARD)
+        for g in roh.get("gruppen") or []:                   # Etappe 16: Kataloge von vorher bekommen die Startwerte
+            g["items"] = [_mit_tkp(it) if "kontakte" not in it else it for it in g.get("items") or []]
+        try:
+            return pruefe(roh)
+        except ValueError:
             return pruefe(copy.deepcopy(STANDARD))
 
     def format(self, iid: str) -> tuple[dict, str] | None:
