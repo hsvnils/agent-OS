@@ -1,0 +1,10 @@
+[Unit]
+Description=LUNA: Betriebs-Waechter (NAS, Bot, Telegram-Zustellung, Backup) -- BETRIEB_ROADMAP Etappe 3
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=luna
+WorkingDirectory=/home/luna/ki-unternehmen
+ExecStart=/home/luna/ki-unternehmen/.venv/bin/python /home/luna/ki-unternehmen/deploy/luna_waechter.py

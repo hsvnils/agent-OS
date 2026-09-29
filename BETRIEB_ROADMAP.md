@@ -5,7 +5,8 @@
 - Arbeitsbranch: `ai/antraege-aufraeumen`
 - Basiscommit: `79d6fbc`
 - Naechster Schritt: Etappe 1 live (2026-09-29) -- nach Montag 05.10. 04:00 pruefen, dass hoechstens ein Antrag kam und
-  keiner ein abgelehntes Thema wiederholt. Etappe 2 umgesetzt (Merge/Push-Go offen); danach Go fuer Etappe 3.
+  keiner ein abgelehntes Thema wiederholt. Etappe 2 live. Etappe 3 umgesetzt: NAS deployen + Neustart, dann Timer auf dem MACO470 installieren und
+  mit einem Test-Ausfall verifizieren.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -85,7 +86,17 @@ umwandeln ... und was wir mittlerweile nicht mehr brauchen“). Befund (Antrags-
 
 ### Etappe 3: Betriebs-Monitoring Ende-zu-Ende
 
-- Status: geplant (aus drei Antraegen „zentrales Infrastruktur-Monitoring (+ Alerting)“, CTO)
+- Status: umgesetzt (CEO-Go 2026-09-29 „Go fuer Etappe 3“), Deploy (NAS) + Timer-Installation (MACO470) + Verifikation offen
+- Ergebnis: `core/betriebswaechter.py` (Herzschlag, Status, Befunde, Melde-Logik: Alarm erst nach 2 Laeufen, Erinnerung je
+  24 h, Entwarnung), Bot schreibt den Herzschlag im 15-Minuten-Abruf, `GET /api/betrieb/status` in LUNA-OS,
+  `deploy/luna_waechter.py` (mit `--probe`) + `deploy/luna-waechter.service`/`.timer` (alle 15 min, Meldung direkt per
+  Telegram vom MACO470). Schwellen: Bot > 45 min stumm, Meldung > 30 min unzugestellt, Backup > 26 h oder fehlgeschlagen.
+  Tests `test_betriebswaechter.py` (6) + 5 Gegenproben; Probelauf gegen das echte System (vor Deploy): Backup erkannt
+  (ok, 12,6 h), NAS-Schnittstelle noch nicht vorhanden -> erwartet. Kosten 0 EUR.
+- Verifikation nach Deploy: `.venv/bin/python deploy/luna_waechter.py --probe` -> `Befunde: keine`; Timer aktiv
+  (`systemctl list-timers luna-waechter.timer`); Test-Ausfall: Herzschlag-Datei auf der NAS 1 h zurueckdatieren ->
+  nach zwei Laeufen genau eine Telegram-Meldung, danach „wieder in Ordnung“.
+- Herkunft: (aus drei Antraegen „zentrales Infrastruktur-Monitoring (+ Alerting)“, CTO)
 - Bestand: Betriebswacht (Cutter-Queue, Worker-Herzschlag, Reel-Nacht), Selbstwartung/Systemcheck, Sicherheits-Audit.
 - Luecke: Niemand prueft von aussen, ob die NAS-Container leben, ob Telegram-Nachrichten **ankommen** und ob das
   naechtliche Backup auf dem MACO470 gelaufen ist.
