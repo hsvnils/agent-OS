@@ -4,8 +4,8 @@
 - Stand: 2026-09-29
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 13 live (2026-09-29 11:26, 11 Abo-Belege ER-2026-0037..0047, Quittungen umgehaengt) --
-  CEO-Abnahme beim Buchen; erste echte Auto-Weiterleitung pruefen; Go fuer Etappe 14 steht aus.
+- Naechster Schritt: Etappe 14 deployen (Go), dann live `stammdaten/zuordnen` (erst Probe) und Erstbefuellung der
+  Lieferanten aus den Belegen; Etappe 13: CEO-Abnahme beim Buchen, erste echte Auto-Weiterleitung pruefen.
   Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
   gemischte Rechnung aufteilen); Deploy + Abnahme Etappe 12 (Barter-Deal einmal von Angebot bis Ware-Eingang
   durchspielen). Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
@@ -478,8 +478,20 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 14: Lieferanten-, Partner- und Dienstleister-Stammdaten mit Nummern
 
-- Status: geplant (CEO 2026-09-29: „Fuer JEDEN Lieferanten, Partner und Dienstleister ... Adressen anlegen. Inkl.
-  Nummern usw., sodass alle Belege dann immer auch unter dieser ... Nummer laufen“)
+- Status: umgesetzt (CEO-Go 2026-09-29 „Go fuer etappe 14“), Deploy + Nachzuordnung live + Erstbefuellung + Abnahme offen
+- Ergebnis: Kreise `K-`/`L-`/`P-` (`buchhaltung.KREISE_OHNE_JAHR`, `kunden.KREIS`); alte Lieferanten behalten ihren
+  K-Schluessel und bekommen eine L-Nummer (`rollennummer_sichern`, Ereignis `firma_nummer_ergaenzt`, jede Nummer findet die
+  Firma, angezeigt wird die Rollennummer); neue Felder `kundennummer_bei`, `zahlungsweg`, `rechnungs_absender`,
+  `vertraege` [{bezeichnung, nummer, notiz}], Lueckenanzeige (Adresse/Land/USt-ID, im Ausland ohne PLZ); `finde` (Absender >
+  Name > erstes Namenswort; Zahlungsdienste wie PayPal nie) und `zuordnen` (finden oder anlegen, Absender lernen). Buchen
+  eines Belegs setzt **immer** eine Nummer (gewaehlt, gefunden oder neu: Lieferant bei Ausgaben, Partner bei Einnahmen);
+  Eigenbelege brauchen eine Gegenpartei (Nummer); Altbelege per `POST /api/finanzen/stammdaten/zuordnen` (mit `probe`);
+  Journal mit Nummer + Filter `?firma=`, CSV-Spalte „Nr.“, Export-Spalten Partner_Nr/Lieferant_Nr + erweiterte
+  `kunden.csv`, alle Dateien eines Belegs im Export; Firmen-Detail mit Belegen, Summen je Jahr, Abo-Erkennung; CFO-Hinweis
+  „wiederkehrend fehlt“ je Nummer. LUNA-OS: Reiter Kunden/Lieferanten/Partner, Vertraege-Editor, Stammdaten-Auswahl beim
+  Buchen und bei Eigenbelegen (app v61). Tests `test_stammdaten.py` (7) + 8 Gegenproben, Browser-Test; Probelauf an einer
+  Kopie des Live-Kassenbuchs: L-00001..L-00005 fuer die bisherigen Lieferanten, TeamClash/Fiverr/Elgato L-00006..8, Meta
+  P-00001, Kette intakt. Offen: welche weitere Angabe der CEO mit „etwas anderes“ meinte.
 - Bestand: Firmen-Stammdaten gibt es (`core/kunden.py`, Typ kunde/lieferant/partner), aber **eine** Nummernfolge
   `K-00001` fuer alle; Lieferanten entstehen beim Buchen nur mit Namen (live: K-00003..K-00007). Eigenbelege haben nur
   Freitext „Gegenpartei“.

@@ -8,7 +8,7 @@ Grundsaetze (Rechtsrahmen siehe Roadmap):
   Korrekturen sind neue Eintraege (Storno/Korrektur mit Bezug), nie Ueberschreiben.
 - **Kein Leck-Schutz-Schwaerzen** beim Schreiben: Buchhaltungsdaten muessen unveraendert bleiben (der Leck-Schutz koennte
   Inhalte ersetzen, BF-20); in diesen Speicher gehoeren keine Geheimnisse.
-- **Nummernkreise** (CEO 2026-09-27): Firmen `K-00001`, Ansprechpartner `AP-00001`, Angebote/Auftraege/Rechnungen/
+- **Nummernkreise** (CEO 2026-09-27): Firmen `K-00001` (seit 2026-09-29 Lieferanten `L-`, Partner `P-`), Ansprechpartner `AP-00001`, Angebote/Auftraege/Rechnungen/
   Eingangsbelege `AN-/AB-/RE-/ER-JJJJ-NNNN` -- lueckenlos, nie wiederverwendet, unter Dateisperre vergeben (Bot und Web-App
   schreiben in dieselbe Datei).
 - **Belege** liegen unter `belege/<jahr>/` neben dem Log; ihr SHA-256 steht im Eintrag, `pruefe_belege()` erkennt
@@ -34,7 +34,7 @@ TZ = ZoneInfo("Europe/Berlin")   # Container laufen in UTC (BF-32): Zeitstempel 
 def jetzt() -> datetime:
     """Aktuelle deutsche Zeit mit Zeitzone -- massgeblich fuer Zeitstempel, Belegjahr und Nummernkreis-Jahr."""
     return datetime.now(TZ)
-KREISE_OHNE_JAHR = {"K": 5, "AP": 5}                      # Stammdaten: fortlaufend ueber alle Jahre
+KREISE_OHNE_JAHR = {"K": 5, "L": 5, "P": 5, "AP": 5}      # Stammdaten (K Kunde, L Lieferant, P Partner): fortlaufend
 KREISE_MIT_JAHR = ("AN", "AB", "RE", "ER", "EB", "MA")    # je Jahr neu, 4-stellig (EB = Eigenbeleg, MA = Mahnung)
 AUFBEWAHRUNG_JAHRE = {"beleg": 8, "aufzeichnung": 10, "geschaeftsbrief": 6}
 
@@ -122,7 +122,8 @@ class Buchhaltung:
                    von: str = "", pruefe=None) -> dict:
         """Nummer vergeben **und** den fachlichen Eintrag (mit `daten["nummer"]`) unter derselben Sperre schreiben --
         keine Nummer ohne Objekt. `pruefe(eintraege)` darf vorher (unter der Sperre) mit ValueError abbrechen.
-        `daten` darf eine Funktion `(eintraege) -> dict` sein -- dann entsteht der Inhalt erst unter der Sperre."""
+        `daten` darf eine Funktion `(eintraege) -> dict` sein -- dann entsteht der Inhalt erst unter der Sperre; `kreis`
+        darf eine Funktion ohne Argumente sein (nach `daten` ausgewertet)."""
         if not re.fullmatch(r"[a-z_]+", typ or ""):
             raise ValueError(f"Ungueltiger Eintragstyp: {typ!r}")
         with self._gesperrt():
@@ -130,6 +131,8 @@ class Buchhaltung:
                 pruefe(self._eintraege())
             if callable(daten):
                 daten = daten(self._eintraege())
+            if callable(kreis):                                   # Kreis erst unter der Sperre festlegen (Etappe 14)
+                kreis = kreis()
             nummer, jahr = self._naechste_nummer(kreis, jahr)
             self._anhaengen("nummer", {"kreis": kreis.upper(), "jahr": jahr, "nummer": nummer, "bezug": bezug}, von=von)
             return self._anhaengen(typ, {**daten, "nummer": nummer}, von=von)

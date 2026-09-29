@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 11:59] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 14 umgesetzt (auf `ai/kunden-finanzen`, noch nicht deployt): eigene Nummernkreise
+  Kunden `K-` / Lieferanten `L-` / Partner `P-` (alte K-Lieferanten bekommen zusaetzlich eine L-Nummer), neue Stammdaten-
+  Felder (unsere Kundennummer, Zahlungsweg, Rechnungs-Absender, Vertraege/Abos/Policen), Lueckenanzeige; jeder gebuchte
+  Beleg und jeder neue Eigenbeleg haengt an einer Nummer (waehlen, finden oder anlegen; PayPal & Co. nie als Absender
+  gelernt); Nachzuordnung der Altbelege (`POST /api/finanzen/stammdaten/zuordnen`, mit Probe); Journal mit Nummer + Filter,
+  Export-Spalten, Firmen-Detail mit Belegen/Jahressummen/Abo-Erkennung, CFO-Hinweis je Nummer; LUNA-OS app v61.
+  Tests `test_stammdaten.py` (7) + 8 Gegenproben (eine schlug zunaechst nicht an -> Test geschaerft), 2 Alt-Tests auf die
+  neuen Kreise angepasst (`test_kunden.py`, `test_finanzen.py`), Suite 981 gruen, Browser-Test; Probelauf an einer Kopie
+  des Live-Kassenbuchs (Kette intakt).
+- **Warum:** CEO 2026-09-29 „Go fuer etappe 14“ (Lieferanten-, Partner- und Dienstleister-Stammdaten mit Nummern).
+- **Betroffen:** `orchestrator/core/kunden.py`, `buchhaltung.py`, `eingangsbelege.py`, `eigenbelege.py`, `finanzen.py`,
+  `jahresabschluss.py`, `todos.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `index-v2.html`,
+  `orchestrator/tests/test_stammdaten.py`, `test_kunden.py`, `test_finanzen.py`, `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`,
+  `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `docs/datenfluesse.md`,
+  `docs/verfahrensdokumentation-buchhaltung.md`
+
 ## [2026-09-29 11:46] — Claude Code
 - **Was:** Etappe 13 live geprueft (main 1b0776c, deployt, CEO-Neustart): Abruf 11:26 legte die 11 Mailtext-Rechnungen als
   ER-2026-0037..0047 an (Werte wie im Probelauf), Apple-Developer-Mail nach `LUNA/Doppelt/2026`, 11 Mails nach

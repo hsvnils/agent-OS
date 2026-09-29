@@ -184,7 +184,7 @@ TABELLEN = {                                                 # Dateiname -> (Bes
                     [("Datum", "datum"), ("Zuordnungsjahr", "text"), ("Art", "text"), ("Beleg", "text"),
                      ("Gegenpartei", "text"), ("Text", "text"), ("Kategorie", "text"), ("Position_EUeR", "text"),
                      ("Zeile_EUeR", "text"), ("Betrag", "zahl"), ("Absetzbar", "zahl"), ("Storniert", "text"),
-                     ("Stornogrund", "text")]),
+                     ("Stornogrund", "text"), ("Partner_Nr", "text")]),
     "euer.csv": ("EUeR des Jahres je Position (Zeile/Kennzahl der Anlage EUeR)",
                  [("Zeile", "text"), ("Kennzahl", "text"), ("Position", "text"), ("Art", "text"), ("Betrag", "zahl")]),
     "anlagen.csv": ("Anlageverzeichnis mit AfA", [("Beleg", "text"), ("Gegenstand", "text"), ("Lieferant", "text"),
@@ -200,14 +200,17 @@ TABELLEN = {                                                 # Dateiname -> (Bes
                            [("Nummer", "text"), ("Art", "text"), ("Eingang", "datum"), ("Belegdatum", "datum"),
                             ("Aussteller", "text"), ("Rechnungsnummer", "text"), ("Kategorie", "text"),
                             ("Betrag", "zahl"), ("Bezahlt", "zahl"), ("Status", "text"), ("Datei", "text"),
-                            ("SHA256", "text"), ("Aufteilung", "text")]),
+                            ("SHA256", "text"), ("Aufteilung", "text"), ("Lieferant_Nr", "text")]),
     "eigenbelege.csv": ("Eigenbelege (Zahlungen ohne eigene Rechnung) im Jahr",
                         [("Nummer", "text"), ("Art", "text"), ("Datum", "datum"), ("Kategorie", "text"), ("Text", "text"),
                          ("Gegenpartei", "text"), ("Referenz", "text"), ("Betrag", "zahl"), ("Status", "text"),
-                         ("Stornogrund", "text")]),
-    "kunden.csv": ("Stammdaten Kunden und Lieferanten", [("Nummer", "text"), ("Name", "text"), ("Typ", "text"),
-                                                          ("Strasse", "text"), ("PLZ", "text"), ("Ort", "text"),
-                                                          ("Land", "text"), ("USt_IdNr", "text"), ("Aktiv", "text")]),
+                         ("Stornogrund", "text"), ("Partner_Nr", "text")]),
+    "kunden.csv": ("Stammdaten Kunden, Lieferanten und Partner", [("Nummer", "text"), ("Name", "text"), ("Typ", "text"),
+                                                                   ("Strasse", "text"), ("PLZ", "text"), ("Ort", "text"),
+                                                                   ("Land", "text"), ("USt_IdNr", "text"), ("Aktiv", "text"),
+                                                                   ("Rollennummer", "text"), ("Weitere_Nummern", "text"),
+                                                                   ("Steuernummer", "text"), ("Unsere_Kundennummer", "text"),
+                                                                   ("Vertraege", "text"), ("Zahlungsweg", "text")]),
 }
 
 
@@ -223,7 +226,7 @@ def export_zip(bh: Buchhaltung, kunden, jahr: int, firmendaten: dict) -> bytes:
     tabellen["journal.csv"] = [
         [_d(z["datum"]), z["jahr"], "Einnahme" if z["art"] == "einnahme" else "Ausgabe", z["bezug"], z["gegenpartei"],
          z["text"], z["kategorie"], z["position"], zeile(jahr, z["kategorie"])["zeile"], _b(z["betrag_cent"]),
-         _b(z["abziehbar_cent"]), "ja" if z["storniert"] else "", z.get("storno_grund", "")]
+         _b(z["abziehbar_cent"]), "ja" if z["storniert"] else "", z.get("storno_grund", ""), z.get("firma_nr", "")]
         for z in f.journal(jahr)]
     ez = euer_zeilen(f, jahr)
     tabellen["euer.csv"] = [[z["zeile"], z["kz"], z["amtlich"] or z["position"], z["art"], _b(z["betrag_cent"])]
@@ -253,14 +256,20 @@ def export_zip(bh: Buchhaltung, kunden, jahr: int, firmendaten: dict) -> bytes:
              _b(fe.get("betrag_cent")) if fe else "", _b(x.get("bezahlt_cent", 0)), x["status"],
              (x.get("belege") or [{}])[0].get("pfad", ""), (x.get("belege") or [{}])[0].get("sha256", ""),
              " | ".join(f"{t['text']}: {_b(t['betrag_cent'])} ({'privat' if t['kategorie'] == 'privat' else _kat_name(t['kategorie'])})"
-                        for t in fe.get("aufteilung") or [])])
+                        for t in fe.get("aufteilung") or []),
+             (firmen.get(fe.get("lieferant_firma")) or {}).get("anzeige", fe.get("lieferant_firma", ""))])
     tabellen["eigenbelege.csv"] = [
         [x["nummer"], x["art"], _d(x["datum"]), _kat_name(x["kategorie"]), x["text"], x.get("gegenpartei", ""),
-         x.get("referenz", ""), _b(x["betrag_cent"]), x["status"], x.get("storno_grund", "")]
+         x.get("referenz", ""), _b(x["betrag_cent"]), x["status"], x.get("storno_grund", ""),
+         (firmen.get(x.get("firma")) or {}).get("anzeige", x.get("firma", ""))]
         for x in sorted(EigenbelegStore._falte(e).values(), key=lambda x: x["nummer"])
         if str(x.get("zuordnung_jahr") or x["datum"][:4]) == str(jahr)]
     tabellen["kunden.csv"] = [[x["nummer"], x.get("name", ""), x.get("typ", ""), x.get("strasse", ""), x.get("plz", ""),
-                               x.get("ort", ""), x.get("land", ""), x.get("ustid", ""), "ja" if x.get("aktiv") else "nein"]
+                               x.get("ort", ""), x.get("land", ""), x.get("ustid", ""), "ja" if x.get("aktiv") else "nein",
+                               x.get("anzeige", ""), " ".join(n for n in x.get("nummern", []) if n != x.get("anzeige")),
+                               x.get("steuernummer", ""), x.get("kundennummer_bei", ""),
+                               " | ".join(f"{v['bezeichnung']}: {v['nummer']}" for v in x.get("vertraege") or []),
+                               x.get("zahlungsweg", "")]
                               for x in firmen.values()]
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
@@ -281,6 +290,8 @@ def export_zip(bh: Buchhaltung, kunden, jahr: int, firmendaten: dict) -> bytes:
         # z. B. Dezember-Rechnung im Januar erhalten) + alle Dateien, die im Jahr abgelegt wurden
         pfade = {r[11] for r in tabellen["ausgangsrechnungen.csv"] if r[11]}
         pfade |= {r[10] for r in tabellen["eingangsbelege.csv"] if r[10]}
+        nummern = {r[0] for r in tabellen["eingangsbelege.csv"]}           # auch Original-Mail/Quittung (Etappe 13)
+        pfade |= {b["pfad"] for x in EingangStore._falte(e).values() if x["nummer"] in nummern for b in x.get("belege") or []}
         pfade |= {n["pfad"] for r in rechnungen.values() for v in r.get("ware_vorgaenge") or []
                   if str(v.get("datum", ""))[:4] == str(jahr) for n in v.get("nachweise") or []}
         pfade |= {b["daten"]["pfad"] for b in bh.eintraege("beleg") if str(b["daten"].get("jahr")) == str(jahr)}

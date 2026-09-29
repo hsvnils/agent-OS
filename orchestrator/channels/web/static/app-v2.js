@@ -549,7 +549,16 @@ async function crmFirma(firma) {
 const KUNDE_TYP = { kunde: "Kunde", lieferant: "Lieferant", partner: "Partner" };
 const FIRMA_FORM = [["name", "Firmenname *"], ["typ", "Typ", "typ"], ["strasse", "Straße und Hausnummer"], ["plz", "PLZ"], ["ort", "Ort"], ["land", "Land"],
   ["rechnungsmail", "Rechnungs-Mail", "email"], ["telefon", "Telefon"], ["website", "Website"], ["ustid", "USt-IdNr."], ["steuernummer", "Steuernummer"],
-  ["zahlungsziel_tage", "Zahlungsziel (Tage)", "number"], ["verbraucher", "Privatperson (Verbraucher)?", "janein"], ["notiz", "Notiz", "textarea"]];
+  ["zahlungsziel_tage", "Zahlungsziel (Tage)", "number"], ["verbraucher", "Privatperson (Verbraucher)?", "janein"],
+  ["kundennummer_bei", "Unsere Kundennummer dort"], ["zahlungsweg", "Zahlungsweg (z. B. PayPal, Mastercard •••• 1364, Lastschrift)"],
+  ["rechnungs_absender", "Rechnungs-Absender (Mail oder Domain, mit Komma getrennt)"], ["vertraege", "Verträge / Abos / Policen", "vertraege"], ["notiz", "Notiz", "textarea"]];
+// Etappe 14: Lieferanten L-, Partner P-, Kunden K- — die Rollennummer steht vorne, frühere Nummern bleiben gültig
+const firmaNr = (x) => x.anzeige || x.nummer;
+const firmaOption = (x) => `${firmaNr(x)} · ${x.name}`;
+const firmaAusText = (t) => { const m = /^\s*([KLP]-\d{5})\s*·\s*(.*)$/.exec(t || ""); return m ? { firma: m[1], name: m[2].trim() } : { firma: "", name: (t || "").trim() }; };
+function vertragZeile(v = {}) {
+  return `<div class="v2-an-zeile v2-vertrag"><input class="v2-inp vt-bez" placeholder="Bezeichnung (z. B. AppleCare iPhone)" value="${esc(v.bezeichnung || "")}"><input class="v2-inp vt-nr" placeholder="Vertrags-/Policen-Nr." value="${esc(v.nummer || "")}"><input class="v2-inp vt-notiz" placeholder="Notiz (Laufzeit, Kündigung …)" value="${esc(v.notiz || "")}"></div>`;
+}
 const AP_FORM = [["vorname", "Vorname"], ["nachname", "Nachname"], ["rolle", "Rolle / Position"], ["mail", "Mail", "email"], ["telefon", "Telefon"], ["notiz", "Notiz", "textarea"]];
 const FELD_LBL = Object.fromEntries([...FIRMA_FORM, ...AP_FORM].map(([k, l]) => [k, l.replace(" *", "")]).concat([["aktiv", "Aktiv"], ["collab", "Collab zugeordnet"], ["collab_entfernt", "Collab gelöst"], ["firma", "Firma"]]));
 let KUNDEN = { firmen: [], collab_ohne_nummer: [] }, KUNDEN_SUCHE = "", _kundenTimer = null;
@@ -560,30 +569,42 @@ function formFelder(prefix, spec, werte = {}) {
     let inp;
     if (art === "typ") inp = `<select id="${prefix}-${k}">${Object.entries(KUNDE_TYP).map(([id, l]) => `<option value="${id}" ${(v || "kunde") === id ? "selected" : ""}>${l}</option>`).join("")}</select>`;
     else if (art === "textarea") inp = `<textarea id="${prefix}-${k}" rows="3" class="v2-inp">${esc(v)}</textarea>`;
+    else if (art === "vertraege") inp = `<div id="${prefix}-${k}">${(Array.isArray(werte[k]) && werte[k].length ? werte[k] : [{}]).map(vertragZeile).join("")}</div><button class="v2-btn sm" type="button" data-act="vertrag-neu" data-id="${prefix}-${k}">+ Vertrag</button>`;
     else if (art === "janein") inp = `<select id="${prefix}-${k}"><option value="nein">nein — Firma / Unternehmer</option><option value="ja" ${v === "true" || v === "ja" ? "selected" : ""}>ja — Privatperson</option></select>`;
     else inp = `<input id="${prefix}-${k}" type="${art || "text"}" value="${esc(v)}" ${art === "number" ? 'min="0" max="365"' : ""}>`;
     return `<label class="v2-feld"><small>${esc(lbl)}</small>${inp}</label>`;
   }).join("");
 }
-function formWerte(prefix, spec) { const o = {}; spec.forEach(([k]) => { const e = $(`#${prefix}-${k}`); if (e) o[k] = e.value.trim(); }); return o; }
+function formWerte(prefix, spec) {
+  const o = {};
+  spec.forEach(([k, , art]) => {
+    const e = $(`#${prefix}-${k}`); if (!e) return;
+    if (art === "vertraege") o[k] = [...e.querySelectorAll(".v2-vertrag")].map(z => ({ bezeichnung: z.querySelector(".vt-bez").value.trim(), nummer: z.querySelector(".vt-nr").value.trim(), notiz: z.querySelector(".vt-notiz").value.trim() })).filter(v => v.bezeichnung || v.nummer);
+    else o[k] = e.value.trim();
+  });
+  return o;
+}
 function kundenMsg(id, text, ok) { const m = $("#" + id); if (m) { m.textContent = text; m.className = "v2-msg " + (ok ? "ok" : "err"); } }
 
 RENDER.kunden = renderKunden;
 async function renderKunden() {
   const sub = SUBTAB.kunden || "firmen";
+  const ROLLE = { kunden: "kunde", lieferanten: "lieferant", partner: "partner" };
   KUNDEN = await jget("/api/crm/kunden" + (KUNDEN_SUCHE ? "?suche=" + encodeURIComponent(KUNDEN_SUCHE) : "")) || { firmen: [], collab_ohne_nummer: [] };
-  const f = KUNDEN.firmen || [], c = KUNDEN.collab_ohne_nummer || [];
+  const alle = KUNDEN.firmen || [], c = KUNDEN.collab_ohne_nummer || [];
+  const f = ROLLE[sub] ? alle.filter(x => (x.typ || "kunde") === ROLLE[sub]) : alle;
   let body;
   if (sub === "collab") {
     body = tile("Collab-Firmen ohne Kundennummer", c.map(x => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(x.status || "")}</span><div class="grow"><b>${esc(x.firma)}</b><small>${esc(kanal[x.quelle] || x.quelle || "")} · ${x.nachrichten || 0} Nachr.${x.letzter_kontakt ? " · " + esc(zeitKurz(x.letzter_kontakt)) : ""}</small></div>
       <button class="v2-btn" data-act="kunde-neu" data-id="${esc(x.firma)}">+ Als Firma anlegen</button><button class="v2-btn" data-act="kunde-collab-zu" data-id="${esc(x.firma)}">Zuordnen…</button></div>`).join("") || emptyRow("Alle Collab-Firmen haben eine Kundennummer."), "w12");
   } else {
-    const rows = f.map(x => `<tr class="klick" data-act="kunde-detail" data-id="${esc(x.nummer)}"><td><b>${esc(x.nummer)}</b></td><td>${esc(x.name)}${x.aktiv ? "" : ` <span class="v2-badge neutral">inaktiv</span>`}</td><td>${esc(KUNDE_TYP[x.typ] || x.typ || "")}</td><td>${esc([x.plz, x.ort].filter(Boolean).join(" "))}</td><td>${x.ansprechpartner || 0}</td><td>${(x.collab || []).length ? "🤝" : ""}</td></tr>`).join("");
+    const rows = f.map(x => `<tr class="klick" data-act="kunde-detail" data-id="${esc(x.nummer)}"><td><b>${esc(firmaNr(x))}</b>${firmaNr(x) !== x.nummer ? `<br><small class="v2-sub">früher ${esc(x.nummer)}</small>` : ""}</td><td>${esc(x.name)}${x.aktiv ? "" : ` <span class="v2-badge neutral">inaktiv</span>`}${(x.luecken || []).length && x.typ !== "kunde" ? ` <span class="v2-badge wartet" title="fehlt: ${esc(x.luecken.join(", "))}">⚠️ ${esc(x.luecken.join(", "))} fehlt</span>` : ""}</td><td>${esc(KUNDE_TYP[x.typ] || x.typ || "")}</td><td>${esc([x.plz, x.ort].filter(Boolean).join(" "))}</td><td>${x.ansprechpartner || 0}</td><td>${(x.collab || []).length ? "🤝" : ""}</td></tr>`).join("");
     body = `${kpiTile("Firmen", String(f.filter(x => x.aktiv).length), null, "aktiv")}${kpiTile("Collab ohne Nummer", String(c.length), null, "noch zuzuordnen")}
       ${tile(KUNDEN_SUCHE ? `Treffer für „${KUNDEN_SUCHE}"` : "Firmen", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Firma</th><th>Typ</th><th>Ort</th><th>Ansprechp.</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow(KUNDEN_SUCHE ? "Keine Treffer." : "Noch keine Firma angelegt — oben rechts „+ Neue Firma“."), "w12")}`;
   }
   const actions = `<input id="kunden-suche" class="v2-inp" placeholder="Suchen (Name, Nr., Ort, Ansprechpartner)…" value="${esc(KUNDEN_SUCHE)}" style="width:260px"><button class="v2-btn pri" data-act="kunde-neu">+ Neue Firma</button>`;
-  $("#v2-app").innerHTML = secHead("Kunden", actions) + tabs("kunden", [["firmen", "Firmen"], ["collab", `Collab ohne Nummer (${c.length})`]]) + `<div class="v2-grid">${body}</div>`;
+  const n = (t) => alle.filter(x => (x.typ || "kunde") === t).length;
+  $("#v2-app").innerHTML = secHead("Kunden & Lieferanten", actions) + tabs("kunden", [["firmen", `Alle (${alle.length})`], ["kunden", `Kunden (${n("kunde")})`], ["lieferanten", `Lieferanten (${n("lieferant")})`], ["partner", `Partner (${n("partner")})`], ["collab", `Collab ohne Nummer (${c.length})`]]) + `<div class="v2-grid">${body}</div>`;
   const s = $("#kunden-suche");
   if (s) {
     s.addEventListener("input", () => { clearTimeout(_kundenTimer); _kundenTimer = setTimeout(() => { KUNDEN_SUCHE = s.value.trim(); renderKunden().then(() => { const n = $("#kunden-suche"); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }); }, 300); });
@@ -607,8 +628,16 @@ async function kundeDetail(nr, meldung) {
   const f = d && d.firma; if (!f) return openModal(nr, emptyRow("Firma nicht gefunden."));
   const aps = (f.ansprechpartner_liste || []).map(a => `<div class="v2-list-row"><span class="v2-badge ${a.aktiv ? "aktiv" : "neutral"}">${esc(a.nummer)}</span><div class="grow"><b>${esc([a.vorname, a.nachname].filter(Boolean).join(" "))}</b><small>${esc([a.rolle, a.mail, a.telefon].filter(Boolean).join(" · "))}</small></div><button class="v2-btn" data-act="kunde-ap-edit" data-id="${esc(a.nummer)}" data-val="${esc(f.nummer)}">Bearbeiten</button></div>`).join("") || emptyRow("Noch kein Ansprechpartner.");
   const collab = (f.collab || []).map(c => `<div class="v2-list-row"><span>🤝</span><div class="grow"><b>${esc(c)}</b></div><button class="v2-btn" data-act="kunde-collab-los" data-id="${esc(f.nummer)}" data-val="${esc(c)}">Lösen</button></div>`).join("") || emptyRow("Keine Collab-Firma verknüpft.");
-  const verlauf = (f.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc({ firma_angelegt: "Angelegt", firma_geaendert: "Geändert", collab_zugeordnet: "Collab verknüpft", collab_geloest: "Collab gelöst" }[v.typ] || v.typ)}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")} · ${esc(Object.entries(v.felder || {}).filter(([k, w]) => w !== "" && w != null).map(([k, w]) => `${FELD_LBL[k] || k}: ${typeof w === "boolean" ? (w ? "ja" : "nein") : w}`).join(" · "))}</small></div></div>`).join("");
-  openModal(`${f.nummer} · ${f.name}`, `${meldung ? `<div class="v2-msg ok">${esc(meldung)}</div>` : ""}
+  const verlauf = (f.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc({ firma_angelegt: "Angelegt", firma_geaendert: "Geändert", firma_nummer_ergaenzt: "Nummer ergänzt", collab_zugeordnet: "Collab verknüpft", collab_geloest: "Collab gelöst" }[v.typ] || v.typ)}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")} · ${esc(Object.entries(v.felder || {}).filter(([k, w]) => w !== "" && w != null).map(([k, w]) => `${FELD_LBL[k] || (k === "nummer_ergaenzt" ? "Nummer" : k)}: ${typeof w === "boolean" ? (w ? "ja" : "nein") : Array.isArray(w) ? w.map(v => [v.bezeichnung, v.nummer].filter(Boolean).join(" ")).join(", ") : w}`).join(" · "))}</small></div></div>`).join("");
+  const bu = (d && d.buchungen) || { belege: [], je_jahr: {}, abo: {} };
+  const buHtml = `${bu.abo && bu.abo.monatlich_cent ? `<div class="v2-msg">🔁 Abo erkannt: ca. <b>${esc(cent2eur(bu.abo.monatlich_cent))}</b> im Monat (${esc(bu.abo.monate.map(m => m.slice(5) + "/" + m.slice(0, 4)).join(", "))})</div>` : ""}
+    ${Object.entries(bu.je_jahr || {}).map(([j, x]) => `<div class="v2-kv"><span>${esc(j)}</span><b>${x.ausgaben_cent ? `bezahlt ${esc(cent2eur(x.ausgaben_cent))}` : ""}${x.ausgaben_cent && x.einnahmen_cent ? " · " : ""}${x.einnahmen_cent ? `erhalten ${esc(cent2eur(x.einnahmen_cent))}` : ""}</b></div>`).join("")}
+    ${(bu.belege || []).map(b => `<div class="v2-list-row klick" data-act="${b.quelle === "eigenbeleg" ? "eb-detail" : "bl-detail"}" data-id="${esc(b.nummer)}"><span class="v2-badge ${b.status === "bezahlt" || b.status === "gebucht" ? "ok" : "neutral"}">${esc(b.status)}</span><div class="grow"><b>${esc(b.nummer)} · ${esc(cent2eur(b.betrag_cent))}</b><small>${esc(datumDe(b.datum))} · ${esc(b.text || "")}</small></div></div>`).join("") || emptyRow("Noch keine Belege unter dieser Nummer.")}`;
+  const nummern = (f.nummern || [f.nummer]).filter(x => x !== firmaNr(f));
+  openModal(`${firmaNr(f)} · ${f.name}`, `${meldung ? `<div class="v2-msg ok">${esc(meldung)}</div>` : ""}
+    ${nummern.length ? `<div class="v2-sub">Auch gültig: ${esc(nummern.join(", "))}</div>` : ""}
+    ${(f.luecken || []).length && f.typ !== "kunde" ? `<div class="v2-msg err">Es fehlt noch: ${esc(f.luecken.join(", "))} – steht meist auf der Rechnung.</div>` : ""}
+    ${f.typ !== "kunde" || (bu.belege || []).length ? `<h3>Belege & Zahlungen</h3>${buHtml}` : ""}
     <h3>Stammdaten</h3><div class="v2-form">${formFelder("ke", FIRMA_FORM, f)}
     <label class="v2-modlbl"><input type="checkbox" id="ke-aktiv" ${f.aktiv ? "checked" : ""}> Aktiv (inaktive Firmen bleiben erhalten, nur ausgeblendet)</label>
     <button class="v2-btn pri" data-act="kunde-speichern" data-id="${esc(f.nummer)}">Änderungen speichern</button><div id="ke-msg" class="v2-msg"></div></div>
@@ -622,7 +651,7 @@ async function kundeSpeichern(nr) {
   const r = await jpost("/api/crm/kunden/" + encodeURIComponent(nr), { firma });
   if (!r || !r.ok) return kundenMsg("ke-msg", (r && r.hinweis) || "Fehler.", false);
   const n = Object.keys(r.geaendert || {}).length;
-  renderKunden(); return kundeDetail(nr, n ? `${n} Feld(er) geändert.` : "Keine Änderung.");
+  renderKunden(); return kundeDetail(nr, (n ? `${n} Feld(er) geändert.` : "Keine Änderung.") + (r.rollennummer ? ` Nummer für die neue Rolle: ${r.rollennummer}.` : ""));
 }
 function kundeApForm(firmaNr, ap) {
   const box = $("#kap-box"); if (!box) return;
@@ -1376,7 +1405,9 @@ async function blDetail(nr, meldung, fehler) {
   const quelle = { "e-rechnung": "E-Rechnung (exakt)", regeln: "Schnell-Erkennung", backoffice: "LUNA-Backoffice (lokale KI)" }[v.quelle] || v.quelle || "";
   const kiLaeuft = !f && v.quelle !== "backoffice" && v.quelle !== "e-rechnung" && ["neu", "in_arbeit"].includes(d.ki_status);
   const katOpt = Object.entries(ein ? BL_KAT_EIN : BL_KAT).map(([k, l]) => `<option value="${esc(k)}" ${w("kategorie") === k ? "selected" : ""}>${esc(l)}</option>`).join("");
-  const lief = (d.lieferanten || []).map(l => `<option value="${esc(l.name)}">`).join("");
+  const lief = (d.lieferanten || []).map(l => `<option value="${esc(firmaOption(l))}">`).join("");
+  const fv = d.firma_vorschlag || {};
+  const liefWert = fv.nummer ? firmaOption(fv) : w("lieferant");
   const gesperrt = b.status === "verworfen" ? "disabled" : "";
   const lbl = { eingang_angelegt: "Eingegangen", eingang_vorschlag: "Vorschlag", eingang_gebucht: "Gebucht", eingang_bezahlt: "Zahlung", eingang_zahlung_storniert: "Zahlung storniert", eingang_verworfen: "Verworfen" };
   const rest = f ? f.betrag_cent - (b.bezahlt_cent || 0) : 0;
@@ -1396,8 +1427,8 @@ async function blDetail(nr, meldung, fehler) {
       ${!f && v.waehrung && v.waehrung !== "EUR" ? `<div class="v2-msg err" style="margin:8px 0">Betrag in ${esc(v.waehrung)}: ${esc(v.betrag_fremd || "?")}. Bitte den <b>Euro-Betrag</b> eintragen, der auf dem Konto angekommen bzw. abgebucht worden ist (Kontoauszug) — nur der zählt in der EÜR.</div>` : ""}
       <h3>${f ? "Gebucht (korrigierbar)" : "Prüfen & buchen"}</h3><div class="v2-form">
         <label class="v2-feld"><small>Art *</small><select id="bl-art" ${gesperrt}><option value="ausgabe" ${ein ? "" : "selected"}>Ausgabe — wir zahlen (Eingangsrechnung)</option><option value="einnahme" ${ein ? "selected" : ""}>Einnahme — wir bekommen Geld (Gutschrift, z. B. Facebook-Monetarisierung)</option></select></label>
-        <label class="v2-feld"><small id="bl-lief-lbl">${ein ? "Von (Aussteller der Gutschrift) *" : "Lieferant *"}</small><input id="bl-lieferant" list="bl-lieferanten" value="${esc(w("lieferant"))}" ${gesperrt}><datalist id="bl-lieferanten">${lief}</datalist></label>
-        <label class="v2-modlbl"><input type="checkbox" id="bl-lief-anlegen" ${f && f.lieferant_firma ? "" : "checked"} ${gesperrt}> im Kundenstamm als Lieferant führen</label>
+        <label class="v2-feld"><small id="bl-lief-lbl">${ein ? "Von (Aussteller der Gutschrift) *" : "Lieferant *"}</small><input id="bl-lieferant" list="bl-lieferanten" value="${esc(liefWert)}" ${gesperrt}><datalist id="bl-lieferanten">${lief}</datalist>
+          <small class="v2-sub">${fv.nummer ? `Stammdaten: <b>${esc(fv.anzeige)}</b>${f ? "" : " (vorgeschlagen)"} – anderen aus der Liste wählen oder Namen tippen` : "Kein Treffer in den Stammdaten – beim Buchen wird der Lieferant mit eigener Nummer angelegt"}</small></label>
         <div class="v2-an-zeile"><label class="v2-feld"><small>Rechnungsnummer</small><input id="bl-nr" value="${esc(w("rechnungsnummer"))}" ${gesperrt}></label>
           <label class="v2-feld"><small>Rechnungsdatum *</small><input id="bl-datum" type="date" value="${esc(w("rechnungsdatum"))}" ${gesperrt}></label>
           <label class="v2-feld"><small>Fällig am</small><input id="bl-faellig" type="date" value="${esc(w("faellig_am"))}" ${gesperrt}></label></div>
@@ -1469,11 +1500,12 @@ function blBezahltForm(nr) {
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 async function blBuchen(nr, trotz) {
-  const felder = { lieferant: $("#bl-lieferant").value.trim(), rechnungsnummer: $("#bl-nr").value.trim(), rechnungsdatum: $("#bl-datum").value, faellig_am: $("#bl-faellig").value,
+  const lf = firmaAusText($("#bl-lieferant").value);
+  const felder = { lieferant: lf.name, lieferant_firma: lf.firma, rechnungsnummer: $("#bl-nr").value.trim(), rechnungsdatum: $("#bl-datum").value, faellig_am: $("#bl-faellig").value,
     betrag: $("#bl-betrag").value.trim(), kategorie: $("#bl-kat").value, leistung: $("#bl-leistung").value.trim(), notiz: $("#bl-notiz").value.trim(), trotz_doppelt: !!trotz, art: $("#bl-art").value,
     nutzungsdauer_jahre: $("#bl-kat").value === "anlage" ? $("#bl-nd").value : "" };
   if (blPosAktiv()) felder.aufteilung = blPosWerte().filter(p => p.text || p.betrag);
-  const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(nr)}/buchen`, { felder, lieferant_anlegen: $("#bl-lief-anlegen").checked });
+  const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(nr)}/buchen`, { felder });
   if (!r) return kundenMsg("bl-form-msg", "Keine Verbindung zum Server.", false);
   if (!r.ok && /schon als/.test(r.hinweis || "") && confirm(r.hinweis + "\n\nTrotzdem buchen?")) return blBuchen(nr, true);
   if (!r.ok) return kundenMsg("bl-form-msg", r.hinweis || "Fehler.", false);
@@ -1577,7 +1609,7 @@ async function finDrill(query) {
     + `<small class="v2-sub">Zeile anklicken: Rechnung/Beleg öffnen. Stornierte Zahlungen sind durchgestrichen und zählen nicht; Abschreibung erscheint monatlich.</small>`, true);
 }
 function finTabelle(zeilen, summe) {
-  const rows = zeilen.map(z => `<tr class="klick${z.storniert ? " v2-fin-storno" : ""}" data-act="${String(z.bezug).startsWith("RE-") ? "re-detail" : FIN_ACT[z.quelle]}" data-id="${esc(z.bezug)}"><td>${z.quelle === "afa" ? esc(z.datum.slice(5, 7) + "/" + z.datum.slice(0, 4)) : esc(datumDe(z.datum))}${z.zuordnung_jahr ? ` <small title="10-Tage-Regel">→ ${esc(z.zuordnung_jahr)}</small>` : ""}</td><td><b>${esc(z.bezug)}</b></td><td>${esc(z.gegenpartei || "")}</td><td>${esc(z.text || "")}${z.storniert ? ` <span class="v2-badge err">storniert</span>` : ""}</td><td><small>${esc(z.position)}</small></td>
+  const rows = zeilen.map(z => `<tr class="klick${z.storniert ? " v2-fin-storno" : ""}" data-act="${String(z.bezug).startsWith("RE-") ? "re-detail" : FIN_ACT[z.quelle]}" data-id="${esc(z.bezug)}"><td>${z.quelle === "afa" ? esc(z.datum.slice(5, 7) + "/" + z.datum.slice(0, 4)) : esc(datumDe(z.datum))}${z.zuordnung_jahr ? ` <small title="10-Tage-Regel">→ ${esc(z.zuordnung_jahr)}</small>` : ""}</td><td><b>${esc(z.bezug)}</b></td><td>${z.firma_nr ? `<small class="v2-sub">${esc(z.firma_nr)}</small> ` : ""}${esc(z.gegenpartei || "")}</td><td>${esc(z.text || "")}${z.storniert ? ` <span class="v2-badge err">storniert</span>` : ""}</td><td><small>${esc(z.position)}</small></td>
     <td style="text-align:right;color:var(--v2-green)">${z.art === "einnahme" ? esc(cent2eur(z.betrag_cent)) : ""}</td><td style="text-align:right;color:var(--v2-red)">${z.art === "ausgabe" && z.quelle !== "afa" ? esc(cent2eur(z.betrag_cent)) : ""}</td>${summe ? `<td style="text-align:right">${z.art === "ausgabe" && !z.storniert ? esc(cent2eur(z.abziehbar_cent)) : ""}</td>` : ""}</tr>`).join("");
   const gueltig = zeilen.filter(z => !z.storniert), s = (a, feld) => gueltig.filter(z => z.art === a).reduce((x, z) => x + z[feld], 0);
   const fuss = summe ? `<tfoot><tr><td></td><td></td><td></td><td><b>Summe</b></td><td></td><td style="text-align:right"><b>${esc(cent2eur(s("einnahme", "betrag_cent")))}</b></td><td style="text-align:right"><b>${esc(cent2eur(s("ausgabe", "betrag_cent")))}</b></td><td style="text-align:right"><b>${esc(cent2eur(s("ausgabe", "abziehbar_cent")))}</b></td></tr></tfoot>` : "";
@@ -1634,7 +1666,9 @@ function zehnTageVerdrahten(datumId, boxId) {   // 10-Tage-Regel: Auswahl nur zw
   el.addEventListener("change", upd); upd();
 }
 const zehnTageWert = (boxId) => { const s = $("#" + boxId + "-jahr"); return s ? s.value : ""; };
+let EB_FIRMEN = [];
 async function ebNeu(art) {
+  EB_FIRMEN = (((await jget("/api/crm/kunden")) || {}).firmen || []).filter(x => x.aktiv);
   if (!FIN_KAT) FIN_KAT = ((await jget("/api/finanzen/eigenbelege")) || {}).kategorien || { einnahme: {}, ausgabe: {} };
   const kat = Object.entries(FIN_KAT[art] || {});
   openModal(art === "einnahme" ? "Einnahme ohne eigene Rechnung" : "Ausgabe ohne Beleg", `<div class="v2-form" style="max-width:620px">
@@ -1643,7 +1677,7 @@ async function ebNeu(art) {
       <label class="v2-feld"><small>Betrag (€) *</small><input id="eb-betrag" inputmode="decimal" placeholder="z. B. 250,50"></label>
       <label class="v2-feld"><small>Kategorie *</small><select id="eb-kat">${kat.length > 1 ? `<option value="">— wählen —</option>` : ""}${kat.map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join("")}</select></label></div>
     <label class="v2-feld"><small>Wofür? *</small><input id="eb-text" placeholder="${art === "einnahme" ? "z. B. YouTube-Auszahlung September" : "z. B. Kontoführungsgebühr Oktober"}"></label>
-    <div class="v2-an-zeile"><label class="v2-feld"><small>${art === "einnahme" ? "Von wem" : "An wen"}</small><input id="eb-gegen" placeholder="z. B. Google Ireland Ltd."></label>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>${art === "einnahme" ? "Von wem" : "An wen"}</small><input id="eb-gegen" list="eb-firmen" placeholder="Firma wählen oder Namen tippen (wird mit eigener Nummer angelegt)"><datalist id="eb-firmen">${EB_FIRMEN.map(x => `<option value="${esc(firmaOption(x))}">`).join("")}</datalist></label>
       <label class="v2-feld"><small>Referenz (Kontoauszug, Transaktions-ID)</small><input id="eb-ref"></label></div>
     <div id="eb-zuord"></div>
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="eb-speichern" data-val="${esc(art)}">✔ Buchen</button><button class="v2-btn" data-modal-close>Abbrechen</button></div><div id="eb-msg" class="v2-msg"></div></div>`, false);
@@ -1651,7 +1685,7 @@ async function ebNeu(art) {
 }
 async function ebSpeichern(art) {
   const buchung = { art, datum: $("#eb-datum").value, betrag: $("#eb-betrag").value.trim(), kategorie: $("#eb-kat").value, text: $("#eb-text").value.trim(),
-    gegenpartei: $("#eb-gegen").value.trim(), referenz: $("#eb-ref").value.trim(), zuordnung_jahr: zehnTageWert("eb-zuord") };
+    gegenpartei: firmaAusText($("#eb-gegen").value).name, firma: firmaAusText($("#eb-gegen").value).firma, referenz: $("#eb-ref").value.trim(), zuordnung_jahr: zehnTageWert("eb-zuord") };
   const r = await jpost("/api/finanzen/eigenbelege", { buchung });
   if (!r || !r.ok) return kundenMsg("eb-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
   closeModal(); FIN_JAHR = Number(buchung.zuordnung_jahr || buchung.datum.slice(0, 4)) || FIN_JAHR;
@@ -2141,6 +2175,7 @@ async function handleAct(act, el) {
       if (AKTIV === "angebote") renderAngebote();
       return anDetail(id, r && r.ok ? [val === "angenommen" ? "Angenommen." : "Abgelehnt.", ...(r.hinweise || [])].join("\n") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
+    case "vertrag-neu": { const box = $("#" + id); if (box) box.insertAdjacentHTML("beforeend", vertragZeile()); return; }
     case "kunde-neu": return kundeNeu(id || "");
     case "kunde-anlegen": return kundeAnlegen(id || "");
     case "kunde-detail": return kundeDetail(id);

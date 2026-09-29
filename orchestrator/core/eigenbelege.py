@@ -62,6 +62,8 @@ class EigenbelegStore:
             t, d = e["typ"], e["daten"]
             if t == "eigenbeleg_angelegt":
                 out[d["nummer"]] = dict(d) | {"status": "gebucht", "angelegt": e["ts"], "von": e.get("von", "")}
+            elif t == "eigenbeleg_firma_verknuepft" and d.get("nummer") in out:     # Etappe 14: Altbeleg -> Nummer
+                out[d["nummer"]]["firma"] = d["firma"]
             elif t == "eigenbeleg_storniert" and d.get("nummer") in out:
                 out[d["nummer"]] |= {"status": "storniert", "storno_grund": d.get("grund", ""), "storniert_am": e["ts"]}
         return out
@@ -73,6 +75,13 @@ class EigenbelegStore:
         return self._falte(self.bh.eintraege()).get((nummer or "").strip().upper())
 
     def anlegen(self, daten: dict, *, von: str = "") -> dict:
+        d = self.pruefen(daten)
+        ev = self.bh.mit_nummer("EB", "eigenbeleg_angelegt", d, jahr=int(d["datum"][:4]), bezug=d["text"][:60], von=von)
+        return {"nummer": ev["daten"]["nummer"]}
+
+    @staticmethod
+    def pruefen(daten: dict) -> dict:
+        """Eingaben pruefen und bereinigen, ohne zu schreiben (ValueError mit Grund)."""
         art = str(daten.get("art") or "").strip()
         if art not in ARTEN:
             raise ValueError("Art muss Einnahme oder Ausgabe sein.")
@@ -94,10 +103,23 @@ class EigenbelegStore:
         d = {"art": art, "datum": tag, "betrag_cent": betrag, "kategorie": kat, "text": text,
              "gegenpartei": str(daten.get("gegenpartei") or "").strip()[:200],
              "referenz": str(daten.get("referenz") or "").strip()[:120]}
+        if daten.get("firma"):                               # Etappe 14: Stammdaten-Nummer der Gegenpartei
+            d["firma"] = str(daten["firma"]).strip().upper()[:20]
         if (z := zuordnung_pruefen(tag, daten.get("zuordnung_jahr"))):
             d["zuordnung_jahr"] = z
-        ev = self.bh.mit_nummer("EB", "eigenbeleg_angelegt", d, jahr=int(tag[:4]), bezug=text[:60], von=von)
-        return {"nummer": ev["daten"]["nummer"]}
+        return d
+
+    def firma_verknuepfen(self, nummer: str, firma: str, *, von: str = "") -> dict:
+        nummer, firma = (nummer or "").strip().upper(), (firma or "").strip().upper()
+
+        def pruefe(eintraege):
+            x = self._falte(eintraege).get(nummer)
+            if not x:
+                raise KeyError(nummer)
+            if x.get("firma") == firma:
+                raise ValueError(f"{nummer} haengt schon an {firma}.")
+        self.bh.erfassen_geprueft("eigenbeleg_firma_verknuepft", {"nummer": nummer, "firma": firma}, von=von, pruefe=pruefe)
+        return {"nummer": nummer, "firma": firma}
 
     def stornieren(self, nummer: str, grund: str, *, von: str = "") -> dict:
         nummer = (nummer or "").strip().upper()
