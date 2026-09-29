@@ -4,8 +4,8 @@
 - Stand: 2026-09-29
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 13 deployen (Go), danach ER-2026-0034/-0036 per „als Nachweis“ an ER-0033/-0035 haengen und
-  die 11 Abo-Mails im Live-Abruf pruefen; Go fuer Etappe 14 steht aus.
+- Naechster Schritt: Etappe 13 live (2026-09-29 11:26, 11 Abo-Belege ER-2026-0037..0047, Quittungen umgehaengt) --
+  CEO-Abnahme beim Buchen; erste echte Auto-Weiterleitung pruefen; Go fuer Etappe 14 steht aus.
   Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
   gemischte Rechnung aufteilen); Deploy + Abnahme Etappe 12 (Barter-Deal einmal von Angebot bis Ware-Eingang
   durchspielen). Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.

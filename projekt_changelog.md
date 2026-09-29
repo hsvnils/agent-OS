@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 11:46] — Claude Code
+- **Was:** Etappe 13 live geprueft (main 1b0776c, deployt, CEO-Neustart): Abruf 11:26 legte die 11 Mailtext-Rechnungen als
+  ER-2026-0037..0047 an (Werte wie im Probelauf), Apple-Developer-Mail nach `LUNA/Doppelt/2026`, 11 Mails nach
+  `LUNA/Rechnungen/2026`; Posteingang enthaelt nur noch „Re: Angebot AN-2026-0002“. Quittungen per API umgehaengt:
+  ER-2026-0034 -> Zahlungsnachweis zu ER-0033 (Anthropic), ER-2026-0036 -> zu ER-0035 (Supabase), beide verworfen
+  (Dateien bleiben), Euro-Erinnerung von ER-0036 automatisch geloescht. Noch keine automatische Weiterleitung eingegangen.
+- **Warum:** CEO-Go „merge, push und deploy“ + „Schau mal rein“.
+- **Betroffen:** Live-Kassenbuch (NAS), LUNAs Gmail/Kalender, `docs/bekannte-fehler.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-29 10:47] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 13 umgesetzt (auf `ai/kunden-finanzen`, noch nicht deployt): Rechnungen im Mailtext
   (ohne PDF) werden Belege -- lesbare PDF-Ansicht + unveraenderte `.eml` als Original, Vorschlag mit Haendler statt
