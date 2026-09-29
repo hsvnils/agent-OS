@@ -912,6 +912,63 @@ def absender_echt(roh: bytes, absender: list[str]) -> bool:
                 or re.search(rf"dkim=pass [^;]*header\.i=@(?:[\w-]+\.)*{dom}(?![\w.-])", kopf))
 
 
+MAIL_ABGELEGT = "eingang_mail_abgelegt"
+MAIL_ORDNER = "LUNA"
+
+
+def _ordner(art: str, jahr: str | int) -> str:
+    return f"{MAIL_ORDNER}/{art}/{jahr}"
+
+
+def mail_ordner(beleg: dict) -> str:
+    """Zielordner einer erledigten Beleg-Mail: Gutschriften (Einnahmen) und Rechnungen getrennt, je Jahr.
+    Jahr = Rechnungsdatum (gebucht, sonst Vorschlag), ersatzweise Eingangsdatum."""
+    f, v = beleg.get("felder") or {}, beleg.get("vorschlag") or {}
+    art = f.get("art") or v.get("art") or "ausgabe"
+    jahr = str(f.get("rechnungsdatum") or v.get("rechnungsdatum") or "")[:4]
+    if not re.fullmatch(r"20\d\d", jahr):
+        jahr = str(beleg.get("eingegangen") or jetzt().isoformat())[:4]
+    return _ordner("Gutschriften" if art == "einnahme" else "Rechnungen", jahr)
+
+
+def _abgelegt(eintraege: list[dict]) -> set[str]:
+    return {e["daten"].get("mail_id") for e in eintraege if e["typ"] == MAIL_ABGELEGT}
+
+
+def _ablegen(st: EingangStore, google, mid: str, ordner: str, nummern: list[str]) -> bool:
+    """Mail verschieben + gelesen; nur bei Erfolg protokollieren (sonst naechster Lauf erneut)."""
+    if not hasattr(google, "mail_ablegen"):
+        return False
+    try:
+        r = google.mail_ablegen(mid, ordner)
+    except Exception:
+        return False
+    if not r.get("ok"):
+        return False
+    st.bh.erfassen(MAIL_ABGELEGT, {"mail_id": mid, "ordner": ordner, "belege": nummern}, von="LUNA-Mail")
+    return True
+
+
+def mails_ablegen(st: EingangStore, google) -> list[dict]:
+    """Beleg-Mails, deren Anhang sicher im Kassenbuch liegt, aus dem Posteingang in `LUNA/<Art>/<Jahr>` verschieben
+    (CEO 2026-09-29). Nachholend und idempotent: jede Mail genau einmal, protokolliert (`eingang_mail_abgelegt`).
+    Verworfene Belege bleiben im Posteingang (kein erledigter Beleg)."""
+    if google is None or not google.verfuegbar():
+        return []
+    eintraege = st.bh.eintraege()
+    fertig, je_mail = _abgelegt(eintraege), {}
+    for x in sorted(st._falte(eintraege).values(), key=lambda b: b["nummer"]):
+        mid = x.get("mail_id")
+        if mid and mid not in fertig and x.get("status") != "verworfen":
+            je_mail.setdefault(mid, []).append(x)
+    out = []
+    for mid, belege in je_mail.items():
+        ordner = mail_ordner(belege[0])
+        if _ablegen(st, google, mid, ordner, [b["nummer"] for b in belege]):
+            out.append({"mail_id": mid, "ordner": ordner})
+    return out
+
+
 def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backoffice=None, notify=None,
                          gesehen: set | None = None, tage: int = 30) -> list[str]:
     """Belege, die der CEO an LUNAs Adresse weiterleitet, automatisch aufnehmen -- **nur von den eigenen Absendern**
@@ -923,7 +980,8 @@ def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backo
     r = google.mail_suchen(q, max_results=20)
     if not r.get("ok"):
         return []
-    bekannt = {x.get("mail_id") for x in st._falte(st.bh.eintraege()).values() if x.get("mail_id")}
+    eintraege = st.bh.eintraege()
+    bekannt = {x.get("mail_id") for x in st._falte(eintraege).values() if x.get("mail_id")} | _abgelegt(eintraege)
     gesehen = gesehen if gesehen is not None else set()
     neu = []
     for m in r.get("mails", []):
@@ -939,21 +997,26 @@ def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backo
             continue
         if not absender_echt(roh["roh"], absender):             # gefaelschter Absender -> nie uebernehmen
             continue
-        vorher = len(neu)
+        vorher, doppelt = len(neu), []
         for name, daten in anhaenge(roh["roh"]):
             try:
                 res = st.aufnehmen(daten, name, quelle="mail", mail_id=mid, von="LUNA-Mail")
             except ValueError:
                 continue
             if res.get("doppelt"):
+                doppelt.append(res["nummer"])
                 continue
             neu.append(res["nummer"])
             llm_beauftragen(st, backoffice, res["nummer"])
-        if len(neu) > vorher and hasattr(google, "mail_aus_spam"):   # Gmail lernt: eigene Beleg-Mails sind kein Spam
-            try:
+        if len(neu) == vorher and doppelt:                  # nur schon bekannte Belege -> erledigt, ab nach „Doppelt“
+            if not _ablegen(st, google, mid, _ordner("Doppelt", jetzt().year), doppelt):
+                gesehen.discard(mid)
+        elif len(neu) > vorher and not hasattr(google, "mail_ablegen") and hasattr(google, "mail_aus_spam"):
+            try:                                            # ohne Ablage: Gmail lernt, eigene Beleg-Mails sind kein Spam
                 google.mail_aus_spam(mid)
             except Exception:
                 pass
+    mails_ablegen(st, google)                               # neue + frueher nicht abgelegte Beleg-Mails (CEO 2026-09-29)
     if neu and notify:
         try:
             notify(f"📥 {len(neu)} Beleg(e) aus deiner Mail an LUNA übernommen: {', '.join(neu)} -- in LUNA-OS prüfen "

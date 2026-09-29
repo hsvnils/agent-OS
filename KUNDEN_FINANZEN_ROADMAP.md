@@ -266,6 +266,9 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   ER-2026-0001 (Calumet, per Mail an LUNA weitergeleitet, gebucht, bezahlt). Dabei BF-36 behoben (Apple-Mail-Anhaenge
   inline/verschachtelt) und der Regel-Vorschlag geschaerft. Zusatz (CEO): erledigte Kalender-Erinnerungen von Angeboten
   und Rechnungen loescht LUNA selbststaendig (`core/erinnerungen.py`). OCR-Live-Probe mit Foto steht noch aus.
+  Zusatz (CEO 2026-09-29): erledigte Beleg-Mails legt LUNA in Gmail-Ordnern `LUNA/<Rechnungen|Gutschriften|Doppelt>/
+  <Jahr>` ab (gelesen; alles andere bleibt im Posteingang; `eingangsbelege.mails_ablegen`, Recht `gmail.modify`,
+  Neu-Anmeldung bei Google durch den CEO noetig, BF-39).
 - Ergebnis: `core/eingangsbelege.py`: Aufnahme mit Beleg-Nr. `ER-JJJJ-NNNN` + Original (8 Jahre) atomar
   (`Buchhaltung.festschreiben`), doppelte Dateien erkannt; Auslesen lokal: XRechnung UBL/CII + ZUGFeRD-XML im PDF
   (defusedxml, exakt), PDF-Text (`pypdf`), OCR (`tesseract`/`pdftoppm`); Sofort-Vorschlag nach Regeln + genauerer

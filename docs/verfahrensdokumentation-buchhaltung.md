@@ -53,6 +53,9 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    `luna.hanserautisch@gmail.com` (nur von den eigenen Adressen; Absender kryptografisch geprueft per DKIM/DMARC).
 2. Das **Original** wird sofort unveraendert abgelegt (SHA-256 im Kassenbuch) und erhaelt die Nummer `ER-JJJJ-NNNN`.
    Doppelte Dateien werden erkannt.
+   Danach legt LUNA die Mail in ihrem Postfach unter `LUNA/Rechnungen/<Jahr>`, `LUNA/Gutschriften/<Jahr>` bzw.
+   `LUNA/Doppelt/<Jahr>` ab (gelesen, nie geloescht); welche Mail zu welchem Beleg gehoert, steht im Kassenbuch
+   (`eingang_mail_abgelegt`). Mails ohne erkannten Beleg bleiben im Posteingang.
 3. LUNA liest den Beleg lokal aus (E-Rechnung exakt, PDF-Text, Texterkennung) und schlaegt Lieferant, Datum,
    Betrag, Kategorie vor. **Der Inhaber prueft und bucht**. Belegarten: Ausgabe (Eingangsrechnung) oder
    Einnahme (Gutschrift, z. B. Plattform-Verguetung).

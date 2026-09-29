@@ -26,6 +26,7 @@ from email.message import EmailMessage
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",     # Mails lesen/suchen
     "https://www.googleapis.com/auth/gmail.compose",      # Entwuerfe anlegen + senden (gated)
+    "https://www.googleapis.com/auth/gmail.modify",       # erledigte Beleg-Mails in Ordner ablegen (CEO 2026-09-29)
     "https://www.googleapis.com/auth/calendar.readonly",  # Termine lesen
     "https://www.googleapis.com/auth/calendar.events",    # Termine anlegen/aendern (gated)
     "https://www.googleapis.com/auth/drive.readonly",     # Dateien lesen/suchen
@@ -79,8 +80,8 @@ class GoogleAuth:
 
         creds = Credentials(
             token=None, refresh_token=self.refresh_token, token_uri=_TOKEN_URI,
-            client_id=self.client_id, client_secret=self.client_secret, scopes=SCOPES,
-        )
+            client_id=self.client_id, client_secret=self.client_secret,
+        )   # ohne scopes: der Token behaelt die erteilten Rechte -- ein neues Recht bricht so nie den Altzugang
         creds.refresh(Request())
         svc = build(api, version, credentials=creds, cache_discovery=False)
         self._services[key] = svc
@@ -377,6 +378,35 @@ class GoogleWorkspace:
         except Exception as exc:
             return _fehler(f"Mail markieren fehlgeschlagen: {str(exc)[:160]}")
 
+    def _label_id(self, svc, name: str) -> str:
+        """ID eines Gmail-Ordners (Label, verschachtelt mit „/“); fehlende Ebenen werden angelegt."""
+        cache = self.__dict__.setdefault("_labels", {})
+        if name not in cache:
+            cache.update({x["name"]: x["id"] for x in svc.users().labels().list(userId="me").execute().get("labels", [])})
+        teile = name.split("/")
+        for i in range(1, len(teile) + 1):
+            n = "/".join(teile[:i])
+            if n not in cache:
+                neu = svc.users().labels().create(userId="me", body={
+                    "name": n, "labelListVisibility": "labelShow", "messageListVisibility": "show"}).execute()
+                cache[n] = neu["id"]
+        return cache[name]
+
+    def mail_ablegen(self, message_id: str, ordner: str) -> dict:
+        """Erledigte Mail in einen Ordner verschieben (aus Posteingang/Spam heraus) und als gelesen markieren.
+        Nichts wird geloescht (benigne -- nicht gated; CEO 2026-09-29)."""
+        if (g := self._guard()):
+            return g
+        try:
+            svc = self.auth.service("gmail", "v1")
+            lid = self._label_id(svc, ordner)
+            svc.users().messages().modify(userId="me", id=message_id, body={
+                "addLabelIds": [lid], "removeLabelIds": ["INBOX", "UNREAD", "SPAM"]}).execute()
+            return _ok(ordner=ordner)
+        except Exception as exc:
+            self.__dict__.pop("_labels", None)
+            return _fehler(f"Mail ablegen fehlgeschlagen: {str(exc)[:160]}")
+
     def mail_aus_spam(self, message_id: str) -> dict:
         """Eigene, gepruefte Beleg-Mail aus dem Spam in den Posteingang holen (benigne -- nicht gated)."""
         if (g := self._guard()):
@@ -654,6 +684,10 @@ class MockGoogleWorkspace:
 
     def mail_markieren(self, message_id, *, gelesen=True):
         return _ok(gelesen=gelesen)
+
+    def mail_ablegen(self, message_id, ordner):
+        self.abgelegt = getattr(self, "abgelegt", []) + [(message_id, ordner)]
+        return _ok(ordner=ordner)
 
     def drive_anlegen(self, name, inhalt, *, bestaetigt=False):
         if not bestaetigt:

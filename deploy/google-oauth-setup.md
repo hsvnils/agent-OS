@@ -19,6 +19,7 @@ Lege ein neues Google-Konto an (z. B. `luna.hanserautisch@gmail.com`). **Dieses*
 3. **Scopes**: hinzufuegen (Least-Privilege; muss zu `SCOPES` in `orchestrator/governance/google_workspace.py`
    passen):
    - `.../auth/gmail.readonly`, `.../auth/gmail.compose`
+   - `.../auth/gmail.modify` (erledigte Beleg-Mails in Ordner ablegen, seit 2026-09-29)
    - `.../auth/calendar.readonly`, `.../auth/calendar.events`
    - `.../auth/drive.readonly`, `.../auth/drive.file`
    - `.../auth/spreadsheets`
