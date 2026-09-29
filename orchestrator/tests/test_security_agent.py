@@ -42,6 +42,20 @@ class TestSecurityAgent(unittest.TestCase):
         leak = [x for x in f if x.kategorie == "secret-leak"][0]
         self.assertEqual(leak.schwere, "ok")
 
+    def test_geheim_dateien_rechte(self):
+        """BF-26: .env & Co. muessen 600 sein -- 644 ist ein hoher Befund, 600 ok, fehlende Datei kein Befund."""
+        titel = "Geheimnis-Dateien fuer andere Benutzer lesbar"
+        self.assertNotIn(titel, self._schweren(self._agent()._check_secret_hygiene()))
+        (self.root / "orchestrator").mkdir()
+        env = self.root / "orchestrator" / ".env"
+        env.write_text("X=1\n", encoding="utf-8")
+        env.chmod(0o644)
+        f = self._agent()._check_secret_hygiene()
+        self.assertEqual(self._schweren(f)[titel], "hoch")
+        self.assertIn("orchestrator/.env", next(x.detail for x in f if x.titel == titel))
+        env.chmod(0o600)
+        self.assertEqual(self._schweren(self._agent()._check_secret_hygiene())["Geheimnis-Dateien nur fuer den Besitzer lesbar"], "ok")
+
     def test_hardening_login_offen(self):
         f = self._agent(env={"LUNA_OS_PASSWORD": ""})._check_hardening()
         self.assertTrue(any(x.schwere == "mittel" and "Login" in x.titel for x in f))

@@ -39,6 +39,10 @@ _SECRET_TRACKED = (".env", "client_secret", "credentials.json")
 SCHWEREN = ("hoch", "mittel", "niedrig", "ok")
 
 
+# BF-26 (2026-09-29): Dateien mit Schluesseln/Bankdaten -- muessen 600 sein
+GEHEIM_DATEIEN = ("orchestrator/.env", "orchestrator/state/instagram_token.json", "buchhaltung/firmendaten.json")
+
+
 @dataclass
 class Finding:
     kategorie: str
@@ -243,6 +247,15 @@ class SecurityAgent:
                                    "Keys ROTIEREN (CEO/CISO)."))
             else:
                 out.append(Finding("secret-leak", "ok", "Keine Secrets im git-Index", "", ""))
+        # Dateirechte der Geheimnis-Dateien (BF-26): nur der Besitzer (= Container-Benutzer 1026) darf lesen
+        offen = [rel for rel in GEHEIM_DATEIEN
+                 if (self.root / rel).is_file() and (self.root / rel).stat().st_mode & 0o077]
+        if offen:
+            out.append(Finding("secret-hygiene", "hoch", "Geheimnis-Dateien fuer andere Benutzer lesbar",
+                               "Rechte zu offen: " + ", ".join(offen),
+                               "chmod 600 auf dem Host (Besitzer = Container-Benutzer, LUNA liest weiter)."))
+        elif any((self.root / rel).is_file() for rel in GEHEIM_DATEIEN):
+            out.append(Finding("secret-hygiene", "ok", "Geheimnis-Dateien nur fuer den Besitzer lesbar", "", ""))
         return out
 
     def _check_hardening(self) -> list[Finding]:
