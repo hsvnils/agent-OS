@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 16:50] — Claude Code
+- **Was:** Pruefung der Instagram-/DM-Teile: Collab-Radar lief noch jede Nacht (DM-Abgleich + KI-Analyse, 1.015 DMs,
+  39 Analysen, letzter Lauf 29.09. 00:04), Token-Erneuerung aktiv, DM-Poll ins CRM seit 06.07. ohne Eintrag, Webhook
+  wartet (signaturgeschuetzt). Auf CEO-Anweisung in der NAS-`orchestrator/.env` `IG_RADAR_AUTO` und
+  `INSTAGRAM_DM_POLL` auf 0 gesetzt (Werte nicht angezeigt; vorher Sicherung nur auf dem MACO470 unter
+  `~/env-backups/`, 600; Rechte der `.env` weiter 600). Wirksam nach Container-Neustart. Code und Daten bleiben brach.
+- **Warum:** CEO „Pruefe das, aber wir koennen es auch erstmal brach liegen lassen“ + „Radar abschalten“.
+- **Betroffen:** NAS `orchestrator/.env` (2 Schalter), `docs/entscheidungs-register.md`, `docs/datenschutz-ki-nutzung.md`
+
 ## [2026-09-29 16:44] — Claude Code
 - **Was:** CEO-Entscheidungen festgehalten: KUNDEN_FINANZEN Etappe 17 (Collab-Anfrage -> Angebotsentwurf) verworfen --
   Angebote legt der CEO manuell an, Firmen schreiben nicht an LUNAs Adresse; Anbindung an das Meta-/Instagram-Postfach
