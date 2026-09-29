@@ -25,11 +25,18 @@ ZUSTELLUNG_MIN = 30         # aelteste unzugestellte Meldung
 BACKUP_STUNDEN = 26         # naechtlicher Lauf 03:20 + Puffer
 ERINNERN_STUNDEN = 24
 
+# Nutzersichtbar (Telegram) -> echte Umlaute; eigener Text fuer die Entwarnung (CEO-Hinweis 2026-09-29)
 TEXTE = {
     "luna_os": "LUNA-OS auf der NAS ist nicht erreichbar (Container luna-os oder die NAS selbst).",
     "bot_stumm": "Der Telegram-Bot auf der NAS meldet sich nicht mehr (kein Herzschlag).",
-    "zustellung": "Telegram-Meldungen werden nicht zugestellt (sie haengen in der Outbox).",
-    "backup": "Das naechtliche Backup auf dem MACO470 ist ausgefallen oder fehlgeschlagen.",
+    "zustellung": "Telegram-Meldungen werden nicht zugestellt (sie hängen in der Warteschlange).",
+    "backup": "Das nächtliche Backup auf dem MACO470 ist ausgefallen oder fehlgeschlagen.",
+}
+OK_TEXTE = {
+    "luna_os": "LUNA-OS auf der NAS ist wieder erreichbar.",
+    "bot_stumm": "Der Telegram-Bot auf der NAS meldet sich wieder.",
+    "zustellung": "Telegram-Meldungen werden wieder zugestellt.",
+    "backup": "Das Backup auf dem MACO470 ist wieder gelaufen.",
 }
 
 
@@ -107,7 +114,7 @@ def entscheiden(aktuell: list[str], zustand: dict, jetzt: datetime) -> tuple[lis
         neu[k] = z
     for k, z in zustand.items():
         if k not in neu and z.get("gemeldet"):
-            meldungen.append(f"✅ Wieder in Ordnung: {TEXTE.get(k, k)}")
+            meldungen.append(f"✅ Wieder in Ordnung: {OK_TEXTE.get(k, k)}")
     return meldungen, neu
 
 

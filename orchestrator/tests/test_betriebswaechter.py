@@ -57,7 +57,7 @@ class TestMelden(unittest.TestCase):
         m, z = entscheiden(["bot_stumm"], z, JETZT + timedelta(hours=24, minutes=20))  # Erinnerung
         self.assertTrue(m[0].startswith("⏰ Weiterhin"))
         m, z = entscheiden([], z, JETZT + timedelta(hours=25))                        # Entwarnung
-        self.assertEqual(m, ["✅ Wieder in Ordnung: Der Telegram-Bot auf der NAS meldet sich nicht mehr (kein Herzschlag)."])
+        self.assertEqual(m, ["✅ Wieder in Ordnung: Der Telegram-Bot auf der NAS meldet sich wieder."])
         self.assertEqual(z, {})
 
     def test_neustart_blip_bleibt_still(self):
