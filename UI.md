@@ -6,7 +6,12 @@
 > Umlauten** (ae/oe/ue/ss vermeiden -- siehe AGENTS.md Abschnitt 6 gilt fuer .md-Fliesstext, aber UI-STRINGS
 > im Code nutzen echte Umlaute).
 
-Ort der Oberflaeche: `orchestrator/channels/web/static/` (`index.html`, `style.css`, `app.js`).
+Ort der Oberflaeche: `orchestrator/channels/web/static/` (`index-v2.html`, `style-v2.css`, `app-v2.js`).
+
+> **Seit 2026-09-29 gibt es nur noch EIN Design: UI-V2 (Abschnitt 11).** Das fruehere Command Center (UI-V1:
+> `index.html`, `style.css`, `app.js`, WinBox) wurde auf CEO-Anweisung entfernt; es liegt nur noch in der Git-Historie.
+> Die Abschnitte 1–10 beschreiben die Identitaet (Orb, Stimme, Farben, Regeln), die in V2 weiter gilt; Hinweise auf
+> Fenster/WinBox/Sidebar sind historisch.
 
 ---
 
@@ -165,8 +170,8 @@ Alle Panels folgen demselben Grundgeruest:
 
 - **Theming nur ueber CSS-Variablen** (Abschnitt 2). Neue Farbe noetig? -> zuerst Token definieren.
 - **Selbst-genuegsam:** keine externen Fonts/Icon-CDNs/JS-CDNs; vendored Libs unter `static/vendor/`
-  (aktuell nur WinBox).
-- **Cache-Bust:** bei jeder Frontend-Aenderung `?v=N` in `index.html` erhoehen (aktuell v41).
+  (seit 2026-09-29 keine mehr -- WinBox ging mit V1).
+- **Cache-Bust:** bei jeder Frontend-Aenderung `?v=N` in `index-v2.html` erhoehen (app-v2.js und style-v2.css).
 - **Investment-Command-Center (App „Investment"):** ueber der Watchlist ein „Lern-Loop (Walk-Forward)"-Block
   aus `/api/investment/loop` -- KPI-Kacheln (Richtungsquote, MAE, Baseline, Anteil besser Baseline), Fehler-
   Verlauf als **Inline-SVG** (Modell cyan vs. Baseline gestrichelt, niedriger = besser), Balken je Anlageklasse,
@@ -198,18 +203,17 @@ LUNA-Umsetzung nutzt **reale** Daten (Antraege, Meldungen, Research, Second Brai
 
 ---
 
-## 11. UI-V2 — helles „Flux"-Dashboard (opt-in, zweite Design-Sprache)
+## 11. UI-V2 — helles „Flux"-Dashboard (einziges Design seit 2026-09-29)
 
-Seit 2026-07-04 gibt es ein **zweites, gleichwertiges UI** neben dem Command Center (jetzt „UI-V1"). UI-V2 ist
-ein **helles, glasiges, dashboard-/sektionsbasiertes** Design (Vorbild: „Flux"-Screenshots @orbixstudiollc) —
-**ohne Fenster-Paradigma (kein WinBox)**. Beide UIs sind gleichberechtigt; der Nutzer waehlt.
+Seit 2026-07-04 gab es UI-V2 neben dem Command Center („UI-V1"); **am 2026-09-29 wurde V1 entfernt (CEO)** -- V2 ist
+das einzige Design. UI-V2 ist ein **helles, glasiges, dashboard-/sektionsbasiertes** Design (Vorbild: „Flux"-Screenshots
+@orbixstudiollc) — **ohne Fenster-Paradigma (kein WinBox)**.
 
-- **Umschalten & Persistenz:** Umschalter in beiden UIs (V1: Sidebar-Knopf; V2: Pill „Zurueck zu UI V1").
-  Wahl liegt in `luna_os_prefs.prefs.ui_version` (pro Nutzer, geraeteuebergreifend) + localStorage-Flash-Schutz.
-  Der `/`-Handler serviert `index.html` (V1, Default) oder `index-v2.html` (V2). **`?ui=v1|v2`** ist der harte
-  Override/Escape-Hatch (V1 muss immer erreichbar bleiben).
-- **Dateien:** `static/index-v2.html`, `static/style-v2.css`, `static/app-v2.js` (eigenes Token-Set
-  `--v2-*`, kollidiert NICHT mit V1). V1-Dateien bleiben unangetastet (nur additiver Umschalt-Knopf).
+- **Einstieg:** Der `/`-Handler liefert immer `index-v2.html`; alte Lesezeichen mit `?ui=v1` und eine gespeicherte
+  Einstellung `luna_os_prefs.prefs.ui_version` werden ignoriert. Kein Umschalter mehr.
+- **Dateien:** `static/index-v2.html`, `static/style-v2.css`, `static/app-v2.js` (Token-Set `--v2-*`); gemeinsam mit
+  der Sprach-/Hologramm-Darstellung: `static/luna-avatar.js`, `static/luna-portrait.png`. Die Dateinamen behalten das
+  „-v2“ bewusst (Umbenennen = eigener, spaeterer Schritt).
 - **Bindende Regeln gelten weiter:** **echte Daten** (keine Mock-Zahlen; alle Kacheln aus `/api/...`),
   **Deutsch mit Umlauten**, `prefers-reduced-motion`, `?v=N`-Cache-Bust (V2-Assets eigener Zaehler),
   selbstgenuegsam (kein CDN), Modul-Gating via `/api/me`.

@@ -1,6 +1,5 @@
 // LUNA-OS UI-V2 -- helles, dashboard-/sektionsbasiertes UI (opt-in, siehe UI.md Abschnitt 11).
-// Nutzt DIESELBEN /api/*-Endpunkte wie V1, aber ohne Fenster (WinBox). Deutsch mit echten Umlauten.
-// Ziel: VOLLE Paritaet zu V1 -- alle Bereiche, Felder und Aktionen sind auch hier erreichbar.
+// Einziges Design von LUNA-OS (V1 am 2026-09-29 entfernt, CEO). Deutsch mit echten Umlauten.
 "use strict";
 
 /* =========================== Helfer =========================== */
@@ -94,12 +93,6 @@ function applyTheme() {
   document.documentElement.classList.toggle("v2-light", !dark);
 }
 function toggleTheme() { const m = localStorage.getItem("luna-v2-theme") || "light"; localStorage.setItem("luna-v2-theme", m === "dark" ? "light" : "dark"); applyTheme(); }
-async function setUiMode(mode) {
-  if (mode !== "v2") mode = "v1";
-  try { localStorage.setItem("luna-ui-mode", mode); } catch { }
-  PREFS = { ...PREFS, ui_version: mode }; await jpost("/api/prefs", { prefs: PREFS });
-  location.href = "/?ui=" + mode;
-}
 function buildShell() {
   $("#v2-nav").innerHTML = SECTIONS.filter(s => darf(s.app)).map(s =>
     `<button data-go="${s.id}" class="${s.id === "dash" ? "home " : ""}${s.id === AKTIV ? "active" : ""}" title="${esc(s.label)}">${s.icon}</button>`).join("");
@@ -107,7 +100,6 @@ function buildShell() {
     darf("auftraege") ? `<button class="v2-pill" data-go="freigaben">✔ Freigabe prüfen</button>` : "",
     darf("investment") ? `<button class="v2-pill" data-act="inv-screen">🔍 Screen starten</button>` : "",
     `<button class="v2-pill" data-toggle-chat>💬 LUNA fragen</button>`,
-    `<button class="v2-pill cta" data-ui-mode="v1">↩ Zurück zu UI V1</button>`,
   ].filter(Boolean).join("");
   const nm = (ME.display_name || ME.username || "L").trim();
   $("#v2-avatar").textContent = nm.slice(0, 1).toUpperCase(); $("#v2-avatar").title = nm + (ME.role === "owner" ? " · Voll-Zugriff" : " · " + (ME.role || ""));
@@ -2471,7 +2463,6 @@ document.addEventListener("click", (e) => {
   const ac0 = e.target.closest("[data-act]"); if (ac0) { handleAct(ac0.dataset.act, ac0); return; }  // Aktionen VOR Navigation (Inline-Buttons in klickbaren Kacheln)
   const g = e.target.closest("[data-go]"); if (g) { go(g.dataset.go); return; }
   const tb = e.target.closest("[data-tab]"); if (tb) { const [sec, id] = tb.dataset.tab.split(":"); go(sec, id); return; }
-  const um = e.target.closest("[data-ui-mode]"); if (um) { setUiMode(um.dataset.uiMode); return; }
   const tc = e.target.closest("[data-toggle-chat]"); if (tc) { toggleChat(); return; }
   const orb = e.target.closest("#v2-orb"); if (orb) { toggleVoice(); return; }
   const holo = e.target.closest("#luna-holo"); if (holo) { toggleVoice(); return; }

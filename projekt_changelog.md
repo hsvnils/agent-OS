@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 14:57] — Claude Code
+- **Was:** Design-Version V1 (Command Center) aus LUNA-OS entfernt, V2 ist das einzige Design: geloescht
+  `static/index.html`, `static/app.js`, `static/style.css`, `static/vendor/winbox.bundle.min.js` (ca. 176 KB); Versionsweiche
+  `_ui_version` in `app.py` entfernt (`/` liefert immer `index-v2.html`, auch bei `?ui=v1`); in `app-v2.js` Pill „Zurueck
+  zu UI V1“, `setUiMode` und Klick-Handler entfernt (app v63). Backend, API und Daten unveraendert; `luna-avatar.js` und
+  `luna-portrait.png` bleiben (Hologramm in V2). Vorab-Analyse: V1 nutzte keinen Endpunkt, den V2 nicht nutzt.
+  `test_web_ui_version.py` neu (nur noch V2, V1-Dateien weg, alte Einstellung stoert nicht) + Gegenprobe; Suite 990 gruen;
+  Browser-Rauchtest ohne Fehler. `UI.md` auf V2 als einziges Design umgestellt.
+- **Warum:** CEO 2026-09-29 „Design-Version V1 aus Luna entfernen. NUR DAS DESIGN!“ + „META Review spielt keine Rolle
+  mehr, Go fuer das Entfernen“.
+- **Betroffen:** `orchestrator/channels/web/static/` (4 Dateien geloescht, `app-v2.js`, `index-v2.html`),
+  `orchestrator/channels/web/app.py`, `orchestrator/tests/test_web_ui_version.py`, `UI.md`,
+  `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
 ## [2026-09-29 12:57] — Claude Code
 - **Was:** Facebook-Euro-Betrag per Telegram geprueft: ER-2026-0002 um 09:30 mit 246,38 EUR gebucht und bezahlt
   („Telegram:CEO“), Kalender-Erinnerung selbst geloescht -- Telegram-Strecke funktioniert. KUNDEN_FINANZEN Etappe 15
