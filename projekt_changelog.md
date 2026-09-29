@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 15:10] — Claude Code
+- **Was:** Nach CEO-Neustart live geprueft: `/` und `/?ui=v1` liefern V2 (app v63), `/static/app.js`, `style.css`,
+  `index.html` antworten 404, kein Umschalter mehr; Abos- und TKP-Code aktiv (Katalog: Post 1.300, Story 780, Reel 1.600,
+  Integration 1.050 EUR beim Minimum; OMR-Werte geliefert); `/api/me`, `/api/finanzen/abos`, `/api/crm/katalog`,
+  `/api/finanzen/uebersicht` antworten 200.
+- **Warum:** CEO „Neustart erledigt, du kannst pruefen“.
+- **Betroffen:** keine Dateien (Pruefung), Changelog
+
 ## [2026-09-29 15:09] — Claude Code
 - **Was:** V1-Entfernung deployt (main b802cdd, Code-Sync ohne Neustart) und auf der NAS die drei V1-Dateien
   `orchestrator/channels/web/static/index.html`, `app.js`, `style.css` gezielt geloescht (der Sync loescht nie);
