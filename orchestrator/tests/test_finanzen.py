@@ -235,7 +235,14 @@ class TestFinanzenApi(ApiBasis):
     def test_a1_ablauf(self):
         r = self.c.post("/api/finanzen/eigenbelege", json={"buchung": {
             "art": "einnahme", "datum": date.today().isoformat(), "betrag": "80", "text": "Instagram-Bonus"}}).json()
+        self.assertFalse(r["ok"])                                            # Etappe 14: Gegenpartei ist Pflicht
+        self.assertEqual(self.w.kunden_store.firmen(suche="Meta"), [])      # ... und es entsteht keine Firma
+        r = self.c.post("/api/finanzen/eigenbelege", json={"buchung": {
+            "art": "einnahme", "datum": date.today().isoformat(), "betrag": "80", "text": "Instagram-Bonus",
+            "gegenpartei": "Meta Platforms Ireland Ltd."}}).json()
         self.assertTrue(r["ok"], r)
+        meta = self.w.kunden_store.firmen(suche="Meta")[0]
+        self.assertEqual((meta["typ"], meta["anzeige"]), ("partner", "P-00001"))   # Einnahme -> Partner
         u = self.c.get("/api/finanzen/uebersicht").json()
         self.assertEqual(u["kennzahlen"]["einnahmen_cent"], 8000)
         j = self.c.get("/api/finanzen/journal").json()

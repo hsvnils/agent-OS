@@ -528,6 +528,10 @@ class EingangStore:
                 out[d["nummer"]]["llm_auftrag"] = d["auftrag_id"]
             elif t == "eingang_erinnerung":                  # Kalender: Euro-Betrag nachtragen (Fremdwaehrung)
                 out[d["nummer"]]["erinnerung"] = d["termin"]
+            elif t == "eingang_firma_verknuepft":            # Etappe 14: Altbeleg an Stammdaten-Nummer haengen
+                x = out[d["nummer"]]
+                x["felder"] = dict(x.get("felder") or {}) | {"lieferant_firma": d["firma"]}
+                x["verlauf"].append(spur | {"felder": ["lieferant_firma"]})
             elif t == "eingang_datei":                       # weitere Datei, z. B. Zahlungsquittung (CEO 2026-09-29)
                 x = out[d["nummer"]]
                 x["belege"] = list(x.get("belege") or []) + [{k: d.get(k) for k in ("pfad", "sha256", "name", "rolle")}]
@@ -588,7 +592,7 @@ class EingangStore:
 
     def aufnehmen(self, daten: bytes, dateiname: str, *, quelle: str = "upload", mail_id: str = "",
                   von: str = "", zusatz: list[tuple[bytes, str]] | None = None, text: str | None = None,
-                  vorschlag: dict | None = None) -> dict:
+                  vorschlag: dict | None = None, vorschlag_extra: dict | None = None) -> dict:
         """Beleg aufnehmen: auslesen (ausserhalb der Sperre, OCR dauert), dann Nummer + Datei + Eintrag atomar."""
         name = re.sub(r"[\\\\/:*?\"<>|]+", "_", Path(dateiname or "beleg").name)[:120] or "beleg"
         if not daten:
@@ -604,6 +608,7 @@ class EingangStore:
         a = ({"text": text[:15000], "text_quelle": "mail", "e_rechnung": None} if text is not None
              else auslesen(daten, name))
         vorschlag = vorschlag if vorschlag is not None else vorschlag_regeln(a["text"], a["e_rechnung"])
+        vorschlag = dict(vorschlag) | {k: v for k, v in (vorschlag_extra or {}).items() if v}
         heute = jetzt().date()
 
         def pruefe(eintraege):
@@ -747,6 +752,21 @@ class EingangStore:
         self.bh.erfassen_geprueft("eingang_zahlung_storniert", {"nummer": nummer, "index": index, "grund": grund},
                                   von=von, pruefe=pruefe)
         return {"storniert": index}
+
+    def firma_verknuepfen(self, nummer: str, firma: str, *, von: str = "") -> dict:
+        """Gebuchten Beleg an eine Stammdaten-Nummer haengen (Altbelege, Etappe 14) -- additiv, mit Verlauf."""
+        nummer, firma = (nummer or "").strip().upper(), (firma or "").strip().upper()
+
+        def pruefe(eintraege):
+            x = self._falte(eintraege).get(nummer)
+            if not x:
+                raise KeyError(nummer)
+            if x["status"] != "gebucht":
+                raise ValueError(f"{nummer} ist nicht gebucht -- die Nummer wird beim Buchen gesetzt.")
+            if (x.get("felder") or {}).get("lieferant_firma") == firma:
+                raise ValueError(f"{nummer} haengt schon an {firma}.")
+        self.bh.erfassen_geprueft("eingang_firma_verknuepft", {"nummer": nummer, "firma": firma}, von=von, pruefe=pruefe)
+        return {"nummer": nummer, "firma": firma}
 
     def datei_anhaengen(self, nummer: str, daten: bytes, name: str, *, rolle: str = "zahlungsnachweis",
                         von: str = "") -> dict:
@@ -1169,6 +1189,7 @@ def vorschlag_mail(text: str, orig: dict) -> dict:
     Euro-Betrag = Brutto, Datum ersatzweise aus dem Original-Kopf)."""
     v = vorschlag_regeln(text)
     v["positionen"] = []
+    v["absender"] = str(orig.get("von") or "")[:200]
     if not v.get("waehrung"):
         werte = []
         for a, b in _EUR_BETRAG.findall(text):
@@ -1327,11 +1348,13 @@ def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backo
             quittungen = []
         ergebnisse = []
         if dateien:
+            absender_orig = weiterleitung(roh, mail_text(roh))[0].get("von", "")   # Stammdaten: Rechnungs-Absender
             for name, daten in dateien:
                 if (name, daten) in quittungen:
                     continue
                 try:
-                    ergebnisse.append(st.aufnehmen(daten, name, quelle="mail", mail_id=mid, von="LUNA-Mail"))
+                    ergebnisse.append(st.aufnehmen(daten, name, quelle="mail", mail_id=mid, von="LUNA-Mail",
+                                                   vorschlag_extra={"absender": absender_orig}))
                 except ValueError:
                     continue
         else:

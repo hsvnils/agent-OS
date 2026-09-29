@@ -92,17 +92,19 @@ def finanzcheck(e: list[dict], heute: date, *, rechnungen: dict | None = None) -
     # 2) wiederkehrende Posten: in beiden Vormonaten da, in diesem Monat (ab dem 10.) nicht
     if heute.day >= 10:
         je_monat: dict[str, dict] = {}                      # {JJJJ-MM: {(art, wer): Summe}}
-        def merke(mon, art, wer, c):
-            k = (art, wer.strip())
+        namen: dict[str, str] = {}                          # Etappe 14: je Stammdaten-Nummer, sonst je Name
+        def merke(mon, art, wer, c, nr=""):
+            k = (art, (nr or wer).strip())
+            namen[k[1].lower()] = wer.strip()
             je_monat.setdefault(mon, {})[k] = je_monat.get(mon, {}).get(k, 0) + abs(int(c or 0))
         for x in EingangStore._falte(e).values():
             f = x.get("felder") or {}
             if x["status"] == "gebucht" and f.get("lieferant"):
                 merke(str(f.get("rechnungsdatum", ""))[:7], "einnahme" if f.get("art") == "einnahme" else "ausgabe",
-                      f["lieferant"], f.get("betrag_cent"))
+                      f["lieferant"], f.get("betrag_cent"), f.get("lieferant_firma", ""))
         for x in EigenbelegStore._falte(e).values():
             if x["status"] == "gebucht" and x.get("gegenpartei"):
-                merke(x["datum"][:7], x["art"], x["gegenpartei"], x["betrag_cent"])
+                merke(x["datum"][:7], x["art"], x["gegenpartei"], x["betrag_cent"], x.get("firma", ""))
         m0, m1, m2 = _monat(heute), _monat(heute, 1), _monat(heute, 2)
         dieser = {w.lower() for _, w in je_monat.get(m0, {})}
         vor2 = {(a, w.lower()): c for (a, w), c in je_monat.get(m2, {}).items()}
@@ -112,7 +114,7 @@ def finanzcheck(e: list[dict], heute: date, *, rechnungen: dict | None = None) -
             if aehnlich and wer.lower() not in dieser:
                 sl = f"fehlt:{wer.lower()}:{m0}"
                 if sl not in quittiert:
-                    out.append(_todo(sl, "Finanzen", "🔁", f"{wer}: {'Einnahme' if art == 'einnahme' else 'Rechnung'} "
+                    out.append(_todo(sl, "Finanzen", "🔁", f"{namen.get(wer.lower(), wer)}: {'Einnahme' if art == 'einnahme' else 'Rechnung'} "
                                      f"für {m0[5:]}/{m0[:4]} fehlt?", "kam in den beiden Vormonaten jeweils · hochladen, an "
                                      "LUNA weiterleiten oder bestätigen, dass diesen Monat nichts kommt", "go:belege:alle",
                                      "", f"{m0}-10", h, {"pfad": "/api/finanzen/hinweis-quittieren", "schluessel": sl,

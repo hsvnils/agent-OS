@@ -96,10 +96,12 @@ class Finanzen:
     def _stand(self, eintraege: list[dict] | None = None) -> dict:
         e = self.bh.eintraege() if eintraege is None else eintraege
         return {"e": e, "rechnungen": RechnungStore._falte(e)[1], "belege": EingangStore._falte(e),
-                "eigen": EigenbelegStore._falte(e), "firmen": {f["nummer"]: f["name"] for f in self.kunden.firmen()}}
+                "eigen": EigenbelegStore._falte(e), "firmen": {f["nummer"]: f["name"] for f in self.kunden.firmen()},
+                "firmen_nr": {f["nummer"]: f["anzeige"] for f in self.kunden.firmen()}}
 
-    def journal(self, jahr: int | None = None, st: dict | None = None) -> list[dict]:
-        """Alle Zahlungen als Journalzeilen, nach Zahlungsdatum. `jahr` filtert nach Zuordnungsjahr."""
+    def journal(self, jahr: int | None = None, st: dict | None = None, firma: str = "") -> list[dict]:
+        """Alle Zahlungen als Journalzeilen, nach Zahlungsdatum. `jahr` filtert nach Zuordnungsjahr, `firma` nach
+        Stammdaten-Nummer (jede Nummer der Firma, Etappe 14)."""
         st = st or self._stand()
         zeilen = []
         for r in st["rechnungen"].values():
@@ -142,18 +144,24 @@ class Finanzen:
                         continue
                     zeilen.append({"datum": z["datum"], "art": f.get("art") or "ausgabe", "betrag_cent": anteil,
                                    "kategorie": t["kategorie"], "bezug": x["nummer"], "index": i,
-                                   "gegenpartei": f.get("lieferant", ""),
+                                   "gegenpartei": f.get("lieferant", ""), "firma": f.get("lieferant_firma", ""),
                                    "text": (t.get("text") if len(tl) > 1 else "") or f.get("leistung") or f.get("rechnungsnummer")
                                    or x.get("dateiname", ""),
                                    "zuordnung_jahr": z.get("zuordnung_jahr"), "storniert": bool(z.get("storniert")),
                                    "storno_grund": z.get("storno_grund", ""), "quelle": "beleg"})
         for x in st["eigen"].values():
             zeilen.append({"datum": x["datum"], "art": x["art"], "betrag_cent": x["betrag_cent"], "kategorie": x["kategorie"],
-                           "bezug": x["nummer"], "index": None, "gegenpartei": x.get("gegenpartei", ""),
+                           "bezug": x["nummer"], "index": None, "gegenpartei": x.get("gegenpartei", ""), "firma": x.get("firma", ""),
                            "text": x["text"], "zuordnung_jahr": x.get("zuordnung_jahr"),
                            "storniert": x["status"] == "storniert", "storno_grund": x.get("storno_grund", ""),
                            "quelle": "eigenbeleg"})
+        for r in st["rechnungen"].values():                   # Kunde der Rechnung (Zahlungen/Barter)
+            for z in zeilen:
+                if z["bezug"] == r["nummer"]:
+                    z.setdefault("firma", r.get("firma", ""))
         for z in zeilen:
+            z.setdefault("firma", "")
+            z["firma_nr"] = st["firmen_nr"].get(z["firma"], z["firma"])
             z["jahr"] = int(z.get("zuordnung_jahr") or z["datum"][:4])
             # Monat im Zuordnungsjahr (10-Tage-Regel: Januar-Zahlung fuers Vorjahr -> Dezember, umgekehrt Januar)
             z["monat"] = int(z["datum"][5:7]) if int(z["datum"][:4]) == z["jahr"] else (12 if z["datum"][:4] > str(z["jahr"]) else 1)
@@ -162,6 +170,9 @@ class Finanzen:
             z["position"] = POSITIONEN.get(z["kategorie"], POSITIONEN["sonstiges"])
         if jahr:
             zeilen = [z for z in zeilen if z["jahr"] == int(jahr)]
+        if firma:
+            h = self.kunden.haupt(self.kunden._stand()[0], firma)
+            zeilen = [z for z in zeilen if z["firma"] == h]
         return sorted(zeilen, key=lambda z: (z["datum"], z["bezug"], z["index"] or 0))
 
     # -- Anlageverzeichnis ---------------------------------------------------------------------------------------
@@ -382,11 +393,11 @@ def journal_csv(zeilen: list[dict]) -> str:
     """Journal als CSV (Semikolon, deutsches Zahlenformat) -- fuer Excel/Numbers."""
     buf = io.StringIO()
     w = csv.writer(buf, delimiter=";")
-    w.writerow(["Datum", "Jahr", "Art", "Beleg", "Gegenpartei", "Text", "Kategorie", "Betrag EUR", "Abziehbar EUR",
+    w.writerow(["Datum", "Jahr", "Art", "Beleg", "Nr.", "Gegenpartei", "Text", "Kategorie", "Betrag EUR", "Abziehbar EUR",
                 "Storniert"])
     for z in zeilen:
         w.writerow([z["datum"], z["jahr"], "Einnahme" if z["art"] == "einnahme" else "Ausgabe", z["bezug"],
-                    z["gegenpartei"], z["text"], z["position"], f"{z['betrag_cent'] / 100:.2f}".replace(".", ","),
+                    z.get("firma_nr", ""), z["gegenpartei"], z["text"], z["position"], f"{z['betrag_cent'] / 100:.2f}".replace(".", ","),
                     f"{z['abziehbar_cent'] / 100:.2f}".replace(".", ","), "ja" if z["storniert"] else ""])
     return buf.getvalue()
 

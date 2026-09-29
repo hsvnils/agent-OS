@@ -19,7 +19,7 @@ class TestKundenStore(unittest.TestCase):
         k = ks.firma_anlegen({"name": "Muster GmbH", "ort": "Hamburg", "rechnungsmail": "rechnung@muster.de"},
                              von="LUNA-OS:ceo")["nummer"]
         self.assertEqual(k, "K-00001")
-        self.assertEqual(ks.firma_anlegen({"name": "Zweite AG", "typ": "lieferant"})["nummer"], "K-00002")
+        self.assertEqual(ks.firma_anlegen({"name": "Zweite AG", "typ": "lieferant"})["nummer"], "L-00001")  # eigener Kreis
         a1 = ks.ansprechpartner_anlegen(k, {"vorname": "Anna", "nachname": "Muster", "rolle": "Marketing"})["nummer"]
         a2 = ks.ansprechpartner_anlegen(k, {"nachname": "Berger", "mail": "b@muster.de"})["nummer"]
         self.assertEqual((a1, a2), ("AP-00001", "AP-00002"))
@@ -138,15 +138,15 @@ class TestKundenApi(unittest.TestCase):
         self.assertEqual({f["firma"] for f in liste["collab_ohne_nummer"]}, {"Brand_X", "Andere Marke"})
         r = self.c.post("/api/crm/kunden", json={"firma": {"name": "Brand X GmbH", "typ": "partner"},
                                                  "collab": "Brand_X"}).json()
-        self.assertEqual(r, {"ok": True, "nummer": "K-00001"})
+        self.assertEqual(r, {"ok": True, "nummer": "P-00001"})
         liste = self.c.get("/api/crm/kunden").json()
         self.assertEqual([f["firma"] for f in liste["collab_ohne_nummer"]], ["Andere Marke"])
-        self.assertTrue(self.c.post("/api/crm/kunden/K-00001/ansprechpartner",
+        self.assertTrue(self.c.post("/api/crm/kunden/P-00001/ansprechpartner",
                                     json={"ansprechpartner": {"vorname": "Anna"}}).json()["ok"])
         self.assertEqual(self.c.post("/api/crm/ansprechpartner/AP-00001",
                                      json={"ansprechpartner": {"rolle": "Chefin"}}).json(),
                          {"ok": True, "geaendert": {"rolle": "Chefin"}})
-        d = self.c.get("/api/crm/kunden/k-00001").json()["firma"]
+        d = self.c.get("/api/crm/kunden/p-00001").json()["firma"]
         self.assertEqual((d["collab"], d["ansprechpartner_liste"][0]["rolle"]), (["brand_x"], "Chefin"))
         self.assertTrue(d["verlauf"][0]["von"].startswith("LUNA-OS:"))
         self.assertEqual(self.c.get("/api/crm/kunden/K-00077").status_code, 404)

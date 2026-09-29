@@ -1325,7 +1325,51 @@ def kunden_detail(nummer: str):
     f = kunden_store.firma(nummer)
     if not f:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Firmenkundennummer")
-    return {"firma": f}
+    return {"firma": f, "buchungen": _firma_buchungen(f["nummer"])}
+
+
+def _firma_buchungen(nummer: str) -> dict:
+    """Etappe 14: alles, was unter dieser Nummer laeuft -- Belege, Zahlungen je Jahr, erkannte Abos."""
+    from ...core.eigenbelege import EigenbelegStore as _EB
+    e = kunden_store.bh.eintraege()
+    belege = []
+    for x in _eb.EingangStore._falte(e).values():
+        fe = x.get("felder") or {}
+        if fe.get("lieferant_firma") == nummer:
+            belege.append({"nummer": x["nummer"], "datum": fe.get("rechnungsdatum", ""), "betrag_cent": fe.get("betrag_cent", 0),
+                           "art": fe.get("art", "ausgabe"), "text": fe.get("leistung") or fe.get("rechnungsnummer") or "",
+                           "status": "bezahlt" if x.get("bezahlt_am") else x["status"], "quelle": "beleg"})
+    for x in _EB._falte(e).values():
+        if x.get("firma") == nummer:
+            belege.append({"nummer": x["nummer"], "datum": x["datum"], "betrag_cent": x["betrag_cent"], "art": x["art"],
+                           "text": x["text"], "status": x["status"], "quelle": "eigenbeleg"})
+    belege.sort(key=lambda b: (b["datum"], b["nummer"]), reverse=True)
+    zeilen = _finanzen().journal(firma=nummer)
+    je_jahr: dict = {}
+    for z in zeilen:
+        if z["storniert"]:
+            continue
+        j = je_jahr.setdefault(str(z["jahr"]), {"einnahmen_cent": 0, "ausgaben_cent": 0})
+        j["einnahmen_cent" if z["art"] == "einnahme" else "ausgaben_cent"] += z["betrag_cent"]
+    return {"belege": belege, "je_jahr": dict(sorted(je_jahr.items(), reverse=True)), "abo": _abo(belege)}
+
+
+def _abo(belege: list[dict]) -> dict:
+    """Abo erkennen: in mind. 2 verschiedenen Monaten der letzten 4 ein aehnlicher Betrag (±25 %) derselben Art."""
+    heute = jetzt_iso()[:7]
+    j, m = int(heute[:4]), int(heute[5:7])
+    fenster = {f"{j - (m - i <= 0)}-{(m - i - 1) % 12 + 1:02d}" for i in range(4)}
+    je_monat: dict = {}
+    for b in belege:
+        if b["status"] in ("storniert", "verworfen") or str(b["datum"])[:7] not in fenster:
+            continue
+        je_monat.setdefault(str(b["datum"])[:7], []).append(abs(int(b["betrag_cent"] or 0)))
+    betraege = sorted(c for werte in je_monat.values() for c in werte if c)
+    if len(je_monat) < 2 or not betraege:
+        return {}
+    mitte = betraege[len(betraege) // 2]
+    passend = {mon for mon, werte in je_monat.items() if any(abs(c - mitte) <= 0.25 * mitte for c in werte)}
+    return {"monatlich_cent": mitte, "monate": sorted(passend)} if len(passend) >= 2 else {}
 
 
 @app.post("/api/crm/kunden")
@@ -1345,7 +1389,12 @@ async def kunden_anlegen(request: Request):
 @app.post("/api/crm/kunden/{nummer}")
 async def kunden_aendern(nummer: str, request: Request):
     body = await _json(request)
-    return _kunden_aktion(lambda: kunden_store.firma_aendern(nummer, body.get("firma") or {}, von=_von(request)))
+    def tun():
+        r = kunden_store.firma_aendern(nummer, body.get("firma") or {}, von=_von(request))
+        if "typ" in (r.get("geaendert") or {}):              # neue Rolle -> Nummer im passenden Kreis (Etappe 14)
+            r["rollennummer"] = kunden_store.rollennummer_sichern(nummer, von=_von(request))
+        return r
+    return _kunden_aktion(tun)
 
 
 @app.post("/api/crm/kunden/{nummer}/ansprechpartner")
@@ -1802,7 +1851,30 @@ def _eingang() -> _eb.EingangStore:
 
 
 def _lieferanten() -> list[dict]:
-    return [{"nummer": f["nummer"], "name": f["name"]} for f in kunden_store.firmen() if f.get("typ") == "lieferant" and f["aktiv"]]
+    """Auswahl fuer Belege: aktive Lieferanten/Partner (und Kunden) mit Anzeigenummer (Etappe 14)."""
+    reihe = {"lieferant": 0, "partner": 1, "kunde": 2}
+    return sorted(({"nummer": f["nummer"], "anzeige": f["anzeige"], "name": f["name"], "typ": f.get("typ") or "kunde"}
+                   for f in kunden_store.firmen() if f["aktiv"]), key=lambda x: (reihe.get(x["typ"], 3), x["name"].lower()))
+
+
+def _firma_vorschlag(felder: dict, vorschlag: dict) -> dict:
+    nr = (felder or {}).get("lieferant_firma") or kunden_store.finde(
+        (felder or {}).get("lieferant") or vorschlag.get("lieferant") or "", vorschlag.get("absender") or "")
+    f = kunden_store.firma(nr) if nr else None
+    return {"nummer": f["nummer"], "anzeige": f["anzeige"], "name": f["name"]} if f else {}
+
+
+def _firma_fuer_beleg(firma: str, name: str, art: str, absender: str, von: str) -> str:
+    """Stammdaten-Nummer fuer eine Buchung: gewaehlte Firma (jede ihrer Nummern) oder finden/anlegen (Etappe 14)."""
+    if firma:
+        f = kunden_store.firma(firma)
+        if not f:
+            raise ValueError(f"Unbekannte Stammdaten-Nummer: {firma}")
+        if f.get("typ") != "kunde":
+            kunden_store.rollennummer_sichern(f["nummer"], von=von)
+        kunden_store.absender_lernen(f["nummer"], absender, von=von)
+        return f["nummer"]
+    return kunden_store.zuordnen(name, art=art, absender=absender, von=von)
 
 
 @app.get("/api/finanzen/belege")
@@ -1823,7 +1895,7 @@ def beleg_detail(nummer: str):
     llm = backoffice.get(x["llm_auftrag"]) if x.get("llm_auftrag") else None
     return {"beleg": {k: v for k, v in x.items() if k != "text"} | {"text": (x.get("text") or "")[:4000]},
             "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()}, "kategorien_einnahme": _eb.EINNAHME_KATEGORIEN,
-            "lieferanten": _lieferanten(),
+            "lieferanten": _lieferanten(), "firma_vorschlag": _firma_vorschlag(x.get("felder") or {}, x.get("vorschlag") or {}),
             "ki_status": (llm or {}).get("status", "")}
 
 
@@ -1879,12 +1951,17 @@ async def beleg_buchen(nummer: str, request: Request):
 
     def tun():
         felder = dict(body.get("felder") or {})
-        if body.get("lieferant_anlegen") and not felder.get("lieferant_firma") and felder.get("lieferant"):
-            name = str(felder["lieferant"]).strip()
-            vorhanden = next((f for f in kunden_store.firmen() if f["name"].strip().lower() == name.lower()), None)
-            felder["lieferant_firma"] = vorhanden["nummer"] if vorhanden else kunden_store.firma_anlegen(
-                {"name": name, "typ": "lieferant"}, von=_von(request))["nummer"]
-        return _eingang().buchen(nummer, felder, von=_von(request))
+        st = _eingang()
+        x = st.get(nummer)
+        if not x:
+            raise KeyError(nummer)
+        if not str(felder.get("lieferant") or "").strip():
+            raise ValueError("Lieferant fehlt.")
+        # Etappe 14: jeder Beleg haengt an einer Stammdaten-Nummer (gewaehlt, gefunden oder neu angelegt)
+        felder["lieferant_firma"] = _firma_fuer_beleg(felder.get("lieferant_firma") or "", felder.get("lieferant") or "",
+                                                      felder.get("art") or "ausgabe",
+                                                      (x.get("vorschlag") or {}).get("absender") or "", _von(request))
+        return st.buchen(nummer, felder, von=_von(request))
     return _kunden_aktion(_mit_aufraeumen(tun, _von(request)))
 
 
@@ -1993,9 +2070,9 @@ def finanzen_ki_kosten(jahr: int = 0):
 
 
 @app.get("/api/finanzen/journal")
-def finanzen_journal(jahr: int = 0, format: str = ""):
+def finanzen_journal(jahr: int = 0, format: str = "", firma: str = ""):
     j = jetzt_iso()[:4]
-    zeilen = _finanzen().journal(jahr or int(j))
+    zeilen = _finanzen().journal(jahr or int(j), firma=firma)
     if format == "csv":
         return Response("\ufeff" + journal_csv(zeilen), media_type="text/csv; charset=utf-8",
                         headers={"Content-Disposition": f'attachment; filename="Journal_{jahr or j}.csv"'})
@@ -2075,7 +2152,18 @@ def eigenbelege_liste():
 @app.post("/api/finanzen/eigenbelege")
 async def eigenbeleg_anlegen(request: Request):
     body = await _json(request)
-    return _kunden_aktion(lambda: EigenbelegStore(kunden_store.bh).anlegen(body.get("buchung") or {}, von=_von(request)))
+    def tun():
+        b = dict(body.get("buchung") or {})
+        if not (b.get("firma") or str(b.get("gegenpartei") or "").strip()):
+            raise ValueError("Bitte angeben, von wem bzw. an wen (Gegenpartei) -- jeder Beleg braucht eine Stammdaten-Nummer.")
+        EigenbelegStore.pruefen(b)                           # erst pruefen, dann ggf. Firma anlegen
+        b["firma"] = _firma_fuer_beleg(b.get("firma") or "", b.get("gegenpartei") or "", b.get("art") or "ausgabe", "",
+                                       _von(request))
+        if not str(b.get("gegenpartei") or "").strip():
+            b["gegenpartei"] = kunden_store.firma(b["firma"])["name"]
+        return EigenbelegStore(kunden_store.bh).anlegen(b, von=_von(request))
+    return _kunden_aktion(tun)
+
 
 
 @app.post("/api/finanzen/eigenbelege/{nummer}/stornieren")
@@ -2090,6 +2178,48 @@ async def beleg_verwerfen(nummer: str, request: Request):
     body = await _json(request)
     return _kunden_aktion(_mit_aufraeumen(lambda: _eingang().verwerfen(nummer, body.get("grund") or "", von=_von(request)),
                                           _von(request)))
+
+
+@app.post("/api/finanzen/stammdaten/zuordnen")
+async def stammdaten_zuordnen(request: Request):
+    """Etappe 14, einmalig/nachholend: jeder gebuchte Beleg und Eigenbeleg bekommt seine Stammdaten-Nummer (finden oder
+    anlegen), jede Lieferanten-/Partnerfirma ihre L-/P-Nummer. `probe: true` = nur anzeigen, nichts schreiben."""
+    from ...core.eigenbelege import EigenbelegStore as _EB
+    body = await _json(request)
+    probe, von = bool(body.get("probe")), _von(request)
+
+    def tun():
+        e = kunden_store.bh.eintraege()
+        plan = []
+        for x in sorted(_eb.EingangStore._falte(e).values(), key=lambda b: b["nummer"]):
+            fe = x.get("felder") or {}
+            if x["status"] == "gebucht" and not fe.get("lieferant_firma"):
+                vor = kunden_store.finde(fe.get("lieferant", ""), (x.get("vorschlag") or {}).get("absender", ""))
+                plan.append({"beleg": x["nummer"], "name": fe.get("lieferant", ""), "art": fe.get("art", "ausgabe"),
+                             "absender": (x.get("vorschlag") or {}).get("absender", ""), "firma": vor})
+        ohne = []
+        for x in sorted(_EB._falte(e).values(), key=lambda b: b["nummer"]):
+            if not x.get("firma"):
+                if not x.get("gegenpartei"):
+                    ohne.append(x["nummer"])
+                    continue
+                plan.append({"beleg": x["nummer"], "name": x["gegenpartei"], "art": x["art"], "absender": "",
+                             "firma": kunden_store.finde(x["gegenpartei"])})
+        rollen = [f["nummer"] for f in kunden_store.firmen() if f.get("typ") in ("lieferant", "partner")
+                  and f["anzeige"] == f["nummer"] and not f["nummer"].startswith(("L-", "P-"))]
+        if probe:
+            return {"probe": True, "plan": plan, "ohne_gegenpartei": ohne, "rollennummern_fuer": rollen}
+        for nr in rollen:                                   # zuerst die vorhandenen Firmen (L-00001 ... in Anlagereihenfolge)
+            kunden_store.rollennummer_sichern(nr, von=von)
+        erg = []
+        for pz in plan:
+            nr = kunden_store.zuordnen(pz["name"], art=pz["art"], absender=pz["absender"], von=von) if not pz["firma"] \
+                else _firma_fuer_beleg(pz["firma"], pz["name"], pz["art"], pz["absender"], von)
+            (_eingang() if pz["beleg"].startswith("ER-") else _EB(kunden_store.bh)).firma_verknuepfen(pz["beleg"], nr, von=von)
+            erg.append({"beleg": pz["beleg"], "firma": kunden_store.firma(nr)["anzeige"]})
+        return {"zugeordnet": erg, "ohne_gegenpartei": ohne,
+                "rollennummern": {nr: kunden_store.firma(nr)["anzeige"] for nr in rollen}}
+    return _kunden_aktion(tun)
 
 
 @app.post("/api/finanzen/belege/{nummer}/als-nachweis")
