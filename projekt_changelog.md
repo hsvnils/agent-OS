@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 09:10] — Claude Code
+- **Was:** (1) Verlustvortrag 2025 live eingetragen: 2.622,59 EUR (`POST /api/finanzen/verlustvortrag`, Ereignis
+  `verlustvortrag_erfasst`; Uebersicht 2026 zeigt ihn voll verrechenbar, da 2026 bisher Verlust). (2) Erledigte
+  Beleg-Mails ablegen: nach sicherer Aufnahme ins Kassenbuch verschiebt LUNA die Mail aus Posteingang/Spam nach
+  `LUNA/Rechnungen/<Jahr>`, `LUNA/Gutschriften/<Jahr>` bzw. `LUNA/Doppelt/<Jahr>` (Ordner legt sie selbst an) und
+  markiert sie gelesen; Mails ohne erkannten Beleg und verworfene Belege bleiben im Posteingang; nichts wird geloescht;
+  jede Ablage protokolliert (`eingang_mail_abgelegt`), fehlgeschlagene werden im naechsten Poll nachgeholt, frueher
+  aufgenommene Beleg-Mails ebenfalls. Neues Google-Recht `gmail.modify`; Token-Erneuerung jetzt ohne Scope-Liste, damit
+  der bestehende Zugang bis zur Neu-Anmeldung weiterlaeuft. Dabei BF-39 gefunden (Spam-Rueckholung/als gelesen markieren
+  scheiterten live mangels Recht). Tests `test_mail_ablage.py` (7) + Gegenproben (6 Mutationen, alle rot); Suite 965 gruen.
+- **Warum:** CEO 2026-09-29 „Luna soll die Mails, nachdem sie sie bearbeitet hat, in passende Ordner wegsortieren“ --
+  Unterordner je Jahr, gelesen markieren, alles andere bleibt; „Den Verlustvortrag kannst du schon mit eintragen“.
+- **Betroffen:** `orchestrator/governance/google_workspace.py`, `orchestrator/core/eingangsbelege.py`,
+  `orchestrator/tests/test_mail_ablage.py`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md` (BF-39, Baseline),
+  `docs/entscheidungs-register.md`, `docs/verfahrensdokumentation-buchhaltung.md`, `KUNDEN_FINANZEN_ROADMAP.md`,
+  `deploy/google-oauth-setup.md`; Live-Kassenbuch (NAS)
+
 ## [2026-09-28 20:56] — Claude Code
 - **Was:** Verlustvortrag im Finanzbereich (Eingabe im Jahresabschluss, Anzeige „noch verrechenbar“ in Uebersicht/Jahresabschluss, nicht in der EUeR); Kategorienamen fuer Content Creator (Technik & Equipment bis/ueber 800 €, Arbeitsmittel & Zubehoer); Positionserkennung fuer Amazon-Rechnungen (mehrzeilige Artikeltexte, geschuetzte Leerzeichen, ASIN-Zeilen, Sammel-PDF = Summe der Zahlbetraege); CFO-Hinweis „wiederkehrend fehlt“ nur bei aehnlichen Betraegen. UI-Cache app v59.
 - **Warum:** CEO-Entscheidungen zum Uebertrag (Kategorien, Verlustvortrag) + Erkenntnisse aus den 35 Amazon-Rechnungen.
