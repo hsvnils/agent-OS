@@ -607,7 +607,9 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 17: Aus einer Collab-Anfrage ein Angebotsentwurf
 
-- Status: geplant (Antrags-Durchsicht 2026-09-29, Antrag „Collab-CRM um KI-gestuetzte Lead-Qualifizierung und
+- Status: **verworfen** (CEO 2026-09-29: „brauchen wir so nicht, ich lege das manuell an“ -- Unternehmen schreiben nicht an
+  LUNAs Adresse, sie bekommen sie nur beim Angebotsversand; die Anbindung an das Meta-Postfach ist verworfen). Nicht bauen.
+- Urspruenglich: geplant (Antrags-Durchsicht 2026-09-29, Antrag „Collab-CRM um KI-gestuetzte Lead-Qualifizierung und
   Angebotsentwuerfe erweitern“, CRO; Eigenbau statt der geschaetzten 2.500–5.000 EUR)
 - Ziel / Scope: im Collab-CRM (Firma/Nachricht) ein Knopf „Angebot entwerfen“: legt -- falls noetig -- die Firma mit
   K-Nummer an, schlaegt passende Katalog-Formate vor (aus dem Anfragetext, regelbasiert, optional lokales Backoffice-
