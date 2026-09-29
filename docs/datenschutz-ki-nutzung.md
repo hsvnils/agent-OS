@@ -1,6 +1,6 @@
 # Datenschutz-Check der KI-Nutzung (Entwurf)
 
-> **Entwurf zur Entscheidung durch den CEO** (BETRIEB_ROADMAP Etappe 4, 2026-09-29). Keine Rechtsberatung: Rechtliche
+> **Vom CEO entschieden am 2026-09-29** (siehe 6; BETRIEB_ROADMAP Etappe 4). Keine Rechtsberatung: Rechtliche
 > Fragen sind CEO-Tor (`AGENTS.md` 4) -- im Zweifel Datenschutz-Anwalt/-Generator. Belege: Code-Stellen und
 > `docs/datenfluesse.md`; externe Quellen mit Datum.
 
@@ -79,7 +79,11 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
 4. **Regel fuer spaeter:** Neue Funktionen, die Dritten automatisch antworten oder Inhalte erzeugen, bekommen vorab einen
    KI-Hinweis (Art. 50) -- als Punkt in die Roadmap-Vorlage aufnehmen, sobald so etwas geplant wird.
 
-## 6. Offen fuer den CEO
+## 6. Entscheidungen des CEO (2026-09-29)
 
-- 5.1 Google-Konto (EWR, Data Processing Addendum), 5.2 Datenschutzerklaerung, 5.3 ob die optionale Maskierung/Lokal-
-  Umstellung gewuenscht ist.
+- **5.1 Google / Auftragsverarbeitung: Variante a -- so lassen.** Gemini-Gratis bleibt; im EWR kein Training mit den
+  Eingaben; die formal offene Vertragsfrage (Data Processing Addendum fuer die Gratis-Stufe) wird bewusst in Kauf genommen.
+- **5.2 Datenschutzerklaerung: entfaellt fuer LUNA.** LUNA ist ein internes Werkzeug und hat mit hanserautisch.de nichts
+  zu tun; die Datenschutzerklaerung der Website wird an anderer Stelle gepflegt.
+- **5.3 Maskierung / DM-Analyse lokal: nicht gewuenscht.** Bleibt wie heute.
+- Neu zu entscheiden, sobald LUNA Dritten selbst antwortet oder Inhalte erzeugt, die veroeffentlicht werden (AI Act Art. 50).
