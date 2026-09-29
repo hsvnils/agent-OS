@@ -17,6 +17,33 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 15:43] — Claude Code
+- **Was:** BETRIEB_ROADMAP Etappe 1 umgesetzt (noch nicht deployt): Dubletten-Filter in der Ideen-Pipeline
+  (`core/innovation.py` `finde_dublette`, regelbasiert, gegen alle bisherigen Antraege inkl. abgelehnter; bei Treffer kein
+  Antrag, keine CTO/CFO-Modellaufrufe, keine Freigabe-Meldung, Hinweis mit Antrags-Nummer); Selbst-Entwicklung
+  woechentlich statt taeglich (`SELF_DEV_WOCHENTAG`, Standard Montag 04:00; `self_development.selfdev_wochentag`,
+  Bot-Loop); Tool-Antworten `innovation_scouting`/`funde_bewerten`/`selbstentwicklung` nennen die Dublette.
+  Tests `test_ideen_dubletten.py` + 5 Gegenproben; Probelauf ueber 103 echte Antraege: 14 Wiederholungen erkannt, keine
+  Fehlgriffe; Suite 984 gruen.
+- **Warum:** CEO 2026-09-29 „Go fuer Etappe 1“ (Ursache der 97 offenen Antraege).
+- **Betroffen:** `orchestrator/core/innovation.py`, `orchestrator/core/self_development.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_ideen_dubletten.py`,
+  `BETRIEB_ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
+## [2026-09-29 15:39] — Claude Code
+- **Was:** Antrags-Durchsicht mit dem CEO: alle 97 offenen Antraege (Ideen-/Selbst-Entwicklungs-Laeufe Juni–September)
+  gelesen, gegen den Systemstand bewertet und im Live-System geschlossen -- 8 Fehler-Antraege geloescht, 89 mit
+  Begruendung abgelehnt (41 bereits umgesetzt, 39 nicht noetig, 9 in Roadmaps ueberfuehrt); danach 0 offen (Store:
+  91 abgelehnt, 10 geloescht, 2 erledigt). Neue `BETRIEB_ROADMAP.md` (Etappen: Ideen-Laeufe entruempeln, Changelog-Check,
+  Betriebs-Monitoring Ende-zu-Ende, Datenschutz-Check KI) mit Ursachenanalyse und kalibriertem Dubletten-Vergleich;
+  `KUNDEN_FINANZEN_ROADMAP.md`: Content-Feedback-Loop in Etappe 3c, neue Etappe 17 (Collab-Anfrage -> Angebotsentwurf),
+  Arbeitsbranch als geschlossen vermerkt; `ROADMAP.md`-Verzeichnis und Register ergaenzt. Kein Code geaendert.
+  (Das Ablehnen schreibt je Antrag zusaetzlich einen Eintrag ins Changelog der NAS.)
+- **Warum:** CEO 2026-09-29 „offene Freigaben gemeinsam anschauen ... was wir in Roadmaps umwandeln ... und was wir nicht
+  mehr brauchen“ + „Passt, lass uns starten“.
+- **Betroffen:** Live-Antrags-Store (NAS), `BETRIEB_ROADMAP.md` (neu), `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`,
+  `docs/entscheidungs-register.md`
+
 ## [2026-09-29 15:27] — Claude Code
 - **Was:** Nach CEO-Neustart (main 9fe89f6) geprueft: LUNA-OS-Login und Finanzen ok (Schluessel aus der `.env` werden
   gelesen), Bot laeuft (Watch-Log 15:27 geschrieben); `orchestrator/.env`, `state/instagram_token.json`,

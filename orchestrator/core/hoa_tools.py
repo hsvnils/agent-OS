@@ -715,8 +715,9 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                 f"Bewerte die neuen Funde im Bereich {ab} und schlage EINE konkrete Massnahme vor",
                 abteilung=ab, wissen=wissen)
             return {"ok": True, "abteilung": ab, "idee": redact(erg.idee, sec),
-                    "antrag_id": erg.antrag_id,
-                    "hinweis": "Als Antrag eingereicht -- CEO entscheidet (keine Ausfuehrung)."}
+                    "antrag_id": erg.antrag_id, "dublette": erg.dublette,
+                    "hinweis": (f"Kein neuer Antrag -- Thema schon beantragt ({erg.dublette['antrag_id']})."
+                                if erg.dublette else "Als Antrag eingereicht -- CEO entscheidet (keine Ausfuehrung).")}
         if name == "watch_digest":
             return {"funde": [_redact_obj(f, sec)
                               for f in watch.briefing(None)
@@ -738,7 +739,7 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"ok": True, "abteilung": erg.abteilung, "idee": redact(erg.idee, sec),
                 "machbarkeit": redact(erg.machbarkeit, sec),
                 "kostenvoranschlag": redact(erg.kostenvoranschlag, sec), "antrag_id": erg.antrag_id,
-                "hinweis": "Als Antrag eingereicht -- CEO entscheidet (keine Ausfuehrung)."}
+                "hinweis": erg.hinweis or "Als Antrag eingereicht -- CEO entscheidet (keine Ausfuehrung)."}
 
     if name == "autonomie_pausieren":
         if ctx.watch is None:
@@ -985,8 +986,10 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"thema": erg.thema, "idee": redact(erg.idee, sec),
                 "machbarkeit": redact(erg.machbarkeit, sec),
                 "kostenvoranschlag": redact(erg.kostenvoranschlag, sec),
-                "quellen": erg.quellen, "antrag_id": erg.antrag_id,
-                "hinweis": "Als Antrag eingereicht -- CEO entscheidet (keine Ausfuehrung)."}
+                "quellen": erg.quellen, "antrag_id": erg.antrag_id, "dublette": erg.dublette,
+                "hinweis": (f"Kein neuer Antrag -- Thema schon beantragt ({erg.dublette['antrag_id']}, "
+                            f"{erg.dublette['status']})." if erg.dublette
+                            else "Als Antrag eingereicht -- CEO entscheidet (keine Ausfuehrung).")}
 
     if name == "brain_merken":
         if ctx.brain is None:

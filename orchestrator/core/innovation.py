@@ -27,6 +27,7 @@ class InnovationErgebnis:
     machbarkeit: str = ""
     kostenvoranschlag: str = ""
     antrag_id: str | None = None
+    dublette: dict | None = None      # {antrag_id, titel, status} -- gleiches Thema schon beantragt (kein neuer Antrag)
 
 
 class InnovationPipeline:
@@ -67,6 +68,13 @@ class InnovationPipeline:
             "Verantwortungsbereich vor: erste Zeile ein praegnanter Titel, danach 2-3 Saetze "
             "Nutzen/Begruendung. Stuetze dich auf den aktuellen Wissensstand, wenn vorhanden.\n\n"
             f"Thema: {thema}\n\nWissensstand/Befund:\n{erg.befund or '(keiner)'}")
+
+        # 2b. Dubletten-Filter (BETRIEB_ROADMAP Etappe 1): gleiches Thema schon beantragt -- auch abgelehnt oder
+        #     erledigt -> kein neuer Antrag, keine CTO/CFO-Bewertung (spart zwei Modellaufrufe).
+        if self.antraege is not None and not erg.idee.startswith(_NICHT_VERFUEGBAR):
+            erg.dublette = finde_dublette(_titel(erg.idee), self.antraege.list())
+            if erg.dublette:
+                return erg
 
         # 3. Bewertung -- CTO (Machbarkeit) + CFO (Kostenvoranschlag).
         erg.machbarkeit = self._frag(
@@ -145,6 +153,57 @@ class InnovationPipeline:
 
 
 _NICHT_VERFUEGBAR = "(nicht verfügbar"
+
+# --- Dubletten-Filter (BETRIEB_ROADMAP Etappe 1, CEO-Go 2026-09-29) ------------------------------------------------
+# Regelbasiert und kostenlos: Titel ohne Fuellwoerter, Wortstaemme, gleiche Wortanfaenge ab 6 Zeichen. Kalibriert an
+# den 97 Antraegen Juni–September 2026 (Wiederholungen wie „zentrales Infrastruktur-Monitoring“ in drei Varianten).
+_FUELL = set("""einfuehrung etablierung implementierung aufbau entwicklung integration erweiterung optimierung standardisierung
+festlegung aktivierung vertiefung systematisch systematische systematischen systematisches standardisierte
+standardisierten standardisiertes zentral zentrale zentralen zentrales zentraler zentralisiert zentralisierten eines
+einer einen eine ein des der die das und fuer von zur zum mit im in am auf pro je statt durch den dem ki ai gestuetzte
+gestuetzten gestuetztes verbindlichen verbindlich detaillierten detailliertes automatisierten automatisiertes
+automatisierte automatisierter proaktive proaktiven direkten spezialisierten dedizierten strategischen strategische
+internen interne neuen titel granularen obligatorischen verpflichtenden kontinuierlichen gezielte integrierten tools
+tool system systems""".split())
+_DUBLETTE_MIN, _DUBLETTE_MAX = 0.6, 0.3   # Anteil am kuerzeren / am laengeren Titel
+
+
+def _stamm(w: str) -> str:
+    for endung in ("ungen", "ung", "ern", "en", "es", "er", "s", "e", "n"):
+        if len(w) > 5 and w.endswith(endung):
+            return w[: -len(endung)]
+    return w
+
+
+def _kernwoerter(titel: str) -> set[str]:
+    t = (titel or "").lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+    return {_stamm(w) for w in re.split(r"[^a-z0-9]+", t) if len(w) > 2 and w not in _FUELL}
+
+
+def _gleich(a: str, b: str) -> bool:
+    return a == b or (min(len(a), len(b)) >= 6 and a[:6] == b[:6])
+
+
+def aehnlichkeit(t1: str, t2: str) -> tuple[int, float, float]:
+    """-> (gemeinsame Kernwoerter, Anteil am kuerzeren, Anteil am laengeren Titel)."""
+    a, b = _kernwoerter(t1), _kernwoerter(t2)
+    if len(a) < 2 or len(b) < 2:
+        return 0, 0.0, 0.0
+    treffer = sum(1 for x in a if any(_gleich(x, y) for y in b))
+    return treffer, treffer / min(len(a), len(b)), treffer / max(len(a), len(b))
+
+
+def finde_dublette(titel: str, antraege: list[dict]) -> dict | None:
+    """Bisheriger Antrag (jeder Status, ausser Fehler-Antraege) zum selben Thema, sonst None."""
+    beste = None
+    for a in antraege:
+        alt = str(a.get("titel") or "")
+        if not alt or alt.startswith(_NICHT_VERFUEGBAR):
+            continue
+        n, kurz, lang = aehnlichkeit(titel, alt)
+        if n >= 2 and kurz >= _DUBLETTE_MIN and lang >= _DUBLETTE_MAX and (beste is None or kurz > beste[0]):
+            beste = (kurz, {"antrag_id": a.get("antrag_id"), "titel": alt, "status": a.get("status")})
+    return beste[1] if beste else None
 
 
 def _titel(idee: str) -> str:

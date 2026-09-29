@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-09-29
-- Arbeitsbranch: `ai/kunden-finanzen`
+- Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappen 15 (Abos) und 16 (TKP) deployen (Go), dann CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -227,6 +227,9 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   Auswertung (Median 90 Tage je Format, Follower, Aufrufe, Interaktionen, Verlauf); Werte fliessen in Katalog-Basis
   („Ø 37.000 Aufrufe je Reel") und die Kennzahlen im Angebot/Preisliste statt fester Zahlen.
 - Gate: Export hochladen -> Auswertung in LUNA-OS stimmt mit der Meta Business Suite ueberein -> Angebot zeigt die Werte.
+- Erweiterung (Antrags-Durchsicht 2026-09-29, Antrag „datengetriebener Content-Feedback-Loop“, CCO): die Auswertung
+  speist auch die **TKP-Kontakte** im Katalog (Etappe 16: Median 90 Tage statt Handwert) und zeigt je Format/Thema, was
+  funktioniert (Top-/Flop-Reels) -> Hinweis an Content-Feed/Ideen. Weiter wartend auf die Meta-Exporte.
 
 ### Etappe 4: Beauftragung (Auftragsbestaetigung)
 
@@ -601,6 +604,16 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   veroeffentlichen (Oeffentlichkeit = CEO-Tor).
 - Aufwand: mittel (1 Sitzung). Unabhaengig von Etappe 15.
 - Dokumentation: Changelog, Roadmap, Register (TKP-Spannen, Quelle OMR), `docs/datenfluesse.md`.
+
+### Etappe 17: Aus einer Collab-Anfrage ein Angebotsentwurf
+
+- Status: geplant (Antrags-Durchsicht 2026-09-29, Antrag „Collab-CRM um KI-gestuetzte Lead-Qualifizierung und
+  Angebotsentwuerfe erweitern“, CRO; Eigenbau statt der geschaetzten 2.500–5.000 EUR)
+- Ziel / Scope: im Collab-CRM (Firma/Nachricht) ein Knopf „Angebot entwerfen“: legt -- falls noetig -- die Firma mit
+  K-Nummer an, schlaegt passende Katalog-Formate vor (aus dem Anfragetext, regelbasiert, optional lokales Backoffice-
+  Modell), setzt TKP-Stufe Standard und oeffnet den Angebots-Editor als Entwurf. Kein Versand ohne CEO (Oeffentlichkeit).
+- Gate: echte Beispiel-DM -> Entwurf mit plausiblen Formaten; nichts wird versendet; Tests + Gegenprobe.
+- Aufwand: mittel. Abhaengig von Etappe 16 (TKP) -- erfuellt.
 
 ## Reihenfolge
 
