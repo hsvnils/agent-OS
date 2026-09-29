@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 16:44] — Claude Code
+- **Was:** CEO-Entscheidungen festgehalten: KUNDEN_FINANZEN Etappe 17 (Collab-Anfrage -> Angebotsentwurf) verworfen --
+  Angebote legt der CEO manuell an, Firmen schreiben nicht an LUNAs Adresse; Anbindung an das Meta-/Instagram-Postfach
+  (App-Review/Webhook) verworfen. Roadmap, `ROADMAP.md`, Register nachgezogen. Kein Code.
+- **Warum:** CEO „Ich denke nicht, dass wir das SO brauchen ... Das Anschliessen an das META Postfach habe ich verworfen.“
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-29 16:34] — Claude Code
 - **Was:** Selbst-Entwicklung einmal manuell ueber LUNAs Chat (`/api/chat`, Werkzeug `selbstentwicklung`, Bereich cto)
   ausgeloest: Lauf komplett (584 s, lokales Modell), neuer Antrag A-20260929-142702-2054 „Erweiterung des Agenten-
