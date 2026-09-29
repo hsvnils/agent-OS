@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 15:23] — Claude Code
+- **Was:** BF-26 behoben: auf der NAS `chmod 600 orchestrator/.env` (vorher 644; Besitzer uid 1026 = Container-Benutzer,
+  `env_file` liest der Docker-Dienst als root -> LUNA liest weiter, LUNA-OS danach geprueft: ok). Instagram-Token und
+  Firmendaten waren schon 600. Sicherheits-Audit (`core/security_agent.py`) prueft taeglich die Rechte dieser drei Dateien
+  (Befund „hoch“, wenn andere lesen koennen) + Test mit Gegenprobe; Suite 991 gruen. Versehentlich einen zusaetzlichen
+  Backup-Lauf `deploy/backup-from-nas.sh` gestartet (Aufruf mit `--help`, das Skript kennt die Option nicht): ergab ein
+  vollstaendiges Zusatz-Backup `~/LUNA-Backups/2026-09-29_1522` (29 MB, 19 Stores), nichts rotiert/geloescht (7 von 30).
+- **Warum:** CEO „Kuemmere dich um BF-26“.
+- **Betroffen:** NAS `orchestrator/.env` (Rechte), `orchestrator/core/security_agent.py`,
+  `orchestrator/tests/test_security_agent.py`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-29 15:18] — Claude Code
 - **Was:** NAS-Altlasten geloescht (gezielt, Pfad fuer Pfad): `mac/LunaOrb/.build` (431 MB) + `mac/LunaOrb/LunaOrb.app`,
   alle `._*`-Mac-Metadateien (102) + `.DS_Store` (3), alter Trend-Code `orchestrator/core/trends.py`,
