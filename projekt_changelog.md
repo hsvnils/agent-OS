@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 15:27] — Claude Code
+- **Was:** Nach CEO-Neustart (main 9fe89f6) geprueft: LUNA-OS-Login und Finanzen ok (Schluessel aus der `.env` werden
+  gelesen), Bot laeuft (Watch-Log 15:27 geschrieben); `orchestrator/.env`, `state/instagram_token.json`,
+  `buchhaltung/firmendaten.json` alle 600 -- die neue Audit-Pruefung meldet damit „ok“.
+- **Warum:** CEO „Neustart erledigt, du kannst pruefen“ (BF-26).
+- **Betroffen:** keine Dateien (Pruefung), Changelog
+
 ## [2026-09-29 15:23] — Claude Code
 - **Was:** BF-26 behoben: auf der NAS `chmod 600 orchestrator/.env` (vorher 644; Besitzer uid 1026 = Container-Benutzer,
   `env_file` liest der Docker-Dienst als root -> LUNA liest weiter, LUNA-OS danach geprueft: ok). Instagram-Token und
