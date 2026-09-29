@@ -4,8 +4,9 @@
 - Stand: 2026-09-29
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 14 deployen (Go), dann live `stammdaten/zuordnen` (erst Probe) und Erstbefuellung der
-  Lieferanten aus den Belegen; Etappe 13: CEO-Abnahme beim Buchen, erste echte Auto-Weiterleitung pruefen.
+- Naechster Schritt: CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
+  waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
+  Auto-Weiterleitung pruefen.
   Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
   gemischte Rechnung aufteilen); Deploy + Abnahme Etappe 12 (Barter-Deal einmal von Angebot bis Ware-Eingang
   durchspielen). Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
@@ -478,7 +479,9 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 14: Lieferanten-, Partner- und Dienstleister-Stammdaten mit Nummern
 
-- Status: umgesetzt (CEO-Go 2026-09-29 „Go fuer etappe 14“), Deploy + Nachzuordnung live + Erstbefuellung + Abnahme offen
+- Status: deployt + live befuellt (main 774de97, 2026-09-29), CEO-Abnahme offen. Nachzuordnung live: L-00001..05
+  (Calumet, Amazon, J. Fuehr, Adlerfokus, Apple), L-00006..08 (TeamClash, Fiverr, Elgato), P-00001 (Meta); Erstbefuellung aus
+  den Belegen + neue Abo-Anbieter L-00009..16 (Anthropic, Supabase, Canva, DR.SIM, Microsoft, DAZN, Grover, Dropbox); Kette intakt
 - Ergebnis: Kreise `K-`/`L-`/`P-` (`buchhaltung.KREISE_OHNE_JAHR`, `kunden.KREIS`); alte Lieferanten behalten ihren
   K-Schluessel und bekommen eine L-Nummer (`rollennummer_sichern`, Ereignis `firma_nummer_ergaenzt`, jede Nummer findet die
   Firma, angezeigt wird die Rollennummer); neue Felder `kundennummer_bei`, `zahlungsweg`, `rechnungs_absender`,

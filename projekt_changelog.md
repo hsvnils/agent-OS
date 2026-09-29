@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 12:24] — Claude Code
+- **Was:** Etappe 14 live (main 774de97, CEO-Neustart): Nachzuordnung per API (erst Probe, dann echt) -- Rollennummern
+  L-00001..L-00005 fuer die bisherigen K-Lieferanten, Eigenbelege TeamClash/Fiverr/Elgato -> L-00006..08, Amazon-Eigenbeleg ->
+  L-00002, Meta-Gutschrift ER-2026-0002 -> P-00001; zweite Probe leer. Erstbefuellung nur aus Belegtexten: Adressen/USt-IDs
+  (Calumet, Amazon EU, Adlerfokus, Apple, Meta), Kundennummern (Calumet K00027416, J. Fuehr 11887, DR.SIM 1500177069),
+  Apple-Vertraege (2 AppleCare-Policen, iCloud+, Meta Verified, Developer-Programm), Zahlungswege; Ansprechpartnerin J. Fuehr
+  (AP-00003); neue Lieferanten L-00009..16 (Anthropic, Supabase, Canva, DR.SIM, Microsoft Payments, DAZN, Grover, Dropbox).
+  Offene Abo-Belege ER-0037..0047 bekommen den richtigen Lieferanten vorgeschlagen; Kette intakt (466 Eintraege).
+- **Warum:** CEO „neustart erledigt, leg los“.
+- **Betroffen:** Live-Kassenbuch (NAS), `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-29 12:21] — Claude Code
 - **Was:** CEO-Antworten festgehalten: „etwas anderes“ bei den Lieferanten-Angaben war ein Versehen (keine weiteren
   Felder); Reverse Charge (§ 13b) -- CEO muss keine USt melden, LUNA gibt dazu keinen Hinweis (Register).
