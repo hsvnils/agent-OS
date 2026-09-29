@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 10:40] — Claude Code
+- **Was:** CEO-Entscheidungen zu Etappe 14 in die Roadmap: eigene Nummernkreise K-/L-/P-; Felder Adresse + USt-ID,
+  eigene Kundennummer, Vertrags-/Abo-Nummern, Zahlungsweg (+ weitere Angabe offen); vorerst nur Plan, kein Go.
+- **Warum:** CEO-Antwort auf die Rueckfragen zu Etappe 13/14.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-29 10:30] — Claude Code
 - **Was:** 13 vom CEO weitergeleitete Abo-Mails gesichtet (nur gelesen): 2 mit PDF (Anthropic, Supabase -- je Rechnung +
   Quittung), 11 ohne Anhang (Rechnung im Mailtext: Apple x4, PayPal-Belege Microsoft x2/DAZN/Grover/Dropbox, Canva,

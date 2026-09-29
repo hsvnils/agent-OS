@@ -484,6 +484,10 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
     Adlerfokus, Apple, Meta (Partner), Fiverr, Elgato, TeamClash) plus die neuen Abo-Anbieter (Anthropic, Supabase,
     Microsoft, DAZN, Grover, Dropbox, Canva, DR.SIM) mit den Adressen/Nummern, die auf den Belegen stehen; fehlende
     Angaben als Luecke markiert, nichts erfunden.
+- Entscheidungen (CEO 2026-09-29): (1) **eigene Nummernkreise** K-/L-/P- (bestehende Lieferanten K-00003..K-00007
+  erhalten zusaetzlich eine L-Nummer); (2) je Lieferant **Adresse + USt-ID, unsere Kundennummer, Vertrags-/Abo-/
+  Versicherungsnummern, Zahlungsweg** -- plus weitere Angabe(n), vom CEO noch zu nennen; (3) **erst nur planen**:
+  CEO liest die Roadmap, Go fuer 13/14 steht aus.
 - Gate: jeder gebuchte Beleg und Eigenbeleg hat eine Lieferanten-/Partnernummer; Lieferanten-Ansicht zeigt fuer Amazon
   alle Amazon-Belege mit Summe = Summe im Journal; Tests + Gegenprobe; CEO-Abnahme der Ansicht.
 - Verifikation (vorab): `pytest` gruen; Readback live: Anzahl Belege ohne Lieferantennummer = 0.
