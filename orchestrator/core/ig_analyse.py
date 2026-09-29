@@ -9,8 +9,9 @@ Nimmt den Verlauf eines Kontakts (ein+ausgehend) und laesst ein **guenstiges** M
 
 **Modell-agnostisch** (AGENTS.md): das LLM ist per `analyse_llm_aus_env` austauschbar -- Claude Haiku
 (Anthropic), Gemini Flash (Google, OpenAI-kompatibel) oder OpenAI. Nur bei NEUEN Nachrichten neu analysieren
-(`IgInboxStore.braucht_analyse`) -> minimale Kosten. Datenschutz-Hinweis: Gemini **Free-Tier** nutzt Inhalte
-zum Training -> fuer private Partner-DMs Bezahl-Tier oder Anthropic waehlen (Modell via `IG_ANALYSE_MODELL`).
+(`IgInboxStore.braucht_analyse`) -> minimale Kosten. Datenschutz: fuer Nutzer im EWR nutzt Google auch in der
+Gratis-Stufe keine Eingaben zum Training (Bedingungen Stand 28.04.2026); offen ist die Auftragsverarbeitung -- siehe
+`docs/datenschutz-ki-nutzung.md` (Modell via `IG_ANALYSE_MODELL`, auch lokal moeglich).
 """
 from __future__ import annotations
 

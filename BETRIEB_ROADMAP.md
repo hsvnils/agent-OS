@@ -5,7 +5,8 @@
 - Arbeitsbranch: `ai/antraege-aufraeumen`
 - Basiscommit: `79d6fbc`
 - Naechster Schritt: Etappe 1 live (2026-09-29) -- nach Montag 05.10. 04:00 pruefen, dass hoechstens ein Antrag kam und
-  keiner ein abgelehntes Thema wiederholt. Etappe 2 live. Etappe 3 live (Waechter alle 15 min, Test-Ausfall ok). Naechstes: Go fuer Etappe 4 (Datenschutz-Check).
+  keiner ein abgelehntes Thema wiederholt. Etappe 2 live. Etappe 3 live und vom CEO abgenommen (Telegram-Meldungen kamen an). Etappe 4: Entwurf vorgelegt, CEO
+  entscheidet 5.1–5.3; danach Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -111,7 +112,12 @@ umwandeln ... und was wir mittlerweile nicht mehr brauchen“). Befund (Antrags-
 
 ### Etappe 4: Datenschutz-Check der KI-Nutzung (Entwurf)
 
-- Status: geplant (aus Antraegen „Leitfaden LLM-Datenschutz“ (CLO) und „Expertise EU AI Act“ (CLO))
+- Status: umgesetzt (CEO-Go 2026-09-29 „weiter mit Etappe 4“) -- Entwurf `docs/datenschutz-ki-nutzung.md` liegt dem CEO vor;
+  Befund: Belege/Buchhaltung lokal, Chat/DM-Analyse/Gegenlesen/Bildschirm ueber Gemini; Gemini-Gratis im EWR ohne
+  Training (Bedingungen 28.04.2026, Register korrigiert); AI Act Art. 50 ab 02.08.2026 fuer heutiges LUNA kaum relevant.
+  Offen: CEO-Entscheidungen 5.1 (Google-Konto/Auftragsverarbeitung), 5.2 (Datenschutzerklaerung), 5.3 (optionale
+  Maskierung/Lokal-Umstellung).
+- Herkunft: (aus Antraegen „Leitfaden LLM-Datenschutz“ (CLO) und „Expertise EU AI Act“ (CLO))
 - Ziel / Scope: read-only Bestandsaufnahme, welche Daten an welches Modell gehen (Chat ueber Gemini-Gratis, das
   Eingaben nutzen darf; Backoffice lokal; Beleg-/Kundendaten), plus kurze Einordnung der fuer einen Creator relevanten
   Pflichten (DSGVO, EU AI Act Transparenz). Ergebnis: Entwurf mit Empfehlungen (z. B. Kunden-/Rechnungsdaten nur lokal).

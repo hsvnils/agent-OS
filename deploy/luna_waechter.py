@@ -60,7 +60,7 @@ def telegram(env: dict, text: str) -> bool:
     tok, chat = env.get("TELEGRAM_BOT_TOKEN", ""), env.get("TELEGRAM_ALLOWED_CHAT_ID", "")
     if not tok or not chat:
         return False
-    daten = urllib.parse.urlencode({"chat_id": chat, "text": f"🛡️ Waechter (MACO470): {text}"}).encode()
+    daten = urllib.parse.urlencode({"chat_id": chat, "text": f"🛡️ Wächter (MACO470): {text}"}).encode()
     try:
         with urllib.request.urlopen(f"https://api.telegram.org/bot{tok}/sendMessage", data=daten, timeout=15) as r:
             return json.loads(r.read()).get("ok") is True

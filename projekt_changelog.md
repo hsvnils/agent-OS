@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 16:10] — Claude Code
+- **Was:** Etappe 3 vom CEO abgenommen (beide Waechter-Meldungen kamen in Telegram an); Waechter-Texte verbessert
+  (echte Umlaute, „Wächter“, eigener Entwarnungs-Satz statt Wiederholung des Fehlertexts; wirkt sofort, weil der Timer das
+  Skript aus dem Arbeitsverzeichnis des MACO470 startet). BETRIEB_ROADMAP Etappe 4: Entwurf `docs/datenschutz-ki-nutzung.md`
+  -- Datenwege zu KI-Diensten mit Code-Belegen, Gemini-API-Bedingungen (Stand 28.04.2026: im EWR kein Training auch in der
+  Gratis-Stufe), DSGVO-Punkte (Auftragsverarbeitung, Informationspflicht, Drittland), EU AI Act Art. 50/4, Empfehlungen und
+  offene CEO-Entscheidungen. Register korrigiert (neuer Eintrag „revidiert“ zum Eintrag 2026-07-06), Kommentar in
+  `core/ig_analyse.py` angepasst, AGENTS.md-Dateitabelle ergaenzt.
+- **Warum:** CEO „so richtig? Dann weiter mit Etappe 4“.
+- **Betroffen:** `orchestrator/core/betriebswaechter.py`, `deploy/luna_waechter.py`, `orchestrator/tests/test_betriebswaechter.py`,
+  `docs/datenschutz-ki-nutzung.md` (neu), `docs/entscheidungs-register.md`, `orchestrator/core/ig_analyse.py`,
+  `BETRIEB_ROADMAP.md`, `AGENTS.md`
+
 ## [2026-09-29 16:06] — Claude Code
 - **Was:** Etappe 3 nach CEO-Neustart verifiziert: Bot-Herzschlag 16:05:31 geschrieben, `/api/betrieb/status` antwortet,
   Probelauf ohne Befunde; `luna-waechter.timer` auf dem MACO470 aktiviert (erster Lauf 16:05:50 ok, danach alle 15 min).
