@@ -26,7 +26,7 @@
 | Belege/Rechnungen auslesen | lokal (Ollama, MACO470) | Belegtext | ja (Lieferanten), bleibt im Haus | `core/eingangsbelege.py` `llm_beauftragen` |
 | Chat (Telegram/LUNA-OS) | **Gemini** (Standard seit 2026-09-26), lokal als Ausweich | Nachricht + Werkzeug-Ergebnisse | **ja**, wenn Mail-/CRM-/Drive-Werkzeuge genutzt werden | Register „Gemini-Gratis-Tier als Standard fuer den Chat“; `core/model_router.py`, `core/hoa_tools.py` |
 | Bildschirm sehen (Phase 17) | Gemini | Bildschirmfoto | moeglich (was gerade offen ist) | `docs/datenfluesse.md` (Screenshots) |
-| DM-Analyse Collab-Radar | Gemini (Modell per `IG_ANALYSE_MODELL`) | Instagram-DMs von Marken/Personen | **ja** | `core/ig_analyse.py` |
+| DM-Analyse Collab-Radar | **abgeschaltet seit 2026-09-29** (vorher Gemini, `IG_ANALYSE_MODELL`) | Instagram-DMs von Marken/Personen | (ja) | `core/ig_analyse.py`, `IG_RADAR_AUTO=0` |
 | Backoffice-Gegenlesen | Gemini | Entwurf von Bewertungen/Analysen (Auftraege `bewertung`/`analyse`) | je nach Auftrag | `backoffice/worker.py` `GEGENLESEN` |
 | Reel-Schnitt/Tagging | Gemini (nur mit `CUTTER_VIDEO_KI=1` bzw. Tagging) | Videoclips aus dem eigenen Archiv | Personen im Stadion (ohnehin oeffentlich gepostet) | `cutter/gemini_video.py`, `cutter/reel_tag.py` |
 | Sprache rein | Deepgram | Sprachnachrichten des CEO | kaum (CEO selbst) | `docs/datenfluesse.md` |
