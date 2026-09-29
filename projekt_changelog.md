@@ -17,6 +17,41 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 12:57] — Claude Code
+- **Was:** Facebook-Euro-Betrag per Telegram geprueft: ER-2026-0002 um 09:30 mit 246,38 EUR gebucht und bezahlt
+  („Telegram:CEO“), Kalender-Erinnerung selbst geloescht -- Telegram-Strecke funktioniert. KUNDEN_FINANZEN Etappe 15
+  (Abos: Vorlagen `ABO-`, Turnus, automatisch buchen per Haken, Mail-Beleg-Abgleich, To-dos „faellig/Beleg fehlt/kuendigen“,
+  Reiter Finanzen -> Abos) und Etappe 16 (TKP-Kalkulation: Kontakte x TKP + Produktion, Spannen, OMR-Vergleich mit Link,
+  Community-Fit im Angebot, Rechnung/OMR per Haken, Preisliste mit Spanne; Story 600 -> 780 EUR, uebrige Preise gleich)
+  umgesetzt, noch nicht deployt. Tests `test_abos.py` (6), `test_tkp.py` (5) + 17 Gegenproben (2 zunaechst ohne Wirkung
+  wegen doppelter Sicherung -> ein Test ergaenzt), `test_katalog.py` an die TKP-Rechnung angepasst; Suite 992 gruen;
+  Browser-Test; Angebots-PDF gesichtet (Quellenzeile gekuerzt, lief ueber den Kasten).
+- **Warum:** CEO 2026-09-29 „1 Automatisch buchen als Option ... 2 Vorschlaege der OMR anzeigen ... mit Link ... 3 Nimm
+  erstmal deine Rechnung 4 an- und abwaehlen ... Du hast dann das Go fuer beide Etappen.“
+- **Betroffen:** `orchestrator/core/abos.py` (neu), `katalog.py`, `angebote.py`, `beleg_pdf.py`, `todos.py`, `buchhaltung.py`,
+  `orchestrator/channels/web/app.py`, `static/app-v2.js`, `style-v2.css`, `index-v2.html`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_abos.py`, `test_tkp.py`, `test_katalog.py`, `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`,
+  `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `docs/datenfluesse.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
+## [2026-09-29 12:36] — Claude Code
+- **Was:** Etappen 15 (wiederkehrende Zahlungen/Abos als manuelle Belege, Turnus waehlbar) und 16 (TKP-Kalkulation in
+  Preisliste und Angeboten, Regler 20–30 EUR) als Plan in `KUNDEN_FINANZEN_ROADMAP.md`; Ist-Stand der Live-Preisliste
+  gegen OMR „Influencer Preisliste 2026“ (08.05.2026) abgeglichen (Story liegt mit ca. 15 EUR TKP unter der OMR-Spanne).
+  Kein Code.
+- **Warum:** CEO 2026-09-29 „Beides planen und mit vorschlagen, ich gebe dann frei und erst dann darfst du anfangen“.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`
+
+## [2026-09-29 12:24] — Claude Code
+- **Was:** Etappe 14 live (main 774de97, CEO-Neustart): Nachzuordnung per API (erst Probe, dann echt) -- Rollennummern
+  L-00001..L-00005 fuer die bisherigen K-Lieferanten, Eigenbelege TeamClash/Fiverr/Elgato -> L-00006..08, Amazon-Eigenbeleg ->
+  L-00002, Meta-Gutschrift ER-2026-0002 -> P-00001; zweite Probe leer. Erstbefuellung nur aus Belegtexten: Adressen/USt-IDs
+  (Calumet, Amazon EU, Adlerfokus, Apple, Meta), Kundennummern (Calumet K00027416, J. Fuehr 11887, DR.SIM 1500177069),
+  Apple-Vertraege (2 AppleCare-Policen, iCloud+, Meta Verified, Developer-Programm), Zahlungswege; Ansprechpartnerin J. Fuehr
+  (AP-00003); neue Lieferanten L-00009..16 (Anthropic, Supabase, Canva, DR.SIM, Microsoft Payments, DAZN, Grover, Dropbox).
+  Offene Abo-Belege ER-0037..0047 bekommen den richtigen Lieferanten vorgeschlagen; Kette intakt (466 Eintraege).
+- **Warum:** CEO „neustart erledigt, leg los“.
+- **Betroffen:** Live-Kassenbuch (NAS), `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-29 12:21] — Claude Code
 - **Was:** CEO-Antworten festgehalten: „etwas anderes“ bei den Lieferanten-Angaben war ein Versehen (keine weiteren
   Felder); Reverse Charge (§ 13b) -- CEO muss keine USt melden, LUNA gibt dazu keinen Hinweis (Register).

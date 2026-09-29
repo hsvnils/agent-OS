@@ -2180,6 +2180,64 @@ async def beleg_verwerfen(nummer: str, request: Request):
                                           _von(request)))
 
 
+# -- Abos / wiederkehrende Zahlungen (KUNDEN_FINANZEN Etappe 15) --------------------------------------------------
+
+def _abos():
+    from ...core.abos import AboStore
+    return AboStore(kunden_store.bh)
+
+
+@app.get("/api/finanzen/abos")
+def abos_liste():
+    from ...core.abos import TURNUS
+    liste = _abos().liste()
+    namen = {f["nummer"]: f for f in kunden_store.firmen()}
+    for a in liste:
+        f = namen.get(a["firma"]) or {}
+        a["firma_name"], a["firma_nr"] = f.get("name", ""), f.get("anzeige", a["firma"])
+    aktiv = [a for a in liste if a["status"] == "aktiv"]
+    aus = sum(a["monatlich_cent"] for a in aktiv if a["art"] == "ausgabe")
+    ein = sum(a["monatlich_cent"] for a in aktiv if a["art"] == "einnahme")
+    return {"abos": liste, "turnus": {k: v[0] for k, v in TURNUS.items()}, "kategorien": KATEGORIE_NAMEN,
+            "summe": {"ausgaben_monat_cent": aus, "ausgaben_jahr_cent": aus * 12, "einnahmen_monat_cent": ein},
+            "firmen": _lieferanten()}
+
+
+@app.post("/api/finanzen/abos")
+async def abo_anlegen(request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _abos().anlegen(body.get("abo") or {}, kunden_store, von=_von(request)))
+
+
+@app.post("/api/finanzen/abos/{nummer}")
+async def abo_aendern(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _abos().aendern(nummer, body.get("abo") or {}, kunden_store, von=_von(request)))
+
+
+@app.post("/api/finanzen/abos/{nummer}/beenden")
+async def abo_beenden(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _abos().beenden(nummer, body.get("ende") or jetzt_iso()[:10], body.get("grund") or "",
+                                                   von=_von(request)))
+
+
+@app.post("/api/finanzen/abos/{nummer}/buchen")
+async def abo_buchen(nummer: str, request: Request):
+    """Faelligkeit buchen -- `faellig` (oder `schluessel` aus dem To-do der Hauptseite), optional `datum`/`betrag`."""
+    body = await _json(request)
+    return _kunden_aktion(lambda: _abos().buchen(nummer, body.get("faellig") or body.get("schluessel") or "", kunden_store,
+                                                  datum=body.get("datum") or "", betrag=body.get("betrag"),
+                                                  von=_von(request)))
+
+
+@app.post("/api/finanzen/abos/{nummer}/ueberspringen")
+async def abo_ueberspringen(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _abos().ueberspringen(nummer, body.get("faellig") or "", body.get("grund") or "",
+                                                         von=_von(request)))
+
+
 @app.post("/api/finanzen/stammdaten/zuordnen")
 async def stammdaten_zuordnen(request: Request):
     """Etappe 14, einmalig/nachholend: jeder gebuchte Beleg und Eigenbeleg bekommt seine Stammdaten-Nummer (finden oder
@@ -2240,7 +2298,8 @@ def katalog_lesen(request: Request):
     """Leistungskatalog (Formate, Pakete, Zuschlaege, Texte) fuer Angebots-Editor und Preisliste (Etappe 3b)."""
     k = Katalog(kunden_store.bh)
     u = getattr(request.state, "user", None) or _ceo_user()
-    return {"katalog": k.laden(), "gespeichert": k.pfad.exists(), "darf_aendern": hat_modul(u, "finanzen")}
+    from ...core.katalog import OMR
+    return {"katalog": k.laden(), "gespeichert": k.pfad.exists(), "darf_aendern": hat_modul(u, "finanzen"), "omr": OMR}
 
 
 @app.post("/api/crm/katalog")

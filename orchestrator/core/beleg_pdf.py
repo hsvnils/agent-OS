@@ -380,6 +380,9 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
                     for a in absaetze)
         if texte.get("kalkulation_beispiel"):
             h += 4 + pdf.multi_cell(B - 10, 4.8, T(texte["kalkulation_beispiel"]), dry_run=True, output="HEIGHT")
+        link = texte.get("kalkulation_link") or []                    # Etappe 16: [Text, URL] -- z. B. OMR-Quelle
+        if len(link) == 2:
+            h += 6
         pdf.ln(5)
         platz(h + 8)
         y0 = pdf.get_y()
@@ -400,6 +403,14 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
             pdf.line(25, pdf.get_y() + 1, 20 + B - 5, pdf.get_y() + 1)
             pdf.set_xy(25, pdf.get_y() + 3)
             pdf.multi_cell(B - 10, 4.8, T(texte["kalkulation_beispiel"]), align="L", new_x="LMARGIN", new_y="NEXT")
+        if len(link) == 2:
+            pdf.set_xy(25, pdf.get_y() + 1.5)
+            pdf.set_font(S, "U", 8.5)
+            farbe(BLAU)
+            seite = re.sub(r"^https?://(www\.)?", "", link[1]).split("/")[0]       # kurz halten, Link bleibt klickbar
+            pdf.cell(B - 10, 4.5, T(f"{link[0]} · {seite}"), link=link[1], new_x="LMARGIN", new_y="NEXT")
+            farbe((0, 0, 0))
+            pdf.set_font(S, size=9.3)
         pdf.set_y(y0 + h + 6)
 
     # Kennzahlen

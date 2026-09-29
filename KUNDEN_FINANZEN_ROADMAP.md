@@ -4,8 +4,10 @@
 - Stand: 2026-09-29
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 14 deployen (Go), dann live `stammdaten/zuordnen` (erst Probe) und Erstbefuellung der
-  Lieferanten aus den Belegen; Etappe 13: CEO-Abnahme beim Buchen, erste echte Auto-Weiterleitung pruefen.
+- Naechster Schritt: Etappen 15 (Abos) und 16 (TKP) deployen (Go), dann CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+  Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
+  waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
+  Auto-Weiterleitung pruefen.
   Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
   gemischte Rechnung aufteilen); Deploy + Abnahme Etappe 12 (Barter-Deal einmal von Angebot bis Ware-Eingang
   durchspielen). Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
@@ -478,7 +480,9 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 14: Lieferanten-, Partner- und Dienstleister-Stammdaten mit Nummern
 
-- Status: umgesetzt (CEO-Go 2026-09-29 „Go fuer etappe 14“), Deploy + Nachzuordnung live + Erstbefuellung + Abnahme offen
+- Status: deployt + live befuellt (main 774de97, 2026-09-29), CEO-Abnahme offen. Nachzuordnung live: L-00001..05
+  (Calumet, Amazon, J. Fuehr, Adlerfokus, Apple), L-00006..08 (TeamClash, Fiverr, Elgato), P-00001 (Meta); Erstbefuellung aus
+  den Belegen + neue Abo-Anbieter L-00009..16 (Anthropic, Supabase, Canva, DR.SIM, Microsoft, DAZN, Grover, Dropbox); Kette intakt
 - Ergebnis: Kreise `K-`/`L-`/`P-` (`buchhaltung.KREISE_OHNE_JAHR`, `kunden.KREIS`); alte Lieferanten behalten ihren
   K-Schluessel und bekommen eine L-Nummer (`rollennummer_sichern`, Ereignis `firma_nummer_ergaenzt`, jede Nummer findet die
   Firma, angezeigt wird die Rollennummer); neue Felder `kundennummer_bei`, `zahlungsweg`, `rechnungs_absender`,
@@ -521,9 +525,86 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 - Aufwand: mittel bis gross (1-2 Sitzungen). Reihenfolge: **14 vor 13(a)**, 13 ohne (a) sofort moeglich.
 - Dokumentation: Changelog, Roadmap, `docs/datenfluesse.md`, Register, Verfahrensdokumentation (Stammdaten).
 
+### Etappe 15: Wiederkehrende Zahlungen / Abos (manuelle Belege)
+
+- Status: umgesetzt (CEO-Go 2026-09-29 „Du hast dann das Go fuer beide Etappen“), Deploy + Abnahme offen
+- Entscheidung (CEO 2026-09-29): **automatisch buchen als Option** -- Haken beim Anlegen/Bearbeiten; ohne Haken To-do mit
+  „✓ Buchen“; mit „Beleg kommt per Mail“ bucht LUNA nie selbst.
+- Ergebnis: `core/abos.py` (Kreis `ABO-`, Turnus woechentlich bis jaehrlich, Monatsende-sicher, Faelligkeit genau einmal
+  erledigt: gebucht/Beleg/uebersprungen, Abgleich mit gebuchten Belegen derselben Stammdaten-Nummer ±25 %, taeglicher Lauf
+  05:00 im Bot), To-dos auf der Hauptseite („faellig – buchen?“, „Beleg fehlt“ nach 10 Tagen, „kuendigen bis …“ 14 Tage
+  vorher; die Kuendigungs-Erinnerung laeuft als To-do statt Kalendertermin), CFO-Hinweis „wiederkehrend fehlt“ schweigt fuer
+  Firmen mit Abo; API `/api/finanzen/abos*`; LUNA-OS Reiter Finanzen -> Abos (Liste, Kosten je Monat/Jahr, Formular, Detail
+  mit Buchen/Ueberspringen/Beenden) und „Als Abo anlegen“ bei erkannten Abos. Tests `test_abos.py` (6) + 9 Gegenproben.
+- Bestand: Eigenbelege `EB-` (einzeln), Stammdaten mit Vertraegen (Etappe 14), Abo-Erkennung aus Belegen, CFO-Hinweis
+  „wiederkehrend fehlt“. Es gibt keine Vorlage, die regelmaessig faellig wird.
+- Ziel / Scope:
+  - **Abo-Vorlage** `ABO-00001` (eigener Kreis, `AB-` ist die Auftragsbestaetigung): Bezeichnung, Stammdaten-Nummer
+    (L-/P-), Ausgabe/Einnahme, Betrag, Kategorie, **Turnus** (woechentlich, monatlich, alle 2 Monate, vierteljaehrlich,
+    halbjaehrlich, jaehrlich), erste Faelligkeit, optional Ende/Kuendigungsdatum und Kuendigungsfrist, Zahlungsweg,
+    Vertragsnummer, „Beleg kommt per Mail“ ja/nein, pausieren/beenden (nichts wird geloescht).
+  - **Bei Faelligkeit** (CFO-Lauf 05:00): To-do „Abo X faellig – buchen?“ auf der Hauptseite (+ optional Telegram ✅/❌);
+    ✅ erzeugt einen Eigenbeleg mit Verweis auf das Abo (Datum = Faelligkeit, aenderbar). Kommt fuer das Abo schon ein
+    Mail-Beleg derselben Firma mit aehnlichem Betrag (±25 %) im Zeitraum, wird das Abo automatisch als erfuellt markiert
+    und nichts doppelt gebucht.
+  - **Abo-Uebersicht** im Finanzbereich: alle aktiven Abos, Kosten je Monat (jaehrlich / 12) und je Jahr, naechste
+    Faelligkeit, Kuendigungstermine; Kalender-Erinnerung X Tage vor Ablauf der Kuendigungsfrist.
+  - **Aus erkannten Abos anlegen:** Firma mit „🔁 Abo erkannt“ (Etappe 14) bekommt „Als Abo anlegen“ mit Vorbelegung.
+- Nicht enthalten: wiederkehrende **Ausgangsrechnungen** an Kunden (z. B. Saison-Sponsoring monatlich) -- spaeter als
+  eigene Etappe moeglich.
+- Gate: Monats- und Jahresabo laufen ueber einen Jahreswechsel korrekt (Faelligkeiten nachgerechnet); ✅ bucht genau einen
+  Eigenbeleg; ein passender Mail-Beleg verhindert die Doppelbuchung; Kuendigung stoppt kuenftige Faelligkeiten; Tests +
+  Gegenprobe; Browser-Test; CEO-Abnahme.
+- Verifikation (vorab): `pytest` gruen; Beispiel iCloud 9,99 EUR monatlich ab 22.07.: Faelligkeiten 22.08., 22.09., ...;
+  Developer-Programm 99 EUR jaehrlich ab 23.05.2026 -> 23.05.2027; 31.01. monatlich -> 28./29.02., 31.03.
+- Risiko: Doppelbuchung (Abo-Eigenbeleg + Mail-Beleg) -> Abgleich wie oben + Hinweis beim ✅; Buchung nie ohne CEO-Klick.
+- Aufwand: mittel (1 Sitzung).
+- Dokumentation: Changelog, Roadmap, Register, `docs/datenfluesse.md`, Verfahrensdokumentation (Dauervorgaenge).
+
+### Etappe 16: TKP-Kalkulation in Preisliste und Angeboten
+
+- Status: umgesetzt (CEO-Go 2026-09-29), Deploy + Abnahme offen
+- Entscheidungen (CEO 2026-09-29): (1) OMR-Vorschlaege im System anzeigen und im Angebot per Haken als Vergleich **mit Link**
+  zeigen; (2) Spannen/Produktion „erstmal deine Rechnung“; (3) Rechnung Kontakte x TKP im Angebot an-/abwaehlbar.
+- Ergebnis: `core/katalog.py` (`OMR`, `TKP_STANDARD`, `tkp_preis`, `kalkulation_texte`; Kataloge von vorher bekommen die
+  Startwerte: Post 52.000 Kontakte, TKP 20–30, 260 EUR Produktion; Story 34.000, 20–30, 100 EUR; Reel Standalone 37.000, 30–40,
+  490 EUR; Reel-Integration 37.000, 25–35, 125 EUR -- heutige Preise bleiben beim Minimum, nur Story 600 -> 780 EUR), Angebots-
+  Positionen mit TKP (Preis rechnet der Server nach, eingefroren), Schalter `tkp_zeigen`/`omr_zeigen`, PDF-Block mit Rechnung je
+  Format, OMR-Vergleich und klickbarem Quellen-Link, Preisliste mit Spanne 20–40 EUR + OMR; LUNA-OS: Katalog-Editor mit
+  TKP-Zeile je Format (Kontakte, TKP min/max, Produktion, OMR-Vergleich, Preisspanne), Angebots-Editor mit TKP je Position,
+  „Community-Fit“ (Standard/Mitte/oben) und zwei Haken. Tests `test_tkp.py` (5) + 8 Gegenproben, Browser-Test, PDF gesichtet.
+- Abgleich (Live-Katalog 2026-09-29 vs. OMR „Influencer Preisliste 2026“, Stand 08.05.2026 -- Instagram-Post 20–30 EUR,
+  Story 20–50 EUR, Reel/TikTok 25–50 EUR, YouTube-Video 60–100 EUR TKP; Preis steigt u. a. mit Nische/Zielgruppen-Fit,
+  Engagement, Content-Qualitaet, Nutzungsrechten, Exklusivitaet, Saison):
+  | Format | Kontakte | Preis | TKP heute (ohne Produktion) | OMR |
+  |---|---|---|---|---|
+  | Feed-Post | 52.000 | 1.300 EUR | ca. 20 EUR (bei ca. 260 EUR Produktion) | 20–30 EUR |
+  | Reel Standalone | 37.000 | 1.600 EUR | ca. 31 EUR (450 EUR Produktion) | 25–50 EUR |
+  | Reel-Integration | 37.000 | 1.050 EUR | 16–28 EUR (Produktionsanteil offen) | 25–50 EUR |
+  | Story-Serie | 34.000 | 600 EUR | ca. 15 EUR | 20–50 EUR (**heute darunter**) |
+  Der Preislisten-Text („je nach Format 12–30 EUR ... am unteren Rand“) stimmt fuer Story nicht mehr.
+- Ziel / Scope:
+  - **Katalog rechnet statt fester Preise** (fuer Reichweiten-Formate): Kontakte (Median 90 Tage) x TKP / 1.000 +
+    Produktionspauschale, gerundet (z. B. auf 10 EUR). Je Format **TKP-Spanne** (Standard/Minimum und Maximum) und
+    Produktionspauschale; Formate ohne verlaessliche Reichweite (X, App, Stadion, Kanaele im Aufbau) bleiben Festpreise.
+  - **Im Angebot:** Regler „Community-Fit“ je Angebot (und je Position abweichend) -- TKP zwischen Minimum und Maximum,
+    Standard = Minimum; Vorschau des Preises je Stufe; der gewaehlte TKP wird mit dem Angebot festgeschrieben (spaetere
+    Katalogaenderung aendert nichts). PDF zeigt den Preis; Kalkulation (Kontakte x TKP) optional sichtbar.
+  - **Preisliste:** Kalkulationstext und Beispielrechnung werden aus den Werten erzeugt (keine veralteten Zahlen mehr);
+    Zuschlaege (Nutzungsrechte, Whitelisting, Exklusivitaet ...) bleiben wie sie sind.
+  - **Kontakte** vorerst von Hand im Katalog; spaeter automatisch aus den Meta-Exporten (Etappe 3c).
+- Gate: Beispielrechnungen je Format von Hand nachgerechnet (TKP 20/25/30); bestehende Angebote unveraendert; Angebot mit
+  TKP 28 fuer einen passenden Kunden -> Preis im PDF korrekt; Tests + Gegenprobe; CEO-Abnahme von Editor und PDF.
+- Verifikation (vorab): Feed-Post 52.000 Kontakte, Produktion 260 EUR: TKP 20 -> 1.300 EUR, TKP 25 -> 1.560 EUR, TKP 30 ->
+  1.820 EUR; Story 34.000 Kontakte, Produktion 100 EUR: TKP 20 -> 780 EUR, TKP 30 -> 1.120 EUR.
+- Risiko: Preisaenderung fuer Kunden -> nur neue Angebote; Rundung nachvollziehbar; Preisliste nur mit CEO-Freigabe
+  veroeffentlichen (Oeffentlichkeit = CEO-Tor).
+- Aufwand: mittel (1 Sitzung). Unabhaengig von Etappe 15.
+- Dokumentation: Changelog, Roadmap, Register (TKP-Spannen, Quelle OMR), `docs/datenfluesse.md`.
+
 ## Reihenfolge
 
-1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 (ohne Auto-Weiterleitung) -> 14 -> 13 (Auto-Weiterleitung). Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst
+1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 (ohne Auto-Weiterleitung) -> 14 -> 13 (Auto-Weiterleitung) -> 15/16 (unabhaengig, nach CEO-Go). Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst
 erfasst werden sollen. Jede Etappe ist fuer sich nutzbar.
 
 ## Kosten

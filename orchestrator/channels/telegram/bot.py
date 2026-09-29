@@ -472,6 +472,11 @@ def _start_buchhaltung_loop(ctx) -> None:
                     from ...core.kunden import KundenStore
                     from ...core.todos import cfo_meldung, geschaefts_todos
                     _bh = Buchhaltung(log.parent)
+                    try:                                    # Etappe 15: Abos -- Belege vermerken, angehakte buchen
+                        from ...core.abos import lauf as _abo_lauf
+                        _abo_lauf(_bh, KundenStore(_bh), notify=ctx.notifications.enqueue)
+                    except Exception as _exc:
+                        print(f"[abos] Fehler: {_exc}", flush=True)
                     _text = cfo_meldung(geschaefts_todos(_bh, KundenStore(_bh), crm=False))
                     if _text:
                         ctx.notifications.enqueue(_text, abteilung="CFO", kategorie="finanzen", quelle="finanzcheck",

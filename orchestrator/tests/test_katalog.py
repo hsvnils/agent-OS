@@ -39,7 +39,7 @@ class TestKatalog(unittest.TestCase):
         kat = Katalog(bh)
         self.assertFalse(kat.pfad.exists())
         neu = kat.laden()
-        neu["gruppen"][0]["items"][0]["preis_cent"] = 170000
+        neu["gruppen"][0]["items"][0]["produktion_cent"] = 59000     # Etappe 16: Preis = Kontakte x TKP + Produktion
         r = kat.speichern(neu, von="LUNA-OS:ceo")
         self.assertEqual(r["preise"], {"reel_solo": [160000, 170000]})
         self.assertEqual(kat.laden()["gruppen"][0]["items"][0]["preis_cent"], 170000)

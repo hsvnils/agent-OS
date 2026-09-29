@@ -630,7 +630,7 @@ async function kundeDetail(nr, meldung) {
   const collab = (f.collab || []).map(c => `<div class="v2-list-row"><span>🤝</span><div class="grow"><b>${esc(c)}</b></div><button class="v2-btn" data-act="kunde-collab-los" data-id="${esc(f.nummer)}" data-val="${esc(c)}">Lösen</button></div>`).join("") || emptyRow("Keine Collab-Firma verknüpft.");
   const verlauf = (f.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc({ firma_angelegt: "Angelegt", firma_geaendert: "Geändert", firma_nummer_ergaenzt: "Nummer ergänzt", collab_zugeordnet: "Collab verknüpft", collab_geloest: "Collab gelöst" }[v.typ] || v.typ)}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")} · ${esc(Object.entries(v.felder || {}).filter(([k, w]) => w !== "" && w != null).map(([k, w]) => `${FELD_LBL[k] || (k === "nummer_ergaenzt" ? "Nummer" : k)}: ${typeof w === "boolean" ? (w ? "ja" : "nein") : Array.isArray(w) ? w.map(v => [v.bezeichnung, v.nummer].filter(Boolean).join(" ")).join(", ") : w}`).join(" · "))}</small></div></div>`).join("");
   const bu = (d && d.buchungen) || { belege: [], je_jahr: {}, abo: {} };
-  const buHtml = `${bu.abo && bu.abo.monatlich_cent ? `<div class="v2-msg">🔁 Abo erkannt: ca. <b>${esc(cent2eur(bu.abo.monatlich_cent))}</b> im Monat (${esc(bu.abo.monate.map(m => m.slice(5) + "/" + m.slice(0, 4)).join(", "))})</div>` : ""}
+  const buHtml = `${bu.abo && bu.abo.monatlich_cent ? `<div class="v2-msg">🔁 Abo erkannt: ca. <b>${esc(cent2eur(bu.abo.monatlich_cent))}</b> im Monat (${esc(bu.abo.monate.map(m => m.slice(5) + "/" + m.slice(0, 4)).join(", "))}) <button class="v2-btn sm" data-act="abo-aus-firma" data-id="${esc(f.nummer)}">Als Abo anlegen</button></div>` : ""}
     ${Object.entries(bu.je_jahr || {}).map(([j, x]) => `<div class="v2-kv"><span>${esc(j)}</span><b>${x.ausgaben_cent ? `bezahlt ${esc(cent2eur(x.ausgaben_cent))}` : ""}${x.ausgaben_cent && x.einnahmen_cent ? " · " : ""}${x.einnahmen_cent ? `erhalten ${esc(cent2eur(x.einnahmen_cent))}` : ""}</b></div>`).join("")}
     ${(bu.belege || []).map(b => `<div class="v2-list-row klick" data-act="${b.quelle === "eigenbeleg" ? "eb-detail" : "bl-detail"}" data-id="${esc(b.nummer)}"><span class="v2-badge ${b.status === "bezahlt" || b.status === "gebucht" ? "ok" : "neutral"}">${esc(b.status)}</span><div class="grow"><b>${esc(b.nummer)} · ${esc(cent2eur(b.betrag_cent))}</b><small>${esc(datumDe(b.datum))} · ${esc(b.text || "")}</small></div></div>`).join("") || emptyRow("Noch keine Belege unter dieser Nummer.")}`;
   const nummern = (f.nummern || [f.nummer]).filter(x => x !== firmaNr(f));
@@ -687,7 +687,11 @@ const heuteIso = (plus = 0) => { const d = new Date(); d.setDate(d.getDate() + p
 const zahl = (t) => { t = String(t || "").replace(/[€\s]/g, ""); if (t.includes(",")) t = t.replace(/\./g, "").replace(",", "."); else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ""); const n = Number(t); return isFinite(n) ? n : NaN; };
 const pz = (p) => String(p).replace(".", ",");
 let AN_FIRMEN = [], KATALOG = null, KAT_DARF = false;
-async function katalogLaden(neu) { if (!KATALOG || neu) { const d = await jget("/api/crm/katalog"); KATALOG = d && d.katalog; KAT_DARF = !!(d && d.darf_aendern); } return KATALOG; }
+async function katalogLaden(neu) { if (!KATALOG || neu) { const d = await jget("/api/crm/katalog"); KATALOG = d && d.katalog; KAT_DARF = !!(d && d.darf_aendern); OMR = (d && d.omr) || OMR; } return KATALOG; }
+// Etappe 16: Reichweiten-Formate = Kontakte × TKP / 1.000 + Produktion (auf 10 € gerundet); OMR-Werte als Vergleich
+let OMR = { werte: {} };
+const tkpPreis = (kontakte, tkpCent, prodCent) => Math.round((kontakte * tkpCent / 1000 + prodCent) / 1000) * 1000;
+const omrText = (key) => { const w = (OMR.werte || {})[key]; return w ? `OMR ${w.min}–${w.max} € (${w.name})` : ""; };
 const katItem = (id) => { for (const g of (KATALOG && KATALOG.gruppen) || []) for (const it of g.items) if (it.id === id) return [it, g]; return [null, null]; };
 
 RENDER.angebote = renderAngebote;
@@ -713,12 +717,13 @@ const anKopf = () => secHead("Angebote & Aufträge", `<button class="v2-btn pri"
 
 /* ---------- Editor ---------- */
 function anPosZeile(p = {}) {
-  return `<div class="v2-an-pos" data-katalog="${esc(p.katalog_id || "")}" data-gruppe="${esc(p.gruppe || "")}" data-farbe="${esc(p.gruppe_farbe || "")}">
+  const tkp = p.kontakte ? `<div class="an-p-tkp"><small>TKP</small><input class="v2-inp an-p-tkpwert" type="number" min="${(p.tkp_min_cent || 100) / 100}" max="${(p.tkp_max_cent || 50000) / 100}" step="1" value="${esc(String((p.tkp_cent || p.tkp_min_cent) / 100))}" aria-label="TKP in Euro"><small>€ · Spanne ${esc(String((p.tkp_min_cent || p.tkp_cent) / 100))}–${esc(String((p.tkp_max_cent || p.tkp_cent) / 100))} €${p.omr ? " · " + esc(omrText(p.omr)) : ""} · ${esc(Number(p.kontakte).toLocaleString("de-DE"))} Kontakte + ${esc(cent2eur(p.produktion_cent || 0))} Produktion</small></div>` : "";
+  return `<div class="v2-an-pos" data-katalog="${esc(p.katalog_id || "")}" data-gruppe="${esc(p.gruppe || "")}" data-farbe="${esc(p.gruppe_farbe || "")}" data-kontakte="${esc(String(p.kontakte || ""))}" data-prod="${esc(String(p.produktion_cent || 0))}" data-tmin="${esc(String(p.tkp_min_cent || ""))}" data-tmax="${esc(String(p.tkp_max_cent || ""))}" data-omr="${esc(p.omr || "")}">
     <div class="v2-an-text"><input class="v2-inp an-p-beschreibung" value="${esc(p.beschreibung || "")}" placeholder="Leistung">
-      <input class="v2-inp an-p-detail" value="${esc(p.detail || "")}" placeholder="Detail (Reichweite, Hinweis) – optional"></div>
+      <input class="v2-inp an-p-detail" value="${esc(p.detail || "")}" placeholder="Detail (Reichweite, Hinweis) – optional">${tkp}</div>
     <input class="v2-inp an-p-menge" value="${esc(p.menge != null ? String(p.menge).replace(".", ",") : "1")}" placeholder="Menge" inputmode="decimal" aria-label="Menge">
     <input class="v2-inp an-p-einheit" value="${esc(p.einheit || "")}" placeholder="Einheit" aria-label="Einheit">
-    <input class="v2-inp an-p-preis" value="${p.einzelpreis_cent != null ? cent2feld(p.einzelpreis_cent) : ""}" placeholder="Einzelpreis €" inputmode="decimal" aria-label="Einzelpreis">
+    <input class="v2-inp an-p-preis" value="${p.einzelpreis_cent != null ? cent2feld(p.einzelpreis_cent) : ""}" placeholder="Einzelpreis €" inputmode="decimal" aria-label="Einzelpreis" ${p.kontakte ? 'readonly title="folgt aus dem TKP"' : ""}>
     <span class="an-p-gesamt">–</span>
     <button class="v2-btn v2-an-weg" data-act="an-pos-weg" title="Position löschen" aria-label="Position löschen">🗑</button></div>`;
 }
@@ -780,11 +785,14 @@ async function anEditor(nummer, firmaVorwahl) {
           <label class="v2-feld"><small>Nachfassen nach (Tagen)</small><input id="an-nachfassen" type="number" min="1" max="90" value="${esc(String(a.nachfassen_tage || 7))}"></label></div>
         <div class="v2-an-zeile"><label class="v2-feld"><small>Layout</small><select id="an-layout"><option value="hanserautisch" ${a.layout !== "standard" ? "selected" : ""}>Hanserautisch</option><option value="standard" ${a.layout === "standard" ? "selected" : ""}>Schlicht (DIN)</option></select></label>
           <label class="v2-modlbl"><input type="checkbox" id="an-zeige-kalk" ${b.zeige_kalkulation !== false ? "checked" : ""}> „So kalkulieren wir“</label>
-          <label class="v2-modlbl"><input type="checkbox" id="an-zeige-kz" ${b.zeige_kennzahlen !== false ? "checked" : ""}> Kennzahlen</label></div>
+          <label class="v2-modlbl"><input type="checkbox" id="an-zeige-kz" ${b.zeige_kennzahlen !== false ? "checked" : ""}> Kennzahlen</label>
+          <label class="v2-modlbl"><input type="checkbox" id="an-tkp-zeigen" ${b.tkp_zeigen !== false ? "checked" : ""}> Rechnung Kontakte × TKP zeigen</label>
+          <label class="v2-modlbl"><input type="checkbox" id="an-omr-zeigen" ${b.omr_zeigen ? "checked" : ""}> OMR-Vergleich mit Link zeigen</label></div>
       </div>
     </div>
     <h3>Positionen <small class="v2-sub">Preise ohne Umsatzsteuer (Kleinunternehmer § 19 UStG)</small></h3>
-    <div class="v2-an-kat"><select id="an-kat" class="v2-inp"><option value="">Aus Katalog wählen …</option>${katOpt}</select><button class="v2-btn" data-act="an-kat-neu">+ Aus Katalog</button><button class="v2-btn" data-act="an-pos-neu">+ Freie Position</button></div>
+    <div class="v2-an-kat"><select id="an-kat" class="v2-inp"><option value="">Aus Katalog wählen …</option>${katOpt}</select><button class="v2-btn" data-act="an-kat-neu">+ Aus Katalog</button><button class="v2-btn" data-act="an-pos-neu">+ Freie Position</button>
+      <label class="v2-feld" style="margin-left:auto"><small>Community-Fit (TKP innerhalb der Spanne)</small><select id="an-fit" class="v2-inp"><option value="0">Standard – unterer TKP</option><option value="0.5">Gute Passung – Mitte</option><option value="1">Sehr gute Passung – oberer TKP</option></select></label></div>
     <div class="v2-an-pos v2-an-pos-kopf"><span>Leistung / Detail</span><span>Menge</span><span>Einheit</span><span>Einzelpreis</span><span>Gesamt</span><span></span></div>
     <div id="an-pos">${(a.positionen || []).map(anPosZeile).join("")}</div>
     <div id="an-pos-leer" class="v2-empty">Noch keine Position — „Aus Katalog“ oder „Freie Position“.</div>
@@ -815,12 +823,21 @@ async function anApListe(vorwahl) {
 function anKatNeu() {
   const id = ($("#an-kat") || {}).value; if (!id) return;
   const [it, g] = katItem(id); if (!it) return;
-  $("#an-pos").insertAdjacentHTML("beforeend", anPosZeile({ beschreibung: it.name, detail: [it.basis, it.hinweis].filter(Boolean).join(" · "), menge: 1, einheit: it.einheit, einzelpreis_cent: it.preis_cent, katalog_id: it.id, gruppe: g.name, gruppe_farbe: g.farbe }));
+  const fit = ($("#an-fit") || {}).value || "0", tk = it.kontakte ? Math.round((it.tkp_min_cent + Number(fit) * (it.tkp_max_cent - it.tkp_min_cent)) / 100) * 100 : null;
+  $("#an-pos").insertAdjacentHTML("beforeend", anPosZeile({ beschreibung: it.name, detail: [it.basis, it.hinweis].filter(Boolean).join(" · "), menge: 1, einheit: it.einheit, einzelpreis_cent: it.kontakte ? tkpPreis(it.kontakte, tk, it.produktion_cent || 0) : it.preis_cent, katalog_id: it.id, gruppe: g.name, gruppe_farbe: g.farbe,
+    kontakte: it.kontakte, tkp_cent: tk, tkp_min_cent: it.tkp_min_cent, tkp_max_cent: it.tkp_max_cent, produktion_cent: it.produktion_cent, omr: it.omr }));
   $("#an-kat").value = ""; anSumme();
 }
 function anPositionen() {
   return [...document.querySelectorAll("#an-pos .v2-an-pos")].map(z => ({ beschreibung: $(".an-p-beschreibung", z).value.trim(), detail: $(".an-p-detail", z).value.trim(), menge: $(".an-p-menge", z).value.trim(), einheit: $(".an-p-einheit", z).value.trim(), einzelpreis: $(".an-p-preis", z).value.trim(),
-    katalog_id: z.dataset.katalog || "", gruppe: z.dataset.gruppe || "", gruppe_farbe: z.dataset.farbe || "" })).filter(p => p.beschreibung || p.einzelpreis);
+    katalog_id: z.dataset.katalog || "", gruppe: z.dataset.gruppe || "", gruppe_farbe: z.dataset.farbe || "",
+    ...(z.dataset.kontakte ? { kontakte: Number(z.dataset.kontakte), tkp_cent: Math.round(zahl($(".an-p-tkpwert", z).value) * 100), produktion_cent: Number(z.dataset.prod || 0),
+      tkp_min_cent: z.dataset.tmin, tkp_max_cent: z.dataset.tmax, omr: z.dataset.omr } : {}) })).filter(p => p.beschreibung || p.einzelpreis);
+}
+function anFitSetzen() {   // „Community-Fit“: TKP aller Reichweiten-Positionen innerhalb ihrer Spanne setzen
+  const fit = Number(($("#an-fit") || {}).value || 0);
+  document.querySelectorAll("#an-pos .v2-an-pos").forEach(z => { const i = $(".an-p-tkpwert", z); if (!i || !z.dataset.tmin) return; const lo = Number(z.dataset.tmin), hi = Number(z.dataset.tmax || z.dataset.tmin); i.value = String(Math.round((lo + fit * (hi - lo)) / 100)); });
+  anSumme();
 }
 const anZuschlaege = () => [...document.querySelectorAll(".an-zu:checked")].map(e => ({ id: e.value, name: e.dataset.name, prozent: Number(e.dataset.prozent) }));
 // Etappe 12: Barter -- Gegenleistung ganz oder teilweise in Ware (Angebot, Auftrag, Rechnung)
@@ -832,8 +849,11 @@ function anWareFelder(w) {
     <button class="v2-btn sm" data-act="an-ware-alles">Ganzer Betrag in Ware</button></div>`;
 }
 const anWare = () => ($("#an-ware-an") || {}).checked ? { text: ($("#an-ware-text") || {}).value.trim(), wert: ($("#an-ware-wert") || {}).value.trim() } : {};
-function anSumme() {
+function anSumme(ev) {
+  if (ev && ev.target && ev.target.id === "an-fit") return anFitSetzen();
   const box = $("#an-summe-box"); if (!box) return;
+  document.querySelectorAll("#an-pos .v2-an-pos").forEach(z => { const i = $(".an-p-tkpwert", z); if (!i || !z.dataset.kontakte) return;
+    $(".an-p-preis", z).value = cent2feld(tkpPreis(Number(z.dataset.kontakte), Math.round(zahl(i.value) * 100), Number(z.dataset.prod || 0))); });
   document.querySelectorAll("#an-pos .v2-an-pos").forEach(z => { const c = Math.round(zahl($(".an-p-menge", z).value) * zahl($(".an-p-preis", z).value) * 100); $(".an-p-gesamt", z).textContent = isFinite(c) ? cent2eur(c) : "–"; });
   const leer = $("#an-pos-leer"); if (leer) leer.hidden = !!document.querySelector("#an-pos .v2-an-pos");
   const formate = anPositionen().reduce((acc, p) => acc + Math.round(zahl(p.menge) * zahl(p.einzelpreis) * 100), 0);
@@ -852,7 +872,8 @@ async function anSpeichern(nummer) {
   const angebot = { firma: $("#an-firma").value, ansprechpartner: $("#an-ap").value, titel: $("#an-titel").value.trim(), datum: $("#an-datum").value, gueltig_bis: $("#an-gueltig").value,
     nachfassen_tage: $("#an-nachfassen").value, einleitung: $("#an-einleitung").value.trim(), schluss: $("#an-schluss").value.trim(), positionen: anPositionen(),
     zuschlaege: anZuschlaege(), rabatt_prozent: ($("#an-rabatt") || {}).value || 0, layout: $("#an-layout").value,
-    zeige_kalkulation: $("#an-zeige-kalk").checked, zeige_kennzahlen: $("#an-zeige-kz").checked, ware: anWare() };
+    zeige_kalkulation: $("#an-zeige-kalk").checked, zeige_kennzahlen: $("#an-zeige-kz").checked, ware: anWare(),
+    tkp_zeigen: ($("#an-tkp-zeigen") || {}).checked !== false, omr_zeigen: !!($("#an-omr-zeigen") || {}).checked };
   const r = nummer ? await jpost("/api/crm/angebote/" + encodeURIComponent(nummer), { angebot }) : await jpost("/api/crm/angebote", { angebot });
   if (!r || !r.ok) return kundenMsg("an-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
   const nr = nummer || r.nummer; if (AKTIV === "angebote") renderAngebote();
@@ -1050,7 +1071,14 @@ async function renderKatalog(ausCache) {
   const grp = k.gruppen.map((g, gi) => tile(g.name, `<div class="v2-kat-liste">${g.items.map(it => `<div class="v2-kat-zeile" data-gi="${gi}" data-id="${esc(it.id)}">
       <input class="v2-inp kat-name" value="${esc(it.name)}" ${ro}><input class="v2-inp kat-basis" value="${esc(it.basis)}" placeholder="Basis (Reichweite)" ${ro}>
       <input class="v2-inp kat-hinweis" value="${esc(it.hinweis)}" placeholder="Hinweis" ${ro}><input class="v2-inp kat-preis" value="${cent2feld(it.preis_cent)}" inputmode="decimal" ${ro}>
-      <input class="v2-inp kat-einheit" value="${esc(it.einheit)}" placeholder="Einheit" ${ro}><label class="v2-modlbl"><input type="checkbox" class="kat-aktiv" ${it.aktiv ? "checked" : ""} ${ro}> aktiv</label></div>`).join("")}</div>
+      <input class="v2-inp kat-einheit" value="${esc(it.einheit)}" placeholder="Einheit" ${ro}><label class="v2-modlbl"><input type="checkbox" class="kat-aktiv" ${it.aktiv ? "checked" : ""} ${ro}> aktiv</label>
+      <div class="v2-kat-tkp"><small>TKP-Rechnung (leer = Festpreis):</small>
+        <input class="v2-inp kat-kontakte" value="${it.kontakte ? esc(String(it.kontakte)) : ""}" placeholder="Kontakte (Median)" inputmode="numeric" ${ro}>
+        <input class="v2-inp kat-tmin" value="${it.tkp_min_cent ? esc(String(it.tkp_min_cent / 100)) : ""}" placeholder="TKP min €" inputmode="decimal" ${ro}>
+        <input class="v2-inp kat-tmax" value="${it.tkp_max_cent ? esc(String(it.tkp_max_cent / 100)) : ""}" placeholder="TKP max €" inputmode="decimal" ${ro}>
+        <input class="v2-inp kat-prod" value="${it.kontakte ? esc(cent2feld(it.produktion_cent || 0)) : ""}" placeholder="Produktion €" inputmode="decimal" ${ro}>
+        <select class="v2-inp kat-omr" ${ro}><option value="">OMR-Vergleich: keiner</option>${Object.entries(OMR.werte || {}).map(([k, w]) => `<option value="${esc(k)}" ${it.omr === k ? "selected" : ""}>${esc(w.name)} (${w.min}–${w.max} €)</option>`).join("")}</select>
+        <small class="v2-sub">${it.kontakte ? `= ${esc(cent2eur(tkpPreis(it.kontakte, it.tkp_min_cent, it.produktion_cent || 0)))} bis ${esc(cent2eur(tkpPreis(it.kontakte, it.tkp_max_cent, it.produktion_cent || 0)))}${it.omr ? " · " + esc(omrText(it.omr)) : ""}` : ""}</small></div></div>`).join("")}</div>
       ${KAT_DARF ? `<button class="v2-btn" data-act="kat-neu" data-id="${gi}">+ Format</button>` : ""}`, "w12")).join("");
   const zu = tile("Zuschläge", `${k.zuschlaege.map(z => `<div class="v2-kat-zu" data-id="${esc(z.id)}"><input class="v2-inp zu-name" value="${esc(z.name)}" ${ro}><input class="v2-inp zu-prozent" value="${esc(pz(z.prozent))}" inputmode="decimal" ${ro}><input class="v2-inp zu-info" value="${esc(z.info)}" placeholder="Erklärung" ${ro}></div>`).join("")}`, "w12");
   const t = k.texte, ta = (id, v, rows = 3) => `<textarea id="kt-${id}" rows="${rows}" class="v2-inp" ${ro}>${esc(v || "")}</textarea>`;
@@ -1058,8 +1086,8 @@ async function renderKatalog(ausCache) {
     <label class="v2-feld"><small>Untertitel</small><input id="kt-untertitel" value="${esc(t.untertitel)}" ${ro}></label>
     <label class="v2-feld"><small>Einleitung</small>${ta("intro", t.intro)}</label>
     <label class="v2-feld"><small>Überschrift Kalkulation</small><input id="kt-kalkulation_titel" value="${esc(t.kalkulation_titel)}" ${ro}></label>
-    ${[0, 1, 2].map(i => `<label class="v2-feld"><small>Kalkulation, Absatz ${i + 1} (Text vor dem ersten Doppelpunkt wird fett)</small>${ta("kalk" + i, (t.kalkulation || [])[i])}</label>`).join("")}
-    <label class="v2-feld"><small>Rechenbeispiel</small>${ta("kalkulation_beispiel", t.kalkulation_beispiel, 2)}</label>
+    ${[0, 1, 2].map(i => `<label class="v2-feld"><small>Kalkulation, Absatz ${i + 1} (Text vor dem ersten Doppelpunkt wird fett)${i === 1 ? " – beginnt er mit „2. TKP“, schreibt LUNA ihn aus den TKP-Werten neu" : ""}</small>${ta("kalk" + i, (t.kalkulation || [])[i])}</label>`).join("")}
+    <label class="v2-feld"><small>Rechenbeispiel (bei TKP-Formaten erzeugt LUNA die Rechnung je Format selbst)</small>${ta("kalkulation_beispiel", t.kalkulation_beispiel, 2)}</label>
     <small class="v2-sub">Kennzahlen (bis Etappe 3c von Hand; danach aus deinen Meta-Exporten)</small>
     <div class="v2-an-zeile">${[0, 1, 2, 3].map(i => `<div class="v2-feld"><input id="kt-kzw${i}" value="${esc(((t.kennzahlen || [])[i] || [])[0] || "")}" placeholder="Wert" ${ro}><input id="kt-kzl${i}" value="${esc(((t.kennzahlen || [])[i] || [])[1] || "")}" placeholder="Beschriftung" ${ro}></div>`).join("")}</div>
     <label class="v2-feld"><small>Datenbasis-Hinweis</small>${ta("kennzahlen_quelle", t.kennzahlen_quelle)}</label>
@@ -1075,7 +1103,10 @@ function katalogAusForm() {
   document.querySelectorAll(".v2-kat-zeile").forEach(z => {
     const g = k.gruppen[Number(z.dataset.gi)];
     g.items.push({ id: z.dataset.id, name: $(".kat-name", z).value.trim(), basis: $(".kat-basis", z).value.trim(), hinweis: $(".kat-hinweis", z).value.trim(),
-      preis_cent: Math.round(zahl($(".kat-preis", z).value) * 100), einheit: $(".kat-einheit", z).value.trim(), aktiv: $(".kat-aktiv", z).checked });
+      preis_cent: Math.round(zahl($(".kat-preis", z).value) * 100), einheit: $(".kat-einheit", z).value.trim(), aktiv: $(".kat-aktiv", z).checked,
+      kontakte: ($(".kat-kontakte", z) || {}).value ? Math.round(zahl($(".kat-kontakte", z).value.replace(/\./g, ""))) : null,
+      tkp_min_cent: Math.round(zahl(($(".kat-tmin", z) || {}).value || "0") * 100), tkp_max_cent: Math.round(zahl(($(".kat-tmax", z) || {}).value || "0") * 100),
+      produktion_cent: Math.round(zahl(($(".kat-prod", z) || {}).value || "0") * 100), omr: ($(".kat-omr", z) || {}).value || "" });
   });
   k.zuschlaege = [...document.querySelectorAll(".v2-kat-zu")].map(z => ({ id: z.dataset.id, name: $(".zu-name", z).value.trim(), prozent: zahl($(".zu-prozent", z).value), info: $(".zu-info", z).value.trim() }));
   const v = (id) => ($("#kt-" + id) || {}).value || "";
@@ -1537,13 +1568,76 @@ async function renderFinanzen(meldung) {
   FIN_JAHR = u.jahr;
   const jahrWahl = `<select id="fin-jahr" class="v2-inp" style="width:auto">${u.jahre.map(j => `<option ${j === u.jahr ? "selected" : ""}>${j}</option>`).join("")}</select>`;
   const zeitWahl = sub === "uebersicht" ? `<select id="fin-zeit" class="v2-inp" style="width:auto"><option value="jahr">Ganzes Jahr</option>${[1, 2, 3, 4].map(q => `<option value="q${q}">Q${q}</option>`).join("")}${FIN_MONATE.map((m, i) => `<option value="m${String(i + 1).padStart(2, "0")}">${m}</option>`).join("")}</select>` : "";
-  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : sub === "abschluss" ? await finAbschluss(u.jahr) : await finUebersicht(u);
+  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : sub === "abschluss" ? await finAbschluss(u.jahr) : sub === "abos" ? await finAbos() : await finUebersicht(u);
   $("#v2-app").innerHTML = secHead("Finanzen " + (sub === "uebersicht" ? finZeitName(u.zeitraum, u.jahr) : u.jahr), `${jahrWahl}${zeitWahl}<button class="v2-btn" data-act="eb-neu" data-val="ausgabe">− Ausgabe ohne Beleg</button><button class="v2-btn pri" data-act="eb-neu" data-val="einnahme">+ Einnahme ohne Rechnung</button>`)
-    + tabs("finanzen", [["uebersicht", "Übersicht"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"], ["abschluss", "Jahresabschluss"]])
+    + tabs("finanzen", [["uebersicht", "Übersicht"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"], ["abos", "Abos"], ["abschluss", "Jahresabschluss"]])
     + (meldung ? `<div class="v2-msg ok" style="margin-bottom:12px">${esc(meldung)}</div>` : "") + `<div class="v2-grid">${body}</div>`;
   $("#fin-jahr").addEventListener("change", e => { FIN_JAHR = Number(e.target.value); renderFinanzen(); });
   const zw = $("#fin-zeit"); if (zw) { zw.value = u.zeitraum; zw.addEventListener("change", e => { FIN_ZEIT = e.target.value; renderFinanzen(); }); }
 }
+/* ---- Abos / wiederkehrende Zahlungen (KUNDEN_FINANZEN Etappe 15) ---- */
+let ABOS = { abos: [], turnus: {}, kategorien: { ausgabe: {}, einnahme: {} }, firmen: [], summe: {} };
+async function finAbos() {
+  ABOS = await jget("/api/finanzen/abos") || ABOS;
+  const a = ABOS.abos || [], aktiv = a.filter(x => x.status === "aktiv");
+  const rows = a.map(x => `<tr class="klick${x.status === "aktiv" ? "" : " blass"}" data-act="abo-detail" data-id="${esc(x.nummer)}"><td><b>${esc(x.nummer)}</b></td><td>${esc(x.bezeichnung)}<br><small class="v2-sub">${esc(x.firma_nr)} · ${esc(x.firma_name)}</small></td>
+    <td>${esc(x.turnus_text)}${x.auto_buchen && !x.beleg_per_mail ? ` <span class="v2-badge ok" title="wird automatisch gebucht">auto</span>` : ""}${x.beleg_per_mail ? ` <span class="v2-badge neutral" title="Beleg kommt per Mail">✉️</span>` : ""}</td>
+    <td style="text-align:right">${esc(cent2eur(x.betrag_cent))}</td><td style="text-align:right">${esc(cent2eur(x.monatlich_cent))}</td>
+    <td>${x.status === "aktiv" ? esc(datumDe(x.naechste)) : `<span class="v2-badge neutral">beendet</span>`}${(x.offen || []).length ? ` <span class="v2-badge wartet">${x.offen.length} offen</span>` : ""}</td></tr>`).join("");
+  return `${kpiTile("Aktive Abos", String(aktiv.length), null, "wiederkehrende Zahlungen")}${kpiTile("Kosten je Monat", cent2eur((ABOS.summe || {}).ausgaben_monat_cent || 0), null, "Jahresabos anteilig")}${kpiTile("Kosten je Jahr", cent2eur((ABOS.summe || {}).ausgaben_jahr_cent || 0), null, "hochgerechnet")}
+    ${tile("Abos", `<div class="v2-card-actions" style="margin-bottom:8px"><button class="v2-btn pri" data-act="abo-neu">+ Abo anlegen</button></div>` + (rows ? `<div class="v2-tab-scroll"><table class="v2-table"><thead><tr><th>Nr.</th><th>Abo</th><th>Turnus</th><th style="text-align:right">Betrag</th><th style="text-align:right">je Monat</th><th>Nächste Fälligkeit</th></tr></thead><tbody>${rows}</tbody></table></div>` : emptyRow("Noch kein Abo angelegt.")), "w12")}`;
+}
+async function aboForm(nr, vorlage) {
+  if (!(ABOS.firmen || []).length) ABOS = await jget("/api/finanzen/abos") || ABOS;
+  const x = nr ? (ABOS.abos || []).find(a => a.nummer === nr) : (vorlage || {});
+  const art = x.art || "ausgabe", kat = Object.entries((ABOS.kategorien || {})[art] || {});
+  const firma = x.firma ? (ABOS.firmen || []).find(f => f.nummer === x.firma || f.anzeige === x.firma) : null;
+  openModal(nr ? `${nr} bearbeiten` : "Neues Abo", `<div class="v2-form" style="max-width:680px">
+    <label class="v2-feld"><small>Bezeichnung *</small><input id="abo-bez" value="${esc(x.bezeichnung || "")}" placeholder="z. B. iCloud+ 2 TB"></label>
+    <label class="v2-feld"><small>Firma (Stammdaten) *</small><input id="abo-firma" list="abo-firmen" value="${esc(firma ? firmaOption(firma) : "")}" placeholder="L-… wählen"><datalist id="abo-firmen">${(ABOS.firmen || []).map(f => `<option value="${esc(firmaOption(f))}">`).join("")}</datalist></label>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Art</small><select id="abo-art"><option value="ausgabe">Ausgabe</option><option value="einnahme" ${art === "einnahme" ? "selected" : ""}>Einnahme</option></select></label>
+      <label class="v2-feld"><small>Betrag (€) *</small><input id="abo-betrag" inputmode="decimal" value="${x.betrag_cent ? esc(cent2feld(x.betrag_cent)) : ""}"></label>
+      <label class="v2-feld"><small>Kategorie *</small><select id="abo-kat"><option value="">— wählen —</option>${kat.map(([k, l]) => `<option value="${esc(k)}" ${x.kategorie === k ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label></div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Turnus *</small><select id="abo-turnus">${Object.entries(ABOS.turnus || {}).map(([k, l]) => `<option value="${esc(k)}" ${(x.turnus || "monatlich") === k ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+      <label class="v2-feld"><small>Erste Fälligkeit *</small><input id="abo-start" type="date" value="${esc(x.start || heuteIso())}" ${nr ? "disabled" : ""}></label>
+      <label class="v2-feld"><small>Ende / Vertragsende</small><input id="abo-ende" type="date" value="${esc(x.ende || "")}"></label></div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Kündigungsfrist (Tage)</small><input id="abo-frist" type="number" min="0" max="730" value="${x.kuendigungsfrist_tage == null ? "" : esc(String(x.kuendigungsfrist_tage))}"></label>
+      <label class="v2-feld"><small>Zahlungsweg</small><input id="abo-weg" value="${esc(x.zahlungsweg || (firma && firma.zahlungsweg) || "")}"></label>
+      <label class="v2-feld"><small>Vertrags-/Kundennummer</small><input id="abo-vnr" value="${esc(x.vertragsnummer || "")}"></label></div>
+    <label class="v2-modlbl"><input type="checkbox" id="abo-mail" ${x.beleg_per_mail ? "checked" : ""}> Beleg kommt per Mail (LUNA wartet auf den Beleg und bucht nicht selbst)</label>
+    <label class="v2-modlbl"><input type="checkbox" id="abo-auto" ${x.auto_buchen ? "checked" : ""}> Automatisch buchen, wenn fällig (ohne Rückfrage; nur ohne Mail-Beleg)</label>
+    <label class="v2-feld"><small>Notiz</small><input id="abo-notiz" value="${esc(x.notiz || "")}"></label>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="abo-speichern" data-id="${esc(nr || "")}">✔ ${nr ? "Speichern" : "Abo anlegen"}</button><button class="v2-btn" data-modal-close>Abbrechen</button></div><div id="abo-msg" class="v2-msg"></div></div>`, false);
+  $("#abo-art").addEventListener("change", e => { const k = Object.entries((ABOS.kategorien || {})[e.target.value] || {}); $("#abo-kat").innerHTML = `<option value="">— wählen —</option>` + k.map(([id, l]) => `<option value="${esc(id)}">${esc(l)}</option>`).join(""); });
+}
+async function aboSpeichern(nr) {
+  const abo = { bezeichnung: $("#abo-bez").value.trim(), firma: firmaAusText($("#abo-firma").value).firma, art: $("#abo-art").value, betrag: $("#abo-betrag").value.trim(),
+    kategorie: $("#abo-kat").value, turnus: $("#abo-turnus").value, ende: $("#abo-ende").value, kuendigungsfrist_tage: $("#abo-frist").value, zahlungsweg: $("#abo-weg").value.trim(),
+    vertragsnummer: $("#abo-vnr").value.trim(), beleg_per_mail: $("#abo-mail").checked, auto_buchen: $("#abo-auto").checked, notiz: $("#abo-notiz").value.trim() };
+  if (!nr) abo.start = $("#abo-start").value;
+  const r = await jpost(nr ? `/api/finanzen/abos/${encodeURIComponent(nr)}` : "/api/finanzen/abos", { abo });
+  if (!r || !r.ok) return kundenMsg("abo-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
+  if (AKTIV === "finanzen") renderFinanzen();
+  return aboDetail(nr || r.nummer, nr ? "Gespeichert." : `${r.nummer} angelegt.`);
+}
+async function aboDetail(nr, meldung, fehler) {
+  ABOS = await jget("/api/finanzen/abos") || ABOS;
+  const x = (ABOS.abos || []).find(a => a.nummer === nr); if (!x) return openModal(nr, emptyRow("Abo nicht gefunden."));
+  const WIE = { gebucht: "gebucht", beleg: "Beleg kam", uebersprungen: "übersprungen" };
+  const erl = Object.entries(x.erledigt || {}).sort((a, b) => b[0].localeCompare(a[0])).map(([d, v]) => `<div class="v2-list-row${v.beleg ? " klick" : ""}" ${v.beleg ? `data-act="${String(v.beleg).startsWith("EB-") ? "eb-detail" : "bl-detail"}" data-id="${esc(v.beleg)}"` : ""}><span class="v2-badge ${v.wie === "uebersprungen" ? "neutral" : "ok"}">${esc(WIE[v.wie] || v.wie)}</span><div class="grow"><b>${esc(datumDe(d))}</b><small>${esc(v.beleg || v.grund || "")}</small></div></div>`).join("");
+  const offen = (x.offen || []).map(d => `<div class="v2-list-row"><span class="v2-badge wartet">offen</span><div class="grow"><b>${esc(datumDe(d))}</b><small>${esc(cent2eur(x.betrag_cent))}</small></div>
+    <button class="v2-btn ok sm" data-act="abo-buchen" data-id="${esc(nr)}" data-val="${esc(d)}">✓ Buchen</button><button class="v2-btn sm" data-act="abo-skip" data-id="${esc(nr)}" data-val="${esc(d)}">Überspringen</button></div>`).join("");
+  openModal(`${nr} · ${x.bezeichnung}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}">${esc(meldung)}</div>` : ""}
+    <div class="v2-kv"><span>Firma</span><b class="klick" data-act="kunde-detail" data-id="${esc(x.firma)}">${esc(x.firma_nr)} · ${esc(x.firma_name)}</b></div>
+    <div class="v2-kv"><span>Betrag</span><b>${esc(cent2eur(x.betrag_cent))} ${esc(x.turnus_text)} · ${esc(cent2eur(x.monatlich_cent))} je Monat</b></div>
+    <div class="v2-kv"><span>Buchung</span><b>${x.beleg_per_mail ? "Beleg kommt per Mail" : x.auto_buchen ? "automatisch bei Fälligkeit" : "auf Rückfrage (Hauptseite)"}</b></div>
+    <div class="v2-kv"><span>Status</span><b>${x.status === "aktiv" ? `aktiv · nächste Fälligkeit ${esc(datumDe(x.naechste))}` : `beendet${x.ende ? " zum " + esc(datumDe(x.ende)) : ""}`}</b></div>
+    ${x.ende && x.status === "aktiv" ? `<div class="v2-kv"><span>Vertragsende</span><b>${esc(datumDe(x.ende))}${x.kuendigungsfrist_tage != null ? ` · Kündigungsfrist ${esc(String(x.kuendigungsfrist_tage))} Tage` : ""}</b></div>` : ""}
+    ${offen ? `<h3>Offene Fälligkeiten</h3>${offen}` : ""}
+    <h3>Erledigt</h3>${erl || emptyRow("Noch keine Fälligkeit erledigt.")}
+    ${x.status === "aktiv" ? `<div class="v2-card-actions" style="margin-top:12px"><button class="v2-btn" data-act="abo-bearbeiten" data-id="${esc(nr)}">Bearbeiten</button><button class="v2-btn" data-act="abo-beenden" data-id="${esc(nr)}">Abo beenden</button></div>` : ""}`, false);
+}
+
 async function finUebersicht(u) {
   const k = u.kennzahlen, v = u.vorjahr, f = u.forderungen, vb = u.verbindlichkeiten, p = u.pipeline, w = u.waechter;
   const zn = finZeitName(u.zeitraum, u.jahr), dz = `zeitraum=${u.zeitraum}`;
@@ -2175,6 +2269,14 @@ async function handleAct(act, el) {
       if (AKTIV === "angebote") renderAngebote();
       return anDetail(id, r && r.ok ? [val === "angenommen" ? "Angenommen." : "Abgelehnt.", ...(r.hinweise || [])].join("\n") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
+    case "abo-neu": return aboForm("", null);
+    case "abo-detail": return aboDetail(id);
+    case "abo-bearbeiten": return aboForm(id);
+    case "abo-speichern": return aboSpeichern(id);
+    case "abo-buchen": { const r = await jpost(`/api/finanzen/abos/${encodeURIComponent(id)}/buchen`, { faellig: val }); if (AKTIV === "finanzen") renderFinanzen(); return aboDetail(id, r && r.ok ? `Gebucht als ${r.eigenbeleg}.` : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
+    case "abo-skip": { const grund = prompt("Warum überspringen? (z. B. Gratismonat)", ""); if (!grund) return; const r = await jpost(`/api/finanzen/abos/${encodeURIComponent(id)}/ueberspringen`, { faellig: val, grund }); return aboDetail(id, r && r.ok ? "Übersprungen." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
+    case "abo-beenden": { const ende = prompt("Abo endet zum (JJJJ-MM-TT):", heuteIso()); if (!ende) return; const grund = prompt("Grund (z. B. gekündigt):", "gekündigt") || ""; const r = await jpost(`/api/finanzen/abos/${encodeURIComponent(id)}/beenden`, { ende, grund }); if (AKTIV === "finanzen") renderFinanzen(); return aboDetail(id, r && r.ok ? "Abo beendet – es wird nichts mehr fällig." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
+    case "abo-aus-firma": { const d = await jget("/api/crm/kunden/" + encodeURIComponent(id)); const f = d && d.firma, ab = d && d.buchungen && d.buchungen.abo; ABOS = await jget("/api/finanzen/abos") || ABOS; const letzte = ((d && d.buchungen && d.buchungen.belege) || [])[0] || {}; return aboForm("", { bezeichnung: letzte.text || (f && f.name) || "", firma: f && f.nummer, betrag_cent: ab && ab.monatlich_cent, turnus: "monatlich", kategorie: "", zahlungsweg: f && f.zahlungsweg, beleg_per_mail: true }); }
     case "vertrag-neu": { const box = $("#" + id); if (box) box.insertAdjacentHTML("beforeend", vertragZeile()); return; }
     case "kunde-neu": return kundeNeu(id || "");
     case "kunde-anlegen": return kundeAnlegen(id || "");

@@ -456,3 +456,9 @@ a.v2-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .v2-bl-pos input, .v2-bl-pos select { min-width: 0; }
 .v2-bl-pos-kopf { color: var(--v2-faint); font-size: 11px; }
 @media (max-width: 760px) { .v2-bl-pos { grid-template-columns: 1fr 90px 30px; } .v2-bl-pos .bp-kat { grid-column: 1 / 3; } .v2-bl-pos-kopf { display: none; } }
+
+/* Etappe 16: TKP-Zeilen in Katalog und Angebot */
+.v2-kat-tkp { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.v2-kat-tkp .v2-inp { width: 120px; }
+.an-p-tkp { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
+.an-p-tkp .an-p-tkpwert { width: 70px; }

@@ -53,6 +53,8 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    `luna.hanserautisch@gmail.com` (nur von den eigenen Adressen; Absender kryptografisch geprueft per DKIM/DMARC).
 2. Das **Original** wird sofort unveraendert abgelegt (SHA-256 im Kassenbuch) und erhaelt die Nummer `ER-JJJJ-NNNN`.
    Doppelte Dateien werden erkannt.
+   Wiederkehrende Zahlungen ohne eigenen Beleg (Abos, `ABO-`) werden je Faelligkeit genau einmal erledigt: als Eigenbeleg
+   (per Klick oder -- nur wenn am Abo angehakt -- automatisch), durch einen passenden Beleg oder begruendet uebersprungen.
    Jeder Beleg haengt an einer Stammdaten-Nummer des Geschaeftspartners (Kunden `K-`, Lieferanten `L-`, Partner `P-`,
    fortlaufend, nie wiederverwendet); Adresse, USt-ID und Vertragsnummern werden aus den Belegen uebernommen.
    Steht die Rechnung nur im Mailtext (z. B. Apple, PayPal), ist die **Mail selbst das Original**: LUNA archiviert die
