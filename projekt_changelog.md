@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 17:22] — Claude Code
+- **Was:** WhatsApp-Bewertung fuer den konkreten Zweck (Team-Erinnerungen in der bestehenden WhatsApp-Gruppe, geteilte
+  Nummer) ergaenzt: offiziell nicht machbar (Groups API nur mit Official Business Account und fuer per API angelegte
+  Gruppen, keine Gruppen bei geteilter Nummer/Coexistence), inoffiziell Sperr-Risiko; Alternativen im Register notiert.
+- **Warum:** CEO-Idee 2026-09-29 „LUNA erinnert das Team in unserer WhatsApp-Gruppe, wenn Content faellig ist“.
+- **Betroffen:** `docs/entscheidungs-register.md`
+
 ## [2026-09-29 17:20] — Claude Code
 - **Was:** CEO-Frage „Wie kann LUNA WhatsApp-Nachrichten senden?“ recherchiert (Register zuerst: bisher nicht bewertet)
   und als „bewertet, offen“ ins Entscheidungs-Register eingetragen: offizieller Weg WhatsApp Business Cloud API (Meta,
