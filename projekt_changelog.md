@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 12:21] — Claude Code
+- **Was:** CEO-Antworten festgehalten: „etwas anderes“ bei den Lieferanten-Angaben war ein Versehen (keine weiteren
+  Felder); Reverse Charge (§ 13b) -- CEO muss keine USt melden, LUNA gibt dazu keinen Hinweis (Register).
+- **Warum:** CEO 2026-09-29 „1. War ein Versehen 2. Ich muss keine UST melden“.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-29 11:59] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 14 umgesetzt (auf `ai/kunden-finanzen`, noch nicht deployt): eigene Nummernkreise
   Kunden `K-` / Lieferanten `L-` / Partner `P-` (alte K-Lieferanten bekommen zusaetzlich eine L-Nummer), neue Stammdaten-
