@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 15:48] — Claude Code
+- **Was:** Nach CEO-Neustart (main 94770b2) geprueft: LUNA-OS ok, Bot laeuft (Watch-Log 15:42 geschrieben), 0 offene
+  Antraege, letzter Eintrag im Antrags-Store ist die Durchsicht (kein neuer Vorschlag). Erster Wochenlauf der
+  Selbst-Entwicklung: Montag 05.10. 04:00 -- danach Verifikation laut BETRIEB_ROADMAP Etappe 1.
+- **Warum:** CEO „Neustart gemacht, kannst pruefen“.
+- **Betroffen:** keine Dateien (Pruefung), Changelog
+
 ## [2026-09-29 15:43] — Claude Code
 - **Was:** BETRIEB_ROADMAP Etappe 1 umgesetzt (noch nicht deployt): Dubletten-Filter in der Ideen-Pipeline
   (`core/innovation.py` `finde_dublette`, regelbasiert, gegen alle bisherigen Antraege inkl. abgelehnter; bei Treffer kein
