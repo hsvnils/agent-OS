@@ -17,6 +17,45 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 15:18] — Claude Code
+- **Was:** NAS-Altlasten geloescht (gezielt, Pfad fuer Pfad): `mac/LunaOrb/.build` (431 MB) + `mac/LunaOrb/LunaOrb.app`,
+  alle `._*`-Mac-Metadateien (102) + `.DS_Store` (3), alter Trend-Code `orchestrator/core/trends.py`,
+  `orchestrator/tests/test_trends.py`, `trends/cache.jsonl`, `.obsidian/`, `Unbenannt.canvas` und die 5 alten
+  `.env`-Sicherungen (`orchestrator/.env.bak-*`, mit Schluesseln); `orchestrator/.env`, `.env.example`, Live-Daten, `vault/`,
+  `runner/` unberuehrt; LUNA-OS antwortet danach normal. `deploy/sync-to-nas.sh` schliesst `._*`, `.DS_Store`, `.obsidian`,
+  `mac/LunaOrb/.build` und `*.app` kuenftig aus (Dry-Run: keine solche Datei mehr im Paket). BF-26 fortgeschrieben.
+- **Warum:** CEO „Alles loeschen, auch die .env Sicherungen und Skript anpassen“.
+- **Betroffen:** NAS-Projektordner, `deploy/sync-to-nas.sh`, `docs/bekannte-fehler.md`
+
+## [2026-09-29 15:14] — Claude Code
+- **Was:** Auf der NAS `orchestrator/channels/web/static/vendor/` geloescht (Three.js + `models/luna-avatar.glb`, 5,3 MB,
+  Reste der 3D-Avatar-Versuche vom 2026-07-05; seit 03403c0 im Git entfernt, von keinem Code referenziert). Danach
+  Abgleich NAS-Projektordner gegen Git (ohne Live-Daten-Ordner): 3.214 Dateien nur auf der NAS -- davon Live-Daten
+  (bleiben), `vault/` + `runner/app_register.md` (schreibt LUNA, bleiben) und Altlasten zur CEO-Entscheidung:
+  `mac/LunaOrb/.build` (431 MB Swift-Build-Cache) + `LunaOrb.app`, 102 Mac-Metadateien `._*` + 3 `.DS_Store`, alter
+  Trend-Code `orchestrator/core/trends.py` + `tests/test_trends.py` + `trends/cache.jsonl` (seit e4e1f93 ersetzt),
+  Obsidian-Einstellungen `.obsidian/` + `Unbenannt.canvas`, 5 alte `.env`-Sicherungen (mit Schluesseln, fuer alle
+  NAS-Nutzer lesbar). Nichts davon geloescht.
+- **Warum:** CEO „Ja loeschen und auf weitere Altdateien pruefen“.
+- **Betroffen:** NAS `orchestrator/channels/web/static/vendor/`
+
+## [2026-09-29 15:10] — Claude Code
+- **Was:** Nach CEO-Neustart live geprueft: `/` und `/?ui=v1` liefern V2 (app v63), `/static/app.js`, `style.css`,
+  `index.html` antworten 404, kein Umschalter mehr; Abos- und TKP-Code aktiv (Katalog: Post 1.300, Story 780, Reel 1.600,
+  Integration 1.050 EUR beim Minimum; OMR-Werte geliefert); `/api/me`, `/api/finanzen/abos`, `/api/crm/katalog`,
+  `/api/finanzen/uebersicht` antworten 200.
+- **Warum:** CEO „Neustart erledigt, du kannst pruefen“.
+- **Betroffen:** keine Dateien (Pruefung), Changelog
+
+## [2026-09-29 15:09] — Claude Code
+- **Was:** V1-Entfernung deployt (main b802cdd, Code-Sync ohne Neustart) und auf der NAS die drei V1-Dateien
+  `orchestrator/channels/web/static/index.html`, `app.js`, `style.css` gezielt geloescht (der Sync loescht nie);
+  `vendor/winbox.bundle.min.js` lag auf der NAS nicht vor. `static/vendor/three/` und `vendor/models/` (nur auf der NAS,
+  nicht im Git, vom frueheren 3D-Hologramm-Versuch) bewusst nicht angefasst. NAS geprueft: `index-v2.html` mit app v63,
+  keine Versionsweiche mehr in `app.py`.
+- **Warum:** CEO „Go fuer Merge, push und Deploy“ (V1-Entfernung).
+- **Betroffen:** NAS-Code-Ordner `orchestrator/channels/web/static/`
+
 ## [2026-09-29 14:57] — Claude Code
 - **Was:** Design-Version V1 (Command Center) aus LUNA-OS entfernt, V2 ist das einzige Design: geloescht
   `static/index.html`, `static/app.js`, `static/style.css`, `static/vendor/winbox.bundle.min.js` (ca. 176 KB); Versionsweiche
