@@ -79,6 +79,12 @@ TAR_EXCLUDES=(
   --exclude='./nutzung'             # Nutzungs-Log (Leistungsbericht)
   --exclude='./backoffice/log.jsonl'  # Backoffice-Auftraege (Live-Daten; der Code-Ordner backoffice/ wird deployt)
   --exclude='./orchestrator/channels/voice/selected_voice.json'
+  # --- Mac-Altlasten, die nie auf die NAS gehoeren (Aufraeumen 2026-09-29) ---
+  --exclude='._*'                   # AppleDouble-Metadateien (macOS-tar)
+  --exclude='.DS_Store'
+  --exclude='.obsidian'             # Obsidian-Einstellungen (vault/ schreibt LUNA selbst)
+  --exclude='./mac/LunaOrb/.build'  # Swift-Build-Cache des Mac-Orbs (431 MB)
+  --exclude='*.app'                 # gebaute Mac-Apps
   # --- Git + virtuelle Umgebungen + Worktrees ---
   --exclude='./.git'
   --exclude='./.venv'

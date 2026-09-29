@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 15:18] — Claude Code
+- **Was:** NAS-Altlasten geloescht (gezielt, Pfad fuer Pfad): `mac/LunaOrb/.build` (431 MB) + `mac/LunaOrb/LunaOrb.app`,
+  alle `._*`-Mac-Metadateien (102) + `.DS_Store` (3), alter Trend-Code `orchestrator/core/trends.py`,
+  `orchestrator/tests/test_trends.py`, `trends/cache.jsonl`, `.obsidian/`, `Unbenannt.canvas` und die 5 alten
+  `.env`-Sicherungen (`orchestrator/.env.bak-*`, mit Schluesseln); `orchestrator/.env`, `.env.example`, Live-Daten, `vault/`,
+  `runner/` unberuehrt; LUNA-OS antwortet danach normal. `deploy/sync-to-nas.sh` schliesst `._*`, `.DS_Store`, `.obsidian`,
+  `mac/LunaOrb/.build` und `*.app` kuenftig aus (Dry-Run: keine solche Datei mehr im Paket). BF-26 fortgeschrieben.
+- **Warum:** CEO „Alles loeschen, auch die .env Sicherungen und Skript anpassen“.
+- **Betroffen:** NAS-Projektordner, `deploy/sync-to-nas.sh`, `docs/bekannte-fehler.md`
+
 ## [2026-09-29 15:14] — Claude Code
 - **Was:** Auf der NAS `orchestrator/channels/web/static/vendor/` geloescht (Three.js + `models/luna-avatar.glb`, 5,3 MB,
   Reste der 3D-Avatar-Versuche vom 2026-07-05; seit 03403c0 im Git entfernt, von keinem Code referenziert). Danach
