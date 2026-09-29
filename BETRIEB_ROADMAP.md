@@ -50,6 +50,9 @@ umwandeln ... und was wir mittlerweile nicht mehr brauchen“). Befund (Antrags-
   `self_development.selfdev_wochentag` + Bot: Lauf nur am Wochentag `SELF_DEV_WOCHENTAG` (Standard Montag) 04:00,
   intern/extern im Wochenwechsel. Tests `test_ideen_dubletten.py` (7 Faelle, 12 echte Titelpaare) + 5 Gegenproben;
   Suite gruen. Probelauf ueber den echten Verlauf (103 Antraege): 14 waeren als Wiederholung zurueckgehalten worden.
+- Live-Test 2026-09-29 (manuell ueber den Chat, Bereich cto): neuer Antrag „RAG-Faehigkeiten“ korrekt als neu gewertet
+  (40 % zum naechsten abgelehnten Titel); Grenze: gleiche Woerter statt verwandter Themen -- ausreichend, weil die
+  Absage das Thema danach sperrt. Antrag vom CEO abgelehnt.
 - Ziel / Scope: Vor dem Einreichen prueft `InnovationPipeline.run` den Titel gegen **alle** bisherigen Antraege
   (auch abgelehnte/geloeschte/erledigte) mit einem regelbasierten Wortvergleich (Fuellwoerter wie „Einfuehrung/
   Etablierung/zentral“ raus, Wortstaemme, gleiche Wortanfaenge ab 6 Zeichen). Treffer -> **kein Antrag**, Ergebnis nennt

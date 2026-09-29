@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 16:34] — Claude Code
+- **Was:** Selbst-Entwicklung einmal manuell ueber LUNAs Chat (`/api/chat`, Werkzeug `selbstentwicklung`, Bereich cto)
+  ausgeloest: Lauf komplett (584 s, lokales Modell), neuer Antrag A-20260929-142702-2054 „Erweiterung des Agenten-
+  Frameworks um erweiterte RAG-Faehigkeiten“ -- vom Dubletten-Filter korrekt als neu gewertet (naechster abgelehnter
+  Titel 40 % < 60 % Schwelle); Grenze dokumentiert: der Filter erkennt gleiche Woerter, nicht verwandte Themen. Antrag
+  auf CEO-Anweisung mit Begruendung abgelehnt (RAG lohnt nicht, Second Brain/Suche vorhanden, nah an Vektordatenbank/
+  Agent-Framework). Danach 0 offene Antraege. Wochentakt selbst wird am 05.10. geprueft.
+- **Warum:** CEO „Wochenlauf jetzt einmal manuell anstossen und pruefen“ + „Ablehnen mit deiner Begruendung“.
+- **Betroffen:** Live-Antrags-Store (NAS), Chat-Verlauf LUNA-OS (Testnachricht)
+
 ## [2026-09-29 16:14] — Claude Code
 - **Was:** CEO-Entscheidungen zum Datenschutz-Check festgehalten: Gemini-Gratis bleibt (Restrisiko Auftragsverarbeitung
   akzeptiert), keine Datenschutzerklaerung ueber LUNA (internes Werkzeug, hat mit hanserautisch.de nichts zu tun), keine
