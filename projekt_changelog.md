@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 15:09] — Claude Code
+- **Was:** V1-Entfernung deployt (main b802cdd, Code-Sync ohne Neustart) und auf der NAS die drei V1-Dateien
+  `orchestrator/channels/web/static/index.html`, `app.js`, `style.css` gezielt geloescht (der Sync loescht nie);
+  `vendor/winbox.bundle.min.js` lag auf der NAS nicht vor. `static/vendor/three/` und `vendor/models/` (nur auf der NAS,
+  nicht im Git, vom frueheren 3D-Hologramm-Versuch) bewusst nicht angefasst. NAS geprueft: `index-v2.html` mit app v63,
+  keine Versionsweiche mehr in `app.py`.
+- **Warum:** CEO „Go fuer Merge, push und Deploy“ (V1-Entfernung).
+- **Betroffen:** NAS-Code-Ordner `orchestrator/channels/web/static/`
+
 ## [2026-09-29 14:57] — Claude Code
 - **Was:** Design-Version V1 (Command Center) aus LUNA-OS entfernt, V2 ist das einzige Design: geloescht
   `static/index.html`, `static/app.js`, `static/style.css`, `static/vendor/winbox.bundle.min.js` (ca. 176 KB); Versionsweiche
