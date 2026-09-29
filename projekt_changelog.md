@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 15:39] — Claude Code
+- **Was:** Antrags-Durchsicht mit dem CEO: alle 97 offenen Antraege (Ideen-/Selbst-Entwicklungs-Laeufe Juni–September)
+  gelesen, gegen den Systemstand bewertet und im Live-System geschlossen -- 8 Fehler-Antraege geloescht, 89 mit
+  Begruendung abgelehnt (41 bereits umgesetzt, 39 nicht noetig, 9 in Roadmaps ueberfuehrt); danach 0 offen (Store:
+  91 abgelehnt, 10 geloescht, 2 erledigt). Neue `BETRIEB_ROADMAP.md` (Etappen: Ideen-Laeufe entruempeln, Changelog-Check,
+  Betriebs-Monitoring Ende-zu-Ende, Datenschutz-Check KI) mit Ursachenanalyse und kalibriertem Dubletten-Vergleich;
+  `KUNDEN_FINANZEN_ROADMAP.md`: Content-Feedback-Loop in Etappe 3c, neue Etappe 17 (Collab-Anfrage -> Angebotsentwurf),
+  Arbeitsbranch als geschlossen vermerkt; `ROADMAP.md`-Verzeichnis und Register ergaenzt. Kein Code geaendert.
+  (Das Ablehnen schreibt je Antrag zusaetzlich einen Eintrag ins Changelog der NAS.)
+- **Warum:** CEO 2026-09-29 „offene Freigaben gemeinsam anschauen ... was wir in Roadmaps umwandeln ... und was wir nicht
+  mehr brauchen“ + „Passt, lass uns starten“.
+- **Betroffen:** Live-Antrags-Store (NAS), `BETRIEB_ROADMAP.md` (neu), `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`,
+  `docs/entscheidungs-register.md`
+
 ## [2026-09-29 15:27] — Claude Code
 - **Was:** Nach CEO-Neustart (main 9fe89f6) geprueft: LUNA-OS-Login und Finanzen ok (Schluessel aus der `.env` werden
   gelesen), Bot laeuft (Watch-Log 15:27 geschrieben); `orchestrator/.env`, `state/instagram_token.json`,
