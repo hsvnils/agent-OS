@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 10:30] — Claude Code
+- **Was:** 13 vom CEO weitergeleitete Abo-Mails gesichtet (nur gelesen): 2 mit PDF (Anthropic, Supabase -- je Rechnung +
+  Quittung), 11 ohne Anhang (Rechnung im Mailtext: Apple x4, PayPal-Belege Microsoft x2/DAZN/Grover/Dropbox, Canva,
+  DR.SIM), alle Absender echt (DKIM). Plan als Etappe 13 (Abo-Belege aus Mails ohne PDF, Quittung als Zahlungsnachweis,
+  automatische Weiterleitungen) und Etappe 14 (Lieferanten-/Partner-Stammdaten mit eigenen Nummern, Adressen,
+  Kunden-/Vertragsnummern, jeder Beleg an einer Nummer) in die Roadmap geschrieben -- Plan, noch kein Auftrag.
+- **Warum:** CEO 2026-09-29 „Bitte schaue dir die mal an“ + „Fuer JEDEN Lieferanten, Partner und Dienstleister ...
+  Adressen anlegen. Inkl. Nummern“.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-29 09:31] — Claude Code
 - **Was:** Mail-Ablage live verifiziert: CEO hat LUNAs Google-Zugang mit `gmail.modify` neu bestaetigt und die Container
   neu gestartet; erster Poll 09:28 legte ER-2026-0001 (Calumet) nach `LUNA/Rechnungen/2026` und ER-2026-0002 (Meta)
