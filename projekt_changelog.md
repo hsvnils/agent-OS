@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 12:36] — Claude Code
+- **Was:** Etappen 15 (wiederkehrende Zahlungen/Abos als manuelle Belege, Turnus waehlbar) und 16 (TKP-Kalkulation in
+  Preisliste und Angeboten, Regler 20–30 EUR) als Plan in `KUNDEN_FINANZEN_ROADMAP.md`; Ist-Stand der Live-Preisliste
+  gegen OMR „Influencer Preisliste 2026“ (08.05.2026) abgeglichen (Story liegt mit ca. 15 EUR TKP unter der OMR-Spanne).
+  Kein Code.
+- **Warum:** CEO 2026-09-29 „Beides planen und mit vorschlagen, ich gebe dann frei und erst dann darfst du anfangen“.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-09-29 12:24] — Claude Code
 - **Was:** Etappe 14 live (main 774de97, CEO-Neustart): Nachzuordnung per API (erst Probe, dann echt) -- Rollennummern
   L-00001..L-00005 fuer die bisherigen K-Lieferanten, Eigenbelege TeamClash/Fiverr/Elgato -> L-00006..08, Amazon-Eigenbeleg ->

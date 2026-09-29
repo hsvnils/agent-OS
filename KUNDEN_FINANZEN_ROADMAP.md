@@ -4,7 +4,7 @@
 - Stand: 2026-09-29
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
+- Naechster Schritt: CEO-Go fuer Etappen 15 (Abos) und 16 (TKP) steht aus (geplant 2026-09-29). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
   Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
@@ -524,9 +524,71 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 - Aufwand: mittel bis gross (1-2 Sitzungen). Reihenfolge: **14 vor 13(a)**, 13 ohne (a) sofort moeglich.
 - Dokumentation: Changelog, Roadmap, `docs/datenfluesse.md`, Register, Verfahrensdokumentation (Stammdaten).
 
+### Etappe 15: Wiederkehrende Zahlungen / Abos (manuelle Belege)
+
+- Status: geplant (CEO 2026-09-29: „Moeglichkeit zur Anlage wiederkehrender Abos mit Auswahl verschiedener Zahlungsturni
+  wie Monatlich, Jaehrlich usw (Manuelle Belege)“) -- Plan, kein Auftrag; Go steht aus.
+- Bestand: Eigenbelege `EB-` (einzeln), Stammdaten mit Vertraegen (Etappe 14), Abo-Erkennung aus Belegen, CFO-Hinweis
+  „wiederkehrend fehlt“. Es gibt keine Vorlage, die regelmaessig faellig wird.
+- Ziel / Scope:
+  - **Abo-Vorlage** `ABO-00001` (eigener Kreis, `AB-` ist die Auftragsbestaetigung): Bezeichnung, Stammdaten-Nummer
+    (L-/P-), Ausgabe/Einnahme, Betrag, Kategorie, **Turnus** (woechentlich, monatlich, alle 2 Monate, vierteljaehrlich,
+    halbjaehrlich, jaehrlich), erste Faelligkeit, optional Ende/Kuendigungsdatum und Kuendigungsfrist, Zahlungsweg,
+    Vertragsnummer, „Beleg kommt per Mail“ ja/nein, pausieren/beenden (nichts wird geloescht).
+  - **Bei Faelligkeit** (CFO-Lauf 05:00): To-do „Abo X faellig – buchen?“ auf der Hauptseite (+ optional Telegram ✅/❌);
+    ✅ erzeugt einen Eigenbeleg mit Verweis auf das Abo (Datum = Faelligkeit, aenderbar). Kommt fuer das Abo schon ein
+    Mail-Beleg derselben Firma mit aehnlichem Betrag (±25 %) im Zeitraum, wird das Abo automatisch als erfuellt markiert
+    und nichts doppelt gebucht.
+  - **Abo-Uebersicht** im Finanzbereich: alle aktiven Abos, Kosten je Monat (jaehrlich / 12) und je Jahr, naechste
+    Faelligkeit, Kuendigungstermine; Kalender-Erinnerung X Tage vor Ablauf der Kuendigungsfrist.
+  - **Aus erkannten Abos anlegen:** Firma mit „🔁 Abo erkannt“ (Etappe 14) bekommt „Als Abo anlegen“ mit Vorbelegung.
+- Nicht enthalten: wiederkehrende **Ausgangsrechnungen** an Kunden (z. B. Saison-Sponsoring monatlich) -- spaeter als
+  eigene Etappe moeglich.
+- Gate: Monats- und Jahresabo laufen ueber einen Jahreswechsel korrekt (Faelligkeiten nachgerechnet); ✅ bucht genau einen
+  Eigenbeleg; ein passender Mail-Beleg verhindert die Doppelbuchung; Kuendigung stoppt kuenftige Faelligkeiten; Tests +
+  Gegenprobe; Browser-Test; CEO-Abnahme.
+- Verifikation (vorab): `pytest` gruen; Beispiel iCloud 9,99 EUR monatlich ab 22.07.: Faelligkeiten 22.08., 22.09., ...;
+  Developer-Programm 99 EUR jaehrlich ab 23.05.2026 -> 23.05.2027; 31.01. monatlich -> 28./29.02., 31.03.
+- Risiko: Doppelbuchung (Abo-Eigenbeleg + Mail-Beleg) -> Abgleich wie oben + Hinweis beim ✅; Buchung nie ohne CEO-Klick.
+- Aufwand: mittel (1 Sitzung).
+- Dokumentation: Changelog, Roadmap, Register, `docs/datenfluesse.md`, Verfahrensdokumentation (Dauervorgaenge).
+
+### Etappe 16: TKP-Kalkulation in Preisliste und Angeboten
+
+- Status: geplant (CEO 2026-09-29: „TKP Preis als Basis in den Angeboten ... einstellen koennen, welchen TKP zwischen 20
+  und 30 wir nehmen wollen. Gerne Ist-Stand und OMR-Beitrag mal abgleichen.“) -- Plan, kein Auftrag; Go steht aus.
+- Abgleich (Live-Katalog 2026-09-29 vs. OMR „Influencer Preisliste 2026“, Stand 08.05.2026 -- Instagram-Post 20–30 EUR,
+  Story 20–50 EUR, Reel/TikTok 25–50 EUR, YouTube-Video 60–100 EUR TKP; Preis steigt u. a. mit Nische/Zielgruppen-Fit,
+  Engagement, Content-Qualitaet, Nutzungsrechten, Exklusivitaet, Saison):
+  | Format | Kontakte | Preis | TKP heute (ohne Produktion) | OMR |
+  |---|---|---|---|---|
+  | Feed-Post | 52.000 | 1.300 EUR | ca. 20 EUR (bei ca. 260 EUR Produktion) | 20–30 EUR |
+  | Reel Standalone | 37.000 | 1.600 EUR | ca. 31 EUR (450 EUR Produktion) | 25–50 EUR |
+  | Reel-Integration | 37.000 | 1.050 EUR | 16–28 EUR (Produktionsanteil offen) | 25–50 EUR |
+  | Story-Serie | 34.000 | 600 EUR | ca. 15 EUR | 20–50 EUR (**heute darunter**) |
+  Der Preislisten-Text („je nach Format 12–30 EUR ... am unteren Rand“) stimmt fuer Story nicht mehr.
+- Ziel / Scope:
+  - **Katalog rechnet statt fester Preise** (fuer Reichweiten-Formate): Kontakte (Median 90 Tage) x TKP / 1.000 +
+    Produktionspauschale, gerundet (z. B. auf 10 EUR). Je Format **TKP-Spanne** (Standard/Minimum und Maximum) und
+    Produktionspauschale; Formate ohne verlaessliche Reichweite (X, App, Stadion, Kanaele im Aufbau) bleiben Festpreise.
+  - **Im Angebot:** Regler „Community-Fit“ je Angebot (und je Position abweichend) -- TKP zwischen Minimum und Maximum,
+    Standard = Minimum; Vorschau des Preises je Stufe; der gewaehlte TKP wird mit dem Angebot festgeschrieben (spaetere
+    Katalogaenderung aendert nichts). PDF zeigt den Preis; Kalkulation (Kontakte x TKP) optional sichtbar.
+  - **Preisliste:** Kalkulationstext und Beispielrechnung werden aus den Werten erzeugt (keine veralteten Zahlen mehr);
+    Zuschlaege (Nutzungsrechte, Whitelisting, Exklusivitaet ...) bleiben wie sie sind.
+  - **Kontakte** vorerst von Hand im Katalog; spaeter automatisch aus den Meta-Exporten (Etappe 3c).
+- Gate: Beispielrechnungen je Format von Hand nachgerechnet (TKP 20/25/30); bestehende Angebote unveraendert; Angebot mit
+  TKP 28 fuer einen passenden Kunden -> Preis im PDF korrekt; Tests + Gegenprobe; CEO-Abnahme von Editor und PDF.
+- Verifikation (vorab): Feed-Post 52.000 Kontakte, Produktion 260 EUR: TKP 20 -> 1.300 EUR, TKP 25 -> 1.560 EUR, TKP 30 ->
+  1.820 EUR; Story 34.000 Kontakte, Produktion 100 EUR: TKP 20 -> 780 EUR, TKP 30 -> 1.120 EUR.
+- Risiko: Preisaenderung fuer Kunden -> nur neue Angebote; Rundung nachvollziehbar; Preisliste nur mit CEO-Freigabe
+  veroeffentlichen (Oeffentlichkeit = CEO-Tor).
+- Aufwand: mittel (1 Sitzung). Unabhaengig von Etappe 15.
+- Dokumentation: Changelog, Roadmap, Register (TKP-Spannen, Quelle OMR), `docs/datenfluesse.md`.
+
 ## Reihenfolge
 
-1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 (ohne Auto-Weiterleitung) -> 14 -> 13 (Auto-Weiterleitung). Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst
+1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 (ohne Auto-Weiterleitung) -> 14 -> 13 (Auto-Weiterleitung) -> 15/16 (unabhaengig, nach CEO-Go). Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst
 erfasst werden sollen. Jede Etappe ist fuer sich nutzbar.
 
 ## Kosten
