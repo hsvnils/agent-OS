@@ -17,6 +17,46 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 10:47] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 13 umgesetzt (auf `ai/kunden-finanzen`, noch nicht deployt): Rechnungen im Mailtext
+  (ohne PDF) werden Belege -- lesbare PDF-Ansicht + unveraenderte `.eml` als Original, Vorschlag mit Haendler statt
+  PayPal, Brutto, Datum, Nummer, Zweifelsfall-Hinweisen; Quittung neben der Rechnung wird Zahlungsnachweis am selben
+  Beleg (statt zweitem Beleg); automatische Weiterleitungen mit Original-Absender werden angenommen, wenn DKIM/DMARC
+  echt und an/ueber eine eigene Adresse; Dubletten per Rechnungsnummer + Betrag; Regeln fuer englische Rechnungen
+  (Stripe-Nummer, „September 25, 2026“, Lieferant nicht „Page 1 of 1“); LUNA-OS zeigt weitere Dateien, Hinweise und
+  „🧾 Ist Zahlungsnachweis zu …“ (`POST /api/finanzen/belege/<nr>/als-nachweis`), app v60; Gmail-Suche bis 50 Treffer.
+  Probelauf mit den 13 echten Mails lokal (Scratchpad, nicht im Git): alle erkannt. Tests `test_mail_belege.py` (9),
+  8 Gegenproben rot, Browser-Test, Suite 974 gruen. BF-40 dokumentiert.
+- **Warum:** CEO 2026-09-29 „Alle Mails die ich eben geschickt habe, muessen auch erkannt werden ... Solange kommt das
+  alles noch ueber die Weiterleitungen. Kuemmere dich bitte drum“.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/governance/google_workspace.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`,
+  `orchestrator/tests/test_mail_belege.py`, `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`,
+  `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
+## [2026-09-29 10:40] — Claude Code
+- **Was:** CEO-Entscheidungen zu Etappe 14 in die Roadmap: eigene Nummernkreise K-/L-/P-; Felder Adresse + USt-ID,
+  eigene Kundennummer, Vertrags-/Abo-Nummern, Zahlungsweg (+ weitere Angabe offen); vorerst nur Plan, kein Go.
+- **Warum:** CEO-Antwort auf die Rueckfragen zu Etappe 13/14.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`
+
+## [2026-09-29 10:30] — Claude Code
+- **Was:** 13 vom CEO weitergeleitete Abo-Mails gesichtet (nur gelesen): 2 mit PDF (Anthropic, Supabase -- je Rechnung +
+  Quittung), 11 ohne Anhang (Rechnung im Mailtext: Apple x4, PayPal-Belege Microsoft x2/DAZN/Grover/Dropbox, Canva,
+  DR.SIM), alle Absender echt (DKIM). Plan als Etappe 13 (Abo-Belege aus Mails ohne PDF, Quittung als Zahlungsnachweis,
+  automatische Weiterleitungen) und Etappe 14 (Lieferanten-/Partner-Stammdaten mit eigenen Nummern, Adressen,
+  Kunden-/Vertragsnummern, jeder Beleg an einer Nummer) in die Roadmap geschrieben -- Plan, noch kein Auftrag.
+- **Warum:** CEO 2026-09-29 „Bitte schaue dir die mal an“ + „Fuer JEDEN Lieferanten, Partner und Dienstleister ...
+  Adressen anlegen. Inkl. Nummern“.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`
+
+## [2026-09-29 09:31] — Claude Code
+- **Was:** Mail-Ablage live verifiziert: CEO hat LUNAs Google-Zugang mit `gmail.modify` neu bestaetigt und die Container
+  neu gestartet; erster Poll 09:28 legte ER-2026-0001 (Calumet) nach `LUNA/Rechnungen/2026` und ER-2026-0002 (Meta)
+  nach `LUNA/Gutschriften/2026` ab (Ereignisse `eingang_mail_abgelegt`, nur bei Google-OK protokolliert). BF-39 behoben.
+- **Warum:** Abnahme „Wirkung bis zum Empfaenger“ der Mail-Ablage (CEO 2026-09-29).
+- **Betroffen:** `docs/bekannte-fehler.md`, Live-Kassenbuch (NAS), LUNAs Gmail
+
 ## [2026-09-29 09:10] — Claude Code
 - **Was:** (1) Verlustvortrag 2025 live eingetragen: 2.622,59 EUR (`POST /api/finanzen/verlustvortrag`, Ereignis
   `verlustvortrag_erfasst`; Uebersicht 2026 zeigt ihn voll verrechenbar, da 2026 bisher Verlust). (2) Erledigte

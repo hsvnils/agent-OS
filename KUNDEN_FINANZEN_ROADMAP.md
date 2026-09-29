@@ -1,10 +1,12 @@
 # Roadmap: Kunden, Angebote, Rechnungen und Finanzen in LUNA-OS
 
 - Status: in Umsetzung
-- Stand: 2026-09-28
+- Stand: 2026-09-29
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
+- Naechster Schritt: Etappe 13 deployen (Go), danach ER-2026-0034/-0036 per „als Nachweis“ an ER-0033/-0035 haengen und
+  die 11 Abo-Mails im Live-Abruf pruefen; Go fuer Etappe 14 steht aus.
+  Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
   gemischte Rechnung aufteilen); Deploy + Abnahme Etappe 12 (Barter-Deal einmal von Angebot bis Ware-Eingang
   durchspielen). Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
@@ -425,9 +427,91 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 - Dokumentation: Changelog, Roadmap-Status, `ROADMAP.md`, Entscheidungs-Register (Wertermittlung, Verwendung),
   `docs/datenfluesse.md`, Verfahrensdokumentation (Tauschgeschaefte).
 
+### Etappe 13: Abo-Belege aus Mails (ohne PDF) und automatische Weiterleitungen
+
+- Status: umgesetzt (CEO 2026-09-29: „Alle Mails die ich eben geschickt habe, muessen auch erkannt werden ... Kuemmere
+  dich bitte drum“), Deploy + Abnahme offen. Probelauf mit den 13 echten Mails (lokal): 11 Mailtext-Rechnungen mit
+  richtigem Lieferant/Datum/Betrag, Anthropic/Supabase je ein Beleg mit Quittung als Zahlungsnachweis, Apple-Developer-
+  Mail als Dublette von ER-2026-0003 erkannt. Abo-Kennzeichnung je Lieferant wandert in Etappe 14 (braucht L-Nummern).
+- Ergebnis: `core/eingangsbelege.py`: `mail_text` (Text-/HTML-Teil ohne Links), `weiterleitung` (Original-Absender,
+  -Betreff, -Datum aus dem Weiterleitungskopf), `mail_ist_beleg` (Beleg-Wort + Betrag), `vorschlag_mail` (Haendler statt
+  PayPal, hoechster Euro-Betrag = brutto, Datum ersatzweise aus dem Kopf), `mail_pdf` (lesbare Ansicht) + `.eml` als
+  unveraendertes Original am selben Beleg; `auto_weitergeleitet` (DKIM/DMARC des Original-Absenders + an/ueber eigene
+  Adresse); `_gleicher_beleg` (Dublette per Rechnungsnummer + Betrag -> `LUNA/Doppelt`); Quittung neben Rechnung ->
+  `datei_anhaengen` (Rolle Zahlungsnachweis); `als_nachweis` + `POST /api/finanzen/belege/<nr>/als-nachweis` fuer
+  Altfaelle; Regeln: Stripe-Nummer, englische/deutsche ausgeschriebene Daten, Lieferant nicht „Page 1 of 1“/„Invoice“,
+  Bestell-/Dokument-/Transaktionsnummer, Zweifelsfall-Hinweise (Versicherung, Mobilfunk, Streaming, PayPal-Beleg,
+  Kundenportal). LUNA-OS: weitere Dateien am Beleg, Hinweise, „🧾 Ist Zahlungsnachweis zu …“ (app v60). Tests
+  `test_mail_belege.py` (9) + 8 Gegenproben; Browser-Test.
+- Befund 2026-09-29 (13 Weiterleitungen von moin@, alle DKIM-geprueft echt): nur **2 mit PDF** (Anthropic, Supabase --
+  je **Rechnung + Zahlungsquittung** als zwei PDFs); **11 ohne Anhang**, die Rechnung steht im Mailtext (Apple iCloud+/
+  AppleCare x4, PayPal-Belege Microsoft x2/DAZN/Grover/Dropbox, Canva, DR.SIM). Der Mail-Eingang sucht bisher nur
+  `has:attachment` -> diese 11 sieht LUNA gar nicht.
+- Ziel / Scope:
+  - **Mail als Beleg:** eigene, echte Weiterleitung ohne PDF, deren Text wie eine Rechnung/Quittung aussieht (Wort
+    Rechnung/Beleg/Receipt/Invoice + Betrag) -> Beleg `ER-...`; Original = die **.eml unveraendert** (GoBD: bei
+    Mail-Rechnungen ist die Mail das Original), dazu eine lesbare PDF-Ansicht (Absender, Datum, Betreff, Text) fuer
+    LUNA-OS und Auslesen. Vorschlag aus dem weitergeleiteten Teil (Originalabsender, Rechnungsdatum, Nummer, Betrag,
+    MwSt). Mails ohne Rechnungsmerkmale bleiben im Posteingang.
+  - **Rechnung + Quittung in einer Mail:** Quittung/Receipt/Zahlungsbestaetigung wird **Zahlungsnachweis am selben
+    Beleg**, kein zweiter Beleg (sonst doppelte Ausgabe); Zahlungsdatum daraus als Vorschlag „bezahlt“.
+  - **Automatische Weiterleitungen:** Viele Anbieter/Postfaecher leiten mit dem **Original-Absender** weiter (z. B.
+    `no_reply@email.apple.com`) -- dann greift die Absenderliste nicht. Zulassen, wenn (a) die Absenderdomain per
+    DKIM/DMARC echt ist **und** als Rechnungs-Absender eines Lieferanten in den Stammdaten steht (Etappe 14), oder
+    (b) die Mail nachweislich ueber eines der eigenen Postfaecher kam (ARC-/Weiterleitungs-Kopf). Erste echte
+    Auto-Weiterleitung wird vorher untersucht, wie sie ankommt.
+  - **Abos erkennen:** Lieferant + aehnlicher Betrag monatlich -> Kennzeichen „Abo“ (Kostenstatistik, CFO-Hinweis
+    „Abo-Beleg fehlt diesen Monat“ auf Lieferantenbasis statt Kategorie).
+  - **Zweifelsfaelle als Hinweis** beim Buchen (kein Steuerberater): Mobilfunk (privater Anteil), Streaming (DAZN),
+    Versicherungen/AppleCare (nur fuer betriebliche Geraete), Cloud-Speicher; Steuer-Hinweis „Versicherungssteuer,
+    keine MwSt“ bei AppleCare.
+- Gate: die 11 Mails ohne PDF werden (nach Deploy) als 11 Belege mit richtigem Lieferant/Datum/Betrag vorgeschlagen
+  (Abweichungen von Hand gezaehlt); Anthropic/Supabase ergeben je **einen** Beleg mit Zahlungsnachweis; eine Mail ohne
+  Rechnungsmerkmale bleibt im Posteingang; eine gefaelschte Mail (DKIM fail) wird nie Beleg; Tests + Gegenprobe.
+- Verifikation (vorab): `pytest -q orchestrator backoffice` gruen; Testmails aus den echten Mustern (anonymisiert):
+  Apple 9,99 EUR (MwSt 1,59), PayPal/DAZN 44,99 EUR, Canva 12,00 EUR -> Vorschlag korrekt; Readback im Live-Kassenbuch.
+- Risiko: falsche Beleg-Erkennung (Werbemail als Rechnung) -> nur eigene/verifizierte Absender, CEO bucht immer selbst;
+  zurueck per „verwerfen“. Bereits aufgenommene Quittungs-PDFs (Anthropic/Supabase, falls vorher gepollt) werden
+  verworfen bzw. als Nachweis umgehaengt.
+- Aufwand: mittel (1 Sitzung). Abhaengigkeit: (a) der Auto-Weiterleitung nutzt Etappe 14.
+- Dokumentation: Changelog, Roadmap, `docs/datenfluesse.md`, Register, Verfahrensdokumentation (Mail als Original).
+
+### Etappe 14: Lieferanten-, Partner- und Dienstleister-Stammdaten mit Nummern
+
+- Status: geplant (CEO 2026-09-29: „Fuer JEDEN Lieferanten, Partner und Dienstleister ... Adressen anlegen. Inkl.
+  Nummern usw., sodass alle Belege dann immer auch unter dieser ... Nummer laufen“)
+- Bestand: Firmen-Stammdaten gibt es (`core/kunden.py`, Typ kunde/lieferant/partner), aber **eine** Nummernfolge
+  `K-00001` fuer alle; Lieferanten entstehen beim Buchen nur mit Namen (live: K-00003..K-00007). Eigenbelege haben nur
+  Freitext „Gegenpartei“.
+- Ziel / Scope:
+  - **Eigene Nummer je Rolle** (Vorschlag): Kunden `K-`, Lieferanten/Dienstleister `L-`, Partner `P-`; bestehende
+    Lieferanten bekommen ihre L-Nummer als Ergaenzung (K-Nummer bleibt als Verweis gueltig, Hash-Kette unveraendert).
+  - **Adresse und Nummern** je Lieferant: Anschrift, Land, USt-ID/Steuernummer, **unsere Kundennummer beim Lieferanten**,
+    Vertrags-/Abo-/Versicherungsnummern, Rechnungs-Absenderadressen (fuer Etappe 13), Zahlungsweg, Website, Notiz.
+  - **Jeder Beleg haengt an einer Nummer:** Eingangsbelege Pflichtfeld Lieferant (Auswahl/Neuanlage mit Vorschlag aus
+    dem Beleg: Name, Anschrift, USt-ID, Kundennummer), Eigenbelege und Barter ebenfalls; Altbelege nachtraeglich
+    verknuepfen (additives Ereignis).
+  - **Lieferanten-Ansicht** in LUNA-OS: Stammdaten, alle Belege/Zahlungen, Summe je Jahr, Abos; Filter im Journal und
+    Export-Spalte Lieferantennummer.
+  - **Erstbefuellung durch LUNA:** alle bisherigen Lieferanten/Partner aus den Belegen (Calumet, Amazon, J. Fuehr,
+    Adlerfokus, Apple, Meta (Partner), Fiverr, Elgato, TeamClash) plus die neuen Abo-Anbieter (Anthropic, Supabase,
+    Microsoft, DAZN, Grover, Dropbox, Canva, DR.SIM) mit den Adressen/Nummern, die auf den Belegen stehen; fehlende
+    Angaben als Luecke markiert, nichts erfunden.
+- Entscheidungen (CEO 2026-09-29): (1) **eigene Nummernkreise** K-/L-/P- (bestehende Lieferanten K-00003..K-00007
+  erhalten zusaetzlich eine L-Nummer); (2) je Lieferant **Adresse + USt-ID, unsere Kundennummer, Vertrags-/Abo-/
+  Versicherungsnummern, Zahlungsweg** -- plus weitere Angabe(n), vom CEO noch zu nennen; (3) **erst nur planen**:
+  CEO liest die Roadmap, Go fuer 13/14 steht aus.
+- Gate: jeder gebuchte Beleg und Eigenbeleg hat eine Lieferanten-/Partnernummer; Lieferanten-Ansicht zeigt fuer Amazon
+  alle Amazon-Belege mit Summe = Summe im Journal; Tests + Gegenprobe; CEO-Abnahme der Ansicht.
+- Verifikation (vorab): `pytest` gruen; Readback live: Anzahl Belege ohne Lieferantennummer = 0.
+- Risiko: Dubletten (Amazon.de vs. Amazon EU S.a.r.l.) -> Dublettenpruefung + Zusammenfuehren; Nummern sind additiv,
+  nichts wird umgeschrieben.
+- Aufwand: mittel bis gross (1-2 Sitzungen). Reihenfolge: **14 vor 13(a)**, 13 ohne (a) sofort moeglich.
+- Dokumentation: Changelog, Roadmap, `docs/datenfluesse.md`, Register, Verfahrensdokumentation (Stammdaten).
+
 ## Reihenfolge
 
-1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9. Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst
+1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 (ohne Auto-Weiterleitung) -> 14 -> 13 (Auto-Weiterleitung). Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst
 erfasst werden sollen. Jede Etappe ist fuer sich nutzbar.
 
 ## Kosten

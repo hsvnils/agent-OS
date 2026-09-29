@@ -53,6 +53,9 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    `luna.hanserautisch@gmail.com` (nur von den eigenen Adressen; Absender kryptografisch geprueft per DKIM/DMARC).
 2. Das **Original** wird sofort unveraendert abgelegt (SHA-256 im Kassenbuch) und erhaelt die Nummer `ER-JJJJ-NNNN`.
    Doppelte Dateien werden erkannt.
+   Steht die Rechnung nur im Mailtext (z. B. Apple, PayPal), ist die **Mail selbst das Original**: LUNA archiviert die
+   `.eml` unveraendert und legt eine lesbare PDF-Ansicht dazu. Eine Zahlungsquittung neben der Rechnung wird als
+   Zahlungsnachweis beim selben Beleg abgelegt (kein zweiter Beleg).
    Danach legt LUNA die Mail in ihrem Postfach unter `LUNA/Rechnungen/<Jahr>`, `LUNA/Gutschriften/<Jahr>` bzw.
    `LUNA/Doppelt/<Jahr>` ab (gelesen, nie geloescht); welche Mail zu welchem Beleg gehoert, steht im Kassenbuch
    (`eingang_mail_abgelegt`). Mails ohne erkannten Beleg bleiben im Posteingang.

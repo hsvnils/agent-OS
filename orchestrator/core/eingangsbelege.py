@@ -258,6 +258,27 @@ _BETRAG = r"(-?\d{1,3}(?:\.\d{3})*,\d{2}|-?\d+,\d{2}|-?\d+\.\d{2})"
 _DATUM = r"(\d{1,2})\.(\d{1,2})\.(\d{2,4})"
 _MONATE_EN = {m: i + 1 for i, m in enumerate(("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"))}
 _DATUM_EN = r"(\d{1,2})[-\s]([A-Za-z]{3})[a-z]*[-\s,]+(\d{4})"                 # 25-Sep-2026 (Meta, englische Belege)
+_MONATE_DE = {"januar": 1, "jan": 1, "februar": 2, "feb": 2, "märz": 3, "maerz": 3, "mär": 3, "april": 4, "apr": 4,
+              "mai": 5, "juni": 6, "jun": 6, "juli": 7, "jul": 7, "august": 8, "aug": 8, "september": 9, "sep": 9,
+              "sept": 9, "oktober": 10, "okt": 10, "november": 11, "nov": 11, "dezember": 12, "dez": 12}
+_MONATE_EN_LANG = {"january": 1, "february": 2, "march": 3, "april": 4, "june": 6, "july": 7, "august": 8,
+                   "september": 9, "october": 10, "november": 11, "december": 12} | _MONATE_EN
+_DATUM_DE_LANG = re.compile(r"(\d{1,2})\.\s*([A-Za-zÄÖÜäöü]{3,9})\.?\s+(\d{4})")       # 21. Juli 2026 (Apple, Mails)
+_DATUM_EN_US = re.compile(r"\b([A-Za-z]{3,9})\.?\s+(\d{1,2}),\s*(\d{4})")                # September 25, 2026 (Stripe)
+
+
+def datum_frei(t: str) -> str:
+    """Erstes ausgeschriebenes Datum (deutsch „21. Juli 2026“ oder englisch „Sep 21, 2026“) -> ISO, sonst ''."""
+    treffer = []
+    for m in _DATUM_DE_LANG.finditer(t or ""):
+        if (mo := _MONATE_DE.get(m.group(2).lower())) and (d := _iso("", m.group(1), str(mo), m.group(3))):
+            treffer.append((m.start(), d))
+            break
+    for m in _DATUM_EN_US.finditer(t or ""):
+        if (mo := _MONATE_EN_LANG.get(m.group(1).lower())) and (d := _iso("", m.group(2), str(mo), m.group(3))):
+            treffer.append((m.start(), d))
+            break
+    return min(treffer)[1] if treffer else ""
 
 
 def _iso(t: str, tag: str, monat: str, jahr: str) -> str:
@@ -322,6 +343,32 @@ def positionen_regeln(text: str) -> list[dict]:
     return out[:40]
 
 
+_KEIN_LIEFERANT = re.compile(r"(?i)^(?:page|seite)\s+\d+|^(?:invoice|receipt|rechnung|quittung|gutschrift|beleg|credit note|"
+                             r"remittance)\b|hanserautisch|nils\s+kr[üu]ger|^bill\s+to|^rechnungsadresse")
+_RECHTSFORM = re.compile(r"(?i)\b(?:gmbh|ag|ug|kg|ohg|e\.\s?k|ltd|pbc|inc|llc|s\.?\s?[àa]\.?\s?r\.?\s?l|s\.a|b\.v|pte|"
+                         r"limited|corp|plc|sarl)\b")
+_NR_WEITERE = (r"(?i)(?:bestell-?(?:nummer|nr\.?)|order\s+(?:no\.?|number|id)|auftragsnummer|auftragsbest[äa]tigung|"
+               r"dokument(?:nummer)?|transaktionscode|transaction\s+id|receipt\s+number)\s*[:#]?\s*([A-Z0-9][A-Z0-9\-/_.]{3,30})",
+               r"(?i)\brechnung\s*[:#]?\s*\n\s*(\d[\d\-]{5,30})\b")
+# Steuerliche Zweifelsfaelle (kein Steuerberater -> Hinweis, nie still entscheiden; CEO 2026-09-28)
+HINWEISE = (
+    (r"(?i)applecare|versicherungs(?:nummer|police|schutz|steuer)",
+     "Versicherung: nur absetzbar, soweit das versicherte Gerät betrieblich genutzt wird – sonst privat bzw. aufteilen."),
+    (r"(?i)mobilfunk|handyvertr|handytarif|dr\.?\s?sim|telekom|vodafone|\bo2\b|congstar",
+     "Mobilfunk: bei privater Mitnutzung nur den betrieblichen Anteil buchen (Beleg aufteilen)."),
+    (r"(?i)\bdazn\b|netflix|disney\+|sky ticket|spotify|prime video",
+     "Streaming-Abo: nur absetzbar, wenn es betrieblich (z. B. für Content) genutzt wird – sonst privat."),
+    (r"(?i)beleg f[üu]r ihre zahlung an|you sent a payment",
+     "PayPal-Zahlungsbeleg: die Rechnung des Händlers ist der eigentliche Beleg – wenn vorhanden, nachreichen."),
+    (r"(?i)im kundenbereich|zum download bereit|rechnung herunterladen|online abrufen",
+     "Die eigentliche Rechnung liegt evtl. im Kundenportal – PDF dort herunterladen und als Beleg ergänzen."),
+)
+
+
+def hinweise_raten(text: str) -> list[str]:
+    return [h for muster, h in HINWEISE if re.search(muster, text or "")]
+
+
 def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
     """Schneller Vorschlag ohne KI. E-Rechnungs-Felder haben Vorrang (exakt)."""
     t = text or ""
@@ -332,10 +379,18 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
     zeilen = [z.strip() for z in t.splitlines() if z.strip()]
     m = re.search(r"(?i)(?:rechnungs?[- ]?(?:nummer|nr\.?)|rechnung\s+nr\.?|invoice\s+(?:no\.?|number)|payment\s+(?:no\.?|number)|"
                   r"beleg[- ]?(?:nummer|nr\.?))"
-                  r"\s*[:#]?\s*([A-Z0-9][A-Z0-9\-/_.]{2,30})", t)
+                  r"\s*[:#]?\s*([A-Z0-9][A-Z0-9\-/_.]{2,30})(?:[ \xa0\x00](\d{4})\b)?", t)       # \x00 = verlorener Bindestrich (Stripe-PDF)
     if m:
         v["rechnungsnummer"] = m.group(1).rstrip(".")
-    m = (re.search(r"(?i)(?:rechnungsdatum|invoice\s+date|belegdatum|leistungsdatum)\s*[:]?\s*" + _DATUM, t)
+        if m.group(2) and re.fullmatch(r"[A-Z0-9]{8}", m.group(1)):       # Stripe: „PXE7RQGJ-0008“ im Text mit Leerzeichen
+            v["rechnungsnummer"] += "-" + m.group(2)
+    else:
+        for muster in _NR_WEITERE:                              # Bestell-/Dokument-/Transaktionsnummer (Apple, PayPal, Canva)
+            if (m := re.search(muster, t)):
+                v["rechnungsnummer"] = m.group(1).rstrip(".")
+                break
+    m = (re.search(r"(?i)(?:rechnungsdatum|invoice\s+date|belegdatum|leistungsdatum|transaktionsdatum|ausstellungsdatum)"
+                   r"\s*[:]?\s*" + _DATUM, t)
          or re.search(r"(?i)(?<![a-zäöü])datum\s*[:]?\s*" + _DATUM, t) or re.search(_DATUM, t))
     if m:
         v["rechnungsdatum"] = _iso(t, *m.groups()[-3:])
@@ -343,9 +398,12 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
         m = (re.search(r"(?i)(?:payment|invoice|remittance)\s+date\s*:?\s*" + _DATUM_EN, t) or re.search(_DATUM_EN, t))
         if m and m.group(2).lower()[:3] in _MONATE_EN:
             v["rechnungsdatum"] = _iso(t, m.group(1), str(_MONATE_EN[m.group(2).lower()[:3]]), m.group(3))
+    if not v["rechnungsdatum"]:                                 # ausgeschrieben: „Date of issue September 25, 2026“
+        lab = re.search(r"(?i)(?:date of issue|invoice date|receipt date|date paid|payment date)\s*:?\s*(.{0,30})", t)
+        v["rechnungsdatum"] = (datum_frei(lab.group(1)) if lab else "") or datum_frei(t)
     betraege = []
     for z in zeilen:
-        if re.search(r"(?i)(gesamt|rechnungsbetrag|zu zahlen|endbetrag|summe|total|brutto|zahlbetrag)", z):
+        if re.search(r"(?i)(gesamt|rechnungsbetrag|zu zahlen|endbetrag|summe|total|brutto|zahlbetrag|amount due|amount paid)", z):
             betraege += re.findall(_BETRAG, z)
     if not betraege:
         betraege = re.findall(_BETRAG + r"\s*(?:€|EUR)", t)
@@ -364,8 +422,12 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
         v |= {"waehrung": waehrung, "betrag_fremd": v["betrag"], "betrag": ""}
         if v["betrag_fremd"]:
             v["leistung"] = f"{'Auszahlung' if gutschrift else 'Kauf'} {v['betrag_fremd']} {waehrung}"
-    if zeilen:
-        v["lieferant"] = re.split(r"\s+[·|•]\s+", zeilen[0])[0][:120]      # Absenderzeile "Firma · Strasse · Ort"
+    if zeilen:                                                  # Absenderzeile "Firma · Strasse · Ort"
+        kopf = [z for z in zeilen[:15] if not _KEIN_LIEFERANT.search(z)]
+        firma = next((z for z in kopf if _RECHTSFORM.search(z)), "")
+        erste = kopf[0] if kopf else zeilen[0]
+        lief = erste if (_RECHTSFORM.search(erste) or not firma) else firma   # „Page 1 of 1“/„Invoice“ ueberspringen
+        v["lieferant"] = re.sub(r"\s+@\S+$", "", re.split(r"\s+[·|•]\s+", lief)[0]).strip()[:120]
     if not v.get("waehrung"):                                   # Fremdwaehrung: Euro-Betrag kommt vom Konto
         v["positionen"] = positionen_regeln(t)
     # Sammel-PDF mit mehreren Rechnungen (Amazon: eine je Verkaeufer): Zahlbetraege aller Rechnungen addieren
@@ -380,6 +442,8 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
         v.update({k: e_rechnung[k] for k in ("lieferant", "rechnungsnummer", "rechnungsdatum", "betrag", "faellig_am", "leistung",
                                               "positionen") if e_rechnung.get(k)})
         v["quelle"] = "e-rechnung"
+    if (h := hinweise_raten(t)):
+        v["hinweise"] = h
     return v
 
 
@@ -464,6 +528,10 @@ class EingangStore:
                 out[d["nummer"]]["llm_auftrag"] = d["auftrag_id"]
             elif t == "eingang_erinnerung":                  # Kalender: Euro-Betrag nachtragen (Fremdwaehrung)
                 out[d["nummer"]]["erinnerung"] = d["termin"]
+            elif t == "eingang_datei":                       # weitere Datei, z. B. Zahlungsquittung (CEO 2026-09-29)
+                x = out[d["nummer"]]
+                x["belege"] = list(x.get("belege") or []) + [{k: d.get(k) for k in ("pfad", "sha256", "name", "rolle")}]
+                x["verlauf"].append(spur | {"name": d.get("name", ""), "rolle": d.get("rolle", "")})
             elif t == "eingang_gebucht":
                 x = out[d["nummer"]]
                 x["felder"], x["status"] = d["felder"], "gebucht"
@@ -519,7 +587,8 @@ class EingangStore:
         return ""
 
     def aufnehmen(self, daten: bytes, dateiname: str, *, quelle: str = "upload", mail_id: str = "",
-                  von: str = "") -> dict:
+                  von: str = "", zusatz: list[tuple[bytes, str]] | None = None, text: str | None = None,
+                  vorschlag: dict | None = None) -> dict:
         """Beleg aufnehmen: auslesen (ausserhalb der Sperre, OCR dauert), dann Nummer + Datei + Eintrag atomar."""
         name = re.sub(r"[\\\\/:*?\"<>|]+", "_", Path(dateiname or "beleg").name)[:120] or "beleg"
         if not daten:
@@ -531,8 +600,10 @@ class EingangStore:
         sha = hashlib.sha256(daten).hexdigest()
         if (alt := self.vorhanden(sha)):
             return {"nummer": alt, "doppelt": True}
-        a = auslesen(daten, name)
-        vorschlag = vorschlag_regeln(a["text"], a["e_rechnung"])
+        # Mail ohne PDF: Text + Vorschlag kommen aus der Mail, die .eml liegt unveraendert dabei (zusatz)
+        a = ({"text": text[:15000], "text_quelle": "mail", "e_rechnung": None} if text is not None
+             else auslesen(daten, name))
+        vorschlag = vorschlag if vorschlag is not None else vorschlag_regeln(a["text"], a["e_rechnung"])
         heute = jetzt().date()
 
         def pruefe(eintraege):
@@ -543,7 +614,8 @@ class EingangStore:
         def erzeuge(nummer, eintraege):
             return ({"dateiname": name, "mime": ENDUNGEN[Path(name).suffix.lower()], "quelle": quelle,
                      "mail_id": mail_id, "text_quelle": a["text_quelle"], "text": a["text"],
-                     "e_rechnung": a["e_rechnung"], "vorschlag": vorschlag}, [(daten, name, "beleg")])
+                     "e_rechnung": a["e_rechnung"], "vorschlag": vorschlag},
+                    [(daten, name, "beleg")] + [(b, n, "beleg") for b, n in zusatz or []])
         try:
             ev = self.bh.festschreiben("ER", "eingang_angelegt", erzeuge, jahr=heute.year, bezug=name, von=von,
                                        pruefe=pruefe)
@@ -675,6 +747,39 @@ class EingangStore:
         self.bh.erfassen_geprueft("eingang_zahlung_storniert", {"nummer": nummer, "index": index, "grund": grund},
                                   von=von, pruefe=pruefe)
         return {"storniert": index}
+
+    def datei_anhaengen(self, nummer: str, daten: bytes, name: str, *, rolle: str = "zahlungsnachweis",
+                        von: str = "") -> dict:
+        """Weitere Datei unveraendert zum Beleg legen (z. B. Zahlungsquittung zur Rechnung) -- kein eigener Beleg."""
+        nummer = (nummer or "").strip().upper()
+        x = self.get(nummer)
+        if not x:
+            raise KeyError(nummer)
+        name = re.sub(r"[\\/:*?\"<>|]+", "_", Path(name or "datei").name)[:120] or "datei"
+        b = self.bh.beleg_ablegen(daten, name, jahr=int(str(x["eingegangen"])[:4]), art="beleg", bezug=nummer,
+                                  von=von)["daten"]
+        self.bh.erfassen("eingang_datei", {"nummer": nummer, "pfad": b["pfad"], "sha256": b["sha256"], "name": name,
+                                           "rolle": rolle}, von=von)
+        return {"nummer": nummer, "pfad": b["pfad"]}
+
+    def als_nachweis(self, quelle: str, ziel: str, *, von: str = "") -> dict:
+        """Versehentlich eigener Beleg (z. B. „Receipt“-PDF neben der „Invoice“): Datei als Zahlungsnachweis zum
+        Ziel-Beleg legen und den Quell-Beleg mit Begruendung verwerfen (nichts wird geloescht)."""
+        quelle, ziel = (quelle or "").strip().upper(), (ziel or "").strip().upper()
+        q, z = self.get(quelle), self.get(ziel)
+        if not q or not z:
+            raise KeyError(quelle if not q else ziel)
+        if quelle == ziel:
+            raise ValueError("Beleg kann nicht Nachweis zu sich selbst sein.")
+        if q["status"] != "zu_pruefen":
+            raise ValueError(f"{quelle} ist {q['status']} -- nur ungepruefte Belege koennen Nachweis werden.")
+        if z["status"] == "verworfen":
+            raise ValueError(f"{ziel} ist verworfen.")
+        haupt = q["belege"][0]
+        self.datei_anhaengen(ziel, (self.bh.dir / haupt["pfad"]).read_bytes(), q.get("dateiname") or "nachweis.pdf",
+                             von=von)
+        self.verwerfen(quelle, f"Zahlungsnachweis zu {ziel} (kein eigener Beleg)", von=von)
+        return {"nummer": ziel, "verworfen": quelle}
 
     def verwerfen(self, nummer: str, grund: str, *, von: str = "") -> dict:
         nummer = (nummer or "").strip().upper()
@@ -969,15 +1074,231 @@ def mails_ablegen(st: EingangStore, google) -> list[dict]:
     return out
 
 
+# --- Beleg-Mails ohne PDF und automatische Weiterleitungen (KUNDEN_FINANZEN Etappe 13, CEO 2026-09-29) ---------------
+_WEITER_MARKE = re.compile(r"(?i)anfang der weitergeleiteten nachricht|begin forwarded message|-{2,}\s*(?:forwarded message|"
+                           r"weitergeleitete nachricht|original message|urspr[üu]ngliche nachricht)\s*-{2,}")
+_WEITER_BETREFF = re.compile(r"(?i)^\s*(?:fwd?|wg|wtr|weitergeleitet)\s*:")
+_KOPF_FELD = re.compile(r"(?i)^(von|from|betreff|subject|datum|date|gesendet|sent|an|to|cc|antwort an|reply-to)\s*:\s*(.*)$")
+_BELEG_WORT = re.compile(r"(?i)rechnung|beleg|quittung|receipt|invoice|zahlung|payment|remittance|auftragsbest|"
+                         r"bestellbest|abrechnung|gutschrift|kaufbest|order confirmation")
+_EUR_BETRAG = re.compile(r"(\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2})\s*(?:€|EUR)|€\s?(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})")
+_FREMD_BETRAG = re.compile(r"(?:\$|USD|US\$)\s?\d+[.,]\d{2}|\d+[.,]\d{2}\s?(?:USD|\$)")
+_QUITTUNG = re.compile(r"(?i)receipt|quittung|zahlungsbest[äa]tigung|payment[_ -]?confirmation")
+_HAENDLER = (re.compile(r"(?im)^h[äa]ndler\s*:?\s+(.+?)\s*$"), re.compile(r"(?i)\ban\s+(.{3,80}?)\s+gezahlt\b"),
+             re.compile(r"(?im)(?:zahlung an|payment to)\s+(.+?)\s*$"))
+_WEITER_KOEPFE = ("To", "Cc", "Delivered-To", "X-Forwarded-For", "X-Forwarded-To", "X-Original-To", "Resent-From",
+                  "Resent-To", "X-Original-Recipient")
+
+
+def mail_text(roh: bytes) -> str:
+    """Lesbarer Text einer Mail (plain bevorzugt, sonst HTML ohne Tags/Links, Zitatzeichen „>“ entfernt)."""
+    import email
+    import html as _html
+    from email import policy
+    m = email.message_from_bytes(roh, policy=policy.default)
+
+    def lesen(art: str) -> str:
+        teil = m.get_body(preferencelist=(art,))
+        try:
+            t = teil.get_content() if teil is not None else ""
+        except Exception:
+            return ""
+        if art == "html":
+            t = re.sub(r"(?is)<(style|script|head)\b.*?</\1>", " ", t)
+            t = re.sub(r"(?i)<br\s*/?>|</(?:p|div|tr|li|h\d|table|blockquote)>", "\n", t)
+            t = re.sub(r"(?i)</t[dh]>", "  ", t)
+            t = _html.unescape(re.sub(r"<[^>]+>", " ", t))
+        t = re.sub(r"<?https?://[^\s>]+>?", " ", t)
+        zeilen = [re.sub(r"[ \t\xa0​‌﻿]+", " ", re.sub(r"^(?:\s*>)+", "", z)).strip() for z in t.splitlines()]
+        return "\n".join(z for z in zeilen if z)[:30000]
+    text, html = lesen("plain"), lesen("html")
+    return text if len(text) >= len(html) // 2 else html        # Textteil nur „siehe HTML“ -> HTML nehmen
+
+
+def weiterleitung(roh: bytes, text: str) -> tuple[dict, str, bool]:
+    """-> (original {von_name, von, betreff, datum}, Text ab dem Original, markiert). Ohne Weiterleitungsmarke (auto-
+    matische Weiterleitung) stammen die Angaben aus den Mail-Koepfen."""
+    import email
+    from email import policy
+    from email.utils import parseaddr
+    m = email.message_from_bytes(roh, policy=policy.default)
+    marke = _WEITER_MARKE.search(text)
+    orig = {"von_name": "", "von": "", "betreff": str(m.get("Subject", "")), "datum": ""}
+    if not marke:
+        name, adr = parseaddr(str(m.get("From", "")))
+        orig |= {"von_name": name, "von": adr.lower(), "datum": str(m.get("Date", ""))}
+        return orig, text, bool(_WEITER_BETREFF.search(orig["betreff"]))
+    zeilen, rest = text[marke.end():].split("\n"), []
+    if zeilen and re.fullmatch(r"[\s:.\-]*", zeilen[0]):     # Rest der Markenzeile („...Nachricht:“)
+        zeilen = zeilen[1:]
+    kopf = True
+    for z in zeilen:
+        f = _KOPF_FELD.match(z) if kopf else None
+        if f:
+            k, w = f.group(1).lower(), f.group(2).strip()
+            if k in ("von", "from"):
+                name, adr = parseaddr(w)
+                orig |= {"von_name": name, "von": adr.lower()}
+            elif k in ("betreff", "subject"):
+                orig["betreff"] = w
+            elif k in ("datum", "date", "gesendet", "sent"):
+                orig["datum"] = w
+            continue
+        if z.strip():
+            kopf = False
+            rest.append(z)
+    return orig, "\n".join(rest), True
+
+
+def mail_ist_beleg(betreff: str, text: str) -> bool:
+    """Rechnungsmerkmale: Beleg-Wort in Betreff/Anfang **und** ein Geldbetrag."""
+    return bool(_BELEG_WORT.search(f"{betreff}\n{text[:3000]}") and (_EUR_BETRAG.search(text) or _FREMD_BETRAG.search(text)))
+
+
+def _datum_kopf(w: str) -> str:
+    from email.utils import parsedate_to_datetime
+    try:
+        return parsedate_to_datetime(w).date().isoformat()
+    except (TypeError, ValueError, IndexError):
+        m = re.search(_DATUM, w or "")
+        return (_iso("", *m.groups()) if m else "") or datum_frei(w)
+
+
+def vorschlag_mail(text: str, orig: dict) -> dict:
+    """Vorschlag fuer eine Rechnung im Mailtext: Regeln + Mail-Wissen (Haendler statt Zahlungsdienst, Betrag = hoechster
+    Euro-Betrag = Brutto, Datum ersatzweise aus dem Original-Kopf)."""
+    v = vorschlag_regeln(text)
+    v["positionen"] = []
+    if not v.get("waehrung"):
+        werte = []
+        for a, b in _EUR_BETRAG.findall(text):
+            try:
+                werte.append(abs(cent(a or b)))
+            except ValueError:
+                continue
+        if werte:
+            v["betrag"] = eur(max(werte)).replace(" €", "")
+    haendler = next((m.group(1).strip() for rx in _HAENDLER                  # PayPal: Haendler statt Zahlungsdienst
+                     if (m := rx.search(f"{text[:2000]}\n{orig.get('betreff', '')}"))), "")
+    haendler = haendler.rstrip(".").strip()                               # PayPal kuerzt lange Namen („Dropbox Internationa...“)
+    name = re.split(r"\s+via\s+", str(orig.get("von_name") or "").strip().strip('"'))[0]
+    v["lieferant"] = (haendler or name or v.get("lieferant") or "")[:120]
+    if not v.get("rechnungsdatum"):
+        v["rechnungsdatum"] = _datum_kopf(orig.get("datum", ""))
+    if not v.get("leistung"):
+        v["leistung"] = re.sub(_WEITER_BETREFF, "", str(orig.get("betreff") or "")).strip()[:120]
+    if (h := [x for x in hinweise_raten(f"{orig.get('betreff', '')}\n{text}") if x not in v.get("hinweise", [])]):
+        v["hinweise"] = v.get("hinweise", []) + h
+    return v
+
+
+def mail_pdf(orig: dict, text: str, weitergeleitet: str = "") -> bytes:
+    """Lesbare PDF-Ansicht einer Rechnungs-Mail (das Original ist die beiliegende .eml)."""
+    from fpdf import FPDF
+    from .beleg_pdf import DEJAVU, _latin1
+    uni = (DEJAVU / "DejaVuSans.ttf").exists() and (DEJAVU / "DejaVuSans-Bold.ttf").exists()
+    T = (lambda x: str(x or "")) if uni else _latin1
+    pdf = FPDF(format="A4")
+    if uni:
+        pdf.add_font("DejaVu", "", str(DEJAVU / "DejaVuSans.ttf"))
+        pdf.add_font("DejaVu", "B", str(DEJAVU / "DejaVuSans-Bold.ttf"))
+    sch = "DejaVu" if uni else "Helvetica"
+    pdf.set_creation_date(jetzt())
+    pdf.add_page()
+    pdf.set_font(sch, "B", 12)
+    pdf.cell(0, 7, T("Beleg aus E-Mail (Ansicht)"), new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font(sch, size=8)
+    pdf.multi_cell(0, 4, T("Original: beiliegende .eml-Datei (unverändert archiviert)."
+                           + (f" Weitergeleitet von {weitergeleitet}." if weitergeleitet else "")), new_x="LMARGIN")
+    pdf.ln(2)
+    pdf.set_font(sch, size=9)
+    for k, w in (("Von", f"{orig.get('von_name', '')} <{orig.get('von', '')}>"), ("Datum", orig.get("datum", "")),
+                 ("Betreff", orig.get("betreff", ""))):
+        pdf.multi_cell(0, 5, T(f"{k}: {w}"), new_x="LMARGIN")
+    pdf.ln(2)
+    pdf.set_font(sch, size=9)
+    for z in text.splitlines()[:400]:
+        pdf.multi_cell(0, 4.5, T(z[:500]), new_x="LMARGIN")
+    return bytes(pdf.output())
+
+
+def auto_weitergeleitet(roh: bytes, eigene: list[str]) -> bool:
+    """Automatische Weiterleitung (Original-Absender bleibt, z. B. no_reply@email.apple.com): nur wenn der Absender per
+    DKIM/DMARC echt ist (Google-Pruefung) **und** die Mail an eine eigene Adresse ging bzw. ueber sie weitergeleitet
+    wurde. Ergebnis ist immer nur ein Beleg-Vorschlag -- gebucht wird vom CEO."""
+    import email
+    from email import policy
+    from email.utils import parseaddr
+    m = email.message_from_bytes(roh, policy=policy.default)
+    von = parseaddr(str(m.get("From", "")))[1].lower()
+    if not von or von in eigene or not absender_echt(roh, [von]):
+        return False
+    koepfe = " ".join(str(x) for h in _WEITER_KOEPFE for x in (m.get_all(h) or [])).lower()
+    auth = re.sub(r"\s+", " ", str((m.get_all("Authentication-Results") or [""])[0]).lower())
+    return (any(a in koepfe for a in eigene)
+            or any(f"smtp.mailfrom={a.split('@')[0]}+" in auth for a in eigene))     # Gmail-Weiterleitung (+caf_=)
+
+
+def _gleicher_beleg(st: EingangStore, v: dict) -> str:
+    """Schon vorhandener Beleg mit derselben Rechnungsnummer (und gleichem Betrag, falls bekannt) -> Nummer."""
+    norm = lambda x: re.sub(r"[^A-Z0-9]", "", str(x or "").upper())
+    nr = norm(v.get("rechnungsnummer"))
+    if len(nr) < 4:
+        return ""
+    try:
+        betrag = abs(cent(v["betrag"])) if v.get("betrag") else None
+    except ValueError:
+        betrag = None
+    for x in st._falte(st.bh.eintraege()).values():
+        if x["status"] == "verworfen":
+            continue
+        f, w = x.get("felder") or {}, x.get("vorschlag") or {}
+        if norm(f.get("rechnungsnummer") or w.get("rechnungsnummer")) != nr:
+            continue
+        alt = f.get("betrag_cent")
+        if alt is None and w.get("betrag"):
+            try:
+                alt = cent(w["betrag"])
+            except ValueError:
+                alt = None
+        if betrag is None or alt is None or abs(alt) == betrag:
+            return x["nummer"]
+    return ""
+
+
+def _mail_beleg(st: EingangStore, roh: bytes, mid: str, *, eigen: bool) -> dict | None:
+    """Rechnung im Mailtext -> Beleg (PDF-Ansicht + .eml). None = keine Rechnung erkannt (Mail bleibt liegen)."""
+    import email
+    from email import policy
+    from email.utils import parseaddr
+    text = mail_text(roh)
+    orig, rest, markiert = weiterleitung(roh, text)
+    if eigen and not markiert:                  # eigene Mail ohne Weiterleitung (z. B. Antwort an LUNA) ist kein Beleg
+        return None
+    if not mail_ist_beleg(orig.get("betreff", ""), rest):
+        return None
+    v = vorschlag_mail(rest, orig)
+    if (alt := _gleicher_beleg(st, v)):
+        return {"nummer": alt, "doppelt": True}
+    m = email.message_from_bytes(roh, policy=policy.default)
+    weiter = parseaddr(str(m.get("From", "")))[1] if eigen else ""
+    stamm = re.sub(r"[^\w.-]+", "_", re.sub(_WEITER_BETREFF, "", orig.get("betreff") or "Mail"), flags=re.UNICODE).strip("_")[:60]
+    return st.aufnehmen(mail_pdf(orig, rest, weiter), f"Mail-{stamm or 'Beleg'}.pdf", quelle="mail", mail_id=mid,
+                        von="LUNA-Mail", zusatz=[(roh, f"Mail-{stamm or 'Beleg'}.eml")], text=rest, vorschlag=v)
+
+
 def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backoffice=None, notify=None,
                          gesehen: set | None = None, tage: int = 30) -> list[str]:
-    """Belege, die der CEO an LUNAs Adresse weiterleitet, automatisch aufnehmen -- **nur von den eigenen Absendern**
-    (Schutz vor Phishing/Fremd-Anhaengen). Idempotent ueber die Mail-ID. Rueckgabe: neue ER-Nummern."""
+    """Belege aus LUNAs Postfach aufnehmen: vom CEO weitergeleitet (eigene Absender, DKIM-geprueft) oder automatisch
+    ueber ein eigenes Postfach weitergeleitet (`auto_weitergeleitet`). PDF/XML-Anhaenge werden Belege; eine Quittung
+    neben der Rechnung wird deren Zahlungsnachweis; ohne Anhang wird die Rechnung im Mailtext zum Beleg (`_mail_beleg`).
+    Idempotent ueber die Mail-ID. Rueckgabe: neue ER-Nummern."""
     absender = [a.strip().lower() for a in absender if a and "@" in a]
     if not absender or google is None or not google.verfuegbar():
         return []
-    q = f"in:anywhere -in:trash has:attachment newer_than:{tage}d from:({' OR '.join(absender)})"   # auch Spam (BF-37)
-    r = google.mail_suchen(q, max_results=20)
+    eig = " OR ".join(absender)
+    q = f"in:anywhere -in:trash -in:sent newer_than:{tage}d {{from:({eig}) to:({eig}) deliveredto:({eig})}}"   # + Spam
+    r = google.mail_suchen(q, max_results=50)
     if not r.get("ok"):
         return []
     eintraege = st.bh.eintraege()
@@ -988,26 +1309,50 @@ def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backo
         mid = m.get("id", "")
         if not mid or mid in bekannt or mid in gesehen:
             continue
+        eigen = any(a in str(m.get("von", "")).lower() for a in absender)
+        if not eigen and not _BELEG_WORT.search(str(m.get("betreff", ""))):
+            continue                                        # fremde Mail ohne Rechnungsmerkmal im Betreff: nicht laden
         gesehen.add(mid)
-        if not any(a in str(m.get("von", "")).lower() for a in absender):              # zweite Pruefung des Absenders
-            continue
         roh = google.mail_roh(mid)
         if not roh.get("ok"):
             gesehen.discard(mid)
             continue
-        if not absender_echt(roh["roh"], absender):             # gefaelschter Absender -> nie uebernehmen
-            continue
+        roh = roh["roh"]
+        if not (absender_echt(roh, absender) if eigen else auto_weitergeleitet(roh, absender)):
+            continue                                        # gefaelscht / nicht ueber ein eigenes Postfach -> nie
         vorher, doppelt = len(neu), []
-        for name, daten in anhaenge(roh["roh"]):
+        dateien = anhaenge(roh)
+        quittungen = [d for d in dateien if _QUITTUNG.search(d[0])] if len(dateien) > 1 else []
+        if len(quittungen) == len(dateien):
+            quittungen = []
+        ergebnisse = []
+        if dateien:
+            for name, daten in dateien:
+                if (name, daten) in quittungen:
+                    continue
+                try:
+                    ergebnisse.append(st.aufnehmen(daten, name, quelle="mail", mail_id=mid, von="LUNA-Mail"))
+                except ValueError:
+                    continue
+        else:
             try:
-                res = st.aufnehmen(daten, name, quelle="mail", mail_id=mid, von="LUNA-Mail")
+                if (res := _mail_beleg(st, roh, mid, eigen=eigen)):
+                    ergebnisse.append(res)
             except ValueError:
-                continue
+                pass
+        for res in ergebnisse:
             if res.get("doppelt"):
                 doppelt.append(res["nummer"])
-                continue
-            neu.append(res["nummer"])
-            llm_beauftragen(st, backoffice, res["nummer"])
+            else:
+                neu.append(res["nummer"])
+                llm_beauftragen(st, backoffice, res["nummer"])
+        ziel = (neu[vorher:] or doppelt or [""])[0]
+        for name, daten in quittungen if ziel else []:       # Quittung = Zahlungsnachweis, kein zweiter Beleg
+            try:
+                if not st.vorhanden(hashlib.sha256(daten).hexdigest()):
+                    st.datei_anhaengen(ziel, daten, name, von="LUNA-Mail")
+            except (KeyError, ValueError):
+                pass
         if len(neu) == vorher and doppelt:                  # nur schon bekannte Belege -> erledigt, ab nach „Doppelt“
             if not _ablegen(st, google, mid, _ordner("Doppelt", jetzt().year), doppelt):
                 gesehen.discard(mid)
