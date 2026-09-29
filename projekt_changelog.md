@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 16:14] — Claude Code
+- **Was:** CEO-Entscheidungen zum Datenschutz-Check festgehalten: Gemini-Gratis bleibt (Restrisiko Auftragsverarbeitung
+  akzeptiert), keine Datenschutzerklaerung ueber LUNA (internes Werkzeug, hat mit hanserautisch.de nichts zu tun), keine
+  Maskierung. Etappe 4 abgeschlossen; BETRIEB_ROADMAP wartet nur noch auf die Pruefung des ersten Wochenlaufs (05.10.).
+- **Warum:** CEO „1 = A, 2 = Ignorieren ... LUNA ist ein internes Tool“.
+- **Betroffen:** `docs/datenschutz-ki-nutzung.md`, `BETRIEB_ROADMAP.md`, `docs/entscheidungs-register.md`, `AGENTS.md`
+
 ## [2026-09-29 16:10] — Claude Code
 - **Was:** Etappe 3 vom CEO abgenommen (beide Waechter-Meldungen kamen in Telegram an); Waechter-Texte verbessert
   (echte Umlaute, „Wächter“, eigener Entwarnungs-Satz statt Wiederholung des Fehlertexts; wirkt sofort, weil der Timer das
