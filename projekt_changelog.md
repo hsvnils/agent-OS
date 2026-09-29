@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 17:22] — Claude Code
+- **Was:** WhatsApp-Bewertung fuer den konkreten Zweck (Team-Erinnerungen in der bestehenden WhatsApp-Gruppe, geteilte
+  Nummer) ergaenzt: offiziell nicht machbar (Groups API nur mit Official Business Account und fuer per API angelegte
+  Gruppen, keine Gruppen bei geteilter Nummer/Coexistence), inoffiziell Sperr-Risiko; Alternativen im Register notiert.
+- **Warum:** CEO-Idee 2026-09-29 „LUNA erinnert das Team in unserer WhatsApp-Gruppe, wenn Content faellig ist“.
+- **Betroffen:** `docs/entscheidungs-register.md`
+
+## [2026-09-29 17:20] — Claude Code
+- **Was:** CEO-Frage „Wie kann LUNA WhatsApp-Nachrichten senden?“ recherchiert (Register zuerst: bisher nicht bewertet)
+  und als „bewertet, offen“ ins Entscheidungs-Register eingetragen: offizieller Weg WhatsApp Business Cloud API (Meta,
+  Vorlagen-Freigabe, Abrechnung je Vorlagen-Nachricht seit 01.07.2025), keine offizielle API fuer WhatsApp-Kanaele,
+  inoffizielle Werkzeuge mit Sperr-Risiko. Nichts gebaut.
+- **Warum:** CEO-Frage 2026-09-29.
+- **Betroffen:** `docs/entscheidungs-register.md`
+
 ## [2026-09-29 16:50] — Claude Code
 - **Was:** Pruefung der Instagram-/DM-Teile: Collab-Radar lief noch jede Nacht (DM-Abgleich + KI-Analyse, 1.015 DMs,
   39 Analysen, letzter Lauf 29.09. 00:04), Token-Erneuerung aktiv, DM-Poll ins CRM seit 06.07. ohne Eintrag, Webhook
