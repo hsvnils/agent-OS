@@ -4,8 +4,8 @@
 - Stand: 2026-09-29
 - Arbeitsbranch: `ai/antraege-aufraeumen`
 - Basiscommit: `79d6fbc`
-- Naechster Schritt: Etappe 1 deployen (Go fuer Merge/Push/Deploy), nach dem naechsten Montag 04:00 pruefen, dass hoechstens
-  ein Antrag kam und keiner ein abgelehntes Thema wiederholt; danach Go fuer Etappe 2.
+- Naechster Schritt: Etappe 1 live (2026-09-29) -- nach Montag 05.10. 04:00 pruefen, dass hoechstens ein Antrag kam und
+  keiner ein abgelehntes Thema wiederholt. Etappe 2 umgesetzt (Merge/Push-Go offen); danach Go fuer Etappe 3.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -68,7 +68,14 @@ umwandeln ... und was wir mittlerweile nicht mehr brauchen“). Befund (Antrags-
 
 ### Etappe 2: Changelog-Disziplin automatisch pruefen
 
-- Status: geplant (aus Antraegen „Automatisiertes Changelog-Validierungssystem“ / „Automatisierte Ueberpruefung der
+- Status: umgesetzt (CEO-Go 2026-09-29 „Go fuer Etappe 2“) -- wirkt sofort im Doku-Check (laeuft mit der Testsuite), kein
+  Deploy noetig. Ergebnis: `scripts/doku_check.py` `pruefe_changelog`: Kopf `## [JJJJ-MM-TT HH:MM] — Akteur`, gueltiges
+  Datum, Was/Warum/Betroffen mit Inhalt in derselben Zeile, keine Zeit mehr als 10 min in der Zukunft (BF-09), neueste
+  zuerst ab `CHANGELOG_REIHENFOLGE_AB = 2026-09-29` (die 5 aelteren Abweichungen bis 2026-09-28 bleiben, keine
+  Historien-Aenderung). Ist-Stand: 472 Eintraege, alle im Format. Test `test_doku_check.test_1b` + 5 Gegenproben (eine
+  fand einen echten Fehler: leeres Feld galt als gefuellt, weil das Muster ueber den Zeilenumbruch sprang -> behoben).
+  Pre-Commit-Hinweis bewusst weggelassen (Doku-Check laeuft ohnehin mit jeder Testsuite).
+- Herkunft: aus Antraegen „Automatisiertes Changelog-Validierungssystem“ / „Automatisierte Ueberpruefung der
   Changelog-Disziplin“, CAO)
 - Ziel / Scope: `scripts/doku_check.py` prueft zusaetzlich, dass der neueste Changelog-Eintrag das Pflichtformat hat
   (Kopf `## [JJJJ-MM-TT HH:MM] — Akteur`, Was/Warum/Betroffen) und dass Eintraege nicht in der Zukunft liegen (BF-09:

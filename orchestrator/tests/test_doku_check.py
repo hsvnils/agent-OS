@@ -24,7 +24,32 @@ class TestDokuCheck(unittest.TestCase):
 
     def test_1_repo_ist_konsistent(self):
         self.assertEqual(self.dc.pruefe_roadmaps() + self.dc.pruefe_datenfluesse()
-                         + self.dc.pruefe_speicherschutz(), [])
+                         + self.dc.pruefe_speicherschutz() + self.dc.pruefe_changelog(), [])
+
+    def test_1b_changelog_format_zeit_reihenfolge(self):
+        """BETRIEB_ROADMAP Etappe 2: Pflichtformat, keine Zukunft (BF-09), neueste zuerst ab dem Stichtag."""
+        from datetime import datetime
+        jetzt = datetime(2026, 9, 30, 12, 0)
+        def e(kopf, was="x", warum="y", betroffen="z"):
+            return f"{kopf}\n- **Was:** {was}\n- **Warum:** {warum}\n- **Betroffen:** {betroffen}\n\n"
+        gut = ("# Changelog\n\n## Eintraege\n\n" + e("## [2026-09-30 11:00] — Claude Code")
+               + e("## [2026-09-29 18:00] — Codex") + e("## [2026-09-20 08:00] — HoA") + e("## [2026-09-21 09:00] — HoA"))
+        self.assertEqual(self.dc.pruefe_changelog(gut, jetzt), [])            # alte Unordnung (vor Stichtag) bleibt
+        faelle = {
+            "Kopf nicht im Format": e("## 2026-09-30 11:00 — Claude Code"),
+            "Feld(er) fehlen oder leer: Warum": e("## [2026-09-30 11:00] — Claude Code", warum=""),
+            "liegt in der Zukunft": e("## [2026-09-30 12:30] — Claude Code"),
+            "ungueltiges Datum": e("## [2026-09-31 11:00] — Claude Code"),
+        }
+        for erwartet, eintrag in faelle.items():
+            with self.subTest(erwartet=erwartet):
+                befunde = self.dc.pruefe_changelog("## Eintraege\n" + eintrag, jetzt)
+                self.assertTrue(any(erwartet in b for b in befunde), befunde)
+        falsch_sortiert = "## Eintraege\n" + e("## [2026-09-29 18:00] — A") + e("## [2026-09-30 09:00] — B")
+        self.assertTrue(any("steht unter dem aelteren Eintrag" in b
+                            for b in self.dc.pruefe_changelog(falsch_sortiert, jetzt)))
+        self.assertEqual(self.dc.pruefe_changelog("## [2026-09-30 11:00] — x", jetzt),
+                         ["Changelog: Abschnitt „## Eintraege“ fehlt"])
 
     def test_2_gegenprobe_fehlender_host_wird_gemeldet(self):
         text = (ROOT / "docs" / "datenfluesse.md").read_text(encoding="utf-8")

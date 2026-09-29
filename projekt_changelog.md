@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 15:51] — Claude Code
+- **Was:** BETRIEB_ROADMAP Etappe 2 umgesetzt: `scripts/doku_check.py` prueft `projekt_changelog.md` (Kopf-Format, gueltiges
+  Datum, Was/Warum/Betroffen mit Inhalt, keine Zukunftszeit ueber 10 min Toleranz, neueste zuerst ab 2026-09-29).
+  Ist-Stand 472 Eintraege, alle im Format; die 5 alten Reihenfolge-Abweichungen (bis 28.09., BF-09) bleiben unveraendert.
+  Test mit gezielt kaputten Eintraegen + 5 Gegenproben -- dabei einen echten Fehler der neuen Pruefung gefunden und
+  behoben (leeres Feld galt als gefuellt). Suite 999 gruen. AGENTS.md-Dateitabelle, BF-09, Register nachgezogen.
+- **Warum:** CEO 2026-09-29 „Go fuer Etappe 2“.
+- **Betroffen:** `scripts/doku_check.py`, `orchestrator/tests/test_doku_check.py`, `BETRIEB_ROADMAP.md`, `AGENTS.md`,
+  `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-29 15:48] — Claude Code
 - **Was:** Nach CEO-Neustart (main 94770b2) geprueft: LUNA-OS ok, Bot laeuft (Watch-Log 15:42 geschrieben), 0 offene
   Antraege, letzter Eintrag im Antrags-Store ist die Durchsicht (kein neuer Vorschlag). Erster Wochenlauf der
