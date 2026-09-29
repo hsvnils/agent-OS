@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 16:02] — Claude Code
+- **Was:** Etappe 3 deployt (main ed9235b, NAS-Code-Sync ohne Neustart). Auf dem MACO470 `luna-waechter.service` und
+  `luna-waechter.timer` nach `/etc/systemd/system/` kopiert + `daemon-reload` -- Timer noch **nicht** aktiviert (erst nach
+  dem Container-Neustart, sonst Fehlalarm wegen fehlender NAS-Schnittstelle). `luna-backup.timer` und `cutter-worker`
+  unberuehrt (beide aktiv).
+- **Warum:** CEO „Go fuer Merge, Push und Deploy. Timer richtest du ein.“
+- **Betroffen:** NAS-Code, MACO470 `/etc/systemd/system/luna-waechter.{service,timer}`
+
 ## [2026-09-29 16:00] — Claude Code
 - **Was:** BETRIEB_ROADMAP Etappe 3 umgesetzt (noch nicht deployt/installiert): Betriebs-Waechter von aussen --
   `core/betriebswaechter.py`, Bot-Herzschlag im 15-Minuten-Abruf (`orchestrator/state/bot_herzschlag.json`),
