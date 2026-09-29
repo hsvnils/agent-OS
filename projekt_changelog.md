@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 10:47] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 13 umgesetzt (auf `ai/kunden-finanzen`, noch nicht deployt): Rechnungen im Mailtext
+  (ohne PDF) werden Belege -- lesbare PDF-Ansicht + unveraenderte `.eml` als Original, Vorschlag mit Haendler statt
+  PayPal, Brutto, Datum, Nummer, Zweifelsfall-Hinweisen; Quittung neben der Rechnung wird Zahlungsnachweis am selben
+  Beleg (statt zweitem Beleg); automatische Weiterleitungen mit Original-Absender werden angenommen, wenn DKIM/DMARC
+  echt und an/ueber eine eigene Adresse; Dubletten per Rechnungsnummer + Betrag; Regeln fuer englische Rechnungen
+  (Stripe-Nummer, „September 25, 2026“, Lieferant nicht „Page 1 of 1“); LUNA-OS zeigt weitere Dateien, Hinweise und
+  „🧾 Ist Zahlungsnachweis zu …“ (`POST /api/finanzen/belege/<nr>/als-nachweis`), app v60; Gmail-Suche bis 50 Treffer.
+  Probelauf mit den 13 echten Mails lokal (Scratchpad, nicht im Git): alle erkannt. Tests `test_mail_belege.py` (9),
+  8 Gegenproben rot, Browser-Test, Suite 974 gruen. BF-40 dokumentiert.
+- **Warum:** CEO 2026-09-29 „Alle Mails die ich eben geschickt habe, muessen auch erkannt werden ... Solange kommt das
+  alles noch ueber die Weiterleitungen. Kuemmere dich bitte drum“.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/governance/google_workspace.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`,
+  `orchestrator/tests/test_mail_belege.py`, `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`,
+  `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
 ## [2026-09-29 10:40] — Claude Code
 - **Was:** CEO-Entscheidungen zu Etappe 14 in die Roadmap: eigene Nummernkreise K-/L-/P-; Felder Adresse + USt-ID,
   eigene Kundennummer, Vertrags-/Abo-Nummern, Zahlungsweg (+ weitere Angabe offen); vorerst nur Plan, kein Go.

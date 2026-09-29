@@ -4,7 +4,8 @@
 - Stand: 2026-09-29
 - Arbeitsbranch: `ai/kunden-finanzen`
 - Basiscommit: `649a974`
-- Naechster Schritt: CEO-Go fuer Etappe 13/14 (geplant 2026-09-29, Abo-Mails ohne PDF + Lieferanten-Stammdaten).
+- Naechster Schritt: Etappe 13 deployen (Go), danach ER-2026-0034/-0036 per „als Nachweis“ an ER-0033/-0035 haengen und
+  die 11 Abo-Mails im Live-Abruf pruefen; Go fuer Etappe 14 steht aus.
   Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
   gemischte Rechnung aufteilen); Deploy + Abnahme Etappe 12 (Barter-Deal einmal von Angebot bis Ware-Eingang
   durchspielen). Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
@@ -428,8 +429,20 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 13: Abo-Belege aus Mails (ohne PDF) und automatische Weiterleitungen
 
-- Status: geplant (CEO 2026-09-29: „mehrere Mails ... fuer verschiedenste Abos weitergeleitet“, Weiterleitungsregeln in
-  den anderen Postfaechern angelegt)
+- Status: umgesetzt (CEO 2026-09-29: „Alle Mails die ich eben geschickt habe, muessen auch erkannt werden ... Kuemmere
+  dich bitte drum“), Deploy + Abnahme offen. Probelauf mit den 13 echten Mails (lokal): 11 Mailtext-Rechnungen mit
+  richtigem Lieferant/Datum/Betrag, Anthropic/Supabase je ein Beleg mit Quittung als Zahlungsnachweis, Apple-Developer-
+  Mail als Dublette von ER-2026-0003 erkannt. Abo-Kennzeichnung je Lieferant wandert in Etappe 14 (braucht L-Nummern).
+- Ergebnis: `core/eingangsbelege.py`: `mail_text` (Text-/HTML-Teil ohne Links), `weiterleitung` (Original-Absender,
+  -Betreff, -Datum aus dem Weiterleitungskopf), `mail_ist_beleg` (Beleg-Wort + Betrag), `vorschlag_mail` (Haendler statt
+  PayPal, hoechster Euro-Betrag = brutto, Datum ersatzweise aus dem Kopf), `mail_pdf` (lesbare Ansicht) + `.eml` als
+  unveraendertes Original am selben Beleg; `auto_weitergeleitet` (DKIM/DMARC des Original-Absenders + an/ueber eigene
+  Adresse); `_gleicher_beleg` (Dublette per Rechnungsnummer + Betrag -> `LUNA/Doppelt`); Quittung neben Rechnung ->
+  `datei_anhaengen` (Rolle Zahlungsnachweis); `als_nachweis` + `POST /api/finanzen/belege/<nr>/als-nachweis` fuer
+  Altfaelle; Regeln: Stripe-Nummer, englische/deutsche ausgeschriebene Daten, Lieferant nicht „Page 1 of 1“/„Invoice“,
+  Bestell-/Dokument-/Transaktionsnummer, Zweifelsfall-Hinweise (Versicherung, Mobilfunk, Streaming, PayPal-Beleg,
+  Kundenportal). LUNA-OS: weitere Dateien am Beleg, Hinweise, „🧾 Ist Zahlungsnachweis zu …“ (app v60). Tests
+  `test_mail_belege.py` (9) + 8 Gegenproben; Browser-Test.
 - Befund 2026-09-29 (13 Weiterleitungen von moin@, alle DKIM-geprueft echt): nur **2 mit PDF** (Anthropic, Supabase --
   je **Rechnung + Zahlungsquittung** als zwei PDFs); **11 ohne Anhang**, die Rechnung steht im Mailtext (Apple iCloud+/
   AppleCare x4, PayPal-Belege Microsoft x2/DAZN/Grover/Dropbox, Canva, DR.SIM). Der Mail-Eingang sucht bisher nur

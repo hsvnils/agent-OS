@@ -145,7 +145,7 @@ class GoogleWorkspace:
         try:
             svc = self.auth.service("gmail", "v1")
             resp = svc.users().messages().list(userId="me", q=query,
-                                               maxResults=max(1, min(max_results, 25))).execute()
+                                               maxResults=max(1, min(max_results, 50))).execute()
             mails = []
             for m in resp.get("messages", []):
                 full = svc.users().messages().get(
@@ -294,7 +294,7 @@ class GoogleWorkspace:
         try:
             svc = self.auth.service("gmail", "v1")
             resp = svc.users().messages().list(userId="me", q="is:unread in:inbox",
-                                               maxResults=max(1, min(max_results, 25))).execute()
+                                               maxResults=max(1, min(max_results, 50))).execute()
             mails = []
             for m in resp.get("messages", []):
                 full = svc.users().messages().get(

@@ -1828,15 +1828,23 @@ def beleg_detail(nummer: str):
 
 
 @app.get("/api/finanzen/belege/{nummer}/datei")
-def beleg_datei(nummer: str):
+def beleg_datei(nummer: str, i: int = 0):
+    """Datei eines Belegs; i > 0 = weitere Dateien (Original-Mail .eml, Zahlungsnachweis)."""
     x = _eingang().get(nummer)
-    if not x:
+    if not x or not 0 <= i < len(x.get("belege") or []):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Beleg")
-    mime = x.get("mime") or "application/octet-stream"
-    kopf = {"Content-Disposition": f'inline; filename="{x["dateiname"]}"', "X-Content-Type-Options": "nosniff"}
+    b = x["belege"][i]
+    name = x["dateiname"] if i == 0 else (b.get("name") or Path(b["pfad"]).name[17:] or "datei")
+    endung = Path(name).suffix.lower()
+    mime = (x.get("mime") if i == 0 else None) or _eb.ENDUNGEN.get(endung) or (
+        "message/rfc822" if endung == ".eml" else "application/octet-stream")
+    art = "attachment" if endung == ".eml" else "inline"
+    import re as _re
+    sicher = _re.sub(r'["\\\r\n?]', "_", name.encode("ascii", "replace").decode())   # Kopfzeile nur ASCII
+    kopf = {"Content-Disposition": f'{art}; filename="{sicher}"', "X-Content-Type-Options": "nosniff"}
     if mime != "application/pdf":                  # Chrome zeigt PDFs in einer Sandbox nicht an; XML/Bilder abschotten
         kopf["Content-Security-Policy"] = "sandbox"
-    return Response((kunden_store.bh.dir / x["belege"][0]["pfad"]).read_bytes(), media_type=mime, headers=kopf)
+    return Response((kunden_store.bh.dir / b["pfad"]).read_bytes(), media_type=mime, headers=kopf)
 
 
 @app.post("/api/finanzen/belege/hochladen")
@@ -2081,6 +2089,14 @@ async def eigenbeleg_stornieren(nummer: str, request: Request):
 async def beleg_verwerfen(nummer: str, request: Request):
     body = await _json(request)
     return _kunden_aktion(_mit_aufraeumen(lambda: _eingang().verwerfen(nummer, body.get("grund") or "", von=_von(request)),
+                                          _von(request)))
+
+
+@app.post("/api/finanzen/belege/{nummer}/als-nachweis")
+async def beleg_als_nachweis(nummer: str, request: Request):
+    """Beleg ist nur die Zahlungsquittung zu einem anderen Beleg: Datei dorthin, dieser wird verworfen."""
+    body = await _json(request)
+    return _kunden_aktion(_mit_aufraeumen(lambda: _eingang().als_nachweis(nummer, body.get("zu") or "", von=_von(request)),
                                           _von(request)))
 
 

@@ -1307,7 +1307,7 @@ function reBezahltForm(nr) {
 // Hochladen (Ziehen, Auswahl, Kamera) oder an LUNA weiterleiten -> lokal auslesen -> Vorschlag -> CEO bucht.
 const BL_STATUS = { zu_pruefen: ["Zu prüfen", "wartet"], gebucht: ["Gebucht", "ok"], verworfen: ["Verworfen", "neutral"] };
 const blBadge = (st) => { const [l, c] = BL_STATUS[st] || [st, "neutral"]; return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
-const TQ = { "xml": "E-Rechnung (XML)", "pdf-text": "PDF-Text", "ocr": "Texterkennung (Scan/Foto)", "leer": "kein Text erkannt" };
+const TQ = { "xml": "E-Rechnung (XML)", "pdf-text": "PDF-Text", "ocr": "Texterkennung (Scan/Foto)", "mail": "Rechnung im Mailtext", "leer": "kein Text erkannt" };
 let BL_KAT = {}, BL_KAT_EIN = {};
 RENDER.belege = renderBelege;
 async function renderBelege(meldung) {
@@ -1385,12 +1385,14 @@ async function blDetail(nr, meldung, fehler) {
   openModal(`${nr} · ${b.dateiname}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
     <div class="v2-an-detail"><div>
       ${vorschau}
+      ${(b.belege || []).length > 1 ? `<h3>Weitere Dateien</h3>${b.belege.slice(1).map((x, i) => `<div class="v2-list-row"><span>${x.rolle === "zahlungsnachweis" ? "🧾" : "✉️"}</span><div class="grow"><a href="${src}?i=${i + 1}" target="_blank" rel="noopener">${esc(x.name || (x.pfad || "").split("/").pop().slice(17))}</a><small>${x.rolle === "zahlungsnachweis" ? "Zahlungsnachweis" : "Original-Mail (unverändert)"}</small></div></div>`).join("")}` : ""}
       <div class="v2-kv"><span>Eingang</span><b>${esc(zeit(b.eingegangen))} · ${b.quelle === "mail" ? "per Mail" : "Upload"} · ${esc(TQ[b.text_quelle] || b.text_quelle)}</b></div>
       <h3>Verlauf</h3>${verlauf}
     </div><div>
       <div class="v2-kv"><span>Status</span>${blBadge(b.status)}${b.bezahlt_am ? ` <span class="v2-badge ok">bezahlt ${esc(datumDe(b.bezahlt_am))}</span>` : b.bezahlt_cent ? ` <span class="v2-badge wartet">teilweise bezahlt · offen ${esc(cent2eur(rest))}</span>` : ""}</div>
       ${!f ? `<div class="v2-kv"><span>Vorschlag von</span><b>${esc(quelle)}${kiLaeuft ? " · KI liest noch …" : ""}</b></div>` : ""}
       ${kiLaeuft ? `<button class="v2-btn" data-act="bl-detail" data-id="${esc(nr)}">🔄 KI-Vorschlag abholen</button>` : ""}
+      ${!f && (v.hinweise || []).length ? `<div class="v2-msg" style="margin:8px 0">${v.hinweise.map(h => "⚠️ " + esc(h)).join("<br>")}</div>` : ""}
       ${!f && v.waehrung && v.waehrung !== "EUR" ? `<div class="v2-msg err" style="margin:8px 0">Betrag in ${esc(v.waehrung)}: ${esc(v.betrag_fremd || "?")}. Bitte den <b>Euro-Betrag</b> eintragen, der auf dem Konto angekommen bzw. abgebucht worden ist (Kontoauszug) — nur der zählt in der EÜR.</div>` : ""}
       <h3>${f ? "Gebucht (korrigierbar)" : "Prüfen & buchen"}</h3><div class="v2-form">
         <label class="v2-feld"><small>Art *</small><select id="bl-art" ${gesperrt}><option value="ausgabe" ${ein ? "" : "selected"}>Ausgabe — wir zahlen (Eingangsrechnung)</option><option value="einnahme" ${ein ? "selected" : ""}>Einnahme — wir bekommen Geld (Gutschrift, z. B. Facebook-Monetarisierung)</option></select></label>
@@ -1411,7 +1413,7 @@ async function blDetail(nr, meldung, fehler) {
         <label class="v2-feld"><small>Notiz</small><input id="bl-notiz" value="${esc(f ? f.notiz || "" : v.betrag_fremd ? `${v.betrag_fremd} ${v.waehrung} laut Beleg` : "")}" ${gesperrt}></label>
         ${b.status !== "verworfen" ? `<div class="v2-card-actions"><button class="v2-btn pri" data-act="bl-buchen" data-id="${esc(nr)}">✔ ${f ? "Korrektur buchen" : "Buchen"}</button>
           ${f && rest !== 0 ? `<button class="v2-btn ok" data-act="bl-bezahlt-form" data-id="${esc(nr)}">💶 ${ein ? "Geldeingang erfassen" : "Zahlung erfassen"}</button>` : ""}
-          ${!f ? `<button class="v2-btn" data-act="bl-verwerfen" data-id="${esc(nr)}">Kein Beleg / verwerfen</button>` : ""}</div>` : `<div class="v2-msg">Verworfen: ${esc(b.grund || "")}</div>`}
+          ${!f ? `<button class="v2-btn" data-act="bl-verwerfen" data-id="${esc(nr)}">Kein Beleg / verwerfen</button><button class="v2-btn" data-act="bl-nachweis" data-id="${esc(nr)}">🧾 Ist Zahlungsnachweis zu …</button>` : ""}</div>` : `<div class="v2-msg">Verworfen: ${esc(b.grund || "")}</div>`}
         <div id="bl-form-msg" class="v2-msg"></div></div>
       <div id="bl-aktion-box"></div>
       ${zahlungen ? `<h3>Zahlungen</h3>${zahlungen}` : ""}
@@ -2040,6 +2042,7 @@ async function handleAct(act, el) {
       if (AKTIV === "finanzen") renderFinanzen();
       return ebDetail(id, r && r.ok ? "Storniert — bleibt im Journal sichtbar, zählt aber nicht." : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
+    case "bl-nachweis": { const zu = (prompt("Zu welchem Beleg gehört diese Quittung? (z. B. ER-2026-0033)", "") || "").trim(); if (!zu) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/als-nachweis`, { zu }); if (AKTIV === "belege") renderBelege(); return blDetail(r && r.ok ? zu.toUpperCase() : id, r && r.ok ? `Als Zahlungsnachweis an ${zu.toUpperCase()} gehängt; ${id} ist verworfen (Datei bleibt archiviert).` : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "bl-verwerfen": { const grund = prompt("Warum ist das kein Beleg? (z. B. versehentlich hochgeladen)", ""); if (!grund) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/verwerfen`, { grund }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Verworfen — die Datei bleibt archiviert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "re-neu": return reEditor("");
     case "re-detail": return reDetail(id);
