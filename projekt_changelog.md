@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 09:31] — Claude Code
+- **Was:** Mail-Ablage live verifiziert: CEO hat LUNAs Google-Zugang mit `gmail.modify` neu bestaetigt und die Container
+  neu gestartet; erster Poll 09:28 legte ER-2026-0001 (Calumet) nach `LUNA/Rechnungen/2026` und ER-2026-0002 (Meta)
+  nach `LUNA/Gutschriften/2026` ab (Ereignisse `eingang_mail_abgelegt`, nur bei Google-OK protokolliert). BF-39 behoben.
+- **Warum:** Abnahme „Wirkung bis zum Empfaenger“ der Mail-Ablage (CEO 2026-09-29).
+- **Betroffen:** `docs/bekannte-fehler.md`, Live-Kassenbuch (NAS), LUNAs Gmail
+
 ## [2026-09-29 09:10] — Claude Code
 - **Was:** (1) Verlustvortrag 2025 live eingetragen: 2.622,59 EUR (`POST /api/finanzen/verlustvortrag`, Ereignis
   `verlustvortrag_erfasst`; Uebersicht 2026 zeigt ihn voll verrechenbar, da 2026 bisher Verlust). (2) Erledigte
