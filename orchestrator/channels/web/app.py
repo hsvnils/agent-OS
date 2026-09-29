@@ -583,6 +583,13 @@ async def prefs_set(request: Request):
     return JSONResponse({"ok": True})
 
 
+@app.get("/api/betrieb/status")
+def betrieb_status():
+    """Fuer den Waechter auf dem MACO470 (BETRIEB_ROADMAP Etappe 3): Bot-Herzschlag + haengende Telegram-Meldungen."""
+    from ...core.betriebswaechter import status as _status
+    return _status(ROOT / "orchestrator" / "state" / "bot_herzschlag.json", ROOT / "notifications" / "log.jsonl")
+
+
 @app.get("/api/antraege/{antrag_id}")
 def antrag_detail(antrag_id: str):
     a = antraege.get(antrag_id)

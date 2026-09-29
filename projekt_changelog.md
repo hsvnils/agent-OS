@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 16:00] — Claude Code
+- **Was:** BETRIEB_ROADMAP Etappe 3 umgesetzt (noch nicht deployt/installiert): Betriebs-Waechter von aussen --
+  `core/betriebswaechter.py`, Bot-Herzschlag im 15-Minuten-Abruf (`orchestrator/state/bot_herzschlag.json`),
+  `GET /api/betrieb/status` (LUNA-OS), `deploy/luna_waechter.py` (+ `--probe`) und `deploy/luna-waechter.service`/`.timer`
+  fuer den MACO470 (alle 15 min; meldet LUNA-OS-Ausfall, stummen Bot, haengende Telegram-Meldungen, fehlgeschlagenes/
+  altes Backup direkt per Telegram; Alarm nach 2 Laeufen, Erinnerung 24 h, Entwarnung). Tests + 5 Gegenproben, Suite 1005
+  gruen; Probelauf gegen das echte System ohne Versand. Datenfluesse, Register, Roadmap nachgezogen.
+- **Warum:** CEO 2026-09-29 „Go fuer Etappe 3“.
+- **Betroffen:** `orchestrator/core/betriebswaechter.py` (neu), `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/channels/web/app.py`, `deploy/luna_waechter.py`, `deploy/luna-waechter.service`, `deploy/luna-waechter.timer`
+  (neu), `orchestrator/tests/test_betriebswaechter.py`, `BETRIEB_ROADMAP.md`, `docs/datenfluesse.md`,
+  `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
 ## [2026-09-29 15:51] — Claude Code
 - **Was:** BETRIEB_ROADMAP Etappe 2 umgesetzt: `scripts/doku_check.py` prueft `projekt_changelog.md` (Kopf-Format, gueltiges
   Datum, Was/Warum/Betroffen mit Inhalt, keine Zukunftszeit ueber 10 min Toleranz, neueste zuerst ab 2026-09-29).

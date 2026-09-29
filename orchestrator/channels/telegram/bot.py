@@ -1335,6 +1335,11 @@ def main() -> None:
         import time as _t
         if _t.time() - _last_poll > 900:
             _last_poll = _t.time()
+            try:                                   # Herzschlag fuer den Waechter auf dem MACO470 (BETRIEB Etappe 3)
+                from ...core.betriebswaechter import herzschlag_schreiben
+                herzschlag_schreiben(ROOT / "orchestrator" / "state" / "bot_herzschlag.json")
+            except Exception as exc:
+                print(f"[herzschlag] {exc}", flush=True)
             try:
                 if ctx.watch is not None and not ctx.watch.store.paused():
                     ctx.watch.mail_tick()
