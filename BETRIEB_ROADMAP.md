@@ -1,10 +1,11 @@
 # Roadmap: Betrieb und Qualitaet (aus der Antrags-Durchsicht 2026-09-29)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-09-29
 - Arbeitsbranch: `ai/antraege-aufraeumen`
 - Basiscommit: `79d6fbc`
-- Naechster Schritt: CEO-Go fuer Etappe 1 (Ideen-Laeufe entruempeln) einholen; bis dahin keine Code-Aenderung.
+- Naechster Schritt: Etappe 1 deployen (Go fuer Merge/Push/Deploy), nach dem naechsten Montag 04:00 pruefen, dass hoechstens
+  ein Antrag kam und keiner ein abgelehntes Thema wiederholt; danach Go fuer Etappe 2.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -40,7 +41,14 @@ umwandeln ... und was wir mittlerweile nicht mehr brauchen“). Befund (Antrags-
 
 ### Etappe 1: Ideen-Laeufe entruempeln (Dubletten-Filter + ruhigerer Takt)
 
-- Status: geplant
+- Status: umgesetzt (CEO-Go 2026-09-29 „Go fuer Etappe 1“), Deploy + Verifikation offen
+- Ergebnis: `core/innovation.py` `finde_dublette` (Kernwoerter ohne Fuellwoerter, Wortstaemme, Wortanfang ab 6 Zeichen;
+  Dublette = mind. 2 gemeinsame Kernwoerter, >= 60 % des kuerzeren und >= 30 % des laengeren Titels; Fehler-Antraege
+  zaehlen nicht), Pruefung direkt nach der Idee -> bei Dublette kein Antrag, keine CTO/CFO-Bewertung, keine
+  Freigabe-Meldung, Hinweis „Thema schon beantragt (A-..., Status)“ in Tool-Antworten und Bot-Log;
+  `self_development.selfdev_wochentag` + Bot: Lauf nur am Wochentag `SELF_DEV_WOCHENTAG` (Standard Montag) 04:00,
+  intern/extern im Wochenwechsel. Tests `test_ideen_dubletten.py` (7 Faelle, 12 echte Titelpaare) + 5 Gegenproben;
+  Suite gruen. Probelauf ueber den echten Verlauf (103 Antraege): 14 waeren als Wiederholung zurueckgehalten worden.
 - Ziel / Scope: Vor dem Einreichen prueft `InnovationPipeline.run` den Titel gegen **alle** bisherigen Antraege
   (auch abgelehnte/geloeschte/erledigte) mit einem regelbasierten Wortvergleich (Fuellwoerter wie „Einfuehrung/
   Etablierung/zentral“ raus, Wortstaemme, gleiche Wortanfaenge ab 6 Zeichen). Treffer -> **kein Antrag**, Ergebnis nennt

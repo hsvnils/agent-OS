@@ -350,7 +350,8 @@ def _start_watch_loop(watch, interval_hours: float, *, maintenance=None, notify=
 
 
 def _start_selfdev_loop(ctx, secrets) -> None:
-    """Geplanter Selbst-Entwicklungs-Loop: 1x taeglich 09:00 (DE) EIN Bereich -> Antrag -> Freigabe-Push.
+    """Geplanter Selbst-Entwicklungs-Loop: 1x pro Woche 04:00 (DE, Wochentag `SELF_DEV_WOCHENTAG`, Standard Montag)
+    EIN Bereich -> Antrag -> Freigabe-Push; Dubletten bestehender Antraege werden nicht eingereicht.
 
     Nur aktiv mit SELF_DEV_ENABLED=1 (CEO-Freigabe der laufenden Token-Kosten); respektiert die Notbremse.
     """
@@ -367,8 +368,9 @@ def _start_selfdev_loop(ctx, secrets) -> None:
         tz = ZoneInfo("Europe/Berlin")
     except Exception:
         tz = None
-    from ...core.self_development import SelfDevelopment
+    from ...core.self_development import SelfDevelopment, selfdev_wochentag
     from ...core.watch_config import DEPARTMENT_WATCH
+    wochentag = selfdev_wochentag(secrets.get("SELF_DEV_WOCHENTAG"))   # woechentlich statt taeglich (2026-09-29)
     sd = SelfDevelopment(ctx.core, web=ctx.web, watch=ctx.watch, antraege=ctx.antraege,
                          notify=ctx.notifications.enqueue, secrets=ctx.leak_secrets, enabled=True)
     depts = itertools.cycle(list(DEPARTMENT_WATCH.keys()))
@@ -379,11 +381,11 @@ def _start_selfdev_loop(ctx, secrets) -> None:
             try:
                 jetzt = datetime.now(tz) if tz else datetime.now()
                 datum = jetzt.strftime("%Y-%m-%d")
-                if jetzt.hour == 4 and not ctx.agenda.briefing_gesendet("selfdev", datum) \
-                        and not ctx.watch.store.paused():   # 04:00 statt 09:00 (Backoffice-Nachtfenster, CEO 2026-09-27)
-                    # Abwechselnd: gerade Tage = interne Luecken-/Mandatsanalyse (proaktive Vorschlaege aus
+                if (jetzt.hour == 4 and jetzt.weekday() == wochentag      # 04:00 (Backoffice-Nachtfenster, 2026-09-27)
+                        and not ctx.agenda.briefing_gesendet("selfdev", datum) and not ctx.watch.store.paused()):
+                    # Abwechselnd: gerade Kalenderwochen = interne Luecken-/Mandatsanalyse (proaktive Vorschlaege aus
                     # dem System), ungerade = externe Web-Entwicklungen.
-                    modus = "intern" if jetzt.day % 2 == 0 else "extern"
+                    modus = "intern" if jetzt.isocalendar()[1] % 2 == 0 else "extern"   # im Wochenwechsel
                     with hintergrund_modus():                     # lokal ueber das Backoffice, Meldung ins Briefing
                         sd.vorschlag_fuer(next(depts), modus=modus)   # erzeugt Antrag + Freigabe-Push
                     ctx.agenda.markiere_briefing("selfdev", datum)
@@ -1294,7 +1296,8 @@ def main() -> None:
               flush=True)
     _start_selfdev_loop(ctx, secrets)
     if secrets.get("SELF_DEV_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
-        print("Self-Dev-Loop aktiv (taeglich 09:00, 1 Bereich -> Antrag mit Freigabe-Push).", flush=True)
+        print("Self-Dev-Loop aktiv (woechentlich 04:00, 1 Bereich -> Antrag mit Freigabe-Push, Dubletten-Filter).",
+              flush=True)
     _start_investment_loop(ctx, secrets)  # nur aktiv mit INVESTMENT_AUTO_SCREEN=1
     _start_content_feed_loop(ctx, secrets)  # K3: nur aktiv mit CONTENT_FEED_ENABLED=1
     if secrets.get("CONTENT_FEED_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):

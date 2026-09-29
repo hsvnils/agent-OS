@@ -80,8 +80,12 @@ class SelfDevelopment:
                             quelle="self-dev", detail=erg.idee)
             except Exception:
                 pass
+        hinweis = (f"Kein neuer Antrag: Thema schon beantragt ({erg.dublette['antrag_id']}, "
+                   f"{erg.dublette['status']}: {erg.dublette['titel'][:70]})." if erg.dublette else "")
+        if hinweis:
+            print(f"[selfdev] {abteilung}: {hinweis}", flush=True)
         return SelfDevErgebnis(abteilung=abteilung, idee=erg.idee, machbarkeit=erg.machbarkeit,
-                               kostenvoranschlag=erg.kostenvoranschlag, antrag_id=erg.antrag_id)
+                               kostenvoranschlag=erg.kostenvoranschlag, antrag_id=erg.antrag_id, hinweis=hinweis)
 
     def lauf(self, abteilungen: list[str] | None = None) -> dict:
         """Geplanter Mehr-Bereichs-Lauf -- GATED (Token-/Notbremsen-Schutz).
@@ -107,3 +111,15 @@ class SelfDevelopment:
             if ab and ab not in gesehen:
                 gesehen.append(ab)
         return gesehen or ["berater"]
+
+
+WOCHENTAGE = {"mo": 0, "di": 1, "mi": 2, "do": 3, "fr": 4, "sa": 5, "so": 6}
+
+
+def selfdev_wochentag(wert) -> int:
+    """Wochentag des geplanten Laufs (BETRIEB_ROADMAP Etappe 1: woechentlich statt taeglich). `.env`
+    `SELF_DEV_WOCHENTAG` = mo..so oder 0..6; leer/ungueltig = Montag."""
+    w = str(wert or "").strip().lower()[:2]
+    if w in WOCHENTAGE:
+        return WOCHENTAGE[w]
+    return int(w) if w.isdigit() and 0 <= int(w) <= 6 else 0
