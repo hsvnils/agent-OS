@@ -5,8 +5,7 @@
 - Arbeitsbranch: `ai/antraege-aufraeumen`
 - Basiscommit: `79d6fbc`
 - Naechster Schritt: Etappe 1 live (2026-09-29) -- nach Montag 05.10. 04:00 pruefen, dass hoechstens ein Antrag kam und
-  keiner ein abgelehntes Thema wiederholt. Etappe 2 live. Etappe 3 umgesetzt: NAS deployen + Neustart, dann Timer auf dem MACO470 installieren und
-  mit einem Test-Ausfall verifizieren.
+  keiner ein abgelehntes Thema wiederholt. Etappe 2 live. Etappe 3 live (Waechter alle 15 min, Test-Ausfall ok). Naechstes: Go fuer Etappe 4 (Datenschutz-Check).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -86,7 +85,9 @@ umwandeln ... und was wir mittlerweile nicht mehr brauchen“). Befund (Antrags-
 
 ### Etappe 3: Betriebs-Monitoring Ende-zu-Ende
 
-- Status: umgesetzt (CEO-Go 2026-09-29 „Go fuer Etappe 3“), Deploy (NAS) + Timer-Installation (MACO470) + Verifikation offen
+- Status: deployt + verifiziert technisch (2026-09-29 16:06): NAS main ed9235b + Neustart, Timer auf dem MACO470 aktiv
+  (`systemctl enable --now luna-waechter.timer`); simulierter Ausfall (Herzschlag 1 h zurueck) -> 2. Lauf 1 Meldung,
+  nach Ruecksetzen 1 Entwarnung, Zustand leer, kein Versandfehler. Offen: CEO bestaetigt, dass beide Telegram-Meldungen ankamen.
 - Ergebnis: `core/betriebswaechter.py` (Herzschlag, Status, Befunde, Melde-Logik: Alarm erst nach 2 Laeufen, Erinnerung je
   24 h, Entwarnung), Bot schreibt den Herzschlag im 15-Minuten-Abruf, `GET /api/betrieb/status` in LUNA-OS,
   `deploy/luna_waechter.py` (mit `--probe`) + `deploy/luna-waechter.service`/`.timer` (alle 15 min, Meldung direkt per

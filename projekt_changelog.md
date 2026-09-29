@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-29 16:06] — Claude Code
+- **Was:** Etappe 3 nach CEO-Neustart verifiziert: Bot-Herzschlag 16:05:31 geschrieben, `/api/betrieb/status` antwortet,
+  Probelauf ohne Befunde; `luna-waechter.timer` auf dem MACO470 aktiviert (erster Lauf 16:05:50 ok, danach alle 15 min).
+  Test-Ausfall: Herzschlag-Datei auf der NAS eine Stunde zurueckgesetzt -> Lauf 1 vorgemerkt, Lauf 2 eine Telegram-Meldung
+  „Bot meldet sich nicht mehr“; Herzschlag zurueckgesetzt -> eine Entwarnung, Zustand leer, kein Versandfehler im Journal.
+- **Warum:** CEO „Neustart erledigt, du kannst pruefen“ (Etappe 3, Timer-Einrichtung durch Claude Code freigegeben).
+- **Betroffen:** MACO470 `luna-waechter.timer` (aktiviert), NAS `orchestrator/state/bot_herzschlag.json` (Test),
+  `BETRIEB_ROADMAP.md`
+
 ## [2026-09-29 16:02] — Claude Code
 - **Was:** Etappe 3 deployt (main ed9235b, NAS-Code-Sync ohne Neustart). Auf dem MACO470 `luna-waechter.service` und
   `luna-waechter.timer` nach `/etc/systemd/system/` kopiert + `daemon-reload` -- Timer noch **nicht** aktiviert (erst nach
