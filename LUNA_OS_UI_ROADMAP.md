@@ -50,7 +50,9 @@ uebernommen); Glocke zaehlt allen dringenden Handlungsbedarf.
 ## Etappen
 
 ### Etappe 1: Neue Navigation (4 Bereiche, Glocke, iPhone-Seitenmenue)
-- Status: geplant
+- Status: umgesetzt (2026-09-30) -- Browsertest: 19/19 Seiten erreichbar, Team-Rechte filtern Bereiche, keine
+  Ueberbreite; dabei BF-46 gefunden und behoben. Die funktionslosen Knoepfe 🔎/🌐 DE sind entfernt, „Freigabe pruefen“/
+  „Screen starten“ als Pills entfallen (Glocke bzw. Knopf auf der Investment-Seite).
 - Ziel / Scope: Kopfzeile mit 4 beschrifteten Bereichen -- **Geschaeft** (Kunden, Angebote, Rechnungen, Belege,
   Finanzen), **Content & Collabs** (CRM, Radar, Content, Cutter, Reels), **Investment**, **LUNA & System**
   (Freigaben, Agenten, Wissen, Roadmap, System, Team, Einstellungen). Im Bereich eine zweite Reihe mit den

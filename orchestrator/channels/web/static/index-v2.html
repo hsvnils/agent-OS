@@ -24,21 +24,24 @@
   <div id="v2-bg"><span class="blob b1"></span><span class="blob b2"></span></div>
 
   <header id="v2-top">
-    <div class="v2-brand">
-      <div class="v2-logo"><span></span></div>
+    <button class="v2-icon v2-burger" id="v2-burger" title="Menü" aria-label="Menü öffnen">☰</button>
+    <button class="v2-brand" data-go="dash" title="Start">
+      <span class="v2-logo"><span></span></span>
       <b>LUNA</b>
-    </div>
-    <nav id="v2-nav" class="v2-nav"><!-- Icon-Reihe: von app-v2.js gefuellt (modul-gated) --></nav>
+    </button>
+    <span class="v2-titel-mobil" id="v2-titel-mobil"></span>
+    <nav id="v2-nav" class="v2-nav" aria-label="Bereiche"><!-- 4 Bereiche: von app-v2.js gefuellt (modul-gated) --></nav>
     <div class="v2-pills" id="v2-pills"><!-- Aktions-Pills: von app-v2.js gefuellt --></div>
     <div class="v2-topright">
-      <button class="v2-icon" id="v2-search" title="Suche">🔎</button>
+      <button class="v2-icon v2-glocke" id="v2-glocke" data-go="handlung" title="Handlungsbedarf" aria-label="Handlungsbedarf">🔔<span class="v2-zaehler" id="v2-glocke-n" hidden></span></button>
       <button class="v2-icon" id="v2-holo-toggle" title="Orb / Hologramm" hidden>🌙</button>
       <button class="v2-icon" id="v2-theme" title="Hell/Dunkel">☀</button>
-      <button class="v2-lang" id="v2-lang" title="Sprache">🌐 DE</button>
       <div class="v2-avatar" id="v2-avatar" title="Profil"></div>
     </div>
   </header>
-
+  <nav id="v2-unter" class="v2-unter" aria-label="Unterbereiche" hidden></nav>
+  <div id="v2-schleier" class="v2-schleier" hidden></div>
+  <nav id="v2-lade" class="v2-lade" aria-label="Menü" hidden></nav>
   <main id="v2-app"><!-- Dashboard/Sektionen werden von app-v2.js gerendert --></main>
 
   <!-- LUNA: Orb + Voice-Launcher (UI.md 1a -- bleibt Pflicht, auch in V2) -->

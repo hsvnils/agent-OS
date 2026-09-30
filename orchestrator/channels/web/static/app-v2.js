@@ -90,6 +90,25 @@ const SECTIONS = [
   { id: "einstellungen", icon: "⚙", label: "Einstellungen", app: null },
 ];
 const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.includes(app);
+// LUNA_OS_UI_ROADMAP Etappe 1: 4 Bereiche statt 19 Symbolen (CEO 2026-09-30, Skizze abgenommen). Reihenfolge nach Nutzung.
+const BEREICHE = [
+  { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "rechnungen", "belege", "finanzen"] },
+  { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["crm", "radar", "content", "cutter", "reel"] },
+  { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
+  { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "devroadmap", "system", "team", "einstellungen"] },
+];
+const TEIL_INFO = {
+  kunden: "Firmen, Ansprechpartner, Akte", angebote: "Angebote und Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
+  belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
+  radar: "Neue Collab-Chancen", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
+  investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
+  wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", team: "Team-Zugänge",
+  einstellungen: "Depot, Briefings, Anmeldung",
+};
+const teilErlaubt = (b) => b.teile.filter(t => { const x = SECTIONS.find(s => s.id === t); return x && darf(x.app); });
+const bereichVon = (id) => BEREICHE.find(b => "b-" + b.id === id || b.teile.includes(id));
+const bereichZiel = (b) => teilErlaubt(b).length > 1 ? "b-" + b.id : teilErlaubt(b)[0];
+const seitenName = (id) => id === "dash" ? "Start" : id === "handlung" ? "Handlungsbedarf" : id.startsWith("b-") ? (bereichVon(id) || {}).label || "" : (SECTIONS.find(s => s.id === id) || {}).label || "";
 
 /* =========================== Theme / Shell =========================== */
 function applyTheme() {
@@ -100,13 +119,9 @@ function applyTheme() {
 }
 function toggleTheme() { const m = localStorage.getItem("luna-v2-theme") || "light"; localStorage.setItem("luna-v2-theme", m === "dark" ? "light" : "dark"); applyTheme(); }
 function buildShell() {
-  $("#v2-nav").innerHTML = SECTIONS.filter(s => darf(s.app)).map(s =>
-    `<button data-go="${s.id}" class="${s.id === "dash" ? "home " : ""}${s.id === AKTIV ? "active" : ""}" title="${esc(s.label)}">${s.icon}</button>`).join("");
-  $("#v2-pills").innerHTML = [
-    darf("auftraege") ? `<button class="v2-pill" data-go="freigaben">✔ Freigabe prüfen</button>` : "",
-    darf("investment") ? `<button class="v2-pill" data-act="inv-screen">🔍 Screen starten</button>` : "",
-    `<button class="v2-pill" data-toggle-chat>💬 LUNA fragen</button>`,
-  ].filter(Boolean).join("");
+  $("#v2-nav").innerHTML = BEREICHE.filter(b => teilErlaubt(b).length).map(b =>
+    `<button data-go="${bereichZiel(b)}" data-bereich="${b.id}" title="${esc(b.label)}"><span class="i">${b.icon}</span><span class="t">${esc(b.label)}</span></button>`).join("");
+  $("#v2-pills").innerHTML = `<button class="v2-pill" data-toggle-chat>💬 LUNA fragen</button>`;
   const nm = (ME.display_name || ME.username || "L").trim();
   $("#v2-avatar").textContent = nm.slice(0, 1).toUpperCase(); $("#v2-avatar").title = nm + (ME.role === "owner" ? " · Voll-Zugriff" : " · " + (ME.role || ""));
 }
@@ -114,13 +129,58 @@ function buildShell() {
 /* =========================== Router =========================== */
 const RENDER = {};
 function go(id, sub) {
-  if (!SECTIONS.find(s => s.id === id)) id = "dash";
+  if (!SECTIONS.find(s => s.id === id) && !(id.startsWith("b-") && bereichVon(id)) && id !== "handlung") id = "dash";
   AKTIV = id; if (sub) SUBTAB[id] = sub;
-  document.querySelectorAll("#v2-nav button").forEach(b => b.classList.toggle("active", b.dataset.go === id));
+  navAktualisieren(); ladeZu();
   $("#v2-app").innerHTML = `<div class="v2-empty">Lade …</div>`;
   jpost("/api/nutzung", { app: id });   // Feature-Friedhof: App-Oeffnung zaehlen (fire-and-forget)
   (RENDER[id] || renderDash)();
 }
+
+// Kopfzeile, Unterreihe und Seitenmenue passend zur aktuellen Seite
+function navAktualisieren() {
+  const b = AKTIV === "dash" || AKTIV === "handlung" ? null : bereichVon(AKTIV);
+  document.querySelectorAll("#v2-nav button").forEach(x => { const an = !!b && x.dataset.bereich === b.id; x.classList.toggle("active", an); x.setAttribute("aria-current", an ? "page" : "false"); });
+  const u = $("#v2-unter"), teile = b ? teilErlaubt(b) : [];
+  if (b && teile.length > 1) {
+    u.innerHTML = `<span class="v2-unter-b">${b.icon} ${esc(b.label)}</span>`
+      + [["b-" + b.id, "Übersicht"], ...teile.map(t => [t, seitenName(t)])].map(([id, n]) => `<button data-go="${id}" class="${id === AKTIV ? "active" : ""}" ${id === AKTIV ? 'aria-current="page"' : ""}>${esc(n)}</button>`).join("");
+    u.hidden = false;
+  } else { u.hidden = true; u.innerHTML = ""; }
+  $("#v2-titel-mobil").textContent = seitenName(AKTIV);
+  document.title = "LUNA · " + seitenName(AKTIV);
+}
+function ladeAuf() {
+  const zeile = (id, n, extra = "") => `<button class="v2-lade-e ${id === AKTIV ? "active" : ""}" data-go="${id}">${n}${extra}</button>`;
+  const n = GLOCKE_N ? ` <span class="v2-zaehler an">${GLOCKE_N}</span>` : "";
+  $("#v2-lade").innerHTML = `<div class="v2-lade-kopf"><button class="v2-brand" data-go="dash"><span class="v2-logo"><span></span></span><b>LUNA</b></button><button class="v2-icon" id="v2-lade-zu" aria-label="Menü schließen">✕</button></div>`
+    + zeile("dash", "🏠 Start") + zeile("handlung", "⚡ Handlungsbedarf", n)
+    + BEREICHE.filter(b => teilErlaubt(b).length).map(b => `<div class="v2-lade-g">${esc(b.label)}</div>`
+      + (teilErlaubt(b).length > 1 ? zeile("b-" + b.id, b.icon + " Übersicht") : "")
+      + teilErlaubt(b).map(t => zeile(t, esc(seitenName(t)))).join("")).join("")
+    + `<button class="v2-lade-luna" data-toggle-chat>💬 LUNA fragen</button>`;
+  $("#v2-lade").hidden = false; $("#v2-schleier").hidden = false; document.body.classList.add("v2-lade-offen");
+}
+function ladeZu() { const l = $("#v2-lade"); if (!l || l.hidden) return; l.hidden = true; $("#v2-schleier").hidden = true; document.body.classList.remove("v2-lade-offen"); }
+// Glocke: Anzahl dringender Punkte aus dem Handlungsbedarf (Etappe 3)
+let GLOCKE_N = 0, GLOCKE_T = null;
+async function glockeAktualisieren() {
+  const d = await jget("/api/handlungsbedarf");
+  GLOCKE_N = d && d.zaehler ? d.zaehler.dringend || 0 : 0;
+  const el = $("#v2-glocke-n"); if (!el) return;
+  el.textContent = GLOCKE_N > 99 ? "99+" : String(GLOCKE_N); el.hidden = !GLOCKE_N;
+  $("#v2-glocke").setAttribute("aria-label", GLOCKE_N ? `${GLOCKE_N} dringende Punkte` : "Handlungsbedarf");
+}
+// Bereichs-Startseite (Etappe 1: Spruenge; Etappe 4 ergaenzt Kennzahlen)
+async function renderBereich() {
+  const b = bereichVon(AKTIV); if (!b) return renderDash();
+  const spruenge = `<div class="v2-sprung">${teilErlaubt(b).map(t => { const x = SECTIONS.find(s => s.id === t);
+    return `<button class="v2-sprung-k" data-go="${t}"><span class="i">${x.icon}</span><b>${esc(x.label)}</b><small>${esc(TEIL_INFO[t] || "")}</small></button>`; }).join("")}</div>`;
+  const oben = typeof bereichKopf === "function" ? await bereichKopf(b) : "";
+  if (bereichVon(AKTIV) !== b) return;
+  $("#v2-app").innerHTML = secHead(b.icon + " " + b.label) + oben + `<h3 class="v2-h3">Direkt zu</h3>` + spruenge;
+}
+BEREICHE.forEach(b => { RENDER["b-" + b.id] = renderBereich; });
 
 /* =========================== Bausteine =========================== */
 function secHead(title, actions = "") { return `<div class="v2-sec-head"><h1>${esc(title)}</h1><div class="actions">${actions}</div></div>`; }
@@ -2800,7 +2860,7 @@ function toggleVoice() {
 }
 
 /* =========================== SSE Live =========================== */
-function connectSSE() { try { const es = new EventSource("/api/events"); es.onmessage = () => { if (AKTIV === "dash" && !EDIT2) renderDash(); }; } catch { } }
+function connectSSE() { try { const es = new EventSource("/api/events"); es.onmessage = () => { if (AKTIV === "dash" && !EDIT2) renderDash(); clearTimeout(GLOCKE_T); GLOCKE_T = setTimeout(glockeAktualisieren, 10000); }; } catch { } }
 
 /* =========================== Events + Boot =========================== */
 document.addEventListener("click", (e) => {
@@ -2811,16 +2871,18 @@ document.addEventListener("click", (e) => {
   const ac0 = e.target.closest("[data-act]"); if (ac0) { handleAct(ac0.dataset.act, ac0); return; }  // Aktionen VOR Navigation (Inline-Buttons in klickbaren Kacheln)
   const g = e.target.closest("[data-go]"); if (g) { go(g.dataset.go); return; }
   const tb = e.target.closest("[data-tab]"); if (tb) { const [sec, id] = tb.dataset.tab.split(":"); go(sec, id); return; }
-  const tc = e.target.closest("[data-toggle-chat]"); if (tc) { toggleChat(); return; }
+  const tc = e.target.closest("[data-toggle-chat]"); if (tc) { ladeZu(); toggleChat(); return; }
   const orb = e.target.closest("#v2-orb"); if (orb) { toggleVoice(); return; }
   const holo = e.target.closest("#luna-holo"); if (holo) { toggleVoice(); return; }
   const ht = e.target.closest("#v2-holo-toggle"); if (ht) { setAvatarPref(PREFS.avatar === "hologramm" ? "orb" : "hologramm"); return; }
   const th = e.target.closest("#v2-theme"); if (th) { toggleTheme(); return; }
+  if (e.target.closest("#v2-burger")) { ladeAuf(); return; }
+  if (e.target.closest("#v2-lade-zu") || e.target.closest("#v2-schleier")) { ladeZu(); return; }
   const mc = e.target.closest("[data-modal-close]"); if (mc) { closeModal(); return; }
   const ac = e.target.closest("[data-act]"); if (ac) { handleAct(ac.dataset.act, ac); return; }
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { closeModal(); return; }
+  if (e.key === "Escape") { ladeZu(); closeModal(); return; }
   if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches('.v2-tile.klick[role="button"]')) {
     e.preventDefault(); const el = e.target;
     if (el.dataset.go) go(el.dataset.go); else if (el.dataset.tab) { const [s, i] = el.dataset.tab.split(":"); go(s, i); }
@@ -2841,4 +2903,5 @@ document.addEventListener("drop", (e) => { if (!EDIT2 || !DRAG2) return; const t
   DASH2 = normDash2(saved);
   if (!PREFS.avatar) { try { const a = localStorage.getItem("luna-v2-avatar"); if (a) PREFS.avatar = a; } catch { } }
   buildShell(); go("dash"); connectSSE(); applyAvatar(); passkeyAngebot();
+  glockeAktualisieren(); setInterval(glockeAktualisieren, 5 * 60 * 1000);
 })();

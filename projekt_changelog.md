@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 19:25] — Claude Code
+- **Was:** LUNA_OS_UI_ROADMAP Etappe 1 umgesetzt: Kopfzeile mit 4 beschrifteten Bereichen (Geschaeft, Content &
+  Collabs, Investment, LUNA & System) statt 19 Symbolen, Unterreihe je Bereich, Bereichs-Seite mit Sprungkarten, Glocke
+  (Zaehler aus `/api/handlungsbedarf`), ab 900 px abwaerts Seitenmenue (☰) mit Titel, Abstaende fuer Notch/Home-Balken.
+  Funktionslose Knoepfe 🔎 und 🌐 DE entfernt. BF-46 (`hidden` von `display:flex` ueberschrieben) gefunden und global
+  behoben.
+- **Warum:** CEO-Go 2026-09-30 fuer die UI-Roadmap (Skizze abgenommen).
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `style-v2.css`, `LUNA_OS_UI_ROADMAP.md`,
+  `docs/bekannte-fehler.md`
+
 ## [2026-09-30 19:21] — Claude Code
 - **Was:** LUNA_OS_UI_ROADMAP Etappen 2 + 6 umgesetzt: eigene Login-Seite (Schluesselbund/Face-ID-Autofill),
   Sitzungs-Cookie 30 Tage gleitend (HttpOnly, Secure bei HTTPS, SameSite=Lax; nur SHA-256 des Tokens auf der NAS),
