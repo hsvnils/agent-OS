@@ -16,6 +16,12 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+
+def _jetzt() -> datetime:
+    """Deutsche Zeit ohne Zonenangabe (der Container laeuft in UTC; vgl. BF-32/BF-48)."""
+    return datetime.now(ZoneInfo("Europe/Berlin")).replace(tzinfo=None)
 
 CHALLENGE_S = 300
 
@@ -116,7 +122,7 @@ class Passkeys:
                                              require_user_verification=True)
         except Exception as e:                                    # Bibliothek wirft je Fehler eigene Klassen
             raise PasskeyFehler(f"Passkey nicht bestaetigt: {e}") from e
-        jetzt = datetime.now().isoformat(timespec="seconds")
+        jetzt = _jetzt().isoformat(timespec="seconds")
         eintrag = {"id": _b64(v.credential_id), "username": username, "art": c.get("art", ""),
                    "public_key": _b64(v.credential_public_key), "sign_count": v.sign_count,
                    "geraet": geraet[:60], "erstellt": jetzt, "zuletzt": jetzt}
@@ -154,6 +160,6 @@ class Passkeys:
             except Exception as e:
                 raise PasskeyFehler(f"Face ID nicht bestaetigt: {e}") from e
             p["sign_count"] = v.new_sign_count
-            p["zuletzt"] = datetime.now().isoformat(timespec="seconds")
+            p["zuletzt"] = _jetzt().isoformat(timespec="seconds")
             self._speichern(liste)
         return {"username": p["username"], "art": p.get("art", "")}

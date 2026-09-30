@@ -19,6 +19,12 @@ import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+
+def _jetzt() -> datetime:
+    """Deutsche Zeit ohne Zonenangabe (der Container laeuft in UTC; vgl. BF-32/BF-48)."""
+    return datetime.now(ZoneInfo("Europe/Berlin")).replace(tzinfo=None)
 
 LAUFZEIT_TAGE = 30
 COOKIE = "luna_sitzung"
@@ -87,7 +93,7 @@ class Sitzungen:
     def anlegen(self, username: str, *, art: str, geraet: str = "") -> str:
         """Neue Sitzung -> Klartext-Token (nur fuers Cookie; gespeichert wird der Hash)."""
         token = secrets.token_urlsafe(32)
-        jetzt = datetime.now()
+        jetzt = _jetzt()
         with self._lock:
             d = {h: s for h, s in self._laden().items() if not self._abgelaufen(s, jetzt)}
             d[_hash(token)] = {"id": secrets.token_hex(6), "username": username, "art": art, "geraet": geraet[:60],
@@ -102,7 +108,7 @@ class Sitzungen:
         if not token:
             return None
         h = _hash(token)
-        jetzt = datetime.now()
+        jetzt = _jetzt()
         with self._lock:
             d = self._laden()
             s = d.get(h)
@@ -125,7 +131,7 @@ class Sitzungen:
                 self._speichern(d)
 
     def liste(self, username: str) -> list[dict]:
-        jetzt = datetime.now()
+        jetzt = _jetzt()
         return sorted(({k: s.get(k) for k in ("id", "geraet", "erstellt", "zuletzt", "ablauf")}
                        for s in self._laden().values()
                        if s.get("username") == username and not self._abgelaufen(s, jetzt)),
