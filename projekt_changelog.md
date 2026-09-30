@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 19:21] — Claude Code
+- **Was:** LUNA_OS_UI_ROADMAP Etappen 2 + 6 umgesetzt: eigene Login-Seite (Schluesselbund/Face-ID-Autofill),
+  Sitzungs-Cookie 30 Tage gleitend (HttpOnly, Secure bei HTTPS, SameSite=Lax; nur SHA-256 des Tokens auf der NAS),
+  Fehlversuch-Bremse (5 in 15 min -> 10 min), Schutz gegen fremde Seiten bei aendernden Anfragen, Abmelden und „Alle
+  anderen Geraete abmelden“; Passkeys (WebAuthn, Face ID ohne Passwort, Passwort bleibt Notweg) mit Einrichtung in den
+  Einstellungen und einmaligem Angebot nach dem Passwort-Login; WebApp-Manifest + apple-mobile-web-app-capable.
+  HTTP-Basic bleibt fuer Waechter/Cutter-Bruecke. Neue Abhaengigkeit `webauthn==3.0.1` im Dockerfile (OSV: keine
+  Funde, auch cbor2/pyOpenSSL/pyasn1). Tests `test_login.py` (10, mit simuliertem Face-ID-Geraet), Gegenprobe rot/gruen.
+- **Warum:** CEO 2026-09-30: auf iPhone/iPad als WebApp immer neu einloggen, Schluesselbund schlaegt nichts vor;
+  „Passkey kannst du gern mit einbauen“.
+- **Betroffen:** `orchestrator/core/sitzungen.py`, `orchestrator/core/passkeys.py` (neu), `orchestrator/core/team_auth.py`,
+  `orchestrator/channels/web/app.py`, `static/login.html`, `static/passkey.js`, `static/manifest.webmanifest` (neu),
+  `static/app-v2.js`, `static/index-v2.html`, `static/style-v2.css`, `deploy/Dockerfile`, `deploy/backup-from-nas.sh`,
+  `orchestrator/tests/test_login.py`, `LUNA_OS_UI_ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-30 19:00] — Claude Code
 - **Was:** Roadmap `LUNA_OS_UI_ROADMAP.md` angelegt (Etappen 1-6: Navigation in 4 Bereichen + Glocke + iPhone-
   Seitenmenue, WebApp-Login mit Schluesselbund und Sitzungs-Cookie, Handlungsbedarf systemweit, Start- und

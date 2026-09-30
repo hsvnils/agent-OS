@@ -167,6 +167,8 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | Speicher | Schreibt | Liest | Deploy-Schutz | Backup |
 |---|---|---|---|---|
 | `antraege/log.jsonl` | Bot, Web, Voice | alle | ja | ja |
+| `orchestrator/state/luna_os_sitzungen.json` | Web (Login, Passkey-Login, Abmelden) | Web (jede Anfrage mit Cookie) | ja (`orchestrator/state` ausgenommen) | nein (fluechtig) |
+| `orchestrator/state/luna_os_passkeys.json` | Web (Passkey einrichten/entfernen, Zaehler bei Anmeldung) | Web (Passkey-Login) | ja | ja |
 | `research/log.jsonl` | Bot, Web | dito | ja | ja |
 | `notifications/log.jsonl` (Outbox) | Bot, Web | Bot stellt zu | ja | ja |
 | `agenda/log.jsonl` (auch Merker „Briefing gesendet") | Bot, Web | dito | ja | ja |
@@ -235,6 +237,7 @@ content_ops/sources_cache.jsonl
 content_ops/trends_cache.jsonl
 cutter_ops/jobs_cache.jsonl         # Cache von luna_cutter_jobs
 cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
+orchestrator/state/luna_os_sitzungen.json  # Login-Sitzungen (nur Token-Hashes); Verlust = einmal neu anmelden
 ```
 
 **MACO470** (WSL, Benutzer `luna`): `~/CutterInbox`, `~/CutterOutbox`, `~/ReelOutbox/<datum>/`,
@@ -295,6 +298,7 @@ cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
 | Backoffice MACO470 <-> NAS | `backoffice/worker.py` ueber `cutter/luna_bridge.py`: `GET /api/backoffice/naechster` (Auftrag wird `in_arbeit`), `POST /api/backoffice/ergebnis`; Modell ueber die **native** Ollama-API (`/api/chat`, `num_ctx` 8192, ohne Werkzeuge) auf `192.168.178.184:11434`; RAM-Messung per `powershell.exe` (Windows); Gegenlesen von Bewertungen/Analysen ueber Gemini | `backoffice/worker.py` |
 | Reel -> Facebook | Reel liegt in `reel_freigabe/` auf der NAS -> CEO gibt in LUNA-OS frei -> `governance/facebook_reels.py` | `channels/web/app.py` |
 | Backup NAS -> MACO470 | `ssh luna-nas "tar czf - <Liste>" \| tar xzf -` nach `~/LUNA-Backups/<stamp>`, 30 Staende; bei leerem Lauf Exit 1 + Telegram | `deploy/backup-from-nas.sh` |
+| Browser/WebApp -> LUNA-OS | Login-Seite `/login` (Formular, Schluesselbund) oder Passkey (`/api/passkey/*`, WebAuthn, nur HTTPS) -> Cookie `luna_sitzung` (HttpOnly, Secure, SameSite=Lax, 30 Tage gleitend); aendernde Anfragen per Cookie nur mit eigener Origin; Maschinen (Waechter, Cutter-Bruecke) weiter HTTP-Basic | `channels/web/app.py` `auth()`, `core/sitzungen.py`, `core/passkeys.py` |
 | Deploy MACO470 -> NAS | `deploy/sync-to-nas.sh` (tar ueber ssh, Schutzliste), Neustart per `sudo` durch den CEO | `deploy/sync-to-nas.sh` |
 | Code MACO470 -> GitHub | `git push` per Deploy-Key (nur dieses Repo); Fetch anonym per HTTPS; **Repo ist oeffentlich** | `git remote -v` |
 | LUNA -> GitHub | Tool `antrag_pushen` pusht Branch `antrag/<id>` | `core/hoa_tools.py` |

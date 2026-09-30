@@ -1,9 +1,9 @@
 # Roadmap: LUNA-OS Navigation, Handlungsbedarf und WebApp-Login
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/plan-ui-navigation` (Plan); Umsetzung je Etappe auf eigenem Branch `ai/ui-etappe-<n>`
 - Basiscommit: `86393dc`
-- Naechster Schritt: CEO-Go fuer Etappe 1 (neue Navigation) abwarten; bis dahin keine Umsetzung.
+- Naechster Schritt: CEO-Go 2026-09-30 fuer Etappen 1-6 am Stueck (Passkey ausdruecklich dazu); Etappen 2+6 umgesetzt, weiter mit Etappe 1. Deploy braucht einen Image-Neubau (neue Bibliothek `webauthn`).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -68,7 +68,7 @@ uebernommen); Glocke zaehlt allen dringenden Handlungsbedarf.
 - Aufwand: mittel.
 
 ### Etappe 2: Login fuer die WebApp (Schluesselbund, angemeldet bleiben)
-- Status: geplant
+- Status: umgesetzt (2026-09-30) -- `core/sitzungen.py`, `static/login.html`, `auth()` in `app.py`; Tests `test_login.py`
 - Ziel / Scope: Eigene Login-Seite (Formular mit `autocomplete="username"` / `current-password`) -> iCloud-
   Schluesselbund schlaegt die Daten vor und fuellt sie per Face ID aus. Nach erfolgreichem Login ein
   **Sitzungs-Cookie** (`HttpOnly`, `Secure`, `SameSite=Lax`, Laufzeit 30 Tage, gleitend verlaengert); Sitzungen
@@ -119,7 +119,9 @@ uebernommen); Glocke zaehlt allen dringenden Handlungsbedarf.
 - Aufwand: klein bis mittel.
 
 ### Etappe 6 (optional): Face ID direkt per Passkey
-- Status: geplant (optional, nach Etappe 2 entscheiden)
+- Status: umgesetzt (2026-09-30, CEO: „Passkey kannst du gern mit einbauen“) -- `core/passkeys.py`, `static/passkey.js`,
+  Einstellungen „Anmeldung & Geraete“, Angebot nach Passwort-Login; `webauthn==3.0.1` im `deploy/Dockerfile` (OSV ohne
+  Funde) -> Deploy mit Image-Neubau
 - Ziel / Scope: Anmeldung per Passkey (WebAuthn) -- Face ID statt Passwort, das Passwort bleibt als Notweg. Braucht
   eine neue Python-Abhaengigkeit (z. B. `webauthn`, Open Source, kostenlos) -> Register-Eintrag, CISO-Pruefung, CEO-Go.
 - Aufwand: mittel.

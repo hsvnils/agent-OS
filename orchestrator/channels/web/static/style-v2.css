@@ -472,3 +472,10 @@ a.v2-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .v2-kat-kalk { grid-column: 1 / -1; }
 .v2-kat-kalk summary { cursor: pointer; }
 .v2-an-intern { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--v2-line-soft); }
+/* ---------------- Face-ID-Angebot nach Passwort-Login (LUNA_OS_UI_ROADMAP Etappe 6) ---------------- */
+.v2-pk-angebot { position: fixed; left: 50%; transform: translateX(-50%); z-index: 60;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: min(420px, calc(100% - 32px));
+  background: var(--v2-card-solid); border: 1px solid var(--v2-line); border-radius: 18px; box-shadow: var(--v2-shadow-hi);
+  padding: 16px; display: grid; gap: 8px; font-size: 14px; }
+.v2-pk-angebot span { color: var(--v2-muted); }
+.v2-pk-angebot div { display: flex; gap: 8px; flex-wrap: wrap; }

@@ -20,12 +20,15 @@ RUN apt-get update \
 #  - pip-audit: Dependency-CVE-Scan fuer den Cybersecurity-Agent (Phase 21, sicherheits_audit)
 #  - fpdf2: PDF fuer Angebote/Rechnungen (KUNDEN_FINANZEN Etappe 3, CEO-Freigabe 2026-09-27)
 #  - pypdf: PDF-Text + ZUGFeRD-Anhang aus Eingangsrechnungen lesen (Etappe 6; 6.19.0 ohne bekannte Luecken)
+#  - webauthn: Passkeys/Face ID fuer den LUNA-OS-Login (LUNA_OS_UI_ROADMAP Etappe 6, CEO 2026-09-30;
+#    3.0.1 + Abhaengigkeiten cbor2/pyOpenSSL/pyasn1 laut OSV 2026-09-30 ohne Funde)
 # pip selbst aktuell halten: das Base-Image bundlet pip 25.0.1 -> mehrere CVEs
 # (u. a. PYSEC-2026-196, CVE-2025-8869). >=26.1.2 deckt alle bekannten Funde ab.
 RUN python -m pip install --no-cache-dir --upgrade "pip>=26.1.2"
 RUN pip install --no-cache-dir "claude-agent-sdk==0.2.107" "anthropic==0.111.0" \
     "google-api-python-client==2.149.0" "google-auth==2.35.0" "tzdata" "openai" \
-    "fastapi==0.138.0" "uvicorn==0.49.0" "pip-audit==2.10.1" "fpdf2==2.8.4" "pypdf==6.19.0"
+    "fastapi==0.138.0" "uvicorn==0.49.0" "pip-audit==2.10.1" "fpdf2==2.8.4" "pypdf==6.19.0" \
+    "webauthn==3.0.1"
 
 ENV PYTHONUNBUFFERED=1
 # Git-Identitaet + safe.directory SYSTEMWEIT (/etc/gitconfig) -- gilt fuer JEDEN User, auch den

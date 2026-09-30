@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>LUNA · Anmelden</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png?v=2">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="LUNA">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <style>
+    :root { --bg0: #eef4fb; --bg1: #f7fafd; --bg2: #e7eef8; --card: #ffffff; --fg: #17202e; --muted: #56657c;
+      --line: rgba(23, 32, 46, .12); --accent: #2f6bff; --on-accent: #ffffff; --red: #c9425a; --red-soft: #fce8ec;
+      --green: #1d8f57; --green-soft: #e2f6ec; --shadow: 0 14px 44px rgba(23, 42, 82, .12);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    @media (prefers-color-scheme: dark) { :root { --bg0: #0c1526; --bg1: #0f1a2f; --bg2: #0a1120; --card: #16223a;
+      --fg: #e8f0fb; --muted: #9fb0cb; --line: rgba(255, 255, 255, .12); --accent: #6a96ff; --on-accent: #0c1526;
+      --red: #f07a8e; --red-soft: rgba(224, 85, 107, .18); --green: #4cc98a; --green-soft: rgba(34, 165, 101, .18);
+      --shadow: 0 14px 44px rgba(0, 0, 0, .45); color-scheme: dark; } }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; }
+    body { margin: 0; font-family: var(--font); color: var(--fg); -webkit-font-smoothing: antialiased;
+      background: radial-gradient(120% 80% at 15% 0%, var(--bg2), var(--bg1) 55%, var(--bg0));
+      display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+    main { width: 100%; max-width: 380px; background: var(--card); border: 1px solid var(--line); border-radius: 24px;
+      box-shadow: var(--shadow); padding: 28px 24px; display: grid; gap: 16px; }
+    .marke { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 800; }
+    .logo { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+      background: conic-gradient(from 210deg, var(--accent), #7db4ff, var(--accent)); }
+    .logo i { width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: inset -4px -3px 0 0 var(--accent); }
+    p { margin: 0; color: var(--muted); font-size: 14px; }
+    form { display: grid; gap: 12px; }
+    label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+    input { font: inherit; font-size: 16px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
+      background: var(--bg1); color: var(--fg); }
+    input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    button { font: inherit; font-size: 16px; font-weight: 700; border: 0; border-radius: 999px; padding: 13px 16px; cursor: pointer; }
+    .pri { background: var(--accent); color: var(--on-accent); }
+    .face { background: var(--fg); color: var(--card); display: flex; justify-content: center; gap: 8px; align-items: center; }
+    .oder { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
+    .oder::before, .oder::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+    .msg { font-size: 14px; padding: 10px 12px; border-radius: 12px; }
+    .msg.fehler { background: var(--red-soft); color: var(--red); }
+    .msg.ok { background: var(--green-soft); color: var(--green); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="marke"><span class="logo"><i></i></span>LUNA</div>
+    <p>Melde dich an, um den Kontrollraum zu öffnen. Du bleibst 30 Tage angemeldet.</p>
+    <div id="msg" class="msg" hidden></div>
+    <button id="face" class="face" type="button" hidden>Mit Face ID anmelden</button>
+    <div id="oder" class="oder" hidden>oder mit Passwort</div>
+    <form method="post" action="/api/login">
+      <label for="username">Benutzername
+        <input id="username" name="username" autocomplete="username webauthn" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+      </label>
+      <label for="password">Passwort
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </label>
+      <input id="weiter" name="weiter" type="hidden" value="/">
+      <button class="pri" type="submit">Anmelden</button>
+    </form>
+  </main>
+  <script src="/static/passkey.js?v=1"></script>
+  <script>
+    (function () {
+      const q = new URLSearchParams(location.search);
+      const weiter = (q.get("weiter") || "/").startsWith("/") && !(q.get("weiter") || "").startsWith("//") ? (q.get("weiter") || "/") : "/";
+      document.getElementById("weiter").value = weiter;
+      const msg = document.getElementById("msg");
+      const zeige = (text, art) => { msg.textContent = text; msg.className = "msg " + (art || "fehler"); msg.hidden = false; };
+      const texte = { falsch: "Benutzername oder Passwort stimmt nicht.", gesperrt: "Zu viele Fehlversuche. Bitte warte 10 Minuten.",
+        herkunft: "Die Anfrage kam nicht von dieser Seite. Bitte hier neu anmelden." };
+      if (q.get("fehler")) zeige(texte[q.get("fehler")] || "Anmeldung fehlgeschlagen.");
+      if (q.get("abgemeldet")) zeige("Du bist abgemeldet.", "ok");
+
+      const P = window.LunaPasskey;
+      if (!P || !P.unterstuetzt()) return;
+      const knopf = document.getElementById("face");
+      knopf.hidden = false; document.getElementById("oder").hidden = false;
+      let vor = null, ctl = null;
+      const holen = () => P.vorbereitenLogin().then(v => { vor = v; }).catch(() => { vor = null; });
+      holen();
+      // Passkey direkt ueber der Tastatur vorschlagen (iOS 16+ „bedingte“ Anmeldung)
+      (async () => {
+        try {
+          if (!(PublicKeyCredential.isConditionalMediationAvailable && await PublicKeyCredential.isConditionalMediationAvailable())) return;
+          ctl = new AbortController();
+          const v = await P.vorbereitenLogin();
+          const r = await P.anmelden(v, weiter, true, ctl.signal);
+          location.href = r.weiter || "/";
+        } catch (e) { if (e && e.name !== "AbortError" && e.name !== "NotAllowedError") zeige(e.message); }
+      })();
+      knopf.addEventListener("click", async () => {
+        if (ctl) { ctl.abort(); ctl = null; }
+        const v = vor; vor = null;
+        try {
+          const r = await P.anmelden(v || await P.vorbereitenLogin(), weiter, false);
+          location.href = r.weiter || "/";
+        } catch (e) {
+          zeige(e && e.name === "NotAllowedError" ? "Face ID abgebrochen. Falls noch kein Passkey eingerichtet ist: mit Passwort anmelden, LUNA bietet ihn dann an." : (e.message || "Face ID hat nicht geklappt."));
+          holen();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

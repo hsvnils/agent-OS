@@ -3,6 +3,12 @@
 "use strict";
 
 /* =========================== Helfer =========================== */
+// Abgelaufene/fehlende Anmeldung (401) -> zur Login-Seite, danach zurueck hierher (LUNA_OS_UI_ROADMAP Etappe 2)
+let LOGIN_UMLEITUNG = false;
+{ const _fetch = window.fetch.bind(window);
+  window.fetch = async (...a) => { const r = await _fetch(...a);
+    if (r && r.status === 401 && !LOGIN_UMLEITUNG) { LOGIN_UMLEITUNG = true; location.href = "/login?weiter=" + encodeURIComponent(location.pathname || "/"); }
+    return r; }; }
 const $ = (sel, el = document) => el.querySelector(sel);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -2343,7 +2349,50 @@ async function renderEinstellungen() {
     ${tile("🏦 Echtes Depot (Beratung)", a, "w4")}
     ${tile("💼 Paper-Depot (Spielgeld)", b, "w4")}
     ${tile("🔔 Benachrichtigungen & Briefings", c, "w4")}
+    ${tile("🔐 Anmeldung & Geräte", `<div id="set-anmeldung"><div class="v2-empty">Lade …</div></div>`, "w12")}
   </div><div class="v2-sub" style="margin-top:8px">Gilt für Anzeige, Telegram-Hinweise und Briefings. Moduswechsel (advisory→paper→live) und Budget bleiben separat abgesichert.</div>`;
+  anmeldungBox();
+}
+// Etappe 2 + 6: Passkeys (Face ID) und angemeldete Geraete; Optionen fuer Face ID vorab holen (iOS: Abfrage direkt im Tipp)
+let PK_VOR = null;
+const pkVorbereiten = () => { PK_VOR = null; if (window.LunaPasskey && LunaPasskey.unterstuetzt()) LunaPasskey.vorbereitenEinrichten().then(v => { PK_VOR = v; }).catch(() => { }); };
+async function anmeldungBox(meldung) {
+  const box = $("#set-anmeldung"); if (!box) return;
+  const d = await jget("/api/sitzungen"); if (!d) { box.innerHTML = emptyRow("Nicht verfügbar."); return; }
+  const kann = window.LunaPasskey && LunaPasskey.unterstuetzt();
+  const dt = (t) => t ? new Date(t).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "–";
+  box.innerHTML = (meldung ? `<div class="v2-msg ${meldung.ok ? "ok" : "err"}" style="margin-bottom:10px">${esc(meldung.text)}</div>` : "")
+    + `<div class="v2-kv"><span><b>Face ID / Passkey</b><br><small class="v2-sub">Anmelden ohne Passwort. Der geheime Schlüssel bleibt auf dem Gerät.</small></span>
+      ${kann ? `<button class="v2-btn pri" data-act="pk-einrichten">Auf diesem Gerät einrichten</button>` : `<small class="v2-sub">Einrichten geht in Safari/der WebApp über https://os.hanserautisch.synology.me</small>`}</div>`
+    + (d.passkeys.length ? d.passkeys.map(p => `<div class="v2-kv"><span>🔑 ${esc(p.geraet || "Passkey")} <small class="v2-sub">eingerichtet ${esc(dt(p.erstellt))} · zuletzt ${esc(dt(p.zuletzt))}</small></span><button class="v2-btn" data-act="pk-loeschen" data-id="${esc(p.id)}">Entfernen</button></div>`).join("") : `<div class="v2-kv"><span class="v2-sub">Noch kein Passkey eingerichtet.</span></div>`)
+    + `<div class="v2-kv" style="margin-top:10px"><span><b>Angemeldete Geräte</b><br><small class="v2-sub">Jede Anmeldung hält 30 Tage und verlängert sich bei Nutzung.</small></span>
+      <span style="display:flex;gap:8px;flex-wrap:wrap">${d.sitzungen.length > 1 ? `<button class="v2-btn" data-act="sz-alle">Alle anderen abmelden</button>` : ""}${d.per_cookie ? `<button class="v2-btn" data-act="logout">Abmelden</button>` : ""}</span></div>`
+    + (d.sitzungen.length ? d.sitzungen.map(z => `<div class="v2-kv"><span>${z.aktuell ? "📍" : "💻"} ${esc(z.geraet || "Gerät")}${z.aktuell ? " <b>(dieses Gerät)</b>" : ""} <small class="v2-sub">seit ${esc(dt(z.erstellt))} · zuletzt ${esc(dt(z.zuletzt))}</small></span>${z.aktuell ? "" : `<button class="v2-btn" data-act="sz-widerrufen" data-id="${esc(z.id)}">Abmelden</button>`}</div>`).join("")
+      : `<div class="v2-kv"><span class="v2-sub">Keine Anmeldung per Login-Seite (dieser Browser nutzt noch das alte Login-Fenster).</span></div>`);
+  pkVorbereiten();
+}
+async function passkeyEinrichten(nachher) {
+  try {
+    const vor = PK_VOR || await LunaPasskey.vorbereitenEinrichten(); PK_VOR = null;
+    await LunaPasskey.einrichten(vor);
+    try { localStorage.setItem("luna-pk-gefragt", "1"); } catch { }
+    return nachher({ ok: true, text: "Face ID ist eingerichtet. Beim nächsten Login einfach „Mit Face ID anmelden“ tippen." });
+  } catch (e) {
+    return nachher({ ok: false, text: e && e.name === "NotAllowedError" ? "Abgebrochen." : e && e.name === "InvalidStateError" ? "Auf diesem Gerät ist schon ein Passkey eingerichtet." : ("Hat nicht geklappt: " + (e.message || e)) });
+  }
+}
+// Nach einem Passwort-Login einmal je Geraet anbieten: „Beim naechsten Mal mit Face ID?“
+function passkeyAngebot() {
+  const hat = document.cookie.split(";").some(c => c.trim().startsWith("luna_pk_anbieten="));
+  if (!hat) return;
+  document.cookie = "luna_pk_anbieten=; Max-Age=0; path=/";
+  let gefragt = false; try { gefragt = localStorage.getItem("luna-pk-gefragt") === "1"; } catch { }
+  if (gefragt || !(window.LunaPasskey && LunaPasskey.unterstuetzt())) return;
+  pkVorbereiten();
+  const el = document.createElement("div"); el.className = "v2-pk-angebot"; el.id = "v2-pk-angebot";
+  el.innerHTML = `<b>Beim nächsten Mal mit Face ID anmelden?</b><span>Dann brauchst du auf diesem Gerät kein Passwort mehr.</span>
+    <div><button class="v2-btn pri" data-act="pk-angebot-ja">Einrichten</button><button class="v2-btn" data-act="pk-angebot-nein">Nicht jetzt</button></div>`;
+  document.body.appendChild(el);
 }
 
 /* =========================== Aktionen =========================== */
@@ -2352,6 +2401,13 @@ async function handleAct(act, el) {
   const id = el.dataset.id, val = el.dataset.val, asset = el.dataset.asset, typ = el.dataset.typ;
   const flash = (m) => { const o = el.textContent; el.textContent = m; return o; };
   switch (act) {
+    case "pk-einrichten": return passkeyEinrichten(m => anmeldungBox(m));
+    case "pk-angebot-ja": return passkeyEinrichten(m => { const b = $("#v2-pk-angebot"); if (b) b.innerHTML = `<b>${esc(m.text)}</b><div><button class="v2-btn" data-act="pk-angebot-nein">Schließen</button></div>`; });
+    case "pk-angebot-nein": { try { localStorage.setItem("luna-pk-gefragt", "1"); } catch { } const b = $("#v2-pk-angebot"); if (b) b.remove(); return; }
+    case "pk-loeschen": if (!confirm("Diesen Passkey entfernen? Auf dem Gerät klappt Face ID dann nicht mehr (Passwort geht weiter).")) return; await jpost("/api/passkey/loeschen", { id }); return anmeldungBox({ ok: true, text: "Passkey entfernt. Tipp: auch in den iPhone-Einstellungen unter Passwörter löschen." });
+    case "sz-widerrufen": { const r = await jpost("/api/sitzungen/widerrufen", { id }); return anmeldungBox({ ok: true, text: `${(r && r.abgemeldet) || 0} Gerät abgemeldet.` }); }
+    case "sz-alle": { if (!confirm("Alle anderen Geräte abmelden?")) return; const r = await jpost("/api/sitzungen/widerrufen", { alle: true }); return anmeldungBox({ ok: true, text: `${(r && r.abgemeldet) || 0} Gerät(e) abgemeldet.` }); }
+    case "logout": await jpost("/api/logout"); location.href = "/login?abgemeldet=1"; return;
     case "antrag-freigeben": await jpost(`/api/antraege/${id}/freigeben`); return reFreig();
     case "antrag-ablehnen": { const grund = prompt("Grund der Ablehnung?", ""); if (grund === null) return; await jpost(`/api/antraege/${id}/ablehnen`, { grund }); return reFreig(); }
     case "antrag-revidieren": { const feedback = prompt("Was soll anders/besser sein? LUNA überarbeitet den Antrag (du musst neu freigeben).", ""); if (feedback === null) return; flash("⏳ überarbeitet…"); await jpost(`/api/antraege/${id}/revidieren`, { feedback }); return reFreig(); }
@@ -2784,5 +2840,5 @@ document.addEventListener("drop", (e) => { if (!EDIT2 || !DRAG2) return; const t
   let saved = PREFS.v2_dashboard; if (!saved) { try { saved = JSON.parse(localStorage.getItem("luna-v2-dash") || "null"); } catch { } }
   DASH2 = normDash2(saved);
   if (!PREFS.avatar) { try { const a = localStorage.getItem("luna-v2-avatar"); if (a) PREFS.avatar = a; } catch { } }
-  buildShell(); go("dash"); connectSSE(); applyAvatar();
+  buildShell(); go("dash"); connectSSE(); applyAvatar(); passkeyAngebot();
 })();
