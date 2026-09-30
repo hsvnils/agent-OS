@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 11:06] — Claude Code
+- **Was:** Favicon rund und mit ganzem Gesicht: Ausschnitt 620 px um den Kopf (Haare bis Kinn), leicht mehr Kontrast,
+  kreisfoermig freigestellt (transparente Ecken) fuer `favicon-32.png`, `favicon-192.png`, `favicon.ico`;
+  `apple-touch-icon.png` bleibt quadratisch mit demselben Ausschnitt (iOS rundet selbst, Transparenz wuerde dort schwarz);
+  Cache-Version der Icons auf `?v=2`.
+- **Warum:** CEO 2026-09-30: „Bild ist eckig, bitte rund und so, dass Lunas Gesicht richtig zu sehen ist“.
+- **Betroffen:** `orchestrator/channels/web/static/` (Favicon-Dateien, `index-v2.html`)
+
 ## [2026-09-30 11:03] — Claude Code
 - **Was:** Lunas Portraet als Favicon: Gesichtsausschnitt aus `luna-portrait.png` (per ffmpeg) als `favicon-32.png`,
   `favicon-192.png`, `apple-touch-icon.png` (180 px, Home-Bildschirm iPhone/iPad) und `favicon.ico`; Links im Kopf von
