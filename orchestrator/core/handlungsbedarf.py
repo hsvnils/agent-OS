@@ -2,7 +2,8 @@
 dringenden Handlungen ueber das gesamte LUNA-System anzeigt, die ich durchfuehren muss“).
 
 Sammelt die bestehenden Tages-To-dos (`/api/todos`: Rechnungen, Angebote, Belege, Abos, Zeiten, Firmenakte, CRM,
-Reels) und ergaenzt: offene Antraege (Freigaben), offene Investment-Entscheidungen (Telegram-Freigaben) und
+Reels) und ergaenzt: offene Antraege (Freigaben), offene Investment-Entscheidungen der letzten 2 Tage (aeltere
+Kauf-Chancen sind ueberholt und bleiben unangetastet im Speicher) und
 Betriebsstoerungen (Bot-Herzschlag, haengende Telegram-Meldungen, gleiche Schwellen wie der Waechter). Jeder Punkt
 bekommt eine **Stufe** -- dringend (ueberfaellig/heute oder Stoerung), diese Woche (faellig in 7 Tagen oder wartet
 auf dich), wenn Zeit ist -- und den Bereich der neuen Navigation fuer Filter und Sprung. Reine Lesefunktion: Erledigt
@@ -18,6 +19,7 @@ from datetime import date, timedelta
 from .betriebswaechter import BOT_STUMM_MIN, ZUSTELLUNG_MIN
 
 STUFEN = ("dringend", "woche", "spaeter")
+INVESTMENT_MAX_TAGE = 2      # Kauf-/Verkaufs-Chancen veralten schnell; aeltere offene Telegram-Anfragen sind ueberholt
 # To-do-Bereich (core/todos.py, /api/todos) -> Bereich der Navigation
 _BEREICH = {"CRM": "content", "Content": "content", "Investment": "investment", "Freigaben": "luna", "Betrieb": "luna"}
 
@@ -41,6 +43,10 @@ def zusammenstellen(todos: list[dict], *, antraege: list[dict] | None = None, in
                        "detail": "; ".join(a.get("titel", "")[:50] for a in antraege[:3]) + (" …" if len(antraege) > 3 else ""),
                        "act": "go:freigaben", "act_id": "", "faellig": "", "dringend": False, "stufe": "woche", "anzahl": len(antraege),
                        "seit": aeltester, "erledigen": None})
+    if investment:                                 # nur frische Anfragen (Datum steckt in der ID: APV-JJJJMMTT-...)
+        grenze = (heute - timedelta(days=INVESTMENT_MAX_TAGE)).strftime("%Y%m%d")
+        investment = [a for a in investment if (a.get("id") or "")[4:12] >= grenze
+                      or str(a.get("erstellt") or "")[:10].replace("-", "") >= grenze]
     if investment:
         punkte.append({"id": "investment-freigaben", "bereich": "Investment", "icon": "📈",
                        "titel": f"{len(investment)} Investment-Entscheidung(en) offen",

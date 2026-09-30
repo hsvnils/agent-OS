@@ -3,7 +3,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/plan-ui-navigation` (Plan); Umsetzung je Etappe auf eigenem Branch `ai/ui-etappe-<n>`
 - Basiscommit: `86393dc`
-- Naechster Schritt: Etappen 1-6 umgesetzt (Branch `ai/ui-etappen`); CEO-Go fuer Merge, Push und Deploy abwarten -- Deploy braucht einen Image-Neubau (neue Bibliothek `webauthn`), danach Live-Pruefung und Abnahme auf iPhone, iPad und Rechner.
+- Naechster Schritt: Etappen 1-6 live (deployt 2026-09-30, `52718fa`, Image-Neubau durch den CEO, live geprueft); CEO-Abnahme auf iPhone (Login, Face ID einrichten), iPad und Rechner. Nachbesserung Investment-Alter (Branch `ai/hb-investment-alter`) wartet auf Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

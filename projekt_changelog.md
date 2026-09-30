@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 19:44] — Claude Code
+- **Was:** UI-Roadmap Etappen 1-6 live geprueft nach Image-Neubau (CEO): `/` ohne Login -> `/login`, API ohne Login 401
+  ohne Basic-Fenster, Basic (Waechter-Weg) 200, UI v76 + `passkey.js` ausgeliefert, Passkey-Start ueber
+  `https://os.hanserautisch.synology.me` liefert rpId (Bibliothek im Container), echter Login ueber HTTPS: falsches
+  Passwort abgewiesen, Cookie mit HttpOnly/Secure/SameSite=Lax/30 Tage, POST ohne Herkunft 403, Abmelden beendet die
+  Sitzung. Handlungsbedarf live: 6 Punkte. Nachbesserung: offene Investment-Anfragen zaehlen nur noch bis 2 Tage alt
+  (live standen 5 ueberholte Anfragen vom 09.07. bis 23.09. als „dringend“; Speicher unveraendert), Test angepasst.
+- **Warum:** Abnahme-Pruefung nach Deploy; Glocke soll nur echten Handlungsbedarf zeigen.
+- **Betroffen:** `orchestrator/core/handlungsbedarf.py`, `orchestrator/tests/test_handlungsbedarf.py`, `LUNA_OS_UI_ROADMAP.md`
+
 ## [2026-09-30 19:35] — Claude Code
 - **Was:** Vor dem Deploy Synology-Reverse-Proxy lesend geprueft (`Host` = $http_host, `X-Forwarded-Proto` = $scheme ->
   Herkunftsschutz und Passkey-Adresse passen). Dabei BF-47 gefunden und behoben: Fehlversuch-Bremse nutzt `X-Real-IP`
