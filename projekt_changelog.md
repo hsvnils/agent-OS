@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 13:43] — Claude Code
+- **Was:** Belege 2026 aus dem Ordner `Desktop/LUNA-Uebertrag/Belege` (MACO470) live in LUNA-OS hochgeladen: 73 Dateien
+  (9 Meta-Verified-Mails ausgelassen) -> 67 neue Belege ER-2026-0064 bis -0130 (zu pruefen), 6 als Dubletten vorhandener
+  Belege erkannt. Eigenbelege nach CEO-Vorgabe: Canva Pro 02-07 und 09/2026 je 12,00 EUR (EB-2026-0005 bis -0011, Verweis
+  auf Januar-Rechnung ER-2026-0130), Sky 01-09/2026 einzeln laut Zahlungsuebersicht (EB-2026-0012 bis -0020, neuer
+  Lieferant L-00017). Verworfen mit Grund: ER-2026-0038 (Dublette Klarmobil 09/2026), ER-2026-0043 (Meta Verified),
+  ER-2026-0129 (Sky-Uebersicht, keine Rechnung). Keine Buchungen der Eingangsbelege -- das macht der CEO.
+- **Warum:** CEO 2026-09-30: Belege 2026 aus dem Ordner uebernehmen, Canva und Sky als Einzelbelege, 0038/0043 doppelt.
+- **Betroffen:** Live-Kassenbuch auf der NAS (`buchhaltung/`), keine Code-Dateien
+
 ## [2026-09-30 13:27] — Claude Code
 - **Was:** Beleg-Import: Upload in LUNA-OS nimmt gespeicherte Mails (`.eml`) und Postfaecher (`.mbox`) an
   (`eingangsbelege.datei_importieren`/`eml_aufnehmen`, gleiche Erkennung wie Mails an LUNA, idempotent, Dubletten erkannt);
