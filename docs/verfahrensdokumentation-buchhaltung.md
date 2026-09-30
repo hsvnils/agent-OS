@@ -42,6 +42,8 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    **Provisionen** (z. B. Affiliate): Angebot und Auftrag nennen nur das Modell (Euro je verkauftem Artikel bzw. Prozent
    vom vermittelten Umsatz); die Rechnung entsteht nach der Abrechnung (Stueckzahl bzw. Umsatz) mit ausgewiesener
    Berechnungsgrundlage; eine Rechnung mit nicht abgerechneter Provision kann nicht festgeschrieben werden.
+   **Firmenakte**: Geschaeftsbriefe (z. B. Anwaltsschreiben, Vertraege) und Mails je Geschaeftspartner werden unveraendert
+   (Original `.eml` + Hash) mit Datum und optionalem Bezug zur Rechnung abgelegt.
 4. **Korrektur** nur per **Stornorechnung** (eigene Nummer, negativer Betrag, Bezug auf das Original) und ggf.
    neuer Rechnung.
 5. **Zahlungseingang** wird von Hand erfasst (Datum laut Kontoauszug, Teilzahlungen moeglich).

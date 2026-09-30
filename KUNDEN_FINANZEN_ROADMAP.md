@@ -780,7 +780,15 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 24: Firmenakte -- Dokumente und Mailverlauf je Firma
 
-- Status: geplant (CEO-Wunsch 2026-09-30), wartet auf CEO-Go
+- Status: umgesetzt (CEO-Go 2026-09-30), Deploy offen
+- Ergebnis: `core/firmenakte.py` -- Upload je Firma (Art, Titel, Datum, Bezug z. B. RG-11052026; Geschaeftsbrief 6 Jahre),
+  Mails im 15-min-Poll des Bots: vom CEO weitergeleitete Nicht-Beleg-Mails (Original-Absender, DKIM-geprueft, Text
+  darueber = Notiz) und Mails mit LUNA in CC/BCC oder vom CEO -> `.eml` + PDF-Ansicht in der Akte; Zuordnung ueber
+  exakte Adressen (Rechnungs-Mail, Rechnungs-Absender, Ansprechpartner) oder Domain (nie Freemail); keine/mehrere Firmen
+  -> To-do „Mail zuordnen“. Endpunkte `/api/crm/kunden/<nr>/akte` (GET/POST), `/api/crm/akte/<id>/datei`,
+  `/api/crm/akte/offen`, `/api/crm/akte/<id>/zuordnen`; Rechnungs-Detail zeigt Dokumente mit Bezug. LUNA-OS: „📁 Akte“ in der
+  Kunden-Detailansicht, Zuordnen-Fenster. Beim Testen gefunden und behoben: `firmen()` liefert keine Ansprechpartner.
+  Tests `test_firmenakte.py` (7) + 8 Gegenproben, Browser-Test.
 - Ausgangslage: Dokumente gibt es nur an Belegen/Rechnungen/Angeboten; Mails werden nur fuer Angebote (Antworten) und im
   Collab-CRM (Phase 19, Instagram-Firmen) mitgeschrieben -- nicht an den Stammdaten-Firmen (K-/L-/P-).
 - Ziel / Scope:

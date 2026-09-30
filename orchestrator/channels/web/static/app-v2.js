@@ -633,10 +633,12 @@ async function kundeDetail(nr, meldung) {
     <h3>Stammdaten</h3>${kundeRecherche(f, d)}<div class="v2-form">${formFelder("ke", FIRMA_FORM, f)}
     <label class="v2-modlbl"><input type="checkbox" id="ke-aktiv" ${f.aktiv ? "checked" : ""}> Aktiv (inaktive Firmen bleiben erhalten, nur ausgeblendet)</label>
     <button class="v2-btn pri" data-act="kunde-speichern" data-id="${esc(f.nummer)}">Änderungen speichern</button><div id="ke-msg" class="v2-msg"></div></div>
+    <h3>📁 Akte <small class="v2-sub">Dokumente &amp; Mails</small></h3><div id="akte-box"><div class="v2-empty">Lade…</div></div>
     <h3>Ansprechpartner</h3>${aps}<button class="v2-btn" data-act="kunde-ap-neu" data-id="${esc(f.nummer)}" style="margin-top:8px">+ Ansprechpartner</button><div id="kap-box"></div>
     <h3>Angebote</h3><button class="v2-btn" data-act="an-neu" data-id="${esc(f.nummer)}">+ Angebot für ${esc(f.name)}</button>
     <h3>Collab-CRM</h3>${collab}
     <h3>Verlauf</h3>${verlauf}`);
+  akteLaden(f.nummer);
 }
 // Etappe 22: oeffentliche Firmendaten (Impressum) vorschlagen -- uebernommen wird nur per Klick
 function kundeRecherche(f, d) {
@@ -647,6 +649,37 @@ function kundeRecherche(f, d) {
   return `<div class="v2-msg" style="margin:6px 0 12px"><b>🔎 Vorschläge aus dem Netz</b>${d.vorschlag_quelle ? ` · Quelle: <a href="${esc(d.vorschlag_quelle)}" target="_blank" rel="noopener">${esc(d.vorschlag_quelle.replace(/^https?:\/\//, ""))}</a>` : ""}
     ${offen.map(k => `<div class="v2-kv"><span>${esc(namen[k] || k)}</span><b>${esc(v[k])} <button class="v2-btn sm" data-act="kunde-vorschlag" data-id="${esc(f.nummer)}" data-val="${esc(k)}">Übernehmen</button></b></div>`).join("")}
     <div class="v2-card-actions" style="margin-top:6px"><button class="v2-btn ok sm" data-act="kunde-vorschlag" data-id="${esc(f.nummer)}" data-val="">Alle übernehmen</button><button class="v2-btn sm" data-act="kunde-vorschlag-weg" data-id="${esc(f.nummer)}">Verwerfen</button>${knopf}</div></div>`;
+}
+// Etappe 24: Firmenakte -- Dokumente hochladen, Mails (weitergeleitet / LUNA in CC) chronologisch
+async function akteLaden(nr) {
+  const box = $("#akte-box"); if (!box) return;
+  const d = await jget(`/api/crm/kunden/${encodeURIComponent(nr)}/akte`);
+  const docs = (d && d.dokumente) || [], arten = (d && d.arten) || {};
+  const ICON = { mail: "✉️", anwalt: "⚖️", vertrag: "📜", schreiben: "📄", notiz: "📝", sonstiges: "📎" };
+  box.innerHTML = (docs.length ? docs.map(x => `<div class="v2-list-row"><span>${ICON[x.art] || "📎"}</span><div class="grow"><b><a href="/api/crm/akte/${encodeURIComponent(x.id)}/datei" target="_blank" rel="noopener">${esc(x.titel)}</a></b>
+      <small>${esc(datumDe(x.datum))} · ${esc(arten[x.art] || x.art)}${x.mail_von ? " · von " + esc(x.mail_von) : ""}${x.bezug ? " · zu " + esc(x.bezug) : ""}${x.notiz ? " · " + esc(x.notiz) : ""}${(x.dateien || []).length > 1 ? ` · <a href="/api/crm/akte/${encodeURIComponent(x.id)}/datei?i=1">Original (.eml)</a>` : ""}</small></div></div>`).join("")
+    : `<div class="v2-sub">Noch nichts abgelegt. Mails landen hier automatisch, wenn du sie an LUNA weiterleitest oder LUNA in CC/BCC nimmst.</div>`)
+    + `<details style="margin-top:8px"><summary><small>+ Dokument hochladen</small></summary><div class="v2-form">
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Datei *</small><input id="ak-datei" type="file"></label><label class="v2-feld"><small>Art</small><select id="ak-art">${Object.entries(arten).filter(([k]) => k !== "mail").map(([k, n]) => `<option value="${esc(k)}">${esc(n)}</option>`).join("")}</select></label></div>
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Titel</small><input id="ak-titel" placeholder="z. B. Schreiben der Anwältin"></label><label class="v2-feld"><small>Datum</small><input id="ak-datum" type="date"></label><label class="v2-feld"><small>Bezug (optional)</small><input id="ak-bezug" placeholder="z. B. RG-11052026"></label></div>
+      <label class="v2-feld"><small>Notiz</small><input id="ak-notiz"></label>
+      <button class="v2-btn" data-act="akte-hochladen" data-id="${esc(nr)}">Ablegen</button><div id="ak-msg" class="v2-msg"></div></div></details>`;
+}
+async function akteHochladen(nr) {
+  const f = ($("#ak-datei") || {}).files; if (!f || !f.length) return kundenMsg("ak-msg", "Bitte eine Datei wählen.", false);
+  const datei = await blLesen(f[0]);
+  const r = await jpost(`/api/crm/kunden/${encodeURIComponent(nr)}/akte`, { datei, art: $("#ak-art").value, titel: $("#ak-titel").value.trim(), datum: $("#ak-datum").value, bezug: $("#ak-bezug").value.trim(), notiz: $("#ak-notiz").value.trim() });
+  if (!r || !r.ok) return kundenMsg("ak-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+  return akteLaden(nr);
+}
+async function akteZuordnenForm(did) {
+  const [o, k] = await Promise.all([jget("/api/crm/akte/offen"), jget("/api/crm/kunden")]);
+  const m = ((o && o.mails) || []).find(x => x.id === did); if (!m) return openModal("Mail zuordnen", emptyRow("Diese Mail ist schon zugeordnet."));
+  const firmen = ((k && k.firmen) || []).filter(f => f.aktiv !== false);
+  openModal("Mail zuordnen", `<div class="v2-form"><div class="v2-kv"><span>Betreff</span><b><a href="/api/crm/akte/${encodeURIComponent(did)}/datei" target="_blank" rel="noopener">${esc(m.titel)}</a></b></div>
+    <div class="v2-kv"><span>Von</span><b>${esc(m.mail_von || "?")}</b></div>${m.notiz ? `<div class="v2-kv"><span>Deine Notiz</span><b>${esc(m.notiz)}</b></div>` : ""}
+    <label class="v2-feld"><small>Firma</small><select id="az-firma">${firmen.map(f => `<option value="${esc(f.nummer)}" ${(m.kandidaten || [])[0] === f.nummer ? "selected" : ""}>${esc(f.name)} (${esc(firmaNr(f))})</option>`).join("")}</select></label>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="akte-zuordnen-ok" data-id="${esc(did)}">Zuordnen</button><button class="v2-btn" data-act="akte-zuordnen-keine" data-id="${esc(did)}">Gehört zu keiner Firma</button></div></div>`);
 }
 async function kundeSpeichern(nr) {
   const firma = { ...formWerte("ke", FIRMA_FORM), aktiv: !!($("#ke-aktiv") || {}).checked };
@@ -1416,6 +1449,7 @@ async function reDetail(id, meldung, fehler) {
   if (r.bezug) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.bezug)}">↩ Original ${esc(r.bezug)}</button>`;
   if (r.storniert_durch) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.storniert_durch)}">Storno ${esc(r.storniert_durch)}</button>`;
   const MSTUFE = { 1: "1. Mahnung", 2: "2. Mahnung", 3: "Letzte Mahnung" };
+  const dokumente = (d.dokumente || []).map(x => `<div class="v2-list-row"><span>📎</span><div class="grow"><b><a href="/api/crm/akte/${encodeURIComponent(x.id)}/datei" target="_blank" rel="noopener">${esc(x.titel)}</a></b><small>${esc(datumDe(x.datum))}${x.notiz ? " · " + esc(x.notiz) : ""}</small></div></div>`).join("");
   const mahnungen = (d.mahnungen || []).map(m => `<div class="v2-list-row"><span>⚠️</span><div class="grow"><b>${esc(MSTUFE[m.stufe])} ${esc(m.nummer)} · ${cent2eur(m.summe_cent)}</b><small>${esc(datumDe(m.datum))} · Frist ${esc(datumDe(m.frist))} · ${m.versendet_am ? "✉️ gesendet an " + esc((m.mail || {}).an || "") : "noch nicht gesendet"}</small></div>
     <a class="v2-btn sm" href="/api/finanzen/mahnungen/${encodeURIComponent(m.nummer)}/pdf" target="_blank" rel="noopener">📄</a>${m.versendet_am ? "" : `<button class="v2-btn pri sm" data-act="ma-senden" data-id="${esc(m.nummer)}">✉️ Senden …</button>`}</div>`).join("");
   const zahlungen = (r.zahlungen || []).map((z, i) => `<div class="v2-list-row${z.storniert ? " v2-fin-storno" : ""}"><span>💶</span><div class="grow"><b>${cent2eur(z.betrag_cent)}${z.nebenforderung_cent ? " + " + cent2eur(z.nebenforderung_cent) + " Zinsen/Kosten" : ""}</b><small>${esc(datumDe(z.datum))}${z.zuordnung_jahr ? " · zugeordnet " + esc(z.zuordnung_jahr) : ""}${z.notiz ? " · " + esc(z.notiz) : ""}${z.storniert ? " · storniert: " + esc(z.storno_grund || "") : ""}</small></div>${!z.storniert && r.status !== "storniert" ? `<button class="v2-btn" data-act="re-zahlung-storno" data-id="${esc(r.nummer)}" data-val="${i}" title="Falsch erfasste Zahlung zurücknehmen">↶</button>` : ""}</div>`).join("");
@@ -1438,6 +1472,7 @@ async function reDetail(id, meldung, fehler) {
     ${r.versendet_mail ? `<div class="v2-kv"><span>Gesendet</span><b>✉️ ${esc(r.versendet_mail.an)} · ${esc(zeit(r.versendet_am))}</b></div>` : ""}
     ${zahlungen ? `<h3>Zahlungen</h3>${zahlungen}` : ""}
     ${mahnungen ? `<h3>Mahnungen</h3>${mahnungen}` : ""}
+    ${dokumente ? `<h3>Dokumente</h3>${dokumente}` : ""}
     <h3>Verlauf</h3>${verlauf}
     </div><div>
     <div id="re-aktion-box"></div>
@@ -2334,6 +2369,10 @@ async function handleAct(act, el) {
     case "bl-verwerfen": { const grund = prompt("Warum ist das kein Beleg? (z. B. versehentlich hochgeladen)", ""); if (!grund) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/verwerfen`, { grund }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Verworfen — die Datei bleibt archiviert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "re-neu": return reEditor("");
     case "re-alt-form": return reAltForm();
+    case "akte-hochladen": return akteHochladen(id);
+    case "akte-zuordnen": return akteZuordnenForm(id);
+    case "akte-zuordnen-ok": case "akte-zuordnen-keine": { const r = await jpost(`/api/crm/akte/${encodeURIComponent(id)}/zuordnen`, { firma: act === "akte-zuordnen-ok" ? $("#az-firma").value : "" });
+      if (!r || !r.ok) return alert((r && r.hinweis) || "Fehler."); closeModal(); return renderDash(); }
     case "kunde-recherche": { el.disabled = true; el.textContent = "⏳ suche …"; const r = await jpost(`/api/crm/kunden/${encodeURIComponent(id)}/recherche`, {});
       return kundeDetail(id, !r || !r.ok ? ((r && r.hinweis) || "Suche fehlgeschlagen.") : Object.keys(r.vorschlaege || {}).length ? `${Object.keys(r.vorschlaege).length} Vorschlag/Vorschläge gefunden – bitte prüfen.` : "Nichts Passendes gefunden."); }
     case "kunde-vorschlag": { const r = await jpost(`/api/crm/kunden/${encodeURIComponent(id)}/vorschlaege`, val ? { felder: [val] } : {});
