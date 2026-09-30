@@ -276,5 +276,15 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                                  f"{firmen.get(a['firma'], a['firma'])} · Leistung erledigt, noch keine Rechnung",
                                  "ab-detail", a["nummer"],
                                  (date.fromisoformat(str(a.get("erledigt_am") or h)[:10]) + timedelta(days=7)).isoformat(), h))
+        try:                                                     # Etappe 21: Lagerbestand unter Mindestbestand
+            from .katalog import Katalog
+            from .lager import bestaende
+            for x in bestaende(e, Katalog(bh).laden()).values():
+                if x["niedrig"]:
+                    out.append(_todo(f"lager:{x['id']}", "Lager", "📦", f"Lagerbestand niedrig: {x['name']}",
+                                     f"Bestand {x['bestand']}, Mindestbestand {x['mindestbestand']} – nachbestellen oder "
+                                     "Zugang erfassen", "go:angebote:katalog", "", h, h))
+        except Exception:
+            pass
         out += finanzcheck(e, heute, rechnungen=rechnungen)
     return sorted(out, key=lambda t: (not t["dringend"], t["faellig"] or "9999", t["titel"]))

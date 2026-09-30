@@ -2347,6 +2347,23 @@ def katalog_lesen(request: Request):
     return {"katalog": k.laden(), "gespeichert": k.pfad.exists(), "darf_aendern": hat_modul(u, "finanzen"), "omr": OMR}
 
 
+@app.get("/api/finanzen/lager")
+def lager_liste():
+    """Etappe 21: Bestaende physischer Ware (Zugaenge minus Verkaeufe laut Rechnungen)."""
+    from ...core.lager import Lager
+    return {"artikel": Lager(kunden_store.bh, Katalog(kunden_store.bh)).uebersicht()}
+
+
+@app.post("/api/finanzen/lager/{artikel}/bewegung")
+async def lager_bewegung(artikel: str, request: Request):
+    """Zugang/Korrektur erfassen (Modul finanzen)."""
+    from ...core.lager import Lager
+    body = await _json(request)
+    return _kunden_aktion(lambda: Lager(kunden_store.bh, Katalog(kunden_store.bh)).bewegung(
+        artikel, body.get("menge"), grund=body.get("grund") or "", datum=body.get("datum") or "",
+        beleg=body.get("beleg") or "", von=_von(request)))
+
+
 @app.post("/api/crm/katalog")
 async def katalog_speichern(request: Request):
     """Katalog speichern -- Preise sind Geschaeftsdaten: nur mit Modul finanzen (Owner)."""

@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 import re
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
 from .buchhaltung import Buchhaltung
@@ -195,6 +196,21 @@ def _txt(v, n=1500) -> str:
     return str(v if v is not None else "").strip()[:n]
 
 
+KOSTEN_ARTEN = {"einkauf": "Einkauf", "fremdleistung": "Fremdleistung/Freelancer", "material": "Material",
+                "reise": "Reise/Fahrt", "sonstiges": "Sonstiges"}                 # Etappe 21: interne Kosten je Artikel
+MINDESTMARGE = 30
+
+
+def kalkulation(it: dict, mindestmarge: float = MINDESTMARGE) -> dict | None:
+    """Deckungsbeitrag und Marge eines Artikels (nur intern). None ohne Kosten oder ohne festen Preis (Provision)."""
+    kosten = sum((it.get("kosten") or {}).values())
+    if not kosten or it.get("provision_art") or not it.get("preis_cent"):
+        return None
+    db = it["preis_cent"] - kosten
+    marge = round(db * 100 / it["preis_cent"], 1)
+    return {"kosten_cent": kosten, "db_cent": db, "marge_prozent": marge, "unter_mindestmarge": marge < mindestmarge}
+
+
 def pruefe(k: dict) -> dict:
     """Validiert und normalisiert einen Katalog. ValueError mit verstaendlichem Grund."""
     if not isinstance(k, dict):
@@ -230,6 +246,31 @@ def pruefe(k: dict) -> dict:
                 if not (0 < w <= (10_000_000 if it["provision_art"] == "stueck" else 100)):
                     raise ValueError(f"{iid}: Provisionssatz ausserhalb des Rahmens.")
                 eintrag |= {"provision_art": it["provision_art"], "provision_wert": w}
+            kosten = {}                                                   # Etappe 21: Kalkulation + Lager
+            for art in KOSTEN_ARTEN:
+                try:
+                    c = int((it.get("kosten") or {}).get(art) or 0)
+                except (TypeError, ValueError):
+                    raise ValueError(f"{iid}: Kosten ({KOSTEN_ARTEN[art]}) muessen Zahlen sein.") from None
+                if not 0 <= c <= 100_000_000:
+                    raise ValueError(f"{iid}: Kosten ({KOSTEN_ARTEN[art]}) ausserhalb des Rahmens.")
+                if c:
+                    kosten[art] = c
+            if kosten:
+                eintrag["kosten"] = kosten
+            if it.get("physisch"):
+                try:
+                    mind = int(it.get("mindestbestand") or 0)
+                except (TypeError, ValueError):
+                    raise ValueError(f"{iid}: Mindestbestand als ganze Zahl.") from None
+                if not 0 <= mind <= 1_000_000:
+                    raise ValueError(f"{iid}: Mindestbestand ausserhalb des Rahmens.")
+                start = str(it.get("lager_start") or "")[:10]
+                try:
+                    start = date.fromisoformat(start).isoformat() if start else date.today().isoformat()
+                except ValueError:
+                    raise ValueError(f"{iid}: Lager-Start ungueltig.") from None
+                eintrag |= {"physisch": True, "mindestbestand": mind, "lager_start": start}
             if it.get("kontakte") not in (None, "", 0, "0"):             # Etappe 16: Preis = Kontakte x TKP + Produktion
                 try:
                     tk = {k: int(it.get(k) or 0) for k in TKP_FELDER if k != "omr"}
@@ -270,7 +311,12 @@ def pruefe(k: dict) -> dict:
         rmax = int(k.get("rabatt_max", 30))
     except (TypeError, ValueError):
         rmax = 30
-    return {"gruppen": gruppen, "zuschlaege": zuschlaege, "rabatt_max": max(0, min(rmax, 90)), "texte": texte}
+    try:
+        mm = float(str(k.get("mindestmarge_prozent", MINDESTMARGE)).replace(",", "."))
+    except (TypeError, ValueError):
+        mm = MINDESTMARGE
+    return {"gruppen": gruppen, "zuschlaege": zuschlaege, "rabatt_max": max(0, min(rmax, 90)), "texte": texte,
+            "mindestmarge_prozent": max(0.0, min(round(mm, 1), 95.0))}
 
 
 class Katalog:

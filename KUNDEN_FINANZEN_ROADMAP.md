@@ -4,7 +4,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 Provisionsmodell umgesetzt (Deploy offen); freigegeben und in dieser Reihenfolge: 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappe 21 Kalkulation + Lager umgesetzt (Deploy offen); freigegeben und in dieser Reihenfolge: 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -717,8 +717,15 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 21: Artikel-Kalkulation (Einkauf, Kosten, Marge) und Lagerbestand im Leistungskatalog
 
-- Status: freigegeben (CEO-Go 2026-09-30: „die fehlenden einbauen und fuer physische Ware schon mal einen moeglichen
-  Lagerbestand als Funktion“ -- aktuell keine physische Ware, Funktion fuer die Zukunft)
+- Status: umgesetzt (CEO-Go 2026-09-30: „die fehlenden einbauen und fuer physische Ware schon mal einen moeglichen
+  Lagerbestand als Funktion“ -- aktuell keine physische Ware, Funktion fuer die Zukunft), Deploy offen
+- Ergebnis: Katalog-Artikel mit internen Kosten (`kosten`: Einkauf, Fremdleistung, Material, Reise, Sonstiges) ->
+  `katalog.kalkulation` (Kosten, Deckungsbeitrag, Marge, Warnung unter `mindestmarge_prozent`, Standard 30 %); Angebots-
+  Editor zeigt „🔒 Intern“ Kosten/DB/Marge (nie im PDF, Test). Lager: `physisch`, `mindestbestand`, `lager_start`;
+  `core/lager.py` -- Bestand = Zugaenge/Korrekturen (Ereignis `lager_bewegung`) minus Verkaeufe laut festgeschriebenen
+  Rechnungen ab Lager-Start, Storno bucht zurueck; To-do „Lagerbestand niedrig“; Endpunkte `GET /api/finanzen/lager`,
+  `POST /api/finanzen/lager/<id>/bewegung`; LUNA-OS: Katalog „Kalkulation & Lager“ je Artikel, Mindestmarge, Kachel
+  „📦 Lager“ mit Bewegungs-Formular. Tests `test_kalkulation_lager.py` (5) + 8 Gegenproben, Browser-Test.
 - Zusatz Lager: Artikel optional als „physische Ware“ mit Bestand, Mindestbestand, Einkaufspreis; Zugang (Einkauf,
   optional mit Eingangsbeleg) und Abgang (Rechnung/Angebot angenommen) als Ereignisse; Warnung unter Mindestbestand.
 - Ausgangslage: Eigene Artikel anlegen geht schon -- LUNA-OS „Angebote & Auftraege“ -> Katalog (Name, Preis, Einheit,
