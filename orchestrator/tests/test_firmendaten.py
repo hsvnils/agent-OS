@@ -99,6 +99,17 @@ class TestRecherche(unittest.TestCase):
         r = FirmenRecherche(ks, suche=leer.suche, abruf=leer.abruf).recherchieren(nr)
         self.assertEqual((r["vorschlaege"], leer.abrufe), ({}, []))                  # Portale werden nie abgerufen
 
+    def test_2b_fremde_seiten(self):
+        bh, ks, st, k, ap = _stores()
+        nr = ks.firma_anlegen({"name": "Microsoft Payments"})["nummer"]
+        n = _Netz({"https://www.kuendigung.org/impressum": IMPRESSUM.replace("Kiez Alm Gastro GmbH", "Kündigung.org GmbH")},
+                  [("Microsoft Payments kündigen – kuendigung.org", "https://www.kuendigung.org/microsoft")])
+        r = FirmenRecherche(ks, suche=n.suche, abruf=n.abruf).recherchieren(nr)
+        self.assertEqual((r["vorschlaege"], n.abrufe), ({}, []))                     # Titel allein reicht nicht
+        nr2 = ks.firma_anlegen({"name": "Beispiel Werke GmbH", "website": "https://www.beispiel-werke.de"})["nummer"]
+        n2 = _Netz({"https://www.beispiel-werke.de/impressum": IMPRESSUM})           # Impressum nennt eine andere Firma
+        self.assertEqual(FirmenRecherche(ks, abruf=n2.abruf).recherchieren(nr2)["vorschlaege"].get("ustid"), None)
+
     def test_3_wochenlauf(self):
         bh, ks, nr = self._kiez()
         for i in range(10):

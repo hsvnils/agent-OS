@@ -96,14 +96,30 @@ def _basis(url: str) -> str:
     return f"{u.scheme or 'https'}://{u.netloc}" if u.netloc else ""
 
 
+def _namenswoerter(name: str) -> list[str]:
+    return [w for w in re.findall(r"[a-zäöüß0-9]{4,}", (name or "").lower())
+            if w not in ("gmbh", "mbh", "gastro", "group", "international", "limited", "deutschland", "germany", "payments",
+                         "distribution", "platforms", "ireland", "fernsehen", "trading", "photo", "video")]
+
+
+def _klar(s: str) -> str:
+    return s.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+
+
 def _passt(name: str, url: str, titel: str = "") -> bool:
+    """Treffer gehoert zur Firma, wenn ein kennzeichnendes Namenswort in der **Domain** steht (nicht nur im Titel --
+    sonst landen Verbraucherportale wie kuendigung.org oder datenanfragen.de als „Firmen-Website“ im Vorschlag)."""
     host = urllib.parse.urlparse(url).netloc.lower()
     if not host or any(p in host for p in PORTALE):
         return False
-    woerter = [w for w in re.findall(r"[a-zäöüß0-9]{4,}", name.lower())
-               if w not in ("gmbh", "mbh", "gastro", "group", "international", "limited", "deutschland", "germany")]
-    klar = lambda s: s.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")  # noqa: E731
-    return any(w in host or klar(w) in host or w in titel.lower() for w in woerter)
+    return any(w in host or _klar(w) in host for w in _namenswoerter(name))
+
+
+def _impressum_der_firma(name: str, text: str) -> bool:
+    """Das Impressum muss die Firma selbst nennen (kennzeichnendes Namenswort), sonst ist es eine fremde Seite."""
+    t = (text or "").lower()
+    woerter = _namenswoerter(name) or [w for w in re.findall(r"[a-zäöüß0-9]{3,}", (name or "").lower())]
+    return any(w in t or _klar(w) in _klar(t) for w in woerter)
 
 
 class FirmenRecherche:
@@ -153,6 +169,8 @@ class FirmenRecherche:
                 except Exception:
                     continue
                 if not re.search(r"(?i)impressum|imprint|angaben gem|legal notice|§\s?5", text):
+                    continue
+                if not _impressum_der_firma(f["name"], text):              # fremdes Impressum (z. B. Portal)
                     continue
                 gefunden = impressum_lesen(text)
                 if gefunden:
