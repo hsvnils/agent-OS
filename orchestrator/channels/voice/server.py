@@ -78,7 +78,8 @@ def main() -> None:
 
     cfg = _load_config()
     secrets = _load_secrets_map()
-    secret_values = [v for v in secrets.values() if v]
+    from ...governance.leak_guard import is_redactable_secret
+    secret_values = [v for v in secrets.values() if isinstance(v, str) and is_redactable_secret(v)]
 
     core = _build_live_core(cfg, secret_values)
     _serve(core, cfg, secrets, secret_values)

@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 09:27] — Claude Code
+- **Was:** BF-42 behoben: `leak_guard.redact` schwaerzt nur echte Geheimnisse (`is_redactable_secret`), `bot.py` und
+  `channels/voice/server.py` filtern die `.env`-Werte ebenso. Verstuemmelte Zeilen in `investment/features.jsonl` bleiben
+  erhalten, gelten als unbrauchbar und werden beim Lesen uebersprungen (`LoopStore.verstuemmelt()` zaehlt sie). Tagessperre
+  des Merkmals-Snapshots zusaetzlich im Speicher. CIO-Statusmeldungen (Merkmals-Snapshot, Prognose-/Insider-Abgleich,
+  Prognose erstellt, Markt-Screen erledigt) nur noch im Log statt per Telegram; Vorschlaege, Trades, Exits und
+  Depot-Hinweise kommen weiter. Neue Tests `test_bf42_schwaerzung.py` (Gegenprobe rot), Suite 1009 gruen.
+- **Warum:** CEO-Go 2026-09-30 („BF-42 fixen, Daten markieren“; keine Flut an CIO-Meldungen).
+- **Betroffen:** `orchestrator/governance/leak_guard.py`, `orchestrator/investment/loop_store.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/voice/server.py`,
+  `orchestrator/tests/test_bf42_schwaerzung.py`, `docs/bekannte-fehler.md`
+
 ## [2026-09-30 09:17] — Claude Code
 - **Was:** Nacht 29./30.09. geprueft (Telegram-Meldungen, Backoffice): Briefing, CFO-, Audit-, Reel- und Finanzcheck-Meldungen
   zugestellt; Self-Dev lief planmaessig nicht (woechentlich), kein Radar-Lauf. Backoffice hat nach Schliessen der

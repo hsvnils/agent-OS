@@ -7,6 +7,10 @@ Stand ueberschreiben. Schema: `docs/hcc_inv_loop.sql`. Leck-geschuetzt beim loka
 
 Das **Abweichungs-Register** (`inv_deviations`) ist bewusst getrennt und wird **nie ueberschrieben** -- es ist
 der Beweis, ob Daten-/Wissens-Anreicherung die Prognosen ueber Zeit genauer macht.
+
+**BF-42 (2026-09-30):** Bis zum Fix schwaerzte der Bot jede Ziffer 0/1 als vermeintliches Geheimnis. Diese Zeilen
+enthalten `[REDACTED]`, sind nicht verlustfrei rekonstruierbar und gelten als **unbrauchbar**: Sie bleiben in der
+Datei (append-only), werden beim Lesen aber uebersprungen (`verstuemmelt()` zaehlt sie).
 """
 from __future__ import annotations
 
@@ -14,7 +18,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from ..governance.leak_guard import redact
+from ..governance.leak_guard import REDACTED, redact
 
 TABELLEN = ("inv_features", "inv_forecasts", "inv_actuals", "inv_deviations", "inv_model_runs")
 
@@ -54,6 +58,12 @@ class LoopStore:
 
     def list(self, tabelle: str) -> list[dict]:
         return [e for e in self._events() if e.get("tabelle") == tabelle]
+
+    def verstuemmelt(self) -> int:
+        """Anzahl der als unbrauchbar markierten Zeilen (BF-42)."""
+        if not self.path.exists():
+            return 0
+        return sum(1 for z in self.path.read_text(encoding="utf-8").splitlines() if REDACTED in z)
 
     def last_datum(self, tabelle: str) -> str:
         items = self.list(tabelle)
@@ -115,7 +125,7 @@ class LoopStore:
         out: list[dict] = []
         for line in self.path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
-            if line:
+            if line and REDACTED not in line:          # verstuemmelte Altzeilen (BF-42) nicht verwenden
                 try:
                     out.append(json.loads(line))
                 except json.JSONDecodeError:
