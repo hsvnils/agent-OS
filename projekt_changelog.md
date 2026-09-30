@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 15:09] — Claude Code
+- **Was:** Alle 93 offenen Eingangsbelege live gebucht und als bezahlt erfasst (CEO-Go): Apple (iCloud+ Software,
+  AppleCare+ Gebuehren/Versicherungen), Microsoft, Anthropic, Supabase, Dropbox, Canva, DAZN (Software), Grover
+  (Sonstiges), Klarmobil (aufgeteilt: Rufnummer 01514/2085715 Telekommunikation, 0173/7428375 privat; Zahlung zum
+  Lastschrifttag). 10 USD-Belege mit EZB-Referenzkurs des Rechnungstags umgerechnet (Kurs in der Notiz). ER-2026-0042
+  (PayPal DAZN 08/2026) als Zahlungsnachweis zu ER-2026-0068. Neuer Lieferant L-00018 klarmobil GmbH; DAZN Limited wurde
+  der vorhandenen Nummer L-00014 (DAZN) zugeordnet. Stand: 124 gebucht, 6 verworfen, 0 offen. Entscheidung im Register.
+- **Warum:** CEO 2026-09-30: „Go fuer das Buchen der Belege ... USD immer den Dollar-Euro Kurs des Tages“.
+- **Betroffen:** Live-Kassenbuch auf der NAS (`buchhaltung/`), `docs/entscheidungs-register.md`
+
 ## [2026-09-30 14:28] — Claude Code
 - **Was:** Zweck/Begruendung nach Deploy und Container-Neustart geprueft: LUNA-OS liefert v66, Endpunkt
   `/api/finanzen/belege/<nr>/zweck` antwortet (Probe ohne Aenderung, nichts geschrieben), 130 Belege lesbar, Bot-Herzschlag
