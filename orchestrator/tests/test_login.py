@@ -144,6 +144,17 @@ class TestLogin(LoginBasis):
         self.assertIn(hashlib.sha256(token.encode()).hexdigest(), inhalt)
 
 
+class TestZeitzone(unittest.TestCase):
+    def test_deutsche_zeit(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        s = Sitzungen(Path(tempfile.mkdtemp()) / "s.json")
+        s.anlegen("ceo", art="ceo")
+        erstellt = datetime.fromisoformat(s.liste("ceo")[0]["erstellt"])
+        berlin = datetime.now(ZoneInfo("Europe/Berlin")).replace(tzinfo=None)
+        self.assertLess(abs((berlin - erstellt).total_seconds()), 120)      # nicht UTC (2 h daneben)
+
+
 class TestPasskey(LoginBasis):
     def _einrichten(self, g: Geraet) -> dict:
         start = self.c.post("/api/passkey/registrieren/start", headers={"origin": ORIGIN}).json()

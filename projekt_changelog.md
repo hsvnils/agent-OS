@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 19:56] — Claude Code
+- **Was:** Investment-Nachbesserung gemergt, gepusht, per Sync auf der NAS (`388bb54`, Neustart durch den CEO offen).
+  CEO bestaetigt: Face ID klappt; auf der NAS hinterlegt ist 1 Passkey „iPhone · Safari“ mit 1 Sitzung. Dabei BF-48
+  gefunden und auf Branch `ai/login-zeitzone` behoben: Anmelde-Zeiten wurden in UTC gespeichert (2 h daneben).
+- **Warum:** CEO-Go 2026-09-30; Abnahme Face ID; korrekte Anzeige der Geraeteliste.
+- **Betroffen:** `orchestrator/core/sitzungen.py`, `orchestrator/core/passkeys.py`, `orchestrator/tests/test_login.py`,
+  `docs/bekannte-fehler.md`
+
 ## [2026-09-30 19:44] — Claude Code
 - **Was:** UI-Roadmap Etappen 1-6 live geprueft nach Image-Neubau (CEO): `/` ohne Login -> `/login`, API ohne Login 401
   ohne Basic-Fenster, Basic (Waechter-Weg) 200, UI v76 + `passkey.js` ausgeliefert, Passkey-Start ueber
