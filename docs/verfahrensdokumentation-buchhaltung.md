@@ -47,6 +47,14 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    letzten Mahnung und versendet erst nach Bestaetigung. Verzugszinsen ab Faelligkeit (Basiszinssatz + 9 bzw. 5
    Prozentpunkte, taggenau), Verzugspauschale 40 EUR (Unternehmer) bzw. 2,50 EUR je Mahnung (Verbraucher). Mahnungen
    `MA-JJJJ-NNNN` werden wie Rechnungen unveraenderbar abgelegt.
+8. **Zahlungsbedingungen und Vorkasse** (Etappe 18): Je Angebot werden Zahlungsziel und optional eine Vorkasse (Prozent
+   des Geldanteils oder fester Betrag, Frist in Tagen nach Auftragsbestaetigung oder festes Datum) festgelegt und
+   unveraendert in Auftrag und Rechnung uebernommen. Die Vorkasse wird als eigene **Vorkasse-Rechnung** `RE-JJJJ-NNNN`
+   gestellt (Leistung „folgt gemaess Auftrag“, faellig zur vereinbarten Frist). Die **Schlussrechnung** zum Auftrag
+   weist die Auftragssumme aus und zieht jede nicht stornierte Vorkasse-Rechnung mit Nummer und Datum ab; ihr Betrag ist
+   nur der Rest, so zaehlt der Umsatz nur einmal. Eine abgezogene Vorkasse-Rechnung kann erst storniert werden, wenn die
+   Schlussrechnung storniert ist. Zu jeder festgeschriebenen Rechnung legt LUNA einen Payment-Check-Termin am
+   Faelligkeitstag an und loescht ihn, sobald die Zahlung erfasst ist.
 
 ### 2.3 Eingangsseite
 1. **Belegeingang**: Upload in LUNA-OS (PDF, E-Rechnung XML, Foto) oder Weiterleitung an
@@ -135,3 +143,4 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 | 2026-09-28 | Erstfassung (KUNDEN_FINANZEN Etappe 9) | Claude Code, Abnahme durch den Inhaber offen |
 | 2026-09-28 | Mahnwesen (Etappe 10) und Aufteilung gemischter Rechnungen (Etappe 11) ergaenzt | Claude Code |
 | 2026-09-28 | Barter-Deals (Etappe 12) ergaenzt | Claude Code |
+| 2026-09-30 | Zahlungsbedingungen, Vorkasse- und Schlussrechnung (Etappe 18) ergaenzt | Claude Code |

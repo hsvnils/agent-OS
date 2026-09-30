@@ -253,13 +253,24 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                     t = (f"Letzte Mahnung zu {r['nummer']} abgelaufen", f"{wer}; Mahnbescheid oder Inkasso prüfen", h)
                 out.append(_todo(f"re-ueber:{r['nummer']}", "Rechnungen", "⚠️", t[0], t[1], "re-detail", r["nummer"], t[2], h))
         for eid, x in entwuerfe.items():
-            out.append(_todo(f"re-entwurf:{eid}", "Rechnungen", "✎", "Rechnungsentwurf festschreiben",
+            out.append(_todo(f"re-entwurf:{eid}", "Rechnungen", "✎",
+                             "Vorkasse-Rechnung festschreiben" if x.get("art") == "anzahlung" else "Rechnungsentwurf festschreiben",
                              f"{firmen.get(x.get('firma'), x.get('firma', ''))} · {x.get('titel') or eid}", "re-detail", eid,
                              (date.fromisoformat(x["angelegt"][:10]) + timedelta(days=7)).isoformat(), h))
-        berechnet = {r.get("auftrag") for r in rechnungen.values()
-                     if r.get("auftrag") and r["status"] != "storniert" and r.get("art") != "storno"}
-        berechnet |= {x.get("auftrag") for x in entwuerfe.values() if x.get("auftrag")}
+        berechnet = {r.get("auftrag") for r in rechnungen.values()              # Vorkasse-Rechnung zaehlt nicht
+                     if r.get("auftrag") and r["status"] != "storniert" and r.get("art") not in ("storno", "anzahlung")}
+        berechnet |= {x.get("auftrag") for x in entwuerfe.values() if x.get("auftrag") and x.get("art") != "anzahlung"}
+        vorkasse = {r.get("auftrag") for r in rechnungen.values()               # Etappe 18
+                    if r.get("art") == "anzahlung" and r["status"] != "storniert"}
+        vorkasse |= {x.get("auftrag") for x in entwuerfe.values() if x.get("art") == "anzahlung"}
         for a in AuftragBuch._falte(e).values():
+            if (a["status"] == "beauftragt" and a.get("vorkasse_cent") and a["nummer"] not in vorkasse
+                    and a["nummer"] not in berechnet):
+                out.append(_todo(f"ab-vorkasse:{a['nummer']}", "Aufträge", "💶",
+                                 f"Vorkasse-Rechnung erstellen: {a['nummer']}",
+                                 f"{firmen.get(a['firma'], a['firma'])} · {eur(a['vorkasse_cent'])} bis "
+                                 f"{a['vorkasse_faellig'][8:10]}.{a['vorkasse_faellig'][5:7]}.", "ab-detail", a["nummer"],
+                                 a["datum"], h))
             if a["status"] == "erledigt" and a["nummer"] not in berechnet:
                 out.append(_todo(f"ab-rechnung:{a['nummer']}", "Aufträge", "🧾", f"Rechnung schreiben: {a['nummer']}",
                                  f"{firmen.get(a['firma'], a['firma'])} · Leistung erledigt, noch keine Rechnung",

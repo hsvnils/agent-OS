@@ -22,10 +22,12 @@ from .beleg_pdf import (HINWEIS_19, beleg_pdf, cent, datum_de, eur, hanserautisc
 from .buchhaltung import Buchhaltung, jetzt
 from .katalog import OMR, kalkulation_texte, tkp_preis
 from .kunden import KundenStore
+from . import zahlungsbedingungen as zb
 
 STATUS = ("entwurf", "versendet", "angenommen", "abgelehnt")
 KOPF_FELDER = ("firma", "ansprechpartner", "titel", "datum", "gueltig_bis", "einleitung", "schluss", "nachfassen_tage",
-               "zuschlaege", "rabatt_prozent", "layout", "bloecke", "ware")  # 3b; „ware“ = Barter (Etappe 12)
+               "zuschlaege", "rabatt_prozent", "layout", "bloecke", "ware",   # 3b; „ware“ = Barter (Etappe 12)
+               "zahlung")                                                     # Zahlungsbedingungen/Vorkasse (Etappe 18)
 LAYOUTS = ("hanserautisch", "standard")
 SCHALTER = ("zeige_kalkulation", "zeige_kennzahlen", "tkp_zeigen", "omr_zeigen")
 GUELTIG_TAGE = 14                                                           # CEO 2026-09-27 (wie im Generator)
@@ -113,6 +115,8 @@ def _kopf(daten: dict) -> dict:
             out[k] = _bloecke(v)
         elif k == "ware":
             out[k] = _ware(v)
+        elif k == "zahlung":
+            out[k] = zb.pruefen(v)
         elif k == "nachfassen_tage":
             try:
                 n = int(v)
@@ -349,6 +353,7 @@ class AngebotStore:
                 "nachfassen_tage": 7, "ansprechpartner": "", "titel": "", "einleitung": "", "schluss": "",
                 "zuschlaege": [], "rabatt_prozent": 0, "layout": "hanserautisch" if self.katalog else "standard"}
         kopf.update(_kopf(daten))
+        self._ziel_vorschlag(kopf, daten.get("zahlung"), kopf.get("firma") or "")
         if kopf["layout"] == "hanserautisch" and "bloecke" not in kopf:
             kopf["bloecke"] = _bloecke(self.katalog.laden()["texte"] if self.katalog else {})
         _schalter(kopf, daten)
@@ -360,11 +365,21 @@ class AngebotStore:
                                 bezug=kopf["firma"], von=von, pruefe=lambda e: self._pruefe_bezug(e, kopf))
         return {"nummer": ev["daten"]["nummer"]}
 
+    def _ziel_vorschlag(self, kopf: dict, roh, firma: str) -> None:
+        """Etappe 18: kein/leeres Zahlungsziel -> aus den Kundendaten (sonst 14 Tage)."""
+        if "zahlung" in kopf and str((roh or {}).get("ziel_tage") if isinstance(roh, dict) else "").strip():
+            return
+        ziel = (self.kunden.firma(firma) or {}).get("zahlungsziel_tage")
+        kopf["zahlung"] = zb.pruefen(roh, ziel_vorschlag=ziel)
+
     def aendern(self, nummer: str, daten: dict, *, von: str = "") -> dict:
         nummer = (nummer or "").strip().upper()
         if not isinstance(daten, dict):
             raise ValueError("Ungueltige Eingabe.")
         neu = _kopf(daten)
+        if "zahlung" in neu:
+            firma = neu.get("firma") or (self.angebot(nummer) or {}).get("firma") or ""
+            self._ziel_vorschlag(neu, daten.get("zahlung"), firma)
         schalter = {k: daten[k] for k in SCHALTER if k in daten}
         if "positionen" in daten:
             neu["positionen"] = _positionen(daten["positionen"])
@@ -420,7 +435,8 @@ class AngebotStore:
             einleitung=einleitung, positionen=a["positionen"], summe_cent=a["summe_cent"],
             summen_zeilen=_summen_zeilen(a["summen"]),
             hinweise=[HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
-            + [f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."], schluss=schluss)
+            + [zb.text(a.get("zahlung"), a["geld_cent"]), f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."],
+            schluss=schluss)
 
     def _pdf_hanserautisch(self, a: dict, f: dict, ap: dict | None, firmendaten: dict) -> bytes:
         b = a.get("bloecke") or _bloecke({})
@@ -442,8 +458,9 @@ class AngebotStore:
             zeige_kalkulation=b.get("zeige_kalkulation", True) or b.get("omr_zeigen", False),
             zeige_kennzahlen=b.get("zeige_kennzahlen", True),
             gruppen=list(gruppen.values()), summen=a["summen"], zuschlag_liste=None,
-            fuss_zusatz=" ".join(ware_hinweis(a["summe_cent"], a.get("ware"))
-                                 + [f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."]))
+            fuss_zusatz=" ".join(x for x in ware_hinweis(a["summe_cent"], a.get("ware"))
+                                 + [zb.text(a.get("zahlung"), a["geld_cent"]),
+                                    f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."] if x))
 
     def pdf_ablegen(self, nummer: str, pdf: bytes, *, an: str = "", entwurf_id: str = "", von: str = "") -> dict:
         a = self.angebot(nummer)
@@ -561,12 +578,15 @@ def _schalter(kopf: dict, daten: dict) -> None:
 
 def _summen_zeilen(sm: dict) -> list[tuple[str, int]] | None:
     """Zwischenzeilen fuer das Standard-PDF, nur wenn es Zuschlaege oder Rabatt gibt."""
-    if not (sm["zuschlaege"] or sm["rabatt"]):
+    if not (sm["zuschlaege"] or sm["rabatt"] or sm.get("abzuege")):
         return None
     zeilen = [("Summe Formate", sm["formate_cent"])]
     zeilen += [(f"{n} (+{menge_text(pr)} %)", c) for n, pr, c in sm["zuschlaege"]]
     if sm["rabatt"]:
         zeilen.append((f"Paketrabatt ({menge_text(sm['rabatt'][0])} %)", -sm["rabatt"][1]))
+    if sm.get("abzuege"):                                  # Schlussrechnung (Etappe 18)
+        zeilen.append(("Auftragssumme", sm["vor_abzug_cent"]))
+        zeilen += [(n, -c) for n, c in sm["abzuege"]]
     return zeilen
 
 

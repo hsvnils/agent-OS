@@ -299,7 +299,7 @@ function todosInner(d) {
   const liste = d.todos || [];
   if (!liste.length) return `<div class="v2-check done" style="border:none"><span class="mark">✓</span>Alles erledigt — nichts offen im Tagesbetrieb.</div>`;
   const gruppen = {}; liste.forEach(t => (gruppen[t.bereich] = gruppen[t.bereich] || []).push(t));
-  const zeile = (t) => `<div class="v2-list-row"><span>${t.icon}</span><div class="grow"><b>${esc(t.titel)}</b><small>${esc(t.detail || "")}</small></div>
+  const zeile = (t) => `<div class="v2-list-row"><span>${t.icon}</span><div class="grow"><b class="v2-todo-titel" role="button" tabindex="0" title="Öffnen" data-act="todo-oeffnen" data-val="${esc(t.act)}" data-id="${esc(t.act_id || "")}">${esc(t.titel)}</b><small>${esc(t.detail || "")}</small></div>
     ${t.faellig ? `<span class="v2-badge ${t.dringend ? "err" : "neutral"}">${t.dringend ? (t.faellig < heuteIso() ? "überfällig" : "heute") : esc(datumDe(t.faellig))}</span>` : ""}
     ${t.erledigen ? `<button class="v2-btn ok sm" data-act="todo-erledigen" data-val="${esc(t.erledigen.pfad)}" data-schluessel="${esc(t.erledigen.schluessel || "")}">${esc(t.erledigen.label)}</button>` : ""}
     <button class="v2-btn sm" data-act="todo-oeffnen" data-val="${esc(t.act)}" data-id="${esc(t.act_id || "")}">Öffnen ›</button></div>`;
@@ -793,6 +793,7 @@ async function anEditor(nummer, firmaVorwahl) {
         ${zuHtml ? `<small class="v2-sub">Zuschläge (Prozent auf die Summe aller Formate)</small><div class="v2-mods" id="an-zu-box">${zuHtml}</div>` : ""}
         <label class="v2-feld"><small>Paketrabatt in % (0–${rmax}, nur gegen Laufzeit oder Volumen)</small><input id="an-rabatt" type="number" min="0" max="${rmax}" step="0.5" value="${esc(String(a.rabatt_prozent || 0))}"></label>
         ${anWareFelder(a.ware)}
+        ${anZahlungFelder(a.zahlung)}
       </div>
       <div id="an-summe-box" class="v2-an-summen"></div>
     </div>
@@ -840,6 +841,37 @@ function anWareFelder(w) {
     <label class="v2-feld"><small>Warenwert in € (Preis laut Marke)</small><input id="an-ware-wert" inputmode="decimal" value="${an ? esc(cent2feld(w.wert_cent)) : ""}"></label>
     <button class="v2-btn sm" data-act="an-ware-alles">Ganzer Betrag in Ware</button></div>`;
 }
+// Etappe 18: Zahlungsbedingungen je Angebot -- Zahlungsziel, optional Vorkasse (Prozent oder Euro) mit Frist
+function anZahlungFelder(z) {
+  z = z || {}; const v = z.vorkasse || {};
+  const wert = v.art === "prozent" ? pz(v.prozent) : v.art === "euro" ? cent2feld(v.cent) : "";
+  return `<h4 style="margin:10px 0 2px">💶 Zahlungsbedingungen</h4>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Zahlungsziel der Rechnung (Tage; leer = aus Kundendaten, sonst 14)</small><input id="an-ziel" type="number" min="0" max="120" value="${esc(z.ziel_tage ?? "")}"></label>
+      <label class="v2-feld"><small>Vorkasse</small><select id="an-vk-art"><option value="">keine</option><option value="prozent" ${v.art === "prozent" ? "selected" : ""}>in % des Auftrags</option><option value="euro" ${v.art === "euro" ? "selected" : ""}>fester Betrag in €</option></select></label></div>
+    <div id="an-vk-box" ${v.art ? "" : "hidden"}><div class="v2-an-zeile"><label class="v2-feld"><small id="an-vk-lbl">${v.art === "euro" ? "Betrag in €" : "Prozent"}</small><input id="an-vk-wert" inputmode="decimal" value="${esc(wert)}" placeholder="${v.art === "euro" ? "z. B. 500" : "z. B. 50"}"></label>
+      <label class="v2-feld"><small>fällig … Tage nach Auftragsbestätigung</small><input id="an-vk-tage" type="number" min="0" max="90" value="${esc(v.frist_datum ? "" : (v.frist_tage ?? 7))}"></label>
+      <label class="v2-feld"><small>oder festes Datum</small><input id="an-vk-datum" type="date" value="${esc(v.frist_datum || "")}"></label></div>
+      <small class="v2-sub">LUNA erinnert an die Vorkasse-Rechnung und legt einen Payment-Check in ihren Kalender.</small></div>
+    <label class="v2-feld"><small>Zusatz zu den Zahlungsbedingungen (optional)</small><input id="an-zb-text" value="${esc(z.text || "")}" placeholder="z. B. Bitte Rechnungsnummer als Verwendungszweck angeben."></label>`;
+}
+function anZahlung() {
+  const art = ($("#an-vk-art") || {}).value || "", datum = ($("#an-vk-datum") || {}).value || "";
+  const vk = art ? { art, wert: ($("#an-vk-wert") || {}).value.trim(), ...(datum ? { frist_datum: datum } : { frist_tage: ($("#an-vk-tage") || {}).value }) } : null;
+  return { ziel_tage: ($("#an-ziel") || {}).value, vorkasse: vk, text: ($("#an-zb-text") || {}).value.trim() };
+}
+function anVorkasseZeile(geldCent) {   // Vorschau „Vorkasse … · Rest …“ im Summenkasten
+  const art = ($("#an-vk-art") || {}).value; const box = $("#an-vk-box"); if (box) box.hidden = !art;
+  const lbl = $("#an-vk-lbl"); if (lbl) lbl.textContent = art === "euro" ? "Betrag in €" : "Prozent";
+  if (!art || !(geldCent > 0)) return "";
+  const w = zahl(($("#an-vk-wert") || {}).value);
+  if (!isFinite(w) || w <= 0) return `<div class="v2-kv"><span>Vorkasse</span><b>Wert eingeben</b></div>`;
+  const vk = Math.min(geldCent, art === "prozent" ? Math.round(geldCent * w / 100) : Math.round(w * 100));
+  return `<div class="v2-kv"><span>Vorkasse${art === "prozent" ? " (" + esc(pz(w)) + " %)" : ""}</span><b>${cent2eur(vk)}</b></div><div class="v2-kv"><span>Rest mit der Rechnung</span><b>${cent2eur(geldCent - vk)}</b></div>`;
+}
+function zbKurz(z) {
+  if (!z) return "—"; const v = z.vorkasse;
+  return (v ? (v.art === "prozent" ? pz(v.prozent) + " %" : cent2eur(v.cent)) + " Vorkasse · " : "") + `Zahlungsziel ${z.ziel_tage ?? 14} Tage` + (z.text ? " · " + z.text : "");
+}
 const anWare = () => ($("#an-ware-an") || {}).checked ? { text: ($("#an-ware-text") || {}).value.trim(), wert: ($("#an-ware-wert") || {}).value.trim() } : {};
 function anSumme(ev) {
   if (ev && ev.target && ev.target.id === "an-fit") return anFitSetzen();
@@ -858,13 +890,14 @@ function anSumme(ev) {
   const wb = $("#an-ware-box"); if (wb) wb.hidden = !($("#an-ware-an") || {}).checked;
   const wc = ($("#an-ware-an") || {}).checked ? feld2cent(($("#an-ware-wert") || {}).value) : 0;
   if (wc) box.innerHTML += `<div class="v2-kv"><span>davon in Ware 🎁</span><b>${cent2eur(wc)}</b></div><div class="v2-kv"><span>in Geld zu zahlen</span><b style="${wc > zwischen - rb ? "color:var(--v2-red)" : ""}">${cent2eur(zwischen - rb - wc)}</b></div>`;
+  if ($("#an-vk-art")) box.innerHTML += anVorkasseZeile(zwischen - rb - wc);
 }
 async function anSpeichern(nummer) {
   if (!$("#an-firma").value) { $("#an-firma-suche").focus(); return kundenMsg("an-msg", "Bitte eine Firma aus den Vorschlägen auswählen.", false); }
   const angebot = { firma: $("#an-firma").value, ansprechpartner: $("#an-ap").value, titel: $("#an-titel").value.trim(), datum: $("#an-datum").value, gueltig_bis: $("#an-gueltig").value,
     nachfassen_tage: $("#an-nachfassen").value, einleitung: $("#an-einleitung").value.trim(), schluss: $("#an-schluss").value.trim(), positionen: anPositionen(),
     zuschlaege: anZuschlaege(), rabatt_prozent: ($("#an-rabatt") || {}).value || 0, layout: $("#an-layout").value,
-    zeige_kalkulation: $("#an-zeige-kalk").checked, zeige_kennzahlen: $("#an-zeige-kz").checked, ware: anWare(),
+    zeige_kalkulation: $("#an-zeige-kalk").checked, zeige_kennzahlen: $("#an-zeige-kz").checked, ware: anWare(), zahlung: anZahlung(),
     tkp_zeigen: ($("#an-tkp-zeigen") || {}).checked !== false, omr_zeigen: !!($("#an-omr-zeigen") || {}).checked };
   const r = nummer ? await jpost("/api/crm/angebote/" + encodeURIComponent(nummer), { angebot }) : await jpost("/api/crm/angebote", { angebot });
   if (!r || !r.ok) return kundenMsg("an-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
@@ -964,7 +997,10 @@ async function abDetail(nr, meldung, fehler) {
   let aktionen = `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 Auftragsbestätigung (PDF)</a>
     <button class="v2-btn" data-act="an-detail" data-id="${esc(a.angebot)}">↩ Angebot ${esc(a.angebot)}</button>`;
   if (a.status !== "storniert") aktionen += `<button class="v2-btn pri" data-act="ab-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled"}>✉️ Senden …</button>`;
-  if (a.status !== "storniert" && darf("rechnungen")) aktionen += `<button class="v2-btn pri" data-act="ab-rechnung" data-id="${esc(nr)}">🧾 Rechnung erstellen</button>`;
+  const reListe = d.rechnungen || [], vkDa = reListe.some(r => r.art === "anzahlung" && r.status !== "storniert");
+  const schlussDa = reListe.some(r => (r.art || "rechnung") === "rechnung" && r.status !== "storniert");
+  if (a.status !== "storniert" && darf("rechnungen") && a.vorkasse_cent && !vkDa && !schlussDa) aktionen += `<button class="v2-btn pri" data-act="ab-vorkasse" data-id="${esc(nr)}">💶 Vorkasse-Rechnung erstellen</button>`;
+  if (a.status !== "storniert" && darf("rechnungen")) aktionen += `<button class="v2-btn ${a.vorkasse_cent && !vkDa ? "" : "pri"}" data-act="ab-rechnung" data-id="${esc(nr)}">🧾 ${vkDa ? "Schlussrechnung" : "Rechnung"} erstellen</button>`;
   if (a.status === "beauftragt") aktionen += `<button class="v2-btn ok" data-act="ab-status" data-id="${esc(nr)}" data-val="erledigt">✔ Erledigt</button><button class="v2-btn" data-act="ab-status" data-id="${esc(nr)}" data-val="storniert">Stornieren</button>`;
   if ((a.pdfs || []).length) aktionen += `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf?archiv=1" target="_blank" rel="noopener">📎 Abgelegtes PDF</a>`;
   const lbl = { auftrag_angelegt: "Angelegt", auftrag_geaendert: "Geändert", auftrag_pdf_abgelegt: "PDF abgelegt", auftrag_status: "Status" };
@@ -979,6 +1015,9 @@ async function abDetail(nr, meldung, fehler) {
     <div class="v2-kv"><span>Ansprechpartner</span><b>${ap ? esc(ap.nummer + " · " + [ap.vorname, ap.nachname].filter(Boolean).join(" ")) : "—"}</b></div>
     <div class="v2-kv"><span>Beauftragt am</span><b>${esc(datumDe(a.datum))}</b></div>
     ${a.ware_cent ? `<div class="v2-kv"><span>Gegenleistung 🎁</span><b>${cent2eur(a.ware_cent)} in Ware (${esc((a.ware || {}).text || "")})${a.geld_cent ? " + " + cent2eur(a.geld_cent) + " in Geld" : " – reiner Barter"}</b></div>` : ""}
+    <div class="v2-kv"><span>Zahlungsbedingungen</span><b>${esc(zbKurz(a.zahlung))}</b></div>
+    ${a.vorkasse_cent ? `<div class="v2-kv"><span>Vorkasse</span><b>${cent2eur(a.vorkasse_cent)} bis ${esc(datumDe(a.vorkasse_faellig))}</b></div>` : ""}
+    ${reListe.length ? `<div class="v2-kv"><span>Rechnungen</span><b>${reListe.map(r => `<a href="#" data-act="re-detail" data-id="${esc(r.nummer)}">${esc(r.status === "entwurf" ? "Entwurf" : r.nummer)}</a> ${esc(RE_ART[r.art] || "")} · ${esc((RE_STATUS[r.status] || [r.status])[0])}`).join("<br>")}</b></div>` : ""}
     ${a.gesendet_mail ? `<div class="v2-kv"><span>Bestätigung gesendet</span><b>✉️ ${esc(a.gesendet_mail.an)} · ${esc(zeit(a.gesendet_am))}</b></div>` : ""}
     <h3>Leistung</h3><div class="v2-form">
       <div class="v2-an-zeile"><label class="v2-feld"><small>von</small><input id="abe-von" type="date" value="${esc(a.leistung_von || "")}" ${bearbeitbar ? "" : "disabled"}></label>
@@ -1150,6 +1189,7 @@ function preislistePdf() {
 /* =========================== Rechnungen (KUNDEN_FINANZEN Etappe 5, Modul Finanzen) =========================== */
 // Entwurf (ohne Nummer, frei aenderbar) -> Festschreiben (RE-Nummer + PDF, unveraenderlich) -> Senden -> Bezahlt.
 // Korrektur nur per Storno (eigene Nummer). Kleinunternehmer-Waechter blockiert > 100.000 EUR Jahresumsatz.
+const RE_ART = { anzahlung: "Vorkasse", rechnung: "", storno: "Storno" };
 const RE_STATUS = { entwurf: ["Entwurf", "neutral"], offen: ["Offen", "wartet"], bezahlt: ["Bezahlt", "ok"], storniert: ["Storniert", "neutral"], storno: ["Stornorechnung", "neutral"] };
 const reBadge = (r) => { const st = r.ueberfaellig ? "ueberfaellig" : r.status; const [l, c] = st === "ueberfaellig" ? ["Überfällig", "err"] : (RE_STATUS[st] || [st, "neutral"]); return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
 RENDER.rechnungen = renderRechnungen;
@@ -1164,8 +1204,8 @@ async function renderRechnungen() {
   const anteil = Math.min(100, Math.round((w.anteil || 0) * 100));
   const balken = `<div class="v2-re-balken"><i style="width:${anteil}%;background:${w.ueberschritten ? "var(--v2-red)" : w.warnung ? "#e8a200" : "var(--v2-accent)"}"></i></div><small class="v2-sub">${anteil} % der Kleinunternehmer-Grenze (100.000 €)${w.vorjahr_ueberschritten ? " · ⚠️ Vorjahr über 25.000 €!" : ""}</small>`;
   let liste = sub === "entwuerfe" ? null : (sub === "offen" ? offen : alle);
-  const rows = liste ? liste.map(r => `<tr class="klick" data-act="re-detail" data-id="${esc(r.nummer)}"><td><b>${esc(r.nummer)}</b>${r.art === "storno" ? " <small>Storno zu " + esc(r.bezug) + "</small>" : ""}</td><td>${esc(r.firma_name || r.firma)}</td><td>${esc(r.titel || "")}</td><td>${esc(datumDe(r.rechnungsdatum))}</td><td>${esc(datumDe(r.faellig_am))}</td><td style="text-align:right">${cent2eur(r.summe_cent)}</td><td>${reBadge(r)}${r.versendet ? " ✉️" : ""}</td></tr>`).join("")
-    : (d.entwuerfe || []).map(e => `<tr class="klick" data-act="re-detail" data-id="${esc(e.entwurf_id)}"><td><b>Entwurf</b> <small>${esc(e.entwurf_id)}</small></td><td>${esc(e.firma_name || e.firma)}</td><td>${esc(e.titel || "")}</td><td>${esc(e.auftrag || "")}</td><td></td><td style="text-align:right">${cent2eur(e.summe_cent)}</td><td>${reBadge({ status: "entwurf" })}</td></tr>`).join("");
+  const rows = liste ? liste.map(r => `<tr class="klick" data-act="re-detail" data-id="${esc(r.nummer)}"><td><b>${esc(r.nummer)}</b>${r.art === "storno" ? " <small>Storno zu " + esc(r.bezug) + "</small>" : r.art === "anzahlung" ? " <small>Vorkasse</small>" : ""}</td><td>${esc(r.firma_name || r.firma)}</td><td>${esc(r.titel || "")}</td><td>${esc(datumDe(r.rechnungsdatum))}</td><td>${esc(datumDe(r.faellig_am))}</td><td style="text-align:right">${cent2eur(r.summe_cent)}</td><td>${reBadge(r)}${r.versendet ? " ✉️" : ""}</td></tr>`).join("")
+    : (d.entwuerfe || []).map(e => `<tr class="klick" data-act="re-detail" data-id="${esc(e.entwurf_id)}"><td><b>${e.art === "anzahlung" ? "Vorkasse-Entwurf" : "Entwurf"}</b> <small>${esc(e.entwurf_id)}</small></td><td>${esc(e.firma_name || e.firma)}</td><td>${esc(e.titel || "")}</td><td>${esc(e.auftrag || "")}</td><td></td><td style="text-align:right">${cent2eur(e.summe_cent)}</td><td>${reBadge({ status: "entwurf" })}</td></tr>`).join("");
   const kopf = sub === "entwuerfe" ? "<th>Entwurf</th><th>Firma</th><th>Titel</th><th>Auftrag</th><th></th><th style=\"text-align:right\">Summe</th><th></th>" : "<th>Nr.</th><th>Firma</th><th>Titel</th><th>Datum</th><th>Fällig</th><th style=\"text-align:right\">Betrag</th><th>Status</th>";
   const body = `${tile("Umsatz " + jahr, `<div class="v2-kpi">${esc(cent2eur(w.umsatz_cent || 0))}</div>${balken}`, "w4")}
     ${kpiTile("Offen", String(offen.length), null, cent2eur(offen.reduce((x, r) => x + r.summe_cent - (r.bezahlt_cent || 0), 0)))}
@@ -1234,6 +1274,7 @@ async function reDetail(id, meldung, fehler) {
   const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Positionen</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
     + sm.zuschlaege.map(([n, p, c]) => `<tr><td></td><td>${esc(n)} (+${esc(pz(p))} %)</td><td></td><td style="text-align:right">${cent2eur(c)}</td></tr>`).join("")
     + (sm.rabatt ? `<tr><td></td><td>Rabatt (${esc(pz(sm.rabatt[0]))} %)</td><td></td><td style="text-align:right">−${cent2eur(Math.abs(sm.rabatt[1]))}</td></tr>` : "")
+    + (sm.abzuege ? `<tr><td></td><td>Auftragssumme</td><td></td><td style="text-align:right">${cent2eur(sm.vor_abzug_cent)}</td></tr>` + sm.abzuege.map(([n, c]) => `<tr><td></td><td>${esc(n)}</td><td></td><td style="text-align:right">−${cent2eur(c)}</td></tr>`).join("") : "")
     + `<tr><td></td><td><b>Rechnungsbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
   let aktionen = `<a class="v2-btn" href="/api/finanzen/rechnungen/${encodeURIComponent(id)}/pdf" target="_blank" rel="noopener">📄 ${entwurf ? "PDF-Vorschau" : "Rechnung (PDF)"}</a>`;
   if (entwurf) aktionen += `<button class="v2-btn" data-act="re-bearbeiten" data-id="${esc(id)}">✎ Bearbeiten</button>
@@ -1258,7 +1299,8 @@ async function reDetail(id, meldung, fehler) {
   const lbl = { rechnung_entwurf: "Entwurf angelegt", rechnung_entwurf_geaendert: "Entwurf geändert", rechnung_festgeschrieben: "Festgeschrieben", rechnung_versendet: "Gesendet", rechnung_bezahlt: "Zahlung", rechnung_zahlung_storniert: "Zahlung storniert" };
   RE_DETAIL = d;
   const verlauf = (r.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(lbl[v.typ] || v.typ)}${v.mail_an ? " an " + esc(v.mail_an) : ""}${v.betrag_cent ? " " + cent2eur(v.betrag_cent) : ""}${v.storno ? " — storniert durch " + esc(v.storno) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
-  const titel = entwurf ? `Rechnungs-Entwurf · ${d.firma.name || r.firma}` : `${r.nummer} · ${d.firma.name || r.firma}`;
+  const artTxt = r.art === "anzahlung" ? "Vorkasse-Rechnung" : sm.abzuege ? "Schlussrechnung" : "Rechnung";
+  const titel = entwurf ? `${r.art === "anzahlung" ? "Vorkasse-Entwurf" : sm.abzuege ? "Schlussrechnungs-Entwurf" : "Rechnungs-Entwurf"} · ${d.firma.name || r.firma}` : `${r.nummer} · ${artTxt} · ${d.firma.name || r.firma}`;
   openModal(titel, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
     ${entwurf && !d.steuernummer ? `<div class="v2-msg err">Steuernummer fehlt in den Firmendaten — Festschreiben nicht möglich.</div>` : ""}
     <div class="v2-card-actions" style="flex-wrap:wrap;margin:8px 0 14px">${aktionen}</div>
@@ -2234,6 +2276,7 @@ async function handleAct(act, el) {
       return r.korrektur_entwurf ? reEditor(r.korrektur_entwurf) : reDetail(r.storno, [`Stornorechnung ${r.storno} erstellt.`, ...(r.hinweise || [])].join("\n"));
     }
     case "re-box-zu": { const bx = $("#re-aktion-box"); if (bx) bx.innerHTML = ""; return; }
+    case "ab-vorkasse": { const r = await jpost(`/api/finanzen/rechnungen/aus-auftrag/${encodeURIComponent(id)}`, { vorkasse: true }); if (!r || !r.ok) return abDetail(id, (r && r.hinweis) || "Fehler.", true); return reDetail(r.entwurf_id, r.vorhanden ? "Es gab schon einen Vorkasse-Entwurf — hier ist er." : "Vorkasse-Rechnung als Entwurf angelegt. Prüfen und festschreiben — dann legt LUNA den Payment-Check in den Kalender."); }
     case "ab-rechnung": { const r = await jpost(`/api/finanzen/rechnungen/aus-auftrag/${encodeURIComponent(id)}`, {}); if (!r || !r.ok) return abDetail(id, (r && r.hinweis) || "Fehler.", true); return reEditor(r.entwurf_id); }
     case "ab-neu": return abNeu(id, val === "annehmen");
     case "ab-anlegen": return abAnlegen(id, val === "annehmen");
@@ -2477,6 +2520,7 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault(); const el = e.target;
     if (el.dataset.go) go(el.dataset.go); else if (el.dataset.tab) { const [s, i] = el.dataset.tab.split(":"); go(s, i); }
   }
+  if (e.key === "Enter" && e.target.matches && e.target.matches(".v2-todo-titel")) { e.preventDefault(); handleAct(e.target.dataset.act, e.target); }
 });
 
 /* Drag&Drop zum Anordnen der Dashboard-Widgets (nur im Edit-Modus) */

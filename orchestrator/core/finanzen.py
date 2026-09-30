@@ -333,8 +333,8 @@ class Finanzen:
         # Pipeline: offene Angebote, Auftraege ohne Rechnung, Rechnungsentwuerfe
         angebote = [AngebotStore._anreichern(a, heute) for a in AngebotStore._falte(e).values()]
         offen_an = [a for a in angebote if a["anzeige_status"] == "versendet"]
-        berechnet = {r.get("auftrag") for r in st["rechnungen"].values()          # Storno-Gegenbeleg zaehlt nicht
-                     if r.get("auftrag") and r["status"] != "storniert" and r.get("art") != "storno"}
+        berechnet = {r.get("auftrag") for r in st["rechnungen"].values()          # Storno/Vorkasse zaehlen nicht
+                     if r.get("auftrag") and r["status"] != "storniert" and r.get("art") not in ("storno", "anzahlung")}
         auftraege = [a for a in AuftragBuch._falte(e).values() if a["status"] != "storniert" and a["nummer"] not in berechnet]
         auftrag_summe = sum(summen(a["positionen"], a.get("zuschlaege") or [], a.get("rabatt_prozent") or 0)["gesamt_cent"]
                             for a in auftraege)

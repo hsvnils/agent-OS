@@ -494,7 +494,8 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
     # Summen (Angebot)
     if summen is not None:
         pdf.ln(5)
-        zeilen = 1 + len(summen.get("zuschlaege") or []) + (1 if summen.get("rabatt") else 0)
+        zeilen = (1 + len(summen.get("zuschlaege") or []) + (1 if summen.get("rabatt") else 0)
+                  + (1 + len(summen["abzuege"]) if summen.get("abzuege") else 0))
         platz(zeilen * 5.5 + 16)
         x0, bs = 20 + B - 115, 115
         pdf.set_font(S, size=9.5)
@@ -512,6 +513,10 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
         if summen.get("rabatt"):
             pr, c = summen["rabatt"]
             zeile(f"Paketrabatt ({menge_text(pr)} %)", eur(-c), ROT)
+        if summen.get("abzuege"):                          # Schlussrechnung: Vorkasse abziehen (Etappe 18)
+            zeile("Auftragssumme", eur(summen["vor_abzug_cent"]), fett=True)
+            for name, c in summen["abzuege"]:
+                zeile(name, eur(-c), ROT)
         pdf.set_x(x0)
         pdf.set_fill_color(0, 0, 0)
         farbe((255, 255, 255))

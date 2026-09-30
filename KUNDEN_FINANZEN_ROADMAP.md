@@ -1,10 +1,10 @@
 # Roadmap: Kunden, Angebote, Rechnungen und Finanzen in LUNA-OS
 
 - Status: in Umsetzung
-- Stand: 2026-09-29
+- Stand: 2026-09-30
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -616,6 +616,57 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   Modell), setzt TKP-Stufe Standard und oeffnet den Angebots-Editor als Entwurf. Kein Versand ohne CEO (Oeffentlichkeit).
 - Gate: echte Beispiel-DM -> Entwurf mit plausiblen Formaten; nichts wird versendet; Tests + Gegenprobe.
 - Aufwand: mittel. Abhaengig von Etappe 16 (TKP) -- erfuellt.
+
+### Etappe 18: Zahlungsbedingungen und Vorkasse mit Payment-Check im Kalender
+
+- Status: umgesetzt (CEO-Go 2026-09-30), Deploy + Abnahme offen
+- Ergebnis: `core/zahlungsbedingungen.py` (pruefen/Vorkasse-Betrag/Frist/Texte); Angebot-Feld `zahlung` (leeres
+  Zahlungsziel = Kundendaten, sonst 14), Satz in Angebots- und AB-PDF; Auftrag friert `vorkasse_cent`/`vorkasse_faellig`
+  ein (Vorkasse vom Geldanteil, Barter-Ware bleibt der Schlussrechnung); `RechnungStore.entwurf_aus_auftrag(vorkasse=True)`
+  -> Vorkasse-Rechnung `art="anzahlung"` (Leistungsdatum optional: „folgt gemaess Auftrag“), Schlussrechnung mit
+  `abzuege` nach Zuschlaegen/Rabatt (PDF-Titel „Schlussrechnung“, Zeilen „Auftragssumme“ + „abzgl. Vorkasse RE-...“),
+  Sperren unter der Buchhaltungs-Sperre (keine zweite Vorkasse, keine Vorkasse nach der Rechnung, abgezogene Vorkasse
+  nicht stornierbar, 100 % Vorkasse -> keine Schlussrechnung noetig). Kalender: „💶 Payment-Check: Vorkasse|Rechnung
+  RE-... (Betrag) – Firma“ am Faelligkeitstag 09:00; das Loeschen bei Zahlung/Storno gab es schon (`core/erinnerungen.py`,
+  die Ausgangslage oben war insoweit falsch). To-do „Vorkasse-Rechnung erstellen“; Vorkasse zaehlt nicht als
+  „berechnet“. LUNA-OS: Block „💶 Zahlungsbedingungen“ im Angebots-Editor mit Vorschau Vorkasse/Rest, Auftrag zeigt
+  Bedingungen, Vorkasse, Rechnungen und Knopf „💶 Vorkasse-Rechnung erstellen“, Rechnungen mit Art. Nebenbei (CEO):
+  Titel in „Zu erledigen“ klickbar (auch Enter). Tests `test_zahlungsbedingungen.py` (8) + 8 Gegenproben, Suite 1017
+  gruen, Headless-Chrome-Test, PDFs gesichtet.
+- Entscheidungen (CEO 2026-09-30): (1) Vorkasse als eigene Vorkasse-Rechnung, Schlussrechnung zieht ab; (2) Standard-Frist
+  7 Tage nach Auftragsbestaetigung, im Angebot aenderbar; (3) Payment-Check auch fuer normale Rechnungen, Termin wird bei
+  Zahlung geloescht; (4) Vorkasse wird **pro Angebot** entschieden -- keine Standard-Vorkasse je Kunde.
+- Ausgangslage (Code-Stand 2026-09-30): Zahlungsziel gibt es nur als Tage je Kunde (`kunden.zahlungsziel_tage`) und je
+  Rechnung (0-120 Tage, Standard 14). **Angebot und Auftragsbestaetigung nennen keine Zahlungsbedingungen.** Je Auftrag
+  ist genau **eine** Rechnung moeglich -- Vorkasse/Anzahlung geht heute nicht. Beim Festschreiben einer Rechnung legt LUNA
+  einen Termin „Rechnung ... faellig“ an; bei Zahlungseingang bleibt der Termin stehen.
+- Ziel / Scope:
+  - **Zahlungsbedingungen im Angebot einstellbar** (werden in Auftrag und Rechnung uebernommen, eingefroren wie Positionen):
+    Zahlungsziel in Tagen (Vorschlag aus dem Kunden, sonst 14) und optional **Vorkasse** als **Prozent des Auftrags** oder
+    **fester Euro-Betrag**, faellig **N Tage nach Auftragsbestaetigung** (Standard 7) oder zu einem festen Datum.
+    Optionaler Zusatztext. Vorschau im Editor: „Vorkasse 50 % = 1.300,00 EUR, Rest 1.300,00 EUR 14 Tage nach Rechnung“.
+  - **PDF-Text** in Angebot, Auftragsbestaetigung und Rechnung, z. B. „Zahlungsbedingungen: 50 % Vorkasse (1.300,00 EUR)
+    bis 7 Tage nach Auftragsbestaetigung, Rest zahlbar innerhalb von 14 Tagen nach Rechnungsstellung ohne Abzug.“
+  - **Vorkasse-Rechnung** (Vorschlag, Entscheidung 1): Knopf „Vorkasse-Rechnung erstellen“ im Auftrag -> eigene Rechnung
+    `RE-` ueber den Vorkasse-Betrag (Art „Anzahlung“, Faelligkeit = Vorkasse-Frist). Zahlungseingang, Ueberfaellig-Meldung
+    und Mahnwesen funktionieren damit wie bei jeder Rechnung. Die **Schlussrechnung** aus dem Auftrag zieht die Anzahlung
+    ab („abzgl. Anzahlung RE-... vom ...“) und nennt nur den Rest; der Kleinunternehmer-Waechter und das Journal zaehlen
+    den Umsatz nicht doppelt.
+  - **Payment-Check im Kalender:** Sobald ein Auftrag mit Vorkasse entsteht bzw. die Vorkasse-Rechnung festgeschrieben
+    wird, legt LUNA in ihrem Kalender einen Termin „💶 Payment-Check: Vorkasse AB-... (1.300,00 EUR) -- Firma“ am
+    Faelligkeitstag 09:00 an (CEO eingeladen, wie bei den Angebots-Erinnerungen). **Wird die Zahlung vorher erfasst, loescht
+    LUNA den Termin** -- das gilt dann auch fuer die bestehenden „Rechnung ... faellig“-Termine. Ohne Zahlung bis zum Termin
+    zusaetzlich Hinweis in „Zu erledigen“ (wie ueberfaellige Rechnungen).
+- Nicht im Scope: Standard-Vorkasse je Kunde (CEO: pro Angebot), Skonto, Ratenplaene mit mehr als zwei Teilen, automatischer Zahlungsabgleich mit dem Konto.
+- Gate: Angebot mit 50 % Vorkasse -> Auftrag -> Vorkasse-Rechnung (Betrag, Frist, PDF-Text korrekt) -> Termin im Kalender ->
+  Zahlung erfassen -> Termin weg -> Schlussrechnung mit Abzug, Rest korrekt; Umsatz nur einmal gezaehlt; Angebot ohne
+  Vorkasse unveraendert (alte Angebote/Auftraege/Rechnungen unveraendert); Tests + Gegenproben; CEO-Abnahme von Editor
+  und PDFs.
+- Risiko: Rundung bei Prozent (auf volle Cent, Rest = Summe - Vorkasse, damit nichts verloren geht); festgeschriebene
+  Belege duerfen sich nicht aendern (neue Felder nur fuer neue Belege); Kalender-Zugang faellt aus -> Hinweis wie bisher.
+- Aufwand: mittel bis gross (1-2 Sitzungen).
+- Dokumentation: Changelog, Roadmap, Register (Entscheidungen), `docs/datenfluesse.md` (Kalender-Termine, neue Felder),
+  Verfahrensdokumentation (Anzahlungs- und Schlussrechnung).
 
 ## Reihenfolge
 

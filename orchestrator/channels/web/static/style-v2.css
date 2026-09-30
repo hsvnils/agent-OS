@@ -448,6 +448,8 @@ a.v2-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .v2-todo-gruppe { border-top: 1px solid var(--v2-line-soft); padding: 6px 0; }
 .v2-todo-gruppe summary { cursor: pointer; padding: 6px 0; list-style: none; display: flex; gap: 8px; align-items: center; }
 .v2-todo-gruppe summary::-webkit-details-marker { display: none; }
+.v2-todo-titel { cursor: pointer; }
+.v2-todo-titel:hover, .v2-todo-titel:focus-visible { text-decoration: underline; color: var(--v2-accent); outline: none; }
 .v2-todo-gruppe summary::before { content: "›"; color: var(--v2-faint); transition: transform .15s; display: inline-block; }
 .v2-todo-gruppe[open] summary::before { transform: rotate(90deg); }
 .v2-kpi .delta { white-space: nowrap; }
