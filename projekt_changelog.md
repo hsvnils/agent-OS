@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 11:01] — Claude Code
+- **Was:** Etappe 18 nach Deploy und Container-Neustart geprueft: LUNA-OS liefert v64/v27 mit den neuen Funktionen aus,
+  Auftrags-Detail liefert Rechnungen und Zahlungstext (Alt-Auftrag AB-2026-0001 ohne Zahlungsbedingungen: leer, wie
+  gewollt), Aufgabenliste und Katalog antworten, Bot-Herzschlag frisch, keine unzugestellten Meldungen.
+- **Warum:** CEO „Neustart erledigt, bitte pruefen“.
+- **Betroffen:** keine Dateien ausser diesem Changelog
+
 ## [2026-09-30 10:35] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 18 umgesetzt: Zahlungsbedingungen je Angebot (Zahlungsziel, Vorkasse in Prozent oder
   Euro mit Frist, Zusatztext), Uebernahme in Auftrag und Rechnung, Vorkasse-Rechnung, Schlussrechnung mit Abzug,
