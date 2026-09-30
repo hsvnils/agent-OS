@@ -48,6 +48,8 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    -- keine Betriebsausgaben, keine Buchung, nicht in der EUeR (Fahrten mit dem Firmenwagen des Arbeitgebers verursachen
    keine eigenen Kosten). Sie koennen in der Finanz-Uebersicht und auf Wunsch in Exporten als klar getrennter Zusatz
    „kalkulatorisch, keine Betriebsausgaben“ gezeigt werden; EUeR, EUeR-PDF und der GoBD-Index enthalten sie nie.
+   **Plattform-Auszahlungen** (Facebook) werden mit dem Bankeingang am Zahlungstag gebucht (Zuflussprinzip); die
+   Erzielt-Zeitraeume je Posten (aus dem Meta-Zahlungsbeleg oder von Hand) sind reine Zusatzinformation.
 4. **Korrektur** nur per **Stornorechnung** (eigene Nummer, negativer Betrag, Bezug auf das Original) und ggf.
    neuer Rechnung.
 5. **Zahlungseingang** wird von Hand erfasst (Datum laut Kontoauszug, Teilzahlungen moeglich).

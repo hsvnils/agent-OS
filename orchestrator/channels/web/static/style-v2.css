@@ -579,3 +579,11 @@ body.v2-lade-offen { overflow: hidden; }
   .v2-icon { min-width: 44px; }
   .v2-inp { min-height: 44px; font-size: 16px; }             /* 16 px: iOS zoomt beim Tippen sonst ins Feld */
 }
+/* Plattform-Einnahmen: erzielt je Monat (KUNDEN_FINANZEN Etappe 27) */
+.v2-pf { display: flex; gap: 8px; align-items: flex-end; overflow-x: auto; padding-bottom: 4px; }
+.v2-pf-m { display: grid; justify-items: center; gap: 3px; min-width: 52px; font-size: 11px; }
+.v2-pf-b { width: 26px; height: 90px; display: flex; align-items: flex-end; background: var(--v2-line-soft); border-radius: 6px; overflow: hidden; }
+.v2-pf-b i { display: block; width: 100%; background: var(--v2-green); border-radius: 6px 6px 0 0; }
+.v2-pf-m small { color: var(--v2-muted); }
+.v2-pf-m b { font-variant-numeric: tabular-nums; font-size: 11px; white-space: nowrap; }
+.v2-bl-posten-form summary { cursor: pointer; color: var(--v2-accent); font-size: 13px; margin: 8px 0; }

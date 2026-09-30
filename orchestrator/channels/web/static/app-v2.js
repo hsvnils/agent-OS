@@ -1820,6 +1820,23 @@ async function blHochladen(dateien) {
   SUBTAB.belege = "pruefen";
   return renderBelege(zeilen.join("\n"));
 }
+// Etappe 27: Erzielt-Zeitraeume einer Plattform-Auszahlung (Information; die EUeR zaehlt den Bankeingang)
+const datumKurz = (iso) => iso ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}` : "";
+const fremdTxt = (c, w) => `${(Number(c || 0) / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${w === "USD" ? "$" : esc(w || "")}`;
+function blPlattform(nr, b, f) {
+  const a = b.plattform, eur = f && f.betrag_cent;
+  const summe = a ? a.posten.reduce((s, p) => s + p.betrag_cent, 0) : 0;
+  const zeilen = a ? a.posten.map(p => `<tr><td>${esc(datumKurz(p.von))} – ${esc(datumKurz(p.bis))}</td><td class="num">${fremdTxt(p.betrag_cent, a.waehrung)}</td><td class="num">${eur ? cent2eur(Math.round(eur * p.betrag_cent / (summe || 1))) : "–"}</td><td><small class="v2-sub">${esc(p.referenz || p.text || "")}</small></td></tr>`).join("") : "";
+  const quelle = a ? (a.quelle === "hand" ? "von Hand erfasst" : "aus dem Meta-PDF gelesen") : "";
+  const form = `<details class="v2-bl-posten-form" ${a ? "" : "open"}><summary>${a ? "Zeiträume von Hand korrigieren" : "Zeiträume eintragen"}</summary><div class="v2-form">
+      <small class="v2-sub">Je Zeile ein Posten: <b>von–bis Betrag</b>, z. B. <code>01.11.2025-30.11.2025 98,87</code>. Maßgeblich ist der Zahlungsbeleg von Meta.</small>
+      <textarea id="bl-posten" rows="4" class="v2-inp" placeholder="01.11.2025-30.11.2025 98,87&#10;01.12.2025-31.12.2025 47,29">${a && a.quelle === "hand" ? esc(a.posten.map(p => `${datumKurz(p.von)}-${datumKurz(p.bis)} ${(p.betrag_cent / 100).toFixed(2).replace(".", ",")}`).join("\n")) : ""}</textarea>
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Zahlungs-ID</small><input id="bl-posten-id" class="v2-inp" value="${esc((a && a.zahlungs_id) || (f && f.rechnungsnummer) || "")}"></label>
+      <label class="v2-feld"><small>Währung</small><input id="bl-posten-wg" class="v2-inp" value="${esc((a && a.waehrung) || "USD")}" maxlength="3"></label></div>
+      <button class="v2-btn sm" data-act="bl-posten" data-id="${esc(nr)}">Zeiträume speichern</button></div></details>`;
+  return `<h3>Erzielt-Zeiträume</h3>${a ? `<div class="v2-tab-scroll"><table class="v2-table"><thead><tr><th>Erzielt</th><th class="num">Betrag</th><th class="num">anteilig €</th><th>Referenz</th></tr></thead><tbody>${zeilen}</tbody></table></div>
+    <small class="v2-sub">${quelle} · Summe ${fremdTxt(summe, a.waehrung)}${a.betrag_cent && a.betrag_cent !== summe ? ` · <b style="color:var(--v2-red)">passt nicht zur Auszahlung ${fremdTxt(a.betrag_cent, a.waehrung)}</b>` : ""}. Nur Information — die EÜR zählt den Bankeingang am Zahlungstag.</small>` : `<small class="v2-sub">Für diese Einnahme sind keine Zeiträume bekannt.</small>`}${form}`;
+}
 async function blDetail(nr, meldung, fehler) {
   openModal(nr, `<div class="v2-empty">Lade…</div>`, true);
   const d = await jget("/api/finanzen/belege/" + encodeURIComponent(nr));
@@ -1847,6 +1864,7 @@ async function blDetail(nr, meldung, fehler) {
       ${vorschau}
       ${(b.belege || []).length > 1 ? `<h3>Weitere Dateien</h3>${b.belege.slice(1).map((x, i) => `<div class="v2-list-row"><span>${x.rolle === "zahlungsnachweis" ? "🧾" : "✉️"}</span><div class="grow"><a href="${src}?i=${i + 1}" target="_blank" rel="noopener">${esc(x.name || (x.pfad || "").split("/").pop().slice(17))}</a><small>${x.rolle === "zahlungsnachweis" ? "Zahlungsnachweis" : "Original-Mail (unverändert)"}</small></div></div>`).join("")}` : ""}
       <div class="v2-kv"><span>Eingang</span><b>${esc(zeit(b.eingegangen))} · ${b.quelle === "mail" ? "per Mail" : "Upload"} · ${esc(TQ[b.text_quelle] || b.text_quelle)}</b></div>
+      ${ein ? blPlattform(nr, b, f) : ""}
       <h3>Zweck / Begründung</h3><div class="v2-form"><textarea id="bl-zweck" rows="2" class="v2-inp" maxlength="500" placeholder="Wofür wurde das gekauft? (betriebliche Veranlassung – z. B. „Schuhe für den Medizincheck-Dreh im Athleticum“)">${esc(b.zweck || "")}</textarea>
         <button class="v2-btn sm" data-act="bl-zweck" data-id="${esc(nr)}">Zweck speichern</button><small class="v2-sub">Steht mit im Export für den Steuerberater. Schreibst du beim Weiterleiten etwas über die Mail, übernimmt LUNA es automatisch.</small></div>
       <h3>Verlauf</h3>${verlauf}
@@ -2042,7 +2060,8 @@ async function aboDetail(nr, meldung, fehler) {
 async function finUebersicht(u) {
   const k = u.kennzahlen, v = u.vorjahr, f = u.forderungen, vb = u.verbindlichkeiten, p = u.pipeline, w = u.waechter;
   const zn = finZeitName(u.zeitraum, u.jahr), dz = `zeitraum=${u.zeitraum}`;
-  const ki = await jget("/api/finanzen/ki-kosten?jahr=" + u.jahr) || { monate_eur: [], gesamt_eur: 0, je_provider: {} };
+  const [ki0, pfTile] = await Promise.all([jget("/api/finanzen/ki-kosten?jahr=" + u.jahr), finPlattformTile(u.jahr)]);
+  const ki = ki0 || { monate_eur: [], gesamt_eur: 0, je_provider: {} };
   const max = Math.max(1, ...u.monate.map(m => Math.max(Math.abs(m.einnahmen_cent), Math.abs(m.ausgaben_cent), Math.abs(m.vj_einnahmen_cent), Math.abs(m.vj_ausgaben_cent))));
   const h = (c) => Math.max(0, Math.round(c / max * 100));
   const aktivM = (m) => u.zeitraum === "jahr" || (u.zeitraum[0] === "q" ? Math.ceil(m.nr / 3) === Number(u.zeitraum[1]) : Number(u.zeitraum.slice(1)) === m.nr);
@@ -2073,6 +2092,7 @@ async function finUebersicht(u) {
     ${finKpi("Gewinn " + zn, cent2eur(k.gewinn_cent), finDelta(k.gewinn_cent, v.gewinn_cent), `${vjText}: ${cent2eur(v.gewinn_cent)}`, dz)}
     ${kpiTile("Offen: bekommen wir", cent2eur(f.summe_cent), null, `${f.anzahl} Rechnung(en)${f.ueberfaellig ? ", " + f.ueberfaellig + " überfällig" : ""} · wir zahlen noch ${cent2eur(vb.summe_cent)}`)}
     ${finKalkTile(u, zn)}
+    ${pfTile}
     ${tile("Monatsverlauf " + u.jahr, monate, "w8")}
     ${tile("Kleinunternehmer-Grenze " + u.jahr, grenze, "w4")}
     ${u.verlustvortrag ? tile("Verlustvortrag aus " + u.verlustvortrag.aus_jahr, vvHtml(u.verlustvortrag), "w4") : ""}
@@ -2087,6 +2107,19 @@ async function finUebersicht(u) {
 }
 // Etappe 26: kalkulatorische Kosten (eigene Arbeitszeit, Fahrten) -- zuschaltbar, nie Teil der echten Zahlen/EÜR
 function finKalkAn() { try { return localStorage.getItem("luna-fin-kalk") !== "aus"; } catch (e) { return true; } }
+// Etappe 27: Plattform-Einnahmen -- erzielt je Monat neben ausgezahlt (Zufluss)
+async function finPlattformTile(jahr) {
+  const d = await jget(`/api/finanzen/plattform?jahr=${jahr}`);
+  if (!d || !(d.auszahlungen || []).length) return "";
+  const wg = d.auszahlungen[0].waehrung || "USD", mx = Math.max(...d.erzielt.map(m => m.fremd_cent), 1);
+  const MN = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+  const balken = d.erzielt.map(m => `<div class="v2-pf-m" title="${esc(MN[Number(m.monat.slice(5)) - 1])} ${esc(m.monat.slice(0, 4))}: ${fremdTxt(m.fremd_cent, wg)} ≈ ${esc(cent2eur(m.eur_cent))}">
+      <span class="v2-pf-b"><i style="height:${Math.max(3, Math.round(m.fremd_cent / mx * 100))}%"></i></span><small>${esc(MN[Number(m.monat.slice(5)) - 1])}${m.monat.slice(0, 4) !== String(jahr) ? " " + m.monat.slice(2, 4) : ""}</small><b>${fremdTxt(m.fremd_cent, wg).replace(",00", "")}</b></div>`).join("");
+  const liste = d.auszahlungen.map(a => `<div class="v2-list-row klick" data-act="bl-detail" data-id="${esc(a.nummer)}" role="button" tabindex="0"><span>💸</span><div class="grow"><b>${esc(datumKurz(a.zufluss))} · ${fremdTxt(a.fremd_cent, a.waehrung)} → ${esc(cent2eur(a.eur_cent))}</b><small>erzielt ${esc(datumKurz(a.von))} – ${esc(datumKurz(a.bis))} · ${esc(a.nummer)}${a.quelle === "hand" ? " · von Hand" : ""}</small></div></div>`).join("");
+  return tile(`Plattform-Einnahmen ${jahr} · Facebook`, `<div class="v2-kpi">${esc(cent2eur(d.ausgezahlt_eur_cent))} <span class="v2-sub" style="font-size:13px">ausgezahlt (${fremdTxt(d.ausgezahlt_fremd_cent, wg)})</span></div>
+    <h3 class="v2-h3" style="margin-top:10px">Erzielt je Monat</h3><div class="v2-pf">${balken}</div>
+    <h3 class="v2-h3">Auszahlungen</h3>${liste}<small class="v2-sub">${esc(d.hinweis)}</small>`, "w12");
+}
 function finKalkTile(u, zn) {
   const kk = u.kalkulatorisch; if (!kk) return "";
   const an = finKalkAn();
@@ -2730,6 +2763,7 @@ async function handleAct(act, el) {
       return r.korrektur_entwurf ? reEditor(r.korrektur_entwurf) : reDetail(r.storno, [`Stornorechnung ${r.storno} erstellt.`, ...(r.hinweise || [])].join("\n"));
     }
     case "re-box-zu": { const bx = $("#re-aktion-box"); if (bx) bx.innerHTML = ""; return; }
+    case "bl-posten": { const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/posten`, { zeilen: ($("#bl-posten") || {}).value || "", zahlungs_id: ($("#bl-posten-id") || {}).value || "", waehrung: ($("#bl-posten-wg") || {}).value || "USD" }); return blDetail(id, r && r.ok ? "Zeiträume gespeichert." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
     case "bl-zweck": { const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/zweck`, { zweck: ($("#bl-zweck") || {}).value || "" }); return blDetail(id, r && r.ok ? "Zweck gespeichert." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
     case "ab-vorkasse": { const r = await jpost(`/api/finanzen/rechnungen/aus-auftrag/${encodeURIComponent(id)}`, { vorkasse: true }); if (!r || !r.ok) return abDetail(id, (r && r.hinweis) || "Fehler.", true); return reDetail(r.entwurf_id, r.vorhanden ? "Es gab schon einen Vorkasse-Entwurf — hier ist er." : "Vorkasse-Rechnung als Entwurf angelegt. Prüfen und festschreiben — dann legt LUNA den Payment-Check in den Kalender."); }
     case "ab-rechnung": { const r = await jpost(`/api/finanzen/rechnungen/aus-auftrag/${encodeURIComponent(id)}`, {}); if (!r || !r.ok) return abDetail(id, (r && r.hinweis) || "Fehler.", true); return reEditor(r.entwurf_id); }
