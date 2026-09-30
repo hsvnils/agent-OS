@@ -1392,6 +1392,11 @@ def main() -> None:
                         from ...core.eingangsbelege import fremdwaehrung_erinnern, llm_ergebnisse_uebernehmen
                         llm_ergebnisse_uebernehmen(EingangStore(_bh), AuftragStore(ROOT / "backoffice" / "log.jsonl",
                                                                                    secrets=ctx.leak_secrets))
+                        try:                                          # Etappe 20: Euro-Betrag zum EZB-Kurs vorschlagen
+                            from ...core.wechselkurse import EzbKurse, kurse_ergaenzen
+                            kurse_ergaenzen(EingangStore(_bh), EzbKurse(_bh.dir / "wechselkurse.json"))
+                        except Exception as exc:
+                            print(f"[belege] EZB-Kurse: {exc}", flush=True)
                         fremdwaehrung_erinnern(EingangStore(_bh), ctx.google)
                         # Etappe 10: Frist einer Mahnung abgelaufen -> naechste Stufe per Telegram anfragen (1x taeglich,
                         # 08-20 Uhr); gesendet wird nur nach ✅ des CEO (Geld/Recht nie autonom)

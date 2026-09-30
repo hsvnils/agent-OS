@@ -1971,6 +1971,11 @@ async def belege_hochladen(request: Request):
                 ergebnisse.append({"name": name, "ok": True} | {k: r.get(k) for k in ("nummer", "doppelt", "text_quelle")})
         except (ValueError, TypeError) as exc:
             ergebnisse.append({"name": name, "ok": False, "hinweis": str(exc)[:200]})
+    try:                                                    # Etappe 20: Euro-Betrag zum EZB-Kurs vorschlagen
+        from ...core.wechselkurse import EzbKurse, kurse_ergaenzen
+        kurse_ergaenzen(st, EzbKurse(kunden_store.bh.dir / "wechselkurse.json"))
+    except Exception:
+        pass
     try:                                                    # Fremdwaehrung -> Kalender „Euro-Betrag eintragen“
         _eb.fremdwaehrung_erinnern(st, _google())
     except Exception:

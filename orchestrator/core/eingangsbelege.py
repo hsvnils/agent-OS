@@ -949,7 +949,8 @@ def fremdwaehrung_erinnern(st: EingangStore, google, heute: date | None = None) 
     neu = []
     for x in st._falte(st.bh.eintraege()).values():
         v = x.get("vorschlag") or {}
-        if x["status"] != "zu_pruefen" or x.get("erinnerung") or not v.get("waehrung") or v["waehrung"] == "EUR":
+        if (x["status"] != "zu_pruefen" or x.get("erinnerung") or not v.get("waehrung") or v["waehrung"] == "EUR"
+                or v.get("kurs")):                              # Etappe 20: Euro-Betrag kommt schon aus dem EZB-Kurs
             continue
         try:
             basis = date.fromisoformat(v.get("rechnungsdatum") or x["eingegangen"][:10])

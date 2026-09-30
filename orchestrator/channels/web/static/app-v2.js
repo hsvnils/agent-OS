@@ -1529,7 +1529,8 @@ async function blDetail(nr, meldung, fehler) {
       ${!f ? `<div class="v2-kv"><span>Vorschlag von</span><b>${esc(quelle)}${kiLaeuft ? " · KI liest noch …" : ""}</b></div>` : ""}
       ${kiLaeuft ? `<button class="v2-btn" data-act="bl-detail" data-id="${esc(nr)}">🔄 KI-Vorschlag abholen</button>` : ""}
       ${!f && (v.hinweise || []).length ? `<div class="v2-msg" style="margin:8px 0">${v.hinweise.map(h => "⚠️ " + esc(h)).join("<br>")}</div>` : ""}
-      ${!f && v.waehrung && v.waehrung !== "EUR" ? `<div class="v2-msg err" style="margin:8px 0">Betrag in ${esc(v.waehrung)}: ${esc(v.betrag_fremd || "?")}. Bitte den <b>Euro-Betrag</b> eintragen, der auf dem Konto angekommen bzw. abgebucht worden ist (Kontoauszug) — nur der zählt in der EÜR.</div>` : ""}
+      ${!f && v.kurs ? `<div class="v2-msg" style="margin:8px 0">💱 Euro-Betrag nach <b>EZB-Referenzkurs</b> vom ${esc(datumDe(v.kurs.tag))} vorgeschlagen: ${esc(v.betrag_fremd || "")} ${esc(v.kurs.waehrung)} ÷ ${esc(String(v.kurs.kurs).replace(".", ","))} = <b>${esc(v.betrag)} €</b>. Weicht die Abbuchung laut Kontoauszug ab, einfach den Betrag ändern.</div>` : ""}
+      ${!f && v.waehrung && v.waehrung !== "EUR" && !v.kurs ? `<div class="v2-msg err" style="margin:8px 0">Betrag in ${esc(v.waehrung)}: ${esc(v.betrag_fremd || "?")}. Bitte den <b>Euro-Betrag</b> eintragen, der auf dem Konto angekommen bzw. abgebucht worden ist (Kontoauszug) — nur der zählt in der EÜR.</div>` : ""}
       <h3>${f ? "Gebucht (korrigierbar)" : "Prüfen & buchen"}</h3><div class="v2-form">
         <label class="v2-feld"><small>Art *</small><select id="bl-art" ${gesperrt}><option value="ausgabe" ${ein ? "" : "selected"}>Ausgabe — wir zahlen (Eingangsrechnung)</option><option value="einnahme" ${ein ? "selected" : ""}>Einnahme — wir bekommen Geld (Gutschrift, z. B. Facebook-Monetarisierung)</option></select></label>
         <label class="v2-feld"><small id="bl-lief-lbl">${ein ? "Von (Aussteller der Gutschrift) *" : "Lieferant *"}</small><input id="bl-lieferant" list="bl-lieferanten" value="${esc(liefWert)}" ${gesperrt}><datalist id="bl-lieferanten">${lief}</datalist>
@@ -1546,7 +1547,7 @@ async function blDetail(nr, meldung, fehler) {
           <div id="bl-pos">${blPosStart(f, v).map(blPosZeile).join("")}</div>
           <div class="v2-card-actions"><button class="v2-btn sm" data-act="bl-pos-neu">+ Position</button><button class="v2-btn sm" data-act="bl-pos-diff">Differenz als Position</button></div>
           <div id="bl-pos-summe" class="v2-sub"></div></div></div>
-        <label class="v2-feld"><small>Notiz</small><input id="bl-notiz" value="${esc(f ? f.notiz || "" : v.betrag_fremd ? `${v.betrag_fremd} ${v.waehrung} laut Beleg` : "")}" ${gesperrt}></label>
+        <label class="v2-feld"><small>Notiz</small><input id="bl-notiz" value="${esc(f ? f.notiz || "" : v.kurs_notiz || (v.betrag_fremd ? `${v.betrag_fremd} ${v.waehrung} laut Beleg` : ""))}" ${gesperrt}></label>
         ${b.status !== "verworfen" ? `<div class="v2-card-actions"><button class="v2-btn pri" data-act="bl-buchen" data-id="${esc(nr)}">✔ ${f ? "Korrektur buchen" : "Buchen"}</button>
           ${f && rest !== 0 ? `<button class="v2-btn ok" data-act="bl-bezahlt-form" data-id="${esc(nr)}">💶 ${ein ? "Geldeingang erfassen" : "Zahlung erfassen"}</button>` : ""}
           ${!f ? `<button class="v2-btn" data-act="bl-verwerfen" data-id="${esc(nr)}">Kein Beleg / verwerfen</button><button class="v2-btn" data-act="bl-nachweis" data-id="${esc(nr)}">🧾 Ist Zahlungsnachweis zu …</button>` : ""}</div>` : `<div class="v2-msg">Verworfen: ${esc(b.grund || "")}</div>`}
