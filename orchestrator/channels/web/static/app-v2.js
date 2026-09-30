@@ -540,7 +540,7 @@ async function crmFirma(firma) {
 // Firmen mit Firmenkundennummer K-…, Ansprechpartner mit AP-…; jede Änderung landet als Eintrag im Verlauf.
 const KUNDE_TYP = { kunde: "Kunde", lieferant: "Lieferant", partner: "Partner" };
 const FIRMA_FORM = [["name", "Firmenname *"], ["typ", "Typ", "typ"], ["strasse", "Straße und Hausnummer"], ["plz", "PLZ"], ["ort", "Ort"], ["land", "Land"],
-  ["rechnungsmail", "Rechnungs-Mail", "email"], ["telefon", "Telefon"], ["website", "Website"], ["ustid", "USt-IdNr."], ["steuernummer", "Steuernummer"],
+  ["rechnungsmail", "Rechnungs-Mail", "email"], ["telefon", "Telefon"], ["website", "Website"], ["ustid", "USt-IdNr."], ["handelsregister", "Handelsregister (z. B. Amtsgericht Hamburg HRB 12345)"], ["steuernummer", "Steuernummer"],
   ["zahlungsziel_tage", "Zahlungsziel (Tage)", "number"], ["verbraucher", "Privatperson (Verbraucher)?", "janein"],
   ["kundennummer_bei", "Unsere Kundennummer dort"], ["zahlungsweg", "Zahlungsweg (z. B. PayPal, Mastercard •••• 1364, Lastschrift)"],
   ["rechnungs_absender", "Rechnungs-Absender (Mail oder Domain, mit Komma getrennt)"], ["vertraege", "Verträge / Abos / Policen", "vertraege"], ["notiz", "Notiz", "textarea"]];
@@ -630,13 +630,23 @@ async function kundeDetail(nr, meldung) {
     ${nummern.length ? `<div class="v2-sub">Auch gültig: ${esc(nummern.join(", "))}</div>` : ""}
     ${(f.luecken || []).length && f.typ !== "kunde" ? `<div class="v2-msg err">Es fehlt noch: ${esc(f.luecken.join(", "))} – steht meist auf der Rechnung.</div>` : ""}
     ${f.typ !== "kunde" || (bu.belege || []).length ? `<h3>Belege & Zahlungen</h3>${buHtml}` : ""}
-    <h3>Stammdaten</h3><div class="v2-form">${formFelder("ke", FIRMA_FORM, f)}
+    <h3>Stammdaten</h3>${kundeRecherche(f, d)}<div class="v2-form">${formFelder("ke", FIRMA_FORM, f)}
     <label class="v2-modlbl"><input type="checkbox" id="ke-aktiv" ${f.aktiv ? "checked" : ""}> Aktiv (inaktive Firmen bleiben erhalten, nur ausgeblendet)</label>
     <button class="v2-btn pri" data-act="kunde-speichern" data-id="${esc(f.nummer)}">Änderungen speichern</button><div id="ke-msg" class="v2-msg"></div></div>
     <h3>Ansprechpartner</h3>${aps}<button class="v2-btn" data-act="kunde-ap-neu" data-id="${esc(f.nummer)}" style="margin-top:8px">+ Ansprechpartner</button><div id="kap-box"></div>
     <h3>Angebote</h3><button class="v2-btn" data-act="an-neu" data-id="${esc(f.nummer)}">+ Angebot für ${esc(f.name)}</button>
     <h3>Collab-CRM</h3>${collab}
     <h3>Verlauf</h3>${verlauf}`);
+}
+// Etappe 22: oeffentliche Firmendaten (Impressum) vorschlagen -- uebernommen wird nur per Klick
+function kundeRecherche(f, d) {
+  const v = d.vorschlaege || {}, namen = d.feldnamen || {}, offen = Object.keys(v);
+  if (f.verbraucher) return "";
+  const knopf = (d.luecken || []).length ? `<button class="v2-btn" data-act="kunde-recherche" data-id="${esc(f.nummer)}">🔎 Fehlende Daten im Netz suchen</button>` : "";
+  if (!offen.length) return knopf ? `<div class="v2-card-actions" style="margin:4px 0 10px">${knopf}<small class="v2-sub">Fehlt: ${esc(d.luecken.map(k => namen[k] || k).join(", "))}</small></div>` : "";
+  return `<div class="v2-msg" style="margin:6px 0 12px"><b>🔎 Vorschläge aus dem Netz</b>${d.vorschlag_quelle ? ` · Quelle: <a href="${esc(d.vorschlag_quelle)}" target="_blank" rel="noopener">${esc(d.vorschlag_quelle.replace(/^https?:\/\//, ""))}</a>` : ""}
+    ${offen.map(k => `<div class="v2-kv"><span>${esc(namen[k] || k)}</span><b>${esc(v[k])} <button class="v2-btn sm" data-act="kunde-vorschlag" data-id="${esc(f.nummer)}" data-val="${esc(k)}">Übernehmen</button></b></div>`).join("")}
+    <div class="v2-card-actions" style="margin-top:6px"><button class="v2-btn ok sm" data-act="kunde-vorschlag" data-id="${esc(f.nummer)}" data-val="">Alle übernehmen</button><button class="v2-btn sm" data-act="kunde-vorschlag-weg" data-id="${esc(f.nummer)}">Verwerfen</button>${knopf}</div></div>`;
 }
 async function kundeSpeichern(nr) {
   const firma = { ...formWerte("ke", FIRMA_FORM), aktiv: !!($("#ke-aktiv") || {}).checked };
@@ -2324,6 +2334,12 @@ async function handleAct(act, el) {
     case "bl-verwerfen": { const grund = prompt("Warum ist das kein Beleg? (z. B. versehentlich hochgeladen)", ""); if (!grund) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/verwerfen`, { grund }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Verworfen — die Datei bleibt archiviert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "re-neu": return reEditor("");
     case "re-alt-form": return reAltForm();
+    case "kunde-recherche": { el.disabled = true; el.textContent = "⏳ suche …"; const r = await jpost(`/api/crm/kunden/${encodeURIComponent(id)}/recherche`, {});
+      return kundeDetail(id, !r || !r.ok ? ((r && r.hinweis) || "Suche fehlgeschlagen.") : Object.keys(r.vorschlaege || {}).length ? `${Object.keys(r.vorschlaege).length} Vorschlag/Vorschläge gefunden – bitte prüfen.` : "Nichts Passendes gefunden."); }
+    case "kunde-vorschlag": { const r = await jpost(`/api/crm/kunden/${encodeURIComponent(id)}/vorschlaege`, val ? { felder: [val] } : {});
+      return kundeDetail(id, r && r.ok ? `Übernommen: ${Object.keys(r.uebernommen || {}).join(", ") || "–"}.` : (r && r.hinweis) || "Fehler."); }
+    case "kunde-vorschlag-weg": { const r = await jpost(`/api/crm/kunden/${encodeURIComponent(id)}/vorschlaege`, { verwerfen: true });
+      return kundeDetail(id, r && r.ok ? "Vorschläge verworfen." : (r && r.hinweis) || "Fehler."); }
     case "lg-buchen": return lagerBuchen();
     case "re-alt-speichern": return reAltSpeichern();
     case "re-altmahn-form": return reAltMahnForm(id);

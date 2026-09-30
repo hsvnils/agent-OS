@@ -1379,6 +1379,28 @@ def main() -> None:
                                 and not ctx.agenda.briefing_gesendet("drive-stand", _j.date().isoformat()):
                             if stand_sichern(_bh, ctx.google).get("ok"):
                                 ctx.agenda.markiere_briefing("drive-stand", _j.date().isoformat())
+                        # Etappe 22: einmal pro Woche (Sonntag ab 06:00) Firmendaten mit Luecken recherchieren -- nur
+                        # Vorschlaege, uebernommen wird nie automatisch; Hinweis kommt ins Morgen-Briefing
+                        _woche = f"{_j.isocalendar()[0]}-W{_j.isocalendar()[1]:02d}"
+                        if (_j.weekday() == 6 and _j.hour >= 6 and ctx.agenda is not None
+                                and not ctx.agenda.briefing_gesendet("firmendaten", _woche)):
+                            ctx.agenda.markiere_briefing("firmendaten", _woche)
+                            try:
+                                from ...core.firmendaten import FirmenRecherche, wochenlauf
+                                from ...core.kunden import KundenStore as _KS
+                                from ...governance.web_research import BraveProvider
+                                _brave = BraveProvider(secrets)
+                                _suche = ((lambda q: [(t.titel, t.url) for t in _brave.suche(q, max_results=8).treffer])
+                                          if _brave.verfuegbar() else None)
+                                _ks = _KS(_bh)
+                                _neu = wochenlauf(_ks, FirmenRecherche(_ks, suche=_suche))
+                                if _neu and ctx.notifications:
+                                    ctx.notifications.enqueue(
+                                        f"🔎 Firmendaten: Vorschläge für {len(_neu)} Firma/Firmen gefunden ({', '.join(_neu)}) "
+                                        "-- in LUNA-OS unter Kunden/Stammdaten prüfen und übernehmen.",
+                                        abteilung="CDO", kategorie="finanzen", quelle="firmendaten", nach_briefing=True)
+                            except Exception as exc:
+                                print(f"[firmendaten] Wochenlauf: {exc}", flush=True)
                         # KUNDEN_FINANZEN Etappe 6: vom CEO an LUNA weitergeleitete Belege uebernehmen
                         from ...core.eingangsbelege import EingangStore, mail_eingang_pruefen
                         from ...core.auftraege import AuftragStore

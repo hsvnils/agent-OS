@@ -1311,7 +1311,45 @@ def kunden_detail(nummer: str):
     f = kunden_store.firma(nummer)
     if not f:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Firmenkundennummer")
-    return {"firma": f, "buchungen": _firma_buchungen(f["nummer"])}
+    from ...core.firmendaten import NAMEN, luecken, offene_vorschlaege
+    v = offene_vorschlaege(kunden_store.bh.eintraege()).get(f["nummer"]) or {}
+    return {"firma": f, "buchungen": _firma_buchungen(f["nummer"]), "luecken": luecken(f), "feldnamen": NAMEN,
+            "vorschlaege": v.get("vorschlaege") or {}, "vorschlag_quelle": v.get("quelle", ""),
+            "vorschlag_ts": v.get("ts", "")}
+
+
+_RECHERCHE_TEST = None                     # Tests: FirmenRecherche mit Fake-Suche/-Abruf (kein Netz)
+
+
+def _recherche():
+    """Etappe 22: Firmendaten-Recherche mit Brave-Suche (nur wenn BRAVE_API_KEY gesetzt) und Impressums-Abruf."""
+    from ...core.firmendaten import FirmenRecherche
+    if _RECHERCHE_TEST is not None:
+        return _RECHERCHE_TEST
+    try:
+        from ..telegram.bot import _load_secrets
+        sec = _load_secrets()
+    except Exception:
+        sec = dict(os.environ)
+    from ...governance.web_research import BraveProvider
+    brave = BraveProvider(sec)
+    suche = (lambda q: [(t.titel, t.url) for t in brave.suche(q, max_results=8).treffer]) if brave.verfuegbar() else None
+    return FirmenRecherche(kunden_store, suche=suche)
+
+
+@app.post("/api/crm/kunden/{nummer}/recherche")
+async def kunden_recherche(nummer: str, request: Request):
+    """Oeffentliche Firmendaten (Impressum) suchen -> Vorschlaege fuer leere Felder; uebernommen wird nur per Klick."""
+    return _kunden_aktion(lambda: _recherche().recherchieren(nummer, von=_von(request)))
+
+
+@app.post("/api/crm/kunden/{nummer}/vorschlaege")
+async def kunden_vorschlaege(nummer: str, request: Request):
+    """{"felder": [...] (leer = alle), "verwerfen": false} -- Vorschlaege uebernehmen bzw. verwerfen."""
+    from ...core.firmendaten import uebernehmen
+    body = await _json(request)
+    return _kunden_aktion(lambda: uebernehmen(kunden_store, nummer, body.get("felder") or None,
+                                              verwerfen=bool(body.get("verwerfen")), von=_von(request)))
 
 
 def _firma_buchungen(nummer: str) -> dict:

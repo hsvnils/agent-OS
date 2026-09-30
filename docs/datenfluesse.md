@@ -60,7 +60,8 @@ Kalendereinladung, Alpaca-Order (Paper), Git-Push eines Antrags-Branches.
 | OpenAI (SDK) | Fallback in `core/model_router.py`, `core/ig_analyse.py` | Prompts | `OPENAI_API_KEY`, `IG_ANALYSE_*` | lesen |
 | `api.deepgram.com` | `bot.py` (Sprachnachrichten), `cutter/transkription.py` (3. Fallback), Voice | Audio / Transkript | `DEEPGRAM_API_KEY` | lesen |
 | `api.elevenlabs.io`, Cartesia (SDK) | `channels/web/app.py` (`/api/tts`), `channels/voice/pipeline.py` | Text / Audio | `ELEVENLABS_API_KEY`, `CARTESIA_API_KEY` | lesen |
-| `api.search.brave.com` | `governance/web_research.py` | Suchanfragen | `BRAVE_API_KEY` | lesen |
+| `api.search.brave.com` | `governance/web_research.py`; seit Etappe 22 auch `core/firmendaten.py` (Web-App auf Knopfdruck, Bot sonntags bis 8 Firmen) | Suchanfragen („<Firmenname> Impressum“) | `BRAVE_API_KEY` | lesen |
+| Websites der Geschaeftspartner (Impressum) | `core/firmendaten.py` (KUNDEN_FINANZEN Etappe 22) | GET der Impressums-Seite (nur Firmen, nie Privatpersonen, nur dieselbe Website, max. 800 KB) / oeffentliche Pflichtangaben als Vorschlag (Ereignis `firma_recherche`) | – | lesen |
 | `data-api.ecb.europa.eu` | `core/wechselkurse.py` (KUNDEN_FINANZEN Etappe 20; Web-App nach Beleg-Upload, Bot im 15-min-Poll) | Waehrung + Zeitraum (keine Belegdaten) / EZB-Referenzkurse (CSV), zwischengespeichert in `buchhaltung/wechselkurse.json` | – (oeffentlich) | lesen |
 | `api.github.com` | `governance/github_watch.py` (Watch-Loop) | Topic-Suche / Repos | `GITHUB_TOKEN` (optional) | lesen |
 | github.com (git) | `core/execution_live.py`, `core/hoa_tools.py` (`antrag_pushen`); Werkbank per Deploy-Key | Branches | `GITHUB_TOKEN` / `~/.ssh/github` | **schreiben** (Push) |

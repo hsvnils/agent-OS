@@ -4,7 +4,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappe 21 Kalkulation + Lager umgesetzt (Deploy offen); freigegeben und in dieser Reihenfolge: 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappen 21 (Kalkulation + Lager) und 22 (Firmendaten) umgesetzt -- gemeinsamer Deploy offen; 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -739,7 +739,16 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 22: Firmendaten recherchieren und auf Knopfdruck uebernehmen
 
-- Status: freigegeben (CEO 2026-09-30: „Mach das“)
+- Status: umgesetzt (CEO 2026-09-30: „Mach das“), Deploy offen
+- Ergebnis: `core/firmendaten.py` -- Website (hinterlegt oder Brave „<Name> Impressum“, Portale wie North Data/LinkedIn
+  ausgeschlossen) -> Impressum (uebliche Pfade, sonst Impressums-Link der Startseite, nur dieselbe Website) -> Muster fuer
+  Strasse/PLZ/Ort, USt-ID, Handelsregister, Telefon, Rechnungs-Mail (nur rechnung@/billing@ ...); Vorschlaege nur fuer
+  leere Felder, mit Quelle (Ereignis `firma_recherche`), Uebernehmen einzeln/alle oder Verwerfen (`firma_vorschlag_erledigt`,
+  ueberschreibt nie von Hand Eingetragenes); keine Privatpersonen, nie die eigene Firma. Neues Stammdatenfeld
+  `handelsregister`. Wochenlauf im Bot (Sonntag ab 06:00, bis 8 Firmen, Pause 30 Tage, Hinweis im Morgen-Briefing).
+  Endpunkte `POST /api/crm/kunden/<nr>/recherche`, `/vorschlaege`; Kunden-Detail zeigt Vorschlaege + „🔎 Fehlende Daten im
+  Netz suchen“. Echter Probelauf (nur lesend): Kiez Alm, Hands of God, Grover vollstaendig; Calumet, Canva nichts
+  (auslaendisch/anderes Format). Tests `test_firmendaten.py` (6) + 9 Gegenproben, Browser-Test.
 - Ziel / Scope: Fuer Kunden, Lieferanten und Partner mit Luecken (Adresse, USt-ID, Website, Handelsregister, Rechnungs-
   Mail) sucht LUNA oeffentliche Angaben (Web-Suche ueber Brave, Impressum der Firmen-Website) und zeigt je Feld einen
   Vorschlag mit Quelle; „Uebernehmen“ je Feld oder alle. Regelmaessig (z. B. woechentlich) prueft ein Agent die Luecken
