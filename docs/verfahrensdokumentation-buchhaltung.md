@@ -57,8 +57,11 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    Faelligkeitstag an und loescht ihn, sobald die Zahlung erfasst ist.
 
 ### 2.3 Eingangsseite
-1. **Belegeingang**: Upload in LUNA-OS (PDF, E-Rechnung XML, Foto) oder Weiterleitung an
-   `luna.hanserautisch@gmail.com` (nur von den eigenen Adressen; Absender kryptografisch geprueft per DKIM/DMARC).
+1. **Belegeingang**: Upload in LUNA-OS (PDF, E-Rechnung XML, Foto, gespeicherte Mails `.eml`/`.mbox`) oder
+   Weiterleitung an `luna.hanserautisch@gmail.com` (nur von den eigenen Adressen; Absender kryptografisch geprueft per
+   DKIM/DMARC). **Zweck/Begruendung**: Was der Inhaber beim Weiterleiten ueber die Mail schreibt („wofuer gekauft“),
+   speichert LUNA als Zweck am Beleg (betriebliche Veranlassung); er ist in LUNA-OS aenderbar (Aenderungen im Verlauf)
+   und steht im Jahresexport (Spalte `Zweck`).
 2. Das **Original** wird sofort unveraendert abgelegt (SHA-256 im Kassenbuch) und erhaelt die Nummer `ER-JJJJ-NNNN`.
    Doppelte Dateien werden erkannt.
    Wiederkehrende Zahlungen ohne eigenen Beleg (Abos, `ABO-`) werden je Faelligkeit genau einmal erledigt: als Eigenbeleg
@@ -144,3 +147,4 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 | 2026-09-28 | Mahnwesen (Etappe 10) und Aufteilung gemischter Rechnungen (Etappe 11) ergaenzt | Claude Code |
 | 2026-09-28 | Barter-Deals (Etappe 12) ergaenzt | Claude Code |
 | 2026-09-30 | Zahlungsbedingungen, Vorkasse- und Schlussrechnung (Etappe 18) ergaenzt | Claude Code |
+| 2026-09-30 | Beleg-Import aus gespeicherten Mails und Zweck/Begruendung am Beleg ergaenzt | Claude Code |
