@@ -467,3 +467,8 @@ a.v2-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .v2-kat-tkp .v2-inp { width: 120px; }
 .an-p-tkp { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
 .an-p-tkp .an-p-tkpwert { width: 70px; }
+
+/* Etappe 21: Kalkulation & Lager */
+.v2-kat-kalk { grid-column: 1 / -1; }
+.v2-kat-kalk summary { cursor: pointer; }
+.v2-an-intern { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--v2-line-soft); }

@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 17:16] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 21 umgesetzt: interne Kosten je Katalog-Artikel mit Deckungsbeitrag/Marge und
+  Mindestmarge-Warnung (auch intern im Angebots-Editor, nie im PDF); Lagerbestand fuer physische Ware (`core/lager.py`,
+  Zugaenge/Korrekturen + Verkaeufe laut Rechnungen, Storno zurueck, To-do bei Mindestbestand, Lager-Kachel). JS v70,
+  CSS v29. Tests `test_kalkulation_lager.py` (5) + 8 Gegenproben, Suite 1047 gruen, Browser-Test. Live-Katalog:
+  Affiliate-Standardmodell 5,00 EUR je verkauftem Artikel gesetzt (nach Etappe-23-Deploy).
+- **Warum:** CEO-Go 2026-09-30 (Etappe 21 mit Lager); Arbeitsweise „Etappen hintereinander, ein Neustart am Ende“.
+- **Betroffen:** `orchestrator/core/katalog.py`, `orchestrator/core/lager.py` (neu), `orchestrator/core/todos.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`,
+  `orchestrator/tests/test_kalkulation_lager.py`, `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`
+
 ## [2026-09-30 17:09] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 23 umgesetzt: Provisionsmodell (Affiliate) -- „EUR je verkauftem Artikel“ oder „% vom
   Umsatz“ in Angebot/Auftrag ohne Summe („nach Abrechnung“), Abrechnung im Rechnungs-Editor (Stueck bzw. Umsatz) ->

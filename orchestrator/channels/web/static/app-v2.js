@@ -920,6 +920,16 @@ function anSumme(ev) {
   const wc = ($("#an-ware-an") || {}).checked ? feld2cent(($("#an-ware-wert") || {}).value) : 0;
   if (wc) box.innerHTML += `<div class="v2-kv"><span>davon in Ware 🎁</span><b>${cent2eur(wc)}</b></div><div class="v2-kv"><span>in Geld zu zahlen</span><b style="${wc > zwischen - rb ? "color:var(--v2-red)" : ""}">${cent2eur(zwischen - rb - wc)}</b></div>`;
   if ($("#an-vk-art")) box.innerHTML += anVorkasseZeile(zwischen - rb - wc);
+  box.innerHTML += anInternKalk(zwischen - rb);
+}
+function anInternKalk(netto) {   // Etappe 21: nur intern (nie im PDF) -- Kosten laut Katalog x Menge
+  if (!KATALOG) return "";
+  const items = Object.fromEntries(KATALOG.gruppen.flatMap(g => g.items).map(i => [i.id, i]));
+  let kosten = 0, ohne = 0;
+  anPositionen().filter(p => !p.provision).forEach(p => { const it = items[p.katalog_id]; const k = it ? Object.values(it.kosten || {}).reduce((s, c) => s + c, 0) : 0; if (k) kosten += Math.round(k * zahl(p.menge)); else ohne++; });
+  if (!kosten) return "";
+  const db = netto - kosten, marge = netto ? Math.round(db * 1000 / netto) / 10 : 0, unter = marge < (KATALOG.mindestmarge_prozent ?? 30);
+  return `<div class="v2-an-intern"><small>🔒 Intern (nicht im PDF)</small><div class="v2-kv"><span>Kosten laut Katalog${ohne ? ` (${ohne} Pos. ohne Kosten)` : ""}</span><b>${cent2eur(kosten)}</b></div><div class="v2-kv"><span>Deckungsbeitrag</span><b>${cent2eur(db)}</b></div><div class="v2-kv"><span>Marge</span><b style="${unter ? "color:var(--v2-red)" : ""}">${esc(pz(marge))} %${unter ? " ⚠️ unter Mindestmarge" : ""}</b></div></div>`;
 }
 async function anSpeichern(nummer) {
   if (!$("#an-firma").value) { $("#an-firma-suche").focus(); return kundenMsg("an-msg", "Bitte eine Firma aus den Vorschlägen auswählen.", false); }
@@ -1134,6 +1144,10 @@ async function renderKatalog(ausCache) {
       <input class="v2-inp kat-einheit" value="${esc(it.einheit)}" placeholder="Einheit" ${ro}><label class="v2-modlbl"><input type="checkbox" class="kat-aktiv" ${it.aktiv ? "checked" : ""} ${ro}> aktiv</label>
       <div class="v2-kat-tkp"><small>Preismodell:</small><select class="v2-inp kat-prov-art" ${ro}><option value="">Festpreis</option><option value="stueck" ${it.provision_art === "stueck" ? "selected" : ""}>Provision je verkauftem Artikel (€)</option><option value="prozent" ${it.provision_art === "prozent" ? "selected" : ""}>Provision vom Umsatz (%)</option></select>
         <input class="v2-inp kat-prov-wert" value="${it.provision_art === "stueck" ? esc(cent2feld(it.provision_wert)) : it.provision_art ? esc(pz(it.provision_wert)) : ""}" placeholder="Satz (z. B. 5 oder 10)" inputmode="decimal" ${ro}></div>
+      <details class="v2-kat-kalk" data-lager-start="${esc(it.lager_start || "")}"><summary><small>Kalkulation &amp; Lager (intern)${katKalkKurz(it, k)}</small></summary>
+        <div class="v2-kat-tkp"><small>Kosten je Einheit:</small>${Object.entries(KOSTEN_ARTEN).map(([a, n]) => `<input class="v2-inp kat-kosten" data-art="${a}" value="${(it.kosten || {})[a] ? esc(cent2feld(it.kosten[a])) : ""}" placeholder="${esc(n)} €" inputmode="decimal" title="${esc(n)}" ${ro}>`).join("")}</div>
+        <div class="v2-kat-tkp"><label class="v2-modlbl"><input type="checkbox" class="kat-physisch" ${it.physisch ? "checked" : ""} ${ro}> physische Ware (Lagerbestand führen)</label>
+          <input class="v2-inp kat-mindest" value="${it.physisch ? esc(String(it.mindestbestand || 0)) : ""}" placeholder="Mindestbestand" inputmode="numeric" ${ro}></div></details>
       <div class="v2-kat-tkp"><small>TKP-Rechnung (leer = Festpreis):</small>
         <input class="v2-inp kat-kontakte" value="${it.kontakte ? esc(String(it.kontakte)) : ""}" placeholder="Kontakte (Median)" inputmode="numeric" ${ro}>
         <input class="v2-inp kat-tmin" value="${it.tkp_min_cent ? esc(String(it.tkp_min_cent / 100)) : ""}" placeholder="TKP min €" inputmode="decimal" ${ro}>
@@ -1157,7 +1171,32 @@ async function renderKatalog(ausCache) {
     <label class="v2-feld"><small>Fußtext</small>${ta("fuss", t.fuss)}</label>
     <label class="v2-feld"><small>Kontakt (Fußzeile)</small><input id="kt-kontakt" value="${esc(t.kontakt)}" ${ro}></label></div>`, "w12");
   const aktion = KAT_DARF ? `<span id="kat-msg" class="v2-msg"></span><button class="v2-btn pri" data-act="kat-speichern">Katalog speichern</button>` : `<span class="v2-sub">Nur ansehen — Preise ändert der Owner (Modul Finanzen).</span>`;
-  $("#v2-app").innerHTML = anKopf() + `<div class="v2-card-actions" style="justify-content:flex-end;margin-bottom:10px">${aktion}</div><div class="v2-grid">${grp}${zu}${texte}</div>`;
+  const lager = await jget("/api/finanzen/lager");
+  const la = (lager && lager.artikel) || [];
+  const lagerTile = tile("📦 Lager (physische Ware)", la.length ? `<table class="v2-table"><thead><tr><th>Artikel</th><th style="text-align:right">Bestand</th><th style="text-align:right">Mindest</th><th>seit</th></tr></thead><tbody>${la.map(x => `<tr><td>${esc(x.name)}</td><td style="text-align:right"><b style="${x.niedrig ? "color:var(--v2-red)" : ""}">${esc(String(x.bestand))}</b></td><td style="text-align:right">${esc(String(x.mindestbestand))}</td><td>${esc(datumDe(x.lager_start))}</td></tr>`).join("")}</tbody></table>
+    ${KAT_DARF ? `<div class="v2-form" style="margin-top:10px"><div class="v2-an-zeile"><label class="v2-feld"><small>Artikel</small><select id="lg-artikel">${la.map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join("")}</select></label>
+      <label class="v2-feld"><small>Menge (+ Zugang / − Abgang)</small><input id="lg-menge" inputmode="numeric" placeholder="z. B. 50"></label><label class="v2-feld"><small>Datum</small><input id="lg-datum" type="date"></label></div>
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Grund</small><input id="lg-grund" placeholder="Wareneingang, Inventur, Bruch …"></label><label class="v2-feld"><small>Beleg (optional)</small><input id="lg-beleg" placeholder="ER-2026-…"></label></div>
+      <button class="v2-btn" data-act="lg-buchen">Bewegung erfassen</button><div id="lg-msg" class="v2-msg"></div></div>` : ""}`
+    : emptyRow("Noch keine physische Ware. Im Katalog bei einem Artikel unter „Kalkulation & Lager“ „physische Ware“ anhaken — Verkäufe laut Rechnungen zählen dann automatisch ab."), "w12");
+  const marge = KAT_DARF ? `<label class="v2-feld" style="max-width:220px"><small>Mindestmarge in % (Warnung darunter)</small><input id="kat-mindestmarge" value="${esc(pz(k.mindestmarge_prozent ?? 30))}" inputmode="decimal"></label>` : "";
+  $("#v2-app").innerHTML = anKopf() + `<div class="v2-card-actions" style="justify-content:space-between;margin-bottom:10px">${marge}<span>${aktion}</span></div><div class="v2-grid">${grp}${lagerTile}${zu}${texte}</div>`;
+}
+const KOSTEN_ARTEN = { einkauf: "Einkauf", fremdleistung: "Fremdleistung/Freelancer", material: "Material", reise: "Reise/Fahrt", sonstiges: "Sonstiges" };
+function katKalk(it, mm) {   // wie core/katalog.kalkulation -- nur intern
+  const kosten = Object.values(it.kosten || {}).reduce((s, c) => s + c, 0);
+  if (!kosten || it.provision_art || !it.preis_cent) return null;
+  const db = it.preis_cent - kosten, marge = Math.round(db * 1000 / it.preis_cent) / 10;
+  return { kosten, db, marge, unter: marge < (mm ?? 30) };
+}
+function katKalkKurz(it, k) {
+  const x = katKalk(it, k.mindestmarge_prozent);
+  return (x ? ` · Kosten ${cent2eur(x.kosten)} · DB ${cent2eur(x.db)} · <b style="${x.unter ? "color:var(--v2-red)" : ""}">Marge ${pz(x.marge)} %${x.unter ? " ⚠️" : ""}</b>` : "") + (it.physisch ? " · 📦 Lager" : "");
+}
+async function lagerBuchen() {
+  const r = await jpost(`/api/finanzen/lager/${encodeURIComponent($("#lg-artikel").value)}/bewegung`, { menge: $("#lg-menge").value.trim(), grund: $("#lg-grund").value.trim(), datum: $("#lg-datum").value, beleg: $("#lg-beleg").value.trim() });
+  if (!r || !r.ok) return kundenMsg("lg-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+  return renderKatalog(true);
 }
 function katalogAusForm() {
   const k = JSON.parse(JSON.stringify(KATALOG));
@@ -1169,8 +1208,11 @@ function katalogAusForm() {
       kontakte: ($(".kat-kontakte", z) || {}).value ? Math.round(zahl($(".kat-kontakte", z).value.replace(/\./g, ""))) : null,
       tkp_min_cent: Math.round(zahl(($(".kat-tmin", z) || {}).value || "0") * 100), tkp_max_cent: Math.round(zahl(($(".kat-tmax", z) || {}).value || "0") * 100),
       produktion_cent: Math.round(zahl(($(".kat-prod", z) || {}).value || "0") * 100), omr: ($(".kat-omr", z) || {}).value || "",
-      ...(($(".kat-prov-art", z) || {}).value ? { provision_art: $(".kat-prov-art", z).value, provision_wert: $(".kat-prov-art", z).value === "stueck" ? Math.round(zahl($(".kat-prov-wert", z).value) * 100) : zahl($(".kat-prov-wert", z).value) } : {}) });
+      ...(($(".kat-prov-art", z) || {}).value ? { provision_art: $(".kat-prov-art", z).value, provision_wert: $(".kat-prov-art", z).value === "stueck" ? Math.round(zahl($(".kat-prov-wert", z).value) * 100) : zahl($(".kat-prov-wert", z).value) } : {}),
+      kosten: Object.fromEntries([...z.querySelectorAll(".kat-kosten")].filter(i => i.value.trim()).map(i => [i.dataset.art, Math.round(zahl(i.value) * 100)])),
+      ...(($(".kat-physisch", z) || {}).checked ? { physisch: true, mindestbestand: Math.round(zahl($(".kat-mindest", z).value || "0")), lager_start: ($(".v2-kat-kalk", z) || {}).dataset?.lagerStart || "" } : {}) });
   });
+  if ($("#kat-mindestmarge")) k.mindestmarge_prozent = zahl($("#kat-mindestmarge").value || "30");
   k.zuschlaege = [...document.querySelectorAll(".v2-kat-zu")].map(z => ({ id: z.dataset.id, name: $(".zu-name", z).value.trim(), prozent: zahl($(".zu-prozent", z).value), info: $(".zu-info", z).value.trim() }));
   const v = (id) => ($("#kt-" + id) || {}).value || "";
   k.texte = { untertitel: v("untertitel"), intro: v("intro"), kalkulation_titel: v("kalkulation_titel"), kalkulation: [0, 1, 2].map(i => v("kalk" + i)).filter(x => x.trim()),
@@ -2282,6 +2324,7 @@ async function handleAct(act, el) {
     case "bl-verwerfen": { const grund = prompt("Warum ist das kein Beleg? (z. B. versehentlich hochgeladen)", ""); if (!grund) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/verwerfen`, { grund }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Verworfen — die Datei bleibt archiviert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "re-neu": return reEditor("");
     case "re-alt-form": return reAltForm();
+    case "lg-buchen": return lagerBuchen();
     case "re-alt-speichern": return reAltSpeichern();
     case "re-altmahn-form": return reAltMahnForm(id);
     case "re-altmahn-speichern": return reAltMahnSpeichern(id);
