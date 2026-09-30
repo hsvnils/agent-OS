@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 19:00] — Claude Code
+- **Was:** Roadmap `LUNA_OS_UI_ROADMAP.md` angelegt (Etappen 1-6: Navigation in 4 Bereichen + Glocke + iPhone-
+  Seitenmenue, WebApp-Login mit Schluesselbund und Sitzungs-Cookie, Handlungsbedarf systemweit, Start- und
+  Bereichs-Startseiten, Mobil-Feinschliff, optional Passkey/Face ID). Analyse read-only: 19 Symbol-Menuepunkte,
+  Nutzung 30 Tage, iPhone-Darstellung im 390-px-Rahmen, Login = HTTP-Basic (Ursache fuer das Neu-Einloggen in der
+  iOS-WebApp). Klickbare Skizze als privates Artifact. Im Roadmap-Verzeichnis und Entscheidungs-Register eingetragen.
+- **Warum:** CEO-Wunsch 2026-09-30 (Menue unuebersichtlich, Bereichs-Startseiten, Mobil-Seitenmenue, Kachel fuer
+  allen dringenden Handlungsbedarf, Login auf iPhone/iPad).
+- **Betroffen:** `LUNA_OS_UI_ROADMAP.md` (neu), `ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-30 18:38] — Claude Code
 - **Was:** Etappe 26 live geprueft nach CEO-Neustart: UI v75 ausgeliefert, Uebersicht liefert `kalkulatorisch` (live
   noch 0 EUR, keine Zeiten erfasst), Journal-CSV mit Haken = unveraenderte Buchungen + getrennter Block, ZIP mit Haken
