@@ -708,11 +708,33 @@ async function renderAngebote() {
 const anKopf = () => secHead("Angebote & Aufträge", `<button class="v2-btn pri" data-act="an-neu">+ Neues Angebot</button>`) + tabs("angebote", [["offen", "Offen"], ["alle", "Alle"], ["auftraege", "Aufträge"], ["katalog", "Katalog"], ["preisliste", "Preisliste"]]);
 
 /* ---------- Editor ---------- */
+function provText(pr) {      // wie core/angebote.provision_text
+  if (!pr) return "";
+  if (pr.art === "stueck") return `${cent2eur(pr.satz_cent)} je verkauftem Artikel` + (pr.stueck != null ? ` · abgerechnet: ${pr.stueck} × ${cent2eur(pr.satz_cent)}` : "");
+  return `${pz(pr.prozent)} % vom vermittelten Umsatz` + (pr.basis_cent != null ? ` · abgerechnet: ${pz(pr.prozent)} % von ${cent2eur(pr.basis_cent)}` : "");
+}
+const posBetrag = (p) => p.provision && p.provision.stueck == null && p.provision.basis_cent == null ? "nach Abrechnung" : cent2eur(p.gesamt_cent);
+function anProvBetrag(z) {   // Cent der Provision oder null (noch nicht abgerechnet)
+  const art = $(".an-p-prov-art", z).value, w = zahl($(".an-p-prov-wert", z).value), abF = $(".an-p-prov-ab", z);
+  if (!abF || abF.value.trim() === "") return null;
+  const ab = zahl(abF.value);
+  return art === "stueck" ? Math.round(ab * w * 100) : Math.round(ab * 100 * w / 100);
+}
+let AN_KONTEXT = "angebot";   // "rechnung": Provision abrechnen (Etappe 23)
+function anProvFelder(pr) {
+  const st = pr.art === "stueck";
+  const wert = st ? cent2feld(pr.satz_cent ?? pr.wert_cent ?? 0) : pz(pr.prozent ?? 0);
+  const ab = st ? (pr.stueck ?? "") : (pr.basis_cent != null ? cent2feld(pr.basis_cent) : "");
+  return `<div class="an-p-prov"><small>Provision</small><select class="v2-inp an-p-prov-art"><option value="stueck" ${st ? "selected" : ""}>€ je verkauftem Artikel</option><option value="prozent" ${st ? "" : "selected"}>% vom Umsatz</option></select>
+    <input class="v2-inp an-p-prov-wert" value="${esc(wert)}" inputmode="decimal" aria-label="Provisionssatz">
+    ${AN_KONTEXT === "rechnung" ? `<small>Abrechnung:</small><input class="v2-inp an-p-prov-ab" value="${esc(String(ab))}" inputmode="decimal" placeholder="${st ? "verkaufte Stück" : "vermittelter Umsatz €"}" aria-label="Abrechnung">` : `<small class="v2-sub">wird nach der Kooperation abgerechnet</small>`}</div>`;
+}
 function anPosZeile(p = {}) {
   const tkp = p.kontakte ? `<div class="an-p-tkp"><small>TKP</small><input class="v2-inp an-p-tkpwert" type="number" min="${(p.tkp_min_cent || 100) / 100}" max="${(p.tkp_max_cent || 50000) / 100}" step="1" value="${esc(String((p.tkp_cent || p.tkp_min_cent) / 100))}" aria-label="TKP in Euro"><small>€ · Spanne ${esc(String((p.tkp_min_cent || p.tkp_cent) / 100))}–${esc(String((p.tkp_max_cent || p.tkp_cent) / 100))} €${p.omr ? " · " + esc(omrText(p.omr)) : ""} · ${esc(Number(p.kontakte).toLocaleString("de-DE"))} Kontakte + ${esc(cent2eur(p.produktion_cent || 0))} Produktion</small></div>` : "";
-  return `<div class="v2-an-pos" data-katalog="${esc(p.katalog_id || "")}" data-gruppe="${esc(p.gruppe || "")}" data-farbe="${esc(p.gruppe_farbe || "")}" data-kontakte="${esc(String(p.kontakte || ""))}" data-prod="${esc(String(p.produktion_cent || 0))}" data-tmin="${esc(String(p.tkp_min_cent || ""))}" data-tmax="${esc(String(p.tkp_max_cent || ""))}" data-omr="${esc(p.omr || "")}">
+  const prov = p.provision ? anProvFelder(p.provision) : "";
+  return `<div class="v2-an-pos${p.provision ? " v2-an-prov" : ""}" data-prov="${p.provision ? "1" : ""}" data-katalog="${esc(p.katalog_id || "")}" data-gruppe="${esc(p.gruppe || "")}" data-farbe="${esc(p.gruppe_farbe || "")}" data-kontakte="${esc(String(p.kontakte || ""))}" data-prod="${esc(String(p.produktion_cent || 0))}" data-tmin="${esc(String(p.tkp_min_cent || ""))}" data-tmax="${esc(String(p.tkp_max_cent || ""))}" data-omr="${esc(p.omr || "")}">
     <div class="v2-an-text"><input class="v2-inp an-p-beschreibung" value="${esc(p.beschreibung || "")}" placeholder="Leistung">
-      <input class="v2-inp an-p-detail" value="${esc(p.detail || "")}" placeholder="Detail (Reichweite, Hinweis) – optional">${tkp}</div>
+      <input class="v2-inp an-p-detail" value="${esc(p.detail || "")}" placeholder="Detail (Reichweite, Hinweis) – optional">${tkp}${prov}</div>
     <input class="v2-inp an-p-menge" value="${esc(p.menge != null ? String(p.menge).replace(".", ",") : "1")}" placeholder="Menge" inputmode="decimal" aria-label="Menge">
     <input class="v2-inp an-p-einheit" value="${esc(p.einheit || "")}" placeholder="Einheit" aria-label="Einheit">
     <input class="v2-inp an-p-preis" value="${p.einzelpreis_cent != null ? cent2feld(p.einzelpreis_cent) : ""}" placeholder="Einzelpreis €" inputmode="decimal" aria-label="Einzelpreis" ${p.kontakte ? 'readonly title="folgt aus dem TKP"' : ""}>
@@ -749,6 +771,7 @@ async function firmaWaehlen(nr) {
   await anApListe("");
 }
 async function anEditor(nummer, firmaVorwahl) {
+  AN_KONTEXT = "angebot";
   openModal(nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-empty">Lade…</div>`, true);
   const [k, d] = await Promise.all([jget("/api/crm/kunden"), nummer ? jget("/api/crm/angebote/" + encodeURIComponent(nummer)) : Promise.resolve(null), katalogLaden()]);
   AN_FIRMEN = ((k && k.firmen) || []).filter(f => f.aktiv);
@@ -818,14 +841,16 @@ function anKatNeu() {
   const [it, g] = katItem(id); if (!it) return;
   const fit = ($("#an-fit") || {}).value || "0", tk = it.kontakte ? Math.round((it.tkp_min_cent + Number(fit) * (it.tkp_max_cent - it.tkp_min_cent)) / 100) * 100 : null;
   $("#an-pos").insertAdjacentHTML("beforeend", anPosZeile({ beschreibung: it.name, detail: [it.basis, it.hinweis].filter(Boolean).join(" · "), menge: 1, einheit: it.einheit, einzelpreis_cent: it.kontakte ? tkpPreis(it.kontakte, tk, it.produktion_cent || 0) : it.preis_cent, katalog_id: it.id, gruppe: g.name, gruppe_farbe: g.farbe,
-    kontakte: it.kontakte, tkp_cent: tk, tkp_min_cent: it.tkp_min_cent, tkp_max_cent: it.tkp_max_cent, produktion_cent: it.produktion_cent, omr: it.omr }));
+    kontakte: it.kontakte, tkp_cent: tk, tkp_min_cent: it.tkp_min_cent, tkp_max_cent: it.tkp_max_cent, produktion_cent: it.produktion_cent, omr: it.omr,
+    ...(it.provision_art ? { provision: it.provision_art === "stueck" ? { art: "stueck", satz_cent: it.provision_wert } : { art: "prozent", prozent: it.provision_wert }, einzelpreis_cent: 0 } : {}) }));
   $("#an-kat").value = ""; anSumme();
 }
 function anPositionen() {
   return [...document.querySelectorAll("#an-pos .v2-an-pos")].map(z => ({ beschreibung: $(".an-p-beschreibung", z).value.trim(), detail: $(".an-p-detail", z).value.trim(), menge: $(".an-p-menge", z).value.trim(), einheit: $(".an-p-einheit", z).value.trim(), einzelpreis: $(".an-p-preis", z).value.trim(),
     katalog_id: z.dataset.katalog || "", gruppe: z.dataset.gruppe || "", gruppe_farbe: z.dataset.farbe || "",
     ...(z.dataset.kontakte ? { kontakte: Number(z.dataset.kontakte), tkp_cent: Math.round(zahl($(".an-p-tkpwert", z).value) * 100), produktion_cent: Number(z.dataset.prod || 0),
-      tkp_min_cent: z.dataset.tmin, tkp_max_cent: z.dataset.tmax, omr: z.dataset.omr } : {}) })).filter(p => p.beschreibung || p.einzelpreis);
+      tkp_min_cent: z.dataset.tmin, tkp_max_cent: z.dataset.tmax, omr: z.dataset.omr } : {}),
+    ...(z.dataset.prov ? { menge: "1", einzelpreis: "0", provision: { art: $(".an-p-prov-art", z).value, wert: $(".an-p-prov-wert", z).value.trim(), ...($(".an-p-prov-ab", z) && $(".an-p-prov-ab", z).value.trim() !== "" ? { abrechnung: $(".an-p-prov-ab", z).value.trim() } : {}) } } : {}) })).filter(p => p.beschreibung || p.einzelpreis);
 }
 function anFitSetzen() {   // „Community-Fit“: TKP aller Reichweiten-Positionen innerhalb ihrer Spanne setzen
   const fit = Number(($("#an-fit") || {}).value || 0);
@@ -878,15 +903,19 @@ function anSumme(ev) {
   const box = $("#an-summe-box"); if (!box) return;
   document.querySelectorAll("#an-pos .v2-an-pos").forEach(z => { const i = $(".an-p-tkpwert", z); if (!i || !z.dataset.kontakte) return;
     $(".an-p-preis", z).value = cent2feld(tkpPreis(Number(z.dataset.kontakte), Math.round(zahl(i.value) * 100), Number(z.dataset.prod || 0))); });
-  document.querySelectorAll("#an-pos .v2-an-pos").forEach(z => { const c = Math.round(zahl($(".an-p-menge", z).value) * zahl($(".an-p-preis", z).value) * 100); $(".an-p-gesamt", z).textContent = isFinite(c) ? cent2eur(c) : "–"; });
+  document.querySelectorAll("#an-pos .v2-an-pos").forEach(z => { const pv = z.dataset.prov ? anProvBetrag(z) : undefined; const c = pv !== undefined ? pv : Math.round(zahl($(".an-p-menge", z).value) * zahl($(".an-p-preis", z).value) * 100); $(".an-p-gesamt", z).textContent = pv === null ? "nach Abrechnung" : isFinite(c) ? cent2eur(c) : "–"; });
   const leer = $("#an-pos-leer"); if (leer) leer.hidden = !!document.querySelector("#an-pos .v2-an-pos");
-  const formate = anPositionen().reduce((acc, p) => acc + Math.round(zahl(p.menge) * zahl(p.einzelpreis) * 100), 0);
+  const formate = anPositionen().filter(p => !p.provision).reduce((acc, p) => acc + Math.round(zahl(p.menge) * zahl(p.einzelpreis) * 100), 0);
+  const provZ = [...document.querySelectorAll("#an-pos .v2-an-pos[data-prov='1']")].map(anProvBetrag);
+  const prov = provZ.reduce((s, c) => s + (c || 0), 0), provOffen = provZ.some(c => c === null);
   if (!isFinite(formate)) { box.innerHTML = `<div class="v2-kv"><span>Summe</span><b>Eingabe prüfen</b></div>`; return; }
   const zu = anZuschlaege().map(z => [z.name, z.prozent, Math.round(formate * z.prozent / 100)]);
   const zwischen = formate + zu.reduce((s, z) => s + z[2], 0);
   const r = Number(($("#an-rabatt") || {}).value || 0), rb = Math.round(zwischen * r / 100);
   box.innerHTML = `<div class="v2-kv"><span>Summe Formate</span><b>${cent2eur(formate)}</b></div>` + zu.map(z => `<div class="v2-kv"><span>${esc(z[0])} (+${esc(pz(z[1]))} %)</span><b>${cent2eur(z[2])}</b></div>`).join("")
-    + (r ? `<div class="v2-kv"><span>Paketrabatt (${esc(pz(r))} %)</span><b>−${cent2eur(rb)}</b></div>` : "") + `<div class="v2-kv"><span><b>Gesamtbetrag</b></span><b>${cent2eur(zwischen - rb)}</b></div>`;
+    + (r ? `<div class="v2-kv"><span>Paketrabatt (${esc(pz(r))} %)</span><b>−${cent2eur(rb)}</b></div>` : "")
+    + (provZ.length ? `<div class="v2-kv"><span>Provision</span><b>${provOffen && !prov ? "nach Abrechnung" : cent2eur(prov)}</b></div>` : "")
+    + `<div class="v2-kv"><span><b>Gesamtbetrag</b></span><b>${cent2eur(zwischen - rb + prov)}${provOffen ? " + Provision" : ""}</b></div>`;
   const wb = $("#an-ware-box"); if (wb) wb.hidden = !($("#an-ware-an") || {}).checked;
   const wc = ($("#an-ware-an") || {}).checked ? feld2cent(($("#an-ware-wert") || {}).value) : 0;
   if (wc) box.innerHTML += `<div class="v2-kv"><span>davon in Ware 🎁</span><b>${cent2eur(wc)}</b></div><div class="v2-kv"><span>in Geld zu zahlen</span><b style="${wc > zwischen - rb ? "color:var(--v2-red)" : ""}">${cent2eur(zwischen - rb - wc)}</b></div>`;
@@ -911,7 +940,7 @@ async function anDetail(nr, meldung, fehler) {
   const d = await jget("/api/crm/angebote/" + encodeURIComponent(nr));
   const a = d && d.angebot; if (!a) return openModal(nr, emptyRow("Angebot nicht gefunden."), true);
   const ap = d.ansprechpartner, sm = a.summen || { formate_cent: a.summe_cent, zuschlaege: [], rabatt: null, gesamt_cent: a.summe_cent };
-  const pos = a.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${cent2eur(p.gesamt_cent)}</td></tr>`).join("");
+  const pos = a.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}${p.provision ? `<br><small>💶 ${esc(provText(p.provision))}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${posBetrag(p)}</td></tr>`).join("");
   const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Formate</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
     + sm.zuschlaege.map(([n, p, c]) => `<tr><td></td><td>${esc(n)} (+${esc(pz(p))} %)</td><td></td><td style="text-align:right">${cent2eur(c)}</td></tr>`).join("")
     + (sm.rabatt ? `<tr><td></td><td>Paketrabatt (${esc(pz(sm.rabatt[0]))} %)</td><td></td><td style="text-align:right">−${cent2eur(sm.rabatt[1])}</td></tr>` : "")
@@ -989,7 +1018,7 @@ async function abDetail(nr, meldung, fehler) {
   const d = await jget("/api/crm/auftraege/" + encodeURIComponent(nr));
   const a = d && d.auftrag; if (!a) return openModal(nr, emptyRow("Auftrag nicht gefunden."), true);
   const ap = d.ansprechpartner, sm = a.summen;
-  const pos = a.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${cent2eur(p.gesamt_cent)}</td></tr>`).join("");
+  const pos = a.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}${p.provision ? `<br><small>💶 ${esc(provText(p.provision))}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${posBetrag(p)}</td></tr>`).join("");
   const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Formate</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
     + sm.zuschlaege.map(([n, p, c]) => `<tr><td></td><td>${esc(n)} (+${esc(pz(p))} %)</td><td></td><td style="text-align:right">${cent2eur(c)}</td></tr>`).join("")
     + (sm.rabatt ? `<tr><td></td><td>Paketrabatt (${esc(pz(sm.rabatt[0]))} %)</td><td></td><td style="text-align:right">−${cent2eur(sm.rabatt[1])}</td></tr>` : "")
@@ -1103,6 +1132,8 @@ async function renderKatalog(ausCache) {
       <input class="v2-inp kat-name" value="${esc(it.name)}" ${ro}><input class="v2-inp kat-basis" value="${esc(it.basis)}" placeholder="Basis (Reichweite)" ${ro}>
       <input class="v2-inp kat-hinweis" value="${esc(it.hinweis)}" placeholder="Hinweis" ${ro}><input class="v2-inp kat-preis" value="${cent2feld(it.preis_cent)}" inputmode="decimal" ${ro}>
       <input class="v2-inp kat-einheit" value="${esc(it.einheit)}" placeholder="Einheit" ${ro}><label class="v2-modlbl"><input type="checkbox" class="kat-aktiv" ${it.aktiv ? "checked" : ""} ${ro}> aktiv</label>
+      <div class="v2-kat-tkp"><small>Preismodell:</small><select class="v2-inp kat-prov-art" ${ro}><option value="">Festpreis</option><option value="stueck" ${it.provision_art === "stueck" ? "selected" : ""}>Provision je verkauftem Artikel (€)</option><option value="prozent" ${it.provision_art === "prozent" ? "selected" : ""}>Provision vom Umsatz (%)</option></select>
+        <input class="v2-inp kat-prov-wert" value="${it.provision_art === "stueck" ? esc(cent2feld(it.provision_wert)) : it.provision_art ? esc(pz(it.provision_wert)) : ""}" placeholder="Satz (z. B. 5 oder 10)" inputmode="decimal" ${ro}></div>
       <div class="v2-kat-tkp"><small>TKP-Rechnung (leer = Festpreis):</small>
         <input class="v2-inp kat-kontakte" value="${it.kontakte ? esc(String(it.kontakte)) : ""}" placeholder="Kontakte (Median)" inputmode="numeric" ${ro}>
         <input class="v2-inp kat-tmin" value="${it.tkp_min_cent ? esc(String(it.tkp_min_cent / 100)) : ""}" placeholder="TKP min €" inputmode="decimal" ${ro}>
@@ -1137,7 +1168,8 @@ function katalogAusForm() {
       preis_cent: Math.round(zahl($(".kat-preis", z).value) * 100), einheit: $(".kat-einheit", z).value.trim(), aktiv: $(".kat-aktiv", z).checked,
       kontakte: ($(".kat-kontakte", z) || {}).value ? Math.round(zahl($(".kat-kontakte", z).value.replace(/\./g, ""))) : null,
       tkp_min_cent: Math.round(zahl(($(".kat-tmin", z) || {}).value || "0") * 100), tkp_max_cent: Math.round(zahl(($(".kat-tmax", z) || {}).value || "0") * 100),
-      produktion_cent: Math.round(zahl(($(".kat-prod", z) || {}).value || "0") * 100), omr: ($(".kat-omr", z) || {}).value || "" });
+      produktion_cent: Math.round(zahl(($(".kat-prod", z) || {}).value || "0") * 100), omr: ($(".kat-omr", z) || {}).value || "",
+      ...(($(".kat-prov-art", z) || {}).value ? { provision_art: $(".kat-prov-art", z).value, provision_wert: $(".kat-prov-art", z).value === "stueck" ? Math.round(zahl($(".kat-prov-wert", z).value) * 100) : zahl($(".kat-prov-wert", z).value) } : {}) });
   });
   k.zuschlaege = [...document.querySelectorAll(".v2-kat-zu")].map(z => ({ id: z.dataset.id, name: $(".zu-name", z).value.trim(), prozent: zahl($(".zu-prozent", z).value), info: $(".zu-info", z).value.trim() }));
   const v = (id) => ($("#kt-" + id) || {}).value || "";
@@ -1252,6 +1284,7 @@ async function reAltMahnSpeichern(nr) {
   return reDetail(nr, `${r.nummer} erfasst (Stufe ${r.stufe}).`);
 }
 async function reEditor(eid) {
+  AN_KONTEXT = "rechnung";
   openModal(eid ? `Rechnung ${eid} bearbeiten` : "Neue Rechnung", `<div class="v2-empty">Lade…</div>`, true);
   const [k, d] = await Promise.all([jget("/api/crm/kunden"), eid ? jget("/api/finanzen/rechnungen/" + encodeURIComponent(eid)) : Promise.resolve(null), katalogLaden()]);
   AN_FIRMEN = ((k && k.firmen) || []).filter(f => f.aktiv);
@@ -1307,7 +1340,7 @@ async function reDetail(id, meldung, fehler) {
   const d = await jget("/api/finanzen/rechnungen/" + encodeURIComponent(id));
   const r = d && d.rechnung; if (!r) return openModal(id, emptyRow("Rechnung nicht gefunden."), true);
   const entwurf = r.status === "entwurf", sm = r.summen, ap = d.ansprechpartner;
-  const pos = r.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${cent2eur(p.gesamt_cent)}</td></tr>`).join("");
+  const pos = r.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}${p.provision ? `<br><small>💶 ${esc(provText(p.provision))}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${posBetrag(p)}</td></tr>`).join("");
   const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Positionen</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
     + sm.zuschlaege.map(([n, p, c]) => `<tr><td></td><td>${esc(n)} (+${esc(pz(p))} %)</td><td></td><td style="text-align:right">${cent2eur(c)}</td></tr>`).join("")
     + (sm.rabatt ? `<tr><td></td><td>Rabatt (${esc(pz(sm.rabatt[0]))} %)</td><td></td><td style="text-align:right">−${cent2eur(Math.abs(sm.rabatt[1]))}</td></tr>` : "")

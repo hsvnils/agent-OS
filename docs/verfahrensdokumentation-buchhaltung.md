@@ -39,6 +39,9 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    **Altrechnungen** (vor LUNA mit eigener Nummer geschrieben) werden mit Originalnummer und Original-PDF
    unveraendert uebernommen -- ohne neue Nummer und ohne zweite Rechnung; bereits verschickte Mahnungen werden mit Datum
    (und PDF) als erreichte Stufe erfasst.
+   **Provisionen** (z. B. Affiliate): Angebot und Auftrag nennen nur das Modell (Euro je verkauftem Artikel bzw. Prozent
+   vom vermittelten Umsatz); die Rechnung entsteht nach der Abrechnung (Stueckzahl bzw. Umsatz) mit ausgewiesener
+   Berechnungsgrundlage; eine Rechnung mit nicht abgerechneter Provision kann nicht festgeschrieben werden.
 4. **Korrektur** nur per **Stornorechnung** (eigene Nummer, negativer Betrag, Bezug auf das Original) und ggf.
    neuer Rechnung.
 5. **Zahlungseingang** wird von Hand erfasst (Datum laut Kontoauszug, Teilzahlungen moeglich).
@@ -152,3 +155,4 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 | 2026-09-30 | Zahlungsbedingungen, Vorkasse- und Schlussrechnung (Etappe 18) ergaenzt | Claude Code |
 | 2026-09-30 | Beleg-Import aus gespeicherten Mails und Zweck/Begruendung am Beleg ergaenzt | Claude Code |
 | 2026-09-30 | Altrechnungen und Mahnungen von vor LUNA (Etappe 19) ergaenzt | Claude Code |
+| 2026-09-30 | Provisionen (Etappe 23) ergaenzt | Claude Code |

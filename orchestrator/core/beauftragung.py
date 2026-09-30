@@ -12,7 +12,8 @@ from __future__ import annotations
 
 from datetime import date
 
-from .angebote import AngebotStore, _bloecke, _empfaenger, anrede_moin, inhalt_hash, summen, ware_hinweis
+from .angebote import (AngebotStore, _bloecke, _empfaenger, _summen_zeilen, anrede_moin, inhalt_hash, pdf_posten, pdf_posten_standard,
+                       summen, ware_hinweis)
 from .beleg_pdf import HINWEIS_19, beleg_pdf, datum_de, eur, hanserautisch_pdf
 from .buchhaltung import Buchhaltung, jetzt
 from .kunden import KundenStore
@@ -198,7 +199,7 @@ class AuftragBuch:
                                        (p.get("gruppe") or "Leistungen", p.get("gruppe_farbe", "blau"), []))
                 g[2].append({"name": p["beschreibung"], "detail": p.get("detail", ""), "menge": p["menge"],
                              "einheit": p.get("einheit", "") if p.get("einheit", "").lower() == "monat" else "",
-                             "betrag_cent": p["gesamt_cent"]})
+                             "betrag_cent": p["gesamt_cent"]} | pdf_posten(p))
             return hanserautisch_pdf(
                 art="Auftragsbestätigung", nummer=a["nummer"], firma=firmendaten, logo=self.bh.dir / "logo.jpg",
                 empfaenger=_empfaenger(f, ap), untertitel=a.get("titel") or b.get("untertitel", ""),
@@ -211,8 +212,8 @@ class AuftragBuch:
             art="Auftragsbestätigung", nummer=a["nummer"], firma=firmendaten, empfaenger=_empfaenger(f, ap),
             infos=[("Datum", datum_de(a["datum"])), ("Angebot", a["angebot"]), ("Kundennummer", a["firma"]),
                    ("Leistung", zeitraum)],
-            einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einleitung, positionen=a["positionen"],
-            summe_cent=a["summe_cent"], hinweise=hinweise, schluss="")
+            einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einleitung, positionen=[x | pdf_posten_standard(x) for x in a["positionen"]],
+            summe_cent=a["summe_cent"], hinweise=hinweise, schluss="", summen_zeilen=_summen_zeilen(a["summen"]))
 
     def pdf_ablegen(self, nummer: str, pdf: bytes, *, an: str = "", von: str = "") -> dict:
         a = self.auftrag(nummer)

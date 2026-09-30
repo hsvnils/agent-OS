@@ -221,6 +221,15 @@ def pruefe(k: dict) -> dict:
             eintrag = {"id": iid, "name": _txt(it.get("name"), 120), "basis": _txt(it.get("basis"), 200),
                        "hinweis": _txt(it.get("hinweis"), 300), "preis_cent": preis,
                        "einheit": _txt(it.get("einheit"), 20), "aktiv": it.get("aktiv", True) is not False}
+            if it.get("provision_art") in ("stueck", "prozent"):          # Etappe 23: Standard-Provisionsmodell
+                try:
+                    w = (int(it.get("provision_wert")) if it["provision_art"] == "stueck"
+                         else round(float(str(it.get("provision_wert")).replace(",", ".")), 2))
+                except (TypeError, ValueError):
+                    raise ValueError(f"{iid}: Provisionssatz fehlt.") from None
+                if not (0 < w <= (10_000_000 if it["provision_art"] == "stueck" else 100)):
+                    raise ValueError(f"{iid}: Provisionssatz ausserhalb des Rahmens.")
+                eintrag |= {"provision_art": it["provision_art"], "provision_wert": w}
             if it.get("kontakte") not in (None, "", 0, "0"):             # Etappe 16: Preis = Kontakte x TKP + Produktion
                 try:
                     tk = {k: int(it.get(k) or 0) for k in TKP_FELDER if k != "omr"}

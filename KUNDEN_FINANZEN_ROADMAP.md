@@ -4,7 +4,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 umgesetzt (Deploy offen); freigegeben und in dieser Reihenfolge: 23 Provisionsmodell, 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 Provisionsmodell umgesetzt (Deploy offen); freigegeben und in dieser Reihenfolge: 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -743,8 +743,15 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 23: Provisionsmodell (Affiliate) in Angebot, Auftrag und Abrechnung
 
-- Status: freigegeben (CEO 2026-09-30: „im Angebot mit einem Preis ausstatten, z. B. 5 Euro pro verkauftem Artikel oder
-  10 % ... um nach der Collab abrechnen zu koennen; auf der Rechnung steht dann ein richtiger Euro-Wert“)
+- Status: umgesetzt (CEO 2026-09-30: „im Angebot mit einem Preis ausstatten, z. B. 5 Euro pro verkauftem Artikel oder
+  10 % ... um nach der Collab abrechnen zu koennen; auf der Rechnung steht dann ein richtiger Euro-Wert“), Deploy offen
+- Ergebnis: Position mit `provision` (`stueck`: Satz in Cent, `prozent`: Satz in %); ohne Abrechnung Betrag 0 und
+  „nach Abrechnung“ (Angebot, Auftrag, PDFs, Detail), mit Abrechnung (verkaufte Stueck bzw. vermittelter Umsatz) rechnet
+  der Server den Euro-Betrag (kaufmaennisch gerundet). Summen: Provision ohne Zuschlag/Rabatt, danach addiert; Vorkasse
+  nur vom Festpreis-Anteil. Festschreiben einer Rechnung mit offener Provision gesperrt. Katalog: Standard-Preismodell je
+  Artikel (`provision_art`/`provision_wert`, Editor „Preismodell“), Preisliste zeigt den Satz statt 0,00 EUR. LUNA-OS:
+  Provisionsfelder in der Positionszeile, im Rechnungs-Editor Feld „Abrechnung“. Tests `test_provision.py` (6) +
+  8 Gegenproben, Suite gruen, Headless-Chrome-Test, PDF gesichtet.
 - Ziel / Scope: Katalog-Artikel „Affiliate-Partnerschaft“ (live seit 2026-09-30, Gruppe „Partnerschaften“) bekommt ein
   Provisionsmodell: **fester Betrag je verkauftem Artikel** (z. B. 5,00 EUR) oder **Prozent vom Umsatz** (z. B. 10 %).
   Im Angebot/Auftrag steht das Modell statt einer Summe („5,00 EUR je verkauftem Artikel“), die Angebotssumme weist die

@@ -207,8 +207,9 @@ def beleg_pdf(*, art: str, nummer: str, firma: dict, empfaenger: list[str], info
         pdf.set_xy(20 + breiten[0], y0 + 1)
         pdf.multi_cell(breiten[1], 4.6, T(p["beschreibung"]), align="L")
         x = 20 + breiten[0] + breiten[1]
-        for b, w, a in zip(breiten[2:], (menge_text(p["menge"]), p.get("einheit", ""), eur(p["einzelpreis_cent"]),
-                                         eur(p["gesamt_cent"])), ("R", "L", "R", "R")):
+        for b, w, a in zip(breiten[2:], (menge_text(p["menge"]), p.get("einheit", ""),
+                                         p.get("einzel_text") or eur(p["einzelpreis_cent"]),
+                                         p.get("gesamt_text") or eur(p["gesamt_cent"])), ("R", "L", "R", "R")):
             pdf.set_xy(x, y0 + 1)
             pdf.cell(b, 4.6, T(w), align=a)
             x += b
@@ -480,7 +481,7 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
                 pdf.cell(14, 5.2, T(f"{menge_text(p['menge'])} ×"), align="R")
             pdf.set_xy(20 + B - 34, y0)
             pdf.set_font(S, "B", 9.5)
-            pdf.cell(34, 5.2, T(eur(p["betrag_cent"])), align="R")
+            pdf.cell(34, 5.2, T(p.get("betrag_text") or eur(p["betrag_cent"])), align="R")
             if p.get("einheit"):
                 pdf.set_xy(20 + B - 34, y0 + 5)
                 pdf.set_font(S, size=7.5)
@@ -494,7 +495,7 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
     # Summen (Angebot)
     if summen is not None:
         pdf.ln(5)
-        zeilen = (1 + len(summen.get("zuschlaege") or []) + (1 if summen.get("rabatt") else 0)
+        zeilen = (1 + len(summen.get("zuschlaege") or []) + (1 if summen.get("rabatt") else 0) + ("provision_cent" in summen)
                   + (1 + len(summen["abzuege"]) if summen.get("abzuege") else 0))
         platz(zeilen * 5.5 + 16)
         x0, bs = 20 + B - 115, 115
@@ -513,6 +514,9 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
         if summen.get("rabatt"):
             pr, c = summen["rabatt"]
             zeile(f"Paketrabatt ({menge_text(pr)} %)", eur(-c), ROT)
+        if "provision_cent" in summen:                     # Etappe 23: Provision (Affiliate)
+            zeile("Provision",
+                  "nach Abrechnung" if summen.get("provision_offen") and not summen["provision_cent"] else eur(summen["provision_cent"]))
         if summen.get("abzuege"):                          # Schlussrechnung: Vorkasse abziehen (Etappe 18)
             zeile("Auftragssumme", eur(summen["vor_abzug_cent"]), fett=True)
             for name, c in summen["abzuege"]:
