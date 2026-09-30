@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 20:00] — Claude Code
+- **Was:** Investment-Nachbesserung nach CEO-Neustart live geprueft: Handlungsbedarf 5 Punkte (4 dringend, 1 diese
+  Woche), die 5 ueberholten Investment-Anfragen erscheinen nicht mehr; Bot-Herzschlag 1 min. BF-48 (Anmelde-Zeiten
+  in deutscher Zeit) gemergt, gepusht, per Sync auf der NAS (`4d41f67`), Neustart durch den CEO offen.
+- **Warum:** CEO-Go 2026-09-30.
+- **Betroffen:** `projekt_changelog.md` (Code siehe vorige Eintraege)
+
 ## [2026-09-30 19:56] — Claude Code
 - **Was:** Investment-Nachbesserung gemergt, gepusht, per Sync auf der NAS (`388bb54`, Neustart durch den CEO offen).
   CEO bestaetigt: Face ID klappt; auf der NAS hinterlegt ist 1 Passkey „iPhone · Safari“ mit 1 Sitzung. Dabei BF-48
