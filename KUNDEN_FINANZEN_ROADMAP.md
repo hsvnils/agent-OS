@@ -481,6 +481,10 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 - Aufwand: mittel (1 Sitzung). Abhaengigkeit: (a) der Auto-Weiterleitung nutzt Etappe 14.
 - Dokumentation: Changelog, Roadmap, `docs/datenfluesse.md`, Register, Verfahrensdokumentation (Mail als Original).
 
+- Nachtrag 2026-09-30 (CEO: Jahresordner statt Eigenbelege): Upload in LUNA-OS nimmt auch gespeicherte Mails (`.eml`) und
+  Postfaecher (`.mbox`) an -- gleiche Erkennung wie Mails an LUNA, idempotent ueber die Message-ID, Dubletten erkannt
+  (`eingangsbelege.datei_importieren`); Lesefehler aus dem echten Ordner behoben (BF-43).
+
 ### Etappe 14: Lieferanten-, Partner- und Dienstleister-Stammdaten mit Nummern
 
 - Status: deployt + live befuellt (main 774de97, 2026-09-29), CEO-Abnahme offen. Nachzuordnung live: L-00001..05

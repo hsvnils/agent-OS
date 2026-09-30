@@ -1933,10 +1933,13 @@ async def belege_hochladen(request: Request):
         name = str((d or {}).get("name") or "beleg")
         try:
             daten = _b64.b64decode(str(d.get("daten") or ""), validate=True)
-            r = st.aufnehmen(daten, name, quelle="upload", von=_von(request))
-            if not r.get("doppelt"):
-                _eb.llm_beauftragen(st, backoffice, r["nummer"])
-            ergebnisse.append({"name": name, "ok": True} | {k: r.get(k) for k in ("nummer", "doppelt", "text_quelle")})
+            rs = _eb.datei_importieren(st, daten, name, von=_von(request))     # auch .eml/.mbox (Beleg-Import)
+            if not rs:
+                ergebnisse.append({"name": name, "ok": False, "hinweis": "Keine Rechnung in der Mail erkannt."})
+            for r in rs:
+                if not r.get("doppelt"):
+                    _eb.llm_beauftragen(st, backoffice, r["nummer"])
+                ergebnisse.append({"name": name, "ok": True} | {k: r.get(k) for k in ("nummer", "doppelt", "text_quelle")})
         except (ValueError, TypeError) as exc:
             ergebnisse.append({"name": name, "ok": False, "hinweis": str(exc)[:200]})
     try:                                                    # Fremdwaehrung -> Kalender „Euro-Betrag eintragen“
