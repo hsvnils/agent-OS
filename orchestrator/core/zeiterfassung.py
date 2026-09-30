@@ -8,10 +8,11 @@ irgendwo andrucken muessen“) -- keine Zeiten in PDFs, Mails oder beim Kunden.
   Einstellung in `buchhaltung/zeiterfassung.json` (nur NAS, nicht im Git).
 - **Zeiten:** Start/Stopp (Telegram „Bin auf dem Weg zu …“ / „Bin wieder zuhause“, Fahrzeit zaehlt) oder manuell (Datum,
   von-bis bzw. Dauer). Immer an einem Auftrag `AB-` (oder vorlaeufig nur an der Firma, dann To-do „Zeit zuordnen“).
-- **Fahrten:** Kilometer Hin + Rueck ab der Firmenadresse (OpenStreetMap, `core/routen.py`) oder von Hand -> echte
-  Betriebsausgabe: **Eigenbeleg** „Fahrtkosten“ mit 0,30 EUR/km (Kategorie Reisekosten), Referenz Auftrag.
-- **Nachkalkulation:** Auftragssumme (Geldanteil) minus Zeitkosten minus Fahrtkosten -> Deckungsbeitrag und effektiver
-  Stundenlohn.
+- **Fahrten:** Kilometer Hin + Rueck ab der Firmenadresse (OpenStreetMap, `core/routen.py`) oder von Hand -> ebenfalls
+  **nur kalkulatorisch** mit 0,30 EUR/km (CEO 2026-09-30: Firmenwagen des Arbeitgebers, real keine Kosten -- „was es
+  kosten wuerde, wenn man selbststaendig waere“). **Kein Eigenbeleg, keine Buchung, nicht in der EUeR.**
+- **Nachkalkulation:** Auftragssumme (Geldanteil) minus kalkulatorische Zeit- und Fahrtkosten -> Deckungsbeitrag und
+  effektiver Stundenlohn („als waere ich selbststaendig“).
 
 Ereignisse: `zeit_start`, `zeit_stopp`, `zeit_eintrag`, `zeit_fahrt`, `zeit_storniert`, `zeit_zugeordnet`.
 """
@@ -25,7 +26,7 @@ from datetime import datetime, timedelta
 from .beleg_pdf import eur
 from .buchhaltung import jetzt
 
-KM_SATZ_CENT = 30                        # Kilometerpauschale Dienstreise mit Privat-Pkw (EStG), je gefahrenem km
+KM_SATZ_CENT = 30                        # kalkulatorisch, angelehnt an die Kilometerpauschale (je gefahrenem km)
 ERINNERN_STUNDEN = 10
 MAX_MINUTEN = 24 * 60
 
@@ -85,7 +86,7 @@ class Zeiterfassung:
             elif t == "zeit_stopp":
                 out[d["id"]] |= {"ende": d["ende"], "satz_cent": d["satz_cent"]}
             elif t == "zeit_fahrt":
-                out[d["id"]]["fahrten"].append({k: d.get(k) for k in ("km", "quelle", "adresse", "eigenbeleg", "betrag_cent")})
+                out[d["id"]]["fahrten"] = [{k: d.get(k) for k in ("km", "quelle", "adresse", "betrag_cent")}]   # letzte gilt
             elif t == "zeit_storniert":
                 out[d["id"]] |= {"storniert": True, "grund": d.get("grund", "")}
             elif t == "zeit_zugeordnet":
@@ -205,8 +206,6 @@ class Zeiterfassung:
             raise ValueError("Diesen Eintrag gibt es nicht (mehr).")
         if not (grund or "").strip():
             raise ValueError("Bitte einen Grund angeben.")
-        if any(f.get("eigenbeleg") for f in x["fahrten"]):
-            raise ValueError("Zu diesem Eintrag ist Fahrtkosten gebucht -- erst den Eigenbeleg stornieren.")
         self.bh.erfassen("zeit_storniert", {"id": zid, "grund": grund.strip()[:200]}, von=von)
         return {"id": zid, "storniert": True}
 
@@ -225,14 +224,12 @@ class Zeiterfassung:
         km = self.routen.km_hin_zurueck(self.heimadresse, ziel) if (self.routen and ziel and self.heimadresse) else None
         return {"id": zid, "adresse": ziel, "km": km, "betrag_cent": km * KM_SATZ_CENT if km else None}
 
-    def fahrt_buchen(self, zid: str, *, km=None, adresse: str = "", von: str = "") -> dict:
-        """Fahrtkosten als Eigenbeleg (Betriebsausgabe, 0,30 EUR/km). Ohne km: aus der Route (Hin + Rueck)."""
-        from .eigenbelege import EigenbelegStore
+    def fahrt_erfassen(self, zid: str, *, km=None, adresse: str = "", von: str = "") -> dict:
+        """Fahrt **kalkulatorisch** erfassen (0,30 EUR/km, keine Buchung). Ohne km: aus der Route (Hin + Rueck).
+        Erneut erfassen korrigiert (letzter Eintrag gilt)."""
         x = self._falte().get(zid)
         if not x or x["storniert"]:
             raise ValueError("Diesen Zeiteintrag gibt es nicht (mehr).")
-        if x["fahrten"]:
-            raise ValueError("Fuer diesen Termin ist die Fahrt schon erfasst.")
         quelle = "hand"
         if km in (None, ""):
             v = self.km_vorschlag(zid, adresse)
@@ -243,20 +240,12 @@ class Zeiterfassung:
             km = int(round(float(str(km).replace(",", "."))))
         except (TypeError, ValueError):
             raise ValueError("Kilometer als Zahl.") from None
-        if not 0 < km <= 3000:
-            raise ValueError("Kilometer zwischen 1 und 3000.")
-        f = self.kunden.firma(x["firma"]) or {}
-        tag = str(x["start"])[:10]
+        if not 0 <= km <= 3000:
+            raise ValueError("Kilometer zwischen 0 und 3000.")
         betrag = km * KM_SATZ_CENT
-        eb = EigenbelegStore(self.bh).anlegen({
-            "art": "ausgabe", "datum": tag, "betrag": betrag / 100, "kategorie": "reise",
-            "text": f"Fahrtkosten {tag[8:10]}.{tag[5:7]}.{tag[:4]} zu {f.get('name', x['firma'])} ({adresse or self.adresse_fuer(x)}): "
-                    f"{km} km Hin + Rueck x {eur(KM_SATZ_CENT)}",
-            "gegenpartei": f.get("name", ""), "firma": x["firma"],
-            "referenz": " ".join(v for v in (x.get("auftrag"), zid) if v)}, von=von)
-        self.bh.erfassen("zeit_fahrt", {"id": zid, "km": km, "quelle": quelle, "adresse": (adresse or "")[:200],
-                                        "eigenbeleg": eb["nummer"], "betrag_cent": betrag}, von=von)
-        return {"id": zid, "km": km, "betrag_cent": betrag, "eigenbeleg": eb["nummer"]}
+        self.bh.erfassen("zeit_fahrt", {"id": zid, "km": km, "quelle": quelle, "adresse": (adresse or self.adresse_fuer(x))[:200],
+                                        "betrag_cent": betrag}, von=von)
+        return {"id": zid, "km": km, "betrag_cent": betrag}
 
 
 # -- Telegram-Befehle -------------------------------------------------------------------------------------------------

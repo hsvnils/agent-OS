@@ -94,6 +94,18 @@ class TestMails(unittest.TestCase):
         self.assertEqual((akte.akte(k), akte.akte(kiez)), ([], []))
         self.assertEqual(sorted(akte.offene()[0]["kandidaten"]), sorted([k, kiez]))       # du entscheidest
 
+    def test_1c_belegnummer_im_betreff(self):
+        bh, ks, k, kiez, akte = _setup()
+        from orchestrator.core.rechnungen import RechnungStore
+        from orchestrator.tests.test_eingangsbelege import _pdf as _p
+        RechnungStore(bh, ks).alt_erfassen({"firma": kiez, "nummer": "RG-11052026", "rechnungsdatum": "2026-05-11",
+                                            "betrag": "4000"}, _p("RG"))
+        m = _mail(MOIN, "WG: Mahnung RG-11052026", text=_weiter("Frist verstrichen", "Nils <moin@hanserautisch.de>",
+                                                                   "Mahnung RG-11052026"))
+        mails_pruefen(akte, _G({"r1": m}), ceo=ABS, luna=LUNA)
+        x = akte.akte(kiez)[0]
+        self.assertEqual((x["titel"], x["bezug"]), ("Mahnung RG-11052026", "RG-11052026"))
+
     def test_2_gefaelschte_weiterleitung(self):
         bh, ks, k, kiez, akte = _setup()
         falsch = _mail(MOIN, "WG: Ihre Forderung", text=_weiter(ANWALT, "Kanzlei <post@kiez-alm.de>"), auth="falsch")

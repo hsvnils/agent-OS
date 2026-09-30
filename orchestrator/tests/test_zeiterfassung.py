@@ -59,18 +59,19 @@ class TestZeit(unittest.TestCase):
         ende = (datetime.fromisoformat(r["start"]) + timedelta(minutes=150)).isoformat()
         s = z.stoppen(ende=ende)
         self.assertEqual((s["minuten"], s["kosten_cent"]), (150, 7300))                 # 2,5 h x 29,20
-        f = z.fahrt_buchen(s["id"])                                                     # OSM: 23,45 km -> 47 km Hin+Rueck
+        f = z.fahrt_erfassen(s["id"])                                                     # OSM: 23,45 km -> 47 km Hin+Rueck
         self.assertEqual((f["km"], f["betrag_cent"]), (47, 1410))
-        with self.assertRaises(ValueError):
-            z.fahrt_buchen(s["id"], km=10)                                              # nur einmal je Termin
+        z.fahrt_erfassen(s["id"], km=48)                                                # Korrektur: letzter Wert gilt
+        z.fahrt_erfassen(s["id"], km=47)
         e2 = z.eintragen(auftrag=nr, datum=jetzt().date().isoformat(), von_uhr="09:00", bis_uhr="10:30")
-        z.fahrt_buchen(e2["id"], km="12")
+        z.fahrt_erfassen(e2["id"], km="12")
         nk = z.nachkalkulation(ab.auftrag(nr))
         self.assertEqual((nk["minuten"], nk["zeit_cent"], nk["fahrt_cent"], nk["km"]), (240, 7300 + 4380, 1410 + 360, 59))
         self.assertEqual(nk["db_cent"], 102000 - 11680 - 1770)
         self.assertEqual(nk["stundenlohn_cent"], round((102000 - 1770) * 60 / 240))
-        with self.assertRaises(ValueError):
-            z.stornieren(s["id"], "falsch")                                             # Fahrt gebucht -> erst Eigenbeleg
+        self.assertEqual([e for e in bh.eintraege() if e["typ"] == "eigenbeleg_angelegt"], [])   # nie ein Beleg
+        z.stornieren(s["id"], "falsch")
+        self.assertEqual(z.nachkalkulation(ab.auftrag(nr))["minuten"], 90)
 
     def test_3_nur_intern_eur_unveraendert(self):
         bh, ks, k, ab, nr, z = _setup()
@@ -78,9 +79,9 @@ class TestZeit(unittest.TestCase):
         vorher = f.euer(jetzt().year)
         z.eintragen(auftrag=nr, datum=jetzt().date().isoformat(), minuten=600)          # 10 h Arbeitszeit
         self.assertEqual(f.euer(jetzt().year), vorher)                                  # Arbeitszeit ist keine Ausgabe
-        z.fahrt_buchen(z.fuer_auftrag(nr)[0]["id"], km=20)
-        eb = [e for e in bh.eintraege() if e["typ"] == "eigenbeleg_angelegt"][-1]["daten"]
-        self.assertEqual((eb["kategorie"], eb["betrag_cent"], eb["firma"]), ("reise", 600, k))   # Fahrt ist echt
+        z.fahrt_erfassen(z.fuer_auftrag(nr)[0]["id"], km=20)
+        self.assertEqual(f.euer(jetzt().year), vorher)                                  # Firmenwagen: auch km fiktiv
+        self.assertEqual(z.nachkalkulation(ab.auftrag(nr))["fahrt_cent"], 600)
 
     def test_4_eingaben_und_offline(self):
         bh, ks, k, ab, nr, z = _setup(osm=_Osm(fehler=True))
@@ -93,7 +94,7 @@ class TestZeit(unittest.TestCase):
         r = z.eintragen(auftrag=nr, datum=jetzt().date().isoformat(), von_uhr="22:00", bis_uhr="01:00")
         self.assertEqual(r["minuten"], 180)                                             # ueber Mitternacht
         with self.assertRaisesRegex(ValueError, "selbst eintragen"):
-            z.fahrt_buchen(r["id"])                                                     # offline: km von Hand
+            z.fahrt_erfassen(r["id"])                                                     # offline: km von Hand
 
     def test_5_ohne_auftrag_und_todos(self):
         bh, ks, k, ab, nr, z = _setup()

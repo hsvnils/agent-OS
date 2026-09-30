@@ -157,6 +157,11 @@ class Firmenakte:
                     treffer.append(nr)
         betreff = re.sub(r"^\s*(?:fwd?|wg|wtr|aw|re)\s*:\s*", "", orig.get("betreff") or str(m.get("Subject", "")),
                          flags=re.I).strip()[:200] or "(ohne Betreff)"
+        bezug = ""
+        if len(treffer) != 1:                                 # Belegnummer im Betreff/Text -> Firma dieses Belegs
+            bezug, nr = self._beleg_firma(f"{betreff}\n{rest[:3000]}")
+            if nr:
+                treffer = [nr]
         datum = jetzt().date().isoformat()
         try:
             from email.utils import parsedate_to_datetime
@@ -170,7 +175,7 @@ class Firmenakte:
             b = self.bh.beleg_ablegen(inhalt, name, jahr=int(datum[:4]), art="geschaeftsbrief", bezug=mid, von=von)["daten"]
             dateien.append({"pfad": b["pfad"], "sha256": b["sha256"], "name": name})
         did = "D-" + uuid.uuid4().hex[:8]
-        daten = {"id": did, "titel": betreff, "art": "mail", "datum": datum, "bezug": "", "notiz": notiz, "quelle": "mail",
+        daten = {"id": did, "titel": betreff, "art": "mail", "datum": datum, "bezug": bezug, "notiz": notiz, "quelle": "mail",
                  "mail_id": mid, "mail_von": orig.get("von") or parseaddr(str(m.get("From", "")))[1],
                  "dateien": list(reversed(dateien))}                      # PDF-Ansicht zuerst, .eml dahinter
         if len(treffer) == 1:
@@ -178,6 +183,20 @@ class Firmenakte:
             return {"id": did, "firma": treffer[0]}
         self.bh.erfassen("akte_mail_offen", daten | {"kandidaten": treffer}, von=von)
         return {"id": did, "firma": ""}
+
+    def _beleg_firma(self, text: str) -> tuple[str, str]:
+        """„Angebot AN-2026-0002“ -> (AN-2026-0002, Firma des Angebots); auch Auftrag, Rechnung (auch Altrechnung RG-...)."""
+        from .angebote import AngebotStore
+        from .beauftragung import AuftragBuch
+        from .rechnungen import RechnungStore
+        e = self.bh.eintraege()
+        belege = {**{k: v["firma"] for k, v in AngebotStore._falte(e).items()},
+                  **{k: v["firma"] for k, v in AuftragBuch._falte(e).items()},
+                  **{k: v["firma"] for k, v in RechnungStore._falte(e)[1].items()}}
+        for nr in re.findall(r"\b(?:AN|AB|RE|MA)-\d{4}-\d{4}\b|\bRG-\d{6,8}\b", text or "", flags=re.I):
+            if nr.upper() in belege:
+                return nr.upper(), belege[nr.upper()]
+        return "", ""
 
     def zuordnen(self, did: str, firma: str, *, von: str = "") -> dict:
         f = self.kunden.firma(firma) if firma else None

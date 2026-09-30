@@ -50,6 +50,7 @@ FILES=(
   buchhaltung/firmendaten.json
   buchhaltung/katalog.json       # Leistungskatalog/Preise (Etappe 3b; Aenderungen zusaetzlich in der Kette)
   buchhaltung/logo.jpg           # Logo fuer Angebote/Preisliste
+  buchhaltung/zeiterfassung.json # Etappe 25: kalkulatorischer Stundensatz (nur NAS/Backup, nie im Git)
 )
 
 mkdir -p "$DEST"
