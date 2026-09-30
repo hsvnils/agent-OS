@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 18:38] — Claude Code
+- **Was:** Etappe 26 live geprueft nach CEO-Neustart: UI v75 ausgeliefert, Uebersicht liefert `kalkulatorisch` (live
+  noch 0 EUR, keine Zeiten erfasst), Journal-CSV mit Haken = unveraenderte Buchungen + getrennter Block, ZIP mit Haken
+  enthaelt `zusatz/kalkulatorisch.csv`; `euer.csv`, `journal.csv`, `index.xml` mit/ohne Haken byte-gleich. Bot-Herzschlag ok.
+- **Warum:** Abnahme-Gegenprobe nach Deploy (`911e8b1`).
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md` (Status live), `projekt_changelog.md`
+
 ## [2026-09-30 18:28] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 26 umgesetzt: kalkulatorische Kosten (eigene Arbeitszeit, Fahrten) in der
   Finanz-Uebersicht als eigene Kachel mit Schalter (Standard an, Wahl im Browser gemerkt, folgt dem Zeitraum) inkl.

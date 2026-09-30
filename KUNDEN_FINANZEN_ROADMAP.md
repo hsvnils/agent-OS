@@ -4,7 +4,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 26 (kalkulatorische Kosten zuschaltbar) umgesetzt -- Deploy + CEO-Abnahme offen; Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappen 21, 22 live; 24 (Firmenakte) und 25 (Zeiterfassung) umgesetzt -- gemeinsamer Deploy offen; 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappe 26 (kalkulatorische Kosten zuschaltbar) live -- CEO-Abnahme offen; Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappen 21, 22 live; 24 (Firmenakte) und 25 (Zeiterfassung) umgesetzt -- gemeinsamer Deploy offen; 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -837,7 +837,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 26: Kalkulatorische Kosten in Finanzauswertung und Export (zuschaltbar)
 
-- Status: umgesetzt (CEO-Go 2026-09-30) -- Deploy + CEO-Abnahme offen (CEO-Wunsch 2026-09-30: „fiktive Kosten auch
+- Status: live (deployt 2026-09-30, `911e8b1`, Neustart durch den CEO, live geprueft) -- CEO-Abnahme offen (CEO-Wunsch 2026-09-30: „fiktive Kosten auch
   anzeigen, aber abwaehlbar ... bei Exporten auswaehlen, ob sie mitgerechnet werden“)
 - Ziel / Scope:
   - **Finanz-Uebersicht (LUNA-OS):** Schalter „Kalkulatorische Kosten zeigen“ (Standard: an, Wahl merkt sich der Browser).
