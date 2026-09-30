@@ -44,7 +44,7 @@ def faellige_loeschungen(eintraege: list[dict], heute: str | None = None) -> lis
         t = r.get("erinnerung") or {}
         if r.get("status") in RECHNUNG_ERLEDIGT and t:
             out.append({"bezug": r["nummer"], "id": t.get("id", ""), "datum": t.get("datum", ""),
-                        "titel": f"Rechnung {r['nummer']} fällig", "grund": f"Rechnung {r['status']}"})
+                        "titel": f"Payment-Check {r['nummer']}", "grund": f"Rechnung {r['status']}"})
     for b in EingangStore._falte(eintraege).values():               # Fremdwaehrung: Euro-Betrag ist eingetragen
         t = b.get("erinnerung") or {}
         if t and b.get("status") != "zu_pruefen":

@@ -1429,9 +1429,16 @@ def auftrag_detail(nummer: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Auftragsnummer")
     f = kunden_store.firma(a["firma"]) or {}
     ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == a.get("ansprechpartner")), None)
+    from ...core import zahlungsbedingungen as zb
+    entwuerfe, rechnungen = _rechnungen()._stand()                       # Etappe 18: Vorkasse-/Schlussrechnung zeigen
+    re = [{k: r.get(k) for k in ("nummer", "art", "status", "faellig_am", "summe_cent")}
+          for r in sorted(rechnungen.values(), key=lambda r: r["nummer"]) if r.get("auftrag") == a["nummer"]]
+    re += [{"nummer": eid, "art": x.get("art") or "rechnung", "status": "entwurf"}
+           for eid, x in entwuerfe.items() if x.get("auftrag") == a["nummer"]]
     return {"auftrag": a, "firma": {k: f.get(k) for k in ("nummer", "name", "rechnungsmail")}, "ansprechpartner": ap,
             "mail_an": (ap or {}).get("mail") or f.get("rechnungsmail") or "", "google": bool(_google().verfuegbar()),
-            "firmendaten": bool(_firmendaten())}
+            "firmendaten": bool(_firmendaten()), "rechnungen": re,
+            "zahlung_text": zb.text(a.get("zahlung"), a["geld_cent"], ab_datum=a["datum"])}
 
 
 @app.post("/api/crm/angebote/{nummer}/auftrag")
@@ -1590,11 +1597,14 @@ async def rechnung_entwurf_neu(request: Request):
 
 @app.post("/api/finanzen/rechnungen/aus-auftrag/{nummer}")
 async def rechnung_aus_auftrag(nummer: str, request: Request):
+    """Rechnungsentwurf aus dem Auftrag; `{"vorkasse": true}` = Vorkasse-Rechnung (Etappe 18)."""
+    body = await _json(request)
+
     def tun():
         a = _auftraege().auftrag(nummer)
         if not a:
             raise KeyError(nummer)
-        return _rechnungen().entwurf_aus_auftrag(a, von=_von(request))
+        return _rechnungen().entwurf_aus_auftrag(a, vorkasse=bool(body.get("vorkasse")), von=_von(request))
     return _kunden_aktion(tun)
 
 
@@ -1647,8 +1657,13 @@ async def rechnung_festschreiben(eid: str, request: Request):
         if g.verfuegbar():
             x = rs.get(r["nummer"])
             name = (kunden_store.firma(x["firma"]) or {}).get("name", x["firma"])
-            t = g.termin_anlegen(f"Rechnung {r['nummer']} fällig: {name}", f"{r['faellig_am']}T09:00:00",
-                                 f"{r['faellig_am']}T09:15:00", beschreibung=f"{r['nummer']} · {eur_text(x['summe_cent'])}",
+            art = "Vorkasse" if x.get("art") == "anzahlung" else "Rechnung"      # Etappe 18: Payment-Check
+            t = g.termin_anlegen(f"💶 Payment-Check: {art} {r['nummer']} ({eur_text(x['summe_cent'])}) – {name}",
+                                 f"{r['faellig_am']}T09:00:00", f"{r['faellig_am']}T09:15:00",
+                                 beschreibung=(f"{r['nummer']} · {eur_text(x['summe_cent'])}"
+                                               + (f" · Auftrag {x['auftrag']}" if x.get("auftrag") else "")
+                                               + "\nIst das Geld da? In LUNA-OS die Zahlung erfassen -- dann löscht LUNA "
+                                                 "diesen Termin."),
                                  bestaetigt=True)
             if t.get("ok"):
                 rs.erinnerung_merken(r["nummer"], {"datum": r["faellig_am"], "id": t.get("termin_id", "")}, von=_von(request))

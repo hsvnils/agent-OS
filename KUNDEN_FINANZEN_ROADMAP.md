@@ -4,7 +4,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 18 (Zahlungsbedingungen/Vorkasse) geplant, Entscheidungen getroffen -- wartet auf CEO-Go. Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -619,7 +619,20 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 18: Zahlungsbedingungen und Vorkasse mit Payment-Check im Kalender
 
-- Status: geplant (CEO-Wunsch 2026-09-30), Entscheidungen getroffen, wartet auf CEO-Go
+- Status: umgesetzt (CEO-Go 2026-09-30), Deploy + Abnahme offen
+- Ergebnis: `core/zahlungsbedingungen.py` (pruefen/Vorkasse-Betrag/Frist/Texte); Angebot-Feld `zahlung` (leeres
+  Zahlungsziel = Kundendaten, sonst 14), Satz in Angebots- und AB-PDF; Auftrag friert `vorkasse_cent`/`vorkasse_faellig`
+  ein (Vorkasse vom Geldanteil, Barter-Ware bleibt der Schlussrechnung); `RechnungStore.entwurf_aus_auftrag(vorkasse=True)`
+  -> Vorkasse-Rechnung `art="anzahlung"` (Leistungsdatum optional: „folgt gemaess Auftrag“), Schlussrechnung mit
+  `abzuege` nach Zuschlaegen/Rabatt (PDF-Titel „Schlussrechnung“, Zeilen „Auftragssumme“ + „abzgl. Vorkasse RE-...“),
+  Sperren unter der Buchhaltungs-Sperre (keine zweite Vorkasse, keine Vorkasse nach der Rechnung, abgezogene Vorkasse
+  nicht stornierbar, 100 % Vorkasse -> keine Schlussrechnung noetig). Kalender: „💶 Payment-Check: Vorkasse|Rechnung
+  RE-... (Betrag) – Firma“ am Faelligkeitstag 09:00; das Loeschen bei Zahlung/Storno gab es schon (`core/erinnerungen.py`,
+  die Ausgangslage oben war insoweit falsch). To-do „Vorkasse-Rechnung erstellen“; Vorkasse zaehlt nicht als
+  „berechnet“. LUNA-OS: Block „💶 Zahlungsbedingungen“ im Angebots-Editor mit Vorschau Vorkasse/Rest, Auftrag zeigt
+  Bedingungen, Vorkasse, Rechnungen und Knopf „💶 Vorkasse-Rechnung erstellen“, Rechnungen mit Art. Nebenbei (CEO):
+  Titel in „Zu erledigen“ klickbar (auch Enter). Tests `test_zahlungsbedingungen.py` (8) + 8 Gegenproben, Suite 1017
+  gruen, Headless-Chrome-Test, PDFs gesichtet.
 - Entscheidungen (CEO 2026-09-30): (1) Vorkasse als eigene Vorkasse-Rechnung, Schlussrechnung zieht ab; (2) Standard-Frist
   7 Tage nach Auftragsbestaetigung, im Angebot aenderbar; (3) Payment-Check auch fuer normale Rechnungen, Termin wird bei
   Zahlung geloescht; (4) Vorkasse wird **pro Angebot** entschieden -- keine Standard-Vorkasse je Kunde.

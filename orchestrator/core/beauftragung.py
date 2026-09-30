@@ -16,9 +16,11 @@ from .angebote import AngebotStore, _bloecke, _empfaenger, anrede_moin, inhalt_h
 from .beleg_pdf import HINWEIS_19, beleg_pdf, datum_de, eur, hanserautisch_pdf
 from .buchhaltung import Buchhaltung, jetzt
 from .kunden import KundenStore
+from . import zahlungsbedingungen as zb
 
 STATUS = ("beauftragt", "erledigt", "storniert")
-_UEBERNAHME = ("firma", "ansprechpartner", "titel", "positionen", "zuschlaege", "rabatt_prozent", "layout", "bloecke", "ware")
+_UEBERNAHME = ("firma", "ansprechpartner", "titel", "positionen", "zuschlaege", "rabatt_prozent", "layout", "bloecke", "ware",
+               "zahlung")
 
 
 def _datum(v, feld: str) -> str:
@@ -112,9 +114,13 @@ class AuftragBuch:
 
         def daten(eintraege):                                 # unter der Sperre: Stand des Angebots uebernehmen
             a = AngebotStore._falte(eintraege)[angebot_nr]
-            return {k: a.get(k) for k in _UEBERNAHME} | {"angebot": angebot_nr, "datum": heute.isoformat(),
-                                                         "leistung_von": lv, "leistung_bis": lb,
-                                                         "notiz": str(notiz or "").strip()[:2000]}
+            d = {k: a.get(k) for k in _UEBERNAHME} | {"angebot": angebot_nr, "datum": heute.isoformat(),
+                                                      "leistung_von": lv, "leistung_bis": lb,
+                                                      "notiz": str(notiz or "").strip()[:2000]}
+            vk = zb.vorkasse_cent(a.get("zahlung"), AngebotStore._anreichern(a, heute)["geld_cent"])
+            if vk:                                            # Etappe 18: Vorkasse-Betrag und -Frist einfrieren
+                d |= {"vorkasse_cent": vk, "vorkasse_faellig": zb.vorkasse_frist(a["zahlung"], heute)}
+            return d
 
         ev = self.bh.mit_nummer("AB", "auftrag_angelegt", daten, jahr=heute.year, bezug=angebot_nr, von=von,
                                 pruefe=pruefe)
@@ -181,7 +187,9 @@ class AuftragBuch:
                     else f"bis {datum_de(lb)}" if lb else "")
         einleitung = (f"vielen Dank für Ihren Auftrag. Hiermit bestätigen wir die Beauftragung auf Grundlage unseres "
                       f"Angebots {a['angebot']}" + (f" für den Leistungszeitraum {zeitraum}" if zeitraum else "") + ".")
-        hinweise = [HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware")) + ([f"Anmerkung: {a['notiz']}"] if a.get("notiz") else [])
+        hinweise = ([HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
+                    + [x for x in [zb.text(a.get("zahlung"), a["geld_cent"], ab_datum=a["datum"])] if x]
+                    + ([f"Anmerkung: {a['notiz']}"] if a.get("notiz") else []))
         if a.get("layout") == "hanserautisch":
             b = a.get("bloecke") or _bloecke({})
             gruppen: dict[str, tuple] = {}

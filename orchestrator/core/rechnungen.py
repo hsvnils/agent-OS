@@ -5,6 +5,10 @@ Ablauf: **Entwurf** (frei oder aus Auftrag `AB-`, beliebig aenderbar/verwerfbar,
 -> versendet / bezahlt. Fehler werden nie ueberschrieben, sondern **storniert**: eine Stornorechnung mit eigener Nummer
 (negative Betraege, Bezug auf das Original), optional mit neuem Korrektur-Entwurf.
 
+Vorkasse (Etappe 18): aus einem Auftrag mit Vorkasse entsteht eine **Vorkasse-Rechnung** (`art="anzahlung"`, Betrag und
+Frist aus dem Auftrag); die Rechnung zum Auftrag zieht alle nicht stornierten Vorkasse-Rechnungen als `abzuege` ab
+(Schlussrechnung) -- der Umsatz zaehlt so nur einmal. Eine abgezogene Vorkasse-Rechnung ist nicht mehr stornierbar.
+
 Schutz: kein Umsatzsteuer-Feld (§ 14c), Pflicht Steuernummer + Leistungsdatum, **Kleinunternehmer-Waechter**: Festschreiben
 wird blockiert, wenn der Jahresumsatz 100.000 EUR ueberschreiten wuerde (ab dieser Rechnung waere Umsatzsteuer faellig)
 oder der Vorjahresumsatz ueber 25.000 EUR lag; ab 80 % Warnung. Umsatz = Summe festgeschriebener Rechnungen des
@@ -15,17 +19,20 @@ from __future__ import annotations
 import uuid
 from datetime import date, timedelta
 
-from .angebote import _bloecke, _empfaenger, _kopf, _positionen, anrede_moin, summen, ware_geld, ware_hinweis
-from .beleg_pdf import HINWEIS_19, beleg_pdf, cent, datum_de, eur, hanserautisch_pdf, positions_summe
+from .angebote import (_bloecke, _empfaenger, _kopf, _positionen, _summen_zeilen, anrede_moin, summen, ware_geld,
+                       ware_hinweis)
+from .beleg_pdf import HINWEIS_19, beleg_pdf, cent, datum_de, eur, hanserautisch_pdf, menge_text, positions_summe
 from .buchhaltung import Buchhaltung, jetzt
 from .eigenbelege import einnahmen_cent, zuordnung_pruefen
 from .kunden import KundenStore
+from . import zahlungsbedingungen as zb
 
 GRENZE_LAUFEND = 100_000_00     # Cent, § 19 Abs. 1 UStG (ab 2025): Ueberschreiten beendet den Status sofort
 GRENZE_VORJAHR = 25_000_00
 WARNSCHWELLE = 0.8
 FELDER = ("firma", "ansprechpartner", "titel", "leistung_von", "leistung_bis", "zahlungsziel_tage", "einleitung",
-          "layout", "bloecke", "zuschlaege", "rabatt_prozent", "ware")
+          "layout", "bloecke", "zuschlaege", "rabatt_prozent", "ware", "zahlung")
+ARTEN_TEXT = {"rechnung": "Rechnung", "anzahlung": "Vorkasse-Rechnung", "storno": "Stornorechnung"}
 VERWENDUNG = ("content", "privat", "leihgabe")         # Barter-Ware: betrieblich fuer Content (Standard) / privat / zurueck
 
 
@@ -120,7 +127,7 @@ class RechnungStore:
                     if not v["storniert"]:
                         v |= {"storniert": True, "storno_grund": d.get("grund", ""), "storniert_am": e["ts"]}
                 r["verlauf"].append(spur | {"grund": d.get("grund", "")})
-            elif t == "rechnung_erinnerung":
+            elif t == "rechnung_erinnerung":                  # Payment-Check-Termin (Etappe 18: geloescht bei Zahlung)
                 rechnungen[d["nummer"]]["erinnerung"] = d.get("termin")
         for r in rechnungen.values():                        # bezahlt = Geldteil gezahlt UND Ware erhalten (Barter)
             r.setdefault("ware_cent", 0)
@@ -136,7 +143,28 @@ class RechnungStore:
     def _summen(x: dict) -> dict:
         pos = [p | {"gesamt_cent": positions_summe(p["menge"], p["einzelpreis_cent"])} for p in x.get("positionen", [])]
         sm = summen(x.get("positionen", []), x.get("zuschlaege") or [], x.get("rabatt_prozent") or 0)
+        abz = x.get("abzuege") or []
+        if abz:                                          # Etappe 18: Vorkasse nach Zuschlaegen/Rabatt abziehen
+            sm = sm | {"vor_abzug_cent": sm["gesamt_cent"],
+                       "abzuege": [(f"abzgl. Vorkasse {a['nummer']} vom {datum_de(a['datum'])}", a["betrag_cent"])
+                                   for a in abz],
+                       "gesamt_cent": sm["gesamt_cent"] - sum(a["betrag_cent"] for a in abz)}
         return x | {"positionen": pos, "summen": sm, "summe_cent": sm["gesamt_cent"]}
+
+    @staticmethod
+    def _abzuege(auftrag: str, rechnungen: dict) -> list[dict]:
+        """Nicht stornierte Vorkasse-Rechnungen eines Auftrags -> Abzuege der Schlussrechnung."""
+        if not auftrag:
+            return []
+        return [{"nummer": r["nummer"], "datum": r["rechnungsdatum"], "betrag_cent": r["summe_cent"]}
+                for r in sorted(rechnungen.values(), key=lambda r: r["nummer"])
+                if r.get("auftrag") == auftrag and r.get("art") == "anzahlung" and r["status"] != "storniert"]
+
+    def _mit_abzug(self, x: dict, rechnungen: dict) -> dict:
+        """Entwurf einer (Schluss-)Rechnung: aktuelle Vorkasse-Abzuege einrechnen."""
+        if x.get("art", "rechnung") != "rechnung" or not x.get("auftrag"):
+            return x
+        return x | {"abzuege": self._abzuege(x["auftrag"], rechnungen)}
 
     def _stand(self):
         return self._falte(self.bh.eintraege())
@@ -175,9 +203,10 @@ class RechnungStore:
                                                  "summe_cent", "bezahlt_cent", "status", "auftrag")}
                          | {"firma_name": firmen.get(r["firma"], ""), "ueberfaellig": ueber,
                             "versendet": bool(r.get("versendet_mail"))})
-        ents = [self._summen(x) for x in entwuerfe.values()]
+        ents = [self._summen(self._mit_abzug(x, rechnungen)) for x in entwuerfe.values()]
         return {"rechnungen": sorted(liste, key=lambda x: x["nummer"], reverse=True),
-                "entwuerfe": [{k: x.get(k) for k in ("entwurf_id", "firma", "titel", "auftrag", "summe_cent", "angelegt")}
+                "entwuerfe": [{k: x.get(k) for k in ("entwurf_id", "firma", "titel", "auftrag", "summe_cent", "angelegt",
+                                                      "art")}
                               | {"firma_name": firmen.get(x["firma"], "")} for x in ents],
                 "waechter": self.waechter(rechnungen=rechnungen, eintraege=eintraege)}
 
@@ -187,11 +216,12 @@ class RechnungStore:
         if k.upper() in rechnungen:
             r = self._summen(rechnungen[k.upper()])
             return r | {"ueberfaellig": r["status"] == "offen" and r.get("faellig_am", "9") < jetzt().date().isoformat()}
-        return self._summen(entwuerfe[k]) if k in entwuerfe else None
+        return self._summen(self._mit_abzug(entwuerfe[k], rechnungen)) if k in entwuerfe else None
 
     # -- Entwuerfe -----------------------------------------------------------------------------------------------
 
-    def entwurf_anlegen(self, daten: dict, *, von: str = "") -> dict:
+    def entwurf_anlegen(self, daten: dict, *, von: str = "", intern: dict | None = None) -> dict:
+        """`intern` = Felder, die nur aus dem Auftrag kommen (art, zahlung, vorkasse_faellig) -- nicht vom Editor."""
         d = _entwurf_felder(daten)
         if not d.get("firma"):
             raise ValueError("Firma fehlt.")
@@ -214,27 +244,52 @@ class RechnungStore:
         for k in ("auftrag", "angebot"):
             if daten.get(k):
                 d[k] = str(daten[k]).upper()[:20]
+        d |= {k: v for k, v in (intern or {}).items() if k in ("art", "zahlung", "vorkasse_faellig") and v}
         eid = "E-" + uuid.uuid4().hex[:8]
         self.bh.erfassen("rechnung_entwurf", d | {"entwurf_id": eid}, von=von)
         return {"entwurf_id": eid}
 
-    def entwurf_aus_auftrag(self, auftrag: dict, *, von: str = "") -> dict:
-        _, rechnungen = self._stand()
-        entwuerfe = self._stand()[0]
-        aktiv = [r["nummer"] for r in rechnungen.values() if r.get("auftrag") == auftrag["nummer"] and r["status"] != "storniert"
-                 and r.get("art") != "storno"]
-        if aktiv:
-            raise ValueError(f"Zu {auftrag['nummer']} gibt es schon die Rechnung {aktiv[0]}.")
-        offen = [e for e, x in entwuerfe.items() if x.get("auftrag") == auftrag["nummer"]]
-        if offen:
-            return {"entwurf_id": offen[0], "vorhanden": True}
+    def entwurf_aus_auftrag(self, auftrag: dict, *, vorkasse: bool = False, von: str = "") -> dict:
+        """Entwurf aus einem Auftrag: die Rechnung (bzw. Schlussrechnung) -- oder mit `vorkasse=True` die
+        Vorkasse-Rechnung ueber den im Auftrag eingefrorenen Vorkasse-Betrag (Etappe 18)."""
+        entwuerfe, rechnungen = self._stand()
+        art = "anzahlung" if vorkasse else "rechnung"
         if auftrag.get("status") == "storniert":
             raise ValueError(f"{auftrag['nummer']} ist storniert.")
-        daten = {k: auftrag.get(k) for k in ("firma", "ansprechpartner", "titel", "zuschlaege", "rabatt_prozent", "layout",
-                                              "bloecke", "leistung_von", "leistung_bis", "ware")}
-        daten["positionen"] = [{k: v for k, v in p.items() if k != "gesamt_cent"} for p in auftrag["positionen"]]
+        aktiv = [r for r in rechnungen.values() if r.get("auftrag") == auftrag["nummer"] and r["status"] != "storniert"
+                 and r.get("art") != "storno"]
+        schluss = [r["nummer"] for r in aktiv if r.get("art", "rechnung") == "rechnung"]
+        if schluss:
+            raise ValueError(f"Zu {auftrag['nummer']} gibt es schon die Rechnung {schluss[0]}.")
+        if vorkasse:
+            if not auftrag.get("vorkasse_cent"):
+                raise ValueError(f"{auftrag['nummer']} hat keine Vorkasse vereinbart.")
+            vk = [r["nummer"] for r in aktiv if r.get("art") == "anzahlung"]
+            if vk:
+                raise ValueError(f"Zu {auftrag['nummer']} gibt es schon die Vorkasse-Rechnung {vk[0]}.")
+        offen = [e for e, x in entwuerfe.items() if x.get("auftrag") == auftrag["nummer"] and x.get("art", "rechnung") == art]
+        if offen:
+            return {"entwurf_id": offen[0], "vorhanden": True}
+        zahlung = auftrag.get("zahlung") or {}
+        daten = {k: auftrag.get(k) for k in ("firma", "ansprechpartner", "titel", "layout", "bloecke", "leistung_von",
+                                              "leistung_bis")}
         daten |= {"auftrag": auftrag["nummer"], "angebot": auftrag.get("angebot", "")}
-        return self.entwurf_anlegen({k: v for k, v in daten.items() if v not in (None,)}, von=von)
+        if "ziel_tage" in zahlung:
+            daten["zahlungsziel_tage"] = zahlung["ziel_tage"]
+        if vorkasse:
+            v = zahlung.get("vorkasse") or {}
+            anteil = f"{menge_text(v['prozent'])} % " if v.get("art") == "prozent" else ""
+            daten["positionen"] = [{"beschreibung": f"Vorkasse {anteil}gemäß Auftragsbestätigung {auftrag['nummer']}"
+                                                    + (f" – {auftrag['titel']}" if auftrag.get("titel") else ""),
+                                    "menge": "1", "einheit": "", "einzelpreis_cent": int(auftrag["vorkasse_cent"])}]
+            daten["einleitung"] = (f"gemäß unserer Auftragsbestätigung {auftrag['nummer']} berechnen wir Ihnen die "
+                                   "vereinbarte Vorkasse:")
+        else:
+            daten |= {k: auftrag.get(k) for k in ("zuschlaege", "rabatt_prozent", "ware")}
+            daten["positionen"] = [{k: v for k, v in p.items() if k != "gesamt_cent"} for p in auftrag["positionen"]]
+        return self.entwurf_anlegen({k: v for k, v in daten.items() if v is not None}, von=von,
+                                    intern={"art": art, "zahlung": zahlung,
+                                            "vorkasse_faellig": auftrag.get("vorkasse_faellig") if vorkasse else ""})
 
     def entwurf_aendern(self, eid: str, daten: dict, *, von: str = "") -> dict:
         neu = _entwurf_felder(daten)
@@ -275,11 +330,20 @@ class RechnungStore:
             x = entwuerfe.get(eid)
             if not x:
                 raise KeyError(eid)
-            x = self._summen(x)
-            if not x.get("leistung_von") and not x.get("leistung_bis"):
+            art = x.get("art") or "rechnung"
+            aktiv = [r for r in rechnungen.values() if x.get("auftrag") and r.get("auftrag") == x["auftrag"]
+                     and r["status"] != "storniert" and r.get("art") != "storno"]
+            if art == "anzahlung" and aktiv:                          # Etappe 18: unter der Sperre erneut pruefen
+                raise ValueError(f"Zu {x['auftrag']} gibt es schon die Rechnung {aktiv[0]['nummer']} -- keine "
+                                 "weitere Vorkasse-Rechnung.")
+            if art == "rechnung" and any(r.get("art", "rechnung") == "rechnung" for r in aktiv):
+                raise ValueError(f"Zu {x['auftrag']} gibt es schon eine Rechnung.")
+            x = self._summen(self._mit_abzug(x, rechnungen))
+            if not x.get("leistung_von") and not x.get("leistung_bis") and art != "anzahlung":   # Vorkasse: Leistung folgt
                 raise ValueError("Leistungsdatum fehlt (Pflichtangabe).")
             if x["summe_cent"] <= 0:
-                raise ValueError("Rechnungsbetrag muss groesser als 0 sein.")
+                raise ValueError("Der Auftrag ist per Vorkasse vollstaendig berechnet -- keine Schlussrechnung noetig."
+                                 if x.get("abzuege") else "Rechnungsbetrag muss groesser als 0 sein.")
             ware_geld(x["summe_cent"], x.get("ware"))                  # Warenwert nicht ueber der Summe
             w = self.waechter(x["summe_cent"], heute.year, rechnungen, eintraege)
             if w["vorjahr_ueberschritten"]:
@@ -290,19 +354,28 @@ class RechnungStore:
                                  "100.000 €. Ab dieser Rechnung waere Umsatzsteuer faellig; nicht festgeschrieben.")
             info["warnung"] = w["warnung"]
             info["waechter"] = w
-            faellig = heute + timedelta(days=int(x.get("zahlungsziel_tage") or 0))
+            faellig = self._faellig(x, heute)
             kopf = {k: x.get(k) for k in FELDER} | {"positionen": [{k: v for k, v in p.items() if k != "gesamt_cent"}
                                                                    for p in x["positionen"]],
-                                                    "entwurf_id": eid, "art": "rechnung",
+                                                    "entwurf_id": eid, "art": art,
                                                     "auftrag": x.get("auftrag", ""), "angebot": x.get("angebot", ""),
                                                     "rechnungsdatum": heute.isoformat(), "faellig_am": faellig.isoformat(),
                                                     "summe_cent": x["summe_cent"]}
+            if x.get("abzuege"):
+                kopf["abzuege"] = x["abzuege"]
             pdf = self._pdf(kopf | {"nummer": nummer}, firmendaten)
-            return kopf, [(pdf, f"Rechnung_{nummer}.pdf", "beleg")]
+            return kopf, [(pdf, f"{ARTEN_TEXT[art].replace('-', '')}_{nummer}.pdf", "beleg")]
 
         ev = self.bh.festschreiben("RE", "rechnung_festgeschrieben", erzeuge, jahr=heute.year, bezug=eid, von=von)
         return {"nummer": ev["daten"]["nummer"], "faellig_am": ev["daten"]["faellig_am"], "warnung": info.get("warnung"),
                 "waechter": info.get("waechter")}
+
+    @staticmethod
+    def _faellig(x: dict, heute: date) -> date:
+        """Vorkasse-Rechnung: vereinbarte Frist (nie in der Vergangenheit); sonst Rechnungsdatum + Zahlungsziel."""
+        if x.get("art") == "anzahlung" and x.get("vorkasse_faellig"):
+            return max(heute, date.fromisoformat(x["vorkasse_faellig"]))
+        return heute + timedelta(days=int(x.get("zahlungsziel_tage") or 0))
 
     def stornieren(self, nummer: str, firmendaten: dict, *, grund: str = "", korrektur: bool = False,
                    von: str = "") -> dict:
@@ -325,6 +398,10 @@ class RechnungStore:
                 raise ValueError(f"{nummer} ist (teil)bezahlt -- erst die Zahlung klaeren (Rueckzahlung), dann stornieren.")
             if o.get("ware_erhalten"):
                 raise ValueError(f"Zu {nummer} ist Ware als erhalten gebucht -- erst den Ware-Eingang stornieren.")
+            abgezogen = [r["nummer"] for r in rechnungen.values() if r["status"] != "storniert" and r.get("art") != "storno"
+                         and any(a["nummer"] == nummer for a in r.get("abzuege") or [])]
+            if abgezogen:
+                raise ValueError(f"{nummer} ist in der Schlussrechnung {abgezogen[0]} abgezogen -- erst diese stornieren.")
             original.update(o)
             pos = [p | {"einzelpreis_cent": -int(p["einzelpreis_cent"])} for p in o["positionen"]]
             kopf = {k: o.get(k) for k in FELDER} | {"positionen": pos, "art": "storno", "bezug": nummer, "grund": grund,
@@ -332,6 +409,8 @@ class RechnungStore:
                                                     "rechnungsdatum": heute.isoformat(), "faellig_am": heute.isoformat(),
                                                     "leistung_von": o.get("leistung_von", ""),
                                                     "leistung_bis": o.get("leistung_bis", "")}
+            if o.get("abzuege"):                              # Schlussrechnung: Abzuege mit umgekehrtem Vorzeichen
+                kopf["abzuege"] = [a | {"betrag_cent": -int(a["betrag_cent"])} for a in o["abzuege"]]
             kopf["summe_cent"] = self._summen(kopf)["summe_cent"]
             pdf = self._pdf(kopf | {"nummer": neu_nr}, firmendaten)
             return kopf, [(pdf, f"Stornorechnung_{neu_nr}.pdf", "beleg")]
@@ -344,7 +423,8 @@ class RechnungStore:
             for k in ("auftrag", "angebot"):
                 if original.get(k):
                     d[k] = original[k]
-            out["korrektur_entwurf"] = self.entwurf_anlegen(d, von=von)["entwurf_id"]
+            out["korrektur_entwurf"] = self.entwurf_anlegen(
+                d, von=von, intern={k: original.get(k) for k in ("art", "zahlung", "vorkasse_faellig")})["entwurf_id"]
         return out
 
     def versendet(self, nummer: str, mail: dict, *, von: str = "") -> None:
@@ -490,17 +570,19 @@ class RechnungStore:
             raise KeyError(eid)
         heute = jetzt().date()
         return self._pdf(x | {"nummer": "ENTWURF", "rechnungsdatum": heute.isoformat(),
-                              "faellig_am": (heute + timedelta(days=int(x.get("zahlungsziel_tage") or 0))).isoformat()},
-                         firmendaten)
+                              "faellig_am": self._faellig(x, heute).isoformat()}, firmendaten)
 
     def _pdf(self, r: dict, firmendaten: dict) -> bytes:
         r = self._summen(r)
         f = self.kunden.firma(r["firma"]) or {}
         ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == r.get("ansprechpartner")), None)
         storno = r.get("art") == "storno"
-        art = "Stornorechnung" if storno else "Rechnung"
+        art = ("Schlussrechnung" if r.get("abzuege") and not storno
+               else ARTEN_TEXT.get(r.get("art") or "rechnung", "Rechnung"))
         lv, lb = r.get("leistung_von"), r.get("leistung_bis")
         leistung = (f"{datum_de(lv)} – {datum_de(lb)}" if lv and lb else datum_de(lv or lb))
+        if not leistung and r.get("art") == "anzahlung":
+            leistung = f"folgt gemäß Auftrag {r.get('auftrag', '')}".strip()
         infos = [f"Rechnungsdatum: {datum_de(r['rechnungsdatum'])}", f"{art}: {r['nummer']}",
                  f"Kundennummer: {r['firma']}", f"Leistung: {leistung}" if leistung else ""]
         if storno:
@@ -515,6 +597,8 @@ class RechnungStore:
                    "unten genannte Konto.")
         if not storno and w:
             zahlung = " ".join(ware_hinweis(r["summe_cent"], r.get("ware"), rechnung=True) + ([zahlung] if zahlung else []))
+        if not storno and (r.get("zahlung") or {}).get("text"):         # Zusatztext der Zahlungsbedingungen
+            zahlung = " ".join(x for x in (zahlung, r["zahlung"]["text"]) if x)
         if r.get("layout") == "hanserautisch":
             b = r.get("bloecke") or _bloecke({})
             gruppen: dict[str, tuple] = {}
@@ -534,7 +618,8 @@ class RechnungStore:
             art=art, nummer=r["nummer"], firma=firmendaten, empfaenger=_empfaenger(f, ap),
             infos=[(i.split(": ", 1)[0], i.split(": ", 1)[1]) for i in infos if i],
             einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einleitung, positionen=r["positionen"],
-            summe_cent=r["summe_cent"], hinweise=[HINWEIS_19, zahlung], schluss="")
+            summe_cent=r["summe_cent"], hinweise=[HINWEIS_19, zahlung], schluss="",
+            summen_zeilen=_summen_zeilen(r["summen"]) if r["summen"].get("abzuege") else None)
 
 
 class _Nichts(Exception):
@@ -545,11 +630,12 @@ def rechnung_mail_text(r: dict, ap: dict | None, firmendaten: dict) -> tuple[str
     name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
     anrede = f"Guten Tag {name}," if name else "Sehr geehrte Damen und Herren,"
     storno = r.get("art") == "storno"
-    betreff = (f"Stornorechnung {r['nummer']} zu {r.get('bezug')}" if storno else f"Rechnung {r['nummer']}"
+    art = "Schlussrechnung" if r.get("abzuege") else ARTEN_TEXT.get(r.get("art") or "rechnung", "Rechnung")
+    betreff = (f"Stornorechnung {r['nummer']} zu {r.get('bezug')}" if storno else f"{art} {r['nummer']}"
                + (f" – {r['titel']}" if r.get("titel") else ""))
     text = (f"{anrede}\n\nanbei erhalten Sie " + (f"die Stornorechnung {r['nummer']} zur Rechnung {r.get('bezug')}."
                                                   if storno else
-                                                  f"unsere Rechnung {r['nummer']} über {eur(r['summe_cent'])}, zahlbar bis "
+                                                  f"unsere {art} {r['nummer']} über {eur(r['summe_cent'])}, zahlbar bis "
                                                   f"{datum_de(r['faellig_am'])}.")
             + "\n\nBei Fragen melden Sie sich gerne.\n\nMit freundlichen Grüßen\n"
             + "\n".join(x for x in (firmendaten.get("inhaber"), firmendaten.get("firma")) if x))

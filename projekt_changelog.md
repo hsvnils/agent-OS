@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 10:35] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 18 umgesetzt: Zahlungsbedingungen je Angebot (Zahlungsziel, Vorkasse in Prozent oder
+  Euro mit Frist, Zusatztext), Uebernahme in Auftrag und Rechnung, Vorkasse-Rechnung, Schlussrechnung mit Abzug,
+  Payment-Check-Termin im Kalender, To-do „Vorkasse-Rechnung erstellen“, LUNA-OS-Editor/Detail. Nebenbei: Titel in
+  „Zu erledigen“ anklickbar. Tests (8) + 8 Gegenproben, Suite 1017 gruen, Browser-Test, PDFs gesichtet.
+- **Warum:** CEO-Go 2026-09-30 fuer Etappe 18 und Wunsch „Ueberschrift der Belege anklicken“.
+- **Betroffen:** `orchestrator/core/zahlungsbedingungen.py` (neu), `orchestrator/core/angebote.py`,
+  `orchestrator/core/beauftragung.py`, `orchestrator/core/rechnungen.py`, `orchestrator/core/beleg_pdf.py`,
+  `orchestrator/core/todos.py`, `orchestrator/core/finanzen.py`, `orchestrator/core/erinnerungen.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js` (v64), `style-v2.css` (v27),
+  `index-v2.html`, `orchestrator/tests/test_zahlungsbedingungen.py` (neu), `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`,
+  `docs/datenfluesse.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
 ## [2026-09-30 10:20] — Claude Code
 - **Was:** CEO-Entscheidungen zu Etappe 18 festgehalten: Vorkasse-Rechnung, Frist 7 Tage, Payment-Check auch fuer normale
   Rechnungen (Termin bei Zahlung geloescht), Vorkasse pro Angebot (keine Standard-Vorkasse je Kunde).
