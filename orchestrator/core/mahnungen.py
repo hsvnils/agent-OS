@@ -160,6 +160,49 @@ class MahnStore:
         ev = self.bh.festschreiben("MA", "mahnung_erstellt", erzeuge, jahr=heute.year, bezug=rechnung, von=von)
         return {k: ev["daten"][k] for k in ("nummer", "stufe", "summe_cent", "frist")}
 
+    def alt_erfassen(self, rechnung: str, *, datum: str, frist: str = "", summe=None, pdf: bytes | None = None,
+                     dateiname: str = "", von: str = "") -> dict:
+        """Etappe 19: Mahnung, die vor LUNA verschickt wurde, als erreichte Stufe erfassen (Nummer `<Rechnung>-M<Stufe>`,
+        kein `MA-`-Kreis). Danach macht das Mahnwesen bei der naechsten Stufe weiter."""
+        from .beleg_pdf import cent
+        rechnung = (rechnung or "").strip().upper()
+        tag = date.fromisoformat(str(datum or "")[:10]).isoformat() if datum else ""
+        if not tag or tag > jetzt().date().isoformat():
+            raise ValueError("Mahnungsdatum fehlt oder liegt in der Zukunft.")
+        fr = date.fromisoformat(str(frist)[:10]).isoformat() if frist else (date.fromisoformat(tag) + timedelta(days=FRIST_TAGE)).isoformat()
+        if fr < tag:
+            raise ValueError("Frist liegt vor dem Mahnungsdatum.")
+        if pdf is not None and pdf and not pdf.startswith(b"%PDF"):
+            raise ValueError("Die Mahnung bitte als PDF anhaengen.")
+        with self.bh._gesperrt():
+            e = self.bh._eintraege()
+            r = RechnungStore._falte(e)[1].get(rechnung)
+            if not r:
+                raise KeyError(rechnung)
+            if r.get("art") == "storno" or r["status"] != "offen":
+                raise ValueError(f"{rechnung} ist {r['status']} -- keine Mahnung erfassbar.")
+            bisher = self.fuer_rechnung(rechnung, e)
+            stufe = len(bisher) + 1
+            if stufe > 3:
+                raise ValueError("Es sind schon drei Mahnungen erfasst.")
+            if tag < r["rechnungsdatum"] or (bisher and tag < bisher[-1]["datum"]):
+                raise ValueError("Mahnungsdatum liegt vor der Rechnung bzw. vor der vorigen Mahnung.")
+            offen = r["geld_cent"] - r["bezahlt_cent"]
+            betrag = cent(summe) if summe not in (None, "") else offen
+            nummer = f"{rechnung}-M{stufe}"
+            belege = []
+            if pdf:
+                b = self.bh._beleg_schreiben(pdf, dateiname or f"Mahnung_{nummer}.pdf", jahr=int(tag[:4]),
+                                             art="geschaeftsbrief", bezug=rechnung, von=von)["daten"]
+                belege = [{"pfad": b["pfad"], "sha256": b["sha256"]}]
+            self.bh._anhaengen("mahnung_erstellt", {"nummer": nummer, "rechnung": rechnung, "stufe": stufe,
+                                                    "titel": STUFEN[stufe], "datum": tag, "frist": fr, "firma": r["firma"],
+                                                    "faellig_am": r["faellig_am"], "offen_cent": offen, "summe_cent": betrag,
+                                                    "zinsen_cent": 0, "gebuehr_cent": max(betrag - offen, 0), "alt": True,
+                                                    "belege": belege}, von=von)
+            self.bh._anhaengen("mahnung_versendet", {"nummer": nummer, "mail": {"an": "vor LUNA verschickt"}}, von=von)
+        return {"nummer": nummer, "stufe": stufe, "frist": fr}
+
     def versendet(self, nummer: str, mail: dict, *, von: str = "") -> None:
         nummer = (nummer or "").strip().upper()
 

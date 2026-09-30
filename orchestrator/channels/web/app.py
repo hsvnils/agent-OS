@@ -1595,6 +1595,35 @@ async def rechnung_entwurf_neu(request: Request):
     return _kunden_aktion(lambda: _rechnungen().entwurf_anlegen(body.get("rechnung") or {}, von=_von(request)))
 
 
+def _datei_b64(d) -> tuple[bytes, str]:
+    import base64 as _b64
+    d = d or {}
+    return (_b64.b64decode(str(d.get("daten") or ""), validate=True) if d.get("daten") else b""), str(d.get("name") or "")
+
+
+@app.post("/api/finanzen/rechnungen/alt")
+async def rechnung_alt(request: Request):
+    """Etappe 19: Rechnung von vor LUNA mit Originalnummer + Original-PDF uebernehmen."""
+    body = await _json(request)
+
+    def tun():
+        pdf, name = _datei_b64(body.get("datei"))
+        return _rechnungen().alt_erfassen(body.get("rechnung") or {}, pdf, name, von=_von(request))
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/finanzen/rechnungen/{nummer}/altmahnung")
+async def rechnung_altmahnung(nummer: str, request: Request):
+    """Etappe 19: vor LUNA verschickte Mahnung als erreichte Stufe erfassen (optional mit PDF)."""
+    body = await _json(request)
+
+    def tun():
+        pdf, name = _datei_b64(body.get("datei"))
+        return _mahn().alt_erfassen(nummer, datum=body.get("datum") or "", frist=body.get("frist") or "",
+                                    summe=body.get("summe"), pdf=pdf or None, dateiname=name, von=_von(request))
+    return _kunden_aktion(tun)
+
+
 @app.post("/api/finanzen/rechnungen/aus-auftrag/{nummer}")
 async def rechnung_aus_auftrag(nummer: str, request: Request):
     """Rechnungsentwurf aus dem Auftrag; `{"vorkasse": true}` = Vorkasse-Rechnung (Etappe 18)."""
@@ -1783,8 +1812,8 @@ async def mahnung_erstellen(nummer: str, request: Request):
 @app.get("/api/finanzen/mahnungen/{nummer}/pdf")
 def mahnung_pdf(nummer: str):
     m = _mahn().get(nummer)
-    if not m:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Mahnung")
+    if not m or not m.get("belege"):                    # Mahnung vor LUNA ohne PDF (Etappe 19)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Mahnung bzw. kein PDF hinterlegt")
     return Response((kunden_store.bh.dir / m["belege"][0]["pfad"]).read_bytes(), media_type="application/pdf",
                     headers={"Content-Disposition": f'inline; filename="Mahnung_{m["nummer"]}.pdf"'})
 

@@ -16,6 +16,7 @@ Kalenderjahres abzueglich Stornos (vereinfachte Sicht; Zahlungseingang/EUeR folg
 """
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import date, timedelta
 
@@ -32,6 +33,7 @@ GRENZE_VORJAHR = 25_000_00
 WARNSCHWELLE = 0.8
 FELDER = ("firma", "ansprechpartner", "titel", "leistung_von", "leistung_bis", "zahlungsziel_tage", "einleitung",
           "layout", "bloecke", "zuschlaege", "rabatt_prozent", "ware", "zahlung")
+_ALT_NR = re.compile(r"[A-Z0-9][A-Z0-9\-/_.]{2,39}")
 ARTEN_TEXT = {"rechnung": "Rechnung", "anzahlung": "Vorkasse-Rechnung", "storno": "Stornorechnung"}
 VERWENDUNG = ("content", "privat", "leihgabe")         # Barter-Ware: betrieblich fuer Content (Standard) / privat / zurueck
 
@@ -426,6 +428,48 @@ class RechnungStore:
             out["korrektur_entwurf"] = self.entwurf_anlegen(
                 d, von=von, intern={k: original.get(k) for k in ("art", "zahlung", "vorkasse_faellig")})["entwurf_id"]
         return out
+
+    def alt_erfassen(self, daten: dict, pdf: bytes, dateiname: str = "", *, von: str = "") -> dict:
+        """Etappe 19: Rechnung, die vor LUNA mit eigener Nummer geschrieben wurde (z. B. `RG-11052026`), mit ihrer
+        Originalnummer und dem Original-PDF uebernehmen -- keine neue `RE-`-Nummer (der Kreis bleibt lueckenlos), keine
+        zweite Rechnung. Danach wie jede Rechnung: Umsatz, Zahlung, Mahnwesen, Export."""
+        nummer = str(daten.get("nummer") or "").strip().upper()
+        if not _ALT_NR.fullmatch(nummer) or nummer.startswith(("RE-", "MA-", "AN-", "AB-", "ER-", "EB-")):
+            raise ValueError("Originalnummer: 3-40 Zeichen (Buchstaben, Ziffern, - / _ .), nicht aus LUNAs Nummernkreisen.")
+        if not pdf or not pdf.startswith(b"%PDF"):
+            raise ValueError("Bitte das Original-PDF der Rechnung anhaengen.")
+        firma = self.kunden.firma(str(daten.get("firma") or "").strip().upper())
+        if not firma:
+            raise ValueError("Bitte den Kunden aus den Stammdaten waehlen.")
+        datum = _datum(daten.get("rechnungsdatum"), "Rechnungsdatum")
+        if not datum or datum > jetzt().date().isoformat():
+            raise ValueError("Rechnungsdatum fehlt oder liegt in der Zukunft.")
+        faellig = _datum(daten.get("faellig_am"), "Faellig am") or datum
+        if faellig < datum:
+            raise ValueError("Faelligkeit liegt vor dem Rechnungsdatum.")
+        try:
+            betrag = cent(daten.get("betrag"))
+        except (TypeError, ValueError):
+            raise ValueError("Betrag fehlt oder ist ungueltig.") from None
+        if betrag <= 0:
+            raise ValueError("Betrag muss groesser als 0 sein.")
+        text = str(daten.get("leistung") or "").strip()[:300] or f"Leistung laut Rechnung {nummer}"
+        kopf = {k: None for k in FELDER} | {
+            "firma": firma["nummer"], "ansprechpartner": "", "titel": str(daten.get("titel") or "").strip()[:200],
+            "leistung_von": _datum(daten.get("leistung_von"), "Leistung von"), "leistung_bis": _datum(daten.get("leistung_bis"), "Leistung bis"),
+            "zahlungsziel_tage": (date.fromisoformat(faellig) - date.fromisoformat(datum)).days, "einleitung": "",
+            "layout": "standard", "zuschlaege": [], "rabatt_prozent": 0,
+            "positionen": _positionen([{"beschreibung": text, "menge": "1", "einzelpreis_cent": betrag}]),
+            "art": "rechnung", "alt": True, "auftrag": "", "angebot": "", "entwurf_id": "", "rechnungsdatum": datum,
+            "faellig_am": faellig, "summe_cent": betrag, "notiz": str(daten.get("notiz") or "").strip()[:500]}
+        with self.bh._gesperrt():
+            if nummer in self._falte(self.bh._eintraege())[1]:
+                raise ValueError(f"{nummer} gibt es schon.")
+            b = self.bh._beleg_schreiben(pdf, dateiname or f"Rechnung_{nummer}.pdf", jahr=int(datum[:4]), art="beleg",
+                                         bezug=nummer, von=von)["daten"]
+            self.bh._anhaengen("rechnung_festgeschrieben", kopf | {"nummer": nummer, "belege": [
+                {"pfad": b["pfad"], "sha256": b["sha256"]}]}, von=von)
+        return {"nummer": nummer, "faellig_am": faellig}
 
     def versendet(self, nummer: str, mail: dict, *, von: str = "") -> None:
         def pruefe(eintraege):
