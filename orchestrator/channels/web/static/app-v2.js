@@ -46,7 +46,7 @@ let AKTIV = "dash", SUBTAB = {};
 
 /* Dashboard-Bearbeiten (wie V1): Widget-Reihenfolge + ausgeblendete, pro Nutzer in PREFS.v2_dashboard. */
 const DASH2_DEFAULT = ["todos", "freigaben", "loop", "budget", "trefferquote", "provider", "compliance", "live", "schritte", "meldungen", "research"];
-const DASH2_TITEL = { todos: "Zu erledigen", budget: "Monatsbudget", trefferquote: "Prognose-Trefferquote", freigaben: "Offene Freigaben", provider: "Provider verbunden", loop: "Investment · Lern-Loop", compliance: "Compliance-Puls", live: "Live-Aktivität", schritte: "Erste Schritte", meldungen: "Meldungen", research: "Research-Tickets" };
+const DASH2_TITEL = { todos: "⚡ Handlungsbedarf", budget: "Monatsbudget", trefferquote: "Prognose-Trefferquote", freigaben: "Offene Freigaben", provider: "Provider verbunden", loop: "Investment · Lern-Loop", compliance: "Compliance-Puls", live: "Live-Aktivität", schritte: "Erste Schritte", meldungen: "Meldungen", research: "Research-Tickets" };
 let DASH2 = { order: [...DASH2_DEFAULT], hidden: [] };
 let EDIT2 = false, DRAG2 = null;
 let _VERLAUF = [], _trendRO = null;
@@ -166,7 +166,10 @@ function ladeZu() { const l = $("#v2-lade"); if (!l || l.hidden) return; l.hidde
 let GLOCKE_N = 0, GLOCKE_T = null;
 async function glockeAktualisieren() {
   const d = await jget("/api/handlungsbedarf");
-  GLOCKE_N = d && d.zaehler ? d.zaehler.dringend || 0 : 0;
+  if (!d || !d.zaehler) return;
+  GLOCKE_N = d.zaehler.dringend || 0; glockeZeigen();
+}
+function glockeZeigen() {
   const el = $("#v2-glocke-n"); if (!el) return;
   el.textContent = GLOCKE_N > 99 ? "99+" : String(GLOCKE_N); el.hidden = !GLOCKE_N;
   $("#v2-glocke").setAttribute("aria-label", GLOCKE_N ? `${GLOCKE_N} dringende Punkte` : "Handlungsbedarf");
@@ -309,8 +312,9 @@ function dash2Tray(W) {
 }
 async function renderDash() {
   let TODOS;
-  [STATE, OVERVIEW, LOOP, TODOS] = await Promise.all([jget("/api/state"), jget("/api/overview"), jget("/api/investment/loop"), jget("/api/todos")]);
-  TODOS = TODOS || { todos: [], anzahl: 0, dringend: 0 };
+  [STATE, OVERVIEW, LOOP, TODOS] = await Promise.all([jget("/api/state"), jget("/api/overview"), jget("/api/investment/loop"), jget("/api/handlungsbedarf")]);
+  TODOS = TODOS || { punkte: [], zaehler: { gesamt: 0, dringend: 0, woche: 0, spaeter: 0 }, bereiche: {} };
+  GLOCKE_N = TODOS.zaehler.dringend || 0; glockeZeigen();
   STATE = STATE || {}; OVERVIEW = OVERVIEW || {}; LOOP = LOOP || {}; _VERLAUF = LOOP.verlauf || [];
   const g = (LOOP.kennzahlen && LOOP.kennzahlen.gesamt) || {};
   const antraege = STATE.antraege || [], provs = OVERVIEW.providers || [];
@@ -338,7 +342,7 @@ async function renderDash() {
   const miniList = (arr, keys, sub) => arr.slice(0, 2).map(x => `<div class="v2-mini"><b>${esc(String(firstOf(x, keys, "—")).slice(0, 54))}</b>${sub ? `<small>${esc(String(firstOf(x, sub, "")).slice(0, 40))}</small>` : ""}</div>`).join("") || `<div class="v2-sub">nichts offen</div>`;
 
   const W = {
-    todos: { span: "w12", link: null, aria: `Zu erledigen: ${TODOS.anzahl}`, html: todosInner(TODOS) },
+    todos: { span: "w12", link: null, aria: `Handlungsbedarf: ${TODOS.zaehler.gesamt}`, html: handlungKompakt(TODOS) },
     freigaben: { span: "w4 tall", link: null, aria: `Offene Freigaben: ${antraege.length}`, html: freigInner },
     loop: { span: "w8 tall", link: "go:investment", aria: `Investment Lern-Loop, Richtungsquote ${g.n ? pct(g.richtungsquote) : "keine Daten"}`, html: `<div class="v2-kpi">${g.n ? pct(g.richtungsquote) : "–"} <span class="delta ${(g.anteil_besser_baseline || 0) >= .5 ? "up" : "down"}">${g.n ? pct(g.anteil_besser_baseline) + " schlägt Baseline" : ""}</span></div><div class="v2-sub">Richtungsquote · MAE ${num(g.mae_pct)} vs Baseline ${num(g.baseline_mae_pct)} · n=${g.n || 0}</div>${chartMount()}` },
     budget: { span: "", link: null, aria: `Monatsbudget ${budget}`, html: kpiInner(String(budget), null, "aus finance/budget.md") },
@@ -361,21 +365,42 @@ async function renderDash() {
 }
 /* To-dos des Tagesbetriebs (Belege, Rechnungen, Angebote, Aufträge, CRM, Reels) -- zusammengefasst je Bereich.
    Erledigt wird durch die eigentliche Arbeit („Öffnen“) oder direkt („✓ …“); LUNA löscht dazugehörige Kalendertermine. */
-function todosInner(d) {
-  const liste = d.todos || [];
-  if (!liste.length) return `<div class="v2-check done" style="border:none"><span class="mark">✓</span>Alles erledigt — nichts offen im Tagesbetrieb.</div>`;
-  const gruppen = {}; liste.forEach(t => (gruppen[t.bereich] = gruppen[t.bereich] || []).push(t));
-  const zeile = (t) => `<div class="v2-list-row"><span>${t.icon}</span><div class="grow"><b class="v2-todo-titel" role="button" tabindex="0" title="Öffnen" data-act="todo-oeffnen" data-val="${esc(t.act)}" data-id="${esc(t.act_id || "")}">${esc(t.titel)}</b><small>${esc(t.detail || "")}</small></div>
-    ${t.faellig ? `<span class="v2-badge ${t.dringend ? "err" : "neutral"}">${t.dringend ? (t.faellig < heuteIso() ? "überfällig" : "heute") : esc(datumDe(t.faellig))}</span>` : ""}
-    ${t.erledigen ? `<button class="v2-btn ok sm" data-act="todo-erledigen" data-val="${esc(t.erledigen.pfad)}" data-schluessel="${esc(t.erledigen.schluessel || "")}">${esc(t.erledigen.label)}</button>` : ""}
+// Handlungsbedarf (LUNA_OS_UI_ROADMAP Etappe 3): alle Punkte aus allen Bereichen, nach Stufe
+const STUFEN = [["dringend", "Dringend", "überfällig, heute oder Störung"], ["woche", "Diese Woche", "fällig in 7 Tagen oder wartet auf dich"], ["spaeter", "Wenn Zeit ist", "ohne Termin"]];
+let HB_FILTER = "";
+function hbZeile(t, mitBereich) {
+  const b = BEREICHE.find(x => x.id === t.bereich_id);
+  const termin = t.faellig ? `<span class="v2-badge ${t.stufe === "dringend" ? "err" : "neutral"}">${t.stufe === "dringend" ? (t.faellig < heuteIso() ? "überfällig" : "heute") : esc(datumDe(t.faellig))}</span>` : "";
+  return `<div class="v2-list-row v2-hb-zeile"><span>${t.icon}</span><div class="grow"><b class="v2-todo-titel" role="button" tabindex="0" title="Öffnen" data-act="todo-oeffnen" data-val="${esc(t.act)}" data-id="${esc(t.act_id || "")}">${esc(t.titel)}</b><small>${esc(t.detail || "")}${mitBereich && b ? ` · ${b.icon} ${esc(b.label)}` : ""}</small></div>
+    ${termin}${t.erledigen ? `<button class="v2-btn ok sm" data-act="todo-erledigen" data-val="${esc(t.erledigen.pfad)}" data-schluessel="${esc(t.erledigen.schluessel || "")}">${esc(t.erledigen.label)}</button>` : ""}
     <button class="v2-btn sm" data-act="todo-oeffnen" data-val="${esc(t.act)}" data-id="${esc(t.act_id || "")}">Öffnen ›</button></div>`;
-  const bloecke = Object.entries(gruppen).map(([b, ts]) => {
-    const dr = ts.filter(t => t.dringend).length;
-    return `<details class="v2-todo-gruppe" ${dr || Object.keys(gruppen).length === 1 ? "open" : ""}><summary><b>${esc(ts[0].icon)} ${esc(b)}</b> <span class="v2-badge ${dr ? "err" : "neutral"}">${ts.length}${dr ? ` · ${dr} fällig` : ""}</span></summary>${ts.map(zeile).join("")}</details>`;
-  }).join("");
-  return `<div class="v2-kpi">${d.anzahl} <span class="delta ${d.dringend ? "down" : "up"}">${d.dringend ? d.dringend + " heute fällig/überfällig" : "nichts dringend"}</span></div>
-    <div class="v2-sub">Tagesbetrieb — Freigaben für die Weiterentwicklung stehen separat.</div><div class="v2-todo-liste">${bloecke}</div>`;
 }
+function hbChips(z) {
+  return `<span class="v2-hb-chips">${STUFEN.map(([k, n]) => `<span class="v2-badge ${k === "dringend" && z[k] ? "err" : k === "woche" && z[k] ? "warn" : "neutral"}">${z[k] || 0} ${n}</span>`).join("")}</span>`;
+}
+function handlungKompakt(d) {
+  const z = d.zaehler || {}, dr = (d.punkte || []).filter(p => p.stufe === "dringend");
+  if (!z.gesamt) return `<div class="v2-check done" style="border:none"><span class="mark">✓</span>Alles erledigt — nichts wartet auf dich.</div>`;
+  const naechste = dr.length ? dr : (d.punkte || []).slice(0, 3);
+  return `<div class="v2-hb-kopf"><div class="v2-kpi">${z.gesamt}</div>${hbChips(z)}</div>
+    <div class="v2-sub">${dr.length ? "Dringend:" : "Nichts dringend. Als Nächstes:"}</div>
+    <div class="v2-todo-liste">${naechste.slice(0, 6).map(t => hbZeile(t, true)).join("")}</div>
+    <button class="v2-btn" data-go="handlung">Alle ${z.gesamt} Punkte anzeigen ›</button>`;
+}
+async function renderHandlung() {
+  const d = await jget("/api/handlungsbedarf");
+  if (AKTIV !== "handlung") return;
+  if (!d) { $("#v2-app").innerHTML = secHead("⚡ Handlungsbedarf") + emptyRow("Nicht erreichbar."); return; }
+  const liste = (d.punkte || []).filter(p => !HB_FILTER || p.bereich_id === HB_FILTER);
+  const filter = `<div class="v2-tabs" role="group" aria-label="Nach Bereich filtern"><button class="${!HB_FILTER ? "active" : ""}" data-act="hb-filter" data-val="">Alle · ${d.zaehler.gesamt}</button>`
+    + BEREICHE.filter(b => d.bereiche[b.id]).map(b => `<button class="${HB_FILTER === b.id ? "active" : ""}" data-act="hb-filter" data-val="${b.id}">${b.icon} ${esc(b.label)} · ${d.bereiche[b.id]}</button>`).join("") + `</div>`;
+  const teile = STUFEN.map(([k, n, info]) => { const l = liste.filter(p => p.stufe === k); if (!l.length) return "";
+    return tile(`${n} · ${l.length}`, `<div class="v2-sub" style="margin-bottom:6px">${esc(info)}</div>${l.map(t => hbZeile(t, !HB_FILTER)).join("")}`, "w12"); }).join("");
+  $("#v2-app").innerHTML = secHead("⚡ Handlungsbedarf") + `<div class="v2-sub" style="margin:-8px 0 14px">Alles, was du tun musst, aus allen Bereichen von LUNA. Erledigtes verschwindet von selbst, sobald LUNA es in der Fachseite sieht.</div>`
+    + filter + (teile ? `<div class="v2-grid">${teile}</div>` : emptyRow(HB_FILTER ? "In diesem Bereich ist nichts offen." : "Alles erledigt — nichts wartet auf dich."));
+  GLOCKE_N = d.zaehler.dringend || 0; glockeZeigen();
+}
+RENDER.handlung = renderHandlung;
 function sparkFromVerlauf(verlauf) {
   const v = (verlauf || []).slice(-28); if (!v.length) return "";
   const mx = Math.max(...v.map(x => Number(x.mae_pct) || 0), 1);
@@ -2523,6 +2548,7 @@ async function handleAct(act, el) {
       const ok = !!(r && r.ok), m = ok ? "Zahlung storniert — sie bleibt sichtbar, zählt aber nicht mehr." : ((r && r.hinweis) || "Fehler.");
       return act === "re-zahlung-storno" ? reDetail(id, m, !ok) : blDetail(id, m, !ok);
     }
+    case "hb-filter": HB_FILTER = val || ""; return renderHandlung();
     case "todo-oeffnen": {
       if (val.startsWith("go:")) { const [, s, t] = val.split(":"); return go(s, t); }
       return handleAct(val, el);
@@ -2530,7 +2556,8 @@ async function handleAct(act, el) {
     case "todo-erledigen": {
       el.disabled = true; const r = await jpost(val, el.dataset.schluessel ? { schluessel: el.dataset.schluessel } : {});
       if (!r || r.ok === false) { el.disabled = false; return alert((r && r.hinweis) || "Fehler."); }
-      return renderDash();
+      glockeAktualisieren();
+      return AKTIV === "handlung" ? renderHandlung() : renderDash();
     }
     case "fin-drill": return finDrill(val);
     case "fin-vv": {

@@ -142,7 +142,7 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
   font-size: 11px; font-weight: 700; }
 .v2-badge.live, .v2-badge.aktiv, .v2-badge.ok, .v2-badge.freigegeben { color: var(--v2-green); background: var(--v2-green-soft); }
 .v2-badge.closed, .v2-badge.abgelehnt, .v2-badge.err { color: var(--v2-red); background: var(--v2-red-soft); }
-.v2-badge.draft, .v2-badge.entwurf, .v2-badge.standby, .v2-badge.wartet { color: var(--v2-amber); background: var(--v2-amber-soft); }
+.v2-badge.draft, .v2-badge.entwurf, .v2-badge.standby, .v2-badge.wartet, .v2-badge.warn { color: var(--v2-amber); background: var(--v2-amber-soft); }
 .v2-badge.neutral { color: var(--v2-muted); background: var(--v2-line-soft); }
 
 /* Buttons in Sektionen */
@@ -540,3 +540,8 @@ body.v2-lade-offen { overflow: hidden; }
   .v2-unter-b { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .v2-sprung-k { transition: none; } .v2-sprung-k:hover { transform: none; } }
+/* Handlungsbedarf (LUNA_OS_UI_ROADMAP Etappe 3) */
+.v2-hb-kopf { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+.v2-hb-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.v2-hb-zeile { flex-wrap: wrap; }
+.v2-hb-zeile .grow { min-width: 180px; }

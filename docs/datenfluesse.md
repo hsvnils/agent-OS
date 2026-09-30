@@ -178,7 +178,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `finance/kosten-log.jsonl` | Bot (Kostenlauf 03:00) | Bot, Web | ja | ja |
 | `investment/log.jsonl` | Bot, Web | dito | ja | ja |
 | `investment/features.jsonl` | Bot | Web | ja | ja |
-| `approvals/log.jsonl` | Bot | Bot | ja | ja |
+| `approvals/log.jsonl` | Bot | Bot; Web liest offene Entscheidungen fuer `GET /api/handlungsbedarf` (UI-Roadmap Etappe 3, nur lesend) | ja | ja |
 | `trajektorien/log.jsonl`, `social/log.jsonl` | Bot | Bot | ja | ja |
 | `entwicklung/roadmap.jsonl` | Bot, Web, Voice | Web | ja | ja |
 | `ig_inbox/log.jsonl` | Bot (Radar), Web (Webhook) | dito | ja | ja |

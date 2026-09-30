@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 19:28] — Claude Code
+- **Was:** LUNA_OS_UI_ROADMAP Etappe 3 umgesetzt: Handlungsbedarf ueber alle Bereiche (`core/handlungsbedarf.py`,
+  `GET /api/handlungsbedarf`): bisherige Tages-To-dos plus offene Antraege, offene Investment-Entscheidungen und
+  Betriebsstoerungen (Bot-Herzschlag, haengende Meldungen; Schwellen wie der Waechter), je Punkt Stufe dringend/diese
+  Woche/wenn Zeit ist und Bereich. Startseiten-Kachel „⚡ Handlungsbedarf“ statt „Zu erledigen“, eigene Seite mit
+  Bereichs-Filter, Glocke zaehlt „dringend“. Tests `test_handlungsbedarf.py`, Browsertest.
+- **Warum:** CEO 2026-09-30: Kachel fuer alle dringenden Handlungen ueber das ganze LUNA-System.
+- **Betroffen:** `orchestrator/core/handlungsbedarf.py` (neu), `orchestrator/channels/web/app.py`, `static/app-v2.js`,
+  `static/style-v2.css`, `orchestrator/tests/test_handlungsbedarf.py`, `LUNA_OS_UI_ROADMAP.md`, `docs/datenfluesse.md`
+
 ## [2026-09-30 19:25] — Claude Code
 - **Was:** LUNA_OS_UI_ROADMAP Etappe 1 umgesetzt: Kopfzeile mit 4 beschrifteten Bereichen (Geschaeft, Content &
   Collabs, Investment, LUNA & System) statt 19 Symbolen, Unterreihe je Bereich, Bereichs-Seite mit Sprungkarten, Glocke

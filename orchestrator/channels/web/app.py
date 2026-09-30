@@ -2448,10 +2448,8 @@ def _index(body: dict) -> int:
 
 # -- To-dos fuer die Hauptseite (CEO 2026-09-28): Tagesbetrieb gesammelt; Antraege/Freigaben bewusst NICHT hier ------
 
-@app.get("/api/todos")
-def todos_liste(request: Request):
+def _todos_fuer(u: dict) -> list[dict]:
     from ...core.todos import geschaefts_todos
-    u = getattr(request.state, "user", None) or _ceo_user()
     out = geschaefts_todos(kunden_store.bh, kunden_store, finanzen=hat_modul(u, "finanzen"), crm=hat_modul(u, "crm"))
     heute = jetzt_iso()[:10]
     if hat_modul(u, "crm"):
@@ -2466,9 +2464,35 @@ def todos_liste(request: Request):
         if wartet:
             out.append({"id": "reels", "bereich": "Content", "icon": "🎬", "titel": f"{len(wartet)} Reel(s) zur Freigabe",
                         "detail": "prüfen, Caption anpassen, freigeben oder ablehnen", "act": "go:reel", "act_id": "",
-                        "faellig": "", "dringend": False, "erledigen": None})
+                        "faellig": "", "dringend": False, "stufe": "woche", "erledigen": None})
     out.sort(key=lambda t: (not t["dringend"], t["faellig"] or "9999", t["titel"]))
+    return out
+
+
+@app.get("/api/todos")
+def todos_liste(request: Request):
+    u = getattr(request.state, "user", None) or _ceo_user()
+    out = _todos_fuer(u)
     return {"todos": out, "anzahl": len(out), "dringend": sum(1 for t in out if t["dringend"])}
+
+
+@app.get("/api/handlungsbedarf")
+def handlungsbedarf(request: Request):
+    """LUNA_OS_UI_ROADMAP Etappe 3: alles, was der CEO tun muss, aus allen Bereichen, nach Dringlichkeit (Glocke)."""
+    from datetime import date as _date
+    from ...core.handlungsbedarf import zusammenstellen
+    from ...investment.approvals import ApprovalStore
+    u = getattr(request.state, "user", None) or _ceo_user()
+    admin = hat_modul(u, "administration")
+    inv = None
+    if hat_modul(u, "invest"):
+        try:
+            inv = ApprovalStore(ROOT / "approvals" / "log.jsonl").offen()
+        except Exception:
+            inv = None
+    return zusammenstellen(_todos_fuer(u), antraege=antraege.list(status="eingereicht") if admin else None,
+                           investment=inv, betrieb=betrieb_status() if admin else None,
+                           heute=_date.fromisoformat(jetzt_iso()[:10]))
 
 
 @app.post("/api/finanzen/hinweis-quittieren")

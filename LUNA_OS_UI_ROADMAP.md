@@ -91,7 +91,10 @@ uebernommen); Glocke zaehlt allen dringenden Handlungsbedarf.
 - Aufwand: klein bis mittel.
 
 ### Etappe 3: Handlungsbedarf ueber das ganze LUNA-System
-- Status: geplant
+- Status: umgesetzt (2026-09-30) -- `core/handlungsbedarf.py`, `GET /api/handlungsbedarf` (Tages-To-dos + Antraege +
+  Investment-Entscheidungen + Betriebsstoerungen), Startseiten-Kachel ersetzt „Zu erledigen“, eigene Seite mit Filter,
+  Glocke zaehlt „dringend“. Nicht enthalten (Grund im Modul): Backup-Status (nur MACO470) und Sicherheits-Befunde
+  (kommen als Antrag unter Freigaben).
 - Ziel / Scope: Neuer Sammler (`core/handlungsbedarf.py`, Endpunkt `GET /api/handlungsbedarf`), der aus allen
   Bereichen die Punkte holt, die der CEO tun muss, mit Stufe **dringend** (ueberfaellig/heute), **diese Woche**,
   **wenn Zeit ist**, Grund, Bereich und Sprungziel. Quellen: bestehende Geschaefts-To-dos (`core/todos.py`:
