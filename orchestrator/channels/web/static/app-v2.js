@@ -1212,7 +1212,44 @@ async function renderRechnungen() {
     ${kpiTile("Überfällig", String(ueber.length), null, ueber.length ? cent2eur(ueber.reduce((x, r) => x + r.summe_cent - (r.bezahlt_cent || 0), 0)) : "alles im Zeitplan")}
     ${kpiTile("Bezahlt " + jahr, String(bezahlt.length), null, cent2eur(bezahlt.reduce((x, r) => x + r.summe_cent, 0)))}
     ${tile(sub === "entwuerfe" ? "Entwürfe (noch ohne Nummer)" : sub === "offen" ? "Offene Rechnungen" : "Alle Rechnungen", rows ? `<table class="v2-table"><thead><tr>${kopf}</tr></thead><tbody>${rows}</tbody></table>` : emptyRow(sub === "entwuerfe" ? "Keine Entwürfe." : "Keine Rechnungen — aus einem Auftrag („🧾 Rechnung erstellen“) oder oben rechts „+ Neue Rechnung“."), "w12")}`;
-  $("#v2-app").innerHTML = secHead("Rechnungen", `<button class="v2-btn pri" data-act="re-neu">+ Neue Rechnung</button>`) + tabs("rechnungen", [["offen", "Offen"], ["alle", "Alle"], ["entwuerfe", `Entwürfe (${(d.entwuerfe || []).length})`]]) + `<div class="v2-grid">${body}</div>`;
+  $("#v2-app").innerHTML = secHead("Rechnungen", `<button class="v2-btn" data-act="re-alt-form" title="Rechnung, die du vor LUNA mit eigener Nummer geschrieben hast">+ Altrechnung erfassen</button><button class="v2-btn pri" data-act="re-neu">+ Neue Rechnung</button>`) + tabs("rechnungen", [["offen", "Offen"], ["alle", "Alle"], ["entwuerfe", `Entwürfe (${(d.entwuerfe || []).length})`]]) + `<div class="v2-grid">${body}</div>`;
+}
+// Etappe 19: Rechnungen von vor LUNA (eigene Nummer, eigenes PDF) und dort schon verschickte Mahnungen
+async function reAltForm() {
+  const k = await jget("/api/crm/kunden"); const firmen = ((k && k.firmen) || []).filter(f => f.aktiv !== false);
+  openModal("Altrechnung erfassen", `<div class="v2-form">
+    <div class="v2-msg">Für Rechnungen, die du <b>vor LUNA</b> mit eigener Nummer geschrieben und verschickt hast. LUNA übernimmt Nummer und Original-PDF unverändert – es entsteht <b>keine</b> neue Rechnung. Danach: Zahlung erfassen oder mahnen wie gewohnt.</div>
+    <label class="v2-feld"><small>Kunde *</small><select id="ra-firma"><option value="">— wählen —</option>${firmen.map(f => `<option value="${esc(f.nummer)}">${esc(f.name)} (${esc(f.nummer)})</option>`).join("")}</select></label>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Rechnungsnummer (Original) *</small><input id="ra-nr" placeholder="z. B. RG-11052026"></label>
+      <label class="v2-feld"><small>Rechnungsdatum *</small><input id="ra-datum" type="date"></label>
+      <label class="v2-feld"><small>Fällig am (leer = sofort)</small><input id="ra-faellig" type="date"></label></div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Betrag in € *</small><input id="ra-betrag" inputmode="decimal"></label>
+      <label class="v2-feld"><small>Leistung von</small><input id="ra-von" type="date"></label><label class="v2-feld"><small>bis</small><input id="ra-bis" type="date"></label></div>
+    <label class="v2-feld"><small>Leistung (wie auf der Rechnung)</small><input id="ra-leistung" placeholder="z. B. Provisionen aus Affiliate-Partnerschaft"></label>
+    <label class="v2-feld"><small>Original-PDF *</small><input id="ra-pdf" type="file" accept=".pdf,application/pdf"></label>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="re-alt-speichern">Übernehmen</button><div id="ra-msg" class="v2-msg"></div></div></div>`, true);
+}
+async function reAltSpeichern() {
+  const f = ($("#ra-pdf") || {}).files; if (!f || !f.length) return kundenMsg("ra-msg", "Bitte das Original-PDF wählen.", false);
+  const datei = await blLesen(f[0]);
+  const r = await jpost("/api/finanzen/rechnungen/alt", { datei, rechnung: { firma: $("#ra-firma").value, nummer: $("#ra-nr").value.trim(), rechnungsdatum: $("#ra-datum").value,
+    faellig_am: $("#ra-faellig").value, betrag: $("#ra-betrag").value.trim(), leistung_von: $("#ra-von").value, leistung_bis: $("#ra-bis").value, leistung: $("#ra-leistung").value.trim() } });
+  if (!r || !r.ok) return kundenMsg("ra-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
+  return reDetail(r.nummer, `${r.nummer} übernommen.`);
+}
+function reAltMahnForm(nr) {
+  const box = $("#re-aktion-box"); if (!box) return;
+  box.innerHTML = `<h3>Mahnung vor LUNA erfassen</h3><div class="v2-form"><small class="v2-sub">Für Mahnungen, die du schon selbst verschickt hast – LUNA zählt die Stufe mit und macht danach mit der nächsten weiter.</small>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Mahnungsdatum *</small><input id="rm-datum" type="date"></label><label class="v2-feld"><small>Frist bis (leer = +7 Tage)</small><input id="rm-frist" type="date"></label>
+    <label class="v2-feld"><small>Geforderter Betrag (leer = offener Rest)</small><input id="rm-summe" inputmode="decimal"></label></div>
+    <label class="v2-feld"><small>PDF der Mahnung (optional)</small><input id="rm-pdf" type="file" accept=".pdf,application/pdf"></label>
+    <button class="v2-btn pri" data-act="re-altmahn-speichern" data-id="${esc(nr)}">Mahnung erfassen</button><div id="rm-msg" class="v2-msg"></div></div>`;
+}
+async function reAltMahnSpeichern(nr) {
+  const f = ($("#rm-pdf") || {}).files; const datei = f && f.length ? await blLesen(f[0]) : null;
+  const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(nr)}/altmahnung`, { datum: $("#rm-datum").value, frist: $("#rm-frist").value, summe: $("#rm-summe").value.trim(), ...(datei ? { datei } : {}) });
+  if (!r || !r.ok) return kundenMsg("rm-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
+  return reDetail(nr, `${r.nummer} erfasst (Stufe ${r.stufe}).`);
 }
 async function reEditor(eid) {
   openModal(eid ? `Rechnung ${eid} bearbeiten` : "Neue Rechnung", `<div class="v2-empty">Lade…</div>`, true);
@@ -1288,6 +1325,7 @@ async function reDetail(id, meldung, fehler) {
     if (r.ware_erhalten) aktionen += `<button class="v2-btn" data-act="re-ware-storno" data-id="${esc(r.nummer)}" title="Falsch erfassten Ware-Eingang zurücknehmen">↶ Ware-Eingang stornieren</button>`;
     if (r.status === "offen") aktionen += `<button class="v2-btn" data-act="re-storno" data-id="${esc(r.nummer)}">Stornieren …</button>`;
     if (d.naechste_mahnung) aktionen += `<button class="v2-btn danger" data-act="ma-form" data-id="${esc(r.nummer)}">⚠️ ${esc(d.naechste_mahnung.titel)} erstellen …</button>`;
+    if (r.status === "offen" && r.art !== "storno" && (d.mahnungen || []).length < 3) aktionen += `<button class="v2-btn" data-act="re-altmahn-form" data-id="${esc(r.nummer)}" title="Mahnung, die du schon selbst verschickt hast">📨 Mahnung vor LUNA erfassen …</button>`;
   }
   if (r.auftrag) aktionen += `<button class="v2-btn" data-act="ab-detail" data-id="${esc(r.auftrag)}">↩ Auftrag ${esc(r.auftrag)}</button>`;
   if (r.bezug) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.bezug)}">↩ Original ${esc(r.bezug)}</button>`;
@@ -2209,6 +2247,10 @@ async function handleAct(act, el) {
     case "bl-nachweis": { const zu = (prompt("Zu welchem Beleg gehört diese Quittung? (z. B. ER-2026-0033)", "") || "").trim(); if (!zu) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/als-nachweis`, { zu }); if (AKTIV === "belege") renderBelege(); return blDetail(r && r.ok ? zu.toUpperCase() : id, r && r.ok ? `Als Zahlungsnachweis an ${zu.toUpperCase()} gehängt; ${id} ist verworfen (Datei bleibt archiviert).` : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "bl-verwerfen": { const grund = prompt("Warum ist das kein Beleg? (z. B. versehentlich hochgeladen)", ""); if (!grund) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/verwerfen`, { grund }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Verworfen — die Datei bleibt archiviert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "re-neu": return reEditor("");
+    case "re-alt-form": return reAltForm();
+    case "re-alt-speichern": return reAltSpeichern();
+    case "re-altmahn-form": return reAltMahnForm(id);
+    case "re-altmahn-speichern": return reAltMahnSpeichern(id);
     case "re-detail": return reDetail(id);
     case "re-bearbeiten": return reEditor(id);
     case "re-speichern": return reSpeichern(id);

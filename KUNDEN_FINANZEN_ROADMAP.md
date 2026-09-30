@@ -4,7 +4,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappe 19 umgesetzt (Deploy, dann Hands of God/Kiezalm uebernehmen); freigegeben und in dieser Reihenfolge: 20 EZB-Kurs, 23 Provisionsmodell, 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -671,6 +671,83 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 - Aufwand: mittel bis gross (1-2 Sitzungen).
 - Dokumentation: Changelog, Roadmap, Register (Entscheidungen), `docs/datenfluesse.md` (Kalender-Termine, neue Felder),
   Verfahrensdokumentation (Anzahlungs- und Schlussrechnung).
+
+### Etappe 19: Altrechnungen uebernehmen (vor LUNA geschrieben) inkl. Zahlung und Mahnstufe
+
+- Status: umgesetzt (CEO-Go 2026-09-30: „neue Rechnungen anlegen, aber die alten Nummern nutzen“), Deploy + Uebernahme
+  der 3 Rechnungen offen
+- Ergebnis: `RechnungStore.alt_erfassen` -- Originalnummer (nicht aus LUNAs Kreisen, eindeutig) + Original-PDF
+  unveraendert, Datensatz wie eine festgeschriebene Rechnung (`alt: true`, Faelligkeit leer = sofort), kein `RE-`-
+  Eintrag, zaehlt zum Umsatz; `MahnStore.alt_erfassen` -- schon verschickte Mahnung als naechste Stufe
+  (`<Rechnung>-M<Stufe>`, kein `MA-`-Kreis, optional PDF, als versendet markiert), danach Mahnwesen wie gewohnt (nach
+  Stufe 3: „Mahnbescheid oder Inkasso pruefen“). Endpunkte `POST /api/finanzen/rechnungen/alt`,
+  `/api/finanzen/rechnungen/<nr>/altmahnung`; LUNA-OS: „+ Altrechnung erfassen“ in Rechnungen, „📨 Mahnung vor LUNA
+  erfassen …“ im Rechnungs-Detail. Tests `test_altrechnungen.py` (4) + 8 Gegenproben, Browser-Test.
+- Anlass: Kundenrechnungen, die der CEO vor LUNA selbst geschrieben hat (eigene Nummern `RG-TTMMJJJJ`): Hands of God
+  GmbH K-00008 (RG-18032026 385,12 EUR, RG-20092026 186,31 EUR, beide ueberwiesen) und Kiez Alm Gastro GmbH K-00009
+  (RG-11052026 4.000,00 EUR, offen, 1.-3. Mahnung bis 31.08.2026). Eine neue `RE-`-Rechnung darueber waere eine zweite
+  Rechnung fuer dieselbe Leistung -- das darf nicht sein.
+- Ziel / Scope: „Altrechnung erfassen“: Original-PDF hochladen, Originalnummer, Datum, Kunde, Betrag, Faelligkeit ->
+  unveraenderlicher Rechnungs-Datensatz ohne `RE-`-Nummer (der eigene Nummernkreis bleibt lueckenlos), zaehlt zum Umsatz
+  (Kleinunternehmer-Waechter, EUeR, Export). Zahlung erfassen wie bei jeder Rechnung. Bereits verschickte Mahnungen als
+  Dokumente mit Datum anhaengen und die erreichte Mahnstufe setzen; das Mahnwesen (Etappe 10) macht von dort weiter
+  (nach der letzten Mahnung: To-do „Mahnbescheid oder Inkasso pruefen“).
+- Danach: Hands of God als bezahlt durchbuchen (Zahlungsdatum laut EUeR-Liste), Kiezalm nur anlegen (CEO bucht und
+  setzt die Mahnstufe selbst).
+- Gate: Altrechnung erscheint in Rechnungen/Umsatz/Export mit Originalnummer, `RE-`-Kreis unberuehrt; Zahlung und
+  Mahnstufe funktionieren; Tests + Gegenproben.
+- Aufwand: klein bis mittel.
+
+### Etappe 20: EZB-Kurs fuer Fremdwaehrungs-Belege automatisch
+
+- Status: freigegeben (CEO 2026-09-30: „EZB-Kurs bei Dollar nehmen“, „Sehr gut“)
+- Ziel / Scope: Belege in Fremdwaehrung (USD usw.) bekommen beim Eingang den Euro-Betrag vorgeschlagen: EZB-
+  Referenzkurs des Rechnungstags (Wochenende/Feiertag: letzter Kurs davor) von `data-api.ecb.europa.eu`, Kurs und Datum
+  in der Notiz (wie bei der Nachbuchung vom 30.09.). Der Kalender-Termin „Euro-Betrag eintragen“ entfaellt, wenn der Kurs
+  da ist; ohne Netz bleibt es beim heutigen Weg. Kurse werden lokal zwischengespeichert.
+- Gate: Beispiel-USD-Beleg ergibt den Euro-Betrag wie von Hand gerechnet; Ausfall der EZB-Schnittstelle bricht nichts;
+  Tests + Gegenprobe; `docs/datenfluesse.md` (neue externe Verbindung).
+- Aufwand: klein.
+
+### Etappe 21: Artikel-Kalkulation (Einkauf, Kosten, Marge) und Lagerbestand im Leistungskatalog
+
+- Status: freigegeben (CEO-Go 2026-09-30: „die fehlenden einbauen und fuer physische Ware schon mal einen moeglichen
+  Lagerbestand als Funktion“ -- aktuell keine physische Ware, Funktion fuer die Zukunft)
+- Zusatz Lager: Artikel optional als „physische Ware“ mit Bestand, Mindestbestand, Einkaufspreis; Zugang (Einkauf,
+  optional mit Eingangsbeleg) und Abgang (Rechnung/Angebot angenommen) als Ereignisse; Warnung unter Mindestbestand.
+- Ausgangslage: Eigene Artikel anlegen geht schon -- LUNA-OS „Angebote & Auftraege“ -> Katalog (Name, Preis, Einheit,
+  Gruppe, bei Reichweiten-Formaten TKP-Rechnung); sie erscheinen im Angebots-Dropdown. Einkaufspreise, Kosten und
+  Marge gibt es noch nicht; eine Warenwirtschaft mit Lager gibt es nicht.
+- Ziel / Scope: je Artikel interne Kosten (Einkaufspreis, Produktion, Fremdleistung/Freelancer, Material, Reisen) ->
+  Deckungsbeitrag und Marge in EUR/% neben dem Verkaufspreis, Warnung unter Mindestmarge; im Angebot (nur intern, nie im
+  PDF) Summe Kosten, Deckungsbeitrag, Marge. Optional spaeter: Lagerbestand fuer physische Ware (nur wenn benoetigt).
+- Gate: Kalkulation je Artikel und im Angebot stimmt mit Handrechnung; nichts davon im Kunden-PDF (Gegenprobe).
+- Aufwand: mittel.
+
+### Etappe 22: Firmendaten recherchieren und auf Knopfdruck uebernehmen
+
+- Status: freigegeben (CEO 2026-09-30: „Mach das“)
+- Ziel / Scope: Fuer Kunden, Lieferanten und Partner mit Luecken (Adresse, USt-ID, Website, Handelsregister, Rechnungs-
+  Mail) sucht LUNA oeffentliche Angaben (Web-Suche ueber Brave, Impressum der Firmen-Website) und zeigt je Feld einen
+  Vorschlag mit Quelle; „Uebernehmen“ je Feld oder alle. Regelmaessig (z. B. woechentlich) prueft ein Agent die Luecken
+  und legt Vorschlaege ab -- uebernommen wird nie automatisch. Nur oeffentliche Firmendaten, keine Privatpersonen.
+- Gate: Vorschlag fuer eine bekannte Firma mit korrekter Quelle; nichts ohne Klick uebernommen; Kosten im Rahmen
+  (Brave-Kontingent); Tests + Gegenprobe; `docs/datenfluesse.md`.
+- Aufwand: mittel.
+
+### Etappe 23: Provisionsmodell (Affiliate) in Angebot, Auftrag und Abrechnung
+
+- Status: freigegeben (CEO 2026-09-30: „im Angebot mit einem Preis ausstatten, z. B. 5 Euro pro verkauftem Artikel oder
+  10 % ... um nach der Collab abrechnen zu koennen; auf der Rechnung steht dann ein richtiger Euro-Wert“)
+- Ziel / Scope: Katalog-Artikel „Affiliate-Partnerschaft“ (live seit 2026-09-30, Gruppe „Partnerschaften“) bekommt ein
+  Provisionsmodell: **fester Betrag je verkauftem Artikel** (z. B. 5,00 EUR) oder **Prozent vom Umsatz** (z. B. 10 %).
+  Im Angebot/Auftrag steht das Modell statt einer Summe („5,00 EUR je verkauftem Artikel“), die Angebotssumme weist die
+  Provision als „nach Abrechnung“ aus. Nach der Collab: Abrechnung im Auftrag -- verkaufte Stueck bzw. vermittelter
+  Umsatz eintragen -> LUNA rechnet den Euro-Betrag aus und legt die Rechnung mit echtem Betrag an (Grundlage der
+  Rechnung: Menge x Satz bzw. Umsatz x %).
+- Gate: Angebot mit Provisionsposition zeigt das Modell, keine Phantasiesumme; Abrechnung ergibt den handgerechneten
+  Betrag; Tests + Gegenproben.
+- Aufwand: mittel.
 
 ## Reihenfolge
 

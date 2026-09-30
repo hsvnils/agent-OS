@@ -36,6 +36,9 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 3. **Rechnung**: zuerst Entwurf ohne Nummer (frei aenderbar), dann **Festschreiben**: Nummer `RE-JJJJ-NNNN`
    (lueckenlos), PDF und Eintrag entstehen in einem Schritt und sind danach unveraenderbar. Pflichtangaben nach
    § 34a UStDV inkl. Hinweis auf die Steuerbefreiung nach § 19 UStG; keine Umsatzsteuer.
+   **Altrechnungen** (vor LUNA mit eigener Nummer geschrieben) werden mit Originalnummer und Original-PDF
+   unveraendert uebernommen -- ohne neue Nummer und ohne zweite Rechnung; bereits verschickte Mahnungen werden mit Datum
+   (und PDF) als erreichte Stufe erfasst.
 4. **Korrektur** nur per **Stornorechnung** (eigene Nummer, negativer Betrag, Bezug auf das Original) und ggf.
    neuer Rechnung.
 5. **Zahlungseingang** wird von Hand erfasst (Datum laut Kontoauszug, Teilzahlungen moeglich).
@@ -148,3 +151,4 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 | 2026-09-28 | Barter-Deals (Etappe 12) ergaenzt | Claude Code |
 | 2026-09-30 | Zahlungsbedingungen, Vorkasse- und Schlussrechnung (Etappe 18) ergaenzt | Claude Code |
 | 2026-09-30 | Beleg-Import aus gespeicherten Mails und Zweck/Begruendung am Beleg ergaenzt | Claude Code |
+| 2026-09-30 | Altrechnungen und Mahnungen von vor LUNA (Etappe 19) ergaenzt | Claude Code |

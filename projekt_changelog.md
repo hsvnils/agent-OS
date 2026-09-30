@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 15:24] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 19 umgesetzt: Altrechnungen mit Originalnummer + Original-PDF uebernehmen (ohne neue
+  RE-Nummer), Mahnungen von vor LUNA als erreichte Stufe erfassen; Endpunkte, LUNA-OS-Formulare (JS v67), Tests
+  `test_altrechnungen.py` (4) + 8 Gegenproben, Suite 1033 gruen, Browser-Test. CEO-Antworten eingetragen: Etappen 20-22
+  freigegeben (21 mit Lagerbestand), neue Etappe 23 Provisionsmodell (Affiliate) geplant und freigegeben.
+- **Warum:** CEO-Go 2026-09-30 („Fang mit dem an, mit dem du empfehlen wuerdest zu beginnen“).
+- **Betroffen:** `orchestrator/core/rechnungen.py`, `orchestrator/core/mahnungen.py`, `orchestrator/channels/web/app.py`,
+  `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_altrechnungen.py`,
+  `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
+## [2026-09-30 15:14] — Claude Code
+- **Was:** Live: Katalog-Artikel „Affiliate-Partnerschaft“ (neue Gruppe „Partnerschaften“, Preis je Abrechnung, 0 EUR als
+  Vorgabe) und Kunden K-00008 Hands of God GmbH, K-00009 Kiez Alm Gastro GmbH (Adressen aus den Rechnungen) angelegt.
+  Geplant in `KUNDEN_FINANZEN_ROADMAP.md`: Etappe 19 Altrechnungen uebernehmen (inkl. Zahlung/Mahnstufe), 20 EZB-Kurs
+  automatisch, 21 Artikel-Kalkulation, 22 Firmendaten-Recherche -- keine Umsetzung ohne CEO-Go.
+- **Warum:** CEO-Auftraege 2026-09-30 (Affiliate-Produkt, Hands of God/Kiezalm, Warenwirtschaft, Firmendaten, EZB-Kurs).
+- **Betroffen:** Live-Katalog und Stammdaten (`buchhaltung/`), `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-09-30 15:09] — Claude Code
 - **Was:** Alle 93 offenen Eingangsbelege live gebucht und als bezahlt erfasst (CEO-Go): Apple (iCloud+ Software,
   AppleCare+ Gebuehren/Versicherungen), Microsoft, Anthropic, Supabase, Dropbox, Canva, DAZN (Software), Grover
