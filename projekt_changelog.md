@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 10:09] — Claude Code
+- **Was:** BF-42 nach Deploy und Container-Neustart geprueft: LUNA-OS erreichbar, Bot-Herzschlag frisch (2,8 min),
+  keine unzugestellten Meldungen, neuer Code auf der NAS. Die Wirkung auf den Investment-Loop zeigt sich erst beim
+  naechsten Snapshot (01.10. 07:00) -- Nachkontrolle dann.
+- **Warum:** CEO „Neustart erledigt, bitte pruefen“.
+- **Betroffen:** keine Dateien ausser diesem Changelog
+
 ## [2026-09-30 09:27] — Claude Code
 - **Was:** BF-42 behoben: `leak_guard.redact` schwaerzt nur echte Geheimnisse (`is_redactable_secret`), `bot.py` und
   `channels/voice/server.py` filtern die `.env`-Werte ebenso. Verstuemmelte Zeilen in `investment/features.jsonl` bleiben
