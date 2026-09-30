@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 11:03] — Claude Code
+- **Was:** Lunas Portraet als Favicon: Gesichtsausschnitt aus `luna-portrait.png` (per ffmpeg) als `favicon-32.png`,
+  `favicon-192.png`, `apple-touch-icon.png` (180 px, Home-Bildschirm iPhone/iPad) und `favicon.ico`; Links im Kopf von
+  `index-v2.html`, Route `GET /favicon.ico`; Test ergaenzt, Suite 1018 gruen.
+- **Warum:** CEO-Wunsch 2026-09-30 („Lunas Bild als Favicon“).
+- **Betroffen:** `orchestrator/channels/web/static/` (4 Bilddateien, `index-v2.html`), `orchestrator/channels/web/app.py`,
+  `orchestrator/tests/test_web_ui_version.py`
+
 ## [2026-09-30 11:01] — Claude Code
 - **Was:** Etappe 18 nach Deploy und Container-Neustart geprueft: LUNA-OS liefert v64/v27 mit den neuen Funktionen aus,
   Auftrags-Detail liefert Rechnungen und Zahlungstext (Alt-Auftrag AB-2026-0001 ohne Zahlungsbedingungen: leer, wie

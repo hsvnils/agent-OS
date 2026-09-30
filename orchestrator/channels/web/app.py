@@ -3046,3 +3046,9 @@ async def _json(request: Request):
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    """Lunas Gesicht als Browser-Icon (auch fuer Aufrufe ohne <link>, z. B. PDF-Ansicht)."""
+    return FileResponse(STATIC / "favicon.ico", media_type="image/x-icon")
