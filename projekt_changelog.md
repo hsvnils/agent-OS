@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 10:15] — Claude Code
+- **Was:** Etappe 18 „Zahlungsbedingungen und Vorkasse mit Payment-Check im Kalender“ als Plan in
+  `KUNDEN_FINANZEN_ROADMAP.md` aufgenommen (Status geplant, keine Umsetzung).
+- **Warum:** CEO-Wunsch 2026-09-30: Zahlungsbedingungen anpassbar, Vorkasse in Prozent oder Euro, Payment-Check im Kalender.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-30 10:09] — Claude Code
 - **Was:** BF-42 nach Deploy und Container-Neustart geprueft: LUNA-OS erreichbar, Bot-Herzschlag frisch (2,8 min),
   keine unzugestellten Meldungen, neuer Code auf der NAS. Die Wirkung auf den Investment-Loop zeigt sich erst beim
