@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 17:45] — Claude Code
+- **Was:** Etappen 24 (Firmenakte: Dokumente + Mailverlauf je Firma, Weiterleiten, LUNA in CC/BCC) und 25 (Zeiterfassung per
+  Telegram/manuell, Stundensatz, Nachkalkulation je Auftrag, optional Kilometer) in `KUNDEN_FINANZEN_ROADMAP.md` geplant.
+- **Warum:** CEO-Wuensche 2026-09-30.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-30 17:44] — Claude Code
 - **Was:** Firmendaten-Recherche live fuer alle Firmen mit Luecken ausgefuehrt (nur Vorschlaege); dabei BF-45 gefunden
   (fremde Websites ueber Treffer-Titel) -- 8 falsche Vorschlaege live verworfen, Abgleich korrigiert (Domain statt Titel,
