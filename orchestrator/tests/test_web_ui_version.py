@@ -29,6 +29,15 @@ class TestNurNochV2(unittest.TestCase):
         self.assertTrue(r.json().get("ok"))
         self.assertIn("app-v2.js", self.c.get("/").text)
 
+    def test_favicon_ist_lunas_gesicht(self):
+        html = self.c.get("/").text
+        for datei in ("favicon-32.png", "favicon-192.png", "apple-touch-icon.png"):
+            self.assertIn(f"/static/{datei}", html, datei)
+            r = self.c.get(f"/static/{datei}")
+            self.assertEqual((r.status_code, r.content[:4]), (200, b"\x89PNG"), datei)
+        r = self.c.get("/favicon.ico")
+        self.assertEqual((r.status_code, r.headers["content-type"]), (200, "image/x-icon"))
+
 
 if __name__ == "__main__":
     unittest.main()
