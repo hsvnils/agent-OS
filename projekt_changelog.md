@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 18:28] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 26 umgesetzt: kalkulatorische Kosten (eigene Arbeitszeit, Fahrten) in der
+  Finanz-Uebersicht als eigene Kachel mit Schalter (Standard an, Wahl im Browser gemerkt, folgt dem Zeitraum) inkl.
+  „Ergebnis inkl. kalkulatorischer Kosten“ neben dem echten Gewinn; Exporte mit Haken „beilegen“ (Standard aus):
+  Journal-CSV mit getrenntem Block, Jahresabschluss-ZIP mit `zusatz/kalkulatorisch.csv` + LIESMICH-Hinweis. EUeR,
+  EUeR-PDF, Kennzahlen und GoBD-`index.xml` bleiben immer ohne diese Kosten. UI v75.
+- **Warum:** CEO-Go 2026-09-30 („fiktive Kosten anzeigen, aber abwaehlbar; bei Exporten auswaehlen“).
+- **Betroffen:** `orchestrator/core/zeiterfassung.py`, `orchestrator/core/finanzen.py`, `orchestrator/core/jahresabschluss.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`,
+  `orchestrator/tests/test_kalkulatorisch.py` (neu), `KUNDEN_FINANZEN_ROADMAP.md`, `docs/datenfluesse.md`,
+  `docs/verfahrensdokumentation-buchhaltung.md`
+
 ## [2026-09-30 18:20] — Claude Code
 - **Was:** Etappe 25 nach Neustart live geprueft (v74, km kalkulatorisch, Stundensatz 29,20 EUR/h, keine offenen
   Akten-Mails). Etappe 26 (kalkulatorische Kosten in Finanzauswertung/Export zuschaltbar, EUeR nie vermischt) geplant.

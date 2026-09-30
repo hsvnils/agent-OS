@@ -4,7 +4,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappen 21, 22 live; 24 (Firmenakte) und 25 (Zeiterfassung) umgesetzt -- gemeinsamer Deploy offen; 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappe 26 (kalkulatorische Kosten zuschaltbar) umgesetzt -- Deploy + CEO-Abnahme offen; Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappen 21, 22 live; 24 (Firmenakte) und 25 (Zeiterfassung) umgesetzt -- gemeinsamer Deploy offen; 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -837,8 +837,8 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 26: Kalkulatorische Kosten in Finanzauswertung und Export (zuschaltbar)
 
-- Status: geplant (CEO-Wunsch 2026-09-30: „fiktive Kosten auch anzeigen, aber abwaehlbar ... bei Exporten auswaehlen, ob
-  sie mitgerechnet werden“), wartet auf CEO-Go
+- Status: umgesetzt (CEO-Go 2026-09-30) -- Deploy + CEO-Abnahme offen (CEO-Wunsch 2026-09-30: „fiktive Kosten auch
+  anzeigen, aber abwaehlbar ... bei Exporten auswaehlen, ob sie mitgerechnet werden“)
 - Ziel / Scope:
   - **Finanz-Uebersicht (LUNA-OS):** Schalter „Kalkulatorische Kosten zeigen“ (Standard: an, Wahl merkt sich der Browser).
     Eigener, klar markierter Block „Kalkulatorisch (nicht steuerlich)“: eigene Arbeitszeit (Stunden x Satz) und Fahrten
@@ -850,6 +850,14 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
     und GoBD-Index bleiben immer ohne kalkulatorische Kosten** -- fuer Steuerberater und Finanzamt nie vermischt.
 - Gate: Ansicht mit/ohne Schalter; Export mit/ohne Haken; EUeR-Summen in allen Faellen identisch (Test + Gegenprobe).
 - Aufwand: klein bis mittel.
+- Ergebnis: `core/zeiterfassung.kalkulatorisch()` wertet die Zeit-Ereignisse je Jahr/Zeitraum aus (Arbeitszeit, Fahrten,
+  je Monat); `Finanzen.uebersicht()` liefert sie als Zusatz `kalkulatorisch` mit `gewinn_inkl_cent`, Kennzahlen/EUeR
+  unberuehrt. LUNA-OS V2: Kachel „Kalkulatorisch (nicht steuerlich)“ mit Schalter (Browser merkt sich die Wahl, Standard
+  an), folgt dem gewaehlten Zeitraum. Exporte: Haken „Kalkulatorische Kosten beilegen“ (Standard aus) an Journal-CSV
+  (eigener Block unter den echten Buchungen, Ueberschrift „KEINE Betriebsausgaben“ -- statt Zusatzspalte, damit die
+  Buchungszeilen unveraendert bleiben) und Jahresabschluss-ZIP (`zusatz/kalkulatorisch.csv` + Hinweis in `LIESMICH.txt`,
+  nicht im `index.xml`). Test `test_kalkulatorisch.py`: `euer.csv`, `journal.csv`, `index.xml` mit/ohne Haken
+  byte-gleich, EUeR mit Zeiten = EUeR ohne Zeiten; Browsertest Schalter + beide Haken.
 
 ## Reihenfolge
 

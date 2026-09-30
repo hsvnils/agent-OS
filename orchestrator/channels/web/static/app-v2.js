@@ -1918,6 +1918,7 @@ async function finUebersicht(u) {
     ${finKpi("Ausgaben " + zn, cent2eur(k.ausgaben_cent), finDelta(k.ausgaben_cent, v.ausgaben_cent, true), `absetzbar, inkl. Abschreibung · ${vjText}: ${cent2eur(v.ausgaben_cent)}`, `${dz}&art=ausgabe`)}
     ${finKpi("Gewinn " + zn, cent2eur(k.gewinn_cent), finDelta(k.gewinn_cent, v.gewinn_cent), `${vjText}: ${cent2eur(v.gewinn_cent)}`, dz)}
     ${kpiTile("Offen: bekommen wir", cent2eur(f.summe_cent), null, `${f.anzahl} Rechnung(en)${f.ueberfaellig ? ", " + f.ueberfaellig + " überfällig" : ""} · wir zahlen noch ${cent2eur(vb.summe_cent)}`)}
+    ${finKalkTile(u, zn)}
     ${tile("Monatsverlauf " + u.jahr, monate, "w8")}
     ${tile("Kleinunternehmer-Grenze " + u.jahr, grenze, "w4")}
     ${u.verlustvortrag ? tile("Verlustvortrag aus " + u.verlustvortrag.aus_jahr, vvHtml(u.verlustvortrag), "w4") : ""}
@@ -1929,6 +1930,20 @@ async function finUebersicht(u) {
     ${tile("Ausgaben nach Kategorie · " + zn, kat, "w6")}
     ${tile("Top-Kunden · " + zn, kunden, "w6")}
     ${tile("Letzte Zahlungen", zeilen, "w12")}`;
+}
+// Etappe 26: kalkulatorische Kosten (eigene Arbeitszeit, Fahrten) -- zuschaltbar, nie Teil der echten Zahlen/EÜR
+function finKalkAn() { try { return localStorage.getItem("luna-fin-kalk") !== "aus"; } catch (e) { return true; } }
+function finKalkTile(u, zn) {
+  const kk = u.kalkulatorisch; if (!kk) return "";
+  const an = finKalkAn();
+  const schalter = `<label class="v2-modlbl"><input type="checkbox" data-act="fin-kalk" ${an ? "checked" : ""}> Kalkulatorische Kosten zeigen</label>`;
+  if (!an) return tile("Kalkulatorisch · " + zn, `${schalter}<small class="v2-sub">Ausgeblendet. Echte Zahlen und EÜR sind davon nie betroffen.</small>`, "w12");
+  return tile("Kalkulatorisch (nicht steuerlich) · " + zn, `${schalter}
+    <div class="v2-an-intern" style="border-top:none"><div class="v2-kv"><span>Eigene Arbeitszeit ${esc(dauerTxt(kk.minuten || 0))}</span><b>−${cent2eur(kk.zeit_cent)}</b></div>
+    <div class="v2-kv"><span>Fahrten ${esc(String(kk.km || 0))} km</span><b>−${cent2eur(kk.fahrt_cent)}</b></div>
+    <div class="v2-kv"><span>Gewinn (echt)</span><b>${cent2eur(u.kennzahlen.gewinn_cent)}</b></div>
+    <div class="v2-kv"><span><b>Ergebnis inkl. kalkulatorischer Kosten</b></span><b style="${kk.gewinn_inkl_cent < 0 ? "color:var(--v2-red)" : ""}">${cent2eur(kk.gewinn_inkl_cent)}</b></div></div>
+    <small class="v2-sub">${esc(kk.hinweis)}</small>`, "w12");
 }
 function vvHtml(v) {
   return `<div class="v2-kpi">${esc(cent2eur(v.verbleibend_cent))} <span class="v2-sub" style="font-size:12px">noch verrechenbar</span></div>
@@ -1959,7 +1974,7 @@ function finTabelle(zeilen, summe) {
 async function finJournal(jahr) {
   const d = await jget("/api/finanzen/journal?jahr=" + jahr) || { zeilen: [] };
   const inhalt = d.zeilen.length ? finTabelle(d.zeilen, true) : emptyRow("Keine Zahlungen in " + jahr + ".");
-  return tile("Journal " + jahr + " — alle Zahlungen nach Zahlungsdatum", inhalt + `<div class="v2-card-actions" style="margin-top:10px"><a class="v2-btn" href="/api/finanzen/journal?jahr=${jahr}&format=csv">⬇ Als CSV (Excel/Numbers)</a><small class="v2-sub">Stornierte Zahlungen bleiben sichtbar, zählen aber nicht. „→ Jahr“ = 10-Tage-Regel.</small></div>`, "w12");
+  return tile("Journal " + jahr + " — alle Zahlungen nach Zahlungsdatum", inhalt + `<div class="v2-card-actions" style="margin-top:10px"><a class="v2-btn" data-kalk-link href="/api/finanzen/journal?jahr=${jahr}&format=csv">⬇ Als CSV (Excel/Numbers)</a><label class="v2-modlbl"><input type="checkbox" data-act="fin-kalk-export"> kalkulatorische Kosten beilegen</label><small class="v2-sub">Stornierte Zahlungen bleiben sichtbar, zählen aber nicht. „→ Jahr“ = 10-Tage-Regel.</small></div>`, "w12");
 }
 async function finEuer(jahr) {
   const e = await jget("/api/finanzen/euer?jahr=" + jahr);
@@ -1986,7 +2001,7 @@ async function finAbschluss(jahr) {
     <tr class="v2-fin-gewinn"><td></td><td></td><td><b>${eu.gewinn_cent >= 0 ? "Gewinn" : "Verlust"}</b> <small>(ELSTER rechnet die Summen selbst)</small></td><td style="text-align:right"><b>${esc(cent2eur(eu.gewinn_cent))}</b></td></tr></tbody></table>`;
   return tile(`Vor der Steuererklärung ${jahr}`, (offenPflicht ? `<div class="v2-msg err" style="margin-bottom:8px">${offenPflicht} Punkt(e) noch offen — erst klären, dann Export und ELSTER.</div>` : `<div class="v2-msg ok" style="margin-bottom:8px">Alles Nötige erledigt.</div>`) + pruef, "w6")
     + tile(`Export ${jahr}`, `<div class="v2-sub" style="line-height:1.6">Ein ZIP für Finanzamt oder Steuerberater: alle Tabellen (CSV + index.xml nach dem Beschreibungsstandard), das unveränderbare Kassenbuch mit Prüfergebnis, alle Belege im Original und die EÜR als PDF.</div>
-      <div class="v2-card-actions" style="margin-top:12px"><a class="v2-btn pri" href="/api/finanzen/abschluss/export?jahr=${jahr}">⬇ Export ${jahr} (ZIP)</a><a class="v2-btn" href="/api/finanzen/abschluss/euer.pdf?jahr=${jahr}" target="_blank" rel="noopener">📄 EÜR ${jahr} als PDF</a></div>
+      <div class="v2-card-actions" style="margin-top:12px"><a class="v2-btn pri" data-kalk-link href="/api/finanzen/abschluss/export?jahr=${jahr}">⬇ Export ${jahr} (ZIP)</a><label class="v2-modlbl" title="Als Zusatzdatei – EÜR, Journal und index.xml bleiben unverändert"><input type="checkbox" data-act="fin-kalk-export"> kalkulatorische Kosten als Zusatz beilegen</label><a class="v2-btn" href="/api/finanzen/abschluss/euer.pdf?jahr=${jahr}" target="_blank" rel="noopener">📄 EÜR ${jahr} als PDF</a></div>
       <small class="v2-sub">Geht nur an dich (Download), nichts wird verschickt.</small>`, "w6")
     + tile(`Verlustvortrag aus ${jahr - 1}`, (d.verlustvortrag ? vvHtml(d.verlustvortrag) : `<div class="v2-sub">Kein Verlustvortrag aus ${jahr - 1} erfasst. Hattest du ${jahr - 1} einen Verlust, trag ihn hier ein (Betrag aus deiner EÜR bzw. dem Steuerbescheid).</div>`)
       + `<div class="v2-card-actions" style="margin-top:8px"><button class="v2-btn sm" data-act="fin-vv" data-val="${jahr - 1}">${d.verlustvortrag ? "Ändern" : "Verlustvortrag eintragen"}</button></div>`, "w12")
@@ -2421,6 +2436,10 @@ async function handleAct(act, el) {
     case "bl-verwerfen": { const grund = prompt("Warum ist das kein Beleg? (z. B. versehentlich hochgeladen)", ""); if (!grund) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/verwerfen`, { grund }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Verworfen — die Datei bleibt archiviert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "re-neu": return reEditor("");
     case "re-alt-form": return reAltForm();
+    case "fin-kalk": { try { localStorage.setItem("luna-fin-kalk", el.checked ? "an" : "aus"); } catch (e) {} return renderFinanzen(); }
+    case "fin-kalk-export": { const box = el.closest(".v2-card-actions"); (box ? box.querySelectorAll("a[data-kalk-link]") : []).forEach(a => {
+      const u2 = new URL(a.getAttribute("href"), location.origin); if (el.checked) u2.searchParams.set("kalkulatorisch", "1"); else u2.searchParams.delete("kalkulatorisch");
+      a.setAttribute("href", u2.pathname + u2.search); }); return; }
     case "zeit-start": case "zeit-stopp": case "zeit-storno": case "zeit-km": case "zeit-eintragen": case "zeit-satz": return zeitAktion(act, id, val);
     case "akte-hochladen": return akteHochladen(id);
     case "akte-zuordnen": return akteZuordnenForm(id);

@@ -2301,11 +2301,17 @@ def finanzen_ki_kosten(jahr: int = 0):
 
 
 @app.get("/api/finanzen/journal")
-def finanzen_journal(jahr: int = 0, format: str = "", firma: str = ""):
+def finanzen_journal(jahr: int = 0, format: str = "", firma: str = "", kalkulatorisch: int = 0):
     j = jetzt_iso()[:4]
     zeilen = _finanzen().journal(jahr or int(j), firma=firma)
     if format == "csv":
-        return Response("\ufeff" + journal_csv(zeilen), media_type="text/csv; charset=utf-8",
+        text = journal_csv(zeilen)
+        if kalkulatorisch and not firma:                    # Etappe 26: Zusatz, getrennt von den echten Buchungen
+            from ...core.zeiterfassung import kalkulatorisch as _kalk, kalkulatorisch_csv
+            firmen = {f["nummer"]: f["name"] for f in kunden_store.firmen()}
+            text += ("\n\nKalkulatorische Kosten (eigene Arbeitszeit, Fahrten) -- KEINE Betriebsausgaben, nicht in der EUeR\n"
+                     + kalkulatorisch_csv(_kalk(kunden_store.bh.eintraege(), jahr or int(j), None, firmen)))
+        return Response("\ufeff" + text, media_type="text/csv; charset=utf-8",
                         headers={"Content-Disposition": f'attachment; filename="Journal_{jahr or j}.csv"'})
     return {"jahr": jahr or int(j), "zeilen": zeilen}
 
@@ -2358,11 +2364,12 @@ async def finanzen_verlustvortrag(request: Request):
 
 
 @app.get("/api/finanzen/abschluss/export")
-def finanzen_export(jahr: int = 0):
-    """Export fuer Finanzamt/Steuerberater (ZIP: Tabellen + index.xml, Kassenbuch, Belege, EUeR-PDF)."""
+def finanzen_export(jahr: int = 0, kalkulatorisch: int = 0):
+    """Export fuer Finanzamt/Steuerberater (ZIP: Tabellen + index.xml, Kassenbuch, Belege, EUeR-PDF). Mit
+    `kalkulatorisch=1` zusaetzlich `kalkulatorisch.csv` (nicht im index.xml, EUeR unveraendert)."""
     from ...core.jahresabschluss import export_zip
     j = jahr or int(jetzt_iso()[:4])
-    daten = export_zip(kunden_store.bh, kunden_store, j, _firmendaten() or {})
+    daten = export_zip(kunden_store.bh, kunden_store, j, _firmendaten() or {}, kalkulatorisch=bool(kalkulatorisch))
     return Response(daten, media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="Buchhaltung_{j}.zip"'})
 
