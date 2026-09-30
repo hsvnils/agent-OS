@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 20:05] — Claude Code
+- **Was:** BF-48 nach CEO-Neustart live geprueft: Test-Login ueber HTTPS zeigt „erstellt 20:05“ = deutsche Zeit
+  (vorher 2 h daneben), Test-Sitzung wieder abgemeldet; Passkey des CEO weiter hinterlegt; Bot-Herzschlag 2 min;
+  Handlungsbedarf 5 Punkte.
+- **Warum:** Abnahme-Gegenprobe nach Deploy (`4d41f67`).
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-09-30 20:00] — Claude Code
 - **Was:** Investment-Nachbesserung nach CEO-Neustart live geprueft: Handlungsbedarf 5 Punkte (4 dringend, 1 diese
   Woche), die 5 ueberholten Investment-Anfragen erscheinen nicht mehr; Bot-Herzschlag 1 min. BF-48 (Anmelde-Zeiten
