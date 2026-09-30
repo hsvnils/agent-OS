@@ -46,7 +46,8 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    (Original `.eml` + Hash) mit Datum und optionalem Bezug zur Rechnung abgelegt.
    **Eigene Arbeitszeit und Fahrten** zu Kundenterminen werden nur intern kalkulatorisch erfasst (Stundensatz, 0,30 EUR/km)
    -- keine Betriebsausgaben, keine Buchung, nicht in der EUeR (Fahrten mit dem Firmenwagen des Arbeitgebers verursachen
-   keine eigenen Kosten).
+   keine eigenen Kosten). Sie koennen in der Finanz-Uebersicht und auf Wunsch in Exporten als klar getrennter Zusatz
+   „kalkulatorisch, keine Betriebsausgaben“ gezeigt werden; EUeR, EUeR-PDF und der GoBD-Index enthalten sie nie.
 4. **Korrektur** nur per **Stornorechnung** (eigene Nummer, negativer Betrag, Bezug auf das Original) und ggf.
    neuer Rechnung.
 5. **Zahlungseingang** wird von Hand erfasst (Datum laut Kontoauszug, Teilzahlungen moeglich).

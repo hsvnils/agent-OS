@@ -356,9 +356,13 @@ class Finanzen:
             if z["art"] == "einnahme":
                 kunden_umsatz[z["gegenpartei"] or "ohne Kunde"] = kunden_umsatz.get(z["gegenpartei"] or "ohne Kunde", 0) + z["betrag_cent"]
         jahre = sorted({z["jahr"] for z in journal} | {heute.year, jahr}, reverse=True)
+        from .zeiterfassung import kalkulatorisch                  # Etappe 26: nur Zusatz, nie in Kennzahlen/EUeR
+        kalk = kalkulatorisch(e, jahr, ms, firmen)
+        kalk = {k: v for k, v in kalk.items() if k != "zeilen"} | {
+            "gewinn_inkl_cent": kennzahlen(j)["gewinn_cent"] - kalk["summe_cent"]}
         return {
             "jahr": jahr, "stand": heute.isoformat(), "jahre": jahre,
-            "zeitraum": zeitraum,
+            "zeitraum": zeitraum, "kalkulatorisch": kalk,
             "verlustvortrag": vv_info(verlustvortrag(e, jahr - 1), jahr - 1, kennzahlen(p)["gewinn_cent"]),
             "kennzahlen": kennzahlen(j),
             "vorjahr": kennzahlen([z for z in pv if z["monat"] in ms]),

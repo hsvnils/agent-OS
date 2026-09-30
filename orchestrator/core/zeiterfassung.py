@@ -76,28 +76,7 @@ class Zeiterfassung:
     # -- Lesen --------------------------------------------------------------------------------------------------------
 
     def _falte(self, eintraege: list[dict] | None = None) -> dict[str, dict]:
-        out: dict[str, dict] = {}
-        for e in self.bh.eintraege() if eintraege is None else eintraege:
-            d, t = e["daten"], e["typ"]
-            if t in ("zeit_start", "zeit_eintrag"):
-                out[d["id"]] = dict(d) | {"ts": e["ts"], "fahrten": [], "storniert": False}
-            elif d.get("id") not in out:
-                continue
-            elif t == "zeit_stopp":
-                out[d["id"]] |= {"ende": d["ende"], "satz_cent": d["satz_cent"]}
-            elif t == "zeit_fahrt":
-                out[d["id"]]["fahrten"] = [{k: d.get(k) for k in ("km", "quelle", "adresse", "betrag_cent")}]   # letzte gilt
-            elif t == "zeit_storniert":
-                out[d["id"]] |= {"storniert": True, "grund": d.get("grund", "")}
-            elif t == "zeit_zugeordnet":
-                out[d["id"]]["auftrag"] = d["auftrag"]
-        for x in out.values():
-            if x.get("ende"):
-                x["minuten"] = max(0, round((_zeit(x["ende"]) - _zeit(x["start"])).total_seconds() / 60))
-            x["laeuft"] = not x.get("ende") and not x["storniert"]
-            x["kosten_cent"] = round(x.get("minuten", 0) * (x.get("satz_cent") or 0) / 60)
-            x["fahrt_cent"] = sum(f.get("betrag_cent") or 0 for f in x["fahrten"])
-        return out
+        return falte_zeiten(self.bh.eintraege() if eintraege is None else eintraege)
 
     def laufend(self) -> dict | None:
         return next((x for x in self._falte().values() if x["laeuft"]), None)
@@ -299,3 +278,71 @@ def erinnerung_faellig(x: dict | None, jetzt_: datetime | None = None) -> bool:
     if not x:
         return False
     return (jetzt_ or _jetzt_lokal()) - _zeit(x["start"]) >= timedelta(hours=ERINNERN_STUNDEN)
+
+
+
+def falte_zeiten(eintraege: list[dict]) -> dict[str, dict]:
+    """Zeiteintraege aus der Kette (auch fuer Finanzen/Export, ohne Store-Objekt)."""
+    out: dict[str, dict] = {}
+    for e in eintraege:
+        d, t = e["daten"], e["typ"]
+        if t in ("zeit_start", "zeit_eintrag"):
+            out[d["id"]] = dict(d) | {"ts": e["ts"], "fahrten": [], "storniert": False}
+        elif d.get("id") not in out:
+            continue
+        elif t == "zeit_stopp":
+            out[d["id"]] |= {"ende": d["ende"], "satz_cent": d["satz_cent"]}
+        elif t == "zeit_fahrt":
+            out[d["id"]]["fahrten"] = [{k: d.get(k) for k in ("km", "quelle", "adresse", "betrag_cent")}]   # letzte gilt
+        elif t == "zeit_storniert":
+            out[d["id"]] |= {"storniert": True, "grund": d.get("grund", "")}
+        elif t == "zeit_zugeordnet":
+            out[d["id"]]["auftrag"] = d["auftrag"]
+    for x in out.values():
+        if x.get("ende"):
+            x["minuten"] = max(0, round((_zeit(x["ende"]) - _zeit(x["start"])).total_seconds() / 60))
+        x["laeuft"] = not x.get("ende") and not x["storniert"]
+        x["kosten_cent"] = round(x.get("minuten", 0) * (x.get("satz_cent") or 0) / 60)
+        x["fahrt_cent"] = sum(f.get("betrag_cent") or 0 for f in x["fahrten"])
+    return out
+
+
+def kalkulatorisch(eintraege: list[dict], jahr: int, monate: set[int] | None = None, firmen: dict | None = None) -> dict:
+    """Etappe 26: kalkulatorische Kosten (eigene Arbeitszeit + Fahrten) -- **nie** Teil von EUeR/Gewinn, nur Zusatz.
+    -> {zeit_cent, fahrt_cent, summe_cent, minuten, km, monate: [{nr, ...}], zeilen: [...] }"""
+    firmen = firmen or {}
+    je = {m: {"nr": m, "zeit_cent": 0, "fahrt_cent": 0, "minuten": 0, "km": 0} for m in range(1, 13)}
+    zeilen = []
+    for x in sorted(falte_zeiten(eintraege).values(), key=lambda x: x["start"]):
+        if x["storniert"] or x["laeuft"] or str(x["start"])[:4] != str(jahr):
+            continue
+        m = int(str(x["start"])[5:7])
+        if monate and m not in monate:
+            continue
+        km = sum(f.get("km") or 0 for f in x["fahrten"])
+        je[m]["zeit_cent"] += x["kosten_cent"]
+        je[m]["fahrt_cent"] += x["fahrt_cent"]
+        je[m]["minuten"] += x.get("minuten", 0)
+        je[m]["km"] += km
+        wer = firmen.get(x.get("firma"), x.get("firma", ""))
+        zeilen.append({"datum": str(x["start"])[:10], "art": "Arbeitszeit", "auftrag": x.get("auftrag", ""), "gegenpartei": wer,
+                       "menge": f"{x.get('minuten', 0) / 60:.2f} h".replace(".", ","), "betrag_cent": x["kosten_cent"]})
+        if x["fahrt_cent"]:
+            zeilen.append({"datum": str(x["start"])[:10], "art": "Fahrt", "auftrag": x.get("auftrag", ""), "gegenpartei": wer,
+                           "menge": f"{km} km", "betrag_cent": x["fahrt_cent"]})
+    summe = {k: sum(v[k] for v in je.values()) for k in ("zeit_cent", "fahrt_cent", "minuten", "km")}
+    return summe | {"summe_cent": summe["zeit_cent"] + summe["fahrt_cent"], "monate": list(je.values()), "zeilen": zeilen,
+                    "hinweis": "Kalkulatorisch (eigene Arbeitszeit, Fahrten mit Firmenwagen) -- keine Betriebsausgaben, "
+                               "nicht in der EUeR."}
+
+
+def kalkulatorisch_csv(k: dict) -> str:
+    import csv
+    import io
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["Datum", "Art", "Auftrag", "Gegenpartei", "Menge", "Betrag EUR (kalkulatorisch)", "Hinweis"])
+    for z in k["zeilen"]:
+        w.writerow([f"{z['datum'][8:10]}.{z['datum'][5:7]}.{z['datum'][:4]}", z["art"], z["auftrag"], z["gegenpartei"],
+                    z["menge"], f"{z['betrag_cent'] / 100:.2f}".replace(".", ","), "keine Betriebsausgabe"])
+    return buf.getvalue()

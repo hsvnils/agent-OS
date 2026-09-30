@@ -218,7 +218,7 @@ def _kat_name(k: str) -> str:
     return POSITIONEN.get(k) or (KATEGORIEN.get(k) or (k,))[0]
 
 
-def export_zip(bh: Buchhaltung, kunden, jahr: int, firmendaten: dict) -> bytes:
+def export_zip(bh: Buchhaltung, kunden, jahr: int, firmendaten: dict, *, kalkulatorisch: bool = False) -> bytes:
     f = Finanzen(bh, kunden)
     e = bh.eintraege()
     firmen = {x["nummer"]: x for x in kunden.firmen()}
@@ -301,7 +301,15 @@ def export_zip(bh: Buchhaltung, kunden, jahr: int, firmendaten: dict) -> bytes:
                 z.writestr(pf, (bh.dir / pf).read_bytes())
                 anzahl += 1
         z.writestr(f"EUER_{jahr}.pdf", euer_pdf(f, jahr, firmendaten))
-        z.writestr("LIESMICH.txt", liesmich(jahr, firmendaten, tabellen, anzahl, not befunde).encode("utf-8"))
+        text = liesmich(jahr, firmendaten, tabellen, anzahl, not befunde)
+        if kalkulatorisch:                                     # Etappe 26: Zusatz, bewusst NICHT im index.xml
+            from .zeiterfassung import kalkulatorisch as _kalk, kalkulatorisch_csv
+            k = _kalk(e, jahr, None, {n: x["name"] for n, x in firmen.items()})
+            z.writestr("zusatz/kalkulatorisch.csv", ("\ufeff" + kalkulatorisch_csv(k)).encode("utf-8"))
+            text += (f"\nZusatz (auf Wunsch beigelegt): zusatz/kalkulatorisch.csv -- kalkulatorische Kosten (eigene Arbeitszeit "
+                     f"und Fahrten mit dem Firmenwagen des Arbeitgebers, {_b(k['summe_cent'])} EUR). KEINE Betriebsausgaben, "
+                     "nicht in EUeR, Journal oder index.xml enthalten; nur zur internen Nachkalkulation.\n")
+        z.writestr("LIESMICH.txt", text.encode("utf-8"))
     return buf.getvalue()
 
 
