@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 21:48] — Claude Code
+- **Was:** Etappe 27 live geprueft und drei Facebook-Auszahlungen nachgebucht (CEO: „nimm den EZB-Kurs“), Beleg =
+  Screenshot der Meta-Auszahlungsdetails (Remittance-Mails nicht auffindbar): ER-2026-0131 (23.01., 146,16 USD ->
+  124,48 EUR, Kurs 1,1742, erzielt Nov.-Dez. 2025), ER-2026-0132 (20.03., 191,74 USD -> 165,94 EUR, 1,1555, Jan.-Feb.),
+  ER-2026-0133 (22.06., 135,01 USD -> 117,85 EUR, 1,1456, Maerz-Mai; Meta-Posten ergeben 135,03 USD, in der Notiz
+  vermerkt). Je Einnahme bei P-00001, Zahlung am Auszahlungstag, Zeitraeume von Hand. Plattform-Auswertung 2026:
+  4 Auszahlungen, 654,65 EUR. Keine Kalender-Erinnerungen entstanden.
+- **Warum:** CEO-Go 2026-09-30 (Etappe 27 + Nachtrag mit EZB-Kurs).
+- **Betroffen:** Live-Buchhaltung (NAS, `buchhaltung/log.jsonl` + Belege), `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-30 21:16] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 27 umgesetzt: Plattform-Auszahlungen mit Erzielt-Zeitraum. Meta-Remittance-PDF wird
   ausgelesen (Posten mit Zeitraum, Referenz, Betrag; Summenpruefung), von Hand erfassbare Posten fuer Belege ohne PDF

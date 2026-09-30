@@ -4,7 +4,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 27 (Plattform-Auszahlungen) umgesetzt -- Deploy + Nachtrag Jan/Maer/Jun offen; Etappe 26 (kalkulatorische Kosten zuschaltbar) live -- CEO-Abnahme offen; Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappen 21, 22 live; 24 (Firmenakte) und 25 (Zeiterfassung) umgesetzt -- gemeinsamer Deploy offen; 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappe 27 (Plattform-Auszahlungen) live, Nachtrag gebucht -- CEO-Abnahme offen; Etappe 26 (kalkulatorische Kosten zuschaltbar) live -- CEO-Abnahme offen; Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappen 21, 22 live; 24 (Firmenakte) und 25 (Zeiterfassung) umgesetzt -- gemeinsamer Deploy offen; 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -861,8 +861,8 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 27: Plattform-Auszahlungen mit Erzielt-Zeitraum (Facebook-Monetarisierung)
 
-- Status: umgesetzt (CEO-Go 2026-09-30) -- Deploy + Nachtrag der drei Auszahlungen offen (CEO findet die Meta-Mails
-  nicht; Weg siehe Ergebnis)
+- Status: live (deployt 2026-09-30, `b2aca93`, Neustart CEO); Nachtrag Jan/Maer/Jun gebucht (ER-2026-0131..0133) --
+  CEO-Abnahme offen
 - Analyse: 4 Facebook-Auszahlungen 2026 (23.01. 146,16 USD, 20.03. 191,74 USD, 22.06. 135,01 USD, 25.09. 282,37 USD).
   Erfasst ist nur 25.09. als `ER-2026-0002` (Einnahme 246,38 EUR = echter Bankeingang, EZB-Kurs haette 247,63 EUR
   ergeben). Das Meta-„Remittance“-PDF nennt je Posten Payout-Referenz, Zeitraum und Betrag; die Meta-Oberflaeche
