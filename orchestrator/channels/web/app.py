@@ -1318,6 +1318,61 @@ def kunden_detail(nummer: str):
             "vorschlag_ts": v.get("ts", "")}
 
 
+def _akte():
+    from ...core.firmenakte import Firmenakte
+    return Firmenakte(kunden_store.bh, kunden_store)
+
+
+@app.get("/api/crm/kunden/{nummer}/akte")
+def kunden_akte(nummer: str):
+    """Etappe 24: Dokumente und Mails der Firma (neueste zuerst)."""
+    from ...core.firmenakte import ARTEN
+    try:
+        return {"dokumente": _akte().akte(nummer), "arten": ARTEN}
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Firma") from None
+
+
+@app.post("/api/crm/kunden/{nummer}/akte")
+async def kunden_akte_hochladen(nummer: str, request: Request):
+    body = await _json(request)
+
+    def tun():
+        daten, name = _datei_b64(body.get("datei"))
+        return _akte().hochladen(nummer, daten, name, titel=body.get("titel") or "", art=body.get("art") or "sonstiges",
+                                 datum=body.get("datum") or "", bezug=body.get("bezug") or "", notiz=body.get("notiz") or "",
+                                 von=_von(request))
+    return _kunden_aktion(tun)
+
+
+@app.get("/api/crm/akte/offen")
+def akte_offen():
+    return {"mails": [{k: m.get(k) for k in ("id", "titel", "datum", "mail_von", "notiz", "kandidaten", "ts")}
+                      for m in _akte().offene()]}
+
+
+@app.post("/api/crm/akte/{did}/zuordnen")
+async def akte_zuordnen(did: str, request: Request):
+    """Mail ohne eindeutige Firma zuordnen; leere Firma = gehoert zu keiner Firma (erledigt)."""
+    body = await _json(request)
+    return _kunden_aktion(lambda: _akte().zuordnen(did, body.get("firma") or "", von=_von(request)))
+
+
+@app.get("/api/crm/akte/{did}/datei")
+def akte_datei(did: str, i: int = 0):
+    a = _akte()
+    x = a.dokument(did) or next((m for m in a.offene() if m["id"] == did), None)
+    if not x or not 0 <= i < len(x.get("dateien") or []):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekanntes Dokument")
+    d = x["dateien"][i]
+    endung = Path(d.get("name") or d["pfad"]).suffix.lower()
+    mime = {".pdf": "application/pdf", ".eml": "message/rfc822", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+            ".png": "image/png"}.get(endung, "application/octet-stream")
+    art = "inline" if mime in ("application/pdf", "image/jpeg", "image/png") else "attachment"
+    return Response((kunden_store.bh.dir / d["pfad"]).read_bytes(), media_type=mime,
+                    headers={"Content-Disposition": f'{art}; filename="{Path(d.get("name") or d["pfad"]).name}"'})
+
+
 _RECHERCHE_TEST = None                     # Tests: FirmenRecherche mit Fake-Suche/-Abruf (kein Netz)
 
 
@@ -1620,7 +1675,10 @@ def rechnung_detail(kennung: str):
         mahnbar = ""
     except (ValueError, KeyError) as exc:
         naechste, mahnbar = None, str(exc)
-    return {"rechnung": r, "firma": {k: f.get(k) for k in ("nummer", "name", "rechnungsmail", "verbraucher")},
+    from ...core.firmenakte import Firmenakte
+    doks = [{k: x.get(k) for k in ("id", "titel", "art", "datum", "notiz")}
+            for x in Firmenakte(kunden_store.bh, kunden_store).zu_bezug(r.get("nummer", ""))] if r.get("nummer") else []
+    return {"rechnung": r, "firma": {k: f.get(k) for k in ("nummer", "name", "rechnungsmail", "verbraucher")}, "dokumente": doks,
             "ansprechpartner": ap, "mail_an": f.get("rechnungsmail") or (ap or {}).get("mail") or "",
             "google": bool(_google().verfuegbar()), "firmendaten": bool(_firmendaten()),
             "steuernummer": bool(_firmendaten().get("steuernummer")), "mahnungen": mahn,

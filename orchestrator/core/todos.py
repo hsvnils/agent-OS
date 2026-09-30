@@ -181,6 +181,11 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
     firmen = {f["nummer"]: f["name"] for f in kunden.firmen()}
     out: list[dict] = []
     if crm:
+        from .firmenakte import _falte as _akte_falte                   # Etappe 24: Mails ohne eindeutige Firma
+        for m in _akte_falte(e)[1].values():
+            out.append(_todo(f"akte:{m['id']}", "Firmenakte", "✉️", f"Mail zuordnen: {m['titel'][:60]}",
+                             f"von {m.get('mail_von') or '?'} – welcher Firma gehört die Mail?", "akte-zuordnen", m["id"],
+                             "", h))
         for a in AngebotStore._falte(e).values():
             if a["status"] != "versendet":
                 continue

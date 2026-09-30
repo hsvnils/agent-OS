@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 17:59] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 24 umgesetzt: Firmenakte (Dokumente je Firma mit Bezug, weitergeleitete Mails und Mails
+  mit LUNA in CC/BCC automatisch bei der Firma, „Mail zuordnen“), LUNA-OS Akte + Dokumente an der Rechnung (JS v72).
+  Tests `test_firmenakte.py` (7) + 8 Gegenproben, Suite 1061 gruen, Browser-Test.
+- **Warum:** CEO-Go 2026-09-30 (Anwaltsschreiben Kiezalm ablegen, Mails am Unternehmen tracken).
+- **Betroffen:** `orchestrator/core/firmenakte.py` (neu), `orchestrator/core/todos.py`, `orchestrator/channels/web/app.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`,
+  `orchestrator/tests/test_firmenakte.py`, `KUNDEN_FINANZEN_ROADMAP.md`, `docs/datenfluesse.md`,
+  `docs/verfahrensdokumentation-buchhaltung.md`
+
 ## [2026-09-30 17:45] — Claude Code
 - **Was:** Etappen 24 (Firmenakte: Dokumente + Mailverlauf je Firma, Weiterleiten, LUNA in CC/BCC) und 25 (Zeiterfassung per
   Telegram/manuell, Stundensatz, Nachkalkulation je Auftrag, optional Kilometer) in `KUNDEN_FINANZEN_ROADMAP.md` geplant.

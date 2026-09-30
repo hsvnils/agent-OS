@@ -442,6 +442,7 @@ def _start_security_loop(ctx, secrets) -> None:
 
 
 _BELEG_MAILS_GESEHEN: set = set()      # Mail-IDs ohne verwertbaren Anhang nicht bei jedem Poll neu laden
+_AKTE_MAILS_GESEHEN: set = set()   # Etappe 24: in diesem Prozess schon gepruefte Mail-IDs
 
 
 def _start_buchhaltung_loop(ctx) -> None:
@@ -1410,6 +1411,14 @@ def main() -> None:
                                              backoffice=AuftragStore(ROOT / "backoffice" / "log.jsonl", secrets=ctx.leak_secrets),
                                              notify=(ctx.notifications.enqueue if ctx.notifications else None),
                                              gesehen=_BELEG_MAILS_GESEHEN)
+                        try:                                          # Etappe 24: Firmenakte (CC/BCC, weitergeleitet)
+                            from ...core.firmenakte import Firmenakte, mails_pruefen
+                            from ...core.kunden import KundenStore as _KS2
+                            mails_pruefen(Firmenakte(_bh, _KS2(_bh)), ctx.google, ceo=_abs,
+                                          luna=secrets.get("GOOGLE_ACCOUNT_EMAIL", "luna.hanserautisch@gmail.com"),
+                                          gesehen=_AKTE_MAILS_GESEHEN)
+                        except Exception as exc:
+                            print(f"[akte] Mails: {exc}", flush=True)
                         # Fremdwaehrung (z. B. Meta in USD): KI-Vorschlaege holen, dann Kalender „Euro-Betrag eintragen“
                         from ...core.eingangsbelege import fremdwaehrung_erinnern, llm_ergebnisse_uebernehmen
                         llm_ergebnisse_uebernehmen(EingangStore(_bh), AuftragStore(ROOT / "backoffice" / "log.jsonl",
