@@ -114,6 +114,14 @@ class TestLogin(LoginBasis):
         self.assertIn("fehler=gesperrt", r.headers["location"])
         self.assertNotIn(COOKIE, r.cookies)
 
+    def test_5b_bremse_nicht_per_xff_umgehbar(self):
+        for i in range(5):
+            self.c.post("/api/login", data={"username": "ceo", "password": "falsch"},
+                        headers={"x-real-ip": "203.0.113.7", "x-forwarded-for": f"10.0.0.{i}"})
+        r = self.c.post("/api/login", data={"username": "ceo", "password": "richtig-geheim"},
+                        headers={"x-real-ip": "203.0.113.7", "x-forwarded-for": "10.9.9.9"})
+        self.assertIn("fehler=gesperrt", r.headers["location"])                    # gefaelschtes XFF hilft nicht
+
     def test_6_abmelden_und_widerrufen(self):
         self.einloggen()
         zweit = self.c.__class__(self.w.app, base_url=ORIGIN, follow_redirects=False)

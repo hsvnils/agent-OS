@@ -370,8 +370,9 @@ def index(request: Request):
 
 # -- Login, Sitzungen, Passkeys (LUNA_OS_UI_ROADMAP Etappen 2 + 6) --------------------------------------------------
 def _client_ip(request: Request) -> str:
-    xff = request.headers.get("x-forwarded-for", "")
-    return xff.split(",")[0].strip() if xff else (request.client.host if request.client else "?")
+    """Absender fuer die Fehlversuch-Bremse. `X-Real-IP` setzt der Synology-Proxy selbst ($remote_addr, ueberschreibt
+    Mitgeschicktes); `X-Forwarded-For` beginnt mit dem Wert des Absenders und ist daher faelschbar -> nie verwenden."""
+    return (request.headers.get("x-real-ip") or "").strip() or (request.client.host if request.client else "?")
 
 
 def _weiter(w: str | None) -> str:
