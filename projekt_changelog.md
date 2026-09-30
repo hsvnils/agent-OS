@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 21:10] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 27 geplant (Plattform-Auszahlungen mit Erzielt-Zeitraum). Analyse read-only: von 4
+  Facebook-Auszahlungen 2026 ist nur 25.09. erfasst (ER-2026-0002, 246,38 EUR Bankeingang); Meta-Oberflaeche weicht vom
+  Remittance-PDF ab (Juni-Posten +0,02 USD, Juli-Posten 70,23 statt 69,96 USD) -> PDF massgeblich.
+- **Warum:** CEO 2026-09-30: Einnahmen und Zeitraeume der Facebook-Auszahlungen tracken.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-09-30 20:05] — Claude Code
 - **Was:** BF-48 nach CEO-Neustart live geprueft: Test-Login ueber HTTPS zeigt „erstellt 20:05“ = deutsche Zeit
   (vorher 2 h daneben), Test-Sitzung wieder abgemeldet; Passkey des CEO weiter hinterlegt; Bot-Herzschlag 2 min;
