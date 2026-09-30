@@ -2338,7 +2338,9 @@ def beleg_detail(nummer: str):
     if not x:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Beleg")
     llm = backoffice.get(x["llm_auftrag"]) if x.get("llm_auftrag") else None
-    return {"beleg": {k: v for k, v in x.items() if k != "text"} | {"text": (x.get("text") or "")[:4000]},
+    from ...core.plattform import auszahlung as _auszahlung
+    return {"beleg": {k: v for k, v in x.items() if k != "text"} | {"text": (x.get("text") or "")[:4000],
+                                                                    "plattform": _auszahlung(x)},
             "kategorien": {k: v[0] for k, v in _eb.KATEGORIEN.items()}, "kategorien_einnahme": _eb.EINNAHME_KATEGORIEN,
             "lieferanten": _lieferanten(), "firma_vorschlag": _firma_vorschlag(x.get("felder") or {}, x.get("vorschlag") or {}),
             "ki_status": (llm or {}).get("status", "")}
@@ -2396,6 +2398,24 @@ async def belege_hochladen(request: Request):
     except Exception:
         pass
     return {"ok": any(e["ok"] for e in ergebnisse), "ergebnisse": ergebnisse}
+
+
+@app.post("/api/finanzen/belege/{nummer}/posten")
+async def beleg_posten(nummer: str, request: Request):
+    """Etappe 27: Erzielt-Zeitraeume einer Plattform-Auszahlung von Hand (je Zeile „von-bis Betrag“)."""
+    body = await _json(request)
+    return _kunden_aktion(lambda: _eingang().posten_setzen(
+        nummer, body.get("zeilen") or "", plattform=body.get("plattform") or "Facebook",
+        zahlungs_id=body.get("zahlungs_id") or "", datum=body.get("datum") or "", waehrung=body.get("waehrung") or "USD",
+        von=_von(request)))
+
+
+@app.get("/api/finanzen/plattform")
+def plattform_einnahmen(jahr: int | None = None):
+    """Etappe 27: Plattform-Auszahlungen mit Erzielt-Zeitraum (Information; EUeR bleibt beim Zufluss)."""
+    from ...core.plattform import auswertung
+    st = _eingang()
+    return auswertung(list(st._falte(st.bh.eintraege()).values()), jahr or int(jetzt_iso()[:4]))
 
 
 @app.post("/api/finanzen/belege/{nummer}/zweck")

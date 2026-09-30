@@ -443,6 +443,11 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
         v |= {"waehrung": waehrung, "betrag_fremd": v["betrag"], "betrag": ""}
         if v["betrag_fremd"]:
             v["leistung"] = f"{'Auszahlung' if gutschrift else 'Kauf'} {v['betrag_fremd']} {waehrung}"
+            from .plattform import remittance_lesen                 # Etappe 27: Erzielt-Zeitraum der Meta-Auszahlung
+            if (r := remittance_lesen(t)):
+                von, bis = min(x["von"] for x in r["posten"]), max(x["bis"] for x in r["posten"])
+                v["leistung"] = (f"Facebook-Auszahlung {v['betrag_fremd']} {waehrung}, erzielt "
+                                 f"{von[8:10]}.{von[5:7]}.{von[:4]}–{bis[8:10]}.{bis[5:7]}.{bis[:4]}")
     if zeilen:                                                  # Absenderzeile "Firma · Strasse · Ort"
         kopf = [z for z in zeilen[:15] if not _KEIN_LIEFERANT.search(z) and len(re.findall(r"[A-Za-zÄÖÜäöü]", z)) >= 3
                 and not _DATUM_DE_LANG.fullmatch(z)]
@@ -557,6 +562,11 @@ class EingangStore:
                 x = out[d["nummer"]]
                 x["zweck"] = d.get("zweck", "")
                 x["verlauf"].append(spur | {"felder": ["zweck"]})
+            elif t == "eingang_posten":                      # Etappe 27: Erzielt-Zeitraeume von Hand (ohne PDF)
+                x = out[d["nummer"]]
+                x["plattform"] = {k: d.get(k) for k in ("plattform", "zahlungs_id", "datum", "waehrung", "posten")} \
+                    | {"quelle": "hand", "betrag_cent": sum(p["betrag_cent"] for p in d.get("posten") or [])}
+                x["verlauf"].append(spur | {"felder": ["posten"]})
             elif t == "eingang_llm_auftrag":
                 out[d["nummer"]]["llm_auftrag"] = d["auftrag_id"]
             elif t == "eingang_erinnerung":                  # Kalender: Euro-Betrag nachtragen (Fremdwaehrung)
@@ -758,6 +768,32 @@ class EingangStore:
                 raise ValueError(f"Rechnung {f['rechnungsnummer']} von {f['lieferant']} ist schon als {doppelt[0]} gebucht.")
         self.bh.erfassen_geprueft("eingang_gebucht", {"nummer": nummer, "felder": f}, von=von, pruefe=pruefe)
         return {"nummer": nummer, "felder": f}
+
+    def posten_setzen(self, nummer: str, zeilen: str, *, plattform: str = "Facebook", zahlungs_id: str = "",
+                      datum: str = "", waehrung: str = "USD", von: str = "") -> dict:
+        """Etappe 27: Erzielt-Zeitraeume einer Plattform-Auszahlung von Hand (nur Einnahmen; aendert keine Buchung)."""
+        from .plattform import posten_aus_text
+        nummer = (nummer or "").strip().upper()
+        posten = posten_aus_text(zeilen)
+        if datum:
+            try:
+                datum = date.fromisoformat(datum[:10]).isoformat()
+            except ValueError:
+                raise ValueError("Zahlungsdatum ungueltig.") from None
+        daten = {"nummer": nummer, "plattform": (plattform or "Facebook").strip()[:40],
+                 "zahlungs_id": re.sub(r"[^0-9A-Za-z-]", "", zahlungs_id or "")[:40], "datum": datum,
+                 "waehrung": (waehrung or "USD").strip().upper()[:3], "posten": posten}
+
+        def pruefe(eintraege):
+            x = self._falte(eintraege).get(nummer)
+            if not x:
+                raise KeyError(nummer)
+            if x["status"] == "verworfen":
+                raise ValueError(f"{nummer} ist verworfen.")
+            if ((x.get("felder") or {}).get("art") or (x.get("vorschlag") or {}).get("art")) != "einnahme":
+                raise ValueError("Zeitraeume gibt es nur bei Einnahmen (Gutschriften/Auszahlungen).")
+        self.bh.erfassen_geprueft("eingang_posten", daten, von=von, pruefe=pruefe)
+        return daten
 
     def bezahlt(self, nummer: str, datum: str, *, betrag=None, zuordnung_jahr=None, notiz: str = "",
                 von: str = "") -> dict:

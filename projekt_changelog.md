@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 21:16] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 27 umgesetzt: Plattform-Auszahlungen mit Erzielt-Zeitraum. Meta-Remittance-PDF wird
+  ausgelesen (Posten mit Zeitraum, Referenz, Betrag; Summenpruefung), von Hand erfassbare Posten fuer Belege ohne PDF
+  (Ereignis `eingang_posten`), Beleg-Ansicht „Erzielt-Zeitraeume“, Finanz-Kachel „Plattform-Einnahmen“ (erzielt je
+  Monat neben den Auszahlungen, Euro anteilig zum Bankeingang). EUeR unveraendert (Zufluss). UI v77.
+- **Warum:** CEO-Go 2026-09-30 („Daten der Einnahmen und Zeitraeume tracken“).
+- **Betroffen:** `orchestrator/core/plattform.py` (neu), `orchestrator/core/eingangsbelege.py`,
+  `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`,
+  `orchestrator/tests/test_plattform.py` (neu), `KUNDEN_FINANZEN_ROADMAP.md`, `docs/datenfluesse.md`,
+  `docs/verfahrensdokumentation-buchhaltung.md`
+
 ## [2026-09-30 21:10] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 27 geplant (Plattform-Auszahlungen mit Erzielt-Zeitraum). Analyse read-only: von 4
   Facebook-Auszahlungen 2026 ist nur 25.09. erfasst (ER-2026-0002, 246,38 EUR Bankeingang); Meta-Oberflaeche weicht vom
