@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 17:37] — Claude Code
+- **Was:** Etappen 21 + 22 nach Neustart live geprueft: LUNA-OS v71/v29, `/api/finanzen/lager` antwortet (noch keine
+  physische Ware), Mindestmarge 30 %. Firmendaten-Recherche live fuer K-00009 Kiez Alm und K-00008 Hands of God
+  ausgefuehrt -- je 4 Vorschlaege (USt-ID, Handelsregister, Telefon, Website) mit Impressum als Quelle, nichts
+  uebernommen (CEO entscheidet per Klick). Bot-Herzschlag frisch.
+- **Warum:** CEO „Neustart erledigt, du kannst pruefen“.
+- **Betroffen:** Live-Kassenbuch (Ereignisse `firma_recherche`), sonst keine Dateien ausser diesem Changelog
+
 ## [2026-09-30 17:34] — Claude Code
 - **Was:** Gemeinsamer Abschluss Etappen 21 + 22: gepusht und auf die NAS uebertragen (Neustart durch den CEO offen).
   Dabei 1 roter Test entdeckt -- Push/Deploy liefen trotzdem, weil der Befehl das Testergebnis nicht als Abbruch
