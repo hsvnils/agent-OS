@@ -17,6 +17,23 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 09:17] — Claude Code
+- **Was:** Nacht 29./30.09. geprueft (Telegram-Meldungen, Backoffice): Briefing, CFO-, Audit-, Reel- und Finanzcheck-Meldungen
+  zugestellt; Self-Dev lief planmaessig nicht (woechentlich), kein Radar-Lauf. Backoffice hat nach Schliessen der
+  Chrome-Tabs den Rueckstand abgearbeitet (BF-41 ergaenzt). Neu gefunden: BF-42 -- Investment-Loop meldet morgens
+  rund zehnmal, weil `bot.py` Schalterwerte wie `0`/`1` als Geheimnisse schwaerzt und damit `investment/features.jsonl`
+  verstuemmelt. Nur Doku, kein Code geaendert.
+- **Warum:** CEO-Auftrag „Schau dir mal an, ob die Nacht so lief wie geplant, was die Telegram Meldungen angeht“.
+- **Betroffen:** `docs/bekannte-fehler.md`
+
+## [2026-09-29 17:30] — Claude Code
+- **Was:** Naechtliche Agenten-Jobs im Briefing geprueft: Zustellung ok (CFO-Kostenpruefung und Self-Dev-Vorschlag kamen
+  in beiden Naechten als „Nachts von den Agenten“ im Morgen-Briefing), aber das Backoffice auf dem MACO470 arbeitet seit
+  28.09. nichts mehr ab (RAM-Waechter: 8,8 GB frei < 11/13 GB) -- Jobs laufen per Cloud-Ausweich, Beleg-Vorschlaege nur
+  regelbasiert. Als BF-41 erfasst; keine Code-/Dienst-Aenderung.
+- **Warum:** CEO-Auftrag „Pruefe die naechtlichen Agenten-Jobs im Briefing“.
+- **Betroffen:** `docs/bekannte-fehler.md`
+
 ## [2026-09-29 17:22] — Claude Code
 - **Was:** WhatsApp-Bewertung fuer den konkreten Zweck (Team-Erinnerungen in der bestehenden WhatsApp-Gruppe, geteilte
   Nummer) ergaenzt: offiziell nicht machbar (Groups API nur mit Official Business Account und fuer per API angelegte
