@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 15:29] — Claude Code
+- **Was:** Live: Altrechnungen uebernommen -- RG-18032026 (385,12 EUR) und RG-20092026 (186,31 EUR) Hands of God K-00008,
+  je bezahlt zum Datum laut EUeR-Liste; RG-11052026 (4.000,00 EUR) Kiez Alm K-00009, offen (Mahnstufen setzt der CEO).
+  Code: KUNDEN_FINANZEN Etappe 20 -- EZB-Referenzkurs fuer Fremdwaehrungs-Belege (`core/wechselkurse.py`, nach Upload und
+  im Bot-Abruf, Erinnerung entfaellt mit Kurs, Anzeige im Beleg-Detail, JS v68), Tests (3) + 5 Gegenproben,
+  `orchestrator/tests/conftest.py` (keine EZB-Abrufe in Tests), neuer Datenfluss `data-api.ecb.europa.eu`.
+- **Warum:** CEO-Go 2026-09-30 (Etappe 19 Uebernahme, Etappe 20 „EZB-Kurs bei Dollar nehmen“).
+- **Betroffen:** Live-Kassenbuch (`buchhaltung/`), `orchestrator/core/wechselkurse.py`, `orchestrator/core/eingangsbelege.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/static/app-v2.js`,
+  `index-v2.html`, `orchestrator/tests/test_wechselkurse.py`, `orchestrator/tests/conftest.py`, `docs/datenfluesse.md`,
+  `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-09-30 15:24] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 19 umgesetzt: Altrechnungen mit Originalnummer + Original-PDF uebernehmen (ohne neue
   RE-Nummer), Mahnungen von vor LUNA als erreichte Stufe erfassen; Endpunkte, LUNA-OS-Formulare (JS v67), Tests

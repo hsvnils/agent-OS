@@ -4,7 +4,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 19 umgesetzt (Deploy, dann Hands of God/Kiezalm uebernehmen); freigegeben und in dieser Reihenfolge: 20 EZB-Kurs, 23 Provisionsmodell, 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 umgesetzt (Deploy offen); freigegeben und in dieser Reihenfolge: 23 Provisionsmodell, 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -674,8 +674,8 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 19: Altrechnungen uebernehmen (vor LUNA geschrieben) inkl. Zahlung und Mahnstufe
 
-- Status: umgesetzt (CEO-Go 2026-09-30: „neue Rechnungen anlegen, aber die alten Nummern nutzen“), Deploy + Uebernahme
-  der 3 Rechnungen offen
+- Status: live (CEO-Go 2026-09-30: „neue Rechnungen anlegen, aber die alten Nummern nutzen“); uebernommen 2026-09-30:
+  RG-18032026 und RG-20092026 (Hands of God, bezahlt), RG-11052026 (Kiez Alm, offen -- Mahnstufen setzt der CEO)
 - Ergebnis: `RechnungStore.alt_erfassen` -- Originalnummer (nicht aus LUNAs Kreisen, eindeutig) + Original-PDF
   unveraendert, Datensatz wie eine festgeschriebene Rechnung (`alt: true`, Faelligkeit leer = sofort), kein `RE-`-
   Eintrag, zaehlt zum Umsatz; `MahnStore.alt_erfassen` -- schon verschickte Mahnung als naechste Stufe
@@ -700,7 +700,13 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 20: EZB-Kurs fuer Fremdwaehrungs-Belege automatisch
 
-- Status: freigegeben (CEO 2026-09-30: „EZB-Kurs bei Dollar nehmen“, „Sehr gut“)
+- Status: umgesetzt (CEO 2026-09-30: „EZB-Kurs bei Dollar nehmen“, „Sehr gut“), Deploy + Abnahme offen
+- Ergebnis: `core/wechselkurse.py` (`EzbKurse` mit Zwischenspeicher `buchhaltung/wechselkurse.json`, Wochenende/
+  Feiertag = letzter Kurs davor, eine Luecke gilt als gesichert, sobald ein spaeterer Kurs bekannt ist; `euro_vorschlag`,
+  `kurse_ergaenzen`), laeuft nach jedem Upload in LUNA-OS und im 15-Minuten-Abruf des Bots; der Termin „Euro-Betrag
+  eintragen“ entfaellt bei vorhandenem Kurs; Beleg-Detail zeigt Kurs, Rechnung und vorbelegte Notiz. Nie automatisch
+  gebucht. Tests `test_wechselkurse.py` (3) + 5 Gegenproben; `orchestrator/tests/conftest.py` schaltet EZB-Abrufe in
+  Tests ab (`LUNA_EZB_OFFLINE`).
 - Ziel / Scope: Belege in Fremdwaehrung (USD usw.) bekommen beim Eingang den Euro-Betrag vorgeschlagen: EZB-
   Referenzkurs des Rechnungstags (Wochenende/Feiertag: letzter Kurs davor) von `data-api.ecb.europa.eu`, Kurs und Datum
   in der Notiz (wie bei der Nachbuchung vom 30.09.). Der Kalender-Termin „Euro-Betrag eintragen“ entfaellt, wenn der Kurs

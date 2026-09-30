@@ -66,7 +66,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 |---|---|---|
 | `LUNA_GOOGLE_KONTO_ROADMAP.md` | Eigenes Google-Konto fuer LUNA (Gmail, Kalender, Drive, Sheets), hanserautisch@gmail.com entkoppeln | abgeschlossen (2026-09-28) |
 | `BETRIEB_ROADMAP.md` | Betrieb und Qualitaet aus der Antrags-Durchsicht: Ideen-Laeufe entruempeln, Changelog-Check, Betriebs-Monitoring Ende-zu-Ende, Datenschutz-Check KI | geplant (2026-09-29) |
-| `KUNDEN_FINANZEN_ROADMAP.md` | Kunden (CRM-Stammdaten), Angebote, Beauftragung, Rechnungen, Belege, Finanzen/EUeR in LUNA-OS | in Umsetzung (Etappen 1-8 abgenommen, 9-12 live, 13 Abo-Mails live, 14 Lieferanten-Stammdaten live, 15 Abos + 16 TKP live, 18 Vorkasse umgesetzt, 19 Altrechnungen umgesetzt, 20-23 freigegeben, 3c geplant, 17 verworfen) |
+| `KUNDEN_FINANZEN_ROADMAP.md` | Kunden (CRM-Stammdaten), Angebote, Beauftragung, Rechnungen, Belege, Finanzen/EUeR in LUNA-OS | in Umsetzung (Etappen 1-8 abgenommen, 9-12 live, 13 Abo-Mails live, 14 Lieferanten-Stammdaten live, 15 Abos + 16 TKP live, 18 Vorkasse umgesetzt, 19 Altrechnungen live, 20 EZB-Kurs umgesetzt, 21-23 freigegeben, 3c geplant, 17 verworfen) |
 | `FRONTDESK_BACKOFFICE_ROADMAP.md` | Gemini spricht im Chat, lokales LLM arbeitet Auftraege im Hintergrund ab | in Umsetzung (Etappen 1-3 verifiziert) |
 | `WERKZEUGAUSWAHL_ROADMAP.md` | Nur passende Werkzeuge je Nachricht (Prompt ~13.600 -> <= 5.000 Token) | live, Beobachtung bis 2026-10-03 |
 | `LOKALES_LLM_ROADMAP.md` | Lokales LLM (M6): Ollama auf dem MACO470 fuer Jobs + Chat-Fallback | abgeschlossen (2026-09-26) — Rest in Frontdesk/Backoffice |

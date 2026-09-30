@@ -61,6 +61,7 @@ Kalendereinladung, Alpaca-Order (Paper), Git-Push eines Antrags-Branches.
 | `api.deepgram.com` | `bot.py` (Sprachnachrichten), `cutter/transkription.py` (3. Fallback), Voice | Audio / Transkript | `DEEPGRAM_API_KEY` | lesen |
 | `api.elevenlabs.io`, Cartesia (SDK) | `channels/web/app.py` (`/api/tts`), `channels/voice/pipeline.py` | Text / Audio | `ELEVENLABS_API_KEY`, `CARTESIA_API_KEY` | lesen |
 | `api.search.brave.com` | `governance/web_research.py` | Suchanfragen | `BRAVE_API_KEY` | lesen |
+| `data-api.ecb.europa.eu` | `core/wechselkurse.py` (KUNDEN_FINANZEN Etappe 20; Web-App nach Beleg-Upload, Bot im 15-min-Poll) | Waehrung + Zeitraum (keine Belegdaten) / EZB-Referenzkurse (CSV), zwischengespeichert in `buchhaltung/wechselkurse.json` | – (oeffentlich) | lesen |
 | `api.github.com` | `governance/github_watch.py` (Watch-Loop) | Topic-Suche / Repos | `GITHUB_TOKEN` (optional) | lesen |
 | github.com (git) | `core/execution_live.py`, `core/hoa_tools.py` (`antrag_pushen`); Werkbank per Deploy-Key | Branches | `GITHUB_TOKEN` / `~/.ssh/github` | **schreiben** (Push) |
 | `api.osv.dev` | `core/security_agent.py` (nur Tool `sicherheits_audit`, nicht im 04:00-Lauf) | Paket + Version / Schwachstellen | – | lesen |
@@ -84,6 +85,7 @@ generativelanguage.googleapis.com
 api.deepgram.com
 api.elevenlabs.io
 api.search.brave.com
+data-api.ecb.europa.eu
 api.github.com
 api.osv.dev
 paper-api.alpaca.markets
