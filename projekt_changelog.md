@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 17:45] — Claude Code
+- **Was:** Etappen 24 (Firmenakte: Dokumente + Mailverlauf je Firma, Weiterleiten, LUNA in CC/BCC) und 25 (Zeiterfassung per
+  Telegram/manuell, Stundensatz, Nachkalkulation je Auftrag, optional Kilometer) in `KUNDEN_FINANZEN_ROADMAP.md` geplant.
+- **Warum:** CEO-Wuensche 2026-09-30.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`
+
+## [2026-09-30 17:44] — Claude Code
+- **Was:** Firmendaten-Recherche live fuer alle Firmen mit Luecken ausgefuehrt (nur Vorschlaege); dabei BF-45 gefunden
+  (fremde Websites ueber Treffer-Titel) -- 8 falsche Vorschlaege live verworfen, Abgleich korrigiert (Domain statt Titel,
+  Impressum muss die Firma nennen), Test `test_2b_fremde_seiten`. Korrekte Vorschlaege u. a. fuer J. Fuehr, klarmobil,
+  Grover, CR Container, Adlerfokus, Elgato, Fiverr liegen zur Uebernahme bereit.
+- **Warum:** CEO-Frage „Hast du die anderen wie J. Fuehr auch recherchiert?“
+- **Betroffen:** Live-Kassenbuch (`firma_recherche`/`firma_vorschlag_erledigt`), `orchestrator/core/firmendaten.py`,
+  `orchestrator/tests/test_firmendaten.py`, `docs/bekannte-fehler.md`
+
 ## [2026-09-30 17:37] — Claude Code
 - **Was:** Etappen 21 + 22 nach Neustart live geprueft: LUNA-OS v71/v29, `/api/finanzen/lager` antwortet (noch keine
   physische Ware), Mindestmarge 30 %. Firmendaten-Recherche live fuer K-00009 Kiez Alm und K-00008 Hands of God

@@ -778,6 +778,42 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   Betrag; Tests + Gegenproben.
 - Aufwand: mittel.
 
+### Etappe 24: Firmenakte -- Dokumente und Mailverlauf je Firma
+
+- Status: geplant (CEO-Wunsch 2026-09-30), wartet auf CEO-Go
+- Ausgangslage: Dokumente gibt es nur an Belegen/Rechnungen/Angeboten; Mails werden nur fuer Angebote (Antworten) und im
+  Collab-CRM (Phase 19, Instagram-Firmen) mitgeschrieben -- nicht an den Stammdaten-Firmen (K-/L-/P-).
+- Ziel / Scope:
+  - **Dokumente je Firma:** Upload in der Kunden-Detailansicht (PDF, Bild, Office) mit Titel, Datum, Art (z. B.
+    Anwaltsschreiben, Vertrag, Korrespondenz) und optional Bezug (Rechnung/Auftrag); unveraendert abgelegt mit Hash und
+    Aufbewahrung (Geschaeftsbrief 6 Jahre). In der Rechnung sichtbar, wenn Bezug gesetzt (z. B. Kiezalm RG-11052026).
+  - **Mail an LUNA weiterleiten:** ist die weitergeleitete Mail kein Beleg, ordnet LUNA sie ueber den Original-Absender
+    (Mail/Domain aus Stammdaten, Ansprechpartner, Website) der Firma zu und legt sie als `.eml` + Lesefassung in der Akte ab;
+    dein Text darueber wird Notiz. Ohne eindeutige Firma: Liste „Mail zuordnen“ in LUNA-OS.
+  - **LUNA in CC/BCC:** Mails, in denen LUNAs Adresse in CC/BCC steht, landen genauso in der Akte der Firma (Absender bzw.
+    Empfaenger). Nur Lesen/Ablegen, LUNA antwortet nie selbst.
+  - Akte zeigt Dokumente + Mails chronologisch (Timeline), Suche im Titel.
+- Gate: Anwaltsschreiben hochgeladen und an RG-11052026 sichtbar; weitergeleitete Mail der Anwaeltin landet bei
+  K-00009; CC-Mail an einen Kunden landet in dessen Akte; unklare Mail in „zuordnen“; Tests + Gegenproben.
+- Aufwand: mittel.
+
+### Etappe 25: Zeiterfassung und Nachkalkulation je Auftrag
+
+- Status: geplant (CEO-Wunsch 2026-09-30), wartet auf CEO-Go und Entscheidung Stundensatz
+- Ziel / Scope:
+  - **Stundensatz (intern):** Einstellung „kalkulatorischer Stundensatz“ (Empfehlung: Brutto-Stundenlohn des Arbeitgebers,
+    siehe Entscheidung), nur fuer Kalkulation -- keine Buchung, keine Betriebsausgabe (Unternehmerlohn ist in der EUeR nicht
+    abziehbar).
+  - **Telegram:** „Bin auf dem Weg zu CR Container“ -> LUNA erkennt die Firma, waehlt den offenen Auftrag (bei mehreren:
+    Knoepfe zur Auswahl) und startet die Zeit; „Bin wieder zuhause“ / „fertig“ stoppt sie und meldet Dauer + Kosten.
+    Vergessener Stopp: Nachfrage nach 10 Stunden. Manuelle Eintraege (Datum, von-bis oder Dauer, Notiz) in LUNA-OS am Auftrag.
+  - **Nachkalkulation am Auftrag:** Auftragssumme vs. Kosten (Stunden x Satz + dem Auftrag zugeordnete Belege, z. B.
+    Material) -> Deckungsbeitrag und effektiver Stundenlohn; auch im Angebot als Planwert (Stunden schaetzen).
+  - Optional: gefahrene Kilometer je Termin -> Fahrtkosten als echte Betriebsausgabe (0,30 EUR/km Pauschale) als Eigenbeleg.
+- Gate: Start/Stopp per Telegram am richtigen Auftrag; manueller Eintrag; Nachkalkulation stimmt mit Handrechnung;
+  Tests + Gegenproben.
+- Aufwand: mittel.
+
 ## Reihenfolge
 
 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 (ohne Auto-Weiterleitung) -> 14 -> 13 (Auto-Weiterleitung) -> 15/16 (unabhaengig, nach CEO-Go). Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst
