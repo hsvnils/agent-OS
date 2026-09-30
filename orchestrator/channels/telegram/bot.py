@@ -474,12 +474,12 @@ def _zeit_km_frage(token, chat_id, z, zid: str, adresse: str = "") -> None:
     except Exception:
         v = {"km": None, "adresse": adresse}
     if v.get("km"):
-        kb = {"inline_keyboard": [[{"text": f"✅ {v['km']} km buchen", "callback_data": f"zkm:{zid}:{v['km']}:y"}],
+        kb = {"inline_keyboard": [[{"text": f"✅ {v['km']} km erfassen", "callback_data": f"zkm:{zid}:{v['km']}:y"}],
                                   [{"text": "✏️ Andere km/Adresse", "callback_data": f"zkm:{zid}:0:a"},
                                    {"text": "🚫 Keine Fahrt", "callback_data": f"zkm:{zid}:0:n"}]]}
         _api(token, "sendMessage", {"chat_id": chat_id, "reply_markup": json.dumps(kb), "text": fuer_telegram(
-            f"🚗 Fahrt: {v['km']} km Hin + Rück zu {v['adresse']} → Fahrtkosten {_eur(v['betrag_cent'])} (0,30 €/km) als "
-            "Eigenbeleg buchen?")})
+            f"🚗 Fahrt: {v['km']} km Hin + Rück zu {v['adresse']} → kalkulatorisch {_eur(v['betrag_cent'])} (0,30 €/km, "
+            "keine Buchung). Erfassen?")})
     else:
         _ZEIT_KM_WARTET[str(chat_id)] = zid
         _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(
@@ -1632,13 +1632,13 @@ def main() -> None:
                             else:
                                 _, zid, km, ent = data.split(":", 3)
                                 if ent == "y":
-                                    f = _z.fahrt_buchen(zid, km=km, von="Telegram:CEO")
-                                    res = f"✅ Fahrt gebucht: {f['km']} km → {_eur(f['betrag_cent'])} ({f['eigenbeleg']})."
+                                    f = _z.fahrt_erfassen(zid, km=km, von="Telegram:CEO")
+                                    res = f"✅ Fahrt erfasst: {f['km']} km → kalkulatorisch {_eur(f['betrag_cent'])}."
                                 elif ent == "a":
                                     _ZEIT_KM_WARTET[cbchat] = zid
                                     res = "✏️ Schick mir die Kilometer (z. B. „42 km“) oder die Adresse des Drehs."
                                 else:
-                                    res = "🚫 Keine Fahrt gebucht."
+                                    res = "🚫 Keine Fahrt erfasst."
                         except (ValueError, KeyError) as exc:
                             res = f"⚠️ {exc}"
                         _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "OK"})
@@ -1775,11 +1775,11 @@ def main() -> None:
                             if _zb["art"] == "adresse":
                                 _zeit_km_frage(token, chat_id, _z, zid, text.strip())
                             elif float(_zb["km"]) <= 0:
-                                _api(token, "sendMessage", {"chat_id": chat_id, "text": "OK – keine Fahrt gebucht."})
+                                _api(token, "sendMessage", {"chat_id": chat_id, "text": "OK – keine Fahrt erfasst."})
                             else:
-                                f = _z.fahrt_buchen(zid, km=_zb["km"], von="Telegram:CEO")
+                                f = _z.fahrt_erfassen(zid, km=_zb["km"], von="Telegram:CEO")
                                 _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(
-                                    f"✅ Fahrt gebucht: {f['km']} km → {_eur(f['betrag_cent'])} ({f['eigenbeleg']}).")})
+                                    f"✅ Fahrt erfasst: {f['km']} km → kalkulatorisch {_eur(f['betrag_cent'])}.")})
                         else:
                             _api(token, "sendMessage", {"chat_id": chat_id, "text": "Dazu ist gerade keine Fahrt offen."})
                         continue

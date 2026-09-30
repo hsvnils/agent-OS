@@ -1121,14 +1121,14 @@ async function abZeitLaden(nr) {
   if (!d) { box.innerHTML = ""; return; }
   const nk = d.nachkalkulation || {}, e = d.einstellungen || {}, lauf = d.laufend;
   const zeilen = (d.eintraege || []).map(x => `<div class="v2-list-row"><span>${x.laeuft ? "▶️" : "⏱"}</span><div class="grow"><b>${esc(datumDe(x.start.slice(0, 10)))} · ${x.laeuft ? "läuft seit " + esc(x.start.slice(11, 16)) : esc(x.start.slice(11, 16)) + "–" + esc((x.ende || "").slice(11, 16)) + " · " + esc(dauerTxt(x.minuten || 0))}</b>
-      <small>${x.kosten_cent ? "intern " + cent2eur(x.kosten_cent) : ""}${x.fahrten.length ? ` · 🚗 ${x.fahrten[0].km} km = ${cent2eur(x.fahrten[0].betrag_cent)} (${esc(x.fahrten[0].eigenbeleg)})` : ""}${x.notiz ? " · " + esc(x.notiz) : ""}${x.quelle === "Telegram" ? " · per Telegram" : ""}</small></div>
-      ${!x.laeuft && !x.fahrten.length ? `<button class="v2-btn sm" data-act="zeit-km" data-id="${esc(x.id)}" data-val="${esc(nr)}" title="Kilometer Hin + Rück (OpenStreetMap) als Fahrtkosten buchen">🚗 km</button>` : ""}
-      ${!x.fahrten.length ? `<button class="v2-btn sm" data-act="zeit-storno" data-id="${esc(x.id)}" data-val="${esc(nr)}" title="Eintrag stornieren">↶</button>` : ""}</div>`).join("");
-  box.innerHTML = `<h3>⏱ Zeiten &amp; Nachkalkulation <small class="v2-sub">🔒 nur intern – nie im PDF, keine Buchung</small></h3>
+      <small>${x.kosten_cent ? "intern " + cent2eur(x.kosten_cent) : ""}${x.fahrten.length ? ` · 🚗 ${x.fahrten[0].km} km = ${cent2eur(x.fahrten[0].betrag_cent)} (kalkulatorisch)` : ""}${x.notiz ? " · " + esc(x.notiz) : ""}${x.quelle === "Telegram" ? " · per Telegram" : ""}</small></div>
+      ${!x.laeuft ? `<button class="v2-btn sm" data-act="zeit-km" data-id="${esc(x.id)}" data-val="${esc(nr)}" title="Kilometer Hin + Rück (OpenStreetMap) kalkulatorisch erfassen/korrigieren">🚗 km</button>` : ""}
+      ${true ? `<button class="v2-btn sm" data-act="zeit-storno" data-id="${esc(x.id)}" data-val="${esc(nr)}" title="Eintrag stornieren">↶</button>` : ""}</div>`).join("");
+  box.innerHTML = `<h3>⏱ Zeiten &amp; Nachkalkulation <small class="v2-sub">🔒 nur intern, kalkulatorisch – nie im PDF, keine Buchung, nicht in der EÜR</small></h3>
     <div class="v2-an-intern" style="border-top:none">
       <div class="v2-kv"><span>Auftragssumme (Geld)</span><b>${cent2eur(nk.umsatz_cent || 0)}</b></div>
       <div class="v2-kv"><span>Arbeitszeit ${esc(dauerTxt(nk.minuten || 0))} × ${e.stundensatz_cent ? cent2eur(e.stundensatz_cent) + "/h" : "<i>Stundensatz fehlt</i>"} (kalkulatorisch)</span><b>−${cent2eur(nk.zeit_cent || 0)}</b></div>
-      <div class="v2-kv"><span>Fahrtkosten ${nk.km || 0} km (echte Ausgabe)</span><b>−${cent2eur(nk.fahrt_cent || 0)}</b></div>
+      <div class="v2-kv"><span>Fahrtkosten ${nk.km || 0} km × 0,30 € (kalkulatorisch)</span><b>−${cent2eur(nk.fahrt_cent || 0)}</b></div>
       <div class="v2-kv"><span><b>Deckungsbeitrag</b></span><b style="${(nk.db_cent || 0) < 0 ? "color:var(--v2-red)" : ""}">${cent2eur(nk.db_cent || 0)}</b></div>
       ${nk.stundenlohn_cent != null ? `<div class="v2-kv"><span>Effektiver Stundenlohn</span><b>${cent2eur(nk.stundenlohn_cent)}/h</b></div>` : ""}</div>
     <div class="v2-card-actions" style="margin:8px 0">${lauf ? (lauf.auftrag === nr ? `<button class="v2-btn danger" data-act="zeit-stopp" data-id="${esc(nr)}">⏹ Zeit stoppen (läuft seit ${esc(lauf.start.slice(11, 16))})</button>` : `<small class="v2-sub">Es läuft gerade eine Zeit für ${esc(lauf.auftrag || lauf.firma)}.</small>`) : `<button class="v2-btn" data-act="zeit-start" data-id="${esc(nr)}">▶️ Zeit starten</button>`}</div>
@@ -1151,7 +1151,7 @@ async function zeitAktion(act, id, val) {
   else if (act === "zeit-storno") { const g = prompt("Grund für das Stornieren dieses Zeiteintrags:", ""); if (!g) return; r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/stornieren`, { grund: g }); id = val; }
   else if (act === "zeit-km") {
     const v = await jget(`/api/finanzen/zeit/${encodeURIComponent(id)}/km`);
-    const km = prompt(`Kilometer Hin + Rück${v && v.adresse ? " zu " + v.adresse : ""} (0,30 €/km, wird als Eigenbeleg gebucht):`, v && v.km ? String(v.km) : "");
+    const km = prompt(`Kilometer Hin + Rück${v && v.adresse ? " zu " + v.adresse : ""} (0,30 €/km, nur kalkulatorisch – keine Buchung):`, v && v.km ? String(v.km) : "");
     if (!km) return; r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/fahrt`, { km }); id = val;
   } else if (act === "zeit-eintragen") {
     r = await jpost("/api/finanzen/zeit/eintrag", { auftrag: id, datum: $("#zt-datum").value, von: $("#zt-von").value, bis: $("#zt-bis").value, minuten: $("#zt-min").value.trim(),

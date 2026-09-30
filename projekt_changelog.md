@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 18:17] — Claude Code
+- **Was:** Etappe 25 korrigiert: Kilometer nur noch kalkulatorisch (`fahrt_erfassen`, kein Eigenbeleg, korrigierbar),
+  Texte in Telegram/LUNA-OS angepasst (JS v74); Test belegt EUeR unveraendert auch nach km. Firmenakte: Mails mit
+  Belegnummer (AN/AB/RE/RG) im Betreff gehen an die Firma des Belegs (mit Bezug). Sicherung: `buchhaltung/zeiterfassung.json`
+  ins naechtliche Backup. Live: Stundensatz gesetzt (29,20 EUR/h), live noch keine Fahrt gebucht gewesen.
+- **Warum:** CEO 2026-09-30: „Die Kilometerpauschale gehoert genauso zu fiktiven Kosten ... Firmenwagen ... zahle real nichts“.
+- **Betroffen:** `orchestrator/core/zeiterfassung.py`, `orchestrator/core/firmenakte.py`, `orchestrator/channels/web/app.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`,
+  `deploy/backup-from-nas.sh`, Tests, `KUNDEN_FINANZEN_ROADMAP.md`, `docs/verfahrensdokumentation-buchhaltung.md`,
+  `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-30 18:07] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 25 umgesetzt: Zeiterfassung (Telegram-Start/Stopp, manuell, Zuordnen, Storno,
   Erinnerung nach 10 h), kalkulatorischer Stundensatz aus Brutto-Monatslohn (nur NAS), Fahrten Hin + Rueck per

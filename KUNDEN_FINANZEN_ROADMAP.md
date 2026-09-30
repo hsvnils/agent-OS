@@ -811,9 +811,11 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 - Entscheidungen (CEO 2026-09-30): Stundensatz = Brutto-Monatslohn des Arbeitgebers (5.061,21 EUR, 40 h/Woche ->
   29,20 EUR/h, nur kalkulatorisch); Fahrzeit zaehlt; Kilometer erfassen, **Adresse eingeben und LUNA rechnet** (Start =
   Firmenadresse, Hin + Rueck); Stunden **nur intern** -- nie im PDF, nie beim Kunden, **kein Kostenpunkt in der EUeR**.
+  **Revidiert 2026-09-30:** auch die Kilometer sind nur kalkulatorisch (Firmenwagen des Hauptarbeitgebers, real keine
+  Kosten; Ziel: wissen, was es als Selbststaendiger kosten wuerde) -- **kein Eigenbeleg, keine Buchung**.
 - Ergebnis: `core/zeiterfassung.py` (Einstellung, Start/Stopp, manuell inkl. ueber Mitternacht, Zuordnen, Storno,
-  Fahrt -> Eigenbeleg 0,30 EUR/km Kategorie Reisekosten, Nachkalkulation: Auftragssumme - Arbeitszeit (kalkulatorisch) -
-  Fahrtkosten = Deckungsbeitrag, effektiver Stundenlohn), `core/routen.py` (OpenStreetMap: Nominatim + OSRM, kostenlos,
+  Fahrt kalkulatorisch 0,30 EUR/km (korrigierbar, letzter Wert gilt), Nachkalkulation: Auftragssumme - Arbeitszeit -
+  Fahrtkosten (beides kalkulatorisch) = Deckungsbeitrag, effektiver Stundenlohn), `core/routen.py` (OpenStreetMap: Nominatim + OSRM, kostenlos,
   Zwischenspeicher; Google Maps waere kostenpflichtig = CEO-Tor, nicht angebunden). Telegram: „Bin auf dem Weg zu <Firma>“
   (Auftrag automatisch, bei mehreren Knoepfe; ohne Auftrag -> To-do „Zeit zuordnen“), „Bin wieder zuhause“/„Fahre nach
   Hause“ stoppt und schlaegt km vor (✅/✏️ andere km oder Adresse/🚫), Erinnerung nach 10 h. LUNA-OS: Auftrags-Detail
