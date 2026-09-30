@@ -109,7 +109,10 @@ uebernommen); Glocke zaehlt allen dringenden Handlungsbedarf.
 - Aufwand: mittel.
 
 ### Etappe 4: Startseite und Bereichs-Startseiten
-- Status: geplant
+- Status: umgesetzt (2026-09-30) -- Startseite: Handlungsbedarf fest oben, 4 Bereichs-Kacheln mit Live-Zahlen
+  (Finanz-Uebersicht, Reels, Investment-Loop, Betriebsstatus, Handlungsbedarf), darunter „Dein Dashboard“ (anpassbar wie
+  bisher). Bereichs-Startseiten mit Kennzahlen und „Als Naechstes in diesem Bereich“. „Freigaben offen“ kommt aus
+  derselben Quelle wie die Glocke.
 - Ziel / Scope: Startseite = Handlungsbedarf + 4 Bereichs-Kacheln mit je 2-3 Live-Zahlen (Reihenfolge nach Nutzung),
   darunter das bisherige anpassbare Dashboard. Je Bereich eine Startseite mit Kennzahlen, „Als Naechstes in diesem
   Bereich“ (aus Etappe 3) und Sprungknoepfen. Zahlen nur aus bestehenden Endpunkten.

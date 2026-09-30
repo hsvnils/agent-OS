@@ -545,3 +545,17 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-hb-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .v2-hb-zeile { flex-wrap: wrap; }
 .v2-hb-zeile .grow { min-width: 180px; }
+/* Startseite: Bereichs-Kacheln (LUNA_OS_UI_ROADMAP Etappe 4) */
+.v2-bereiche-start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 16px 0 8px; }
+.v2-bereich-k { text-align: left; font: inherit; color: var(--v2-fg); cursor: pointer; display: grid; gap: 10px; align-content: start;
+  background: var(--v2-card); backdrop-filter: blur(10px); border: 1px solid var(--v2-line-soft); border-radius: var(--v2-radius);
+  box-shadow: var(--v2-shadow); padding: 18px 20px; transition: transform .12s, box-shadow .15s; min-width: 0; }
+.v2-bereich-k:hover { transform: translateY(-2px); box-shadow: var(--v2-shadow-hi); }
+.v2-bereich-k .kopf { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; }
+.v2-bereich-k .sym { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--v2-accent-soft); font-size: 20px; }
+.v2-bereich-k .v2-kv { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 6px 0; border-top: 1px solid var(--v2-line-soft); }
+.v2-bereich-k .v2-kv b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.v2-dash-kopf { margin-top: 26px; }
+.v2-dash-kopf h2 { margin: 0; font-size: 20px; font-weight: 800; }
+@media (max-width: 700px) { .v2-bereiche-start { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .v2-bereich-k { transition: none; } .v2-bereich-k:hover { transform: none; } }

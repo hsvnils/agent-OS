@@ -174,6 +174,61 @@ function glockeZeigen() {
   el.textContent = GLOCKE_N > 99 ? "99+" : String(GLOCKE_N); el.hidden = !GLOCKE_N;
   $("#v2-glocke").setAttribute("aria-label", GLOCKE_N ? `${GLOCKE_N} dringende Punkte` : "Handlungsbedarf");
 }
+// Kennzahlen je Bereich (Etappe 4) -- nur aus bestehenden Endpunkten; ein Kontext teilt die Abrufe einer Seite
+function bereichKontext(vorhanden = {}) {
+  const c = { ...vorhanden }, einmal = (k, f) => (c[k] = c[k] || f());
+  return {
+    hb: () => einmal("hb", () => Promise.resolve(vorhanden.hbDaten || jget("/api/handlungsbedarf"))),
+    fin: () => einmal("fin", () => darf("finanzen") ? jget("/api/finanzen/uebersicht") : Promise.resolve(null)),
+    reels: () => einmal("reels", () => darf("cutter") ? jget("/api/reel") : Promise.resolve(null)),
+    loop: () => einmal("loop", () => Promise.resolve(vorhanden.loopDaten || (darf("investment") ? jget("/api/investment/loop") : null))),
+    betrieb: () => einmal("betrieb", () => jget("/api/betrieb/status")),
+  };
+}
+async function bereichDaten(b, k) {
+  const hb = await k.hb() || { punkte: [], bereiche: {} };
+  const offen = (hb.bereiche || {})[b.id] || 0, dringend = (hb.punkte || []).filter(p => p.bereich_id === b.id && p.stufe === "dringend").length;
+  const punkte = ["Offene Punkte", String(offen), dringend ? `${dringend} dringend` : "nichts dringend"];
+  if (b.id === "geschaeft") {
+    const u = await k.fin(); if (!u) return { kpis: [punkte], zeilen: [["Offene Punkte", String(offen)]] };
+    const pl = u.pipeline || {}, fo = u.forderungen || {};
+    return { kpis: [punkte, ["Gewinn " + u.jahr, cent2eur(u.kennzahlen.gewinn_cent), "echte Zahlen, ohne kalkulatorische Kosten"],
+        ["Offen: bekommen wir", cent2eur(fo.summe_cent || 0), `${fo.anzahl || 0} Rechnung(en)${fo.ueberfaellig ? ` · ${fo.ueberfaellig} überfällig` : ""}`],
+        ["Angebote offen", String(pl.angebote_anzahl || 0), cent2eur(pl.angebote_cent || 0)]],
+      zeilen: [["Angebote offen", `${pl.angebote_anzahl || 0} · ${cent2eur(pl.angebote_cent || 0)}`], ["Offen: bekommen wir", cent2eur(fo.summe_cent || 0)], ["Gewinn " + u.jahr, cent2eur(u.kennzahlen.gewinn_cent)]] };
+  }
+  if (b.id === "content") {
+    const r = await k.reels(), wartet = r ? (r.reels || []).filter(x => x.status === "wartet").length : null;
+    const crm = (hb.punkte || []).filter(p => p.bereich === "CRM").length;
+    return { kpis: [punkte, ["Reels zur Freigabe", wartet == null ? "–" : String(wartet), "warten auf dich"], ["CRM-Aufgaben", String(crm), "fällige Collab-To-dos"]],
+      zeilen: [["Offene Punkte", String(offen)], ["Reels zur Freigabe", wartet == null ? "–" : String(wartet)], ["CRM-Aufgaben", String(crm)]] };
+  }
+  if (b.id === "investment") {
+    const l = await k.loop() || {}, g = (l.kennzahlen && l.kennzahlen.gesamt) || {};
+    return { kpis: [punkte, ["Trefferquote", g.n ? pct(g.richtungsquote) : "–", g.n ? `Richtung, n=${g.n}` : "noch keine Auswertung"]],
+      zeilen: [["Offene Entscheidungen", String(offen)], ["Trefferquote", g.n ? pct(g.richtungsquote) : "–"]] };
+  }
+  const be = await k.betrieb();
+  const antr = ((hb.punkte || []).find(p => p.id === "freigaben") || {}).anzahl || 0;     // dieselbe Quelle wie die Glocke
+  const bot = be && be.bot_alter_min != null ? (be.bot_alter_min <= 45 ? "läuft" : `seit ${Math.round(be.bot_alter_min)} min stumm`) : "–";
+  return { kpis: [punkte, ["Freigaben offen", String(antr), "Anträge von LUNA"], ["Telegram-Bot", bot, be && be.bot_alter_min != null ? `Herzschlag vor ${Math.round(be.bot_alter_min)} min` : "kein Herzschlag gemeldet"]],
+    zeilen: [["Freigaben offen", String(antr)], ["Telegram-Bot", bot]] };
+}
+async function bereichKopf(b) {
+  const k = bereichKontext(), d = await bereichDaten(b, k), hb = await k.hb() || { punkte: [] };
+  const naechstes = (hb.punkte || []).filter(p => p.bereich_id === b.id).slice(0, 6);
+  return `<div class="v2-grid">${d.kpis.map(([t, z, sub]) => tile(t, `<div class="v2-kpi">${esc(z)}</div><div class="v2-sub">${esc(sub)}</div>`, { 1: "w12", 2: "w6", 3: "w4" }[d.kpis.length] || "")).join("")}
+    ${tile("Als Nächstes in diesem Bereich", naechstes.length ? naechstes.map(t => hbZeile(t, false)).join("") : `<div class="v2-check done" style="border:none"><span class="mark">✓</span>Hier wartet nichts auf dich.</div>`, "w12")}</div>`;
+}
+async function startBereiche(k) {
+  const karten = await Promise.all(BEREICHE.filter(b => teilErlaubt(b).length).map(async b => {
+    const d = await bereichDaten(b, k);
+    return `<button class="v2-bereich-k" data-go="${bereichZiel(b)}"><span class="kopf"><span class="sym">${b.icon}</span>${esc(b.label)}</span>
+      <span class="v2-sub">${esc(teilErlaubt(b).map(seitenName).join(", "))}</span>
+      <span>${d.zeilen.map(([n, v]) => `<span class="v2-kv"><span>${esc(n)}</span><b>${esc(v)}</b></span>`).join("")}</span></button>`;
+  }));
+  return `<div class="v2-bereiche-start">${karten.join("")}</div>`;
+}
 // Bereichs-Startseite (Etappe 1: Spruenge; Etappe 4 ergaenzt Kennzahlen)
 async function renderBereich() {
   const b = bereichVon(AKTIV); if (!b) return renderDash();
@@ -354,11 +409,19 @@ async function renderDash() {
     meldungen: { span: "w4", link: "tab:system:meldungen", aria: `Meldungen: ${meld.length}`, html: `<div class="v2-kpi">${meld.length} <span class="v2-sub" style="font-size:12px">ungelesen</span></div><div class="v2-hero-list">${miniList(meld, ["text"], ["abteilung"])}</div>` },
     research: { span: "w4", link: "tab:system:research", aria: `Research-Tickets: ${research.length}`, html: `<div class="v2-kpi">${research.length} <span class="v2-sub" style="font-size:12px">offen</span></div><div class="v2-hero-list">${miniList(research, ["frage", "titel"], ["abteilung", "status"])}</div>` },
   };
+  const hbKachel = tile("⚡ Handlungsbedarf", handlungKompakt(TODOS), "w12");
+  delete W.todos;                                            // Handlungsbedarf steht fest oben (Etappe 4)
   const order = DASH2.order.filter(id => W[id] && !DASH2.hidden.includes(id));
+  const bereiche = await startBereiche(bereichKontext({ hbDaten: TODOS, loopDaten: LOOP }));
+  if (AKTIV !== "dash") return;
+  const stunde = new Date().getHours(), gruss = stunde < 11 ? "Guten Morgen" : stunde < 18 ? "Hallo" : "Guten Abend";
   const editBtn = `<button class="v2-btn ${EDIT2 ? "pri" : ""}" data-editdash>${EDIT2 ? "✓ Fertig" : "✎ Anpassen"}</button>`;
   $("#v2-app").innerHTML = `
-    <div class="v2-welcome"><div class="v2-welcome-row"><div><h1>Willkommen zurück, ${esc(ME.display_name || "CEO")}</h1>
-      <p>Dein KI-Kontrollraum — Agenten, Kosten und Compliance im Blick.</p></div>${editBtn}</div></div>
+    <div class="v2-welcome"><div class="v2-welcome-row"><div><h1>${gruss}, ${esc(ME.display_name || "CEO")}</h1>
+      <p>Was ansteht und wo du hinwillst.</p></div></div></div>
+    <div class="v2-grid">${hbKachel}</div>
+    ${bereiche}
+    <div class="v2-sec-head v2-dash-kopf"><h2>Dein Dashboard</h2><div class="actions">${editBtn}</div></div>
     <div class="v2-grid ${EDIT2 ? "editing" : ""}">${order.map(id => dashTile(id, W[id])).join("")}</div>
     ${EDIT2 ? dash2Tray(W) : ""}`;
   mountTrends();

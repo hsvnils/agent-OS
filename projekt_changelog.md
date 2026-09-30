@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 19:32] — Claude Code
+- **Was:** LUNA_OS_UI_ROADMAP Etappe 4 umgesetzt: neue Startseite (Gruss, Handlungsbedarf fest oben, 4 Bereichs-Kacheln
+  mit Live-Zahlen, darunter das anpassbare Dashboard) und Bereichs-Startseiten mit Kennzahlen, „Als Naechstes in diesem
+  Bereich“ und Sprungkarten; Zahlen nur aus bestehenden Endpunkten. Handlungsbedarf-Punkt „Freigaben“ traegt die Anzahl
+  (eine Quelle fuer Kachel und Glocke). Browsertest Desktop + iPhone-Breite.
+- **Warum:** CEO-Go 2026-09-30 (UI-Roadmap, Skizze abgenommen).
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `static/style-v2.css`, `orchestrator/core/handlungsbedarf.py`,
+  `orchestrator/tests/test_handlungsbedarf.py`, `LUNA_OS_UI_ROADMAP.md`
+
 ## [2026-09-30 19:28] — Claude Code
 - **Was:** LUNA_OS_UI_ROADMAP Etappe 3 umgesetzt: Handlungsbedarf ueber alle Bereiche (`core/handlungsbedarf.py`,
   `GET /api/handlungsbedarf`): bisherige Tages-To-dos plus offene Antraege, offene Investment-Entscheidungen und

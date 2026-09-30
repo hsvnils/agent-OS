@@ -38,6 +38,7 @@ class TestZusammenstellen(unittest.TestCase):
         self.assertEqual(p["freigaben"]["stufe"], "woche")
         self.assertEqual(p["freigaben"]["bereich_id"], "luna")
         self.assertIn("2 Antrag", p["freigaben"]["titel"])
+        self.assertEqual(p["freigaben"]["anzahl"], 2)
         self.assertEqual((p["investment-freigaben"]["stufe"], p["investment-freigaben"]["bereich_id"]), ("dringend", "investment"))
         self.assertEqual(p["betrieb-bot"]["stufe"], "dringend")
         self.assertEqual(p["betrieb-zustellung"]["stufe"], "dringend")

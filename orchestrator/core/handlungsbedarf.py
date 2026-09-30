@@ -39,7 +39,7 @@ def zusammenstellen(todos: list[dict], *, antraege: list[dict] | None = None, in
                        "titel": f"{len(antraege)} Antrag/Anträge warten auf deine Freigabe" if len(antraege) > 1
                        else "1 Antrag wartet auf deine Freigabe",
                        "detail": "; ".join(a.get("titel", "")[:50] for a in antraege[:3]) + (" …" if len(antraege) > 3 else ""),
-                       "act": "go:freigaben", "act_id": "", "faellig": "", "dringend": False, "stufe": "woche",
+                       "act": "go:freigaben", "act_id": "", "faellig": "", "dringend": False, "stufe": "woche", "anzahl": len(antraege),
                        "seit": aeltester, "erledigen": None})
     if investment:
         punkte.append({"id": "investment-freigaben", "bereich": "Investment", "icon": "📈",
