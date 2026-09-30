@@ -31,6 +31,8 @@ html.v2-dark {
 }
 
 * { box-sizing: border-box; }
+/* [hidden] gewinnt immer (BF-46: `display:flex/grid` einer Klasse hob das Attribut auf -> Seitenmenue/Zaehler sichtbar) */
+[hidden] { display: none !important; }
 body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); background: var(--v2-bg1);
   -webkit-font-smoothing: antialiased; min-height: 100vh; }
 
@@ -140,7 +142,7 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
   font-size: 11px; font-weight: 700; }
 .v2-badge.live, .v2-badge.aktiv, .v2-badge.ok, .v2-badge.freigegeben { color: var(--v2-green); background: var(--v2-green-soft); }
 .v2-badge.closed, .v2-badge.abgelehnt, .v2-badge.err { color: var(--v2-red); background: var(--v2-red-soft); }
-.v2-badge.draft, .v2-badge.entwurf, .v2-badge.standby, .v2-badge.wartet { color: var(--v2-amber); background: var(--v2-amber-soft); }
+.v2-badge.draft, .v2-badge.entwurf, .v2-badge.standby, .v2-badge.wartet, .v2-badge.warn { color: var(--v2-amber); background: var(--v2-amber-soft); }
 .v2-badge.neutral { color: var(--v2-muted); background: var(--v2-line-soft); }
 
 /* Buttons in Sektionen */
@@ -472,3 +474,108 @@ a.v2-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .v2-kat-kalk { grid-column: 1 / -1; }
 .v2-kat-kalk summary { cursor: pointer; }
 .v2-an-intern { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--v2-line-soft); }
+/* ---------------- Face-ID-Angebot nach Passwort-Login (LUNA_OS_UI_ROADMAP Etappe 6) ---------------- */
+.v2-pk-angebot { position: fixed; left: 50%; transform: translateX(-50%); z-index: 60;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: min(420px, calc(100% - 32px));
+  background: var(--v2-card-solid); border: 1px solid var(--v2-line); border-radius: 18px; box-shadow: var(--v2-shadow-hi);
+  padding: 16px; display: grid; gap: 8px; font-size: 14px; }
+.v2-pk-angebot span { color: var(--v2-muted); }
+.v2-pk-angebot div { display: flex; gap: 8px; flex-wrap: wrap; }
+/* ---------------- Navigation in 4 Bereichen (LUNA_OS_UI_ROADMAP Etappe 1) ---------------- */
+#v2-top { padding-top: calc(12px + env(safe-area-inset-top, 0px)); padding-left: calc(22px + env(safe-area-inset-left, 0px));
+  padding-right: calc(22px + env(safe-area-inset-right, 0px)); }
+button.v2-brand { border: 0; background: none; color: inherit; font: inherit; font-size: 18px; cursor: pointer; padding: 0; }
+.v2-nav button { width: auto; height: 34px; padding: 0 14px; display: flex; gap: 7px; font-size: 14px; white-space: nowrap; }
+.v2-nav button .i { font-size: 15px; }
+.v2-nav button.active { background: var(--v2-accent-soft); color: var(--v2-accent); box-shadow: none; }
+.v2-burger, .v2-titel-mobil { display: none; }
+.v2-glocke { position: relative; }
+.v2-zaehler { position: absolute; top: -5px; right: -5px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px;
+  background: var(--v2-red); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center;
+  font-variant-numeric: tabular-nums; }
+.v2-zaehler.an { position: static; display: inline-grid; margin-left: 6px; }
+.v2-unter { display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none;
+  padding: 12px calc(22px + env(safe-area-inset-right, 0px)) 0 calc(22px + env(safe-area-inset-left, 0px)); }
+.v2-unter::-webkit-scrollbar { display: none; }
+.v2-unter-b { font-size: 13px; font-weight: 700; color: var(--v2-muted); margin-right: 6px; white-space: nowrap; }
+.v2-unter button { border: 1px solid var(--v2-line-soft); background: var(--v2-card-solid); color: var(--v2-muted); font: inherit;
+  font-size: 13px; padding: 7px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.v2-unter button:hover { color: var(--v2-fg); }
+.v2-unter button.active { background: var(--v2-accent); color: #fff; border-color: transparent; font-weight: 700; }
+/* Bereichs-Startseite */
+.v2-h3 { font-size: 13px; color: var(--v2-muted); font-weight: 700; letter-spacing: .3px; margin: 18px 0 10px; }
+.v2-sprung { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.v2-sprung-k { text-align: left; border: 1px solid var(--v2-line-soft); background: var(--v2-card-solid); color: var(--v2-fg);
+  border-radius: 16px; padding: 16px; cursor: pointer; display: grid; gap: 4px; box-shadow: var(--v2-shadow); font: inherit;
+  transition: transform .12s, box-shadow .15s; min-height: 44px; }
+.v2-sprung-k:hover { transform: translateY(-1px); box-shadow: var(--v2-shadow-hi); }
+.v2-sprung-k .i { font-size: 20px; }
+.v2-sprung-k b { font-size: 15px; }
+.v2-sprung-k small { color: var(--v2-muted); font-size: 12px; }
+/* Seitenmenue (schmal: iPhone, iPad hochkant) */
+.v2-schleier { position: fixed; inset: 0; z-index: 70; background: rgba(15, 22, 36, .38); }
+.v2-lade { position: fixed; top: 0; left: 0; bottom: 0; z-index: 71; width: min(84vw, 320px); overflow-y: auto;
+  background: var(--v2-card-solid); box-shadow: var(--v2-shadow-hi); display: flex; flex-direction: column; gap: 2px;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 12px calc(20px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px)); }
+.v2-lade-kopf { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 8px; }
+.v2-lade-g { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--v2-muted); padding: 14px 12px 4px; }
+.v2-lade-e { border: 0; background: none; color: var(--v2-fg); font: inherit; font-size: 15px; text-align: left; padding: 11px 12px;
+  border-radius: 12px; cursor: pointer; display: flex; align-items: center; min-height: 44px; }
+.v2-lade-e:hover { background: var(--v2-line-soft); }
+.v2-lade-e.active { background: var(--v2-accent-soft); color: var(--v2-accent); font-weight: 700; }
+.v2-lade-luna { margin-top: 14px; border: 1px solid var(--v2-line); background: var(--v2-accent-soft); color: var(--v2-accent);
+  font: inherit; font-weight: 700; border-radius: 14px; padding: 12px; cursor: pointer; }
+body.v2-lade-offen { overflow: hidden; }
+#v2-app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.v2-orb { bottom: calc(22px + env(safe-area-inset-bottom, 0px)); right: calc(22px + env(safe-area-inset-right, 0px)); }
+@media (max-width: 1180px) { .v2-nav button { padding: 0 11px; font-size: 13px; } }
+@media (max-width: 900px) {
+  .v2-burger { display: grid; }
+  .v2-nav, .v2-pills { display: none; }
+  #v2-top { gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px; flex-wrap: nowrap; }
+  #v2-top .v2-brand b { display: none; }
+  .v2-titel-mobil { display: block; flex: 1; min-width: 0; font-weight: 700; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v2-topright { margin-left: auto; gap: 6px; }
+  .v2-unter { padding: 10px 14px 0; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+  .v2-unter-b { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .v2-sprung-k { transition: none; } .v2-sprung-k:hover { transform: none; } }
+/* Handlungsbedarf (LUNA_OS_UI_ROADMAP Etappe 3) */
+.v2-hb-kopf { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+.v2-hb-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.v2-hb-zeile { flex-wrap: wrap; }
+.v2-hb-zeile .grow { min-width: 180px; }
+/* Startseite: Bereichs-Kacheln (LUNA_OS_UI_ROADMAP Etappe 4) */
+.v2-bereiche-start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 16px 0 8px; }
+.v2-bereich-k { text-align: left; font: inherit; color: var(--v2-fg); cursor: pointer; display: grid; gap: 10px; align-content: start;
+  background: var(--v2-card); backdrop-filter: blur(10px); border: 1px solid var(--v2-line-soft); border-radius: var(--v2-radius);
+  box-shadow: var(--v2-shadow); padding: 18px 20px; transition: transform .12s, box-shadow .15s; min-width: 0; }
+.v2-bereich-k:hover { transform: translateY(-2px); box-shadow: var(--v2-shadow-hi); }
+.v2-bereich-k .kopf { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; }
+.v2-bereich-k .sym { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--v2-accent-soft); font-size: 20px; }
+.v2-bereich-k .v2-kv { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 6px 0; border-top: 1px solid var(--v2-line-soft); }
+.v2-bereich-k .v2-kv b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.v2-dash-kopf { margin-top: 26px; }
+.v2-dash-kopf h2 { margin: 0; font-size: 20px; font-weight: 800; }
+@media (max-width: 700px) { .v2-bereiche-start { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .v2-bereich-k { transition: none; } .v2-bereich-k:hover { transform: none; } }
+/* ---------------- Mobil-Feinschliff (LUNA_OS_UI_ROADMAP Etappe 5) ---------------- */
+.v2-tile, .v2-fin-stufe { min-width: 0; }                 /* Grid-Kinder duerfen schrumpfen statt die Seite zu verbreitern */
+@media (max-width: 700px) {
+  .v2-sec-head { flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+  .v2-sec-head h1 { font-size: 26px; flex: 1 1 100%; }
+  .v2-sec-head .actions { flex: 1 1 100%; }
+  .v2-sec-head .actions > input, .v2-sec-head .actions > select.v2-inp, .v2-sec-head .actions .v2-inp[type="search"],
+  .v2-sec-head .actions input.v2-inp { flex: 1 1 100%; min-width: 0; width: 100%; }
+  .v2-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }   /* breite Tabellen wischen in der Karte */
+  .v2-table td:first-child, .v2-table th { white-space: nowrap; }
+  .v2-fin-pipeline { grid-template-columns: minmax(0, 1fr); }
+  .v2-modal, .v2-modal-box { max-width: 100%; }
+}
+/* Touch-Geraete: Tipp-Flaechen mindestens 44 px (Apple-Richtwert) */
+@media (pointer: coarse) {
+  .v2-btn, .v2-tabs button, .v2-unter button, .v2-icon, .v2-pill { min-height: 44px; }
+  .v2-btn.sm { min-height: 40px; padding: 8px 12px; font-size: 13px; }
+  .v2-icon { min-width: 44px; }
+  .v2-inp { min-height: 44px; font-size: 16px; }             /* 16 px: iOS zoomt beim Tippen sonst ins Feld */
+}

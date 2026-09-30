@@ -8,7 +8,11 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon-192.png?v=2">
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
   <meta name="apple-mobile-web-app-title" content="LUNA">
-  <link rel="stylesheet" href="/static/style-v2.css?v=29">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="stylesheet" href="/static/style-v2.css?v=30">
   <!-- Theme flash-frei (V2 Default: hell). Dunkel nur, wenn Nutzer es fuer V2 explizit waehlt. -->
   <script>(function () {
     var m = localStorage.getItem("luna-v2-theme") || "light";
@@ -20,21 +24,24 @@
   <div id="v2-bg"><span class="blob b1"></span><span class="blob b2"></span></div>
 
   <header id="v2-top">
-    <div class="v2-brand">
-      <div class="v2-logo"><span></span></div>
+    <button class="v2-icon v2-burger" id="v2-burger" title="Menü" aria-label="Menü öffnen">☰</button>
+    <button class="v2-brand" data-go="dash" title="Start">
+      <span class="v2-logo"><span></span></span>
       <b>LUNA</b>
-    </div>
-    <nav id="v2-nav" class="v2-nav"><!-- Icon-Reihe: von app-v2.js gefuellt (modul-gated) --></nav>
+    </button>
+    <span class="v2-titel-mobil" id="v2-titel-mobil"></span>
+    <nav id="v2-nav" class="v2-nav" aria-label="Bereiche"><!-- 4 Bereiche: von app-v2.js gefuellt (modul-gated) --></nav>
     <div class="v2-pills" id="v2-pills"><!-- Aktions-Pills: von app-v2.js gefuellt --></div>
     <div class="v2-topright">
-      <button class="v2-icon" id="v2-search" title="Suche">🔎</button>
+      <button class="v2-icon v2-glocke" id="v2-glocke" data-go="handlung" title="Handlungsbedarf" aria-label="Handlungsbedarf">🔔<span class="v2-zaehler" id="v2-glocke-n" hidden></span></button>
       <button class="v2-icon" id="v2-holo-toggle" title="Orb / Hologramm" hidden>🌙</button>
       <button class="v2-icon" id="v2-theme" title="Hell/Dunkel">☀</button>
-      <button class="v2-lang" id="v2-lang" title="Sprache">🌐 DE</button>
       <div class="v2-avatar" id="v2-avatar" title="Profil"></div>
     </div>
   </header>
-
+  <nav id="v2-unter" class="v2-unter" aria-label="Unterbereiche" hidden></nav>
+  <div id="v2-schleier" class="v2-schleier" hidden></div>
+  <nav id="v2-lade" class="v2-lade" aria-label="Menü" hidden></nav>
   <main id="v2-app"><!-- Dashboard/Sektionen werden von app-v2.js gerendert --></main>
 
   <!-- LUNA: Orb + Voice-Launcher (UI.md 1a -- bleibt Pflicht, auch in V2) -->
@@ -43,6 +50,7 @@
   <div id="luna-holo" class="luna-holo" title="Mit LUNA sprechen" hidden></div>
   <section id="v2-chat" class="v2-chat" hidden><!-- Inline-Chat-Panel (kein Fenster) --></section>
 
-  <script src="/static/app-v2.js?v=75"></script>
+  <script src="/static/passkey.js?v=1"></script>
+  <script src="/static/app-v2.js?v=76"></script>
 </body>
 </html>

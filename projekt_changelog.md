@@ -17,6 +17,75 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 19:35] — Claude Code
+- **Was:** Vor dem Deploy Synology-Reverse-Proxy lesend geprueft (`Host` = $http_host, `X-Forwarded-Proto` = $scheme ->
+  Herkunftsschutz und Passkey-Adresse passen). Dabei BF-47 gefunden und behoben: Fehlversuch-Bremse nutzt `X-Real-IP`
+  statt des faelschbaren ersten `X-Forwarded-For`-Eintrags; Test mit Gegenprobe.
+- **Warum:** Sicherheit des neuen Logins (UI-Roadmap Etappe 2) vor dem Livegang.
+- **Betroffen:** `orchestrator/channels/web/app.py`, `orchestrator/tests/test_login.py`, `docs/bekannte-fehler.md`
+
+## [2026-09-30 19:34] — Claude Code
+- **Was:** LUNA_OS_UI_ROADMAP Etappe 5 umgesetzt: Mobil-Feinschliff nach Messlauf ueber alle 24 Ansichten bei 390 px
+  (iPhone) und 820 px (iPad hochkant): Tabellen wischen in der Karte statt die Seite zu verbreitern, Seitenkoepfe und
+  Suchfelder stapeln unter 700 px, Finanz-Pipeline einspaltig, Grid-Kacheln duerfen schrumpfen, Touch-Tippflaechen
+  >= 44 px, Eingabefelder 16 px. `UI.md` um Navigation, Mobil-Regeln und Anmeldung ergaenzt. Alle Etappen 1-6 fertig.
+- **Warum:** CEO-Go 2026-09-30 (UI-Roadmap), Pruefung „passt das zum iPhone?“.
+- **Betroffen:** `orchestrator/channels/web/static/style-v2.css`, `UI.md`, `LUNA_OS_UI_ROADMAP.md`, `ROADMAP.md`
+
+## [2026-09-30 19:32] — Claude Code
+- **Was:** LUNA_OS_UI_ROADMAP Etappe 4 umgesetzt: neue Startseite (Gruss, Handlungsbedarf fest oben, 4 Bereichs-Kacheln
+  mit Live-Zahlen, darunter das anpassbare Dashboard) und Bereichs-Startseiten mit Kennzahlen, „Als Naechstes in diesem
+  Bereich“ und Sprungkarten; Zahlen nur aus bestehenden Endpunkten. Handlungsbedarf-Punkt „Freigaben“ traegt die Anzahl
+  (eine Quelle fuer Kachel und Glocke). Browsertest Desktop + iPhone-Breite.
+- **Warum:** CEO-Go 2026-09-30 (UI-Roadmap, Skizze abgenommen).
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `static/style-v2.css`, `orchestrator/core/handlungsbedarf.py`,
+  `orchestrator/tests/test_handlungsbedarf.py`, `LUNA_OS_UI_ROADMAP.md`
+
+## [2026-09-30 19:28] — Claude Code
+- **Was:** LUNA_OS_UI_ROADMAP Etappe 3 umgesetzt: Handlungsbedarf ueber alle Bereiche (`core/handlungsbedarf.py`,
+  `GET /api/handlungsbedarf`): bisherige Tages-To-dos plus offene Antraege, offene Investment-Entscheidungen und
+  Betriebsstoerungen (Bot-Herzschlag, haengende Meldungen; Schwellen wie der Waechter), je Punkt Stufe dringend/diese
+  Woche/wenn Zeit ist und Bereich. Startseiten-Kachel „⚡ Handlungsbedarf“ statt „Zu erledigen“, eigene Seite mit
+  Bereichs-Filter, Glocke zaehlt „dringend“. Tests `test_handlungsbedarf.py`, Browsertest.
+- **Warum:** CEO 2026-09-30: Kachel fuer alle dringenden Handlungen ueber das ganze LUNA-System.
+- **Betroffen:** `orchestrator/core/handlungsbedarf.py` (neu), `orchestrator/channels/web/app.py`, `static/app-v2.js`,
+  `static/style-v2.css`, `orchestrator/tests/test_handlungsbedarf.py`, `LUNA_OS_UI_ROADMAP.md`, `docs/datenfluesse.md`
+
+## [2026-09-30 19:25] — Claude Code
+- **Was:** LUNA_OS_UI_ROADMAP Etappe 1 umgesetzt: Kopfzeile mit 4 beschrifteten Bereichen (Geschaeft, Content &
+  Collabs, Investment, LUNA & System) statt 19 Symbolen, Unterreihe je Bereich, Bereichs-Seite mit Sprungkarten, Glocke
+  (Zaehler aus `/api/handlungsbedarf`), ab 900 px abwaerts Seitenmenue (☰) mit Titel, Abstaende fuer Notch/Home-Balken.
+  Funktionslose Knoepfe 🔎 und 🌐 DE entfernt. BF-46 (`hidden` von `display:flex` ueberschrieben) gefunden und global
+  behoben.
+- **Warum:** CEO-Go 2026-09-30 fuer die UI-Roadmap (Skizze abgenommen).
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `style-v2.css`, `LUNA_OS_UI_ROADMAP.md`,
+  `docs/bekannte-fehler.md`
+
+## [2026-09-30 19:21] — Claude Code
+- **Was:** LUNA_OS_UI_ROADMAP Etappen 2 + 6 umgesetzt: eigene Login-Seite (Schluesselbund/Face-ID-Autofill),
+  Sitzungs-Cookie 30 Tage gleitend (HttpOnly, Secure bei HTTPS, SameSite=Lax; nur SHA-256 des Tokens auf der NAS),
+  Fehlversuch-Bremse (5 in 15 min -> 10 min), Schutz gegen fremde Seiten bei aendernden Anfragen, Abmelden und „Alle
+  anderen Geraete abmelden“; Passkeys (WebAuthn, Face ID ohne Passwort, Passwort bleibt Notweg) mit Einrichtung in den
+  Einstellungen und einmaligem Angebot nach dem Passwort-Login; WebApp-Manifest + apple-mobile-web-app-capable.
+  HTTP-Basic bleibt fuer Waechter/Cutter-Bruecke. Neue Abhaengigkeit `webauthn==3.0.1` im Dockerfile (OSV: keine
+  Funde, auch cbor2/pyOpenSSL/pyasn1). Tests `test_login.py` (10, mit simuliertem Face-ID-Geraet), Gegenprobe rot/gruen.
+- **Warum:** CEO 2026-09-30: auf iPhone/iPad als WebApp immer neu einloggen, Schluesselbund schlaegt nichts vor;
+  „Passkey kannst du gern mit einbauen“.
+- **Betroffen:** `orchestrator/core/sitzungen.py`, `orchestrator/core/passkeys.py` (neu), `orchestrator/core/team_auth.py`,
+  `orchestrator/channels/web/app.py`, `static/login.html`, `static/passkey.js`, `static/manifest.webmanifest` (neu),
+  `static/app-v2.js`, `static/index-v2.html`, `static/style-v2.css`, `deploy/Dockerfile`, `deploy/backup-from-nas.sh`,
+  `orchestrator/tests/test_login.py`, `LUNA_OS_UI_ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
+## [2026-09-30 19:00] — Claude Code
+- **Was:** Roadmap `LUNA_OS_UI_ROADMAP.md` angelegt (Etappen 1-6: Navigation in 4 Bereichen + Glocke + iPhone-
+  Seitenmenue, WebApp-Login mit Schluesselbund und Sitzungs-Cookie, Handlungsbedarf systemweit, Start- und
+  Bereichs-Startseiten, Mobil-Feinschliff, optional Passkey/Face ID). Analyse read-only: 19 Symbol-Menuepunkte,
+  Nutzung 30 Tage, iPhone-Darstellung im 390-px-Rahmen, Login = HTTP-Basic (Ursache fuer das Neu-Einloggen in der
+  iOS-WebApp). Klickbare Skizze als privates Artifact. Im Roadmap-Verzeichnis und Entscheidungs-Register eingetragen.
+- **Warum:** CEO-Wunsch 2026-09-30 (Menue unuebersichtlich, Bereichs-Startseiten, Mobil-Seitenmenue, Kachel fuer
+  allen dringenden Handlungsbedarf, Login auf iPhone/iPad).
+- **Betroffen:** `LUNA_OS_UI_ROADMAP.md` (neu), `ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-09-30 18:38] — Claude Code
 - **Was:** Etappe 26 live geprueft nach CEO-Neustart: UI v75 ausgeliefert, Uebersicht liefert `kalkulatorisch` (live
   noch 0 EUR, keine Zeiten erfasst), Journal-CSV mit Haken = unveraenderte Buchungen + getrennter Block, ZIP mit Haken

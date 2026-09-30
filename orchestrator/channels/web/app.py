@@ -17,7 +17,7 @@ from functools import partial
 from pathlib import Path
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
-from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 
@@ -45,6 +45,8 @@ from ...core.notifications import Notifications
 from ...core.reel_store import ReelStore
 from ...core.research_tickets import ResearchTickets
 from ...core.team_auth import MODULE, MODUL_LABELS, TeamAuth, erlaubte_apps, hat_modul, modul_fuer_pfad
+from ...core.sitzungen import COOKIE, LAUFZEIT_TAGE, Sitzungen, geraet_aus
+from ...core.passkeys import PasskeyFehler, Passkeys
 from ...governance.changelog_tool import append_changelog
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -176,7 +178,7 @@ _team_auth = TeamAuth(_sb, changelog=_changelog)
 def _ceo_user() -> dict:
     """Der env-CEO = Superuser (Rolle owner -> alle Module)."""
     return {"username": _USER, "display_name": "CEO", "role": "owner",
-            "allowed_modules": list(MODULE), "is_active": True}
+            "allowed_modules": list(MODULE), "is_active": True, "art": "ceo"}
 
 
 def _login_erforderlich() -> bool:
@@ -194,18 +196,67 @@ def _resolve_user(cred: HTTPBasicCredentials | None) -> dict | None:
     return None
 
 
+# LUNA_OS_UI_ROADMAP Etappe 2/6: Menschen melden sich per Login-Formular oder Passkey an und bekommen ein
+# Sitzungs-Cookie; Maschinen (Waechter, Cutter-Bruecke) bleiben bei HTTP-Basic. Sitzungen/Passkeys liegen als Datei
+# unter orchestrator/state/ (NAS, nicht im Git, nicht gesynct).
+_sitzungen = Sitzungen(ROOT / "orchestrator" / "state" / "luna_os_sitzungen.json")
+_passkeys = Passkeys(ROOT / "orchestrator" / "state" / "luna_os_passkeys.json")
+_OFFEN = ("/login", "/api/login", "/api/logout", "/api/passkey/login/start", "/api/passkey/login/ende",
+          "/favicon.ico")
+
+
+def _user_aus_sitzung(s: dict) -> dict | None:
+    if s.get("art") == "ceo":
+        return _ceo_user() if _PW and s.get("username") == _USER else None
+    return _team_auth.nutzer(s.get("username", "")) if _team_auth.verfuegbar() else None
+
+
+def _hosts(request: Request) -> set[str]:
+    return {h.strip().lower() for kopf in (request.headers.get("host", ""), request.headers.get("x-forwarded-host", ""))
+            for h in kopf.split(",") if h.strip()}
+
+
+def _gleiche_herkunft(request: Request) -> bool:
+    """Schutz gegen fremde Seiten (CSRF): aendernde Anfragen per Cookie nur von der eigenen Adresse."""
+    import urllib.parse as _up
+    quelle = request.headers.get("origin") or request.headers.get("referer") or ""
+    return bool(quelle) and _up.urlsplit(quelle).netloc.lower() in _hosts(request)
+
+
+def _ist_https(request: Request) -> bool:
+    return request.url.scheme == "https" or \
+        request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower() == "https"
+
+
 def auth(request: Request, cred: HTTPBasicCredentials = Depends(_security)):
     # Webhook-Endpunkte (Instagram/Meta) sind von der Basic-Auth ausgenommen: Meta kann sich nicht per Login
     # authentifizieren. Sie sichern sich selbst -- GET ueber den Verify-Token, POST ueber die HMAC-Signatur.
-    if request.url.path.startswith("/api/webhook/"):
+    pfad = request.url.path
+    if pfad.startswith("/api/webhook/") or pfad in _OFFEN:
         return
-    user = _resolve_user(cred)
+    user = None
+    token = request.cookies.get(COOKIE)
+    s = _sitzungen.pruefen(token) if token else None
+    if s:
+        user = _user_aus_sitzung(s)
+        if user and request.method not in ("GET", "HEAD", "OPTIONS") and not _gleiche_herkunft(request):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Anfrage von fremder Seite abgelehnt")
+        if user:
+            request.state.sitzung = s
+    if user is None:
+        user = _resolve_user(cred)
     if user is None:
         if not _login_erforderlich():
             request.state.user = _ceo_user()   # lokaler Dev ohne Passwort/Tabelle: offener Owner
             return
+        if request.method == "GET" and not pfad.startswith("/api/") \
+                and "text/html" in request.headers.get("accept", ""):
+            import urllib.parse as _up
+            raise HTTPException(status.HTTP_303_SEE_OTHER, "Login nötig",
+                                headers={"Location": "/login?weiter=" + _up.quote(pfad)})
+        # Das Basic-Fenster nur fuer Maschinen mit falschen Zugangsdaten; Menschen landen auf der Login-Seite.
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Login nötig",
-                            headers={"WWW-Authenticate": "Basic"})
+                            headers={"WWW-Authenticate": "Basic"} if cred else None)
     request.state.user = user
     # Modul-Gating: sensible App-Endpunkte/Aktionen brauchen das passende Modul (Owner sieht alles).
     modul = modul_fuer_pfad(request.method, request.url.path)
@@ -315,6 +366,184 @@ def _mtimes():
 def index(request: Request):
     """LUNA-OS (V2 ist seit 2026-09-29 das einzige Design; alte `?ui=v1`-Lesezeichen landen ebenfalls hier)."""
     return FileResponse(STATIC / "index-v2.html")
+
+
+# -- Login, Sitzungen, Passkeys (LUNA_OS_UI_ROADMAP Etappen 2 + 6) --------------------------------------------------
+def _client_ip(request: Request) -> str:
+    """Absender fuer die Fehlversuch-Bremse. `X-Real-IP` setzt der Synology-Proxy selbst ($remote_addr, ueberschreibt
+    Mitgeschicktes); `X-Forwarded-For` beginnt mit dem Wert des Absenders und ist daher faelschbar -> nie verwenden."""
+    return (request.headers.get("x-real-ip") or "").strip() or (request.client.host if request.client else "?")
+
+
+def _weiter(w: str | None) -> str:
+    w = (w or "/").strip()
+    return w if w.startswith("/") and not w.startswith("//") and "\\" not in w else "/"
+
+
+def _sitzung_setzen(resp: Response, request: Request, username: str, art: str) -> None:
+    token = _sitzungen.anlegen(username, art=art, geraet=geraet_aus(request.headers.get("user-agent", "")))
+    resp.set_cookie(COOKIE, token, max_age=LAUFZEIT_TAGE * 86400, httponly=True, secure=_ist_https(request),
+                    samesite="lax", path="/")
+
+
+def _angemeldet(request: Request) -> dict | None:
+    s = _sitzungen.pruefen(request.cookies.get(COOKIE, ""))
+    return _user_aus_sitzung(s) if s else None
+
+
+@app.get("/login")
+def login_seite(request: Request):
+    if _angemeldet(request):
+        return RedirectResponse(_weiter(request.query_params.get("weiter")), status_code=303)
+    return FileResponse(STATIC / "login.html", headers={"Cache-Control": "no-store"})
+
+
+@app.post("/api/login")
+async def login(request: Request):
+    """Login-Formular (Schluesselbund fuellt es aus) -> Sitzungs-Cookie. Formular: Weiterleitung; JSON: Antwort."""
+    import urllib.parse as _up
+    roh = (await request.body()).decode("utf-8", "replace")
+    formular = "json" not in request.headers.get("content-type", "")
+    if formular:
+        d = {k: v[0] for k, v in _up.parse_qs(roh).items()}
+    else:
+        try:
+            d = json.loads(roh or "{}")
+        except ValueError:
+            d = {}
+    username, pw = str(d.get("username") or "").strip(), str(d.get("password") or "")
+    weiter = _weiter(d.get("weiter"))
+
+    def fehler(code: str, text: str, st: int):
+        if formular:
+            return RedirectResponse(f"/login?fehler={code}&weiter={_up.quote(weiter)}", status_code=303)
+        return JSONResponse({"ok": False, "hinweis": text}, status_code=st)
+
+    if request.headers.get("origin") and not _gleiche_herkunft(request):
+        return fehler("herkunft", "Anfrage von fremder Seite abgelehnt.", 403)
+    schl = f"{_client_ip(request)}|{username.lower()}"
+    rest = _sitzungen.gesperrt_s(schl)
+    if rest:
+        return fehler("gesperrt", f"Zu viele Fehlversuche -- bitte in {rest // 60 + 1} Minuten erneut.", 429)
+    art = ""
+    if _PW and secrets.compare_digest(username, _USER) and secrets.compare_digest(pw, _PW):
+        art = "ceo"
+    elif username and pw and _team_auth.verfuegbar() and _team_auth.verify(username, pw):
+        art = "team"
+    if not art:
+        _sitzungen.fehlversuch(schl)
+        return fehler("falsch", "Benutzername oder Passwort stimmt nicht.", 401)
+    _sitzungen.erfolg(schl)
+    resp = RedirectResponse(weiter, status_code=303) if formular else JSONResponse({"ok": True, "weiter": weiter})
+    _sitzung_setzen(resp, request, username, art)
+    # Einmaliges Angebot „beim naechsten Mal mit Face ID“ (liest die Oberflaeche, loescht es dann)
+    resp.set_cookie("luna_pk_anbieten", "1", max_age=600, secure=_ist_https(request), samesite="lax", path="/")
+    return resp
+
+
+@app.post("/api/logout")
+async def logout(request: Request):
+    _sitzungen.beenden(request.cookies.get(COOKIE, ""))
+    formular = "json" not in request.headers.get("content-type", "")
+    resp = RedirectResponse("/login?abgemeldet=1", status_code=303) if formular else JSONResponse({"ok": True})
+    resp.delete_cookie(COOKIE, path="/")
+    return resp
+
+
+def _ich(request: Request) -> tuple[str, str]:
+    u = getattr(request.state, "user", None) or _ceo_user()
+    s = getattr(request.state, "sitzung", None)
+    return u.get("username") or _USER, (s or {}).get("art") or u.get("art") or "team"
+
+
+@app.get("/api/sitzungen")
+def sitzungen_liste(request: Request):
+    name, _ = _ich(request)
+    aktuell = (getattr(request.state, "sitzung", None) or {}).get("id")
+    return {"sitzungen": [s | {"aktuell": s["id"] == aktuell} for s in _sitzungen.liste(name)],
+            "passkeys": _passkeys.liste(name), "per_cookie": bool(aktuell)}
+
+
+@app.post("/api/sitzungen/widerrufen")
+async def sitzungen_widerrufen(request: Request):
+    """{id} eine Sitzung oder {alle: true} alle anderen Geraete abmelden."""
+    name, _ = _ich(request)
+    body = await _json(request) or {}
+    aktuell = (getattr(request.state, "sitzung", None) or {}).get("id")
+    if body.get("alle"):
+        n = _sitzungen.widerrufen(name, ausser_id=aktuell)
+    else:
+        n = _sitzungen.widerrufen(name, str(body.get("id") or "")) if body.get("id") else 0
+    return {"ok": True, "abgemeldet": n}
+
+
+def _rp(request: Request) -> tuple[str, str]:
+    """(rp_id, origin) aus der Adresse, unter der LUNA-OS aufgerufen wird -- Passkeys nur ueber HTTPS."""
+    if not _ist_https(request):
+        raise HTTPException(400, "Face ID/Passkey geht nur über https://os.hanserautisch.synology.me")
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(",")[0].strip().lower()
+    host = host[:-4] if host.endswith(":443") else host
+    return host.split(":")[0], "https://" + host
+
+
+@app.post("/api/passkey/registrieren/start")
+def passkey_reg_start(request: Request):
+    rp_id, _ = _rp(request)
+    name, art = _ich(request)
+    u = getattr(request.state, "user", None) or {}
+    return _passkeys.registrierung_start(rp_id=rp_id, username=name, anzeigename=u.get("display_name") or name, art=art)
+
+
+@app.post("/api/passkey/registrieren/ende")
+async def passkey_reg_ende(request: Request):
+    rp_id, origin = _rp(request)
+    name, _ = _ich(request)
+    body = await _json(request) or {}
+    try:
+        p = _passkeys.registrierung_ende(challenge_id=body.get("challenge_id", ""), credential=body.get("credential") or {},
+                                         rp_id=rp_id, origin=origin, username=name,
+                                         geraet=geraet_aus(request.headers.get("user-agent", "")))
+    except PasskeyFehler as e:
+        return JSONResponse({"ok": False, "hinweis": str(e)}, status_code=400)
+    return {"ok": True, "passkey": p}
+
+
+@app.post("/api/passkey/loeschen")
+async def passkey_loeschen(request: Request):
+    name, _ = _ich(request)
+    body = await _json(request) or {}
+    return {"ok": _passkeys.loeschen(name, str(body.get("id") or ""))}
+
+
+@app.post("/api/passkey/login/start")
+def passkey_login_start(request: Request):
+    rp_id, _ = _rp(request)
+    return _passkeys.login_start(rp_id=rp_id)
+
+
+@app.post("/api/passkey/login/ende")
+async def passkey_login_ende(request: Request):
+    rp_id, origin = _rp(request)
+    if not _gleiche_herkunft(request):
+        return JSONResponse({"ok": False, "hinweis": "Anfrage von fremder Seite abgelehnt."}, status_code=403)
+    schl = f"{_client_ip(request)}|passkey"
+    rest = _sitzungen.gesperrt_s(schl)
+    if rest:
+        return JSONResponse({"ok": False, "hinweis": f"Zu viele Fehlversuche -- bitte in {rest // 60 + 1} Minuten erneut."},
+                            status_code=429)
+    body = await _json(request) or {}
+    try:
+        wer = _passkeys.login_ende(challenge_id=body.get("challenge_id", ""), credential=body.get("credential") or {},
+                                   rp_id=rp_id, origin=origin)
+    except PasskeyFehler as e:
+        _sitzungen.fehlversuch(schl)
+        return JSONResponse({"ok": False, "hinweis": str(e)}, status_code=401)
+    if not _user_aus_sitzung(wer):                               # Nutzer deaktiviert / CEO-Passwort entfernt
+        return JSONResponse({"ok": False, "hinweis": "Dieses Konto ist nicht mehr aktiv."}, status_code=401)
+    _sitzungen.erfolg(schl)
+    resp = JSONResponse({"ok": True, "weiter": _weiter(body.get("weiter"))})
+    _sitzung_setzen(resp, request, wer["username"], wer["art"])
+    return resp
 
 
 @app.get("/api/state")
@@ -2220,10 +2449,8 @@ def _index(body: dict) -> int:
 
 # -- To-dos fuer die Hauptseite (CEO 2026-09-28): Tagesbetrieb gesammelt; Antraege/Freigaben bewusst NICHT hier ------
 
-@app.get("/api/todos")
-def todos_liste(request: Request):
+def _todos_fuer(u: dict) -> list[dict]:
     from ...core.todos import geschaefts_todos
-    u = getattr(request.state, "user", None) or _ceo_user()
     out = geschaefts_todos(kunden_store.bh, kunden_store, finanzen=hat_modul(u, "finanzen"), crm=hat_modul(u, "crm"))
     heute = jetzt_iso()[:10]
     if hat_modul(u, "crm"):
@@ -2238,9 +2465,35 @@ def todos_liste(request: Request):
         if wartet:
             out.append({"id": "reels", "bereich": "Content", "icon": "🎬", "titel": f"{len(wartet)} Reel(s) zur Freigabe",
                         "detail": "prüfen, Caption anpassen, freigeben oder ablehnen", "act": "go:reel", "act_id": "",
-                        "faellig": "", "dringend": False, "erledigen": None})
+                        "faellig": "", "dringend": False, "stufe": "woche", "erledigen": None})
     out.sort(key=lambda t: (not t["dringend"], t["faellig"] or "9999", t["titel"]))
+    return out
+
+
+@app.get("/api/todos")
+def todos_liste(request: Request):
+    u = getattr(request.state, "user", None) or _ceo_user()
+    out = _todos_fuer(u)
     return {"todos": out, "anzahl": len(out), "dringend": sum(1 for t in out if t["dringend"])}
+
+
+@app.get("/api/handlungsbedarf")
+def handlungsbedarf(request: Request):
+    """LUNA_OS_UI_ROADMAP Etappe 3: alles, was der CEO tun muss, aus allen Bereichen, nach Dringlichkeit (Glocke)."""
+    from datetime import date as _date
+    from ...core.handlungsbedarf import zusammenstellen
+    from ...investment.approvals import ApprovalStore
+    u = getattr(request.state, "user", None) or _ceo_user()
+    admin = hat_modul(u, "administration")
+    inv = None
+    if hat_modul(u, "invest"):
+        try:
+            inv = ApprovalStore(ROOT / "approvals" / "log.jsonl").offen()
+        except Exception:
+            inv = None
+    return zusammenstellen(_todos_fuer(u), antraege=antraege.list(status="eingereicht") if admin else None,
+                           investment=inv, betrieb=betrieb_status() if admin else None,
+                           heute=_date.fromisoformat(jetzt_iso()[:10]))
 
 
 @app.post("/api/finanzen/hinweis-quittieren")

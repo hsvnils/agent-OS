@@ -133,6 +133,13 @@ class TeamAuth:
                 return None
         return None
 
+    def nutzer(self, username: str) -> dict | None:
+        """Aktiver Nutzer ohne Passwort-Pruefung (fuer Sitzungen/Passkeys: deaktiviert -> sofort abgemeldet)."""
+        for row in self._alle():
+            if row.get("username") == (username or "").strip() and row.get("is_active", True):
+                return {k: row.get(k) for k in _FELDER.split(",")}
+        return None
+
     def liste(self) -> list[dict]:
         """Alle Nutzer ohne Passwort-Hash (fuer Anzeige/Admin)."""
         return [{k: row.get(k) for k in _FELDER.split(",")} for row in self._alle()]

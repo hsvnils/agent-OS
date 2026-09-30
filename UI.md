@@ -219,9 +219,19 @@ das einzige Design. UI-V2 ist ein **helles, glasiges, dashboard-/sektionsbasiert
   selbstgenuegsam (kein CDN), Modul-Gating via `/api/me`.
 - **Feste Identitaet bleibt (Punkt 1a):** **Orb + Stimme „Lola"** sind auch in V2 Pflicht — als Orb-/Voice-
   Launcher unten rechts + Inline-Chat-Panel (kein Fenster). Reuse `/api/chat`, `/api/tts`, `/api/sehen`.
-- **Struktur V2:** Top-Nav (Icon-Reihe + Aktions-Pills + Sprache/Theme/Avatar) statt Sidebar; Kachel-Grid
-  (`--v2-radius`-Glaskarten) fuers Dashboard; Apps werden **geroutete Voll-Sektionen** in `#v2-app` statt
-  Fenster. Helles Default-Theme; Dunkel-Variante `html.v2-dark` optional.
+- **Struktur V2 (seit 2026-09-30, `LUNA_OS_UI_ROADMAP.md`):** Kopfzeile mit **4 beschrifteten Bereichen** (`BEREICHE`
+  in `app-v2.js`: Geschaeft, Content & Collabs, Investment, LUNA & System), darunter die Unterreihe des Bereichs;
+  Glocke oben rechts = Anzahl „dringend“ aus `/api/handlungsbedarf`. Startseite: Handlungsbedarf, 4 Bereichs-Kacheln,
+  darunter „Dein Dashboard“ (anpassbar). Bereichs-Startseiten `b-<bereich>` mit Kennzahlen und „Als Naechstes“. Unter
+  **900 px** (iPhone, iPad hochkant) ersetzt ein Seitenmenue (☰) die Bereiche. Apps bleiben **geroutete
+  Voll-Sektionen** in `#v2-app`. Helles Default-Theme; Dunkel-Variante `html.v2-dark` optional.
+- **Neue Sektion einhaengen:** in `SECTIONS` anlegen **und** in `BEREICHE[].teile` eines Bereichs eintragen (sonst ist
+  sie nur per Link erreichbar); Kurztext in `TEIL_INFO`.
+- **Mobil-Regeln:** `[hidden]` gewinnt immer (BF-46); Abstaende mit `env(safe-area-inset-*)`; unter 700 px stapeln
+  Seitenkoepfe, Tabellen wischen in der Karte; auf Touch-Geraeten Tipp-Flaechen >= 44 px, Eingabefelder 16 px
+  (sonst zoomt iOS). Pruefung: keine Seite breiter als 390 px.
+- **Anmeldung:** `/login` (Formular fuer den Schluesselbund, Passkey/Face ID ueber `static/passkey.js`), Sitzungs-Cookie
+  30 Tage; 401 aus der API leitet automatisch zur Login-Seite.
 - **Belege ganzseitig (CEO 2026-09-28):** Angebote, Auftraege, Rechnungen, Belege und alle weiteren Buchhaltungs-Ansichten
   (Editor **und** Detail) oeffnen immer ueber die ganze Flaeche (`openModal(titel, html, true)` -> `.v2-modal-card.breit`),
   mehrspaltig auf breiten Bildschirmen. Stammdaten wie Kunden duerfen in der schmalen Seitenleiste bleiben.

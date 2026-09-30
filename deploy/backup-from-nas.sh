@@ -51,6 +51,7 @@ FILES=(
   buchhaltung/katalog.json       # Leistungskatalog/Preise (Etappe 3b; Aenderungen zusaetzlich in der Kette)
   buchhaltung/logo.jpg           # Logo fuer Angebote/Preisliste
   buchhaltung/zeiterfassung.json # Etappe 25: kalkulatorischer Stundensatz (nur NAS/Backup, nie im Git)
+  orchestrator/state/luna_os_passkeys.json # LUNA-OS-Login: oeffentliche Passkey-Schluessel (Face ID)
 )
 
 mkdir -p "$DEST"

@@ -3,6 +3,12 @@
 "use strict";
 
 /* =========================== Helfer =========================== */
+// Abgelaufene/fehlende Anmeldung (401) -> zur Login-Seite, danach zurueck hierher (LUNA_OS_UI_ROADMAP Etappe 2)
+let LOGIN_UMLEITUNG = false;
+{ const _fetch = window.fetch.bind(window);
+  window.fetch = async (...a) => { const r = await _fetch(...a);
+    if (r && r.status === 401 && !LOGIN_UMLEITUNG) { LOGIN_UMLEITUNG = true; location.href = "/login?weiter=" + encodeURIComponent(location.pathname || "/"); }
+    return r; }; }
 const $ = (sel, el = document) => el.querySelector(sel);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -40,7 +46,7 @@ let AKTIV = "dash", SUBTAB = {};
 
 /* Dashboard-Bearbeiten (wie V1): Widget-Reihenfolge + ausgeblendete, pro Nutzer in PREFS.v2_dashboard. */
 const DASH2_DEFAULT = ["todos", "freigaben", "loop", "budget", "trefferquote", "provider", "compliance", "live", "schritte", "meldungen", "research"];
-const DASH2_TITEL = { todos: "Zu erledigen", budget: "Monatsbudget", trefferquote: "Prognose-Trefferquote", freigaben: "Offene Freigaben", provider: "Provider verbunden", loop: "Investment · Lern-Loop", compliance: "Compliance-Puls", live: "Live-Aktivität", schritte: "Erste Schritte", meldungen: "Meldungen", research: "Research-Tickets" };
+const DASH2_TITEL = { todos: "⚡ Handlungsbedarf", budget: "Monatsbudget", trefferquote: "Prognose-Trefferquote", freigaben: "Offene Freigaben", provider: "Provider verbunden", loop: "Investment · Lern-Loop", compliance: "Compliance-Puls", live: "Live-Aktivität", schritte: "Erste Schritte", meldungen: "Meldungen", research: "Research-Tickets" };
 let DASH2 = { order: [...DASH2_DEFAULT], hidden: [] };
 let EDIT2 = false, DRAG2 = null;
 let _VERLAUF = [], _trendRO = null;
@@ -84,6 +90,25 @@ const SECTIONS = [
   { id: "einstellungen", icon: "⚙", label: "Einstellungen", app: null },
 ];
 const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.includes(app);
+// LUNA_OS_UI_ROADMAP Etappe 1: 4 Bereiche statt 19 Symbolen (CEO 2026-09-30, Skizze abgenommen). Reihenfolge nach Nutzung.
+const BEREICHE = [
+  { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "rechnungen", "belege", "finanzen"] },
+  { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["crm", "radar", "content", "cutter", "reel"] },
+  { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
+  { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "devroadmap", "system", "team", "einstellungen"] },
+];
+const TEIL_INFO = {
+  kunden: "Firmen, Ansprechpartner, Akte", angebote: "Angebote und Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
+  belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
+  radar: "Neue Collab-Chancen", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
+  investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
+  wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", team: "Team-Zugänge",
+  einstellungen: "Depot, Briefings, Anmeldung",
+};
+const teilErlaubt = (b) => b.teile.filter(t => { const x = SECTIONS.find(s => s.id === t); return x && darf(x.app); });
+const bereichVon = (id) => BEREICHE.find(b => "b-" + b.id === id || b.teile.includes(id));
+const bereichZiel = (b) => teilErlaubt(b).length > 1 ? "b-" + b.id : teilErlaubt(b)[0];
+const seitenName = (id) => id === "dash" ? "Start" : id === "handlung" ? "Handlungsbedarf" : id.startsWith("b-") ? (bereichVon(id) || {}).label || "" : (SECTIONS.find(s => s.id === id) || {}).label || "";
 
 /* =========================== Theme / Shell =========================== */
 function applyTheme() {
@@ -94,13 +119,9 @@ function applyTheme() {
 }
 function toggleTheme() { const m = localStorage.getItem("luna-v2-theme") || "light"; localStorage.setItem("luna-v2-theme", m === "dark" ? "light" : "dark"); applyTheme(); }
 function buildShell() {
-  $("#v2-nav").innerHTML = SECTIONS.filter(s => darf(s.app)).map(s =>
-    `<button data-go="${s.id}" class="${s.id === "dash" ? "home " : ""}${s.id === AKTIV ? "active" : ""}" title="${esc(s.label)}">${s.icon}</button>`).join("");
-  $("#v2-pills").innerHTML = [
-    darf("auftraege") ? `<button class="v2-pill" data-go="freigaben">✔ Freigabe prüfen</button>` : "",
-    darf("investment") ? `<button class="v2-pill" data-act="inv-screen">🔍 Screen starten</button>` : "",
-    `<button class="v2-pill" data-toggle-chat>💬 LUNA fragen</button>`,
-  ].filter(Boolean).join("");
+  $("#v2-nav").innerHTML = BEREICHE.filter(b => teilErlaubt(b).length).map(b =>
+    `<button data-go="${bereichZiel(b)}" data-bereich="${b.id}" title="${esc(b.label)}"><span class="i">${b.icon}</span><span class="t">${esc(b.label)}</span></button>`).join("");
+  $("#v2-pills").innerHTML = `<button class="v2-pill" data-toggle-chat>💬 LUNA fragen</button>`;
   const nm = (ME.display_name || ME.username || "L").trim();
   $("#v2-avatar").textContent = nm.slice(0, 1).toUpperCase(); $("#v2-avatar").title = nm + (ME.role === "owner" ? " · Voll-Zugriff" : " · " + (ME.role || ""));
 }
@@ -108,13 +129,116 @@ function buildShell() {
 /* =========================== Router =========================== */
 const RENDER = {};
 function go(id, sub) {
-  if (!SECTIONS.find(s => s.id === id)) id = "dash";
+  if (!SECTIONS.find(s => s.id === id) && !(id.startsWith("b-") && bereichVon(id)) && id !== "handlung") id = "dash";
   AKTIV = id; if (sub) SUBTAB[id] = sub;
-  document.querySelectorAll("#v2-nav button").forEach(b => b.classList.toggle("active", b.dataset.go === id));
+  navAktualisieren(); ladeZu();
   $("#v2-app").innerHTML = `<div class="v2-empty">Lade …</div>`;
   jpost("/api/nutzung", { app: id });   // Feature-Friedhof: App-Oeffnung zaehlen (fire-and-forget)
   (RENDER[id] || renderDash)();
 }
+
+// Kopfzeile, Unterreihe und Seitenmenue passend zur aktuellen Seite
+function navAktualisieren() {
+  const b = AKTIV === "dash" || AKTIV === "handlung" ? null : bereichVon(AKTIV);
+  document.querySelectorAll("#v2-nav button").forEach(x => { const an = !!b && x.dataset.bereich === b.id; x.classList.toggle("active", an); x.setAttribute("aria-current", an ? "page" : "false"); });
+  const u = $("#v2-unter"), teile = b ? teilErlaubt(b) : [];
+  if (b && teile.length > 1) {
+    u.innerHTML = `<span class="v2-unter-b">${b.icon} ${esc(b.label)}</span>`
+      + [["b-" + b.id, "Übersicht"], ...teile.map(t => [t, seitenName(t)])].map(([id, n]) => `<button data-go="${id}" class="${id === AKTIV ? "active" : ""}" ${id === AKTIV ? 'aria-current="page"' : ""}>${esc(n)}</button>`).join("");
+    u.hidden = false;
+  } else { u.hidden = true; u.innerHTML = ""; }
+  $("#v2-titel-mobil").textContent = seitenName(AKTIV);
+  document.title = "LUNA · " + seitenName(AKTIV);
+}
+function ladeAuf() {
+  const zeile = (id, n, extra = "") => `<button class="v2-lade-e ${id === AKTIV ? "active" : ""}" data-go="${id}">${n}${extra}</button>`;
+  const n = GLOCKE_N ? ` <span class="v2-zaehler an">${GLOCKE_N}</span>` : "";
+  $("#v2-lade").innerHTML = `<div class="v2-lade-kopf"><button class="v2-brand" data-go="dash"><span class="v2-logo"><span></span></span><b>LUNA</b></button><button class="v2-icon" id="v2-lade-zu" aria-label="Menü schließen">✕</button></div>`
+    + zeile("dash", "🏠 Start") + zeile("handlung", "⚡ Handlungsbedarf", n)
+    + BEREICHE.filter(b => teilErlaubt(b).length).map(b => `<div class="v2-lade-g">${esc(b.label)}</div>`
+      + (teilErlaubt(b).length > 1 ? zeile("b-" + b.id, b.icon + " Übersicht") : "")
+      + teilErlaubt(b).map(t => zeile(t, esc(seitenName(t)))).join("")).join("")
+    + `<button class="v2-lade-luna" data-toggle-chat>💬 LUNA fragen</button>`;
+  $("#v2-lade").hidden = false; $("#v2-schleier").hidden = false; document.body.classList.add("v2-lade-offen");
+}
+function ladeZu() { const l = $("#v2-lade"); if (!l || l.hidden) return; l.hidden = true; $("#v2-schleier").hidden = true; document.body.classList.remove("v2-lade-offen"); }
+// Glocke: Anzahl dringender Punkte aus dem Handlungsbedarf (Etappe 3)
+let GLOCKE_N = 0, GLOCKE_T = null;
+async function glockeAktualisieren() {
+  const d = await jget("/api/handlungsbedarf");
+  if (!d || !d.zaehler) return;
+  GLOCKE_N = d.zaehler.dringend || 0; glockeZeigen();
+}
+function glockeZeigen() {
+  const el = $("#v2-glocke-n"); if (!el) return;
+  el.textContent = GLOCKE_N > 99 ? "99+" : String(GLOCKE_N); el.hidden = !GLOCKE_N;
+  $("#v2-glocke").setAttribute("aria-label", GLOCKE_N ? `${GLOCKE_N} dringende Punkte` : "Handlungsbedarf");
+}
+// Kennzahlen je Bereich (Etappe 4) -- nur aus bestehenden Endpunkten; ein Kontext teilt die Abrufe einer Seite
+function bereichKontext(vorhanden = {}) {
+  const c = { ...vorhanden }, einmal = (k, f) => (c[k] = c[k] || f());
+  return {
+    hb: () => einmal("hb", () => Promise.resolve(vorhanden.hbDaten || jget("/api/handlungsbedarf"))),
+    fin: () => einmal("fin", () => darf("finanzen") ? jget("/api/finanzen/uebersicht") : Promise.resolve(null)),
+    reels: () => einmal("reels", () => darf("cutter") ? jget("/api/reel") : Promise.resolve(null)),
+    loop: () => einmal("loop", () => Promise.resolve(vorhanden.loopDaten || (darf("investment") ? jget("/api/investment/loop") : null))),
+    betrieb: () => einmal("betrieb", () => jget("/api/betrieb/status")),
+  };
+}
+async function bereichDaten(b, k) {
+  const hb = await k.hb() || { punkte: [], bereiche: {} };
+  const offen = (hb.bereiche || {})[b.id] || 0, dringend = (hb.punkte || []).filter(p => p.bereich_id === b.id && p.stufe === "dringend").length;
+  const punkte = ["Offene Punkte", String(offen), dringend ? `${dringend} dringend` : "nichts dringend"];
+  if (b.id === "geschaeft") {
+    const u = await k.fin(); if (!u) return { kpis: [punkte], zeilen: [["Offene Punkte", String(offen)]] };
+    const pl = u.pipeline || {}, fo = u.forderungen || {};
+    return { kpis: [punkte, ["Gewinn " + u.jahr, cent2eur(u.kennzahlen.gewinn_cent), "echte Zahlen, ohne kalkulatorische Kosten"],
+        ["Offen: bekommen wir", cent2eur(fo.summe_cent || 0), `${fo.anzahl || 0} Rechnung(en)${fo.ueberfaellig ? ` · ${fo.ueberfaellig} überfällig` : ""}`],
+        ["Angebote offen", String(pl.angebote_anzahl || 0), cent2eur(pl.angebote_cent || 0)]],
+      zeilen: [["Angebote offen", `${pl.angebote_anzahl || 0} · ${cent2eur(pl.angebote_cent || 0)}`], ["Offen: bekommen wir", cent2eur(fo.summe_cent || 0)], ["Gewinn " + u.jahr, cent2eur(u.kennzahlen.gewinn_cent)]] };
+  }
+  if (b.id === "content") {
+    const r = await k.reels(), wartet = r ? (r.reels || []).filter(x => x.status === "wartet").length : null;
+    const crm = (hb.punkte || []).filter(p => p.bereich === "CRM").length;
+    return { kpis: [punkte, ["Reels zur Freigabe", wartet == null ? "–" : String(wartet), "warten auf dich"], ["CRM-Aufgaben", String(crm), "fällige Collab-To-dos"]],
+      zeilen: [["Offene Punkte", String(offen)], ["Reels zur Freigabe", wartet == null ? "–" : String(wartet)], ["CRM-Aufgaben", String(crm)]] };
+  }
+  if (b.id === "investment") {
+    const l = await k.loop() || {}, g = (l.kennzahlen && l.kennzahlen.gesamt) || {};
+    return { kpis: [punkte, ["Trefferquote", g.n ? pct(g.richtungsquote) : "–", g.n ? `Richtung, n=${g.n}` : "noch keine Auswertung"]],
+      zeilen: [["Offene Entscheidungen", String(offen)], ["Trefferquote", g.n ? pct(g.richtungsquote) : "–"]] };
+  }
+  const be = await k.betrieb();
+  const antr = ((hb.punkte || []).find(p => p.id === "freigaben") || {}).anzahl || 0;     // dieselbe Quelle wie die Glocke
+  const bot = be && be.bot_alter_min != null ? (be.bot_alter_min <= 45 ? "läuft" : `seit ${Math.round(be.bot_alter_min)} min stumm`) : "–";
+  return { kpis: [punkte, ["Freigaben offen", String(antr), "Anträge von LUNA"], ["Telegram-Bot", bot, be && be.bot_alter_min != null ? `Herzschlag vor ${Math.round(be.bot_alter_min)} min` : "kein Herzschlag gemeldet"]],
+    zeilen: [["Freigaben offen", String(antr)], ["Telegram-Bot", bot]] };
+}
+async function bereichKopf(b) {
+  const k = bereichKontext(), d = await bereichDaten(b, k), hb = await k.hb() || { punkte: [] };
+  const naechstes = (hb.punkte || []).filter(p => p.bereich_id === b.id).slice(0, 6);
+  return `<div class="v2-grid">${d.kpis.map(([t, z, sub]) => tile(t, `<div class="v2-kpi">${esc(z)}</div><div class="v2-sub">${esc(sub)}</div>`, { 1: "w12", 2: "w6", 3: "w4" }[d.kpis.length] || "")).join("")}
+    ${tile("Als Nächstes in diesem Bereich", naechstes.length ? naechstes.map(t => hbZeile(t, false)).join("") : `<div class="v2-check done" style="border:none"><span class="mark">✓</span>Hier wartet nichts auf dich.</div>`, "w12")}</div>`;
+}
+async function startBereiche(k) {
+  const karten = await Promise.all(BEREICHE.filter(b => teilErlaubt(b).length).map(async b => {
+    const d = await bereichDaten(b, k);
+    return `<button class="v2-bereich-k" data-go="${bereichZiel(b)}"><span class="kopf"><span class="sym">${b.icon}</span>${esc(b.label)}</span>
+      <span class="v2-sub">${esc(teilErlaubt(b).map(seitenName).join(", "))}</span>
+      <span>${d.zeilen.map(([n, v]) => `<span class="v2-kv"><span>${esc(n)}</span><b>${esc(v)}</b></span>`).join("")}</span></button>`;
+  }));
+  return `<div class="v2-bereiche-start">${karten.join("")}</div>`;
+}
+// Bereichs-Startseite (Etappe 1: Spruenge; Etappe 4 ergaenzt Kennzahlen)
+async function renderBereich() {
+  const b = bereichVon(AKTIV); if (!b) return renderDash();
+  const spruenge = `<div class="v2-sprung">${teilErlaubt(b).map(t => { const x = SECTIONS.find(s => s.id === t);
+    return `<button class="v2-sprung-k" data-go="${t}"><span class="i">${x.icon}</span><b>${esc(x.label)}</b><small>${esc(TEIL_INFO[t] || "")}</small></button>`; }).join("")}</div>`;
+  const oben = typeof bereichKopf === "function" ? await bereichKopf(b) : "";
+  if (bereichVon(AKTIV) !== b) return;
+  $("#v2-app").innerHTML = secHead(b.icon + " " + b.label) + oben + `<h3 class="v2-h3">Direkt zu</h3>` + spruenge;
+}
+BEREICHE.forEach(b => { RENDER["b-" + b.id] = renderBereich; });
 
 /* =========================== Bausteine =========================== */
 function secHead(title, actions = "") { return `<div class="v2-sec-head"><h1>${esc(title)}</h1><div class="actions">${actions}</div></div>`; }
@@ -243,8 +367,9 @@ function dash2Tray(W) {
 }
 async function renderDash() {
   let TODOS;
-  [STATE, OVERVIEW, LOOP, TODOS] = await Promise.all([jget("/api/state"), jget("/api/overview"), jget("/api/investment/loop"), jget("/api/todos")]);
-  TODOS = TODOS || { todos: [], anzahl: 0, dringend: 0 };
+  [STATE, OVERVIEW, LOOP, TODOS] = await Promise.all([jget("/api/state"), jget("/api/overview"), jget("/api/investment/loop"), jget("/api/handlungsbedarf")]);
+  TODOS = TODOS || { punkte: [], zaehler: { gesamt: 0, dringend: 0, woche: 0, spaeter: 0 }, bereiche: {} };
+  GLOCKE_N = TODOS.zaehler.dringend || 0; glockeZeigen();
   STATE = STATE || {}; OVERVIEW = OVERVIEW || {}; LOOP = LOOP || {}; _VERLAUF = LOOP.verlauf || [];
   const g = (LOOP.kennzahlen && LOOP.kennzahlen.gesamt) || {};
   const antraege = STATE.antraege || [], provs = OVERVIEW.providers || [];
@@ -272,7 +397,7 @@ async function renderDash() {
   const miniList = (arr, keys, sub) => arr.slice(0, 2).map(x => `<div class="v2-mini"><b>${esc(String(firstOf(x, keys, "—")).slice(0, 54))}</b>${sub ? `<small>${esc(String(firstOf(x, sub, "")).slice(0, 40))}</small>` : ""}</div>`).join("") || `<div class="v2-sub">nichts offen</div>`;
 
   const W = {
-    todos: { span: "w12", link: null, aria: `Zu erledigen: ${TODOS.anzahl}`, html: todosInner(TODOS) },
+    todos: { span: "w12", link: null, aria: `Handlungsbedarf: ${TODOS.zaehler.gesamt}`, html: handlungKompakt(TODOS) },
     freigaben: { span: "w4 tall", link: null, aria: `Offene Freigaben: ${antraege.length}`, html: freigInner },
     loop: { span: "w8 tall", link: "go:investment", aria: `Investment Lern-Loop, Richtungsquote ${g.n ? pct(g.richtungsquote) : "keine Daten"}`, html: `<div class="v2-kpi">${g.n ? pct(g.richtungsquote) : "–"} <span class="delta ${(g.anteil_besser_baseline || 0) >= .5 ? "up" : "down"}">${g.n ? pct(g.anteil_besser_baseline) + " schlägt Baseline" : ""}</span></div><div class="v2-sub">Richtungsquote · MAE ${num(g.mae_pct)} vs Baseline ${num(g.baseline_mae_pct)} · n=${g.n || 0}</div>${chartMount()}` },
     budget: { span: "", link: null, aria: `Monatsbudget ${budget}`, html: kpiInner(String(budget), null, "aus finance/budget.md") },
@@ -284,32 +409,61 @@ async function renderDash() {
     meldungen: { span: "w4", link: "tab:system:meldungen", aria: `Meldungen: ${meld.length}`, html: `<div class="v2-kpi">${meld.length} <span class="v2-sub" style="font-size:12px">ungelesen</span></div><div class="v2-hero-list">${miniList(meld, ["text"], ["abteilung"])}</div>` },
     research: { span: "w4", link: "tab:system:research", aria: `Research-Tickets: ${research.length}`, html: `<div class="v2-kpi">${research.length} <span class="v2-sub" style="font-size:12px">offen</span></div><div class="v2-hero-list">${miniList(research, ["frage", "titel"], ["abteilung", "status"])}</div>` },
   };
+  const hbKachel = tile("⚡ Handlungsbedarf", handlungKompakt(TODOS), "w12");
+  delete W.todos;                                            // Handlungsbedarf steht fest oben (Etappe 4)
   const order = DASH2.order.filter(id => W[id] && !DASH2.hidden.includes(id));
+  const bereiche = await startBereiche(bereichKontext({ hbDaten: TODOS, loopDaten: LOOP }));
+  if (AKTIV !== "dash") return;
+  const stunde = new Date().getHours(), gruss = stunde < 11 ? "Guten Morgen" : stunde < 18 ? "Hallo" : "Guten Abend";
   const editBtn = `<button class="v2-btn ${EDIT2 ? "pri" : ""}" data-editdash>${EDIT2 ? "✓ Fertig" : "✎ Anpassen"}</button>`;
   $("#v2-app").innerHTML = `
-    <div class="v2-welcome"><div class="v2-welcome-row"><div><h1>Willkommen zurück, ${esc(ME.display_name || "CEO")}</h1>
-      <p>Dein KI-Kontrollraum — Agenten, Kosten und Compliance im Blick.</p></div>${editBtn}</div></div>
+    <div class="v2-welcome"><div class="v2-welcome-row"><div><h1>${gruss}, ${esc(ME.display_name || "CEO")}</h1>
+      <p>Was ansteht und wo du hinwillst.</p></div></div></div>
+    <div class="v2-grid">${hbKachel}</div>
+    ${bereiche}
+    <div class="v2-sec-head v2-dash-kopf"><h2>Dein Dashboard</h2><div class="actions">${editBtn}</div></div>
     <div class="v2-grid ${EDIT2 ? "editing" : ""}">${order.map(id => dashTile(id, W[id])).join("")}</div>
     ${EDIT2 ? dash2Tray(W) : ""}`;
   mountTrends();
 }
 /* To-dos des Tagesbetriebs (Belege, Rechnungen, Angebote, Aufträge, CRM, Reels) -- zusammengefasst je Bereich.
    Erledigt wird durch die eigentliche Arbeit („Öffnen“) oder direkt („✓ …“); LUNA löscht dazugehörige Kalendertermine. */
-function todosInner(d) {
-  const liste = d.todos || [];
-  if (!liste.length) return `<div class="v2-check done" style="border:none"><span class="mark">✓</span>Alles erledigt — nichts offen im Tagesbetrieb.</div>`;
-  const gruppen = {}; liste.forEach(t => (gruppen[t.bereich] = gruppen[t.bereich] || []).push(t));
-  const zeile = (t) => `<div class="v2-list-row"><span>${t.icon}</span><div class="grow"><b class="v2-todo-titel" role="button" tabindex="0" title="Öffnen" data-act="todo-oeffnen" data-val="${esc(t.act)}" data-id="${esc(t.act_id || "")}">${esc(t.titel)}</b><small>${esc(t.detail || "")}</small></div>
-    ${t.faellig ? `<span class="v2-badge ${t.dringend ? "err" : "neutral"}">${t.dringend ? (t.faellig < heuteIso() ? "überfällig" : "heute") : esc(datumDe(t.faellig))}</span>` : ""}
-    ${t.erledigen ? `<button class="v2-btn ok sm" data-act="todo-erledigen" data-val="${esc(t.erledigen.pfad)}" data-schluessel="${esc(t.erledigen.schluessel || "")}">${esc(t.erledigen.label)}</button>` : ""}
+// Handlungsbedarf (LUNA_OS_UI_ROADMAP Etappe 3): alle Punkte aus allen Bereichen, nach Stufe
+const STUFEN = [["dringend", "Dringend", "überfällig, heute oder Störung"], ["woche", "Diese Woche", "fällig in 7 Tagen oder wartet auf dich"], ["spaeter", "Wenn Zeit ist", "ohne Termin"]];
+let HB_FILTER = "";
+function hbZeile(t, mitBereich) {
+  const b = BEREICHE.find(x => x.id === t.bereich_id);
+  const termin = t.faellig ? `<span class="v2-badge ${t.stufe === "dringend" ? "err" : "neutral"}">${t.stufe === "dringend" ? (t.faellig < heuteIso() ? "überfällig" : "heute") : esc(datumDe(t.faellig))}</span>` : "";
+  return `<div class="v2-list-row v2-hb-zeile"><span>${t.icon}</span><div class="grow"><b class="v2-todo-titel" role="button" tabindex="0" title="Öffnen" data-act="todo-oeffnen" data-val="${esc(t.act)}" data-id="${esc(t.act_id || "")}">${esc(t.titel)}</b><small>${esc(t.detail || "")}${mitBereich && b ? ` · ${b.icon} ${esc(b.label)}` : ""}</small></div>
+    ${termin}${t.erledigen ? `<button class="v2-btn ok sm" data-act="todo-erledigen" data-val="${esc(t.erledigen.pfad)}" data-schluessel="${esc(t.erledigen.schluessel || "")}">${esc(t.erledigen.label)}</button>` : ""}
     <button class="v2-btn sm" data-act="todo-oeffnen" data-val="${esc(t.act)}" data-id="${esc(t.act_id || "")}">Öffnen ›</button></div>`;
-  const bloecke = Object.entries(gruppen).map(([b, ts]) => {
-    const dr = ts.filter(t => t.dringend).length;
-    return `<details class="v2-todo-gruppe" ${dr || Object.keys(gruppen).length === 1 ? "open" : ""}><summary><b>${esc(ts[0].icon)} ${esc(b)}</b> <span class="v2-badge ${dr ? "err" : "neutral"}">${ts.length}${dr ? ` · ${dr} fällig` : ""}</span></summary>${ts.map(zeile).join("")}</details>`;
-  }).join("");
-  return `<div class="v2-kpi">${d.anzahl} <span class="delta ${d.dringend ? "down" : "up"}">${d.dringend ? d.dringend + " heute fällig/überfällig" : "nichts dringend"}</span></div>
-    <div class="v2-sub">Tagesbetrieb — Freigaben für die Weiterentwicklung stehen separat.</div><div class="v2-todo-liste">${bloecke}</div>`;
 }
+function hbChips(z) {
+  return `<span class="v2-hb-chips">${STUFEN.map(([k, n]) => `<span class="v2-badge ${k === "dringend" && z[k] ? "err" : k === "woche" && z[k] ? "warn" : "neutral"}">${z[k] || 0} ${n}</span>`).join("")}</span>`;
+}
+function handlungKompakt(d) {
+  const z = d.zaehler || {}, dr = (d.punkte || []).filter(p => p.stufe === "dringend");
+  if (!z.gesamt) return `<div class="v2-check done" style="border:none"><span class="mark">✓</span>Alles erledigt — nichts wartet auf dich.</div>`;
+  const naechste = dr.length ? dr : (d.punkte || []).slice(0, 3);
+  return `<div class="v2-hb-kopf"><div class="v2-kpi">${z.gesamt}</div>${hbChips(z)}</div>
+    <div class="v2-sub">${dr.length ? "Dringend:" : "Nichts dringend. Als Nächstes:"}</div>
+    <div class="v2-todo-liste">${naechste.slice(0, 6).map(t => hbZeile(t, true)).join("")}</div>
+    <button class="v2-btn" data-go="handlung">Alle ${z.gesamt} Punkte anzeigen ›</button>`;
+}
+async function renderHandlung() {
+  const d = await jget("/api/handlungsbedarf");
+  if (AKTIV !== "handlung") return;
+  if (!d) { $("#v2-app").innerHTML = secHead("⚡ Handlungsbedarf") + emptyRow("Nicht erreichbar."); return; }
+  const liste = (d.punkte || []).filter(p => !HB_FILTER || p.bereich_id === HB_FILTER);
+  const filter = `<div class="v2-tabs" role="group" aria-label="Nach Bereich filtern"><button class="${!HB_FILTER ? "active" : ""}" data-act="hb-filter" data-val="">Alle · ${d.zaehler.gesamt}</button>`
+    + BEREICHE.filter(b => d.bereiche[b.id]).map(b => `<button class="${HB_FILTER === b.id ? "active" : ""}" data-act="hb-filter" data-val="${b.id}">${b.icon} ${esc(b.label)} · ${d.bereiche[b.id]}</button>`).join("") + `</div>`;
+  const teile = STUFEN.map(([k, n, info]) => { const l = liste.filter(p => p.stufe === k); if (!l.length) return "";
+    return tile(`${n} · ${l.length}`, `<div class="v2-sub" style="margin-bottom:6px">${esc(info)}</div>${l.map(t => hbZeile(t, !HB_FILTER)).join("")}`, "w12"); }).join("");
+  $("#v2-app").innerHTML = secHead("⚡ Handlungsbedarf") + `<div class="v2-sub" style="margin:-8px 0 14px">Alles, was du tun musst, aus allen Bereichen von LUNA. Erledigtes verschwindet von selbst, sobald LUNA es in der Fachseite sieht.</div>`
+    + filter + (teile ? `<div class="v2-grid">${teile}</div>` : emptyRow(HB_FILTER ? "In diesem Bereich ist nichts offen." : "Alles erledigt — nichts wartet auf dich."));
+  GLOCKE_N = d.zaehler.dringend || 0; glockeZeigen();
+}
+RENDER.handlung = renderHandlung;
 function sparkFromVerlauf(verlauf) {
   const v = (verlauf || []).slice(-28); if (!v.length) return "";
   const mx = Math.max(...v.map(x => Number(x.mae_pct) || 0), 1);
@@ -2343,7 +2497,50 @@ async function renderEinstellungen() {
     ${tile("🏦 Echtes Depot (Beratung)", a, "w4")}
     ${tile("💼 Paper-Depot (Spielgeld)", b, "w4")}
     ${tile("🔔 Benachrichtigungen & Briefings", c, "w4")}
+    ${tile("🔐 Anmeldung & Geräte", `<div id="set-anmeldung"><div class="v2-empty">Lade …</div></div>`, "w12")}
   </div><div class="v2-sub" style="margin-top:8px">Gilt für Anzeige, Telegram-Hinweise und Briefings. Moduswechsel (advisory→paper→live) und Budget bleiben separat abgesichert.</div>`;
+  anmeldungBox();
+}
+// Etappe 2 + 6: Passkeys (Face ID) und angemeldete Geraete; Optionen fuer Face ID vorab holen (iOS: Abfrage direkt im Tipp)
+let PK_VOR = null;
+const pkVorbereiten = () => { PK_VOR = null; if (window.LunaPasskey && LunaPasskey.unterstuetzt()) LunaPasskey.vorbereitenEinrichten().then(v => { PK_VOR = v; }).catch(() => { }); };
+async function anmeldungBox(meldung) {
+  const box = $("#set-anmeldung"); if (!box) return;
+  const d = await jget("/api/sitzungen"); if (!d) { box.innerHTML = emptyRow("Nicht verfügbar."); return; }
+  const kann = window.LunaPasskey && LunaPasskey.unterstuetzt();
+  const dt = (t) => t ? new Date(t).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "–";
+  box.innerHTML = (meldung ? `<div class="v2-msg ${meldung.ok ? "ok" : "err"}" style="margin-bottom:10px">${esc(meldung.text)}</div>` : "")
+    + `<div class="v2-kv"><span><b>Face ID / Passkey</b><br><small class="v2-sub">Anmelden ohne Passwort. Der geheime Schlüssel bleibt auf dem Gerät.</small></span>
+      ${kann ? `<button class="v2-btn pri" data-act="pk-einrichten">Auf diesem Gerät einrichten</button>` : `<small class="v2-sub">Einrichten geht in Safari/der WebApp über https://os.hanserautisch.synology.me</small>`}</div>`
+    + (d.passkeys.length ? d.passkeys.map(p => `<div class="v2-kv"><span>🔑 ${esc(p.geraet || "Passkey")} <small class="v2-sub">eingerichtet ${esc(dt(p.erstellt))} · zuletzt ${esc(dt(p.zuletzt))}</small></span><button class="v2-btn" data-act="pk-loeschen" data-id="${esc(p.id)}">Entfernen</button></div>`).join("") : `<div class="v2-kv"><span class="v2-sub">Noch kein Passkey eingerichtet.</span></div>`)
+    + `<div class="v2-kv" style="margin-top:10px"><span><b>Angemeldete Geräte</b><br><small class="v2-sub">Jede Anmeldung hält 30 Tage und verlängert sich bei Nutzung.</small></span>
+      <span style="display:flex;gap:8px;flex-wrap:wrap">${d.sitzungen.length > 1 ? `<button class="v2-btn" data-act="sz-alle">Alle anderen abmelden</button>` : ""}${d.per_cookie ? `<button class="v2-btn" data-act="logout">Abmelden</button>` : ""}</span></div>`
+    + (d.sitzungen.length ? d.sitzungen.map(z => `<div class="v2-kv"><span>${z.aktuell ? "📍" : "💻"} ${esc(z.geraet || "Gerät")}${z.aktuell ? " <b>(dieses Gerät)</b>" : ""} <small class="v2-sub">seit ${esc(dt(z.erstellt))} · zuletzt ${esc(dt(z.zuletzt))}</small></span>${z.aktuell ? "" : `<button class="v2-btn" data-act="sz-widerrufen" data-id="${esc(z.id)}">Abmelden</button>`}</div>`).join("")
+      : `<div class="v2-kv"><span class="v2-sub">Keine Anmeldung per Login-Seite (dieser Browser nutzt noch das alte Login-Fenster).</span></div>`);
+  pkVorbereiten();
+}
+async function passkeyEinrichten(nachher) {
+  try {
+    const vor = PK_VOR || await LunaPasskey.vorbereitenEinrichten(); PK_VOR = null;
+    await LunaPasskey.einrichten(vor);
+    try { localStorage.setItem("luna-pk-gefragt", "1"); } catch { }
+    return nachher({ ok: true, text: "Face ID ist eingerichtet. Beim nächsten Login einfach „Mit Face ID anmelden“ tippen." });
+  } catch (e) {
+    return nachher({ ok: false, text: e && e.name === "NotAllowedError" ? "Abgebrochen." : e && e.name === "InvalidStateError" ? "Auf diesem Gerät ist schon ein Passkey eingerichtet." : ("Hat nicht geklappt: " + (e.message || e)) });
+  }
+}
+// Nach einem Passwort-Login einmal je Geraet anbieten: „Beim naechsten Mal mit Face ID?“
+function passkeyAngebot() {
+  const hat = document.cookie.split(";").some(c => c.trim().startsWith("luna_pk_anbieten="));
+  if (!hat) return;
+  document.cookie = "luna_pk_anbieten=; Max-Age=0; path=/";
+  let gefragt = false; try { gefragt = localStorage.getItem("luna-pk-gefragt") === "1"; } catch { }
+  if (gefragt || !(window.LunaPasskey && LunaPasskey.unterstuetzt())) return;
+  pkVorbereiten();
+  const el = document.createElement("div"); el.className = "v2-pk-angebot"; el.id = "v2-pk-angebot";
+  el.innerHTML = `<b>Beim nächsten Mal mit Face ID anmelden?</b><span>Dann brauchst du auf diesem Gerät kein Passwort mehr.</span>
+    <div><button class="v2-btn pri" data-act="pk-angebot-ja">Einrichten</button><button class="v2-btn" data-act="pk-angebot-nein">Nicht jetzt</button></div>`;
+  document.body.appendChild(el);
 }
 
 /* =========================== Aktionen =========================== */
@@ -2352,6 +2549,13 @@ async function handleAct(act, el) {
   const id = el.dataset.id, val = el.dataset.val, asset = el.dataset.asset, typ = el.dataset.typ;
   const flash = (m) => { const o = el.textContent; el.textContent = m; return o; };
   switch (act) {
+    case "pk-einrichten": return passkeyEinrichten(m => anmeldungBox(m));
+    case "pk-angebot-ja": return passkeyEinrichten(m => { const b = $("#v2-pk-angebot"); if (b) b.innerHTML = `<b>${esc(m.text)}</b><div><button class="v2-btn" data-act="pk-angebot-nein">Schließen</button></div>`; });
+    case "pk-angebot-nein": { try { localStorage.setItem("luna-pk-gefragt", "1"); } catch { } const b = $("#v2-pk-angebot"); if (b) b.remove(); return; }
+    case "pk-loeschen": if (!confirm("Diesen Passkey entfernen? Auf dem Gerät klappt Face ID dann nicht mehr (Passwort geht weiter).")) return; await jpost("/api/passkey/loeschen", { id }); return anmeldungBox({ ok: true, text: "Passkey entfernt. Tipp: auch in den iPhone-Einstellungen unter Passwörter löschen." });
+    case "sz-widerrufen": { const r = await jpost("/api/sitzungen/widerrufen", { id }); return anmeldungBox({ ok: true, text: `${(r && r.abgemeldet) || 0} Gerät abgemeldet.` }); }
+    case "sz-alle": { if (!confirm("Alle anderen Geräte abmelden?")) return; const r = await jpost("/api/sitzungen/widerrufen", { alle: true }); return anmeldungBox({ ok: true, text: `${(r && r.abgemeldet) || 0} Gerät(e) abgemeldet.` }); }
+    case "logout": await jpost("/api/logout"); location.href = "/login?abgemeldet=1"; return;
     case "antrag-freigeben": await jpost(`/api/antraege/${id}/freigeben`); return reFreig();
     case "antrag-ablehnen": { const grund = prompt("Grund der Ablehnung?", ""); if (grund === null) return; await jpost(`/api/antraege/${id}/ablehnen`, { grund }); return reFreig(); }
     case "antrag-revidieren": { const feedback = prompt("Was soll anders/besser sein? LUNA überarbeitet den Antrag (du musst neu freigeben).", ""); if (feedback === null) return; flash("⏳ überarbeitet…"); await jpost(`/api/antraege/${id}/revidieren`, { feedback }); return reFreig(); }
@@ -2407,6 +2611,7 @@ async function handleAct(act, el) {
       const ok = !!(r && r.ok), m = ok ? "Zahlung storniert — sie bleibt sichtbar, zählt aber nicht mehr." : ((r && r.hinweis) || "Fehler.");
       return act === "re-zahlung-storno" ? reDetail(id, m, !ok) : blDetail(id, m, !ok);
     }
+    case "hb-filter": HB_FILTER = val || ""; return renderHandlung();
     case "todo-oeffnen": {
       if (val.startsWith("go:")) { const [, s, t] = val.split(":"); return go(s, t); }
       return handleAct(val, el);
@@ -2414,7 +2619,8 @@ async function handleAct(act, el) {
     case "todo-erledigen": {
       el.disabled = true; const r = await jpost(val, el.dataset.schluessel ? { schluessel: el.dataset.schluessel } : {});
       if (!r || r.ok === false) { el.disabled = false; return alert((r && r.hinweis) || "Fehler."); }
-      return renderDash();
+      glockeAktualisieren();
+      return AKTIV === "handlung" ? renderHandlung() : renderDash();
     }
     case "fin-drill": return finDrill(val);
     case "fin-vv": {
@@ -2744,7 +2950,7 @@ function toggleVoice() {
 }
 
 /* =========================== SSE Live =========================== */
-function connectSSE() { try { const es = new EventSource("/api/events"); es.onmessage = () => { if (AKTIV === "dash" && !EDIT2) renderDash(); }; } catch { } }
+function connectSSE() { try { const es = new EventSource("/api/events"); es.onmessage = () => { if (AKTIV === "dash" && !EDIT2) renderDash(); clearTimeout(GLOCKE_T); GLOCKE_T = setTimeout(glockeAktualisieren, 10000); }; } catch { } }
 
 /* =========================== Events + Boot =========================== */
 document.addEventListener("click", (e) => {
@@ -2755,16 +2961,18 @@ document.addEventListener("click", (e) => {
   const ac0 = e.target.closest("[data-act]"); if (ac0) { handleAct(ac0.dataset.act, ac0); return; }  // Aktionen VOR Navigation (Inline-Buttons in klickbaren Kacheln)
   const g = e.target.closest("[data-go]"); if (g) { go(g.dataset.go); return; }
   const tb = e.target.closest("[data-tab]"); if (tb) { const [sec, id] = tb.dataset.tab.split(":"); go(sec, id); return; }
-  const tc = e.target.closest("[data-toggle-chat]"); if (tc) { toggleChat(); return; }
+  const tc = e.target.closest("[data-toggle-chat]"); if (tc) { ladeZu(); toggleChat(); return; }
   const orb = e.target.closest("#v2-orb"); if (orb) { toggleVoice(); return; }
   const holo = e.target.closest("#luna-holo"); if (holo) { toggleVoice(); return; }
   const ht = e.target.closest("#v2-holo-toggle"); if (ht) { setAvatarPref(PREFS.avatar === "hologramm" ? "orb" : "hologramm"); return; }
   const th = e.target.closest("#v2-theme"); if (th) { toggleTheme(); return; }
+  if (e.target.closest("#v2-burger")) { ladeAuf(); return; }
+  if (e.target.closest("#v2-lade-zu") || e.target.closest("#v2-schleier")) { ladeZu(); return; }
   const mc = e.target.closest("[data-modal-close]"); if (mc) { closeModal(); return; }
   const ac = e.target.closest("[data-act]"); if (ac) { handleAct(ac.dataset.act, ac); return; }
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { closeModal(); return; }
+  if (e.key === "Escape") { ladeZu(); closeModal(); return; }
   if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches('.v2-tile.klick[role="button"]')) {
     e.preventDefault(); const el = e.target;
     if (el.dataset.go) go(el.dataset.go); else if (el.dataset.tab) { const [s, i] = el.dataset.tab.split(":"); go(s, i); }
@@ -2784,5 +2992,6 @@ document.addEventListener("drop", (e) => { if (!EDIT2 || !DRAG2) return; const t
   let saved = PREFS.v2_dashboard; if (!saved) { try { saved = JSON.parse(localStorage.getItem("luna-v2-dash") || "null"); } catch { } }
   DASH2 = normDash2(saved);
   if (!PREFS.avatar) { try { const a = localStorage.getItem("luna-v2-avatar"); if (a) PREFS.avatar = a; } catch { } }
-  buildShell(); go("dash"); connectSSE(); applyAvatar();
+  buildShell(); go("dash"); connectSSE(); applyAvatar(); passkeyAngebot();
+  glockeAktualisieren(); setInterval(glockeAktualisieren, 5 * 60 * 1000);
 })();
