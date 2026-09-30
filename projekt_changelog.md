@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 14:28] — Claude Code
+- **Was:** Zweck/Begruendung nach Deploy und Container-Neustart geprueft: LUNA-OS liefert v66, Endpunkt
+  `/api/finanzen/belege/<nr>/zweck` antwortet (Probe ohne Aenderung, nichts geschrieben), 130 Belege lesbar, Bot-Herzschlag
+  frisch, keine unzugestellten Meldungen.
+- **Warum:** CEO „Neustart erledigt, du kannst pruefen“.
+- **Betroffen:** keine Dateien ausser diesem Changelog
+
 ## [2026-09-30 14:05] — Claude Code
 - **Was:** Zweck/Begruendung am Beleg: Text des CEO ueber einer weitergeleiteten Rechnung (ohne Gruss, Name, „Von meinem
   iPhone gesendet“) wird als `zweck` gespeichert -- bei Mail-Anhaengen, Rechnungen im Mailtext und `.eml`-Import; kommt
