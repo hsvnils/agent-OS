@@ -1009,9 +1009,10 @@ def _start_investment_loop(ctx, secrets) -> None:
         from ...investment.forecaster import Forecaster
         from ...investment.insider import InsiderModel
         from ...investment.loop_store import LoopStore
+        from ...governance.leak_guard import is_redactable_secret
         _auth = SupabaseAuth.from_env(secrets)
         _sb = SupabaseClient(_auth) if _auth.verfuegbar() else None
-        _leak = [v for v in secrets.values() if isinstance(v, str) and v]
+        _leak = [v for v in secrets.values() if isinstance(v, str) and is_redactable_secret(v)]
         _loop_store = LoopStore(ROOT / "investment" / "features.jsonl", supabase=_sb, secrets=_leak)
         collector = FeatureCollector(eng.market, _loop_store)
         forecaster = Forecaster(_loop_store)
@@ -1029,6 +1030,7 @@ def _start_investment_loop(ctx, secrets) -> None:
         time.sleep(45)
         _autotrade_datum = ""
         _autotrade_krypto_datum = ""
+        _feature_datum = ""                 # 1x/Tag auch dann, wenn der Store kein heutiges Datum liefert (BF-42)
         _last_monitor = 0.0
         _last_depot = 0.0
         while True:
@@ -1048,29 +1050,27 @@ def _start_investment_loop(ctx, secrets) -> None:
                     _last_depot = time.time()
                     _real_depot_monitor_tick(ctx, eng)
                 # Taeglicher Merkmals-/Preis-Snapshot (~07:00) + Abgleich faelliger Prognosen, 1x/Tag
-                if collector is not None and jetzt.hour == 7 and collector.store.last_datum("inv_features") != datum:
+                if (collector is not None and jetzt.hour == 7 and _feature_datum != datum
+                        and collector.store.last_datum("inv_features") != datum):
+                    _feature_datum = datum
+                    # Reine Statusmeldungen (erfasst/ausgewertet/erstellt) nur ins Log, nicht per Telegram (CEO 2026-09-30)
                     r = collector.collect(eng.store.watchlist(), datum=datum)
-                    ctx.notifications.enqueue(
-                        f"Merkmals-Snapshot: {len(r['gesammelt'])} Werte erfasst ({datum}), "
-                        f"{len(r['uebersprungen'])} bereits vorhanden.",
-                        abteilung="CIO", kategorie="investment", quelle="feature-loop", dedup_stunden=0)
+                    print(f"[investment] Merkmals-Snapshot: {len(r['gesammelt'])} Werte erfasst ({datum}), "
+                          f"{len(r['uebersprungen'])} bereits vorhanden.", flush=True)
                     a = forecaster.auswerten(heute=datum)   # 7-Tage-Prognosen gegen die Realitaet abgleichen
                     if insider_model is not None:
                         try:
                             ia = insider_model.auswerten(heute=datum)   # v4: faellige 30-Tage-Insider-Prognosen
                             if ia.get("neu_bewertet"):
-                                ctx.notifications.enqueue(
-                                    f"Insider-Prognose-Abgleich (v4): {ia['neu_bewertet']} ausgewertet (30 Tage).",
-                                    abteilung="CIO", kategorie="investment", quelle="loop-insider", dedup_stunden=0)
+                                print(f"[investment] Insider-Prognose-Abgleich (v4): {ia['neu_bewertet']} ausgewertet.",
+                                      flush=True)
                         except Exception as exc:
                             print(f"[investment] Insider-Auswerten-Fehler: {exc}", flush=True)
                     if a["neu_bewertet"]:
                         k = a["kennzahlen"].get("gesamt", {})
-                        ctx.notifications.enqueue(
-                            f"Prognose-Abgleich: {a['neu_bewertet']} ausgewertet. "
-                            f"Fehler (MAE) {k.get('mae_pct')}% vs. Baseline {k.get('baseline_mae_pct')}%, "
-                            f"Richtungsquote {round((k.get('richtungsquote') or 0) * 100)}%.",
-                            abteilung="CIO", kategorie="investment", quelle="loop-abgleich", dedup_stunden=0)
+                        print(f"[investment] Prognose-Abgleich: {a['neu_bewertet']} ausgewertet. "
+                              f"MAE {k.get('mae_pct')}% vs. Baseline {k.get('baseline_mae_pct')}%, "
+                              f"Richtungsquote {round((k.get('richtungsquote') or 0) * 100)}%.", flush=True)
                 # Woechentliche 7-Tage-Prognose (Mo ~09:00), 1x/Tag -- Watchlist + Discovery-Universum
                 if forecaster is not None and jetzt.weekday() == 0 and jetzt.hour == 9:
                     _fc = forecaster.store.list("inv_forecasts")
@@ -1078,10 +1078,8 @@ def _start_investment_loop(ctx, secrets) -> None:
                         from ...investment.universe import panel
                         wl = eng.store.watchlist()
                         p = forecaster.prognostizieren(panel(wl), datum=datum)
-                        ctx.notifications.enqueue(
-                            f"7-Tage-Prognose erstellt: {len(p['erstellt'])} Werte "
-                            f"(Modell {forecaster.MODELL_VERSION}, faellig {p['faellig_am']}).",
-                            abteilung="CIO", kategorie="investment", quelle="loop-prognose", dedup_stunden=0)
+                        print(f"[investment] 7-Tage-Prognose erstellt: {len(p['erstellt'])} Werte "
+                              f"(Modell {forecaster.MODELL_VERSION}, faellig {p['faellig_am']}).", flush=True)
                         # Chancen AUSSERHALB der Watchlist -> je durch den Risk-Agent (engine.vorschlag) -> Alert
                         for ch in forecaster.chancen([w.get("symbol") for w in wl], max_n=3):
                             try:
@@ -1097,20 +1095,16 @@ def _start_investment_loop(ctx, secrets) -> None:
                             try:
                                 il = insider_model.live_prognosen(datum=datum)
                                 if il.get("erstellt"):
-                                    ctx.notifications.enqueue(
-                                        f"Insider-Prognosen (v4) erstellt: {', '.join(il['erstellt'])} "
-                                        f"(30 Tage, faellig {il['faellig_am']}).",
-                                        abteilung="CIO", kategorie="investment", quelle="loop-insider", dedup_stunden=0)
+                                    print(f"[investment] Insider-Prognosen (v4) erstellt: {', '.join(il['erstellt'])} "
+                                          f"(faellig {il['faellig_am']}).", flush=True)
                             except Exception as exc:
                                 print(f"[investment] Insider-Live-Prognose-Fehler: {exc}", flush=True)
                 # Taeglicher Markt-Screen (werktags ~16:00), 1x/Tag
                 if auto_screen and jetzt.weekday() < 5 and jetzt.hour == 16 and _letztes_datum("screening") != datum:
                     r = eng.screen_und_vorschlagen(max_vorschlaege=3)
                     n = len(r.get("erstellt", []))
-                    ctx.notifications.enqueue(
-                        f"Markt-Screen erledigt: {n} neue Vorschläge (Risk-geprüft), "
-                        f"{len(r.get('vom_risk_abgelehnt', []))} vom Risk-Agent abgelehnt. Modus: advisory.",
-                        abteilung="CIO", kategorie="investment")
+                    print(f"[investment] Markt-Screen: {n} neue Vorschlaege, "
+                          f"{len(r.get('vom_risk_abgelehnt', []))} vom Risk-Agent abgelehnt.", flush=True)
                     try:
                         eng.scorecard_aktualisieren()  # faellige Wochenprognosen auswerten (Track-Record)
                     except Exception as exc:

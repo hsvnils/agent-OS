@@ -28,8 +28,9 @@ def is_redactable_secret(val: str) -> bool:
 
 def redact(text: str, secrets: list[str]) -> str:
     out = text
-    # laengste zuerst, damit Teilstrings nicht stehen bleiben
-    for s in sorted((s for s in secrets if s), key=len, reverse=True):
+    # Nur echte Secrets -- auch wenn ein Aufrufer ungefiltert alle .env-Werte uebergibt (BF-42: Schalter `0`/`1`
+    # schwaerzten jede Ziffer in investment/features.jsonl). Laengste zuerst, damit Teilstrings nicht stehen bleiben.
+    for s in sorted((s for s in secrets if s and is_redactable_secret(s)), key=len, reverse=True):
         out = out.replace(s, REDACTED)
     return out
 
