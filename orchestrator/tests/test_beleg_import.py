@@ -89,10 +89,10 @@ class TestImport(unittest.TestCase):
         self.assertEqual((b["quelle"], b["mail_id"], b["vorschlag"]["betrag"]), ("upload", "eml:abc@paypal.de", "55,70"))
         self.assertEqual([x["pfad"][-4:] for x in b["belege"]], [".pdf", ".eml"])            # PDF-Ansicht + Original
         self.assertEqual(datei_importieren(st, roh, "Beleg 2.eml"), [{"nummer": r[0]["nummer"], "doppelt": True}])
-        st.verwerfen(r[0]["nummer"], "Test: privat")                                         # verworfen bleibt verworfen
-        self.assertEqual(datei_importieren(st, roh, "Beleg 2.eml"), [{"nummer": r[0]["nummer"], "doppelt": True}])
         anders = roh.replace(b"abc@paypal.de", b"xyz@paypal.de")                            # gleiche Rechnung, neue Mail
         self.assertTrue(datei_importieren(st, anders, "Beleg 3.eml")[0].get("doppelt"))
+        st.verwerfen(r[0]["nummer"], "Test: privat")                                         # verworfen bleibt verworfen
+        self.assertEqual(datei_importieren(st, roh, "Beleg 2.eml"), [{"nummer": r[0]["nummer"], "doppelt": True}])
 
     def test_2_eml_mit_pdf_anhang_und_mbox(self):
         st = _store()

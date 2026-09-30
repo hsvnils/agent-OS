@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 17:34] — Claude Code
+- **Was:** Gemeinsamer Abschluss Etappen 21 + 22: gepusht und auf die NAS uebertragen (Neustart durch den CEO offen).
+  Dabei 1 roter Test entdeckt -- Push/Deploy liefen trotzdem, weil der Befehl das Testergebnis nicht als Abbruch
+  auswertete (Fehler von Claude Code). Ursache gefunden (BF-44, Wackel-Test in `test_beleg_import.py`, nur Test-
+  Reihenfolge, kein Programmfehler) und behoben; 8 Suite-Laeufe mit vollstaendigem Fehlerprotokoll.
+- **Warum:** CEO-Arbeitsweise „Etappen hintereinander, ein Neustart am Ende“.
+- **Betroffen:** `orchestrator/tests/test_beleg_import.py`, `docs/bekannte-fehler.md`
+
 ## [2026-09-30 17:23] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 22 umgesetzt: Firmendaten aus dem Impressum recherchieren (Brave + Firmen-Website),
   Vorschlaege mit Quelle nur fuer leere Felder, Uebernehmen/Verwerfen per Klick, Wochenlauf im Bot (sonntags, max. 8,
