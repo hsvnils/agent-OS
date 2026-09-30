@@ -835,6 +835,22 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   Tests + Gegenproben.
 - Aufwand: mittel.
 
+### Etappe 26: Kalkulatorische Kosten in Finanzauswertung und Export (zuschaltbar)
+
+- Status: geplant (CEO-Wunsch 2026-09-30: „fiktive Kosten auch anzeigen, aber abwaehlbar ... bei Exporten auswaehlen, ob
+  sie mitgerechnet werden“), wartet auf CEO-Go
+- Ziel / Scope:
+  - **Finanz-Uebersicht (LUNA-OS):** Schalter „Kalkulatorische Kosten zeigen“ (Standard: an, Wahl merkt sich der Browser).
+    Eigener, klar markierter Block „Kalkulatorisch (nicht steuerlich)“: eigene Arbeitszeit (Stunden x Satz) und Fahrten
+    (km x 0,30 EUR) je Monat und Jahr, dazu „Ergebnis inkl. kalkulatorischer Kosten“ **neben** dem echten Gewinn. Die
+    echten Zahlen (Einnahmen, Ausgaben, Gewinn, EUeR) aendern sich dadurch nie.
+  - **Exporte:** Haken „Kalkulatorische Kosten beilegen“ (Standard: aus). Journal-CSV: zusaetzliche Zeilen mit Art
+    „kalkulatorisch“ (eigene Spalte, nicht in den Summen der echten Buchungen). Jahresabschluss-ZIP: zusaetzliche Datei
+    `kalkulatorisch.csv` + Abschnitt in der Uebersicht, gekennzeichnet „keine Betriebsausgaben“. **EUeR-PDF, EUeR-Zahlen
+    und GoBD-Index bleiben immer ohne kalkulatorische Kosten** -- fuer Steuerberater und Finanzamt nie vermischt.
+- Gate: Ansicht mit/ohne Schalter; Export mit/ohne Haken; EUeR-Summen in allen Faellen identisch (Test + Gegenprobe).
+- Aufwand: klein bis mittel.
+
 ## Reihenfolge
 
 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 (ohne Auto-Weiterleitung) -> 14 -> 13 (Auto-Weiterleitung) -> 15/16 (unabhaengig, nach CEO-Go). Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst

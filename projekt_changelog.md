@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 18:20] — Claude Code
+- **Was:** Etappe 25 nach Neustart live geprueft (v74, km kalkulatorisch, Stundensatz 29,20 EUR/h, keine offenen
+  Akten-Mails). Etappe 26 (kalkulatorische Kosten in Finanzauswertung/Export zuschaltbar, EUeR nie vermischt) geplant.
+- **Warum:** CEO „Neustart erledigt“ und Wunsch nach flexibler Anzeige/Export der fiktiven Kosten.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-30 18:18] — Claude Code
 - **Was:** Live: wartende Akten-Mail „Angebot AN-2026-0002 – Kampagne“ der Firma des Angebots zugeordnet (K-00002, eigenes
   Test-Angebot). Korrektur Kilometer (kalkulatorisch) deployt, Neustart durch den CEO offen.
