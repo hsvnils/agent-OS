@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 10:20] — Claude Code
+- **Was:** CEO-Entscheidungen zu Etappe 18 festgehalten: Vorkasse-Rechnung, Frist 7 Tage, Payment-Check auch fuer normale
+  Rechnungen (Termin bei Zahlung geloescht), Vorkasse pro Angebot (keine Standard-Vorkasse je Kunde).
+- **Warum:** CEO-Antworten 2026-09-30.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-30 10:15] — Claude Code
 - **Was:** Etappe 18 „Zahlungsbedingungen und Vorkasse mit Payment-Check im Kalender“ als Plan in
   `KUNDEN_FINANZEN_ROADMAP.md` aufgenommen (Status geplant, keine Umsetzung).
