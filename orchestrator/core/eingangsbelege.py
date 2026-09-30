@@ -553,6 +553,10 @@ class EingangStore:
                 x = out[d["nummer"]]
                 x["vorschlag"] = (x.get("vorschlag") or {}) | {k: v for k, v in d["vorschlag"].items() if v}
                 x["verlauf"].append(spur | {"quelle": d["vorschlag"].get("quelle", "")})
+            elif t == "eingang_zweck":                       # Begruendung nachgetragen/geaendert (CEO 2026-09-30)
+                x = out[d["nummer"]]
+                x["zweck"] = d.get("zweck", "")
+                x["verlauf"].append(spur | {"felder": ["zweck"]})
             elif t == "eingang_llm_auftrag":
                 out[d["nummer"]]["llm_auftrag"] = d["auftrag_id"]
             elif t == "eingang_erinnerung":                  # Kalender: Euro-Betrag nachtragen (Fremdwaehrung)
@@ -613,6 +617,20 @@ class EingangStore:
     def get(self, nummer: str) -> dict | None:
         return self._falte(self.bh.eintraege()).get((nummer or "").strip().upper())
 
+    def zweck_setzen(self, nummer: str, zweck: str, *, von: str = "") -> dict:
+        """Begruendung (betriebliche Veranlassung) nachtragen oder aendern -- in jedem Status, alte bleibt im Verlauf."""
+        nummer = (nummer or "").strip().upper()
+        zweck = re.sub(r"\s+", " ", str(zweck or "")).strip()[:ZWECK_MAX]
+
+        def pruefe(eintraege):
+            x = self._falte(eintraege).get(nummer)
+            if not x:
+                raise KeyError(nummer)
+            if (x.get("zweck") or "") == zweck:
+                raise ValueError("Keine Aenderung.")
+        self.bh.erfassen_geprueft("eingang_zweck", {"nummer": nummer, "zweck": zweck}, von=von, pruefe=pruefe)
+        return {"nummer": nummer, "zweck": zweck}
+
     def vorhanden(self, sha: str) -> str:
         for x in self._falte(self.bh.eintraege()).values():
             if any(b.get("sha256") == sha for b in x.get("belege", [])):
@@ -621,8 +639,9 @@ class EingangStore:
 
     def aufnehmen(self, daten: bytes, dateiname: str, *, quelle: str = "upload", mail_id: str = "",
                   von: str = "", zusatz: list[tuple[bytes, str]] | None = None, text: str | None = None,
-                  vorschlag: dict | None = None, vorschlag_extra: dict | None = None) -> dict:
-        """Beleg aufnehmen: auslesen (ausserhalb der Sperre, OCR dauert), dann Nummer + Datei + Eintrag atomar."""
+                  vorschlag: dict | None = None, vorschlag_extra: dict | None = None, zweck: str = "") -> dict:
+        """Beleg aufnehmen: auslesen (ausserhalb der Sperre, OCR dauert), dann Nummer + Datei + Eintrag atomar.
+        `zweck` = Begruendung des CEO (Text ueber der weitergeleiteten Mail), wofuer der Kauf war."""
         name = re.sub(r"[\\\\/:*?\"<>|]+", "_", Path(dateiname or "beleg").name)[:120] or "beleg"
         if not daten:
             raise ValueError(f"{name}: leere Datei.")
@@ -648,6 +667,7 @@ class EingangStore:
         def erzeuge(nummer, eintraege):
             return ({"dateiname": name, "mime": ENDUNGEN[Path(name).suffix.lower()], "quelle": quelle,
                      "mail_id": mail_id, "text_quelle": a["text_quelle"], "text": a["text"],
+                     **({"zweck": zweck[:ZWECK_MAX]} if zweck else {}),
                      "e_rechnung": a["e_rechnung"], "vorschlag": vorschlag},
                     [(daten, name, "beleg")] + [(b, n, "beleg") for b, n in zusatz or []])
         try:
@@ -1199,6 +1219,23 @@ def weiterleitung(roh: bytes, text: str) -> tuple[dict, str, bool]:
     return orig, "\n".join(rest), True
 
 
+ZWECK_MAX = 500
+_ZWECK_WEG = re.compile(r"(?i)^(?:von meinem \w+ gesendet|gesendet (?:von|mit) .*|sent from my .*|(?:viele|liebe|beste|"
+                        r"herzliche|freundliche)?\s*gr[üu](?:ß|ss)e,?|lg,?|vg,?|mfg,?|nils|nils kr[üu]ger|--)\s*$")
+
+
+def zweck_aus_mail(roh: bytes) -> str:
+    """Text des CEO ueber der Weiterleitung („Fuer den Dreh im Athleticum gekauft“) -> Zweck des Belegs. Gruss, Name
+    und „Von meinem iPhone gesendet“ fallen weg; ohne Weiterleitungsmarke (automatische Weiterleitung) leer."""
+    text = mail_text(roh)
+    marke = _WEITER_MARKE.search(text)
+    if not marke:
+        return ""
+    zeilen = [z.strip() for z in text[:marke.start()].splitlines()]
+    zeilen = [z for z in zeilen if z and not _ZWECK_WEG.match(z) and not _KOPF_FELD.match(z)]
+    return re.sub(r"\s+", " ", " ".join(zeilen)).strip()[:ZWECK_MAX]
+
+
 def mail_ist_beleg(betreff: str, text: str) -> bool:
     """Rechnungsmerkmale: Beleg-Wort in Betreff/Anfang **und** ein Geldbetrag."""
     return bool(_BELEG_WORT.search(f"{betreff}\n{text[:3000]}") and (_EUR_BETRAG.search(text) or _FREMD_BETRAG.search(text)))
@@ -1317,7 +1354,7 @@ def _gleicher_beleg(st: EingangStore, v: dict) -> str:
 
 
 def _mail_beleg(st: EingangStore, roh: bytes, mid: str, *, eigen: bool, quelle: str = "mail",
-                von: str = "LUNA-Mail") -> dict | None:
+                von: str = "LUNA-Mail", zweck: str | None = None) -> dict | None:
     """Rechnung im Mailtext -> Beleg (PDF-Ansicht + .eml). None = keine Rechnung erkannt (Mail bleibt liegen)."""
     import email
     from email import policy
@@ -1335,7 +1372,8 @@ def _mail_beleg(st: EingangStore, roh: bytes, mid: str, *, eigen: bool, quelle: 
     weiter = parseaddr(str(m.get("From", "")))[1] if eigen else ""
     stamm = re.sub(r"[^\w.-]+", "_", re.sub(_WEITER_BETREFF, "", orig.get("betreff") or "Mail"), flags=re.UNICODE).strip("_")[:60]
     return st.aufnehmen(mail_pdf(orig, rest, weiter), f"Mail-{stamm or 'Beleg'}.pdf", quelle=quelle, mail_id=mid,
-                        von=von, zusatz=[(roh, f"Mail-{stamm or 'Beleg'}.eml")], text=rest, vorschlag=v)
+                        von=von, zusatz=[(roh, f"Mail-{stamm or 'Beleg'}.eml")], text=rest, vorschlag=v,
+                        zweck=(zweck_aus_mail(roh) if eigen else "") if zweck is None else zweck)
 
 
 def eml_aufnehmen(st: EingangStore, roh: bytes, *, von: str = "") -> list[dict]:
@@ -1359,8 +1397,8 @@ def eml_aufnehmen(st: EingangStore, roh: bytes, *, von: str = "") -> list[dict]:
         for name, daten in dateien:
             if (name, daten) not in quittungen:
                 out.append(st.aufnehmen(daten, name, quelle="upload", mail_id=mid, von=von,
-                                        vorschlag_extra={"absender": absender}))
-    elif (res := _mail_beleg(st, roh, mid, eigen=False, quelle="upload", von=von)):
+                                        vorschlag_extra={"absender": absender}, zweck=zweck_aus_mail(roh)))
+    elif (res := _mail_beleg(st, roh, mid, eigen=False, quelle="upload", von=von, zweck=zweck_aus_mail(roh))):
         out.append(res)
     ziel = next((r["nummer"] for r in out if not r.get("doppelt")), "") or (out[0]["nummer"] if out else "")
     for name, daten in quittungen if ziel else []:
@@ -1435,7 +1473,8 @@ def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backo
                     continue
                 try:
                     ergebnisse.append(st.aufnehmen(daten, name, quelle="mail", mail_id=mid, von="LUNA-Mail",
-                                                   vorschlag_extra={"absender": absender_orig}))
+                                                   vorschlag_extra={"absender": absender_orig},
+                                                   zweck=zweck_aus_mail(roh) if eigen else ""))
                 except ValueError:
                     continue
         else:
@@ -1444,9 +1483,15 @@ def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backo
                     ergebnisse.append(res)
             except ValueError:
                 pass
+        zweck = zweck_aus_mail(roh) if eigen else ""
         for res in ergebnisse:
             if res.get("doppelt"):
                 doppelt.append(res["nummer"])
+                if zweck and not (st.get(res["nummer"]) or {}).get("zweck"):   # Begruendung zum schon bekannten Beleg
+                    try:
+                        st.zweck_setzen(res["nummer"], zweck, von="LUNA-Mail")
+                    except (KeyError, ValueError):
+                        pass
             else:
                 neu.append(res["nummer"])
                 llm_beauftragen(st, backoffice, res["nummer"])

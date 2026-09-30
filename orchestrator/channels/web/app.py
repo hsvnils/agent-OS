@@ -1949,6 +1949,13 @@ async def belege_hochladen(request: Request):
     return {"ok": any(e["ok"] for e in ergebnisse), "ergebnisse": ergebnisse}
 
 
+@app.post("/api/finanzen/belege/{nummer}/zweck")
+async def beleg_zweck(nummer: str, request: Request):
+    """Begruendung/Zweck des Kaufs nachtragen oder aendern (betriebliche Veranlassung, CEO 2026-09-30)."""
+    body = await _json(request)
+    return _kunden_aktion(lambda: _eingang().zweck_setzen(nummer, body.get("zweck") or "", von=_von(request)))
+
+
 @app.post("/api/finanzen/belege/{nummer}/buchen")
 async def beleg_buchen(nummer: str, request: Request):
     body = await _json(request)

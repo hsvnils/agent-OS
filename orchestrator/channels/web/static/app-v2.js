@@ -1483,6 +1483,8 @@ async function blDetail(nr, meldung, fehler) {
       ${vorschau}
       ${(b.belege || []).length > 1 ? `<h3>Weitere Dateien</h3>${b.belege.slice(1).map((x, i) => `<div class="v2-list-row"><span>${x.rolle === "zahlungsnachweis" ? "🧾" : "✉️"}</span><div class="grow"><a href="${src}?i=${i + 1}" target="_blank" rel="noopener">${esc(x.name || (x.pfad || "").split("/").pop().slice(17))}</a><small>${x.rolle === "zahlungsnachweis" ? "Zahlungsnachweis" : "Original-Mail (unverändert)"}</small></div></div>`).join("")}` : ""}
       <div class="v2-kv"><span>Eingang</span><b>${esc(zeit(b.eingegangen))} · ${b.quelle === "mail" ? "per Mail" : "Upload"} · ${esc(TQ[b.text_quelle] || b.text_quelle)}</b></div>
+      <h3>Zweck / Begründung</h3><div class="v2-form"><textarea id="bl-zweck" rows="2" class="v2-inp" maxlength="500" placeholder="Wofür wurde das gekauft? (betriebliche Veranlassung – z. B. „Schuhe für den Medizincheck-Dreh im Athleticum“)">${esc(b.zweck || "")}</textarea>
+        <button class="v2-btn sm" data-act="bl-zweck" data-id="${esc(nr)}">Zweck speichern</button><small class="v2-sub">Steht mit im Export für den Steuerberater. Schreibst du beim Weiterleiten etwas über die Mail, übernimmt LUNA es automatisch.</small></div>
       <h3>Verlauf</h3>${verlauf}
     </div><div>
       <div class="v2-kv"><span>Status</span>${blBadge(b.status)}${b.bezahlt_am ? ` <span class="v2-badge ok">bezahlt ${esc(datumDe(b.bezahlt_am))}</span>` : b.bezahlt_cent ? ` <span class="v2-badge wartet">teilweise bezahlt · offen ${esc(cent2eur(rest))}</span>` : ""}</div>
@@ -2276,6 +2278,7 @@ async function handleAct(act, el) {
       return r.korrektur_entwurf ? reEditor(r.korrektur_entwurf) : reDetail(r.storno, [`Stornorechnung ${r.storno} erstellt.`, ...(r.hinweise || [])].join("\n"));
     }
     case "re-box-zu": { const bx = $("#re-aktion-box"); if (bx) bx.innerHTML = ""; return; }
+    case "bl-zweck": { const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/zweck`, { zweck: ($("#bl-zweck") || {}).value || "" }); return blDetail(id, r && r.ok ? "Zweck gespeichert." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
     case "ab-vorkasse": { const r = await jpost(`/api/finanzen/rechnungen/aus-auftrag/${encodeURIComponent(id)}`, { vorkasse: true }); if (!r || !r.ok) return abDetail(id, (r && r.hinweis) || "Fehler.", true); return reDetail(r.entwurf_id, r.vorhanden ? "Es gab schon einen Vorkasse-Entwurf — hier ist er." : "Vorkasse-Rechnung als Entwurf angelegt. Prüfen und festschreiben — dann legt LUNA den Payment-Check in den Kalender."); }
     case "ab-rechnung": { const r = await jpost(`/api/finanzen/rechnungen/aus-auftrag/${encodeURIComponent(id)}`, {}); if (!r || !r.ok) return abDetail(id, (r && r.hinweis) || "Fehler.", true); return reEditor(r.entwurf_id); }
     case "ab-neu": return abNeu(id, val === "annehmen");

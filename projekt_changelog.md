@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 14:05] — Claude Code
+- **Was:** Zweck/Begruendung am Beleg: Text des CEO ueber einer weitergeleiteten Rechnung (ohne Gruss, Name, „Von meinem
+  iPhone gesendet“) wird als `zweck` gespeichert -- bei Mail-Anhaengen, Rechnungen im Mailtext und `.eml`-Import; kommt
+  die Rechnung doppelt mit Begruendung, wird sie am vorhandenen Beleg nachgetragen. In LUNA-OS im Beleg-Detail aenderbar
+  (`POST /api/finanzen/belege/<nr>/zweck`, Ereignis `eingang_zweck`, Verlauf), Export-Spalte `Zweck`. Tests
+  `test_beleg_zweck.py` (5) + 7 Gegenproben, Browser-Test, JS v66.
+- **Warum:** CEO 2026-09-30: Begruendung aus der weitergeleiteten Amazon-Mail soll nicht verloren gehen.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/core/jahresabschluss.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`,
+  `orchestrator/tests/test_beleg_zweck.py`, `docs/datenfluesse.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
 ## [2026-09-30 13:43] — Claude Code
 - **Was:** Belege 2026 aus dem Ordner `Desktop/LUNA-Uebertrag/Belege` (MACO470) live in LUNA-OS hochgeladen: 73 Dateien
   (9 Meta-Verified-Mails ausgelassen) -> 67 neue Belege ER-2026-0064 bis -0130 (zu pruefen), 6 als Dubletten vorhandener
