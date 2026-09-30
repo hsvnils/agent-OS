@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 17:23] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 22 umgesetzt: Firmendaten aus dem Impressum recherchieren (Brave + Firmen-Website),
+  Vorschlaege mit Quelle nur fuer leere Felder, Uebernehmen/Verwerfen per Klick, Wochenlauf im Bot (sonntags, max. 8,
+  Pause 30 Tage, Hinweis im Briefing); neues Stammdatenfeld Handelsregister; LUNA-OS Kunden-Detail (JS v71). Tests
+  `test_firmendaten.py` (6) + 9 Gegenproben, Suite 1053 gruen, Browser-Test, lesender Probelauf mit 5 echten Firmen.
+- **Warum:** CEO 2026-09-30 („Offene Daten der Unternehmen im Netz recherchieren ... auf Knopfdruck uebernehmen ...
+  regelmaessig ein Agent“ -> „Mach das“).
+- **Betroffen:** `orchestrator/core/firmendaten.py` (neu), `orchestrator/core/kunden.py`, `orchestrator/channels/web/app.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`,
+  `orchestrator/tests/test_firmendaten.py`, `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`
+
 ## [2026-09-30 17:16] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 21 umgesetzt: interne Kosten je Katalog-Artikel mit Deckungsbeitrag/Marge und
   Mindestmarge-Warnung (auch intern im Angebots-Editor, nie im PDF); Lagerbestand fuer physische Ware (`core/lager.py`,

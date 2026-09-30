@@ -25,7 +25,8 @@ KREIS = {"kunde": "K", "lieferant": "L", "partner": "P"}
 FIRMA_FELDER = ("name", "typ", "strasse", "plz", "ort", "land", "ustid", "steuernummer", "rechnungsmail", "telefon",
                 "website", "zahlungsziel_tage", "notiz", "aktiv", "verbraucher",
                 # Etappe 14: unsere Kundennummer dort, Zahlungsweg, Rechnungs-Absender (Mail/Domain), Vertraege/Abos
-                "kundennummer_bei", "zahlungsweg", "rechnungs_absender", "vertraege")
+                "kundennummer_bei", "zahlungsweg", "rechnungs_absender", "vertraege",
+                "handelsregister")                                     # Etappe 22: aus dem Impressum
 VERTRAG_FELDER = ("bezeichnung", "nummer", "notiz")
 AP_FELDER = ("vorname", "nachname", "rolle", "mail", "telefon", "notiz", "aktiv")
 _MAIL = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
