@@ -31,7 +31,8 @@ class TestZusammenstellen(unittest.TestCase):
     def test_2_zusatzquellen(self):
         antraege = [{"titel": "Neue Funktion", "verlauf": [{"ts": "2026-09-28T10:00:00"}]},
                     {"titel": "Sicherheits-Audit: 2 Befunde beheben", "verlauf": [{"ts": "2026-09-29T10:00:00"}]}]
-        d = zusammenstellen([], antraege=antraege, investment=[{"frage": "NVDA für 200 $ kaufen?"}],
+        d = zusammenstellen([], antraege=antraege, investment=[{"id": "APV-20260930-101500-ab12", "frage": "NVDA für 200 $ kaufen?"},
+                                        {"id": "APV-20260709-133100-cd34", "frage": "alte Kauf-Chance"}],
                             betrieb={"bot_alter_min": 61.0, "unzugestellt": 2, "aelteste_unzugestellt_min": 45.0},
                             heute=HEUTE)
         p = {x["id"]: x for x in d["punkte"]}
@@ -40,6 +41,7 @@ class TestZusammenstellen(unittest.TestCase):
         self.assertIn("2 Antrag", p["freigaben"]["titel"])
         self.assertEqual(p["freigaben"]["anzahl"], 2)
         self.assertEqual((p["investment-freigaben"]["stufe"], p["investment-freigaben"]["bereich_id"]), ("dringend", "investment"))
+        self.assertIn("1 Investment", p["investment-freigaben"]["titel"])          # die vom 09.07. zaehlt nicht mehr
         self.assertEqual(p["betrieb-bot"]["stufe"], "dringend")
         self.assertEqual(p["betrieb-zustellung"]["stufe"], "dringend")
         self.assertEqual(d["zaehler"]["dringend"], 3)
