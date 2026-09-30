@@ -344,7 +344,8 @@ def positionen_regeln(text: str) -> list[dict]:
 
 
 _KEIN_LIEFERANT = re.compile(r"(?i)^(?:page|seite)\s+\d+|^(?:invoice|receipt|rechnung|quittung|gutschrift|beleg|credit note|"
-                             r"remittance)\b|hanserautisch|nils\s+kr[üu]ger|^bill\s+to|^rechnungsadresse")
+                             r"remittance)\b|hanserautisch|nils\s+kr[üu]ger|^bill\s+to|^rechnungsadresse|"
+                             r"^rechnungs(?:datum|nr|nummer)|^(?:an|datum)$")
 _RECHTSFORM = re.compile(r"(?i)\b(?:gmbh|ag|ug|kg|ohg|e\.\s?k|ltd|pbc|inc|llc|s\.?\s?[àa]\.?\s?r\.?\s?l|s\.a|b\.v|pte|"
                          r"limited|corp|plc|sarl)\b")
 _NR_WEITERE = (r"(?i)(?:bestell-?(?:nummer|nr\.?)|order\s+(?:no\.?|number|id)|auftragsnummer|auftragsbest[äa]tigung|"
@@ -369,6 +370,21 @@ def hinweise_raten(text: str) -> list[str]:
     return [h for muster, h in HINWEISE if re.search(muster, text or "")]
 
 
+def rufnummern_positionen(text: str, betrag: str) -> list[dict]:
+    """Mobilfunk-Rechnung mit mehreren Rufnummern (Klarmobil): je Rufnummer eine Position (netto -> brutto mit dem
+    ausgewiesenen USt-Satz), damit eine private Nummer beim Buchen als „privat“ abgetrennt werden kann. Die letzte
+    Position gleicht Rundungscent zum Rechnungsbetrag aus."""
+    treffer = re.findall(r"(?i)Nettobetrag f[üu]r Rufnummer\s*([\d /]+?)\s+(-?\d+,\d+)\s*€", text or "")
+    if len(treffer) < 2 or not betrag:
+        return []
+    satz = re.search(r"(?i)USt\.?-Betrag\s*\((\d{1,2})\s*%\)", text)
+    faktor = 1 + (int(satz.group(1)) if satz else 19) / 100
+    out = [{"text": f"Rufnummer {re.sub(r'\\s+', ' ', nr).strip()}",
+            "cent": int(round(float(netto.replace(",", ".")) * faktor * 100))} for nr, netto in treffer]
+    out[-1]["cent"] += cent(betrag) - sum(p["cent"] for p in out)
+    return [{"text": p["text"], "betrag": eur(p["cent"]).replace(" €", "")} for p in out]
+
+
 def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
     """Schneller Vorschlag ohne KI. E-Rechnungs-Felder haben Vorrang (exakt)."""
     t = text or ""
@@ -391,6 +407,7 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
                 break
     m = (re.search(r"(?i)(?:rechnungsdatum|invoice\s+date|belegdatum|leistungsdatum|transaktionsdatum|ausstellungsdatum)"
                    r"\s*[:]?\s*" + _DATUM, t)
+         or re.search(r"(?i)(?:rechnungsdatum|invoice\s+date|belegdatum)\s*:?\s*(\d{1,2})/(\d{1,2})/(\d{4})", t)
          or re.search(r"(?i)(?<![a-zäöü])datum\s*[:]?\s*" + _DATUM, t) or re.search(_DATUM, t))
     if m:
         v["rechnungsdatum"] = _iso(t, *m.groups()[-3:])
@@ -401,11 +418,15 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
     if not v["rechnungsdatum"]:                                 # ausgeschrieben: „Date of issue September 25, 2026“
         lab = re.search(r"(?i)(?:date of issue|invoice date|receipt date|date paid|payment date)\s*:?\s*(.{0,30})", t)
         v["rechnungsdatum"] = (datum_frei(lab.group(1)) if lab else "") or datum_frei(t)
+    fest = re.search(r"(?i)(?:rechnungsbetrag\s+gesamt|gesamtbetrag|endbetrag|zahlbetrag|amount\s+due|amount\s+paid)"
+                     r"\s*:?\s*(?:EUR|€)?\s*" + _BETRAG, t)
     betraege = []
     for z in zeilen:
         if re.search(r"(?i)(gesamt|rechnungsbetrag|zu zahlen|endbetrag|summe|total|brutto|zahlbetrag|amount due|amount paid)", z):
             betraege += re.findall(_BETRAG, z)
-    if not betraege:
+    if fest:
+        betraege = [fest.group(1)]
+    elif not betraege:
         betraege = re.findall(_BETRAG + r"\s*(?:€|EUR)", t)
     if betraege:
         werte = []
@@ -423,13 +444,21 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
         if v["betrag_fremd"]:
             v["leistung"] = f"{'Auszahlung' if gutschrift else 'Kauf'} {v['betrag_fremd']} {waehrung}"
     if zeilen:                                                  # Absenderzeile "Firma · Strasse · Ort"
-        kopf = [z for z in zeilen[:15] if not _KEIN_LIEFERANT.search(z)]
+        kopf = [z for z in zeilen[:15] if not _KEIN_LIEFERANT.search(z) and len(re.findall(r"[A-Za-zÄÖÜäöü]", z)) >= 3
+                and not _DATUM_DE_LANG.fullmatch(z)]
         firma = next((z for z in kopf if _RECHTSFORM.search(z)), "")
+        if not firma and not any(_RECHTSFORM.search(z) for z in kopf):   # Canva: Firma steht nur im Fuss
+            fuss = next((z for z in zeilen[15:] if _RECHTSFORM.search(z) and not _KEIN_LIEFERANT.search(z)
+                         and not re.search(r"(?i)copyright|©", z)), "")
+            if fuss:
+                firma = fuss[:_RECHTSFORM.search(fuss).end()].strip(" .,")
+                kopf = [firma] + kopf
         erste = kopf[0] if kopf else zeilen[0]
         lief = erste if (_RECHTSFORM.search(erste) or not firma) else firma   # „Page 1 of 1“/„Invoice“ ueberspringen
-        v["lieferant"] = re.sub(r"\s+@\S+$", "", re.split(r"\s+[·|•]\s+", lief)[0]).strip()[:120]
+        v["lieferant"] = re.sub(r"(?i)^(?:post|absender|von)\s*:\s*", "",
+                                re.sub(r"\s+@\S+$", "", re.split(r"\s+[·|•]\s+", lief)[0])).strip()[:120]
     if not v.get("waehrung"):                                   # Fremdwaehrung: Euro-Betrag kommt vom Konto
-        v["positionen"] = positionen_regeln(t)
+        v["positionen"] = rufnummern_positionen(t, v["betrag"]) or positionen_regeln(t)
     # Sammel-PDF mit mehreren Rechnungen (Amazon: eine je Verkaeufer): Zahlbetraege aller Rechnungen addieren
     zahl = []
     for teil in re.split(r"Rechnungsdetails", t.replace("\xa0", " "))[1:]:
@@ -1287,7 +1316,8 @@ def _gleicher_beleg(st: EingangStore, v: dict) -> str:
     return ""
 
 
-def _mail_beleg(st: EingangStore, roh: bytes, mid: str, *, eigen: bool) -> dict | None:
+def _mail_beleg(st: EingangStore, roh: bytes, mid: str, *, eigen: bool, quelle: str = "mail",
+                von: str = "LUNA-Mail") -> dict | None:
     """Rechnung im Mailtext -> Beleg (PDF-Ansicht + .eml). None = keine Rechnung erkannt (Mail bleibt liegen)."""
     import email
     from email import policy
@@ -1304,8 +1334,59 @@ def _mail_beleg(st: EingangStore, roh: bytes, mid: str, *, eigen: bool) -> dict 
     m = email.message_from_bytes(roh, policy=policy.default)
     weiter = parseaddr(str(m.get("From", "")))[1] if eigen else ""
     stamm = re.sub(r"[^\w.-]+", "_", re.sub(_WEITER_BETREFF, "", orig.get("betreff") or "Mail"), flags=re.UNICODE).strip("_")[:60]
-    return st.aufnehmen(mail_pdf(orig, rest, weiter), f"Mail-{stamm or 'Beleg'}.pdf", quelle="mail", mail_id=mid,
-                        von="LUNA-Mail", zusatz=[(roh, f"Mail-{stamm or 'Beleg'}.eml")], text=rest, vorschlag=v)
+    return st.aufnehmen(mail_pdf(orig, rest, weiter), f"Mail-{stamm or 'Beleg'}.pdf", quelle=quelle, mail_id=mid,
+                        von=von, zusatz=[(roh, f"Mail-{stamm or 'Beleg'}.eml")], text=rest, vorschlag=v)
+
+
+def eml_aufnehmen(st: EingangStore, roh: bytes, *, von: str = "") -> list[dict]:
+    """Gespeicherte Mail (.eml) hochladen -- dieselbe Erkennung wie bei Mails an LUNA: PDF-/XML-Anhaenge werden Belege
+    (eine Quittung daneben wird Zahlungsnachweis), sonst die Rechnung im Mailtext. Idempotent ueber die Message-ID;
+    schon vorhandene Belege (gleicher Lieferant/Datum/Betrag) werden als doppelt gemeldet. Rueckgabe: Ergebnisse."""
+    import email
+    from email import policy
+    m = email.message_from_bytes(roh, policy=policy.default)
+    mid = "eml:" + (str(m.get("Message-ID") or "").strip().strip("<>") or hashlib.sha256(roh).hexdigest()[:32])
+    alt = next((x["nummer"] for x in st._falte(st.bh.eintraege()).values() if x.get("mail_id") == mid), "")
+    if alt:
+        return [{"nummer": alt, "doppelt": True}]
+    dateien = anhaenge(roh)
+    quittungen = [d for d in dateien if _QUITTUNG.search(d[0])] if len(dateien) > 1 else []
+    if len(quittungen) == len(dateien):
+        quittungen = []
+    out = []
+    if dateien:
+        absender = weiterleitung(roh, mail_text(roh))[0].get("von", "")
+        for name, daten in dateien:
+            if (name, daten) not in quittungen:
+                out.append(st.aufnehmen(daten, name, quelle="upload", mail_id=mid, von=von,
+                                        vorschlag_extra={"absender": absender}))
+    elif (res := _mail_beleg(st, roh, mid, eigen=False, quelle="upload", von=von)):
+        out.append(res)
+    ziel = next((r["nummer"] for r in out if not r.get("doppelt")), "") or (out[0]["nummer"] if out else "")
+    for name, daten in quittungen if ziel else []:
+        if not st.vorhanden(hashlib.sha256(daten).hexdigest()):
+            st.datei_anhaengen(ziel, daten, name, von=von)
+    return out
+
+
+def datei_importieren(st: EingangStore, daten: bytes, name: str, *, von: str = "") -> list[dict]:
+    """Upload in LUNA-OS: PDF/Bild/XML wie bisher, dazu gespeicherte Mails (.eml) und ganze Postfaecher (.mbox)."""
+    endung = Path(name).suffix.lower()
+    if endung == ".eml":
+        return eml_aufnehmen(st, daten, von=von)
+    if endung == ".mbox":
+        import mailbox
+        with tempfile.NamedTemporaryFile(suffix=".mbox") as f:
+            f.write(daten)
+            f.flush()
+            out = []
+            for msg in mailbox.mbox(f.name):
+                try:
+                    out += eml_aufnehmen(st, msg.as_bytes(), von=von)
+                except ValueError:
+                    continue
+            return out
+    return [st.aufnehmen(daten, name, quelle="upload", von=von)]
 
 
 def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backoffice=None, notify=None,

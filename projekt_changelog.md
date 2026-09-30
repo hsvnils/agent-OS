@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 13:27] — Claude Code
+- **Was:** Beleg-Import: Upload in LUNA-OS nimmt gespeicherte Mails (`.eml`) und Postfaecher (`.mbox`) an
+  (`eingangsbelege.datei_importieren`/`eml_aufnehmen`, gleiche Erkennung wie Mails an LUNA, idempotent, Dubletten erkannt);
+  Upload-Feld/Hinweis in LUNA-OS (JS v65). Lesefehler aus dem Jahresordner behoben (BF-43: DAZN-Datum, Klarmobil-Betrag
+  und -Absender, Canva-Lieferant; Rufnummern als Positionen). Probelauf mit allen 82 Dateien in Test-Buchhaltung ohne
+  Fehler. Tests `test_beleg_import.py` (6) + 6 Gegenproben, Suite 1024 gruen. Entscheidung im Register.
+- **Warum:** CEO 2026-09-30: Belege 2026 als Ordner geben statt rueckwirkender Eigenbelege.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/channels/web/app.py`,
+  `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_beleg_import.py`,
+  `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-09-30 11:06] — Claude Code
 - **Was:** Favicon rund und mit ganzem Gesicht: Ausschnitt 620 px um den Kopf (Haare bis Kinn), leicht mehr Kontrast,
   kreisfoermig freigestellt (transparente Ecken) fuer `favicon-32.png`, `favicon-192.png`, `favicon.ico`;
