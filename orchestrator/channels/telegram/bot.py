@@ -9,6 +9,7 @@ der Bot mit der Chat-ID, damit der CEO sie eintragen kann -- er fuehrt dann NICH
 from __future__ import annotations
 
 import json
+import re
 import sys
 import time
 import tomllib
@@ -443,6 +444,47 @@ def _start_security_loop(ctx, secrets) -> None:
 
 _BELEG_MAILS_GESEHEN: set = set()      # Mail-IDs ohne verwertbaren Anhang nicht bei jedem Poll neu laden
 _AKTE_MAILS_GESEHEN: set = set()   # Etappe 24: in diesem Prozess schon gepruefte Mail-IDs
+_ZEIT_KM_WARTET: dict = {}         # Etappe 25: chat_id -> Zeit-ID, deren Kilometer als naechste Nachricht kommen
+
+
+def _zeiterfassung():
+    """Etappe 25: Zeiterfassung (nur intern) mit Aufträgen, OSM-Routen und Firmenadresse als Start."""
+    from ...core.angebote import AngebotStore
+    from ...core.beauftragung import AuftragBuch
+    from ...core.buchhaltung import Buchhaltung
+    from ...core.kunden import KundenStore
+    from ...core.routen import Routen
+    from ...core.zeiterfassung import Zeiterfassung
+    bh = Buchhaltung(ROOT / "buchhaltung")
+    ks = KundenStore(bh)
+    try:
+        fd = json.loads((bh.dir / "firmendaten.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        fd = {}
+    heim = " ".join(x for x in (fd.get("strasse"), fd.get("plz"), fd.get("ort")) if x)
+    return Zeiterfassung(bh, ks, auftraege=AuftragBuch(bh, ks, AngebotStore(bh, ks)), routen=Routen(bh.dir / "geocache.json"),
+                         heimadresse=heim)
+
+
+def _zeit_km_frage(token, chat_id, z, zid: str, adresse: str = "") -> None:
+    """Nach dem Stopp: Kilometer-Vorschlag (OSM, Hin + Rueck) mit ✅ / ✏️ / 🚫 -- gebucht wird nur nach Tipp."""
+    from ...core.beleg_pdf import eur as _eur
+    try:
+        v = z.km_vorschlag(zid, adresse)
+    except Exception:
+        v = {"km": None, "adresse": adresse}
+    if v.get("km"):
+        kb = {"inline_keyboard": [[{"text": f"✅ {v['km']} km buchen", "callback_data": f"zkm:{zid}:{v['km']}:y"}],
+                                  [{"text": "✏️ Andere km/Adresse", "callback_data": f"zkm:{zid}:0:a"},
+                                   {"text": "🚫 Keine Fahrt", "callback_data": f"zkm:{zid}:0:n"}]]}
+        _api(token, "sendMessage", {"chat_id": chat_id, "reply_markup": json.dumps(kb), "text": fuer_telegram(
+            f"🚗 Fahrt: {v['km']} km Hin + Rück zu {v['adresse']} → Fahrtkosten {_eur(v['betrag_cent'])} (0,30 €/km) als "
+            "Eigenbeleg buchen?")})
+    else:
+        _ZEIT_KM_WARTET[str(chat_id)] = zid
+        _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(
+            "🚗 Wie viele Kilometer bist du gefahren (Hin + Rück)? Antworte z. B. „42 km“ – oder schick die Adresse des "
+            "Drehs, dann rechne ich. „0 km“ = keine Fahrt.")})
 
 
 def _start_buchhaltung_loop(ctx) -> None:
@@ -1411,6 +1453,18 @@ def main() -> None:
                                              backoffice=AuftragStore(ROOT / "backoffice" / "log.jsonl", secrets=ctx.leak_secrets),
                                              notify=(ctx.notifications.enqueue if ctx.notifications else None),
                                              gesehen=_BELEG_MAILS_GESEHEN)
+                        try:                                          # Etappe 25: Zeit laeuft seit >= 10 h -> einmal nachfragen
+                            from ...core.zeiterfassung import erinnerung_faellig
+                            _lz = _zeiterfassung().laufend()
+                            if (erinnerung_faellig(_lz) and ctx.agenda is not None and ctx.notifications
+                                    and not ctx.agenda.briefing_gesendet("zeit-erinnerung", _lz["id"])):
+                                ctx.agenda.markiere_briefing("zeit-erinnerung", _lz["id"])
+                                ctx.notifications.enqueue(
+                                    f"⏱ Die Zeit läuft seit {_lz['start'][8:10]}.{_lz['start'][5:7]}. {_lz['start'][11:16]} Uhr – "
+                                    "vergessen zu stoppen? „Bin wieder zuhause“ stoppt sie; falsche Zeiten korrigierst du in "
+                                    "LUNA-OS am Auftrag.", abteilung="CFO", kategorie="finanzen", quelle="zeiterfassung")
+                        except Exception as exc:
+                            print(f"[zeit] Erinnerung: {exc}", flush=True)
                         try:                                          # Etappe 24: Firmenakte (CC/BCC, weitergeleitet)
                             from ...core.firmenakte import Firmenakte, mails_pruefen
                             from ...core.kunden import KundenStore as _KS2
@@ -1567,6 +1621,31 @@ def main() -> None:
                             _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
                                                             "reply_markup": json.dumps({"inline_keyboard": []}),
                                                             "text": fuer_telegram(res)})
+                    elif data.startswith(("zst:", "zkm:")):        # Etappe 25: Auftrag waehlen / Kilometer buchen
+                        from ...core.beleg_pdf import eur as _eur
+                        mid = (cb.get("message") or {}).get("message_id")
+                        _z = _zeiterfassung()
+                        try:
+                            if data.startswith("zst:"):
+                                r = _z.starten(auftrag=data[4:], quelle="Telegram", von="Telegram:CEO")
+                                res = f"⏱ Zeit läuft seit {r['start'][11:16]} – {r['auftrag']}. „Bin wieder zuhause“ stoppt sie."
+                            else:
+                                _, zid, km, ent = data.split(":", 3)
+                                if ent == "y":
+                                    f = _z.fahrt_buchen(zid, km=km, von="Telegram:CEO")
+                                    res = f"✅ Fahrt gebucht: {f['km']} km → {_eur(f['betrag_cent'])} ({f['eigenbeleg']})."
+                                elif ent == "a":
+                                    _ZEIT_KM_WARTET[cbchat] = zid
+                                    res = "✏️ Schick mir die Kilometer (z. B. „42 km“) oder die Adresse des Drehs."
+                                else:
+                                    res = "🚫 Keine Fahrt gebucht."
+                        except (ValueError, KeyError) as exc:
+                            res = f"⚠️ {exc}"
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "OK"})
+                        if mid:
+                            _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
+                                                            "reply_markup": json.dumps({"inline_keyboard": []}),
+                                                            "text": fuer_telegram(res)})
                     elif data.startswith("eur:"):                  # Euro-Betrag buchen (Vorschau oben) -- nur nach ✅
                         _, nr, c, datum, ent = data.split(":", 4)
                         mid = (cb.get("message") or {}).get("message_id")
@@ -1653,6 +1732,62 @@ def main() -> None:
                     _api(token, "sendMessage", {"chat_id": chat_id,
                          "text": "Das war keine Zahl — Freigabe abgebrochen. Frag gern neu."})
                 continue
+            # Etappe 25: Zeiterfassung per Telegram (nur intern) -- Start/Stopp/Kilometer
+            try:
+                if (ROOT / "buchhaltung" / "log.jsonl").exists():
+                    from ...core.zeiterfassung import befehl as _zbefehl, dauer_text, firma_finden, offene_auftraege
+                    from ...core.beleg_pdf import eur as _eur
+                    _zb = _zbefehl(text)
+                    if _zb is None and str(chat_id) in _ZEIT_KM_WARTET and len(text.strip()) >= 8 and re.search(r"\d{5}", text):
+                        _zb = {"art": "adresse"}                    # Dreh-Adresse statt Kilometer geschickt
+                    _z = _zeiterfassung() if _zb else None
+                    firma = firma_finden(_z.kunden, _zb["ziel"]) if _zb and _zb["art"] == "start" else ""
+                    if _zb and _zb["art"] == "start" and not firma:
+                        _zb = None                                  # keine bekannte Firma -> normaler Chat
+                    if _zb:
+                        if _zb["art"] == "start":
+                            if True:
+                                auftr = offene_auftraege(_z.auftraege, firma)
+                                if len(auftr) > 1:
+                                    kb = {"inline_keyboard": [[{"text": f"{a['nummer']} · {(a.get('titel') or '')[:30]}",
+                                                                "callback_data": f"zst:{a['nummer']}"}] for a in auftr[:6]]}
+                                    _api(token, "sendMessage", {"chat_id": chat_id, "reply_markup": json.dumps(kb),
+                                                                "text": "Für welchen Auftrag läuft die Zeit?"})
+                                else:
+                                    r = _z.starten(auftrag=auftr[0]["nummer"] if auftr else "", firma=firma, quelle="Telegram",
+                                                   von="Telegram:CEO")
+                                    name = (_z.kunden.firma(firma) or {}).get("name", firma)
+                                    _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(
+                                        f"⏱ Zeit läuft seit {r['start'][11:16]} – {name}"
+                                        + (f" · {r['auftrag']}" if r["auftrag"] else " · noch ohne Auftrag (bitte später in "
+                                           "LUNA-OS zuordnen)") + ". „Bin wieder zuhause“ stoppt sie.")})
+                        elif _zb["art"] == "stopp":
+                            r = _z.stoppen(von="Telegram:CEO")
+                            name = (_z.kunden.firma(r["firma"]) or {}).get("name", r["firma"])
+                            _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(
+                                f"⏹ Gestoppt: {dauer_text(r['minuten'])} für {name}"
+                                + (f" ({r['auftrag']})" if r["auftrag"] else "")
+                                + (f" · intern {_eur(r['kosten_cent'])} ({_eur(r['satz_cent'])}/h)" if r["satz_cent"] else
+                                   " · Stundensatz fehlt noch (LUNA-OS)"))})
+                            _zeit_km_frage(token, chat_id, _z, r["id"])
+                        elif _zb["art"] in ("km", "adresse") and str(chat_id) in _ZEIT_KM_WARTET:
+                            zid = _ZEIT_KM_WARTET.pop(str(chat_id))
+                            if _zb["art"] == "adresse":
+                                _zeit_km_frage(token, chat_id, _z, zid, text.strip())
+                            elif float(_zb["km"]) <= 0:
+                                _api(token, "sendMessage", {"chat_id": chat_id, "text": "OK – keine Fahrt gebucht."})
+                            else:
+                                f = _z.fahrt_buchen(zid, km=_zb["km"], von="Telegram:CEO")
+                                _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(
+                                    f"✅ Fahrt gebucht: {f['km']} km → {_eur(f['betrag_cent'])} ({f['eigenbeleg']}).")})
+                        else:
+                            _api(token, "sendMessage", {"chat_id": chat_id, "text": "Dazu ist gerade keine Fahrt offen."})
+                        continue
+            except ValueError as exc:
+                _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(f"⚠️ {exc}")})
+                continue
+            except Exception as exc:
+                print(f"[zeit] Telegram: {exc}", flush=True)
             # Euro-Betrag zu einem Beleg in Fremdwaehrung (z. B. „Facebook 241,80“) -> Vorschau mit ✅/❌ (CEO 2026-09-28)
             try:
                 if (ROOT / "buchhaltung" / "log.jsonl").exists():

@@ -44,6 +44,9 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    Berechnungsgrundlage; eine Rechnung mit nicht abgerechneter Provision kann nicht festgeschrieben werden.
    **Firmenakte**: Geschaeftsbriefe (z. B. Anwaltsschreiben, Vertraege) und Mails je Geschaeftspartner werden unveraendert
    (Original `.eml` + Hash) mit Datum und optionalem Bezug zur Rechnung abgelegt.
+   **Fahrtkosten** zu Kundenterminen werden je Termin als Eigenbeleg (0,30 EUR je gefahrenem km, Hin + Rueck, Strecke
+   aus OpenStreetMap oder von Hand) gebucht. Die **eigene Arbeitszeit** wird nur intern kalkulatorisch erfasst und
+   ist keine Betriebsausgabe (keine Buchung, nicht in der EUeR).
 4. **Korrektur** nur per **Stornorechnung** (eigene Nummer, negativer Betrag, Bezug auf das Original) und ggf.
    neuer Rechnung.
 5. **Zahlungseingang** wird von Hand erfasst (Datum laut Kontoauszug, Teilzahlungen moeglich).

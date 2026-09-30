@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 18:07] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 25 umgesetzt: Zeiterfassung (Telegram-Start/Stopp, manuell, Zuordnen, Storno,
+  Erinnerung nach 10 h), kalkulatorischer Stundensatz aus Brutto-Monatslohn (nur NAS), Fahrten Hin + Rueck per
+  OpenStreetMap -> Eigenbeleg 0,30 EUR/km, Nachkalkulation am Auftrag (nur intern, keine EUeR-Wirkung -- per Test belegt).
+  Neue Datenfluesse Nominatim/OSRM, Entscheidung im Register, JS v73. Tests `test_zeiterfassung.py` (8) + Gegenproben.
+- **Warum:** CEO-Go 2026-09-30 (Brutto, Fahrzeit zaehlt, km per Adresse, Stunden nur intern).
+- **Betroffen:** `orchestrator/core/zeiterfassung.py` (neu), `orchestrator/core/routen.py` (neu), `orchestrator/core/todos.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/static/app-v2.js`,
+  `index-v2.html`, `orchestrator/tests/test_zeiterfassung.py`, `KUNDEN_FINANZEN_ROADMAP.md`, `docs/datenfluesse.md`,
+  `docs/verfahrensdokumentation-buchhaltung.md`, `docs/entscheidungs-register.md`
+
 ## [2026-09-30 17:59] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 24 umgesetzt: Firmenakte (Dokumente je Firma mit Bezug, weitergeleitete Mails und Mails
   mit LUNA in CC/BCC automatisch bei der Firma, „Mail zuordnen“), LUNA-OS Akte + Dokumente an der Rechnung (JS v72).

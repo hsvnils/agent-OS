@@ -4,7 +4,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappen 21 (Kalkulation + Lager) und 22 (Firmendaten) umgesetzt -- gemeinsamer Deploy offen; 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
+- Naechster Schritt: Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappen 21, 22 live; 24 (Firmenakte) und 25 (Zeiterfassung) umgesetzt -- gemeinsamer Deploy offen; 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
   Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
   waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
   Auto-Weiterleitung pruefen.
@@ -807,7 +807,18 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 25: Zeiterfassung und Nachkalkulation je Auftrag
 
-- Status: geplant (CEO-Wunsch 2026-09-30), wartet auf CEO-Go und Entscheidung Stundensatz
+- Status: umgesetzt (CEO-Go 2026-09-30), Deploy offen
+- Entscheidungen (CEO 2026-09-30): Stundensatz = Brutto-Monatslohn des Arbeitgebers (5.061,21 EUR, 40 h/Woche ->
+  29,20 EUR/h, nur kalkulatorisch); Fahrzeit zaehlt; Kilometer erfassen, **Adresse eingeben und LUNA rechnet** (Start =
+  Firmenadresse, Hin + Rueck); Stunden **nur intern** -- nie im PDF, nie beim Kunden, **kein Kostenpunkt in der EUeR**.
+- Ergebnis: `core/zeiterfassung.py` (Einstellung, Start/Stopp, manuell inkl. ueber Mitternacht, Zuordnen, Storno,
+  Fahrt -> Eigenbeleg 0,30 EUR/km Kategorie Reisekosten, Nachkalkulation: Auftragssumme - Arbeitszeit (kalkulatorisch) -
+  Fahrtkosten = Deckungsbeitrag, effektiver Stundenlohn), `core/routen.py` (OpenStreetMap: Nominatim + OSRM, kostenlos,
+  Zwischenspeicher; Google Maps waere kostenpflichtig = CEO-Tor, nicht angebunden). Telegram: „Bin auf dem Weg zu <Firma>“
+  (Auftrag automatisch, bei mehreren Knoepfe; ohne Auftrag -> To-do „Zeit zuordnen“), „Bin wieder zuhause“/„Fahre nach
+  Hause“ stoppt und schlaegt km vor (✅/✏️ andere km oder Adresse/🚫), Erinnerung nach 10 h. LUNA-OS: Auftrags-Detail
+  „⏱ Zeiten & Nachkalkulation“ (🔒 intern). Test beweist: EUeR vor/nach Zeiterfassung gleich. Tests
+  `test_zeiterfassung.py` (8) + Gegenproben, Browser-/Telegram-Probe.
 - Ziel / Scope:
   - **Stundensatz (intern):** Einstellung „kalkulatorischer Stundensatz“ (Empfehlung: Brutto-Stundenlohn des Arbeitgebers,
     siehe Entscheidung), nur fuer Kalkulation -- keine Buchung, keine Betriebsausgabe (Unternehmerlohn ist in der EUeR nicht

@@ -1109,8 +1109,60 @@ async function abDetail(nr, meldung, fehler) {
     <h3>Verlauf</h3>${verlauf}
     </div><div>
     <div id="ab-senden-box"></div>
+    ${darf("rechnungen") ? `<div id="ab-zeit-box"></div>` : ""}
     <h3>Positionen <small class="v2-sub">aus ${esc(a.angebot)} übernommen</small></h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
     </div></div>`, true);
+  abZeitLaden(nr);
+}
+// Etappe 25: Zeiten & Nachkalkulation -- NUR INTERN (nie im PDF, nie beim Kunden); Arbeitszeit ist kalkulatorisch, keine Buchung
+async function abZeitLaden(nr) {
+  const box = $("#ab-zeit-box"); if (!box) return;
+  const d = await jget(`/api/finanzen/zeit?auftrag=${encodeURIComponent(nr)}`);
+  if (!d) { box.innerHTML = ""; return; }
+  const nk = d.nachkalkulation || {}, e = d.einstellungen || {}, lauf = d.laufend;
+  const zeilen = (d.eintraege || []).map(x => `<div class="v2-list-row"><span>${x.laeuft ? "▶️" : "⏱"}</span><div class="grow"><b>${esc(datumDe(x.start.slice(0, 10)))} · ${x.laeuft ? "läuft seit " + esc(x.start.slice(11, 16)) : esc(x.start.slice(11, 16)) + "–" + esc((x.ende || "").slice(11, 16)) + " · " + esc(dauerTxt(x.minuten || 0))}</b>
+      <small>${x.kosten_cent ? "intern " + cent2eur(x.kosten_cent) : ""}${x.fahrten.length ? ` · 🚗 ${x.fahrten[0].km} km = ${cent2eur(x.fahrten[0].betrag_cent)} (${esc(x.fahrten[0].eigenbeleg)})` : ""}${x.notiz ? " · " + esc(x.notiz) : ""}${x.quelle === "Telegram" ? " · per Telegram" : ""}</small></div>
+      ${!x.laeuft && !x.fahrten.length ? `<button class="v2-btn sm" data-act="zeit-km" data-id="${esc(x.id)}" data-val="${esc(nr)}" title="Kilometer Hin + Rück (OpenStreetMap) als Fahrtkosten buchen">🚗 km</button>` : ""}
+      ${!x.fahrten.length ? `<button class="v2-btn sm" data-act="zeit-storno" data-id="${esc(x.id)}" data-val="${esc(nr)}" title="Eintrag stornieren">↶</button>` : ""}</div>`).join("");
+  box.innerHTML = `<h3>⏱ Zeiten &amp; Nachkalkulation <small class="v2-sub">🔒 nur intern – nie im PDF, keine Buchung</small></h3>
+    <div class="v2-an-intern" style="border-top:none">
+      <div class="v2-kv"><span>Auftragssumme (Geld)</span><b>${cent2eur(nk.umsatz_cent || 0)}</b></div>
+      <div class="v2-kv"><span>Arbeitszeit ${esc(dauerTxt(nk.minuten || 0))} × ${e.stundensatz_cent ? cent2eur(e.stundensatz_cent) + "/h" : "<i>Stundensatz fehlt</i>"} (kalkulatorisch)</span><b>−${cent2eur(nk.zeit_cent || 0)}</b></div>
+      <div class="v2-kv"><span>Fahrtkosten ${nk.km || 0} km (echte Ausgabe)</span><b>−${cent2eur(nk.fahrt_cent || 0)}</b></div>
+      <div class="v2-kv"><span><b>Deckungsbeitrag</b></span><b style="${(nk.db_cent || 0) < 0 ? "color:var(--v2-red)" : ""}">${cent2eur(nk.db_cent || 0)}</b></div>
+      ${nk.stundenlohn_cent != null ? `<div class="v2-kv"><span>Effektiver Stundenlohn</span><b>${cent2eur(nk.stundenlohn_cent)}/h</b></div>` : ""}</div>
+    <div class="v2-card-actions" style="margin:8px 0">${lauf ? (lauf.auftrag === nr ? `<button class="v2-btn danger" data-act="zeit-stopp" data-id="${esc(nr)}">⏹ Zeit stoppen (läuft seit ${esc(lauf.start.slice(11, 16))})</button>` : `<small class="v2-sub">Es läuft gerade eine Zeit für ${esc(lauf.auftrag || lauf.firma)}.</small>`) : `<button class="v2-btn" data-act="zeit-start" data-id="${esc(nr)}">▶️ Zeit starten</button>`}</div>
+    ${zeilen || `<div class="v2-sub">Noch keine Zeiten. Unterwegs per Telegram: „Bin auf dem Weg zu …“ / „Bin wieder zuhause“.</div>`}
+    <details style="margin-top:8px"><summary><small>+ Zeit von Hand eintragen</small></summary><div class="v2-form">
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Datum</small><input id="zt-datum" type="date"></label><label class="v2-feld"><small>von</small><input id="zt-von" type="time"></label><label class="v2-feld"><small>bis</small><input id="zt-bis" type="time"></label><label class="v2-feld"><small>oder Dauer (Min.)</small><input id="zt-min" inputmode="numeric"></label></div>
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Adresse des Drehs (leer = Firmenadresse)</small><input id="zt-adresse"></label><label class="v2-feld"><small>km Hin + Rück (leer = keine Fahrt)</small><input id="zt-km" inputmode="numeric"></label>
+        <label class="v2-modlbl"><input type="checkbox" id="zt-km-auto"> km berechnen (OpenStreetMap)</label></div>
+      <label class="v2-feld"><small>Notiz</small><input id="zt-notiz"></label>
+      <button class="v2-btn" data-act="zeit-eintragen" data-id="${esc(nr)}">Eintragen</button><div id="zt-msg" class="v2-msg"></div></div></details>
+    <details style="margin-top:6px"><summary><small>Stundensatz ${e.stundensatz_cent ? cent2eur(e.stundensatz_cent) + "/h" : "festlegen"}</small></summary><div class="v2-form"><small class="v2-sub">Brutto-Monatslohn × 12 ÷ (Wochenstunden × 52) – kalkulatorisch, bleibt nur auf der NAS.</small>
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Brutto im Monat (€)</small><input id="zs-brutto" inputmode="decimal"></label><label class="v2-feld"><small>Wochenstunden</small><input id="zs-std" inputmode="decimal" value="${esc(String(e.wochenstunden || ""))}"></label></div>
+      <button class="v2-btn" data-act="zeit-satz" data-id="${esc(nr)}">Speichern</button><div id="zs-msg" class="v2-msg"></div></div></details>`;
+}
+const dauerTxt = (m) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")} h`;
+async function zeitAktion(act, id, val) {
+  let r;
+  if (act === "zeit-start") r = await jpost("/api/finanzen/zeit/start", { auftrag: id });
+  else if (act === "zeit-stopp") r = await jpost("/api/finanzen/zeit/stopp", {});
+  else if (act === "zeit-storno") { const g = prompt("Grund für das Stornieren dieses Zeiteintrags:", ""); if (!g) return; r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/stornieren`, { grund: g }); id = val; }
+  else if (act === "zeit-km") {
+    const v = await jget(`/api/finanzen/zeit/${encodeURIComponent(id)}/km`);
+    const km = prompt(`Kilometer Hin + Rück${v && v.adresse ? " zu " + v.adresse : ""} (0,30 €/km, wird als Eigenbeleg gebucht):`, v && v.km ? String(v.km) : "");
+    if (!km) return; r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/fahrt`, { km }); id = val;
+  } else if (act === "zeit-eintragen") {
+    r = await jpost("/api/finanzen/zeit/eintrag", { auftrag: id, datum: $("#zt-datum").value, von: $("#zt-von").value, bis: $("#zt-bis").value, minuten: $("#zt-min").value.trim(),
+      notiz: $("#zt-notiz").value.trim(), adresse: $("#zt-adresse").value.trim(), km: $("#zt-km").value.trim(), km_berechnen: $("#zt-km-auto").checked });
+    if (!r || !r.ok) return kundenMsg("zt-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+  } else if (act === "zeit-satz") {
+    r = await jpost("/api/finanzen/zeit/einstellungen", { monatsbrutto: $("#zs-brutto").value.trim(), wochenstunden: $("#zs-std").value.trim() });
+    if (!r || !r.ok) return kundenMsg("zs-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+  }
+  if (r && r.ok === false) return alert(r.hinweis || "Fehler.");
+  return abZeitLaden(id);
 }
 async function abSendenVorschau(nr) {
   const box = $("#ab-senden-box"); if (!box) return;
@@ -2369,6 +2421,7 @@ async function handleAct(act, el) {
     case "bl-verwerfen": { const grund = prompt("Warum ist das kein Beleg? (z. B. versehentlich hochgeladen)", ""); if (!grund) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/verwerfen`, { grund }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Verworfen — die Datei bleibt archiviert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "re-neu": return reEditor("");
     case "re-alt-form": return reAltForm();
+    case "zeit-start": case "zeit-stopp": case "zeit-storno": case "zeit-km": case "zeit-eintragen": case "zeit-satz": return zeitAktion(act, id, val);
     case "akte-hochladen": return akteHochladen(id);
     case "akte-zuordnen": return akteZuordnenForm(id);
     case "akte-zuordnen-ok": case "akte-zuordnen-keine": { const r = await jpost(`/api/crm/akte/${encodeURIComponent(id)}/zuordnen`, { firma: act === "akte-zuordnen-ok" ? $("#az-firma").value : "" });

@@ -9,7 +9,7 @@ Weitere Quellen (CRM-To-dos, Antraege, Reels) haengt die Web-App an (`channels/w
 """
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from .angebote import AngebotStore
 from .beauftragung import AuftragBuch
@@ -281,6 +281,32 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                                  f"{firmen.get(a['firma'], a['firma'])} · Leistung erledigt, noch keine Rechnung",
                                  "ab-detail", a["nummer"],
                                  (date.fromisoformat(str(a.get("erledigt_am") or h)[:10]) + timedelta(days=7)).isoformat(), h))
+        try:                                                     # Etappe 25: Zeiten ohne Auftrag / Zeit laeuft zu lange
+            from .zeiterfassung import ERINNERN_STUNDEN
+            zeiten: dict = {}
+            for x in e:
+                d = x["daten"]
+                if x["typ"] in ("zeit_start", "zeit_eintrag"):
+                    zeiten[d["id"]] = dict(d)
+                elif x["typ"] == "zeit_stopp" and d.get("id") in zeiten:
+                    zeiten[d["id"]]["ende"] = d["ende"]
+                elif x["typ"] == "zeit_zugeordnet" and d.get("id") in zeiten:
+                    zeiten[d["id"]]["auftrag"] = d["auftrag"]
+                elif x["typ"] == "zeit_storniert":
+                    zeiten.pop(d.get("id"), None)
+            for z in zeiten.values():
+                name = firmen.get(z.get("firma"), z.get("firma", ""))
+                if not z.get("auftrag"):
+                    out.append(_todo(f"zeit-zuordnen:{z['id']}", "Zeiten", "⏱", f"Zeit einem Auftrag zuordnen: {name}",
+                                     f"{z['start'][8:10]}.{z['start'][5:7]}. – nur an der Firma erfasst", "go:angebote:auftraege",
+                                     "", h, h))
+                if not z.get("ende") and datetime.fromisoformat(z["start"][:19]) <= jetzt().replace(tzinfo=None) - timedelta(
+                        hours=ERINNERN_STUNDEN):
+                    out.append(_todo(f"zeit-laeuft:{z['id']}", "Zeiten", "⏱", f"Zeit läuft noch: {name}",
+                                     f"seit {z['start'][8:10]}.{z['start'][5:7]}. {z['start'][11:16]} – vergessen zu stoppen?",
+                                     "go:angebote:auftraege", "", h, h))
+        except Exception:
+            pass
         try:                                                     # Etappe 21: Lagerbestand unter Mindestbestand
             from .katalog import Katalog
             from .lager import bestaende

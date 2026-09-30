@@ -1510,6 +1510,96 @@ def _auftraege() -> AuftragBuch:
     return AuftragBuch(kunden_store.bh, kunden_store, _angebote())
 
 
+def heimadresse(fd: dict) -> str:
+    return " ".join(x for x in (fd.get("strasse"), fd.get("plz"), fd.get("ort")) if x)
+
+
+def _zeit():
+    """Etappe 25: Zeiterfassung (nur intern) -- Start der Fahrten ist die Firmenadresse aus den Firmendaten."""
+    from ...core.routen import Routen
+    from ...core.zeiterfassung import Zeiterfassung
+    return Zeiterfassung(kunden_store.bh, kunden_store, auftraege=_auftraege(),
+                         routen=Routen(kunden_store.bh.dir / "geocache.json"), heimadresse=heimadresse(_firmendaten()))
+
+
+@app.get("/api/finanzen/zeit")
+def zeit_liste(auftrag: str = ""):
+    """Zeiten + Nachkalkulation eines Auftrags (Modul finanzen, nur intern)."""
+    z = _zeit()
+    out = {"laufend": z.laufend(), "einstellungen": {k: v for k, v in z.einstellungen().items() if k != "monatsbrutto_cent"}}
+    if auftrag:
+        a = _auftraege().auftrag(auftrag)
+        if not a:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Auftrag")
+        out |= {"eintraege": z.fuer_auftrag(a["nummer"]), "nachkalkulation": z.nachkalkulation(a)}
+    return out
+
+
+@app.get("/api/finanzen/zeit/einstellungen")
+def zeit_einstellungen():
+    return _zeit().einstellungen()
+
+
+@app.post("/api/finanzen/zeit/einstellungen")
+async def zeit_einstellungen_setzen(request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _zeit().einstellen(body.get("monatsbrutto"), body.get("wochenstunden"), von=_von(request)))
+
+
+@app.post("/api/finanzen/zeit/start")
+async def zeit_start(request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _zeit().starten(auftrag=body.get("auftrag") or "", firma=body.get("firma") or "",
+                                                  adresse=body.get("adresse") or "", von=_von(request)))
+
+
+@app.post("/api/finanzen/zeit/stopp")
+async def zeit_stopp(request: Request):
+    return _kunden_aktion(lambda: _zeit().stoppen(von=_von(request)))
+
+
+@app.post("/api/finanzen/zeit/eintrag")
+async def zeit_eintrag(request: Request):
+    body = await _json(request)
+
+    def tun():
+        z = _zeit()
+        r = z.eintragen(auftrag=body.get("auftrag") or "", firma=body.get("firma") or "", datum=body.get("datum") or "",
+                        von_uhr=body.get("von") or "", bis_uhr=body.get("bis") or "", minuten=body.get("minuten"),
+                        notiz=body.get("notiz") or "", adresse=body.get("adresse") or "", von=_von(request))
+        if body.get("km") not in (None, "") or body.get("km_berechnen"):
+            r["fahrt"] = z.fahrt_buchen(r["id"], km=body.get("km"), adresse=body.get("adresse") or "", von=_von(request))
+        return r
+    return _kunden_aktion(tun)
+
+
+@app.get("/api/finanzen/zeit/{zid}/km")
+def zeit_km(zid: str, adresse: str = ""):
+    try:
+        return _zeit().km_vorschlag(zid, adresse)
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Zeiteintrag") from None
+
+
+@app.post("/api/finanzen/zeit/{zid}/fahrt")
+async def zeit_fahrt(zid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _zeit().fahrt_buchen(zid, km=body.get("km"), adresse=body.get("adresse") or "",
+                                                       von=_von(request)))
+
+
+@app.post("/api/finanzen/zeit/{zid}/zuordnen")
+async def zeit_zuordnen(zid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _zeit().zuordnen(zid, body.get("auftrag") or "", von=_von(request)))
+
+
+@app.post("/api/finanzen/zeit/{zid}/stornieren")
+async def zeit_stornieren(zid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _zeit().stornieren(zid, body.get("grund") or "", von=_von(request)))
+
+
 @app.get("/api/crm/auftraege")
 def auftraege_liste():
     return {"auftraege": _auftraege().liste()}
