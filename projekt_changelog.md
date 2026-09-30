@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 19:34] — Claude Code
+- **Was:** LUNA_OS_UI_ROADMAP Etappe 5 umgesetzt: Mobil-Feinschliff nach Messlauf ueber alle 24 Ansichten bei 390 px
+  (iPhone) und 820 px (iPad hochkant): Tabellen wischen in der Karte statt die Seite zu verbreitern, Seitenkoepfe und
+  Suchfelder stapeln unter 700 px, Finanz-Pipeline einspaltig, Grid-Kacheln duerfen schrumpfen, Touch-Tippflaechen
+  >= 44 px, Eingabefelder 16 px. `UI.md` um Navigation, Mobil-Regeln und Anmeldung ergaenzt. Alle Etappen 1-6 fertig.
+- **Warum:** CEO-Go 2026-09-30 (UI-Roadmap), Pruefung „passt das zum iPhone?“.
+- **Betroffen:** `orchestrator/channels/web/static/style-v2.css`, `UI.md`, `LUNA_OS_UI_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-09-30 19:32] — Claude Code
 - **Was:** LUNA_OS_UI_ROADMAP Etappe 4 umgesetzt: neue Startseite (Gruss, Handlungsbedarf fest oben, 4 Bereichs-Kacheln
   mit Live-Zahlen, darunter das anpassbare Dashboard) und Bereichs-Startseiten mit Kennzahlen, „Als Naechstes in diesem

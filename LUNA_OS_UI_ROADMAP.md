@@ -3,7 +3,7 @@
 - Stand: 2026-09-30
 - Arbeitsbranch: `ai/plan-ui-navigation` (Plan); Umsetzung je Etappe auf eigenem Branch `ai/ui-etappe-<n>`
 - Basiscommit: `86393dc`
-- Naechster Schritt: CEO-Go 2026-09-30 fuer Etappen 1-6 am Stueck (Passkey ausdruecklich dazu); Etappen 2+6 umgesetzt, weiter mit Etappe 1. Deploy braucht einen Image-Neubau (neue Bibliothek `webauthn`).
+- Naechster Schritt: Etappen 1-6 umgesetzt (Branch `ai/ui-etappen`); CEO-Go fuer Merge, Push und Deploy abwarten -- Deploy braucht einen Image-Neubau (neue Bibliothek `webauthn`), danach Live-Pruefung und Abnahme auf iPhone, iPad und Rechner.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -120,7 +120,10 @@ uebernommen); Glocke zaehlt allen dringenden Handlungsbedarf.
 - Aufwand: mittel.
 
 ### Etappe 5: Mobil-Feinschliff der Seiten (iPhone und iPad)
-- Status: geplant
+- Status: umgesetzt (2026-09-30) -- Messlauf ueber alle 24 Ansichten bei 390 und 820 px: vorher echte Ueberbreite
+  auf Investment, Kunden, Finanzen, Rechnungen (Tabellen, Suchleiste, Pipeline); nachher keine Seite breiter als der
+  Bildschirm, Tabellen wischen in der Karte. Seitenkoepfe stapeln unter 700 px, Touch-Tippflaechen >= 44 px,
+  Eingabefelder 16 px (kein iOS-Zoom).
 - Ziel / Scope: Seitenkoepfe unter 700 px untereinander; Suchfelder volle Breite; breite Tabellen scrollen in der
   Karte; Tipp-Flaechen mindestens 44 px; Pruefung bei 390 px (iPhone) und 820/1180 px (iPad hoch/quer).
 - Gate: Browsertest ueber alle 19 Seiten bei 390 px: keine Seite breiter als der Bildschirm (`scrollWidth = clientWidth`).

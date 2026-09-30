@@ -559,3 +559,23 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-dash-kopf h2 { margin: 0; font-size: 20px; font-weight: 800; }
 @media (max-width: 700px) { .v2-bereiche-start { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .v2-bereich-k { transition: none; } .v2-bereich-k:hover { transform: none; } }
+/* ---------------- Mobil-Feinschliff (LUNA_OS_UI_ROADMAP Etappe 5) ---------------- */
+.v2-tile, .v2-fin-stufe { min-width: 0; }                 /* Grid-Kinder duerfen schrumpfen statt die Seite zu verbreitern */
+@media (max-width: 700px) {
+  .v2-sec-head { flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+  .v2-sec-head h1 { font-size: 26px; flex: 1 1 100%; }
+  .v2-sec-head .actions { flex: 1 1 100%; }
+  .v2-sec-head .actions > input, .v2-sec-head .actions > select.v2-inp, .v2-sec-head .actions .v2-inp[type="search"],
+  .v2-sec-head .actions input.v2-inp { flex: 1 1 100%; min-width: 0; width: 100%; }
+  .v2-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }   /* breite Tabellen wischen in der Karte */
+  .v2-table td:first-child, .v2-table th { white-space: nowrap; }
+  .v2-fin-pipeline { grid-template-columns: minmax(0, 1fr); }
+  .v2-modal, .v2-modal-box { max-width: 100%; }
+}
+/* Touch-Geraete: Tipp-Flaechen mindestens 44 px (Apple-Richtwert) */
+@media (pointer: coarse) {
+  .v2-btn, .v2-tabs button, .v2-unter button, .v2-icon, .v2-pill { min-height: 44px; }
+  .v2-btn.sm { min-height: 40px; padding: 8px 12px; font-size: 13px; }
+  .v2-icon { min-width: 44px; }
+  .v2-inp { min-height: 44px; font-size: 16px; }             /* 16 px: iOS zoomt beim Tippen sonst ins Feld */
+}
