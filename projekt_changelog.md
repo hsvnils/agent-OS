@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 18:18] — Claude Code
+- **Was:** Live: wartende Akten-Mail „Angebot AN-2026-0002 – Kampagne“ der Firma des Angebots zugeordnet (K-00002, eigenes
+  Test-Angebot). Korrektur Kilometer (kalkulatorisch) deployt, Neustart durch den CEO offen.
+- **Warum:** Nachtrag zur Belegnummer-Erkennung der Firmenakte.
+- **Betroffen:** Live-Kassenbuch (`akte_mail_zugeordnet`), sonst keine Dateien ausser diesem Changelog
+
 ## [2026-09-30 18:17] — Claude Code
 - **Was:** Etappe 25 korrigiert: Kilometer nur noch kalkulatorisch (`fahrt_erfassen`, kein Eigenbeleg, korrigierbar),
   Texte in Telegram/LUNA-OS angepasst (JS v74); Test belegt EUeR unveraendert auch nach km. Firmenakte: Mails mit
