@@ -20,8 +20,8 @@ import re
 import uuid
 from datetime import date, timedelta
 
-from .angebote import (_bloecke, _empfaenger, _kopf, _positionen, _summen_zeilen, anrede_moin, summen, ware_geld,
-                       ware_hinweis)
+from .angebote import (_bloecke, _empfaenger, _kopf, _positionen, _summen_zeilen, anrede_moin, pdf_posten,
+                       pdf_posten_standard, provision_abgerechnet, summen, ware_geld, ware_hinweis)
 from .beleg_pdf import HINWEIS_19, beleg_pdf, cent, datum_de, eur, hanserautisch_pdf, menge_text, positions_summe
 from .buchhaltung import Buchhaltung, jetzt
 from .eigenbelege import einnahmen_cent, zuordnung_pruefen
@@ -341,6 +341,10 @@ class RechnungStore:
             if art == "rechnung" and any(r.get("art", "rechnung") == "rechnung" for r in aktiv):
                 raise ValueError(f"Zu {x['auftrag']} gibt es schon eine Rechnung.")
             x = self._summen(self._mit_abzug(x, rechnungen))
+            offen = [p["beschreibung"] for p in x["positionen"] if p.get("provision") and not provision_abgerechnet(p)]
+            if offen:                                                  # Etappe 23: erst abrechnen, dann festschreiben
+                raise ValueError(f"Provision noch nicht abgerechnet ({offen[0]}): verkaufte Stueck bzw. vermittelten "
+                                 "Umsatz eintragen.")
             if not x.get("leistung_von") and not x.get("leistung_bis") and art != "anzahlung":   # Vorkasse: Leistung folgt
                 raise ValueError("Leistungsdatum fehlt (Pflichtangabe).")
             if x["summe_cent"] <= 0:
@@ -651,7 +655,7 @@ class RechnungStore:
                                        (p.get("gruppe") or "Leistungen", p.get("gruppe_farbe", "blau"), []))
                 g[2].append({"name": p["beschreibung"], "detail": p.get("detail", ""), "menge": p["menge"],
                              "einheit": p.get("einheit", "") if p.get("einheit", "").lower() == "monat" else "",
-                             "betrag_cent": p["gesamt_cent"]})
+                             "betrag_cent": p["gesamt_cent"]} | pdf_posten(p))
             return hanserautisch_pdf(
                 art=art, nummer=r["nummer"], firma=firmendaten, logo=self.bh.dir / "logo.jpg",
                 empfaenger=_empfaenger(f, ap), untertitel=r.get("titel") or "", infos=[i for i in infos if i],
@@ -661,9 +665,10 @@ class RechnungStore:
         return beleg_pdf(
             art=art, nummer=r["nummer"], firma=firmendaten, empfaenger=_empfaenger(f, ap),
             infos=[(i.split(": ", 1)[0], i.split(": ", 1)[1]) for i in infos if i],
-            einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einleitung, positionen=r["positionen"],
+            einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einleitung, positionen=[x | pdf_posten_standard(x) for x in r["positionen"]],
             summe_cent=r["summe_cent"], hinweise=[HINWEIS_19, zahlung], schluss="",
-            summen_zeilen=_summen_zeilen(r["summen"]) if r["summen"].get("abzuege") else None)
+            summen_zeilen=_summen_zeilen(r["summen"]) if (r["summen"].get("abzuege") or "provision_cent" in r["summen"])
+            else None)
 
 
 class _Nichts(Exception):

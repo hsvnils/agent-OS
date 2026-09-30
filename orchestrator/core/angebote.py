@@ -57,7 +57,8 @@ def _positionen(roh) -> list[dict]:
             raise ValueError(f"Position {i}: Beschreibung fehlt.")
         try:
             m = menge(p.get("menge", 1))
-            ep = int(p["einzelpreis_cent"]) if "einzelpreis_cent" in p else cent(p.get("einzelpreis", ""))
+            ep = (int(p["einzelpreis_cent"]) if "einzelpreis_cent" in p
+                  else cent(p.get("einzelpreis") or ("0" if p.get("provision") else "")))
         except ValueError as exc:
             raise ValueError(f"Position {i}: {exc}") from None
         if ep < 0:
@@ -80,6 +81,8 @@ def _positionen(roh) -> list[dict]:
                     pos[k] = int(p[k])
             if str(p.get("omr") or "") in OMR["werte"]:
                 pos["omr"] = p["omr"]
+        if p.get("provision"):                                     # Etappe 23: Provisionsmodell (Affiliate)
+            pos |= _provision(p["provision"], i)
         for k, n in (("detail", 600), ("katalog_id", 30), ("gruppe", 60)):   # Etappe 3b: aus dem Leistungskatalog
             if str(p.get(k) or "").strip():
                 pos[k] = str(p[k]).strip()[:n]
@@ -87,6 +90,92 @@ def _positionen(roh) -> list[dict]:
             pos["gruppe_farbe"] = "rot"
         out.append(pos)
     return out
+
+
+PROVISION_ARTEN = ("stueck", "prozent")
+
+
+def _provision(roh, i: int) -> dict:
+    """Etappe 23: Provision statt Festpreis -- „5,00 EUR je verkauftem Artikel“ oder „10 % vom vermittelten Umsatz“.
+    Ohne Abrechnung (Angebot, Auftrag) ist der Betrag 0 und zaehlt nicht zur Summe; mit Abrechnung (verkaufte Stueck
+    bzw. Umsatz) rechnet LUNA den Euro-Betrag aus. Nimmt Eingaben (`wert`, `abrechnung`) und gespeicherte Felder an."""
+    if not isinstance(roh, dict) or roh.get("art") not in PROVISION_ARTEN:
+        raise ValueError(f"Position {i}: Provision je Stueck oder in Prozent.")
+    out = {"art": roh["art"]}
+    try:
+        if roh["art"] == "stueck":
+            out["satz_cent"] = int(roh["satz_cent"]) if roh.get("satz_cent") not in (None, "") else cent(roh.get("wert"))
+            if not 0 < out["satz_cent"] <= 10_000_000:
+                raise ValueError
+        else:
+            out["prozent"] = round(float(str(roh.get("prozent", roh.get("wert"))).replace(",", ".")), 2)
+            if not 0 < out["prozent"] <= 100:
+                raise ValueError
+    except (TypeError, ValueError):
+        raise ValueError(f"Position {i}: Provisionssatz ungueltig (Euro je Stueck > 0 bzw. 0-100 %).") from None
+    ab = roh.get("stueck" if roh["art"] == "stueck" else "basis_cent")
+    if ab in (None, ""):
+        ab = roh.get("abrechnung")
+        if ab not in (None, "") and roh["art"] == "prozent":
+            try:
+                ab = cent(ab)
+            except ValueError:
+                raise ValueError(f"Position {i}: Umsatz fuer die Provision ungueltig.") from None
+    if ab in (None, ""):
+        return {"menge": "1", "einzelpreis_cent": 0, "provision": out}           # noch nicht abgerechnet
+    try:
+        ab = int(str(ab).replace(".", "")) if roh["art"] == "stueck" else int(ab)
+    except (TypeError, ValueError):
+        raise ValueError(f"Position {i}: verkaufte Stueck als ganze Zahl.") from None
+    if ab < 0:
+        raise ValueError(f"Position {i}: Abrechnung darf nicht negativ sein.")
+    if roh["art"] == "stueck":
+        out["stueck"] = ab
+        return {"menge": str(ab) if ab else "1", "einzelpreis_cent": out["satz_cent"] if ab else 0, "provision": out}
+    from decimal import ROUND_HALF_UP, Decimal
+    out["basis_cent"] = ab
+    betrag = int((Decimal(ab) * Decimal(str(out["prozent"])) / 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    return {"menge": "1", "einzelpreis_cent": betrag, "provision": out}
+
+
+def provision_abgerechnet(p: dict) -> bool:
+    pr = p.get("provision") or {}
+    return bool(pr) and ("stueck" in pr or "basis_cent" in pr)
+
+
+def provision_text(pr: dict) -> str:
+    """„5,00 € je verkauftem Artikel“ / „10 % vom vermittelten Umsatz“ -- mit Abrechnung die Rechnung dazu."""
+    if not pr:
+        return ""
+    if pr["art"] == "stueck":
+        satz = f"{eur(pr['satz_cent'])} je verkauftem Artikel"
+        return satz + (f" · abgerechnet: {pr['stueck']} verkaufte Artikel × {eur(pr['satz_cent'])}" if "stueck" in pr else "")
+    satz = f"{menge_text(pr['prozent'])} % vom vermittelten Umsatz"
+    return satz + (f" · abgerechnet: {menge_text(pr['prozent'])} % von {eur(pr['basis_cent'])} Umsatz" if "basis_cent" in pr else "")
+
+
+def pdf_posten(p: dict) -> dict:
+    """Zusatzfelder fuer die PDF-Zeile einer Provisionsposition (Betragstext statt 0,00 EUR, Modell im Detail)."""
+    pr = p.get("provision")
+    if not pr:
+        return {}
+    detail = " · ".join(x for x in (p.get("detail"), provision_text(pr)) if x)
+    if provision_abgerechnet(p):
+        return {"detail": detail}
+    kurz = f"{eur(pr['satz_cent'])}/Stk." if pr["art"] == "stueck" else f"{menge_text(pr['prozent'])} %"
+    return {"detail": detail, "betrag_text": "nach Abrechnung", "einzel_text": kurz, "gesamt_text": "nach Abr.",
+            "menge": None}
+
+
+def pdf_posten_standard(p: dict) -> dict:
+    """Wie `pdf_posten`, fuer das schlichte Layout (Modell in der Beschreibung, Texte in den Betragsspalten)."""
+    pr = p.get("provision")
+    if not pr:
+        return {}
+    extra = {"beschreibung": f"{p['beschreibung']} – {provision_text(pr)}"}
+    if not provision_abgerechnet(p):
+        extra |= {k: v for k, v in pdf_posten(p).items() if k in ("einzel_text", "gesamt_text")}
+    return extra
 
 
 def _kopf(daten: dict) -> dict:
@@ -220,12 +309,17 @@ def summen(positionen: list[dict], zuschlaege: list[dict], rabatt_prozent: float
     """Summe Formate + Zuschlaege (Prozent auf die Summe aller Formate, wie im Generator) - Paketrabatt, in Cent."""
     from decimal import ROUND_HALF_UP, Decimal
     rund = lambda d: int(d.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-    formate = sum(positions_summe(p["menge"], p["einzelpreis_cent"]) for p in positionen)
+    formate = sum(positions_summe(p["menge"], p["einzelpreis_cent"]) for p in positionen if not p.get("provision"))
     zu = [(z["name"], z["prozent"], rund(Decimal(formate) * Decimal(str(z["prozent"])) / 100)) for z in zuschlaege]
     zwischen = formate + sum(c for _, _, c in zu)
     rabatt = (rabatt_prozent, rund(Decimal(zwischen) * Decimal(str(rabatt_prozent)) / 100)) if rabatt_prozent else None
-    return {"formate_cent": formate, "zuschlaege": zu, "rabatt": rabatt,
-            "gesamt_cent": zwischen - (rabatt[1] if rabatt else 0)}
+    out = {"formate_cent": formate, "zuschlaege": zu, "rabatt": rabatt, "gesamt_cent": zwischen - (rabatt[1] if rabatt else 0)}
+    prov = [p for p in positionen if p.get("provision")]          # Etappe 23: Provision ohne Zuschlag/Rabatt, danach
+    if prov:
+        out["provision_cent"] = sum(positions_summe(p["menge"], p["einzelpreis_cent"]) for p in prov)
+        out["provision_offen"] = any(not provision_abgerechnet(p) for p in prov)
+        out["gesamt_cent"] += out["provision_cent"]
+    return out
 
 
 def anrede_moin(ap: dict | None, firma_name: str) -> str:
@@ -432,7 +526,7 @@ class AngebotStore:
             art="Angebot", nummer=a["nummer"], firma=firmendaten, empfaenger=empfaenger,
             infos=[("Datum", datum_de(a["datum"])), ("Gültig bis", datum_de(a["gueltig_bis"])),
                    ("Kundennummer", a["firma"]), ("Ansprechpartner", a.get("ansprechpartner", ""))],
-            einleitung=einleitung, positionen=a["positionen"], summe_cent=a["summe_cent"],
+            einleitung=einleitung, positionen=[x | pdf_posten_standard(x) for x in a["positionen"]], summe_cent=a["summe_cent"],
             summen_zeilen=_summen_zeilen(a["summen"]),
             hinweise=[HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
             + [zb.text(a.get("zahlung"), a["geld_cent"]), f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."],
@@ -446,7 +540,7 @@ class AngebotStore:
                                                                       p.get("gruppe_farbe", "blau"), []))
             g[2].append({"name": p["beschreibung"], "detail": p.get("detail", ""), "menge": p["menge"],
                          "einheit": p.get("einheit", "") if p.get("einheit", "").lower() == "monat" else "",
-                         "betrag_cent": p["gesamt_cent"]})
+                         "betrag_cent": p["gesamt_cent"]} | pdf_posten(p))
         return hanserautisch_pdf(
             art="Angebot", nummer=a["nummer"], firma=firmendaten, logo=self.bh.dir / "logo.jpg",
             empfaenger=_empfaenger(f, ap), untertitel=a.get("titel") or b.get("untertitel", ""),
@@ -578,12 +672,14 @@ def _schalter(kopf: dict, daten: dict) -> None:
 
 def _summen_zeilen(sm: dict) -> list[tuple[str, int]] | None:
     """Zwischenzeilen fuer das Standard-PDF, nur wenn es Zuschlaege oder Rabatt gibt."""
-    if not (sm["zuschlaege"] or sm["rabatt"] or sm.get("abzuege")):
+    if not (sm["zuschlaege"] or sm["rabatt"] or sm.get("abzuege") or "provision_cent" in sm):
         return None
     zeilen = [("Summe Formate", sm["formate_cent"])]
     zeilen += [(f"{n} (+{menge_text(pr)} %)", c) for n, pr, c in sm["zuschlaege"]]
     if sm["rabatt"]:
         zeilen.append((f"Paketrabatt ({menge_text(sm['rabatt'][0])} %)", -sm["rabatt"][1]))
+    if "provision_cent" in sm:                             # Etappe 23: Provision nach Rabatt, ohne Zuschlag
+        zeilen.append(("Provision" + (" (Rest nach Abrechnung)" if sm.get("provision_offen") else ""), sm["provision_cent"]))
     if sm.get("abzuege"):                                  # Schlussrechnung (Etappe 18)
         zeilen.append(("Auftragssumme", sm["vor_abzug_cent"]))
         zeilen += [(n, -c) for n, c in sm["abzuege"]]
@@ -604,6 +700,9 @@ def preisliste_pdf(katalog: dict, firmendaten: dict, *, logo: Path | None, ids: 
     for g in katalog["gruppen"]:
         posten = [{"name": it["name"], "detail": " · ".join(x for x in (it["basis"], it["hinweis"]) if x), "menge": None,
                    "einheit": it["einheit"], "betrag_cent": it["preis_cent"]}
+                  | ({"betrag_text": (f"{eur(it['provision_wert'])} / Stk." if it["provision_art"] == "stueck"
+                                      else f"{menge_text(it['provision_wert'])} % Provision"), "einheit": ""}
+                     if it.get("provision_art") else {})
                   for it in g["items"] if it["aktiv"] and (ids is None or it["id"] in ids)]
         gruppen.append((g["name"], g["farbe"], posten))
     if not any(p for _, _, p in gruppen):

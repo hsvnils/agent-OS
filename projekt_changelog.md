@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-09-30 17:09] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 23 umgesetzt: Provisionsmodell (Affiliate) -- „EUR je verkauftem Artikel“ oder „% vom
+  Umsatz“ in Angebot/Auftrag ohne Summe („nach Abrechnung“), Abrechnung im Rechnungs-Editor (Stueck bzw. Umsatz) ->
+  echter Euro-Betrag; Provision ohne Zuschlag/Rabatt; Festschreiben erst nach Abrechnung; Katalog-Preismodell,
+  Preisliste zeigt den Satz. JS v69, CSS v28. Tests `test_provision.py` (6) + 8 Gegenproben, Suite gruen, Browser-Test.
+- **Warum:** CEO 2026-09-30 (Affiliate im Angebot mit Preis, nach der Collab abrechnen).
+- **Betroffen:** `orchestrator/core/angebote.py`, `orchestrator/core/beauftragung.py`, `orchestrator/core/rechnungen.py`,
+  `orchestrator/core/katalog.py`, `orchestrator/core/beleg_pdf.py`, `orchestrator/channels/web/static/app-v2.js`,
+  `style-v2.css`, `index-v2.html`, `orchestrator/tests/test_provision.py`, `KUNDEN_FINANZEN_ROADMAP.md`, `ROADMAP.md`,
+  `docs/datenfluesse.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
 ## [2026-09-30 17:01] — Claude Code
 - **Was:** Etappe 20 nach Deploy und Neustart geprueft: LUNA-OS liefert v68, NAS erreicht `data-api.ecb.europa.eu`,
   Kursabruf gegen die echte EZB-Antwort korrekt (35,00 USD vom 21.09. = 30,46 EUR wie bei der Nachbuchung; Samstag
