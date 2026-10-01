@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 00:12] — Claude Code
+- **Was:** Etappen 29/30 live geprueft (UI v81, Zeit-/Lieferungs-Endpunkte antworten, Bot ok). KUNDEN_FINANZEN Etappe 31
+  umgesetzt: Auftrag ohne Angebot -- „+ Neuer Auftrag (ohne Angebot)“ in der Auftragsliste, Angebots-Editor im
+  Auftragsmodus (Leistungszeitraum, Notiz), `AuftragBuch.anlegen` mit den Pruefregeln des Angebots inkl. Vorkasse,
+  Auftragsbestaetigung (PDF in beiden Vorlagen, Mail) ohne Angebotsbezug, Rechnung und Zeiterfassung wie gewohnt.
+  UI v82. Tests mit Gegenprobe, Browsertest.
+- **Warum:** CEO-Go 2026-10-02 („Nicht jeder Auftrag braucht ein Angebot“).
+- **Betroffen:** `orchestrator/core/beauftragung.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`,
+  `static/index-v2.html`, `orchestrator/tests/test_auftrag_manuell.py` (neu), `KUNDEN_FINANZEN_ROADMAP.md`,
+  `docs/datenfluesse.md`
+
 ## [2026-10-02 00:04] — Claude Code
 - **Was:** Etappen 29/30 + Auftraege-Knopf gemergt, gepusht, per Sync auf der NAS (`78cf434`, Neustart CEO offen).
   KUNDEN_FINANZEN Etappe 31 geplant (Auftrag ohne Angebot manuell anlegen).

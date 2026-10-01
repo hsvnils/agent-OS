@@ -1038,9 +1038,10 @@ async function firmaWaehlen(nr) {
   const box = $("#an-firma-treffer"); if (box) box.hidden = true;
   await anApListe("");
 }
-async function anEditor(nummer, firmaVorwahl) {
+async function anEditor(nummer, firmaVorwahl, modus) {
   AN_KONTEXT = "angebot";
-  openModal(nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-empty">Lade…</div>`, true);
+  const alsAuftrag = modus === "auftrag";                         // Etappe 31: Auftrag ohne Angebot, gleicher Editor
+  openModal(alsAuftrag ? "Neuer Auftrag" : nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-empty">Lade…</div>`, true);
   const [k, d] = await Promise.all([jget("/api/crm/kunden"), nummer ? jget("/api/crm/angebote/" + encodeURIComponent(nummer)) : Promise.resolve(null), katalogLaden()]);
   AN_FIRMEN = ((k && k.firmen) || []).filter(f => f.aktiv);
   if (!AN_FIRMEN.length) return openModal("Neues Angebot", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."), true);
@@ -1053,7 +1054,7 @@ async function anEditor(nummer, firmaVorwahl) {
   const zuHtml = zuListe.map(z => { const alt = (a.zuschlaege || []).find(x => x.id === z.id); const pr = alt ? alt.prozent : z.prozent;
     return `<label class="v2-modlbl"><input type="checkbox" class="an-zu" value="${esc(z.id)}" data-name="${esc(z.name)}" data-prozent="${esc(String(pr))}" ${gewaehlt.has(z.id) ? "checked" : ""}> +${esc(pz(pr))} % ${esc(z.name)}</label>`; }).join("");
   const rmax = esc(String((KATALOG && KATALOG.rabatt_max) || 30));
-  openModal(nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-form v2-an-editor">
+  openModal(alsAuftrag ? "Neuer Auftrag (ohne Angebot)" : nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-form v2-an-editor">
     <div class="v2-an-kopf">
       <div class="v2-form">
         <div class="v2-feld v2-auto-feld"><small>Firma * (Name, Kundennummer oder Ort tippen)</small>
@@ -1096,6 +1097,7 @@ async function anEditor(nummer, firmaVorwahl) {
   await anApListe(a.ansprechpartner || "");
   firmaSucheVerdrahten();
   const box = $("#v2-modal .v2-form"); box.addEventListener("input", anSumme); box.addEventListener("change", anSumme); anSumme();
+  if (alsAuftrag) abEditorUmbauen();
 }
 async function anApListe(vorwahl) {
   const nr = ($("#an-firma") || {}).value; const sel = $("#an-ap"); if (!sel) return;
@@ -1199,13 +1201,32 @@ function anInternKalk(netto) {   // Etappe 21: nur intern (nie im PDF) -- Kosten
   const db = netto - kosten, marge = netto ? Math.round(db * 1000 / netto) / 10 : 0, unter = marge < (KATALOG.mindestmarge_prozent ?? 30);
   return `<div class="v2-an-intern"><small>🔒 Intern (nicht im PDF)</small><div class="v2-kv"><span>Kosten laut Katalog${ohne ? ` (${ohne} Pos. ohne Kosten)` : ""}</span><b>${cent2eur(kosten)}</b></div><div class="v2-kv"><span>Deckungsbeitrag</span><b>${cent2eur(db)}</b></div><div class="v2-kv"><span>Marge</span><b style="${unter ? "color:var(--v2-red)" : ""}">${esc(pz(marge))} %${unter ? " ⚠️ unter Mindestmarge" : ""}</b></div></div>`;
 }
-async function anSpeichern(nummer) {
-  if (!$("#an-firma").value) { $("#an-firma-suche").focus(); return kundenMsg("an-msg", "Bitte eine Firma aus den Vorschlägen auswählen.", false); }
-  const angebot = { firma: $("#an-firma").value, ansprechpartner: $("#an-ap").value, titel: $("#an-titel").value.trim(), datum: $("#an-datum").value, gueltig_bis: $("#an-gueltig").value,
+// Etappe 31: im Auftragsmodus Gueltigkeit/Nachfassen weg, Leistungszeitraum + Notiz dazu, Speichern legt den Auftrag an
+function abEditorUmbauen() {
+  ["#an-gueltig", "#an-nachfassen", "#an-datum"].forEach(sel => { const f = $(sel); const l = f && f.closest("label"); if (l) l.hidden = true; });
+  const knopf = document.querySelector('[data-act="an-speichern"]'); if (!knopf) return;
+  knopf.dataset.act = "ab-manuell-speichern"; knopf.textContent = "Auftrag anlegen (Nummer wird vergeben)";
+  knopf.closest(".v2-card-actions").insertAdjacentHTML("beforebegin", `<h3>Auftrag</h3><div class="v2-form">
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Leistung von</small><input id="abm-von" type="date"></label><label class="v2-feld"><small>Leistung bis</small><input id="abm-bis" type="date"></label></div>
+    <label class="v2-feld"><small>Notiz (intern)</small><textarea id="abm-notiz" rows="2" class="v2-inp"></textarea></label></div>`);
+}
+function anDaten() {
+  return { firma: $("#an-firma").value, ansprechpartner: $("#an-ap").value, titel: $("#an-titel").value.trim(), datum: $("#an-datum").value, gueltig_bis: $("#an-gueltig").value,
     nachfassen_tage: $("#an-nachfassen").value, einleitung: $("#an-einleitung").value.trim(), schluss: $("#an-schluss").value.trim(), positionen: anPositionen(),
     zuschlaege: anZuschlaege(), rabatt_prozent: ($("#an-rabatt") || {}).value || 0, layout: $("#an-layout").value,
     zeige_kalkulation: $("#an-zeige-kalk").checked, zeige_kennzahlen: $("#an-zeige-kz").checked, ware: anWare(), zahlung: anZahlung(),
     tkp_zeigen: ($("#an-tkp-zeigen") || {}).checked !== false, omr_zeigen: !!($("#an-omr-zeigen") || {}).checked };
+}
+async function abManuellSpeichern() {
+  if (!$("#an-firma").value) { $("#an-firma-suche").focus(); return kundenMsg("an-msg", "Bitte eine Firma aus den Vorschlägen auswählen.", false); }
+  const r = await jpost("/api/crm/auftraege", { auftrag: anDaten(), leistung_von: $("#abm-von").value, leistung_bis: $("#abm-bis").value, notiz: $("#abm-notiz").value.trim() });
+  if (!r || !r.ok) return kundenMsg("an-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
+  if (AKTIV === "angebote" || AKTIV === "auftraege") renderAngebote();
+  return abDetail(r.nummer, `${r.nummer} angelegt — ohne Angebot. Auftragsbestätigung, Rechnung und Zeiterfassung wie gewohnt.`);
+}
+async function anSpeichern(nummer) {
+  if (!$("#an-firma").value) { $("#an-firma-suche").focus(); return kundenMsg("an-msg", "Bitte eine Firma aus den Vorschlägen auswählen.", false); }
+  const angebot = anDaten();
   const r = nummer ? await jpost("/api/crm/angebote/" + encodeURIComponent(nummer), { angebot }) : await jpost("/api/crm/angebote", { angebot });
   if (!r || !r.ok) return kundenMsg("an-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
   const nr = nummer || r.nummer; if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
@@ -1272,10 +1293,10 @@ async function renderAuftraege() {
   const d = await jget("/api/crm/auftraege") || {};
   const l = d.auftraege || [];
   const offen = l.filter(a => a.status === "beauftragt");
-  const rows = l.map(a => `<tr class="klick" data-act="ab-detail" data-id="${esc(a.nummer)}"><td><b>${esc(a.nummer)}</b></td><td>${esc(a.firma_name || a.firma)}</td><td>${esc(a.titel || "")}</td><td>${esc(a.angebot)}</td><td>${esc([datumDe(a.leistung_von), datumDe(a.leistung_bis)].filter(Boolean).join(" – "))}</td><td style="text-align:right">${cent2eur(a.summe_cent)}</td><td>${abBadge(a.status)}</td></tr>`).join("");
+  const rows = l.map(a => `<tr class="klick" data-act="ab-detail" data-id="${esc(a.nummer)}"><td><b>${esc(a.nummer)}</b></td><td>${esc(a.firma_name || a.firma)}</td><td>${esc(a.titel || "")}</td><td>${a.angebot ? esc(a.angebot) : `<span class="v2-sub">direkt</span>`}</td><td>${esc([datumDe(a.leistung_von), datumDe(a.leistung_bis)].filter(Boolean).join(" – "))}</td><td style="text-align:right">${cent2eur(a.summe_cent)}</td><td>${abBadge(a.status)}</td></tr>`).join("");
   const body = `${kpiTile("Offene Aufträge", String(offen.length), null, cent2eur(offen.reduce((x, a) => x + (a.summe_cent || 0), 0)))}${kpiTile("Geliefert", String(l.filter(a => a.status === "erledigt").length), null, "bereit für die Rechnung")}
     ${tile("Aufträge", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Firma</th><th>Titel</th><th>Angebot</th><th>Leistung</th><th style="text-align:right">Summe</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow("Noch kein Auftrag — entsteht aus einem angenommenen Angebot („📋 Auftrag anlegen“)."), "w12")}`;
-  $("#v2-app").innerHTML = anKopf() + `<div class="v2-grid">${body}</div>`;
+  $("#v2-app").innerHTML = anKopf() + `<div class="v2-card-actions" style="margin:-6px 0 12px"><button class="v2-btn pri" data-act="ab-manuell">+ Neuer Auftrag (ohne Angebot)</button></div><div class="v2-grid">${body}</div>`;
 }
 function abNeu(angebotNr, annehmen) {
   openModal(`Auftrag aus ${angebotNr}`, `<div class="v2-form" style="max-width:640px">
@@ -1302,7 +1323,7 @@ async function abDetail(nr, meldung, fehler) {
     + (sm.rabatt ? `<tr><td></td><td>Paketrabatt (${esc(pz(sm.rabatt[0]))} %)</td><td></td><td style="text-align:right">−${cent2eur(sm.rabatt[1])}</td></tr>` : "")
     + `<tr><td></td><td><b>Gesamtbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
   let aktionen = `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 Auftragsbestätigung (PDF)</a>
-    <button class="v2-btn" data-act="an-detail" data-id="${esc(a.angebot)}">↩ Angebot ${esc(a.angebot)}</button>`;
+    ${a.angebot ? `<button class="v2-btn" data-act="an-detail" data-id="${esc(a.angebot)}">↩ Angebot ${esc(a.angebot)}</button>` : ""}`;
   if (a.status !== "storniert") aktionen += `<button class="v2-btn pri" data-act="ab-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled"}>✉️ Senden …</button>`;
   const reListe = d.rechnungen || [], vkDa = reListe.some(r => r.art === "anzahlung" && r.status !== "storniert");
   const schlussDa = reListe.some(r => (r.art || "rechnung") === "rechnung" && r.status !== "storniert");
@@ -1318,7 +1339,7 @@ async function abDetail(nr, meldung, fehler) {
     <div class="v2-card-actions" style="flex-wrap:wrap;margin:8px 0 14px">${aktionen}</div>
     <div class="v2-an-detail"><div>
     <div class="v2-kv"><span>Status</span>${abBadge(a.status)}</div>
-    <div class="v2-kv"><span>Angebot</span><b>${esc(a.angebot)}</b></div>
+    <div class="v2-kv"><span>Angebot</span><b>${a.angebot ? esc(a.angebot) : "— (direkt angelegt)"}</b></div>
     <div class="v2-kv"><span>Firma</span><b>${esc(a.firma)} · ${esc(d.firma.name || "")}</b></div>
     <div class="v2-kv"><span>Ansprechpartner</span><b>${ap ? esc(ap.nummer + " · " + [ap.vorname, ap.nachname].filter(Boolean).join(" ")) : "—"}</b></div>
     <div class="v2-kv"><span>Beauftragt am</span><b>${esc(datumDe(a.datum))}</b></div>
@@ -1338,7 +1359,7 @@ async function abDetail(nr, meldung, fehler) {
     </div><div>
     <div id="ab-senden-box"></div>
     ${darf("rechnungen") ? `<div id="ab-zeit-box"></div>` : ""}
-    <h3>Positionen <small class="v2-sub">aus ${esc(a.angebot)} übernommen</small></h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
+    <h3>Positionen${a.angebot ? ` <small class="v2-sub">aus ${esc(a.angebot)} übernommen</small>` : ""}</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
     </div></div>`, true);
   abZeitLaden(nr); abLieferungen(nr);
 }
@@ -2765,6 +2786,8 @@ async function handleAct(act, el) {
     case "pl-pdf": return preislistePdf();
     case "an-pos-weg": { const z = el.closest(".v2-an-pos"); if (z) z.remove(); return anSumme(); }
     case "an-speichern": return anSpeichern(id);
+    case "ab-manuell": return anEditor("", "", "auftrag");
+    case "ab-manuell-speichern": return abManuellSpeichern();
     case "an-mail": { flash("⏳ erstellt…"); const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/mailentwurf`, {}); return anDetail(id, r && r.ok ? `Gmail-Entwurf an ${r.an} mit PDF angelegt — in Gmail prüfen und selbst senden. Danach hier „Als versendet markieren“.` : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "an-versendet": {
       if (!confirm("Hast du das Angebot auf anderem Weg verschickt (nicht über „Senden“)? Danach ist es nicht mehr änderbar, und die Kalender-Erinnerungen werden angelegt.")) return;
