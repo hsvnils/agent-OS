@@ -889,6 +889,27 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   identisch), Browsertest. Nachtrag ohne Meta-Mails: Screenshot der Auszahlungsdetails als Beleg + Betrag laut
   Kontoauszug, Zeitraeume von Hand.
 
+### Etappe 28: Mahnstufen und Mahnverfahren, Anwalts-Post in die Akte, Selgros-Positionen
+
+- Status: geplant (CEO 2026-10-01), wartet auf CEO-Go
+- Ziel / Scope:
+  - **Begriffe (CEO):** unsere Mahnungen heissen in LUNA **„Mahnstufe 1/2/3“** (Status, Listen, Handlungsbedarf,
+    Telegram); die Ueberschrift auf dem Brief an den Kunden bleibt „1./2./3. Mahnung“ wie in den CEO-PDFs (bisher druckt
+    LUNA bei Stufe 3 „Letzte Mahnung“).
+  - **Status „Mahnverfahren“:** an einer offenen Rechnung eintragbar (Datum eingeleitet, durch wen, Notiz, Bezug auf ein
+    Akte-Dokument), z. B. RG-11052026 seit 29.09.2026 durch RAin Marquardt (digital beim Gericht). Rechnung bleibt
+    offen; Handlungsbedarf zeigt statt „dringend: Mahnbescheid/Inkasso pruefen“ den ruhigen Punkt „Mahnverfahren laeuft
+    seit … – auf Zahlung oder Nachricht der Anwaeltin warten“ (Stufe „wenn Zeit ist“). Zahlung beendet es wie bisher.
+  - **BF-49:** Mails, die eine eigene Ausgangsrechnung nennen (auch „Rechnung Nr. 11052026“ ohne Praefix) oder von einer
+    in der Akte hinterlegten Kanzlei kommen, gehen in die Firmenakte statt in die Belege.
+  - **BF-50:** Leser fuer Selgros/Transgourmet-Rechnungen: 24 Positionen mit GTIN, mehrzeilige Namen, **brutto je
+    MwSt-Satz** (Kleinunternehmer), Summen-/Infozeilen ignorieren, Lieferant „Transgourmet Deutschland GmbH & Co. OHG
+    (Selgros …)“; Kartenzahlungsbeleg mit gleicher Belegnummer automatisch als Zahlungsnachweis. Allgemein: zwei PDFs
+    einer Mail mit derselben Belegnummer = Rechnung + Nachweis.
+- Gate: Tests mit nachgebauten Texten (keine echten Kundendaten): Selgros 24 Positionen, Summe exakt; Anwalts-Mail ->
+  Akte; Mahnverfahren-Status im Handlungsbedarf; Brief-Ueberschrift „3. Mahnung“; Suite + Doku-Check gruen.
+- Aufwand: mittel.
+
 ## Reihenfolge
 
 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 (ohne Auto-Weiterleitung) -> 14 -> 13 (Auto-Weiterleitung) -> 15/16 (unabhaengig, nach CEO-Go). Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst

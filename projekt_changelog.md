@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-01 09:34] — Claude Code
+- **Was:** Weitergeleitete Mails vom 01.10. geprueft und Einsortierung korrigiert: Anwaltsschreiben 08.09.2026, Begleitmail
+  und Mailverlauf bis 29.09.2026 (Mahnverfahren eingeleitet) in die Firmenakte K-00009 (Bezug RG-11052026); die
+  faelschlich als Eingangsrechnung angelegten ER-2026-0134/-0135 verworfen (BF-49); Selgros-Kartenbeleg ER-2026-0136
+  als Zahlungsnachweis an die Rechnung ER-2026-0137 (BF-50). Selgros-Positionen geprueft: automatischer Vorschlag
+  unsauber, 24 Positionen brutto nachgerechnet (195,36 EUR exakt), Buchung wartet auf Zweck/Kategorie vom CEO.
+  KUNDEN_FINANZEN Etappe 28 geplant (Mahnstufe 1-3, Status „Mahnverfahren“, Fix BF-49/BF-50).
+- **Warum:** CEO 2026-10-01: Anwalts-Mails und Selgros-Rechnung an LUNA weitergeleitet; Begriffe „Mahnstufen“ und
+  „Mahnverfahren“.
+- **Betroffen:** Live-Buchhaltung (NAS), `docs/bekannte-fehler.md`, `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-10-01 09:16] — Claude Code
 - **Was:** Drei vor LUNA verschickte Mahnungen zu RG-11052026 (Kiez Alm Gastro GmbH, K-00009) als Altmahnungen mit
   Original-PDF erfasst: M1 29.07.2026 (Frist 05.08., 4.005,00 EUR inkl. 5 EUR Gebuehr), M2 23.08.2026 (Frist 30.08.,
