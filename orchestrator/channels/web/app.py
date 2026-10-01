@@ -1849,6 +1849,15 @@ def auftraege_liste():
     return {"auftraege": _auftraege().liste()}
 
 
+@app.post("/api/crm/auftraege")
+async def auftrag_anlegen(request: Request):
+    """Etappe 31: Auftrag ohne Angebot (gleiche Felder wie ein Angebot + Leistungszeitraum/Notiz)."""
+    body = await _json(request)
+    return _kunden_aktion(lambda: _auftraege().anlegen(body.get("auftrag") or {}, leistung_von=body.get("leistung_von") or "",
+                                                       leistung_bis=body.get("leistung_bis") or "", notiz=body.get("notiz") or "",
+                                                       von=_von(request)))
+
+
 @app.get("/api/crm/auftraege/{nummer}")
 def auftrag_detail(nummer: str):
     a = _auftraege().auftrag(nummer)

@@ -131,6 +131,49 @@ class AuftragBuch:
                                 pruefe=pruefe)
         return {"nummer": ev["daten"]["nummer"]}
 
+    def anlegen(self, daten: dict, *, leistung_von: str = "", leistung_bis: str = "", notiz: str = "",
+                von: str = "") -> dict:
+        """Etappe 31 (CEO 2026-10-02: „Nicht jeder Auftrag braucht ein Angebot“): Auftrag direkt anlegen -- gleiche
+        Felder und Pruefregeln wie ein Angebot (Firma, Ansprechpartner, Titel, Positionen, Zuschlaege/Rabatt, Layout,
+        Ware, Zahlungsbedingungen inkl. Vorkasse), Feld „angebot“ bleibt leer."""
+        from .angebote import _kopf, _positionen, _schalter
+        if not isinstance(daten, dict):
+            raise ValueError("Ungueltige Eingabe.")
+        lv, lb = _datum(leistung_von, "Leistung von"), _datum(leistung_bis, "Leistung bis")
+        if lv and lb and lb < lv:
+            raise ValueError("Leistungszeitraum: Ende liegt vor dem Beginn.")
+        heute = jetzt().date()
+        katalog = getattr(self.angebote, "katalog", None)
+        kopf = {"ansprechpartner": "", "titel": "", "zuschlaege": [], "rabatt_prozent": 0,
+                "layout": "hanserautisch" if katalog else "standard"}
+        kopf.update({k: v for k, v in _kopf(daten).items() if k in _UEBERNAHME})
+        if not str(kopf.get("titel") or "").strip():
+            raise ValueError("Bitte einen Titel angeben (z. B. „Social-Media-Kampagne Herbst“).")
+        self.angebote._ziel_vorschlag(kopf, daten.get("zahlung"), kopf.get("firma") or "")
+        if kopf["layout"] == "hanserautisch" and "bloecke" not in kopf:
+            from .angebote import _bloecke
+            kopf["bloecke"] = _bloecke(katalog.laden()["texte"] if katalog else {})
+        _schalter(kopf, daten)
+        pos = _positionen(daten.get("positionen"))
+        sm = summen(pos, kopf.get("zuschlaege") or [], kopf.get("rabatt_prozent") or 0)
+        geld = sm["gesamt_cent"] - min(int((kopf.get("ware") or {}).get("wert_cent") or 0), sm["gesamt_cent"])
+
+        def pruefe(eintraege):
+            self.angebote._pruefe_bezug(eintraege, kopf)
+
+        def bauen(eintraege):
+            d = {k: kopf.get(k) for k in _UEBERNAHME if k in kopf} | {
+                "positionen": pos, "angebot": "", "datum": heute.isoformat(), "leistung_von": lv, "leistung_bis": lb,
+                "notiz": str(notiz or "").strip()[:2000]}
+            vk = zb.vorkasse_cent(kopf.get("zahlung"), geld)
+            if vk:
+                d |= {"vorkasse_cent": vk, "vorkasse_faellig": zb.vorkasse_frist(kopf["zahlung"], heute)}
+            return d
+
+        ev = self.bh.mit_nummer("AB", "auftrag_angelegt", bauen, jahr=heute.year, bezug=kopf["firma"], von=von,
+                                pruefe=pruefe)
+        return {"nummer": ev["daten"]["nummer"]}
+
     def aendern(self, nummer: str, felder: dict, *, von: str = "") -> dict:
         nummer = (nummer or "").strip().upper()
         neu = {}
@@ -201,8 +244,9 @@ class AuftragBuch:
         lv, lb = a.get("leistung_von"), a.get("leistung_bis")
         zeitraum = (f"{datum_de(lv)} – {datum_de(lb)}" if lv and lb else f"ab {datum_de(lv)}" if lv
                     else f"bis {datum_de(lb)}" if lb else "")
-        einleitung = (f"vielen Dank für Ihren Auftrag. Hiermit bestätigen wir die Beauftragung auf Grundlage unseres "
-                      f"Angebots {a['angebot']}" + (f" für den Leistungszeitraum {zeitraum}" if zeitraum else "") + ".")
+        einleitung = ("vielen Dank für Ihren Auftrag. Hiermit bestätigen wir die Beauftragung"
+                      + (f" auf Grundlage unseres Angebots {a['angebot']}" if a.get("angebot") else "")   # Etappe 31
+                      + (f" für den Leistungszeitraum {zeitraum}" if zeitraum else "") + ".")
         hinweise = ([HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
                     + [x for x in [zb.text(a.get("zahlung"), a["geld_cent"], ab_datum=a["datum"])] if x]
                     + ([f"Anmerkung: {a['notiz']}"] if a.get("notiz") else []))
@@ -218,14 +262,14 @@ class AuftragBuch:
             return hanserautisch_pdf(
                 art="Auftragsbestätigung", nummer=a["nummer"], firma=firmendaten, logo=self.bh.dir / "logo.jpg",
                 empfaenger=_empfaenger(f, ap), untertitel=a.get("titel") or b.get("untertitel", ""),
-                infos=[f"Tangstedt, den {datum_de(a['datum'])}", f"Auftrag: {a['nummer']}", f"Angebot: {a['angebot']}",
-                       f"Kundennummer: {a['firma']}"] + ([f"Leistung: {zeitraum}"] if zeitraum else []),
+                infos=[f"Tangstedt, den {datum_de(a['datum'])}", f"Auftrag: {a['nummer']}"] + ([f"Angebot: {a['angebot']}"] if a.get("angebot") else [])
+                      + [f"Kundennummer: {a['firma']}"] + ([f"Leistung: {zeitraum}"] if zeitraum else []),
                 anrede=anrede_moin(ap, f.get("name", "")), einleitung=einleitung, texte=b | {"fuss": b.get("fuss", "")},
                 zeige_kalkulation=False, zeige_kennzahlen=False, gruppen=list(gruppen.values()), summen=a["summen"],
                 zuschlag_liste=None, fuss_zusatz=" ".join(hinweise[1:]))
         return beleg_pdf(
             art="Auftragsbestätigung", nummer=a["nummer"], firma=firmendaten, empfaenger=_empfaenger(f, ap),
-            infos=[("Datum", datum_de(a["datum"])), ("Angebot", a["angebot"]), ("Kundennummer", a["firma"]),
+            infos=[("Datum", datum_de(a["datum"]))] + ([("Angebot", a["angebot"])] if a.get("angebot") else []) + [("Kundennummer", a["firma"]),
                    ("Leistung", zeitraum)],
             einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einleitung, positionen=[x | pdf_posten_standard(x) for x in a["positionen"]],
             summe_cent=a["summe_cent"], hinweise=hinweise, schluss="", summen_zeilen=_summen_zeilen(a["summen"]))
@@ -251,7 +295,7 @@ def auftrag_mail_text(a: dict, ap: dict | None, firmendaten: dict) -> tuple[str,
     anrede = f"Guten Tag {name}," if name else "Sehr geehrte Damen und Herren,"
     betreff = f"Auftragsbestätigung {a['nummer']}" + (f" – {a['titel']}" if a.get("titel") else "")
     text = (f"{anrede}\n\nvielen Dank für Ihren Auftrag. Anbei erhalten Sie unsere Auftragsbestätigung {a['nummer']} "
-            f"zu unserem Angebot {a['angebot']} über {eur(a['summe_cent'])}.\n\n"
+            + (f"zu unserem Angebot {a['angebot']} " if a.get("angebot") else "") + f"über {eur(a['summe_cent'])}.\n\n"
             "Bei Fragen melden Sie sich gerne.\n\nMit freundlichen Grüßen\n"
             + "\n".join(x for x in (firmendaten.get("inhaber"), firmendaten.get("firma")) if x))
     return betreff, text
