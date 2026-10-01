@@ -62,6 +62,10 @@ class AuftragBuch:
                 if d["status"] in STATUS:
                     a["status"] = d["status"]
                     a[d["status"] + "_am"] = e["ts"]
+                    if d["status"] == "erledigt":                # Etappe 30: „Geliefert“ mit Lieferdatum
+                        a["geliefert_am"] = d.get("datum") or e["ts"][:10]
+                    elif d["status"] == "beauftragt":            # wieder geoeffnet (Nachlieferung)
+                        a["geliefert_am"] = ""
                 if d.get("mail"):
                     a["gesendet_mail"] = d["mail"]
                     a["gesendet_am"] = e["ts"]
@@ -157,19 +161,30 @@ class AuftragBuch:
         return {"geaendert": sorted(diff)}
 
     def status_setzen(self, nummer: str, status: str, *, grund: str = "", mail: dict | None = None,
-                      von: str = "") -> dict:
-        """erledigt / storniert (nur aus „beauftragt"); `status="gesendet"` protokolliert nur den Mailversand."""
+                      von: str = "", datum: str = "") -> dict:
+        """erledigt (= „Geliefert“, Etappe 30, mit Lieferdatum) / storniert (nur aus „beauftragt“); `beauftragt` =
+        wieder oeffnen (nur aus „erledigt“, mit Grund); `status="gesendet"` protokolliert nur den Mailversand."""
         nummer = (nummer or "").strip().upper()
-        if status not in ("erledigt", "storniert", "gesendet"):
-            raise ValueError("Status muss erledigt, storniert oder gesendet sein.")
+        if status not in ("erledigt", "storniert", "gesendet", "beauftragt"):
+            raise ValueError("Status muss geliefert, storniert, wieder offen oder gesendet sein.")
+        if status == "beauftragt" and not str(grund or "").strip():
+            raise ValueError("Bitte kurz begruenden, warum der Auftrag wieder geoeffnet wird.")
+        if status == "erledigt" and datum:
+            try:
+                datum = date.fromisoformat(str(datum)[:10]).isoformat()
+            except ValueError:
+                raise ValueError("Lieferdatum ungueltig.") from None
+            if datum > jetzt().date().isoformat():
+                raise ValueError("Das Lieferdatum liegt in der Zukunft.")
 
         def pruefe(eintraege):
             a = self._falte(eintraege).get(nummer)
             if not a:
                 raise KeyError(nummer)
-            if status != "gesendet" and a["status"] != "beauftragt":
+            noetig = "erledigt" if status == "beauftragt" else "beauftragt"
+            if status != "gesendet" and a["status"] != noetig:
                 raise ValueError(f"{nummer}: von „{a['status']}“ nicht nach „{status}“ moeglich.")
-        daten = {"nummer": nummer, "status": status}
+        daten = {"nummer": nummer, "status": status} | ({"datum": datum} if status == "erledigt" and datum else {})
         if grund:
             daten["grund"] = str(grund).strip()[:500]
         if mail:

@@ -587,3 +587,21 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-pf-m small { color: var(--v2-muted); }
 .v2-pf-m b { font-variant-numeric: tabular-nums; font-size: 11px; white-space: nowrap; }
 .v2-bl-posten-form summary { cursor: pointer; color: var(--v2-accent); font-size: 13px; margin: 8px 0; }
+/* Zeit-Tracker (KUNDEN_FINANZEN Etappe 29) */
+.v2-zeit-chip { border: 0; border-radius: 999px; padding: 8px 12px; background: var(--v2-red); color: #fff; font: inherit; font-size: 13px;
+  font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.v2-zeit-kachel, .v2-zeit-fenster { display: grid; gap: 10px; justify-items: start; }
+.v2-zeit-gross { font-size: 40px; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+.v2-zeit-knopf { min-height: 48px; padding: 0 22px; font-size: 16px; }
+.v2-zeit-mini { margin-left: 8px; font-size: 12px; font-weight: 700; color: var(--v2-red); font-variant-numeric: tabular-nums; }
+.v2-zeit-fenster .v2-feld { width: 100%; }
+@media (max-width: 900px) { .v2-zeit-chip { padding: 8px 10px; font-size: 12px; } }
+/* Lieferungen (KUNDEN_FINANZEN Etappe 30) */
+.v2-lf { border: 1px solid var(--v2-line-soft); border-radius: 14px; padding: 12px; margin: 8px 0; display: grid; gap: 8px; }
+.v2-lf-kopf { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.v2-lf-kopf small { color: var(--v2-muted); flex: 1; }
+.v2-lf-links a { font-size: 13px; word-break: break-all; }
+.v2-lf-dateien { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.v2-lf-datei { display: grid; gap: 4px; min-width: 0; }
+.v2-lf-datei video, .v2-lf-datei img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; background: #000; }
+.v2-lf-datei small { color: var(--v2-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

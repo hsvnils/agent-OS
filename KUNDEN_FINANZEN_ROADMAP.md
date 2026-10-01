@@ -918,6 +918,51 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   Summenzeile), Kartenzahlungsbeleg per Inhalt als Zahlungsnachweis. Tests `test_mahnverfahren.py`,
   `test_geschaeftspost.py` mit Gegenprobe, Browsertest.
 
+### Etappe 29: Zeit-Tracker auf der Startseite
+
+- Status: umgesetzt (CEO-Go 2026-10-01) -- Deploy offen. Kachel „⏱ Zeit“ neben dem Handlungsbedarf, Fenster mit
+  Auftragswahl, Knopf wechselt sofort (vor der Serverantwort), Timer in Fenster/Kachel/Kopfzeilen-Chip/Seitenmenue,
+  km nach dem Stoppen; Startzeit zusaetzlich als `start_ms` (Timer stimmt in jeder Geraete-Zeitzone; im Browsertest
+  gefunden).
+- Analyse: Start/Stopp gibt es schon (`POST /api/finanzen/zeit/start|stopp`, `core/zeiterfassung.py`), erreichbar aber nur
+  im Auftrag und per Telegram.
+- Ziel / Scope: Eigene Kachel „⏱ Zeit“ auf der Startseite (und im Seitenmenue). Klick oeffnet ein Fenster:
+  laufenden Auftrag waehlen (nur Status „beauftragt“, zuletzt genutzter vorbelegt) -> „▶ Zeit starten“. Laeuft eine
+  Zeit, wird der Knopf **sofort** zu „■ Zeit stoppen“ und ein Timer zaehlt sichtbar mit (hh:mm:ss) -- im Fenster, auf
+  der Kachel und als kleine Anzeige oben in der Kopfzeile (auf jeder Seite, auch am iPhone). Nach dem Stoppen
+  optional Fahrt-km (wie heute im Auftrag). Eine per Telegram gestartete Zeit erscheint genauso (gleiche Quelle).
+- Gate: Browsertest Start -> Knopf/Timer wechseln ohne Neuladen -> Stopp; Kopfzeilen-Anzeige auf einer anderen Seite;
+  Test: Start nur fuer beauftragte Auftraege.
+- Aufwand: klein.
+
+### Etappe 30: Auftrag „geliefert“ mit Lieferungen (Videos, Bilder, Links)
+
+- Status: umgesetzt (CEO-Go 2026-10-01) -- Deploy offen. `core/lieferungen.py` (Ereignisse `lieferung_angelegt/_datei/
+  _entfernt`, Ablage `lieferungen/<Auftrag>/`, Upload in 8-MB-Stuecken per `PUT`, kein Multipart), Status „Geliefert“
+  mit Lieferdatum + „Wieder oeffnen“ (Grund Pflicht), Zeitsperre in `zeiterfassung._ziel`, Lieferungen im Auftrag und in
+  der Firmenakte, `lieferungen/` aus Git und Deploy-Sync ausgenommen. Tests `test_lieferungen.py` mit Gegenprobe.
+  Noch nicht: LUNA legt Lieferungen automatisch aus Mails/Reels ab (Funktion `datei_ablegen` steht bereit; Folgeschritt).
+- Analyse: Auftrags-Status heute `beauftragt/erledigt/storniert`; „erledigt“ bedeutet bereits „fertig, bereit fuer die
+  Rechnung“ (Handlungsbedarf „Rechnung schreiben“). Die Zeiterfassung sperrt nur stornierte Auftraege. Belege-Ablage
+  (`buchhaltung/belege/`) ist ungeeignet fuer Videos: alles dort wird nach Google Drive kopiert (15 GB) und ist Teil des
+  Kassenbuchs. Der NAS-Proxy hat keine Groessengrenze, lange Uploads am Stueck sind am Handy aber anfaellig.
+- Ziel / Scope:
+  - „Erledigt“ heisst in der Oberflaeche **„Geliefert“** (intern bleibt der Schluessel, Daten unveraendert) mit
+    Lieferdatum. Knopf „📦 Als geliefert markieren“ im Auftrag.
+  - **Lieferungen** je Auftrag: Dateien (Videos, Bilder, PDFs) **oder Links** (z. B. Instagram-Post, Drive, WeTransfer)
+    mit Titel und Datum. Upload in Stuecken (je 8 MB, auch grosse Videos vom iPhone), Ablage auf der NAS unter
+    `lieferungen/<Auftrag>/` (nicht im Git, nicht im Kassenbuch, nicht nach Drive). Ansicht mit Vorschau im Auftrag
+    und in der Firmenakte („was haben wir wann wohin geliefert“). LUNA kann Lieferungen auch selbst ablegen (z. B. aus
+    weitergeleiteten Mails oder fertigen Reels).
+  - Geliefert = keine Zeit mehr buchbar (Start, Nachtrag und Telegram verweigern mit Hinweis). „Wieder oeffnen“ fuer
+    Nachlieferungen (mit Verlauf) gibt die Zeiterfassung wieder frei.
+- Gate: Tests -- Statuswechsel + Verlauf, Zeitsperre (Start/Eintrag/Telegram), Upload in Stuecken (Reihenfolge,
+  Abbruch, Groesse), Links, Dateien nicht in `belege/`; Browsertest Auftrag + Firmenakte; Suite + Doku-Check gruen.
+- CEO-Entscheidungen 2026-10-01: Lieferungs-Dateien **nur auf der NAS, kein zusaetzliches Backup** (die Liste der
+  Lieferungen steht in der gesicherten Hash-Kette); eine Lieferung kann **Dateien und Links zugleich** haben;
+  „Erledigt“ heisst **„Geliefert“**; **Wieder oeffnen** erlaubt (mit Verlauf, Zeit danach wieder buchbar).
+- Aufwand: mittel.
+
 ## Reihenfolge
 
 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 (ohne Auto-Weiterleitung) -> 14 -> 13 (Auto-Weiterleitung) -> 15/16 (unabhaengig, nach CEO-Go). Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst

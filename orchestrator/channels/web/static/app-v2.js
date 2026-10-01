@@ -76,6 +76,7 @@ const SECTIONS = [
   { id: "crm", icon: "🤝", label: "CRM", app: "crm" },
   { id: "kunden", icon: "🏢", label: "Kunden", app: "kunden" },
   { id: "angebote", icon: "📄", label: "Angebote", app: "angebote" },
+  { id: "auftraege", icon: "📋", label: "Aufträge", app: "angebote" },
   { id: "finanzen", icon: "💶", label: "Finanzen", app: "finanzen" },
   { id: "rechnungen", icon: "🧾", label: "Rechnungen", app: "rechnungen" },
   { id: "belege", icon: "📥", label: "Belege", app: "belege" },
@@ -92,13 +93,13 @@ const SECTIONS = [
 const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.includes(app);
 // LUNA_OS_UI_ROADMAP Etappe 1: 4 Bereiche statt 19 Symbolen (CEO 2026-09-30, Skizze abgenommen). Reihenfolge nach Nutzung.
 const BEREICHE = [
-  { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "rechnungen", "belege", "finanzen"] },
+  { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen"] },
   { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["crm", "radar", "content", "cutter", "reel"] },
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
   { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "devroadmap", "system", "team", "einstellungen"] },
 ];
 const TEIL_INFO = {
-  kunden: "Firmen, Ansprechpartner, Akte", angebote: "Angebote und Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
+  kunden: "Firmen, Ansprechpartner, Akte", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
   belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
   radar: "Neue Collab-Chancen", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
@@ -130,6 +131,8 @@ function buildShell() {
 const RENDER = {};
 function go(id, sub) {
   if (!SECTIONS.find(s => s.id === id) && !(id.startsWith("b-") && bereichVon(id)) && id !== "handlung") id = "dash";
+  if (id === "angebote" && sub === "auftraege") id = "auftraege";        // Reiter „Aufträge“ = eigener Punkt in Geschäft
+  if (id === "angebote" && !sub && SUBTAB.angebote === "auftraege") SUBTAB.angebote = "offen";
   AKTIV = id; if (sub) SUBTAB[id] = sub;
   navAktualisieren(); ladeZu();
   $("#v2-app").innerHTML = `<div class="v2-empty">Lade …</div>`;
@@ -155,6 +158,7 @@ function ladeAuf() {
   const n = GLOCKE_N ? ` <span class="v2-zaehler an">${GLOCKE_N}</span>` : "";
   $("#v2-lade").innerHTML = `<div class="v2-lade-kopf"><button class="v2-brand" data-go="dash"><span class="v2-logo"><span></span></span><b>LUNA</b></button><button class="v2-icon" id="v2-lade-zu" aria-label="Menü schließen">✕</button></div>`
     + zeile("dash", "🏠 Start") + zeile("handlung", "⚡ Handlungsbedarf", n)
+    + (darf("finanzen") ? `<button class="v2-lade-e" data-act="zt-fenster">⏱ Zeit${ZEIT.laufend ? ` <span class="v2-zeit-mini" data-zeit-uhr>${zeitDauer(ZEIT.laufend)}</span>` : ""}</button>` : "")
     + BEREICHE.filter(b => teilErlaubt(b).length).map(b => `<div class="v2-lade-g">${esc(b.label)}</div>`
       + (teilErlaubt(b).length > 1 ? zeile("b-" + b.id, b.icon + " Übersicht") : "")
       + teilErlaubt(b).map(t => zeile(t, esc(seitenName(t)))).join("")).join("")
@@ -174,6 +178,70 @@ function glockeZeigen() {
   el.textContent = GLOCKE_N > 99 ? "99+" : String(GLOCKE_N); el.hidden = !GLOCKE_N;
   $("#v2-glocke").setAttribute("aria-label", GLOCKE_N ? `${GLOCKE_N} dringende Punkte` : "Handlungsbedarf");
 }
+// KUNDEN_FINANZEN Etappe 29: Zeit-Tracker -- Kachel auf der Startseite, Fenster, Timer in der Kopfzeile
+let ZEIT = { laufend: null, auftraege: [], alle: [], ergebnis: null };
+const zeitStartMs = (l) => l.start_ms || new Date(l.start).getTime();          // start_ms: eindeutig, jede Zeitzone
+const zeitDauer = (l) => { const s = Math.max(0, Math.floor((Date.now() - zeitStartMs(l)) / 1000));
+  return `${Math.floor(s / 3600)}:${String(Math.floor(s % 3600 / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
+async function zeitLaden() {
+  if (!darf("finanzen")) return;
+  const d = await jget("/api/finanzen/zeit"); if (d) ZEIT.laufend = d.laufend || null;
+  zeitZeigen();
+}
+function zeitZeigen() {
+  const chip = $("#v2-zeit-chip"); if (chip) chip.hidden = !ZEIT.laufend;
+  document.querySelectorAll("[data-zeit-uhr]").forEach(e => { e.textContent = ZEIT.laufend ? zeitDauer(ZEIT.laufend) : "0:00:00"; });
+  const k = $("#v2-zeit-kachel"); if (k) k.innerHTML = zeitKachelInhalt();
+}
+setInterval(() => { if (ZEIT.laufend) document.querySelectorAll("[data-zeit-uhr]").forEach(e => { e.textContent = zeitDauer(ZEIT.laufend); }); }, 1000);
+const zeitAuftragName = (nr) => { const a = ZEIT.alle.find(x => x.nummer === nr); return a ? `${a.nummer} · ${a.firma_name || a.firma}${a.titel ? " · " + a.titel : ""}` : (nr || "ohne Auftrag"); };
+function zeitKachelInhalt() {
+  if (ZEIT.laufend) return `<div class="v2-zeit-gross" data-zeit-uhr>${zeitDauer(ZEIT.laufend)}</div><div class="v2-sub">läuft · ${esc(zeitAuftragName(ZEIT.laufend.auftrag))}</div>
+    <button class="v2-btn danger v2-zeit-knopf" data-act="zt-stopp">■ Zeit stoppen</button>`;
+  return `<div class="v2-sub">Keine Zeit läuft.</div><button class="v2-btn pri v2-zeit-knopf" data-act="zt-fenster">▶ Zeit starten …</button>`;
+}
+function zeitInhalt(meldung, fehler) {
+  const msg = meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="margin-bottom:10px">${esc(meldung)}</div>` : "";
+  if (ZEIT.laufend) return msg + `<div class="v2-zeit-fenster"><div class="v2-zeit-gross" data-zeit-uhr>${zeitDauer(ZEIT.laufend)}</div>
+    <div class="v2-sub">läuft seit ${esc(String(ZEIT.laufend.start).slice(11, 16))} Uhr · ${esc(zeitAuftragName(ZEIT.laufend.auftrag))}</div>
+    <button class="v2-btn danger v2-zeit-knopf" data-act="zt-stopp">■ Zeit stoppen</button></div>`;
+  if (ZEIT.ergebnis) { const e = ZEIT.ergebnis;
+    return msg + `<div class="v2-zeit-fenster"><b>${esc(dauerTxt(e.minuten || 0))} erfasst</b><div class="v2-sub">${esc(zeitAuftragName(e.auftrag))} · intern ${esc(cent2eur(e.kosten_cent || 0))}</div>
+      <label class="v2-feld"><small>Gefahrene km (Hin + Rück, optional)</small><input id="zt-km" class="v2-inp" inputmode="numeric" placeholder="z. B. 42"></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="v2-btn pri" data-act="zt-km" data-id="${esc(e.id)}">km speichern</button><button class="v2-btn" data-act="zt-neu">Fertig</button></div></div>`; }
+  let letzter = ""; try { letzter = localStorage.getItem("luna-zeit-auftrag") || ""; } catch { }
+  if (!ZEIT.auftraege.length) return msg + emptyRow("Kein laufender Auftrag (Status „beauftragt“) – Zeit gibt es nur für laufende Aufträge.");
+  return msg + `<div class="v2-zeit-fenster"><label class="v2-feld"><small>Laufender Auftrag</small><select id="zt-auftrag" class="v2-inp">${ZEIT.auftraege.map(a =>
+      `<option value="${esc(a.nummer)}" ${a.nummer === letzter ? "selected" : ""}>${esc(a.nummer)} · ${esc(a.firma_name || a.firma)}${a.titel ? " · " + esc(a.titel) : ""}</option>`).join("")}</select></label>
+    <button class="v2-btn pri v2-zeit-knopf" data-act="zt-start">▶ Zeit starten</button></div>`;
+}
+async function zeitFenster(meldung, fehler) {
+  const [z, a] = await Promise.all([jget("/api/finanzen/zeit"), jget("/api/crm/auftraege")]);
+  if (z) ZEIT.laufend = z.laufend || null;
+  ZEIT.alle = (a && a.auftraege) || []; ZEIT.auftraege = ZEIT.alle.filter(x => x.status === "beauftragt");
+  openModal("⏱ Zeiterfassung", `<div id="zt-box">${zeitInhalt(meldung, fehler)}</div>`);
+  zeitZeigen();
+}
+const zeitNeuZeichnen = (m, f) => { const b = $("#zt-box"); if (b) b.innerHTML = zeitInhalt(m, f); zeitZeigen(); };
+async function zeitStart() {
+  const nr = ($("#zt-auftrag") || {}).value; if (!nr) return;
+  try { localStorage.setItem("luna-zeit-auftrag", nr); } catch { }
+  ZEIT.ergebnis = null; ZEIT.laufend = { start: new Date().toISOString(), start_ms: Date.now(), auftrag: nr, vorlaeufig: true };   // sofort umschalten
+  zeitNeuZeichnen();
+  const r = await jpost("/api/finanzen/zeit/start", { auftrag: nr });
+  if (!r || r.ok === false) { ZEIT.laufend = null; return zeitNeuZeichnen((r && r.hinweis) || "Start hat nicht geklappt.", true); }
+  ZEIT.laufend = { id: r.id, start: r.start, start_ms: r.start_ms, auftrag: r.auftrag, firma: r.firma };
+  zeitNeuZeichnen();
+}
+async function zeitStopp() {
+  const vorher = ZEIT.laufend; ZEIT.laufend = null; zeitNeuZeichnen();           // sofort umschalten
+  const r = await jpost("/api/finanzen/zeit/stopp", {});
+  if (!r || r.ok === false) { ZEIT.laufend = vorher; return zeitNeuZeichnen((r && r.hinweis) || "Stoppen hat nicht geklappt.", true); }
+  ZEIT.ergebnis = r;
+  if (!$("#zt-box")) return zeitFenster();
+  zeitNeuZeichnen();
+}
+
 // Kennzahlen je Bereich (Etappe 4) -- nur aus bestehenden Endpunkten; ein Kontext teilt die Abrufe einer Seite
 function bereichKontext(vorhanden = {}) {
   const c = { ...vorhanden }, einmal = (k, f) => (c[k] = c[k] || f());
@@ -409,7 +477,9 @@ async function renderDash() {
     meldungen: { span: "w4", link: "tab:system:meldungen", aria: `Meldungen: ${meld.length}`, html: `<div class="v2-kpi">${meld.length} <span class="v2-sub" style="font-size:12px">ungelesen</span></div><div class="v2-hero-list">${miniList(meld, ["text"], ["abteilung"])}</div>` },
     research: { span: "w4", link: "tab:system:research", aria: `Research-Tickets: ${research.length}`, html: `<div class="v2-kpi">${research.length} <span class="v2-sub" style="font-size:12px">offen</span></div><div class="v2-hero-list">${miniList(research, ["frage", "titel"], ["abteilung", "status"])}</div>` },
   };
-  const hbKachel = tile("⚡ Handlungsbedarf", handlungKompakt(TODOS), "w12");
+  const hbKachel = darf("finanzen") ? tile("⚡ Handlungsbedarf", handlungKompakt(TODOS), "w8")
+      + tile("⏱ Zeit", `<div id="v2-zeit-kachel" class="v2-zeit-kachel">${zeitKachelInhalt()}</div>`, "w4")
+    : tile("⚡ Handlungsbedarf", handlungKompakt(TODOS), "w12");
   delete W.todos;                                            // Handlungsbedarf steht fest oben (Etappe 4)
   const order = DASH2.order.filter(id => W[id] && !DASH2.hidden.includes(id));
   const bereiche = await startBereiche(bereichKontext({ hbDaten: TODOS, loopDaten: LOOP }));
@@ -808,11 +878,12 @@ function kundeRecherche(f, d) {
 async function akteLaden(nr) {
   const box = $("#akte-box"); if (!box) return;
   const d = await jget(`/api/crm/kunden/${encodeURIComponent(nr)}/akte`);
-  const docs = (d && d.dokumente) || [], arten = (d && d.arten) || {};
+  const docs = (d && d.dokumente) || [], arten = (d && d.arten) || {}, lief = (d && d.lieferungen) || [];
   const ICON = { mail: "✉️", anwalt: "⚖️", vertrag: "📜", schreiben: "📄", notiz: "📝", sonstiges: "📎" };
   box.innerHTML = (docs.length ? docs.map(x => `<div class="v2-list-row"><span>${ICON[x.art] || "📎"}</span><div class="grow"><b><a href="/api/crm/akte/${encodeURIComponent(x.id)}/datei" target="_blank" rel="noopener">${esc(x.titel)}</a></b>
       <small>${esc(datumDe(x.datum))} · ${esc(arten[x.art] || x.art)}${x.mail_von ? " · von " + esc(x.mail_von) : ""}${x.bezug ? " · zu " + esc(x.bezug) : ""}${x.notiz ? " · " + esc(x.notiz) : ""}${(x.dateien || []).length > 1 ? ` · <a href="/api/crm/akte/${encodeURIComponent(x.id)}/datei?i=1">Original (.eml)</a>` : ""}</small></div></div>`).join("")
     : `<div class="v2-sub">Noch nichts abgelegt. Mails landen hier automatisch, wenn du sie an LUNA weiterleitest oder LUNA in CC/BCC nimmst.</div>`)
+    + (lief.length ? `<h3 class="v2-h3">📦 Geliefert</h3>${lief.map(x => lfAnzeige(x, false)).join("")}` : "")
     + `<details style="margin-top:8px"><summary><small>+ Dokument hochladen</small></summary><div class="v2-form">
       <div class="v2-an-zeile"><label class="v2-feld"><small>Datei *</small><input id="ak-datei" type="file"></label><label class="v2-feld"><small>Art</small><select id="ak-art">${Object.entries(arten).filter(([k]) => k !== "mail").map(([k, n]) => `<option value="${esc(k)}">${esc(n)}</option>`).join("")}</select></label></div>
       <div class="v2-an-zeile"><label class="v2-feld"><small>Titel</small><input id="ak-titel" placeholder="z. B. Schreiben der Anwältin"></label><label class="v2-feld"><small>Datum</small><input id="ak-datum" type="date"></label><label class="v2-feld"><small>Bezug (optional)</small><input id="ak-bezug" placeholder="z. B. RG-11052026"></label></div>
@@ -1137,7 +1208,7 @@ async function anSpeichern(nummer) {
     tkp_zeigen: ($("#an-tkp-zeigen") || {}).checked !== false, omr_zeigen: !!($("#an-omr-zeigen") || {}).checked };
   const r = nummer ? await jpost("/api/crm/angebote/" + encodeURIComponent(nummer), { angebot }) : await jpost("/api/crm/angebote", { angebot });
   if (!r || !r.ok) return kundenMsg("an-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
-  const nr = nummer || r.nummer; if (AKTIV === "angebote") renderAngebote();
+  const nr = nummer || r.nummer; if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
   return anDetail(nr, nummer ? (r.geaendert && r.geaendert.length ? "Gespeichert." : "Keine Änderung.") : `${nr} angelegt.`);
 }
 
@@ -1194,7 +1265,7 @@ async function anDetail(nr, meldung, fehler) {
 }
 
 /* ---------- Auftraege (Beauftragung, KUNDEN_FINANZEN Etappe 4) ---------- */
-const AB_STATUS = { beauftragt: ["Beauftragt", "wartet"], erledigt: ["Erledigt", "ok"], storniert: ["Storniert", "err"] };
+const AB_STATUS = { beauftragt: ["Beauftragt", "wartet"], erledigt: ["Geliefert", "ok"], storniert: ["Storniert", "err"] };   // Etappe 30: erledigt = „Geliefert“
 const abBadge = (st) => { const [l, c] = AB_STATUS[st] || [st, "neutral"]; return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
 const datumDe = (d) => d ? new Date(d).toLocaleDateString("de-DE") : "";
 async function renderAuftraege() {
@@ -1202,7 +1273,7 @@ async function renderAuftraege() {
   const l = d.auftraege || [];
   const offen = l.filter(a => a.status === "beauftragt");
   const rows = l.map(a => `<tr class="klick" data-act="ab-detail" data-id="${esc(a.nummer)}"><td><b>${esc(a.nummer)}</b></td><td>${esc(a.firma_name || a.firma)}</td><td>${esc(a.titel || "")}</td><td>${esc(a.angebot)}</td><td>${esc([datumDe(a.leistung_von), datumDe(a.leistung_bis)].filter(Boolean).join(" – "))}</td><td style="text-align:right">${cent2eur(a.summe_cent)}</td><td>${abBadge(a.status)}</td></tr>`).join("");
-  const body = `${kpiTile("Offene Aufträge", String(offen.length), null, cent2eur(offen.reduce((x, a) => x + (a.summe_cent || 0), 0)))}${kpiTile("Erledigt", String(l.filter(a => a.status === "erledigt").length), null, "bereit für die Rechnung")}
+  const body = `${kpiTile("Offene Aufträge", String(offen.length), null, cent2eur(offen.reduce((x, a) => x + (a.summe_cent || 0), 0)))}${kpiTile("Geliefert", String(l.filter(a => a.status === "erledigt").length), null, "bereit für die Rechnung")}
     ${tile("Aufträge", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Firma</th><th>Titel</th><th>Angebot</th><th>Leistung</th><th style="text-align:right">Summe</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow("Noch kein Auftrag — entsteht aus einem angenommenen Angebot („📋 Auftrag anlegen“)."), "w12")}`;
   $("#v2-app").innerHTML = anKopf() + `<div class="v2-grid">${body}</div>`;
 }
@@ -1217,7 +1288,7 @@ function abNeu(angebotNr, annehmen) {
 async function abAnlegen(angebotNr, annehmen) {
   const r = await jpost(`/api/crm/angebote/${encodeURIComponent(angebotNr)}/auftrag`, { annehmen: !!annehmen, leistung_von: $("#ab-von").value, leistung_bis: $("#ab-bis").value, notiz: $("#ab-notiz").value.trim() });
   if (!r || !r.ok) return kundenMsg("ab-msg", (r && r.hinweis) || "Fehler.", false);
-  if (AKTIV === "angebote") renderAngebote();
+  if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
   return abDetail(r.nummer, [`${r.nummer} angelegt.`, ...(r.hinweise || [])].join("\n"));
 }
 async function abDetail(nr, meldung, fehler) {
@@ -1237,7 +1308,8 @@ async function abDetail(nr, meldung, fehler) {
   const schlussDa = reListe.some(r => (r.art || "rechnung") === "rechnung" && r.status !== "storniert");
   if (a.status !== "storniert" && darf("rechnungen") && a.vorkasse_cent && !vkDa && !schlussDa) aktionen += `<button class="v2-btn pri" data-act="ab-vorkasse" data-id="${esc(nr)}">💶 Vorkasse-Rechnung erstellen</button>`;
   if (a.status !== "storniert" && darf("rechnungen")) aktionen += `<button class="v2-btn ${a.vorkasse_cent && !vkDa ? "" : "pri"}" data-act="ab-rechnung" data-id="${esc(nr)}">🧾 ${vkDa ? "Schlussrechnung" : "Rechnung"} erstellen</button>`;
-  if (a.status === "beauftragt") aktionen += `<button class="v2-btn ok" data-act="ab-status" data-id="${esc(nr)}" data-val="erledigt">✔ Erledigt</button><button class="v2-btn" data-act="ab-status" data-id="${esc(nr)}" data-val="storniert">Stornieren</button>`;
+  if (a.status === "beauftragt") aktionen += `<button class="v2-btn ok" data-act="ab-geliefert-form" data-id="${esc(nr)}">📦 Als geliefert markieren …</button><button class="v2-btn" data-act="ab-status" data-id="${esc(nr)}" data-val="storniert">Stornieren</button>`;
+  if (a.status === "erledigt") aktionen += `<button class="v2-btn" data-act="ab-wieder-offen" data-id="${esc(nr)}" title="Für eine Nachlieferung – danach ist wieder Zeit buchbar">↺ Wieder öffnen …</button>`;
   if ((a.pdfs || []).length) aktionen += `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf?archiv=1" target="_blank" rel="noopener">📎 Abgelegtes PDF</a>`;
   const lbl = { auftrag_angelegt: "Angelegt", auftrag_geaendert: "Geändert", auftrag_pdf_abgelegt: "PDF abgelegt", auftrag_status: "Status" };
   const verlauf = (a.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(lbl[v.typ] || v.typ)}${v.status ? ": " + esc(v.status === "gesendet" ? "Gesendet an " + (v.mail_an || "") : (AB_STATUS[v.status] || [v.status])[0]) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
@@ -1250,6 +1322,7 @@ async function abDetail(nr, meldung, fehler) {
     <div class="v2-kv"><span>Firma</span><b>${esc(a.firma)} · ${esc(d.firma.name || "")}</b></div>
     <div class="v2-kv"><span>Ansprechpartner</span><b>${ap ? esc(ap.nummer + " · " + [ap.vorname, ap.nachname].filter(Boolean).join(" ")) : "—"}</b></div>
     <div class="v2-kv"><span>Beauftragt am</span><b>${esc(datumDe(a.datum))}</b></div>
+    ${a.status === "erledigt" && a.geliefert_am ? `<div class="v2-kv"><span>Geliefert am</span><b>📦 ${esc(datumDe(a.geliefert_am))}</b></div>` : ""}
     ${a.ware_cent ? `<div class="v2-kv"><span>Gegenleistung 🎁</span><b>${cent2eur(a.ware_cent)} in Ware (${esc((a.ware || {}).text || "")})${a.geld_cent ? " + " + cent2eur(a.geld_cent) + " in Geld" : " – reiner Barter"}</b></div>` : ""}
     <div class="v2-kv"><span>Zahlungsbedingungen</span><b>${esc(zbKurz(a.zahlung))}</b></div>
     ${a.vorkasse_cent ? `<div class="v2-kv"><span>Vorkasse</span><b>${cent2eur(a.vorkasse_cent)} bis ${esc(datumDe(a.vorkasse_faellig))}</b></div>` : ""}
@@ -1260,13 +1333,70 @@ async function abDetail(nr, meldung, fehler) {
         <label class="v2-feld"><small>bis</small><input id="abe-bis" type="date" value="${esc(a.leistung_bis || "")}" ${bearbeitbar ? "" : "disabled"}></label></div>
       <label class="v2-feld"><small>Notiz</small><textarea id="abe-notiz" rows="2" class="v2-inp" ${bearbeitbar ? "" : "disabled"}>${esc(a.notiz || "")}</textarea></label>
       ${bearbeitbar ? `<button class="v2-btn" data-act="ab-speichern" data-id="${esc(nr)}">Speichern</button><div id="abe-msg" class="v2-msg"></div>` : ""}</div>
+    ${a.status !== "storniert" ? `<h3>Lieferungen</h3><div id="ab-lief-box"><div class="v2-empty">Lade…</div></div>` : ""}
     <h3>Verlauf</h3>${verlauf}
     </div><div>
     <div id="ab-senden-box"></div>
     ${darf("rechnungen") ? `<div id="ab-zeit-box"></div>` : ""}
     <h3>Positionen <small class="v2-sub">aus ${esc(a.angebot)} übernommen</small></h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
     </div></div>`, true);
-  abZeitLaden(nr);
+  abZeitLaden(nr); abLieferungen(nr);
+}
+// Etappe 30: Lieferungen -- Dateien (in 8-MB-Stuecken, auch grosse Videos vom iPhone) und Links je Auftrag
+function lfAnzeige(x, mitEntfernen) {
+  const dateien = (x.dateien || []).map((f, i) => { const src = `/api/crm/lieferungen/${encodeURIComponent(x.id)}/datei/${i}`;
+    const gr = f.groesse > 1048576 ? (f.groesse / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round((f.groesse || 0) / 1024)) + " KB";
+    return String(f.mime || "").startsWith("video/") ? `<div class="v2-lf-datei"><video src="${src}" controls playsinline preload="metadata"></video><small><a href="${src}" target="_blank" rel="noopener">${esc(f.name)}</a> · ${gr}</small></div>`
+      : String(f.mime || "").startsWith("image/") ? `<div class="v2-lf-datei"><a href="${src}" target="_blank" rel="noopener"><img src="${src}" alt="${esc(f.name)}" loading="lazy"></a><small>${esc(f.name)} · ${gr}</small></div>`
+      : `<div class="v2-lf-datei"><a href="${src}" target="_blank" rel="noopener">📄 ${esc(f.name)}</a><small>${gr}</small></div>`; }).join("");
+  const links = (x.links || []).map(u => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">🔗 ${esc(u.replace(/^https?:\/\//, "").slice(0, 60))}</a>`).join("<br>");
+  return `<div class="v2-lf"><div class="v2-lf-kopf"><b>📦 ${esc(x.titel)}</b><small>${esc(datumDe(x.datum))}${x.auftrag ? " · " + esc(x.auftrag) : ""}${x.notiz ? " · " + esc(x.notiz) : ""}</small>
+    ${mitEntfernen ? `<button class="v2-btn sm" data-act="lf-entfernen" data-id="${esc(x.id)}" data-val="${esc(x.auftrag)}" title="Falsch angelegt? Entfernt die Lieferung samt Dateien">✕</button>` : ""}</div>
+    ${links ? `<div class="v2-lf-links">${links}</div>` : ""}${dateien ? `<div class="v2-lf-dateien">${dateien}</div>` : ""}</div>`;
+}
+function lfFormular(nr, geliefert) {
+  return `<div class="v2-form v2-lf-form">
+    ${geliefert ? `<label class="v2-feld"><small>Geliefert am *</small><input id="lf-datum-st" type="date" value="${heuteIso()}"></label><small class="v2-sub">Optional gleich die Lieferung dazu – oder später unter „Lieferungen“.</small>` : ""}
+    <label class="v2-feld"><small>Titel der Lieferung${geliefert ? "" : " *"}</small><input id="lf-titel" class="v2-inp" placeholder="z. B. Reel Herbstkampagne, finale Version"></label>
+    <label class="v2-feld"><small>Links (je Zeile einer, z. B. Instagram-Post, Drive, WeTransfer)</small><textarea id="lf-links" rows="2" class="v2-inp" placeholder="https://… (Post, Drive, WeTransfer)"></textarea></label>
+    <label class="v2-feld"><small>Dateien (Videos, Bilder, PDF, ZIP – auch mehrere, bis 4 GB je Datei)</small><input id="lf-dateien" type="file" multiple accept="video/*,image/*,.pdf,.zip"></label>
+    <label class="v2-feld"><small>Notiz</small><input id="lf-notiz" class="v2-inp" maxlength="500"></label>
+    <div id="lf-fortschritt" class="v2-sub"></div>
+    <button class="v2-btn ${geliefert ? "ok" : "pri"}" data-act="${geliefert ? "ab-geliefert" : "lf-speichern"}" data-id="${esc(nr)}">${geliefert ? "📦 Als geliefert markieren" : "Lieferung speichern"}</button><div id="lf-msg" class="v2-msg"></div></div>`;
+}
+async function abLieferungen(nr) {
+  const box = $("#ab-lief-box"); if (!box) return;
+  const d = await jget(`/api/crm/auftraege/${encodeURIComponent(nr)}/lieferungen`);
+  const l = (d && d.lieferungen) || [];
+  box.innerHTML = (l.length ? l.map(x => lfAnzeige(x, true)).join("") : `<div class="v2-sub">Noch nichts geliefert. Hier legst du ab, was an den Kunden ging – Dateien und/oder Links.</div>`)
+    + `<details style="margin-top:8px"><summary><small>+ Lieferung hinzufügen</small></summary>${lfFormular(nr, false)}</details>`;
+}
+async function lfHochladen(lid, file, melde) {
+  const uid = (Date.now().toString(36) + Math.random().toString(36).slice(2, 12)).replace(/[^a-z0-9]/g, "");
+  const ST = 8 * 1024 * 1024, teile = Math.max(1, Math.ceil(file.size / ST));
+  for (let i = 0; i < teile; i++) {
+    let ok = false, hinweis = "";
+    for (let versuch = 0; versuch < 3 && !ok; versuch++) {
+      try { const r = await fetch(`/api/crm/lieferungen/upload/${uid}/${i}`, { method: "PUT", body: file.slice(i * ST, (i + 1) * ST) });
+        const j = await r.json(); ok = r.ok && j.ok !== false; hinweis = j.hinweis || ""; } catch (e) { hinweis = "Netzwerk"; }
+    }
+    if (!ok) throw new Error(`${file.name}: Upload abgebrochen bei ${Math.round(i / teile * 100)} % (${hinweis})`);
+    melde(`${file.name}: ${Math.round((i + 1) / teile * 100)} %`);
+  }
+  const r = await jpost(`/api/crm/lieferungen/${encodeURIComponent(lid)}/fertig`, { upload_id: uid, name: file.name, groesse: file.size });
+  if (!r || r.ok === false) throw new Error((r && r.hinweis) || `${file.name}: Abschluss fehlgeschlagen`);
+}
+// Lieferung anlegen + Dateien hochladen; `pflicht` = Titel zwingend (beim reinen „Lieferung hinzufuegen“)
+async function lfSpeichern(nr, pflicht) {
+  const titel = ($("#lf-titel") || {}).value.trim(), links = ($("#lf-links") || {}).value.trim(), files = [...((($("#lf-dateien") || {}).files) || [])];
+  const fort = $("#lf-fortschritt"), melde = (t) => { if (fort) fort.textContent = t; };
+  if (!titel && !links && !files.length) { if (pflicht) throw new Error("Bitte Titel und Dateien oder Links angeben."); return null; }
+  if (!titel) throw new Error("Bitte einen Titel für die Lieferung angeben.");
+  const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(nr)}/lieferungen`, { titel, links, notiz: ($("#lf-notiz") || {}).value || "", datum: ($("#lf-datum-st") || {}).value || "" });
+  if (!r || r.ok === false) throw new Error((r && r.hinweis) || "Lieferung konnte nicht angelegt werden.");
+  for (const f of files) await lfHochladen(r.id, f, melde);
+  melde(files.length ? `${files.length} Datei(en) hochgeladen.` : "");
+  return r;
 }
 // Etappe 25: Zeiten & Nachkalkulation -- NUR INTERN (nie im PDF, nie beim Kunden); Arbeitszeit ist kalkulatorisch, keine Buchung
 async function abZeitLaden(nr) {
@@ -1378,7 +1508,7 @@ async function anSendenJetzt(nr) {
   const b = $('[data-act="an-senden-jetzt"]'); if (b) { b.disabled = true; b.textContent = "⏳ sendet…"; }
   const r = await jpost(`/api/crm/angebote/${encodeURIComponent(nr)}/senden`, { an, betreff, text, bestaetigt: true });
   if (!r || !r.ok) { if (b) { b.disabled = false; b.textContent = "✉️ Jetzt senden"; } return kundenMsg("as-msg", (r && r.hinweis) || "Senden fehlgeschlagen.", false); }
-  if (AKTIV === "angebote") renderAngebote();
+  if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
   return anDetail(nr, [`Gesendet an ${r.an}.`, ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n"));
 }
 
@@ -2541,6 +2671,7 @@ const SETTING_KEYS = ["depot_stop_pct", "depot_target_pct", "depot_alerts", "pap
 const SETTING_BOOLS = new Set(["depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content"]);
 const SETTING_OPT = new Set(["ruhezeit_von", "ruhezeit_bis"]);
 RENDER.einstellungen = renderEinstellungen;
+RENDER.auftraege = () => { SUBTAB.angebote = "auftraege"; return renderAngebote(); };   // eigener Punkt, gleiche Seite
 async function renderEinstellungen() {
   const cfg = await jget("/api/settings") || {};
   const nInp = (k, label, sub) => `<label class="v2-set-row"><span class="v2-set-lbl">${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ""}</span><input id="set-${k}" class="v2-inp" type="number" step="any" value="${cfg[k] != null ? esc(String(cfg[k])) : ""}" style="width:120px"></label>`;
@@ -2638,7 +2769,7 @@ async function handleAct(act, el) {
     case "an-versendet": {
       if (!confirm("Hast du das Angebot auf anderem Weg verschickt (nicht über „Senden“)? Danach ist es nicht mehr änderbar, und die Kalender-Erinnerungen werden angelegt.")) return;
       flash("⏳ …"); const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/versendet`, {});
-      if (AKTIV === "angebote") renderAngebote();
+      if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
       return anDetail(id, r && r.ok ? ["Als versendet markiert.", ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
     case "bl-detail": return blDetail(id);
@@ -2702,7 +2833,14 @@ async function handleAct(act, el) {
     case "fin-kalk-export": { const box = el.closest(".v2-card-actions"); (box ? box.querySelectorAll("a[data-kalk-link]") : []).forEach(a => {
       const u2 = new URL(a.getAttribute("href"), location.origin); if (el.checked) u2.searchParams.set("kalkulatorisch", "1"); else u2.searchParams.delete("kalkulatorisch");
       a.setAttribute("href", u2.pathname + u2.search); }); return; }
-    case "zeit-start": case "zeit-stopp": case "zeit-storno": case "zeit-km": case "zeit-eintragen": case "zeit-satz": return zeitAktion(act, id, val);
+    case "zeit-start": case "zeit-stopp": case "zeit-storno": case "zeit-km": case "zeit-eintragen": case "zeit-satz": { const r = await zeitAktion(act, id, val); zeitLaden(); return r; }
+    case "zt-fenster": ladeZu(); ZEIT.ergebnis = null; return zeitFenster();
+    case "zt-start": return zeitStart();
+    case "zt-stopp": return zeitStopp();
+    case "zt-neu": ZEIT.ergebnis = null; closeModal(); return AKTIV === "dash" ? renderDash() : undefined;
+    case "zt-km": { const km = (($("#zt-km") || {}).value || "").trim(); if (!km) return zeitNeuZeichnen("Bitte km eintragen.", true);
+      const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/fahrt`, { km }); if (!r || r.ok === false) return zeitNeuZeichnen((r && r.hinweis) || "Fehler.", true);
+      ZEIT.ergebnis = null; return zeitNeuZeichnen(`${km} km gespeichert.`); }
     case "akte-hochladen": return akteHochladen(id);
     case "akte-zuordnen": return akteZuordnenForm(id);
     case "akte-zuordnen-ok": case "akte-zuordnen-keine": { const r = await jpost(`/api/crm/akte/${encodeURIComponent(id)}/zuordnen`, { firma: act === "akte-zuordnen-ok" ? $("#az-firma").value : "" });
@@ -2799,10 +2937,25 @@ async function handleAct(act, el) {
     case "ab-senden-jetzt": return abSendenJetzt(id);
     case "ab-senden-abbruch": { const bx = $("#ab-senden-box"); if (bx) bx.innerHTML = ""; return; }
     case "ab-speichern": { const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}`, { auftrag: { leistung_von: $("#abe-von").value, leistung_bis: $("#abe-bis").value, notiz: $("#abe-notiz").value.trim() } }); if (!r || !r.ok) return kundenMsg("abe-msg", (r && r.hinweis) || "Fehler.", false); return abDetail(id, r.geaendert && r.geaendert.length ? "Gespeichert." : "Keine Änderung."); }
+    case "ab-geliefert-form": { const box = $("#ab-senden-box"); if (box) { box.innerHTML = `<h3>Als geliefert markieren</h3>${lfFormular(id, true)}`; box.scrollIntoView({ block: "nearest" }); } return; }
+    case "ab-geliefert": { el.disabled = true; try { await lfSpeichern(id, false);
+        const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/status`, { status: "erledigt", datum: ($("#lf-datum-st") || {}).value || "" });
+        if (!r || r.ok === false) throw new Error((r && r.hinweis) || "Status nicht gesetzt.");
+        if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote(); glockeAktualisieren();
+        return abDetail(id, "Als geliefert markiert — bereit für die Rechnung. Zeit ist für diesen Auftrag jetzt gesperrt."); }
+      catch (e) { el.disabled = false; return kundenMsg("lf-msg", e.message, false); } }
+    case "lf-speichern": { el.disabled = true; try { await lfSpeichern(id, true); return abDetail(id, "Lieferung gespeichert."); }
+      catch (e) { el.disabled = false; return kundenMsg("lf-msg", e.message, false); } }
+    case "lf-entfernen": { const grund = prompt("Lieferung samt Dateien entfernen – Grund:", ""); if (!grund) return;
+      const r = await jpost(`/api/crm/lieferungen/${encodeURIComponent(id)}/entfernen`, { grund }); return abDetail(val, r && r.ok ? "Lieferung entfernt." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
+    case "ab-wieder-offen": { const grund = prompt("Auftrag wieder öffnen (z. B. Nachlieferung) – Grund:", ""); if (!grund) return;
+      const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/status`, { status: "beauftragt", grund });
+      if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
+      return abDetail(id, r && r.ok ? "Wieder geöffnet — Zeit ist wieder buchbar." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
     case "ab-status": {
       const grund = prompt(val === "erledigt" ? "Erledigt — Notiz (optional):" : "Stornieren — Grund:", ""); if (grund === null) return;
       const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/status`, { status: val, grund });
-      if (AKTIV === "angebote") renderAngebote();
+      if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
       return abDetail(id, r && r.ok ? (val === "erledigt" ? "Als erledigt markiert — bereit für die Rechnung." : "Storniert.") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
     case "an-senden": return anSendenVorschau(id);
@@ -2815,7 +2968,7 @@ async function handleAct(act, el) {
     case "an-status": {
       const grund = prompt(val === "angenommen" ? "Angenommen — Notiz (optional, z. B. „per Mail vom …“):" : "Abgelehnt — Grund (optional):", ""); if (grund === null) return;
       const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/status`, { status: val, grund });
-      if (AKTIV === "angebote") renderAngebote();
+      if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
       return anDetail(id, r && r.ok ? [val === "angenommen" ? "Angenommen." : "Abgelehnt.", ...(r.hinweise || [])].join("\n") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
     case "abo-neu": return aboForm("", null);
@@ -3053,4 +3206,5 @@ document.addEventListener("drop", (e) => { if (!EDIT2 || !DRAG2) return; const t
   if (!PREFS.avatar) { try { const a = localStorage.getItem("luna-v2-avatar"); if (a) PREFS.avatar = a; } catch { } }
   buildShell(); go("dash"); connectSSE(); applyAvatar(); passkeyAngebot();
   glockeAktualisieren(); setInterval(glockeAktualisieren, 5 * 60 * 1000);
+  zeitLaden(); setInterval(zeitLaden, 60 * 1000);                        // auch per Telegram gestartete Zeiten
 })();

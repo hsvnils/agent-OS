@@ -1557,7 +1557,10 @@ def kunden_akte(nummer: str):
     """Etappe 24: Dokumente und Mails der Firma (neueste zuerst)."""
     from ...core.firmenakte import ARTEN
     try:
-        return {"dokumente": _akte().akte(nummer), "arten": ARTEN}
+        doks = _akte().akte(nummer)
+        firma = (nummer or "").strip().upper()                     # Etappe 30: Lieferungen der Auftraege dieser Firma
+        nrs = {x["nummer"] for x in _auftraege().liste() if x["firma"] == firma}
+        return {"dokumente": doks, "arten": ARTEN, "lieferungen": _lieferungen().fuer_auftraege(nrs)}
     except KeyError:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Firma") from None
 
@@ -1751,11 +1754,23 @@ def _zeit():
                          routen=Routen(kunden_store.bh.dir / "geocache.json"), heimadresse=heimadresse(_firmendaten()))
 
 
+def _mit_ms(x: dict | None) -> dict | None:
+    """Etappe 29: Startzeit zusaetzlich als Epoch-ms -- der Timer im Browser stimmt so in jeder Geraete-Zeitzone
+    (`start` ist deutsche Ortszeit ohne Zonenangabe)."""
+    if not x or not x.get("start"):
+        return x
+    from zoneinfo import ZoneInfo
+    try:
+        return x | {"start_ms": int(datetime.fromisoformat(x["start"]).replace(tzinfo=ZoneInfo("Europe/Berlin")).timestamp() * 1000)}
+    except ValueError:
+        return x
+
+
 @app.get("/api/finanzen/zeit")
 def zeit_liste(auftrag: str = ""):
     """Zeiten + Nachkalkulation eines Auftrags (Modul finanzen, nur intern)."""
     z = _zeit()
-    out = {"laufend": z.laufend(), "einstellungen": {k: v for k, v in z.einstellungen().items() if k != "monatsbrutto_cent"}}
+    out = {"laufend": _mit_ms(z.laufend()), "einstellungen": {k: v for k, v in z.einstellungen().items() if k != "monatsbrutto_cent"}}
     if auftrag:
         a = _auftraege().auftrag(auftrag)
         if not a:
@@ -1778,8 +1793,8 @@ async def zeit_einstellungen_setzen(request: Request):
 @app.post("/api/finanzen/zeit/start")
 async def zeit_start(request: Request):
     body = await _json(request)
-    return _kunden_aktion(lambda: _zeit().starten(auftrag=body.get("auftrag") or "", firma=body.get("firma") or "",
-                                                  adresse=body.get("adresse") or "", von=_von(request)))
+    return _kunden_aktion(lambda: _mit_ms(_zeit().starten(auftrag=body.get("auftrag") or "", firma=body.get("firma") or "",
+                                                         adresse=body.get("adresse") or "", von=_von(request))))
 
 
 @app.post("/api/finanzen/zeit/stopp")
@@ -1889,10 +1904,60 @@ async def auftrag_aendern(nummer: str, request: Request):
 async def auftrag_status(nummer: str, request: Request):
     body = await _json(request)
     ziel = (body.get("status") or "").strip()
-    if ziel not in ("erledigt", "storniert"):
-        return {"ok": False, "hinweis": "Status muss erledigt oder storniert sein."}
+    if ziel not in ("erledigt", "storniert", "beauftragt"):          # erledigt = „Geliefert“, beauftragt = wieder oeffnen
+        return {"ok": False, "hinweis": "Status muss geliefert, storniert oder wieder offen sein."}
     return _kunden_aktion(lambda: _auftraege().status_setzen(nummer, ziel, grund=body.get("grund") or "",
-                                                             von=_von(request)))
+                                                             datum=body.get("datum") or "", von=_von(request)))
+
+
+# -- Lieferungen (KUNDEN_FINANZEN Etappe 30): Dateien + Links je Auftrag, Upload in Stuecken ---------------------------
+def _lieferungen():
+    from ...core.lieferungen import Lieferungen
+    return Lieferungen(kunden_store.bh, ROOT / "lieferungen", _auftraege())
+
+
+@app.get("/api/crm/auftraege/{nummer}/lieferungen")
+def lieferungen_liste(nummer: str):
+    return {"lieferungen": _lieferungen().fuer_auftrag(nummer)}
+
+
+@app.post("/api/crm/auftraege/{nummer}/lieferungen")
+async def lieferung_anlegen(nummer: str, request: Request):
+    body = await _json(request)
+    links = body.get("links") or []
+    links = [x for x in (links.splitlines() if isinstance(links, str) else links) if str(x).strip()]
+    return _kunden_aktion(lambda: _lieferungen().anlegen(nummer, titel=body.get("titel") or "", datum=body.get("datum") or "",
+                                                         links=links, notiz=body.get("notiz") or "", von=_von(request)))
+
+
+@app.put("/api/crm/lieferungen/upload/{upload_id}/{teil}")
+async def lieferung_stueck(upload_id: str, teil: int, request: Request):
+    """Ein Stueck (max. 8 MB) einer grossen Datei -- der Rumpf ist das rohe Stueck (kein Multipart noetig)."""
+    daten = await request.body()
+    return _kunden_aktion(lambda: _lieferungen().stueck(upload_id, teil, daten))
+
+
+@app.post("/api/crm/lieferungen/{lid}/fertig")
+async def lieferung_fertig(lid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _lieferungen().fertig(lid, body.get("upload_id") or "", body.get("name") or "",
+                                                        groesse=int(body.get("groesse") or -1), von=_von(request)))
+
+
+@app.get("/api/crm/lieferungen/{lid}/datei/{i}")
+def lieferung_datei(lid: str, i: int):
+    r = _lieferungen().datei(lid, i)
+    if not r:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Datei nicht gefunden.")
+    pfad, d = r
+    return FileResponse(pfad, media_type=d.get("mime") or "application/octet-stream", filename=d.get("name") or pfad.name,
+                        content_disposition_type="inline")
+
+
+@app.post("/api/crm/lieferungen/{lid}/entfernen")
+async def lieferung_entfernen(lid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _lieferungen().entfernen(lid, body.get("grund") or "", von=_von(request)))
 
 
 @app.get("/api/crm/auftraege/{nummer}/pdf")

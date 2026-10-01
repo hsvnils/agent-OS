@@ -287,9 +287,10 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                                  a["datum"], h))
             if a["status"] == "erledigt" and a["nummer"] not in berechnet:
                 out.append(_todo(f"ab-rechnung:{a['nummer']}", "Aufträge", "🧾", f"Rechnung schreiben: {a['nummer']}",
-                                 f"{firmen.get(a['firma'], a['firma'])} · Leistung erledigt, noch keine Rechnung",
+                                 f"{firmen.get(a['firma'], a['firma'])} · geliefert, noch keine Rechnung",
                                  "ab-detail", a["nummer"],
-                                 (date.fromisoformat(str(a.get("erledigt_am") or h)[:10]) + timedelta(days=7)).isoformat(), h))
+                                 (date.fromisoformat(str(a.get("geliefert_am") or a.get("erledigt_am") or h)[:10])
+                                  + timedelta(days=7)).isoformat(), h))
         try:                                                     # Etappe 25: Zeiten ohne Auftrag / Zeit laeuft zu lange
             from .zeiterfassung import ERINNERN_STUNDEN
             zeiten: dict = {}

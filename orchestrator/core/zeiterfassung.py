@@ -107,6 +107,9 @@ class Zeiterfassung:
                 raise ValueError(f"Auftrag {auftrag} gibt es nicht.")
             if a["status"] == "storniert":
                 raise ValueError(f"{auftrag} ist storniert.")
+            if a["status"] == "erledigt":                   # Etappe 30: geliefert -> keine Zeit mehr
+                raise ValueError(f"{a['nummer']} ist geliefert -- keine Zeit mehr buchbar (bei Nachlieferung erst "
+                                 "„Wieder öffnen“).")
             return a["nummer"], a["firma"]
         f = self.kunden.firma(firma) if firma else None
         if not f:
