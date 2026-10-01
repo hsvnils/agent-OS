@@ -1560,6 +1560,20 @@ async function reAltSpeichern() {
   if (!r || !r.ok) return kundenMsg("ra-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
   return reDetail(r.nummer, `${r.nummer} übernommen.`);
 }
+// Etappe 28: gerichtliches Mahnverfahren eintragen (CEO 2026-10-01)
+function reMvForm(nr) {
+  const box = $("#re-aktion-box"); if (!box) return;
+  box.innerHTML = `<h3>Mahnverfahren eintragen</h3><div class="v2-form"><small class="v2-sub">Das gerichtliche Mahnverfahren läuft (z. B. von der Anwältin digital beantragt). Die Rechnung bleibt offen; LUNA meldet sie dann nicht mehr als dringend.</small>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Eingeleitet am *</small><input id="mv-datum" type="date" value="${heuteIso()}"></label><label class="v2-feld"><small>Durch</small><input id="mv-durch" class="v2-inp" placeholder="z. B. Rechtsanwältin Marquardt"></label></div>
+    <label class="v2-feld"><small>Notiz</small><input id="mv-notiz" class="v2-inp" maxlength="500" placeholder="z. B. Aktenzeichen, Stand"></label>
+    <button class="v2-btn pri" data-act="re-mv-speichern" data-id="${esc(nr)}">Mahnverfahren eintragen</button><div id="mv-msg" class="v2-msg"></div></div>`;
+}
+async function reMvSpeichern(nr) {
+  const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(nr)}/mahnverfahren`, { datum: $("#mv-datum").value, durch: $("#mv-durch").value.trim(), notiz: $("#mv-notiz").value.trim() });
+  if (!r || !r.ok) return kundenMsg("mv-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
+  glockeAktualisieren();
+  return reDetail(nr, "Mahnverfahren eingetragen.");
+}
 function reAltMahnForm(nr) {
   const box = $("#re-aktion-box"); if (!box) return;
   box.innerHTML = `<h3>Mahnung vor LUNA erfassen</h3><div class="v2-form"><small class="v2-sub">Für Mahnungen, die du schon selbst verschickt hast – LUNA zählt die Stufe mit und macht danach mit der nächsten weiter.</small>
@@ -1649,12 +1663,14 @@ async function reDetail(id, meldung, fehler) {
     if (r.ware_erhalten) aktionen += `<button class="v2-btn" data-act="re-ware-storno" data-id="${esc(r.nummer)}" title="Falsch erfassten Ware-Eingang zurücknehmen">↶ Ware-Eingang stornieren</button>`;
     if (r.status === "offen") aktionen += `<button class="v2-btn" data-act="re-storno" data-id="${esc(r.nummer)}">Stornieren …</button>`;
     if (d.naechste_mahnung) aktionen += `<button class="v2-btn danger" data-act="ma-form" data-id="${esc(r.nummer)}">⚠️ ${esc(d.naechste_mahnung.titel)} erstellen …</button>`;
+    if (r.status === "offen" && r.art !== "storno" && !d.mahnverfahren && (d.mahnungen || []).length) aktionen += `<button class="v2-btn" data-act="re-mv-form" data-id="${esc(r.nummer)}" title="Gerichtliches Mahnverfahren ist eingeleitet (z. B. durch die Anwältin)">⚖️ Mahnverfahren eintragen …</button>`;
     if (r.status === "offen" && r.art !== "storno" && (d.mahnungen || []).length < 3) aktionen += `<button class="v2-btn" data-act="re-altmahn-form" data-id="${esc(r.nummer)}" title="Mahnung, die du schon selbst verschickt hast">📨 Mahnung vor LUNA erfassen …</button>`;
   }
   if (r.auftrag) aktionen += `<button class="v2-btn" data-act="ab-detail" data-id="${esc(r.auftrag)}">↩ Auftrag ${esc(r.auftrag)}</button>`;
   if (r.bezug) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.bezug)}">↩ Original ${esc(r.bezug)}</button>`;
   if (r.storniert_durch) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.storniert_durch)}">Storno ${esc(r.storniert_durch)}</button>`;
-  const MSTUFE = { 1: "1. Mahnung", 2: "2. Mahnung", 3: "Letzte Mahnung" };
+  const MSTUFE = { 1: "Mahnstufe 1", 2: "Mahnstufe 2", 3: "Mahnstufe 3" };   // Brief an den Kunden: „1./2./3. Mahnung“
+  const mv = d.mahnverfahren;
   const dokumente = (d.dokumente || []).map(x => `<div class="v2-list-row"><span>📎</span><div class="grow"><b><a href="/api/crm/akte/${encodeURIComponent(x.id)}/datei" target="_blank" rel="noopener">${esc(x.titel)}</a></b><small>${esc(datumDe(x.datum))}${x.notiz ? " · " + esc(x.notiz) : ""}</small></div></div>`).join("");
   const mahnungen = (d.mahnungen || []).map(m => `<div class="v2-list-row"><span>⚠️</span><div class="grow"><b>${esc(MSTUFE[m.stufe])} ${esc(m.nummer)} · ${cent2eur(m.summe_cent)}</b><small>${esc(datumDe(m.datum))} · Frist ${esc(datumDe(m.frist))} · ${m.versendet_am ? "✉️ gesendet an " + esc((m.mail || {}).an || "") : "noch nicht gesendet"}</small></div>
     <a class="v2-btn sm" href="/api/finanzen/mahnungen/${encodeURIComponent(m.nummer)}/pdf" target="_blank" rel="noopener">📄</a>${m.versendet_am ? "" : `<button class="v2-btn pri sm" data-act="ma-senden" data-id="${esc(m.nummer)}">✉️ Senden …</button>`}</div>`).join("");
@@ -1678,6 +1694,7 @@ async function reDetail(id, meldung, fehler) {
     ${r.versendet_mail ? `<div class="v2-kv"><span>Gesendet</span><b>✉️ ${esc(r.versendet_mail.an)} · ${esc(zeit(r.versendet_am))}</b></div>` : ""}
     ${zahlungen ? `<h3>Zahlungen</h3>${zahlungen}` : ""}
     ${mahnungen ? `<h3>Mahnungen</h3>${mahnungen}` : ""}
+    ${mv ? `<h3>Mahnverfahren</h3><div class="v2-list-row"><span>⚖️</span><div class="grow"><b>Mahnverfahren seit ${esc(datumDe(mv.datum))}${mv.durch ? " · " + esc(mv.durch) : ""}</b><small>${esc(mv.notiz || "")}${mv.notiz ? " · " : ""}Die Rechnung bleibt offen, bis gezahlt ist.</small></div></div>` : ""}
     ${dokumente ? `<h3>Dokumente</h3>${dokumente}` : ""}
     <h3>Verlauf</h3>${verlauf}
     </div><div>
@@ -2693,6 +2710,8 @@ async function handleAct(act, el) {
     case "lg-buchen": return lagerBuchen();
     case "re-alt-speichern": return reAltSpeichern();
     case "re-altmahn-form": return reAltMahnForm(id);
+    case "re-mv-form": return reMvForm(id);
+    case "re-mv-speichern": return reMvSpeichern(id);
     case "re-altmahn-speichern": return reAltMahnSpeichern(id);
     case "re-detail": return reDetail(id);
     case "re-bearbeiten": return reEditor(id);

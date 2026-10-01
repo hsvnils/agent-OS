@@ -891,7 +891,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 28: Mahnstufen und Mahnverfahren, Anwalts-Post in die Akte, Selgros-Positionen
 
-- Status: geplant (CEO 2026-10-01), wartet auf CEO-Go
+- Status: umgesetzt (CEO-Go 2026-10-01) -- Deploy offen
 - Ziel / Scope:
   - **Begriffe (CEO):** unsere Mahnungen heissen in LUNA **„Mahnstufe 1/2/3“** (Status, Listen, Handlungsbedarf,
     Telegram); die Ueberschrift auf dem Brief an den Kunden bleibt „1./2./3. Mahnung“ wie in den CEO-PDFs (bisher druckt
@@ -909,6 +909,14 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 - Gate: Tests mit nachgebauten Texten (keine echten Kundendaten): Selgros 24 Positionen, Summe exakt; Anwalts-Mail ->
   Akte; Mahnverfahren-Status im Handlungsbedarf; Brief-Ueberschrift „3. Mahnung“; Suite + Doku-Check gruen.
 - Aufwand: mittel.
+- Ergebnis: `core/mahnungen.py` `STUFEN` (Status „Mahnstufe 1-3“) getrennt von `BRIEF` („1./2./3. Mahnung“ fuer PDF,
+  Betreff, Telegram-Frage), Ereignis `rechnung_mahnverfahren` + `MahnStore.mahnverfahren_setzen`,
+  `POST /api/finanzen/rechnungen/<nr>/mahnverfahren`, Rechnungsansicht mit Anzeige + Formular, Handlungsbedarf
+  „Mahnverfahren laeuft seit …“ (nicht dringend). BF-49: `firmenakte.eigene_forderung` (volle Nummer, „Rechnung Nr.
+  11052026“, Forderungs-/Anwaltsvokabular + Firmenname; Kosten-/Honorarnote an uns bleibt Beleg) -- Beleg-Eingang
+  ueberspringt, Akte nimmt auf (auch Anhangtext). BF-50: `selgros_lesen` (Positionen brutto, Rundung je MwSt-Satz an die
+  Summenzeile), Kartenzahlungsbeleg per Inhalt als Zahlungsnachweis. Tests `test_mahnverfahren.py`,
+  `test_geschaeftspost.py` mit Gegenprobe, Browsertest.
 
 ## Reihenfolge
 

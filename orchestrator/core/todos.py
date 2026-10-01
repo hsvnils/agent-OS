@@ -233,6 +233,7 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
         mahn: dict[str, list] = {}
         for m in MahnStore._falte(e).values():
             mahn.setdefault(m["rechnung"], []).append(m)
+        verfahren = MahnStore.mahnverfahren(e)
         for r in rechnungen.values():
             if (r["status"] == "offen" and r.get("art") != "storno" and r.get("ware_cent")   # Etappe 12: Barter-Ware
                     and not r.get("ware_erhalten")):
@@ -244,8 +245,15 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                     and r["geld_cent"] - r["bezahlt_cent"] > 0):
                 wer = f"{firmen.get(r['firma'], r['firma'])} · {eur(r['geld_cent'] - r['bezahlt_cent'])} offen"
                 ms = sorted(mahn.get(r["nummer"], []), key=lambda m: m["stufe"])
+                if (mv := verfahren.get(r["nummer"])):         # Etappe 28: Mahnverfahren laeuft -> ruhig warten
+                    seit = f"{mv['datum'][8:10]}.{mv['datum'][5:7]}.{mv['datum'][:4]}"
+                    out.append(_todo(f"re-mahnverfahren:{r['nummer']}", "Rechnungen", "⚖️",
+                                     f"Mahnverfahren zu {r['nummer']} läuft",
+                                     f"{wer}; seit {seit}{' durch ' + mv['durch'] if mv.get('durch') else ''} -- auf "
+                                     "Zahlung oder Nachricht warten", "re-detail", r["nummer"], "", h))
+                    continue
                 if not ms:                                   # Etappe 10: naechster Schritt im Mahnverfahren
-                    t = (f"Rechnung {r['nummer']} überfällig", f"{wer}; 1. Mahnung erstellen oder Zahlung erfassen", r["faellig_am"])
+                    t = (f"Rechnung {r['nummer']} überfällig", f"{wer}; Mahnstufe 1 erstellen oder Zahlung erfassen", r["faellig_am"])
                 elif not ms[-1].get("versendet_am"):
                     t = (f"{STUFEN[ms[-1]['stufe']]} {ms[-1]['nummer']} senden", wer, h)
                 elif ms[-1]["frist"] >= h:
@@ -255,7 +263,8 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                     t = (f"Frist der {STUFEN[ms[-1]['stufe']]} zu {r['nummer']} abgelaufen",
                          f"{wer}; LUNA fragt per Telegram nach der {STUFEN[ms[-1]['stufe'] + 1]}", h)
                 else:
-                    t = (f"Letzte Mahnung zu {r['nummer']} abgelaufen", f"{wer}; Mahnbescheid oder Inkasso prüfen", h)
+                    t = (f"Frist der Mahnstufe 3 zu {r['nummer']} abgelaufen", f"{wer}; Mahnverfahren einleiten oder Inkasso "
+                         "prüfen -- schon eingeleitet? An der Rechnung „Mahnverfahren“ eintragen", h)
                 out.append(_todo(f"re-ueber:{r['nummer']}", "Rechnungen", "⚠️", t[0], t[1], "re-detail", r["nummer"], t[2], h))
         for eid, x in entwuerfe.items():
             out.append(_todo(f"re-entwurf:{eid}", "Rechnungen", "✎",

@@ -104,7 +104,7 @@ class TestMahnwesen(unittest.TestCase):
 
     def test_5_folgemahnung_per_telegram_und_todos(self):
         ids = lambda: {t["id"]: t for t in geschaefts_todos(self.bh, self.ks)}
-        self.assertIn("1. Mahnung erstellen", ids()[f"re-ueber:{self.re}"]["detail"])
+        self.assertIn("Mahnstufe 1 erstellen", ids()[f"re-ueber:{self.re}"]["detail"])
         m = self.ms.erstellen(self.re, FD)
         self.assertIn("senden", ids()[f"re-ueber:{self.re}"]["titel"])
         self.ms.versendet(m["nummer"], {"an": "x"})

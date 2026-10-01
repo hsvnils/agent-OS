@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-01 09:46] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappe 28 umgesetzt: Status „Mahnstufe 1-3“ (Brief/Betreff bleibt „1./2./3. Mahnung“, Stufe 3
+  nicht mehr „Letzte Mahnung“), Status „Mahnverfahren“ an der Rechnung (Datum, durch wen, Notiz; Handlungsbedarf ruhig
+  statt dringend), BF-49 (Forderungs-/Anwaltspost zu eigenen Rechnungen -> Firmenakte statt Beleg) und BF-50
+  (Selgros-Positionen brutto, Kartenbeleg als Zahlungsnachweis). UI v78. Tests mit Gegenprobe, Browsertest.
+- **Warum:** CEO-Go 2026-10-01 („Mahnverfahren“, „Mahnstufen 1-3“, Fehler bei Anwalts- und Selgros-Mail).
+- **Betroffen:** `orchestrator/core/mahnungen.py`, `orchestrator/core/todos.py`, `orchestrator/core/firmenakte.py`,
+  `orchestrator/core/eingangsbelege.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/index-v2.html`,
+  `orchestrator/tests/test_mahnverfahren.py`, `orchestrator/tests/test_geschaeftspost.py` (neu),
+  `orchestrator/tests/test_mahnungen.py`, `orchestrator/tests/test_altrechnungen.py`, `KUNDEN_FINANZEN_ROADMAP.md`,
+  `docs/bekannte-fehler.md`, `docs/datenfluesse.md`
+
 ## [2026-10-01 09:34] — Claude Code
 - **Was:** Weitergeleitete Mails vom 01.10. geprueft und Einsortierung korrigiert: Anwaltsschreiben 08.09.2026, Begleitmail
   und Mailverlauf bis 29.09.2026 (Mahnverfahren eingeleitet) in die Firmenakte K-00009 (Bezug RG-11052026); die

@@ -385,6 +385,48 @@ def rufnummern_positionen(text: str, betrag: str) -> list[dict]:
     return [{"text": p["text"], "betrag": eur(p["cent"]).replace(" €", "")} for p in out]
 
 
+_SG_KOPF = re.compile(r"^(\d{1,3}) (\d{8,14}) (.*)$")
+_SG_WERTE = re.compile(r"(?:^|\s)([\d,]+) (\d+) ([A-Za-z]{1,3})(?: [A-Z])? ([\d,]+) ([\d,]+) (\d{1,2},\d) %$")
+_SG_SUMME = re.compile(r"^(\d{1,2},\d) % ([\d.,]+) ([\d.,]+) ([\d.,]+) ([\d.,]+) ([\d.,]+)$", re.M)
+
+
+def selgros_lesen(text: str) -> dict | None:
+    """Selgros/Transgourmet-Rechnung (BF-50, Etappe 28): Positionen mit GTIN, mehrzeilige Namen, Warenwert NETTO je
+    MwSt-Satz -> Positionen BRUTTO (Kleinunternehmer zahlt brutto), Rundung je Satz an die Summenzeile angeglichen;
+    Summen-, Spar- und Infozeilen zaehlen nicht. -> {lieferant, betrag, positionen} oder None."""
+    t = text or ""
+    if not (re.search(r"(?i)selgros|transgourmet", t) and re.search(r"(?i)\bGTIN\b", t)):
+        return None
+    z, pos, i = t.splitlines(), [], 0
+    while i < len(z):
+        m = _SG_KOPF.match(z[i].strip())
+        if m:
+            txt, j = m.group(3), i
+            while not _SG_WERTE.search(txt) and j + 1 < len(z) and j - i < 4:
+                j += 1
+                txt += " " + z[j].strip()
+            w = _SG_WERTE.search(txt)
+            if w:
+                pos.append({"text": re.sub(r"\s+", " ", txt[:w.start()]).strip()[:120], "netto": cent(w.group(5)),
+                            "satz": float(w.group(6).replace(",", "."))})
+                i = j
+        i += 1
+    if not pos:
+        return None
+    soll = {float(m.group(1).replace(",", ".")): cent(m.group(6)) for m in _SG_SUMME.finditer(t)}
+    for satz in {p["satz"] for p in pos}:
+        gruppe = [p for p in pos if p["satz"] == satz]
+        for p in gruppe:
+            p["brutto"] = round(p["netto"] * (1 + satz / 100))
+        if satz in soll and (diff := soll[satz] - sum(p["brutto"] for p in gruppe)) and abs(diff) <= len(gruppe):
+            max(gruppe, key=lambda p: p["netto"])["brutto"] += diff        # Rundung je Satz an den Beleg angleichen
+    gesamt = re.search(r"(?m)^EUR\s+([\d.]+,\d{2})\s*$", t)
+    ort = re.search(r"(?i)Selgros\s+([A-ZÄÖÜ][\wäöüß-]+)", t)
+    return {"lieferant": "Transgourmet Deutschland GmbH & Co. OHG" + (f" (Selgros {ort.group(1)})" if ort else " (Selgros)"),
+            "betrag": gesamt.group(1) if gesamt else eur(sum(p["brutto"] for p in pos)).replace(" €", ""),
+            "positionen": [{"text": p["text"], "betrag": eur(p["brutto"]).replace(" €", "")} for p in pos]}
+
+
 def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
     """Schneller Vorschlag ohne KI. E-Rechnungs-Felder haben Vorrang (exakt)."""
     t = text or ""
@@ -472,6 +514,11 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
             zahl.append(cent(m.group(1)))
     if len(zahl) >= 2 and not v.get("waehrung"):
         v["betrag"] = eur(sum(zahl)).replace(" €", "")
+    if (sg := selgros_lesen(t)):                                # BF-50: Grosshandel mit Netto-Positionen
+        v.update(sg)
+        v.setdefault("leistung", "")
+        if not v["leistung"]:
+            v["leistung"] = f"Einkauf Selgros, {len(sg['positionen'])} Positionen"
     if e_rechnung:
         v.update({k: e_rechnung[k] for k in ("lieferant", "rechnungsnummer", "rechnungsdatum", "betrag", "faellig_am", "leistung",
                                               "positionen") if e_rechnung.get(k)})
@@ -649,7 +696,8 @@ class EingangStore:
 
     def aufnehmen(self, daten: bytes, dateiname: str, *, quelle: str = "upload", mail_id: str = "",
                   von: str = "", zusatz: list[tuple[bytes, str]] | None = None, text: str | None = None,
-                  vorschlag: dict | None = None, vorschlag_extra: dict | None = None, zweck: str = "") -> dict:
+                  vorschlag: dict | None = None, vorschlag_extra: dict | None = None, zweck: str = "",
+                  ausgelesen: dict | None = None) -> dict:
         """Beleg aufnehmen: auslesen (ausserhalb der Sperre, OCR dauert), dann Nummer + Datei + Eintrag atomar.
         `zweck` = Begruendung des CEO (Text ueber der weitergeleiteten Mail), wofuer der Kauf war."""
         name = re.sub(r"[\\\\/:*?\"<>|]+", "_", Path(dateiname or "beleg").name)[:120] or "beleg"
@@ -664,7 +712,7 @@ class EingangStore:
             return {"nummer": alt, "doppelt": True}
         # Mail ohne PDF: Text + Vorschlag kommen aus der Mail, die .eml liegt unveraendert dabei (zusatz)
         a = ({"text": text[:15000], "text_quelle": "mail", "e_rechnung": None} if text is not None
-             else auslesen(daten, name))
+             else ausgelesen or auslesen(daten, name))
         vorschlag = vorschlag if vorschlag is not None else vorschlag_regeln(a["text"], a["e_rechnung"])
         vorschlag = dict(vorschlag) | {k: v for k, v in (vorschlag_extra or {}).items() if v}
         heute = jetzt().date()
@@ -1190,6 +1238,12 @@ _BELEG_WORT = re.compile(r"(?i)rechnung|beleg|quittung|receipt|invoice|zahlung|p
 _EUR_BETRAG = re.compile(r"(\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2})\s*(?:€|EUR)|€\s?(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})")
 _FREMD_BETRAG = re.compile(r"(?:\$|USD|US\$)\s?\d+[.,]\d{2}|\d+[.,]\d{2}\s?(?:USD|\$)")
 _QUITTUNG = re.compile(r"(?i)receipt|quittung|zahlungsbest[äa]tigung|payment[_ -]?confirmation")
+
+
+def _zahlungsbeleg(text: str) -> bool:
+    """Kartenzahlungs-/Kundenbeleg ohne eigene Positionen (BF-50: Selgros schickt ihn als zweites PDF mit)."""
+    return bool(re.search(r"(?i)kartenzahlung|kundenbeleg|zahlung erfolgt|genehmigungs-?nr", text or "")) and \
+        not re.search(r"(?i)\bGTIN\b|bezeichnung\s+menge|einzelpreis|rechnungsbetrag", text or "")
 _HAENDLER = (re.compile(r"(?im)^h[äa]ndler\s*:?\s+(.+?)\s*$"), re.compile(r"(?i)\ban\s+(.{3,80}?)\s+gezahlt\b"),
              re.compile(r"(?im)(?:zahlung an|payment to)\s+(.+?)\s*$"))
 _WEITER_KOEPFE = ("To", "Cc", "Delivered-To", "X-Forwarded-For", "X-Forwarded-To", "X-Original-To", "Resent-From",
@@ -1499,7 +1553,20 @@ def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backo
             continue                                        # gefaelscht / nicht ueber ein eigenes Postfach -> nie
         vorher, doppelt = len(neu), []
         dateien = anhaenge(roh)
-        quittungen = [d for d in dateien if _QUITTUNG.search(d[0])] if len(dateien) > 1 else []
+        gelesen = {}
+        for name, daten in dateien:                         # einmal auslesen, fuer Pruefungen und Aufnahme
+            try:
+                gelesen[name] = auslesen(daten, name)
+            except Exception:
+                pass
+        if eigen:                                           # BF-49: Post zu eigener Forderung -> Firmenakte, kein Beleg
+            from .firmenakte import eigene_forderung
+            orig, rest, _m = weiterleitung(roh, mail_text(roh))
+            if eigene_forderung("\n".join([orig.get("betreff", ""), rest] + [g.get("text") or "" for g in gelesen.values()]),
+                                eintraege):
+                continue
+        quittungen = ([d for d in dateien if _QUITTUNG.search(d[0]) or _zahlungsbeleg((gelesen.get(d[0]) or {}).get("text", ""))]
+                      if len(dateien) > 1 else [])
         if len(quittungen) == len(dateien):
             quittungen = []
         ergebnisse = []
@@ -1511,7 +1578,7 @@ def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backo
                 try:
                     ergebnisse.append(st.aufnehmen(daten, name, quelle="mail", mail_id=mid, von="LUNA-Mail",
                                                    vorschlag_extra={"absender": absender_orig},
-                                                   zweck=zweck_aus_mail(roh) if eigen else ""))
+                                                   zweck=zweck_aus_mail(roh) if eigen else "", ausgelesen=gelesen.get(name)))
                 except ValueError:
                     continue
         else:
