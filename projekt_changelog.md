@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-01 23:43] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappen 29 (Zeit-Tracker auf der Startseite) und 30 (Auftrag „geliefert“ mit Lieferungen,
+  keine Zeit mehr auf gelieferte Auftraege) geplant. Analyse read-only: Zeit-Endpunkte vorhanden, Status „erledigt“ =
+  bereit fuer die Rechnung, Zeitsperre nur bei storniert, Belege-Ablage fuer Videos ungeeignet (Drive-Kopie), Proxy ohne
+  Groessengrenze.
+- **Warum:** CEO-Wunsch 2026-10-01.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-01 10:13] — Claude Code
 - **Was:** REELS_ROADMAP Etappe 1 live geprueft nach CEO-Neustart: UI v79, `GET /api/reel/bremse` -> 25 wartend, Bremse
   aktiv (Nachtlauf 02.10. 03:30 schneidet daher nicht); Reels tragen `eingereicht` (aeltestes wartendes 16.07.2026);
