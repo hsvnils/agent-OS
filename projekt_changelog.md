@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-01 09:51] — Claude Code
+- **Was:** Etappe 28 live geprueft (UI v78) und Daten eingetragen: RG-11052026 (Kiez Alm) Status „Mahnverfahren seit
+  29.09.2026 durch Rechtsanwaeltin Sarah Marquardt“ (Verweis Akte D-2a83e179) -> Handlungsbedarf „wenn Zeit ist“
+  statt dringend. Selgros ER-2026-0137 gebucht: Transgourmet Deutschland GmbH & Co. OHG (Selgros Norderstedt, neu
+  L-00019), 19.09.2026, 195,36 EUR, 24 Positionen brutto (mit dem neuen Leser, Summe exakt), Kategorie Wareneinkauf /
+  Material, Zweck „Lebensmittel und Zubehoer fuer den BBQ-Dreh“, bezahlt 19.09. per Karte (Kundenbeleg als Nachweis).
+- **Warum:** CEO-Go 2026-10-01 (Selgros fuer BBQ-Dreh).
+- **Betroffen:** Live-Buchhaltung (NAS), `KUNDEN_FINANZEN_ROADMAP.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-01 09:46] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappe 28 umgesetzt: Status „Mahnstufe 1-3“ (Brief/Betreff bleibt „1./2./3. Mahnung“, Stufe 3
   nicht mehr „Letzte Mahnung“), Status „Mahnverfahren“ an der Rechnung (Datum, durch wen, Notiz; Handlungsbedarf ruhig

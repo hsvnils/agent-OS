@@ -891,7 +891,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 28: Mahnstufen und Mahnverfahren, Anwalts-Post in die Akte, Selgros-Positionen
 
-- Status: umgesetzt (CEO-Go 2026-10-01) -- Deploy offen
+- Status: live (deployt 2026-10-01, `0afc429`, Neustart CEO, live geprueft) -- CEO-Abnahme offen
 - Ziel / Scope:
   - **Begriffe (CEO):** unsere Mahnungen heissen in LUNA **„Mahnstufe 1/2/3“** (Status, Listen, Handlungsbedarf,
     Telegram); die Ueberschrift auf dem Brief an den Kunden bleibt „1./2./3. Mahnung“ wie in den CEO-PDFs (bisher druckt
