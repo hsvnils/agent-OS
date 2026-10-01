@@ -3204,6 +3204,20 @@ def entwicklungs_roadmap_liste():
     return {"items": entwicklungs_roadmap.list()}
 
 
+@app.get("/api/reel/bremse")
+def reel_bremse():
+    """REELS_ROADMAP: Nachtlauf fragt vor dem Schnitt, ob schon genug Reels warten (ab 10 -> nicht schneiden)."""
+    return reel_store.bremse()
+
+
+@app.post("/api/reel/uebersprungen")
+async def reel_uebersprungen(request: Request):
+    """Nachtlauf meldet eine gebremste Nacht -- die Betriebs-Wacht wertet das nicht als Ausfall."""
+    body = await _json(request)
+    reel_store.uebersprungen(grund=body.get("grund") or "Bremse", wartet=body.get("wartet"))
+    return {"ok": True}
+
+
 @app.get("/api/reel/{rid}/video")
 def reel_video(rid: str):
     """Liefert das eingereichte Reel-Video (Inline-Vorschau in der Reels-App)."""

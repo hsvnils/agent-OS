@@ -62,6 +62,13 @@ class LunaBridge:
             return None
         return self._req("/api/reel/einreichen", method="POST", data={**meta, "video_b64": b64}, timeout=180)
 
+    def reel_bremse(self) -> dict | None:
+        """REELS_ROADMAP: {wartet, bremse} -- ab 10 wartenden Reels soll der Nachtlauf nicht schneiden."""
+        return self._req("/api/reel/bremse")
+
+    def reel_uebersprungen(self, *, grund: str, wartet: int | None = None) -> dict | None:
+        return self._req("/api/reel/uebersprungen", method="POST", data={"grund": grund, "wartet": wartet})
+
     def offene_jobs(self) -> list[dict]:
         """Von LUNA-OS in die Warteschlange gestellte Jobs (queued)."""
         r = self._req("/api/cutter/queue")

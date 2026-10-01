@@ -182,7 +182,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `trajektorien/log.jsonl`, `social/log.jsonl` | Bot | Bot | ja | ja |
 | `entwicklung/roadmap.jsonl` | Bot, Web, Voice | Web | ja | ja |
 | `ig_inbox/log.jsonl` | Bot (Radar), Web (Webhook) | dito | ja | ja |
-| `reel_freigabe/log.jsonl` + `<id>.mp4` | Web (`/api/reel/einreichen`) | Web, Betriebs-Wacht | ja | Log ja, Videos bewusst nein (CEO) |
+| `reel_freigabe/log.jsonl` + `<id>.mp4` | Web (`/api/reel/einreichen`, `/api/reel/uebersprungen`), Bot-Tageslauf 05:00 (Verfall nach 30 Tagen, MP4 abgelehnter/verfallener Reels nach 14 Tagen geloescht, gepostete bleiben; REELS_ROADMAP) | Web (`/api/reel`, `/api/reel/bremse`), Betriebs-Wacht (`zuletzt_aktiv`), Nachtlauf `cutter/reel_daily.py` (Bremse ab 10 wartenden) | ja | Log ja, Videos bewusst nein (CEO) |
 | `cutter_ops/jobs_cache.jsonl` | Web | Bot | ja | nein (Cache von Supabase) |
 | `cutter_ops/worker_herzschlag.json` | Web bei jedem `GET /api/cutter/queue` | Betriebs-Wacht | ja | nein (fluechtig) |
 | `crm/log.jsonl` | Bot, Web | dito | ja | ja |

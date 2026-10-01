@@ -216,15 +216,31 @@ def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
             "spiele": spiele, "metadata": str(tag_dir / "metadata.json")}
 
 
-def _einreichen(res: dict) -> dict:
-    """Reicht das fertige Reel bei LUNA-OS zur CEO-Freigabe ein (ueber die Mac-Bruecke). Best-effort."""
+def _bruecke():
     from .luna_bridge import LunaBridge
     from .pipeline import _lade_env
     env = _lade_env()
     for k in ("LUNA_OS_URL", "LUNA_OS_USER", "LUNA_OS_PASSWORD"):   # Prozess-Env darf .env ueberschreiben
         if os.environ.get(k):                                       # (NAS-Job im Container: localhost:8765)
             env[k] = os.environ[k]
-    br = LunaBridge.from_env(env)
+    return LunaBridge.from_env(env)
+
+
+def gebremst(br=None) -> dict | None:
+    """REELS_ROADMAP (CEO 2026-10-01): warten schon genug Reels (ab 10), schneidet der Nachtlauf nicht und meldet
+    das als „uebersprungen“ (die Betriebs-Wacht zaehlt das nicht als Ausfall). LUNA-OS nicht erreichbar -> None =
+    wie bisher schneiden."""
+    br = br or _bruecke()
+    b = br.reel_bremse() if br.aktiv() else None
+    if not b or not b.get("bremse"):
+        return None
+    br.reel_uebersprungen(grund=f"{b.get('wartet')} Reels warten auf Freigabe", wartet=b.get("wartet"))
+    return b
+
+
+def _einreichen(res: dict) -> dict:
+    """Reicht das fertige Reel bei LUNA-OS zur CEO-Freigabe ein (ueber die Mac-Bruecke). Best-effort."""
+    br = _bruecke()
     if not br.aktiv():
         return {"eingereicht": False, "hinweis": "LUNA-OS-Bruecke inaktiv (LUNA_OS_URL/PASSWORD fehlt)."}
     meta = {k: res.get(k) for k in ("datum", "thema", "caption", "dauer_sek", "spiele")}
@@ -287,6 +303,9 @@ def main(argv=None) -> int:
     state = _pfad(a.state, "REEL_STATE", "~/ReelState")
     tag = date.fromisoformat(a.datum) if a.datum else None
 
+    if a.einreichen and not (a.spiel or a.thema) and (b := gebremst()):   # nur der automatische Nachtlauf
+        print(json.dumps({"ok": True, "uebersprungen": True, "wartet": b.get("wartet")}, ensure_ascii=False))
+        return 0
     res = lauf(source=source, outbox=outbox, state=state, tag=tag, ziel_dauer=a.dauer,
                clip_laenge=a.clip_laenge, gemini=a.mit_gemini, transkribieren=a.mit_transkript,
                schnell_index=a.schnell_index, spiel=a.spiel, thema_name=a.thema,

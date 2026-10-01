@@ -2371,12 +2371,18 @@ function roadmapDetail(rid) {
 RENDER.reel = renderReels;
 async function renderReels() {
   const d = await jget("/api/reel") || {};
-  const badge = { wartet: "wartet", freigegeben: "ok", abgelehnt: "danger", gepostet: "ok", fehler: "danger" };
-  const lbl = { wartet: "Wartet auf Freigabe", freigegeben: "Freigegeben – wird gepostet…", abgelehnt: "Abgelehnt", gepostet: "Gepostet", fehler: "Fehler" };
-  const cards = (d.reels || []).map(r => {
+  const badge = { wartet: "wartet", freigegeben: "ok", abgelehnt: "danger", gepostet: "ok", fehler: "danger", verfallen: "neutral" };
+  const lbl = { wartet: "Wartet auf Freigabe", freigegeben: "Freigegeben – wird gepostet…", abgelehnt: "Abgelehnt", gepostet: "Gepostet", fehler: "Fehler", verfallen: "Verfallen – 30 Tage ohne Freigabe" };
+  // REELS_ROADMAP: wartende zuerst (die bald verfallenden oben), danach der Rest neueste zuerst
+  const verfaelltAm = (r) => { const t = new Date((r.eingereicht || r.ts || "").slice(0, 10)); if (isNaN(t)) return ""; t.setDate(t.getDate() + 31); return t.toISOString().slice(0, 10); };
+  const reels = (d.reels || []).slice().sort((a, b) => (a.status === "wartet") !== (b.status === "wartet") ? (a.status === "wartet" ? -1 : 1)
+    : a.status === "wartet" ? String(a.eingereicht || "").localeCompare(String(b.eingereicht || "")) : String(b.ts || "").localeCompare(String(a.ts || "")));
+  const cards = reels.map(r => {
     const wartet = r.status === "wartet", postbar = r.status === "freigegeben" || r.status === "fehler";
     return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${badge[r.status] || "neutral"}">${lbl[r.status] || esc(r.status)}</span><b>${esc(r.thema || "Reel")}</b> <small>${esc(r.datum || "")}${r.dauer_sek ? " · " + r.dauer_sek + "s" : ""}</small></div>
-    <video src="/api/reel/${esc(r.id)}/video" controls playsinline preload="metadata" style="width:100%;max-height:60vh;border-radius:12px;background:#000;margin:8px 0"></video>
+    ${r.video_geloescht ? `<div class="v2-sub" style="margin:8px 0">🗑 Video gelöscht (${r.status === "verfallen" ? "verfallen" : "abgelehnt"}, nach 14 Tagen) – Text und Daten bleiben erhalten.</div>`
+      : `<video src="/api/reel/${esc(r.id)}/video" controls playsinline preload="metadata" style="width:100%;max-height:60vh;border-radius:12px;background:#000;margin:8px 0"></video>`}
+    ${wartet && verfaelltAm(r) ? `<div class="v2-sub">⏳ verfällt am ${esc(datumDe(verfaelltAm(r)))}, wenn du nicht entscheidest</div>` : ""}
     <div class="v2-sub">Text fürs Video (wird so gepostet – kurz halten):</div>
     <textarea id="cap-${esc(r.id)}" rows="2" maxlength="180" ${wartet ? "" : "readonly"} style="width:100%;resize:vertical;font:inherit">${esc(r.caption || "")}</textarea>
     ${(r.spiele && r.spiele.length) ? `<div class="v2-sub">${r.spiele.map(esc).join(" · ")}</div>` : ""}

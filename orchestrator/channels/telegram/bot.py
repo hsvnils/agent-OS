@@ -522,6 +522,18 @@ def _start_buchhaltung_loop(ctx) -> None:
                         _abo_lauf(_bh, KundenStore(_bh), notify=ctx.notifications.enqueue)
                     except Exception as _exc:
                         print(f"[abos] Fehler: {_exc}", flush=True)
+                    try:                                    # REELS_ROADMAP: Verfall nach 30 Tagen, Videos loeschen
+                        from ...core.reel_store import VERFALL_TAGE, ReelStore as _RS
+                        _rr = _RS(ROOT / "reel_freigabe" / "log.jsonl").aufraeumen(jetzt.date())
+                        if _rr["verfallen"]:
+                            ctx.notifications.enqueue(
+                                f"🎬 {len(_rr['verfallen'])} Reel(s) verfallen -- {VERFALL_TAGE} Tage ohne Freigabe, werden "
+                                "nicht gepostet.", abteilung="Content", kategorie="content", quelle="reels",
+                                detail="LUNA-OS -> Reels")
+                        if _rr["geloescht"]:
+                            print(f"[reels] {len(_rr['geloescht'])} Video(s) abgelehnter/verfallener Reels geloescht", flush=True)
+                    except Exception as _exc:
+                        print(f"[reels] Fehler: {_exc}", flush=True)
                     _text = cfo_meldung(geschaefts_todos(_bh, KundenStore(_bh), crm=False))
                     if _text:
                         ctx.notifications.enqueue(_text, abteilung="CFO", kategorie="finanzen", quelle="finanzcheck",
@@ -1213,7 +1225,7 @@ def _start_betriebswacht_loop(ctx, notify, secrets) -> None:
 
     def _letztes_reel():
         try:
-            return ReelStore(ROOT / "reel_freigabe" / "log.jsonl").zuletzt_eingereicht()
+            return ReelStore(ROOT / "reel_freigabe" / "log.jsonl").zuletzt_aktiv()   # Bremse = kein Ausfall
         except Exception:
             return None
 

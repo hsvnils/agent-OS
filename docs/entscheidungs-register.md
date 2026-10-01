@@ -22,6 +22,7 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Reels: Verfall nach 30 Tagen ohne Entscheidung, Videos abgelehnter/verfallener Reels nach 14 Tagen loeschen, gepostete behalten, Nachschub-Bremse ab 10 wartenden** | 2026-10-01 | **BESCHLOSSEN** (CEO) | 25 wartende Reels (18 aelter als 30 Tage) verstopfen Liste und Handlungsbedarf; Speicher (1,5 GB) unkritisch, aber unbegrenzt; Original-Clips bleiben. `REELS_ROADMAP.md` |
 | **LUNA-OS-Navigation in 4 Bereichen** (Geschaeft, Content & Collabs, Investment, LUNA & System) statt 19 Symbolen; Startseite + Bereichs-Startseiten; iPhone mit Seitenmenue; **Glocke** fuer systemweiten Handlungsbedarf (inkl. Freigaben) | 2026-09-30 | **BESCHLOSSEN** (CEO, Skizze abgenommen) | Nutzung 30 Tage: Geschaeftsteil 74 von 110 Oeffnungen; `LUNA_OS_UI_ROADMAP.md` Etappen 1, 3, 4 |
 | **WebApp-Login: Login-Formular + Sitzungs-Cookie (30 Tage, gleitend, nur Token-Hash gespeichert) statt HTTP-Basic fuer Menschen**, Basic bleibt fuer Maschinen-Zugaenge; **Passkey/Face ID** mit `webauthn==3.0.1` (py_webauthn, OSV ohne Funde) | 2026-09-30 | **BESCHLOSSEN** (CEO-Go inkl. Passkey) | iOS-WebApp behaelt Basic nicht, Schluesselbund fuellt nur Formulare; `LUNA_OS_UI_ROADMAP.md` Etappen 2, 6 |
 | NVIDIA **SkillSpector** (Security-Scanner fuer Agent-Skills) | 2026-07-03 | **UEBERNEHMEN** (Muster/Regeln) | Phase 22 |
