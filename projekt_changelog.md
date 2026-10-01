@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-01 09:16] — Claude Code
+- **Was:** Drei vor LUNA verschickte Mahnungen zu RG-11052026 (Kiez Alm Gastro GmbH, K-00009) als Altmahnungen mit
+  Original-PDF erfasst: M1 29.07.2026 (Frist 05.08., 4.005,00 EUR inkl. 5 EUR Gebuehr), M2 23.08.2026 (Frist 30.08.,
+  4.010,00 EUR), M3 31.08.2026 (Frist 07.09., 4.015,00 EUR, Ankuendigung Anwaeltin). PDFs aus
+  `Desktop\LUNA-Uebertrag` gelesen, unveraendert als Geschaeftsbrief abgelegt, live abrufbar. Handlungsbedarf zeigt
+  jetzt „Letzte Mahnung abgelaufen -- Mahnbescheid oder Inkasso pruefen“.
+- **Warum:** CEO 2026-10-01: Mahnungs-PDFs der Kiez Alm in den Uebertrag-Ordner gelegt.
+- **Betroffen:** Live-Buchhaltung (NAS, `buchhaltung/log.jsonl` + `belege/2026/`)
+
 ## [2026-09-30 21:48] — Claude Code
 - **Was:** Etappe 27 live geprueft und drei Facebook-Auszahlungen nachgebucht (CEO: „nimm den EZB-Kurs“), Beleg =
   Screenshot der Meta-Auszahlungsdetails (Remittance-Mails nicht auffindbar): ER-2026-0131 (23.01., 146,16 USD ->
