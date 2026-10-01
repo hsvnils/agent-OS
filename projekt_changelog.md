@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-01 10:01] — Claude Code
+- **Was:** Roadmap `REELS_ROADMAP.md` angelegt (Etappe 1: Status „verfallen“ nach 30 Tagen, Videos abgelehnter/
+  verfallener Reels nach 14 Tagen loeschen, gepostete behalten, Nachschub-Bremse ab 10 wartenden, Betriebs-Wacht ohne
+  Fehlalarm). Analyse read-only: 40 Reels, 25 wartend (18 > 30 Tage), 1,5 GB. Entscheidung im Register.
+- **Warum:** CEO-Frage und -Entscheidungen 2026-10-01.
+- **Betroffen:** `REELS_ROADMAP.md` (neu), `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-01 09:51] — Claude Code
 - **Was:** Etappe 28 live geprueft (UI v78) und Daten eingetragen: RG-11052026 (Kiez Alm) Status „Mahnverfahren seit
   29.09.2026 durch Rechtsanwaeltin Sarah Marquardt“ (Verweis Akte D-2a83e179) -> Handlungsbedarf „wenn Zeit ist“
