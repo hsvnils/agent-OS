@@ -920,7 +920,10 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 29: Zeit-Tracker auf der Startseite
 
-- Status: geplant (CEO-Wunsch 2026-10-01), wartet auf CEO-Go
+- Status: umgesetzt (CEO-Go 2026-10-01) -- Deploy offen. Kachel „⏱ Zeit“ neben dem Handlungsbedarf, Fenster mit
+  Auftragswahl, Knopf wechselt sofort (vor der Serverantwort), Timer in Fenster/Kachel/Kopfzeilen-Chip/Seitenmenue,
+  km nach dem Stoppen; Startzeit zusaetzlich als `start_ms` (Timer stimmt in jeder Geraete-Zeitzone; im Browsertest
+  gefunden).
 - Analyse: Start/Stopp gibt es schon (`POST /api/finanzen/zeit/start|stopp`, `core/zeiterfassung.py`), erreichbar aber nur
   im Auftrag und per Telegram.
 - Ziel / Scope: Eigene Kachel „⏱ Zeit“ auf der Startseite (und im Seitenmenue). Klick oeffnet ein Fenster:
@@ -934,7 +937,11 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 
 ### Etappe 30: Auftrag „geliefert“ mit Lieferungen (Videos, Bilder, Links)
 
-- Status: geplant (CEO-Wunsch 2026-10-01), wartet auf CEO-Go
+- Status: umgesetzt (CEO-Go 2026-10-01) -- Deploy offen. `core/lieferungen.py` (Ereignisse `lieferung_angelegt/_datei/
+  _entfernt`, Ablage `lieferungen/<Auftrag>/`, Upload in 8-MB-Stuecken per `PUT`, kein Multipart), Status „Geliefert“
+  mit Lieferdatum + „Wieder oeffnen“ (Grund Pflicht), Zeitsperre in `zeiterfassung._ziel`, Lieferungen im Auftrag und in
+  der Firmenakte, `lieferungen/` aus Git und Deploy-Sync ausgenommen. Tests `test_lieferungen.py` mit Gegenprobe.
+  Noch nicht: LUNA legt Lieferungen automatisch aus Mails/Reels ab (Funktion `datei_ablegen` steht bereit; Folgeschritt).
 - Analyse: Auftrags-Status heute `beauftragt/erledigt/storniert`; „erledigt“ bedeutet bereits „fertig, bereit fuer die
   Rechnung“ (Handlungsbedarf „Rechnung schreiben“). Die Zeiterfassung sperrt nur stornierte Auftraege. Belege-Ablage
   (`buchhaltung/belege/`) ist ungeeignet fuer Videos: alles dort wird nach Google Drive kopiert (15 GB) und ist Teil des

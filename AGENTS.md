@@ -261,6 +261,7 @@ Autonomie). Kostenvoranschlag des CFO und Budget-Check des HoA sind die **Vorber
 | `agents/01..14_*.md`      | Charten der 14 Abteilungs-Agenten.                              |
 | `finance/budget.md`       | Einzige Quelle des CEO-Monatsbudgets (inkl. Aenderungshistorie). |
 | `finance/kosten-statistik.md` | Fortlaufende Kostenstatistik (CFO), monatlich, mit Historie. |
+| `lieferungen/`             | Gelieferte Dateien je Auftrag auf der NAS (nicht im Git, kein Backup); Code `orchestrator/core/lieferungen.py`. |
 | `buchhaltung/`             | Live-Buchhaltung auf der NAS (Hash-Kette `log.jsonl`, Belege), nicht im Git; Code `orchestrator/core/buchhaltung.py`. |
 | `governance/`             | Lebende Steuerungsdokumente (AGENTS.md untergeordnet).          |
 | `governance/orchestrierung.md` | Kanonische Orchestrierungslogik (HoA-Supervisor-Pattern).  |

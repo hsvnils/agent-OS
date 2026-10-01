@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-01 23:59] — Claude Code
+- **Was:** KUNDEN_FINANZEN Etappen 29 + 30 umgesetzt. 29: Zeit-Tracker als Kachel auf der Startseite, Fenster mit
+  Auftragswahl, Knopf wechselt sofort zu „Zeit stoppen“, Timer in Fenster/Kachel/Kopfzeile/Seitenmenue, km nach dem
+  Stoppen, `start_ms` fuer zeitzonensicheren Timer. 30: Status „Geliefert“ (statt „Erledigt“) mit Lieferdatum,
+  „Wieder oeffnen“ mit Grund, keine Zeit auf gelieferte Auftraege, Lieferungen mit Dateien und Links (Upload in
+  8-MB-Stuecken, Ablage `lieferungen/<Auftrag>/` auf der NAS, nicht im Kassenbuch/Drive/Git, kein Backup laut CEO),
+  Anzeige im Auftrag und in der Firmenakte. UI v80. Tests mit Gegenprobe, Browsertests.
+- **Warum:** CEO-Go 2026-10-01 inkl. Entscheidungen (kein Backup, Dateien + Links, „Geliefert“, Wieder oeffnen).
+- **Betroffen:** `orchestrator/core/lieferungen.py` (neu), `orchestrator/core/beauftragung.py`, `orchestrator/core/zeiterfassung.py`,
+  `orchestrator/core/todos.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`,
+  `static/index-v2.html`, `orchestrator/tests/test_lieferungen.py` (neu), `.gitignore`, `deploy/sync-to-nas.sh`,
+  `AGENTS.md` (Dateiuebersicht), `KUNDEN_FINANZEN_ROADMAP.md`, `docs/datenfluesse.md`
+
 ## [2026-10-01 23:47] — Claude Code
 - **Was:** CEO-Entscheidungen zu Etappe 30 in der Roadmap festgehalten (kein Backup der Lieferungs-Dateien, Dateien und
   Links je Lieferung, „Erledigt“ -> „Geliefert“, Wieder oeffnen mit Verlauf).
