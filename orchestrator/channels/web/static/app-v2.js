@@ -76,6 +76,7 @@ const SECTIONS = [
   { id: "crm", icon: "🤝", label: "CRM", app: "crm" },
   { id: "kunden", icon: "🏢", label: "Kunden", app: "kunden" },
   { id: "angebote", icon: "📄", label: "Angebote", app: "angebote" },
+  { id: "auftraege", icon: "📋", label: "Aufträge", app: "angebote" },
   { id: "finanzen", icon: "💶", label: "Finanzen", app: "finanzen" },
   { id: "rechnungen", icon: "🧾", label: "Rechnungen", app: "rechnungen" },
   { id: "belege", icon: "📥", label: "Belege", app: "belege" },
@@ -92,13 +93,13 @@ const SECTIONS = [
 const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.includes(app);
 // LUNA_OS_UI_ROADMAP Etappe 1: 4 Bereiche statt 19 Symbolen (CEO 2026-09-30, Skizze abgenommen). Reihenfolge nach Nutzung.
 const BEREICHE = [
-  { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "rechnungen", "belege", "finanzen"] },
+  { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen"] },
   { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["crm", "radar", "content", "cutter", "reel"] },
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
   { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "devroadmap", "system", "team", "einstellungen"] },
 ];
 const TEIL_INFO = {
-  kunden: "Firmen, Ansprechpartner, Akte", angebote: "Angebote und Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
+  kunden: "Firmen, Ansprechpartner, Akte", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
   belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
   radar: "Neue Collab-Chancen", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
@@ -130,6 +131,8 @@ function buildShell() {
 const RENDER = {};
 function go(id, sub) {
   if (!SECTIONS.find(s => s.id === id) && !(id.startsWith("b-") && bereichVon(id)) && id !== "handlung") id = "dash";
+  if (id === "angebote" && sub === "auftraege") id = "auftraege";        // Reiter „Aufträge“ = eigener Punkt in Geschäft
+  if (id === "angebote" && !sub && SUBTAB.angebote === "auftraege") SUBTAB.angebote = "offen";
   AKTIV = id; if (sub) SUBTAB[id] = sub;
   navAktualisieren(); ladeZu();
   $("#v2-app").innerHTML = `<div class="v2-empty">Lade …</div>`;
@@ -1205,7 +1208,7 @@ async function anSpeichern(nummer) {
     tkp_zeigen: ($("#an-tkp-zeigen") || {}).checked !== false, omr_zeigen: !!($("#an-omr-zeigen") || {}).checked };
   const r = nummer ? await jpost("/api/crm/angebote/" + encodeURIComponent(nummer), { angebot }) : await jpost("/api/crm/angebote", { angebot });
   if (!r || !r.ok) return kundenMsg("an-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
-  const nr = nummer || r.nummer; if (AKTIV === "angebote") renderAngebote();
+  const nr = nummer || r.nummer; if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
   return anDetail(nr, nummer ? (r.geaendert && r.geaendert.length ? "Gespeichert." : "Keine Änderung.") : `${nr} angelegt.`);
 }
 
@@ -1285,7 +1288,7 @@ function abNeu(angebotNr, annehmen) {
 async function abAnlegen(angebotNr, annehmen) {
   const r = await jpost(`/api/crm/angebote/${encodeURIComponent(angebotNr)}/auftrag`, { annehmen: !!annehmen, leistung_von: $("#ab-von").value, leistung_bis: $("#ab-bis").value, notiz: $("#ab-notiz").value.trim() });
   if (!r || !r.ok) return kundenMsg("ab-msg", (r && r.hinweis) || "Fehler.", false);
-  if (AKTIV === "angebote") renderAngebote();
+  if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
   return abDetail(r.nummer, [`${r.nummer} angelegt.`, ...(r.hinweise || [])].join("\n"));
 }
 async function abDetail(nr, meldung, fehler) {
@@ -1505,7 +1508,7 @@ async function anSendenJetzt(nr) {
   const b = $('[data-act="an-senden-jetzt"]'); if (b) { b.disabled = true; b.textContent = "⏳ sendet…"; }
   const r = await jpost(`/api/crm/angebote/${encodeURIComponent(nr)}/senden`, { an, betreff, text, bestaetigt: true });
   if (!r || !r.ok) { if (b) { b.disabled = false; b.textContent = "✉️ Jetzt senden"; } return kundenMsg("as-msg", (r && r.hinweis) || "Senden fehlgeschlagen.", false); }
-  if (AKTIV === "angebote") renderAngebote();
+  if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
   return anDetail(nr, [`Gesendet an ${r.an}.`, ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n"));
 }
 
@@ -2668,6 +2671,7 @@ const SETTING_KEYS = ["depot_stop_pct", "depot_target_pct", "depot_alerts", "pap
 const SETTING_BOOLS = new Set(["depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content"]);
 const SETTING_OPT = new Set(["ruhezeit_von", "ruhezeit_bis"]);
 RENDER.einstellungen = renderEinstellungen;
+RENDER.auftraege = () => { SUBTAB.angebote = "auftraege"; return renderAngebote(); };   // eigener Punkt, gleiche Seite
 async function renderEinstellungen() {
   const cfg = await jget("/api/settings") || {};
   const nInp = (k, label, sub) => `<label class="v2-set-row"><span class="v2-set-lbl">${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ""}</span><input id="set-${k}" class="v2-inp" type="number" step="any" value="${cfg[k] != null ? esc(String(cfg[k])) : ""}" style="width:120px"></label>`;
@@ -2765,7 +2769,7 @@ async function handleAct(act, el) {
     case "an-versendet": {
       if (!confirm("Hast du das Angebot auf anderem Weg verschickt (nicht über „Senden“)? Danach ist es nicht mehr änderbar, und die Kalender-Erinnerungen werden angelegt.")) return;
       flash("⏳ …"); const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/versendet`, {});
-      if (AKTIV === "angebote") renderAngebote();
+      if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
       return anDetail(id, r && r.ok ? ["Als versendet markiert.", ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
     case "bl-detail": return blDetail(id);
@@ -2937,7 +2941,7 @@ async function handleAct(act, el) {
     case "ab-geliefert": { el.disabled = true; try { await lfSpeichern(id, false);
         const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/status`, { status: "erledigt", datum: ($("#lf-datum-st") || {}).value || "" });
         if (!r || r.ok === false) throw new Error((r && r.hinweis) || "Status nicht gesetzt.");
-        if (AKTIV === "angebote") renderAngebote(); glockeAktualisieren();
+        if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote(); glockeAktualisieren();
         return abDetail(id, "Als geliefert markiert — bereit für die Rechnung. Zeit ist für diesen Auftrag jetzt gesperrt."); }
       catch (e) { el.disabled = false; return kundenMsg("lf-msg", e.message, false); } }
     case "lf-speichern": { el.disabled = true; try { await lfSpeichern(id, true); return abDetail(id, "Lieferung gespeichert."); }
@@ -2946,12 +2950,12 @@ async function handleAct(act, el) {
       const r = await jpost(`/api/crm/lieferungen/${encodeURIComponent(id)}/entfernen`, { grund }); return abDetail(val, r && r.ok ? "Lieferung entfernt." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
     case "ab-wieder-offen": { const grund = prompt("Auftrag wieder öffnen (z. B. Nachlieferung) – Grund:", ""); if (!grund) return;
       const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/status`, { status: "beauftragt", grund });
-      if (AKTIV === "angebote") renderAngebote();
+      if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
       return abDetail(id, r && r.ok ? "Wieder geöffnet — Zeit ist wieder buchbar." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
     case "ab-status": {
       const grund = prompt(val === "erledigt" ? "Erledigt — Notiz (optional):" : "Stornieren — Grund:", ""); if (grund === null) return;
       const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/status`, { status: val, grund });
-      if (AKTIV === "angebote") renderAngebote();
+      if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
       return abDetail(id, r && r.ok ? (val === "erledigt" ? "Als erledigt markiert — bereit für die Rechnung." : "Storniert.") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
     case "an-senden": return anSendenVorschau(id);
@@ -2964,7 +2968,7 @@ async function handleAct(act, el) {
     case "an-status": {
       const grund = prompt(val === "angenommen" ? "Angenommen — Notiz (optional, z. B. „per Mail vom …“):" : "Abgelehnt — Grund (optional):", ""); if (grund === null) return;
       const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/status`, { status: val, grund });
-      if (AKTIV === "angebote") renderAngebote();
+      if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
       return anDetail(id, r && r.ok ? [val === "angenommen" ? "Angenommen." : "Abgelehnt.", ...(r.hinweise || [])].join("\n") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
     case "abo-neu": return aboForm("", null);

@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 00:03] — Claude Code
+- **Was:** „Aufträge“ als eigener Punkt im Bereich Geschäft (zwischen Angebote und Rechnungen); der Reiter „Aufträge“ der
+  Angebotsseite fuehrt auf denselben Punkt, „Angebote“ zurueck zur Angebotsliste. UI v81. Browsertest.
+- **Warum:** CEO 2026-10-02 (Screenshot Geschaeft-Leiste).
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `static/index-v2.html`
+
 ## [2026-10-02 00:01] — Claude Code
 - **Was:** BF-51 dokumentiert: Suite-Lauf ueber Mitternacht ergab 5 rote Tests (Datum beim Import festgelegt), der
   Wiederholungslauf ist mit 1102 gruen. Der Commit `816ac43` entstand im roten Lauf (Befehlskette pruefte nur den
