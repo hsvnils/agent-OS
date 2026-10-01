@@ -3,7 +3,7 @@
 - Stand: 2026-10-01
 - Arbeitsbranch: `ai/plan-reels` (Plan); Umsetzung auf `ai/reels-aufraeumen`
 - Basiscommit: `fbfa09c`
-- Naechster Schritt: Etappe 1 umgesetzt (Branch `ai/reels-aufraeumen`); CEO-Go fuer Merge, Push und Deploy abwarten (normaler Neustart).
+- Naechster Schritt: Etappe 1 live (deployt 2026-10-01, `883de60`); Verifikation nach dem ersten Lauf 02.10. 05:00 (erwartet `wartet = 7, bremse = false`) und nach 14 Tagen (Videos geloescht).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
