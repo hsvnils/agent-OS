@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 00:04] — Claude Code
+- **Was:** Etappen 29/30 + Auftraege-Knopf gemergt, gepusht, per Sync auf der NAS (`78cf434`, Neustart CEO offen).
+  KUNDEN_FINANZEN Etappe 31 geplant (Auftrag ohne Angebot manuell anlegen).
+- **Warum:** CEO-Go 2026-10-02; CEO: „Nicht jeder Auftrag braucht ein Angebot“.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-02 00:03] — Claude Code
 - **Was:** „Aufträge“ als eigener Punkt im Bereich Geschäft (zwischen Angebote und Rechnungen); der Reiter „Aufträge“ der
   Angebotsseite fuehrt auf denselben Punkt, „Angebote“ zurueck zur Angebotsliste. UI v81. Browsertest.

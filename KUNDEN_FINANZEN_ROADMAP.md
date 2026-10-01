@@ -963,6 +963,23 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   „Erledigt“ heisst **„Geliefert“**; **Wieder oeffnen** erlaubt (mit Verlauf, Zeit danach wieder buchbar).
 - Aufwand: mittel.
 
+### Etappe 31: Auftrag ohne Angebot (manuell anlegen)
+
+- Status: geplant (CEO 2026-10-02: „Nicht jeder Auftrag braucht ein Angebot. Ich muss Auftraege auch manuell anlegen
+  koennen.“), wartet auf CEO-Go
+- Analyse: Auftraege entstehen heute nur aus einem angenommenen Angebot (`AuftragBuch.aus_angebot`, uebernimmt Firma,
+  Ansprechpartner, Titel, Positionen, Zuschlaege/Rabatt, Zahlungsbedingungen inkl. Vorkasse, Ware/Barter). Ein Weg ohne
+  Angebot fehlt in Code und Oberflaeche.
+- Ziel / Scope:
+  - Knopf „+ Neuer Auftrag“ in der Auftragsliste (und auf der Bereichsseite Geschaeft). Formular wie der
+    Angebots-Editor: Firma (Suche/Anlegen), Ansprechpartner, Titel, Positionen aus dem Katalog oder frei (mit
+    Provision/TKP wie bisher), Zuschlaege/Rabatt, Zahlungsbedingungen inkl. Vorkasse, Leistungszeitraum, Notiz.
+  - Speichern legt direkt einen Auftrag `AB-JJJJ-NNNN` an (Nummernkreis wie bisher, Feld „Angebot“ leer). Danach gilt
+    alles wie heute: Auftragsbestaetigung (PDF ohne Angebotsbezug), Vorkasse-/Schlussrechnung, Zeiterfassung, Geliefert.
+- Gate: Tests -- Anlegen ohne Angebot (Pflichtfelder, Summen, Vorkasse), PDF ohne „Angebot“-Zeile, Rechnung aus dem
+  manuellen Auftrag, Zeit buchbar; Browsertest Formular -> Auftrag; Suite + Doku-Check gruen.
+- Aufwand: mittel.
+
 ## Reihenfolge
 
 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 (ohne Auto-Weiterleitung) -> 14 -> 13 (Auto-Weiterleitung) -> 15/16 (unabhaengig, nach CEO-Go). Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst
