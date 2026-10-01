@@ -966,7 +966,7 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
 ### Etappe 31: Auftrag ohne Angebot (manuell anlegen)
 
 - Status: geplant (CEO 2026-10-02: „Nicht jeder Auftrag braucht ein Angebot. Ich muss Auftraege auch manuell anlegen
-  koennen.“), umgesetzt (CEO-Go 2026-10-02) -- Deploy offen. `AuftragBuch.anlegen` (gleiche Pruefregeln wie das
+  koennen.“), live (deployt 2026-10-02, `cf18f27`, Neustart CEO, live geprueft) -- CEO-Abnahme offen. `AuftragBuch.anlegen` (gleiche Pruefregeln wie das
   Angebot), `POST /api/crm/auftraege`, Angebots-Editor im Auftragsmodus, Knopf „+ Neuer Auftrag (ohne Angebot)“,
   Bestaetigung (PDF beide Vorlagen, Mail) ohne Angebotsbezug. Tests `test_auftrag_manuell.py` mit Gegenprobe.
 - Analyse: Auftraege entstehen heute nur aus einem angenommenen Angebot (`AuftragBuch.aus_angebot`, uebernimmt Firma,

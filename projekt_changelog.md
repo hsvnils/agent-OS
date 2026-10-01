@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 00:15] — Claude Code
+- **Was:** Etappe 31 live geprueft nach CEO-Neustart: UI v82 mit Auftragsmodus ausgeliefert, `POST /api/crm/auftraege`
+  antwortet und prueft (ohne Titel abgewiesen, kein Auftrag/keine Nummer verbraucht -- weiter nur AB-2026-0001),
+  Bot-Herzschlag 0,3 min.
+- **Warum:** Abnahme-Gegenprobe nach Deploy (`cf18f27`).
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-02 00:12] — Claude Code
 - **Was:** Etappen 29/30 live geprueft (UI v81, Zeit-/Lieferungs-Endpunkte antworten, Bot ok). KUNDEN_FINANZEN Etappe 31
   umgesetzt: Auftrag ohne Angebot -- „+ Neuer Auftrag (ohne Angebot)“ in der Auftragsliste, Angebots-Editor im
