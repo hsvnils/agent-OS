@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 00:01] — Claude Code
+- **Was:** BF-51 dokumentiert: Suite-Lauf ueber Mitternacht ergab 5 rote Tests (Datum beim Import festgelegt), der
+  Wiederholungslauf ist mit 1102 gruen. Der Commit `816ac43` entstand im roten Lauf (Befehlskette pruefte nur den
+  Doku-Check); nichts gepusht oder gemergt.
+- **Warum:** Ehrliches Protokoll; Push erst nach gruenem Lauf.
+- **Betroffen:** `docs/bekannte-fehler.md`
+
 ## [2026-10-01 23:59] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappen 29 + 30 umgesetzt. 29: Zeit-Tracker als Kachel auf der Startseite, Fenster mit
   Auftragswahl, Knopf wechselt sofort zu „Zeit stoppen“, Timer in Fenster/Kachel/Kopfzeile/Seitenmenue, km nach dem
