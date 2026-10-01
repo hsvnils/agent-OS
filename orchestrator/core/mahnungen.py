@@ -40,7 +40,8 @@ def tage_jahr(tag: date) -> int:
     return 366 if tag.year % 4 == 0 and (tag.year % 100 != 0 or tag.year % 400 == 0) else 365
 
 
-STUFEN = {1: "1. Mahnung", 2: "2. Mahnung", 3: "Letzte Mahnung"}
+STUFEN = {1: "Mahnstufe 1", 2: "Mahnstufe 2", 3: "Mahnstufe 3"}          # Status in LUNA (CEO 2026-10-01)
+BRIEF = {1: "1. Mahnung", 2: "2. Mahnung", 3: "3. Mahnung"}                # Ueberschrift/Betreff an den Kunden
 FRIST_TAGE = 7
 
 
@@ -97,6 +98,40 @@ class MahnStore:
     def ausgesetzt(eintraege: list[dict]) -> set[tuple[str, int]]:
         return {(e["daten"]["rechnung"], int(e["daten"]["stufe"])) for e in eintraege if e["typ"] == "mahnung_ausgesetzt"}
 
+    @staticmethod
+    def mahnverfahren(eintraege: list[dict]) -> dict[str, dict]:
+        """Rechnung -> eingetragenes gerichtliches Mahnverfahren (letzter Stand gilt; CEO 2026-10-01)."""
+        out: dict[str, dict] = {}
+        for e in eintraege:
+            if e["typ"] == "rechnung_mahnverfahren":
+                out[e["daten"]["rechnung"]] = dict(e["daten"]) | {"erfasst": e["ts"]}
+        return out
+
+    def mahnverfahren_setzen(self, rechnung: str, *, datum: str, durch: str = "", notiz: str = "", akte: str = "",
+                             von: str = "") -> dict:
+        """Gerichtliches Mahnverfahren eingeleitet (z. B. von der Anwaeltin digital beantragt). Die Rechnung bleibt offen;
+        der Handlungsbedarf wartet dann ruhig auf Zahlung oder Nachricht statt „Mahnbescheid pruefen“ zu melden."""
+        rechnung = (rechnung or "").strip().upper()
+        try:
+            tag = date.fromisoformat(str(datum or "")[:10]).isoformat()
+        except ValueError:
+            raise ValueError("Datum fehlt oder ist ungueltig.") from None
+        if tag > jetzt().date().isoformat():
+            raise ValueError("Das Datum liegt in der Zukunft.")
+        daten = {"rechnung": rechnung, "datum": tag, "durch": str(durch or "").strip()[:120],
+                 "notiz": str(notiz or "").strip()[:500], "akte": str(akte or "").strip()[:20]}
+
+        def pruefe(eintraege):
+            r = RechnungStore._falte(eintraege)[1].get(rechnung)
+            if not r:
+                raise KeyError(rechnung)
+            if r.get("art") == "storno" or r["status"] != "offen":
+                raise ValueError(f"{rechnung} ist {r['status']} -- kein Mahnverfahren noetig.")
+            if tag < r["rechnungsdatum"]:
+                raise ValueError("Das Datum liegt vor der Rechnung.")
+        self.bh.erfassen_geprueft("rechnung_mahnverfahren", daten, von=von, pruefe=pruefe)
+        return daten
+
     def fuer_rechnung(self, rechnung: str, eintraege: list[dict] | None = None) -> list[dict]:
         e = self.bh.eintraege() if eintraege is None else eintraege
         return sorted((m for m in self._falte(e).values() if m["rechnung"] == rechnung), key=lambda m: m["stufe"])
@@ -124,7 +159,7 @@ class MahnStore:
             raise ValueError(f"{bisher[-1]['nummer']} ist noch nicht versendet -- erst senden, dann die naechste Stufe.")
         stufe = len(bisher) + 1
         if stufe > 3:
-            raise ValueError("Die letzte Mahnung ist verschickt -- weiter nur ueber Mahnbescheid/Inkasso (CEO).")
+            raise ValueError("Mahnstufe 3 ist verschickt -- weiter nur ueber Mahnverfahren/Inkasso (CEO).")
         if not 1 <= int(frist_tage) <= 60:
             raise ValueError("Frist zwischen 1 und 60 Tagen.")
         if r["geld_cent"] - r["bezahlt_cent"] <= 0:
@@ -137,7 +172,7 @@ class MahnStore:
         gebuehr = KOSTEN_VERBRAUCHER_CENT * stufe if verbraucher else PAUSCHALE_UNTERNEHMER_CENT
         offen = r["geld_cent"] - r["bezahlt_cent"]         # Barter: nur der Geldteil
         tageszins = round(offen * z["abschnitte"][-1]["satz"] / 100 / tage_jahr(heute)) if z["abschnitte"] else 0
-        return {"rechnung": rechnung, "stufe": stufe, "titel": STUFEN[stufe], "datum": heute.isoformat(),
+        return {"rechnung": rechnung, "stufe": stufe, "titel": BRIEF[stufe], "datum": heute.isoformat(),
                 "frist": (heute + timedelta(days=int(frist_tage))).isoformat(), "faellig_am": r["faellig_am"],
                 "rechnungsdatum": r.get("rechnungsdatum", ""), "firma": r["firma"], "verbraucher": verbraucher,
                 "offen_cent": offen, "zinsen_cent": z["zinsen_cent"], "zins_abschnitte": z["abschnitte"],
@@ -196,7 +231,7 @@ class MahnStore:
                                              art="geschaeftsbrief", bezug=rechnung, von=von)["daten"]
                 belege = [{"pfad": b["pfad"], "sha256": b["sha256"]}]
             self.bh._anhaengen("mahnung_erstellt", {"nummer": nummer, "rechnung": rechnung, "stufe": stufe,
-                                                    "titel": STUFEN[stufe], "datum": tag, "frist": fr, "firma": r["firma"],
+                                                    "titel": BRIEF[stufe], "datum": tag, "frist": fr, "firma": r["firma"],
                                                     "faellig_am": r["faellig_am"], "offen_cent": offen, "summe_cent": betrag,
                                                     "zinsen_cent": 0, "gebuehr_cent": max(betrag - offen, 0), "alt": True,
                                                     "belege": belege}, von=von)
@@ -281,7 +316,7 @@ class MahnStore:
         if m["stufe"] == 3:
             hinweise.insert(1, "Nach Ablauf dieser Frist behalten wir uns vor, ohne weitere Ankündigung das gerichtliche "
                                "Mahnverfahren einzuleiten; die dadurch entstehenden Kosten gehen zu Ihren Lasten.")
-        return beleg_pdf(art=STUFEN[m["stufe"]], nummer=m["nummer"], firma=firmendaten, empfaenger=_empfaenger(f, ap),
+        return beleg_pdf(art=BRIEF[m["stufe"]], nummer=m["nummer"], firma=firmendaten, empfaenger=_empfaenger(f, ap),
                          infos=[("Datum", datum_de(m["datum"])), ("Mahnung", m["nummer"]), ("Rechnung", m["rechnung"]),
                                 ("Kundennummer", m["firma"]), ("Zahlbar bis", datum_de(m["frist"]))],
                          einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einl, positionen=pos,
@@ -291,9 +326,9 @@ class MahnStore:
 def mahnung_mail_text(m: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:
     name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
     anrede = f"Guten Tag {name}," if name else "Sehr geehrte Damen und Herren,"
-    betreff = f"{STUFEN[m['stufe']]} zu Rechnung {m['rechnung']}"
+    betreff = f"{BRIEF[m['stufe']]} zu Rechnung {m['rechnung']}"
     text = (f"{anrede}\n\nunsere Rechnung {m['rechnung']} war am {datum_de(m['faellig_am'])} fällig und ist noch offen. "
-            f"Anbei erhalten Sie unsere {STUFEN[m['stufe']].lower() if m['stufe'] < 3 else 'letzte Mahnung'} "
+            f"Anbei erhalten Sie unsere {BRIEF[m['stufe']] if m['stufe'] < 3 else 'letzte Mahnung'} "
             f"({m['nummer']}). Bitte überweisen Sie den Gesamtbetrag von {eur(m['summe_cent'])} bis zum "
             f"{datum_de(m['frist'])}.\n\nSollte sich Ihre Zahlung mit dieser Nachricht überschnitten haben, betrachten "
             "Sie sie bitte als gegenstandslos.\n\nMit freundlichen Grüßen\n"
@@ -307,7 +342,7 @@ ABSENDER_NAME = "Hanserautisch – LUNA"
 def folgemahnung_frage(m: dict, firma_name: str) -> str:
     """Telegram-Vorschau fuer die naechste Mahnstufe (aus `MahnStore.berechnen`)."""
     return (f"⚠️ {firma_name}: Frist der {STUFEN[m['stufe'] - 1]} zu {m['rechnung']} ist abgelaufen, noch kein "
-            f"Zahlungseingang.\n\n{m['titel']} jetzt senden?\n"
+            f"Zahlungseingang.\n\n{STUFEN[m['stufe']]} ({m['titel']}) jetzt senden?\n"
             f"Offen {eur(m['offen_cent'])} + Verzugszinsen {eur(m['zinsen_cent'])} + {m['gebuehr_text']} "
             f"{eur(m['gebuehr_cent'])} = {eur(m['summe_cent'])}\nNeue Frist: {datum_de(m['frist'])}")
 

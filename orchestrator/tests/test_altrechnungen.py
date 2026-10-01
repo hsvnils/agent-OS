@@ -68,12 +68,12 @@ class TestAltrechnung(unittest.TestCase):
         self.assertEqual(ms.get("RG-11052026-M3")["summe_cent"], 401500)
         with self.assertRaisesRegex(ValueError, "drei Mahnungen"):
             ms.alt_erfassen("RG-11052026", datum=T(1))
-        with self.assertRaisesRegex(ValueError, "Mahnbescheid"):
+        with self.assertRaisesRegex(ValueError, "Mahnverfahren"):
             ms.berechnen("RG-11052026")                                                  # naechster Schritt: Anwalt
         self.assertEqual([e for e in bh.eintraege("nummer") if e["daten"]["kreis"] == "MA"], [])
         from orchestrator.core.todos import geschaefts_todos
         t = [x for x in geschaefts_todos(bh, ks) if x["id"] == "re-ueber:RG-11052026"]
-        self.assertIn("Mahnbescheid", t[0]["detail"])
+        self.assertIn("Mahnverfahren einleiten", t[0]["detail"])
 
 
 class TestApi(ApiBasis):

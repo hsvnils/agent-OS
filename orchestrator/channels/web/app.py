@@ -2001,6 +2001,7 @@ def rechnung_detail(kennung: str):
             "ansprechpartner": ap, "mail_an": f.get("rechnungsmail") or (ap or {}).get("mail") or "",
             "google": bool(_google().verfuegbar()), "firmendaten": bool(_firmendaten()),
             "steuernummer": bool(_firmendaten().get("steuernummer")), "mahnungen": mahn,
+            "mahnverfahren": MahnStore.mahnverfahren(kunden_store.bh.eintraege()).get(r.get("nummer", "")) if r.get("nummer") else None,
             "naechste_mahnung": naechste, "nicht_mahnbar": mahnbar}
 
 
@@ -2037,6 +2038,15 @@ async def rechnung_altmahnung(nummer: str, request: Request):
         return _mahn().alt_erfassen(nummer, datum=body.get("datum") or "", frist=body.get("frist") or "",
                                     summe=body.get("summe"), pdf=pdf or None, dateiname=name, von=_von(request))
     return _kunden_aktion(tun)
+
+
+@app.post("/api/finanzen/rechnungen/{nummer}/mahnverfahren")
+async def rechnung_mahnverfahren(nummer: str, request: Request):
+    """Etappe 28: gerichtliches Mahnverfahren eingeleitet (z. B. von der Anwaeltin digital beantragt)."""
+    body = await _json(request)
+    return _kunden_aktion(lambda: _mahn().mahnverfahren_setzen(nummer, datum=body.get("datum") or "",
+                                                               durch=body.get("durch") or "", notiz=body.get("notiz") or "",
+                                                               akte=body.get("akte") or "", von=_von(request)))
 
 
 @app.post("/api/finanzen/rechnungen/aus-auftrag/{nummer}")

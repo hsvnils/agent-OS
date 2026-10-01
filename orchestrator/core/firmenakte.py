@@ -133,7 +133,8 @@ class Firmenakte:
         """`firmen()` liefert die Ansprechpartner nicht mit -- fuer die Zuordnung ueber deren Mailadressen noetig."""
         return [self.kunden.firma(f["nummer"]) or f for f in self.kunden.firmen()]
 
-    def mail_aufnehmen(self, roh: bytes, mid: str, *, eigene: list[str], weitergeleitet: bool, von: str = "LUNA-Mail") -> dict:
+    def mail_aufnehmen(self, roh: bytes, mid: str, *, eigene: list[str], weitergeleitet: bool, von: str = "LUNA-Mail",
+                       bezug: str = "") -> dict:
         """Mail in die Akte (oder „zuordnen“). `eigene` = Adressen des CEO und von LUNA (zaehlen nie als Firma).
         Weitergeleitet: Firma aus dem Original-Absender, Text darueber = Notiz. Rueckgabe {id, firma|""}."""
         from .eingangsbelege import mail_pdf, mail_text, weiterleitung, zweck_aus_mail
@@ -157,7 +158,11 @@ class Firmenakte:
                     treffer.append(nr)
         betreff = re.sub(r"^\s*(?:fwd?|wg|wtr|aw|re)\s*:\s*", "", orig.get("betreff") or str(m.get("Subject", "")),
                          flags=re.I).strip()[:200] or "(ohne Betreff)"
-        bezug = ""
+        forderung, bezug = bezug, ""
+        if forderung:                                         # BF-49: Post zu eigener Rechnung -> Firma dieser Rechnung
+            bezug, nr = self._beleg_firma(forderung)
+            if nr:
+                treffer = [nr]
         if len(treffer) != 1:                                 # Belegnummer im Betreff/Text -> Firma dieses Belegs
             bezug, nr = self._beleg_firma(f"{betreff}\n{rest[:3000]}")
             if nr:
@@ -208,6 +213,61 @@ class Firmenakte:
         return {"id": did, "firma": f["nummer"] if f else ""}
 
 
+_FORDERUNG = re.compile(r"(?i)offene forderung|mahnverfahren|mahnbescheid|zahlungsverzug|rechtsanw[aä]lt|anwaltskanzlei|"
+                        r"inkasso|mandant(?:in|en)?\b")
+_EIGENE_KOSTEN = re.compile(r"(?i)kostennote|verg[üu]tungs(?:berechnung|rechnung)|honorar(?:rechnung|note)")
+_RECHTSFORM_W = {"gmbh", "mbh", "ug", "ag", "kg", "ohg", "co", "ek", "gbr", "haftungsbeschraenkt", "gastro", "und"}
+
+
+def _stamm(name: str) -> str:
+    """„Kiez Alm Gastro GmbH“ -> „kiezalm“ (erste zwei Woerter ohne Rechtsform, nur Buchstaben/Ziffern)."""
+    w = [x for x in re.findall(r"[a-z0-9äöüß]+", (name or "").lower()) if x not in _RECHTSFORM_W]
+    return "".join(w[:2])
+
+
+def eigene_forderung(text: str, eintraege: list[dict]) -> str:
+    """BF-49 (Etappe 28): Ist das Post zu einer EIGENEN Ausgangsrechnung (Anwalt, Mahnverfahren, Kunde)? -> Rechnungsnummer,
+    sonst ''. Erkennt die volle Nummer (RG-11052026, RE-2026-0007), „Rechnung Nr. 11052026“ ohne Praefix sowie
+    Forderungs-/Anwaltsvokabular zusammen mit dem Namen einer Firma, die eine offene eigene Rechnung hat. Eine Kosten-
+    oder Honorarnote AN UNS bleibt ein Beleg."""
+    from .rechnungen import RechnungStore
+    t = text or ""
+    if _EIGENE_KOSTEN.search(t):
+        return ""
+    rechnungen = {k: v for k, v in RechnungStore._falte(eintraege)[1].items() if v.get("art") != "storno"}
+    for nr in re.findall(r"\b(?:RE-\d{4}-\d{4}|RG-\d{6,8})\b", t, flags=re.I):
+        if nr.upper() in rechnungen:
+            return nr.upper()
+    ziffern = {re.sub(r"\D", "", k): k for k in rechnungen if k.upper().startswith("RG-")}
+    for m in re.finditer(r"(?i)rechnung(?:s?-?nummer|s?-?nr\.?)?\s*(?:nr\.?|nummer)?\s*[:#]?\s*([A-Z]{0,2}-?\d{6,8})\b", t):
+        if (k := ziffern.get(re.sub(r"\D", "", m.group(1)))):
+            return k
+    if _FORDERUNG.search(t):
+        norm = re.sub(r"[^a-z0-9äöüß]", "", t.lower())
+        namen: dict[str, str] = {}
+        for e in eintraege:
+            if e["typ"] == "firma_angelegt":
+                namen[e["daten"]["nummer"]] = e["daten"].get("name", "")
+        offen = [(k, v) for k, v in rechnungen.items() if v.get("status") == "offen"]
+        for k, v in sorted(offen, key=lambda x: x[1].get("rechnungsdatum", "")):
+            st = _stamm(namen.get(v.get("firma", ""), ""))
+            if len(st) >= 5 and st in norm:
+                return k
+    return ""
+
+
+def anhang_texte(roh: bytes) -> str:
+    """Text aller PDF-/Bild-Anhaenge einer Mail (fuer die Zuordnung; OCR nur wenn noetig)."""
+    from .eingangsbelege import anhaenge, auslesen
+    teile = []
+    for name, daten in anhaenge(roh):
+        try:
+            teile.append(auslesen(daten, name).get("text") or "")
+        except Exception:
+            continue
+    return "\n".join(teile)
+
+
 def mails_pruefen(akte: Firmenakte, google, *, ceo: list[str], luna: str, tage: int = 14, gesehen: set | None = None) -> list[str]:
     """LUNAs Postfach: Mails mit LUNA in CC/BCC oder vom CEO weitergeleitete Nicht-Beleg-Mails in die Akte.
     Beleg-Mails (schon im Kassenbuch) und bereits abgelegte Mails werden uebersprungen. Rueckgabe: neue Dokument-IDs."""
@@ -237,9 +297,12 @@ def mails_pruefen(akte: Firmenakte, google, *, ceo: list[str], luna: str, tage: 
         cc = luna in " ".join(str(kopf.get(h, "")) for h in ("Cc", "Bcc", "Delivered-To", "X-Original-To")).lower()
         orig, rest, markiert = weiterleitung(roh, mail_text(roh))
         if von_ceo and markiert:
-            if not absender_echt(roh, ceo) or mail_ist_beleg(orig.get("betreff", ""), rest):
-                continue                                         # gefaelscht bzw. Beleg -> Beleg-Abruf ist zustaendig
-            neu.append(akte.mail_aufnehmen(roh, mid, eigene=ceo + [luna], weitergeleitet=True)["id"])
+            if not absender_echt(roh, ceo):
+                continue                                         # gefaelscht
+            fo = eigene_forderung(f"{orig.get('betreff', '')}\n{rest}\n{anhang_texte(roh)}", eintraege)   # BF-49
+            if not fo and mail_ist_beleg(orig.get("betreff", ""), rest):
+                continue                                         # Beleg -> Beleg-Abruf ist zustaendig
+            neu.append(akte.mail_aufnehmen(roh, mid, eigene=ceo + [luna], weitergeleitet=True, bezug=fo)["id"])
         elif cc or von_ceo:
             neu.append(akte.mail_aufnehmen(roh, mid, eigene=ceo + [luna], weitergeleitet=False)["id"])
     return neu
