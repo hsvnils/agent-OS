@@ -11,10 +11,13 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
-STATUS = ("wartet", "freigegeben", "abgelehnt", "gepostet", "fehler")
+STATUS = ("wartet", "freigegeben", "abgelehnt", "gepostet", "fehler", "verfallen")
+VERFALL_TAGE = 30            # REELS_ROADMAP (CEO 2026-10-01): ohne Entscheidung nach 30 Tagen verfallen
+LOESCH_TAGE = 14             # Video abgelehnter/verfallener Reels 14 Tage nach der Entscheidung loeschen
+BREMSE_AB = 10               # ab so vielen wartenden Reels schneidet der Nachtlauf kein neues
 _FELDER = ("id", "datum", "thema", "caption", "video", "spiele", "dauer_sek", "clips", "status")
 
 
@@ -68,9 +71,12 @@ class ReelStore:
                 continue
             if ev.get("typ") == "einreichen":
                 reels[rid] = {k: ev.get(k) for k in _FELDER}
-                reels[rid]["ts"] = ev.get("ts")
+                reels[rid]["ts"] = reels[rid]["eingereicht"] = ev.get("ts")
             elif ev.get("typ") == "status" and rid in reels:
                 reels[rid].update({k: v for k, v in ev.items() if k not in ("typ", "id")})
+                reels[rid]["entschieden"] = ev.get("ts")
+            elif ev.get("typ") == "video_geloescht" and rid in reels:
+                reels[rid]["video_geloescht"] = ev.get("ts")
         return reels
 
     def liste(self, *, status: str | None = None, limit: int = 60) -> list[dict]:
@@ -82,6 +88,51 @@ class ReelStore:
 
     def holen(self, rid: str) -> dict | None:
         return self._falten().get(rid)
+
+    def wartend(self) -> int:
+        return sum(1 for r in self._falten().values() if r.get("status") == "wartet")
+
+    def bremse(self) -> dict:
+        """Nachschub-Bremse fuer den Nachtlauf: ab BREMSE_AB wartenden Reels wird nicht geschnitten."""
+        n = self.wartend()
+        return {"wartet": n, "bremse": n >= BREMSE_AB, "ab": BREMSE_AB}
+
+    def uebersprungen(self, *, grund: str, wartet: int | None = None) -> None:
+        """Nachtlauf hat wegen der Bremse nicht geschnitten -- zaehlt fuer die Betriebs-Wacht als „aktiv“."""
+        self._append({"typ": "uebersprungen", "grund": str(grund)[:200], "wartet": wartet})
+
+    def zuletzt_aktiv(self) -> str | None:
+        """Juengstes Einreichen ODER bewusstes Ueberspringen (Bremse) -- eine gebremste Nacht ist kein Ausfall."""
+        stempel = [e.get("ts") for e in self._events() if e.get("typ") in ("einreichen", "uebersprungen") and e.get("ts")]
+        return max(stempel) if stempel else None
+
+    def aufraeumen(self, heute: date | None = None) -> dict:
+        """Taeglich: wartende Reels nach VERFALL_TAGE -> `verfallen`; Videos von `abgelehnt`/`verfallen` nach
+        LOESCH_TAGE ab der Entscheidung loeschen (gepostete nie). Idempotent. -> {verfallen: [ids], geloescht: [ids]}"""
+        heute = heute or date.today()
+        out = {"verfallen": [], "geloescht": []}
+        for rid, r in self._falten().items():
+            if r.get("status") == "wartet" and r.get("eingereicht") and \
+                    (heute - date.fromisoformat(r["eingereicht"][:10])).days > VERFALL_TAGE:
+                self.status_setzen(rid, "verfallen", grund=f"{VERFALL_TAGE} Tage ohne Entscheidung")
+                out["verfallen"].append(rid)
+        ordner = self.pfad.parent.resolve()
+        for rid, r in self._falten().items():
+            if r.get("status") not in ("abgelehnt", "verfallen") or r.get("video_geloescht") or not r.get("entschieden") \
+                    or rid in out["verfallen"]:
+                continue
+            if (heute - date.fromisoformat(r["entschieden"][:10])).days < LOESCH_TAGE:
+                continue
+            datei = ordner / Path(str(r.get("video") or "")).name           # nur im eigenen Ordner, nur MP4
+            if datei.suffix.lower() != ".mp4":
+                continue
+            try:
+                datei.unlink(missing_ok=True)
+            except OSError:
+                continue
+            self._append({"typ": "video_geloescht", "id": rid, "datei": datei.name})
+            out["geloescht"].append(rid)
+        return out
 
     def zuletzt_eingereicht(self) -> str | None:
         """Zeitstempel des zuletzt **eingereichten** Reels (None, wenn es keines gibt).

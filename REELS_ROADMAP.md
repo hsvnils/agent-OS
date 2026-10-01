@@ -1,9 +1,9 @@
 # Roadmap: Reels aufraeumen (Verfall, Videos loeschen, Nachschub-Bremse)
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-01
 - Arbeitsbranch: `ai/plan-reels` (Plan); Umsetzung auf `ai/reels-aufraeumen`
 - Basiscommit: `fbfa09c`
-- Naechster Schritt: CEO-Go fuer Etappe 1 abwarten; bis dahin keine Umsetzung.
+- Naechster Schritt: Etappe 1 umgesetzt (Branch `ai/reels-aufraeumen`); CEO-Go fuer Merge, Push und Deploy abwarten (normaler Neustart).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -33,7 +33,10 @@ CEO-Entscheidungen 2026-10-01: Verfall nach **30 Tagen**; Videos abgelehnter und
 
 ## Etappe 1: Verfall, Aufraeumen, Bremse
 
-- Status: geplant
+- Status: umgesetzt (CEO-Go 2026-10-01) -- `core/reel_store.py` (`aufraeumen`, `bremse`, `uebersprungen`,
+  `zuletzt_aktiv`), Bot-Tageslauf 05:00, `GET /api/reel/bremse`, `POST /api/reel/uebersprungen`, `cutter/reel_daily.py`
+  (`gebremst`, nur automatischer Lauf), Betriebs-Wacht auf `zuletzt_aktiv`, Reels-Ansicht (wartende zuerst, „verfaellt
+  am“, „Video geloescht“). Tests `test_reel_aufraeumen.py` mit Gegenprobe (Tag 30/31, 9/10, gepostet nie).
 - Ziel / Scope:
   - **Verfall:** Neuer Status `verfallen`. Ein Reel, das 30 Tage nach dem Einreichen noch `wartet`, verfaellt -- es
     wird nie gepostet, faellt aus Freigabe-Liste und Handlungsbedarf. Taeglicher Lauf im Bot (mit den anderen
