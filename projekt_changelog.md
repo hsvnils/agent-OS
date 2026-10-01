@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-01 23:47] — Claude Code
+- **Was:** CEO-Entscheidungen zu Etappe 30 in der Roadmap festgehalten (kein Backup der Lieferungs-Dateien, Dateien und
+  Links je Lieferung, „Erledigt“ -> „Geliefert“, Wieder oeffnen mit Verlauf).
+- **Warum:** CEO-Antworten 2026-10-01.
+- **Betroffen:** `KUNDEN_FINANZEN_ROADMAP.md`
+
 ## [2026-10-01 23:43] — Claude Code
 - **Was:** KUNDEN_FINANZEN Etappen 29 (Zeit-Tracker auf der Startseite) und 30 (Auftrag „geliefert“ mit Lieferungen,
   keine Zeit mehr auf gelieferte Auftraege) geplant. Analyse read-only: Zeit-Endpunkte vorhanden, Status „erledigt“ =

@@ -951,8 +951,9 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
     Nachlieferungen (mit Verlauf) gibt die Zeiterfassung wieder frei.
 - Gate: Tests -- Statuswechsel + Verlauf, Zeitsperre (Start/Eintrag/Telegram), Upload in Stuecken (Reihenfolge,
   Abbruch, Groesse), Links, Dateien nicht in `belege/`; Browsertest Auftrag + Firmenakte; Suite + Doku-Check gruen.
-- Offene CEO-Entscheidungen: Backup der Lieferungs-Dateien (Videos koennen GB gross sein); Links zulassen; „Erledigt“
-  in „Geliefert“ umbenennen; Wieder oeffnen erlauben.
+- CEO-Entscheidungen 2026-10-01: Lieferungs-Dateien **nur auf der NAS, kein zusaetzliches Backup** (die Liste der
+  Lieferungen steht in der gesicherten Hash-Kette); eine Lieferung kann **Dateien und Links zugleich** haben;
+  „Erledigt“ heisst **„Geliefert“**; **Wieder oeffnen** erlaubt (mit Verlauf, Zeit danach wieder buchbar).
 - Aufwand: mittel.
 
 ## Reihenfolge
