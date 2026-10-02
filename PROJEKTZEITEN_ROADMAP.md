@@ -3,7 +3,7 @@
 - Stand: 2026-10-02
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
-- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck (zusammen mit PROJEKTBERICHT); Bau auf `ai/projekt-etappen`.
+- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck (zusammen mit PROJEKTBERICHT); Bau auf `ai/projekt-etappen` (Z1, Z2 fertig).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -41,7 +41,12 @@ ob die Projektzeiten mitgerechnet werden.“
 
 ## Etappe Z2: Projektzeiten optional in der Rechnung
 
-- Status: geplant
+- Status: umgesetzt (2026-10-02) -- `core/projektabrechnung.py`: Auswahl je Rechnungsentwurf (Zeiten und Fahrten),
+  zusammengefasst (Standard, Stundenzettel als PDF-Anlage) oder einzeln, Verkaufs-Satz aus dem Auftrag oder dem
+  Katalog-Artikel „Projektstunde“/„Fahrt-km“ (eingetragener Satz wird am Auftrag gemerkt), „abgerechnet“ abgeleitet aus
+  festgeschriebenen Rechnungen, Storno gibt frei, Pruefung beim Festschreiben (doppelt, seitdem geaendert, Position
+  entfernt). Tests `test_projektabrechnung.py` mit Gegenprobe; Browsertest 1300/820/390 px. **Offen:** Saetze im Katalog
+  anlegen (CEO).
 - Ziel / Scope: Beim Rechnungsentwurf aus einem Auftrag der Schalter **„Projektzeiten abrechnen“** (Standard aus).
   Darunter der Stundenzettel mit Haken je Eintrag (vorausgewaehlt: noch nicht abgerechnete). Darstellung waehlbar:
   **einzeln** (je Eintrag eine Position „Arbeitszeit 05.10.2026, 09:00–12:30 (3,5 h)“) oder **zusammengefasst**

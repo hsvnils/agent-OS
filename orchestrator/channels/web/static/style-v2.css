@@ -670,3 +670,10 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-po-bilder { display: flex; gap: 6px; flex-wrap: wrap; }
 .v2-po-bilder img { width: 64px; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid var(--v2-line-soft); }
 .v2-erkannt { outline: 2px solid var(--v2-amber); }
+/* Projektzeiten in der Rechnung (PROJEKTZEITEN Z2) */
+.v2-pz { border: 1px solid var(--v2-line-soft); border-radius: 14px; padding: 10px 12px; margin-top: 14px; }
+.v2-pz summary { cursor: pointer; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.v2-pz-zeile { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--v2-line-soft); }
+.v2-pz-zeile label { display: flex; gap: 8px; align-items: center; min-height: 36px; }
+.v2-pz-zeile.ab { color: var(--v2-muted); }
+.v2-pz-zeile input[type=checkbox] { width: 20px; height: 20px; }

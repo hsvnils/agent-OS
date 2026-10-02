@@ -1950,7 +1950,36 @@ async function reDetail(id, meldung, fehler) {
     </div><div>
     <div id="re-aktion-box"></div>
     <h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
+    ${entwurf && r.auftrag && r.art !== "anzahlung" ? `<div id="re-pz-box"></div>` : ""}
     </div></div>`, true);
+  if (entwurf && r.auftrag && r.art !== "anzahlung") rePzLaden(id);
+}
+// PROJEKTZEITEN Z2: Projektzeiten optional in der Rechnung (Standard aus; zusammengefasst + Stundenzettel-Anlage)
+async function rePzLaden(eid) {
+  const box = $("#re-pz-box"); if (!box) return;
+  const d = await jget(`/api/finanzen/rechnungen/${encodeURIComponent(eid)}/projektzeiten`); if (!d) { box.innerHTML = ""; return; }
+  const ez = (d.stundenzettel || {}).eintraege || [], akt = d.aktuell || {}, an = !!(akt.zeiten || []).length || !!(akt.km || []).length;
+  if (!ez.length) { box.innerHTML = ""; return; }
+  const gew = new Set(an ? akt.zeiten : ez.filter(x => !x.abgerechnet).map(x => x.id)), gewKm = new Set(an ? akt.km : []);
+  const satz = (c) => c ? (c / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+  const zeilen = ez.map(x => `<div class="v2-pz-zeile${x.abgerechnet ? " ab" : ""}"><label><input type="checkbox" class="pz-z" value="${esc(x.id)}" ${gew.has(x.id) && !x.abgerechnet ? "checked" : ""} ${x.abgerechnet ? "disabled" : ""}>
+      <b>${esc(datumDe(x.datum))}</b> ${esc(x.von)}–${esc(x.bis)} · ${esc(dauerTxt(x.minuten))}${x.taetigkeit ? " · " + esc(x.taetigkeit) : ""}</label>
+      ${x.km ? `<label class="pz-km-l"><input type="checkbox" class="pz-km" value="${esc(x.id)}" ${gewKm.has(x.id) && !x.km_abgerechnet ? "checked" : ""} ${x.km_abgerechnet ? "disabled" : ""}> 🚗 ${esc(String(x.km))} km</label>` : ""}
+      ${x.abgerechnet ? `<span class="v2-badge ok">${esc(x.abgerechnet)}</span>` : ""}</div>`).join("");
+  box.innerHTML = `<details class="v2-pz" ${an ? "open" : ""}><summary><b>⏱ Projektzeiten abrechnen</b> <small class="v2-sub">${an ? "auf dieser Rechnung" : "aus – Stunden sind sonst intern"}</small></summary>
+    <div class="v2-form">${zeilen}
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Darstellung</small><select id="pz-darst" class="v2-inp"><option value="zusammen" ${akt.darstellung !== "einzeln" ? "selected" : ""}>Zusammengefasst + Stundenzettel als Anlage</option><option value="einzeln" ${akt.darstellung === "einzeln" ? "selected" : ""}>Einzeln (je Zeit eine Position)</option></select></label></div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Verkaufs-Stundensatz (€)</small><input id="pz-satz" class="v2-inp" inputmode="decimal" value="${esc(satz(akt.satz_cent || d.saetze.satz_cent))}" placeholder="z. B. 65,00"></label>
+      <label class="v2-feld"><small>Verkaufs-km-Satz (€)</small><input id="pz-kmsatz" class="v2-inp" inputmode="decimal" value="${esc(satz(akt.km_satz_cent || d.saetze.km_satz_cent))}" placeholder="z. B. 0,50"></label></div>
+    <small class="v2-sub">${d.saetze.quelle === "auftrag" ? "Satz aus diesem Auftrag." : d.saetze.quelle === "katalog" ? "Satz aus dem Katalog (Projektstunde)." : "Noch kein Satz: im Katalog „Projektstunde“ anlegen oder hier eintragen – er wird am Auftrag gemerkt."} Berechnete Stunden und km sind echte Einnahmen; die kalkulatorischen Kosten bleiben getrennt.</small>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="pz-speichern" data-id="${esc(eid)}">Übernehmen</button>${an ? `<button class="v2-btn" data-act="pz-aus" data-id="${esc(eid)}">Projektzeiten entfernen</button>` : ""}</div><div id="pz-msg" class="v2-msg"></div></div></details>`;
+}
+async function rePzSpeichern(eid, aus) {
+  const werte = (k) => [...document.querySelectorAll(`#re-pz-box .${k}:checked`)].map(i => i.value);
+  const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(eid)}/projektzeiten`, aus ? { zeiten: [], km: [] } :
+    { zeiten: werte("pz-z"), km: werte("pz-km"), darstellung: $("#pz-darst").value, satz: $("#pz-satz").value.trim(), km_satz: $("#pz-kmsatz").value.trim() });
+  if (!r || r.ok === false) return kundenMsg("pz-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+  return reDetail(eid, aus ? "Projektzeiten entfernt." : "Projektzeiten übernommen – bitte die PDF-Vorschau prüfen.");
 }
 async function reSendenVorschau(nr) {
   const box = $("#re-aktion-box"); if (!box) return;
@@ -3074,6 +3103,7 @@ async function handleAct(act, el) {
         if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote(); glockeAktualisieren();
         return abDetail(id, "Als geliefert markiert — bereit für die Rechnung. Zeit ist für diesen Auftrag jetzt gesperrt."); }
       catch (e) { el.disabled = false; return kundenMsg("lf-msg", e.message, false); } }
+    case "pz-speichern": case "pz-aus": return rePzSpeichern(id, act === "pz-aus");
     case "po-form-v": case "po-form-k": return poForm(id, val, act.slice(-1));
     case "po-speichern-v": case "po-speichern-k": { el.disabled = true; await poSpeichern(id, val, act.slice(-1)); el.disabled = false; return; }
     case "lf-speichern": { el.disabled = true; try { await lfSpeichern(id, true); return abDetail(id, "Lieferung gespeichert."); }

@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 23:45] — Claude Code
+- **Was:** PROJEKTZEITEN Etappe Z2: Projektzeiten optional in der Rechnung -- Auswahl je Rechnungsentwurf (Zeiten und
+  Fahrten), zusammengefasst mit Stundenzettel als PDF-Anlage (Standard) oder einzeln, Verkaufs-Satz aus Auftrag/Katalog
+  (am Auftrag gemerkt), keine Doppelabrechnung, Storno gibt frei; Desktop + iPad + iPhone. Dazu BF-53 (einmaliger
+  roter Suite-Lauf, nicht reproduzierbar) dokumentiert.
+- **Warum:** CEO-Go 2026-10-02; CEO-Entscheidungen zu Satz, Darstellung und km.
+- **Betroffen:** `orchestrator/core/projektabrechnung.py` (neu), `orchestrator/core/rechnungen.py`,
+  `orchestrator/core/zeiterfassung.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`,
+  `static/index-v2.html` (v86/v36), `orchestrator/tests/test_projektabrechnung.py` (neu), `PROJEKTZEITEN_ROADMAP.md`,
+  `ROADMAP.md`, `docs/verfahrensdokumentation-buchhaltung.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`.
+
 ## [2026-10-02 23:37] — Claude Code
 - **Was:** PROJEKTBERICHT Etappe P2: Kennzahlen-Erinnerung 7 Tage nach Veroeffentlichung per Telegram (je Posting
   einmal, mit Knopf), Foto-Empfang im Bot, Auslesen der Insights-Screenshots per Gemini mit Bestaetigung des CEO,

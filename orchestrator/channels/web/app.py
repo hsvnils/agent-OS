@@ -2223,6 +2223,28 @@ async def rechnung_entwurf_aendern(eid: str, request: Request):
     return _kunden_aktion(lambda: _rechnungen().entwurf_aendern(eid, body.get("rechnung") or {}, von=_von(request)))
 
 
+@app.get("/api/finanzen/rechnungen/{eid}/projektzeiten")
+def rechnung_projektzeiten(eid: str):
+    """PROJEKTZEITEN Z2: Stundenzettel des Auftrags zur Auswahl + Verkaufs-Saetze (Auftrag vor Katalog)."""
+    from ...core.projektabrechnung import saetze
+    rs = _rechnungen()
+    x = rs.get(eid)
+    if not x or x.get("status") != "entwurf" or not x.get("auftrag"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "kein Rechnungsentwurf zu einem Auftrag")
+    a = _auftraege().auftrag(x["auftrag"]) or {}
+    return {"stundenzettel": _zeit().stundenzettel(x["auftrag"]), "saetze": saetze(a, rs.katalog),
+            "aktuell": x.get("projektzeiten") or {}}
+
+
+@app.post("/api/finanzen/rechnungen/{eid}/projektzeiten")
+async def rechnung_projektzeiten_setzen(eid: str, request: Request):
+    from ...core.projektabrechnung import setzen
+    body = await _json(request)
+    return _kunden_aktion(lambda: setzen(_rechnungen(), _zeit(), eid, zeiten=body.get("zeiten") or [], km=body.get("km") or [],
+                                         darstellung=body.get("darstellung") or "zusammen", satz=body.get("satz") or "",
+                                         km_satz=body.get("km_satz") or "", von=_von(request)))
+
+
 @app.post("/api/finanzen/rechnungen/{eid}/verwerfen")
 async def rechnung_entwurf_verwerfen(eid: str, request: Request):
     return _kunden_aktion(lambda: _rechnungen().entwurf_verwerfen(eid, von=_von(request)))

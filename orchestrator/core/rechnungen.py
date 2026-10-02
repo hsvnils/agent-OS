@@ -340,6 +340,8 @@ class RechnungStore:
                                  "weitere Vorkasse-Rechnung.")
             if art == "rechnung" and any(r.get("art", "rechnung") == "rechnung" for r in aktiv):
                 raise ValueError(f"Zu {x['auftrag']} gibt es schon eine Rechnung.")
+            from .projektabrechnung import mit_anlage, pruefe_festschreiben
+            pruefe_festschreiben(x, eintraege)                        # PROJEKTZEITEN Z2: nichts doppelt abrechnen
             x = self._summen(self._mit_abzug(x, rechnungen))
             offen = [p["beschreibung"] for p in x["positionen"] if p.get("provision") and not provision_abgerechnet(p)]
             if offen:                                                  # Etappe 23: erst abrechnen, dann festschreiben
@@ -369,7 +371,9 @@ class RechnungStore:
                                                     "summe_cent": x["summe_cent"]}
             if x.get("abzuege"):
                 kopf["abzuege"] = x["abzuege"]
-            pdf = self._pdf(kopf | {"nummer": nummer}, firmendaten)
+            if x.get("projektzeiten"):                                # Z2: Auswahl mit der Rechnung einfrieren
+                kopf["projektzeiten"] = x["projektzeiten"]
+            pdf = mit_anlage(self._pdf(kopf | {"nummer": nummer}, firmendaten), kopf | {"nummer": nummer}, firmendaten)
             return kopf, [(pdf, f"{ARTEN_TEXT[art].replace('-', '')}_{nummer}.pdf", "beleg")]
 
         ev = self.bh.festschreiben("RE", "rechnung_festgeschrieben", erzeuge, jahr=heute.year, bezug=eid, von=von)
@@ -431,6 +435,9 @@ class RechnungStore:
                     d[k] = original[k]
             out["korrektur_entwurf"] = self.entwurf_anlegen(
                 d, von=von, intern={k: original.get(k) for k in ("art", "zahlung", "vorkasse_faellig")})["entwurf_id"]
+            if original.get("projektzeiten"):                 # Z2: die (durch das Storno freien) Zeiten bleiben gewaehlt
+                self.bh.erfassen("rechnung_entwurf_geaendert", {"entwurf_id": out["korrektur_entwurf"],
+                                                                "felder": {"projektzeiten": original["projektzeiten"]}}, von=von)
         return out
 
     def alt_erfassen(self, daten: dict, pdf: bytes, dateiname: str = "", *, von: str = "") -> dict:
@@ -617,8 +624,9 @@ class RechnungStore:
         if not x or x.get("status") != "entwurf":
             raise KeyError(eid)
         heute = jetzt().date()
-        return self._pdf(x | {"nummer": "ENTWURF", "rechnungsdatum": heute.isoformat(),
-                              "faellig_am": self._faellig(x, heute).isoformat()}, firmendaten)
+        from .projektabrechnung import mit_anlage
+        r = x | {"nummer": "ENTWURF", "rechnungsdatum": heute.isoformat(), "faellig_am": self._faellig(x, heute).isoformat()}
+        return mit_anlage(self._pdf(r, firmendaten), r, firmendaten)
 
     def _pdf(self, r: dict, firmendaten: dict) -> bytes:
         r = self._summen(r)

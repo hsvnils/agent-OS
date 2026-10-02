@@ -254,6 +254,7 @@ class Zeiterfassung:
                  "pause_min": int(x.get("pause_min") or 0), "minuten": x.get("minuten", 0),
                  "taetigkeit": x.get("taetigkeit", ""), "notiz": x.get("notiz", ""), "km": km, "quelle": x.get("quelle", ""),
                  "kosten_cent": x["kosten_cent"], "fahrt_cent": x["fahrt_cent"], "abgerechnet": x.get("abgerechnet", ""),
+                 "km_abgerechnet": x.get("km_abgerechnet", ""),
                  "korrigiert": len(x.get("korrekturen") or [])}
             zeilen.append(z)
             t = tage.setdefault(z["datum"], {"datum": z["datum"], "minuten": 0, "km": 0})
@@ -276,6 +277,8 @@ class Zeiterfassung:
         x = self._falte().get(zid)
         if not x or x["storniert"]:
             raise ValueError("Diesen Eintrag gibt es nicht (mehr).")
+        if x.get("abgerechnet") or x.get("km_abgerechnet"):
+            raise ValueError(f"Schon auf {x.get('abgerechnet') or x['km_abgerechnet']} abgerechnet -- erst die Rechnung stornieren.")
         if not (grund or "").strip():
             raise ValueError("Bitte einen Grund angeben.")
         self.bh.erfassen("zeit_storniert", {"id": zid, "grund": grund.strip()[:200]}, von=von)
@@ -302,6 +305,8 @@ class Zeiterfassung:
         x = self._falte().get(zid)
         if not x or x["storniert"]:
             raise ValueError("Diesen Zeiteintrag gibt es nicht (mehr).")
+        if x.get("km_abgerechnet"):
+            raise ValueError(f"Die Fahrt ist schon auf {x['km_abgerechnet']} abgerechnet -- erst die Rechnung stornieren.")
         quelle = "hand"
         if km in (None, ""):
             v = self.km_vorschlag(zid, adresse)
@@ -395,8 +400,20 @@ def falte_zeiten(eintraege: list[dict]) -> dict[str, dict]:
     out: dict[str, dict] = {}
     for e in eintraege:
         d, t = e["daten"], e["typ"]
+        if t == "rechnung_festgeschrieben":               # Z2: abgerechnet = auf einer festgeschriebenen Rechnung
+            if d.get("art") == "storno":                    # Storno gibt die Zeiten der Original-Rechnung frei
+                for x in out.values():
+                    x |= {k: "" for k in ("abgerechnet", "km_abgerechnet") if x.get(k) and x[k] == d.get("bezug")}
+            pz = d.get("projektzeiten") or {}
+            for i in pz.get("zeiten") or []:
+                if i in out:
+                    out[i] |= {"abgerechnet": d["nummer"], "abgerechnet_satz_cent": pz.get("satz_cent")}
+            for i in pz.get("km") or []:
+                if i in out:
+                    out[i]["km_abgerechnet"] = d["nummer"]
+            continue
         if t in ("zeit_start", "zeit_eintrag"):
-            out[d["id"]] = dict(d) | {"ts": e["ts"], "fahrten": [], "storniert": False, "abgerechnet": ""}
+            out[d["id"]] = dict(d) | {"ts": e["ts"], "fahrten": [], "storniert": False, "abgerechnet": "", "km_abgerechnet": ""}
         elif d.get("id") not in out:
             continue
         elif t == "zeit_stopp":
@@ -409,10 +426,6 @@ def falte_zeiten(eintraege: list[dict]) -> dict[str, dict]:
             x.setdefault("korrekturen", []).append({"ts": e["ts"], "von": e.get("von", ""), "grund": d.get("grund", ""),
                                                      "vorher": {k: x.get(k) for k in ("start", "ende", "pause_min")}})
             x |= {k: d[k] for k in ("start", "ende", "pause_min", "taetigkeit") if k in d}
-        elif t == "zeit_abgerechnet":                       # Z2: auf einer festgeschriebenen Rechnung
-            out[d["id"]] |= {"abgerechnet": d.get("rechnung", ""), "abgerechnet_satz_cent": d.get("satz_cent")}
-        elif t == "zeit_abrechnung_frei":                   # Z2: Rechnung storniert -> wieder abrechenbar
-            out[d["id"]] |= {"abgerechnet": ""}
         elif t == "zeit_fahrt":
             out[d["id"]]["fahrten"] = [{k: d.get(k) for k in ("km", "quelle", "adresse", "betrag_cent")}]   # letzte gilt
         elif t == "zeit_storniert":

@@ -48,6 +48,12 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    -- keine Betriebsausgaben, keine Buchung, nicht in der EUeR (Fahrten mit dem Firmenwagen des Arbeitgebers verursachen
    keine eigenen Kosten). Sie koennen in der Finanz-Uebersicht und auf Wunsch in Exporten als klar getrennter Zusatz
    „kalkulatorisch, keine Betriebsausgaben“ gezeigt werden; EUeR, EUeR-PDF und der GoBD-Index enthalten sie nie.
+   **Projektzeiten auf der Rechnung** (seit 2026-10-02, nur auf ausdruecklichen Wunsch je Rechnung): ausgewaehlte
+   Zeiteintraege und Fahrten werden mit dem **Verkaufs**-Stundensatz bzw. -km-Satz als normale Positionen berechnet und
+   sind damit echte Einnahmen (Zufluss bei Zahlung). Die Auswahl (Zeilen des Stundenzettels) wird mit der Rechnung
+   festgeschrieben; der Stundenzettel haengt als Anlage am PDF. Eine Zeit gilt als abgerechnet, solange sie auf einer
+   nicht stornierten Rechnung steht -- eine zweite Abrechnung wird abgelehnt, ein Storno gibt sie wieder frei. Die
+   kalkulatorischen Kosten derselben Zeiten bleiben unveraendert getrennt.
    **Plattform-Auszahlungen** (Facebook) werden mit dem Bankeingang am Zahlungstag gebucht (Zuflussprinzip); die
    Erzielt-Zeitraeume je Posten (aus dem Meta-Zahlungsbeleg oder von Hand) sind reine Zusatzinformation.
 4. **Korrektur** nur per **Stornorechnung** (eigene Nummer, negativer Betrag, Bezug auf das Original) und ggf.
@@ -164,3 +170,4 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 | 2026-09-30 | Beleg-Import aus gespeicherten Mails und Zweck/Begruendung am Beleg ergaenzt | Claude Code |
 | 2026-09-30 | Altrechnungen und Mahnungen von vor LUNA (Etappe 19) ergaenzt | Claude Code |
 | 2026-09-30 | Provisionen (Etappe 23) ergaenzt | Claude Code |
+| 2026-10-02 | Projektzeiten optional auf der Rechnung (PROJEKTZEITEN Z2) ergaenzt | Claude Code |
