@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 23:16] — Claude Code
+- **Was:** CEO-Go fuer PROJEKTZEITEN (Z1-Z3) und PROJEKTBERICHT (P1-P4) am Stueck sowie BF-52 festgehalten; Kontakt je
+  Format: Reel/Story = Aufrufe, Feed/Karussell = Impressionen.
+- **Warum:** CEO 2026-10-02 („Passt alles, mache alles an einem Stueck“).
+- **Betroffen:** `PROJEKTZEITEN_ROADMAP.md`, `PROJEKTBERICHT_ROADMAP.md`
+
 ## [2026-10-02 23:13] — Claude Code
 - **Was:** `PROJEKTBERICHT_ROADMAP.md` ergaenzt: Kennzahlen als Zahlen am Auftrag, TKP-Vergleich (Gegenwert Ist,
   Mehrleistung, effektiver TKP, Summe), festgeschriebene Konditionen (geprueft: Positionen speichern Kontakte/TKP/

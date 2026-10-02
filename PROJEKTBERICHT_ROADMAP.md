@@ -1,5 +1,5 @@
 # Roadmap: Social-Kennzahlen je Posting und Projektbericht zum Abschluss
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-02
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
@@ -111,13 +111,10 @@ muessen an jedem Auftrag klar erkennbar sein.“
 Z1 -> P1 -> P2 -> Z2 -> P3 -> P4/Z3. Z1 zuerst, weil der Bericht die Stunden braucht; P1 vor P2, weil die Erinnerung
 das Veroeffentlichungsdatum braucht.
 
-## Offene CEO-Entscheidung
-
-- **Welche Kennzahl zaehlt als „Kontakt“ je Format?** Muss zur Definition im Angebot passen (Katalog-Kommentar: „Ø 37.000
-  Aufrufe je Reel“). Vorschlag: Reel = Aufrufe, Story = Aufrufe, Feed/Karussell = Impressionen (alternativ ueberall
-  „erreichte Konten“ = konservativer).
-
 ## CEO-Entscheidungen (2026-10-02)
+
+0. Go fuer alle Etappen am Stueck (CEO: „Passt alles, mache alles an einem Stueck“). **Kontakt je Format:** Reel =
+   Aufrufe, Story = Aufrufe, Feed/Karussell = Impressionen.
 
 1. Screenshots liest **Gemini** (Google) aus -- neuer Datenfluss: wird mit Etappe P2 in `docs/datenschutz-ki-nutzung.md`
    und `docs/datenfluesse.md` eingetragen; der CEO bestaetigt die erkannten Werte trotzdem („Stimmt/Korrigieren“).
