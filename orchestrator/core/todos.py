@@ -217,6 +217,20 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                               "Screenshot an LUNA (Telegram) oder Formular im Auftrag", "ab-detail", a["nummer"],
                               (date.fromisoformat(x["datum"]) + timedelta(days=ERINNERN_TAGE)).isoformat(), h)
                     out.append(t | {"dringend": False, "stufe": "woche"})
+            ps = postings_aus(a)                         # P3: Abschluss -- Kennzahlen fehlen -> Bericht senden
+            if a["status"] != "erledigt" or not ps or a.get("berichte") or a.get("bericht_entfaellt"):
+                continue
+            fehlt = [p for p in ps if not stand.get(p["id"], {}).get("kennzahlen")]
+            name = firmen.get(a["firma"], a["firma"])
+            if fehlt and not any(_faellig(stand.get(p["id"], {}), heute) for p in fehlt):
+                out.append(_todo(f"ab-kennzahlen:{a['nummer']}", "Aufträge", "📊",
+                                 f"Kennzahlen fehlen ({len(fehlt)} von {len(ps)}): {a['nummer']}",
+                                 f"{name} · erst veröffentlicht eintragen, nach 7 Tagen die Zahlen", "ab-detail", a["nummer"],
+                                 "", h) | {"stufe": "spaeter"})
+            elif not fehlt:
+                out.append(_todo(f"ab-bericht:{a['nummer']}", "Aufträge", "📝", f"Projektbericht senden: {a['nummer']}",
+                                 f"{name} · alle Zahlen da – Bericht prüfen und an den Kunden senden", "ab-detail",
+                                 a["nummer"], "", h) | {"stufe": "woche"})
     if finanzen:
         for x in EingangStore._falte(e).values():
             v, f = x.get("vorschlag") or {}, x.get("felder") or {}

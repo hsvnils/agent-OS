@@ -20,7 +20,7 @@ from email.utils import getaddresses, parseaddr
 from .buchhaltung import jetzt
 
 ARTEN = {"schreiben": "Schreiben/Brief", "anwalt": "Anwaltsschreiben", "vertrag": "Vertrag", "mail": "Mail",
-         "notiz": "Notiz/Protokoll", "sonstiges": "Sonstiges"}
+         "notiz": "Notiz/Protokoll", "bericht": "Projektbericht", "sonstiges": "Sonstiges"}
 MAX_BYTES = 15 * 1024 * 1024
 FREEMAIL = {"gmail.com", "googlemail.com", "web.de", "gmx.de", "gmx.net", "icloud.com", "me.com", "mac.com", "outlook.com",
             "hotmail.com", "hotmail.de", "live.com", "live.de", "t-online.de", "yahoo.com", "yahoo.de", "aol.com", "freenet.de",

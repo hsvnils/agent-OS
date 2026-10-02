@@ -1289,14 +1289,14 @@ async function anDetail(nr, meldung, fehler) {
 }
 
 /* ---------- Auftraege (Beauftragung, KUNDEN_FINANZEN Etappe 4) ---------- */
-const AB_STATUS = { beauftragt: ["Beauftragt", "wartet"], erledigt: ["Geliefert", "ok"], storniert: ["Storniert", "err"] };   // Etappe 30: erledigt = „Geliefert“
+const AB_STATUS = { beauftragt: ["Beauftragt", "wartet"], erledigt: ["Geliefert", "ok"], storniert: ["Storniert", "err"], abgeschlossen: ["✓ Abgeschlossen", "ok"] };   // Etappe 30: erledigt = „Geliefert“
 const abBadge = (st) => { const [l, c] = AB_STATUS[st] || [st, "neutral"]; return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
 const datumDe = (d) => d ? new Date(d).toLocaleDateString("de-DE") : "";
 async function renderAuftraege() {
   const d = await jget("/api/crm/auftraege") || {};
   const l = d.auftraege || [];
   const offen = l.filter(a => a.status === "beauftragt");
-  const rows = l.map(a => `<tr class="klick" data-act="ab-detail" data-id="${esc(a.nummer)}"><td><b>${esc(a.nummer)}</b></td><td>${esc(a.firma_name || a.firma)}</td><td>${esc(a.titel || "")}</td><td>${a.angebot ? esc(a.angebot) : `<span class="v2-sub">direkt</span>`}</td><td>${esc([datumDe(a.leistung_von), datumDe(a.leistung_bis)].filter(Boolean).join(" – "))}</td><td style="text-align:right">${cent2eur(a.summe_cent)}</td><td>${abBadge(a.status)}</td></tr>`).join("");
+  const rows = l.map(a => `<tr class="klick" data-act="ab-detail" data-id="${esc(a.nummer)}"><td><b>${esc(a.nummer)}</b></td><td>${esc(a.firma_name || a.firma)}</td><td>${esc(a.titel || "")}</td><td>${a.angebot ? esc(a.angebot) : `<span class="v2-sub">direkt</span>`}</td><td>${esc([datumDe(a.leistung_von), datumDe(a.leistung_bis)].filter(Boolean).join(" – "))}</td><td style="text-align:right">${cent2eur(a.summe_cent)}</td><td>${abBadge(a.abgeschlossen ? "abgeschlossen" : a.status)}</td></tr>`).join("");
   const body = `${kpiTile("Offene Aufträge", String(offen.length), null, cent2eur(offen.reduce((x, a) => x + (a.summe_cent || 0), 0)))}${kpiTile("Geliefert", String(l.filter(a => a.status === "erledigt").length), null, "bereit für die Rechnung")}
     ${tile("Aufträge", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Firma</th><th>Titel</th><th>Angebot</th><th>Leistung</th><th style="text-align:right">Summe</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow("Noch kein Auftrag — entsteht aus einem angenommenen Angebot („📋 Auftrag anlegen“)."), "w12")}`;
   $("#v2-app").innerHTML = anKopf() + `<div class="v2-card-actions" style="margin:-6px 0 12px"><button class="v2-btn pri" data-act="ab-manuell">+ Neuer Auftrag (ohne Angebot)</button></div><div class="v2-grid">${body}</div>`;
@@ -1341,7 +1341,7 @@ async function abDetail(nr, meldung, fehler) {
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
     <div class="v2-card-actions" style="flex-wrap:wrap;margin:8px 0 14px">${aktionen}</div>
     <div class="v2-an-detail"><div>
-    <div class="v2-kv"><span>Status</span>${abBadge(a.status)}</div>
+    <div class="v2-kv"><span>Status</span>${abBadge(a.abgeschlossen ? "abgeschlossen" : a.status)}</div>
     <div class="v2-kv"><span>Angebot</span><b>${a.angebot ? esc(a.angebot) : "— (direkt angelegt)"}</b></div>
     <div class="v2-kv"><span>Firma</span><b>${esc(a.firma)} · ${esc(d.firma.name || "")}</b></div>
     <div class="v2-kv"><span>Ansprechpartner</span><b>${ap ? esc(ap.nummer + " · " + [ap.vorname, ap.nachname].filter(Boolean).join(" ")) : "—"}</b></div>
@@ -1359,6 +1359,7 @@ async function abDetail(nr, meldung, fehler) {
       ${bearbeitbar ? `<button class="v2-btn" data-act="ab-speichern" data-id="${esc(nr)}">Speichern</button><div id="abe-msg" class="v2-msg"></div>` : ""}</div>
     ${a.status !== "storniert" ? `<h3>Lieferungen</h3><div id="ab-lief-box"><div class="v2-empty">Lade…</div></div>` : ""}
     <div id="ab-post-box"></div>
+    ${a.status !== "storniert" ? `<div id="ab-bericht-box"></div>` : ""}
     <h3>Verlauf</h3>${verlauf}
     </div><div>
     <div id="ab-senden-box"></div>
@@ -1366,7 +1367,7 @@ async function abDetail(nr, meldung, fehler) {
     <h3>Positionen${a.angebot ? ` <small class="v2-sub">aus ${esc(a.angebot)} übernommen</small>` : ""}</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
     <div id="ab-kond-box"></div>
     </div></div>`, true);
-  abZeitLaden(nr); abLieferungen(nr); abPostings(nr, a.status);
+  abZeitLaden(nr); abLieferungen(nr); abPostings(nr, a.status); abBericht(nr);
 }
 // PROJEKTBERICHT P1: Postings je Position (Menge) mit Veroeffentlichung, Kennzahlen als Zahlen und TKP-Vergleich;
 // dazu die beim Anlegen festgeschriebenen Konditionen (Katalog-Aenderungen wirken nie zurueck)
@@ -1437,6 +1438,52 @@ async function poSpeichern(pid, nr, art) {
   if (!r || r.ok === false) { const m = karte.querySelector(".po-msg"); m.className = "v2-msg err po-msg"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return; }
   const a = (await jget("/api/crm/auftraege/" + encodeURIComponent(nr)) || {}).auftrag || {};
   return abPostings(nr, a.status);
+}
+// PROJEKTBERICHT P3: Bericht je Auftrag (Fazit-Vorschlag, Stunden/km per Haken, Versand nach Klick, Akte)
+async function abBericht(nr) {
+  const box = $("#ab-bericht-box"); if (!box) return;
+  const d = await jget(`/api/crm/auftraege/${encodeURIComponent(nr)}/bericht`); if (!d) { box.innerHTML = ""; return; }
+  const ab = d.abschluss || {}, e = d.entwurf || {}, b = d.berichte || [];
+  const schritt = (ok, t) => `<span class="v2-ab-schritt${ok ? " ok" : ""}">${ok ? "✓" : "○"} ${esc(t)}</span>`;
+  const gesendet = b.map((x, i) => `<div class="v2-list-row"><span>📎</span><div class="grow"><b><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/bericht/pdf?archiv=${i + 1}" target="_blank" rel="noopener">Projektbericht${x.version > 1 ? " (Version " + x.version + ")" : ""}</a></b><small>gesendet an ${esc(x.an || "")} · ${esc(zeit(x.ts))} · liegt in der Firmenakte</small></div></div>`).join("");
+  const offen = !d.abgeschlossen;
+  box.innerHTML = `<h3>📝 Projektbericht &amp; Abschluss</h3>
+    <div class="v2-ab-schritte">${schritt(ab.geliefert, "Geliefert")}${schritt(ab.bericht, ab.bericht === "entfaellt" ? "Kein Bericht nötig" : "Bericht versendet")}${schritt(ab.bezahlt, "Rechnung bezahlt")}${d.abgeschlossen ? `<span class="v2-badge ok">✓ Abgeschlossen</span>` : ""}</div>
+    ${d.entfaellt ? `<div class="v2-sub">Kein Bericht nötig: ${esc(d.entfaellt)}</div>` : ""}${gesendet}
+    ${(d.daten.fehlen || []).length ? `<div class="v2-msg warn">Noch ohne Zahlen: ${esc(d.daten.fehlen.join(", "))}</div>` : ""}
+    <details class="v2-pz" ${b.length || !offen ? "" : "open"}><summary><b>${b.length ? "Neue Version erstellen" : "Bericht erstellen"}</b> <small class="v2-sub">Vorschau prüfen, dann senden</small></summary>
+    <div class="v2-form">
+      <label class="v2-feld"><small>Fazit (LUNA schlägt es aus den Zahlen vor – anpassen)</small><textarea id="ber-fazit" class="v2-inp" rows="6" maxlength="3000">${esc(e.fazit != null && e.fazit !== "" ? e.fazit : d.fazit_vorschlag)}</textarea></label>
+      ${d.zeiten ? `<div class="v2-ab-haken"><label><input type="checkbox" id="ber-std" ${e.stunden ? "checked" : ""}> Stunden im Bericht zeigen</label><label><input type="checkbox" id="ber-km" ${e.km ? "checked" : ""}> km zeigen</label></div>` : ""}
+      <div class="v2-card-actions"><button class="v2-btn" data-act="ber-vorschau" data-id="${esc(nr)}">💾 Speichern &amp; 📄 Vorschau</button><button class="v2-btn pri" data-act="ber-senden-form" data-id="${esc(nr)}">✉️ Senden …</button>${!b.length && !d.entfaellt ? `<button class="v2-btn" data-act="ber-entfaellt" data-id="${esc(nr)}" title="z. B. reiner Dreh ohne Postings">Kein Bericht nötig …</button>` : ""}</div>
+      <div id="ber-msg" class="v2-msg"></div><div id="ber-senden-box"></div></div></details>`;
+}
+async function berSpeichern(nr) {
+  const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(nr)}/bericht`, { fazit: $("#ber-fazit").value, stunden: !!($("#ber-std") || {}).checked, km: !!($("#ber-km") || {}).checked });
+  if (!r || r.ok === false) { kundenMsg("ber-msg", (r && r.hinweis) || "Keine Verbindung.", false); return false; }
+  return true;
+}
+async function berSendenForm(nr) {
+  if (!(await berSpeichern(nr))) return;
+  const box = $("#ber-senden-box"), v = await jget(`/api/crm/auftraege/${encodeURIComponent(nr)}/bericht/versandvorschau`);
+  if (!box || !v) return;
+  box.innerHTML = `<h3>Bericht senden</h3>${(v.fehlen || []).length ? `<div class="v2-msg warn">Ohne Zahlen: ${esc(v.fehlen.join(", "))} – trotzdem senden?</div>` : ""}
+    <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
+    <label class="v2-feld"><small>An *</small><input id="ber-an" type="email" value="${esc(v.an || "")}"></label>
+    <label class="v2-feld"><small>Betreff *</small><input id="ber-betreff" value="${esc(v.betreff)}"></label>
+    <label class="v2-feld"><small>Text *</small><textarea id="ber-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/bericht/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ber-senden" data-id="${esc(nr)}" ${v.google ? "" : "disabled title=\"Google nicht verbunden\""}>✉️ Jetzt senden</button></div><div id="bers-msg" class="v2-msg"></div>`;
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+async function berSenden(nr) {
+  const an = $("#ber-an").value.trim();
+  if (!an || !an.includes("@")) return kundenMsg("bers-msg", "Bitte eine gültige Empfänger-Adresse eintragen.", false);
+  if (!confirm(`Projektbericht ${nr} jetzt an ${an} senden?`)) return;
+  const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(nr)}/bericht/senden`, { an, betreff: $("#ber-betreff").value.trim(), text: $("#ber-text").value.trim(), bestaetigt: true });
+  if (!r || !r.ok) return kundenMsg("bers-msg", (r && r.hinweis) || "Senden fehlgeschlagen.", false);
+  glockeAktualisieren();
+  return abDetail(nr, `Projektbericht an ${r.an} gesendet und in der Firmenakte abgelegt.`);
 }
 // Etappe 30: Lieferungen -- Dateien (in 8-MB-Stuecken, auch grosse Videos vom iPhone) und Links je Auftrag
 function lfAnzeige(x, mitEntfernen) {
@@ -3103,6 +3150,11 @@ async function handleAct(act, el) {
         if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote(); glockeAktualisieren();
         return abDetail(id, "Als geliefert markiert — bereit für die Rechnung. Zeit ist für diesen Auftrag jetzt gesperrt."); }
       catch (e) { el.disabled = false; return kundenMsg("lf-msg", e.message, false); } }
+    case "ber-vorschau": { const w = window.open("about:blank", "_blank"); if (await berSpeichern(id)) { if (w) w.location = `/api/crm/auftraege/${encodeURIComponent(id)}/bericht/pdf`; kundenMsg("ber-msg", "Gespeichert.", true); } else if (w) w.close(); return; }
+    case "ber-senden-form": return berSendenForm(id);
+    case "ber-senden": return berSenden(id);
+    case "ber-entfaellt": { const g = prompt("Warum ist kein Bericht nötig? (z. B. reiner Dreh ohne Postings)", ""); if (!g) return;
+      const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/bericht/entfaellt`, { grund: g }); return abDetail(id, r && r.ok ? "Vermerkt: kein Bericht nötig." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
     case "pz-speichern": case "pz-aus": return rePzSpeichern(id, act === "pz-aus");
     case "po-form-v": case "po-form-k": return poForm(id, val, act.slice(-1));
     case "po-speichern-v": case "po-speichern-k": { el.disabled = true; await poSpeichern(id, val, act.slice(-1)); el.disabled = false; return; }

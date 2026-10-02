@@ -172,40 +172,48 @@ def stundenzettel_pdf(r: dict, firmendaten: dict) -> bytes:
     """Anlage „Stundenzettel“ zur Rechnung (nur Darstellung zusammengefasst): Zeilen der eingefrorenen Auswahl."""
     from fpdf import FPDF
     pz = r.get("projektzeiten") or {}
+    from .beleg_pdf import DEJAVU
+    uni = (DEJAVU / "DejaVuSans.ttf").exists() and (DEJAVU / "DejaVuSans-Bold.ttf").exists()
+    T = (lambda x: str(x or "")) if uni else _latin1
     pdf = FPDF(format="A4")
+    S = "Helvetica"
+    if uni:
+        pdf.add_font("DejaVu", "", str(DEJAVU / "DejaVuSans.ttf"))
+        pdf.add_font("DejaVu", "B", str(DEJAVU / "DejaVuSans-Bold.ttf"))
+        S = "DejaVu"
     pdf.set_auto_page_break(True, 18)
     pdf.add_page()
-    pdf.set_font("Helvetica", "B", 14)
-    pdf.cell(0, 8, _latin1(f"Anlage: Stundenzettel zu {r.get('nummer') or 'ENTWURF'}"), new_x="LMARGIN", new_y="NEXT")
-    pdf.set_font("Helvetica", "", 9)
-    pdf.cell(0, 6, _latin1(f"{firmendaten.get('name') or ''} · Auftrag {r.get('auftrag', '')}"
+    pdf.set_font(S, "B", 14)
+    pdf.cell(0, 8, T(f"Anlage: Stundenzettel zu {r.get('nummer') or 'ENTWURF'}"), new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font(S, "", 9)
+    pdf.cell(0, 6, T(f"{firmendaten.get('name') or ''} · Auftrag {r.get('auftrag', '')}"
                            + (f" · {r['titel']}" if r.get("titel") else "")), new_x="LMARGIN", new_y="NEXT")
     pdf.ln(3)
     spalten = [("Datum", 24), ("Ein", 14), ("Aus", 14), ("Pause", 16), ("Dauer", 18), ("Tätigkeit", 74), ("km", 14)]
-    pdf.set_font("Helvetica", "B", 9)
+    pdf.set_font(S, "B", 9)
     for t, w in spalten:
-        pdf.cell(w, 7, _latin1(t), border="B")
+        pdf.cell(w, 7, T(t), border="B")
     pdf.ln()
-    pdf.set_font("Helvetica", "", 9)
+    pdf.set_font(S, "", 9)
     km_ids = set(pz.get("km") or [])
     zeilen = pz.get("zeilen") or []
     for z in zeilen:
         werte = [datum_de(z["datum"]), z["von"], z["bis"], f"{z['pause_min']} min" if z.get("pause_min") else "",
                  _std_text(z["minuten"]), (z.get("taetigkeit") or "")[:48], str(z["km"]) if z["id"] in km_ids and z["km"] else ""]
         for (t, w), v in zip(spalten, werte):
-            pdf.cell(w, 6, _latin1(v), border="B")
+            pdf.cell(w, 6, T(v), border="B")
         pdf.ln()
-    pdf.set_font("Helvetica", "B", 9)
+    pdf.set_font(S, "B", 9)
     m = sum(z["minuten"] for z in zeilen)
     km = sum(z["km"] for z in pz.get("km_zeilen") or [])
     pdf.cell(86, 7, "Summe")
-    pdf.cell(18, 7, _latin1(_std_text(m)))
-    pdf.cell(74, 7, _latin1(f"x {eur(pz.get('satz_cent') or 0)} = {eur(round(m * (pz.get('satz_cent') or 0) / 60))}"
+    pdf.cell(18, 7, T(_std_text(m)))
+    pdf.cell(74, 7, T(f"x {eur(pz.get('satz_cent') or 0)} = {eur(round(m * (pz.get('satz_cent') or 0) / 60))}"
                             if m else ""))
     pdf.cell(14, 7, str(km) if km else "")
     pdf.ln(10)
-    pdf.set_font("Helvetica", "", 8)
-    pdf.multi_cell(0, 4, _latin1("Dauer = Aus - Ein - Pause. Berechnet wird die Summe laut Rechnung (auf 0,01 h gerundet)."))
+    pdf.set_font(S, "", 8)
+    pdf.multi_cell(0, 4, T("Dauer = Aus - Ein - Pause. Berechnet wird die Summe laut Rechnung (auf 0,01 h gerundet)."))
     return bytes(pdf.output())
 
 

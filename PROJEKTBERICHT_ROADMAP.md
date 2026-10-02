@@ -3,7 +3,7 @@
 - Stand: 2026-10-02
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
-- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck; Bau auf `ai/projekt-etappen` (Z1, P1, P2 fertig; weiter Z2).
+- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck; Bau auf `ai/projekt-etappen` (Z1, P1, P2, Z2, P3 fertig; weiter Z3/P4).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -90,7 +90,12 @@ muessen an jedem Auftrag klar erkennbar sein.“
 
 ## Etappe P3: Projektbericht und Status „abgeschlossen“
 
-- Status: geplant
+- Status: umgesetzt (2026-10-02) -- `core/projektbericht.py`: Bericht-PDF (Kacheln, Postings mit Zahlen und Links,
+  Plan gegen Ist mit festgeschriebenen Konditionen und Summe, Stunden/km nur mit Haken, Fazit), Fazit-Vorschlag
+  regelbasiert aus den Zahlen, Versand mit Vorschau nur nach CEO-Klick, gesendete Fassung unveraenderlich in der
+  Firmenakte (neue Versionen moeglich), `abgeschlossen` = geliefert + Bericht versendet (oder bewusst „kein Bericht
+  noetig“) + alle Rechnungen bezahlt; Handlungsbedarf „Kennzahlen fehlen“ -> „Projektbericht senden“ (nur Auftraege mit
+  Postings). Tests `test_projektbericht.py` mit Gegenprobe; PDF geprueft; Browsertest 1300/820/390 px.
 - Ziel / Scope:
   - **Bericht je Auftrag** (PDF im Hanserautisch-Layout): Kampagne, Zeitraum, Leistungen, je Posting Vorschau/Link +
     Kennzahlen, Summen (Gesamt-Reichweite, Interaktionen, Engagement-Rate), **Plan gegen Ist** (geplante Kontakte und

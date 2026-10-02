@@ -2050,6 +2050,135 @@ def posting_bild(pid: str, i: int):
     return FileResponse(f, content_disposition_type="inline")
 
 
+# -- Projektbericht (PROJEKTBERICHT P3): Entwurf, PDF, Versand nach CEO-Klick, eingefroren in der Firmenakte -------------
+def _bericht(nummer: str):
+    from ...core.projektbericht import daten
+    a = _auftraege().auftrag(nummer)
+    if not a:
+        raise KeyError(nummer)
+    b = a.get("bericht") or {}
+    sz = _zeit().stundenzettel(a["nummer"]) if (b.get("stunden") or b.get("km")) else None
+    return a, daten(a, _postings().liste(a["nummer"]), stundenzettel=sz, mit_stunden=bool(b.get("stunden")),
+                    mit_km=bool(b.get("km")))
+
+
+def _bericht_pdf(a: dict, d: dict, version: int) -> bytes:
+    from ...core.projektbericht import fazit_vorschlag, pdf
+    f = kunden_store.firma(a["firma"]) or {}
+    fazit = (a.get("bericht") or {}).get("fazit")
+    return pdf(d, firmendaten=_firmendaten(), firma_name=f.get("name", ""), logo=kunden_store.bh.dir / "logo.jpg",
+               fazit=fazit if fazit is not None else fazit_vorschlag(d), version=version)
+
+
+@app.get("/api/crm/auftraege/{nummer}/bericht")
+def bericht_detail(nummer: str):
+    from ...core.projektbericht import fazit_vorschlag
+    try:
+        a, d = _bericht(nummer)
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Auftragsnummer")
+    return {"daten": d, "entwurf": a.get("bericht") or {}, "fazit_vorschlag": fazit_vorschlag(d),
+            "berichte": a.get("berichte") or [], "entfaellt": a.get("bericht_entfaellt") or "",
+            "abschluss": a.get("abschluss") or {}, "abgeschlossen": bool(a.get("abgeschlossen")),
+            "zeiten": bool(_zeit().stundenzettel(a["nummer"])["eintraege"])}
+
+
+@app.post("/api/crm/auftraege/{nummer}/bericht")
+async def bericht_speichern(nummer: str, request: Request):
+    from ...core.projektbericht import entwurf_speichern
+    body = await _json(request)
+    return _kunden_aktion(lambda: entwurf_speichern(kunden_store.bh, _auftraege(), nummer, fazit=body.get("fazit") or "",
+                                                    stunden=bool(body.get("stunden")), km=bool(body.get("km")),
+                                                    von=_von(request)))
+
+
+@app.post("/api/crm/auftraege/{nummer}/bericht/entfaellt")
+async def bericht_entfaellt(nummer: str, request: Request):
+    from ...core.projektbericht import entfaellt
+    body = await _json(request)
+    return _kunden_aktion(lambda: entfaellt(kunden_store.bh, _auftraege(), nummer, body.get("grund") or "", von=_von(request)))
+
+
+@app.get("/api/crm/auftraege/{nummer}/bericht/pdf")
+def bericht_pdf(nummer: str, archiv: int = 0):
+    from ...core.firmenakte import Firmenakte
+    from ...core.projektbericht import dateiname
+    try:
+        a, d = _bericht(nummer)
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Auftragsnummer")
+    if archiv:                                                    # gesendete Fassung aus der Firmenakte (unveraendert)
+        b = (a.get("berichte") or [])[archiv - 1:archiv]
+        doc = Firmenakte(kunden_store.bh, kunden_store).dokument(b[0]["akte_id"]) if b else None
+        if not doc:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "kein gesendeter Bericht")
+        daten = (kunden_store.bh.dir / doc["dateien"][0]["pfad"]).read_bytes()
+        name = doc["dateien"][0]["name"]
+    else:
+        if not _firmendaten():
+            raise HTTPException(status.HTTP_409_CONFLICT, "Firmendaten fehlen (buchhaltung/firmendaten.json)")
+        v = len(a.get("berichte") or []) + 1
+        daten, name = _bericht_pdf(a, d, v), dateiname(a["nummer"], v)
+    return Response(daten, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{name}"'})
+
+
+@app.get("/api/crm/auftraege/{nummer}/bericht/versandvorschau")
+def bericht_versandvorschau(nummer: str):
+    from ...core.projektbericht import dateiname, mail_text
+    det = auftrag_detail(nummer)
+    a, d = _bericht(nummer)
+    v = len(a.get("berichte") or []) + 1
+    betreff, text = mail_text(d, det["ansprechpartner"], _firmendaten(), v)
+    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    return {"an": det["mail_an"], "betreff": betreff, "text": text, "pdf": dateiname(a["nummer"], v), "version": v,
+            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": det["google"],
+            "fehlen": d["fehlen"]}
+
+
+@app.post("/api/crm/auftraege/{nummer}/bericht/senden")
+async def bericht_senden(nummer: str, request: Request):
+    """Bericht aus LUNAs Konto senden -- nur CEO (Modul finanzen), nur mit Bestaetigung aus der Vorschau; das gesendete
+    PDF wird unveraenderlich in der Firmenakte abgelegt (Bezug = Auftrag)."""
+    from ...core.firmenakte import Firmenakte
+    from ...core.projektbericht import dateiname
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if not hat_modul(u, "finanzen"):
+        return {"ok": False, "hinweis": "Berichte senden darf nur der CEO (Modul Finanzen)."}
+    body = await _json(request)
+
+    def tun():
+        if body.get("bestaetigt") is not True:
+            raise ValueError("Senden braucht die ausdrueckliche Bestaetigung aus der Vorschau.")
+        a, d = _bericht(nummer)
+        if a["status"] == "storniert":
+            raise ValueError(f"{a['nummer']} ist storniert.")
+        an = (body.get("an") or "").strip()
+        betreff, text = (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
+        if not an or "@" not in an or not betreff or not text:
+            raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
+        if not _firmendaten():
+            raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
+        g = _google()
+        if not g.verfuegbar():
+            raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
+        v = len(a.get("berichte") or []) + 1
+        pdf, name = _bericht_pdf(a, d, v), dateiname(a["nummer"], v)
+        r = g.mail_senden(an, betreff, text, bestaetigt=True, absender_name=ABSENDER_NAME,
+                          anhaenge=[(name, pdf, "application/pdf")])
+        if not r.get("ok"):
+            raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
+        doc = Firmenakte(kunden_store.bh, kunden_store).hochladen(
+            a["firma"], pdf, name, titel=f"Projektbericht {a['nummer']}" + (f" (Version {v})" if v > 1 else ""),
+            art="bericht", bezug=a["nummer"], notiz=f"gesendet an {an}", von=_von(request))
+        import hashlib as _hl
+        kunden_store.bh.erfassen("auftrag_bericht_versendet", {"nummer": a["nummer"], "akte_id": doc["id"],
+                                                                "sha256": _hl.sha256(pdf).hexdigest(), "an": an,
+                                                                "betreff": betreff, "version": v,
+                                                                "message_id": r.get("id", "")}, von=_von(request))
+        return {"an": an, "version": v}
+    return _kunden_aktion(tun)
+
+
 @app.get("/api/crm/auftraege/{nummer}/pdf")
 def auftrag_pdf(nummer: str, archiv: int = 0):
     ab = _auftraege()

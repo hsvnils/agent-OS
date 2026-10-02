@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 23:54] — Claude Code
+- **Was:** PROJEKTBERICHT Etappe P3: Projektbericht je Auftrag (PDF mit Zahlen, Plan gegen Ist, optional Stunden/km,
+  Fazit-Vorschlag), Versand nach CEO-Klick mit Vorschau, Ablage in der Firmenakte, Status „abgeschlossen“ (geliefert +
+  Bericht + bezahlt), Abschluss-Schritte im Handlungsbedarf; Stundenzettel-Anlage mit Unicode-Schrift.
+- **Warum:** CEO-Go 2026-10-02; CEO-Entscheidung „abgeschlossen = Bericht versendet und Rechnung bezahlt“.
+- **Betroffen:** `orchestrator/core/projektbericht.py` (neu), `orchestrator/core/beauftragung.py`,
+  `orchestrator/core/todos.py`, `orchestrator/core/firmenakte.py`, `orchestrator/core/projektabrechnung.py`,
+  `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html` (v87/v37),
+  `orchestrator/tests/test_projektbericht.py` (neu), `PROJEKTBERICHT_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`.
+
 ## [2026-10-02 23:45] — Claude Code
 - **Was:** PROJEKTZEITEN Etappe Z2: Projektzeiten optional in der Rechnung -- Auswahl je Rechnungsentwurf (Zeiten und
   Fahrten), zusammengefasst mit Stundenzettel als PDF-Anlage (Standard) oder einzeln, Verkaufs-Satz aus Auftrag/Katalog

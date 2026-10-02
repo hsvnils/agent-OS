@@ -677,3 +677,11 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-pz-zeile label { display: flex; gap: 8px; align-items: center; min-height: 36px; }
 .v2-pz-zeile.ab { color: var(--v2-muted); }
 .v2-pz-zeile input[type=checkbox] { width: 20px; height: 20px; }
+/* Projektbericht + Abschluss (PROJEKTBERICHT P3) */
+.v2-msg.warn { color: var(--v2-amber); }
+.v2-ab-schritte { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: 4px 0 8px; }
+.v2-ab-schritt { color: var(--v2-muted); font-size: 13px; }
+.v2-ab-schritt.ok { color: var(--v2-green); font-weight: 600; }
+.v2-ab-haken { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.v2-ab-haken label { display: flex; gap: 8px; align-items: center; min-height: 36px; }
+.v2-ab-haken input { width: 20px; height: 20px; }

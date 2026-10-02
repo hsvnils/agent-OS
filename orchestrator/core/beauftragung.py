@@ -57,6 +57,18 @@ class AuftragBuch:
                 a = out[d["nummer"]]
                 a["pdfs"].append({k: d.get(k) for k in ("pfad", "sha256", "an")} | {"ts": e["ts"]})
                 a["verlauf"].append(spur | {"an": d.get("an", "")})
+            elif t == "auftrag_bericht":                  # PROJEKTBERICHT P3: Entwurf (Fazit, Haken Stunden/km)
+                a = out[d["nummer"]]
+                a["bericht"] = {k: d.get(k) for k in ("fazit", "stunden", "km")} | {"geaendert": e["ts"]}
+            elif t == "auftrag_bericht_versendet":        # P3: eingefrorenes PDF in der Firmenakte
+                a = out[d["nummer"]]
+                a.setdefault("berichte", []).append({k: d.get(k) for k in ("akte_id", "sha256", "an", "betreff", "version")}
+                                                    | {"ts": e["ts"]})
+                a["verlauf"].append(spur | {"an": d.get("an", "")})
+            elif t == "auftrag_bericht_entfaellt":        # P3: bewusst kein Bericht (z. B. reiner Dreh ohne Postings)
+                a = out[d["nummer"]]
+                a["bericht_entfaellt"] = d.get("grund", "")
+                a["verlauf"].append(spur | {"grund": d.get("grund", "")})
             elif t == "auftrag_status":
                 a = out[d["nummer"]]
                 if d["status"] in STATUS:
@@ -86,15 +98,18 @@ class AuftragBuch:
 
     def liste(self) -> list[dict]:
         firmen = {f["nummer"]: f["name"] for f in self.kunden.firmen()}
+        e = self.bh.eintraege()
         out = []
-        for a in self._falte(self.bh.eintraege()).values():
+        for a in abschluss(self._falte(e), e).values():
             r = self._anreichern(a)
             out.append({k: r.get(k) for k in ("nummer", "angebot", "firma", "titel", "datum", "leistung_von",
-                                               "leistung_bis", "status", "summe_cent")} | {"firma_name": firmen.get(a["firma"], "")})
+                                               "leistung_bis", "status", "summe_cent", "abgeschlossen")}
+                       | {"firma_name": firmen.get(a["firma"], "")})
         return sorted(out, key=lambda x: x["nummer"], reverse=True)
 
     def auftrag(self, nummer: str) -> dict | None:
-        a = self._falte(self.bh.eintraege()).get((nummer or "").strip().upper())
+        e = self.bh.eintraege()
+        a = abschluss(self._falte(e), e).get((nummer or "").strip().upper())
         return self._anreichern(a) if a else None
 
     # -- Schreiben -----------------------------------------------------------------------------------------------
@@ -288,6 +303,23 @@ class AuftragBuch:
 
 class _Nichts(Exception):
     pass
+
+
+def abschluss(auftraege: dict[str, dict], eintraege: list[dict]) -> dict[str, dict]:
+    """PROJEKTBERICHT P3 (CEO 2026-10-02): **abgeschlossen** = geliefert, Bericht versendet (oder bewusst entfallen) und
+    alle Rechnungen zum Auftrag bezahlt. Der Status bleibt „erledigt“ (Geliefert); `abgeschlossen` kommt dazu."""
+    from .rechnungen import RechnungStore
+    re_je: dict[str, list] = {}
+    for r in RechnungStore._falte(eintraege)[1].values():
+        if r.get("auftrag") and r["status"] != "storniert" and r.get("art") != "storno":
+            re_je.setdefault(r["auftrag"], []).append(r)
+    for a in auftraege.values():
+        rs = re_je.get(a["nummer"], [])
+        bezahlt = any(r.get("art", "rechnung") == "rechnung" for r in rs) and all(r["status"] == "bezahlt" for r in rs)
+        bericht = "versendet" if a.get("berichte") else "entfaellt" if a.get("bericht_entfaellt") else ""
+        a["abschluss"] = {"geliefert": a["status"] == "erledigt", "bericht": bericht, "bezahlt": bezahlt}
+        a["abgeschlossen"] = a["status"] == "erledigt" and bool(bericht) and bezahlt
+    return auftraege
 
 
 def auftrag_mail_text(a: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:
