@@ -29,6 +29,32 @@ waere erst dann wirklich abgeschlossen, wenn wir die Zusammenfassung erstellt un
   Konto-Kennzahlen) ist geplant und ergaenzt diese Roadmap: Exporte = ganzes Konto; hier = je Kundenposting.
 - Auftragsstatus heute: beauftragt -> geliefert -> (Rechnung). „Abgeschlossen“ gibt es noch nicht.
 
+## Festgeschriebene Konditionen und TKP-Vergleich (CEO 2026-10-02)
+
+„Die Reichweiten muessen als Zahlen im System am Auftrag gespeichert werden. TKP aus dem Auftrag gegen die wirklich
+erreichten Zahlen rechnen, dann eine Summe -- ist sie hoeher als vereinbart, sieht der Kunde, dass er mehr Leistung
+bekommen hat. Wenn ich den TKP aendere, darf das an bestehenden Auftraegen und Belegen nichts aendern; die Konditionen
+muessen an jedem Auftrag klar erkennbar sein.“
+
+- **Stand (geprueft 2026-10-02):** Jede Position speichert ihre eigenen Werte (`kontakte`, `tkp_cent`,
+  `produktion_cent`, Preis; `core/angebote._positionen`), der Auftrag uebernimmt sie beim Anlegen als feste Kopie
+  (`_UEBERNAHME`). Katalog-Aenderungen wirken nur auf neue Angebote. Preisformel `katalog.tkp_preis`: Kontakte x TKP /
+  1.000 + Produktion, auf volle 10 EUR gerundet.
+- **Absicherung:** Test „TKP im Katalog aendern -> Auftrag, Rechnung, Bericht unveraendert“; die Konditionen stehen im
+  Auftrag sichtbar als Block „Vereinbarte Konditionen (festgeschrieben am …)“ je Position: geplante Kontakte, TKP,
+  Produktion, Preis.
+- **Kennzahlen sind Zahlen am Auftrag:** je Posting als Ganzzahlen gespeichert (Ereignis in der Hash-Kette mit Quelle
+  Screenshot/Formular und Verlauf), nicht nur als Bild.
+- **Rechnung je Posting** (Plan = Werte der Position je Stueck):
+  - Reichweite Ist gegen Plan: Kontakte_Ist / Kontakte_Plan in %.
+  - **Gegenwert Ist** = Kontakte_Ist x TKP_vereinbart / 1.000 + Produktion_vereinbart (ohne Rundung).
+  - **Mehrleistung** = Gegenwert Ist - vereinbarter Preis (positiv = Kunde hat mehr bekommen).
+  - **Effektiver TKP** = (Preis - Produktion) / Kontakte_Ist x 1.000 (niedriger als vereinbart = guenstiger erreicht).
+  - **Summe** ueber alle Postings des Auftrags: Kontakte Plan/Ist, Preis, Gegenwert Ist, Mehrleistung in EUR und %.
+  - Positionen ohne TKP (Pauschalen): Reichweite wird gezeigt, Gegenwert/Mehrleistung nur fuer TKP-Positionen.
+- **Bericht friert ein:** Beim Versand werden Kennzahlen und Rechnung des Berichts als PDF in der Firmenakte abgelegt
+  (unveraenderlich); spaetere Korrekturen erzeugen einen neuen Bericht, der alte bleibt nachvollziehbar.
+
 ## Etappe P1: Postings je Position (veroeffentlicht am, Link, Format)
 
 - Status: geplant
@@ -84,6 +110,12 @@ waere erst dann wirklich abgeschlossen, wenn wir die Zusammenfassung erstellt un
 
 Z1 -> P1 -> P2 -> Z2 -> P3 -> P4/Z3. Z1 zuerst, weil der Bericht die Stunden braucht; P1 vor P2, weil die Erinnerung
 das Veroeffentlichungsdatum braucht.
+
+## Offene CEO-Entscheidung
+
+- **Welche Kennzahl zaehlt als „Kontakt“ je Format?** Muss zur Definition im Angebot passen (Katalog-Kommentar: „Ø 37.000
+  Aufrufe je Reel“). Vorschlag: Reel = Aufrufe, Story = Aufrufe, Feed/Karussell = Impressionen (alternativ ueberall
+  „erreichte Konten“ = konservativer).
 
 ## CEO-Entscheidungen (2026-10-02)
 

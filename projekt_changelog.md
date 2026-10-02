@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 23:13] — Claude Code
+- **Was:** `PROJEKTBERICHT_ROADMAP.md` ergaenzt: Kennzahlen als Zahlen am Auftrag, TKP-Vergleich (Gegenwert Ist,
+  Mehrleistung, effektiver TKP, Summe), festgeschriebene Konditionen (geprueft: Positionen speichern Kontakte/TKP/
+  Produktion/Preis als Kopie, Katalog-Aenderungen wirken nur auf Neues; Absicherung per Test und Anzeige im Auftrag),
+  Bericht wird beim Versand eingefroren. Offene Frage: Kennzahl je Format als „Kontakt“.
+- **Warum:** CEO 2026-10-02.
+- **Betroffen:** `PROJEKTBERICHT_ROADMAP.md`
+
 ## [2026-10-02 23:08] — Claude Code
 - **Was:** CEO-Entscheidungen zu den neuen Roadmaps eingetragen: Gemini liest Insights-Screenshots; „abgeschlossen“ =
   Bericht versendet + Rechnung bezahlt; Projektzeiten auf der Rechnung waehlbar (Standard zusammengefasst +
