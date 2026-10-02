@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 07:14] — Claude Code
+- **Was:** Geplante Pruefung des ersten Reel-Verfall-Laufs (lesend): `GET /api/reel/bremse` = 7 wartend, keine Bremse;
+  18 Reels um 05:01 verfallen; Nachtlauf um 03:00 wegen 25 wartenden uebersprungen (Ereignis `uebersprungen`); Telegram
+  „18 Reel(s) verfallen“ zugestellt; keine Wacht-Meldung „Kein Reel“; Bot-Herzschlag 4 min. Abweichung zur Ankuendigung:
+  die MP4 der 5 abgelehnten Reels (Entscheidung 09.-15.07.) wurden schon heute geloescht -- regelkonform (14 Tage nach
+  der Entscheidung), meine Vorhersage „erst ab 16.10.“ galt nur fuer die 18 verfallenen; 35 MP4 / 1,4 GB uebrig.
+  Neuer Befund BF-52 (Fehlalarm „Meldungen haengen“ durch Briefing-Meldungen), nichts repariert.
+- **Warum:** CEO-Auftrag 01.10.2026 („Pruef morgen frueh, ob der Verfall-Lauf geklappt hat“).
+- **Betroffen:** `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-10-02 00:15] — Claude Code
 - **Was:** Etappe 31 live geprueft nach CEO-Neustart: UI v82 mit Auftragsmodus ausgeliefert, `POST /api/crm/auftraege`
   antwortet und prueft (ohne Titel abgewiesen, kein Auftrag/keine Nummer verbraucht -- weiter nur AB-2026-0001),
