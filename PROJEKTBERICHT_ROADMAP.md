@@ -3,8 +3,8 @@
 - Stand: 2026-10-02
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
-- Naechster Schritt: CEO-Entscheidungen (Screenshot-Auslesen, Abschluss-Regel, Stunden im Bericht) und Go fuer Etappe P1
-  abwarten.
+- Naechster Schritt: Entscheidungen liegen vor (2026-10-02); Go fuer die Etappen abwarten (Reihenfolge Z1 -> P1 -> P2 ->
+  Z2 -> P3).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -62,10 +62,10 @@ waere erst dann wirklich abgeschlossen, wenn wir die Zusammenfassung erstellt un
 - Ziel / Scope:
   - **Bericht je Auftrag** (PDF im Hanserautisch-Layout): Kampagne, Zeitraum, Leistungen, je Posting Vorschau/Link +
     Kennzahlen, Summen (Gesamt-Reichweite, Interaktionen, Engagement-Rate), **Plan gegen Ist** (geplante Kontakte und
-    TKP aus dem Angebot gegen tatsaechliche Reichweite -> **TKP-Ist**), optional **Stundenuebersicht** (aus
+    TKP aus dem Angebot gegen tatsaechliche Reichweite -> **TKP-Ist**), optional **Stunden- und km-Uebersicht** (aus
     PROJEKTZEITEN Z1, nur wenn angehakt), Fazit (LUNA schreibt einen Entwurf, du passt ihn an).
   - **Versand** wie beim Angebot: Vorschau -> Senden aus LUNAs Konto nur nach deinem Klick (Aussenkommunikation = CEO-Tor).
-  - **Status „abgeschlossen“** = Bericht versendet. Handlungsbedarf fuehrt durch den Abschluss: „Kennzahlen fehlen (3
+  - **Status „abgeschlossen“** = Bericht versendet **und** Rechnung bezahlt (CEO 2026-10-02). Handlungsbedarf fuehrt durch den Abschluss: „Kennzahlen fehlen (3
     von 5)“ -> „Bericht erstellen“ -> „Bericht senden“.
 - Gate: Tests (Summen/TKP-Ist, Stunden nur mit Haken, Status erst nach Versand); PDF-Pruefung; Browsertest Desktop +
   Mobil; echter Versand nur nach CEO-Klick.
@@ -85,12 +85,12 @@ waere erst dann wirklich abgeschlossen, wenn wir die Zusammenfassung erstellt un
 Z1 -> P1 -> P2 -> Z2 -> P3 -> P4/Z3. Z1 zuerst, weil der Bericht die Stunden braucht; P1 vor P2, weil die Erinnerung
 das Veroeffentlichungsdatum braucht.
 
-## Offene CEO-Entscheidungen
+## CEO-Entscheidungen (2026-10-02)
 
-1. Screenshots auslesen: **lokal** (Tesseract, alles bleibt im Haus, du bestaetigst die Werte) oder **Gemini** (liest
-   Insights zuverlaessiger, neuer Datenfluss zu Google)? Empfehlung: lokal, Gemini nur als Ausweich nach Freigabe.
-2. „Abgeschlossen“ allein durch den versendeten Bericht -- oder zusaetzlich erst, wenn die Rechnung bezahlt ist?
-3. Stunden im Kundenbericht: je Bericht per Haken (Standard aus)?
+1. Screenshots liest **Gemini** (Google) aus -- neuer Datenfluss: wird mit Etappe P2 in `docs/datenschutz-ki-nutzung.md`
+   und `docs/datenfluesse.md` eingetragen; der CEO bestaetigt die erkannten Werte trotzdem („Stimmt/Korrigieren“).
+2. „Abgeschlossen“ erst, wenn **Bericht versendet und Rechnung bezahlt**.
+3. Stunden **und km** im Bericht per Haken (Standard aus).
 
 ## Doku je Etappe
 

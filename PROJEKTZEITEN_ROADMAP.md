@@ -3,7 +3,7 @@
 - Stand: 2026-10-02
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
-- Naechster Schritt: CEO-Entscheidungen (Verkaufs-Stundensatz, Darstellung auf der Rechnung) und Go fuer Etappe Z1 abwarten.
+- Naechster Schritt: Entscheidungen liegen vor (2026-10-02); Go fuer Etappe Z1 abwarten.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -45,7 +45,7 @@ ob die Projektzeiten mitgerechnet werden.“
   **einzeln** (je Eintrag eine Position „Arbeitszeit 05.10.2026, 09:00–12:30 (3,5 h)“) oder **zusammengefasst**
   („Projektzeit 12,5 h“, Stundenzettel als Anlage zum PDF). Preis = **Verkaufs-Stundensatz** (Katalog-Artikel
   „Projektstunde“, je Auftrag aenderbar). Abgerechnete Eintraege sind markiert (keine Doppelabrechnung); ein
-  Rechnungs-Storno gibt sie wieder frei. Optional ebenso Fahrten (km x Verkaufs-km-Satz) -- nur wenn der CEO das will.
+  Rechnungs-Storno gibt sie wieder frei. Ebenso per Haken Fahrten (km x Verkaufs-km-Satz, CEO-Entscheidung 2026-10-02).
 - Gate: Tests -- Auswahl, beide Darstellungen, Summe = Stunden x Satz, Doppelabrechnung verhindert, Storno gibt frei,
   EUeR bucht nur die echte Einnahme (kalkulatorische Kosten bleiben getrennt); PDF-Pruefung; Browsertest Desktop +
   Mobil.
@@ -59,12 +59,13 @@ ob die Projektzeiten mitgerechnet werden.“
   sich lohnen und wo Preise im Katalog zu niedrig sind.
 - Aufwand: klein bis mittel.
 
-## Offene CEO-Entscheidungen
+## CEO-Entscheidungen (2026-10-02)
 
-1. Verkaufs-Stundensatz: ein Katalog-Artikel „Projektstunde“, je Auftrag aenderbar? (Empfehlung: ja)
-2. Darstellung auf der Rechnung: je Rechnung waehlbar einzeln/zusammengefasst? (Empfehlung: ja, Standard
-   zusammengefasst + Stundenzettel als Anlage)
-3. Fahrten mit abrechnen koennen? (Firmenwagen -- dem Kunden berechnete km waeren echte Einnahmen)
+1. Verkaufs-Stundensatz: Katalog-Artikel „Projektstunde“, je Auftrag aenderbar.
+2. Darstellung auf der Rechnung: je Rechnung waehlbar einzeln/zusammengefasst, **Standard zusammengefasst** +
+   Stundenzettel als Anlage.
+3. **Stunden und km per Haken** abrechen- und zeigbar (Standard aus). Dem Kunden berechnete km sind echte Einnahmen
+   (Verkaufs-km-Satz, eigener Katalog-Artikel); die kalkulatorischen Fahrtkosten bleiben getrennt.
 
 ## Doku je Etappe
 

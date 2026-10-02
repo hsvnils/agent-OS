@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 23:08] — Claude Code
+- **Was:** CEO-Entscheidungen zu den neuen Roadmaps eingetragen: Gemini liest Insights-Screenshots; „abgeschlossen“ =
+  Bericht versendet + Rechnung bezahlt; Projektzeiten auf der Rechnung waehlbar (Standard zusammengefasst +
+  Stundenzettel), Verkaufs-Stundensatz als Katalog-Artikel; Stunden und km per Haken zeig-/abrechenbar. Register ergaenzt
+  (revidiert „Stunden nur intern“ zur Opt-in-Regel).
+- **Warum:** CEO-Antworten 2026-10-02.
+- **Betroffen:** `PROJEKTZEITEN_ROADMAP.md`, `PROJEKTBERICHT_ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-02 23:07] — Claude Code
 - **Was:** Zwei Roadmaps angelegt: `PROJEKTZEITEN_ROADMAP.md` (Z1 Stundenzettel, Z2 Projektzeiten optional in der
   Rechnung, Z3 Auswertung) und `PROJEKTBERICHT_ROADMAP.md` (P1 Postings je Position, P2 Kennzahlen-Erinnerung + Telegram-
