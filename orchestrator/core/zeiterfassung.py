@@ -126,21 +126,26 @@ class Zeiterfassung:
                                         "adresse": (adresse or "").strip()[:200], "quelle": quelle}, von=von)
         return {"id": zid, "auftrag": auftrag, "firma": firma, "start": start}
 
-    def stoppen(self, *, ende: str = "", von: str = "") -> dict:
+    def stoppen(self, *, ende: str = "", taetigkeit: str = "", pause_min=None, von: str = "") -> dict:
         x = self.laufend()
         if not x:
             raise ValueError("Es laeuft keine Zeit.")
         e = _zeit(ende) if ende else _jetzt_lokal()
         if e < _zeit(x["start"]):
             raise ValueError("Ende liegt vor dem Start.")
+        brutto = round((e - _zeit(x["start"])).total_seconds() / 60)
+        pause = _pause(pause_min, brutto)
         satz = self.einstellungen()["stundensatz_cent"]
-        self.bh.erfassen("zeit_stopp", {"id": x["id"], "ende": e.isoformat(), "satz_cent": satz}, von=von)
-        m = round((e - _zeit(x["start"])).total_seconds() / 60)
+        self.bh.erfassen("zeit_stopp", {"id": x["id"], "ende": e.isoformat(), "satz_cent": satz}
+                         | ({"taetigkeit": _taetigkeit(taetigkeit)} if taetigkeit else {})
+                         | ({"pause_min": pause} if pause else {}), von=von)
+        m = brutto - pause
         return {"id": x["id"], "auftrag": x["auftrag"], "firma": x["firma"], "minuten": m,
                 "kosten_cent": round(m * satz / 60), "satz_cent": satz}
 
     def eintragen(self, *, auftrag: str = "", firma: str = "", datum: str, von_uhr: str = "", bis_uhr: str = "",
-                  minuten=None, notiz: str = "", adresse: str = "", von: str = "") -> dict:
+                  minuten=None, notiz: str = "", adresse: str = "", taetigkeit: str = "", pause_min=None,
+                  von: str = "") -> dict:
         """Manuell: Datum + von/bis (HH:MM) oder Dauer in Minuten."""
         auftrag, firma = self._ziel(auftrag, firma)
         try:
@@ -164,15 +169,100 @@ class Zeiterfassung:
                 raise ValueError("Von/bis oder Dauer in Minuten angeben.") from None
             s, e = datetime.combine(tag.date(), datetime.min.time()).replace(hour=9), None
             e = s + timedelta(minutes=m)
-        m = round((e - s).total_seconds() / 60)
-        if not 0 < m <= MAX_MINUTEN:
+        brutto = round((e - s).total_seconds() / 60)
+        if not 0 < brutto <= MAX_MINUTEN:
             raise ValueError("Dauer zwischen 1 Minute und 24 Stunden.")
+        pause = _pause(pause_min, brutto)
+        m = brutto - pause
         zid = "Z-" + uuid.uuid4().hex[:8]
         satz = self.einstellungen()["stundensatz_cent"]
         self.bh.erfassen("zeit_eintrag", {"id": zid, "auftrag": auftrag, "firma": firma, "start": s.isoformat(),
                                           "ende": e.isoformat(), "satz_cent": satz, "notiz": (notiz or "").strip()[:300],
-                                          "adresse": (adresse or "").strip()[:200], "quelle": "manuell"}, von=von)
+                                          "adresse": (adresse or "").strip()[:200], "quelle": "manuell"}
+                         | ({"taetigkeit": _taetigkeit(taetigkeit)} if taetigkeit else {})
+                         | ({"pause_min": pause} if pause else {}), von=von)
         return {"id": zid, "minuten": m, "kosten_cent": round(m * satz / 60)}
+
+    # -- PROJEKTZEITEN Z1: Stundenzettel, Taetigkeit, Korrektur ---------------------------------------------------------
+
+    def details_setzen(self, zid: str, *, taetigkeit=None, pause_min=None, notiz=None, von: str = "") -> dict:
+        x = self._falte().get(zid)
+        if not x or x["storniert"]:
+            raise KeyError(zid)
+        d = {"id": zid}
+        if taetigkeit is not None:
+            d["taetigkeit"] = _taetigkeit(taetigkeit)
+        if pause_min is not None:
+            brutto = round((_zeit(x["ende"]) - _zeit(x["start"])).total_seconds() / 60) if x.get("ende") else MAX_MINUTEN
+            d["pause_min"] = _pause(pause_min, brutto)
+        if notiz is not None:
+            d["notiz"] = str(notiz).strip()[:300]
+        if len(d) == 1:
+            raise ValueError("Nichts zu aendern.")
+        self.bh.erfassen("zeit_details", d, von=von)
+        return d
+
+    def korrigieren(self, zid: str, *, datum: str, von_uhr: str, bis_uhr: str, pause_min=None, taetigkeit=None,
+                    grund: str = "", von: str = "") -> dict:
+        """Ein/Aus/Pause eines beendeten Eintrags aendern (Verlauf bleibt). Nicht mehr, wenn schon abgerechnet."""
+        x = self._falte().get(zid)
+        if not x or x["storniert"]:
+            raise KeyError(zid)
+        if x["laeuft"]:
+            raise ValueError("Die Zeit laeuft noch -- erst stoppen.")
+        if x.get("abgerechnet"):
+            raise ValueError(f"Schon mit {x['abgerechnet']} abgerechnet -- dort erst stornieren.")
+        if not str(grund or "").strip():
+            raise ValueError("Bitte kurz begruenden (z. B. „Ende vergessen zu stoppen“).")
+        try:
+            tag = datetime.fromisoformat(str(datum)[:10]).date()
+            s = datetime.combine(tag, datetime.strptime(von_uhr, "%H:%M").time())
+            e = datetime.combine(tag, datetime.strptime(bis_uhr, "%H:%M").time())
+        except ValueError:
+            raise ValueError("Datum TT.MM.JJJJ bzw. Uhrzeit HH:MM.") from None
+        if e <= s:
+            e += timedelta(days=1)
+        if s.date() > _jetzt_lokal().date():
+            raise ValueError("Datum liegt in der Zukunft.")
+        brutto = round((e - s).total_seconds() / 60)
+        if not 0 < brutto <= MAX_MINUTEN:
+            raise ValueError("Dauer zwischen 1 Minute und 24 Stunden.")
+        d = {"id": zid, "start": s.isoformat(), "ende": e.isoformat(), "pause_min": _pause(pause_min, brutto),
+             "grund": str(grund).strip()[:200]} | ({"taetigkeit": _taetigkeit(taetigkeit)} if taetigkeit is not None else {})
+        self.bh.erfassen("zeit_korrigiert", d, von=von)
+        return {"id": zid, "minuten": brutto - d["pause_min"]}
+
+    def taetigkeiten(self, n: int = 3) -> list[str]:
+        """Zuletzt genutzte Taetigkeiten (fuer Knoepfe im Zeit-Fenster und in Telegram)."""
+        out: list[str] = []
+        for x in sorted(self._falte().values(), key=lambda x: x.get("ende") or x["start"], reverse=True):
+            t = (x.get("taetigkeit") or "").strip()
+            if t and t not in out:
+                out.append(t)
+            if len(out) >= n:
+                break
+        return out
+
+    def stundenzettel(self, auftrag: str) -> dict:
+        """Wie Positionen: je Eintrag Datum, Ein, Aus, Pause, Dauer, Taetigkeit, km -- Summen je Tag und gesamt."""
+        zeilen, tage = [], {}
+        for x in self.fuer_auftrag(auftrag):
+            if x["laeuft"]:
+                continue
+            km = sum(f.get("km") or 0 for f in x["fahrten"])
+            z = {"id": x["id"], "datum": x["start"][:10], "von": x["start"][11:16], "bis": str(x.get("ende") or "")[11:16],
+                 "pause_min": int(x.get("pause_min") or 0), "minuten": x.get("minuten", 0),
+                 "taetigkeit": x.get("taetigkeit", ""), "notiz": x.get("notiz", ""), "km": km, "quelle": x.get("quelle", ""),
+                 "kosten_cent": x["kosten_cent"], "fahrt_cent": x["fahrt_cent"], "abgerechnet": x.get("abgerechnet", ""),
+                 "korrigiert": len(x.get("korrekturen") or [])}
+            zeilen.append(z)
+            t = tage.setdefault(z["datum"], {"datum": z["datum"], "minuten": 0, "km": 0})
+            t["minuten"] += z["minuten"]
+            t["km"] += km
+        return {"eintraege": zeilen, "tage": sorted(tage.values(), key=lambda t: t["datum"]),
+                "summe": {"minuten": sum(z["minuten"] for z in zeilen), "km": sum(z["km"] for z in zeilen),
+                          "kosten_cent": sum(z["kosten_cent"] for z in zeilen),
+                          "fahrt_cent": sum(z["fahrt_cent"] for z in zeilen)}}
 
     def zuordnen(self, zid: str, auftrag: str, *, von: str = "") -> dict:
         x = self._falte().get(zid)
@@ -277,6 +367,22 @@ def dauer_text(minuten: int) -> str:
     return f"{minuten // 60}:{minuten % 60:02d} h"
 
 
+def _taetigkeit(t) -> str:
+    return " ".join(str(t or "").split())[:60]
+
+
+def _pause(p, brutto: int) -> int:
+    if p in (None, ""):
+        return 0
+    try:
+        m = int(float(str(p).replace(",", ".")))
+    except ValueError:
+        raise ValueError("Pause in Minuten.") from None
+    if not 0 <= m < brutto:
+        raise ValueError("Pause muss kuerzer sein als die Zeit selbst.")
+    return m
+
+
 def erinnerung_faellig(x: dict | None, jetzt_: datetime | None = None) -> bool:
     if not x:
         return False
@@ -290,11 +396,23 @@ def falte_zeiten(eintraege: list[dict]) -> dict[str, dict]:
     for e in eintraege:
         d, t = e["daten"], e["typ"]
         if t in ("zeit_start", "zeit_eintrag"):
-            out[d["id"]] = dict(d) | {"ts": e["ts"], "fahrten": [], "storniert": False}
+            out[d["id"]] = dict(d) | {"ts": e["ts"], "fahrten": [], "storniert": False, "abgerechnet": ""}
         elif d.get("id") not in out:
             continue
         elif t == "zeit_stopp":
-            out[d["id"]] |= {"ende": d["ende"], "satz_cent": d["satz_cent"]}
+            out[d["id"]] |= {"ende": d["ende"], "satz_cent": d["satz_cent"]} \
+                | {k: d[k] for k in ("taetigkeit", "pause_min") if k in d}
+        elif t == "zeit_details":                           # PROJEKTZEITEN Z1: Taetigkeit/Pause/Notiz nachtragen
+            out[d["id"]] |= {k: d[k] for k in ("taetigkeit", "pause_min", "notiz") if k in d}
+        elif t == "zeit_korrigiert":                        # Z1: Ein/Aus/Pause korrigiert, Verlauf bleibt in der Kette
+            x = out[d["id"]]
+            x.setdefault("korrekturen", []).append({"ts": e["ts"], "von": e.get("von", ""), "grund": d.get("grund", ""),
+                                                     "vorher": {k: x.get(k) for k in ("start", "ende", "pause_min")}})
+            x |= {k: d[k] for k in ("start", "ende", "pause_min", "taetigkeit") if k in d}
+        elif t == "zeit_abgerechnet":                       # Z2: auf einer festgeschriebenen Rechnung
+            out[d["id"]] |= {"abgerechnet": d.get("rechnung", ""), "abgerechnet_satz_cent": d.get("satz_cent")}
+        elif t == "zeit_abrechnung_frei":                   # Z2: Rechnung storniert -> wieder abrechenbar
+            out[d["id"]] |= {"abgerechnet": ""}
         elif t == "zeit_fahrt":
             out[d["id"]]["fahrten"] = [{k: d.get(k) for k in ("km", "quelle", "adresse", "betrag_cent")}]   # letzte gilt
         elif t == "zeit_storniert":
@@ -303,7 +421,8 @@ def falte_zeiten(eintraege: list[dict]) -> dict[str, dict]:
             out[d["id"]]["auftrag"] = d["auftrag"]
     for x in out.values():
         if x.get("ende"):
-            x["minuten"] = max(0, round((_zeit(x["ende"]) - _zeit(x["start"])).total_seconds() / 60))
+            brutto = round((_zeit(x["ende"]) - _zeit(x["start"])).total_seconds() / 60)
+            x["minuten"] = max(0, brutto - int(x.get("pause_min") or 0))           # Z1: Pause zaehlt nicht
         x["laeuft"] = not x.get("ende") and not x["storniert"]
         x["kosten_cent"] = round(x.get("minuten", 0) * (x.get("satz_cent") or 0) / 60)
         x["fahrt_cent"] = sum(f.get("betrag_cent") or 0 for f in x["fahrten"])

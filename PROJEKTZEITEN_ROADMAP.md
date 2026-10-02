@@ -27,7 +27,9 @@ ob die Projektzeiten mitgerechnet werden.“
 
 ## Etappe Z1: Stundenzettel je Auftrag
 
-- Status: geplant
+- Status: umgesetzt (2026-10-02) -- Ereignisse `zeit_details`/`zeit_korrigiert`, Pause mindert die Dauer, `stundenzettel()`,
+  Endpunkte `/api/finanzen/zeit/<id>/details|korrigieren`, Tabelle im Auftrag (Handy: kompakte Karten), Taetigkeit + Pause
+  nach dem Stoppen (Fenster und Telegram-Knoepfe). Tests `test_projektzeiten.py` mit Gegenprobe; Browsertest 1300/820/390 px.
 - Ziel / Scope: Im Auftrag (und im Zeit-Fenster) eine Tabelle wie Positionen: **Datum · Ein · Aus · Pause · Dauer ·
   Taetigkeit · km · Quelle**, Summen je Tag und gesamt (Stunden, km, interne Kosten). Beim Stoppen und beim Nachtrag
   kurz die **Taetigkeit** (z. B. Dreh, Schnitt, Abstimmung; Vorschlaege merken). **Korrigieren** statt nur stornieren

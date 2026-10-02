@@ -207,8 +207,11 @@ function zeitInhalt(meldung, fehler) {
     <button class="v2-btn danger v2-zeit-knopf" data-act="zt-stopp">■ Zeit stoppen</button></div>`;
   if (ZEIT.ergebnis) { const e = ZEIT.ergebnis;
     return msg + `<div class="v2-zeit-fenster"><b>${esc(dauerTxt(e.minuten || 0))} erfasst</b><div class="v2-sub">${esc(zeitAuftragName(e.auftrag))} · intern ${esc(cent2eur(e.kosten_cent || 0))}</div>
-      <label class="v2-feld"><small>Gefahrene km (Hin + Rück, optional)</small><input id="zt-km" class="v2-inp" inputmode="numeric" placeholder="z. B. 42"></label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="v2-btn pri" data-act="zt-km" data-id="${esc(e.id)}">km speichern</button><button class="v2-btn" data-act="zt-neu">Fertig</button></div></div>`; }
+      <label class="v2-feld"><small>Was hast du gemacht?</small><input id="zt-e-taet" class="v2-inp" list="zt-taet-liste" placeholder="z. B. Dreh, Schnitt, Abstimmung"></label>
+      ${(ZEIT.taetigkeiten || []).length ? `<div class="v2-zt-chips">${ZEIT.taetigkeiten.map(t => `<button class="v2-btn sm" data-act="zt-taet-chip" data-val="${esc(t)}">${esc(t)}</button>`).join("")}</div>` : ""}
+      <datalist id="zt-taet-liste">${(ZEIT.taetigkeiten || []).map(t => `<option value="${esc(t)}">`).join("")}</datalist>
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Pause (Min.)</small><input id="zt-e-pause" class="v2-inp" inputmode="numeric"></label><label class="v2-feld"><small>km Hin + Rück</small><input id="zt-km" class="v2-inp" inputmode="numeric" placeholder="z. B. 42"></label></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="v2-btn pri" data-act="zt-km" data-id="${esc(e.id)}">Speichern</button><button class="v2-btn" data-act="zt-neu">Fertig</button></div></div>`; }
   let letzter = ""; try { letzter = localStorage.getItem("luna-zeit-auftrag") || ""; } catch { }
   if (!ZEIT.auftraege.length) return msg + emptyRow("Kein laufender Auftrag (Status „beauftragt“) – Zeit gibt es nur für laufende Aufträge.");
   return msg + `<div class="v2-zeit-fenster"><label class="v2-feld"><small>Laufender Auftrag</small><select id="zt-auftrag" class="v2-inp">${ZEIT.auftraege.map(a =>
@@ -217,7 +220,7 @@ function zeitInhalt(meldung, fehler) {
 }
 async function zeitFenster(meldung, fehler) {
   const [z, a] = await Promise.all([jget("/api/finanzen/zeit"), jget("/api/crm/auftraege")]);
-  if (z) ZEIT.laufend = z.laufend || null;
+  if (z) { ZEIT.laufend = z.laufend || null; ZEIT.taetigkeiten = z.taetigkeiten || []; }
   ZEIT.alle = (a && a.auftraege) || []; ZEIT.auftraege = ZEIT.alle.filter(x => x.status === "beauftragt");
   openModal("⏱ Zeiterfassung", `<div id="zt-box">${zeitInhalt(meldung, fehler)}</div>`);
   zeitZeigen();
@@ -1425,10 +1428,22 @@ async function abZeitLaden(nr) {
   const d = await jget(`/api/finanzen/zeit?auftrag=${encodeURIComponent(nr)}`);
   if (!d) { box.innerHTML = ""; return; }
   const nk = d.nachkalkulation || {}, e = d.einstellungen || {}, lauf = d.laufend;
-  const zeilen = (d.eintraege || []).map(x => `<div class="v2-list-row"><span>${x.laeuft ? "▶️" : "⏱"}</span><div class="grow"><b>${esc(datumDe(x.start.slice(0, 10)))} · ${x.laeuft ? "läuft seit " + esc(x.start.slice(11, 16)) : esc(x.start.slice(11, 16)) + "–" + esc((x.ende || "").slice(11, 16)) + " · " + esc(dauerTxt(x.minuten || 0))}</b>
-      <small>${x.kosten_cent ? "intern " + cent2eur(x.kosten_cent) : ""}${x.fahrten.length ? ` · 🚗 ${x.fahrten[0].km} km = ${cent2eur(x.fahrten[0].betrag_cent)} (kalkulatorisch)` : ""}${x.notiz ? " · " + esc(x.notiz) : ""}${x.quelle === "Telegram" ? " · per Telegram" : ""}</small></div>
-      ${!x.laeuft ? `<button class="v2-btn sm" data-act="zeit-km" data-id="${esc(x.id)}" data-val="${esc(nr)}" title="Kilometer Hin + Rück (OpenStreetMap) kalkulatorisch erfassen/korrigieren">🚗 km</button>` : ""}
-      ${true ? `<button class="v2-btn sm" data-act="zeit-storno" data-id="${esc(x.id)}" data-val="${esc(nr)}" title="Eintrag stornieren">↶</button>` : ""}</div>`).join("");
+  const sz = d.stundenzettel || { eintraege: [], tage: [], summe: {} };   // PROJEKTZEITEN Z1: Stundenzettel wie Positionen
+  const tagSumme = Object.fromEntries((sz.tage || []).map(t => [t.datum, t]));
+  let zeilen = "", letzterTag = "";
+  (sz.eintraege || []).forEach((x, i, alle) => {
+    zeilen += `<tr><td class="zt-datum" data-tag="${esc(datumDe(x.datum))}">${x.datum !== letzterTag ? `<b>${esc(datumDe(x.datum))}</b>` : ""}</td><td class="zt-ein">${esc(x.von)}</td><td class="zt-aus">${esc(x.bis)}</td><td class="num zt-pause">${x.pause_min ? esc(String(x.pause_min)) + " min" : ""}</td>
+      <td class="num zt-dauer"><b>${esc(dauerTxt(x.minuten))}</b></td><td>${esc(x.taetigkeit || "")}${x.notiz ? `<br><small class="v2-sub">${esc(x.notiz)}</small>` : ""}${x.korrigiert ? ` <small class="v2-sub" title="korrigiert">✎</small>` : ""}${x.abgerechnet ? ` <span class="v2-badge ok">${esc(x.abgerechnet)}</span>` : ""}</td>
+      <td class="num">${x.km ? esc(String(x.km)) + " km" : ""}</td>
+      <td class="v2-zt-akt">${x.abgerechnet ? "" : `<button class="v2-btn sm" data-act="zt-korr-form" data-id="${esc(x.id)}" data-val="${esc(nr)}" title="Ein/Aus/Pause/Tätigkeit korrigieren">✎</button>`}<button class="v2-btn sm" data-act="zeit-km" data-id="${esc(x.id)}" data-val="${esc(nr)}" title="Kilometer Hin + Rück">🚗</button>${x.abgerechnet ? "" : `<button class="v2-btn sm" data-act="zeit-storno" data-id="${esc(x.id)}" data-val="${esc(nr)}" title="Eintrag stornieren">↶</button>`}</td></tr>`;
+    letzterTag = x.datum;
+    const naechster = alle[i + 1];
+    if (!naechster || naechster.datum !== x.datum) { const t = tagSumme[x.datum] || {};
+      if (alle.filter(y => y.datum === x.datum).length > 1) zeilen += `<tr class="v2-zt-tag"><td colspan="4"><small>Summe ${esc(datumDe(x.datum))}</small></td><td class="num"><b>${esc(dauerTxt(t.minuten || 0))}</b></td><td></td><td class="num">${t.km ? esc(String(t.km)) + " km" : ""}</td><td></td></tr>`; }
+  });
+  if (zeilen) zeilen = `<div class="v2-tab-scroll"><table class="v2-table v2-zt"><thead><tr><th>Datum</th><th>Ein</th><th>Aus</th><th class="num">Pause</th><th class="num">Dauer</th><th>Tätigkeit</th><th class="num">km</th><th></th></tr></thead><tbody>${zeilen}</tbody>
+    <tfoot><tr><td colspan="4"><b>Gesamt</b></td><td class="num"><b>${esc(dauerTxt((sz.summe || {}).minuten || 0))}</b></td><td></td><td class="num"><b>${(sz.summe || {}).km ? esc(String(sz.summe.km)) + " km" : ""}</b></td><td></td></tr></tfoot></table></div><div id="zt-korr-box"></div>`;
+  const taetListe = `<datalist id="zt-taet-liste">${(d.taetigkeiten || []).map(t => `<option value="${esc(t)}">`).join("")}</datalist>`;
   box.innerHTML = `<h3>⏱ Zeiten &amp; Nachkalkulation <small class="v2-sub">🔒 nur intern, kalkulatorisch – nie im PDF, keine Buchung, nicht in der EÜR</small></h3>
     <div class="v2-an-intern" style="border-top:none">
       <div class="v2-kv"><span>Auftragssumme (Geld)</span><b>${cent2eur(nk.umsatz_cent || 0)}</b></div>
@@ -1442,6 +1457,7 @@ async function abZeitLaden(nr) {
       <div class="v2-an-zeile"><label class="v2-feld"><small>Datum</small><input id="zt-datum" type="date"></label><label class="v2-feld"><small>von</small><input id="zt-von" type="time"></label><label class="v2-feld"><small>bis</small><input id="zt-bis" type="time"></label><label class="v2-feld"><small>oder Dauer (Min.)</small><input id="zt-min" inputmode="numeric"></label></div>
       <div class="v2-an-zeile"><label class="v2-feld"><small>Adresse des Drehs (leer = Firmenadresse)</small><input id="zt-adresse"></label><label class="v2-feld"><small>km Hin + Rück (leer = keine Fahrt)</small><input id="zt-km" inputmode="numeric"></label>
         <label class="v2-modlbl"><input type="checkbox" id="zt-km-auto"> km berechnen (OpenStreetMap)</label></div>
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Tätigkeit</small><input id="zt-taet" list="zt-taet-liste" placeholder="z. B. Dreh, Schnitt"></label><label class="v2-feld"><small>Pause (Min.)</small><input id="zt-pause" inputmode="numeric"></label></div>${taetListe}
       <label class="v2-feld"><small>Notiz</small><input id="zt-notiz"></label>
       <button class="v2-btn" data-act="zeit-eintragen" data-id="${esc(nr)}">Eintragen</button><div id="zt-msg" class="v2-msg"></div></div></details>
     <details style="margin-top:6px"><summary><small>Stundensatz ${e.stundensatz_cent ? cent2eur(e.stundensatz_cent) + "/h" : "festlegen"}</small></summary><div class="v2-form"><small class="v2-sub">Brutto-Monatslohn × 12 ÷ (Wochenstunden × 52) – kalkulatorisch, bleibt nur auf der NAS.</small>
@@ -1449,6 +1465,16 @@ async function abZeitLaden(nr) {
       <button class="v2-btn" data-act="zeit-satz" data-id="${esc(nr)}">Speichern</button><div id="zs-msg" class="v2-msg"></div></div></details>`;
 }
 const dauerTxt = (m) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")} h`;
+// Z1: Eintrag korrigieren (Ein/Aus/Pause/Taetigkeit, Grund Pflicht -- Verlauf bleibt in der Kette)
+async function ztKorrForm(zid, nr) {
+  const d = await jget(`/api/finanzen/zeit?auftrag=${encodeURIComponent(nr)}`);
+  const x = ((d && d.stundenzettel && d.stundenzettel.eintraege) || []).find(e => e.id === zid); const box = $("#zt-korr-box"); if (!x || !box) return;
+  box.innerHTML = `<h3>Zeit korrigieren</h3><div class="v2-form">
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Datum</small><input id="zk-datum" type="date" value="${esc(x.datum)}"></label><label class="v2-feld"><small>Ein</small><input id="zk-von" type="time" value="${esc(x.von)}"></label><label class="v2-feld"><small>Aus</small><input id="zk-bis" type="time" value="${esc(x.bis)}"></label><label class="v2-feld"><small>Pause (Min.)</small><input id="zk-pause" inputmode="numeric" value="${esc(String(x.pause_min || ""))}"></label></div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Tätigkeit</small><input id="zk-taet" list="zt-taet-liste" value="${esc(x.taetigkeit || "")}"></label><label class="v2-feld"><small>Grund der Korrektur *</small><input id="zk-grund" placeholder="z. B. Stoppen vergessen"></label></div>
+    <button class="v2-btn pri" data-act="zt-korr-speichern" data-id="${esc(zid)}" data-val="${esc(nr)}">Korrektur speichern</button><div id="zk-msg" class="v2-msg"></div></div>`;
+  box.scrollIntoView({ block: "nearest" });
+}
 async function zeitAktion(act, id, val) {
   let r;
   if (act === "zeit-start") r = await jpost("/api/finanzen/zeit/start", { auftrag: id });
@@ -1460,7 +1486,8 @@ async function zeitAktion(act, id, val) {
     if (!km) return; r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/fahrt`, { km }); id = val;
   } else if (act === "zeit-eintragen") {
     r = await jpost("/api/finanzen/zeit/eintrag", { auftrag: id, datum: $("#zt-datum").value, von: $("#zt-von").value, bis: $("#zt-bis").value, minuten: $("#zt-min").value.trim(),
-      notiz: $("#zt-notiz").value.trim(), adresse: $("#zt-adresse").value.trim(), km: $("#zt-km").value.trim(), km_berechnen: $("#zt-km-auto").checked });
+      notiz: $("#zt-notiz").value.trim(), adresse: $("#zt-adresse").value.trim(), km: $("#zt-km").value.trim(), km_berechnen: $("#zt-km-auto").checked,
+      taetigkeit: ($("#zt-taet") || {}).value || "", pause_min: ($("#zt-pause") || {}).value || "" });
     if (!r || !r.ok) return kundenMsg("zt-msg", (r && r.hinweis) || "Keine Verbindung.", false);
   } else if (act === "zeit-satz") {
     r = await jpost("/api/finanzen/zeit/einstellungen", { monatsbrutto: $("#zs-brutto").value.trim(), wochenstunden: $("#zs-std").value.trim() });
@@ -2858,12 +2885,20 @@ async function handleAct(act, el) {
       a.setAttribute("href", u2.pathname + u2.search); }); return; }
     case "zeit-start": case "zeit-stopp": case "zeit-storno": case "zeit-km": case "zeit-eintragen": case "zeit-satz": { const r = await zeitAktion(act, id, val); zeitLaden(); return r; }
     case "zt-fenster": ladeZu(); ZEIT.ergebnis = null; return zeitFenster();
+    case "zt-korr-form": return ztKorrForm(id, val);
+    case "zt-korr-speichern": { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/korrigieren`, { datum: $("#zk-datum").value, von: $("#zk-von").value, bis: $("#zk-bis").value, pause_min: $("#zk-pause").value, taetigkeit: $("#zk-taet").value, grund: $("#zk-grund").value.trim() });
+      if (!r || r.ok === false) return kundenMsg("zk-msg", (r && r.hinweis) || "Fehler.", false); return abDetail(val, "Zeit korrigiert."); }
     case "zt-start": return zeitStart();
     case "zt-stopp": return zeitStopp();
     case "zt-neu": ZEIT.ergebnis = null; closeModal(); return AKTIV === "dash" ? renderDash() : undefined;
-    case "zt-km": { const km = (($("#zt-km") || {}).value || "").trim(); if (!km) return zeitNeuZeichnen("Bitte km eintragen.", true);
-      const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/fahrt`, { km }); if (!r || r.ok === false) return zeitNeuZeichnen((r && r.hinweis) || "Fehler.", true);
-      ZEIT.ergebnis = null; return zeitNeuZeichnen(`${km} km gespeichert.`); }
+    case "zt-taet-chip": { const f = $("#zt-e-taet"); if (f) f.value = val; return; }
+    case "zt-km": { const km = (($("#zt-km") || {}).value || "").trim(), taet = (($("#zt-e-taet") || {}).value || "").trim(), pause = (($("#zt-e-pause") || {}).value || "").trim();
+      if (!km && !taet && !pause) return zeitNeuZeichnen("Bitte Tätigkeit, Pause oder km eintragen – oder „Fertig“.", true);
+      const teile = [];
+      if (taet || pause) { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/details`, { ...(taet ? { taetigkeit: taet } : {}), ...(pause ? { pause_min: pause } : {}) });
+        if (!r || r.ok === false) return zeitNeuZeichnen((r && r.hinweis) || "Fehler.", true); teile.push(taet ? `„${taet}“` : "", pause ? `${pause} min Pause` : ""); }
+      if (km) { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/fahrt`, { km }); if (!r || r.ok === false) return zeitNeuZeichnen((r && r.hinweis) || "Fehler.", true); teile.push(`${km} km`); }
+      ZEIT.ergebnis = null; return zeitNeuZeichnen(`Gespeichert: ${teile.filter(Boolean).join(", ")}.`); }
     case "akte-hochladen": return akteHochladen(id);
     case "akte-zuordnen": return akteZuordnenForm(id);
     case "akte-zuordnen-ok": case "akte-zuordnen-keine": { const r = await jpost(`/api/crm/akte/${encodeURIComponent(id)}/zuordnen`, { firma: act === "akte-zuordnen-ok" ? $("#az-firma").value : "" });

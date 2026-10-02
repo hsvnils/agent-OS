@@ -605,3 +605,34 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-lf-datei { display: grid; gap: 4px; min-width: 0; }
 .v2-lf-datei video, .v2-lf-datei img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; background: #000; }
 .v2-lf-datei small { color: var(--v2-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Stundenzettel (PROJEKTZEITEN Z1) */
+.v2-zt td, .v2-zt th { white-space: nowrap; }
+.v2-zt td:nth-child(6) { white-space: normal; min-width: 120px; }
+.v2-zt .v2-zt-tag td { background: var(--v2-line-soft); }
+.v2-zt tfoot td { border-top: 2px solid var(--v2-line); }
+.v2-zt-akt { display: flex; gap: 4px; }
+.v2-zt-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+/* Stundenzettel auf dem Handy: jede Zeit als kompakte Karte statt breiter Tabelle (CEO-Regel Desktop + Mobil) */
+@media (max-width: 700px) {
+  .v2-zt { display: block; overflow: visible; }
+  .v2-zt thead { display: none; }
+  .v2-zt tbody, .v2-zt tfoot { display: block; }
+  .v2-zt tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 10px 0; border-bottom: 1px solid var(--v2-line-soft); }
+  .v2-zt td { border: 0; padding: 0; white-space: nowrap; }
+  .v2-zt td:empty { display: none; }
+  .v2-zt td.zt-datum { order: 1; }
+  .v2-zt td.zt-datum:empty { display: inline; }
+  .v2-zt td.zt-datum:empty::before { content: attr(data-tag); font-weight: 700; }
+  .v2-zt td.zt-dauer { order: 2; margin-left: auto; }
+  .v2-zt td.zt-ein { order: 3; flex-basis: auto; color: var(--v2-muted); }
+  .v2-zt td.zt-aus { order: 4; color: var(--v2-muted); }
+  .v2-zt td.zt-aus::before { content: "– "; }
+  .v2-zt td.zt-pause { order: 5; color: var(--v2-muted); }
+  .v2-zt td.zt-pause::before { content: "Pause "; }
+  .v2-zt td:nth-child(7) { order: 6; color: var(--v2-muted); }
+  .v2-zt td:nth-child(6) { order: 7; flex-basis: 100%; white-space: normal; min-width: 0; }
+  .v2-zt td.v2-zt-akt { order: 8; flex-basis: 100%; }
+  .v2-zt .v2-zt-tag td, .v2-zt tfoot td { white-space: nowrap; background: none; border-top: 0; }
+  .v2-zt .v2-zt-tag { background: var(--v2-line-soft); border-radius: 8px; padding: 6px 8px; border-bottom: 0; margin: 4px 0; }
+  .v2-zt tfoot tr { border-bottom: 0; border-top: 2px solid var(--v2-line); }
+}

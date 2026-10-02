@@ -445,6 +445,8 @@ def _start_security_loop(ctx, secrets) -> None:
 _BELEG_MAILS_GESEHEN: set = set()      # Mail-IDs ohne verwertbaren Anhang nicht bei jedem Poll neu laden
 _AKTE_MAILS_GESEHEN: set = set()   # Etappe 24: in diesem Prozess schon gepruefte Mail-IDs
 _ZEIT_KM_WARTET: dict = {}         # Etappe 25: chat_id -> Zeit-ID, deren Kilometer als naechste Nachricht kommen
+_ZEIT_TAET_WARTET: dict = {}       # PROJEKTZEITEN Z1: chat_id -> Zeit-ID, deren Taetigkeit als naechste Nachricht kommt
+_ZEIT_TAET_OPT: dict = {}          # Zeit-ID -> angebotene Taetigkeiten (Knopf-Index -> Text)
 
 
 def _zeiterfassung():
@@ -485,6 +487,17 @@ def _zeit_km_frage(token, chat_id, z, zid: str, adresse: str = "") -> None:
         _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(
             "🚗 Wie viele Kilometer bist du gefahren (Hin + Rück)? Antworte z. B. „42 km“ – oder schick die Adresse des "
             "Drehs, dann rechne ich. „0 km“ = keine Fahrt.")})
+
+
+def _zeit_taet_frage(token, chat_id, z, zid: str) -> None:
+    """PROJEKTZEITEN Z1: nach dem Stopp kurz fragen, was gemacht wurde -- Knoepfe mit den letzten Taetigkeiten."""
+    opt = (z.taetigkeiten(3) or []) or ["Dreh", "Schnitt", "Abstimmung"]
+    _ZEIT_TAET_OPT[zid] = opt
+    reihe = [{"text": t[:30], "callback_data": f"ztt:{zid}:{i}"} for i, t in enumerate(opt)]
+    kb = {"inline_keyboard": [reihe, [{"text": "✏️ Andere", "callback_data": f"ztt:{zid}:a"},
+                                      {"text": "Überspringen", "callback_data": f"ztt:{zid}:n"}]]}
+    _api(token, "sendMessage", {"chat_id": chat_id, "reply_markup": json.dumps(kb),
+                                "text": "🛠 Was hast du gemacht? (kommt in den Stundenzettel)"})
 
 
 def _start_buchhaltung_loop(ctx) -> None:
@@ -1633,6 +1646,26 @@ def main() -> None:
                             _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
                                                             "reply_markup": json.dumps({"inline_keyboard": []}),
                                                             "text": fuer_telegram(res)})
+                    elif data.startswith("ztt:"):                  # PROJEKTZEITEN Z1: Taetigkeit nach dem Stopp
+                        mid = (cb.get("message") or {}).get("message_id")
+                        _, zid, wahl = data.split(":", 2)
+                        try:
+                            if wahl == "n":
+                                res = "OK – ohne Tätigkeit (später im Stundenzettel ergänzbar)."
+                            elif wahl == "a":
+                                _ZEIT_TAET_WARTET[cbchat] = zid
+                                res = "✏️ Schreib mir kurz, was du gemacht hast (z. B. „Dreh Stadion“)."
+                            else:
+                                t = (_ZEIT_TAET_OPT.get(zid) or [])[int(wahl)]
+                                _zeiterfassung().details_setzen(zid, taetigkeit=t, von="Telegram:CEO")
+                                res = f"✅ Tätigkeit: {t}"
+                        except (ValueError, KeyError, IndexError) as exc:
+                            res = f"⚠️ {exc}"
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "OK"})
+                        if mid:
+                            _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
+                                                            "reply_markup": json.dumps({"inline_keyboard": []}),
+                                                            "text": fuer_telegram(res)})
                     elif data.startswith(("zst:", "zkm:")):        # Etappe 25: Auftrag waehlen / Kilometer buchen
                         from ...core.beleg_pdf import eur as _eur
                         mid = (cb.get("message") or {}).get("message_id")
@@ -1750,6 +1783,11 @@ def main() -> None:
                     from ...core.zeiterfassung import befehl as _zbefehl, dauer_text, firma_finden, offene_auftraege
                     from ...core.beleg_pdf import eur as _eur
                     _zb = _zbefehl(text)
+                    if _zb is None and str(chat_id) in _ZEIT_TAET_WARTET and 0 < len(text.strip()) <= 60 and "?" not in text:
+                        zid = _ZEIT_TAET_WARTET.pop(str(chat_id))      # Z1: freie Taetigkeit nach „✏️ Andere“
+                        _zeiterfassung().details_setzen(zid, taetigkeit=text.strip(), von="Telegram:CEO")
+                        _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(f"✅ Tätigkeit: {text.strip()}")})
+                        continue
                     if _zb is None and str(chat_id) in _ZEIT_KM_WARTET and len(text.strip()) >= 8 and re.search(r"\d{5}", text):
                         _zb = {"art": "adresse"}                    # Dreh-Adresse statt Kilometer geschickt
                     _z = _zeiterfassung() if _zb else None
@@ -1782,6 +1820,7 @@ def main() -> None:
                                 + (f" · intern {_eur(r['kosten_cent'])} ({_eur(r['satz_cent'])}/h)" if r["satz_cent"] else
                                    " · Stundensatz fehlt noch (LUNA-OS)"))})
                             _zeit_km_frage(token, chat_id, _z, r["id"])
+                            _zeit_taet_frage(token, chat_id, _z, r["id"])
                         elif _zb["art"] in ("km", "adresse") and str(chat_id) in _ZEIT_KM_WARTET:
                             zid = _ZEIT_KM_WARTET.pop(str(chat_id))
                             if _zb["art"] == "adresse":

@@ -1770,12 +1770,13 @@ def _mit_ms(x: dict | None) -> dict | None:
 def zeit_liste(auftrag: str = ""):
     """Zeiten + Nachkalkulation eines Auftrags (Modul finanzen, nur intern)."""
     z = _zeit()
-    out = {"laufend": _mit_ms(z.laufend()), "einstellungen": {k: v for k, v in z.einstellungen().items() if k != "monatsbrutto_cent"}}
+    out = {"laufend": _mit_ms(z.laufend()), "taetigkeiten": z.taetigkeiten(), "einstellungen": {k: v for k, v in z.einstellungen().items() if k != "monatsbrutto_cent"}}
     if auftrag:
         a = _auftraege().auftrag(auftrag)
         if not a:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Auftrag")
-        out |= {"eintraege": z.fuer_auftrag(a["nummer"]), "nachkalkulation": z.nachkalkulation(a)}
+        out |= {"eintraege": z.fuer_auftrag(a["nummer"]), "nachkalkulation": z.nachkalkulation(a),
+                "stundenzettel": z.stundenzettel(a["nummer"])}
     return out
 
 
@@ -1799,7 +1800,27 @@ async def zeit_start(request: Request):
 
 @app.post("/api/finanzen/zeit/stopp")
 async def zeit_stopp(request: Request):
-    return _kunden_aktion(lambda: _zeit().stoppen(von=_von(request)))
+    body = await _json(request) or {}
+    return _kunden_aktion(lambda: _zeit().stoppen(taetigkeit=body.get("taetigkeit") or "", pause_min=body.get("pause_min"),
+                                                  von=_von(request)))
+
+
+@app.post("/api/finanzen/zeit/{zid}/details")
+async def zeit_details(zid: str, request: Request):
+    """PROJEKTZEITEN Z1: Taetigkeit/Pause/Notiz nachtragen."""
+    body = await _json(request) or {}
+    return _kunden_aktion(lambda: _zeit().details_setzen(zid, taetigkeit=body.get("taetigkeit"), pause_min=body.get("pause_min"),
+                                                         notiz=body.get("notiz"), von=_von(request)))
+
+
+@app.post("/api/finanzen/zeit/{zid}/korrigieren")
+async def zeit_korrigieren(zid: str, request: Request):
+    """PROJEKTZEITEN Z1: Ein/Aus/Pause korrigieren (mit Grund, Verlauf bleibt)."""
+    body = await _json(request) or {}
+    return _kunden_aktion(lambda: _zeit().korrigieren(zid, datum=body.get("datum") or "", von_uhr=body.get("von") or "",
+                                                      bis_uhr=body.get("bis") or "", pause_min=body.get("pause_min"),
+                                                      taetigkeit=body.get("taetigkeit"), grund=body.get("grund") or "",
+                                                      von=_von(request)))
 
 
 @app.post("/api/finanzen/zeit/eintrag")
@@ -1810,7 +1831,8 @@ async def zeit_eintrag(request: Request):
         z = _zeit()
         r = z.eintragen(auftrag=body.get("auftrag") or "", firma=body.get("firma") or "", datum=body.get("datum") or "",
                         von_uhr=body.get("von") or "", bis_uhr=body.get("bis") or "", minuten=body.get("minuten"),
-                        notiz=body.get("notiz") or "", adresse=body.get("adresse") or "", von=_von(request))
+                        notiz=body.get("notiz") or "", adresse=body.get("adresse") or "",
+                        taetigkeit=body.get("taetigkeit") or "", pause_min=body.get("pause_min"), von=_von(request))
         if body.get("km") not in (None, "") or body.get("km_berechnen"):
             r["fahrt"] = z.fahrt_erfassen(r["id"], km=body.get("km"), adresse=body.get("adresse") or "", von=_von(request))
         return r

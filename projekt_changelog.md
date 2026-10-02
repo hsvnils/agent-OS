@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 23:23] — Claude Code
+- **Was:** PROJEKTZEITEN Z1 umgesetzt: Stundenzettel je Auftrag (Datum, Ein, Aus, Pause, Dauer, Taetigkeit, km; Summen
+  je Tag und gesamt), Korrektur mit Grund und Verlauf, Pause mindert Dauer und interne Kosten, Taetigkeit + Pause nach
+  dem Stoppen im Zeit-Fenster und per Telegram (Knoepfe mit den letzten Taetigkeiten). Auf dem Handy als kompakte Karten
+  statt breiter Tabelle. UI v83. Tests mit Gegenprobe, Browsertest Desktop/iPad/iPhone.
+- **Warum:** CEO-Go 2026-10-02.
+- **Betroffen:** `orchestrator/core/zeiterfassung.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/telegram/bot.py`,
+  `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `orchestrator/tests/test_projektzeiten.py` (neu),
+  `PROJEKTZEITEN_ROADMAP.md`, `docs/datenfluesse.md`
+
 ## [2026-10-02 23:17] — Claude Code
 - **Was:** BF-52 behoben: Meldungen, die absichtlich auf das Morgen-Briefing warten (`nach_briefing`), zaehlen im
   Betriebsstatus erst ab 08:00 deutscher Zeit als unzugestellt -- kein naechtlicher Fehlalarm mehr beim Waechter und im
