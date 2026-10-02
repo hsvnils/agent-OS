@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-03 00:09] — Claude Code
+- **Was:** Live-Pruefung nach dem Neustart: LUNA-OS liefert v89/v39; Postings, Konditionen, Bericht (inkl. PDF),
+  Stundenzettel mit Nachkalkulation je Position, Zeit-Auswertung (inkl. CSV), Katalog mit `ist_kontakte` und
+  Handlungsbedarf antworten; Bot-Herzschlag frisch, keine haengenden Meldungen. Nur gelesen, nichts geaendert.
+- **Warum:** CEO „Neustart erledigt, kannst pruefen“.
+- **Betroffen:** keine Dateien (nur dieser Eintrag).
+
 ## [2026-10-03 00:06] — Claude Code
 - **Was:** Branch `ai/projekt-etappen` (BF-52, Z1-Z3, P1-P4) nach `main` gemergt (fast-forward), gepusht, Code per
   `deploy/sync-to-nas.sh --no-restart` auf die NAS; im Live-Katalog neue Gruppe „Projektzeiten“ mit „Projektstunde“
