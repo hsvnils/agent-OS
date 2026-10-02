@@ -3,8 +3,7 @@
 - Stand: 2026-10-02
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
-- Naechster Schritt: Entscheidungen liegen vor (2026-10-02); Go fuer die Etappen abwarten (Reihenfolge Z1 -> P1 -> P2 ->
-  Z2 -> P3).
+- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck; Bau auf `ai/projekt-etappen` (Z1, P1 fertig; weiter P2).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -57,7 +56,10 @@ muessen an jedem Auftrag klar erkennbar sein.“
 
 ## Etappe P1: Postings je Position (veroeffentlicht am, Link, Format)
 
-- Status: geplant
+- Status: umgesetzt (2026-10-02) -- `core/postings.py` (Postings aus Menge, Format aus Katalog-ID oder Text, Ereignisse
+  `posting_*`), Block „Vereinbarte Konditionen (festgeschrieben am …)“ und „📣 Postings & Kennzahlen“ mit TKP-Vergleich
+  und Summe im Auftrag; Kennzahlen-Formular je Format. Tests `test_postings.py` (inkl. Katalog-TKP-Aenderung wirkt
+  nicht auf Auftrag/Rechnung) mit Gegenprobe; Browsertest 1300/820/390 px.
 - Ziel / Scope: Je Auftragsposition so viele **Postings** wie die Menge (z. B. „Reel 1“, „Reel 2“), jeweils mit
   Format (aus dem Katalog: Feed-Bild, Karussell, Story, Reel), Plattform, **veroeffentlicht am**, Link und Bezug zur
   Lieferung. Erfassen im Auftrag („📣 Veroeffentlicht“) oder direkt beim Anlegen einer Lieferung mit Link.

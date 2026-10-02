@@ -636,3 +636,34 @@ body.v2-lade-offen { overflow: hidden; }
   .v2-zt .v2-zt-tag { background: var(--v2-line-soft); border-radius: 8px; padding: 6px 8px; border-bottom: 0; margin: 4px 0; }
   .v2-zt tfoot tr { border-bottom: 0; border-top: 2px solid var(--v2-line); }
 }
+/* Postings + Kennzahlen, festgeschriebene Konditionen (PROJEKTBERICHT P1) */
+.v2-po { border: 1px solid var(--v2-line-soft); border-radius: 14px; padding: 12px; margin: 8px 0; display: grid; gap: 8px; min-width: 0; }
+.v2-po-kopf { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.v2-po-kopf small { color: var(--v2-muted); flex: 1; min-width: 140px; }
+.v2-po-zahlen, .v2-po-vgl, .v2-po-summe { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.v2-po-zahlen span, .v2-po-vgl span, .v2-po-summe span { display: grid; min-width: 0; }
+.v2-po-zahlen small, .v2-po-vgl small, .v2-po-summe small { color: var(--v2-muted); font-size: 11px; }
+.v2-po-zahlen .kf b { color: var(--v2-accent, inherit); }
+.v2-po-vgl { padding-top: 6px; border-top: 1px dashed var(--v2-line-soft); }
+.v2-po b.pos { color: var(--v2-green); } .v2-po b.neg { color: var(--v2-red); }
+.v2-po-summe { border: 2px solid var(--v2-line); border-radius: 14px; padding: 12px; margin: 8px 0; align-items: end; }
+.v2-po-summe > b { flex-basis: 100%; }
+.v2-po-summe b.pos { color: var(--v2-green); } .v2-po-summe b.neg { color: var(--v2-red); }
+.v2-po-akt { display: flex; gap: 6px; flex-wrap: wrap; }
+.v2-po-felder { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.v2-kond { margin-top: 14px; }
+.v2-kond-t td, .v2-kond-t th { white-space: nowrap; }
+.v2-kond-t td:nth-child(2) { white-space: normal; }
+@media (max-width: 700px) {
+  .v2-kond-t thead { display: none; }
+  .v2-kond-t, .v2-kond-t tbody { display: block; }
+  .v2-kond-t tr { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 8px 0; border-bottom: 1px solid var(--v2-line-soft); }
+  .v2-kond-t td { border: 0; padding: 0; }
+  .v2-kond-t td:nth-child(1) { display: none; }
+  .v2-kond-t td:nth-child(2) { flex-basis: 100%; font-weight: 600; }
+  .v2-kond-t td.num { display: grid; text-align: left; }
+  .v2-kond-t td.num::before { content: attr(data-l); color: var(--v2-muted); font-size: 11px; }
+  .v2-kond-t td.leer { display: none; }
+  .v2-po-akt .v2-btn { min-height: 36px; }
+  .v2-po-felder { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 23:31] — Claude Code
+- **Was:** PROJEKTBERICHT Etappe P1: Postings je Auftragsposition (Menge -> Reel 1/Reel 2 ...), Veroeffentlichung mit
+  Datum/Link/Plattform, Kennzahlen als Ganzzahlen je Format (Kontakt: Reel/Story = Aufrufe, Bild-Post = Impressionen),
+  TKP-Vergleich je Posting und Summe (Gegenwert Ist, Mehrleistung, effektiver TKP), Block „Vereinbarte Konditionen
+  (festgeschrieben am …)“ im Auftrag; Desktop + iPad + iPhone.
+- **Warum:** CEO-Go 2026-10-02 („mache alles an einem Stueck“), Reichweiten als Zahlen am Auftrag, Konditionen fest.
+- **Betroffen:** `orchestrator/core/postings.py` (neu), `orchestrator/channels/web/app.py`, `static/app-v2.js`,
+  `static/style-v2.css`, `static/index-v2.html` (v84/v34), `orchestrator/tests/test_postings.py` (neu),
+  `PROJEKTBERICHT_ROADMAP.md`, `docs/datenfluesse.md`.
+
 ## [2026-10-02 23:23] — Claude Code
 - **Was:** PROJEKTZEITEN Z1 umgesetzt: Stundenzettel je Auftrag (Datum, Ein, Aus, Pause, Dauer, Taetigkeit, km; Summen
   je Tag und gesamt), Korrektur mit Grund und Verlauf, Pause mindert Dauer und interne Kosten, Taetigkeit + Pause nach

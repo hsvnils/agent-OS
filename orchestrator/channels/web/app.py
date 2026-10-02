@@ -1991,6 +1991,45 @@ async def lieferung_entfernen(lid: str, request: Request):
     return _kunden_aktion(lambda: _lieferungen().entfernen(lid, body.get("grund") or "", von=_von(request)))
 
 
+# -- Postings + Kennzahlen (PROJEKTBERICHT P1/P2): je Position so viele Postings wie die Menge ---------------------------
+def _postings():
+    from ...core.postings import Postings
+    return Postings(kunden_store.bh, _auftraege(), ROOT / "lieferungen")
+
+
+@app.get("/api/crm/auftraege/{nummer}/postings")
+def postings_liste(nummer: str):
+    from ...core.postings import FELDER, FORMATE, KONTAKT, PLATTFORMEN, konditionen, vergleich
+    a = _auftraege().auftrag(nummer)
+    if not a:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Auftragsnummer")
+    ps = _postings().liste(a["nummer"])
+    return {"postings": ps, "konditionen": konditionen(a), "vergleich": vergleich(ps),
+            "felder": FELDER, "formate": FORMATE, "kontakt": KONTAKT, "plattformen": PLATTFORMEN}
+
+
+@app.post("/api/crm/postings/{pid}/veroeffentlicht")
+async def posting_veroeffentlicht(pid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _postings().veroeffentlichen(pid, datum=body.get("datum") or "", link=body.get("link") or "",
+                                                               plattform=body.get("plattform") or "", von=_von(request)))
+
+
+@app.post("/api/crm/postings/{pid}/kennzahlen")
+async def posting_kennzahlen(pid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _postings().kennzahlen_setzen(pid, body.get("werte") or {},
+                                                                quelle=body.get("quelle") or "formular", von=_von(request)))
+
+
+@app.get("/api/crm/postings/{pid}/bild/{i}")
+def posting_bild(pid: str, i: int):
+    f = _postings().bild_datei(pid, i)
+    if not f:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bild nicht gefunden.")
+    return FileResponse(f, content_disposition_type="inline")
+
+
 @app.get("/api/crm/auftraege/{nummer}/pdf")
 def auftrag_pdf(nummer: str, archiv: int = 0):
     ab = _auftraege()

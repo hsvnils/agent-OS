@@ -1358,13 +1358,70 @@ async function abDetail(nr, meldung, fehler) {
       <label class="v2-feld"><small>Notiz</small><textarea id="abe-notiz" rows="2" class="v2-inp" ${bearbeitbar ? "" : "disabled"}>${esc(a.notiz || "")}</textarea></label>
       ${bearbeitbar ? `<button class="v2-btn" data-act="ab-speichern" data-id="${esc(nr)}">Speichern</button><div id="abe-msg" class="v2-msg"></div>` : ""}</div>
     ${a.status !== "storniert" ? `<h3>Lieferungen</h3><div id="ab-lief-box"><div class="v2-empty">Lade…</div></div>` : ""}
+    <div id="ab-post-box"></div>
     <h3>Verlauf</h3>${verlauf}
     </div><div>
     <div id="ab-senden-box"></div>
     ${darf("rechnungen") ? `<div id="ab-zeit-box"></div>` : ""}
     <h3>Positionen${a.angebot ? ` <small class="v2-sub">aus ${esc(a.angebot)} übernommen</small>` : ""}</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
+    <div id="ab-kond-box"></div>
     </div></div>`, true);
-  abZeitLaden(nr); abLieferungen(nr);
+  abZeitLaden(nr); abLieferungen(nr); abPostings(nr, a.status);
+}
+// PROJEKTBERICHT P1: Postings je Position (Menge) mit Veroeffentlichung, Kennzahlen als Zahlen und TKP-Vergleich;
+// dazu die beim Anlegen festgeschriebenen Konditionen (Katalog-Aenderungen wirken nie zurueck)
+const tsd = (n) => n == null ? "–" : Number(n).toLocaleString("de-DE");
+const pzt = (v) => v == null ? "" : `${String(v).replace(".", ",")} %`;
+let POST = null;
+async function abPostings(nr, status) {
+  const box = $("#ab-post-box"), kbox = $("#ab-kond-box"); if (!box) return;
+  const d = await jget(`/api/crm/auftraege/${encodeURIComponent(nr)}/postings`); POST = d;
+  if (!d) { box.innerHTML = ""; return; }
+  const k = d.konditionen || { positionen: [] }, mitTkp = k.positionen.some(p => p.tkp_cent);
+  if (kbox) kbox.innerHTML = `<div class="v2-kond"><h3>Vereinbarte Konditionen <small class="v2-sub">festgeschrieben am ${esc(datumDe(k.festgeschrieben_am))}${k.angebot ? " · aus " + esc(k.angebot) : ""}</small></h3>
+    <div class="v2-tab-scroll"><table class="v2-table v2-kond-t"><thead><tr><th>#</th><th>Leistung</th>${mitTkp ? `<th class="num">Kontakte</th><th class="num">TKP</th><th class="num">Produktion</th>` : ""}<th class="num">Preis je Stück</th></tr></thead><tbody>
+    ${k.positionen.map(p => `<tr><td data-l="#">${p.position}</td><td data-l="Leistung">${esc(p.beschreibung)}</td>${mitTkp ? (p.tkp_cent ? `<td class="num" data-l="Kontakte">${tsd(p.kontakte)}</td><td class="num" data-l="TKP">${cent2eur(p.tkp_cent)}</td><td class="num" data-l="Produktion">${cent2eur(p.produktion_cent)}</td>` : `<td class="num leer">–</td><td class="num leer">–</td><td class="num leer">–</td>`) : ""}<td class="num" data-l="Preis je Stück">${cent2eur(p.einzelpreis_cent)}</td></tr>`).join("")}
+    </tbody></table></div><small class="v2-sub">Diese Werte gelten für diesen Auftrag, seine Rechnungen und den Bericht – spätere Änderungen im Katalog ändern hier nichts.</small></div>`;
+  const ps = d.postings || [];
+  if (!ps.length) { box.innerHTML = ""; return; }
+  const vz = Object.fromEntries(((d.vergleich || {}).zeilen || []).map(z => [z.id, z])), s = (d.vergleich || {}).summe || {};
+  const offen = status !== "storniert";
+  const karten = ps.map(p => { const z = vz[p.id] || {}, kz = p.kennzahlen || {}, kf = p.kontakt_feld, lbl = Object.fromEntries((d.felder[p.format] || []));
+    const stand = p.kennzahlen ? `<span class="v2-badge ok">📊 Kennzahlen da</span>` : p.kennzahl_faellig ? `<span class="v2-badge warn">📊 Kennzahlen fällig</span>` : p.datum ? `<span class="v2-badge neutral">📣 veröffentlicht</span>` : `<span class="v2-badge neutral">geplant</span>`;
+    const zahlen = p.kennzahlen ? `<div class="v2-po-zahlen">${(d.felder[p.format] || []).filter(([f]) => kz[f] != null).map(([f, l]) => `<span${f === kf ? ' class="kf"' : ""}><small>${esc(l)}</small><b>${tsd(kz[f])}</b></span>`).join("")}</div>
+      <div class="v2-po-vgl"><span><small>${esc(lbl[kf] || kf)} Plan → Ist</small><b>${tsd(p.plan.kontakte || null)} → ${tsd(kz[kf])}${z.erfuellung_pct != null ? ` (${pzt(z.erfuellung_pct)})` : ""}</b></span>
+      ${z.gegenwert_cent != null ? `<span><small>Gegenwert Ist</small><b>${cent2eur(z.gegenwert_cent)}</b></span><span><small>Mehrleistung</small><b class="${z.mehrleistung_cent >= 0 ? "pos" : "neg"}">${z.mehrleistung_cent >= 0 ? "+" : "−"}${cent2eur(Math.abs(z.mehrleistung_cent))}</b></span>${z.tkp_eff_cent != null ? `<span><small>TKP effektiv</small><b>${cent2eur(z.tkp_eff_cent)} <small>statt ${cent2eur(p.plan.tkp_cent)}</small></b></span>` : ""}` : ""}</div>` : "";
+    return `<div class="v2-po" id="po-${esc(p.id)}"><div class="v2-po-kopf"><b>${esc(p.titel)}</b><small>${esc(p.plattform)} · Pos. ${p.position}${p.plan.kontakte ? " · Plan " + tsd(p.plan.kontakte) + " " + esc(lbl[kf] || kf) : ""}</small>${stand}</div>
+      ${p.datum ? `<div class="v2-sub">Veröffentlicht am ${esc(datumDe(p.datum))}${p.link ? ` · <a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">🔗 ansehen</a>` : ""}</div>` : ""}
+      ${zahlen}
+      ${offen ? `<div class="v2-po-akt"><button class="v2-btn sm" data-act="po-form-v" data-id="${esc(p.id)}" data-val="${esc(nr)}">📣 ${p.datum ? "Veröffentlichung ändern" : "Veröffentlicht …"}</button>${p.datum ? `<button class="v2-btn sm ${p.kennzahl_faellig ? "pri" : ""}" data-act="po-form-k" data-id="${esc(p.id)}" data-val="${esc(nr)}">📊 Kennzahlen ${p.kennzahlen ? "korrigieren" : "eintragen"} …</button>` : ""}</div>` : ""}
+      <div class="po-form"></div></div>`; }).join("");
+  const summe = s.gemessen && s.preis_cent ? `<div class="v2-po-summe"><b>Summe (${s.gemessen} von ${s.anzahl} gemessen)</b>
+    <span><small>Kontakte Plan → Ist</small><b>${tsd(s.kontakte_plan)} → ${tsd(s.kontakte_ist)}${s.erfuellung_pct != null ? ` (${pzt(s.erfuellung_pct)})` : ""}</b></span>
+    <span><small>Preis</small><b>${cent2eur(s.preis_cent)}</b></span><span><small>Gegenwert Ist</small><b>${cent2eur(s.gegenwert_cent)}</b></span>
+    <span><small>Mehrleistung</small><b class="${s.mehrleistung_cent >= 0 ? "pos" : "neg"}">${s.mehrleistung_cent >= 0 ? "+" : "−"}${cent2eur(Math.abs(s.mehrleistung_cent))}${s.mehrleistung_pct != null ? ` (${pzt(Math.abs(s.mehrleistung_pct))})` : ""}</b></span></div>` : "";
+  box.innerHTML = `<h3>📣 Postings &amp; Kennzahlen</h3>${karten}${summe}`;
+}
+function poForm(pid, nr, art) {
+  const p = ((POST && POST.postings) || []).find(x => x.id === pid), karte = $("#po-" + CSS.escape(pid)); if (!p || !karte) return;
+  const f = karte.querySelector(".po-form");
+  if (art === "v") f.innerHTML = `<div class="v2-form"><div class="v2-an-zeile"><label class="v2-feld"><small>Veröffentlicht am *</small><input class="po-datum" type="date" max="${heuteIso()}" value="${esc(p.datum || heuteIso())}"></label>
+    <label class="v2-feld"><small>Plattform</small><select class="po-pl v2-inp">${POST.plattformen.map(x => `<option${x === p.plattform ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label></div>
+    <label class="v2-feld"><small>Link zum Posting</small><input class="po-link v2-inp" inputmode="url" placeholder="https://…" value="${esc(p.link || "")}"></label>
+    <button class="v2-btn pri" data-act="po-speichern-v" data-id="${esc(pid)}" data-val="${esc(nr)}">Speichern</button><div class="v2-msg po-msg"></div></div>`;
+  else { const kz = p.kennzahlen || {};
+    f.innerHTML = `<div class="v2-form"><div class="v2-po-felder">${(POST.felder[p.format] || []).map(([k, l]) => `<label class="v2-feld"><small>${esc(l)}${k === p.kontakt_feld ? " *" : ""}</small><input class="v2-inp" data-feld="${esc(k)}" inputmode="numeric" value="${kz[k] != null ? esc(String(kz[k])) : ""}"></label>`).join("")}</div>
+    <small class="v2-sub">${esc((POST.felder[p.format].find(([k]) => k === p.kontakt_feld) || [])[1] || "")} zählt als Kontakt (Grundlage für den TKP-Vergleich).${p.kennzahlen ? " Eine Korrektur bleibt im Verlauf sichtbar." : ""}</small>
+    <button class="v2-btn pri" data-act="po-speichern-k" data-id="${esc(pid)}" data-val="${esc(nr)}">Kennzahlen speichern</button><div class="v2-msg po-msg"></div></div>`; }
+  f.querySelector("input")?.focus();
+}
+async function poSpeichern(pid, nr, art) {
+  const karte = $("#po-" + CSS.escape(pid)); if (!karte) return;
+  const r = art === "v" ? await jpost(`/api/crm/postings/${encodeURIComponent(pid)}/veroeffentlicht`, { datum: karte.querySelector(".po-datum").value, link: karte.querySelector(".po-link").value.trim(), plattform: karte.querySelector(".po-pl").value })
+    : await jpost(`/api/crm/postings/${encodeURIComponent(pid)}/kennzahlen`, { werte: Object.fromEntries([...karte.querySelectorAll("[data-feld]")].map(i => [i.dataset.feld, i.value.trim()])) });
+  if (!r || r.ok === false) { const m = karte.querySelector(".po-msg"); m.className = "v2-msg err po-msg"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return; }
+  const a = (await jget("/api/crm/auftraege/" + encodeURIComponent(nr)) || {}).auftrag || {};
+  return abPostings(nr, a.status);
 }
 // Etappe 30: Lieferungen -- Dateien (in 8-MB-Stuecken, auch grosse Videos vom iPhone) und Links je Auftrag
 function lfAnzeige(x, mitEntfernen) {
@@ -3002,6 +3059,8 @@ async function handleAct(act, el) {
         if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote(); glockeAktualisieren();
         return abDetail(id, "Als geliefert markiert — bereit für die Rechnung. Zeit ist für diesen Auftrag jetzt gesperrt."); }
       catch (e) { el.disabled = false; return kundenMsg("lf-msg", e.message, false); } }
+    case "po-form-v": case "po-form-k": return poForm(id, val, act.slice(-1));
+    case "po-speichern-v": case "po-speichern-k": { el.disabled = true; await poSpeichern(id, val, act.slice(-1)); el.disabled = false; return; }
     case "lf-speichern": { el.disabled = true; try { await lfSpeichern(id, true); return abDetail(id, "Lieferung gespeichert."); }
       catch (e) { el.disabled = false; return kundenMsg("lf-msg", e.message, false); } }
     case "lf-entfernen": { const grund = prompt("Lieferung samt Dateien entfernen – Grund:", ""); if (!grund) return;
