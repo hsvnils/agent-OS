@@ -2022,6 +2022,26 @@ async def posting_kennzahlen(pid: str, request: Request):
                                                                 quelle=body.get("quelle") or "formular", von=_von(request)))
 
 
+@app.post("/api/crm/postings/{pid}/bild")
+async def posting_bild_hochladen(pid: str, request: Request):
+    """P2: Insights-Screenshot am Posting ablegen (Rumpf = rohes Bild, Name im Kopf `X-Dateiname`) und von Gemini
+    auslesen lassen -- die Werte kommen nur als Vorschlag zurueck, gespeichert wird erst mit „Kennzahlen speichern“."""
+    from urllib.parse import unquote
+    daten = await request.body()
+    name = unquote(request.headers.get("x-dateiname") or "screenshot.jpg")
+
+    def tun():
+        ps = _postings()
+        b = ps.bild_ablegen(pid, daten, name, von=_von(request))
+        try:
+            v = ps.auslesen(pid, key=(_google_secrets().get("GEMINI_API_KEY") or "").strip())
+            return {"bild": b, "vorschlag": v, "hinweis": "" if v else "Keine Zahlen erkannt -- bitte von Hand eintragen."}
+        except Exception as exc:                          # Auslesen ist Komfort: Bild bleibt, Formular geht immer
+            print(f"[postings] Auslesen fehlgeschlagen: {exc.__class__.__name__}", flush=True)   # keine Fehlertexte (Schluessel)
+            return {"bild": b, "vorschlag": {}, "hinweis": "Auslesen gerade nicht moeglich -- bitte von Hand eintragen."}
+    return _kunden_aktion(tun)
+
+
 @app.get("/api/crm/postings/{pid}/bild/{i}")
 def posting_bild(pid: str, i: int):
     f = _postings().bild_datei(pid, i)

@@ -204,6 +204,19 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                 out.append(_todo(f"an-nachfassen:{a['nummer']}", "Angebote", "📞", f"Angebot {a['nummer']} nachfassen",
                                  f"{name} · {a.get('titel') or ''}".strip(" ·"), "an-detail", a["nummer"], nf, h,
                                  {"pfad": f"/api/crm/angebote/{a['nummer']}/nachgefasst", "label": "✓ Nachgefasst"}))
+        from .postings import ERINNERN_TAGE, Postings, _faellig, postings_aus   # PROJEKTBERICHT P2: Kennzahlen faellig
+        stand = Postings._falte(e)
+        for a in AuftragBuch._falte(e).values():
+            if a["status"] == "storniert":
+                continue
+            for p in postings_aus(a):
+                x = stand.get(p["id"], {})
+                if _faellig(x, heute):
+                    t = _todo(f"po-kennzahlen:{p['id']}", "Aufträge", "📊", f"Kennzahlen eintragen: {p['titel']} · {a['nummer']}",
+                              f"{firmen.get(a['firma'], a['firma'])} · veröffentlicht am {x['datum'][8:10]}.{x['datum'][5:7]}. – "
+                              "Screenshot an LUNA (Telegram) oder Formular im Auftrag", "ab-detail", a["nummer"],
+                              (date.fromisoformat(x["datum"]) + timedelta(days=ERINNERN_TAGE)).isoformat(), h)
+                    out.append(t | {"dringend": False, "stufe": "woche"})
     if finanzen:
         for x in EingangStore._falte(e).values():
             v, f = x.get("vorschlag") or {}, x.get("felder") or {}

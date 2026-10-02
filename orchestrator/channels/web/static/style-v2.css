@@ -667,3 +667,6 @@ body.v2-lade-offen { overflow: hidden; }
   .v2-po-akt .v2-btn { min-height: 36px; }
   .v2-po-felder { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+.v2-po-bilder { display: flex; gap: 6px; flex-wrap: wrap; }
+.v2-po-bilder img { width: 64px; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid var(--v2-line-soft); }
+.v2-erkannt { outline: 2px solid var(--v2-amber); }

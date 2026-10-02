@@ -193,17 +193,31 @@ class Postings:
         f = (self.ordner / p["bilder"][i]["pfad"]).resolve()
         return f if f.is_file() and self.ordner.resolve() in f.parents else None
 
+    def auslesen(self, pid: str, *, key: str = "", client=None) -> dict:
+        """Alle Screenshots des Postings an Gemini -> Vorschlag {feld: zahl} (gespeichert wird erst nach Bestaetigung)."""
+        from .kennzahlen_lesen import lesen
+        p = self._pruefe(pid)
+        bilder = [(f.read_bytes(), f.name) for i in range(len(p["bilder"])) if (f := self.bild_datei(pid, i))]
+        if not bilder:
+            raise ValueError("Noch kein Screenshot an diesem Posting.")
+        return lesen(bilder[-4:], FELDER[p["format"]], FORMATE[p["format"]], key=key, client=client)
+
     def erinnert(self, pid: str) -> None:
         self.bh.erfassen("posting_erinnert", {"id": pid}, von="LUNA-Kennzahlen")
 
-    def faellige(self, auftraege: list[dict], heute: date | None = None) -> list[dict]:
-        """Postings, deren Kennzahlen faellig sind (veroeffentlicht + 7 Tage, noch keine Kennzahlen)."""
+    def faellige(self, heute: date | None = None) -> list[dict]:
+        """Postings, deren Kennzahlen faellig sind (veroeffentlicht + 7 Tage, noch keine Kennzahlen), mit Auftrag/Firma."""
+        from .beauftragung import AuftragBuch
         e = self.bh.eintraege()
+        st = self._falte(e)
         out = []
-        for a in auftraege:
+        for a in AuftragBuch._falte(e).values():
             if a["status"] == "storniert":
                 continue
-            out += [p for p in self.liste(a["nummer"], e) if _faellig(p, heute)]
+            for p in postings_aus(a):
+                x = p | st.get(p["id"], {"bilder": [], "verlauf": []})
+                if _faellig(x, heute):
+                    out.append(x | {"firma": a["firma"], "auftrag_titel": a.get("titel", "")})
         return out
 
 

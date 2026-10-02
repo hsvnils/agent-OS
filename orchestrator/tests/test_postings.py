@@ -1,6 +1,10 @@
 """PROJEKTBERICHT P1: Postings je Position (Menge), veroeffentlicht am/Link, Kennzahlen als Zahlen, festgeschriebene
 Konditionen und TKP-Vergleich; Katalog-Aenderungen wirken nie auf bestehende Auftraege/Belege."""
+import json
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 from datetime import timedelta
 
 from orchestrator.core.beauftragung import AuftragBuch
@@ -50,8 +54,8 @@ class TestPostings(unittest.TestCase):
         ps.veroeffentlichen(pid, datum=(HEUTE - timedelta(days=7)).isoformat(), link="https://www.instagram.com/reel/abc/")
         x = ps.get(pid)
         self.assertEqual((x["datum"], x["plattform"], x["kennzahl_faellig"]), ((HEUTE - timedelta(days=7)).isoformat(), "Instagram", True))
-        self.assertEqual([p["id"] for p in ps.faellige([ab.auftrag(nr)])], [pid])
-        self.assertEqual(ps.faellige([ab.auftrag(nr)], heute=HEUTE - timedelta(days=1)), [])   # erst am 7. Tag
+        self.assertEqual([p["id"] for p in ps.faellige()], [pid])
+        self.assertEqual(ps.faellige(heute=HEUTE - timedelta(days=1)), [])   # erst am 7. Tag
 
     def test_3_kennzahlen_als_zahlen_mit_verlauf(self):
         bh, ab, nr, ps = _auftrag()
@@ -96,6 +100,91 @@ class TestPostings(unittest.TestCase):
         self.assertEqual(vorher, nachher)
 
 
+class _Antwort:
+    def __init__(self, text):
+        self.choices = [type("C", (), {"message": type("M", (), {"content": text})()})()]
+
+
+class _Gemini:
+    """OpenAI-kompatibler Test-Client: merkt sich die Anfrage, antwortet mit festem Text."""
+    def __init__(self, text):
+        self.text, self.anfragen = text, []
+        self.chat = type("Ch", (), {"completions": self})()
+
+    def create(self, **kw):
+        self.anfragen.append(kw)
+        return _Antwort(self.text)
+
+
+class TestKennzahlenP2(unittest.TestCase):
+    def setUp(self):
+        from orchestrator.channels.telegram import bot
+        self.bot = bot
+        for d in (bot._PO_FOTO_WARTET, bot._PO_FOTO_OFFEN, bot._PO_AUSLESEN, bot._PO_VORSCHLAG):
+            d.clear()
+        self.bh, self.ab, self.nr, self.ps = _auftrag()
+        self.pid = f"{self.nr}-P1-1"
+        self.ps.veroeffentlichen(self.pid, datum=(HEUTE - timedelta(days=7)).isoformat())
+        self.ps.veroeffentlichen(f"{self.nr}-P2-1", datum=(HEUTE - timedelta(days=6)).isoformat())
+        self.gesendet = []
+        self.p1 = mock.patch.object(bot, "_postings", return_value=self.ps)
+        self.p2 = mock.patch.object(bot, "_api", side_effect=lambda t, m, p, **k: self.gesendet.append((m, p)) or {"ok": True})
+        self.p1.start(); self.p2.start()
+
+    def tearDown(self):
+        self.p1.stop(); self.p2.stop()
+
+    def test_1_erinnerung_genau_einmal_ab_tag_7(self):
+        self.assertEqual(self.bot._kennzahlen_erinnern("T", "1", heute=HEUTE - timedelta(days=1)), 0)
+        self.assertEqual(self.bot._kennzahlen_erinnern("T", "1"), 1)                 # nur Reel 1 (Tag 7), nicht Bild-Post (Tag 6)
+        kb = json.loads(self.gesendet[0][1]["reply_markup"])["inline_keyboard"]
+        self.assertEqual(kb[0][0]["callback_data"], f"pkz:{self.pid}")
+        self.assertLessEqual(len(kb[0][0]["callback_data"].encode()), 64)
+        self.assertEqual(self.bot._kennzahlen_erinnern("T", "1"), 0)                 # eine je Posting
+        self.assertEqual(self.bot._kennzahlen_erinnern("T", "1", heute=HEUTE + timedelta(days=1)), 1)   # Bild-Post am 7. Tag
+
+    def test_2_nicht_zugestellt_bleibt_offen(self):
+        with mock.patch.object(self.bot, "_api", return_value={"ok": False}):
+            self.assertEqual(self.bot._kennzahlen_erinnern("T", "1"), 0)
+        self.assertEqual(self.bot._kennzahlen_erinnern("T", "1"), 1)
+
+    def test_3_foto_zuordnen_auslesen_bestaetigen(self):
+        from orchestrator.core import kennzahlen_lesen
+        with mock.patch.object(self.bot, "_download_voice", return_value=b"\xff\xd8bild1"):
+            self.bot._po_foto("T", "1", {"file_id": "f1"}, "a.jpg")                  # ohne Wahl: fragt nach dem Posting
+            self.bot._po_foto("T", "1", {"file_id": "f2"}, "b.jpg")                  # Album: nur einmal fragen
+        frage = [p for m, p in self.gesendet if "reply_markup" in p]
+        self.assertEqual(len(frage), 1)
+        self.assertIn(f"pkz:{self.pid}", frage[0]["reply_markup"])
+        self.assertIn("📷 2 Screenshot(s)", self.bot._po_knopf("1", f"pkz:{self.pid}"))
+        self.assertEqual(len(self.ps.get(self.pid)["bilder"]), 2)
+        g = _Gemini('Hier: {"aufrufe": "51.234", "likes": 2100, "unsinn": 5, "reichweite": -3}')
+        echt = kennzahlen_lesen.lesen
+        with mock.patch.object(kennzahlen_lesen, "lesen", side_effect=lambda *a, **k: echt(*a, **(k | {"client": g}))):
+            self.bot._po_auslesen("T", {"GEMINI_API_KEY": "x"})
+        self.assertEqual(len([c for c in g.anfragen[0]["messages"][0]["content"] if c["type"] == "image_url"]), 2)
+        self.assertEqual(self.bot._PO_VORSCHLAG[self.pid], {"aufrufe": 51234, "likes": 2100})
+        self.assertIsNone(self.ps.get(self.pid).get("kennzahlen"))                   # erst nach ✅ gespeichert
+        self.assertIn("✅", self.bot._po_knopf("1", f"pkj:{self.pid}"))
+        x = self.ps.get(self.pid)
+        self.assertEqual((x["kennzahlen"], x["kennzahlen_quelle"]), ({"aufrufe": 51234, "likes": 2100}, "screenshot"))
+        self.assertNotIn(self.pid, [p["id"] for p in self.ps.faellige()])
+
+    def test_4_korrigieren_speichert_nichts(self):
+        self.bot._PO_VORSCHLAG[self.pid] = {"aufrufe": 5}
+        self.assertIn("LUNA-OS", self.bot._po_knopf("1", f"pkk:{self.pid}"))
+        self.assertIsNone(self.ps.get(self.pid).get("kennzahlen"))
+        self.assertIn("⚠️", self.bot._po_knopf("1", f"pkj:{self.pid}"))
+
+    def test_5_handlungsbedarf(self):
+        from orchestrator.core.kunden import KundenStore
+        from orchestrator.core.todos import geschaefts_todos
+        t = [x for x in geschaefts_todos(self.bh, KundenStore(self.bh)) if x["id"].startswith("po-kennzahlen:")]
+        self.assertEqual([(x["id"], x["stufe"], x["act_id"]) for x in t], [(f"po-kennzahlen:{self.pid}", "woche", self.nr)])
+        self.ps.kennzahlen_setzen(self.pid, {"aufrufe": 1})
+        self.assertFalse([x for x in geschaefts_todos(self.bh, KundenStore(self.bh)) if x["id"].startswith("po-kennzahlen:")])
+
+
 class TestApi(ApiBasis):
     def test_a1_endpunkte_und_rechnung_festgeschrieben(self):
         r = self.c.post("/api/crm/angebote", json={"angebot": {"firma": self.k, "ansprechpartner": self.ap, "titel": "Herbst",
@@ -112,6 +201,15 @@ class TestApi(ApiBasis):
         k = self.c.post(f"/api/crm/postings/{pid}/kennzahlen", json={"werte": {"aufrufe": "40000"}}).json()
         self.assertTrue(k["ok"], k)
         self.assertEqual(self.c.get(f"/api/crm/auftraege/{nr}/postings").json()["vergleich"]["summe"]["kontakte_ist"], 40000)
+        tmp = Path(tempfile.mkdtemp())
+        with mock.patch.object(self.w, "_google_secrets", return_value={}), mock.patch.object(self.w, "ROOT", tmp):
+            b = self.c.post(f"/api/crm/postings/{pid}/bild", content=b"\xff\xd8bild", headers={"X-Dateiname": "ins%20ights.png"}).json()
+            self.assertEqual(self.c.get(f"/api/crm/postings/{pid}/bild/0").content, b"\xff\xd8bild")
+            self.assertFalse(self.c.post(f"/api/crm/postings/{pid}/bild", content=b"x", headers={"X-Dateiname": "a.exe"}).json()["ok"])
+        self.assertTrue(b["ok"], b)
+        self.assertEqual((b["vorschlag"], b["bild"]["name"][-4:]), ({}, ".png"))
+        self.assertIn("von Hand", b["hinweis"])
+        self.assertTrue((tmp / "lieferungen" / nr / "kennzahlen").is_dir())
         kat = Katalog(self.w.kunden_store.bh)
         kk = kat.laden()
         for g in kk["gruppen"]:

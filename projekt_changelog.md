@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 23:37] — Claude Code
+- **Was:** PROJEKTBERICHT Etappe P2: Kennzahlen-Erinnerung 7 Tage nach Veroeffentlichung per Telegram (je Posting
+  einmal, mit Knopf), Foto-Empfang im Bot, Auslesen der Insights-Screenshots per Gemini mit Bestaetigung des CEO,
+  Punkt im Handlungsbedarf, Screenshot-Upload mit Auslesen im LUNA-OS-Formular.
+- **Warum:** CEO-Go 2026-10-02; CEO-Entscheidung „Gemini liest die Screenshots“.
+- **Betroffen:** `orchestrator/core/kennzahlen_lesen.py` (neu), `orchestrator/core/postings.py`, `orchestrator/core/todos.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`,
+  `static/index-v2.html` (v85/v35), `orchestrator/tests/test_postings.py`, `docs/datenschutz-ki-nutzung.md`,
+  `docs/datenfluesse.md`, `PROJEKTBERICHT_ROADMAP.md`.
+
 ## [2026-10-02 23:31] — Claude Code
 - **Was:** PROJEKTBERICHT Etappe P1: Postings je Auftragsposition (Menge -> Reel 1/Reel 2 ...), Veroeffentlichung mit
   Datum/Link/Plattform, Kennzahlen als Ganzzahlen je Format (Kontakt: Reel/Story = Aufrufe, Bild-Post = Impressionen),

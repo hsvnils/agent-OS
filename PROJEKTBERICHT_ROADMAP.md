@@ -3,7 +3,7 @@
 - Stand: 2026-10-02
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
-- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck; Bau auf `ai/projekt-etappen` (Z1, P1 fertig; weiter P2).
+- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck; Bau auf `ai/projekt-etappen` (Z1, P1, P2 fertig; weiter Z2).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -68,7 +68,11 @@ muessen an jedem Auftrag klar erkennbar sein.“
 
 ## Etappe P2: Kennzahlen-Erinnerung und Erfassung per Telegram-Screenshot
 
-- Status: geplant
+- Status: umgesetzt (2026-10-02) -- Erinnerung je Posting im 15-min-Poll (09-21 Uhr, einmal, erst nach `ok` von
+  Telegram als erinnert), Foto-Empfang im Bot (auch Alben, ohne Zuordnung Auswahl des Postings), Auslesen per Gemini
+  (`core/kennzahlen_lesen.py`, keine neue Abhaengigkeit), „✅ Stimmt / ✏️ Korrigieren / 📷 Noch ein Screenshot“,
+  Handlungsbedarf „diese Woche“, Screenshot-Upload mit Auslesen im LUNA-OS-Formular. Tests mit Gegenprobe; Browsertest
+  1300/820/390 px. **Offen:** OCR-Probe mit echten Insights-Screenshots des CEO (Trefferquote) und Zustellprobe live.
 - Ziel / Scope:
   - **7 Tage nach „veroeffentlicht am“**: Telegram-Erinnerung je Posting („📊 Kennzahlen fuer Reel 2 · Kampagne Herbst
     (AB-2026-0003) faellig“) mit Knopf; dazu ein Punkt im Handlungsbedarf (Stufe „diese Woche“).

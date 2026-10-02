@@ -500,6 +500,141 @@ def _zeit_taet_frage(token, chat_id, z, zid: str) -> None:
                                 "text": "🛠 Was hast du gemacht? (kommt in den Stundenzettel)"})
 
 
+_PO_FOTO_WARTET: dict = {}         # PROJEKTBERICHT P2: chat_id -> Posting-ID, zu dem die naechsten Fotos gehoeren
+_PO_FOTO_OFFEN: dict = {}          # chat_id -> [(bytes, name)] Fotos ohne Zuordnung (warten auf die Posting-Wahl)
+_PO_AUSLESEN: dict = {}            # chat_id -> Posting-IDs mit neuen Fotos (gesammelt ausgelesen, Alben = 1 Antwort)
+_PO_VORSCHLAG: dict = {}           # Posting-ID -> von Gemini erkannte Werte (gespeichert erst nach ✅)
+
+
+def _postings():
+    from ...core.angebote import AngebotStore
+    from ...core.beauftragung import AuftragBuch
+    from ...core.buchhaltung import Buchhaltung
+    from ...core.kunden import KundenStore
+    from ...core.postings import Postings
+    bh = Buchhaltung(ROOT / "buchhaltung")
+    ks = KundenStore(bh)
+    return Postings(bh, AuftragBuch(bh, ks, AngebotStore(bh, ks)), ROOT / "lieferungen")
+
+
+def _po_name(p: dict) -> str:
+    return f"{p['titel']} · {p.get('auftrag_titel') or p['auftrag']} ({p['auftrag']})"
+
+
+def _kennzahlen_erinnern(token, chat_id, heute=None) -> int:
+    """P2: 7 Tage nach der Veroeffentlichung je Posting EINE Erinnerung mit Knopf (Handlungsbedarf zeigt es weiter an).
+    Als erinnert gilt ein Posting erst, wenn Telegram die Nachricht angenommen hat (`ok`)."""
+    ps = _postings()
+    n = 0
+    for p in ps.faellige(heute):
+        if p.get("erinnert"):
+            continue
+        kb = {"inline_keyboard": [[{"text": "📷 Screenshot schicken", "callback_data": f"pkz:{p['id']}"}]]}
+        text = (f"📊 Kennzahlen fällig: {_po_name(p)} – veröffentlicht am {p['datum'][8:10]}.{p['datum'][5:7]}.\n"
+                "Tipp auf den Knopf und schick mir den Screenshot der Statistik (gern 2–3 Seiten). Ich lese die Zahlen "
+                "aus, du bestätigst. Oder trag sie im Auftrag in LUNA-OS ein.")
+        if _api(token, "sendMessage", {"chat_id": chat_id, "reply_markup": json.dumps(kb), "text": fuer_telegram(text)}).get("ok"):
+            ps.erinnert(p["id"])
+            n += 1
+    return n
+
+
+def _po_foto(token, chat_id, foto: dict, name: str) -> None:
+    """P2: Foto empfangen -- am wartenden Posting ablegen oder fragen, zu welchem Posting es gehoert."""
+    daten = _download_voice(token, foto["file_id"])
+    if not daten:
+        _api(token, "sendMessage", {"chat_id": chat_id, "text": "⚠️ Das Bild konnte ich nicht laden – schick es bitte nochmal."})
+        return
+    cid = str(chat_id)
+    pid = _PO_FOTO_WARTET.get(cid)
+    if pid:
+        try:
+            _postings().bild_ablegen(pid, daten, name, von="Telegram:CEO")
+            _PO_AUSLESEN.setdefault(cid, set()).add(pid)
+        except (ValueError, KeyError) as exc:
+            _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(f"⚠️ {exc}")})
+        return
+    offen = [p for p in _postings_offen()]
+    if not offen:
+        _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(
+            "📷 Danke – aber gerade wartet kein Posting auf Kennzahlen (erst eintragen, wann es veröffentlicht wurde).")})
+        return
+    _PO_FOTO_OFFEN.setdefault(cid, []).append((daten, name))
+    if len(_PO_FOTO_OFFEN[cid]) > 1:                     # Album: nur einmal fragen
+        return
+    kb = {"inline_keyboard": [[{"text": _po_name(p)[:60], "callback_data": f"pkz:{p['id']}"}] for p in offen[:8]]}
+    _api(token, "sendMessage", {"chat_id": chat_id, "reply_markup": json.dumps(kb),
+                                "text": "📷 Zu welchem Posting gehört der Screenshot?"})
+
+
+def _po_knopf(cbchat: str, data: str) -> str:
+    """Knoepfe pkz (Screenshot zu diesem Posting), pkj (✅ Stimmt -> speichern), pkk (✏️ Korrigieren -> LUNA-OS)."""
+    art, pid = data[:3], data[4:]
+    try:
+        ps = _postings()
+        p = ps.get(pid)
+        if not p:
+            raise KeyError(pid)
+        if art == "pkz":
+            _PO_FOTO_WARTET[cbchat] = pid
+            gesammelt = _PO_FOTO_OFFEN.pop(cbchat, [])
+            for daten, name in gesammelt:                  # Fotos, die vor der Wahl kamen
+                ps.bild_ablegen(pid, daten, name, von="Telegram:CEO")
+            if gesammelt:
+                _PO_AUSLESEN.setdefault(cbchat, set()).add(pid)
+                return f"📷 {len(gesammelt)} Screenshot(s) an {_po_name(p)} – ich lese die Zahlen aus …"
+            return f"📷 Schick mir jetzt den Screenshot der Statistik zu {_po_name(p)}."
+        _PO_FOTO_WARTET.pop(cbchat, None)
+        if art == "pkj":
+            werte = _PO_VORSCHLAG.pop(pid, None)
+            if not werte:
+                raise ValueError("Der Vorschlag ist nicht mehr da – bitte den Screenshot nochmal schicken.")
+            ps.kennzahlen_setzen(pid, werte, quelle="screenshot", von="Telegram:CEO")
+            return f"✅ Kennzahlen für {_po_name(p)} gespeichert."
+        _PO_VORSCHLAG.pop(pid, None)
+        return (f"✏️ Nicht gespeichert. Trag die Zahlen für {_po_name(p)} in LUNA-OS ein: Auftrag {p['auftrag']} → "
+                "„📣 Postings & Kennzahlen“ → „📊 Kennzahlen eintragen“.")
+    except (ValueError, KeyError) as exc:
+        return f"⚠️ {exc}"
+
+
+def _postings_offen() -> list[dict]:
+    """Veroeffentlichte Postings ohne Kennzahlen (faellige zuerst) -- Auswahl fuer ein Foto ohne Zuordnung."""
+    from datetime import date as _d
+    return sorted(_postings().faellige(_d(2999, 1, 1)), key=lambda p: p["datum"])
+
+
+def _po_auslesen(token, secrets) -> None:
+    """Gesammelte neue Fotos je Posting an Gemini; Vorschlag mit ✅ Stimmt / ✏️ Korrigieren / 📷 Noch ein Bild."""
+    from ...core.postings import FELDER
+    for cid, pids in list(_PO_AUSLESEN.items()):
+        _PO_AUSLESEN.pop(cid, None)
+        for pid in pids:
+            ps = _postings()
+            p = ps.get(pid)
+            if not p:
+                continue
+            try:
+                werte = ps.auslesen(pid, key=(secrets.get("GEMINI_API_KEY") or "").strip())
+            except Exception as exc:
+                print(f"[postings] Auslesen fehlgeschlagen: {exc.__class__.__name__}", flush=True)
+                werte = {}
+            n = len(p["bilder"])
+            if not werte.get(p["kontakt_feld"]):
+                _api(token, "sendMessage", {"chat_id": cid, "text": fuer_telegram(
+                    f"📷 {n} Screenshot(s) an {_po_name(p)} abgelegt – die Zahlen konnte ich nicht sicher lesen. Schick einen "
+                    "anderen Ausschnitt oder trag sie im Auftrag in LUNA-OS ein.")})
+                continue
+            _PO_VORSCHLAG[pid] = werte
+            lbl = dict(FELDER[p["format"]])
+            zeilen = "\n".join(f"• {lbl[k]}: {v:,}".replace(",", ".") for k, v in werte.items())
+            kb = {"inline_keyboard": [[{"text": "✅ Stimmt", "callback_data": f"pkj:{pid}"},
+                                       {"text": "✏️ Korrigieren", "callback_data": f"pkk:{pid}"}],
+                                      [{"text": "📷 Noch ein Screenshot", "callback_data": f"pkz:{pid}"}]]}
+            _api(token, "sendMessage", {"chat_id": cid, "reply_markup": json.dumps(kb), "text": fuer_telegram(
+                f"📊 {_po_name(p)} – erkannt aus {n} Screenshot(s):\n{zeilen}\nStimmt das?")})
+
+
 def _start_buchhaltung_loop(ctx) -> None:
     """KUNDEN_FINANZEN Etappe 1: taeglich 05:00 (DE) Hash-Kette + Belege der Buchhaltung pruefen, Alarm bei Befund.
 
@@ -1392,6 +1527,11 @@ def main() -> None:
         from ...core.crm_sync import CrmSync
         crm_sync = CrmSync(ctx.crm, ctx.crm.projektor.client, cursor_path=ROOT / "crm" / "sync_cursor.txt")
     while True:
+        if _PO_AUSLESEN:                                  # P2: Fotos des letzten Stapels (Album) gesammelt auslesen
+            try:
+                _po_auslesen(token, secrets)
+            except Exception as exc:
+                print(f"[postings] Auslesen: {exc.__class__.__name__}", flush=True)
         upd = _api(token, "getUpdates", {"offset": offset, "timeout": 30}, timeout=35)
         # Alle ~15 min kostenlos: neue Mails/Termin-Kollisionen pruefen + steckengebliebene Tickets schliessen.
         import time as _t
@@ -1402,6 +1542,12 @@ def main() -> None:
                 herzschlag_schreiben(ROOT / "orchestrator" / "state" / "bot_herzschlag.json")
             except Exception as exc:
                 print(f"[herzschlag] {exc}", flush=True)
+            try:                                   # PROJEKTBERICHT P2: Kennzahlen 7 Tage nach Veroeffentlichung (09-21 Uhr)
+                if allowed and 9 <= (datetime.now(tz) if tz else datetime.now()).hour < 21 \
+                        and (ROOT / "buchhaltung" / "log.jsonl").exists():
+                    _kennzahlen_erinnern(token, allowed)
+            except Exception as exc:
+                print(f"[postings] Erinnerung: {exc.__class__.__name__}: {exc}", flush=True)
             try:
                 if ctx.watch is not None and not ctx.watch.store.paused():
                     ctx.watch.mail_tick()
@@ -1646,6 +1792,14 @@ def main() -> None:
                             _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
                                                             "reply_markup": json.dumps({"inline_keyboard": []}),
                                                             "text": fuer_telegram(res)})
+                    elif data.startswith(("pkz:", "pkj:", "pkk:")):  # PROJEKTBERICHT P2: Kennzahlen per Screenshot
+                        mid = (cb.get("message") or {}).get("message_id")
+                        res = _po_knopf(cbchat, data)
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "OK"})
+                        if mid:
+                            _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
+                                                            "reply_markup": json.dumps({"inline_keyboard": []}),
+                                                            "text": fuer_telegram(res)})
                     elif data.startswith("ztt:"):                  # PROJEKTZEITEN Z1: Taetigkeit nach dem Stopp
                         mid = (cb.get("message") or {}).get("message_id")
                         _, zid, wahl = data.split(":", 2)
@@ -1754,6 +1908,14 @@ def main() -> None:
             if not allowed:
                 _api(token, "sendMessage", {"chat_id": chat_id,
                      "text": f"Setze TELEGRAM_ALLOWED_CHAT_ID={chat_id} in orchestrator/.env und starte neu."})
+                continue
+            _doc = msg.get("document") or {}
+            _foto = (msg.get("photo") or [None])[-1] or (_doc if str(_doc.get("mime_type", "")).startswith("image/") else None)
+            if _foto and (ROOT / "buchhaltung" / "log.jsonl").exists():   # PROJEKTBERICHT P2: Insights-Screenshot
+                try:
+                    _po_foto(token, chat_id, _foto, _doc.get("file_name") or f"telegram-{_foto.get('file_unique_id', 'bild')}.jpg")
+                except Exception as exc:
+                    print(f"[postings] Foto-Fehler: {exc.__class__.__name__}", flush=True)
                 continue
             text = msg.get("text")
             if not text and msg.get("voice") and deepgram:

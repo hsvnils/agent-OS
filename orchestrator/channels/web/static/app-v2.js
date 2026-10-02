@@ -1394,6 +1394,7 @@ async function abPostings(nr, status) {
     return `<div class="v2-po" id="po-${esc(p.id)}"><div class="v2-po-kopf"><b>${esc(p.titel)}</b><small>${esc(p.plattform)} · Pos. ${p.position}${p.plan.kontakte ? " · Plan " + tsd(p.plan.kontakte) + " " + esc(lbl[kf] || kf) : ""}</small>${stand}</div>
       ${p.datum ? `<div class="v2-sub">Veröffentlicht am ${esc(datumDe(p.datum))}${p.link ? ` · <a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">🔗 ansehen</a>` : ""}</div>` : ""}
       ${zahlen}
+      ${(p.bilder || []).length ? `<div class="v2-po-bilder">${p.bilder.map((b, i) => `<a href="/api/crm/postings/${encodeURIComponent(p.id)}/bild/${i}" target="_blank" rel="noopener"><img src="/api/crm/postings/${encodeURIComponent(p.id)}/bild/${i}" alt="Screenshot ${i + 1}" loading="lazy"></a>`).join("")}</div>` : ""}
       ${offen ? `<div class="v2-po-akt"><button class="v2-btn sm" data-act="po-form-v" data-id="${esc(p.id)}" data-val="${esc(nr)}">📣 ${p.datum ? "Veröffentlichung ändern" : "Veröffentlicht …"}</button>${p.datum ? `<button class="v2-btn sm ${p.kennzahl_faellig ? "pri" : ""}" data-act="po-form-k" data-id="${esc(p.id)}" data-val="${esc(nr)}">📊 Kennzahlen ${p.kennzahlen ? "korrigieren" : "eintragen"} …</button>` : ""}</div>` : ""}
       <div class="po-form"></div></div>`; }).join("");
   const summe = s.gemessen && s.preis_cent ? `<div class="v2-po-summe"><b>Summe (${s.gemessen} von ${s.anzahl} gemessen)</b>
@@ -1410,10 +1411,24 @@ function poForm(pid, nr, art) {
     <label class="v2-feld"><small>Link zum Posting</small><input class="po-link v2-inp" inputmode="url" placeholder="https://…" value="${esc(p.link || "")}"></label>
     <button class="v2-btn pri" data-act="po-speichern-v" data-id="${esc(pid)}" data-val="${esc(nr)}">Speichern</button><div class="v2-msg po-msg"></div></div>`;
   else { const kz = p.kennzahlen || {};
-    f.innerHTML = `<div class="v2-form"><div class="v2-po-felder">${(POST.felder[p.format] || []).map(([k, l]) => `<label class="v2-feld"><small>${esc(l)}${k === p.kontakt_feld ? " *" : ""}</small><input class="v2-inp" data-feld="${esc(k)}" inputmode="numeric" value="${kz[k] != null ? esc(String(kz[k])) : ""}"></label>`).join("")}</div>
+    f.innerHTML = `<div class="v2-form"><label class="v2-feld"><small>📷 Screenshot(s) der Statistik – LUNA liest die Zahlen aus (Gemini), du prüfst und speicherst</small><input class="po-bild" type="file" accept="image/*" multiple></label><div class="v2-sub po-bild-msg"></div><div class="v2-po-felder">${(POST.felder[p.format] || []).map(([k, l]) => `<label class="v2-feld"><small>${esc(l)}${k === p.kontakt_feld ? " *" : ""}</small><input class="v2-inp" data-feld="${esc(k)}" inputmode="numeric" value="${kz[k] != null ? esc(String(kz[k])) : ""}"></label>`).join("")}</div>
     <small class="v2-sub">${esc((POST.felder[p.format].find(([k]) => k === p.kontakt_feld) || [])[1] || "")} zählt als Kontakt (Grundlage für den TKP-Vergleich).${p.kennzahlen ? " Eine Korrektur bleibt im Verlauf sichtbar." : ""}</small>
     <button class="v2-btn pri" data-act="po-speichern-k" data-id="${esc(pid)}" data-val="${esc(nr)}">Kennzahlen speichern</button><div class="v2-msg po-msg"></div></div>`; }
-  f.querySelector("input")?.focus();
+  const pb = f.querySelector(".po-bild"); if (pb) pb.addEventListener("change", () => poBilder(pb, pid));
+  f.querySelector("[data-feld], .po-datum")?.focus();
+}
+async function poBilder(el, pid) {
+  const karte = $("#po-" + CSS.escape(pid)), msg = karte && karte.querySelector(".po-bild-msg"); if (!karte) return;
+  const files = [...(el.files || [])]; if (!files.length) return;
+  let vorschlag = {}, hinweis = "";
+  for (const [i, f] of files.entries()) {
+    if (msg) msg.textContent = `Lade ${i + 1}/${files.length} hoch und lese aus …`;
+    try { const r = await fetch(`/api/crm/postings/${encodeURIComponent(pid)}/bild`, { method: "POST", body: f, headers: { "X-Dateiname": encodeURIComponent(f.name || "screenshot.jpg") } });
+      const j = await r.json(); if (!r.ok || j.ok === false) { hinweis = j.hinweis || "Upload fehlgeschlagen."; break; }
+      vorschlag = j.vorschlag || {}; hinweis = j.hinweis || ""; } catch (e) { hinweis = "Keine Verbindung."; break; }
+  }
+  for (const [k, v] of Object.entries(vorschlag)) { const inp = karte.querySelector(`[data-feld="${k}"]`); if (inp) { inp.value = String(v); inp.classList.add("v2-erkannt"); } }
+  if (msg) msg.textContent = Object.keys(vorschlag).length ? `✅ ${Object.keys(vorschlag).length} Werte erkannt – bitte prüfen und speichern.` : hinweis;
 }
 async function poSpeichern(pid, nr, art) {
   const karte = $("#po-" + CSS.escape(pid)); if (!karte) return;

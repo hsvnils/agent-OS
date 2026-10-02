@@ -29,6 +29,7 @@
 | DM-Analyse Collab-Radar | **abgeschaltet seit 2026-09-29** (vorher Gemini, `IG_ANALYSE_MODELL`) | Instagram-DMs von Marken/Personen | (ja) | `core/ig_analyse.py`, `IG_RADAR_AUTO=0` |
 | Backoffice-Gegenlesen | Gemini | Entwurf von Bewertungen/Analysen (Auftraege `bewertung`/`analyse`) | je nach Auftrag | `backoffice/worker.py` `GEGENLESEN` |
 | Reel-Schnitt/Tagging | Gemini (nur mit `CUTTER_VIDEO_KI=1` bzw. Tagging) | Videoclips aus dem eigenen Archiv | Personen im Stadion (ohnehin oeffentlich gepostet) | `cutter/gemini_video.py`, `cutter/reel_tag.py` |
+| Kennzahlen-Screenshots auslesen (seit 2026-10-02, PROJEKTBERICHT P2) | **Gemini** (`gemini-flash-latest`) | Screenshots der Instagram/Facebook-Statistik eines Kundenpostings (Zahlen, ggf. Vorschaubild des Postings) | gering: Statistik ist aggregiert; das Vorschaubild zeigt den Kunden-Inhalt, der ohnehin veroeffentlicht ist | `core/kennzahlen_lesen.py`; CEO bestaetigt die Werte („Stimmt/Korrigieren“), Bild bleibt nur auf der NAS |
 | Sprache rein | Deepgram | Sprachnachrichten des CEO | kaum (CEO selbst) | `docs/datenfluesse.md` |
 | Sprache raus | ElevenLabs / Cartesia | LUNAs Antworttext | moeglich (wenn die Antwort Dritte nennt) | `channels/web/app.py` `/api/tts` |
 | Web-Recherche | Brave | Suchanfragen | selten | `governance/web_research.py` |
@@ -87,3 +88,6 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
   zu tun; die Datenschutzerklaerung der Website wird an anderer Stelle gepflegt.
 - **5.3 Maskierung / DM-Analyse lokal: nicht gewuenscht.** Bleibt wie heute.
 - Neu zu entscheiden, sobald LUNA Dritten selbst antwortet oder Inhalte erzeugt, die veroeffentlicht werden (AI Act Art. 50).
+- **2026-10-02: Insights-Screenshots liest Gemini (PROJEKTBERICHT P2).** Neuer Datenfluss, gleiche Einordnung wie 5.1
+  (Gratis-Stufe, kein Training im EWR). Gesendet werden nur die Screenshots des einen Postings; gespeichert wird erst nach
+  Bestaetigung des CEO. Ohne Gemini-Schluessel oder bei Fehlern bleibt das Formular in LUNA-OS (Eingabe von Hand).
