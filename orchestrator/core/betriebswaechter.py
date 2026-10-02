@@ -50,6 +50,25 @@ def herzschlag_schreiben(pfad: Path, jetzt: float | None = None) -> None:
     tmp.replace(pfad)
 
 
+BRIEFING_STUNDE = 8           # Morgen-Briefing (deutsche Zeit); Briefing-Meldungen zaehlen erst ab dann als offen
+
+
+def _naechstes_briefing(ts: str) -> str:
+    """BF-52: Zeitstempel (Uhr des Containers, ohne Zone) -> naechstes Morgen-Briefing ab diesem Moment, wieder als
+    Container-Ortszeit ohne Zone. So zaehlt eine nachts eingereihte Briefing-Meldung erst ab 08:00 als „haengend“."""
+    from datetime import timedelta
+    from zoneinfo import ZoneInfo
+    try:
+        t = datetime.fromisoformat(ts).astimezone()              # naive = Ortszeit des Prozesses (Container: UTC)
+    except ValueError:
+        return ts
+    berlin = t.astimezone(ZoneInfo("Europe/Berlin"))
+    b = berlin.replace(hour=BRIEFING_STUNDE, minute=0, second=0, microsecond=0)
+    if b < berlin:
+        b += timedelta(days=1)
+    return b.astimezone(t.tzinfo).replace(tzinfo=None).isoformat(timespec="seconds")
+
+
 def status(herzschlag: Path, notifications_log: Path, *, jetzt: float | None = None) -> dict:
     """Fuer `GET /api/betrieb/status`: Alter des Bot-Herzschlags und der aeltesten unzugestellten Meldung (Minuten)."""
     jetzt = jetzt if jetzt is not None else time.time()
@@ -65,12 +84,16 @@ def status(herzschlag: Path, notifications_log: Path, *, jetzt: float | None = N
             except ValueError:
                 continue
             if e.get("typ") == "queued":
-                queued[e.get("id")] = e.get("ts", "")
+                ts = e.get("ts", "")
+                if e.get("nach_briefing") and ts:          # BF-52: wartet absichtlich aufs Morgen-Briefing
+                    ts = _naechstes_briefing(ts)
+                queued[e.get("id")] = ts
             elif e.get("typ") == "sent":
                 sent.add(e.get("id"))
     except OSError:
         pass
-    offen = [ts for nid, ts in queued.items() if nid not in sent]
+    jetzt_iso = datetime.fromtimestamp(jetzt).isoformat(timespec="seconds")
+    offen = [ts for nid, ts in queued.items() if nid not in sent and ts and ts <= jetzt_iso]   # Briefing-Meldungen erst ab 08:00
     aelteste = None
     if offen:                                   # ts ohne Zeitzone = Uhr des Containers -> gegen dieselbe Uhr rechnen
         try:

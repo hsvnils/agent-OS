@@ -27,6 +27,34 @@ class TestStatus(unittest.TestCase):
         self.assertEqual(status(d / "fehlt.json", d / "fehlt.jsonl", jetzt=t),
                          {"bot_alter_min": None, "unzugestellt": 0, "aelteste_unzugestellt_min": None})
 
+    def test_1b_briefing_meldung_kein_fehlalarm(self):
+        """BF-52: eine nachts eingereihte Briefing-Meldung haengt erst, wenn sie nach dem Morgen-Briefing (08:00)
+        noch nicht zugestellt ist -- im Container (UTC) wie lokal."""
+        import os
+        import time as _time
+        for tz in ("UTC", "Europe/Berlin"):
+            alt = os.environ.get("TZ")
+            os.environ["TZ"] = tz
+            _time.tzset()
+            try:
+                from zoneinfo import ZoneInfo
+                nacht = datetime(2026, 10, 2, 3, 23, tzinfo=ZoneInfo("Europe/Berlin")).astimezone().replace(tzinfo=None)
+                d = Path(tempfile.mkdtemp())
+                log = d / "n.jsonl"
+                log.write_text(json.dumps({"ts": nacht.isoformat(), "id": "B1", "typ": "queued", "nach_briefing": True}) + "\n")
+                frueh = datetime(2026, 10, 2, 7, 13, tzinfo=ZoneInfo("Europe/Berlin")).timestamp()
+                spaet = datetime(2026, 10, 2, 8, 40, tzinfo=ZoneInfo("Europe/Berlin")).timestamp()
+                r = status(d / "x.json", log, jetzt=frueh)
+                self.assertEqual((r["unzugestellt"], r["aelteste_unzugestellt_min"]), (0, None), tz)
+                r = status(d / "x.json", log, jetzt=spaet)
+                self.assertEqual((r["unzugestellt"], r["aelteste_unzugestellt_min"]), (1, 40.0), tz)
+            finally:
+                if alt is None:
+                    os.environ.pop("TZ", None)
+                else:
+                    os.environ["TZ"] = alt
+                _time.tzset()
+
     def test_2_befunde(self):
         gut = {"bot_alter_min": 12, "aelteste_unzugestellt_min": None}
         self.assertEqual(befunde(gut, {"ok": True, "alter_h": 9}), [])

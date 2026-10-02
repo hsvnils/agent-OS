@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 23:17] — Claude Code
+- **Was:** BF-52 behoben: Meldungen, die absichtlich auf das Morgen-Briefing warten (`nach_briefing`), zaehlen im
+  Betriebsstatus erst ab 08:00 deutscher Zeit als unzugestellt -- kein naechtlicher Fehlalarm mehr beim Waechter und im
+  Handlungsbedarf. Test in beiden Zeitzonen, Gegenprobe rot/gruen.
+- **Warum:** CEO-Go 2026-10-02 („Passt alles“).
+- **Betroffen:** `orchestrator/core/betriebswaechter.py`, `orchestrator/tests/test_betriebswaechter.py`, `docs/bekannte-fehler.md`
+
 ## [2026-10-02 23:16] — Claude Code
 - **Was:** CEO-Go fuer PROJEKTZEITEN (Z1-Z3) und PROJEKTBERICHT (P1-P4) am Stueck sowie BF-52 festgehalten; Kontakt je
   Format: Reel/Story = Aufrufe, Feed/Karussell = Impressionen.
