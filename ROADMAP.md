@@ -66,6 +66,8 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 |---|---|---|
 | `LUNA_GOOGLE_KONTO_ROADMAP.md` | Eigenes Google-Konto fuer LUNA (Gmail, Kalender, Drive, Sheets), hanserautisch@gmail.com entkoppeln | abgeschlossen (2026-09-28) |
 | `BETRIEB_ROADMAP.md` | Betrieb und Qualitaet aus der Antrags-Durchsicht: Ideen-Laeufe entruempeln, Changelog-Check, Betriebs-Monitoring Ende-zu-Ende, Datenschutz-Check KI | geplant (2026-09-29) |
+| `PROJEKTZEITEN_ROADMAP.md` | Projektzeiten als Stundenzettel (Tag, Ein/Aus, Taetigkeit, Summen, Korrektur) und optional in der Rechnung | geplant (2026-10-02) |
+| `PROJEKTBERICHT_ROADMAP.md` | Postings je Position, Kennzahlen-Erinnerung nach 7 Tagen per Telegram-Screenshot, Projektbericht und Status „abgeschlossen“ | geplant (2026-10-02) |
 | `REELS_ROADMAP.md` | Reels aufraeumen: Verfall nach 30 Tagen, Videos abgelehnter/verfallener Reels loeschen, Nachschub-Bremse bei 10 | in Umsetzung (Etappe 1 umgesetzt 2026-10-01, Deploy offen) |
 | `LUNA_OS_UI_ROADMAP.md` | LUNA-OS: Navigation in 4 Bereichen, Handlungsbedarf systemweit, Bereichs-Startseiten, iPhone-Seitenmenue, WebApp-Login mit Schluesselbund und Passkey | in Umsetzung (Etappen 1-6 umgesetzt 2026-09-30, Deploy offen) |
 | `KUNDEN_FINANZEN_ROADMAP.md` | Kunden (CRM-Stammdaten), Angebote, Beauftragung, Rechnungen, Belege, Finanzen/EUeR in LUNA-OS | in Umsetzung (Etappen 1-8 abgenommen, 9-12 live, 13 Abo-Mails live, 14 Lieferanten-Stammdaten live, 15 Abos + 16 TKP live, 18 Vorkasse umgesetzt, 19 Altrechnungen live, 20 EZB-Kurs live, 23 Provision live, 21 Kalkulation/Lager + 22 Firmendaten umgesetzt, 3c geplant, 17 verworfen) |

@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 23:07] — Claude Code
+- **Was:** Zwei Roadmaps angelegt: `PROJEKTZEITEN_ROADMAP.md` (Z1 Stundenzettel, Z2 Projektzeiten optional in der
+  Rechnung, Z3 Auswertung) und `PROJEKTBERICHT_ROADMAP.md` (P1 Postings je Position, P2 Kennzahlen-Erinnerung + Telegram-
+  Screenshot, P3 Projektbericht + Status „abgeschlossen“, P4 aus den Zahlen lernen). Analyse read-only: Zeiten speichern
+  Start/Ende schon, Bot nimmt keine Fotos an, Etappe 3c (Meta-Exporte) ergaenzt.
+- **Warum:** CEO-Wunsch 2026-10-02.
+- **Betroffen:** `PROJEKTZEITEN_ROADMAP.md`, `PROJEKTBERICHT_ROADMAP.md` (neu), `ROADMAP.md`
+
 ## [2026-10-02 07:14] — Claude Code
 - **Was:** Geplante Pruefung des ersten Reel-Verfall-Laufs (lesend): `GET /api/reel/bremse` = 7 wartend, keine Bremse;
   18 Reels um 05:01 verfallen; Nachtlauf um 03:00 wegen 25 wartenden uebersprungen (Ereignis `uebersprungen`); Telegram
