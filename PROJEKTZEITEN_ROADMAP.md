@@ -1,6 +1,6 @@
 # Roadmap: Projektzeiten als Stundenzettel und optional in der Rechnung
 - Status: in Umsetzung
-- Stand: 2026-10-02
+- Stand: 2026-10-03
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
 - Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck (zusammen mit PROJEKTBERICHT); Bau auf `ai/projekt-etappen` (Z1-Z3 fertig).

@@ -287,3 +287,15 @@ def entfaellt(bh, ab, nr: str, grund: str, *, von: str = "") -> dict:
         raise ValueError("Bitte kurz begruenden, warum kein Bericht noetig ist.")
     bh.erfassen("auftrag_bericht_entfaellt", {"nummer": a["nummer"], "grund": str(grund).strip()[:300]}, von=von)
     return {"entfaellt": True}
+
+
+def kundenstimme_text(a: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:
+    """P4: Bitte um eine kurze Kundenstimme (Referenz) -- nur als Entwurf, der CEO sendet selbst."""
+    name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
+    betreff = "Kurze Rückmeldung zu unserer Zusammenarbeit?" + (f" ({a['titel']})" if a.get("titel") else "")
+    text = (f"Moin{' ' + name if name else ''},\n\nwir hoffen, die Kampagne{' „' + a['titel'] + '“' if a.get('titel') else ''} "
+            "hat Ihnen gefallen. Hätten Sie Lust, uns in zwei, drei Sätzen zu schreiben, wie Sie die Zusammenarbeit erlebt "
+            "haben? Mit Ihrer Erlaubnis würden wir Ihre Rückmeldung (mit Namen und Firma) als Referenz zeigen – natürlich "
+            "nur, wenn Sie einverstanden sind.\n\nVielen Dank und viele Grüße\n"
+            + "\n".join(x for x in (firmendaten.get("inhaber"), firmendaten.get("firma")) if x))
+    return betreff, text

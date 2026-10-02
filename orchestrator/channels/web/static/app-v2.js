@@ -904,11 +904,13 @@ async function akteLaden(nr) {
   const box = $("#akte-box"); if (!box) return;
   const d = await jget(`/api/crm/kunden/${encodeURIComponent(nr)}/akte`);
   const docs = (d && d.dokumente) || [], arten = (d && d.arten) || {}, lief = (d && d.lieferungen) || [];
-  const ICON = { mail: "✉️", anwalt: "⚖️", vertrag: "📜", schreiben: "📄", notiz: "📝", sonstiges: "📎" };
+  const ICON = { mail: "✉️", anwalt: "⚖️", vertrag: "📜", schreiben: "📄", notiz: "📝", bericht: "📊", sonstiges: "📎" };
   box.innerHTML = (docs.length ? docs.map(x => `<div class="v2-list-row"><span>${ICON[x.art] || "📎"}</span><div class="grow"><b><a href="/api/crm/akte/${encodeURIComponent(x.id)}/datei" target="_blank" rel="noopener">${esc(x.titel)}</a></b>
       <small>${esc(datumDe(x.datum))} · ${esc(arten[x.art] || x.art)}${x.mail_von ? " · von " + esc(x.mail_von) : ""}${x.bezug ? " · zu " + esc(x.bezug) : ""}${x.notiz ? " · " + esc(x.notiz) : ""}${(x.dateien || []).length > 1 ? ` · <a href="/api/crm/akte/${encodeURIComponent(x.id)}/datei?i=1">Original (.eml)</a>` : ""}</small></div></div>`).join("")
     : `<div class="v2-sub">Noch nichts abgelegt. Mails landen hier automatisch, wenn du sie an LUNA weiterleitest oder LUNA in CC/BCC nimmst.</div>`)
     + (lief.length ? `<h3 class="v2-h3">📦 Geliefert</h3>${lief.map(x => lfAnzeige(x, false)).join("")}` : "")
+    + ((d && d.kampagnen || []).length ? `<h3 class="v2-h3">📣 Kampagnen</h3>${d.kampagnen.map(k => `<div class="v2-list-row klick" data-act="ab-detail" data-id="${esc(k.nummer)}"><span>${k.abgeschlossen ? "✅" : "📣"}</span><div class="grow"><b>${esc(k.nummer)}${k.titel ? " · " + esc(k.titel) : ""}</b>
+      <small class="v2-kampagne"><span>${esc(datumDe(k.datum))}</span>${k.postings ? `<span>${k.gemessen}/${k.postings} Postings gemessen</span>` : "<span>ohne Postings</span>"}${k.kontakte_ist ? `<span>${esc(Number(k.kontakte_ist).toLocaleString("de-DE"))} Kontakte</span>` : ""}${k.mehrleistung_cent != null ? `<span>${k.mehrleistung_cent >= 0 ? "+" : "−"}${cent2eur(Math.abs(k.mehrleistung_cent))} Mehrleistung</span>` : ""}${k.bericht ? "<span>📝 Bericht gesendet</span>" : ""}</small></div></div>`).join("")}` : "")
     + `<details style="margin-top:8px"><summary><small>+ Dokument hochladen</small></summary><div class="v2-form">
       <div class="v2-an-zeile"><label class="v2-feld"><small>Datei *</small><input id="ak-datei" type="file"></label><label class="v2-feld"><small>Art</small><select id="ak-art">${Object.entries(arten).filter(([k]) => k !== "mail").map(([k, n]) => `<option value="${esc(k)}">${esc(n)}</option>`).join("")}</select></label></div>
       <div class="v2-an-zeile"><label class="v2-feld"><small>Titel</small><input id="ak-titel" placeholder="z. B. Schreiben der Anwältin"></label><label class="v2-feld"><small>Datum</small><input id="ak-datum" type="date"></label><label class="v2-feld"><small>Bezug (optional)</small><input id="ak-bezug" placeholder="z. B. RG-11052026"></label></div>
@@ -972,7 +974,8 @@ const heuteIso = (plus = 0) => { const d = new Date(); d.setDate(d.getDate() + p
 const zahl = (t) => { t = String(t || "").replace(/[€\s]/g, ""); if (t.includes(",")) t = t.replace(/\./g, "").replace(",", "."); else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ""); const n = Number(t); return isFinite(n) ? n : NaN; };
 const pz = (p) => String(p).replace(".", ",");
 let AN_FIRMEN = [], KATALOG = null, KAT_DARF = false;
-async function katalogLaden(neu) { if (!KATALOG || neu) { const d = await jget("/api/crm/katalog"); KATALOG = d && d.katalog; KAT_DARF = !!(d && d.darf_aendern); OMR = (d && d.omr) || OMR; } return KATALOG; }
+let IST_KONTAKTE = {};
+async function katalogLaden(neu) { if (!KATALOG || neu) { const d = await jget("/api/crm/katalog"); KATALOG = d && d.katalog; KAT_DARF = !!(d && d.darf_aendern); OMR = (d && d.omr) || OMR; IST_KONTAKTE = (d && d.ist_kontakte) || {}; } return KATALOG; }
 // Etappe 16: Reichweiten-Formate = Kontakte × TKP / 1.000 + Produktion (auf 10 € gerundet); OMR-Werte als Vergleich
 let OMR = { werte: {} };
 const tkpPreis = (kontakte, tkpCent, prodCent) => Math.round((kontakte * tkpCent / 1000 + prodCent) / 1000) * 1000;
@@ -1417,8 +1420,9 @@ async function abPostings(nr, status) {
     return `<div class="v2-po" id="po-${esc(p.id)}"><div class="v2-po-kopf"><b>${esc(p.titel)}</b><small>${esc(p.plattform)} · Pos. ${p.position}${p.plan.kontakte ? " · Plan " + tsd(p.plan.kontakte) + " " + esc(lbl[kf] || kf) : ""}</small>${stand}</div>
       ${p.datum ? `<div class="v2-sub">Veröffentlicht am ${esc(datumDe(p.datum))}${p.link ? ` · <a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">🔗 ansehen</a>` : ""}</div>` : ""}
       ${zahlen}
+      ${p.kennzahlen_30 ? `<div class="v2-sub">📈 Nach 30 Tagen: ${esc(lbl[kf] || kf)} <b>${tsd(p.kennzahlen_30[kf])}</b>${kz[kf] ? ` (+${tsd(Math.max(0, p.kennzahlen_30[kf] - kz[kf]))} seit Tag 7)` : ""}</div>` : ""}
       ${(p.bilder || []).length ? `<div class="v2-po-bilder">${p.bilder.map((b, i) => `<a href="/api/crm/postings/${encodeURIComponent(p.id)}/bild/${i}" target="_blank" rel="noopener"><img src="/api/crm/postings/${encodeURIComponent(p.id)}/bild/${i}" alt="Screenshot ${i + 1}" loading="lazy"></a>`).join("")}</div>` : ""}
-      ${offen ? `<div class="v2-po-akt"><button class="v2-btn sm" data-act="po-form-v" data-id="${esc(p.id)}" data-val="${esc(nr)}">📣 ${p.datum ? "Veröffentlichung ändern" : "Veröffentlicht …"}</button>${p.datum ? `<button class="v2-btn sm ${p.kennzahl_faellig ? "pri" : ""}" data-act="po-form-k" data-id="${esc(p.id)}" data-val="${esc(nr)}">📊 Kennzahlen ${p.kennzahlen ? "korrigieren" : "eintragen"} …</button>` : ""}</div>` : ""}
+      ${offen ? `<div class="v2-po-akt"><button class="v2-btn sm" data-act="po-form-v" data-id="${esc(p.id)}" data-val="${esc(nr)}">📣 ${p.datum ? "Veröffentlichung ändern" : "Veröffentlicht …"}</button>${p.datum ? `<button class="v2-btn sm ${p.kennzahl_faellig ? "pri" : ""}" data-act="po-form-k" data-id="${esc(p.id)}" data-val="${esc(nr)}">📊 Kennzahlen ${p.kennzahlen ? "korrigieren" : "eintragen"} …</button>` : ""}${p.kennzahlen && p.format === "reel" ? `<button class="v2-btn sm" data-act="po-form-l" data-id="${esc(p.id)}" data-val="${esc(nr)}" title="Optional: zweiter Messpunkt nach 30 Tagen">📈 30 Tage …</button>` : ""}</div>` : ""}
       <div class="po-form"></div></div>`; }).join("");
   const summe = s.gemessen && s.preis_cent ? `<div class="v2-po-summe"><b>Summe (${s.gemessen} von ${s.anzahl} gemessen)</b>
     <span><small>Kontakte Plan → Ist</small><b>${tsd(s.kontakte_plan)} → ${tsd(s.kontakte_ist)}${s.erfuellung_pct != null ? ` (${pzt(s.erfuellung_pct)})` : ""}</b></span>
@@ -1433,10 +1437,10 @@ function poForm(pid, nr, art) {
     <label class="v2-feld"><small>Plattform</small><select class="po-pl v2-inp">${POST.plattformen.map(x => `<option${x === p.plattform ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label></div>
     <label class="v2-feld"><small>Link zum Posting</small><input class="po-link v2-inp" inputmode="url" placeholder="https://…" value="${esc(p.link || "")}"></label>
     <button class="v2-btn pri" data-act="po-speichern-v" data-id="${esc(pid)}" data-val="${esc(nr)}">Speichern</button><div class="v2-msg po-msg"></div></div>`;
-  else { const kz = p.kennzahlen || {};
-    f.innerHTML = `<div class="v2-form"><label class="v2-feld"><small>📷 Screenshot(s) der Statistik – LUNA liest die Zahlen aus (Gemini), du prüfst und speicherst</small><input class="po-bild" type="file" accept="image/*" multiple></label><div class="v2-sub po-bild-msg"></div><div class="v2-po-felder">${(POST.felder[p.format] || []).map(([k, l]) => `<label class="v2-feld"><small>${esc(l)}${k === p.kontakt_feld ? " *" : ""}</small><input class="v2-inp" data-feld="${esc(k)}" inputmode="numeric" value="${kz[k] != null ? esc(String(kz[k])) : ""}"></label>`).join("")}</div>
+  else { const lang = art === "l", kz = (lang ? p.kennzahlen_30 : p.kennzahlen) || {};
+    f.innerHTML = `<div class="v2-form">${lang ? `<div class="v2-sub">📈 Zweiter Messpunkt 30 Tage nach der Veröffentlichung (optional) – der Bericht rechnet mit den 7-Tage-Zahlen.</div>` : `<label class="v2-feld"><small>📷 Screenshot(s) der Statistik – LUNA liest die Zahlen aus (Gemini), du prüfst und speicherst</small><input class="po-bild" type="file" accept="image/*" multiple></label><div class="v2-sub po-bild-msg"></div>`}<div class="v2-po-felder">${(POST.felder[p.format] || []).map(([k, l]) => `<label class="v2-feld"><small>${esc(l)}${k === p.kontakt_feld ? " *" : ""}</small><input class="v2-inp" data-feld="${esc(k)}" inputmode="numeric" value="${kz[k] != null ? esc(String(kz[k])) : ""}"></label>`).join("")}</div>
     <small class="v2-sub">${esc((POST.felder[p.format].find(([k]) => k === p.kontakt_feld) || [])[1] || "")} zählt als Kontakt (Grundlage für den TKP-Vergleich).${p.kennzahlen ? " Eine Korrektur bleibt im Verlauf sichtbar." : ""}</small>
-    <button class="v2-btn pri" data-act="po-speichern-k" data-id="${esc(pid)}" data-val="${esc(nr)}">Kennzahlen speichern</button><div class="v2-msg po-msg"></div></div>`; }
+    <button class="v2-btn pri" data-act="${lang ? "po-speichern-l" : "po-speichern-k"}" data-id="${esc(pid)}" data-val="${esc(nr)}">${lang ? "30-Tage-Zahlen speichern" : "Kennzahlen speichern"}</button><div class="v2-msg po-msg"></div></div>`; }
   const pb = f.querySelector(".po-bild"); if (pb) pb.addEventListener("change", () => poBilder(pb, pid));
   f.querySelector("[data-feld], .po-datum")?.focus();
 }
@@ -1456,7 +1460,7 @@ async function poBilder(el, pid) {
 async function poSpeichern(pid, nr, art) {
   const karte = $("#po-" + CSS.escape(pid)); if (!karte) return;
   const r = art === "v" ? await jpost(`/api/crm/postings/${encodeURIComponent(pid)}/veroeffentlicht`, { datum: karte.querySelector(".po-datum").value, link: karte.querySelector(".po-link").value.trim(), plattform: karte.querySelector(".po-pl").value })
-    : await jpost(`/api/crm/postings/${encodeURIComponent(pid)}/kennzahlen`, { werte: Object.fromEntries([...karte.querySelectorAll("[data-feld]")].map(i => [i.dataset.feld, i.value.trim()])) });
+    : await jpost(`/api/crm/postings/${encodeURIComponent(pid)}/kennzahlen`, { werte: Object.fromEntries([...karte.querySelectorAll("[data-feld]")].map(i => [i.dataset.feld, i.value.trim()])), messpunkt: art === "l" ? 30 : 7 });
   if (!r || r.ok === false) { const m = karte.querySelector(".po-msg"); m.className = "v2-msg err po-msg"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return; }
   const a = (await jget("/api/crm/auftraege/" + encodeURIComponent(nr)) || {}).auftrag || {};
   return abPostings(nr, a.status);
@@ -1478,7 +1482,8 @@ async function abBericht(nr) {
       <label class="v2-feld"><small>Fazit (LUNA schlägt es aus den Zahlen vor – anpassen)</small><textarea id="ber-fazit" class="v2-inp" rows="6" maxlength="3000">${esc(e.fazit != null && e.fazit !== "" ? e.fazit : d.fazit_vorschlag)}</textarea></label>
       ${d.zeiten ? `<div class="v2-ab-haken"><label><input type="checkbox" id="ber-std" ${e.stunden ? "checked" : ""}> Stunden im Bericht zeigen</label><label><input type="checkbox" id="ber-km" ${e.km ? "checked" : ""}> km zeigen</label></div>` : ""}
       <div class="v2-card-actions"><button class="v2-btn" data-act="ber-vorschau" data-id="${esc(nr)}">💾 Speichern &amp; 📄 Vorschau</button><button class="v2-btn pri" data-act="ber-senden-form" data-id="${esc(nr)}">✉️ Senden …</button>${!b.length && !d.entfaellt ? `<button class="v2-btn" data-act="ber-entfaellt" data-id="${esc(nr)}" title="z. B. reiner Dreh ohne Postings">Kein Bericht nötig …</button>` : ""}</div>
-      <div id="ber-msg" class="v2-msg"></div><div id="ber-senden-box"></div></div></details>`;
+      <div id="ber-msg" class="v2-msg"></div><div id="ber-senden-box"></div></div></details>
+    ${b.length ? `<div class="v2-card-actions" style="margin-top:8px"><button class="v2-btn" data-act="ber-stimme" data-id="${esc(nr)}" title="Nur ein Entwurf in Gmail – du sendest selbst">💬 Kundenstimme erbitten (Entwurf) …</button></div><div id="ber-msg2" class="v2-msg"></div>` : ""}`;
 }
 async function berSpeichern(nr) {
   const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(nr)}/bericht`, { fazit: $("#ber-fazit").value, stunden: !!($("#ber-std") || {}).checked, km: !!($("#ber-km") || {}).checked });
@@ -1726,7 +1731,8 @@ async function renderKatalog(ausCache) {
         <input class="v2-inp kat-tmax" value="${it.tkp_max_cent ? esc(String(it.tkp_max_cent / 100)) : ""}" placeholder="TKP max €" inputmode="decimal" ${ro}>
         <input class="v2-inp kat-prod" value="${it.kontakte ? esc(cent2feld(it.produktion_cent || 0)) : ""}" placeholder="Produktion €" inputmode="decimal" ${ro}>
         <select class="v2-inp kat-omr" ${ro}><option value="">OMR-Vergleich: keiner</option>${Object.entries(OMR.werte || {}).map(([k, w]) => `<option value="${esc(k)}" ${it.omr === k ? "selected" : ""}>${esc(w.name)} (${w.min}–${w.max} €)</option>`).join("")}</select>
-        <small class="v2-sub">${it.kontakte ? `= ${esc(cent2eur(tkpPreis(it.kontakte, it.tkp_min_cent, it.produktion_cent || 0)))} bis ${esc(cent2eur(tkpPreis(it.kontakte, it.tkp_max_cent, it.produktion_cent || 0)))}${it.omr ? " · " + esc(omrText(it.omr)) : ""}` : ""}</small></div></div>`).join("")}</div>
+        <small class="v2-sub">${it.kontakte ? `= ${esc(cent2eur(tkpPreis(it.kontakte, it.tkp_min_cent, it.produktion_cent || 0)))} bis ${esc(cent2eur(tkpPreis(it.kontakte, it.tkp_max_cent, it.produktion_cent || 0)))}${it.omr ? " · " + esc(omrText(it.omr)) : ""}` : ""}</small>
+        ${IST_KONTAKTE[it.id] ? `<small class="v2-kat-ist">📊 Gemessen: Median ${esc(Number(IST_KONTAKTE[it.id].median).toLocaleString("de-DE"))} aus ${IST_KONTAKTE[it.id].anzahl} Posting(s) (${esc(Number(IST_KONTAKTE[it.id].min).toLocaleString("de-DE"))}–${esc(Number(IST_KONTAKTE[it.id].max).toLocaleString("de-DE"))})${KAT_DARF ? ` <button class="v2-btn sm" data-act="kat-ist" data-val="${IST_KONTAKTE[it.id].median}">übernehmen</button>` : ""}</small>` : ""}</div></div>`).join("")}</div>
       ${KAT_DARF ? `<button class="v2-btn" data-act="kat-neu" data-id="${gi}">+ Format</button>` : ""}`, "w12")).join("");
   const zu = tile("Zuschläge", `${k.zuschlaege.map(z => `<div class="v2-kat-zu" data-id="${esc(z.id)}"><input class="v2-inp zu-name" value="${esc(z.name)}" ${ro}><input class="v2-inp zu-prozent" value="${esc(pz(z.prozent))}" inputmode="decimal" ${ro}><input class="v2-inp zu-info" value="${esc(z.info)}" placeholder="Erklärung" ${ro}></div>`).join("")}`, "w12");
   const t = k.texte, ta = (id, v, rows = 3) => `<textarea id="kt-${id}" rows="${rows}" class="v2-inp" ${ro}>${esc(v || "")}</textarea>`;
@@ -3183,10 +3189,15 @@ async function handleAct(act, el) {
       const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/bericht/entfaellt`, { grund: g }); return abDetail(id, r && r.ok ? "Vermerkt: kein Bericht nötig." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
     case "zt-pos-speichern": { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/details`, { position: $("#zk-pos").value });
       if (!r || r.ok === false) return kundenMsg("zk-msg", (r && r.hinweis) || "Fehler.", false); return abZeitLaden(val); }
+    case "kat-ist": { const z = el.closest(".v2-kat-zeile"), i = z && $(".kat-kontakte", z); if (i) { i.value = val; i.classList.add("v2-erkannt"); i.focus(); } return; }
+    case "ab-folge": { const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/folge-erledigt`, {}); return abDetail(id, r && r.ok ? "Folgeauftrag-Nachfassen erledigt." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
+    case "ber-stimme": { if (!confirm("Bitte um eine Kundenstimme als Gmail-Entwurf in LUNAs Konto anlegen? (Es wird nichts gesendet.)")) return;
+      const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/kundenstimme-entwurf`, {});
+      return kundenMsg("ber-msg2", r && r.ok ? `Entwurf an ${r.an} liegt in Gmail (LUNAs Konto) – dort prüfen und selbst senden.` : (r && r.hinweis) || "Fehler.", !!(r && r.ok)); }
     case "zt-auswertung": return val === "frei" ? ztAuswertung("frei", $("#aw-von").value, $("#aw-bis").value) : ztAuswertung(val);
     case "pz-speichern": case "pz-aus": return rePzSpeichern(id, act === "pz-aus");
-    case "po-form-v": case "po-form-k": return poForm(id, val, act.slice(-1));
-    case "po-speichern-v": case "po-speichern-k": { el.disabled = true; await poSpeichern(id, val, act.slice(-1)); el.disabled = false; return; }
+    case "po-form-v": case "po-form-k": case "po-form-l": return poForm(id, val, act.slice(-1));
+    case "po-speichern-v": case "po-speichern-k": case "po-speichern-l": { el.disabled = true; await poSpeichern(id, val, act.slice(-1)); el.disabled = false; return; }
     case "lf-speichern": { el.disabled = true; try { await lfSpeichern(id, true); return abDetail(id, "Lieferung gespeichert."); }
       catch (e) { el.disabled = false; return kundenMsg("lf-msg", e.message, false); } }
     case "lf-entfernen": { const grund = prompt("Lieferung samt Dateien entfernen – Grund:", ""); if (!grund) return;

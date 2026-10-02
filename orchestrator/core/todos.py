@@ -204,7 +204,7 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                 out.append(_todo(f"an-nachfassen:{a['nummer']}", "Angebote", "📞", f"Angebot {a['nummer']} nachfassen",
                                  f"{name} · {a.get('titel') or ''}".strip(" ·"), "an-detail", a["nummer"], nf, h,
                                  {"pfad": f"/api/crm/angebote/{a['nummer']}/nachgefasst", "label": "✓ Nachgefasst"}))
-        from .postings import ERINNERN_TAGE, Postings, _faellig, postings_aus   # PROJEKTBERICHT P2: Kennzahlen faellig
+        from .postings import ERINNERN_TAGE, Postings, _faellig, lang_faellig, postings_aus   # PROJEKTBERICHT P2/P4
         stand = Postings._falte(e)
         for a in AuftragBuch._falte(e).values():
             if a["status"] == "storniert":
@@ -217,6 +217,19 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                               "Screenshot an LUNA (Telegram) oder Formular im Auftrag", "ab-detail", a["nummer"],
                               (date.fromisoformat(x["datum"]) + timedelta(days=ERINNERN_TAGE)).isoformat(), h)
                     out.append(t | {"dringend": False, "stufe": "woche"})
+                elif lang_faellig(p | x, heute):              # P4: optionaler 30-Tage-Wert fuer Reels
+                    out.append(_todo(f"po-30:{p['id']}", "Aufträge", "📈", f"30-Tage-Zahlen (optional): {p['titel']} · {a['nummer']}",
+                                     f"{firmen.get(a['firma'], a['firma'])} · Reels laufen lange – zweiter Messpunkt im Auftrag",
+                                     "ab-detail", a["nummer"], "", h) | {"stufe": "spaeter"})
+            if a.get("berichte") and not a.get("folge_erledigt"):   # P4: 14 Tage nach dem Bericht Folgeauftrag anfragen
+                f = (date.fromisoformat(a["berichte"][0]["ts"][:10]) + timedelta(days=14)).isoformat()
+                if f <= h:
+                    out.append(_todo(f"ab-folge:{a['nummer']}", "Aufträge", "🤝",
+                                     f"Folgeauftrag anfragen? {firmen.get(a['firma'], a['firma'])}",
+                                     f"Bericht zu {a['nummer']} ist 14 Tage raus – nachfassen, nächste Kampagne anbieten",
+                                     "ab-detail", a["nummer"], f, h,
+                                     {"pfad": f"/api/crm/auftraege/{a['nummer']}/folge-erledigt", "label": "✓ Erledigt"})
+                               | {"dringend": False, "stufe": "woche"})
             ps = postings_aus(a)                         # P3: Abschluss -- Kennzahlen fehlen -> Bericht senden
             if a["status"] != "erledigt" or not ps or a.get("berichte") or a.get("bericht_entfaellt"):
                 continue

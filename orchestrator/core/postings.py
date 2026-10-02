@@ -17,6 +17,7 @@ from pathlib import Path
 from .buchhaltung import Buchhaltung, jetzt
 
 ERINNERN_TAGE = 7
+MESSPUNKT_LANG = 30                                     # P4: optionaler zweiter Messpunkt (Reels laufen lange)
 FORMATE = {"reel": "Reel", "story": "Story", "feed": "Bild-Post"}
 KONTAKT = {"reel": "aufrufe", "story": "aufrufe", "feed": "impressionen"}
 FELDER = {
@@ -95,6 +96,9 @@ class Postings:
             spur = {"ts": e["ts"], "von": e.get("von", ""), "typ": t}
             if t == "posting_veroeffentlicht":
                 x |= {k: d.get(k) for k in ("datum", "link", "plattform")}
+            elif t == "posting_kennzahlen" and d.get("messpunkt") == MESSPUNKT_LANG:
+                x["kennzahlen_30"] = d["werte"]
+                x["kennzahlen_30_am"] = e["ts"]
             elif t == "posting_kennzahlen":
                 x["kennzahlen"] = d["werte"]
                 x["kennzahlen_quelle"] = d.get("quelle", "")
@@ -149,9 +153,15 @@ class Postings:
         self.bh.erfassen("posting_veroeffentlicht", d, von=von)
         return d
 
-    def kennzahlen_setzen(self, pid: str, werte: dict, *, quelle: str = "formular", von: str = "") -> dict:
-        """Kennzahlen als ganze Zahlen (Pflicht: die Kontakt-Kennzahl des Formats). Erneut = Korrektur mit Verlauf."""
+    def kennzahlen_setzen(self, pid: str, werte: dict, *, quelle: str = "formular", messpunkt: int = ERINNERN_TAGE,
+                          von: str = "") -> dict:
+        """Kennzahlen als ganze Zahlen (Pflicht: die Kontakt-Kennzahl des Formats). Erneut = Korrektur mit Verlauf.
+        `messpunkt=30` = zweiter Messpunkt (P4); Bericht und TKP-Vergleich rechnen mit dem 7-Tage-Wert."""
         p = self._pruefe(pid)
+        if messpunkt not in (ERINNERN_TAGE, MESSPUNKT_LANG):
+            raise ValueError("Messpunkt: 7 oder 30 Tage.")
+        if messpunkt == MESSPUNKT_LANG and not p.get("kennzahlen"):
+            raise ValueError("Erst die Zahlen nach 7 Tagen eintragen, dann den 30-Tage-Wert.")
         erlaubt = dict(FELDER[p["format"]])
         out = {}
         for k, v in (werte or {}).items():
@@ -166,8 +176,9 @@ class Postings:
             out[k] = n
         if p["kontakt_feld"] not in out:
             raise ValueError(f"{erlaubt[p['kontakt_feld']]} fehlt -- das ist die Kontakt-Kennzahl fuer {FORMATE[p['format']]}s.")
-        self.bh.erfassen("posting_kennzahlen", {"id": pid, "werte": out, "quelle": quelle[:40]}, von=von)
-        return {"id": pid, "werte": out}
+        d = {"id": pid, "werte": out, "quelle": quelle[:40]} | ({"messpunkt": messpunkt} if messpunkt != ERINNERN_TAGE else {})
+        self.bh.erfassen("posting_kennzahlen", d, von=von)
+        return {"id": pid, "werte": out, "messpunkt": messpunkt}
 
     def bild_ablegen(self, pid: str, daten: bytes, name: str, *, von: str = "") -> dict:
         """Screenshot der Insights am Posting ablegen (`lieferungen/<Auftrag>/kennzahlen/`, wie Lieferungen nur NAS)."""
@@ -274,3 +285,49 @@ def vergleich(postings: list[dict]) -> dict:
     s["mehrleistung_pct"] = round(s["mehrleistung_cent"] / s["preis_cent"] * 100, 1) if s["preis_cent"] else None
     s["erfuellung_pct"] = round(s["kontakte_ist"] / s["kontakte_plan"] * 100, 1) if s["kontakte_plan"] else None
     return {"zeilen": zeilen, "summe": s}
+
+
+def lang_faellig(p: dict, heute: date | None = None) -> bool:
+    """P4: Reel mit 7-Tage-Zahlen, aber ohne 30-Tage-Wert, 30 Tage nach der Veroeffentlichung."""
+    if p.get("format") != "reel" or not p.get("datum") or not p.get("kennzahlen") or p.get("kennzahlen_30"):
+        return False
+    return date.fromisoformat(p["datum"]) + timedelta(days=MESSPUNKT_LANG) <= (heute or jetzt().date())
+
+
+def ist_kontakte(eintraege: list[dict]) -> dict[str, dict]:
+    """P4: gemessene Kontakte (7 Tage) je Katalog-Artikel -> Median als Vorschlag fuer die Katalog-Kontakte."""
+    from statistics import median
+    from .beauftragung import AuftragBuch
+    st = Postings._falte(eintraege)
+    werte: dict[str, list[int]] = {}
+    for a in AuftragBuch._falte(eintraege).values():
+        if a["status"] == "storniert":
+            continue
+        for i, pos in enumerate(a.get("positionen") or []):
+            kid = str(pos.get("katalog_id") or "")
+            for p in postings_aus(a):
+                if not kid or p["position"] != i + 1:
+                    continue
+                v = (st.get(p["id"], {}).get("kennzahlen") or {}).get(p["kontakt_feld"])
+                if v is not None:
+                    werte.setdefault(kid, []).append(int(v))
+    return {k: {"median": int(median(v)), "anzahl": len(v), "min": min(v), "max": max(v)} for k, v in werte.items()}
+
+
+def kampagnen(eintraege: list[dict], firma: str) -> list[dict]:
+    """P4: Kampagnen-Historie je Kunde fuer die Firmenakte (neueste zuerst)."""
+    from .beauftragung import AuftragBuch, abschluss
+    st = Postings._falte(eintraege)
+    out = []
+    for a in abschluss(AuftragBuch._falte(eintraege), eintraege).values():
+        if a["firma"] != firma or a["status"] == "storniert":
+            continue
+        ps = [p | st.get(p["id"], {}) for p in postings_aus(a)]
+        v = vergleich(ps)["summe"] if ps else {}
+        out.append({"nummer": a["nummer"], "titel": a.get("titel", ""), "datum": a.get("datum", ""), "status": a["status"],
+                    "abgeschlossen": a.get("abgeschlossen", False), "postings": len(ps),
+                    "gemessen": v.get("gemessen", 0), "kontakte_ist": sum(((p.get("kennzahlen") or {}).get(p["kontakt_feld"]) or 0)
+                                                                          for p in ps),
+                    "mehrleistung_cent": v.get("mehrleistung_cent") if v.get("preis_cent") else None,
+                    "bericht": bool(a.get("berichte"))})
+    return sorted(out, key=lambda x: x["nummer"], reverse=True)

@@ -693,3 +693,11 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-zt-aw td:first-child { white-space: normal; }
 .v2-zt-aw th.num, .v2-zt-aw td.num { text-align: right; white-space: nowrap; }
 .v2-zt-aw td:first-child { width: 50%; }
+/* Aus den Zahlen lernen (PROJEKTBERICHT P4) */
+.v2-kat-ist { flex-basis: 100%; color: var(--v2-green); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.v2-kampagne { display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; }
+/* Katalog-Editor: Felder schrumpfen mit (vorher Ueberlauf auf iPad/iPhone, gefunden bei P4) */
+.v2-kat-zeile > *, .v2-kat-zu > * { min-width: 0; }
+.v2-kat-zeile > .v2-inp, .v2-kat-zu > .v2-inp { width: 100%; }
+@media (max-width: 900px) { .v2-kat-zeile, .v2-kat-zu { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 700px) { .v2-kat-tkp .v2-inp { width: calc(50% - 4px); } }

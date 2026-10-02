@@ -1,9 +1,9 @@
 # Roadmap: Social-Kennzahlen je Posting und Projektbericht zum Abschluss
 - Status: in Umsetzung
-- Stand: 2026-10-02
+- Stand: 2026-10-03
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
-- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck; Bau auf `ai/projekt-etappen` (Z1, P1, P2, Z2, P3 fertig; weiter Z3/P4).
+- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck; Bau auf `ai/projekt-etappen` (alle Etappen fertig; naechster Schritt: Deploy + Abnahme an einem echten Projekt).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -110,7 +110,11 @@ muessen an jedem Auftrag klar erkennbar sein.“
 
 ## Etappe P4 (eigene Vorschlaege): aus den Zahlen lernen
 
-- Status: geplant (Vorschlag Claude Code)
+- Status: umgesetzt (2026-10-03) -- gemessene Kontakte je Katalog-Artikel (Median) als Vorschlag im Katalog-Editor
+  („übernehmen“, gespeichert wird erst mit dem Katalog), Kampagnen-Historie in der Firmenakte, optionaler 30-Tage-Wert
+  fuer Reels (Bericht rechnet mit 7 Tagen), „Folgeauftrag anfragen?“ 14 Tage nach dem Bericht im Handlungsbedarf,
+  Bitte um Kundenstimme nur als Gmail-Entwurf (gesendet wird von Hand). Tests in `test_projektbericht.py` mit
+  Gegenprobe; Browsertest 1300/820/390 px.
 - Ziel / Scope: Ist-Kennzahlen fliessen in die **Katalog-Kontakte** (zusammen mit Etappe 3c: Median statt Handwert)
   und in die **Firmenakte** (Kampagnen-Historie je Kunde); ein **zweiter Messpunkt nach 30 Tagen** (optional, fuer
   Reels mit langer Laufzeit); **14 Tage nach dem Bericht** Erinnerung „Folgeauftrag anfragen?“ (CRM) und auf Wunsch

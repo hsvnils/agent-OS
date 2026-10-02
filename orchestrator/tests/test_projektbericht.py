@@ -88,6 +88,48 @@ class TestBericht(unittest.TestCase):
         self.assertEqual(self.ab.auftrag(self.nr)["abschluss"]["bericht"], "entfaellt")
 
 
+class TestLernenP4(unittest.TestCase):
+    def setUp(self):
+        self.bh, self.ab, self.nr, self.ps = _auftrag([REEL, FEED])
+        self.ks = KundenStore(self.bh)
+
+    def test_1_ist_kontakte_median_und_kampagnen(self):
+        from orchestrator.core.postings import ist_kontakte, kampagnen
+        for pid, n in ((f"{self.nr}-P1-1", 50000), (f"{self.nr}-P1-2", 30000), (f"{self.nr}-P2-1", 61000)):
+            self.ps.veroeffentlichen(pid, datum=GESTERN)
+            self.ps.kennzahlen_setzen(pid, {"aufrufe" if "P1" in pid else "impressionen": n})
+        ik = ist_kontakte(self.bh.eintraege())
+        self.assertEqual(ik["reel_solo"], {"median": 40000, "anzahl": 2, "min": 30000, "max": 50000})
+        self.assertEqual(ik["feed"]["median"], 61000)
+        k = kampagnen(self.bh.eintraege(), self.ab.auftrag(self.nr)["firma"])
+        self.assertEqual((k[0]["nummer"], k[0]["gemessen"], k[0]["postings"], k[0]["kontakte_ist"]), (self.nr, 3, 3, 141000))
+
+    def test_2_messpunkt_30(self):
+        from orchestrator.core.postings import lang_faellig
+        pid = f"{self.nr}-P1-1"
+        self.ps.veroeffentlichen(pid, datum=(HEUTE - timedelta(days=30)).isoformat())
+        with self.assertRaisesRegex(ValueError, "7 Tagen"):
+            self.ps.kennzahlen_setzen(pid, {"aufrufe": 1}, messpunkt=30)
+        self.ps.kennzahlen_setzen(pid, {"aufrufe": 50000})
+        self.assertTrue(lang_faellig(self.ps.get(pid)))
+        ids = [t["id"] for t in geschaefts_todos(self.bh, self.ks)]
+        self.assertIn(f"po-30:{pid}", ids)
+        self.ps.kennzahlen_setzen(pid, {"aufrufe": 90000}, messpunkt=30)
+        x = self.ps.get(pid)
+        self.assertEqual((x["kennzahlen"]["aufrufe"], x["kennzahlen_30"]["aufrufe"]), (50000, 90000))   # Bericht: 7 Tage
+        self.assertNotIn(f"po-30:{pid}", [t["id"] for t in geschaefts_todos(self.bh, self.ks)])
+        self.assertFalse(lang_faellig(self.ps.get(f"{self.nr}-P2-1") | {"kennzahlen": {"impressionen": 1}, "datum": "2026-01-01"}))
+
+    def test_3_folgeauftrag_14_tage(self):
+        self.bh.erfassen("auftrag_bericht_versendet", {"nummer": self.nr, "akte_id": "D-1", "an": "a@b.de", "version": 1})
+        folge = lambda heute: [t for t in geschaefts_todos(self.bh, self.ks, heute=heute) if t["id"] == f"ab-folge:{self.nr}"]
+        self.assertFalse(folge(HEUTE + timedelta(days=13)))
+        t = folge(HEUTE + timedelta(days=14))
+        self.assertEqual((t[0]["stufe"], t[0]["erledigen"]["pfad"]), ("woche", f"/api/crm/auftraege/{self.nr}/folge-erledigt"))
+        self.bh.erfassen("auftrag_folge_erledigt", {"nummer": self.nr})
+        self.assertFalse(folge(HEUTE + timedelta(days=20)))
+
+
 class TestApi(ApiBasis):
     def _auftrag(self):
         r = self.c.post("/api/crm/angebote", json={"angebot": {"firma": self.k, "ansprechpartner": self.ap, "titel": "Herbst",
@@ -123,7 +165,11 @@ class TestApi(ApiBasis):
         self.c.post(f"/api/crm/auftraege/{nr}/bericht", json={"fazit": "Korrigiert"})   # spaeter: neue Version, alte bleibt
         self.assertIn("Top!", _text(self.c.get(f"/api/crm/auftraege/{nr}/bericht/pdf?archiv=1").content))
         self.assertIn("Version 2", _text(self.c.get(f"/api/crm/auftraege/{nr}/bericht/pdf").content))
+        self.assertTrue(self.c.post(f"/api/crm/auftraege/{nr}/kundenstimme-entwurf", json={}).json()["ok"])  # P4: nur Entwurf
+        self.assertEqual(len(self.g.gesendet), 1)                                  # weiterhin nur der Bericht gesendet
         akte = self.c.get(f"/api/crm/kunden/{self.k}/akte").json()
+        self.assertEqual(akte["kampagnen"][0]["nummer"], nr)
+        self.assertEqual(self.c.get("/api/crm/katalog").json()["ist_kontakte"]["reel_solo"]["median"], 40000)
         self.assertEqual([(x["art"], x["bezug"]) for x in akte["dokumente"] if x["art"] == "bericht"], [("bericht", nr)])
 
 

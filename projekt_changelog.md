@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-03 00:02] — Claude Code
+- **Was:** PROJEKTBERICHT Etappe P4: gemessene Kontakte (Median) als Vorschlag im Katalog-Editor, Kampagnen-Historie
+  in der Firmenakte, optionaler 30-Tage-Wert fuer Reels, „Folgeauftrag anfragen?“ 14 Tage nach dem Bericht, Bitte um
+  Kundenstimme als Gmail-Entwurf; dazu BF-54 (Katalog-Editor ragte auf iPad/iPhone ueber den Rand) behoben.
+- **Warum:** CEO-Go 2026-10-02 (eigene Vorschlaege P4 in der Roadmap); CEO-Regel Desktop + Mobil.
+- **Betroffen:** `orchestrator/core/postings.py`, `orchestrator/core/beauftragung.py`, `orchestrator/core/todos.py`,
+  `orchestrator/core/projektbericht.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`,
+  `static/index-v2.html` (v89/v39), `orchestrator/tests/test_projektbericht.py`, `PROJEKTBERICHT_ROADMAP.md`,
+  `ROADMAP.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`.
+
 ## [2026-10-02 23:57] — Claude Code
 - **Was:** PROJEKTZEITEN Etappe Z3: Zeiten auswerten (Woche/Monat/Jahr/frei; je Kunde, Taetigkeit, Auftrag, Woche/Monat;
   CSV-Export), Zeit einer Auftragsposition zuordnen, Nachkalkulation je Leistung im Auftrag; Desktop + iPad + iPhone.

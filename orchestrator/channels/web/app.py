@@ -1560,7 +1560,9 @@ def kunden_akte(nummer: str):
         doks = _akte().akte(nummer)
         firma = (nummer or "").strip().upper()                     # Etappe 30: Lieferungen der Auftraege dieser Firma
         nrs = {x["nummer"] for x in _auftraege().liste() if x["firma"] == firma}
-        return {"dokumente": doks, "arten": ARTEN, "lieferungen": _lieferungen().fuer_auftraege(nrs)}
+        from ...core.postings import kampagnen                         # P4: Kampagnen-Historie je Kunde
+        return {"dokumente": doks, "arten": ARTEN, "lieferungen": _lieferungen().fuer_auftraege(nrs),
+                "kampagnen": kampagnen(kunden_store.bh.eintraege(), firma)}
     except KeyError:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Firma") from None
 
@@ -2040,7 +2042,8 @@ async def posting_veroeffentlicht(pid: str, request: Request):
 async def posting_kennzahlen(pid: str, request: Request):
     body = await _json(request)
     return _kunden_aktion(lambda: _postings().kennzahlen_setzen(pid, body.get("werte") or {},
-                                                                quelle=body.get("quelle") or "formular", von=_von(request)))
+                                                                quelle=body.get("quelle") or "formular",
+                                                                messpunkt=int(body.get("messpunkt") or 7), von=_von(request)))
 
 
 @app.post("/api/crm/postings/{pid}/bild")
@@ -2069,6 +2072,53 @@ def posting_bild(pid: str, i: int):
     if not f:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Bild nicht gefunden.")
     return FileResponse(f, content_disposition_type="inline")
+
+
+# -- Aus den Zahlen lernen (PROJEKTBERICHT P4) ------------------------------------------------------------------------
+@app.get("/api/crm/katalog/ist-kontakte")
+def katalog_ist_kontakte():
+    """Gemessene Kontakte je Katalog-Artikel (Median) -- Vorschlag fuer die Katalog-Kontakte, aendert nichts."""
+    from ...core.postings import ist_kontakte
+    return {"artikel": ist_kontakte(kunden_store.bh.eintraege())}
+
+
+@app.post("/api/crm/auftraege/{nummer}/folge-erledigt")
+async def auftrag_folge_erledigt(nummer: str, request: Request):
+    body = await _json(request)
+
+    def tun():
+        a = _auftraege().auftrag(nummer)
+        if not a:
+            raise KeyError(nummer)
+        kunden_store.bh.erfassen("auftrag_folge_erledigt", {"nummer": a["nummer"], "notiz": str(body.get("notiz") or "")[:300]},
+                                 von=_von(request))
+        return {"erledigt": a["nummer"]}
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/crm/auftraege/{nummer}/kundenstimme-entwurf")
+async def auftrag_kundenstimme_entwurf(nummer: str, request: Request):
+    """Bitte um eine kurze Kundenstimme -- nur als **Gmail-Entwurf** in LUNAs Konto; gesendet wird von Hand (CEO-Tor)."""
+    from ...core.projektbericht import kundenstimme_text
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if not hat_modul(u, "finanzen"):
+        return {"ok": False, "hinweis": "Nur der CEO (Modul Finanzen)."}
+
+    def tun():
+        det = auftrag_detail(nummer)
+        a = det["auftrag"]
+        if not det["mail_an"]:
+            raise ValueError("Keine Mail-Adresse beim Ansprechpartner oder der Firma.")
+        g = _google()
+        if not g.verfuegbar():
+            raise ValueError("Google ist nicht verbunden.")
+        betreff, text = kundenstimme_text(a, det["ansprechpartner"], _firmendaten())
+        r = g.mail_entwurf(det["mail_an"], betreff, text)
+        if not r.get("ok"):
+            raise ValueError(r.get("hinweis") or "Entwurf nicht angelegt.")
+        kunden_store.bh.erfassen("auftrag_kundenstimme_entwurf", {"nummer": a["nummer"], "an": det["mail_an"]}, von=_von(request))
+        return {"an": det["mail_an"]}
+    return _kunden_aktion(tun)
 
 
 # -- Projektbericht (PROJEKTBERICHT P3): Entwurf, PDF, Versand nach CEO-Klick, eingefroren in der Firmenakte -------------
@@ -3147,7 +3197,9 @@ def katalog_lesen(request: Request):
     k = Katalog(kunden_store.bh)
     u = getattr(request.state, "user", None) or _ceo_user()
     from ...core.katalog import OMR
-    return {"katalog": k.laden(), "gespeichert": k.pfad.exists(), "darf_aendern": hat_modul(u, "finanzen"), "omr": OMR}
+    from ...core.postings import ist_kontakte                       # P4: gemessene Kontakte als Vorschlag
+    return {"katalog": k.laden(), "gespeichert": k.pfad.exists(), "darf_aendern": hat_modul(u, "finanzen"), "omr": OMR,
+            "ist_kontakte": ist_kontakte(kunden_store.bh.eintraege())}
 
 
 @app.get("/api/finanzen/lager")

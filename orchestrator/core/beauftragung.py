@@ -65,6 +65,14 @@ class AuftragBuch:
                 a.setdefault("berichte", []).append({k: d.get(k) for k in ("akte_id", "sha256", "an", "betreff", "version")}
                                                     | {"ts": e["ts"]})
                 a["verlauf"].append(spur | {"an": d.get("an", "")})
+            elif t == "auftrag_folge_erledigt":           # P4: „Folgeauftrag anfragen?“ erledigt (14 Tage nach Bericht)
+                a = out[d["nummer"]]
+                a["folge_erledigt"] = e["ts"]
+                a["verlauf"].append(spur | {"grund": d.get("notiz", "")})
+            elif t == "auftrag_kundenstimme_entwurf":     # P4: Bitte um Kundenstimme als Gmail-Entwurf (nicht gesendet)
+                a = out[d["nummer"]]
+                a["kundenstimme_entwurf"] = e["ts"]
+                a["verlauf"].append(spur | {"an": d.get("an", "")})
             elif t == "auftrag_bericht_entfaellt":        # P3: bewusst kein Bericht (z. B. reiner Dreh ohne Postings)
                 a = out[d["nummer"]]
                 a["bericht_entfaellt"] = d.get("grund", "")
