@@ -3,7 +3,7 @@
 - Stand: 2026-10-02
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
-- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck (zusammen mit PROJEKTBERICHT); Bau auf `ai/projekt-etappen` (Z1, Z2 fertig).
+- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck (zusammen mit PROJEKTBERICHT); Bau auf `ai/projekt-etappen` (Z1-Z3 fertig).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -60,7 +60,10 @@ ob die Projektzeiten mitgerechnet werden.“
 
 ## Etappe Z3 (eigener Vorschlag): Zeiten auswerten
 
-- Status: geplant (Vorschlag Claude Code)
+- Status: umgesetzt (2026-10-02/03) -- `zeiterfassung.auswertung()` je Kunde/Taetigkeit/Auftrag/Woche/Monat, Endpunkt
+  `/api/finanzen/zeit/auswertung` (+ CSV), Fenster „📊 Zeiten auswerten“ (aus der Zeiterfassung), Zeit einer
+  Auftragsposition zuordnen (Ereignis `zeit_details` mit `position`) -> Nachkalkulation je Leistung im Auftrag. Tests in
+  `test_projektzeiten.py`; Browsertest 1300/820/390 px.
 - Ziel / Scope: Wochen-/Monatsuebersicht ueber alle Auftraege (Stunden je Kunde/Taetigkeit), CSV-Export; Zeit
   optional einer **Auftragsposition** zuordnen (z. B. „Reel 2“) -> Nachkalkulation je Leistung zeigt, welche Formate
   sich lohnen und wo Preise im Katalog zu niedrig sind.

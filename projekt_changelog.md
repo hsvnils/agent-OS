@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-02 23:57] — Claude Code
+- **Was:** PROJEKTZEITEN Etappe Z3: Zeiten auswerten (Woche/Monat/Jahr/frei; je Kunde, Taetigkeit, Auftrag, Woche/Monat;
+  CSV-Export), Zeit einer Auftragsposition zuordnen, Nachkalkulation je Leistung im Auftrag; Desktop + iPad + iPhone.
+- **Warum:** CEO-Go 2026-10-02 (eigener Vorschlag Z3 in der Roadmap).
+- **Betroffen:** `orchestrator/core/zeiterfassung.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`,
+  `static/style-v2.css`, `static/index-v2.html` (v88/v38), `orchestrator/tests/test_projektzeiten.py`,
+  `PROJEKTZEITEN_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`.
+
 ## [2026-10-02 23:54] — Claude Code
 - **Was:** PROJEKTBERICHT Etappe P3: Projektbericht je Auftrag (PDF mit Zahlen, Plan gegen Ist, optional Stunden/km,
   Fazit-Vorschlag), Versand nach CEO-Klick mit Vorschau, Ablage in der Firmenakte, Status „abgeschlossen“ (geliefert +

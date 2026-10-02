@@ -216,7 +216,29 @@ function zeitInhalt(meldung, fehler) {
   if (!ZEIT.auftraege.length) return msg + emptyRow("Kein laufender Auftrag (Status „beauftragt“) – Zeit gibt es nur für laufende Aufträge.");
   return msg + `<div class="v2-zeit-fenster"><label class="v2-feld"><small>Laufender Auftrag</small><select id="zt-auftrag" class="v2-inp">${ZEIT.auftraege.map(a =>
       `<option value="${esc(a.nummer)}" ${a.nummer === letzter ? "selected" : ""}>${esc(a.nummer)} · ${esc(a.firma_name || a.firma)}${a.titel ? " · " + esc(a.titel) : ""}</option>`).join("")}</select></label>
-    <button class="v2-btn pri v2-zeit-knopf" data-act="zt-start">▶ Zeit starten</button></div>`;
+    <button class="v2-btn pri v2-zeit-knopf" data-act="zt-start">▶ Zeit starten</button>
+    <button class="v2-btn" data-act="zt-auswertung" data-val="monat">📊 Auswertung</button></div>`;
+}
+// PROJEKTZEITEN Z3: Zeiten auswerten (Woche/Monat/Jahr) je Kunde, Taetigkeit, Woche/Monat; CSV-Export
+async function ztAuswertung(art, vonX, bisX) {
+  const h = new Date(), iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const mo = new Date(h); mo.setDate(h.getDate() - ((h.getDay() + 6) % 7));
+  const B = { woche: [mo, h], vorwoche: [new Date(mo.getFullYear(), mo.getMonth(), mo.getDate() - 7), new Date(mo.getFullYear(), mo.getMonth(), mo.getDate() - 1)],
+    monat: [new Date(h.getFullYear(), h.getMonth(), 1), h], vormonat: [new Date(h.getFullYear(), h.getMonth() - 1, 1), new Date(h.getFullYear(), h.getMonth(), 0)],
+    jahr: [new Date(h.getFullYear(), 0, 1), h] };
+  const [v, b] = vonX ? [vonX, bisX] : (B[art] || B.monat).map(iso);
+  const d = await jget(`/api/finanzen/zeit/auswertung?von=${v}&bis=${b}`);
+  const chip = (k, t) => `<button class="v2-btn sm ${k === art ? "pri" : ""}" data-act="zt-auswertung" data-val="${k}">${t}</button>`;
+  const tab = (titel, rows) => rows.length ? `<h3>${titel}</h3><div class="v2-tab-scroll"><table class="v2-table v2-zt-aw"><thead><tr><th></th><th class="num">Stunden</th><th class="num">km</th><th class="num">intern</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.name)}</td><td class="num"><b>${esc(dauerTxt(r.minuten))}</b></td><td class="num">${r.km ? esc(String(r.km)) : ""}</td><td class="num">${cent2eur(r.kosten_cent)}</td></tr>`).join("")}</tbody></table></div>` : "";
+  const s = (d && d.summe) || {};
+  const lang = d && Object.keys(d).length && (d.je_woche || []).length > 1;
+  openModal("📊 Zeiten auswerten", `<div class="v2-zt-chips">${chip("woche", "Diese Woche")}${chip("vorwoche", "Letzte Woche")}${chip("monat", "Dieser Monat")}${chip("vormonat", "Letzter Monat")}${chip("jahr", "Dieses Jahr")}</div>
+    <div class="v2-an-zeile" style="margin-top:8px"><label class="v2-feld"><small>von</small><input id="aw-von" class="v2-inp" type="date" value="${esc(v)}"></label><label class="v2-feld"><small>bis</small><input id="aw-bis" class="v2-inp" type="date" value="${esc(b)}"></label><button class="v2-btn" data-act="zt-auswertung" data-val="frei">Anzeigen</button></div>
+    ${!d ? emptyRow("Auswertung nicht verfügbar.") : `<div class="v2-aw-kpis"><div class="v2-aw-kpi"><small>Stunden</small><b>${esc(dauerTxt(s.minuten || 0))}</b></div><div class="v2-aw-kpi"><small>Einträge</small><b>${s.eintraege || 0}</b></div><div class="v2-aw-kpi"><small>km</small><b>${s.km || 0}</b></div><div class="v2-aw-kpi"><small>intern (kalkulatorisch)</small><b>${cent2eur(s.kosten_cent || 0)}</b></div></div>
+    ${s.eintraege ? "" : emptyRow("Keine Zeiten in diesem Zeitraum.")}
+    ${tab("Je Kunde", d.je_kunde || [])}${tab("Je Tätigkeit", d.je_taetigkeit || [])}${tab("Je Auftrag", (d.je_auftrag || []))}${lang ? tab((d.je_monat || []).length > 1 ? "Je Monat" : "Je Woche", ((d.je_monat || []).length > 1 ? d.je_monat : d.je_woche)) : ""}
+    <div class="v2-card-actions" style="margin-top:10px"><a class="v2-btn" href="/api/finanzen/zeit/auswertung?von=${esc(v)}&bis=${esc(b)}&format=csv">⬇️ CSV herunterladen</a></div>
+    <small class="v2-sub">🔒 Nur intern – Stunden und Kosten sind kalkulatorisch, keine Buchung.</small>`}`, true);
 }
 async function zeitFenster(meldung, fehler) {
   const [z, a] = await Promise.all([jget("/api/finanzen/zeit"), jget("/api/crm/auftraege")]);
@@ -1569,7 +1591,8 @@ async function abZeitLaden(nr) {
       <div class="v2-kv"><span>Arbeitszeit ${esc(dauerTxt(nk.minuten || 0))} × ${e.stundensatz_cent ? cent2eur(e.stundensatz_cent) + "/h" : "<i>Stundensatz fehlt</i>"} (kalkulatorisch)</span><b>−${cent2eur(nk.zeit_cent || 0)}</b></div>
       <div class="v2-kv"><span>Fahrtkosten ${nk.km || 0} km × 0,30 € (kalkulatorisch)</span><b>−${cent2eur(nk.fahrt_cent || 0)}</b></div>
       <div class="v2-kv"><span><b>Deckungsbeitrag</b></span><b style="${(nk.db_cent || 0) < 0 ? "color:var(--v2-red)" : ""}">${cent2eur(nk.db_cent || 0)}</b></div>
-      ${nk.stundenlohn_cent != null ? `<div class="v2-kv"><span>Effektiver Stundenlohn</span><b>${cent2eur(nk.stundenlohn_cent)}/h</b></div>` : ""}</div>
+      ${nk.stundenlohn_cent != null ? `<div class="v2-kv"><span>Effektiver Stundenlohn</span><b>${cent2eur(nk.stundenlohn_cent)}/h</b></div>` : ""}
+      ${(nk.je_position || []).length ? `<div class="v2-sub" style="margin-top:6px"><b>Je Leistung</b> (Zeit einer Position zugeordnet)</div>${nk.je_position.map(p => `<div class="v2-kv"><span>${p.position}. ${esc(p.beschreibung)} · ${esc(dauerTxt(p.minuten))}</span><b>${p.stundenlohn_cent != null ? cent2eur(p.stundenlohn_cent) + "/h" : "–"} <small class="v2-sub">DB ${cent2eur(p.db_cent)}</small></b></div>`).join("")}${nk.ohne_position_min ? `<div class="v2-kv"><span class="v2-sub">ohne Position</span><b class="v2-sub">${esc(dauerTxt(nk.ohne_position_min))}</b></div>` : ""}` : ""}</div>
     <div class="v2-card-actions" style="margin:8px 0">${lauf ? (lauf.auftrag === nr ? `<button class="v2-btn danger" data-act="zeit-stopp" data-id="${esc(nr)}">⏹ Zeit stoppen (läuft seit ${esc(lauf.start.slice(11, 16))})</button>` : `<small class="v2-sub">Es läuft gerade eine Zeit für ${esc(lauf.auftrag || lauf.firma)}.</small>`) : `<button class="v2-btn" data-act="zeit-start" data-id="${esc(nr)}">▶️ Zeit starten</button>`}</div>
     ${zeilen || `<div class="v2-sub">Noch keine Zeiten. Unterwegs per Telegram: „Bin auf dem Weg zu …“ / „Bin wieder zuhause“.</div>`}
     <details style="margin-top:8px"><summary><small>+ Zeit von Hand eintragen</small></summary><div class="v2-form">
@@ -1586,12 +1609,15 @@ async function abZeitLaden(nr) {
 const dauerTxt = (m) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")} h`;
 // Z1: Eintrag korrigieren (Ein/Aus/Pause/Taetigkeit, Grund Pflicht -- Verlauf bleibt in der Kette)
 async function ztKorrForm(zid, nr) {
-  const d = await jget(`/api/finanzen/zeit?auftrag=${encodeURIComponent(nr)}`);
+  const [d, ad] = await Promise.all([jget(`/api/finanzen/zeit?auftrag=${encodeURIComponent(nr)}`), jget("/api/crm/auftraege/" + encodeURIComponent(nr))]);
+  const posListe = ((ad && ad.auftrag && ad.auftrag.positionen) || []);
   const x = ((d && d.stundenzettel && d.stundenzettel.eintraege) || []).find(e => e.id === zid); const box = $("#zt-korr-box"); if (!x || !box) return;
   box.innerHTML = `<h3>Zeit korrigieren</h3><div class="v2-form">
     <div class="v2-an-zeile"><label class="v2-feld"><small>Datum</small><input id="zk-datum" type="date" value="${esc(x.datum)}"></label><label class="v2-feld"><small>Ein</small><input id="zk-von" type="time" value="${esc(x.von)}"></label><label class="v2-feld"><small>Aus</small><input id="zk-bis" type="time" value="${esc(x.bis)}"></label><label class="v2-feld"><small>Pause (Min.)</small><input id="zk-pause" inputmode="numeric" value="${esc(String(x.pause_min || ""))}"></label></div>
     <div class="v2-an-zeile"><label class="v2-feld"><small>Tätigkeit</small><input id="zk-taet" list="zt-taet-liste" value="${esc(x.taetigkeit || "")}"></label><label class="v2-feld"><small>Grund der Korrektur *</small><input id="zk-grund" placeholder="z. B. Stoppen vergessen"></label></div>
-    <button class="v2-btn pri" data-act="zt-korr-speichern" data-id="${esc(zid)}" data-val="${esc(nr)}">Korrektur speichern</button><div id="zk-msg" class="v2-msg"></div></div>`;
+    <button class="v2-btn pri" data-act="zt-korr-speichern" data-id="${esc(zid)}" data-val="${esc(nr)}">Korrektur speichern</button><div id="zk-msg" class="v2-msg"></div>
+    ${posListe.length ? `<div class="v2-an-zeile" style="margin-top:10px"><label class="v2-feld"><small>Leistung (für die Nachkalkulation je Position)</small><select id="zk-pos" class="v2-inp"><option value="0">— keine —</option>${posListe.map((p, i) => `<option value="${i + 1}" ${Number(x.position || 0) === i + 1 ? "selected" : ""}>${i + 1}. ${esc(p.beschreibung)}</option>`).join("")}</select></label>
+      <button class="v2-btn" data-act="zt-pos-speichern" data-id="${esc(zid)}" data-val="${esc(nr)}">Leistung zuordnen</button></div>` : ""}</div>`;
   box.scrollIntoView({ block: "nearest" });
 }
 async function zeitAktion(act, id, val) {
@@ -3155,6 +3181,9 @@ async function handleAct(act, el) {
     case "ber-senden": return berSenden(id);
     case "ber-entfaellt": { const g = prompt("Warum ist kein Bericht nötig? (z. B. reiner Dreh ohne Postings)", ""); if (!g) return;
       const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/bericht/entfaellt`, { grund: g }); return abDetail(id, r && r.ok ? "Vermerkt: kein Bericht nötig." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
+    case "zt-pos-speichern": { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/details`, { position: $("#zk-pos").value });
+      if (!r || r.ok === false) return kundenMsg("zk-msg", (r && r.hinweis) || "Fehler.", false); return abZeitLaden(val); }
+    case "zt-auswertung": return val === "frei" ? ztAuswertung("frei", $("#aw-von").value, $("#aw-bis").value) : ztAuswertung(val);
     case "pz-speichern": case "pz-aus": return rePzSpeichern(id, act === "pz-aus");
     case "po-form-v": case "po-form-k": return poForm(id, val, act.slice(-1));
     case "po-speichern-v": case "po-speichern-k": { el.disabled = true; await poSpeichern(id, val, act.slice(-1)); el.disabled = false; return; }

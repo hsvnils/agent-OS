@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from .beleg_pdf import eur
 from .buchhaltung import jetzt
@@ -93,9 +93,21 @@ class Zeiterfassung:
         km = sum(f.get("km") or 0 for x in z for f in x["fahrten"])
         umsatz = int(auftrag.get("geld_cent", auftrag.get("summe_cent", 0)) or 0)
         db = umsatz - zeit_cent - fahrt_cent
+        je_pos = []                                         # Z3: Nachkalkulation je Leistung (Zeit einer Position zugeordnet)
+        for i, p in enumerate(auftrag.get("positionen") or [], 1):
+            zp = [x for x in z if int(x.get("position") or 0) == i]
+            if not zp:
+                continue
+            m = sum(x.get("minuten", 0) for x in zp)
+            um = int(p.get("gesamt_cent") or 0)
+            k = sum(x["kosten_cent"] + x["fahrt_cent"] for x in zp)
+            je_pos.append({"position": i, "beschreibung": p.get("beschreibung", ""), "katalog_id": p.get("katalog_id", ""),
+                           "umsatz_cent": um, "minuten": m, "kosten_cent": k, "db_cent": um - k,
+                           "stundenlohn_cent": round(um * 60 / m) if m else None})
         return {"umsatz_cent": umsatz, "minuten": minuten, "zeit_cent": zeit_cent, "fahrt_cent": fahrt_cent, "km": km,
                 "db_cent": db, "stundenlohn_cent": round((umsatz - fahrt_cent) * 60 / minuten) if minuten else None,
-                "eintraege": len(z)}
+                "eintraege": len(z), "je_position": je_pos,
+                "ohne_position_min": sum(x.get("minuten", 0) for x in z if not int(x.get("position") or 0))}
 
     # -- Schreiben ----------------------------------------------------------------------------------------------------
 
@@ -185,11 +197,20 @@ class Zeiterfassung:
 
     # -- PROJEKTZEITEN Z1: Stundenzettel, Taetigkeit, Korrektur ---------------------------------------------------------
 
-    def details_setzen(self, zid: str, *, taetigkeit=None, pause_min=None, notiz=None, von: str = "") -> dict:
+    def details_setzen(self, zid: str, *, taetigkeit=None, pause_min=None, notiz=None, position=None, von: str = "") -> dict:
         x = self._falte().get(zid)
         if not x or x["storniert"]:
             raise KeyError(zid)
         d = {"id": zid}
+        if position is not None:                            # Z3: Zeit einer Auftragsposition zuordnen (0 = keine)
+            try:
+                n = int(position or 0)
+            except (TypeError, ValueError):
+                raise ValueError("Position: Nummer der Auftragsposition.") from None
+            a = self.auftraege.auftrag(x.get("auftrag") or "") if self.auftraege and x.get("auftrag") else None
+            if n and (not a or not 1 <= n <= len(a["positionen"])):
+                raise ValueError("Diese Position gibt es im Auftrag nicht.")
+            d["position"] = n
         if taetigkeit is not None:
             d["taetigkeit"] = _taetigkeit(taetigkeit)
         if pause_min is not None:
@@ -254,7 +275,7 @@ class Zeiterfassung:
                  "pause_min": int(x.get("pause_min") or 0), "minuten": x.get("minuten", 0),
                  "taetigkeit": x.get("taetigkeit", ""), "notiz": x.get("notiz", ""), "km": km, "quelle": x.get("quelle", ""),
                  "kosten_cent": x["kosten_cent"], "fahrt_cent": x["fahrt_cent"], "abgerechnet": x.get("abgerechnet", ""),
-                 "km_abgerechnet": x.get("km_abgerechnet", ""),
+                 "km_abgerechnet": x.get("km_abgerechnet", ""), "position": int(x.get("position") or 0),
                  "korrigiert": len(x.get("korrekturen") or [])}
             zeilen.append(z)
             t = tage.setdefault(z["datum"], {"datum": z["datum"], "minuten": 0, "km": 0})
@@ -419,8 +440,8 @@ def falte_zeiten(eintraege: list[dict]) -> dict[str, dict]:
         elif t == "zeit_stopp":
             out[d["id"]] |= {"ende": d["ende"], "satz_cent": d["satz_cent"]} \
                 | {k: d[k] for k in ("taetigkeit", "pause_min") if k in d}
-        elif t == "zeit_details":                           # PROJEKTZEITEN Z1: Taetigkeit/Pause/Notiz nachtragen
-            out[d["id"]] |= {k: d[k] for k in ("taetigkeit", "pause_min", "notiz") if k in d}
+        elif t == "zeit_details":                           # PROJEKTZEITEN Z1: Taetigkeit/Pause/Notiz nachtragen (Z3: Position)
+            out[d["id"]] |= {k: d[k] for k in ("taetigkeit", "pause_min", "notiz", "position") if k in d}
         elif t == "zeit_korrigiert":                        # Z1: Ein/Aus/Pause korrigiert, Verlauf bleibt in der Kette
             x = out[d["id"]]
             x.setdefault("korrekturen", []).append({"ts": e["ts"], "von": e.get("von", ""), "grund": d.get("grund", ""),
@@ -440,6 +461,56 @@ def falte_zeiten(eintraege: list[dict]) -> dict[str, dict]:
         x["kosten_cent"] = round(x.get("minuten", 0) * (x.get("satz_cent") or 0) / 60)
         x["fahrt_cent"] = sum(f.get("betrag_cent") or 0 for f in x["fahrten"])
     return out
+
+
+def auswertung(eintraege: list[dict], von: str, bis: str, firmen: dict | None = None) -> dict:
+    """PROJEKTZEITEN Z3: Zeiten im Zeitraum [von, bis] (Tage, inklusive) -- je Kunde, Taetigkeit, Woche, Monat, Auftrag.
+    Nur beendete, nicht stornierte Eintraege; Stunden sind intern (kalkulatorisch), nichts davon ist eine Buchung."""
+    firmen = firmen or {}
+    zeilen = []
+    for x in sorted(falte_zeiten(eintraege).values(), key=lambda x: x["start"]):
+        tag = str(x["start"])[:10]
+        if x["storniert"] or x["laeuft"] or not (von <= tag <= bis):
+            continue
+        km = sum(f.get("km") or 0 for f in x["fahrten"])
+        iso = date.fromisoformat(tag).isocalendar()
+        zeilen.append({"id": x["id"], "datum": tag, "von": str(x["start"])[11:16], "bis": str(x.get("ende") or "")[11:16],
+                       "pause_min": int(x.get("pause_min") or 0), "minuten": x.get("minuten", 0), "km": km,
+                       "taetigkeit": x.get("taetigkeit") or "", "auftrag": x.get("auftrag") or "", "firma": x.get("firma") or "",
+                       "firma_name": firmen.get(x.get("firma"), x.get("firma") or ""), "kosten_cent": x["kosten_cent"],
+                       "fahrt_cent": x["fahrt_cent"], "abgerechnet": x.get("abgerechnet") or "",
+                       "woche": f"{iso[0]}-W{iso[1]:02d}", "monat": tag[:7]})
+
+    def gruppe(feld, name=None):
+        g: dict = {}
+        for z in zeilen:
+            k = z[feld] or "—"
+            r = g.setdefault(k, {"schluessel": k, "name": (name(z) if name else k), "minuten": 0, "km": 0, "kosten_cent": 0})
+            r["minuten"] += z["minuten"]
+            r["km"] += z["km"]
+            r["kosten_cent"] += z["kosten_cent"] + z["fahrt_cent"]
+        return sorted(g.values(), key=lambda r: -r["minuten"])
+    return {"von": von, "bis": bis, "zeilen": zeilen,
+            "summe": {"minuten": sum(z["minuten"] for z in zeilen), "km": sum(z["km"] for z in zeilen),
+                      "kosten_cent": sum(z["kosten_cent"] + z["fahrt_cent"] for z in zeilen), "eintraege": len(zeilen)},
+            "je_kunde": gruppe("firma", lambda z: z["firma_name"]), "je_taetigkeit": gruppe("taetigkeit"),
+            "je_auftrag": gruppe("auftrag"),
+            "je_woche": sorted(gruppe("woche"), key=lambda r: r["schluessel"]),
+            "je_monat": sorted(gruppe("monat"), key=lambda r: r["schluessel"])}
+
+
+def auswertung_csv(a: dict) -> str:
+    import csv
+    import io
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["Datum", "Ein", "Aus", "Pause (min)", "Dauer (h)", "Taetigkeit", "Kunde", "Auftrag", "km",
+                "Kosten EUR (kalkulatorisch)", "Abgerechnet auf"])
+    for z in a["zeilen"]:
+        w.writerow([f"{z['datum'][8:10]}.{z['datum'][5:7]}.{z['datum'][:4]}", z["von"], z["bis"], z["pause_min"],
+                    f"{z['minuten'] / 60:.2f}".replace(".", ","), z["taetigkeit"], z["firma_name"], z["auftrag"], z["km"],
+                    f"{(z['kosten_cent'] + z['fahrt_cent']) / 100:.2f}".replace(".", ","), z["abgerechnet"]])
+    return "\ufeff" + buf.getvalue()
 
 
 def kalkulatorisch(eintraege: list[dict], jahr: int, monate: set[int] | None = None, firmen: dict | None = None) -> dict:

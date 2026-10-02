@@ -685,3 +685,11 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-ab-haken { display: flex; flex-wrap: wrap; gap: 6px 18px; }
 .v2-ab-haken label { display: flex; gap: 8px; align-items: center; min-height: 36px; }
 .v2-ab-haken input { width: 20px; height: 20px; }
+/* Zeiten auswerten (PROJEKTZEITEN Z3) */
+.v2-aw-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 12px 0; }
+.v2-aw-kpi { background: var(--v2-line-soft); border-radius: 12px; padding: 10px 12px; display: grid; }
+.v2-aw-kpi small { color: var(--v2-muted); font-size: 11px; }
+.v2-aw-kpi b { font-size: 20px; }
+.v2-zt-aw td:first-child { white-space: normal; }
+.v2-zt-aw th.num, .v2-zt-aw td.num { text-align: right; white-space: nowrap; }
+.v2-zt-aw td:first-child { width: 50%; }

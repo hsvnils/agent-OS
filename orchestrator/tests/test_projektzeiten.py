@@ -71,6 +71,39 @@ class TestStundenzettel(unittest.TestCase):
         self.assertLessEqual(max(len(b["callback_data"].encode()) for r in kb for b in r), 64)   # Telegram-Grenze
 
 
+class TestAuswertungZ3(unittest.TestCase):
+    def test_1_je_kunde_taetigkeit_woche_csv(self):
+        from orchestrator.core.zeiterfassung import auswertung, auswertung_csv
+        bh, ks, k, ab, nr, z = _setup()
+        a = z.eintragen(auftrag=nr, datum=VORGESTERN, von_uhr="09:00", bis_uhr="12:00", taetigkeit="Dreh")
+        z.eintragen(auftrag=nr, datum=GESTERN, von_uhr="13:00", bis_uhr="14:30", taetigkeit="Schnitt")
+        s = z.eintragen(auftrag=nr, datum=GESTERN, von_uhr="15:00", bis_uhr="16:00", taetigkeit="Schnitt")
+        z.stornieren(s["id"], "doppelt")
+        z.fahrt_erfassen(a["id"], km=20)
+        r = auswertung(bh.eintraege(), VORGESTERN, GESTERN, {k: "Brand X GmbH"})
+        self.assertEqual((r["summe"]["minuten"], r["summe"]["km"], r["summe"]["eintraege"]), (270, 20, 2))
+        self.assertEqual([(x["name"], x["minuten"]) for x in r["je_kunde"]], [("Brand X GmbH", 270)])
+        self.assertEqual([(x["name"], x["minuten"]) for x in r["je_taetigkeit"]], [("Dreh", 180), ("Schnitt", 90)])
+        self.assertEqual(sum(x["minuten"] for x in r["je_woche"]), 270)
+        self.assertEqual(auswertung(bh.eintraege(), GESTERN, GESTERN)["summe"]["minuten"], 90)
+        csv = auswertung_csv(r)
+        self.assertIn("Taetigkeit", csv.splitlines()[0])
+        self.assertIn(";3,00;Dreh;Brand X GmbH;", csv)
+
+    def test_2_zeit_je_position(self):
+        bh, ks, k, ab, nr, z = _setup()                                          # POS: Reel 2 x 450 + Story 1,5 x 80
+        a = z.eintragen(auftrag=nr, datum=GESTERN, von_uhr="09:00", bis_uhr="13:00", taetigkeit="Dreh")
+        z.eintragen(auftrag=nr, datum=GESTERN, von_uhr="14:00", bis_uhr="15:00", taetigkeit="Mail")
+        z.details_setzen(a["id"], position=1)
+        with self.assertRaisesRegex(ValueError, "Position"):
+            z.details_setzen(a["id"], position=9)
+        nk = z.nachkalkulation(ab.auftrag(nr))
+        self.assertEqual([(p["position"], p["minuten"], p["umsatz_cent"], p["stundenlohn_cent"]) for p in nk["je_position"]],
+                         [(1, 240, 90000, 22500)])                               # 900 EUR / 4 h
+        self.assertEqual(nk["ohne_position_min"], 60)
+        self.assertEqual(z.stundenzettel(nr)["eintraege"][0]["position"], 1)
+
+
 class TestApi(ApiBasis):
     def test_a1_endpunkte(self):
         an = self._neu()
@@ -89,6 +122,11 @@ class TestApi(ApiBasis):
         self.assertTrue(self.c.post(f"/api/finanzen/zeit/{r['id']}/details", json={"taetigkeit": "Schnitt"}).json()["ok"])
         x = self.c.get(f"/api/finanzen/zeit?auftrag={nr}").json()["stundenzettel"]["eintraege"][0]
         self.assertEqual((x["minuten"], x["taetigkeit"]), (60, "Schnitt"))
+        aw = self.c.get(f"/api/finanzen/zeit/auswertung?von={GESTERN}&bis={GESTERN}").json()      # Z3
+        self.assertEqual(aw["summe"]["minuten"], 60)
+        c = self.c.get(f"/api/finanzen/zeit/auswertung?von={GESTERN}&bis={GESTERN}&format=csv")
+        self.assertIn("text/csv", c.headers["content-type"])
+        self.assertEqual(self.c.get("/api/finanzen/zeit/auswertung?von=2026-02-01&bis=2026-01-01").status_code, 400)
 
 
 if __name__ == "__main__":

@@ -1780,6 +1780,27 @@ def zeit_liste(auftrag: str = ""):
     return out
 
 
+@app.get("/api/finanzen/zeit/auswertung")
+def zeit_auswertung(von: str = "", bis: str = "", format: str = ""):
+    """PROJEKTZEITEN Z3: Zeiten je Kunde/Taetigkeit/Woche/Monat im Zeitraum (Standard: laufender Monat), CSV-Export."""
+    from datetime import date as _date
+    from ...core.zeiterfassung import auswertung, auswertung_csv
+    heute = _date.fromisoformat(jetzt_iso()[:10])
+    try:
+        v = _date.fromisoformat(von[:10]) if von else heute.replace(day=1)
+        b = _date.fromisoformat(bis[:10]) if bis else heute
+    except ValueError:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datum: JJJJ-MM-TT")
+    if b < v or (b - v).days > 731:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Zeitraum: bis nach von, hoechstens 2 Jahre")
+    firmen = {f["nummer"]: f["name"] for f in kunden_store.firmen()}
+    a = auswertung(kunden_store.bh.eintraege(), v.isoformat(), b.isoformat(), firmen)
+    if format == "csv":
+        return Response(auswertung_csv(a), media_type="text/csv; charset=utf-8",
+                        headers={"Content-Disposition": f'attachment; filename="Zeiten_{v.isoformat()}_{b.isoformat()}.csv"'})
+    return a
+
+
 @app.get("/api/finanzen/zeit/einstellungen")
 def zeit_einstellungen():
     return _zeit().einstellungen()
@@ -1810,7 +1831,7 @@ async def zeit_details(zid: str, request: Request):
     """PROJEKTZEITEN Z1: Taetigkeit/Pause/Notiz nachtragen."""
     body = await _json(request) or {}
     return _kunden_aktion(lambda: _zeit().details_setzen(zid, taetigkeit=body.get("taetigkeit"), pause_min=body.get("pause_min"),
-                                                         notiz=body.get("notiz"), von=_von(request)))
+                                                         notiz=body.get("notiz"), position=body.get("position"), von=_von(request)))
 
 
 @app.post("/api/finanzen/zeit/{zid}/korrigieren")
