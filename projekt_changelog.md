@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-03 00:06] — Claude Code
+- **Was:** Branch `ai/projekt-etappen` (BF-52, Z1-Z3, P1-P4) nach `main` gemergt (fast-forward), gepusht, Code per
+  `deploy/sync-to-nas.sh --no-restart` auf die NAS; im Live-Katalog neue Gruppe „Projektzeiten“ mit „Projektstunde“
+  65,00 EUR/Std. und „Fahrt-km“ 0,50 EUR/km angelegt (inaktiv = nicht in Preisliste/Angebotsauswahl, nur Verkaufssatz
+  fuer Projektzeiten auf der Rechnung; Ereignis `katalog_geaendert`).
+- **Warum:** CEO-Go 2026-10-03 („Go fuer Merge, Push und Deploy, Projektstunde 65 EUR, km 0,50 EUR“).
+- **Betroffen:** `main`, NAS-Code, `buchhaltung/katalog.json` (NAS); Neustart der Container durch den CEO offen.
+
 ## [2026-10-03 00:02] — Claude Code
 - **Was:** PROJEKTBERICHT Etappe P4: gemessene Kontakte (Median) als Vorschlag im Katalog-Editor, Kampagnen-Historie
   in der Firmenakte, optionaler 30-Tage-Wert fuer Reels, „Folgeauftrag anfragen?“ 14 Tage nach dem Bericht, Bitte um
