@@ -2074,6 +2074,19 @@ def posting_bild(pid: str, i: int):
     return FileResponse(f, content_disposition_type="inline")
 
 
+# -- Belegverfolgung (BELEGVERFOLGUNG B1): verbundene Belege und Ereignisse als Zeitstrahl ----------------------------
+@app.get("/api/crm/belege/{kennung}/verfolgung")
+def beleg_verfolgung(kennung: str, request: Request):
+    from ...core.belegverfolgung import kette
+    u = getattr(request.state, "user", None) or _ceo_user()
+    try:
+        return kette(kunden_store.bh.eintraege(), kennung, finanzen=hat_modul(u, "finanzen"))
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Beleg")
+    except PermissionError as exc:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc))
+
+
 # -- Aus den Zahlen lernen (PROJEKTBERICHT P4) ------------------------------------------------------------------------
 @app.get("/api/crm/katalog/ist-kontakte")
 def katalog_ist_kontakte():

@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-03 11:34] — Claude Code
+- **Was:** BELEGVERFOLGUNG B1+B2: verbundene Belege und Ereignisse je Kundenbeleg ermitteln (`core/belegverfolgung.py`,
+  `GET /api/crm/belege/<nummer>/verfolgung`), Korrektur-Rechnungen merken `korrektur_zu`; Knopf „🔗 Belegverfolgung“ in
+  Angebot, Auftrag, Rechnung und je Mahnung mit Zeitstrahl (Rechner waagerecht, iPad/iPhone senkrecht), Klick oeffnet.
+- **Warum:** CEO-Go 2026-10-03 fuer B1 und B2.
+- **Betroffen:** `orchestrator/core/belegverfolgung.py` (neu), `orchestrator/core/rechnungen.py`,
+  `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html` (v90/v40),
+  `orchestrator/tests/test_belegverfolgung.py` (neu), `BELEGVERFOLGUNG_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`.
+
 ## [2026-10-03 11:27] — Claude Code
 - **Was:** Roadmap „Belegverfolgung“ angelegt (Analyse read-only: Belegarten, vorhandene Verknuepfungen, Live-Umfang,
   Luecke `korrektur_zu`), Etappen B1 (Kern + Endpunkt) und B2 (Knopf + Zeitstrahl), CEO-Entscheidungen eingetragen.

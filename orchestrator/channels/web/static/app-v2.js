@@ -1274,7 +1274,7 @@ async function anDetail(nr, meldung, fehler) {
     + `<tr><td></td><td><b>Gesamtbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
   const termine = (a.versendet_termine || []).map(t => `<div class="v2-list-row"><span>📅</span><div class="grow"><b>${esc(t.titel)}</b><small>${esc(new Date(t.datum).toLocaleDateString("de-DE"))}, 09:00</small></div></div>`).join("");
   const pdfs = (a.pdfs || []).map(p => `<div class="v2-list-row"><span>📎</span><div class="grow"><b>${esc(p.pfad.split("/").pop())}</b><small>${esc(zeit(p.ts))}${p.an ? " · Mail-Entwurf an " + esc(p.an) : ""}${p.inhalt === a.inhalt ? "" : " · älterer Stand"}</small></div></div>`).join("");
-  let aktionen = `<a class="v2-btn" href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 PDF ansehen</a>`;
+  let aktionen = `<a class="v2-btn" href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 PDF ansehen</a><button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(nr)}">🔗 Belegverfolgung</button>`;
   if (a.status === "entwurf") aktionen += `<button class="v2-btn" data-act="an-bearbeiten" data-id="${esc(nr)}">✎ Bearbeiten</button>
     <button class="v2-btn pri" data-act="an-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled title=\"Google nicht verbunden\""}>✉️ Senden …</button>
     <button class="v2-btn" data-act="an-versendet" data-id="${esc(nr)}" title="Nur wenn du das Angebot auf anderem Weg verschickt hast">✔ Anderweitig versendet</button>`;
@@ -1350,7 +1350,7 @@ async function abDetail(nr, meldung, fehler) {
     + sm.zuschlaege.map(([n, p, c]) => `<tr><td></td><td>${esc(n)} (+${esc(pz(p))} %)</td><td></td><td style="text-align:right">${cent2eur(c)}</td></tr>`).join("")
     + (sm.rabatt ? `<tr><td></td><td>Paketrabatt (${esc(pz(sm.rabatt[0]))} %)</td><td></td><td style="text-align:right">−${cent2eur(sm.rabatt[1])}</td></tr>` : "")
     + `<tr><td></td><td><b>Gesamtbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
-  let aktionen = `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 Auftragsbestätigung (PDF)</a>
+  let aktionen = `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 Auftragsbestätigung (PDF)</a><button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(nr)}">🔗 Belegverfolgung</button>
     ${a.angebot ? `<button class="v2-btn" data-act="an-detail" data-id="${esc(a.angebot)}">↩ Angebot ${esc(a.angebot)}</button>` : ""}`;
   if (a.status !== "storniert") aktionen += `<button class="v2-btn pri" data-act="ab-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled"}>✉️ Senden …</button>`;
   const reListe = d.rechnungen || [], vkDa = reListe.some(r => r.art === "anzahlung" && r.status !== "storniert");
@@ -1464,6 +1464,32 @@ async function poSpeichern(pid, nr, art) {
   if (!r || r.ok === false) { const m = karte.querySelector(".po-msg"); m.className = "v2-msg err po-msg"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return; }
   const a = (await jget("/api/crm/auftraege/" + encodeURIComponent(nr)) || {}).auftrag || {};
   return abPostings(nr, a.status);
+}
+// BELEGVERFOLGUNG B2: verbundene Belege als Zeitstrahl (Rechner waagerecht, iPad/iPhone senkrecht), Klick oeffnet
+const BV_ICON = { angebot: "📝", auftrag: "📋", entwurf: "✎", vorkasse: "💶", rechnung: "🧾", schlussrechnung: "🧾", storno: "↩️", zahlung: "💰", mahnung: "⚠️", mahnverfahren: "⚖️", lieferung: "📦", bericht: "📊", dokument: "📎" };
+const BV_EIN = { "beauftragt": "aus", "Vorkasse": "zu", "berechnet": "zu", "storniert durch": "storniert", "ersetzt durch": "ersetzt", "abgezogen in": "zieht ab:", "bezahlt": "für", "gemahnt": "zu", "Mahnverfahren": "zu", "geliefert": "zu", "Bericht gesendet": "zu", "Dokument": "zu" };
+const BV_AUS = { "storniert durch": "storniert durch", "ersetzt durch": "ersetzt durch", "abgezogen in": "abgezogen in" };
+async function belegVerfolgung(kennung) {
+  openModal("🔗 Belegverfolgung · " + kennung, `<div class="v2-empty">Lade…</div>`, true);
+  const d = await jget(`/api/crm/belege/${encodeURIComponent(kennung)}/verfolgung`);
+  if (!d || !d.knoten) return openModal("🔗 Belegverfolgung · " + kennung, emptyRow("Belegverfolgung nicht verfügbar."), true);
+  const nr = Object.fromEntries(d.knoten.map(k => [k.id, k.nummer]));
+  const karte = (k, i) => {
+    const ein = d.kanten.filter(e => e.nach === k.id).map(e => `${BV_EIN[e.text] || e.text} ${esc(nr[e.von] || e.von)}`);
+    const aus = d.kanten.filter(e => e.von === k.id && BV_AUS[e.text]).map(e => `${BV_AUS[e.text]} ${esc(nr[e.nach] || e.nach)}`);
+    const o = k.oeffnen || {}, akt = i === d.position;
+    const inhalt = `<span class="bv-art">${BV_ICON[k.art] || "•"} ${esc(k.art_text)}</span><b>${esc(k.nummer)}</b>
+      <small>${esc(datumDe(k.datum))}${k.betrag_cent != null ? " · " + cent2eur(k.betrag_cent) : ""}</small>
+      ${k.titel ? `<small class="bv-titel">${esc(k.titel)}</small>` : ""}${k.status ? `<small class="bv-status">${esc({ storniert: "storniert", bezahlt: "bezahlt", offen: "offen", storno: "Storno", entwurf: "Entwurf", erledigt: "geliefert", beauftragt: "beauftragt", abgeschlossen: "✓ abgeschlossen", angenommen: "angenommen", versendet: "versendet", abgelehnt: "abgelehnt", gesendet: "gesendet" }[k.status] || k.status)}</small>` : ""}
+      ${[...ein, ...aus].map(t => `<small class="bv-bez">${t}</small>`).join("")}`;
+    const kl = `bv-knoten${k.gross ? "" : " klein"}${akt ? " aktuell" : ""}`;
+    return akt ? `<div class="${kl}" id="bv-aktuell">${inhalt}<small class="bv-hier">● dieser Beleg</small></div>`
+      : o.url ? `<a class="${kl}" href="${esc(o.url)}" target="_blank" rel="noopener">${inhalt}</a>`
+      : `<button class="${kl}" data-act="${esc(o.act)}" data-id="${esc(o.id)}">${inhalt}</button>`;
+  };
+  openModal("🔗 Belegverfolgung · " + kennung, `<div class="v2-sub" style="margin-bottom:8px">${d.vorher} früher · ${d.nachher} später – Klick öffnet den Beleg.</div>
+    <div class="v2-bv"><div class="bv-spur">${d.knoten.map(karte).join("")}</div></div>`, true);
+  requestAnimationFrame(() => { const a = $("#bv-aktuell"); if (a) a.scrollIntoView({ block: "center", inline: "center" }); });
 }
 // PROJEKTBERICHT P3: Bericht je Auftrag (Fazit-Vorschlag, Stunden/km per Haken, Versand nach Klick, Akte)
 async function abBericht(nr) {
@@ -1980,7 +2006,7 @@ async function reDetail(id, meldung, fehler) {
     + (sm.rabatt ? `<tr><td></td><td>Rabatt (${esc(pz(sm.rabatt[0]))} %)</td><td></td><td style="text-align:right">−${cent2eur(Math.abs(sm.rabatt[1]))}</td></tr>` : "")
     + (sm.abzuege ? `<tr><td></td><td>Auftragssumme</td><td></td><td style="text-align:right">${cent2eur(sm.vor_abzug_cent)}</td></tr>` + sm.abzuege.map(([n, c]) => `<tr><td></td><td>${esc(n)}</td><td></td><td style="text-align:right">−${cent2eur(c)}</td></tr>`).join("") : "")
     + `<tr><td></td><td><b>Rechnungsbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
-  let aktionen = `<a class="v2-btn" href="/api/finanzen/rechnungen/${encodeURIComponent(id)}/pdf" target="_blank" rel="noopener">📄 ${entwurf ? "PDF-Vorschau" : "Rechnung (PDF)"}</a>`;
+  let aktionen = `<a class="v2-btn" href="/api/finanzen/rechnungen/${encodeURIComponent(id)}/pdf" target="_blank" rel="noopener">📄 ${entwurf ? "PDF-Vorschau" : "Rechnung (PDF)"}</a><button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(id)}">🔗 Belegverfolgung</button>`;
   if (entwurf) aktionen += `<button class="v2-btn" data-act="re-bearbeiten" data-id="${esc(id)}">✎ Bearbeiten</button>
     <button class="v2-btn pri" data-act="re-festschreiben" data-id="${esc(id)}" ${d.steuernummer ? "" : "disabled title=\"Steuernummer fehlt\""}>🔒 Festschreiben (Nummer vergeben)</button>
     <button class="v2-btn" data-act="re-verwerfen" data-id="${esc(id)}">Entwurf verwerfen</button>`;
@@ -2002,7 +2028,7 @@ async function reDetail(id, meldung, fehler) {
   const mv = d.mahnverfahren;
   const dokumente = (d.dokumente || []).map(x => `<div class="v2-list-row"><span>📎</span><div class="grow"><b><a href="/api/crm/akte/${encodeURIComponent(x.id)}/datei" target="_blank" rel="noopener">${esc(x.titel)}</a></b><small>${esc(datumDe(x.datum))}${x.notiz ? " · " + esc(x.notiz) : ""}</small></div></div>`).join("");
   const mahnungen = (d.mahnungen || []).map(m => `<div class="v2-list-row"><span>⚠️</span><div class="grow"><b>${esc(MSTUFE[m.stufe])} ${esc(m.nummer)} · ${cent2eur(m.summe_cent)}</b><small>${esc(datumDe(m.datum))} · Frist ${esc(datumDe(m.frist))} · ${m.versendet_am ? "✉️ gesendet an " + esc((m.mail || {}).an || "") : "noch nicht gesendet"}</small></div>
-    <a class="v2-btn sm" href="/api/finanzen/mahnungen/${encodeURIComponent(m.nummer)}/pdf" target="_blank" rel="noopener">📄</a>${m.versendet_am ? "" : `<button class="v2-btn pri sm" data-act="ma-senden" data-id="${esc(m.nummer)}">✉️ Senden …</button>`}</div>`).join("");
+    <a class="v2-btn sm" href="/api/finanzen/mahnungen/${encodeURIComponent(m.nummer)}/pdf" target="_blank" rel="noopener">📄</a><button class="v2-btn sm" data-act="bv-oeffnen" data-id="${esc(m.nummer)}" title="Belegverfolgung">🔗</button>${m.versendet_am ? "" : `<button class="v2-btn pri sm" data-act="ma-senden" data-id="${esc(m.nummer)}">✉️ Senden …</button>`}</div>`).join("");
   const zahlungen = (r.zahlungen || []).map((z, i) => `<div class="v2-list-row${z.storniert ? " v2-fin-storno" : ""}"><span>💶</span><div class="grow"><b>${cent2eur(z.betrag_cent)}${z.nebenforderung_cent ? " + " + cent2eur(z.nebenforderung_cent) + " Zinsen/Kosten" : ""}</b><small>${esc(datumDe(z.datum))}${z.zuordnung_jahr ? " · zugeordnet " + esc(z.zuordnung_jahr) : ""}${z.notiz ? " · " + esc(z.notiz) : ""}${z.storniert ? " · storniert: " + esc(z.storno_grund || "") : ""}</small></div>${!z.storniert && r.status !== "storniert" ? `<button class="v2-btn" data-act="re-zahlung-storno" data-id="${esc(r.nummer)}" data-val="${i}" title="Falsch erfasste Zahlung zurücknehmen">↶</button>` : ""}</div>`).join("");
   const lbl = { rechnung_entwurf: "Entwurf angelegt", rechnung_entwurf_geaendert: "Entwurf geändert", rechnung_festgeschrieben: "Festgeschrieben", rechnung_versendet: "Gesendet", rechnung_bezahlt: "Zahlung", rechnung_zahlung_storniert: "Zahlung storniert" };
   RE_DETAIL = d;
@@ -3194,6 +3220,7 @@ async function handleAct(act, el) {
     case "ber-stimme": { if (!confirm("Bitte um eine Kundenstimme als Gmail-Entwurf in LUNAs Konto anlegen? (Es wird nichts gesendet.)")) return;
       const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/kundenstimme-entwurf`, {});
       return kundenMsg("ber-msg2", r && r.ok ? `Entwurf an ${r.an} liegt in Gmail (LUNAs Konto) – dort prüfen und selbst senden.` : (r && r.hinweis) || "Fehler.", !!(r && r.ok)); }
+    case "bv-oeffnen": return belegVerfolgung(id);
     case "zt-auswertung": return val === "frei" ? ztAuswertung("frei", $("#aw-von").value, $("#aw-bis").value) : ztAuswertung(val);
     case "pz-speichern": case "pz-aus": return rePzSpeichern(id, act === "pz-aus");
     case "po-form-v": case "po-form-k": case "po-form-l": return poForm(id, val, act.slice(-1));

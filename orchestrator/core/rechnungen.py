@@ -246,7 +246,7 @@ class RechnungStore:
         for k in ("auftrag", "angebot"):
             if daten.get(k):
                 d[k] = str(daten[k]).upper()[:20]
-        d |= {k: v for k, v in (intern or {}).items() if k in ("art", "zahlung", "vorkasse_faellig") and v}
+        d |= {k: v for k, v in (intern or {}).items() if k in ("art", "zahlung", "vorkasse_faellig", "korrektur_zu") and v}
         eid = "E-" + uuid.uuid4().hex[:8]
         self.bh.erfassen("rechnung_entwurf", d | {"entwurf_id": eid}, von=von)
         return {"entwurf_id": eid}
@@ -373,6 +373,8 @@ class RechnungStore:
                 kopf["abzuege"] = x["abzuege"]
             if x.get("projektzeiten"):                                # Z2: Auswahl mit der Rechnung einfrieren
                 kopf["projektzeiten"] = x["projektzeiten"]
+            if x.get("korrektur_zu"):                                 # Belegverfolgung: ersetzt die stornierte Rechnung
+                kopf["korrektur_zu"] = x["korrektur_zu"]
             pdf = mit_anlage(self._pdf(kopf | {"nummer": nummer}, firmendaten), kopf | {"nummer": nummer}, firmendaten)
             return kopf, [(pdf, f"{ARTEN_TEXT[art].replace('-', '')}_{nummer}.pdf", "beleg")]
 
@@ -434,7 +436,8 @@ class RechnungStore:
                 if original.get(k):
                     d[k] = original[k]
             out["korrektur_entwurf"] = self.entwurf_anlegen(
-                d, von=von, intern={k: original.get(k) for k in ("art", "zahlung", "vorkasse_faellig")})["entwurf_id"]
+                d, von=von, intern={k: original.get(k) for k in ("art", "zahlung", "vorkasse_faellig")}
+                | {"korrektur_zu": nummer})["entwurf_id"]
             if original.get("projektzeiten"):                 # Z2: die (durch das Storno freien) Zeiten bleiben gewaehlt
                 self.bh.erfassen("rechnung_entwurf_geaendert", {"entwurf_id": out["korrektur_entwurf"],
                                                                 "felder": {"projektzeiten": original["projektzeiten"]}}, von=von)

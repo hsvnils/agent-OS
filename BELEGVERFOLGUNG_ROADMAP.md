@@ -1,9 +1,9 @@
 # Roadmap: Belegverfolgung (Belegkette als Zeitstrahl in jeder Belegart)
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-03
 - Arbeitsbranch: `ai/belegverfolgung`
 - Basiscommit: `fd77aa7`
-- Naechster Schritt: Entscheidungen liegen vor (2026-10-03); CEO-Go fuer B1-B2 abwarten.
+- Naechster Schritt: B1+B2 gebaut (2026-10-03); Deploy + gemeinsamer Test mit PROJEKTZEITEN/PROJEKTBERICHT, Abnahme an AB-2026-0001.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -33,7 +33,9 @@ darueber auch oeffnen lassen. So wird der Zusammenhang der Belege deutlicher.“
 
 ## Etappe B1: Belegkette ermitteln (Kern + Schnittstelle)
 
-- Status: geplant
+- Status: umgesetzt (2026-10-03) -- `core/belegverfolgung.py`, Endpunkt `GET /api/crm/belege/<nummer>/verfolgung`,
+  `korrektur_zu` an Korrektur-Entwurf und -Rechnung (Altfaelle abgeleitet), Reihenfolge am selben Tag nach der Kette.
+  Tests `test_belegverfolgung.py` mit Gegenprobe.
 - Ziel / Scope: `core/belegverfolgung.py` -- von einem beliebigen Beleg aus alle verbundenen Belege und Ereignisse
   sammeln (Graph ueber die Verknuepfungen oben), je Knoten Art, Nummer, Titel, Datum, Betrag, Status und wie er sich
   oeffnen laesst; Kanten mit Beschriftung („aus Angebot“, „Rechnung zu“, „storniert durch“, „ersetzt durch“, „Mahnung
@@ -47,7 +49,9 @@ darueber auch oeffnen lassen. So wird der Zusammenhang der Belege deutlicher.“
 
 ## Etappe B2: „🔗 Belegverfolgung“ in jeder Belegart (Zeitstrahl)
 
-- Status: geplant
+- Status: umgesetzt (2026-10-03) -- Knopf in Angebot, Auftrag, Rechnung (alle Arten, auch Entwurf) und je Mahnung;
+  Zeitstrahl ab 900 px waagerecht (durchgehende Spur, aktueller Beleg in die Mitte gerollt), darunter senkrecht;
+  Browsertest 1300/820/390 px.
 - Ziel / Scope: Knopf in Angebot, Auftrag, Rechnung (auch Entwurf, Vorkasse, Storno, Altrechnung) und Mahnung.
   Fenster mit Zeitstrahl (Rechner waagerecht, iPad/iPhone senkrecht): „vorher“, hervorgehoben der aktuelle Beleg, „nachher“;
   Knoten mit Symbol, Nummer, Datum, Betrag, Status; Verbindungslinien mit Beschriftung; Klick oeffnet den Beleg

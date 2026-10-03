@@ -701,3 +701,30 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-kat-zeile > .v2-inp, .v2-kat-zu > .v2-inp { width: 100%; }
 @media (max-width: 900px) { .v2-kat-zeile, .v2-kat-zu { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 700px) { .v2-kat-tkp .v2-inp { width: calc(50% - 4px); } }
+/* Belegverfolgung (BELEGVERFOLGUNG B2): mobil senkrecht, am Rechner waagerecht (durchgehende Spur hinter den Karten) */
+.v2-bv { position: relative; }
+.bv-spur { position: relative; display: flex; flex-direction: column; gap: 10px; padding-left: 22px; }
+.bv-spur::before { content: ""; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--v2-line); }
+.bv-knoten { position: relative; display: grid; gap: 2px; text-align: left; font: inherit; color: inherit; text-decoration: none;
+  border: 1px solid var(--v2-line-soft); border-radius: 14px; padding: 10px 12px; background: var(--v2-card-solid, #fff); cursor: pointer; min-width: 0; }
+.bv-knoten::before { content: ""; position: absolute; left: -20px; top: 14px; width: 12px; height: 12px; border-radius: 50%; box-sizing: border-box;
+  background: var(--v2-card-solid, #fff); border: 2px solid var(--v2-accent, #2f6bff); }
+.bv-knoten:hover { border-color: var(--v2-accent, #2f6bff); }
+.bv-knoten.klein { padding: 6px 10px; font-size: 13px; border-style: dashed; }
+.bv-knoten.klein::before { width: 10px; height: 10px; left: -19px; top: 11px; }
+.bv-knoten.aktuell { border: 2px solid var(--v2-accent, #2f6bff); box-shadow: 0 0 0 4px var(--v2-accent-soft, #e7efff); cursor: default; }
+.bv-knoten.aktuell::before { background: var(--v2-accent, #2f6bff); width: 16px; height: 16px; left: -23px; top: 12px; }
+.bv-knoten small { color: var(--v2-muted); font-size: 12px; overflow-wrap: anywhere; }
+.bv-art { font-size: 12px; color: var(--v2-muted); }
+.bv-knoten .bv-bez { color: inherit; }
+.bv-knoten .bv-hier { color: var(--v2-accent, #2f6bff); font-weight: 700; }
+.bv-knoten .bv-status { font-weight: 600; }
+@media (min-width: 900px) {
+  .v2-bv { overflow-x: auto; padding-bottom: 10px; }
+  .bv-spur { flex-direction: row; align-items: flex-start; width: max-content; padding: 26px 6px 6px; gap: 14px; }
+  .bv-spur::before { left: 0; right: 0; top: 13px; bottom: auto; width: auto; height: 2px; }
+  .bv-knoten { width: 200px; }
+  .bv-knoten.klein { width: 150px; }
+  .bv-knoten::before, .bv-knoten.klein::before { left: 50%; transform: translateX(-50%); top: -19px; }
+  .bv-knoten.aktuell::before { top: -22px; left: 50%; }
+}
