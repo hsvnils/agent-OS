@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-04 00:40] — Claude Code
+- **Was:** `ai/iphone-feinschliff` nach `main` gemergt (fast-forward), Suite gruen (1149), gepusht, Code per
+  `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen.
+- **Warum:** CEO-Go 2026-10-04 („Go fuer Merge, Push und Deploy“).
+- **Betroffen:** `main`, NAS-Code.
+
 ## [2026-10-04 00:34] — Claude Code
 - **Was:** Stempel „IM MAHNVERFAHREN“ statt „UEBERFAELLIG“ bei eingetragenem Mahnverfahren (Test); iPhone-17-Pro-Web-App
   geprueft und korrigiert (BF-55): Fenster mit Sicherheitsbereichen (Dynamic Island, Home-Balken), auf dem Handy volle
