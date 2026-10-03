@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-03 12:21] — Claude Code
+- **Was:** `ai/belegverfolgung` nach `main` gemergt (fast-forward), Suite gruen (1144), gepusht, Code per
+  `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen.
+- **Warum:** CEO-Go 2026-10-03 („Go fuer Merge, Push und Deploy“).
+- **Betroffen:** `main`, NAS-Code.
+
 ## [2026-10-03 11:34] — Claude Code
 - **Was:** BELEGVERFOLGUNG B1+B2: verbundene Belege und Ereignisse je Kundenbeleg ermitteln (`core/belegverfolgung.py`,
   `GET /api/crm/belege/<nummer>/verfolgung`), Korrektur-Rechnungen merken `korrektur_zu`; Knopf „🔗 Belegverfolgung“ in
