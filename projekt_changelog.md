@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-03 12:49] — Claude Code
+- **Was:** Live-Pruefung nach dem Neustart: LUNA-OS v90/v40; Belegverfolgung live korrekt fuer die echte Kette
+  AN-2026-0001 -> AB-2026-0001 -> RE-2026-0001 -> Storno RE-2026-0002 -> RE-2026-0003 (Korrektur abgeleitet) und fuer
+  RG-11052026 (3 Mahnstufen, Mahnverfahren, 4 Akte-Dokumente); Bot-Herzschlag frisch. Nur gelesen.
+- **Warum:** CEO „Neustart erledigt, kannst pruefen“.
+- **Betroffen:** keine Dateien (nur dieser Eintrag).
+
 ## [2026-10-03 12:21] — Claude Code
 - **Was:** `ai/belegverfolgung` nach `main` gemergt (fast-forward), Suite gruen (1144), gepusht, Code per
   `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen.
