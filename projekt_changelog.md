@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-04 00:25] — Claude Code
+- **Was:** Live-Pruefung nach dem Neustart: LUNA-OS v91/v41; Belegblatt live fuer AN-2026-0001/-0002, AB-2026-0001/-0002,
+  RE-2026-0002/-0003, RG-11052026 und die drei Mahnungen RG-11052026-M1..M3 (Anschrift, Kopfdaten, Positionen, Summen,
+  Stempel, Fusszeile, Original-PDF der Altmahnungen); Bot-Herzschlag frisch. Nur gelesen. Live-Helfer im Scratchpad
+  neu angelegt (liest Zugang nur ueber `_load_secrets()`, gibt nichts aus).
+- **Warum:** CEO „Neustart erledigt, kannst pruefen“.
+- **Betroffen:** keine Dateien (nur dieser Eintrag).
+
 ## [2026-10-04 00:14] — Claude Code
 - **Was:** `ai/digitaler-beleg` nach `main` gemergt (fast-forward), Suite gruen (1149), gepusht, Code per
   `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen.
