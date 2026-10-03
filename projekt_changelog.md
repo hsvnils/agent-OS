@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-04 00:42] — Claude Code
+- **Was:** Live-Pruefung nach dem Neustart: LUNA-OS v92/v42 mit den iPhone-Regeln (BF-55) ausgeliefert; RG-11052026
+  (Kiezalm) zeigt „IM MAHNVERFAHREN, seit 29.09.2026“, RE-2026-0003 weiter „OFFEN“; Bot-Herzschlag frisch. Nur gelesen.
+- **Warum:** CEO „Neustart erledigt, kannst pruefen“.
+- **Betroffen:** keine Dateien (nur dieser Eintrag).
+
 ## [2026-10-04 00:40] — Claude Code
 - **Was:** `ai/iphone-feinschliff` nach `main` gemergt (fast-forward), Suite gruen (1149), gepusht, Code per
   `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen.
