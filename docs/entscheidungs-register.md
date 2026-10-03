@@ -22,6 +22,7 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Digitaler Beleg**: Belege in LUNA-OS als Belegblatt (Inhalte wie PDF), Variante A -- Rechner Blatt links + Seitenleiste, iPhone Blatt volle Breite + Aktionsleiste unten, Auftrag mit Reitern; Variante B (Reiter Beleg/Ablauf/Intern) verworfen | 2026-10-03 | **BESCHLOSSEN** (CEO) | `DIGITALER_BELEG_ROADMAP.md`, `docs/skizzen/digitaler-beleg.html` |
 | **Belegverfolgung**: nur Kundenbelege (AN/AB/RE/RG/MA, nicht Eingang/Eigenbeleg); Belege + Ereignisse (Zahlung, Lieferung, Bericht, Mahnverfahren, Akte-Dokumente); Zeitstrahl am Rechner waagerecht, mobil senkrecht | 2026-10-03 | **BESCHLOSSEN** (CEO) | `BELEGVERFOLGUNG_ROADMAP.md` |
 | **Projektzeiten und km optional fuer Kunden sichtbar/abrechenbar** (je Rechnung/Bericht per Haken, Standard aus; Verkaufs-Stundensatz und -km-Satz als Katalog-Artikel; Rechnung Standard zusammengefasst + Stundenzettel) -- revidiert „Stunden nur intern“ (2026-09-30) zur Opt-in-Regel | 2026-10-02 | **BESCHLOSSEN** (CEO) | `PROJEKTZEITEN_ROADMAP.md`, `PROJEKTBERICHT_ROADMAP.md` |
 | **Insights-Screenshots liest Gemini aus** (neuer Datenfluss zu Google; CEO bestaetigt die Werte); Auftrag „abgeschlossen“ erst nach versendetem Projektbericht **und** bezahlter Rechnung | 2026-10-02 | **BESCHLOSSEN** (CEO) | `PROJEKTBERICHT_ROADMAP.md`; Datenschutz-Doku bei Etappe P2 |

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skizze Digitaler Beleg</title>
+<style>
+:root{--bg:#eef4fb;--card:#fff;--fg:#17202e;--muted:#56657c;--line:rgba(23,32,46,.10);--soft:rgba(23,32,46,.06);--accent:#2f6bff;--accent-soft:#e7efff;--green:#22a565;--green-soft:#e2f6ec;--red:#e0556b;--red-soft:#fce8ec;--amber:#c27d16;--amber-soft:#fdf1de;--blau:#004087;--rot:#cc0000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1526;--card:#16223a;--fg:#e8f0fb;--muted:#93a6c4;--line:rgba(255,255,255,.12);--soft:rgba(255,255,255,.06);--accent:#5b8bff;--accent-soft:rgba(91,139,255,.16);--green-soft:rgba(34,165,101,.18);--red-soft:rgba(224,85,107,.18);--amber-soft:rgba(233,162,59,.18)}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);padding:24px 16px 60px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:34px 0 6px}p.lead{color:var(--muted);margin:0 0 14px;max-width:900px;line-height:1.45}
+.rahmen{background:var(--card);border-radius:18px;box-shadow:0 8px 30px rgba(23,42,82,.08);padding:16px;max-width:1240px}
+.titelzeile{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.titelzeile b{font-size:16px}.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:6px 12px;font-size:13px;white-space:nowrap}
+.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}.btn.ok{background:var(--green);color:#fff;border-color:var(--green)}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px}.badge.offen{background:var(--amber-soft);color:var(--amber)}.badge.ok{background:var(--green-soft);color:var(--green)}.badge.err{background:var(--red-soft);color:var(--red)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+/* das Belegblatt */
+.blatt{position:relative;background:#fff;color:#17202e;border-radius:6px;box-shadow:0 2px 14px rgba(0,0,0,.12);padding:26px 30px 22px;overflow:hidden;font-size:13px}
+.blatt .balken{display:flex;height:4px;margin:-26px -30px 18px}.blatt .balken i{flex:1;background:var(--blau)}.blatt .balken i+i{background:var(--rot)}
+.blatt .kopf{display:grid;grid-template-columns:1fr auto;gap:18px}
+.absender{font-size:10.5px;color:#888;border-bottom:1px solid #ddd;padding-bottom:3px;margin-bottom:6px}
+.anschrift b{font-size:14px}.anschrift div{line-height:1.45}
+.meta{text-align:right}.meta .art{font-size:22px;font-weight:800;color:#17202e}.meta .titel{color:#555;margin:2px 0 8px}
+.meta dl{display:grid;grid-template-columns:auto auto;gap:2px 12px;margin:0;font-size:12px;justify-content:end}.meta dt{color:#777}.meta dd{margin:0;font-weight:600}
+.blatt .text{margin:18px 0 10px;line-height:1.5}
+table.pos{width:100%;border-collapse:collapse;font-size:12.5px}
+table.pos th{text-align:left;font-size:11px;color:#777;font-weight:600;border-bottom:1.5px solid #17202e;padding:5px 6px}
+table.pos td{border-bottom:1px solid #e6e6e6;padding:7px 6px;vertical-align:top}table.pos .r{text-align:right;white-space:nowrap}
+table.pos small{display:block;color:#888;font-size:11px}
+.gruppe td{background:#f2f4f8;font-weight:700;color:var(--blau);font-size:11.5px}
+.summen{margin-left:auto;width:300px;margin-top:8px;font-size:12.5px}.summen div{display:flex;justify-content:space-between;padding:3px 6px}
+.summen .ges{border-top:1.5px solid #17202e;font-weight:800;font-size:14px;margin-top:3px;padding-top:6px}
+.zahlhinweis{margin-top:14px;background:#f6f8fb;border-left:3px solid var(--blau);padding:8px 10px;line-height:1.45;font-size:12px}
+.fuss{margin-top:16px;border-top:1px solid #e3e3e3;padding-top:6px;font-size:10px;color:#999;text-align:center}
+.stempel{position:absolute;left:44%;top:70px;transform:rotate(-12deg);border:3px solid;border-radius:8px;padding:4px 12px;font-weight:900;font-size:22px;letter-spacing:2px;opacity:.85}
+.stempel.offen{color:var(--amber);border-color:var(--amber)}.stempel.bez{color:var(--green);border-color:var(--green)}.stempel.sto{color:var(--red);border-color:var(--red)}.stempel.ent{color:#8a96aa;border-color:#8a96aa}
+/* Seitenleiste */
+.seite{display:grid;gap:10px}.box{border:1px solid var(--line);border-radius:14px;padding:12px}.box h4{margin:0 0 8px;font-size:13px}
+.kv{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0}.kv span{color:var(--muted)}
+.mini{display:flex;flex-direction:column;gap:6px;border-left:2px solid var(--line);padding-left:12px;margin-left:4px}
+.mini a{font-size:12.5px;color:var(--fg);text-decoration:none;position:relative}.mini a::before{content:"";position:absolute;left:-17px;top:4px;width:8px;height:8px;border-radius:50%;border:2px solid var(--accent);background:var(--card)}
+.mini a.akt{font-weight:800;color:var(--accent)}.mini a.akt::before{background:var(--accent)}
+.intern{background:repeating-linear-gradient(135deg,transparent 0 8px,var(--soft) 8px 16px)}
+.notiz{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
+.pfeil{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:8px;padding:2px 7px;font-size:11.5px;font-weight:700;margin-right:4px}
+/* Handy */
+.phones{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+.phone{width:390px;max-width:100%;border:10px solid #1d2433;border-radius:38px;background:var(--bg);overflow:hidden;position:relative;height:780px;display:flex;flex-direction:column}
+.phone .bar{background:var(--card);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:14px;border-bottom:1px solid var(--line)}
+.phone .scroll{flex:1;overflow:auto;padding:12px}
+.phone .blatt{padding:18px 16px 14px;font-size:12.5px}.phone .blatt .balken{margin:-18px -16px 14px}
+.phone .blatt .kopf{grid-template-columns:1fr}.phone .meta{text-align:left}.phone .meta dl{justify-content:start}
+.phone .stempel{top:20px;left:auto;right:14px;font-size:15px}
+.pcards{display:grid;gap:8px}.pcard{border-bottom:1px solid #e6e6e6;padding:6px 0}.pcard .z{display:flex;justify-content:space-between;gap:8px}.pcard small{color:#888;font-size:11px}
+.phone .summen{width:100%}
+.unten{background:var(--card);border-top:1px solid var(--line);padding:8px 10px;display:flex;gap:6px;overflow-x:auto}
+.tabs{display:flex;gap:4px;padding:8px 12px 0;background:var(--card)}.tabs span{padding:7px 12px;font-size:13px;border-radius:10px 10px 0 0;color:var(--muted)}.tabs span.on{background:var(--bg);color:var(--fg);font-weight:700}
+.legende{font-size:13px;line-height:1.55;max-width:900px;color:var(--fg)}.legende li{margin:3px 0}
+.drei{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;max-width:1240px}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+@media (max-width:600px){.blatt{padding:18px 14px}.blatt .balken{margin:-18px -14px 14px}.blatt .kopf{grid-template-columns:1fr}.meta{text-align:left}.meta dl{justify-content:start}.summen{width:100%}}
+</style>
+</head>
+<body>
+<h1>Skizze: Digitaler Beleg in LUNA-OS</h1>
+<p class="lead">Jeder Beleg (Angebot, Auftragsbestätigung, Rechnung, Storno, Mahnung) wird in LUNA-OS als <b>Belegblatt</b> gezeigt: weißes „Papier“ mit Logo-Balken, Kundenanschrift, Beleg-Infos, Positionen, Summen und Zahlungshinweis – wie ein Beleg, aber lesbar am Bildschirm (kein PDF). Alles, was <b>nicht</b> auf den Beleg gehört (Aktionen, Status, Zahlungen, Verlauf, interne Kalkulation), steht daneben bzw. darunter.</p>
+
+<h2>Variante A – Rechner: Belegblatt links, Seitenleiste rechts (Empfehlung)</h2>
+<div class="rahmen">
+  <div class="titelzeile"><b>RE-2026-0003 · Rechnung · Brand X GmbH (Beispiel)</b>
+    <div class="btns"><span class="btn">📄 PDF</span><span class="btn">🔗 Belegverfolgung</span><span class="btn pri">✉️ Senden …</span><span class="btn ok">💶 Zahlung erfassen</span><span class="btn">Stornieren …</span></div></div>
+  <div class="layout">
+    <div class="blatt">
+      <div class="balken"><i></i><i></i></div>
+      <div class="stempel offen">OFFEN</div>
+      <div class="kopf">
+        <div class="anschrift">
+          <div class="absender">Hanserautisch · Nils Krüger · Arthur-Soltau-Weg 7c · 22889 Tangstedt</div>
+          <div><b>Brand X GmbH (Beispiel)</b></div>
+          <div>z. Hd. Anna Muster</div>
+          <div>Hafenstraße 12</div>
+          <div>20457 Hamburg</div>
+        </div>
+        <div class="meta">
+          <div class="art">Rechnung</div>
+          <div class="titel">Herbstkampagne</div>
+          <dl><dt>Rechnungs-Nr.</dt><dd>RE-2026-0003</dd><dt>Datum</dt><dd>28.09.2026</dd><dt>Kunden-Nr.</dt><dd>K-00004</dd>
+            <dt>Leistung</dt><dd>01.09. – 30.09.2026</dd><dt>Auftrag</dt><dd>AB-2026-0001</dd><dt>Fällig am</dt><dd>12.10.2026</dd></dl>
+        </div>
+      </div>
+      <div class="text"><b>Moin Anna Muster,</b><br>vielen Dank für Ihren Auftrag. Wir berechnen Ihnen folgende Leistungen:</div>
+      <table class="pos">
+        <thead><tr><th style="width:28px">#</th><th>Leistung</th><th class="r">Menge</th><th class="r">Einzelpreis</th><th class="r">Gesamt</th></tr></thead>
+        <tbody>
+          <tr class="gruppe"><td colspan="5">Instagram</td></tr>
+          <tr><td>1</td><td>Feed-Post oder Karussell<small>Ø 52.000 Impressionen · bleibt dauerhaft im Profil sichtbar</small></td><td class="r">1 Stück</td><td class="r">1.560,00 €</td><td class="r">1.560,00 €</td></tr>
+          <tr><td>2</td><td>Story-Serie, 3 Frames<small>mit Link-Sticker</small></td><td class="r">2 Stück</td><td class="r">600,00 €</td><td class="r">1.200,00 €</td></tr>
+          <tr class="gruppe"><td colspan="5">Projektzeiten</td></tr>
+          <tr><td>3</td><td>Projektzeit 4,83 h<small>29.09. – 30.09.2026 · Stundenzettel siehe Anlage</small></td><td class="r">4,83 Std.</td><td class="r">65,00 €</td><td class="r">313,95 €</td></tr>
+        </tbody>
+      </table>
+      <div class="summen"><div><span>Summe Positionen</span><span>3.073,95 €</span></div><div><span>Paketrabatt (5 %)</span><span>−153,70 €</span></div><div class="ges"><span>Rechnungsbetrag</span><span>2.920,25 €</span></div></div>
+      <div class="zahlhinweis">Bitte überweisen Sie den Rechnungsbetrag von <b>2.920,25 €</b> bis zum <b>12.10.2026</b> unter Angabe der Rechnungsnummer RE-2026-0003.<br>Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.</div>
+      <div class="fuss">Steuernummer 30/000/00000 · Bank: Hamburger Sparkasse · IBAN DE00 0000 0000 0000 0000 00 · 📎 Anlage: Stundenzettel</div>
+    </div>
+    <div class="seite">
+      <div class="box"><h4>Status</h4><div class="kv"><span>Status</span><span class="badge offen">offen · fällig in 9 Tagen</span></div><div class="kv"><span>Bezahlt / offen</span><b>0,00 € / 2.920,25 €</b></div><div class="kv"><span>Gesendet</span><b>✉️ 28.09. an anna@…</b></div></div>
+      <div class="box"><h4>🔗 Belegverfolgung</h4><div class="mini"><a href="#">AN-2026-0001 · Angebot</a><a href="#">AB-2026-0001 · Auftrag</a><a href="#">RE-2026-0001 · storniert</a><a href="#">RE-2026-0002 · Storno</a><a class="akt" href="#">RE-2026-0003 · dieser Beleg</a></div><div class="notiz">Kompakte Kette – Klick öffnet, „🔗“ oben öffnet den großen Zeitstrahl.</div></div>
+      <div class="box"><h4>Zahlungen &amp; Mahnungen</h4><div class="notiz">Noch keine Zahlung. Mahnstufe 1 ab 13.10. möglich.</div></div>
+      <div class="box"><h4>Verlauf</h4><div class="kv"><span>28.09. 14:12</span><span>Festgeschrieben</span></div><div class="kv"><span>28.09. 14:15</span><span>Gesendet</span></div></div>
+    </div>
+  </div>
+</div>
+
+<h2>Variante A – iPhone (390 px)</h2>
+<p class="lead">Das Blatt füllt die Breite, Positionen werden zu kompakten Zeilen (Leistung oben, Menge × Preis = Gesamt darunter). Die Aktionen liegen als Leiste unten – immer erreichbar mit dem Daumen. Status, Belegverfolgung, Zahlungen und Verlauf folgen unter dem Blatt.</p>
+<div class="phones">
+  <div class="phone">
+    <div class="bar"><span>‹ Zurück</span><b>RE-2026-0003</b><span class="badge offen">offen</span></div>
+    <div class="scroll">
+      <div class="blatt">
+        <div class="balken"><i></i><i></i></div>
+        <div class="stempel offen">OFFEN</div>
+        <div class="kopf">
+          <div class="anschrift"><div class="absender">Hanserautisch · Nils Krüger · 22889 Tangstedt</div><div><b>Brand X GmbH (Beispiel)</b></div><div>z. Hd. Anna Muster</div><div>Hafenstraße 12, 20457 Hamburg</div></div>
+          <div class="meta"><div class="art">Rechnung</div><div class="titel">Herbstkampagne</div>
+            <dl><dt>Nr.</dt><dd>RE-2026-0003</dd><dt>Datum</dt><dd>28.09.2026</dd><dt>Leistung</dt><dd>01.–30.09.2026</dd><dt>Fällig</dt><dd>12.10.2026</dd></dl></div>
+        </div>
+        <div class="pcards" style="margin-top:14px">
+          <div class="pcard"><div class="z"><b>1 · Feed-Post oder Karussell</b></div><div class="z"><small>1 Stück × 1.560,00 €</small><b>1.560,00 €</b></div></div>
+          <div class="pcard"><div class="z"><b>2 · Story-Serie, 3 Frames</b></div><div class="z"><small>2 Stück × 600,00 €</small><b>1.200,00 €</b></div></div>
+          <div class="pcard"><div class="z"><b>3 · Projektzeit 4,83 h</b></div><div class="z"><small>4,83 Std. × 65,00 €</small><b>313,95 €</b></div></div>
+        </div>
+        <div class="summen"><div><span>Summe</span><span>3.073,95 €</span></div><div><span>Rabatt 5 %</span><span>−153,70 €</span></div><div class="ges"><span>Rechnungsbetrag</span><span>2.920,25 €</span></div></div>
+        <div class="zahlhinweis">Zahlbar bis <b>12.10.2026</b> · § 19 UStG</div>
+      </div>
+      <div class="box" style="margin-top:12px;background:var(--card)"><h4>🔗 Belegverfolgung</h4><div class="mini"><a href="#">AB-2026-0001 · Auftrag</a><a href="#">RE-2026-0001 · storniert</a><a class="akt" href="#">RE-2026-0003 · dieser Beleg</a></div></div>
+    </div>
+    <div class="unten"><span class="btn pri">✉️ Senden</span><span class="btn ok">💶 Zahlung</span><span class="btn">📄 PDF</span><span class="btn">🔗</span><span class="btn">⋯</span></div>
+  </div>
+  <div class="phone">
+    <div class="bar"><span>‹ Zurück</span><b>AB-2026-0002</b><span class="badge ok">beauftragt</span></div>
+    <div class="tabs"><span class="on">📄 Beleg</span><span>📣 Postings</span><span>⏱ Zeiten</span><span>📝 Bericht</span></div>
+    <div class="scroll">
+      <div class="blatt">
+        <div class="balken"><i></i><i></i></div>
+        <div class="kopf">
+          <div class="anschrift"><div class="absender">Hanserautisch · Nils Krüger · 22889 Tangstedt</div><div><b>Beispiel Sport GmbH</b></div><div>Musterweg 3, 22525 Hamburg</div></div>
+          <div class="meta"><div class="art">Auftragsbestätigung</div><dl><dt>Nr.</dt><dd>AB-2026-0002</dd><dt>Datum</dt><dd>02.10.2026</dd><dt>Angebot</dt><dd>— direkt angelegt</dd><dt>Leistung</dt><dd>ab 05.10.2026</dd></dl></div>
+        </div>
+        <div class="pcards" style="margin-top:14px">
+          <div class="pcard"><div class="z"><b>1 · Reel, Standalone</b></div><div class="z"><small>37.000 Aufrufe · TKP 30 € + 490 € Produktion</small><b>1.600,00 €</b></div></div>
+          <div class="pcard"><div class="z"><b>2 · Fotoshooting vor Ort</b></div><div class="z"><small>1 Pauschale</small><b>350,00 €</b></div></div>
+        </div>
+        <div class="summen"><div class="ges"><span>Gesamtbetrag</span><span>1.950,00 €</span></div></div>
+        <div class="zahlhinweis">Zahlbar 14 Tage nach Rechnungsstellung</div>
+      </div>
+      <div class="notiz" style="padding:8px 4px">Beim Auftrag sind Postings, Zeiten und Bericht als Reiter oben – das Blatt bleibt übersichtlich.</div>
+    </div>
+    <div class="unten"><span class="btn pri">✉️ Senden</span><span class="btn">🧾 Rechnung</span><span class="btn ok">📦 Geliefert</span><span class="btn">⋯</span></div>
+  </div>
+</div>
+
+<h2>So sieht jede Belegart aus (Ausschnitte)</h2>
+<div class="drei">
+  <div class="blatt" style="min-height:250px"><div class="balken"><i></i><i></i></div><div class="stempel bez" style="top:18px;left:auto;right:16px;font-size:16px">BEZAHLT</div>
+    <div class="meta" style="text-align:left"><div class="art">Rechnung</div><dl style="justify-content:start"><dt>Nr.</dt><dd>RE-2026-0001</dd><dt>Bezahlt am</dt><dd>05.10.2026</dd></dl></div>
+    <div class="notiz" style="color:#555">Stempel je Status: <b>OFFEN</b> (gelb), <b>BEZAHLT</b> (grün, mit Datum), <b>ÜBERFÄLLIG</b> (rot), <b>STORNIERT</b> (rot, mit „siehe RE-…“), <b>ENTWURF</b> (grau, Nummer „wird vergeben“).</div></div>
+  <div class="blatt" style="min-height:250px"><div class="balken"><i></i><i></i></div><div class="stempel sto" style="top:18px;left:auto;right:16px;font-size:16px">STORNO</div>
+    <div class="meta" style="text-align:left"><div class="art">Stornorechnung</div><dl style="justify-content:start"><dt>Nr.</dt><dd>RE-2026-0002</dd><dt>Storno zu</dt><dd>RE-2026-0001</dd></dl></div>
+    <div class="text">Hiermit stornieren wir die Rechnung RE-2026-0001. Grund: Adresse falsch.</div>
+    <div class="summen" style="width:100%"><div class="ges"><span>Betrag</span><span>−2.920,25 €</span></div></div></div>
+  <div class="blatt" style="min-height:250px"><div class="balken"><i></i><i></i></div>
+    <div class="meta" style="text-align:left"><div class="art">2. Mahnung</div><dl style="justify-content:start"><dt>Nr.</dt><dd>MA-2026-0004</dd><dt>zu Rechnung</dt><dd>RG-11052026</dd><dt>Frist</dt><dd>17.10.2026</dd></dl></div>
+    <table class="pos" style="margin-top:10px"><tbody><tr><td>Offener Betrag</td><td class="r">4.000,00 €</td></tr><tr><td>Verzugszinsen (14.06.–10.10.)<small>Basiszins + 9 Prozentpunkte</small></td><td class="r">171,23 €</td></tr><tr><td>Verzugspauschale § 288 Abs. 5 BGB</td><td class="r">40,00 €</td></tr></tbody></table>
+    <div class="summen" style="width:100%"><div class="ges"><span>Zu zahlen</span><span>4.211,23 €</span></div></div></div>
+  <div class="blatt" style="min-height:250px"><div class="balken"><i></i><i></i></div><div class="stempel ent" style="top:18px;left:auto;right:16px;font-size:16px">ENTWURF</div>
+    <div class="meta" style="text-align:left"><div class="art">Angebot</div><dl style="justify-content:start"><dt>Nr.</dt><dd>AN-2026-0003</dd><dt>Gültig bis</dt><dd>31.10.2026</dd></dl></div>
+    <div class="notiz" style="color:#555">Angebote zusätzlich mit Zuschlägen, Rabatt, „So kalkulieren wir“ (TKP) nur wenn auch im PDF gezeigt, und den Zahlungsbedingungen inkl. Vorkasse.</div></div>
+</div>
+
+<h2>Was neben dem Blatt steht (nie auf dem Beleg)</h2>
+<div class="rahmen intern" style="max-width:900px">
+  <ul class="legende">
+    <li><span class="pfeil">Aktionen</span> oben (Rechner) bzw. als Leiste unten (iPhone): Senden, Zahlung, PDF, Belegverfolgung, Stornieren …</li>
+    <li><span class="pfeil">Status</span> Bezahlt/offen, gesendet an, Mahnstufe, Mahnverfahren.</li>
+    <li><span class="pfeil">Belegverfolgung</span> als kompakte Mini-Kette in der Seitenleiste; der große Zeitstrahl bleibt über „🔗“.</li>
+    <li><span class="pfeil">🔒 Intern</span> Nachkalkulation, Zeiten, Postings &amp; Kennzahlen, Bericht, Notizen – beim Auftrag als Reiter (iPhone) bzw. unter der Seitenleiste (Rechner), klar als intern markiert.</li>
+    <li><span class="pfeil">Bearbeiten</span> Entwürfe öffnen weiter den Editor; das Blatt ist die Ansicht.</li>
+  </ul>
+</div>
+
+<h2>Variante B – Reiter statt Seitenleiste (Alternative)</h2>
+<p class="lead">Oben drei Reiter <b>📄 Beleg · 🔗 Ablauf · 🔒 Intern</b>, das Blatt nutzt die volle Breite. Vorteil: maximal ruhig. Nachteil: Status und Zahlungen sind einen Klick entfernt. Auf dem iPhone ist der Unterschied zu A klein.</p>
+<div class="rahmen" style="max-width:900px"><div class="tabs" style="background:transparent;padding:0 0 8px"><span class="on">📄 Beleg</span><span>🔗 Ablauf</span><span>🔒 Intern</span></div>
+  <div class="blatt" style="min-height:120px"><div class="balken"><i></i><i></i></div><div class="kopf"><div class="anschrift"><div class="absender">Hanserautisch · Nils Krüger · 22889 Tangstedt</div><b>Brand X GmbH (Beispiel)</b><div>Hafenstraße 12, 20457 Hamburg</div></div><div class="meta"><div class="art">Rechnung</div><dl><dt>Nr.</dt><dd>RE-2026-0003</dd></dl></div></div></div></div>
+</body>
+</html>

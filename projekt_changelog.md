@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-03 23:57] — Claude Code
+- **Was:** Skizze „Digitaler Beleg“ (Variante A/B, Rechner + iPhone, alle Belegarten) und Roadmap angelegt (Etappen D1
+  Rechnungen, D2 Angebot/Auftrag, D3 Mahnung + Feinschliff); CEO-Entscheidung Variante A eingetragen.
+- **Warum:** CEO-Wunsch 2026-10-03 („jeder Beleg soll aussehen wie ein digitaler Beleg“, „Variante A passt, mach die Roadmap“).
+- **Betroffen:** `docs/skizzen/digitaler-beleg.html` (neu), `DIGITALER_BELEG_ROADMAP.md` (neu), `ROADMAP.md`,
+  `docs/entscheidungs-register.md`.
+
 ## [2026-10-03 12:49] — Claude Code
 - **Was:** Live-Pruefung nach dem Neustart: LUNA-OS v90/v40; Belegverfolgung live korrekt fuer die echte Kette
   AN-2026-0001 -> AB-2026-0001 -> RE-2026-0001 -> Storno RE-2026-0002 -> RE-2026-0003 (Korrektur abgeleitet) und fuer
