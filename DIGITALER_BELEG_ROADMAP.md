@@ -70,6 +70,11 @@ Zahlungshinweis, Fusszeile). Interne Daten (Nachkalkulation, Zeiten, Kennzahlen,
 - Gate: Tests (Mahnungs-Blatt = Mahnungs-PDF-Zahlen); Browsertest 1300/820/390 px.
 - Aufwand: klein bis mittel.
 
+## Nachtrag 2026-10-04 (CEO)
+
+- Stempel „IM MAHNVERFAHREN“ (rot, mit Datum) statt „UEBERFAELLIG“, sobald ein Mahnverfahren eingetragen ist.
+- iPhone 17 Pro als Web-App: Sicherheitsbereiche, volle Fensterbreite, feste Aktionsleiste, Tippflaechen (BF-55).
+
 ## Nicht-Scope
 
 Keine Aenderung an PDFs, Nummern, Buchungen oder gespeicherten Belegen; kein neuer Editor; Eingangs-/Eigenbelege

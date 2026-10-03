@@ -71,10 +71,13 @@ def rechnung(rs, r: dict, fd: dict) -> dict:
         infos.append(("Fällig am", datum_de(r["faellig_am"])))
     st = r.get("status")
     zahl = [z for z in r.get("zahlungen") or [] if not z.get("storniert")]
+    from .mahnungen import MahnStore                    # CEO 2026-10-04: laufendes Mahnverfahren statt „ueberfaellig“
+    mv = MahnStore.mahnverfahren(rs.bh.eintraege()).get(r.get("nummer", "")) or {} if not entwurf else {}
     stempel = (_stempel("grau", "ENTWURF") if entwurf
                else _stempel("rot", "STORNO", f"zu {r.get('bezug', '')}") if r.get("art") == "storno"
                else _stempel("rot", "STORNIERT", f"durch {r.get('storniert_durch', '')}") if st == "storniert"
                else _stempel("gruen", "BEZAHLT", datum_de(zahl[-1]["datum"]) if zahl else "") if st == "bezahlt"
+               else _stempel("rot", "IM MAHNVERFAHREN", f"seit {datum_de(mv['datum'])}" if mv.get("datum") else "") if mv
                else _stempel("rot", "ÜBERFÄLLIG", f"seit {datum_de(r['faellig_am'])}") if r.get("faellig_am", "9") < heute
                else _stempel("gelb", "OFFEN", f"fällig {datum_de(r['faellig_am'])}" if r.get("faellig_am") else ""))
     from .beleg_pdf import HINWEIS_19

@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-04 00:34] — Claude Code
+- **Was:** Stempel „IM MAHNVERFAHREN“ statt „UEBERFAELLIG“ bei eingetragenem Mahnverfahren (Test); iPhone-17-Pro-Web-App
+  geprueft und korrigiert (BF-55): Fenster mit Sicherheitsbereichen (Dynamic Island, Home-Balken), auf dem Handy volle
+  Breite mit symmetrischen Raendern, Aktionsleiste fest unten (Ende langer Belege wieder erreichbar), Summen auf dem
+  Handy volle Breite, Touch-Mindesthoehe 44 px fuer Aufklapp-Zeilen/Logo/Eingaben; Pruefung 402 x 874 mit simulierten
+  Sicherheitsbereichen fuer 16 Ansichten ohne Befund, Rechner/iPad unveraendert ok. Memory: Kunde KIEZALM,
+  Pruefgeraet iPhone 17 Pro.
+- **Warum:** CEO 2026-10-04 („Stempel auf Im Mahnverfahren“, „Masse, Abstaende und Symmetrie auf dem iPhone 17 Pro in
+  Safari pruefen, nichts darf ausserhalb vom Bild sein“).
+- **Betroffen:** `orchestrator/core/belegblatt.py`, `orchestrator/tests/test_belegblatt.py`, `static/style-v2.css`,
+  `static/index-v2.html` (v92/v42), `docs/bekannte-fehler.md`, `DIGITALER_BELEG_ROADMAP.md`.
+
 ## [2026-10-04 00:25] — Claude Code
 - **Was:** Live-Pruefung nach dem Neustart: LUNA-OS v91/v41; Belegblatt live fuer AN-2026-0001/-0002, AB-2026-0001/-0002,
   RE-2026-0002/-0003, RG-11052026 und die drei Mahnungen RG-11052026-M1..M3 (Anschrift, Kopfdaten, Positionen, Summen,

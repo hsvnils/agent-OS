@@ -95,6 +95,10 @@ class TestBlatt(unittest.TestCase):
     def test_4_mahnung_und_altmahnung(self):
         bh, ks, rs, k = _rs()
         ms = _drei_mahnungen(bh, ks, rs, k)
+        self.assertEqual(belegblatt.rechnung(rs, rs.get("RG-11052026"), FD)["stempel"]["text"], "ÜBERFÄLLIG")
+        ms.mahnverfahren_setzen("RG-11052026", datum=HEUTE().isoformat(), durch="Anwältin")
+        self.assertEqual(belegblatt.rechnung(rs, rs.get("RG-11052026"), FD)["stempel"],
+                         {"art": "rot", "text": "IM MAHNVERFAHREN", "unter": f"seit {HEUTE().strftime('%d.%m.%Y')}"})
         alt = belegblatt.mahnung(ms, ms.get("RG-11052026-M2"), FD)
         self.assertEqual((alt["art"], alt["titel"], alt["gesamt"]["cent"]), ("2. Mahnung", "vor LUNA verschickt", 400000))
         bh2, ks2, st, ab, rs2, an, nr = _ablauf({"ziel_tage": 0})

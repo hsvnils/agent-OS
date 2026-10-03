@@ -831,3 +831,38 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-bl-box .v2-feld, .v2-bl-box input, .v2-bl-box textarea, .v2-bl-box select { min-width: 0; max-width: 100%; }
 .v2-bl-box input[type="date"] { width: 100%; }
 .v2-bl-box a { color: var(--v2-accent); }
+/* iPhone als Web-App (CEO 2026-10-04, iPhone 17 Pro): Fenster respektieren Dynamic Island/Statusleiste und Home-Balken;
+   auf dem Handy volle Breite (kein schmaler Rand links -> symmetrisch) */
+.v2-modal-card header { padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  padding-left: calc(20px + env(safe-area-inset-left, 0px)); padding-right: calc(20px + env(safe-area-inset-right, 0px)); }
+.v2-modal-body { padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+.v2-modal-card.breit .v2-modal-body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+@media (max-width: 600px) {
+  .v2-modal-card { width: 100vw; border-left: none; }
+  .v2-modal-body { padding-left: calc(16px + env(safe-area-inset-left, 0px)); padding-right: calc(16px + env(safe-area-inset-right, 0px)); }
+  .v2-modal-card.breit .v2-modal-body { padding-left: calc(16px + env(safe-area-inset-left, 0px)); padding-right: calc(16px + env(safe-area-inset-right, 0px)); }
+  .v2-modal-card header { padding-left: calc(16px + env(safe-area-inset-left, 0px)); padding-right: calc(16px + env(safe-area-inset-right, 0px)); }
+}
+@media (max-width: 899px) {
+  .v2-beleg-aktionen { bottom: calc(-20px - env(safe-area-inset-bottom, 0px)); margin-bottom: calc(-20px - env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 600px) {
+  .v2-beleg-aktionen { margin-left: calc(-16px - env(safe-area-inset-left, 0px)); margin-right: calc(-16px - env(safe-area-inset-right, 0px));
+    padding-left: 16px; padding-right: 16px; }
+}
+/* Aktionsleiste unten (iPad/iPhone): fest am unteren Fensterrand statt sticky mit Negativ-Abstaenden -- sonst war das
+   Ende langer Belege (Seitenleiste) nicht erreichbar; der Inhalt bekommt unten Platz fuer die Leiste + Home-Balken */
+@media (max-width: 899px) {
+  .v2-beleg-aktionen { position: fixed; left: 0; right: 0; bottom: 0; margin: 0;
+    padding: 10px calc(16px + env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) calc(16px + env(safe-area-inset-left, 0px)); }
+  .v2-modal-body:has(.v2-beleg-aktionen) { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 899px) { .v2-modal-card .v2-modal-body:has(.v2-beleg-aktionen) { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 600px) { .bl-summen { width: 100%; } }
+/* Touch (iPhone/iPad): Aufklapp-Zeilen, Logo-Knopf und alle Eingabefelder mindestens 44 px hoch; Eingaben 16 px
+   (iOS zoomt sonst beim Tippen ins Feld) -- CEO 2026-10-04 */
+@media (pointer: coarse) {
+  summary { min-height: 44px; padding: 11px 0; box-sizing: border-box; }
+  .v2-brand { min-height: 44px; }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select { min-height: 44px; font-size: 16px; }
+}
