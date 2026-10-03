@@ -22,6 +22,7 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Belegverfolgung**: nur Kundenbelege (AN/AB/RE/RG/MA, nicht Eingang/Eigenbeleg); Belege + Ereignisse (Zahlung, Lieferung, Bericht, Mahnverfahren, Akte-Dokumente); Zeitstrahl am Rechner waagerecht, mobil senkrecht | 2026-10-03 | **BESCHLOSSEN** (CEO) | `BELEGVERFOLGUNG_ROADMAP.md` |
 | **Projektzeiten und km optional fuer Kunden sichtbar/abrechenbar** (je Rechnung/Bericht per Haken, Standard aus; Verkaufs-Stundensatz und -km-Satz als Katalog-Artikel; Rechnung Standard zusammengefasst + Stundenzettel) -- revidiert „Stunden nur intern“ (2026-09-30) zur Opt-in-Regel | 2026-10-02 | **BESCHLOSSEN** (CEO) | `PROJEKTZEITEN_ROADMAP.md`, `PROJEKTBERICHT_ROADMAP.md` |
 | **Insights-Screenshots liest Gemini aus** (neuer Datenfluss zu Google; CEO bestaetigt die Werte); Auftrag „abgeschlossen“ erst nach versendetem Projektbericht **und** bezahlter Rechnung | 2026-10-02 | **BESCHLOSSEN** (CEO) | `PROJEKTBERICHT_ROADMAP.md`; Datenschutz-Doku bei Etappe P2 |
 | **Reels: Verfall nach 30 Tagen ohne Entscheidung, Videos abgelehnter/verfallener Reels nach 14 Tagen loeschen, gepostete behalten, Nachschub-Bremse ab 10 wartenden** | 2026-10-01 | **BESCHLOSSEN** (CEO) | 25 wartende Reels (18 aelter als 30 Tage) verstopfen Liste und Handlungsbedarf; Speicher (1,5 GB) unkritisch, aber unbegrenzt; Original-Clips bleiben. `REELS_ROADMAP.md` |

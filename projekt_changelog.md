@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-03 11:27] — Claude Code
+- **Was:** Roadmap „Belegverfolgung“ angelegt (Analyse read-only: Belegarten, vorhandene Verknuepfungen, Live-Umfang,
+  Luecke `korrektur_zu`), Etappen B1 (Kern + Endpunkt) und B2 (Knopf + Zeitstrahl), CEO-Entscheidungen eingetragen.
+- **Warum:** CEO-Wunsch 2026-10-03 („Belegverfolgung in jeder Belegart, wie ein Zeitstrahl“); Roadmap vor Umsetzung.
+- **Betroffen:** `BELEGVERFOLGUNG_ROADMAP.md` (neu), `ROADMAP.md`, `docs/entscheidungs-register.md`.
+
 ## [2026-10-03 00:09] — Claude Code
 - **Was:** Live-Pruefung nach dem Neustart: LUNA-OS liefert v89/v39; Postings, Konditionen, Bericht (inkl. PDF),
   Stundenzettel mit Nachkalkulation je Position, Zeit-Auswertung (inkl. CSV), Katalog mit `ist_kontakte` und
