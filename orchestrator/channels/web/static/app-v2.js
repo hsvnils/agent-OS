@@ -1292,25 +1292,18 @@ async function anDetail(nr, meldung, fehler) {
     const titel = v.richtung === "ein" ? `💬 Antwort von ${esc(v.mail_von || "")}` : `✉️ Gesendet an ${esc(v.mail_an || "")}${v.betreff ? " · „" + esc(v.betreff) + "“" : ""}`;
     return `<details class="v2-mail" data-nr="${esc(nr)}" data-mid="${esc(v.mail_id)}"><summary><div class="grow"><b>${titel}</b><small>${esc(zeit(v.ts))}${v.vorschau ? " · " + esc(v.vorschau.slice(0, 90)) : ""}${v.status ? " · Status: " + esc((AN_STATUS[v.status] || [v.status])[0]) : ""}</small></div></summary><div class="v2-mail-inhalt">Lade Mail…</div></details>`;
   }).join("");
-  openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
-    <div class="v2-card-actions" style="flex-wrap:wrap;margin:8px 0 14px">${aktionen}</div>
-    <div class="v2-an-detail"><div>
-    <div class="v2-kv"><span>Status</span>${anBadge(a.anzeige_status)}</div>
-    <div class="v2-kv"><span>Firma</span><b>${esc(a.firma)} · ${esc(d.firma.name || "")}</b></div>
-    <div class="v2-kv"><span>Ansprechpartner</span><b>${ap ? esc(ap.nummer + " · " + [ap.vorname, ap.nachname].filter(Boolean).join(" ")) : "—"}</b></div>
+  const altTab = `<h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>`;
+  const status = `<div class="v2-kv"><span>Status</span>${anBadge(a.anzeige_status)}</div>
     <div class="v2-kv"><span>Mail an</span><b>${esc(d.mail_an || "— keine Adresse —")}</b></div>
-    <div class="v2-kv"><span>Datum / gültig bis</span><b>${esc(new Date(a.datum).toLocaleDateString("de-DE"))} / ${esc(new Date(a.gueltig_bis).toLocaleDateString("de-DE"))}</b></div>
     <div class="v2-kv"><span>Layout</span><b>${a.layout === "standard" ? "Schlicht (DIN)" : "Hanserautisch"}</b></div>
-    ${a.titel ? `<div class="v2-kv"><span>Titel</span><b>${esc(a.titel)}</b></div>` : ""}
-    ${a.ware_cent ? `<div class="v2-kv"><span>Gegenleistung 🎁</span><b>${cent2eur(a.ware_cent)} in Ware (${esc((a.ware || {}).text || "")})${a.geld_cent ? " + " + cent2eur(a.geld_cent) + " in Geld" : " – reiner Barter"}</b></div>` : ""}
-    ${d.firmendaten ? "" : `<div class="v2-msg err">Firmendaten fehlen auf der NAS — PDF nicht möglich.</div>`}
+    ${a.ware_cent ? `<div class="v2-kv"><span>Gegenleistung 🎁</span><b>${cent2eur(a.ware_cent)} in Ware${a.geld_cent ? " + " + cent2eur(a.geld_cent) + " Geld" : " – Barter"}</b></div>` : ""}
     ${anzAntworten ? `<div class="v2-kv"><span>Antworten vom Kunden</span><b>💬 ${anzAntworten} (im Verlauf)</b></div>` : ""}
-    ${termine ? `<h3>Erinnerungen</h3>${termine}` : ""}${pdfs ? `<h3>Abgelegte PDFs</h3>${pdfs}` : ""}
-    <h3>Verlauf <small class="v2-sub">Mails zum Aufklappen</small></h3>${verlauf}
-    </div><div>
-    <div id="an-senden-box"></div>
-    <h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
-    </div></div>`, true);
+    ${d.firmendaten ? "" : `<div class="v2-msg err">Firmendaten fehlen auf der NAS — PDF nicht möglich.</div>`}`;
+  const seite = blBox("Status", status) + `<section class="v2-bl-box" id="bv-mini"></section>` + blBox("Erinnerungen", termine)
+    + blBox("Abgelegte PDFs", pdfs) + blBox(`Verlauf <small class="v2-sub">Mails zum Aufklappen</small>`, verlauf);
+  openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
+    ${belegAnsicht({ aktionen, haupt: `<div id="an-senden-box"></div>${d.blatt ? belegBlatt(d.blatt) : altTab}`, seite })}`, true);
+  bvMini(nr);
 }
 
 /* ---------- Auftraege (Beauftragung, KUNDEN_FINANZEN Etappe 4) ---------- */
@@ -1363,35 +1356,28 @@ async function abDetail(nr, meldung, fehler) {
   const lbl = { auftrag_angelegt: "Angelegt", auftrag_geaendert: "Geändert", auftrag_pdf_abgelegt: "PDF abgelegt", auftrag_status: "Status" };
   const verlauf = (a.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(lbl[v.typ] || v.typ)}${v.status ? ": " + esc(v.status === "gesendet" ? "Gesendet an " + (v.mail_an || "") : (AB_STATUS[v.status] || [v.status])[0]) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
   const bearbeitbar = a.status === "beauftragt";
-  openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
-    <div class="v2-card-actions" style="flex-wrap:wrap;margin:8px 0 14px">${aktionen}</div>
-    <div class="v2-an-detail"><div>
-    <div class="v2-kv"><span>Status</span>${abBadge(a.abgeschlossen ? "abgeschlossen" : a.status)}</div>
-    <div class="v2-kv"><span>Angebot</span><b>${a.angebot ? esc(a.angebot) : "— (direkt angelegt)"}</b></div>
-    <div class="v2-kv"><span>Firma</span><b>${esc(a.firma)} · ${esc(d.firma.name || "")}</b></div>
-    <div class="v2-kv"><span>Ansprechpartner</span><b>${ap ? esc(ap.nummer + " · " + [ap.vorname, ap.nachname].filter(Boolean).join(" ")) : "—"}</b></div>
-    <div class="v2-kv"><span>Beauftragt am</span><b>${esc(datumDe(a.datum))}</b></div>
+  const altTab = `<h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>`;
+  const status = `<div class="v2-kv"><span>Status</span>${abBadge(a.abgeschlossen ? "abgeschlossen" : a.status)}</div>
     ${a.status === "erledigt" && a.geliefert_am ? `<div class="v2-kv"><span>Geliefert am</span><b>📦 ${esc(datumDe(a.geliefert_am))}</b></div>` : ""}
-    ${a.ware_cent ? `<div class="v2-kv"><span>Gegenleistung 🎁</span><b>${cent2eur(a.ware_cent)} in Ware (${esc((a.ware || {}).text || "")})${a.geld_cent ? " + " + cent2eur(a.geld_cent) + " in Geld" : " – reiner Barter"}</b></div>` : ""}
-    <div class="v2-kv"><span>Zahlungsbedingungen</span><b>${esc(zbKurz(a.zahlung))}</b></div>
+    ${a.ware_cent ? `<div class="v2-kv"><span>Gegenleistung 🎁</span><b>${cent2eur(a.ware_cent)} in Ware${a.geld_cent ? " + " + cent2eur(a.geld_cent) + " Geld" : " – Barter"}</b></div>` : ""}
     ${a.vorkasse_cent ? `<div class="v2-kv"><span>Vorkasse</span><b>${cent2eur(a.vorkasse_cent)} bis ${esc(datumDe(a.vorkasse_faellig))}</b></div>` : ""}
     ${reListe.length ? `<div class="v2-kv"><span>Rechnungen</span><b>${reListe.map(r => `<a href="#" data-act="re-detail" data-id="${esc(r.nummer)}">${esc(r.status === "entwurf" ? "Entwurf" : r.nummer)}</a> ${esc(RE_ART[r.art] || "")} · ${esc((RE_STATUS[r.status] || [r.status])[0])}`).join("<br>")}</b></div>` : ""}
-    ${a.gesendet_mail ? `<div class="v2-kv"><span>Bestätigung gesendet</span><b>✉️ ${esc(a.gesendet_mail.an)} · ${esc(zeit(a.gesendet_am))}</b></div>` : ""}
-    <h3>Leistung</h3><div class="v2-form">
+    ${a.gesendet_mail ? `<div class="v2-kv"><span>Bestätigung gesendet</span><b>✉️ ${esc(a.gesendet_mail.an)} · ${esc(zeit(a.gesendet_am))}</b></div>` : ""}`;
+  const leistung = `<div class="v2-form">
       <div class="v2-an-zeile"><label class="v2-feld"><small>von</small><input id="abe-von" type="date" value="${esc(a.leistung_von || "")}" ${bearbeitbar ? "" : "disabled"}></label>
         <label class="v2-feld"><small>bis</small><input id="abe-bis" type="date" value="${esc(a.leistung_bis || "")}" ${bearbeitbar ? "" : "disabled"}></label></div>
-      <label class="v2-feld"><small>Notiz</small><textarea id="abe-notiz" rows="2" class="v2-inp" ${bearbeitbar ? "" : "disabled"}>${esc(a.notiz || "")}</textarea></label>
-      ${bearbeitbar ? `<button class="v2-btn" data-act="ab-speichern" data-id="${esc(nr)}">Speichern</button><div id="abe-msg" class="v2-msg"></div>` : ""}</div>
-    ${a.status !== "storniert" ? `<h3>Lieferungen</h3><div id="ab-lief-box"><div class="v2-empty">Lade…</div></div>` : ""}
-    <div id="ab-post-box"></div>
-    ${a.status !== "storniert" ? `<div id="ab-bericht-box"></div>` : ""}
-    <h3>Verlauf</h3>${verlauf}
-    </div><div>
-    <div id="ab-senden-box"></div>
-    ${darf("rechnungen") ? `<div id="ab-zeit-box"></div>` : ""}
-    <h3>Positionen${a.angebot ? ` <small class="v2-sub">aus ${esc(a.angebot)} übernommen</small>` : ""}</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
-    <div id="ab-kond-box"></div>
-    </div></div>`, true);
+      <label class="v2-feld"><small>Notiz (steht als Anmerkung auf der Bestätigung)</small><textarea id="abe-notiz" rows="2" class="v2-inp" ${bearbeitbar ? "" : "disabled"}>${esc(a.notiz || "")}</textarea></label>
+      ${bearbeitbar ? `<button class="v2-btn" data-act="ab-speichern" data-id="${esc(nr)}">Speichern</button><div id="abe-msg" class="v2-msg"></div>` : ""}</div>`;
+  const seite = blBox("Status", status) + `<section class="v2-bl-box" id="bv-mini"></section>` + blBox("Leistung &amp; Anmerkung", leistung)
+    + (a.status !== "storniert" ? blBox("Lieferungen", `<div id="ab-lief-box"><div class="v2-empty">Lade…</div></div>`) : "") + blBox("Verlauf", verlauf);
+  const intern = `<div class="v2-beleg-intern"><div class="v2-intern-kopf">🔒 Intern – nie auf dem Beleg</div>
+    <div class="v2-intern-raster"><div data-tabteil="postings"><div id="ab-post-box"></div><div id="ab-kond-box"></div></div>
+    ${darf("rechnungen") ? `<div data-tabteil="zeiten"><div id="ab-zeit-box"></div></div>` : ""}
+    ${a.status !== "storniert" ? `<div data-tabteil="bericht"><div id="ab-bericht-box"></div></div>` : ""}</div></div>`;
+  openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
+    ${belegAnsicht({ aktionen, haupt: `<div id="ab-senden-box"></div>${d.blatt ? belegBlatt(d.blatt) : altTab}`, seite, unten: intern,
+      reiter: [["beleg", "📄 Beleg"], ["postings", "📣 Postings"], ...(darf("rechnungen") ? [["zeiten", "⏱ Zeiten"]] : []), ["bericht", "📝 Bericht"]] })}`, true);
+  bvMini(nr);
   abZeitLaden(nr); abLieferungen(nr); abPostings(nr, a.status); abBericht(nr);
 }
 // PROJEKTBERICHT P1: Postings je Position (Menge) mit Veroeffentlichung, Kennzahlen als Zahlen und TKP-Vergleich;
@@ -1465,6 +1451,69 @@ async function poSpeichern(pid, nr, art) {
   const a = (await jget("/api/crm/auftraege/" + encodeURIComponent(nr)) || {}).auftrag || {};
   return abPostings(nr, a.status);
 }
+// DIGITALER_BELEG D3: Mahnung als eigenes Belegblatt (Forderungsaufstellung wie im PDF)
+async function maDetail(nr, meldung, fehler) {
+  openModal(nr, `<div class="v2-empty">Lade…</div>`, true);
+  const d = await jget(`/api/finanzen/mahnungen/${encodeURIComponent(nr)}`);
+  const m = d && d.mahnung; if (!m) return openModal(nr, emptyRow("Mahnung nicht gefunden."), true);
+  const r = d.rechnung || {};
+  let aktionen = (m.pdf ? `<a class="v2-btn" href="/api/finanzen/mahnungen/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 ${m.alt ? "Original-PDF" : "PDF"}</a>` : "")
+    + `<button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(nr)}">🔗 Belegverfolgung</button><button class="v2-btn" data-act="re-detail" data-id="${esc(m.rechnung)}">↩ Rechnung ${esc(m.rechnung)}</button>`;
+  if (!m.versendet_am) aktionen += `<button class="v2-btn pri" data-act="ma-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled"}>✉️ Senden …</button>`;
+  const status = `<div class="v2-kv"><span>Mahnung</span><b>${m.versendet_am ? (m.alt ? "vor LUNA verschickt" : "✉️ gesendet " + esc(zeit(m.versendet_am)) + ((m.mail || {}).an ? " an " + esc(m.mail.an) : "")) : "noch nicht gesendet"}</b></div>
+    <div class="v2-kv"><span>Frist</span><b>${esc(datumDe(m.frist))}</b></div>
+    <div class="v2-kv"><span>Rechnung</span><b><a href="#" data-act="re-detail" data-id="${esc(m.rechnung)}">${esc(m.rechnung)}</a> · ${esc((RE_STATUS[r.status] || [r.status || ""])[0])}</b></div>
+    ${r.summe_cent != null ? `<div class="v2-kv"><span>Bezahlt / Rechnung</span><b>${cent2eur(r.bezahlt_cent || 0)} / ${cent2eur(r.summe_cent)}</b></div>` : ""}`;
+  openModal(`${nr} · ${d.firma.name || ""}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
+    ${belegAnsicht({ aktionen, haupt: `<div id="re-aktion-box"></div>${d.blatt ? belegBlatt(d.blatt, { original: m.alt && m.pdf ? `/api/finanzen/mahnungen/${encodeURIComponent(nr)}/pdf` : "" }) : emptyRow("Ansicht nicht verfügbar.")}`,
+      seite: blBox("Status", status) + `<section class="v2-bl-box" id="bv-mini"></section>` })}`, true);
+  bvMini(nr);
+}
+// DIGITALER_BELEG D1-D3 (Variante A): jeder Beleg als Belegblatt -- Inhalte kommen vom Server (`blatt`, wie im PDF)
+const BL_STEMPEL = { gelb: "offen", gruen: "bez", rot: "sto", grau: "ent", blau: "ges" };
+function belegBlatt(b, extra = {}) {
+  if (!b) return "";
+  const eur = (c) => c == null ? "" : cent2eur(c);
+  const posten = (b.gruppen || []).map(g => (g.name ? `<tr class="bl-gruppe"><td colspan="5">${esc(g.name)}</td></tr>` : "")
+    + g.posten.map(p => `<tr><td class="bl-nr">${p.nr}</td><td class="bl-leistung"><b>${esc(p.beschreibung)}</b>${p.detail ? `<small>${esc(p.detail)}</small>` : ""}</td>
+      <td class="bl-r bl-menge">${esc([p.menge ? String(p.menge).replace(".", ",") : "", p.einheit].filter(Boolean).join(" "))}<span class="bl-mal">${p.menge ? " × " : ""}${esc(p.einzel_text) || eur(p.einzel_cent)}</span></td>
+      <td class="bl-r bl-einzel">${esc(p.einzel_text) || eur(p.einzel_cent)}</td><td class="bl-r bl-gesamt">${esc(p.gesamt_text) || eur(p.gesamt_cent)}</td></tr>`).join("")).join("");
+  const st = b.stempel ? `<div class="bl-stempel ${BL_STEMPEL[b.stempel.art] || "ent"}">${esc(b.stempel.text)}${b.stempel.unter ? `<small>${esc(b.stempel.unter)}</small>` : ""}</div>` : "";
+  const k = b.kalkulation;
+  return `<article class="v2-blatt">
+    <div class="bl-balken"><i></i><i></i></div>${st}
+    <div class="bl-kopf"><div class="bl-anschrift"><div class="bl-absender">${esc(b.absender)}</div>${(b.empfaenger || []).map((z, i) => i ? `<div>${esc(z)}</div>` : `<div><b>${esc(z)}</b></div>`).join("")}</div>
+      <div class="bl-meta"><div class="bl-art">${esc(b.art)}</div>${b.titel ? `<div class="bl-titel">${esc(b.titel)}</div>` : ""}
+        <dl>${(b.infos || []).map(([l, w]) => `<dt>${esc(l)}</dt><dd>${esc(w)}</dd>`).join("")}</dl></div></div>
+    ${b.anrede || b.einleitung ? `<div class="bl-text">${b.anrede ? `<b>${esc(b.anrede)}</b><br>` : ""}${esc(b.einleitung).replace(/\n/g, "<br>")}</div>` : ""}
+    ${k ? `<div class="bl-kalk"><b>${esc(k.titel)}</b>${(k.absaetze || []).map(x => `<p>${esc(x)}</p>`).join("")}${k.beispiel ? `<p><i>${esc(k.beispiel)}</i></p>` : ""}</div>` : ""}
+    <table class="bl-pos"><thead><tr><th class="bl-nr">#</th><th>Leistung</th><th class="bl-r">Menge</th><th class="bl-r">Einzelpreis</th><th class="bl-r">Gesamt</th></tr></thead><tbody>${posten}</tbody></table>
+    <div class="bl-summen">${(b.summen || []).map(([n, c]) => `<div><span>${esc(n)}</span><span>${c < 0 ? "−" + eur(-c) : eur(c)}</span></div>`).join("")}
+      <div class="bl-ges"><span>${esc(b.gesamt.text)}</span><span>${eur(b.gesamt.cent)}</span></div></div>
+    ${(b.hinweise || []).length ? `<div class="bl-hinweis">${b.hinweise.map(h => `<div>${esc(h)}</div>`).join("")}</div>` : ""}
+    ${b.schluss ? `<div class="bl-text">${esc(b.schluss).replace(/\n/g, "<br>")}</div>` : ""}
+    <div class="bl-fuss">${esc((b.fuss || []).join(" · "))}${b.anlage ? ` · 📎 Anlage: ${esc(b.anlage)}` : ""}${extra.original ? ` · <a href="${esc(extra.original)}" target="_blank" rel="noopener">📄 Original-PDF</a>` : ""}</div>
+  </article>`;
+}
+// Variante A: Rechner Blatt links + Seitenleiste rechts; iPhone/iPad Blatt volle Breite, Aktionsleiste unten, Reiter beim Auftrag
+function belegAnsicht({ aktionen, haupt, seite, unten = "", reiter = null }) {
+  return `<div class="v2-beleg" data-tab="beleg">
+    ${reiter ? `<div class="v2-beleg-reiter">${reiter.map(([k, t]) => `<button class="${k === "beleg" ? "on" : ""}" data-act="bl-reiter" data-val="${k}">${t}</button>`).join("")}</div>` : ""}
+    <div class="v2-card-actions v2-beleg-aktionen">${aktionen}</div>
+    <div class="v2-beleg-layout"><div class="v2-beleg-haupt" data-tabteil="beleg">${haupt}</div><aside class="v2-beleg-seite" data-tabteil="beleg">${seite}</aside></div>
+    ${unten}</div>`;
+}
+const blBox = (titel, inhalt, id = "") => inhalt || id ? `<section class="v2-bl-box"${id ? ` id="${id}"` : ""}>${titel ? `<h4>${titel}</h4>` : ""}${inhalt || ""}</section>` : "";
+async function bvMini(nr) {
+  const box = $("#bv-mini"); if (!box) return;
+  const d = await jget(`/api/crm/belege/${encodeURIComponent(nr)}/verfolgung`);
+  const k = ((d && d.knoten) || []).filter(x => x.gross);
+  if (k.length < 2) { box.remove(); return; }
+  box.innerHTML = `<h4>🔗 Belegverfolgung</h4><div class="bl-mini">${k.map(x => x.id === d.start
+      ? `<span class="akt">${esc(x.nummer || x.art_text)} · dieser Beleg</span>`
+      : `<a href="#" data-act="${esc((x.oeffnen || {}).act || "bv-oeffnen")}" data-id="${esc((x.oeffnen || {}).id || x.id)}">${esc(x.nummer === "Entwurf" ? "Entwurf" : x.nummer)} · ${esc(x.art_text)}${x.status && ["storniert", "bezahlt", "storno"].includes(x.status) ? " · " + esc(x.status) : ""}</a>`).join("")}</div>
+    <button class="v2-btn sm" data-act="bv-oeffnen" data-id="${esc(nr)}">Zeitstrahl öffnen</button>`;
+}
 // BELEGVERFOLGUNG B2: verbundene Belege als Zeitstrahl (Rechner waagerecht, iPad/iPhone senkrecht), Klick oeffnet
 const BV_ICON = { angebot: "📝", auftrag: "📋", entwurf: "✎", vorkasse: "💶", rechnung: "🧾", schlussrechnung: "🧾", storno: "↩️", zahlung: "💰", mahnung: "⚠️", mahnverfahren: "⚖️", lieferung: "📦", bericht: "📊", dokument: "📎" };
 const BV_EIN = { "beauftragt": "aus", "Vorkasse": "zu", "berechnet": "zu", "storniert durch": "storniert", "ersetzt durch": "ersetzt", "abgezogen in": "zieht ab:", "bezahlt": "für", "gemahnt": "zu", "Mahnverfahren": "zu", "geliefert": "zu", "Bericht gesendet": "zu", "Dokument": "zu" };
@@ -1484,8 +1533,8 @@ async function belegVerfolgung(kennung) {
       ${[...ein, ...aus].map(t => `<small class="bv-bez">${t}</small>`).join("")}`;
     const kl = `bv-knoten${k.gross ? "" : " klein"}${akt ? " aktuell" : ""}`;
     return akt ? `<div class="${kl}" id="bv-aktuell">${inhalt}<small class="bv-hier">● dieser Beleg</small></div>`
-      : o.url ? `<a class="${kl}" href="${esc(o.url)}" target="_blank" rel="noopener">${inhalt}</a>`
-      : `<button class="${kl}" data-act="${esc(o.act)}" data-id="${esc(o.id)}">${inhalt}</button>`;
+      : o.act ? `<button class="${kl}" data-act="${esc(o.act)}" data-id="${esc(o.id)}">${inhalt}</button>`
+      : `<a class="${kl}" href="${esc(o.url || "#")}" target="_blank" rel="noopener">${inhalt}</a>`;
   };
   openModal("🔗 Belegverfolgung · " + kennung, `<div class="v2-sub" style="margin-bottom:8px">${d.vorher} früher · ${d.nachher} später – Klick öffnet den Beleg.</div>
     <div class="v2-bv"><div class="bv-spur">${d.knoten.map(karte).join("")}</div></div>`, true);
@@ -2027,7 +2076,7 @@ async function reDetail(id, meldung, fehler) {
   const MSTUFE = { 1: "Mahnstufe 1", 2: "Mahnstufe 2", 3: "Mahnstufe 3" };   // Brief an den Kunden: „1./2./3. Mahnung“
   const mv = d.mahnverfahren;
   const dokumente = (d.dokumente || []).map(x => `<div class="v2-list-row"><span>📎</span><div class="grow"><b><a href="/api/crm/akte/${encodeURIComponent(x.id)}/datei" target="_blank" rel="noopener">${esc(x.titel)}</a></b><small>${esc(datumDe(x.datum))}${x.notiz ? " · " + esc(x.notiz) : ""}</small></div></div>`).join("");
-  const mahnungen = (d.mahnungen || []).map(m => `<div class="v2-list-row"><span>⚠️</span><div class="grow"><b>${esc(MSTUFE[m.stufe])} ${esc(m.nummer)} · ${cent2eur(m.summe_cent)}</b><small>${esc(datumDe(m.datum))} · Frist ${esc(datumDe(m.frist))} · ${m.versendet_am ? "✉️ gesendet an " + esc((m.mail || {}).an || "") : "noch nicht gesendet"}</small></div>
+  const mahnungen = (d.mahnungen || []).map(m => `<div class="v2-list-row"><span>⚠️</span><div class="grow"><b><a href="#" data-act="ma-detail" data-id="${esc(m.nummer)}">${esc(MSTUFE[m.stufe])} ${esc(m.nummer)}</a> · ${cent2eur(m.summe_cent)}</b><small>${esc(datumDe(m.datum))} · Frist ${esc(datumDe(m.frist))} · ${m.versendet_am ? "✉️ gesendet an " + esc((m.mail || {}).an || "") : "noch nicht gesendet"}</small></div>
     <a class="v2-btn sm" href="/api/finanzen/mahnungen/${encodeURIComponent(m.nummer)}/pdf" target="_blank" rel="noopener">📄</a><button class="v2-btn sm" data-act="bv-oeffnen" data-id="${esc(m.nummer)}" title="Belegverfolgung">🔗</button>${m.versendet_am ? "" : `<button class="v2-btn pri sm" data-act="ma-senden" data-id="${esc(m.nummer)}">✉️ Senden …</button>`}</div>`).join("");
   const zahlungen = (r.zahlungen || []).map((z, i) => `<div class="v2-list-row${z.storniert ? " v2-fin-storno" : ""}"><span>💶</span><div class="grow"><b>${cent2eur(z.betrag_cent)}${z.nebenforderung_cent ? " + " + cent2eur(z.nebenforderung_cent) + " Zinsen/Kosten" : ""}</b><small>${esc(datumDe(z.datum))}${z.zuordnung_jahr ? " · zugeordnet " + esc(z.zuordnung_jahr) : ""}${z.notiz ? " · " + esc(z.notiz) : ""}${z.storniert ? " · storniert: " + esc(z.storno_grund || "") : ""}</small></div>${!z.storniert && r.status !== "storniert" ? `<button class="v2-btn" data-act="re-zahlung-storno" data-id="${esc(r.nummer)}" data-val="${i}" title="Falsch erfasste Zahlung zurücknehmen">↶</button>` : ""}</div>`).join("");
   const lbl = { rechnung_entwurf: "Entwurf angelegt", rechnung_entwurf_geaendert: "Entwurf geändert", rechnung_festgeschrieben: "Festgeschrieben", rechnung_versendet: "Gesendet", rechnung_bezahlt: "Zahlung", rechnung_zahlung_storniert: "Zahlung storniert" };
@@ -2035,28 +2084,21 @@ async function reDetail(id, meldung, fehler) {
   const verlauf = (r.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(lbl[v.typ] || v.typ)}${v.mail_an ? " an " + esc(v.mail_an) : ""}${v.betrag_cent ? " " + cent2eur(v.betrag_cent) : ""}${v.storno ? " — storniert durch " + esc(v.storno) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
   const artTxt = r.art === "anzahlung" ? "Vorkasse-Rechnung" : sm.abzuege ? "Schlussrechnung" : "Rechnung";
   const titel = entwurf ? `${r.art === "anzahlung" ? "Vorkasse-Entwurf" : sm.abzuege ? "Schlussrechnungs-Entwurf" : "Rechnungs-Entwurf"} · ${d.firma.name || r.firma}` : `${r.nummer} · ${artTxt} · ${d.firma.name || r.firma}`;
+  const pzBox = entwurf && r.auftrag && r.art !== "anzahlung" ? `<div id="re-pz-box"></div>` : "";
+  const altTab = `<h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>`;
+  const status = `<div class="v2-kv"><span>Status</span>${reBadge(r)}</div>
+    ${!entwurf && r.art !== "storno" ? `<div class="v2-kv"><span>${r.ware_cent ? "Geld bezahlt / offen" : "Bezahlt / offen"}</span><b>${cent2eur(r.bezahlt_cent || 0)} / ${cent2eur((r.geld_cent ?? r.summe_cent) - (r.bezahlt_cent || 0))}</b></div>` : ""}
+    ${(r.ware && r.ware.wert_cent) ? `<div class="v2-kv"><span>Ware 🎁</span><b>${cent2eur(r.ware.wert_cent)}${entwurf ? "" : r.ware_erhalten ? ` · ✓ erhalten ${esc(datumDe(r.ware_erhalten.datum))}` : " · noch nicht erhalten"}</b></div>` : ""}
+    ${r.versendet_mail ? `<div class="v2-kv"><span>Gesendet</span><b>✉️ ${esc(r.versendet_mail.an)} · ${esc(zeit(r.versendet_am))}</b></div>` : ""}
+    ${!entwurf || r.leistung_von || r.leistung_bis ? "" : `<div class="v2-kv"><span>Leistung</span><b class="v2-neg">— fehlt —</b></div>`}`;
+  const seite = blBox("Status", status) + (entwurf ? "" : `<section class="v2-bl-box" id="bv-mini"></section>`)
+    + blBox("Zahlungen", zahlungen) + blBox("Mahnungen", mahnungen)
+    + (mv ? blBox("Mahnverfahren", `<div class="v2-list-row"><span>⚖️</span><div class="grow"><b>seit ${esc(datumDe(mv.datum))}${mv.durch ? " · " + esc(mv.durch) : ""}</b><small>${esc(mv.notiz || "")}${mv.notiz ? " · " : ""}Die Rechnung bleibt offen, bis gezahlt ist.</small></div></div>`) : "")
+    + blBox("Dokumente", dokumente) + blBox("Verlauf", verlauf);
   openModal(titel, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
     ${entwurf && !d.steuernummer ? `<div class="v2-msg err">Steuernummer fehlt in den Firmendaten — Festschreiben nicht möglich.</div>` : ""}
-    <div class="v2-card-actions" style="flex-wrap:wrap;margin:8px 0 14px">${aktionen}</div>
-    <div class="v2-an-detail"><div>
-    <div class="v2-kv"><span>Status</span>${reBadge(r)}</div>
-    ${entwurf ? `<div class="v2-kv"><span>Nummer</span><b>wird beim Festschreiben vergeben</b></div>` : `<div class="v2-kv"><span>Rechnungsdatum</span><b>${esc(datumDe(r.rechnungsdatum))}</b></div><div class="v2-kv"><span>Fällig am</span><b>${esc(datumDe(r.faellig_am))}</b></div>`}
-    <div class="v2-kv"><span>Firma</span><b>${esc(r.firma)} · ${esc(d.firma.name || "")}</b></div>
-    <div class="v2-kv"><span>Ansprechpartner</span><b>${ap ? esc(ap.nummer + " · " + [ap.vorname, ap.nachname].filter(Boolean).join(" ")) : "—"}</b></div>
-    <div class="v2-kv"><span>Leistung</span><b>${esc([datumDe(r.leistung_von), datumDe(r.leistung_bis)].filter(Boolean).join(" – ") || "— fehlt —")}</b></div>
-    ${!entwurf && r.art !== "storno" ? `<div class="v2-kv"><span>${r.ware_cent ? "Geld bezahlt / offen" : "Bezahlt / offen"}</span><b>${cent2eur(r.bezahlt_cent || 0)} / ${cent2eur((r.geld_cent ?? r.summe_cent) - (r.bezahlt_cent || 0))}</b></div>` : ""}
-    ${(r.ware && r.ware.wert_cent) ? `<div class="v2-kv"><span>Gegenleistung in Ware 🎁</span><b>${cent2eur(r.ware.wert_cent)} · ${esc(r.ware.text || "")}${entwurf ? "" : r.ware_erhalten ? ` · ✓ erhalten ${esc(datumDe(r.ware_erhalten.datum))} (${cent2eur(r.ware_erhalten.wert_cent)}, ${esc({ content: "für Content", privat: "privat", leihgabe: "Leihgabe" }[r.ware_erhalten.verwendung] || "")})` : " · noch nicht erhalten"}</b></div>` : ""}
-    ${r.versendet_mail ? `<div class="v2-kv"><span>Gesendet</span><b>✉️ ${esc(r.versendet_mail.an)} · ${esc(zeit(r.versendet_am))}</b></div>` : ""}
-    ${zahlungen ? `<h3>Zahlungen</h3>${zahlungen}` : ""}
-    ${mahnungen ? `<h3>Mahnungen</h3>${mahnungen}` : ""}
-    ${mv ? `<h3>Mahnverfahren</h3><div class="v2-list-row"><span>⚖️</span><div class="grow"><b>Mahnverfahren seit ${esc(datumDe(mv.datum))}${mv.durch ? " · " + esc(mv.durch) : ""}</b><small>${esc(mv.notiz || "")}${mv.notiz ? " · " : ""}Die Rechnung bleibt offen, bis gezahlt ist.</small></div></div>` : ""}
-    ${dokumente ? `<h3>Dokumente</h3>${dokumente}` : ""}
-    <h3>Verlauf</h3>${verlauf}
-    </div><div>
-    <div id="re-aktion-box"></div>
-    <h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>
-    ${entwurf && r.auftrag && r.art !== "anzahlung" ? `<div id="re-pz-box"></div>` : ""}
-    </div></div>`, true);
+    ${belegAnsicht({ aktionen, haupt: `<div id="re-aktion-box"></div>${d.blatt ? belegBlatt(d.blatt, { original: d.blatt.original_pdf ? `/api/finanzen/rechnungen/${encodeURIComponent(id)}/pdf` : "" }) : altTab}${pzBox}`, seite })}`, true);
+  if (!entwurf) bvMini(r.nummer);
   if (entwurf && r.auftrag && r.art !== "anzahlung") rePzLaden(id);
 }
 // PROJEKTZEITEN Z2: Projektzeiten optional in der Rechnung (Standard aus; zusammengefasst + Stundenzettel-Anlage)
@@ -3221,6 +3263,8 @@ async function handleAct(act, el) {
       const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/kundenstimme-entwurf`, {});
       return kundenMsg("ber-msg2", r && r.ok ? `Entwurf an ${r.an} liegt in Gmail (LUNAs Konto) – dort prüfen und selbst senden.` : (r && r.hinweis) || "Fehler.", !!(r && r.ok)); }
     case "bv-oeffnen": return belegVerfolgung(id);
+    case "ma-detail": return maDetail(id);
+    case "bl-reiter": { const w = el.closest(".v2-beleg"); if (!w) return; w.dataset.tab = val; w.querySelectorAll(".v2-beleg-reiter button").forEach(b => b.classList.toggle("on", b.dataset.val === val)); return; }
     case "zt-auswertung": return val === "frei" ? ztAuswertung("frei", $("#aw-von").value, $("#aw-bis").value) : ztAuswertung(val);
     case "pz-speichern": case "pz-aus": return rePzSpeichern(id, act === "pz-aus");
     case "po-form-v": case "po-form-k": case "po-form-l": return poForm(id, val, act.slice(-1));

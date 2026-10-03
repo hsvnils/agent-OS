@@ -633,6 +633,14 @@ class RechnungStore:
 
     def _pdf(self, r: dict, firmendaten: dict) -> bytes:
         r = self._summen(r)
+        t = self.teile(r)
+        f, ap, storno, art, infos, einleitung, zahlung = (t[k] for k in ("firma", "ap", "storno", "art", "infos",
+                                                                          "einleitung", "zahlung"))
+        return self._pdf_bauen(r, firmendaten, f, ap, storno, art, infos, einleitung, zahlung)
+
+    def teile(self, r: dict) -> dict:
+        """Texte und Kopfdaten, die PDF und Belegblatt (DIGITALER_BELEG D1) gemeinsam nutzen."""
+        r = self._summen(r) if "summen" not in r else r
         f = self.kunden.firma(r["firma"]) or {}
         ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == r.get("ansprechpartner")), None)
         storno = r.get("art") == "storno"
@@ -658,6 +666,10 @@ class RechnungStore:
             zahlung = " ".join(ware_hinweis(r["summe_cent"], r.get("ware"), rechnung=True) + ([zahlung] if zahlung else []))
         if not storno and (r.get("zahlung") or {}).get("text"):         # Zusatztext der Zahlungsbedingungen
             zahlung = " ".join(x for x in (zahlung, r["zahlung"]["text"]) if x)
+        return {"firma": f, "ap": ap, "storno": storno, "art": art, "infos": [i for i in infos if i],
+                "einleitung": einleitung, "zahlung": zahlung, "anrede": anrede_moin(ap, f.get("name", ""))}
+
+    def _pdf_bauen(self, r, firmendaten, f, ap, storno, art, infos, einleitung, zahlung) -> bytes:
         if r.get("layout") == "hanserautisch":
             b = r.get("bloecke") or _bloecke({})
             gruppen: dict[str, tuple] = {}

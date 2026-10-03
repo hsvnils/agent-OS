@@ -1,9 +1,9 @@
 # Roadmap: Digitaler Beleg (Belegblatt in LUNA-OS statt Datenliste)
-- Status: geplant
-- Stand: 2026-10-03
+- Status: in Umsetzung
+- Stand: 2026-10-04
 - Arbeitsbranch: `ai/digitaler-beleg`
 - Basiscommit: `df6385c`
-- Naechster Schritt: CEO-Go fuer D1-D3 abwarten (Variante A ist entschieden).
+- Naechster Schritt: D1-D3 gebaut (2026-10-04); Deploy + Abnahme an echten Belegen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -35,7 +35,10 @@ Zahlungshinweis, Fusszeile). Interne Daten (Nachkalkulation, Zeiten, Kennzahlen,
 
 ## Etappe D1: Belegblatt-Baustein + Rechnungen
 
-- Status: geplant
+- Status: umgesetzt (2026-10-04) -- `core/belegblatt.py` + `teile()` in Rechnung/Auftrag/Angebot/Mahnung (PDF und Blatt
+  nutzen dieselben Texte), Block `blatt` im Rechnungs-Detail, Blatt mit Stempel, Seitenleiste mit Mini-Belegverfolgung,
+  Aktionsleiste unten auf iPad/iPhone. Tests `test_belegblatt.py` (Blatt = PDF-Inhalte, keine internen Felder) mit
+  Gegenprobe; Browsertest 1300/820/390 px, hell und dunkel.
 - Ziel / Scope: `core/belegblatt.py` + Block `blatt` im Rechnungs-Detail; Oberflaeche `belegBlatt()` (weisses
   Papier auch im Dunkelmodus, blau-roter Balken, Anschrift, Kopfdaten, Positionen je Gruppe, Summen, Zahlungshinweis,
   Fusszeile, Status-Stempel OFFEN/BEZAHLT/UEBERFAELLIG/STORNIERT/ENTWURF). Rechner: Blatt links, Seitenleiste rechts
@@ -48,7 +51,8 @@ Zahlungshinweis, Fusszeile). Interne Daten (Nachkalkulation, Zeiten, Kennzahlen,
 
 ## Etappe D2: Angebot und Auftragsbestaetigung
 
-- Status: geplant
+- Status: umgesetzt (2026-10-04) -- Angebot und Auftragsbestaetigung als Blatt; Auftrag mit Reitern Beleg/Postings/
+  Zeiten/Bericht auf iPad/iPhone, am Rechner interne Bereiche unter dem Blatt („🔒 Intern“).
 - Ziel / Scope: Gleiches Blatt fuer Angebot (gueltig bis, Zuschlaege, Rabatt, Zahlungsbedingungen inkl. Vorkasse,
   „So kalkulieren wir“ nur wenn auch im PDF) und Auftragsbestaetigung (Leistungszeitraum, Bezug Angebot,
   Konditionen). Beim Auftrag: auf dem iPhone Reiter „📄 Beleg · 📣 Postings · ⏱ Zeiten · 📝 Bericht“, am Rechner die
@@ -58,7 +62,8 @@ Zahlungshinweis, Fusszeile). Interne Daten (Nachkalkulation, Zeiten, Kennzahlen,
 
 ## Etappe D3: Mahnung als eigenes Blatt + Feinschliff
 
-- Status: geplant
+- Status: umgesetzt (2026-10-04) -- `GET /api/finanzen/mahnungen/<nr>`, Mahnung als Blatt (auch vor LUNA verschickte
+  mit Original-PDF), erreichbar aus Rechnung und Belegverfolgung; Primaeraktionen zuerst in der Leiste unten.
 - Ziel / Scope: neue Detailansicht je Mahnung (Forderungsaufstellung: offener Betrag, Verzugszinsen mit Zeitraum,
   Pauschale/Mahnkosten, Frist; Senden aus der Ansicht), erreichbar aus Rechnung, Belegverfolgung und Handlungsbedarf.
   Mini-Belegverfolgung oeffnet Belege direkt; einheitliche Aktionsleiste unten auf dem iPhone fuer alle Belege.

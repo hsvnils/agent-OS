@@ -33,6 +33,7 @@ from ...core.katalog import Katalog
 from ...core.beauftragung import AuftragBuch, auftrag_mail_text
 from ...core.rechnungen import RechnungStore, rechnung_mail_text
 from ...core import eingangsbelege as _eb
+from ...core import belegblatt
 from ...core.eigenbelege import EigenbelegStore
 from ...core.finanzen import KATEGORIE_NAMEN, Finanzen, journal_csv
 from ...core.ig_inbox import IgInboxStore
@@ -112,6 +113,15 @@ def _google():
                                   lese_kalender=sec.get("GOOGLE_CALENDAR_LESEN", ""))
         _GOOGLE.konto_adresse = sec.get("GOOGLE_ACCOUNT_EMAIL", "")
     return _GOOGLE
+
+
+def _blatt(bauen) -> dict | None:
+    """DIGITALER_BELEG: Belegblatt fuer die Detailansicht -- ein Fehler dabei darf die Ansicht nie verhindern."""
+    try:
+        return bauen(_firmendaten())
+    except Exception as exc:
+        print(f"[belegblatt] {exc.__class__.__name__}: {exc}", flush=True)
+        return None
 
 
 def _firmendaten() -> dict:
@@ -1919,7 +1929,8 @@ def auftrag_detail(nummer: str):
     return {"auftrag": a, "firma": {k: f.get(k) for k in ("nummer", "name", "rechnungsmail")}, "ansprechpartner": ap,
             "mail_an": (ap or {}).get("mail") or f.get("rechnungsmail") or "", "google": bool(_google().verfuegbar()),
             "firmendaten": bool(_firmendaten()), "rechnungen": re,
-            "zahlung_text": zb.text(a.get("zahlung"), a["geld_cent"], ab_datum=a["datum"])}
+            "zahlung_text": zb.text(a.get("zahlung"), a["geld_cent"], ab_datum=a["datum"]),
+            "blatt": _blatt(lambda fd: belegblatt.auftrag(_auftraege(), a, fd))}
 
 
 @app.post("/api/crm/angebote/{nummer}/auftrag")
@@ -2370,7 +2381,8 @@ def rechnung_detail(kennung: str):
             "google": bool(_google().verfuegbar()), "firmendaten": bool(_firmendaten()),
             "steuernummer": bool(_firmendaten().get("steuernummer")), "mahnungen": mahn,
             "mahnverfahren": MahnStore.mahnverfahren(kunden_store.bh.eintraege()).get(r.get("nummer", "")) if r.get("nummer") else None,
-            "naechste_mahnung": naechste, "nicht_mahnbar": mahnbar}
+            "naechste_mahnung": naechste, "nicht_mahnbar": mahnbar,
+            "blatt": _blatt(lambda fd: belegblatt.rechnung(_rechnungen(), r, fd))}
 
 
 @app.post("/api/finanzen/rechnungen")
@@ -2602,6 +2614,21 @@ async def rechnung_ware_stornieren(nummer: str, request: Request):
 def _mahn():
     from ...core.mahnungen import MahnStore
     return MahnStore(kunden_store.bh, kunden_store)
+
+
+@app.get("/api/finanzen/mahnungen/{nummer}")
+def mahnung_detail(nummer: str):
+    """DIGITALER_BELEG D3: eine Mahnung als Belegblatt (Forderungsaufstellung wie im PDF) mit Bezug zur Rechnung."""
+    m = _mahn().get(nummer)
+    if not m:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Mahnung")
+    r = _rechnungen().get(m["rechnung"]) or {}
+    f = kunden_store.firma(m["firma"]) or {}
+    return {"mahnung": {k: m.get(k) for k in ("nummer", "rechnung", "stufe", "datum", "frist", "summe_cent", "versendet_am",
+                                              "mail", "alt", "erstellt")} | {"pdf": bool(m.get("belege"))},
+            "rechnung": {k: r.get(k) for k in ("nummer", "status", "summe_cent", "bezahlt_cent", "faellig_am")},
+            "firma": {k: f.get(k) for k in ("nummer", "name")}, "google": bool(_google().verfuegbar()),
+            "blatt": _blatt(lambda fd: belegblatt.mahnung(_mahn(), m, fd))}
 
 
 @app.get("/api/finanzen/rechnungen/{nummer}/mahnung-vorschau")
@@ -3276,7 +3303,8 @@ def angebot_detail(nummer: str):
     ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == a.get("ansprechpartner")), None)
     return {"angebot": a, "firma": {k: f.get(k) for k in ("nummer", "name", "rechnungsmail", "collab")},
             "ansprechpartner": ap, "mail_an": (ap or {}).get("mail") or f.get("rechnungsmail") or "",
-            "google": bool(_google().verfuegbar()), "firmendaten": bool(_firmendaten())}
+            "google": bool(_google().verfuegbar()), "firmendaten": bool(_firmendaten()),
+            "blatt": _blatt(lambda fd: belegblatt.angebot(_angebote(), a, fd))}
 
 
 @app.post("/api/crm/angebote")

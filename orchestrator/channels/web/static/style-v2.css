@@ -728,3 +728,106 @@ body.v2-lade-offen { overflow: hidden; }
   .bv-knoten::before, .bv-knoten.klein::before { left: 50%; transform: translateX(-50%); top: -19px; }
   .bv-knoten.aktuell::before { top: -22px; left: 50%; }
 }
+/* Digitaler Beleg (DIGITALER_BELEG D1-D3, Variante A): Blatt + Seitenleiste; Blatt bleibt auch im Dunkelmodus Papier */
+.v2-beleg { display: flex; flex-direction: column; gap: 12px; }
+.v2-beleg-aktionen { flex-wrap: wrap; margin: 4px 0 2px; }
+.v2-beleg-layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 18px; align-items: start; }
+.v2-beleg-haupt { min-width: 0; display: grid; gap: 12px; }
+.v2-beleg-seite { display: grid; gap: 10px; min-width: 0; }
+.v2-bl-box { border: 1px solid var(--v2-line); border-radius: 14px; padding: 12px; min-width: 0; }
+.v2-bl-box:empty { display: none; }
+.v2-bl-box > h4 { margin: 0 0 8px; font-size: 13px; }
+.v2-bl-box .v2-kv { font-size: 13px; }
+.v2-bl-box h3 { font-size: 14px; }
+.bl-mini { display: flex; flex-direction: column; gap: 6px; border-left: 2px solid var(--v2-line); padding-left: 12px; margin: 0 0 8px 4px; }
+.bl-mini a, .bl-mini span { font-size: 13px; color: var(--v2-fg); text-decoration: none; position: relative; overflow-wrap: anywhere; }
+.bl-mini a::before, .bl-mini span::before { content: ""; position: absolute; left: -18px; top: 4px; width: 8px; height: 8px; border-radius: 50%;
+  border: 2px solid var(--v2-accent); background: var(--v2-card-solid); }
+.bl-mini a:hover { color: var(--v2-accent); }
+.bl-mini .akt { font-weight: 800; color: var(--v2-accent); }
+.bl-mini .akt::before { background: var(--v2-accent); }
+.v2-beleg-reiter { display: none; }
+.v2-beleg-intern { border-top: 1px dashed var(--v2-line); padding-top: 10px; }
+.v2-intern-kopf { font-size: 12px; color: var(--v2-muted); font-weight: 700; margin-bottom: 4px; }
+.v2-intern-raster { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 22px; align-items: start; }
+.v2-intern-raster > [data-tabteil="bericht"] { grid-column: 1 / -1; }
+/* das Blatt */
+.v2-blatt { position: relative; background: #fff; color: #17202e; border-radius: 6px; box-shadow: 0 2px 16px rgba(0, 0, 0, .14);
+  padding: 26px 30px 20px; overflow: hidden; font-size: 13px; line-height: 1.45; min-width: 0; }
+.v2-blatt a { color: #004087; }
+.bl-balken { display: flex; height: 4px; margin: -26px -30px 18px; }
+.bl-balken i { flex: 1; background: #004087; } .bl-balken i + i { background: #cc0000; }
+.bl-kopf { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; }
+.bl-absender { font-size: 10.5px; color: #888; border-bottom: 1px solid #ddd; padding-bottom: 3px; margin-bottom: 6px; overflow-wrap: anywhere; }
+.bl-anschrift b { font-size: 14px; }
+.bl-meta { text-align: right; min-width: 0; }
+.bl-art { font-size: 22px; font-weight: 800; color: #17202e; line-height: 1.15; }
+.bl-titel { color: #555; margin: 2px 0 6px; }
+.bl-meta dl { display: grid; grid-template-columns: auto auto; gap: 2px 12px; margin: 6px 0 0; font-size: 12px; justify-content: end; }
+.bl-meta dt { color: #777; } .bl-meta dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.bl-text { margin: 16px 0 8px; }
+.bl-kalk { background: #f2f4f8; border-left: 3px solid #004087; padding: 8px 12px; margin: 10px 0; font-size: 12px; }
+.bl-kalk p { margin: 4px 0; }
+.bl-pos { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+.bl-pos th { text-align: left; font-size: 11px; color: #777; font-weight: 600; border-bottom: 1.5px solid #17202e; padding: 5px 6px; }
+.bl-pos td { border-bottom: 1px solid #e6e6e6; padding: 7px 6px; vertical-align: top; }
+.bl-pos .bl-r { text-align: right; white-space: nowrap; } .bl-pos .bl-nr { width: 26px; color: #777; }
+.bl-pos small { display: block; color: #888; font-size: 11px; }
+.bl-mal { display: none; }
+.bl-pos b { font-weight: 600; }
+.bl-gruppe td { background: #f2f4f8; font-weight: 700; color: #004087; font-size: 11.5px; }
+.bl-summen { margin-left: auto; width: min(320px, 100%); margin-top: 8px; font-size: 12.5px; }
+.bl-summen > div { display: flex; justify-content: space-between; gap: 10px; padding: 3px 6px; }
+.bl-summen .bl-ges { border-top: 1.5px solid #17202e; font-weight: 800; font-size: 14px; margin-top: 3px; padding-top: 6px; }
+.bl-hinweis { margin-top: 14px; background: #f6f8fb; border-left: 3px solid #004087; padding: 8px 10px; font-size: 12px; display: grid; gap: 4px; }
+.bl-fuss { margin-top: 16px; border-top: 1px solid #e3e3e3; padding-top: 6px; font-size: 10px; color: #999; text-align: center; overflow-wrap: anywhere; }
+.bl-stempel { position: absolute; left: 44%; top: 64px; transform: rotate(-12deg); border: 3px solid; border-radius: 8px; padding: 3px 12px;
+  font-weight: 900; font-size: 20px; letter-spacing: 2px; opacity: .85; text-align: center; line-height: 1.1; pointer-events: none; background: rgba(255, 255, 255, .6); }
+.bl-stempel small { display: block; font-size: 10px; letter-spacing: 0; font-weight: 700; }
+.bl-stempel.offen { color: #c27d16; } .bl-stempel.bez { color: #1f8f57; } .bl-stempel.sto { color: #d0344d; }
+.bl-stempel.ent { color: #8a96aa; } .bl-stempel.ges { color: #2f6bff; }
+/* iPad/iPhone: Blatt volle Breite, Seitenleiste darunter, Aktionen als Leiste unten, Reiter beim Auftrag */
+@media (max-width: 899px) {
+  .v2-beleg-layout { grid-template-columns: 1fr; }
+  .v2-beleg-aktionen { order: 99; position: sticky; bottom: -20px; z-index: 3; flex-wrap: nowrap; overflow-x: auto; margin: 0 -20px -20px;
+    padding: 10px 20px calc(10px + env(safe-area-inset-bottom)); background: var(--v2-card-solid); border-top: 1px solid var(--v2-line);
+    box-shadow: 0 -6px 20px rgba(23, 42, 82, .08); }
+  .v2-beleg-aktionen > * { flex: 0 0 auto; }
+  .v2-beleg-aktionen > .pri, .v2-beleg-aktionen > .ok { order: -1; }
+  .v2-beleg-reiter { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--v2-line); }
+  .v2-beleg-reiter button { flex: 0 0 auto; border: 0; background: none; color: var(--v2-muted); font: inherit; font-size: 14px;
+    padding: 10px 12px; border-bottom: 3px solid transparent; min-height: 44px; }
+  .v2-beleg-reiter button.on { color: var(--v2-fg); font-weight: 700; border-bottom-color: var(--v2-accent); }
+  .v2-beleg:not([data-tab="beleg"]) [data-tabteil="beleg"] { display: none; }
+  .v2-beleg[data-tab="beleg"] .v2-beleg-intern { display: none; }
+  .v2-beleg[data-tab] .v2-intern-raster > [data-tabteil] { display: none; }
+  .v2-beleg[data-tab="postings"] .v2-intern-raster > [data-tabteil="postings"],
+  .v2-beleg[data-tab="zeiten"] .v2-intern-raster > [data-tabteil="zeiten"],
+  .v2-beleg[data-tab="bericht"] .v2-intern-raster > [data-tabteil="bericht"] { display: block; }
+  .v2-intern-raster { grid-template-columns: 1fr; }
+  .v2-intern-kopf { display: none; }
+}
+@media (max-width: 600px) {
+  .v2-blatt { padding: 18px 14px 14px; font-size: 12.5px; }
+  .bl-balken { margin: -18px -14px 14px; }
+  .bl-kopf { grid-template-columns: 1fr; gap: 10px; }
+  .bl-meta { text-align: left; } .bl-meta dl { justify-content: start; }
+  .bl-art { font-size: 20px; }
+  .bl-stempel { position: static; float: right; transform: rotate(-6deg); margin: 0 0 6px 8px; font-size: 13px; padding: 2px 8px; }
+  .bl-pos thead { display: none; }
+  .bl-pos, .bl-pos tbody { display: block; }
+  .bl-pos tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 10px; padding: 7px 0; border-bottom: 1px solid #e6e6e6; }
+  .bl-pos td { border: 0; padding: 0; }
+  .bl-pos .bl-nr { display: none; }
+  .bl-pos .bl-leistung { grid-column: 1 / -1; }
+  .bl-pos .bl-menge { grid-column: 1; text-align: left; color: #888; font-size: 11.5px; }
+  .bl-pos .bl-mal { display: inline; }
+  .bl-pos .bl-einzel { display: none; }
+  .bl-pos .bl-gesamt { grid-column: 2; grid-row: 2; font-weight: 700; }
+  .bl-pos tr.bl-gruppe { display: block; padding: 4px 6px; background: #f2f4f8; border: 0; }
+  .bl-pos tr.bl-gruppe td { background: none; }
+}
+.v2-bl-box .v2-an-zeile { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.v2-bl-box .v2-feld, .v2-bl-box input, .v2-bl-box textarea, .v2-bl-box select { min-width: 0; max-width: 100%; }
+.v2-bl-box input[type="date"] { width: 100%; }
+.v2-bl-box a { color: var(--v2-accent); }

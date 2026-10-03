@@ -278,6 +278,13 @@ class MahnStore:
     # -- Dokument ---------------------------------------------------------------------------------------------------
 
     def pdf(self, m: dict, firmendaten: dict) -> bytes:
+        t = self.teile(m)
+        return beleg_pdf(art=BRIEF[m["stufe"]], nummer=m["nummer"], firma=firmendaten, empfaenger=_empfaenger(t["firma"], t["ap"]),
+                         infos=t["infos"], einleitung=t["anrede"] + "\n\n" + t["einleitung"], positionen=t["positionen"],
+                         summe_cent=m["summe_cent"], hinweise=t["hinweise"], schluss="")
+
+    def teile(self, m: dict) -> dict:
+        """Texte, Forderungsaufstellung und Kopfdaten fuer PDF und Belegblatt (DIGITALER_BELEG D3)."""
         f = self.kunden.firma(m["firma"]) or {}
         aps = [a for a in f.get("ansprechpartner_liste", []) if a.get("aktiv")]
         ap = aps[0] if aps else None
@@ -316,11 +323,10 @@ class MahnStore:
         if m["stufe"] == 3:
             hinweise.insert(1, "Nach Ablauf dieser Frist behalten wir uns vor, ohne weitere Ankündigung das gerichtliche "
                                "Mahnverfahren einzuleiten; die dadurch entstehenden Kosten gehen zu Ihren Lasten.")
-        return beleg_pdf(art=BRIEF[m["stufe"]], nummer=m["nummer"], firma=firmendaten, empfaenger=_empfaenger(f, ap),
-                         infos=[("Datum", datum_de(m["datum"])), ("Mahnung", m["nummer"]), ("Rechnung", m["rechnung"]),
-                                ("Kundennummer", m["firma"]), ("Zahlbar bis", datum_de(m["frist"]))],
-                         einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einl, positionen=pos,
-                         summe_cent=m["summe_cent"], hinweise=hinweise, schluss="")
+        return {"firma": f, "ap": ap, "anrede": anrede_moin(ap, f.get("name", "")), "einleitung": einl, "positionen": pos,
+                "hinweise": hinweise, "infos": [("Datum", datum_de(m["datum"])), ("Mahnung", m["nummer"]),
+                                                ("Rechnung", m["rechnung"]), ("Kundennummer", m["firma"]),
+                                                ("Zahlbar bis", datum_de(m["frist"]))]}
 
 
 def mahnung_mail_text(m: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:

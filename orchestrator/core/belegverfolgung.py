@@ -139,7 +139,7 @@ def kette(eintraege: list[dict], kennung: str, *, finanzen: bool = True) -> dict
         knoten_neu(m["nummer"], "mahnung", m["nummer"], m.get("datum") or m.get("erstellt"),
                    titel=f"Mahnstufe {m.get('stufe')}", betrag=m.get("summe_cent"), firma=(r or {}).get("firma", ""),
                    status="gesendet" if m.get("versendet_am") else "",
-                   oeffnen={"url": f"/api/finanzen/mahnungen/{m['nummer']}/pdf"})
+                   oeffnen={"act": "ma-detail", "id": m["nummer"]})
         kante(m.get("rechnung"), m["nummer"], "gemahnt")
     for re_nr, mv in MahnStore.mahnverfahren(eintraege).items():
         mid = f"MV:{re_nr}"

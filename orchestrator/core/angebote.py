@@ -505,6 +505,34 @@ class AngebotStore:
             return {"geaendert": []}
         return {"geaendert": sorted(diff)}
 
+    def teile(self, a: dict, firmendaten: dict) -> dict:
+        """Texte und Kopfdaten fuer PDF und Belegblatt (DIGITALER_BELEG D2) -- je Layout wie im PDF."""
+        f = self.kunden.firma(a["firma"]) or {}
+        ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == a.get("ansprechpartner")), None)
+        hinweise = ([HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
+                    + [x for x in [zb.text(a.get("zahlung"), a["geld_cent"])] if x]
+                    + [f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."])
+        infos = [("Datum", datum_de(a["datum"])), ("Angebot", a["nummer"]), ("Gültig bis", datum_de(a["gueltig_bis"])),
+                 ("Kundennummer", a["firma"])]
+        if a["layout"] == "hanserautisch":
+            b = a.get("bloecke") or _bloecke({})
+            texte = kalkulation_texte(b, formate=a["positionen"], tkp_zeigen=b.get("tkp_zeigen", True),
+                                      omr_zeigen=b.get("omr_zeigen", False))
+            zeigen = b.get("zeige_kalkulation", True) or b.get("omr_zeigen", False)
+            return {"firma": f, "ap": ap, "anrede": anrede_moin(ap, f.get("name", "")),
+                    "einleitung": a.get("einleitung") or b.get("intro", ""), "hinweise": hinweise, "infos": infos,
+                    "untertitel": a.get("titel") or b.get("untertitel", ""), "schluss": "",
+                    "kalkulation": ({"titel": texte.get("kalkulation_titel", ""), "absaetze": texte.get("kalkulation") or [],
+                                     "beispiel": texte.get("kalkulation_beispiel", "")} if zeigen and texte.get("kalkulation") else None)}
+        ap_name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
+        anrede = f"Guten Tag {ap_name}," if ap_name else "Sehr geehrte Damen und Herren,"
+        einleitung = a.get("einleitung") or (f"{anrede}\n\nvielen Dank für Ihr Interesse. Gerne unterbreiten wir "
+                                             "Ihnen folgendes Angebot" + (f" zu „{a['titel']}“" if a.get("titel") else "") + ":")
+        schluss = a.get("schluss") or ("Wir freuen uns auf Ihre Rückmeldung.\n\nMit freundlichen Grüßen\n"
+                                       + (firmendaten.get("inhaber") or firmendaten.get("firma") or ""))
+        return {"firma": f, "ap": ap, "anrede": "", "einleitung": einleitung, "hinweise": hinweise, "infos": infos,
+                "untertitel": a.get("titel") or "", "schluss": schluss, "kalkulation": None}
+
     def pdf(self, nummer: str, firmendaten: dict) -> bytes:
         a = self.angebot(nummer)
         if not a:

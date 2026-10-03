@@ -258,10 +258,8 @@ class AuftragBuch:
         self.bh.erfassen_geprueft("auftrag_status", daten, von=von, pruefe=pruefe)
         return {"status": status}
 
-    def pdf(self, nummer: str, firmendaten: dict) -> bytes:
-        a = self.auftrag(nummer)
-        if not a:
-            raise KeyError(nummer)
+    def teile(self, a: dict) -> dict:
+        """Texte und Kopfdaten fuer PDF und Belegblatt (DIGITALER_BELEG D2)."""
         f = self.kunden.firma(a["firma"]) or {}
         ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == a.get("ansprechpartner")), None)
         lv, lb = a.get("leistung_von"), a.get("leistung_bis")
@@ -273,6 +271,17 @@ class AuftragBuch:
         hinweise = ([HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
                     + [x for x in [zb.text(a.get("zahlung"), a["geld_cent"], ab_datum=a["datum"])] if x]
                     + ([f"Anmerkung: {a['notiz']}"] if a.get("notiz") else []))
+        infos = ([("Datum", datum_de(a["datum"])), ("Auftrag", a["nummer"])] + ([("Angebot", a["angebot"])] if a.get("angebot") else [])
+                 + [("Kundennummer", a["firma"])] + ([("Leistung", zeitraum)] if zeitraum else []))
+        return {"firma": f, "ap": ap, "zeitraum": zeitraum, "einleitung": einleitung, "hinweise": hinweise, "infos": infos,
+                "anrede": anrede_moin(ap, f.get("name", ""))}
+
+    def pdf(self, nummer: str, firmendaten: dict) -> bytes:
+        a = self.auftrag(nummer)
+        if not a:
+            raise KeyError(nummer)
+        t = self.teile(a)
+        f, ap, zeitraum, einleitung, hinweise = (t[k] for k in ("firma", "ap", "zeitraum", "einleitung", "hinweise"))
         if a.get("layout") == "hanserautisch":
             b = a.get("bloecke") or _bloecke({})
             gruppen: dict[str, tuple] = {}

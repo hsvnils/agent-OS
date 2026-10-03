@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-04 00:13] — Claude Code
+- **Was:** DIGITALER BELEG D1-D3: Angebot, Auftragsbestaetigung, Rechnung (alle Arten) und Mahnung werden in LUNA-OS als
+  Belegblatt gezeigt (Anschrift, Kopfdaten, Positionen, Summen, Hinweise, Fusszeile, Status-Stempel) -- dieselben Texte
+  wie im PDF (`teile()` je Store, `core/belegblatt.py`); Variante A: Rechner Blatt + Seitenleiste mit Mini-Belegverfolgung,
+  iPad/iPhone Aktionsleiste unten und beim Auftrag Reiter; neue Mahnungs-Ansicht.
+- **Warum:** CEO-Go 2026-10-03 fuer D1 bis D3.
+- **Betroffen:** `orchestrator/core/belegblatt.py` (neu), `orchestrator/core/rechnungen.py`, `orchestrator/core/beauftragung.py`,
+  `orchestrator/core/angebote.py`, `orchestrator/core/mahnungen.py`, `orchestrator/core/belegverfolgung.py`,
+  `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html` (v91/v41),
+  `orchestrator/tests/test_belegblatt.py` (neu), `orchestrator/tests/test_belegverfolgung.py`,
+  `DIGITALER_BELEG_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`.
+
 ## [2026-10-03 23:57] — Claude Code
 - **Was:** Skizze „Digitaler Beleg“ (Variante A/B, Rechner + iPhone, alle Belegarten) und Roadmap angelegt (Etappen D1
   Rechnungen, D2 Angebot/Auftrag, D3 Mahnung + Feinschliff); CEO-Entscheidung Variante A eingetragen.

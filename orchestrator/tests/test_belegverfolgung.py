@@ -66,7 +66,7 @@ class TestKette(unittest.TestCase):
         self.assertEqual(arten.count("mahnung"), 3)
         self.assertEqual((arten[0], "mahnverfahren" in arten, "dokument" in arten), ("rechnung", True, True))
         self.assertEqual(kk["knoten"][kk["position"]]["nummer"], "RG-11052026-M2")
-        self.assertTrue(kk["knoten"][kk["position"]]["oeffnen"]["url"].endswith("/RG-11052026-M2/pdf"))
+        self.assertEqual(kk["knoten"][kk["position"]]["oeffnen"], {"act": "ma-detail", "id": "RG-11052026-M2"})
 
     def test_4_rechte_und_unbekannt(self):
         bh, ks, st, ab, rs, an, nr = _ablauf({"ziel_tage": 14})
