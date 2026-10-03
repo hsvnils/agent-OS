@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-04 00:14] — Claude Code
+- **Was:** `ai/digitaler-beleg` nach `main` gemergt (fast-forward), Suite gruen (1149), gepusht, Code per
+  `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen.
+- **Warum:** CEO-Go 2026-10-04 („Go fuer Merge, Push und Deploy“).
+- **Betroffen:** `main`, NAS-Code.
+
 ## [2026-10-04 00:13] — Claude Code
 - **Was:** DIGITALER BELEG D1-D3: Angebot, Auftragsbestaetigung, Rechnung (alle Arten) und Mahnung werden in LUNA-OS als
   Belegblatt gezeigt (Anschrift, Kopfdaten, Positionen, Summen, Hinweise, Fusszeile, Status-Stempel) -- dieselben Texte
