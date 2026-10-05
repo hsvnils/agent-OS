@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 11:13] — Claude Code
+- **Was:** `ai/clo-ausbau` (Beschriftungs-Korrektur + Roadmap) nach `main` gemergt (fast-forward), Suite gruen (1159),
+  gepusht, Code per `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen.
+- **Warum:** CEO-Go 2026-10-05 („Go fuer Merge, Push und Deploy und C1 bis C4“).
+- **Betroffen:** `main`, NAS-Code.
+
 ## [2026-10-05 11:11] — Claude Code
 - **Was:** Herkunft der Vertragsentwuerfe korrigiert: Claude Code (nicht der CLO-Agent) hat sie geschrieben -- Quelle
   jetzt „Entwurf Claude Code (ungeprueft)“, Knopf „Erste Entwuerfe laden“, Hinweistext angepasst (live noch nicht
