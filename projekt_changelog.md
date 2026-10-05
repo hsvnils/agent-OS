@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 11:07] — Claude Code
+- **Was:** Live-Pruefung nach dem Neustart: LUNA-OS v93/v43; Konzept-Mappe ordnet AN-2026-0001, AB-2026-0001 und
+  RE-2026-0003 demselben Vorgang AN-2026-0001 zu, AB-2026-0002 (direkt angelegt) und AN-2026-0002 haben eigene Vorgaenge,
+  Leistungen korrekt; Drehliste-PDF erzeugt; Vertragswerk mit vier leeren Vorlagen (Entwuerfe laedt der CEO); Bot frisch.
+  Nur gelesen.
+- **Warum:** CEO „Neustart erledigt, kannst pruefen“.
+- **Betroffen:** keine Dateien (nur dieser Eintrag).
+
 ## [2026-10-05 11:05] — Claude Code
 - **Was:** `ai/konzept-vertrag` (inkl. Plan-Commit) nach `main` gemergt (fast-forward), Suite gruen (1159), gepusht, Code
   per `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen.
