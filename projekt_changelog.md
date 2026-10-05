@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 16:25] — Claude Code
+- **Was:** Roadmaps `ANGEBOT_PRAESENTATION_ROADMAP.md`, `VIDEOGRAF_ROADMAP.md` und `FACHAGENTEN_ROUTING_ROADMAP.md` auf
+  „abgeschlossen“ gesetzt (R5-Beobachtung als Etappe verworfen, bleibt ueber Leistungsbericht sichtbar); `ROADMAP.md`
+  und Entscheidungs-Register nachgezogen. Kein Code geaendert.
+- **Warum:** CEO „Schliesse es ruhig ab. Wenn mir spaeter Fehler auffallen, melde ich mich.“
+- **Betroffen:** die drei Roadmaps, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 16:19] — Claude Code
 - **Was:** Deploy VIDEOGRAF V2-V4 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): UI v99/v47; Agent 17
   aktiv mit 5 geladenen Skills; Endpunkt `/api/crm/konzept-videograf` antwortet (Probe mit nicht vorhandenem Vorgang:

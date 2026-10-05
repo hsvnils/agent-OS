@@ -1,9 +1,9 @@
 # Roadmap: Canva-Praesentation im Angebot (DE/EN)
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/canva-videograf`
 - Basiscommit: `782e428`
-- Naechster Schritt: P1 live (2026-10-05, Katalog mit beiden Links geprueft) -- beim ersten echten Angebot PDF/Mail pruefen, dann abschliessen.
+- Naechster Schritt: keiner -- abgeschlossen auf CEO-Wunsch (2026-10-05); Fehler beim ersten echten Angebot meldet der CEO.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
