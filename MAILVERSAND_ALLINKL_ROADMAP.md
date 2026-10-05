@@ -3,8 +3,8 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/mail-allinkl`
 - Basiscommit: `3a08276`
-- Naechster Schritt: M1 live, Anmeldung SMTP+IMAP ok (2026-10-05) -- Testmail an eine CEO-Adresse nach Freigabe, dann
-  `KUNDENVERSAND=allinkl` setzen.
+- Naechster Schritt: Kundenversand laeuft seit 2026-10-05 ueber All-Inkl -- beobachten (M3); CEO-Go fuer M2 (Antworten per
+  IMAP erkennen) abwarten. Bis dahin landen Kundenantworten nur im Postfach luna@ (keine Telegram-Meldung).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -27,7 +27,7 @@ von All-Inkl (SMTP zum Senden, IMAP zum Lesen). Entscheidungen: **statt Gmail fu
 
 ## Etappe M1: Versand ueber All-Inkl
 
-- Status: umgesetzt (Gate offen: Anmelde-Pruefung + echte Testmail)
+- Status: verifiziert (2026-10-05: Anmeldung ok, Testmails an CEO-Adressen angekommen, kein Spam)
 - Ziel / Scope: neuer Versandweg „All-Inkl“ mit dem gleichen Aufruf wie Gmail (Empfaenger, Betreff, Text, Anhaenge);
   Absender „Hanserautisch – LUNA <luna@hanserautisch.de>“; die gesendete Mail wird per IMAP in „Gesendet“ abgelegt und
   wie bisher als .eml archiviert; Schalter in der `.env` (Kundenversand = allinkl | gmail), Rueckfall auf Gmail nur
@@ -54,7 +54,7 @@ von All-Inkl (SMTP zum Senden, IMAP zum Lesen). Entscheidungen: **statt Gmail fu
 
 ## Etappe M3: Umschalten und Beobachten
 
-- Status: geplant
+- Status: in Umsetzung (umgeschaltet 2026-10-05 auf CEO-Anweisung, vor M2; Beobachtung laeuft)
 - Ziel / Scope: Kundenversand auf All-Inkl umstellen, eine Woche beobachten (Zustellung, Spam-Ordner beim Empfaenger,
   Antworten), Erkenntnisse in `docs/bekannte-fehler.md`.
 - Gate: CEO-Bestaetigung.

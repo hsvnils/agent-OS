@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 22:04] — Claude Code
+- **Was:** Kundenversand auf All-Inkl umgeschaltet: in der NAS-`.env` `KUNDENVERSAND=gmail` -> `allinkl` (Sicherung
+  `.env.bak-20261005-umschalten`, keine anderen Werte gelesen). Live geprueft: Kanal allinkl, Absender „Hanserautisch – LUNA
+  <luna@hanserautisch.de>“ in den Versanddialogen, Anmeldung SMTP+IMAP ok. M1 verifiziert, M3 (Beobachten) laeuft; M2
+  (Kundenantworten per IMAP) noch offen -- bis dahin keine automatische Antwort-Meldung fuer neu gesendete Angebote.
+- **Warum:** CEO: „Beide angekommen, kein Spam – stell auf allinkl um“.
+- **Betroffen:** NAS `orchestrator/.env` (nicht im Git), `MAILVERSAND_ALLINKL_ROADMAP.md`, `ROADMAP.md`,
+  `governance/zugriffs-policy.md`, `projekt_changelog.md`
+
 ## [2026-10-05 22:03] — Claude Code
 - **Was:** Zwei Testmails ueber All-Inkl verschickt (`POST /api/finanzen/kundenversand/testmail`): an nils@hanserautisch.de und
   an hsvnils@icloud.com; beide vom Server angenommen, Kopie jeweils im Ordner „Gesendet“ von luna@hanserautisch.de abgelegt.
