@@ -244,6 +244,8 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                 out.append(_todo(f"ab-bericht:{a['nummer']}", "Aufträge", "📝", f"Projektbericht senden: {a['nummer']}",
                                  f"{name} · alle Zahlen da – Bericht prüfen und an den Kunden senden", "ab-detail",
                                  a["nummer"], "", h) | {"stufe": "woche"})
+        from .konzept import todos as konzept_todos       # KONZEPT_MAPPE K3: Freigabe ausstehend, Dreh heute/morgen
+        out += konzept_todos(e, heute)
     if finanzen:
         for x in EingangStore._falte(e).values():
             v, f = x.get("vorschlag") or {}, x.get("felder") or {}

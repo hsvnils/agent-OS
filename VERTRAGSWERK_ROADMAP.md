@@ -1,9 +1,9 @@
 # Roadmap: Vertragswerk (Vorlagen-Bibliothek, Vertrag je Auftrag, AGB am Angebot)
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/plan-konzept-vertrag` (Plan); Umsetzung auf eigenem Branch
 - Basiscommit: `6636d02`
-- Naechster Schritt: CEO-Go fuer V1-V4 abwarten; vor dem ersten Einsatz beim Kunden: anwaltliche Pruefung der Vorlagen (CEO-Tor Recht + Geld).
+- Naechster Schritt: V1+V2 gebaut (2026-10-05); CEO laedt die CLO-Entwuerfe, liest sie und laesst sie anwaltlich pruefen (CEO-Tor); danach Go fuer V3/V4.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -34,7 +34,9 @@ AGB am Angebot (CEO-Entscheidung 2026-10-05).
 
 ## Etappe V1: Vorlagen-Bibliothek
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- `core/vertraege.py` (Versionen, Status Entwurf/geprueft/ausser Kraft mit
+  Pruefvermerk, „in Kraft“ = juengste gepruefte Version, Vergleich), Seite „📜 Vertragswerk“ (Geschaeft), aendern und
+  pruefen nur CEO. Tests `test_vertraege.py` mit Gegenprobe; Browsertest 1300/820/402 px.
 - Ziel / Scope: `core/vertraege.py`; Vorlagenarten **AGB, Kooperationsvertrag (Influencer-/Content-Kooperation),
   Nutzungsrechte-Vereinbarung, NDA**; Text in Paragraphen mit Platzhaltern (`{Kunde}`, `{Leistungen}`, `{Verguetung}`,
   `{Nutzungsrechte}`, `{Freigabe}` …); Versionen mit Status und Pruefvermerk (wer, wann, Dokument der Pruefung in der
@@ -44,7 +46,9 @@ AGB am Angebot (CEO-Entscheidung 2026-10-05).
 
 ## Etappe V2: Erste Entwuerfe durch den CLO
 
-- Status: geplant
+- Status: Entwuerfe liegen vor (2026-10-05) -- `core/vertrag_entwuerfe.py` (AGB 14 §§, Kooperationsvertrag 11 §§,
+  Nutzungsrechte 6 §§, NDA 6 §§, mit Platzhaltern); per Knopf „CLO-Entwuerfe laden“ als Version 1 (Entwurf).
+  **Offen (CEO-Tor):** Lesen durch den CEO, anwaltliche Pruefung, dann Status „geprueft“.
 - Ziel / Scope: CLO-Entwuerfe fuer AGB, Kooperationsvertrag, Nutzungsrechte-Vereinbarung, NDA -- passend zum Geschaeft
   (Kleinunternehmer, Social-Media-Kooperationen, Kennzeichnungspflicht, Nutzungsrechte/Whitelisting/Exklusivitaet wie
   die Katalog-Zuschlaege, Freigabeprozess aus der Konzept-Mappe, Zahlungsbedingungen/Vorkasse, Haftung, Kuendigung).

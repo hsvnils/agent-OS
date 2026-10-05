@@ -80,6 +80,7 @@ const SECTIONS = [
   { id: "finanzen", icon: "💶", label: "Finanzen", app: "finanzen" },
   { id: "rechnungen", icon: "🧾", label: "Rechnungen", app: "rechnungen" },
   { id: "belege", icon: "📥", label: "Belege", app: "belege" },
+  { id: "vertraege", icon: "📜", label: "Vertragswerk", app: "angebote" },
   { id: "radar", icon: "🎯", label: "Radar", app: "crm" },
   { id: "content", icon: "✎", label: "Content", app: "trends" },
   { id: "cutter", icon: "🎬", label: "Cutter", app: "cutter" },
@@ -93,13 +94,13 @@ const SECTIONS = [
 const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.includes(app);
 // LUNA_OS_UI_ROADMAP Etappe 1: 4 Bereiche statt 19 Symbolen (CEO 2026-09-30, Skizze abgenommen). Reihenfolge nach Nutzung.
 const BEREICHE = [
-  { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen"] },
+  { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen", "vertraege"] },
   { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["crm", "radar", "content", "cutter", "reel"] },
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
   { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "devroadmap", "system", "team", "einstellungen"] },
 ];
 const TEIL_INFO = {
-  kunden: "Firmen, Ansprechpartner, Akte", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
+  kunden: "Firmen, Ansprechpartner, Akte", vertraege: "AGB und Vertragsvorlagen", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
   belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
   radar: "Neue Collab-Chancen", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
@@ -1302,8 +1303,9 @@ async function anDetail(nr, meldung, fehler) {
   const seite = blBox("Status", status) + `<section class="v2-bl-box" id="bv-mini"></section>` + blBox("Erinnerungen", termine)
     + blBox("Abgelegte PDFs", pdfs) + blBox(`Verlauf <small class="v2-sub">Mails zum Aufklappen</small>`, verlauf);
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
-    ${belegAnsicht({ aktionen, haupt: `<div id="an-senden-box"></div>${d.blatt ? belegBlatt(d.blatt) : altTab}`, seite })}`, true);
-  bvMini(nr);
+    ${belegAnsicht({ aktionen, haupt: `<div id="an-senden-box"></div>${d.blatt ? belegBlatt(d.blatt) : altTab}`, seite, unten: `<section class="v2-kz" data-tabteil="konzept"><h3 class="v2-kz-titel">🎬 Konzept</h3><div id="kz-box"><div class="v2-empty">Lade…</div></div></section>`,
+      reiter: [["beleg", "📄 Beleg"], ["konzept", "🎬 Konzept"]] })}`, true);
+  bvMini(nr); KZ.tab = "briefing"; konzeptLaden(nr);
 }
 
 /* ---------- Auftraege (Beauftragung, KUNDEN_FINANZEN Etappe 4) ---------- */
@@ -1375,9 +1377,9 @@ async function abDetail(nr, meldung, fehler) {
     ${darf("rechnungen") ? `<div data-tabteil="zeiten"><div id="ab-zeit-box"></div></div>` : ""}
     ${a.status !== "storniert" ? `<div data-tabteil="bericht"><div id="ab-bericht-box"></div></div>` : ""}</div></div>`;
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
-    ${belegAnsicht({ aktionen, haupt: `<div id="ab-senden-box"></div>${d.blatt ? belegBlatt(d.blatt) : altTab}`, seite, unten: intern,
-      reiter: [["beleg", "📄 Beleg"], ["postings", "📣 Postings"], ...(darf("rechnungen") ? [["zeiten", "⏱ Zeiten"]] : []), ["bericht", "📝 Bericht"]] })}`, true);
-  bvMini(nr);
+    ${belegAnsicht({ aktionen, haupt: `<div id="ab-senden-box"></div>${d.blatt ? belegBlatt(d.blatt) : altTab}`, seite, unten: `<section class="v2-kz" data-tabteil="konzept"><h3 class="v2-kz-titel">🎬 Konzept</h3><div id="kz-box"><div class="v2-empty">Lade…</div></div></section>` + intern,
+      reiter: [["beleg", "📄 Beleg"], ["konzept", "🎬 Konzept"], ["postings", "📣 Postings"], ...(darf("rechnungen") ? [["zeiten", "⏱ Zeiten"]] : []), ["bericht", "📝 Bericht"]] })}`, true);
+  bvMini(nr); KZ.tab = "briefing"; konzeptLaden(nr);
   abZeitLaden(nr); abLieferungen(nr); abPostings(nr, a.status); abBericht(nr);
 }
 // PROJEKTBERICHT P1: Postings je Position (Menge) mit Veroeffentlichung, Kennzahlen als Zahlen und TKP-Vergleich;
@@ -1451,6 +1453,200 @@ async function poSpeichern(pid, nr, art) {
   const a = (await jget("/api/crm/auftraege/" + encodeURIComponent(nr)) || {}).auftrag || {};
   return abPostings(nr, a.status);
 }
+// KONZEPT_MAPPE K1-K3: eine Mappe je Vorgang (Briefing, Ideen, Skripte, Shotlist & Dreh, Freigabe)
+let KZ = { tab: "briefing", d: null, beleg: "" };
+const KZ_TABS = [["briefing", "📋 Briefing"], ["ideen", "💡 Ideen"], ["skripte", "✍️ Skripte"], ["dreh", "🎬 Dreh"], ["freigabe", "✅ Freigabe"]];
+const KZ_ST = { idee: ["Idee", "neutral"], ausgewaehlt: ["ausgewählt", "ok"], verworfen: ["verworfen", "err"], entwurf: ["Entwurf", "wartet"], fertig: ["fertig", "neutral"], freigegeben: ["freigegeben", "ok"], beim_kunden: ["beim Kunden", "wartet"], aenderung: ["Änderungswunsch", "err"] };
+const kzBadge = (st) => { const [l, c] = KZ_ST[st] || [st, "neutral"]; return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
+async function konzeptLaden(beleg, tab) {
+  const box = $("#kz-box"); if (!box) return;
+  if (tab) KZ.tab = tab;
+  const d = await jget(`/api/crm/konzept/${encodeURIComponent(beleg)}`);
+  if (!d) { box.innerHTML = emptyRow("Konzept nicht verfügbar."); return; }
+  KZ.d = d; KZ.beleg = beleg; konzeptZeichnen();
+}
+function konzeptZeichnen() {
+  const box = $("#kz-box"); if (!box || !KZ.d) return;
+  const { mappe: m, kontext: k, felder: F } = KZ.d, v = k.vorgang, ta = (id, wert, rows = 2, ph = "") => `<textarea id="${id}" class="v2-inp" rows="${rows}" placeholder="${esc(ph)}">${esc(wert || "")}</textarea>`;
+  const kopf = `<div class="v2-kz-kopf"><span class="v2-sub">Vorgang <b>${esc(v)}</b>${k.auftrag && k.auftrag !== v ? " · Auftrag " + esc(k.auftrag) : ""} · Freigabe ${kzBadge(m.freigabe.status)}</span>
+    <div class="v2-card-actions"><a class="v2-btn sm" href="/api/crm/konzept-pdf/${encodeURIComponent(v)}?art=kunde" target="_blank" rel="noopener">📄 Konzept-PDF</a><a class="v2-btn sm" href="/api/crm/konzept-pdf/${encodeURIComponent(v)}?art=dreh" target="_blank" rel="noopener">📄 Drehliste</a></div></div>
+    <div class="v2-kz-tabs">${KZ_TABS.map(([t, n]) => `<button class="${t === KZ.tab ? "on" : ""}" data-act="kz-tab" data-val="${t}">${n}</button>`).join("")}</div>`;
+  let inhalt = "";
+  if (KZ.tab === "briefing") {
+    const b = m.briefing || {};
+    inhalt = `<div class="v2-form"><div class="v2-kz-raster">${F.briefing.map(([key, label]) => `<label class="v2-feld"><small>${esc(label)}</small>${ta("kzb-" + key, b[key], key === "notizen" ? 3 : 2, key === "pflicht" ? "z. B. „Werbung“, @marke, Rabattcode, Link in Bio" : "")}</label>`).join("")}</div>
+      <button class="v2-btn pri" data-act="kz-briefing" data-id="${esc(v)}">Briefing speichern</button><div id="kz-msg" class="v2-msg"></div></div>`;
+  } else if (KZ.tab === "ideen") {
+    const bilder = (m.bilder || []).map((x, i) => ({ ...x, i }));
+    const karte = (i) => `<div class="v2-kz-idee${i.status === "verworfen" ? " weg" : ""}"><div class="v2-kz-zeile"><b>${esc(i.titel || "")}</b>${kzBadge(i.status)}</div>
+      ${i.beschreibung ? `<div class="v2-sub">${esc(i.beschreibung)}</div>` : ""}${i.format || i.ziel ? `<small class="v2-sub">${esc([i.format, i.ziel].filter(Boolean).join(" · "))}</small>` : ""}
+      ${bilder.filter(x => x.idee === i.id).length ? `<div class="v2-kz-mood">${bilder.filter(x => x.idee === i.id).map(x => `<a href="/api/crm/konzept-bild/${encodeURIComponent(v)}/${x.i}" target="_blank" rel="noopener"><img src="/api/crm/konzept-bild/${encodeURIComponent(v)}/${x.i}" alt="" loading="lazy"></a>`).join("")}</div>` : ""}
+      <div class="v2-card-actions">${["ausgewaehlt", "idee", "verworfen"].filter(st => st !== i.status).map(st => `<button class="v2-btn sm" data-act="kz-idee-status" data-id="${esc(i.id)}" data-val="${st}">${st === "ausgewaehlt" ? "✓ auswählen" : st === "verworfen" ? "✕ verwerfen" : "↺ zurück"}</button>`).join("")}
+        <label class="v2-btn sm v2-kz-upload">🖼 Bild<input type="file" accept="image/*" multiple hidden data-kz-bild="${esc(i.id)}"></label></div></div>`;
+    const ideen = Object.values(m.ideen || {}).sort((a, b) => (a.status === "verworfen") - (b.status === "verworfen") || String(a.angelegt).localeCompare(String(b.angelegt)));
+    inhalt = `${ideen.length ? `<div class="v2-kz-liste">${ideen.map(karte).join("")}</div>` : `<div class="v2-sub">Noch keine Ideen.</div>`}
+      ${bilder.filter(x => !x.idee).length ? `<h4>Moodboard</h4><div class="v2-kz-mood">${bilder.filter(x => !x.idee).map(x => `<a href="/api/crm/konzept-bild/${encodeURIComponent(v)}/${x.i}" target="_blank" rel="noopener"><img src="/api/crm/konzept-bild/${encodeURIComponent(v)}/${x.i}" alt="" loading="lazy"></a>`).join("")}</div>` : ""}
+      <details class="v2-pz" ${ideen.length ? "" : "open"}><summary><b>+ Idee hinzufügen</b></summary><div class="v2-form">
+        <label class="v2-feld"><small>Titel *</small><input id="kzi-titel" class="v2-inp" maxlength="160"></label>
+        <label class="v2-feld"><small>Beschreibung</small>${ta("kzi-beschr", "", 3)}</label>
+        <div class="v2-an-zeile"><label class="v2-feld"><small>Format</small><input id="kzi-format" class="v2-inp" placeholder="z. B. Reel"></label><label class="v2-feld"><small>Für</small><input id="kzi-ziel" class="v2-inp" placeholder="z. B. Reel 1"></label></div>
+        <button class="v2-btn pri" data-act="kz-idee" data-id="${esc(v)}">Idee speichern</button>
+        <label class="v2-btn v2-kz-upload">🖼 Moodboard-Bilder hochladen<input type="file" accept="image/*" multiple hidden data-kz-bild=""></label><div id="kz-msg" class="v2-msg"></div></div></details>`;
+  } else if (KZ.tab === "skripte") {
+    const sk = m.skripte || {};
+    inhalt = (k.slots || []).length ? k.slots.map(sl => { const x = sk[`S-${sl.position}-${sl.nr}`] || {}, id = `${sl.position}-${sl.nr}`;
+      return `<details class="v2-kz-skript" ${x.hook || x.text ? "" : ""}><summary><b>${esc(sl.titel)}</b> ${x.status ? kzBadge(x.status) : `<span class="v2-sub">noch leer</span>`}${x.hook ? `<small class="v2-sub"> · ${esc(x.hook.slice(0, 60))}</small>` : ""}</summary>
+        <div class="v2-form">${F.skript.map(([key, label]) => `<label class="v2-feld"><small>${esc(label)}</small>${key === "laenge" || key === "musik" ? `<input class="v2-inp" data-sk="${key}" value="${esc(x[key] || "")}">` : `<textarea class="v2-inp" rows="${key === "text" ? 5 : 2}" data-sk="${key}">${esc(x[key] || "")}</textarea>`}</label>`).join("")}
+          <div class="v2-an-zeile"><label class="v2-feld"><small>Status</small><select class="v2-inp" data-sk="status">${["entwurf", "fertig", "freigegeben"].map(st => `<option value="${st}" ${(x.status || "entwurf") === st ? "selected" : ""}>${KZ_ST[st][0]}</option>`).join("")}</select></label></div>
+          <button class="v2-btn pri" data-act="kz-skript" data-id="${esc(v)}" data-val="${id}">Skript speichern</button><div class="v2-msg" data-sk-msg="${id}"></div></div></details>`; }).join("")
+      : `<div class="v2-sub">Keine Leistungen im Vorgang.</div>`;
+  } else if (KZ.tab === "dreh") {
+    const d = m.dreh || {}, sz = m.szenen_liste || [], fertig = sz.filter(x => x.erledigt).length;
+    inhalt = `<div class="v2-kz-zeile"><b>Shotlist</b><span class="v2-sub">${fertig}/${sz.length} erledigt</span>${sz.length ? `<button class="v2-btn pri sm" data-act="kz-drehmodus" data-id="${esc(v)}">🎬 Drehmodus</button>` : ""}</div>
+      ${sz.map((x, i) => `<div class="v2-kz-szene${x.erledigt ? " ok" : ""}"><button class="v2-kz-haken" data-act="kz-erledigt" data-id="${esc(x.id)}" data-val="${x.erledigt ? "" : "1"}" aria-label="erledigt">${x.erledigt ? "✓" : ""}</button>
+        <div class="grow"><b>${i + 1} · ${esc(x.titel || "")}</b><small class="v2-sub">${esc([x.einstellung, x.ort, x.requisite, x.dauer].filter(Boolean).join(" · "))}${x.notiz ? " · " + esc(x.notiz) : ""}</small></div>
+        <button class="v2-btn sm" data-act="kz-szene-weg" data-id="${esc(x.id)}" title="Szene entfernen">✕</button></div>`).join("") || `<div class="v2-sub">Noch keine Szenen.</div>`}
+      <details class="v2-pz"><summary><b>+ Szene hinzufügen</b></summary><div class="v2-form"><div class="v2-kz-raster">${F.szene.map(([key, label]) => `<label class="v2-feld"><small>${esc(label)}${key === "titel" ? " *" : ""}</small><input class="v2-inp" data-sz="${key}"></label>`).join("")}</div>
+        <button class="v2-btn pri" data-act="kz-szene" data-id="${esc(v)}">Szene speichern</button><div id="kz-msg" class="v2-msg"></div></div></details>
+      <h4>Drehplan</h4><div class="v2-form"><div class="v2-kz-raster">${F.dreh.map(([key, label]) => `<label class="v2-feld"><small>${esc(label)}</small>${key === "mitbringen" ? ta("kzd-" + key, d[key], 2) : `<input id="kzd-${key}" class="v2-inp" type="${key === "datum" ? "date" : key === "zeit" ? "time" : "text"}" value="${esc(d[key] || "")}">`}</label>`).join("")}</div>
+        <button class="v2-btn" data-act="kz-dreh" data-id="${esc(v)}">Drehplan speichern</button><div id="kz-msg2" class="v2-msg"></div></div>`;
+  } else {
+    const f = m.freigabe || { status: "entwurf", versionen: [] };
+    inhalt = `<div class="v2-kv"><span>Status</span>${kzBadge(f.status)}${f[f.status + "_am"] ? ` <small class="v2-sub">seit ${esc(datumDe(f[f.status + "_am"]))}</small>` : ""}</div>
+      ${f.notiz ? `<div class="v2-kv"><span>Notiz</span><b>${esc(f.notiz)}</b></div>` : ""}
+      ${(f.versionen || []).map((x, i) => `<div class="v2-list-row"><span>📎</span><div class="grow"><b><a href="/api/crm/konzept-pdf/${encodeURIComponent(v)}?archiv=${i + 1}" target="_blank" rel="noopener">Konzept Version ${x.version}</a></b><small>gesendet an ${esc(x.an || "")} · ${esc(zeit(x.ts))} · in der Firmenakte</small></div></div>`).join("")}
+      <div class="v2-card-actions" style="margin-top:8px"><button class="v2-btn pri" data-act="kz-senden-form" data-id="${esc(v)}">✉️ Zur Freigabe senden …</button>
+        ${f.status !== "freigegeben" ? `<button class="v2-btn ok" data-act="kz-freigabe" data-id="${esc(v)}" data-val="freigegeben">✓ Kunde hat freigegeben</button>` : ""}
+        <button class="v2-btn" data-act="kz-freigabe" data-id="${esc(v)}" data-val="aenderung">✎ Änderungswunsch …</button>
+        ${f.status !== "entwurf" ? `<button class="v2-btn" data-act="kz-freigabe" data-id="${esc(v)}" data-val="entwurf">↺ wieder Entwurf</button>` : ""}</div>
+      <div id="kz-msg" class="v2-msg"></div><div id="kz-senden-box"></div>`;
+  }
+  box.innerHTML = kopf + `<div class="v2-kz-inhalt">${inhalt}</div>`;
+  box.querySelectorAll("[data-kz-bild]").forEach(inp => inp.addEventListener("change", () => kzBilder(inp)));
+}
+async function kzBilder(inp) {
+  const v = KZ.d.kontext.vorgang, files = [...(inp.files || [])];
+  for (const f of files) {
+    const r = await fetch(`/api/crm/konzept-bild/${encodeURIComponent(v)}?idee=${encodeURIComponent(inp.dataset.kzBild || "")}`, { method: "POST", body: f, headers: { "X-Dateiname": encodeURIComponent(f.name || "bild.jpg") } });
+    const j = await r.json().catch(() => ({})); if (!r.ok || j.ok === false) { alert(j.hinweis || "Upload fehlgeschlagen."); break; }
+  }
+  return konzeptLaden(KZ.beleg);
+}
+async function kzAktion(act, id, val, el) {
+  const v = KZ.d && KZ.d.kontext.vorgang, post = (teil, body) => jpost(`/api/crm/konzept/${encodeURIComponent(v)}/${teil}`, body);
+  let r;
+  if (act === "kz-tab") { KZ.tab = val; return konzeptZeichnen(); }
+  if (act === "kz-briefing") r = await post("briefing", { felder: Object.fromEntries(KZ.d.felder.briefing.map(([k]) => [k, ($("#kzb-" + k) || {}).value || ""])) });
+  else if (act === "kz-idee") r = await post("idee", { titel: $("#kzi-titel").value.trim(), beschreibung: $("#kzi-beschr").value.trim(), format: $("#kzi-format").value.trim(), ziel: $("#kzi-ziel").value.trim() });
+  else if (act === "kz-idee-status") r = await post("idee", { id, status: val });
+  else if (act === "kz-skript") { const [pos, nr] = val.split("-"); const box = el.closest(".v2-form");
+    r = await post("skript", { position: Number(pos), nr: Number(nr), ...Object.fromEntries([...box.querySelectorAll("[data-sk]")].map(i => [i.dataset.sk, i.value])) });
+    if (!r || r.ok === false) { const m = box.querySelector("[data-sk-msg]"); if (m) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Fehler."; } return; } }
+  else if (act === "kz-szene") r = await post("szene", Object.fromEntries([...document.querySelectorAll("#kz-box [data-sz]")].map(i => [i.dataset.sz, i.value.trim()])));
+  else if (act === "kz-erledigt") r = await post("erledigt", { id, erledigt: !!val });
+  else if (act === "kz-szene-weg") { if (!confirm("Szene entfernen?")) return; r = await post("entfernen", { id }); }
+  else if (act === "kz-dreh") r = await post("dreh", { felder: Object.fromEntries(KZ.d.felder.dreh.map(([k]) => [k, ($("#kzd-" + k) || {}).value || ""])) });
+  else if (act === "kz-freigabe") { let notiz = "";
+    if (val === "aenderung") { notiz = prompt("Was möchte der Kunde geändert haben?", "") || ""; if (!notiz) return; }
+    r = await post("freigabe", { status: val, notiz }); }
+  else if (act === "kz-senden-form") return kzSendenForm(v);
+  else if (act === "kz-senden") return kzSenden(v);
+  else if (act === "kz-drehmodus") return drehModus(KZ.beleg);
+  if (!r || r.ok === false) return kundenMsg(act === "kz-dreh" ? "kz-msg2" : "kz-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+  const offen = act === "kz-skript" ? [...document.querySelectorAll("#kz-box details[open]")].map(x => x.querySelector("summary b").innerText) : [];
+  await konzeptLaden(KZ.beleg);
+  if (offen.length) document.querySelectorAll("#kz-box details").forEach(x => { if (offen.includes(x.querySelector("summary b").innerText)) x.open = true; });
+}
+async function kzSendenForm(v) {
+  const box = $("#kz-senden-box"), d = await jget(`/api/crm/konzept-versand/${encodeURIComponent(v)}`); if (!box || !d) return;
+  box.innerHTML = `<h4>Konzept zur Freigabe senden</h4><div class="v2-form"><div class="v2-kv"><span>Absender</span><b>${esc(d.absender)}</b></div>
+    <label class="v2-feld"><small>An *</small><input id="kzs-an" class="v2-inp" type="email" value="${esc(d.an || "")}"></label>
+    <label class="v2-feld"><small>Betreff *</small><input id="kzs-betreff" class="v2-inp" value="${esc(d.betreff)}"></label>
+    <label class="v2-feld"><small>Text *</small><textarea id="kzs-text" class="v2-inp" rows="7">${esc(d.text)}</textarea></label>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/konzept-pdf/${encodeURIComponent(v)}?art=kunde" target="_blank" rel="noopener">📎 ${esc(d.pdf)}</a></div>
+    <button class="v2-btn pri" data-act="kz-senden" data-id="${esc(v)}" ${d.google ? "" : "disabled"}>✉️ Jetzt senden</button><div id="kzs-msg" class="v2-msg"></div></div>`;
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+async function kzSenden(v) {
+  const an = $("#kzs-an").value.trim(); if (!an.includes("@")) return kundenMsg("kzs-msg", "Bitte eine gültige Adresse.", false);
+  if (!confirm(`Konzept jetzt an ${an} senden?`)) return;
+  const r = await jpost(`/api/crm/konzept-versand/${encodeURIComponent(v)}`, { an, betreff: $("#kzs-betreff").value.trim(), text: $("#kzs-text").value.trim(), bestaetigt: true });
+  if (!r || !r.ok) return kundenMsg("kzs-msg", (r && r.hinweis) || "Senden fehlgeschlagen.", false);
+  await konzeptLaden(KZ.beleg); kundenMsg("kz-msg", `Konzept Version ${r.version} an ${r.an} gesendet und in der Firmenakte abgelegt.`, true);
+}
+async function konzeptFenster(beleg, tab) {
+  openModal("🎬 Konzept · " + beleg, `<div id="kz-box"><div class="v2-empty">Lade…</div></div>`, true);
+  KZ.tab = tab || "briefing"; return konzeptLaden(beleg);
+}
+// Drehmodus: grosse Haken, Skript-Hook darunter -- fuer den Dreh auf dem iPhone
+async function drehModus(beleg) {
+  const d = await jget(`/api/crm/konzept/${encodeURIComponent(beleg)}`); if (!d) return;
+  const m = d.mappe, v = d.kontext.vorgang, sz = m.szenen_liste || [], dr = m.dreh || {};
+  openModal(`🎬 Dreh${dr.datum ? " " + datumDe(dr.datum) : ""} · ${v}`, `<div class="v2-dreh">
+    <div class="v2-sub">${sz.filter(x => x.erledigt).length}/${sz.length} erledigt</div>
+    ${sz.map((x, i) => `<button class="v2-dreh-zeile${x.erledigt ? " ok" : ""}" data-act="dreh-haken" data-id="${esc(x.id)}" data-val="${esc(beleg)}" data-ok="${x.erledigt ? "1" : ""}">
+      <span class="v2-dreh-haken">${x.erledigt ? "✓" : ""}</span><span class="grow"><b>${i + 1} · ${esc(x.titel || "")}</b><small>${esc([x.einstellung, x.dauer, x.ort].filter(Boolean).join(" · "))}</small></span>${x.erledigt ? `<small>${esc(String(x.erledigt).slice(11, 16))}</small>` : ""}</button>`).join("")}
+    ${dr.ort || dr.ansprechpartner || dr.mitbringen ? `<div class="v2-sub" style="margin-top:12px">${dr.ort ? "📍 " + esc(dr.ort) : ""}${dr.ansprechpartner ? " · " + esc(dr.ansprechpartner) : ""}${dr.telefon ? ` · <a href="tel:${esc(dr.telefon)}">${esc(dr.telefon)}</a>` : ""}${dr.mitbringen ? "<br>🎒 " + esc(dr.mitbringen) : ""}</div>` : ""}
+    <div class="v2-card-actions" style="margin-top:12px"><button class="v2-btn" data-act="konzept" data-id="${esc(beleg)}" data-val="dreh">↩ zur Konzept-Mappe</button></div></div>`, true);
+}
+// VERTRAGSWERK V1/V2: Vorlagen-Bibliothek
+const VT_ST = { entwurf: ["Entwurf – anwaltliche Prüfung erforderlich", "wartet"], geprueft: ["geprüft", "ok"], ausser_kraft: ["außer Kraft", "neutral"] };
+const vtBadge = (st) => { const [l, c] = VT_ST[st] || [st || "—", "neutral"]; return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
+const vtText = (t) => esc(t).replace(/\{([A-Za-zÄÖÜäöüß_]+)\}/g, '<span class="v2-ph">{$1}</span>');
+RENDER.vertraege = async function () {
+  const d = await jget("/api/crm/vertraege"); const l = (d && d.vorlagen) || [];
+  const leer = l.every(x => !x.versionen);
+  $("#v2-app").innerHTML = secHead("📜 Vertragswerk", leer && darf("finanzen") ? `<button class="v2-btn pri" data-act="vt-entwuerfe">CLO-Entwürfe laden</button>` : "")
+    + `<div class="v2-msg warn" style="margin-bottom:12px">Alle Texte sind Entwürfe des CLO-Agenten (keine Rechtsberatung). An Kunden geht nur eine Version mit Status „geprüft“ – nach anwaltlicher Prüfung.</div>`
+    + `<div class="v2-vt-liste">${l.map(x => `<button class="v2-vt-zeile" data-act="vt-detail" data-id="${esc(x.art)}"><span class="grow"><b>${esc(x.name)}</b><small class="v2-sub">${x.versionen ? `Version ${x.aktuell}${x.in_kraft ? ` · in Kraft: v${x.in_kraft}` : " · noch keine geprüfte Version"}` : "noch keine Version"}</small></span>${x.versionen ? vtBadge(x.status) : ""}</button>`).join("")}</div>`;
+};
+async function vtDetail(art, version, meldung) {
+  const d = await jget(`/api/crm/vertraege/${encodeURIComponent(art)}`); const x = d && d.vorlage; if (!x) return;
+  if (!x.versionen.length) return openModal(x.name, emptyRow("Noch keine Version – „CLO-Entwürfe laden“ auf der Vertragswerk-Seite."), true);
+  const ver = x.versionen.find(v => v.version === Number(version)) || x.versionen[x.versionen.length - 1];
+  const ceo = darf("finanzen");
+  const kopf = `<div class="v2-card-actions" style="flex-wrap:wrap">${x.versionen.length > 1 ? `<select class="v2-inp" data-act-change="vt-version" data-id="${esc(art)}" style="width:auto">${x.versionen.map(v => `<option value="${v.version}" ${v.version === ver.version ? "selected" : ""}>Version ${v.version} · ${esc(VT_ST[v.status] ? VT_ST[v.status][0].split(" –")[0] : v.status)}</option>`).join("")}</select>` : ""}
+    ${ceo ? `<button class="v2-btn" data-act="vt-neu" data-id="${esc(art)}" data-val="${ver.version}">✎ Neue Version</button>` : ""}
+    ${ceo && ver.status !== "geprueft" ? `<button class="v2-btn ok" data-act="vt-pruef-form" data-id="${esc(art)}" data-val="${ver.version}">✓ Als geprüft markieren …</button>` : ""}
+    ${ceo && ver.status === "geprueft" ? `<button class="v2-btn" data-act="vt-status" data-id="${esc(art)}" data-val="${ver.version}:ausser_kraft">Außer Kraft setzen</button>` : ""}
+    ${x.versionen.length > 1 && ver.version > 1 ? `<button class="v2-btn" data-act="vt-vergleich" data-id="${esc(art)}" data-val="${ver.version - 1}:${ver.version}">⇄ Mit v${ver.version - 1} vergleichen</button>` : ""}</div>`;
+  const seite = `<section class="v2-bl-box"><h4>Status</h4><div class="v2-kv"><span>Version ${ver.version}</span>${vtBadge(ver.status)}</div>
+      ${ver.pruefer ? `<div class="v2-kv"><span>Geprüft</span><b>${esc(ver.pruefer)} · ${esc(datumDe(ver.datum))}</b></div>` : ""}
+      <div class="v2-kv"><span>Quelle</span><b>${esc(ver.quelle || "")}</b></div><div class="v2-kv"><span>In Kraft</span><b>${x.in_kraft ? "Version " + x.in_kraft : "keine"}</b></div></section>
+    <section class="v2-bl-box"><h4>Platzhalter</h4><div class="v2-sub">${(ver.platzhalter || []).map(p => `<span class="v2-ph">{${esc(p)}}</span>`).join(" ") || "keine"}</div><div class="v2-sub" style="margin-top:6px">Werden beim Vertrag je Auftrag aus den Auftragsdaten gefüllt.</div></section>
+    <section class="v2-bl-box"><h4>Verlauf</h4>${(ver.verlauf || []).slice().reverse().map(h => `<div class="v2-kv"><span>${esc(zeit(h.ts))}</span><b>${esc((VT_ST[h.status] || [h.status])[0].split(" –")[0])}${h.notiz ? " · " + esc(h.notiz) : ""}</b></div>`).join("")}</section>`;
+  const blatt = `<article class="v2-blatt"><div class="bl-balken"><i></i><i></i></div>${ver.status === "entwurf" ? `<div class="bl-stempel ent">ENTWURF<small>anwaltl. Prüfung erforderlich</small></div>` : ""}
+    <div class="bl-art" style="margin-bottom:10px">${esc(ver.titel)}</div>${ver.paragraphen.map(p => `<div class="v2-vt-par"><b>${vtText(p.titel)}</b><p>${vtText(p.text)}</p></div>`).join("")}</article>`;
+  openModal(`📜 ${x.name}`, `${meldung ? `<div class="v2-msg ok">${esc(meldung)}</div>` : ""}${kopf}<div id="vt-box"></div>
+    <div class="v2-beleg-layout" style="margin-top:10px"><div class="v2-beleg-haupt">${blatt}</div><aside class="v2-beleg-seite">${seite}</aside></div>`, true);
+  const sel = document.querySelector("[data-act-change=vt-version]"); if (sel) sel.addEventListener("change", () => vtDetail(art, sel.value));
+}
+async function vtAktion(act, id, val) {
+  if (act === "vt-entwuerfe") { const r = await jpost("/api/crm/vertraege/alle/entwuerfe", {}); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return RENDER.vertraege(); }
+  if (act === "vt-detail") return vtDetail(id);
+  if (act === "vt-status") { const [v, st] = val.split(":"); if (!confirm("Version " + v + " außer Kraft setzen?")) return;
+    const r = await jpost(`/api/crm/vertraege/${encodeURIComponent(id)}/status`, { version: Number(v), status: st }); return vtDetail(id, v, r && r.ok ? "Gespeichert." : (r && r.hinweis) || "Fehler."); }
+  if (act === "vt-pruef-form") { $("#vt-box").innerHTML = `<section class="v2-bl-box" style="margin-top:10px"><h4>Anwaltliche Prüfung eintragen (Version ${esc(val)})</h4><div class="v2-form">
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Geprüft von *</small><input id="vtp-pruefer" class="v2-inp" placeholder="Kanzlei / Anwältin"></label><label class="v2-feld"><small>Datum *</small><input id="vtp-datum" class="v2-inp" type="date" value="${heuteIso()}"></label></div>
+      <label class="v2-feld"><small>Notiz</small><input id="vtp-notiz" class="v2-inp" placeholder="z. B. Prüfschreiben liegt in der Firmenakte"></label>
+      <button class="v2-btn ok" data-act="vt-pruefen" data-id="${esc(id)}" data-val="${esc(val)}">✓ Als geprüft speichern</button><div id="vtp-msg" class="v2-msg"></div></div></section>`; return; }
+  if (act === "vt-pruefen") { const r = await jpost(`/api/crm/vertraege/${encodeURIComponent(id)}/status`, { version: Number(val), status: "geprueft", pruefer: $("#vtp-pruefer").value.trim(), datum: $("#vtp-datum").value, notiz: $("#vtp-notiz").value.trim() });
+    if (!r || r.ok === false) return kundenMsg("vtp-msg", (r && r.hinweis) || "Fehler.", false); return vtDetail(id, val, "Als geprüft gespeichert – diese Version darf jetzt an Kunden."); }
+  if (act === "vt-vergleich") { const [a, b] = val.split(":"); const d = await jget(`/api/crm/vertraege/${encodeURIComponent(id)}?a=${a}&b=${b}`);
+    $("#vt-box").innerHTML = `<section class="v2-bl-box" style="margin-top:10px"><h4>Vergleich v${esc(a)} → v${esc(b)}</h4>${((d && d.vergleich) || []).filter(x => x.art !== "gleich").map(x => `<div class="v2-vt-diff ${x.art}"><b>${esc(x.titel)}</b> <span class="v2-badge ${x.art === "neu" ? "ok" : x.art === "entfernt" ? "err" : "wartet"}">${esc(x.art)}</span>${x.alt ? `<p class="alt">${esc(x.alt)}</p>` : ""}${x.neu ? `<p class="neu">${esc(x.neu)}</p>` : ""}</div>`).join("") || `<div class="v2-sub">Keine Unterschiede.</div>`}</section>`; return; }
+  if (act === "vt-neu") { const d = await jget(`/api/crm/vertraege/${encodeURIComponent(id)}`); const ver = d.vorlage.versionen.find(v => v.version === Number(val));
+    $("#vt-box").innerHTML = `<section class="v2-bl-box" style="margin-top:10px"><h4>Neue Version (auf Basis von v${esc(val)})</h4><div class="v2-form" id="vt-edit">
+      <label class="v2-feld"><small>Titel</small><input id="vte-titel" class="v2-inp" value="${esc(ver.titel)}"></label>
+      ${ver.paragraphen.map(p => vtParFeld(p)).join("")}
+      <div class="v2-card-actions"><button class="v2-btn" data-act="vt-par-neu">+ Paragraph</button><button class="v2-btn pri" data-act="vt-speichern" data-id="${esc(id)}">Als neue Version speichern (Entwurf)</button></div><div id="vte-msg" class="v2-msg"></div></div></section>`;
+    $("#vt-box").scrollIntoView({ behavior: "smooth" }); return; }
+  if (act === "vt-par-neu") { $("#vt-edit .v2-card-actions").insertAdjacentHTML("beforebegin", vtParFeld({ titel: "", text: "" })); return; }
+  if (act === "vt-par-weg") { const z = document.activeElement && document.activeElement.closest(".v2-vt-feld"); if (z) z.remove(); return; }
+  if (act === "vt-speichern") { const par = [...document.querySelectorAll("#vt-edit .v2-vt-feld")].map(z => ({ titel: z.querySelector("input").value.trim(), text: z.querySelector("textarea").value.trim() }));
+    const r = await jpost(`/api/crm/vertraege/${encodeURIComponent(id)}/version`, { titel: $("#vte-titel").value.trim(), paragraphen: par });
+    if (!r || r.ok === false) return kundenMsg("vte-msg", (r && r.hinweis) || "Fehler.", false); return vtDetail(id, r.version, `Version ${r.version} als Entwurf gespeichert.`); }
+}
+const vtParFeld = (p) => `<div class="v2-vt-feld"><div class="v2-an-zeile"><input class="v2-inp" value="${esc(p.titel)}" placeholder="§ … Titel"><button class="v2-btn sm" data-act="vt-par-weg" title="Paragraph entfernen">✕</button></div><textarea class="v2-inp" rows="4">${esc(p.text)}</textarea></div>`;
 // DIGITALER_BELEG D3: Mahnung als eigenes Belegblatt (Forderungsaufstellung wie im PDF)
 async function maDetail(nr, meldung, fehler) {
   openModal(nr, `<div class="v2-empty">Lade…</div>`, true);
@@ -2092,6 +2288,7 @@ async function reDetail(id, meldung, fehler) {
     ${r.versendet_mail ? `<div class="v2-kv"><span>Gesendet</span><b>✉️ ${esc(r.versendet_mail.an)} · ${esc(zeit(r.versendet_am))}</b></div>` : ""}
     ${!entwurf || r.leistung_von || r.leistung_bis ? "" : `<div class="v2-kv"><span>Leistung</span><b class="v2-neg">— fehlt —</b></div>`}`;
   const seite = blBox("Status", status) + (entwurf ? "" : `<section class="v2-bl-box" id="bv-mini"></section>`)
+    + (r.auftrag || r.angebot ? blBox("🎬 Konzept", `<button class="v2-btn sm" data-act="konzept" data-id="${esc(r.auftrag || r.angebot)}">Konzept-Mappe öffnen</button>`) : "")
     + blBox("Zahlungen", zahlungen) + blBox("Mahnungen", mahnungen)
     + (mv ? blBox("Mahnverfahren", `<div class="v2-list-row"><span>⚖️</span><div class="grow"><b>seit ${esc(datumDe(mv.datum))}${mv.durch ? " · " + esc(mv.durch) : ""}</b><small>${esc(mv.notiz || "")}${mv.notiz ? " · " : ""}Die Rechnung bleibt offen, bis gezahlt ist.</small></div></div>`) : "")
     + blBox("Dokumente", dokumente) + blBox("Verlauf", verlauf);
@@ -3263,6 +3460,13 @@ async function handleAct(act, el) {
       const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(id)}/kundenstimme-entwurf`, {});
       return kundenMsg("ber-msg2", r && r.ok ? `Entwurf an ${r.an} liegt in Gmail (LUNAs Konto) – dort prüfen und selbst senden.` : (r && r.hinweis) || "Fehler.", !!(r && r.ok)); }
     case "bv-oeffnen": return belegVerfolgung(id);
+    case "konzept": return konzeptFenster(id, val);
+    case "kz-tab": case "kz-briefing": case "kz-idee": case "kz-idee-status": case "kz-skript": case "kz-szene": case "kz-erledigt": case "kz-szene-weg":
+    case "kz-dreh": case "kz-freigabe": case "kz-senden-form": case "kz-senden": case "kz-drehmodus": return kzAktion(act, id, val, el);
+    case "dreh-haken": { const v = KZ.d ? KZ.d.kontext.vorgang : ""; const d = v ? null : await jget(`/api/crm/konzept/${encodeURIComponent(val)}`);
+      const vg = v || (d && d.kontext.vorgang); await jpost(`/api/crm/konzept/${encodeURIComponent(vg)}/erledigt`, { id, erledigt: !el.dataset.ok }); return drehModus(val); }
+    case "vt-entwuerfe": case "vt-detail": case "vt-status": case "vt-pruef-form": case "vt-pruefen": case "vt-vergleich": case "vt-neu": case "vt-par-neu": case "vt-speichern": return vtAktion(act, id, val);
+    case "vt-par-weg": { const z = el.closest(".v2-vt-feld"); if (z) z.remove(); return; }
     case "ma-detail": return maDetail(id);
     case "bl-reiter": { const w = el.closest(".v2-beleg"); if (!w) return; w.dataset.tab = val; w.querySelectorAll(".v2-beleg-reiter button").forEach(b => b.classList.toggle("on", b.dataset.val === val)); return; }
     case "zt-auswertung": return val === "frei" ? ztAuswertung("frei", $("#aw-von").value, $("#aw-bis").value) : ztAuswertung(val);

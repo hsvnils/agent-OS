@@ -866,3 +866,54 @@ body.v2-lade-offen { overflow: hidden; }
   .v2-brand { min-height: 44px; }
   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select { min-height: 44px; font-size: 16px; }
 }
+/* Konzept-Mappe (KONZEPT_MAPPE K1-K3) */
+.v2-kz { border-top: 1px dashed var(--v2-line); padding-top: 10px; }
+.v2-kz-titel { margin: 0 0 6px; }
+.v2-kz-kopf { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.v2-kz-tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--v2-line); margin: 8px 0 12px; }
+.v2-kz-tabs button { flex: 0 0 auto; border: 0; background: none; color: var(--v2-muted); font: inherit; font-size: 13.5px; padding: 9px 12px;
+  border-bottom: 3px solid transparent; min-height: 40px; cursor: pointer; }
+.v2-kz-tabs button.on { color: var(--v2-fg); font-weight: 700; border-bottom-color: var(--v2-accent); }
+.v2-kz-raster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+.v2-kz-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-bottom: 10px; }
+.v2-kz-idee { border: 1px solid var(--v2-line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 6px; min-width: 0; }
+.v2-kz-idee.weg { opacity: .55; }
+.v2-kz-zeile { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: space-between; margin-bottom: 6px; }
+.v2-kz-mood { display: flex; gap: 6px; flex-wrap: wrap; }
+.v2-kz-mood img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--v2-line); }
+.v2-kz-upload { cursor: pointer; }
+.v2-kz-skript { border: 1px solid var(--v2-line); border-radius: 14px; padding: 4px 12px; margin-bottom: 8px; }
+.v2-kz-skript summary { cursor: pointer; }
+.v2-kz-szene { display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--v2-line-soft); padding: 8px 0; }
+.v2-kz-szene .grow { display: grid; min-width: 0; }
+.v2-kz-szene.ok b { text-decoration: line-through; color: var(--v2-muted); }
+.v2-kz-haken { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 9px; border: 2px solid var(--v2-accent); background: none;
+  color: #fff; font-weight: 900; cursor: pointer; }
+.v2-kz-szene.ok .v2-kz-haken { background: var(--v2-green); border-color: var(--v2-green); }
+.v2-kz-inhalt h4 { margin: 16px 0 8px; font-size: 14px; }
+.v2-dreh { display: grid; gap: 6px; }
+.v2-dreh-zeile { display: flex; gap: 14px; align-items: center; text-align: left; font: inherit; color: inherit; background: var(--v2-card-solid);
+  border: 1px solid var(--v2-line); border-radius: 14px; padding: 12px; min-height: 64px; cursor: pointer; }
+.v2-dreh-zeile .grow { display: grid; gap: 2px; min-width: 0; } .v2-dreh-zeile small { color: var(--v2-muted); }
+.v2-dreh-haken { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 10px; border: 2px solid var(--v2-accent); display: grid; place-items: center;
+  font-size: 22px; font-weight: 900; color: #fff; }
+.v2-dreh-zeile.ok .v2-dreh-haken { background: var(--v2-green); border-color: var(--v2-green); }
+.v2-dreh-zeile.ok b { text-decoration: line-through; color: var(--v2-muted); }
+@media (max-width: 899px) {
+  .v2-beleg:not([data-tab="konzept"]) .v2-kz[data-tabteil="konzept"] { display: none; }
+  .v2-beleg[data-tab="konzept"] .v2-kz-titel { display: none; }
+  .v2-beleg[data-tab="konzept"] .v2-kz { border-top: 0; padding-top: 0; }
+}
+@media (max-width: 600px) { .v2-kz-raster { grid-template-columns: 1fr; } }
+/* Vertragswerk (VERTRAGSWERK V1/V2) */
+.v2-vt-liste { display: grid; gap: 8px; max-width: 900px; }
+.v2-vt-zeile { display: flex; gap: 12px; align-items: center; text-align: left; font: inherit; color: inherit; background: var(--v2-card);
+  border: 1px solid var(--v2-line); border-radius: 14px; padding: 12px 14px; cursor: pointer; flex-wrap: wrap; }
+.v2-vt-zeile .grow { display: grid; gap: 2px; flex: 1 1 220px; min-width: 0; }
+.v2-vt-par { margin: 10px 0; } .v2-vt-par p { margin: 3px 0 0; white-space: pre-wrap; }
+.v2-ph { background: #fff3c4; color: #6b4e00; border-radius: 4px; padding: 0 3px; font-size: .95em; }
+.v2-vt-feld { border: 1px solid var(--v2-line); border-radius: 12px; padding: 8px; display: grid; gap: 6px; margin-bottom: 8px; }
+.v2-vt-feld .v2-an-zeile { display: flex; gap: 6px; } .v2-vt-feld .v2-an-zeile input { flex: 1; min-width: 0; }
+.v2-vt-diff { border-left: 3px solid var(--v2-line); padding: 4px 10px; margin: 8px 0; }
+.v2-vt-diff.neu { border-color: var(--v2-green); } .v2-vt-diff.entfernt { border-color: var(--v2-red); } .v2-vt-diff.geaendert { border-color: var(--v2-amber); }
+.v2-vt-diff .alt { color: var(--v2-red); text-decoration: line-through; } .v2-vt-diff .neu { color: var(--v2-green); }

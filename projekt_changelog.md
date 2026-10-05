@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 10:53] — Claude Code
+- **Was:** KONZEPT-MAPPE K1-K3 (eine Mappe je Vorgang: Briefing, Ideen + Moodboard, Skript je Leistung/Posting,
+  Shotlist mit Drehmodus, Drehplan, PDF Konzept/Drehliste, Kunden-Freigabe mit Versand nach Klick + Firmenakte,
+  Handlungsbedarf) und VERTRAGSWERK V1+V2 (Vorlagen-Bibliothek mit Versionen, Pruefstatus, Vergleich; CLO-Entwuerfe fuer
+  AGB, Kooperationsvertrag, Nutzungsrechte, NDA -- nur als Entwurf, anwaltliche Pruefung offen); Rechner, iPad und
+  iPhone 17 Pro (Safe Areas) geprueft.
+- **Warum:** CEO-Go 2026-10-05 fuer K1-K3 und V1-V2.
+- **Betroffen:** `orchestrator/core/konzept.py`, `orchestrator/core/vertraege.py`, `orchestrator/core/vertrag_entwuerfe.py`
+  (neu), `orchestrator/core/todos.py`, `orchestrator/core/firmenakte.py`, `orchestrator/channels/web/app.py`,
+  `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html` (v93/v43), `orchestrator/tests/test_konzept.py`,
+  `orchestrator/tests/test_vertraege.py` (neu), `KONZEPT_MAPPE_ROADMAP.md`, `VERTRAGSWERK_ROADMAP.md`, `ROADMAP.md`,
+  `docs/datenfluesse.md`.
+
 ## [2026-10-05 10:08] — Claude Code
 - **Was:** Zwei Roadmaps angelegt (Analyse read-only): Konzept-Mappe je Vorgang (K1 Briefing + Ideen, K2 Skript je
   Posting + Shotlist/Drehmodus + Drehplan, K3 PDF + Kunden-Freigabe, K4 Vorschlag LUNA-Hilfe) und Vertragswerk (V1

@@ -1,9 +1,9 @@
 # Roadmap: Konzept-Mappe je Vorgang (Briefing, Ideen, Skript, Shotlist, Drehplan, Kunden-Freigabe)
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/plan-konzept-vertrag` (Plan); Umsetzung auf eigenem Branch
 - Basiscommit: `6636d02`
-- Naechster Schritt: CEO-Go fuer K1-K3 abwarten (Entscheidungen 2026-10-05 liegen vor); Skizze `docs/skizzen/konzept-und-vertrag.html`.
+- Naechster Schritt: K1-K3 gebaut (2026-10-05); Deploy + Abnahme an einem echten Vorgang; K4 nach eigenem Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -30,7 +30,9 @@ Mappe automatisch auch dort. Aenderungen stehen mit Verlauf in der Hash-Kette (`
 
 ## Etappe K1: Mappe + Briefing + Ideen
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- `core/konzept.py` (Vorgang = erstes Angebot bzw. direkter Auftrag, Ereignisse
+  `konzept_*`), Bereich „🎬 Konzept“ in Angebot/Auftrag (iPhone-Reiter), Link in der Rechnung, Briefing + Ideen +
+  Moodboard-Bilder (NAS `lieferungen/<Vorgang>/konzept/`).
 - Ziel / Scope: `core/konzept.py`; Bereich „🎬 Konzept“ in Angebot und Auftrag (iPhone: eigener Reiter), Hinweis mit
   Link in Rechnung/Bericht. **Briefing:** Ziel, Zielgruppe, Kernbotschaft, Tonalitaet, Do's & Don'ts, Pflichtangaben
   (Kennzeichnung „Werbung“, Link, Rabattcode, Markierungen), Ansprechpartner fuer Freigaben. **Ideen:** Liste mit Titel,
@@ -41,7 +43,8 @@ Mappe automatisch auch dort. Aenderungen stehen mit Verlauf in der Hash-Kette (`
 
 ## Etappe K2: Skript je Posting + Shotlist + Drehplan
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- Skript je Leistung (`S-<Pos>-<Nr>`, ab dem Auftrag als „Reel 1 …“), Shotlist mit
+  Haken + Drehmodus (iPhone), Drehplan. Kalender-Eintrag des Drehs noch nicht (optional, spaeter).
 - Ziel / Scope: **Skript** je Leistung -- vor dem Auftrag je Angebotsposition, ab dem Auftrag je Posting (Reel 1,
   Reel 2 ...; die Skripte wandern mit): Hook (erste 3 Sek.), Text/Voice-over, Einblendungen, Musik-Hinweis, CTA,
   Laenge. **Shotlist:** Szenen mit Einstellung, Ort, Personen/Requisite, Dauer, Zuordnung zum Skript; beim Dreh auf
@@ -53,7 +56,10 @@ Mappe automatisch auch dort. Aenderungen stehen mit Verlauf in der Hash-Kette (`
 
 ## Etappe K3: PDF-Export + Kunden-Freigabe
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- PDF „Konzept fuer den Kunden“ / „Drehliste intern“, Versand nur nach CEO-Klick,
+  gesendete Fassung in der Firmenakte (Art `konzept`), Status Entwurf/beim Kunden/freigegeben/Aenderungswunsch,
+  Handlungsbedarf (Freigabe seit 3 Tagen, Dreh heute/morgen). Tests `test_konzept.py` mit Gegenprobe; Browsertest
+  1300/820/402 px.
 - Ziel / Scope: PDF im Hanserautisch-Layout mit Auswahl: **„Konzept fuer den Kunden“** (Briefing, ausgewaehlte Ideen,
   Skripte) oder **„Drehliste intern“** (Shotlist + Drehplan). **Freigabe:** Versand aus LUNAs Konto nur nach CEO-Klick
   (Aussenkommunikation = CEO-Tor), Status Entwurf / beim Kunden / freigegeben (mit Datum) / Aenderungswunsch;

@@ -2085,6 +2085,204 @@ def posting_bild(pid: str, i: int):
     return FileResponse(f, content_disposition_type="inline")
 
 
+# -- Vertragswerk: Vorlagen-Bibliothek (VERTRAGSWERK V1/V2) -- lesen: Modul crm; Versionen/Status: nur CEO (finanzen) --
+def _vertraege():
+    from ...core.vertraege import VertragStore
+    return VertragStore(kunden_store.bh)
+
+
+@app.get("/api/crm/vertraege")
+def vertraege_liste():
+    from ...core.vertraege import STATUS_TEXT
+    return {"vorlagen": _vertraege().liste(), "status_text": STATUS_TEXT}
+
+
+@app.get("/api/crm/vertraege/{art}")
+def vertrag_vorlage(art: str, a: int = 0, b: int = 0):
+    from ...core.vertraege import STATUS_TEXT
+    vs = _vertraege()
+    try:
+        x = vs.vorlage(art)
+        out = {"vorlage": x, "status_text": STATUS_TEXT}
+        if a and b:
+            out["vergleich"] = vs.vergleich(art, a, b)
+        return out
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Vorlage/Version")
+
+
+@app.post("/api/crm/vertraege/{art}/{aktion}")
+async def vertrag_aendern(art: str, aktion: str, request: Request):
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if not hat_modul(u, "finanzen"):
+        return {"ok": False, "hinweis": "Vorlagen aendern und pruefen darf nur der CEO (Modul Finanzen)."}
+    body = await _json(request)
+    vs, von = _vertraege(), _von(request)
+    if aktion == "version":
+        return _kunden_aktion(lambda: vs.version_anlegen(art, titel=body.get("titel") or "", paragraphen=body.get("paragraphen"),
+                                                         quelle="CEO", hinweis=body.get("hinweis") or "", von=von))
+    if aktion == "status":
+        return _kunden_aktion(lambda: vs.status_setzen(art, int(body.get("version") or 0), str(body.get("status") or ""),
+                                                       pruefer=body.get("pruefer") or "", datum=body.get("datum") or "",
+                                                       notiz=body.get("notiz") or "", akte_id=body.get("akte_id") or "", von=von))
+    if aktion == "entwuerfe" and art == "alle":
+        return _kunden_aktion(lambda: {"angelegt": vs.entwuerfe_laden(von=von)})
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Aktion")
+
+
+# -- Konzept-Mappe je Vorgang (KONZEPT_MAPPE K1-K3) --------------------------------------------------------------------
+def _konzept():
+    from ...core.konzept import KonzeptStore
+    return KonzeptStore(kunden_store.bh, ROOT / "lieferungen")
+
+
+@app.get("/api/crm/konzept/{beleg}")
+def konzept_detail(beleg: str):
+    """Mappe des Vorgangs, zu dem der Beleg gehoert (Angebot/Auftrag/Rechnung) + Leistungen fuer die Skripte."""
+    from ...core import konzept as kz
+    e = kunden_store.bh.eintraege()
+    try:
+        v = kz.vorgang_von(e, beleg)
+        ks = _konzept()
+        m, k = ks.mappe(v, e), ks.kontext(v, e)
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "kein Vorgang zu diesem Beleg")
+    return {"mappe": m, "kontext": k, "felder": {"briefing": kz.BRIEFING, "skript": kz.SKRIPT, "szene": kz.SZENE, "dreh": kz.DREH},
+            "freigabe_text": kz.FREIGABE_TEXT, "google": bool(_google().verfuegbar())}
+
+
+@app.post("/api/crm/konzept/{vorgang}/{teil}")
+async def konzept_schreiben(vorgang: str, teil: str, request: Request):
+    body = await _json(request)
+    ks, von = _konzept(), _von(request)
+    aktionen = {"briefing": lambda: ks.briefing(vorgang, body.get("felder") or {}, von=von),
+                "idee": lambda: ks.idee(vorgang, body, von=von),
+                "skript": lambda: ks.skript(vorgang, body, von=von),
+                "szene": lambda: ks.szene(vorgang, body, von=von),
+                "erledigt": lambda: ks.szene_erledigt(vorgang, str(body.get("id") or ""), bool(body.get("erledigt")), von=von),
+                "entfernen": lambda: ks.szene_entfernen(vorgang, str(body.get("id") or ""), von=von),
+                "dreh": lambda: ks.dreh(vorgang, body.get("felder") or {}, von=von),
+                "freigabe": lambda: ks.freigabe(vorgang, str(body.get("status") or ""), notiz=body.get("notiz") or "",
+                                                datum=body.get("datum") or "", von=von)}
+    if teil not in aktionen:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Bereich")
+    return _kunden_aktion(aktionen[teil])
+
+
+@app.post("/api/crm/konzept-bild/{vorgang}")
+async def konzept_bild_hochladen(vorgang: str, request: Request, idee: str = ""):
+    from urllib.parse import unquote
+    daten = await request.body()
+    name = unquote(request.headers.get("x-dateiname") or "bild.jpg")
+    return _kunden_aktion(lambda: _konzept().bild(vorgang, daten, name, idee=idee, von=_von(request)))
+
+
+@app.get("/api/crm/konzept-bild/{vorgang}/{i}")
+def konzept_bild(vorgang: str, i: int):
+    try:
+        f = _konzept().bild_datei(vorgang, i)
+    except KeyError:
+        f = None
+    if not f:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bild nicht gefunden.")
+    return FileResponse(f, content_disposition_type="inline")
+
+
+def _konzept_pdf(v: str, art: str, version: int = 0) -> tuple[bytes, str]:
+    from ...core import konzept as kz
+    ks = _konzept()
+    e = kunden_store.bh.eintraege()
+    m, k = ks.mappe(v, e), ks.kontext(v, e)
+    f = kunden_store.firma(k["firma"]) or {}
+    daten = kz.pdf(m, k, firmendaten=_firmendaten(), firma_name=f.get("name", ""), art=art,
+                   logo=kunden_store.bh.dir / "logo.jpg", version=version)
+    name = f"{'Konzept' if art == 'kunde' else 'Drehliste'}_{k['vorgang']}" + (f"_v{version}" if version > 1 else "") + ".pdf"
+    return daten, name
+
+
+@app.get("/api/crm/konzept-pdf/{vorgang}")
+def konzept_pdf(vorgang: str, art: str = "kunde", archiv: int = 0):
+    from ...core.firmenakte import Firmenakte
+    try:
+        m = _konzept().mappe(vorgang)
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Vorgang")
+    if archiv:
+        vs = m["freigabe"]["versionen"][archiv - 1:archiv]
+        doc = Firmenakte(kunden_store.bh, kunden_store).dokument(vs[0]["akte_id"]) if vs else None
+        if not doc:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "keine gesendete Fassung")
+        daten, name = (kunden_store.bh.dir / doc["dateien"][0]["pfad"]).read_bytes(), doc["dateien"][0]["name"]
+    else:
+        if not _firmendaten():
+            raise HTTPException(status.HTTP_409_CONFLICT, "Firmendaten fehlen (buchhaltung/firmendaten.json)")
+        daten, name = _konzept_pdf(m["vorgang"], "dreh" if art == "dreh" else "kunde", len(m["freigabe"]["versionen"]) + 1)
+    return Response(daten, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{name}"'})
+
+
+def _konzept_empfaenger(k: dict) -> tuple[str, dict | None]:
+    from ...core.angebote import AngebotStore
+    f = kunden_store.firma(k["firma"]) or {}
+    beleg = (AngebotStore._falte(kunden_store.bh.eintraege()).get(k["angebot"]) if k.get("angebot") else None) \
+        or (_auftraege().auftrag(k["auftrag"]) if k.get("auftrag") else None) or {}
+    ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == beleg.get("ansprechpartner")), None)
+    return (ap or {}).get("mail") or f.get("rechnungsmail") or "", ap
+
+
+@app.get("/api/crm/konzept-versand/{vorgang}")
+def konzept_versandvorschau(vorgang: str):
+    from ...core import konzept as kz
+    ks = _konzept()
+    try:
+        m, k = ks.mappe(vorgang), ks.kontext(vorgang)
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Vorgang")
+    an, ap = _konzept_empfaenger(k)
+    v = len(m["freigabe"]["versionen"]) + 1
+    betreff, text = kz.mail_text(k, ap, _firmendaten(), v)
+    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    return {"an": an, "betreff": betreff, "text": text, "version": v, "pdf": f"Konzept_{k['vorgang']}" + (f"_v{v}" if v > 1 else "") + ".pdf",
+            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": bool(_google().verfuegbar())}
+
+
+@app.post("/api/crm/konzept-versand/{vorgang}")
+async def konzept_senden(vorgang: str, request: Request):
+    """K3: Konzept zur Freigabe aus LUNAs Konto senden -- nur CEO (Modul finanzen), nur mit Bestaetigung; die gesendete
+    Fassung liegt unveraenderlich in der Firmenakte (Art `konzept`)."""
+    import hashlib as _hl
+    from ...core.firmenakte import Firmenakte
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if not hat_modul(u, "finanzen"):
+        return {"ok": False, "hinweis": "Konzepte an Kunden senden darf nur der CEO (Modul Finanzen)."}
+    body = await _json(request)
+
+    def tun():
+        if body.get("bestaetigt") is not True:
+            raise ValueError("Senden braucht die ausdrueckliche Bestaetigung aus der Vorschau.")
+        ks = _konzept()
+        m, k = ks.mappe(vorgang), ks.kontext(vorgang)
+        an, betreff, text = (body.get("an") or "").strip(), (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
+        if not an or "@" not in an or not betreff or not text:
+            raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
+        if not _firmendaten():
+            raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
+        g = _google()
+        if not g.verfuegbar():
+            raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
+        v = len(m["freigabe"]["versionen"]) + 1
+        pdf, name = _konzept_pdf(k["vorgang"], "kunde", v)
+        r = g.mail_senden(an, betreff, text, bestaetigt=True, absender_name=ABSENDER_NAME, anhaenge=[(name, pdf, "application/pdf")])
+        if not r.get("ok"):
+            raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
+        doc = Firmenakte(kunden_store.bh, kunden_store).hochladen(
+            k["firma"], pdf, name, titel=f"Konzept {k['vorgang']}" + (f" (Version {v})" if v > 1 else ""), art="konzept",
+            bezug=k["auftrag"] or k["vorgang"], notiz=f"zur Freigabe gesendet an {an}", von=_von(request))
+        ks.freigabe(k["vorgang"], "beim_kunden", akte_id=doc["id"], an=an, version=v, sha256=_hl.sha256(pdf).hexdigest(),
+                    von=_von(request))
+        return {"an": an, "version": v}
+    return _kunden_aktion(tun)
+
+
 # -- Belegverfolgung (BELEGVERFOLGUNG B1): verbundene Belege und Ereignisse als Zeitstrahl ----------------------------
 @app.get("/api/crm/belege/{kennung}/verfolgung")
 def beleg_verfolgung(kennung: str, request: Request):
