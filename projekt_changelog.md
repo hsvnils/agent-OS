@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 11:25] — Claude Code
+- **Was:** CLO-AUSBAU C1-C4: sieben CLO-Skills (Werbekennzeichnung, AGB-Pruefung, Nutzungsrechte/Bildrecht, Musik in
+  Videos, Kleinunternehmer-Hinweise, KI-Kennzeichnung, Club-/Markenrechte) mit Checklisten; Rechtsquellen (18 Normen im
+  Wortlaut von gesetze-im-internet.de, Stand 2026-10-05); naechtlicher Abgleich 04:30 mit Meldung neuer Aenderungen
+  (CEO-Wunsch), Watcher-Themen umgestellt; echter CLO-Pruef-Lauf der vier Vertragsentwuerfe ueber Gemini
+  (`gemini-pro-latest`, nur Vertragstexte) mit Pruefbericht (JSON/PDF) und Uebernahme als Version 2 per CEO-Klick.
+- **Warum:** CEO-Go 2026-10-05 fuer C1 bis C4; „nachts die Quellen auf Veraenderungen pruefen“.
+- **Betroffen:** `skills/clo/*` (neu), `orchestrator/core/rechtsquellen.py`, `orchestrator/core/clo_pruefung.py` (neu),
+  `orchestrator/core/watch_config.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`,
+  `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html` (v95/v44), `orchestrator/tests/test_clo_ausbau.py`
+  (neu), `docs/recht/clo-pruefung-vertragsentwuerfe.json` (neu), `CLO_AUSBAU_ROADMAP.md`, `ROADMAP.md`,
+  `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`.
+
 ## [2026-10-05 11:13] — Claude Code
 - **Was:** `ai/clo-ausbau` (Beschriftungs-Korrektur + Roadmap) nach `main` gemergt (fast-forward), Suite gruen (1159),
   gepusht, Code per `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen.

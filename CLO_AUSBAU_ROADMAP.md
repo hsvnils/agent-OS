@@ -1,9 +1,9 @@
 # Roadmap: CLO-Ausbau (Skills, Rechtsquellen, Beobachtung, echter Pruef-Lauf)
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/clo-ausbau`
 - Basiscommit: `77fa015`
-- Naechster Schritt: CEO-Go je Etappe abwarten (Empfehlung: C1-C4 am Stueck, C5 getrennt als Charta-Aenderung).
+- Naechster Schritt: C1-C4 gebaut (2026-10-05); Deploy, CEO liest Pruefbericht, uebernimmt ggf. Version 2, Anwaeltin prueft; C5 nach CEO-Anweisung.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -30,7 +30,8 @@ uebergeben kann.
 
 ## Etappe C1: Skills fuer den CLO
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- sieben Skills unter `skills/clo/` (Security-Gate bestanden, ~16.000 Zeichen im
+  CLO-Prompt), je mit Checkliste, Kernnormen und Ausgabeformat; Tests `test_clo_ausbau.py`.
 - Ziel / Scope: eigene Skills unter `skills/clo/` (Format laut Skill-Standard, durch das Security-Gate), je mit
   Anwendungsfall, **Pruef-Checkliste**, Kernnormen in Kurzfassung, Ausgabeformat („Entwurf -- anwaltliche Pruefung
   erforderlich“) und Quellen mit Stand-Datum:
@@ -49,7 +50,9 @@ uebergeben kann.
 
 ## Etappe C2: Rechtsquellen (Wissensbasis)
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- `quellen.md` je Skill mit 18 Normen im Wortlaut (gesetze-im-internet.de, Abruf
+  2026-10-05, naechste Pruefung 2027-04-05); MStV, Leitfaden der Medienanstalten, BGH-Urteile, Plattformregeln und AI Act
+  (EUR-Lex von hier nicht abrufbar) nur als Verweis mit eigener Kurzfassung.
 - Ziel / Scope: je Skill eine `quellen.md` mit den einschlaegigen Paragraphen im Wortlaut (Gesetze sind amtliche Werke
   und frei nutzbar, § 5 UrhG; Quelle gesetze-im-internet.de, Abrufdatum) und Leitfaeden/Urteilen **nur als Verweis mit
   eigener Kurzfassung** (Urheberrecht der Verlage/Medienanstalten). Jede Quelle mit „Stand“ und „naechste Pruefung“;
@@ -59,7 +62,10 @@ uebergeben kann.
 
 ## Etappe C3: Aktualitaet (Beobachtung)
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- `core/rechtsquellen.py`: Bot-Nachtlauf 04:30 vergleicht jede Norm mit der amtlichen
+  Seite, meldet nur neue Aenderungen/ueberschrittene Pruefdaten (Briefing), aendert keine Skills (CEO-Wunsch „nachts auf
+  Veraenderungen pruefen“); Watcher-Themen des CLO auf Influencer-/Werbe-, AGB-, Urheber-, Bildrecht, KI-Kennzeichnung
+  und Kleinunternehmerregelung umgestellt.
 - Ziel / Scope: Watcher-Themen des CLO auf das Geschaeft umstellen (Influencer-/Werbekennzeichnung, BGH-/OLG-Urteile zu
   Influencern, AGB-Recht B2B, Urheber-/Bildrecht Social Media, KI-Kennzeichnung, Medienanstalten); Treffer als Meldung
   „Rechtsquelle veraltet? -- Skill X pruefen“ ins Briefing, Stand-Datum der Quellen ueberwachen (Hinweis nach 6 Monaten).
@@ -68,7 +74,10 @@ uebergeben kann.
 
 ## Etappe C4: Echter CLO-Pruef-Lauf der Vertragsentwuerfe
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- `core/clo_pruefung.py`; echter Lauf mit Charta + Skills + Quellen ueber
+  `gemini-pro-latest` (gemini-2.5-pro nicht mehr verfuegbar): AGB 10/4/0, Kooperation 8/3/0, Nutzungsrechte 2/2/2,
+  NDA 5/1/0 (gruen/gelb/rot) plus 6 vorgeschlagene neue Paragraphen; Bericht `docs/recht/clo-pruefung-vertragsentwuerfe.json`,
+  PDF fuer die Anwaeltin und „Ueberarbeitung als neue Version uebernehmen“ (CEO-Klick) im Vertragswerk.
 - Ziel / Scope: LUNA beauftragt den CLO mit den vier Entwuerfen (AGB, Kooperationsvertrag, Nutzungsrechte, NDA) und
   seinen Skills. Ergebnis: **Pruefbericht fuer die Anwaeltin** (je Paragraph Ampel, Fundstelle, Risiko, offene Frage)
   als PDF in der Firmenakte bzw. im Vertragswerk, plus ueberarbeitete Texte als **Version 2** (Status Entwurf, Quelle

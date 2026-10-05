@@ -30,6 +30,7 @@
 | Backoffice-Gegenlesen | Gemini | Entwurf von Bewertungen/Analysen (Auftraege `bewertung`/`analyse`) | je nach Auftrag | `backoffice/worker.py` `GEGENLESEN` |
 | Reel-Schnitt/Tagging | Gemini (nur mit `CUTTER_VIDEO_KI=1` bzw. Tagging) | Videoclips aus dem eigenen Archiv | Personen im Stadion (ohnehin oeffentlich gepostet) | `cutter/gemini_video.py`, `cutter/reel_tag.py` |
 | Kennzahlen-Screenshots auslesen (seit 2026-10-02, PROJEKTBERICHT P2) | **Gemini** (`gemini-flash-latest`) | Screenshots der Instagram/Facebook-Statistik eines Kundenpostings (Zahlen, ggf. Vorschaubild des Postings) | gering: Statistik ist aggregiert; das Vorschaubild zeigt den Kunden-Inhalt, der ohnehin veroeffentlicht ist | `core/kennzahlen_lesen.py`; CEO bestaetigt die Werte („Stimmt/Korrigieren“), Bild bleibt nur auf der NAS |
+| CLO-Pruefung der Vertragsvorlagen (2026-10-05, CLO_AUSBAU C4) | **Gemini** (`gemini-pro-latest`) | nur die Vertragsentwuerfe (AGB, Kooperation, Nutzungsrechte, NDA) mit Platzhaltern und die Gesetzestexte | **nein** (keine Kunden-/Personendaten) | `core/clo_pruefung.py`; Ergebnis nur Entwurf, CEO liest, Anwaeltin prueft |
 | Sprache rein | Deepgram | Sprachnachrichten des CEO | kaum (CEO selbst) | `docs/datenfluesse.md` |
 | Sprache raus | ElevenLabs / Cartesia | LUNAs Antworttext | moeglich (wenn die Antwort Dritte nennt) | `channels/web/app.py` `/api/tts` |
 | Web-Recherche | Brave | Suchanfragen | selten | `governance/web_research.py` |
@@ -91,3 +92,4 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
 - **2026-10-02: Insights-Screenshots liest Gemini (PROJEKTBERICHT P2).** Neuer Datenfluss, gleiche Einordnung wie 5.1
   (Gratis-Stufe, kein Training im EWR). Gesendet werden nur die Screenshots des einen Postings; gespeichert wird erst nach
   Bestaetigung des CEO. Ohne Gemini-Schluessel oder bei Fehlern bleibt das Formular in LUNA-OS (Eingabe von Hand).
+- **2026-10-05: CLO-Pruef-Lauf mit Gemini (CLO_AUSBAU C4).** Es gingen nur Vertragsvorlagen ohne Kundendaten an Google; gleiche Einordnung wie 5.1.

@@ -42,8 +42,10 @@ DEPARTMENT_WATCH: dict[str, dict[str, list[str]]] = {
         "suche": ["AI sales automation", "AI marketing agents", "lead generation AI"],
         "github": ["sales-automation", "marketing-ai"],
     },
-    "clo": {  # Legal
-        "suche": ["EU AI Act updates", "AI copyright ruling", "LLM compliance datenschutz"],
+    "clo": {  # Legal -- CLO_AUSBAU C3 (CEO 2026-10-05): Influencer-/Werbe-, AGB-, Urheber- und KI-Kennzeichnungsrecht
+        "suche": ["Influencer Werbekennzeichnung Urteil", "Medienanstalten Leitfaden Werbekennzeichnung",
+                  "BGH Influencer Werbung", "AGB Recht Urteil Werbeagentur", "Urheberrecht Social Media Nutzungsrechte Urteil",
+                  "Recht am eigenen Bild Werbung Urteil", "KI-Kennzeichnung AI Act Artikel 50", "Kleinunternehmerregelung Aenderung"],
         "github": ["ai-governance", "compliance"],
     },
     "cxo": {  # Experience

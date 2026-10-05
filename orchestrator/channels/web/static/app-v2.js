@@ -1596,13 +1596,18 @@ const vtText = (t) => esc(t).replace(/\{([A-Za-zÄÖÜäöüß_]+)\}/g, '<span c
 RENDER.vertraege = async function () {
   const d = await jget("/api/crm/vertraege"); const l = (d && d.vorlagen) || [];
   const leer = l.every(x => !x.versionen);
+  const pr = await jget("/api/crm/vertraege-pruefung") || {};
   $("#v2-app").innerHTML = secHead("📜 Vertragswerk", leer && darf("finanzen") ? `<button class="v2-btn pri" data-act="vt-entwuerfe">Erste Entwürfe laden</button>` : "")
     + `<div class="v2-msg warn" style="margin-bottom:12px">Die ersten Texte hat Claude Code entworfen – ungeprüft, keine Rechtsberatung; der CLO-Agent wird erst noch ausgebaut. An Kunden geht nur eine Version mit Status „geprüft“ – nach anwaltlicher Prüfung.</div>`
+    + (pr.vorhanden ? `<div class="v2-bl-box" style="max-width:900px;margin-bottom:12px"><h4>⚖️ CLO-Prüfung vom ${esc(datumDe(pr.datum))}</h4><div class="v2-sub">Der CLO-Agent hat alle Vorlagen mit seinen Skills und Rechtsquellen geprüft (${esc(pr.modell || "")}). Je Paragraph Ampel, Fundstelle, Risiko und Fragen an die Anwältin – Details in der jeweiligen Vorlage.</div>
+      <div class="v2-card-actions" style="margin-top:8px"><a class="v2-btn" href="/api/crm/vertraege-pruefung.pdf" target="_blank" rel="noopener">📄 Prüfbericht für die Anwältin (PDF)</a></div></div>` : "")
     + `<div class="v2-vt-liste">${l.map(x => `<button class="v2-vt-zeile" data-act="vt-detail" data-id="${esc(x.art)}"><span class="grow"><b>${esc(x.name)}</b><small class="v2-sub">${x.versionen ? `Version ${x.aktuell}${x.in_kraft ? ` · in Kraft: v${x.in_kraft}` : " · noch keine geprüfte Version"}` : "noch keine Version"}</small></span>${x.versionen ? vtBadge(x.status) : ""}</button>`).join("")}</div>`;
 };
 async function vtDetail(art, version, meldung) {
   const d = await jget(`/api/crm/vertraege/${encodeURIComponent(art)}`); const x = d && d.vorlage; if (!x) return;
   if (!x.versionen.length) return openModal(x.name, emptyRow("Noch keine Version – „Erste Entwürfe laden“ auf der Vertragswerk-Seite."), true);
+  const pr = await jget("/api/crm/vertraege-pruefung") || {}, prv = (pr.vorlagen || []).find(v => v.art === art);
+  const cloSchon = x.versionen.some(v => /CLO-Agent/.test(v.quelle || ""));
   const ver = x.versionen.find(v => v.version === Number(version)) || x.versionen[x.versionen.length - 1];
   const ceo = darf("finanzen");
   const kopf = `<div class="v2-card-actions" style="flex-wrap:wrap">${x.versionen.length > 1 ? `<select class="v2-inp" data-act-change="vt-version" data-id="${esc(art)}" style="width:auto">${x.versionen.map(v => `<option value="${v.version}" ${v.version === ver.version ? "selected" : ""}>Version ${v.version} · ${esc(VT_ST[v.status] ? VT_ST[v.status][0].split(" –")[0] : v.status)}</option>`).join("")}</select>` : ""}
@@ -1613,6 +1618,12 @@ async function vtDetail(art, version, meldung) {
   const seite = `<section class="v2-bl-box"><h4>Status</h4><div class="v2-kv"><span>Version ${ver.version}</span>${vtBadge(ver.status)}</div>
       ${ver.pruefer ? `<div class="v2-kv"><span>Geprüft</span><b>${esc(ver.pruefer)} · ${esc(datumDe(ver.datum))}</b></div>` : ""}
       <div class="v2-kv"><span>Quelle</span><b>${esc(ver.quelle || "")}</b></div><div class="v2-kv"><span>In Kraft</span><b>${x.in_kraft ? "Version " + x.in_kraft : "keine"}</b></div></section>
+    ${prv ? `<section class="v2-bl-box"><h4>⚖️ CLO-Prüfung</h4><div class="v2-sub">${esc(prv.gesamt)}</div>
+      <div class="v2-vt-ampeln">${["rot", "gelb", "gruen"].map(a => `<span class="v2-badge ${a === "rot" ? "err" : a === "gelb" ? "wartet" : "ok"}">${prv.paragraphen.filter(p => p.ampel === a).length} ${a === "gruen" ? "grün" : a}</span>`).join("")}${prv.fehlend.length ? `<span class="v2-badge neutral">${prv.fehlend.length} neu vorgeschlagen</span>` : ""}</div>
+      ${prv.paragraphen.filter(p => p.ampel !== "gruen").map(p => `<details class="v2-vt-befund ${p.ampel}"><summary><b>${esc(p.titel)}</b></summary><small><b>Fundstelle:</b> ${esc(p.fundstelle)}<br><b>Risiko:</b> ${esc(p.risiko)}<br><b>Vorschlag:</b> ${esc(p.vorschlag)}${p.frage_anwaeltin ? `<br><b>Frage an die Anwältin:</b> ${esc(p.frage_anwaeltin)}` : ""}</small></details>`).join("")}
+      ${prv.fehlend.map(f => `<details class="v2-vt-befund neu"><summary><b>Neu: ${esc(f.titel)}</b></summary><small>${esc(f.begruendung)}</small></details>`).join("")}
+      <div class="v2-card-actions" style="margin-top:8px"><a class="v2-btn sm" href="/api/crm/vertraege-pruefung.pdf" target="_blank" rel="noopener">📄 Prüfbericht (PDF)</a>
+        ${ceo && !cloSchon ? `<button class="v2-btn sm pri" data-act="vt-clo-version" data-id="${esc(art)}">Überarbeitung als neue Version übernehmen</button>` : cloSchon ? `<small class="v2-sub">Überarbeitung ist als Version angelegt.</small>` : ""}</div></section>` : ""}
     <section class="v2-bl-box"><h4>Platzhalter</h4><div class="v2-sub">${(ver.platzhalter || []).map(p => `<span class="v2-ph">{${esc(p)}}</span>`).join(" ") || "keine"}</div><div class="v2-sub" style="margin-top:6px">Werden beim Vertrag je Auftrag aus den Auftragsdaten gefüllt.</div></section>
     <section class="v2-bl-box"><h4>Verlauf</h4>${(ver.verlauf || []).slice().reverse().map(h => `<div class="v2-kv"><span>${esc(zeit(h.ts))}</span><b>${esc((VT_ST[h.status] || [h.status])[0].split(" –")[0])}${h.notiz ? " · " + esc(h.notiz) : ""}</b></div>`).join("")}</section>`;
   const blatt = `<article class="v2-blatt"><div class="bl-balken"><i></i><i></i></div>${ver.status === "entwurf" ? `<div class="bl-stempel ent">ENTWURF<small>anwaltl. Prüfung erforderlich</small></div>` : ""}
@@ -1624,6 +1635,9 @@ async function vtDetail(art, version, meldung) {
 async function vtAktion(act, id, val) {
   if (act === "vt-entwuerfe") { const r = await jpost("/api/crm/vertraege/alle/entwuerfe", {}); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return RENDER.vertraege(); }
   if (act === "vt-detail") return vtDetail(id);
+  if (act === "vt-clo-version") { if (!confirm("Die Überarbeitung des CLO als neue Version (Entwurf) anlegen? Version 1 bleibt erhalten.")) return;
+    const r = await jpost(`/api/crm/vertraege/${encodeURIComponent(id)}/clo-version`, {});
+    if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return vtDetail(id, r.version, `Version ${r.version} (CLO-Überarbeitung) als Entwurf angelegt.`); }
   if (act === "vt-status") { const [v, st] = val.split(":"); if (!confirm("Version " + v + " außer Kraft setzen?")) return;
     const r = await jpost(`/api/crm/vertraege/${encodeURIComponent(id)}/status`, { version: Number(v), status: st }); return vtDetail(id, v, r && r.ok ? "Gespeichert." : (r && r.hinweis) || "Fehler."); }
   if (act === "vt-pruef-form") { $("#vt-box").innerHTML = `<section class="v2-bl-box" style="margin-top:10px"><h4>Anwaltliche Prüfung eintragen (Version ${esc(val)})</h4><div class="v2-form">
@@ -3465,7 +3479,7 @@ async function handleAct(act, el) {
     case "kz-dreh": case "kz-freigabe": case "kz-senden-form": case "kz-senden": case "kz-drehmodus": return kzAktion(act, id, val, el);
     case "dreh-haken": { const v = KZ.d ? KZ.d.kontext.vorgang : ""; const d = v ? null : await jget(`/api/crm/konzept/${encodeURIComponent(val)}`);
       const vg = v || (d && d.kontext.vorgang); await jpost(`/api/crm/konzept/${encodeURIComponent(vg)}/erledigt`, { id, erledigt: !el.dataset.ok }); return drehModus(val); }
-    case "vt-entwuerfe": case "vt-detail": case "vt-status": case "vt-pruef-form": case "vt-pruefen": case "vt-vergleich": case "vt-neu": case "vt-par-neu": case "vt-speichern": return vtAktion(act, id, val);
+    case "vt-clo-version": case "vt-entwuerfe": case "vt-detail": case "vt-status": case "vt-pruef-form": case "vt-pruefen": case "vt-vergleich": case "vt-neu": case "vt-par-neu": case "vt-speichern": return vtAktion(act, id, val);
     case "vt-par-weg": { const z = el.closest(".v2-vt-feld"); if (z) z.remove(); return; }
     case "ma-detail": return maDetail(id);
     case "bl-reiter": { const w = el.closest(".v2-beleg"); if (!w) return; w.dataset.tab = val; w.querySelectorAll(".v2-beleg-reiter button").forEach(b => b.classList.toggle("on", b.dataset.val === val)); return; }

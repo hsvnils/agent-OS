@@ -2111,6 +2111,27 @@ def vertrag_vorlage(art: str, a: int = 0, b: int = 0):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Vorlage/Version")
 
 
+@app.get("/api/crm/vertraege-pruefung")
+def vertraege_pruefung():
+    """CLO_AUSBAU C4: Pruefbericht des CLO zu den Vertragsvorlagen (aus docs/recht, im Repo)."""
+    from ...core.clo_pruefung import bericht_laden
+    b = bericht_laden()
+    if not b:
+        return {"vorhanden": False}
+    return {"vorhanden": True, "datum": b.get("datum"), "modell": b.get("modell"),
+            "vorlagen": [{k: v[k] for k in ("art", "titel", "gesamt", "paragraphen", "fehlend")} for v in b.get("vorlagen") or []]}
+
+
+@app.get("/api/crm/vertraege-pruefung.pdf")
+def vertraege_pruefung_pdf():
+    from ...core.clo_pruefung import bericht_laden, pdf
+    b = bericht_laden()
+    if not b:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "kein Pruefbericht")
+    return Response(pdf(b, firmendaten=_firmendaten()), media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="CLO-Pruefbericht_{b.get("datum", "")}.pdf"'})
+
+
 @app.post("/api/crm/vertraege/{art}/{aktion}")
 async def vertrag_aendern(art: str, aktion: str, request: Request):
     u = getattr(request.state, "user", None) or _ceo_user()
@@ -2125,6 +2146,22 @@ async def vertrag_aendern(art: str, aktion: str, request: Request):
         return _kunden_aktion(lambda: vs.status_setzen(art, int(body.get("version") or 0), str(body.get("status") or ""),
                                                        pruefer=body.get("pruefer") or "", datum=body.get("datum") or "",
                                                        notiz=body.get("notiz") or "", akte_id=body.get("akte_id") or "", von=von))
+    if aktion == "clo-version":                                   # C4: Ueberarbeitung des CLO als neue Version (Entwurf)
+        from ...core.clo_pruefung import QUELLE_V2, bericht_laden
+
+        def tun():
+            b = bericht_laden() or {}
+            par = (b.get("version2") or {}).get(art)
+            if not par:
+                raise ValueError("Kein CLO-Pruefbericht fuer diese Vorlage.")
+            x = vs.vorlage(art)
+            if not x["versionen"]:
+                raise ValueError("Erst die ersten Entwuerfe laden (Version 1).")
+            if any(v.get("quelle") == QUELLE_V2 for v in x["versionen"]):
+                raise ValueError("Die CLO-Ueberarbeitung ist schon als Version angelegt.")
+            return vs.version_anlegen(art, titel=x["versionen"][-1]["titel"], paragraphen=par, quelle=QUELLE_V2,
+                                      hinweis=f"CLO-Pruefung vom {b.get('datum', '')} -- Entwurf, anwaltliche Pruefung erforderlich", von=von)
+        return _kunden_aktion(tun)
     if aktion == "entwuerfe" and art == "alle":
         return _kunden_aktion(lambda: {"angelegt": vs.entwuerfe_laden(von=von)})
     raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Aktion")

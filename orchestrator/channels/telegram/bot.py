@@ -695,6 +695,36 @@ def _start_buchhaltung_loop(ctx) -> None:
         threading.Thread(target=loop, daemon=True, name="buchhaltung-loop").start()
 
 
+def _start_rechtsquellen_loop(ctx) -> None:
+    """CLO_AUSBAU C3 (CEO 2026-10-05): jede Nacht 04:30 (DE) die Rechtsquellen der CLO-Skills mit den amtlichen Seiten
+    vergleichen; Aenderungen/Pruefdaten nur melden (Briefing), Skills nie selbst aendern. Kein LLM, ~20 Abrufe."""
+    import threading
+    import time
+    from datetime import datetime
+
+    from ...core.rechtsquellen import lauf
+    tz = _tz_berlin()
+
+    def loop():
+        time.sleep(180)
+        while True:
+            try:
+                jetzt = datetime.now(tz) if tz else datetime.now()
+                datum = jetzt.strftime("%Y-%m-%d")
+                if jetzt.hour == 4 and jetzt.minute >= 30 and not ctx.agenda.briefing_gesendet("rechtsquellen", datum):
+                    erg = lauf(ROOT / "skills" / "clo", ROOT / "orchestrator" / "state" / "rechtsquellen.json",
+                               notify=lambda text, **kw: ctx.notifications.enqueue(text, nach_briefing=True, **kw))
+                    print(f"[rechtsquellen] {erg['geprueft']} geprueft, {len(erg['geaendert'])} geaendert, "
+                          f"{len(erg['fehler'])} Fehler", flush=True)
+                    ctx.agenda.markiere_briefing("rechtsquellen", datum)
+            except Exception as exc:
+                print(f"[rechtsquellen] Fehler: {exc.__class__.__name__}", flush=True)
+            time.sleep(300)
+
+    if ctx.agenda is not None and ctx.notifications is not None:
+        threading.Thread(target=loop, daemon=True, name="rechtsquellen-loop").start()
+
+
 def _start_content_feed_loop(ctx, secrets) -> None:
     """K3: geplanter Content-Feed-Loop -- 1x taeglich 07:00 (DE) volle Pipeline Trends->Ideen->Drafts.
 
@@ -1503,7 +1533,8 @@ def main() -> None:
     _start_security_loop(ctx, secrets)  # Phase 21: nur aktiv mit SECURITY_AUDIT_ENABLED=1
     if secrets.get("SECURITY_AUDIT_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Security-Audit-Loop aktiv (taeglich 04:00, regelbasiert, L1-Meldung).", flush=True)
-    _start_buchhaltung_loop(ctx)  # KUNDEN_FINANZEN Etappe 1: Integritaetspruefung 05:00, nur melden
+    _start_buchhaltung_loop(ctx)
+    _start_rechtsquellen_loop(ctx)  # CLO_AUSBAU C3: Rechtsquellen der CLO-Skills naechtlich 04:30 auf Aenderungen pruefen  # KUNDEN_FINANZEN Etappe 1: Integritaetspruefung 05:00, nur melden
     offset = 0
     _last_poll = 0.0
     tz = _tz_berlin()          # wurde hier vergessen -> NameError im Zustellblock (siehe _tz_berlin)

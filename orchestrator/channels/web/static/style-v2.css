@@ -917,3 +917,7 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-vt-diff { border-left: 3px solid var(--v2-line); padding: 4px 10px; margin: 8px 0; }
 .v2-vt-diff.neu { border-color: var(--v2-green); } .v2-vt-diff.entfernt { border-color: var(--v2-red); } .v2-vt-diff.geaendert { border-color: var(--v2-amber); }
 .v2-vt-diff .alt { color: var(--v2-red); text-decoration: line-through; } .v2-vt-diff .neu { color: var(--v2-green); }
+.v2-vt-ampeln { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.v2-vt-befund { border-left: 3px solid var(--v2-line); padding: 4px 10px; margin: 6px 0; }
+.v2-vt-befund.rot { border-color: var(--v2-red); } .v2-vt-befund.gelb { border-color: var(--v2-amber); } .v2-vt-befund.neu { border-color: var(--v2-accent); }
+.v2-vt-befund summary { cursor: pointer; } .v2-vt-befund small { display: block; color: var(--v2-muted); line-height: 1.5; margin-top: 4px; }
