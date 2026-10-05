@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 16:41] — Claude Code
+- **Was:** Roadmap `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md` angelegt (T1 Textbausteine + Signatur, T2 Vorlagen im
+  Gmail-Versand, T3 Knopf „Im Mail-Programm oeffnen“ per Teilen-Menue bzw. .eml-Entwurf, T4 Geraete-Abnahme) und in
+  `ROADMAP.md` registriert; CEO-Entscheidungen im Register. Signaturtext nicht im Git (Telefonnummer). Nur Plan.
+- **Warum:** CEO-Auftrag Textbausteine und Mail-Knopf; Antworten: iPhone/Mac Apple Mail, MACO470 Outlook, 6 Belegarten,
+  Signatur in LUNA-OS, Vorlagen auch fuer Gmail.
+- **Betroffen:** `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 16:25] — Claude Code
 - **Was:** Roadmaps `ANGEBOT_PRAESENTATION_ROADMAP.md`, `VIDEOGRAF_ROADMAP.md` und `FACHAGENTEN_ROUTING_ROADMAP.md` auf
   „abgeschlossen“ gesetzt (R5-Beobachtung als Etappe verworfen, bleibt ueber Leistungsbericht sichtbar); `ROADMAP.md`
