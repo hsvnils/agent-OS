@@ -23,6 +23,7 @@
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
 | **Konzept-Mappe**: eine Mappe je Vorgang (ab Angebot bzw. direkt angelegtem Auftrag, in allen Folgebelegen derselbe Stand, keine Kopie je Beleg); Bereiche Briefing, Ideen + Skript je Posting, Shotlist + Drehplan, Kunden-Freigabe; PDF-Export | 2026-10-05 | **BESCHLOSSEN** (CEO) | `KONZEPT_MAPPE_ROADMAP.md` |
+| **Charta Videograf-Berater (17_videograf.md, Kuerzel VID)** vom CEO bestaetigt und angelegt; Status aktiv, befragbar, Skills folgen in V2 | 2026-10-05 | **BESCHLOSSEN** (CEO, Diff bestaetigt) | `VIDEOGRAF_ROADMAP.md` V1, `agents/17_videograf.md` |
 | **Canva-Praesentation im Angebot**: Link in PDF + Mailtext, Sprache je Angebot waehlbar (Standard Deutsch) | 2026-10-05 | **BESCHLOSSEN** (CEO, Plan) | `ANGEBOT_PRAESENTATION_ROADMAP.md` |
 | **Videograf-Berater als eigener Agent 17** (nicht Unter-Agent des CCO, nicht nur Skills); Vorschlaege per Knopf in der Konzept-Mappe und im Chat | 2026-10-05 | **BESCHLOSSEN** (CEO, Plan) | `VIDEOGRAF_ROADMAP.md` |
 | **LUNA routet Sachfragen selbst**: Zustaendigkeitskarte in `delegate` + Routing-Regel im Prompt; Nur-Lese-Werkzeug `geschaeftsregeln` (ohne Kunden-/Rechnungsdaten); Werkzeug-Antworten zaehlen beim Bereich; Token-Gate der Werkzeugauswahl 5.000 -> 5.200 (Mehrverbrauch ~320 Token je Nachricht) | 2026-10-05 | **UEBERNEHMEN** (CEO-Go R1-R4) | `FACHAGENTEN_ROUTING_ROADMAP.md` |

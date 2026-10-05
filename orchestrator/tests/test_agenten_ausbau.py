@@ -140,7 +140,7 @@ class TestA1Profil(unittest.TestCase):
 
     def test_3_uebersicht_alle_agenten(self):
         u = {x["key"]: x for x in uebersicht(REPO, watch_log=self.watch, nutzung=self.n)}
-        self.assertEqual(len(u), 18)                                             # HoA + 15 + CIO + Risk
+        self.assertEqual(len(u), 19)                                             # HoA + 15 + CIO + Risk + Videograf
         self.assertEqual((u["cfo"]["skills"], u["cfo"]["funde"], u["cfo"]["nutzung30"]), (4, 2, 1))
         self.assertEqual(u["clo"]["skills"], 7)
 
@@ -152,7 +152,7 @@ class TestA1Profil(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()["skills"]), 4)
         self.assertEqual(c.get("/api/agenten/gibtsnicht/profil").status_code, 404)
-        self.assertEqual(len(c.get("/api/agenten-uebersicht").json()["agenten"]), 18)
+        self.assertEqual(len(c.get("/api/agenten-uebersicht").json()["agenten"]), 19)
 
 
 class TestA1Leistungsbericht(unittest.TestCase):
@@ -245,12 +245,12 @@ class TestPaket2Skills(unittest.TestCase):
         u = {x["key"]: x for x in uebersicht(REPO, watch_log=w, nutzung=n)}
         self.assertEqual({k: u[k]["skills"] for k in PAKET2}, {k: len(v) for k, v in PAKET2.items()})
         self.assertEqual(profil(REPO, "researcher", watch_log=w, nutzung=n)["skills"][0]["name"], "quellenbewertung")
-        self.assertEqual([k for k, x in u.items() if x["skills"] == 0], ["hoa", "cio", "risk"])
+        self.assertEqual([k for k, x in u.items() if x["skills"] == 0], ["hoa", "cio", "risk", "vid"])   # vid: Skills in V2
 
 
 class TestA4Watcher(unittest.TestCase):
     def test_themen_auf_das_geschaeft(self):
-        self.assertEqual(len(DEPARTMENT_WATCH), 14)
+        self.assertEqual(len(DEPARTMENT_WATCH), 15)
         for key, t in DEPARTMENT_WATCH.items():
             self.assertTrue(3 <= len(t["suche"]) <= 8, key)                     # token-frugal
         self.assertTrue(any("Kleinunternehmer" in s for s in themen_fuer("cfo")["suche"]))

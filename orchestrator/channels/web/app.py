@@ -1149,6 +1149,7 @@ _DEPARTMENTS = [
     ("cko", "14 · CKO", "Knowledge", []),
     ("researcher", "15 · Researcher", "Web-Recherche", []),
     ("cio", "16 · CIO", "Investment", [("risk", "Risk-Agent", "standby")]),
+    ("vid", "17 · VID", "Videograf-Berater", []),
 ]
 
 

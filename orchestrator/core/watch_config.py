@@ -76,6 +76,11 @@ DEPARTMENT_WATCH: dict[str, dict[str, list[str]]] = {
                   "Scheinselbststaendigkeit Freelancer Kreativbranche"],
         "github": ["hr-tech"],
     },
+    "vid": {  # Videograf-Berater (VIDEOGRAF V1, CEO 2026-10-05)
+        "suche": ["Reels filmen Tipps Smartphone", "Videografie Licht Gastronomie", "Mikrofon Interview Smartphone Test",
+                  "Gimbal Smartphone Test 2026"],
+        "github": ["video-editing"],
+    },
     "cao": {  # Verwaltung (A5)
         "suche": ["Betriebshaftpflicht Content Creator", "Fristen Kleinunternehmer Steuer Kalender",
                   "Versicherung Kamera Equipment Creator"],

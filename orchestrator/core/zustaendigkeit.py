@@ -30,6 +30,7 @@ ZUSTAENDIG: dict[str, str] = {
     "res": "Web-Recherche",
     "cio": "Investment (Test)",
     "risk": "Investment-Risiko",
+    "vid": "Drehpraxis: Shotlist, Kamera, Licht, Ton, Equipment, Drehplan",
 }
 
 ROUTING_REGEL = (

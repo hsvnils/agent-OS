@@ -1669,7 +1669,7 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
 # -- intern --
 
 _AGENT_KEYS = ("berater", "cao", "cfo", "cro", "ciso", "cbo", "cpo", "cto", "cxo", "cco",
-               "cdo", "chro", "clo", "cko", "res", "cio", "risk")
+               "cdo", "chro", "clo", "cko", "res", "cio", "risk", "vid")
 
 _GOOGLE_TOOLS = ("mail_suchen", "mail_lesen", "mail_entwurf", "mail_senden", "kalender_agenda",
                  "termin_anlegen", "drive_suchen", "drive_lesen", "tabelle_lesen", "tabelle_schreiben",

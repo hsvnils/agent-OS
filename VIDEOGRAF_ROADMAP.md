@@ -1,9 +1,9 @@
 # Roadmap: Videograf-Berater (Agent 17)
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-05
-- Arbeitsbranch: `ai/plan-canva-videograf`
+- Arbeitsbranch: `ai/canva-videograf`
 - Basiscommit: `782e428`
-- Naechster Schritt: CEO-Go fuer V1 (Charta-Diff) abwarten; V2-V4 danach.
+- Naechster Schritt: V1 umgesetzt (2026-10-05) -- Deploy-Go (mit P1), danach CEO-Go fuer V2-V4.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -26,7 +26,9 @@ Konzept-Mappe und im Chat**.
 
 ## Etappe V1: Charta (CEO-Tor, nur HoA mit Diff)
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- Charta-Diff vom CEO bestaetigt („Charta passt, leg sie an“): `agents/17_videograf.md`,
+  Registry, `governance/organigramm.md`, Fachagenten-Liste (`vid`), Zustaendigkeitszeile, Organigramm-Kachel „17 · VID“,
+  Watcher-Themen. Token der Werkzeugauswahl im Mittel 5.190 (Gate 5.200 -- knapp, bei V4 beobachten).
 - Ziel / Scope: neue Charta `agents/17_videograf.md` nach `agents/_TEMPLATE.md` -- Rolle „professioneller Videograf-
   Berater fuer Kundenauftraege und eigene Reels“, Auftrag (Shotlist, Bildsprache, Licht/Ton, Equipment, Drehplan,
   Machbarkeit am Ort), Ausdruecklich NICHT (keine Buchung von Freien = CHRO, kein Posten, keine Kosten), Skills,

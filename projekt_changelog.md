@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 15:53] — Head of Agents (umgesetzt durch Claude Code)
+- **Was:** VIDEOGRAF V1 umgesetzt: bestaetigte Charta `agents/17_videograf.md` (Videograf-Berater, VID) angelegt, Registry
+  und `governance/organigramm.md` ergaenzt; verdrahtet als befragbarer Fachagent (`ALL_AGENT_CHARTERS`, `_AGENT_KEYS`),
+  Zustaendigkeitszeile „Drehpraxis …“, Organigramm-Kachel „17 · VID“, Watcher-Themen (Reels filmen, Licht Gastronomie,
+  Mikrofon, Gimbal). Tests angepasst (19 Agenten, 15 Watcher-Bereiche); Suite 1198 passed; Organigramm im Browser ok.
+- **Warum:** CEO „Charta passt, leg sie an“ (AGENTS.md 3.3: Diff gezeigt, bestaetigt).
+- **Betroffen:** `agents/17_videograf.md`, `agents/REGISTRY.md`, `governance/organigramm.md`, `orchestrator/core/subagents.py`,
+  `core/hoa_tools.py`, `core/zustaendigkeit.py`, `core/watch_config.py`, `channels/web/app.py`,
+  `tests/test_agenten_ausbau.py`, `VIDEOGRAF_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 15:40] — Claude Code (fuer den Head of Agents)
 - **Was:** VIDEOGRAF V1 vorbereitet: Charta-Entwurf `agents/17_videograf.md` (Videograf-Berater, Kuerzel VID) und
   Registry-Erweiterung als Diff-Vorlage `v1-charta-vorschlag.diff` (nicht eingecheckt). **Noch nichts unter `agents/`
