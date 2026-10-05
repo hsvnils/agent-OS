@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 12:15] — Claude Code
+- **Was:** Deploy AGENTEN_AUSBAU Paket 2 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): alle 19 neuen
+  Skills auf der NAS und in den Profilen geladen (CISO 3, CTO 3, Researcher 1, CHRO 3, CKO 3, CPO 2, CXO 2, CAO 2), Quellen
+  CISO (TDDDG § 25, BDSG §§ 26, 38) und CHRO (SGB IV §§ 7, 7a) mit Stand sichtbar. Fachagenten-Zaehlung noch ohne Anfrage
+  (Protokoll entsteht mit der ersten Frage), Quellen-Nachtlauf erstmals 04:30.
+- **Warum:** CEO „Beide Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** NAS-Deploy (`luna-os`, `luna-telegram`)
+
 ## [2026-10-05 12:07] — Claude Code
 - **Was:** AGENTEN_AUSBAU Paket 2 gebaut: **A3** -- CISO (Zugriffs-/Rollenpruefung, Secret-Hygiene, Datenschutz-Check mit
   Quellen TDDDG § 25, BDSG §§ 26, 38 im Wortlaut, DSGVO als Verweis), CTO (Deploy-Checkliste, Fehlersuche entlang
