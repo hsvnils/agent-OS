@@ -944,3 +944,11 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-kz-vid > small, .v2-kz-vid .v2-kz-zeile .v2-sub { overflow-wrap: anywhere; }
 .v2-kz-vid .v2-kz-szene .grow { min-width: 0; } .v2-kz-vid .v2-kz-szene small { overflow-wrap: anywhere; }
 .v2-kz-vid-txt p { margin: 2px 0 0; font-size: 13px; color: var(--v2-muted); }
+
+/* TEXTBAUSTEINE T1/T3 */
+.v2-tb-vorlage { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--v2-line-soft); }
+.v2-tb-arten, .v2-tb-ph { margin: 10px 0 4px; } .v2-tb-ph .v2-chip { font-family: ui-monospace, monospace; font-size: 12px; }
+.v2-mp { display: grid; gap: 6px; margin-top: 8px; padding: 10px 12px; border: 1px dashed var(--v2-line); border-radius: 12px; }
+.v2-mp-nach { display: grid; gap: 6px; }
+.v2-mail-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (pointer: coarse) { .v2-tb-arten .v2-chip, .v2-tb-ph .v2-chip { min-height: 44px; } }

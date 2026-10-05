@@ -95,7 +95,7 @@ def stand_sichern(bh: Buchhaltung, google, *, heute: str | None = None) -> dict:
     if not r.get("ok"):
         return r
     hochgeladen = []
-    for datei in ("log.jsonl", "katalog.json", "firmendaten.json"):
+    for datei in ("log.jsonl", "katalog.json", "firmendaten.json", "textbausteine.json"):
         pfad = bh.dir / datei
         if not pfad.exists():
             continue

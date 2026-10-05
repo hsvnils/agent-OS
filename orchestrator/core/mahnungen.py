@@ -329,17 +329,14 @@ class MahnStore:
                                                 ("Zahlbar bis", datum_de(m["frist"]))]}
 
 
-def mahnung_mail_text(m: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:
-    name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
-    anrede = f"Guten Tag {name}," if name else "Sehr geehrte Damen und Herren,"
-    betreff = f"{BRIEF[m['stufe']]} zu Rechnung {m['rechnung']}"
-    text = (f"{anrede}\n\nunsere Rechnung {m['rechnung']} war am {datum_de(m['faellig_am'])} fällig und ist noch offen. "
-            f"Anbei erhalten Sie unsere {BRIEF[m['stufe']] if m['stufe'] < 3 else 'letzte Mahnung'} "
-            f"({m['nummer']}). Bitte überweisen Sie den Gesamtbetrag von {eur(m['summe_cent'])} bis zum "
-            f"{datum_de(m['frist'])}.\n\nSollte sich Ihre Zahlung mit dieser Nachricht überschnitten haben, betrachten "
-            "Sie sie bitte als gegenstandslos.\n\nMit freundlichen Grüßen\n"
-            + "\n".join(x for x in (firmendaten.get("inhaber"), firmendaten.get("firma")) if x))
-    return betreff, text
+def mahnung_mail_text(m: dict, ap: dict | None, firmendaten: dict, *, vorlage: dict | None = None,
+                      signatur: str = "", kunde: str = "") -> tuple[str, str]:
+    from .textbausteine import anrede_werte, rendern
+    w = anrede_werte(ap) | {"kunde": kunde, "nummer": m["nummer"], "titel": "", "titel_zusatz": "", "rechnung": m["rechnung"],
+                            "faellig": datum_de(m["faellig_am"]), "stufe": BRIEF[m["stufe"]],
+                            "mahnung_im_text": BRIEF[m["stufe"]] if m["stufe"] < 3 else "letzte Mahnung",
+                            "betrag": eur(m["summe_cent"]), "frist": datum_de(m["frist"])}
+    return rendern("mahnung", w, firmendaten, vorlage=vorlage, signatur=signatur)
 
 
 ABSENDER_NAME = "Hanserautisch – LUNA"
@@ -364,7 +361,10 @@ def folgemahnung_senden(bh, kunden, google, rechnung: str, stufe: int, firmendat
         raise ValueError("Keine Rechnungs-Mail beim Kunden hinterlegt -- bitte in LUNA-OS senden.")
     m = ms.erstellen(rechnung, firmendaten, von=von)
     voll = ms.get(m["nummer"])
-    betreff, text = mahnung_mail_text(voll, ap, firmendaten)
+    from .textbausteine import TextbausteinStore              # Standardvorlage + Signatur (TEXTBAUSTEINE T2)
+    tb = TextbausteinStore(bh)
+    betreff, text = mahnung_mail_text(voll, ap, firmendaten, vorlage=tb.vorlage("mahnung"), signatur=tb.laden()["signatur"],
+                                      kunde=(kunden.firma(voll["firma"]) or {}).get("name", ""))
     senden(ms, google, m["nummer"], an=an, betreff=betreff, text=text, von=von, absender_name=ABSENDER_NAME)
     return {"nummer": m["nummer"], "an": an, "summe_cent": m["summe_cent"], "frist": m["frist"]}
 
@@ -398,7 +398,7 @@ def senden(ms: MahnStore, google, nummer: str, *, an: str, betreff: str, text: s
     if not s.get("ok"):
         raise ValueError(s.get("hinweis") or "Senden fehlgeschlagen.")
     ms.versendet(m["nummer"], {"an": an, "message_id": s.get("id", ""), "thread_id": s.get("thread_id", ""),
-                               "betreff": betreff}, von=von)
+                               "betreff": betreff, "kanal": s.get("kanal", "gmail")}, von=von)
     roh = google.mail_roh(s["id"]) if s.get("id") and hasattr(google, "mail_roh") else {}
     if roh.get("ok"):
         ms.bh.beleg_ablegen(roh["roh"], f"Mail_{m['nummer']}_aus_{s['id']}.eml", jahr=int(m["datum"][:4]),

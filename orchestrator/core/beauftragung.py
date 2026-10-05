@@ -339,12 +339,11 @@ def abschluss(auftraege: dict[str, dict], eintraege: list[dict]) -> dict[str, di
     return auftraege
 
 
-def auftrag_mail_text(a: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:
-    name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
-    anrede = f"Guten Tag {name}," if name else "Sehr geehrte Damen und Herren,"
-    betreff = f"Auftragsbestätigung {a['nummer']}" + (f" – {a['titel']}" if a.get("titel") else "")
-    text = (f"{anrede}\n\nvielen Dank für Ihren Auftrag. Anbei erhalten Sie unsere Auftragsbestätigung {a['nummer']} "
-            + (f"zu unserem Angebot {a['angebot']} " if a.get("angebot") else "") + f"über {eur(a['summe_cent'])}.\n\n"
-            "Bei Fragen melden Sie sich gerne.\n\nMit freundlichen Grüßen\n"
-            + "\n".join(x for x in (firmendaten.get("inhaber"), firmendaten.get("firma")) if x))
-    return betreff, text
+def auftrag_mail_text(a: dict, ap: dict | None, firmendaten: dict, *, vorlage: dict | None = None,
+                      signatur: str = "", kunde: str = "") -> tuple[str, str]:
+    from .textbausteine import anrede_werte, rendern
+    t = a.get("titel") or ""
+    w = anrede_werte(ap) | {"kunde": kunde, "nummer": a["nummer"], "titel": t, "titel_zusatz": f" – {t}" if t else "",
+                            "betrag": eur(a["summe_cent"]), "angebot": a.get("angebot") or "",
+                            "zu_angebot": f"zu unserem Angebot {a['angebot']}" if a.get("angebot") else ""}
+    return rendern("auftrag", w, firmendaten, vorlage=vorlage, signatur=signatur)

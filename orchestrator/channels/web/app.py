@@ -2331,7 +2331,7 @@ def _konzept_empfaenger(k: dict) -> tuple[str, dict | None]:
 
 
 @app.get("/api/crm/konzept-versand/{vorgang}")
-def konzept_versandvorschau(vorgang: str):
+def konzept_versandvorschau(vorgang: str, vorlage: str = ""):
     from ...core import konzept as kz
     ks = _konzept()
     try:
@@ -2340,10 +2340,12 @@ def konzept_versandvorschau(vorgang: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Vorgang")
     an, ap = _konzept_empfaenger(k)
     v = len(m["freigabe"]["versionen"]) + 1
-    betreff, text = kz.mail_text(k, ap, _firmendaten(), v)
+    tb = _tb("konzept", vorlage)
+    betreff, text = kz.mail_text(k, ap, _firmendaten(), v, vorlage=tb["vorlage"], signatur=tb["signatur"],
+                                 kunde=_kunde_name(k.get("firma")))
     konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
     return {"an": an, "betreff": betreff, "text": text, "version": v, "pdf": f"Konzept_{k['vorgang']}" + (f"_v{v}" if v > 1 else "") + ".pdf",
-            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": bool(_google().verfuegbar())}
+            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": bool(_google().verfuegbar())} | tb["auswahl"]
 
 
 @app.post("/api/crm/konzept-versand/{vorgang}")
@@ -2367,7 +2369,7 @@ async def konzept_senden(vorgang: str, request: Request):
             raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
         if not _firmendaten():
             raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
-        g = _google()
+        g = _versand_google(body)
         if not g.verfuegbar():
             raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
         v = len(m["freigabe"]["versionen"]) + 1
@@ -2517,16 +2519,18 @@ def bericht_pdf(nummer: str, archiv: int = 0):
 
 
 @app.get("/api/crm/auftraege/{nummer}/bericht/versandvorschau")
-def bericht_versandvorschau(nummer: str):
+def bericht_versandvorschau(nummer: str, vorlage: str = ""):
     from ...core.projektbericht import dateiname, mail_text
     det = auftrag_detail(nummer)
     a, d = _bericht(nummer)
     v = len(a.get("berichte") or []) + 1
-    betreff, text = mail_text(d, det["ansprechpartner"], _firmendaten(), v)
+    tb = _tb("bericht", vorlage)
+    betreff, text = mail_text(d, det["ansprechpartner"], _firmendaten(), v, vorlage=tb["vorlage"], signatur=tb["signatur"],
+                              kunde=_kunde_name(a.get("firma")))
     konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
     return {"an": det["mail_an"], "betreff": betreff, "text": text, "pdf": dateiname(a["nummer"], v), "version": v,
             "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": det["google"],
-            "fehlen": d["fehlen"]}
+            "fehlen": d["fehlen"]} | tb["auswahl"]
 
 
 @app.post("/api/crm/auftraege/{nummer}/bericht/senden")
@@ -2552,7 +2556,7 @@ async def bericht_senden(nummer: str, request: Request):
             raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
         if not _firmendaten():
             raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
-        g = _google()
+        g = _versand_google(body)
         if not g.verfuegbar():
             raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
         v = len(a.get("berichte") or []) + 1
@@ -2568,7 +2572,8 @@ async def bericht_senden(nummer: str, request: Request):
         kunden_store.bh.erfassen("auftrag_bericht_versendet", {"nummer": a["nummer"], "akte_id": doc["id"],
                                                                 "sha256": _hl.sha256(pdf).hexdigest(), "an": an,
                                                                 "betreff": betreff, "version": v,
-                                                                "message_id": r.get("id", "")}, von=_von(request))
+                                                                "message_id": r.get("id", ""), "kanal": r.get("kanal", "gmail")},
+                                 von=_von(request))
         return {"an": an, "version": v}
     return _kunden_aktion(tun)
 
@@ -2593,12 +2598,14 @@ def auftrag_pdf(nummer: str, archiv: int = 0):
 
 
 @app.get("/api/crm/auftraege/{nummer}/versandvorschau")
-def auftrag_versandvorschau(nummer: str):
+def auftrag_versandvorschau(nummer: str, vorlage: str = ""):
     d = auftrag_detail(nummer)
-    betreff, text = auftrag_mail_text(d["auftrag"], d["ansprechpartner"], _firmendaten())
+    tb = _tb("auftrag", vorlage)
+    betreff, text = auftrag_mail_text(d["auftrag"], d["ansprechpartner"], _firmendaten(), vorlage=tb["vorlage"],
+                                      signatur=tb["signatur"], kunde=_kunde_name(d["auftrag"].get("firma")))
     konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
     return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": f"Auftragsbestaetigung_{d['auftrag']['nummer']}.pdf",
-            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": d["google"]}
+            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": d["google"]} | tb["auswahl"]
 
 
 @app.post("/api/crm/auftraege/{nummer}/senden")
@@ -2625,7 +2632,7 @@ async def auftrag_senden(nummer: str, request: Request):
         fd = _firmendaten()
         if not fd:
             raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
-        g = _google()
+        g = _versand_google(body)
         if not g.verfuegbar():
             raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
         pdf = ab.pdf(a["nummer"], fd)
@@ -2635,7 +2642,8 @@ async def auftrag_senden(nummer: str, request: Request):
             raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
         ab.pdf_ablegen(a["nummer"], pdf, an=an, von=_von(request))
         ab.status_setzen(a["nummer"], "gesendet", mail={"an": an, "message_id": r.get("id", ""),
-                                                        "thread_id": r.get("thread_id", ""), "betreff": betreff},
+                                                        "thread_id": r.get("thread_id", ""), "betreff": betreff,
+                                                        "kanal": r.get("kanal", "gmail")},
                          von=_von(request))
         roh = g.mail_roh(r["id"]) if r.get("id") else {}
         if roh.get("ok"):                                          # Original-Mail als Geschaeftsbrief archivieren
@@ -2834,15 +2842,18 @@ def eur_text(c: int) -> str:
 
 
 @app.get("/api/finanzen/rechnungen/{nummer}/versandvorschau")
-def rechnung_versandvorschau(nummer: str):
+def rechnung_versandvorschau(nummer: str, vorlage: str = ""):
+    from ...core.rechnungen import mail_art
     d = rechnung_detail(nummer)
     r = d["rechnung"]
     if r.get("status") == "entwurf":
         raise HTTPException(status.HTTP_409_CONFLICT, "Erst festschreiben, dann senden.")
-    betreff, text = rechnung_mail_text(r, d["ansprechpartner"], _firmendaten())
+    tb = _tb(mail_art(r), vorlage)
+    betreff, text = rechnung_mail_text(r, d["ansprechpartner"], _firmendaten(), vorlage=tb["vorlage"], signatur=tb["signatur"],
+                                       kunde=_kunde_name(r.get("firma")))
     konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
     return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": Path(r["belege"][0]["pfad"]).name.split("-", 1)[-1],
-            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": d["google"]}
+            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": d["google"]} | tb["auswahl"]
 
 
 @app.post("/api/finanzen/rechnungen/{nummer}/senden")
@@ -2861,7 +2872,7 @@ async def rechnung_senden(nummer: str, request: Request):
         betreff, text = (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
         if not an or "@" not in an or not betreff or not text:
             raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
-        g = _google()
+        g = _versand_google(body)
         if not g.verfuegbar():
             raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
         pfad = r["belege"][0]["pfad"]
@@ -2871,7 +2882,7 @@ async def rechnung_senden(nummer: str, request: Request):
         if not s.get("ok"):
             raise ValueError(s.get("hinweis") or "Senden fehlgeschlagen.")
         rs.versendet(r["nummer"], {"an": an, "message_id": s.get("id", ""), "thread_id": s.get("thread_id", ""),
-                                   "betreff": betreff}, von=_von(request))
+                                   "betreff": betreff, "kanal": s.get("kanal", "gmail")}, von=_von(request))
         roh = g.mail_roh(s["id"]) if s.get("id") else {}
         if roh.get("ok"):
             kunden_store.bh.beleg_ablegen(roh["roh"], f"Mail_{r['nummer']}_aus_{s['id']}.eml",
@@ -2960,16 +2971,18 @@ def mahnung_pdf(nummer: str):
 
 
 @app.get("/api/finanzen/mahnungen/{nummer}/versandvorschau")
-def mahnung_versandvorschau(nummer: str):
+def mahnung_versandvorschau(nummer: str, vorlage: str = ""):
     from ...core.mahnungen import empfaenger, mahnung_mail_text
     m = _mahn().get(nummer)
     if not m:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Mahnung")
     an, ap = empfaenger(kunden_store, m["firma"])
-    betreff, text = mahnung_mail_text(m, ap, _firmendaten())
+    tb = _tb("mahnung", vorlage)
+    betreff, text = mahnung_mail_text(m, ap, _firmendaten(), vorlage=tb["vorlage"], signatur=tb["signatur"],
+                                      kunde=_kunde_name(m.get("firma")))
     konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
     return {"an": an, "betreff": betreff, "text": text, "pdf": f"Mahnung_{m['nummer']}.pdf",
-            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": bool(_google().verfuegbar())}
+            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": bool(_google().verfuegbar())} | tb["auswahl"]
 
 
 @app.post("/api/finanzen/mahnungen/{nummer}/senden")
@@ -2980,7 +2993,7 @@ async def mahnung_senden(nummer: str, request: Request):
     def tun():
         if body.get("bestaetigt") is not True:
             raise ValueError("Senden braucht die ausdrueckliche Bestaetigung aus der Vorschau.")
-        return senden(_mahn(), _google(), nummer, an=(body.get("an") or "").strip(),
+        return senden(_mahn(), _versand_google(body), nummer, an=(body.get("an") or "").strip(),
                       betreff=(body.get("betreff") or "").strip(), text=(body.get("text") or "").strip(),
                       von=_von(request), absender_name=ABSENDER_NAME)
     return _kunden_aktion(tun)
@@ -3719,16 +3732,147 @@ def _als_versendet(st: AngebotStore, a: dict, *, pdf: str, von: str, mail: dict 
 ABSENDER_NAME = "Hanserautisch – LUNA"
 
 
+class _MailProgramm:
+    """TEXTBAUSTEINE T3: Versand ueber das eigene Mail-Programm des CEO -- LUNA verschickt nichts; der Rest des
+    Senden-Ablaufs (PDF-Ablage, Firmenakte, Status, Erinnerungen) laeuft wie beim Gmail-Weg."""
+    def verfuegbar(self) -> bool:
+        return True
+
+    def mail_senden(self, an, betreff, text, **kw) -> dict:
+        return {"ok": True, "id": "", "thread_id": "", "kanal": "mail-programm"}
+
+    def mail_roh(self, mid) -> dict:
+        return {}
+
+
+def _versand_google(body: dict):
+    return _MailProgramm() if (body or {}).get("kanal") == "mail-programm" else _google()
+
+
+def _tb(art: str, vid: str = "") -> dict:
+    """TEXTBAUSTEINE T2: gewaehlte (sonst Standard-)Vorlage, Signatur und Auswahl fuer den Versanddialog."""
+    from ...core.textbausteine import TextbausteinStore
+    st = TextbausteinStore(kunden_store.bh)
+    v = st.vorlage(art, vid)
+    return {"vorlage": v, "signatur": st.laden()["signatur"], "auswahl": {"art": art, "vorlage": v["id"],
+                                                                         "vorlagen": st.auswahl(art)}}
+
+
+def _kunde_name(firma: str) -> str:
+    return (kunden_store.firma(firma) or {}).get("name", "") if firma else ""
+
+
+_MAIL_ARTEN = ("angebot", "auftrag", "rechnung", "mahnung", "bericht", "konzept")
+
+
+def _beleg_pdf(art: str, nummer: str) -> tuple[str, bytes]:
+    """PDF genau wie beim Senden (Gmail-Weg) -- fuer Teilen-Menue und .eml-Entwurf (TEXTBAUSTEINE T3)."""
+    fd = _firmendaten()
+    if art in ("angebot", "auftrag", "bericht", "konzept") and not fd:
+        raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
+    if art == "angebot":
+        st = _angebote()
+        a = st.angebot(nummer)
+        if not a:
+            raise KeyError(nummer)
+        return f"Angebot_{a['nummer']}.pdf", st.pdf(a["nummer"], fd)
+    if art == "auftrag":
+        ab = _auftraege()
+        a = ab.auftrag(nummer)
+        if not a:
+            raise KeyError(nummer)
+        return f"Auftragsbestaetigung_{a['nummer']}.pdf", ab.pdf(a["nummer"], fd)
+    if art in ("rechnung", "mahnung"):
+        x = (_rechnungen() if art == "rechnung" else _mahn()).get(nummer)
+        if not x or x.get("status") == "entwurf" or not x.get("belege"):
+            raise KeyError(nummer)
+        pfad = x["belege"][0]["pfad"]
+        name = Path(pfad).name.split("-", 1)[-1] if art == "rechnung" else f"Mahnung_{x['nummer']}.pdf"
+        return name, (kunden_store.bh.dir / pfad).read_bytes()
+    if art == "bericht":
+        from ...core.projektbericht import dateiname
+        a, d = _bericht(nummer)
+        v = len(a.get("berichte") or []) + 1
+        return dateiname(a["nummer"], v), _bericht_pdf(a, d, v)
+    if art == "konzept":
+        ks = _konzept()
+        m, k = ks.mappe(nummer), ks.kontext(nummer)
+        pdf, name = _konzept_pdf(k["vorgang"], "kunde", len(m["freigabe"]["versionen"]) + 1)
+        return name, pdf
+    raise KeyError(art)
+
+
+def _darf_versenden(request: Request) -> bool:
+    return hat_modul(getattr(request.state, "user", None) or _ceo_user(), "finanzen")
+
+
+@app.get("/api/crm/mailentwurf/{art}/{nummer}/pdf")
+def mailentwurf_pdf(art: str, nummer: str, request: Request):
+    """TEXTBAUSTEINE T3: PDF fuer das Teilen-Menue (iPhone/Mac -> Apple Mail)."""
+    from urllib.parse import quote
+    if art not in _MAIL_ARTEN or not _darf_versenden(request):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannt")
+    try:
+        name, pdf = _beleg_pdf(art, nummer)
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Beleg")
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc))
+    return Response(pdf, media_type="application/pdf", headers={
+        "Content-Disposition": f"inline; filename*=UTF-8''{quote(name)}", "X-Dateiname": quote(name)})
+
+
+@app.post("/api/crm/mailentwurf/{art}/{nummer}/eml")
+async def mailentwurf_eml(art: str, nummer: str, request: Request):
+    """TEXTBAUSTEINE T3: Mail-Entwurf (.eml, „ungesendet“) mit PDF fuer Outlook (MACO470). LUNA verschickt nichts."""
+    from urllib.parse import quote
+    from ...core.textbausteine import eml
+    if art not in _MAIL_ARTEN or not _darf_versenden(request):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannt")
+    body = await _json(request)
+    betreff, text = (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
+    if not betreff or not text:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Betreff und Text sind Pflicht.")
+    try:
+        anhang = _beleg_pdf(art, nummer)
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Beleg")
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc))
+    name = anhang[0].rsplit(".", 1)[0] + ".eml"
+    return Response(eml((body.get("an") or "").strip(), betreff, text, anhang), media_type="message/rfc822",
+                    headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(name)}"})
+
+
+@app.get("/api/crm/textbausteine")
+def textbausteine_lesen(request: Request):
+    """TEXTBAUSTEINE T1: Vorlagen je Belegart, Signatur, erlaubte Platzhalter (Einstellungen)."""
+    from ...core.textbausteine import ARTEN, PLATZHALTER, TextbausteinStore
+    return {"textbausteine": TextbausteinStore(kunden_store.bh).laden(), "arten": ARTEN, "platzhalter": PLATZHALTER,
+            "darf_aendern": _darf_versenden(request)}
+
+
+@app.post("/api/crm/textbausteine")
+async def textbausteine_speichern(request: Request):
+    from ...core.textbausteine import TextbausteinStore
+    if not _darf_versenden(request):
+        return {"ok": False, "hinweis": "Textbausteine ändert nur der CEO (Modul Finanzen)."}
+    body = await _json(request)
+    return _kunden_aktion(lambda: TextbausteinStore(kunden_store.bh).speichern(body.get("textbausteine") or {}, von=_von(request)))
+
+
 @app.get("/api/crm/angebote/{nummer}/versandvorschau")
-def angebot_versandvorschau(nummer: str):
+def angebot_versandvorschau(nummer: str, vorlage: str = ""):
     """Was „Jetzt senden" verschicken wuerde: Empfaenger, Betreff, Text, PDF (vom CEO in LUNA-OS anpassbar)."""
     d = angebot_detail(nummer)
     a = d["angebot"]
-    betreff, text = angebot_mail_text(a, d["firma"], d["ansprechpartner"], _firmendaten())
+    tb = _tb("angebot", vorlage)
+    betreff, text = angebot_mail_text(a, d["firma"], d["ansprechpartner"], _firmendaten(), vorlage=tb["vorlage"],
+                                      signatur=tb["signatur"])
     konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
     return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": f"Angebot_{a['nummer']}.pdf",
             "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": d["google"],
-            "status": a["status"]}
+            "status": a["status"]} | tb["auswahl"]
 
 
 @app.get("/api/crm/angebote/{nummer}/mail/{message_id}")
@@ -3775,7 +3919,7 @@ async def angebot_senden(nummer: str, request: Request):
         fd = _firmendaten()
         if not fd:
             raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
-        g = _google()
+        g = _versand_google(body)
         if not g.verfuegbar():
             raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
         pdf = st.pdf(a["nummer"], fd)
@@ -3784,7 +3928,8 @@ async def angebot_senden(nummer: str, request: Request):
         if not r.get("ok"):
             raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
         abl = st.pdf_ablegen(a["nummer"], pdf, an=an, entwurf_id="", von=_von(request))   # genau das gesendete PDF
-        mail = {"an": an, "message_id": r.get("id", ""), "thread_id": r.get("thread_id", ""), "betreff": betreff}
+        mail = {"an": an, "message_id": r.get("id", ""), "thread_id": r.get("thread_id", ""), "betreff": betreff,
+                "kanal": r.get("kanal", "gmail")}
         termine, hinweise = _als_versendet(st, st.angebot(a["nummer"]), pdf=abl["pfad"], von=_von(request), mail=mail)
         roh = g.mail_roh(mail["message_id"]) if mail["message_id"] else {}
         if roh.get("ok"):                                         # Original-Mail sofort archivieren (sonst im Poll)

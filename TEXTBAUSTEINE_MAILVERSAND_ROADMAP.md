@@ -1,9 +1,9 @@
 # Roadmap: Textbausteine und Versand ueber das eigene Mail-Programm
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-05
-- Arbeitsbranch: `ai/plan-textbausteine`
+- Arbeitsbranch: `ai/textbausteine`
 - Basiscommit: `ed7fdcc`
-- Naechster Schritt: CEO-Go fuer T1-T3 abwarten (T4 = Geraete-Abnahme mit dem CEO).
+- Naechster Schritt: T1-T3 gebaut (2026-10-05) -- Deploy-Go, Signatur des CEO eintragen, dann T4 (Geraete-Abnahme mit dem CEO).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -36,7 +36,10 @@ Entscheidungen des CEO (2026-10-05):
 
 ## Etappe T1: Textbausteine und Signatur
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- `core/textbausteine.py` (7 Vorlagen-Arten inkl. Stornorechnung, Platzhalter je Art,
+  Pruefung, genau ein Standard, `buchhaltung/textbausteine.json`, Ereignis `textbausteine_geaendert`), Editor unter
+  Einstellungen mit Platzhalter-Chips und Vorschau mit Beispielwerten; Standard = bisheriger Text (180 Faelle mit dem
+  alten Code verglichen, identisch).
 - Ziel / Scope: Vorlagen je Belegart (mehrere moeglich, eine als Standard), je Vorlage Name, Betreff und Text mit
   **Platzhaltern** (z. B. {anrede}, {vorname}, {firma}, {nummer}, {titel}, {betrag}, {gueltig_bis}, {faellig},
   {zahlungsziel}, {praesentation}, {mahnstufe}, {frist}); Standardvorlagen = die heutigen Texte (nichts aendert sich, bis
@@ -52,7 +55,8 @@ Entscheidungen des CEO (2026-10-05):
 
 ## Etappe T2: Vorlagen im Gmail-Versand
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- alle 6 Versandvorschauen mit `?vorlage=` und Auswahl im Dialog; Signatur ersetzt den
+  frueheren Gruss; Folgemahnung per Telegram nutzt Standardvorlage + Signatur.
 - Ziel / Scope: In jedem Versanddialog (6 Belegarten) Auswahl der Vorlage; Text bleibt vor dem Senden aenderbar; Signatur
   automatisch darunter. Bisherige Wirkung (PDF-Anhang, Firmenakte, Status) unveraendert.
 - Gate: Tests je Belegart; Gegenprobe ohne Vorlagen = heutiger Text.
@@ -60,7 +64,9 @@ Entscheidungen des CEO (2026-10-05):
 
 ## Etappe T3: Knopf „✉️ Im Mail-Programm oeffnen“
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- Block in allen 6 Versanddialogen: Apple-Geraete Teilen-Menue (PDF vorab geladen,
+  Teilen startet direkt im Tipp), sonst .eml-Entwurf (X-Unsent) fuer Outlook; „📋 Adresse kopieren“; „✓ Als versendet
+  markieren“ ueber den bestehenden Senden-Ablauf mit `kanal: mail-programm` (kein Gmail, Kanal im Protokoll).
 - Ziel / Scope: Knopf an allen 6 Belegarten (Detail/Beleg): Vorlage waehlen -> LUNA baut Betreff, Text + Signatur und PDF ->
   **iPhone/Mac:** Teilen-Menue mit PDF und Text (Adresse wird angezeigt und, wo moeglich, kopiert); **Windows:** .eml-Entwurf
   fuer Outlook (mit Empfaenger). Danach „✓ Als versendet markieren“ (Status, Firmenakte, Erinnerungen wie beim Gmail-Weg).

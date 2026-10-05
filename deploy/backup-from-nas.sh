@@ -50,6 +50,7 @@ FILES=(
   # Briefkopf + Bankverbindung (nur NAS, nie im Git; kein JSONL -> nicht im Zeilen-Check)
   buchhaltung/firmendaten.json
   buchhaltung/katalog.json       # Leistungskatalog/Preise (Etappe 3b; Aenderungen zusaetzlich in der Kette)
+  buchhaltung/textbausteine.json # Mail-Vorlagen + Signatur (TEXTBAUSTEINE T1; Aenderungen zusaetzlich in der Kette)
   buchhaltung/logo.jpg           # Logo fuer Angebote/Preisliste
   buchhaltung/zeiterfassung.json # Etappe 25: kalkulatorischer Stundensatz (nur NAS/Backup, nie im Git)
   orchestrator/state/luna_os_passkeys.json # LUNA-OS-Login: oeffentliche Passkey-Schluessel (Face ID)

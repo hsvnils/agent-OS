@@ -254,14 +254,13 @@ def pdf(d: dict, *, firmendaten: dict, firma_name: str, fazit: str, logo: Path |
     return bytes(p.output())
 
 
-def mail_text(d: dict, ap: dict | None, firmendaten: dict, version: int = 1) -> tuple[str, str]:
-    name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
-    anrede = f"Moin {name}," if name else "Moin,"
-    betreff = f"Projektbericht {d['auftrag']}" + (f" – {d['titel']}" if d["titel"] else "") + (f" (Version {version})" if version > 1 else "")
-    text = (f"{anrede}\n\nanbei unser Projektbericht zur Kampagne{' „' + d['titel'] + '“' if d['titel'] else ''} mit den "
-            "erreichten Zahlen je Posting.\n\nBei Fragen melden Sie sich gern.\n\nViele Grüße\n"
-            + "\n".join(x for x in (firmendaten.get("inhaber"), firmendaten.get("firma")) if x))
-    return betreff, text
+def mail_text(d: dict, ap: dict | None, firmendaten: dict, version: int = 1, *, vorlage: dict | None = None,
+              signatur: str = "", kunde: str = "") -> tuple[str, str]:
+    from .textbausteine import anrede_werte, rendern
+    t = d.get("titel") or ""
+    w = anrede_werte(ap) | {"kunde": kunde, "nummer": d["auftrag"], "titel": t, "titel_zusatz": f" – {t}" if t else "",
+                            "titel_quote": f" „{t}“" if t else "", "version_zusatz": f" (Version {version})" if version > 1 else ""}
+    return rendern("bericht", w, firmendaten, vorlage=vorlage, signatur=signatur)
 
 
 def dateiname(nr: str, version: int) -> str:

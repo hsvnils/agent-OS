@@ -698,20 +698,20 @@ class _Nichts(Exception):
     pass
 
 
-def rechnung_mail_text(r: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:
-    name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
-    anrede = f"Guten Tag {name}," if name else "Sehr geehrte Damen und Herren,"
-    storno = r.get("art") == "storno"
+def mail_art(r: dict) -> str:
+    """Textbaustein-Art einer Rechnung: Storno hat eigene Vorlagen."""
+    return "storno" if r.get("art") == "storno" else "rechnung"
+
+
+def rechnung_mail_text(r: dict, ap: dict | None, firmendaten: dict, *, vorlage: dict | None = None,
+                       signatur: str = "", kunde: str = "") -> tuple[str, str]:
+    from .textbausteine import anrede_werte, rendern
+    t = r.get("titel") or ""
     art = "Schlussrechnung" if r.get("abzuege") else ARTEN_TEXT.get(r.get("art") or "rechnung", "Rechnung")
-    betreff = (f"Stornorechnung {r['nummer']} zu {r.get('bezug')}" if storno else f"{art} {r['nummer']}"
-               + (f" – {r['titel']}" if r.get("titel") else ""))
-    text = (f"{anrede}\n\nanbei erhalten Sie " + (f"die Stornorechnung {r['nummer']} zur Rechnung {r.get('bezug')}."
-                                                  if storno else
-                                                  f"unsere {art} {r['nummer']} über {eur(r['summe_cent'])}, zahlbar bis "
-                                                  f"{datum_de(r['faellig_am'])}.")
-            + "\n\nBei Fragen melden Sie sich gerne.\n\nMit freundlichen Grüßen\n"
-            + "\n".join(x for x in (firmendaten.get("inhaber"), firmendaten.get("firma")) if x))
-    return betreff, text
+    w = anrede_werte(ap) | {"kunde": kunde, "nummer": r["nummer"], "titel": t, "titel_zusatz": f" – {t}" if t else "",
+                            "betrag": eur(r["summe_cent"]), "faellig": datum_de(r["faellig_am"]) if r.get("faellig_am") else "",
+                            "rechnungsart": art, "bezug": r.get("bezug") or ""}
+    return rendern(mail_art(r), w, firmendaten, vorlage=vorlage, signatur=signatur)
 
 
 def ueberfaellige(store: RechnungStore) -> list[dict]:

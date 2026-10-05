@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 16:56] — Claude Code
+- **Was:** TEXTBAUSTEINE_MAILVERSAND T1-T3 gebaut. **T1** `core/textbausteine.py`: Vorlagen je Belegart (Angebot,
+  Auftragsbestaetigung, Rechnung, Stornorechnung, Mahnung, Projektbericht, Konzept) mit Platzhaltern, genau ein Standard,
+  Signatur ersetzt den frueheren Gruss; Ablage `buchhaltung/textbausteine.json` (nur NAS, Backup + Drive-Kopie), Ereignis
+  `textbausteine_geaendert`; Editor unter Einstellungen. Die 6 bisherigen Mailtext-Funktionen laufen ueber die Vorlagen --
+  Standard ergibt exakt den alten Wortlaut (180 Faelle gegen den alten Code verglichen). **T2** Vorlagenwahl in allen 6
+  Versanddialogen (`…/versandvorschau?vorlage=`), Folgemahnung per Telegram mit Signatur. **T3** Block „✉️ Im Mail-Programm
+  oeffnen“: Teilen-Menue (iPhone/Mac, Apple Mail) bzw. .eml-Entwurf (Outlook), „📋 Adresse kopieren“, „✓ Als versendet
+  markieren“ ueber den bestehenden Senden-Ablauf ohne Gmail (`kanal: mail-programm`). UI v100/v48. 8 neue Tests
+  (Gegenproben rot), Suite gruen; Browsertest Rechner/iPad/iPhone 17 Pro ok.
+- **Warum:** CEO „Go fuer T1 bis T3“.
+- **Betroffen:** `orchestrator/core/textbausteine.py`, `core/angebote.py`, `core/beauftragung.py`, `core/rechnungen.py`,
+  `core/mahnungen.py`, `core/projektbericht.py`, `core/konzept.py`, `core/beleg_sicherung.py`, `channels/web/app.py`,
+  `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `tests/test_textbausteine.py`,
+  `deploy/backup-from-nas.sh`, `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`
+
 ## [2026-10-05 16:44] — Claude Code
 - **Was:** `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md` T1 praezisiert: Editor unter „Einstellungen“; Vorlagen wirken beim Versand
   (auch fuer bestehende, noch nicht versendete Belege), versendete Mails bleiben unveraendert. Nur Plan.

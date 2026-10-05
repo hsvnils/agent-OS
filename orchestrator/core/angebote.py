@@ -836,15 +836,13 @@ def _link(a: dict) -> tuple[str, str] | None:
     return (p.get("text") or p["url"], p["url"]) if p.get("url") else None
 
 
-def mail_text(a: dict, firma: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:
-    """Betreff + Text fuer den Gmail-Entwurf (der CEO passt ihn vor dem Senden in Gmail an)."""
-    name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
-    anrede = f"Guten Tag {name}," if name else "Sehr geehrte Damen und Herren,"
-    betreff = f"Angebot {a['nummer']}" + (f" – {a['titel']}" if a.get("titel") else "")
-    text = (f"{anrede}\n\nanbei erhalten Sie unser Angebot {a['nummer']}"
-            + (f" zu „{a['titel']}“" if a.get("titel") else "")
-            + f" über {eur(a['summe_cent'])}. Es ist gültig bis {datum_de(a['gueltig_bis'])}.\n\n"
-            + (f"{_link(a)[0]}: {_link(a)[1]}\n\n" if _link(a) else "")
-            + "Bei Fragen melden Sie sich gerne.\n\nMit freundlichen Grüßen\n"
-            + "\n".join(x for x in (firmendaten.get("inhaber"), firmendaten.get("firma")) if x))
-    return betreff, text
+def mail_text(a: dict, firma: dict, ap: dict | None, firmendaten: dict, *, vorlage: dict | None = None,
+              signatur: str = "") -> tuple[str, str]:
+    """Betreff + Text fuer den Versand (Textbausteine: Standard = frueherer Text; der CEO passt ihn vor dem Senden an)."""
+    from .textbausteine import anrede_werte, rendern
+    t = a.get("titel") or ""
+    w = anrede_werte(ap) | {"kunde": (firma or {}).get("name", ""), "nummer": a["nummer"], "titel": t,
+                            "titel_zusatz": f" – {t}" if t else "", "zu_titel": f" zu „{t}“" if t else "",
+                            "betrag": eur(a["summe_cent"]), "gueltig_bis": datum_de(a["gueltig_bis"]),
+                            "praesentation": f"{_link(a)[0]}: {_link(a)[1]}" if _link(a) else ""}
+    return rendern("angebot", w, firmendaten, vorlage=vorlage, signatur=signatur)

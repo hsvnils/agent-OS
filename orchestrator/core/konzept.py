@@ -427,10 +427,11 @@ def pdf(m: dict, kontext: dict, *, firmendaten: dict, firma_name: str, art: str 
     return bytes(p.output())
 
 
-def mail_text(kontext: dict, ap: dict | None, firmendaten: dict, version: int) -> tuple[str, str]:
-    name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
-    betreff = f"Konzept zur Freigabe – {kontext.get('titel') or kontext['vorgang']}" + (f" (Version {version})" if version > 1 else "")
-    text = (f"Moin{' ' + name if name else ''},\n\nanbei unser Konzept{' zu „' + kontext['titel'] + '“' if kontext.get('titel') else ''} "
-            "mit Briefing, Ideen und Skripten. Bitte schauen Sie es sich an und geben Sie uns kurz Ihre Freigabe oder "
-            "Ihre Änderungswünsche.\n\nViele Grüße\n" + "\n".join(x for x in (firmendaten.get("inhaber"), firmendaten.get("firma")) if x))
-    return betreff, text
+def mail_text(kontext: dict, ap: dict | None, firmendaten: dict, version: int, *, vorlage: dict | None = None,
+              signatur: str = "", kunde: str = "") -> tuple[str, str]:
+    from .textbausteine import anrede_werte, rendern
+    t = kontext.get("titel") or ""
+    w = anrede_werte(ap) | {"kunde": kunde, "nummer": kontext["vorgang"], "titel": t, "titel_zusatz": f" – {t}" if t else "",
+                            "zu_titel": f" zu „{t}“" if t else "", "titel_oder_vorgang": t or kontext["vorgang"],
+                            "version_zusatz": f" (Version {version})" if version > 1 else ""}
+    return rendern("konzept", w, firmendaten, vorlage=vorlage, signatur=signatur)

@@ -1603,7 +1603,7 @@ async function kzSendenForm(v) {
     <label class="v2-feld"><small>An *</small><input id="kzs-an" class="v2-inp" type="email" value="${esc(d.an || "")}"></label>
     <label class="v2-feld"><small>Betreff *</small><input id="kzs-betreff" class="v2-inp" value="${esc(d.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="kzs-text" class="v2-inp" rows="7">${esc(d.text)}</textarea></label>
-    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/konzept-pdf/${encodeURIComponent(v)}?art=kunde" target="_blank" rel="noopener">📎 ${esc(d.pdf)}</a></div>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/konzept-pdf/${encodeURIComponent(v)}?art=kunde" target="_blank" rel="noopener">📎 ${esc(d.pdf)}</a></div>${mailBlock("konzept", v, d)}
     <button class="v2-btn pri" data-act="kz-senden" data-id="${esc(v)}" ${d.google ? "" : "disabled"}>✉️ Jetzt senden</button><div id="kzs-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -1825,7 +1825,7 @@ async function berSendenForm(nr) {
     <label class="v2-feld"><small>An *</small><input id="ber-an" type="email" value="${esc(v.an || "")}"></label>
     <label class="v2-feld"><small>Betreff *</small><input id="ber-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="ber-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
-    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/bericht/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/bericht/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("bericht", nr, v)}
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="ber-senden" data-id="${esc(nr)}" ${v.google ? "" : "disabled title=\"Google nicht verbunden\""}>✉️ Jetzt senden</button></div><div id="bers-msg" class="v2-msg"></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -1981,7 +1981,7 @@ async function abSendenVorschau(nr) {
     <label class="v2-feld"><small>An *</small><input id="abs-an" type="email" value="${esc(v.an || "")}"></label>
     <label class="v2-feld"><small>Betreff *</small><input id="abs-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="abs-text" class="v2-inp" rows="9">${esc(v.text)}</textarea></label>
-    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("auftrag", nr, v)}
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="ab-senden-jetzt" data-id="${esc(nr)}">✉️ Jetzt senden</button><button class="v2-btn" data-act="ab-senden-abbruch">Abbrechen</button></div>
     <div id="abs-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2019,7 +2019,7 @@ async function anSendenVorschau(nr) {
     <label class="v2-feld"><small>An *</small><input id="as-an" type="email" value="${esc(v.an || "")}" placeholder="kunde@firma.de"></label>
     <label class="v2-feld"><small>Betreff *</small><input id="as-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text * (Signatur anpassbar)</small><textarea id="as-text" class="v2-inp" rows="10">${esc(v.text)}</textarea></label>
-    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("angebot", nr, v)}
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="an-senden-jetzt" data-id="${esc(nr)}">✉️ Jetzt senden</button><button class="v2-btn" data-act="an-senden-abbruch">Abbrechen</button></div>
     <div id="as-msg" class="v2-msg"></div>
     <small class="v2-sub">Geht aus LUNAs Google-Konto raus. Danach ist das Angebot „versendet“ (nicht mehr änderbar), die Erinnerungen werden angelegt, Antworten des Kunden erscheinen hier und kommen per Telegram.</small></div>`;
@@ -2035,6 +2035,75 @@ async function anSendenJetzt(nr) {
   if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
   return anDetail(nr, [`Gesendet an ${r.an}.`, ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n"));
 }
+
+/* ---------- TEXTBAUSTEINE T2/T3: Vorlage waehlen + Versand ueber das eigene Mail-Programm ---------- */
+const E_ = encodeURIComponent;
+const MP = {
+  angebot: { px: "as", msg: "as-msg", vorschau: n => `/api/crm/angebote/${E_(n)}/versandvorschau`, senden: n => `/api/crm/angebote/${E_(n)}/senden`, fertig: (n, m) => { if (AKTIV === "angebote" || AKTIV === "auftraege") renderAngebote(); return anDetail(n, m); } },
+  auftrag: { px: "abs", msg: "abs-msg", vorschau: n => `/api/crm/auftraege/${E_(n)}/versandvorschau`, senden: n => `/api/crm/auftraege/${E_(n)}/senden`, fertig: (n, m) => abDetail(n, m) },
+  rechnung: { px: "res", msg: "res-msg", vorschau: n => `/api/finanzen/rechnungen/${E_(n)}/versandvorschau`, senden: n => `/api/finanzen/rechnungen/${E_(n)}/senden`, fertig: (n, m) => { if (AKTIV === "rechnungen") renderRechnungen(); return reDetail(n, m); } },
+  mahnung: { px: "mas", msg: "mas-msg", vorschau: n => `/api/finanzen/mahnungen/${E_(n)}/versandvorschau`, senden: n => `/api/finanzen/mahnungen/${E_(n)}/senden`, fertig: (n, m) => reDetail(RE_DETAIL && RE_DETAIL.rechnung ? RE_DETAIL.rechnung.nummer : n, m) },
+  bericht: { px: "ber", msg: "bers-msg", vorschau: n => `/api/crm/auftraege/${E_(n)}/bericht/versandvorschau`, senden: n => `/api/crm/auftraege/${E_(n)}/bericht/senden`, fertig: (n, m) => abDetail(n, m) },
+  konzept: { px: "kzs", msg: "kzs-msg", vorschau: n => `/api/crm/konzept-versand/${E_(n)}`, senden: n => `/api/crm/konzept-versand/${E_(n)}`, fertig: async (n, m) => { await konzeptLaden(KZ.beleg); kundenMsg("kz-msg", m, true); } },
+};
+const MP_DATEI = {};
+const MP_APPLE = /iPhone|iPad|Macintosh/.test(navigator.userAgent);
+function mailBlock(art, nr, v) {
+  const vl = v.vorlagen || [];
+  const wahl = vl.length > 1 ? `<label class="v2-feld"><small>Textvorlage</small><select class="v2-inp v2-mp-vorlage" data-art="${esc(art)}" data-nr="${esc(nr)}">${vl.map(x => `<option value="${esc(x.id)}" ${x.id === v.vorlage ? "selected" : ""}>${esc(x.name)}${x.standard && x.name !== "Standard" ? " (Standard)" : ""}</option>`).join("")}</select></label>`
+    : `<small class="v2-sub">Textvorlage „${esc((vl[0] || {}).name || "Standard")}“ – weitere Vorlagen und Signatur unter ⚙ Einstellungen.</small>`;
+  setTimeout(() => mpVorbereiten(art, nr), 0);
+  return `<div class="v2-mp">${wahl}
+    <div class="v2-card-actions"><button class="v2-btn" data-act="mp-oeffnen" data-id="${esc(nr)}" data-val="${esc(art)}">✉️ Im Mail-Programm öffnen</button>
+      <button class="v2-btn" data-act="mp-adresse" data-val="${esc(art)}">📋 Adresse kopieren</button></div>
+    <div class="v2-mp-nach" data-mp-nach="${esc(art)}" hidden><small class="v2-sub">Mail aus deinem Mail-Programm verschickt? Dann hier abschließen – PDF kommt in die Firmenakte, Status und Erinnerungen wie beim Senden über LUNA.</small>
+      <div class="v2-card-actions"><button class="v2-btn ok" data-act="mp-versendet" data-id="${esc(nr)}" data-val="${esc(art)}">✓ Als versendet markieren</button>
+        ${MP_APPLE ? `<button class="v2-btn" data-act="mp-eml" data-id="${esc(nr)}" data-val="${esc(art)}">Als .eml-Datei</button>` : ""}</div></div></div>`;
+}
+async function mpVorbereiten(art, nr) {                   // PDF vorab laden: Teilen muss direkt im Tipp starten (Safari)
+  if (!MP_APPLE || !navigator.canShare) return;
+  try { const r = await fetch(`/api/crm/mailentwurf/${art}/${E_(nr)}/pdf`); if (!r.ok) return;
+    const name = decodeURIComponent(r.headers.get("X-Dateiname") || `${nr}.pdf`);
+    MP_DATEI[art + "|" + nr] = new File([await r.blob()], name, { type: "application/pdf" }); } catch { }
+}
+const mpFeld = (art, f) => ($(`#${MP[art].px}-${f}`) || {}).value || "";
+function mpNach(art, text) { const n = document.querySelector(`[data-mp-nach="${art}"]`); if (n) n.hidden = false; if (text) kundenMsg(MP[art].msg, text, true); }
+async function mpEml(art, nr) {
+  const r = await fetch(`/api/crm/mailentwurf/${art}/${E_(nr)}/eml`, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ an: mpFeld(art, "an").trim(), betreff: mpFeld(art, "betreff").trim(), text: mpFeld(art, "text").trim() }) });
+  if (!r.ok) return kundenMsg(MP[art].msg, (await r.text()).slice(0, 200) || "Mail-Entwurf nicht möglich.", false);
+  const url = URL.createObjectURL(await r.blob()), a = document.createElement("a");
+  a.href = url; a.download = `${nr}.eml`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+  mpNach(art, "Mail-Entwurf heruntergeladen – Datei öffnen, Outlook zeigt die Mail mit Anhang, Text und Signatur.");
+}
+async function mpAktion(act, nr, art) {
+  if (!MP[art]) return;
+  if (act === "mp-oeffnen") {
+    const f = MP_DATEI[art + "|" + nr];
+    if (MP_APPLE && f && navigator.canShare && navigator.canShare({ files: [f] })) {
+      try { await navigator.share({ files: [f], title: mpFeld(art, "betreff").trim(), text: mpFeld(art, "text").trim() }); }
+      catch (e) { if (e && e.name === "AbortError") return; return mpEml(art, nr); }
+      return mpNach(art, `Im Teilen-Menü „Mail“ wählen. Empfänger: ${mpFeld(art, "an").trim() || "bitte eintragen"} (mit „📋 Adresse kopieren“ übernehmen).`);
+    }
+    return mpEml(art, nr);
+  }
+  if (act === "mp-eml") return mpEml(art, nr);
+  if (act === "mp-adresse") { const an = mpFeld(art, "an").trim(); if (!an) return kundenMsg(MP[art].msg, "Keine Adresse eingetragen.", false);
+    try { await navigator.clipboard.writeText(an); kundenMsg(MP[art].msg, `Adresse kopiert: ${an}`, true); } catch { kundenMsg(MP[art].msg, `Adresse: ${an}`, true); } return; }
+  if (act === "mp-versendet") {
+    const an = mpFeld(art, "an").trim(); if (!an.includes("@")) return kundenMsg(MP[art].msg, "Bitte die Empfänger-Adresse eintragen (für die Ablage).", false);
+    if (!confirm(`Hast du die Mail an ${an} verschickt?\n\nLUNA markiert den Beleg dann als versendet und legt das PDF ab.`)) return;
+    const r = await jpost(MP[art].senden(nr), { an, betreff: mpFeld(art, "betreff").trim(), text: mpFeld(art, "text").trim(), bestaetigt: true, kanal: "mail-programm" });
+    if (!r || !r.ok) return kundenMsg(MP[art].msg, (r && r.hinweis) || "Fehler.", false);
+    return MP[art].fertig(nr, `Als versendet markiert (über dein Mail-Programm an ${an}).`);
+  }
+}
+document.addEventListener("change", async (e) => {         // Vorlage gewechselt -> Betreff/Text neu aus der Vorschau
+  const sel = e.target; if (!(sel instanceof HTMLSelectElement) || !sel.classList.contains("v2-mp-vorlage")) return;
+  const art = sel.dataset.art, nr = sel.dataset.nr, v = await jget(MP[art].vorschau(nr) + "?vorlage=" + E_(sel.value));
+  if (!v) return;
+  const b = $(`#${MP[art].px}-betreff`), t = $(`#${MP[art].px}-text`); if (b) b.value = v.betreff; if (t) t.value = v.text;
+});
 
 /* ---------- Katalog (Preise pflegen, nur mit Modul Finanzen) ---------- */
 async function renderKatalog(ausCache) {
@@ -2393,7 +2462,7 @@ async function reSendenVorschau(nr) {
     <label class="v2-feld"><small>An *</small><input id="res-an" type="email" value="${esc(v.an || "")}"></label>
     <label class="v2-feld"><small>Betreff *</small><input id="res-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="res-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
-    <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/rechnungen/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/rechnungen/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("rechnung", nr, v)}
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="re-senden-jetzt" data-id="${esc(nr)}">✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="res-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -2445,7 +2514,7 @@ async function maSendenVorschau(ma) {
     <label class="v2-feld"><small>An *</small><input id="mas-an" type="email" value="${esc(v.an || "")}"></label>
     <label class="v2-feld"><small>Betreff *</small><input id="mas-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="mas-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
-    <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/mahnungen/${encodeURIComponent(ma)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/mahnungen/${encodeURIComponent(ma)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("mahnung", ma, v)}
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="ma-senden-jetzt" data-id="${esc(ma)}" ${v.google ? "" : "disabled"}>✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="mas-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -3265,9 +3334,68 @@ async function renderEinstellungen() {
     ${tile("🏦 Echtes Depot (Beratung)", a, "w4")}
     ${tile("💼 Paper-Depot (Spielgeld)", b, "w4")}
     ${tile("🔔 Benachrichtigungen & Briefings", c, "w4")}
+    ${tile("✉️ Textbausteine & Signatur", `<div id="set-tb"><div class="v2-empty">Lade …</div></div>`, "w12")}
     ${tile("🔐 Anmeldung & Geräte", `<div id="set-anmeldung"><div class="v2-empty">Lade …</div></div>`, "w12")}
   </div><div class="v2-sub" style="margin-top:8px">Gilt für Anzeige, Telegram-Hinweise und Briefings. Moduswechsel (advisory→paper→live) und Budget bleiben separat abgesichert.</div>`;
-  anmeldungBox();
+  anmeldungBox(); tbLaden();
+}
+// TEXTBAUSTEINE T1: Vorlagen je Belegart + Signatur (wirken ab dem naechsten Versand)
+let TB = null;
+const TB_BEISPIEL = { anrede: "Guten Tag Anna Muster,", anrede_moin: "Moin Anna Muster,", vorname: "Anna", nachname: "Muster", kunde: "Kiez Alm Gastro GmbH",
+  nummer: "AN-2026-0012", titel: "Herbstkampagne", titel_zusatz: " – Herbstkampagne", zu_titel: " zu „Herbstkampagne“", titel_quote: " „Herbstkampagne“",
+  betrag: "1.600,00 €", gueltig_bis: "19.10.2026", praesentation: "Unsere Präsentation ansehen: https://canva.link/…", angebot: "AN-2026-0012",
+  zu_angebot: "zu unserem Angebot AN-2026-0012", faellig: "20.10.2026", rechnungsart: "Rechnung", bezug: "RE-2026-0007", rechnung: "RE-2026-0007",
+  stufe: "1. Mahnung", mahnung_im_text: "1. Mahnung", frist: "27.10.2026", version_zusatz: "", titel_oder_vorgang: "Herbstkampagne" };
+async function tbLaden(meldung) {
+  const d = await jget("/api/crm/textbausteine"); if (!d) { const b = $("#set-tb"); if (b) b.innerHTML = emptyRow("Nicht verfügbar."); return; }
+  TB = { d: d.textbausteine, arten: d.arten, ph: d.platzhalter, darf: d.darf_aendern, art: (TB && TB.art) || "angebot", fokus: null };
+  tbZeichnen(meldung);
+}
+function tbVorschau(art, v) {
+  const f = (t) => String(t || "").replace(/\{([a-z_]+)\}/g, (_, k) => TB_BEISPIEL[k] ?? "").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  return `Betreff: ${f(v.betreff)}\n\n${f(v.text)}\n\n${TB.d.signatur || "(noch keine Signatur – es gilt „Mit freundlichen Grüßen …“)"}`;
+}
+function tbZeichnen(meldung) {
+  const box = $("#set-tb"); if (!box || !TB) return;
+  const art = TB.art, liste = TB.d.vorlagen[art] || [], ro = TB.darf ? "" : "disabled";
+  box.innerHTML = (meldung ? `<div class="v2-msg ${meldung.ok ? "ok" : "err"}" style="margin-bottom:10px">${esc(meldung.text)}</div>` : "")
+    + `<small class="v2-sub">Gilt für jede Mail ab dem nächsten Versand – „Senden …“ über LUNA und „✉️ Im Mail-Programm öffnen“. Vor dem Versand kannst du den Text für die eine Mail noch anpassen. Bereits versendete Mails bleiben unverändert.</small>
+    <label class="v2-feld" style="margin-top:10px"><small>Signatur (steht unter jedem Text)</small><textarea id="tb-signatur" class="v2-inp" rows="7" ${ro}>${esc(TB.d.signatur)}</textarea></label>
+    <div class="v2-chips v2-tb-arten">${Object.entries(TB.arten).map(([k, l]) => `<button class="v2-chip ${k === art ? "on" : ""}" data-act="tb-art" data-val="${esc(k)}">${esc(l)} <small>${(TB.d.vorlagen[k] || []).length}</small></button>`).join("")}</div>
+    ${liste.map((v, i) => `<div class="v2-tb-vorlage" data-i="${i}"><div class="v2-an-zeile"><label class="v2-feld"><small>Name der Vorlage</small><input class="v2-inp tb-name" value="${esc(v.name)}" ${ro}></label>
+        <label class="v2-modlbl"><input type="radio" name="tb-std" data-act="tb-standard" data-val="${i}" ${v.standard ? "checked" : ""} ${ro}> Standard</label></div>
+      <label class="v2-feld"><small>Betreff</small><input class="v2-inp tb-betreff" value="${esc(v.betreff)}" ${ro}></label>
+      <label class="v2-feld"><small>Text (Signatur kommt automatisch darunter)</small><textarea class="v2-inp tb-text" rows="8" ${ro}>${esc(v.text)}</textarea></label>
+      <details class="v2-pz"><summary>Vorschau mit Beispielwerten</summary><pre class="v2-mail-text">${esc(tbVorschau(art, v))}</pre></details>
+      ${TB.darf && liste.length > 1 ? `<div class="v2-card-actions"><button class="v2-btn sm" data-act="tb-weg" data-val="${i}">Vorlage löschen</button></div>` : ""}</div>`).join("")}
+    <small class="v2-sub">Platzhalter (antippen = an der Cursor-Stelle einfügen):</small>
+    <div class="v2-chips v2-tb-ph">${Object.entries(TB.ph[art] || {}).map(([k, l]) => `<button class="v2-chip" data-act="tb-ph" data-val="${esc(k)}" title="${esc(l)}">{${esc(k)}}</button>`).join("")}</div>
+    ${TB.darf ? `<div class="v2-card-actions" style="margin-top:10px"><button class="v2-btn" data-act="tb-neu">+ Neue Vorlage (${esc(TB.arten[art])})</button><button class="v2-btn pri" data-act="tb-speichern">Textbausteine speichern</button></div>` : `<small class="v2-sub">Nur ansehen – ändern darf der CEO (Modul Finanzen).</small>`}
+    <div id="tb-msg" class="v2-msg"></div>`;
+  box.querySelectorAll(".tb-betreff, .tb-text, .tb-name").forEach(i => i.addEventListener("focus", () => { TB.fokus = i; }));
+}
+function tbUebernehmen() {                                    // Formularwerte der aktuellen Belegart in TB.d
+  if (!TB || !$("#set-tb")) return;
+  const sig = $("#tb-signatur"); if (sig) TB.d.signatur = sig.value;
+  const liste = TB.d.vorlagen[TB.art] || [];
+  document.querySelectorAll("#set-tb .v2-tb-vorlage").forEach(el => { const v = liste[Number(el.dataset.i)]; if (!v) return;
+    v.name = $(".tb-name", el).value; v.betreff = $(".tb-betreff", el).value; v.text = $(".tb-text", el).value; });
+}
+async function tbAktion(act, id, val, el) {
+  if (!TB) return;
+  if (act === "tb-ph") { const f = TB.fokus; if (!f) return kundenMsg("tb-msg", "Erst in Betreff oder Text tippen, dann den Platzhalter wählen.", false);
+    const p = f.selectionStart ?? f.value.length; f.value = f.value.slice(0, p) + `{${val}}` + f.value.slice(f.selectionEnd ?? p); f.focus(); return; }
+  tbUebernehmen();
+  const liste = TB.d.vorlagen[TB.art];
+  if (act === "tb-art") { TB.art = val; TB.fokus = null; return tbZeichnen(); }
+  if (act === "tb-neu") { const std = liste.find(v => v.standard) || liste[0]; liste.push({ id: "", name: "Neue Vorlage", betreff: std.betreff, text: std.text, standard: false }); return tbZeichnen(); }
+  if (act === "tb-weg") { if (!confirm("Diese Vorlage löschen?")) return; const [weg] = liste.splice(Number(val), 1); if (weg && weg.standard && liste[0]) liste[0].standard = true; return tbZeichnen(); }
+  if (act === "tb-standard") { liste.forEach((v, i) => { v.standard = i === Number(val); }); return; }
+  if (act === "tb-speichern") {
+    const r = await jpost("/api/crm/textbausteine", { textbausteine: TB.d });
+    if (!r || r.ok === false) return kundenMsg("tb-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+    return tbLaden({ ok: true, text: r.geaendert === false ? "Keine Änderung." : "Gespeichert – gilt ab dem nächsten Versand." });
+  }
 }
 // Etappe 2 + 6: Passkeys (Face ID) und angemeldete Geraete; Optionen fuer Face ID vorab holen (iOS: Abfrage direkt im Tipp)
 let PK_VOR = null;
@@ -3557,6 +3685,8 @@ async function handleAct(act, el) {
     case "vt-clo-version": case "vt-entwuerfe": case "vt-detail": case "vt-status": case "vt-pruef-form": case "vt-pruefen": case "vt-vergleich": case "vt-neu": case "vt-par-neu": case "vt-speichern": return vtAktion(act, id, val);
     case "vt-par-weg": { const z = el.closest(".v2-vt-feld"); if (z) z.remove(); return; }
     case "ma-detail": return maDetail(id);
+    case "mp-oeffnen": case "mp-eml": case "mp-adresse": case "mp-versendet": return mpAktion(act, id, val);
+    case "tb-art": case "tb-neu": case "tb-weg": case "tb-standard": case "tb-ph": case "tb-speichern": return tbAktion(act, id, val, el);
     case "ag-profil": return agentProfil(id);
     case "bl-reiter": { const w = el.closest(".v2-beleg"); if (!w) return; w.dataset.tab = val; w.querySelectorAll(".v2-beleg-reiter button").forEach(b => b.classList.toggle("on", b.dataset.val === val)); return; }
     case "zt-auswertung": return val === "frei" ? ztAuswertung("frei", $("#aw-von").value, $("#aw-bis").value) : ztAuswertung(val);
