@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 22:03] — Claude Code
+- **Was:** Zwei Testmails ueber All-Inkl verschickt (`POST /api/finanzen/kundenversand/testmail`): an nils@hanserautisch.de und
+  an hsvnils@icloud.com; beide vom Server angenommen, Kopie jeweils im Ordner „Gesendet“ von luna@hanserautisch.de abgelegt.
+  Offen: Empfangs-Bestaetigung des CEO (Posteingang statt Spam, Absender), dann Umschalten auf `KUNDENVERSAND=allinkl`.
+- **Warum:** CEO-Freigabe: „Schick gerne hierher: nils@hanserautisch.de“ und „und eine an icloud“.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-05 22:00] — Claude Code
 - **Was:** Deploy MAILVERSAND_ALLINKL M1 live geprueft (ohne Versand): LUNA-OS laedt v106; `GET /api/finanzen/kundenversand` --
   Versand weiter ueber Gmail (`KUNDENVERSAND=gmail`), keine fehlenden Schluessel, Anmeldung SMTP + IMAP am All-Inkl-Postfach ok,
