@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skizze Konzept und Vertrag</title><style>
+:root{--bg:#eef4fb;--card:#fff;--fg:#17202e;--muted:#56657c;--line:rgba(23,32,46,.10);--soft:rgba(23,32,46,.06);--accent:#2f6bff;--accent-soft:#e7efff;--green:#22a565;--green-soft:#e2f6ec;--red:#e0556b;--red-soft:#fce8ec;--amber:#c27d16;--amber-soft:#fdf1de;--blau:#004087;--rot:#cc0000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1526;--card:#16223a;--fg:#e8f0fb;--muted:#93a6c4;--line:rgba(255,255,255,.12);--soft:rgba(255,255,255,.06);--accent:#5b8bff;--accent-soft:rgba(91,139,255,.16);--green-soft:rgba(34,165,101,.18);--red-soft:rgba(224,85,107,.18);--amber-soft:rgba(233,162,59,.18)}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);padding:24px 16px 60px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:34px 0 6px}p.lead{color:var(--muted);margin:0 0 14px;max-width:900px;line-height:1.45}
+.rahmen{background:var(--card);border-radius:18px;box-shadow:0 8px 30px rgba(23,42,82,.08);padding:16px;max-width:1240px}
+.titelzeile{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.titelzeile b{font-size:16px}.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:6px 12px;font-size:13px;white-space:nowrap}
+.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}.btn.ok{background:var(--green);color:#fff;border-color:var(--green)}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px}.badge.offen{background:var(--amber-soft);color:var(--amber)}.badge.ok{background:var(--green-soft);color:var(--green)}.badge.err{background:var(--red-soft);color:var(--red)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+/* das Belegblatt */
+.blatt{position:relative;background:#fff;color:#17202e;border-radius:6px;box-shadow:0 2px 14px rgba(0,0,0,.12);padding:26px 30px 22px;overflow:hidden;font-size:13px}
+.blatt .balken{display:flex;height:4px;margin:-26px -30px 18px}.blatt .balken i{flex:1;background:var(--blau)}.blatt .balken i+i{background:var(--rot)}
+.blatt .kopf{display:grid;grid-template-columns:1fr auto;gap:18px}
+.absender{font-size:10.5px;color:#888;border-bottom:1px solid #ddd;padding-bottom:3px;margin-bottom:6px}
+.anschrift b{font-size:14px}.anschrift div{line-height:1.45}
+.meta{text-align:right}.meta .art{font-size:22px;font-weight:800;color:#17202e}.meta .titel{color:#555;margin:2px 0 8px}
+.meta dl{display:grid;grid-template-columns:auto auto;gap:2px 12px;margin:0;font-size:12px;justify-content:end}.meta dt{color:#777}.meta dd{margin:0;font-weight:600}
+.blatt .text{margin:18px 0 10px;line-height:1.5}
+table.pos{width:100%;border-collapse:collapse;font-size:12.5px}
+table.pos th{text-align:left;font-size:11px;color:#777;font-weight:600;border-bottom:1.5px solid #17202e;padding:5px 6px}
+table.pos td{border-bottom:1px solid #e6e6e6;padding:7px 6px;vertical-align:top}table.pos .r{text-align:right;white-space:nowrap}
+table.pos small{display:block;color:#888;font-size:11px}
+.gruppe td{background:#f2f4f8;font-weight:700;color:var(--blau);font-size:11.5px}
+.summen{margin-left:auto;width:300px;margin-top:8px;font-size:12.5px}.summen div{display:flex;justify-content:space-between;padding:3px 6px}
+.summen .ges{border-top:1.5px solid #17202e;font-weight:800;font-size:14px;margin-top:3px;padding-top:6px}
+.zahlhinweis{margin-top:14px;background:#f6f8fb;border-left:3px solid var(--blau);padding:8px 10px;line-height:1.45;font-size:12px}
+.fuss{margin-top:16px;border-top:1px solid #e3e3e3;padding-top:6px;font-size:10px;color:#999;text-align:center}
+.stempel{position:absolute;left:44%;top:70px;transform:rotate(-12deg);border:3px solid;border-radius:8px;padding:4px 12px;font-weight:900;font-size:22px;letter-spacing:2px;opacity:.85}
+.stempel.offen{color:var(--amber);border-color:var(--amber)}.stempel.bez{color:var(--green);border-color:var(--green)}.stempel.sto{color:var(--red);border-color:var(--red)}.stempel.ent{color:#8a96aa;border-color:#8a96aa}
+/* Seitenleiste */
+.seite{display:grid;gap:10px}.box{border:1px solid var(--line);border-radius:14px;padding:12px}.box h4{margin:0 0 8px;font-size:13px}
+.kv{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0}.kv span{color:var(--muted)}
+.mini{display:flex;flex-direction:column;gap:6px;border-left:2px solid var(--line);padding-left:12px;margin-left:4px}
+.mini a{font-size:12.5px;color:var(--fg);text-decoration:none;position:relative}.mini a::before{content:"";position:absolute;left:-17px;top:4px;width:8px;height:8px;border-radius:50%;border:2px solid var(--accent);background:var(--card)}
+.mini a.akt{font-weight:800;color:var(--accent)}.mini a.akt::before{background:var(--accent)}
+.intern{background:repeating-linear-gradient(135deg,transparent 0 8px,var(--soft) 8px 16px)}
+.notiz{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
+.pfeil{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:8px;padding:2px 7px;font-size:11.5px;font-weight:700;margin-right:4px}
+/* Handy */
+.phones{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+.phone{width:390px;max-width:100%;border:10px solid #1d2433;border-radius:38px;background:var(--bg);overflow:hidden;position:relative;height:780px;display:flex;flex-direction:column}
+.phone .bar{background:var(--card);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:14px;border-bottom:1px solid var(--line)}
+.phone .scroll{flex:1;overflow:auto;padding:12px}
+.phone .blatt{padding:18px 16px 14px;font-size:12.5px}.phone .blatt .balken{margin:-18px -16px 14px}
+.phone .blatt .kopf{grid-template-columns:1fr}.phone .meta{text-align:left}.phone .meta dl{justify-content:start}
+.phone .stempel{top:20px;left:auto;right:14px;font-size:15px}
+.pcards{display:grid;gap:8px}.pcard{border-bottom:1px solid #e6e6e6;padding:6px 0}.pcard .z{display:flex;justify-content:space-between;gap:8px}.pcard small{color:#888;font-size:11px}
+.phone .summen{width:100%}
+.unten{background:var(--card);border-top:1px solid var(--line);padding:8px 10px;display:flex;gap:6px;overflow-x:auto}
+.tabs{display:flex;gap:4px;padding:8px 12px 0;background:var(--card)}.tabs span{padding:7px 12px;font-size:13px;border-radius:10px 10px 0 0;color:var(--muted)}.tabs span.on{background:var(--bg);color:var(--fg);font-weight:700}
+.legende{font-size:13px;line-height:1.55;max-width:900px;color:var(--fg)}.legende li{margin:3px 0}
+.drei{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;max-width:1240px}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+@media (max-width:600px){.blatt{padding:18px 14px}.blatt .balken{margin:-18px -14px 14px}.blatt .kopf{grid-template-columns:1fr}.meta{text-align:left}.meta dl{justify-content:start}.summen{width:100%}}
+
+.reiter2{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:4px 0 12px;overflow-x:auto}.reiter2 span{padding:9px 12px;font-size:13.5px;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}.reiter2 span.on{color:var(--fg);font-weight:700;border-bottom-color:var(--accent)}
+.feld{display:grid;gap:3px;margin-bottom:9px}.feld small{color:var(--muted);font-size:11.5px}.feld div{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;background:var(--card)}
+.zwei{display:grid;grid-template-columns:1fr 1fr;gap:10px}.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:12px;border-radius:999px;padding:3px 9px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.idee{border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:4px;font-size:13px}.idee.weg{opacity:.5}.mood{display:flex;gap:6px}.mood i{width:56px;height:56px;border-radius:8px;background:linear-gradient(135deg,#2f6bff55,#cc000033)}
+.skript{border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;display:grid;gap:6px}.skript b.k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.shot{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:10px 0;font-size:14px}.shot .h{width:30px;height:30px;border-radius:8px;border:2px solid var(--accent);display:grid;place-items:center;font-weight:900;color:#fff}.shot.ok .h{background:var(--green);border-color:var(--green)}.shot.ok .t{text-decoration:line-through;color:var(--muted)}.shot small{display:block;color:var(--muted);font-size:12px}
+.vlist{display:grid;gap:8px}.vrow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px}
+.ph{background:#fff3c4;border-radius:3px;padding:0 3px}.par{margin:10px 0}.par b{display:block}
+.frei{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+@media (max-width:900px){.zwei{grid-template-columns:1fr}.vrow{grid-template-columns:1fr}}
+</style></head><body>
+<h1>Skizze: Konzept-Mappe und Vertragswerk</h1>
+<p class="lead">Beispieldaten (Brand X GmbH). Die <b>Konzept-Mappe</b> gehört zum Vorgang: angelegt beim Angebot, im Auftrag (und später Rechnung/Bericht) derselbe Stand. Das <b>Vertragswerk</b> hält geprüfte Vorlagen; daraus entsteht je Auftrag ein Vertrag.</p>
+
+<h2>1 · Konzept im Auftrag (Rechner) – Reiter innerhalb „🎬 Konzept“</h2>
+<div class="rahmen">
+  <div class="titelzeile"><b>AB-2026-0003 · Brand X GmbH (Beispiel) · 🎬 Konzept</b><div class="btns"><span class="btn">📄 PDF: Konzept für Kunde</span><span class="btn">📄 PDF: Drehliste</span><span class="btn pri">✉️ Zur Freigabe senden …</span></div></div>
+  <div class="reiter2"><span>📋 Briefing</span><span>💡 Ideen</span><span class="on">✍️ Skripte</span><span>🎬 Shotlist &amp; Dreh</span><span>✅ Freigabe</span></div>
+  <div class="layout">
+    <div style="display:grid;gap:12px">
+      <div class="skript"><div class="frei"><b>Reel 1 · Instagram</b><span class="chip">aus Pos. 1 „Reel, Standalone“</span><span class="badge ok">vom Kunden freigegeben 02.10.</span></div>
+        <b class="k">Hook (0–3 s)</b><div>„Was macht ein Containerhafen eigentlich nachts?“ – Drohnenflug über das Terminal</div>
+        <b class="k">Text / Voice-over</b><div>Wir sind eine Nacht lang bei Brand X mitgefahren … (ca. 25 s)</div>
+        <b class="k">Einblendungen</b><div>„Werbung“ oben links · @brandx · Rabattcode HSV10</div>
+        <b class="k">Musik</b><div>lizenzfrei aus der Instagram-Bibliothek (Hinweis CLO: keine Vereinsmusik)</div>
+        <b class="k">CTA</b><div>„Link in Bio – 10 % mit HSV10“ · Länge 35 s</div></div>
+      <div class="skript"><div class="frei"><b>Reel 2 · Instagram</b><span class="badge offen">Entwurf</span></div><div class="notiz">Noch leer – „✍️ Skript anlegen“ oder aus einer Idee übernehmen.</div></div>
+    </div>
+    <div class="seite">
+      <div class="box"><h4>Konzept-Status</h4><div class="kv"><span>Freigabe</span><span class="badge offen">beim Kunden seit 2 Tagen</span></div><div class="kv"><span>Version</span><b>2 (gesendet 03.10.)</b></div><div class="kv"><span>Dreh</span><b>📅 08.10., 09:00 · Terminal Burchardkai</b></div></div>
+      <div class="box"><h4>Ausgewählte Ideen</h4><div class="notiz">💡 Nachtschicht am Terminal → Reel 1<br>💡 „Ein Container, drei Kontinente“ → Reel 2</div></div>
+      <div class="box intern"><h4>🔒 Intern</h4><div class="notiz">Verlauf: 01.10. Briefing angelegt · 02.10. Reel 1 freigegeben · 03.10. Version 2 gesendet</div></div>
+    </div>
+  </div>
+</div>
+
+<h2>2 · Briefing und Ideen (Ausschnitt)</h2>
+<div class="rahmen"><div class="zwei">
+  <div><div class="feld"><small>Ziel</small><div>Bekanntheit in Hamburg, Bewerbung Rabattcode</div></div>
+    <div class="feld"><small>Zielgruppe</small><div>HSV-Fans 18–40, Metropolregion Hamburg</div></div>
+    <div class="feld"><small>Kernbotschaft</small><div>„Brand X bewegt Hamburg – Tag und Nacht“</div></div>
+    <div class="feld"><small>Do's &amp; Don'ts</small><div>✓ echte Mitarbeitende zeigen · ✗ keine Vereinslogos, keine Konkurrenz im Bild</div></div>
+    <div class="feld"><small>Pflichtangaben</small><div class="chips" style="border:0;padding:0"><span class="chip">„Werbung“</span><span class="chip">@brandx</span><span class="chip">Code HSV10</span><span class="chip">Link in Bio</span></div></div></div>
+  <div style="display:grid;gap:8px"><div class="idee"><div class="frei"><b>Nachtschicht am Terminal</b><span class="badge ok">ausgewählt → Reel 1</span></div><div class="notiz">Drohne + Kran-POV, Mitarbeitende im Gespräch</div><div class="mood"><i></i><i></i><i></i></div></div>
+    <div class="idee"><div class="frei"><b>Ein Container, drei Kontinente</b><span class="badge ok">ausgewählt → Reel 2</span></div></div>
+    <div class="idee weg"><div class="frei"><b>Quiz im Stadion</b><span class="badge err">verworfen</span></div></div></div>
+</div></div>
+
+<h2>3 · iPhone 17 Pro: Drehmodus der Shotlist</h2>
+<p class="lead">Beim Dreh: große Haken, nach Szenen sortiert, Skript-Zeile direkt darunter. Abgehakt wird mit Uhrzeit gespeichert.</p>
+<div class="phones">
+  <div class="phone"><div class="bar"><span>‹</span><b>Dreh 08.10. · Reel 1</b><span class="badge offen">3/6</span></div>
+    <div class="scroll" style="background:var(--card)">
+      <div class="shot ok"><span class="h">✓</span><div class="t"><b>1 · Drohne Totale Terminal</b><small>Hook · 5 s · Licht: blaue Stunde</small></div><small>18:42</small></div>
+      <div class="shot ok"><span class="h">✓</span><div class="t"><b>2 · Kran-POV</b><small>GoPro am Helm · 4 s</small></div><small>18:55</small></div>
+      <div class="shot ok"><span class="h">✓</span><div class="t"><b>3 · Interview Schichtleiter</b><small>„Was macht ihr nachts?“ · 10 s</small></div><small>19:20</small></div>
+      <div class="shot"><span class="h"></span><div class="t"><b>4 · Detail Container-Nummer</b><small>Makro · 2 s</small></div></div>
+      <div class="shot"><span class="h"></span><div class="t"><b>5 · Rabattcode-Einblendung</b><small>Insert, im Schnitt</small></div></div>
+      <div class="shot"><span class="h"></span><div class="t"><b>6 · Abschluss Logo-Wand</b><small>„Link in Bio“ · 3 s</small></div></div>
+      <div class="notiz" style="margin-top:10px">📍 Burchardkai, Tor 3 · Ansprechpartner vor Ort: Herr Beispiel, 0151 …<br>🎒 Mitbringen: Drohne, Akkus, Warnweste</div>
+    </div>
+    <div class="unten"><span class="btn pri">＋ Szene</span><span class="btn">✍️ Skript</span><span class="btn">📄 Drehliste</span></div></div>
+  <div class="phone"><div class="bar"><span>‹</span><b>AB-2026-0003</b><span class="badge ok">beauftragt</span></div>
+    <div class="tabs"><span>📄 Beleg</span><span class="on">🎬 Konzept</span><span>📣 Postings</span><span>⏱</span></div>
+    <div class="scroll"><div class="box" style="background:var(--card)"><h4>✅ Freigabe</h4><div class="kv"><span>Status</span><span class="badge offen">beim Kunden</span></div><div class="kv"><span>gesendet</span><b>03.10. an anna@…</b></div><div class="notiz">Antwort des Kunden: „Reel 2 bitte ohne Stadion“ → als Änderungswunsch im Verlauf</div></div>
+      <div class="box" style="background:var(--card);margin-top:10px"><h4>✍️ Skripte</h4><div class="kv"><span>Reel 1</span><span class="badge ok">freigegeben</span></div><div class="kv"><span>Reel 2</span><span class="badge offen">Entwurf</span></div></div></div>
+    <div class="unten"><span class="btn pri">✉️ Freigabe senden</span><span class="btn">📄 PDF</span><span class="btn">⋯</span></div></div>
+</div>
+
+<h2>4 · Vertragswerk: Vorlagen-Bibliothek</h2>
+<div class="rahmen" style="max-width:900px"><div class="vlist">
+  <div class="vrow"><div><b>AGB</b><div class="notiz">Version 1 · 14 Paragraphen</div></div><span class="badge offen">Entwurf – anwaltliche Prüfung erforderlich</span><span class="btn">Öffnen</span></div>
+  <div class="vrow"><div><b>Kooperationsvertrag (Content/Influencer)</b><div class="notiz">Version 2 · Platzhalter: Kunde, Leistungen, Vergütung, Nutzungsrechte, Freigabe</div></div><span class="badge ok">geprüft 20.10. · RAin Muster</span><span class="btn">Öffnen</span></div>
+  <div class="vrow"><div><b>Nutzungsrechte-Vereinbarung</b><div class="notiz">für Repost / Whitelisting / außerhalb Social</div></div><span class="badge offen">Entwurf</span><span class="btn">Öffnen</span></div>
+  <div class="vrow"><div><b>NDA</b><div class="notiz">Vertraulichkeit vor Kampagnenstart</div></div><span class="badge offen">Entwurf</span><span class="btn">Öffnen</span></div>
+</div><div class="notiz" style="margin-top:8px">Nur Vorlagen mit „geprüft“ dürfen an Kunden. Den Status setzt nur der CEO (mit Prüfvermerk und Dokument der Anwältin in der Akte).</div></div>
+
+<h2>5 · Vertrag am Auftrag (aus geprüfter Vorlage befüllt)</h2>
+<div class="rahmen"><div class="layout">
+  <div class="blatt"><div class="balken"><i></i><i></i></div>
+    <div class="meta" style="text-align:left"><div class="art">Kooperationsvertrag</div><div class="titel">zu Auftrag AB-2026-0003 · Vorlage v2 (geprüft 20.10.)</div></div>
+    <div class="par"><b>§ 1 Vertragspartner</b>Hanserautisch, Nils Krüger, Tangstedt – und – <span class="ph">Brand X GmbH, Hafenstr. 1, 20095 Hamburg</span></div>
+    <div class="par"><b>§ 2 Leistungen</b><span class="ph">2 × Reel (Instagram), 1 × Story-Serie</span>; Inhalte laut freigegebenem Konzept (Version 2).</div>
+    <div class="par"><b>§ 3 Vergütung</b><span class="ph">5.110,00 € · 30 % Vorkasse bis 11.10.2026, Rest 14 Tage nach Rechnung</span>; Kleinunternehmer, § 19 UStG.</div>
+    <div class="par"><b>§ 4 Nutzungsrechte</b><span class="ph">Repost auf eigenen Kanälen für 6 Monate</span> (aus Zuschlag „Nutzungsrechte Social“).</div>
+    <div class="par"><b>§ 5 Kennzeichnung &amp; Freigabe</b>Kennzeichnung als Werbung; Freigabe des Konzepts vor dem Dreh, eine Korrekturschleife.</div>
+    <div class="notiz" style="color:#888">… § 6 Haftung · § 7 Laufzeit/Kündigung · § 8 Schlussbestimmungen</div></div>
+  <div class="seite"><div class="box"><h4>Vertrag</h4><div class="kv"><span>Status</span><span class="badge offen">gesendet 04.10.</span></div><div class="kv"><span>Unterschrieben</span><b>— noch nicht zurück</b></div><div class="notiz">Unterschriebenes PDF hochladen → Firmenakte; Belegverfolgung zeigt „Vertrag“.</div></div>
+    <div class="box"><h4>AGB</h4><div class="notiz">Angebot AN-2026-0003 und AB enthalten den Verweis „Es gelten unsere AGB (Stand v1)“ + AGB als Anhang – sobald die AGB geprüft sind.</div></div></div>
+</div></div>
+</body></html>

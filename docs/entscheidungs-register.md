@@ -22,6 +22,8 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Konzept-Mappe**: eine Mappe je Vorgang (ab Angebot bzw. direkt angelegtem Auftrag, in allen Folgebelegen derselbe Stand, keine Kopie je Beleg); Bereiche Briefing, Ideen + Skript je Posting, Shotlist + Drehplan, Kunden-Freigabe; PDF-Export | 2026-10-05 | **BESCHLOSSEN** (CEO) | `KONZEPT_MAPPE_ROADMAP.md` |
+| **Vertragswerk**: Vorlagen-Bibliothek + Vertrag je Auftrag + AGB am Angebot; keine vorhandenen Texte -- CLO entwirft, anwaltliche Pruefung vor dem ersten Einsatz (CEO-Tor Recht/Geld); keine E-Signatur-Plattform | 2026-10-05 | **BESCHLOSSEN** (CEO) | `VERTRAGSWERK_ROADMAP.md` |
 | **Digitaler Beleg**: Belege in LUNA-OS als Belegblatt (Inhalte wie PDF), Variante A -- Rechner Blatt links + Seitenleiste, iPhone Blatt volle Breite + Aktionsleiste unten, Auftrag mit Reitern; Variante B (Reiter Beleg/Ablauf/Intern) verworfen | 2026-10-03 | **BESCHLOSSEN** (CEO) | `DIGITALER_BELEG_ROADMAP.md`, `docs/skizzen/digitaler-beleg.html` |
 | **Belegverfolgung**: nur Kundenbelege (AN/AB/RE/RG/MA, nicht Eingang/Eigenbeleg); Belege + Ereignisse (Zahlung, Lieferung, Bericht, Mahnverfahren, Akte-Dokumente); Zeitstrahl am Rechner waagerecht, mobil senkrecht | 2026-10-03 | **BESCHLOSSEN** (CEO) | `BELEGVERFOLGUNG_ROADMAP.md` |
 | **Projektzeiten und km optional fuer Kunden sichtbar/abrechenbar** (je Rechnung/Bericht per Haken, Standard aus; Verkaufs-Stundensatz und -km-Satz als Katalog-Artikel; Rechnung Standard zusammengefasst + Stundenzettel) -- revidiert „Stunden nur intern“ (2026-09-30) zur Opt-in-Regel | 2026-10-02 | **BESCHLOSSEN** (CEO) | `PROJEKTZEITEN_ROADMAP.md`, `PROJEKTBERICHT_ROADMAP.md` |

@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 10:08] — Claude Code
+- **Was:** Zwei Roadmaps angelegt (Analyse read-only): Konzept-Mappe je Vorgang (K1 Briefing + Ideen, K2 Skript je
+  Posting + Shotlist/Drehmodus + Drehplan, K3 PDF + Kunden-Freigabe, K4 Vorschlag LUNA-Hilfe) und Vertragswerk (V1
+  Vorlagen-Bibliothek mit Pruefstatus, V2 CLO-Entwuerfe + anwaltliche Pruefung, V3 Vertrag je Auftrag, V4 AGB am
+  Angebot/AB); Skizze `docs/skizzen/konzept-und-vertrag.html`; CEO-Entscheidungen im Register.
+- **Warum:** CEO-Wunsch 2026-10-05 (Content-Ideen/Skript/Shotlist je Vorgang, „Vertragswerk“).
+- **Betroffen:** `KONZEPT_MAPPE_ROADMAP.md`, `VERTRAGSWERK_ROADMAP.md` (neu), `docs/skizzen/konzept-und-vertrag.html` (neu),
+  `ROADMAP.md`, `docs/entscheidungs-register.md`.
+
 ## [2026-10-04 00:42] — Claude Code
 - **Was:** Live-Pruefung nach dem Neustart: LUNA-OS v92/v42 mit den iPhone-Regeln (BF-55) ausgeliefert; RG-11052026
   (Kiezalm) zeigt „IM MAHNVERFAHREN, seit 29.09.2026“, RE-2026-0003 weiter „OFFEN“; Bot-Herzschlag frisch. Nur gelesen.
