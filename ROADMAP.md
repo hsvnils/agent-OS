@@ -78,7 +78,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `ANGEBOT_PRAESENTATION_ROADMAP.md` | Canva-Praesentation (DE/EN, je Angebot waehlbar) in Angebots-PDF, digitalem Beleg und Mailtext | abgeschlossen (2026-10-05) |
 | `VIDEOGRAF_ROADMAP.md` | Videograf-Berater als Agent 17: Charta (CEO-Tor), 5 Skills, Vorschlaege per Knopf in der Konzept-Mappe und im Chat | abgeschlossen (2026-10-05) |
 | `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md` | Textbausteine mit Signatur fuer 6 Belegarten (auch Gmail-Versand) und Knopf „Im Mail-Programm oeffnen“ (Apple Mail iPhone/Mac, Outlook MACO470) | in Umsetzung (T1-T3 gebaut 2026-10-05) |
-| `CONTENT_PLAN_ROADMAP.md` | Content-Plan als Kalender (eigene + Kunden-Postings, Drehtermine, Anlaesse; Monat/Woche/Liste) | geplant (2026-10-05) |
+| `CONTENT_PLAN_ROADMAP.md` | Content-Plan als Kalender (eigene + Kunden-Postings, Drehtermine, Anlaesse; Monat/Woche/Liste) | in Umsetzung (C1-C3 umgesetzt 2026-10-05, C4 offen) |
 | `MAILVERSAND_ALLINKL_ROADMAP.md` | Kundenmails ueber All-Inkl (luna@hanserautisch.de) statt Gmail, inkl. Antworten per IMAP | geplant (2026-10-05) |
 | `REELS_ROADMAP.md` | Reels aufraeumen: Verfall nach 30 Tagen, Videos abgelehnter/verfallener Reels loeschen, Nachschub-Bremse bei 10 | in Umsetzung (Etappe 1 umgesetzt 2026-10-01, Deploy offen) |
 | `LUNA_OS_UI_ROADMAP.md` | LUNA-OS: Navigation in 4 Bereichen, Handlungsbedarf systemweit, Bereichs-Startseiten, iPhone-Seitenmenue, WebApp-Login mit Schluesselbund und Passkey | in Umsetzung (Etappen 1-6 umgesetzt 2026-09-30, Deploy offen) |

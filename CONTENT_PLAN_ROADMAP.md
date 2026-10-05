@@ -1,9 +1,9 @@
 # Roadmap: Content-Plan (Kalender fuer Planung und Verwaltung)
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-05
-- Arbeitsbranch: `ai/plan-contentplan-allinkl`
-- Basiscommit: `655f82a`
-- Naechster Schritt: CEO-Go fuer C1-C3 abwarten (C4 Spielplan nach eigener Freigabe der Datenquelle).
+- Arbeitsbranch: `ai/contentplan`
+- Basiscommit: `043998b`
+- Naechster Schritt: C1-C3 umgesetzt -- CEO-Go fuer Merge, Push und Deploy abwarten; C4 Spielplan erst nach eigener Freigabe der Datenquelle.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -24,30 +24,43 @@ Ansichten **Monat, Woche, Liste**.
 
 ## Etappe C1: Eintraege und Kalender
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: eigene Plan-Eintraege (Datum, optional Uhrzeit, Kanal, Format, Thema/Titel, Status Idee -> Skript ->
   gedreht -> geschnitten -> geplant -> online, Notiz, optional Bezug Kunde/Auftrag) in der Buchhaltungs-Kette
   (Ereignisse `plan_*`, nachvollziehbar); neue Seite „🗓 Content-Plan“ unter Content & Collabs mit **Monat**, **Woche**
   und **Liste** (iPhone startet in der Liste), Eintrag per Tipp anlegen/aendern/verschieben, Filter nach Kanal/Status.
 - Gate: Tests; Browsertest Rechner/iPad/iPhone 17 Pro.
 - Aufwand: mittel bis gross.
+- Umsetzung (2026-10-05): `core/contentplan.py` (Ereignisse `plan_eintrag`/`plan_entfernt` in der Kette, IDs `CP-…`,
+  Pflicht Titel+Datum, Uhrzeit HH:MM, Kanal/Format/Status geprueft, optional Kunde), Endpunkte `GET/POST /api/contentplan`,
+  `POST /api/contentplan/<id>` (+ `/entfernen`); Seite „🗓 Content-Plan“ (Content & Collabs) mit Monat/Woche/Liste,
+  Blaettern/Heute, Filter Quelle/Kanal/Status, Eintrag per Tipp auf den Tag; iPhone startet in der Liste, im Monat
+  oeffnet ein Tipp auf den Tag die Woche. Rechte: Modul `content_ops` (App `trends`), Planungsdatum am Posting Modul `crm`.
 
 ## Etappe C2: Kunden-Postings und Drehtermine automatisch
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Postings bekommen ein **geplantes Datum** (im Auftrag/Postings-Bereich setzbar); geplante und
   veroeffentlichte Kunden-Postings sowie Drehtermine aus der Konzept-Mappe erscheinen automatisch im Kalender (nur lesend,
   Klick oeffnet Auftrag/Konzept); ueberfaellige geplante Postings markiert.
 - Gate: Tests (Quellen zusammengefuehrt, keine Doppelungen); Browsertest.
 - Aufwand: mittel.
+- Umsetzung (2026-10-05): Ereignis `posting_geplant` + `Postings.planen`, `POST /api/crm/postings/<id>/geplant`, im Auftrag
+  unter „📣 Postings“ ein Feld „🗓 Geplant fuer“; der Kalender fuehrt geplante/veroeffentlichte Kunden-Postings
+  (ueberfaellig = geplant und Datum vorbei, rot) und Drehtermine der Konzept-Mappe (mit Kundenname) zusammen, nur lesend;
+  Klick oeffnet Auftrag bzw. Konzept-Mappe (Drehplan).
 
 ## Etappe C3: Anlaesse
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: gesetzliche Feiertage (Hamburg, lokal berechnet) und eigene Anlaesse/Kampagnen-Zeitraeume (von-bis) als
   Hintergrund im Kalender; LUNA kann auf Wunsch einen Wochenplan vorschlagen (CCO-Skill `content-kalender`, nur Entwurf).
 - Gate: Tests; Browsertest.
 - Aufwand: klein bis mittel.
+- Umsetzung (2026-10-05): Feiertage Hamburg lokal berechnet (Osterformel, inkl. Reformationstag), eigene Anlaesse
+  (`plan_anlass`/`plan_anlass_entfernt`, von-bis, `POST /api/contentplan/anlass`); „🪄 Wochenplan vorschlagen“ fragt den
+  CCO (Gemini, Charta + Skill `content-kalender`) -- Kundentermine nur als „Kunden-Posting“/„Kundendreh“ ohne Namen;
+  nichts wird gespeichert, Uebernahme je Idee per Klick (Status Idee); Nutzung als CCO/Quelle `konzept` gezaehlt.
 
 ## Etappe C4: Spieltage (eigene Freigabe der Datenquelle)
 

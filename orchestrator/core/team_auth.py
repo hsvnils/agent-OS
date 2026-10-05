@@ -186,7 +186,8 @@ class TeamAuth:
 
 # App-spezifische Endpunkt-Praefixe je Modul. GET+POST beide gated.
 _MODUL_PFADE = {
-    "content_ops": ("/api/trends", "/api/ideas", "/api/drafts", "/api/sources", "/api/ai-inbox", "/api/cutter"),
+    "content_ops": ("/api/trends", "/api/ideas", "/api/drafts", "/api/sources", "/api/ai-inbox", "/api/cutter",
+                    "/api/contentplan"),
     "crm": ("/api/crm",),
     "invest": ("/api/investment",),
     "finanzen": ("/api/buchhaltung", "/api/finanzen"),

@@ -107,6 +107,8 @@ class Postings:
                 x["bilder"].append({k: d.get(k) for k in ("pfad", "name", "sha256")} | {"ts": e["ts"]})
             elif t == "posting_erinnert":
                 x["erinnert"] = e["ts"]
+            elif t == "posting_geplant":                       # CONTENT_PLAN C2: geplantes Datum ("" = entfernt)
+                x["geplant"] = d.get("datum") or ""
             x["verlauf"].append(spur)
         return out
 
@@ -152,6 +154,18 @@ class Postings:
         d = {"id": pid, "datum": tag.isoformat(), "link": link[:500], "plattform": pl}
         self.bh.erfassen("posting_veroeffentlicht", d, von=von)
         return d
+
+    def planen(self, pid: str, datum: str, *, von: str = "") -> dict:
+        """CONTENT_PLAN C2: geplantes Veroeffentlichungsdatum (leer = Planung entfernen)."""
+        self._pruefe(pid)
+        tag = ""
+        if str(datum or "").strip():
+            try:
+                tag = date.fromisoformat(str(datum)[:10]).isoformat()
+            except ValueError:
+                raise ValueError("Geplantes Datum ungueltig.") from None
+        self.bh.erfassen("posting_geplant", {"id": pid, "datum": tag}, von=von)
+        return {"id": pid, "geplant": tag}
 
     def kennzahlen_setzen(self, pid: str, werte: dict, *, quelle: str = "formular", messpunkt: int = ERINNERN_TAGE,
                           von: str = "") -> dict:

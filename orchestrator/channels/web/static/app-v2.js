@@ -83,6 +83,7 @@ const SECTIONS = [
   { id: "vertraege", icon: "📜", label: "Vertragswerk", app: "angebote" },
   { id: "radar", icon: "🎯", label: "Radar", app: "crm" },
   { id: "content", icon: "✎", label: "Content", app: "trends" },
+  { id: "contentplan", icon: "🗓", label: "Content-Plan", app: "trends" },
   { id: "cutter", icon: "🎬", label: "Cutter", app: "cutter" },
   { id: "reel", icon: "📤", label: "Reels", app: "cutter" },
   { id: "wissen", icon: "🧠", label: "Wissen", app: "wissen" },
@@ -95,14 +96,14 @@ const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.inclu
 // LUNA_OS_UI_ROADMAP Etappe 1: 4 Bereiche statt 19 Symbolen (CEO 2026-09-30, Skizze abgenommen). Reihenfolge nach Nutzung.
 const BEREICHE = [
   { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen", "vertraege"] },
-  { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["crm", "radar", "content", "cutter", "reel"] },
+  { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["contentplan", "crm", "radar", "content", "cutter", "reel"] },
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
   { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "devroadmap", "system", "team", "einstellungen"] },
 ];
 const TEIL_INFO = {
   kunden: "Firmen, Ansprechpartner, Akte", vertraege: "AGB und Vertragsvorlagen", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
   belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
-  radar: "Neue Collab-Chancen", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
+  radar: "Neue Collab-Chancen", contentplan: "Kalender: eigene Posts, Kunden, Drehs", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
   wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", team: "Team-Zugänge",
   einstellungen: "Depot, Briefings, Anmeldung",
@@ -1433,12 +1434,13 @@ async function abPostings(nr, status) {
   const vz = Object.fromEntries(((d.vergleich || {}).zeilen || []).map(z => [z.id, z])), s = (d.vergleich || {}).summe || {};
   const offen = status !== "storniert";
   const karten = ps.map(p => { const z = vz[p.id] || {}, kz = p.kennzahlen || {}, kf = p.kontakt_feld, lbl = Object.fromEntries((d.felder[p.format] || []));
-    const stand = p.kennzahlen ? `<span class="v2-badge ok">📊 Kennzahlen da</span>` : p.kennzahl_faellig ? `<span class="v2-badge warn">📊 Kennzahlen fällig</span>` : p.datum ? `<span class="v2-badge neutral">📣 veröffentlicht</span>` : `<span class="v2-badge neutral">geplant</span>`;
+    const stand = p.kennzahlen ? `<span class="v2-badge ok">📊 Kennzahlen da</span>` : p.kennzahl_faellig ? `<span class="v2-badge warn">📊 Kennzahlen fällig</span>` : p.datum ? `<span class="v2-badge neutral">📣 veröffentlicht</span>` : `<span class="v2-badge neutral">${p.geplant ? "🗓 geplant " + esc(datumDe(p.geplant)) : "noch nicht geplant"}</span>`;
     const zahlen = p.kennzahlen ? `<div class="v2-po-zahlen">${(d.felder[p.format] || []).filter(([f]) => kz[f] != null).map(([f, l]) => `<span${f === kf ? ' class="kf"' : ""}><small>${esc(l)}</small><b>${tsd(kz[f])}</b></span>`).join("")}</div>
       <div class="v2-po-vgl"><span><small>${esc(lbl[kf] || kf)} Plan → Ist</small><b>${tsd(p.plan.kontakte || null)} → ${tsd(kz[kf])}${z.erfuellung_pct != null ? ` (${pzt(z.erfuellung_pct)})` : ""}</b></span>
       ${z.gegenwert_cent != null ? `<span><small>Gegenwert Ist</small><b>${cent2eur(z.gegenwert_cent)}</b></span><span><small>Mehrleistung</small><b class="${z.mehrleistung_cent >= 0 ? "pos" : "neg"}">${z.mehrleistung_cent >= 0 ? "+" : "−"}${cent2eur(Math.abs(z.mehrleistung_cent))}</b></span>${z.tkp_eff_cent != null ? `<span><small>TKP effektiv</small><b>${cent2eur(z.tkp_eff_cent)} <small>statt ${cent2eur(p.plan.tkp_cent)}</small></b></span>` : ""}` : ""}</div>` : "";
     return `<div class="v2-po" id="po-${esc(p.id)}"><div class="v2-po-kopf"><b>${esc(p.titel)}</b><small>${esc(p.plattform)} · Pos. ${p.position}${p.plan.kontakte ? " · Plan " + tsd(p.plan.kontakte) + " " + esc(lbl[kf] || kf) : ""}</small>${stand}</div>
       ${p.datum ? `<div class="v2-sub">Veröffentlicht am ${esc(datumDe(p.datum))}${p.link ? ` · <a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">🔗 ansehen</a>` : ""}</div>` : ""}
+      ${!p.datum && offen ? `<label class="v2-feld v2-po-plan"><small>🗓 Geplant für (Content-Plan)</small><input class="v2-inp" type="date" data-po-geplant="${esc(p.id)}" data-nr="${esc(nr)}" value="${esc(p.geplant || "")}"></label>` : ""}
       ${zahlen}
       ${p.kennzahlen_30 ? `<div class="v2-sub">📈 Nach 30 Tagen: ${esc(lbl[kf] || kf)} <b>${tsd(p.kennzahlen_30[kf])}</b>${kz[kf] ? ` (+${tsd(Math.max(0, p.kennzahlen_30[kf] - kz[kf]))} seit Tag 7)` : ""}</div>` : ""}
       ${(p.bilder || []).length ? `<div class="v2-po-bilder">${p.bilder.map((b, i) => `<a href="/api/crm/postings/${encodeURIComponent(p.id)}/bild/${i}" target="_blank" rel="noopener"><img src="/api/crm/postings/${encodeURIComponent(p.id)}/bild/${i}" alt="Screenshot ${i + 1}" loading="lazy"></a>`).join("")}</div>` : ""}
@@ -1485,6 +1487,13 @@ async function poSpeichern(pid, nr, art) {
   const a = (await jget("/api/crm/auftraege/" + encodeURIComponent(nr)) || {}).auftrag || {};
   return abPostings(nr, a.status);
 }
+document.addEventListener("change", async (e) => {             // CONTENT_PLAN C2: geplantes Datum eines Kunden-Postings
+  const inp = e.target.closest && e.target.closest("[data-po-geplant]"); if (!inp) return;
+  inp.disabled = true; const r = await jpost(`/api/crm/postings/${encodeURIComponent(inp.dataset.poGeplant)}/geplant`, { datum: inp.value }); inp.disabled = false;
+  if (!r || r.ok === false) { alert((r && r.hinweis) || "Keine Verbindung."); return; }
+  const a = (await jget("/api/crm/auftraege/" + encodeURIComponent(inp.dataset.nr)) || {}).auftrag || {};
+  abPostings(inp.dataset.nr, a.status);
+});
 // KONZEPT_MAPPE K1-K3: eine Mappe je Vorgang (Briefing, Ideen, Skripte, Shotlist & Dreh, Freigabe)
 let KZ = { tab: "briefing", d: null, beleg: "" };
 const KZ_TABS = [["briefing", "📋 Briefing"], ["ideen", "💡 Ideen"], ["skripte", "✍️ Skripte"], ["dreh", "🎬 Dreh"], ["freigabe", "✅ Freigabe"]];
@@ -3123,6 +3132,123 @@ async function renderContent() {
   if (sub === "aiinbox") rows = (d.items || []).map(it => card(recLbl[it.recommendation] || it.recommendation, it.title || "(ohne Titel)", `${esc(it.summary || "")}<br><small>${esc(it.source_type || "")}${it.author ? " · " + esc(it.author) : ""} · Relevanz ${it.hcc_relevance_score ?? "?"} · Machbarkeit ${it.feasibility_score ?? "?"} · Risiko ${it.risk_score ?? "?"}</small>${it.source_url ? ` · <a href="${esc(it.source_url)}" target="_blank" rel="noopener">Quelle ↗</a>` : ""}`, ["use", "investigate", "later", "ignore"].map(rc => btn("ai", it.id, rc, recLbl[rc])).join(""), it.recommendation === "use")).join("");
   $("#v2-app").innerHTML = secHead("Content-Ops") + tabs("content", [["trends", "Trends"], ["ideen", "Ideen-Labor"], ["drafts", "Drafts"], ["quellen", "Quellen"], ["aiinbox", "AI-Inbox"]]) + `<div class="v2-cards">${rows || emptyRow("Leer.")}</div>`;
 }
+/* =========================== Content-Plan (CONTENT_PLAN C1-C3) =========================== */
+// Eigene Eintraege + Kunden-Postings (geplant/online) + Drehtermine + Feiertage/Anlaesse in Monat, Woche oder Liste.
+RENDER.contentplan = renderContentplan;
+let CP = { ansicht: "", tag: "", d: null, filter: "", kanal: "", status: "" };
+let CP_KANAL = {}, CP_FORMAT = {}, CP_STATUS = {};
+const CP_KUERZEL = { instagram: "IG", tiktok: "TT", youtube: "YT", facebook: "FB", threads: "TH", twitch: "TW", x: "X" };                       // Beschriftungen kommen vom Server (contentplan.py)
+const CP_TAGE = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const cpIso = (d) => d.toLocaleDateString("sv-SE");
+const cpDatum = (iso) => new Date(iso + "T12:00:00");
+const cpPlus = (iso, n) => { const d = cpDatum(iso); d.setDate(d.getDate() + n); return cpIso(d); };
+const cpMontag = (iso) => { const d = cpDatum(iso); return cpPlus(iso, -((d.getDay() + 6) % 7)); };
+function cpBereich() {
+  const t = CP.tag || heuteIso();
+  if (CP.ansicht === "woche") { const v = cpMontag(t); return [v, cpPlus(v, 6)]; }
+  const erster = t.slice(0, 8) + "01", d = cpDatum(erster); d.setMonth(d.getMonth() + 1); d.setDate(0);
+  return CP.ansicht === "monat" ? [cpMontag(erster), cpPlus(cpMontag(cpIso(d)), 6)] : [erster, cpIso(d)];
+}
+function cpTitel() {
+  const t = cpDatum(CP.tag || heuteIso());
+  if (CP.ansicht !== "woche") return t.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  const [v, b] = cpBereich(), kw = (() => { const d = cpDatum(v); d.setDate(d.getDate() + 3); const j = new Date(d.getFullYear(), 0, 4); return 1 + Math.round(((d - j) / 864e5 - 3 + (j.getDay() + 6) % 7) / 7); })();
+  const kurz = (iso) => cpDatum(iso).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" });
+  return `KW ${kw} · ${kurz(v)} – ${datumDe(b)}`;
+}
+async function renderContentplan(meldung) {
+  if (!CP.ansicht) { let a = ""; try { a = localStorage.getItem("luna-cp-ansicht") || ""; } catch { } CP.ansicht = a || (innerWidth < 700 ? "liste" : "monat"); }
+  const [von, bis] = cpBereich();
+  const d = await jget(`/api/contentplan?von=${von}&bis=${bis}`);
+  if (AKTIV !== "contentplan") return;
+  if (!d || !d.eintraege) { $("#v2-app").innerHTML = secHead("🗓 Content-Plan") + emptyRow("Content-Plan nicht erreichbar."); return; }
+  CP.d = d; CP_KANAL = d.kanaele || {}; CP_FORMAT = d.formate || {}; CP_STATUS = d.status || {};
+  const sicht = (id, l) => `<button class="${CP.ansicht === id ? "active" : ""}" data-act="cp-ansicht" data-val="${id}">${l}</button>`;
+  const kopf = `<div class="v2-cp-leiste"><div class="v2-cp-nav"><button class="v2-btn sm" data-act="cp-blaettern" data-val="-1" aria-label="zurück">‹</button><button class="v2-btn sm" data-act="cp-blaettern" data-val="0">Heute</button><button class="v2-btn sm" data-act="cp-blaettern" data-val="1" aria-label="weiter">›</button><b>${esc(cpTitel())}</b></div>
+    <div class="v2-tabs v2-cp-sicht">${sicht("monat", "Monat")}${sicht("woche", "Woche")}${sicht("liste", "Liste")}</div>
+    <div class="v2-cp-filter"><select class="v2-inp" data-act-change="cp-filter"><option value="">Alles</option>${[["plan", "Eigene"], ["posting", "Kunden-Postings"], ["dreh", "Drehtermine"]].map(([k, l]) => `<option value="${k}"${CP.filter === k ? " selected" : ""}>${l}</option>`).join("")}</select>
+    <select class="v2-inp" data-act-change="cp-kanal"><option value="">Alle Kanäle</option>${Object.keys(CP_KANAL).map(k => `<option value="${k}"${CP.kanal === k ? " selected" : ""}>${esc(CP_KANAL[k] || k)}</option>`).join("")}</select>
+    <select class="v2-inp" data-act-change="cp-status"><option value="">Jeder Status</option>${Object.keys(CP_STATUS).map(k => `<option value="${k}"${CP.status === k ? " selected" : ""}>${esc(CP_STATUS[k])}</option>`).join("")}</select></div></div>`;
+  const aktionen = `<button class="v2-btn pri" data-act="cp-neu">＋ Eintrag</button><button class="v2-btn" data-act="cp-anlaesse">📌 Anlässe</button><button class="v2-btn" data-act="cp-vorschlag" title="Der Content-Agent (CCO) schlägt eigene Inhalte für die angezeigte Woche vor – nur Entwurf">🪄 Wochenplan vorschlagen</button>`;
+  const es = d.eintraege.filter(e => (!CP.filter || e.quelle === CP.filter) && (!CP.kanal || e.kanal === CP.kanal) && (!CP.status || e.status === CP.status));
+  const proTag = {}; es.forEach(e => (proTag[e.datum] = proTag[e.datum] || []).push(e));
+  const body = CP.ansicht === "liste" ? cpListe(proTag, von, bis) : cpRaster(proTag, von, bis);
+  const legende = `<div class="v2-cp-legende"><span class="q-plan">Eigene</span><span class="q-posting">Kunden-Posting</span><span class="q-dreh">Dreh</span><span class="ueber">überfällig</span><span class="fei">Feiertag/Anlass</span></div>`;
+  $("#v2-app").innerHTML = secHead("🗓 Content-Plan", aktionen) + (meldung ? `<div class="v2-msg ok">${esc(meldung)}</div>` : "") + kopf + body + legende + `<div id="cp-vorschlag-box"></div>`;
+  document.querySelectorAll("#v2-app [data-act-change^=cp-]").forEach(sel => sel.addEventListener("change", () => { CP[{ "cp-filter": "filter", "cp-kanal": "kanal", "cp-status": "status" }[sel.dataset.actChange]] = sel.value; renderContentplan(); }));
+}
+function cpChip(e) {
+  const zeit = e.zeit ? `<small>${esc(e.zeit)}</small>` : "";
+  const was = e.quelle === "dreh" ? "🎬" : e.quelle === "posting" ? (e.status === "online" ? "✅" : "📣") : "";
+  return `<button class="v2-cp-e q-${esc(e.quelle)} s-${esc(e.status || "")}${e.ueberfaellig ? " ueber" : ""}" data-act="cp-eintrag" data-id="${esc(e.id)}" title="${esc(e.titel)}${e.kunde_name ? " · " + esc(e.kunde_name) : ""}${e.status ? " · " + esc(CP_STATUS[e.status] || e.status) : ""}${e.ueberfaellig ? " · überfällig" : ""}">${zeit}<span>${was}${e.kanal && e.quelle !== "dreh" ? `<i title="${esc(CP_KANAL[e.kanal] || e.kanal)}">${esc(CP_KUERZEL[e.kanal] || "")}</i>` : ""} ${esc(e.titel)}</span></button>`;
+}
+function cpMarken(tag) {
+  const f = CP.d.feiertage[tag], a = CP.d.anlaesse.filter(x => x.von <= tag && tag <= x.bis);
+  return (f ? `<span class="v2-cp-fei">🎌 ${esc(f)}</span>` : "") + a.map(x => `<span class="v2-cp-anl" title="${esc(x.notiz || "")}">📌 ${esc(x.titel)}</span>`).join("");
+}
+function cpRaster(proTag, von, bis) {
+  const heute = heuteIso(), monat = (CP.tag || heute).slice(0, 7), tage = [];
+  for (let t = von; t <= bis; t = cpPlus(t, 1)) tage.push(t);
+  const zellen = tage.map(t => `<div class="v2-cp-tag${t === heute ? " heute" : ""}${CP.ansicht === "monat" && t.slice(0, 7) !== monat ? " fremd" : ""}${CP.d.feiertage[t] ? " feiertag" : ""}">
+    <button class="v2-cp-tagkopf" data-act="cp-neu" data-val="${t}" title="Eintrag am ${esc(datumDe(t))} anlegen"><b>${cpDatum(t).getDate()}</b>${CP.ansicht === "woche" ? `<small>${CP_TAGE[(cpDatum(t).getDay() + 6) % 7]}</small>` : ""}<span class="plus">＋</span></button>
+    ${cpMarken(t)}${(proTag[t] || []).map(cpChip).join("")}</div>`).join("");
+  return `<div class="v2-cp-raster ${CP.ansicht}">${CP.ansicht === "monat" ? CP_TAGE.map(x => `<div class="v2-cp-wt">${x}</div>`).join("") : ""}${zellen}</div>`;
+}
+function cpListe(proTag, von, bis) {
+  const heute = heuteIso(), zeilen = [];
+  for (let t = von; t <= bis; t = cpPlus(t, 1)) {
+    const marken = cpMarken(t);
+    if (!(proTag[t] || []).length && !marken) continue;
+    zeilen.push(`<div class="v2-cp-ltag${t === heute ? " heute" : ""}"><div class="v2-cp-ldatum"><b>${CP_TAGE[(cpDatum(t).getDay() + 6) % 7]}, ${esc(datumDe(t))}</b><button class="v2-btn sm" data-act="cp-neu" data-val="${t}" aria-label="Eintrag anlegen">＋</button></div>${marken}${(proTag[t] || []).map(cpChip).join("")}</div>`);
+  }
+  return `<div class="v2-cp-liste">${zeilen.join("") || emptyRow("In diesem Monat ist noch nichts geplant.")}</div>`;
+}
+async function cpForm(id, datum, vorlage) {
+  const e = id ? (CP.d.eintraege.find(x => x.id === id) || {}) : (vorlage || { datum: datum || CP.tag || heuteIso(), kanal: "instagram", format: "reel", status: "idee" });
+  if (!CP.firmen) CP.firmen = ((await jget("/api/crm/kunden")) || {}).firmen?.filter(f => f.aktiv !== false && f.typ !== "lieferant").map(f => ({ nummer: f.nummer, name: f.name })) || [];
+  const opt = (liste, namen, wert) => liste.map(k => `<option value="${k}"${k === wert ? " selected" : ""}>${esc(namen[k] || k)}</option>`).join("");
+  openModal(id ? "Eintrag bearbeiten" : "Neuer Eintrag", `<div class="v2-form" id="cp-form">
+    <label class="v2-feld"><small>Titel *</small><input class="v2-inp" name="titel" maxlength="160" value="${esc(e.titel || "")}" placeholder="z. B. Derby-Reel: Fanmarsch"></label>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Datum *</small><input class="v2-inp" type="date" name="datum" value="${esc(e.datum || "")}"></label><label class="v2-feld"><small>Uhrzeit</small><input class="v2-inp" type="time" name="zeit" value="${esc(e.zeit || "")}"></label></div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Kanal</small><select class="v2-inp" name="kanal">${opt(Object.keys(CP_KANAL), CP_KANAL, e.kanal)}</select></label><label class="v2-feld"><small>Format</small><select class="v2-inp" name="format">${opt(Object.keys(CP_FORMAT), CP_FORMAT, e.format)}</select></label><label class="v2-feld"><small>Status</small><select class="v2-inp" name="status">${opt(Object.keys(CP_STATUS), CP_STATUS, e.status)}</select></label></div>
+    <label class="v2-feld"><small>Für Kunde (optional)</small><select class="v2-inp" name="kunde"><option value="">— eigener Inhalt —</option>${(CP.firmen || []).map(f => `<option value="${esc(f.nummer)}"${f.nummer === e.kunde ? " selected" : ""}>${esc(f.name)}</option>`).join("")}</select></label>
+    <label class="v2-feld"><small>Notiz</small><textarea class="v2-inp" name="notiz" rows="3" maxlength="2000">${esc(e.notiz || "")}</textarea></label>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="cp-speichern" data-id="${esc(id || "")}">Speichern</button>${id ? `<button class="v2-btn" data-act="cp-entfernen" data-id="${esc(id)}">🗑 Entfernen</button>` : ""}</div><div class="v2-msg" id="cp-msg"></div></div>`);
+  $("#cp-form [name=titel]").focus();
+}
+async function cpSpeichern(id) {
+  const f = $("#cp-form"), daten = Object.fromEntries([...f.querySelectorAll("[name]")].map(i => [i.name, i.value.trim()]));
+  const r = await jpost(id ? `/api/contentplan/${encodeURIComponent(id)}` : "/api/contentplan", daten);
+  if (!r || r.ok === false) { const m = $("#cp-msg"); m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return false; }
+  CP.tag = daten.datum || CP.tag; closeModal(); renderContentplan(id ? "Eintrag gespeichert." : "Eintrag angelegt."); return true;
+}
+function cpAnlaesse() {
+  const [von] = cpBereich(), liste = (CP.d.anlaesse || []).map(a => `<div class="v2-list-row"><span>📌</span><div class="grow"><b>${esc(a.titel)}</b><small>${esc(datumDe(a.von))}${a.bis !== a.von ? " – " + esc(datumDe(a.bis)) : ""}${a.notiz ? " · " + esc(a.notiz) : ""}</small></div><button class="v2-btn sm" data-act="cp-anlass-weg" data-id="${esc(a.id)}">Entfernen</button></div>`).join("");
+  openModal("📌 Anlässe & Kampagnen", `<div class="v2-sub">Feiertage in Hamburg stehen automatisch im Kalender. Hier trägst du eigene Anlässe ein – z. B. Derby-Woche, Kampagne, Kiez-Event.</div>
+    ${liste ? `<h3 class="v2-h3">Im angezeigten Zeitraum</h3>${liste}` : ""}
+    <div class="v2-form" id="cp-anl"><h3 class="v2-h3">Neuer Anlass</h3><label class="v2-feld"><small>Titel *</small><input class="v2-inp" name="titel" maxlength="120" placeholder="z. B. Derby-Woche"></label>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Von *</small><input class="v2-inp" type="date" name="von" value="${esc(CP.tag || von)}"></label><label class="v2-feld"><small>Bis</small><input class="v2-inp" type="date" name="bis"></label></div>
+    <label class="v2-feld"><small>Notiz</small><input class="v2-inp" name="notiz" maxlength="500"></label>
+    <button class="v2-btn pri" data-act="cp-anlass-neu">Anlass anlegen</button><div class="v2-msg" id="cp-anl-msg"></div></div>`);
+}
+async function cpVorschlag(el) {
+  const box = $("#cp-vorschlag-box"); if (!box) return;
+  const v = cpMontag(CP.ansicht === "woche" ? cpBereich()[0] : (CP.tag || heuteIso())), b = cpPlus(v, 6);
+  box.innerHTML = `<div class="v2-tile w12 v2-cp-vor"><div class="v2-empty">🪄 Der Content-Agent plant die Woche ${esc(datumDe(v))} – ${esc(datumDe(b))} … (bis zu 30 Sekunden)</div></div>`;
+  box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  el.disabled = true; const r = await jpost("/api/contentplan/vorschlag", { von: v, bis: b }); el.disabled = false;
+  if (!r || r.ok === false) { box.innerHTML = `<div class="v2-msg err">${esc((r && r.hinweis) || "Keine Verbindung.")}</div>`; return; }
+  CP.vorschlaege = r.vorschlaege || [];
+  box.innerHTML = `<div class="v2-tile w12 v2-cp-vor"><div class="v2-tile-h"><span class="t">🪄 Vorschlag des Content-Agenten (CCO) · ${esc(datumDe(v))} – ${esc(datumDe(b))}</span><span class="v2-tile-tools"><button class="v2-icon" data-act="cp-vorschlag-zu" aria-label="schließen">✕</button></span></div>
+    <div class="v2-sub">Nur ein Entwurf – nichts ist gespeichert. Übernimm einzelne Ideen per Klick (als Status „Idee“).</div>
+    ${CP.vorschlaege.map((x, i) => `<div class="v2-list-row" id="cp-v-${i}"><span>💡</span><div class="grow"><b>${esc(x.titel)}</b><small>${CP_TAGE[(cpDatum(x.datum).getDay() + 6) % 7]}, ${esc(datumDe(x.datum))} · ${esc(CP_KANAL[x.kanal] || x.kanal)} · ${esc(CP_FORMAT[x.format] || x.format)}${x.notiz ? " · " + esc(x.notiz) : ""}</small></div><button class="v2-btn sm" data-act="cp-v-uebernehmen" data-val="${i}">Übernehmen</button></div>`).join("") || emptyRow("Kein Vorschlag erhalten.")}</div>`;
+}
+async function cpEintragOeffnen(id) {
+  const e = (CP.d.eintraege || []).find(x => x.id === id); if (!e) return;
+  if (e.quelle === "plan") return cpForm(id);
+  if (e.quelle === "posting") return abDetail(e.auftrag);
+  if (e.quelle === "dreh") return konzeptFenster(e.vorgang, "dreh");
+}
 function card(badge, titel, body, actions, good) {
   return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${good ? "ok" : "neutral"}">${esc(badge || "")}</span><b>${esc(titel)}</b></div><div class="v2-desc">${body}</div>${actions ? `<div class="v2-card-actions">${actions}</div>` : ""}</div>`;
 }
@@ -3750,6 +3876,27 @@ async function handleAct(act, el) {
     case "bl-reiter": { const w = el.closest(".v2-beleg"); if (!w) return; w.dataset.tab = val; w.querySelectorAll(".v2-beleg-reiter button").forEach(b => b.classList.toggle("on", b.dataset.val === val)); return; }
     case "zt-auswertung": return val === "frei" ? ztAuswertung("frei", $("#aw-von").value, $("#aw-bis").value) : ztAuswertung(val);
     case "pz-speichern": case "pz-aus": return rePzSpeichern(id, act === "pz-aus");
+    case "cp-ansicht": CP.ansicht = val; try { localStorage.setItem("luna-cp-ansicht", val); } catch { } return renderContentplan();
+    case "cp-blaettern": { const t = CP.tag || heuteIso(), n = Number(val);
+      if (!n) CP.tag = heuteIso(); else if (CP.ansicht === "woche") CP.tag = cpPlus(t, 7 * n); else { const d = cpDatum(t.slice(0, 8) + "01"); d.setMonth(d.getMonth() + n); CP.tag = cpIso(d); }
+      return renderContentplan(); }
+    case "cp-neu": if (val && CP.ansicht === "monat" && innerWidth <= 700) { CP.ansicht = "woche"; CP.tag = val; return renderContentplan(); }   // Handy: Tag antippen = Woche
+      return cpForm("", val);
+    case "cp-eintrag": return cpEintragOeffnen(id);
+    case "cp-speichern": { el.disabled = true; const ok = await cpSpeichern(id); if (!ok) el.disabled = false; return; }
+    case "cp-entfernen": { if (!confirm("Diesen Eintrag aus dem Content-Plan entfernen?")) return; const r = await jpost(`/api/contentplan/${encodeURIComponent(id)}/entfernen`); closeModal(); return renderContentplan(r && r.ok !== false ? "Eintrag entfernt." : ""); }
+    case "cp-anlaesse": return cpAnlaesse();
+    case "cp-anlass-neu": { const f = $("#cp-anl"), daten = Object.fromEntries([...f.querySelectorAll("[name]")].map(i => [i.name, i.value.trim()]));
+      const r = await jpost("/api/contentplan/anlass", daten); if (!r || r.ok === false) { const m = $("#cp-anl-msg"); m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return; }
+      closeModal(); return renderContentplan("Anlass angelegt."); }
+    case "cp-anlass-weg": { if (!confirm("Diesen Anlass entfernen?")) return; await jpost(`/api/contentplan/anlass/${encodeURIComponent(id)}/entfernen`); closeModal(); return renderContentplan("Anlass entfernt."); }
+    case "cp-vorschlag": return cpVorschlag(el);
+    case "cp-vorschlag-zu": { const b = $("#cp-vorschlag-box"); if (b) b.innerHTML = ""; return; }
+    case "cp-v-uebernehmen": { const x = (CP.vorschlaege || [])[Number(val)]; if (!x) return; el.disabled = true;
+      const r = await jpost("/api/contentplan", { datum: x.datum, kanal: x.kanal, format: x.format, titel: x.titel, notiz: x.notiz || "", status: "idee" });
+      if (!r || r.ok === false) { el.disabled = false; alert((r && r.hinweis) || "Keine Verbindung."); return; }
+      el.textContent = "✓ übernommen"; const box = $("#cp-vorschlag-box"), html = box ? box.innerHTML : "";
+      await renderContentplan(); const nb = $("#cp-vorschlag-box"); if (nb) nb.innerHTML = html; return; }
     case "po-form-v": case "po-form-k": case "po-form-l": return poForm(id, val, act.slice(-1));
     case "po-speichern-v": case "po-speichern-k": case "po-speichern-l": { el.disabled = true; await poSpeichern(id, val, act.slice(-1)); el.disabled = false; return; }
     case "lf-speichern": { el.disabled = true; try { await lfSpeichern(id, true); return abDetail(id, "Lieferung gespeichert."); }

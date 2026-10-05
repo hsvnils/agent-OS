@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 21:45] — Claude Code
+- **Was:** CONTENT_PLAN C1-C3 umgesetzt: neue Seite „🗓 Content-Plan“ (Content & Collabs) mit Monat/Woche/Liste, Blaettern, Filter
+  Quelle/Kanal/Status; eigene Eintraege (Titel, Datum, Uhrzeit, Kanal, Format, Status Idee bis Online, optional Kunde, Notiz) in der
+  Buchhaltungs-Kette (`plan_eintrag`/`plan_entfernt`); Kunden-Postings bekommen ein geplantes Datum (`posting_geplant`, Feld im Auftrag
+  unter „📣 Postings“) und stehen mit Drehterminen der Konzept-Mappe automatisch im Kalender (ueberfaellig rot, Klick oeffnet Auftrag
+  bzw. Drehplan); Feiertage Hamburg lokal berechnet, eigene Anlaesse von-bis; „🪄 Wochenplan vorschlagen“ ueber den CCO (Gemini) nur als
+  Entwurf, Uebernahme je Idee per Klick, Kundentermine ohne Namen im Prompt, Nutzung als CCO gezaehlt. Cache v105/v53. Tests 7 neu
+  (`test_contentplan.py`, Gegenproben rot), Browsertest Rechner 1300 / iPad 820 / iPhone 17 Pro ohne Ueberlauf.
+- **Warum:** CEO-Go „Go fuer C1 bis C3“ (CONTENT_PLAN_ROADMAP).
+- **Betroffen:** `orchestrator/core/contentplan.py` (neu), `orchestrator/core/postings.py`, `orchestrator/core/team_auth.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`,
+  `orchestrator/tests/test_contentplan.py` (neu), `CONTENT_PLAN_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`,
+  `docs/entscheidungs-register.md`
+
 ## [2026-10-05 21:26] — Claude Code
 - **Was:** Deploy Belegverfolgung mit Bogen + „Neue Position“ live geprueft (CEO hat NAS-Sync und Neustart ausgefuehrt):
   UI v104/v52 mit beiden Funktionen. Nichts geaendert.

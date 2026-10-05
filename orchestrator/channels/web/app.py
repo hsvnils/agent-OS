@@ -2231,6 +2231,91 @@ async def konzept_schreiben(vorgang: str, teil: str, request: Request):
     return _kunden_aktion(aktionen[teil])
 
 
+# -- Content-Plan (CONTENT_PLAN_ROADMAP C1-C3) --------------------------------------------------------------------------
+def _contentplan():
+    from ...core.contentplan import ContentPlan
+    return ContentPlan(kunden_store.bh)
+
+
+@app.get("/api/contentplan")
+def contentplan_lesen(von: str, bis: str):
+    """Kalender: eigene Eintraege, Kunden-Postings, Drehtermine, Feiertage Hamburg, Anlaesse."""
+    try:
+        return _contentplan().zeitraum(von, bis)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc))
+
+
+@app.post("/api/contentplan")
+async def contentplan_anlegen(request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _contentplan().anlegen(body, von=_von(request)))
+
+
+@app.post("/api/contentplan/anlass")
+async def contentplan_anlass(request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _contentplan().anlass(body, von=_von(request)))
+
+
+@app.post("/api/contentplan/anlass/{aid}/entfernen")
+def contentplan_anlass_entfernen(aid: str, request: Request):
+    return _kunden_aktion(lambda: _contentplan().anlass_entfernen(aid, von=_von(request)))
+
+
+@app.post("/api/contentplan/vorschlag")
+def contentplan_vorschlag(body: dict):
+    """C3: Wochenplan-Vorschlag vom CCO (Gemini) -- nur Entwurf, uebernommen wird je Eintrag per Klick."""
+    import time
+    import openai
+    from ...core.agenten_profil import AgentenNutzung
+    from ...core.charter_loader import load_subagent
+    from ...core.contentplan import vorschlag
+    from ...core.model_router import GEMINI_BASE_URL
+
+    def tun():
+        plan = _contentplan().zeitraum(str(body.get("von") or ""), str(body.get("bis") or ""))
+        key = (_google_secrets().get("GEMINI_API_KEY") or "").strip()
+        if not key:
+            raise ValueError("Kein Gemini-Zugang konfiguriert.")
+        t0, ok = time.monotonic(), False
+        try:
+            erg = {"vorschlaege": vorschlag(plan, system=load_subagent("agents/10_cco-content.md", "cco").system_prompt,
+                                            client=openai.OpenAI(api_key=key, base_url=GEMINI_BASE_URL, timeout=55, max_retries=0))}
+            ok = True
+            return erg
+        except ValueError:
+            raise
+        except Exception as exc:                          # ohne Fehlertext (koennte Schluessel enthalten)
+            print(f"[contentplan] {exc.__class__.__name__}", flush=True)
+            raise ValueError("Der CCO ist gerade nicht erreichbar -- bitte gleich noch einmal versuchen.") from None
+        finally:
+            try:
+                AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl").erfassen(
+                    "cco", ok=ok, dauer_ms=int((time.monotonic() - t0) * 1000), quelle="konzept")
+            except Exception:
+                pass
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/contentplan/{pid}")
+async def contentplan_aendern(pid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _contentplan().aendern(pid, body, von=_von(request)))
+
+
+@app.post("/api/contentplan/{pid}/entfernen")
+def contentplan_entfernen(pid: str, request: Request):
+    return _kunden_aktion(lambda: _contentplan().entfernen(pid, von=_von(request)))
+
+
+@app.post("/api/crm/postings/{pid}/geplant")
+async def posting_geplant(pid: str, request: Request):
+    """CONTENT_PLAN C2: geplantes Veroeffentlichungsdatum eines Kunden-Postings."""
+    body = await _json(request)
+    return _kunden_aktion(lambda: _postings().planen(pid, str(body.get("datum") or ""), von=_von(request)))
+
+
 @app.post("/api/crm/konzept-videograf/{vorgang}")
 def konzept_videograf(vorgang: str, body: dict):
     """VIDEOGRAF V3: Vorschlag des Videograf-Agenten (17) zu einer Idee/einem Skript -- nur Vorschlag, nichts gespeichert;
