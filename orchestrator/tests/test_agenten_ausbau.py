@@ -165,7 +165,7 @@ class TestA2Skills(unittest.TestCase):
 
     def test_3_nachtlauf_ueber_alle_agenten(self):
         alle = rechtsquellen.quellen(REPO / "skills")
-        self.assertEqual({q["agent"] for q in alle}, {"clo", "cfo"})
+        self.assertEqual({q["agent"] for q in alle}, {"clo", "cfo", "ciso", "chro"})
         roh = {}
         for f in (REPO / "skills").rglob("quellen.md"):
             for m in rechtsquellen.KOPF.finditer(f.read_text(encoding="utf-8")):
@@ -183,6 +183,39 @@ class TestA2Skills(unittest.TestCase):
         erg = rechtsquellen.lauf(REPO / "skills", Path(tempfile.mkdtemp()) / "rq.json",
                                  lambda text, **kw: gemeldet.append(text), heute=date(2026, 10, 6), holen=holen_alt)
         self.assertEqual((erg["geaendert"], gemeldet), ([], []))
+
+
+PAKET2 = {"ciso": ["datenschutz-check", "secret-hygiene", "zugriffs-pruefung"],
+           "cto": ["deploy-checkliste", "fehlersuche", "release-notizen"], "res": ["quellenbewertung"],
+           "chro": ["freien-abrechnung", "freien-briefing", "freien-vereinbarung-pruefen"],
+           "cko": ["clip-suche", "quellenpflege", "wissen-ablegen"],
+           "cpo": ["funktionsantrag-bewerten", "nutzungsdaten-auswerten"],
+           "cxo": ["kunden-dokument-pruefen", "mobil-check"], "cao": ["dienstleister-vertrag-pruefen", "fristen-uebersicht"]}
+
+
+class TestPaket2Skills(unittest.TestCase):
+    def test_1_a3_a5_skills_geladen(self):
+        alle = load_all_subagents()
+        for key, namen in PAKET2.items():
+            _, meta = lade_dept_skills(key, REPO)
+            self.assertEqual(sorted(m["skill"] for m in meta if m["geladen"]), namen, key)
+            for n in namen:
+                self.assertIn(f"### Skill: {n}", alle[key].system_prompt)
+
+    def test_2_quellen_ciso_chro(self):
+        qs = rechtsquellen.quellen(REPO / "skills")
+        self.assertEqual({q["norm"] for q in qs if q["agent"] == "ciso"}, {"TDDDG § 25", "BDSG § 26", "BDSG § 38"})
+        self.assertEqual({q["norm"] for q in qs if q["agent"] == "chro"}, {"SGB IV § 7", "SGB IV § 7a"})
+        self.assertIn("https://www.gesetze-im-internet.de/ttdsg/__25.html", {q["url"] for q in qs})
+        ds = (REPO / "skills" / "ciso" / "datenschutz-check" / "quellen.md").read_text(encoding="utf-8")
+        self.assertIn("DSGVO", ds)                                               # Verweis, kein Wortlaut
+
+    def test_3_profil_researcher_und_rand_agenten(self):
+        n, w = AgentenNutzung(Path(tempfile.mkdtemp()) / "n.jsonl"), Path(tempfile.mkdtemp()) / "w.jsonl"
+        u = {x["key"]: x for x in uebersicht(REPO, watch_log=w, nutzung=n)}
+        self.assertEqual({k: u[k]["skills"] for k in PAKET2}, {k: len(v) for k, v in PAKET2.items()})
+        self.assertEqual(profil(REPO, "researcher", watch_log=w, nutzung=n)["skills"][0]["name"], "quellenbewertung")
+        self.assertEqual([k for k, x in u.items() if x["skills"] == 0], ["hoa", "cio", "risk"])
 
 
 class TestA4Watcher(unittest.TestCase):

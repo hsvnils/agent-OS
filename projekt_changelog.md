@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 12:07] — Claude Code
+- **Was:** AGENTEN_AUSBAU Paket 2 gebaut: **A3** -- CISO (Zugriffs-/Rollenpruefung, Secret-Hygiene, Datenschutz-Check mit
+  Quellen TDDDG § 25, BDSG §§ 26, 38 im Wortlaut, DSGVO als Verweis), CTO (Deploy-Checkliste, Fehlersuche entlang
+  bekannte-fehler, Release-Notizen), Researcher (Quellenbewertung/Recherche-Protokoll). **A5** -- CHRO (Freien-Briefing,
+  Freien-Vereinbarung pruefen mit SGB IV §§ 7, 7a, Freien-Abrechnung), CKO (Wissen ablegen, Clip-Suche, Quellenpflege),
+  CPO (Funktionsantrag bewerten, Nutzungsdaten auswerten), CXO (Mobil-/Safe-Area-Check, Kunden-Dokument pruefen), CAO
+  (Fristen-Uebersicht, Dienstleister-Vertrag pruefen). 19 Skills, alle durch das Security-Gate; der Nachtlauf prueft jetzt
+  auch die CISO- und CHRO-Normen. Charten unveraendert (A6). Tests ergaenzt (Gegenprobe rot), Suite 1183 passed;
+  Browsertest der neuen Profile auf Rechner/iPad/iPhone 17 Pro ok. Kein UI-Code geaendert.
+- **Warum:** CEO „Go fuer Paket 2“.
+- **Betroffen:** `skills/{ciso,cto,res,chro,cko,cpo,cxo,cao}/`, `orchestrator/tests/test_agenten_ausbau.py`,
+  `AGENTEN_AUSBAU_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 12:00] — Claude Code
 - **Was:** Deploy AGENTEN_AUSBAU Paket 1 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): UI v96/v45,
   `/api/agenten-uebersicht` liefert 18 Agenten mit echten Watcher-Funden, CFO-Profil mit 4 geladenen Skills und 9 Quellen,

@@ -1,9 +1,9 @@
 # Roadmap: Agenten-Ausbau (Bestandsaufnahme, Skills, Quellen, Nutzung, Charten)
 - Status: in Umsetzung
 - Stand: 2026-10-05
-- Arbeitsbranch: `ai/agenten-paket1`
+- Arbeitsbranch: `ai/agenten-paket2`
 - Basiscommit: `313dacb`
-- Naechster Schritt: Paket 1 (A1, A2, A4) gebaut (2026-10-05) -- Deploy-Go abwarten; danach Paket 2 (A3 + A5-Skills), A6 (Charten) getrennt.
+- Naechster Schritt: Paket 1 live (2026-10-05), Paket 2 (A3 + A5-Skills) gebaut -- Deploy-Go abwarten; danach A6 (Charten) getrennt.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -84,7 +84,9 @@ Quellen: Charten `agents/*.md`, `skills/*`, `core/watch_config.py`, Code-Verweis
 
 ## Etappe A3: Betriebs-Agenten mit Skills
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- CISO (zugriffs-pruefung, secret-hygiene, datenschutz-check mit TDDDG § 25, BDSG §§ 26,
+  38 im Wortlaut und DSGVO als Verweis), CTO (deploy-checkliste, fehlersuche, release-notizen), Researcher
+  (quellenbewertung); alle durch das Security-Gate, CISO-Quellen im Nachtlauf.
 - Ziel / Scope: **CISO** (3: Zugriffs-/Rollenpruefung, Secret-Hygiene, Datenschutz-Check mit Quellen DSGVO/BDSG/TDDDG),
   **CTO** (3: Deploy-Checkliste, Fehlersuche entlang `docs/bekannte-fehler.md`, Release-Notizen), **Researcher** (1:
   Quellenbewertung/Recherche-Protokoll).
@@ -116,6 +118,10 @@ Quellen: Charten `agents/*.md`, `skills/*`, `core/watch_config.py`, Code-Verweis
   - **CAO** -- Verwaltung: Fristen, Ablage, Vertraege mit Dienstleistern, Versicherungen, Abos (mit dem CFO). Skills:
     Fristen-Uebersicht, Dienstleister-Vertrag pruefen (mit dem CLO).
 - Umsetzung: Skills wie A2/A3 (ohne Charta-Aenderung); Aufgaben/Status in den Charten ueber A6.
+- Skills umgesetzt (2026-10-05): CHRO 3 (freien-briefing, freien-vereinbarung-pruefen mit SGB IV §§ 7, 7a, freien-abrechnung),
+  CKO 3 (wissen-ablegen, clip-suche, quellenpflege), CPO 2 (funktionsantrag-bewerten, nutzungsdaten-auswerten), CXO 2
+  (mobil-check, kunden-dokument-pruefen), CAO 2 (fristen-uebersicht, dienstleister-vertrag-pruefen). Status der Charten
+  bleibt „Entwurf“ bis A6.
 - Ziel / Scope: fuer CKO, CXO, CPO, CHRO, CAO je eine Entscheidung: **aktivieren** (mit Aufgabe + Skills, z. B. CHRO
   fuer Freie wie Kamera/Schnitt -- Briefings, Vertraege, Abrechnung; CKO fuer das Clip-/Wissens-Gedaechtnis), **zusammenlegen**
   (z. B. CAO in HoA, CXO+CPO zu „LUNA-OS-Produkt“) oder **ruhend** (bleibt, wird nicht befragt, keine Watcher-Last).
