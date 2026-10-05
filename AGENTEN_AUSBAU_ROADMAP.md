@@ -1,9 +1,9 @@
 # Roadmap: Agenten-Ausbau (Bestandsaufnahme, Skills, Quellen, Nutzung, Charten)
 - Status: in Umsetzung
 - Stand: 2026-10-05
-- Arbeitsbranch: `ai/agenten-paket2`
+- Arbeitsbranch: `ai/agenten-a6`
 - Basiscommit: `313dacb`
-- Naechster Schritt: Paket 1 live (2026-10-05), Paket 2 (A3 + A5-Skills) gebaut -- Deploy-Go abwarten; danach A6 (Charten) getrennt.
+- Naechster Schritt: A1-A5 live (2026-10-05), A6 umgesetzt -- Deploy-Go abwarten, danach Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -130,7 +130,10 @@ Quellen: Charten `agents/*.md`, `skills/*`, `core/watch_config.py`, Code-Verweis
 
 ## Etappe A6: Charten auf den Ist-Stand heben (CEO-Tor)
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- Diff-Vorlage fuer 18 Charten + Registry vom CEO bestaetigt („Uebernimm alle
+  Diffs“) und durch den Head of Agents uebernommen: Status aktiv fuer CAO, CISO, CPO, CXO, CHRO, CLO, CKO; Modell-
+  Richtwerte als Modellklasse mit Ist-Stand (Gemini, BF-18); Skills, Quellen und Werkzeuge je Agent; A5-Rollen; CLO C5.
+  CIO bleibt „Entwurf“ (CEO: keine echte Anbindung, Testmodus).
 - Ziel / Scope: je Charta Status, realistische Modell-Richtwerte, echte Werkzeuge/Skills/Quellen, Ergebnis aus A5;
   inklusive CLO_AUSBAU C5. **Nur der Head of Agents auf CEO-Anweisung, je Charta mit Diff-Vorlage und Bestaetigung**
   (`AGENTS.md` 3.3).

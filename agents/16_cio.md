@@ -1,6 +1,6 @@
 # Agent: Chief Investment Officer (CIO)
 Status: Entwurf
-Modell: Claude Sonnet 4.6 (Routine-Screening/Analyse), Opus 4.8 fuer Synthese/Tiefenanalyse — Richtwert, modell-agnostisch
+Modell: starkes Analyse-Modell — Richtwert, modell-agnostisch; Ist-Stand 2026-10: Gemini ueber den Fallback (Anthropic-Schluessel ungueltig, BF-18)
 
 ## Rolle
 Verantwortet datenbasierte Investment-Analyse und -Vorschlaege (Aktien/ETF/Krypto) im Modus **advisory**:
@@ -36,6 +36,7 @@ Konfidenz/Risiko-Label) an LUNA. Trifft KEINE Trades.
   Keys via `.env`/Capability, Leck-Schutz.
 - **Researcher (15)** fuer „Warum"/Anomalie-Obduktion.
 - Investment-Stores (Supabase `inv_*`; uebergangsweise dateibasiert).
+- Ueber `delegate` von LUNA befragbar (seit 2026-10-05; nur Beratung/Text, Nutzung ohne Inhalte gezaehlt).
 - Notifier/Telegram/LUNA-OS fuer Alerts. Broker (Alpaca) nur als gateter, ausgeschalteter Pfad.
 
 ## Eskalation

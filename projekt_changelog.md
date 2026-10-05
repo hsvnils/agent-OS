@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 13:28] — Head of Agents (umgesetzt durch Claude Code)
+- **Was:** AGENTEN_AUSBAU A6 umgesetzt: bestaetigte Diffs fuer 18 Charten und `agents/REGISTRY.md` uebernommen --
+  Status aktiv fuer CAO, CISO, CPO, CXO, CHRO, CLO, CKO; Modell-Zeilen als Modellklasse mit Ist-Stand (Gemini, BF-18);
+  echte Skills, Quellen und Werkzeuge je Agent; neue Rollen aus A5 (CAO Verwaltung, CPO LUNA-OS als Produkt, CXO
+  Erlebnis, CHRO freie Mitarbeitende, CKO Gedaechtnis/Clip-Gedaechtnis); CLO C5 (Schwerpunkt Werbe-/AGB-/Urheber-/
+  Bildrecht, Vertragswerk-Pruef-Lauf); CRO ohne Instagram-Postfach (verworfen 2026-09-29); CTO-Infrastruktur ohne
+  Vercel/HCC. CIO bleibt Entwurf (Testmodus). Suite gruen.
+- **Warum:** CEO „Uebernimm alle Diffs, CIO hat keine echte Anbindung sondern laeuft im Testmodus“ (AGENTS.md 3.3:
+  Diff gezeigt, bestaetigt).
+- **Betroffen:** `agents/00..16a_*.md`, `agents/REGISTRY.md`, `AGENTEN_AUSBAU_ROADMAP.md`, `CLO_AUSBAU_ROADMAP.md`,
+  `docs/entscheidungs-register.md`
+
 ## [2026-10-05 12:40] — Claude Code (fuer den Head of Agents)
 - **Was:** AGENTEN_AUSBAU A6 vorbereitet: Diff-Vorlage fuer 18 Charten + `agents/REGISTRY.md` (Status, realistische
   Modell-Richtwerte mit Ist-Stand Gemini/BF-18, echte Skills/Quellen/Werkzeuge, A5-Rollen fuer CAO/CPO/CXO/CHRO/CKO,

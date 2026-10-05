@@ -3,7 +3,7 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/clo-ausbau`
 - Basiscommit: `77fa015`
-- Naechster Schritt: C1-C4 gebaut (2026-10-05); Deploy, CEO liest Pruefbericht, uebernimmt ggf. Version 2, Anwaeltin prueft; C5 nach CEO-Anweisung.
+- Naechster Schritt: C1-C5 umgesetzt (2026-10-05); offen nur noch: CEO liest Pruefbericht, uebernimmt ggf. Version 2, Anwaeltin prueft.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -88,7 +88,8 @@ uebergeben kann.
 
 ## Etappe C5 (getrennt, CEO-Tor Charta): Charta-Anpassung
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- im Rahmen von AGENTEN_AUSBAU A6 mit bestaetigtem Diff (Status aktiv, Schwerpunkt
+  Werbe-/AGB-/Urheber-/Bildrecht und Kleinunternehmer-Hinweise, Skills, Quellen, Vertragswerk-Pruef-Lauf).
 - Ziel / Scope: Charta des CLO auf den Ist-Stand heben -- Schwerpunkt um Influencer-/Werbe-, AGB- und Urheberrecht
   ergaenzen, echte Werkzeuge nennen (Skills, Quellen, Recherche ueber den Researcher, Vertragswerk), Status „Entwurf“
   -> „aktiv“. **Nur der Head of Agents auf ausdrueckliche CEO-Anweisung, mit Diff-Vorlage und Bestaetigung**

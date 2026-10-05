@@ -1,6 +1,6 @@
 # Agent: Researcher (RES)
 Status: aktiv
-Modell: Claude Sonnet 4.6 (Web-Recherche/Synthese), Opus 4.8 fuer tiefe Analysen — Richtwert, modell-agnostisch
+Modell: mittleres Modell (Recherche/Synthese) — Richtwert, modell-agnostisch; Ist-Stand 2026-10: Gemini ueber den Fallback (Anthropic-Schluessel ungueltig, BF-18)
 
 ## Rolle
 Zentraler Recherche-Dienst des Agenten-Unternehmens: nimmt Recherche-Auftraege (von LUNA oder — ueber LUNA —
@@ -26,6 +26,10 @@ Befunde als Research-Tickets zurueck.
 - Capability `web_research` (Brave live; Anthropic-Web erst nach CEO-Kostenfreigabe, WEB_RESEARCH_ANTHROPIC=1).
 - Research-Tickets-Store (`research/log.jsonl`) — Schreiben/Lesen via Tools.
 - Leck-Schutz aktiv (keine Secrets in Befunden/Tickets/Logs).
+- Anthropic-Web-Eskalation ist freigeschaltet, aber mangels Guthaben blockiert -> faellt auf Brave zurueck.
+- **Skills** (`skills/res/`, durch das Security-Gate, im System-Prompt): `quellenbewertung`.
+- **Befragung:** LUNA fragt den Agenten ueber `delegate` (nur Beratung/Text); jede Anfrage wird ohne Inhalte gezaehlt
+  (Agenten-Profil in LUNA-OS, Leistungsbericht).
 
 ## Eskalation
 - Zuerst eigenstaendig im Mandat loesen; an den Head of Agents nur eskalieren, wenn nicht selbst loesbar.
