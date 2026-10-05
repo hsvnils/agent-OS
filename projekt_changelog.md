@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 21:22] — Claude Code
+- **Was:** Zwei Roadmaps angelegt und registriert: `CONTENT_PLAN_ROADMAP.md` (C1 Eintraege + Kalender Monat/Woche/Liste,
+  C2 Kunden-Postings + Drehtermine automatisch, C3 Anlaesse/Feiertage, C4 Spielplan nach Freigabe der Quelle) und
+  `MAILVERSAND_ALLINKL_ROADMAP.md` (M1 Versand ueber All-Inkl SMTP/IMAP von luna-hoa@hanserautisch.de, M2 Antworten per
+  IMAP, M3 Umschalten). CEO-Entscheidungen im Register. Nur Plan.
+- **Warum:** CEO: Content-Plan wie ein Kalender; „Kann LUNA ausgehende Mails auch ueber eine meiner All-Inkl-Adressen
+  versenden?“
+- **Betroffen:** `CONTENT_PLAN_ROADMAP.md`, `MAILVERSAND_ALLINKL_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 21:18] — Claude Code
 - **Was:** (1) Belegverfolgung am Rechner mehrzeilig: Karten brechen in die naechste Zeile um, eine Linie (SVG, `bvLinie`)
   fuehrt am Zeilenende im **Bogen** rechts herunter und zurueck zum Anfang der naechsten Zeile (vorher eine einzige,
