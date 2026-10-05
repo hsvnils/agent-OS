@@ -4,7 +4,7 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/beleg-eine-ebene`
 - Basiscommit: `5cdb129`
-- Naechster Schritt: E1-E3 gebaut (2026-10-05) -- CEO-Go fuer Merge, Push und Deploy, danach Abnahme an echten Belegen.
+- Naechster Schritt: E1-E3 live (2026-10-05) -- Abnahme durch den CEO an echten Belegen, dann Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

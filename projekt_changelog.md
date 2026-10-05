@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 23:01] — Claude Code
+- **Was:** Deploy BELEG_EINE_EBENE E1-E3 live geprueft (nur lesend): LUNA-OS laedt v107/v54 mit Formular-Bausteinen und
+  Umschalter-Styles; alle 13 echten Belege (3 Angebote, 2 Auftraege, 8 Rechnungen/Entwuerfe/Stornos) liefern Positionen und
+  Firma fuer das Formular. Push vom CEO ausgefuehrt. Offen: Abnahme durch den CEO.
+- **Warum:** CEO: „Alle drei Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** `BELEG_EINE_EBENE_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-05 22:58] — Claude Code
 - **Was:** BELEG_EINE_EBENE E1-E3 gebaut: Angebot, Auftrag und Rechnung zeigen im Beleg das Formular an der Stelle des Blatts
   (Umschalter „✎ Formular | 📄 Vorschau“, Wahl je Geraet gemerkt); Entwurf direkt aenderbar, „✎ Bearbeiten“-Knopf und
