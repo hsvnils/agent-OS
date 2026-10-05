@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 14:44] — Claude Code
+- **Was:** BF-53 nachgetragen: Vor Commit `9be6412` war ein Suite-Lauf mit 1 rotem Test (Name nicht festgehalten,
+  wieder nur `tail -1` gelesen); der Commit lief trotzdem durch. Danach 4 volle Laeufe (1192 gruen) und 15 Laeufe der neuen
+  Testdateien gruen -- nicht reproduzierbar. Auswertung kuenftig nur mit `grep -E '^FAILED'` vor dem Commit.
+- **Warum:** Ehrliche Protokollierung eines Prozessfehlers (Lehre aus BF-44).
+- **Betroffen:** `docs/bekannte-fehler.md`
+
 ## [2026-10-05 14:39] — Claude Code
 - **Was:** FACHAGENTEN_ROUTING R1-R4 gebaut: `core/zustaendigkeit.py` (Zustaendigkeitskarte aller 17 Fachagenten in der
   Beschreibung von `delegate`, Routing-Regel im System-Prompt „CEO nennt nie eine Abteilung“), neues Nur-Lese-Werkzeug
