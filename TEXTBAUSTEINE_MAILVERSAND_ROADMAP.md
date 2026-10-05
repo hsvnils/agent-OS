@@ -41,8 +41,11 @@ Entscheidungen des CEO (2026-10-05):
   **Platzhaltern** (z. B. {anrede}, {vorname}, {firma}, {nummer}, {titel}, {betrag}, {gueltig_bis}, {faellig},
   {zahlungsziel}, {praesentation}, {mahnstufe}, {frist}); Standardvorlagen = die heutigen Texte (nichts aendert sich, bis
   der CEO etwas anpasst). Signatur einmal hinterlegt, wird automatisch unter jeden Text gesetzt. Ablage nur auf der NAS
-  (`buchhaltung/`, wie Firmendaten), Aenderungen nachvollziehbar protokolliert. Editor in LUNA-OS (Bereich Geschaeft:
-  „Textbausteine & Signatur“) mit Vorschau an einem echten Beleg.
+  (`buchhaltung/`, wie Firmendaten), Aenderungen nachvollziehbar protokolliert. Editor in LUNA-OS unter **Einstellungen**
+  („Textbausteine & Signatur“, CEO 2026-10-05) mit Vorschau an einem echten Beleg. **Wirkung:** Der Mailtext entsteht erst
+  beim Versand aus der aktuellen Vorlage -- eine Aenderung gilt fuer jede Mail ab dann (auch fuer bestehende, noch nicht
+  versendete Belege); bereits versendete Mails bleiben unveraendert in der Firmenakte. Vor jedem Versand ist der Text fuer
+  diese eine Mail anpassbar, ohne die Vorlage zu aendern.
 - Gate: Tests (Platzhalter, unbekannte Platzhalter abgelehnt, Standard = heutiger Text, Signatur angehaengt, nichts im
   Git); Browsertest Rechner/iPad/iPhone 17 Pro.
 - Aufwand: mittel.

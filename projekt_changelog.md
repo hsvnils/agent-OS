@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 16:44] — Claude Code
+- **Was:** `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md` T1 praezisiert: Editor unter „Einstellungen“; Vorlagen wirken beim Versand
+  (auch fuer bestehende, noch nicht versendete Belege), versendete Mails bleiben unveraendert. Nur Plan.
+- **Warum:** CEO-Rueckfrage „Die Textbausteine kann ich dann in den Einstellungen bearbeiten und die sind dann fuer alle
+  neuen Belege anders?“
+- **Betroffen:** `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md`
+
 ## [2026-10-05 16:41] — Claude Code
 - **Was:** Roadmap `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md` angelegt (T1 Textbausteine + Signatur, T2 Vorlagen im
   Gmail-Versand, T3 Knopf „Im Mail-Programm oeffnen“ per Teilen-Menue bzw. .eml-Entwurf, T4 Geraete-Abnahme) und in
