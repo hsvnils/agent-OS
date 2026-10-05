@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 13:59] — Claude Code
+- **Was:** Deploy A6 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): Agenten-Profile zeigen die neuen
+  Charten (alle aktiv ausser CIO = Entwurf, Testmodus), CPO mit Rolle „LUNA-OS als Produkt“ und neuer Modell-Zeile.
+  `AGENTEN_AUSBAU_ROADMAP.md` abgeschlossen. Fachagenten-Zaehlung weiter ohne Anfrage (0).
+- **Warum:** CEO „Beide Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** NAS-Deploy, `AGENTEN_AUSBAU_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-05 13:28] — Head of Agents (umgesetzt durch Claude Code)
 - **Was:** AGENTEN_AUSBAU A6 umgesetzt: bestaetigte Diffs fuer 18 Charten und `agents/REGISTRY.md` uebernommen --
   Status aktiv fuer CAO, CISO, CPO, CXO, CHRO, CLO, CKO; Modell-Zeilen als Modellklasse mit Ist-Stand (Gemini, BF-18);

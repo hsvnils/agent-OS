@@ -1,9 +1,9 @@
 # Roadmap: Agenten-Ausbau (Bestandsaufnahme, Skills, Quellen, Nutzung, Charten)
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/agenten-a6`
 - Basiscommit: `313dacb`
-- Naechster Schritt: A1-A5 live (2026-10-05), A6 umgesetzt -- Deploy-Go abwarten, danach Roadmap abschliessen.
+- Naechster Schritt: keiner -- A1-A6 live seit 2026-10-05; Nutzung der Fachagenten im Agenten-Profil/Leistungsbericht beobachten.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
