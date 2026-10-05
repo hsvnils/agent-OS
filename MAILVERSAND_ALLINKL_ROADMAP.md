@@ -3,8 +3,8 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/mail-allinkl`
 - Basiscommit: `3a08276`
-- Naechster Schritt: M1 gebaut (Schalter steht weiter auf Gmail) -- nach Deploy traegt der CEO die `ALLINKL_*`-Werte in die
-  NAS-`.env` ein; dann Anmelde-Pruefung (`GET /api/finanzen/kundenversand`) und eine Testmail an eine CEO-Adresse nach Freigabe.
+- Naechster Schritt: M1 live, Anmeldung SMTP+IMAP ok (2026-10-05) -- Testmail an eine CEO-Adresse nach Freigabe, dann
+  `KUNDENVERSAND=allinkl` setzen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

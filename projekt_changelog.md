@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 22:00] — Claude Code
+- **Was:** Deploy MAILVERSAND_ALLINKL M1 live geprueft (ohne Versand): LUNA-OS laedt v106; `GET /api/finanzen/kundenversand` --
+  Versand weiter ueber Gmail (`KUNDENVERSAND=gmail`), keine fehlenden Schluessel, Anmeldung SMTP + IMAP am All-Inkl-Postfach ok,
+  Ordner „Gesendet“ erkannt. Push nach `origin/main` vom CEO ausgefuehrt. Offen im Gate: Testmail nach CEO-Freigabe, dann Umschalten.
+- **Warum:** CEO: „Alle drei Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** `projekt_changelog.md`, `MAILVERSAND_ALLINKL_ROADMAP.md`
+
 ## [2026-10-05 21:54] — Claude Code
 - **Was:** In der NAS-`orchestrator/.env` die All-Inkl-Servereinstellungen nach Vorgabe des CEO angehaengt (`KUNDENVERSAND=gmail`,
   SMTP/IMAP-Host und -Ports, Benutzer, Absender `luna@hanserautisch.de`); `ALLINKL_MAIL_PASSWORT` bewusst leer -- traegt der CEO
