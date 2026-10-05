@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 11:05] — Claude Code
+- **Was:** `ai/konzept-vertrag` (inkl. Plan-Commit) nach `main` gemergt (fast-forward), Suite gruen (1159), gepusht, Code
+  per `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen.
+- **Warum:** CEO-Go 2026-10-05 („Go fuer Merge, Push und Deploy“).
+- **Betroffen:** `main`, NAS-Code.
+
 ## [2026-10-05 10:53] — Claude Code
 - **Was:** KONZEPT-MAPPE K1-K3 (eine Mappe je Vorgang: Briefing, Ideen + Moodboard, Skript je Leistung/Posting,
   Shotlist mit Drehmodus, Drehplan, PDF Konzept/Drehliste, Kunden-Freigabe mit Versand nach Klick + Firmenakte,
