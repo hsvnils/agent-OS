@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 14:53] — Claude Code
+- **Was:** Erste echte Sachfrage des CEO geprueft („Zahlungsbedingungen“): LUNA hat ohne Abteilungsnennung das Werkzeug
+  `geschaeftsregeln` gewaehlt (Aktivitaet 14:52, „vorausgewaehlt“), Zaehlung landet beim CFO als „ueber Werkzeuge“ (1),
+  ohne Inhalte. Befund: der neue Store schreibt Zeit in UTC (wie BF-32), das Profil zeigt „zuletzt“ dadurch 2 h zu alt.
+- **Warum:** CEO „Ich habe LUNA nach den Zahlungsbedingungen gefragt, kannst pruefen“.
+- **Betroffen:** keine Dateien ausser `projekt_changelog.md` (nur Pruefung)
+
 ## [2026-10-05 14:51] — Claude Code
 - **Was:** Deploy FACHAGENTEN_ROUTING R1-R4 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): UI v97, Code auf
   der NAS (Werkzeug `geschaeftsregeln`, Routing-Regel im Prompt). Werkzeug mit dem echten Katalog aus `/api/crm/katalog`
