@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 15:00] — Claude Code
+- **Was:** Deploy BF-57 live geprueft: CFO-Profil zeigt „zuletzt“ 2026-10-05T14:52:44+02:00 (Alt-Eintrag als UTC gelesen,
+  Datei unveraendert), Leistungsbericht zaehlt 1 Anfrage beim CFO ueber Werkzeuge. BF-57 auf „live geprueft“.
+- **Warum:** CEO „Beide Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** NAS-Deploy, `docs/bekannte-fehler.md`
+
 ## [2026-10-05 14:56] — Claude Code
 - **Was:** BF-57 behoben: Nutzungsprotokoll der Fachagenten schreibt deutsche Zeit mit Zeitzone statt Container-UTC;
   naive Alt-Eintraege werden als UTC gelesen und deutsch angezeigt; Fenstergrenzen zeitzonenrichtig. Test unter
