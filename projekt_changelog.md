@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 11:33] — Claude Code
+- **Was:** Bestandsaufnahme aller Agenten (read-only: Charten, Skills, Watcher-Themen, Code, NAS-Protokolle watch/research/
+  aktivitaet) und Roadmap „Agenten-Ausbau“ (A1 Nutzung messen + Agenten-Seite, A2 Geschaefts-, A3 Betriebs-Agenten mit
+  Skills/Quellen, A4 Watcher-Themen, A5 Rand-Agenten entscheiden, A6 Charten ueber HoA mit Diff).
+- **Warum:** CEO 2026-10-05 („Agenten und ihre Skills anschauen und ausbauen“, „danach Bestandsaufnahme“).
+- **Betroffen:** `AGENTEN_AUSBAU_ROADMAP.md` (neu), `ROADMAP.md`.
+
 ## [2026-10-05 11:30] — Claude Code
 - **Was:** `ai/clo-c1-c4` nach `main` gemergt (fast-forward), Suite gruen (1166), gepusht, Code per
   `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen (nimmt auch die Beschriftungs-Korrektur mit).
