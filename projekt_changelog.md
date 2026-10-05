@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 12:40] — Claude Code (fuer den Head of Agents)
+- **Was:** AGENTEN_AUSBAU A6 vorbereitet: Diff-Vorlage fuer 18 Charten + `agents/REGISTRY.md` (Status, realistische
+  Modell-Richtwerte mit Ist-Stand Gemini/BF-18, echte Skills/Quellen/Werkzeuge, A5-Rollen fuer CAO/CPO/CXO/CHRO/CKO,
+  CLO C5) in `a6-charta-vorschlag.diff` (nicht eingecheckt). **Noch nichts an `agents/` geaendert** -- wartet auf
+  CEO-Bestaetigung (AGENTS.md 3.3). Testsuite und Doku-Check mit den vorgeschlagenen Charten in einer Kopie: 1183 passed.
+- **Warum:** CEO „Ja, bereite die Diffs fuer A6 vor“.
+- **Betroffen:** keine Charta (nur Vorlage); `projekt_changelog.md`
+
 ## [2026-10-05 12:15] — Claude Code
 - **Was:** Deploy AGENTEN_AUSBAU Paket 2 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): alle 19 neuen
   Skills auf der NAS und in den Profilen geladen (CISO 3, CTO 3, Researcher 1, CHRO 3, CKO 3, CPO 2, CXO 2, CAO 2), Quellen
