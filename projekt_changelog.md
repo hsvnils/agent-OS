@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 11:54] — Claude Code
+- **Was:** AGENTEN_AUSBAU Paket 1 (`ai/agenten-paket1`, inkl. Plan-Commits `f2ee9c4`, `ee7d89f`) lokal in `main` gemergt;
+  Suite auf main 1180 passed, 0 failed. Push und NAS-Sync stehen noch aus (Freigabe der Ausfuehrung in Claude Code verweigert).
+- **Warum:** CEO „Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `main`
+
 ## [2026-10-05 11:50] — Claude Code
 - **Was:** AGENTEN_AUSBAU Paket 1 gebaut. **A1 Transparenz:** neues `core/agenten_profil.py` (Nutzungsprotokoll
   `agenten_nutzung/log.jsonl` ohne Inhalte, Profil und Uebersicht je Agent), „delegate“ protokolliert jede Anfrage,
