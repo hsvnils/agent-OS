@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 15:40] — Claude Code (fuer den Head of Agents)
+- **Was:** VIDEOGRAF V1 vorbereitet: Charta-Entwurf `agents/17_videograf.md` (Videograf-Berater, Kuerzel VID) und
+  Registry-Erweiterung als Diff-Vorlage `v1-charta-vorschlag.diff` (nicht eingecheckt). **Noch nichts unter `agents/`
+  angelegt** -- wartet auf CEO-Bestaetigung (AGENTS.md 3.3); Verdrahtung (Fachagenten-Liste, Zustaendigkeit,
+  Organigramm, Watcher) folgt nach der Bestaetigung.
+- **Warum:** CEO „Go fuer P1 und V1“.
+- **Betroffen:** keine Charta (nur Vorlage); `projekt_changelog.md`
+
 ## [2026-10-05 15:38] — Claude Code
 - **Was:** ANGEBOT_PRAESENTATION P1 gebaut: Canva-Praesentation (DE https://canva.link/so4wrkmr0n7gfq1, EN
   https://canva.link/yyeywahmisjymuw) im Katalog (Link + Linktext je Sprache, im Katalog-Editor aenderbar, nur https),
