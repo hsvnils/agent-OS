@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 14:56] — Claude Code
+- **Was:** BF-57 behoben: Nutzungsprotokoll der Fachagenten schreibt deutsche Zeit mit Zeitzone statt Container-UTC;
+  naive Alt-Eintraege werden als UTC gelesen und deutsch angezeigt; Fenstergrenzen zeitzonenrichtig. Test unter
+  `TZ=UTC` mit Gegenprobe (rot mit alter Zeit, gruen mit Fix). Kein UI-Code geaendert.
+- **Warum:** CEO „Ja, beheb das“ (Profil zeigte „zuletzt gefragt“ 2 h zu alt).
+- **Betroffen:** `orchestrator/core/agenten_profil.py`, `orchestrator/tests/test_agenten_ausbau.py`, `docs/bekannte-fehler.md`
+
 ## [2026-10-05 14:53] — Claude Code
 - **Was:** Erste echte Sachfrage des CEO geprueft („Zahlungsbedingungen“): LUNA hat ohne Abteilungsnennung das Werkzeug
   `geschaeftsregeln` gewaehlt (Aktivitaet 14:52, „vorausgewaehlt“), Zaehlung landet beim CFO als „ueber Werkzeuge“ (1),

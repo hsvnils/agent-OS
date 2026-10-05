@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .subagents import ALL_AGENT_CHARTERS
@@ -20,13 +20,25 @@ CHARTEN = {"hoa": "agents/00_head-of-agents.md", **ALL_AGENT_CHARTERS}
 ALIAS = {"researcher": "res"}                                     # Organigramm-Schluessel -> Charta-Schluessel
 
 
+def _zeit(v) -> datetime:
+    """Protokoll-Zeitstempel mit Zeitzone. Naive Alt-Eintraege stammen aus dem Container (UTC, BF-32) -- als UTC lesen."""
+    d = v if isinstance(v, datetime) else datetime.fromisoformat(str(v))
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+
+def _grenze(d: datetime) -> datetime:
+    """Fenstergrenze: naive Werte kommen von `datetime.now()` des laufenden Rechners -> dessen Ortszeit."""
+    return d if d.tzinfo else d.astimezone()
+
+
 class AgentenNutzung:
     def __init__(self, path: Path | str):
         self.path = Path(path)
 
     def erfassen(self, agent: str, *, ok: bool, dauer_ms: int, skills: int = 0, quelle: str = "delegate") -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        e = {"ts": datetime.now().isoformat(timespec="seconds"), "agent": agent, "ok": bool(ok), "dauer_ms": int(dauer_ms),
+        from .buchhaltung import jetzt                      # deutsche Zeit mit Zeitzone (BF-32/BF-57)
+        e = {"ts": jetzt().isoformat(timespec="seconds"), "agent": agent, "ok": bool(ok), "dauer_ms": int(dauer_ms),
              "skills": int(skills), "quelle": quelle}
         with self.path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(e, ensure_ascii=False) + "\n")
@@ -43,17 +55,22 @@ class AgentenNutzung:
         return out
 
     def zaehlen(self, seit: datetime, bis: datetime | None = None) -> dict[str, dict]:
-        s, b = seit.isoformat(timespec="seconds"), (bis or datetime.now()).isoformat(timespec="seconds")
+        from .buchhaltung import TZ
+        s, b = _grenze(seit), _grenze(bis or datetime.now(timezone.utc))
         out: dict[str, dict] = {}
         for e in self._events():
-            if not (s <= e.get("ts", "") <= b):
+            try:
+                t = _zeit(e.get("ts", ""))
+            except ValueError:
+                continue
+            if not (s <= t <= b):
                 continue
             x = out.setdefault(e.get("agent", "?"), {"anzahl": 0, "direkt": 0, "werkzeug": 0, "fehler": 0, "zuletzt": "",
                                                      "dauer_ms": []})
             x["anzahl"] += 1
             x["werkzeug" if e.get("quelle") == "werkzeug" else "direkt"] += 1
             x["fehler"] += 0 if e.get("ok") else 1
-            x["zuletzt"] = max(x["zuletzt"], e.get("ts", ""))
+            x["zuletzt"] = max(x["zuletzt"], t.astimezone(TZ).isoformat(timespec="seconds"))
             x["dauer_ms"].append(int(e.get("dauer_ms") or 0))
         for x in out.values():
             d = sorted(x.pop("dauer_ms"))
@@ -109,7 +126,7 @@ def profil(repo: Path | str, key: str, *, watch_log: Path | str, nutzung: Agente
            _funde: dict | None = None) -> dict:
     from .rechtsquellen import quellen
     from .watch_config import themen_fuer
-    repo, jetzt = Path(repo), jetzt or datetime.now()
+    repo, jetzt = Path(repo), jetzt or datetime.now(timezone.utc)
     key = ALIAS.get(key, key)
     if key not in CHARTEN:
         raise KeyError(key)

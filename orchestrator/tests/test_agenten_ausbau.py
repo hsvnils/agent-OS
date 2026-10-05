@@ -82,6 +82,35 @@ class TestA1Nutzung(unittest.TestCase):
         self.assertEqual(n.zaehlen(jetzt - timedelta(days=90), jetzt)["cfo"]["anzahl"], 3)
 
 
+class TestZeitzone(unittest.TestCase):
+    """BF-57: Container laufen in UTC -- das Protokoll schreibt deutsche Zeit mit Zeitzone, liest Alt-Eintraege als UTC."""
+    def test_deutsche_zeit_unter_utc(self):
+        import os
+        import time
+        alt = os.environ.get("TZ")
+        os.environ["TZ"] = "UTC"
+        time.tzset()
+        try:
+            n = AgentenNutzung(Path(tempfile.mkdtemp()) / "log.jsonl")
+            n.erfassen("cfo", ok=True, dauer_ms=1, quelle="werkzeug")
+            ts = json.loads(n.path.read_text(encoding="utf-8"))["ts"]
+            self.assertRegex(ts, r"\+0[12]:00$")                                 # deutsche Zeit mit Zeitzone
+            jetzt_utc = datetime.now()                                           # naive = Container-Zeit (UTC)
+            z = n.zaehlen(jetzt_utc - timedelta(minutes=5), jetzt_utc + timedelta(minutes=5))
+            self.assertEqual(z["cfo"]["anzahl"], 1)
+            # Alt-Eintrag ohne Zeitzone (UTC, vor dem Fix) wird als UTC gelesen und deutsch angezeigt
+            with n.path.open("a", encoding="utf-8") as f:
+                f.write(json.dumps({"ts": "2026-10-05T12:52:44", "agent": "clo", "ok": True, "dauer_ms": 5}) + "\n")
+            z = n.zaehlen(datetime(2026, 10, 5, 12), datetime(2026, 10, 5, 13))
+            self.assertEqual(z["clo"]["zuletzt"], "2026-10-05T14:52:44+02:00")
+        finally:
+            if alt is None:
+                os.environ.pop("TZ", None)
+            else:
+                os.environ["TZ"] = alt
+            time.tzset()
+
+
 class TestA1Profil(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
