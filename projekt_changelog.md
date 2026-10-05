@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 21:54] — Claude Code
+- **Was:** In der NAS-`orchestrator/.env` die All-Inkl-Servereinstellungen nach Vorgabe des CEO angehaengt (`KUNDENVERSAND=gmail`,
+  SMTP/IMAP-Host und -Ports, Benutzer, Absender `luna@hanserautisch.de`); `ALLINKL_MAIL_PASSWORT` bewusst leer -- traegt der CEO
+  selbst ein. Vorher Sicherungskopie `orchestrator/.env.bak-20261005-allinkl` auf der NAS; keine bestehenden Werte gelesen oder
+  angezeigt (nur Schluesselnamen gezaehlt). Wirkung erst nach Deploy von M1; Versand bleibt bis zur Pruefung auf Gmail.
+- **Warum:** CEO: „Kannst du die bitte eintragen und ich trage dann das PW ein?“
+- **Betroffen:** NAS `orchestrator/.env` (nicht im Git), `projekt_changelog.md`
+
 ## [2026-10-05 21:52] — Claude Code
 - **Was:** MAILVERSAND_ALLINKL M1 gebaut: neuer Versandweg `governance/allinkl_mail.py` (SMTP an All-Inkl, identische Kopie per
   IMAP in „Gesendet“, .eml wie bisher in der Firmenakte, Message-ID `<luna-…@hanserautisch.de>`, Fehlertexte ohne Zugangsdaten);
