@@ -933,3 +933,7 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-ag-zahlen div { background: var(--v2-bg2); border-radius: 10px; padding: 10px; text-align: center; }
 .v2-ag-zahlen b { display: block; font-size: 20px; } .v2-ag-zahlen small { color: var(--v2-muted); font-size: 12px; }
 @media (max-width: 600px) { .v2-ag-zahlen { grid-template-columns: repeat(2, minmax(0, 1fr)); } .v2-ag-zeile > .v2-badge { min-width: 66px; } }
+
+/* ANGEBOT_PRAESENTATION P1: Canva-Link im digitalen Beleg */
+.bl-praes { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; padding: 10px 12px; border: 1px solid #c9d6e8; border-radius: 8px; color: #004087; font-weight: 700; font-size: 13px; text-decoration: none; min-height: 44px; justify-content: center; }
+.bl-praes small { color: #667; font-weight: 400; font-size: 11px; overflow-wrap: anywhere; }

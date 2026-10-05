@@ -114,6 +114,7 @@ www.coingecko.com              # Registrierungs-Link
 site.financialmodelingprep.com # Registrierungs-Link
 json.schemastore.org           # SARIF-Schema
 omr.com                        # Quellen-Link im Angebots-/Preislisten-PDF (Etappe 16), keine Verbindung
+canva.link                     # Canva-Praesentation als Link in Angebots-PDF/Mail (ANGEBOT_PRAESENTATION), keine Verbindung
 sarifweb.azurewebsites.net     # SARIF-Schema
 www.w3.org                     # SVG-Namespace
 www.apple.com                  # plist-DTD
@@ -200,7 +201,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `backoffice/log.jsonl` (Auftraege, append-only) | Web (`/api/backoffice/*`, Worker-Ergebnisse) | Web, Bot (Werkzeug `auftrag_details`, Morgen-Briefing) | ja | ja |
 | `buchhaltung/log.jsonl` (Hash-Kette: Nummern, Kunden, Angebote, Auftraege, Rechnungen, Eingangsbelege, Zahlungen, Eigenbelege) + `buchhaltung/belege/<jahr>/` (Angebots-PDFs, Original-Mails `.eml` zu Angeboten) | Web (Kunden- und Angebots-App), Bot (Mail-Archiv/Antworten im 15-min-Poll) | Bot (Integritaetspruefung 05:00), Web | ja | ja (Log + Beleg-Ordner, Schrumpf-Check) + ausser Haus in LUNAs Drive |
 | `buchhaltung/firmendaten.json` (eigene Firma: Briefkopf, Steuernummer, Bankverbindung; **nur NAS, nie im Git**) | CEO (Angabe), von Hand angelegt | Web: Angebots-/Rechnungs-/Mahnungs-PDF (Briefkopf, Fusszeile mit Bank); Bot: Folgemahnung nach ✅ per Telegram | ja | ja |
-| `buchhaltung/katalog.json` (Leistungskatalog: Formate, Pakete, Zuschlaege, Textbausteine; **nur NAS**) + `buchhaltung/logo.jpg` | Web (`POST /api/crm/katalog`, nur Modul finanzen; Aenderung zusaetzlich als `katalog_geaendert` in der Kette) | Web: Angebots-Editor, Angebots-PDF, Preisliste (`/api/crm/katalog/preisliste.pdf`); Chat-Werkzeug `geschaeftsregeln` (nur Formate/Preise/Zuschlaege/Saetze, FACHAGENTEN_ROUTING R2) | ja | ja |
+| `buchhaltung/katalog.json` (Leistungskatalog: Formate, Pakete, Zuschlaege, Textbausteine; **nur NAS**) + `buchhaltung/logo.jpg` | Web (`POST /api/crm/katalog`, nur Modul finanzen; Aenderung zusaetzlich als `katalog_geaendert` in der Kette) | Web: Angebots-Editor, Angebots-PDF, Preisliste (`/api/crm/katalog/preisliste.pdf`); Chat-Werkzeug `geschaeftsregeln` (nur Formate/Preise/Zuschlaege/Saetze, FACHAGENTEN_ROUTING R2); Canva-Praesentationslinks DE/EN (`texte.praesentation_*`) -> Angebot (eingefroren), PDF/Beleg/Mail | ja | ja |
 | `orchestrator/memory/log.jsonl` | Bot, Voice | dito | ja | ja |
 | `orchestrator/state/instagram_token.json` (**Secret**) | `governance/instagram_token.py` | dito | ja | bewusst nein (CEO) |
 | `projekt_changelog.md`, `finance/budget.md` | Bot, Web, Agenten | alle | ja | Git |

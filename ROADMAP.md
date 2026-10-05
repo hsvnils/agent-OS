@@ -75,7 +75,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `CLO_AUSBAU_ROADMAP.md` | CLO-Ausbau: Skills (Werbekennzeichnung, AGB, Nutzungsrechte, Musik, § 19 UStG, KI-Kennzeichnung, Club-/Markenrechte), Rechtsquellen mit Stand, Beobachtung, Pruef-Lauf der Vertragsentwuerfe | in Umsetzung (C1-C4 2026-10-05, C5 offen) |
 | `AGENTEN_AUSBAU_ROADMAP.md` | Agenten-Ausbau: Bestandsaufnahme aller Agenten, Nutzung messen, Skills/Quellen fuer Geschaefts- und Betriebsagenten, Watcher, Rand-Agenten, Charten | abgeschlossen (A1-A6 live 2026-10-05) |
 | `FACHAGENTEN_ROUTING_ROADMAP.md` | Fachagenten-Routing: LUNA bestimmt die zustaendige Abteilung selbst, Zustaendigkeitskarte, Geschaeftsregeln lesbar, Zaehlung inkl. Werkzeuge, Routing-Test | in Umsetzung (R1-R4 gebaut 2026-10-05) |
-| `ANGEBOT_PRAESENTATION_ROADMAP.md` | Canva-Praesentation (DE/EN, je Angebot waehlbar) in Angebots-PDF, digitalem Beleg und Mailtext | geplant (2026-10-05) |
+| `ANGEBOT_PRAESENTATION_ROADMAP.md` | Canva-Praesentation (DE/EN, je Angebot waehlbar) in Angebots-PDF, digitalem Beleg und Mailtext | in Umsetzung (P1 gebaut 2026-10-05) |
 | `VIDEOGRAF_ROADMAP.md` | Videograf-Berater als Agent 17: Charta (CEO-Tor), 5 Skills, Vorschlaege per Knopf in der Konzept-Mappe und im Chat | geplant (2026-10-05) |
 | `REELS_ROADMAP.md` | Reels aufraeumen: Verfall nach 30 Tagen, Videos abgelehnter/verfallener Reels loeschen, Nachschub-Bremse bei 10 | in Umsetzung (Etappe 1 umgesetzt 2026-10-01, Deploy offen) |
 | `LUNA_OS_UI_ROADMAP.md` | LUNA-OS: Navigation in 4 Bereichen, Handlungsbedarf systemweit, Bereichs-Startseiten, iPhone-Seitenmenue, WebApp-Login mit Schluesselbund und Passkey | in Umsetzung (Etappen 1-6 umgesetzt 2026-09-30, Deploy offen) |

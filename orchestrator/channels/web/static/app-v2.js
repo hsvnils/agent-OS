@@ -1096,6 +1096,7 @@ async function anEditor(nummer, firmaVorwahl, modus) {
         <div class="v2-an-zeile"><label class="v2-feld"><small>Datum</small><input id="an-datum" type="date" value="${esc(a.datum)}"></label>
           <label class="v2-feld"><small>Gültig bis</small><input id="an-gueltig" type="date" value="${esc(a.gueltig_bis)}"></label>
           <label class="v2-feld"><small>Nachfassen nach (Tagen)</small><input id="an-nachfassen" type="number" min="1" max="90" value="${esc(String(a.nachfassen_tage || 7))}"></label></div>
+        <div class="v2-an-zeile"><label class="v2-feld"><small>Präsentation (Canva-Link)</small><select id="an-praes">${[["de", "Deutsch"], ["en", "Englisch"], ["", "keine"]].map(([v, l]) => `<option value="${v}" ${(a.nummer ? ((a.praesentation || {}).sprache || "") : "de") === v ? "selected" : ""}>${l}</option>`).join("")}</select></label></div>
         <div class="v2-an-zeile"><label class="v2-feld"><small>Layout</small><select id="an-layout"><option value="hanserautisch" ${a.layout !== "standard" ? "selected" : ""}>Hanserautisch</option><option value="standard" ${a.layout === "standard" ? "selected" : ""}>Schlicht (DIN)</option></select></label>
           <label class="v2-modlbl"><input type="checkbox" id="an-zeige-kalk" ${b.zeige_kalkulation !== false ? "checked" : ""}> „So kalkulieren wir“</label>
           <label class="v2-modlbl"><input type="checkbox" id="an-zeige-kz" ${b.zeige_kennzahlen !== false ? "checked" : ""}> Kennzahlen</label>
@@ -1243,7 +1244,7 @@ function anDaten() {
   return { firma: $("#an-firma").value, ansprechpartner: $("#an-ap").value, titel: $("#an-titel").value.trim(), datum: $("#an-datum").value, gueltig_bis: $("#an-gueltig").value,
     nachfassen_tage: $("#an-nachfassen").value, einleitung: $("#an-einleitung").value.trim(), schluss: $("#an-schluss").value.trim(), positionen: anPositionen(),
     zuschlaege: anZuschlaege(), rabatt_prozent: ($("#an-rabatt") || {}).value || 0, layout: $("#an-layout").value,
-    zeige_kalkulation: $("#an-zeige-kalk").checked, zeige_kennzahlen: $("#an-zeige-kz").checked, ware: anWare(), zahlung: anZahlung(),
+    zeige_kalkulation: $("#an-zeige-kalk").checked, zeige_kennzahlen: $("#an-zeige-kz").checked, ware: anWare(), zahlung: anZahlung(), praesentation: ($("#an-praes") || {}).value || "",
     tkp_zeigen: ($("#an-tkp-zeigen") || {}).checked !== false, omr_zeigen: !!($("#an-omr-zeigen") || {}).checked };
 }
 async function abManuellSpeichern() {
@@ -1701,6 +1702,7 @@ function belegBlatt(b, extra = {}) {
     <div class="bl-summen">${(b.summen || []).map(([n, c]) => `<div><span>${esc(n)}</span><span>${c < 0 ? "−" + eur(-c) : eur(c)}</span></div>`).join("")}
       <div class="bl-ges"><span>${esc(b.gesamt.text)}</span><span>${eur(b.gesamt.cent)}</span></div></div>
     ${(b.hinweise || []).length ? `<div class="bl-hinweis">${b.hinweise.map(h => `<div>${esc(h)}</div>`).join("")}</div>` : ""}
+    ${(b.praesentation || {}).url ? `<a class="bl-praes" href="${esc(b.praesentation.url)}" target="_blank" rel="noopener">▶ ${esc(b.praesentation.text || "Präsentation")}<small>${esc(b.praesentation.url)}</small></a>` : ""}
     ${b.schluss ? `<div class="bl-text">${esc(b.schluss).replace(/\n/g, "<br>")}</div>` : ""}
     <div class="bl-fuss">${esc((b.fuss || []).join(" · "))}${b.anlage ? ` · 📎 Anlage: ${esc(b.anlage)}` : ""}${extra.original ? ` · <a href="${esc(extra.original)}" target="_blank" rel="noopener">📄 Original-PDF</a>` : ""}</div>
   </article>`;
@@ -2032,7 +2034,9 @@ async function renderKatalog(ausCache) {
     <label class="v2-feld"><small>Datenbasis-Hinweis</small>${ta("kennzahlen_quelle", t.kennzahlen_quelle)}</label>
     <label class="v2-feld"><small>Einleitung „Zusätzliche Leistungen“ (Preisliste)</small>${ta("zuschlaege_info", t.zuschlaege_info, 2)}</label>
     <label class="v2-feld"><small>Fußtext</small>${ta("fuss", t.fuss)}</label>
-    <label class="v2-feld"><small>Kontakt (Fußzeile)</small><input id="kt-kontakt" value="${esc(t.kontakt)}" ${ro}></label></div>`, "w12");
+    <label class="v2-feld"><small>Kontakt (Fußzeile)</small><input id="kt-kontakt" value="${esc(t.kontakt)}" ${ro}></label>
+    <small class="v2-sub">Präsentation im Angebot (Canva, je Angebot Deutsch/Englisch wählbar; leer = aus)</small>
+    ${[["de", "Deutsch"], ["en", "Englisch"]].map(([s2, l]) => `<div class="v2-an-zeile"><label class="v2-feld"><small>Link ${l}</small><input id="kt-praesentation_${s2}" type="url" inputmode="url" value="${esc(t["praesentation_" + s2] || "")}" placeholder="https://…" ${ro}></label><label class="v2-feld"><small>Linktext ${l}</small><input id="kt-praesentation_text_${s2}" value="${esc(t["praesentation_text_" + s2] || "")}" ${ro}></label></div>`).join("")}</div>`, "w12");
   const aktion = KAT_DARF ? `<span id="kat-msg" class="v2-msg"></span><button class="v2-btn pri" data-act="kat-speichern">Katalog speichern</button>` : `<span class="v2-sub">Nur ansehen — Preise ändert der Owner (Modul Finanzen).</span>`;
   const lager = await jget("/api/finanzen/lager");
   const la = (lager && lager.artikel) || [];
@@ -2080,7 +2084,9 @@ function katalogAusForm() {
   const v = (id) => ($("#kt-" + id) || {}).value || "";
   k.texte = { untertitel: v("untertitel"), intro: v("intro"), kalkulation_titel: v("kalkulation_titel"), kalkulation: [0, 1, 2].map(i => v("kalk" + i)).filter(x => x.trim()),
     kalkulation_beispiel: v("kalkulation_beispiel"), kennzahlen: [0, 1, 2, 3].map(i => [v("kzw" + i), v("kzl" + i)]).filter(x => x[0].trim()),
-    kennzahlen_quelle: v("kennzahlen_quelle"), zuschlaege_info: v("zuschlaege_info"), fuss: v("fuss"), kontakt: v("kontakt") };
+    kennzahlen_quelle: v("kennzahlen_quelle"), zuschlaege_info: v("zuschlaege_info"), fuss: v("fuss"), kontakt: v("kontakt"),
+    praesentation_de: v("praesentation_de").trim(), praesentation_en: v("praesentation_en").trim(),
+    praesentation_text_de: v("praesentation_text_de"), praesentation_text_en: v("praesentation_text_en") };
   return k;
 }
 async function katalogSpeichern() {

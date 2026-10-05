@@ -102,7 +102,8 @@ def angebot(st, a: dict, fd: dict) -> dict:
     return _blatt(art="Angebot", nummer=a["nummer"], titel=t["untertitel"], fd=fd, firma=t["firma"], ap=t["ap"],
                   infos=t["infos"], anrede=t["anrede"], einleitung=t["einleitung"], positionen=a["positionen"],
                   summen=a["summen"], gesamt_text="Gesamtbetrag", gesamt_cent=a["summe_cent"], hinweise=t["hinweise"],
-                  schluss=t["schluss"], stempel=stempel, extra={"kalkulation": t["kalkulation"]})
+                  schluss=t["schluss"], stempel=stempel, extra={"kalkulation": t["kalkulation"],
+                                                                "praesentation": t.get("praesentation") or {}})
 
 
 def auftrag(ab, a: dict, fd: dict) -> dict:

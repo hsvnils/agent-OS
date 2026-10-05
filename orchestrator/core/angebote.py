@@ -27,7 +27,9 @@ from . import zahlungsbedingungen as zb
 STATUS = ("entwurf", "versendet", "angenommen", "abgelehnt")
 KOPF_FELDER = ("firma", "ansprechpartner", "titel", "datum", "gueltig_bis", "einleitung", "schluss", "nachfassen_tage",
                "zuschlaege", "rabatt_prozent", "layout", "bloecke", "ware",   # 3b; „ware“ = Barter (Etappe 12)
-               "zahlung")                                                     # Zahlungsbedingungen/Vorkasse (Etappe 18)
+               "zahlung",                                                     # Zahlungsbedingungen/Vorkasse (Etappe 18)
+               "praesentation")                                               # Canva-Link DE/EN (ANGEBOT_PRAESENTATION)
+PRAES_SPRACHEN = ("de", "en", "")
 LAYOUTS = ("hanserautisch", "standard")
 SCHALTER = ("zeige_kalkulation", "zeige_kennzahlen", "tkp_zeigen", "omr_zeigen")
 GUELTIG_TAGE = 14                                                           # CEO 2026-09-27 (wie im Generator)
@@ -206,6 +208,11 @@ def _kopf(daten: dict) -> dict:
             out[k] = _ware(v)
         elif k == "zahlung":
             out[k] = zb.pruefen(v)
+        elif k == "praesentation":
+            sprache = (v.get("sprache") if isinstance(v, dict) else v) or ""
+            if sprache not in PRAES_SPRACHEN:
+                raise ValueError("Praesentation: de, en oder leer.")
+            out[k] = sprache                                   # wird im Store zum Link aufgeloest (_praesentation)
         elif k == "nachfassen_tage":
             try:
                 n = int(v)
@@ -448,6 +455,7 @@ class AngebotStore:
                 "zuschlaege": [], "rabatt_prozent": 0, "layout": "hanserautisch" if self.katalog else "standard"}
         kopf.update(_kopf(daten))
         self._ziel_vorschlag(kopf, daten.get("zahlung"), kopf.get("firma") or "")
+        kopf["praesentation"] = self._praesentation(kopf.get("praesentation", "de"))
         if kopf["layout"] == "hanserautisch" and "bloecke" not in kopf:
             kopf["bloecke"] = _bloecke(self.katalog.laden()["texte"] if self.katalog else {})
         _schalter(kopf, daten)
@@ -458,6 +466,15 @@ class AngebotStore:
         ev = self.bh.mit_nummer("AN", "angebot_angelegt", kopf | {"positionen": pos}, jahr=jahr,
                                 bezug=kopf["firma"], von=von, pruefe=lambda e: self._pruefe_bezug(e, kopf))
         return {"nummer": ev["daten"]["nummer"]}
+
+    def _praesentation(self, sprache: str) -> dict:
+        """Sprache -> eingefrorener Link {sprache, url, text} aus dem Katalog (spaetere Katalogaenderung aendert nichts)."""
+        if not sprache:
+            return {}
+        from .katalog import STANDARD
+        t = self.katalog.laden()["texte"] if self.katalog else STANDARD["texte"]
+        url = t.get(f"praesentation_{sprache}") or ""
+        return {"sprache": sprache, "url": url, "text": t.get(f"praesentation_text_{sprache}") or url} if url else {}
 
     def _ziel_vorschlag(self, kopf: dict, roh, firma: str) -> None:
         """Etappe 18: kein/leeres Zahlungsziel -> aus den Kundendaten (sonst 14 Tage)."""
@@ -471,6 +488,8 @@ class AngebotStore:
         if not isinstance(daten, dict):
             raise ValueError("Ungueltige Eingabe.")
         neu = _kopf(daten)
+        if "praesentation" in neu:
+            neu["praesentation"] = self._praesentation(neu["praesentation"])
         if "zahlung" in neu:
             firma = neu.get("firma") or (self.angebot(nummer) or {}).get("firma") or ""
             self._ziel_vorschlag(neu, daten.get("zahlung"), firma)
@@ -519,7 +538,7 @@ class AngebotStore:
             texte = kalkulation_texte(b, formate=a["positionen"], tkp_zeigen=b.get("tkp_zeigen", True),
                                       omr_zeigen=b.get("omr_zeigen", False))
             zeigen = b.get("zeige_kalkulation", True) or b.get("omr_zeigen", False)
-            return {"firma": f, "ap": ap, "anrede": anrede_moin(ap, f.get("name", "")),
+            return {"firma": f, "ap": ap, "anrede": anrede_moin(ap, f.get("name", "")), "praesentation": a.get("praesentation") or {},
                     "einleitung": a.get("einleitung") or b.get("intro", ""), "hinweise": hinweise, "infos": infos,
                     "untertitel": a.get("titel") or b.get("untertitel", ""), "schluss": "",
                     "kalkulation": ({"titel": texte.get("kalkulation_titel", ""), "absaetze": texte.get("kalkulation") or [],
@@ -531,7 +550,8 @@ class AngebotStore:
         schluss = a.get("schluss") or ("Wir freuen uns auf Ihre Rückmeldung.\n\nMit freundlichen Grüßen\n"
                                        + (firmendaten.get("inhaber") or firmendaten.get("firma") or ""))
         return {"firma": f, "ap": ap, "anrede": "", "einleitung": einleitung, "hinweise": hinweise, "infos": infos,
-                "untertitel": a.get("titel") or "", "schluss": schluss, "kalkulation": None}
+                "untertitel": a.get("titel") or "", "schluss": schluss, "kalkulation": None,
+                "praesentation": a.get("praesentation") or {}}
 
     def pdf(self, nummer: str, firmendaten: dict) -> bytes:
         a = self.angebot(nummer)
@@ -558,7 +578,7 @@ class AngebotStore:
             summen_zeilen=_summen_zeilen(a["summen"]),
             hinweise=[HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
             + [zb.text(a.get("zahlung"), a["geld_cent"]), f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."],
-            schluss=schluss)
+            schluss=schluss, link=_link(a))
 
     def _pdf_hanserautisch(self, a: dict, f: dict, ap: dict | None, firmendaten: dict) -> bytes:
         b = a.get("bloecke") or _bloecke({})
@@ -582,7 +602,8 @@ class AngebotStore:
             gruppen=list(gruppen.values()), summen=a["summen"], zuschlag_liste=None,
             fuss_zusatz=" ".join(x for x in ware_hinweis(a["summe_cent"], a.get("ware"))
                                  + [zb.text(a.get("zahlung"), a["geld_cent"]),
-                                    f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."] if x))
+                                    f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."] if x),
+            praesentation=_link(a))
 
     def pdf_ablegen(self, nummer: str, pdf: bytes, *, an: str = "", entwurf_id: str = "", von: str = "") -> dict:
         a = self.angebot(nummer)
@@ -810,6 +831,11 @@ def mail_lesen(roh: bytes) -> dict:
             "betreff": str(m.get("Subject", "")), "text": text.strip()[:20000], "anhaenge": anhaenge}
 
 
+def _link(a: dict) -> tuple[str, str] | None:
+    p = a.get("praesentation") or {}
+    return (p.get("text") or p["url"], p["url"]) if p.get("url") else None
+
+
 def mail_text(a: dict, firma: dict, ap: dict | None, firmendaten: dict) -> tuple[str, str]:
     """Betreff + Text fuer den Gmail-Entwurf (der CEO passt ihn vor dem Senden in Gmail an)."""
     name = " ".join(x for x in ((ap or {}).get("vorname"), (ap or {}).get("nachname")) if x)
@@ -818,6 +844,7 @@ def mail_text(a: dict, firma: dict, ap: dict | None, firmendaten: dict) -> tuple
     text = (f"{anrede}\n\nanbei erhalten Sie unser Angebot {a['nummer']}"
             + (f" zu „{a['titel']}“" if a.get("titel") else "")
             + f" über {eur(a['summe_cent'])}. Es ist gültig bis {datum_de(a['gueltig_bis'])}.\n\n"
-            "Bei Fragen melden Sie sich gerne.\n\nMit freundlichen Grüßen\n"
+            + (f"{_link(a)[0]}: {_link(a)[1]}\n\n" if _link(a) else "")
+            + "Bei Fragen melden Sie sich gerne.\n\nMit freundlichen Grüßen\n"
             + "\n".join(x for x in (firmendaten.get("inhaber"), firmendaten.get("firma")) if x))
     return betreff, text

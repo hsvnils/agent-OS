@@ -92,7 +92,8 @@ def _latin1(text: str) -> str:
 
 def beleg_pdf(*, art: str, nummer: str, firma: dict, empfaenger: list[str], infos: list[tuple[str, str]],
               einleitung: str, positionen: list[dict], summe_cent: int, hinweise: list[str], schluss: str,
-              schrift_dir: Path | None = None, summen_zeilen: list[tuple[str, int]] | None = None) -> bytes:
+              schrift_dir: Path | None = None, summen_zeilen: list[tuple[str, int]] | None = None,
+              link: tuple[str, str] | None = None) -> bytes:
     """Erzeugt das PDF. `positionen`: [{beschreibung, menge (Text), einheit, einzelpreis_cent, gesamt_cent}]."""
     from fpdf import FPDF
 
@@ -230,6 +231,11 @@ def beleg_pdf(*, art: str, nummer: str, firma: dict, empfaenger: list[str], info
     for h in hinweise:
         if h:
             pdf.multi_cell(0, 4.8, T(h), align="L", new_x="LMARGIN", new_y="NEXT")
+    if link:                                                 # Canva-Praesentation (ANGEBOT_PRAESENTATION P1), klickbar
+        pdf.ln(2)
+        pdf.set_text_color(0, 64, 135)
+        pdf.multi_cell(0, 4.8, T(f"{link[0]}: {link[1]}"), align="L", link=link[1], new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(0, 0, 0)
     if schluss:
         pdf.ln(3)
         pdf.set_font(SCHRIFT, size=10)
@@ -259,7 +265,7 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
                       infos: list[str], untertitel: str, anrede: str, einleitung: str, texte: dict,
                       zeige_kalkulation: bool, zeige_kennzahlen: bool, gruppen: list[tuple],
                       summen: dict | None, zuschlag_liste: list[dict] | None, fuss_zusatz: str = "",
-                      schrift_dir: Path | None = None) -> bytes:
+                      schrift_dir: Path | None = None, praesentation: tuple[str, str] | None = None) -> bytes:
     """Angebot oder Preisliste im Hanserautisch-Look.
 
     `gruppen`: [(name, farbe 'blau'|'rot', [{name, detail, menge|None, einheit, betrag_cent}])];
@@ -562,6 +568,17 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
             pdf.set_draw_color(*LINIE)
             pdf.line(20, pdf.get_y(), 20 + B, pdf.get_y())
             pdf.ln(1)
+
+    if praesentation:                                                 # Canva-Praesentation (ANGEBOT_PRAESENTATION P1), klickbar
+        pdf.ln(5)
+        platz(12)
+        pdf.set_font(S, "B", 10)
+        farbe(BLAU)
+        pdf.multi_cell(0, 5.5, T(praesentation[0]), align="L", link=praesentation[1], new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font(S, size=8.3)
+        farbe((102, 102, 102))
+        pdf.multi_cell(0, 4.2, T(praesentation[1]), align="L", link=praesentation[1], new_x="LMARGIN", new_y="NEXT")
+        farbe((0, 0, 0))
 
     # Fusstext
     pdf.ln(6)

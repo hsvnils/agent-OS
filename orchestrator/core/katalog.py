@@ -156,6 +156,10 @@ STANDARD = {
     ],
     "rabatt_max": 30,
     "texte": {
+        "praesentation_de": "https://canva.link/so4wrkmr0n7gfq1",
+        "praesentation_en": "https://canva.link/yyeywahmisjymuw",
+        "praesentation_text_de": "Unsere Präsentation ansehen",
+        "praesentation_text_en": "View our presentation",
         "untertitel": "Saison 2026/27",
         "intro": ("vielen Dank für Ihr Interesse an einer Zusammenarbeit mit Hanserautisch. Auf dieser Seite finden Sie "
                   "unsere Formate, die zugehörigen Preise und – weil wir finden, dass ein Angebot nachvollziehbar sein "
@@ -189,6 +193,8 @@ STANDARD = {
 
 _TEXT_FELDER = ("untertitel", "intro", "kalkulation_titel", "kalkulation_beispiel", "kennzahlen_quelle",
                 "zuschlaege_info", "fuss", "kontakt")
+# ANGEBOT_PRAESENTATION P1 (CEO 2026-10-05): oeffentliche Canva-Praesentation je Sprache, im Angebot waehlbar.
+PRAES_FELDER = ("praesentation_de", "praesentation_en", "praesentation_text_de", "praesentation_text_en")
 _ID = re.compile(r"[a-z0-9_]{1,30}")
 
 
@@ -305,6 +311,11 @@ def pruefe(k: dict) -> dict:
                            "info": _txt(z.get("info"), 300)})
     t = k.get("texte") or {}
     texte = {f: _txt(t.get(f), 2000) for f in _TEXT_FELDER}
+    for f in PRAES_FELDER:                                   # fehlt das Feld (Katalog von vorher) -> Standard; "" = bewusst aus
+        v = _txt(STANDARD["texte"][f] if t.get(f) is None else t.get(f), 300)
+        if f.startswith("praesentation_") and not f.startswith("praesentation_text") and v and not v.startswith("https://"):
+            raise ValueError(f"{f}: Link muss mit https:// beginnen.")
+        texte[f] = v
     texte["kalkulation"] = [_txt(x, 1500) for x in (t.get("kalkulation") or []) if _txt(x)][:6]
     texte["kennzahlen"] = [[_txt(a, 20), _txt(b, 60)] for a, b in (t.get("kennzahlen") or []) if _txt(a)][:6]
     try:

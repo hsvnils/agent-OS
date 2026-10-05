@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 15:38] — Claude Code
+- **Was:** ANGEBOT_PRAESENTATION P1 gebaut: Canva-Praesentation (DE https://canva.link/so4wrkmr0n7gfq1, EN
+  https://canva.link/yyeywahmisjymuw) im Katalog (Link + Linktext je Sprache, im Katalog-Editor aenderbar, nur https),
+  je Angebot waehlbar (Deutsch/Englisch/keine, Standard Deutsch, beim Anlegen eingefroren), klickbar im Angebots-PDF
+  (Hanserautisch + DIN), im digitalen Beleg und im Gmail-Entwurf. Fehler beim Bau gefunden und behoben: eine vorhandene
+  Variable `link` (OMR-Quelle) ueberschrieb den Parameter im Hanserautisch-PDF -> Parameter heisst `praesentation`
+  (Test war rot, dann gruen). UI v98/v46. 5 neue Tests; Browsertest Rechner/iPad/iPhone 17 Pro ok.
+- **Warum:** CEO „Go fuer P1 und V1“.
+- **Betroffen:** `orchestrator/core/katalog.py`, `core/angebote.py`, `core/beleg_pdf.py`, `core/belegblatt.py`,
+  `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `tests/test_angebot_praesentation.py`,
+  `ANGEBOT_PRAESENTATION_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`
+
 ## [2026-10-05 15:06] — Claude Code
 - **Was:** Zwei Roadmaps angelegt und in `ROADMAP.md` registriert: `ANGEBOT_PRAESENTATION_ROADMAP.md` (P1: Canva-Link
   DE/EN je Angebot in PDF, digitalem Beleg und Mailtext) und `VIDEOGRAF_ROADMAP.md` (V1 Charta Agent 17 mit CEO-Diff,
