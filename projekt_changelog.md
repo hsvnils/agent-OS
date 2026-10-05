@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 21:26] — Claude Code
+- **Was:** Deploy Belegverfolgung mit Bogen + „Neue Position“ live geprueft (CEO hat NAS-Sync und Neustart ausgefuehrt):
+  UI v104/v52 mit beiden Funktionen. Nichts geaendert.
+- **Warum:** CEO „Beide Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** NAS-Deploy
+
 ## [2026-10-05 21:23] — Claude Code
 - **Was:** All-Inkl-Absenderadresse in Roadmap, `ROADMAP.md` und Entscheidungs-Register auf **luna@hanserautisch.de**
   korrigiert (vorher luna-hoa@hanserautisch.de). Nur Plan.
