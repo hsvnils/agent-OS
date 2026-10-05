@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 21:00] — Claude Code
+- **Was:** Deploy T5 (erneut senden) + Preisaenderung mit Grund + BF-58 live geprueft (CEO hat NAS-Sync und Neustart
+  ausgefuehrt): UI v102/v50 mit beiden Funktionen; Server lehnt einen geaenderten Preis ohne Grund ab (Probe mit
+  ausgedachter Firma, nichts angelegt). Nichts versendet, keine Daten geaendert.
+- **Warum:** CEO „Beide Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** NAS-Deploy, `docs/bekannte-fehler.md`
+
 ## [2026-10-05 20:51] — Claude Code
 - **Was:** Rechnung: Preis einer Position von Hand ueberschreibbar -- nur mit Grund. Editor fragt den Grund ab, sobald der
   Preis einer Position aus Auftrag/Katalog geaendert wird (ohne Grund bleibt der alte Preis); TKP-Positionen bekommen
