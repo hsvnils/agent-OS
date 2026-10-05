@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 14:51] — Claude Code
+- **Was:** Deploy FACHAGENTEN_ROUTING R1-R4 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): UI v97, Code auf
+  der NAS (Werkzeug `geschaeftsregeln`, Routing-Regel im Prompt). Werkzeug mit dem echten Katalog aus `/api/crm/katalog`
+  gegengeprueft: Zahlungsziel 14 Tage, Vorkasse-Frist 7 Tage, Mahnwesen (Basiszins 1,52 % + 9 Punkte, 40 € Pauschale),
+  19 Formate, Projektstunde 65 €, km 0,50 €, keine AGB in Kraft. Direkt im Container nicht ausfuehrbar (kein sudo,
+  NAS-Python 3.8 ohne zoneinfo). Fachagenten-Zaehlung noch ohne Anfrage. R5 (Beobachtung) laeuft bis 2026-10-19.
+- **Warum:** CEO „Beide Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** NAS-Deploy, `FACHAGENTEN_ROUTING_ROADMAP.md`
+
 ## [2026-10-05 14:44] — Claude Code
 - **Was:** BF-53 nachgetragen: Vor Commit `9be6412` war ein Suite-Lauf mit 1 rotem Test (Name nicht festgehalten,
   wieder nur `tail -1` gelesen); der Commit lief trotzdem durch. Danach 4 volle Laeufe (1192 gruen) und 15 Laeufe der neuen

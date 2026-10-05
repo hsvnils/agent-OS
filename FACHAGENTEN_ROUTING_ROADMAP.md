@@ -3,7 +3,7 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/routing`
 - Basiscommit: `e290304`
-- Naechster Schritt: R1-R4 gebaut (2026-10-05) -- Deploy-Go abwarten, danach R5 (zwei Wochen beobachten).
+- Naechster Schritt: R1-R4 live (2026-10-05); R5 laeuft bis 2026-10-19 -- dann „wer wird gefragt“ auswerten und abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -91,7 +91,7 @@ aktuellen Zahlungsbedingungen?‘ An welche Abteilung die Frage geht, muss LUNA 
 
 ## Etappe R5: Beobachtung im Betrieb
 
-- Status: geplant
+- Status: laeuft (2026-10-05 bis 2026-10-19)
 - Ziel / Scope: nach dem Deploy zwei Wochen „wer wird gefragt“ im Leistungsbericht beobachten; auffaellige
   Fehlgriffe (falscher Bereich, Antwort ohne Daten) nachschaerfen.
 - Gate: CEO-Eindruck + Zahlen aus dem Leistungsbericht.
