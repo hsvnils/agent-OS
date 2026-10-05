@@ -67,7 +67,20 @@ def _positionen(roh) -> list[dict]:
             raise ValueError(f"Position {i}: negativer Preis.")
         pos = {"beschreibung": text, "menge": format(m, "f"), "einheit": str(p.get("einheit") or "").strip()[:30],
                "einzelpreis_cent": ep}
-        if p.get("kontakte") not in (None, "", 0, "0") and (p.get("tkp_cent") or p.get("tkp")):   # Etappe 16: TKP
+        # Preis von Hand ueberschrieben (CEO 2026-10-05): vorheriger Preis + Grund an der Position, Grund ist Pflicht
+        grund = str(p.get("preis_grund") or "").strip()[:300]
+        if p.get("preis_vorher_cent") not in (None, ""):
+            try:
+                vorher = int(p["preis_vorher_cent"])
+            except (TypeError, ValueError):
+                raise ValueError(f"Position {i}: vorheriger Preis ungueltig.") from None
+            if vorher != ep:
+                if not grund:
+                    raise ValueError(f"Position {i}: Grund fuer den geaenderten Preis fehlt.")
+                pos |= {"preis_vorher_cent": vorher, "preis_grund": grund}
+        if pos.get("preis_grund"):
+            pass                                                  # ueberschriebener Preis gilt -- kein TKP-Nachrechnen
+        elif p.get("kontakte") not in (None, "", 0, "0") and (p.get("tkp_cent") or p.get("tkp")):   # Etappe 16: TKP
             try:
                 kontakte = int(p["kontakte"])
                 tkp = int(p["tkp_cent"]) if p.get("tkp_cent") else cent(p.get("tkp"))

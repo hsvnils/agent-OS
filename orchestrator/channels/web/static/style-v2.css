@@ -952,3 +952,15 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-mp-nach { display: grid; gap: 6px; }
 .v2-mail-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (pointer: coarse) { .v2-tb-arten .v2-chip, .v2-tb-ph .v2-chip { min-height: 44px; } }
+
+/* Rechnung: Preis von Hand ueberschrieben (mit Grund) */
+.an-p-grund { display: block; color: var(--v2-amber); font-size: 12px; margin-top: 4px; overflow-wrap: anywhere; }
+.an-p-frei { justify-self: start; margin-top: 4px; }
+/* Positionszeile auf dem iPhone (2026-10-05): Einzelpreis + Loeschen lagen ausserhalb des Bildes (Raster zu breit) */
+@media (max-width: 640px) {
+  .v2-an-pos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .v2-an-pos > input, .v2-an-pos .an-p-beschreibung, .v2-an-pos .an-p-detail { min-width: 0; width: 100%; }
+  .v2-an-pos .an-p-gesamt { grid-column: 1 / 3; align-self: center; }
+  .v2-an-pos .v2-an-weg { grid-column: 3; justify-self: end; width: 44px; min-width: 44px; height: 44px; padding: 0; }
+}
+.an-p-frei { width: auto; }

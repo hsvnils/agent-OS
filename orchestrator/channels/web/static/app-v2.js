@@ -1026,18 +1026,36 @@ function anProvFelder(pr) {
     <input class="v2-inp an-p-prov-wert" value="${esc(wert)}" inputmode="decimal" aria-label="Provisionssatz">
     ${AN_KONTEXT === "rechnung" ? `<small>Abrechnung:</small><input class="v2-inp an-p-prov-ab" value="${esc(String(ab))}" inputmode="decimal" placeholder="${st ? "verkaufte Stück" : "vermittelter Umsatz €"}" aria-label="Abrechnung">` : `<small class="v2-sub">wird nach der Kooperation abgerechnet</small>`}</div>`;
 }
+let RE_AUS_AUFTRAG = false;
+function anPosOrig(p) {                                         // Rechnung: Bezugspreis, dessen Aenderung einen Grund braucht
+  if (AN_KONTEXT !== "rechnung" || p.provision || p.einzelpreis_cent == null) return "";
+  if (p.preis_vorher_cent != null) return String(p.preis_vorher_cent);
+  return p.katalog_id || p.kontakte || RE_AUS_AUFTRAG ? String(p.einzelpreis_cent) : "";
+}
+const anGrundText = (orig, grund) => grund ? `<small class="an-p-grund">✎ Preis geändert${orig !== "" ? " (vorher " + cent2eur(Number(orig)) + ")" : ""} · Grund: ${esc(grund)}</small>` : "";
 function anPosZeile(p = {}) {
+  const orig = anPosOrig(p), frei = AN_KONTEXT === "rechnung" && p.kontakte && !p.preis_grund;
   const tkp = p.kontakte ? `<div class="an-p-tkp"><small>TKP</small><input class="v2-inp an-p-tkpwert" type="number" min="${(p.tkp_min_cent || 100) / 100}" max="${(p.tkp_max_cent || 50000) / 100}" step="1" value="${esc(String((p.tkp_cent || p.tkp_min_cent) / 100))}" aria-label="TKP in Euro"><small>€ · Spanne ${esc(String((p.tkp_min_cent || p.tkp_cent) / 100))}–${esc(String((p.tkp_max_cent || p.tkp_cent) / 100))} €${p.omr ? " · " + esc(omrText(p.omr)) : ""} · ${esc(Number(p.kontakte).toLocaleString("de-DE"))} Kontakte + ${esc(cent2eur(p.produktion_cent || 0))} Produktion</small></div>` : "";
   const prov = p.provision ? anProvFelder(p.provision) : "";
-  return `<div class="v2-an-pos${p.provision ? " v2-an-prov" : ""}" data-prov="${p.provision ? "1" : ""}" data-katalog="${esc(p.katalog_id || "")}" data-gruppe="${esc(p.gruppe || "")}" data-farbe="${esc(p.gruppe_farbe || "")}" data-kontakte="${esc(String(p.kontakte || ""))}" data-prod="${esc(String(p.produktion_cent || 0))}" data-tmin="${esc(String(p.tkp_min_cent || ""))}" data-tmax="${esc(String(p.tkp_max_cent || ""))}" data-omr="${esc(p.omr || "")}">
+  return `<div class="v2-an-pos${p.provision ? " v2-an-prov" : ""}" data-prov="${p.provision ? "1" : ""}" data-orig="${esc(orig)}" data-grund="${esc(p.preis_grund || "")}" data-katalog="${esc(p.katalog_id || "")}" data-gruppe="${esc(p.gruppe || "")}" data-farbe="${esc(p.gruppe_farbe || "")}" data-kontakte="${esc(String(p.kontakte || ""))}" data-prod="${esc(String(p.produktion_cent || 0))}" data-tmin="${esc(String(p.tkp_min_cent || ""))}" data-tmax="${esc(String(p.tkp_max_cent || ""))}" data-omr="${esc(p.omr || "")}">
     <div class="v2-an-text"><input class="v2-inp an-p-beschreibung" value="${esc(p.beschreibung || "")}" placeholder="Leistung">
-      <input class="v2-inp an-p-detail" value="${esc(p.detail || "")}" placeholder="Detail (Reichweite, Hinweis) – optional">${tkp}${prov}</div>
+      <input class="v2-inp an-p-detail" value="${esc(p.detail || "")}" placeholder="Detail (Reichweite, Hinweis) – optional">${tkp}${frei ? `<button class="v2-btn sm an-p-frei" data-act="an-preis-frei" title="Preis von Hand überschreiben (mit Grund)">✎ Preis überschreiben</button>` : ""}${prov}<span class="an-p-grund-box">${anGrundText(orig, p.preis_grund)}</span></div>
     <input class="v2-inp an-p-menge" value="${esc(p.menge != null ? String(p.menge).replace(".", ",") : "1")}" placeholder="Menge" inputmode="decimal" aria-label="Menge">
     <input class="v2-inp an-p-einheit" value="${esc(p.einheit || "")}" placeholder="Einheit" aria-label="Einheit">
     <input class="v2-inp an-p-preis" value="${p.einzelpreis_cent != null ? cent2feld(p.einzelpreis_cent) : ""}" placeholder="Einzelpreis €" inputmode="decimal" aria-label="Einzelpreis" ${p.kontakte ? 'readonly title="folgt aus dem TKP"' : ""}>
     <span class="an-p-gesamt">–</span>
     <button class="v2-btn v2-an-weg" data-act="an-pos-weg" title="Position löschen" aria-label="Position löschen">🗑</button></div>`;
 }
+document.addEventListener("change", (e) => {                // Rechnung: Preisaenderung gegen den Bezugspreis -> Grund abfragen
+  const pr = e.target; if (!(pr instanceof HTMLInputElement) || !pr.classList.contains("an-p-preis") || AN_KONTEXT !== "rechnung") return;
+  const z = pr.closest(".v2-an-pos"); if (!z || !z.dataset.orig) return;
+  const neu = Math.round(zahl(pr.value) * 100), orig = Number(z.dataset.orig);
+  if (neu === orig) { z.dataset.grund = ""; $(".an-p-grund-box", z).innerHTML = ""; return; }
+  if (z.dataset.grund) { $(".an-p-grund-box", z).innerHTML = anGrundText(z.dataset.orig, z.dataset.grund); return; }
+  const grund = (prompt(`Preis von ${cent2eur(orig)} auf ${cent2eur(neu)} ändern – Grund? (wird an der Position vermerkt, nicht auf der Rechnung gedruckt)`, "") || "").trim();
+  if (!grund) { pr.value = cent2feld(orig); anSumme(); return; }
+  z.dataset.grund = grund; $(".an-p-grund-box", z).innerHTML = anGrundText(z.dataset.orig, grund); anSumme();
+});
 /* Firmen-Suche mit Vorschlägen (statt Dropdown) */
 function firmaSucheVerdrahten() {   // genutzt von Angebots- und Rechnungs-Editor
   const such = $("#an-firma-suche"); if (!such) return;
@@ -1150,6 +1168,7 @@ function anPositionen() {
     katalog_id: z.dataset.katalog || "", gruppe: z.dataset.gruppe || "", gruppe_farbe: z.dataset.farbe || "",
     ...(z.dataset.kontakte ? { kontakte: Number(z.dataset.kontakte), tkp_cent: Math.round(zahl($(".an-p-tkpwert", z).value) * 100), produktion_cent: Number(z.dataset.prod || 0),
       tkp_min_cent: z.dataset.tmin, tkp_max_cent: z.dataset.tmax, omr: z.dataset.omr } : {}),
+    ...(z.dataset.orig && !z.dataset.kontakte ? { preis_vorher_cent: Number(z.dataset.orig), ...(z.dataset.grund ? { preis_grund: z.dataset.grund } : {}) } : {}),
     ...(z.dataset.prov ? { menge: "1", einzelpreis: "0", provision: { art: $(".an-p-prov-art", z).value, wert: $(".an-p-prov-wert", z).value.trim(), ...($(".an-p-prov-ab", z) && $(".an-p-prov-ab", z).value.trim() !== "" ? { abrechnung: $(".an-p-prov-ab", z).value.trim() } : {}) } } : {}) })).filter(p => p.beschreibung || p.einzelpreis);
 }
 function anFitSetzen() {   // „Community-Fit“: TKP aller Reichweiten-Positionen innerhalb ihrer Spanne setzen
@@ -2329,6 +2348,7 @@ async function reEditor(eid) {
   AN_FIRMEN = ((k && k.firmen) || []).filter(f => f.aktiv);
   if (!AN_FIRMEN.length) return openModal("Neue Rechnung", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."), true);
   const r = (d && d.rechnung) || { firma: "", positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch", leistung_von: heuteIso(), zahlungsziel_tage: "" };
+  RE_AUS_AUFTRAG = !!r.auftrag;
   const fa = AN_FIRMEN.find(f => f.nummer === r.firma);
   const katOpt = ((KATALOG && KATALOG.gruppen) || []).map(g => `<optgroup label="${esc(g.name)}">${g.items.filter(it => it.aktiv).map(it => `<option value="${esc(it.id)}">${esc(it.name)} — ${cent2eur(it.preis_cent)}${it.einheit ? " / " + esc(it.einheit) : ""}</option>`).join("")}</optgroup>`).join("");
   const gewaehlt = new Set((r.zuschlaege || []).map(z => z.id));
@@ -2379,7 +2399,7 @@ async function reDetail(id, meldung, fehler) {
   const d = await jget("/api/finanzen/rechnungen/" + encodeURIComponent(id));
   const r = d && d.rechnung; if (!r) return openModal(id, emptyRow("Rechnung nicht gefunden."), true);
   const entwurf = r.status === "entwurf", sm = r.summen, ap = d.ansprechpartner;
-  const pos = r.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}${p.provision ? `<br><small>💶 ${esc(provText(p.provision))}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${posBetrag(p)}</td></tr>`).join("");
+  const pos = r.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}${p.provision ? `<br><small>💶 ${esc(provText(p.provision))}</small>` : ""}${p.preis_grund ? `<br><small>✎ Preis geändert (vorher ${cent2eur(p.preis_vorher_cent)}) · Grund: ${esc(p.preis_grund)}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${posBetrag(p)}</td></tr>`).join("");
   const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Positionen</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
     + sm.zuschlaege.map(([n, p, c]) => `<tr><td></td><td>${esc(n)} (+${esc(pz(p))} %)</td><td></td><td style="text-align:right">${cent2eur(c)}</td></tr>`).join("")
     + (sm.rabatt ? `<tr><td></td><td>Rabatt (${esc(pz(sm.rabatt[0]))} %)</td><td></td><td style="text-align:right">−${cent2eur(Math.abs(sm.rabatt[1]))}</td></tr>` : "")
@@ -3472,6 +3492,11 @@ async function handleAct(act, el) {
     case "an-neu": return anEditor("", id || "");
     case "an-detail": return anDetail(id);
     case "an-bearbeiten": return anEditor(id);
+    case "an-preis-frei": { const z = el.closest(".v2-an-pos"); if (!z) return;
+      const grund = (prompt("Grund für den abweichenden Preis? (wird an der Position vermerkt, nicht auf der Rechnung gedruckt)", "") || "").trim(); if (!grund) return;
+      const pr = $(".an-p-preis", z); z.dataset.orig = String(Math.round(zahl(pr.value) * 100)); z.dataset.grund = grund; delete z.dataset.kontakte;
+      const t = $(".an-p-tkp", z); if (t) t.remove(); pr.removeAttribute("readonly"); pr.removeAttribute("title"); el.remove();
+      $(".an-p-grund-box", z).innerHTML = anGrundText(z.dataset.orig, grund); pr.focus(); pr.select(); return anSumme(); }
     case "an-pos-neu": { $("#an-pos").insertAdjacentHTML("beforeend", anPosZeile()); return anSumme(); }
     case "an-kat-neu": return anKatNeu();
     case "an-firma-wahl": return firmaWaehlen(id);

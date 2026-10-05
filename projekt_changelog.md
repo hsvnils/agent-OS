@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 20:51] — Claude Code
+- **Was:** Rechnung: Preis einer Position von Hand ueberschreibbar -- nur mit Grund. Editor fragt den Grund ab, sobald der
+  Preis einer Position aus Auftrag/Katalog geaendert wird (ohne Grund bleibt der alte Preis); TKP-Positionen bekommen
+  „✎ Preis ueberschreiben“ (Grund-Abfrage, danach kein TKP-Nachrechnen). Server speichert `preis_vorher_cent` +
+  `preis_grund` an der Position (Hash-Kette) und lehnt geaenderte Preise ohne Grund ab; Grund steht im Editor und in der
+  Rechnungsansicht, nicht auf dem PDF. Dabei gefunden und behoben (BF-58): auf dem iPhone lagen Einzelpreis und Loeschen
+  im Positions-Editor (Angebot/Auftrag/Rechnung) ausserhalb des Bildes. UI v102/v50. 3 Tests (Gegenprobe rot), Suite gruen.
+- **Warum:** CEO „Ich kann in einer Rechnung den Betrag eines Artikels nicht manuell ueberschreiben? Das muss, mit einer
+  Abfrage nach dem Grund, bitte moeglich sein.“
+- **Betroffen:** `orchestrator/core/angebote.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`,
+  `tests/test_preis_grund.py`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 20:38] — Claude Code
 - **Was:** TEXTBAUSTEINE T5 gebaut: versendete Angebote und Mahnungen koennen erneut gesendet / nachgefasst werden
   (eingefrorenes PDF, Vorlage waehlbar, Gmail oder eigenes Mail-Programm; Status/Stufe/Erinnerungen unveraendert; Verlauf
