@@ -3,7 +3,7 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/videograf-v2v4`
 - Basiscommit: `782e428`
-- Naechster Schritt: V2-V4 gebaut (2026-10-05) -- Deploy-Go abwarten, danach live pruefen und abschliessen.
+- Naechster Schritt: V1-V4 live (2026-10-05) -- erster echter Vorschlag in einer Konzept-Mappe durch den CEO, dann abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

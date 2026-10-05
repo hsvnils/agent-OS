@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 16:19] — Claude Code
+- **Was:** Deploy VIDEOGRAF V2-V4 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): UI v99/v47; Agent 17
+  aktiv mit 5 geladenen Skills; Endpunkt `/api/crm/konzept-videograf` antwortet (Probe mit nicht vorhandenem Vorgang:
+  fachliche Meldung, kein Modellaufruf, nichts geschrieben). Erster echter Vorschlag folgt durch den CEO.
+- **Warum:** CEO „Beide Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** NAS-Deploy, `VIDEOGRAF_ROADMAP.md`
+
 ## [2026-10-05 16:11] — Claude Code
 - **Was:** VIDEOGRAF V2-V4 gebaut: **V2** 5 Skills fuer Agent 17 (`skills/vid/`: Shotlist, Bildsprache/Kamera, Licht/Ton,
   Equipment/Drehplan, B-Roll/Schnitt; Security-Gate bestanden). **V3** `core/videograf.py` + `POST /api/crm/konzept-videograf/
