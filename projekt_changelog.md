@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 22:15] — Claude Code
+- **Was:** Deploy M2 live geprueft (Code auf der NAS, Kundenversand allinkl, Anmeldung SMTP+IMAP ok). Fuer den echten Test
+  nachgebessert: die Testmail aus LUNA-OS speichert ihre Kennung (Ereignis `kundenversand_testmail`), eine Antwort darauf wird
+  auch von CEO-Adressen erkannt und nur per Telegram gemeldet (keine Ablage); Antworten des CEO auf echte Belege bleiben
+  ignoriert. 1 neuer Test, 3 Gegenproben rot. Vorher waere der Test ins Leere gelaufen (Testmail ohne Beleg, iCloud = CEO-Adresse).
+- **Warum:** CEO: „Testmail an icloud“ (Gate M2).
+- **Betroffen:** `orchestrator/core/mail_antworten.py`, `orchestrator/channels/web/app.py`,
+  `orchestrator/tests/test_mail_antworten.py`, `MAILVERSAND_ALLINKL_ROADMAP.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-05 22:10] — Claude Code
 - **Was:** MAILVERSAND_ALLINKL M2 gebaut: `core/mail_antworten.py` erkennt im 15-min-Poll des Bots (nur bei
   `KUNDENVERSAND=allinkl`) Kundenantworten im Postfach luna@hanserautisch.de -- IMAP nur lesend (`AllInklMail.posteingang`,

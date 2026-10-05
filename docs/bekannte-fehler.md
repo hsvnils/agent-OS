@@ -55,7 +55,7 @@ Tabelle fort.
   `orchestrator/.env`; die Test-Basis (`ApiBasis`) las sie mit -- mit `KUNDENVERSAND=allinkl` haetten Tests den echten
   Versandweg genommen. Seit MAILVERSAND_ALLINKL M1 ersetzt `ApiBasis` die Secrets durch `{}` (2026-10-05).
 - **Antworten des CEO zaehlen nicht als Kundenantwort.** Die IMAP-Erkennung (M2) ignoriert alle Adressen aus
-  `BELEG_ABSENDER`; zum Testen deshalb von einer anderen Adresse antworten.
+  `BELEG_ABSENDER` -- ausser bei der Antwort auf die LUNA-Testmail (dafuer gibt es die Ausnahme, 2026-10-05).
 - **Keine Tests, die man sich gruen formuliert.** Ein Stichwort-Test „Frage passt zur Zustaendigkeitszeile“ liess sich
   nur mit zurechtgelegten Synonymen bestehen (FACHAGENTEN_ROUTING R4) -- ersetzt durch den echten Probelauf ueber das Modell.
 - **„Erzeugt" ist nicht „angekommen".** Die Telegram-Zustellung war 5 Wochen tot, obwohl alles „lief"

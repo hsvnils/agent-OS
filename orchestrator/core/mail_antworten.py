@@ -20,6 +20,7 @@ from email.utils import parseaddr
 
 KENNUNG = re.compile(r"<(luna-[0-9a-f]{24})@", re.I)
 BELEGNR = re.compile(r"\b(?:AN|AB|RE|MA)-\d{4}-\d{4}\b|\bRG-\d{6,8}\b", re.I)
+TESTMAIL = "TESTMAIL"                                          # Testmail aus LUNA-OS (Gate M2): nur melden, nichts ablegen
 ART = {"AN": "Angebot", "AB": "Auftrag", "RE": "Rechnung", "RG": "Rechnung", "MA": "Mahnung"}
 
 
@@ -103,14 +104,14 @@ def antworten_pruefen(bh, kunden, postfach, *, eigene: list[str], notify=None, t
         if key in schon:
             continue
         absender = parseaddr(str(m.get("From", "")))[1].lower()
-        if not absender or absender in eigene:
-            continue
         nummer = zuordnen(roh, zu, mahn_re)
-        if not nummer:
-            continue
+        if not absender or not nummer or (absender in eigene and nummer != TESTMAIL):
+            continue                                           # CEO/LUNA zaehlen nie als Kunde -- ausser beim Testlauf
         info = {"id": key, "nummer": nummer, "von": str(m.get("From", ""))[:200], "datum": str(m.get("Date", ""))[:80],
                 "betreff": str(m.get("Subject", ""))[:200], "vorschau": _vorschau(roh), "kanal": "allinkl"}
-        if nummer.startswith("AN-"):
+        if nummer == TESTMAIL:
+            info["ablage"] = "keine"
+        elif nummer.startswith("AN-"):
             st = AngebotStore(bh, kunden)
             st.antwort_erfassen(nummer, {"id": key, "von": info["von"], "datum": info["datum"], "vorschau": info["vorschau"]},
                                 von=von)
@@ -125,6 +126,11 @@ def antworten_pruefen(bh, kunden, postfach, *, eigene: list[str], notify=None, t
         neu.append(info)
         if notify:
             try:
+                if nummer == TESTMAIL:
+                    notify(f"✉️ Antwort auf die LUNA-Testmail von {info['von']} erkannt – die Antwort-Erkennung ueber "
+                           f"luna@hanserautisch.de funktioniert. „{info['vorschau'][:120]}“", abteilung="CRO", kategorie="crm",
+                           quelle="mail_antworten")
+                    continue
                 a = art(nummer)
                 notify(f"✉️ Antwort auf {a} {nummer} von {info['von']}: {info['vorschau'][:160]}",
                        abteilung="CRO", kategorie="crm", quelle="mail_antworten",

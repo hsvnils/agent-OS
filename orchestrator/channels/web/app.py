@@ -3884,6 +3884,8 @@ async def kundenversand_testmail(request: Request):
                           bestaetigt=True, absender_name=ABSENDER_NAME)
         if not r.get("ok"):
             raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
+        kunden_store.bh.erfassen("kundenversand_testmail", {"nummer": "TESTMAIL", "an": an, "message_id": r["id"],
+                                                            "kanal": "allinkl"}, von=_von(request))   # M2: Antwort testbar
         return {"an": an, "id": r["id"], "gesendet_ordner": r.get("gesendet_ordner", "")}
     return _kunden_aktion(tun)
 

@@ -3,8 +3,8 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/mail-allinkl`
 - Basiscommit: `3a08276`
-- Naechster Schritt: M2 gebaut -- CEO-Go fuer Merge/Deploy, danach echter Test: CEO antwortet von einer Adresse, die NICHT
-  als CEO-Adresse gilt (z. B. hsvnils@gmail.com), auf eine ueber All-Inkl gesendete Mail; M3 (Beobachten) laeuft weiter.
+- Naechster Schritt: M2 live -- echter Test: Testmail aus LUNA-OS an den CEO, der CEO antwortet (auch von einer eigenen
+  Adresse), Telegram-Meldung „Antwort auf die LUNA-Testmail“ innerhalb von 15 Minuten; M3 (Beobachten) laeuft weiter.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -58,7 +58,8 @@ von All-Inkl (SMTP zum Senden, IMAP zum Lesen). Entscheidungen: **statt Gmail fu
   All-Inkl gingen (Mahnung zaehlt fuer ihre Rechnung). Angebot: Antwort im Verlauf + .eml wie bei Gmail; andere Belege:
   Mail in die Firmenakte mit Bezug (Rechnung/Mahnung -> Rechnung, dort unter Dokumente). Ereignis `mail_antwort` (genau
   einmal), Telegram-Meldung „✉️ Antwort auf …“; Absender des CEO (`BELEG_ABSENDER`) und LUNA zaehlen nie als Kunde;
-  Mails ohne Zuordnung bleiben unberuehrt.
+  Mails ohne Zuordnung bleiben unberuehrt. Testmail (`POST /api/finanzen/kundenversand/testmail`) speichert ihre Kennung
+  (`kundenversand_testmail`); eine Antwort darauf wird auch von CEO-Adressen erkannt, nur gemeldet, nicht abgelegt.
 
 ## Etappe M3: Umschalten und Beobachten
 

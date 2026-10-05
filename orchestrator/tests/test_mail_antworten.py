@@ -89,6 +89,24 @@ class TestAblauf(ApiBasis):
         self.assertEqual(len(meldungen), 2)
         self.assertEqual(len(self.c.get(f"/api/crm/angebote/{an}").json()["angebot"]["antworten"]), 1)
 
+    def test_testmail_antwort_auch_vom_ceo(self):
+        mid = self._senden("/api/finanzen/kundenversand/testmail", {"an": "hsvnils@icloud.com"})
+        meldungen = []
+        pf = Postfach([antwort("Nils <hsvnils@icloud.com>", "Re: LUNA-Testmail ueber All-Inkl", "Kommt an!", auf=mid)])
+        bh = self.w.kunden_store.bh
+        neu = antworten_pruefen(bh, self.w.kunden_store, pf, eigene=CEO, notify=lambda t, **kw: meldungen.append(t))
+        self.assertEqual([(x["nummer"], x["ablage"]) for x in neu], [("TESTMAIL", "keine")])
+        self.assertIn("Testmail", meldungen[0])
+        self.assertIn("Kommt an!", meldungen[0])
+        from orchestrator.core.firmenakte import Firmenakte
+        self.assertEqual(Firmenakte(bh, self.w.kunden_store).offene(), [])                 # nichts abgelegt
+        self.assertEqual(antworten_pruefen(bh, self.w.kunden_store, pf, eigene=CEO), [])     # nur einmal
+        # CEO antwortet auf einen echten Beleg -> weiter ignoriert
+        an = self._neu()
+        mid2 = self._senden(f"/api/crm/angebote/{an}/senden", {"an": "anna@brandx.de", "betreff": f"Angebot {an}", "text": "T"})
+        pf2 = Postfach([antwort("hsvnils@icloud.com", f"Re: Angebot {an}", "intern", auf=mid2, mid="<c9@x>")])
+        self.assertEqual(antworten_pruefen(bh, self.w.kunden_store, pf2, eigene=CEO), [])
+
     def test_ohne_allinkl_versand_nichts(self):
         an = self._neu()
         pf = Postfach([antwort("anna@brandx.de", f"Re: Angebot {an}", "Hallo")])
