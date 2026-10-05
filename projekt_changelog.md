@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 21:52] — Claude Code
+- **Was:** MAILVERSAND_ALLINKL M1 gebaut: neuer Versandweg `governance/allinkl_mail.py` (SMTP an All-Inkl, identische Kopie per
+  IMAP in „Gesendet“, .eml wie bisher in der Firmenakte, Message-ID `<luna-…@hanserautisch.de>`, Fehlertexte ohne Zugangsdaten);
+  Schalter `KUNDENVERSAND=gmail|allinkl` (Standard gmail) fuer alle Kunden-Versandwege der Web-App und die Folgemahnung per
+  Telegram, kein automatischer Rueckfall auf Gmail; Versanddialoge zeigen den Absender des gewaehlten Weges, „Jetzt senden“
+  gesperrt, wenn er nicht bereit ist; Anmelde-Pruefung `GET /api/finanzen/kundenversand` (ohne Versand) und Testmail
+  `POST /api/finanzen/kundenversand/testmail` (nur mit Bestaetigung); `.env.example` um die `ALLINKL_*`-Schluessel ergaenzt;
+  Test-Basis liest die echte `.env` nicht mehr (Schalter darf Tests nie umlenken). 9 neue Tests mit Attrappen (Gegenproben rot),
+  Cache v106. Ausserdem CONTENT_PLAN C4 (Spielplan) verworfen, Roadmap abgeschlossen.
+- **Warum:** CEO: „Spielplan kannst du streichen -- Weiter mit M1“.
+- **Betroffen:** `orchestrator/governance/allinkl_mail.py` (neu), `orchestrator/channels/web/app.py`,
+  `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`,
+  `orchestrator/tests/test_allinkl_mail.py` (neu), `orchestrator/tests/test_angebote.py`, `orchestrator/.env.example`,
+  `MAILVERSAND_ALLINKL_ROADMAP.md`, `CONTENT_PLAN_ROADMAP.md`, `ROADMAP.md`, `governance/zugriffs-policy.md`,
+  `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 21:45] — Claude Code
 - **Was:** Deploy CONTENT_PLAN C1-C3 live geprueft (nur lesend): Seite laedt v105/v53 mit Content-Plan-Code und -Styles,
   `GET /api/contentplan` antwortet (Feiertage Hamburg Oktober korrekt, Status-Beschriftungen da, ungueltiger Zeitraum -> 400);

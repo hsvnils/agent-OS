@@ -1,9 +1,9 @@
 # Roadmap: Content-Plan (Kalender fuer Planung und Verwaltung)
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/contentplan`
 - Basiscommit: `043998b`
-- Naechster Schritt: C1-C3 umgesetzt -- CEO-Go fuer Merge, Push und Deploy abwarten; C4 Spielplan erst nach eigener Freigabe der Datenquelle.
+- Naechster Schritt: keiner -- C1-C3 live seit 2026-10-05, C4 Spielplan vom CEO gestrichen (Spieltage bei Bedarf als Anlass von Hand).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -64,7 +64,7 @@ Ansichten **Monat, Woche, Liste**.
 
 ## Etappe C4: Spieltage (eigene Freigabe der Datenquelle)
 
-- Status: geplant
+- Status: verworfen (CEO 2026-10-05: „Spielplan kannst du streichen“ -- kein externer Dienst; Spieltage als Anlass von Hand)
 - Ziel / Scope: HSV-Spielplan automatisch (Datenquelle wird vorher bewertet und im Entscheidungs-Register festgehalten,
   z. B. eine freie Fussball-Daten-Schnittstelle oder ein Kalender-Abo); bis dahin Spieltage als Anlass von Hand.
 - Gate: CEO-Freigabe der Quelle (neuer externer Dienst), Eintrag in `docs/datenfluesse.md`.

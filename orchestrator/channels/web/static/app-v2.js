@@ -1891,7 +1891,7 @@ async function berSendenForm(nr) {
     <label class="v2-feld"><small>Betreff *</small><input id="ber-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="ber-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/bericht/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("bericht", nr, v)}
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ber-senden" data-id="${esc(nr)}" ${v.google ? "" : "disabled title=\"Google nicht verbunden\""}>✉️ Jetzt senden</button></div><div id="bers-msg" class="v2-msg"></div>`;
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ber-senden" data-id="${esc(nr)}" ${sendSperre(v)}>✉️ Jetzt senden</button></div><div id="bers-msg" class="v2-msg"></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 async function berSenden(nr) {
@@ -2047,7 +2047,7 @@ async function abSendenVorschau(nr) {
     <label class="v2-feld"><small>Betreff *</small><input id="abs-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="abs-text" class="v2-inp" rows="9">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("auftrag", nr, v)}
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ab-senden-jetzt" data-id="${esc(nr)}" ${v.google ? "" : "disabled"}>✉️ Jetzt senden</button><button class="v2-btn" data-act="ab-senden-abbruch">Abbrechen</button></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ab-senden-jetzt" data-id="${esc(nr)}" ${sendSperre(v)}>✉️ Jetzt senden</button><button class="v2-btn" data-act="ab-senden-abbruch">Abbrechen</button></div>
     <div id="abs-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -2085,7 +2085,7 @@ async function anSendenVorschau(nr, erneut) {
     <label class="v2-feld"><small>Betreff *</small><input id="as-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text * (Signatur anpassbar)</small><textarea id="as-text" class="v2-inp" rows="10">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("angebot", nr, v, erneut)}
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="an-senden-jetzt" data-id="${esc(nr)}" ${erneut ? 'data-val="erneut"' : ""} ${v.google ? "" : "disabled title=\"Google nicht verbunden – nutze dein Mail-Programm\""}>✉️ Jetzt senden</button><button class="v2-btn" data-act="an-senden-abbruch">Abbrechen</button></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="an-senden-jetzt" data-id="${esc(nr)}" ${erneut ? 'data-val="erneut"' : ""} ${sendSperre(v)}>✉️ Jetzt senden</button><button class="v2-btn" data-act="an-senden-abbruch">Abbrechen</button></div>
     <div id="as-msg" class="v2-msg"></div>
     <small class="v2-sub">${erneut ? "„Jetzt senden“ geht aus LUNAs Google-Konto raus; Status und Erinnerungen bleiben unverändert, die Mail steht im Verlauf." : "Geht aus LUNAs Google-Konto raus. Danach ist das Angebot „versendet“ (nicht mehr änderbar), die Erinnerungen werden angelegt, Antworten des Kunden erscheinen hier und kommen per Telegram."}</small></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2531,7 +2531,7 @@ async function reSendenVorschau(nr) {
     <label class="v2-feld"><small>Betreff *</small><input id="res-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="res-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/rechnungen/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("rechnung", nr, v)}
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="re-senden-jetzt" data-id="${esc(nr)}" ${v.google ? "" : "disabled"}>✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="res-msg" class="v2-msg"></div></div>`;
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="re-senden-jetzt" data-id="${esc(nr)}" ${sendSperre(v)}>✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="res-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 let RE_DETAIL = null;
@@ -2583,7 +2583,7 @@ async function maSendenVorschau(ma, erneut) {
     <label class="v2-feld"><small>Betreff *</small><input id="mas-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="mas-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/mahnungen/${encodeURIComponent(ma)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("mahnung", ma, v, erneut)}
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ma-senden-jetzt" data-id="${esc(ma)}" ${erneut ? 'data-val="erneut"' : ""} ${v.google ? "" : "disabled"}>✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="mas-msg" class="v2-msg"></div></div>`;
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ma-senden-jetzt" data-id="${esc(ma)}" ${erneut ? 'data-val="erneut"' : ""} ${sendSperre(v)}>✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="mas-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function reBezahltForm(nr) {
@@ -3249,6 +3249,8 @@ async function cpEintragOeffnen(id) {
   if (e.quelle === "posting") return abDetail(e.auftrag);
   if (e.quelle === "dreh") return konzeptFenster(e.vorgang, "dreh");
 }
+// MAILVERSAND_ALLINKL M1: „Jetzt senden" gesperrt, wenn der gewaehlte Versandweg nicht bereit ist (Mail-Programm geht immer)
+const sendSperre = (v) => v.google ? "" : `disabled title="${v.versand_kanal === "allinkl" ? "All-Inkl-Postfach nicht eingerichtet" : "Google nicht verbunden"} – nutze dein Mail-Programm"`;
 function card(badge, titel, body, actions, good) {
   return `<div class="v2-card"><div class="v2-card-h"><span class="v2-badge ${good ? "ok" : "neutral"}">${esc(badge || "")}</span><b>${esc(titel)}</b></div><div class="v2-desc">${body}</div>${actions ? `<div class="v2-card-actions">${actions}</div>` : ""}</div>`;
 }

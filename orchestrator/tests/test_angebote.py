@@ -140,9 +140,13 @@ class ApiBasis(unittest.TestCase):
         webapp.crm_store.nachricht_erfassen("Brand_X", "Kooperation?", quelle="instagram")
         ks.collab_zuordnen(self.k, "Brand_X")
         self.g = webapp._GOOGLE = MockGoogleWorkspace()
+        from unittest import mock
+        self._env = mock.patch.object(webapp, "_google_secrets", return_value={})   # nie die echte .env (z. B. KUNDENVERSAND)
+        self._env.start()
         self.c = TestClient(webapp.app)
 
     def tearDown(self):
+        self._env.stop()
         self.w.kunden_store, self.w.crm_store, self.w._GOOGLE = self.orig
 
     def _neu(self, **extra):

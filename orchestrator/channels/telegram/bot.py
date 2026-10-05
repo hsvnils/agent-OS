@@ -1812,7 +1812,9 @@ def main() -> None:
                         if ent == "y":
                             try:
                                 _fd = json.loads((ROOT / "buchhaltung" / "firmendaten.json").read_text(encoding="utf-8"))
-                                r = folgemahnung_senden(_bh, _KS(_bh), ctx.google, re_nr, int(stufe), _fd, von="Telegram:CEO")
+                                from ...governance.allinkl_mail import versandweg as _vw   # M1: Schalter KUNDENVERSAND
+                                r = folgemahnung_senden(_bh, _KS(_bh), _vw(_load_secrets(), ctx.google), re_nr, int(stufe), _fd,
+                                                        von="Telegram:CEO")
                                 from ...core.beleg_pdf import eur as _eur
                                 res = (f"✅ {STUFEN[int(stufe)]} {r['nummer']} an {r['an']} gesendet · {_eur(r['summe_cent'])}"
                                        f" · Frist {r['frist'][8:10]}.{r['frist'][5:7]}.{r['frist'][:4]}")

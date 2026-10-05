@@ -2428,9 +2428,9 @@ def konzept_versandvorschau(vorgang: str, vorlage: str = ""):
     tb = _tb("konzept", vorlage)
     betreff, text = kz.mail_text(k, ap, _firmendaten(), v, vorlage=tb["vorlage"], signatur=tb["signatur"],
                                  kunde=_kunde_name(k.get("firma")))
-    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    vs = _versand_absender()
     return {"an": an, "betreff": betreff, "text": text, "version": v, "pdf": f"Konzept_{k['vorgang']}" + (f"_v{v}" if v > 1 else "") + ".pdf",
-            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": bool(_google().verfuegbar())} | tb["auswahl"]
+            "absender": vs["absender"], "google": bool(_google().verfuegbar()) if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"]} | tb["auswahl"]
 
 
 @app.post("/api/crm/konzept-versand/{vorgang}")
@@ -2612,9 +2612,9 @@ def bericht_versandvorschau(nummer: str, vorlage: str = ""):
     tb = _tb("bericht", vorlage)
     betreff, text = mail_text(d, det["ansprechpartner"], _firmendaten(), v, vorlage=tb["vorlage"], signatur=tb["signatur"],
                               kunde=_kunde_name(a.get("firma")))
-    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    vs = _versand_absender()
     return {"an": det["mail_an"], "betreff": betreff, "text": text, "pdf": dateiname(a["nummer"], v), "version": v,
-            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": det["google"],
+            "absender": vs["absender"], "google": det["google"] if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"],
             "fehlen": d["fehlen"]} | tb["auswahl"]
 
 
@@ -2688,9 +2688,9 @@ def auftrag_versandvorschau(nummer: str, vorlage: str = ""):
     tb = _tb("auftrag", vorlage)
     betreff, text = auftrag_mail_text(d["auftrag"], d["ansprechpartner"], _firmendaten(), vorlage=tb["vorlage"],
                                       signatur=tb["signatur"], kunde=_kunde_name(d["auftrag"].get("firma")))
-    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    vs = _versand_absender()
     return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": f"Auftragsbestaetigung_{d['auftrag']['nummer']}.pdf",
-            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": d["google"]} | tb["auswahl"]
+            "absender": vs["absender"], "google": d["google"] if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"]} | tb["auswahl"]
 
 
 @app.post("/api/crm/auftraege/{nummer}/senden")
@@ -2936,9 +2936,9 @@ def rechnung_versandvorschau(nummer: str, vorlage: str = ""):
     tb = _tb(mail_art(r), vorlage)
     betreff, text = rechnung_mail_text(r, d["ansprechpartner"], _firmendaten(), vorlage=tb["vorlage"], signatur=tb["signatur"],
                                        kunde=_kunde_name(r.get("firma")))
-    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    vs = _versand_absender()
     return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": Path(r["belege"][0]["pfad"]).name.split("-", 1)[-1],
-            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": d["google"]} | tb["auswahl"]
+            "absender": vs["absender"], "google": d["google"] if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"]} | tb["auswahl"]
 
 
 @app.post("/api/finanzen/rechnungen/{nummer}/senden")
@@ -3065,9 +3065,9 @@ def mahnung_versandvorschau(nummer: str, vorlage: str = ""):
     tb = _tb("mahnung", vorlage)
     betreff, text = mahnung_mail_text(m, ap, _firmendaten(), vorlage=tb["vorlage"], signatur=tb["signatur"],
                                       kunde=_kunde_name(m.get("firma")))
-    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    vs = _versand_absender()
     return {"an": an, "betreff": betreff, "text": text, "pdf": f"Mahnung_{m['nummer']}.pdf",
-            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": bool(_google().verfuegbar())} | tb["auswahl"]
+            "absender": vs["absender"], "google": bool(_google().verfuegbar()) if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"]} | tb["auswahl"]
 
 
 @app.post("/api/finanzen/mahnungen/{nummer}/senden")
@@ -3831,7 +3831,61 @@ class _MailProgramm:
 
 
 def _versand_google(body: dict):
-    return _MailProgramm() if (body or {}).get("kanal") == "mail-programm" else _google()
+    """Versandweg fuer Kundenmails: eigenes Mail-Programm (Klick im Dialog), sonst der Schalter KUNDENVERSAND in der
+    .env -- All-Inkl (luna@hanserautisch.de, MAILVERSAND_ALLINKL M1) oder Gmail. Kein automatischer Rueckfall."""
+    if (body or {}).get("kanal") == "mail-programm":
+        return _MailProgramm()
+    from ...governance.allinkl_mail import kundenversand, versandweg
+    sec = _google_secrets()
+    return versandweg(sec, None) if kundenversand(sec) == "allinkl" else _google()
+
+
+def _versand_absender() -> dict:
+    """Fuer die Versanddialoge: von welcher Adresse geht die Kundenmail raus, und ist der Weg bereit?"""
+    from ...governance.allinkl_mail import AllInklMail, kundenversand
+    sec = _google_secrets()
+    if kundenversand(sec) == "allinkl":
+        a = AllInklMail(sec)
+        return {"kanal": "allinkl", "absender": a.absender(ABSENDER_NAME) if a.adresse else ABSENDER_NAME,
+                "bereit": a.verfuegbar()}
+    konto = (sec.get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    return {"kanal": "gmail", "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "bereit": None}
+
+
+@app.get("/api/finanzen/kundenversand")
+def kundenversand_status():
+    """MAILVERSAND_ALLINKL M1: welcher Versandweg gilt, und meldet sich das All-Inkl-Postfach an (SMTP + IMAP, ohne
+    Versand)? Liefert nie Zugangsdaten, nur fehlende Schluessel-Namen und Fehlerklassen."""
+    from ...governance.allinkl_mail import AllInklMail, kundenversand
+    sec = _google_secrets()
+    a = AllInklMail(sec)
+    out = {"kanal": kundenversand(sec), "absender": _versand_absender()["absender"], "fehlend": a.fehlend()}
+    if a.verfuegbar():
+        out["pruefung"] = a.verbindung_pruefen()
+    return out
+
+
+@app.post("/api/finanzen/kundenversand/testmail")
+async def kundenversand_testmail(request: Request):
+    """Eine Testmail ueber All-Inkl an eine Adresse des CEO (Gate M1) -- nur mit Bestaetigung, Modul finanzen."""
+    body = await _json(request)
+
+    def tun():
+        from ...governance.allinkl_mail import AllInklMail
+        if body.get("bestaetigt") is not True:
+            raise ValueError("Testmail braucht die ausdrueckliche Bestaetigung.")
+        an = (body.get("an") or "").strip()
+        if "@" not in an:
+            raise ValueError("Empfaenger fehlt.")
+        a = AllInklMail(_google_secrets())
+        r = a.mail_senden(an, "LUNA-Testmail ueber All-Inkl",
+                          "Diese Testmail kommt ueber das Postfach luna@hanserautisch.de (All-Inkl).\n"
+                          "Bitte pruefen: Absender, Zustellung (nicht im Spam) und Kopie im Ordner Gesendet.\n\nLUNA",
+                          bestaetigt=True, absender_name=ABSENDER_NAME)
+        if not r.get("ok"):
+            raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
+        return {"an": an, "id": r["id"], "gesendet_ordner": r.get("gesendet_ordner", "")}
+    return _kunden_aktion(tun)
 
 
 def _tb(art: str, vid: str = "") -> dict:
@@ -3954,9 +4008,9 @@ def angebot_versandvorschau(nummer: str, vorlage: str = ""):
     tb = _tb("angebot", vorlage)
     betreff, text = angebot_mail_text(a, d["firma"], d["ansprechpartner"], _firmendaten(), vorlage=tb["vorlage"],
                                       signatur=tb["signatur"])
-    konto = (_google_secrets().get("GOOGLE_ACCOUNT_EMAIL") or "").strip()
+    vs = _versand_absender()
     return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": f"Angebot_{a['nummer']}.pdf",
-            "absender": f"{ABSENDER_NAME} <{konto}>" if konto else ABSENDER_NAME, "google": d["google"],
+            "absender": vs["absender"], "google": d["google"] if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"],
             "status": a["status"]} | tb["auswahl"]
 
 

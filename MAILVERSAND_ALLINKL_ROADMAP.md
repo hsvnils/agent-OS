@@ -1,10 +1,10 @@
 # Roadmap: Kundenmails ueber All-Inkl (luna@hanserautisch.de) statt Gmail
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-05
-- Arbeitsbranch: `ai/plan-contentplan-allinkl`
-- Basiscommit: `655f82a`
-- Naechster Schritt: CEO-Go fuer M1 abwarten; vorher legt der CEO das Postfach-Passwort selbst in `orchestrator/.env` an
-  (CEO-Tor: neuer Zugang).
+- Arbeitsbranch: `ai/mail-allinkl`
+- Basiscommit: `3a08276`
+- Naechster Schritt: M1 gebaut (Schalter steht weiter auf Gmail) -- nach Deploy traegt der CEO die `ALLINKL_*`-Werte in die
+  NAS-`.env` ein; dann Anmelde-Pruefung (`GET /api/finanzen/kundenversand`) und eine Testmail an eine CEO-Adresse nach Freigabe.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -27,13 +27,22 @@ von All-Inkl (SMTP zum Senden, IMAP zum Lesen). Entscheidungen: **statt Gmail fu
 
 ## Etappe M1: Versand ueber All-Inkl
 
-- Status: geplant
+- Status: umgesetzt (Gate offen: Anmelde-Pruefung + echte Testmail)
 - Ziel / Scope: neuer Versandweg „All-Inkl“ mit dem gleichen Aufruf wie Gmail (Empfaenger, Betreff, Text, Anhaenge);
   Absender „Hanserautisch – LUNA <luna@hanserautisch.de>“; die gesendete Mail wird per IMAP in „Gesendet“ abgelegt und
   wie bisher als .eml archiviert; Schalter in der `.env` (Kundenversand = allinkl | gmail), Rueckfall auf Gmail nur
   per Schalter (nie automatisch, damit kein Kunde Mails von zwei Absendern bekommt). Versanddialoge zeigen den Absender.
 - Gate: Tests mit Attrappe (kein echter Versand); **ein echter Testversand an eine CEO-Adresse** nach Freigabe; CISO-Eintrag.
 - Aufwand: mittel.
+- Umsetzung (2026-10-05): `governance/allinkl_mail.py` -- `AllInklMail` mit gleichem Aufruf wie Gmail (`mail_senden`,
+  `mail_roh`), SMTP (SSL 465, sonst STARTTLS), Message-ID `<luna-…@hanserautisch.de>` (Kennung = Archiv-Name der .eml),
+  Ablage der identischen Bytes per IMAP-APPEND in „Gesendet“ (Ordner per `\Sent`-Flag erkannt oder `ALLINKL_GESENDET_ORDNER`;
+  scheitert die Ablage, ist die Mail trotzdem raus und in der Firmenakte); Fehlertexte ohne Zugangsdaten. Schalter
+  `KUNDENVERSAND=allinkl|gmail` (Standard gmail) gilt fuer alle 6 Versandwege der Web-App und die Folgemahnung per Telegram;
+  steht er auf allinkl und fehlt etwas, kommt ein klarer Fehler statt Rueckfall auf Gmail. Versanddialoge zeigen den
+  Absender des gewaehlten Weges, „Jetzt senden“ ist gesperrt, wenn er nicht bereit ist (Mail-Programm geht immer).
+  Pruefung `GET /api/finanzen/kundenversand` (Anmeldung SMTP+IMAP, kein Versand), Testmail
+  `POST /api/finanzen/kundenversand/testmail` (nur mit Bestaetigung). Antworten erkennt erst M2.
 
 ## Etappe M2: Antworten der Kunden
 
