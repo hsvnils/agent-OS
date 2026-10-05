@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 21:11] — Claude Code
+- **Was:** Deploy „Preis direkt im Positionsfeld“ live geprueft (CEO hat NAS-Sync und Neustart ausgefuehrt): UI v103/v51,
+  Knopf entfernt, Preisfeld im Rechnungs-Editor frei, Tipp-Schutz aktiv; Server verlangt weiter den Grund. Nichts geaendert.
+- **Warum:** CEO „Beide Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** NAS-Deploy
+
 ## [2026-10-05 21:04] — Claude Code
 - **Was:** Preisaenderung in der Rechnung korrigiert: kein Knopf „✎ Preis ueberschreiben“ mehr -- das Preisfeld jeder
   Position (auch TKP) ist im Rechnungsentwurf direkt aenderbar; beim Verlassen des Feldes fragt LUNA nach dem Grund
