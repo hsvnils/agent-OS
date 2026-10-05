@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 22:36] — Claude Code
+- **Was:** Korrektur zum vorigen Eintrag: Die Telegram-Meldung zur Testmail-Antwort wurde um 22:33 zugestellt (`sent`, eine
+  Minute nach dem Erfassen) -- es war **kein** „Nicht stoeren“-Fenster; meine Pruefung kam nur vor dem naechsten Zustell-Tick.
+  CEO hat den Empfang bestaetigt. Gate M2 damit vollstaendig bis zum Empfaenger geprueft.
+- **Warum:** CEO: „Telegram-Meldung ist angekommen“.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-05 22:33] — Claude Code
 - **Was:** Gate M2 geprueft: Testmail 22:17 an hsvnils@icloud.com, CEO hat geantwortet; der 15-min-Poll hat die Antwort um
   22:32 erkannt (Ereignis `mail_antwort`, Nummer TESTMAIL, keine Ablage) und die Telegram-Meldung in die Outbox gelegt. Sie ist
