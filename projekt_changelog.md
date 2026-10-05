@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 22:50] — Claude Code
+- **Was:** Roadmap `BELEG_EINE_EBENE_ROADMAP.md` angelegt (E1 Rechnung, E2 Angebot + Auftrag, E3 Feinschliff): Formular an der
+  Stelle des Belegblatts, im Entwurf aenderbar, gesperrt nur lesen, Umschalter „Vorschau“ fuer das Blatt; im Roadmap-Verzeichnis
+  registriert. Nichts umgesetzt.
+- **Warum:** CEO: „beide Ebenen zusammenbringen“; Entscheidungen: Formular + Umschalter; Angebot, Auftrag, Rechnung.
+- **Betroffen:** `BELEG_EINE_EBENE_ROADMAP.md` (neu), `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-05 22:45] — Claude Code
 - **Was:** TEXTBAUSTEINE T4 (Geraete-Abnahme des Mail-Programm-Wegs) verworfen und die Roadmap abgeschlossen; Entscheidung im
   Register. Versand aus LUNA-OS ueber luna@hanserautisch.de ist der Standardweg, der Knopf „Im Mail-Programm oeffnen“ bleibt
