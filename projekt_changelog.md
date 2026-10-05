@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 12:00] — Claude Code
+- **Was:** Deploy AGENTEN_AUSBAU Paket 1 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): UI v96/v45,
+  `/api/agenten-uebersicht` liefert 18 Agenten mit echten Watcher-Funden, CFO-Profil mit 4 geladenen Skills und 9 Quellen,
+  CIO/Risk/Researcher/HoA-Profile ok, Leistungsbericht mit Fachagenten-Zeile (noch 0 Anfragen), Skills und
+  verallgemeinerter Nachtlauf auf der NAS. Erste Messung der Nutzung ab der naechsten Fachagenten-Frage, erster
+  Quellen-Nachtlauf (CLO + CFO) 04:30.
+- **Warum:** CEO „Beide Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** NAS-Deploy (`luna-os`, `luna-telegram`)
+
 ## [2026-10-05 11:54] — Claude Code
 - **Was:** AGENTEN_AUSBAU Paket 1 (`ai/agenten-paket1`, inkl. Plan-Commits `f2ee9c4`, `ee7d89f`) lokal in `main` gemergt;
   Suite auf main 1180 passed, 0 failed. Push und NAS-Sync stehen noch aus (Freigabe der Ausfuehrung in Claude Code verweigert).
