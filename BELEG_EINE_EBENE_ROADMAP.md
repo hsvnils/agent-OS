@@ -1,10 +1,10 @@
 # Roadmap: Beleg in einer Ebene (Formular an der Stelle des Blatts, gesperrt nur lesen)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/beleg-eine-ebene`
 - Basiscommit: `5cdb129`
-- Naechster Schritt: CEO-Go fuer E1 (Rechnung) abwarten.
+- Naechster Schritt: E1-E3 gebaut (2026-10-05) -- CEO-Go fuer Merge, Push und Deploy, danach Abnahme an echten Belegen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -38,7 +38,7 @@ gilt fuer **Angebot, Auftrag und Rechnung**.
 
 ## Etappe E1: Rechnung
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Formular-Baustein aus `reEditor` so umbauen, dass er in einen Container der Detailansicht rendert
   (statt eigenes Fenster) und einen Nur-lesen-Modus kennt; Rechnungsdetail zeigt Formular + Umschalter Vorschau; „✎
   Bearbeiten“ entfaellt; Speichern bleibt im Beleg (danach Ansicht aktualisiert, nicht geschlossen). Festgeschriebene,
@@ -49,22 +49,31 @@ gilt fuer **Angebot, Auftrag und Rechnung**.
 - Verifikation: Browser-Szenario „festgeschrieben“ -> erwartet: 0 bedienbare Eingabefelder, keine Speichern-/Positions-Knoepfe.
 - Risiko / Rueckweg: Umbau der Editor-Funktion; Rueckweg = Commit zuruecknehmen (nur Oberflaeche).
 - Aufwand: mittel.
+- Umsetzung (2026-10-05): `reFormHtml` (Formular-Baustein aus `reEditor`) steht im Rechnungsdetail an der Stelle des Blatts;
+  Entwurf aenderbar (Speichern bleibt im Beleg), festgeschrieben/storniert/Storno nur lesen mit Hinweis; Summen gesperrter
+  Belege vom Server (inkl. Abzuege der Schlussrechnung); „✎ Bearbeiten“ entfaellt; Korrektur-Entwurf nach Storno oeffnet im Beleg.
 
 ## Etappe E2: Angebot und Auftrag
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: dasselbe fuer das Angebot (`anEditor`; Entwurf aenderbar, ab versendet nur lesen) und den Auftrag (immer
   nur lesen: Positionen/Konditionen der Auftragsbestaetigung als Formular, Reiter Konzept/Postings/Zeiten/Bericht bleiben).
 - Gate/Verifikation wie E1.
 - Aufwand: mittel.
+- Umsetzung (2026-10-05): `anFormHtml` im Angebot (Entwurf aenderbar, ab Versand nur lesen mit Status/Versanddatum) und im
+  Auftrag (immer nur lesen, Angebots-Felder wie Gueltig bis/Praesentation/Bloecke ausgeblendet; Leistung & Anmerkung rechts).
 
 ## Etappe E3: Feinschliff
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Umschalter-Gedaechtnis je Geraet, Tastatur/Fokus, iPhone-Feinschliff, Aufraeumen der alten
   Bearbeiten-Wege (Handlungsbedarf-/Verlinkungen, die noch das Fenster oeffnen).
 - Gate: Browsertest aller drei Belegarten.
 - Aufwand: klein.
+- Umsetzung (2026-10-05): Umschalter-Wahl je Geraet (`luna-beleg-ansicht`); alte Bearbeiten-Wege fuehren in den Beleg;
+  Rueckfrage bei ungespeicherten Aenderungen vor Festschreiben/Senden/Verwerfen/Status, beim Springen zu anderen Belegen
+  und beim Schliessen; gesperrt: leere Felder als „–“, nur gewaehlte Zuschlaege; schmalere Hauptspalte (Kopf/Fuss
+  untereinander bis 1400 px, Positionen dreispaltig bis 1180 px).
 
 ## Nicht-Scope
 

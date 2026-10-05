@@ -1028,3 +1028,22 @@ body.v2-lade-offen { overflow: hidden; }
   .v2-cp-tagkopf { padding: 1px 2px; } .v2-cp-tagkopf .plus { display: none; }
   .v2-po-plan { max-width: none; }
 }
+/* Beleg in einer Ebene (BELEG_EINE_EBENE E1-E3, 2026-10-05): Formular statt Blatt, Umschalter Vorschau, gesperrt nur lesen */
+.v2-ansicht-wahl { display: inline-flex; gap: 4px; padding: 3px; margin: 0 0 12px; border: 1px solid var(--v2-line-soft); border-radius: 12px; background: var(--v2-card-solid); }
+.v2-ansicht-wahl button { border: 0; background: none; color: var(--v2-muted); font: inherit; font-size: 14px; padding: 7px 14px; border-radius: 9px; cursor: pointer; min-height: 36px; }
+.v2-ansicht-wahl button.on { background: var(--v2-accent); color: #fff; font-weight: 700; }
+.v2-ansicht[data-ansicht="formular"] .v2-ansicht-vorschau, .v2-ansicht[data-ansicht="vorschau"] .v2-ansicht-formular { display: none; }
+.v2-ansicht-formular .v2-an-editor { min-width: 0; }
+.v2-gesperrt-hinweis { margin: 0 0 10px; background: var(--v2-amber-soft); color: var(--v2-fg); border-radius: 10px; padding: 9px 12px; }
+.v2-an-editor.gesperrt input:disabled, .v2-an-editor.gesperrt select:disabled, .v2-an-editor.gesperrt textarea:disabled {
+  opacity: 1; color: var(--v2-fg); -webkit-text-fill-color: var(--v2-fg); background: transparent; border-color: var(--v2-line-soft); cursor: default; }
+.v2-an-editor.gesperrt select:disabled { appearance: none; -webkit-appearance: none; background-image: none; }
+.v2-an-editor.gesperrt .v2-modlbl:has(input:not(:checked)) { opacity: .5; }
+.v2-summen-fest { margin: 0; } .v2-summen-fest td:first-child { display: none; } .v2-summen-fest td:last-child { text-align: right; white-space: nowrap; }
+/* Im Beleg ist die Hauptspalte schmaler als das alte Vollbild-Fenster: Kopf/Fuss frueher untereinander */
+@media (max-width: 1400px) { .v2-beleg-haupt .v2-an-kopf, .v2-beleg-haupt .v2-an-fuss { grid-template-columns: 1fr; } }
+@media (max-width: 1180px) { .v2-beleg-haupt .v2-an-pos { grid-template-columns: repeat(3, minmax(0, 1fr)); } .v2-beleg-haupt .v2-an-pos .v2-an-text { grid-column: 1 / -1; }
+  .v2-beleg-haupt .v2-an-pos-kopf { display: none; }
+  .v2-beleg-haupt .v2-an-pos .an-p-gesamt { grid-column: 1 / 3; align-self: center; }
+  .v2-beleg-haupt .v2-an-pos .v2-an-weg { grid-column: 3; justify-self: end; width: 44px; min-width: 44px; height: 44px; padding: 0; } }
+@media (max-width: 620px) { .v2-ansicht-wahl { display: flex; } .v2-ansicht-wahl button { flex: 1; } }

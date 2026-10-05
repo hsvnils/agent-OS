@@ -400,11 +400,15 @@ function tabs(sec, list) {
 }
 /* Detail-Overlay (ersetzt WinBox-Fenster) */
 function openModal(title, html, breit = false) {   // breit = ganze Seite (z. B. Angebots-Editor)
+  FORM_GEAENDERT = false;
   let m = $("#v2-modal"); if (!m) { m = document.createElement("div"); m.id = "v2-modal"; document.body.appendChild(m); }
   m.innerHTML = `<div class="v2-modal-back" data-modal-close></div><div class="v2-modal-card${breit ? " breit" : ""}"><header><b>${esc(title)}</b><button class="v2-icon" data-modal-close>✕</button></header><div class="v2-modal-body">${html}</div></div>`;
   m.hidden = false;
 }
-function closeModal() { const m = $("#v2-modal"); if (m && !m.hidden) { m.hidden = true; if (AKTIV === "dash") renderDash(); } }   // To-dos neu laden
+const formUngespeichert = () => FORM_GEAENDERT && !!document.querySelector("#v2-modal .v2-an-editor:not(.gesperrt)");
+function closeModal() { const m = $("#v2-modal"); if (m && !m.hidden) {
+  if (formUngespeichert() && !confirm("Im Formular gibt es ungespeicherte Änderungen. Wirklich schließen?")) return;
+  FORM_GEAENDERT = false; m.hidden = true; if (AKTIV === "dash") renderDash(); } }   // To-dos neu laden
 
 /* Fehler-Verlauf-Chart (LUNA vs. Baseline): breiten-bewusst gerendert -> KEINE Streckung.
    viewBox-Breite = Container-Pixelbreite -> 1:1-Abbildung (Achsen/Text unverzerrt). ResizeObserver wie V1. */
@@ -1088,14 +1092,48 @@ async function firmaWaehlen(nr) {
   const box = $("#an-firma-treffer"); if (box) box.hidden = true;
   await anApListe("");
 }
-async function anEditor(nummer, firmaVorwahl, modus) {
-  AN_KONTEXT = "angebot";
-  const alsAuftrag = modus === "auftrag";                         // Etappe 31: Auftrag ohne Angebot, gleicher Editor
-  openModal(alsAuftrag ? "Neuer Auftrag" : nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-empty">Lade…</div>`, true);
-  const [k, d] = await Promise.all([jget("/api/crm/kunden"), nummer ? jget("/api/crm/angebote/" + encodeURIComponent(nummer)) : Promise.resolve(null), katalogLaden()]);
+// BELEG_EINE_EBENE: Formular als Baustein -- im Fenster (Neu anlegen) und in der Detailansicht (Entwurf / nur lesen)
+async function belegFormDaten() {
+  const [k] = await Promise.all([jget("/api/crm/kunden"), katalogLaden()]);
   AN_FIRMEN = ((k && k.firmen) || []).filter(f => f.aktiv);
-  if (!AN_FIRMEN.length) return openModal("Neues Angebot", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."), true);
-  const a = (d && d.angebot) || { firma: firmaVorwahl || AN_FIRMEN[0].nummer, datum: heuteIso(), gueltig_bis: heuteIso(14), nachfassen_tage: 7, positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch" };
+}
+let FORM_GEAENDERT = false;                                       // ungespeicherte Eingaben im Beleg-Formular
+const belegAnsichtWahl = () => { try { return localStorage.getItem("luna-beleg-ansicht") === "vorschau" ? "vorschau" : "formular"; } catch { return "formular"; } };
+function belegZweiAnsichten(formular, vorschau) {                 // Umschalter Formular | Vorschau (Belegblatt)
+  const v = belegAnsichtWahl();
+  return `<div class="v2-ansicht" data-ansicht="${v}"><div class="v2-ansicht-wahl" role="group" aria-label="Ansicht">
+    <button class="${v === "formular" ? "on" : ""}" data-act="bl-ansicht" data-val="formular">✎ Formular</button><button class="${v === "vorschau" ? "on" : ""}" data-act="bl-ansicht" data-val="vorschau">📄 Vorschau</button></div>
+    <div class="v2-ansicht-formular">${formular}</div><div class="v2-ansicht-vorschau">${vorschau}</div></div>`;
+}
+// Formular verdrahten. `sperre` = Grund -> nur lesen (keine Eingabe, keine Knoepfe); `summen` = Summen-Zeilen vom Server
+async function belegFormularFertig(sperre, ap, summen) {
+  const root = document.querySelector("#v2-modal .v2-an-editor"); if (!root) return;
+  await anApListe(ap || "");
+  if (sperre) {
+    root.classList.add("gesperrt");
+    root.querySelectorAll("input, select, textarea").forEach(e => { e.disabled = true; });
+    root.querySelectorAll("button, .v2-an-kat, .v2-an-neu, #an-pos-leer").forEach(e => { e.hidden = true; });
+    root.querySelectorAll("input:not([type=checkbox]):not([type=hidden]), textarea").forEach(e => {   // leere Felder ruhig darstellen
+      if (e.value) return;
+      if (e.classList.contains("an-p-detail")) e.hidden = true;
+      else if (e.type === "date") { e.type = "text"; e.value = "–"; }
+      else e.placeholder = "–"; });
+    root.querySelectorAll(".v2-mods").forEach(m => {               // nur gewaehlte Zuschlaege zeigen
+      m.querySelectorAll(".v2-modlbl").forEach(l => { const c = l.querySelector("input"); if (c && !c.checked) l.hidden = true; });
+      if (![...m.querySelectorAll(".v2-modlbl")].some(l => !l.hidden)) { m.hidden = true; const t = m.previousElementSibling; if (t && t.tagName === "SMALL") t.hidden = true; } });
+    root.insertAdjacentHTML("afterbegin", `<div class="v2-msg v2-gesperrt-hinweis">🔒 ${esc(sperre)}</div>`);
+  } else {
+    firmaSucheVerdrahten();
+    root.addEventListener("input", () => { FORM_GEAENDERT = true; });
+    root.addEventListener("input", anSumme); root.addEventListener("change", anSumme);
+  }
+  anSumme();
+  const box = $("#an-summe-box");
+  if (summen && box) box.innerHTML = `<table class="v2-table v2-summen-fest"><tbody>${summen}</tbody></table>`;
+  if (sperre) { const l = $("#an-pos-leer"); if (l) l.hidden = true; }
+  FORM_GEAENDERT = false;
+}
+function anFormHtml(a, { nummer = "" } = {}) {
   const b = a.bloecke || {};
   const fa = AN_FIRMEN.find(f => f.nummer === a.firma);
   const gewaehlt = new Set((a.zuschlaege || []).map(z => z.id));
@@ -1103,7 +1141,7 @@ async function anEditor(nummer, firmaVorwahl, modus) {
   const zuHtml = zuListe.map(z => { const alt = (a.zuschlaege || []).find(x => x.id === z.id); const pr = alt ? alt.prozent : z.prozent;
     return `<label class="v2-modlbl"><input type="checkbox" class="an-zu" value="${esc(z.id)}" data-name="${esc(z.name)}" data-prozent="${esc(String(pr))}" ${gewaehlt.has(z.id) ? "checked" : ""}> +${esc(pz(pr))} % ${esc(z.name)}</label>`; }).join("");
   const rmax = esc(String((KATALOG && KATALOG.rabatt_max) || 30));
-  openModal(alsAuftrag ? "Neuer Auftrag (ohne Angebot)" : nummer ? `${nummer} bearbeiten` : "Neues Angebot", `<div class="v2-form v2-an-editor">
+  return `<div class="v2-form v2-an-editor">
     <div class="v2-an-kopf">
       <div class="v2-form">
         <div class="v2-feld v2-auto-feld"><small>Firma * (Name, Kundennummer oder Ort tippen)</small>
@@ -1143,10 +1181,18 @@ async function anEditor(nummer, firmaVorwahl, modus) {
       <label class="v2-feld"><small>Einleitung (leer = Standardtext)</small><textarea id="an-einleitung" rows="3" class="v2-inp">${esc(a.einleitung || "")}</textarea></label>
       <label class="v2-feld"><small>Schluss (nur schlichtes Layout; leer = Standardtext mit Gruß)</small><textarea id="an-schluss" rows="3" class="v2-inp">${esc(a.schluss || "")}</textarea></label>
     </div>
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="an-speichern" data-id="${esc(nummer || "")}">${nummer ? "Änderungen speichern" : "Anlegen (Nummer wird vergeben)"}</button><div id="an-msg" class="v2-msg"></div></div></div>`, true);
-  await anApListe(a.ansprechpartner || "");
-  firmaSucheVerdrahten();
-  const box = $("#v2-modal .v2-form"); box.addEventListener("input", anSumme); box.addEventListener("change", anSumme); anSumme();
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="an-speichern" data-id="${esc(nummer || "")}">${nummer ? "Änderungen speichern" : "Anlegen (Nummer wird vergeben)"}</button><div id="an-msg" class="v2-msg"></div></div></div>`;
+}
+async function anEditor(nummer, firmaVorwahl, modus) {
+  if (nummer) return anDetail(nummer);                            // Bearbeiten passiert im Beleg selbst
+  AN_KONTEXT = "angebot";
+  const alsAuftrag = modus === "auftrag";                         // Etappe 31: Auftrag ohne Angebot, gleicher Editor
+  openModal(alsAuftrag ? "Neuer Auftrag" : "Neues Angebot", `<div class="v2-empty">Lade…</div>`, true);
+  await belegFormDaten();
+  if (!AN_FIRMEN.length) return openModal("Neues Angebot", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."), true);
+  const a = { firma: firmaVorwahl || AN_FIRMEN[0].nummer, datum: heuteIso(), gueltig_bis: heuteIso(14), nachfassen_tage: 7, positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch" };
+  openModal(alsAuftrag ? "Neuer Auftrag (ohne Angebot)" : "Neues Angebot", anFormHtml(a), true);
+  await belegFormularFertig("", "");
   if (alsAuftrag) abEditorUmbauen();
 }
 async function anApListe(vorwahl) {
@@ -1297,8 +1343,10 @@ async function anSpeichern(nummer) {
 /* ---------- Detail ---------- */
 async function anDetail(nr, meldung, fehler) {
   openModal(nr, `<div class="v2-empty">Lade…</div>`, true);
-  const d = await jget("/api/crm/angebote/" + encodeURIComponent(nr));
+  const [d] = await Promise.all([jget("/api/crm/angebote/" + encodeURIComponent(nr)), belegFormDaten()]);
   const a = d && d.angebot; if (!a) return openModal(nr, emptyRow("Angebot nicht gefunden."), true);
+  AN_KONTEXT = "angebot";
+  if (!AN_FIRMEN.some(f => f.nummer === a.firma)) AN_FIRMEN.push({ nummer: a.firma, name: (d.firma || {}).name || a.firma });
   const ap = d.ansprechpartner, sm = a.summen || { formate_cent: a.summe_cent, zuschlaege: [], rabatt: null, gesamt_cent: a.summe_cent };
   const pos = a.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}${p.provision ? `<br><small>💶 ${esc(provText(p.provision))}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${posBetrag(p)}</td></tr>`).join("");
   const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Formate</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
@@ -1308,8 +1356,7 @@ async function anDetail(nr, meldung, fehler) {
   const termine = (a.versendet_termine || []).map(t => `<div class="v2-list-row"><span>📅</span><div class="grow"><b>${esc(t.titel)}</b><small>${esc(new Date(t.datum).toLocaleDateString("de-DE"))}, 09:00</small></div></div>`).join("");
   const pdfs = (a.pdfs || []).map(p => `<div class="v2-list-row"><span>📎</span><div class="grow"><b>${esc(p.pfad.split("/").pop())}</b><small>${esc(zeit(p.ts))}${p.an ? " · Mail-Entwurf an " + esc(p.an) : ""}${p.inhalt === a.inhalt ? "" : " · älterer Stand"}</small></div></div>`).join("");
   let aktionen = `<a class="v2-btn" href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 PDF ansehen</a><button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(nr)}">🔗 Belegverfolgung</button>`;
-  if (a.status === "entwurf") aktionen += `<button class="v2-btn" data-act="an-bearbeiten" data-id="${esc(nr)}">✎ Bearbeiten</button>
-    <button class="v2-btn pri" data-act="an-senden" data-id="${esc(nr)}">✉️ Senden …</button>
+  if (a.status === "entwurf") aktionen += `<button class="v2-btn pri" data-act="an-senden" data-id="${esc(nr)}">✉️ Senden …</button>
     <button class="v2-btn" data-act="an-versendet" data-id="${esc(nr)}" title="Nur wenn du das Angebot auf anderem Weg verschickt hast">✔ Anderweitig versendet</button>`;
   else aktionen += `<button class="v2-btn" data-act="an-senden" data-id="${esc(nr)}" data-val="erneut" title="Gleiches PDF erneut schicken, z. B. mit der Vorlage zum Nachfassen">✉️ Erneut senden / nachfassen …</button>`;
   if (a.auftrag) aktionen += `<button class="v2-btn ok" data-act="ab-detail" data-id="${esc(a.auftrag)}">📋 Auftrag ${esc(a.auftrag)}</button>`;
@@ -1336,8 +1383,12 @@ async function anDetail(nr, meldung, fehler) {
   const seite = blBox("Status", status) + `<section class="v2-bl-box" id="bv-mini"></section>` + blBox("Erinnerungen", termine)
     + blBox("Abgelegte PDFs", pdfs) + blBox(`Verlauf <small class="v2-sub">Mails zum Aufklappen</small>`, verlauf);
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
-    ${belegAnsicht({ aktionen, haupt: `<div id="an-senden-box"></div>${d.blatt ? belegBlatt(d.blatt) : altTab}`, seite, unten: `<section class="v2-kz" data-tabteil="konzept"><h3 class="v2-kz-titel">🎬 Konzept</h3><div id="kz-box"><div class="v2-empty">Lade…</div></div></section>`,
+    ${belegAnsicht({ aktionen, haupt: `<div id="an-senden-box"></div>${belegZweiAnsichten(anFormHtml(a, { nummer: nr }), d.blatt ? belegBlatt(d.blatt) : altTab)}`, seite, unten: `<section class="v2-kz" data-tabteil="konzept"><h3 class="v2-kz-titel">🎬 Konzept</h3><div id="kz-box"><div class="v2-empty">Lade…</div></div></section>`,
       reiter: [["beleg", "📄 Beleg"], ["konzept", "🎬 Konzept"]] })}`, true);
+  const stand = a.status === "versendet" ? `Versendet${a.versendet_am ? " am " + datumDe(a.versendet_am) : ""}`
+    : `${(AN_STATUS[a.status] || [a.status])[0]}${a.versendet_am ? " (versendet am " + datumDe(a.versendet_am) + ")" : ""}`;
+  await belegFormularFertig(a.status === "entwurf" ? "" : `${stand} – nur lesen. Nachfassen über „Erneut senden“.`,
+    a.ansprechpartner, a.status === "entwurf" ? null : fuss);
   bvMini(nr); KZ.tab = "briefing"; konzeptLaden(nr);
 }
 
@@ -1370,8 +1421,10 @@ async function abAnlegen(angebotNr, annehmen) {
 }
 async function abDetail(nr, meldung, fehler) {
   openModal(nr, `<div class="v2-empty">Lade…</div>`, true);
-  const d = await jget("/api/crm/auftraege/" + encodeURIComponent(nr));
+  const [d] = await Promise.all([jget("/api/crm/auftraege/" + encodeURIComponent(nr)), belegFormDaten()]);
   const a = d && d.auftrag; if (!a) return openModal(nr, emptyRow("Auftrag nicht gefunden."), true);
+  AN_KONTEXT = "angebot";
+  if (!AN_FIRMEN.some(f => f.nummer === a.firma)) AN_FIRMEN.push({ nummer: a.firma, name: (d.firma || {}).name || a.firma });
   const ap = d.ansprechpartner, sm = a.summen;
   const pos = a.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}${p.provision ? `<br><small>💶 ${esc(provText(p.provision))}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${posBetrag(p)}</td></tr>`).join("");
   const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Formate</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
@@ -1410,8 +1463,12 @@ async function abDetail(nr, meldung, fehler) {
     ${darf("rechnungen") ? `<div data-tabteil="zeiten"><div id="ab-zeit-box"></div></div>` : ""}
     ${a.status !== "storniert" ? `<div data-tabteil="bericht"><div id="ab-bericht-box"></div></div>` : ""}</div></div>`;
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
-    ${belegAnsicht({ aktionen, haupt: `<div id="ab-senden-box"></div>${d.blatt ? belegBlatt(d.blatt) : altTab}`, seite, unten: `<section class="v2-kz" data-tabteil="konzept"><h3 class="v2-kz-titel">🎬 Konzept</h3><div id="kz-box"><div class="v2-empty">Lade…</div></div></section>` + intern,
+    ${belegAnsicht({ aktionen, haupt: `<div id="ab-senden-box"></div>${belegZweiAnsichten(anFormHtml(a, { nummer: nr }), d.blatt ? belegBlatt(d.blatt) : altTab)}`, seite, unten: `<section class="v2-kz" data-tabteil="konzept"><h3 class="v2-kz-titel">🎬 Konzept</h3><div id="kz-box"><div class="v2-empty">Lade…</div></div></section>` + intern,
       reiter: [["beleg", "📄 Beleg"], ["konzept", "🎬 Konzept"], ["postings", "📣 Postings"], ...(darf("rechnungen") ? [["zeiten", "⏱ Zeiten"]] : []), ["bericht", "📝 Bericht"]] })}`, true);
+  await belegFormularFertig("Auftragsbestätigung – die Positionen sind aus dem Angebot festgeschrieben. Leistungszeitraum und Anmerkung änderst du rechts.",
+    a.ansprechpartner, fuss);
+  ["#an-gueltig", "#an-nachfassen", "#an-praes", "#an-zeige-kalk", "#an-zeige-kz", "#an-tkp-zeigen", "#an-omr-zeigen", "#an-schluss"].forEach(sel => {   // nur Angebot
+    const f = document.querySelector("#v2-modal .v2-an-editor " + sel); const l = f && f.closest("label"); if (l) l.hidden = true; });
   bvMini(nr); KZ.tab = "briefing"; konzeptLaden(nr);
   abZeitLaden(nr); abLieferungen(nr); abPostings(nr, a.status); abBericht(nr);
 }
@@ -2384,13 +2441,7 @@ async function reAltMahnSpeichern(nr) {
   if (!r || !r.ok) return kundenMsg("rm-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
   return reDetail(nr, `${r.nummer} erfasst (Stufe ${r.stufe}).`);
 }
-async function reEditor(eid) {
-  AN_KONTEXT = "rechnung";
-  openModal(eid ? `Rechnung ${eid} bearbeiten` : "Neue Rechnung", `<div class="v2-empty">Lade…</div>`, true);
-  const [k, d] = await Promise.all([jget("/api/crm/kunden"), eid ? jget("/api/finanzen/rechnungen/" + encodeURIComponent(eid)) : Promise.resolve(null), katalogLaden()]);
-  AN_FIRMEN = ((k && k.firmen) || []).filter(f => f.aktiv);
-  if (!AN_FIRMEN.length) return openModal("Neue Rechnung", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."), true);
-  const r = (d && d.rechnung) || { firma: "", positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch", leistung_von: heuteIso(), zahlungsziel_tage: "" };
+function reFormHtml(r, eid) {
   RE_AUS_AUFTRAG = !!r.auftrag;
   const fa = AN_FIRMEN.find(f => f.nummer === r.firma);
   const gewaehlt = new Set((r.zuschlaege || []).map(z => z.id));
@@ -2398,7 +2449,7 @@ async function reEditor(eid) {
   const zuHtml = zuListe.map(z => { const alt = (r.zuschlaege || []).find(x => x.id === z.id); const pr = alt ? alt.prozent : z.prozent;
     return `<label class="v2-modlbl"><input type="checkbox" class="an-zu" value="${esc(z.id)}" data-name="${esc(z.name)}" data-prozent="${esc(String(pr))}" ${gewaehlt.has(z.id) ? "checked" : ""}> +${esc(pz(pr))} % ${esc(z.name)}</label>`; }).join("");
   const rmax = esc(String((KATALOG && KATALOG.rabatt_max) || 30));
-  openModal(eid ? `Rechnungs-Entwurf ${eid}` : "Neue Rechnung", `<div class="v2-form v2-an-editor">
+  return `<div class="v2-form v2-an-editor">
     ${r.auftrag ? `<div class="v2-msg ok">Aus Auftrag ${esc(r.auftrag)} (Angebot ${esc(r.angebot || "")}) übernommen — Positionen bei Bedarf anpassen.</div>` : ""}
     <div class="v2-an-kopf"><div class="v2-form">
         <div class="v2-feld v2-auto-feld"><small>Firma * (Name, Kundennummer oder Ort tippen)</small>
@@ -2421,10 +2472,17 @@ async function reEditor(eid) {
         ${anWareFelder(r.ware)}</div>
       <div id="an-summe-box" class="v2-an-summen"></div></div>
     <label class="v2-feld"><small>Einleitung (leer = „vielen Dank für Ihren Auftrag. Wir berechnen Ihnen folgende Leistungen:“)</small><textarea id="an-einleitung" rows="2" class="v2-inp">${esc(r.einleitung || "")}</textarea></label>
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="re-speichern" data-id="${esc(eid || "")}">${eid ? "Entwurf speichern" : "Entwurf anlegen (noch ohne Nummer)"}</button><div id="an-msg" class="v2-msg"></div></div></div>`, true);
-  await anApListe(r.ansprechpartner || "");
-  firmaSucheVerdrahten();
-  const box = $("#v2-modal .v2-form"); box.addEventListener("input", anSumme); box.addEventListener("change", anSumme); anSumme();
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="re-speichern" data-id="${esc(eid || "")}">${eid ? "Entwurf speichern" : "Entwurf anlegen (noch ohne Nummer)"}</button><div id="an-msg" class="v2-msg"></div></div></div>`;
+}
+async function reEditor(eid) {
+  if (eid) return reDetail(eid);                                  // Bearbeiten passiert im Beleg selbst
+  AN_KONTEXT = "rechnung";
+  openModal("Neue Rechnung", `<div class="v2-empty">Lade…</div>`, true);
+  await belegFormDaten();
+  if (!AN_FIRMEN.length) return openModal("Neue Rechnung", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."), true);
+  const r = { firma: "", positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch", leistung_von: heuteIso(), zahlungsziel_tage: "" };
+  openModal("Neue Rechnung", reFormHtml(r, ""), true);
+  await belegFormularFertig("", "");
 }
 async function reSpeichern(eid) {
   if (!$("#an-firma").value) { $("#an-firma-suche").focus(); return kundenMsg("an-msg", "Bitte eine Firma aus den Vorschlägen auswählen.", false); }
@@ -2433,13 +2491,16 @@ async function reSpeichern(eid) {
   if ($("#re-ziel").value !== "") rechnung.zahlungsziel_tage = $("#re-ziel").value;
   const r = eid ? await jpost("/api/finanzen/rechnungen/" + encodeURIComponent(eid), { rechnung }) : await jpost("/api/finanzen/rechnungen", { rechnung });
   if (!r || !r.ok) return kundenMsg("an-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
+  FORM_GEAENDERT = false;
   if (AKTIV === "rechnungen") renderRechnungen();
   return reDetail(eid || r.entwurf_id, eid ? "Entwurf gespeichert." : "Entwurf angelegt — prüfen, dann festschreiben.");
 }
 async function reDetail(id, meldung, fehler) {
   openModal(id, `<div class="v2-empty">Lade…</div>`, true);
-  const d = await jget("/api/finanzen/rechnungen/" + encodeURIComponent(id));
+  const [d] = await Promise.all([jget("/api/finanzen/rechnungen/" + encodeURIComponent(id)), belegFormDaten()]);
   const r = d && d.rechnung; if (!r) return openModal(id, emptyRow("Rechnung nicht gefunden."), true);
+  AN_KONTEXT = "rechnung";
+  if (!AN_FIRMEN.some(f => f.nummer === r.firma)) AN_FIRMEN.push({ nummer: r.firma, name: (d.firma || {}).name || r.firma });
   const entwurf = r.status === "entwurf", sm = r.summen, ap = d.ansprechpartner;
   const pos = r.positionen.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.beschreibung)}</b>${p.detail ? `<br><small>${esc(p.detail)}</small>` : ""}${p.provision ? `<br><small>💶 ${esc(provText(p.provision))}</small>` : ""}${p.preis_grund ? `<br><small>✎ Preis geändert (vorher ${cent2eur(p.preis_vorher_cent)}) · Grund: ${esc(p.preis_grund)}</small>` : ""}</td><td style="text-align:right">${esc(String(p.menge).replace(".", ","))} ${esc(p.einheit || "")}</td><td style="text-align:right">${posBetrag(p)}</td></tr>`).join("");
   const fuss = (sm.zuschlaege.length || sm.rabatt ? `<tr><td></td><td>Summe Positionen</td><td></td><td style="text-align:right">${cent2eur(sm.formate_cent)}</td></tr>` : "")
@@ -2448,8 +2509,7 @@ async function reDetail(id, meldung, fehler) {
     + (sm.abzuege ? `<tr><td></td><td>Auftragssumme</td><td></td><td style="text-align:right">${cent2eur(sm.vor_abzug_cent)}</td></tr>` + sm.abzuege.map(([n, c]) => `<tr><td></td><td>${esc(n)}</td><td></td><td style="text-align:right">−${cent2eur(c)}</td></tr>`).join("") : "")
     + `<tr><td></td><td><b>Rechnungsbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
   let aktionen = `<a class="v2-btn" href="/api/finanzen/rechnungen/${encodeURIComponent(id)}/pdf" target="_blank" rel="noopener">📄 ${entwurf ? "PDF-Vorschau" : "Rechnung (PDF)"}</a><button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(id)}">🔗 Belegverfolgung</button>`;
-  if (entwurf) aktionen += `<button class="v2-btn" data-act="re-bearbeiten" data-id="${esc(id)}">✎ Bearbeiten</button>
-    <button class="v2-btn pri" data-act="re-festschreiben" data-id="${esc(id)}" ${d.steuernummer ? "" : "disabled title=\"Steuernummer fehlt\""}>🔒 Festschreiben (Nummer vergeben)</button>
+  if (entwurf) aktionen += `<button class="v2-btn pri" data-act="re-festschreiben" data-id="${esc(id)}" ${d.steuernummer ? "" : "disabled title=\"Steuernummer fehlt\""}>🔒 Festschreiben (Nummer vergeben)</button>
     <button class="v2-btn" data-act="re-verwerfen" data-id="${esc(id)}">Entwurf verwerfen</button>`;
   else {
     if (r.art !== "storno") aktionen += `<button class="v2-btn pri" data-act="re-senden" data-id="${esc(r.nummer)}">✉️ Senden …</button>`;
@@ -2490,7 +2550,10 @@ async function reDetail(id, meldung, fehler) {
     + blBox("Dokumente", dokumente) + blBox("Verlauf", verlauf);
   openModal(titel, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
     ${entwurf && !d.steuernummer ? `<div class="v2-msg err">Steuernummer fehlt in den Firmendaten — Festschreiben nicht möglich.</div>` : ""}
-    ${belegAnsicht({ aktionen, haupt: `<div id="re-aktion-box"></div>${d.blatt ? belegBlatt(d.blatt, { original: d.blatt.original_pdf ? `/api/finanzen/rechnungen/${encodeURIComponent(id)}/pdf` : "" }) : altTab}${pzBox}`, seite })}`, true);
+    ${belegAnsicht({ aktionen, haupt: `<div id="re-aktion-box"></div>${belegZweiAnsichten(reFormHtml(r, entwurf ? id : ""), d.blatt ? belegBlatt(d.blatt, { original: d.blatt.original_pdf ? `/api/finanzen/rechnungen/${encodeURIComponent(id)}/pdf` : "" }) : altTab)}${pzBox}`, seite })}`, true);
+  const sperre = entwurf ? "" : r.art === "storno" ? "Stornorechnung – nur lesen." : r.status === "storniert" ? `Storniert${r.storniert_durch ? " durch " + r.storniert_durch : ""} – nur lesen.`
+    : "Festgeschrieben – nur lesen. Korrekturen über „Stornieren …“ (danach entsteht ein neuer Entwurf).";
+  await belegFormularFertig(sperre, r.ansprechpartner, entwurf && !sm.abzuege ? null : fuss);
   if (!entwurf) bvMini(r.nummer);
   if (entwurf && r.auftrag && r.art !== "anzahlung") rePzLaden(id);
 }
@@ -3631,6 +3694,9 @@ const reFreig = () => AKTIV === "dash" ? renderDash() : renderFreigaben();  // A
 async function handleAct(act, el) {
   const id = el.dataset.id, val = el.dataset.val, asset = el.dataset.asset, typ = el.dataset.typ;
   const flash = (m) => { const o = el.textContent; el.textContent = m; return o; };
+  if (formUngespeichert() && ["re-festschreiben", "an-senden", "an-versendet", "re-verwerfen", "an-status", "ab-neu", "ab-detail",
+      "an-detail", "re-detail", "bv-oeffnen", "konzept", "ma-detail", "re-senden"].includes(act)
+      && !confirm("Im Formular gibt es ungespeicherte Änderungen. Ohne Speichern weitermachen?\n(Abbrechen = zurück, dann unten „Speichern“)")) return;
   switch (act) {
     case "pk-einrichten": return passkeyEinrichten(m => anmeldungBox(m));
     case "pk-angebot-ja": return passkeyEinrichten(m => { const b = $("#v2-pk-angebot"); if (b) b.innerHTML = `<b>${esc(m.text)}</b><div><button class="v2-btn" data-act="pk-angebot-nein">Schließen</button></div>`; });
@@ -3652,7 +3718,10 @@ async function handleAct(act, el) {
     case "crm-firma": return crmFirma(id);
     case "an-neu": return anEditor("", id || "");
     case "an-detail": return anDetail(id);
-    case "an-bearbeiten": return anEditor(id);
+    case "an-bearbeiten": return anDetail(id);
+    case "bl-ansicht": { const w = el.closest(".v2-ansicht"); if (!w) return; w.dataset.ansicht = val;
+      w.querySelectorAll(".v2-ansicht-wahl button").forEach(b => b.classList.toggle("on", b.dataset.val === val));
+      try { localStorage.setItem("luna-beleg-ansicht", val); } catch { } return; }
     case "an-pos-neu": { $("#an-pos").insertAdjacentHTML("beforeend", anProduktZeile()); const n = $("#an-pos").lastElementChild; anSumme(); const sel = n && $(".an-p-produkt", n); if (sel) sel.focus(); return; }
     case "an-firma-wahl": return firmaWaehlen(id);
     case "kat-speichern": return katalogSpeichern();
@@ -3763,7 +3832,7 @@ async function handleAct(act, el) {
     case "re-mv-speichern": return reMvSpeichern(id);
     case "re-altmahn-speichern": return reAltMahnSpeichern(id);
     case "re-detail": return reDetail(id);
-    case "re-bearbeiten": return reEditor(id);
+    case "re-bearbeiten": return reDetail(id);
     case "re-speichern": return reSpeichern(id);
     case "re-verwerfen": { if (!confirm("Entwurf verwerfen? (Er hatte noch keine Nummer.)")) return; const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/verwerfen`, {}); closeModal(); return AKTIV === "rechnungen" ? renderRechnungen() : null; }
     case "re-festschreiben": {
@@ -3829,7 +3898,7 @@ async function handleAct(act, el) {
       const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/stornieren`, { grund, korrektur });
       if (AKTIV === "rechnungen") renderRechnungen();
       if (!r || !r.ok) return reDetail(id, (r && r.hinweis) || "Fehler.", true);
-      return r.korrektur_entwurf ? reEditor(r.korrektur_entwurf) : reDetail(r.storno, [`Stornorechnung ${r.storno} erstellt.`, ...(r.hinweise || [])].join("\n"));
+      return r.korrektur_entwurf ? reDetail(r.korrektur_entwurf, `Stornorechnung ${r.storno} erstellt – der Korrektur-Entwurf ist offen und kann bearbeitet werden.`) : reDetail(r.storno, [`Stornorechnung ${r.storno} erstellt.`, ...(r.hinweise || [])].join("\n"));
     }
     case "re-box-zu": { const bx = $("#re-aktion-box"); if (bx) bx.innerHTML = ""; return; }
     case "bl-posten": { const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/posten`, { zeilen: ($("#bl-posten") || {}).value || "", zahlungs_id: ($("#bl-posten-id") || {}).value || "", waehrung: ($("#bl-posten-wg") || {}).value || "USD" }); return blDetail(id, r && r.ok ? "Zeiträume gespeichert." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }

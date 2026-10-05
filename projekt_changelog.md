@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 22:58] — Claude Code
+- **Was:** BELEG_EINE_EBENE E1-E3 gebaut: Angebot, Auftrag und Rechnung zeigen im Beleg das Formular an der Stelle des Blatts
+  (Umschalter „✎ Formular | 📄 Vorschau“, Wahl je Geraet gemerkt); Entwurf direkt aenderbar, „✎ Bearbeiten“-Knopf und
+  Extra-Fenster entfallen (Neu anlegen bleibt im Fenster); gesperrt (versendet, angenommen, festgeschrieben, storniert, Auftrag)
+  nur lesen mit 🔒-Hinweis, ohne Eingabe und Knoepfe, Summen vom Server; Rueckfrage bei ungespeicherten Aenderungen. Editor in
+  Bausteine zerlegt (`anFormHtml`, `reFormHtml`, `belegFormularFertig`, `belegZweiAnsichten`). Kein Server-Code geaendert.
+  Browsertest Rechner 1300 / iPad 820 / iPhone 17 Pro (15 Ansichten ohne Ueberlauf; Entwurf 37/21 aktive Felder, gesperrt 0;
+  Rueckfrage greift). Suite 1237 gruen. Cache v107/v54.
+- **Warum:** CEO: „Go fuer E1 bis E3“.
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`, `BELEG_EINE_EBENE_ROADMAP.md`,
+  `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 22:50] — Claude Code
 - **Was:** Roadmap `BELEG_EINE_EBENE_ROADMAP.md` angelegt (E1 Rechnung, E2 Angebot + Auftrag, E3 Feinschliff): Formular an der
   Stelle des Belegblatts, im Entwurf aenderbar, gesperrt nur lesen, Umschalter „Vorschau“ fuer das Blatt; im Roadmap-Verzeichnis
