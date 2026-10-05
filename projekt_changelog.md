@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 11:34] — Claude Code
+- **Was:** CEO-Entscheidungen zu den Rand-Agenten in die Roadmap Agenten-Ausbau (A5) und ins Register eingetragen: CHRO,
+  CKO, CPO, CXO (getrennt) und CAO werden aktiviert, je mit Aufgabe und geplanten Skills.
+- **Warum:** CEO-Antworten 2026-10-05.
+- **Betroffen:** `AGENTEN_AUSBAU_ROADMAP.md`, `docs/entscheidungs-register.md`.
+
 ## [2026-10-05 11:33] — Claude Code
 - **Was:** Bestandsaufnahme aller Agenten (read-only: Charten, Skills, Watcher-Themen, Code, NAS-Protokolle watch/research/
   aktivitaet) und Roadmap „Agenten-Ausbau“ (A1 Nutzung messen + Agenten-Seite, A2 Geschaefts-, A3 Betriebs-Agenten mit

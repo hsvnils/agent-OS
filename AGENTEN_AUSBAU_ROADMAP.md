@@ -3,7 +3,7 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/plan-agenten`
 - Basiscommit: `313dacb`
-- Naechster Schritt: CEO-Entscheidungen zu den Rand-Agenten (A5) und Go fuer A1-A4 abwarten.
+- Naechster Schritt: A5 entschieden (alle aktivieren); Go fuer A1-A5 (Skills) abwarten, A6 (Charten) getrennt.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -93,7 +93,18 @@ Quellen: Charten `agents/*.md`, `skills/*`, `core/watch_config.py`, Code-Verweis
 
 ## Etappe A5: Rand-Agenten entscheiden (CEO)
 
-- Status: geplant
+- Status: entschieden (2026-10-05) -- **alle fuenf aktivieren**, CXO und CPO getrennt:
+  - **CHRO** -- freie Mitarbeitende (Kamera, Schnitt): Briefings, Vereinbarungen (mit dem CLO), Abrechnung,
+    Verfuegbarkeit. Skills: Freien-Briefing, Freien-Vereinbarung pruefen, Freien-Abrechnung.
+  - **CKO** -- Gedaechtnis: Clip-Gedaechtnis (Video-Second-Brain), Wissen/Notizen, Wiederfinden. Skills: Wissen
+    ablegen und verschlagworten, Clip-Suche, Quellenpflege (Stand-Daten aller Agenten-Quellen).
+  - **CPO** -- LUNA-OS als Produkt: Funktionsideen bewerten, Roadmap-Vorschlaege, Release-Notizen. Skills:
+    Funktionsantrag bewerten, Nutzungsdaten auswerten.
+  - **CXO** -- Erlebnis: Bedienbarkeit auf iPhone 17 Pro/iPad/Rechner, Kundenerlebnis (Angebote, Berichte,
+    Konzept-PDFs). Skills: Mobil-/Safe-Area-Check, Kunden-Dokument pruefen (Verstaendlichkeit, Ton).
+  - **CAO** -- Verwaltung: Fristen, Ablage, Vertraege mit Dienstleistern, Versicherungen, Abos (mit dem CFO). Skills:
+    Fristen-Uebersicht, Dienstleister-Vertrag pruefen (mit dem CLO).
+- Umsetzung: Skills wie A2/A3 (ohne Charta-Aenderung); Aufgaben/Status in den Charten ueber A6.
 - Ziel / Scope: fuer CKO, CXO, CPO, CHRO, CAO je eine Entscheidung: **aktivieren** (mit Aufgabe + Skills, z. B. CHRO
   fuer Freie wie Kamera/Schnitt -- Briefings, Vertraege, Abrechnung; CKO fuer das Clip-/Wissens-Gedaechtnis), **zusammenlegen**
   (z. B. CAO in HoA, CXO+CPO zu „LUNA-OS-Produkt“) oder **ruhend** (bleibt, wird nicht befragt, keine Watcher-Last).
