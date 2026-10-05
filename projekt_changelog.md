@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 21:23] — Claude Code
+- **Was:** All-Inkl-Absenderadresse in Roadmap, `ROADMAP.md` und Entscheidungs-Register auf **luna@hanserautisch.de**
+  korrigiert (vorher luna-hoa@hanserautisch.de). Nur Plan.
+- **Warum:** CEO „Die Mailadresse wird nur luna@hanserautisch.de sein.“
+- **Betroffen:** `MAILVERSAND_ALLINKL_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 21:22] — Claude Code
 - **Was:** Zwei Roadmaps angelegt und registriert: `CONTENT_PLAN_ROADMAP.md` (C1 Eintraege + Kalender Monat/Woche/Liste,
   C2 Kunden-Postings + Drehtermine automatisch, C3 Anlaesse/Feiertage, C4 Spielplan nach Freigabe der Quelle) und

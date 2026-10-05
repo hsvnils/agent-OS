@@ -1,4 +1,4 @@
-# Roadmap: Kundenmails ueber All-Inkl (luna-hoa@hanserautisch.de) statt Gmail
+# Roadmap: Kundenmails ueber All-Inkl (luna@hanserautisch.de) statt Gmail
 - Status: geplant
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/plan-contentplan-allinkl`
@@ -12,7 +12,7 @@
 
 „Kann LUNA ausgehende Mails auch ueber eine meiner All-Inkl-Adressen versenden?“ -- **Ja**, technisch ueber den Mailserver
 von All-Inkl (SMTP zum Senden, IMAP zum Lesen). Entscheidungen: **statt Gmail fuer Kundenmails**, Absender
-**luna-hoa@hanserautisch.de**.
+**luna@hanserautisch.de** (CEO-Korrektur 2026-10-05, vorher luna-hoa@).
 
 ## Analyse (read-only, 2026-10-05)
 
@@ -29,7 +29,7 @@ von All-Inkl (SMTP zum Senden, IMAP zum Lesen). Entscheidungen: **statt Gmail fu
 
 - Status: geplant
 - Ziel / Scope: neuer Versandweg „All-Inkl“ mit dem gleichen Aufruf wie Gmail (Empfaenger, Betreff, Text, Anhaenge);
-  Absender „Hanserautisch – LUNA <luna-hoa@hanserautisch.de>“; die gesendete Mail wird per IMAP in „Gesendet“ abgelegt und
+  Absender „Hanserautisch – LUNA <luna@hanserautisch.de>“; die gesendete Mail wird per IMAP in „Gesendet“ abgelegt und
   wie bisher als .eml archiviert; Schalter in der `.env` (Kundenversand = allinkl | gmail), Rueckfall auf Gmail nur
   per Schalter (nie automatisch, damit kein Kunde Mails von zwei Absendern bekommt). Versanddialoge zeigen den Absender.
 - Gate: Tests mit Attrappe (kein echter Versand); **ein echter Testversand an eine CEO-Adresse** nach Freigabe; CISO-Eintrag.
@@ -38,7 +38,7 @@ von All-Inkl (SMTP zum Senden, IMAP zum Lesen). Entscheidungen: **statt Gmail fu
 ## Etappe M2: Antworten der Kunden
 
 - Status: geplant
-- Ziel / Scope: Kundenantworten im Postfach luna-hoa@ per IMAP erkennen (Zuordnung ueber Message-ID/In-Reply-To bzw.
+- Ziel / Scope: Kundenantworten im Postfach luna@ per IMAP erkennen (Zuordnung ueber Message-ID/In-Reply-To bzw.
   Belegnummer im Betreff), im Verlauf des Belegs anzeigen, archivieren und per Telegram melden -- wie heute bei Gmail.
 - Gate: Tests (Zuordnung, keine Doppelmeldung); echter Test mit einer Antwort des CEO.
 - Aufwand: mittel.
@@ -63,5 +63,5 @@ Einstellungen bei All-Inkl macht der CEO selbst.
 
 ## Definition of Done
 
-Alle Kundenmails gehen von luna-hoa@hanserautisch.de raus, liegen dort in „Gesendet“ und in der Firmenakte, Antworten werden
+Alle Kundenmails gehen von luna@hanserautisch.de raus, liegen dort in „Gesendet“ und in der Firmenakte, Antworten werden
 erkannt und gemeldet.
