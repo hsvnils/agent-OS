@@ -1,6 +1,7 @@
-"""Rechtsquellen des CLO aktuell halten (CLO_AUSBAU C2/C3, CEO 2026-10-05: „nachts die Quellen auf Veraenderungen pruefen“).
+"""Rechtsquellen der Agenten aktuell halten (CLO_AUSBAU C2/C3, CEO 2026-10-05: „nachts die Quellen auf Veraenderungen
+pruefen“; seit AGENTEN_AUSBAU A2 fuer alle Agenten, nicht nur den CLO).
 
-Die Skills unter `skills/clo/<skill>/quellen.md` enthalten die Kernnormen im Wortlaut (abgerufen von
+Die Skills unter `skills/<agent>/<skill>/quellen.md` enthalten die Kernnormen im Wortlaut (abgerufen von
 gesetze-im-internet.de) mit Abrufdatum und Pruefdatum. Der naechtliche Lauf holt jede Norm neu, vergleicht den
 **normalisierten Wortlaut** mit dem gespeicherten und meldet Aenderungen sowie ueberschrittene Pruefdaten. Er aendert
 **keine** Skills selbst -- eine Gesetzesaenderung kann die Pruef-Checkliste inhaltlich betreffen; nachgezogen wird
@@ -27,14 +28,15 @@ def normalisieren(text: str) -> str:
 
 
 def quellen(skills_dir: Path | str) -> list[dict]:
-    """Alle hinterlegten Normen: Skill, Norm, URL, Stand, Pruefdatum, Hash des gespeicherten Wortlauts."""
+    """Alle hinterlegten Normen: Skill, Agent, Norm, URL, Stand, Pruefdatum, Hash des gespeicherten Wortlauts.
+    `skills_dir` ist `skills/` (alle Agenten, Nachtlauf) oder `skills/<agent>/` (ein Agent)."""
     out = []
-    for q in sorted(Path(skills_dir).glob("*/quellen.md")):
+    for q in sorted(Path(skills_dir).rglob("quellen.md")):
         s = q.read_text(encoding="utf-8")
         pruef = (PRUEF.search(s) or [None, ""])[1]
         for m in KOPF.finditer(s):
             text = "\n".join(z[2:] for z in m["text"].strip("\n").split("\n"))
-            out.append({"skill": q.parent.name, "norm": m["norm"].strip(), "url": m["url"], "stand": m["stand"],
+            out.append({"skill": q.parent.name, "agent": q.parent.parent.name, "norm": m["norm"].strip(), "url": m["url"], "stand": m["stand"],
                         "pruefen_bis": pruef, "hash": hashlib.sha256(normalisieren(text).encode()).hexdigest()})
     return out
 
@@ -71,7 +73,7 @@ def pruefen(skills_dir: Path | str, *, heute: date | None = None, holen=_holen) 
                 fehler.append({"norm": q["norm"], "url": q["url"], "fehler": f"{exc.__class__.__name__}: {str(exc)[:80]}"})
             gesehen[q["url"]] = neu
         if neu and neu != q["hash"]:
-            geaendert.append({k: q[k] for k in ("skill", "norm", "url", "stand")})
+            geaendert.append({k: q[k] for k in ("skill", "agent", "norm", "url", "stand")})
     faellig = sorted({q["skill"] for q in qs if q["pruefen_bis"] and q["pruefen_bis"] <= heute.isoformat()})
     return {"geprueft": len(gesehen), "normen": len(qs), "geaendert": geaendert, "fehler": fehler, "faellig": faellig,
             "datum": heute.isoformat()}
@@ -80,11 +82,12 @@ def pruefen(skills_dir: Path | str, *, heute: date | None = None, holen=_holen) 
 def meldung(erg: dict, bekannt: set[str]) -> str:
     """Telegram-/Briefing-Text nur fuer **neue** Befunde (bekannte nicht jede Nacht wiederholen)."""
     neu = [g for g in erg["geaendert"] if f"{g['norm']}|{g['skill']}" not in bekannt]
-    zeilen = [f"• {g['norm']} hat sich geaendert -> Skill „{g['skill']}“ pruefen ({g['url']})" for g in neu]
+    zeilen = [f"• {g['norm']} hat sich geaendert -> Skill „{g['agent'].upper()}/{g['skill']}“ pruefen ({g['url']})"
+              for g in neu]
     zeilen += [f"• Pruefdatum der Quellen erreicht: Skill „{s}“" for s in erg["faellig"] if f"faellig|{s}" not in bekannt]
     if len(erg["fehler"]) >= max(3, erg["geprueft"] // 2):
         zeilen.append(f"• {len(erg['fehler'])} Normen nicht abrufbar (gesetze-im-internet.de erreichbar?)")
-    return ("⚖️ CLO-Rechtsquellen:\n" + "\n".join(zeilen)) if zeilen else ""
+    return ("⚖️ Rechtsquellen der Agenten:\n" + "\n".join(zeilen)) if zeilen else ""
 
 
 def lauf(skills_dir: Path | str, zustand: Path | str, notify=None, *, heute: date | None = None, holen=_holen) -> dict:
@@ -98,7 +101,7 @@ def lauf(skills_dir: Path | str, zustand: Path | str, notify=None, *, heute: dat
     erg = pruefen(skills_dir, heute=heute, holen=holen)
     text = meldung(erg, bekannt)
     if text and notify:
-        notify(text, abteilung="CLO", kategorie="info", quelle="rechtsquellen", detail="Skills unter skills/clo/ pruefen")
+        notify(text, abteilung="CLO", kategorie="info", quelle="rechtsquellen", detail="Skills unter skills/<agent>/ pruefen")
     erg["bekannt"] = sorted(bekannt | {f"{g['norm']}|{g['skill']}" for g in erg["geaendert"]} | {f"faellig|{s}" for s in erg["faellig"]})
     z.parent.mkdir(parents=True, exist_ok=True)
     z.write_text(json.dumps(erg, ensure_ascii=False, indent=1), encoding="utf-8")

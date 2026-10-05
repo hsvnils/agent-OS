@@ -57,9 +57,10 @@ class TestLoadSubagentIntegration(unittest.TestCase):
     def test_ohne_skills_bleibt_charta_pur(self):
         # Reale Abteilung ohne skills/<key>/-Ordner -> system_prompt == Charta-Text (kein Skill-Block).
         from orchestrator.core.charter_loader import load_subagent
-        spec = load_subagent("agents/03_cfo.md", "cfo")
+        # (CFO hat seit AGENTEN_AUSBAU A2 Skills -> Beispiel ist der HoA, der keine Abteilungs-Skills traegt.)
+        spec = load_subagent("agents/00_head-of-agents.md", "hoa")
         self.assertNotIn("## Verfuegbare Skills", spec.system_prompt)
-        self.assertIn("CFO", spec.system_prompt)
+        self.assertIn("Head of Agents", spec.system_prompt)
 
 
 if __name__ == "__main__":

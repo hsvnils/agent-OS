@@ -57,7 +57,7 @@ Kalendereinladung, Alpaca-Order (Paper), Git-Push eines Antrags-Branches.
 | Anthropic (SDK) | `core/hoa_conversation.py`, `core/backends.py`, `core/execution_live.py`, `governance/web_research.py`, `core/ig_analyse.py` | Prompts, Kontext, DM-Inhalte / Antworten | `ANTHROPIC_API_KEY` | lesen; Execution schreibt Code in `.worktrees/` |
 | `accounts.google.com` | `deploy/google_oauth_neu.py` (nur von Hand auf dem MACO470, BF-33) | Google-Anmeldelink fuer die CEO-Zustimmung; neuer Refresh-Token landet nur in `orchestrator/.env` (MACO470 + NAS) | `GOOGLE_OAUTH_CLIENT_ID`/`_SECRET` | Zustimmung durch den CEO im Browser |
 | `generativelanguage.googleapis.com` | `core/model_router.py` (Fallback), `cutter/gemini_video.py`, `cutter/reel_tag.py`, `core/ig_analyse.py`, `core/kennzahlen_lesen.py` (Insights-Screenshots, P2), `core/clo_pruefung.py` (CLO-Pruef-Lauf der Vertragsvorlagen, nur Vertragstexte, einmalig per Skript 2026-10-05, Modell `gemini-pro-latest`) | Prompts, Screenshots, **Videoclips** (nur mit `CUTTER_VIDEO_KI=1`) | `GEMINI_API_KEY` | lesen; Upload zu Google |
-| `www.gesetze-im-internet.de` | `core/rechtsquellen.py` (CLO_AUSBAU C3: Bot-Nachtlauf 04:30, ~20 Seitenabrufe; Erstabruf der Normen fuer `skills/clo/*/quellen.md` am 2026-10-05) | keine (nur Abruf oeffentlicher Gesetzestexte) | -- | nur lesen; meldet Aenderungen, aendert keine Skills |
+| `www.gesetze-im-internet.de` | `core/rechtsquellen.py` (CLO_AUSBAU C3: Bot-Nachtlauf 04:30, seit AGENTEN_AUSBAU A2 ueber alle `skills/*/*/quellen.md` (CLO + CFO), ~28 Seitenabrufe; Erstabruf CLO und CFO am 2026-10-05) | keine (nur Abruf oeffentlicher Gesetzestexte) | -- | nur lesen; meldet Aenderungen, aendert keine Skills |
 | OpenAI (SDK) | Fallback in `core/model_router.py`, `core/ig_analyse.py` | Prompts | `OPENAI_API_KEY`, `IG_ANALYSE_*` | lesen |
 | `api.deepgram.com` | `bot.py` (Sprachnachrichten), `cutter/transkription.py` (3. Fallback), Voice | Audio / Transkript | `DEEPGRAM_API_KEY` | lesen |
 | `api.elevenlabs.io`, Cartesia (SDK) | `channels/web/app.py` (`/api/tts`), `channels/voice/pipeline.py` | Text / Audio | `ELEVENLABS_API_KEY`, `CARTESIA_API_KEY` | lesen |
@@ -171,8 +171,9 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `lieferungen/<Auftrag>/` (Videos, Bilder, PDF, ZIP) | Web (`PUT /api/crm/lieferungen/upload/<id>/<teil>`, `POST .../fertig`; Etappe 30) | Web (`/api/crm/lieferungen/<id>/datei/<i>`, Auftrag, Firmenakte) | ja (`./lieferungen` ausgenommen) | nein (CEO 2026-10-01; Liste in der Hash-Kette) |
 | `lieferungen/<Auftrag>/kennzahlen/` (Insights-Screenshots je Posting) | Telegram-Foto / Web (PROJEKTBERICHT P2, `core/postings.bild_ablegen`) | Web (`/api/crm/postings/<id>/bild/<i>`), Bericht | ja (`./lieferungen` ausgenommen) | nein (wie Lieferungen; Pruefsumme in der Hash-Kette, Zahlen selbst als Ereignis `posting_kennzahlen`) |
 | `lieferungen/<Vorgang>/konzept/` (Moodboard-Bilder der Konzept-Mappe) | Web (`POST /api/crm/konzept-bild/<vorgang>`, KONZEPT_MAPPE K1) | Web (`/api/crm/konzept-bild/<vorgang>/<i>`) | ja (`./lieferungen` ausgenommen) | nein (wie Lieferungen; Pruefsumme in der Hash-Kette) |
-| `orchestrator/state/rechtsquellen.json` (letzter Abgleich der CLO-Rechtsquellen, bekannte Abweichungen) | Bot (`core/rechtsquellen.lauf`, 04:30) | Bot | nein (`orchestrator/state` ausgenommen) | nein (fluechtig) |
+| `orchestrator/state/rechtsquellen.json` (letzter Abgleich der Rechtsquellen aller Agenten, bekannte Abweichungen) | Bot (`core/rechtsquellen.lauf`, 04:30) | Bot | nein (`orchestrator/state` ausgenommen) | nein (fluechtig) |
 | `skills/clo/*/SKILL.md`, `quellen.md` (CLO-Skills + Normen im Wortlaut mit Stand) | Repo (Claude Code) | CLO-Agent (System-Prompt), Nachtlauf | ja (Code-Sync) | Git |
+| `skills/{cfo,cco,cro,cdo}/*/SKILL.md`, `skills/cfo/*/quellen.md` (AGENTEN_AUSBAU A2: Skills; CFO-Normen UStG/UStDV/EStG/AO mit Stand) | Repo (Claude Code) | Fachagent (System-Prompt), Nachtlauf (Quellen), Agenten-Profil (`/api/agenten/{key}/profil`) | ja (Code-Sync) | Git |
 | `docs/recht/clo-pruefung-vertragsentwuerfe.json` (CLO-Pruefbericht + Version-2-Texte) | Repo (Pruef-Lauf C4) | Web (`/api/crm/vertraege-pruefung*`, Version 2 per CEO-Klick) | ja (Code-Sync) | Git |
 | `orchestrator/state/luna_os_sitzungen.json` | Web (Login, Passkey-Login, Abmelden) | Web (jede Anfrage mit Cookie) | ja (`orchestrator/state` ausgenommen) | nein (fluechtig) |
 | `orchestrator/state/luna_os_passkeys.json` | Web (Passkey einrichten/entfernen, Zaehler bei Anmeldung) | Web (Passkey-Login) | ja | ja |
@@ -195,6 +196,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `crm/log.jsonl` | Bot, Web | dito | ja | ja |
 | `content_ops/*_cache.jsonl` (5 Dateien) | Web, Content-Feed | dito | ja | nein (Cache von Supabase) |
 | `nutzung/log.jsonl` | Web (`/api/nutzung`) | Leistungsbericht | ja | ja |
+| `agenten_nutzung/log.jsonl` (Fachagenten-Anfragen: Zeit, Agent, Dauer, Erfolg, Zahl der Skills -- **keine Inhalte**; AGENTEN_AUSBAU A1) | Bot/Web-Chat (Werkzeug `delegate`) | Web (`/api/agenten/{key}/profil`, `/api/agenten-uebersicht`), Leistungsbericht (Web + Bot montags) | ja | ja |
 | `backoffice/log.jsonl` (Auftraege, append-only) | Web (`/api/backoffice/*`, Worker-Ergebnisse) | Web, Bot (Werkzeug `auftrag_details`, Morgen-Briefing) | ja | ja |
 | `buchhaltung/log.jsonl` (Hash-Kette: Nummern, Kunden, Angebote, Auftraege, Rechnungen, Eingangsbelege, Zahlungen, Eigenbelege) + `buchhaltung/belege/<jahr>/` (Angebots-PDFs, Original-Mails `.eml` zu Angeboten) | Web (Kunden- und Angebots-App), Bot (Mail-Archiv/Antworten im 15-min-Poll) | Bot (Integritaetspruefung 05:00), Web | ja | ja (Log + Beleg-Ordner, Schrumpf-Check) + ausser Haus in LUNAs Drive |
 | `buchhaltung/firmendaten.json` (eigene Firma: Briefkopf, Steuernummer, Bankverbindung; **nur NAS, nie im Git**) | CEO (Angabe), von Hand angelegt | Web: Angebots-/Rechnungs-/Mahnungs-PDF (Briefkopf, Fusszeile mit Bank); Bot: Folgemahnung nach ✅ per Telegram | ja | ja |
@@ -229,6 +231,7 @@ content_ops/ideas_cache.jsonl
 content_ops/sources_cache.jsonl
 content_ops/trends_cache.jsonl
 nutzung/log.jsonl
+agenten_nutzung/log.jsonl
 backoffice/log.jsonl
 buchhaltung/log.jsonl
 buchhaltung/firmendaten.json

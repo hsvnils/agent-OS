@@ -921,3 +921,15 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-vt-befund { border-left: 3px solid var(--v2-line); padding: 4px 10px; margin: 6px 0; }
 .v2-vt-befund.rot { border-color: var(--v2-red); } .v2-vt-befund.gelb { border-color: var(--v2-amber); } .v2-vt-befund.neu { border-color: var(--v2-accent); }
 .v2-vt-befund summary { cursor: pointer; } .v2-vt-befund small { display: block; color: var(--v2-muted); line-height: 1.5; margin-top: 4px; }
+
+/* AGENTEN_AUSBAU A1: Agenten-Profil */
+.v2-mm-b.klick { cursor: pointer; } .v2-mm-b.klick:hover rect { stroke-width: 2.2; }
+.v2-ag-zeile { cursor: pointer; } .v2-ag-zeile > .v2-badge { min-width: 74px; justify-content: center; } .v2-ag-zeile .grow { min-width: 0; } .v2-ag-zeile small { overflow-wrap: anywhere; }
+.v2-ag-pfeil { color: var(--v2-faint); font-size: 22px; padding-left: 4px; }
+.v2-ag-block { display: flex; flex-direction: column; gap: 3px; padding: 9px 0; border-top: 1px solid var(--v2-line-soft); font-size: 14px; }
+.v2-ag-block > span { color: var(--v2-muted); font-size: 13px; } .v2-ag-block small { color: var(--v2-muted); font-size: 12px; }
+.v2-ag-rolle { font-size: 14px; color: var(--v2-muted); padding: 9px 0; border-top: 1px solid var(--v2-line-soft); }
+.v2-ag-zahlen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 4px 0 8px; }
+.v2-ag-zahlen div { background: var(--v2-bg2); border-radius: 10px; padding: 10px; text-align: center; }
+.v2-ag-zahlen b { display: block; font-size: 20px; } .v2-ag-zahlen small { color: var(--v2-muted); font-size: 12px; }
+@media (max-width: 600px) { .v2-ag-zahlen { grid-template-columns: repeat(2, minmax(0, 1fr)); } .v2-ag-zeile > .v2-badge { min-width: 66px; } }

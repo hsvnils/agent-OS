@@ -8,38 +8,47 @@ from __future__ import annotations
 
 # abteilung -> {"suche": [Brave-Suchthemen], "github": [GitHub-Topics]}
 DEPARTMENT_WATCH: dict[str, dict[str, list[str]]] = {
+    # AGENTEN_AUSBAU A4 (CEO 2026-10-05): Themen auf das Geschaeft von Hanserautisch ausgerichtet (Social-Media-Content
+    # und Werbung fuer Unternehmen, Fussball/HSV, Kleinunternehmer) -- weiter token-frugal (Brave, ein Bereich je Takt).
     "berater": {  # Unternehmensberater / Strategie & Innovation
-        "suche": ["KI-Agenten Markttrends", "AI agent startups funding", "agentic AI business models"],
+        "suche": ["Content Creator Geschaeftsmodell Agentur", "Influencer Marketing Markt Deutschland 2026",
+                  "lokales Influencer Marketing Gastronomie Einzelhandel", "Creator Economy Trends Deutschland"],
         "github": ["ai-agents", "autonomous-agents", "multi-agent"],
     },
-    "cto": {  # Technology / IT
-        "suche": ["AI agent frameworks vergleich", "LLM orchestration tools", "MCP model context protocol",
-                  "neue KI-Dienstleister und Tools", "IT-Sicherheitsrichtlinien best practices"],
+    "cto": {  # Technology / IT -- LUNA selbst ist Technik: Agenten-Werkzeuge bleiben, ergaenzt um genutzte Dienste
+        "suche": ["Gemini API Aenderungen", "Synology DSM Update Docker", "Instagram Graph API Aenderungen",
+                  "Telegram Bot API Update", "MCP model context protocol"],
         "github": ["ai-agents", "llm", "agent-framework", "mcp", "llmops"],
     },
     "cfo": {  # Finance
-        "suche": ["LLM API pricing changes", "AI token cost optimization", "inference cost reduction"],
-        "github": ["llm-inference", "cost-optimization"],
+        "suche": ["Kleinunternehmerregelung Aenderung 2026", "E-Rechnung Pflicht Kleinunternehmer",
+                  "GoBD Aenderung BMF-Schreiben", "Einnahmen-Ueberschuss-Rechnung Aenderung Formular",
+                  "Steuer Influencer Content Creator Finanzamt"],
+        "github": ["cost-optimization"],
     },
     "ciso": {  # Security
-        "suche": ["LLM prompt injection defense", "AI agent security", "OWASP LLM top 10",
-                  "neue IT-Richtlinien Compliance", "ISO 27001 AI guidelines"],
+        "suche": ["Synology Sicherheitsluecke", "Telegram Bot Sicherheit Token", "Google Workspace Sicherheitswarnung",
+                  "Instagram Konto gehackt Creator Schutz", "LLM prompt injection defense"],
         "github": ["llm-security", "prompt-injection", "ai-security"],
     },
     "cdo": {  # Data
-        "suche": ["RAG techniques 2026", "vector database benchmark", "AI data pipelines"],
+        "suche": ["Instagram Reels Reichweite Benchmark 2026", "Engagement Rate Benchmark Instagram Deutschland",
+                  "TKP Influencer Marketing Benchmark", "Instagram Insights Kennzahlen Aenderung"],
         "github": ["rag", "vector-database", "embeddings"],
     },
-    "cco": {  # Content
-        "suche": ["AI video generation tools", "AI content creation trends", "social media automation AI"],
-        "github": ["text-to-video", "generative-ai", "content-generation"],
+    "cco": {  # Content -- speist auch den Content-Feed (Trends -> Ideen)
+        "suche": ["Instagram Reels Trends Fussball", "HSV Fans Social Media", "Reels Hook Ideen Trend",
+                  "TikTok Trends Fussball Deutschland", "Gastronomie Reels Ideen"],
+        "github": ["text-to-video", "content-generation"],
     },
-    "cpo": {  # Product
-        "suche": ["AI agent product launches", "agent UX patterns", "AI product onboarding"],
+    "cpo": {  # Product -- LUNA-OS als Produkt (A5)
+        "suche": ["Agentur Software Angebote Rechnungen Kleinunternehmer", "Creator Business Tool CRM",
+                  "Web App iPhone Safe Area Best Practice"],
         "github": ["ai-product", "copilot"],
     },
     "cro": {  # Revenue
-        "suche": ["AI sales automation", "AI marketing agents", "lead generation AI"],
+        "suche": ["Influencer Preise Deutschland 2026", "Influencer Kooperation Gastronomie Hamburg",
+                  "Mikroinfluencer Honorar Reel", "Sponsoring Fussball Fan Account", "Hamburg Unternehmen Social Media Werbung"],
         "github": ["sales-automation", "marketing-ai"],
     },
     "clo": {  # Legal -- CLO_AUSBAU C3 (CEO 2026-10-05): Influencer-/Werbe-, AGB-, Urheber- und KI-Kennzeichnungsrecht
@@ -48,24 +57,28 @@ DEPARTMENT_WATCH: dict[str, dict[str, list[str]]] = {
                   "Recht am eigenen Bild Werbung Urteil", "KI-Kennzeichnung AI Act Artikel 50", "Kleinunternehmerregelung Aenderung"],
         "github": ["ai-governance", "compliance"],
     },
-    "cxo": {  # Experience
-        "suche": ["conversational AI UX", "voice agent design", "realtime voice AI"],
-        "github": ["voice-assistant", "conversational-ai", "speech-to-text"],
+    "cxo": {  # Experience -- Bedienbarkeit (iPhone/iPad/Rechner) und Kundendokumente (A5)
+        "suche": ["iOS Safari Web App Aenderung", "Kunden Report Vorlage Social Media Agentur",
+                  "Angebot gestalten Agentur Kunden Erlebnis"],
+        "github": ["voice-assistant", "conversational-ai"],
     },
     "cbo": {  # Brand
-        "suche": ["AI branding tools", "AI generated brand design", "fan brand engagement AI"],
+        "suche": ["Fan Account Markenaufbau Instagram", "Personal Branding Content Creator Fussball",
+                  "HSV Marke Fanprojekte"],
         "github": ["brand", "design-tools"],
     },
-    "cko": {  # Knowledge
-        "suche": ["knowledge management AI", "AI documentation tools", "second brain AI"],
+    "cko": {  # Knowledge -- Gedaechtnis / Clip-Second-Brain (A5)
+        "suche": ["Video Archiv durchsuchbar Creator", "second brain Video Clips Suche", "knowledge management AI"],
         "github": ["knowledge-management", "second-brain", "documentation"],
     },
-    "chro": {  # HR
-        "suche": ["AI recruiting tools", "AI workforce productivity"],
+    "chro": {  # Freie Mitarbeitende (A5)
+        "suche": ["Freelancer Kameramann Tagessatz Hamburg", "Videoschnitt Freelancer Honorar",
+                  "Scheinselbststaendigkeit Freelancer Kreativbranche"],
         "github": ["hr-tech"],
     },
-    "cao": {  # Admin
-        "suche": ["AI office automation", "AI scheduling assistant"],
+    "cao": {  # Verwaltung (A5)
+        "suche": ["Betriebshaftpflicht Content Creator", "Fristen Kleinunternehmer Steuer Kalender",
+                  "Versicherung Kamera Equipment Creator"],
         "github": ["automation", "workflow-automation"],
     },
 }

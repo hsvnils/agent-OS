@@ -682,11 +682,13 @@ def _performance_agent():
     from ...core.aktivitaet import Aktivitaet
     from ...core.kosten import KostenStore
     from ...core.nutzung import NutzungStore
+    from ...core.agenten_profil import AgentenNutzung
     from ...core.performance_agent import PerformanceAgent
     return PerformanceAgent(reels=reel_store, antraege=antraege, cutter=cutter_store,
                             aktivitaet=Aktivitaet(ROOT / "aktivitaet" / "log.jsonl"),
                             kosten=KostenStore(ROOT / "finance" / "kosten-log.jsonl"),
-                            nutzung=NutzungStore(ROOT / "nutzung" / "log.jsonl"))
+                            nutzung=NutzungStore(ROOT / "nutzung" / "log.jsonl"),
+                            fachagenten=AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl"))
 
 
 @app.get("/api/performance")
@@ -1191,6 +1193,28 @@ def agenten():
         "departments": depts,
         "stand": _now_iso(),
     }
+
+
+def _agenten_nutzung():
+    from ...core.agenten_profil import AgentenNutzung
+    return AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl")
+
+
+@app.get("/api/agenten/{key}/profil")
+def agent_profil(key: str):
+    """Profil eines Agenten (AGENTEN_AUSBAU A1): Charta, Skills, Quellen mit Stand, Watcher-Themen + letzte Funde,
+    Nutzung 30/90 Tage. Nur lesend; keine Inhalte der Anfragen."""
+    from ...core.agenten_profil import profil
+    try:
+        return profil(ROOT, key, watch_log=ROOT / "watch" / "log.jsonl", nutzung=_agenten_nutzung())
+    except KeyError:
+        raise HTTPException(404, "Unbekannter Agent")
+
+
+@app.get("/api/agenten-uebersicht")
+def agenten_uebersicht():
+    from ...core.agenten_profil import uebersicht
+    return {"agenten": uebersicht(ROOT, watch_log=ROOT / "watch" / "log.jsonl", nutzung=_agenten_nutzung())}
 
 
 def _now_iso():

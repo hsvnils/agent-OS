@@ -44,6 +44,7 @@ FILES=(
   social/log.jsonl
   entwicklung/roadmap.jsonl
   nutzung/log.jsonl
+  agenten_nutzung/log.jsonl
   backoffice/log.jsonl
   buchhaltung/log.jsonl
   # Briefkopf + Bankverbindung (nur NAS, nie im Git; kein JSONL -> nicht im Zeilen-Check)

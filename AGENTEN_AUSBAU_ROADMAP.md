@@ -1,9 +1,9 @@
 # Roadmap: Agenten-Ausbau (Bestandsaufnahme, Skills, Quellen, Nutzung, Charten)
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-05
-- Arbeitsbranch: `ai/plan-agenten`
+- Arbeitsbranch: `ai/agenten-paket1`
 - Basiscommit: `313dacb`
-- Naechster Schritt: A5 entschieden (alle aktivieren); Go fuer A1-A5 (Skills) abwarten, A6 (Charten) getrennt.
+- Naechster Schritt: Paket 1 (A1, A2, A4) gebaut (2026-10-05) -- Deploy-Go abwarten; danach Paket 2 (A3 + A5-Skills), A6 (Charten) getrennt.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -52,7 +52,13 @@ Quellen: Charten `agents/*.md`, `skills/*`, `core/watch_config.py`, Code-Verweis
 
 ## Etappe A1: Transparenz -- Nutzung messen und Agenten zeigen
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- `core/agenten_profil.py`: jede „delegate“-Anfrage im Chat (Telegram/LUNA-OS)
+  landet ohne Inhalte in `agenten_nutzung/log.jsonl` (Zeit, Agent, Dauer, Erfolg, Zahl der Skills); Agenten-Seite:
+  Organigramm-Knoten und neue Liste „Agenten im Ueberblick“ oeffnen je Agent ein Profil (Charta-Status, Modell-Richtwert,
+  Rolle, Nutzung 30/90 Tage, Skills, Quellen mit Stand, Watcher-Themen, letzte Funde); `GET /api/agenten/{key}/profil`
+  und `/api/agenten-uebersicht`; Leistungsbericht (Web + Telegram montags) mit Zeile „Fachagenten -- wer wird gefragt“;
+  CIO und Risk ueber „delegate“ befragbar. Nicht gemessen: Sprach-Delegation (Voice-Server laeuft am Mac, eigenes
+  Dateisystem) und Systemlaeufe (Self-Dev, Innovation, Content-Feed) -- sie sind keine Anfragen von LUNA.
 - Ziel / Scope: jede Fachagenten-Anfrage protokollieren (Agent, Zeit, Dauer, Skills geladen, Modell, Erfolg -- ohne
   Inhalte); Seite „🛰 Agenten“ in LUNA-OS je Agent: Charta-Status, Skills, Quellen mit Stand, Watcher-Themen und letzte
   Funde, Nutzung (30/90 Tage); im Wochenbericht des Leistungs-Agenten „wer wird gefragt“. CIO/Risk befragbar machen.
@@ -61,7 +67,10 @@ Quellen: Charten `agents/*.md`, `skills/*`, `core/watch_config.py`, Code-Verweis
 
 ## Etappe A2: Geschaefts-Agenten mit Skills und Quellen
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- 11 Skills (CFO 4, CCO 4, CRO +2, CDO +1), alle durch das Security-Gate; CFO-Quellen
+  UStG §§ 14, 14c, UStDV § 34a, EStG §§ 4, 6, 11, AO §§ 141, 146, 147 im Wortlaut (gesetze-im-internet.de, Stand
+  2026-10-05, naechste Pruefung 2027-04-05), GoBD als Verweis; der Nachtlauf 04:30 prueft jetzt alle `skills/*/*/quellen.md`
+  (CLO + CFO) und nennt in der Meldung Agent und Skill.
 - Ziel / Scope (Skills im Skill-Standard, Quellen-Mechanik des CLO wiederverwenden):
   - **CFO** (4): Beleg-/GoBD-Pruefung, Monats- und Jahresabschluss-Check (EUeR), Preis-/Margen-Analyse (Nachkalkulation,
     TKP-Vergleich), Liquiditaetsvorschau; Quellen UStG/EStG/AO (gesetze-im-internet.de) + GoBD (BMF, Verweis) mit
@@ -84,7 +93,9 @@ Quellen: Charten `agents/*.md`, `skills/*`, `core/watch_config.py`, Code-Verweis
 
 ## Etappe A4: Watcher-Themen auf das Geschaeft zuschneiden
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- alle 14 Abteilungen mit 3-8 Suchthemen zu Hanserautisch (Steuer/E-Rechnung,
+  Influencer-Preise, Reel-Trends Fussball/HSV, Sicherheit der genutzten Dienste, Freie, Verwaltung); GitHub-Topics des
+  CTO bleiben (LUNA ist Technik). Die CCO-Themen speisen auch den Content-Feed.
 - Ziel / Scope: Suchthemen aller Abteilungen auf Hanserautisch ausrichten (z. B. CFO: Kleinunternehmer/Steuer fuer
   Creator; CRO: Influencer-Preise/Marktdaten; CCO: Reel-Trends Fussball; CISO: Sicherheitsluecken der genutzten
   Dienste), weiter token-frugal (Brave, ein Bereich je Takt).

@@ -70,13 +70,14 @@ def _median_stunden(paare: list[tuple[datetime, datetime]]) -> float | None:
 
 class PerformanceAgent:
     def __init__(self, *, reels=None, antraege=None, cutter=None, aktivitaet=None, kosten=None,
-                 nutzung=None, apps: tuple = DEFAULT_APPS):
+                 nutzung=None, fachagenten=None, apps: tuple = DEFAULT_APPS):
         self.reels = reels          # ReelStore (Events: einreichen / status)
         self.antraege = antraege    # Antraege  (Events: event=eingereicht/freigegeben/...)
         self.cutter = cutter        # ContentStore luna_cutter_jobs (rows mit status + updated_at)
         self.aktivitaet = aktivitaet
         self.kosten = kosten
         self.nutzung = nutzung      # NutzungStore (App-Oeffnungen; Feature-Friedhof)
+        self.fachagenten = fachagenten  # AgentenNutzung (Fachagenten-Anfragen, AGENTEN_AUSBAU A1)
         self.apps = tuple(apps)
 
     # -- Bereiche (je ein dict fuer EIN Zeitfenster) --
@@ -200,6 +201,17 @@ class PerformanceAgent:
         return {"oeffnungen": len(evs),
                 "je_app": dict(Counter(e.get("app", "?") for e in evs).most_common())}
 
+    def _fachagenten(self, start: datetime, ende: datetime) -> dict | None:
+        """Wer wird gefragt: Fachagenten-Anfragen je Agent (ohne Inhalte)."""
+        if self.fachagenten is None:
+            return None
+        try:
+            je = self.fachagenten.zaehlen(start, ende)
+        except Exception:
+            return None
+        return {"anfragen": sum(x["anzahl"] for x in je.values()), "fehler": sum(x["fehler"] for x in je.values()),
+                "je_agent": dict(sorted(((k, x["anzahl"]) for k, x in je.items()), key=lambda kv: -kv[1]))}
+
     def _friedhof(self, jetzt: datetime) -> list | None:
         """Apps der kanonischen Liste, die seit FRIEDHOF_TAGE nicht geoeffnet wurden. None ohne Nutzungsdaten
         (erste Tage nach Einfuehrung des Loggings waere sonst ALLES faelschlich 'brachliegend')."""
@@ -225,7 +237,7 @@ class PerformanceAgent:
                 "cutter": self._cutter(start, ende), "aktivitaet": self._aktivitaet(start, ende),
                 "kosten": self._kosten(start, ende),
                 "reaktionszeiten": self._reaktionszeiten(start, ende),
-                "nutzung": self._nutzung(start, ende)}
+                "nutzung": self._nutzung(start, ende), "fachagenten": self._fachagenten(start, ende)}
 
     def historie(self, wochen: int = 8, jetzt: datetime | None = None) -> list[dict]:
         """Kennzahlen der letzten `wochen` Wochenfenster (aelteste zuerst) -- fuer den Verlaufs-Chart.
@@ -326,6 +338,13 @@ class PerformanceAgent:
         if nz:
             top = ", ".join(f"{a} ({n})" for a, n in list(nz["je_app"].items())[:3])
             z.append(f"\U0001f4f1 Nutzung: {nz['oeffnungen']} App-Oeffnungen" + (f" — meist: {top}" if top else ""))
+        fa = w.get("fachagenten")
+        if fa is not None:
+            top = ", ".join(f"{a} ({n})" for a, n in list(fa["je_agent"].items())[:5])
+            z.append(f"\U0001f6f0 Fachagenten: {fa['anfragen']} Anfragen"
+                     + delta(fa["anfragen"], (v.get("fachagenten") or {}).get("anfragen"))
+                     + (f" — gefragt: {top}" if top else " — niemand gefragt")
+                     + (f", {fa['fehler']} Fehler" if fa["fehler"] else ""))
         if b.get("friedhof"):
             z.append(f"\U0001faa6 Brachliegend (> {b['friedhof_tage']} Tage nicht geoeffnet): "
                      + ", ".join(b["friedhof"]))

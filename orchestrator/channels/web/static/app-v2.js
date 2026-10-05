@@ -3079,7 +3079,8 @@ async function renderAgents() {
     const box = (cxp, y, w, titel, cls, sub, tip) => {
       const t = sub ? `<text x="${cxp}" y="${y - 3}" text-anchor="middle" class="v2-mm-bt">${esc(titel)}</text><text x="${cxp}" y="${y + 10}" text-anchor="middle" class="v2-mm-bs">${esc(sub)}</text>`
         : `<text x="${cxp}" y="${y + 4}" text-anchor="middle" class="v2-mm-bt">${esc(titel)}</text>`;
-      return `<g class="v2-mm-b ${cls}">${tip ? `<title>${esc(tip)}</title>` : ""}<rect x="${cxp - w / 2}" y="${y - bh / 2}" width="${w}" height="${bh}" rx="9"/>${t}</g>`;
+      const pk = cls === "luna" ? "hoa" : cls === "human" ? "" : (box.key || "");   // A1: Klick -> Agenten-Profil
+      return `<g class="v2-mm-b ${cls}${pk ? " klick" : ""}"${pk ? ` data-act="ag-profil" data-id="${esc(pk)}"` : ""}>${tip ? `<title>${esc(tip)}</title>` : ""}<rect x="${cxp - w / 2}" y="${y - bh / 2}" width="${w}" height="${bh}" rx="9"/>${t}</g>`;
     };
     const vlink = (x1, y1, x2, y2, cls) => { const my = (y1 + y2) / 2; return `<path d="M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}" class="v2-mm-link ${cls}"/>`; };
     let links = vlink(centerX, yCEO + bh / 2, centerX, yLUNA - bh / 2, "human"), nodes = "";
@@ -3087,19 +3088,43 @@ async function renderAgents() {
       const cx = rowX(row, i);
       links += vlink(centerX, yLUNA + bh / 2, cx, yDEP - bh / 2, d.status);
       const num = (d.name.split("·")[0] || "").trim(), kuerzel = (d.name.split("·")[1] || d.name).trim();
-      nodes += box(cx, yDEP, bw, kuerzel, "dep " + d.status, num, d.rolle);
+      box.key = d.key; nodes += box(cx, yDEP, bw, kuerzel, "dep " + d.status, num, d.rolle);
       (d.subs || []).forEach((s, j) => {
         const sy = ySUB + j * subStep, py = j === 0 ? yDEP + bh / 2 : sy - subStep + bh / 2;
         links += vlink(cx, py, cx, sy - bh / 2, s.status);
-        nodes += box(cx, sy, bw, s.name, "sub " + s.status, "", s.name + " · " + stL(s.status));
+        box.key = s.key === "risk" ? "risk" : ""; nodes += box(cx, sy, bw, s.name, "sub " + s.status, "", s.name + " · " + stL(s.status));
       });
     });
     drawRow(rowA, yDEPA, ySUBA); drawRow(rowB, yDEPB, ySUBB);
-    nodes += box(centerX, yCEO, 126, ceo.name || "CEO", "human", ceo.rolle);
+    box.key = ""; nodes += box(centerX, yCEO, 126, ceo.name || "CEO", "human", ceo.rolle);
     nodes += box(centerX, yLUNA, 142, luna.name || "LUNA", "luna", luna.rolle || "Head of Agents");
     svg = `<div class="v2-mm-scroll"><svg viewBox="0 0 ${W} ${H}" class="v2-mm-svg" preserveAspectRatio="xMidYMid meet" style="min-width:${Math.min(W, 900)}px">${links}${nodes}</svg></div>`;
   }
-  $("#v2-app").innerHTML = secHead("Agenten-Organisation") + tile("Organigramm — Live-Status", legend + svg, "w12");
+  const u = (await jget("/api/agenten-uebersicht") || {}).agenten || [];
+  const liste = u.map(x => `<div class="v2-list-row v2-ag-zeile" data-act="ag-profil" data-id="${esc(x.key)}"><span class="v2-badge ${x.status === "aktiv" ? "aktiv" : "neutral"}">${esc(x.status)}</span><div class="grow"><b>${esc(agTitel(x.titel))}</b><small>${x.skills} Skills · ${x.quellen} Quellen · ${x.watcher} Themen · ${x.funde} Funde · ${x.nutzung30} ${x.nutzung30 === 1 ? "Anfrage" : "Anfragen"}/30 T.</small></div><span class="v2-ag-pfeil">›</span></div>`).join("") || emptyRow("Keine Agenten-Daten.");
+  $("#v2-app").innerHTML = secHead("Agenten-Organisation") + tile("Organigramm — Live-Status", legend + svg + `<div class="v2-sub" style="margin-top:6px">Tippe auf einen Agenten für sein Profil.</div>`, "w12")
+    + tile("Agenten im Überblick — Skills, Quellen, Watcher-Themen, Nutzung", liste, "w12");
+}
+const agTitel = (t) => { const p = String(t || "").split(" — "); return p[p.length - 1]; };
+async function agentProfil(key) {
+  openModal("Agent", `<div class="v2-empty">Lade…</div>`);
+  const p = await jget(`/api/agenten/${encodeURIComponent(key)}/profil`);
+  if (!p || !p.charta) return openModal("Agent", emptyRow("Profil nicht gefunden."));
+  const c = p.charta, n30 = p.nutzung.tage30, n90 = p.nutzung.tage90;
+  const kopf = `<div class="v2-kv"><span>Status (Charta)</span><b><span class="v2-badge ${c.status === "aktiv" ? "aktiv" : "neutral"}">${esc(c.status)}</span></b></div>
+    <div class="v2-ag-block"><span>Modell (Richtwert laut Charta)</span><b>${esc(c.modell || "—")}</b><small>Geantwortet wird derzeit über Gemini (BF-18).</small></div>
+    ${c.rolle ? `<div class="v2-ag-rolle">${esc(c.rolle.replace(/\*\*/g, ""))}</div>` : ""}`;
+  const nz = `<div class="v2-ag-zahlen"><div><b>${n30.anzahl}</b><small>Anfragen 30 Tage</small></div><div><b>${n90.anzahl}</b><small>Anfragen 90 Tage</small></div><div><b>${n30.median_s == null ? "–" : n30.median_s + " s"}</b><small>Antwortzeit (Median)</small></div><div><b>${n90.fehler}</b><small>Fehler 90 Tage</small></div></div>
+    <div class="v2-sub">${n90.zuletzt ? "Zuletzt gefragt: " + esc(zeitKurz(n90.zuletzt)) : "Noch nicht gefragt (gemessen wird seit dem 05.10.2026, nur Zeit/Dauer – keine Inhalte)."}</div>`;
+  const sk = p.skills.map(x => `<div class="v2-list-row"><span class="v2-badge ${x.geladen ? "aktiv" : "neutral"}">${x.geladen ? "geladen" : esc(x.verdikt)}</span><div class="grow"><b>${esc(x.name)}${x.quellen ? " 📚" : ""}</b><small>${esc(x.beschreibung)}</small></div></div>`).join("") || emptyRow("Noch keine Skills.");
+  const qs = p.quellen.map(q => `<div class="v2-list-row"><span>⚖️</span><div class="grow"><b><a href="${esc(q.url)}" target="_blank" rel="noopener">${esc(q.norm)}</a></b><small>${esc(q.skill)} · Stand ${esc(datumDe(q.stand))}${q.pruefen_bis ? " · nächste Prüfung " + esc(datumDe(q.pruefen_bis)) : ""}</small></div></div>`).join("");
+  const wt = p.watcher.length ? `<div class="v2-chips">${p.watcher.map(t => `<span class="v2-chip">${esc(t)}</span>`).join("")}</div>` : emptyRow("Keine Watcher-Themen.");
+  const fu = p.funde.map(f => `<div class="v2-list-row"><span>🛰</span><div class="grow"><b><a href="${esc(f.url || "#")}" target="_blank" rel="noopener">${esc(f.titel || "")}</a></b><small>${esc(zeitKurz(f.ts))}</small></div></div>`).join("");
+  const h = (t) => `<div class="v2-sub" style="margin:16px 0 4px"><b>${t}</b></div>`;
+  openModal(agTitel(c.titel), kopf + h("Nutzung") + nz + h(`Skills (${p.skills.length})`) + sk
+    + (qs ? h(`Quellen (${p.quellen.length}) – nachts auf Änderungen geprüft`) + qs : "")
+    + h("Watcher-Themen") + wt + (fu ? h(`Letzte Funde (${p.funde_gesamt} gesamt)`) + fu : "")
+    + `<div class="v2-sub" style="margin-top:14px">Charta: <code>${esc(c.datei)}</code> – ändert nur der Head of Agents auf deine Anweisung.</div>`);
 }
 
 /* =========================== System (Sub-Tabs) =========================== */
@@ -3135,6 +3160,10 @@ function leistungHtml(p) {
   if (w.nutzung) {
     const topApps = Object.entries(w.nutzung.je_app || {}).slice(0, 4).map(([a, n]) => `${esc(a)} (${n})`).join(", ");
     h += zeile(null, "Nutzung (App-Öffnungen)", `${w.nutzung.oeffnungen} diese Woche${topApps ? " · meist: " + topApps : ""}`);
+  }
+  if (w.fachagenten) {
+    const top = Object.entries(w.fachagenten.je_agent || {}).slice(0, 5).map(([a, n]) => `${esc(a.toUpperCase())} (${n})`).join(", ");
+    h += zeile(null, "Fachagenten — wer wird gefragt", `${w.fachagenten.anfragen} Anfragen${delta(w.fachagenten.anfragen, (v.fachagenten || {}).anfragen)}${top ? " · " + top : " · niemand gefragt"}${w.fachagenten.fehler ? ` · ${w.fachagenten.fehler} Fehler` : ""}`);
   }
   if (p.friedhof && p.friedhof.length) h += zeile("gelb", `Feature-Friedhof (> ${p.friedhof_tage} Tage nicht geöffnet)`, p.friedhof.map(esc).join(", "));
   h += zeile(p.ampeln.fehler, "Fehler gesamt", String(p.fehler_gesamt));
@@ -3482,6 +3511,7 @@ async function handleAct(act, el) {
     case "vt-clo-version": case "vt-entwuerfe": case "vt-detail": case "vt-status": case "vt-pruef-form": case "vt-pruefen": case "vt-vergleich": case "vt-neu": case "vt-par-neu": case "vt-speichern": return vtAktion(act, id, val);
     case "vt-par-weg": { const z = el.closest(".v2-vt-feld"); if (z) z.remove(); return; }
     case "ma-detail": return maDetail(id);
+    case "ag-profil": return agentProfil(id);
     case "bl-reiter": { const w = el.closest(".v2-beleg"); if (!w) return; w.dataset.tab = val; w.querySelectorAll(".v2-beleg-reiter button").forEach(b => b.classList.toggle("on", b.dataset.val === val)); return; }
     case "zt-auswertung": return val === "frei" ? ztAuswertung("frei", $("#aw-von").value, $("#aw-bis").value) : ztAuswertung(val);
     case "pz-speichern": case "pz-aus": return rePzSpeichern(id, act === "pz-aus");

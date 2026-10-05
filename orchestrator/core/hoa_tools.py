@@ -9,6 +9,7 @@ Vereinheitlichung (eine Quelle fuer Voice + Text) ist als Aufraeumschritt vorges
 """
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 
 from ..governance.leak_guard import redact
@@ -41,6 +42,7 @@ class ToolContext:
     crm: object | None = None            # CrmStore (Collab-CRM, CRO) oder None
     social: object | None = None         # SocialStore (Social-Media-Analyzer, CBO/CCO) oder None
     approvals: object | None = None      # ApprovalStore (1-Tap-Freigaben per Telegram, Schritt 5) oder None
+    agenten_nutzung: object | None = None  # AgentenNutzung (Fachagenten-Anfragen ohne Inhalte, AGENTEN_AUSBAU A1)
 
 
 def tool_specs() -> list[dict]:
@@ -525,10 +527,19 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
                                   f"- {f.get('titel', '')} ({f.get('url', '')})" for f in funde))
         task = ("Beantworte als Fachagent knapp in Text. Du kannst derzeit nicht handeln, nur beraten."
                 + wissen_ctx + "\n\nAufgabe: " + aufgabe)
+        t0, ok = time.monotonic(), False
         try:
             out = ctx.core.backend.respond(an, spec.system_prompt, task, {})
+            ok = True
         except Exception as exc:
             return {"fehler": str(exc)[:200]}
+        finally:                                      # AGENTEN_AUSBAU A1: Nutzung ohne Inhalte protokollieren
+            if ctx.agenten_nutzung is not None:
+                try:
+                    ctx.agenten_nutzung.erfassen(an, ok=ok, dauer_ms=int((time.monotonic() - t0) * 1000),
+                                                 skills=spec.system_prompt.count("### Skill: "))
+                except Exception:
+                    pass
         return {"ergebnis": redact(out, sec)}
 
     if name == "content_feed_lauf":
@@ -1629,7 +1640,7 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
 # -- intern --
 
 _AGENT_KEYS = ("berater", "cao", "cfo", "cro", "ciso", "cbo", "cpo", "cto", "cxo", "cco",
-               "cdo", "chro", "clo", "cko", "res")
+               "cdo", "chro", "clo", "cko", "res", "cio", "risk")
 
 _GOOGLE_TOOLS = ("mail_suchen", "mail_lesen", "mail_entwurf", "mail_senden", "kalender_agenda",
                  "termin_anlegen", "drive_suchen", "drive_lesen", "tabelle_lesen", "tabelle_schreiben",

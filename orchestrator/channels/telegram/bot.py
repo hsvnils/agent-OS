@@ -170,6 +170,7 @@ def _build_ctx(cfg: dict, secrets: dict):
                    notify=notifications.enqueue)
     from ...investment.approvals import ApprovalStore
     approvals = ApprovalStore(ROOT / "approvals" / "log.jsonl", secrets=secret_values)
+    from ...core.agenten_profil import AgentenNutzung
     from ...core.auftraege import AuftragStore
     backoffice = AuftragStore(ROOT / "backoffice" / "log.jsonl", secrets=secret_values)
     return ToolContext(core=core, antraege=antraege, engine=engine,
@@ -179,7 +180,7 @@ def _build_ctx(cfg: dict, secrets: dict):
                        kosten=kosten, aktivitaet=aktivitaet, visuals=[],
                        brain=brain, insights=insights, investment=investment, crm=crm,
                        trajektorien=trajektorien, social=social, approvals=approvals,
-                       backoffice=backoffice), secret_values
+                       backoffice=backoffice, agenten_nutzung=AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl")), secret_values
 
 
 def _api(token: str, method: str, params: dict, timeout: int = 60) -> dict:
@@ -712,7 +713,7 @@ def _start_rechtsquellen_loop(ctx) -> None:
                 jetzt = datetime.now(tz) if tz else datetime.now()
                 datum = jetzt.strftime("%Y-%m-%d")
                 if jetzt.hour == 4 and jetzt.minute >= 30 and not ctx.agenda.briefing_gesendet("rechtsquellen", datum):
-                    erg = lauf(ROOT / "skills" / "clo", ROOT / "orchestrator" / "state" / "rechtsquellen.json",
+                    erg = lauf(ROOT / "skills", ROOT / "orchestrator" / "state" / "rechtsquellen.json",
                                notify=lambda text, **kw: ctx.notifications.enqueue(text, nach_briefing=True, **kw))
                     print(f"[rechtsquellen] {erg['geprueft']} geprueft, {len(erg['geaendert'])} geaendert, "
                           f"{len(erg['fehler'])} Fehler", flush=True)
@@ -774,6 +775,7 @@ def _leistungsbericht(ctx) -> str:
     Dateien (Reel-Log bzw. lokaler Cutter-Job-Cache, den die Web-App pflegt) -- kein Supabase-Zugriff."""
     from ...core.content_store import CUTTER_FELDER, ContentStore
     from ...core.nutzung import NutzungStore
+    from ...core.agenten_profil import AgentenNutzung
     from ...core.performance_agent import PerformanceAgent
     from ...core.reel_store import ReelStore
     agent = PerformanceAgent(
@@ -781,7 +783,8 @@ def _leistungsbericht(ctx) -> str:
         antraege=ctx.antraege,
         cutter=ContentStore(None, "luna_cutter_jobs", CUTTER_FELDER, ROOT / "cutter_ops" / "jobs_cache.jsonl"),
         aktivitaet=ctx.aktivitaet, kosten=ctx.kosten,
-        nutzung=NutzungStore(ROOT / "nutzung" / "log.jsonl"))
+        nutzung=NutzungStore(ROOT / "nutzung" / "log.jsonl"),
+        fachagenten=AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl"))
     return agent.als_text()
 
 
@@ -1534,7 +1537,7 @@ def main() -> None:
     if secrets.get("SECURITY_AUDIT_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Security-Audit-Loop aktiv (taeglich 04:00, regelbasiert, L1-Meldung).", flush=True)
     _start_buchhaltung_loop(ctx)
-    _start_rechtsquellen_loop(ctx)  # CLO_AUSBAU C3: Rechtsquellen der CLO-Skills naechtlich 04:30 auf Aenderungen pruefen  # KUNDEN_FINANZEN Etappe 1: Integritaetspruefung 05:00, nur melden
+    _start_rechtsquellen_loop(ctx)  # CLO_AUSBAU C3: Rechtsquellen aller Agenten-Skills (CLO, CFO) naechtlich 04:30 auf Aenderungen pruefen  # KUNDEN_FINANZEN Etappe 1: Integritaetspruefung 05:00, nur melden
     offset = 0
     _last_poll = 0.0
     tz = _tz_berlin()          # wurde hier vergessen -> NameError im Zustellblock (siehe _tz_berlin)

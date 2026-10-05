@@ -17,6 +17,24 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 11:50] — Claude Code
+- **Was:** AGENTEN_AUSBAU Paket 1 gebaut. **A1 Transparenz:** neues `core/agenten_profil.py` (Nutzungsprotokoll
+  `agenten_nutzung/log.jsonl` ohne Inhalte, Profil und Uebersicht je Agent), „delegate“ protokolliert jede Anfrage,
+  CIO und Risk befragbar (`ALL_AGENT_CHARTERS`, `_AGENT_KEYS`), Endpunkte `GET /api/agenten/{key}/profil` und
+  `/api/agenten-uebersicht`, Agenten-Seite mit klickbaren Knoten, Liste „Agenten im Ueberblick“ und Profil-Fenster,
+  Leistungsbericht mit Zeile „Fachagenten -- wer wird gefragt“ (Web + Telegram). **A2:** 11 Skills (CFO: Beleg-/GoBD-
+  Pruefung, Abschluss-Check EUeR, Preis-/Margen-Analyse, Liquiditaetsvorschau; CCO: Hook und Skript, Reel-Dramaturgie,
+  Content-Kalender, Briefing -> Konzept; CRO: Angebot nachfassen, Folgeauftrag/Upsell; CDO: Kampagnen-Auswertung),
+  CFO-Quellen (9 Normen UStG/UStDV/EStG/AO im Wortlaut, GoBD als Verweis), Rechtsquellen-Nachtlauf auf alle Agenten
+  verallgemeinert. **A4:** Watcher-Themen aller 14 Abteilungen auf das Geschaeft ausgerichtet. UI v96/v45. Tests
+  `test_agenten_ausbau.py` (14, Gegenproben rot), Suite 1180 passed; Browsertest Rechner/iPad/iPhone 17 Pro ok.
+- **Warum:** CEO „Go fuer Paket 1“ (A1, A2, A4 der `AGENTEN_AUSBAU_ROADMAP.md`).
+- **Betroffen:** `orchestrator/core/agenten_profil.py`, `core/hoa_tools.py`, `core/subagents.py`, `core/performance_agent.py`,
+  `core/rechtsquellen.py`, `core/watch_config.py`, `channels/web/app.py`, `channels/telegram/bot.py`, `static/app-v2.js`,
+  `static/style-v2.css`, `static/index-v2.html`, `skills/{cfo,cco,cro,cdo}/`, `tests/test_agenten_ausbau.py`,
+  `tests/test_dept_skills.py`, `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `.gitignore`,
+  `AGENTEN_AUSBAU_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 11:34] — Claude Code
 - **Was:** CEO-Entscheidungen zu den Rand-Agenten in die Roadmap Agenten-Ausbau (A5) und ins Register eingetragen: CHRO,
   CKO, CPO, CXO (getrennt) und CAO werden aktiviert, je mit Aufgabe und geplanten Skills.
