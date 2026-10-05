@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 17:01] — Claude Code
+- **Was:** Deploy TEXTBAUSTEINE T1-T3 live geprueft (CEO hat NAS-Sync und Neustart ausgefuehrt; Merge + Push durch Claude
+  Code): UI v100/v48; Signatur des CEO wortgleich ueber `POST /api/crm/textbausteine` eingetragen (Ereignis
+  `textbausteine_geaendert`); echte Versandvorschau AN-2026-0002 endet mit der Signatur, alter Gruss entfaellt; PDF- und
+  .eml-Endpunkt liefern (X-Unsent gesetzt). Test-Mailentwurf `LUNA-Test-Mailentwurf.eml` auf den Windows-Desktop des
+  MACO470 gelegt (fuer T4, danach loeschen). Nichts versendet, kein Beleg-Status geaendert.
+- **Warum:** CEO-Go Merge/Push/Deploy; Signatur hatte der CEO vorgegeben.
+- **Betroffen:** NAS-Deploy, `buchhaltung/textbausteine.json` (NAS), `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md`
+
 ## [2026-10-05 16:56] — Claude Code
 - **Was:** TEXTBAUSTEINE_MAILVERSAND T1-T3 gebaut. **T1** `core/textbausteine.py`: Vorlagen je Belegart (Angebot,
   Auftragsbestaetigung, Rechnung, Stornorechnung, Mahnung, Projektbericht, Konzept) mit Platzhaltern, genau ein Standard,

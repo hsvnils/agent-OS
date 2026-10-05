@@ -3,7 +3,7 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/textbausteine`
 - Basiscommit: `ed7fdcc`
-- Naechster Schritt: T1-T3 gebaut (2026-10-05) -- Deploy-Go, Signatur des CEO eintragen, dann T4 (Geraete-Abnahme mit dem CEO).
+- Naechster Schritt: T1-T3 live, Signatur eingetragen (2026-10-05) -- T4: CEO testet iPhone (Apple Mail), MacBook (Apple Mail), MACO470 (Outlook).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
