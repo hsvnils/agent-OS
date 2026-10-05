@@ -1278,15 +1278,16 @@ async function anDetail(nr, meldung, fehler) {
   const pdfs = (a.pdfs || []).map(p => `<div class="v2-list-row"><span>📎</span><div class="grow"><b>${esc(p.pfad.split("/").pop())}</b><small>${esc(zeit(p.ts))}${p.an ? " · Mail-Entwurf an " + esc(p.an) : ""}${p.inhalt === a.inhalt ? "" : " · älterer Stand"}</small></div></div>`).join("");
   let aktionen = `<a class="v2-btn" href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 PDF ansehen</a><button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(nr)}">🔗 Belegverfolgung</button>`;
   if (a.status === "entwurf") aktionen += `<button class="v2-btn" data-act="an-bearbeiten" data-id="${esc(nr)}">✎ Bearbeiten</button>
-    <button class="v2-btn pri" data-act="an-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled title=\"Google nicht verbunden\""}>✉️ Senden …</button>
+    <button class="v2-btn pri" data-act="an-senden" data-id="${esc(nr)}">✉️ Senden …</button>
     <button class="v2-btn" data-act="an-versendet" data-id="${esc(nr)}" title="Nur wenn du das Angebot auf anderem Weg verschickt hast">✔ Anderweitig versendet</button>`;
+  else aktionen += `<button class="v2-btn" data-act="an-senden" data-id="${esc(nr)}" data-val="erneut" title="Gleiches PDF erneut schicken, z. B. mit der Vorlage zum Nachfassen">✉️ Erneut senden / nachfassen …</button>`;
   if (a.auftrag) aktionen += `<button class="v2-btn ok" data-act="ab-detail" data-id="${esc(a.auftrag)}">📋 Auftrag ${esc(a.auftrag)}</button>`;
   else if (a.status === "angenommen") aktionen += `<button class="v2-btn pri" data-act="ab-neu" data-id="${esc(nr)}">📋 Auftrag anlegen</button>`;
   else if (a.status === "versendet") aktionen += `<button class="v2-btn pri" data-act="ab-neu" data-id="${esc(nr)}" data-val="annehmen">📋 Angenommen + Auftrag anlegen</button>`;
   if (a.status === "versendet") aktionen += `<button class="v2-btn ok" data-act="an-status" data-id="${esc(nr)}" data-val="angenommen">Angenommen</button><button class="v2-btn" data-act="an-status" data-id="${esc(nr)}" data-val="abgelehnt">Abgelehnt</button>`
     + ((a.versendet_termine || []).length < 2 ? `<button class="v2-btn" data-act="an-erinnerungen" data-id="${esc(nr)}" title="Fehlende Kalender-Erinnerungen anlegen">📅 Erinnerungen nachholen</button>` : "");
   if ((a.pdfs || []).length) aktionen += `<a class="v2-btn" href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf?archiv=1" target="_blank" rel="noopener">📎 Abgelegtes PDF</a>`;
-  const verlaufLbl = { auftrag_angelegt: "Auftrag angelegt", angebot_angelegt: "Angelegt", angebot_geaendert: "Geändert", angebot_pdf_abgelegt: "PDF abgelegt", angebot_status: "Status", angebot_erinnerungen: "Erinnerungen nachgeholt", angebot_antwort: "Antwort vom Kunden" };
+  const verlaufLbl = { auftrag_angelegt: "Auftrag angelegt", angebot_angelegt: "Angelegt", angebot_geaendert: "Geändert", angebot_pdf_abgelegt: "PDF abgelegt", angebot_status: "Status", angebot_erinnerungen: "Erinnerungen nachgeholt", angebot_antwort: "Antwort vom Kunden", angebot_erneut_gesendet: "Erneut gesendet" };
   const anzAntworten = (a.antworten || []).length;
   const verlauf = (a.verlauf || []).slice().reverse().map(v => {
     const kopf = `<b>${esc(verlaufLbl[v.typ] || v.typ)}${v.status ? ": " + esc((AN_STATUS[v.status] || [v.status])[0]) : ""}${v.auftrag ? " " + esc(v.auftrag) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.an ? " · an " + esc(v.an) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small>`;
@@ -1348,7 +1349,7 @@ async function abDetail(nr, meldung, fehler) {
     + `<tr><td></td><td><b>Gesamtbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
   let aktionen = `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 Auftragsbestätigung (PDF)</a><button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(nr)}">🔗 Belegverfolgung</button>
     ${a.angebot ? `<button class="v2-btn" data-act="an-detail" data-id="${esc(a.angebot)}">↩ Angebot ${esc(a.angebot)}</button>` : ""}`;
-  if (a.status !== "storniert") aktionen += `<button class="v2-btn pri" data-act="ab-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled"}>✉️ Senden …</button>`;
+  if (a.status !== "storniert") aktionen += `<button class="v2-btn pri" data-act="ab-senden" data-id="${esc(nr)}">✉️ Senden …</button>`;
   const reListe = d.rechnungen || [], vkDa = reListe.some(r => r.art === "anzahlung" && r.status !== "storniert");
   const schlussDa = reListe.some(r => (r.art || "rechnung") === "rechnung" && r.status !== "storniert");
   if (a.status !== "storniert" && darf("rechnungen") && a.vorkasse_cent && !vkDa && !schlussDa) aktionen += `<button class="v2-btn pri" data-act="ab-vorkasse" data-id="${esc(nr)}">💶 Vorkasse-Rechnung erstellen</button>`;
@@ -1709,8 +1710,10 @@ async function maDetail(nr, meldung, fehler) {
   const r = d.rechnung || {};
   let aktionen = (m.pdf ? `<a class="v2-btn" href="/api/finanzen/mahnungen/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 ${m.alt ? "Original-PDF" : "PDF"}</a>` : "")
     + `<button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(nr)}">🔗 Belegverfolgung</button><button class="v2-btn" data-act="re-detail" data-id="${esc(m.rechnung)}">↩ Rechnung ${esc(m.rechnung)}</button>`;
-  if (!m.versendet_am) aktionen += `<button class="v2-btn pri" data-act="ma-senden" data-id="${esc(nr)}" ${d.google ? "" : "disabled"}>✉️ Senden …</button>`;
+  if (!m.versendet_am) aktionen += `<button class="v2-btn pri" data-act="ma-senden" data-id="${esc(nr)}">✉️ Senden …</button>`;
+  else if (!m.alt) aktionen += `<button class="v2-btn" data-act="ma-senden" data-id="${esc(nr)}" data-val="erneut" title="Gleiche Mahnung noch einmal schicken">✉️ Erneut senden …</button>`;
   const status = `<div class="v2-kv"><span>Mahnung</span><b>${m.versendet_am ? (m.alt ? "vor LUNA verschickt" : "✉️ gesendet " + esc(zeit(m.versendet_am)) + ((m.mail || {}).an ? " an " + esc(m.mail.an) : "")) : "noch nicht gesendet"}</b></div>
+    ${(m.erneut || []).map(x => `<div class="v2-kv"><span>Erneut gesendet</span><b>${esc(zeit(x.ts))}${x.an ? " an " + esc(x.an) : ""}${x.kanal === "mail-programm" ? " (Mail-Programm)" : ""}</b></div>`).join("")}
     <div class="v2-kv"><span>Frist</span><b>${esc(datumDe(m.frist))}</b></div>
     <div class="v2-kv"><span>Rechnung</span><b><a href="#" data-act="re-detail" data-id="${esc(m.rechnung)}">${esc(m.rechnung)}</a> · ${esc((RE_STATUS[r.status] || [r.status || ""])[0])}</b></div>
     ${r.summe_cent != null ? `<div class="v2-kv"><span>Bezahlt / Rechnung</span><b>${cent2eur(r.bezahlt_cent || 0)} / ${cent2eur(r.summe_cent)}</b></div>` : ""}`;
@@ -1982,7 +1985,7 @@ async function abSendenVorschau(nr) {
     <label class="v2-feld"><small>Betreff *</small><input id="abs-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="abs-text" class="v2-inp" rows="9">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("auftrag", nr, v)}
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ab-senden-jetzt" data-id="${esc(nr)}">✉️ Jetzt senden</button><button class="v2-btn" data-act="ab-senden-abbruch">Abbrechen</button></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ab-senden-jetzt" data-id="${esc(nr)}" ${v.google ? "" : "disabled"}>✉️ Jetzt senden</button><button class="v2-btn" data-act="ab-senden-abbruch">Abbrechen</button></div>
     <div id="abs-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -2009,31 +2012,31 @@ document.addEventListener("toggle", async (e) => {
 }, true);
 
 /* ---------- Senden aus LUNAs Konto (CEO-Klick, mit Vorschau) ---------- */
-async function anSendenVorschau(nr) {
+async function anSendenVorschau(nr, erneut) {
   const box = $("#an-senden-box"); if (!box) return;
   box.innerHTML = `<div class="v2-empty">Lade Vorschau…</div>`;
   const v = await jget(`/api/crm/angebote/${encodeURIComponent(nr)}/versandvorschau`);
   if (!v) { box.innerHTML = emptyRow("Vorschau nicht verfügbar."); return; }
-  box.innerHTML = `<h3>Angebot senden</h3><div class="v2-form v2-an-senden">
+  box.innerHTML = `<h3>${erneut ? "Angebot erneut senden / nachfassen" : "Angebot senden"}</h3>${erneut ? `<div class="v2-msg">Es geht das bereits versendete PDF noch einmal raus. Der Status bleibt, es entstehen keine neuen Erinnerungen – die Mail steht im Verlauf.</div>` : ""}<div class="v2-form v2-an-senden">
     <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
     <label class="v2-feld"><small>An *</small><input id="as-an" type="email" value="${esc(v.an || "")}" placeholder="kunde@firma.de"></label>
     <label class="v2-feld"><small>Betreff *</small><input id="as-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text * (Signatur anpassbar)</small><textarea id="as-text" class="v2-inp" rows="10">${esc(v.text)}</textarea></label>
-    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("angebot", nr, v)}
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="an-senden-jetzt" data-id="${esc(nr)}">✉️ Jetzt senden</button><button class="v2-btn" data-act="an-senden-abbruch">Abbrechen</button></div>
+    <div class="v2-kv"><span>Anhang</span><a href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("angebot", nr, v, erneut)}
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="an-senden-jetzt" data-id="${esc(nr)}" ${erneut ? 'data-val="erneut"' : ""} ${v.google ? "" : "disabled title=\"Google nicht verbunden – nutze dein Mail-Programm\""}>✉️ Jetzt senden</button><button class="v2-btn" data-act="an-senden-abbruch">Abbrechen</button></div>
     <div id="as-msg" class="v2-msg"></div>
-    <small class="v2-sub">Geht aus LUNAs Google-Konto raus. Danach ist das Angebot „versendet“ (nicht mehr änderbar), die Erinnerungen werden angelegt, Antworten des Kunden erscheinen hier und kommen per Telegram.</small></div>`;
+    <small class="v2-sub">${erneut ? "„Jetzt senden“ geht aus LUNAs Google-Konto raus; Status und Erinnerungen bleiben unverändert, die Mail steht im Verlauf." : "Geht aus LUNAs Google-Konto raus. Danach ist das Angebot „versendet“ (nicht mehr änderbar), die Erinnerungen werden angelegt, Antworten des Kunden erscheinen hier und kommen per Telegram."}</small></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-async function anSendenJetzt(nr) {
+async function anSendenJetzt(nr, erneut) {
   const an = $("#as-an").value.trim(), betreff = $("#as-betreff").value.trim(), text = $("#as-text").value.trim();
   if (!an || !an.includes("@")) return kundenMsg("as-msg", "Bitte eine gültige Empfänger-Adresse eintragen.", false);
-  if (!confirm(`Angebot ${nr} jetzt an ${an} senden?\n\nDas lässt sich nicht zurückholen.`)) return;
+  if (!confirm(`Angebot ${nr} jetzt ${erneut ? "erneut " : ""}an ${an} senden?\n\nDas lässt sich nicht zurückholen.`)) return;
   const b = $('[data-act="an-senden-jetzt"]'); if (b) { b.disabled = true; b.textContent = "⏳ sendet…"; }
-  const r = await jpost(`/api/crm/angebote/${encodeURIComponent(nr)}/senden`, { an, betreff, text, bestaetigt: true });
+  const r = await jpost(`/api/crm/angebote/${encodeURIComponent(nr)}/senden`, { an, betreff, text, bestaetigt: true, erneut: !!erneut });
   if (!r || !r.ok) { if (b) { b.disabled = false; b.textContent = "✉️ Jetzt senden"; } return kundenMsg("as-msg", (r && r.hinweis) || "Senden fehlgeschlagen.", false); }
   if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
-  return anDetail(nr, [`Gesendet an ${r.an}.`, ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n"));
+  return anDetail(nr, [`${r.erneut ? "Erneut gesendet" : "Gesendet"} an ${r.an}.`, ...(r.termine || []).map(t => `📅 ${t.titel} (${new Date(t.datum).toLocaleDateString("de-DE")})`), ...(r.hinweise || [])].join("\n"));
 }
 
 /* ---------- TEXTBAUSTEINE T2/T3: Vorlage waehlen + Versand ueber das eigene Mail-Programm ---------- */
@@ -2048,8 +2051,10 @@ const MP = {
 };
 const MP_DATEI = {};
 const MP_APPLE = /iPhone|iPad|Macintosh/.test(navigator.userAgent);
-function mailBlock(art, nr, v) {
+const MP_ERNEUT = {};
+function mailBlock(art, nr, v, erneut) {
   const vl = v.vorlagen || [];
+  MP_ERNEUT[art + "|" + nr] = !!erneut;
   const wahl = vl.length > 1 ? `<label class="v2-feld"><small>Textvorlage</small><select class="v2-inp v2-mp-vorlage" data-art="${esc(art)}" data-nr="${esc(nr)}">${vl.map(x => `<option value="${esc(x.id)}" ${x.id === v.vorlage ? "selected" : ""}>${esc(x.name)}${x.standard && x.name !== "Standard" ? " (Standard)" : ""}</option>`).join("")}</select></label>`
     : `<small class="v2-sub">Textvorlage „${esc((vl[0] || {}).name || "Standard")}“ – weitere Vorlagen und Signatur unter ⚙ Einstellungen.</small>`;
   setTimeout(() => mpVorbereiten(art, nr), 0);
@@ -2057,7 +2062,7 @@ function mailBlock(art, nr, v) {
     <div class="v2-card-actions"><button class="v2-btn" data-act="mp-oeffnen" data-id="${esc(nr)}" data-val="${esc(art)}">✉️ Im Mail-Programm öffnen</button>
       <button class="v2-btn" data-act="mp-adresse" data-val="${esc(art)}">📋 Adresse kopieren</button></div>
     <div class="v2-mp-nach" data-mp-nach="${esc(art)}" hidden><small class="v2-sub">Mail aus deinem Mail-Programm verschickt? Dann hier abschließen – PDF kommt in die Firmenakte, Status und Erinnerungen wie beim Senden über LUNA.</small>
-      <div class="v2-card-actions"><button class="v2-btn ok" data-act="mp-versendet" data-id="${esc(nr)}" data-val="${esc(art)}">✓ Als versendet markieren</button>
+      <div class="v2-card-actions"><button class="v2-btn ok" data-act="mp-versendet" data-id="${esc(nr)}" data-val="${esc(art)}">${erneut ? "✓ Als erneut gesendet vermerken" : "✓ Als versendet markieren"}</button>
         ${MP_APPLE ? `<button class="v2-btn" data-act="mp-eml" data-id="${esc(nr)}" data-val="${esc(art)}">Als .eml-Datei</button>` : ""}</div></div></div>`;
 }
 async function mpVorbereiten(art, nr) {                   // PDF vorab laden: Teilen muss direkt im Tipp starten (Safari)
@@ -2092,10 +2097,11 @@ async function mpAktion(act, nr, art) {
     try { await navigator.clipboard.writeText(an); kundenMsg(MP[art].msg, `Adresse kopiert: ${an}`, true); } catch { kundenMsg(MP[art].msg, `Adresse: ${an}`, true); } return; }
   if (act === "mp-versendet") {
     const an = mpFeld(art, "an").trim(); if (!an.includes("@")) return kundenMsg(MP[art].msg, "Bitte die Empfänger-Adresse eintragen (für die Ablage).", false);
-    if (!confirm(`Hast du die Mail an ${an} verschickt?\n\nLUNA markiert den Beleg dann als versendet und legt das PDF ab.`)) return;
-    const r = await jpost(MP[art].senden(nr), { an, betreff: mpFeld(art, "betreff").trim(), text: mpFeld(art, "text").trim(), bestaetigt: true, kanal: "mail-programm" });
+    const erneut = !!MP_ERNEUT[art + "|" + nr];
+    if (!confirm(erneut ? `Hast du die Mail an ${an} erneut verschickt?\n\nLUNA vermerkt sie im Verlauf.` : `Hast du die Mail an ${an} verschickt?\n\nLUNA markiert den Beleg dann als versendet und legt das PDF ab.`)) return;
+    const r = await jpost(MP[art].senden(nr), { an, betreff: mpFeld(art, "betreff").trim(), text: mpFeld(art, "text").trim(), bestaetigt: true, kanal: "mail-programm", erneut });
     if (!r || !r.ok) return kundenMsg(MP[art].msg, (r && r.hinweis) || "Fehler.", false);
-    return MP[art].fertig(nr, `Als versendet markiert (über dein Mail-Programm an ${an}).`);
+    return MP[art].fertig(nr, erneut ? `Erneut gesendet vermerkt (über dein Mail-Programm an ${an}).` : `Als versendet markiert (über dein Mail-Programm an ${an}).`);
   }
 }
 document.addEventListener("change", async (e) => {         // Vorlage gewechselt -> Betreff/Text neu aus der Vorschau
@@ -2384,8 +2390,8 @@ async function reDetail(id, meldung, fehler) {
     <button class="v2-btn pri" data-act="re-festschreiben" data-id="${esc(id)}" ${d.steuernummer ? "" : "disabled title=\"Steuernummer fehlt\""}>🔒 Festschreiben (Nummer vergeben)</button>
     <button class="v2-btn" data-act="re-verwerfen" data-id="${esc(id)}">Entwurf verwerfen</button>`;
   else {
-    if (r.art !== "storno") aktionen += `<button class="v2-btn pri" data-act="re-senden" data-id="${esc(r.nummer)}" ${d.google ? "" : "disabled"}>✉️ Senden …</button>`;
-    else aktionen += `<button class="v2-btn" data-act="re-senden" data-id="${esc(r.nummer)}" ${d.google ? "" : "disabled"}>✉️ Storno senden …</button>`;
+    if (r.art !== "storno") aktionen += `<button class="v2-btn pri" data-act="re-senden" data-id="${esc(r.nummer)}">✉️ Senden …</button>`;
+    else aktionen += `<button class="v2-btn" data-act="re-senden" data-id="${esc(r.nummer)}">✉️ Storno senden …</button>`;
     if (r.status === "offen" && (r.geld_cent ?? r.summe_cent) - (r.bezahlt_cent || 0) > 0) aktionen += `<button class="v2-btn ok" data-act="re-bezahlt-form" data-id="${esc(r.nummer)}">💶 Zahlung erfassen</button>`;
     if (r.art !== "storno" && r.ware_cent && !r.ware_erhalten && r.status !== "storniert") aktionen += `<button class="v2-btn ok" data-act="re-ware-form" data-id="${esc(r.nummer)}">📦 Ware erhalten …</button>`;
     if (r.ware_erhalten) aktionen += `<button class="v2-btn" data-act="re-ware-storno" data-id="${esc(r.nummer)}" title="Falsch erfassten Ware-Eingang zurücknehmen">↶ Ware-Eingang stornieren</button>`;
@@ -2463,7 +2469,7 @@ async function reSendenVorschau(nr) {
     <label class="v2-feld"><small>Betreff *</small><input id="res-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="res-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/rechnungen/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("rechnung", nr, v)}
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="re-senden-jetzt" data-id="${esc(nr)}">✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="res-msg" class="v2-msg"></div></div>`;
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="re-senden-jetzt" data-id="${esc(nr)}" ${v.google ? "" : "disabled"}>✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="res-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 let RE_DETAIL = null;
@@ -2505,17 +2511,17 @@ async function maForm(nr, frist) {
   $("#ma-frist").addEventListener("change", e => maForm(nr, Number(e.target.value) || 7));
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-async function maSendenVorschau(ma) {
+async function maSendenVorschau(ma, erneut) {
   const box = $("#re-aktion-box"); if (!box) return;
   const v = await jget(`/api/finanzen/mahnungen/${encodeURIComponent(ma)}/versandvorschau`);
   if (!v) { box.innerHTML = emptyRow("Vorschau nicht verfügbar."); return; }
-  box.innerHTML = `<h3>Mahnung ${esc(ma)} senden</h3><div class="v2-form">
+  box.innerHTML = `<h3>Mahnung ${esc(ma)} ${erneut ? "erneut " : ""}senden</h3>${erneut ? `<div class="v2-msg">Gleiche Mahnung noch einmal – Stufe und Frist bleiben, die Mail wird an der Mahnung vermerkt.</div>` : ""}<div class="v2-form">
     <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
     <label class="v2-feld"><small>An *</small><input id="mas-an" type="email" value="${esc(v.an || "")}"></label>
     <label class="v2-feld"><small>Betreff *</small><input id="mas-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="mas-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
-    <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/mahnungen/${encodeURIComponent(ma)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("mahnung", ma, v)}
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ma-senden-jetzt" data-id="${esc(ma)}" ${v.google ? "" : "disabled"}>✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="mas-msg" class="v2-msg"></div></div>`;
+    <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/mahnungen/${encodeURIComponent(ma)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("mahnung", ma, v, erneut)}
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ma-senden-jetzt" data-id="${esc(ma)}" ${erneut ? 'data-val="erneut"' : ""} ${v.google ? "" : "disabled"}>✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="mas-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function reBezahltForm(nr) {
@@ -3625,11 +3631,12 @@ async function handleAct(act, el) {
       if (AKTIV === "rechnungen") renderRechnungen();
       await reDetail(id, `${r.nummer} festgeschrieben — jetzt prüfen und senden.`); return maSendenVorschau(r.nummer);
     }
-    case "ma-senden": return maSendenVorschau(id);
+    case "ma-senden": return maSendenVorschau(id, val === "erneut");
     case "ma-senden-jetzt": {
-      const r = await jpost(`/api/finanzen/mahnungen/${encodeURIComponent(id)}/senden`, { an: $("#mas-an").value.trim(), betreff: $("#mas-betreff").value.trim(), text: $("#mas-text").value, bestaetigt: true });
+      const r = await jpost(`/api/finanzen/mahnungen/${encodeURIComponent(id)}/senden`, { an: $("#mas-an").value.trim(), betreff: $("#mas-betreff").value.trim(), text: $("#mas-text").value, bestaetigt: true, erneut: val === "erneut" });
       if (!r || !r.ok) return kundenMsg("mas-msg", (r && r.hinweis) || "Fehler.", false);
-      return reDetail(RE_DETAIL && RE_DETAIL.rechnung ? RE_DETAIL.rechnung.nummer : id, `Mahnung ${id} an ${r.an} gesendet.`);
+      if (AKTIV !== "rechnungen" && !RE_DETAIL) return maDetail(id, `Mahnung ${id} an ${r.an} ${val === "erneut" ? "erneut " : ""}gesendet.`);
+      return reDetail(RE_DETAIL && RE_DETAIL.rechnung ? RE_DETAIL.rechnung.nummer : id, `Mahnung ${id} an ${r.an} ${val === "erneut" ? "erneut " : ""}gesendet.`);
     }
     case "re-bezahlt": {
       const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/bezahlt`, { datum: $("#rez-datum").value, betrag: $("#rez-betrag").value.trim() || null, notiz: $("#rez-notiz").value.trim(), zuordnung_jahr: zehnTageWert("rez-zuord"), nebenforderung: ($("#rez-neben") || {}).value || null });
@@ -3707,8 +3714,8 @@ async function handleAct(act, el) {
       if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote();
       return abDetail(id, r && r.ok ? (val === "erledigt" ? "Als erledigt markiert — bereit für die Rechnung." : "Storniert.") : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
-    case "an-senden": return anSendenVorschau(id);
-    case "an-senden-jetzt": return anSendenJetzt(id);
+    case "an-senden": return anSendenVorschau(id, val === "erneut");
+    case "an-senden-jetzt": return anSendenJetzt(id, val === "erneut");
     case "an-senden-abbruch": { const bx = $("#an-senden-box"); if (bx) bx.innerHTML = ""; return; }
     case "an-erinnerungen": {
       flash("⏳ …"); const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/erinnerungen`, {});

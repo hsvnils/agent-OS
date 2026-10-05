@@ -138,3 +138,59 @@ class TestVersand(ApiBasis):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestErneutSenden(ApiBasis):
+    """T5: versendete Angebote/Mahnungen erneut senden bzw. nachfassen -- gleiches PDF, Status bleibt."""
+    def test_1_angebot_erneut(self):
+        nr = self._neu()
+        post = lambda **kw: self.c.post(f"/api/crm/angebote/{nr}/senden", json={"an": "anna@brandx.de", "betreff": "B",
+                                                                                "text": "T", "bestaetigt": True} | kw).json()
+        self.assertFalse(post(erneut=True)["ok"])                                # Entwurf: erst normal senden
+        self.assertTrue(post()["ok"])
+        a = self.c.get(f"/api/crm/angebote/{nr}").json()["angebot"]
+        termine, groesse = len(a.get("versendet_termine") or []), self.g.gesendet[-1]["anhaenge"][0][1]   # Mock: Groesse
+        self.assertFalse(post()["ok"])                                           # normal nicht zweimal
+        r = post(erneut=True, betreff="Kurze Nachfrage")
+        self.assertTrue(r["ok"] and r["erneut"], r)
+        self.assertEqual(self.g.gesendet[-1]["anhaenge"][0][1], groesse)         # genau das versendete PDF
+        r = post(erneut=True, kanal="mail-programm")                             # ueber das eigene Mail-Programm
+        self.assertTrue(r["ok"])
+        a = self.c.get(f"/api/crm/angebote/{nr}").json()["angebot"]
+        self.assertEqual(a["status"], "versendet")
+        self.assertEqual(len(a.get("versendet_termine") or []), termine)          # keine neuen Erinnerungen
+        erneut = [v for v in a["verlauf"] if v["typ"] == "angebot_erneut_gesendet"]
+        self.assertEqual(len(erneut), 2)
+        self.assertIn("Mail-Programm", erneut[-1]["grund"])
+        p = self.c.get(f"/api/crm/mailentwurf/angebot/{nr}/pdf")                # Mail-Programm bekommt das gesendete PDF
+        a = self.c.get(f"/api/crm/angebote/{nr}").json()["angebot"]
+        self.assertEqual(p.content, (self.w.kunden_store.bh.dir / a["versendet_pdf"]).read_bytes())
+        self.assertEqual(len(p.content), groesse)
+
+
+class TestMahnungErneut(unittest.TestCase):
+    def test_mahnung_erneut(self):
+        from datetime import timedelta
+        from unittest import mock
+        from orchestrator.core.buchhaltung import jetzt
+        from orchestrator.core.mahnungen import MahnStore, senden
+        from orchestrator.core.rechnungen import RechnungStore
+        from orchestrator.governance.google_workspace import MockGoogleWorkspace
+        from orchestrator.tests.test_angebote import _stores
+        from orchestrator.tests.test_mahnungen import FD as MFD, _entwurf
+        bh, ks, _, k, ap = _stores()
+        rs, ms = RechnungStore(bh, ks), MahnStore(bh, ks)
+        with mock.patch("orchestrator.core.rechnungen.jetzt", return_value=jetzt() - timedelta(days=40)):
+            re_ = rs.festschreiben(_entwurf(rs, k, ap, zahlungsziel_tage=14), MFD)["nummer"]
+        m = ms.erstellen(re_, MFD)["nummer"]
+        g = MockGoogleWorkspace()
+        with self.assertRaises(ValueError):
+            senden(ms, g, m, an="x@y.de", betreff="B", text="T", von="t", erneut=True)       # noch nicht versendet
+        senden(ms, g, m, an="x@y.de", betreff="B", text="T", von="t")
+        versendet = ms.get(m)["versendet_am"]
+        with self.assertRaises(ValueError):
+            senden(ms, g, m, an="x@y.de", betreff="B", text="T", von="t")                    # normal nicht zweimal
+        senden(ms, g, m, an="x@y.de", betreff="B2", text="T2", von="t", erneut=True)
+        voll = ms.get(m)
+        self.assertEqual((voll["versendet_am"], len(voll["erneut"]), voll["erneut"][0]["betreff"]), (versendet, 1, "B2"))
+        self.assertEqual(len(g.gesendet), 2)

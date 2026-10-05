@@ -1,9 +1,9 @@
 # Roadmap: Textbausteine und Versand ueber das eigene Mail-Programm
 - Status: in Umsetzung
 - Stand: 2026-10-05
-- Arbeitsbranch: `ai/textbausteine`
+- Arbeitsbranch: `ai/erneut-senden`
 - Basiscommit: `ed7fdcc`
-- Naechster Schritt: T1-T3 live, Signatur eingetragen (2026-10-05) -- T4: CEO testet iPhone (Apple Mail), MacBook (Apple Mail), MACO470 (Outlook).
+- Naechster Schritt: T1-T3 live, T5 gebaut (2026-10-05) -- Deploy-Go fuer T5; T4: CEO testet iPhone (Apple Mail), MacBook (Apple Mail), MACO470 (Outlook).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -83,6 +83,17 @@ Entscheidungen des CEO (2026-10-05):
   falls Outlook die .eml nicht als Entwurf oeffnet, Rueckfall-Weg festlegen.
 - Gate: CEO bestaetigt je Geraet; Befunde in `docs/bekannte-fehler.md`.
 - Aufwand: klein.
+
+## Etappe T5: Erneut senden / nachfassen, Versand ohne Google
+
+- Status: umgesetzt (2026-10-05) -- CEO-Frage „Kann es sein, dass die Senden-Buttons verschwinden, sobald ein Beleg mal
+  versendet wurde?“ (ja: bei Angebot und Mahnung). Neu: versendete Angebote („✉️ Erneut senden / nachfassen …“) und
+  Mahnungen („✉️ Erneut senden …“) gehen mit dem **eingefrorenen PDF** erneut raus -- ueber Gmail oder das eigene
+  Mail-Programm, mit waehlbarer Vorlage; Status, Stufe, Frist und Erinnerungen bleiben, die Mail steht im Verlauf
+  (Ereignisse `angebot_erneut_gesendet`, `mahnung_erneut_gesendet`). „Senden …“ ist ohne Google-Verbindung nicht mehr
+  gesperrt -- gesperrt ist nur „Jetzt senden“ (Gmail), der Mail-Programm-Weg geht immer.
+- Gate: Tests (erneut nur nach Versand, normales Senden nicht doppelt, gleiches PDF, keine neuen Erinnerungen,
+  Gegenprobe rot); Browsertest Rechner/iPad/iPhone 17 Pro.
 
 ## Nicht-Scope
 

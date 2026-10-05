@@ -92,6 +92,8 @@ class MahnStore:
                 out[d["nummer"]] = dict(d) | {"erstellt": e["ts"], "von": e.get("von", "")}
             elif t == "mahnung_versendet" and d.get("nummer") in out:
                 out[d["nummer"]] |= {"versendet_am": e["ts"], "mail": d.get("mail")}
+            elif t == "mahnung_erneut_gesendet" and d.get("nummer") in out:     # TEXTBAUSTEINE T5
+                out[d["nummer"]].setdefault("erneut", []).append({"ts": e["ts"], **(d.get("mail") or {})})
         return out
 
     @staticmethod
@@ -378,15 +380,17 @@ def empfaenger(kunden, firma_nr: str) -> tuple[str, dict | None]:
 
 
 def senden(ms: MahnStore, google, nummer: str, *, an: str, betreff: str, text: str, von: str,
-           absender_name: str = "") -> dict:
+           absender_name: str = "", erneut: bool = False) -> dict:
     """Festgeschriebene Mahnung (genau das archivierte PDF) aus LUNAs Konto senden, protokollieren, Mail archivieren.
     Aufruf nur nach ausdruecklicher Bestaetigung des CEO (LUNA-OS-Knopf bzw. Telegram ✅)."""
     from pathlib import Path
     m = ms.get(nummer)
     if not m:
         raise KeyError(nummer)
-    if m.get("versendet_am"):
+    if m.get("versendet_am") and not erneut:
         raise ValueError(f"{m['nummer']} ist bereits versendet.")
+    if erneut and not m.get("versendet_am"):
+        raise ValueError(f"{m['nummer']} ist noch nicht versendet -- bitte normal senden.")
     if not an or "@" not in an or not betreff or not text:
         raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
     if google is None or not google.verfuegbar():
@@ -397,8 +401,12 @@ def senden(ms: MahnStore, google, nummer: str, *, an: str, betreff: str, text: s
                            anhaenge=[(f"Mahnung_{m['nummer']}.pdf", pdf, "application/pdf")])
     if not s.get("ok"):
         raise ValueError(s.get("hinweis") or "Senden fehlgeschlagen.")
-    ms.versendet(m["nummer"], {"an": an, "message_id": s.get("id", ""), "thread_id": s.get("thread_id", ""),
-                               "betreff": betreff, "kanal": s.get("kanal", "gmail")}, von=von)
+    mail = {"an": an, "message_id": s.get("id", ""), "thread_id": s.get("thread_id", ""), "betreff": betreff,
+            "kanal": s.get("kanal", "gmail")}
+    if erneut:                                                     # T5: Stufe bleibt, nur protokollieren
+        ms.bh.erfassen("mahnung_erneut_gesendet", {"nummer": m["nummer"], "mail": mail}, von=von)
+    else:
+        ms.versendet(m["nummer"], mail, von=von)
     roh = google.mail_roh(s["id"]) if s.get("id") and hasattr(google, "mail_roh") else {}
     if roh.get("ok"):
         ms.bh.beleg_ablegen(roh["roh"], f"Mail_{m['nummer']}_aus_{s['id']}.eml", jahr=int(m["datum"][:4]),

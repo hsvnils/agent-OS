@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 20:38] — Claude Code
+- **Was:** TEXTBAUSTEINE T5 gebaut: versendete Angebote und Mahnungen koennen erneut gesendet / nachgefasst werden
+  (eingefrorenes PDF, Vorlage waehlbar, Gmail oder eigenes Mail-Programm; Status/Stufe/Erinnerungen unveraendert; Verlauf
+  bzw. „Erneut gesendet“ an der Mahnung). Das Mail-Programm bekommt bei versendeten Angeboten ebenfalls das eingefrorene PDF.
+  „Senden …“ bei Angebot, Auftrag, Rechnung, Mahnung nicht mehr an die Google-Verbindung gebunden (nur „Jetzt senden“).
+  UI v101. 2 neue Tests (Gegenprobe rot), Suite gruen; Browsertest Rechner/iPad/iPhone 17 Pro ok.
+- **Warum:** CEO „Ja, plan das ein und bau es“ (Senden-Knoepfe verschwanden nach dem Versand).
+- **Betroffen:** `orchestrator/core/angebote.py`, `core/mahnungen.py`, `channels/web/app.py`, `static/app-v2.js`,
+  `static/index-v2.html`, `tests/test_textbausteine.py`, `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md`
+
 ## [2026-10-05 17:01] — Claude Code
 - **Was:** Deploy TEXTBAUSTEINE T1-T3 live geprueft (CEO hat NAS-Sync und Neustart ausgefuehrt; Merge + Push durch Claude
   Code): UI v100/v48; Signatur des CEO wortgleich ueber `POST /api/crm/textbausteine` eingetragen (Ereignis

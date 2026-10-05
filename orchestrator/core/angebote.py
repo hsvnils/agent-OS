@@ -385,6 +385,12 @@ class AngebotStore:
                                             "mail_von": d.get("von", ""), "vorschau": d.get("vorschau", "")})
             elif t == "angebot_mail_archiviert":             # Original-Mail (.eml) als Geschaeftsbrief abgelegt
                 out[d["nummer"]].setdefault("mail_archiv", {})[d["message_id"]] = {k: d.get(k) for k in ("pfad", "richtung")}
+            elif t == "angebot_erneut_gesendet":             # T5: versendetes Angebot erneut/nachgefasst (gleiches PDF)
+                m = d.get("mail") or {}
+                out[d["nummer"]]["verlauf"].append(spur | (
+                    {"mail_id": m["message_id"], "richtung": "aus", "mail_an": m.get("an", ""), "betreff": m.get("betreff", "")}
+                    if m.get("message_id") else {"grund": f"über dein Mail-Programm an {m.get('an', '')}"
+                                                          + (f" · „{m['betreff']}“" if m.get("betreff") else "")}))
             elif t == "angebot_nachgefasst":                 # CEO hat nachgefasst (Hauptseite) -> Nachfass-Termin weg
                 a = out[d["nummer"]]
                 a["nachgefasst_am"] = e["ts"]
@@ -627,6 +633,17 @@ class AngebotStore:
             if a["status"] != "versendet":
                 raise ValueError(f"{nummer} ist {a['status']} -- Erinnerungen nur fuer versendete Angebote.")
         self.bh.erfassen_geprueft("angebot_erinnerungen", {"nummer": nummer, "termine": termine}, von=von, pruefe=pruefe)
+
+    def erneut_gesendet(self, nummer: str, mail: dict, *, von: str = "") -> None:
+        """TEXTBAUSTEINE T5: bereits versendetes Angebot erneut geschickt (Nachfassen) -- Status und Erinnerungen bleiben."""
+        self.bh.erfassen("angebot_erneut_gesendet", {"nummer": nummer, "mail": mail}, von=von)
+
+    def gesendetes_pdf(self, a: dict) -> bytes:
+        """Das eingefrorene, beim Versand abgelegte PDF (T5)."""
+        pfad = a.get("versendet_pdf") or next((p["pfad"] for p in reversed(a.get("pdfs") or []) if p.get("inhalt") == a.get("inhalt")), "")
+        if not pfad:
+            raise ValueError("Kein abgelegtes PDF zu diesem Angebot gefunden.")
+        return (self.bh.dir / pfad).read_bytes()
 
     def mail_archivieren(self, nummer: str, message_id: str, roh: bytes, *, richtung: str,
                          von: str = "LUNA-Mail") -> bool:

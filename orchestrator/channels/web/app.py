@@ -2993,7 +2993,7 @@ async def mahnung_senden(nummer: str, request: Request):
     def tun():
         if body.get("bestaetigt") is not True:
             raise ValueError("Senden braucht die ausdrueckliche Bestaetigung aus der Vorschau.")
-        return senden(_mahn(), _versand_google(body), nummer, an=(body.get("an") or "").strip(),
+        return senden(_mahn(), _versand_google(body), nummer, erneut=bool(body.get("erneut")), an=(body.get("an") or "").strip(),
                       betreff=(body.get("betreff") or "").strip(), text=(body.get("text") or "").strip(),
                       von=_von(request), absender_name=ABSENDER_NAME)
     return _kunden_aktion(tun)
@@ -3775,7 +3775,7 @@ def _beleg_pdf(art: str, nummer: str) -> tuple[str, bytes]:
         a = st.angebot(nummer)
         if not a:
             raise KeyError(nummer)
-        return f"Angebot_{a['nummer']}.pdf", st.pdf(a["nummer"], fd)
+        return f"Angebot_{a['nummer']}.pdf", (st.gesendetes_pdf(a) if a["status"] != "entwurf" else st.pdf(a["nummer"], fd))
     if art == "auftrag":
         ab = _auftraege()
         a = ab.auftrag(nummer)
@@ -3910,7 +3910,10 @@ async def angebot_senden(nummer: str, request: Request):
         a = st.angebot(nummer)
         if not a:
             raise KeyError(nummer)
-        if a["status"] != "entwurf":
+        erneut = bool(body.get("erneut"))                         # TEXTBAUSTEINE T5: Nachfassen/erneut senden
+        if erneut and a["status"] == "entwurf":
+            raise ValueError(f"{a['nummer']} ist noch nicht versendet -- bitte normal senden.")
+        if not erneut and a["status"] != "entwurf":
             raise ValueError(f"{a['nummer']} ist bereits {a['status']}.")
         an = (body.get("an") or "").strip()
         betreff, text = (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
@@ -3922,11 +3925,19 @@ async def angebot_senden(nummer: str, request: Request):
         g = _versand_google(body)
         if not g.verfuegbar():
             raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
-        pdf = st.pdf(a["nummer"], fd)
+        pdf = st.gesendetes_pdf(a) if erneut else st.pdf(a["nummer"], fd)
         r = g.mail_senden(an, betreff, text, bestaetigt=True, absender_name=ABSENDER_NAME,
                           anhaenge=[(f"Angebot_{a['nummer']}.pdf", pdf, "application/pdf")])
         if not r.get("ok"):
             raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
+        if erneut:
+            mail = {"an": an, "message_id": r.get("id", ""), "thread_id": r.get("thread_id", ""), "betreff": betreff,
+                    "kanal": r.get("kanal", "gmail")}
+            st.erneut_gesendet(a["nummer"], mail, von=_von(request))
+            roh = g.mail_roh(mail["message_id"]) if mail["message_id"] else {}
+            if roh.get("ok"):
+                st.mail_archivieren(a["nummer"], mail["message_id"], roh["roh"], richtung="aus", von=_von(request))
+            return {"an": an, "erneut": True, "termine": [], "hinweise": []}
         abl = st.pdf_ablegen(a["nummer"], pdf, an=an, entwurf_id="", von=_von(request))   # genau das gesendete PDF
         mail = {"an": an, "message_id": r.get("id", ""), "thread_id": r.get("thread_id", ""), "betreff": betreff,
                 "kanal": r.get("kanal", "gmail")}
