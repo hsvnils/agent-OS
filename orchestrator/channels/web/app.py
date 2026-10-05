@@ -2466,7 +2466,7 @@ async def konzept_senden(vorgang: str, request: Request):
             k["firma"], pdf, name, titel=f"Konzept {k['vorgang']}" + (f" (Version {v})" if v > 1 else ""), art="konzept",
             bezug=k["auftrag"] or k["vorgang"], notiz=f"zur Freigabe gesendet an {an}", von=_von(request))
         ks.freigabe(k["vorgang"], "beim_kunden", akte_id=doc["id"], an=an, version=v, sha256=_hl.sha256(pdf).hexdigest(),
-                    von=_von(request))
+                    message_id=r.get("id", ""), kanal=r.get("kanal", "gmail"), von=_von(request))
         return {"an": an, "version": v}
     return _kunden_aktion(tun)
 

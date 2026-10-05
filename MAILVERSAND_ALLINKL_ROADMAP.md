@@ -3,8 +3,8 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/mail-allinkl`
 - Basiscommit: `3a08276`
-- Naechster Schritt: Kundenversand laeuft seit 2026-10-05 ueber All-Inkl -- beobachten (M3); CEO-Go fuer M2 (Antworten per
-  IMAP erkennen) abwarten. Bis dahin landen Kundenantworten nur im Postfach luna@ (keine Telegram-Meldung).
+- Naechster Schritt: M2 gebaut -- CEO-Go fuer Merge/Deploy, danach echter Test: CEO antwortet von einer Adresse, die NICHT
+  als CEO-Adresse gilt (z. B. hsvnils@gmail.com), auf eine ueber All-Inkl gesendete Mail; M3 (Beobachten) laeuft weiter.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -46,11 +46,19 @@ von All-Inkl (SMTP zum Senden, IMAP zum Lesen). Entscheidungen: **statt Gmail fu
 
 ## Etappe M2: Antworten der Kunden
 
-- Status: geplant
+- Status: umgesetzt (Gate offen: echter Test mit einer Antwort)
 - Ziel / Scope: Kundenantworten im Postfach luna@ per IMAP erkennen (Zuordnung ueber Message-ID/In-Reply-To bzw.
   Belegnummer im Betreff), im Verlauf des Belegs anzeigen, archivieren und per Telegram melden -- wie heute bei Gmail.
 - Gate: Tests (Zuordnung, keine Doppelmeldung); echter Test mit einer Antwort des CEO.
 - Aufwand: mittel.
+- Umsetzung (2026-10-05): `core/mail_antworten.py` im 15-min-Poll des Bots (nur bei `KUNDENVERSAND=allinkl`): Posteingang
+  der letzten 30 Tage per IMAP nur lesend (`SELECT` readonly, `BODY.PEEK` -- Gelesen-Status bleibt, nichts verschoben/geloescht);
+  Zuordnung ueber `In-Reply-To`/`References` mit der Kennung `<luna-…@hanserautisch.de>` aus dem Versand-Ereignis (alle
+  Belegarten, Konzept-Versand speichert die Kennung jetzt mit), sonst Belegnummer im Betreff -- nur fuer Belege, die ueber
+  All-Inkl gingen (Mahnung zaehlt fuer ihre Rechnung). Angebot: Antwort im Verlauf + .eml wie bei Gmail; andere Belege:
+  Mail in die Firmenakte mit Bezug (Rechnung/Mahnung -> Rechnung, dort unter Dokumente). Ereignis `mail_antwort` (genau
+  einmal), Telegram-Meldung „✉️ Antwort auf …“; Absender des CEO (`BELEG_ABSENDER`) und LUNA zaehlen nie als Kunde;
+  Mails ohne Zuordnung bleiben unberuehrt.
 
 ## Etappe M3: Umschalten und Beobachten
 

@@ -265,7 +265,7 @@ class KonzeptStore:
         return f if f.is_file() and self.ordner.resolve() in f.parents else None
 
     def freigabe(self, vorgang: str, status: str, *, notiz: str = "", datum: str = "", akte_id: str = "", an: str = "",
-                 version: int = 0, sha256: str = "", von: str = "") -> dict:
+                 version: int = 0, sha256: str = "", message_id: str = "", kanal: str = "", von: str = "") -> dict:
         if status not in FREIGABE:
             raise ValueError("Status: entwurf, beim_kunden, freigegeben oder aenderung.")
         if status == "aenderung" and not _t(notiz, 10):
@@ -275,6 +275,8 @@ class KonzeptStore:
         d = {"status": status, "notiz": _t(notiz, 1000), "datum": (datum or "")[:10]}
         if akte_id:
             d |= {"akte_id": akte_id, "an": an, "version": version, "sha256": sha256}
+            if message_id:                                   # M2: Kennung der gesendeten Mail (Antworten zuordnen)
+                d |= {"message_id": message_id, "kanal": kanal}
         return self._schreiben("konzept_freigabe", vorgang, d, was=f"Freigabe: {FREIGABE_TEXT[status]}", von=von)
 
 

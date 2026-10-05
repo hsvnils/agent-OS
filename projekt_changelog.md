@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 22:10] — Claude Code
+- **Was:** MAILVERSAND_ALLINKL M2 gebaut: `core/mail_antworten.py` erkennt im 15-min-Poll des Bots (nur bei
+  `KUNDENVERSAND=allinkl`) Kundenantworten im Postfach luna@hanserautisch.de -- IMAP nur lesend (`AllInklMail.posteingang`,
+  readonly + `BODY.PEEK`), Zuordnung ueber die Kennung der gesendeten Mail (`In-Reply-To`/`References`) oder die Belegnummer im
+  Betreff (nur ueber All-Inkl gesendete Belege, Mahnung -> Rechnung); Angebot: Antwort im Verlauf + .eml, sonst Firmenakte mit
+  Bezug; Ereignis `mail_antwort` (genau einmal), Telegram-Meldung; CEO-/LUNA-Adressen zaehlen nie als Kunde. Konzept-Versand
+  speichert jetzt die Mail-Kennung mit. 4 neue Tests (4 Gegenproben rot), Lehren in `docs/bekannte-fehler.md`.
+- **Warum:** CEO: „Go fuer M2“.
+- **Betroffen:** `orchestrator/core/mail_antworten.py` (neu), `orchestrator/governance/allinkl_mail.py`,
+  `orchestrator/core/konzept.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/telegram/bot.py`,
+  `orchestrator/tests/test_mail_antworten.py` (neu), `MAILVERSAND_ALLINKL_ROADMAP.md`, `ROADMAP.md`,
+  `governance/zugriffs-policy.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-05 22:04] — Claude Code
 - **Was:** Kundenversand auf All-Inkl umgeschaltet: in der NAS-`.env` `KUNDENVERSAND=gmail` -> `allinkl` (Sicherung
   `.env.bak-20261005-umschalten`, keine anderen Werte gelesen). Live geprueft: Kanal allinkl, Absender „Hanserautisch – LUNA

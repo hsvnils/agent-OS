@@ -170,6 +170,36 @@ class AllInklMail:
         roh = self._roh.get(kennung)
         return {"ok": True, "roh": roh} if roh else {"ok": False, "hinweis": "Mail nicht im Zwischenspeicher."}
 
+    def posteingang(self, *, tage: int = 30, max_mails: int = 200) -> list[dict]:
+        """MAILVERSAND_ALLINKL M2: Mails im Posteingang der letzten `tage` als Rohdaten -- nur lesen (BODY.PEEK, der
+        Gelesen-Status bleibt unveraendert, nichts wird verschoben oder geloescht). Rueckgabe [{uid, roh}]."""
+        from datetime import date, timedelta
+        if not self.verfuegbar():
+            return []
+        monate = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        d = date.today() - timedelta(days=tage)
+        seit = f"{d.day:02d}-{monate[d.month - 1]}-{d.year}"              # IMAP will englische Monate (unabh. von Locale)
+        out = []
+        i = self._imap()
+        try:
+            i.login(self.user, self._pw)
+            typ, _ = i.select("INBOX", readonly=True)
+            if typ != "OK":
+                return []
+            typ, daten = i.uid("SEARCH", None, "SINCE", seit)
+            uids = (daten[0].split() if typ == "OK" and daten and daten[0] else [])[-max_mails:]
+            for uid in uids:
+                typ, teile = i.uid("FETCH", uid, "(BODY.PEEK[])")
+                roh = next((t[1] for t in teile or [] if isinstance(t, tuple) and len(t) > 1), None) if typ == "OK" else None
+                if roh:
+                    out.append({"uid": uid.decode() if isinstance(uid, bytes) else str(uid), "roh": roh})
+        finally:
+            try:
+                i.logout()
+            except Exception:
+                pass
+        return out
+
     def verbindung_pruefen(self) -> dict:
         """Nur Anmeldung an SMTP und IMAP (kein Versand) -- fuer den Einrichtungs-Check."""
         if not self.verfuegbar():

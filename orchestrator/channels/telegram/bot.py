@@ -1611,6 +1611,24 @@ def main() -> None:
                                           notify=(ctx.notifications.enqueue if ctx.notifications else None))
                     except Exception as exc:
                         print(f"[angebote] Antwort-Pruefung: {exc}", flush=True)
+                # MAILVERSAND_ALLINKL M2: Kundenantworten im Postfach luna@ (nur wenn der Kundenversand auf All-Inkl steht)
+                if (ROOT / "buchhaltung" / "log.jsonl").exists() and (ctx.watch is None or not ctx.watch.store.paused()):
+                    try:
+                        from ...governance.allinkl_mail import AllInklMail, kundenversand
+                        _sec = _load_secrets()
+                        _pf = AllInklMail(_sec)
+                        if kundenversand(_sec) == "allinkl" and _pf.verfuegbar():
+                            from ...core.buchhaltung import Buchhaltung
+                            from ...core.kunden import KundenStore
+                            from ...core.mail_antworten import antworten_pruefen as _imap_antworten
+                            _bh = Buchhaltung(ROOT / "buchhaltung")
+                            _imap_antworten(_bh, KundenStore(_bh), _pf,
+                                            eigene=[_pf.adresse, _sec.get("GOOGLE_ACCOUNT_EMAIL", "")]
+                                            + str(_sec.get("BELEG_ABSENDER", "hsvnils@icloud.com,hanserautisch@gmail.com,"
+                                                           "nils@hanserautisch.de,moin@hanserautisch.de")).split(","),   # CEO nie Kunde
+                                            notify=(ctx.notifications.enqueue if ctx.notifications else None))
+                    except Exception as exc:
+                        print(f"[mail_antworten] {exc.__class__.__name__}", flush=True)
                 # LUNA_GOOGLE_KONTO Etappe 6: Belege ausser Haus in LUNAs Drive (+ taeglicher Stand ab 03:00).
                 if ctx.google is not None and (ROOT / "buchhaltung" / "log.jsonl").exists() \
                         and (ctx.watch is None or not ctx.watch.store.paused()):
