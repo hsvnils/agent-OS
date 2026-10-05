@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 11:30] — Claude Code
+- **Was:** `ai/clo-c1-c4` nach `main` gemergt (fast-forward), Suite gruen (1166), gepusht, Code per
+  `deploy/sync-to-nas.sh --no-restart` auf die NAS; Neustart durch den CEO offen (nimmt auch die Beschriftungs-Korrektur mit).
+- **Warum:** CEO-Go 2026-10-05 („Go fuer Merge, Push und Deploy, danach Bestandsaufnahme“).
+- **Betroffen:** `main`, NAS-Code.
+
 ## [2026-10-05 11:25] — Claude Code
 - **Was:** CLO-AUSBAU C1-C4: sieben CLO-Skills (Werbekennzeichnung, AGB-Pruefung, Nutzungsrechte/Bildrecht, Musik in
   Videos, Kleinunternehmer-Hinweise, KI-Kennzeichnung, Club-/Markenrechte) mit Checklisten; Rechtsquellen (18 Normen im
