@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 21:18] — Claude Code
+- **Was:** (1) Belegverfolgung am Rechner mehrzeilig: Karten brechen in die naechste Zeile um, eine Linie (SVG, `bvLinie`)
+  fuehrt am Zeilenende im **Bogen** rechts herunter und zurueck zum Anfang der naechsten Zeile (vorher eine einzige,
+  seitlich scrollende Zeile); iPhone bleibt senkrecht. (2) Positionen in Angebot/Auftrag/Rechnung: „+ Neue Position“ legt
+  eine Zeile an, in der Zeile wird das Produkt gewaehlt (Katalog oder „Freie Position“); Dropdown oben und „+ Aus Katalog“
+  entfernt; TKP je Position weiter einstellbar (Preis rechnet mit). Browser-Simulation beider Editoren und Mobil-Check ok;
+  UI v104/v52.
+- **Warum:** CEO „wieso springt die Belegverfolgung nicht sauber in eine zweite Zeile? (Verfolgung mit Bogen?)“ und
+  „Positionen korrigieren: ‚Neue Position‘ … Dann aus Dropdown das Produkt waehlen. Der Button ‚Aus Katalog‘ kann dann raus.
+  PRO Position muss der TKP auch anpassbar sein.“
+- **Betroffen:** `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`
+
 ## [2026-10-05 21:11] — Claude Code
 - **Was:** Deploy „Preis direkt im Positionsfeld“ live geprueft (CEO hat NAS-Sync und Neustart ausgefuehrt): UI v103/v51,
   Knopf entfernt, Preisfeld im Rechnungs-Editor frei, Tipp-Schutz aktiv; Server verlangt weiter den Grund. Nichts geaendert.

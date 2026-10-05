@@ -1097,7 +1097,6 @@ async function anEditor(nummer, firmaVorwahl, modus) {
   const a = (d && d.angebot) || { firma: firmaVorwahl || AN_FIRMEN[0].nummer, datum: heuteIso(), gueltig_bis: heuteIso(14), nachfassen_tage: 7, positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch" };
   const b = a.bloecke || {};
   const fa = AN_FIRMEN.find(f => f.nummer === a.firma);
-  const katOpt = ((KATALOG && KATALOG.gruppen) || []).map(g => `<optgroup label="${esc(g.name)}">${g.items.filter(it => it.aktiv).map(it => `<option value="${esc(it.id)}">${esc(it.name)} — ${cent2eur(it.preis_cent)}${it.einheit ? " / " + esc(it.einheit) : ""}</option>`).join("")}</optgroup>`).join("");
   const gewaehlt = new Set((a.zuschlaege || []).map(z => z.id));
   const zuListe = [...((KATALOG && KATALOG.zuschlaege) || []), ...(a.zuschlaege || []).filter(z => !((KATALOG && KATALOG.zuschlaege) || []).some(k => k.id === z.id))];
   const zuHtml = zuListe.map(z => { const alt = (a.zuschlaege || []).find(x => x.id === z.id); const pr = alt ? alt.prozent : z.prozent;
@@ -1125,11 +1124,11 @@ async function anEditor(nummer, firmaVorwahl, modus) {
       </div>
     </div>
     <h3>Positionen <small class="v2-sub">Preise ohne Umsatzsteuer (Kleinunternehmer § 19 UStG)</small></h3>
-    <div class="v2-an-kat"><select id="an-kat" class="v2-inp"><option value="">Aus Katalog wählen …</option>${katOpt}</select><button class="v2-btn" data-act="an-kat-neu">+ Aus Katalog</button><button class="v2-btn" data-act="an-pos-neu">+ Freie Position</button>
+    <div class="v2-an-kat"><button class="v2-btn pri" data-act="an-pos-neu">+ Neue Position</button>
       <label class="v2-feld" style="margin-left:auto"><small>Community-Fit (TKP innerhalb der Spanne)</small><select id="an-fit" class="v2-inp"><option value="0">Standard – unterer TKP</option><option value="0.5">Gute Passung – Mitte</option><option value="1">Sehr gute Passung – oberer TKP</option></select></label></div>
     <div class="v2-an-pos v2-an-pos-kopf"><span>Leistung / Detail</span><span>Menge</span><span>Einheit</span><span>Einzelpreis</span><span>Gesamt</span><span></span></div>
     <div id="an-pos">${(a.positionen || []).map(anPosZeile).join("")}</div>
-    <div id="an-pos-leer" class="v2-empty">Noch keine Position — „Aus Katalog“ oder „Freie Position“.</div>
+    <div id="an-pos-leer" class="v2-empty">Noch keine Position — „+ Neue Position“ antippen und das Produkt wählen.</div>
     <div class="v2-an-fuss">
       <div class="v2-form">
         ${zuHtml ? `<small class="v2-sub">Zuschläge (Prozent auf die Summe aller Formate)</small><div class="v2-mods" id="an-zu-box">${zuHtml}</div>` : ""}
@@ -1156,17 +1155,26 @@ async function anApListe(vorwahl) {
   const aps = ((d && d.firma && d.firma.ansprechpartner_liste) || []).filter(x => x.aktiv || x.nummer === vorwahl);
   sel.innerHTML = `<option value="">— keiner —</option>` + aps.map(x => `<option value="${esc(x.nummer)}" ${x.nummer === vorwahl ? "selected" : ""}>${esc(x.nummer)} · ${esc([x.vorname, x.nachname].filter(Boolean).join(" "))}${x.mail ? " · " + esc(x.mail) : ""}</option>`).join("");
 }
-function anKatNeu() {
-  const id = ($("#an-kat") || {}).value; if (!id) return;
-  const [it, g] = katItem(id); if (!it) return;
+function katPosDaten(id) {                                    // Katalog-Artikel -> Positionsdaten (TKP nach Community-Fit)
+  const [it, g] = katItem(id); if (!it) return null;
   const fit = ($("#an-fit") || {}).value || "0", tk = it.kontakte ? Math.round((it.tkp_min_cent + Number(fit) * (it.tkp_max_cent - it.tkp_min_cent)) / 100) * 100 : null;
-  $("#an-pos").insertAdjacentHTML("beforeend", anPosZeile({ beschreibung: it.name, detail: [it.basis, it.hinweis].filter(Boolean).join(" · "), menge: 1, einheit: it.einheit, einzelpreis_cent: it.kontakte ? tkpPreis(it.kontakte, tk, it.produktion_cent || 0) : it.preis_cent, katalog_id: it.id, gruppe: g.name, gruppe_farbe: g.farbe,
+  return ({ beschreibung: it.name, detail: [it.basis, it.hinweis].filter(Boolean).join(" · "), menge: 1, einheit: it.einheit, einzelpreis_cent: it.kontakte ? tkpPreis(it.kontakte, tk, it.produktion_cent || 0) : it.preis_cent, katalog_id: it.id, gruppe: g.name, gruppe_farbe: g.farbe,
     kontakte: it.kontakte, tkp_cent: tk, tkp_min_cent: it.tkp_min_cent, tkp_max_cent: it.tkp_max_cent, produktion_cent: it.produktion_cent, omr: it.omr,
-    ...(it.provision_art ? { provision: it.provision_art === "stueck" ? { art: "stueck", satz_cent: it.provision_wert } : { art: "prozent", prozent: it.provision_wert }, einzelpreis_cent: 0 } : {}) }));
-  $("#an-kat").value = ""; anSumme();
+    ...(it.provision_art ? { provision: it.provision_art === "stueck" ? { art: "stueck", satz_cent: it.provision_wert } : { art: "prozent", prozent: it.provision_wert }, einzelpreis_cent: 0 } : {}) });
 }
+function anProduktZeile() {                                   // neue Position: erst Produkt waehlen (Katalog oder frei)
+  const opt = ((KATALOG && KATALOG.gruppen) || []).map(g => `<optgroup label="${esc(g.name)}">${g.items.filter(it => it.aktiv).map(it => `<option value="${esc(it.id)}">${esc(it.name)} — ${cent2eur(it.preis_cent)}${it.einheit ? " / " + esc(it.einheit) : ""}</option>`).join("")}</optgroup>`).join("");
+  return `<div class="v2-an-pos v2-an-neu"><div class="v2-an-text"><select class="v2-inp an-p-produkt" aria-label="Produkt wählen"><option value="">Produkt wählen …</option>${opt}<option value="__frei">Freie Position (ohne Katalog)</option></select></div>
+    <button class="v2-btn v2-an-weg" data-act="an-pos-weg" title="Position löschen" aria-label="Position löschen">🗑</button></div>`;
+}
+document.addEventListener("change", (e) => {
+  const sel = e.target; if (!(sel instanceof HTMLSelectElement) || !sel.classList.contains("an-p-produkt") || !sel.value) return;
+  const z = sel.closest(".v2-an-pos"), daten = sel.value === "__frei" ? {} : katPosDaten(sel.value); if (!z || !daten) return;
+  z.insertAdjacentHTML("afterend", anPosZeile(daten)); const neu = z.nextElementSibling; z.remove();
+  anSumme(); const f = neu && $(sel.value === "__frei" ? ".an-p-beschreibung" : ".an-p-menge", neu); if (f) f.focus();
+});
 function anPositionen() {
-  return [...document.querySelectorAll("#an-pos .v2-an-pos")].map(z => ({ beschreibung: $(".an-p-beschreibung", z).value.trim(), detail: $(".an-p-detail", z).value.trim(), menge: $(".an-p-menge", z).value.trim(), einheit: $(".an-p-einheit", z).value.trim(), einzelpreis: $(".an-p-preis", z).value.trim(),
+  return [...document.querySelectorAll("#an-pos .v2-an-pos:not(.v2-an-neu)")].map(z => ({ beschreibung: $(".an-p-beschreibung", z).value.trim(), detail: $(".an-p-detail", z).value.trim(), menge: $(".an-p-menge", z).value.trim(), einheit: $(".an-p-einheit", z).value.trim(), einzelpreis: $(".an-p-preis", z).value.trim(),
     katalog_id: z.dataset.katalog || "", gruppe: z.dataset.gruppe || "", gruppe_farbe: z.dataset.farbe || "",
     ...(z.dataset.kontakte ? { kontakte: Number(z.dataset.kontakte), tkp_cent: Math.round(zahl($(".an-p-tkpwert", z).value) * 100), produktion_cent: Number(z.dataset.prod || 0),
       tkp_min_cent: z.dataset.tmin, tkp_max_cent: z.dataset.tmax, omr: z.dataset.omr } : {}),
@@ -1225,7 +1233,7 @@ function anSumme(ev) {
   document.querySelectorAll("#an-pos .v2-an-pos").forEach(z => { const i = $(".an-p-tkpwert", z); if (!i || !z.dataset.kontakte) return;
     if (ev && ev.target === $(".an-p-preis", z)) return;      // Rechnung: Preis wird gerade von Hand geaendert
     $(".an-p-preis", z).value = cent2feld(tkpPreis(Number(z.dataset.kontakte), Math.round(zahl(i.value) * 100), Number(z.dataset.prod || 0))); });
-  document.querySelectorAll("#an-pos .v2-an-pos").forEach(z => { const pv = z.dataset.prov ? anProvBetrag(z) : undefined; const c = pv !== undefined ? pv : Math.round(zahl($(".an-p-menge", z).value) * zahl($(".an-p-preis", z).value) * 100); $(".an-p-gesamt", z).textContent = pv === null ? "nach Abrechnung" : isFinite(c) ? cent2eur(c) : "–"; });
+  document.querySelectorAll("#an-pos .v2-an-pos:not(.v2-an-neu)").forEach(z => { const pv = z.dataset.prov ? anProvBetrag(z) : undefined; const c = pv !== undefined ? pv : Math.round(zahl($(".an-p-menge", z).value) * zahl($(".an-p-preis", z).value) * 100); $(".an-p-gesamt", z).textContent = pv === null ? "nach Abrechnung" : isFinite(c) ? cent2eur(c) : "–"; });
   const leer = $("#an-pos-leer"); if (leer) leer.hidden = !!document.querySelector("#an-pos .v2-an-pos");
   const formate = anPositionen().filter(p => !p.provision).reduce((acc, p) => acc + Math.round(zahl(p.menge) * zahl(p.einzelpreis) * 100), 0);
   const provZ = [...document.querySelectorAll("#an-pos .v2-an-pos[data-prov='1']")].map(anProvBetrag);
@@ -1814,7 +1822,30 @@ async function belegVerfolgung(kennung) {
   };
   openModal("🔗 Belegverfolgung · " + kennung, `<div class="v2-sub" style="margin-bottom:8px">${d.vorher} früher · ${d.nachher} später – Klick öffnet den Beleg.</div>
     <div class="v2-bv"><div class="bv-spur">${d.knoten.map(karte).join("")}</div></div>`, true);
+  const spur = $(".v2-bv .bv-spur"); if (spur) { bvLinie(spur); try { new ResizeObserver(() => bvLinie(spur)).observe(spur); } catch { } }
   requestAnimationFrame(() => { const a = $("#bv-aktuell"); if (a) a.scrollIntoView({ block: "center", inline: "center" }); });
+}
+// Spur am Rechner: Linie je Zeile, am Zeilenende ein Bogen nach rechts unten und zurueck zum Anfang der naechsten Zeile
+function bvLinie(spur) {
+  let svg = spur.querySelector(":scope > svg.bv-linie");
+  if (innerWidth < 900) { if (svg) svg.remove(); return; }
+  const karten = [...spur.querySelectorAll(":scope > .bv-knoten")]; if (!karten.length) return;
+  const zeilen = [];
+  karten.forEach(k => { const t = k.offsetTop, z = zeilen.find(r => Math.abs(r.top - t) < 4);
+    z ? z.k.push(k) : zeilen.push({ top: t, k: [k] }); });
+  const W = spur.clientWidth, R = 14, xl = 8, xr = W - 8, mitte = k => k.offsetLeft + k.offsetWidth / 2;
+  let d = "";
+  zeilen.forEach((z, i) => {
+    const y = z.top - 13, x1 = mitte(z.k[0]), x2 = mitte(z.k[z.k.length - 1]);
+    d += i ? ` L ${x1} ${y}` : `M ${x1} ${y}`;
+    d += ` L ${x2} ${y}`;
+    const n = zeilen[i + 1]; if (!n) return;
+    const unten = Math.max(...z.k.map(k => k.offsetTop + k.offsetHeight)), yn = n.top - 13, ym = (unten + yn) / 2;
+    d += ` L ${xr - R} ${y} Q ${xr} ${y} ${xr} ${y + R} L ${xr} ${ym - R} Q ${xr} ${ym} ${xr - R} ${ym}`
+      + ` L ${xl + R} ${ym} Q ${xl} ${ym} ${xl} ${ym + R} L ${xl} ${yn - R} Q ${xl} ${yn} ${xl + R} ${yn}`;
+  });
+  if (!svg) { svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("class", "bv-linie"); svg.setAttribute("aria-hidden", "true"); spur.prepend(svg); }
+  svg.setAttribute("width", W); svg.setAttribute("height", spur.scrollHeight); svg.innerHTML = `<path d="${d}"/>`;
 }
 // PROJEKTBERICHT P3: Bericht je Auftrag (Fazit-Vorschlag, Stunden/km per Haken, Versand nach Klick, Akte)
 async function abBericht(nr) {
@@ -2353,7 +2384,6 @@ async function reEditor(eid) {
   const r = (d && d.rechnung) || { firma: "", positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch", leistung_von: heuteIso(), zahlungsziel_tage: "" };
   RE_AUS_AUFTRAG = !!r.auftrag;
   const fa = AN_FIRMEN.find(f => f.nummer === r.firma);
-  const katOpt = ((KATALOG && KATALOG.gruppen) || []).map(g => `<optgroup label="${esc(g.name)}">${g.items.filter(it => it.aktiv).map(it => `<option value="${esc(it.id)}">${esc(it.name)} — ${cent2eur(it.preis_cent)}${it.einheit ? " / " + esc(it.einheit) : ""}</option>`).join("")}</optgroup>`).join("");
   const gewaehlt = new Set((r.zuschlaege || []).map(z => z.id));
   const zuListe = [...((KATALOG && KATALOG.zuschlaege) || []), ...(r.zuschlaege || []).filter(z => !((KATALOG && KATALOG.zuschlaege) || []).some(x => x.id === z.id))];
   const zuHtml = zuListe.map(z => { const alt = (r.zuschlaege || []).find(x => x.id === z.id); const pr = alt ? alt.prozent : z.prozent;
@@ -2373,7 +2403,7 @@ async function reEditor(eid) {
           <label class="v2-feld"><small>Zahlungsziel (Tage)</small><input id="re-ziel" type="number" min="0" max="120" value="${esc(String(r.zahlungsziel_tage ?? ""))}" placeholder="Firma / 14"></label></div>
         <label class="v2-feld"><small>Layout</small><select id="an-layout"><option value="hanserautisch" ${r.layout !== "standard" ? "selected" : ""}>Hanserautisch</option><option value="standard" ${r.layout === "standard" ? "selected" : ""}>Schlicht (DIN)</option></select></label></div></div>
     <h3>Positionen <small class="v2-sub">ohne Umsatzsteuer (Kleinunternehmer § 19 UStG)</small></h3>
-    <div class="v2-an-kat"><select id="an-kat" class="v2-inp"><option value="">Aus Katalog wählen …</option>${katOpt}</select><button class="v2-btn" data-act="an-kat-neu">+ Aus Katalog</button><button class="v2-btn" data-act="an-pos-neu">+ Freie Position</button></div>
+    <div class="v2-an-kat"><button class="v2-btn pri" data-act="an-pos-neu">+ Neue Position</button></div>
     <div class="v2-an-pos v2-an-pos-kopf"><span>Leistung / Detail</span><span>Menge</span><span>Einheit</span><span>Einzelpreis</span><span>Gesamt</span><span></span></div>
     <div id="an-pos">${(r.positionen || []).map(anPosZeile).join("")}</div>
     <div id="an-pos-leer" class="v2-empty">Noch keine Position.</div>
@@ -3495,8 +3525,7 @@ async function handleAct(act, el) {
     case "an-neu": return anEditor("", id || "");
     case "an-detail": return anDetail(id);
     case "an-bearbeiten": return anEditor(id);
-    case "an-pos-neu": { $("#an-pos").insertAdjacentHTML("beforeend", anPosZeile()); return anSumme(); }
-    case "an-kat-neu": return anKatNeu();
+    case "an-pos-neu": { $("#an-pos").insertAdjacentHTML("beforeend", anProduktZeile()); const n = $("#an-pos").lastElementChild; anSumme(); const sel = n && $(".an-p-produkt", n); if (sel) sel.focus(); return; }
     case "an-firma-wahl": return firmaWaehlen(id);
     case "kat-speichern": return katalogSpeichern();
     case "kat-neu": return katalogFormatNeu(Number(id));

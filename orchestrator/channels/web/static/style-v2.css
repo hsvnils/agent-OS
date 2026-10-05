@@ -719,10 +719,12 @@ body.v2-lade-offen { overflow: hidden; }
 .bv-knoten .bv-bez { color: inherit; }
 .bv-knoten .bv-hier { color: var(--v2-accent, #2f6bff); font-weight: 700; }
 .bv-knoten .bv-status { font-weight: 600; }
-@media (min-width: 900px) {
-  .v2-bv { overflow-x: auto; padding-bottom: 10px; }
-  .bv-spur { flex-direction: row; align-items: flex-start; width: max-content; padding: 26px 6px 6px; gap: 14px; }
-  .bv-spur::before { left: 0; right: 0; top: 13px; bottom: auto; width: auto; height: 2px; }
+@media (min-width: 900px) {                                     /* mehrzeilig, Bogen am Zeilenende (2026-10-05) */
+  .v2-bv { padding-bottom: 10px; }
+  .bv-spur { flex-direction: row; flex-wrap: wrap; align-items: flex-start; padding: 26px 26px 6px 26px; column-gap: 14px; row-gap: 72px; }
+  .bv-spur::before { display: none; }
+  .bv-linie { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+  .bv-linie path { fill: none; stroke: var(--v2-line); stroke-width: 2; }
   .bv-knoten { width: 200px; }
   .bv-knoten.klein { width: 150px; }
   .bv-knoten::before, .bv-knoten.klein::before { left: 50%; transform: translateX(-50%); top: -19px; }
@@ -962,3 +964,6 @@ body.v2-lade-offen { overflow: hidden; }
   .v2-an-pos .an-p-gesamt { grid-column: 1 / 3; align-self: center; }
   .v2-an-pos .v2-an-weg { grid-column: 3; justify-self: end; width: 44px; min-width: 44px; height: 44px; padding: 0; }
 }
+/* Neue Position: erst Produkt waehlen (2026-10-05) */
+.v2-an-neu .v2-an-text { grid-column: 1 / -2; } .v2-an-neu .an-p-produkt { width: 100%; }
+@media (max-width: 640px) { .v2-an-neu .v2-an-text { grid-column: 1 / 3; } }
