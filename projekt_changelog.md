@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 22:45] — Claude Code
+- **Was:** TEXTBAUSTEINE T4 (Geraete-Abnahme des Mail-Programm-Wegs) verworfen und die Roadmap abgeschlossen; Entscheidung im
+  Register. Versand aus LUNA-OS ueber luna@hanserautisch.de ist der Standardweg, der Knopf „Im Mail-Programm oeffnen“ bleibt
+  als ungepruefte Ausweichmoeglichkeit erhalten (kein Code geaendert).
+- **Warum:** CEO: „Aus dem LUNA-OS versenden reicht. Das ist ein guter Weg“.
+- **Betroffen:** `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-10-05 22:36] — Claude Code
 - **Was:** Korrektur zum vorigen Eintrag: Die Telegram-Meldung zur Testmail-Antwort wurde um 22:33 zugestellt (`sent`, eine
   Minute nach dem Erfassen) -- es war **kein** „Nicht stoeren“-Fenster; meine Pruefung kam nur vor dem naechsten Zustell-Tick.

@@ -1,9 +1,9 @@
 # Roadmap: Textbausteine und Versand ueber das eigene Mail-Programm
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/erneut-senden`
 - Basiscommit: `ed7fdcc`
-- Naechster Schritt: T1-T3 live, T5 gebaut (2026-10-05) -- Deploy-Go fuer T5; T4: CEO testet iPhone (Apple Mail), MacBook (Apple Mail), MACO470 (Outlook).
+- Naechster Schritt: keiner -- T1-T3 und T5 live; T4 (Geraete-Abnahme Mail-Programm) vom CEO gestrichen, weil der Versand aus LUNA-OS reicht (2026-10-05).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -77,7 +77,8 @@ Entscheidungen des CEO (2026-10-05):
 
 ## Etappe T4: Geraete-Abnahme mit dem CEO
 
-- Status: geplant
+- Status: verworfen (CEO 2026-10-05: „Aus dem LUNA-OS versenden reicht. Das ist ein guter Weg“ -- Kundenmails gehen ueber
+  luna@hanserautisch.de aus LUNA-OS; der Knopf „Im Mail-Programm oeffnen“ bleibt als ungepruefte Ausweichmoeglichkeit)
 - Ziel / Scope: echter Test auf **iPhone (Apple Mail)**, **MacBook (Apple Mail)** und **MACO470 (Outlook)**: Mail oeffnet
   sich mit Anhang, Text und Signatur. Was ein Geraet nicht kann (z. B. Empfaenger im Teilen-Menue), wird dokumentiert;
   falls Outlook die .eml nicht als Entwurf oeffnet, Rueckfall-Weg festlegen.

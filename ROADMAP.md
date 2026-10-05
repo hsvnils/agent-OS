@@ -77,7 +77,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `FACHAGENTEN_ROUTING_ROADMAP.md` | Fachagenten-Routing: LUNA bestimmt die zustaendige Abteilung selbst, Zustaendigkeitskarte, Geschaeftsregeln lesbar, Zaehlung inkl. Werkzeuge, Routing-Test | abgeschlossen (2026-10-05) |
 | `ANGEBOT_PRAESENTATION_ROADMAP.md` | Canva-Praesentation (DE/EN, je Angebot waehlbar) in Angebots-PDF, digitalem Beleg und Mailtext | abgeschlossen (2026-10-05) |
 | `VIDEOGRAF_ROADMAP.md` | Videograf-Berater als Agent 17: Charta (CEO-Tor), 5 Skills, Vorschlaege per Knopf in der Konzept-Mappe und im Chat | abgeschlossen (2026-10-05) |
-| `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md` | Textbausteine mit Signatur fuer 6 Belegarten (auch Gmail-Versand) und Knopf „Im Mail-Programm oeffnen“ (Apple Mail iPhone/Mac, Outlook MACO470) | in Umsetzung (T1-T3 gebaut 2026-10-05) |
+| `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md` | Textbausteine mit Signatur fuer 6 Belegarten (auch Gmail-Versand) und Knopf „Im Mail-Programm oeffnen“ (Apple Mail iPhone/Mac, Outlook MACO470) | abgeschlossen (T1-T3, T5 live; T4 Geraete-Abnahme gestrichen 2026-10-05) |
 | `CONTENT_PLAN_ROADMAP.md` | Content-Plan als Kalender (eigene + Kunden-Postings, Drehtermine, Anlaesse; Monat/Woche/Liste) | abgeschlossen (C1-C3 live 2026-10-05, C4 Spielplan gestrichen) |
 | `MAILVERSAND_ALLINKL_ROADMAP.md` | Kundenmails ueber All-Inkl (luna@hanserautisch.de) statt Gmail, inkl. Antworten per IMAP | in Umsetzung (M1+M2 live und verifiziert 2026-10-05; M3 Beobachten) |
 | `REELS_ROADMAP.md` | Reels aufraeumen: Verfall nach 30 Tagen, Videos abgelehnter/verfallener Reels loeschen, Nachschub-Bremse bei 10 | in Umsetzung (Etappe 1 umgesetzt 2026-10-01, Deploy offen) |
