@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 11:11] — Claude Code
+- **Was:** Herkunft der Vertragsentwuerfe korrigiert: Claude Code (nicht der CLO-Agent) hat sie geschrieben -- Quelle
+  jetzt „Entwurf Claude Code (ungeprueft)“, Knopf „Erste Entwuerfe laden“, Hinweistext angepasst (live noch nicht
+  geladen, daher keine Altdaten). Roadmap „CLO-Ausbau“ angelegt (Analyse read-only: keine Skills, kein Wissen, Watcher
+  nur KI-Themen): C1 Skills, C2 Rechtsquellen mit Stand, C3 Beobachtung, C4 echter Pruef-Lauf mit Bericht fuer die
+  Anwaeltin, C5 Charta-Anpassung (nur ueber HoA mit Diff).
+- **Warum:** CEO-Frage 2026-10-05 („Wer hat die Entwuerfe gemacht, der CLO?“) und Auftrag „mach die Roadmap und
+  korrigiere die Beschriftung“.
+- **Betroffen:** `orchestrator/core/vertraege.py`, `orchestrator/core/vertrag_entwuerfe.py`, `static/app-v2.js`,
+  `static/index-v2.html` (v94), `orchestrator/tests/test_vertraege.py`, `CLO_AUSBAU_ROADMAP.md` (neu),
+  `VERTRAGSWERK_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`.
+
 ## [2026-10-05 11:07] — Claude Code
 - **Was:** Live-Pruefung nach dem Neustart: LUNA-OS v93/v43; Konzept-Mappe ordnet AN-2026-0001, AB-2026-0001 und
   RE-2026-0003 demselben Vorgang AN-2026-0001 zu, AB-2026-0002 (direkt angelegt) und AN-2026-0002 haben eigene Vorgaenge,

@@ -3,7 +3,7 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/plan-konzept-vertrag` (Plan); Umsetzung auf eigenem Branch
 - Basiscommit: `6636d02`
-- Naechster Schritt: V1+V2 gebaut (2026-10-05); CEO laedt die CLO-Entwuerfe, liest sie und laesst sie anwaltlich pruefen (CEO-Tor); danach Go fuer V3/V4.
+- Naechster Schritt: V1+V2 gebaut (2026-10-05); CEO laedt die ersten Entwuerfe, liest sie; CLO-Ausbau (C1-C4) erzeugt Pruefbericht + Version 2; dann anwaltliche Pruefung (CEO-Tor); danach Go fuer V3/V4.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -46,8 +46,9 @@ AGB am Angebot (CEO-Entscheidung 2026-10-05).
 
 ## Etappe V2: Erste Entwuerfe durch den CLO
 
-- Status: Entwuerfe liegen vor (2026-10-05) -- `core/vertrag_entwuerfe.py` (AGB 14 §§, Kooperationsvertrag 11 §§,
-  Nutzungsrechte 6 §§, NDA 6 §§, mit Platzhaltern); per Knopf „CLO-Entwuerfe laden“ als Version 1 (Entwurf).
+- Status: Entwuerfe liegen vor (2026-10-05) -- **geschrieben von Claude Code, nicht vom CLO-Agenten** (Korrektur
+  2026-10-05; CLO-Ausbau siehe `CLO_AUSBAU_ROADMAP.md`) -- `core/vertrag_entwuerfe.py` (AGB 14 §§, Kooperationsvertrag 11 §§,
+  Nutzungsrechte 6 §§, NDA 6 §§, mit Platzhaltern); per Knopf „Erste Entwuerfe laden“ als Version 1 (Entwurf, Quelle „Entwurf Claude Code (ungeprueft)“).
   **Offen (CEO-Tor):** Lesen durch den CEO, anwaltliche Pruefung, dann Status „geprueft“.
 - Ziel / Scope: CLO-Entwuerfe fuer AGB, Kooperationsvertrag, Nutzungsrechte-Vereinbarung, NDA -- passend zum Geschaeft
   (Kleinunternehmer, Social-Media-Kooperationen, Kennzeichnungspflicht, Nutzungsrechte/Whitelisting/Exklusivitaet wie

@@ -1,7 +1,7 @@
 """Vertragswerk -- Vorlagen-Bibliothek (VERTRAGSWERK_ROADMAP V1/V2, CEO-Entscheidungen 2026-10-05).
 
 Vorlagen (AGB, Kooperationsvertrag, Nutzungsrechte-Vereinbarung, NDA) bestehen aus Paragraphen mit Platzhaltern
-(`{Kunde}`, `{Leistungen}` …) und haben **Versionen**. Jede Version hat einen Status: *Entwurf* (Standard; CLO-Entwurf,
+(`{Kunde}`, `{Leistungen}` …) und haben **Versionen**. Jede Version hat einen Status: *Entwurf* (Standard; erster Entwurf von Claude Code,
 „anwaltliche Pruefung erforderlich“), *geprueft* (mit Pruefer, Datum und optional dem Pruefdokument in der Firmenakte)
 oder *ausser Kraft*. **Nur eine gepruefte Version darf an Kunden** (V3/V4). Den Status setzt nur der CEO. Alles steht
 als Ereignis `vertrag_vorlage_*` in der Hash-Kette; eine Version wird nie geaendert -- Aenderung = neue Version.
@@ -140,12 +140,12 @@ class VertragStore:
         return out
 
     def entwuerfe_laden(self, *, von: str = "") -> list[str]:
-        """V2: die CLO-Entwuerfe als Version 1 anlegen -- nur fuer Vorlagen, die noch keine Version haben (CEO-Klick)."""
+        """V2: die ersten Entwuerfe (Claude Code, ungeprueft) als Version 1 anlegen -- nur fuer Vorlagen, die noch keine Version haben (CEO-Klick)."""
         from .vertrag_entwuerfe import ENTWUERFE
         neu = []
         for art, e in ENTWUERFE.items():
             if not self.vorlage(art)["versionen"]:
-                self.version_anlegen(art, titel=e["titel"], paragraphen=e["paragraphen"], quelle="CLO-Entwurf",
+                self.version_anlegen(art, titel=e["titel"], paragraphen=e["paragraphen"], quelle="Entwurf Claude Code (ungeprüft)",
                                      hinweis="Entwurf – anwaltliche Prüfung erforderlich", von=von)
                 neu.append(art)
         return neu

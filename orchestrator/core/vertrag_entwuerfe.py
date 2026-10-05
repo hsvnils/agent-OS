@@ -1,4 +1,8 @@
-"""CLO-Entwuerfe fuer das Vertragswerk (VERTRAGSWERK_ROADMAP V2, CEO 2026-10-05: „keine Texte vorhanden -- CLO entwirft“).
+"""Erste Vertragsentwuerfe fuer das Vertragswerk (VERTRAGSWERK_ROADMAP V2, CEO 2026-10-05: „keine Texte vorhanden“).
+
+HERKUNFT (Korrektur 2026-10-05, CEO): Diese Texte hat **Claude Code** beim Bau von V2 aus allgemeinem Wissen geschrieben --
+**nicht** der CLO-Agent (der lief dabei nicht; er hat noch keine Skills und keine Wissensbasis, siehe
+CLO_AUSBAU_ROADMAP.md). Sie werden als „Entwurf Claude Code (ungeprueft)“ gespeichert.
 
 ENTWURF -- ANWALTLICHE PRUEFUNG ERFORDERLICH. Keine Rechtsberatung. Die Texte sind auf das Geschaeft zugeschnitten
 (Kleinunternehmer nach § 19 UStG, Social-Media-Kooperationen, Kennzeichnung als Werbung, Nutzungsrechte/Whitelisting/

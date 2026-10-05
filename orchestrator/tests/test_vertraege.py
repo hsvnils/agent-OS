@@ -1,5 +1,5 @@
 """VERTRAGSWERK V1/V2: Vorlagen mit Versionen und Pruefstatus, nur gepruefte Version „in Kraft“, Vergleich,
-CLO-Entwuerfe nur als Entwurf, Rechte (nur CEO aendert)."""
+erste Entwuerfe (Claude Code) nur als Entwurf, Rechte (nur CEO aendert)."""
 import unittest
 
 from orchestrator.core.vertraege import ARTEN, VertragStore, platzhalter
@@ -21,7 +21,7 @@ class TestVertraege(unittest.TestCase):
         self.assertIsNone(self.vs.in_kraft("agb"))                                  # ungeprueft darf nicht raus
         k = self.vs.vorlage("kooperation")["versionen"][0]
         self.assertTrue({"Kunde", "Leistungen", "Verguetung", "Nutzungsrechte", "Freigabe"} <= set(k["platzhalter"]))
-        self.assertEqual(k["quelle"], "CLO-Entwurf")
+        self.assertEqual(k["quelle"], "Entwurf Claude Code (ungeprüft)")
 
     def test_2_pruefen_versionen_vergleich(self):
         self.vs.entwuerfe_laden()

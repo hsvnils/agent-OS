@@ -1596,13 +1596,13 @@ const vtText = (t) => esc(t).replace(/\{([A-Za-zÄÖÜäöüß_]+)\}/g, '<span c
 RENDER.vertraege = async function () {
   const d = await jget("/api/crm/vertraege"); const l = (d && d.vorlagen) || [];
   const leer = l.every(x => !x.versionen);
-  $("#v2-app").innerHTML = secHead("📜 Vertragswerk", leer && darf("finanzen") ? `<button class="v2-btn pri" data-act="vt-entwuerfe">CLO-Entwürfe laden</button>` : "")
-    + `<div class="v2-msg warn" style="margin-bottom:12px">Alle Texte sind Entwürfe des CLO-Agenten (keine Rechtsberatung). An Kunden geht nur eine Version mit Status „geprüft“ – nach anwaltlicher Prüfung.</div>`
+  $("#v2-app").innerHTML = secHead("📜 Vertragswerk", leer && darf("finanzen") ? `<button class="v2-btn pri" data-act="vt-entwuerfe">Erste Entwürfe laden</button>` : "")
+    + `<div class="v2-msg warn" style="margin-bottom:12px">Die ersten Texte hat Claude Code entworfen – ungeprüft, keine Rechtsberatung; der CLO-Agent wird erst noch ausgebaut. An Kunden geht nur eine Version mit Status „geprüft“ – nach anwaltlicher Prüfung.</div>`
     + `<div class="v2-vt-liste">${l.map(x => `<button class="v2-vt-zeile" data-act="vt-detail" data-id="${esc(x.art)}"><span class="grow"><b>${esc(x.name)}</b><small class="v2-sub">${x.versionen ? `Version ${x.aktuell}${x.in_kraft ? ` · in Kraft: v${x.in_kraft}` : " · noch keine geprüfte Version"}` : "noch keine Version"}</small></span>${x.versionen ? vtBadge(x.status) : ""}</button>`).join("")}</div>`;
 };
 async function vtDetail(art, version, meldung) {
   const d = await jget(`/api/crm/vertraege/${encodeURIComponent(art)}`); const x = d && d.vorlage; if (!x) return;
-  if (!x.versionen.length) return openModal(x.name, emptyRow("Noch keine Version – „CLO-Entwürfe laden“ auf der Vertragswerk-Seite."), true);
+  if (!x.versionen.length) return openModal(x.name, emptyRow("Noch keine Version – „Erste Entwürfe laden“ auf der Vertragswerk-Seite."), true);
   const ver = x.versionen.find(v => v.version === Number(version)) || x.versionen[x.versionen.length - 1];
   const ceo = darf("finanzen");
   const kopf = `<div class="v2-card-actions" style="flex-wrap:wrap">${x.versionen.length > 1 ? `<select class="v2-inp" data-act-change="vt-version" data-id="${esc(art)}" style="width:auto">${x.versionen.map(v => `<option value="${v.version}" ${v.version === ver.version ? "selected" : ""}>Version ${v.version} · ${esc(VT_ST[v.status] ? VT_ST[v.status][0].split(" –")[0] : v.status)}</option>`).join("")}</select>` : ""}
