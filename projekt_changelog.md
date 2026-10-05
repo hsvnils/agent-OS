@@ -18,6 +18,14 @@ Eintragsformat:
 ## Eintraege
 
 ## [2026-10-05 21:45] — Claude Code
+- **Was:** Deploy CONTENT_PLAN C1-C3 live geprueft (nur lesend): Seite laedt v105/v53 mit Content-Plan-Code und -Styles,
+  `GET /api/contentplan` antwortet (Feiertage Hamburg Oktober korrekt, Status-Beschriftungen da, ungueltiger Zeitraum -> 400);
+  Kalender noch leer, weil live keine Postings geplant/veroeffentlicht und keine Drehtermine gesetzt sind (2 Auftraege, 2 Postings).
+  Push nach `origin/main` hat der CEO ausgefuehrt.
+- **Warum:** CEO: „Alle drei Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** `projekt_changelog.md`
+
+## [2026-10-05 21:45] — Claude Code
 - **Was:** CONTENT_PLAN C1-C3 umgesetzt: neue Seite „🗓 Content-Plan“ (Content & Collabs) mit Monat/Woche/Liste, Blaettern, Filter
   Quelle/Kanal/Status; eigene Eintraege (Titel, Datum, Uhrzeit, Kanal, Format, Status Idee bis Online, optional Kunde, Notiz) in der
   Buchhaltungs-Kette (`plan_eintrag`/`plan_entfernt`); Kunden-Postings bekommen ein geplantes Datum (`posting_geplant`, Feld im Auftrag
