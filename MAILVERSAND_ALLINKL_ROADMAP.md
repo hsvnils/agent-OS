@@ -3,8 +3,8 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/mail-allinkl`
 - Basiscommit: `3a08276`
-- Naechster Schritt: M2 live -- echter Test: Testmail aus LUNA-OS an den CEO, der CEO antwortet (auch von einer eigenen
-  Adresse), Telegram-Meldung „Antwort auf die LUNA-Testmail“ innerhalb von 15 Minuten; M3 (Beobachten) laeuft weiter.
+- Naechster Schritt: M3 Beobachten (eine Woche: Zustellung, Spam beim Empfaenger, erkannte Kundenantworten), danach
+  CEO-Bestaetigung und Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -46,7 +46,7 @@ von All-Inkl (SMTP zum Senden, IMAP zum Lesen). Entscheidungen: **statt Gmail fu
 
 ## Etappe M2: Antworten der Kunden
 
-- Status: umgesetzt (Gate offen: echter Test mit einer Antwort)
+- Status: verifiziert (2026-10-05 22:32: echte CEO-Antwort auf die Testmail erkannt und erfasst)
 - Ziel / Scope: Kundenantworten im Postfach luna@ per IMAP erkennen (Zuordnung ueber Message-ID/In-Reply-To bzw.
   Belegnummer im Betreff), im Verlauf des Belegs anzeigen, archivieren und per Telegram melden -- wie heute bei Gmail.
 - Gate: Tests (Zuordnung, keine Doppelmeldung); echter Test mit einer Antwort des CEO.

@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 22:33] — Claude Code
+- **Was:** Gate M2 geprueft: Testmail 22:17 an hsvnils@icloud.com, CEO hat geantwortet; der 15-min-Poll hat die Antwort um
+  22:32 erkannt (Ereignis `mail_antwort`, Nummer TESTMAIL, keine Ablage) und die Telegram-Meldung in die Outbox gelegt. Sie ist
+  noch nicht zugestellt (kein `sent`) -- vermutlich das „Nicht stoeren“-Fenster (`ruhezeit_von/_bis`); sie kommt nach dem Fenster.
+  M2 verifiziert, M3 (Beobachten) laeuft.
+- **Warum:** CEO: „Meldung ist angekommen, Antwort gesendet, kannst pruefen“.
+- **Betroffen:** `MAILVERSAND_ALLINKL_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-05 22:15] — Claude Code
 - **Was:** Deploy M2 live geprueft (Code auf der NAS, Kundenversand allinkl, Anmeldung SMTP+IMAP ok). Fuer den echten Test
   nachgebessert: die Testmail aus LUNA-OS speichert ihre Kennung (Ereignis `kundenversand_testmail`), eine Antwort darauf wird
