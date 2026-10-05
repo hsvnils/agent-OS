@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 14:15] — Claude Code
+- **Was:** Roadmap `FACHAGENTEN_ROUTING_ROADMAP.md` angelegt (R1 Zustaendigkeitskarte + Routing-Regel, R2 Nur-Lese-
+  Werkzeug Geschaeftsregeln, R3 Zaehlung inkl. Werkzeuge, R4 Routing-Test mit Sachfragen, R5 Beobachtung) und in
+  `ROADMAP.md` registriert. Nur Plan, nichts umgesetzt.
+- **Warum:** CEO „Mach die Roadmap“ -- LUNA soll die zustaendige Abteilung bei Sachfragen selbst bestimmen.
+- **Betroffen:** `FACHAGENTEN_ROUTING_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-05 13:59] — Claude Code
 - **Was:** Deploy A6 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): Agenten-Profile zeigen die neuen
   Charten (alle aktiv ausser CIO = Entwurf, Testmodus), CPO mit Rolle „LUNA-OS als Produkt“ und neuer Modell-Zeile.
