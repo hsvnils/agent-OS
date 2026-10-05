@@ -2231,6 +2231,45 @@ async def konzept_schreiben(vorgang: str, teil: str, request: Request):
     return _kunden_aktion(aktionen[teil])
 
 
+@app.post("/api/crm/konzept-videograf/{vorgang}")
+def konzept_videograf(vorgang: str, body: dict):
+    """VIDEOGRAF V3: Vorschlag des Videograf-Agenten (17) zu einer Idee/einem Skript -- nur Vorschlag, nichts gespeichert;
+    Szenen uebernimmt der CEO einzeln (POST .../szene mit quelle). Synchron im Threadpool (Gemini, ~10-30 s)."""
+    import time
+    from ...core.agenten_profil import AgentenNutzung
+    from ...core.charter_loader import load_subagent
+    from ...core.model_router import GEMINI_BASE_URL
+    from ...core.videograf import vorschlag
+
+    def tun():
+        import openai
+        ks = _konzept()
+        m = ks.mappe(vorgang)
+        key = (_google_secrets().get("GEMINI_API_KEY") or "").strip()
+        if not key:
+            raise ValueError("Kein Gemini-Zugang konfiguriert.")
+        client = openai.OpenAI(api_key=key, base_url=GEMINI_BASE_URL, timeout=55, max_retries=0)
+        t0, ok = time.monotonic(), False
+        try:
+            erg = vorschlag(m, str(body.get("art") or ""), str(body.get("id") or ""),
+                            system=load_subagent("agents/17_videograf.md", "vid").system_prompt, client=client,
+                            slots=ks.kontext(vorgang).get("slots"))
+            ok = True
+            return erg
+        except (KeyError, ValueError):
+            raise
+        except Exception as exc:                          # Netz/Kontingent: ohne Fehlertext (koennte Schluessel enthalten)
+            print(f"[videograf] {exc.__class__.__name__}", flush=True)
+            raise ValueError("Der Videograf ist gerade nicht erreichbar -- bitte gleich noch einmal versuchen.") from None
+        finally:
+            try:
+                AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl").erfassen(
+                    "vid", ok=ok, dauer_ms=int((time.monotonic() - t0) * 1000), quelle="konzept")
+            except Exception:
+                pass
+    return _kunden_aktion(tun)
+
+
 @app.post("/api/crm/konzept-bild/{vorgang}")
 async def konzept_bild_hochladen(vorgang: str, request: Request, idee: str = ""):
     from urllib.parse import unquote

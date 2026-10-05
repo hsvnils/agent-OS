@@ -46,6 +46,10 @@ SACHFRAGEN = [
     ("Warum laedt die Seite auf dem Handy so langsam?", "delegate", "cto"),
     ("Wie sollten wir als Marke klingen, eher frech oder serioes?", "delegate", "cbo"),
     ("Findest du im Archiv eine Choreo-Szene vom letzten Heimspiel?", "delegate", "cko"),
+    # VIDEOGRAF V4: Drehfragen -> Agent 17 (Abgrenzung: Ideen/Skripte CCO, Freie buchen/bezahlen CHRO)
+    ("Wie filme ich die Bar abends am besten, damit es nicht zu dunkel wird?", "delegate", "vid"),
+    ("Welches Mikro brauchen wir fuer ein Interview im Stadion?", "delegate", "vid"),
+    ("Was muessen wir zum Dreh am Samstag alles mitnehmen?", "delegate", "vid"),
 ]
 
 
@@ -128,7 +132,7 @@ class TestR4Sachfragen(unittest.TestCase):
         namen = re.compile(r"\b(" + "|".join(list(ALL_AGENT_CHARTERS) + ["researcher", "luna", "abteilung", "agent"]) + r")\b", re.I)
         self.assertEqual([f for f, _, _ in SACHFRAGEN if namen.search(f)], [])
         self.assertGreaterEqual(len({b for _, _, b in SACHFRAGEN}), 12)
-        self.assertEqual(len(SACHFRAGEN), 20)
+        self.assertEqual(len(SACHFRAGEN), 23)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,9 +1,9 @@
 # Roadmap: Videograf-Berater (Agent 17)
 - Status: in Umsetzung
 - Stand: 2026-10-05
-- Arbeitsbranch: `ai/canva-videograf`
+- Arbeitsbranch: `ai/videograf-v2v4`
 - Basiscommit: `782e428`
-- Naechster Schritt: V1 live (2026-10-05) -- CEO-Go fuer V2-V4 abwarten.
+- Naechster Schritt: V2-V4 gebaut (2026-10-05) -- Deploy-Go abwarten, danach live pruefen und abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -40,7 +40,7 @@ Konzept-Mappe und im Chat**.
 
 ## Etappe V2: Skills
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- 5 Skills unter `skills/vid/`, Security-Gate bestanden, im System-Prompt.
 - Ziel / Scope: `skills/vid/` (Security-Gate):
   1. `shotlist-erstellen` -- aus Idee/Skript eine Shotlist (Szene, Einstellungsgroesse, Perspektive, Bewegung,
      Dauer, Ton, Hinweis), 9:16 zuerst, Hook-Shot zuerst.
@@ -55,7 +55,10 @@ Konzept-Mappe und im Chat**.
 
 ## Etappe V3: Knopf in der Konzept-Mappe
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- `core/videograf.py` + `POST /api/crm/konzept-videograf/{vorgang}` (gemini-2.5-flash,
+  Probe mit Beispielkonzept: 10 Szenen in 18,6 s); Knoepfe „🎥 Videograf“ an Ideen und Skripten, Vorschlagsfeld im Dreh-Tab,
+  Szenen einzeln oder alle per Klick uebernehmen (Quelle gesetzt, 🎥 in der Shotlist); Kontext ohne Ansprechpartner,
+  Telefon, Freigabe-Personen und Notizen (Test + Gegenprobe); Nutzung zaehlt beim Videografen (quelle `konzept`).
 - Ziel / Scope: je Idee bzw. Skript ein Knopf „🎥 Videograf-Vorschlaege“ -> Anfrage an Agent 17 (Charta + Skills,
   Kontext: Briefing, Idee, Skript, vorhandene Szenen, Drehort/-zeit) -> Ergebnis als **Entwurf**: vorgeschlagene
   Shotlist-Szenen (je Szene uebernehmen per Klick), Hinweise zu Licht/Ton/Equipment, Drehplan-Ergaenzungen. Nichts wird
@@ -67,7 +70,7 @@ Konzept-Mappe und im Chat**.
 
 ## Etappe V4: Im Chat befragbar
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- drei Drehfragen im Routing-Probelauf, 3 Laeufe je 23/23 (100 %).
 - Ziel / Scope: LUNA ordnet Drehfragen ohne Abteilungsnamen dem Videografen zu („Wie filme ich die Kiez Alm abends
   am besten?“, „Welches Mikro fuer ein Interview im Stadion?“); Probelauf `scripts/routing_probelauf.py` um 3 Fragen
   erweitert, Abgrenzung zu CCO (Idee/Skript) und CHRO (Freie buchen/bezahlen) geprueft.

@@ -937,3 +937,10 @@ body.v2-lade-offen { overflow: hidden; }
 /* ANGEBOT_PRAESENTATION P1: Canva-Link im digitalen Beleg */
 .bl-praes { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; padding: 10px 12px; border: 1px solid #c9d6e8; border-radius: 8px; color: #004087; font-weight: 700; font-size: 13px; text-decoration: none; min-height: 44px; justify-content: center; }
 .bl-praes small { color: #667; font-weight: 400; font-size: 11px; overflow-wrap: anywhere; }
+
+/* VIDEOGRAF V3: Vorschlag des Videografen in der Konzept-Mappe */
+.v2-kz-vid { display: grid; gap: 6px; margin: 0 0 14px; padding: 12px; border: 1px dashed var(--v2-accent); border-radius: 12px; background: var(--v2-bg2); }
+.v2-kz-vid.err { border-color: var(--v2-red); }
+.v2-kz-vid > small, .v2-kz-vid .v2-kz-zeile .v2-sub { overflow-wrap: anywhere; }
+.v2-kz-vid .v2-kz-szene .grow { min-width: 0; } .v2-kz-vid .v2-kz-szene small { overflow-wrap: anywhere; }
+.v2-kz-vid-txt p { margin: 2px 0 0; font-size: 13px; color: var(--v2-muted); }

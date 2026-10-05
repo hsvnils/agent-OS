@@ -203,6 +203,8 @@ class KonzeptStore:
     def szene(self, vorgang: str, daten: dict, *, von: str = "") -> dict:
         sid = _t(daten.get("id"), 20) or "Z-" + uuid.uuid4().hex[:8]
         f = {k: _t(daten[k], n) for k, _, n in SZENE if k in daten}
+        if daten.get("quelle"):                                  # z. B. „Videograf-Agent (Vorschlag)“ (VIDEOGRAF V3)
+            f["quelle"] = _t(daten["quelle"], 60)
         for k in ("reihe", "position", "nr"):
             if daten.get(k) not in (None, ""):
                 try:

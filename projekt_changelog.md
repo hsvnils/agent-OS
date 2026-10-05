@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 16:11] — Claude Code
+- **Was:** VIDEOGRAF V2-V4 gebaut: **V2** 5 Skills fuer Agent 17 (`skills/vid/`: Shotlist, Bildsprache/Kamera, Licht/Ton,
+  Equipment/Drehplan, B-Roll/Schnitt; Security-Gate bestanden). **V3** `core/videograf.py` + `POST /api/crm/konzept-videograf/
+  {vorgang}`: Knoepfe „🎥 Videograf“ an Ideen und Skripten der Konzept-Mappe, Vorschlag im Dreh-Tab (Szenen, Licht/Ton,
+  Equipment, Ablauf, Hinweise), Szenen einzeln/alle per Klick uebernehmen (Quelle „Videograf-Agent (Vorschlag)“, 🎥 in der
+  Shotlist); nichts wird ohne Klick gespeichert; Kontext ohne Kontaktdaten; Nutzung zaehlt beim Videografen. Echte Probe ueber
+  gemini-2.5-flash mit Beispielkonzept: 10 Szenen in 18,6 s. **V4** Routing-Probelauf um 3 Drehfragen erweitert: 3 Laeufe
+  je 23/23. UI v99/v47. Tests `test_videograf.py` (5, Gegenproben rot); Browsertest Rechner/iPad/iPhone 17 Pro ok.
+- **Warum:** CEO „Go fuer V2 bis V4“.
+- **Betroffen:** `skills/vid/`, `orchestrator/core/videograf.py`, `core/konzept.py`, `channels/web/app.py`, `static/app-v2.js`,
+  `static/style-v2.css`, `static/index-v2.html`, `tests/test_videograf.py`, `tests/test_fachagenten_routing.py`,
+  `VIDEOGRAF_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 15:57] — Claude Code
 - **Was:** Deploy P1 + V1 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): UI v98/v46; echter Katalog liefert
   beide Canva-Links und Linktexte (Standard greift fuer den bestehenden NAS-Katalog); Agent 17 „Videograf-Berater (VID)“

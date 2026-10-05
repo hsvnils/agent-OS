@@ -26,6 +26,7 @@
 | Belege/Rechnungen auslesen | lokal (Ollama, MACO470) | Belegtext | ja (Lieferanten), bleibt im Haus | `core/eingangsbelege.py` `llm_beauftragen` |
 | Chat (Telegram/LUNA-OS) | **Gemini** (Standard seit 2026-09-26), lokal als Ausweich | Nachricht + Werkzeug-Ergebnisse | **ja**, wenn Mail-/CRM-/Drive-Werkzeuge genutzt werden | Register „Gemini-Gratis-Tier als Standard fuer den Chat“; `core/model_router.py`, `core/hoa_tools.py` |
 | Geschaeftsregeln im Chat (seit 2026-10-05, FACHAGENTEN_ROUTING R2) | Gemini | Zahlungsziel/Vorkasse-Regeln, Mahnwesen-Saetze, Leistungskatalog mit Preisen, Projektstunde/km-Satz, AGB-Fassung in Kraft | **nein** -- bewusst ohne Kunden-, Rechnungs- und Kontodaten (Test prueft das) | `core/zustaendigkeit.py` `geschaeftsregeln` |
+| Videograf-Vorschlaege (Konzept-Mappe, seit 2026-10-05) | Gemini | Briefing (ohne „Freigaben durch“ und Notizen), Idee bzw. Skript, vorhandene Szenen, Drehdatum/-ort/Mitbringen | gering -- **ohne** Ansprechpartner/Telefon; Briefing kann Markennamen enthalten | `core/videograf.py` `kontext` (Test prueft den Ausschluss) |
 | Routing-Probelauf (manuell) | Gemini | 20 Testfragen + System-Prompt + Werkzeug-Beschreibungen, kein Werkzeug wird ausgefuehrt | nein | `scripts/routing_probelauf.py` |
 | Bildschirm sehen (Phase 17) | Gemini | Bildschirmfoto | moeglich (was gerade offen ist) | `docs/datenfluesse.md` (Screenshots) |
 | DM-Analyse Collab-Radar | **abgeschaltet seit 2026-09-29** (vorher Gemini, `IG_ANALYSE_MODELL`) | Instagram-DMs von Marken/Personen | (ja) | `core/ig_analyse.py`, `IG_RADAR_AUTO=0` |

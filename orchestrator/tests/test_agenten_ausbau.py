@@ -245,7 +245,8 @@ class TestPaket2Skills(unittest.TestCase):
         u = {x["key"]: x for x in uebersicht(REPO, watch_log=w, nutzung=n)}
         self.assertEqual({k: u[k]["skills"] for k in PAKET2}, {k: len(v) for k, v in PAKET2.items()})
         self.assertEqual(profil(REPO, "researcher", watch_log=w, nutzung=n)["skills"][0]["name"], "quellenbewertung")
-        self.assertEqual([k for k, x in u.items() if x["skills"] == 0], ["hoa", "cio", "risk", "vid"])   # vid: Skills in V2
+        self.assertEqual([k for k, x in u.items() if x["skills"] == 0], ["hoa", "cio", "risk"])
+        self.assertEqual(u["vid"]["skills"], 5)                                 # VIDEOGRAF V2
 
 
 class TestA4Watcher(unittest.TestCase):

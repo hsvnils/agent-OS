@@ -1461,6 +1461,7 @@ const KZ_ST = { idee: ["Idee", "neutral"], ausgewaehlt: ["ausgewählt", "ok"], v
 const kzBadge = (st) => { const [l, c] = KZ_ST[st] || [st, "neutral"]; return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
 async function konzeptLaden(beleg, tab) {
   const box = $("#kz-box"); if (!box) return;
+  if (beleg !== KZ.beleg) KZ.vid = null;                    // Videograf-Vorschlag gehoert zum Vorgang
   if (tab) KZ.tab = tab;
   const d = await jget(`/api/crm/konzept/${encodeURIComponent(beleg)}`);
   if (!d) { box.innerHTML = emptyRow("Konzept nicht verfügbar."); return; }
@@ -1483,7 +1484,8 @@ function konzeptZeichnen() {
       ${i.beschreibung ? `<div class="v2-sub">${esc(i.beschreibung)}</div>` : ""}${i.format || i.ziel ? `<small class="v2-sub">${esc([i.format, i.ziel].filter(Boolean).join(" · "))}</small>` : ""}
       ${bilder.filter(x => x.idee === i.id).length ? `<div class="v2-kz-mood">${bilder.filter(x => x.idee === i.id).map(x => `<a href="/api/crm/konzept-bild/${encodeURIComponent(v)}/${x.i}" target="_blank" rel="noopener"><img src="/api/crm/konzept-bild/${encodeURIComponent(v)}/${x.i}" alt="" loading="lazy"></a>`).join("")}</div>` : ""}
       <div class="v2-card-actions">${["ausgewaehlt", "idee", "verworfen"].filter(st => st !== i.status).map(st => `<button class="v2-btn sm" data-act="kz-idee-status" data-id="${esc(i.id)}" data-val="${st}">${st === "ausgewaehlt" ? "✓ auswählen" : st === "verworfen" ? "✕ verwerfen" : "↺ zurück"}</button>`).join("")}
-        <label class="v2-btn sm v2-kz-upload">🖼 Bild<input type="file" accept="image/*" multiple hidden data-kz-bild="${esc(i.id)}"></label></div></div>`;
+        <label class="v2-btn sm v2-kz-upload">🖼 Bild<input type="file" accept="image/*" multiple hidden data-kz-bild="${esc(i.id)}"></label>
+        ${i.status !== "verworfen" ? `<button class="v2-btn sm" data-act="kz-vid" data-id="${esc(i.id)}" data-val="idee">🎥 Videograf</button>` : ""}</div></div>`;
     const ideen = Object.values(m.ideen || {}).sort((a, b) => (a.status === "verworfen") - (b.status === "verworfen") || String(a.angelegt).localeCompare(String(b.angelegt)));
     inhalt = `${ideen.length ? `<div class="v2-kz-liste">${ideen.map(karte).join("")}</div>` : `<div class="v2-sub">Noch keine Ideen.</div>`}
       ${bilder.filter(x => !x.idee).length ? `<h4>Moodboard</h4><div class="v2-kz-mood">${bilder.filter(x => !x.idee).map(x => `<a href="/api/crm/konzept-bild/${encodeURIComponent(v)}/${x.i}" target="_blank" rel="noopener"><img src="/api/crm/konzept-bild/${encodeURIComponent(v)}/${x.i}" alt="" loading="lazy"></a>`).join("")}</div>` : ""}
@@ -1499,13 +1501,14 @@ function konzeptZeichnen() {
       return `<details class="v2-kz-skript" ${x.hook || x.text ? "" : ""}><summary><b>${esc(sl.titel)}</b> ${x.status ? kzBadge(x.status) : `<span class="v2-sub">noch leer</span>`}${x.hook ? `<small class="v2-sub"> · ${esc(x.hook.slice(0, 60))}</small>` : ""}</summary>
         <div class="v2-form">${F.skript.map(([key, label]) => `<label class="v2-feld"><small>${esc(label)}</small>${key === "laenge" || key === "musik" ? `<input class="v2-inp" data-sk="${key}" value="${esc(x[key] || "")}">` : `<textarea class="v2-inp" rows="${key === "text" ? 5 : 2}" data-sk="${key}">${esc(x[key] || "")}</textarea>`}</label>`).join("")}
           <div class="v2-an-zeile"><label class="v2-feld"><small>Status</small><select class="v2-inp" data-sk="status">${["entwurf", "fertig", "freigegeben"].map(st => `<option value="${st}" ${(x.status || "entwurf") === st ? "selected" : ""}>${KZ_ST[st][0]}</option>`).join("")}</select></label></div>
-          <button class="v2-btn pri" data-act="kz-skript" data-id="${esc(v)}" data-val="${id}">Skript speichern</button><div class="v2-msg" data-sk-msg="${id}"></div></div></details>`; }).join("")
+          <div class="v2-card-actions"><button class="v2-btn pri" data-act="kz-skript" data-id="${esc(v)}" data-val="${id}">Skript speichern</button>
+          ${x.hook || x.text ? `<button class="v2-btn" data-act="kz-vid" data-id="S-${id}" data-val="skript">🎥 Videograf-Vorschläge</button>` : ""}</div><div class="v2-msg" data-sk-msg="${id}"></div></div></details>`; }).join("")
       : `<div class="v2-sub">Keine Leistungen im Vorgang.</div>`;
   } else if (KZ.tab === "dreh") {
     const d = m.dreh || {}, sz = m.szenen_liste || [], fertig = sz.filter(x => x.erledigt).length;
-    inhalt = `<div class="v2-kz-zeile"><b>Shotlist</b><span class="v2-sub">${fertig}/${sz.length} erledigt</span>${sz.length ? `<button class="v2-btn pri sm" data-act="kz-drehmodus" data-id="${esc(v)}">🎬 Drehmodus</button>` : ""}</div>
+    inhalt = kzVidPanel() + `<div class="v2-kz-zeile"><b>Shotlist</b><span class="v2-sub">${fertig}/${sz.length} erledigt</span>${sz.length ? `<button class="v2-btn pri sm" data-act="kz-drehmodus" data-id="${esc(v)}">🎬 Drehmodus</button>` : ""}</div>
       ${sz.map((x, i) => `<div class="v2-kz-szene${x.erledigt ? " ok" : ""}"><button class="v2-kz-haken" data-act="kz-erledigt" data-id="${esc(x.id)}" data-val="${x.erledigt ? "" : "1"}" aria-label="erledigt">${x.erledigt ? "✓" : ""}</button>
-        <div class="grow"><b>${i + 1} · ${esc(x.titel || "")}</b><small class="v2-sub">${esc([x.einstellung, x.ort, x.requisite, x.dauer].filter(Boolean).join(" · "))}${x.notiz ? " · " + esc(x.notiz) : ""}</small></div>
+        <div class="grow"><b>${i + 1} · ${esc(x.titel || "")}${x.quelle ? ` <span title="${esc(x.quelle)}">🎥</span>` : ""}</b><small class="v2-sub">${esc([x.einstellung, x.ort, x.requisite, x.dauer].filter(Boolean).join(" · "))}${x.notiz ? " · " + esc(x.notiz) : ""}</small></div>
         <button class="v2-btn sm" data-act="kz-szene-weg" data-id="${esc(x.id)}" title="Szene entfernen">✕</button></div>`).join("") || `<div class="v2-sub">Noch keine Szenen.</div>`}
       <details class="v2-pz"><summary><b>+ Szene hinzufügen</b></summary><div class="v2-form"><div class="v2-kz-raster">${F.szene.map(([key, label]) => `<label class="v2-feld"><small>${esc(label)}${key === "titel" ? " *" : ""}</small><input class="v2-inp" data-sz="${key}"></label>`).join("")}</div>
         <button class="v2-btn pri" data-act="kz-szene" data-id="${esc(v)}">Szene speichern</button><div id="kz-msg" class="v2-msg"></div></div></details>
@@ -1524,6 +1527,42 @@ function konzeptZeichnen() {
   }
   box.innerHTML = kopf + `<div class="v2-kz-inhalt">${inhalt}</div>`;
   box.querySelectorAll("[data-kz-bild]").forEach(inp => inp.addEventListener("change", () => kzBilder(inp)));
+}
+// VIDEOGRAF V3: Vorschlag des Videograf-Agenten (17) -- nur Anzeige, Szenen per Klick uebernehmen
+function kzVidPanel() {
+  const x = KZ.vid; if (!x) return "";
+  if (x.laden) return `<div class="v2-kz-vid"><b>🎥 Videograf denkt nach …</b><small class="v2-sub">Vorschlag zu „${esc(x.titel || x.id)}“ – dauert meist 10–30 Sekunden.</small></div>`;
+  if (x.fehler) return `<div class="v2-kz-vid err"><b>🎥 Kein Vorschlag</b><small class="v2-sub">${esc(x.fehler)}</small><div class="v2-card-actions"><button class="v2-btn sm" data-act="kz-vid-weg">Schließen</button></div></div>`;
+  const rest = x.szenen.filter(z => !z.ok).length;
+  return `<div class="v2-kz-vid"><div class="v2-kz-zeile"><b>🎥 Vorschlag des Videografen</b><span class="v2-sub">zu „${esc(x.titel || x.bezug)}“ · Vorschlag – nichts ist gespeichert</span></div>
+    ${x.szenen.map((z, i) => `<div class="v2-kz-szene${z.ok ? " ok" : ""}"><div class="grow"><b>${i + 1} · ${esc(z.titel)}</b><small class="v2-sub">${esc([z.einstellung, z.ort, z.requisite, z.dauer].filter(Boolean).join(" · "))}${z.notiz ? " · " + esc(z.notiz) : ""}</small></div>
+      ${z.ok ? `<span class="v2-badge ok">übernommen</span>` : `<button class="v2-btn sm" data-act="kz-vid-ueb" data-val="${i}">＋ übernehmen</button>`}</div>`).join("")}
+    ${x.licht_ton ? `<div class="v2-kz-vid-txt"><b>Licht & Ton</b><p>${esc(x.licht_ton)}</p></div>` : ""}
+    ${(x.equipment || []).length ? `<div class="v2-kz-vid-txt"><b>Equipment</b><p>${x.equipment.map(esc).join(" · ")}</p></div>` : ""}
+    ${x.ablauf ? `<div class="v2-kz-vid-txt"><b>Ablauf</b><p>${esc(x.ablauf)}</p></div>` : ""}
+    ${x.hinweise ? `<div class="v2-kz-vid-txt"><b>Hinweise</b><p>${esc(x.hinweise)}</p></div>` : ""}
+    <div class="v2-card-actions">${rest ? `<button class="v2-btn pri sm" data-act="kz-vid-ueb" data-val="alle">＋ Alle ${rest} übernehmen</button>` : ""}<button class="v2-btn sm" data-act="kz-vid-weg">Vorschlag schließen</button></div>
+    <div id="kz-vid-msg" class="v2-msg"></div></div>`;
+}
+async function kzVid(act, id, val) {
+  const v = KZ.d && KZ.d.kontext.vorgang; if (!v) return;
+  if (act === "kz-vid-weg") { KZ.vid = null; return konzeptZeichnen(); }
+  if (act === "kz-vid") {
+    const m = KZ.d.mappe, titel = val === "idee" ? ((m.ideen || {})[id] || {}).titel : ((KZ.d.kontext.slots || []).find(s => `S-${s.position}-${s.nr}` === id) || {}).titel;
+    KZ.vid = { laden: true, id, titel }; KZ.tab = "dreh"; konzeptZeichnen();
+    const r = await jpost(`/api/crm/konzept-videograf/${encodeURIComponent(v)}`, { art: val, id });
+    if (!KZ.vid || KZ.vid.id !== id) return;
+    KZ.vid = r && r.ok !== false ? { ...r, titel } : { fehler: (r && r.hinweis) || "Keine Verbindung." };
+    return konzeptZeichnen();
+  }
+  if (act === "kz-vid-ueb" && KZ.vid && KZ.vid.szenen) {
+    const idx = val === "alle" ? KZ.vid.szenen.map((z, i) => z.ok ? -1 : i).filter(i => i >= 0) : [Number(val)];
+    for (const i of idx) { const z = KZ.vid.szenen[i]; if (!z || z.ok) continue;
+      const { ok, ...felder } = z; const r = await jpost(`/api/crm/konzept/${encodeURIComponent(v)}/szene`, { ...felder, quelle: KZ.vid.quelle || "Videograf-Agent (Vorschlag)" });
+      if (!r || r.ok === false) { kundenMsg("kz-vid-msg", (r && r.hinweis) || "Keine Verbindung.", false); break; }
+      z.ok = true; }
+    return konzeptLaden(KZ.beleg);
+  }
 }
 async function kzBilder(inp) {
   const v = KZ.d.kontext.vorgang, files = [...(inp.files || [])];
@@ -3510,6 +3549,7 @@ async function handleAct(act, el) {
       return kundenMsg("ber-msg2", r && r.ok ? `Entwurf an ${r.an} liegt in Gmail (LUNAs Konto) – dort prüfen und selbst senden.` : (r && r.hinweis) || "Fehler.", !!(r && r.ok)); }
     case "bv-oeffnen": return belegVerfolgung(id);
     case "konzept": return konzeptFenster(id, val);
+    case "kz-vid": case "kz-vid-ueb": case "kz-vid-weg": return kzVid(act, id, val);
     case "kz-tab": case "kz-briefing": case "kz-idee": case "kz-idee-status": case "kz-skript": case "kz-szene": case "kz-erledigt": case "kz-szene-weg":
     case "kz-dreh": case "kz-freigabe": case "kz-senden-form": case "kz-senden": case "kz-drehmodus": return kzAktion(act, id, val, el);
     case "dreh-haken": { const v = KZ.d ? KZ.d.kontext.vorgang : ""; const d = v ? null : await jget(`/api/crm/konzept/${encodeURIComponent(val)}`);
