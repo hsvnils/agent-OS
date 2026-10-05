@@ -136,7 +136,8 @@ class TestA1Leistungsbericht(unittest.TestCase):
                                       {"ts": ts(9), "agent": "cro", "ok": True, "dauer_ms": 1}])
         a = PerformanceAgent(fachagenten=n)
         b = a.bericht(jetzt)
-        self.assertEqual(b["woche"]["fachagenten"], {"anfragen": 3, "fehler": 1, "je_agent": {"cfo": 2, "clo": 1}})
+        self.assertEqual(b["woche"]["fachagenten"], {"anfragen": 3, "fehler": 1, "direkt": 3, "werkzeug": 0,
+                                                       "je_agent": {"cfo": 2, "clo": 1}})
         self.assertEqual(b["vorwoche"]["fachagenten"]["anfragen"], 1)
         self.assertIn("Fachagenten: 3 Anfragen", a.als_text(b))
         self.assertIn("cfo (2)", a.als_text(b))

@@ -3112,10 +3112,10 @@ async function agentProfil(key) {
   if (!p || !p.charta) return openModal("Agent", emptyRow("Profil nicht gefunden."));
   const c = p.charta, n30 = p.nutzung.tage30, n90 = p.nutzung.tage90;
   const kopf = `<div class="v2-kv"><span>Status (Charta)</span><b><span class="v2-badge ${c.status === "aktiv" ? "aktiv" : "neutral"}">${esc(c.status)}</span></b></div>
-    <div class="v2-ag-block"><span>Modell (Richtwert laut Charta)</span><b>${esc(c.modell || "—")}</b><small>Geantwortet wird derzeit über Gemini (BF-18).</small></div>
+    <div class="v2-ag-block"><span>Modell (Richtwert laut Charta)</span><b>${esc(c.modell || "—")}</b></div>
     ${c.rolle ? `<div class="v2-ag-rolle">${esc(c.rolle.replace(/\*\*/g, ""))}</div>` : ""}`;
   const nz = `<div class="v2-ag-zahlen"><div><b>${n30.anzahl}</b><small>Anfragen 30 Tage</small></div><div><b>${n90.anzahl}</b><small>Anfragen 90 Tage</small></div><div><b>${n30.median_s == null ? "–" : n30.median_s + " s"}</b><small>Antwortzeit (Median)</small></div><div><b>${n90.fehler}</b><small>Fehler 90 Tage</small></div></div>
-    <div class="v2-sub">${n90.zuletzt ? "Zuletzt gefragt: " + esc(zeitKurz(n90.zuletzt)) : "Noch nicht gefragt (gemessen wird seit dem 05.10.2026, nur Zeit/Dauer – keine Inhalte)."}</div>`;
+    <div class="v2-sub">${n90.zuletzt ? `Zuletzt gefragt: ${esc(zeitKurz(n90.zuletzt))} · 90 Tage: ${n90.direkt || 0} direkt, ${n90.werkzeug || 0} über Werkzeuge` : "Noch nicht gefragt (gemessen wird seit dem 05.10.2026, nur Zeit/Dauer – keine Inhalte)."}</div>`;
   const sk = p.skills.map(x => `<div class="v2-list-row"><span class="v2-badge ${x.geladen ? "aktiv" : "neutral"}">${x.geladen ? "geladen" : esc(x.verdikt)}</span><div class="grow"><b>${esc(x.name)}${x.quellen ? " 📚" : ""}</b><small>${esc(x.beschreibung)}</small></div></div>`).join("") || emptyRow("Noch keine Skills.");
   const qs = p.quellen.map(q => `<div class="v2-list-row"><span>⚖️</span><div class="grow"><b><a href="${esc(q.url)}" target="_blank" rel="noopener">${esc(q.norm)}</a></b><small>${esc(q.skill)} · Stand ${esc(datumDe(q.stand))}${q.pruefen_bis ? " · nächste Prüfung " + esc(datumDe(q.pruefen_bis)) : ""}</small></div></div>`).join("");
   const wt = p.watcher.length ? `<div class="v2-chips">${p.watcher.map(t => `<span class="v2-chip">${esc(t)}</span>`).join("")}</div>` : emptyRow("Keine Watcher-Themen.");
@@ -3163,7 +3163,7 @@ function leistungHtml(p) {
   }
   if (w.fachagenten) {
     const top = Object.entries(w.fachagenten.je_agent || {}).slice(0, 5).map(([a, n]) => `${esc(a.toUpperCase())} (${n})`).join(", ");
-    h += zeile(null, "Fachagenten — wer wird gefragt", `${w.fachagenten.anfragen} Anfragen${delta(w.fachagenten.anfragen, (v.fachagenten || {}).anfragen)}${top ? " · " + top : " · niemand gefragt"}${w.fachagenten.fehler ? ` · ${w.fachagenten.fehler} Fehler` : ""}`);
+    h += zeile(null, "Fachagenten — wer wird gefragt", `${w.fachagenten.anfragen} Anfragen (${w.fachagenten.direkt || 0} direkt, ${w.fachagenten.werkzeug || 0} über Werkzeuge)${delta(w.fachagenten.anfragen, (v.fachagenten || {}).anfragen)}${top ? " · " + top : " · niemand gefragt"}${w.fachagenten.fehler ? ` · ${w.fachagenten.fehler} Fehler` : ""}`);
   }
   if (p.friedhof && p.friedhof.length) h += zeile("gelb", `Feature-Friedhof (> ${p.friedhof_tage} Tage nicht geöffnet)`, p.friedhof.map(esc).join(", "));
   h += zeile(p.ampeln.fehler, "Fehler gesamt", String(p.fehler_gesamt));

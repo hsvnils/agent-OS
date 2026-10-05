@@ -91,9 +91,13 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
                          "watcher", "hintergrund", "wer hat", "was hast du", "was habt ihr"],
     },
     "finanzen": {
-        "werkzeuge": ["finance_dashboard", "frage_finance", "kosten_optimierung", "kosten_statistik", "set_budget"],
+        "werkzeuge": ["finance_dashboard", "frage_finance", "kosten_optimierung", "kosten_statistik", "set_budget",
+                      "geschaeftsregeln"],
         "stichwoerter": ["budget", "kosten", "geld", "euro", "eur", "ausgabe", "rechnung", "abo", "cfo", "finanz",
-                         "token", "sparen", "guenstig", "preis", "teuer", "dienstleister", "modelle", "provider"],
+                         "token", "sparen", "guenstig", "preis", "teuer", "dienstleister", "modelle", "provider",
+                         "zahlung", "zahlungsziel", "zahlungsbeding", "vorkasse", "anzahlung", "konditionen", "mahn",
+                         "verzug", "zinsen", "katalog", "paket", "zuschlag", "rabatt", "agb", "projektstunde",
+                         "stundensatz", "kilometer", "kostet", "tarif"],
     },
     "backoffice": {
         "werkzeuge": ["auftrag_details", "auftraege_zeigen"],

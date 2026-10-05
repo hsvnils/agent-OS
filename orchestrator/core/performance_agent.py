@@ -210,6 +210,8 @@ class PerformanceAgent:
         except Exception:
             return None
         return {"anfragen": sum(x["anzahl"] for x in je.values()), "fehler": sum(x["fehler"] for x in je.values()),
+                "direkt": sum(x.get("direkt", 0) for x in je.values()),
+                "werkzeug": sum(x.get("werkzeug", 0) for x in je.values()),
                 "je_agent": dict(sorted(((k, x["anzahl"]) for k, x in je.items()), key=lambda kv: -kv[1]))}
 
     def _friedhof(self, jetzt: datetime) -> list | None:
@@ -341,7 +343,8 @@ class PerformanceAgent:
         fa = w.get("fachagenten")
         if fa is not None:
             top = ", ".join(f"{a} ({n})" for a, n in list(fa["je_agent"].items())[:5])
-            z.append(f"\U0001f6f0 Fachagenten: {fa['anfragen']} Anfragen"
+            z.append(f"\U0001f6f0 Fachagenten: {fa['anfragen']} Anfragen ({fa.get('direkt', 0)} direkt, "
+                     f"{fa.get('werkzeug', 0)} ueber Werkzeuge)"
                      + delta(fa["anfragen"], (v.get("fachagenten") or {}).get("anfragen"))
                      + (f" — gefragt: {top}" if top else " — niemand gefragt")
                      + (f", {fa['fehler']} Fehler" if fa["fehler"] else ""))

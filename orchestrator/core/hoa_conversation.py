@@ -12,6 +12,7 @@ import time
 
 from .hoa_tools import ToolContext, run_tool, tool_specs
 from .model_router import bid, binput, bname, btext, btype
+from .zustaendigkeit import ROUTING_REGEL
 
 TEXT_SYSTEM_PROMPT = (
     "Du bist LUNA, der Head of Agents des Hanserautisch Agenten-Unternehmens, und sprichst mit dem CEO "
@@ -81,7 +82,8 @@ TEXT_SYSTEM_PROMPT = (
     "Du hast KEINE Timer-/Erinnerungsfunktion: versprich NIEMALS, dich 'in X Minuten' von selbst zu melden. "
     "Erledige Aufgaben sofort, oder sage klar, dass der CEO nachfragen soll; fuer Hintergrund-Ergebnisse "
     "meldet sich der Watcher/Self-Maintenance ohnehin automatisch via 'melde_an_ceo'. "
-    "WICHTIG: Schreibe alle Antworten an den CEO mit korrekten deutschen Umlauten (ä, ö, ü, ß) -- niemals ae/oe/ue/ss."
+    "WICHTIG: Schreibe alle Antworten an den CEO mit korrekten deutschen Umlauten (ä, ö, ü, ß) -- niemals ae/oe/ue/ss. "
+    + ROUTING_REGEL
 )
 
 

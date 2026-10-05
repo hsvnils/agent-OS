@@ -17,6 +17,22 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 14:39] — Claude Code
+- **Was:** FACHAGENTEN_ROUTING R1-R4 gebaut: `core/zustaendigkeit.py` (Zustaendigkeitskarte aller 17 Fachagenten in der
+  Beschreibung von `delegate`, Routing-Regel im System-Prompt „CEO nennt nie eine Abteilung“), neues Nur-Lese-Werkzeug
+  `geschaeftsregeln` (Zahlungsbedingungen, Mahnwesen, Katalog/Preise, Projektstunde/km-Satz, AGB in Kraft -- ohne
+  Kunden-/Rechnungsdaten), Zaehlung „wer wird gefragt“ inkl. Werkzeug-Antworten (Profil + Leistungsbericht: direkt /
+  ueber Werkzeuge), Testfragen und Probelauf-Skript `scripts/routing_probelauf.py` (gemini-2.5-flash, nichts ausgefuehrt):
+  95/100/100 % nach Nachschaerfen (vorher 80/80 %). Token-Gate der Werkzeugauswahl 5.000 -> 5.200 (+~320 Token). UI v97
+  (doppelter Gemini-Hinweis im Profil entfernt). Suite 1192 passed; iPhone-17-Pro-Check ok. Neu: BF-56, Lehre zu
+  „gruen formulierten“ Tests.
+- **Warum:** CEO „Go fuer R1 bis R4“ -- LUNA soll Sachfragen ohne Abteilungsnamen selbst zuordnen.
+- **Betroffen:** `orchestrator/core/zustaendigkeit.py`, `core/hoa_tools.py`, `core/hoa_conversation.py`, `core/werkzeugauswahl.py`,
+  `core/agenten_profil.py`, `core/performance_agent.py`, `static/app-v2.js`, `static/index-v2.html`,
+  `tests/test_fachagenten_routing.py`, `tests/test_agenten_ausbau.py`, `tests/test_werkzeugauswahl.py`,
+  `scripts/routing_probelauf.py`, `FACHAGENTEN_ROUTING_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`,
+  `docs/datenschutz-ki-nutzung.md`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 14:15] — Claude Code
 - **Was:** Roadmap `FACHAGENTEN_ROUTING_ROADMAP.md` angelegt (R1 Zustaendigkeitskarte + Routing-Regel, R2 Nur-Lese-
   Werkzeug Geschaeftsregeln, R3 Zaehlung inkl. Werkzeuge, R4 Routing-Test mit Sachfragen, R5 Beobachtung) und in

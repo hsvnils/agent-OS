@@ -46,6 +46,7 @@ class ToolContext:
 
 
 def tool_specs() -> list[dict]:
+    from .zustaendigkeit import delegate_beschreibung
     """Anthropic-Tool-Schemas fuer den Text-Kanal."""
     agents = ", ".join(_AGENT_KEYS)
     return [
@@ -54,9 +55,13 @@ def tool_specs() -> list[dict]:
         _spec("set_budget", "Traegt das vom CEO genannte Monatsbudget ueber den CFO in finance/budget.md ein. "
               "Nur bei klarer CEO-Ansage; bestaetige die Zahl vorher.",
               {"betrag_eur": _str("Monatsbudget in Euro, nur Zahl.")}, ["betrag_eur"]),
-        _spec("delegate", f"Konsultiert einen Fachagenten (nur Beratung/Text). an: {agents}.",
-              {"aufgabe": _str("Aufgabe/Frage in einem Satz."), "an": _str("Kuerzel des Spezialisten.")},
+        _spec("delegate", delegate_beschreibung(),
+              {"aufgabe": _str("Aufgabe/Frage, inkl. noetiger Zahlen/Regeln als Kontext."),
+               "an": _str("Kuerzel des zustaendigen Fachagenten.")},
               ["aufgabe", "an"]),
+        _spec("geschaeftsregeln", "Liest Geschaeftsregeln: Zahlungsbedingungen, Mahnwesen, Leistungskatalog/Preise, "
+              "Projektstunde/km-Satz, AGB in Kraft. Keine Kunden-/Rechnungsdaten.",
+              {"thema": _str("zahlung | mahnung | katalog | agb | leer = alles.")}, []),
         _spec("recherche_beauftragen", "Beauftragt den Researcher (Agent 15) mit einer Web-Recherche. Legt ein "
               "nachverfolgbares Research-Ticket an (welche Abteilung, was, Befund, Quellen) und liefert den "
               "Befund zurueck. Standard: Brave. Setze eskalation=true, wenn der CEO eine REVISION oder WEITERE/"
@@ -491,11 +496,35 @@ def _termin_in_vergangenheit(a: dict) -> str:
 
 
 def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
+    """Fuehrt ein Werkzeug aus. FACHAGENTEN_ROUTING R3: Antworten ueber Werkzeuge zaehlen -- ohne Inhalte -- beim
+    zustaendigen Bereich (`core/zustaendigkeit.py`); `delegate` protokolliert sich selbst, LUNA-Werkzeuge zaehlen nicht."""
+    t0 = time.monotonic()
+    res = _run_tool(name, args, ctx)
+    if ctx.agenten_nutzung is not None and name != "delegate":
+        try:
+            from .zustaendigkeit import bereich_von
+            bereich = bereich_von(name)
+            if bereich != "hoa":
+                ok = not (isinstance(res, dict) and (res.get("fehler") or res.get("ok") is False))
+                ctx.agenten_nutzung.erfassen(bereich, ok=ok, dauer_ms=int((time.monotonic() - t0) * 1000),
+                                             quelle="werkzeug")
+        except Exception:
+            pass
+    return res
+
+
+def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
     args = args or {}
     sec = ctx.leak_secrets
 
     if name == "frage_finance":
         return {"finance": finance_text(ctx.finance_dir, sec)}
+
+    if name == "geschaeftsregeln":                    # FACHAGENTEN_ROUTING R2: nur lesen, ohne Kunden-/Rechnungsdaten
+        from pathlib import Path as _P
+        from .buchhaltung import Buchhaltung
+        from .zustaendigkeit import geschaeftsregeln
+        return geschaeftsregeln(Buchhaltung(_P(ctx.repo_root) / "buchhaltung"), str(args.get("thema") or ""))
 
     if name == "set_budget":
         from .channels_common import set_budget as _set

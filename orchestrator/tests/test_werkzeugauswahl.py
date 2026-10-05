@@ -80,7 +80,7 @@ TESTKATALOG = [
 ]
 
 GATE_TREFFER = 0.95
-GATE_TOKEN = 5000
+GATE_TOKEN = 5200   # 2026-10-05 von 5000 angehoben: Zustaendigkeitskarte + Routing-Regel (FACHAGENTEN_ROUTING R1, +~275 Token)
 
 
 def _ergebnis():

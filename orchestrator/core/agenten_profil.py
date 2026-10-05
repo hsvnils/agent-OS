@@ -1,6 +1,7 @@
 """Agenten-Transparenz (AGENTEN_AUSBAU A1, CEO 2026-10-05).
 
-- **Nutzung messen:** jede Fachagenten-Anfrage von LUNA („delegate“) wird ohne Inhalte protokolliert -- Agent, Zeit,
+- **Nutzung messen:** jede Fachagenten-Anfrage von LUNA („delegate“, quelle `delegate`) und jede Antwort ueber ein
+  Werkzeug des Bereichs (quelle `werkzeug`, FACHAGENTEN_ROUTING R3) wird ohne Inhalte protokolliert -- Agent, Zeit,
   Dauer, Erfolg, Zahl der geladenen Skills (`agenten_nutzung/log.jsonl`, NAS).
 - **Profil je Agent:** Charta (Titel, Status, Modell-Richtwert, Rolle), Skills (skill-card + Gate-Verdikt), Quellen mit
   Stand/Pruefdatum, Watcher-Themen und letzte Funde, Nutzung 30/90 Tage -- fuer die Agenten-Seite in LUNA-OS und den
@@ -47,8 +48,10 @@ class AgentenNutzung:
         for e in self._events():
             if not (s <= e.get("ts", "") <= b):
                 continue
-            x = out.setdefault(e.get("agent", "?"), {"anzahl": 0, "fehler": 0, "zuletzt": "", "dauer_ms": []})
+            x = out.setdefault(e.get("agent", "?"), {"anzahl": 0, "direkt": 0, "werkzeug": 0, "fehler": 0, "zuletzt": "",
+                                                     "dauer_ms": []})
             x["anzahl"] += 1
+            x["werkzeug" if e.get("quelle") == "werkzeug" else "direkt"] += 1
             x["fehler"] += 0 if e.get("ok") else 1
             x["zuletzt"] = max(x["zuletzt"], e.get("ts", ""))
             x["dauer_ms"].append(int(e.get("dauer_ms") or 0))
@@ -116,8 +119,8 @@ def profil(repo: Path | str, key: str, *, watch_log: Path | str, nutzung: Agente
     return {"key": key, "charta": _charta(repo, key), "skills": _skills(repo, key),
             "quellen": [{k: q[k] for k in ("skill", "norm", "url", "stand", "pruefen_bis")} for q in qs],
             "watcher": themen_fuer(key).get("suche", []), "funde": funde[:5], "funde_gesamt": len(funde),
-            "nutzung": {"tage30": n30 or {"anzahl": 0, "fehler": 0, "zuletzt": "", "median_s": None},
-                        "tage90": n90 or {"anzahl": 0, "fehler": 0, "zuletzt": "", "median_s": None}}}
+            "nutzung": {"tage30": n30 or {"anzahl": 0, "direkt": 0, "werkzeug": 0, "fehler": 0, "zuletzt": "", "median_s": None},
+                        "tage90": n90 or {"anzahl": 0, "direkt": 0, "werkzeug": 0, "fehler": 0, "zuletzt": "", "median_s": None}}}
 
 
 def uebersicht(repo: Path | str, *, watch_log: Path | str, nutzung: AgentenNutzung) -> list[dict]:

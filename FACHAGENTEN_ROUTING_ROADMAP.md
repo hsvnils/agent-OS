@@ -1,9 +1,9 @@
 # Roadmap: Fachagenten-Routing (LUNA bestimmt die zustaendige Abteilung selbst)
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-05
-- Arbeitsbranch: `ai/plan-routing`
+- Arbeitsbranch: `ai/routing`
 - Basiscommit: `e290304`
-- Naechster Schritt: CEO-Go fuer R1-R4 abwarten (R5 ist der Probelauf nach dem Deploy).
+- Naechster Schritt: R1-R4 gebaut (2026-10-05) -- Deploy-Go abwarten, danach R5 (zwei Wochen beobachten).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -38,7 +38,9 @@ aktuellen Zahlungsbedingungen?‘ An welche Abteilung die Frage geht, muss LUNA 
 
 ## Etappe R1: Zustaendigkeitskarte und Routing-Regel
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- `core/zustaendigkeit.py` (`ZUSTAENDIG`, `ROUTING_REGEL`), Beschreibung von `delegate`
+  mit Zustaendigkeiten, Regel im System-Prompt. Mehrverbrauch +~320 Token je Nachricht (4.850 -> 5.171 im Mittel);
+  Token-Gate der Werkzeugauswahl von 5.000 auf 5.200 angehoben.
 - Ziel / Scope: je Agent eine Zeile „wofuer zustaendig“ (aus der Charta abgeleitet, eine Quelle: Charta-Abschnitt
   „Rolle“ bzw. eine kleine Karte im Code, per Test gegen die Charten geprueft) in der Beschreibung von `delegate`;
   Regel im System-Prompt: „Der CEO nennt keine Abteilung. Bestimme selbst, wer zustaendig ist. Reine Datenfragen mit
@@ -50,7 +52,8 @@ aktuellen Zahlungsbedingungen?‘ An welche Abteilung die Frage geht, muss LUNA 
 
 ## Etappe R2: Geschaeftsregeln lesbar machen
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- Werkzeug `geschaeftsregeln` (Zahlungsbedingungen, Mahnwesen, Katalog, Projekt-
+  stunde/km-Satz, AGB in Kraft); Test: keine Kunden-/Rechnungsdaten im Ergebnis.
 - Ziel / Scope: neues Nur-Lese-Werkzeug `geschaeftsregeln` (Gruppe „finanzen“, Stichwoerter wie Zahlungsbedingung,
   Zahlungsziel, Vorkasse, Preis, Paket, Katalog, AGB, Konditionen): Standard-Zahlungsziel und Vorkasse-Regeln,
   Leistungskatalog (Formate, Pakete, Zuschlaege, Projektstunde/km-Satz), AGB-Fassung in Kraft (Titel/Version/Status).
@@ -61,7 +64,8 @@ aktuellen Zahlungsbedingungen?‘ An welche Abteilung die Frage geht, muss LUNA 
 
 ## Etappe R3: Zaehlung „wer wird gefragt“ vollstaendig
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- `run_tool` zaehlt Werkzeug-Antworten beim Bereich (`WERKZEUG_BEREICH`), Profil und
+  Leistungsbericht zeigen „direkt“ und „ueber Werkzeuge“.
 - Ziel / Scope: jede Werkzeug-Antwort wird -- ohne Inhalte -- dem zustaendigen Bereich zugerechnet (z. B.
   `frage_finance`, `geschaeftsregeln` -> CFO; `recherche_beauftragen` -> Researcher; `crm_*` -> CRO;
   `sicherheits_audit` -> CISO; Investment -> CIO). Profil und Leistungsbericht zeigen „direkt gefragt“ (`delegate`)
@@ -71,7 +75,11 @@ aktuellen Zahlungsbedingungen?‘ An welche Abteilung die Frage geht, muss LUNA 
 
 ## Etappe R4: Routing-Test mit Sachfragen
 
-- Status: geplant
+- Status: umgesetzt (2026-10-05) -- 20 Sachfragen (`tests/test_fachagenten_routing.py`), offline 100 % Werkzeug
+  angeboten; Probelauf `scripts/routing_probelauf.py` ueber gemini-2.5-flash: 80 % / 80 % vor dem Nachschaerfen,
+  danach 95 % / 100 % / 100 % (Gate 85 %). Zwei Testfragen ersetzt, weil sie Daten brauchten, die LUNA bewusst nicht
+  hat (Angebotstext, zu pruefender Text); Wertung: Werkzeug desselben Bereichs zaehlt als richtig (z. B. `brain_suchen`
+  = CKO), Rechtsfrage „Verzugszinsen duerfen“ darf an den CLO. Rest-Fehlgriff als BF-56.
 - Ziel / Scope: 20 typische Fragen ohne Abteilungsnamen mit erwartetem Bereich/Werkzeug, z. B. „Wie hoch ist das
   monatliche Budget?“ (frage_finance), „Wie sind unsere Zahlungsbedingungen?“ (geschaeftsregeln), „Darf ich im Reel
   Musik aus den Charts nutzen?“ (CLO), „Sieht das Angebot fuer die Kiez Alm verstaendlich aus?“ (CXO), „Was kostet uns
