@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 21:04] — Claude Code
+- **Was:** Preisaenderung in der Rechnung korrigiert: kein Knopf „✎ Preis ueberschreiben“ mehr -- das Preisfeld jeder
+  Position (auch TKP) ist im Rechnungsentwurf direkt aenderbar; beim Verlassen des Feldes fragt LUNA nach dem Grund
+  (Abbruch = alter Preis), danach gilt der eigene Preis statt TKP. Die Summenberechnung ueberschreibt den Preis waehrend der
+  Eingabe nicht mehr. Im Angebots-Editor bleibt der TKP-Preis wie bisher berechnet. Browser-Simulation (Abbruch / mit
+  Grund / gesendete Felder) und iPhone-Check ok; UI v103/v51; Suite gruen.
+- **Warum:** CEO „Du hast mich falsch verstanden, ich will keinen Button zum Preis ueberschreiben, ich will den Preis in der
+  Position aendern koennen, solange die Rechnung ein Entwurf ist.“
+- **Betroffen:** `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 21:00] — Claude Code
 - **Was:** Deploy T5 (erneut senden) + Preisaenderung mit Grund + BF-58 live geprueft (CEO hat NAS-Sync und Neustart
   ausgefuehrt): UI v102/v50 mit beiden Funktionen; Server lehnt einen geaenderten Preis ohne Grund ab (Probe mit

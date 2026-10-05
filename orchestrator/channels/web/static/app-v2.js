@@ -1034,15 +1034,15 @@ function anPosOrig(p) {                                         // Rechnung: Bez
 }
 const anGrundText = (orig, grund) => grund ? `<small class="an-p-grund">✎ Preis geändert${orig !== "" ? " (vorher " + cent2eur(Number(orig)) + ")" : ""} · Grund: ${esc(grund)}</small>` : "";
 function anPosZeile(p = {}) {
-  const orig = anPosOrig(p), frei = AN_KONTEXT === "rechnung" && p.kontakte && !p.preis_grund;
+  const orig = anPosOrig(p), tkpFest = p.kontakte && AN_KONTEXT !== "rechnung";   // Rechnung: Preis immer direkt aenderbar
   const tkp = p.kontakte ? `<div class="an-p-tkp"><small>TKP</small><input class="v2-inp an-p-tkpwert" type="number" min="${(p.tkp_min_cent || 100) / 100}" max="${(p.tkp_max_cent || 50000) / 100}" step="1" value="${esc(String((p.tkp_cent || p.tkp_min_cent) / 100))}" aria-label="TKP in Euro"><small>€ · Spanne ${esc(String((p.tkp_min_cent || p.tkp_cent) / 100))}–${esc(String((p.tkp_max_cent || p.tkp_cent) / 100))} €${p.omr ? " · " + esc(omrText(p.omr)) : ""} · ${esc(Number(p.kontakte).toLocaleString("de-DE"))} Kontakte + ${esc(cent2eur(p.produktion_cent || 0))} Produktion</small></div>` : "";
   const prov = p.provision ? anProvFelder(p.provision) : "";
   return `<div class="v2-an-pos${p.provision ? " v2-an-prov" : ""}" data-prov="${p.provision ? "1" : ""}" data-orig="${esc(orig)}" data-grund="${esc(p.preis_grund || "")}" data-katalog="${esc(p.katalog_id || "")}" data-gruppe="${esc(p.gruppe || "")}" data-farbe="${esc(p.gruppe_farbe || "")}" data-kontakte="${esc(String(p.kontakte || ""))}" data-prod="${esc(String(p.produktion_cent || 0))}" data-tmin="${esc(String(p.tkp_min_cent || ""))}" data-tmax="${esc(String(p.tkp_max_cent || ""))}" data-omr="${esc(p.omr || "")}">
     <div class="v2-an-text"><input class="v2-inp an-p-beschreibung" value="${esc(p.beschreibung || "")}" placeholder="Leistung">
-      <input class="v2-inp an-p-detail" value="${esc(p.detail || "")}" placeholder="Detail (Reichweite, Hinweis) – optional">${tkp}${frei ? `<button class="v2-btn sm an-p-frei" data-act="an-preis-frei" title="Preis von Hand überschreiben (mit Grund)">✎ Preis überschreiben</button>` : ""}${prov}<span class="an-p-grund-box">${anGrundText(orig, p.preis_grund)}</span></div>
+      <input class="v2-inp an-p-detail" value="${esc(p.detail || "")}" placeholder="Detail (Reichweite, Hinweis) – optional">${tkp}${prov}<span class="an-p-grund-box">${anGrundText(orig, p.preis_grund)}</span></div>
     <input class="v2-inp an-p-menge" value="${esc(p.menge != null ? String(p.menge).replace(".", ",") : "1")}" placeholder="Menge" inputmode="decimal" aria-label="Menge">
     <input class="v2-inp an-p-einheit" value="${esc(p.einheit || "")}" placeholder="Einheit" aria-label="Einheit">
-    <input class="v2-inp an-p-preis" value="${p.einzelpreis_cent != null ? cent2feld(p.einzelpreis_cent) : ""}" placeholder="Einzelpreis €" inputmode="decimal" aria-label="Einzelpreis" ${p.kontakte ? 'readonly title="folgt aus dem TKP"' : ""}>
+    <input class="v2-inp an-p-preis" value="${p.einzelpreis_cent != null ? cent2feld(p.einzelpreis_cent) : ""}" placeholder="Einzelpreis €" inputmode="decimal" aria-label="Einzelpreis" ${tkpFest ? 'readonly title="folgt aus dem TKP"' : ""}>
     <span class="an-p-gesamt">–</span>
     <button class="v2-btn v2-an-weg" data-act="an-pos-weg" title="Position löschen" aria-label="Position löschen">🗑</button></div>`;
 }
@@ -1054,7 +1054,9 @@ document.addEventListener("change", (e) => {                // Rechnung: Preisae
   if (z.dataset.grund) { $(".an-p-grund-box", z).innerHTML = anGrundText(z.dataset.orig, z.dataset.grund); return; }
   const grund = (prompt(`Preis von ${cent2eur(orig)} auf ${cent2eur(neu)} ändern – Grund? (wird an der Position vermerkt, nicht auf der Rechnung gedruckt)`, "") || "").trim();
   if (!grund) { pr.value = cent2feld(orig); anSumme(); return; }
-  z.dataset.grund = grund; $(".an-p-grund-box", z).innerHTML = anGrundText(z.dataset.orig, grund); anSumme();
+  z.dataset.grund = grund; $(".an-p-grund-box", z).innerHTML = anGrundText(z.dataset.orig, grund);
+  if (z.dataset.kontakte) { delete z.dataset.kontakte; const t = $(".an-p-tkp", z); if (t) t.remove(); }   // eigener Preis statt TKP
+  anSumme();
 });
 /* Firmen-Suche mit Vorschlägen (statt Dropdown) */
 function firmaSucheVerdrahten() {   // genutzt von Angebots- und Rechnungs-Editor
@@ -1221,6 +1223,7 @@ function anSumme(ev) {
   if (ev && ev.target && ev.target.id === "an-fit") return anFitSetzen();
   const box = $("#an-summe-box"); if (!box) return;
   document.querySelectorAll("#an-pos .v2-an-pos").forEach(z => { const i = $(".an-p-tkpwert", z); if (!i || !z.dataset.kontakte) return;
+    if (ev && ev.target === $(".an-p-preis", z)) return;      // Rechnung: Preis wird gerade von Hand geaendert
     $(".an-p-preis", z).value = cent2feld(tkpPreis(Number(z.dataset.kontakte), Math.round(zahl(i.value) * 100), Number(z.dataset.prod || 0))); });
   document.querySelectorAll("#an-pos .v2-an-pos").forEach(z => { const pv = z.dataset.prov ? anProvBetrag(z) : undefined; const c = pv !== undefined ? pv : Math.round(zahl($(".an-p-menge", z).value) * zahl($(".an-p-preis", z).value) * 100); $(".an-p-gesamt", z).textContent = pv === null ? "nach Abrechnung" : isFinite(c) ? cent2eur(c) : "–"; });
   const leer = $("#an-pos-leer"); if (leer) leer.hidden = !!document.querySelector("#an-pos .v2-an-pos");
@@ -3492,11 +3495,6 @@ async function handleAct(act, el) {
     case "an-neu": return anEditor("", id || "");
     case "an-detail": return anDetail(id);
     case "an-bearbeiten": return anEditor(id);
-    case "an-preis-frei": { const z = el.closest(".v2-an-pos"); if (!z) return;
-      const grund = (prompt("Grund für den abweichenden Preis? (wird an der Position vermerkt, nicht auf der Rechnung gedruckt)", "") || "").trim(); if (!grund) return;
-      const pr = $(".an-p-preis", z); z.dataset.orig = String(Math.round(zahl(pr.value) * 100)); z.dataset.grund = grund; delete z.dataset.kontakte;
-      const t = $(".an-p-tkp", z); if (t) t.remove(); pr.removeAttribute("readonly"); pr.removeAttribute("title"); el.remove();
-      $(".an-p-grund-box", z).innerHTML = anGrundText(z.dataset.orig, grund); pr.focus(); pr.select(); return anSumme(); }
     case "an-pos-neu": { $("#an-pos").insertAdjacentHTML("beforeend", anPosZeile()); return anSumme(); }
     case "an-kat-neu": return anKatNeu();
     case "an-firma-wahl": return firmaWaehlen(id);
