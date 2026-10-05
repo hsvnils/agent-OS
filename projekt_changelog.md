@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 15:57] — Claude Code
+- **Was:** Deploy P1 + V1 live geprueft (CEO hat Push, NAS-Sync und Neustart ausgefuehrt): UI v98/v46; echter Katalog liefert
+  beide Canva-Links und Linktexte (Standard greift fuer den bestehenden NAS-Katalog); Agent 17 „Videograf-Berater (VID)“
+  aktiv, Profil mit 4 Watcher-Themen, 0 Skills (V2), Organigramm-Kachel „17 · VID“. Kein Test-Angebot angelegt (keine
+  Live-Daten geschrieben) -- PDF/Mail beim ersten echten Angebot pruefen.
+- **Warum:** CEO „Beide Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** NAS-Deploy, `ANGEBOT_PRAESENTATION_ROADMAP.md`, `VIDEOGRAF_ROADMAP.md`
+
 ## [2026-10-05 15:53] — Head of Agents (umgesetzt durch Claude Code)
 - **Was:** VIDEOGRAF V1 umgesetzt: bestaetigte Charta `agents/17_videograf.md` (Videograf-Berater, VID) angelegt, Registry
   und `governance/organigramm.md` ergaenzt; verdrahtet als befragbarer Fachagent (`ALL_AGENT_CHARTERS`, `_AGENT_KEYS`),

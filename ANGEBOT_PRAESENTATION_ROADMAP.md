@@ -3,7 +3,7 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/canva-videograf`
 - Basiscommit: `782e428`
-- Naechster Schritt: P1 gebaut (2026-10-05) -- Deploy-Go abwarten, dann live pruefen und abschliessen.
+- Naechster Schritt: P1 live (2026-10-05, Katalog mit beiden Links geprueft) -- beim ersten echten Angebot PDF/Mail pruefen, dann abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

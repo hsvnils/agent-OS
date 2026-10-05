@@ -3,7 +3,7 @@
 - Stand: 2026-10-05
 - Arbeitsbranch: `ai/canva-videograf`
 - Basiscommit: `782e428`
-- Naechster Schritt: V1 umgesetzt (2026-10-05) -- Deploy-Go (mit P1), danach CEO-Go fuer V2-V4.
+- Naechster Schritt: V1 live (2026-10-05) -- CEO-Go fuer V2-V4 abwarten.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
