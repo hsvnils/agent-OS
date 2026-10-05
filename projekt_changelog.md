@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-05 15:06] — Claude Code
+- **Was:** Zwei Roadmaps angelegt und in `ROADMAP.md` registriert: `ANGEBOT_PRAESENTATION_ROADMAP.md` (P1: Canva-Link
+  DE/EN je Angebot in PDF, digitalem Beleg und Mailtext) und `VIDEOGRAF_ROADMAP.md` (V1 Charta Agent 17 mit CEO-Diff,
+  V2 fuenf Skills, V3 Knopf in der Konzept-Mappe, V4 Chat-Routing). CEO-Entscheidungen im Register. Nur Plan.
+- **Warum:** CEO-Auftrag Canva-Links im Angebot und Videograf-Berater; Antworten: PDF + Mail, Sprache je Angebot,
+  eigener Agent 17, Knopf + Chat.
+- **Betroffen:** `ANGEBOT_PRAESENTATION_ROADMAP.md`, `VIDEOGRAF_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-05 15:00] — Claude Code
 - **Was:** Deploy BF-57 live geprueft: CFO-Profil zeigt „zuletzt“ 2026-10-05T14:52:44+02:00 (Alt-Eintrag als UTC gelesen,
   Datei unveraendert), Leistungsbericht zaehlt 1 Anfrage beim CFO ueber Werkzeuge. BF-57 auf „live geprueft“.
