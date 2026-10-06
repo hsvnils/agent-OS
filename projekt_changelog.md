@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 19:26] — Claude Code
+- **Was:** Deploy TKP-Ergaenzung live geprueft: app-v2.js v118 mit `katalogTkp` ausgeliefert; AB-2026-0001 nicht gesperrt, Position `feed` ohne gespeicherten TKP, Katalogrechnung ergibt TKP 20 -> 1.300 € (Preis bleibt). Gespeichert wird erst durch den CEO.
+- **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
+- **Betroffen:** keine Code-Aenderung (Pruefung)
+
 ## [2026-10-06 19:19] — Claude Code
 - **Was:** Alte Katalog-Positionen ohne gespeicherte TKP-Werte bekommen in bearbeitbaren Belegen die TKP-Zeile aus dem Katalog (`katalogTkp` in app-v2.js): TKP aus dem heutigen Preis zurueckgerechnet, Preis bleibt, Speichern erst durch den CEO; gesperrte Belege unveraendert. Cache app-v2.js v118.
 - **Warum:** CEO 2026-10-06: TKP-Kalkulation an der Position von AB-2026-0001 (CR Container, 1.300 € = 52.000 x 20 € TKP + 260 € Produktion) war nicht zu oeffnen, weil die Position vom 28.09. die Werte nicht gespeichert hatte -- „bau das bitte automatisch ein“.
