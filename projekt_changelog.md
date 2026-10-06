@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 19:46] — Claude Code
+- **Was:** Roadmap `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md` angelegt (geplant): P1 Schalter „Investment-Vorschlaege pausieren“ systemweit (Telegram + LUNA-OS, Tracking laeuft weiter), P2 Anbieter- und Datenquellen-Liste mit Einrichtungsstatus und Kostenhinweis (Doku-Check gegen Veralten), P3 Kosten je Anbieter (optional). Analyse der Investment-Jobs und Anbieter (read-only).
+- **Warum:** CEO 2026-10-06: Pausenknopf fuer Investment-Vorschlaege, „systemweit“, und Liste der Anbieter, die Kosten verursachen koennten.
+- **Betroffen:** `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-06 19:26] — Claude Code
 - **Was:** Deploy TKP-Ergaenzung live geprueft: app-v2.js v118 mit `katalogTkp` ausgeliefert; AB-2026-0001 nicht gesperrt, Position `feed` ohne gespeicherten TKP, Katalogrechnung ergibt TKP 20 -> 1.300 € (Preis bleibt). Gespeichert wird erst durch den CEO.
 - **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
