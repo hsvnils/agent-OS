@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 09:48] — Claude Code
+- **Was:** „Letzte Zahlungen“ wieder neueste oben (BF-63): `finTabelle` sortiert fest nach Datum absteigend statt die Liste
+  umzudrehen (Journal/Drill-down kamen aufsteigend, „Letzte Zahlungen“ schon absteigend). Browserpruefung beider Lieferrichtungen,
+  Suite gruen.
+- **Warum:** CEO: „Bei letzten Zahlungen sind die Eintraege noch falsch herum sortiert.“
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-10-06 09:46] — Claude Code
 - **Was:** Globale Suche findet jetzt auch Mails, die noch auf ihre Zuordnung warten oder „keiner Firma“ zugeordnet wurden
   (`core/firmenakte.ohne_firma`, Suche Gruppe „Akte & Mails“, Klick oeffnet die Mail; `GET /api/crm/akte/<id>/datei` liefert auch
