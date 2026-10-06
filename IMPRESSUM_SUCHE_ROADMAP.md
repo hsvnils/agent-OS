@@ -4,7 +4,7 @@
 - Stand: 2026-10-06
 - Arbeitsbranch: `ai/impressum-suche`
 - Basiscommit: `1120e1f`
-- Naechster Schritt: I1 gebaut (2026-10-06) -- CEO-Go fuer Merge, Push und Deploy; I2 (lokale KI) nur bei Bedarf.
+- Naechster Schritt: I1 live (2026-10-06) -- Abnahme durch den CEO beim naechsten Neukunden; I2 (lokale KI) nur bei Bedarf.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

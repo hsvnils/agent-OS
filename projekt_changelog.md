@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 09:16] — Claude Code
+- **Was:** Deploy Sofort-Aktualisierung (BF-59) und IMPRESSUM_SUCHE I1 live geprueft: LUNA-OS laedt v110/v56 mit beiden Funktionen;
+  `POST /api/crm/impressum-suche` auf der NAS liest hsv.de korrekt (Name, PLZ, USt-ID, Amtsgericht Hamburg HRB 191603); Fritz!Box
+  (192.168.178.1) und localhost werden abgelehnt; die eigene DDNS-Adresse ist oeffentlich und wird wie jede Website behandelt (kein
+  Impressum gefunden). Push vom CEO ausgefuehrt.
+- **Warum:** CEO: „Alle drei Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** `IMPRESSUM_SUCHE_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-06 09:11] — Claude Code
 - **Was:** IMPRESSUM_SUCHE I1 gebaut: im Formular „Neue Firma“ und in der Firma Feld „Website oder Link zum Impressum“ + „🔎 Kundendaten
   suchen“ -- LUNA liest Firmenname (Rechtsform), Adresse, USt-ID, Handelsregister, Telefon, Rechnungs-Mail und Website aus dem
