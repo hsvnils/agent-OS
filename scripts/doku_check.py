@@ -123,7 +123,9 @@ def pruefe_roadmaps() -> list[str]:
             continue
         kopf = p.read_text(encoding="utf-8").splitlines()[:25]
         felder = {}
-        for z in kopf:
+        for i, z in enumerate(kopf):
+            if i and z.startswith("## "):                     # nur der Kopf bis zur ersten Ueberschrift (Etappen-Status zaehlt nicht)
+                break
             m = re.match(r"-\s*([A-Za-z ]+):\s*(.*)", z)
             if m:
                 felder[m.group(1).strip()] = m.group(2).strip()

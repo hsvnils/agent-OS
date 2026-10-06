@@ -18,6 +18,13 @@ Eintragsformat:
 ## Eintraege
 
 ## [2026-10-06 09:39] — Claude Code
+- **Was:** `scripts/doku_check.py` liest den Roadmap-Kopf nur bis zur ersten Ueberschrift (BF-62) -- bei kurzen Roadmaps wurde sonst
+  der Etappen-Status als Roadmap-Status gelesen; der G1-Commit war mit dieser Meldung durchgelaufen, weil die Ausgabe in einer
+  Pipe stand. Doku-Check jetzt ohne Abweichung.
+- **Warum:** Eigener Befund beim G1-Commit.
+- **Betroffen:** `scripts/doku_check.py`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
+## [2026-10-06 09:39] — Claude Code
 - **Was:** GLOBALE_SUCHE G1 gebaut: 🔎 in der Kopfleiste (Rechner auch Taste „/“) sucht beim Tippen ueber Kunden & Interessenten,
   Angebote, Auftraege, Rechnungen (auch Entwuerfe), Mahnungen, Ausgaben (Belege), Eigenbelege, Content-Plan (inkl. Serien,
   Anlaesse), Konzepte und die Akte; Ergebnisse nach Kategorien mit Anzahl, Klick oeffnet den Treffer; Betraege („1.600“, „89,95“),
