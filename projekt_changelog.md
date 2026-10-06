@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 09:56] — Claude Code
+- **Was:** Deploy „Suche findet Mails ohne Firma“ + BF-63 live geprueft (nur lesend): LUNA-OS laedt v113; Suche „puma“ findet
+  „Bestellt: „PUMA Unisex Anzarun Lite...““ (keiner Firma zugeordnet), die Mail oeffnet als PDF (200); „Letzte Zahlungen“ kommen
+  vom Server absteigend (30.09. zuerst) und werden fest nach Datum absteigend angezeigt. Push vom CEO.
+- **Warum:** CEO: „Alle drei Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-06 09:48] — Claude Code
 - **Was:** „Letzte Zahlungen“ wieder neueste oben (BF-63): `finTabelle` sortiert fest nach Datum absteigend statt die Liste
   umzudrehen (Journal/Drill-down kamen aufsteigend, „Letzte Zahlungen“ schon absteigend). Browserpruefung beider Lieferrichtungen,
