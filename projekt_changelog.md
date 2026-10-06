@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 19:06] — Claude Code
+- **Was:** Deploy BELEG_BEARBEITBAR B1-B3 live geprueft: app-v2.js v117 / style-v2.css v60 ausgeliefert, neue Aktionen im JS vorhanden; AB-2026-0001 und AB-2026-0002 (nicht versendet) ohne Sperre, also im Formular aenderbar; Endpunkt Entsperren antwortet (ohne Grund abgelehnt, nichts geschrieben).
+- **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
+- **Betroffen:** keine Code-Aenderung (Pruefung)
+
 ## [2026-10-06 18:52] — Claude Code
 - **Was:** BELEG_BEARBEITBAR B1-B3 gebaut: Auftrag bis zum Versand voll bearbeitbar (alle Formularfelder, Vorkasse neu berechnet; fest bei festgeschriebener Rechnung oder erfassten Postings); Angebot und Auftrag nach dem Versand ueber „✎ Bearbeiten …“ mit Begruendung als neue Fassung (Version N in PDF und Mailbetreff, alte Angebots-Erinnerungen werden entfernt); Rechnung: „✉️ Senden …“ schreibt beim Versand fest (Nummer, dann Versand ueber LUNA oder Mail-Programm), „🔒 Ohne Mail festschreiben …“ fuer Papier, „✎ Bearbeiten …“ = Storno + Korrektur-Entwurf. Neue Ereignisse `auftrag_entsperrt`, `angebot_entsperrt`; Endpunkte `/api/crm/auftraege/<nr>/entsperren`, `/api/crm/angebote/<nr>/entsperren`. Handlungsbedarf „Rechnungsentwurf pruefen und senden“. Cache app-v2.js v117, style-v2.css v60.
 - **Warum:** CEO 2026-10-06: „Ein Beleg muss immer bearbeitbar und speicherbar sein; erst wenn er verschickt wird, festgeschrieben, danach nur mit Bearbeiten und Begruendung“ -- Go fuer B1 bis B3.
