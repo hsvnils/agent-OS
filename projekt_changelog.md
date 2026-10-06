@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 12:15] — Claude Code
+- **Was:** CEO hat die 4 PDFs der Testrechnungen RE-2026-0001 bis -0004 in LUNAs Drive (`LUNA-Buchhaltung/Belege/2026`, Konto luna.hanserautisch@gmail.com) geloescht. Die Tages-Staende unter `LUNA-Buchhaltung/Stand/` bleiben bewusst erhalten (enthalten bis 06.10. noch die alte Kette).
+- **Warum:** Abschluss der Bereinigung CR Container (CEO-Anweisung).
+- **Betroffen:** Google Drive von LUNA (nicht im Git)
+
 ## [2026-10-06 12:11] — Claude Code
 - **Was:** Sicherung `buchhaltung/log.jsonl.vor-bereinigung-20261006` auf der NAS vom CEO geloescht (nach erfolgreicher Live-Pruefung der Bereinigung); damit sind die Testrechnungen RE-2026-0001 bis -0004 auch aus dieser Kopie entfernt.
 - **Warum:** CEO-Anweisung, Abschluss der Bereinigung CR Container.
