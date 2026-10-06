@@ -3185,6 +3185,7 @@ async function finDrill(query) {
     + `<small class="v2-sub">Zeile anklicken: Rechnung/Beleg öffnen. Stornierte Zahlungen sind durchgestrichen und zählen nicht; Abschreibung erscheint monatlich.</small>`, true);
 }
 function finTabelle(zeilen, summe) {
+  zeilen = [...zeilen].reverse();                                   // neueste oben (CEO 2026-10-06); Server/CSV bleiben chronologisch
   const rows = zeilen.map(z => `<tr class="klick${z.storniert ? " v2-fin-storno" : ""}" data-act="${String(z.bezug).startsWith("RE-") ? "re-detail" : FIN_ACT[z.quelle]}" data-id="${esc(z.bezug)}"><td>${z.quelle === "afa" ? esc(z.datum.slice(5, 7) + "/" + z.datum.slice(0, 4)) : esc(datumDe(z.datum))}${z.zuordnung_jahr ? ` <small title="10-Tage-Regel">→ ${esc(z.zuordnung_jahr)}</small>` : ""}</td><td><b>${esc(z.bezug)}</b></td><td>${z.firma_nr ? `<small class="v2-sub">${esc(z.firma_nr)}</small> ` : ""}${esc(z.gegenpartei || "")}</td><td>${esc(z.text || "")}${z.storniert ? ` <span class="v2-badge err">storniert</span>` : ""}</td><td><small>${esc(z.position)}</small></td>
     <td style="text-align:right;color:var(--v2-green)">${z.art === "einnahme" ? esc(cent2eur(z.betrag_cent)) : ""}</td><td style="text-align:right;color:var(--v2-red)">${z.art === "ausgabe" && z.quelle !== "afa" ? esc(cent2eur(z.betrag_cent)) : ""}</td>${summe ? `<td style="text-align:right">${z.art === "ausgabe" && !z.storniert ? esc(cent2eur(z.abziehbar_cent)) : ""}</td>` : ""}</tr>`).join("");
   const gueltig = zeilen.filter(z => !z.storniert), s = (a, feld) => gueltig.filter(z => z.art === a).reduce((x, z) => x + z[feld], 0);
@@ -3194,7 +3195,7 @@ function finTabelle(zeilen, summe) {
 async function finJournal(jahr) {
   const d = await jget("/api/finanzen/journal?jahr=" + jahr) || { zeilen: [] };
   const inhalt = d.zeilen.length ? finTabelle(d.zeilen, true) : emptyRow("Keine Zahlungen in " + jahr + ".");
-  return tile("Journal " + jahr + " — alle Zahlungen nach Zahlungsdatum", inhalt + `<div class="v2-card-actions" style="margin-top:10px"><a class="v2-btn" data-kalk-link href="/api/finanzen/journal?jahr=${jahr}&format=csv">⬇ Als CSV (Excel/Numbers)</a><label class="v2-modlbl"><input type="checkbox" data-act="fin-kalk-export"> kalkulatorische Kosten beilegen</label><small class="v2-sub">Stornierte Zahlungen bleiben sichtbar, zählen aber nicht. „→ Jahr“ = 10-Tage-Regel.</small></div>`, "w12");
+  return tile("Journal " + jahr + " — alle Zahlungen, neueste oben", inhalt + `<div class="v2-card-actions" style="margin-top:10px"><a class="v2-btn" data-kalk-link href="/api/finanzen/journal?jahr=${jahr}&format=csv">⬇ Als CSV (Excel/Numbers)</a><label class="v2-modlbl"><input type="checkbox" data-act="fin-kalk-export"> kalkulatorische Kosten beilegen</label><small class="v2-sub">Stornierte Zahlungen bleiben sichtbar, zählen aber nicht. „→ Jahr“ = 10-Tage-Regel.</small></div>`, "w12");
 }
 async function finEuer(jahr) {
   const e = await jget("/api/finanzen/euer?jahr=" + jahr);

@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 09:20] — Claude Code
+- **Was:** Ausgaben-/Buchungslisten in Finanzen (Drill-down hinter den Kacheln und Journal) zeigen die neuesten Eintraege oben
+  (`finTabelle` dreht die Anzeige; Server und CSV-Export bleiben chronologisch), Browser-Pruefung der Reihenfolge. Roadmap
+  `GLOBALE_SUCHE_ROADMAP.md` angelegt (G1 Suche ueber alle Geschaeftsdaten nach Kategorien, G2 optional Inhalte von Belegen/Mails).
+- **Warum:** CEO 2026-10-06: Ausgaben „genau andersrum sortieren“; Frage nach globaler Textsuche.
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `GLOBALE_SUCHE_ROADMAP.md` (neu), `ROADMAP.md`
+
 ## [2026-10-06 09:16] — Claude Code
 - **Was:** Deploy Sofort-Aktualisierung (BF-59) und IMPRESSUM_SUCHE I1 live geprueft: LUNA-OS laedt v110/v56 mit beiden Funktionen;
   `POST /api/crm/impressum-suche` auf der NAS liest hsv.de korrekt (Name, PLZ, USt-ID, Amtsgericht Hamburg HRB 191603); Fritz!Box
