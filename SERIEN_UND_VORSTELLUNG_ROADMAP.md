@@ -4,7 +4,7 @@
 - Stand: 2026-10-06
 - Arbeitsbranch: `ai/serien-und-akquise`
 - Basiscommit: `ba6465b`
-- Naechster Schritt: S1, V1, V2 gebaut (2026-10-06) -- CEO-Go fuer Merge, Push und Deploy; danach echter Testversand an eine CEO-Adresse (Gate V1).
+- Naechster Schritt: S1, V1, V2 live (2026-10-06) -- echter Testversand an eine CEO-Adresse (Gate V1), dann Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

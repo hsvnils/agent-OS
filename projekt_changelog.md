@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 08:57] — Claude Code
+- **Was:** Deploy SERIEN_UND_VORSTELLUNG live geprueft (nur lesend): LUNA-OS laedt v108/v55; Content-Plan liefert die Rhythmen;
+  Vorschau der Vorstellungs-Mail mit Absender luna@hanserautisch.de, Canva-Link und UWG-Hinweis, Versand bereit; Textbaustein-Arten
+  „Vorstellung“/„Nachfassen“ da; neue Antwort-Erkennung auf der NAS. Push vom CEO. Offen: echter Testversand (Gate V1).
+- **Warum:** CEO: „Alle drei Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** `SERIEN_UND_VORSTELLUNG_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-06 08:51] — Claude Code
 - **Was:** SERIEN_UND_VORSTELLUNG S1, V1, V2 gebaut. S1: wiederkehrender Content im Content-Plan (woechentlich, alle 2 Wochen,
   monatlich, Ende optional; Termine berechnet, je Termin aendern/auslassen, „diesen und folgende“, Serie beenden). V1:
