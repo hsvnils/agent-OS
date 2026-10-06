@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 22:31] — Claude Code
+- **Was:** Deploy VORSCHLAGSPAUSE_ANBIETER P1+P2 live geprueft: app-v2.js v119 / style-v2.css v61 ausgeliefert, `/api/investment/pause` antwortet (nicht pausiert), `/api/anbieter` liefert 25 Anbieter, 18 eingerichtet, 11 davon koennen Kosten verursachen; nicht eingerichtet: Cartesia, AgentOps. Bot-Herzschlag 15 min alt (Takt 15 min).
+- **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
+- **Betroffen:** keine Code-Aenderung (Pruefung)
+
 ## [2026-10-06 19:56] — Claude Code
 - **Was:** VORSCHLAGSPAUSE_ANBIETER P1+P2 gebaut. P1: Schalter „Investment-Vorschlaege pausieren“ (Einstellungen, Investment-App, LUNA-Werkzeug `investment_vorschlaege_pausieren`) -- systemweit keine automatischen Vorschlaege, Freigaben, Investment-Meldungen, Glocken-Eintraege; Auto-Trader pausiert mit, Paper-Stop-Loss schuetzt weiter, Tracking laeuft; unterdrueckte Vorschlaege werden gezaehlt (Tabelle `unterdrueckt`). P2: `governance/dienste_register.py` zur vollstaendigen Anbieter-Liste ausgebaut (25 Anbieter, Stand nur aus Schluesselnamen, Tarif, Kostenerfassung, Konto-Link), Seite „🔌 Anbieter & Datenquellen“, Kachel „Datenquellen“ in der Investment-App, Quelle an Vorschlaegen, `GET /api/anbieter`, `GET /api/investment/pause`; Doku-Check Pruefung 7 (Schluessel im Code ohne Anbieter = rot). Cache app-v2.js v119, style-v2.css v61.
 - **Warum:** CEO 2026-10-06: Pausenknopf fuer Investment-Vorschlaege systemweit, Tracking weiter; Liste der Anbieter/Datenquellen, vor allem moeglicher Kostenverursacher -- Go P1+P2, Empfehlungen (Auto-Trader pausiert, Stop-Loss laeuft) angenommen.
