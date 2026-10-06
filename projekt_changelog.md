@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 18:43] — Claude Code
+- **Was:** Deploy der Beleg-Nacharbeit (BF-65) live geprueft: app-v2.js v116 / style-v2.css v59 ausgeliefert, Knopf „+ Neuer Auftrag“ im Reiter Auftraege, Breite 1600 px, Scroll-Sperre und buendige Zeilen aktiv.
+- **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
+- **Betroffen:** keine Code-Aenderung (Pruefung)
+
 ## [2026-10-06 18:38] — Claude Code
 - **Was:** Nacharbeit aus der CEO-Abnahme „Beleg in einer Ebene“: nur noch ein Scroll-Balken (Seite hinter offenem Fenster gesperrt), ganzseitige Belege nutzen bis 1600 px Breite, Eingabezeilen buendig ohne Ueberstand (Zahlungsbedingungen/Vorkasse gerade, Zahlungsziel kurz beschriftet), Fenster „Ausgabe aus Bestellbestaetigung“ bricht nach unten um statt seitlich zu scrollen, Reiter Auftraege mit Knopf „+ Neuer Auftrag“ oben rechts (zweiter Knopf entfaellt). Neue Roadmap `BELEG_BEARBEITBAR_ROADMAP.md` (geplant): Belege bis zum Versand bearbeitbar, danach nur mit Begruendung. BF-65. Cache app-v2.js v116, style-v2.css v59.
 - **Warum:** CEO-Rueckmeldung 2026-10-06 (Screenshots PUMA-Buchung, AB-2026-0001, Reiter Auftraege).
