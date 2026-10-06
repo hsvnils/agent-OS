@@ -48,7 +48,8 @@ def nachricht(an: str, betreff: str, text: str, anhaenge: list | None, absender:
     msg["Subject"] = betreff
     msg["Date"] = formatdate(localtime=True)
     msg["Message-ID"] = f"<{kennung}@{domain or 'localhost'}>"
-    msg.set_content(text)
+    from ..core.textbausteine import mail_inhalt
+    mail_inhalt(msg, text)                                    # Text + ggf. HTML mit klickbaren Links (Signatur)
     for name, daten, typ in anhaenge or []:
         haupt, _, unter = (typ or "application/octet-stream").partition("/")
         msg.add_attachment(daten, maintype=haupt, subtype=unter or "octet-stream", filename=name)

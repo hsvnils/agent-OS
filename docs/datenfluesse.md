@@ -109,6 +109,7 @@ Hosts, die im Code nur als Link, Schema, Mock oder Test vorkommen (kein Datenflu
 
 ```doku-check:hosts-ignoriert
 github.com                     # Anzeige-Links in github_watch
+instagram.com                  # nur Beispiel im Signatur-Hinweis (Links schreibt der CEO selbst; kein Abruf)
 www.sec.gov                    # Anzeige-Links
 www.tradingview.com            # Anzeige-Links
 www.coingecko.com              # Registrierungs-Link

@@ -87,6 +87,34 @@ _PH = re.compile(r"\{([^{}]*)\}")
 MAX_VORLAGEN, MAX_TEXT, MAX_SIGNATUR = 10, 4000, 1500
 
 
+# Links in Signatur/Text (CEO 2026-10-06): „[Instagram](https://instagram.com/hanserautisch)“ -> im HTML-Teil klickbares Wort,
+# im Textteil „Instagram (https://…)“ fuer Mail-Programme ohne HTML. Nur http(s).
+LINK = re.compile(r"\[([^\[\]\n]{1,80})\]\((https?://[^\s()<>\"]{3,300})\)")
+
+
+def nur_text(text: str) -> str:
+    return LINK.sub(lambda m: f"{m.group(1)} ({m.group(2)})", text or "")
+
+
+def als_html(text: str) -> str:
+    import html as _h
+    teile, pos = [], 0
+    for m in LINK.finditer(text or ""):
+        teile.append(_h.escape(text[pos:m.start()]))
+        teile.append(f'<a href="{_h.escape(m.group(2), quote=True)}">{_h.escape(m.group(1))}</a>')
+        pos = m.end()
+    teile.append(_h.escape((text or "")[pos:]))
+    rumpf = "".join(teile).replace("\n", "<br>\n")
+    return f'<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.45;">{rumpf}</div>'
+
+
+def mail_inhalt(msg, text: str) -> None:
+    """Text (immer) + HTML-Alternative (nur wenn Links vorkommen) -- vor den Anhaengen aufrufen."""
+    msg.set_content(nur_text(text), charset="utf-8")
+    if LINK.search(text or ""):
+        msg.add_alternative(als_html(text), subtype="html", charset="utf-8")
+
+
 def anrede_werte(ap: dict | None) -> dict:
     vn, nn = ((ap or {}).get("vorname") or "").strip(), ((ap or {}).get("nachname") or "").strip()
     name = " ".join(x for x in (vn, nn) if x)
@@ -210,6 +238,6 @@ def eml(an: str, betreff: str, text: str, anhang: tuple[str, bytes]) -> bytes:
     m["Subject"] = betreff
     m["Date"] = formatdate(localtime=True)
     m["X-Unsent"] = "1"
-    m.set_content(text, charset="utf-8")
+    mail_inhalt(m, text)
     m.add_attachment(anhang[1], maintype="application", subtype="pdf", filename=anhang[0])
     return m.as_bytes()

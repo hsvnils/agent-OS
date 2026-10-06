@@ -3815,6 +3815,7 @@ function tbZeichnen(meldung) {
   box.innerHTML = (meldung ? `<div class="v2-msg ${meldung.ok ? "ok" : "err"}" style="margin-bottom:10px">${esc(meldung.text)}</div>` : "")
     + `<small class="v2-sub">Gilt für jede Mail ab dem nächsten Versand – „Senden …“ über LUNA und „✉️ Im Mail-Programm öffnen“. Vor dem Versand kannst du den Text für die eine Mail noch anpassen. Bereits versendete Mails bleiben unverändert.</small>
     <label class="v2-feld" style="margin-top:10px"><small>Signatur (steht unter jedem Text)</small><textarea id="tb-signatur" class="v2-inp" rows="7" ${ro}>${esc(TB.d.signatur)}</textarea></label>
+    ${ro ? "" : `<div class="v2-tb-link"><button class="v2-btn sm" data-act="tb-link">🔗 Link einfügen</button><small class="v2-sub">Klickbare Wörter so schreiben: <code>[Instagram](https://instagram.com/hanserautisch)</code> – im Mail-Programm erscheint nur „Instagram“ als Link.</small></div>`}
     <div class="v2-chips v2-tb-arten">${Object.entries(TB.arten).map(([k, l]) => `<button class="v2-chip ${k === art ? "on" : ""}" data-act="tb-art" data-val="${esc(k)}">${esc(l)} <small>${(TB.d.vorlagen[k] || []).length}</small></button>`).join("")}</div>
     ${liste.map((v, i) => `<div class="v2-tb-vorlage" data-i="${i}"><div class="v2-an-zeile"><label class="v2-feld"><small>Name der Vorlage</small><input class="v2-inp tb-name" value="${esc(v.name)}" ${ro}></label>
         <label class="v2-modlbl"><input type="radio" name="tb-std" data-act="tb-standard" data-val="${i}" ${v.standard ? "checked" : ""} ${ro}> Standard</label></div>
@@ -3997,6 +3998,12 @@ async function handleAct(act, el) {
       return renderFinanzen(`Verlustvortrag ${val}: ${cent2eur(r.betrag_cent)} gespeichert.`);
     }
     case "eb-neu": return ebNeu(val);
+    case "tb-link": { const t = $("#tb-signatur"); if (!t) return;                 // klickbares Wort in die Signatur einfuegen
+      const wort = (prompt("Welches Wort soll klickbar sein? (z. B. Instagram)", t.value.slice(t.selectionStart, t.selectionEnd)) || "").trim(); if (!wort) return;
+      let url = (prompt(`Link für „${wort}“ (z. B. https://instagram.com/hanserautisch)`, "https://") || "").trim(); if (!url || url === "https://") return;
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+      const a = t.selectionStart, e = t.selectionEnd; t.setRangeText(`[${wort}](${url})`, a, e, "end");
+      t.dispatchEvent(new Event("input", { bubbles: true })); t.focus(); return; }
     case "eb-aus-mail": { const v = await jget(`/api/finanzen/bestellung/${encodeURIComponent(id)}/vorschlag`);
       if (!v) return alert("Die Bestellbestätigung konnte nicht gelesen werden."); return ebNeu("ausgabe", v); }
     case "eb-speichern": return ebSpeichern(val);

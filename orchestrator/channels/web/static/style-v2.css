@@ -1067,3 +1067,8 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-suche-treffer { width: 100%; text-align: left; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-radius: 10px; }
 .v2-suche-treffer:hover, .v2-suche-treffer:focus-visible { background: var(--v2-accent-soft); }
 .v2-suche-treffer .grow { min-width: 0; } .v2-suche-treffer small { overflow-wrap: anywhere; }
+/* Chips als Knopf (z. B. Textbausteine-Arten) im dunklen Modus lesbar (2026-10-06) */
+button.v2-chip { color: var(--v2-fg); font: inherit; font-size: 13px; cursor: pointer; }
+button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-accent-soft); }
+.v2-tb-link { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 2px; }
+.v2-tb-link code { font-size: 12px; overflow-wrap: anywhere; }

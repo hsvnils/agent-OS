@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 10:57] — Claude Code
+- **Was:** Klickbare Links in der Signatur (und im Mailtext): `[Instagram](https://instagram.com/hanserautisch)` -> im Mail-Programm
+  nur „Instagram“ als Link; `core/textbausteine.mail_inhalt` erzeugt Text + HTML-Teil (nur wenn Links vorkommen, nur http(s), Text
+  maskiert) fuer All-Inkl-Versand, Gmail und die .eml fuers eigene Mail-Programm; in den Einstellungen Knopf „🔗 Link einfuegen“ +
+  Hinweis zur Schreibweise. Lesbarkeit der Belegart-Knoepfe im dunklen Modus behoben (BF-64). 2 neue Tests (3 Gegenproben rot),
+  Browsertest Dunkelmodus Rechner/iPad/iPhone, Suite gruen. Cache v115/v58.
+- **Warum:** CEO: „Hier kann man die Beschriftung nicht lesen … bei Instagram, Facebook und Twitter einen Link hinterlegen“.
+- **Betroffen:** `orchestrator/core/textbausteine.py`, `orchestrator/governance/allinkl_mail.py`,
+  `orchestrator/governance/google_workspace.py`, `static/app-v2.js`, `style-v2.css`, `index-v2.html`,
+  `orchestrator/tests/test_signatur_links.py` (neu), `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-06 10:27] — Claude Code
 - **Was:** Deploy „Bestellbestaetigung als Eigenbeleg“ live geprueft (nur lesend): LUNA-OS laedt v114; im Handlungsbedarf steht
   „🛒 Bestellung als Ausgabe buchen: PUMA …“ (Geschaeft); Vorschlag 30.09.2026, 34,99 €, Amazon.de -> Firma K-00004 erkannt,

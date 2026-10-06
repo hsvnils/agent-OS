@@ -575,7 +575,8 @@ def _mime(an: str, betreff: str, text: str, anhaenge: list | None = None, absend
         msg["From"] = absender
     msg["To"] = an
     msg["Subject"] = betreff
-    msg.set_content(text)
+    from ..core.textbausteine import mail_inhalt
+    mail_inhalt(msg, text)                                    # Text + ggf. HTML mit klickbaren Links (Signatur)
     for name, daten, typ in anhaenge or []:                     # z. B. Angebots-PDF (KUNDEN_FINANZEN Etappe 3)
         haupt, _, unter = (typ or "application/octet-stream").partition("/")
         msg.add_attachment(daten, maintype=haupt, subtype=unter or "octet-stream", filename=name)
