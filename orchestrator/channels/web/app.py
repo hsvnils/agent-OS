@@ -1661,6 +1661,14 @@ def _recherche():
     return FirmenRecherche(kunden_store, suche=suche)
 
 
+@app.get("/api/suche")
+def globale_suche(request: Request, q: str = ""):
+    """GLOBALE_SUCHE G1: eine Suche ueber alle Geschaeftsdaten, nach Kategorien; nur Bereiche, die der Nutzer sehen darf."""
+    from ...core.suche import suchen
+    u = getattr(request.state, "user", None) or _ceo_user()
+    return suchen(kunden_store.bh, kunden_store, q[:100], apps=erlaubte_apps(u))
+
+
 @app.post("/api/crm/impressum-suche")
 async def impressum_suche(request: Request):
     """IMPRESSUM_SUCHE I1: {"url": "…"} -> Kundendaten aus dem Impressum als Vorschlag (nichts gespeichert);

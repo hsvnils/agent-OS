@@ -17,6 +17,17 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 09:39] — Claude Code
+- **Was:** GLOBALE_SUCHE G1 gebaut: 🔎 in der Kopfleiste (Rechner auch Taste „/“) sucht beim Tippen ueber Kunden & Interessenten,
+  Angebote, Auftraege, Rechnungen (auch Entwuerfe), Mahnungen, Ausgaben (Belege), Eigenbelege, Content-Plan (inkl. Serien,
+  Anlaesse), Konzepte und die Akte; Ergebnisse nach Kategorien mit Anzahl, Klick oeffnet den Treffer; Betraege („1.600“, „89,95“),
+  Daten („03.10.“, „Oktober 2026“), Umlaute egal; nur Bereiche mit Recht. `core/suche.py`, `GET /api/suche`. 5 neue Tests
+  (3 Gegenproben rot), Browsertest Rechner/iPad/iPhone 17 Pro, Suite gruen. Cache v112/v57.
+- **Warum:** CEO: „Go fuer G1“.
+- **Betroffen:** `orchestrator/core/suche.py` (neu), `orchestrator/channels/web/app.py`, `static/app-v2.js`, `style-v2.css`,
+  `index-v2.html`, `orchestrator/tests/test_suche.py` (neu), `GLOBALE_SUCHE_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`,
+  `docs/entscheidungs-register.md`
+
 ## [2026-10-06 09:20] — Claude Code
 - **Was:** Ausgaben-/Buchungslisten in Finanzen (Drill-down hinter den Kacheln und Journal) zeigen die neuesten Eintraege oben
   (`finTabelle` dreht die Anzeige; Server und CSV-Export bleiben chronologisch), Browser-Pruefung der Reihenfolge. Roadmap

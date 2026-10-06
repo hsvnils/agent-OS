@@ -1,10 +1,10 @@
 # Roadmap: Globale Suche in LUNA-OS
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-06
 - Arbeitsbranch: `ai/suche-und-sortierung`
 - Basiscommit: `e3c8e23`
-- Naechster Schritt: CEO-Go fuer G1 (und ggf. G2) abwarten.
+- Naechster Schritt: G1 gebaut (2026-10-06) -- CEO-Go fuer Merge, Push und Deploy; G2 nur bei Bedarf.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -21,7 +21,7 @@
 
 ## Etappe G1: Suche ueber alle Geschaeftsdaten
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Lupe 🔎 oben in der Leiste (Rechner: auch Taste „/“), Suchfeld mit Ergebnissen beim Tippen, gruppiert nach
   **Kunden & Interessenten, Angebote, Auftraege, Rechnungen, Mahnungen, Ausgaben (Belege), Eigenbelege, Content-Plan,
   Konzepte, Akte & Mails** -- je Gruppe Anzahl + die besten Treffer, Klick oeffnet den Beleg/die Firma. Gesucht wird in
@@ -30,6 +30,10 @@
 - Gate: Tests (Treffer je Kategorie, Betrag/Datum, Umlaute, Rechte, Gegenprobe); Browsertest Rechner/iPad/iPhone 17 Pro;
   Antwortzeit unter 1 s bei heutigem Datenbestand.
 - Aufwand: mittel.
+- Umsetzung (2026-10-06): `core/suche.py` (je Datensatz normalisierter Suchtext inkl. Betraegen „1.600,00/1600“ und Daten
+  „03.10.2026/oktober 2026“; alle Suchwoerter muessen vorkommen; Kategorien nur bei Recht auf die App; je Gruppe Anzahl + 8 beste
+  Treffer, exakte Nummer zuerst, sonst neueste), `GET /api/suche?q=`. Oberflaeche: 🔎 in der Kopfleiste und Taste „/“, Suche beim
+  Tippen, Enter oeffnet den ersten Treffer, Klick oeffnet Firma/Beleg/Content-Plan-Tag/Konzept.
 
 ## Etappe G2: Inhalte durchsuchen (optional)
 

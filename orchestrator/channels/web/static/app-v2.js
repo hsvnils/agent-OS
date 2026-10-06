@@ -990,6 +990,39 @@ async function impressumSuchen(prefix, el) {
     + (r.quelle ? ` <a href="${esc(r.quelle)}" target="_blank" rel="noopener">Quelle ↗</a>` : "")
     + (anders.length ? `<br><small>Nicht überschrieben (schon ausgefüllt): ${esc(anders.join(" · "))}</small>` : "");
 }
+/* GLOBALE_SUCHE G1: eine Suche ueber alles Geschaeftliche, Ergebnisse nach Kategorien */
+let SUCHE = { q: "", timer: null, nr: 0, erster: null };
+function sucheOeffnen() {
+  openModal("🔎 Suchen", `<div class="v2-suche"><input id="suche-q" class="v2-inp" type="search" autocomplete="off" enterkeyhint="search"
+      placeholder="Firma, Nummer, Titel, Betrag (1.600), Datum (03.10.) …" value="${esc(SUCHE.q)}">
+    <small class="v2-sub">Durchsucht Kunden, Angebote, Aufträge, Rechnungen, Mahnungen, Ausgaben, Eigenbelege, Content-Plan, Konzepte und die Akte.</small>
+    <div id="suche-erg"></div></div>`);
+  const i = $("#suche-q");
+  i.addEventListener("input", () => { clearTimeout(SUCHE.timer); SUCHE.timer = setTimeout(sucheLaden, 200); });
+  i.addEventListener("keydown", (e) => { if (e.key === "Enter" && SUCHE.erster) { e.preventDefault(); SUCHE.erster.click(); } });
+  i.focus(); i.select();
+  if (SUCHE.q) sucheLaden();
+}
+async function sucheLaden() {
+  const i = $("#suche-q"), box = $("#suche-erg"); if (!i || !box) return;
+  const q = i.value.trim(); SUCHE.q = q; const nr = ++SUCHE.nr;
+  if (q.length < 2) { box.innerHTML = ""; SUCHE.erster = null; return; }
+  box.innerHTML = `<div class="v2-empty">Suche …</div>`;
+  const d = await jget("/api/suche?q=" + encodeURIComponent(q));
+  if (nr !== SUCHE.nr || !$("#suche-erg")) return;                 // inzwischen weitergetippt
+  if (!d || !d.gruppen || !d.gruppen.length) { box.innerHTML = emptyRow(`Nichts gefunden für „${q}“.`); SUCHE.erster = null; return; }
+  box.innerHTML = `<div class="v2-sub v2-suche-anzahl">${d.gesamt} Treffer</div>` + d.gruppen.map(g => `<section class="v2-suche-gruppe"><h4>${esc(g.titel)} <span class="v2-badge neutral">${g.anzahl}</span></h4>
+    ${g.treffer.map(t => `<button class="v2-list-row v2-suche-treffer" data-act="suche-treffer" data-val="${esc(t.act)}" data-id="${esc(t.act_id)}">
+      <div class="grow"><b>${esc(t.titel)}</b><small>${esc(t.info || "")}${t.datum ? (t.info ? " · " : "") + esc(datumDe(t.datum)) : ""}</small></div><span>›</span></button>`).join("")}
+    ${g.anzahl > g.treffer.length ? `<small class="v2-sub">… und ${g.anzahl - g.treffer.length} weitere – Suche genauer eingrenzen</small>` : ""}</section>`).join("");
+  SUCHE.erster = box.querySelector(".v2-suche-treffer");
+}
+async function sucheTreffer(act, id) {
+  if (act === "cp-suche") { CP.tag = id || heuteIso(); closeModal(); return go("contentplan"); }
+  if (act === "konzept") return konzeptFenster(id);
+  const el = document.createElement("button"); el.dataset.id = id || "";
+  return handleAct(act, el);
+}
 function kundeNeu(collab) {
   openModal("Neue Firma", `<div class="v2-form">${collab ? `<div class="v2-sub">Wird mit der Collab-Firma <b>${esc(collab)}</b> verknüpft.</div>` : ""}${impressumSuche("kf")}${formFelder("kf", FIRMA_FORM, collab ? { name: collab, typ: "partner" } : {})}
     <button class="v2-btn pri" data-act="kunde-anlegen" data-id="${esc(collab || "")}">Anlegen (Nummer wird vergeben)</button><div id="kf-msg" class="v2-msg"></div></div>`);
@@ -3923,6 +3956,8 @@ async function handleAct(act, el) {
     }
     case "hb-filter": HB_FILTER = val || ""; return renderHandlung();
     case "vs-neu": return vsDialog(id || "", val === "nachfassen");
+    case "suche-oeffnen": return sucheOeffnen();
+    case "suche-treffer": return sucheTreffer(val, id);
     case "impressum-suchen": return impressumSuchen(val, el);
     case "vs-senden": return vsSenden(el);
     case "vs-trotzdem": return vsSenden($("#vs-senden-knopf"), true);
@@ -4381,6 +4416,8 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { ladeZu(); closeModal(); return; }
+  if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey && !(e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) {
+    e.preventDefault(); return sucheOeffnen(); }                    // GLOBALE_SUCHE: Taste „/“
   if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches('.v2-tile.klick[role="button"]')) {
     e.preventDefault(); const el = e.target;
     if (el.dataset.go) go(el.dataset.go); else if (el.dataset.tab) { const [s, i] = el.dataset.tab.split(":"); go(s, i); }
