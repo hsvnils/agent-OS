@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 11:02] — Claude Code
+- **Was:** Deploy „Links in Signatur/Mails“ + BF-64 live geprueft (nur lesend): LUNA-OS laedt v115/v58 (Knopf „🔗 Link einfuegen“,
+  Chips im Dunkelmodus lesbar); `mail_inhalt` auf der NAS; Kundenversand weiter allinkl, Anmeldung ok. Push vom CEO. CEO prueft den
+  Stand selbst; ein Rechtsklick-Menue wurde auf CEO-Anweisung NICHT gebaut.
+- **Warum:** CEO: „Alle drei Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-06 10:57] — Claude Code
 - **Was:** Klickbare Links in der Signatur (und im Mailtext): `[Instagram](https://instagram.com/hanserautisch)` -> im Mail-Programm
   nur „Instagram“ als Link; `core/textbausteine.mail_inhalt` erzeugt Text + HTML-Teil (nur wenn Links vorkommen, nur http(s), Text
