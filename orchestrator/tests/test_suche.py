@@ -61,6 +61,18 @@ class TestSuche(ApiBasis):
             g, _ = self._gruppen("brand")
         self.assertIn("angebote", g)
 
+    def test_5_mail_ohne_firma(self):
+        bh = self.w.kunden_store.bh
+        bh.erfassen("akte_mail_offen", {"id": "D-puma0001", "titel": "Bestellt: „PUMA Unisex Anzarun Lite...“", "art": "mail",
+                                        "datum": "2026-09-30", "mail_von": "bestellbestaetigung@amazon.de", "kandidaten": [],
+                                        "dateien": [{"pfad": "x.pdf", "name": "Mail.pdf"}]})
+        g, _ = self._gruppen("puma")
+        self.assertEqual([(t["act"], t["info"]) for t in g["akte"]["treffer"]],
+                         [("akte-datei", "bestellbestaetigung@amazon.de · wartet auf Zuordnung")])
+        bh.erfassen("akte_mail_zugeordnet", {"id": "D-puma0001", "firma": ""})          # „keiner Firma“
+        g, _ = self._gruppen("puma anzarun")
+        self.assertEqual(g["akte"]["treffer"][0]["info"], "bestellbestaetigung@amazon.de · keiner Firma zugeordnet")
+
     def test_4_nichts_veraendert(self):
         vorher = len(self.w.kunden_store.bh.eintraege())
         suchen(self.w.kunden_store.bh, self.w.kunden_store, "brand")

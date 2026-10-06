@@ -81,7 +81,7 @@ def suchen(bh, kunden, q: str, *, apps: list[str] | None = None) -> dict:
     from .contentplan import ContentPlan
     from .eigenbelege import EigenbelegStore
     from .eingangsbelege import EingangStore
-    from .firmenakte import _falte as akte_falte
+    from .firmenakte import _falte as akte_falte, ohne_firma
     from .konzept import KonzeptStore
     from .mahnungen import MahnStore
     from .rechnungen import RechnungStore
@@ -176,6 +176,9 @@ def suchen(bh, kunden, q: str, *, apps: list[str] | None = None) -> dict:
         add("akte", 1, d.get("datum"), d.get("titel", ""), " · ".join(x for x in (fname(d.get("firma")), d.get("mail_von"), d.get("bezug")) if x),
             "kunde-detail", d.get("firma", ""), _suchtext(d.get("titel"), d.get("mail_von"), d.get("notiz"), d.get("bezug"),
                                                          fname(d.get("firma")), daten=[d.get("datum")]))
+    for d, info in [(m, "wartet auf Zuordnung") for m in offen.values()] + [(m, "keiner Firma zugeordnet") for m in ohne_firma(e).values()]:
+        add("akte", 2, d.get("datum"), d.get("titel", ""), " · ".join(x for x in (d.get("mail_von"), info) if x), "akte-datei", d["id"],
+            _suchtext(d.get("titel"), d.get("mail_von"), d.get("notiz"), info, daten=[d.get("datum")]))
     out = []
     for g, (titel, _) in GRUPPEN.items():
         liste = sorted(gruppen[g], key=lambda x: (x[0], [-ord(c) for c in x[1]]))

@@ -77,6 +77,21 @@ def _falte(eintraege: list[dict]) -> tuple[dict, dict]:
     return docs, offen
 
 
+def ohne_firma(eintraege: list[dict]) -> dict:
+    """Mails, die bei der Zuordnung „keiner Firma“ bekamen -- bleiben gespeichert, stehen aber in keiner Akte
+    (GLOBALE_SUCHE: trotzdem auffindbar)."""
+    offen, out = {}, {}
+    for e in eintraege:
+        d, t = e["daten"], e["typ"]
+        if t == "akte_mail_offen":
+            offen[d["id"]] = dict(d) | {"ts": e["ts"]}
+        elif t == "akte_mail_zugeordnet" and d.get("id") in offen:
+            m = offen.pop(d["id"])
+            if not d.get("firma"):
+                out[m["id"]] = m | {"zugeordnet_am": e["ts"]}
+    return out
+
+
 def bekannte_mail_ids(eintraege: list[dict]) -> set[str]:
     return {e["daten"].get("mail_id") for e in eintraege
             if e["typ"] in ("akte_dokument", "akte_mail_offen") and e["daten"].get("mail_id")}

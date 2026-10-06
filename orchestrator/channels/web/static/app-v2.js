@@ -1020,6 +1020,7 @@ async function sucheLaden() {
 async function sucheTreffer(act, id) {
   if (act === "cp-suche") { CP.tag = id || heuteIso(); closeModal(); return go("contentplan"); }
   if (act === "konzept") return konzeptFenster(id);
+  if (act === "akte-datei") { window.open(`/api/crm/akte/${encodeURIComponent(id)}/datei`, "_blank", "noopener"); return; }   // Mail ohne Firma
   const el = document.createElement("button"); el.dataset.id = id || "";
   return handleAct(act, el);
 }

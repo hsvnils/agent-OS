@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 09:46] — Claude Code
+- **Was:** Globale Suche findet jetzt auch Mails, die noch auf ihre Zuordnung warten oder „keiner Firma“ zugeordnet wurden
+  (`core/firmenakte.ohne_firma`, Suche Gruppe „Akte & Mails“, Klick oeffnet die Mail; `GET /api/crm/akte/<id>/datei` liefert auch
+  diese Mails). Anlass: Suche „PUMA“ fand nichts, weil die Amazon-Bestellbestaetigung am 06.10. „keiner Firma“ zugeordnet war.
+  1 neuer Test, Gegenprobe rot, Suite gruen. Cache v113.
+- **Warum:** CEO: „Warum findet er jetzt nichts?“ (Suche „PUMA“).
+- **Betroffen:** `orchestrator/core/firmenakte.py`, `orchestrator/core/suche.py`, `orchestrator/channels/web/app.py`,
+  `static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_suche.py`, `GLOBALE_SUCHE_ROADMAP.md`
+
 ## [2026-10-06 09:43] — Claude Code
 - **Was:** Deploy GLOBALE_SUCHE G1 + Ausgaben-Sortierung live geprueft (nur lesend): LUNA-OS laedt v112/v57 mit 🔎 in der Kopfleiste;
   Suche auf echten Daten in 45-96 ms (z. B. „amazon“ 31 Treffer in Kunden/Ausgaben/Eigenbelege, „kiez“ 10 in 5 Kategorien,

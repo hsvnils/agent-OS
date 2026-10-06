@@ -34,6 +34,8 @@
   „03.10.2026/oktober 2026“; alle Suchwoerter muessen vorkommen; Kategorien nur bei Recht auf die App; je Gruppe Anzahl + 8 beste
   Treffer, exakte Nummer zuerst, sonst neueste), `GET /api/suche?q=`. Oberflaeche: 🔎 in der Kopfleiste und Taste „/“, Suche beim
   Tippen, Enter oeffnet den ersten Treffer, Klick oeffnet Firma/Beleg/Content-Plan-Tag/Konzept.
+  Nachtrag 2026-10-06 (CEO-Befund „PUMA“): auch Mails, die auf Zuordnung warten oder „keiner Firma“ zugeordnet wurden, werden
+  gefunden (`firmenakte.ohne_firma`); Klick oeffnet die Mail-Ansicht.
 
 ## Etappe G2: Inhalte durchsuchen (optional)
 

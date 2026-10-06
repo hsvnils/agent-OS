@@ -1630,7 +1630,9 @@ async def akte_zuordnen(did: str, request: Request):
 @app.get("/api/crm/akte/{did}/datei")
 def akte_datei(did: str, i: int = 0):
     a = _akte()
-    x = a.dokument(did) or next((m for m in a.offene() if m["id"] == did), None)
+    from ...core.firmenakte import ohne_firma
+    x = a.dokument(did) or next((m for m in a.offene() if m["id"] == did), None) \
+        or ohne_firma(kunden_store.bh.eintraege()).get(did)
     if not x or not 0 <= i < len(x.get("dateien") or []):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekanntes Dokument")
     d = x["dateien"][i]
