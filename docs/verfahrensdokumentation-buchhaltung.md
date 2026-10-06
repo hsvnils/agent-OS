@@ -146,6 +146,13 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 - **Datenzugriff der Finanzverwaltung (§ 147 Abs. 6 AO):** LUNA-OS -> Finanzen -> Jahresabschluss -> „Export (ZIP)“:
   Tabellen als CSV mit `index.xml` (Beschreibungsstandard), vollstaendiges Kassenbuch mit Pruefergebnis, alle Belege
   des Jahres im Original, EUeR als PDF.
+- **Einmalige Bereinigung der Testphase (2026-10-06, Anweisung des Inhabers):** Die Testrechnungen RE-2026-0001 bis
+  RE-2026-0004 und der Rechnungsentwurf E-946556bb zum Auftrag AB-2026-0001 (CR Container Trading GmbH) wurden
+  vollstaendig entfernt (22 Kassenbuch-Eintraege, 4 PDF-Dateien), die Hash-Kette neu verkettet und geprueft
+  (1490 Eintraege, Kette in Ordnung). Die Rechnungen waren reine Tests: nie versendet, keine Zahlung, keine Buchung
+  in der EUeR. Der Nummernkreis RE-2026 beginnt deshalb neu bei RE-2026-0001. Angebot AN-2026-0001 und Auftrag
+  AB-2026-0001 blieben unveraendert; zwei weitere Test-Entwuerfe (E-aeaf99b2, E-3fe111f5) hat der Inhaber regulaer
+  verworfen. Dies war ein einmaliger Eingriff vor dem Echtbetrieb und kein vorgesehener Ablauf.
 
 ## 5. Internes Kontrollsystem (Kurzfassung)
 
@@ -171,3 +178,4 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 | 2026-09-30 | Altrechnungen und Mahnungen von vor LUNA (Etappe 19) ergaenzt | Claude Code |
 | 2026-09-30 | Provisionen (Etappe 23) ergaenzt | Claude Code |
 | 2026-10-02 | Projektzeiten optional auf der Rechnung (PROJEKTZEITEN Z2) ergaenzt | Claude Code |
+| 2026-10-06 | Einmalige Bereinigung der Testrechnungen RE-2026-0001 bis -0004 dokumentiert (Abschnitt 4) | Claude Code |
