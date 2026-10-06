@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 12:11] — Claude Code
+- **Was:** Sicherung `buchhaltung/log.jsonl.vor-bereinigung-20261006` auf der NAS vom CEO geloescht (nach erfolgreicher Live-Pruefung der Bereinigung); damit sind die Testrechnungen RE-2026-0001 bis -0004 auch aus dieser Kopie entfernt.
+- **Warum:** CEO-Anweisung, Abschluss der Bereinigung CR Container.
+- **Betroffen:** `buchhaltung/` (NAS, nicht im Git)
+
 ## [2026-10-06 12:09] — Claude Code
 - **Was:** Testrechnungen RE-2026-0001 bis -0004 und Entwurf E-946556bb (Auftrag AB-2026-0001, CR Container) restlos aus der Buchhaltung entfernt: 22 Kassenbuch-Eintraege, 4 PDFs auf der NAS, Hash-Kette neu verkettet (1490 Eintraege, Kette OK, naechste Rechnung RE-2026-0001). Sicherung `buchhaltung/log.jsonl.vor-bereinigung-20261006` angelegt. Zwei weitere Test-Entwuerfe (E-aeaf99b2, E-3fe111f5) hat der CEO in LUNA-OS verworfen. Live geprueft: keine Test-Rechnungen, keine Entwuerfe, Glocke leer, Angebot AN-2026-0001 angenommen und Auftrag AB-2026-0001 beauftragt. Eingriff in der Verfahrensdokumentation (Abschnitt 4) festgehalten.
 - **Warum:** CEO-Anweisung (Loeschen von Daten = CEO-Tor, ausdruecklich freigegeben): Testdaten vor dem Echtbetrieb entfernen. Skript vom CEO bei gestoppten Containern ausgefuehrt (erst Probelauf, dann echt).
