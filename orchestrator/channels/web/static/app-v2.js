@@ -1153,6 +1153,16 @@ async function katalogLaden(neu) { if (!KATALOG || neu) { const d = await jget("
 // Etappe 16: Reichweiten-Formate = Kontakte × TKP / 1.000 + Produktion (auf 10 € gerundet); OMR-Werte als Vergleich
 let OMR = { werte: {} };
 const tkpPreis = (kontakte, tkpCent, prodCent) => Math.round((kontakte * tkpCent / 1000 + prodCent) / 1000) * 1000;
+// Alte Katalog-Positionen ohne gespeicherte TKP-Werte (vor dem 2026-10-02): beim Bearbeiten TKP-Zeile aus dem Katalog
+// ergaenzen -- nur wenn der heutige Preis genau aus einem TKP folgt; der Preis bleibt, gespeichert wird erst beim Speichern
+function katalogTkp(p) {
+  if (!p || p.kontakte || !p.katalog_id || !KATALOG || p.einzelpreis_cent == null) return p;
+  const it = KATALOG.gruppen.flatMap(g => g.items).find(i => i.id === p.katalog_id);
+  if (!it || !it.kontakte) return p;
+  const prod = it.produktion_cent || 0, roh = (p.einzelpreis_cent - prod) * 1000 / it.kontakte;
+  const tkp = [Math.round(roh / 100) * 100, Math.round(roh)].find(t => t > 0 && tkpPreis(it.kontakte, t, prod) === p.einzelpreis_cent);
+  return tkp ? { ...p, kontakte: it.kontakte, produktion_cent: prod, tkp_min_cent: it.tkp_min_cent, tkp_max_cent: it.tkp_max_cent, omr: it.omr || p.omr, tkp_cent: tkp } : p;
+}
 const omrText = (key) => { const w = (OMR.werte || {})[key]; return w ? `OMR ${w.min}–${w.max} € (${w.name})` : ""; };
 const katItem = (id) => { for (const g of (KATALOG && KATALOG.gruppen) || []) for (const it of g.items) if (it.id === id) return [it, g]; return [null, null]; };
 
@@ -1302,7 +1312,7 @@ async function belegFormularFertig(sperre, ap, summen) {
   if (sperre) { const l = $("#an-pos-leer"); if (l) l.hidden = true; }
   FORM_GEAENDERT = false;
 }
-function anFormHtml(a, { nummer = "" } = {}) {
+function anFormHtml(a, { nummer = "", tkpErgaenzen = false } = {}) {
   const b = a.bloecke || {};
   const fa = AN_FIRMEN.find(f => f.nummer === a.firma);
   const gewaehlt = new Set((a.zuschlaege || []).map(z => z.id));
@@ -1335,7 +1345,7 @@ function anFormHtml(a, { nummer = "" } = {}) {
     <div class="v2-an-kat"><button class="v2-btn pri" data-act="an-pos-neu">+ Neue Position</button>
       <label class="v2-feld" style="margin-left:auto"><small>Community-Fit (TKP innerhalb der Spanne)</small><select id="an-fit" class="v2-inp"><option value="0">Standard – unterer TKP</option><option value="0.5">Gute Passung – Mitte</option><option value="1">Sehr gute Passung – oberer TKP</option></select></label></div>
     <div class="v2-an-pos v2-an-pos-kopf"><span>Leistung / Detail</span><span>Menge</span><span>Einheit</span><span>Einzelpreis</span><span>Gesamt</span><span></span></div>
-    <div id="an-pos">${(a.positionen || []).map(anPosZeile).join("")}</div>
+    <div id="an-pos">${(a.positionen || []).map(p => anPosZeile(tkpErgaenzen ? katalogTkp(p) : p)).join("")}</div>
     <div id="an-pos-leer" class="v2-empty">Noch keine Position — „+ Neue Position“ antippen und das Produkt wählen.</div>
     <div class="v2-an-fuss">
       <div class="v2-form">
@@ -1553,7 +1563,7 @@ async function anDetail(nr, meldung, fehler) {
   const seite = blBox("Status", status) + `<section class="v2-bl-box" id="bv-mini"></section>` + blBox("Erinnerungen", termine)
     + blBox("Abgelegte PDFs", pdfs) + blBox(`Verlauf <small class="v2-sub">Mails zum Aufklappen</small>`, verlauf);
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
-    ${belegAnsicht({ aktionen, haupt: `<div id="an-senden-box"></div>${belegZweiAnsichten(anFormHtml(a, { nummer: nr }), d.blatt ? belegBlatt(d.blatt) : altTab)}`, seite, unten: `<section class="v2-kz" data-tabteil="konzept"><h3 class="v2-kz-titel">🎬 Konzept</h3><div id="kz-box"><div class="v2-empty">Lade…</div></div></section>`,
+    ${belegAnsicht({ aktionen, haupt: `<div id="an-senden-box"></div>${belegZweiAnsichten(anFormHtml(a, { nummer: nr, tkpErgaenzen: a.status === "entwurf" }), d.blatt ? belegBlatt(d.blatt) : altTab)}`, seite, unten: `<section class="v2-kz" data-tabteil="konzept"><h3 class="v2-kz-titel">🎬 Konzept</h3><div id="kz-box"><div class="v2-empty">Lade…</div></div></section>`,
       reiter: [["beleg", "📄 Beleg"], ["konzept", "🎬 Konzept"]] })}`, true);
   const stand = a.status === "versendet" ? `Versendet${a.versendet_am ? " am " + datumDe(a.versendet_am) : ""}`
     : `${(AN_STATUS[a.status] || [a.status])[0]}${a.versendet_am ? " (versendet am " + datumDe(a.versendet_am) + ")" : ""}`;
@@ -1640,7 +1650,7 @@ async function abDetail(nr, meldung, fehler) {
     ${darf("rechnungen") ? `<div data-tabteil="zeiten"><div id="ab-zeit-box"></div></div>` : ""}
     ${a.status !== "storniert" ? `<div data-tabteil="bericht"><div id="ab-bericht-box"></div></div>` : ""}</div></div>`;
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
-    ${belegAnsicht({ aktionen, haupt: `<div id="ab-senden-box"></div>${belegZweiAnsichten(anFormHtml(a, { nummer: nr }), d.blatt ? belegBlatt(d.blatt) : altTab)}`, seite, unten: `<section class="v2-kz" data-tabteil="konzept"><h3 class="v2-kz-titel">🎬 Konzept</h3><div id="kz-box"><div class="v2-empty">Lade…</div></div></section>` + intern,
+    ${belegAnsicht({ aktionen, haupt: `<div id="ab-senden-box"></div>${belegZweiAnsichten(anFormHtml(a, { nummer: nr, tkpErgaenzen: !sp.grund }), d.blatt ? belegBlatt(d.blatt) : altTab)}`, seite, unten: `<section class="v2-kz" data-tabteil="konzept"><h3 class="v2-kz-titel">🎬 Konzept</h3><div id="kz-box"><div class="v2-empty">Lade…</div></div></section>` + intern,
       reiter: [["beleg", "📄 Beleg"], ["konzept", "🎬 Konzept"], ["postings", "📣 Postings"], ...(darf("rechnungen") ? [["zeiten", "⏱ Zeiten"]] : []), ["bericht", "📝 Bericht"]] })}`, true);
   await belegFormularFertig(sp.grund || "", a.ansprechpartner, sp.grund ? fuss : null);
   abFormUmbauen(nr, a);
@@ -2667,7 +2677,7 @@ function reFormHtml(r, eid) {
     <h3>Positionen <small class="v2-sub">ohne Umsatzsteuer (Kleinunternehmer § 19 UStG)</small></h3>
     <div class="v2-an-kat"><button class="v2-btn pri" data-act="an-pos-neu">+ Neue Position</button></div>
     <div class="v2-an-pos v2-an-pos-kopf"><span>Leistung / Detail</span><span>Menge</span><span>Einheit</span><span>Einzelpreis</span><span>Gesamt</span><span></span></div>
-    <div id="an-pos">${(r.positionen || []).map(anPosZeile).join("")}</div>
+    <div id="an-pos">${(r.positionen || []).map(p => anPosZeile(eid ? katalogTkp(p) : p)).join("")}</div>
     <div id="an-pos-leer" class="v2-empty">Noch keine Position.</div>
     <div class="v2-an-fuss"><div class="v2-form">${zuHtml ? `<small class="v2-sub">Zuschläge</small><div class="v2-mods">${zuHtml}</div>` : ""}
         <label class="v2-feld"><small>Rabatt in % (0–${rmax})</small><input id="an-rabatt" type="number" min="0" max="${rmax}" step="0.5" value="${esc(String(r.rabatt_prozent || 0))}"></label>

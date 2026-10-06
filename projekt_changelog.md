@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 19:19] — Claude Code
+- **Was:** Alte Katalog-Positionen ohne gespeicherte TKP-Werte bekommen in bearbeitbaren Belegen die TKP-Zeile aus dem Katalog (`katalogTkp` in app-v2.js): TKP aus dem heutigen Preis zurueckgerechnet, Preis bleibt, Speichern erst durch den CEO; gesperrte Belege unveraendert. Cache app-v2.js v118.
+- **Warum:** CEO 2026-10-06: TKP-Kalkulation an der Position von AB-2026-0001 (CR Container, 1.300 € = 52.000 x 20 € TKP + 260 € Produktion) war nicht zu oeffnen, weil die Position vom 28.09. die Werte nicht gespeichert hatte -- „bau das bitte automatisch ein“.
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `BELEG_BEARBEITBAR_ROADMAP.md`
+
 ## [2026-10-06 19:06] — Claude Code
 - **Was:** Deploy BELEG_BEARBEITBAR B1-B3 live geprueft: app-v2.js v117 / style-v2.css v60 ausgeliefert, neue Aktionen im JS vorhanden; AB-2026-0001 und AB-2026-0002 (nicht versendet) ohne Sperre, also im Formular aenderbar; Endpunkt Entsperren antwortet (ohne Grund abgelehnt, nichts geschrieben).
 - **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.

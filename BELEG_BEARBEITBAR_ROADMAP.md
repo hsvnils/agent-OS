@@ -100,6 +100,10 @@ festgeschrieben sein und kann nur mit Klick auf Bearbeiten und Eingabe einer Beg
   Mail-Programm) und „🔒 Ohne Mail festschreiben …“; festgeschriebene Rechnung: „✎ Bearbeiten …“ = Storno + Korrektur-
   Entwurf mit Begruendung. Handlungsbedarf: „Rechnungsentwurf pruefen und senden“. Kein neuer Server-Ablauf noetig.
 - Tests `test_beleg_bearbeitbar.py` (5, Gegenproben rot), Browser Rechner/iPad/iPhone in sechs Zustaenden.
+- Nachtrag (CEO 2026-10-06): Alte Katalog-Positionen ohne gespeicherte TKP-Werte (z. B. AB-2026-0001 vom 28.09.)
+  bekommen beim Bearbeiten die TKP-Zeile aus dem Katalog (Kontakte, Produktion, Spanne); der TKP wird aus dem
+  heutigen Preis zurueckgerechnet, der Preis bleibt gleich; gespeichert wird erst mit „Änderungen speichern“. Nur in
+  bearbeitbaren Belegen (Angebots-/Rechnungs-Entwurf, nicht gesperrter Auftrag), nie in gesperrten.
 
 ## Nicht-Scope
 
