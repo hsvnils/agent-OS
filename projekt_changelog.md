@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 09:43] — Claude Code
+- **Was:** Deploy GLOBALE_SUCHE G1 + Ausgaben-Sortierung live geprueft (nur lesend): LUNA-OS laedt v112/v57 mit 🔎 in der Kopfleiste;
+  Suche auf echten Daten in 45-96 ms (z. B. „amazon“ 31 Treffer in Kunden/Ausgaben/Eigenbelege, „kiez“ 10 in 5 Kategorien,
+  „oktober 2026“ 10, Betrag „4.000,00“ 1 Rechnung); Sortierung „neueste oben“ im ausgelieferten Code. Push vom CEO.
+- **Warum:** CEO: „Alle drei Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** `GLOBALE_SUCHE_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-06 09:39] — Claude Code
 - **Was:** `scripts/doku_check.py` liest den Roadmap-Kopf nur bis zur ersten Ueberschrift (BF-62) -- bei kurzen Roadmaps wurde sonst
   der Etappen-Status als Roadmap-Status gelesen; der G1-Commit war mit dieser Meldung durchgelaufen, weil die Ausgabe in einer

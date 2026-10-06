@@ -4,7 +4,7 @@
 - Stand: 2026-10-06
 - Arbeitsbranch: `ai/suche-und-sortierung`
 - Basiscommit: `e3c8e23`
-- Naechster Schritt: G1 gebaut (2026-10-06) -- CEO-Go fuer Merge, Push und Deploy; G2 nur bei Bedarf.
+- Naechster Schritt: G1 live (2026-10-06) -- Abnahme durch den CEO im Alltag; G2 (Inhalte von Belegen/Mails) nur bei Bedarf.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
