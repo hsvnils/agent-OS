@@ -31,7 +31,7 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
     },
     "investment": {
         "werkzeuge": ["investment_backfill", "investment_modus", "investment_sammeln", "investment_scorecard",
-                      "investment_screen", "investment_status", "investment_vorschlaege", "insider_scan",
+                      "investment_screen", "investment_status", "investment_vorschlaege", "investment_vorschlaege_pausieren", "insider_scan",
                       "insider_signale_zeigen", "paper_konto", "paper_order", "paper_order_freigabe",
                       "watchlist_hinzufuegen"],
         "stichwoerter": ["invest", "aktie", "depot", "kurs", "krypto", "bitcoin", "btc", "ethereum", "etf", "boerse",

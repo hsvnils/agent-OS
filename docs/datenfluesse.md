@@ -108,6 +108,19 @@ esm.sh
 Hosts, die im Code nur als Link, Schema, Mock oder Test vorkommen (kein Datenfluss):
 
 ```doku-check:hosts-ignoriert
+aistudio.google.com            # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+api-dashboard.search.brave.com # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+app.agentops.ai                # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+app.alpaca.markets             # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+console.anthropic.com          # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+console.cloud.google.com       # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+console.deepgram.com           # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+developers.facebook.com        # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+elevenlabs.io                  # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+kas.all-inkl.com               # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+platform.openai.com            # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+play.cartesia.ai               # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
+supabase.com                   # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
 github.com                     # Anzeige-Links in github_watch
 instagram.com                  # nur Beispiel im Signatur-Hinweis (Links schreibt der CEO selbst; kein Abruf)
 www.sec.gov                    # Anzeige-Links
@@ -187,7 +200,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `watch/log.jsonl` (Notbremse, `last_run`) | Bot | Bot, Web | ja | ja |
 | `brain/log.jsonl` | Bot, Web | dito | ja | ja |
 | `finance/kosten-log.jsonl` | Bot (Kostenlauf 03:00) | Bot, Web | ja | ja |
-| `investment/log.jsonl` | Bot, Web | dito | ja | ja |
+| `investment/log.jsonl` (seit 2026-10-06 auch Einstellung `vorschlaege_pausiert` und Tabelle `unterdrueckt` = waehrend der Vorschlagspause nur protokollierte Vorschlaege; `GET /api/investment/pause`) | Bot, Web | dito | ja | ja |
 | `investment/features.jsonl` | Bot | Web | ja | ja |
 | `approvals/log.jsonl` | Bot | Bot; Web liest offene Entscheidungen fuer `GET /api/handlungsbedarf` (UI-Roadmap Etappe 3, nur lesend) | ja | ja |
 | `trajektorien/log.jsonl`, `social/log.jsonl` | Bot | Bot | ja | ja |

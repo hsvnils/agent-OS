@@ -55,7 +55,7 @@ _BEREICHE: dict[str, tuple[str, ...]] = {
     "cdo": ("social_media_analyzer",),
     "cco": ("content_feed_lauf",),
     "cio": ("investment_backfill", "investment_modus", "investment_sammeln", "investment_scorecard",
-            "investment_screen", "investment_status", "investment_vorschlaege", "insider_scan",
+            "investment_screen", "investment_status", "investment_vorschlaege", "investment_vorschlaege_pausieren", "insider_scan",
             "insider_signale_zeigen", "paper_konto", "paper_order", "paper_order_freigabe", "watchlist_hinzufuegen"),
     "res": ("recherche_beauftragen", "recherche_ticket", "recherche_tickets_zeigen"),
     "ciso": ("sicherheits_audit", "skill_pruefen", "sandbox_check"),

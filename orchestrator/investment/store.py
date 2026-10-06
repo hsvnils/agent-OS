@@ -16,7 +16,7 @@ from pathlib import Path
 from ..governance.leak_guard import redact
 
 TABELLEN = ("watchlist", "screening", "forecasts", "actuals", "scorecard", "suggestions", "mode",
-            "positions", "insider_signals", "real_depot", "settings")
+            "positions", "insider_signals", "real_depot", "settings", "unterdrueckt")
 MODI = ("advisory", "paper", "live")
 
 # In der Weboberflaeche einstellbare Werte (geteilte SSOT: Web + Telegram-Bot lesen `settings()`).
@@ -39,6 +39,8 @@ SETTINGS_DEFAULTS = {
     "alert_crm": True,
     "alert_security": True,
     "alert_content": True,
+    # D -- VORSCHLAGSPAUSE P1 (CEO 2026-10-06): systemweit keine Investment-Vorschlaege, Tracking laeuft weiter
+    "vorschlaege_pausiert": False,
 }
 
 
@@ -186,6 +188,25 @@ class InvestmentStore:
         if key not in SETTINGS_DEFAULTS:
             raise ValueError(f"Unbekannte Einstellung: {key}")
         return self.add("settings", {"key": key, "wert": wert, "akteur": akteur})
+
+    # -- VORSCHLAGSPAUSE P1: ein Schalter fuer alle automatischen Vorschlaege (Telegram + LUNA-OS) --
+    def vorschlaege_pausiert(self) -> bool:
+        return bool(self.settings().get("vorschlaege_pausiert"))
+
+    def unterdrueckt_add(self, quelle: str, text: str) -> str:
+        """Waehrend der Pause nicht gemachten Vorschlag protokollieren (Tracking: was waere gekommen?)."""
+        return self.add("unterdrueckt", {"quelle": quelle, "text": str(text or "")[:300]})
+
+    def pause_info(self) -> dict:
+        """{pausiert, seit, von, unterdrueckt (Anzahl seit Pausenbeginn), letzte (bis 5)} fuer Banner/Einstellungen."""
+        evs = [e for e in self.list("settings") if e.get("key") == "vorschlaege_pausiert"]
+        an = bool(evs and evs[-1].get("wert"))
+        if not an:
+            return {"pausiert": False, "seit": None, "von": None, "unterdrueckt": 0, "letzte": []}
+        seit = evs[-1].get("ts") or ""
+        weg = [e for e in self.list("unterdrueckt") if (e.get("ts") or "") >= seit]
+        return {"pausiert": True, "seit": seit, "von": evs[-1].get("akteur"), "unterdrueckt": len(weg),
+                "letzte": [{k: e.get(k) for k in ("ts", "quelle", "text")} for e in weg[-5:]][::-1]}
 
     def set_settings(self, werte: dict, *, akteur: str = "CEO") -> list[str]:
         return [self.set_setting(k, v, akteur=akteur) for k, v in werte.items() if k in SETTINGS_DEFAULTS]

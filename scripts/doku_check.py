@@ -13,6 +13,9 @@ Prueft:
   6. Changelog -- jeder Eintrag in `projekt_changelog.md` hat das Pflichtformat (AGENTS.md 3.2: Kopf
                   `## [JJJJ-MM-TT HH:MM] — Akteur`, Was/Warum/Betroffen mit Inhalt), liegt nicht in der Zukunft
                   (BF-09: geschaetzte Uhrzeiten) und steht ab `CHANGELOG_REIHENFOLGE_AB` neueste zuerst.
+  7. Anbieter  -- jeder Zugangs-Schluessel im Code (`…_API_KEY`, `…_TOKEN`, `…_SECRET` …) gehoert zu einem Anbieter
+                  in `orchestrator/governance/dienste_register.py` (Seite „Anbieter & Datenquellen“), und jeder
+                  dort gefuehrte Schluessel kommt im Code noch vor (VORSCHLAGSPAUSE_ANBIETER P2).
 
 Die Soll-Listen stehen maschinenlesbar in `docs/datenfluesse.md` in Codebloecken ```doku-check:<name>```.
 
@@ -221,6 +224,40 @@ def pruefe_changelog(text: str | None = None, jetzt=None) -> list[str]:
     return out
 
 
+REGISTER = ROOT / "orchestrator" / "governance" / "dienste_register.py"
+RE_SCHLUESSEL = re.compile(r"[\"']([A-Z][A-Z0-9_]*_(?:API_KEY|API_SECRET|TOKEN|SECRET|KEY|PASSWORT|PASSWORD|"
+                           r"CLIENT_ID|CLIENT_SECRET|USER_AGENT|ROLE_KEY|BASE_URL))[\"']")
+
+
+def register_schluessel() -> set[str]:
+    """Schluesselnamen aus ANBIETER/INTERN des Registers -- per AST gelesen (kein Import, keine Abhaengigkeiten)."""
+    baum = ast.parse(REGISTER.read_text(encoding="utf-8"))
+    out: set[str] = set()
+    for knoten in baum.body:
+        if isinstance(knoten, ast.Assign) and any(getattr(t, "id", "") in ("ANBIETER", "INTERN") for t in knoten.targets):
+            wert = ast.literal_eval(knoten.value)
+            for a in (wert if isinstance(wert, list) else [{"schluessel": list(wert)}]):
+                out |= set(a.get("schluessel", [])) | set(a.get("zugehoerig", []))
+    return out
+
+
+def pruefe_anbieter() -> list[str]:
+    if not REGISTER.exists():
+        return [f"{REGISTER.relative_to(ROOT)} fehlt"]
+    soll = register_schluessel()
+    ist: dict[str, set[str]] = {}
+    for p in _code_dateien():
+        if p == REGISTER:
+            continue
+        for k in RE_SCHLUESSEL.findall(p.read_text(encoding="utf-8", errors="replace")):
+            ist.setdefault(k, set()).add(str(p.relative_to(ROOT)))
+    fehler = [f"Anbieter: Schluessel „{k}“ im Code ({', '.join(sorted(d)[:2])}), aber keinem Anbieter zugeordnet -> "
+              f"in orchestrator/governance/dienste_register.py eintragen" for k, d in sorted(ist.items()) if k not in soll]
+    fehler += [f"Anbieter: Schluessel „{k}“ steht im Register, kommt im Code nicht mehr vor -> Register bereinigen"
+               for k in sorted(soll - set(ist))]
+    return fehler
+
+
 def main(argv: list[str]) -> int:
     if "--liste" in argv:
         for name, werte in ist_mengen().items():
@@ -228,7 +265,7 @@ def main(argv: list[str]) -> int:
             for w, dateien in sorted(werte.items()):
                 print(f"{w:45s} # {', '.join(sorted(dateien)[:3])}")
         return 0
-    fehler = pruefe_roadmaps() + pruefe_datenfluesse() + pruefe_speicherschutz() + pruefe_changelog()
+    fehler = pruefe_roadmaps() + pruefe_datenfluesse() + pruefe_speicherschutz() + pruefe_changelog() + pruefe_anbieter()
     if fehler:
         print(f"Doku-Check: {len(fehler)} Abweichung(en)")
         for f in fehler:

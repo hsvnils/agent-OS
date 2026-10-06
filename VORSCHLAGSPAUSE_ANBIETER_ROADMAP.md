@@ -1,10 +1,10 @@
 # Roadmap: Investment-Vorschlaege pausieren (systemweit) und Anbieter-Liste
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-06
 - Arbeitsbranch: `ai/vorschlagspause-anbieter`
 - Basiscommit: `945e1eb`
-- Naechster Schritt: CEO-Entscheidungen (Stop-Loss, Auto-Trader in der Pause) und Go je Etappe.
+- Naechster Schritt: P1+P2 gebaut (2026-10-06) -- Deploy, Abnahme durch den CEO; P3 optional.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -45,11 +45,11 @@ tatsaechlich kostenpflichtig ist, steht nicht im Code -- das kann nur im jeweili
 
 ## Etappe P1: Schalter „Investment-Vorschlaege pausieren“ (systemweit)
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Neue Einstellung `vorschlaege_pausiert` (mit Datum, wer) im Investment-Einstellungsspeicher; Schalter in
   ⚙ Einstellungen -> Investment und als Hinweis-Banner in der Investment-App („Vorschlaege pausiert seit … – Tracking
   laeuft“), dazu LUNA-Werkzeug „Investment-Vorschlaege pausieren/fortsetzen“ (Chat/Telegram). Waehrend der Pause:
-  keine neuen Freigaben, keine Vorschlaege, keine Investment-Meldungen per Telegram, keine Depot-Zeile im Briefing,
+  keine neuen Freigaben, keine Vorschlaege, keine Investment-Meldungen per Telegram, keine Depot-Hinweise im Briefing (der Depot-Stand bleibt),
   keine Investment-Eintraege in Glocke/Handlungsbedarf und keine Vorschlagsliste in der Investment-App; schon offene
   Freigaben werden ausgeblendet und verfallen wie heute nach 2 Tagen. Tracking-Jobs laufen unveraendert weiter und
   zaehlen mit, wie viele Vorschlaege unterdrueckt wurden (sichtbar im Banner).
@@ -63,7 +63,7 @@ tatsaechlich kostenpflichtig ist, steht nicht im Code -- das kann nur im jeweili
 
 ## Etappe P2: Anbieter & Datenquellen (Liste in LUNA-OS)
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Eine kanonische Anbieter-Liste im Code (`core/anbieter.py`): Name, Bereich (Investment, KI, Mail …),
   wofuer, welche Daten gehen hin, Schluessel-**Namen** (nie Werte), Tarif laut Code (gratis / kostenpflichtig /
   unbekannt), Kostenerfassung ja/nein, Link zur Konto-/Abrechnungsseite. Seite „🔌 Anbieter & Datenquellen“ unter
@@ -82,6 +82,23 @@ tatsaechlich kostenpflichtig ist, steht nicht im Code -- das kann nur im jeweili
 - Ziel / Scope: Monatliche Kosten je Anbieter aus den Abos der Buchhaltung (Etappe 15) bzw. von Hand im Anbieter-Eintrag;
   Summe in der Anbieter-Liste, Uebernahme in die Kostenstatistik des CFO (`finance/kosten-statistik.md`).
 - Aufwand: klein bis mittel.
+
+## Umsetzung (2026-10-06, Go CEO fuer P1+P2, Empfehlungen angenommen)
+
+- P1: Einstellung `vorschlaege_pausiert` im Investment-Einstellungsspeicher; Schalter in ⚙ Einstellungen (eigene Kachel,
+  wirkt sofort) und als Hinweis in der Investment-App; LUNA-Werkzeug `investment_vorschlaege_pausieren`. Waehrend der
+  Pause: `InvestmentEngine.vorschlag` protokolliert nur (Tabelle `unterdrueckt`), automatische Freigaben laufen ueber
+  `_auto_freigabe` (nur protokollieren), Auto-Trader ueber den Schutzschalter aus, Echtdepot-Hinweise und die Hinweise
+  im Briefing ruhen (Depot-Stand bleibt), Investment-Meldungen gehen nicht per Telegram raus, Glocke ohne Investment,
+  Vorschlagsliste leer. Vom CEO selbst angestossene Freigaben („Andere Summe“) bleiben moeglich; Paper-Stop-Loss
+  verkauft weiter (ohne Telegram-Meldung). Tracking-Jobs unveraendert.
+- P2: `governance/dienste_register.py` ist die kanonische Anbieter-Liste (25 Anbieter in 7 Bereichen, Stand aus den
+  Schluesselnamen, Tarif laut Code, Kostenerfassung, Konto-Link); `register()` fuer den CFO-Ueberblick bleibt
+  kompatibel. `GET /api/anbieter` (Gesamtliste nur CEO, Investment-Teil fuer das Modul invest), Seite
+  „🔌 Anbieter & Datenquellen“ unter LUNA & System mit Filter „eingerichtet & kann kosten“, Kachel „Datenquellen“ in der
+  Investment-App, Quelle an jedem Vorschlag. `scripts/doku_check.py` Pruefung 7: jeder Zugangs-Schluessel im Code
+  muss einem Anbieter zugeordnet sein (fand sofort `IG_ANALYSE_BASE_URL`).
+- Tests `test_vorschlagspause.py` (6, Gegenproben rot), Browser Rechner/iPad/iPhone.
 
 ## Nicht-Scope
 

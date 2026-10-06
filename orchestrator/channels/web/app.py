@@ -1280,8 +1280,10 @@ def _letzte_shortlist():
 def investment():
     eng = _investment_engine()
     st = eng.status()
+    pause = inv_store.pause_info()                                     # VORSCHLAGSPAUSE P1
     return {
         "modus": st["modus"],
+        "pause": pause,
         "provider": [{"name": p["name"], "konfiguriert": p.get("konfiguriert")} for p in st["provider"]],
         "fehlende_keys": [p["name"] for p in st["fehlende_keys"]],
         "watchlist": st["watchlist"],
@@ -1291,7 +1293,7 @@ def investment():
         "vorschlaege": [{"symbol": s.get("symbol"), "aktion": s.get("aktion"), "grund": s.get("grund"),
                          "risiko_label": s.get("risiko_label"), "konfidenz": s.get("konfidenz"),
                          "quellen": s.get("quellen", []), "ts": s.get("ts")}
-                        for s in reversed(inv_store.list("suggestions"))][:15],
+                        for s in reversed(inv_store.list("suggestions"))][:15] if not pause["pausiert"] else [],
         "insider": [{"symbol": s.get("symbol"), "cluster": s.get("cluster"), "betrag": s.get("betrag"),
                      "rolle": s.get("rolle"), "konfidenz": s.get("konfidenz"),
                      "filing_url": s.get("filing_url"), "datum": s.get("datum"), "ts": s.get("ts")}
@@ -3403,7 +3405,7 @@ def handlungsbedarf(request: Request):
     u = getattr(request.state, "user", None) or _ceo_user()
     admin = hat_modul(u, "administration")
     inv = None
-    if hat_modul(u, "invest"):
+    if hat_modul(u, "invest") and not inv_store.vorschlaege_pausiert():     # VORSCHLAGSPAUSE P1: Glocke ohne Investment
         try:
             inv = ApprovalStore(ROOT / "approvals" / "log.jsonl").offen()
         except Exception:
@@ -4702,7 +4704,7 @@ async def investment_paper_order(request: Request):
 # -- Einstellungen (in der Weboberflaeche anpassbar; geteilte SSOT fuer Web + Telegram-Bot). --
 _SETTING_STUNDE = {"briefing_morgen_stunde", "briefing_abend_stunde"}
 _SETTING_STUNDE_OPT = {"ruhezeit_von", "ruhezeit_bis"}          # Stunde ODER None (= aus)
-_SETTING_BOOL = {"depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content"}
+_SETTING_BOOL = {"depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content", "vorschlaege_pausiert"}
 
 
 def _coerce_setting(key: str, wert):
@@ -4716,6 +4718,25 @@ def _coerce_setting(key: str, wert):
             return None
         return max(0, min(23, int(float(wert))))
     return max(0.0, float(wert))                                # pct / Betrag
+
+
+@app.get("/api/anbieter")
+def anbieter_liste(request: Request, bereich: str = ""):
+    """VORSCHLAGSPAUSE_ANBIETER P2: alle externen Anbieter/Datenquellen mit Zweck, Stand und Kostenhinweis --
+    nur Schluessel-NAMEN, nie Werte. Investment-Kachel (`bereich=Investment`) fuer das Modul invest, sonst Administration."""
+    from ...governance.dienste_register import anbieter
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if not (hat_modul(u, "administration") or (bereich == "Investment" and hat_modul(u, "invest"))):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "nur fuer den CEO")
+    liste = [a for a in anbieter(_google_secrets()) if not bereich or a["bereich"] == bereich]
+    return {"anbieter": liste, "eingerichtet": sum(a["stand"] == "eingerichtet" for a in liste),
+            "kann_kosten": sum(a["kann_kosten"] and a["stand"] == "eingerichtet" for a in liste)}
+
+
+@app.get("/api/investment/pause")
+def investment_pause():
+    """VORSCHLAGSPAUSE P1: Stand des Schalters (seit, von wem, wie viele Vorschlaege unterdrueckt)."""
+    return inv_store.pause_info()
 
 
 @app.get("/api/settings")

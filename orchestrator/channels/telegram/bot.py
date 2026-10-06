@@ -214,6 +214,27 @@ def _deliver_approvals(token: str, chat_id, ctx) -> None:
         print(f"[approval] Zustell-Fehler: {exc}", flush=True)
 
 
+def _inv_pausiert(ctx) -> bool:
+    """VORSCHLAGSPAUSE P1: Sind Investment-Vorschlaege systemweit pausiert? (Fehler -> nicht pausiert.)"""
+    eng = getattr(ctx, "investment", None)
+    try:
+        return bool(eng is not None and eng.store.vorschlaege_pausiert())
+    except Exception:
+        return False
+
+
+def _auto_freigabe(ctx, quelle: str, payload: dict, frage: str):
+    """Automatisch erzeugte Investment-Freigabe anlegen -- waehrend der Vorschlagspause nur protokollieren.
+    (Vom CEO selbst angestossene Freigaben, z. B. „Andere Summe“, laufen weiter direkt ueber `approvals.add`.)"""
+    if _inv_pausiert(ctx):
+        try:
+            ctx.investment.store.unterdrueckt_add(quelle, frage)
+        except Exception:
+            pass
+        return None
+    return ctx.approvals.add("paper_order", payload, frage=frage)
+
+
 def _parse_betrag(text: str) -> float:
     """Zieht einen USD-Betrag aus einer Nachricht (z. B. '50', '50 USD', '50,5')."""
     import re
@@ -914,7 +935,7 @@ def _autonomie_kontext(eng, forecaster, watch, datum: str) -> dict:
     k = forecaster.live_gesamt()   # NUR Live-Auswertungen (Backtest schaltet keine Autonomie frei)
     freigeschaltet = k.get("n", 0) >= 20 and _autonomie_f(k.get("richtungsquote")) >= 0.55
     return {"equity": equity, "cash": _autonomie_f(konto.get("cash")), "tagesverlust_pct": tagesverlust,
-            "kill_switch": bool(watch and watch.store.paused()),
+            "kill_switch": bool(watch and watch.store.paused()) or bool(eng.store.vorschlaege_pausiert()),   # + Vorschlagspause
             "nacht_budget_genutzt": round(sum(_autonomie_f(p.get("order_wert")) for p in heute), 2),
             "trades_im_fenster": len(heute), "autonomie_freigeschaltet": freigeschaltet}
 
@@ -948,8 +969,8 @@ def _auto_trade_tick(ctx, eng, forecaster, auto_trader, datum: str) -> None:
             gruende = "; ".join(d["urteil"]["gruende"][:2]) or "Freigabe noetig"
             frage = (f"Paper-Kauf: {qty:g} {c['symbol']} (~{betrag} USD, Konf. {round(c['konfidenz'] * 100)}%, "
                      f"{c.get('signale_zahl', 0)} Signale).{_cash_txt(kontext.get('cash'))} {gruende}. Ausfuehren?")
-            ctx.approvals.add("paper_order", {"symbol": c["symbol"], "qty": qty, "side": "buy",
-                                              "asset": c["asset"]}, frage=frage)
+            _auto_freigabe(ctx, "auto-trade", {"symbol": c["symbol"], "qty": qty, "side": "buy",
+                                               "asset": c["asset"]}, frage)
         # aktion == "skip" -> globaler Schutzschalter -> nichts tun
 
 
@@ -998,8 +1019,8 @@ def _auto_trade_krypto_tick(ctx, eng, forecaster, datum: str) -> None:
                  f"{round(c['konfidenz'] * 100)}%, {c.get('signale_zahl', 0)} Signale, Ziel "
                  f"{c.get('ziel_return_pct'):+.1f}%).{_cash_txt(kontext.get('cash'))} "
                  f"Autonom erst nach Track-Record. Ausfuehren?")
-        ctx.approvals.add("paper_order", {"symbol": alp, "qty": qty, "side": "buy", "asset": "krypto",
-                                          "preis": preis}, frage=frage)
+        _auto_freigabe(ctx, "auto-trade-krypto", {"symbol": alp, "qty": qty, "side": "buy", "asset": "krypto",
+                                          "preis": preis}, frage)
 
 
 def _positionen_index(eng) -> dict:
@@ -1071,8 +1092,8 @@ def _market_monitor_tick(ctx, eng, monitor, betrag_usd: float = 30.0) -> None:
                 frage = (f"Live-Abfall: {c['symbol']} faellt {c['move_pct']:+.1f}% (kurzfristig) — du haeltst es. "
                          f"Verkauf jetzt = {_gv_hinweis(held['pl'], held['plpc'])}. Position schuetzen? "
                          f"Verkauf {held['qty']:g} {order_sym} (Paper)?")
-                ctx.approvals.add("paper_order", {"symbol": order_sym, "qty": held["qty"], "side": "sell",
-                                                  "asset": asset, "preis": preis}, frage=frage)
+                _auto_freigabe(ctx, "monitor", {"symbol": order_sym, "qty": held["qty"], "side": "sell",
+                                                "asset": asset, "preis": preis}, frage)
             else:                                             # nicht im Depot -> Kauf-Chance
                 if order_sym in offene_buys:
                     continue
@@ -1081,8 +1102,8 @@ def _market_monitor_tick(ctx, eng, monitor, betrag_usd: float = 30.0) -> None:
                     continue
                 frage = (f"Live-Dip: {c['symbol']} faellt {c['move_pct']:+.1f}% (kurzfristig). Kauf-Chance im "
                          f"Paper? {qty:g} {order_sym} (~{betrag_usd:g} USD).{cash_txt} Ausfuehren?")
-                ctx.approvals.add("paper_order", {"symbol": order_sym, "qty": qty, "side": "buy",
-                                                  "asset": asset, "preis": preis}, frage=frage)
+                _auto_freigabe(ctx, "monitor", {"symbol": order_sym, "qty": qty, "side": "buy",
+                                                "asset": asset, "preis": preis}, frage)
         elif ctx.notifications is not None:                   # steigt -> Info (Take-Profit macht der Exit-Monitor)
             zusatz = " — im Depot" if held else ""
             ctx.notifications.enqueue(
@@ -1122,8 +1143,8 @@ def _exit_monitor_tick(ctx, eng, *, stop_pct: float = 8.0, target_pct: float = 1
         elif sig == "target" and ctx.approvals is not None and sym not in offene_sells:   # Take-Profit -> vorschlagen
             frage = (f"Gewinn mitnehmen? {p.get('symbol')}: Verkauf {qty:g} {sym} = "
                      f"{_gv_hinweis(pl_usd, plpc)} (Paper). Ausfuehren?")
-            ctx.approvals.add("paper_order", {"symbol": sym, "qty": qty, "side": "sell", "asset": asset,
-                                              "preis": preis}, frage=frage)
+            _auto_freigabe(ctx, "take-profit", {"symbol": sym, "qty": qty, "side": "sell", "asset": asset,
+                                                "preis": preis}, frage)
 
 
 def _real_depot_monitor_tick(ctx, eng) -> None:
@@ -1133,7 +1154,7 @@ def _real_depot_monitor_tick(ctx, eng) -> None:
     if ctx.notifications is None:
         return
     cfg = eng.store.settings()
-    if not cfg.get("depot_alerts", True):
+    if not cfg.get("depot_alerts", True) or cfg.get("vorschlaege_pausiert"):     # + Vorschlagspause (P1)
         return
     from ...investment.portfolio import real_portfolio, depot_hinweise
     agg = eng.store.real_positionen()
@@ -1161,6 +1182,8 @@ def _depot_briefing_zeile(eng) -> str | None:
     cfg = eng.store.settings()
     zeilen = [f"Echtes Depot: Gesamtwert {s['gesamtwert']:.2f} {cur} "
               f"(offen {s['gv_abs']:+.2f} {cur} / {s['gv_pct']:+.1f}%; realisiert {s['realisiert']:+.2f} {cur})."]
+    if cfg.get("vorschlaege_pausiert"):                    # Vorschlagspause: nur der Stand, keine Hinweise
+        return zeilen[0]
     for h in depot_hinweise(dp["positionen"], stop_pct=cfg["depot_stop_pct"], target_pct=cfg["depot_target_pct"]):
         zeilen.append(f"  - {h['text']}")
     return "\n".join(zeilen)
@@ -1775,7 +1798,8 @@ def main() -> None:
                 # "Nicht stoeren" aktiv -> leere Liste, Pushes bleiben pending und kommen nach dem Fenster.
                 _pending = [] if _in_ruhezeit(_cfg, _stunde) else ctx.notifications.zustellbar()[:10]
                 for n in _pending:
-                    if not _alert_erlaubt(_cfg, n.get("kategorie")):
+                    if not _alert_erlaubt(_cfg, n.get("kategorie")) or (
+                            _cfg.get("vorschlaege_pausiert") and (n.get("kategorie") or "").lower() == "investment"):
                         ctx.notifications.mark_sent(n["id"])   # Kategorie abgeschaltet -> still verwerfen
                         continue
                     ab = n.get("abteilung") or n.get("quelle") or ""

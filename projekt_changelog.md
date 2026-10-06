@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 19:56] — Claude Code
+- **Was:** VORSCHLAGSPAUSE_ANBIETER P1+P2 gebaut. P1: Schalter „Investment-Vorschlaege pausieren“ (Einstellungen, Investment-App, LUNA-Werkzeug `investment_vorschlaege_pausieren`) -- systemweit keine automatischen Vorschlaege, Freigaben, Investment-Meldungen, Glocken-Eintraege; Auto-Trader pausiert mit, Paper-Stop-Loss schuetzt weiter, Tracking laeuft; unterdrueckte Vorschlaege werden gezaehlt (Tabelle `unterdrueckt`). P2: `governance/dienste_register.py` zur vollstaendigen Anbieter-Liste ausgebaut (25 Anbieter, Stand nur aus Schluesselnamen, Tarif, Kostenerfassung, Konto-Link), Seite „🔌 Anbieter & Datenquellen“, Kachel „Datenquellen“ in der Investment-App, Quelle an Vorschlaegen, `GET /api/anbieter`, `GET /api/investment/pause`; Doku-Check Pruefung 7 (Schluessel im Code ohne Anbieter = rot). Cache app-v2.js v119, style-v2.css v61.
+- **Warum:** CEO 2026-10-06: Pausenknopf fuer Investment-Vorschlaege systemweit, Tracking weiter; Liste der Anbieter/Datenquellen, vor allem moeglicher Kostenverursacher -- Go P1+P2, Empfehlungen (Auto-Trader pausiert, Stop-Loss laeuft) angenommen.
+- **Betroffen:** `orchestrator/investment/store.py`, `investment/engine.py`, `channels/telegram/bot.py`, `channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `governance/dienste_register.py`, `core/hoa_tools.py`, `core/werkzeugauswahl.py`, `core/zustaendigkeit.py`, `scripts/doku_check.py`, `tests/test_vorschlagspause.py`, `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-06 19:46] — Claude Code
 - **Was:** Roadmap `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md` angelegt (geplant): P1 Schalter „Investment-Vorschlaege pausieren“ systemweit (Telegram + LUNA-OS, Tracking laeuft weiter), P2 Anbieter- und Datenquellen-Liste mit Einrichtungsstatus und Kostenhinweis (Doku-Check gegen Veralten), P3 Kosten je Anbieter (optional). Analyse der Investment-Jobs und Anbieter (read-only).
 - **Warum:** CEO 2026-10-06: Pausenknopf fuer Investment-Vorschlaege, „systemweit“, und Liste der Anbieter, die Kosten verursachen koennten.

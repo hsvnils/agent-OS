@@ -121,6 +121,7 @@ const SECTIONS = [
   { id: "wissen", icon: "🧠", label: "Wissen", app: "wissen" },
   { id: "agenten", icon: "🛰", label: "Agenten", app: "home" },
   { id: "system", icon: "📡", label: "System", app: null },
+  { id: "anbieter", icon: "🔌", label: "Anbieter", app: null },
   { id: "team", icon: "👥", label: "Team", app: "team" },
   { id: "einstellungen", icon: "⚙", label: "Einstellungen", app: null },
 ];
@@ -130,14 +131,14 @@ const BEREICHE = [
   { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen", "vertraege"] },
   { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["contentplan", "crm", "radar", "content", "cutter", "reel"] },
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
-  { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "devroadmap", "system", "team", "einstellungen"] },
+  { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "devroadmap", "system", "anbieter", "team", "einstellungen"] },
 ];
 const TEIL_INFO = {
   kunden: "Firmen, Ansprechpartner, Akte", vertraege: "AGB und Vertragsvorlagen", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
   belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
   radar: "Neue Collab-Chancen", contentplan: "Kalender: eigene Posts, Kunden, Drehs", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
-  wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", team: "Team-Zugänge",
+  wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", anbieter: "Dienste, Datenquellen, Kosten", team: "Team-Zugänge",
   einstellungen: "Depot, Briefings, Anmeldung",
 };
 const teilErlaubt = (b) => b.teile.filter(t => { const x = SECTIONS.find(s => s.id === t); return x && darf(x.app); });
@@ -715,7 +716,7 @@ async function renderInvestment() {
     return `<div class="v2-list-row klick" data-act="inv-detail" data-id="${esc(s.symbol)}" data-asset="${esc(s.asset || "aktie")}"><span style="color:${c >= 0 ? "var(--v2-green)" : "var(--v2-red)"};font-weight:700;width:64px">${v}</span><div class="grow"><b>${esc(s.symbol)}</b> <small>${esc(s.asset)} · ${esc(s.quelle)}</small></div><span>›</span></div>`; }).join("") || emptyRow("Noch kein Screen — klick auf Screen jetzt.");
   const sug = (i.vorschlaege || []).map(s => `<div class="v2-list-row klick" data-act="inv-detail" data-id="${esc(s.symbol)}" data-asset="${/^[a-z]/.test(s.symbol || "") && (s.symbol || "").length > 4 ? "krypto" : "aktie"}">
     <span class="v2-badge ${s.risiko_label === "spekulativ" ? "wartet" : "ok"}">${esc(s.risiko_label || "")}</span>
-    <div class="grow"><b>${esc((s.aktion || "").toUpperCase())} ${esc(s.symbol)}</b><small>${esc(s.grund || "")} · Konfidenz ${pct(s.konfidenz)}</small></div><span>›</span></div>`).join("") || emptyRow("Noch keine Vorschläge.");
+    <div class="grow"><b>${esc((s.aktion || "").toUpperCase())} ${esc(s.symbol)}</b><small>${esc(s.grund || "")} · Konfidenz ${pct(s.konfidenz)}${(s.quellen || []).length ? " · Quelle: " + esc(s.quellen.map(q => /^https?:/.test(q) ? "SEC Form 4" : q).join(", ")) : ""}</small></div><span>›</span></div>`).join("") || emptyRow(i.pause && i.pause.pausiert ? "⏸ Pausiert – Vorschläge werden nur protokolliert." : "Noch keine Vorschläge.");
   const ins = (i.insider || []).map(s => `<div class="v2-list-row"><span class="v2-badge wartet">Insider</span><div class="grow"><b>${esc(s.symbol)}</b> <small>${s.cluster || 1} Insider · ~${s.betrag != null ? esc(s.betrag) : "?"} USD · ${esc(s.rolle || "k.A.")} · Konf. ${pct(s.konfidenz)}${s.datum ? " · " + esc(s.datum) : ""}</small></div>${s.filing_url ? `<a href="${esc(s.filing_url)}" target="_blank" rel="noopener">Form 4 ↗</a>` : ""}</div>`).join("") || emptyRow("Noch keine Insider-Signale — klick auf Insider-Scan.");
   const vers = Object.entries((LOOP.kennzahlen && LOOP.kennzahlen.je_version) || {}).map(([k, a]) =>
     `<div class="v2-list-row"><div class="grow"><b>${esc(k)}</b><small>MAE ${num(a.mae_pct)} vs ${num(a.baseline_mae_pct)} · Richtung ${pct(a.richtungsquote)} · n=${a.n}</small></div><span class="v2-badge ${(a.anteil_besser_baseline || 0) >= .5 ? "ok" : "wartet"}">${pct(a.anteil_besser_baseline)} schlägt Baseline</span></div>`).join("") || emptyRow("Noch keine Versions-Daten.");
@@ -730,6 +731,7 @@ async function renderInvestment() {
   const actions = `<button class="v2-btn" data-act="inv-sammeln">📥 Jetzt sammeln</button><button class="v2-btn" data-act="inv-backfill">📚 Historie laden</button><button class="v2-btn" data-act="inv-screen">📡 Screen jetzt</button><button class="v2-btn" data-act="inv-insider">🔍 Insider-Scan</button>`;
   $("#v2-app").innerHTML = secHead("Investment", actions) + `
     <div class="v2-grid">
+      ${i.pause && i.pause.pausiert ? tile("📈 Investment-Vorschläge", invPauseHtml(i.pause), "w12") : ""}
       ${kpiTile("Modus", esc(i.modus || "–"), null, "Handels-Modus")}
       ${kpiTile("Track-Record", scText.split(" ")[0] || "–", null, scText)}
       ${kpiTile("Richtungsquote", g.n ? pct(g.richtungsquote) : "–", g.n ? { up: (g.anteil_besser_baseline || 0) >= .5, text: pct(g.anteil_besser_baseline) } : null, `n=${g.n || 0} · MAE ${num(g.mae_pct)} vs ${num(g.baseline_mae_pct)}`, sparkFromVerlauf(LOOP.verlauf))}
@@ -737,7 +739,7 @@ async function renderInvestment() {
       ${depotPaperTile(PF)}
       ${depotEchtTile(DP)}
       ${tile("Watchlist verwalten", `<div style="margin-bottom:10px" class="v2-inv-search"><input id="inv-sym" placeholder="Aktie/Krypto suchen & hinzufügen…" autocomplete="off"><div id="inv-suggest" class="v2-suggest"></div></div><div class="v2-chips">${wl}</div>`, "w6")}
-      ${tile("Provider", `<div class="v2-chips">${prov || "–"}</div><div class="v2-sub" style="margin-top:10px">Historie: ${esc(histText)}</div>`, "w6")}
+      ${tile("Datenquellen", `<div id="inv-quellen"><div class="v2-chips">${prov || "–"}</div></div><div class="v2-sub" style="margin-top:10px">Historie: ${esc(histText)}</div>`, "w6")}
       ${tile("Lern-Loop · Fehler-Verlauf", `<div class="v2-sub">${(LOOP.panel || {}).symbole || 0} Werte · ${(LOOP.panel || {}).snapshots || 0} Snapshots · Modell ${esc(LOOP.modell_version || "")}</div>${chartMount()}`, "w8")}
       ${tile("Je Anlageklasse", balken((LOOP.kennzahlen || {}).je_asset), "w4")}
       ${tile("Signal-Attribution", balken((LOOP.kennzahlen || {}).je_signal), "w6")}
@@ -751,7 +753,12 @@ async function renderInvestment() {
       ${tile("Autonomie-Leitplanken", lpHtml, "w12")}
     </div>`;
   const inp = $("#inv-sym"); if (inp) inp.addEventListener("input", () => invSuche(inp.value));
-  mountTrends();
+  mountTrends(); invQuellen();
+}
+async function invQuellen() {                                     // P2: Investment-Datenquellen mit Stand + Kostenhinweis
+  const box = $("#inv-quellen"); if (!box) return;
+  const d = await jget("/api/anbieter?bereich=Investment"); if (!d) return;            // ohne Recht: alte Chips bleiben
+  box.innerHTML = d.anbieter.map(anbieterZeile).join("") + `<small class="v2-sub">Alle Anbieter: LUNA &amp; System → 🔌 Anbieter.</small>`;
 }
 let _sucheTimer = null;
 function invSuche(q) {
@@ -3788,6 +3795,31 @@ function leistungHtml(p) {
   h += `<div class="v2-sub" style="margin-top:10px">Ampeln: Freigabequote ≥70 % grün / ≥40 % gelb · Pipeline-Erfolg ≥90 % grün / ≥70 % gelb · Fehler 0 grün / ≤2 gelb. Regelbasiert aus den Ereignis-Protokollen — kein LLM, keine Kosten. Wochenbericht kommt montags 9:00 per Telegram. Nutzung zählt nur App-Öffnungen (ts + App).</div>`;
   return h;
 }
+// VORSCHLAGSPAUSE_ANBIETER P2: alle externen Anbieter mit Zweck, Stand (nur Schluesselnamen) und Kostenhinweis
+const ANB_STAND = { "eingerichtet": ["eingerichtet", "ok"], "teilweise": ["teilweise", "wartet"], "nicht eingerichtet": ["nicht eingerichtet", "neutral"], "ohne Zugang": ["ohne Zugang", "neutral"] };
+function anbieterZeile(a) {
+  const [st, cl] = ANB_STAND[a.stand] || [a.stand, "neutral"];
+  return `<div class="v2-anb">
+    <div class="v2-anb-kopf"><b>${esc(a.name)}</b><span class="v2-badge ${cl}">${esc(st)}</span><span class="v2-badge ${a.kann_kosten ? "wartet" : "ok"}">${a.kann_kosten ? "💶 " : ""}${esc(a.tarif_text)}</span></div>
+    <small>${esc(a.zweck)} · Daten: ${esc(a.daten)}</small>
+    <small>${a.schluessel.length ? "Zugang: " + a.schluessel.map(k => `<code>${esc(k)}</code>`).join(" ") : "kein Zugang nötig"}${a.kosten_erfasst ? " · Kosten werden erfasst" : a.kann_kosten ? " · Kosten werden <b>nicht</b> erfasst" : ""}${a.konto ? ` · <a href="${esc(a.konto)}" target="_blank" rel="noopener">Konto / Abrechnung ↗</a>` : ""}</small></div>`;
+}
+let ANB_FILTER = "alle";
+RENDER.anbieter = renderAnbieter;
+async function renderAnbieter() {
+  const d = await jget("/api/anbieter");
+  if (!d) { $("#v2-app").innerHTML = secHead("Anbieter & Datenquellen", "") + emptyRow("Nur für den CEO sichtbar."); return; }
+  const liste = d.anbieter.filter(a => ANB_FILTER === "alle" || (ANB_FILTER === "eingerichtet" ? a.stand === "eingerichtet" : a.kann_kosten && a.stand === "eingerichtet"));
+  const bereiche = [...new Set(d.anbieter.map(a => a.bereich))];
+  const chips = [["alle", "Alle"], ["eingerichtet", "Eingerichtet"], ["kosten", "💶 Eingerichtet & kann kosten"]].map(([k, l]) => `<button class="v2-chip ${ANB_FILTER === k ? "on" : ""}" data-act="anb-filter" data-val="${k}">${l}</button>`).join("");
+  $("#v2-app").innerHTML = secHead("Anbieter & Datenquellen", "") + `<div class="v2-grid">
+    ${kpiTile("Eingerichtet", String(d.eingerichtet), null, `von ${d.anbieter.length} Anbietern`)}
+    ${kpiTile("Können Kosten verursachen", String(d.kann_kosten), null, "eingerichtet, nicht gratis")}
+    ${tile("Hinweis", `<small class="v2-sub">„Eingerichtet“ heißt: der Zugang ist hinterlegt (nur der Name des Schlüssels wird gezeigt, nie der Wert). Ob ein Konto wirklich etwas kostet, steht nur beim Anbieter – über „Konto / Abrechnung“ prüfen. Erfasst werden heute nur die KI-Kosten.</small>`, "w6")}
+    ${tile("Filter", `<div class="v2-chips">${chips}</div>`, "w12")}
+    ${bereiche.map(b => { const z = liste.filter(a => a.bereich === b); return z.length ? tile(b, z.map(anbieterZeile).join(""), "w6") : ""; }).join("")}
+  </div>`;
+}
 async function renderSystem() {
   const sub = SUBTAB.system || "leistung";
   STATE = await jget("/api/state") || STATE;
@@ -3822,8 +3854,25 @@ const SETTING_BOOLS = new Set(["depot_alerts", "alert_investment", "alert_crm", 
 const SETTING_OPT = new Set(["ruhezeit_von", "ruhezeit_bis"]);
 RENDER.einstellungen = renderEinstellungen;
 RENDER.auftraege = () => { SUBTAB.angebote = "auftraege"; return renderAngebote(); };   // eigener Punkt, gleiche Seite
+// VORSCHLAGSPAUSE P1: ein Schalter fuer alle Investment-Vorschlaege (Telegram + LUNA-OS); Tracking laeuft weiter
+function invPauseHtml(p) {
+  p = p || {};
+  if (!p.pausiert) return `<div class="v2-inv-pause"><div class="grow"><b>Investment-Vorschläge sind an</b><small>Telegram-Freigaben, Hinweise, Glocke und Vorschlagsliste laufen normal.</small></div>
+    <button class="v2-btn" data-act="inv-pause" data-val="an">⏸ Vorschläge pausieren</button></div>`;
+  return `<div class="v2-inv-pause an"><div class="grow"><b>⏸ Investment-Vorschläge pausiert</b><small>seit ${esc(zeit(p.seit))}${p.von ? " · " + esc(p.von) : ""} · Tracking, Prognosen und Auswertung laufen weiter, der Paper-Stop-Loss schützt weiter.
+    ${p.unterdrueckt ? ` ${p.unterdrueckt} Vorschlag/Vorschläge seitdem nur protokolliert.` : " Seitdem nichts unterdrückt."}</small></div>
+    <button class="v2-btn pri" data-act="inv-pause" data-val="aus">▶ Vorschläge wieder an</button></div>`;
+}
+async function invPauseSetzen(an) {
+  if (!an || confirm("Investment-Vorschläge systemweit pausieren?\n\nKeine Freigaben, Hinweise oder Vorschläge mehr – weder per Telegram noch in LUNA-OS. Tracking und Prognosen laufen weiter, der Paper-Stop-Loss schützt weiter.")) {
+    const r = await jpost("/api/settings", { vorschlaege_pausiert: !!an });
+    if (!r || !r.ok) return alert("Speichern fehlgeschlagen.");
+    return AKTIV === "investment" ? renderInvestment() : renderEinstellungen();
+  }
+}
 async function renderEinstellungen() {
-  const cfg = await jget("/api/settings") || {};
+  const [cfg0, pause] = await Promise.all([jget("/api/settings"), jget("/api/investment/pause")]);
+  const cfg = cfg0 || {};
   const nInp = (k, label, sub) => `<label class="v2-set-row"><span class="v2-set-lbl">${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ""}</span><input id="set-${k}" class="v2-inp" type="number" step="any" value="${cfg[k] != null ? esc(String(cfg[k])) : ""}" style="width:120px"></label>`;
   const chk = (k, label, sub) => `<label class="v2-set-row"><span class="v2-set-lbl">${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ""}</span><input id="set-${k}" type="checkbox" ${cfg[k] ? "checked" : ""}></label>`;
   const a = nInp("depot_stop_pct", "Stop-Loss-Hinweis", "ab −x %") + nInp("depot_target_pct", "Take-Profit-Hinweis", "ab +x %") + chk("depot_alerts", "Advisory-Alerts (Telegram)", "an/aus");
@@ -3831,6 +3880,7 @@ async function renderEinstellungen() {
   const c = nInp("briefing_morgen_stunde", "Morgen-Briefing", "Stunde 0–23") + nInp("briefing_abend_stunde", "Abend-Briefing", "Stunde 0–23") + nInp("ruhezeit_von", "Nicht stören von", "Stunde (leer = aus)") + nInp("ruhezeit_bis", "Nicht stören bis", "Stunde (leer = aus)") + chk("alert_investment", "Alerts: Investment") + chk("alert_crm", "Alerts: CRM") + chk("alert_security", "Alerts: Security") + chk("alert_content", "Alerts: Content");
   const actions = `<span id="set-msg" class="v2-msg"></span><button class="v2-btn pri" data-act="settings-save">Speichern</button>`;
   $("#v2-app").innerHTML = secHead("Einstellungen", actions) + `<div class="v2-grid">
+    ${pause ? tile("📈 Investment-Vorschläge", invPauseHtml(pause), "w12") : ""}
     ${tile("🏦 Echtes Depot (Beratung)", a, "w4")}
     ${tile("💼 Paper-Depot (Spielgeld)", b, "w4")}
     ${tile("🔔 Benachrichtigungen & Briefings", c, "w4")}
@@ -3984,6 +4034,8 @@ async function handleAct(act, el) {
     case "ab-manuell": return anEditor("", "", "auftrag");
     case "ab-form-speichern": return abFormSpeichern(id);
     case "ab-entsperren": return abEntsperren(id);
+    case "inv-pause": return invPauseSetzen(val === "an");
+    case "anb-filter": ANB_FILTER = val; return renderAnbieter();
     case "an-entsperren": { const grund = (prompt("Das Angebot ist schon versendet. Warum wird es geändert? (steht im Verlauf; die Erinnerungen der alten Fassung entfallen, danach neue Fassung senden)", "") || "").trim();
       if (!grund) return;
       const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/entsperren`, { grund });

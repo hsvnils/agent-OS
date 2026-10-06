@@ -359,6 +359,8 @@ def tool_specs() -> list[dict]:
         _spec("investment_screen", "Fuehrt einen Markt-Screen aus (FMP-Gewinner + Krypto) und erzeugt daraus "
               "Vorschlaege -- jeder durch den Risk-Agent geprueft (Maker/Checker). Freigegebene werden gemeldet. "
               "Advisory: keine Trades.", {}, []),
+        _spec("investment_vorschlaege_pausieren", "Investment-Vorschlaege pausieren/fortsetzen; leer = Stand.",
+              {"pausieren": _bool("an/aus")}, []),
         _spec("investment_vorschlaege", "Listet die aktuellen Investment-Vorschlaege (Symbol, Aktion, Grund, "
               "Risiko-Label, Konfidenz).", {}, []),
         _spec("investment_scorecard", "Zeigt den Investment-Track-Record (Scorecard): ausgewertete Prognosen, "
@@ -1151,10 +1153,14 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
     if name in ("investment_status", "investment_screen", "investment_vorschlaege", "investment_scorecard",
                 "insider_scan", "insider_signale_zeigen", "watchlist_hinzufuegen",
                 "investment_modus", "paper_konto", "paper_order", "paper_order_freigabe", "investment_sammeln",
-                "investment_backfill"):
+                "investment_backfill", "investment_vorschlaege_pausieren"):
         if ctx.investment is None:
             return {"fehler": "Investment-Abteilung (CIO) nicht verfuegbar."}
         eng = ctx.investment
+        if name == "investment_vorschlaege_pausieren":            # VORSCHLAGSPAUSE P1
+            if args.get("pausieren") is not None:
+                eng.store.set_setting("vorschlaege_pausiert", bool(args.get("pausieren")), akteur="LUNA (CEO-Auftrag)")
+            return {"ok": True, **eng.store.pause_info()}
         if name == "investment_modus":
             modus = (args.get("modus") or "").strip().lower()
             if modus not in ("advisory", "paper", "live"):

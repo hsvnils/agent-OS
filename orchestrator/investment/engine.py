@@ -150,7 +150,10 @@ class InvestmentEngine:
 
     # -- 2) Vorschlag (Maker) -> Risk (Checker) --
     def vorschlag(self, symbol: str, *, aktion: str, grund: str, asset: str = "aktie",
-                  veraenderung_pct: float = 0.0, konfidenz: float = 0.5, quellen=None) -> dict:
+                  veraenderung_pct: float = 0.0, konfidenz: float = 0.5, quellen=None, trotz_pause: bool = False) -> dict:
+        if not trotz_pause and self.store.vorschlaege_pausiert():      # VORSCHLAGSPAUSE P1: nur protokollieren
+            self.store.unterdrueckt_add("vorschlag", f"{aktion} {symbol} -- {grund}")
+            return {"ok": False, "pausiert": True, "hinweis": "Investment-Vorschlaege sind pausiert -- nur protokolliert."}
         urteil = self.risk.pruefe({"symbol": symbol, "aktion": aktion, "asset": asset,
                                    "veraenderung_pct": veraenderung_pct, "konfidenz": konfidenz})
         if urteil["entscheidung"] != "freigabe":
@@ -168,7 +171,7 @@ class InvestmentEngine:
         return {"ok": True, "suggestion_id": sid, "urteil": urteil}
 
     def screen_und_vorschlagen(self, *, schwelle_pct: float = 5.0, max_vorschlaege: int = 5,
-                               krypto_ids=None) -> dict:
+                               krypto_ids=None, trotz_pause: bool = False) -> dict:
         """Voll-Schleife: screenen -> auffaellige Werte als 'beobachten'-Vorschlaege durch den Risk-Agent."""
         screen = self.markt_screen(krypto_ids=krypto_ids)
         erstellt, abgelehnt = [], []
@@ -181,7 +184,7 @@ class InvestmentEngine:
                 s["symbol"], aktion="beobachten",
                 grund=f"Auffaellige Bewegung {s.get('veraenderung_pct'):+.1f}% ({s['quelle']})",
                 asset=s["asset"], veraenderung_pct=s.get("veraenderung_pct") or 0, konfidenz=konfidenz,
-                quellen=[s["quelle"]])
+                quellen=[s["quelle"]], trotz_pause=trotz_pause)
             (erstellt if r.get("ok") else abgelehnt).append({"symbol": s["symbol"], **r})
             if len(erstellt) >= max_vorschlaege:
                 break
@@ -190,7 +193,7 @@ class InvestmentEngine:
 
     # -- Insider-Screen (SEC Form 4, oeffentliche Pflichtmeldungen) --
     def insider_scan(self, symbols=None, *, min_kauf_wert: float = 50_000.0, cluster_min: int = 2,
-                     max_alerts: int = 5, seit: str = "") -> dict:
+                     max_alerts: int = 5, seit: str = "", trotz_pause: bool = False) -> dict:
         """Insider-Screen ueber die Watchlist (oder uebergebene Aktien-Symbole): oeffentliche Form-4-**KAEUFE**
         ziehen, je Symbol aggregieren (Cluster = Zahl kaufender Insider, Summe der Kaufwerte). Auffaellige
         Cluster ODER Grosskaeufe -> Signal (gespeichert) + Risk-gepruefter 'beobachten'-Alert + Second-Brain-
@@ -225,7 +228,7 @@ class InvestmentEngine:
                      f"(SEC Form 4).")
             v = self.vorschlag(sym, aktion="beobachten", grund=grund, asset="aktie",
                                veraenderung_pct=0.0, konfidenz=konfidenz,
-                               quellen=[r.get("filing_url") or "SEC Form 4"])
+                               quellen=[r.get("filing_url") or "SEC Form 4"], trotz_pause=trotz_pause)
             if self.brain:
                 try:
                     self.brain(f"{sym}: Insider-Kauf-Cluster ({cluster} Insider, ~{_geld(summe)}, "

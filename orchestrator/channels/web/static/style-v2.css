@@ -1076,3 +1076,17 @@ button.v2-chip { color: var(--v2-fg); font: inherit; font-size: 13px; cursor: po
 button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-accent-soft); }
 .v2-tb-link { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 2px; }
 .v2-tb-link code { font-size: 12px; overflow-wrap: anywhere; }
+
+/* VORSCHLAGSPAUSE P1: Schalter Investment-Vorschlaege */
+.v2-inv-pause { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.v2-inv-pause .grow { flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.v2-inv-pause small { color: var(--v2-muted); font-size: 12.5px; line-height: 1.45; }
+.v2-inv-pause.an b { color: var(--v2-amber); }
+
+/* VORSCHLAGSPAUSE_ANBIETER P2: Anbieter-Liste */
+.v2-anb { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--v2-line-soft); min-width: 0; }
+.v2-anb:last-child { border-bottom: 0; }
+.v2-anb-kopf { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.v2-anb small { color: var(--v2-muted); font-size: 12.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.v2-anb code { font-size: 11.5px; }
+.v2-anb a { color: var(--v2-accent); text-decoration: none; } .v2-anb a:hover { text-decoration: underline; }
