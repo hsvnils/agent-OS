@@ -13,6 +13,38 @@ const $ = (sel, el = document) => el.querySelector(sel);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const jget = async (u) => { try { const r = await fetch(u); return r.ok ? await r.json() : null; } catch { return null; } };
+// Sofort sichtbar (CEO 2026-10-06): jede erfolgreiche Aenderung an /api laedt Glocke und aktuelle Seite neu --
+// sofort, wenn kein Fenster offen ist, sonst beim Schliessen. Reine Lese-/Vorschau-Aufrufe zaehlen nicht.
+const NUR_LESEN = /\/api\/(nutzung|prefs|chat|tts|sehen|login|logout|passkey)|\/(vorschlag|versandvorschau|vorschau)(\?|$)|konzept-videograf|mailentwurf|\/pruefen$|\/eml$/;
+let AENDERUNG_NR = 0, SEITE_NR = 0, AENDERUNG_TIMER = null;   // Zaehler statt Zeit: gleiche Millisekunde waere mehrdeutig
+const _fetchOriginal = window.fetch.bind(window);
+window.fetch = async (u, opt) => {
+  const r = await _fetchOriginal(u, opt);
+  try {
+    const pfad = typeof u === "string" ? u : (u && u.url) || "", meth = ((opt && opt.method) || "GET").toUpperCase();
+    if (meth !== "GET" && pfad.includes("/api/") && !NUR_LESEN.test(pfad) && r.ok) aenderungGemerkt();
+  } catch { }
+  return r;
+};
+function aenderungGemerkt() {
+  AENDERUNG_NR++;
+  clearTimeout(AENDERUNG_TIMER);
+  AENDERUNG_TIMER = setTimeout(() => {
+    if (typeof glockeAktualisieren === "function") glockeAktualisieren();
+    const m = document.getElementById("v2-modal");
+    if (!m || m.hidden) seiteAktualisieren();
+  }, 450);
+}
+(function () {                                                    // wann wurde die Seite zuletzt neu gezeichnet?
+  const a = document.getElementById("v2-app");
+  if (a) new MutationObserver(() => { SEITE_NR = AENDERUNG_NR; }).observe(a, { childList: true });
+})();
+async function seiteAktualisieren() {
+  if (SEITE_NR >= AENDERUNG_NR || !RENDER[AKTIV]) return;        // Seite wurde seit der letzten Aenderung schon neu gezeichnet
+  const y = window.scrollY;
+  await RENDER[AKTIV]();
+  window.scrollTo(0, y);
+}
 const jpost = async (u, body) => { try { const r = await fetch(u, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) }); return r.ok ? await r.json() : null; } catch { return null; } };
 const num = (v, d = 1) => { const n = Number(v); return isFinite(n) ? n.toFixed(d) : "–"; };
 const pct = (v) => isFinite(Number(v)) ? Math.round(Number(v) * 100) + " %" : "–";
@@ -408,7 +440,7 @@ function openModal(title, html, breit = false) {   // breit = ganze Seite (z. B.
 const formUngespeichert = () => FORM_GEAENDERT && !!document.querySelector("#v2-modal .v2-an-editor:not(.gesperrt)");
 function closeModal() { const m = $("#v2-modal"); if (m && !m.hidden) {
   if (formUngespeichert() && !confirm("Im Formular gibt es ungespeicherte Änderungen. Wirklich schließen?")) return;
-  FORM_GEAENDERT = false; m.hidden = true; if (AKTIV === "dash") renderDash(); } }   // To-dos neu laden
+  FORM_GEAENDERT = false; m.hidden = true; seiteAktualisieren(); } }   // Aenderungen im Fenster -> Seite sofort aktuell
 
 /* Fehler-Verlauf-Chart (LUNA vs. Baseline): breiten-bewusst gerendert -> KEINE Streckung.
    viewBox-Breite = Container-Pixelbreite -> 1:1-Abbildung (Achsen/Text unverzerrt). ResizeObserver wie V1. */

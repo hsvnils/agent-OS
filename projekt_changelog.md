@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 09:02] — Claude Code
+- **Was:** Aenderungen sind im ganzen LUNA-OS sofort sichtbar (BF-59): jede erfolgreiche Aenderung an `/api` (ausser reinen
+  Lese-/Vorschau-Aufrufen) laedt Glocke und aktuelle Seite neu -- ohne offenes Fenster sofort, mit Fenster beim Schliessen; Seiten,
+  die sich selbst schon neu gezeichnet haben, werden nicht doppelt geladen; Scrollposition bleibt. Browsertest Rechner/iPad/iPhone
+  (Uebersicht nach Festschreiben/Zuordnen aktuell, Vorschau/Nutzung/Schliessen ohne Aenderung loesen nichts aus), Gegenprobe rot,
+  fruehere Szenarien unveraendert. Cache v109. Ausserdem geprueft (nur lesend): die Amazon-Mail „Bestellt: PUMA Unisex Anzarun
+  Lite“ (Bestellbestaetigung, keine Rechnung) wurde am 06.10. 08:52 als „keiner Firma“ zugeordnet; gebucht ist nichts.
+- **Warum:** CEO: Punkte bleiben bis zum Reload stehen -- „Aenderungen sollen sofort sichtbar sein“; PUMA-Schuhe sind Firmenausgabe.
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `docs/bekannte-fehler.md`
+
 ## [2026-10-06 08:57] — Claude Code
 - **Was:** Deploy SERIEN_UND_VORSTELLUNG live geprueft (nur lesend): LUNA-OS laedt v108/v55; Content-Plan liefert die Rhythmen;
   Vorschau der Vorstellungs-Mail mit Absender luna@hanserautisch.de, Canva-Link und UWG-Hinweis, Versand bereit; Textbaustein-Arten
