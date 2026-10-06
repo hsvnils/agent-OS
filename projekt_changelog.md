@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 10:02] — Claude Code
+- **Was:** Bestellbestaetigungen als Eigenbeleg buchen: `core/bestellung.py` liest aus der weitergeleiteten Mail Betrag („Summe
+  34.99€“), Datum, Haendler, Bestellnummer und Zweck (Text ueber der Weiterleitung); „Ausgabe aus Bestellbestaetigung“ fuellt das
+  Eigenbeleg-Formular vor, die Mail wird als Nachweis verknuepft (`nachweis.akte_id`, kein Doppel); Handlungsbedarf „🛒 Bestellung
+  als Ausgabe buchen“ bis gebucht oder „Keine Firmenausgabe“; Eigenbeleg zeigt den Nachweis. Pruefung des Bestands (nur lesend):
+  genau eine ungebuchte Bestellbestaetigung -- PUMA (30.09.2026, 34,99 €, Bestellnr. 305-4067967-3366747); echte Mail korrekt
+  gelesen. 4 neue Tests (3 Gegenproben rot), Browsertest Rechner/iPad/iPhone, Suite gruen. Cache v114.
+- **Warum:** CEO: „Ich will nicht jedes Mal die Amazon-Rechnung schicken muessen … Funktion einbauen und weitere ungebuchte
+  Bestellbestaetigungen suchen.“
+- **Betroffen:** `orchestrator/core/bestellung.py` (neu), `orchestrator/core/eigenbelege.py`, `orchestrator/channels/web/app.py`,
+  `static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_bestellung.py` (neu), `docs/datenfluesse.md`,
+  `docs/entscheidungs-register.md`
+
 ## [2026-10-06 09:56] — Claude Code
 - **Was:** Deploy „Suche findet Mails ohne Firma“ + BF-63 live geprueft (nur lesend): LUNA-OS laedt v113; Suche „puma“ findet
   „Bestellt: „PUMA Unisex Anzarun Lite...““ (keiner Firma zugeordnet), die Mail oeffnet als PDF (200); „Letzte Zahlungen“ kommen

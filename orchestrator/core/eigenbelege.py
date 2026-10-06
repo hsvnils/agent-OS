@@ -10,6 +10,7 @@ dafuer bei der Zahlung ein abweichendes Zuordnungsjahr; LUNA prueft nur, dass es
 """
 from __future__ import annotations
 
+import re
 from datetime import date
 
 from .beleg_pdf import cent
@@ -103,6 +104,11 @@ class EigenbelegStore:
         d = {"art": art, "datum": tag, "betrag_cent": betrag, "kategorie": kat, "text": text,
              "gegenpartei": str(daten.get("gegenpartei") or "").strip()[:200],
              "referenz": str(daten.get("referenz") or "").strip()[:120]}
+        if daten.get("nachweis"):                            # Bestellbestaetigung o. Ae. aus der Akte als Nachweis
+            na = str(daten["nachweis"]).strip()
+            if not re.fullmatch(r"D-[0-9a-f]{8}", na):
+                raise ValueError("Nachweis ungueltig.")
+            d["nachweis"] = {"akte_id": na}
         if daten.get("firma"):                               # Etappe 14: Stammdaten-Nummer der Gegenpartei
             d["firma"] = str(daten["firma"]).strip().upper()[:20]
         if (z := zuordnung_pruefen(tag, daten.get("zuordnung_jahr"))):

@@ -3278,12 +3278,12 @@ function zehnTageVerdrahten(datumId, boxId) {   // 10-Tage-Regel: Auswahl nur zw
 }
 const zehnTageWert = (boxId) => { const s = $("#" + boxId + "-jahr"); return s ? s.value : ""; };
 let EB_FIRMEN = [];
-async function ebNeu(art) {
+async function ebNeu(art, v) {                                     // v = Vorschlag aus einer Bestellbestaetigung (Mail)
   EB_FIRMEN = (((await jget("/api/crm/kunden")) || {}).firmen || []).filter(x => x.aktiv);
   if (!FIN_KAT) FIN_KAT = ((await jget("/api/finanzen/eigenbelege")) || {}).kategorien || { einnahme: {}, ausgabe: {} };
   const kat = Object.entries(FIN_KAT[art] || {});
-  openModal(art === "einnahme" ? "Einnahme ohne eigene Rechnung" : "Ausgabe ohne Beleg", `<div class="v2-form" style="max-width:620px">
-    <div class="v2-msg">${art === "einnahme" ? "Zum Beispiel Auszahlungen von YouTube, Instagram oder anderen Plattformen – Geld, für das du keine eigene Rechnung schreibst. Zählt zum Umsatz (Kleinunternehmer-Grenze)." : "Nur wenn es wirklich keinen Beleg gibt (z. B. Kontoführungsgebühr, Parkautomat). Rechnungen bitte unter „📥 Belege“ hochladen."} LUNA vergibt eine Eigenbeleg-Nummer (EB-…); korrigieren geht nur per Storno.</div>
+  openModal(v ? "🛒 Ausgabe aus Bestellbestätigung" : art === "einnahme" ? "Einnahme ohne eigene Rechnung" : "Ausgabe ohne Beleg", `<div class="v2-form" style="max-width:620px">
+    <div class="v2-msg" ${v ? "hidden" : ""}>${art === "einnahme" ? "Zum Beispiel Auszahlungen von YouTube, Instagram oder anderen Plattformen – Geld, für das du keine eigene Rechnung schreibst. Zählt zum Umsatz (Kleinunternehmer-Grenze)." : "Nur wenn es wirklich keinen Beleg gibt (z. B. Kontoführungsgebühr, Parkautomat). Rechnungen bitte unter „📥 Belege“ hochladen."} LUNA vergibt eine Eigenbeleg-Nummer (EB-…); korrigieren geht nur per Storno.</div>
     <div class="v2-an-zeile"><label class="v2-feld"><small>${art === "einnahme" ? "Eingegangen am *" : "Bezahlt am *"}</small><input id="eb-datum" type="date" value="${heuteIso()}"></label>
       <label class="v2-feld"><small>Betrag (€) *</small><input id="eb-betrag" inputmode="decimal" placeholder="z. B. 250,50"></label>
       <label class="v2-feld"><small>Kategorie *</small><select id="eb-kat">${kat.length > 1 ? `<option value="">— wählen —</option>` : ""}${kat.map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join("")}</select></label></div>
@@ -3291,12 +3291,24 @@ async function ebNeu(art) {
     <div class="v2-an-zeile"><label class="v2-feld"><small>${art === "einnahme" ? "Von wem" : "An wen"}</small><input id="eb-gegen" list="eb-firmen" placeholder="Firma wählen oder Namen tippen (wird mit eigener Nummer angelegt)"><datalist id="eb-firmen">${EB_FIRMEN.map(x => `<option value="${esc(firmaOption(x))}">`).join("")}</datalist></label>
       <label class="v2-feld"><small>Referenz (Kontoauszug, Transaktions-ID)</small><input id="eb-ref"></label></div>
     <div id="eb-zuord"></div>
+    ${v && v.nachweis ? `<div class="v2-msg v2-eb-nachweis">🛒 Aus der Bestellbestätigung vorausgefüllt – bitte Betrag, Datum und Kategorie prüfen.
+      <br>📎 Nachweis: <a href="${esc(v.datei)}" target="_blank" rel="noopener">${esc(v.titel || "Mail")}</a> (wird mit dem Eigenbeleg verknüpft)
+      <br><small>Hinweis: Als Kleinunternehmer gibt es keinen Vorsteuerabzug; für die EÜR reicht ein nachvollziehbarer Beleg mit Zahlungsnachweis. Im Zweifel entscheidet die Steuerberatung.</small></div><input type="hidden" id="eb-nachweis" value="${esc(v.nachweis)}">` : ""}
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="eb-speichern" data-val="${esc(art)}">✔ Buchen</button><button class="v2-btn" data-modal-close>Abbrechen</button></div><div id="eb-msg" class="v2-msg"></div></div>`, false);
   zehnTageVerdrahten("eb-datum", "eb-zuord");
+  if (v) {
+    if (v.datum) $("#eb-datum").value = v.datum;
+    $("#eb-betrag").value = v.betrag || ""; $("#eb-text").value = v.text || ""; $("#eb-ref").value = v.referenz || "";
+    const f = v.firma && EB_FIRMEN.find(x => x.nummer === v.firma);
+    $("#eb-gegen").value = f ? `${f.nummer} · ${f.name}` : (v.gegenpartei || "");
+    ["eb-datum", "eb-betrag", "eb-text", "eb-gegen", "eb-ref"].forEach(id => { const e = $("#" + id); if (e && e.value) e.classList.add("v2-erkannt"); });
+    $("#eb-datum").dispatchEvent(new Event("change", { bubbles: true }));
+    $("#eb-kat").focus();
+  }
 }
 async function ebSpeichern(art) {
   const buchung = { art, datum: $("#eb-datum").value, betrag: $("#eb-betrag").value.trim(), kategorie: $("#eb-kat").value, text: $("#eb-text").value.trim(),
-    gegenpartei: firmaAusText($("#eb-gegen").value).name, firma: firmaAusText($("#eb-gegen").value).firma, referenz: $("#eb-ref").value.trim(), zuordnung_jahr: zehnTageWert("eb-zuord") };
+    gegenpartei: firmaAusText($("#eb-gegen").value).name, firma: firmaAusText($("#eb-gegen").value).firma, referenz: $("#eb-ref").value.trim(), zuordnung_jahr: zehnTageWert("eb-zuord"), nachweis: ($("#eb-nachweis") || {}).value || "" };
   const r = await jpost("/api/finanzen/eigenbelege", { buchung });
   if (!r || !r.ok) return kundenMsg("eb-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
   closeModal(); FIN_JAHR = Number(buchung.zuordnung_jahr || buchung.datum.slice(0, 4)) || FIN_JAHR;
@@ -3312,6 +3324,7 @@ async function ebDetail(nr, meldung, fehler) {
     <div class="v2-kv"><span>${x.art === "einnahme" ? "Eingegangen am" : "Bezahlt am"}</span><b>${esc(datumDe(x.datum))}${x.zuordnung_jahr ? " · zugeordnet " + esc(x.zuordnung_jahr) + " (10-Tage-Regel)" : ""}</b></div>
     <div class="v2-kv"><span>Betrag</span><b>${esc(cent2eur(x.betrag_cent))}</b></div>
     <div class="v2-kv"><span>Kategorie</span><b>${esc(kat)}</b></div>
+    ${x.nachweis && x.nachweis.akte_id ? `<div class="v2-kv"><span>Nachweis</span><b><a href="/api/crm/akte/${encodeURIComponent(x.nachweis.akte_id)}/datei" target="_blank" rel="noopener">📎 Bestellbestätigung (Mail)</a></b></div>` : ""}
     <div class="v2-kv"><span>Wofür</span><b>${esc(x.text)}</b></div>
     ${x.gegenpartei ? `<div class="v2-kv"><span>${x.art === "einnahme" ? "Von" : "An"}</span><b>${esc(x.gegenpartei)}</b></div>` : ""}
     ${x.referenz ? `<div class="v2-kv"><span>Referenz</span><b>${esc(x.referenz)}</b></div>` : ""}
@@ -3984,6 +3997,8 @@ async function handleAct(act, el) {
       return renderFinanzen(`Verlustvortrag ${val}: ${cent2eur(r.betrag_cent)} gespeichert.`);
     }
     case "eb-neu": return ebNeu(val);
+    case "eb-aus-mail": { const v = await jget(`/api/finanzen/bestellung/${encodeURIComponent(id)}/vorschlag`);
+      if (!v) return alert("Die Bestellbestätigung konnte nicht gelesen werden."); return ebNeu("ausgabe", v); }
     case "eb-speichern": return ebSpeichern(val);
     case "eb-detail": return ebDetail(id);
     case "eb-storno": {

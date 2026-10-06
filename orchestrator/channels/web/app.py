@@ -3349,6 +3349,12 @@ def _todos_fuer(u: dict) -> list[dict]:
                         "detail": t.get("firma") or "", "act": "go:crm", "act_id": "", "faellig": f,
                         "dringend": bool(f) and f <= heute,
                         "erledigen": {"pfad": f"/api/crm/todo/{t['id']}/erledigen", "label": "✓ Erledigt"}})
+    if hat_modul(u, "finanzen"):                               # Bestellbestaetigungen ohne Buchung -> als Eigenbeleg buchen
+        from ...core.bestellung import todos as _best_todos
+        try:
+            out += _best_todos(kunden_store.bh.eintraege())
+        except Exception as exc:
+            print(f"[bestellung] todos: {exc.__class__.__name__}", flush=True)
     if hat_modul(u, "crm"):                                    # V2: Vorstellungen ohne Antwort -> nachfassen
         from datetime import date as _date
         from ...core.vorstellung import todos as _vs_todos
@@ -3544,6 +3550,13 @@ async def eigenbeleg_anlegen(request: Request):
         if not (b.get("firma") or str(b.get("gegenpartei") or "").strip()):
             raise ValueError("Bitte angeben, von wem bzw. an wen (Gegenpartei) -- jeder Beleg braucht eine Stammdaten-Nummer.")
         EigenbelegStore.pruefen(b)                           # erst pruefen, dann ggf. Firma anlegen
+        if b.get("nachweis"):
+            from ...core.bestellung import _gebucht, mails
+            e = kunden_store.bh.eintraege()
+            if b["nachweis"] not in mails(e):
+                raise ValueError("Nachweis-Mail nicht gefunden.")
+            if b["nachweis"] in _gebucht(e):
+                raise ValueError(f"Diese Bestellung ist schon gebucht ({_gebucht(e)[b['nachweis']]}).")
         b["firma"] = _firma_fuer_beleg(b.get("firma") or "", b.get("gegenpartei") or "", b.get("art") or "ausgabe", "",
                                        _von(request))
         if not str(b.get("gegenpartei") or "").strip():
@@ -3551,6 +3564,26 @@ async def eigenbeleg_anlegen(request: Request):
         return EigenbelegStore(kunden_store.bh).anlegen(b, von=_von(request))
     return _kunden_aktion(tun)
 
+
+
+@app.get("/api/finanzen/bestellung/{akte_id}/vorschlag")
+def bestellung_vorschlag(akte_id: str):
+    """Bestellbestaetigung (Mail in der Akte) -> Eigenbeleg-Vorschlag; gebucht wird nur per Klick."""
+    from ...core.bestellung import mails, vorschlag
+    m = mails(kunden_store.bh.eintraege()).get(akte_id)
+    if not m:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "keine Bestellbestaetigung")
+    eml = next((d for d in m.get("dateien") or [] if str(d.get("name", "")).lower().endswith(".eml")), None)
+    if not eml:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Original-Mail fehlt")
+    v = vorschlag((kunden_store.bh.dir / eml["pfad"]).read_bytes(), kunden_store)
+    return v | {"nachweis": akte_id, "titel": m.get("titel", ""), "datei": f"/api/crm/akte/{akte_id}/datei"}
+
+
+@app.post("/api/finanzen/bestellung/{akte_id}/keine-ausgabe")
+async def bestellung_keine_ausgabe(akte_id: str, request: Request):
+    from ...core.bestellung import keine_ausgabe
+    return _kunden_aktion(lambda: keine_ausgabe(kunden_store.bh, akte_id, von=_von(request)))
 
 
 @app.post("/api/finanzen/eigenbelege/{nummer}/stornieren")
