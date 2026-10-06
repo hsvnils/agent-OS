@@ -19,7 +19,8 @@ import re
 import uuid
 
 ARTEN = {"angebot": "Angebot", "auftrag": "Auftragsbestätigung", "rechnung": "Rechnung", "storno": "Stornorechnung",
-         "mahnung": "Mahnung", "bericht": "Projektbericht", "konzept": "Konzept"}
+         "mahnung": "Mahnung", "bericht": "Projektbericht", "konzept": "Konzept",
+         "vorstellung": "Vorstellung", "vorstellung_nachfassen": "Vorstellung – Nachfassen"}   # SERIEN_UND_VORSTELLUNG V1/V2
 
 _GEMEINSAM = {"anrede": "„Guten Tag Vorname Nachname,“ bzw. „Sehr geehrte Damen und Herren,“",
               "anrede_moin": "„Moin Vorname Nachname,“ bzw. „Moin,“", "vorname": "Vorname des Ansprechpartners",
@@ -38,6 +39,11 @@ PLATZHALTER: dict[str, dict[str, str]] = {
                              "mahnung_im_text": "„1. Mahnung“, „2. Mahnung“ bzw. „letzte Mahnung“", "betrag": "Gesamtbetrag",
                              "frist": "Zahlungsfrist (Datum)"},
     "bericht": _GEMEINSAM | {"titel_quote": "„ „Titel““ (leer ohne Titel)", "version_zusatz": "„ (Version 2)“ ab der 2. Fassung"},
+    "vorstellung": {k: v for k, v in _GEMEINSAM.items() if k not in ("nummer", "titel", "titel_zusatz")}
+                   | {"praesentation": "Präsentations-Zeile mit Canva-Link (aus dem Katalog)"},
+    "vorstellung_nachfassen": {k: v for k, v in _GEMEINSAM.items() if k not in ("nummer", "titel", "titel_zusatz")}
+                              | {"praesentation": "Präsentations-Zeile mit Canva-Link (aus dem Katalog)",
+                                 "gesendet_am": "Datum der ersten Mail"},
     "konzept": _GEMEINSAM | {"zu_titel": "„ zu „Titel““ (leer ohne Titel)", "titel_oder_vorgang": "Titel, sonst Vorgangsnummer",
                              "version_zusatz": "„ (Version 2)“ ab der 2. Fassung"},
 }
@@ -65,6 +71,14 @@ STANDARD: dict[str, dict] = {
     "bericht": {"betreff": "Projektbericht {nummer}{titel_zusatz}{version_zusatz}",
                 "text": "{anrede_moin}\n\nanbei unser Projektbericht zur Kampagne{titel_quote} mit den erreichten Zahlen "
                         "je Posting.\n\nBei Fragen melden Sie sich gern."},
+    "vorstellung": {"betreff": "Hanserautisch × {kunde} – kurze Vorstellung",
+                    "text": "{anrede_moin}\n\nich möchte Ihnen Hanserautisch kurz vorstellen: Wir machen Content rund um den HSV "
+                            "und Hamburg für unsere Community auf Social Media.\n\nIch könnte mir gut vorstellen, dass {kunde} "
+                            "und unsere Community zusammenpassen – gerne zeige ich Ihnen, wie eine Zusammenarbeit aussehen "
+                            "kann.\n\n{praesentation}\n\nHätten Sie Lust auf ein kurzes Gespräch?"},
+    "vorstellung_nachfassen": {"betreff": "Kurze Nachfrage – Hanserautisch × {kunde}",
+                               "text": "{anrede_moin}\n\nich wollte kurz nachhaken, ob Sie meine Nachricht vom {gesendet_am} "
+                                       "gesehen haben. Gerne erzähle ich Ihnen in einem kurzen Gespräch mehr.\n\n{praesentation}"},
     "konzept": {"betreff": "Konzept zur Freigabe – {titel_oder_vorgang}{version_zusatz}",
                 "text": "{anrede_moin}\n\nanbei unser Konzept{zu_titel} mit Briefing, Ideen und Skripten. Bitte schauen Sie "
                         "es sich an und geben Sie uns kurz Ihre Freigabe oder Ihre Änderungswünsche."},

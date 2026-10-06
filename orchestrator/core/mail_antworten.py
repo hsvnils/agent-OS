@@ -58,6 +58,8 @@ def erfasste(eintraege: list[dict]) -> set[str]:
 
 
 def art(nummer: str) -> str:
+    if nummer.startswith("K-"):
+        return "Vorstellung an"                                # V1: Vorstellungs-Mail an eine Firma
     return "Mahnung" if re.search(r"-M\d$", nummer) else ART.get(nummer[:2], "Beleg")
 
 
@@ -119,7 +121,9 @@ def antworten_pruefen(bh, kunden, postfach, *, eigene: list[str], notify=None, t
             info["ablage"] = "angebot"
         else:
             bezug = mahn_re.get(nummer, nummer)
-            r = Firmenakte(bh, kunden).mail_aufnehmen(roh, key, eigene=eigene, weitergeleitet=False, von=von, bezug=bezug)
+            r = Firmenakte(bh, kunden).mail_aufnehmen(roh, key, eigene=eigene, weitergeleitet=False, von=von,
+                                                      bezug="" if nummer.startswith("K-") else bezug,
+                                                      firma=nummer if nummer.startswith("K-") else "")
             info |= {"ablage": "akte", "akte_id": r["id"], "bezug": bezug}
         bh.erfassen("mail_antwort", info, von=von)
         schon.add(key)
@@ -132,9 +136,10 @@ def antworten_pruefen(bh, kunden, postfach, *, eigene: list[str], notify=None, t
                            quelle="mail_antworten")
                     continue
                 a = art(nummer)
-                notify(f"✉️ Antwort auf {a} {nummer} von {info['von']}: {info['vorschau'][:160]}",
+                wer = f"{(kunden.firma(nummer) or {}).get('name', '')} ({nummer})" if nummer.startswith("K-") else nummer
+                notify(f"✉️ Antwort auf {a} {wer} von {info['von']}: {info['vorschau'][:160]}",
                        abteilung="CRO", kategorie="crm", quelle="mail_antworten",
-                       detail=f"LUNA-OS -> {a} {nummer} (Postfach luna@hanserautisch.de)")
+                       detail=f"LUNA-OS -> {a} {wer} (Postfach luna@hanserautisch.de)")
             except Exception:
                 pass
     return neu

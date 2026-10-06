@@ -135,7 +135,7 @@ class Firmenakte:
         return [self.kunden.firma(f["nummer"]) or f for f in self.kunden.firmen()]
 
     def mail_aufnehmen(self, roh: bytes, mid: str, *, eigene: list[str], weitergeleitet: bool, von: str = "LUNA-Mail",
-                       bezug: str = "") -> dict:
+                       bezug: str = "", firma: str = "") -> dict:
         """Mail in die Akte (oder „zuordnen“). `eigene` = Adressen des CEO und von LUNA (zaehlen nie als Firma).
         Weitergeleitet: Firma aus dem Original-Absender, Text darueber = Notiz. Rueckgabe {id, firma|""}."""
         from .eingangsbelege import mail_pdf, mail_text, weiterleitung, zweck_aus_mail
@@ -168,6 +168,8 @@ class Firmenakte:
             bezug, nr = self._beleg_firma(f"{betreff}\n{rest[:3000]}")
             if nr:
                 treffer = [nr]
+        if firma and self.kunden.firma(firma):                # Firma steht fest (z. B. Vorstellungs-Mail, V1)
+            treffer = [self.kunden.haupt(self.kunden._stand()[0], firma) or firma]
         datum = jetzt().date().isoformat()
         try:
             from email.utils import parsedate_to_datetime

@@ -733,6 +733,13 @@ class AngebotStore:
         if mail:
             daten["mail"] = mail                                 # {an, message_id, thread_id} beim Versand aus LUNA-OS
         self.bh.erfassen_geprueft("angebot_status", daten, von=von, pruefe=pruefe)
+        if status == "angenommen":                               # V2: Interessent wird Kunde, sobald ein Angebot angenommen ist
+            f = self.kunden.firma((self.angebot(nummer) or {}).get("firma", ""))
+            if f and f.get("typ") == "interessent":
+                try:
+                    self.kunden.firma_aendern(f["nummer"], {"typ": "kunde"}, von=von)
+                except Exception:
+                    pass
         return {"status": status}
 
 

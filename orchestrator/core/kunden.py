@@ -20,8 +20,8 @@ import re
 from .buchhaltung import Buchhaltung
 from .crm import _key as _crm_key   # gleicher Schluessel wie im Collab-CRM
 
-TYPEN = ("kunde", "lieferant", "partner")
-KREIS = {"kunde": "K", "lieferant": "L", "partner": "P"}
+TYPEN = ("kunde", "lieferant", "partner", "interessent")
+KREIS = {"kunde": "K", "lieferant": "L", "partner": "P", "interessent": "K"}   # Interessent: Kundennummer schon vorab
 FIRMA_FELDER = ("name", "typ", "strasse", "plz", "ort", "land", "ustid", "steuernummer", "rechnungsmail", "telefon",
                 "website", "zahlungsziel_tage", "notiz", "aktiv", "verbraucher",
                 # Etappe 14: unsere Kundennummer dort, Zahlungsweg, Rechnungs-Absender (Mail/Domain), Vertraege/Abos

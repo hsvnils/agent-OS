@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 08:51] — Claude Code
+- **Was:** SERIEN_UND_VORSTELLUNG S1, V1, V2 gebaut. S1: wiederkehrender Content im Content-Plan (woechentlich, alle 2 Wochen,
+  monatlich, Ende optional; Termine berechnet, je Termin aendern/auslassen, „diesen und folgende“, Serie beenden). V1:
+  Vorstellungs-Mail aus LUNA-OS in einem Schritt (Firma waehlen oder Name + Mail; neue Firma erst nach erfolgreichem Versand als
+  Interessent; Dubletten-Hinweis; Textbausteine „Vorstellung“/„Nachfassen“ mit Praesentations-Link; UWG-Hinweis, Anlass optional;
+  .eml in der Firmenakte; Antwort erkannt und gemeldet). V2: Reiter „Vorstellungen“/„Interessenten“, Nachfassen nach 7 Tagen im
+  Handlungsbedarf, „Kein Interesse“, Interessent -> Kunde bei angenommenem Angebot. 7 neue Tests (6 Gegenproben rot), Suite gruen,
+  Browsertest Rechner/iPad/iPhone 17 Pro (18 Ansichten ohne Ueberlauf). Cache v108/v55.
+- **Warum:** CEO: „Go fuer S1, V1 und V2“.
+- **Betroffen:** `orchestrator/core/contentplan.py`, `orchestrator/core/vorstellung.py` (neu), `orchestrator/core/kunden.py`,
+  `orchestrator/core/textbausteine.py`, `orchestrator/core/firmenakte.py`, `orchestrator/core/mail_antworten.py`,
+  `orchestrator/core/angebote.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `style-v2.css`, `index-v2.html`,
+  `orchestrator/tests/test_contentplan.py`, `orchestrator/tests/test_vorstellung.py` (neu), `SERIEN_UND_VORSTELLUNG_ROADMAP.md`,
+  `ROADMAP.md`, `docs/datenfluesse.md`
+
 ## [2026-10-06 08:40] — Claude Code
 - **Was:** Roadmap `SERIEN_UND_VORSTELLUNG_ROADMAP.md` angelegt (S1 wiederkehrender Content, V1 Vorstellungs-Mail aus LUNA-OS,
   V2 Nachfassen/Ueberblick), im Roadmap-Verzeichnis registriert; Entscheidung samt UWG-Hinweis im Register. Nichts umgesetzt.

@@ -5,7 +5,7 @@ import unittest
 from datetime import date
 from unittest import mock
 
-from orchestrator.core.contentplan import ContentPlan, feiertage_hamburg, ostersonntag, vorschlag
+from orchestrator.core.contentplan import ContentPlan, feiertage_hamburg, ostersonntag, termine, vorschlag
 from orchestrator.core.konzept import KonzeptStore
 from orchestrator.tests.test_angebote import ApiBasis
 from orchestrator.tests.test_postings import REEL, _auftrag
@@ -93,6 +93,46 @@ class TestPlan(unittest.TestCase):
             vorschlag(plan, system="CCO", client=_Modell("weiss nicht"))
 
 
+class TestSerien(unittest.TestCase):
+    def setUp(self):
+        self.bh, self.ab, self.nr, self.ps = _auftrag([REEL])
+        self.cp = ContentPlan(self.bh)
+        self.serie = lambda von, bis: [(x["datum"], x["titel"], x["status"]) for x in self.cp.zeitraum(von, bis)["eintraege"]
+                                       if x["quelle"] == "serie"]
+
+    def test_1_termine_berechnen(self):
+        self.assertEqual(termine("2026-10-05", "woechentlich", "2026-10-01", "2026-10-31"),
+                         ["2026-10-05", "2026-10-12", "2026-10-19", "2026-10-26"])
+        self.assertEqual(termine("2026-10-05", "zweiwoechentlich", "2026-11-01", "2026-11-30"), ["2026-11-02", "2026-11-16", "2026-11-30"])
+        self.assertEqual(termine("2026-01-31", "monatlich", "2026-01-01", "2026-04-30"),
+                         ["2026-01-31", "2026-02-28", "2026-03-31", "2026-04-30"])          # Monatsletzter
+        self.assertEqual(termine("2026-10-05", "woechentlich", "2026-09-01", "2026-10-15", ende="2026-10-12"),
+                         ["2026-10-05", "2026-10-12"])                                      # vor Start nichts, Ende zaehlt
+
+    def test_2_serie_einzeln_und_ab(self):
+        with self.assertRaises(ValueError):
+            self.cp.serie_anlegen({"datum": "2026-10-05", "titel": "X", "rhythmus": "taeglich"})
+        sid = self.cp.serie_anlegen({"datum": "2026-10-05", "titel": "Matchday-Story", "format": "story", "rhythmus": "woechentlich"})["id"]
+        self.assertEqual(len(self.serie("2026-10-01", "2026-12-31")), 13)                  # ohne Ende offen
+        self.cp.serie_termin(sid, "2026-10-12", {"status": "online"})
+        self.cp.serie_termin(sid, "2026-10-19", {"entfaellt": True})
+        with self.assertRaises(ValueError):
+            self.cp.serie_termin(sid, "2026-10-13", {"status": "online"})                  # kein Termin an dem Tag
+        self.assertEqual(self.serie("2026-10-01", "2026-10-31"),
+                         [("2026-10-05", "Matchday-Story", "idee"), ("2026-10-12", "Matchday-Story", "online"),
+                          ("2026-10-26", "Matchday-Story", "idee")])
+        neu = self.cp.serie_ab(sid, "2026-10-26", {"titel": "Matchday-Reel", "format": "reel"})["id"]
+        z = self.serie("2026-10-01", "2026-11-09")
+        self.assertEqual(z[:2], [("2026-10-05", "Matchday-Story", "idee"), ("2026-10-12", "Matchday-Story", "online")])   # Vergangenes bleibt
+        self.assertEqual(z[2:], [("2026-10-26", "Matchday-Reel", "idee"), ("2026-11-02", "Matchday-Reel", "idee"),
+                                 ("2026-11-09", "Matchday-Reel", "idee")])
+        self.cp.serie_beenden(neu, "2026-11-09")
+        self.assertEqual([d for d, *_ in self.serie("2026-10-20", "2026-12-31")], ["2026-10-26", "2026-11-02"])
+        self.cp.serie_beenden(sid, "2026-10-05")                                             # ab Start = ganz weg
+        self.assertEqual([d for d, *_ in self.serie("2026-10-01", "2026-10-20")], [])
+        self.assertTrue(all(x["quelle"] != "serie" or x["serie"] == neu for x in self.cp.zeitraum("2026-10-01", "2026-12-31")["eintraege"]))
+
+
 class TestApi(ApiBasis):
     def test_endpunkte(self):
         r = self.c.post("/api/contentplan", json={"datum": "2026-10-10", "titel": "Spieltag-Story", "format": "story", "kunde": self.k}).json()
@@ -106,6 +146,18 @@ class TestApi(ApiBasis):
         self.assertTrue(self.c.post(f"/api/contentplan/{r['id']}/entfernen").json()["ok"])
         self.assertFalse(self.c.post("/api/contentplan/CP-gibtsnicht/entfernen").json()["ok"])
         self.assertEqual(self.c.get("/api/contentplan?von=2026-10-31&bis=2026-10-01").status_code, 400)
+
+    def test_serie_api(self):
+        r = self.c.post("/api/contentplan/serie", json={"datum": "2026-10-07", "titel": "Mittwochs-Talk", "rhythmus": "monatlich",
+                                                        "ende": "2026-12-31"}).json()
+        self.assertTrue(r["ok"], r)
+        self.assertTrue(self.c.post(f"/api/contentplan/serie/{r['id']}/termin/2026-11-07", json={"status": "skript"}).json()["ok"])
+        self.assertTrue(self.c.post(f"/api/contentplan/serie/{r['id']}/beenden", json={"ab": "2026-12-07"}).json()["ok"])
+        z = self.c.get("/api/contentplan?von=2026-10-01&bis=2026-12-31").json()
+        self.assertEqual([(x["datum"], x["status"]) for x in z["eintraege"] if x["quelle"] == "serie"],
+                         [("2026-10-07", "idee"), ("2026-11-07", "skript")])
+        self.assertIn("monatlich", z["rhythmen"])
+        self.assertFalse(self.c.post("/api/contentplan/serie/CS-nix/beenden", json={"ab": "2026-10-07"}).json()["ok"])
 
     def test_posting_planen(self):
         an = self.c.post("/api/crm/angebote", json={"angebot": {"firma": self.k, "ansprechpartner": self.ap, "titel": "Herbst",

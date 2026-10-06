@@ -793,7 +793,7 @@ async function crmFirma(firma) {
 
 /* =========================== Kunden (Stammdaten, KUNDEN_FINANZEN Etappe 2) =========================== */
 // Firmen mit Firmenkundennummer K-…, Ansprechpartner mit AP-…; jede Änderung landet als Eintrag im Verlauf.
-const KUNDE_TYP = { kunde: "Kunde", lieferant: "Lieferant", partner: "Partner" };
+const KUNDE_TYP = { kunde: "Kunde", interessent: "Interessent", lieferant: "Lieferant", partner: "Partner" };
 const FIRMA_FORM = [["name", "Firmenname *"], ["typ", "Typ", "typ"], ["strasse", "Straße und Hausnummer"], ["plz", "PLZ"], ["ort", "Ort"], ["land", "Land"],
   ["rechnungsmail", "Rechnungs-Mail", "email"], ["telefon", "Telefon"], ["website", "Website"], ["ustid", "USt-IdNr."], ["handelsregister", "Handelsregister (z. B. Amtsgericht Hamburg HRB 12345)"], ["steuernummer", "Steuernummer"],
   ["zahlungsziel_tage", "Zahlungsziel (Tage)", "number"], ["verbraucher", "Privatperson (Verbraucher)?", "janein"],
@@ -836,12 +836,13 @@ function kundenMsg(id, text, ok) { const m = $("#" + id); if (m) { m.textContent
 RENDER.kunden = renderKunden;
 async function renderKunden() {
   const sub = SUBTAB.kunden || "firmen";
-  const ROLLE = { kunden: "kunde", lieferanten: "lieferant", partner: "partner" };
+  const ROLLE = { kunden: "kunde", interessenten: "interessent", lieferanten: "lieferant", partner: "partner" };
   KUNDEN = await jget("/api/crm/kunden" + (KUNDEN_SUCHE ? "?suche=" + encodeURIComponent(KUNDEN_SUCHE) : "")) || { firmen: [], collab_ohne_nummer: [] };
   const alle = KUNDEN.firmen || [], c = KUNDEN.collab_ohne_nummer || [];
   const f = ROLLE[sub] ? alle.filter(x => (x.typ || "kunde") === ROLLE[sub]) : alle;
   let body;
-  if (sub === "collab") {
+  if (sub === "vorstellungen") body = await vsListe();
+  else if (sub === "collab") {
     body = tile("Collab-Firmen ohne Kundennummer", c.map(x => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(x.status || "")}</span><div class="grow"><b>${esc(x.firma)}</b><small>${esc(kanal[x.quelle] || x.quelle || "")} · ${x.nachrichten || 0} Nachr.${x.letzter_kontakt ? " · " + esc(zeitKurz(x.letzter_kontakt)) : ""}</small></div>
       <button class="v2-btn" data-act="kunde-neu" data-id="${esc(x.firma)}">+ Als Firma anlegen</button><button class="v2-btn" data-act="kunde-collab-zu" data-id="${esc(x.firma)}">Zuordnen…</button></div>`).join("") || emptyRow("Alle Collab-Firmen haben eine Kundennummer."), "w12");
   } else {
@@ -849,13 +850,90 @@ async function renderKunden() {
     body = `${kpiTile("Firmen", String(f.filter(x => x.aktiv).length), null, "aktiv")}${kpiTile("Collab ohne Nummer", String(c.length), null, "noch zuzuordnen")}
       ${tile(KUNDEN_SUCHE ? `Treffer für „${KUNDEN_SUCHE}"` : "Firmen", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Firma</th><th>Typ</th><th>Ort</th><th>Ansprechp.</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow(KUNDEN_SUCHE ? "Keine Treffer." : "Noch keine Firma angelegt — oben rechts „+ Neue Firma“."), "w12")}`;
   }
-  const actions = `<input id="kunden-suche" class="v2-inp" placeholder="Suchen (Name, Nr., Ort, Ansprechpartner)…" value="${esc(KUNDEN_SUCHE)}" style="width:260px"><button class="v2-btn pri" data-act="kunde-neu">+ Neue Firma</button>`;
+  const actions = `<input id="kunden-suche" class="v2-inp" placeholder="Suchen (Name, Nr., Ort, Ansprechpartner)…" value="${esc(KUNDEN_SUCHE)}" style="width:260px"><button class="v2-btn" data-act="vs-neu">✉️ Neue Mail</button><button class="v2-btn pri" data-act="kunde-neu">+ Neue Firma</button>`;
   const n = (t) => alle.filter(x => (x.typ || "kunde") === t).length;
-  $("#v2-app").innerHTML = secHead("Kunden & Lieferanten", actions) + tabs("kunden", [["firmen", `Alle (${alle.length})`], ["kunden", `Kunden (${n("kunde")})`], ["lieferanten", `Lieferanten (${n("lieferant")})`], ["partner", `Partner (${n("partner")})`], ["collab", `Collab ohne Nummer (${c.length})`]]) + `<div class="v2-grid">${body}</div>`;
+  $("#v2-app").innerHTML = secHead("Kunden & Lieferanten", actions) + tabs("kunden", [["firmen", `Alle (${alle.length})`], ["kunden", `Kunden (${n("kunde")})`], ["interessenten", `Interessenten (${n("interessent")})`], ["vorstellungen", "✉️ Vorstellungen"], ["lieferanten", `Lieferanten (${n("lieferant")})`], ["partner", `Partner (${n("partner")})`], ["collab", `Collab ohne Nummer (${c.length})`]]) + `<div class="v2-grid">${body}</div>`;
   const s = $("#kunden-suche");
   if (s) {
     s.addEventListener("input", () => { clearTimeout(_kundenTimer); _kundenTimer = setTimeout(() => { KUNDEN_SUCHE = s.value.trim(); renderKunden().then(() => { const n = $("#kunden-suche"); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }); }, 300); });
   }
+}
+/* SERIEN_UND_VORSTELLUNG V1/V2: Vorstellungs-Mail an Firmen (Firma beim Senden als Interessent), Ueberblick + Nachfassen */
+let VS = { firma: "", nachfassen: false, v: null, textGeaendert: false };
+async function vsDialog(firma, nachfassen) {
+  if (!AN_FIRMEN.length) await belegFormDaten().catch(() => { });
+  VS = { firma: firma || "", nachfassen: !!nachfassen, v: null, textGeaendert: false };
+  const firmen = (AN_FIRMEN || []).filter(f => f.typ !== "lieferant");
+  openModal(nachfassen ? "✉️ Nachfassen" : "✉️ Neue Mail an eine Firma", `<div class="v2-form" id="vs-form">
+    <label class="v2-feld"><small>Empfänger</small><select class="v2-inp" id="vs-firma"><option value="">Neue Firma (wird beim Senden als Interessent angelegt)</option>${firmen.map(f => `<option value="${esc(f.nummer)}" ${f.nummer === VS.firma ? "selected" : ""}>${esc(f.name)} (${esc(f.nummer)})</option>`).join("")}</select></label>
+    <div id="vs-neu" class="v2-form" ${VS.firma ? "hidden" : ""}>
+      <label class="v2-feld"><small>Firmenname *</small><input class="v2-inp" id="vs-name" maxlength="200" placeholder="z. B. Kiez Alm Gastro GmbH"></label>
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Vorname</small><input class="v2-inp" id="vs-vorname"></label><label class="v2-feld"><small>Nachname</small><input class="v2-inp" id="vs-nachname"></label></div>
+      <label class="v2-feld"><small>Website (optional)</small><input class="v2-inp" id="vs-web" inputmode="url" placeholder="https://…"></label></div>
+    <label class="v2-feld"><small>An (Mailadresse) *</small><input class="v2-inp" id="vs-an" type="email" inputmode="email" placeholder="name@firma.de"></label>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Vorlage</small><select class="v2-inp" id="vs-vorlage"></select></label>
+      <label class="v2-modlbl" id="vs-nf-l" hidden><input type="checkbox" id="vs-nf" ${nachfassen ? "checked" : ""}> Nachfassen</label></div>
+    <label class="v2-feld"><small>Betreff *</small><input class="v2-inp" id="vs-betreff"></label>
+    <label class="v2-feld"><small>Text * (mit deiner Signatur)</small><textarea class="v2-inp" id="vs-text" rows="12"></textarea></label>
+    <div class="v2-msg v2-vs-uwg" id="vs-uwg"></div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Anlass (optional, als Nachweis)</small><select class="v2-inp" id="vs-anlass"><option value="">— keiner —</option></select></label>
+      <label class="v2-feld"><small>Notiz zum Anlass</small><input class="v2-inp" id="vs-anlass-notiz" maxlength="300" placeholder="z. B. Gespräch beim Derby, 03.10."></label></div>
+    <div class="v2-kv"><span>Absender</span><b id="vs-absender">…</b></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="vs-senden" id="vs-senden-knopf">✉️ Jetzt senden</button></div><div class="v2-msg" id="vs-msg"></div></div>`);
+  const f = $("#vs-form");
+  f.addEventListener("input", (e) => { if (e.target.id === "vs-text" || e.target.id === "vs-betreff") VS.textGeaendert = true; });
+  let timer;
+  const neuLaden = () => { clearTimeout(timer); timer = setTimeout(() => vsVorschau(), 350); };
+  ["vs-name", "vs-vorname", "vs-nachname"].forEach(id => $("#" + id).addEventListener("input", neuLaden));
+  $("#vs-firma").addEventListener("change", () => { VS.firma = $("#vs-firma").value; $("#vs-neu").hidden = !!VS.firma; VS.textGeaendert = false; vsVorschau(true); });
+  $("#vs-vorlage").addEventListener("change", () => { VS.textGeaendert = false; vsVorschau(); });
+  $("#vs-nf").addEventListener("change", () => { VS.nachfassen = $("#vs-nf").checked; VS.textGeaendert = false; vsVorschau(); });
+  await vsVorschau(true);
+  ($(VS.firma ? "#vs-text" : "#vs-name") || {}).focus?.();
+}
+async function vsVorschau(empfaenger) {
+  const q = new URLSearchParams({ firma: VS.firma, name: ($("#vs-name") || {}).value || "", vorname: ($("#vs-vorname") || {}).value || "",
+    nachname: ($("#vs-nachname") || {}).value || "", vorlage: ($("#vs-vorlage") || {}).value || "", nachfassen: VS.nachfassen ? "1" : "0" });
+  const v = await jget("/api/crm/vorstellung/vorschau?" + q); if (!v || !$("#vs-form")) return;
+  VS.v = v;
+  if (v.bisher && !VS.nachfassen && empfaenger && VS.firma) { VS.nachfassen = true; $("#vs-nf").checked = true; return vsVorschau(empfaenger); }
+  $("#vs-nf-l").hidden = !v.bisher;
+  $("#vs-vorlage").innerHTML = (v.vorlagen || []).map(x => `<option value="${esc(x.id)}" ${x.id === v.vorlage ? "selected" : ""}>${esc(x.name)}${x.standard && x.name !== "Standard" ? " (Standard)" : ""}</option>`).join("");
+  if (!VS.textGeaendert) { $("#vs-betreff").value = v.betreff; $("#vs-text").value = v.text; }
+  if (empfaenger && v.an) $("#vs-an").value = v.an;
+  if ($("#vs-anlass").options.length <= 1) $("#vs-anlass").insertAdjacentHTML("beforeend", Object.entries(v.anlaesse || {}).map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join(""));
+  $("#vs-uwg").textContent = "⚖️ " + v.hinweis_uwg + (v.bisher ? ` · Diese Firma hast du am ${datumDe(v.bisher)} schon angeschrieben.` : "");
+  $("#vs-absender").textContent = v.absender;
+  const k = $("#vs-senden-knopf"); k.disabled = !v.bereit; k.title = v.bereit ? "" : "Versand nicht eingerichtet";
+}
+async function vsSenden(el, trotz) {
+  const body = { an: $("#vs-an").value.trim(), betreff: $("#vs-betreff").value.trim(), text: $("#vs-text").value.trim(), anlass: $("#vs-anlass").value,
+    anlass_notiz: $("#vs-anlass-notiz").value.trim(), nachfassen: VS.nachfassen, bestaetigt: true, trotz_dublette: !!trotz };
+  if (VS.firma) body.firma = VS.firma;
+  else body.neu = { name: $("#vs-name").value.trim(), vorname: $("#vs-vorname").value.trim(), nachname: $("#vs-nachname").value.trim(), website: $("#vs-web").value.trim() };
+  const m = $("#vs-msg");
+  if (!confirm(`Mail jetzt an ${body.an} senden?`)) return;
+  el.disabled = true; m.className = "v2-msg"; m.textContent = "Sende …";
+  const r = await jpost("/api/crm/vorstellung/senden", body); el.disabled = false;
+  if (r && r.ok === false && r.dublette) {
+    m.className = "v2-msg err";
+    m.innerHTML = `${esc(r.hinweis)}<div class="v2-card-actions" style="margin-top:8px">${r.dublette.map(n => `<button class="v2-btn sm" data-act="vs-dublette-nehmen" data-id="${esc(n)}">${esc(((AN_FIRMEN || []).find(f => f.nummer === n) || {}).name || n)} nehmen</button>`).join("")}<button class="v2-btn sm" data-act="vs-trotzdem">Trotzdem neu anlegen</button></div>`;
+    return;
+  }
+  if (!r || r.ok === false) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return; }
+  AN_FIRMEN = []; if (AKTIV === "kunden") renderKunden();
+  return kundeDetail(r.firma, `✉️ Mail an ${r.an} gesendet${r.neu_angelegt ? " – Firma als Interessent angelegt" : ""}. Antworten meldet LUNA per Telegram.`);
+}
+async function vsListe() {
+  const d = await jget("/api/crm/vorstellungen") || {}, l = d.vorstellungen || [];
+  const st = (x) => x.antwort ? `<span class="v2-badge ok">💬 Antwort ${esc(datumDe(x.antwort))}</span>` : x.erledigt ? `<span class="v2-badge neutral">✓ ${esc(x.erledigt)}</span>`
+    : x.typ !== "interessent" ? `<span class="v2-badge ok">${esc(KUNDE_TYP[x.typ] || x.typ)}</span>`
+    : x.nachfassen_faellig ? `<span class="v2-badge warn">Nachfassen fällig</span>` : `<span class="v2-badge wartet">wartet bis ${esc(datumDe(x.faellig_am))}</span>`;
+  const rows = l.map(x => `<div class="v2-list-row v2-vs-zeile"><span>✉️</span><div class="grow"><b class="klick" data-act="kunde-detail" data-id="${esc(x.firma)}">${esc(x.name)}</b>
+      <small>${esc(datumDe(x.erste))}${x.anzahl > 1 ? ` · ${x.anzahl} Mails (${x.nachgefasst} × nachgefasst)` : ""} · an ${esc(x.an)}</small></div>${st(x)}
+      ${x.faellig_am ? `<button class="v2-btn sm" data-act="vs-neu" data-id="${esc(x.firma)}" data-val="nachfassen">Nachfassen …</button><button class="v2-btn sm" data-act="vs-erledigt" data-id="${esc(x.firma)}">Kein Interesse</button>` : ""}</div>`).join("");
+  return tile(`Vorstellungen (${l.length})`, rows || emptyRow("Noch keine Vorstellungs-Mail – „✉️ Neue Mail“ oben rechts."), "w12",
+    `<small class="v2-sub">ohne Antwort nach ${d.nachfassen_tage || 7} Tagen: Erinnerung zum Nachfassen</small>`);
 }
 function kundeNeu(collab) {
   openModal("Neue Firma", `<div class="v2-form">${collab ? `<div class="v2-sub">Wird mit der Collab-Firma <b>${esc(collab)}</b> verknüpft.</div>` : ""}${formFelder("kf", FIRMA_FORM, collab ? { name: collab, typ: "partner" } : {})}
@@ -883,6 +961,7 @@ async function kundeDetail(nr, meldung) {
   const nummern = (f.nummern || [f.nummer]).filter(x => x !== firmaNr(f));
   openModal(`${firmaNr(f)} · ${f.name}`, `${meldung ? `<div class="v2-msg ok">${esc(meldung)}</div>` : ""}
     ${nummern.length ? `<div class="v2-sub">Auch gültig: ${esc(nummern.join(", "))}</div>` : ""}
+    ${f.typ !== "lieferant" ? `<div class="v2-card-actions"><button class="v2-btn" data-act="vs-neu" data-id="${esc(f.nummer)}">✉️ Mail schreiben</button></div>` : ""}
     ${(f.luecken || []).length && f.typ !== "kunde" ? `<div class="v2-msg err">Es fehlt noch: ${esc(f.luecken.join(", "))} – steht meist auf der Rechnung.</div>` : ""}
     ${f.typ !== "kunde" || (bu.belege || []).length ? `<h3>Belege & Zahlungen</h3>${buHtml}` : ""}
     <h3>Stammdaten</h3>${kundeRecherche(f, d)}<div class="v2-form">${formFelder("ke", FIRMA_FORM, f)}
@@ -3233,7 +3312,7 @@ async function renderContentplan(meldung) {
     <select class="v2-inp" data-act-change="cp-kanal"><option value="">Alle Kanäle</option>${Object.keys(CP_KANAL).map(k => `<option value="${k}"${CP.kanal === k ? " selected" : ""}>${esc(CP_KANAL[k] || k)}</option>`).join("")}</select>
     <select class="v2-inp" data-act-change="cp-status"><option value="">Jeder Status</option>${Object.keys(CP_STATUS).map(k => `<option value="${k}"${CP.status === k ? " selected" : ""}>${esc(CP_STATUS[k])}</option>`).join("")}</select></div></div>`;
   const aktionen = `<button class="v2-btn pri" data-act="cp-neu">＋ Eintrag</button><button class="v2-btn" data-act="cp-anlaesse">📌 Anlässe</button><button class="v2-btn" data-act="cp-vorschlag" title="Der Content-Agent (CCO) schlägt eigene Inhalte für die angezeigte Woche vor – nur Entwurf">🪄 Wochenplan vorschlagen</button>`;
-  const es = d.eintraege.filter(e => (!CP.filter || e.quelle === CP.filter) && (!CP.kanal || e.kanal === CP.kanal) && (!CP.status || e.status === CP.status));
+  const es = d.eintraege.filter(e => (!CP.filter || e.quelle === CP.filter || (CP.filter === "plan" && e.quelle === "serie")) && (!CP.kanal || e.kanal === CP.kanal) && (!CP.status || e.status === CP.status));
   const proTag = {}; es.forEach(e => (proTag[e.datum] = proTag[e.datum] || []).push(e));
   const body = CP.ansicht === "liste" ? cpListe(proTag, von, bis) : cpRaster(proTag, von, bis);
   const legende = `<div class="v2-cp-legende"><span class="q-plan">Eigene</span><span class="q-posting">Kunden-Posting</span><span class="q-dreh">Dreh</span><span class="ueber">überfällig</span><span class="fei">Feiertag/Anlass</span></div>`;
@@ -3242,7 +3321,7 @@ async function renderContentplan(meldung) {
 }
 function cpChip(e) {
   const zeit = e.zeit ? `<small>${esc(e.zeit)}</small>` : "";
-  const was = e.quelle === "dreh" ? "🎬" : e.quelle === "posting" ? (e.status === "online" ? "✅" : "📣") : "";
+  const was = e.quelle === "dreh" ? "🎬" : e.quelle === "posting" ? (e.status === "online" ? "✅" : "📣") : e.quelle === "serie" ? "🔁" : "";
   return `<button class="v2-cp-e q-${esc(e.quelle)} s-${esc(e.status || "")}${e.ueberfaellig ? " ueber" : ""}" data-act="cp-eintrag" data-id="${esc(e.id)}" title="${esc(e.titel)}${e.kunde_name ? " · " + esc(e.kunde_name) : ""}${e.status ? " · " + esc(CP_STATUS[e.status] || e.status) : ""}${e.ueberfaellig ? " · überfällig" : ""}">${zeit}<span>${was}${e.kanal && e.quelle !== "dreh" ? `<i title="${esc(CP_KANAL[e.kanal] || e.kanal)}">${esc(CP_KUERZEL[e.kanal] || "")}</i>` : ""} ${esc(e.titel)}</span></button>`;
 }
 function cpMarken(tag) {
@@ -3268,22 +3347,44 @@ function cpListe(proTag, von, bis) {
 }
 async function cpForm(id, datum, vorlage) {
   const e = id ? (CP.d.eintraege.find(x => x.id === id) || {}) : (vorlage || { datum: datum || CP.tag || heuteIso(), kanal: "instagram", format: "reel", status: "idee" });
+  const serie = e.quelle === "serie", rh = CP.d.rhythmen || {};
   if (!CP.firmen) CP.firmen = ((await jget("/api/crm/kunden")) || {}).firmen?.filter(f => f.aktiv !== false && f.typ !== "lieferant").map(f => ({ nummer: f.nummer, name: f.name })) || [];
   const opt = (liste, namen, wert) => liste.map(k => `<option value="${k}"${k === wert ? " selected" : ""}>${esc(namen[k] || k)}</option>`).join("");
-  openModal(id ? "Eintrag bearbeiten" : "Neuer Eintrag", `<div class="v2-form" id="cp-form">
+  const wiederholung = id && !serie ? "" : `<div class="v2-an-zeile"><label class="v2-feld"><small>Wiederholung${serie ? " (gilt für „Diesen und folgende“)" : ""}</small><select class="v2-inp" name="rhythmus" data-cp-rh>${serie ? "" : `<option value="">Keine</option>`}${opt(Object.keys(rh), rh, e.rhythmus || "")}</select></label>
+    <label class="v2-feld" data-cp-ende ${serie || e.rhythmus ? "" : "hidden"}><small>Endet am (optional)</small><input class="v2-inp" type="date" name="ende" value="${esc(e.ende || "")}"></label></div>`;
+  const aktionen = serie
+    ? `<button class="v2-btn pri" data-act="cp-speichern" data-id="${esc(id)}" data-val="termin">Nur diesen Termin speichern</button><button class="v2-btn" data-act="cp-speichern" data-id="${esc(id)}" data-val="ab">Diesen und folgende ändern</button>
+       <button class="v2-btn" data-act="cp-serie-auslassen" data-id="${esc(id)}">Termin auslassen</button><button class="v2-btn" data-act="cp-serie-ende" data-id="${esc(id)}">Serie ab hier beenden</button>`
+    : `<button class="v2-btn pri" data-act="cp-speichern" data-id="${esc(id || "")}">Speichern</button>${id ? `<button class="v2-btn" data-act="cp-entfernen" data-id="${esc(id)}">🗑 Entfernen</button>` : ""}`;
+  openModal(serie ? "Termin einer Serie" : id ? "Eintrag bearbeiten" : "Neuer Eintrag", `<div class="v2-form" id="cp-form">
+    ${serie ? `<div class="v2-msg v2-cp-serie-hinweis">🔁 Teil einer Serie (${esc(rh[e.rhythmus] || e.rhythmus)}, seit ${esc(datumDe(e.start))}${e.ende ? ", bis " + esc(datumDe(e.ende)) : ""})${e.geaendert_einzeln ? " · dieser Termin ist einzeln angepasst" : ""}</div>` : ""}
     <label class="v2-feld"><small>Titel *</small><input class="v2-inp" name="titel" maxlength="160" value="${esc(e.titel || "")}" placeholder="z. B. Derby-Reel: Fanmarsch"></label>
-    <div class="v2-an-zeile"><label class="v2-feld"><small>Datum *</small><input class="v2-inp" type="date" name="datum" value="${esc(e.datum || "")}"></label><label class="v2-feld"><small>Uhrzeit</small><input class="v2-inp" type="time" name="zeit" value="${esc(e.zeit || "")}"></label></div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>${serie ? "Termin" : "Datum *"}</small><input class="v2-inp" type="date" name="datum" value="${esc(e.datum || "")}" ${serie ? "disabled" : ""}></label><label class="v2-feld"><small>Uhrzeit</small><input class="v2-inp" type="time" name="zeit" value="${esc(e.zeit || "")}"></label></div>
+    ${wiederholung}
     <div class="v2-an-zeile"><label class="v2-feld"><small>Kanal</small><select class="v2-inp" name="kanal">${opt(Object.keys(CP_KANAL), CP_KANAL, e.kanal)}</select></label><label class="v2-feld"><small>Format</small><select class="v2-inp" name="format">${opt(Object.keys(CP_FORMAT), CP_FORMAT, e.format)}</select></label><label class="v2-feld"><small>Status</small><select class="v2-inp" name="status">${opt(Object.keys(CP_STATUS), CP_STATUS, e.status)}</select></label></div>
     <label class="v2-feld"><small>Für Kunde (optional)</small><select class="v2-inp" name="kunde"><option value="">— eigener Inhalt —</option>${(CP.firmen || []).map(f => `<option value="${esc(f.nummer)}"${f.nummer === e.kunde ? " selected" : ""}>${esc(f.name)}</option>`).join("")}</select></label>
     <label class="v2-feld"><small>Notiz</small><textarea class="v2-inp" name="notiz" rows="3" maxlength="2000">${esc(e.notiz || "")}</textarea></label>
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="cp-speichern" data-id="${esc(id || "")}">Speichern</button>${id ? `<button class="v2-btn" data-act="cp-entfernen" data-id="${esc(id)}">🗑 Entfernen</button>` : ""}</div><div class="v2-msg" id="cp-msg"></div></div>`);
+    <div class="v2-card-actions">${aktionen}</div><div class="v2-msg" id="cp-msg"></div></div>`);
   $("#cp-form [name=titel]").focus();
 }
-async function cpSpeichern(id) {
+document.addEventListener("change", (e) => {                     // S1: „Endet am“ nur mit Wiederholung
+  if (!e.target.matches || !e.target.matches("[data-cp-rh]")) return;
+  const l = document.querySelector("[data-cp-ende]"); if (l) l.hidden = !e.target.value;
+});
+async function cpSpeichern(id, modus) {
   const f = $("#cp-form"), daten = Object.fromEntries([...f.querySelectorAll("[name]")].map(i => [i.name, i.value.trim()]));
-  const r = await jpost(id ? `/api/contentplan/${encodeURIComponent(id)}` : "/api/contentplan", daten);
+  const nurPlan = (d) => { const x = { ...d }; delete x.rhythmus; delete x.ende; return x; };
+  let pfad, body, text;
+  if (id && id.includes("@")) {                                   // Termin einer Serie
+    const [sid, tag] = id.split("@");
+    if (modus === "ab") { pfad = `/api/contentplan/serie/${encodeURIComponent(sid)}/ab/${tag}`; body = { ...daten, datum: tag }; text = "Serie ab diesem Termin geändert."; }
+    else { pfad = `/api/contentplan/serie/${encodeURIComponent(sid)}/termin/${tag}`; body = nurPlan(daten); delete body.datum; text = "Termin gespeichert."; }
+  } else if (!id && daten.rhythmus) { pfad = "/api/contentplan/serie"; body = daten; text = "Serie angelegt."; }
+  else { pfad = id ? `/api/contentplan/${encodeURIComponent(id)}` : "/api/contentplan"; body = nurPlan(daten); text = id ? "Eintrag gespeichert." : "Eintrag angelegt."; }
+  if (!body.ende) delete body.ende;
+  const r = await jpost(pfad, body);
   if (!r || r.ok === false) { const m = $("#cp-msg"); m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return false; }
-  CP.tag = daten.datum || CP.tag; closeModal(); renderContentplan(id ? "Eintrag gespeichert." : "Eintrag angelegt."); return true;
+  CP.tag = daten.datum || CP.tag; closeModal(); renderContentplan(text); return true;
 }
 function cpAnlaesse() {
   const [von] = cpBereich(), liste = (CP.d.anlaesse || []).map(a => `<div class="v2-list-row"><span>📌</span><div class="grow"><b>${esc(a.titel)}</b><small>${esc(datumDe(a.von))}${a.bis !== a.von ? " – " + esc(datumDe(a.bis)) : ""}${a.notiz ? " · " + esc(a.notiz) : ""}</small></div><button class="v2-btn sm" data-act="cp-anlass-weg" data-id="${esc(a.id)}">Entfernen</button></div>`).join("");
@@ -3308,7 +3409,7 @@ async function cpVorschlag(el) {
 }
 async function cpEintragOeffnen(id) {
   const e = (CP.d.eintraege || []).find(x => x.id === id); if (!e) return;
-  if (e.quelle === "plan") return cpForm(id);
+  if (e.quelle === "plan" || e.quelle === "serie") return cpForm(id);
   if (e.quelle === "posting") return abDetail(e.auftrag);
   if (e.quelle === "dreh") return konzeptFenster(e.vorgang, "dreh");
 }
@@ -3765,6 +3866,13 @@ async function handleAct(act, el) {
       return act === "re-zahlung-storno" ? reDetail(id, m, !ok) : blDetail(id, m, !ok);
     }
     case "hb-filter": HB_FILTER = val || ""; return renderHandlung();
+    case "vs-neu": return vsDialog(id || "", val === "nachfassen");
+    case "vs-senden": return vsSenden(el);
+    case "vs-trotzdem": return vsSenden($("#vs-senden-knopf"), true);
+    case "vs-dublette-nehmen": { const s = $("#vs-firma"); if (!s) return; if (![...s.options].some(o => o.value === id)) s.insertAdjacentHTML("beforeend", `<option value="${esc(id)}">${esc(id)}</option>`);
+      s.value = id; s.dispatchEvent(new Event("change")); const m = $("#vs-msg"); if (m) { m.className = "v2-msg"; m.textContent = "Vorhandene Firma gewählt – bitte prüfen und senden."; } return; }
+    case "vs-erledigt": { if (!confirm("Als „kein Interesse“ abschließen? LUNA erinnert dann nicht mehr ans Nachfassen.")) return;
+      const r = await jpost(`/api/crm/vorstellungen/${encodeURIComponent(id)}/erledigt`, {}); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return renderKunden(); }
     case "todo-oeffnen": {
       if (val.startsWith("go:")) { const [, s, t] = val.split(":"); return go(s, t); }
       return handleAct(val, el);
@@ -3954,7 +4062,12 @@ async function handleAct(act, el) {
     case "cp-neu": if (val && CP.ansicht === "monat" && innerWidth <= 700) { CP.ansicht = "woche"; CP.tag = val; return renderContentplan(); }   // Handy: Tag antippen = Woche
       return cpForm("", val);
     case "cp-eintrag": return cpEintragOeffnen(id);
-    case "cp-speichern": { el.disabled = true; const ok = await cpSpeichern(id); if (!ok) el.disabled = false; return; }
+    case "cp-speichern": { el.disabled = true; const ok = await cpSpeichern(id, val); if (!ok) el.disabled = false; return; }
+    case "cp-serie-auslassen": case "cp-serie-ende": { const [sid, tag] = id.split("@"), ende = act === "cp-serie-ende";
+      if (!confirm(ende ? `Serie ab ${datumDe(tag)} beenden? Frühere Termine bleiben.` : `Termin am ${datumDe(tag)} auslassen?`)) return;
+      const r = ende ? await jpost(`/api/contentplan/serie/${encodeURIComponent(sid)}/beenden`, { ab: tag })
+        : await jpost(`/api/contentplan/serie/${encodeURIComponent(sid)}/termin/${tag}`, { entfaellt: true });
+      closeModal(); return renderContentplan(r && r.ok !== false ? (ende ? "Serie beendet." : "Termin ausgelassen.") : ((r && r.hinweis) || "Fehler.")); }
     case "cp-entfernen": { if (!confirm("Diesen Eintrag aus dem Content-Plan entfernen?")) return; const r = await jpost(`/api/contentplan/${encodeURIComponent(id)}/entfernen`); closeModal(); return renderContentplan(r && r.ok !== false ? "Eintrag entfernt." : ""); }
     case "cp-anlaesse": return cpAnlaesse();
     case "cp-anlass-neu": { const f = $("#cp-anl"), daten = Object.fromEntries([...f.querySelectorAll("[name]")].map(i => [i.name, i.value.trim()]));

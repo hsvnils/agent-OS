@@ -2263,6 +2263,31 @@ def contentplan_anlass_entfernen(aid: str, request: Request):
     return _kunden_aktion(lambda: _contentplan().anlass_entfernen(aid, von=_von(request)))
 
 
+@app.post("/api/contentplan/serie")
+async def contentplan_serie(request: Request):
+    """S1: wiederkehrender Content (woechentlich, alle 2 Wochen, monatlich; Ende optional)."""
+    body = await _json(request)
+    return _kunden_aktion(lambda: _contentplan().serie_anlegen(body, von=_von(request)))
+
+
+@app.post("/api/contentplan/serie/{sid}/termin/{datum}")
+async def contentplan_serie_termin(sid: str, datum: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _contentplan().serie_termin(sid, datum, body, von=_von(request)))
+
+
+@app.post("/api/contentplan/serie/{sid}/ab/{datum}")
+async def contentplan_serie_ab(sid: str, datum: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _contentplan().serie_ab(sid, datum, body, von=_von(request)))
+
+
+@app.post("/api/contentplan/serie/{sid}/beenden")
+async def contentplan_serie_beenden(sid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _contentplan().serie_beenden(sid, str(body.get("ab") or ""), von=_von(request)))
+
+
 @app.post("/api/contentplan/vorschlag")
 def contentplan_vorschlag(body: dict):
     """C3: Wochenplan-Vorschlag vom CCO (Gemini) -- nur Entwurf, uebernommen wird je Eintrag per Klick."""
@@ -3304,6 +3329,13 @@ def _todos_fuer(u: dict) -> list[dict]:
                         "detail": t.get("firma") or "", "act": "go:crm", "act_id": "", "faellig": f,
                         "dringend": bool(f) and f <= heute,
                         "erledigen": {"pfad": f"/api/crm/todo/{t['id']}/erledigen", "label": "✓ Erledigt"}})
+    if hat_modul(u, "crm"):                                    # V2: Vorstellungen ohne Antwort -> nachfassen
+        from datetime import date as _date
+        from ...core.vorstellung import todos as _vs_todos
+        try:
+            out += _vs_todos(kunden_store.bh, kunden_store, _date.fromisoformat(heute))
+        except Exception as exc:
+            print(f"[vorstellung] todos: {exc.__class__.__name__}", flush=True)
     if hat_modul(u, "content_ops"):
         wartet = reel_store.liste(status="wartet")
         if wartet:
@@ -3897,6 +3929,72 @@ def _tb(art: str, vid: str = "") -> dict:
     v = st.vorlage(art, vid)
     return {"vorlage": v, "signatur": st.laden()["signatur"], "auswahl": {"art": art, "vorlage": v["id"],
                                                                          "vorlagen": st.auswahl(art)}}
+
+
+# -- Vorstellungs-Mails (SERIEN_UND_VORSTELLUNG V1/V2) ------------------------------------------------------------------
+def _eigene_adressen() -> list[str]:
+    sec = _google_secrets()
+    return [x.strip() for x in ([sec.get("ALLINKL_ABSENDER", ""), sec.get("GOOGLE_ACCOUNT_EMAIL", "")]
+            + str(sec.get("BELEG_ABSENDER", "hsvnils@icloud.com,hanserautisch@gmail.com,nils@hanserautisch.de,"
+                                          "moin@hanserautisch.de")).split(",")) if "@" in x]
+
+
+@app.get("/api/crm/vorstellung/vorschau")
+def vorstellung_vorschau(firma: str = "", name: str = "", vorname: str = "", nachname: str = "", vorlage: str = "",
+                         nachfassen: int = 0):
+    """V1: Betreff/Text aus der Vorlage „Vorstellung“ (bzw. „Nachfassen“), Empfaenger-Vorschlag, Absender, Anlaesse, UWG-Hinweis."""
+    from ...core.katalog import Katalog
+    from ...core.vorstellung import ANLAESSE, HINWEIS_UWG, _ereignisse, werte
+    art = "vorstellung_nachfassen" if nachfassen else "vorstellung"
+    tb = _tb(art, vorlage)
+    f, ap, an, gesendet = {"name": name.strip()}, {"vorname": vorname.strip(), "nachname": nachname.strip()}, "", ""
+    if firma:
+        f = kunden_store.firma(firma)
+        if not f:
+            raise HTTPException(404, "Firma nicht gefunden")
+        aps = [a for a in f.get("ansprechpartner_liste") or [] if a.get("aktiv") and a.get("mail")]
+        ap = aps[0] if aps else None
+        an = (ap or {}).get("mail") or f.get("rechnungsmail") or ""
+        ev = _ereignisse(kunden_store.bh.eintraege()).get(f["nummer"])
+        gesendet = ev["gesendet"][0]["ts"][:10] if ev else ""
+    from ...core.textbausteine import rendern
+    w = werte(f, ap, Katalog(kunden_store.bh).laden().get("texte"), gesendet_am=gesendet or jetzt_iso()[:10])
+    betreff, text = rendern(art, w, _firmendaten(), vorlage=tb["vorlage"], signatur=tb["signatur"])
+    vs = _versand_absender()
+    return {"an": an, "betreff": betreff, "text": text, "absender": vs["absender"], "versand_kanal": vs["kanal"],
+            "bereit": vs["bereit"] if vs["bereit"] is not None else bool(_google().verfuegbar()),
+            "anlaesse": ANLAESSE, "hinweis_uwg": HINWEIS_UWG, "bisher": gesendet,
+            "firma": {k: f.get(k) for k in ("nummer", "name", "typ")} if firma else None} | tb["auswahl"]
+
+
+@app.post("/api/crm/vorstellung/senden")
+async def vorstellung_senden(request: Request):
+    """V1: Vorstellungs-/Nachfass-Mail senden -- Oeffentlichkeit = CEO-Tor: nur Modul finanzen (Owner), nur mit Bestaetigung."""
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if not hat_modul(u, "finanzen"):
+        return {"ok": False, "hinweis": "Mails an Firmen senden darf nur der CEO."}
+    body = await _json(request)
+
+    def tun():
+        from ...core.vorstellung import senden
+        return senden(kunden_store.bh, kunden_store, _versand_google(body), body, absender_name=ABSENDER_NAME,
+                      eigene=_eigene_adressen(), von=_von(request))
+    return _kunden_aktion(tun)
+
+
+@app.get("/api/crm/vorstellungen")
+def vorstellungen_liste():
+    from datetime import date as _date
+    from ...core.vorstellung import NACHFASSEN_TAGE, liste
+    return {"vorstellungen": liste(kunden_store.bh, kunden_store, _date.fromisoformat(jetzt_iso()[:10])),
+            "nachfassen_tage": NACHFASSEN_TAGE}
+
+
+@app.post("/api/crm/vorstellungen/{nummer}/erledigt")
+async def vorstellung_erledigt(nummer: str, request: Request):
+    body = await _json(request)
+    from ...core.vorstellung import erledigt
+    return _kunden_aktion(lambda: erledigt(kunden_store.bh, nummer, str(body.get("grund") or ""), von=_von(request)))
 
 
 def _kunde_name(firma: str) -> str:

@@ -1,10 +1,10 @@
 # Roadmap: Wiederkehrender Content und Vorstellungs-Mails aus LUNA-OS
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-06
 - Arbeitsbranch: `ai/serien-und-akquise`
 - Basiscommit: `ba6465b`
-- Naechster Schritt: CEO-Go fuer S1, V1 und V2 abwarten.
+- Naechster Schritt: S1, V1, V2 gebaut (2026-10-06) -- CEO-Go fuer Merge, Push und Deploy; danach echter Testversand an eine CEO-Adresse (Gate V1).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -30,7 +30,7 @@
 
 ## Etappe S1: Wiederkehrender Content
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Eintrag mit Wiederholung **woechentlich, alle 2 Wochen, monatlich (gleicher Tag)** und optionalem Enddatum
   (sonst offen); im Kalender erscheinen die Termine automatisch (berechnet, nicht vorab gespeichert); jeder Termin hat eigenen
   Status (Idee -> Online) und laesst sich einzeln aendern oder auslassen; „ganze Serie aendern/beenden“ wirkt ab dem
@@ -38,10 +38,13 @@
 - Gate: Tests (Termine im Zeitraum, Monatsende z. B. 31., Ausnahme/Einzelaenderung, Serienende, Gegenprobe); Browsertest
   Rechner/iPad/iPhone 17 Pro.
 - Aufwand: mittel.
+- Umsetzung (2026-10-06): `core/contentplan.py` `termine()` (Monatsletzter bei 29.-31.), `serie_anlegen/_termin/_ab/_beenden`,
+  Endpunkte `/api/contentplan/serie*`; Kalender zeigt Serientermine mit 🔁, Formular mit „Wiederholung“ + „Endet am“, beim
+  Termin: „Nur diesen Termin speichern“, „Diesen und folgende aendern“, „Termin auslassen“, „Serie ab hier beenden“.
 
 ## Etappe V1: Vorstellungs-Mail aus LUNA-OS
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Knopf „✉️ Neue Mail“ (Kunden und Firmenakte): Empfaenger = Firma aus der Liste **oder** Name + Mailadresse
   (+ optional Ansprechpartner) eintippen; neue Textbaustein-Art „Vorstellung“ (mehrere Vorlagen, mit Signatur, in den
   Einstellungen bearbeitbar), Text anpassbar, optional Anhang (z. B. Praesentation/Canva-Link aus den Vorlagen); Hinweis zur
@@ -51,15 +54,23 @@
 - Gate: Tests (Firma neu/vorhanden, Dublette, Kennung + Antwort-Zuordnung, kein Versand ohne Bestaetigung, Gegenprobe);
   Browsertest; ein echter Testversand an eine CEO-Adresse.
 - Aufwand: mittel bis gross.
+- Umsetzung (2026-10-06): `core/vorstellung.py` (`senden`: Firma erst nach erfolgreichem Versand als Interessent, Dubletten ueber
+  Name/Firmen-Domain mit „vorhandene nehmen“/„trotzdem neu“), Typ `interessent` (Nummernkreis K), Textbaustein-Arten „Vorstellung“
+  und „Vorstellung – Nachfassen“ (mit Praesentations-Link aus dem Katalog), Firmenakte nimmt die .eml mit fester Firma auf,
+  `mail_antworten` meldet „Antwort auf Vorstellung an <Firma>“. Endpunkte `/api/crm/vorstellung/vorschau|senden` (Senden nur
+  Modul finanzen). Oberflaeche: „✉️ Neue Mail“ (Kunden) und „✉️ Mail schreiben“ (Firma), UWG-Hinweis, Anlass optional.
 
 ## Etappe V2: Nachfassen und Ueberblick
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Liste „Vorstellungen“ (wer angeschrieben, wann, Antwort ja/nein); Erinnerung im Handlungsbedarf, wenn nach
   N Tagen (Standard 7) keine Antwort kam; „Nachfassen …“ mit eigener Vorlage; Interessent -> Kunde, sobald ein Angebot
   angenommen wird.
 - Gate: Tests; Browsertest.
 - Aufwand: klein bis mittel.
+- Umsetzung (2026-10-06): Reiter „✉️ Vorstellungen“ und „Interessenten“ unter Kunden; `liste()`/`todos()` -- nach 7 Tagen ohne
+  Antwort „Nachfassen: <Firma>“ im Handlungsbedarf (Oeffnen = Nachfass-Vorlage mit Datum der ersten Mail, „Kein Interesse“ =
+  `vorstellung_erledigt`); Interessent wird beim angenommenen Angebot automatisch Kunde.
 
 ## Nicht-Scope
 
