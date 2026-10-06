@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 09:04] — Claude Code
+- **Was:** Roadmap `IMPRESSUM_SUCHE_ROADMAP.md` angelegt (I1 „Kundendaten suchen“ beim Anlegen, regelbasiert + Schutz gegen Abrufe
+  ins Heimnetz; I2 optional lokale KI); im Roadmap-Verzeichnis registriert. Befund: vorhandene Recherche (`core/firmendaten.py`)
+  ruft URLs ohne Schutz vor internen Adressen ab -- wird in I1 behoben. Nichts umgesetzt.
+- **Warum:** CEO-Frage 2026-10-06 (Impressum-Link eintragen, Daten automatisch einfuellen).
+- **Betroffen:** `IMPRESSUM_SUCHE_ROADMAP.md` (neu), `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-06 09:02] — Claude Code
 - **Was:** Aenderungen sind im ganzen LUNA-OS sofort sichtbar (BF-59): jede erfolgreiche Aenderung an `/api` (ausser reinen
   Lese-/Vorschau-Aufrufen) laedt Glocke und aktuelle Seite neu -- ohne offenes Fenster sofort, mit Fenster beim Schliessen; Seiten,
