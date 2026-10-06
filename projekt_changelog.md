@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 12:30] — Claude Code
+- **Was:** Signatur-Links vom CEO abgenommen: Knopf „Link einfuegen“ unter der Signatur bleibt (kein Rechtsklick-Menue), Links fuer Instagram/Facebook/Twitter/LinkedIn sind eingetragen. Knopf fehlte zunaechst nur, weil der Tab seit vor dem Deploy offen war (Neuladen noetig).
+- **Warum:** CEO-Rueckmeldung „Klappt, Links sind drin“.
+- **Betroffen:** keine Dateien (Abnahme); `buchhaltung/textbausteine.json` auf der NAS vom CEO geaendert
+
 ## [2026-10-06 12:15] — Claude Code
 - **Was:** CEO hat die 4 PDFs der Testrechnungen RE-2026-0001 bis -0004 in LUNAs Drive (`LUNA-Buchhaltung/Belege/2026`, Konto luna.hanserautisch@gmail.com) geloescht. Die Tages-Staende unter `LUNA-Buchhaltung/Stand/` bleiben bewusst erhalten (enthalten bis 06.10. noch die alte Kette).
 - **Warum:** Abschluss der Bereinigung CR Container (CEO-Anweisung).
