@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 18:38] — Claude Code
+- **Was:** Nacharbeit aus der CEO-Abnahme „Beleg in einer Ebene“: nur noch ein Scroll-Balken (Seite hinter offenem Fenster gesperrt), ganzseitige Belege nutzen bis 1600 px Breite, Eingabezeilen buendig ohne Ueberstand (Zahlungsbedingungen/Vorkasse gerade, Zahlungsziel kurz beschriftet), Fenster „Ausgabe aus Bestellbestaetigung“ bricht nach unten um statt seitlich zu scrollen, Reiter Auftraege mit Knopf „+ Neuer Auftrag“ oben rechts (zweiter Knopf entfaellt). Neue Roadmap `BELEG_BEARBEITBAR_ROADMAP.md` (geplant): Belege bis zum Versand bearbeitbar, danach nur mit Begruendung. BF-65. Cache app-v2.js v116, style-v2.css v59.
+- **Warum:** CEO-Rueckmeldung 2026-10-06 (Screenshots PUMA-Buchung, AB-2026-0001, Reiter Auftraege).
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`, `BELEG_EINE_EBENE_ROADMAP.md`, `BELEG_BEARBEITBAR_ROADMAP.md`, `ROADMAP.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-06 12:30] — Claude Code
 - **Was:** Signatur-Links vom CEO abgenommen: Knopf „Link einfuegen“ unter der Signatur bleibt (kein Rechtsklick-Menue), Links fuer Instagram/Facebook/Twitter/LinkedIn sind eingetragen. Knopf fehlte zunaechst nur, weil der Tab seit vor dem Deploy offen war (Neuladen noetig).
 - **Warum:** CEO-Rueckmeldung „Klappt, Links sind drin“.

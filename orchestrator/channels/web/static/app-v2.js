@@ -1175,7 +1175,8 @@ async function renderAngebote() {
     ${tile(sub === "offen" ? "Offene Angebote" : "Alle Angebote", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Firma</th><th>Titel</th><th>Datum</th><th style="text-align:right">Summe</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow(sub === "offen" ? "Keine offenen Angebote — oben rechts „+ Neues Angebot“." : "Noch kein Angebot."), "w12")}`;
   $("#v2-app").innerHTML = anKopf() + `<div class="v2-grid">${body}</div>`;
 }
-const anKopf = () => secHead("Angebote & Aufträge", `<button class="v2-btn pri" data-act="an-neu">+ Neues Angebot</button>`) + tabs("angebote", [["offen", "Offen"], ["alle", "Alle"], ["auftraege", "Aufträge"], ["katalog", "Katalog"], ["preisliste", "Preisliste"]]);
+const anKopf = (auftraege = false) => secHead("Angebote & Aufträge", auftraege   // im Reiter Aufträge: neuer Auftrag (ohne Angebot)
+    ? `<button class="v2-btn pri" data-act="ab-manuell">+ Neuer Auftrag</button>` : `<button class="v2-btn pri" data-act="an-neu">+ Neues Angebot</button>`) + tabs("angebote", [["offen", "Offen"], ["alle", "Alle"], ["auftraege", "Aufträge"], ["katalog", "Katalog"], ["preisliste", "Preisliste"]]);
 
 /* ---------- Editor ---------- */
 function provText(pr) {      // wie core/angebote.provision_text
@@ -1359,7 +1360,7 @@ async function anEditor(nummer, firmaVorwahl, modus) {
   await belegFormDaten();
   if (!AN_FIRMEN.length) return openModal("Neues Angebot", emptyRow("Zuerst unter „🏢 Kunden“ eine Firma anlegen."), true);
   const a = { firma: firmaVorwahl || AN_FIRMEN[0].nummer, datum: heuteIso(), gueltig_bis: heuteIso(14), nachfassen_tage: 7, positionen: [], zuschlaege: [], rabatt_prozent: 0, layout: "hanserautisch" };
-  openModal(alsAuftrag ? "Neuer Auftrag (ohne Angebot)" : "Neues Angebot", anFormHtml(a), true);
+  openModal(alsAuftrag ? "Neuer Auftrag" : "Neues Angebot", anFormHtml(a), true);
   await belegFormularFertig("", "");
   if (alsAuftrag) abEditorUmbauen();
 }
@@ -1415,7 +1416,7 @@ function anZahlungFelder(z) {
   z = z || {}; const v = z.vorkasse || {};
   const wert = v.art === "prozent" ? pz(v.prozent) : v.art === "euro" ? cent2feld(v.cent) : "";
   return `<h4 style="margin:10px 0 2px">💶 Zahlungsbedingungen</h4>
-    <div class="v2-an-zeile"><label class="v2-feld"><small>Zahlungsziel der Rechnung (Tage; leer = aus Kundendaten, sonst 14)</small><input id="an-ziel" type="number" min="0" max="120" value="${esc(z.ziel_tage ?? "")}"></label>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Zahlungsziel (Tage)</small><input id="an-ziel" type="number" min="0" max="120" value="${esc(z.ziel_tage ?? "")}" placeholder="leer = aus Kundendaten, sonst 14" title="Zahlungsziel der Rechnung in Tagen – leer = aus den Kundendaten, sonst 14"></label>
       <label class="v2-feld"><small>Vorkasse</small><select id="an-vk-art"><option value="">keine</option><option value="prozent" ${v.art === "prozent" ? "selected" : ""}>in % des Auftrags</option><option value="euro" ${v.art === "euro" ? "selected" : ""}>fester Betrag in €</option></select></label></div>
     <div id="an-vk-box" ${v.art ? "" : "hidden"}><div class="v2-an-zeile"><label class="v2-feld"><small id="an-vk-lbl">${v.art === "euro" ? "Betrag in €" : "Prozent"}</small><input id="an-vk-wert" inputmode="decimal" value="${esc(wert)}" placeholder="${v.art === "euro" ? "z. B. 500" : "z. B. 50"}"></label>
       <label class="v2-feld"><small>fällig … Tage nach Auftragsbestätigung</small><input id="an-vk-tage" type="number" min="0" max="90" value="${esc(v.frist_datum ? "" : (v.frist_tage ?? 7))}"></label>
@@ -1571,7 +1572,7 @@ async function renderAuftraege() {
   const rows = l.map(a => `<tr class="klick" data-act="ab-detail" data-id="${esc(a.nummer)}"><td><b>${esc(a.nummer)}</b></td><td>${esc(a.firma_name || a.firma)}</td><td>${esc(a.titel || "")}</td><td>${a.angebot ? esc(a.angebot) : `<span class="v2-sub">direkt</span>`}</td><td>${esc([datumDe(a.leistung_von), datumDe(a.leistung_bis)].filter(Boolean).join(" – "))}</td><td style="text-align:right">${cent2eur(a.summe_cent)}</td><td>${abBadge(a.abgeschlossen ? "abgeschlossen" : a.status)}</td></tr>`).join("");
   const body = `${kpiTile("Offene Aufträge", String(offen.length), null, cent2eur(offen.reduce((x, a) => x + (a.summe_cent || 0), 0)))}${kpiTile("Geliefert", String(l.filter(a => a.status === "erledigt").length), null, "bereit für die Rechnung")}
     ${tile("Aufträge", rows ? `<table class="v2-table"><thead><tr><th>Nr.</th><th>Firma</th><th>Titel</th><th>Angebot</th><th>Leistung</th><th style="text-align:right">Summe</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>` : emptyRow("Noch kein Auftrag — entsteht aus einem angenommenen Angebot („📋 Auftrag anlegen“)."), "w12")}`;
-  $("#v2-app").innerHTML = anKopf() + `<div class="v2-card-actions" style="margin:-6px 0 12px"><button class="v2-btn pri" data-act="ab-manuell">+ Neuer Auftrag (ohne Angebot)</button></div><div class="v2-grid">${body}</div>`;
+  $("#v2-app").innerHTML = anKopf(true) + `<div class="v2-grid">${body}</div>`;
 }
 function abNeu(angebotNr, annehmen) {
   openModal(`Auftrag aus ${angebotNr}`, `<div class="v2-form" style="max-width:640px">

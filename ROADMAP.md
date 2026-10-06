@@ -80,7 +80,8 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md` | Textbausteine mit Signatur fuer 6 Belegarten (auch Gmail-Versand) und Knopf „Im Mail-Programm oeffnen“ (Apple Mail iPhone/Mac, Outlook MACO470) | abgeschlossen (T1-T3, T5 live; T4 Geraete-Abnahme gestrichen 2026-10-05) |
 | `CONTENT_PLAN_ROADMAP.md` | Content-Plan als Kalender (eigene + Kunden-Postings, Drehtermine, Anlaesse; Monat/Woche/Liste) | abgeschlossen (C1-C3 live 2026-10-05, C4 Spielplan gestrichen) |
 | `MAILVERSAND_ALLINKL_ROADMAP.md` | Kundenmails ueber All-Inkl (luna@hanserautisch.de) statt Gmail, inkl. Antworten per IMAP | in Umsetzung (M1+M2 live und verifiziert 2026-10-05; M3 Beobachten) |
-| `BELEG_EINE_EBENE_ROADMAP.md` | Beleg in einer Ebene: Formular an der Stelle des Blatts (gesperrt nur lesen) + Umschalter Vorschau; Angebot, Auftrag, Rechnung | in Umsetzung (E1-E3 gebaut 2026-10-05) |
+| `BELEG_EINE_EBENE_ROADMAP.md` | Beleg in einer Ebene: Formular an der Stelle des Blatts (gesperrt nur lesen) + Umschalter Vorschau; Angebot, Auftrag, Rechnung | in Umsetzung (E1-E3 live 2026-10-05, Nacharbeit aus der Abnahme 2026-10-06) |
+| `BELEG_BEARBEITBAR_ROADMAP.md` | Belege bis zum Versand bearbeitbar, mit dem Versand festgeschrieben, danach nur „Bearbeiten“ mit Begruendung (Auftrag, Angebot, Rechnung) | geplant (2026-10-06) |
 | `SERIEN_UND_VORSTELLUNG_ROADMAP.md` | Wiederkehrender Content im Content-Plan; Vorstellungs-Mails an Unternehmen aus LUNA-OS (Firma beim Senden als Interessent) | in Umsetzung (S1, V1, V2 gebaut 2026-10-06) |
 | `IMPRESSUM_SUCHE_ROADMAP.md` | Kundendaten beim Anlegen einer Firma aus dem Impressum vorfuellen (regelbasiert, optional lokale KI) | in Umsetzung (I1 gebaut 2026-10-06) |
 | `GLOBALE_SUCHE_ROADMAP.md` | Globale Suche ueber alle Geschaeftsdaten, Ergebnisse nach Kategorien (Kunden, Angebote, Auftraege, Rechnungen, Ausgaben …) | in Umsetzung (G1 gebaut 2026-10-06) |

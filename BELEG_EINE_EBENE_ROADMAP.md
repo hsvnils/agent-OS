@@ -75,6 +75,18 @@ gilt fuer **Angebot, Auftrag und Rechnung**.
   und beim Schliessen; gesperrt: leere Felder als „–“, nur gewaehlte Zuschlaege; schmalere Hauptspalte (Kopf/Fuss
   untereinander bis 1400 px, Positionen dreispaltig bis 1180 px).
 
+## Nacharbeit aus der CEO-Abnahme (2026-10-06)
+
+- Status: umgesetzt
+- Rueckmeldung CEO: „Belege in einer Ebene sehen gut aus“ -- dazu Darstellungsfehler: zwei Scroll-Balken, ungenutzte
+  freie Flaechen, Zahlungsbedingungen schief (Vorkasse), Fenster „Ausgabe aus Bestellbestaetigung“ zu schmal
+  (Felder rutschen seitlich raus), im Reiter Auftraege stand „Neues Angebot“.
+- Umsetzung: Seite hinter einem offenen Fenster scrollt nicht mehr mit (nur ein Scroll-Balken), ganzseitiges Fenster
+  nutzt bis 1600 px Breite (vorher 1180 px); Eingabezeilen mit buendigen Feldern, die nie ueber den Rand ragen; im
+  schmalen Seitenfenster brechen die Felder nach unten um; Zahlungsziel kurz beschriftet (Erklaerung im Feld);
+  Reiter Auftraege: Knopf oben rechts „+ Neuer Auftrag“, der zweite Knopf „Neuer Auftrag (ohne Angebot)“ entfaellt.
+- Bearbeitbarkeit von Belegen bis zum Versand ist ein eigenes Vorhaben: `BELEG_BEARBEITBAR_ROADMAP.md`.
+
 ## Nicht-Scope
 
 Kein neuer Editor, keine neuen Felder, keine Aenderung an Server-Regeln, PDFs, Nummern oder Buchungen; Mahnungen,
