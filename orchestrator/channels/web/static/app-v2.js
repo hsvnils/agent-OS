@@ -15,7 +15,7 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
 const jget = async (u) => { try { const r = await fetch(u); return r.ok ? await r.json() : null; } catch { return null; } };
 // Sofort sichtbar (CEO 2026-10-06): jede erfolgreiche Aenderung an /api laedt Glocke und aktuelle Seite neu --
 // sofort, wenn kein Fenster offen ist, sonst beim Schliessen. Reine Lese-/Vorschau-Aufrufe zaehlen nicht.
-const NUR_LESEN = /\/api\/(nutzung|prefs|chat|tts|sehen|login|logout|passkey)|\/(vorschlag|versandvorschau|vorschau)(\?|$)|konzept-videograf|mailentwurf|\/pruefen$|\/eml$/;
+const NUR_LESEN = /\/api\/(nutzung|prefs|chat|tts|sehen|login|logout|passkey)|\/(vorschlag|versandvorschau|vorschau)(\?|$)|konzept-videograf|mailentwurf|impressum-suche|\/pruefen$|\/eml$/;
 let AENDERUNG_NR = 0, SEITE_NR = 0, AENDERUNG_TIMER = null;   // Zaehler statt Zeit: gleiche Millisekunde waere mehrdeutig
 const _fetchOriginal = window.fetch.bind(window);
 window.fetch = async (u, opt) => {
@@ -967,8 +967,31 @@ async function vsListe() {
   return tile(`Vorstellungen (${l.length})`, rows || emptyRow("Noch keine Vorstellungs-Mail – „✉️ Neue Mail“ oben rechts."), "w12",
     `<small class="v2-sub">ohne Antwort nach ${d.nachfassen_tage || 7} Tagen: Erinnerung zum Nachfassen</small>`);
 }
+// IMPRESSUM_SUCHE I1: Website/Impressum-Link eintragen -> leere Felder aus dem Impressum vorausfuellen (nur Vorschlag)
+function impressumSuche(prefix) {
+  return `<div class="v2-impressum"><label class="v2-feld"><small>Website oder Link zum Impressum</small><input class="v2-inp" id="${prefix}-impressum-url" inputmode="url" autocomplete="off" placeholder="Website oder Impressum-Seite der Firma"></label>
+    <button class="v2-btn" data-act="impressum-suchen" data-val="${prefix}">🔎 Kundendaten suchen</button></div><div class="v2-msg" id="${prefix}-impressum-msg"></div>`;
+}
+async function impressumSuchen(prefix, el) {
+  const m = $(`#${prefix}-impressum-msg`), url = ($(`#${prefix}-impressum-url`).value || ($(`#${prefix}-website`) || {}).value || "").trim();
+  if (!url) { m.className = "v2-msg err"; m.textContent = "Bitte die Website oder den Link zum Impressum eintragen."; return; }
+  el.disabled = true; m.className = "v2-msg"; m.textContent = "🔎 Lese das Impressum …";
+  const r = await jpost("/api/crm/impressum-suche", { url }); el.disabled = false;
+  if (!r || r.ok === false) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return; }
+  const v = r.vorschlaege || {}, gefuellt = [], anders = [];
+  for (const [k, wert] of Object.entries(v)) {
+    const e = $(`#${prefix}-${k}`); if (!e) continue;
+    if (!e.value.trim()) { e.value = wert; e.classList.add("v2-erkannt"); gefuellt.push(k); }
+    else if (e.value.trim() !== String(wert)) anders.push(`${(FIRMA_FORM.find(f => f[0] === k) || [k, k])[1].replace(" *", "")}: ${wert}`);
+  }
+  if (!Object.keys(v).length) { m.className = "v2-msg err"; m.textContent = r.hinweis || "Nichts gefunden."; return; }
+  m.className = "v2-msg ok";
+  m.innerHTML = `✅ ${gefuellt.length} Feld${gefuellt.length === 1 ? "" : "er"} aus dem Impressum vorausgefüllt – bitte prüfen, gespeichert wird erst mit dem Knopf unten.`
+    + (r.quelle ? ` <a href="${esc(r.quelle)}" target="_blank" rel="noopener">Quelle ↗</a>` : "")
+    + (anders.length ? `<br><small>Nicht überschrieben (schon ausgefüllt): ${esc(anders.join(" · "))}</small>` : "");
+}
 function kundeNeu(collab) {
-  openModal("Neue Firma", `<div class="v2-form">${collab ? `<div class="v2-sub">Wird mit der Collab-Firma <b>${esc(collab)}</b> verknüpft.</div>` : ""}${formFelder("kf", FIRMA_FORM, collab ? { name: collab, typ: "partner" } : {})}
+  openModal("Neue Firma", `<div class="v2-form">${collab ? `<div class="v2-sub">Wird mit der Collab-Firma <b>${esc(collab)}</b> verknüpft.</div>` : ""}${impressumSuche("kf")}${formFelder("kf", FIRMA_FORM, collab ? { name: collab, typ: "partner" } : {})}
     <button class="v2-btn pri" data-act="kunde-anlegen" data-id="${esc(collab || "")}">Anlegen (Nummer wird vergeben)</button><div id="kf-msg" class="v2-msg"></div></div>`);
 }
 async function kundeAnlegen(collab, trotz) {
@@ -996,7 +1019,7 @@ async function kundeDetail(nr, meldung) {
     ${f.typ !== "lieferant" ? `<div class="v2-card-actions"><button class="v2-btn" data-act="vs-neu" data-id="${esc(f.nummer)}">✉️ Mail schreiben</button></div>` : ""}
     ${(f.luecken || []).length && f.typ !== "kunde" ? `<div class="v2-msg err">Es fehlt noch: ${esc(f.luecken.join(", "))} – steht meist auf der Rechnung.</div>` : ""}
     ${f.typ !== "kunde" || (bu.belege || []).length ? `<h3>Belege & Zahlungen</h3>${buHtml}` : ""}
-    <h3>Stammdaten</h3>${kundeRecherche(f, d)}<div class="v2-form">${formFelder("ke", FIRMA_FORM, f)}
+    <h3>Stammdaten</h3>${kundeRecherche(f, d)}<div class="v2-form">${f.verbraucher ? "" : impressumSuche("ke")}${formFelder("ke", FIRMA_FORM, f)}
     <label class="v2-modlbl"><input type="checkbox" id="ke-aktiv" ${f.aktiv ? "checked" : ""}> Aktiv (inaktive Firmen bleiben erhalten, nur ausgeblendet)</label>
     <button class="v2-btn pri" data-act="kunde-speichern" data-id="${esc(f.nummer)}">Änderungen speichern</button><div id="ke-msg" class="v2-msg"></div></div>
     <h3>📁 Akte <small class="v2-sub">Dokumente &amp; Mails</small></h3><div id="akte-box"><div class="v2-empty">Lade…</div></div>
@@ -3899,6 +3922,7 @@ async function handleAct(act, el) {
     }
     case "hb-filter": HB_FILTER = val || ""; return renderHandlung();
     case "vs-neu": return vsDialog(id || "", val === "nachfassen");
+    case "impressum-suchen": return impressumSuchen(val, el);
     case "vs-senden": return vsSenden(el);
     case "vs-trotzdem": return vsSenden($("#vs-senden-knopf"), true);
     case "vs-dublette-nehmen": { const s = $("#vs-firma"); if (!s) return; if (![...s.options].some(o => o.value === id)) s.insertAdjacentHTML("beforeend", `<option value="${esc(id)}">${esc(id)}</option>`);

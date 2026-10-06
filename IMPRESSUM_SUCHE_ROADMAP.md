@@ -1,10 +1,10 @@
 # Roadmap: Kundendaten aus dem Impressum beim Anlegen einer Firma
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-06
-- Arbeitsbranch: `ai/sofort-aktualisieren`
+- Arbeitsbranch: `ai/impressum-suche`
 - Basiscommit: `1120e1f`
-- Naechster Schritt: CEO-Go fuer I1 (und ggf. I2) abwarten.
+- Naechster Schritt: I1 gebaut (2026-10-06) -- CEO-Go fuer Merge, Push und Deploy; I2 (lokale KI) nur bei Bedarf.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -26,7 +26,7 @@ die Daten aus dem Impressum und fuellt sie ein.“
 
 ## Etappe I1: „Kundendaten suchen“ im Formular (regelbasiert)
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: im Formular „Neue Firma“ (und in der Firma) Feld „Website / Impressum-Link“ + Knopf „🔎 Kundendaten suchen“:
   LUNA ruft die Seite (bzw. das verlinkte Impressum) ab, liest Firmenname (Rechtsform-Zeile), Strasse, PLZ, Ort, USt-ID,
   Handelsregister, Telefon, Mail und fuellt **leere** Felder vor (farbig markiert, mit Quelle); gespeichert wird erst mit
@@ -35,6 +35,12 @@ die Daten aus dem Impressum und fuellt sie ein.“
 - Gate: Tests (Impressum-Beispiele, Name mit Rechtsform, Schutz gegen interne Adressen inkl. Umleitung, Gegenprobe);
   Browsertest Rechner/iPad/iPhone 17 Pro; echter Test mit 2-3 Kunden-Websites.
 - Aufwand: klein bis mittel.
+- Umsetzung (2026-10-06): `core/firmendaten.py` `oeffentlich()` (nur http(s), Port 80/443, ohne Zugangsdaten, alle IPs global --
+  keine privaten/lokalen/Link-Local/CGNAT/Multicast-Netze) + `_SichereUmleitung` (Umleitungen ebenso geprueft), `name_lesen()`
+  (Zeile mit Rechtsform, nicht „Vertreten durch …“), `aus_impressum()` (eingegebene Seite, dann /impressum, /imprint,
+  Impressum-Links der Startseite); Endpunkt `POST /api/crm/impressum-suche` (nur Vorschlag, kein Ereignis). Oberflaeche: Feld +
+  „🔎 Kundendaten suchen“ in „Neue Firma“ und in der Firma, fuellt nur leere Felder (markiert, mit Quelle). Echter Test:
+  hsv.de, spiegel.de, all-inkl.com gelesen; dabei Registergericht „des Amtsgerichtes …“ und „Umsatzsteuer-ID :“ nachgeruestet.
 
 ## Etappe I2: Lokale KI als Ergaenzung (optional)
 

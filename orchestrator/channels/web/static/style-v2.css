@@ -1055,3 +1055,7 @@ body.v2-lade-offen { overflow: hidden; }
 @media (max-width: 620px) { .v2-vs-zeile .grow { flex-basis: calc(100% - 40px); } .v2-vs-zeile .v2-btn { flex: 1; } }
 @media (min-width: 641px) { #vs-form .v2-an-zeile, #cp-form .v2-an-zeile { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); } }
 #vs-form .v2-an-zeile > *, #cp-form .v2-an-zeile > * { min-width: 0; } #vs-form .v2-an-zeile input, #vs-form .v2-an-zeile select { width: 100%; box-sizing: border-box; }
+/* Impressum-Suche (IMPRESSUM_SUCHE I1, 2026-10-06) */
+.v2-impressum { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; padding: 10px 12px; border-radius: 12px; background: var(--v2-accent-soft); }
+.v2-impressum .v2-btn { min-height: 44px; }
+@media (max-width: 620px) { .v2-impressum { grid-template-columns: 1fr; } }

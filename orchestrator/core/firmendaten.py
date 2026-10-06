@@ -12,7 +12,9 @@ Der Bot prueft einmal pro Woche bis zu `JE_LAUF` Firmen mit Luecken (letzte Rech
 from __future__ import annotations
 
 import html as _html
+import ipaddress
 import re
+import socket
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta
@@ -61,15 +63,19 @@ def impressum_lesen(text: str) -> dict:
                 break
         if "plz" in out:
             break
-    m = re.search(r"(?is)(?:USt[.-]?\s?Id(?:ent)?(?:\.?-?Nr\.?)?|Umsatzsteuer-?Identifikations-?nummer|VAT\s?(?:ID|No\.?|number))"
+    m = re.search(r"(?is)(?:USt[.-]?\s?Id(?:ent)?(?:\.?-?Nr\.?)?|Umsatzsteuer-?Identifikations-?nummer|Umsatzsteuer-?ID|VAT\s?(?:ID|No\.?|number))"
                   r".{0,80}?\b(DE\s?(?:\d\s?){9}|(?:AT|BE|DK|ES|FI|FR|IE|IT|LU|NL|PL|SE)\s?[0-9A-Z](?:\s?[0-9A-Z]){7,11})\b",
                   text or "")
     if m:
         out["ustid"] = re.sub(r"\s+", "", m.group(1))
     m = re.search(r"(?i)\b(HR[AB])\s?(\d{2,7}\s?[A-Z]{0,2})\b", text or "")
     if m:
-        gericht = (re.search(r"Amtsgericht[:\s]+([A-ZÄÖÜ][\wäöüß\-]+(?:\s(?:am|an der|im)\s[\wäöüß\-]+)?)", text or "")
-                   or re.search(r"(?:Registergericht|AG)[:\s]+([A-ZÄÖÜ][\wäöüß\-]+)", text or ""))
+        kein_ort = {"Vorstand", "Aufsichtsrat", "Sitz", "Registergericht", "Handelsregister", "Geschäftsführer", "Geschaeftsfuehrer",
+                    "Registernummer", "Vertreten", "Komplementärin", "Inhaber"}
+        gericht = next((g for g in re.finditer(r"Amtsgericht(?:es|s)?[:\s]+(?:in\s)?([A-ZÄÖÜ][\wäöüß\-]+(?:\s(?:am|an der|im)\s[\wäöüß\-]+)?)",
+                                               text or "") if g.group(1) not in kein_ort), None) \
+            or next((g for g in re.finditer(r"(?:Registergericht|\bAG)[:\s]+([A-ZÄÖÜ][\wäöüß\-]+)", text or "")
+                     if g.group(1) not in kein_ort), None)
         out["handelsregister"] = " ".join(x for x in ((f"Amtsgericht {gericht.group(1)}" if gericht else ""),
                                                        f"{m.group(1).upper()} {m.group(2).strip()}") if x)
     m = re.search(r"(?i)(?:Tel(?:efon)?\.?|Phone|Fon)\s*[:.]?\s*(\+?\d[\d\s/()\-]{6,20}\d)", text or "")
@@ -82,13 +88,104 @@ def impressum_lesen(text: str) -> dict:
     return out
 
 
+class NichtOeffentlich(ValueError):
+    """Ziel ist keine oeffentliche Web-Adresse (z. B. NAS, Fritz!Box, localhost) -- wird nie abgerufen."""
+
+
+def oeffentlich(url: str, *, aufloesen=socket.getaddrinfo) -> str:
+    """IMPRESSUM_SUCHE I1: nur http(s) zu oeffentlichen Adressen. Alle aufgeloesten IPs muessen global erreichbar sein
+    (keine privaten, lokalen, Link-Local-, Multicast- oder reservierten Netze) -- Schutz vor Abrufen ins Heimnetz."""
+    u = urllib.parse.urlparse(url)
+    if u.scheme not in ("http", "https") or not u.hostname:
+        raise NichtOeffentlich("Nur http- oder https-Adressen.")
+    if u.username or u.password:
+        raise NichtOeffentlich("Adressen mit Zugangsdaten werden nicht abgerufen.")
+    if u.port not in (None, 80, 443):
+        raise NichtOeffentlich("Nur die ueblichen Web-Ports.")
+    try:
+        ips = {a[4][0] for a in aufloesen(u.hostname, None)}
+    except OSError:
+        raise NichtOeffentlich("Adresse nicht gefunden.") from None
+    for ip in ips:
+        a = ipaddress.ip_address(ip.split("%")[0])
+        if not a.is_global or a.is_multicast:
+            raise NichtOeffentlich("Interne Adresse -- wird nicht abgerufen.")
+    return url
+
+
+class _SichereUmleitung(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        oeffentlich(newurl)                                   # auch Umleitungen ins Heimnetz blockieren
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def _abruf(url: str) -> str:
+    oeffentlich(url)
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (LUNA Stammdaten-Recherche)",
                                                "Accept": "text/html"})
-    with urllib.request.urlopen(req, timeout=10) as r:
+    with urllib.request.build_opener(_SichereUmleitung()).open(req, timeout=10) as r:
         if "html" not in (r.headers.get("Content-Type") or "text/html"):
             return ""
         return r.read(MAX_BYTES).decode(r.headers.get_content_charset() or "utf-8", "replace")
+
+
+_RECHTSFORM = re.compile(r"(?i)\b(GmbH\s*&\s*Co\.?\s*KG|GmbH|gGmbH|mbH|UG\s*\(haftungsbeschr(?:ä|ae)nkt\)|UG|AG|KGaA|KG|OHG|"
+                         r"e\.\s?K\.|eK|GbR|PartG(?:\s?mbB)?|e\.\s?V\.|SE|Ltd\.?|Limited|S\.à\s?r\.l\.|B\.V\.|Inc\.?)\s*$")
+_KEIN_NAME = re.compile(r"(?i)^(vertreten|vertretungsberechtigt|gesch(ä|ae)ftsf(ü|ue)hr|inhaber|registergericht|amtsgericht|"
+                        r"sitz|handelsregister|ust|umsatzsteuer|verantwortlich|angaben|impressum|kontakt|tel|e-?mail|copyright|©)")
+
+
+def name_lesen(text: str) -> str:
+    """Firmenname = erste Zeile mit Rechtsform (z. B. „Kiez Alm Gastro GmbH“), nicht „Geschaeftsfuehrer …“ o. Ae."""
+    for z in (text or "").splitlines()[:400]:
+        z = re.sub(r"\s+", " ", z).strip(" ,;:|")
+        if 3 <= len(z) <= 90 and _RECHTSFORM.search(z) and not _KEIN_NAME.match(z) and "@" not in z and "http" not in z.lower():
+            return z
+    return ""
+
+
+def _impressum_kandidaten(url: str, abruf) -> list[str]:
+    """Eingegebene Seite zuerst (oft schon das Impressum), dann die ueblichen Pfade und Impressums-Links der Startseite."""
+    seite = _basis(url)
+    out = [url if "://" in url else "https://" + url]
+    out += [seite + p for p in ("/impressum", "/imprint", "/legal-notice")]
+    try:
+        start = abruf(seite)
+        for link in re.findall(r'href="([^"#]*(?:impressum|imprint|legal-notice)[^"#]*)"', start or "", flags=re.I)[:3]:
+            ziel = urllib.parse.urljoin(seite + "/", link)
+            if urllib.parse.urlparse(ziel).netloc == urllib.parse.urlparse(seite).netloc:
+                out.append(ziel)
+    except Exception:
+        pass
+    return list(dict.fromkeys(out))
+
+
+def aus_impressum(url: str, *, abruf=None) -> dict:
+    """IMPRESSUM_SUCHE I1: Kundendaten aus dem Impressum einer eingegebenen Website -- nur Vorschlaege, nichts gespeichert.
+    -> {vorschlaege: {feld: wert}, quelle}. Regelbasiert (kein LLM)."""
+    abruf = abruf or _abruf
+    url = (url or "").strip()
+    if not url:
+        raise ValueError("Bitte die Website oder den Link zum Impressum eingeben.")
+    if "://" not in url:
+        url = "https://" + url
+    oeffentlich(url) if abruf is _abruf else None              # Fehlermeldung frueh und verstaendlich
+    for kandidat in _impressum_kandidaten(url, abruf):
+        try:
+            text = _text(abruf(kandidat))
+        except NichtOeffentlich:
+            raise
+        except Exception:
+            continue
+        if not re.search(r"(?i)impressum|imprint|angaben gem|legal notice|§\s?5", text):
+            continue
+        gefunden = impressum_lesen(text)
+        name = name_lesen(text)
+        if name:
+            gefunden["name"] = name
+        if gefunden:
+            return {"vorschlaege": gefunden | {"website": _basis(url)}, "quelle": kandidat}
+    return {"vorschlaege": {}, "quelle": "", "hinweis": "Kein Impressum mit Angaben gefunden -- bitte den direkten Link zum Impressum eintragen."}
 
 
 def _basis(url: str) -> str:

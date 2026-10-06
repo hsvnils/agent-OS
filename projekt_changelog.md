@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 09:11] — Claude Code
+- **Was:** IMPRESSUM_SUCHE I1 gebaut: im Formular „Neue Firma“ und in der Firma Feld „Website oder Link zum Impressum“ + „🔎 Kundendaten
+  suchen“ -- LUNA liest Firmenname (Rechtsform), Adresse, USt-ID, Handelsregister, Telefon, Rechnungs-Mail und Website aus dem
+  Impressum und fuellt nur leere Felder vor (markiert, mit Quelle; gespeichert erst mit dem Knopf). Sicherheitsluecke geschlossen
+  (BF-60): Abrufe nur an oeffentliche http(s)-Adressen, auch bei Umleitungen. Auswertung verbessert (BF-61). 7 neue Tests,
+  Gegenproben rot; echter Test an hsv.de, spiegel.de, all-inkl.com; Browsertest Rechner/iPad/iPhone 17 Pro; Suite 1250 gruen.
+  Cache v110/v56.
+- **Warum:** CEO: „Go fuer I1“.
+- **Betroffen:** `orchestrator/core/firmendaten.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `style-v2.css`,
+  `index-v2.html`, `orchestrator/tests/test_impressum_suche.py` (neu), `IMPRESSUM_SUCHE_ROADMAP.md`, `ROADMAP.md`,
+  `docs/bekannte-fehler.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-06 09:04] — Claude Code
 - **Was:** Roadmap `IMPRESSUM_SUCHE_ROADMAP.md` angelegt (I1 „Kundendaten suchen“ beim Anlegen, regelbasiert + Schutz gegen Abrufe
   ins Heimnetz; I2 optional lokale KI); im Roadmap-Verzeichnis registriert. Befund: vorhandene Recherche (`core/firmendaten.py`)

@@ -1661,6 +1661,16 @@ def _recherche():
     return FirmenRecherche(kunden_store, suche=suche)
 
 
+@app.post("/api/crm/impressum-suche")
+async def impressum_suche(request: Request):
+    """IMPRESSUM_SUCHE I1: {"url": "…"} -> Kundendaten aus dem Impressum als Vorschlag (nichts gespeichert);
+    nur oeffentliche Web-Adressen (Schutz vor Abrufen ins Heimnetz)."""
+    from ...core.firmendaten import aus_impressum
+    body = await _json(request)
+    abruf = _RECHERCHE_TEST.abruf if _RECHERCHE_TEST is not None else None
+    return _kunden_aktion(lambda: aus_impressum(str(body.get("url") or ""), abruf=abruf))
+
+
 @app.post("/api/crm/kunden/{nummer}/recherche")
 async def kunden_recherche(nummer: str, request: Request):
     """Oeffentliche Firmendaten (Impressum) suchen -> Vorschlaege fuer leere Felder; uebernommen wird nur per Klick."""
