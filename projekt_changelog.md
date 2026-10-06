@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 10:27] — Claude Code
+- **Was:** Deploy „Bestellbestaetigung als Eigenbeleg“ live geprueft (nur lesend): LUNA-OS laedt v114; im Handlungsbedarf steht
+  „🛒 Bestellung als Ausgabe buchen: PUMA …“ (Geschaeft); Vorschlag 30.09.2026, 34,99 €, Amazon.de -> Firma K-00004 erkannt,
+  Bestellnr. 305-4067967-3366747, Nachweis D-e40ac727. Nichts gebucht (Buchung per Klick durch den CEO). Push vom CEO.
+- **Warum:** CEO: „Alle drei Befehle ausgefuehrt, kannst pruefen“.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-06 10:02] — Claude Code
 - **Was:** Bestellbestaetigungen als Eigenbeleg buchen: `core/bestellung.py` liest aus der weitergeleiteten Mail Betrag („Summe
   34.99€“), Datum, Haendler, Bestellnummer und Zweck (Text ueber der Weiterleitung); „Ausgabe aus Bestellbestaetigung“ fuellt das
