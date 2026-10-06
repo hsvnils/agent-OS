@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 11:48] — Claude Code
+- **Was:** Pruefung (nur lesend) fuer den CEO-Wunsch, am Auftrag AB-2026-0001 (CR Container Trading GmbH) alle Belege ausser dem
+  Auftrag zu loeschen: daran haengen Angebot AN-2026-0001 (angenommen), festgeschriebene RE-2026-0001/-0003 mit Stornos
+  RE-2026-0002/-0004 (je 1.300 €, nie versendet, keine Zahlung, Saldo 0, nicht im Journal; PDFs im Archiv, Kopien in LUNAs Drive und
+  in den Nacht-Backups) und Rechnungsentwurf E-946556bb (2.900 €). Ergebnis an den CEO: Entwurf kann regulaer verworfen werden;
+  festgeschriebene, nummerierte Rechnungen/Stornos zu loeschen widerspraeche GoBD (Unveraenderbarkeit, lueckenlose Nummern) und
+  der Hash-Kette -- Empfehlung: nicht loeschen, ggf. stornierte Paare in der Ansicht einklappen. Nichts geaendert, Go abwarten.
+- **Warum:** CEO: „alle Belege ausser den Auftrag loeschen … pruefen und Bescheid geben“.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-06 11:02] — Claude Code
 - **Was:** Deploy „Links in Signatur/Mails“ + BF-64 live geprueft (nur lesend): LUNA-OS laedt v115/v58 (Knopf „🔗 Link einfuegen“,
   Chips im Dunkelmodus lesbar); `mail_inhalt` auf der NAS; Kundenversand weiter allinkl, Anmeldung ok. Push vom CEO. CEO prueft den
