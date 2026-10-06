@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 08:40] — Claude Code
+- **Was:** Roadmap `SERIEN_UND_VORSTELLUNG_ROADMAP.md` angelegt (S1 wiederkehrender Content, V1 Vorstellungs-Mail aus LUNA-OS,
+  V2 Nachfassen/Ueberblick), im Roadmap-Verzeichnis registriert; Entscheidung samt UWG-Hinweis im Register. Nichts umgesetzt.
+- **Warum:** CEO-Wuensche 2026-10-06; Entscheidungen: Firma beim Senden als Interessent anlegen, Einwilligung nur als Hinweis.
+- **Betroffen:** `SERIEN_UND_VORSTELLUNG_ROADMAP.md` (neu), `ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-10-05 23:01] — Claude Code
 - **Was:** Deploy BELEG_EINE_EBENE E1-E3 live geprueft (nur lesend): LUNA-OS laedt v107/v54 mit Formular-Bausteinen und
   Umschalter-Styles; alle 13 echten Belege (3 Angebote, 2 Auftraege, 8 Rechnungen/Entwuerfe/Stornos) liefern Positionen und
