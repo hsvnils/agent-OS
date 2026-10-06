@@ -2010,6 +2010,21 @@ async def auftrag_aendern(nummer: str, request: Request):
     return _kunden_aktion(lambda: _auftraege().aendern(nummer, body.get("auftrag") or {}, von=_von(request)))
 
 
+@app.post("/api/crm/angebote/{nummer}/entsperren")
+async def angebot_entsperren(nummer: str, request: Request):
+    """BELEG_BEARBEITBAR B2: versendetes Angebot mit Begruendung wieder bearbeiten (neue Fassung, alte Termine weg)."""
+    body = await _json(request)
+    return _kunden_aktion(_mit_aufraeumen(lambda: _angebote().entsperren(nummer, body.get("grund") or "", von=_von(request)),
+                                          _von(request)))
+
+
+@app.post("/api/crm/auftraege/{nummer}/entsperren")
+async def auftrag_entsperren(nummer: str, request: Request):
+    """BELEG_BEARBEITBAR B2: versendeten Auftrag mit Begruendung wieder bearbeiten (neue Fassung)."""
+    body = await _json(request)
+    return _kunden_aktion(lambda: _auftraege().entsperren(nummer, body.get("grund") or "", von=_von(request)))
+
+
 @app.post("/api/crm/auftraege/{nummer}/status")
 async def auftrag_status(nummer: str, request: Request):
     body = await _json(request)

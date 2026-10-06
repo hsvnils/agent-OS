@@ -799,7 +799,7 @@ body.v2-lade-offen { overflow: hidden; }
     padding: 10px 20px calc(10px + env(safe-area-inset-bottom)); background: var(--v2-card-solid); border-top: 1px solid var(--v2-line);
     box-shadow: 0 -6px 20px rgba(23, 42, 82, .08); }
   .v2-beleg-aktionen > * { flex: 0 0 auto; }
-  .v2-beleg-aktionen > .pri, .v2-beleg-aktionen > .ok { order: -1; }
+  .v2-beleg-aktionen > .pri, .v2-beleg-aktionen > .ok, .v2-beleg-aktionen > [data-act$="-entsperren"], .v2-beleg-aktionen > [data-act="re-bearbeiten"] { order: -1; }   /* Bearbeiten vorne (B2/B3) */
   .v2-beleg-reiter { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--v2-line); }
   .v2-beleg-reiter button { flex: 0 0 auto; border: 0; background: none; color: var(--v2-muted); font: inherit; font-size: 14px;
     padding: 10px 12px; border-bottom: 3px solid transparent; min-height: 44px; }

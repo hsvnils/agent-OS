@@ -31,9 +31,13 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 
 ### 2.2 Ausgangsseite
 1. **Angebot** `AN-JJJJ-NNNN` -> Versand per Mail aus LUNAs Postfach nach Klick des Inhabers; Original-Mails (.eml)
-   werden als Geschaeftsbrief abgelegt.
-2. **Auftragsbestaetigung** `AB-JJJJ-NNNN` aus dem angenommenen Angebot.
-3. **Rechnung**: zuerst Entwurf ohne Nummer (frei aenderbar), dann **Festschreiben**: Nummer `RE-JJJJ-NNNN`
+   werden als Geschaeftsbrief abgelegt. Bis zum Versand frei aenderbar; danach nur ueber „Bearbeiten“ mit Begruendung
+   (seit 2026-10-06): neue Fassung (Version 2 …), Grund in der Kette, das versendete PDF bleibt abgelegt.
+2. **Auftragsbestaetigung** `AB-JJJJ-NNNN` aus dem angenommenen Angebot oder direkt. Bis zum Versand frei aenderbar
+   (alle Felder), danach wie das Angebot nur mit Begruendung als neue Fassung; gesperrt, sobald eine festgeschriebene
+   Rechnung oder erfasste Postings daran haengen.
+3. **Rechnung**: zuerst Entwurf ohne Nummer (frei aenderbar), dann **Festschreiben beim Versand** („Senden …“, seit
+   2026-10-06; ohne Mail z. B. bei Uebergabe auf Papier „Ohne Mail festschreiben“): Nummer `RE-JJJJ-NNNN`
    (lueckenlos), PDF und Eintrag entstehen in einem Schritt und sind danach unveraenderbar. Pflichtangaben nach
    § 34a UStDV inkl. Hinweis auf die Steuerbefreiung nach § 19 UStG; keine Umsatzsteuer.
    **Altrechnungen** (vor LUNA mit eigener Nummer geschrieben) werden mit Originalnummer und Original-PDF
@@ -57,7 +61,8 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    **Plattform-Auszahlungen** (Facebook) werden mit dem Bankeingang am Zahlungstag gebucht (Zuflussprinzip); die
    Erzielt-Zeitraeume je Posten (aus dem Meta-Zahlungsbeleg oder von Hand) sind reine Zusatzinformation.
 4. **Korrektur** nur per **Stornorechnung** (eigene Nummer, negativer Betrag, Bezug auf das Original) und ggf.
-   neuer Rechnung.
+   neuer Rechnung. „Bearbeiten“ an einer festgeschriebenen Rechnung fuehrt genau das aus (mit Begruendung): Storno +
+   Korrektur-Entwurf mit allen Daten; die ausgestellte Rechnung selbst wird nie veraendert.
 5. **Zahlungseingang** wird von Hand erfasst (Datum laut Kontoauszug, Teilzahlungen moeglich).
 6. **Barter (Tausch Leistung gegen Ware)**: Angebot, Auftrag und Rechnung weisen die Gegenleistung in Ware mit Wert
    aus. Der Ware-Eingang wird mit Datum, Wert (eigener Nachweis, sonst Angabe der Marke) und Nachweis-Dateien gebucht;
@@ -179,3 +184,4 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 | 2026-09-30 | Provisionen (Etappe 23) ergaenzt | Claude Code |
 | 2026-10-02 | Projektzeiten optional auf der Rechnung (PROJEKTZEITEN Z2) ergaenzt | Claude Code |
 | 2026-10-06 | Einmalige Bereinigung der Testrechnungen RE-2026-0001 bis -0004 dokumentiert (Abschnitt 4) | Claude Code |
+| 2026-10-06 | Belege bis zum Versand bearbeitbar, Rechnung schreibt beim Versand fest, Bearbeiten danach mit Begruendung (BELEG_BEARBEITBAR B1-B3) | Claude Code |

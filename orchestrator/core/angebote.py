@@ -5,6 +5,8 @@ Ereignisse in der Buchhaltungs-Kette (`core/buchhaltung.py`), nichts wird uebers
 - `angebot_angelegt` / `angebot_geaendert` -- nur im Status **entwurf** aenderbar;
 - `angebot_pdf_abgelegt` -- das PDF, das als Mail-Entwurf rausgeht, wird als Geschaeftsbrief (6 Jahre) abgelegt,
   mit Hash des Inhalts, damit spaeter klar ist, welcher Stand verschickt wurde;
+- `angebot_entsperrt` -- versendetes (noch nicht angenommenes) Angebot mit Begruendung wieder bearbeiten
+  (BELEG_BEARBEITBAR B2): zurueck in den Entwurf, neue Fassung (Version 2 …), kommende Erinnerungen der alten Fassung weg;
 - `angebot_status` -- versendet (friert den Inhalt ein), angenommen, abgelehnt. „abgelaufen" wird nicht gespeichert,
   sondern aus `gueltig_bis` abgeleitet.
 Senden bleibt beim CEO (Oeffentlichkeit): LUNA-OS legt nur einen Gmail-**Entwurf** an.
@@ -412,8 +414,16 @@ class AngebotStore:
                 a = out[d["nummer"]]
                 a["versendet_termine"] = a.get("versendet_termine", []) + d.get("termine", [])
                 a["verlauf"].append(spur)
+            elif t == "angebot_entsperrt":                   # B2: neue Fassung nach dem Versand
+                a = out[d["nummer"]]
+                a["ersetzt_termine"] = a.get("ersetzt_termine", []) + (a.pop("versendet_termine", None) or [])
+                a["status"], a["fassung"] = "entwurf", int(a.get("fassung") or 1) + 1
+                a["entsperrt"] = {"grund": d.get("grund", ""), "ts": e["ts"]}
+                a["verlauf"].append(spur | {"grund": d.get("grund", ""), "fassung": a["fassung"]})
             elif t == "angebot_status":
                 a = out[d["nummer"]]
+                if d["status"] == "versendet":
+                    a["entsperrt"] = None
                 a["status"] = d["status"]
                 a[d["status"] + "_am"] = e["ts"]
                 for k in ("termine", "grund", "pdf", "mail"):
@@ -551,7 +561,7 @@ class AngebotStore:
                     + [x for x in [zb.text(a.get("zahlung"), a["geld_cent"])] if x]
                     + [f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."])
         infos = [("Datum", datum_de(a["datum"])), ("Angebot", a["nummer"]), ("Gültig bis", datum_de(a["gueltig_bis"])),
-                 ("Kundennummer", a["firma"])]
+                 ("Kundennummer", a["firma"])] + ([("Version", str(a["fassung"]))] if int(a.get("fassung") or 1) > 1 else [])
         if a["layout"] == "hanserautisch":
             b = a.get("bloecke") or _bloecke({})
             texte = kalkulation_texte(b, formate=a["positionen"], tkp_zeigen=b.get("tkp_zeigen", True),
@@ -592,7 +602,8 @@ class AngebotStore:
         return beleg_pdf(
             art="Angebot", nummer=a["nummer"], firma=firmendaten, empfaenger=empfaenger,
             infos=[("Datum", datum_de(a["datum"])), ("Gültig bis", datum_de(a["gueltig_bis"])),
-                   ("Kundennummer", a["firma"]), ("Ansprechpartner", a.get("ansprechpartner", ""))],
+                   ("Kundennummer", a["firma"]), ("Ansprechpartner", a.get("ansprechpartner", ""))]
+                  + ([("Version", str(a["fassung"]))] if int(a.get("fassung") or 1) > 1 else []),
             einleitung=einleitung, positionen=[x | pdf_posten_standard(x) for x in a["positionen"]], summe_cent=a["summe_cent"],
             summen_zeilen=_summen_zeilen(a["summen"]),
             hinweise=[HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
@@ -612,7 +623,8 @@ class AngebotStore:
             art="Angebot", nummer=a["nummer"], firma=firmendaten, logo=self.bh.dir / "logo.jpg",
             empfaenger=_empfaenger(f, ap), untertitel=a.get("titel") or b.get("untertitel", ""),
             infos=[f"{ORT}, den {datum_de(a['datum'])}", f"Gültig bis: {datum_de(a['gueltig_bis'])}",
-                   f"Angebot: {a['nummer']}", f"Kundennummer: {a['firma']}"],
+                   f"Angebot: {a['nummer']}", f"Kundennummer: {a['firma']}"]
+                  + ([f"Version: {a['fassung']}"] if int(a.get("fassung") or 1) > 1 else []),
             anrede=anrede_moin(ap, f.get("name", "")), einleitung=a.get("einleitung") or b.get("intro", ""),
             texte=kalkulation_texte(b, formate=a["positionen"], tkp_zeigen=b.get("tkp_zeigen", True),
                                     omr_zeigen=b.get("omr_zeigen", False)),
@@ -709,6 +721,25 @@ class AngebotStore:
         self.bh.erfassen_geprueft("angebot_nachgefasst", {"nummer": nummer, "notiz": str(notiz or "").strip()[:300]},
                                   von=von, pruefe=pruefe)
         return {"nachgefasst": nummer}
+
+    def entsperren(self, nummer: str, grund: str, *, von: str = "") -> dict:
+        """B2: versendetes, noch offenes Angebot mit Begruendung wieder bearbeiten -> Entwurf, neue Fassung."""
+        nummer, grund = (nummer or "").strip().upper(), str(grund or "").strip()[:500]
+        if not grund:
+            raise ValueError("Bitte kurz begruenden, warum das versendete Angebot geaendert wird.")
+        fassung = {}
+
+        def pruefe(eintraege):
+            a = self._falte(eintraege).get(nummer)
+            if not a:
+                raise KeyError(nummer)
+            if a["status"] != "versendet":
+                raise ValueError(f"{nummer} ist {a['status']} -- "
+                                 + ("einfach im Formular aendern." if a["status"] == "entwurf"
+                                    else "angenommene/abgelehnte Angebote bleiben so (Aenderungen im Auftrag)."))
+            fassung["n"] = int(a.get("fassung") or 1) + 1
+        self.bh.erfassen_geprueft("angebot_entsperrt", {"nummer": nummer, "grund": grund}, von=von, pruefe=pruefe)
+        return {"fassung": fassung["n"]}
 
     def status_setzen(self, nummer: str, status: str, *, grund: str = "", termine: list | None = None,
                       pdf: str = "", mail: dict | None = None, von: str = "") -> dict:
@@ -882,4 +913,7 @@ def mail_text(a: dict, firma: dict, ap: dict | None, firmendaten: dict, *, vorla
                             "titel_zusatz": f" – {t}" if t else "", "zu_titel": f" zu „{t}“" if t else "",
                             "betrag": eur(a["summe_cent"]), "gueltig_bis": datum_de(a["gueltig_bis"]),
                             "praesentation": f"{_link(a)[0]}: {_link(a)[1]}" if _link(a) else ""}
-    return rendern("angebot", w, firmendaten, vorlage=vorlage, signatur=signatur)
+    betreff, text = rendern("angebot", w, firmendaten, vorlage=vorlage, signatur=signatur)
+    if int(a.get("fassung") or 1) > 1 and "version" not in betreff.lower():   # B2: neue Fassung nach dem Versand
+        betreff += f" (Version {a['fassung']})"
+    return betreff, text

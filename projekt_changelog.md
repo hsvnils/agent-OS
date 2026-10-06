@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-06 18:52] — Claude Code
+- **Was:** BELEG_BEARBEITBAR B1-B3 gebaut: Auftrag bis zum Versand voll bearbeitbar (alle Formularfelder, Vorkasse neu berechnet; fest bei festgeschriebener Rechnung oder erfassten Postings); Angebot und Auftrag nach dem Versand ueber „✎ Bearbeiten …“ mit Begruendung als neue Fassung (Version N in PDF und Mailbetreff, alte Angebots-Erinnerungen werden entfernt); Rechnung: „✉️ Senden …“ schreibt beim Versand fest (Nummer, dann Versand ueber LUNA oder Mail-Programm), „🔒 Ohne Mail festschreiben …“ fuer Papier, „✎ Bearbeiten …“ = Storno + Korrektur-Entwurf. Neue Ereignisse `auftrag_entsperrt`, `angebot_entsperrt`; Endpunkte `/api/crm/auftraege/<nr>/entsperren`, `/api/crm/angebote/<nr>/entsperren`. Handlungsbedarf „Rechnungsentwurf pruefen und senden“. Cache app-v2.js v117, style-v2.css v60.
+- **Warum:** CEO 2026-10-06: „Ein Beleg muss immer bearbeitbar und speicherbar sein; erst wenn er verschickt wird, festgeschrieben, danach nur mit Bearbeiten und Begruendung“ -- Go fuer B1 bis B3.
+- **Betroffen:** `orchestrator/core/beauftragung.py`, `core/angebote.py`, `core/erinnerungen.py`, `core/postings.py`, `core/todos.py`, `channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `tests/test_beleg_bearbeitbar.py`, `BELEG_BEARBEITBAR_ROADMAP.md`, `ROADMAP.md`, `docs/verfahrensdokumentation-buchhaltung.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`
+
 ## [2026-10-06 18:43] — Claude Code
 - **Was:** Deploy der Beleg-Nacharbeit (BF-65) live geprueft: app-v2.js v116 / style-v2.css v59 ausgeliefert, Knopf „+ Neuer Auftrag“ im Reiter Auftraege, Breite 1600 px, Scroll-Sperre und buendige Zeilen aktiv.
 - **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.

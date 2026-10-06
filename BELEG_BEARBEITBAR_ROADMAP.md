@@ -1,10 +1,10 @@
 # Roadmap: Belege bis zum Versand bearbeitbar, danach nur mit Begruendung
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-06
 - Arbeitsbranch: `ai/beleg-bearbeitbar`
 - Basiscommit: `eec7c30`
-- Naechster Schritt: CEO-Entscheidung zu B3 (Rechnung) und Go je Etappe.
+- Naechster Schritt: B1-B3 gebaut (2026-10-06) -- Deploy, dann Abnahme durch den CEO an echten Belegen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -42,7 +42,7 @@ festgeschrieben sein und kann nur mit Klick auf Bearbeiten und Eingabe einer Beg
 
 ## Etappe B1: Auftrag bis zum Versand voll bearbeitbar
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: `AuftragBuch.aendern` nimmt alle Formularfelder an (Firma, Ansprechpartner, Titel, Positionen,
   Zuschlaege, Rabatt, Ware/Barter, Zahlungsbedingungen inkl. Vorkasse, Layout, Einleitung) -- solange der Auftrag
   **nicht versendet** und **beauftragt** ist und es **keine festgeschriebene Rechnung** dazu gibt (sonst passt die
@@ -61,7 +61,7 @@ festgeschrieben sein und kann nur mit Klick auf Bearbeiten und Eingabe einer Beg
 
 ## Etappe B2: Angebot und Auftrag nach dem Versand -- „Bearbeiten“ mit Begruendung
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Knopf „✎ Bearbeiten …“ bei versendetem Angebot (solange nicht angenommen/abgelehnt) und versendetem
   Auftrag (Regeln wie B1); Pflicht-Begruendung, neues Ereignis `*_entsperrt` mit Grund; danach neue Fassung
   (Version 2, 3 …) mit Grund im Verlauf, Mailbetreff „(Version 2)“, Hinweis „erneut senden“. Gueltig-bis und
@@ -71,9 +71,9 @@ festgeschrieben sein und kann nur mit Klick auf Bearbeiten und Eingabe einer Beg
 - Risiko / Rueckweg: wie B1.
 - Aufwand: mittel.
 
-## Etappe B3: Rechnung -- Festschreiben erst beim Versand (Entscheidung CEO noetig)
+## Etappe B3: Rechnung -- Festschreiben erst beim Versand
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope (Empfehlung): Den eigenen Schritt „🔒 Festschreiben“ abschaffen. Der Entwurf bleibt bis zum Senden
   bearbeitbar; **„Senden …“ vergibt Nummer und schreibt fest** in einem Schritt (auch beim Weg „Im Mail-Programm
   oeffnen“: Nummer beim Erzeugen der Mail). Nach dem Versand: „✎ Bearbeiten …“ + Begruendung erzeugt automatisch die
@@ -87,6 +87,19 @@ festgeschrieben sein und kann nur mit Klick auf Bearbeiten und Eingabe einer Beg
   Korrektur, Gegenprobe); Browsertest wie B1; Verfahrensdokumentation Abschnitt 2.2 anpassen.
 - Risiko / Rueckweg: Aenderung im Rechnungsablauf (Nummernvergabe); Rueckweg = Commit zuruecknehmen.
 - Aufwand: mittel.
+
+## Umsetzung (2026-10-06, Go CEO fuer B1-B3)
+
+- B1: `AuftragBuch.aendern` nimmt alle Formularfelder an, `AuftragBuch.sperre` liefert den Grund (versendet / fest wegen
+  Rechnung oder Postings); Vorkasse wird aus der neuen Fassung berechnet, Konditionen tragen das Aenderungsdatum.
+  Formular im Auftrag offen mit „Änderungen speichern“. Leistungszeitraum und Notiz bleiben wie bisher frei (rechts).
+- B2: `auftrag_entsperrt` / `angebot_entsperrt` (Grund Pflicht) -> neue Fassung, „Version N“ im PDF und Mailbetreff;
+  beim Angebot zurueck in den Entwurf, die kommenden Erinnerungen der alten Fassung loescht LUNA; angenommene
+  Angebote bleiben (Hinweis auf den Auftrag). Knopf „✎ Bearbeiten …“ (mobil vorne in der Leiste).
+- B3: Entwurf hat „✉️ Senden …“ (vergibt die Nummer, schreibt fest, oeffnet direkt den Versand ueber LUNA oder das
+  Mail-Programm) und „🔒 Ohne Mail festschreiben …“; festgeschriebene Rechnung: „✎ Bearbeiten …“ = Storno + Korrektur-
+  Entwurf mit Begruendung. Handlungsbedarf: „Rechnungsentwurf pruefen und senden“. Kein neuer Server-Ablauf noetig.
+- Tests `test_beleg_bearbeitbar.py` (5, Gegenproben rot), Browser Rechner/iPad/iPhone in sechs Zustaenden.
 
 ## Nicht-Scope
 

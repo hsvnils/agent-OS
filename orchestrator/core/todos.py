@@ -310,7 +310,7 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                 out.append(_todo(f"re-ueber:{r['nummer']}", "Rechnungen", "⚠️", t[0], t[1], "re-detail", r["nummer"], t[2], h))
         for eid, x in entwuerfe.items():
             out.append(_todo(f"re-entwurf:{eid}", "Rechnungen", "✎",
-                             "Vorkasse-Rechnung festschreiben" if x.get("art") == "anzahlung" else "Rechnungsentwurf festschreiben",
+                             "Vorkasse-Rechnung prüfen und senden" if x.get("art") == "anzahlung" else "Rechnungsentwurf prüfen und senden",
                              f"{firmen.get(x.get('firma'), x.get('firma', ''))} · {x.get('titel') or eid}", "re-detail", eid,
                              (date.fromisoformat(x["angelegt"][:10]) + timedelta(days=7)).isoformat(), h))
         berechnet = {r.get("auftrag") for r in rechnungen.values()              # Vorkasse-Rechnung zaehlt nicht

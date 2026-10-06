@@ -4,9 +4,12 @@ wird ein Auftrag `AB-JJJJ-NNNN` -- Bruecke zur Rechnung (Etappe 5).
 Ereignisse in der Buchhaltungs-Kette:
 - `auftrag_angelegt` -- uebernimmt Firma, Ansprechpartner, Titel, Positionen, Zuschlaege, Rabatt und Textbausteine aus dem
   Angebot (eingefroren) plus Leistungszeitraum/Notiz; genau **ein** Auftrag je Angebot;
-- `auftrag_geaendert` -- nur Leistungszeitraum und Notiz, nur solange „beauftragt";
+- `auftrag_geaendert` -- Leistungszeitraum und Notiz solange „beauftragt"; alle Formularfelder (Positionen, Preise,
+  Zahlungsbedingungen …) solange der Auftrag **nicht versendet** ist (BELEG_BEARBEITBAR B1, CEO 2026-10-06) und keine
+  festgeschriebene Rechnung bzw. keine erfassten Postings daran haengen;
+- `auftrag_entsperrt` -- versendeten Auftrag mit Begruendung wieder zum Bearbeiten oeffnen (B2): neue Fassung (Version 2 …),
+  gesperrt ab dem naechsten Versand;
 - `auftrag_pdf_abgelegt` / `auftrag_status` (erledigt, storniert; gesendet = Mail-Daten) -- wie bei Angeboten.
-Positionen aendern sich im Auftrag nicht mehr; Abweichungen regelt spaeter die Rechnung (Etappe 5).
 """
 from __future__ import annotations
 
@@ -22,6 +25,7 @@ from . import zahlungsbedingungen as zb
 STATUS = ("beauftragt", "erledigt", "storniert")
 _UEBERNAHME = ("firma", "ansprechpartner", "titel", "positionen", "zuschlaege", "rabatt_prozent", "layout", "bloecke", "ware",
                "zahlung")
+FORMULAR = _UEBERNAHME + ("datum", "einleitung")               # B1: im Formular aenderbar, solange nicht versendet
 
 
 def _datum(v, feld: str) -> str:
@@ -52,7 +56,14 @@ class AuftragBuch:
             elif t == "auftrag_geaendert":
                 a = out[d["nummer"]]
                 a.update(d.get("felder", {}))
-                a["verlauf"].append(spur | {"felder": sorted(d.get("felder", {}))})
+                if "positionen" in d.get("felder", {}):
+                    a["positionen_geaendert"] = e["ts"]
+                a["verlauf"].append(spur | {"felder": sorted(d.get("felder", {}))} | ({"grund": d["grund"]} if d.get("grund") else {}))
+            elif t == "auftrag_entsperrt":                # B2: versendeten Auftrag mit Begruendung neu bearbeiten
+                a = out[d["nummer"]]
+                a["fassung"] = int(a.get("fassung") or 1) + 1
+                a["entsperrt"] = {"grund": d.get("grund", ""), "ts": e["ts"]}
+                a["verlauf"].append(spur | {"grund": d.get("grund", ""), "fassung": a["fassung"]})
             elif t == "auftrag_pdf_abgelegt":
                 a = out[d["nummer"]]
                 a["pdfs"].append({k: d.get(k) for k in ("pfad", "sha256", "an")} | {"ts": e["ts"]})
@@ -89,6 +100,7 @@ class AuftragBuch:
                 if d.get("mail"):
                     a["gesendet_mail"] = d["mail"]
                     a["gesendet_am"] = e["ts"]
+                    a["entsperrt"] = None                        # mit dem Versand wieder festgeschrieben
                 a["verlauf"].append(spur | {"status": d["status"], "grund": d.get("grund", "")}
                                     | ({"mail_an": d["mail"].get("an", ""), "betreff": d["mail"].get("betreff", "")}
                                        if d.get("mail") else {}))
@@ -118,7 +130,7 @@ class AuftragBuch:
     def auftrag(self, nummer: str) -> dict | None:
         e = self.bh.eintraege()
         a = abschluss(self._falte(e), e).get((nummer or "").strip().upper())
-        return self._anreichern(a) if a else None
+        return self._anreichern(a) | {"sperre": self.sperre(a, e), "fassung": int(a.get("fassung") or 1)} if a else None
 
     # -- Schreiben -----------------------------------------------------------------------------------------------
 
@@ -197,8 +209,33 @@ class AuftragBuch:
                                 pruefe=pruefe)
         return {"nummer": ev["daten"]["nummer"]}
 
+    @staticmethod
+    def sperre(a: dict, eintraege: list[dict]) -> dict:
+        """Ist das Formular des Auftrags gesperrt? (BELEG_BEARBEITBAR B1/B2) -> {"grund": Text, "art": versendet|fest} oder {}.
+        `versendet` laesst sich mit Begruendung entsperren (B2), `fest` nicht (Rechnung/Postings haengen am Inhalt)."""
+        from .rechnungen import RechnungStore
+        if a["status"] != "beauftragt":
+            return {"art": "fest", "grund": f"{a['nummer']} ist {'geliefert' if a['status'] == 'erledigt' else a['status']} – nur lesen."}
+        re = sorted(r["nummer"] for r in RechnungStore._falte(eintraege)[1].values()
+                    if r.get("auftrag") == a["nummer"] and r["status"] != "storniert")
+        if re:
+            return {"art": "fest", "grund": f"Zu {a['nummer']} gibt es die Rechnung {', '.join(re)} – der Auftrag bleibt so, "
+                                            "Abweichungen regelt die Rechnung."}
+        praefix = a["nummer"] + "-P"
+        if any(str(e["typ"]).startswith("posting_") and str(e["daten"].get("id", "")).startswith(praefix) for e in eintraege):
+            return {"art": "fest", "grund": "Zu diesem Auftrag sind schon Postings erfasst – die Positionen bleiben so."}
+        if a.get("gesendet_am") and not a.get("entsperrt"):
+            return {"art": "versendet", "grund": f"Versendet am {datum_de(a['gesendet_am'][:10])} – ändern nur über „✎ Bearbeiten …“ "
+                                                 "mit Begründung (neue Fassung)."}
+        return {}
+
     def aendern(self, nummer: str, felder: dict, *, von: str = "") -> dict:
+        """Leistungszeitraum/Notiz solange beauftragt; alle Formularfelder nur, solange das Formular nicht gesperrt ist
+        (nicht versendet bzw. mit Begruendung entsperrt, keine festgeschriebene Rechnung, keine Postings)."""
+        from .angebote import _kopf, _positionen, _schalter
         nummer = (nummer or "").strip().upper()
+        if not isinstance(felder, dict):
+            raise ValueError("Ungueltige Eingabe.")
         neu = {}
         if "leistung_von" in felder:
             neu["leistung_von"] = _datum(felder["leistung_von"], "Leistung von")
@@ -206,6 +243,13 @@ class AuftragBuch:
             neu["leistung_bis"] = _datum(felder["leistung_bis"], "Leistung bis")
         if "notiz" in felder:
             neu["notiz"] = str(felder["notiz"] or "").strip()[:2000]
+        form = {k: v for k, v in _kopf(felder).items() if k in FORMULAR}
+        if "positionen" in felder:
+            form["positionen"] = _positionen(felder["positionen"])
+        schalter = {k: felder[k] for k in ("zeige_kalkulation", "zeige_kennzahlen", "tkp_zeigen", "omr_zeigen") if k in felder}
+        if "zahlung" in form:
+            firma = form.get("firma") or (self.auftrag(nummer) or {}).get("firma") or ""
+            self.angebote._ziel_vorschlag(form, felder.get("zahlung"), firma)
         diff: dict = {}
 
         def pruefe(eintraege):
@@ -214,17 +258,54 @@ class AuftragBuch:
                 raise KeyError(nummer)
             if a["status"] != "beauftragt":
                 raise ValueError(f"{nummer} ist {a['status']} und kann nicht mehr geaendert werden.")
-            diff.update({k: v for k, v in neu.items() if a.get(k) != v})
+            if schalter and (a.get("bloecke") or form.get("bloecke")):
+                basis = {"bloecke": form.get("bloecke") or a.get("bloecke")}
+                _schalter(basis, schalter)
+                form["bloecke"] = basis["bloecke"]
+            diff.update({k: v for k, v in (neu | form).items() if a.get(k) != v})
+            if set(diff) & set(FORMULAR):
+                sp = self.sperre(a, eintraege)
+                if sp:
+                    raise ValueError(sp["grund"])
             rest = a | diff
             if rest.get("leistung_von") and rest.get("leistung_bis") and rest["leistung_bis"] < rest["leistung_von"]:
                 raise ValueError("Leistungszeitraum: Ende liegt vor dem Beginn.")
+            if not rest.get("positionen"):
+                raise ValueError("Mindestens eine Position.")
+            if {"firma", "ansprechpartner"} & set(diff):
+                self.angebote._pruefe_bezug(eintraege, rest)
+            if {"positionen", "zuschlaege", "rabatt_prozent", "ware", "zahlung", "datum"} & set(diff):
+                sm = summen(rest["positionen"], rest.get("zuschlaege") or [], rest.get("rabatt_prozent") or 0)
+                geld = sm["gesamt_cent"] - min(int((rest.get("ware") or {}).get("wert_cent") or 0), sm["gesamt_cent"])
+                vk = zb.vorkasse_cent(rest.get("zahlung"), geld)   # Vorkasse aus der neuen Fassung
+                vk_neu = {"vorkasse_cent": vk, "vorkasse_faellig": zb.vorkasse_frist(rest["zahlung"], rest["datum"]) if vk else ""}
+                diff.update({k: v for k, v in vk_neu.items() if (a.get(k) or (0 if k == "vorkasse_cent" else "")) != v})
             if not diff:
                 raise _Nichts()
+        daten = {"nummer": nummer, "felder": diff}
         try:
-            self.bh.erfassen_geprueft("auftrag_geaendert", {"nummer": nummer, "felder": diff}, von=von, pruefe=pruefe)
+            self.bh.erfassen_geprueft("auftrag_geaendert", daten, von=von, pruefe=pruefe)
         except _Nichts:
             return {"geaendert": []}
         return {"geaendert": sorted(diff)}
+
+    def entsperren(self, nummer: str, grund: str, *, von: str = "") -> dict:
+        """B2: versendeten Auftrag mit Begruendung wieder zum Bearbeiten oeffnen -> neue Fassung, gesperrt ab dem naechsten Versand."""
+        nummer, grund = (nummer or "").strip().upper(), str(grund or "").strip()[:500]
+        if not grund:
+            raise ValueError("Bitte kurz begruenden, warum der versendete Auftrag geaendert wird.")
+        fassung = {}
+
+        def pruefe(eintraege):
+            a = self._falte(eintraege).get(nummer)
+            if not a:
+                raise KeyError(nummer)
+            sp = self.sperre(a, eintraege)
+            if sp.get("art") != "versendet":
+                raise ValueError(sp.get("grund") or f"{nummer} ist nicht gesperrt -- einfach im Formular aendern.")
+            fassung["n"] = int(a.get("fassung") or 1) + 1
+        self.bh.erfassen_geprueft("auftrag_entsperrt", {"nummer": nummer, "grund": grund}, von=von, pruefe=pruefe)
+        return {"fassung": fassung["n"]}
 
     def status_setzen(self, nummer: str, status: str, *, grund: str = "", mail: dict | None = None,
                       von: str = "", datum: str = "") -> dict:
@@ -272,7 +353,8 @@ class AuftragBuch:
                     + [x for x in [zb.text(a.get("zahlung"), a["geld_cent"], ab_datum=a["datum"])] if x]
                     + ([f"Anmerkung: {a['notiz']}"] if a.get("notiz") else []))
         infos = ([("Datum", datum_de(a["datum"])), ("Auftrag", a["nummer"])] + ([("Angebot", a["angebot"])] if a.get("angebot") else [])
-                 + [("Kundennummer", a["firma"])] + ([("Leistung", zeitraum)] if zeitraum else []))
+                 + [("Kundennummer", a["firma"])] + ([("Leistung", zeitraum)] if zeitraum else [])
+                 + ([("Version", str(a["fassung"]))] if int(a.get("fassung") or 1) > 1 else []))   # B2
         return {"firma": f, "ap": ap, "zeitraum": zeitraum, "einleitung": einleitung, "hinweise": hinweise, "infos": infos,
                 "anrede": anrede_moin(ap, f.get("name", ""))}
 
@@ -295,14 +377,15 @@ class AuftragBuch:
                 art="Auftragsbestätigung", nummer=a["nummer"], firma=firmendaten, logo=self.bh.dir / "logo.jpg",
                 empfaenger=_empfaenger(f, ap), untertitel=a.get("titel") or b.get("untertitel", ""),
                 infos=[f"Tangstedt, den {datum_de(a['datum'])}", f"Auftrag: {a['nummer']}"] + ([f"Angebot: {a['angebot']}"] if a.get("angebot") else [])
-                      + [f"Kundennummer: {a['firma']}"] + ([f"Leistung: {zeitraum}"] if zeitraum else []),
+                      + [f"Kundennummer: {a['firma']}"] + ([f"Leistung: {zeitraum}"] if zeitraum else [])
+                      + ([f"Version: {a['fassung']}"] if int(a.get("fassung") or 1) > 1 else []),
                 anrede=anrede_moin(ap, f.get("name", "")), einleitung=einleitung, texte=b | {"fuss": b.get("fuss", "")},
                 zeige_kalkulation=False, zeige_kennzahlen=False, gruppen=list(gruppen.values()), summen=a["summen"],
                 zuschlag_liste=None, fuss_zusatz=" ".join(hinweise[1:]))
         return beleg_pdf(
             art="Auftragsbestätigung", nummer=a["nummer"], firma=firmendaten, empfaenger=_empfaenger(f, ap),
             infos=[("Datum", datum_de(a["datum"]))] + ([("Angebot", a["angebot"])] if a.get("angebot") else []) + [("Kundennummer", a["firma"]),
-                   ("Leistung", zeitraum)],
+                   ("Leistung", zeitraum)] + ([("Version", str(a["fassung"]))] if int(a.get("fassung") or 1) > 1 else []),
             einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einleitung, positionen=[x | pdf_posten_standard(x) for x in a["positionen"]],
             summe_cent=a["summe_cent"], hinweise=hinweise, schluss="", summen_zeilen=_summen_zeilen(a["summen"]))
 
@@ -346,4 +429,7 @@ def auftrag_mail_text(a: dict, ap: dict | None, firmendaten: dict, *, vorlage: d
     w = anrede_werte(ap) | {"kunde": kunde, "nummer": a["nummer"], "titel": t, "titel_zusatz": f" – {t}" if t else "",
                             "betrag": eur(a["summe_cent"]), "angebot": a.get("angebot") or "",
                             "zu_angebot": f"zu unserem Angebot {a['angebot']}" if a.get("angebot") else ""}
-    return rendern("auftrag", w, firmendaten, vorlage=vorlage, signatur=signatur)
+    betreff, text = rendern("auftrag", w, firmendaten, vorlage=vorlage, signatur=signatur)
+    if int(a.get("fassung") or 1) > 1 and "version" not in betreff.lower():   # B2: neue Fassung nach dem Versand
+        betreff += f" (Version {a['fassung']})"
+    return betreff, text

@@ -263,7 +263,7 @@ def konditionen(auftrag: dict) -> dict:
                "tkp_cent": int(p.get("tkp_cent") or 0), "produktion_cent": int(p.get("produktion_cent") or 0),
                "einzelpreis_cent": int(p.get("einzelpreis_cent") or 0), "gesamt_cent": p.get("gesamt_cent")}
               for i, p in enumerate(auftrag.get("positionen") or [])]
-    return {"festgeschrieben_am": str(auftrag.get("angelegt") or "")[:10], "angebot": auftrag.get("angebot", ""),
+    return {"festgeschrieben_am": str(auftrag.get("positionen_geaendert") or auftrag.get("angelegt") or "")[:10], "angebot": auftrag.get("angebot", ""),
             "positionen": zeilen}
 
 

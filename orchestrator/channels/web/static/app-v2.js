@@ -1531,10 +1531,11 @@ async function anDetail(nr, meldung, fehler) {
   if (a.auftrag) aktionen += `<button class="v2-btn ok" data-act="ab-detail" data-id="${esc(a.auftrag)}">📋 Auftrag ${esc(a.auftrag)}</button>`;
   else if (a.status === "angenommen") aktionen += `<button class="v2-btn pri" data-act="ab-neu" data-id="${esc(nr)}">📋 Auftrag anlegen</button>`;
   else if (a.status === "versendet") aktionen += `<button class="v2-btn pri" data-act="ab-neu" data-id="${esc(nr)}" data-val="annehmen">📋 Angenommen + Auftrag anlegen</button>`;
+  if (a.status === "versendet") aktionen += `<button class="v2-btn" data-act="an-entsperren" data-id="${esc(nr)}" title="Versendetes Angebot ändern – mit Begründung, danach neue Fassung senden">✎ Bearbeiten …</button>`;
   if (a.status === "versendet") aktionen += `<button class="v2-btn ok" data-act="an-status" data-id="${esc(nr)}" data-val="angenommen">Angenommen</button><button class="v2-btn" data-act="an-status" data-id="${esc(nr)}" data-val="abgelehnt">Abgelehnt</button>`
     + ((a.versendet_termine || []).length < 2 ? `<button class="v2-btn" data-act="an-erinnerungen" data-id="${esc(nr)}" title="Fehlende Kalender-Erinnerungen anlegen">📅 Erinnerungen nachholen</button>` : "");
   if ((a.pdfs || []).length) aktionen += `<a class="v2-btn" href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf?archiv=1" target="_blank" rel="noopener">📎 Abgelegtes PDF</a>`;
-  const verlaufLbl = { auftrag_angelegt: "Auftrag angelegt", angebot_angelegt: "Angelegt", angebot_geaendert: "Geändert", angebot_pdf_abgelegt: "PDF abgelegt", angebot_status: "Status", angebot_erinnerungen: "Erinnerungen nachgeholt", angebot_antwort: "Antwort vom Kunden", angebot_erneut_gesendet: "Erneut gesendet" };
+  const verlaufLbl = { angebot_entsperrt: "✎ Zum Bearbeiten geöffnet", auftrag_angelegt: "Auftrag angelegt", angebot_angelegt: "Angelegt", angebot_geaendert: "Geändert", angebot_pdf_abgelegt: "PDF abgelegt", angebot_status: "Status", angebot_erinnerungen: "Erinnerungen nachgeholt", angebot_antwort: "Antwort vom Kunden", angebot_erneut_gesendet: "Erneut gesendet" };
   const anzAntworten = (a.antworten || []).length;
   const verlauf = (a.verlauf || []).slice().reverse().map(v => {
     const kopf = `<b>${esc(verlaufLbl[v.typ] || v.typ)}${v.status ? ": " + esc((AN_STATUS[v.status] || [v.status])[0]) : ""}${v.auftrag ? " " + esc(v.auftrag) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.an ? " · an " + esc(v.an) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small>`;
@@ -1556,8 +1557,12 @@ async function anDetail(nr, meldung, fehler) {
       reiter: [["beleg", "📄 Beleg"], ["konzept", "🎬 Konzept"]] })}`, true);
   const stand = a.status === "versendet" ? `Versendet${a.versendet_am ? " am " + datumDe(a.versendet_am) : ""}`
     : `${(AN_STATUS[a.status] || [a.status])[0]}${a.versendet_am ? " (versendet am " + datumDe(a.versendet_am) + ")" : ""}`;
-  await belegFormularFertig(a.status === "entwurf" ? "" : `${stand} – nur lesen. Nachfassen über „Erneut senden“.`,
+  await belegFormularFertig(a.status === "entwurf" ? "" : a.status === "versendet"
+      ? `${stand} – ändern nur über „✎ Bearbeiten …“ mit Begründung (neue Fassung). Nachfassen über „Erneut senden“.`
+      : `${stand} – nur lesen${a.auftrag ? "; Änderungen im Auftrag " + a.auftrag : ""}.`,
     a.ansprechpartner, a.status === "entwurf" ? null : fuss);
+  if (a.status === "entwurf" && a.entsperrt) { const ed = document.querySelector("#v2-modal .v2-an-editor");   // B2
+    if (ed) ed.insertAdjacentHTML("afterbegin", `<div class="v2-msg v2-gesperrt-hinweis">✎ Version ${esc(String(a.fassung))} in Bearbeitung – Grund: ${esc(a.entsperrt.grund)}. Nach dem Speichern erneut senden.</div>`); }
   bvMini(nr); KZ.tab = "briefing"; konzeptLaden(nr);
 }
 
@@ -1602,7 +1607,9 @@ async function abDetail(nr, meldung, fehler) {
     + `<tr><td></td><td><b>Gesamtbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
   let aktionen = `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📄 Auftragsbestätigung (PDF)</a><button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(nr)}">🔗 Belegverfolgung</button>
     ${a.angebot ? `<button class="v2-btn" data-act="an-detail" data-id="${esc(a.angebot)}">↩ Angebot ${esc(a.angebot)}</button>` : ""}`;
-  if (a.status !== "storniert") aktionen += `<button class="v2-btn pri" data-act="ab-senden" data-id="${esc(nr)}">✉️ Senden …</button>`;
+  const sp = a.sperre || {}, fassung = a.fassung || 1;                // BELEG_BEARBEITBAR B1/B2
+  if (a.status !== "storniert") aktionen += `<button class="v2-btn pri" data-act="ab-senden" data-id="${esc(nr)}">✉️ ${fassung > 1 && a.entsperrt ? "Version " + fassung + " senden" : a.gesendet_am ? "Erneut senden" : "Senden"} …</button>`;
+  if (sp.art === "versendet") aktionen += `<button class="v2-btn" data-act="ab-entsperren" data-id="${esc(nr)}" title="Versendeten Auftrag ändern – mit Begründung, danach neue Fassung senden">✎ Bearbeiten …</button>`;
   const reListe = d.rechnungen || [], vkDa = reListe.some(r => r.art === "anzahlung" && r.status !== "storniert");
   const schlussDa = reListe.some(r => (r.art || "rechnung") === "rechnung" && r.status !== "storniert");
   if (a.status !== "storniert" && darf("rechnungen") && a.vorkasse_cent && !vkDa && !schlussDa) aktionen += `<button class="v2-btn pri" data-act="ab-vorkasse" data-id="${esc(nr)}">💶 Vorkasse-Rechnung erstellen</button>`;
@@ -1610,11 +1617,12 @@ async function abDetail(nr, meldung, fehler) {
   if (a.status === "beauftragt") aktionen += `<button class="v2-btn ok" data-act="ab-geliefert-form" data-id="${esc(nr)}">📦 Als geliefert markieren …</button><button class="v2-btn" data-act="ab-status" data-id="${esc(nr)}" data-val="storniert">Stornieren</button>`;
   if (a.status === "erledigt") aktionen += `<button class="v2-btn" data-act="ab-wieder-offen" data-id="${esc(nr)}" title="Für eine Nachlieferung – danach ist wieder Zeit buchbar">↺ Wieder öffnen …</button>`;
   if ((a.pdfs || []).length) aktionen += `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf?archiv=1" target="_blank" rel="noopener">📎 Abgelegtes PDF</a>`;
-  const lbl = { auftrag_angelegt: "Angelegt", auftrag_geaendert: "Geändert", auftrag_pdf_abgelegt: "PDF abgelegt", auftrag_status: "Status" };
+  const lbl = { auftrag_angelegt: "Angelegt", auftrag_geaendert: "Geändert", auftrag_pdf_abgelegt: "PDF abgelegt", auftrag_status: "Status", auftrag_entsperrt: "✎ Zum Bearbeiten geöffnet" };
   const verlauf = (a.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(lbl[v.typ] || v.typ)}${v.status ? ": " + esc(v.status === "gesendet" ? "Gesendet an " + (v.mail_an || "") : (AB_STATUS[v.status] || [v.status])[0]) : ""}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")}${v.felder ? " · " + esc(v.felder.join(", ")) : ""}${v.grund ? " · " + esc(v.grund) : ""}</small></div></div>`).join("");
   const bearbeitbar = a.status === "beauftragt";
   const altTab = `<h3>Positionen</h3><table class="v2-table"><thead><tr><th>#</th><th>Leistung</th><th style="text-align:right">Menge</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody><tfoot>${fuss}</tfoot></table>`;
   const status = `<div class="v2-kv"><span>Status</span>${abBadge(a.abgeschlossen ? "abgeschlossen" : a.status)}</div>
+    ${fassung > 1 ? `<div class="v2-kv"><span>Fassung</span><b>Version ${fassung}${a.entsperrt ? " · in Bearbeitung" : ""}</b></div>` : ""}
     ${a.status === "erledigt" && a.geliefert_am ? `<div class="v2-kv"><span>Geliefert am</span><b>📦 ${esc(datumDe(a.geliefert_am))}</b></div>` : ""}
     ${a.ware_cent ? `<div class="v2-kv"><span>Gegenleistung 🎁</span><b>${cent2eur(a.ware_cent)} in Ware${a.geld_cent ? " + " + cent2eur(a.geld_cent) + " Geld" : " – Barter"}</b></div>` : ""}
     ${a.vorkasse_cent ? `<div class="v2-kv"><span>Vorkasse</span><b>${cent2eur(a.vorkasse_cent)} bis ${esc(datumDe(a.vorkasse_faellig))}</b></div>` : ""}
@@ -1634,12 +1642,37 @@ async function abDetail(nr, meldung, fehler) {
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
     ${belegAnsicht({ aktionen, haupt: `<div id="ab-senden-box"></div>${belegZweiAnsichten(anFormHtml(a, { nummer: nr }), d.blatt ? belegBlatt(d.blatt) : altTab)}`, seite, unten: `<section class="v2-kz" data-tabteil="konzept"><h3 class="v2-kz-titel">🎬 Konzept</h3><div id="kz-box"><div class="v2-empty">Lade…</div></div></section>` + intern,
       reiter: [["beleg", "📄 Beleg"], ["konzept", "🎬 Konzept"], ["postings", "📣 Postings"], ...(darf("rechnungen") ? [["zeiten", "⏱ Zeiten"]] : []), ["bericht", "📝 Bericht"]] })}`, true);
-  await belegFormularFertig("Auftragsbestätigung – die Positionen sind aus dem Angebot festgeschrieben. Leistungszeitraum und Anmerkung änderst du rechts.",
-    a.ansprechpartner, fuss);
+  await belegFormularFertig(sp.grund || "", a.ansprechpartner, sp.grund ? fuss : null);
+  abFormUmbauen(nr, a);
   ["#an-gueltig", "#an-nachfassen", "#an-praes", "#an-zeige-kalk", "#an-zeige-kz", "#an-tkp-zeigen", "#an-omr-zeigen", "#an-schluss"].forEach(sel => {   // nur Angebot
     const f = document.querySelector("#v2-modal .v2-an-editor " + sel); const l = f && f.closest("label"); if (l) l.hidden = true; });
   bvMini(nr); KZ.tab = "briefing"; konzeptLaden(nr);
   abZeitLaden(nr); abLieferungen(nr); abPostings(nr, a.status); abBericht(nr);
+}
+// BELEG_BEARBEITBAR B1/B2: Auftrag bis zum Versand im Formular aenderbar; danach „✎ Bearbeiten …“ mit Begruendung
+function abFormUmbauen(nr, a) {
+  const root = document.querySelector("#v2-modal .v2-an-editor"); if (!root) return;
+  const knopf = root.querySelector('[data-act="an-speichern"]');
+  if (knopf) { knopf.dataset.act = "ab-form-speichern"; knopf.dataset.id = nr; knopf.textContent = "Änderungen speichern"; }
+  if (!a.sperre || !a.sperre.grund) root.insertAdjacentHTML("afterbegin", a.entsperrt
+    ? `<div class="v2-msg v2-gesperrt-hinweis">✎ Version ${esc(String(a.fassung))} in Bearbeitung – Grund: ${esc(a.entsperrt.grund)}. Nach dem Speichern erneut senden.</div>`
+    : `<div class="v2-msg">✎ Noch nicht versendet – alles änderbar. Mit dem Versand wird die Auftragsbestätigung festgeschrieben.</div>`);
+}
+async function abFormSpeichern(nr) {
+  if (!$("#an-firma").value) { $("#an-firma-suche").focus(); return kundenMsg("an-msg", "Bitte eine Firma aus den Vorschlägen auswählen.", false); }
+  const d = anDaten(); ["gueltig_bis", "nachfassen_tage", "praesentation", "schluss"].forEach(k => delete d[k]);   // nur Angebot
+  const r = await jpost("/api/crm/auftraege/" + encodeURIComponent(nr), { auftrag: d });
+  if (!r || !r.ok) return kundenMsg("an-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
+  FORM_GEAENDERT = false;
+  if (AKTIV === "angebote" || AKTIV === "auftraege") renderAngebote();
+  return abDetail(nr, r.geaendert && r.geaendert.length ? "Gespeichert." : "Keine Änderung.");
+}
+async function abEntsperren(nr) {
+  const grund = (prompt("Der Auftrag ist schon versendet. Warum wird er geändert? (steht im Verlauf, danach neue Fassung senden)", "") || "").trim();
+  if (!grund) return;
+  const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(nr)}/entsperren`, { grund });
+  if (!r || !r.ok) return alert((r && r.hinweis) || "Keine Verbindung zum Server.");
+  return abDetail(nr, `Version ${r.fassung} – jetzt im Formular ändern, speichern und erneut senden.`);
 }
 // PROJEKTBERICHT P1: Postings je Position (Menge) mit Veroeffentlichung, Kennzahlen als Zahlen und TKP-Vergleich;
 // dazu die beim Anlegen festgeschriebenen Konditionen (Katalog-Aenderungen wirken nie zurueck)
@@ -2662,7 +2695,7 @@ async function reSpeichern(eid) {
   if (!r || !r.ok) return kundenMsg("an-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
   FORM_GEAENDERT = false;
   if (AKTIV === "rechnungen") renderRechnungen();
-  return reDetail(eid || r.entwurf_id, eid ? "Entwurf gespeichert." : "Entwurf angelegt — prüfen, dann festschreiben.");
+  return reDetail(eid || r.entwurf_id, eid ? "Entwurf gespeichert." : "Entwurf angelegt — prüfen, dann senden.");
 }
 async function reDetail(id, meldung, fehler) {
   openModal(id, `<div class="v2-empty">Lade…</div>`, true);
@@ -2678,7 +2711,8 @@ async function reDetail(id, meldung, fehler) {
     + (sm.abzuege ? `<tr><td></td><td>Auftragssumme</td><td></td><td style="text-align:right">${cent2eur(sm.vor_abzug_cent)}</td></tr>` + sm.abzuege.map(([n, c]) => `<tr><td></td><td>${esc(n)}</td><td></td><td style="text-align:right">−${cent2eur(c)}</td></tr>`).join("") : "")
     + `<tr><td></td><td><b>Rechnungsbetrag</b></td><td></td><td style="text-align:right"><b>${cent2eur(sm.gesamt_cent)}</b></td></tr>`;
   let aktionen = `<a class="v2-btn" href="/api/finanzen/rechnungen/${encodeURIComponent(id)}/pdf" target="_blank" rel="noopener">📄 ${entwurf ? "PDF-Vorschau" : "Rechnung (PDF)"}</a><button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(id)}">🔗 Belegverfolgung</button>`;
-  if (entwurf) aktionen += `<button class="v2-btn pri" data-act="re-festschreiben" data-id="${esc(id)}" ${d.steuernummer ? "" : "disabled title=\"Steuernummer fehlt\""}>🔒 Festschreiben (Nummer vergeben)</button>
+  if (entwurf) aktionen += `<button class="v2-btn pri" data-act="re-fest-senden" data-id="${esc(id)}" ${d.steuernummer ? "" : "disabled title=\"Steuernummer fehlt\""}>✉️ Senden …</button>
+    <button class="v2-btn" data-act="re-festschreiben" data-id="${esc(id)}" ${d.steuernummer ? 'title="Ohne Mail – z. B. ausgedruckt übergeben"' : "disabled title=\"Steuernummer fehlt\""}>🔒 Ohne Mail festschreiben …</button>
     <button class="v2-btn" data-act="re-verwerfen" data-id="${esc(id)}">Entwurf verwerfen</button>`;
   else {
     if (r.art !== "storno") aktionen += `<button class="v2-btn pri" data-act="re-senden" data-id="${esc(r.nummer)}">✉️ Senden …</button>`;
@@ -2686,6 +2720,7 @@ async function reDetail(id, meldung, fehler) {
     if (r.status === "offen" && (r.geld_cent ?? r.summe_cent) - (r.bezahlt_cent || 0) > 0) aktionen += `<button class="v2-btn ok" data-act="re-bezahlt-form" data-id="${esc(r.nummer)}">💶 Zahlung erfassen</button>`;
     if (r.art !== "storno" && r.ware_cent && !r.ware_erhalten && r.status !== "storniert") aktionen += `<button class="v2-btn ok" data-act="re-ware-form" data-id="${esc(r.nummer)}">📦 Ware erhalten …</button>`;
     if (r.ware_erhalten) aktionen += `<button class="v2-btn" data-act="re-ware-storno" data-id="${esc(r.nummer)}" title="Falsch erfassten Ware-Eingang zurücknehmen">↶ Ware-Eingang stornieren</button>`;
+    if (r.status === "offen" && r.art !== "storno") aktionen += `<button class="v2-btn" data-act="re-bearbeiten" data-id="${esc(r.nummer)}" title="Ausgestellte Rechnungen werden nie verändert: LUNA storniert sie und legt einen Korrektur-Entwurf mit allen Daten an">✎ Bearbeiten …</button>`;
     if (r.status === "offen") aktionen += `<button class="v2-btn" data-act="re-storno" data-id="${esc(r.nummer)}">Stornieren …</button>`;
     if (d.naechste_mahnung) aktionen += `<button class="v2-btn danger" data-act="ma-form" data-id="${esc(r.nummer)}">⚠️ ${esc(d.naechste_mahnung.titel)} erstellen …</button>`;
     if (r.status === "offen" && r.art !== "storno" && !d.mahnverfahren && (d.mahnungen || []).length) aktionen += `<button class="v2-btn" data-act="re-mv-form" data-id="${esc(r.nummer)}" title="Gerichtliches Mahnverfahren ist eingeleitet (z. B. durch die Anwältin)">⚖️ Mahnverfahren eintragen …</button>`;
@@ -2721,7 +2756,7 @@ async function reDetail(id, meldung, fehler) {
     ${entwurf && !d.steuernummer ? `<div class="v2-msg err">Steuernummer fehlt in den Firmendaten — Festschreiben nicht möglich.</div>` : ""}
     ${belegAnsicht({ aktionen, haupt: `<div id="re-aktion-box"></div>${belegZweiAnsichten(reFormHtml(r, entwurf ? id : ""), d.blatt ? belegBlatt(d.blatt, { original: d.blatt.original_pdf ? `/api/finanzen/rechnungen/${encodeURIComponent(id)}/pdf` : "" }) : altTab)}${pzBox}`, seite })}`, true);
   const sperre = entwurf ? "" : r.art === "storno" ? "Stornorechnung – nur lesen." : r.status === "storniert" ? `Storniert${r.storniert_durch ? " durch " + r.storniert_durch : ""} – nur lesen.`
-    : "Festgeschrieben – nur lesen. Korrekturen über „Stornieren …“ (danach entsteht ein neuer Entwurf).";
+    : `${r.versendet_mail || r.versendet ? "Versendet" : "Festgeschrieben"} – nur lesen. Ändern über „✎ Bearbeiten …“ mit Begründung (Storno + Korrektur-Entwurf).`;
   await belegFormularFertig(sperre, r.ansprechpartner, entwurf && !sm.abzuege ? null : fuss);
   if (!entwurf) bvMini(r.nummer);
   if (entwurf && r.auftrag && r.art !== "anzahlung") rePzLaden(id);
@@ -3901,7 +3936,8 @@ async function handleAct(act, el) {
   const id = el.dataset.id, val = el.dataset.val, asset = el.dataset.asset, typ = el.dataset.typ;
   const flash = (m) => { const o = el.textContent; el.textContent = m; return o; };
   if (formUngespeichert() && ["re-festschreiben", "an-senden", "an-versendet", "re-verwerfen", "an-status", "ab-neu", "ab-detail",
-      "an-detail", "re-detail", "bv-oeffnen", "konzept", "ma-detail", "re-senden"].includes(act)
+      "an-detail", "re-detail", "bv-oeffnen", "konzept", "ma-detail", "re-senden", "ab-senden", "ab-entsperren", "ab-rechnung", "ab-vorkasse",
+      "ab-geliefert-form", "ab-status", "an-entsperren", "re-fest-senden", "re-bearbeiten"].includes(act)
       && !confirm("Im Formular gibt es ungespeicherte Änderungen. Ohne Speichern weitermachen?\n(Abbrechen = zurück, dann unten „Speichern“)")) return;
   switch (act) {
     case "pk-einrichten": return passkeyEinrichten(m => anmeldungBox(m));
@@ -3936,6 +3972,14 @@ async function handleAct(act, el) {
     case "an-pos-weg": { const z = el.closest(".v2-an-pos"); if (z) z.remove(); return anSumme(); }
     case "an-speichern": return anSpeichern(id);
     case "ab-manuell": return anEditor("", "", "auftrag");
+    case "ab-form-speichern": return abFormSpeichern(id);
+    case "ab-entsperren": return abEntsperren(id);
+    case "an-entsperren": { const grund = (prompt("Das Angebot ist schon versendet. Warum wird es geändert? (steht im Verlauf; die Erinnerungen der alten Fassung entfallen, danach neue Fassung senden)", "") || "").trim();
+      if (!grund) return;
+      const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/entsperren`, { grund });
+      if (!r || !r.ok) return alert((r && r.hinweis) || "Keine Verbindung zum Server.");
+      if (AKTIV === "angebote") renderAngebote();
+      return anDetail(id, [`Version ${r.fassung} – jetzt im Formular ändern, speichern und erneut senden.`, ...(r.hinweise || [])].join("\n")); }
     case "ab-manuell-speichern": return abManuellSpeichern();
     case "an-mail": { flash("⏳ erstellt…"); const r = await jpost(`/api/crm/angebote/${encodeURIComponent(id)}/mailentwurf`, {}); return anDetail(id, r && r.ok ? `Gmail-Entwurf an ${r.an} mit PDF angelegt — in Gmail prüfen und selbst senden. Danach hier „Als versendet markieren“.` : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "an-versendet": {
@@ -4059,8 +4103,24 @@ async function handleAct(act, el) {
     case "re-bearbeiten": return reDetail(id);
     case "re-speichern": return reSpeichern(id);
     case "re-verwerfen": { if (!confirm("Entwurf verwerfen? (Er hatte noch keine Nummer.)")) return; const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/verwerfen`, {}); closeModal(); return AKTIV === "rechnungen" ? renderRechnungen() : null; }
+    case "re-fest-senden": {                                     // BELEG_BEARBEITBAR B3: Festschreiben erst beim Versand
+      if (!confirm("Rechnung jetzt senden?\n\nSie bekommt dabei ihre Rechnungsnummer und wird festgeschrieben. Danach öffnet sich der Versand (über LUNA oder dein Mail-Programm).\nÄndern geht danach nur noch über „✎ Bearbeiten …“ (Storno + Korrektur).")) return;
+      flash("⏳ …"); const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/festschreiben`, { bestaetigt: true });
+      if (AKTIV === "rechnungen") renderRechnungen();
+      if (!r || !r.ok) return reDetail(id, (r && r.hinweis) || "Fehler.", true);
+      await reDetail(r.nummer, [`${r.nummer} vergeben — fällig am ${datumDe(r.faellig_am)}. Jetzt senden:`, ...(r.hinweise || [])].join("\n"));
+      return reSendenVorschau(r.nummer);
+    }
+    case "re-bearbeiten": {
+      const grund = (prompt("Rechnung ändern – Grund (erscheint auf der Stornorechnung):\n\nLUNA storniert die Rechnung und legt einen Korrektur-Entwurf mit allen Daten an. Den änderst du und sendest ihn neu.", "") || "").trim();
+      if (!grund) return;
+      const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/stornieren`, { grund, korrektur: true });
+      if (AKTIV === "rechnungen") renderRechnungen();
+      if (!r || !r.ok) return reDetail(id, (r && r.hinweis) || "Fehler.", true);
+      return reDetail(r.korrektur_entwurf || r.storno, `Stornorechnung ${r.storno} erstellt – der Korrektur-Entwurf ist offen: ändern, speichern und senden.${r.korrektur_entwurf ? "" : " (Kein Korrektur-Entwurf angelegt.)"}`);
+    }
     case "re-festschreiben": {
-      if (!confirm("Rechnung festschreiben?\n\nSie bekommt jetzt ihre Rechnungsnummer und ist danach NICHT mehr änderbar (Korrektur nur per Storno).")) return;
+      if (!confirm("Rechnung ohne Mail festschreiben (z. B. ausgedruckt übergeben)?\n\nSie bekommt jetzt ihre Rechnungsnummer. Ändern geht danach nur noch über „✎ Bearbeiten …“ (Storno + Korrektur).")) return;
       flash("⏳ …"); const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/festschreiben`, { bestaetigt: true });
       if (AKTIV === "rechnungen") renderRechnungen();
       if (!r || !r.ok) return reDetail(id, (r && r.hinweis) || "Fehler.", true);
@@ -4127,7 +4187,7 @@ async function handleAct(act, el) {
     case "re-box-zu": { const bx = $("#re-aktion-box"); if (bx) bx.innerHTML = ""; return; }
     case "bl-posten": { const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/posten`, { zeilen: ($("#bl-posten") || {}).value || "", zahlungs_id: ($("#bl-posten-id") || {}).value || "", waehrung: ($("#bl-posten-wg") || {}).value || "USD" }); return blDetail(id, r && r.ok ? "Zeiträume gespeichert." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
     case "bl-zweck": { const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/zweck`, { zweck: ($("#bl-zweck") || {}).value || "" }); return blDetail(id, r && r.ok ? "Zweck gespeichert." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
-    case "ab-vorkasse": { const r = await jpost(`/api/finanzen/rechnungen/aus-auftrag/${encodeURIComponent(id)}`, { vorkasse: true }); if (!r || !r.ok) return abDetail(id, (r && r.hinweis) || "Fehler.", true); return reDetail(r.entwurf_id, r.vorhanden ? "Es gab schon einen Vorkasse-Entwurf — hier ist er." : "Vorkasse-Rechnung als Entwurf angelegt. Prüfen und festschreiben — dann legt LUNA den Payment-Check in den Kalender."); }
+    case "ab-vorkasse": { const r = await jpost(`/api/finanzen/rechnungen/aus-auftrag/${encodeURIComponent(id)}`, { vorkasse: true }); if (!r || !r.ok) return abDetail(id, (r && r.hinweis) || "Fehler.", true); return reDetail(r.entwurf_id, r.vorhanden ? "Es gab schon einen Vorkasse-Entwurf — hier ist er." : "Vorkasse-Rechnung als Entwurf angelegt. Prüfen und senden — dann legt LUNA den Payment-Check in den Kalender."); }
     case "ab-rechnung": { const r = await jpost(`/api/finanzen/rechnungen/aus-auftrag/${encodeURIComponent(id)}`, {}); if (!r || !r.ok) return abDetail(id, (r && r.hinweis) || "Fehler.", true); return reEditor(r.entwurf_id); }
     case "ab-neu": return abNeu(id, val === "annehmen");
     case "ab-anlegen": return abAnlegen(id, val === "annehmen");

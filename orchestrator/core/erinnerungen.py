@@ -3,7 +3,7 @@
 LUNA legt beim Versand Erinnerungen in ihrem Kalender an: Angebot nachfassen / laeuft ab, Rechnung faellig.
 Sobald der Vorgang erledigt ist, loescht LUNA die **noch kommenden** davon selbststaendig:
 
-- Angebot angenommen (Auftrag) oder abgelehnt -> Nachfass- und Ablauf-Termine weg,
+- Angebot angenommen (Auftrag) oder abgelehnt -> Nachfass- und Ablauf-Termine weg (ebenso bei einer neuen Fassung, B2),
 - Rechnung bezahlt oder storniert -> Faelligkeits-Termin weg,
 - Angebot als „nachgefasst“ markiert (Hauptseite) -> Nachfass-Termin weg (auch wenn er heute/vorbei ist),
 - Beleg in Fremdwaehrung gebucht (Euro-Betrag eingetragen) oder verworfen -> „Euro-Betrag eintragen“ weg.
@@ -36,6 +36,9 @@ def faellige_loeschungen(eintraege: list[dict], heute: str | None = None) -> lis
                 if "nachfassen" in str(t.get("titel", "")):
                     out.append({"bezug": a["nummer"], "id": t.get("id", ""), "datum": t.get("datum", ""),
                                 "titel": t.get("titel", ""), "grund": "nachgefasst", "auch_vergangen": True})
+        for t in a.get("ersetzt_termine") or []:                     # B2: neue Fassung -> Termine der alten weg
+            out.append({"bezug": a["nummer"], "id": t.get("id", ""), "datum": t.get("datum", ""),
+                        "titel": t.get("titel", ""), "grund": "neue Fassung"})
         if a.get("status") in ANGEBOT_ERLEDIGT:
             for t in a.get("versendet_termine") or []:
                 out.append({"bezug": a["nummer"], "id": t.get("id", ""), "datum": t.get("datum", ""),
