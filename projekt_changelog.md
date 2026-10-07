@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 11:07] — Claude Code
+- **Was:** Deploy „Rechnung von“ + „Verwerfen zuruecknehmen“ live geprueft (v122). Stammdaten: Rockstar Games (L-00024) angelegt. ABO-00011 GTA+ -> Firma Rockstar Games, Rechnung von Microsoft Payments; ABO-00018 -> „Meta Verified Standard“, Firma Meta Platforms Ireland (P-00001), Rechnung von Apple, Zahlungsweg App Store (Apple) · Mastercard. ER-2026-0043 (Apple, Meta Verified, 19.06.2026, 16,99 €) zurueckgenommen und gebucht, bezahlt 19.06. Abgleich: GTA+ 08/09 und Meta 06 zugeordnet; Meta 01-05 und 07-09 fehlen (Rechnungen bei Apple), Sky 10/2026 offen.
+- **Warum:** CEO 2026-10-07: Variante 2 (Anbieter + Rechnungssteller), „ja, leg Rockstar an“.
+- **Betroffen:** `buchhaltung/log.jsonl` (NAS: Stammdaten, Abos, Beleg)
+
 ## [2026-10-07 10:40] — Claude Code
 - **Was:** Abos mit abweichendem Rechnungssteller: neues Feld `rechnung_von` (Stammdaten-Nummer; leer = Firma selbst). Firma = eigentlicher Anbieter (z. B. Meta), abgeglichen wird mit den Rechnungen des Rechnungsstellers (z. B. Apple App Store). Formularfeld „Rechnung von“, Anzeige in Abo-Liste und -Detail. Test mit Gegenprobe. Cache app-v2.js v122.
 - **Warum:** CEO 2026-10-07: Meta Verified soll als Meta mit Zahlungsweg Apple gefuehrt werden (Variante 2), Go fuer Merge/Push/Deploy.
