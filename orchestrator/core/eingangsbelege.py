@@ -643,6 +643,10 @@ class EingangStore:
                 x = out[d["nummer"]]
                 x["status"], x["grund"] = "verworfen", d.get("grund", "")
                 x["verlauf"].append(spur | {"grund": d.get("grund", "")})
+            elif t == "eingang_reaktiviert":                 # Verwerfen zurueckgenommen (CEO 2026-10-07, Meta Verified)
+                x = out[d["nummer"]]
+                x["status"], x["grund"] = "zu_pruefen", ""
+                x["verlauf"].append(spur | {"grund": d.get("grund", "")})
         for x in out.values():                               # Zahlstand aus Buchung + Zahlungen (Etappe 7)
             gesamt = (x.get("felder") or {}).get("betrag_cent")
             zs = x.setdefault("zahlungen", [])
@@ -933,6 +937,23 @@ class EingangStore:
                              von=von)
         self.verwerfen(quelle, f"Zahlungsnachweis zu {ziel} (kein eigener Beleg)", von=von)
         return {"nummer": ziel, "verworfen": quelle}
+
+    def reaktivieren(self, nummer: str, grund: str, *, von: str = "") -> dict:
+        """Verwerfen zuruecknehmen (mit Grund): der Beleg ist wieder „zu pruefen“ und kann gebucht werden. Nichts wird
+        geloescht -- Verwerfen und Zuruecknehmen stehen beide im Verlauf."""
+        nummer = (nummer or "").strip().upper()
+        grund = str(grund or "").strip()[:300]
+        if not grund:
+            raise ValueError("Bitte kurz begruenden, warum der Beleg doch gebraucht wird.")
+
+        def pruefe(eintraege):
+            x = self._falte(eintraege).get(nummer)
+            if not x:
+                raise KeyError(nummer)
+            if x["status"] != "verworfen":
+                raise ValueError(f"{nummer} ist nicht verworfen.")
+        self.bh.erfassen_geprueft("eingang_reaktiviert", {"nummer": nummer, "grund": grund}, von=von, pruefe=pruefe)
+        return {"status": "zu_pruefen"}
 
     def verwerfen(self, nummer: str, grund: str, *, von: str = "") -> dict:
         nummer = (nummer or "").strip().upper()

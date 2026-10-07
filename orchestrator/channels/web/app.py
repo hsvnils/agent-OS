@@ -3610,6 +3610,13 @@ async def eigenbeleg_stornieren(nummer: str, request: Request):
                                                                               von=_von(request)))
 
 
+@app.post("/api/finanzen/belege/{nummer}/reaktivieren")
+async def beleg_reaktivieren(nummer: str, request: Request):
+    """Verwerfen zuruecknehmen (mit Grund) -> wieder „zu pruefen“."""
+    body = await _json(request)
+    return _kunden_aktion(lambda: _eingang().reaktivieren(nummer, body.get("grund") or "", von=_von(request)))
+
+
 @app.post("/api/finanzen/belege/{nummer}/verwerfen")
 async def beleg_verwerfen(nummer: str, request: Request):
     body = await _json(request)

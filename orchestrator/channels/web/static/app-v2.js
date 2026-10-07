@@ -3014,7 +3014,7 @@ async function blDetail(nr, meldung, fehler) {
         <label class="v2-feld"><small>Notiz</small><input id="bl-notiz" value="${esc(f ? f.notiz || "" : v.kurs_notiz || (v.betrag_fremd ? `${v.betrag_fremd} ${v.waehrung} laut Beleg` : ""))}" ${gesperrt}></label>
         ${b.status !== "verworfen" ? `<div class="v2-card-actions"><button class="v2-btn pri" data-act="bl-buchen" data-id="${esc(nr)}">✔ ${f ? "Korrektur buchen" : "Buchen"}</button>
           ${f && rest !== 0 ? `<button class="v2-btn ok" data-act="bl-bezahlt-form" data-id="${esc(nr)}">💶 ${ein ? "Geldeingang erfassen" : "Zahlung erfassen"}</button>` : ""}
-          ${!f ? `<button class="v2-btn" data-act="bl-verwerfen" data-id="${esc(nr)}">Kein Beleg / verwerfen</button><button class="v2-btn" data-act="bl-nachweis" data-id="${esc(nr)}">🧾 Ist Zahlungsnachweis zu …</button>` : ""}</div>` : `<div class="v2-msg">Verworfen: ${esc(b.grund || "")}</div>`}
+          ${!f ? `<button class="v2-btn" data-act="bl-verwerfen" data-id="${esc(nr)}">Kein Beleg / verwerfen</button><button class="v2-btn" data-act="bl-nachweis" data-id="${esc(nr)}">🧾 Ist Zahlungsnachweis zu …</button>` : ""}</div>` : `<div class="v2-msg">Verworfen: ${esc(b.grund || "")}</div><div class="v2-card-actions"><button class="v2-btn" data-act="bl-reaktivieren" data-id="${esc(nr)}">↺ Verwerfen zurücknehmen …</button></div>`}
         <div id="bl-form-msg" class="v2-msg"></div></div>
       <div id="bl-aktion-box"></div>
       ${zahlungen ? `<h3>Zahlungen</h3>${zahlungen}` : ""}
@@ -4133,6 +4133,7 @@ async function handleAct(act, el) {
       return ebDetail(id, r && r.ok ? "Storniert — bleibt im Journal sichtbar, zählt aber nicht." : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
     }
     case "bl-nachweis": { const zu = (prompt("Zu welchem Beleg gehört diese Quittung? (z. B. ER-2026-0033)", "") || "").trim(); if (!zu) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/als-nachweis`, { zu }); if (AKTIV === "belege") renderBelege(); return blDetail(r && r.ok ? zu.toUpperCase() : id, r && r.ok ? `Als Zahlungsnachweis an ${zu.toUpperCase()} gehängt; ${id} ist verworfen (Datei bleibt archiviert).` : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
+    case "bl-reaktivieren": { const grund = (prompt("Warum wird der Beleg doch gebraucht? (steht im Verlauf)", "") || "").trim(); if (!grund) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/reaktivieren`, { grund }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Wieder zu prüfen – jetzt buchen." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "bl-verwerfen": { const grund = prompt("Warum ist das kein Beleg? (z. B. versehentlich hochgeladen)", ""); if (!grund) return; const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(id)}/verwerfen`, { grund }); if (AKTIV === "belege") renderBelege(); return blDetail(id, r && r.ok ? "Verworfen — die Datei bleibt archiviert." : ((r && r.hinweis) || "Fehler."), !(r && r.ok)); }
     case "re-neu": return reEditor("");
     case "re-alt-form": return reAltForm();

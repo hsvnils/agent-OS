@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 10:30] — Claude Code
+- **Was:** Abo ABO-00018 „Meta Verified Standard (App Store)“ angelegt (Apple K-00007, 16,99 €, monatlich ab 19.01.2026, Beleg per Mail). Neue Funktion „Verwerfen zuruecknehmen“ (Ereignis `eingang_reaktiviert` mit Pflicht-Grund, Endpunkt `POST /api/finanzen/belege/<nr>/reaktivieren`, Knopf im verworfenen Beleg) -- noetig, weil ER-2026-0043 (Meta Verified, 19.06.2026) am 30.09. verworfen wurde und ein erneuter Upload als Doppel erkannt wird. Test mit Gegenprobe. Cache app-v2.js v121.
+- **Warum:** CEO 2026-10-07: „Meta Verified gehoert rein, leg das Abo an inkl. rueckwirkend ab 01.01.26“ (revidiert die Entscheidung vom 30.09.2026).
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `channels/web/app.py`, `static/app-v2.js`, `static/index-v2.html`, `tests/test_beleg_reaktivieren.py`; `buchhaltung/log.jsonl` (NAS, Abo)
+
 ## [2026-10-07 10:21] — Claude Code
 - **Was:** P3-Deploy live geprueft (v120/v62, `/api/anbieter` mit getrennten Kosten). Abos angelegt (nichts gebucht): ABO-00005 Supabase Pro (27,00 €, ab 21.06.), ABO-00006..00017 AppleCare+, AppleCare+ Diebstahl/Verlust, iCloud+ 2 TB, Apple Developer (jaehrlich), Xbox Game Pass Ultimate, GTA+, Canva Pro, klarmobil, Grover, Dropbox, Sky (ohne Mail-Rechnung, Eigenbeleg per Klick), DAZN. Abgleich mit Kopie der Kette: alle bisherigen Faelligkeiten haben ihren Beleg, offen nur Sky 01.10.2026.
 - **Warum:** CEO 2026-10-07: Go fuer das Supabase-Abo und die gefundenen wiederkehrenden Zahlungen; Ziel: pruefen, ob alle Abo-Belege im System landen.
