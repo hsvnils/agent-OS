@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 11:12] — Claude Code
+- **Was:** Meta Verified: 8 fehlende Monate (19.01.-19.05. und 19.07.-19.09.2026) ueber die Abo-Funktion als Eigenbelege gebucht, EB-2026-0022..0029 je 16,99 € (Gegenpartei Meta Platforms Ireland, Software), Faelligkeiten von ABO-00018 damit erledigt; Juni wird vom naechsten Abo-Lauf der gebuchten Apple-Rechnung ER-2026-0043 zugeordnet.
+- **Warum:** CEO 2026-10-07: „Meta bitte als Eigenbelege anlegen, die Kosten waren seit 01.01. gleich“.
+- **Betroffen:** `buchhaltung/log.jsonl` (NAS)
+
 ## [2026-10-07 11:07] — Claude Code
 - **Was:** Deploy „Rechnung von“ + „Verwerfen zuruecknehmen“ live geprueft (v122). Stammdaten: Rockstar Games (L-00024) angelegt. ABO-00011 GTA+ -> Firma Rockstar Games, Rechnung von Microsoft Payments; ABO-00018 -> „Meta Verified Standard“, Firma Meta Platforms Ireland (P-00001), Rechnung von Apple, Zahlungsweg App Store (Apple) · Mastercard. ER-2026-0043 (Apple, Meta Verified, 19.06.2026, 16,99 €) zurueckgenommen und gebucht, bezahlt 19.06. Abgleich: GTA+ 08/09 und Meta 06 zugeordnet; Meta 01-05 und 07-09 fehlen (Rechnungen bei Apple), Sky 10/2026 offen.
 - **Warum:** CEO 2026-10-07: Variante 2 (Anbieter + Rechnungssteller), „ja, leg Rockstar an“.
