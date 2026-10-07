@@ -1518,9 +1518,13 @@ def datei_importieren(st: EingangStore, daten: bytes, name: str, *, von: str = "
     return [st.aufnehmen(daten, name, quelle="upload", von=von)]
 
 
-# Eigene Postfaecher: vom CEO weitergeleitete Belege bzw. automatische Weiterleitungen ueber diese Adressen
-# (rechnung@ seit 2026-10-07: All-Inkl-Rechnungen kommen dort an und werden an LUNA weitergeleitet). .env BELEG_ABSENDER ueberschreibt.
-BELEG_ABSENDER_STANDARD = "hsvnils@icloud.com,hanserautisch@gmail.com,nils@hanserautisch.de,moin@hanserautisch.de,rechnung@hanserautisch.de"
+# Eigene Postfaecher des CEO (Liste vom CEO, 2026-10-07): vom CEO weitergeleitete Belege bzw. automatische
+# Weiterleitungen ueber diese Adressen (rechnung@: All-Inkl/klarmobil-Rechnungen -> LUNA). Bewusst NICHT dabei: LUNAs eigene
+# Postfaecher (luna@, luna-hoa@, luna.hanserautisch@gmail.com) -- sonst landeten LUNAs eigene Kundenmails als Belege.
+# .env BELEG_ABSENDER ueberschreibt die Liste.
+BELEG_ABSENDER_STANDARD = ",".join([
+    "hsvnils@icloud.com", "hanserautisch@gmail.com", "nils@hanserautisch.de", "moin@hanserautisch.de",
+    "rechnung@hanserautisch.de", "moin@hsvinside.de", "moin@kruegerprager.de", "nils.krueger@danceforgood.info"])
 
 
 def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backoffice=None, notify=None,

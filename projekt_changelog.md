@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 09:33] — Claude Code
+- **Was:** Eigene Postfaecher nach CEO-Liste ergaenzt: moin@hsvinside.de, moin@kruegerprager.de, nils.krueger@danceforgood.info (bestehende bleiben); LUNAs eigene Postfaecher (luna@, luna-hoa@, luna.hanserautisch@gmail.com) bewusst ausgenommen, damit LUNAs eigene Kundenmails nie als Eingangsbelege landen. Pruefung LUNAs Postfach: ueber rechnung@ kamen bisher keine Rechnungen (nur 2 All-Inkl-Sicherheitsmails, klarmobil-Registrierung, EasyPark schon als ER-2026-0139 gebucht).
+- **Warum:** CEO 2026-10-07: Liste seiner Mailadressen, bestehende nicht loeschen; Rechnungen kommen kuenftig ueber rechnung@hanserautisch.de.
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `tests/test_mail_belege.py`, `docs/bekannte-fehler.md`
+
 ## [2026-10-07 09:29] — Claude Code
 - **Was:** 15 OpenAI-Rechnungen (Desktop MACO470 `LUNA-Uebertrag/OpenAI`) gebucht: ER-2026-0143..0150 und 0157 = ChatGPT Plus je 23,00 € (10.01.–10.09.2026), ER-2026-0151..0156 = Credits je 10,00 € (23.08.–03.09.2026, Einzelkaeufe, kein Abo); neuer Lieferant OpenAI Ireland Limited (L-00023), Kategorie Software, bezahlt am Rechnungsdatum (Karte). Leistungstext der 9 Plus-Belege per Neubuchung korrigiert (zuerst irrtuemlich „OpenAI Credits“, alte Buchung bleibt im Verlauf). Code: eigene Postfaecher zentral als `BELEG_ABSENDER_STANDARD` inkl. rechnung@hanserautisch.de (Bot, Web), BF-66.
 - **Warum:** CEO 2026-10-07: OpenAI-Rechnungen anlegen; All-Inkl-Rechnungen kommen kuenftig ueber rechnung@hanserautisch.de -- die Adresse fehlte in LUNAs Liste.

@@ -193,6 +193,8 @@ class TestAutoWeiterleitung(unittest.TestCase):
         std = [a for a in BELEG_ABSENDER_STANDARD.split(",") if a]
         self.assertTrue(auto_weitergeleitet(allinkl, std))
         self.assertFalse(auto_weitergeleitet(allinkl, ABS))                          # Gegenprobe: alte Liste ohne rechnung@
+        self.assertFalse(any(a.startswith("luna") for a in std))                    # LUNAs eigene Postfaecher nie als Absender
+        self.assertIn("hsvnils@icloud.com", std)                                     # Bestehende bleiben
         g = _G({"e1": echt, "g1": gmail, "f1": fremd, "x1": falsch, "w1": werbung})
         neu = mail_eingang_pruefen(st, g, absender=ABS)
         self.assertEqual(len(neu), 2)
