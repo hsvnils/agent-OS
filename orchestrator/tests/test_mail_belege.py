@@ -5,7 +5,7 @@ import unittest
 from email.message import EmailMessage
 
 from orchestrator.core.buchhaltung import jetzt
-from orchestrator.core.eingangsbelege import (MAIL_ABGELEGT, auto_weitergeleitet, mail_eingang_pruefen, vorschlag_regeln)
+from orchestrator.core.eingangsbelege import (BELEG_ABSENDER_STANDARD, MAIL_ABGELEGT, auto_weitergeleitet, mail_eingang_pruefen, vorschlag_regeln)
 from orchestrator.tests.test_angebote import ApiBasis
 from orchestrator.tests.test_eingangsbelege import TEXT, _pdf, _store
 
@@ -186,6 +186,13 @@ class TestAutoWeiterleitung(unittest.TestCase):
         self.assertTrue(auto_weitergeleitet(gmail, ABS))
         self.assertFalse(auto_weitergeleitet(fremd, ABS))                            # nicht an eigene Adresse
         self.assertFalse(auto_weitergeleitet(falsch, ABS))                           # DKIM/DMARC fehlgeschlagen
+        # 2026-10-07: All-Inkl-Rechnungen gehen an rechnung@hanserautisch.de und werden an LUNA weitergeleitet
+        allinkl = _mail("ALL-INKL.COM <buchhaltung@all-inkl.com>", "Rechnung 2261262856", text="Summe brutto 23,13 €",
+                        auth="mx.google.com; dkim=pass header.i=@all-inkl.com; dmarc=pass header.from=all-inkl.com",
+                        koepfe={"To": "rechnung@hanserautisch.de"})
+        std = [a for a in BELEG_ABSENDER_STANDARD.split(",") if a]
+        self.assertTrue(auto_weitergeleitet(allinkl, std))
+        self.assertFalse(auto_weitergeleitet(allinkl, ABS))                          # Gegenprobe: alte Liste ohne rechnung@
         g = _G({"e1": echt, "g1": gmail, "f1": fremd, "x1": falsch, "w1": werbung})
         neu = mail_eingang_pruefen(st, g, absender=ABS)
         self.assertEqual(len(neu), 2)

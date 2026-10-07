@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 09:29] — Claude Code
+- **Was:** 15 OpenAI-Rechnungen (Desktop MACO470 `LUNA-Uebertrag/OpenAI`) gebucht: ER-2026-0143..0150 und 0157 = ChatGPT Plus je 23,00 € (10.01.–10.09.2026), ER-2026-0151..0156 = Credits je 10,00 € (23.08.–03.09.2026, Einzelkaeufe, kein Abo); neuer Lieferant OpenAI Ireland Limited (L-00023), Kategorie Software, bezahlt am Rechnungsdatum (Karte). Leistungstext der 9 Plus-Belege per Neubuchung korrigiert (zuerst irrtuemlich „OpenAI Credits“, alte Buchung bleibt im Verlauf). Code: eigene Postfaecher zentral als `BELEG_ABSENDER_STANDARD` inkl. rechnung@hanserautisch.de (Bot, Web), BF-66.
+- **Warum:** CEO 2026-10-07: OpenAI-Rechnungen anlegen; All-Inkl-Rechnungen kommen kuenftig ueber rechnung@hanserautisch.de -- die Adresse fehlte in LUNAs Liste.
+- **Betroffen:** `buchhaltung/` (NAS), `orchestrator/core/eingangsbelege.py`, `channels/telegram/bot.py`, `channels/web/app.py`, `tests/test_mail_belege.py`, `docs/bekannte-fehler.md`
+
 ## [2026-10-07 09:21] — Claude Code
 - **Was:** Drei All-Inkl-Rechnungen (Desktop MACO470 `LUNA-Uebertrag/AllInkl`) ueber LUNA-OS hochgeladen und gebucht: ER-2026-0140 (2260132287, 21.01.2026), ER-2026-0141 (2260696064, 20.04.2026), ER-2026-0142 (2261262856, 20.07.2026), je 23,13 €, Lieferant L-00022, Kategorie Software/Hosting, als bezahlt am Rechnungsdatum (Lastschrift DKB, im Monatsabgleich pruefen). Abo ABO-00002 korrigiert: 23,13 €, naechste Faelligkeit 20.10.2026, Zahlungsweg Lastschrift DKB. Abos gesamt jetzt 114,81 €/Monat.
 - **Warum:** CEO-Anweisung 2026-10-07 („lege die Rechnungen an“, „korrigiere das Abo“); Vorbereitung VORSCHLAGSPAUSE_ANBIETER P3.

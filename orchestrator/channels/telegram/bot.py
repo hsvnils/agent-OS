@@ -22,6 +22,7 @@ from pathlib import Path
 
 from ...core.hintergrund import hintergrund_modus   # Etappe 4: Nacht-Jobs ueber das Backoffice
 from ...core.telegram_format import fuer_telegram
+from ...core.eingangsbelege import BELEG_ABSENDER_STANDARD   # eigene Postfaecher (inkl. rechnung@)
 
 ROOT = Path(__file__).resolve().parents[3]
 API = "https://api.telegram.org"
@@ -1647,8 +1648,7 @@ def main() -> None:
                             _bh = Buchhaltung(ROOT / "buchhaltung")
                             _imap_antworten(_bh, KundenStore(_bh), _pf,
                                             eigene=[_pf.adresse, _sec.get("GOOGLE_ACCOUNT_EMAIL", "")]
-                                            + str(_sec.get("BELEG_ABSENDER", "hsvnils@icloud.com,hanserautisch@gmail.com,"
-                                                           "nils@hanserautisch.de,moin@hanserautisch.de")).split(","),   # CEO nie Kunde
+                                            + str(_sec.get("BELEG_ABSENDER", BELEG_ABSENDER_STANDARD)).split(","),   # CEO nie Kunde
                                             notify=(ctx.notifications.enqueue if ctx.notifications else None))
                     except Exception as exc:
                         print(f"[mail_antworten] {exc.__class__.__name__}", flush=True)
@@ -1693,8 +1693,7 @@ def main() -> None:
                         # KUNDEN_FINANZEN Etappe 6: vom CEO an LUNA weitergeleitete Belege uebernehmen
                         from ...core.eingangsbelege import EingangStore, mail_eingang_pruefen
                         from ...core.auftraege import AuftragStore
-                        _abs = [x for x in str(secrets.get("BELEG_ABSENDER", "hsvnils@icloud.com,hanserautisch@gmail.com,"
-                                                                          "nils@hanserautisch.de,moin@hanserautisch.de")).split(",") if x.strip()]
+                        _abs = [x for x in str(secrets.get("BELEG_ABSENDER", BELEG_ABSENDER_STANDARD)).split(",") if x.strip()]
                         mail_eingang_pruefen(EingangStore(_bh), ctx.google, absender=_abs,
                                              backoffice=AuftragStore(ROOT / "backoffice" / "log.jsonl", secrets=ctx.leak_secrets),
                                              notify=(ctx.notifications.enqueue if ctx.notifications else None),

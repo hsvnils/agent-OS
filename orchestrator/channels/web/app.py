@@ -4003,10 +4003,10 @@ def _tb(art: str, vid: str = "") -> dict:
 
 # -- Vorstellungs-Mails (SERIEN_UND_VORSTELLUNG V1/V2) ------------------------------------------------------------------
 def _eigene_adressen() -> list[str]:
+    from ...core.eingangsbelege import BELEG_ABSENDER_STANDARD
     sec = _google_secrets()
     return [x.strip() for x in ([sec.get("ALLINKL_ABSENDER", ""), sec.get("GOOGLE_ACCOUNT_EMAIL", "")]
-            + str(sec.get("BELEG_ABSENDER", "hsvnils@icloud.com,hanserautisch@gmail.com,nils@hanserautisch.de,"
-                                          "moin@hanserautisch.de")).split(",")) if "@" in x]
+            + str(sec.get("BELEG_ABSENDER", BELEG_ABSENDER_STANDARD)).split(",")) if "@" in x]
 
 
 @app.get("/api/crm/vorstellung/vorschau")

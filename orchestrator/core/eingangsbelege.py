@@ -1518,6 +1518,11 @@ def datei_importieren(st: EingangStore, daten: bytes, name: str, *, von: str = "
     return [st.aufnehmen(daten, name, quelle="upload", von=von)]
 
 
+# Eigene Postfaecher: vom CEO weitergeleitete Belege bzw. automatische Weiterleitungen ueber diese Adressen
+# (rechnung@ seit 2026-10-07: All-Inkl-Rechnungen kommen dort an und werden an LUNA weitergeleitet). .env BELEG_ABSENDER ueberschreibt.
+BELEG_ABSENDER_STANDARD = "hsvnils@icloud.com,hanserautisch@gmail.com,nils@hanserautisch.de,moin@hanserautisch.de,rechnung@hanserautisch.de"
+
+
 def mail_eingang_pruefen(st: EingangStore, google, *, absender: list[str], backoffice=None, notify=None,
                          gesehen: set | None = None, tage: int = 30) -> list[str]:
     """Belege aus LUNAs Postfach aufnehmen: vom CEO weitergeleitet (eigene Absender, DKIM-geprueft) oder automatisch
