@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 09:21] — Claude Code
+- **Was:** Drei All-Inkl-Rechnungen (Desktop MACO470 `LUNA-Uebertrag/AllInkl`) ueber LUNA-OS hochgeladen und gebucht: ER-2026-0140 (2260132287, 21.01.2026), ER-2026-0141 (2260696064, 20.04.2026), ER-2026-0142 (2261262856, 20.07.2026), je 23,13 €, Lieferant L-00022, Kategorie Software/Hosting, als bezahlt am Rechnungsdatum (Lastschrift DKB, im Monatsabgleich pruefen). Abo ABO-00002 korrigiert: 23,13 €, naechste Faelligkeit 20.10.2026, Zahlungsweg Lastschrift DKB. Abos gesamt jetzt 114,81 €/Monat.
+- **Warum:** CEO-Anweisung 2026-10-07 („lege die Rechnungen an“, „korrigiere das Abo“); Vorbereitung VORSCHLAGSPAUSE_ANBIETER P3.
+- **Betroffen:** `buchhaltung/log.jsonl` und `buchhaltung/belege/2026/` (NAS, nicht im Git)
+
 ## [2026-10-06 22:31] — Claude Code
 - **Was:** Deploy VORSCHLAGSPAUSE_ANBIETER P1+P2 live geprueft: app-v2.js v119 / style-v2.css v61 ausgeliefert, `/api/investment/pause` antwortet (nicht pausiert), `/api/anbieter` liefert 25 Anbieter, 18 eingerichtet, 11 davon koennen Kosten verursachen; nicht eingerichtet: Cartesia, AgentOps. Bot-Herzschlag 15 min alt (Takt 15 min).
 - **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
