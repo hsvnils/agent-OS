@@ -4,7 +4,7 @@
 - Stand: 2026-10-06
 - Arbeitsbranch: `ai/vorschlagspause-anbieter`
 - Basiscommit: `945e1eb`
-- Naechster Schritt: P1+P2 gebaut (2026-10-06) -- Deploy, Abnahme durch den CEO; P3 optional.
+- Naechster Schritt: P1+P2 live (2026-10-06); P3 mit CEO-Vorgabe „Abo und Credits getrennt“ geplant -- Go und Freigabe der Datenvorbereitung offen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -76,11 +76,23 @@ tatsaechlich kostenpflichtig ist, steht nicht im Code -- das kann nur im jeweili
 - Gate: Tests (keine Schluesselwerte in der Antwort, Doku-Check-Gegenprobe), Browsertest.
 - Aufwand: mittel.
 
-## Etappe P3: Kosten je Anbieter (optional, nach P2)
+## Etappe P3: Kosten je Anbieter -- Abo und Einzelkosten strikt getrennt
 
 - Status: geplant
-- Ziel / Scope: Monatliche Kosten je Anbieter aus den Abos der Buchhaltung (Etappe 15) bzw. von Hand im Anbieter-Eintrag;
-  Summe in der Anbieter-Liste, Uebernahme in die Kostenstatistik des CFO (`finance/kosten-statistik.md`).
+- Vorgabe CEO (2026-10-07): „Abo-Kosten duerfen nicht mit zusaetzlichen Kosten fuer Credits oder so gemischt werden.“
+- Ziel / Scope: Je Anbieter **zwei getrennte Werte, nie zusammengerechnet**:
+  1. **Abo** -- laufender Monatswert aus den aktiven Abos (vierteljaehrlich/jaehrlich auf den Monat umgerechnet) und die
+     im Jahr bezahlten Abo-Belege. Ein Beleg zaehlt nur dann als Abo, wenn er einer Abo-Faelligkeit zugeordnet ist (das
+     Abo merkt sich je Faelligkeit den Beleg) -- kein Raten ueber Betraege.
+  2. **Einzelkosten** (Credits, Aufladungen, Nutzung) -- alle anderen gebuchten Belege des Anbieters im Jahr.
+  Zuordnung Anbieter -> Lieferant ueber den Lieferantennamen (Muster im Register). Summen oben getrennt: „Abos X €/Monat“
+  und „Einzelkosten 2026 Y €“. Uebernahme beider Werte getrennt in die CFO-Kostenstatistik.
+- Datenvorbereitung (CEO-Daten, nur mit Freigabe): damit auch die Belege von vor dem Anlegen der Abos richtig als Abo
+  zaehlen, beendete Abos fuer fruehere Abos anlegen (ChatGPT Plus 10.01.-10.10.2026, Claude Pro 05.05.-24.06.2026) und
+  Claude Max ab 25.07.2026 laufen lassen; LUNA ordnet die vorhandenen Belege dann selbst den Faelligkeiten zu. Bei
+  zwei Kandidaten im Fenster zaehlt der naechstliegende Betrag (z. B. Claude Pro 21,42 € vs. Aufladung 20,49 €).
+- Gate: Tests (Trennung Abo/Einzel, keine gemeinsame Summe, Umrechnung Turnus, Gegenprobe), Browsertest; Live-Abgleich
+  mit den gebuchten Anthropic-/OpenAI-/All-Inkl-Belegen.
 - Aufwand: klein bis mittel.
 
 ## Umsetzung (2026-10-06, Go CEO fuer P1+P2, Empfehlungen angenommen)

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 10:01] — Claude Code
+- **Was:** P3 in `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md` konkretisiert: Kosten je Anbieter strikt getrennt in Abo (aktive Abos, Belege mit Abo-Faelligkeit) und Einzelkosten (Credits/Nutzung), nie gemeinsam summiert; Datenvorbereitung (beendete Abos fuer ChatGPT Plus/Claude Pro, Claude Max ab 25.07.) nur mit CEO-Freigabe.
+- **Warum:** CEO 2026-10-07: „Abo-Kosten duerfen nicht mit zusaetzlichen Kosten fuer Credits oder so gemischt werden.“
+- **Betroffen:** `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md`
+
 ## [2026-10-07 09:57] — Claude Code
 - **Was:** Deploy der Postfach-Korrektur (BF-66) geprueft: NAS-Code enthaelt `BELEG_ABSENDER_STANDARD` mit rechnung@hanserautisch.de (Bot und Web nutzen die Konstante), LUNA-OS antwortet, keine haengenden Meldungen. LUNA-Adressen bleiben ausgenommen (CEO: dorthin gehen keine Rechnungen).
 - **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
