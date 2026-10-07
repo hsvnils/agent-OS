@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 17:43] — Claude Code
+- **Was:** `KOPFZEILE_SUCHE_MENUE_ROADMAP.md` um K4 (Hell/Dunkel/System und Orb/Hologramm in die Einstellungen, Platz fuer Suchfeld auf dem iPhone) und K5 (LUNAs Portrait statt Mond als Logo) ergaenzt.
+- **Warum:** CEO-Ergaenzung 2026-10-07.
+- **Betroffen:** `KOPFZEILE_SUCHE_MENUE_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-07 17:39] — Claude Code
 - **Was:** Roadmap `KOPFZEILE_SUCHE_MENUE_ROADMAP.md` angelegt (geplant): K1 Suchleiste in der Kopfzeile, K2 Vorschlaege beim Tippen, K3 Aufklapp-Menues bei Maus-Over.
 - **Warum:** CEO 2026-10-07: Suchleiste statt Suchknopf, Autovervollstaendigung („HAMBURG“ -> Hamburger SV, derbe Hamburg), Hover-Menues.

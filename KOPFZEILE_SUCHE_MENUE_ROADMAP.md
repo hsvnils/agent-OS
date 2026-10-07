@@ -1,10 +1,10 @@
-# Roadmap: Suchleiste mit Vorschlaegen in der Kopfzeile und Aufklapp-Menues
+# Roadmap: Kopfzeile aufraeumen -- Suchleiste mit Vorschlaegen, Aufklapp-Menues, Portrait
 
 - Status: geplant
 - Stand: 2026-10-07
 - Arbeitsbranch: `ai/kopfzeile-suche-menue`
 - Basiscommit: `c5299b2`
-- Naechster Schritt: Go des CEO fuer K1-K3.
+- Naechster Schritt: Go des CEO fuer K1-K5.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -46,6 +46,30 @@ Geschaeft und Co. ein Menue mit den naechsten Punkten (ausser man ist schon in d
   kurze Verzoegerung gegen versehentliches Aufklappen. Nur mit Maus (Touch-Geraete unveraendert: Tippen oeffnet den Bereich).
 - Gate: Browsertest Rechner (Hover), iPad/iPhone unveraendert.
 
+## Ergaenzung CEO (2026-10-07)
+
+„Erscheinungsbild Hell/Dunkel/System kann in die Einstellungen. Die Sprachaktivierung von LUNA, zwischen der Glocke
+und dem Erscheinungsbild, kann auch in die Einstellungen. Dann ist auf dem iPhone vielleicht Platz? Ausserdem den Mond
+oben links vor ‚Geschaeft‘ durch Lunas Portrait ersetzen.“ -- Der Knopf zwischen Glocke und Erscheinungsbild ist der
+Umschalter Orb/3D-Hologramm (LUNAs Darstellung); das Sprechen selbst laeuft ueber den LUNA-Knopf unten rechts (bleibt).
+
+## Etappe K4: Erscheinungsbild und LUNA-Darstellung in die Einstellungen
+
+- Status: geplant
+- Ziel / Scope: Knoepfe ☀ (Hell/Dunkel) und ◐/🌙 (Orb/Hologramm) verlassen die Kopfzeile; in ⚙ Einstellungen neue Kachel
+  „Darstellung“: Erscheinungsbild Hell / Dunkel / System (wie Geraet) und LUNA als Orb / 3D-Hologramm, beides sofort
+  wirksam und geraeteuebergreifend gespeichert wie bisher. Auf dem iPhone ist damit Platz fuer ein kompaktes Suchfeld
+  in der Kopfzeile (K1 wird dort ein schmales Feld statt nur 🔎; Vorschlaege als Liste unter der Kopfzeile).
+- Gate: Browsertest Rechner/iPad/iPhone (Safe Areas), Umschalten wirkt sofort, Einstellung bleibt nach Neuladen.
+
+## Etappe K5: LUNAs Portrait statt Mond
+
+- Status: geplant
+- Ziel / Scope: Logo oben links (vor „Geschaeft“) zeigt LUNAs Portrait (`static/luna-portrait.png`, runder Ausschnitt
+  um das Gesicht, leichter Leuchtrand) statt des Mondes; Klick fuehrt wie bisher zum Start. Login-Seite und App-Symbol
+  unveraendert (eigene Frage, falls gewuenscht).
+- Gate: Browsertest hell/dunkel, Rechner/iPad/iPhone.
+
 ## Nicht-Scope
 
 Keine neue Suchtechnik (kein Index, kein Dienst), keine neuen Suchquellen.
@@ -56,4 +80,4 @@ Keine neue Suchtechnik (kein Index, kein Dienst), keine neuen Suchquellen.
 
 ## Definition of Done
 
-Suchleiste mit Vorschlaegen in der Kopfzeile, Aufklapp-Menues bei Maus-Over -- Rechner, iPad, iPhone geprueft.
+Aufgeraeumte Kopfzeile: Suchleiste mit Vorschlaegen (auch iPhone), Aufklapp-Menues bei Maus-Over, Darstellung in den Einstellungen, LUNAs Portrait oben links -- Rechner, iPad, iPhone geprueft.
