@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 12:45] — Claude Code
+- **Was:** Deploy BF-67 live geprueft: app-v2.js v123; Sky-Abo zeigt nur noch 01.10.2026 als offen, 9 Monate als „Beleg da“; Buchungsversuch fuer 01.09. wird abgelehnt (EB-2026-0020 vorhanden, nichts geschrieben). Heute keine Doppelbuchungen entstanden (nur die 8 Meta-Verified-Eigenbelege).
+- **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
+- **Betroffen:** keine Code-Aenderung (Pruefung)
+
 ## [2026-10-07 12:39] — Claude Code
 - **Was:** Abos: keine Doppelbuchung mehr moeglich -- vergangene Faelligkeiten mit schon vorhandenem Beleg erscheinen als „Beleg da – wird zugeordnet“ statt mit „Buchen“; `AboStore.buchen` lehnt ab, wenn ein passender Beleg existiert. BF-67. Cache app-v2.js v123.
 - **Warum:** CEO 2026-10-07 zu Sky: „Es gibt vorhandene EB-Belege und Abo-Belege?! Wie buchen wir das richtig?“ -- Sky 01-09/2026 sind als EB-2026-0012..0020 gebucht, das Abo zeigte sie bis zum naechtlichen Lauf trotzdem als offen.
