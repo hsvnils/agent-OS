@@ -231,21 +231,25 @@ class AboStore:
 
 
 def _passender_beleg(e: list[dict], a: dict, faellig: str, vergeben: set) -> str:
-    """Gebuchter Eingangsbeleg/Eigenbeleg derselben Firma im Fenster um die Faelligkeit mit aehnlichem Betrag."""
+    """Gebuchter Eingangsbeleg/Eigenbeleg derselben Firma im Fenster um die Faelligkeit mit aehnlichem Betrag (±25 %).
+    Mehrere Kandidaten (z. B. Abo 21,42 € und Guthaben-Aufladung 20,49 € in derselben Woche): der naechstliegende Betrag,
+    dann das naechstliegende Datum gewinnt (VORSCHLAGSPAUSE_ANBIETER P3, CEO: Abo und Credits nie mischen)."""
     tage = ABGLEICH_TAGE.get(a["turnus"], 10)
     f0 = date.fromisoformat(faellig)
     von, bis = (f0 - timedelta(days=tage)).isoformat(), (f0 + timedelta(days=tage)).isoformat()
     aehnlich = lambda c: abs(abs(int(c or 0)) - a["betrag_cent"]) <= 0.25 * a["betrag_cent"]
-    for x in sorted(EingangStore._falte(e).values(), key=lambda b: b["nummer"]):
+    kandidaten = []
+    for x in EingangStore._falte(e).values():
         fe = x.get("felder") or {}
-        if (x["status"] == "gebucht" and fe.get("lieferant_firma") == a["firma"] and von <= str(fe.get("rechnungsdatum", "")) <= bis
+        d = str(fe.get("rechnungsdatum", ""))
+        if (x["status"] == "gebucht" and fe.get("lieferant_firma") == a["firma"] and von <= d <= bis
                 and aehnlich(fe.get("betrag_cent")) and x["nummer"] not in vergeben):
-            return x["nummer"]
-    for x in sorted(EigenbelegStore._falte(e).values(), key=lambda b: b["nummer"]):
+            kandidaten.append((abs(abs(int(fe.get("betrag_cent") or 0)) - a["betrag_cent"]), abs((date.fromisoformat(d) - f0).days), x["nummer"]))
+    for x in EigenbelegStore._falte(e).values():
         if (x["status"] == "gebucht" and x.get("firma") == a["firma"] and von <= x["datum"] <= bis and aehnlich(x["betrag_cent"])
                 and x["nummer"] not in vergeben):
-            return x["nummer"]
-    return ""
+            kandidaten.append((abs(abs(int(x["betrag_cent"] or 0)) - a["betrag_cent"]), abs((date.fromisoformat(x["datum"]) - f0).days), x["nummer"]))
+    return min(kandidaten)[2] if kandidaten else ""
 
 
 def offene(e: list[dict], heute: date, *, nur: str = "") -> list[dict]:

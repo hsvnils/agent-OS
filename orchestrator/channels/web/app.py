@@ -4729,8 +4729,16 @@ def anbieter_liste(request: Request, bereich: str = ""):
     if not (hat_modul(u, "administration") or (bereich == "Investment" and hat_modul(u, "invest"))):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "nur fuer den CEO")
     liste = [a for a in anbieter(_google_secrets()) if not bereich or a["bereich"] == bereich]
-    return {"anbieter": liste, "eingerichtet": sum(a["stand"] == "eingerichtet" for a in liste),
-            "kann_kosten": sum(a["kann_kosten"] and a["stand"] == "eingerichtet" for a in liste)}
+    out = {"anbieter": liste, "eingerichtet": sum(a["stand"] == "eingerichtet" for a in liste),
+           "kann_kosten": sum(a["kann_kosten"] and a["stand"] == "eingerichtet" for a in liste)}
+    if hat_modul(u, "finanzen"):                                       # P3: Abo und Einzelkosten getrennt (nur Finanzen)
+        from datetime import date as _date
+        from ...core.anbieter_kosten import kosten
+        bh = kunden_store.bh
+        k = kosten(bh.eintraege(), {f["nummer"]: f.get("name", "") for f in kunden_store.firmen()}, liste,
+                   heute=_date.fromisoformat(jetzt_iso()[:10]))
+        out["kosten"] = k
+    return out
 
 
 @app.get("/api/investment/pause")

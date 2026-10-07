@@ -758,7 +758,7 @@ async function renderInvestment() {
 async function invQuellen() {                                     // P2: Investment-Datenquellen mit Stand + Kostenhinweis
   const box = $("#inv-quellen"); if (!box) return;
   const d = await jget("/api/anbieter?bereich=Investment"); if (!d) return;            // ohne Recht: alte Chips bleiben
-  box.innerHTML = d.anbieter.map(anbieterZeile).join("") + `<small class="v2-sub">Alle Anbieter: LUNA &amp; System → 🔌 Anbieter.</small>`;
+  box.innerHTML = d.anbieter.map(a => anbieterZeile(a)).join("") + `<small class="v2-sub">Alle Anbieter: LUNA &amp; System → 🔌 Anbieter.</small>`;
 }
 let _sucheTimer = null;
 function invSuche(q) {
@@ -3797,27 +3797,38 @@ function leistungHtml(p) {
 }
 // VORSCHLAGSPAUSE_ANBIETER P2: alle externen Anbieter mit Zweck, Stand (nur Schluesselnamen) und Kostenhinweis
 const ANB_STAND = { "eingerichtet": ["eingerichtet", "ok"], "teilweise": ["teilweise", "wartet"], "nicht eingerichtet": ["nicht eingerichtet", "neutral"], "ohne Zugang": ["ohne Zugang", "neutral"] };
-function anbieterZeile(a) {
+const TURNUS_KURZ = { woechentlich: "Woche", monatlich: "Monat", zweimonatlich: "2 Monate", vierteljaehrlich: "Quartal", halbjaehrlich: "Halbjahr", jaehrlich: "Jahr" };
+function anbieterKosten(k) {      // P3: Abo und Einzelkosten getrennt -- nie eine gemeinsame Summe
+  if (!k) return "";
+  const abos = k.abos.map(a => `${esc(a.bezeichnung)} ${cent2eur(a.betrag_cent)}/${esc(TURNUS_KURZ[a.turnus] || a.turnus)}${a.laeuft ? "" : " (beendet)"}`).join(", ");
+  return `<div class="v2-anb-kosten"><span><b>🔁 Abo</b> ${k.abo_monat_cent ? cent2eur(k.abo_monat_cent) + "/Monat" : "läuft nicht"}${k.abo_jahr_cent ? " · " + KOSTEN_JAHR + " bezahlt " + cent2eur(k.abo_jahr_cent) : ""}${abos ? `<small>${abos}</small>` : ""}</span>
+    <span><b>➕ Einzelkosten ${KOSTEN_JAHR}</b> ${k.einzel_anzahl ? cent2eur(k.einzel_jahr_cent) + ` <small>${k.einzel_anzahl} Beleg(e) – Credits, Aufladungen, Nutzung</small>` : "keine"}</span></div>`;
+}
+let KOSTEN_JAHR = "";
+function anbieterZeile(a, k) {
   const [st, cl] = ANB_STAND[a.stand] || [a.stand, "neutral"];
   return `<div class="v2-anb">
     <div class="v2-anb-kopf"><b>${esc(a.name)}</b><span class="v2-badge ${cl}">${esc(st)}</span><span class="v2-badge ${a.kann_kosten ? "wartet" : "ok"}">${a.kann_kosten ? "💶 " : ""}${esc(a.tarif_text)}</span></div>
     <small>${esc(a.zweck)} · Daten: ${esc(a.daten)}</small>
-    <small>${a.schluessel.length ? "Zugang: " + a.schluessel.map(k => `<code>${esc(k)}</code>`).join(" ") : "kein Zugang nötig"}${a.kosten_erfasst ? " · Kosten werden erfasst" : a.kann_kosten ? " · Kosten werden <b>nicht</b> erfasst" : ""}${a.konto ? ` · <a href="${esc(a.konto)}" target="_blank" rel="noopener">Konto / Abrechnung ↗</a>` : ""}</small></div>`;
+    ${anbieterKosten(k)}
+    <small>${a.schluessel.length ? "Zugang: " + a.schluessel.map(k => `<code>${esc(k)}</code>`).join(" ") : "kein Zugang nötig"}${a.kosten_erfasst || k ? " · Kosten werden erfasst" : a.kann_kosten ? " · Kosten werden <b>nicht</b> erfasst" : ""}${a.konto ? ` · <a href="${esc(a.konto)}" target="_blank" rel="noopener">Konto / Abrechnung ↗</a>` : ""}</small></div>`;
 }
 let ANB_FILTER = "alle";
 RENDER.anbieter = renderAnbieter;
 async function renderAnbieter() {
   const d = await jget("/api/anbieter");
   if (!d) { $("#v2-app").innerHTML = secHead("Anbieter & Datenquellen", "") + emptyRow("Nur für den CEO sichtbar."); return; }
+  const K = d.kosten || null; KOSTEN_JAHR = K ? String(K.jahr) : "";
   const liste = d.anbieter.filter(a => ANB_FILTER === "alle" || (ANB_FILTER === "eingerichtet" ? a.stand === "eingerichtet" : a.kann_kosten && a.stand === "eingerichtet"));
   const bereiche = [...new Set(d.anbieter.map(a => a.bereich))];
   const chips = [["alle", "Alle"], ["eingerichtet", "Eingerichtet"], ["kosten", "💶 Eingerichtet & kann kosten"]].map(([k, l]) => `<button class="v2-chip ${ANB_FILTER === k ? "on" : ""}" data-act="anb-filter" data-val="${k}">${l}</button>`).join("");
   $("#v2-app").innerHTML = secHead("Anbieter & Datenquellen", "") + `<div class="v2-grid">
     ${kpiTile("Eingerichtet", String(d.eingerichtet), null, `von ${d.anbieter.length} Anbietern`)}
     ${kpiTile("Können Kosten verursachen", String(d.kann_kosten), null, "eingerichtet, nicht gratis")}
-    ${tile("Hinweis", `<small class="v2-sub">„Eingerichtet“ heißt: der Zugang ist hinterlegt (nur der Name des Schlüssels wird gezeigt, nie der Wert). Ob ein Konto wirklich etwas kostet, steht nur beim Anbieter – über „Konto / Abrechnung“ prüfen. Erfasst werden heute nur die KI-Kosten.</small>`, "w6")}
+    ${K ? kpiTile("Abos (laufend)", cent2eur(K.abos_monat_cent), null, "je Monat – nur Abos") + kpiTile(`Einzelkosten ${K.jahr}`, cent2eur(K.einzel_jahr_cent), null, "Credits, Aufladungen, Nutzung – getrennt von den Abos") : ""}
+    ${tile("Hinweis", `<small class="v2-sub">„Eingerichtet“ heißt: der Zugang ist hinterlegt (nur der Name des Schlüssels wird gezeigt, nie der Wert). Die Kosten stammen aus deinen gebuchten Belegen und Abos: <b>Abo</b> und <b>Einzelkosten</b> (Credits, Aufladungen) stehen immer getrennt. Fehlt ein Beleg, fehlt er auch hier – im Zweifel über „Konto / Abrechnung“ prüfen.</small>`, "w6")}
     ${tile("Filter", `<div class="v2-chips">${chips}</div>`, "w12")}
-    ${bereiche.map(b => { const z = liste.filter(a => a.bereich === b); return z.length ? tile(b, z.map(anbieterZeile).join(""), "w6") : ""; }).join("")}
+    ${bereiche.map(b => { const z = liste.filter(a => a.bereich === b); return z.length ? tile(b, z.map(a => anbieterZeile(a, K && K.anbieter[a.id])).join(""), "w6") : ""; }).join("")}
   </div>`;
 }
 async function renderSystem() {

@@ -4,7 +4,7 @@
 - Stand: 2026-10-06
 - Arbeitsbranch: `ai/vorschlagspause-anbieter`
 - Basiscommit: `945e1eb`
-- Naechster Schritt: P1+P2 live (2026-10-06); P3 mit CEO-Vorgabe „Abo und Credits getrennt“ geplant -- Go und Freigabe der Datenvorbereitung offen.
+- Naechster Schritt: P3 gebaut (2026-10-07) -- Deploy, dann Abnahme; offen: Supabase-Abo (CEO-Entscheidung).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -78,7 +78,7 @@ tatsaechlich kostenpflichtig ist, steht nicht im Code -- das kann nur im jeweili
 
 ## Etappe P3: Kosten je Anbieter -- Abo und Einzelkosten strikt getrennt
 
-- Status: geplant
+- Status: umgesetzt
 - Vorgabe CEO (2026-10-07): „Abo-Kosten duerfen nicht mit zusaetzlichen Kosten fuer Credits oder so gemischt werden.“
 - Ziel / Scope: Je Anbieter **zwei getrennte Werte, nie zusammengerechnet**:
   1. **Abo** -- laufender Monatswert aus den aktiven Abos (vierteljaehrlich/jaehrlich auf den Monat umgerechnet) und die
@@ -111,6 +111,21 @@ tatsaechlich kostenpflichtig ist, steht nicht im Code -- das kann nur im jeweili
   Investment-App, Quelle an jedem Vorschlag. `scripts/doku_check.py` Pruefung 7: jeder Zugangs-Schluessel im Code
   muss einem Anbieter zugeordnet sein (fand sofort `IG_ANALYSE_BASE_URL`).
 - Tests `test_vorschlagspause.py` (6, Gegenproben rot), Browser Rechner/iPad/iPhone.
+
+## Umsetzung P3 (2026-10-07, Go CEO)
+
+- `core/anbieter_kosten.py`: je Anbieter getrennt `abo_monat_cent` (laufende Abos, gekuendigte ohne weitere Zahlung
+  zaehlen nicht), `abo_jahr_cent` (Belege mit Abo-Faelligkeit) und `einzel_jahr_cent` (alle anderen Ausgaben-Belege);
+  Summen `abos_monat_cent` und `einzel_jahr_cent` getrennt, keine gemeinsame Summe. Zuordnung ueber `lieferant`-Muster im
+  Register. `GET /api/anbieter` liefert `kosten` nur mit Modul Finanzen; CFO-Werkzeug `finance_dashboard` ebenso getrennt.
+- Abo-Abgleich (`abos._passender_beleg`): bei mehreren Kandidaten naechster Betrag, dann naechstes Datum (vorher: erste
+  Belegnummer) -- sonst haette eine Guthaben-Aufladung (20,49 €) ein Abo (21,42 €) erledigen koennen.
+- Daten (CEO-Freigabe): ABO-00003 ChatGPT Plus (10.01.-09.10.2026, beendet), ABO-00004 Claude Pro (05.05.-24.06.2026,
+  beendet), ABO-00001 Claude Max ab 25.06.2026 (Upgrade-Rechnung 99,77 €), ABO-00002 All-Inkl ab 20.01.2026.
+  Register: Supabase ist kostenpflichtig (4 Monatsrechnungen), nicht Gratis-Stufe.
+- Probe mit Kopie der echten Kette: Abos 114,81 €/Monat; Anthropic Abo 463,91 € / Einzel 121,95 € (Aufladungen +
+  extra usage), OpenAI Abo 207,00 € / Credits 60,00 €, All-Inkl Abo 69,39 €; Supabase noch Einzel (kein Abo angelegt).
+- Tests `test_anbieter_kosten.py` (3, Gegenprobe alter Abgleich rot), Browser Rechner/iPhone.
 
 ## Nicht-Scope
 

@@ -18,42 +18,43 @@ TARIFE = {
     "paket": "kostenpflichtig (Paket/Abo)",
 }
 
-# schluessel = noetig fuer „eingerichtet“; zugehoerig = weitere Schluessel desselben Anbieters (optional/Varianten)
+# schluessel = noetig fuer „eingerichtet“; zugehoerig = weitere Schluessel desselben Anbieters (optional/Varianten);
+# lieferant = Namensmuster (klein) der Lieferanten in der Buchhaltung -> Kosten je Anbieter (P3)
 ANBIETER = [
     # -- KI --------------------------------------------------------------------------------------------------
-    {"id": "anthropic", "name": "Anthropic (Claude)", "bereich": "KI", "zweck": "Fachagenten, Rückfall im Chat, Web-Recherche-Eskalation",
+    {"id": "anthropic", "lieferant": ["anthropic"], "name": "Anthropic (Claude)", "bereich": "KI", "zweck": "Fachagenten, Rückfall im Chat, Web-Recherche-Eskalation",
      "daten": "Chat-Texte und Aufgaben", "schluessel": ["ANTHROPIC_API_KEY"], "zugehoerig": [], "tarif": "nutzung",
      "kosten_erfasst": True, "konto": "https://console.anthropic.com/settings/billing"},
-    {"id": "gemini", "name": "Gemini (Google)", "bereich": "KI", "zweck": "Chat (Frontdesk), Video-/Bild-Auswertung, Vorschläge",
+    {"id": "gemini", "lieferant": ["google cloud"], "name": "Gemini (Google)", "bereich": "KI", "zweck": "Chat (Frontdesk), Video-/Bild-Auswertung, Vorschläge",
      "daten": "Chat-Texte, Bilder/Videos zur Auswertung", "schluessel": ["GEMINI_API_KEY"], "zugehoerig": [], "tarif": "gratis_stufe",
      "kosten_erfasst": True, "konto": "https://aistudio.google.com/"},
-    {"id": "openai", "name": "OpenAI", "bereich": "KI", "zweck": "Rückfall im Chat, Instagram-Analyse",
+    {"id": "openai", "lieferant": ["openai"], "name": "OpenAI", "bereich": "KI", "zweck": "Rückfall im Chat, Instagram-Analyse",
      "daten": "Chat-Texte, Instagram-Nachrichten zur Analyse", "schluessel": ["OPENAI_API_KEY"], "zugehoerig": ["IG_ANALYSE_KEY", "IG_ANALYSE_BASE_URL"],
      "tarif": "nutzung", "kosten_erfasst": True, "konto": "https://platform.openai.com/settings/organization/billing"},
     {"id": "ollama", "name": "Lokale KI (Ollama auf dem MACO470)", "bereich": "KI", "zweck": "Backoffice-Aufträge, Werkzeugauswahl",
      "daten": "bleibt im Heimnetz", "schluessel": ["LOCAL_LLM_BASE_URL"], "zugehoerig": ["LOCAL_LLM_KEY"], "tarif": "gratis",
      "kosten_erfasst": True, "konto": "", "intern": True},
     # -- Recherche -------------------------------------------------------------------------------------------
-    {"id": "brave", "name": "Brave Search", "bereich": "Recherche", "zweck": "Web-Recherche, Watcher, Impressum-Suche",
+    {"id": "brave", "lieferant": ["brave"], "name": "Brave Search", "bereich": "Recherche", "zweck": "Web-Recherche, Watcher, Impressum-Suche",
      "daten": "Suchbegriffe", "schluessel": ["BRAVE_API_KEY"], "zugehoerig": [], "tarif": "gratis_stufe",
      "kosten_erfasst": False, "konto": "https://api-dashboard.search.brave.com/"},
     # -- Investment ------------------------------------------------------------------------------------------
-    {"id": "finnhub", "name": "Finnhub", "bereich": "Investment", "zweck": "Aktienkurse, Firmenprofile, News, Insider-Transaktionen",
+    {"id": "finnhub", "lieferant": ["finnhub"], "name": "Finnhub", "bereich": "Investment", "zweck": "Aktienkurse, Firmenprofile, News, Insider-Transaktionen",
      "daten": "Börsensymbole", "schluessel": ["FINNHUB_API_KEY"], "zugehoerig": [], "tarif": "gratis_stufe",
      "kosten_erfasst": False, "konto": "https://finnhub.io/dashboard"},
-    {"id": "fmp", "name": "Financial Modeling Prep (FMP)", "bereich": "Investment", "zweck": "Kurshistorie, Top-Gewinner (Markt-Screen)",
+    {"id": "fmp", "lieferant": ["financial modeling"], "name": "Financial Modeling Prep (FMP)", "bereich": "Investment", "zweck": "Kurshistorie, Top-Gewinner (Markt-Screen)",
      "daten": "Börsensymbole", "schluessel": ["FMP_API_KEY"], "zugehoerig": [], "tarif": "gratis_stufe",
      "kosten_erfasst": False, "konto": "https://site.financialmodelingprep.com/developer/docs/dashboard"},
-    {"id": "alphavantage", "name": "Alpha Vantage", "bereich": "Investment", "zweck": "Indikatoren (RSI), Tageskurse – ca. 25 Abfragen/Tag",
+    {"id": "alphavantage", "lieferant": ["alpha vantage"], "name": "Alpha Vantage", "bereich": "Investment", "zweck": "Indikatoren (RSI), Tageskurse – ca. 25 Abfragen/Tag",
      "daten": "Börsensymbole", "schluessel": ["ALPHAVANTAGE_API_KEY"], "zugehoerig": [], "tarif": "gratis_stufe",
      "kosten_erfasst": False, "konto": "https://www.alphavantage.co/premium/"},
-    {"id": "coingecko", "name": "CoinGecko", "bereich": "Investment", "zweck": "Krypto-Kurse und -Historie",
+    {"id": "coingecko", "lieferant": ["coingecko"], "name": "CoinGecko", "bereich": "Investment", "zweck": "Krypto-Kurse und -Historie",
      "daten": "Krypto-Namen", "schluessel": [], "zugehoerig": ["COINGECKO_API_KEY"], "tarif": "gratis_stufe",
      "kosten_erfasst": False, "konto": "https://www.coingecko.com/en/developers/dashboard"},
     {"id": "sec", "name": "SEC EDGAR (US-Börsenaufsicht)", "bereich": "Investment", "zweck": "Insider-Pflichtmeldungen (Form 4)",
      "daten": "Börsensymbole; Kontaktangabe im Abruf", "schluessel": ["SEC_EDGAR_USER_AGENT"], "zugehoerig": [], "tarif": "gratis",
      "kosten_erfasst": False, "konto": ""},
-    {"id": "alpaca", "name": "Alpaca (Paper-Depot)", "bereich": "Investment", "zweck": "Spielgeld-Depot: Orders, Konto, Positionen",
+    {"id": "alpaca", "lieferant": ["alpaca"], "name": "Alpaca (Paper-Depot)", "bereich": "Investment", "zweck": "Spielgeld-Depot: Orders, Konto, Positionen",
      "daten": "Spielgeld-Orders", "schluessel": ["ALPACA_API_KEY", "ALPACA_API_SECRET"], "zugehoerig": [], "tarif": "gratis",
      "kosten_erfasst": False, "konto": "https://app.alpaca.markets/"},
     # -- Kommunikation -----------------------------------------------------------------------------------------
@@ -63,7 +64,7 @@ ANBIETER = [
     {"id": "google", "name": "Google Workspace (LUNAs Konto)", "bereich": "Kommunikation", "zweck": "Gmail, Kalender, Drive (Belegkopien)",
      "daten": "Mails, Termine, Beleg-PDFs", "schluessel": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_OAUTH_REFRESH_TOKEN"],
      "zugehoerig": [], "tarif": "gratis", "kosten_erfasst": False, "konto": "https://console.cloud.google.com/"},
-    {"id": "allinkl", "name": "All-Inkl (Mail luna@hanserautisch.de)", "bereich": "Kommunikation", "zweck": "Kundenmails senden und Antworten lesen",
+    {"id": "allinkl", "lieferant": ["all-inkl"], "name": "All-Inkl (Mail luna@hanserautisch.de)", "bereich": "Kommunikation", "zweck": "Kundenmails senden und Antworten lesen",
      "daten": "Kundenmails mit Belegen", "schluessel": ["ALLINKL_MAIL_PASSWORT"], "zugehoerig": [], "tarif": "paket",
      "kosten_erfasst": False, "konto": "https://kas.all-inkl.com/"},
     {"id": "meta", "name": "Meta (Instagram/Facebook)", "bereich": "Kommunikation", "zweck": "Instagram-Kennzahlen, Reels auf Facebook",
@@ -71,23 +72,23 @@ ANBIETER = [
      "zugehoerig": ["INSTAGRAM_APP_SECRET", "INSTAGRAM_PAGE_TOKEN", "INSTAGRAM_USER_TOKEN", "INSTAGRAM_INSIGHTS_TOKEN", "INSTAGRAM_VERIFY_TOKEN"],
      "tarif": "gratis", "kosten_erfasst": False, "konto": "https://developers.facebook.com/apps/"},
     # -- Sprache ---------------------------------------------------------------------------------------------
-    {"id": "deepgram", "name": "Deepgram", "bereich": "Sprache", "zweck": "Spracherkennung im Voice-Kanal",
+    {"id": "deepgram", "lieferant": ["deepgram"], "name": "Deepgram", "bereich": "Sprache", "zweck": "Spracherkennung im Voice-Kanal",
      "daten": "Sprachaufnahmen", "schluessel": ["DEEPGRAM_API_KEY"], "zugehoerig": [], "tarif": "nutzung",
      "kosten_erfasst": False, "konto": "https://console.deepgram.com/"},
-    {"id": "elevenlabs", "name": "ElevenLabs", "bereich": "Sprache", "zweck": "Sprachausgabe im Voice-Kanal",
+    {"id": "elevenlabs", "lieferant": ["elevenlabs"], "name": "ElevenLabs", "bereich": "Sprache", "zweck": "Sprachausgabe im Voice-Kanal",
      "daten": "Antworttexte", "schluessel": ["ELEVENLABS_API_KEY"], "zugehoerig": [], "tarif": "paket",
      "kosten_erfasst": False, "konto": "https://elevenlabs.io/app/subscription"},
-    {"id": "cartesia", "name": "Cartesia", "bereich": "Sprache", "zweck": "Sprachausgabe im Voice-Kanal (Alternative)",
+    {"id": "cartesia", "lieferant": ["cartesia"], "name": "Cartesia", "bereich": "Sprache", "zweck": "Sprachausgabe im Voice-Kanal (Alternative)",
      "daten": "Antworttexte", "schluessel": ["CARTESIA_API_KEY"], "zugehoerig": [], "tarif": "nutzung",
      "kosten_erfasst": False, "konto": "https://play.cartesia.ai/"},
     # -- Betrieb ---------------------------------------------------------------------------------------------
-    {"id": "github", "name": "GitHub", "bereich": "Betrieb", "zweck": "Code-Ablage, Watcher",
+    {"id": "github", "lieferant": ["github"], "name": "GitHub", "bereich": "Betrieb", "zweck": "Code-Ablage, Watcher",
      "daten": "Quellcode", "schluessel": ["GITHUB_TOKEN"], "zugehoerig": [], "tarif": "gratis",
      "kosten_erfasst": False, "konto": "https://github.com/settings/billing"},
-    {"id": "supabase", "name": "Supabase", "bereich": "Betrieb", "zweck": "Datenbank-Spiegel (Investment-Lernschleife, LUNA-Tabellen)",
-     "daten": "Investment-Prognosen, App-Daten", "schluessel": ["SUPABASE_SERVICE_ROLE_KEY"], "zugehoerig": [], "tarif": "gratis_stufe",
+    {"id": "supabase", "lieferant": ["supabase"], "name": "Supabase", "bereich": "Betrieb", "zweck": "Datenbank-Spiegel (Investment-Lernschleife, LUNA-Tabellen)",
+     "daten": "Investment-Prognosen, App-Daten", "schluessel": ["SUPABASE_SERVICE_ROLE_KEY"], "zugehoerig": [], "tarif": "paket",
      "kosten_erfasst": False, "konto": "https://supabase.com/dashboard"},
-    {"id": "agentops", "name": "AgentOps", "bereich": "Betrieb", "zweck": "Beobachtung der Agenten (optional)",
+    {"id": "agentops", "lieferant": ["agentops"], "name": "AgentOps", "bereich": "Betrieb", "zweck": "Beobachtung der Agenten (optional)",
      "daten": "Agenten-Abläufe", "schluessel": ["AGENTOPS_API_KEY"], "zugehoerig": [], "tarif": "gratis_stufe",
      "kosten_erfasst": False, "konto": "https://app.agentops.ai/"},
     # -- Oeffentliche Dienste ohne Zugang (kein Konto, keine Kosten) --------------------------------------------
@@ -120,6 +121,7 @@ def anbieter(secrets: dict | None = None) -> list[dict]:
         else:
             stand = "eingerichtet" if len(da) == len(a["schluessel"]) else "teilweise" if da else "nicht eingerichtet"
         out.append({k: a[k] for k in ("id", "name", "bereich", "zweck", "daten", "tarif", "kosten_erfasst", "konto")}
+                   | {"lieferant": a.get("lieferant", [])}
                    | {"tarif_text": TARIFE[a["tarif"]], "kann_kosten": a["tarif"] != "gratis", "stand": stand,
                       "schluessel": a["schluessel"] + a["zugehoerig"], "intern": bool(a.get("intern"))})
     return out

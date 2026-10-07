@@ -918,7 +918,20 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         from ..governance.dienste_register import register
         reg = register(ctx.secret_dict or {})
         kosten = ctx.kosten.monat() if ctx.kosten is not None else {}
+        try:                                                       # P3: Anbieter-Kosten, Abo und Einzel getrennt
+            from datetime import date as _date
+            from ..governance.dienste_register import anbieter as _anb
+            from .anbieter_kosten import kosten as _ak
+            from .kunden import KundenStore as _KS
+            from .buchhaltung import Buchhaltung as _BH
+            from pathlib import Path as _P2
+            _bh = _BH(_P2(ctx.repo_root) / "buchhaltung") if getattr(ctx, "repo_root", None) else None
+            anbieter_kosten = _ak(_bh.eintraege(), {f["nummer"]: f.get("name", "") for f in _KS(_bh).firmen()},
+                                  _anb(ctx.secret_dict or {}), heute=_date.today()) if _bh else {}
+        except Exception:
+            anbieter_kosten = {}
         return {"modelle": reg["modelle"], "dienste": reg["dienste"],
+                "anbieter_kosten_getrennt": anbieter_kosten,
                 "gemessene_kosten_monat": kosten,
                 "hinweis": "Chat UND Fachagenten werden je Agent gemessen (SDK-Usage bzw. Fallback-Usage; "
                            "'je_agent' in der Statistik); nur ohne gemeldete Usage wird geschaetzt. Voice-Dienste "

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 10:09] — Claude Code
+- **Was:** VORSCHLAGSPAUSE_ANBIETER P3 gebaut: Kosten je Anbieter strikt getrennt in Abo (Monatswert laufender Abos, bezahlte Abo-Belege) und Einzelkosten (Credits, Aufladungen, Nutzung), nie gemeinsam summiert (`core/anbieter_kosten.py`, `/api/anbieter` mit Modul Finanzen, `finance_dashboard`, Anbieter-Seite mit zwei getrennten Kacheln); Abo-Abgleich waehlt bei mehreren Kandidaten den naechsten Betrag. Daten (CEO-Freigabe): ABO-00003 ChatGPT Plus und ABO-00004 Claude Pro angelegt und beendet, ABO-00001 Claude Max Start 25.06.2026, ABO-00002 All-Inkl Start 20.01.2026; Register: Supabase kostenpflichtig. Cache app-v2.js v120, style-v2.css v62.
+- **Warum:** CEO 2026-10-07: Go fuer P3, „Abo-Kosten duerfen nicht mit zusaetzlichen Kosten fuer Credits gemischt werden“, „leg die drei Abos selbst an“.
+- **Betroffen:** `orchestrator/core/anbieter_kosten.py`, `core/abos.py`, `core/hoa_tools.py`, `governance/dienste_register.py`, `channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `tests/test_anbieter_kosten.py`, `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md`, `ROADMAP.md`; `buchhaltung/log.jsonl` (NAS, Abos)
+
 ## [2026-10-07 10:01] — Claude Code
 - **Was:** P3 in `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md` konkretisiert: Kosten je Anbieter strikt getrennt in Abo (aktive Abos, Belege mit Abo-Faelligkeit) und Einzelkosten (Credits/Nutzung), nie gemeinsam summiert; Datenvorbereitung (beendete Abos fuer ChatGPT Plus/Claude Pro, Claude Max ab 25.07.) nur mit CEO-Freigabe.
 - **Warum:** CEO 2026-10-07: „Abo-Kosten duerfen nicht mit zusaetzlichen Kosten fuer Credits oder so gemischt werden.“
