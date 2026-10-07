@@ -1,10 +1,10 @@
 # Roadmap: Beleg in einer Ebene (Formular an der Stelle des Blatts, gesperrt nur lesen)
 
-- Status: in Umsetzung
-- Stand: 2026-10-05
+- Status: abgeschlossen
+- Stand: 2026-10-07
 - Arbeitsbranch: `ai/beleg-eine-ebene`
 - Basiscommit: `5cdb129`
-- Naechster Schritt: E1-E3 live (2026-10-05) -- Abnahme durch den CEO an echten Belegen, dann Roadmap abschliessen.
+- Naechster Schritt: keiner -- abgeschlossen 2026-10-07 (E1-E3 + Nacharbeit live; CEO: „vorerst abgenommen“, meldet Fehler).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

@@ -1,10 +1,10 @@
 # Roadmap: Belege bis zum Versand bearbeitbar, danach nur mit Begruendung
 
-- Status: in Umsetzung
-- Stand: 2026-10-06
+- Status: abgeschlossen
+- Stand: 2026-10-07
 - Arbeitsbranch: `ai/beleg-bearbeitbar`
 - Basiscommit: `eec7c30`
-- Naechster Schritt: B1-B3 gebaut (2026-10-06) -- Deploy, dann Abnahme durch den CEO an echten Belegen.
+- Naechster Schritt: keiner -- abgeschlossen 2026-10-07 (B1-B3 + TKP-Ergaenzung live; CEO: „vorerst abgenommen“, meldet Fehler).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

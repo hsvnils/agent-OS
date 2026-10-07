@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 11:36] — Claude Code
+- **Was:** `BELEG_EINE_EBENE_ROADMAP.md` und `BELEG_BEARBEITBAR_ROADMAP.md` abgeschlossen (alle Etappen live, inkl. Nacharbeit BF-65 und TKP-Ergaenzung); Status in `ROADMAP.md` nachgezogen.
+- **Warum:** CEO 2026-10-07: „Beleg-Roadmap vorerst abgenommen, schliess sie ab. Ich melde mich, wenn ich Fehler finde.“
+- **Betroffen:** `BELEG_EINE_EBENE_ROADMAP.md`, `BELEG_BEARBEITBAR_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-07 11:32] — Claude Code
 - **Was:** `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md` abgeschlossen (P1 Vorschlagspause, P2 Anbieter-Liste, P3 Kosten je Anbieter mit getrennten Abo-/Einzelkosten -- alle live); Status in `ROADMAP.md` nachgezogen.
 - **Warum:** CEO 2026-10-07: „Anbieter-Seite abgenommen, schliess die Roadmap ab“.
