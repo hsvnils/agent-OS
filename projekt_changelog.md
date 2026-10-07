@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 12:39] — Claude Code
+- **Was:** Abos: keine Doppelbuchung mehr moeglich -- vergangene Faelligkeiten mit schon vorhandenem Beleg erscheinen als „Beleg da – wird zugeordnet“ statt mit „Buchen“; `AboStore.buchen` lehnt ab, wenn ein passender Beleg existiert. BF-67. Cache app-v2.js v123.
+- **Warum:** CEO 2026-10-07 zu Sky: „Es gibt vorhandene EB-Belege und Abo-Belege?! Wie buchen wir das richtig?“ -- Sky 01-09/2026 sind als EB-2026-0012..0020 gebucht, das Abo zeigte sie bis zum naechtlichen Lauf trotzdem als offen.
+- **Betroffen:** `orchestrator/core/abos.py`, `static/app-v2.js`, `static/index-v2.html`, `tests/test_anbieter_kosten.py`, `docs/bekannte-fehler.md`
+
 ## [2026-10-07 11:36] — Claude Code
 - **Was:** `BELEG_EINE_EBENE_ROADMAP.md` und `BELEG_BEARBEITBAR_ROADMAP.md` abgeschlossen (alle Etappen live, inkl. Nacharbeit BF-65 und TKP-Ergaenzung); Status in `ROADMAP.md` nachgezogen.
 - **Warum:** CEO 2026-10-07: „Beleg-Roadmap vorerst abgenommen, schliess sie ab. Ich melde mich, wenn ich Fehler finde.“

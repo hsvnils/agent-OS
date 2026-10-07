@@ -3167,6 +3167,7 @@ async function aboDetail(nr, meldung, fehler) {
   const x = (ABOS.abos || []).find(a => a.nummer === nr); if (!x) return openModal(nr, emptyRow("Abo nicht gefunden."));
   const WIE = { gebucht: "gebucht", beleg: "Beleg kam", uebersprungen: "übersprungen" };
   const erl = Object.entries(x.erledigt || {}).sort((a, b) => b[0].localeCompare(a[0])).map(([d, v]) => `<div class="v2-list-row${v.beleg ? " klick" : ""}" ${v.beleg ? `data-act="${String(v.beleg).startsWith("EB-") ? "eb-detail" : "bl-detail"}" data-id="${esc(v.beleg)}"` : ""}><span class="v2-badge ${v.wie === "uebersprungen" ? "neutral" : "ok"}">${esc(WIE[v.wie] || v.wie)}</span><div class="grow"><b>${esc(datumDe(d))}</b><small>${esc(v.beleg || v.grund || "")}</small></div></div>`).join("");
+  const gefunden = (x.gefunden || []).map(g => `<div class="v2-list-row klick" data-act="${String(g.beleg).startsWith("EB-") ? "eb-detail" : "bl-detail"}" data-id="${esc(g.beleg)}"><span class="v2-badge ok">Beleg da</span><div class="grow"><b>${esc(datumDe(g.faellig))}</b><small>${esc(g.beleg)} – wird heute Nacht zugeordnet, nichts buchen</small></div><span>›</span></div>`).join("");
   const offen = (x.offen || []).map(d => `<div class="v2-list-row"><span class="v2-badge wartet">offen</span><div class="grow"><b>${esc(datumDe(d))}</b><small>${esc(cent2eur(x.betrag_cent))}</small></div>
     <button class="v2-btn ok sm" data-act="abo-buchen" data-id="${esc(nr)}" data-val="${esc(d)}">✓ Buchen</button><button class="v2-btn sm" data-act="abo-skip" data-id="${esc(nr)}" data-val="${esc(d)}">Überspringen</button></div>`).join("");
   openModal(`${nr} · ${x.bezeichnung}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}">${esc(meldung)}</div>` : ""}
@@ -3177,6 +3178,7 @@ async function aboDetail(nr, meldung, fehler) {
     <div class="v2-kv"><span>Status</span><b>${x.status === "aktiv" ? `aktiv · nächste Fälligkeit ${esc(datumDe(x.naechste))}` : `beendet${x.ende ? " zum " + esc(datumDe(x.ende)) : ""}`}</b></div>
     ${x.ende && x.status === "aktiv" ? `<div class="v2-kv"><span>Vertragsende</span><b>${esc(datumDe(x.ende))}${x.kuendigungsfrist_tage != null ? ` · Kündigungsfrist ${esc(String(x.kuendigungsfrist_tage))} Tage` : ""}</b></div>` : ""}
     ${offen ? `<h3>Offene Fälligkeiten</h3>${offen}` : ""}
+    ${gefunden ? `<h3>Beleg gefunden <small class="v2-sub">wird im nächtlichen Abo-Lauf zugeordnet</small></h3>${gefunden}` : ""}
     <h3>Erledigt</h3>${erl || emptyRow("Noch keine Fälligkeit erledigt.")}
     ${x.status === "aktiv" ? `<div class="v2-card-actions" style="margin-top:12px"><button class="v2-btn" data-act="abo-bearbeiten" data-id="${esc(nr)}">Bearbeiten</button><button class="v2-btn" data-act="abo-beenden" data-id="${esc(nr)}">Abo beenden</button></div>` : ""}`, false);
 }

@@ -151,9 +151,14 @@ class AboStore:
         heute = heute or jetzt().date()
         e = self.bh.eintraege()
         out = []
+        alle_offen = offene(e, heute)                       # einmal fuer alle Abos (Belege nie doppelt vergeben)
         for a in sorted(self._falte(e).values(), key=lambda x: x["nummer"]):
+            eigene = [o for o in alle_offen if o["abo"] == a["nummer"]]
             a = dict(a) | {"monatlich_cent": monatlich_cent(a), "naechste": naechste(a, heute) if a["status"] == "aktiv" else "",
-                           "turnus_text": TURNUS[a["turnus"]][0], "offen": [o["faellig"] for o in offene(e, heute, nur=a["nummer"])]}
+                           "turnus_text": TURNUS[a["turnus"]][0],
+                           "offen": [o["faellig"] for o in eigene if not o["beleg"]],
+                           # Beleg schon da, Zuordnung folgt im naechsten Abo-Lauf -> nichts buchen (sonst doppelt)
+                           "gefunden": [{"faellig": o["faellig"], "beleg": o["beleg"]} for o in eigene if o["beleg"]]}
             out.append(a)
         return out
 
@@ -219,6 +224,10 @@ class AboStore:
             raise ValueError(f"{faellig} ist keine Faelligkeit von {nummer}.")
         if faellig in a["erledigt"]:
             raise ValueError(f"{nummer} zum {faellig} ist schon erledigt.")
+        schon = next((o["beleg"] for o in offene(self.bh.eintraege(), jetzt().date())
+                      if o["abo"] == nummer and o["faellig"] == faellig and o["beleg"]), "")
+        if schon:                                           # Beleg ist schon da -> nicht doppelt buchen
+            raise ValueError(f"Zum {faellig} gibt es schon den Beleg {schon} -- LUNA ordnet ihn zu, bitte nicht noch einmal buchen.")
         f = kunden.firma(a["firma"]) if kunden is not None else None
         eb = EigenbelegStore(self.bh).anlegen({
             "art": a["art"], "datum": datum or faellig, "betrag": betrag if betrag not in (None, "") else a["betrag_cent"] / 100,

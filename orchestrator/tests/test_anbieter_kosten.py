@@ -74,6 +74,20 @@ class TestAnbieterKosten(unittest.TestCase):
                              "turnus": "monatlich", "start": "2026-06-19"}, self.ks)
         self.assertEqual(self.st.aendern(nr, {"rechnung_von": meta}, self.ks)["geaendert"], {"rechnung_von": ""})   # gleich = leer
 
+    def test_5_keine_doppelbuchung(self):
+        nr = self.st.anlegen({"bezeichnung": "Sky", "firma": self.ant, "betrag": "33,60", "kategorie": "software",
+                              "turnus": "monatlich", "start": "2026-09-01"}, self.ks)["nummer"]
+        _beleg(self.bh, "ER-30", self.ant, "2026-09-01", 3360)
+        with mock.patch("orchestrator.core.abos.jetzt") as j, mock.patch("orchestrator.core.eigenbelege.jetzt") as j2:
+            from datetime import datetime
+            j.return_value = j2.return_value = datetime(2026, 10, 7, 12, 0)
+            a = next(x for x in self.st.liste(HEUTE) if x["nummer"] == nr)
+            self.assertEqual((a["offen"], a["gefunden"]), (["2026-10-01"], [{"faellig": "2026-09-01", "beleg": "ER-30"}]))
+            with self.assertRaises(ValueError) as cm:
+                self.st.buchen(nr, "2026-09-01", self.ks)                           # Beleg schon da -> nicht doppelt
+            self.assertIn("ER-30", str(cm.exception))
+            self.assertTrue(self.st.buchen(nr, "2026-10-01", self.ks)["eigenbeleg"])  # ohne Beleg geht es
+
     def test_3_endpunkt_nur_mit_finanzen(self):
         from fastapi.testclient import TestClient
         from orchestrator.channels.web import app as webapp
