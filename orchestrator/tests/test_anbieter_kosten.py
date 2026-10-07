@@ -59,6 +59,21 @@ class TestAnbieterKosten(unittest.TestCase):
         self.assertFalse({"gesamt_cent", "summe_cent"} & set(json.dumps(k).split('"')))   # nie eine gemeinsame Summe
         self.assertTrue(nr)
 
+    def test_4_rechnung_von_anderem_anbieter(self):
+        apple = "L-00001"                                                    # aus _stores()
+        meta = self.ks.firma_anlegen({"name": "Meta Platforms Ireland Ltd.", "typ": "partner"})["nummer"]
+        nr = self.st.anlegen({"bezeichnung": "Meta Verified", "firma": meta, "rechnung_von": apple, "betrag": "16,99",
+                              "kategorie": "software", "turnus": "monatlich", "start": "2026-06-19", "beleg_per_mail": True},
+                             self.ks)["nummer"]
+        self.assertEqual(self.st.get(nr)["rechnung_von"], apple)
+        _beleg(self.bh, "ER-20", apple, "2026-06-19", 1699, lieferant="Apple")
+        zu = {o["faellig"]: o["beleg"] for o in offene(self.bh.eintraege(), HEUTE) if o["abo"] == nr}
+        self.assertEqual(zu["2026-06-19"], "ER-20")                        # Apple-Rechnung erledigt das Meta-Abo
+        with self.assertRaises(ValueError):
+            self.st.anlegen({"bezeichnung": "X", "firma": meta, "rechnung_von": "L-99999", "betrag": "1", "kategorie": "software",
+                             "turnus": "monatlich", "start": "2026-06-19"}, self.ks)
+        self.assertEqual(self.st.aendern(nr, {"rechnung_von": meta}, self.ks)["geaendert"], {"rechnung_von": ""})   # gleich = leer
+
     def test_3_endpunkt_nur_mit_finanzen(self):
         from fastapi.testclient import TestClient
         from orchestrator.channels.web import app as webapp

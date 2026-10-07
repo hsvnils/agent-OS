@@ -3639,6 +3639,9 @@ def abos_liste():
     for a in liste:
         f = namen.get(a["firma"]) or {}
         a["firma_name"], a["firma_nr"] = f.get("name", ""), f.get("anzeige", a["firma"])
+        if a.get("rechnung_von"):                                  # Rechnung kommt von einem anderen (z. B. Apple)
+            rv = namen.get(a["rechnung_von"]) or {}
+            a["rechnung_von_name"], a["rechnung_von_nr"] = rv.get("name", ""), rv.get("anzeige", a["rechnung_von"])
     aktiv = [a for a in liste if a["status"] == "aktiv"]
     aus = sum(a["monatlich_cent"] for a in aktiv if a["art"] == "ausgabe")
     ein = sum(a["monatlich_cent"] for a in aktiv if a["art"] == "einnahme")

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 10:40] — Claude Code
+- **Was:** Abos mit abweichendem Rechnungssteller: neues Feld `rechnung_von` (Stammdaten-Nummer; leer = Firma selbst). Firma = eigentlicher Anbieter (z. B. Meta), abgeglichen wird mit den Rechnungen des Rechnungsstellers (z. B. Apple App Store). Formularfeld „Rechnung von“, Anzeige in Abo-Liste und -Detail. Test mit Gegenprobe. Cache app-v2.js v122.
+- **Warum:** CEO 2026-10-07: Meta Verified soll als Meta mit Zahlungsweg Apple gefuehrt werden (Variante 2), Go fuer Merge/Push/Deploy.
+- **Betroffen:** `orchestrator/core/abos.py`, `channels/web/app.py`, `static/app-v2.js`, `static/index-v2.html`, `tests/test_anbieter_kosten.py`, `docs/datenfluesse.md`
+
 ## [2026-10-07 10:30] — Claude Code
 - **Was:** Abo ABO-00018 „Meta Verified Standard (App Store)“ angelegt (Apple K-00007, 16,99 €, monatlich ab 19.01.2026, Beleg per Mail). Neue Funktion „Verwerfen zuruecknehmen“ (Ereignis `eingang_reaktiviert` mit Pflicht-Grund, Endpunkt `POST /api/finanzen/belege/<nr>/reaktivieren`, Knopf im verworfenen Beleg) -- noetig, weil ER-2026-0043 (Meta Verified, 19.06.2026) am 30.09. verworfen wurde und ein erneuter Upload als Doppel erkannt wird. Test mit Gegenprobe. Cache app-v2.js v121.
 - **Warum:** CEO 2026-10-07: „Meta Verified gehoert rein, leg das Abo an inkl. rueckwirkend ab 01.01.26“ (revidiert die Entscheidung vom 30.09.2026).

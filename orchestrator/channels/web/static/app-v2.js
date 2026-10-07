@@ -3119,7 +3119,7 @@ let ABOS = { abos: [], turnus: {}, kategorien: { ausgabe: {}, einnahme: {} }, fi
 async function finAbos() {
   ABOS = await jget("/api/finanzen/abos") || ABOS;
   const a = ABOS.abos || [], aktiv = a.filter(x => x.status === "aktiv");
-  const rows = a.map(x => `<tr class="klick${x.status === "aktiv" ? "" : " blass"}" data-act="abo-detail" data-id="${esc(x.nummer)}"><td><b>${esc(x.nummer)}</b></td><td>${esc(x.bezeichnung)}<br><small class="v2-sub">${esc(x.firma_nr)} · ${esc(x.firma_name)}</small></td>
+  const rows = a.map(x => `<tr class="klick${x.status === "aktiv" ? "" : " blass"}" data-act="abo-detail" data-id="${esc(x.nummer)}"><td><b>${esc(x.nummer)}</b></td><td>${esc(x.bezeichnung)}<br><small class="v2-sub">${esc(x.firma_nr)} · ${esc(x.firma_name)}${x.rechnung_von ? " · Rechnung über " + esc(x.rechnung_von_name || x.rechnung_von_nr) : ""}</small></td>
     <td>${esc(x.turnus_text)}${x.auto_buchen && !x.beleg_per_mail ? ` <span class="v2-badge ok" title="wird automatisch gebucht">auto</span>` : ""}${x.beleg_per_mail ? ` <span class="v2-badge neutral" title="Beleg kommt per Mail">✉️</span>` : ""}</td>
     <td style="text-align:right">${esc(cent2eur(x.betrag_cent))}</td><td style="text-align:right">${esc(cent2eur(x.monatlich_cent))}</td>
     <td>${x.status === "aktiv" ? esc(datumDe(x.naechste)) : `<span class="v2-badge neutral">beendet</span>`}${(x.offen || []).length ? ` <span class="v2-badge wartet">${x.offen.length} offen</span>` : ""}</td></tr>`).join("");
@@ -3131,9 +3131,11 @@ async function aboForm(nr, vorlage) {
   const x = nr ? (ABOS.abos || []).find(a => a.nummer === nr) : (vorlage || {});
   const art = x.art || "ausgabe", kat = Object.entries((ABOS.kategorien || {})[art] || {});
   const firma = x.firma ? (ABOS.firmen || []).find(f => f.nummer === x.firma || f.anzeige === x.firma) : null;
+  const steller = x.rechnung_von ? (ABOS.firmen || []).find(f => f.nummer === x.rechnung_von || f.anzeige === x.rechnung_von) : null;
   openModal(nr ? `${nr} bearbeiten` : "Neues Abo", `<div class="v2-form" style="max-width:680px">
     <label class="v2-feld"><small>Bezeichnung *</small><input id="abo-bez" value="${esc(x.bezeichnung || "")}" placeholder="z. B. iCloud+ 2 TB"></label>
     <label class="v2-feld"><small>Firma (Stammdaten) *</small><input id="abo-firma" list="abo-firmen" value="${esc(firma ? firmaOption(firma) : "")}" placeholder="L-… wählen"><datalist id="abo-firmen">${(ABOS.firmen || []).map(f => `<option value="${esc(firmaOption(f))}">`).join("")}</datalist></label>
+    <label class="v2-feld"><small>Rechnung von (nur wenn ein anderer abrechnet, z. B. Apple App Store)</small><input id="abo-steller" list="abo-firmen" value="${esc(steller ? firmaOption(steller) : "")}" placeholder="leer = die Firma oben"></label>
     <div class="v2-an-zeile"><label class="v2-feld"><small>Art</small><select id="abo-art"><option value="ausgabe">Ausgabe</option><option value="einnahme" ${art === "einnahme" ? "selected" : ""}>Einnahme</option></select></label>
       <label class="v2-feld"><small>Betrag (€) *</small><input id="abo-betrag" inputmode="decimal" value="${x.betrag_cent ? esc(cent2feld(x.betrag_cent)) : ""}"></label>
       <label class="v2-feld"><small>Kategorie *</small><select id="abo-kat"><option value="">— wählen —</option>${kat.map(([k, l]) => `<option value="${esc(k)}" ${x.kategorie === k ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label></div>
@@ -3152,7 +3154,8 @@ async function aboForm(nr, vorlage) {
 async function aboSpeichern(nr) {
   const abo = { bezeichnung: $("#abo-bez").value.trim(), firma: firmaAusText($("#abo-firma").value).firma, art: $("#abo-art").value, betrag: $("#abo-betrag").value.trim(),
     kategorie: $("#abo-kat").value, turnus: $("#abo-turnus").value, ende: $("#abo-ende").value, kuendigungsfrist_tage: $("#abo-frist").value, zahlungsweg: $("#abo-weg").value.trim(),
-    vertragsnummer: $("#abo-vnr").value.trim(), beleg_per_mail: $("#abo-mail").checked, auto_buchen: $("#abo-auto").checked, notiz: $("#abo-notiz").value.trim() };
+    vertragsnummer: $("#abo-vnr").value.trim(), beleg_per_mail: $("#abo-mail").checked, auto_buchen: $("#abo-auto").checked, notiz: $("#abo-notiz").value.trim(),
+    rechnung_von: $("#abo-steller").value.trim() ? firmaAusText($("#abo-steller").value).firma : "" };
   if (!nr) abo.start = $("#abo-start").value;
   const r = await jpost(nr ? `/api/finanzen/abos/${encodeURIComponent(nr)}` : "/api/finanzen/abos", { abo });
   if (!r || !r.ok) return kundenMsg("abo-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
@@ -3168,6 +3171,7 @@ async function aboDetail(nr, meldung, fehler) {
     <button class="v2-btn ok sm" data-act="abo-buchen" data-id="${esc(nr)}" data-val="${esc(d)}">✓ Buchen</button><button class="v2-btn sm" data-act="abo-skip" data-id="${esc(nr)}" data-val="${esc(d)}">Überspringen</button></div>`).join("");
   openModal(`${nr} · ${x.bezeichnung}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}">${esc(meldung)}</div>` : ""}
     <div class="v2-kv"><span>Firma</span><b class="klick" data-act="kunde-detail" data-id="${esc(x.firma)}">${esc(x.firma_nr)} · ${esc(x.firma_name)}</b></div>
+    ${x.rechnung_von ? `<div class="v2-kv"><span>Rechnung von</span><b class="klick" data-act="kunde-detail" data-id="${esc(x.rechnung_von)}">${esc(x.rechnung_von_nr)} · ${esc(x.rechnung_von_name)}</b></div>` : ""}
     <div class="v2-kv"><span>Betrag</span><b>${esc(cent2eur(x.betrag_cent))} ${esc(x.turnus_text)} · ${esc(cent2eur(x.monatlich_cent))} je Monat</b></div>
     <div class="v2-kv"><span>Buchung</span><b>${x.beleg_per_mail ? "Beleg kommt per Mail" : x.auto_buchen ? "automatisch bei Fälligkeit" : "auf Rückfrage (Hauptseite)"}</b></div>
     <div class="v2-kv"><span>Status</span><b>${x.status === "aktiv" ? `aktiv · nächste Fälligkeit ${esc(datumDe(x.naechste))}` : `beendet${x.ende ? " zum " + esc(datumDe(x.ende)) : ""}`}</b></div>

@@ -24,7 +24,8 @@ from .eingangsbelege import EINNAHME_KATEGORIEN, KATEGORIEN, EingangStore
 TURNUS = {"woechentlich": ("wöchentlich", 0), "monatlich": ("monatlich", 1), "zweimonatlich": ("alle 2 Monate", 2),
           "vierteljaehrlich": ("vierteljährlich", 3), "halbjaehrlich": ("halbjährlich", 6), "jaehrlich": ("jährlich", 12)}
 FELDER = ("bezeichnung", "firma", "art", "betrag_cent", "kategorie", "turnus", "start", "ende", "kuendigungsfrist_tage",
-          "zahlungsweg", "vertragsnummer", "beleg_per_mail", "auto_buchen", "notiz")
+          "zahlungsweg", "vertragsnummer", "beleg_per_mail", "auto_buchen", "notiz",
+          "rechnung_von")                 # abweichender Rechnungssteller (z. B. Apple App Store fuer Meta Verified)
 KARENZ_TAGE = 10                  # Beleg per Mail: so lange nach Faelligkeit warten, bevor „fehlt“ gemeldet wird
 ABGLEICH_TAGE = {"woechentlich": 3, "jaehrlich": 30, "halbjaehrlich": 20}   # Fenster fuer den Beleg-Abgleich (sonst 10)
 
@@ -109,6 +110,13 @@ def pruefen(daten: dict, kunden=None) -> dict:
             raise ValueError("Bitte die Firma aus den Stammdaten waehlen (L-/P-Nummer).")
         firma = f["nummer"]
     d["firma"] = firma
+    rv = str(daten.get("rechnung_von") or "").strip().upper()
+    if rv and kunden is not None:
+        f = kunden.firma(rv)
+        if not f:
+            raise ValueError("„Rechnung von“: bitte die Firma aus den Stammdaten waehlen (z. B. Apple).")
+        rv = f["nummer"]
+    d["rechnung_von"] = "" if rv == firma else rv
     return d
 
 
@@ -239,14 +247,15 @@ def _passender_beleg(e: list[dict], a: dict, faellig: str, vergeben: set) -> str
     von, bis = (f0 - timedelta(days=tage)).isoformat(), (f0 + timedelta(days=tage)).isoformat()
     aehnlich = lambda c: abs(abs(int(c or 0)) - a["betrag_cent"]) <= 0.25 * a["betrag_cent"]
     kandidaten = []
+    steller = a.get("rechnung_von") or a["firma"]        # Rechnung kommt ggf. von einem anderen (App Store)
     for x in EingangStore._falte(e).values():
         fe = x.get("felder") or {}
         d = str(fe.get("rechnungsdatum", ""))
-        if (x["status"] == "gebucht" and fe.get("lieferant_firma") == a["firma"] and von <= d <= bis
+        if (x["status"] == "gebucht" and fe.get("lieferant_firma") == steller and von <= d <= bis
                 and aehnlich(fe.get("betrag_cent")) and x["nummer"] not in vergeben):
             kandidaten.append((abs(abs(int(fe.get("betrag_cent") or 0)) - a["betrag_cent"]), abs((date.fromisoformat(d) - f0).days), x["nummer"]))
     for x in EigenbelegStore._falte(e).values():
-        if (x["status"] == "gebucht" and x.get("firma") == a["firma"] and von <= x["datum"] <= bis and aehnlich(x["betrag_cent"])
+        if (x["status"] == "gebucht" and x.get("firma") in (a["firma"], steller) and von <= x["datum"] <= bis and aehnlich(x["betrag_cent"])
                 and x["nummer"] not in vergeben):
             kandidaten.append((abs(abs(int(x["betrag_cent"] or 0)) - a["betrag_cent"]), abs((date.fromisoformat(x["datum"]) - f0).days), x["nummer"]))
     return min(kandidaten)[2] if kandidaten else ""
