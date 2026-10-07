@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 10:21] — Claude Code
+- **Was:** P3-Deploy live geprueft (v120/v62, `/api/anbieter` mit getrennten Kosten). Abos angelegt (nichts gebucht): ABO-00005 Supabase Pro (27,00 €, ab 21.06.), ABO-00006..00017 AppleCare+, AppleCare+ Diebstahl/Verlust, iCloud+ 2 TB, Apple Developer (jaehrlich), Xbox Game Pass Ultimate, GTA+, Canva Pro, klarmobil, Grover, Dropbox, Sky (ohne Mail-Rechnung, Eigenbeleg per Klick), DAZN. Abgleich mit Kopie der Kette: alle bisherigen Faelligkeiten haben ihren Beleg, offen nur Sky 01.10.2026.
+- **Warum:** CEO 2026-10-07: Go fuer das Supabase-Abo und die gefundenen wiederkehrenden Zahlungen; Ziel: pruefen, ob alle Abo-Belege im System landen.
+- **Betroffen:** `buchhaltung/log.jsonl` (NAS, Abos)
+
 ## [2026-10-07 10:09] — Claude Code
 - **Was:** VORSCHLAGSPAUSE_ANBIETER P3 gebaut: Kosten je Anbieter strikt getrennt in Abo (Monatswert laufender Abos, bezahlte Abo-Belege) und Einzelkosten (Credits, Aufladungen, Nutzung), nie gemeinsam summiert (`core/anbieter_kosten.py`, `/api/anbieter` mit Modul Finanzen, `finance_dashboard`, Anbieter-Seite mit zwei getrennten Kacheln); Abo-Abgleich waehlt bei mehreren Kandidaten den naechsten Betrag. Daten (CEO-Freigabe): ABO-00003 ChatGPT Plus und ABO-00004 Claude Pro angelegt und beendet, ABO-00001 Claude Max Start 25.06.2026, ABO-00002 All-Inkl Start 20.01.2026; Register: Supabase kostenpflichtig. Cache app-v2.js v120, style-v2.css v62.
 - **Warum:** CEO 2026-10-07: Go fuer P3, „Abo-Kosten duerfen nicht mit zusaetzlichen Kosten fuer Credits gemischt werden“, „leg die drei Abos selbst an“.
