@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 17:58] — Claude Code
+- **Was:** Deploy KOPFZEILE K1-K5 live geprueft: v124/v63 ausgeliefert, Suchfeld in der Kopfzeile, Theme-Knopf entfernt, Portrait wird geladen; echte Suche „hamb“ liefert 7 Treffer (u. a. KSports GmbH (Derbe-Hamburg), Athleticum am Volkspark).
+- **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
+- **Betroffen:** keine Code-Aenderung (Pruefung)
+
 ## [2026-10-07 17:47] — Claude Code
 - **Was:** KOPFZEILE K1-K5 gebaut: Suchleiste mit Vorschlaegen beim Tippen in der Kopfzeile (auch iPhone), Aufklapp-Menues der Bereiche bei Maus-Over, Hell/Dunkel/System und Orb/Hologramm als Kachel „Darstellung“ in den Einstellungen (Knoepfe aus der Kopfzeile entfernt), LUNAs Portrait als Logo, Burger-Striche auf dem iPhone mittig. Cache app-v2.js v124, style-v2.css v63.
 - **Warum:** CEO 2026-10-07: Go fuer K1-K5 inkl. Burger-Korrektur.
