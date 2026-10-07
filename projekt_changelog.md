@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 14:23] — Claude Code
+- **Was:** Sky-Abo ABO-00016 auf „automatisch buchen“ umgestellt (kein Mail-Beleg): LUNA legt den Eigenbeleg (33,60 €) im naechtlichen Abo-Lauf selbst an, Oktober 2026 wird dabei nachgeholt; abweichende Abbuchungen im Monatsabgleich korrigieren.
+- **Warum:** CEO 2026-10-07: „Ja bitte“ (auf die Frage, ob Sky automatisch gebucht werden soll).
+- **Betroffen:** `buchhaltung/log.jsonl` (NAS, Abo)
+
 ## [2026-10-07 12:45] — Claude Code
 - **Was:** Deploy BF-67 live geprueft: app-v2.js v123; Sky-Abo zeigt nur noch 01.10.2026 als offen, 9 Monate als „Beleg da“; Buchungsversuch fuer 01.09. wird abgelehnt (EB-2026-0020 vorhanden, nichts geschrieben). Heute keine Doppelbuchungen entstanden (nur die 8 Meta-Verified-Eigenbelege).
 - **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
