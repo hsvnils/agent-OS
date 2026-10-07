@@ -1,10 +1,10 @@
 # Roadmap: Investment-Vorschlaege pausieren (systemweit) und Anbieter-Liste
 
-- Status: in Umsetzung
-- Stand: 2026-10-06
+- Status: abgeschlossen
+- Stand: 2026-10-07
 - Arbeitsbranch: `ai/vorschlagspause-anbieter`
 - Basiscommit: `945e1eb`
-- Naechster Schritt: P3 gebaut (2026-10-07) -- Deploy, dann Abnahme; offen: Supabase-Abo (CEO-Entscheidung).
+- Naechster Schritt: keiner -- abgeschlossen 2026-10-07 (CEO: „Anbieter-Seite abgenommen, schliess die Roadmap ab“).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

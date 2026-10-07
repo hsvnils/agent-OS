@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 11:32] — Claude Code
+- **Was:** `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md` abgeschlossen (P1 Vorschlagspause, P2 Anbieter-Liste, P3 Kosten je Anbieter mit getrennten Abo-/Einzelkosten -- alle live); Status in `ROADMAP.md` nachgezogen.
+- **Warum:** CEO 2026-10-07: „Anbieter-Seite abgenommen, schliess die Roadmap ab“.
+- **Betroffen:** `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-07 11:12] — Claude Code
 - **Was:** Meta Verified: 8 fehlende Monate (19.01.-19.05. und 19.07.-19.09.2026) ueber die Abo-Funktion als Eigenbelege gebucht, EB-2026-0022..0029 je 16,99 € (Gegenpartei Meta Platforms Ireland, Software), Faelligkeiten von ABO-00018 damit erledigt; Juni wird vom naechsten Abo-Lauf der gebuchten Apple-Rechnung ER-2026-0043 zugeordnet.
 - **Warum:** CEO 2026-10-07: „Meta bitte als Eigenbelege anlegen, die Kosten waren seit 01.01. gleich“.
