@@ -1093,3 +1093,57 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-anb-kosten { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 6px 14px; margin: 2px 0; font-size: 13px; }
 .v2-anb-kosten span { display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; border-radius: 10px; background: var(--v2-bg1); min-width: 0; }
 .v2-anb-kosten small { font-size: 11.5px; }
+/* ---------------- KOPFZEILE K1-K5 (CEO 2026-10-07) ---------------- */
+#v2-top { position: sticky; }
+.v2-kopfsuche { position: relative; flex: 1 1 220px; min-width: 140px; max-width: 420px; margin-left: auto; }
+.v2-kopfsuche input { width: 100%; box-sizing: border-box; height: 38px; padding: 0 34px 0 36px; border-radius: 999px;
+  border: 1px solid var(--v2-line-soft); background: var(--v2-card-solid); color: var(--v2-fg); font: inherit; font-size: 14px;
+  box-shadow: var(--v2-shadow); outline: none; -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238892a6' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 13px 50%; }
+.v2-kopfsuche input:focus { border-color: var(--v2-accent); box-shadow: 0 0 0 3px var(--v2-accent-soft); }
+.v2-kopfsuche input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.v2-q-taste { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font: inherit; font-size: 11px; color: var(--v2-muted);
+  border: 1px solid var(--v2-line); border-radius: 5px; padding: 0 5px; line-height: 16px; pointer-events: none; }
+.v2-kopfsuche input:focus ~ .v2-q-taste, .v2-kopfsuche input:not(:placeholder-shown) ~ .v2-q-taste { display: none; }
+.v2-pills { margin-left: 0; }
+.v2-vorschlaege { position: absolute; top: calc(100% + 6px); left: 0; right: 0; min-width: 300px; z-index: 40; max-height: min(70vh, 460px); overflow-y: auto;
+  background: var(--v2-card-solid); border: 1px solid var(--v2-line); border-radius: 14px; box-shadow: var(--v2-shadow-hi); padding: 6px; }
+.v2-vs-zeile, .v2-vs-alle { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 0; background: none; color: var(--v2-fg);
+  font: inherit; padding: 8px 10px; border-radius: 10px; cursor: pointer; min-width: 0; }
+.v2-vs-zeile .sym { width: 28px; height: 28px; flex: 0 0 28px; display: grid; place-items: center; border-radius: 8px; background: var(--v2-accent-soft); font-size: 14px; }
+.v2-vs-zeile .grow { display: flex; flex-direction: column; min-width: 0; }
+.v2-vs-zeile b, .v2-vs-zeile small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v2-vs-zeile b { font-size: 14px; font-weight: 600; } .v2-vs-zeile small { font-size: 12px; color: var(--v2-muted); }
+.v2-vs-zeile mark { background: var(--v2-yellow, #ffe066); color: #1a1f2e; border-radius: 3px; padding: 0 1px; }
+.v2-vs-zeile:hover, .v2-vs-zeile.an { background: var(--v2-accent-soft); }
+.v2-vs-alle { justify-content: center; color: var(--v2-accent); font-weight: 700; font-size: 13px; border-top: 1px solid var(--v2-line-soft); border-radius: 0 0 10px 10px; margin-top: 4px; }
+.v2-vs-alle:hover { background: var(--v2-line-soft); }
+.v2-vs-leer { padding: 12px; color: var(--v2-muted); font-size: 13px; }
+/* K3: Aufklapp-Menue */
+.v2-navmenue { position: absolute; z-index: 41; min-width: 210px; padding: 6px; background: var(--v2-card-solid); border: 1px solid var(--v2-line);
+  border-radius: 14px; box-shadow: var(--v2-shadow-hi); display: grid; gap: 2px; }
+.v2-navmenue[hidden] { display: none; }
+.v2-navmenue button { display: flex; align-items: center; gap: 10px; border: 0; background: none; color: var(--v2-fg); font: inherit; font-size: 14px;
+  text-align: left; padding: 9px 12px; border-radius: 10px; cursor: pointer; white-space: nowrap; }
+.v2-navmenue button .i { width: 20px; text-align: center; }
+.v2-navmenue button:hover { background: var(--v2-accent-soft); color: var(--v2-accent); }
+/* K4: Umschalter in den Einstellungen */
+.v2-seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--v2-line-soft); flex-wrap: wrap; }
+.v2-seg button { border: 0; background: none; color: var(--v2-muted); font: inherit; font-size: 13px; padding: 7px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.v2-seg button.on { background: var(--v2-card-solid); color: var(--v2-fg); font-weight: 700; box-shadow: var(--v2-shadow); }
+/* K5: LUNAs Portrait als Logo */
+.v2-logo { width: 32px; height: 32px; border-radius: 50%; background: #0a1430 url("/static/luna-portrait.png") 50% 36% / 230% no-repeat;
+  box-shadow: 0 0 0 2px rgba(91, 156, 255, .55), 0 0 12px rgba(91, 156, 255, .45); }
+.v2-logo span { display: none; }
+/* Burger: Striche genau in der Mitte des Kreises */
+.v2-burger { place-items: center; padding: 0; line-height: 0; }
+.v2-burger svg { display: block; }
+/* Schmal (iPad hoch, iPhone): Suchfeld statt Seitentitel, Vorschlaege volle Breite */
+@media (max-width: 900px) {
+  .v2-kopfsuche { flex: 1 1 auto; min-width: 0; max-width: none; margin-left: 0; }
+  .v2-titel-mobil { display: none !important; }
+  .v2-q-taste { display: none; }
+  .v2-vorschlaege { position: fixed; left: 10px; right: 10px; top: calc(62px + env(safe-area-inset-top, 0px)); min-width: 0; }
+}
+@media (pointer: coarse) { .v2-kopfsuche input { height: 44px; font-size: 16px; } }

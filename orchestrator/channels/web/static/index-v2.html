@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="/static/manifest.webmanifest">
-  <link rel="stylesheet" href="/static/style-v2.css?v=62">
+  <link rel="stylesheet" href="/static/style-v2.css?v=63">
   <!-- Theme flash-frei (V2 Default: hell). Dunkel nur, wenn Nutzer es fuer V2 explizit waehlt. -->
   <script>(function () {
     var m = localStorage.getItem("luna-v2-theme") || "light";
@@ -24,20 +24,24 @@
   <div id="v2-bg"><span class="blob b1"></span><span class="blob b2"></span></div>
 
   <header id="v2-top">
-    <button class="v2-icon v2-burger" id="v2-burger" title="Menü" aria-label="Menü öffnen">☰</button>
+    <button class="v2-icon v2-burger" id="v2-burger" title="Menü" aria-label="Menü öffnen"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     <button class="v2-brand" data-go="dash" title="Start">
       <span class="v2-logo"><span></span></span>
       <b>LUNA</b>
     </button>
     <span class="v2-titel-mobil" id="v2-titel-mobil"></span>
     <nav id="v2-nav" class="v2-nav" aria-label="Bereiche"><!-- 4 Bereiche: von app-v2.js gefuellt (modul-gated) --></nav>
+    <div class="v2-navmenue" id="v2-navmenue" hidden></div>
+    <div class="v2-kopfsuche" id="v2-kopfsuche" role="search">
+      <input id="v2-q" type="search" autocomplete="off" enterkeyhint="search" spellcheck="false" placeholder="Suchen …" aria-label="Suchen (Taste /)"
+        aria-controls="v2-vorschlaege" aria-expanded="false">
+      <kbd class="v2-q-taste" aria-hidden="true">/</kbd>
+      <div class="v2-vorschlaege" id="v2-vorschlaege" role="listbox" hidden></div>
+    </div>
     <div class="v2-pills" id="v2-pills"><!-- Aktions-Pills: von app-v2.js gefuellt --></div>
     <div class="v2-topright">
       <button class="v2-zeit-chip" id="v2-zeit-chip" data-act="zt-fenster" title="Zeit läuft – öffnen" hidden>⏱ <span data-zeit-uhr>0:00:00</span></button>
-      <button class="v2-icon" id="v2-suche-knopf" data-act="suche-oeffnen" title="Suchen (Taste /)" aria-label="Suchen">🔎</button>
       <button class="v2-icon v2-glocke" id="v2-glocke" data-go="handlung" title="Handlungsbedarf" aria-label="Handlungsbedarf">🔔<span class="v2-zaehler" id="v2-glocke-n" hidden></span></button>
-      <button class="v2-icon" id="v2-holo-toggle" title="Orb / Hologramm" hidden>🌙</button>
-      <button class="v2-icon" id="v2-theme" title="Hell/Dunkel">☀</button>
       <div class="v2-avatar" id="v2-avatar" title="Profil"></div>
     </div>
   </header>
@@ -53,6 +57,6 @@
   <section id="v2-chat" class="v2-chat" hidden><!-- Inline-Chat-Panel (kein Fenster) --></section>
 
   <script src="/static/passkey.js?v=1"></script>
-  <script src="/static/app-v2.js?v=123"></script>
+  <script src="/static/app-v2.js?v=124"></script>
 </body>
 </html>

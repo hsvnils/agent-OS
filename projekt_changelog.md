@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 17:47] — Claude Code
+- **Was:** KOPFZEILE K1-K5 gebaut: Suchleiste mit Vorschlaegen beim Tippen in der Kopfzeile (auch iPhone), Aufklapp-Menues der Bereiche bei Maus-Over, Hell/Dunkel/System und Orb/Hologramm als Kachel „Darstellung“ in den Einstellungen (Knoepfe aus der Kopfzeile entfernt), LUNAs Portrait als Logo, Burger-Striche auf dem iPhone mittig. Cache app-v2.js v124, style-v2.css v63.
+- **Warum:** CEO 2026-10-07: Go fuer K1-K5 inkl. Burger-Korrektur.
+- **Betroffen:** `orchestrator/channels/web/static/index-v2.html`, `app-v2.js`, `style-v2.css`, `KOPFZEILE_SUCHE_MENUE_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-07 17:43] — Claude Code
 - **Was:** `KOPFZEILE_SUCHE_MENUE_ROADMAP.md` um K4 (Hell/Dunkel/System und Orb/Hologramm in die Einstellungen, Platz fuer Suchfeld auf dem iPhone) und K5 (LUNAs Portrait statt Mond als Logo) ergaenzt.
 - **Warum:** CEO-Ergaenzung 2026-10-07.

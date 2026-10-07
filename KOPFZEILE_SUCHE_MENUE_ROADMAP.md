@@ -1,10 +1,10 @@
 # Roadmap: Kopfzeile aufraeumen -- Suchleiste mit Vorschlaegen, Aufklapp-Menues, Portrait
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-07
 - Arbeitsbranch: `ai/kopfzeile-suche-menue`
 - Basiscommit: `c5299b2`
-- Naechster Schritt: Go des CEO fuer K1-K5.
+- Naechster Schritt: K1-K5 gebaut (2026-10-07) -- Deploy, dann Abnahme durch den CEO.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -23,14 +23,14 @@ Geschaeft und Co. ein Menue mit den naechsten Punkten (ausser man ist schon in d
 
 ## Etappe K1: Suchleiste in der Kopfzeile
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Eingabefeld „Suchen …“ zwischen den Bereichen und „LUNA fragen“ (Rechner und iPad quer), passt sich der
   Breite an; Taste „/“ springt hinein. iPhone/iPad hoch: weiter der Knopf 🔎 (zu wenig Platz).
 - Gate: Browsertest Rechner 1300/1920, iPad 820/1180, iPhone 17 Pro.
 
 ## Etappe K2: Vorschlaege beim Tippen (Autovervollstaendigung)
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: ab 2 Zeichen klappt unter der Leiste eine Liste auf (kurze Verzoegerung beim Tippen), bis zu 8 Treffer
   gemischt nach Kategorie mit Symbol (🏢 Hamburger SV · Kunde, 📄 AN-… „Derbe Hamburg“ …), Suchwort hervorgehoben; Pfeiltasten
   + Enter oeffnen den Treffer, Enter ohne Auswahl bzw. „Alle Ergebnisse“ oeffnet die volle Ergebnisliste; Esc schliesst.
@@ -40,7 +40,7 @@ Geschaeft und Co. ein Menue mit den naechsten Punkten (ausser man ist schon in d
 
 ## Etappe K3: Aufklapp-Menue bei Maus-Over
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Maus ueber „Geschaeft“, „Content & Collabs“, „Investment“, „LUNA & System“ -> kleines Menue mit den
   Unterpunkten (z. B. Kunden, Angebote, Auftraege …), Klick oeffnet direkt; nicht fuer den Bereich, in dem man gerade ist;
   kurze Verzoegerung gegen versehentliches Aufklappen. Nur mit Maus (Touch-Geraete unveraendert: Tippen oeffnet den Bereich).
@@ -55,7 +55,7 @@ Umschalter Orb/3D-Hologramm (LUNAs Darstellung); das Sprechen selbst laeuft uebe
 
 ## Etappe K4: Erscheinungsbild und LUNA-Darstellung in die Einstellungen
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Knoepfe ☀ (Hell/Dunkel) und ◐/🌙 (Orb/Hologramm) verlassen die Kopfzeile; in ⚙ Einstellungen neue Kachel
   „Darstellung“: Erscheinungsbild Hell / Dunkel / System (wie Geraet) und LUNA als Orb / 3D-Hologramm, beides sofort
   wirksam und geraeteuebergreifend gespeichert wie bisher. Auf dem iPhone ist damit Platz fuer ein kompaktes Suchfeld
@@ -64,11 +64,23 @@ Umschalter Orb/3D-Hologramm (LUNAs Darstellung); das Sprechen selbst laeuft uebe
 
 ## Etappe K5: LUNAs Portrait statt Mond
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Logo oben links (vor „Geschaeft“) zeigt LUNAs Portrait (`static/luna-portrait.png`, runder Ausschnitt
   um das Gesicht, leichter Leuchtrand) statt des Mondes; Klick fuehrt wie bisher zum Start. Login-Seite und App-Symbol
   unveraendert (eigene Frage, falls gewuenscht).
 - Gate: Browsertest hell/dunkel, Rechner/iPad/iPhone.
+
+## Umsetzung (2026-10-07, Go CEO fuer K1-K5)
+
+- K1/K2: Suchfeld `#v2-q` in der Kopfzeile (Rechner/iPad quer zwischen Bereichen und „LUNA fragen“, schmal: statt des
+  Seitentitels -- auch auf dem iPhone); Vorschlaege ab 2 Zeichen aus der bestehenden `/api/suche` (keine Server-Aenderung,
+  Rechte wie bisher), bis 8 Treffer mit Kategorie-Symbol und hervorgehobenem Suchwort, Pfeiltasten/Enter/Esc, „Alle
+  Ergebnisse“ oeffnet die volle Liste; Taste „/“ springt ins Feld.
+- K3: Aufklapp-Menue der Bereiche bei Maus-Over (nur Maus, kurze Verzoegerung, nicht im aktuellen Bereich).
+- K4: Knoepfe Hell/Dunkel und Orb/Hologramm aus der Kopfzeile entfernt; ⚙ Einstellungen -> „Darstellung“:
+  Erscheinungsbild Hell/Dunkel/System (je Geraet, System folgt dem Geraet live) und LUNA als Orb/Hologramm (alle Geraete).
+- K5: Logo = LUNAs Portrait (runder Ausschnitt, Leuchtrand). Dazu: Burger-Striche auf dem iPhone genau mittig (SVG).
+- Browsertest Rechner 1300, iPad 820, iPhone 17 Pro (Vorschlaege, Menue offen/zu im aktuellen Bereich, Einstellungen).
 
 ## Nicht-Scope
 

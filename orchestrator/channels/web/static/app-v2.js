@@ -154,6 +154,8 @@ function applyTheme() {
   document.documentElement.classList.toggle("v2-light", !dark);
 }
 function toggleTheme() { const m = localStorage.getItem("luna-v2-theme") || "light"; localStorage.setItem("luna-v2-theme", m === "dark" ? "light" : "dark"); applyTheme(); }
+function themeSetzen(m) { try { localStorage.setItem("luna-v2-theme", m); } catch { } applyTheme(); }   // KOPFZEILE K4: Einstellungen
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if ((localStorage.getItem("luna-v2-theme") || "light") === "auto") applyTheme(); }); } catch { }
 function buildShell() {
   $("#v2-nav").innerHTML = BEREICHE.filter(b => teilErlaubt(b).length).map(b =>
     `<button data-go="${bereichZiel(b)}" data-bereich="${b.id}" title="${esc(b.label)}"><span class="i">${b.icon}</span><span class="t">${esc(b.label)}</span></button>`).join("");
@@ -169,7 +171,7 @@ function go(id, sub) {
   if (id === "angebote" && sub === "auftraege") id = "auftraege";        // Reiter „Aufträge“ = eigener Punkt in Geschäft
   if (id === "angebote" && !sub && SUBTAB.angebote === "auftraege") SUBTAB.angebote = "offen";
   AKTIV = id; if (sub) SUBTAB[id] = sub;
-  navAktualisieren(); ladeZu();
+  navAktualisieren(); ladeZu(); nmZu(); ksZu();
   $("#v2-app").innerHTML = `<div class="v2-empty">Lade …</div>`;
   jpost("/api/nutzung", { app: id });   // Feature-Friedhof: App-Oeffnung zaehlen (fire-and-forget)
   (RENDER[id] || renderDash)();
@@ -201,6 +203,82 @@ function ladeAuf() {
   $("#v2-lade").hidden = false; $("#v2-schleier").hidden = false; document.body.classList.add("v2-lade-offen");
 }
 function ladeZu() { const l = $("#v2-lade"); if (!l || l.hidden) return; l.hidden = true; $("#v2-schleier").hidden = true; document.body.classList.remove("v2-lade-offen"); }
+/* KOPFZEILE K1/K2: Suchleiste mit Vorschlaegen beim Tippen (nutzt die globale Suche /api/suche) */
+const SUCH_ICON = { kunden: "🏢", angebote: "📄", auftraege: "📋", rechnungen: "🧾", mahnungen: "⚠️", ausgaben: "📥", eigenbelege: "🧾", contentplan: "🗓", konzepte: "🎬", akte: "📎" };
+const KS = { timer: null, nr: 0, treffer: [], aktiv: -1 };
+function ksMarkiere(text, q) {
+  const t = String(text || ""), w = q.trim().split(/\s+/).filter(x => x.length > 1).map(x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (!w.length) return esc(t);
+  const re = new RegExp("(" + w.join("|") + ")", "gi"); let out = "", last = 0;
+  t.replace(re, (m, _g, i) => { out += esc(t.slice(last, i)) + "<mark>" + esc(m) + "</mark>"; last = i + m.length; return m; });
+  return out + esc(t.slice(last));
+}
+function ksZu() { const v = $("#v2-vorschlaege"); if (v) v.hidden = true; const i = $("#v2-q"); if (i) i.setAttribute("aria-expanded", "false"); KS.aktiv = -1; }
+function ksZeichnen(q, d) {
+  const v = $("#v2-vorschlaege"); if (!v) return;
+  KS.treffer = [];
+  for (const g of (d && d.gruppen) || []) for (const t of g.treffer) KS.treffer.push({ ...t, gruppe: g.id, gtitel: g.titel });
+  KS.treffer = KS.treffer.slice(0, 8); KS.aktiv = -1;
+  v.innerHTML = (KS.treffer.length ? KS.treffer.map((t, i) => `<button class="v2-vs-zeile" role="option" data-i="${i}"><span class="sym">${SUCH_ICON[t.gruppe] || "🔎"}</span>
+      <span class="grow"><b>${ksMarkiere(t.titel, q)}</b><small>${esc(t.gtitel)}${t.info ? " · " + esc(t.info) : ""}</small></span></button>`).join("")
+    : `<div class="v2-vs-leer">Nichts gefunden für „${esc(q)}“.</div>`)
+    + `<button class="v2-vs-alle" data-i="alle">Alle Ergebnisse${d && d.gesamt ? ` (${d.gesamt})` : ""} ›</button>`;
+  v.hidden = false; $("#v2-q").setAttribute("aria-expanded", "true");
+}
+async function ksLaden() {
+  const i = $("#v2-q"); if (!i) return; const q = i.value.trim(), nr = ++KS.nr;
+  if (q.length < 2) return ksZu();
+  const d = await jget("/api/suche?q=" + encodeURIComponent(q));
+  if (nr !== KS.nr || i.value.trim() !== q) return;               // inzwischen weitergetippt
+  ksZeichnen(q, d);
+}
+function ksWaehlen(idx) {
+  const i = $("#v2-q"), q = i ? i.value.trim() : "";
+  if (idx === "alle" || idx < 0 || !KS.treffer[idx]) { ksZu(); SUCHE.q = q; return sucheOeffnen(); }
+  const t = KS.treffer[idx]; ksZu(); if (i) i.blur();
+  return sucheTreffer(t.act, t.act_id);
+}
+function ksMarkierung(neu) {
+  const z = [...document.querySelectorAll("#v2-vorschlaege .v2-vs-zeile")]; if (!z.length) return;
+  KS.aktiv = (neu + z.length) % z.length;
+  z.forEach((x, k) => x.classList.toggle("an", k === KS.aktiv)); z[KS.aktiv].scrollIntoView({ block: "nearest" });
+}
+function kopfsucheVerdrahten() {
+  const i = $("#v2-q"), v = $("#v2-vorschlaege"); if (!i || !v || i.dataset.ok) return; i.dataset.ok = "1";
+  i.addEventListener("input", () => { clearTimeout(KS.timer); KS.timer = setTimeout(ksLaden, 180); });
+  i.addEventListener("focus", () => { if (i.value.trim().length > 1) ksLaden(); });
+  i.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); if (v.hidden) ksLaden(); else ksMarkierung(KS.aktiv + 1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); ksMarkierung(KS.aktiv - 1); }
+    else if (e.key === "Enter") { e.preventDefault(); ksWaehlen(KS.aktiv); }
+    else if (e.key === "Escape") { e.stopPropagation(); ksZu(); i.blur(); }
+  });
+  v.addEventListener("mousedown", (e) => e.preventDefault());       // Fokus bleibt im Feld
+  v.addEventListener("click", (e) => { const b = e.target.closest("[data-i]"); if (b) ksWaehlen(b.dataset.i === "alle" ? "alle" : Number(b.dataset.i)); });
+  document.addEventListener("click", (e) => { if (!e.target.closest("#v2-kopfsuche")) ksZu(); });
+}
+/* KOPFZEILE K3: Aufklapp-Menue der Bereiche bei Maus-Over (nur Maus; nicht im aktuellen Bereich) */
+const NM = { auf: null, zu: null, b: null };
+function nmZeigen(btn) {
+  const b = BEREICHE.find(x => x.id === btn.dataset.bereich), m = $("#v2-navmenue"); if (!b || !m) return;
+  const teile = teilErlaubt(b); if (btn.classList.contains("active") || teile.length < 2) return nmZu();
+  m.innerHTML = [["b-" + b.id, "Übersicht"], ...teile.map(t => [t, seitenName(t)])].map(([id, n]) => {
+    const s = SECTIONS.find(x => x.id === id); return `<button data-go="${id}"><span class="i">${id.startsWith("b-") ? b.icon : (s ? s.icon : "")}</span>${esc(n)}</button>`; }).join("");
+  const r = btn.getBoundingClientRect(), k = $("#v2-top").getBoundingClientRect();
+  m.style.left = Math.max(8, r.left - k.left) + "px"; m.style.top = (r.bottom - k.top + 6) + "px";
+  m.hidden = false; NM.b = b.id;
+}
+function nmZu() { const m = $("#v2-navmenue"); if (m) m.hidden = true; NM.b = null; }
+function navmenueVerdrahten() {
+  const nav = $("#v2-nav"), m = $("#v2-navmenue"); if (!nav || !m || nav.dataset.nm) return; nav.dataset.nm = "1";
+  if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;       // Touch: unveraendert
+  nav.addEventListener("mouseover", (e) => { const btn = e.target.closest("button[data-bereich]"); if (!btn) return;
+    clearTimeout(NM.zu); clearTimeout(NM.auf); NM.auf = setTimeout(() => nmZeigen(btn), NM.b ? 0 : 160); });
+  const weg = () => { clearTimeout(NM.auf); clearTimeout(NM.zu); NM.zu = setTimeout(nmZu, 220); };
+  nav.addEventListener("mouseleave", weg); m.addEventListener("mouseleave", weg);
+  m.addEventListener("mouseenter", () => clearTimeout(NM.zu));
+  m.addEventListener("click", () => nmZu());
+}
 // Glocke: Anzahl dringender Punkte aus dem Handlungsbedarf (Etappe 3)
 let GLOCKE_N = 0, GLOCKE_T = null;
 async function glockeAktualisieren() {
@@ -3887,6 +3965,13 @@ async function invPauseSetzen(an) {
     return AKTIV === "investment" ? renderInvestment() : renderEinstellungen();
   }
 }
+// KOPFZEILE K4: Erscheinungsbild (je Geraet) und LUNAs Darstellung (Orb/Hologramm, geraeteuebergreifend) -- aus der Kopfzeile hierher
+function darstellungHtml() {
+  let m = "light"; try { m = localStorage.getItem("luna-v2-theme") || "light"; } catch { }
+  const seg = (act, wahl, opts) => `<div class="v2-seg" role="group">${opts.map(([v, l]) => `<button class="${wahl === v ? "on" : ""}" data-act="${act}" data-val="${v}" aria-pressed="${wahl === v}">${l}</button>`).join("")}</div>`;
+  return `<div class="v2-set-row"><span class="v2-set-lbl">Erscheinungsbild<small>gilt für dieses Gerät</small></span>${seg("theme-setzen", m, [["light", "☀ Hell"], ["dark", "🌙 Dunkel"], ["auto", "◐ System"]])}</div>`
+    + (ME.avatar_enabled === false ? "" : `<div class="v2-set-row"><span class="v2-set-lbl">LUNA erscheint als<small>Orb oder 3D-Hologramm – auf allen Geräten</small></span>${seg("avatar-setzen", PREFS.avatar === "hologramm" ? "hologramm" : "orb", [["orb", "● Orb"], ["hologramm", "✦ Hologramm"]])}</div>`);
+}
 async function renderEinstellungen() {
   const [cfg0, pause] = await Promise.all([jget("/api/settings"), jget("/api/investment/pause")]);
   const cfg = cfg0 || {};
@@ -3897,6 +3982,7 @@ async function renderEinstellungen() {
   const c = nInp("briefing_morgen_stunde", "Morgen-Briefing", "Stunde 0–23") + nInp("briefing_abend_stunde", "Abend-Briefing", "Stunde 0–23") + nInp("ruhezeit_von", "Nicht stören von", "Stunde (leer = aus)") + nInp("ruhezeit_bis", "Nicht stören bis", "Stunde (leer = aus)") + chk("alert_investment", "Alerts: Investment") + chk("alert_crm", "Alerts: CRM") + chk("alert_security", "Alerts: Security") + chk("alert_content", "Alerts: Content");
   const actions = `<span id="set-msg" class="v2-msg"></span><button class="v2-btn pri" data-act="settings-save">Speichern</button>`;
   $("#v2-app").innerHTML = secHead("Einstellungen", actions) + `<div class="v2-grid">
+    ${tile("🎨 Darstellung", darstellungHtml(), "w12")}
     ${pause ? tile("📈 Investment-Vorschläge", invPauseHtml(pause), "w12") : ""}
     ${tile("🏦 Echtes Depot (Beratung)", a, "w4")}
     ${tile("💼 Paper-Depot (Spielgeld)", b, "w4")}
@@ -4052,6 +4138,8 @@ async function handleAct(act, el) {
     case "ab-form-speichern": return abFormSpeichern(id);
     case "ab-entsperren": return abEntsperren(id);
     case "inv-pause": return invPauseSetzen(val === "an");
+    case "theme-setzen": themeSetzen(val); return renderEinstellungen();
+    case "avatar-setzen": await setAvatarPref(val); return renderEinstellungen();
     case "anb-filter": ANB_FILTER = val; return renderAnbieter();
     case "an-entsperren": { const grund = (prompt("Das Angebot ist schon versendet. Warum wird es geändert? (steht im Verlauf; die Erinnerungen der alten Fassung entfallen, danach neue Fassung senden)", "") || "").trim();
       if (!grund) return;
@@ -4579,9 +4667,9 @@ document.addEventListener("click", (e) => {
   const ac = e.target.closest("[data-act]"); if (ac) { handleAct(ac.dataset.act, ac); return; }
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { ladeZu(); closeModal(); return; }
+  if (e.key === "Escape") { ladeZu(); closeModal(); nmZu(); return; }
   if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey && !(e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) {
-    e.preventDefault(); return sucheOeffnen(); }                    // GLOBALE_SUCHE: Taste „/“
+    e.preventDefault(); const q = $("#v2-q"); if (q && q.offsetParent !== null) { q.focus(); q.select(); return; } return sucheOeffnen(); }   // Taste „/“
   if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches('.v2-tile.klick[role="button"]')) {
     e.preventDefault(); const el = e.target;
     if (el.dataset.go) go(el.dataset.go); else if (el.dataset.tab) { const [s, i] = el.dataset.tab.split(":"); go(s, i); }
@@ -4601,7 +4689,7 @@ document.addEventListener("drop", (e) => { if (!EDIT2 || !DRAG2) return; const t
   let saved = PREFS.v2_dashboard; if (!saved) { try { saved = JSON.parse(localStorage.getItem("luna-v2-dash") || "null"); } catch { } }
   DASH2 = normDash2(saved);
   if (!PREFS.avatar) { try { const a = localStorage.getItem("luna-v2-avatar"); if (a) PREFS.avatar = a; } catch { } }
-  buildShell(); go("dash"); connectSSE(); applyAvatar(); passkeyAngebot();
+  buildShell(); kopfsucheVerdrahten(); navmenueVerdrahten(); go("dash"); connectSSE(); applyAvatar(); passkeyAngebot();
   glockeAktualisieren(); setInterval(glockeAktualisieren, 5 * 60 * 1000);
   zeitLaden(); setInterval(zeitLaden, 60 * 1000);                        // auch per Telegram gestartete Zeiten
 })();
