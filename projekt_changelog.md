@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 17:39] — Claude Code
+- **Was:** Roadmap `KOPFZEILE_SUCHE_MENUE_ROADMAP.md` angelegt (geplant): K1 Suchleiste in der Kopfzeile, K2 Vorschlaege beim Tippen, K3 Aufklapp-Menues bei Maus-Over.
+- **Warum:** CEO 2026-10-07: Suchleiste statt Suchknopf, Autovervollstaendigung („HAMBURG“ -> Hamburger SV, derbe Hamburg), Hover-Menues.
+- **Betroffen:** `KOPFZEILE_SUCHE_MENUE_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-07 14:23] — Claude Code
 - **Was:** Sky-Abo ABO-00016 auf „automatisch buchen“ umgestellt (kein Mail-Beleg): LUNA legt den Eigenbeleg (33,60 €) im naechtlichen Abo-Lauf selbst an, Oktober 2026 wird dabei nachgeholt; abweichende Abbuchungen im Monatsabgleich korrigieren.
 - **Warum:** CEO 2026-10-07: „Ja bitte“ (auf die Frage, ob Sky automatisch gebucht werden soll).
