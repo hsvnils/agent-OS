@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-07 09:57] — Claude Code
+- **Was:** Deploy der Postfach-Korrektur (BF-66) geprueft: NAS-Code enthaelt `BELEG_ABSENDER_STANDARD` mit rechnung@hanserautisch.de (Bot und Web nutzen die Konstante), LUNA-OS antwortet, keine haengenden Meldungen. LUNA-Adressen bleiben ausgenommen (CEO: dorthin gehen keine Rechnungen).
+- **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
+- **Betroffen:** keine Code-Aenderung (Pruefung)
+
 ## [2026-10-07 09:33] — Claude Code
 - **Was:** Eigene Postfaecher nach CEO-Liste ergaenzt: moin@hsvinside.de, moin@kruegerprager.de, nils.krueger@danceforgood.info (bestehende bleiben); LUNAs eigene Postfaecher (luna@, luna-hoa@, luna.hanserautisch@gmail.com) bewusst ausgenommen, damit LUNAs eigene Kundenmails nie als Eingangsbelege landen. Pruefung LUNAs Postfach: ueber rechnung@ kamen bisher keine Rechnungen (nur 2 All-Inkl-Sicherheitsmails, klarmobil-Registrierung, EasyPark schon als ER-2026-0139 gebucht).
 - **Warum:** CEO 2026-10-07: Liste seiner Mailadressen, bestehende nicht loeschen; Rechnungen kommen kuenftig ueber rechnung@hanserautisch.de.
