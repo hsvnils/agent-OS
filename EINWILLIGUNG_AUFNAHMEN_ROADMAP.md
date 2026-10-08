@@ -86,6 +86,9 @@ Personendaten per Tastatur, Unterschriftsfeld fuer den Apple Pencil.“
 - E3: Kopie per Mail (Textbaustein „Einwilligung (Kopie)“, nur per Klick, Modul finanzen), Widerruf vermerken
   (Datum, Weg, Notiz) -> Liste durchgestrichen + rote Warnung im Reiter Postings.
 - Tests `test_einwilligungen.py` (6, Gegenprobe Minderjaehrige rot), Browser iPad quer/hoch, iPhone, Rechner.
+- Nachtrag (CEO 2026-10-08): Haken „✉️ Kopie an die Person senden“ im Formular (erscheint mit der Mailadresse, bei gueltiger
+  Adresse vorbelegt) -> beim Speichern geht die Kopie mit dem Textbaustein direkt raus; Versandfehler blockieren das
+  Speichern nie (Hinweis + spaeter „✉️ Kopie …“); nur mit Modul Finanzen.
 
 ## Nicht-Scope
 

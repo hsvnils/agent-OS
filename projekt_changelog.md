@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-08 21:02] — Claude Code
+- **Was:** Einwilligung: Haken „Kopie an die Person senden“ im Formular; beim Speichern geht die PDF-Kopie mit dem Textbaustein „Einwilligung (Kopie)“ direkt an die eingetragene Mailadresse (aus luna@), Ergebnis in der Rueckmeldung; Fehler blockieren das Speichern nicht. Versand-Logik gemeinsam mit „✉️ Kopie …“ (`_ew_senden`). Test mit Gegenprobe. Cache app-v2.js v126.
+- **Warum:** CEO 2026-10-08: Mailadresse eintragen, Haken setzen, beim Speichern automatisch verschicken -- Go.
+- **Betroffen:** `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/index-v2.html`, `tests/test_einwilligungen.py`, `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md`
+
 ## [2026-10-08 17:58] — Claude Code
 - **Was:** Deploy EINWILLIGUNG_AUFNAHMEN live geprueft (v125/v64, Endpunkt antwortet fuer AB-2026-0001). Vorlage „Einwilligung“ im Vertragswerk als Version 1 (Entwurf Claude Code, ungeprueft) angelegt. Ordner `einwilligungen/` entsteht auf der NAS mit der ersten Einwilligung.
 - **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt; Vorlage war als Folgeschritt angekuendigt.

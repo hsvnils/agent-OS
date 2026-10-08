@@ -1782,6 +1782,7 @@ async function ewNeu(nr) {
     <div class="v2-an-zeile">${feld("vorname", "Vorname *", "text", 'autocomplete="off" autocapitalize="words"')}${feld("nachname", "Nachname *", "text", 'autocomplete="off" autocapitalize="words"')}${feld("geb", "Geburtsdatum", "date")}</div>
     <div class="v2-an-zeile">${feld("strasse", "Straße und Nr. *", "text", 'autocomplete="off"')}${feld("plz", "PLZ *", "text", 'inputmode="numeric" autocomplete="off"')}${feld("ort", "Ort *", "text", 'autocomplete="off"')}</div>
     <div class="v2-an-zeile">${feld("mail", "E-Mail (für die Kopie)", "email", 'autocomplete="off" autocapitalize="off"')}${feld("tel", "Telefon", "tel", 'autocomplete="off"')}${feld("verg", "Vergütung (leer = unentgeltlich)", "text")}</div>
+    ${d.darf_senden ? `<label class="v2-modlbl" id="ew-kopie-l" hidden><input type="checkbox" id="ew-kopie"> ✉️ Kopie an die Person senden (beim Speichern, aus luna@)</label>` : ""}
     <div class="v2-an-zeile">${feld("drehort", "Ort der Aufnahmen", "text", `value="${esc(d.ort || "")}"`)}<label class="v2-feld"><small>Datum</small><input class="v2-inp" value="${esc(heute)}" disabled></label></div>
     <div id="ew-person-sig"><h3>Unterschrift der Person</h3>${ewPad("ew-sig-person")}</div>
     <div id="ew-eltern" hidden><h3>Erziehungsberechtigte(r) <small class="v2-sub">Person ist unter 16 Jahre</small></h3>
@@ -1789,6 +1790,10 @@ async function ewNeu(nr) {
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="ew-speichern" data-id="${esc(nr)}">✔ Unterschrieben – speichern</button><button class="v2-btn" data-modal-close>Abbrechen</button></div>
     <div id="ew-msg" class="v2-msg"></div></div>`, true);
   ewPadAktiv("ew-sig-person"); ewPadAktiv("ew-sig-eltern");
+  const mail = $("#ew-mail"), kopie = $("#ew-kopie");                 // Haken folgt der Mailadresse, bis man ihn selbst setzt
+  if (mail && kopie) { mail.addEventListener("input", () => { const ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail.value.trim());
+      $("#ew-kopie-l").hidden = !mail.value.trim(); if (!kopie.dataset.selbst) kopie.checked = ok; });
+    kopie.addEventListener("change", () => { kopie.dataset.selbst = "1"; }); }
   $("#ew-geb").addEventListener("change", () => { const a = ewAlter($("#ew-geb").value);
     $("#ew-eltern").hidden = !(a != null && a < 16); $("#ew-person-sig").hidden = a != null && a < 14;
     if (!$("#ew-eltern").hidden) ewPadAktiv("ew-sig-eltern", true); });
@@ -1822,14 +1827,17 @@ async function ewSpeichern(nr) {
       geburtsdatum: v("geb"), mail: v("mail").trim(), telefon: v("tel").trim() },
     zwecke: [...document.querySelectorAll(".ew-zweck:checked")].map(x => x.value), verguetung: v("verg").trim(), ort: v("drehort").trim(),
     unterschrift_person: a != null && a < 14 ? "" : ewPadBild("ew-sig-person"),
-    unterschrift_eltern: a != null && a < 16 ? ewPadBild("ew-sig-eltern") : "", eltern_name: v("eltern").trim() };
+    unterschrift_eltern: a != null && a < 16 ? ewPadBild("ew-sig-eltern") : "", eltern_name: v("eltern").trim(),
+    kopie_senden: !!($("#ew-kopie") || {}).checked };
   if (!(a != null && a < 14) && !body.unterschrift_person) return kundenMsg("ew-msg", "Bitte im Feld unterschreiben.", false);
   if (a != null && a < 16 && !body.unterschrift_eltern) return kundenMsg("ew-msg", "Bitte die/den Erziehungsberechtigte(n) unterschreiben lassen.", false);
   const b = $('[data-act="ew-speichern"]'); if (b) { b.disabled = true; b.textContent = "⏳ speichert …"; }
   const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(nr)}/einwilligungen`, body);
   if (!r || !r.ok) { if (b) { b.disabled = false; b.textContent = "✔ Unterschrieben – speichern"; } return kundenMsg("ew-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false); }
   FORM_GEAENDERT = false;
-  return abDetail(nr, `Einwilligung von ${body.person.vorname} ${body.person.nachname} gespeichert – die PDF liegt am Auftrag.`);
+  const k = r.kopie;
+  return abDetail(nr, `Einwilligung von ${body.person.vorname} ${body.person.nachname} gespeichert – die PDF liegt am Auftrag.`
+    + (k ? (k.ok ? `\nKopie an ${k.an} gesendet.` : `\n⚠️ Kopie an ${k.an} nicht gesendet: ${k.hinweis} – in der Liste über „✉️ Kopie …“ erneut senden.`) : ""), k && !k.ok);
 }
 async function ewSenden(eid) {
   const v = await jget(`/api/crm/einwilligungen/${encodeURIComponent(eid)}/versandvorschau`); if (!v) return alert("Vorschau nicht verfügbar.");

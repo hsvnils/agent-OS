@@ -130,6 +130,24 @@ class TestApi(ApiBasis):
         kette = json.dumps(self.w.kunden_store.bh.eintraege(), ensure_ascii=False)
         self.assertNotIn("Teststein", kette)                                     # Personendaten nicht in der Buchhaltungs-Kette
 
+    def test_7_kopie_beim_speichern(self):
+        body = {"person": PERSON | {"nachname": "Teststein", "mail": "lotte@example.com"}, "zwecke": ["eigene_kanaele"],
+                "unterschrift_person": _png(), "kopie_senden": True}
+        r = self.c.post(f"/api/crm/auftraege/{self.nr}/einwilligungen", json=body).json()
+        self.assertEqual((r["ok"], r["kopie"]["ok"], r["kopie"]["an"]), (True, True, "lotte@example.com"))
+        self.assertEqual((self.g.gesendet[-1]["an"], self.g.gesendet[-1]["anhaenge"][0][2]), ("lotte@example.com", "application/pdf"))
+        self.assertIn("Dreh Herbst", self.g.gesendet[-1]["betreff"])
+        self.assertEqual(self.ew.get(r["id"])["versendet"][0]["an"], "lotte@example.com")
+        vorher = len(self.g.gesendet)
+        r2 = self.c.post(f"/api/crm/auftraege/{self.nr}/einwilligungen", json=body | {"person": body["person"] | {"mail": "kaputt@"}}).json()
+        self.assertEqual((r2["ok"], r2["kopie"]["ok"]), (True, False))                 # gespeichert, Kopie nicht
+        r3 = self.c.post(f"/api/crm/auftraege/{self.nr}/einwilligungen", json=body | {"kopie_senden": False}).json()
+        self.assertNotIn("kopie", r3)
+        with mock.patch.object(self.w, "_darf_versenden", return_value=False):        # ohne Modul Finanzen: kein Versand
+            r4 = self.c.post(f"/api/crm/auftraege/{self.nr}/einwilligungen", json=body).json()
+        self.assertEqual((r4["ok"], "kopie" in r4, len(self.g.gesendet)), (True, False, vorher))
+        self.assertEqual(len(self.ew.liste(self.nr)), 4)
+
     def test_6_rechte(self):
         with mock.patch.object(self.w, "hat_modul", return_value=False):
             self.assertEqual(self.c.get(f"/api/crm/auftraege/{self.nr}/einwilligungen").status_code, 403)

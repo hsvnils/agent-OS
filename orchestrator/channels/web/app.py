@@ -2254,6 +2254,37 @@ def _einwilligung_vorlage() -> dict:
     return {"titel": e["titel"], "paragraphen": e["paragraphen"], "version": 0, "status": "entwurf"}
 
 
+def _ew_mailtext(x: dict) -> tuple[str, str]:
+    """Betreff + Text der Kopie (Textbaustein „Einwilligung (Kopie)“, Standard-Vorlage, Signatur)."""
+    from datetime import date as _date
+    from ...core.textbausteine import anrede_werte, rendern
+    a = _auftraege().auftrag(x["auftrag"]) or {}
+    tb = _tb("einwilligung")
+    w = anrede_werte(x["person"]) | {"projekt": a.get("titel") or x["auftrag"],
+                                      "datum": _date.fromisoformat(x["datum"]).strftime("%d.%m.%Y")}
+    return rendern("einwilligung", w, _firmendaten() or {}, vorlage=tb["vorlage"], signatur=tb["signatur"])
+
+
+def _ew_senden(eid: str, an: str, betreff: str, text: str, body: dict, von: str) -> dict:
+    """Kopie der PDF an die Person senden und vermerken (ValueError mit Grund bei Fehlern)."""
+    st = _einwilligungen()
+    x = st.get(eid)
+    if not x:
+        raise KeyError(eid)
+    if not an or "@" not in an or "." not in an.split("@")[-1] or not betreff or not text:
+        raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
+    g = _versand_google(body)
+    if not g.verfuegbar():
+        raise ValueError("Mailversand ist nicht verbunden.")
+    name = f"Einwilligung_{x['person']['nachname']}_{x['datum']}.pdf".replace(" ", "_")
+    r = g.mail_senden(an, betreff, text, bestaetigt=True, absender_name=ABSENDER_NAME,
+                      anhaenge=[(name, st.pdf(eid), "application/pdf")])
+    if not r.get("ok"):
+        raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
+    st.versendet(eid, an, von=von)
+    return {"an": an}
+
+
 @app.get("/api/crm/auftraege/{nummer}/einwilligungen")
 def einwilligungen_liste(nummer: str, request: Request):
     from ...core.einwilligungen import STANDARD_ZWECKE, ZWECKE, _fuellen
@@ -2287,9 +2318,17 @@ async def einwilligung_erteilen(nummer: str, request: Request):
         if not a:
             raise KeyError(nummer)
         kunde = (kunden_store.firma(a["firma"]) or {}).get("name", "")
-        return _einwilligungen().erteilen(a, body, vorlage=_einwilligung_vorlage(), firmendaten=_firmendaten() or {},
-                                          kunde=kunde, von=_von(request),
-                                          heute=__import__("datetime").date.fromisoformat(jetzt_iso()[:10]))
+        out = _einwilligungen().erteilen(a, body, vorlage=_einwilligung_vorlage(), firmendaten=_firmendaten() or {},
+                                         kunde=kunde, von=_von(request),
+                                         heute=__import__("datetime").date.fromisoformat(jetzt_iso()[:10]))
+        an = str((body.get("person") or {}).get("mail") or "").strip()
+        if body.get("kopie_senden") and an and _darf_versenden(request):   # Haken „Kopie an die Person senden“
+            try:                                                           # Versandfehler blockieren das Speichern nie
+                betreff, text = _ew_mailtext(_einwilligungen().get(out["id"]))
+                out["kopie"] = {"ok": True} | _ew_senden(out["id"], an, betreff, text, body, _von(request))
+            except (KeyError, ValueError) as exc:
+                out["kopie"] = {"ok": False, "an": an, "hinweis": str(exc)}
+        return out
     return _kunden_aktion(tun)
 
 
@@ -2309,15 +2348,10 @@ def einwilligung_pdf(eid: str, request: Request):
 
 @app.get("/api/crm/einwilligungen/{eid}/versandvorschau")
 def einwilligung_versandvorschau(eid: str, request: Request):
-    from ...core.textbausteine import anrede_werte, rendern
     x = _einwilligungen().get(eid)
     if not x or not _darf_einwilligung(request):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannt")
-    a = _auftraege().auftrag(x["auftrag"]) or {}
-    tb = _tb("einwilligung")
-    w = anrede_werte(x["person"]) | {"projekt": a.get("titel") or x["auftrag"],
-                                      "datum": __import__("datetime").date.fromisoformat(x["datum"]).strftime("%d.%m.%Y")}
-    betreff, text = rendern("einwilligung", w, _firmendaten() or {}, vorlage=tb["vorlage"], signatur=tb["signatur"])
+    betreff, text = _ew_mailtext(x)
     vs = _versand_absender()
     return {"an": x["person"].get("mail", ""), "betreff": betreff, "text": text, "absender": vs["absender"],
             "bereit": vs["bereit"] is not False}
@@ -2329,27 +2363,12 @@ async def einwilligung_senden(eid: str, request: Request):
     if not _darf_versenden(request):
         return {"ok": False, "hinweis": "Mails an Kunden sendet nur der CEO (Modul Finanzen)."}
     body = await _json(request)
-    st = _einwilligungen()
 
     def tun():
         if body.get("bestaetigt") is not True:
             raise ValueError("Senden braucht die ausdrueckliche Bestaetigung.")
-        x = st.get(eid)
-        if not x:
-            raise KeyError(eid)
-        an, betreff, text = (body.get("an") or "").strip(), (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
-        if not an or "@" not in an or not betreff or not text:
-            raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
-        g = _versand_google(body)
-        if not g.verfuegbar():
-            raise ValueError("Mailversand ist nicht verbunden.")
-        name = f"Einwilligung_{x['person']['nachname']}_{x['datum']}.pdf".replace(" ", "_")
-        r = g.mail_senden(an, betreff, text, bestaetigt=True, absender_name=ABSENDER_NAME,
-                          anhaenge=[(name, st.pdf(eid), "application/pdf")])
-        if not r.get("ok"):
-            raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
-        st.versendet(eid, an, von=_von(request))
-        return {"an": an}
+        return _ew_senden(eid, (body.get("an") or "").strip(), (body.get("betreff") or "").strip(),
+                          (body.get("text") or "").strip(), body, _von(request))
     return _kunden_aktion(tun)
 
 
