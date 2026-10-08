@@ -89,6 +89,50 @@ class TestKern(unittest.TestCase):
             self.st.widerrufen(r["id"], weg="Mail")                              # nur einmal
 
 
+def _logo(pfad: Path) -> Path:
+    from PIL import Image
+    Image.new("RGB", (560, 221), (0, 64, 135)).save(pfad, "JPEG")
+    return pfad
+
+
+class TestKopf(unittest.TestCase):
+    """CEO 2026-10-08: ueberall der Hanserautisch-Kopf (Logo + blau/roter Balken) und „c/o Hanserautisch“."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.logo = _logo(self.tmp / "logo.jpg")
+
+    @staticmethod
+    def _seite(pdf: bytes):
+        from pypdf import PdfReader
+        import io
+        return PdfReader(io.BytesIO(pdf)).pages[0]
+
+    def test_9_einwilligung_kopf_und_co(self):
+        st = EinwilligungStore(self.tmp / "ew")
+        r = st.erteilen(AUFTRAG, {"person": PERSON, "zwecke": ["eigene_kanaele"], "unterschrift_person": _png()}, vorlage=VORLAGE,
+                        firmendaten=FIRMA, kunde="Brand X GmbH", heute=date(2026, 10, 8), logo=self.logo)
+        s = self._seite(st.pdf(r["id"]))
+        text = s.extract_text()
+        self.assertIn("c/o Hanserautisch · Arthur-Soltau-Weg 7c", text)                         # Absenderzeile im Kopf
+        self.assertIn("Media, c/o Hanserautisch, Arthur-Soltau-Weg 7c", " ".join(text.split()))  # {Anschrift} im Text
+        self.assertEqual(len(s.images), 1)                                                     # Logo (Unterschrift auf Seite 2)
+
+    def test_10_mahnung_und_stundenzettel_kopf(self):
+        from orchestrator.core.beleg_pdf import beleg_pdf
+        from orchestrator.core.projektabrechnung import stundenzettel_pdf
+        args = dict(art="Zahlungserinnerung", nummer="MA-1", firma=FIRMA, empfaenger=["Brand X GmbH"], infos=[("Datum", "08.10.2026")],
+                    einleitung="Guten Tag", positionen=[{"beschreibung": "RE-1", "menge": "1", "einheit": "", "einzelpreis_cent": 100,
+                                                         "gesamt_cent": 100}], summe_cent=100, hinweise=[], schluss="")
+        self.assertEqual(len(self._seite(beleg_pdf(**args, logo=self.logo)).images), 1)
+        self.assertEqual(len(self._seite(beleg_pdf(**args)).images), 0)                       # ohne Logo-Datei wie bisher
+        r = {"nummer": "RE-1", "auftrag": "AB-1", "projektzeiten": {"zeilen": [{"id": "z", "datum": "2026-10-01", "von": "09:00",
+             "bis": "10:00", "pause_min": 0, "minuten": 60, "taetigkeit": "Dreh", "km": 0}], "satz_cent": 100}}
+        s = self._seite(stundenzettel_pdf(r, FIRMA, self.logo))
+        self.assertEqual(len(s.images), 1)
+        self.assertIn("Krüger Onlinehandel und Media · Auftrag AB-1", s.extract_text())
+
+
 class TestApi(ApiBasis):
     def setUp(self):
         super().setUp()
@@ -148,9 +192,44 @@ class TestApi(ApiBasis):
         self.assertEqual((r4["ok"], "kopie" in r4, len(self.g.gesendet)), (True, False, vorher))
         self.assertEqual(len(self.ew.liste(self.nr)), 4)
 
+    def test_8_kontakt_am_kunden(self):
+        """Variante A (CEO 2026-10-08): Kontakt bekommt nur Name/Mail/Telefon; Geburtsdatum + Anschrift nie in die Kette."""
+        d = self.c.get(f"/api/crm/auftraege/{self.nr}/einwilligungen").json()
+        self.assertIn(self.ap, [x["nummer"] for x in d["ansprechpartner"]])
+        geheim = {"strasse": "Geheimweg 9", "geburtsdatum": "1990-05-01"}
+        body = {"person": PERSON | geheim | {"mail": "andere@example.com", "telefon": "040 1234"}, "zwecke": ["eigene_kanaele"],
+                "unterschrift_person": _png(), "ansprechpartner": self.ap}
+        r = self.c.post(f"/api/crm/auftraege/{self.nr}/einwilligungen", json=body).json()
+        self.assertEqual((r["ok"], r["kontakt"]["ok"], r["kontakt"]["ergaenzt"]), (True, True, ["telefon"]))
+        ap = next(x for x in self.w.kunden_store.firma(self.k)["ansprechpartner_liste"] if x["nummer"] == self.ap)
+        self.assertEqual((ap["telefon"], ap["mail"]), ("040 1234", "anna@brandx.de"))           # Mail nie ueberschrieben
+        neu = body | {"ansprechpartner": "", "als_kontakt": True,
+                      "person": PERSON | geheim | {"vorname": "Lotte", "nachname": "Teststein", "mail": "lotte@example.com"}}
+        r2 = self.c.post(f"/api/crm/auftraege/{self.nr}/einwilligungen", json=neu).json()
+        self.assertEqual((r2["kontakt"]["ok"], r2["kontakt"]["angelegt"]), (True, True))
+        lotte = next(x for x in self.w.kunden_store.firma(self.k)["ansprechpartner_liste"] if x["nummer"] == r2["kontakt"]["nummer"])
+        self.assertEqual((lotte["vorname"], lotte["rolle"], lotte["mail"]), ("Lotte", "Mitwirkende/r", "lotte@example.com"))
+        r3 = self.c.post(f"/api/crm/auftraege/{self.nr}/einwilligungen", json=neu).json()     # gleicher Name -> kein Doppel
+        self.assertEqual((r3["kontakt"]["angelegt"], r3["kontakt"]["nummer"]), (False, r2["kontakt"]["nummer"]))
+        r4 = self.c.post(f"/api/crm/auftraege/{self.nr}/einwilligungen", json=body | {"ansprechpartner": "AP-99999"}).json()
+        self.assertEqual((r4["ok"], r4["kontakt"]["ok"]), (True, False))                       # gespeichert, Kontakt nicht
+        self.assertNotIn("kontakt", self.c.post(f"/api/crm/auftraege/{self.nr}/einwilligungen", json=body | {"ansprechpartner": ""}).json())
+        kette = json.dumps(self.w.kunden_store.bh.eintraege(), ensure_ascii=False)
+        self.assertNotIn("Geheimweg", kette)
+        self.assertNotIn("1990-05-01", kette)
+        # Vorschlag aus der letzten Einwilligung derselben Person, nicht nach Widerruf
+        p = self.c.get("/api/crm/einwilligungen/person", params={"vorname": "lotte", "nachname": "TESTSTEIN"}).json()["person"]
+        self.assertEqual((p["strasse"], p["geburtsdatum"]), ("Geheimweg 9", "1990-05-01"))
+        self.assertEqual(self.c.get("/api/crm/einwilligungen/person", params={"mail": "lotte@example.com"}).json()["person"]["aus"], r3["id"])
+        for x in self.ew.liste(self.nr):
+            if x["person"]["nachname"] == "Teststein":
+                self.ew.widerrufen(x["id"], weg="Mail")
+        self.assertIsNone(self.c.get("/api/crm/einwilligungen/person", params={"vorname": "Lotte", "nachname": "Teststein"}).json()["person"])
+
     def test_6_rechte(self):
         with mock.patch.object(self.w, "hat_modul", return_value=False):
             self.assertEqual(self.c.get(f"/api/crm/auftraege/{self.nr}/einwilligungen").status_code, 403)
+            self.assertEqual(self.c.get("/api/crm/einwilligungen/person", params={"mail": "a@b.de"}).status_code, 403)
             self.assertFalse(self.c.post(f"/api/crm/auftraege/{self.nr}/einwilligungen", json={}).json()["ok"])
 
 

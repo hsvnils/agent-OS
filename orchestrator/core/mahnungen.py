@@ -281,7 +281,7 @@ class MahnStore:
 
     def pdf(self, m: dict, firmendaten: dict) -> bytes:
         t = self.teile(m)
-        return beleg_pdf(art=BRIEF[m["stufe"]], nummer=m["nummer"], firma=firmendaten, empfaenger=_empfaenger(t["firma"], t["ap"]),
+        return beleg_pdf(art=BRIEF[m["stufe"]], nummer=m["nummer"], firma=firmendaten, logo=self.bh.dir / "logo.jpg", empfaenger=_empfaenger(t["firma"], t["ap"]),
                          infos=t["infos"], einleitung=t["anrede"] + "\n\n" + t["einleitung"], positionen=t["positionen"],
                          summe_cent=m["summe_cent"], hinweise=t["hinweise"], schluss="")
 

@@ -1773,15 +1773,20 @@ async function ewNeu(nr) {
   const heute = new Date(d.heute + "T12:00").toLocaleDateString("de-DE");
   const w = { ...(d.werte || {}), Datum: heute };
   const text = d.vorlage.paragraphen.map(p => `<h4>${esc(p.titel)}</h4><p>${esc(ewFuellen(p.text, w))}</p>`).join("");
-  const feld = (id, l, typ = "text", extra = "") => `<label class="v2-feld"><small>${l}</small><input id="ew-${id}" class="v2-inp" type="${typ}" ${extra}></label>`;
+  const feld = (id, l, typ = "text", extra = "") => `<label class="v2-feld"><small>${l}</small><input id="ew-${id}" class="v2-inp" type="${typ}" enterkeyhint="next" ${extra}></label>`;
+  const aps = d.ansprechpartner || [];
   openModal(`✍️ Einwilligung · ${nr}`, `<div class="v2-ew-form">
     <div class="v2-ew-kopf"><b>${esc(d.vorlage.titel)}</b><small>Projekt „${esc(d.projekt)}“ · Auftraggeber ${esc(d.kunde || "–")} · ${esc(heute)}</small></div>
     <details class="v2-ew-text" open><summary>Text der Einwilligung lesen</summary><div>${text}</div></details>
     <h3>Ich willige ein in folgende Zwecke</h3><div class="v2-ew-zwecke">${Object.entries(d.zwecke).map(([k, l]) => `<label class="v2-modlbl"><input type="checkbox" class="ew-zweck" value="${esc(k)}" ${d.standard_zwecke.includes(k) ? "checked" : ""}> ${esc(l)}</label>`).join("")}</div>
     <h3>Person</h3>
-    <div class="v2-an-zeile">${feld("vorname", "Vorname *", "text", 'autocomplete="off" autocapitalize="words"')}${feld("nachname", "Nachname *", "text", 'autocomplete="off" autocapitalize="words"')}${feld("geb", "Geburtsdatum", "date")}</div>
+    ${aps.length ? `<label class="v2-feld"><small>Ansprechpartner des Kunden laden</small><select id="ew-ap" class="v2-inp"><option value="">– neue Person eingeben –</option>${aps.map(x => `<option value="${esc(x.nummer)}">${esc([x.vorname, x.nachname].filter(Boolean).join(" "))}${x.rolle ? ` · ${esc(x.rolle)}` : ""}</option>`).join("")}</select></label>` : ""}
+    <div class="v2-an-zeile">${feld("vorname", "Vorname *", "text", 'autocomplete="off" autocapitalize="words"')}${feld("nachname", "Nachname *", "text", 'autocomplete="off" autocapitalize="words"')}${feld("geb", "Geburtsdatum", "text", 'inputmode="numeric" placeholder="TT.MM.JJJJ" maxlength="10" autocomplete="off"')}</div>
     <div class="v2-an-zeile">${feld("strasse", "Straße und Nr. *", "text", 'autocomplete="off"')}${feld("plz", "PLZ *", "text", 'inputmode="numeric" autocomplete="off"')}${feld("ort", "Ort *", "text", 'autocomplete="off"')}</div>
     <div class="v2-an-zeile">${feld("mail", "E-Mail (für die Kopie)", "email", 'autocomplete="off" autocapitalize="off"')}${feld("tel", "Telefon", "tel", 'autocomplete="off"')}${feld("verg", "Vergütung (leer = unentgeltlich)", "text")}</div>
+    <small id="ew-vorschlag" class="v2-sub" hidden></small>
+    <label class="v2-modlbl" id="ew-kontakt-l"><input type="checkbox" id="ew-kontakt"> 👥 Als Kontakt beim Kunden speichern (Name, Mail, Telefon – Geburtsdatum und Anschrift bleiben nur hier)</label>
+    <small id="ew-kontakt-info" class="v2-sub" hidden>Fehlende Mail oder Telefonnummer wird beim Speichern am Kontakt ergänzt.</small>
     ${d.darf_senden ? `<label class="v2-modlbl" id="ew-kopie-l" hidden><input type="checkbox" id="ew-kopie"> ✉️ Kopie an die Person senden (beim Speichern, aus luna@)</label>` : ""}
     <div class="v2-an-zeile">${feld("drehort", "Ort der Aufnahmen", "text", `value="${esc(d.ort || "")}"`)}<label class="v2-feld"><small>Datum</small><input class="v2-inp" value="${esc(heute)}" disabled></label></div>
     <div id="ew-person-sig"><h3>Unterschrift der Person</h3>${ewPad("ew-sig-person")}</div>
@@ -1794,9 +1799,46 @@ async function ewNeu(nr) {
   if (mail && kopie) { mail.addEventListener("input", () => { const ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail.value.trim());
       $("#ew-kopie-l").hidden = !mail.value.trim(); if (!kopie.dataset.selbst) kopie.checked = ok; });
     kopie.addEventListener("change", () => { kopie.dataset.selbst = "1"; }); }
-  $("#ew-geb").addEventListener("change", () => { const a = ewAlter($("#ew-geb").value);
+  ewFormVerdrahten(aps);
+  $("#ew-geb").addEventListener("input", () => { const a = ewAlter(ewGebIso($("#ew-geb").value));
     $("#ew-eltern").hidden = !(a != null && a < 16); $("#ew-person-sig").hidden = a != null && a < 14;
     if (!$("#ew-eltern").hidden) ewPadAktiv("ew-sig-eltern", true); });
+}
+/* Geburtsdatum als Textfeld TT.MM.JJJJ (iPad: Datumsauswahl liess sich nicht per Tabulator ansteuern, CEO 2026-10-08) */
+function ewGebIso(t) { const m = String(t || "").trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/); return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : ""; }
+function ewGebDe(iso) { const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}.${m[2]}.${m[1]}` : ""; }
+function ewFormVerdrahten(aps) {
+  const form = $(".v2-ew-form"), geb = $("#ew-geb"), sel = $("#ew-ap");
+  geb.addEventListener("input", (e) => {                               // Punkte setzt das Feld selbst
+    if (e.inputType && e.inputType.startsWith("delete")) return;
+    const z = geb.value.replace(/\D/g, "").slice(0, 8);
+    geb.value = z.length > 4 ? `${z.slice(0, 2)}.${z.slice(2, 4)}.${z.slice(4)}` : z.length > 2 ? `${z.slice(0, 2)}.${z.slice(2)}` : z;
+  });
+  form.addEventListener("keydown", (e) => {                            // Return springt ins naechste Feld
+    if (e.key !== "Enter" || e.isComposing || !e.target.matches("input.v2-inp:not([type=checkbox])")) return;
+    e.preventDefault();
+    const felder = [...form.querySelectorAll("input.v2-inp:not([disabled]):not([type=checkbox]), select.v2-inp")].filter(x => x.offsetParent !== null);
+    const n = felder[felder.indexOf(e.target) + 1]; if (n) n.focus(); else e.target.blur();
+  });
+  const setz = (id, wert, nurLeer) => { const el = $("#ew-" + id); if (el && wert && !(nurLeer && el.value.trim())) { el.value = wert; el.dispatchEvent(new Event("input")); } };
+  const vorschlag = async (nurLeer) => {                               // Angaben aus der letzten Einwilligung derselben Person
+    const q = new URLSearchParams({ vorname: $("#ew-vorname").value.trim(), nachname: $("#ew-nachname").value.trim(), mail: $("#ew-mail").value.trim() });
+    if (!(q.get("vorname") && q.get("nachname")) && !q.get("mail")) return;
+    const r = await jget(`/api/crm/einwilligungen/person?${q}`), p = r && r.person, info = $("#ew-vorschlag");
+    if (!p) { info.hidden = true; return; }
+    setz("strasse", p.strasse, nurLeer); setz("plz", p.plz, nurLeer); setz("ort", p.ort, nurLeer);
+    setz("geb", ewGebDe(p.geburtsdatum), nurLeer); setz("mail", p.mail, true); setz("tel", p.telefon, true);
+    info.textContent = `Angaben aus der Einwilligung vom ${datumKurz(p.datum)} übernommen – bitte kurz prüfen.`; info.hidden = false;
+  };
+  $("#ew-nachname").addEventListener("change", () => vorschlag(true));
+  $("#ew-mail").addEventListener("change", () => vorschlag(true));
+  if (sel) sel.addEventListener("change", () => {
+    const x = aps.find(a => a.nummer === sel.value);
+    $("#ew-kontakt-l").hidden = !!x; $("#ew-kontakt-info").hidden = !x;
+    if (!x) return;
+    for (const [id, w] of [["vorname", x.vorname], ["nachname", x.nachname], ["mail", x.mail], ["tel", x.telefon]]) { const el = $("#ew-" + id); el.value = w || ""; el.dispatchEvent(new Event("input")); }
+    vorschlag(true);
+  });
 }
 function ewPad(id) { return `<div class="v2-sig"><canvas id="${id}" aria-label="Unterschriftsfeld"></canvas><div class="v2-sig-fuss"><small>Mit dem Apple Pencil oder dem Finger unterschreiben</small><button class="v2-btn sm" data-act="ew-sig-neu" data-id="${id}">↺ Neu unterschreiben</button></div></div>`; }
 const EW_PAD = {};
@@ -1822,9 +1864,10 @@ function ewPadLeeren(id) { const c = document.getElementById(id); if (!c) return
 function ewPadBild(id) { const c = document.getElementById(id); return c && (EW_PAD[id] || {}).punkte > 15 ? c.toDataURL("image/png") : ""; }
 async function ewSpeichern(nr) {
   const v = (k) => ($("#ew-" + k) || {}).value || "";
-  const a = ewAlter(v("geb"));
+  const a = ewAlter(ewGebIso(v("geb")));
   const body = { person: { vorname: v("vorname").trim(), nachname: v("nachname").trim(), strasse: v("strasse").trim(), plz: v("plz").trim(), ort: v("ort").trim(),
-      geburtsdatum: v("geb"), mail: v("mail").trim(), telefon: v("tel").trim() },
+      geburtsdatum: ewGebIso(v("geb")) || v("geb").trim(), mail: v("mail").trim(), telefon: v("tel").trim() },
+    ansprechpartner: v("ap"), als_kontakt: !v("ap") && !!($("#ew-kontakt") || {}).checked,
     zwecke: [...document.querySelectorAll(".ew-zweck:checked")].map(x => x.value), verguetung: v("verg").trim(), ort: v("drehort").trim(),
     unterschrift_person: a != null && a < 14 ? "" : ewPadBild("ew-sig-person"),
     unterschrift_eltern: a != null && a < 16 ? ewPadBild("ew-sig-eltern") : "", eltern_name: v("eltern").trim(),
@@ -1835,9 +1878,12 @@ async function ewSpeichern(nr) {
   const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(nr)}/einwilligungen`, body);
   if (!r || !r.ok) { if (b) { b.disabled = false; b.textContent = "✔ Unterschrieben – speichern"; } return kundenMsg("ew-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false); }
   FORM_GEAENDERT = false;
-  const k = r.kopie;
-  return abDetail(nr, `Einwilligung von ${body.person.vorname} ${body.person.nachname} gespeichert – die PDF liegt am Auftrag.`
-    + (k ? (k.ok ? `\nKopie an ${k.an} gesendet.` : `\n⚠️ Kopie an ${k.an} nicht gesendet: ${k.hinweis} – in der Liste über „✉️ Kopie …“ erneut senden.`) : ""), k && !k.ok);
+  const k = r.kopie, kt = r.kontakt;
+  const ktText = !kt ? "" : !kt.ok ? `\n⚠️ Kontakt nicht gespeichert: ${kt.hinweis}`
+    : kt.angelegt ? `\nAls Kontakt ${kt.nummer} beim Kunden angelegt.`
+    : kt.ergaenzt.length ? `\nAm Kontakt ${kt.nummer} ergänzt: ${kt.ergaenzt.map(x => x === "mail" ? "E-Mail" : "Telefon").join(", ")}.` : "";
+  return abDetail(nr, `Einwilligung von ${body.person.vorname} ${body.person.nachname} gespeichert – die PDF liegt am Auftrag.` + ktText
+    + (k ? (k.ok ? `\nKopie an ${k.an} gesendet.` : `\n⚠️ Kopie an ${k.an} nicht gesendet: ${k.hinweis} – in der Liste über „✉️ Kopie …“ erneut senden.`) : ""), (k && !k.ok) || (kt && !kt.ok));
 }
 async function ewSenden(eid) {
   const v = await jget(`/api/crm/einwilligungen/${encodeURIComponent(eid)}/versandvorschau`); if (!v) return alert("Vorschau nicht verfügbar.");

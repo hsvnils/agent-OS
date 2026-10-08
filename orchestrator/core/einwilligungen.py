@@ -98,6 +98,19 @@ class EinwilligungStore:
         a = str(auftrag or "").strip().upper()
         return sorted((x for x in self._falte().values() if not a or x.get("auftrag") == a), key=lambda x: x["ts"])
 
+    def letzte_person(self, *, vorname: str = "", nachname: str = "", mail: str = "") -> dict | None:
+        """Angaben aus der juengsten, nicht widerrufenen Einwilligung derselben Person (gleicher Vor- und Nachname oder
+        gleiche Mail) -- damit nichts doppelt getippt wird, ohne Geburtsdatum/Anschrift im Kundenstamm (CEO 2026-10-08)."""
+        n = (str(vorname or "").strip().lower(), str(nachname or "").strip().lower())
+        m = str(mail or "").strip().lower()
+        for x in reversed(self.liste()):
+            p = x.get("person") or {}
+            gleich = (all(n) and (p.get("vorname", "").lower(), p.get("nachname", "").lower()) == n) or \
+                     (m and p.get("mail", "").lower() == m)
+            if gleich and not x.get("widerruf"):
+                return dict(p) | {"aus": x["id"], "datum": x.get("datum", "")}
+        return None
+
     def pdf(self, eid: str) -> bytes:
         x = self.get(eid)
         if not x:
@@ -111,7 +124,7 @@ class EinwilligungStore:
             fh.write(json.dumps(ev, ensure_ascii=False) + "\n")
 
     def erteilen(self, auftrag: dict, eingabe: dict, *, vorlage: dict, firmendaten: dict, kunde: str,
-                 von: str = "", heute: date | None = None) -> dict:
+                 von: str = "", heute: date | None = None, logo: Path | None = None) -> dict:
         """Person + Unterschrift(en) -> PDF + Ereignis. `vorlage` = Version der Vorlage `einwilligung` (titel, paragraphen, version)."""
         heute = heute or _jetzt().date()
         p = eingabe.get("person") or {}
@@ -142,8 +155,8 @@ class EinwilligungStore:
         werte = {"Auftragnehmer": firmendaten.get("firma") or "Hanserautisch", "Kunde": kunde or "dem Auftraggeber",
                  "Projekt": auftrag.get("titel") or auftrag["nummer"], "Datum": heute.strftime("%d.%m.%Y"), "Ort": ort or "–",
                  "Kontakt": firmendaten.get("mail") or KONTAKT_STANDARD,
-                 "Anschrift": ", ".join(x for x in (firmendaten.get("strasse"), " ".join(x for x in (firmendaten.get("plz"), firmendaten.get("ort")) if x)) if x)}
-        pdf = _pdf(eid, vorlage, werte, person, zwecke, verguetung, unterschrift, eltern, jahre, ts)
+                 "Anschrift": firmen_anschrift(firmendaten)}
+        pdf = _pdf(eid, vorlage, werte, person, zwecke, verguetung, unterschrift, eltern, jahre, ts, firmendaten=firmendaten, logo=logo)
         rel = Path("pdf") / str(heute.year) / f"{eid}.pdf"
         (self.dir / rel).parent.mkdir(parents=True, exist_ok=True)
         (self.dir / rel).write_bytes(pdf)
@@ -180,10 +193,15 @@ def _fuellen(text: str, werte: dict) -> str:
     return re.sub(r"\{([A-Za-zÄÖÜäöüß_]+)\}", lambda m: str(werte.get(m.group(1), m.group(0))), text)
 
 
-def _pdf(eid, vorlage, werte, person, zwecke, verguetung, unterschrift, eltern, jahre, ts) -> bytes:
-    """A4 hochkant: Titel, Projektzeile, Paragraphen, Zwecke (angekreuzt), Personendaten, Unterschrift(en), Nachweis-Fuss."""
+def firmen_anschrift(fd: dict) -> str:
+    """Eigene Anschrift fuer Texte, inkl. c/o-Zusatz (CEO 2026-10-08: „c/o Hanserautisch“ fehlte)."""
+    return ", ".join(x for x in (fd.get("zusatz"), fd.get("strasse"), " ".join(x for x in (fd.get("plz"), fd.get("ort")) if x)) if x)
+
+
+def _pdf(eid, vorlage, werte, person, zwecke, verguetung, unterschrift, eltern, jahre, ts, *, firmendaten=None, logo=None) -> bytes:
+    """A4 hochkant: Hanserautisch-Kopf, Titel, Projektzeile, Paragraphen, Zwecke (angekreuzt), Personendaten, Unterschrift(en), Nachweis-Fuss."""
     from fpdf import FPDF
-    from .beleg_pdf import DEJAVU, _latin1
+    from .beleg_pdf import DEJAVU, _latin1, absender_zeile, hanserautisch_kopf
     uni = (DEJAVU / "DejaVuSans.ttf").exists() and (DEJAVU / "DejaVuSans-Bold.ttf").exists()
     T = (lambda x: str(x or "")) if uni else _latin1
 
@@ -205,6 +223,12 @@ def _pdf(eid, vorlage, werte, person, zwecke, verguetung, unterschrift, eltern, 
     p.set_auto_page_break(True, margin=18)
     p.alias_nb_pages()
     p.add_page()
+    y = hanserautisch_kopf(p, logo=logo, x=18, y=12, logo_breite=50)  # wie Angebot/Rechnung (CEO 2026-10-08)
+    p.set_xy(18, y + 4)
+    p.set_font(S, "", 6.8)
+    p.set_text_color(136, 136, 136)
+    p.cell(0, 3.2, T(absender_zeile(firmendaten or {})), new_x="LMARGIN", new_y="NEXT")
+    p.ln(4)
     p.set_text_color(0, 64, 135)
     p.set_font(S, "B", 15)
     p.multi_cell(0, 7, T(vorlage.get("titel") or "Einwilligung in Bild- und Videoaufnahmen"), new_x="LMARGIN", new_y="NEXT")

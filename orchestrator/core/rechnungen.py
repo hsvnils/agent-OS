@@ -375,7 +375,8 @@ class RechnungStore:
                 kopf["projektzeiten"] = x["projektzeiten"]
             if x.get("korrektur_zu"):                                 # Belegverfolgung: ersetzt die stornierte Rechnung
                 kopf["korrektur_zu"] = x["korrektur_zu"]
-            pdf = mit_anlage(self._pdf(kopf | {"nummer": nummer}, firmendaten), kopf | {"nummer": nummer}, firmendaten)
+            pdf = mit_anlage(self._pdf(kopf | {"nummer": nummer}, firmendaten), kopf | {"nummer": nummer}, firmendaten,
+                             self.bh.dir / "logo.jpg")
             return kopf, [(pdf, f"{ARTEN_TEXT[art].replace('-', '')}_{nummer}.pdf", "beleg")]
 
         ev = self.bh.festschreiben("RE", "rechnung_festgeschrieben", erzeuge, jahr=heute.year, bezug=eid, von=von)
@@ -629,7 +630,7 @@ class RechnungStore:
         heute = jetzt().date()
         from .projektabrechnung import mit_anlage
         r = x | {"nummer": "ENTWURF", "rechnungsdatum": heute.isoformat(), "faellig_am": self._faellig(x, heute).isoformat()}
-        return mit_anlage(self._pdf(r, firmendaten), r, firmendaten)
+        return mit_anlage(self._pdf(r, firmendaten), r, firmendaten, self.bh.dir / "logo.jpg")
 
     def _pdf(self, r: dict, firmendaten: dict) -> bytes:
         r = self._summen(r)
@@ -686,7 +687,7 @@ class RechnungStore:
                 texte={"kontakt": b.get("kontakt", ""), "fuss": ""}, zeige_kalkulation=False, zeige_kennzahlen=False,
                 gruppen=list(gruppen.values()), summen=r["summen"], zuschlag_liste=None, fuss_zusatz=zahlung)
         return beleg_pdf(
-            art=art, nummer=r["nummer"], firma=firmendaten, empfaenger=_empfaenger(f, ap),
+            art=art, nummer=r["nummer"], firma=firmendaten, logo=self.bh.dir / "logo.jpg", empfaenger=_empfaenger(f, ap),
             infos=[(i.split(": ", 1)[0], i.split(": ", 1)[1]) for i in infos if i],
             einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einleitung, positionen=[x | pdf_posten_standard(x) for x in r["positionen"]],
             summe_cent=r["summe_cent"], hinweise=[HINWEIS_19, zahlung], schluss="",

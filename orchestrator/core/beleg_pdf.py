@@ -93,7 +93,7 @@ def _latin1(text: str) -> str:
 def beleg_pdf(*, art: str, nummer: str, firma: dict, empfaenger: list[str], infos: list[tuple[str, str]],
               einleitung: str, positionen: list[dict], summe_cent: int, hinweise: list[str], schluss: str,
               schrift_dir: Path | None = None, summen_zeilen: list[tuple[str, int]] | None = None,
-              link: tuple[str, str] | None = None) -> bytes:
+              link: tuple[str, str] | None = None, logo: Path | None = None) -> bytes:
     """Erzeugt das PDF. `positionen`: [{beschreibung, menge (Text), einheit, einzelpreis_cent, gesamt_cent}]."""
     from fpdf import FPDF
 
@@ -140,13 +140,16 @@ def beleg_pdf(*, art: str, nummer: str, firma: dict, empfaenger: list[str], info
     pdf.alias_nb_pages()
     pdf.add_page()
 
-    # Briefkopf rechts oben
-    pdf.set_font(SCHRIFT, "B", 13)
-    pdf.cell(0, 6, T(firma.get("firma", "")), align="R", new_x="LMARGIN", new_y="NEXT")
-    pdf.set_font(SCHRIFT, size=8.5)
-    for z in (firma.get("zusatz"), firma.get("strasse"), f"{firma.get('plz', '')} {firma.get('ort', '')}".strip()):
-        if z:
-            pdf.cell(0, 4, T(z), align="R", new_x="LMARGIN", new_y="NEXT")
+    # Hanserautisch-Kopf (Logo + Balken, CEO 2026-10-08); passt ueber das Anschriftfeld (Balken endet vor 40 mm)
+    if logo and Path(logo).exists():
+        hanserautisch_kopf(pdf, logo=logo, y=11, logo_breite=58)
+    else:                                                    # ohne Logo-Datei: Briefkopf rechts oben wie bisher
+        pdf.set_font(SCHRIFT, "B", 13)
+        pdf.cell(0, 6, T(firma.get("firma", "")), align="R", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font(SCHRIFT, size=8.5)
+        for z in (firma.get("zusatz"), firma.get("strasse"), f"{firma.get('plz', '')} {firma.get('ort', '')}".strip()):
+            if z:
+                pdf.cell(0, 4, T(z), align="R", new_x="LMARGIN", new_y="NEXT")
 
     # Anschriftfeld (DIN 5008 Form B: ab 45 mm von oben, 20 mm links)
     pdf.set_xy(20, 45)
@@ -261,6 +264,30 @@ def _md(text: str) -> str:
     return str(text or "").replace("**", "*​*").replace("__", "_​_").replace("--", "-​-")
 
 
+def absender_zeile(firma: dict) -> str:
+    """Kleine Absenderzeile unter dem Kopf: Firma · Inhaber · c/o-Zusatz · Strasse · PLZ Ort."""
+    return " · ".join(x for x in (firma.get("firma"), firma.get("inhaber"), firma.get("zusatz"), firma.get("strasse"),
+                                    f"{firma.get('plz', '')} {firma.get('ort', '')}".strip()) if x)
+
+
+def hanserautisch_kopf(pdf, *, logo: Path | None, x: float = 20, breite: float | None = None, y: float = 14,
+                       logo_breite: float = 55) -> float:
+    """Gemeinsamer Hanserautisch-Kopf aller Kunden-PDFs: Logo mittig + blau/roter Balken. Gibt die y-Position des
+    Balkens zurueck (darunter schreibt der Aufrufer weiter)."""
+    breite = breite if breite is not None else pdf.w - 2 * x
+    if logo and Path(logo).exists():
+        try:
+            pdf.image(str(logo), x=(pdf.w - logo_breite) / 2, y=y, w=logo_breite)
+            y += logo_breite * 221 / 560 + 3                          # Seitenverhaeltnis des Logos
+        except Exception:
+            pass
+    pdf.set_fill_color(*BLAU)
+    pdf.rect(x, y, breite / 2, 1.6, style="F")
+    pdf.set_fill_color(*ROT)
+    pdf.rect(x + breite / 2, y, breite / 2, 1.6, style="F")
+    return y
+
+
 def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path | None, empfaenger: list[str],
                       infos: list[str], untertitel: str, anrede: str, einleitung: str, texte: dict,
                       zeige_kalkulation: bool, zeige_kennzahlen: bool, gruppen: list[tuple],
@@ -318,18 +345,7 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
             pdf.add_page()
 
     # Logo + Farbbalken
-    y = 14
-    if logo and Path(logo).exists():
-        try:
-            pdf.image(str(logo), x=(pdf.w - 55) / 2, y=y, w=55)
-            y += 55 * 221 / 560 + 3                                   # Seitenverhaeltnis des Logos
-        except Exception:
-            pass
-    pdf.set_fill_color(*BLAU)
-    pdf.rect(20, y, B / 2, 1.6, style="F")
-    pdf.set_fill_color(*ROT)
-    pdf.rect(20 + B / 2, y, B / 2, 1.6, style="F")
-    y += 9
+    y = hanserautisch_kopf(pdf, logo=logo, breite=B) + 9
 
     # Anschrift links, Titel + Meta rechts
     pdf.set_xy(20, y)

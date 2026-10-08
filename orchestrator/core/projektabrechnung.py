@@ -168,11 +168,11 @@ def pruefe_festschreiben(x: dict, eintraege: list[dict]) -> None:
             raise ValueError(f"Fahrt vom {datum_de(z['datum'])} wurde geaendert -- Projektzeiten neu uebernehmen.")
 
 
-def stundenzettel_pdf(r: dict, firmendaten: dict) -> bytes:
+def stundenzettel_pdf(r: dict, firmendaten: dict, logo=None) -> bytes:
     """Anlage „Stundenzettel“ zur Rechnung (nur Darstellung zusammengefasst): Zeilen der eingefrorenen Auswahl."""
     from fpdf import FPDF
     pz = r.get("projektzeiten") or {}
-    from .beleg_pdf import DEJAVU
+    from .beleg_pdf import DEJAVU, absender_zeile, hanserautisch_kopf
     uni = (DEJAVU / "DejaVuSans.ttf").exists() and (DEJAVU / "DejaVuSans-Bold.ttf").exists()
     T = (lambda x: str(x or "")) if uni else _latin1
     pdf = FPDF(format="A4")
@@ -181,12 +181,20 @@ def stundenzettel_pdf(r: dict, firmendaten: dict) -> bytes:
         pdf.add_font("DejaVu", "", str(DEJAVU / "DejaVuSans.ttf"))
         pdf.add_font("DejaVu", "B", str(DEJAVU / "DejaVuSans-Bold.ttf"))
         S = "DejaVu"
+    pdf.set_margins(18, 14, 18)                                       # Tabelle 174 mm = Balkenbreite
     pdf.set_auto_page_break(True, 18)
     pdf.add_page()
+    y = hanserautisch_kopf(pdf, logo=logo, x=18, y=12, logo_breite=45)   # gleicher Kopf wie die Rechnung
+    pdf.set_xy(pdf.l_margin, y + 4)
+    pdf.set_font(S, "", 6.8)
+    pdf.set_text_color(136, 136, 136)
+    pdf.cell(0, 3.2, T(absender_zeile(firmendaten)), new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(3)
     pdf.set_font(S, "B", 14)
     pdf.cell(0, 8, T(f"Anlage: Stundenzettel zu {r.get('nummer') or 'ENTWURF'}"), new_x="LMARGIN", new_y="NEXT")
     pdf.set_font(S, "", 9)
-    pdf.cell(0, 6, T(f"{firmendaten.get('name') or ''} · Auftrag {r.get('auftrag', '')}"
+    pdf.cell(0, 6, T(f"{firmendaten.get('firma') or firmendaten.get('name') or ''} · Auftrag {r.get('auftrag', '')}"
                            + (f" · {r['titel']}" if r.get("titel") else "")), new_x="LMARGIN", new_y="NEXT")
     pdf.ln(3)
     spalten = [("Datum", 24), ("Ein", 14), ("Aus", 14), ("Pause", 16), ("Dauer", 18), ("Tätigkeit", 74), ("km", 14)]
@@ -206,7 +214,7 @@ def stundenzettel_pdf(r: dict, firmendaten: dict) -> bytes:
     pdf.set_font(S, "B", 9)
     m = sum(z["minuten"] for z in zeilen)
     km = sum(z["km"] for z in pz.get("km_zeilen") or [])
-    pdf.cell(86, 7, "Summe")
+    pdf.cell(68, 7, "Summe")                                          # bis zur Spalte „Dauer“
     pdf.cell(18, 7, T(_std_text(m)))
     pdf.cell(74, 7, T(f"x {eur(pz.get('satz_cent') or 0)} = {eur(round(m * (pz.get('satz_cent') or 0) / 60))}"
                             if m else ""))
@@ -217,14 +225,14 @@ def stundenzettel_pdf(r: dict, firmendaten: dict) -> bytes:
     return bytes(pdf.output())
 
 
-def mit_anlage(rechnung_pdf: bytes, r: dict, firmendaten: dict) -> bytes:
+def mit_anlage(rechnung_pdf: bytes, r: dict, firmendaten: dict, logo=None) -> bytes:
     """Stundenzettel als Anlage an das Rechnungs-PDF haengen (nur zusammengefasst mit Zeiten)."""
     pz = r.get("projektzeiten") or {}
     if pz.get("darstellung") != "zusammen" or not pz.get("zeilen"):
         return rechnung_pdf
     from pypdf import PdfReader, PdfWriter
     w = PdfWriter()
-    for teil in (rechnung_pdf, stundenzettel_pdf(r, firmendaten)):
+    for teil in (rechnung_pdf, stundenzettel_pdf(r, firmendaten, logo)):
         w.append(PdfReader(io.BytesIO(teil)))
     out = io.BytesIO()
     w.write(out)

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-08 22:15] — Claude Code
+- **Was:** Einwilligung F1-F3 + einheitlicher Hanserautisch-Kopf: Geburtsdatum als Textfeld TT.MM.JJJJ und Return springt weiter (iPad-Tabulator, BF-69); „c/o Hanserautisch“ in Absenderzeile und `{Anschrift}`; gemeinsamer Kopf `hanserautisch_kopf` (Logo + blau/roter Balken) fuer Einwilligung, Mahnungen, Standard-Layout von Angebot/Auftrag/Rechnung und Anlage Stundenzettel (Fensterposition der Anschrift unveraendert; Stundenzettel-Firmenname und Summenzeile korrigiert, BF-68); im Formular „Ansprechpartner des Kunden laden“, Haken „Als Kontakt beim Kunden speichern“, fehlende Mail/Telefon werden am Kontakt ergaenzt, Vorschlag aus der letzten Einwilligung derselben Person (`GET /api/crm/einwilligungen/person`). Cache app-v2.js v127.
+- **Warum:** CEO 2026-10-08: Tabulator am iPad, Kontakt am Kunden, c/o und Kopf wie bei den anderen Belegen -- Go F1-F3, Variante A, Mahnungen auch.
+- **Betroffen:** `orchestrator/core/beleg_pdf.py`, `einwilligungen.py`, `projektabrechnung.py`, `mahnungen.py`, `angebote.py`, `beauftragung.py`, `rechnungen.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/index-v2.html`, `tests/test_einwilligungen.py`, `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`
+
 ## [2026-10-08 21:52] — Claude Code
 - **Was:** Deploy „Kopie an die Person beim Speichern“ geprueft: NAS liefert app-v2.js v126 mit Haken `ew-kopie`/`kopie_senden`, Einwilligungs-API antwortet (darf_senden=true). Kein Versand im Test ausgeloest.
 - **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.

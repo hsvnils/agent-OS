@@ -600,7 +600,7 @@ class AngebotStore:
         schluss = a.get("schluss") or ("Wir freuen uns auf Ihre Rückmeldung.\n\nMit freundlichen Grüßen\n"
                                        + (firmendaten.get("inhaber") or firmendaten.get("firma") or ""))
         return beleg_pdf(
-            art="Angebot", nummer=a["nummer"], firma=firmendaten, empfaenger=empfaenger,
+            art="Angebot", nummer=a["nummer"], firma=firmendaten, logo=self.bh.dir / "logo.jpg", empfaenger=empfaenger,
             infos=[("Datum", datum_de(a["datum"])), ("Gültig bis", datum_de(a["gueltig_bis"])),
                    ("Kundennummer", a["firma"]), ("Ansprechpartner", a.get("ansprechpartner", ""))]
                   + ([("Version", str(a["fassung"]))] if int(a.get("fassung") or 1) > 1 else []),

@@ -383,7 +383,7 @@ class AuftragBuch:
                 zeige_kalkulation=False, zeige_kennzahlen=False, gruppen=list(gruppen.values()), summen=a["summen"],
                 zuschlag_liste=None, fuss_zusatz=" ".join(hinweise[1:]))
         return beleg_pdf(
-            art="Auftragsbestätigung", nummer=a["nummer"], firma=firmendaten, empfaenger=_empfaenger(f, ap),
+            art="Auftragsbestätigung", nummer=a["nummer"], firma=firmendaten, logo=self.bh.dir / "logo.jpg", empfaenger=_empfaenger(f, ap),
             infos=[("Datum", datum_de(a["datum"]))] + ([("Angebot", a["angebot"])] if a.get("angebot") else []) + [("Kundennummer", a["firma"]),
                    ("Leistung", zeitraum)] + ([("Version", str(a["fassung"]))] if int(a.get("fassung") or 1) > 1 else []),
             einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einleitung, positionen=[x | pdf_posten_standard(x) for x in a["positionen"]],

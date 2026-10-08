@@ -89,6 +89,17 @@ Personendaten per Tastatur, Unterschriftsfeld fuer den Apple Pencil.“
 - Nachtrag (CEO 2026-10-08): Haken „✉️ Kopie an die Person senden“ im Formular (erscheint mit der Mailadresse, bei gueltiger
   Adresse vorbelegt) -> beim Speichern geht die Kopie mit dem Textbaustein direkt raus; Versandfehler blockieren das
   Speichern nie (Hinweis + spaeter „✉️ Kopie …“); nur mit Modul Finanzen.
+- Nachtrag F1-F3 (CEO 2026-10-08, Go, Variante A):
+  - F1: Geburtsdatum als Textfeld TT.MM.JJJJ (iPad-Tabulator, BF-69), Return springt ins naechste Feld; „c/o Hanserautisch“
+    in der Absenderzeile und im Platzhalter `{Anschrift}`.
+  - F2: gemeinsamer Hanserautisch-Kopf (Logo + blau/roter Balken, `beleg_pdf.hanserautisch_kopf`) fuer Einwilligung,
+    Mahnungen, Angebot/Auftrag/Rechnung im Standard-Layout und Anlage Stundenzettel; das Anschriftfeld der Briefe bleibt
+    bei 45 mm (Fensterkuvert). Interne Auswertungen (EUeR, Jahresabschluss, CLO-Pruefbericht) bleiben ohne Kopf.
+  - F3: „Ansprechpartner des Kunden laden“ (fuellt Name/Mail/Telefon) und Haken „Als Kontakt beim Kunden speichern“
+    (Rolle „Mitwirkende/r“, kein Doppel bei gleichem Namen); fehlende Mail/Telefon werden am Kontakt ergaenzt, nie
+    ueberschrieben. Geburtsdatum und Privatanschrift gehen nie in den Kundenstamm (Kette, nicht loeschbar) -- stattdessen
+    schlaegt das Formular sie aus der letzten nicht widerrufenen Einwilligung derselben Person vor.
+  - Tests `test_einwilligungen.py` 8-10 (Gegenproben rot), Browser Rechner/iPad/iPhone.
 
 ## Nicht-Scope
 

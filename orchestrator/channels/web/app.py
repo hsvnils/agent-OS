@@ -2295,15 +2295,17 @@ def einwilligungen_liste(nummer: str, request: Request):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Auftragsnummer")
     fd = _firmendaten() or {}
     kunde = (kunden_store.firma(a["firma"]) or {}).get("name", "")
-    from ...core.einwilligungen import KONTAKT_STANDARD
+    from ...core.einwilligungen import KONTAKT_STANDARD, firmen_anschrift
     werte = {"Auftragnehmer": fd.get("firma") or "Hanserautisch", "Kunde": kunde or "dem Auftraggeber",
              "Projekt": a.get("titel") or a["nummer"], "Ort": fd.get("ort", ""), "Kontakt": fd.get("mail") or KONTAKT_STANDARD,
-             "Anschrift": ", ".join(x for x in (fd.get("strasse"), " ".join(x for x in (fd.get("plz"), fd.get("ort")) if x)) if x)}
+             "Anschrift": firmen_anschrift(fd)}
     liste = [{k: x.get(k) for k in ("id", "ts", "datum", "person", "alter", "minderjaehrig", "eltern_name", "zwecke",
                                     "vorlage_version", "versendet", "widerruf")} for x in _einwilligungen().liste(a["nummer"])]
     return {"einwilligungen": liste, "vorlage": _einwilligung_vorlage(), "kunde": kunde, "projekt": a.get("titel") or a["nummer"],
             "ort": fd.get("ort", ""), "heute": jetzt_iso()[:10], "standard_zwecke": list(STANDARD_ZWECKE),
             "zwecke": {k: _fuellen(v, werte) for k, v in ZWECKE.items()}, "darf_senden": _darf_versenden(request), "werte": werte,
+            "ansprechpartner": [{k: x.get(k, "") for k in ("nummer", "vorname", "nachname", "mail", "telefon", "rolle")}
+                                for x in (kunden_store.firma(a["firma"]) or {}).get("ansprechpartner_liste", []) if x.get("aktiv")],
             "firmendaten": bool(fd)}
 
 
@@ -2319,8 +2321,11 @@ async def einwilligung_erteilen(nummer: str, request: Request):
             raise KeyError(nummer)
         kunde = (kunden_store.firma(a["firma"]) or {}).get("name", "")
         out = _einwilligungen().erteilen(a, body, vorlage=_einwilligung_vorlage(), firmendaten=_firmendaten() or {},
-                                         kunde=kunde, von=_von(request),
+                                         kunde=kunde, von=_von(request), logo=kunden_store.bh.dir / "logo.jpg",
                                          heute=__import__("datetime").date.fromisoformat(jetzt_iso()[:10]))
+        kontakt = _ew_kontakt(a, body, _von(request))                      # Person am Kunden (Variante A)
+        if kontakt:
+            out["kontakt"] = kontakt
         an = str((body.get("person") or {}).get("mail") or "").strip()
         if body.get("kopie_senden") and an and _darf_versenden(request):   # Haken „Kopie an die Person senden“
             try:                                                           # Versandfehler blockieren das Speichern nie
@@ -2330,6 +2335,43 @@ async def einwilligung_erteilen(nummer: str, request: Request):
                 out["kopie"] = {"ok": False, "an": an, "hinweis": str(exc)}
         return out
     return _kunden_aktion(tun)
+
+
+def _ew_kontakt(a: dict, body: dict, von: str) -> dict | None:
+    """Person als Ansprechpartner am Kunden (CEO 2026-10-08, Variante A): geladener Kontakt bekommt fehlende Mail/
+    Telefon ergaenzt, sonst auf Wunsch neu angelegt (Rolle „Mitwirkende/r“). Geburtsdatum und Privatanschrift gehen
+    NIE in den Kundenstamm (Kette, nicht loeschbar) -- sie bleiben nur bei der Einwilligung. Fehler blockieren nie."""
+    p = body.get("person") or {}
+    ap_nr = str(body.get("ansprechpartner") or "").strip().upper()
+    if not ap_nr and not body.get("als_kontakt"):
+        return None
+    name = lambda x: (str(x.get("vorname") or "").strip().lower(), str(x.get("nachname") or "").strip().lower())
+    try:
+        aps = (kunden_store.firma(a["firma"]) or {}).get("ansprechpartner_liste", [])
+        ap = next((x for x in aps if x.get("nummer") == ap_nr), None) if ap_nr else \
+            next((x for x in aps if name(x) == name(p)), None)                  # gleicher Name -> kein Doppel
+        if ap is None and ap_nr:
+            raise KeyError(f"Ansprechpartner {ap_nr} gehört nicht zu diesem Kunden.")
+        neu = {k: str(p.get(k) or "").strip() for k in ("mail", "telefon")}
+        if ap is None:
+            r = kunden_store.ansprechpartner_anlegen(a["firma"], {"vorname": str(p.get("vorname") or "").strip(),
+                                                                  "nachname": str(p.get("nachname") or "").strip(),
+                                                                  "rolle": "Mitwirkende/r"} | {k: v for k, v in neu.items() if v}, von=von)
+            return {"ok": True, "nummer": r["nummer"], "angelegt": True, "ergaenzt": []}
+        ergaenzt = {k: v for k, v in neu.items() if v and not ap.get(k)}
+        if ergaenzt:
+            kunden_store.ansprechpartner_aendern(ap["nummer"], ergaenzt, von=von)
+        return {"ok": True, "nummer": ap["nummer"], "angelegt": False, "ergaenzt": sorted(ergaenzt)}
+    except (KeyError, ValueError) as exc:
+        return {"ok": False, "hinweis": str(exc).strip("'\"") or "Kontakt nicht gefunden"}
+
+
+@app.get("/api/crm/einwilligungen/person")
+def einwilligung_person(request: Request, vorname: str = "", nachname: str = "", mail: str = ""):
+    """Vorschlag aus der letzten Einwilligung derselben Person (Formular: nichts doppelt tippen)."""
+    if not _darf_einwilligung(request):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "keine Berechtigung")
+    return {"person": _einwilligungen().letzte_person(vorname=vorname, nachname=nachname, mail=mail)}
 
 
 @app.get("/api/crm/einwilligungen/{eid}/pdf")
