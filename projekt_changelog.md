@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-08 21:52] — Claude Code
+- **Was:** Deploy „Kopie an die Person beim Speichern“ geprueft: NAS liefert app-v2.js v126 mit Haken `ew-kopie`/`kopie_senden`, Einwilligungs-API antwortet (darf_senden=true). Kein Versand im Test ausgeloest.
+- **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-08 21:02] — Claude Code
 - **Was:** Einwilligung: Haken „Kopie an die Person senden“ im Formular; beim Speichern geht die PDF-Kopie mit dem Textbaustein „Einwilligung (Kopie)“ direkt an die eingetragene Mailadresse (aus luna@), Ergebnis in der Rueckmeldung; Fehler blockieren das Speichern nicht. Versand-Logik gemeinsam mit „✉️ Kopie …“ (`_ew_senden`). Test mit Gegenprobe. Cache app-v2.js v126.
 - **Warum:** CEO 2026-10-08: Mailadresse eintragen, Haken setzen, beim Speichern automatisch verschicken -- Go.
