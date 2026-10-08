@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-08 11:28] — Claude Code
+- **Was:** Vertragswerk: CLO-Ueberarbeitung (Pruefbericht vom 05.10.2026) fuer alle vier Vorlagen als Version 2 (Entwurf) angelegt -- AGB (+ § 15 KI-Einsatz, 4 Paragraphen umformuliert), Kooperationsvertrag (+ § 12 KI-Kennzeichnung, + § 13 Musik-/Drittrechte, 5 umformuliert), Nutzungsrechte (+ § 7 Werbekennzeichnung, 4 umformuliert), NDA (1 umformuliert). Version 1 bleibt; alle Fassungen Entwurf, anwaltliche Pruefung erforderlich (CEO-Tor Recht: nichts in Kraft gesetzt).
+- **Warum:** CEO 2026-10-08: „Bitte uebernimm alle deine Vorschlaege“; dazu Hinweis „immer Hochkant-PDF“ (alle LUNA-PDFs sind bereits A4 hochkant).
+- **Betroffen:** `buchhaltung/log.jsonl` (NAS, Vertragsvorlagen)
+
 ## [2026-10-07 17:58] — Claude Code
 - **Was:** Deploy KOPFZEILE K1-K5 live geprueft: v124/v63 ausgeliefert, Suchfeld in der Kopfzeile, Theme-Knopf entfernt, Portrait wird geladen; echte Suche „hamb“ liefert 7 Treffer (u. a. KSports GmbH (Derbe-Hamburg), Athleticum am Volkspark).
 - **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt.
