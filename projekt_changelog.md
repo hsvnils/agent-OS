@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-08 22:30] — Claude Code
+- **Was:** Deploy Einwilligung F1-F3 geprueft: NAS liefert app-v2.js v127 (Ansprechpartner-Auswahl, Geburtsdatum-Textfeld, Kontakt-Haken), Einwilligungs-API liefert die Ansprechpartner des Kunden und die Anschrift mit „c/o“, `GET /api/crm/einwilligungen/person` antwortet. Nichts gespeichert oder versendet.
+- **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-08 22:15] — Claude Code
 - **Was:** Einwilligung F1-F3 + einheitlicher Hanserautisch-Kopf: Geburtsdatum als Textfeld TT.MM.JJJJ und Return springt weiter (iPad-Tabulator, BF-69); „c/o Hanserautisch“ in Absenderzeile und `{Anschrift}`; gemeinsamer Kopf `hanserautisch_kopf` (Logo + blau/roter Balken) fuer Einwilligung, Mahnungen, Standard-Layout von Angebot/Auftrag/Rechnung und Anlage Stundenzettel (Fensterposition der Anschrift unveraendert; Stundenzettel-Firmenname und Summenzeile korrigiert, BF-68); im Formular „Ansprechpartner des Kunden laden“, Haken „Als Kontakt beim Kunden speichern“, fehlende Mail/Telefon werden am Kontakt ergaenzt, Vorschlag aus der letzten Einwilligung derselben Person (`GET /api/crm/einwilligungen/person`). Cache app-v2.js v127.
 - **Warum:** CEO 2026-10-08: Tabulator am iPad, Kontakt am Kunden, c/o und Kopf wie bei den anderen Belegen -- Go F1-F3, Variante A, Mahnungen auch.
