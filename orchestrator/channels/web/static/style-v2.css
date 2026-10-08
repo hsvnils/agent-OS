@@ -1147,3 +1147,19 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
   .v2-vorschlaege { position: fixed; left: 10px; right: 10px; top: calc(62px + env(safe-area-inset-top, 0px)); min-width: 0; }
 }
 @media (pointer: coarse) { .v2-kopfsuche input { height: 44px; font-size: 16px; } }
+/* EINWILLIGUNG_AUFNAHMEN E2/E3: Formular mit Unterschriftsfeld (Apple Pencil) */
+.v2-ew-form { display: flex; flex-direction: column; gap: 10px; max-width: 860px; margin: 0 auto; }
+.v2-ew-kopf { display: flex; flex-direction: column; gap: 2px; } .v2-ew-kopf b { font-size: 18px; } .v2-ew-kopf small { color: var(--v2-muted); }
+.v2-ew-text > div { max-height: 38vh; overflow-y: auto; padding: 4px 14px 8px; border: 1px solid var(--v2-line-soft); border-radius: 12px; background: var(--v2-bg1); }
+.v2-ew-text h4 { margin: 10px 0 2px; font-size: 13px; } .v2-ew-text p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--v2-fg); }
+.v2-ew-zwecke { display: grid; gap: 6px; } .v2-ew-zwecke .v2-modlbl { align-items: flex-start; line-height: 1.4; }
+.v2-ew-form h3 { margin: 10px 0 2px; }
+.v2-sig canvas { display: block; width: 100%; height: 190px; border: 2px dashed var(--v2-line); border-radius: 14px; background: #fff;
+  touch-action: none; cursor: crosshair; -webkit-user-select: none; user-select: none; }
+.v2-sig-fuss { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+.v2-sig-fuss small { color: var(--v2-muted); }
+.v2-ew-zeile { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--v2-line-soft); }
+.v2-ew-zeile:last-of-type { border-bottom: 0; } .v2-ew-zeile .grow { flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column; }
+.v2-ew-zeile small { color: var(--v2-muted); font-size: 12px; } .v2-ew-zeile.widerrufen b { text-decoration: line-through; color: var(--v2-muted); }
+.v2-ew-akt { display: flex; gap: 6px; flex-wrap: wrap; } .v2-ew-hinweis { display: block; margin-top: 6px; }
+@media (max-width: 640px) { .v2-sig canvas { height: 160px; } }

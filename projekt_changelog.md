@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-08 11:42] — Claude Code
+- **Was:** EINWILLIGUNG_AUFNAHMEN E1-E3 gebaut: Vorlage „Einwilligung in Bild-, Video- und Tonaufnahmen“ im Vertragswerk (Entwurf); Aufnahme je Person am Auftrag mit Unterschriftsfeld fuer den Apple Pencil, PDF A4 hochkant je Person, Ablage nur NAS (`einwilligungen/`, Deploy-Schutz + Backup), Liste am Auftrag; Kopie per Mail (Textbaustein, nur per Klick) und Widerruf mit Warnung bei den Postings. Neue Endpunkte unter `/api/crm/auftraege/<nr>/einwilligungen` und `/api/crm/einwilligungen/<id>/…`. Cache app-v2.js v125, style-v2.css v64.
+- **Warum:** CEO 2026-10-08: Erlaubnis fuer Videoaufnahmen von Personen am iPad einholen -- Go E1-E3, Ablage nur NAS, anwaltliche Pruefung vor dem ersten Einsatz.
+- **Betroffen:** `orchestrator/core/einwilligungen.py`, `core/vertraege.py`, `core/vertrag_entwuerfe.py`, `core/textbausteine.py`, `channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `tests/test_einwilligungen.py`, `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`, `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-08 11:32] — Claude Code
 - **Was:** Roadmap `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md` angelegt (geplant) nach Web-Recherche (KUG/DSGVO, Minderjaehrige, Tablet-Unterschrift als Nachweis): E1 Vorlage im Vertragswerk, E2 Erfassung mit Apple-Pencil-Unterschrift und PDF je Person am Auftrag, E3 Kopie und Widerruf.
 - **Warum:** CEO 2026-10-08: Erlaubnis fuer Videoaufnahmen von Personen am iPad einholen.

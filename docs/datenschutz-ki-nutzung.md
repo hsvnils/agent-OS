@@ -96,3 +96,12 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
   (Gratis-Stufe, kein Training im EWR). Gesendet werden nur die Screenshots des einen Postings; gespeichert wird erst nach
   Bestaetigung des CEO. Ohne Gemini-Schluessel oder bei Fehlern bleibt das Formular in LUNA-OS (Eingabe von Hand).
 - **2026-10-05: CLO-Pruef-Lauf mit Gemini (CLO_AUSBAU C4).** Es gingen nur Vertragsvorlagen ohne Kundendaten an Google; gleiche Einordnung wie 5.1.
+
+## 7. Nachtrag 2026-10-08: Einwilligungen in Bild-/Videoaufnahmen
+
+- Vor einem Dreh erfasst der CEO am iPad je Person Name, Anschrift, optional Geburtsdatum/Kontakt und die Unterschrift
+  (EINWILLIGUNG_AUFNAHMEN E2). Daraus entsteht eine PDF; das Unterschriftsbild steckt nur in der PDF.
+- Ablage **nur auf der NAS** (`einwilligungen/`, mit Backup): nicht in der Buchhaltungs-Kette, nicht in LUNAs Google
+  Drive, keine Verarbeitung durch KI-Modelle (Gemini/Claude/lokal) -- CEO-Entscheidung 2026-10-08.
+- Die Kopie an die Person geht nur per Klick aus `luna@hanserautisch.de` (All-Inkl).
+- Die Vorlage ist ein Entwurf; vor dem ersten echten Einsatz anwaltlich pruefen lassen.

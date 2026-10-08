@@ -47,6 +47,7 @@ FILES=(
   agenten_nutzung/log.jsonl
   backoffice/log.jsonl
   buchhaltung/log.jsonl
+  einwilligungen/log.jsonl
   # Briefkopf + Bankverbindung (nur NAS, nie im Git; kein JSONL -> nicht im Zeilen-Check)
   buchhaltung/firmendaten.json
   buchhaltung/katalog.json       # Leistungskatalog/Preise (Etappe 3b; Aenderungen zusaetzlich in der Kette)
@@ -69,6 +70,9 @@ ssh -n -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH} && tar czf - \$(for f in ${RE
 ssh -n -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH} && [ -d buchhaltung/belege ] && tar czf - buchhaltung/belege 2>/dev/null" \
   | tar xzf - -C "$DEST" 2>/dev/null || true
 BELEGE=$(find "$DEST/buchhaltung/belege" -type f 2>/dev/null | wc -l | tr -d ' ')
+# Einwilligungen in Aufnahmen (EINWILLIGUNG_AUFNAHMEN E2): unterschriebene PDFs je Person -- nie geloescht, nur NAS + Backup
+ssh -n -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH} && [ -d einwilligungen/pdf ] && tar czf - einwilligungen/pdf 2>/dev/null" \
+  | tar xzf - -C "$DEST" 2>/dev/null || true
 
 FILES_OK=$(find "$DEST" -type f -name '*.jsonl' 2>/dev/null | wc -l | tr -d ' ')
 LINES=$(find "$DEST" -type f -name '*.jsonl' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ')

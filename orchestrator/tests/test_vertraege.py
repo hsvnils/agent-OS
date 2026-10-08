@@ -52,7 +52,7 @@ class TestApi(ApiBasis):
     def test_a1_endpunkte(self):
         self.assertTrue(self.c.post("/api/crm/vertraege/alle/entwuerfe", json={}).json()["ok"])
         l = self.c.get("/api/crm/vertraege").json()["vorlagen"]
-        self.assertEqual(len(l), 4)
+        self.assertEqual(len(l), 5)                                            # + Einwilligung (EINWILLIGUNG_AUFNAHMEN E1)
         d = self.c.get("/api/crm/vertraege/agb").json()["vorlage"]
         self.assertEqual(d["versionen"][0]["status"], "entwurf")
         r = self.c.post("/api/crm/vertraege/agb/status", json={"version": 1, "status": "geprueft", "pruefer": "RAin X",

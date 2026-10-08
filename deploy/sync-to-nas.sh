@@ -77,6 +77,7 @@ TAR_EXCLUDES=(
   --exclude='./crm'                 # CRM-Store + Sync-Cursor (Live-Daten, 2026-09-25 nachgezogen, BF-03)
   --exclude='./content_ops'         # Content-Caches (schreibt die Web-App auf der NAS)
   --exclude='./buchhaltung'         # Buchhaltung: Hash-Kette + Belege (GoBD, nie ueberschreiben)
+  --exclude='./einwilligungen'      # Einwilligungen in Aufnahmen (Personendaten + unterschriebene PDFs, nur NAS)
   --exclude='./nutzung'             # Nutzungs-Log (Leistungsbericht)
   --exclude='./agenten_nutzung'     # Fachagenten-Anfragen (AGENTEN_AUSBAU A1, Live-Daten)
   --exclude='./backoffice/log.jsonl'  # Backoffice-Auftraege (Live-Daten; der Code-Ordner backoffice/ wird deployt)

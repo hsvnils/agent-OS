@@ -1709,6 +1709,7 @@ async function abDetail(nr, meldung, fehler) {
   const schlussDa = reListe.some(r => (r.art || "rechnung") === "rechnung" && r.status !== "storniert");
   if (a.status !== "storniert" && darf("rechnungen") && a.vorkasse_cent && !vkDa && !schlussDa) aktionen += `<button class="v2-btn pri" data-act="ab-vorkasse" data-id="${esc(nr)}">💶 Vorkasse-Rechnung erstellen</button>`;
   if (a.status !== "storniert" && darf("rechnungen")) aktionen += `<button class="v2-btn ${a.vorkasse_cent && !vkDa ? "" : "pri"}" data-act="ab-rechnung" data-id="${esc(nr)}">🧾 ${vkDa ? "Schlussrechnung" : "Rechnung"} erstellen</button>`;
+  if (a.status !== "storniert") aktionen += `<button class="v2-btn" data-act="ew-neu" data-id="${esc(nr)}" title="Einwilligung einer Person zu Video-/Bildaufnahmen – am iPad mit dem Apple Pencil unterschreiben">✍️ Einwilligung aufnehmen</button>`;
   if (a.status === "beauftragt") aktionen += `<button class="v2-btn ok" data-act="ab-geliefert-form" data-id="${esc(nr)}">📦 Als geliefert markieren …</button><button class="v2-btn" data-act="ab-status" data-id="${esc(nr)}" data-val="storniert">Stornieren</button>`;
   if (a.status === "erledigt") aktionen += `<button class="v2-btn" data-act="ab-wieder-offen" data-id="${esc(nr)}" title="Für eine Nachlieferung – danach ist wieder Zeit buchbar">↺ Wieder öffnen …</button>`;
   if ((a.pdfs || []).length) aktionen += `<a class="v2-btn" href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf?archiv=1" target="_blank" rel="noopener">📎 Abgelegtes PDF</a>`;
@@ -1729,9 +1730,10 @@ async function abDetail(nr, meldung, fehler) {
       <label class="v2-feld"><small>Notiz (steht als Anmerkung auf der Bestätigung)</small><textarea id="abe-notiz" rows="2" class="v2-inp" ${bearbeitbar ? "" : "disabled"}>${esc(a.notiz || "")}</textarea></label>
       ${bearbeitbar ? `<button class="v2-btn" data-act="ab-speichern" data-id="${esc(nr)}">Speichern</button><div id="abe-msg" class="v2-msg"></div>` : ""}</div>`;
   const seite = blBox("Status", status) + `<section class="v2-bl-box" id="bv-mini"></section>` + blBox("Leistung &amp; Anmerkung", leistung)
-    + (a.status !== "storniert" ? blBox("Lieferungen", `<div id="ab-lief-box"><div class="v2-empty">Lade…</div></div>`) : "") + blBox("Verlauf", verlauf);
+    + (a.status !== "storniert" ? blBox("Lieferungen", `<div id="ab-lief-box"><div class="v2-empty">Lade…</div></div>`) : "")
+    + blBox("✍️ Einwilligungen", `<div id="ew-box"><div class="v2-empty">Lade…</div></div>`) + blBox("Verlauf", verlauf);
   const intern = `<div class="v2-beleg-intern"><div class="v2-intern-kopf">🔒 Intern – nie auf dem Beleg</div>
-    <div class="v2-intern-raster"><div data-tabteil="postings"><div id="ab-post-box"></div><div id="ab-kond-box"></div></div>
+    <div class="v2-intern-raster"><div data-tabteil="postings"><div id="ew-warn"></div><div id="ab-post-box"></div><div id="ab-kond-box"></div></div>
     ${darf("rechnungen") ? `<div data-tabteil="zeiten"><div id="ab-zeit-box"></div></div>` : ""}
     ${a.status !== "storniert" ? `<div data-tabteil="bericht"><div id="ab-bericht-box"></div></div>` : ""}</div></div>`;
   openModal(`${nr} · ${d.firma.name || a.firma}`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="white-space:pre-wrap">${esc(meldung)}</div>` : ""}
@@ -1742,7 +1744,115 @@ async function abDetail(nr, meldung, fehler) {
   ["#an-gueltig", "#an-nachfassen", "#an-praes", "#an-zeige-kalk", "#an-zeige-kz", "#an-tkp-zeigen", "#an-omr-zeigen", "#an-schluss"].forEach(sel => {   // nur Angebot
     const f = document.querySelector("#v2-modal .v2-an-editor " + sel); const l = f && f.closest("label"); if (l) l.hidden = true; });
   bvMini(nr); KZ.tab = "briefing"; konzeptLaden(nr);
-  abZeitLaden(nr); abLieferungen(nr); abPostings(nr, a.status); abBericht(nr);
+  abZeitLaden(nr); abLieferungen(nr); abPostings(nr, a.status); abBericht(nr); ewLaden(nr);
+}
+/* EINWILLIGUNG_AUFNAHMEN E2/E3: Einwilligung je Person am iPad (Apple Pencil), PDF am Auftrag, Kopie + Widerruf */
+let EW = null;
+async function ewLaden(nr) {
+  const box = $("#ew-box"); if (!box) return;
+  const d = await jget(`/api/crm/auftraege/${encodeURIComponent(nr)}/einwilligungen`);
+  if (!d) { box.innerHTML = emptyRow("Nicht verfügbar."); return; }
+  EW = { nr, d };
+  const zeilen = d.einwilligungen.slice().reverse().map(x => {
+    const n = `${x.person.vorname} ${x.person.nachname}`, w = x.widerruf;
+    return `<div class="v2-ew-zeile${w ? " widerrufen" : ""}"><div class="grow"><b>${esc(n)}</b>
+      <small>${esc(datumDe(x.datum))}${x.minderjaehrig ? ` · minderjährig (${esc(String(x.alter))}) – ${esc(x.eltern_name)}` : ""}${(x.versendet || []).length ? " · ✉️ Kopie gesendet" : ""}${w ? ` · ⛔ widerrufen am ${esc(datumDe(w.datum))} (${esc(w.weg)})` : ""}</small></div>
+      <div class="v2-ew-akt"><a class="v2-btn sm" href="/api/crm/einwilligungen/${encodeURIComponent(x.id)}/pdf" target="_blank" rel="noopener">📄 PDF</a>
+      ${!w && d.darf_senden ? `<button class="v2-btn sm" data-act="ew-senden" data-id="${esc(x.id)}">✉️ Kopie …</button>` : ""}
+      ${!w ? `<button class="v2-btn sm" data-act="ew-widerruf" data-id="${esc(x.id)}">Widerruf …</button>` : ""}</div></div>`; }).join("");
+  box.innerHTML = (zeilen || `<small class="v2-sub">Noch keine Einwilligung. Vor dem Dreh je Person „✍️ Einwilligung aufnehmen“.</small>`)
+    + (d.vorlage.status !== "geprueft" ? `<small class="v2-sub v2-ew-hinweis">Vorlage Version ${esc(String(d.vorlage.version || "Entwurf"))} – Entwurf, anwaltliche Prüfung vor dem ersten Einsatz.</small>` : "");
+  const wid = d.einwilligungen.filter(x => x.widerruf), warn = $("#ew-warn");
+  if (warn) warn.innerHTML = wid.length ? `<div class="v2-msg err">⛔ Widerrufen: ${wid.map(x => esc(x.person.vorname + " " + x.person.nachname)).join(", ")} – keine neuen Inhalte mit dieser Person veröffentlichen, vorhandene prüfen.</div>` : "";
+}
+function ewAlter(geb) { if (!geb) return null; const g = new Date(geb + "T12:00"), h = new Date(); let a = h.getFullYear() - g.getFullYear(); if (h.getMonth() < g.getMonth() || (h.getMonth() === g.getMonth() && h.getDate() < g.getDate())) a--; return a; }
+function ewFuellen(t, w) { return String(t || "").replace(/\{([A-Za-zÄÖÜäöüß_]+)\}/g, (m, k) => w[k] != null ? w[k] : m); }
+async function ewNeu(nr) {
+  if (!EW || EW.nr !== nr) await ewLaden(nr);
+  const d = EW && EW.d; if (!d) return alert("Einwilligung gerade nicht verfügbar.");
+  const heute = new Date(d.heute + "T12:00").toLocaleDateString("de-DE");
+  const w = { ...(d.werte || {}), Datum: heute };
+  const text = d.vorlage.paragraphen.map(p => `<h4>${esc(p.titel)}</h4><p>${esc(ewFuellen(p.text, w))}</p>`).join("");
+  const feld = (id, l, typ = "text", extra = "") => `<label class="v2-feld"><small>${l}</small><input id="ew-${id}" class="v2-inp" type="${typ}" ${extra}></label>`;
+  openModal(`✍️ Einwilligung · ${nr}`, `<div class="v2-ew-form">
+    <div class="v2-ew-kopf"><b>${esc(d.vorlage.titel)}</b><small>Projekt „${esc(d.projekt)}“ · Auftraggeber ${esc(d.kunde || "–")} · ${esc(heute)}</small></div>
+    <details class="v2-ew-text" open><summary>Text der Einwilligung lesen</summary><div>${text}</div></details>
+    <h3>Ich willige ein in folgende Zwecke</h3><div class="v2-ew-zwecke">${Object.entries(d.zwecke).map(([k, l]) => `<label class="v2-modlbl"><input type="checkbox" class="ew-zweck" value="${esc(k)}" ${d.standard_zwecke.includes(k) ? "checked" : ""}> ${esc(l)}</label>`).join("")}</div>
+    <h3>Person</h3>
+    <div class="v2-an-zeile">${feld("vorname", "Vorname *", "text", 'autocomplete="off" autocapitalize="words"')}${feld("nachname", "Nachname *", "text", 'autocomplete="off" autocapitalize="words"')}${feld("geb", "Geburtsdatum", "date")}</div>
+    <div class="v2-an-zeile">${feld("strasse", "Straße und Nr. *", "text", 'autocomplete="off"')}${feld("plz", "PLZ *", "text", 'inputmode="numeric" autocomplete="off"')}${feld("ort", "Ort *", "text", 'autocomplete="off"')}</div>
+    <div class="v2-an-zeile">${feld("mail", "E-Mail (für die Kopie)", "email", 'autocomplete="off" autocapitalize="off"')}${feld("tel", "Telefon", "tel", 'autocomplete="off"')}${feld("verg", "Vergütung (leer = unentgeltlich)", "text")}</div>
+    <div class="v2-an-zeile">${feld("drehort", "Ort der Aufnahmen", "text", `value="${esc(d.ort || "")}"`)}<label class="v2-feld"><small>Datum</small><input class="v2-inp" value="${esc(heute)}" disabled></label></div>
+    <div id="ew-person-sig"><h3>Unterschrift der Person</h3>${ewPad("ew-sig-person")}</div>
+    <div id="ew-eltern" hidden><h3>Erziehungsberechtigte(r) <small class="v2-sub">Person ist unter 16 Jahre</small></h3>
+      ${feld("eltern", "Name der/des Erziehungsberechtigten *", "text", 'autocomplete="off" autocapitalize="words"')}${ewPad("ew-sig-eltern")}</div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ew-speichern" data-id="${esc(nr)}">✔ Unterschrieben – speichern</button><button class="v2-btn" data-modal-close>Abbrechen</button></div>
+    <div id="ew-msg" class="v2-msg"></div></div>`, true);
+  ewPadAktiv("ew-sig-person"); ewPadAktiv("ew-sig-eltern");
+  $("#ew-geb").addEventListener("change", () => { const a = ewAlter($("#ew-geb").value);
+    $("#ew-eltern").hidden = !(a != null && a < 16); $("#ew-person-sig").hidden = a != null && a < 14;
+    if (!$("#ew-eltern").hidden) ewPadAktiv("ew-sig-eltern", true); });
+}
+function ewPad(id) { return `<div class="v2-sig"><canvas id="${id}" aria-label="Unterschriftsfeld"></canvas><div class="v2-sig-fuss"><small>Mit dem Apple Pencil oder dem Finger unterschreiben</small><button class="v2-btn sm" data-act="ew-sig-neu" data-id="${id}">↺ Neu unterschreiben</button></div></div>`; }
+const EW_PAD = {};
+function ewPadAktiv(id, neu) {
+  const c = document.getElementById(id); if (!c) return;
+  const r = c.getBoundingClientRect(); if (!r.width) return;
+  const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
+  const x = c.getContext("2d"); x.scale(dpr, dpr); x.lineCap = "round"; x.lineJoin = "round"; x.strokeStyle = "#0b1b3a";
+  EW_PAD[id] = { punkte: 0 };
+  if (c.dataset.ok) return; c.dataset.ok = "1";
+  let zieht = false, last = null;
+  const pos = (e) => { const b = c.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+  c.addEventListener("pointerdown", (e) => { e.preventDefault(); c.setPointerCapture(e.pointerId); zieht = true; last = pos(e); });
+  c.addEventListener("pointermove", (e) => { if (!zieht) return; e.preventDefault();
+    const ctx = c.getContext("2d"), p = pos(e), druck = e.pressure && e.pointerType === "pen" ? e.pressure : 0.5;
+    ctx.lineWidth = 1.4 + druck * 2.2; ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
+    last = p; EW_PAD[id].punkte++; });
+  const ende = () => { zieht = false; last = null; };
+  c.addEventListener("pointerup", ende); c.addEventListener("pointercancel", ende); c.addEventListener("pointerleave", ende);
+}
+function ewPadLeeren(id) { const c = document.getElementById(id); if (!c) return; const x = c.getContext("2d"); x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.width, c.height); x.restore(); EW_PAD[id] = { punkte: 0 }; }
+function ewPadBild(id) { const c = document.getElementById(id); return c && (EW_PAD[id] || {}).punkte > 15 ? c.toDataURL("image/png") : ""; }
+async function ewSpeichern(nr) {
+  const v = (k) => ($("#ew-" + k) || {}).value || "";
+  const a = ewAlter(v("geb"));
+  const body = { person: { vorname: v("vorname").trim(), nachname: v("nachname").trim(), strasse: v("strasse").trim(), plz: v("plz").trim(), ort: v("ort").trim(),
+      geburtsdatum: v("geb"), mail: v("mail").trim(), telefon: v("tel").trim() },
+    zwecke: [...document.querySelectorAll(".ew-zweck:checked")].map(x => x.value), verguetung: v("verg").trim(), ort: v("drehort").trim(),
+    unterschrift_person: a != null && a < 14 ? "" : ewPadBild("ew-sig-person"),
+    unterschrift_eltern: a != null && a < 16 ? ewPadBild("ew-sig-eltern") : "", eltern_name: v("eltern").trim() };
+  if (!(a != null && a < 14) && !body.unterschrift_person) return kundenMsg("ew-msg", "Bitte im Feld unterschreiben.", false);
+  if (a != null && a < 16 && !body.unterschrift_eltern) return kundenMsg("ew-msg", "Bitte die/den Erziehungsberechtigte(n) unterschreiben lassen.", false);
+  const b = $('[data-act="ew-speichern"]'); if (b) { b.disabled = true; b.textContent = "⏳ speichert …"; }
+  const r = await jpost(`/api/crm/auftraege/${encodeURIComponent(nr)}/einwilligungen`, body);
+  if (!r || !r.ok) { if (b) { b.disabled = false; b.textContent = "✔ Unterschrieben – speichern"; } return kundenMsg("ew-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false); }
+  FORM_GEAENDERT = false;
+  return abDetail(nr, `Einwilligung von ${body.person.vorname} ${body.person.nachname} gespeichert – die PDF liegt am Auftrag.`);
+}
+async function ewSenden(eid) {
+  const v = await jget(`/api/crm/einwilligungen/${encodeURIComponent(eid)}/versandvorschau`); if (!v) return alert("Vorschau nicht verfügbar.");
+  openModal("✉️ Kopie der Einwilligung senden", `<div class="v2-form"><div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
+    <label class="v2-feld"><small>An *</small><input id="ews-an" type="email" class="v2-inp" value="${esc(v.an)}" placeholder="person@beispiel.de"></label>
+    <label class="v2-feld"><small>Betreff *</small><input id="ews-betreff" class="v2-inp" value="${esc(v.betreff)}"></label>
+    <label class="v2-feld"><small>Text *</small><textarea id="ews-text" class="v2-inp" rows="9">${esc(v.text)}</textarea></label>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ew-senden-jetzt" data-id="${esc(eid)}">✉️ Jetzt senden</button><button class="v2-btn" data-modal-close>Abbrechen</button></div><div id="ews-msg" class="v2-msg"></div></div>`);
+}
+async function ewSendenJetzt(eid) {
+  const an = $("#ews-an").value.trim(); if (!an.includes("@")) return kundenMsg("ews-msg", "Bitte eine gültige Adresse eintragen.", false);
+  if (!confirm(`Kopie der Einwilligung an ${an} senden?`)) return;
+  const r = await jpost(`/api/crm/einwilligungen/${encodeURIComponent(eid)}/senden`, { an, betreff: $("#ews-betreff").value.trim(), text: $("#ews-text").value.trim(), bestaetigt: true });
+  if (!r || !r.ok) return kundenMsg("ews-msg", (r && r.hinweis) || "Senden fehlgeschlagen.", false);
+  return EW ? abDetail(EW.nr, `Kopie an ${r.an} gesendet.`) : closeModal();
+}
+async function ewWiderruf(eid) {
+  const weg = (prompt("Widerruf vermerken – wie kam der Widerruf? (z. B. Mail, Anruf, persönlich)", "Mail") || "").trim(); if (!weg) return;
+  const datum = (prompt("Datum des Widerrufs (JJJJ-MM-TT)", heuteIso()) || "").trim(); if (!datum) return;
+  const notiz = (prompt("Notiz (optional, z. B. welche Inhalte betroffen sind)", "") || "").trim();
+  const r = await jpost(`/api/crm/einwilligungen/${encodeURIComponent(eid)}/widerruf`, { weg, datum, notiz });
+  if (!r || !r.ok) return alert((r && r.hinweis) || "Fehler.");
+  return EW ? abDetail(EW.nr, "Widerruf vermerkt – keine neuen Inhalte mit dieser Person veröffentlichen.") : null;
 }
 // BELEG_BEARBEITBAR B1/B2: Auftrag bis zum Versand im Formular aenderbar; danach „✎ Bearbeiten …“ mit Begruendung
 function abFormUmbauen(nr, a) {
@@ -4138,6 +4248,12 @@ async function handleAct(act, el) {
     case "ab-form-speichern": return abFormSpeichern(id);
     case "ab-entsperren": return abEntsperren(id);
     case "inv-pause": return invPauseSetzen(val === "an");
+    case "ew-neu": return ewNeu(id);
+    case "ew-speichern": return ewSpeichern(id);
+    case "ew-sig-neu": return ewPadLeeren(id);
+    case "ew-senden": return ewSenden(id);
+    case "ew-senden-jetzt": return ewSendenJetzt(id);
+    case "ew-widerruf": return ewWiderruf(id);
     case "theme-setzen": themeSetzen(val); return renderEinstellungen();
     case "avatar-setzen": await setAvatarPref(val); return renderEinstellungen();
     case "anb-filter": ANB_FILTER = val; return renderAnbieter();

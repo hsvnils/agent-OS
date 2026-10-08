@@ -14,7 +14,8 @@ from datetime import date
 from .buchhaltung import Buchhaltung
 
 ARTEN = {"agb": "Allgemeine Geschäftsbedingungen", "kooperation": "Kooperationsvertrag (Content/Influencer)",
-         "nutzungsrechte": "Nutzungsrechte-Vereinbarung", "nda": "Vertraulichkeitsvereinbarung (NDA)"}
+         "nutzungsrechte": "Nutzungsrechte-Vereinbarung", "nda": "Vertraulichkeitsvereinbarung (NDA)",
+         "einwilligung": "Einwilligung in Bild- und Videoaufnahmen"}          # EINWILLIGUNG_AUFNAHMEN E1
 STATUS = ("entwurf", "geprueft", "ausser_kraft")
 STATUS_TEXT = {"entwurf": "Entwurf – anwaltliche Prüfung erforderlich", "geprueft": "geprüft", "ausser_kraft": "außer Kraft"}
 PLATZHALTER = re.compile(r"\{([A-Za-zÄÖÜäöüß_]+)\}")

@@ -1,10 +1,10 @@
 # Roadmap: Einwilligung in Video-/Bildaufnahmen -- Vorlage und Unterschrift am iPad
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-08
 - Arbeitsbranch: `ai/einwilligung-aufnahmen`
 - Basiscommit: `cff22ad`
-- Naechster Schritt: CEO-Entscheidungen (Ablage, Einsatz vor anwaltlicher Pruefung) und Go je Etappe.
+- Naechster Schritt: E1-E3 gebaut (2026-10-08) -- Deploy, Vorlage Version 1 im Vertragswerk anlegen, Probe am echten iPad durch den CEO, anwaltliche Pruefung vor dem ersten Einsatz.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -38,7 +38,7 @@ Personendaten per Tastatur, Unterschriftsfeld fuer den Apple Pencil.“
 
 ## Etappe E1: Vorlage „Einwilligung in Bild- und Videoaufnahmen“ im Vertragswerk
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: neue Vorlagenart `einwilligung` im Vertragswerk (Version 1, Entwurf, anwaltliche Pruefung erforderlich)
   mit den Inhalten oben, ankreuzbaren Zwecken/Kanaelen, Abschnitt Minderjaehrige und Datenschutzhinweisen; optionaler
   Abschnitt Verguetung (Model Release). Kurz und auf einer Seite lesbar.
@@ -46,7 +46,7 @@ Personendaten per Tastatur, Unterschriftsfeld fuer den Apple Pencil.“
 
 ## Etappe E2: Einwilligung am iPad aufnehmen und am Auftrag ablegen
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: im Auftrag Knopf „✍️ Einwilligung aufnehmen“ -> ganzseitiges Formular (iPad quer/hoch und iPhone):
   Vorlagentext, Personendaten per Tastatur (Name, Anschrift, Geburtsdatum, optional Mail/Telefon), Zwecke vorbelegt aus
   dem Auftrag (anpassbar), Datum = Tag des Oeffnens, **Unterschriftsfeld fuer den Apple Pencil** (auch Finger/Maus,
@@ -59,7 +59,7 @@ Personendaten per Tastatur, Unterschriftsfeld fuer den Apple Pencil.“
 
 ## Etappe E3: Kopie fuer die Person und Widerruf
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Kopie der PDF per Mail an die Person (nur per Klick, aus luna@, Textbaustein „Einwilligung“);
   Widerruf vermerken (Datum, Weg) -> am Auftrag und bei den Postings sichtbar („Person X hat widerrufen – nicht mehr
   verwenden“), Erinnerung, betroffene Inhalte zu pruefen.
@@ -71,6 +71,21 @@ Personendaten per Tastatur, Unterschriftsfeld fuer den Apple Pencil.“
    Dritter so wenig wie moeglich verteilen).
 2. **Einsatz:** Das Formular ist ein Entwurf. Empfehlung -- vor dem ersten echten Einsatz von der Anwaeltin pruefen
    lassen (wie die anderen Vorlagen; CEO-Tor Recht).
+
+## Umsetzung (2026-10-08, Go CEO, beide Empfehlungen angenommen)
+
+- E1: Vorlagenart `einwilligung` im Vertragswerk; Entwurf (8 Paragraphen: Gegenstand, Zwecke, Umfang/Bearbeitung inkl.
+  keine KI-Veraenderung ohne Zustimmung, Dauer/Widerruf, Verguetung, Freiwilligkeit, Minderjaehrige, Datenschutzhinweise)
+  in `core/vertrag_entwuerfe.py`; Zwecke zum Ankreuzen in `core/einwilligungen.ZWECKE`.
+- E2: `core/einwilligungen.py` (EinwilligungStore, PDF A4 hochkant mit Vorlagentext, Zwecken, Personendaten,
+  Unterschrift(en), Nachweis-Fuss mit Vorlagenversion/Zeitstempel, SHA-256 im Log); Ablage `einwilligungen/` nur NAS
+  (vom Deploy ausgenommen, im Backup: Log + PDFs), nicht Kette/Drive. Endpunkte `/api/crm/auftraege/<nr>/einwilligungen`
+  (Liste/Anlegen, Modul crm), `/api/crm/einwilligungen/<id>/pdf`. Oberflaeche: Knopf „✍️ Einwilligung aufnehmen“ im
+  Auftrag, ganzseitiges Formular mit Unterschriftsfeld (Pointer Events, Apple-Pencil-Druck, „Neu unterschreiben“),
+  Erziehungsberechtigte ab Geburtsdatum unter 16 (unter 14 nur Eltern), Liste „Einwilligungen“ am Auftrag.
+- E3: Kopie per Mail (Textbaustein „Einwilligung (Kopie)“, nur per Klick, Modul finanzen), Widerruf vermerken
+  (Datum, Weg, Notiz) -> Liste durchgestrichen + rote Warnung im Reiter Postings.
+- Tests `test_einwilligungen.py` (6, Gegenprobe Minderjaehrige rot), Browser iPad quer/hoch, iPhone, Rechner.
 
 ## Nicht-Scope
 

@@ -200,6 +200,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `watch/log.jsonl` (Notbremse, `last_run`) | Bot | Bot, Web | ja | ja |
 | `brain/log.jsonl` | Bot, Web | dito | ja | ja |
 | `finance/kosten-log.jsonl` | Bot (Kostenlauf 03:00) | Bot, Web | ja | ja |
+| `einwilligungen/log.jsonl` + `einwilligungen/pdf/<jahr>/EW-….pdf` (Einwilligungen in Bild-/Videoaufnahmen je Auftrag: Personendaten, Zwecke, Vorlagenversion, SHA-256; Unterschrift nur in der PDF; EINWILLIGUNG_AUFNAHMEN E2/E3) | Web (`POST /api/crm/auftraege/<nr>/einwilligungen`, `/api/crm/einwilligungen/<id>/widerruf`, Modul crm) | Web (Liste/PDF am Auftrag; Kopie per Mail an die Person nur per Klick, Modul finanzen, `…/senden`) | ja (Ordner vom Deploy ausgenommen) | ja (Log + PDFs; **nicht** in der Buchhaltungs-Kette und **nicht** in LUNAs Google Drive -- CEO 2026-10-08) |
 | `investment/log.jsonl` (seit 2026-10-06 auch Einstellung `vorschlaege_pausiert` und Tabelle `unterdrueckt` = waehrend der Vorschlagspause nur protokollierte Vorschlaege; `GET /api/investment/pause`) | Bot, Web | dito | ja | ja |
 | `investment/features.jsonl` | Bot | Web | ja | ja |
 | `approvals/log.jsonl` | Bot | Bot; Web liest offene Entscheidungen fuer `GET /api/handlungsbedarf` (UI-Roadmap Etappe 3, nur lesend) | ja | ja |
@@ -227,6 +228,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `projekt_changelog.md`, `finance/budget.md` | Bot, Web, Agenten | alle | ja | Git |
 
 ```doku-check:speicher
+einwilligungen/log.jsonl
 antraege/log.jsonl
 research/log.jsonl
 notifications/log.jsonl

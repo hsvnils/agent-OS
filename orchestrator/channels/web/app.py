@@ -2229,6 +2229,139 @@ async def vertrag_aendern(art: str, aktion: str, request: Request):
     raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Aktion")
 
 
+# -- Einwilligungen in Aufnahmen je Auftrag (EINWILLIGUNG_AUFNAHMEN E2/E3) -- nur NAS, nicht in Kette/Drive -------------
+def _einwilligungen():
+    from ...core.einwilligungen import EinwilligungStore
+    return EinwilligungStore((ROOT / "einwilligungen" / "log.jsonl").parent)   # Log + pdf/<jahr>/ -- nur NAS (Backup, kein Drive)
+
+
+def _darf_einwilligung(request: Request) -> bool:
+    return hat_modul(getattr(request.state, "user", None) or _ceo_user(), "crm")
+
+
+def _einwilligung_vorlage() -> dict:
+    """Aktuelle Fassung der Vorlage `einwilligung` (in Kraft, sonst juengste); ohne Version der Entwurf aus dem Code."""
+    from ...core.vertrag_entwuerfe import ENTWUERFE
+    vs = _vertraege()
+    try:
+        x = vs.vorlage("einwilligung")
+        v = vs.in_kraft("einwilligung") or (x["versionen"][-1] if x["versionen"] else None)
+    except KeyError:
+        v = None
+    if v:
+        return {"titel": v["titel"], "paragraphen": v["paragraphen"], "version": v["version"], "status": v.get("status", "")}
+    e = ENTWUERFE["einwilligung"]
+    return {"titel": e["titel"], "paragraphen": e["paragraphen"], "version": 0, "status": "entwurf"}
+
+
+@app.get("/api/crm/auftraege/{nummer}/einwilligungen")
+def einwilligungen_liste(nummer: str, request: Request):
+    from ...core.einwilligungen import STANDARD_ZWECKE, ZWECKE, _fuellen
+    if not _darf_einwilligung(request):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "keine Berechtigung")
+    a = _auftraege().auftrag(nummer)
+    if not a:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Auftragsnummer")
+    fd = _firmendaten() or {}
+    kunde = (kunden_store.firma(a["firma"]) or {}).get("name", "")
+    from ...core.einwilligungen import KONTAKT_STANDARD
+    werte = {"Auftragnehmer": fd.get("firma") or "Hanserautisch", "Kunde": kunde or "dem Auftraggeber",
+             "Projekt": a.get("titel") or a["nummer"], "Ort": fd.get("ort", ""), "Kontakt": fd.get("mail") or KONTAKT_STANDARD,
+             "Anschrift": ", ".join(x for x in (fd.get("strasse"), " ".join(x for x in (fd.get("plz"), fd.get("ort")) if x)) if x)}
+    liste = [{k: x.get(k) for k in ("id", "ts", "datum", "person", "alter", "minderjaehrig", "eltern_name", "zwecke",
+                                    "vorlage_version", "versendet", "widerruf")} for x in _einwilligungen().liste(a["nummer"])]
+    return {"einwilligungen": liste, "vorlage": _einwilligung_vorlage(), "kunde": kunde, "projekt": a.get("titel") or a["nummer"],
+            "ort": fd.get("ort", ""), "heute": jetzt_iso()[:10], "standard_zwecke": list(STANDARD_ZWECKE),
+            "zwecke": {k: _fuellen(v, werte) for k, v in ZWECKE.items()}, "darf_senden": _darf_versenden(request), "werte": werte,
+            "firmendaten": bool(fd)}
+
+
+@app.post("/api/crm/auftraege/{nummer}/einwilligungen")
+async def einwilligung_erteilen(nummer: str, request: Request):
+    if not _darf_einwilligung(request):
+        return {"ok": False, "hinweis": "Keine Berechtigung (Modul CRM)."}
+    body = await _json(request)
+
+    def tun():
+        a = _auftraege().auftrag(nummer)
+        if not a:
+            raise KeyError(nummer)
+        kunde = (kunden_store.firma(a["firma"]) or {}).get("name", "")
+        return _einwilligungen().erteilen(a, body, vorlage=_einwilligung_vorlage(), firmendaten=_firmendaten() or {},
+                                          kunde=kunde, von=_von(request),
+                                          heute=__import__("datetime").date.fromisoformat(jetzt_iso()[:10]))
+    return _kunden_aktion(tun)
+
+
+@app.get("/api/crm/einwilligungen/{eid}/pdf")
+def einwilligung_pdf(eid: str, request: Request):
+    if not _darf_einwilligung(request):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "keine Berechtigung")
+    st = _einwilligungen()
+    x = st.get(eid)
+    if not x:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannt")
+    name = f"Einwilligung_{x['person']['nachname']}_{x['person']['vorname']}_{x['datum']}.pdf".replace(" ", "_")
+    from urllib.parse import quote
+    return Response(st.pdf(eid), media_type="application/pdf",
+                    headers={"Content-Disposition": f"inline; filename*=UTF-8''{quote(name)}"})
+
+
+@app.get("/api/crm/einwilligungen/{eid}/versandvorschau")
+def einwilligung_versandvorschau(eid: str, request: Request):
+    from ...core.textbausteine import anrede_werte, rendern
+    x = _einwilligungen().get(eid)
+    if not x or not _darf_einwilligung(request):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannt")
+    a = _auftraege().auftrag(x["auftrag"]) or {}
+    tb = _tb("einwilligung")
+    w = anrede_werte(x["person"]) | {"projekt": a.get("titel") or x["auftrag"],
+                                      "datum": __import__("datetime").date.fromisoformat(x["datum"]).strftime("%d.%m.%Y")}
+    betreff, text = rendern("einwilligung", w, _firmendaten() or {}, vorlage=tb["vorlage"], signatur=tb["signatur"])
+    vs = _versand_absender()
+    return {"an": x["person"].get("mail", ""), "betreff": betreff, "text": text, "absender": vs["absender"],
+            "bereit": vs["bereit"] is not False}
+
+
+@app.post("/api/crm/einwilligungen/{eid}/senden")
+async def einwilligung_senden(eid: str, request: Request):
+    """E3: Kopie der unterschriebenen Erklaerung an die Person -- nur per Klick (Modul Finanzen wie alle Kundenmails)."""
+    if not _darf_versenden(request):
+        return {"ok": False, "hinweis": "Mails an Kunden sendet nur der CEO (Modul Finanzen)."}
+    body = await _json(request)
+    st = _einwilligungen()
+
+    def tun():
+        if body.get("bestaetigt") is not True:
+            raise ValueError("Senden braucht die ausdrueckliche Bestaetigung.")
+        x = st.get(eid)
+        if not x:
+            raise KeyError(eid)
+        an, betreff, text = (body.get("an") or "").strip(), (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
+        if not an or "@" not in an or not betreff or not text:
+            raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
+        g = _versand_google(body)
+        if not g.verfuegbar():
+            raise ValueError("Mailversand ist nicht verbunden.")
+        name = f"Einwilligung_{x['person']['nachname']}_{x['datum']}.pdf".replace(" ", "_")
+        r = g.mail_senden(an, betreff, text, bestaetigt=True, absender_name=ABSENDER_NAME,
+                          anhaenge=[(name, st.pdf(eid), "application/pdf")])
+        if not r.get("ok"):
+            raise ValueError(r.get("hinweis") or "Senden fehlgeschlagen.")
+        st.versendet(eid, an, von=_von(request))
+        return {"an": an}
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/crm/einwilligungen/{eid}/widerruf")
+async def einwilligung_widerruf(eid: str, request: Request):
+    if not _darf_einwilligung(request):
+        return {"ok": False, "hinweis": "Keine Berechtigung (Modul CRM)."}
+    body = await _json(request)
+    return _kunden_aktion(lambda: _einwilligungen().widerrufen(eid, datum=body.get("datum") or "", weg=body.get("weg") or "",
+                                                               notiz=body.get("notiz") or "", von=_von(request)))
+
+
 # -- Konzept-Mappe je Vorgang (KONZEPT_MAPPE K1-K3) --------------------------------------------------------------------
 def _konzept():
     from ...core.konzept import KonzeptStore

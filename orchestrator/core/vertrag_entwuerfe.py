@@ -149,4 +149,44 @@ ENTWUERFE = {
         {"titel": "§ 6 Schlussbestimmungen",
          "text": "Es gilt deutsches Recht. Änderungen bedürfen der Textform. {Ort}, {Datum}"},
     ]},
+    # EINWILLIGUNG_AUFNAHMEN E1 (CEO 2026-10-08): Grundlage Web-Recherche (KUG, DSGVO Art. 6/7, Minderjaehrige, Tablet-
+    # Unterschrift als Nachweis) -- Entwurf Claude Code, anwaltliche Pruefung vor dem ersten Einsatz. Die Zwecke kreuzt die
+    # Person im Formular an (`core/einwilligungen.ZWECKE`); Platzhalter fuellt LUNA aus Auftrag und Firmendaten.
+    "einwilligung": {"titel": "Einwilligung in Bild-, Video- und Tonaufnahmen", "paragraphen": [
+        {"titel": "§ 1 Gegenstand",
+         "text": "Ich willige ein, dass {Auftragnehmer} im Rahmen des Projekts „{Projekt}“ für {Kunde} am {Datum} in {Ort} "
+                 "Video-, Bild- und Tonaufnahmen von mir anfertigt."},
+        {"titel": "§ 2 Zwecke und Veröffentlichung",
+         "text": "Die Aufnahmen dürfen – bearbeitet und geschnitten – für die unten angekreuzten Zwecke verwendet und "
+                 "veröffentlicht werden. Für andere Zwecke werde ich vorher erneut gefragt. Mir ist bekannt, dass Inhalte im "
+                 "Internet weltweit abrufbar sind und von Dritten gespeichert oder geteilt werden können."},
+        {"titel": "§ 3 Umfang und Bearbeitung",
+         "text": "Die Einwilligung umfasst mein Bild und meine Stimme. Mein Name oder Profil wird nur genannt, wenn das unten "
+                 "angekreuzt ist. Übliche Bearbeitungen (Schnitt, Kürzung, Farbe, Musik, Untertitel, Text-Einblendungen) sind "
+                 "erlaubt. Aufnahmen werden nicht in herabwürdigendem Zusammenhang verwendet; mein Gesicht oder meine Stimme "
+                 "werden nicht ohne gesonderte Zustimmung mit KI verändert oder nachgebildet."},
+        {"titel": "§ 4 Dauer und Widerruf",
+         "text": "Die Einwilligung gilt zeitlich unbefristet. Ich kann sie jederzeit ohne Angabe von Gründen mit Wirkung für "
+                 "die Zukunft widerrufen, formlos an {Kontakt}. Danach werden keine neuen Inhalte mit mir veröffentlicht und "
+                 "eigene Beiträge mit mir in angemessener Frist entfernt, soweit das möglich ist. Inhalte, die Dritte (z. B. der "
+                 "Auftraggeber oder Nutzer der Plattformen) bereits gespeichert oder geteilt haben, lassen sich nicht immer "
+                 "vollständig zurückholen. Die bis zum Widerruf erfolgte Nutzung bleibt rechtmäßig."},
+        {"titel": "§ 5 Vergütung",
+         "text": "Die Einwilligung erfolgt unentgeltlich, sofern unten keine Vergütung eingetragen ist."},
+        {"titel": "§ 6 Freiwilligkeit",
+         "text": "Die Einwilligung ist freiwillig. Wenn ich sie nicht erteile oder widerrufe, entstehen mir keine Nachteile – "
+                 "bei Beschäftigten des Auftraggebers insbesondere keine im Arbeitsverhältnis."},
+        {"titel": "§ 7 Minderjährige",
+         "text": "Für Personen unter 16 Jahren unterschreiben die Erziehungsberechtigten; ab 14 Jahren unterschreibt die "
+                 "minderjährige Person zusätzlich selbst. Bei gemeinsamem Sorgerecht bestätigt der unterschreibende Elternteil, "
+                 "im Einverständnis des anderen zu handeln."},
+        {"titel": "§ 8 Datenschutzhinweise",
+         "text": "Verantwortlich ist {Auftragnehmer}, {Anschrift}, erreichbar unter {Kontakt}. Rechtsgrundlage ist diese "
+                 "Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 22 KUG). Verarbeitet werden Name, Kontaktdaten, Unterschrift und die "
+                 "Aufnahmen. Die Aufnahmen gehen an den Auftraggeber und an die genutzten Plattformen (z. B. Meta, TikTok, "
+                 "YouTube), die Daten auch außerhalb der EU verarbeiten können. Diese Erklärung wird als Nachweis aufbewahrt, "
+                 "solange die Aufnahmen genutzt werden, und danach bis zum Ablauf gesetzlicher Fristen. Ich habe das Recht auf "
+                 "Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Widerruf und Beschwerde bei einer "
+                 "Datenschutz-Aufsichtsbehörde. Eine Kopie dieser Erklärung erhalte ich auf Wunsch."},
+    ]},
 }

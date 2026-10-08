@@ -20,7 +20,8 @@ import uuid
 
 ARTEN = {"angebot": "Angebot", "auftrag": "Auftragsbestätigung", "rechnung": "Rechnung", "storno": "Stornorechnung",
          "mahnung": "Mahnung", "bericht": "Projektbericht", "konzept": "Konzept",
-         "vorstellung": "Vorstellung", "vorstellung_nachfassen": "Vorstellung – Nachfassen"}   # SERIEN_UND_VORSTELLUNG V1/V2
+         "vorstellung": "Vorstellung", "vorstellung_nachfassen": "Vorstellung – Nachfassen",   # SERIEN_UND_VORSTELLUNG V1/V2
+         "einwilligung": "Einwilligung (Kopie)"}                                                  # EINWILLIGUNG_AUFNAHMEN E3
 
 _GEMEINSAM = {"anrede": "„Guten Tag Vorname Nachname,“ bzw. „Sehr geehrte Damen und Herren,“",
               "anrede_moin": "„Moin Vorname Nachname,“ bzw. „Moin,“", "vorname": "Vorname des Ansprechpartners",
@@ -44,6 +45,9 @@ PLATZHALTER: dict[str, dict[str, str]] = {
     "vorstellung_nachfassen": {k: v for k, v in _GEMEINSAM.items() if k not in ("nummer", "titel", "titel_zusatz")}
                               | {"praesentation": "Präsentations-Zeile mit Canva-Link (aus dem Katalog)",
                                  "gesendet_am": "Datum der ersten Mail"},
+    "einwilligung": {"anrede": "„Guten Tag Vorname Nachname,“", "anrede_moin": "„Moin Vorname Nachname,“",
+                     "vorname": "Vorname der Person", "nachname": "Nachname der Person", "projekt": "Projekt bzw. Auftragstitel",
+                     "datum": "Datum der Einwilligung"},
     "konzept": _GEMEINSAM | {"zu_titel": "„ zu „Titel““ (leer ohne Titel)", "titel_oder_vorgang": "Titel, sonst Vorgangsnummer",
                              "version_zusatz": "„ (Version 2)“ ab der 2. Fassung"},
 }
@@ -71,6 +75,10 @@ STANDARD: dict[str, dict] = {
     "bericht": {"betreff": "Projektbericht {nummer}{titel_zusatz}{version_zusatz}",
                 "text": "{anrede_moin}\n\nanbei unser Projektbericht zur Kampagne{titel_quote} mit den erreichten Zahlen "
                         "je Posting.\n\nBei Fragen melden Sie sich gern."},
+    "einwilligung": {"betreff": "Ihre Einwilligung zu den Aufnahmen – {projekt}",
+                     "text": "{anrede}\n\nvielen Dank, dass Sie bei den Aufnahmen für „{projekt}“ mitgemacht haben. Anbei "
+                             "erhalten Sie wie besprochen eine Kopie Ihrer Einwilligung vom {datum}.\n\nSie können die "
+                             "Einwilligung jederzeit für die Zukunft widerrufen – eine kurze Antwort auf diese Mail genügt."},
     "vorstellung": {"betreff": "Hanserautisch × {kunde} – kurze Vorstellung",
                     "text": "{anrede_moin}\n\nich möchte Ihnen Hanserautisch kurz vorstellen: Wir machen Content rund um den HSV "
                             "und Hamburg für unsere Community auf Social Media.\n\nIch könnte mir gut vorstellen, dass {kunde} "
