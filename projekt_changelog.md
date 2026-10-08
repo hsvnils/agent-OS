@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-08 17:58] — Claude Code
+- **Was:** Deploy EINWILLIGUNG_AUFNAHMEN live geprueft (v125/v64, Endpunkt antwortet fuer AB-2026-0001). Vorlage „Einwilligung“ im Vertragswerk als Version 1 (Entwurf Claude Code, ungeprueft) angelegt. Ordner `einwilligungen/` entsteht auf der NAS mit der ersten Einwilligung.
+- **Warum:** CEO hat Push, Sync und Neustart ausgefuehrt; Vorlage war als Folgeschritt angekuendigt.
+- **Betroffen:** `buchhaltung/log.jsonl` (NAS, Vertragsvorlage)
+
 ## [2026-10-08 11:42] — Claude Code
 - **Was:** EINWILLIGUNG_AUFNAHMEN E1-E3 gebaut: Vorlage „Einwilligung in Bild-, Video- und Tonaufnahmen“ im Vertragswerk (Entwurf); Aufnahme je Person am Auftrag mit Unterschriftsfeld fuer den Apple Pencil, PDF A4 hochkant je Person, Ablage nur NAS (`einwilligungen/`, Deploy-Schutz + Backup), Liste am Auftrag; Kopie per Mail (Textbaustein, nur per Klick) und Widerruf mit Warnung bei den Postings. Neue Endpunkte unter `/api/crm/auftraege/<nr>/einwilligungen` und `/api/crm/einwilligungen/<id>/…`. Cache app-v2.js v125, style-v2.css v64.
 - **Warum:** CEO 2026-10-08: Erlaubnis fuer Videoaufnahmen von Personen am iPad einholen -- Go E1-E3, Ablage nur NAS, anwaltliche Pruefung vor dem ersten Einsatz.
