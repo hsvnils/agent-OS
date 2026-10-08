@@ -84,6 +84,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `BELEG_BEARBEITBAR_ROADMAP.md` | Belege bis zum Versand bearbeitbar, mit dem Versand festgeschrieben, danach nur „Bearbeiten“ mit Begruendung (Auftrag, Angebot, Rechnung) | abgeschlossen (2026-10-07, vorerst abgenommen) |
 | `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md` | Investment-Vorschlaege systemweit pausieren (Tracking laeuft weiter) und Liste aller Anbieter/Datenquellen mit Kostenhinweis | abgeschlossen (P1+P2 live 2026-10-06, P3 live 2026-10-07) |
 | `KOPFZEILE_SUCHE_MENUE_ROADMAP.md` | Kopfzeile: Suchleiste mit Vorschlaegen, Aufklapp-Menues bei Maus-Over, Hell/Dunkel + Orb/Hologramm in die Einstellungen, LUNAs Portrait als Logo | in Umsetzung (K1-K5 gebaut 2026-10-07) |
+| `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md` | Einwilligung in Video-/Bildaufnahmen: Vorlage im Vertragswerk, Unterschrift mit dem Apple Pencil am iPad, PDF je Person am Auftrag, Kopie und Widerruf | geplant (2026-10-08) |
 | `SERIEN_UND_VORSTELLUNG_ROADMAP.md` | Wiederkehrender Content im Content-Plan; Vorstellungs-Mails an Unternehmen aus LUNA-OS (Firma beim Senden als Interessent) | in Umsetzung (S1, V1, V2 gebaut 2026-10-06) |
 | `IMPRESSUM_SUCHE_ROADMAP.md` | Kundendaten beim Anlegen einer Firma aus dem Impressum vorfuellen (regelbasiert, optional lokale KI) | in Umsetzung (I1 gebaut 2026-10-06) |
 | `GLOBALE_SUCHE_ROADMAP.md` | Globale Suche ueber alle Geschaeftsdaten, Ergebnisse nach Kategorien (Kunden, Angebote, Auftraege, Rechnungen, Ausgaben …) | in Umsetzung (G1 gebaut 2026-10-06) |

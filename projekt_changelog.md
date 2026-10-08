@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-08 11:32] — Claude Code
+- **Was:** Roadmap `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md` angelegt (geplant) nach Web-Recherche (KUG/DSGVO, Minderjaehrige, Tablet-Unterschrift als Nachweis): E1 Vorlage im Vertragswerk, E2 Erfassung mit Apple-Pencil-Unterschrift und PDF je Person am Auftrag, E3 Kopie und Widerruf.
+- **Warum:** CEO 2026-10-08: Erlaubnis fuer Videoaufnahmen von Personen am iPad einholen.
+- **Betroffen:** `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-08 11:28] — Claude Code
 - **Was:** Vertragswerk: CLO-Ueberarbeitung (Pruefbericht vom 05.10.2026) fuer alle vier Vorlagen als Version 2 (Entwurf) angelegt -- AGB (+ § 15 KI-Einsatz, 4 Paragraphen umformuliert), Kooperationsvertrag (+ § 12 KI-Kennzeichnung, + § 13 Musik-/Drittrechte, 5 umformuliert), Nutzungsrechte (+ § 7 Werbekennzeichnung, 4 umformuliert), NDA (1 umformuliert). Version 1 bleibt; alle Fassungen Entwurf, anwaltliche Pruefung erforderlich (CEO-Tor Recht: nichts in Kraft gesetzt).
 - **Warum:** CEO 2026-10-08: „Bitte uebernimm alle deine Vorschlaege“; dazu Hinweis „immer Hochkant-PDF“ (alle LUNA-PDFs sind bereits A4 hochkant).
