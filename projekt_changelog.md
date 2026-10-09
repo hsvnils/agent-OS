@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-09 10:10] — Claude Code
+- **Was:** Zwei Roadmaps angelegt (geplant): `ZEITERFASSUNG_GRUND_ROADMAP.md` (Z1 feste Gruende, Z2 Nachtragen im OS und per Telegram) und `PARTNERLISTE_ROADMAP.md` (P1 Ideen-Liste getrennt vom Kundenstamm, P2 Telegram, P3 Anschreiben ueber die Vorstellungs-Mail); im Roadmap-Verzeichnis eingetragen.
+- **Warum:** CEO 2026-10-09: Grund fuer Zeiterfassung, manuelles Nachbuchen; Liste potenzieller Partner/Kunden mit Telegram-Erfassung.
+- **Betroffen:** `ZEITERFASSUNG_GRUND_ROADMAP.md`, `PARTNERLISTE_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-08 22:30] — Claude Code
 - **Was:** Deploy Einwilligung F1-F3 geprueft: NAS liefert app-v2.js v127 (Ansprechpartner-Auswahl, Geburtsdatum-Textfeld, Kontakt-Haken), Einwilligungs-API liefert die Ansprechpartner des Kunden und die Anschrift mit „c/o“, `GET /api/crm/einwilligungen/person` antwortet. Nichts gespeichert oder versendet.
 - **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
