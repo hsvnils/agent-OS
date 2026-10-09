@@ -616,6 +616,8 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-zt tfoot td { border-top: 2px solid var(--v2-line); }
 .v2-zt-akt { display: flex; gap: 4px; }
 .v2-zt-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.v2-zt-hand > summary { list-style: none; display: inline-flex; width: auto; } .v2-zt-hand > summary::-webkit-details-marker { display: none; }
+.v2-zt-hand[open] > summary { margin-bottom: 8px; } .v2-zt-nach { width: 100%; } .v2-zt-nach h3 { margin: 0; }
 /* Stundenzettel auf dem Handy: jede Zeit als kompakte Karte statt breiter Tabelle (CEO-Regel Desktop + Mobil) */
 @media (max-width: 700px) {
   .v2-zt { display: block; overflow: visible; }
@@ -1163,3 +1165,9 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-ew-zeile small { color: var(--v2-muted); font-size: 12px; } .v2-ew-zeile.widerrufen b { text-decoration: line-through; color: var(--v2-muted); }
 .v2-ew-akt { display: flex; gap: 6px; flex-wrap: wrap; } .v2-ew-hinweis { display: block; margin-top: 6px; }
 @media (max-width: 640px) { .v2-sig canvas { height: 160px; } }
+/* PARTNERLISTE P1: Ideen-Liste */
+.v2-idee-zeile { align-items: flex-start; flex-wrap: wrap; }
+.v2-idee-zeile .grow { min-width: 180px; display: flex; flex-direction: column; gap: 2px; }
+.v2-idee-notiz { color: var(--v2-fg); opacity: .85; white-space: pre-wrap; }
+.v2-idee-akt { display: flex; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 640px) { .v2-idee-zeile .v2-idee-akt { width: 100%; } }

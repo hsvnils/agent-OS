@@ -248,6 +248,33 @@ class FirmenRecherche:
                 yield ziel
         yield seite
 
+    def _impressum(self, name: str, seite: str) -> tuple[dict, str]:
+        if not seite:
+            return {}, ""
+        for url in self._kandidaten(seite):
+            try:
+                text = _text(self.abruf(url))
+            except Exception:
+                continue
+            if not re.search(r"(?i)impressum|imprint|angaben gem|legal notice|§\s?5", text):
+                continue
+            if not _impressum_der_firma(name, text):                    # fremdes Impressum (z. B. Portal)
+                continue
+            gefunden = impressum_lesen(text)
+            if gefunden:
+                return gefunden, url
+        return {}, ""
+
+    def fuer_idee(self, name: str, website: str = "") -> dict:
+        """PARTNERLISTE P2 „🔎 Daten suchen“: Website + Impressum zu einem Namen -- nur Vorschlag, nichts gespeichert,
+        nichts in der Kette."""
+        seite = self._website({"name": name, "website": website})
+        gefunden, quelle = self._impressum(name, seite)
+        out = {"web": seite, "ort": gefunden.get("ort", ""), "mail": gefunden.get("rechnungsmail", ""),
+               "telefon": gefunden.get("telefon", "")}
+        return {"vorschlaege": {k: v for k, v in out.items() if v}, "quelle": quelle or seite,
+                "hinweis": "" if seite else ("Websuche nicht eingerichtet." if self.suche is None else "Keine Website gefunden.")}
+
     def recherchieren(self, nummer: str, *, von: str = "LUNA") -> dict:
         f = self.kunden.firma(nummer)
         if not f:
@@ -258,21 +285,8 @@ class FirmenRecherche:
         if not offen:
             return {"nummer": f["nummer"], "vorschlaege": {}, "hinweis": "Keine Luecken."}
         seite = self._website(f)
-        vorschlaege, quelle = {}, ""
+        vorschlaege, quelle = self._impressum(f["name"], seite)
         if seite:
-            for url in self._kandidaten(seite):
-                try:
-                    text = _text(self.abruf(url))
-                except Exception:
-                    continue
-                if not re.search(r"(?i)impressum|imprint|angaben gem|legal notice|§\s?5", text):
-                    continue
-                if not _impressum_der_firma(f["name"], text):              # fremdes Impressum (z. B. Portal)
-                    continue
-                gefunden = impressum_lesen(text)
-                if gefunden:
-                    vorschlaege, quelle = gefunden, url
-                    break
             if "website" in offen:
                 vorschlaege["website"] = seite
                 quelle = quelle or seite

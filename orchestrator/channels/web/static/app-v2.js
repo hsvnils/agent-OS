@@ -313,6 +313,39 @@ function zeitKachelInhalt() {
     <button class="v2-btn danger v2-zeit-knopf" data-act="zt-stopp">■ Zeit stoppen</button>`;
   return `<div class="v2-sub">Keine Zeit läuft.</div><button class="v2-btn pri v2-zeit-knopf" data-act="zt-fenster">▶ Zeit starten …</button>`;
 }
+/* ZEITERFASSUNG_GRUND Z1: feste Gruende (Pflicht beim Nachtragen), bei „Sonstiges“ kurzer Text */
+const ZT_ARBEITEN = { dreh: "🎬 Dreharbeiten", post: "✂️ Postproduktion & Schnitt", konzept: "💬 Konzept & Abstimmung", sonstiges: "✏️ Sonstiges" };
+function ztGrundFelder(p, arbeit = "", text = "") {
+  return `<label class="v2-feld"><small>Grund *</small><select id="${p}-arbeit" class="v2-inp" data-zt-grund="${p}"><option value="">– bitte wählen –</option>${Object.entries(ZT_ARBEITEN).map(([k, l]) => `<option value="${k}" ${k === arbeit ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+    <label class="v2-feld"><small id="${p}-text-l">${arbeit === "sonstiges" ? "Was genau? *" : "Zusatz (optional)"}</small><input id="${p}-text" class="v2-inp" value="${esc(text)}" placeholder="${arbeit === "sonstiges" ? "z. B. Messe" : "z. B. Stadion"}"></label>`;
+}
+const ztGrund = (p) => ({ arbeit: ($("#" + p + "-arbeit") || {}).value || "", taetigkeit: (($("#" + p + "-text") || {}).value || "").trim() });
+document.addEventListener("change", (e) => { const s = e.target.closest && e.target.closest("[data-zt-grund]"); if (!s) return;
+  const p = s.dataset.ztGrund, l = $("#" + p + "-text-l"), i = $("#" + p + "-text"), so = s.value === "sonstiges";
+  if (l) l.textContent = so ? "Was genau? *" : "Zusatz (optional)"; if (i) i.placeholder = so ? "z. B. Messe" : "z. B. Stadion"; });
+/* Dauer „2:30“, „2,5“ oder „2“ (Stunden) -> Minuten; leer -> "" */
+function ztMinuten(s) { s = String(s || "").trim().replace(/\s*(h|std\.?|stunden?)$/i, ""); if (!s) return "";
+  const m = s.match(/^(\d{1,2}):(\d{2})$/); if (m) return String(+m[1] * 60 + +m[2]);
+  const h = parseFloat(s.replace(",", ".")); return isNaN(h) ? s : String(Math.round(h * 60)); }
+function ztNachtragenForm(nr) {
+  const liste = (ZEIT.alle || []).filter(a => !["storniert", "abgelehnt"].includes(a.status));
+  let letzter = nr || ""; if (!letzter) { try { letzter = localStorage.getItem("luna-zeit-auftrag") || ""; } catch { } }
+  const heute = new Date(), iso = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}-${String(heute.getDate()).padStart(2, "0")}`;
+  return `<div class="v2-form v2-zt-nach"><h3>➕ Zeit nachtragen</h3>
+    <label class="v2-feld"><small>Auftrag *</small><select id="ztn-auftrag" class="v2-inp">${liste.map(a => `<option value="${esc(a.nummer)}" ${a.nummer === letzter ? "selected" : ""}>${esc(a.nummer)} · ${esc(a.firma_name || a.firma)}${a.titel ? " · " + esc(a.titel) : ""}</option>`).join("")}</select></label>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Datum *</small><input id="ztn-datum" class="v2-inp" type="date" max="${iso}" value="${iso}"></label><label class="v2-feld"><small>von</small><input id="ztn-von" class="v2-inp" type="time"></label><label class="v2-feld"><small>bis</small><input id="ztn-bis" class="v2-inp" type="time"></label></div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>oder Dauer (Std., z. B. 2:30)</small><input id="ztn-dauer" class="v2-inp" inputmode="decimal"></label><label class="v2-feld"><small>Pause (Min.)</small><input id="ztn-pause" class="v2-inp" inputmode="numeric"></label><label class="v2-feld"><small>km Hin + Rück</small><input id="ztn-km" class="v2-inp" inputmode="numeric"></label></div>
+    <div class="v2-an-zeile">${ztGrundFelder("ztn")}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="v2-btn pri" data-act="zt-nachtragen">✔ Eintragen</button><button class="v2-btn" data-act="zt-fenster">Abbrechen</button></div></div>`;
+}
+async function ztNachtragen() {
+  const g = ztGrund("ztn"), nr = $("#ztn-auftrag").value;
+  const r = await jpost("/api/finanzen/zeit/eintrag", { auftrag: nr, datum: $("#ztn-datum").value, von: $("#ztn-von").value, bis: $("#ztn-bis").value,
+    minuten: ztMinuten($("#ztn-dauer").value), pause_min: $("#ztn-pause").value.trim(), km: $("#ztn-km").value.trim(), ...g });
+  if (!r || r.ok === false) return kundenMsg("zt-msg-n", (r && r.hinweis) || "Keine Verbindung.", false);
+  try { localStorage.setItem("luna-zeit-auftrag", nr); } catch { }
+  return zeitNeuZeichnen(`Nachgetragen: ${dauerTxt(r.minuten || 0)} für ${zeitAuftragName(nr)}.`);
+}
 function zeitInhalt(meldung, fehler) {
   const msg = meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="margin-bottom:10px">${esc(meldung)}</div>` : "";
   if (ZEIT.laufend) return msg + `<div class="v2-zeit-fenster"><div class="v2-zeit-gross" data-zeit-uhr>${zeitDauer(ZEIT.laufend)}</div>
@@ -320,16 +353,16 @@ function zeitInhalt(meldung, fehler) {
     <button class="v2-btn danger v2-zeit-knopf" data-act="zt-stopp">■ Zeit stoppen</button></div>`;
   if (ZEIT.ergebnis) { const e = ZEIT.ergebnis;
     return msg + `<div class="v2-zeit-fenster"><b>${esc(dauerTxt(e.minuten || 0))} erfasst</b><div class="v2-sub">${esc(zeitAuftragName(e.auftrag))} · intern ${esc(cent2eur(e.kosten_cent || 0))}</div>
-      <label class="v2-feld"><small>Was hast du gemacht?</small><input id="zt-e-taet" class="v2-inp" list="zt-taet-liste" placeholder="z. B. Dreh, Schnitt, Abstimmung"></label>
-      ${(ZEIT.taetigkeiten || []).length ? `<div class="v2-zt-chips">${ZEIT.taetigkeiten.map(t => `<button class="v2-btn sm" data-act="zt-taet-chip" data-val="${esc(t)}">${esc(t)}</button>`).join("")}</div>` : ""}
-      <datalist id="zt-taet-liste">${(ZEIT.taetigkeiten || []).map(t => `<option value="${esc(t)}">`).join("")}</datalist>
+      <div class="v2-an-zeile">${ztGrundFelder("zt-e")}</div>
       <div class="v2-an-zeile"><label class="v2-feld"><small>Pause (Min.)</small><input id="zt-e-pause" class="v2-inp" inputmode="numeric"></label><label class="v2-feld"><small>km Hin + Rück</small><input id="zt-km" class="v2-inp" inputmode="numeric" placeholder="z. B. 42"></label></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="v2-btn pri" data-act="zt-km" data-id="${esc(e.id)}">Speichern</button><button class="v2-btn" data-act="zt-neu">Fertig</button></div></div>`; }
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="v2-btn pri" data-act="zt-km" data-id="${esc(e.id)}">Speichern</button><button class="v2-btn" data-act="zt-neu">Fertig</button></div><div id="zt-msg-e" class="v2-msg"></div></div>`; }
   let letzter = ""; try { letzter = localStorage.getItem("luna-zeit-auftrag") || ""; } catch { }
-  if (!ZEIT.auftraege.length) return msg + emptyRow("Kein laufender Auftrag (Status „beauftragt“) – Zeit gibt es nur für laufende Aufträge.");
+  if (!ZEIT.auftraege.length) return msg + emptyRow("Kein laufender Auftrag (Status „beauftragt“) – Zeit gibt es nur für laufende Aufträge.")
+    + (ZEIT.alle.length ? `<div class="v2-card-actions"><button class="v2-btn" data-act="zt-nachtragen-form">➕ Zeit nachtragen</button></div>` : "");
   return msg + `<div class="v2-zeit-fenster"><label class="v2-feld"><small>Laufender Auftrag</small><select id="zt-auftrag" class="v2-inp">${ZEIT.auftraege.map(a =>
       `<option value="${esc(a.nummer)}" ${a.nummer === letzter ? "selected" : ""}>${esc(a.nummer)} · ${esc(a.firma_name || a.firma)}${a.titel ? " · " + esc(a.titel) : ""}</option>`).join("")}</select></label>
     <button class="v2-btn pri v2-zeit-knopf" data-act="zt-start">▶ Zeit starten</button>
+    <button class="v2-btn" data-act="zt-nachtragen-form">➕ Zeit nachtragen</button>
     <button class="v2-btn" data-act="zt-auswertung" data-val="monat">📊 Auswertung</button></div>`;
 }
 // PROJEKTZEITEN Z3: Zeiten auswerten (Woche/Monat/Jahr) je Kunde, Taetigkeit, Woche/Monat; CSV-Export
@@ -349,7 +382,7 @@ async function ztAuswertung(art, vonX, bisX) {
     <div class="v2-an-zeile" style="margin-top:8px"><label class="v2-feld"><small>von</small><input id="aw-von" class="v2-inp" type="date" value="${esc(v)}"></label><label class="v2-feld"><small>bis</small><input id="aw-bis" class="v2-inp" type="date" value="${esc(b)}"></label><button class="v2-btn" data-act="zt-auswertung" data-val="frei">Anzeigen</button></div>
     ${!d ? emptyRow("Auswertung nicht verfügbar.") : `<div class="v2-aw-kpis"><div class="v2-aw-kpi"><small>Stunden</small><b>${esc(dauerTxt(s.minuten || 0))}</b></div><div class="v2-aw-kpi"><small>Einträge</small><b>${s.eintraege || 0}</b></div><div class="v2-aw-kpi"><small>km</small><b>${s.km || 0}</b></div><div class="v2-aw-kpi"><small>intern (kalkulatorisch)</small><b>${cent2eur(s.kosten_cent || 0)}</b></div></div>
     ${s.eintraege ? "" : emptyRow("Keine Zeiten in diesem Zeitraum.")}
-    ${tab("Je Kunde", d.je_kunde || [])}${tab("Je Tätigkeit", d.je_taetigkeit || [])}${tab("Je Auftrag", (d.je_auftrag || []))}${lang ? tab((d.je_monat || []).length > 1 ? "Je Monat" : "Je Woche", ((d.je_monat || []).length > 1 ? d.je_monat : d.je_woche)) : ""}
+    ${tab("Je Kunde", d.je_kunde || [])}${tab("Je Grund", d.je_taetigkeit || [])}${tab("Je Auftrag", (d.je_auftrag || []))}${lang ? tab((d.je_monat || []).length > 1 ? "Je Monat" : "Je Woche", ((d.je_monat || []).length > 1 ? d.je_monat : d.je_woche)) : ""}
     <div class="v2-card-actions" style="margin-top:10px"><a class="v2-btn" href="/api/finanzen/zeit/auswertung?von=${esc(v)}&bis=${esc(b)}&format=csv">⬇️ CSV herunterladen</a></div>
     <small class="v2-sub">🔒 Nur intern – Stunden und Kosten sind kalkulatorisch, keine Buchung.</small>`}`, true);
 }
@@ -959,6 +992,7 @@ async function renderKunden() {
   const f = ROLLE[sub] ? alle.filter(x => (x.typ || "kunde") === ROLLE[sub]) : alle;
   let body;
   if (sub === "vorstellungen") body = await vsListe();
+  else if (sub === "ideen") body = await ideenListe();
   else if (sub === "collab") {
     body = tile("Collab-Firmen ohne Kundennummer", c.map(x => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(x.status || "")}</span><div class="grow"><b>${esc(x.firma)}</b><small>${esc(kanal[x.quelle] || x.quelle || "")} · ${x.nachrichten || 0} Nachr.${x.letzter_kontakt ? " · " + esc(zeitKurz(x.letzter_kontakt)) : ""}</small></div>
       <button class="v2-btn" data-act="kunde-neu" data-id="${esc(x.firma)}">+ Als Firma anlegen</button><button class="v2-btn" data-act="kunde-collab-zu" data-id="${esc(x.firma)}">Zuordnen…</button></div>`).join("") || emptyRow("Alle Collab-Firmen haben eine Kundennummer."), "w12");
@@ -969,17 +1003,17 @@ async function renderKunden() {
   }
   const actions = `<input id="kunden-suche" class="v2-inp" placeholder="Suchen (Name, Nr., Ort, Ansprechpartner)…" value="${esc(KUNDEN_SUCHE)}" style="width:260px"><button class="v2-btn" data-act="vs-neu">✉️ Neue Mail</button><button class="v2-btn pri" data-act="kunde-neu">+ Neue Firma</button>`;
   const n = (t) => alle.filter(x => (x.typ || "kunde") === t).length;
-  $("#v2-app").innerHTML = secHead("Kunden & Lieferanten", actions) + tabs("kunden", [["firmen", `Alle (${alle.length})`], ["kunden", `Kunden (${n("kunde")})`], ["interessenten", `Interessenten (${n("interessent")})`], ["vorstellungen", "✉️ Vorstellungen"], ["lieferanten", `Lieferanten (${n("lieferant")})`], ["partner", `Partner (${n("partner")})`], ["collab", `Collab ohne Nummer (${c.length})`]]) + `<div class="v2-grid">${body}</div>`;
+  $("#v2-app").innerHTML = secHead("Kunden & Lieferanten", actions) + tabs("kunden", [["firmen", `Alle (${alle.length})`], ["kunden", `Kunden (${n("kunde")})`], ["interessenten", `Interessenten (${n("interessent")})`], ["ideen", "💡 Ideen"], ["vorstellungen", "✉️ Vorstellungen"], ["lieferanten", `Lieferanten (${n("lieferant")})`], ["partner", `Partner (${n("partner")})`], ["collab", `Collab ohne Nummer (${c.length})`]]) + `<div class="v2-grid">${body}</div>`;
   const s = $("#kunden-suche");
   if (s) {
     s.addEventListener("input", () => { clearTimeout(_kundenTimer); _kundenTimer = setTimeout(() => { KUNDEN_SUCHE = s.value.trim(); renderKunden().then(() => { const n = $("#kunden-suche"); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }); }, 300); });
   }
 }
 /* SERIEN_UND_VORSTELLUNG V1/V2: Vorstellungs-Mail an Firmen (Firma beim Senden als Interessent), Ueberblick + Nachfassen */
-let VS = { firma: "", nachfassen: false, v: null, textGeaendert: false };
-async function vsDialog(firma, nachfassen) {
+let VS = { firma: "", nachfassen: false, v: null, textGeaendert: false, idee: null };
+async function vsDialog(firma, nachfassen, idee) {
   if (!AN_FIRMEN.length) await belegFormDaten().catch(() => { });
-  VS = { firma: firma || "", nachfassen: !!nachfassen, v: null, textGeaendert: false };
+  VS = { firma: firma || "", nachfassen: !!nachfassen, v: null, textGeaendert: false, idee: idee || null };
   const firmen = (AN_FIRMEN || []).filter(f => f.typ !== "lieferant");
   openModal(nachfassen ? "✉️ Nachfassen" : "✉️ Neue Mail an eine Firma", `<div class="v2-form" id="vs-form">
     <label class="v2-feld"><small>Empfänger</small><select class="v2-inp" id="vs-firma"><option value="">Neue Firma (wird beim Senden als Interessent angelegt)</option>${firmen.map(f => `<option value="${esc(f.nummer)}" ${f.nummer === VS.firma ? "selected" : ""}>${esc(f.name)} (${esc(f.nummer)})</option>`).join("")}</select></label>
@@ -1002,6 +1036,10 @@ async function vsDialog(firma, nachfassen) {
   let timer;
   const neuLaden = () => { clearTimeout(timer); timer = setTimeout(() => vsVorschau(), 350); };
   ["vs-name", "vs-vorname", "vs-nachname"].forEach(id => $("#" + id).addEventListener("input", neuLaden));
+  if (VS.idee && !VS.firma) { const i = VS.idee, ap = String(i.ansprechpartner || "").trim().split(/\s+/);   // PARTNERLISTE P3
+    $("#vs-name").value = i.name; $("#vs-web").value = i.web && !i.web.includes("instagram.com") ? i.web : "";
+    if (ap[0]) { $("#vs-vorname").value = ap.length > 1 ? ap.slice(0, -1).join(" ") : ""; $("#vs-nachname").value = ap[ap.length - 1]; }
+    if (i.mail) $("#vs-an").value = i.mail; }
   $("#vs-firma").addEventListener("change", () => { VS.firma = $("#vs-firma").value; $("#vs-neu").hidden = !!VS.firma; VS.textGeaendert = false; vsVorschau(true); });
   $("#vs-vorlage").addEventListener("change", () => { VS.textGeaendert = false; vsVorschau(); });
   $("#vs-nf").addEventListener("change", () => { VS.nachfassen = $("#vs-nf").checked; VS.textGeaendert = false; vsVorschau(); });
@@ -1010,14 +1048,15 @@ async function vsDialog(firma, nachfassen) {
 }
 async function vsVorschau(empfaenger) {
   const q = new URLSearchParams({ firma: VS.firma, name: ($("#vs-name") || {}).value || "", vorname: ($("#vs-vorname") || {}).value || "",
-    nachname: ($("#vs-nachname") || {}).value || "", vorlage: ($("#vs-vorlage") || {}).value || "", nachfassen: VS.nachfassen ? "1" : "0" });
+    nachname: ($("#vs-nachname") || {}).value || "", vorlage: ($("#vs-vorlage") || {}).value || "", nachfassen: VS.nachfassen ? "1" : "0",
+    partner: VS.idee && VS.idee.art === "partner" ? "1" : "0" });
   const v = await jget("/api/crm/vorstellung/vorschau?" + q); if (!v || !$("#vs-form")) return;
   VS.v = v;
   if (v.bisher && !VS.nachfassen && empfaenger && VS.firma) { VS.nachfassen = true; $("#vs-nf").checked = true; return vsVorschau(empfaenger); }
   $("#vs-nf-l").hidden = !v.bisher;
   $("#vs-vorlage").innerHTML = (v.vorlagen || []).map(x => `<option value="${esc(x.id)}" ${x.id === v.vorlage ? "selected" : ""}>${esc(x.name)}${x.standard && x.name !== "Standard" ? " (Standard)" : ""}</option>`).join("");
   if (!VS.textGeaendert) { $("#vs-betreff").value = v.betreff; $("#vs-text").value = v.text; }
-  if (empfaenger && v.an) $("#vs-an").value = v.an;
+  if (empfaenger && v.an && !(VS.idee && $("#vs-an").value)) $("#vs-an").value = v.an;
   if ($("#vs-anlass").options.length <= 1) $("#vs-anlass").insertAdjacentHTML("beforeend", Object.entries(v.anlaesse || {}).map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join(""));
   $("#vs-uwg").textContent = "⚖️ " + v.hinweis_uwg + (v.bisher ? ` · Diese Firma hast du am ${datumDe(v.bisher)} schon angeschrieben.` : "");
   $("#vs-absender").textContent = v.absender;
@@ -1025,7 +1064,8 @@ async function vsVorschau(empfaenger) {
 }
 async function vsSenden(el, trotz) {
   const body = { an: $("#vs-an").value.trim(), betreff: $("#vs-betreff").value.trim(), text: $("#vs-text").value.trim(), anlass: $("#vs-anlass").value,
-    anlass_notiz: $("#vs-anlass-notiz").value.trim(), nachfassen: VS.nachfassen, bestaetigt: true, trotz_dublette: !!trotz };
+    anlass_notiz: $("#vs-anlass-notiz").value.trim(), nachfassen: VS.nachfassen, bestaetigt: true, trotz_dublette: !!trotz,
+    ...(VS.idee ? { idee: VS.idee.id } : {}) };
   if (VS.firma) body.firma = VS.firma;
   else body.neu = { name: $("#vs-name").value.trim(), vorname: $("#vs-vorname").value.trim(), nachname: $("#vs-nachname").value.trim(), website: $("#vs-web").value.trim() };
   const m = $("#vs-msg");
@@ -1040,6 +1080,62 @@ async function vsSenden(el, trotz) {
   if (!r || r.ok === false) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return; }
   AN_FIRMEN = []; if (AKTIV === "kunden") renderKunden();
   return kundeDetail(r.firma, `✉️ Mail an ${r.an} gesendet${r.neu_angelegt ? " – Firma als Interessent angelegt" : ""}. Antworten meldet LUNA per Telegram.`);
+}
+/* PARTNERLISTE P1-P3: Merkzettel fuer Firmen, die wir als Kunde oder Partner ansprechen koennten (nicht in der Kette) */
+let IDEEN = { ideen: [], arten: {}, status: {} };
+const IDEE_BADGE = { idee: "neutral", angeschrieben: "wartet", antwort: "ok", interessent: "wartet", kunde: "ok", kein_interesse: "neutral" };
+async function ideenListe() {
+  IDEEN = await jget("/api/crm/ideen") || IDEEN;
+  const l = IDEEN.ideen || [], ordnung = ["idee", "antwort", "angeschrieben", "interessent", "kunde", "kein_interesse"];
+  const sortiert = [...l].sort((a, b) => ordnung.indexOf(a.status) - ordnung.indexOf(b.status));
+  const rows = sortiert.map(x => `<div class="v2-list-row v2-idee-zeile"><span>${x.art === "kunde" ? "🛒" : "🤝"}</span>
+    <div class="grow"><b class="klick" data-act="idee-form" data-id="${esc(x.id)}">${esc(x.name)}</b>
+      <small>${esc(IDEEN.arten[x.art] || x.art)}${x.branche ? " · " + esc(x.branche) : ""}${x.ort ? " · " + esc(x.ort) : ""} · ${esc(datumDe(x.erstellt))}${x.quelle === "Telegram" ? " · per Telegram" : x.quelle === "Chat" ? " · per Chat" : ""}</small>
+      ${x.notiz ? `<small class="v2-idee-notiz">${esc(x.notiz)}</small>` : ""}</div>
+    <span class="v2-badge ${IDEE_BADGE[x.status] || "neutral"}">${esc(IDEEN.status[x.status] || x.status)}${x.nachfassen_faellig ? " · nachfassen" : ""}</span>
+    <div class="v2-idee-akt">${x.status === "idee" ? `<button class="v2-btn sm pri" data-act="idee-anschreiben" data-id="${esc(x.id)}">✉️ Anschreiben …</button>` : ""}
+      ${x.firma ? `<button class="v2-btn sm" data-act="kunde-detail" data-id="${esc(x.firma)}">Firma</button>` : ""}
+      <button class="v2-btn sm" data-act="idee-form" data-id="${esc(x.id)}" title="Bearbeiten">✎</button></div></div>`).join("");
+  const offen = l.filter(x => x.status === "idee").length;
+  return tile(`💡 Ideen (${offen} offen · ${l.length} gesamt)`, rows || emptyRow("Noch keine Idee. Per Telegram z. B. „Partner-Idee: Kiez Burger – passt für Food-Reels“ oder hier „+ Neue Idee“."), "w12",
+    `<button class="v2-btn sm pri" data-act="idee-form">+ Neue Idee</button>`);
+}
+function ideeForm(iid) {
+  const x = (IDEEN.ideen || []).find(i => i.id === iid) || { art: "partner", status: "idee" };
+  const feld = (k, l, extra = "") => `<label class="v2-feld"><small>${l}</small><input class="v2-inp" id="idee-${k}" value="${esc(x[k] || "")}" ${extra}></label>`;
+  openModal(iid ? `💡 ${x.name}` : "💡 Neue Idee", `<div class="v2-form" id="idee-form">
+    ${feld("name", "Firma *", 'maxlength="200" autocomplete="off"')}
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Art</small><select class="v2-inp" id="idee-art">${Object.entries(IDEEN.arten || { kunde: "potenzieller Kunde", partner: "potenzieller Partner" }).map(([k, l]) => `<option value="${k}" ${k === x.art ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+      ${feld("branche", "Branche", 'placeholder="z. B. Gastro"')}${feld("ort", "Ort")}</div>
+    <div class="v2-an-zeile">${feld("web", "Website / Instagram", 'inputmode="url" placeholder="https://…"')}${feld("mail", "E-Mail", 'type="email" inputmode="email"')}${feld("ansprechpartner", "Ansprechpartner")}</div>
+    <label class="v2-feld"><small>Warum? (Idee, Anlass)</small><textarea class="v2-inp" id="idee-notiz" rows="4" maxlength="1000">${esc(x.notiz || "")}</textarea></label>
+    ${iid ? `<label class="v2-feld"><small>Status</small><select class="v2-inp" id="idee-status" ${x.firma ? "disabled" : ""}>${["idee", "angeschrieben", "kein_interesse"].map(k => `<option value="${k}" ${k === x.status ? "selected" : ""}>${esc(IDEEN.status[k] || k)}</option>`).join("")}${!["idee", "angeschrieben", "kein_interesse"].includes(x.status) ? `<option selected>${esc(IDEEN.status[x.status] || x.status)}</option>` : ""}</select></label>
+      ${(x.verlauf || []).length ? `<small class="v2-sub">${x.verlauf.map(v => `${esc(datumDe(v.ts))}: ${esc(v.text)}`).join(" · ")}</small>` : ""}` : ""}
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="idee-speichern" data-id="${esc(iid || "")}">Speichern</button>
+      ${iid ? `<button class="v2-btn" data-act="idee-suchen" data-id="${esc(iid)}" title="Website und Impressum suchen (Brave) – nur Vorschlag">🔎 Daten suchen</button>
+      ${x.status === "idee" ? `<button class="v2-btn" data-act="idee-anschreiben" data-id="${esc(iid)}">✉️ Anschreiben …</button>` : ""}
+      <button class="v2-btn danger" data-act="idee-loeschen" data-id="${esc(iid)}">🗑 Löschen</button>` : ""}</div>
+    <div class="v2-msg" id="idee-msg"></div></div>`);
+  $("#idee-name").focus();
+}
+async function ideeSpeichern(iid, trotz) {
+  const v = (k) => (($("#idee-" + k) || {}).value || "").trim();
+  const idee = { name: v("name"), art: v("art"), branche: v("branche"), ort: v("ort"), web: v("web"), mail: v("mail"), ansprechpartner: v("ansprechpartner"), notiz: v("notiz") };
+  if (iid && $("#idee-status") && !$("#idee-status").disabled) idee.status = v("status");
+  const r = await jpost(iid ? `/api/crm/ideen/${encodeURIComponent(iid)}` : "/api/crm/ideen", { idee, trotz_dublette: !!trotz });
+  if (r && r.ok === false && r.dublette) { const m = $("#idee-msg"); m.className = "v2-msg err";
+    m.innerHTML = `${esc(r.hinweis)}<div class="v2-card-actions" style="margin-top:8px"><button class="v2-btn sm" data-act="idee-trotzdem">Trotzdem anlegen</button></div>`; return; }
+  if (!r || r.ok === false) return kundenMsg("idee-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+  closeModal(); if (AKTIV === "kunden") renderKunden();
+}
+async function ideeSuchen(iid) {
+  kundenMsg("idee-msg", "🔎 Suche Website und Impressum …", true);
+  const r = await jpost(`/api/crm/ideen/${encodeURIComponent(iid)}/suchen`, {});
+  if (!r || r.ok === false) return kundenMsg("idee-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+  const v = r.vorschlaege || {}, neu = [];
+  for (const k of ["web", "ort", "mail"]) { const f = $("#idee-" + k); if (f && v[k] && !f.value.trim()) { f.value = v[k]; neu.push(k === "web" ? "Website" : k === "ort" ? "Ort" : "E-Mail"); } }
+  if (v.telefon) { const n = $("#idee-notiz"); if (n && !n.value.includes(v.telefon)) { n.value = (n.value ? n.value + "\n" : "") + "Tel. " + v.telefon; neu.push("Telefon"); } }
+  kundenMsg("idee-msg", neu.length ? `Gefunden: ${neu.join(", ")} – bitte prüfen und speichern.${r.quelle ? " Quelle: " + r.quelle : ""}` : (r.hinweis || "Nichts Neues gefunden."), !!neu.length);
 }
 async function vsListe() {
   const d = await jget("/api/crm/vorstellungen") || {}, l = d.vorstellungen || [];
@@ -2496,9 +2592,8 @@ async function abZeitLaden(nr) {
     if (!naechster || naechster.datum !== x.datum) { const t = tagSumme[x.datum] || {};
       if (alle.filter(y => y.datum === x.datum).length > 1) zeilen += `<tr class="v2-zt-tag"><td colspan="4"><small>Summe ${esc(datumDe(x.datum))}</small></td><td class="num"><b>${esc(dauerTxt(t.minuten || 0))}</b></td><td></td><td class="num">${t.km ? esc(String(t.km)) + " km" : ""}</td><td></td></tr>`; }
   });
-  if (zeilen) zeilen = `<div class="v2-tab-scroll"><table class="v2-table v2-zt"><thead><tr><th>Datum</th><th>Ein</th><th>Aus</th><th class="num">Pause</th><th class="num">Dauer</th><th>Tätigkeit</th><th class="num">km</th><th></th></tr></thead><tbody>${zeilen}</tbody>
+  if (zeilen) zeilen = `<div class="v2-tab-scroll"><table class="v2-table v2-zt"><thead><tr><th>Datum</th><th>Ein</th><th>Aus</th><th class="num">Pause</th><th class="num">Dauer</th><th>Grund</th><th class="num">km</th><th></th></tr></thead><tbody>${zeilen}</tbody>
     <tfoot><tr><td colspan="4"><b>Gesamt</b></td><td class="num"><b>${esc(dauerTxt((sz.summe || {}).minuten || 0))}</b></td><td></td><td class="num"><b>${(sz.summe || {}).km ? esc(String(sz.summe.km)) + " km" : ""}</b></td><td></td></tr></tfoot></table></div><div id="zt-korr-box"></div>`;
-  const taetListe = `<datalist id="zt-taet-liste">${(d.taetigkeiten || []).map(t => `<option value="${esc(t)}">`).join("")}</datalist>`;
   box.innerHTML = `<h3>⏱ Zeiten &amp; Nachkalkulation <small class="v2-sub">🔒 nur intern, kalkulatorisch – nie im PDF, keine Buchung, nicht in der EÜR</small></h3>
     <div class="v2-an-intern" style="border-top:none">
       <div class="v2-kv"><span>Auftragssumme (Geld)</span><b>${cent2eur(nk.umsatz_cent || 0)}</b></div>
@@ -2509,11 +2604,11 @@ async function abZeitLaden(nr) {
       ${(nk.je_position || []).length ? `<div class="v2-sub" style="margin-top:6px"><b>Je Leistung</b> (Zeit einer Position zugeordnet)</div>${nk.je_position.map(p => `<div class="v2-kv"><span>${p.position}. ${esc(p.beschreibung)} · ${esc(dauerTxt(p.minuten))}</span><b>${p.stundenlohn_cent != null ? cent2eur(p.stundenlohn_cent) + "/h" : "–"} <small class="v2-sub">DB ${cent2eur(p.db_cent)}</small></b></div>`).join("")}${nk.ohne_position_min ? `<div class="v2-kv"><span class="v2-sub">ohne Position</span><b class="v2-sub">${esc(dauerTxt(nk.ohne_position_min))}</b></div>` : ""}` : ""}</div>
     <div class="v2-card-actions" style="margin:8px 0">${lauf ? (lauf.auftrag === nr ? `<button class="v2-btn danger" data-act="zeit-stopp" data-id="${esc(nr)}">⏹ Zeit stoppen (läuft seit ${esc(lauf.start.slice(11, 16))})</button>` : `<small class="v2-sub">Es läuft gerade eine Zeit für ${esc(lauf.auftrag || lauf.firma)}.</small>`) : `<button class="v2-btn" data-act="zeit-start" data-id="${esc(nr)}">▶️ Zeit starten</button>`}</div>
     ${zeilen || `<div class="v2-sub">Noch keine Zeiten. Unterwegs per Telegram: „Bin auf dem Weg zu …“ / „Bin wieder zuhause“.</div>`}
-    <details style="margin-top:8px"><summary><small>+ Zeit von Hand eintragen</small></summary><div class="v2-form">
-      <div class="v2-an-zeile"><label class="v2-feld"><small>Datum</small><input id="zt-datum" type="date"></label><label class="v2-feld"><small>von</small><input id="zt-von" type="time"></label><label class="v2-feld"><small>bis</small><input id="zt-bis" type="time"></label><label class="v2-feld"><small>oder Dauer (Min.)</small><input id="zt-min" inputmode="numeric"></label></div>
+    <details class="v2-zt-hand" style="margin-top:8px"><summary class="v2-btn">➕ Zeit nachtragen</summary><div class="v2-form">
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Datum</small><input id="zt-datum" type="date"></label><label class="v2-feld"><small>von</small><input id="zt-von" type="time"></label><label class="v2-feld"><small>bis</small><input id="zt-bis" type="time"></label><label class="v2-feld"><small>oder Dauer (Std., z. B. 2:30)</small><input id="zt-min" inputmode="numeric"></label></div>
       <div class="v2-an-zeile"><label class="v2-feld"><small>Adresse des Drehs (leer = Firmenadresse)</small><input id="zt-adresse"></label><label class="v2-feld"><small>km Hin + Rück (leer = keine Fahrt)</small><input id="zt-km" inputmode="numeric"></label>
         <label class="v2-modlbl"><input type="checkbox" id="zt-km-auto"> km berechnen (OpenStreetMap)</label></div>
-      <div class="v2-an-zeile"><label class="v2-feld"><small>Tätigkeit</small><input id="zt-taet" list="zt-taet-liste" placeholder="z. B. Dreh, Schnitt"></label><label class="v2-feld"><small>Pause (Min.)</small><input id="zt-pause" inputmode="numeric"></label></div>${taetListe}
+      <div class="v2-an-zeile">${ztGrundFelder("zt")}<label class="v2-feld"><small>Pause (Min.)</small><input id="zt-pause" inputmode="numeric"></label></div>
       <label class="v2-feld"><small>Notiz</small><input id="zt-notiz"></label>
       <button class="v2-btn" data-act="zeit-eintragen" data-id="${esc(nr)}">Eintragen</button><div id="zt-msg" class="v2-msg"></div></div></details>
     <details style="margin-top:6px"><summary><small>Stundensatz ${e.stundensatz_cent ? cent2eur(e.stundensatz_cent) + "/h" : "festlegen"}</small></summary><div class="v2-form"><small class="v2-sub">Brutto-Monatslohn × 12 ÷ (Wochenstunden × 52) – kalkulatorisch, bleibt nur auf der NAS.</small>
@@ -2528,7 +2623,8 @@ async function ztKorrForm(zid, nr) {
   const x = ((d && d.stundenzettel && d.stundenzettel.eintraege) || []).find(e => e.id === zid); const box = $("#zt-korr-box"); if (!x || !box) return;
   box.innerHTML = `<h3>Zeit korrigieren</h3><div class="v2-form">
     <div class="v2-an-zeile"><label class="v2-feld"><small>Datum</small><input id="zk-datum" type="date" value="${esc(x.datum)}"></label><label class="v2-feld"><small>Ein</small><input id="zk-von" type="time" value="${esc(x.von)}"></label><label class="v2-feld"><small>Aus</small><input id="zk-bis" type="time" value="${esc(x.bis)}"></label><label class="v2-feld"><small>Pause (Min.)</small><input id="zk-pause" inputmode="numeric" value="${esc(String(x.pause_min || ""))}"></label></div>
-    <div class="v2-an-zeile"><label class="v2-feld"><small>Tätigkeit</small><input id="zk-taet" list="zt-taet-liste" value="${esc(x.taetigkeit || "")}"></label><label class="v2-feld"><small>Grund der Korrektur *</small><input id="zk-grund" placeholder="z. B. Stoppen vergessen"></label></div>
+    <div class="v2-an-zeile">${ztGrundFelder("zk", x.arbeit || "", x.taetigkeit_frei || "")}</div>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Begründung der Korrektur *</small><input id="zk-grund" placeholder="z. B. Stoppen vergessen"></label></div>
     <button class="v2-btn pri" data-act="zt-korr-speichern" data-id="${esc(zid)}" data-val="${esc(nr)}">Korrektur speichern</button><div id="zk-msg" class="v2-msg"></div>
     ${posListe.length ? `<div class="v2-an-zeile" style="margin-top:10px"><label class="v2-feld"><small>Leistung (für die Nachkalkulation je Position)</small><select id="zk-pos" class="v2-inp"><option value="0">— keine —</option>${posListe.map((p, i) => `<option value="${i + 1}" ${Number(x.position || 0) === i + 1 ? "selected" : ""}>${i + 1}. ${esc(p.beschreibung)}</option>`).join("")}</select></label>
       <button class="v2-btn" data-act="zt-pos-speichern" data-id="${esc(zid)}" data-val="${esc(nr)}">Leistung zuordnen</button></div>` : ""}</div>`;
@@ -2544,9 +2640,9 @@ async function zeitAktion(act, id, val) {
     const km = prompt(`Kilometer Hin + Rück${v && v.adresse ? " zu " + v.adresse : ""} (0,30 €/km, nur kalkulatorisch – keine Buchung):`, v && v.km ? String(v.km) : "");
     if (!km) return; r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/fahrt`, { km }); id = val;
   } else if (act === "zeit-eintragen") {
-    r = await jpost("/api/finanzen/zeit/eintrag", { auftrag: id, datum: $("#zt-datum").value, von: $("#zt-von").value, bis: $("#zt-bis").value, minuten: $("#zt-min").value.trim(),
+    r = await jpost("/api/finanzen/zeit/eintrag", { auftrag: id, datum: $("#zt-datum").value, von: $("#zt-von").value, bis: $("#zt-bis").value, minuten: ztMinuten($("#zt-min").value), ...ztGrund("zt"),
       notiz: $("#zt-notiz").value.trim(), adresse: $("#zt-adresse").value.trim(), km: $("#zt-km").value.trim(), km_berechnen: $("#zt-km-auto").checked,
-      taetigkeit: ($("#zt-taet") || {}).value || "", pause_min: ($("#zt-pause") || {}).value || "" });
+      pause_min: ($("#zt-pause") || {}).value || "" });
     if (!r || !r.ok) return kundenMsg("zt-msg", (r && r.hinweis) || "Keine Verbindung.", false);
   } else if (act === "zeit-satz") {
     r = await jpost("/api/finanzen/zeit/einstellungen", { monatsbrutto: $("#zs-brutto").value.trim(), wochenstunden: $("#zs-std").value.trim() });
@@ -4353,6 +4449,14 @@ async function handleAct(act, el) {
     }
     case "hb-filter": HB_FILTER = val || ""; return renderHandlung();
     case "vs-neu": return vsDialog(id || "", val === "nachfassen");
+    case "idee-form": return ideeForm(id || "");
+    case "idee-speichern": return ideeSpeichern(id || "");
+    case "idee-trotzdem": return ideeSpeichern("", true);
+    case "idee-suchen": return ideeSuchen(id);
+    case "idee-loeschen": { const x = (IDEEN.ideen || []).find(i => i.id === id); if (!confirm(`Idee „${x ? x.name : id}“ endgültig löschen?`)) return;
+      const r = await jpost(`/api/crm/ideen/${encodeURIComponent(id)}/loeschen`, {}); if (!r || r.ok === false) return kundenMsg("idee-msg", (r && r.hinweis) || "Fehler.", false);
+      closeModal(); return renderKunden(); }
+    case "idee-anschreiben": { const x = (IDEEN.ideen || []).find(i => i.id === id); if (!x) return; return vsDialog("", false, x); }
     case "suche-oeffnen": return sucheOeffnen();
     case "suche-treffer": return sucheTreffer(val, id);
     case "impressum-suchen": return impressumSuchen(val, el);
@@ -4408,17 +4512,19 @@ async function handleAct(act, el) {
     case "zeit-start": case "zeit-stopp": case "zeit-storno": case "zeit-km": case "zeit-eintragen": case "zeit-satz": { const r = await zeitAktion(act, id, val); zeitLaden(); return r; }
     case "zt-fenster": ladeZu(); ZEIT.ergebnis = null; return zeitFenster();
     case "zt-korr-form": return ztKorrForm(id, val);
-    case "zt-korr-speichern": { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/korrigieren`, { datum: $("#zk-datum").value, von: $("#zk-von").value, bis: $("#zk-bis").value, pause_min: $("#zk-pause").value, taetigkeit: $("#zk-taet").value, grund: $("#zk-grund").value.trim() });
+    case "zt-korr-speichern": { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/korrigieren`, { datum: $("#zk-datum").value, von: $("#zk-von").value, bis: $("#zk-bis").value, pause_min: $("#zk-pause").value, ...ztGrund("zk"), grund: $("#zk-grund").value.trim() });
       if (!r || r.ok === false) return kundenMsg("zk-msg", (r && r.hinweis) || "Fehler.", false); return abDetail(val, "Zeit korrigiert."); }
     case "zt-start": return zeitStart();
     case "zt-stopp": return zeitStopp();
     case "zt-neu": ZEIT.ergebnis = null; closeModal(); return AKTIV === "dash" ? renderDash() : undefined;
-    case "zt-taet-chip": { const f = $("#zt-e-taet"); if (f) f.value = val; return; }
-    case "zt-km": { const km = (($("#zt-km") || {}).value || "").trim(), taet = (($("#zt-e-taet") || {}).value || "").trim(), pause = (($("#zt-e-pause") || {}).value || "").trim();
-      if (!km && !taet && !pause) return zeitNeuZeichnen("Bitte Tätigkeit, Pause oder km eintragen – oder „Fertig“.", true);
+    case "zt-nachtragen-form": { const b = $("#zt-box"); if (b) b.innerHTML = ztNachtragenForm() + `<div id="zt-msg-n" class="v2-msg"></div>`; return; }
+    case "zt-nachtragen": return ztNachtragen();
+    case "zt-km": { const km = (($("#zt-km") || {}).value || "").trim(), g = ztGrund("zt-e"), pause = (($("#zt-e-pause") || {}).value || "").trim();
+      if (!km && !g.arbeit && !pause) return zeitNeuZeichnen("Bitte Grund, Pause oder km eintragen – oder „Fertig“.", true);
       const teile = [];
-      if (taet || pause) { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/details`, { ...(taet ? { taetigkeit: taet } : {}), ...(pause ? { pause_min: pause } : {}) });
-        if (!r || r.ok === false) return zeitNeuZeichnen((r && r.hinweis) || "Fehler.", true); teile.push(taet ? `„${taet}“` : "", pause ? `${pause} min Pause` : ""); }
+      if (g.arbeit || pause) { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/details`, { ...(g.arbeit ? g : {}), ...(pause ? { pause_min: pause } : {}) });
+        if (!r || r.ok === false) { ZEIT.ergebnis = ZEIT.ergebnis || { id }; return kundenMsg("zt-msg-e", (r && r.hinweis) || "Fehler.", false); }
+        teile.push(g.arbeit ? `„${ZT_ARBEITEN[g.arbeit].replace(/^\S+ /, "")}“` : "", pause ? `${pause} min Pause` : ""); }
       if (km) { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/fahrt`, { km }); if (!r || r.ok === false) return zeitNeuZeichnen((r && r.hinweis) || "Fehler.", true); teile.push(`${km} km`); }
       ZEIT.ergebnis = null; return zeitNeuZeichnen(`Gespeichert: ${teile.filter(Boolean).join(", ")}.`); }
     case "akte-hochladen": return akteHochladen(id);

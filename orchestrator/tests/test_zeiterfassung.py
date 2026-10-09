@@ -137,7 +137,7 @@ class TestApi(ApiBasis):
         nr = self.c.post(f"/api/crm/angebote/{an}/auftrag", json={"annehmen": True}).json()["nummer"]
         self.assertTrue(self.c.post("/api/finanzen/zeit/einstellungen", json={"monatsbrutto": "5061,21", "wochenstunden": "40"}).json()["ok"])
         r = self.c.post("/api/finanzen/zeit/eintrag", json={"auftrag": nr, "datum": jetzt().date().isoformat(),
-                                                             "minuten": "90", "km": "30"}).json()
+                                                             "minuten": "90", "km": "30", "arbeit": "dreh"}).json()
         self.assertTrue(r["ok"], r)
         d = self.c.get(f"/api/finanzen/zeit?auftrag={nr}").json()
         self.assertEqual((d["nachkalkulation"]["minuten"], d["nachkalkulation"]["fahrt_cent"]), (90, 900))

@@ -78,6 +78,7 @@ TAR_EXCLUDES=(
   --exclude='./content_ops'         # Content-Caches (schreibt die Web-App auf der NAS)
   --exclude='./buchhaltung'         # Buchhaltung: Hash-Kette + Belege (GoBD, nie ueberschreiben)
   --exclude='./einwilligungen'      # Einwilligungen in Aufnahmen (Personendaten + unterschriebene PDFs, nur NAS)
+  --exclude='./akquise'             # Akquise-Ideen (PARTNERLISTE P1, Live-Daten, nicht in der Kette)
   --exclude='./nutzung'             # Nutzungs-Log (Leistungsbericht)
   --exclude='./agenten_nutzung'     # Fachagenten-Anfragen (AGENTEN_AUSBAU A1, Live-Daten)
   --exclude='./backoffice/log.jsonl'  # Backoffice-Auftraege (Live-Daten; der Code-Ordner backoffice/ wird deployt)

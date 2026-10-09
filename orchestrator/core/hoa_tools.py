@@ -59,6 +59,9 @@ def tool_specs() -> list[dict]:
               {"aufgabe": _str("Aufgabe/Frage, inkl. noetiger Zahlen/Regeln als Kontext."),
                "an": _str("Kuerzel des zustaendigen Fachagenten.")},
               ["aufgabe", "an"]),
+        _spec("akquise_idee_merken", "Firma als Akquise-Idee merken (Kunde/Partner).",
+              {"name": _str("Firma"), "art": _str("kunde|partner"), "notiz": _str("Warum"), "ort": _str("Ort")},
+              ["name"]),
         _spec("geschaeftsregeln", "Liest Geschaeftsregeln: Zahlungsbedingungen, Mahnwesen, Leistungskatalog/Preise, "
               "Projektstunde/km-Satz, AGB in Kraft. Keine Kunden-/Rechnungsdaten.",
               {"thema": _str("zahlung | mahnung | katalog | agb | leer = alles.")}, []),
@@ -180,8 +183,8 @@ def tool_specs() -> list[dict]:
               "24 Stunden (Eintraege je Akteur/Kategorie).",
               {"akteur": _str("Optionaler Filter auf einen Agenten/eine Rolle (z. B. cfo, CEO, Researcher)."),
                "anzahl": _str("Wie viele Eintraege (Default 15).")}, []),
-        _spec("werkzeuge_laden", "Laedt eine Werkzeug-Gruppe nach, wenn dir fuer die Aufgabe ein Werkzeug fehlt "
-              "(du siehst nicht immer alle). Gruppen: " + _werkzeug_gruppen_text() + ".",
+        _spec("werkzeuge_laden", "Laedt eine Werkzeug-Gruppe nach, wenn dir ein Werkzeug fehlt. Gruppen: "
+              + _werkzeug_gruppen_text() + ".",
               {"gruppe": _str("Name der Gruppe, z. B. 'kalender'.")}, ["gruppe"]),
         _spec("systemcheck", "IT-Selbstcheck: prueft sofort, ob alle Prozesse/Komponenten laufen (Keys, "
               "Google, Stores, Watcher-Heartbeat). Kostenlos.", {}, []),
@@ -521,6 +524,20 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
 
     if name == "frage_finance":
         return {"finance": finance_text(ctx.finance_dir, sec)}
+
+    if name == "akquise_idee_merken":                 # PARTNERLISTE P2: freie Saetze im Chat
+        from pathlib import Path as _P
+        from .akquise import IdeenStore
+        from .kunden import DubletteFehler
+        try:
+            x = IdeenStore(_P(ctx.repo_root) / "akquise").anlegen(
+                {k: args.get(k) or "" for k in ("name", "notiz", "ort")} | {"art": args.get("art") or "partner"},
+                quelle="Chat", von="LUNA (CEO-Auftrag)")
+        except DubletteFehler as exc:
+            return {"ok": False, "dublette": True, "hinweis": str(exc)}
+        except ValueError as exc:
+            return {"ok": False, "hinweis": str(exc)}
+        return {"ok": True, "id": x["id"], "name": x["name"], "art": x["art"], "hinweis": "In LUNA-OS unter Kunden -> 💡 Ideen."}
 
     if name == "geschaeftsregeln":                    # FACHAGENTEN_ROUTING R2: nur lesen, ohne Kunden-/Rechnungsdaten
         from pathlib import Path as _P

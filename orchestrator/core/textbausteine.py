@@ -21,7 +21,8 @@ import uuid
 ARTEN = {"angebot": "Angebot", "auftrag": "Auftragsbestätigung", "rechnung": "Rechnung", "storno": "Stornorechnung",
          "mahnung": "Mahnung", "bericht": "Projektbericht", "konzept": "Konzept",
          "vorstellung": "Vorstellung", "vorstellung_nachfassen": "Vorstellung – Nachfassen",   # SERIEN_UND_VORSTELLUNG V1/V2
-         "einwilligung": "Einwilligung (Kopie)"}                                                  # EINWILLIGUNG_AUFNAHMEN E3
+         "einwilligung": "Einwilligung (Kopie)",                                                  # EINWILLIGUNG_AUFNAHMEN E3
+         "partnerschaft": "Vorstellung – Partnerschaft"}                                          # PARTNERLISTE P3
 
 _GEMEINSAM = {"anrede": "„Guten Tag Vorname Nachname,“ bzw. „Sehr geehrte Damen und Herren,“",
               "anrede_moin": "„Moin Vorname Nachname,“ bzw. „Moin,“", "vorname": "Vorname des Ansprechpartners",
@@ -42,6 +43,8 @@ PLATZHALTER: dict[str, dict[str, str]] = {
     "bericht": _GEMEINSAM | {"titel_quote": "„ „Titel““ (leer ohne Titel)", "version_zusatz": "„ (Version 2)“ ab der 2. Fassung"},
     "vorstellung": {k: v for k, v in _GEMEINSAM.items() if k not in ("nummer", "titel", "titel_zusatz")}
                    | {"praesentation": "Präsentations-Zeile mit Canva-Link (aus dem Katalog)"},
+    "partnerschaft": {k: v for k, v in _GEMEINSAM.items() if k not in ("nummer", "titel", "titel_zusatz")}
+                     | {"praesentation": "Präsentations-Zeile mit Canva-Link (aus dem Katalog)"},
     "vorstellung_nachfassen": {k: v for k, v in _GEMEINSAM.items() if k not in ("nummer", "titel", "titel_zusatz")}
                               | {"praesentation": "Präsentations-Zeile mit Canva-Link (aus dem Katalog)",
                                  "gesendet_am": "Datum der ersten Mail"},
@@ -84,6 +87,12 @@ STANDARD: dict[str, dict] = {
                             "und Hamburg für unsere Community auf Social Media.\n\nIch könnte mir gut vorstellen, dass {kunde} "
                             "und unsere Community zusammenpassen – gerne zeige ich Ihnen, wie eine Zusammenarbeit aussehen "
                             "kann.\n\n{praesentation}\n\nHätten Sie Lust auf ein kurzes Gespräch?"},
+    "partnerschaft": {"betreff": "Hanserautisch × {kunde} – Idee für eine Partnerschaft",
+                      "text": "{anrede_moin}\n\nich bin Nils von Hanserautisch – wir machen Content rund um den HSV und "
+                              "Hamburg für unsere Community auf Social Media.\n\nIch glaube, {kunde} und Hanserautisch "
+                              "würden gut zusammenpassen, und könnte mir eine Partnerschaft vorstellen, von der beide Seiten "
+                              "etwas haben – zum Beispiel gemeinsame Aktionen oder Inhalte für unsere Community.\n\n"
+                              "{praesentation}\n\nHätten Sie Interesse an einem kurzen Gespräch?"},
     "vorstellung_nachfassen": {"betreff": "Kurze Nachfrage – Hanserautisch × {kunde}",
                                "text": "{anrede_moin}\n\nich wollte kurz nachhaken, ob Sie meine Nachricht vom {gesendet_am} "
                                        "gesehen haben. Gerne erzähle ich Ihnen in einem kurzen Gespräch mehr.\n\n{praesentation}"},

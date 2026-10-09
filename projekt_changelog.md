@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-09 10:35] — Claude Code
+- **Was:** ZEITERFASSUNG_GRUND Z1-Z2 und PARTNERLISTE P1-P3 gebaut. Zeiten: feste Gruende (Dreharbeiten, Postproduktion & Schnitt, Konzept & Abstimmung, Sonstiges) statt Freitext, Pflicht beim Nachtragen, Telegram-Knoepfe nach dem Stopp, Auswertung je Grund; „➕ Zeit nachtragen“ im Zeiterfassungs-Fenster und im Auftrag; Telegram-Saetze wie „Gestern 3 Stunden Schnitt fuer CR Container“ -> Rueckfrage, gespeichert erst nach ✅. Ideen: neuer Reiter Kunden -> 💡 Ideen (`akquise/ideen.json`, nicht in der Kette, loeschbar, Dubletten-Hinweis), Telegram „Partner-Idee:/Kunden-Idee:/Akquise:/Merk dir … als Partner“ mit Rueckgaengig und 🔎 Daten suchen (Brave + Impressum, nur Vorschlag), LUNA-Werkzeug `akquise_idee_merken`, „✉️ Anschreiben …“ ueber die Vorstellungs-Mail mit neuer Vorlage „Partnerschaft“, danach Status aus Vorstellung/Kundenstamm. `.gitignore`: `einwilligungen/` (BF-70) und `akquise/`. Cache app-v2.js v128, style-v2.css v65.
+- **Warum:** CEO 2026-10-09: Grund fuer Zeiterfassung, manuelles Nachbuchen; Liste potenzieller Partner/Kunden mit Telegram-Erfassung -- Go Z1, Z2, P1-P3.
+- **Betroffen:** `orchestrator/core/zeiterfassung.py`, `akquise.py` (neu), `firmendaten.py`, `textbausteine.py`, `hoa_tools.py`, `werkzeugauswahl.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, Tests (`test_zeit_grund.py`, `test_akquise.py` neu; `test_projektzeiten.py`, `test_zeiterfassung.py`, `test_projektabrechnung.py`, `test_kalkulatorisch.py`), `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `.gitignore`, `ZEITERFASSUNG_GRUND_ROADMAP.md`, `PARTNERLISTE_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-09 10:10] — Claude Code
 - **Was:** Zwei Roadmaps angelegt (geplant): `ZEITERFASSUNG_GRUND_ROADMAP.md` (Z1 feste Gruende, Z2 Nachtragen im OS und per Telegram) und `PARTNERLISTE_ROADMAP.md` (P1 Ideen-Liste getrennt vom Kundenstamm, P2 Telegram, P3 Anschreiben ueber die Vorstellungs-Mail); im Roadmap-Verzeichnis eingetragen.
 - **Warum:** CEO 2026-10-09: Grund fuer Zeiterfassung, manuelles Nachbuchen; Liste potenzieller Partner/Kunden mit Telegram-Erfassung.

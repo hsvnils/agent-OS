@@ -1,10 +1,10 @@
 # Roadmap: Grund der Arbeitszeit und Zeiten nachtragen
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-09
 - Arbeitsbranch: `ai/zeitgrund-partnerliste`
 - Basiscommit: `a680e53`
-- Naechster Schritt: CEO-Go fuer Z1 und Z2 abwarten (Gruende bestaetigen).
+- Naechster Schritt: Deploy (CEO), dann Abnahme durch den CEO (Telegram-Test) und Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -26,7 +26,7 @@ System ermoeglichen.“
 
 ## Etappe Z1: Feste Gruende statt Freitext
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Auswahl **Grund** mit festen Werten (Empfehlung): **Dreharbeiten**, **Postproduktion & Schnitt**,
   **Konzept & Abstimmung**, **Sonstiges** (bei Sonstiges kurzer Text). Pflicht beim Nachtragen und Korrigieren; beim
   Stoppen fragt LUNA (OS und Telegram-Knoepfe mit genau diesen Gruenden). Alte Freitexte bleiben lesbar und werden in der
@@ -38,7 +38,7 @@ System ermoeglichen.“
 
 ## Etappe Z2: Zeiten nachtragen ueberall
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Im Fenster „⏱ Zeiterfassung“ Knopf **„+ Zeit nachtragen“** (Auftrag waehlen, Datum, von-bis oder Dauer,
   Pause, Grund, optional km); im Auftrag den Bereich sichtbarer machen (Knopf statt eingeklapptem Text). Telegram:
   „Gestern 3 Stunden Schnitt fuer CR Container“ bzw. „09.10. 10-14 Uhr Dreh AB-2026-0001“ -> LUNA zeigt die erkannte Zeit
@@ -47,6 +47,17 @@ System ermoeglichen.“
 - Gate: Tests (Erkennung der Telegram-Saetze, Bestaetigung Pflicht, Gegenprobe); Browsertest.
 - Risiko / Rueckweg: Telegram-Erkennung regelbasiert (kein LLM noetig); Rueckweg = Commit zuruecknehmen.
 - Aufwand: klein bis mittel.
+
+## Umsetzung (2026-10-09, Go CEO fuer Z1 und Z2)
+
+- Z1: `ARBEITEN` in `core/zeiterfassung.py`, Feld `arbeit` an allen Zeit-Ereignissen; Pflicht beim Nachtragen (OS, Telegram);
+  Anzeige „Dreharbeiten“, „Postproduktion & Schnitt – Zusatz“, „Sonstiges: Messe“ (auch Rechnungs-Anlage und Projektbericht);
+  alte Freitexte werden zugeordnet (Dreh -> Dreharbeiten, Schnitt -> Postproduktion & Schnitt, sonst Sonstiges). Telegram
+  fragt nach dem Stopp mit den vier Gruenden; Auswertung „Je Grund“, CSV-Spalte „Grund“.
+- Z2: Fenster „⏱ Zeiterfassung“ mit „➕ Zeit nachtragen“ (alle Auftraege ausser storniert/abgelehnt), Auftrag mit Knopf
+  „➕ Zeit nachtragen“; Dauer als Stunden („2:30“, „2,5“). Telegram: `nachtrag()` erkennt Tag + Spanne/Dauer + Grund/Ziel,
+  fragt fehlenden Auftrag oder Grund per Knopf und speichert erst nach „✅ Eintragen“.
+- Tests `test_zeit_grund.py` (4, Gegenproben rot), bestehende Zeit-Tests auf Gruende umgestellt; Browser Rechner/iPad/iPhone.
 
 ## Nicht-Scope
 

@@ -35,6 +35,9 @@ agenten_nutzung/
 cutter_ops/
 # Buchhaltung (Hash-Kette + Belege, GoBD) -- Live-Daten auf der NAS, nie ins oeffentliche Repo
 buchhaltung/
+# Einwilligungen (Personendaten + unterschriebene PDFs) und Akquise-Ideen -- nur NAS, nie ins Repo
+einwilligungen/
+akquise/
 
 # Live-Voice: lokale Stimmauswahl (Nutzerpraeferenz, kein Versionierungsbedarf)
 orchestrator/channels/voice/selected_voice.json

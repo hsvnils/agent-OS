@@ -124,7 +124,7 @@ class TestApi(ApiBasis):
         self.c.post(f"/api/crm/angebote/{an}/versendet")
         nr = self.c.post(f"/api/crm/angebote/{an}/auftrag", json={"annehmen": True}).json()["nummer"]
         self.c.post("/api/finanzen/zeit/einstellungen", json={"monatsbrutto": "5061,21", "wochenstunden": "40"})
-        zid = self.c.post("/api/finanzen/zeit/eintrag", json={"auftrag": nr, "datum": GESTERN, "von": "09:00", "bis": "11:00"}).json()["id"]
+        zid = self.c.post("/api/finanzen/zeit/eintrag", json={"auftrag": nr, "datum": GESTERN, "von": "09:00", "bis": "11:00", "arbeit": "dreh"}).json()["id"]
         eid = self.c.post(f"/api/finanzen/rechnungen/aus-auftrag/{nr}", json={}).json()["entwurf_id"]
         d = self.c.get(f"/api/finanzen/rechnungen/{eid}/projektzeiten").json()
         self.assertEqual([x["id"] for x in d["stundenzettel"]["eintraege"]], [zid])

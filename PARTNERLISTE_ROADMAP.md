@@ -1,10 +1,10 @@
 # Roadmap: Liste potenzieller Partner und Kunden (Akquise-Ideen)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-09
 - Arbeitsbranch: `ai/zeitgrund-partnerliste`
 - Basiscommit: `a680e53`
-- Naechster Schritt: CEO-Go fuer P1-P3 abwarten (Speicherort und Telegram-Satz bestaetigen).
+- Naechster Schritt: Deploy (CEO), dann Abnahme durch den CEO (Telegram-Test) und Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -27,7 +27,7 @@ Partnerschaft besteht.“
 
 ## Etappe P1: Liste „💡 Ideen“ im Bereich Kunden
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Neuer Reiter **„💡 Ideen“** neben Vorstellungen/Interessenten: Firma, Art (**potenzieller Kunde** /
   **potenzieller Partner**), Branche, Ort, Website/Instagram, Mail/Ansprechpartner (optional), Warum (Notiz), Quelle
   (OS/Telegram), Datum, Status **Idee -> angeschrieben -> Interessent / kein Interesse**. Anlegen, bearbeiten, loeschen.
@@ -39,7 +39,7 @@ Partnerschaft besteht.“
 
 ## Etappe P2: Ideen per Telegram
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Satz an LUNA, z. B. „Idee: Elbphilharmonie Gastro – passt fuer Food-Reels“ oder „Merk dir Kiez Burger als
   moeglichen Partner“ -> LUNA legt die Idee an und antwortet mit Zusammenfassung + Knopf „↩️ Rueckgaengig“. Erkennung
   regelbasiert (Woerter Idee/merk dir/potenzieller Partner/Kunde), zusaetzlich als LUNA-Werkzeug, damit auch freie Saetze im
@@ -50,12 +50,26 @@ Partnerschaft besteht.“
 
 ## Etappe P3: Von der Idee zur Vorstellungs-Mail
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: In jeder Idee Knopf **„✉️ Anschreiben …“** -> oeffnet die vorhandene Vorstellungs-Mail mit Firma, Mail und
   passender Vorlage (Kunde bzw. Partner; neue Textbaustein-Vorlage „Partnerschaft“). Nach dem Senden: Idee = „angeschrieben“,
   Firma wird wie heute Interessent; Antwort/Nachfassen laufen ueber V2. „Kein Interesse“ schliesst die Idee.
 - Gate: Tests (Statuswechsel, Verknuepfung Idee -> Vorstellung -> Interessent); Browsertest; Senden nur per Klick.
 - Aufwand: klein.
+
+## Umsetzung (2026-10-09, Go CEO fuer P1-P3)
+
+- P1: `core/akquise.py` (`IdeenStore`, `akquise/ideen.json`, wirklich loeschbar), Dubletten gegen Ideen und Kundenstamm
+  (Name ohne Rechtsform, Website-/Mail-Domain ohne Freemail); Reiter Kunden -> „💡 Ideen“ mit Formular, Status, Verlauf;
+  Deploy-Ausschluss, Backup, `.gitignore` (dabei `einwilligungen/` nachgezogen, BF-70).
+- P2: Telegram „Partner-Idee: …“, „Kunden-Idee: …“, „Akquise: …“, „Merk dir … als moeglichen Partner/Kunden“ -> Idee mit
+  „🔎 Daten suchen“ (Brave + Impressum, nur Vorschlag, „✅ Uebernehmen“) und „↩️ Rueckgaengig“; bei Dublette erst Rueckfrage.
+  Ein blosses „Idee: …“ bleibt Chat (oft Content) -- dafuer LUNA-Werkzeug `akquise_idee_merken` (eigene kleine Gruppe,
+  Token-Budget eingehalten).
+- P3: „✉️ Anschreiben …“ oeffnet die Vorstellungs-Mail vorbelegt (Name, Mail, Ansprechpartner, Website); Partner-Ideen
+  mit neuer Vorlage „Vorstellung – Partnerschaft“; nach dem Senden Idee „angeschrieben“ + Firma (Interessent), danach Stand
+  aus Vorstellung/Kundenstamm (Antwort, kein Interesse, Kunde).
+- Tests `test_akquise.py` (7, Gegenproben rot); Browser Rechner/iPad/iPhone.
 
 ## Nicht-Scope
 

@@ -23,8 +23,9 @@ class TestStundenzettel(unittest.TestCase):
         self.assertEqual(a["minuten"], 180)                                       # 3,5 h - 30 min Pause
         sz = z.stundenzettel(nr)
         self.assertEqual([(e["datum"], e["von"], e["bis"], e["pause_min"], e["minuten"], e["taetigkeit"]) for e in sz["eintraege"]],
-                         [(VORGESTERN, "09:00", "12:30", 30, 180, "Dreh"), (VORGESTERN, "14:00", "15:00", 0, 60, "Schnitt"),
-                          (GESTERN, "22:00", "01:00", 0, 180, "Schnitt")])
+                         [(VORGESTERN, "09:00", "12:30", 30, 180, "Dreharbeiten"),          # alte Freitexte -> Grund (Z1)
+                          (VORGESTERN, "14:00", "15:00", 0, 60, "Postproduktion & Schnitt"),
+                          (GESTERN, "22:00", "01:00", 0, 180, "Postproduktion & Schnitt")])
         self.assertEqual([(t["datum"], t["minuten"], t["km"]) for t in sz["tage"]], [(VORGESTERN, 240, 40), (GESTERN, 180, 0)])
         self.assertEqual((sz["summe"]["minuten"], sz["summe"]["km"]), (420, 40))
         self.assertEqual(sz["summe"]["kosten_cent"], round(420 * 2920 / 60))     # Pause kostet nichts
@@ -39,10 +40,10 @@ class TestStundenzettel(unittest.TestCase):
         s = z.stoppen(ende=ende, taetigkeit="  Dreh   Stadion ", pause_min=5)
         self.assertEqual(s["minuten"], 90)
         x = z.stundenzettel(nr)["eintraege"][0]
-        self.assertEqual((x["taetigkeit"], x["pause_min"], x["minuten"]), ("Dreh Stadion", 5, 90))
+        self.assertEqual((x["taetigkeit"], x["pause_min"], x["minuten"]), ("Dreharbeiten – Dreh Stadion", 5, 90))
         z.details_setzen(s["id"], taetigkeit="Dreh", pause_min=15, notiz="Regen")
         x = z.stundenzettel(nr)["eintraege"][0]
-        self.assertEqual((x["taetigkeit"], x["pause_min"], x["minuten"], x["notiz"]), ("Dreh", 15, 80, "Regen"))
+        self.assertEqual((x["taetigkeit"], x["pause_min"], x["minuten"], x["notiz"]), ("Dreharbeiten", 15, 80, "Regen"))
 
     def test_3_korrektur_mit_verlauf(self):
         bh, ks, k, ab, nr, z = _setup()
@@ -65,9 +66,10 @@ class TestStundenzettel(unittest.TestCase):
         gesendet = []
         with mock.patch.object(bot, "_api", side_effect=lambda t, m, p: gesendet.append(p)):
             bot._zeit_taet_frage("T", "1", z, e["id"])
-        kb = json.loads(gesendet[0]["reply_markup"])["inline_keyboard"]
-        self.assertEqual([b["text"] for b in kb[0]], ["Schnitt"])
-        self.assertEqual(kb[0][0]["callback_data"], f"ztt:{e['id']}:0")
+        kb = json.loads(gesendet[0]["reply_markup"])["inline_keyboard"]          # Z1: feste Gruende statt letzter Freitexte
+        self.assertEqual([b["text"] for r in kb for b in r], ["🎬 Dreharbeiten", "✂️ Postproduktion & Schnitt",
+                                                               "💬 Konzept & Abstimmung", "✏️ Sonstiges …", "Überspringen"])
+        self.assertEqual(kb[0][0]["callback_data"], f"ztt:{e['id']}:dreh")
         self.assertLessEqual(max(len(b["callback_data"].encode()) for r in kb for b in r), 64)   # Telegram-Grenze
 
 
@@ -83,12 +85,12 @@ class TestAuswertungZ3(unittest.TestCase):
         r = auswertung(bh.eintraege(), VORGESTERN, GESTERN, {k: "Brand X GmbH"})
         self.assertEqual((r["summe"]["minuten"], r["summe"]["km"], r["summe"]["eintraege"]), (270, 20, 2))
         self.assertEqual([(x["name"], x["minuten"]) for x in r["je_kunde"]], [("Brand X GmbH", 270)])
-        self.assertEqual([(x["name"], x["minuten"]) for x in r["je_taetigkeit"]], [("Dreh", 180), ("Schnitt", 90)])
+        self.assertEqual([(x["name"], x["minuten"]) for x in r["je_taetigkeit"]], [("Dreharbeiten", 180), ("Postproduktion & Schnitt", 90)])
         self.assertEqual(sum(x["minuten"] for x in r["je_woche"]), 270)
         self.assertEqual(auswertung(bh.eintraege(), GESTERN, GESTERN)["summe"]["minuten"], 90)
         csv = auswertung_csv(r)
-        self.assertIn("Taetigkeit", csv.splitlines()[0])
-        self.assertIn(";3,00;Dreh;Brand X GmbH;", csv)
+        self.assertIn("Grund", csv.splitlines()[0])
+        self.assertIn(";3,00;Dreharbeiten;Brand X GmbH;", csv)
 
     def test_2_zeit_je_position(self):
         bh, ks, k, ab, nr, z = _setup()                                          # POS: Reel 2 x 450 + Story 1,5 x 80
@@ -112,6 +114,10 @@ class TestApi(ApiBasis):
         self.c.post("/api/finanzen/zeit/einstellungen", json={"monatsbrutto": "5061,21", "wochenstunden": "40"})
         r = self.c.post("/api/finanzen/zeit/eintrag", json={"auftrag": nr, "datum": GESTERN, "von": "09:00", "bis": "11:00",
                                                              "taetigkeit": "Dreh", "pause_min": "10"}).json()
+        self.assertFalse(r["ok"])                                                 # Z1: Nachtragen nur mit Grund
+        self.assertIn("Grund", r["hinweis"])
+        r = self.c.post("/api/finanzen/zeit/eintrag", json={"auftrag": nr, "datum": GESTERN, "von": "09:00", "bis": "11:00",
+                                                             "arbeit": "dreh", "taetigkeit": "Dreh", "pause_min": "10"}).json()
         self.assertTrue(r["ok"], r)
         d = self.c.get(f"/api/finanzen/zeit?auftrag={nr}").json()
         self.assertEqual(d["stundenzettel"]["summe"]["minuten"], 110)
@@ -119,9 +125,9 @@ class TestApi(ApiBasis):
         k = self.c.post(f"/api/finanzen/zeit/{r['id']}/korrigieren", json={"datum": GESTERN, "von": "09:00", "bis": "10:00",
                                                                            "grund": "falsch"}).json()
         self.assertTrue(k["ok"], k)
-        self.assertTrue(self.c.post(f"/api/finanzen/zeit/{r['id']}/details", json={"taetigkeit": "Schnitt"}).json()["ok"])
+        self.assertTrue(self.c.post(f"/api/finanzen/zeit/{r['id']}/details", json={"arbeit": "post", "taetigkeit": ""}).json()["ok"])
         x = self.c.get(f"/api/finanzen/zeit?auftrag={nr}").json()["stundenzettel"]["eintraege"][0]
-        self.assertEqual((x["minuten"], x["taetigkeit"]), (60, "Schnitt"))
+        self.assertEqual((x["minuten"], x["taetigkeit"], x["arbeit"]), (60, "Postproduktion & Schnitt", "post"))
         aw = self.c.get(f"/api/finanzen/zeit/auswertung?von={GESTERN}&bis={GESTERN}").json()      # Z3
         self.assertEqual(aw["summe"]["minuten"], 60)
         c = self.c.get(f"/api/finanzen/zeit/auswertung?von={GESTERN}&bis={GESTERN}&format=csv")

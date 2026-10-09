@@ -1829,7 +1829,8 @@ def _mit_ms(x: dict | None) -> dict | None:
 def zeit_liste(auftrag: str = ""):
     """Zeiten + Nachkalkulation eines Auftrags (Modul finanzen, nur intern)."""
     z = _zeit()
-    out = {"laufend": _mit_ms(z.laufend()), "taetigkeiten": z.taetigkeiten(), "einstellungen": {k: v for k, v in z.einstellungen().items() if k != "monatsbrutto_cent"}}
+    from ...core.zeiterfassung import ARBEITEN
+    out = {"laufend": _mit_ms(z.laufend()), "taetigkeiten": z.taetigkeiten(), "arbeiten": ARBEITEN, "einstellungen": {k: v for k, v in z.einstellungen().items() if k != "monatsbrutto_cent"}}
     if auftrag:
         a = _auftraege().auftrag(auftrag)
         if not a:
@@ -1882,7 +1883,7 @@ async def zeit_start(request: Request):
 async def zeit_stopp(request: Request):
     body = await _json(request) or {}
     return _kunden_aktion(lambda: _zeit().stoppen(taetigkeit=body.get("taetigkeit") or "", pause_min=body.get("pause_min"),
-                                                  von=_von(request)))
+                                                  arbeit=body.get("arbeit") or "", von=_von(request)))
 
 
 @app.post("/api/finanzen/zeit/{zid}/details")
@@ -1890,7 +1891,8 @@ async def zeit_details(zid: str, request: Request):
     """PROJEKTZEITEN Z1: Taetigkeit/Pause/Notiz nachtragen."""
     body = await _json(request) or {}
     return _kunden_aktion(lambda: _zeit().details_setzen(zid, taetigkeit=body.get("taetigkeit"), pause_min=body.get("pause_min"),
-                                                         notiz=body.get("notiz"), position=body.get("position"), von=_von(request)))
+                                                         notiz=body.get("notiz"), position=body.get("position"),
+                                                         arbeit=body.get("arbeit"), von=_von(request)))
 
 
 @app.post("/api/finanzen/zeit/{zid}/korrigieren")
@@ -1900,7 +1902,7 @@ async def zeit_korrigieren(zid: str, request: Request):
     return _kunden_aktion(lambda: _zeit().korrigieren(zid, datum=body.get("datum") or "", von_uhr=body.get("von") or "",
                                                       bis_uhr=body.get("bis") or "", pause_min=body.get("pause_min"),
                                                       taetigkeit=body.get("taetigkeit"), grund=body.get("grund") or "",
-                                                      von=_von(request)))
+                                                      arbeit=body.get("arbeit"), von=_von(request)))
 
 
 @app.post("/api/finanzen/zeit/eintrag")
@@ -1912,7 +1914,8 @@ async def zeit_eintrag(request: Request):
         r = z.eintragen(auftrag=body.get("auftrag") or "", firma=body.get("firma") or "", datum=body.get("datum") or "",
                         von_uhr=body.get("von") or "", bis_uhr=body.get("bis") or "", minuten=body.get("minuten"),
                         notiz=body.get("notiz") or "", adresse=body.get("adresse") or "",
-                        taetigkeit=body.get("taetigkeit") or "", pause_min=body.get("pause_min"), von=_von(request))
+                        taetigkeit=body.get("taetigkeit") or "", pause_min=body.get("pause_min"),
+                        arbeit=body.get("arbeit") or "", arbeit_pflicht=True, von=_von(request))   # Z1: Grund Pflicht
         if body.get("km") not in (None, "") or body.get("km_berechnen"):
             r["fahrt"] = z.fahrt_erfassen(r["id"], km=body.get("km"), adresse=body.get("adresse") or "", von=_von(request))
         return r
@@ -4215,11 +4218,11 @@ def _eigene_adressen() -> list[str]:
 
 @app.get("/api/crm/vorstellung/vorschau")
 def vorstellung_vorschau(firma: str = "", name: str = "", vorname: str = "", nachname: str = "", vorlage: str = "",
-                         nachfassen: int = 0):
+                         nachfassen: int = 0, partner: int = 0):
     """V1: Betreff/Text aus der Vorlage „Vorstellung“ (bzw. „Nachfassen“), Empfaenger-Vorschlag, Absender, Anlaesse, UWG-Hinweis."""
     from ...core.katalog import Katalog
     from ...core.vorstellung import ANLAESSE, HINWEIS_UWG, _ereignisse, werte
-    art = "vorstellung_nachfassen" if nachfassen else "vorstellung"
+    art = "vorstellung_nachfassen" if nachfassen else ("partnerschaft" if partner else "vorstellung")   # P3: Partner-Idee
     tb = _tb(art, vorlage)
     f, ap, an, gesendet = {"name": name.strip()}, {"vorname": vorname.strip(), "nachname": nachname.strip()}, "", ""
     if firma:
@@ -4251,8 +4254,58 @@ async def vorstellung_senden(request: Request):
 
     def tun():
         from ...core.vorstellung import senden
-        return senden(kunden_store.bh, kunden_store, _versand_google(body), body, absender_name=ABSENDER_NAME,
-                      eigene=_eigene_adressen(), von=_von(request))
+        r = senden(kunden_store.bh, kunden_store, _versand_google(body), body, absender_name=ABSENDER_NAME,
+                   eigene=_eigene_adressen(), von=_von(request))
+        if body.get("idee"):                                         # PARTNERLISTE P3: Idee -> angeschrieben
+            try:
+                r["idee"] = _ideen().angeschrieben(str(body["idee"]), r["firma"], r["an"])["id"]
+            except KeyError:
+                pass                                                 # Idee inzwischen geloescht -- Mail ist trotzdem raus
+        return r
+    return _kunden_aktion(tun)
+
+
+# -- Akquise-Ideen (PARTNERLISTE P1-P3): Merkzettel, nicht in der Kette, loeschbar ---------------------------------------
+def _ideen():
+    from ...core.akquise import IdeenStore
+    return IdeenStore(ROOT / "akquise")
+
+
+@app.get("/api/crm/ideen")
+def ideen_liste():
+    from datetime import date as _date
+    from ...core.akquise import ARTEN, STATUS, mit_stand
+    from ...core.vorstellung import liste
+    vs = liste(kunden_store.bh, kunden_store, _date.fromisoformat(jetzt_iso()[:10]))
+    return {"ideen": mit_stand(_ideen().liste(), vs, kunden_store), "arten": ARTEN, "status": STATUS}
+
+
+@app.post("/api/crm/ideen")
+async def ideen_anlegen(request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: {"idee": _ideen().anlegen(body.get("idee") or {}, quelle="LUNA-OS", von=_von(request),
+                                                             kunden=kunden_store, trotz_dublette=bool(body.get("trotz_dublette")))})
+
+
+@app.post("/api/crm/ideen/{iid}")
+async def ideen_aendern(iid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: {"idee": _ideen().aendern(iid, body.get("idee") or {}, von=_von(request))})
+
+
+@app.post("/api/crm/ideen/{iid}/loeschen")
+async def ideen_loeschen(iid: str, request: Request):
+    return _kunden_aktion(lambda: _ideen().loeschen(iid))
+
+
+@app.post("/api/crm/ideen/{iid}/suchen")
+async def ideen_suchen(iid: str, request: Request):
+    """P2 „🔎 Daten suchen“: Website + Impressum (Brave) -- nur Vorschlag, uebernommen wird per Klick."""
+    def tun():
+        x = _ideen().get(iid)
+        if not x:
+            raise KeyError(iid)
+        return _recherche().fuer_idee(x["name"], x.get("web") or "")
     return _kunden_aktion(tun)
 
 

@@ -468,8 +468,9 @@ def _start_security_loop(ctx, secrets) -> None:
 _BELEG_MAILS_GESEHEN: set = set()      # Mail-IDs ohne verwertbaren Anhang nicht bei jedem Poll neu laden
 _AKTE_MAILS_GESEHEN: set = set()   # Etappe 24: in diesem Prozess schon gepruefte Mail-IDs
 _ZEIT_KM_WARTET: dict = {}         # Etappe 25: chat_id -> Zeit-ID, deren Kilometer als naechste Nachricht kommen
+_AKQ_WARTET: dict = {}             # PARTNERLISTE P2: Kurz-ID -> {idee | vorschlaege} bis zum Knopfdruck
+_ZEIT_NACHTRAG: dict = {}          # ZEITERFASSUNG_GRUND Z2: Kurz-ID -> erkannte Zeit (gespeichert erst nach ✅)
 _ZEIT_TAET_WARTET: dict = {}       # PROJEKTZEITEN Z1: chat_id -> Zeit-ID, deren Taetigkeit als naechste Nachricht kommt
-_ZEIT_TAET_OPT: dict = {}          # Zeit-ID -> angebotene Taetigkeiten (Knopf-Index -> Text)
 
 
 def _zeiterfassung():
@@ -512,15 +513,167 @@ def _zeit_km_frage(token, chat_id, z, zid: str, adresse: str = "") -> None:
             "Drehs, dann rechne ich. „0 km“ = keine Fahrt.")})
 
 
+def _zeit_nachtrag_weiter(token, chat_id, key: str, z, mid=None) -> None:
+    """Z2: fehlt Auftrag oder Grund, per Knopf fragen; sonst Zusammenfassung mit ✅ Eintragen / ❌ Abbrechen."""
+    from ...core.zeiterfassung import nachtrag_text
+    n = _ZEIT_NACHTRAG.get(key)
+    if not n:
+        return
+    kb: list = []
+    if not n.get("auftrag") and not n.get("firma"):
+        auftr = [a for a in (z.auftraege.liste() if z.auftraege else []) if a["status"] == "beauftragt"
+                 and (not n.get("wahl") or a["firma"] == n["wahl"])][:8]
+        if not auftr:
+            _ZEIT_NACHTRAG.pop(key, None)
+            text = "Es gibt keinen laufenden Auftrag – bitte in LUNA-OS nachtragen."
+        else:
+            text = f"⏱ {nachtrag_text(n)}\nFür welchen Auftrag?"
+            kb = [[{"text": f"{a['nummer']} · {(z.kunden.firma(a['firma']) or {}).get('name', a['firma'])[:24]}",
+                    "callback_data": f"ztn:{key}:a:{a['nummer']}"}] for a in auftr]
+    elif not n.get("arbeit"):
+        text = f"⏱ {nachtrag_text(n, _ztn_ziel(n, z))}\nWofür war die Zeit? (Sonstiges bitte in LUNA-OS)"
+        kb = [[{"text": t, "callback_data": f"ztn:{key}:g:{k}"}] for k, t in ZEIT_ARBEIT_KNOEPFE.items()]
+    else:
+        text = f"⏱ Nachtragen: {nachtrag_text(n, _ztn_ziel(n, z))}\nEintragen?"
+        kb = [[{"text": "✅ Eintragen", "callback_data": f"ztn:{key}:ok"}]]
+    if kb:
+        kb.append([{"text": "❌ Abbrechen", "callback_data": f"ztn:{key}:no"}])
+    p = {"chat_id": chat_id, "text": fuer_telegram(text), "reply_markup": json.dumps({"inline_keyboard": kb})}
+    _api(token, "editMessageText" if mid else "sendMessage", p | ({"message_id": mid} if mid else {}))
+
+
+def _ztn_ziel(n: dict, z) -> str:
+    name = (z.kunden.firma(n.get("firma") or "") or {}).get("name", n.get("firma") or "")
+    return " · ".join(x for x in (n.get("auftrag"), name) if x)
+
+
+def _zeit_nachtrag_klick(token, chat_id, data: str, mid) -> str:
+    """Callback „ztn:<id>:a:<AB>|g:<grund>|ok|no“ -> Antworttext fuer die Callback-Bestaetigung."""
+    teile = data.split(":")
+    key, op = teile[1], teile[2]
+    n = _ZEIT_NACHTRAG.get(key)
+    if not n:
+        return "Schon erledigt."
+    z = _zeiterfassung()
+    if op == "no":
+        _ZEIT_NACHTRAG.pop(key, None)
+        _api(token, "editMessageText", {"chat_id": chat_id, "message_id": mid, "text": "Nicht nachgetragen.",
+                                        "reply_markup": json.dumps({"inline_keyboard": []})})
+        return "Abgebrochen"
+    if op == "a":
+        a = z.auftraege.auftrag(teile[3]) if z.auftraege else None
+        n |= {"auftrag": a["nummer"], "firma": a["firma"]} if a else {}
+    elif op == "g":
+        n["arbeit"] = teile[3]
+    elif op == "ok":
+        _ZEIT_NACHTRAG.pop(key, None)
+        try:
+            r = z.eintragen(auftrag=n.get("auftrag") or "", firma=n.get("firma") or "", datum=n["datum"],
+                            von_uhr=n.get("von_uhr") or "", bis_uhr=n.get("bis_uhr") or "", minuten=n.get("minuten"),
+                            arbeit=n.get("arbeit") or "", arbeit_pflicht=True, quelle="Telegram", von="Telegram:CEO")
+            from ...core.zeiterfassung import dauer_text, nachtrag_text
+            text = f"✅ Nachgetragen: {nachtrag_text(n, _ztn_ziel(n, z))} ({dauer_text(r['minuten'])})"
+        except (ValueError, KeyError) as exc:
+            text = f"⚠️ Nicht nachgetragen: {str(exc).strip(chr(39))}"
+        _api(token, "editMessageText", {"chat_id": chat_id, "message_id": mid, "text": fuer_telegram(text),
+                                        "reply_markup": json.dumps({"inline_keyboard": []})})
+        return "OK"
+    _zeit_nachtrag_weiter(token, chat_id, key, z, mid)
+    return "OK"
+
+
+def _ideen():
+    from ...core.akquise import IdeenStore
+    return IdeenStore(ROOT / "akquise")
+
+
+def _akquise_idee(token, chat_id, erkannt: dict, trotz: bool = False) -> None:
+    """P2: Idee anlegen und mit ↩️ Rückgängig / 🔎 Daten suchen bestaetigen; bei Dublette erst nachfragen."""
+    from ...core.akquise import ARTEN
+    from ...core.kunden import DubletteFehler, KundenStore
+    from ...core.buchhaltung import Buchhaltung
+    try:
+        kunden = KundenStore(Buchhaltung(ROOT / "buchhaltung")) if (ROOT / "buchhaltung" / "log.jsonl").exists() else None
+        x = _ideen().anlegen(erkannt, quelle="Telegram", von="Telegram:CEO", kunden=kunden, trotz_dublette=trotz)
+    except DubletteFehler as exc:
+        key = uuid.uuid4().hex[:6]
+        _AKQ_WARTET[key] = {"idee": erkannt}
+        kb = {"inline_keyboard": [[{"text": "Trotzdem merken", "callback_data": f"akq:{key}:trotz"},
+                                   {"text": "❌ Nein", "callback_data": f"akq:{key}:no"}]]}
+        _api(token, "sendMessage", {"chat_id": chat_id, "reply_markup": json.dumps(kb), "text": fuer_telegram(f"💡 {exc}")})
+        return
+    except ValueError as exc:
+        _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(f"⚠️ {exc}")})
+        return
+    kb = {"inline_keyboard": [[{"text": "🔎 Daten suchen", "callback_data": f"akq:{x['id']}:such"},
+                               {"text": "↩️ Rückgängig", "callback_data": f"akq:{x['id']}:del"}]]}
+    _api(token, "sendMessage", {"chat_id": chat_id, "reply_markup": json.dumps(kb), "text": fuer_telegram(
+        f"💡 Gemerkt: {x['name']} ({ARTEN[x['art']]})" + (f" – {x['notiz']}" if x["notiz"] else "")
+        + "\nIn LUNA-OS unter Kunden → 💡 Ideen.")})
+
+
+def _akquise_klick(token, chat_id, data: str, mid) -> str:
+    """Callback „akq:<id|key>:del|such|ueb|trotz|no“."""
+    _, ref, op = data.split(":", 2)
+    fertig = lambda text: _api(token, "editMessageText", {"chat_id": chat_id, "message_id": mid, "text": fuer_telegram(text),
+                                                           "reply_markup": json.dumps({"inline_keyboard": []})})
+    st = _ideen()
+    if op in ("trotz", "no"):
+        w = _AKQ_WARTET.pop(ref, None)
+        if not w:
+            return "Schon erledigt."
+        if op == "trotz":
+            fertig("OK – lege sie trotzdem an.")
+            _akquise_idee(token, chat_id, w["idee"], trotz=True)
+        else:
+            fertig("Nicht gemerkt.")
+        return "OK"
+    x = st.get(ref)
+    if not x:
+        return "Gibt es nicht mehr."
+    if op == "del":
+        st.loeschen(ref)
+        fertig(f"↩️ {x['name']} wieder entfernt.")
+        return "Entfernt"
+    if op == "such":
+        from ...core.firmendaten import FirmenRecherche
+        from ...governance.web_research import BraveProvider
+        brave = BraveProvider(_load_secrets())
+        suche = (lambda q: [(t.titel, t.url) for t in brave.suche(q, max_results=8).treffer]) if brave.verfuegbar() else None
+        r = FirmenRecherche(None, suche=suche).fuer_idee(x["name"], x.get("web") or "")
+        v = r["vorschlaege"]
+        if not v:
+            fertig(f"🔎 {x['name']}: {r['hinweis'] or 'nichts gefunden'}.")
+            return "Nichts gefunden"
+        _AKQ_WARTET[ref] = {"vorschlaege": v}
+        zeilen = "\n".join(f"• {k}: {w}" for k, w in v.items())
+        kb = {"inline_keyboard": [[{"text": "✅ Übernehmen", "callback_data": f"akq:{ref}:ueb"},
+                                   {"text": "Verwerfen", "callback_data": f"akq:{ref}:weg"}]]}
+        _api(token, "editMessageText", {"chat_id": chat_id, "message_id": mid, "reply_markup": json.dumps(kb),
+                                        "text": fuer_telegram(f"🔎 {x['name']} – gefunden:\n{zeilen}")})
+        return "Gefunden"
+    if op in ("ueb", "weg"):
+        w = _AKQ_WARTET.pop(ref, None) or {}
+        if op == "ueb" and w.get("vorschlaege"):
+            v = w["vorschlaege"]
+            st.aendern(ref, {k: v[k] for k in ("web", "ort", "mail") if v.get(k) and not x.get(k)}
+                       | ({"notiz": (x["notiz"] + "\n" if x["notiz"] else "") + f"Tel. {v['telefon']}"} if v.get("telefon") else {}))
+            fertig(f"✅ Daten zu {x['name']} übernommen.")
+        else:
+            fertig("Verworfen.")
+        return "OK"
+    return "?"
+
+
+ZEIT_ARBEIT_KNOEPFE = {"dreh": "🎬 Dreharbeiten", "post": "✂️ Postproduktion & Schnitt", "konzept": "💬 Konzept & Abstimmung"}
+
+
 def _zeit_taet_frage(token, chat_id, z, zid: str) -> None:
-    """PROJEKTZEITEN Z1: nach dem Stopp kurz fragen, was gemacht wurde -- Knoepfe mit den letzten Taetigkeiten."""
-    opt = (z.taetigkeiten(3) or []) or ["Dreh", "Schnitt", "Abstimmung"]
-    _ZEIT_TAET_OPT[zid] = opt
-    reihe = [{"text": t[:30], "callback_data": f"ztt:{zid}:{i}"} for i, t in enumerate(opt)]
-    kb = {"inline_keyboard": [reihe, [{"text": "✏️ Andere", "callback_data": f"ztt:{zid}:a"},
-                                      {"text": "Überspringen", "callback_data": f"ztt:{zid}:n"}]]}
+    """Nach dem Stopp den Grund fragen (ZEITERFASSUNG_GRUND Z1: feste Gruende; „Sonstiges“ -> kurzer Text)."""
+    kb = {"inline_keyboard": [[{"text": t, "callback_data": f"ztt:{zid}:{k}"}] for k, t in ZEIT_ARBEIT_KNOEPFE.items()]
+          + [[{"text": "✏️ Sonstiges …", "callback_data": f"ztt:{zid}:s"}, {"text": "Überspringen", "callback_data": f"ztt:{zid}:n"}]]}
     _api(token, "sendMessage", {"chat_id": chat_id, "reply_markup": json.dumps(kb),
-                                "text": "🛠 Was hast du gemacht? (kommt in den Stundenzettel)"})
+                                "text": "🛠 Wofür war die Zeit? (kommt in den Stundenzettel)"})
 
 
 _PO_FOTO_WARTET: dict = {}         # PROJEKTBERICHT P2: chat_id -> Posting-ID, zu dem die naechsten Fotos gehoeren
@@ -1877,19 +2030,32 @@ def main() -> None:
                             _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
                                                             "reply_markup": json.dumps({"inline_keyboard": []}),
                                                             "text": fuer_telegram(res)})
+                    elif data.startswith("akq:"):                  # PARTNERLISTE P2: Idee rueckgaengig/suchen
+                        try:
+                            res = _akquise_klick(token, cbchat, data, (cb.get("message") or {}).get("message_id"))
+                        except Exception as exc:
+                            res = "Fehler"
+                            print(f"[akquise] {exc}", flush=True)
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": res})
+                    elif data.startswith("ztn:"):                  # ZEITERFASSUNG_GRUND Z2: Zeit nachtragen
+                        try:
+                            res = _zeit_nachtrag_klick(token, cbchat, data, (cb.get("message") or {}).get("message_id"))
+                        except Exception as exc:
+                            res = "Fehler"
+                            print(f"[zeit] Nachtrag: {exc}", flush=True)
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": res})
                     elif data.startswith("ztt:"):                  # PROJEKTZEITEN Z1: Taetigkeit nach dem Stopp
                         mid = (cb.get("message") or {}).get("message_id")
                         _, zid, wahl = data.split(":", 2)
                         try:
                             if wahl == "n":
-                                res = "OK – ohne Tätigkeit (später im Stundenzettel ergänzbar)."
-                            elif wahl == "a":
+                                res = "OK – ohne Grund (später im Stundenzettel ergänzbar)."
+                            elif wahl in ("s", "a"):
                                 _ZEIT_TAET_WARTET[cbchat] = zid
-                                res = "✏️ Schreib mir kurz, was du gemacht hast (z. B. „Dreh Stadion“)."
+                                res = "✏️ Sonstiges – schreib mir kurz, was du gemacht hast (z. B. „Messe“)."
                             else:
-                                t = (_ZEIT_TAET_OPT.get(zid) or [])[int(wahl)]
-                                _zeiterfassung().details_setzen(zid, taetigkeit=t, von="Telegram:CEO")
-                                res = f"✅ Tätigkeit: {t}"
+                                _zeiterfassung().details_setzen(zid, arbeit=wahl, von="Telegram:CEO")
+                                res = f"✅ Grund: {ZEIT_ARBEIT_KNOEPFE.get(wahl, wahl)}"
                         except (ValueError, KeyError, IndexError) as exc:
                             res = f"⚠️ {exc}"
                         _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "OK"})
@@ -2020,12 +2186,29 @@ def main() -> None:
             try:
                 if (ROOT / "buchhaltung" / "log.jsonl").exists():
                     from ...core.zeiterfassung import befehl as _zbefehl, dauer_text, firma_finden, offene_auftraege
+                    from ...core.zeiterfassung import nachtrag as _znachtrag
                     from ...core.beleg_pdf import eur as _eur
                     _zb = _zbefehl(text)
                     if _zb is None and str(chat_id) in _ZEIT_TAET_WARTET and 0 < len(text.strip()) <= 60 and "?" not in text:
                         zid = _ZEIT_TAET_WARTET.pop(str(chat_id))      # Z1: freie Taetigkeit nach „✏️ Andere“
-                        _zeiterfassung().details_setzen(zid, taetigkeit=text.strip(), von="Telegram:CEO")
-                        _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(f"✅ Tätigkeit: {text.strip()}")})
+                        _zeiterfassung().details_setzen(zid, arbeit="sonstiges", taetigkeit=text.strip(), von="Telegram:CEO")
+                        _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(f"✅ Grund: Sonstiges – {text.strip()}")})
+                        continue
+                    _zn = _znachtrag(text) if _zb is None else None   # Z2: „Gestern 3 Stunden Schnitt fuer …“
+                    if _zn:
+                        _z = _zeiterfassung()
+                        a = _z.auftraege.auftrag(_zn["auftrag"]) if _zn["auftrag"] and _z.auftraege else None
+                        firma = a["firma"] if a else (firma_finden(_z.kunden, _zn["ziel"]) if _zn["ziel"] else "")
+                        _zn |= {"auftrag": a["nummer"] if a else "", "firma": firma}
+                        if firma and not a:
+                            auftr = offene_auftraege(_z.auftraege, firma)
+                            if len(auftr) == 1:
+                                _zn["auftrag"] = auftr[0]["nummer"]
+                            elif len(auftr) > 1:
+                                _zn |= {"firma": "", "wahl": firma}     # mehrere -> per Knopf waehlen
+                        _key = uuid.uuid4().hex[:6]
+                        _ZEIT_NACHTRAG[_key] = _zn
+                        _zeit_nachtrag_weiter(token, chat_id, _key, _z)
                         continue
                     if _zb is None and str(chat_id) in _ZEIT_KM_WARTET and len(text.strip()) >= 8 and re.search(r"\d{5}", text):
                         _zb = {"art": "adresse"}                    # Dreh-Adresse statt Kilometer geschickt
@@ -2078,6 +2261,15 @@ def main() -> None:
                 continue
             except Exception as exc:
                 print(f"[zeit] Telegram: {exc}", flush=True)
+            # PARTNERLISTE P2: „Partner-Idee: …“, „Kunden-Idee: …“, „Merk dir … als moeglichen Partner“ (freie Saetze: LUNA-Werkzeug)
+            try:
+                from ...core.akquise import telegram_idee as _tidee
+                _ti = _tidee(text)
+                if _ti:
+                    _akquise_idee(token, chat_id, _ti)
+                    continue
+            except Exception as exc:
+                print(f"[akquise] Telegram: {exc}", flush=True)
             # Euro-Betrag zu einem Beleg in Fremdwaehrung (z. B. „Facebook 241,80“) -> Vorschau mit ✅/❌ (CEO 2026-09-28)
             try:
                 if (ROOT / "buchhaltung" / "log.jsonl").exists():

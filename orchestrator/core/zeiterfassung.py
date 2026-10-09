@@ -26,6 +26,12 @@ from datetime import date, datetime, timedelta
 from .beleg_pdf import eur
 from .buchhaltung import jetzt
 
+# ZEITERFASSUNG_GRUND Z1 (CEO 2026-10-09): feste Gruende der Arbeitszeit; bei „Sonstiges“ kurzer Text in `taetigkeit`.
+# Feld heisst `arbeit` (nicht `grund` -- `grund` ist schon die Begruendung einer Korrektur/eines Stornos).
+ARBEITEN = {"dreh": "Dreharbeiten", "post": "Postproduktion & Schnitt", "konzept": "Konzept & Abstimmung",
+            "sonstiges": "Sonstiges"}
+_ALT_ARBEIT = (("dreh", "dreh"), ("schnitt", "post"), ("post", "post"), ("edit", "post"), ("konzept", "konzept"),
+               ("abstimm", "konzept"), ("planung", "konzept"), ("meeting", "konzept"))
 KM_SATZ_CENT = 30                        # kalkulatorisch, angelehnt an die Kilometerpauschale (je gefahrenem km)
 ERINNERN_STUNDEN = 10
 MAX_MINUTEN = 24 * 60
@@ -138,7 +144,7 @@ class Zeiterfassung:
                                         "adresse": (adresse or "").strip()[:200], "quelle": quelle}, von=von)
         return {"id": zid, "auftrag": auftrag, "firma": firma, "start": start}
 
-    def stoppen(self, *, ende: str = "", taetigkeit: str = "", pause_min=None, von: str = "") -> dict:
+    def stoppen(self, *, ende: str = "", taetigkeit: str = "", pause_min=None, arbeit: str = "", von: str = "") -> dict:
         x = self.laufend()
         if not x:
             raise ValueError("Es laeuft keine Zeit.")
@@ -147,8 +153,10 @@ class Zeiterfassung:
             raise ValueError("Ende liegt vor dem Start.")
         brutto = round((e - _zeit(x["start"])).total_seconds() / 60)
         pause = _pause(pause_min, brutto)
+        a = _arbeit(arbeit, taetigkeit)
         satz = self.einstellungen()["stundensatz_cent"]
         self.bh.erfassen("zeit_stopp", {"id": x["id"], "ende": e.isoformat(), "satz_cent": satz}
+                         | ({"arbeit": a} if a else {})
                          | ({"taetigkeit": _taetigkeit(taetigkeit)} if taetigkeit else {})
                          | ({"pause_min": pause} if pause else {}), von=von)
         m = brutto - pause
@@ -157,8 +165,11 @@ class Zeiterfassung:
 
     def eintragen(self, *, auftrag: str = "", firma: str = "", datum: str, von_uhr: str = "", bis_uhr: str = "",
                   minuten=None, notiz: str = "", adresse: str = "", taetigkeit: str = "", pause_min=None,
-                  von: str = "") -> dict:
-        """Manuell: Datum + von/bis (HH:MM) oder Dauer in Minuten."""
+                  arbeit: str = "", arbeit_pflicht: bool = False, quelle: str = "manuell", von: str = "") -> dict:
+        """Manuell: Datum + von/bis (HH:MM) oder Dauer in Minuten. `arbeit_pflicht`: Nachtragen im OS/Telegram (Z1)."""
+        a = _arbeit(arbeit, taetigkeit)
+        if arbeit_pflicht and not a:
+            raise ValueError("Bitte den Grund waehlen (Dreharbeiten, Postproduktion & Schnitt, Konzept & Abstimmung, Sonstiges).")
         auftrag, firma = self._ziel(auftrag, firma)
         try:
             tag = datetime.fromisoformat(str(datum)[:10])
@@ -190,14 +201,16 @@ class Zeiterfassung:
         satz = self.einstellungen()["stundensatz_cent"]
         self.bh.erfassen("zeit_eintrag", {"id": zid, "auftrag": auftrag, "firma": firma, "start": s.isoformat(),
                                           "ende": e.isoformat(), "satz_cent": satz, "notiz": (notiz or "").strip()[:300],
-                                          "adresse": (adresse or "").strip()[:200], "quelle": "manuell"}
+                                          "adresse": (adresse or "").strip()[:200], "quelle": quelle}
+                         | ({"arbeit": a} if a else {})
                          | ({"taetigkeit": _taetigkeit(taetigkeit)} if taetigkeit else {})
                          | ({"pause_min": pause} if pause else {}), von=von)
         return {"id": zid, "minuten": m, "kosten_cent": round(m * satz / 60)}
 
     # -- PROJEKTZEITEN Z1: Stundenzettel, Taetigkeit, Korrektur ---------------------------------------------------------
 
-    def details_setzen(self, zid: str, *, taetigkeit=None, pause_min=None, notiz=None, position=None, von: str = "") -> dict:
+    def details_setzen(self, zid: str, *, taetigkeit=None, pause_min=None, notiz=None, position=None, arbeit=None,
+                       von: str = "") -> dict:
         x = self._falte().get(zid)
         if not x or x["storniert"]:
             raise KeyError(zid)
@@ -211,6 +224,8 @@ class Zeiterfassung:
             if n and (not a or not 1 <= n <= len(a["positionen"])):
                 raise ValueError("Diese Position gibt es im Auftrag nicht.")
             d["position"] = n
+        if arbeit is not None:
+            d["arbeit"] = _arbeit(arbeit, taetigkeit if taetigkeit is not None else x.get("taetigkeit", ""))
         if taetigkeit is not None:
             d["taetigkeit"] = _taetigkeit(taetigkeit)
         if pause_min is not None:
@@ -224,7 +239,7 @@ class Zeiterfassung:
         return d
 
     def korrigieren(self, zid: str, *, datum: str, von_uhr: str, bis_uhr: str, pause_min=None, taetigkeit=None,
-                    grund: str = "", von: str = "") -> dict:
+                    grund: str = "", arbeit=None, von: str = "") -> dict:
         """Ein/Aus/Pause eines beendeten Eintrags aendern (Verlauf bleibt). Nicht mehr, wenn schon abgerechnet."""
         x = self._falte().get(zid)
         if not x or x["storniert"]:
@@ -249,7 +264,8 @@ class Zeiterfassung:
         if not 0 < brutto <= MAX_MINUTEN:
             raise ValueError("Dauer zwischen 1 Minute und 24 Stunden.")
         d = {"id": zid, "start": s.isoformat(), "ende": e.isoformat(), "pause_min": _pause(pause_min, brutto),
-             "grund": str(grund).strip()[:200]} | ({"taetigkeit": _taetigkeit(taetigkeit)} if taetigkeit is not None else {})
+             "grund": str(grund).strip()[:200]} | ({"taetigkeit": _taetigkeit(taetigkeit)} if taetigkeit is not None else {}) \
+            | ({"arbeit": _arbeit(arbeit, taetigkeit if taetigkeit is not None else x.get("taetigkeit", ""))} if arbeit is not None else {})
         self.bh.erfassen("zeit_korrigiert", d, von=von)
         return {"id": zid, "minuten": brutto - d["pause_min"]}
 
@@ -273,7 +289,8 @@ class Zeiterfassung:
             km = sum(f.get("km") or 0 for f in x["fahrten"])
             z = {"id": x["id"], "datum": x["start"][:10], "von": x["start"][11:16], "bis": str(x.get("ende") or "")[11:16],
                  "pause_min": int(x.get("pause_min") or 0), "minuten": x.get("minuten", 0),
-                 "taetigkeit": x.get("taetigkeit", ""), "notiz": x.get("notiz", ""), "km": km, "quelle": x.get("quelle", ""),
+                 "taetigkeit": arbeit_text(x), "arbeit": arbeit_von(x), "taetigkeit_frei": x.get("taetigkeit", ""),
+                 "notiz": x.get("notiz", ""), "km": km, "quelle": x.get("quelle", ""),
                  "kosten_cent": x["kosten_cent"], "fahrt_cent": x["fahrt_cent"], "abgerechnet": x.get("abgerechnet", ""),
                  "km_abgerechnet": x.get("km_abgerechnet", ""), "position": int(x.get("position") or 0),
                  "korrigiert": len(x.get("korrekturen") or [])}
@@ -370,6 +387,70 @@ def befehl(text: str) -> dict | None:
     return None
 
 
+# ZEITERFASSUNG_GRUND Z2: Zeit per Telegram nachtragen, z. B. „Gestern 3 Stunden Schnitt fuer CR Container“ oder
+# „09.10. 10-14 Uhr Dreh AB-2026-0001“. Regelbasiert; gebraucht werden Tag + (Zeitspanne oder Dauer) + Grund oder Ziel.
+_NT_TAG = re.compile(r"(?i)\b(heute|gestern|vorgestern)\b|\b(\d{1,2})\.(\d{1,2})\.(\d{2,4})?(?!\d)")
+_NT_SPANNE = re.compile(r"(?i)\b(?:von\s+)?(\d{1,2})(?:[:.](\d{2}))?\s*(?:uhr\s*)?(?:-|–|bis)\s*(\d{1,2})(?:[:.](\d{2}))?\s*uhr\b"
+                        r"|\b(\d{1,2}):(\d{2})\s*(?:-|–|bis)\s*(\d{1,2}):(\d{2})\b")
+_NT_DAUER = re.compile(r"(?i)\b(\d{1,2})(?:[.,](\d{1,2}))?\s*(?:h\b|std\b|std\.|stunden?\b)|\b(\d{1,2}):(\d{2})\s*(?:h\b|std|stunden?)"
+                       r"|\b(\d{1,3})\s*(?:min\b|minuten\b)")
+_NT_GRUND = (("dreh", r"dreh|gedreht|filmen|gefilmt|aufnahm"), ("post", r"schnitt|geschnitten|schneiden|postpro|edit|color|bearbeit"),
+             ("konzept", r"konzept|abstimm|meeting|telefonat|planung|besprechung|call\b"))
+_NT_ZIEL = re.compile(r"(?i)\b(AB-\d{4}-\d{3,5})\b|\b(?:f[üu]r|bei|zu|an)\s+(.+)$")
+
+
+def nachtrag(text: str, heute: date | None = None) -> dict | None:
+    """-> {datum, von_uhr, bis_uhr | minuten, arbeit, auftrag, ziel} oder None (normaler Chat). Kein Speichern."""
+    t = " ".join(str(text or "").split())
+    if not t or "?" in t or len(t) > 200:
+        return None
+    heute = heute or _jetzt_lokal().date()
+    m = _NT_TAG.search(t)
+    if not m:
+        return None
+    if m.group(1):
+        tag = heute - timedelta(days={"heute": 0, "gestern": 1, "vorgestern": 2}[m.group(1).lower()])
+    else:
+        j = m.group(4)
+        jahr = heute.year if not j else (2000 + int(j) if len(j) == 2 else int(j))
+        try:
+            tag = date(jahr, int(m.group(3)), int(m.group(2)))
+        except ValueError:
+            return None
+        if not j and tag > heute:                                       # „28.12.“ im Januar = Vorjahr
+            tag = tag.replace(year=jahr - 1)
+    out: dict = {"datum": tag.isoformat()}
+    if (s := _NT_SPANNE.search(t)):
+        g = s.groups()
+        a = (g[0], g[1], g[2], g[3]) if g[0] else (g[4], g[5], g[6], g[7])
+        out |= {"von_uhr": f"{int(a[0]):02d}:{int(a[1] or 0):02d}", "bis_uhr": f"{int(a[2]):02d}:{int(a[3] or 0):02d}"}
+    elif (d := _NT_DAUER.search(t)):
+        g = d.groups()
+        if g[0]:
+            out["minuten"] = int(g[0]) * 60 + round(int(g[1]) * 60 / (10 ** len(g[1]))) if g[1] else int(g[0]) * 60
+        elif g[2]:
+            out["minuten"] = int(g[2]) * 60 + int(g[3])
+        else:
+            out["minuten"] = int(g[4])
+    else:
+        return None
+    low = t.lower()
+    out["arbeit"] = next((k for k, muster in _NT_GRUND if re.search(muster, low)), "")
+    z = _NT_ZIEL.search(t)
+    out["auftrag"] = (z.group(1) or "").upper() if z else ""
+    out["ziel"] = (z.group(2) or "").strip(" .,!") if z and not z.group(1) else ""
+    if not (out["arbeit"] or out["auftrag"] or out["ziel"] or re.search(r"(?i)nachtrag|zeit|gearbeitet", low)):
+        return None                                                      # nur Datum + Dauer reicht nicht (Chat)
+    return out
+
+
+def nachtrag_text(n: dict, ziel_name: str = "") -> str:
+    tag = date.fromisoformat(n["datum"])
+    zeit = f"{n['von_uhr']}–{n['bis_uhr']} Uhr" if n.get("von_uhr") else dauer_text(int(n.get("minuten") or 0))
+    return (f"{tag.strftime('%d.%m.%Y')} · {zeit} · {ARBEITEN.get(n.get('arbeit'), 'Grund fehlt')}"
+            + (f" · {ziel_name}" if ziel_name else ""))
+
+
 def firma_finden(kunden, ziel: str) -> str:
     """Firma zum Ziel aus der Nachricht: Name enthalten oder kennzeichnendes Namenswort (≥ 4 Zeichen)."""
     z = (ziel or "").lower()
@@ -395,6 +476,42 @@ def dauer_text(minuten: int) -> str:
 
 def _taetigkeit(t) -> str:
     return " ".join(str(t or "").split())[:60]
+
+
+def _arbeit(a, taetigkeit="") -> str:
+    """Grund pruefen: '' = keiner; sonst Schluessel aus ARBEITEN (auch die Beschriftung wird erkannt)."""
+    a = str(a or "").strip()
+    if not a:
+        return ""
+    k = a.lower() if a.lower() in ARBEITEN else next((k for k, v in ARBEITEN.items() if v.lower() == a.lower()), "")
+    if not k:
+        raise ValueError(f"Grund muss einer von {', '.join(ARBEITEN.values())} sein.")
+    if k == "sonstiges" and not _taetigkeit(taetigkeit):
+        raise ValueError("Bei „Sonstiges“ bitte kurz beschreiben, was du gemacht hast.")
+    return k
+
+
+def arbeit_von(x: dict) -> str:
+    """Grund eines Eintrags; alte Freitexte (vor Z1) werden zugeordnet, sonst „sonstiges“ -- ohne Angabe ''."""
+    if x.get("arbeit") in ARBEITEN:
+        return x["arbeit"]
+    t = str(x.get("taetigkeit") or "").lower()
+    if not t:
+        return ""
+    return next((k for w, k in _ALT_ARBEIT if w in t), "sonstiges")
+
+
+def arbeit_text(x: dict) -> str:
+    """Anzeige: „Dreharbeiten“, „Sonstiges: Messe“; ein Zusatztext (alt oder frei) haengt mit „ – “ an."""
+    k, t = arbeit_von(x), _taetigkeit(x.get("taetigkeit"))
+    if not k:
+        return ""
+    name = ARBEITEN[k]
+    if k == "sonstiges":
+        return f"{name}: {t}" if t else name
+    if not x.get("arbeit") and len(t.split()) <= 1:                     # alter Einwort-Freitext („Dreh“) = nur der Grund
+        return name
+    return f"{name} – {t}" if t and t.lower() != name.lower() else name
 
 
 def _pause(p, brutto: int) -> int:
@@ -439,14 +556,14 @@ def falte_zeiten(eintraege: list[dict]) -> dict[str, dict]:
             continue
         elif t == "zeit_stopp":
             out[d["id"]] |= {"ende": d["ende"], "satz_cent": d["satz_cent"]} \
-                | {k: d[k] for k in ("taetigkeit", "pause_min") if k in d}
+                | {k: d[k] for k in ("taetigkeit", "pause_min", "arbeit") if k in d}
         elif t == "zeit_details":                           # PROJEKTZEITEN Z1: Taetigkeit/Pause/Notiz nachtragen (Z3: Position)
-            out[d["id"]] |= {k: d[k] for k in ("taetigkeit", "pause_min", "notiz", "position") if k in d}
+            out[d["id"]] |= {k: d[k] for k in ("taetigkeit", "pause_min", "notiz", "position", "arbeit") if k in d}
         elif t == "zeit_korrigiert":                        # Z1: Ein/Aus/Pause korrigiert, Verlauf bleibt in der Kette
             x = out[d["id"]]
             x.setdefault("korrekturen", []).append({"ts": e["ts"], "von": e.get("von", ""), "grund": d.get("grund", ""),
                                                      "vorher": {k: x.get(k) for k in ("start", "ende", "pause_min")}})
-            x |= {k: d[k] for k in ("start", "ende", "pause_min", "taetigkeit") if k in d}
+            x |= {k: d[k] for k in ("start", "ende", "pause_min", "taetigkeit", "arbeit") if k in d}
         elif t == "zeit_fahrt":
             out[d["id"]]["fahrten"] = [{k: d.get(k) for k in ("km", "quelle", "adresse", "betrag_cent")}]   # letzte gilt
         elif t == "zeit_storniert":
@@ -476,7 +593,8 @@ def auswertung(eintraege: list[dict], von: str, bis: str, firmen: dict | None = 
         iso = date.fromisoformat(tag).isocalendar()
         zeilen.append({"id": x["id"], "datum": tag, "von": str(x["start"])[11:16], "bis": str(x.get("ende") or "")[11:16],
                        "pause_min": int(x.get("pause_min") or 0), "minuten": x.get("minuten", 0), "km": km,
-                       "taetigkeit": x.get("taetigkeit") or "", "auftrag": x.get("auftrag") or "", "firma": x.get("firma") or "",
+                       "taetigkeit": arbeit_text(x), "arbeit": ARBEITEN.get(arbeit_von(x), ""),
+                       "auftrag": x.get("auftrag") or "", "firma": x.get("firma") or "",
                        "firma_name": firmen.get(x.get("firma"), x.get("firma") or ""), "kosten_cent": x["kosten_cent"],
                        "fahrt_cent": x["fahrt_cent"], "abgerechnet": x.get("abgerechnet") or "",
                        "woche": f"{iso[0]}-W{iso[1]:02d}", "monat": tag[:7]})
@@ -493,7 +611,7 @@ def auswertung(eintraege: list[dict], von: str, bis: str, firmen: dict | None = 
     return {"von": von, "bis": bis, "zeilen": zeilen,
             "summe": {"minuten": sum(z["minuten"] for z in zeilen), "km": sum(z["km"] for z in zeilen),
                       "kosten_cent": sum(z["kosten_cent"] + z["fahrt_cent"] for z in zeilen), "eintraege": len(zeilen)},
-            "je_kunde": gruppe("firma", lambda z: z["firma_name"]), "je_taetigkeit": gruppe("taetigkeit"),
+            "je_kunde": gruppe("firma", lambda z: z["firma_name"]), "je_taetigkeit": gruppe("arbeit"),
             "je_auftrag": gruppe("auftrag"),
             "je_woche": sorted(gruppe("woche"), key=lambda r: r["schluessel"]),
             "je_monat": sorted(gruppe("monat"), key=lambda r: r["schluessel"])}
@@ -504,7 +622,7 @@ def auswertung_csv(a: dict) -> str:
     import io
     buf = io.StringIO()
     w = csv.writer(buf, delimiter=";")
-    w.writerow(["Datum", "Ein", "Aus", "Pause (min)", "Dauer (h)", "Taetigkeit", "Kunde", "Auftrag", "km",
+    w.writerow(["Datum", "Ein", "Aus", "Pause (min)", "Dauer (h)", "Grund", "Kunde", "Auftrag", "km",
                 "Kosten EUR (kalkulatorisch)", "Abgerechnet auf"])
     for z in a["zeilen"]:
         w.writerow([f"{z['datum'][8:10]}.{z['datum'][5:7]}.{z['datum'][:4]}", z["von"], z["bis"], z["pause_min"],
