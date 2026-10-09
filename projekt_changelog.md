@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-09 10:49] — Claude Code
+- **Was:** Deploy Z1-Z2/P1-P3 geprueft: NAS liefert app-v2.js v128 und style-v2.css v65 (Nachtragen-Formular, Ideen-Liste), `/api/finanzen/zeit` liefert die vier Gruende, `/api/crm/ideen` antwortet (0 Ideen, Ordner `akquise/` entsteht beim ersten Speichern), Vorschau mit `partner=1` nutzt die Vorlage „Partnerschaft“; Bot-Code mit Ideen-Erfassung auf der NAS. Nichts gespeichert oder versendet.
+- **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-09 10:35] — Claude Code
 - **Was:** ZEITERFASSUNG_GRUND Z1-Z2 und PARTNERLISTE P1-P3 gebaut. Zeiten: feste Gruende (Dreharbeiten, Postproduktion & Schnitt, Konzept & Abstimmung, Sonstiges) statt Freitext, Pflicht beim Nachtragen, Telegram-Knoepfe nach dem Stopp, Auswertung je Grund; „➕ Zeit nachtragen“ im Zeiterfassungs-Fenster und im Auftrag; Telegram-Saetze wie „Gestern 3 Stunden Schnitt fuer CR Container“ -> Rueckfrage, gespeichert erst nach ✅. Ideen: neuer Reiter Kunden -> 💡 Ideen (`akquise/ideen.json`, nicht in der Kette, loeschbar, Dubletten-Hinweis), Telegram „Partner-Idee:/Kunden-Idee:/Akquise:/Merk dir … als Partner“ mit Rueckgaengig und 🔎 Daten suchen (Brave + Impressum, nur Vorschlag), LUNA-Werkzeug `akquise_idee_merken`, „✉️ Anschreiben …“ ueber die Vorstellungs-Mail mit neuer Vorlage „Partnerschaft“, danach Status aus Vorstellung/Kundenstamm. `.gitignore`: `einwilligungen/` (BF-70) und `akquise/`. Cache app-v2.js v128, style-v2.css v65.
 - **Warum:** CEO 2026-10-09: Grund fuer Zeiterfassung, manuelles Nachbuchen; Liste potenzieller Partner/Kunden mit Telegram-Erfassung -- Go Z1, Z2, P1-P3.
