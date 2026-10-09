@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-09 10:52] — Claude Code
+- **Was:** Roadmap `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md` abgeschlossen (Status, Naechster Schritt, Eintrag in `ROADMAP.md`); offen bleibt nur die anwaltliche Pruefung der Vorlage Version 1.
+- **Warum:** CEO 2026-10-09: „Einwilligung hiermit abgenommen.“
+- **Betroffen:** `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-09 10:49] — Claude Code
 - **Was:** Deploy Z1-Z2/P1-P3 geprueft: NAS liefert app-v2.js v128 und style-v2.css v65 (Nachtragen-Formular, Ideen-Liste), `/api/finanzen/zeit` liefert die vier Gruende, `/api/crm/ideen` antwortet (0 Ideen, Ordner `akquise/` entsteht beim ersten Speichern), Vorschau mit `partner=1` nutzt die Vorlage „Partnerschaft“; Bot-Code mit Ideen-Erfassung auf der NAS. Nichts gespeichert oder versendet.
 - **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.

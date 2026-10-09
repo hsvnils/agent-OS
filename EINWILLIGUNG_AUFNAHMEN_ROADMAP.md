@@ -1,10 +1,10 @@
 # Roadmap: Einwilligung in Video-/Bildaufnahmen -- Vorlage und Unterschrift am iPad
 
-- Status: in Umsetzung
-- Stand: 2026-10-08
+- Status: abgeschlossen
+- Stand: 2026-10-09
 - Arbeitsbranch: `ai/einwilligung-aufnahmen`
 - Basiscommit: `cff22ad`
-- Naechster Schritt: E1-E3 gebaut (2026-10-08) -- Deploy, Vorlage Version 1 im Vertragswerk anlegen, Probe am echten iPad durch den CEO, anwaltliche Pruefung vor dem ersten Einsatz.
+- Naechster Schritt: keiner -- abgeschlossen 2026-10-09 (E1-E3, Kopie beim Speichern und F1-F3 live; CEO-Abnahme am iPad). Offen ausserhalb der Roadmap: anwaltliche Pruefung der Vorlage Version 1 (CEO).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
