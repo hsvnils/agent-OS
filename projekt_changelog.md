@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-10 23:34] — Claude Code
+- **Was:** Deploy Netzwerk-Wache geprueft: NAS liefert app-v2.js v129/style-v2.css v66 mit der Seite „🛡 Netzwerk“, `GET /api/netzwerk` antwortet (Wache aus, keine Konten hinterlegt, noch keine Geraete/Befunde), Bot-Code mit `_start_netzwerk_loop` auf der NAS. Kein Abruf von Fritz!Box oder DSM.
+- **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-10 23:29] — Claude Code
 - **Was:** NETZWERK_WACHE N1-N3 gebaut (nur lesen und melden): `core/netzwerk.py` mit Fritz!Box-TR-064-Client (feste Lese-Allowlist, 18 Aktionen; FRITZ!Box 7530 AX / FRITZ!OS 8.25 vorab ohne Anmeldung nachgewiesen), DSM-Client (Lese-Allowlist, fehlende Rechte werden angezeigt), Zertifikat/DDNS, Regeln und Zustand `netzwerk/`; Bot-Lauf alle 15 min (Fritz!Box) und taeglich 06:00 (NAS, Aussensicht), nur mit `NETZWERK_WACHE=1`; erster Lauf = Bestand, danach neue Geraete sofort mit ✅/❓-Knoepfen, jeder Befund einmal, Internet-Ausfall ab 10 min; LUNA-OS LUNA & System -> 🛡 Netzwerk (nur administration); CISO-Audit nimmt Netzwerk-Befunde auf. `.env.example`, Deploy-Ausschluss, Backup, `.gitignore`, Register (eigene Geraete als INTERN). Cache app-v2.js v129, style-v2.css v66.
 - **Warum:** CEO 2026-10-10: Go N1-N3, Meldeschwelle „jedes neue Geraet sofort“.
