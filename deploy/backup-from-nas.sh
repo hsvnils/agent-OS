@@ -55,6 +55,8 @@ FILES=(
   buchhaltung/logo.jpg           # Logo fuer Angebote/Preisliste
   buchhaltung/zeiterfassung.json # Etappe 25: kalkulatorischer Stundensatz (nur NAS/Backup, nie im Git)
   akquise/ideen.json             # PARTNERLISTE P1: Akquise-Ideen (loeschbar, nicht in der Kette)
+  netzwerk/geraete.json          # NETZWERK_WACHE: bekannte Geraete im Heimnetz (Namen, MAC)
+  netzwerk/zustand.json          # NETZWERK_WACHE: letzte Befunde je Bereich
   orchestrator/state/luna_os_passkeys.json # LUNA-OS-Login: oeffentliche Passkey-Schluessel (Face ID)
 )
 

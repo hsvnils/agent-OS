@@ -465,6 +465,102 @@ def _start_security_loop(ctx, secrets) -> None:
     threading.Thread(target=loop, daemon=True, name="security-loop").start()
 
 
+def _netzwerk_wache():
+    from ...core.netzwerk import Wache
+    return Wache(ROOT / "netzwerk")
+
+
+def netzwerk_lauf(token, chat_id, secrets, *, taeglich: bool, jetzt=None, fritz=None, dsm=None) -> dict:
+    """NETZWERK_WACHE N1-N3: ein Lauf -- Fritz!Box immer, NAS + Aussensicht nur `taeglich`. Nur lesen; Meldungen nur
+    bei neuen Befunden (warn/alarm) und neuen Geraeten (mit Knoepfen). Gibt eine kurze Zusammenfassung zurueck."""
+    from datetime import datetime as _dt
+    from ...core import netzwerk as nw
+    e = nw.einstellungen(secrets)
+    jetzt = jetzt or _dt.now()
+    w = _netzwerk_wache()
+    texte, wan_ip, neu, bestand = [], "", [], None
+    if e["fritz"] or fritz is not None:
+        fritz = fritz or nw.FritzBox(e["fritz_url"], secrets["FRITZBOX_USER"], secrets["FRITZBOX_PASSWORD"])
+        try:
+            r = nw.lauf_fritz(w, fritz, ports_soll=e["ports_soll"], jetzt=jetzt)
+            texte += r["meldungen"]
+            wan_ip, neu, bestand = r["wan_ip"], r["neue_geraete"], r["bestand"]
+        except nw.NurLesen:
+            raise
+        except Exception as exc:
+            texte += [m for m in nw._melden(w.befunde_merken("fritz", [nw._b("fritz-nicht-erreichbar", "warn", "Fritz!Box",
+                      f"Fritz!Box nicht abfragbar ({exc.__class__.__name__}) – Konto/Passwort prüfen.")], jetzt.isoformat(timespec="seconds")))]
+    if taeglich:
+        if not wan_ip:
+            wan_ip = (((w.zustand().get("bereiche") or {}).get("fritz") or {}).get("roh") or {}).get("internet", {}) or {}
+            wan_ip = wan_ip.get("ip", "") if isinstance(wan_ip, dict) else ""
+        if dsm is None and e["dsm"]:
+            dsm = nw.Dsm(e["dsm_url"], secrets["DSM_USER"], secrets["DSM_PASSWORD"])
+        texte += nw.lauf_taeglich(w, dsm=dsm, host=e["host"], zert_adresse=e["zert_adresse"], wan_ip=wan_ip, jetzt=jetzt)
+    if bestand is not None:
+        texte.insert(0, f"🛡 Netzwerk-Wache aktiv: {bestand} Geräte als Bestand übernommen – bitte in LUNA-OS unter "
+                        "LUNA & System → 🛡 Netzwerk kurz durchsehen.")
+    if chat_id:
+        if texte:
+            _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram("\n".join(texte))})
+        for g in neu:
+            k = nw.mac_kurz(g["mac"])
+            kb = {"inline_keyboard": [[{"text": "✅ Kenne ich", "callback_data": f"nwg:{k}:ok"},
+                                       {"text": "❓ Kenne ich nicht", "callback_data": f"nwg:{k}:no"}]]}
+            _api(token, "sendMessage", {"chat_id": chat_id, "reply_markup": json.dumps(kb), "text": fuer_telegram(nw.geraet_text(g))})
+    return {"meldungen": texte, "neue_geraete": len(neu)}
+
+
+def _netzwerk_klick(token, chat_id, data: str, mid) -> str:
+    """Callback „nwg:<MAC ohne :>:ok|no“ -- Geraet als bekannt bzw. unbekannt markieren (nichts an der Fritz!Box)."""
+    _, mac, op = data.split(":", 2)
+    try:
+        g = _netzwerk_wache().geraet_setzen(mac, bekannt=(op == "ok"))
+    except KeyError:
+        return "Gibt es nicht mehr."
+    text = (f"✅ {g.get('name') or g['mac']} als bekannt gemerkt. Umbenennen in LUNA-OS → 🛡 Netzwerk." if op == "ok" else
+            f"❓ {g.get('name') or g['mac']} bleibt als unbekannt markiert. Wenn es nicht zu dir gehört: in der Fritz!Box unter "
+            "Heimnetz → Netzwerk das Gerät sperren und ggf. das WLAN-Passwort ändern.")
+    _api(token, "editMessageText", {"chat_id": chat_id, "message_id": mid, "text": fuer_telegram(text),
+                                    "reply_markup": json.dumps({"inline_keyboard": []})})
+    return "OK"
+
+
+def _start_netzwerk_loop(ctx, secrets, token, chat_id) -> None:
+    """NETZWERK_WACHE: alle 15 min Fritz!Box, taeglich 06:00 NAS + Zertifikat/DDNS. Nur mit NETZWERK_WACHE=1;
+    respektiert die Notbremse. Kostenlos, regelbasiert, nur lesen."""
+    import threading
+    import time
+    from datetime import datetime
+    from ...core.netzwerk import einstellungen
+    if not einstellungen(secrets)["aktiv"] or ctx.agenda is None:
+        return
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("Europe/Berlin")
+    except Exception:
+        tz = None
+
+    def loop():
+        time.sleep(120)
+        letzter = 0.0
+        while True:
+            try:
+                jetzt = datetime.now(tz) if tz else datetime.now()
+                datum = jetzt.strftime("%Y-%m-%d")
+                taeglich = jetzt.hour >= 6 and not ctx.agenda.briefing_gesendet("netzwerk-taeglich", datum)
+                if (time.time() - letzter >= 900 or taeglich) and (ctx.watch is None or not ctx.watch.store.paused()):
+                    letzter = time.time()
+                    netzwerk_lauf(token, chat_id, secrets, taeglich=taeglich, jetzt=jetzt.replace(tzinfo=None))
+                    if taeglich:
+                        ctx.agenda.markiere_briefing("netzwerk-taeglich", datum)
+            except Exception as exc:
+                print(f"[netzwerk] Fehler: {exc.__class__.__name__}: {exc}", flush=True)
+            time.sleep(60)
+
+    threading.Thread(target=loop, daemon=True, name="netzwerk-loop").start()
+
+
 _BELEG_MAILS_GESEHEN: set = set()      # Mail-IDs ohne verwertbaren Anhang nicht bei jedem Poll neu laden
 _AKTE_MAILS_GESEHEN: set = set()   # Etappe 24: in diesem Prozess schon gepruefte Mail-IDs
 _ZEIT_KM_WARTET: dict = {}         # Etappe 25: chat_id -> Zeit-ID, deren Kilometer als naechste Nachricht kommen
@@ -1711,6 +1807,7 @@ def main() -> None:
         print("Content-Feed-Loop aktiv (taeglich 07:00, Pipeline Trends->Ideen->Drafts -> Kandidaten in "
               "LUNA-OS).", flush=True)
     _start_security_loop(ctx, secrets)  # Phase 21: nur aktiv mit SECURITY_AUDIT_ENABLED=1
+    _start_netzwerk_loop(ctx, secrets, token, allowed)   # NETZWERK_WACHE: nur aktiv mit NETZWERK_WACHE=1
     if secrets.get("SECURITY_AUDIT_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Security-Audit-Loop aktiv (taeglich 04:00, regelbasiert, L1-Meldung).", flush=True)
     _start_buchhaltung_loop(ctx)
@@ -2030,6 +2127,13 @@ def main() -> None:
                             _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
                                                             "reply_markup": json.dumps({"inline_keyboard": []}),
                                                             "text": fuer_telegram(res)})
+                    elif data.startswith("nwg:"):                  # NETZWERK_WACHE N1: Geraet bekannt/unbekannt
+                        try:
+                            res = _netzwerk_klick(token, cbchat, data, (cb.get("message") or {}).get("message_id"))
+                        except Exception as exc:
+                            res = "Fehler"
+                            print(f"[netzwerk] Klick: {exc}", flush=True)
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": res})
                     elif data.startswith("akq:"):                  # PARTNERLISTE P2: Idee rueckgaengig/suchen
                         try:
                             res = _akquise_klick(token, cbchat, data, (cb.get("message") or {}).get("message_id"))

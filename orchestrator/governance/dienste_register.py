@@ -103,7 +103,8 @@ ANBIETER = [
 ]
 
 # Schluessel im Code, die zu keinem externen Anbieter gehoeren (eigene Zugaenge)
-INTERN = {"LUNA_OS_PASSWORD"}
+INTERN = {"LUNA_OS_PASSWORD",
+          "FRITZBOX_PASSWORD", "DSM_PASSWORD"}   # NETZWERK_WACHE: eigene Geraete (Fritz!Box, NAS), kein externer Anbieter
 
 
 def alle_schluessel() -> set[str]:

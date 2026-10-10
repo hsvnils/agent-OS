@@ -1171,3 +1171,8 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-idee-notiz { color: var(--v2-fg); opacity: .85; white-space: pre-wrap; }
 .v2-idee-akt { display: flex; gap: 6px; flex-wrap: wrap; }
 @media (max-width: 640px) { .v2-idee-zeile .v2-idee-akt { width: 100%; } }
+/* NETZWERK_WACHE: Geraeteliste */
+.v2-nw-geraet { flex-wrap: wrap; }
+.v2-nw-geraet .grow { min-width: 180px; display: flex; flex-direction: column; }
+.v2-nw-akt { display: flex; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 640px) { .v2-nw-geraet .v2-nw-akt { width: 100%; } }

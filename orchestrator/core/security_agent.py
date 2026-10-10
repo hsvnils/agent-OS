@@ -212,7 +212,8 @@ class SecurityAgent:
 
     def audit(self) -> list[Finding]:
         checks = (self._check_secret_hygiene() + self._check_hardening()
-                  + self._check_dependencies() + self._check_code_security() + self._check_taint())
+                  + self._check_dependencies() + self._check_code_security() + self._check_taint()
+                  + self._check_netzwerk())
         if self.http is not None:      # OSV.dev nur wenn ein HTTP-Client verdrahtet ist (sonst kein Rauschen)
             checks += self._check_osv()
         return checks
@@ -220,6 +221,22 @@ class SecurityAgent:
     def sarif(self) -> dict:
         """Fuehrt den Audit aus und gibt die Befunde als SARIF-2.1.0-Dokument zurueck (Inkr.5)."""
         return nach_sarif(self.audit())
+
+    def _check_netzwerk(self) -> list[Finding]:
+        """NETZWERK_WACHE N3: offene Befunde der Netzwerk-Wache (Fritz!Box, NAS, Aussensicht) in den CISO-Bericht -- nur
+        lesen (Datei `netzwerk/zustand.json`), L1 = melden, keine Aenderung."""
+        try:
+            z = json.loads((self.root / "netzwerk" / "zustand.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return []
+        out = []
+        for bereich, d in (z.get("bereiche") or {}).items():
+            for b in d.get("befunde") or []:
+                if b.get("stufe") in ("warn", "alarm"):
+                    out.append(Finding("netzwerk", "hoch" if b["stufe"] == "alarm" else "mittel", b.get("text", ""),
+                                       detail=f"Netzwerk-Wache, Bereich {bereich}, Stand {d.get('ts', '')}",
+                                       empfehlung="Im Geraet pruefen (Fritz!Box bzw. DSM) -- LUNA aendert nichts selbst."))
+        return out
 
     def _check_secret_hygiene(self) -> list[Finding]:
         out: list[Finding] = []

@@ -1,10 +1,10 @@
 # Roadmap: Netzwerk-Wache (Fritz!Box, NAS, Aussensicht)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-10
 - Arbeitsbranch: `ai/netzwerk-wache`
 - Basiscommit: `6f20343`
-- Naechster Schritt: CEO-Entscheidung zu den Zugaengen (je ein eigenes Konto fuer Fritz!Box und NAS, CISO-Freigabe) und Go fuer N1-N3 abwarten.
+- Naechster Schritt: Deploy; CEO legt die Konten in Fritz!Box und DSM an, traegt sie mit NETZWERK_WACHE=1 in die NAS-.env ein und startet die Container neu -- dann erster echter Lauf und Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -32,7 +32,7 @@ und meldet**. Kein Mitlesen des Datenverkehrs, keine Aenderungen am Netzwerk.
 
 ## Etappe N1: Fritz!Box
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope (nur lesen, alle 15 Minuten im Bot-Takt, regelbasiert, kein LLM):
   - **Neue Geraete:** Liste der Geraete im Netz (Name, MAC, IP, WLAN/LAN, Gastnetz). Unbekanntes Geraet -> Telegram
     „🆕 Neues Geraet im Netz: …“ mit Knoepfen **„✅ Kenne ich“** (Name vergeben) / **„❓ Kenne ich nicht“** (bleibt markiert,
@@ -51,7 +51,7 @@ und meldet**. Kein Mitlesen des Datenverkehrs, keine Aenderungen am Netzwerk.
 
 ## Etappe N2: NAS (Synology)
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope (nur lesen, taeglich 06:00 + bei Befund sofort):
   - **Anmeldungen:** fehlgeschlagene Anmeldungen und automatisch gesperrte IP-Adressen (Auto-Block) -> Meldung bei
     Haeufung oder neuer gesperrter Adresse.
@@ -66,7 +66,7 @@ und meldet**. Kein Mitlesen des Datenverkehrs, keine Aenderungen am Netzwerk.
 
 ## Etappe N3: Aussensicht und Uebersicht
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope:
   - **Zertifikat** von `os.hanserautisch.synology.me`: Ablauf in weniger als 21 Tagen -> Meldung.
   - **DDNS:** zeigt der Name auf die aktuelle oeffentliche IP der Fritz!Box (aus N1)?
@@ -78,6 +78,22 @@ und meldet**. Kein Mitlesen des Datenverkehrs, keine Aenderungen am Netzwerk.
   aus der Fritz!Box selbst (N1).
 - Gate: Tests; Browser Rechner/iPad/iPhone.
 - Aufwand: klein bis mittel.
+
+## Umsetzung (2026-10-10, Go CEO fuer N1-N3, Meldeschwelle: jedes neue Geraet sofort)
+
+- Nachweis vorab (read-only, ohne Anmeldung): Router = **FRITZ!Box 7530 AX, FRITZ!OS 8.25** unter 192.168.178.1:49000
+  (`/tr64desc.xml`); DSM-API-Verzeichnis (`query.cgi`) bietet alle benoetigten Schnittstellen.
+- `core/netzwerk.py`: `FritzBox` (eigener TR-064-Client, Digest, Allowlist `FRITZ_LESEN` -- 18 Lese-Aktionen, alles andere
+  `NurLesen`, nie gesendet), `Dsm` (Allowlist `DSM_LESEN`, Passwort im POST-Body, Fehler 105 = „ohne Rechte“), Zertifikat/DNS,
+  Regeln `befunde_*`, Zustand `Wache` (`netzwerk/`), Laeufe `lauf_fritz` / `lauf_taeglich`.
+- Bot: `_start_netzwerk_loop` (nur mit `NETZWERK_WACHE=1`, Notbremse), alle 15 min Fritz!Box, taeglich ab 06:00 NAS +
+  Aussensicht; erster Lauf = Bestand (eine Sammelmeldung statt Flut); neue Geraete mit „✅ Kenne ich“ / „❓ Kenne ich nicht“;
+  jeder Befund einmal (wieder, wenn er verschwand und zurueckkommt); Internet-Ausfall ab 10 min nach der Rueckkehr.
+- LUNA-OS: LUNA & System -> „🛡 Netzwerk“ (nur administration): Einrichtungs-Haken, Ampel je Bereich, Befunde, Details,
+  Geraeteliste (zu pruefen/alle/Gastnetz, bekannt/unbekannt, umbenennen, entfernen).
+- CISO-Audit 04:00 nimmt offene Netzwerk-Befunde (warn/alarm) als Kategorie „netzwerk“ auf.
+- Tests `test_netzwerk.py` (6, Gegenproben rot: Allowlist, Bestand, einmal melden, Admin-Recht); Browser Rechner/iPad/iPhone.
+- Noch nicht live geprueft: echte Antworten mit Konto (Geraeteliste, Portfreigaben, DSM-Felder) -- erst nach der Einrichtung.
 
 ## Nicht-Scope (gesamt)
 

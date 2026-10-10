@@ -38,6 +38,7 @@ buchhaltung/
 # Einwilligungen (Personendaten + unterschriebene PDFs) und Akquise-Ideen -- nur NAS, nie ins Repo
 einwilligungen/
 akquise/
+netzwerk/
 
 # Live-Voice: lokale Stimmauswahl (Nutzerpraeferenz, kein Versionierungsbedarf)
 orchestrator/channels/voice/selected_voice.json

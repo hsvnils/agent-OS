@@ -122,6 +122,7 @@ const SECTIONS = [
   { id: "agenten", icon: "🛰", label: "Agenten", app: "home" },
   { id: "system", icon: "📡", label: "System", app: null },
   { id: "anbieter", icon: "🔌", label: "Anbieter", app: null },
+  { id: "netzwerk", icon: "🛡", label: "Netzwerk", app: null },
   { id: "team", icon: "👥", label: "Team", app: "team" },
   { id: "einstellungen", icon: "⚙", label: "Einstellungen", app: null },
 ];
@@ -131,14 +132,14 @@ const BEREICHE = [
   { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen", "vertraege"] },
   { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["contentplan", "crm", "radar", "content", "cutter", "reel"] },
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
-  { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "devroadmap", "system", "anbieter", "team", "einstellungen"] },
+  { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "devroadmap", "system", "netzwerk", "anbieter", "team", "einstellungen"] },
 ];
 const TEIL_INFO = {
   kunden: "Firmen, Ansprechpartner, Akte", vertraege: "AGB und Vertragsvorlagen", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
   belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
   radar: "Neue Collab-Chancen", contentplan: "Kalender: eigene Posts, Kunden, Drehs", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
-  wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", anbieter: "Dienste, Datenquellen, Kosten", team: "Team-Zugänge",
+  wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", netzwerk: "Fritz!Box, NAS, Zertifikat", anbieter: "Dienste, Datenquellen, Kosten", team: "Team-Zugänge",
   einstellungen: "Depot, Briefings, Anmeldung",
 };
 const teilErlaubt = (b) => b.teile.filter(t => { const x = SECTIONS.find(s => s.id === t); return x && darf(x.app); });
@@ -4175,6 +4176,51 @@ async function renderAnbieter() {
     ${bereiche.map(b => { const z = liste.filter(a => a.bereich === b); return z.length ? tile(b, z.map(a => anbieterZeile(a, K && K.anbieter[a.id])).join(""), "w6") : ""; }).join("")}
   </div>`;
 }
+/* NETZWERK_WACHE N1-N3: nur lesen und melden -- Uebersicht, Befunde, Geraete benennen (abgefragt wird vom Bot) */
+RENDER.netzwerk = renderNetzwerk;
+let NW_FILTER = "pruefen";
+const NW_AMPEL = { ok: ["ok", "🟢 in Ordnung"], info: ["neutral", "🔵 Hinweis"], warn: ["warn", "🟠 prüfen"], alarm: ["err", "🔴 handeln"] };
+const NW_BEREICH = { fritz: "📶 Fritz!Box", nas: "🗄 NAS", aussen: "🌐 Außensicht" };
+async function renderNetzwerk() {
+  const d = await jget("/api/netzwerk");
+  if (!d) { $("#v2-app").innerHTML = secHead("🛡 Netzwerk-Wache", "") + emptyRow("Nur für Administratoren sichtbar."); return; }
+  const e = d.einstellungen || {}, B = d.bereiche || {}, A = d.ampel || {};
+  const haken = (ok, t) => `<div class="v2-kv"><span>${t}</span><b>${ok ? "✅" : "—"}</b></div>`;
+  const einrichten = !e.aktiv || !e.fritz ? tile("Einrichtung", `${haken(e.aktiv, "Wache eingeschaltet (NETZWERK_WACHE=1)")}${haken(e.fritz, "Fritz!Box-Konto (FRITZBOX_USER/FRITZBOX_PASSWORD)")}${haken(e.dsm, "NAS-Konto (DSM_USER/DSM_PASSWORD)")}
+    <small class="v2-sub">Die Zugangsdaten trägst du selbst in die <code>.env</code> auf der NAS ein, danach Container neu starten. LUNA liest nur – sie ändert nichts an Fritz!Box oder NAS.</small>`, "w12") : "";
+  const ampelKachel = (k) => { const a = NW_AMPEL[A[k] || (B[k] ? "ok" : "")] || ["neutral", "– noch kein Lauf"];
+    return tile(NW_BEREICH[k], `<span class="v2-badge ${a[0]}">${a[1]}</span><small class="v2-sub" style="display:block;margin-top:6px">${B[k] ? "Stand " + esc(zeitKurz(B[k].ts)) : "noch nicht abgefragt"}</small>`, "w4"); };
+  const befunde = Object.entries(B).flatMap(([k, x]) => (x.befunde || []).map(b => ({ ...b, k }))).sort((a, b) => ({ alarm: 0, warn: 1, info: 2 }[a.stufe] ?? 3) - ({ alarm: 0, warn: 1, info: 2 }[b.stufe] ?? 3));
+  const befundListe = befunde.map(b => `<div class="v2-list-row"><span class="v2-badge ${(NW_AMPEL[b.stufe] || ["neutral"])[0]}">${esc((NW_AMPEL[b.stufe] || ["", b.stufe])[1])}</span><div class="grow"><b>${esc(b.text)}</b><small>${esc(NW_BEREICH[b.k] || b.k)}</small></div></div>`).join("");
+  const f = (B.fritz || {}).roh || {}, n = (B.nas || {}).roh || {}, au = (B.aussen || {}).roh || {};
+  const kv = (l, w) => w === undefined || w === null || w === "" ? "" : `<div class="v2-kv"><span>${l}</span><b>${w}</b></div>`;
+  const fritz = B.fritz ? kv("Gerät", esc([(f.geraet || {}).NewModelName, (f.geraet || {}).NewSoftwareVersion].filter(Boolean).join(" · ")))
+    + kv("Internet", f.internet ? (f.internet.verbunden ? "verbunden" : "<span style='color:var(--v2-red)'>getrennt</span>") + (f.internet.ip ? " · " + esc(f.internet.ip) : "") : "")
+    + kv("Update", f.update ? (f.update.verfuegbar ? "⚠️ " + esc(f.update.version || "verfügbar") : "aktuell") : "")
+    + kv("Portfreigaben", (f.ports || []).length ? (f.ports || []).map(p => esc(`${p.protokoll} ${p.extern} → ${p.ziel}:${p.intern}${p.aktiv ? "" : " (aus)"}`)).join("<br>") : "keine")
+    + kv("Fernzugang", f.fernzugang ? (f.fernzugang.an ? "an" : "aus") : "") + kv("UPnP", f.upnp ? (f.upnp.an ? "an" : "aus") : "")
+    + kv("WLAN", (f.wlan || []).map(w => esc(`${w.ssid || "Netz " + w.nr}: ${w.an ? "an" : "aus"}`)).join("<br>")) : emptyRow("Noch keine Abfrage.");
+  const vol = ((n.speicher || {}).volumes || []).map(v => esc(`${v.name}: ${v.zustand || "–"}${v.frei_prozent != null ? ", " + v.frei_prozent + " % frei" : ""}`)).join("<br>");
+  const pl = ((n.speicher || {}).platten || []).map(p => esc(`${p.name}: ${p.zustand || "–"}${p.temp ? ", " + p.temp + " °C" : ""}`)).join("<br>");
+  const nas = B.nas ? kv("System", esc([(n.system || {}).model, (n.system || {}).firmware_ver].filter(Boolean).join(" · "))) + kv("Volumes", vol) + kv("Platten", pl)
+    + kv("Update", n.update ? (n.update.verfuegbar ? "⚠️ " + esc(n.update.version || "verfügbar") : "aktuell") : "")
+    + kv("Sicherheitsberater", n.sicherheitsberater ? esc(n.sicherheitsberater.stufe || "–") : "")
+    + ((n.ohne_rechte || []).length ? `<small class="v2-sub">Ohne Rechte (in DSM ansehen): ${esc(n.ohne_rechte.join(", "))}</small>` : "") : emptyRow("Noch keine Abfrage (täglich 06:00).");
+  const aussen = B.aussen ? kv("Zertifikat " + esc(e.host || ""), au.zert_tage != null ? `noch ${au.zert_tage} Tage` : "nicht lesbar")
+    + kv("DDNS", au.dns ? esc(au.dns) + (au.wan_ip ? (au.dns === au.wan_ip ? " ✅" : " ⚠️ Fritz!Box: " + esc(au.wan_ip)) : "") : "") + kv("Freigaben-Soll", esc((e.ports_soll || []).join(", "))) : emptyRow("Noch keine Abfrage (täglich 06:00).");
+  const g = d.geraete || [], neu = g.filter(x => x.bekannt !== true);
+  const sicht = NW_FILTER === "pruefen" ? neu : NW_FILTER === "gast" ? g.filter(x => x.gast) : g;
+  const chips = [["pruefen", `Zu prüfen (${neu.length})`], ["alle", `Alle (${g.length})`], ["gast", "Gastnetz"]].map(([k, l]) => `<button class="v2-chip ${NW_FILTER === k ? "on" : ""}" data-act="nw-filter" data-val="${k}">${l}</button>`).join("");
+  const zeile = (x) => `<div class="v2-list-row v2-nw-geraet"><span class="v2-badge ${x.bekannt === true ? "ok" : x.bekannt === false ? "err" : "warn"}">${x.bekannt === true ? "bekannt" : x.bekannt === false ? "unbekannt" : "neu"}</span>
+    <div class="grow"><b>${esc(x.name || x.fritz_name || "ohne Namen")}</b><small>${esc(x.ip || "–")} · ${esc(x.mac)} · ${esc(x.gast ? "Gastnetz" : x.schnittstelle || "–")}${x.zuletzt ? " · zuletzt " + esc(zeitKurz(x.zuletzt)) : ""}${x.quelle ? " · " + esc(x.quelle) : ""}</small></div>
+    <div class="v2-nw-akt">${x.bekannt !== true ? `<button class="v2-btn sm" data-act="nw-bekannt" data-id="${esc(x.mac)}" data-val="1">✅ Kenne ich</button>` : ""}${x.bekannt !== false ? `<button class="v2-btn sm" data-act="nw-bekannt" data-id="${esc(x.mac)}" data-val="0">❓</button>` : ""}
+      <button class="v2-btn sm" data-act="nw-name" data-id="${esc(x.mac)}" title="Umbenennen">✎</button><button class="v2-btn sm" data-act="nw-loeschen" data-id="${esc(x.mac)}" title="Aus der Liste entfernen">🗑</button></div></div>`;
+  $("#v2-app").innerHTML = secHead("🛡 Netzwerk-Wache", "") + `<div class="v2-grid">${einrichten}
+    ${["fritz", "nas", "aussen"].map(ampelKachel).join("")}
+    ${tile(`Befunde (${befunde.length})`, befundListe || emptyRow("Keine offenen Befunde."), "w12", `<small class="v2-sub">nur lesen – LUNA ändert nichts selbst</small>`)}
+    ${tile("📶 Fritz!Box", fritz, "w4")}${tile("🗄 NAS", nas, "w4")}${tile("🌐 Außensicht", aussen, "w4")}
+    ${tile(`Geräte im Netz (${g.length})`, `<div class="v2-chips" style="margin-bottom:8px">${chips}</div>` + (sicht.map(zeile).join("") || emptyRow(NW_FILTER === "pruefen" ? "Alle Geräte sind als bekannt markiert." : "Noch keine Geräte.")), "w12")}</div>`;
+}
 async function renderSystem() {
   const sub = SUBTAB.system || "leistung";
   STATE = await jget("/api/state") || STATE;
@@ -4449,6 +4495,10 @@ async function handleAct(act, el) {
     }
     case "hb-filter": HB_FILTER = val || ""; return renderHandlung();
     case "vs-neu": return vsDialog(id || "", val === "nachfassen");
+    case "nw-filter": NW_FILTER = val; return renderNetzwerk();
+    case "nw-bekannt": { const r = await jpost(`/api/netzwerk/geraete/${encodeURIComponent(id)}`, { bekannt: val === "1" }); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return renderNetzwerk(); }
+    case "nw-name": { const n = prompt("Name für dieses Gerät:", ""); if (!n || !n.trim()) return; const r = await jpost(`/api/netzwerk/geraete/${encodeURIComponent(id)}`, { name: n.trim(), bekannt: true }); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return renderNetzwerk(); }
+    case "nw-loeschen": { if (!confirm("Gerät aus der Liste entfernen? Taucht es wieder auf, meldet LUNA es als neu.")) return; await jpost(`/api/netzwerk/geraete/${encodeURIComponent(id)}/loeschen`, {}); return renderNetzwerk(); }
     case "idee-form": return ideeForm(id || "");
     case "idee-speichern": return ideeSpeichern(id || "");
     case "idee-trotzdem": return ideeSpeichern("", true);

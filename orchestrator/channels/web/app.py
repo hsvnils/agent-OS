@@ -4271,6 +4271,40 @@ def _ideen():
     return IdeenStore(ROOT / "akquise")
 
 
+# -- Netzwerk-Wache (NETZWERK_WACHE N1-N3): Uebersicht, Geraete benennen -- abgefragt wird nur vom Bot ----------------
+def _netzwerk():
+    from ...core.netzwerk import Wache
+    return Wache(ROOT / "netzwerk")
+
+
+@app.get("/api/netzwerk")
+def netzwerk_uebersicht():
+    from ...core.netzwerk import ampel, einstellungen
+    e = einstellungen(_google_secrets())
+    w = _netzwerk()
+    z = w.zustand()
+    geraete = sorted(w.geraete().values(), key=lambda g: (g.get("bekannt") is not False, g.get("bekannt") is True,
+                                                          (g.get("name") or "").lower()))
+    return {"einstellungen": {k: e[k] for k in ("aktiv", "fritz", "dsm", "host")} | {"ports_soll": sorted(e["ports_soll"])},
+            "ampel": ampel(z), "bereiche": z.get("bereiche") or {}, "internet_weg_seit": z.get("internet_weg_seit", ""),
+            "geraete": geraete}
+
+
+@app.post("/api/netzwerk/geraete/{mac}")
+async def netzwerk_geraet(mac: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: {"geraet": _netzwerk().geraet_setzen(
+        mac, bekannt=body.get("bekannt") if "bekannt" in body else None, name=body.get("name"))})
+
+
+@app.post("/api/netzwerk/geraete/{mac}/loeschen")
+async def netzwerk_geraet_loeschen(mac: str, request: Request):
+    def tun():
+        _netzwerk().geraet_loeschen(mac)
+        return {}
+    return _kunden_aktion(tun)
+
+
 @app.get("/api/crm/ideen")
 def ideen_liste():
     from datetime import date as _date

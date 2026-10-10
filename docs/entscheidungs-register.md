@@ -22,6 +22,7 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Netzwerk-Wache nur lesend** (Fritz!Box TR-064 mit fester Lese-Allowlist, weil die Fritz!Box kein reines Lese-Konto kennt; DSM ohne Admin-Konto, fehlende Rechte werden angezeigt; Zertifikat/DDNS); erster Lauf uebernimmt alle Geraete als Bestand, danach jedes neue Geraet sofort melden (CEO: Empfehlung); kein Mitlesen des Datenverkehrs, keine Aenderungen, kein Port-Scan ueber fremde Dienste | 2026-10-10 | **BESCHLOSSEN** (CEO, Go N1-N3) | `NETZWERK_WACHE_ROADMAP.md` |
 | **Grund der Arbeitszeit als feste Liste** (Dreharbeiten, Postproduktion & Schnitt, Konzept & Abstimmung, Sonstiges mit Text) statt Freitext; Pflicht beim Nachtragen; Feld `arbeit` (nicht `grund`, das ist die Korrektur-Begruendung); alte Freitexte werden zugeordnet | 2026-10-09 | **BESCHLOSSEN** (CEO, Go Z1/Z2) | `ZEITERFASSUNG_GRUND_ROADMAP.md` |
 | **Zeiten per Telegram nachtragen** nur regelbasiert (Tag + Zeitspanne/Dauer + Grund/Ziel) und immer erst nach ✅ gespeichert | 2026-10-09 | **BESCHLOSSEN** (CEO, Go Z2) | `core/zeiterfassung.py` `nachtrag` |
 | **Akquise-Ideen getrennt vom Kundenstamm** (`akquise/ideen.json`, nicht in der Kette, wirklich loeschbar); Firma entsteht erst beim Anschreiben (Vorstellungs-Mail, Interessent); Collab-CRM/Meta-Postfach bleibt verworfen; Telegram-Ausloeser nur eindeutig („Partner-Idee:“, „Kunden-Idee:“, „Akquise:“, „Merk dir … als Partner/Kunden“), freie Saetze ueber LUNA-Werkzeug | 2026-10-09 | **BESCHLOSSEN** (CEO, Go P1-P3) | `PARTNERLISTE_ROADMAP.md` |
