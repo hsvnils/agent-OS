@@ -87,6 +87,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md` | Einwilligung in Video-/Bildaufnahmen: Vorlage im Vertragswerk, Unterschrift mit dem Apple Pencil am iPad, PDF je Person am Auftrag, Kopie und Widerruf | abgeschlossen (2026-10-09, CEO-Abnahme am iPad) |
 | `ZEITERFASSUNG_GRUND_ROADMAP.md` | Grund der Arbeitszeit (Dreharbeiten, Postproduktion & Schnitt …) und Zeiten nachtragen im OS und per Telegram | in Umsetzung (Z1-Z2 gebaut 2026-10-09) |
 | `PARTNERLISTE_ROADMAP.md` | Liste potenzieller Partner und Kunden (Ideen), Erfassung per Telegram, Anschreiben ueber die Vorstellungs-Mail | in Umsetzung (P1-P3 gebaut 2026-10-09) |
+| `NETZWERK_WACHE_ROADMAP.md` | Netzwerk-Wache: Fritz!Box (neue Geraete, Portfreigaben, Firmware), NAS (Anmeldungen, Updates, Platten), Zertifikat/DDNS -- nur lesen und melden | geplant |
 | `SERIEN_UND_VORSTELLUNG_ROADMAP.md` | Wiederkehrender Content im Content-Plan; Vorstellungs-Mails an Unternehmen aus LUNA-OS (Firma beim Senden als Interessent) | in Umsetzung (S1, V1, V2 gebaut 2026-10-06) |
 | `IMPRESSUM_SUCHE_ROADMAP.md` | Kundendaten beim Anlegen einer Firma aus dem Impressum vorfuellen (regelbasiert, optional lokale KI) | in Umsetzung (I1 gebaut 2026-10-06) |
 | `GLOBALE_SUCHE_ROADMAP.md` | Globale Suche ueber alle Geschaeftsdaten, Ergebnisse nach Kategorien (Kunden, Angebote, Auftraege, Rechnungen, Ausgaben …) | in Umsetzung (G1 gebaut 2026-10-06) |

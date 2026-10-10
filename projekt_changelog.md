@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-10 23:12] — Claude Code
+- **Was:** Roadmap `NETZWERK_WACHE_ROADMAP.md` angelegt (geplant): N1 Fritz!Box (TR-064, nur Lese-Aktionen per Allowlist), N2 NAS (DSM-API/SNMP nur lesen), N3 Zertifikat/DDNS und Uebersicht; Zugaenge als CEO-Tor mit CISO-Freigabe; im Roadmap-Verzeichnis eingetragen.
+- **Warum:** CEO 2026-10-10: Kann LUNA Netzwerk und Netzwerk-Sicherheit ueberwachen? -- Roadmap schreiben.
+- **Betroffen:** `NETZWERK_WACHE_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-09 10:52] — Claude Code
 - **Was:** Roadmap `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md` abgeschlossen (Status, Naechster Schritt, Eintrag in `ROADMAP.md`); offen bleibt nur die anwaltliche Pruefung der Vorlage Version 1.
 - **Warum:** CEO 2026-10-09: „Einwilligung hiermit abgenommen.“
