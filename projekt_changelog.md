@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-13 10:59] — Claude Code
+- **Was:** Roadmap `MODELL_RADAR_ROADMAP.md` angelegt (geplant): R1 Hersteller-News (Feeds/Seiten, Einstufung, sofort bei Abschaltung genutzter Modelle), R2 Artificial-Analysis-Gratis-API mit Vorschlaegen als Antrag (nie automatischer Wechsel), R3 Uebersicht + Wochenbericht; Quellen vorab read-only auf Erreichbarkeit geprueft.
+- **Warum:** CEO 2026-10-13: Researcher soll artificialanalysis.ai und die fuehrenden KI-Anbieter ueberwachen.
+- **Betroffen:** `MODELL_RADAR_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-13 10:57] — Claude Code
 - **Was:** Deploy mehrere Empfaenger/CC/BCC geprueft: NAS liefert app-v2.js v130/style-v2.css v67 mit dem Empfaenger-Baustein; Versandvorschau eines echten Auftrags (AB-2026-0004) liefert 2 Adressvorschlaege und die Vorbelegung. Nichts versendet.
 - **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
