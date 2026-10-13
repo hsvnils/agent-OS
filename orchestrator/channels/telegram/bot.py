@@ -465,6 +465,101 @@ def _start_security_loop(ctx, secrets) -> None:
     threading.Thread(target=loop, daemon=True, name="security-loop").start()
 
 
+def _modell_radar():
+    from ...core.modell_radar import Radar
+    return Radar(ROOT / "radar")
+
+
+def _nutzung_30_tage() -> dict:
+    """Token je Modell der letzten 30 Tage aus dem Kostenlog (fuer den Kostenvoranschlag)."""
+    from datetime import datetime as _dt, timedelta as _td
+    from ...core.kosten import KostenStore
+    grenze = (_dt.now() - _td(days=30)).isoformat()
+    out: dict = {}
+    for e in KostenStore(ROOT / "finance" / "kosten-log.jsonl")._events():
+        if str(e.get("ts", "")) >= grenze and e.get("modell"):
+            d = out.setdefault(e["modell"], {"in": 0, "out": 0})
+            d["in"] += int(e.get("in") or 0)
+            d["out"] += int(e.get("out") or 0)
+    return out
+
+
+def radar_lauf(token, chat_id, secrets, *, antraege=None, jetzt=None, taeglich: bool = True, abruf=None, suche=None,
+               cfg=None) -> dict:
+    """MODELL_RADAR R1-R3: taeglich Hersteller-News (🔴 sofort) und Artificial Analysis (Vorschlaege als Antrag, nie
+    automatisch wechseln); montags ab 09:00 der Wochenbericht. Nur lesen, kein LLM."""
+    from datetime import datetime as _dt
+    from ...core import modell_radar as mr
+    jetzt = jetzt or _dt.now()
+    unsere = mr.genutzte_modelle(cfg if cfg is not None else _load_config(), secrets)
+    r = _modell_radar()
+    out = {"rot": 0, "vorschlaege": 0, "bericht": False}
+    senden = (lambda text: _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(text)})) if chat_id else (lambda t: None)
+    if taeglich:
+        if suche is None:
+            from ...governance.web_research import BraveProvider
+            brave = BraveProvider(secrets)
+            suche = (lambda q: [(t.titel, t.url, t.auszug) for t in brave.suche(q, max_results=5).treffer]) if brave.verfuegbar() else None
+        rot = mr.lauf_news(r, unsere, jetzt=jetzt, abruf=abruf or mr.abrufen, suche=suche)
+        out["rot"] = len(rot)
+        if rot:
+            senden(mr.meldung_rot(rot))
+        schluessel = (secrets.get("ARTIFICIALANALYSIS_API_KEY") or "").strip()
+        if schluessel:
+            try:
+                neu = mr.lauf_aa(r, unsere, schluessel=schluessel, jetzt=jetzt, abruf=abruf or mr.abrufen)
+            except Exception as exc:
+                r.fehler_merken("artificialanalysis", f"{exc.__class__.__name__}", jetzt.isoformat(timespec="seconds"))
+                neu = []
+            nutzung = _nutzung_30_tage() if neu else {}
+            for v in neu[:3]:                                   # hoechstens 3 neue Antraege je Tag
+                titel, text = mr.vorschlag_text(v, nutzung.get(v["modell"]))
+                if antraege is not None:
+                    antraege.stellen(titel, text, von="Researcher (Modell-Radar)", kategorie="modell", betroffen=v["einsatz"])
+            out["vorschlaege"] = len(neu[:3])
+            if neu:
+                senden(f"🧭 Modell-Radar: {len(neu[:3])} Vorschlag/Vorschläge zum Modellwechsel liegt/liegen als Antrag bereit "
+                       f"(LUNA-OS → Freigaben). Nichts wird automatisch umgestellt. {mr.AA_QUELLE}")
+    items = r.wochenbericht_faellig(jetzt)
+    if items is not None:
+        offen = len([a for a in (antraege.list("eingereicht") if antraege is not None else []) if a.get("kategorie") == "modell"])
+        senden(mr.wochenbericht_text(items, offen))
+        r.wochenbericht_erledigt(jetzt)
+        out["bericht"] = True
+    return out
+
+
+def _start_radar_loop(ctx, secrets, token, chat_id) -> None:
+    """MODELL_RADAR: taeglich ab 07:00 einmal, Wochenbericht montags ab 09:00. Aus mit MODELL_RADAR=0; Notbremse gilt."""
+    import threading
+    import time
+    from datetime import datetime
+    if str(secrets.get("MODELL_RADAR", "1")).strip().lower() in ("0", "false", "aus", "off", "nein") or ctx.agenda is None:
+        return
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("Europe/Berlin")
+    except Exception:
+        tz = None
+
+    def loop():
+        time.sleep(180)
+        while True:
+            try:
+                jetzt = datetime.now(tz) if tz else datetime.now()
+                datum = jetzt.strftime("%Y-%m-%d")
+                taeglich = jetzt.hour >= 7 and not ctx.agenda.briefing_gesendet("modell-radar", datum)
+                if (ctx.watch is None or not ctx.watch.store.paused()):
+                    radar_lauf(token, chat_id, secrets, antraege=ctx.antraege, jetzt=jetzt.replace(tzinfo=None), taeglich=taeglich)
+                    if taeglich:
+                        ctx.agenda.markiere_briefing("modell-radar", datum)
+            except Exception as exc:
+                print(f"[radar] Fehler: {exc.__class__.__name__}: {exc}", flush=True)
+            time.sleep(600)
+
+    threading.Thread(target=loop, daemon=True, name="radar-loop").start()
+
+
 def _netzwerk_wache():
     from ...core.netzwerk import Wache
     return Wache(ROOT / "netzwerk")
@@ -1808,6 +1903,7 @@ def main() -> None:
               "LUNA-OS).", flush=True)
     _start_security_loop(ctx, secrets)  # Phase 21: nur aktiv mit SECURITY_AUDIT_ENABLED=1
     _start_netzwerk_loop(ctx, secrets, token, allowed)   # NETZWERK_WACHE: nur aktiv mit NETZWERK_WACHE=1
+    _start_radar_loop(ctx, secrets, token, allowed)      # MODELL_RADAR: an (aus mit MODELL_RADAR=0)
     if secrets.get("SECURITY_AUDIT_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Security-Audit-Loop aktiv (taeglich 04:00, regelbasiert, L1-Meldung).", flush=True)
     _start_buchhaltung_loop(ctx)

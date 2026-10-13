@@ -39,6 +39,7 @@ buchhaltung/
 einwilligungen/
 akquise/
 netzwerk/
+radar/
 
 # Live-Voice: lokale Stimmauswahl (Nutzerpraeferenz, kein Versionierungsbedarf)
 orchestrator/channels/voice/selected_voice.json

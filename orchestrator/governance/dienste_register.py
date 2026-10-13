@@ -35,6 +35,10 @@ ANBIETER = [
      "daten": "bleibt im Heimnetz", "schluessel": ["LOCAL_LLM_BASE_URL"], "zugehoerig": ["LOCAL_LLM_KEY"], "tarif": "gratis",
      "kosten_erfasst": True, "konto": "", "intern": True},
     # -- Recherche -------------------------------------------------------------------------------------------
+    {"id": "artificialanalysis", "lieferant": ["artificial analysis"], "name": "Artificial Analysis", "bereich": "Recherche",
+     "zweck": "Modell-Radar: Qualität, Preis und Tempo der KI-Modelle (Vorschläge für Modellwechsel)",
+     "daten": "keine (nur Abruf der Modellliste)", "schluessel": ["ARTIFICIALANALYSIS_API_KEY"], "zugehoerig": [], "tarif": "gratis",
+     "kosten_erfasst": True, "konto": "https://artificialanalysis.ai/insights"},
     {"id": "brave", "lieferant": ["brave"], "name": "Brave Search", "bereich": "Recherche", "zweck": "Web-Recherche, Watcher, Impressum-Suche",
      "daten": "Suchbegriffe", "schluessel": ["BRAVE_API_KEY"], "zugehoerig": [], "tarif": "gratis_stufe",
      "kosten_erfasst": False, "konto": "https://api-dashboard.search.brave.com/"},

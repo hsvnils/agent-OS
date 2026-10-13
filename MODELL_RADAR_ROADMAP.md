@@ -1,10 +1,10 @@
 # Roadmap: Modell-Radar (Artificial Analysis + Hersteller-News)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-13
 - Arbeitsbranch: `ai/modell-radar`
 - Basiscommit: `b40d9d1`
-- Naechster Schritt: CEO-Go fuer R1-R3 und Entscheidung zum Gratis-Konto bei Artificial Analysis abwarten.
+- Naechster Schritt: Deploy; CEO legt das Gratis-Konto bei Artificial Analysis an und traegt ARTIFICIALANALYSIS_API_KEY in die NAS-.env ein; erster Lauf ab 07:00 (Bestand), dann Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -35,7 +35,7 @@ Hersteller nicht verpassen.“
 
 ## Etappe R1: Hersteller-News
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Researcher prueft die Quellen oben **einmal taeglich** (Feeds bzw. News-Seite, je Quelle robots.txt geachtet,
   eigener User-Agent, kein Massenabruf). Neue Beitraege werden dedupliziert gespeichert und regelbasiert eingestuft:
   - **🔴 sofort per Telegram:** betrifft ein Modell, das wir nutzen (Abschaltung/„deprecat“, Preisaenderung, API-Aenderung).
@@ -47,7 +47,7 @@ Hersteller nicht verpassen.“
 
 ## Etappe R2: Artificial Analysis -- Modellvergleich und Vorschlaege
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: taeglich die Modellliste ueber die Gratis-API (gecacht, weit unter dem Limit). Abgleich mit **unseren**
   Modellen je Einsatz (Chat, Rueckfall, Fachagenten, lokal): Vorschlag, wenn ein anderes Modell bei mindestens gleicher
   Qualitaet deutlich guenstiger oder schneller ist, oder bei gleichem Preis deutlich besser. Vorschlag = **Antrag
@@ -60,13 +60,31 @@ Hersteller nicht verpassen.“
 
 ## Etappe R3: Uebersicht und Wochenbericht
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: LUNA-OS (LUNA & System -> Wissen bzw. eigener Reiter „🧭 Modell-Radar“): Neuigkeiten je Hersteller (Filter
   wichtig/alle), Tabelle „unsere Modelle vs. beste Alternativen“ (Qualitaet, Preis, Tempo), offene Vorschlaege.
   Wochenbericht montags mit dem Leistungsbericht per Telegram (Top-News + Vorschlaege); Zusammenfassung regelbasiert, optional
   ueber das lokale Modell (kostenlos).
 - Gate: Tests; Browser Rechner/iPad/iPhone.
 - Aufwand: klein bis mittel.
+
+## Umsetzung (2026-10-13, Go CEO fuer R1-R3, Empfehlungen angenommen, NVIDIA und Microsoft dazu)
+
+- `core/modell_radar.py`: 17 Quellen (Feeds: OpenAI, Google DeepMind, Google AI, Mistral, Qwen, DeepSeek- und Ollama-Releases,
+  NVIDIA Developer + Blog, Microsoft Azure; Seiten: Anthropic News, Meta AI; Aenderungsprotokolle: Anthropic, OpenAI, Gemini;
+  Brave-Suche: xAI (Seite blockt Abrufe) und DeepSeek). Eigener User-Agent, gzip, Groessengrenze, ein Abruf je Quelle und Tag.
+  Parser `lies_feed` / `lies_links` (Kartenueberschrift = Titel) / `lies_changelog` (lange und kurze Datumszeilen).
+- Einstufung: 🔴 nur wenn ein **von uns genutztes** Modell genannt wird und es um Abschaltung/Preis/API geht (oder im
+  Aenderungsprotokoll); Grenzen so, dass `gpt-4o-mini` nicht `gpt-4o-mini-tts` und `gemini 2.5 flash` nicht „Flash-Lite“
+  trifft. 🟡 neue Modelle, Releases; ⚪ Rest. Erster Lauf je Quelle = Bestand (keine Meldungsflut). Echter Probelauf
+  2026-10-13: alle 15 direkt abrufbaren Quellen lieferten Beitraege.
+- R2: `aa_modelle`, `aa_finden`, `vorschlaege` (je Modell hoechstens „guenstiger“ >= 30 % bei gleicher Qualitaet und „besser“
+  >= 5 Punkte bei hoechstens +10 % Preis; nur bekannte Hersteller), `kostenvoranschlag` (Token der letzten 30 Tage aus dem
+  Kostenlog x Listenpreise), jeder Vorschlag nur einmal; Antrag Kategorie `modell`, hoechstens 3 je Tag.
+- Bot `_start_radar_loop` (Standard an, `MODELL_RADAR=0` schaltet aus, Notbremse): taeglich ab 07:00, Wochenbericht montags ab 09:00.
+- LUNA-OS: LUNA & System -> „🧭 Modell-Radar“ (nur administration; eigene Kennung `modellradar`, das Collab-Radar bleibt).
+- Tests `test_modell_radar.py` (6, Gegenproben rot: Bestand, keine Verwechslung, Vorschlag einmal, nur bekannte Hersteller,
+  Admin-Recht); Browser Rechner/iPad/iPhone mit echten Probedaten.
 
 ## Nicht-Scope
 

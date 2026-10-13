@@ -63,6 +63,8 @@ Kalendereinladung, Alpaca-Order (Paper), Git-Push eines Antrags-Branches.
 | `api.deepgram.com` | `bot.py` (Sprachnachrichten), `cutter/transkription.py` (3. Fallback), Voice | Audio / Transkript | `DEEPGRAM_API_KEY` | lesen |
 | `api.elevenlabs.io`, Cartesia (SDK) | `channels/web/app.py` (`/api/tts`), `channels/voice/pipeline.py` | Text / Audio | `ELEVENLABS_API_KEY`, `CARTESIA_API_KEY` | lesen |
 | `api.search.brave.com` | `governance/web_research.py`; seit Etappe 22 auch `core/firmendaten.py` (Web-App auf Knopfdruck, Bot sonntags bis 8 Firmen) | Suchanfragen („<Firmenname> Impressum“) | `BRAVE_API_KEY` | lesen |
+| Modell-Radar-Quellen (MODELL_RADAR R1, oeffentlich, einmal taeglich, eigener User-Agent, robots.txt beachtet): `www.anthropic.com`, `platform.claude.com`, `openai.com`, `developers.openai.com`, `deepmind.google`, `blog.google`, `ai.google.dev`, `ai.meta.com`, `mistral.ai`, `github.com` (Release-Feeds DeepSeek/Ollama), `qwenlm.github.io`, `developer.nvidia.com`, `blogs.nvidia.com`, `azure.microsoft.com`; xAI ueber die Brave-Suche | `core/modell_radar.py` (Bot `_start_radar_loop`) | keine (nur Abrufe) | – | lesen |
+| `artificialanalysis.ai` (Gratis-Daten-API `/api/v2/data/llms/models`, 1 Abruf/Tag, Quellenangabe Pflicht) | `core/modell_radar.py` (Bot, MODELL_RADAR R2) | keine | `ARTIFICIALANALYSIS_API_KEY` (nur NAS-.env) | lesen |
 | Fritz!Box im Heimnetz (`FRITZBOX_URL`, Standard `http://192.168.178.1:49000`, TR-064/SOAP, FRITZ!Box 7530 AX) | `core/netzwerk.py` (Bot, NETZWERK_WACHE N1) -- **nur feste Lese-Allowlist** (`FRITZ_LESEN`: Geraeteliste, Portfreigaben, Internet-Status/IP, Update, Fernzugang, UPnP, WLAN) | keine (nur Abfragen) | `FRITZBOX_USER`, `FRITZBOX_PASSWORD` (nur NAS-.env) | lesen |
 | NAS-DSM im Heimnetz (`DSM_URL`, Standard `http://192.168.178.129:5000`, DSM-Web-API) | `core/netzwerk.py` (Bot taeglich 06:00, NETZWERK_WACHE N2) -- Lese-Allowlist `DSM_LESEN` (System, Speicher/Platten, Update, Sicherheitsberater, Auto-Block, Verbindungsprotokoll) | Anmeldedaten (Passwort im POST-Body) | `DSM_USER`, `DSM_PASSWORD` (nur NAS-.env) | lesen |
 | Eigene Adresse `os.hanserautisch.synology.me` (TLS-Zertifikat ueber `NETZWERK_ZERT_ADRESSE` = NAS, DNS-Aufloesung) | `core/netzwerk.py` (Bot taeglich 06:00, N3) | keine | – | lesen |
@@ -84,6 +86,20 @@ Nicht angebunden, obwohl erwaehnt: AgentOps (nur Key-Check/Dienste-Register). Ol
 der Code es nur ueber die `.env`-Adresse (IP) anspricht.
 
 ```doku-check:hosts
+ai.google.dev                  # Modell-Radar (MODELL_RADAR R1/R2)
+ai.meta.com                    # Modell-Radar (MODELL_RADAR R1/R2)
+artificialanalysis.ai          # Modell-Radar (MODELL_RADAR R1/R2)
+azure.microsoft.com            # Modell-Radar (MODELL_RADAR R1/R2)
+blog.google                    # Modell-Radar (MODELL_RADAR R1/R2)
+blogs.nvidia.com               # Modell-Radar (MODELL_RADAR R1/R2)
+deepmind.google                # Modell-Radar (MODELL_RADAR R1/R2)
+developer.nvidia.com           # Modell-Radar (MODELL_RADAR R1/R2)
+developers.openai.com          # Modell-Radar (MODELL_RADAR R1/R2)
+mistral.ai                     # Modell-Radar (MODELL_RADAR R1/R2)
+openai.com                     # Modell-Radar (MODELL_RADAR R1/R2)
+platform.claude.com            # Modell-Radar (MODELL_RADAR R1/R2)
+qwenlm.github.io               # Modell-Radar (MODELL_RADAR R1/R2)
+www.anthropic.com              # Modell-Radar (MODELL_RADAR R1/R2)
 api.telegram.org
 graph.facebook.com
 www.googleapis.com
@@ -227,6 +243,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | Zeiterfassung in der Hash-Kette mit Grund (ZEITERFASSUNG_GRUND Z1/Z2): Feld `arbeit` (dreh/post/konzept/sonstiges) an `zeit_eintrag`, `zeit_stopp`, `zeit_details`, `zeit_korrigiert`; nachgetragene Zeiten `quelle` manuell bzw. Telegram | Web (`POST /api/finanzen/zeit/eintrag` -- Grund Pflicht, `…/stopp`, `…/details`, `…/korrigieren`); Bot (Knoepfe nach „Bin wieder zuhause“, Saetze wie „Gestern 3 Stunden Schnitt fuer …“ -> erst nach ✅ gespeichert) | Web (Stundenzettel, Auswertung „Je Grund“, CSV); Rechnungs-Anlage Stundenzettel zeigt den Grund | ja | ja |
 | `akquise/ideen.json` (Akquise-Ideen: Firma, Art Kunde/Partner, Branche, Ort, Website, Mail, Ansprechpartner, Notiz, Status, Verlauf; PARTNERLISTE P1-P3) -- **nicht** in der Kette, loeschbar | Web (`POST /api/crm/ideen`, `/api/crm/ideen/<id>`, `…/loeschen`); Bot (`Partner-Idee: …`, `Kunden-Idee: …`, `Merk dir … als moeglichen Partner`; ↩️ Rueckgaengig); LUNA-Werkzeug `akquise_idee_merken` (Chat); `POST /api/crm/vorstellung/senden` mit `idee` setzt „angeschrieben“ + Firma | Web (`GET /api/crm/ideen`, Reiter Kunden -> 💡 Ideen; Stand aus Vorstellung/Kundenstamm abgeleitet); „🔎 Daten suchen“ (`POST /api/crm/ideen/<id>/suchen`, Bot `akq:…:such`) fragt Brave + Impressum der Firma ab -- nur Vorschlag, uebernommen per Klick | ja (Ordner vom Deploy ausgenommen) | ja |
 | `netzwerk/geraete.json` (Geraete im Heimnetz: MAC, IP, Name, bekannt/unbekannt, erst/zuletzt gesehen) + `netzwerk/zustand.json` (Befunde je Bereich, Rohwerte, Internet-Ausfall) -- **nicht** in der Kette, loeschbar | Bot (Netzwerk-Wache, alle 15 min / 06:00), Web (`POST /api/netzwerk/geraete/<mac>` umbenennen/bekannt, `…/loeschen`, nur administration), Bot-Knoepfe `nwg:` | Web (`GET /api/netzwerk`, LUNA & System -> 🛡 Netzwerk); CISO-Audit 04:00 (`_check_netzwerk`) | ja (Ordner vom Deploy ausgenommen) | ja |
+| `radar/news.json` (Hersteller-Beitraege: Titel, Link, Datum, Anriss, Stufe, betroffene Modelle), `radar/stand.json` (Quellenstand, Fehler, Wochenbericht), `radar/aa.json` (Artificial-Analysis-Modellliste), `radar/vorschlaege.json` (schon gemachte Vorschlaege) -- nicht in der Kette | Bot (Modell-Radar taeglich ab 07:00) | Web (`GET /api/modell-radar`, nur administration, LUNA & System -> 🧭 Modell-Radar); Bot: 🔴 sofort, Wochenbericht Mo ab 09:00, Vorschlaege als Antrag (`antraege/log.jsonl`, Kategorie `modell`) | ja (Ordner vom Deploy ausgenommen) | ja |
 | Globale Suche (GLOBALE_SUCHE G1): liest die Hash-Kette `buchhaltung/log.jsonl` (Firmen, Ansprechpartner, Angebote, Auftraege, Rechnungen, Mahnungen, Eingangs-/Eigenbelege, Content-Plan, Konzepte, Firmenakte) -- **nur lesend**, kein Index, nichts gespeichert | – | Web: `GET /api/suche?q=` (Kategorien nach App-Rechten des Nutzers) | – | – |
 | Bestellbestaetigung -> Eigenbeleg (CEO 2026-10-06): liest die gespeicherte .eml einer Akte-Mail (auch offen/„keiner Firma“) und schlaegt Betrag, Datum, Haendler, Bestellnummer, Zweck vor; Eigenbeleg mit `nachweis.akte_id`; Ereignis `bestellung_keine_ausgabe` | Web (`POST /api/finanzen/eigenbelege` mit `nachweis`, `POST /api/finanzen/bestellung/<id>/keine-ausgabe`; Modul finanzen) | Web: `GET /api/finanzen/bestellung/<id>/vorschlag`, Handlungsbedarf „Bestellung als Ausgabe buchen“ | ja | ja (wie Buchhaltung) |
 | `buchhaltung/textbausteine.json` (Mail-Vorlagen je Belegart + Signatur mit Telefonnummer; **nur NAS**, TEXTBAUSTEINE T1) | Web (`POST /api/crm/textbausteine`, nur Modul finanzen; Aenderung als `textbausteine_geaendert` in der Kette, ohne Texte) | Web: alle Versandvorschauen (`…/versandvorschau?vorlage=`), Bot: Folgemahnung per Telegram; Mail-Entwurf `POST /api/crm/mailentwurf/<art>/<nr>/eml` und PDF `GET /api/crm/mailentwurf/<art>/<nr>/pdf` fuer das eigene Mail-Programm (Download aufs Geraet, kein externer Dienst); „Als versendet markieren“ = `…/senden` mit `kanal: mail-programm` (kein Gmail) | ja | ja (NAS-Backup + Drive-Kopie `LUNA-Buchhaltung/Stand/`) |
@@ -311,6 +328,7 @@ orchestrator/state/luna_os_sitzungen.json  # Login-Sitzungen (nur Token-Hashes);
 | 03:00 | CFO-Kostenlauf (ueber das Backoffice, Meldung ins Morgen-Briefing) | – |
 | 04:00 | Security-Audit | `SECURITY_AUDIT_ENABLED` |
 | alle 15 min / 06:00 | Netzwerk-Wache: Fritz!Box (15 min), NAS + Zertifikat/DDNS (taeglich 06:00) | `NETZWERK_WACHE` |
+| ab 07:00 taeglich / Mo ab 09:00 | Modell-Radar: Hersteller-News + Artificial Analysis / Wochenbericht | `MODELL_RADAR` (Standard an) |
 | 02:00 | Content-Feed (ueber das Backoffice, Meldungen ins Morgen-Briefing; bis 2026-09-27: 07:00) | `CONTENT_FEED_ENABLED` |
 | 07:00 | Merkmals-Snapshot | `INV_FEATURE_LOOP` |
 | 08:00 / 20:00 | Briefings | Einstellungen |

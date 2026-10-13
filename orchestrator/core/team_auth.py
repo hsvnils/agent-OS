@@ -196,7 +196,8 @@ _MODUL_PFADE = {
 _ADMIN_POST_PREFIXE = ("/api/antraege/",)
 _ADMIN_PFADE = ("/api/chat", "/api/tts", "/api/sehen")
 _ADMIN_PREFIXE = ("/api/team", "/api/backoffice",   # Team-Verwaltung + Backoffice-Auftraege: nur administration
-                  "/api/netzwerk")                    # NETZWERK_WACHE: Geraete/Befunde des Heimnetzes
+                  "/api/netzwerk",                    # NETZWERK_WACHE: Geraete/Befunde des Heimnetzes
+                  "/api/modell-radar")                # MODELL_RADAR: genutzte Modelle, Vorschlaege
 
 
 def modul_fuer_pfad(method: str, pfad: str) -> str | None:

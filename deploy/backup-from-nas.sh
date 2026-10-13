@@ -57,6 +57,9 @@ FILES=(
   akquise/ideen.json             # PARTNERLISTE P1: Akquise-Ideen (loeschbar, nicht in der Kette)
   netzwerk/geraete.json          # NETZWERK_WACHE: bekannte Geraete im Heimnetz (Namen, MAC)
   netzwerk/zustand.json          # NETZWERK_WACHE: letzte Befunde je Bereich
+  radar/news.json                # MODELL_RADAR: Hersteller-Beitraege
+  radar/stand.json               # MODELL_RADAR: Quellenstand, Wochenbericht
+  radar/vorschlaege.json         # MODELL_RADAR: schon gemachte Vorschlaege
   orchestrator/state/luna_os_passkeys.json # LUNA-OS-Login: oeffentliche Passkey-Schluessel (Face ID)
 )
 

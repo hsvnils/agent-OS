@@ -123,6 +123,7 @@ const SECTIONS = [
   { id: "system", icon: "📡", label: "System", app: null },
   { id: "anbieter", icon: "🔌", label: "Anbieter", app: null },
   { id: "netzwerk", icon: "🛡", label: "Netzwerk", app: null },
+  { id: "modellradar", icon: "🧭", label: "Modell-Radar", app: null },
   { id: "team", icon: "👥", label: "Team", app: "team" },
   { id: "einstellungen", icon: "⚙", label: "Einstellungen", app: null },
 ];
@@ -132,14 +133,14 @@ const BEREICHE = [
   { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen", "vertraege"] },
   { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["contentplan", "crm", "radar", "content", "cutter", "reel"] },
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
-  { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "devroadmap", "system", "netzwerk", "anbieter", "team", "einstellungen"] },
+  { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "modellradar", "devroadmap", "system", "netzwerk", "anbieter", "team", "einstellungen"] },
 ];
 const TEIL_INFO = {
   kunden: "Firmen, Ansprechpartner, Akte", vertraege: "AGB und Vertragsvorlagen", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
   belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
   radar: "Neue Collab-Chancen", contentplan: "Kalender: eigene Posts, Kunden, Drehs", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
-  wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", netzwerk: "Fritz!Box, NAS, Zertifikat", anbieter: "Dienste, Datenquellen, Kosten", team: "Team-Zugänge",
+  wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", netzwerk: "Fritz!Box, NAS, Zertifikat", modellradar: "KI-Modelle und Hersteller-News", anbieter: "Dienste, Datenquellen, Kosten", team: "Team-Zugänge",
   einstellungen: "Depot, Briefings, Anmeldung",
 };
 const teilErlaubt = (b) => b.teile.filter(t => { const x = SECTIONS.find(s => s.id === t); return x && darf(x.app); });
@@ -4210,6 +4211,39 @@ async function renderAnbieter() {
     ${bereiche.map(b => { const z = liste.filter(a => a.bereich === b); return z.length ? tile(b, z.map(a => anbieterZeile(a, K && K.anbieter[a.id])).join(""), "w6") : ""; }).join("")}
   </div>`;
 }
+/* MODELL_RADAR R3: Hersteller-News, unsere Modelle vs. Artificial Analysis, Vorschlaege (Antraege) -- nur Anzeige */
+RENDER.modellradar = renderRadar;
+let RADAR_FILTER = "wichtig", RADAR_HERST = "";
+const RADAR_STUFE = { rot: ["err", "🔴 betrifft uns"], gelb: ["warn", "🟡 neu"], grau: ["neutral", "⚪ Archiv"] };
+async function renderRadar() {
+  const d = await jget("/api/modell-radar");
+  if (!d) { $("#v2-app").innerHTML = secHead("🧭 Modell-Radar", "") + emptyRow("Nur für Administratoren sichtbar."); return; }
+  const n = d.news || [], woche = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 19);
+  const neu7 = n.filter(x => !x.bestand && x.gesehen >= woche);
+  const fehler = (d.quellen || []).filter(q => q.fehler), ok = (d.quellen || []).filter(q => q.ts && !q.fehler);
+  const zahl = (x, s = "") => x == null ? "–" : (Math.round(x * 10) / 10).toLocaleString("de-DE") + s;
+  const modelle = (d.modelle || []).map(m => `<tr><td>${esc(m.einsatz)}</td><td><b>${esc(m.modell)}</b>${m.aa ? `<br><small class="v2-sub">${esc(m.aa.name)}</small>` : ""}</td>
+    <td class="num">${m.aa ? zahl(m.aa.iq) : "–"}</td><td class="num">${m.aa ? zahl(m.aa.preis, " $") : "–"}</td><td class="num">${m.aa ? zahl(m.aa.tempo, " t/s") : "–"}</td>
+    <td>${(m.alternativen || []).map(a => { const [r, name] = a.split(":"); return `<span class="v2-badge ${r === "besser" ? "ok" : "warn"}">${r === "besser" ? "besser" : "günstiger"}: ${esc(name)}</span>`; }).join(" ") || `<small class="v2-sub">${d.aa_aktiv ? "keine bessere Alternative" : "–"}</small>`}</td></tr>`).join("");
+  const sicht = n.filter(x => (RADAR_FILTER === "alle" || (RADAR_FILTER === "wichtig" ? x.stufe !== "grau" && !x.bestand : x.stufe === "rot")) && (!RADAR_HERST || x.hersteller === RADAR_HERST));
+  const chips = [["wichtig", `Neu & wichtig (${n.filter(x => x.stufe !== "grau" && !x.bestand).length})`], ["rot", `Betrifft uns (${n.filter(x => x.stufe === "rot").length})`], ["alle", `Alle (${n.length})`]]
+    .map(([k, l]) => `<button class="v2-chip ${RADAR_FILTER === k ? "on" : ""}" data-act="radar-filter" data-val="${k}">${l}</button>`).join("");
+  const herst = `<select class="v2-inp v2-radar-herst" data-act-change="radar-herst"><option value="">Alle Hersteller</option>${(d.hersteller || []).map(h => `<option ${h === RADAR_HERST ? "selected" : ""}>${esc(h)}</option>`).join("")}</select>`;
+  const zeile = (x) => `<div class="v2-list-row v2-radar-zeile"><span class="v2-badge ${RADAR_STUFE[x.stufe][0]}">${RADAR_STUFE[x.stufe][1]}</span>
+    <div class="grow"><a href="${esc(x.link)}" target="_blank" rel="noopener"><b>${esc(x.titel)}</b></a>
+      <small>${esc(x.hersteller)}${x.datum && !x.titel.startsWith(x.datum) ? " · " + esc(x.datum.slice(0, 16)) : ""} · gefunden ${esc(zeitKurz(x.gesehen))}${(x.betroffen || []).length ? " · betrifft " + esc(x.betroffen.join(", ")) : ""}${x.bestand ? " · Bestand" : ""}</small>
+      ${x.anriss && !x.titel.includes(x.anriss.slice(0, 40)) ? `<small class="v2-radar-anriss">${esc(x.anriss.slice(0, 220))}</small>` : ""}</div></div>`;
+  $("#v2-app").innerHTML = secHead("🧭 Modell-Radar", "") + `<div class="v2-grid">
+    ${kpiTile("Neu in 7 Tagen", String(neu7.length), null, `${neu7.filter(x => x.stufe === "rot").length} betreffen uns`)}
+    ${kpiTile("Quellen", `${ok.length}/${(d.quellen || []).length}`, null, fehler.length ? `${fehler.length} mit Fehler` : "alle erreichbar")}
+    ${kpiTile("Vorschläge", String((d.vorschlaege || []).length), null, d.aa_aktiv ? "als Antrag unter Freigaben" : "Artificial Analysis noch ohne Schlüssel")}
+    ${tile("Unsere Modelle", `<div class="v2-tab-scroll"><table class="v2-table"><thead><tr><th>Einsatz</th><th>Modell</th><th class="num">Qualität</th><th class="num">Preis/1 Mio.</th><th class="num">Tempo</th><th>Vorschlag</th></tr></thead><tbody>${modelle}</tbody></table></div>
+      <small class="v2-sub">${d.aa_aktiv ? `${esc(d.quelle_aa)}${d.aa_stand ? " · Stand " + esc(zeitKurz(d.aa_stand)) : ""} · Qualität = Intelligenz-Index, Preis gemischt (3:1). Gewechselt wird nie automatisch.` : "Für Qualität, Preise und Vorschläge fehlt noch der Gratis-Schlüssel von Artificial Analysis (ARTIFICIALANALYSIS_API_KEY in der NAS-.env)."}</small>`, "w12")}
+    ${tile("Neuigkeiten der Hersteller", `<div class="v2-chips" style="margin-bottom:8px">${chips}${herst}</div>` + (sicht.slice(0, 80).map(zeile).join("") || emptyRow(n.length ? "Nichts in dieser Auswahl." : "Noch kein Lauf – der Researcher prüft täglich ab 07:00.")), "w12")}
+    ${tile("Quellen", (d.quellen || []).map(q => `<div class="v2-kv"><span>${esc(q.hersteller)} <small class="v2-sub">${esc(q.id)} · ${esc(q.art)}</small></span><b>${q.fehler ? `<span style="color:var(--v2-red)">⚠️ ${esc(q.fehler)}</span>` : q.ts ? "✅ " + esc(zeitKurz(q.ts)) : "–"}</b></div>`).join(""), "w12")}
+  </div>`;
+  const s = $(".v2-radar-herst"); if (s) s.addEventListener("change", () => { RADAR_HERST = s.value; renderRadar(); });
+}
 /* NETZWERK_WACHE N1-N3: nur lesen und melden -- Uebersicht, Befunde, Geraete benennen (abgefragt wird vom Bot) */
 RENDER.netzwerk = renderNetzwerk;
 let NW_FILTER = "pruefen";
@@ -4530,6 +4564,7 @@ async function handleAct(act, el) {
     case "hb-filter": HB_FILTER = val || ""; return renderHandlung();
     case "vs-neu": return vsDialog(id || "", val === "nachfassen");
     case "nw-filter": NW_FILTER = val; return renderNetzwerk();
+    case "radar-filter": RADAR_FILTER = val; return renderRadar();
     case "nw-bekannt": { const r = await jpost(`/api/netzwerk/geraete/${encodeURIComponent(id)}`, { bekannt: val === "1" }); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return renderNetzwerk(); }
     case "nw-name": { const n = prompt("Name für dieses Gerät:", ""); if (!n || !n.trim()) return; const r = await jpost(`/api/netzwerk/geraete/${encodeURIComponent(id)}`, { name: n.trim(), bekannt: true }); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return renderNetzwerk(); }
     case "nw-loeschen": { if (!confirm("Gerät aus der Liste entfernen? Taucht es wieder auf, meldet LUNA es als neu.")) return; await jpost(`/api/netzwerk/geraete/${encodeURIComponent(id)}/loeschen`, {}); return renderNetzwerk(); }

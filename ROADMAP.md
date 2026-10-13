@@ -89,7 +89,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `PARTNERLISTE_ROADMAP.md` | Liste potenzieller Partner und Kunden (Ideen), Erfassung per Telegram, Anschreiben ueber die Vorstellungs-Mail | in Umsetzung (P1-P3 gebaut 2026-10-09) |
 | `NETZWERK_WACHE_ROADMAP.md` | Netzwerk-Wache: Fritz!Box (neue Geraete, Portfreigaben, Firmware), NAS (Anmeldungen, Updates, Platten), Zertifikat/DDNS -- nur lesen und melden | in Umsetzung (N1-N3 gebaut 2026-10-10, wartet auf Konten) |
 | `EMPFAENGER_MEHRERE_ROADMAP.md` | Mehrere Empfaenger beim Versand (Adressen der Firma anhaken, weitere von Hand, CC, BCC) in allen Versanddialogen | in Umsetzung (M1-M2 gebaut 2026-10-13) |
-| `MODELL_RADAR_ROADMAP.md` | Modell-Radar: Hersteller-News (Feeds/Seiten), Artificial-Analysis-Vergleich, Vorschlaege fuer Modellwechsel (nie automatisch) | geplant |
+| `MODELL_RADAR_ROADMAP.md` | Modell-Radar: Hersteller-News (Feeds/Seiten), Artificial-Analysis-Vergleich, Vorschlaege fuer Modellwechsel (nie automatisch) | in Umsetzung (R1-R3 gebaut 2026-10-13) |
 | `SERIEN_UND_VORSTELLUNG_ROADMAP.md` | Wiederkehrender Content im Content-Plan; Vorstellungs-Mails an Unternehmen aus LUNA-OS (Firma beim Senden als Interessent) | in Umsetzung (S1, V1, V2 gebaut 2026-10-06) |
 | `IMPRESSUM_SUCHE_ROADMAP.md` | Kundendaten beim Anlegen einer Firma aus dem Impressum vorfuellen (regelbasiert, optional lokale KI) | in Umsetzung (I1 gebaut 2026-10-06) |
 | `GLOBALE_SUCHE_ROADMAP.md` | Globale Suche ueber alle Geschaeftsdaten, Ergebnisse nach Kategorien (Kunden, Angebote, Auftraege, Rechnungen, Ausgaben …) | in Umsetzung (G1 gebaut 2026-10-06) |

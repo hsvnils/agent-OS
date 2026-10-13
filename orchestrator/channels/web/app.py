@@ -4295,6 +4295,34 @@ def _ideen():
     return IdeenStore(ROOT / "akquise")
 
 
+# -- Modell-Radar (MODELL_RADAR R1-R3): nur Anzeige -- abgefragt wird vom Bot ----------------------------------------
+@app.get("/api/modell-radar")
+def modell_radar_uebersicht(tage: int = 60):
+    from datetime import datetime as _dt, timedelta as _td
+    from ...core import modell_radar as mr
+    from ..telegram.bot import _load_config
+    sec = _google_secrets()
+    r = mr.Radar(ROOT / "radar")
+    unsere = mr.genutzte_modelle(_load_config(), sec)
+    aa = (r.aa() or {}).get("modelle") or []
+    grenze = (_dt.now() - _td(days=max(1, min(tage, 400)))).isoformat()
+    news = sorted([x for x in r.news().values() if x.get("gesehen", "") >= grenze or x["stufe"] == "rot"],
+                  key=lambda x: (x.get("bestand", False), x.get("gesehen", "")), reverse=False)
+    news = sorted(news, key=lambda x: x.get("gesehen", ""), reverse=True)[:300]
+    vor = {f"{v['einsatz']}|{v['modell']}": v for v in mr.vorschlaege(unsere, aa)} if aa else {}
+    tabelle = [u | {"aa": mr.aa_finden(u["modell"], aa) if aa else None,
+                    "alternativen": [v["regel"] + ":" + v["neu"]["name"] for k, v in vor.items() if k == f"{u['einsatz']}|{u['modell']}"]}
+               for u in unsere]
+    st = r.stand()
+    quellen = [{"id": q["id"], "hersteller": q["hersteller"], "art": q["art"]} | ((st.get("quellen") or {}).get(q["id"]) or {})
+               for q in mr.QUELLEN] + ([{"id": "artificialanalysis", "hersteller": "Artificial Analysis", "art": "api"}
+                                       | ((st.get("quellen") or {}).get("artificialanalysis") or {}) | {"ts": (r.aa() or {}).get("ts", "")}]
+                                      if sec.get("ARTIFICIALANALYSIS_API_KEY") else [])
+    return {"news": news, "modelle": tabelle, "quellen": quellen, "aa_aktiv": bool(sec.get("ARTIFICIALANALYSIS_API_KEY")),
+            "aa_stand": (r.aa() or {}).get("ts", ""), "vorschlaege": list(r.vorschlaege_gemerkt().values()),
+            "hersteller": mr.HERSTELLER, "quelle_aa": mr.AA_QUELLE}
+
+
 # -- Netzwerk-Wache (NETZWERK_WACHE N1-N3): Uebersicht, Geraete benennen -- abgefragt wird nur vom Bot ----------------
 def _netzwerk():
     from ...core.netzwerk import Wache

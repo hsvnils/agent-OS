@@ -1182,3 +1182,9 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-empf-liste .v2-modlbl { align-items: flex-start; } .v2-empf-liste .v2-modlbl span { min-width: 0; overflow-wrap: anywhere; }
 .v2-empf-kopie > summary { cursor: pointer; color: var(--v2-muted); list-style: none; } .v2-empf-kopie > summary::-webkit-details-marker { display: none; }
 .v2-empf-info { color: var(--v2-muted); } .v2-empf-info.err { color: var(--v2-red); }
+/* MODELL_RADAR: Neuigkeitenliste */
+.v2-radar-zeile { align-items: flex-start; }
+.v2-radar-zeile .grow { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.v2-radar-zeile a { color: var(--v2-fg); text-decoration: none; overflow-wrap: anywhere; } .v2-radar-zeile a:hover b { text-decoration: underline; }
+.v2-radar-anriss { color: var(--v2-muted); }
+.v2-radar-herst { width: auto; min-width: 160px; }

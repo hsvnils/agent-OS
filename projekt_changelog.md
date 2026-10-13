@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-13 11:23] — Claude Code
+- **Was:** MODELL_RADAR R1-R3 gebaut: `core/modell_radar.py` (17 Quellen der KI-Hersteller inkl. NVIDIA/Microsoft, Feeds/Seiten/Aenderungsprotokolle, regelbasierte Einstufung 🔴/🟡/⚪, Bestand beim ersten Lauf), Artificial-Analysis-Gratis-API mit Vorschlaegen als Antrag samt Kostenvoranschlag (nie automatisch), Bot-Lauf taeglich ab 07:00 und Wochenbericht Mo ab 09:00, LUNA-OS LUNA & System -> 🧭 Modell-Radar (nur Admins). Register (Artificial Analysis), Datenfluesse/Hosts, Deploy-Ausschluss, Backup, `.gitignore`, `.env.example`. Cache app-v2.js v131, style-v2.css v68.
+- **Warum:** CEO 2026-10-13: Researcher soll artificialanalysis.ai und die fuehrenden KI-Hersteller ueberwachen -- Go R1-R3, NVIDIA und Microsoft dazu.
+- **Betroffen:** `orchestrator/core/modell_radar.py` (neu), `team_auth.py`, `orchestrator/governance/dienste_register.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `orchestrator/tests/test_modell_radar.py` (neu), `orchestrator/.env.example`, `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `.gitignore`, `MODELL_RADAR_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-13 10:59] — Claude Code
 - **Was:** Roadmap `MODELL_RADAR_ROADMAP.md` angelegt (geplant): R1 Hersteller-News (Feeds/Seiten, Einstufung, sofort bei Abschaltung genutzter Modelle), R2 Artificial-Analysis-Gratis-API mit Vorschlaegen als Antrag (nie automatischer Wechsel), R3 Uebersicht + Wochenbericht; Quellen vorab read-only auf Erreichbarkeit geprueft.
 - **Warum:** CEO 2026-10-13: Researcher soll artificialanalysis.ai und die fuehrenden KI-Anbieter ueberwachen.
