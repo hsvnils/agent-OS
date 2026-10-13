@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-13 10:39] — Claude Code
+- **Was:** Roadmap `EMPFAENGER_MEHRERE_ROADMAP.md` angelegt (geplant): M1 Empfaenger-Baustein (Adressen der Firma anhaken, weitere von Hand, CC) fuer Angebot/Auftrag/Rechnung/Mahnung, M2 fuer Projektbericht, Konzept, Einwilligungs-Kopie, Vorstellungs-Mail; im Roadmap-Verzeichnis eingetragen.
+- **Warum:** CEO 2026-10-13: mehrere Mailadressen des Kunden und manuelle Adressen beim Belegversand.
+- **Betroffen:** `EMPFAENGER_MEHRERE_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-10 23:34] — Claude Code
 - **Was:** Deploy Netzwerk-Wache geprueft: NAS liefert app-v2.js v129/style-v2.css v66 mit der Seite „🛡 Netzwerk“, `GET /api/netzwerk` antwortet (Wache aus, keine Konten hinterlegt, noch keine Geraete/Befunde), Bot-Code mit `_start_netzwerk_loop` auf der NAS. Kein Abruf von Fritz!Box oder DSM.
 - **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
