@@ -1022,7 +1022,7 @@ async function vsDialog(firma, nachfassen, idee) {
       <label class="v2-feld"><small>Firmenname *</small><input class="v2-inp" id="vs-name" maxlength="200" placeholder="z. B. Kiez Alm Gastro GmbH"></label>
       <div class="v2-an-zeile"><label class="v2-feld"><small>Vorname</small><input class="v2-inp" id="vs-vorname"></label><label class="v2-feld"><small>Nachname</small><input class="v2-inp" id="vs-nachname"></label></div>
       <label class="v2-feld"><small>Website (optional)</small><input class="v2-inp" id="vs-web" inputmode="url" placeholder="https://…"></label></div>
-    <label class="v2-feld"><small>An (Mailadresse) *</small><input class="v2-inp" id="vs-an" type="email" inputmode="email" placeholder="name@firma.de"></label>
+    ${empfBaustein("vs", { an: "" })}
     <div class="v2-an-zeile"><label class="v2-feld"><small>Vorlage</small><select class="v2-inp" id="vs-vorlage"></select></label>
       <label class="v2-modlbl" id="vs-nf-l" hidden><input type="checkbox" id="vs-nf" ${nachfassen ? "checked" : ""}> Nachfassen</label></div>
     <label class="v2-feld"><small>Betreff *</small><input class="v2-inp" id="vs-betreff"></label>
@@ -1040,7 +1040,7 @@ async function vsDialog(firma, nachfassen, idee) {
   if (VS.idee && !VS.firma) { const i = VS.idee, ap = String(i.ansprechpartner || "").trim().split(/\s+/);   // PARTNERLISTE P3
     $("#vs-name").value = i.name; $("#vs-web").value = i.web && !i.web.includes("instagram.com") ? i.web : "";
     if (ap[0]) { $("#vs-vorname").value = ap.length > 1 ? ap.slice(0, -1).join(" ") : ""; $("#vs-nachname").value = ap[ap.length - 1]; }
-    if (i.mail) $("#vs-an").value = i.mail; }
+    if (i.mail) empfSetzen("vs", { an: i.mail, adressen: [] }); }
   $("#vs-firma").addEventListener("change", () => { VS.firma = $("#vs-firma").value; $("#vs-neu").hidden = !!VS.firma; VS.textGeaendert = false; vsVorschau(true); });
   $("#vs-vorlage").addEventListener("change", () => { VS.textGeaendert = false; vsVorschau(); });
   $("#vs-nf").addEventListener("change", () => { VS.nachfassen = $("#vs-nf").checked; VS.textGeaendert = false; vsVorschau(); });
@@ -1057,7 +1057,7 @@ async function vsVorschau(empfaenger) {
   $("#vs-nf-l").hidden = !v.bisher;
   $("#vs-vorlage").innerHTML = (v.vorlagen || []).map(x => `<option value="${esc(x.id)}" ${x.id === v.vorlage ? "selected" : ""}>${esc(x.name)}${x.standard && x.name !== "Standard" ? " (Standard)" : ""}</option>`).join("");
   if (!VS.textGeaendert) { $("#vs-betreff").value = v.betreff; $("#vs-text").value = v.text; }
-  if (empfaenger && v.an && !(VS.idee && $("#vs-an").value)) $("#vs-an").value = v.an;
+  if (empfaenger && !(VS.idee && $("#vs-an").value)) empfSetzen("vs", v);
   if ($("#vs-anlass").options.length <= 1) $("#vs-anlass").insertAdjacentHTML("beforeend", Object.entries(v.anlaesse || {}).map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join(""));
   $("#vs-uwg").textContent = "⚖️ " + v.hinweis_uwg + (v.bisher ? ` · Diese Firma hast du am ${datumDe(v.bisher)} schon angeschrieben.` : "");
   $("#vs-absender").textContent = v.absender;
@@ -1985,7 +1985,7 @@ async function ewSpeichern(nr) {
 async function ewSenden(eid) {
   const v = await jget(`/api/crm/einwilligungen/${encodeURIComponent(eid)}/versandvorschau`); if (!v) return alert("Vorschau nicht verfügbar.");
   openModal("✉️ Kopie der Einwilligung senden", `<div class="v2-form"><div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
-    <label class="v2-feld"><small>An *</small><input id="ews-an" type="email" class="v2-inp" value="${esc(v.an)}" placeholder="person@beispiel.de"></label>
+    ${empfBaustein("ews", v)}
     <label class="v2-feld"><small>Betreff *</small><input id="ews-betreff" class="v2-inp" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="ews-text" class="v2-inp" rows="9">${esc(v.text)}</textarea></label>
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="ew-senden-jetzt" data-id="${esc(eid)}">✉️ Jetzt senden</button><button class="v2-btn" data-modal-close>Abbrechen</button></div><div id="ews-msg" class="v2-msg"></div></div>`);
@@ -2255,7 +2255,7 @@ async function kzAktion(act, id, val, el) {
 async function kzSendenForm(v) {
   const box = $("#kz-senden-box"), d = await jget(`/api/crm/konzept-versand/${encodeURIComponent(v)}`); if (!box || !d) return;
   box.innerHTML = `<h4>Konzept zur Freigabe senden</h4><div class="v2-form"><div class="v2-kv"><span>Absender</span><b>${esc(d.absender)}</b></div>
-    <label class="v2-feld"><small>An *</small><input id="kzs-an" class="v2-inp" type="email" value="${esc(d.an || "")}"></label>
+    ${empfBaustein("kzs", d)}
     <label class="v2-feld"><small>Betreff *</small><input id="kzs-betreff" class="v2-inp" value="${esc(d.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="kzs-text" class="v2-inp" rows="7">${esc(d.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/crm/konzept-pdf/${encodeURIComponent(v)}?art=kunde" target="_blank" rel="noopener">📎 ${esc(d.pdf)}</a></div>${mailBlock("konzept", v, d)}
@@ -2502,7 +2502,7 @@ async function berSendenForm(nr) {
   if (!box || !v) return;
   box.innerHTML = `<h3>Bericht senden</h3>${(v.fehlen || []).length ? `<div class="v2-msg warn">Ohne Zahlen: ${esc(v.fehlen.join(", "))} – trotzdem senden?</div>` : ""}
     <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
-    <label class="v2-feld"><small>An *</small><input id="ber-an" type="email" value="${esc(v.an || "")}"></label>
+    ${empfBaustein("ber", v)}
     <label class="v2-feld"><small>Betreff *</small><input id="ber-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="ber-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/bericht/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("bericht", nr, v)}
@@ -2658,7 +2658,7 @@ async function abSendenVorschau(nr) {
   if (!v) { box.innerHTML = emptyRow("Vorschau nicht verfügbar."); return; }
   box.innerHTML = `<h3>Auftragsbestätigung senden</h3><div class="v2-form">
     <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
-    <label class="v2-feld"><small>An *</small><input id="abs-an" type="email" value="${esc(v.an || "")}"></label>
+    ${empfBaustein("abs", v)}
     <label class="v2-feld"><small>Betreff *</small><input id="abs-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="abs-text" class="v2-inp" rows="9">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/crm/auftraege/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("auftrag", nr, v)}
@@ -2696,7 +2696,7 @@ async function anSendenVorschau(nr, erneut) {
   if (!v) { box.innerHTML = emptyRow("Vorschau nicht verfügbar."); return; }
   box.innerHTML = `<h3>${erneut ? "Angebot erneut senden / nachfassen" : "Angebot senden"}</h3>${erneut ? `<div class="v2-msg">Es geht das bereits versendete PDF noch einmal raus. Der Status bleibt, es entstehen keine neuen Erinnerungen – die Mail steht im Verlauf.</div>` : ""}<div class="v2-form v2-an-senden">
     <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
-    <label class="v2-feld"><small>An *</small><input id="as-an" type="email" value="${esc(v.an || "")}" placeholder="kunde@firma.de"></label>
+    ${empfBaustein("as", v)}
     <label class="v2-feld"><small>Betreff *</small><input id="as-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text * (Signatur anpassbar)</small><textarea id="as-text" class="v2-inp" rows="10">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/crm/angebote/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("angebot", nr, v, erneut)}
@@ -2726,6 +2726,39 @@ const MP = {
   bericht: { px: "ber", msg: "bers-msg", vorschau: n => `/api/crm/auftraege/${E_(n)}/bericht/versandvorschau`, senden: n => `/api/crm/auftraege/${E_(n)}/bericht/senden`, fertig: (n, m) => abDetail(n, m) },
   konzept: { px: "kzs", msg: "kzs-msg", vorschau: n => `/api/crm/konzept-versand/${E_(n)}`, senden: n => `/api/crm/konzept-versand/${E_(n)}`, fertig: async (n, m) => { await konzeptLaden(KZ.beleg); kundenMsg("kz-msg", m, true); } },
 };
+/* EMPFAENGER_MEHRERE M1/M2: An (Adressen der Firma anhaken + weitere von Hand), CC, BCC. Das versteckte Feld
+   `<px>-an` haelt den zusammengesetzten Text „a, b · CC: c · BCC: d“ -- so bleibt jeder Senden-Ablauf unveraendert. */
+const EMPF_MAIL = /^[^@\s,;<>()"']+@[^@\s,;<>()"']+\.[A-Za-z]{2,}$/;
+const empfListe = (t) => String(t || "").split(/[,;\n]+/).map(x => x.trim()).filter(Boolean);
+function empfInnen(px, v) {
+  const ad = (v && v.adressen) || [], an = empfListe(v && v.an), vor = new Set(an.map(x => x.toLowerCase()));
+  const bekannt = new Set(ad.map(a => a.mail.toLowerCase()));
+  const mehr = an.filter(x => !bekannt.has(x.toLowerCase())).join(", ");
+  return `${ad.length ? `<div class="v2-empf-liste">${ad.map(a => `<label class="v2-modlbl"><input type="checkbox" class="v2-empf-haken" value="${esc(a.mail)}" ${vor.has(a.mail.toLowerCase()) ? "checked" : ""}> <span><b>${esc(a.mail)}</b>${a.name || a.rolle ? ` <small class="v2-sub">${esc([a.name, a.rolle].filter(Boolean).join(" · "))}</small>` : ""}</span></label>`).join("")}</div>` : ""}
+    <label class="v2-feld"><small>${ad.length ? "Weitere Adressen (mit Komma trennen)" : "An * (mehrere mit Komma trennen)"}</small><input class="v2-inp v2-empf-mehr" id="${px}-an-mehr" type="text" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(mehr)}" placeholder="name@firma.de, …"></label>
+    <details class="v2-empf-kopie"${(v && (v.cc || v.bcc)) ? " open" : ""}><summary><small>+ CC / BCC</small></summary>
+      <div class="v2-an-zeile"><label class="v2-feld"><small>CC (Kopie, für alle sichtbar)</small><input class="v2-inp v2-empf-cc" id="${px}-cc" type="text" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc((v && v.cc) || "")}"></label>
+        <label class="v2-feld"><small>BCC (Blindkopie, unsichtbar)</small><input class="v2-inp v2-empf-bcc" id="${px}-bcc" type="text" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc((v && v.bcc) || "")}"></label></div></details>
+    <small class="v2-empf-info" id="${px}-empf-info"></small>`;
+}
+function empfBaustein(px, v) {
+  setTimeout(() => empfSync(px), 0);
+  return `<div class="v2-feld v2-empf" id="${px}-empf" data-px="${px}"><small>Empfänger *</small><input type="hidden" id="${px}-an" value="${esc((v && v.an) || "")}">
+    <div class="v2-empf-innen">${empfInnen(px, v)}</div></div>`;
+}
+function empfSetzen(px, v) { const b = $(`#${px}-empf .v2-empf-innen`); if (!b) return; b.innerHTML = empfInnen(px, v); empfSync(px); }
+function empfSync(px) {
+  const box = $(`#${px}-empf`), feld = $(`#${px}-an`); if (!box || !feld) return;
+  const an = [...box.querySelectorAll(".v2-empf-haken:checked")].map(x => x.value).concat(empfListe(($(`#${px}-an-mehr`) || {}).value));
+  const cc = empfListe(($(`#${px}-cc`) || {}).value), bcc = empfListe(($(`#${px}-bcc`) || {}).value);
+  const falsch = [...an, ...cc, ...bcc].filter(x => !EMPF_MAIL.test(x));
+  feld.value = an.join(", ") + (cc.length ? " · CC: " + cc.join(", ") : "") + (bcc.length ? " · BCC: " + bcc.join(", ") : "");
+  const info = $(`#${px}-empf-info`);
+  if (info) { info.className = "v2-empf-info" + (falsch.length ? " err" : "");
+    info.textContent = falsch.length ? `⚠️ Ungültig: ${falsch.join(", ")}` : an.length ? `Geht an ${an.length} Empfänger${an.length === 1 ? "" : "*innen"}${cc.length ? ` · ${cc.length} in Kopie` : ""}${bcc.length ? ` · ${bcc.length} als Blindkopie` : ""}` : "Noch kein Empfänger gewählt."; }
+}
+document.addEventListener("input", (e) => { const b = e.target.closest && e.target.closest(".v2-empf"); if (b) empfSync(b.dataset.px); });
+document.addEventListener("change", (e) => { const b = e.target.closest && e.target.closest(".v2-empf"); if (b) empfSync(b.dataset.px); });
 const MP_DATEI = {};
 const MP_APPLE = /iPhone|iPad|Macintosh/.test(navigator.userAgent);
 const MP_ERNEUT = {};
@@ -2770,8 +2803,9 @@ async function mpAktion(act, nr, art) {
     return mpEml(art, nr);
   }
   if (act === "mp-eml") return mpEml(art, nr);
-  if (act === "mp-adresse") { const an = mpFeld(art, "an").trim(); if (!an) return kundenMsg(MP[art].msg, "Keine Adresse eingetragen.", false);
-    try { await navigator.clipboard.writeText(an); kundenMsg(MP[art].msg, `Adresse kopiert: ${an}`, true); } catch { kundenMsg(MP[art].msg, `Adresse: ${an}`, true); } return; }
+  if (act === "mp-adresse") { const voll = mpFeld(art, "an").trim(), an = voll.split(" · ")[0], rest = voll.split(" · ").slice(1).join(" · ");
+    if (!an) return kundenMsg(MP[art].msg, "Keine Adresse eingetragen.", false);
+    try { await navigator.clipboard.writeText(an); kundenMsg(MP[art].msg, `Adresse kopiert: ${an}${rest ? ` – bitte noch eintragen: ${rest}` : ""}`, true); } catch { kundenMsg(MP[art].msg, `Adresse: ${voll}`, true); } return; }
   if (act === "mp-versendet") {
     const an = mpFeld(art, "an").trim(); if (!an.includes("@")) return kundenMsg(MP[art].msg, "Bitte die Empfänger-Adresse eintragen (für die Ablage).", false);
     const erneut = !!MP_ERNEUT[art + "|" + nr];
@@ -3150,7 +3184,7 @@ async function reSendenVorschau(nr) {
   if (!v) { box.innerHTML = emptyRow("Vorschau nicht verfügbar."); return; }
   box.innerHTML = `<h3>Rechnung senden</h3><div class="v2-form">
     <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
-    <label class="v2-feld"><small>An *</small><input id="res-an" type="email" value="${esc(v.an || "")}"></label>
+    ${empfBaustein("res", v)}
     <label class="v2-feld"><small>Betreff *</small><input id="res-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="res-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/rechnungen/${encodeURIComponent(nr)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("rechnung", nr, v)}
@@ -3202,7 +3236,7 @@ async function maSendenVorschau(ma, erneut) {
   if (!v) { box.innerHTML = emptyRow("Vorschau nicht verfügbar."); return; }
   box.innerHTML = `<h3>Mahnung ${esc(ma)} ${erneut ? "erneut " : ""}senden</h3>${erneut ? `<div class="v2-msg">Gleiche Mahnung noch einmal – Stufe und Frist bleiben, die Mail wird an der Mahnung vermerkt.</div>` : ""}<div class="v2-form">
     <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
-    <label class="v2-feld"><small>An *</small><input id="mas-an" type="email" value="${esc(v.an || "")}"></label>
+    ${empfBaustein("mas", v)}
     <label class="v2-feld"><small>Betreff *</small><input id="mas-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="mas-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
     <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/mahnungen/${encodeURIComponent(ma)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("mahnung", ma, v, erneut)}

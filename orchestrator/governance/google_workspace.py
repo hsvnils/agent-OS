@@ -570,10 +570,16 @@ def _dt(s: str):
 
 
 def _mime(an: str, betreff: str, text: str, anhaenge: list | None = None, absender: str = "") -> str:
+    from ..core.empfaenger import kopf
+    to, cc, bcc, _ = kopf(an)                                    # EMPFAENGER_MEHRERE: Gmail entfernt Bcc beim Zustellen
     msg = EmailMessage()
     if absender:
         msg["From"] = absender
-    msg["To"] = an
+    msg["To"] = to
+    if cc:
+        msg["Cc"] = cc
+    if bcc:
+        msg["Bcc"] = ", ".join(bcc)
     msg["Subject"] = betreff
     from ..core.textbausteine import mail_inhalt
     mail_inhalt(msg, text)                                    # Text + ggf. HTML mit klickbaren Links (Signatur)

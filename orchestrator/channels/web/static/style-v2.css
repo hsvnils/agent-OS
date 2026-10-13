@@ -1176,3 +1176,9 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-nw-geraet .grow { min-width: 180px; display: flex; flex-direction: column; }
 .v2-nw-akt { display: flex; gap: 6px; flex-wrap: wrap; }
 @media (max-width: 640px) { .v2-nw-geraet .v2-nw-akt { width: 100%; } }
+/* EMPFAENGER_MEHRERE: Empfaenger-Baustein in den Versanddialogen */
+.v2-empf { display: flex; flex-direction: column; gap: 6px; }
+.v2-empf-liste { display: grid; gap: 4px; padding: 6px 10px; border: 1px solid var(--v2-line-soft); border-radius: 12px; background: var(--v2-bg1); }
+.v2-empf-liste .v2-modlbl { align-items: flex-start; } .v2-empf-liste .v2-modlbl span { min-width: 0; overflow-wrap: anywhere; }
+.v2-empf-kopie > summary { cursor: pointer; color: var(--v2-muted); list-style: none; } .v2-empf-kopie > summary::-webkit-details-marker { display: none; }
+.v2-empf-info { color: var(--v2-muted); } .v2-empf-info.err { color: var(--v2-red); }

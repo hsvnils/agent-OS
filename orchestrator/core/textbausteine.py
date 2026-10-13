@@ -251,7 +251,16 @@ def eml(an: str, betreff: str, text: str, anhang: tuple[str, bytes]) -> bytes:
     from email.utils import formatdate
     m = EmailMessage()
     if an:
-        m["To"] = an
+        from .empfaenger import kopf
+        try:
+            to, cc, bcc, _ = kopf(an)                           # EMPFAENGER_MEHRERE: An/CC/BCC fuer das Mail-Programm
+        except ValueError:
+            to, cc, bcc = an, "", []
+        m["To"] = to
+        if cc:
+            m["Cc"] = cc
+        if bcc:
+            m["Bcc"] = ", ".join(bcc)
     m["Subject"] = betreff
     m["Date"] = formatdate(localtime=True)
     m["X-Unsent"] = "1"

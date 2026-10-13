@@ -1,10 +1,10 @@
 # Roadmap: Mehrere Empfaenger beim Versand von Belegen
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-13
 - Arbeitsbranch: `ai/mehrere-empfaenger`
 - Basiscommit: `6a6a87e`
-- Naechster Schritt: CEO-Go fuer M1 und M2 abwarten (CC ja/nein bestaetigen).
+- Naechster Schritt: Deploy, dann Abnahme durch den CEO (eine echte Mail mit CC/BCC an eigene Adressen) und Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -28,7 +28,7 @@ eintragen? Falls nicht, muessen wir das einrichten.“
 
 ## Etappe M1: Empfaenger-Baustein fuer Angebot, Auftrag, Rechnung, Mahnung
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Ein gemeinsamer Baustein statt des einzelnen Felds:
   - **Vorschlaege zum Anhaken:** alle Mailadressen der Firma (Ansprechpartner mit Mail + Rechnungs-Mail), die bisherige
     Vorbelegung ist angehakt.
@@ -44,11 +44,25 @@ eintragen? Falls nicht, muessen wir das einrichten.“
 
 ## Etappe M2: Uebrige Versanddialoge
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: derselbe Baustein fuer Projektbericht, Konzept, Einwilligungs-Kopie (Vorschlag = Mail der Person) und
   Vorstellungs-Mail (Vorschlaege nur bei vorhandener Firma); „Im Mail-Programm oeffnen“ uebernimmt alle Adressen.
 - Gate: wie M1.
 - Aufwand: klein bis mittel.
+
+## Umsetzung (2026-10-13, Go CEO fuer M1 und M2, zusaetzlich BCC)
+
+- `core/empfaenger.py`: `pruefen` (je Adresse, Doppelte raus, An vor CC vor BCC, hoechstens 10, mindestens ein An, auch
+  „Name <a@b.de>“), `anzeige`/`zerlegen` (ein Text „a, b · CC: c · BCC: d“ fuer Kette und Verlauf), `aus_body`, `kopf`
+  (To/Cc/Bcc fuer den Versandweg; einzelne alte Adressen bleiben unveraendert), `vorschlaege` (Ansprechpartner + Rechnungs-Mail).
+- Versand: All-Inkl setzt To/Cc, BCC nur im SMTP-Umschlag (nie im Kopf, auch nicht in der Kopie in „Gesendet“ und der .eml in
+  der Firmenakte); Gmail mit Bcc-Kopf (Gmail entfernt ihn beim Zustellen); .eml fuers eigene Mail-Programm mit To/Cc/Bcc.
+- Alle Senden-Endpunkte (Angebot inkl. Gmail-Entwurf, Auftrag, Rechnung, Mahnung, Projektbericht, Konzept, Einwilligungs-Kopie,
+  Vorstellungs-Mail, Mail-Programm) pruefen ueber `_an()`; Testmail an den CEO bleibt eine Adresse. Alle acht Vorschauen
+  liefern `adressen`.
+- Oberflaeche: Baustein `empfBaustein` in allen acht Dialogen -- Adressen der Firma anhaken, weitere von Hand (Komma),
+  „+ CC / BCC“, Hinweis auf ungueltige Adressen; „📋 Adresse kopieren“ kopiert die An-Adressen und nennt CC/BCC.
+- Tests `test_empfaenger.py` (4, Gegenproben rot); Browser Rechner/iPad/iPhone.
 
 ## Nicht-Scope
 

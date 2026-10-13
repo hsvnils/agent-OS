@@ -23,8 +23,10 @@ class FakeSMTP:
             raise self.fehler
         self.p.append(("login", user, pw))
 
-    def send_message(self, msg):
+    def send_message(self, msg, to_addrs=None):
         self.p.append(("send", msg))
+        if to_addrs is not None:
+            self.p.append(("an", list(to_addrs)))
 
     def quit(self):
         self.p.append(("quit",))

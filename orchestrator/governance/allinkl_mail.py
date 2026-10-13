@@ -42,9 +42,13 @@ def versandweg(env: dict, google):
 def nachricht(an: str, betreff: str, text: str, anhaenge: list | None, absender: str, domain: str,
               kennung: str) -> EmailMessage:
     """Message-ID = <kennung@domain> -- aus der gespeicherten Kennung wieder herleitbar (Antworten, M2)."""
+    from ..core.empfaenger import kopf
+    to, cc, _bcc, _alle = kopf(an)                              # EMPFAENGER_MEHRERE: BCC steht nie im Kopf
     msg = EmailMessage()
     msg["From"] = absender
-    msg["To"] = an
+    msg["To"] = to
+    if cc:
+        msg["Cc"] = cc
     msg["Subject"] = betreff
     msg["Date"] = formatdate(localtime=True)
     msg["Message-ID"] = f"<{kennung}@{domain or 'localhost'}>"
@@ -106,13 +110,18 @@ class AllInklMail:
             return {"ok": False, "bestaetigung_noetig": True, "vorschau": {"an": an, "betreff": betreff, "text": text},
                     "hinweis": "Senden braucht CEO-Bestaetigung -- erneut mit bestaetigt=true aufrufen."}
         kennung = "luna-" + uuid.uuid4().hex[:24]                  # dateinamen-tauglich (Archiv-.eml)
+        from ..core.empfaenger import kopf
+        try:
+            alle = kopf(an)[3]
+        except ValueError as exc:
+            return {"ok": False, "hinweis": str(exc)}
         msg = nachricht(an, betreff, text, anhaenge, self.absender(absender_name), self.adresse.partition("@")[2], kennung)
         roh = msg.as_bytes()
         try:
             s = self._smtp()
             try:
                 s.login(self.user, self._pw)
-                s.send_message(msg)
+                s.send_message(msg, to_addrs=alle)            # An + CC + BCC (BCC nur hier, nie im Kopf)
             finally:
                 try:
                     s.quit()

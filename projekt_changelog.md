@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-13 10:46] — Claude Code
+- **Was:** EMPFAENGER_MEHRERE M1/M2 gebaut: in allen acht Versanddialogen (Angebot, Auftrag, Rechnung, Mahnung, Projektbericht, Konzept, Einwilligungs-Kopie, Vorstellungs-Mail) Adressen der Firma anhaken, weitere von Hand, CC und BCC; Pruefung je Adresse (`core/empfaenger.py`), Versand ueber All-Inkl (BCC nur im Umschlag), Gmail und Mail-Programm (.eml mit To/Cc/Bcc); Verlauf zeigt alle Empfaenger. Cache app-v2.js v130, style-v2.css v67.
+- **Warum:** CEO 2026-10-13: mehrere Adressen und manuelle Adressen beim Belegversand, dazu CC und BCC -- Go M1/M2.
+- **Betroffen:** `orchestrator/core/empfaenger.py` (neu), `vorstellung.py`, `textbausteine.py`, `orchestrator/governance/allinkl_mail.py`, `google_workspace.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, Tests (`test_empfaenger.py` neu, `test_allinkl_mail.py`), `EMPFAENGER_MEHRERE_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-13 10:39] — Claude Code
 - **Was:** Roadmap `EMPFAENGER_MEHRERE_ROADMAP.md` angelegt (geplant): M1 Empfaenger-Baustein (Adressen der Firma anhaken, weitere von Hand, CC) fuer Angebot/Auftrag/Rechnung/Mahnung, M2 fuer Projektbericht, Konzept, Einwilligungs-Kopie, Vorstellungs-Mail; im Roadmap-Verzeichnis eingetragen.
 - **Warum:** CEO 2026-10-13: mehrere Mailadressen des Kunden und manuelle Adressen beim Belegversand.

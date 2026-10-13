@@ -2398,7 +2398,7 @@ def einwilligung_versandvorschau(eid: str, request: Request):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannt")
     betreff, text = _ew_mailtext(x)
     vs = _versand_absender()
-    return {"an": x["person"].get("mail", ""), "betreff": betreff, "text": text, "absender": vs["absender"],
+    return {"an": x["person"].get("mail", ""), "adressen": [{"mail": x["person"]["mail"], "name": f"{x['person'].get('vorname', '')} {x['person'].get('nachname', '')}".strip(), "rolle": "Person"}] if x["person"].get("mail") else [], "betreff": betreff, "text": text, "absender": vs["absender"],
             "bereit": vs["bereit"] is not False}
 
 
@@ -2412,7 +2412,7 @@ async def einwilligung_senden(eid: str, request: Request):
     def tun():
         if body.get("bestaetigt") is not True:
             raise ValueError("Senden braucht die ausdrueckliche Bestaetigung.")
-        return _ew_senden(eid, (body.get("an") or "").strip(), (body.get("betreff") or "").strip(),
+        return _ew_senden(eid, _an(body), (body.get("betreff") or "").strip(),
                           (body.get("text") or "").strip(), body, _von(request))
     return _kunden_aktion(tun)
 
@@ -2688,7 +2688,7 @@ def konzept_versandvorschau(vorgang: str, vorlage: str = ""):
     betreff, text = kz.mail_text(k, ap, _firmendaten(), v, vorlage=tb["vorlage"], signatur=tb["signatur"],
                                  kunde=_kunde_name(k.get("firma")))
     vs = _versand_absender()
-    return {"an": an, "betreff": betreff, "text": text, "version": v, "pdf": f"Konzept_{k['vorgang']}" + (f"_v{v}" if v > 1 else "") + ".pdf",
+    return {"an": an, "adressen": _adressen(k.get("firma")), "betreff": betreff, "text": text, "version": v, "pdf": f"Konzept_{k['vorgang']}" + (f"_v{v}" if v > 1 else "") + ".pdf",
             "absender": vs["absender"], "google": bool(_google().verfuegbar()) if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"]} | tb["auswahl"]
 
 
@@ -2708,7 +2708,7 @@ async def konzept_senden(vorgang: str, request: Request):
             raise ValueError("Senden braucht die ausdrueckliche Bestaetigung aus der Vorschau.")
         ks = _konzept()
         m, k = ks.mappe(vorgang), ks.kontext(vorgang)
-        an, betreff, text = (body.get("an") or "").strip(), (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
+        an, betreff, text = _an(body), (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
         if not an or "@" not in an or not betreff or not text:
             raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
         if not _firmendaten():
@@ -2872,7 +2872,7 @@ def bericht_versandvorschau(nummer: str, vorlage: str = ""):
     betreff, text = mail_text(d, det["ansprechpartner"], _firmendaten(), v, vorlage=tb["vorlage"], signatur=tb["signatur"],
                               kunde=_kunde_name(a.get("firma")))
     vs = _versand_absender()
-    return {"an": det["mail_an"], "betreff": betreff, "text": text, "pdf": dateiname(a["nummer"], v), "version": v,
+    return {"an": det["mail_an"], "adressen": _adressen(a.get("firma")), "betreff": betreff, "text": text, "pdf": dateiname(a["nummer"], v), "version": v,
             "absender": vs["absender"], "google": det["google"] if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"],
             "fehlen": d["fehlen"]} | tb["auswahl"]
 
@@ -2894,7 +2894,7 @@ async def bericht_senden(nummer: str, request: Request):
         a, d = _bericht(nummer)
         if a["status"] == "storniert":
             raise ValueError(f"{a['nummer']} ist storniert.")
-        an = (body.get("an") or "").strip()
+        an = _an(body)
         betreff, text = (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
         if not an or "@" not in an or not betreff or not text:
             raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
@@ -2948,7 +2948,7 @@ def auftrag_versandvorschau(nummer: str, vorlage: str = ""):
     betreff, text = auftrag_mail_text(d["auftrag"], d["ansprechpartner"], _firmendaten(), vorlage=tb["vorlage"],
                                       signatur=tb["signatur"], kunde=_kunde_name(d["auftrag"].get("firma")))
     vs = _versand_absender()
-    return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": f"Auftragsbestaetigung_{d['auftrag']['nummer']}.pdf",
+    return {"an": d["mail_an"], "adressen": _adressen(d["auftrag"].get("firma")), "betreff": betreff, "text": text, "pdf": f"Auftragsbestaetigung_{d['auftrag']['nummer']}.pdf",
             "absender": vs["absender"], "google": d["google"] if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"]} | tb["auswahl"]
 
 
@@ -2969,7 +2969,7 @@ async def auftrag_senden(nummer: str, request: Request):
             raise KeyError(nummer)
         if a["status"] == "storniert":
             raise ValueError(f"{a['nummer']} ist storniert.")
-        an = (body.get("an") or "").strip()
+        an = _an(body)
         betreff, text = (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
         if not an or "@" not in an or not betreff or not text:
             raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
@@ -3196,7 +3196,7 @@ def rechnung_versandvorschau(nummer: str, vorlage: str = ""):
     betreff, text = rechnung_mail_text(r, d["ansprechpartner"], _firmendaten(), vorlage=tb["vorlage"], signatur=tb["signatur"],
                                        kunde=_kunde_name(r.get("firma")))
     vs = _versand_absender()
-    return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": Path(r["belege"][0]["pfad"]).name.split("-", 1)[-1],
+    return {"an": d["mail_an"], "adressen": _adressen(r.get("firma")), "betreff": betreff, "text": text, "pdf": Path(r["belege"][0]["pfad"]).name.split("-", 1)[-1],
             "absender": vs["absender"], "google": d["google"] if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"]} | tb["auswahl"]
 
 
@@ -3212,7 +3212,7 @@ async def rechnung_senden(nummer: str, request: Request):
         r = rs.get(nummer)
         if not r or r.get("status") == "entwurf":
             raise KeyError(nummer)
-        an = (body.get("an") or "").strip()
+        an = _an(body)
         betreff, text = (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
         if not an or "@" not in an or not betreff or not text:
             raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")
@@ -3325,7 +3325,7 @@ def mahnung_versandvorschau(nummer: str, vorlage: str = ""):
     betreff, text = mahnung_mail_text(m, ap, _firmendaten(), vorlage=tb["vorlage"], signatur=tb["signatur"],
                                       kunde=_kunde_name(m.get("firma")))
     vs = _versand_absender()
-    return {"an": an, "betreff": betreff, "text": text, "pdf": f"Mahnung_{m['nummer']}.pdf",
+    return {"an": an, "adressen": _adressen(m["firma"]), "betreff": betreff, "text": text, "pdf": f"Mahnung_{m['nummer']}.pdf",
             "absender": vs["absender"], "google": bool(_google().verfuegbar()) if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"]} | tb["auswahl"]
 
 
@@ -3337,7 +3337,7 @@ async def mahnung_senden(nummer: str, request: Request):
     def tun():
         if body.get("bestaetigt") is not True:
             raise ValueError("Senden braucht die ausdrueckliche Bestaetigung aus der Vorschau.")
-        return senden(_mahn(), _versand_google(body), nummer, erneut=bool(body.get("erneut")), an=(body.get("an") or "").strip(),
+        return senden(_mahn(), _versand_google(body), nummer, erneut=bool(body.get("erneut")), an=_an(body),
                       betreff=(body.get("betreff") or "").strip(), text=(body.get("text") or "").strip(),
                       von=_von(request), absender_name=ABSENDER_NAME)
     return _kunden_aktion(tun)
@@ -4068,7 +4068,7 @@ async def angebot_mailentwurf(nummer: str, request: Request):
         if not fd:
             raise ValueError("Firmendaten fehlen (buchhaltung/firmendaten.json auf der NAS).")
         d = angebot_detail(a["nummer"])
-        an = (body.get("an") or d["mail_an"] or "").strip()
+        an = _an(body, d["mail_an"])
         if not an:
             raise ValueError("Keine Mail-Adresse: beim Ansprechpartner oder als Rechnungs-Mail der Firma eintragen.")
         g = _google()
@@ -4137,6 +4137,30 @@ class _MailProgramm:
 
     def mail_roh(self, mid) -> dict:
         return {}
+
+
+def _adressen(firma: str | None) -> list[dict]:
+    """EMPFAENGER_MEHRERE: Mailadressen der Firma zum Anhaken im Versanddialog (Ansprechpartner, Rechnungs-Mail)."""
+    from ...core.empfaenger import vorschlaege
+    try:
+        return vorschlaege(kunden_store, firma or "")
+    except Exception:
+        return []
+
+
+def _an(body: dict, ersatz: str = "", *, pruefen: bool = True) -> str:
+    """EMPFAENGER_MEHRERE: An/CC/BCC aus dem Dialog -> geprueft, als ein Text („a, b · CC: c · BCC: d“) fuer Versand und
+    Verlauf. Ohne Angaben im Dialog gilt `ersatz` (Vorbelegung). ValueError nennt die falsche Adresse."""
+    from ...core.empfaenger import aus_body
+    b = body or {}
+    if not any(str(b.get(k) or "").strip() for k in ("an", "cc", "bcc")):
+        return (ersatz or "").strip()
+    try:
+        return aus_body(b)
+    except ValueError:
+        if pruefen:
+            raise
+        return str(b.get("an") or "").strip()
 
 
 def _versand_google(body: dict):
@@ -4238,7 +4262,7 @@ def vorstellung_vorschau(firma: str = "", name: str = "", vorname: str = "", nac
     w = werte(f, ap, Katalog(kunden_store.bh).laden().get("texte"), gesendet_am=gesendet or jetzt_iso()[:10])
     betreff, text = rendern(art, w, _firmendaten(), vorlage=tb["vorlage"], signatur=tb["signatur"])
     vs = _versand_absender()
-    return {"an": an, "betreff": betreff, "text": text, "absender": vs["absender"], "versand_kanal": vs["kanal"],
+    return {"an": an, "adressen": _adressen(f.get("nummer")) if firma else [], "betreff": betreff, "text": text, "absender": vs["absender"], "versand_kanal": vs["kanal"],
             "bereit": vs["bereit"] if vs["bereit"] is not None else bool(_google().verfuegbar()),
             "anlaesse": ANLAESSE, "hinweis_uwg": HINWEIS_UWG, "bisher": gesendet,
             "firma": {k: f.get(k) for k in ("nummer", "name", "typ")} if firma else None} | tb["auswahl"]
@@ -4440,7 +4464,7 @@ async def mailentwurf_eml(art: str, nummer: str, request: Request):
     except ValueError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc))
     name = anhang[0].rsplit(".", 1)[0] + ".eml"
-    return Response(eml((body.get("an") or "").strip(), betreff, text, anhang), media_type="message/rfc822",
+    return Response(eml(_an(body, pruefen=False), betreff, text, anhang), media_type="message/rfc822",
                     headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(name)}"})
 
 
@@ -4470,7 +4494,7 @@ def angebot_versandvorschau(nummer: str, vorlage: str = ""):
     betreff, text = angebot_mail_text(a, d["firma"], d["ansprechpartner"], _firmendaten(), vorlage=tb["vorlage"],
                                       signatur=tb["signatur"])
     vs = _versand_absender()
-    return {"an": d["mail_an"], "betreff": betreff, "text": text, "pdf": f"Angebot_{a['nummer']}.pdf",
+    return {"an": d["mail_an"], "adressen": _adressen(a.get("firma")), "betreff": betreff, "text": text, "pdf": f"Angebot_{a['nummer']}.pdf",
             "absender": vs["absender"], "google": d["google"] if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"],
             "status": a["status"]} | tb["auswahl"]
 
@@ -4515,7 +4539,7 @@ async def angebot_senden(nummer: str, request: Request):
             raise ValueError(f"{a['nummer']} ist noch nicht versendet -- bitte normal senden.")
         if not erneut and a["status"] != "entwurf":
             raise ValueError(f"{a['nummer']} ist bereits {a['status']}.")
-        an = (body.get("an") or "").strip()
+        an = _an(body)
         betreff, text = (body.get("betreff") or "").strip(), (body.get("text") or "").strip()
         if not an or "@" not in an or not betreff or not text:
             raise ValueError("Empfaenger, Betreff und Text sind Pflicht.")

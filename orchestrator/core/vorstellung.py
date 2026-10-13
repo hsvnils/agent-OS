@@ -72,10 +72,12 @@ def senden(bh, kunden, versand, daten: dict, *, absender_name: str, eigene: list
     from .kunden import DubletteFehler
     if (daten or {}).get("bestaetigt") is not True:
         raise ValueError("Senden braucht die ausdrueckliche Bestaetigung.")
-    an = str(daten.get("an") or "").strip()
+    from .empfaenger import aus_body, erste
     betreff, text = str(daten.get("betreff") or "").strip(), str(daten.get("text") or "").strip()
-    if not _MAIL.match(an) or not betreff or not text:
+    if not str(daten.get("an") or "").strip() or not betreff or not text:
         raise ValueError("Empfaenger (gueltige Mailadresse), Betreff und Text sind Pflicht.")
+    an = aus_body(daten)                                        # EMPFAENGER_MEHRERE: An/CC/BCC geprueft
+    erst = erste(an)
     anlass = str(daten.get("anlass") or "").strip()
     if anlass and anlass not in ANLAESSE:
         raise ValueError("Unbekannter Anlass.")
@@ -88,7 +90,7 @@ def senden(bh, kunden, versand, daten: dict, *, absender_name: str, eigene: list
         name = str(neu.get("name") or "").strip()
         if not name:
             raise ValueError("Firmenname fehlt.")
-        gleich = dubletten(kunden, name, an)
+        gleich = dubletten(kunden, name, erst)
         if gleich and not daten.get("trotz_dublette"):
             raise DubletteFehler(f"Diese Firma gibt es vermutlich schon ({', '.join(gleich)}) – bitte aus der Liste waehlen.", gleich)
     s = versand.mail_senden(an, betreff, text, bestaetigt=True, absender_name=absender_name)
@@ -96,14 +98,14 @@ def senden(bh, kunden, versand, daten: dict, *, absender_name: str, eigene: list
         raise ValueError(s.get("hinweis") or "Senden fehlgeschlagen.")
     angelegt = False
     if not nr:
-        firma = {"name": str(neu["name"]).strip(), "typ": "interessent", "notiz": f"Vorstellung per Mail an {an}"}
+        firma = {"name": str(neu["name"]).strip(), "typ": "interessent", "notiz": f"Vorstellung per Mail an {erst}"}
         if neu.get("website"):
             firma["website"] = str(neu["website"]).strip()
         nr = kunden.firma_anlegen(firma, von=von, trotz_dublette=True)["nummer"]
         angelegt = True
         if str(neu.get("vorname") or "").strip() or str(neu.get("nachname") or "").strip():
             kunden.ansprechpartner_anlegen(nr, {"vorname": neu.get("vorname") or "", "nachname": neu.get("nachname") or "",
-                                                "mail": an}, von=von)
+                                                "mail": erst}, von=von)
     akte = ""
     roh = versand.mail_roh(s["id"]) if s.get("id") and hasattr(versand, "mail_roh") else {}
     if roh.get("ok"):
