@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-13 10:57] — Claude Code
+- **Was:** Deploy mehrere Empfaenger/CC/BCC geprueft: NAS liefert app-v2.js v130/style-v2.css v67 mit dem Empfaenger-Baustein; Versandvorschau eines echten Auftrags (AB-2026-0004) liefert 2 Adressvorschlaege und die Vorbelegung. Nichts versendet.
+- **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-13 10:46] — Claude Code
 - **Was:** EMPFAENGER_MEHRERE M1/M2 gebaut: in allen acht Versanddialogen (Angebot, Auftrag, Rechnung, Mahnung, Projektbericht, Konzept, Einwilligungs-Kopie, Vorstellungs-Mail) Adressen der Firma anhaken, weitere von Hand, CC und BCC; Pruefung je Adresse (`core/empfaenger.py`), Versand ueber All-Inkl (BCC nur im Umschlag), Gmail und Mail-Programm (.eml mit To/Cc/Bcc); Verlauf zeigt alle Empfaenger. Cache app-v2.js v130, style-v2.css v67.
 - **Warum:** CEO 2026-10-13: mehrere Adressen und manuelle Adressen beim Belegversand, dazu CC und BCC -- Go M1/M2.
