@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-13 21:36] — Claude Code
+- **Was:** Deploy Modell-Radar geprueft: NAS liefert app-v2.js v131/style-v2.css v68 (🧭 Modell-Radar), `/api/modell-radar` zeigt 8 genutzte Modelle (u. a. lokal qwen3:30b-a3b); erster Bot-Lauf um 21:35 hat alle 17 Quellen gelesen (inkl. xAI/DeepSeek ueber Brave), keine Fehler, alles als Bestand uebernommen (keine Meldungsflut). Artificial Analysis noch ohne Schluessel.
+- **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-13 11:23] — Claude Code
 - **Was:** MODELL_RADAR R1-R3 gebaut: `core/modell_radar.py` (17 Quellen der KI-Hersteller inkl. NVIDIA/Microsoft, Feeds/Seiten/Aenderungsprotokolle, regelbasierte Einstufung 🔴/🟡/⚪, Bestand beim ersten Lauf), Artificial-Analysis-Gratis-API mit Vorschlaegen als Antrag samt Kostenvoranschlag (nie automatisch), Bot-Lauf taeglich ab 07:00 und Wochenbericht Mo ab 09:00, LUNA-OS LUNA & System -> 🧭 Modell-Radar (nur Admins). Register (Artificial Analysis), Datenfluesse/Hosts, Deploy-Ausschluss, Backup, `.gitignore`, `.env.example`. Cache app-v2.js v131, style-v2.css v68.
 - **Warum:** CEO 2026-10-13: Researcher soll artificialanalysis.ai und die fuehrenden KI-Hersteller ueberwachen -- Go R1-R3, NVIDIA und Microsoft dazu.
