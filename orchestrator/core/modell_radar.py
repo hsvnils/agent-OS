@@ -418,3 +418,177 @@ def wochenbericht_text(items: list[dict], offene_vorschlaege: int) -> str:
     fuss = (f"\n{offene_vorschlaege} Vorschlag/Vorschläge zum Modellwechsel liegen als Antrag bereit." if offene_vorschlaege else "")
     return kopf + ("\n" + "\n".join(zeilen) if zeilen else "\nNichts Wichtiges diese Woche.") + fuss + \
         "\nMehr in LUNA-OS → LUNA & System → 🧭 Modell-Radar."
+
+
+# -- R4: bessere lokale Modelle (MODELL_RADAR R4, CEO 2026-10-16) -------------------------------------------------------
+OLLAMA_BIBLIOTHEK = "https://ollama.com/library?sort=newest"
+_GROESSE = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)b(?![\w])", re.I)
+# Allgemeine Pruffaelle fuer den Modellvergleich (ergaenzt um die Pruffaelle aktiver Werkstatt-Skills)
+STANDARD_PRUEFFAELLE = [
+    {"eingabe": "Schreibe eine kurze, freundliche Mail an Kiez Burger: Wir bieten ein Reel (Preis 450 EUR netto) fuer ihr neues "
+                "Smash-Burger-Menue an, Drehtermin naechste Woche. Hoechstens 8 Saetze.",
+     "kriterien": ["nennt den Preis 450 EUR", "nennt den Drehtermin naechste Woche", "hoechstens 8 Saetze", "hoefliche Anrede und Gruss"]},
+    {"eingabe": "Fasse in 3 Stichpunkten zusammen: Der Kunde will 3 Reels im November, Budget 1.200 EUR, Freigabe ueber die "
+                "Marketingleiterin Frau Sommer, Drehort Hafen, keine Musik mit Text.",
+     "kriterien": ["genau 3 Stichpunkte", "nennt Budget 1.200 EUR", "nennt Frau Sommer", "erwaehnt keine Musik mit Text"]},
+    {"eingabe": "Ein Kunde zahlt eine Rechnung ueber 714 EUR seit 20 Tagen nicht. Formuliere eine hoefliche erste Zahlungserinnerung "
+                "mit neuer Frist von 7 Tagen.",
+     "kriterien": ["nennt 714 EUR", "nennt Frist 7 Tage", "hoeflicher Ton ohne Drohung", "fordert zur Zahlung auf"]},
+    {"eingabe": "Nenne drei Ideen fuer Instagram-Reels fuer eine Hamburger Bar zum HSV-Heimspiel. Je Idee ein Satz.",
+     "kriterien": ["genau drei Ideen", "Bezug zum HSV oder Heimspiel", "je Idee hoechstens zwei Saetze"]},
+    {"eingabe": "Antworte nur mit JSON: {\"kunde\": <Name>, \"betrag\": <Zahl>} fuer den Satz: Hafenbar GmbH bestellt fuer 980 Euro.",
+     "kriterien": ["gueltiges JSON", "kunde = Hafenbar GmbH", "betrag = 980"]},
+]
+
+
+def groesse_b(modell: str) -> float | None:
+    """„qwen3:30b-a3b“ -> 30.0, „gemma3:4b“ -> 4.0; ohne Angabe None."""
+    m = _GROESSE.search(str(modell or "").replace("-", " ").replace(":", " "))
+    return float(m.group(1)) if m else None
+
+
+def lies_ollama(text: str) -> list[dict]:
+    """Ollama-Bibliothek (oeffentliche Liste) -> [{name, kurz, faehigkeiten, groessen, pulls, aktualisiert}]."""
+    out = []
+    teile = re.split(r'(?=<a href="/library/[a-z0-9._-]+")', text or "")
+    for t in teile[1:]:
+        m = re.match(r'<a href="/library/([a-z0-9._-]+)"', t)
+        if not m:
+            continue
+        stuecke = [s for s in (_text(x) for x in re.split(r"<[^>]+>", t[:6000])) if s]
+        name = m.group(1)
+        kurz = next((s for s in stuecke if len(s) > 30), "")[:140]
+        faehig = [s for s in stuecke if s.lower() in ("tools", "thinking", "vision", "embedding", "audio", "cloud")]
+        groessen = sorted({float(g[:-1]) for g in stuecke if re.fullmatch(r"\d+(?:\.\d+)?b", g, re.I)})
+        akt = next((stuecke[i + 1] for i, s in enumerate(stuecke) if s.startswith("Updated") and i + 1 < len(stuecke)), "")
+        pulls = next((stuecke[i - 1] for i, s in enumerate(stuecke) if s.endswith("Pulls") and i), "")
+        if not any(x["name"] == name for x in out):
+            out.append({"name": name, "kurz": kurz, "faehigkeiten": faehig, "groessen": groessen, "pulls": pulls, "aktualisiert": akt})
+    return out
+
+
+def _familie(name: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", str(name).split(":")[0].lower())
+
+
+def lokale_kandidaten(lokal: str, bibliothek: list[dict], aa: list[dict], *, max_b: float | None = None) -> dict:
+    """Kandidaten fuer das lokale Modell: Werkzeuge noetig (LUNA arbeitet mit Tools), kein reines Embedding/Cloud,
+    groesste Variante bis `max_b` (Standard: Groesse des heutigen Modells, damit es auf den MACO470 passt).
+    Qualitaet aus Artificial Analysis, wenn vorhanden -> {unser, kandidaten: [...], vorschlaege: [...]}."""
+    grenze = max_b or groesse_b(lokal) or 14.0
+    unser_aa = aa_finden(lokal, aa) if aa else None
+    kandidaten = []
+    for m in bibliothek:
+        f = set(m["faehigkeiten"])
+        if "tools" not in f or {"embedding", "cloud"} & f or _familie(m["name"]) == _familie(lokal):
+            continue
+        passend = [g for g in m["groessen"] if g <= grenze]
+        if not passend:
+            continue
+        g = max(passend)
+        tag = f"{m['name']}:{g:g}b"
+        q = aa_finden(f"{m['name']}-{g:g}b", aa) if aa else None
+        kandidaten.append({"modell": tag, "familie": m["name"], "groesse_b": g, "faehigkeiten": sorted(f), "kurz": m["kurz"],
+                           "aktualisiert": m["aktualisiert"], "pulls": m["pulls"], "iq": (q or {}).get("iq"), "aa_name": (q or {}).get("name", "")})
+    vorschlaege = []
+    if unser_aa and unser_aa.get("iq") is not None:
+        for k in kandidaten:
+            if k["iq"] is not None and k["iq"] >= unser_aa["iq"] + 3:
+                vorschlaege.append(k | {"unser_iq": unser_aa["iq"]})
+        vorschlaege.sort(key=lambda k: -k["iq"])
+    return {"unser": {"modell": lokal, "groesse_b": groesse_b(lokal), "iq": (unser_aa or {}).get("iq"), "grenze_b": grenze},
+            "kandidaten": kandidaten[:30], "vorschlaege": vorschlaege[:3]}
+
+
+def lokal_vorschlag_text(lokal: str, k: dict) -> tuple[str, str]:
+    titel = f"Lokales Modell testen: {lokal} → {k['modell']}"
+    text = (f"Der Researcher (Modell-Radar) schlägt vor, auf dem MACO470 statt {lokal} das offene Modell {k['modell']} zu testen: "
+            f"Qualität {k['iq']:.0f} statt {k['unser_iq']:.0f} Punkte, Größe {k['groesse_b']:g} Mrd. Parameter (passt in die bisherige "
+            f"Grenze), kann Werkzeuge nutzen.\n\nKosten: keine (lokal, Strom); einmalig ein Download von einigen GB.\n\n"
+            "Nächster Schritt: in LUNA-OS → Modell-Radar → „🧪 Probelauf“ starten. Der MACO470 lädt das Modell dann nachts und "
+            "vergleicht es mit dem heutigen an festen Prüffällen. Umgestellt wird erst nach deiner Entscheidung.\n\n" + AA_QUELLE)
+    return titel, text
+
+
+class LokalTests:
+    """Probelaeufe altes gegen neues lokales Modell ueber das Backoffice (`radar/lokal_tests.json`)."""
+    def __init__(self, radar: Radar):
+        self.r = radar
+
+    def alle(self) -> dict:
+        return self.r._lesen("lokal_tests.json")
+
+    def _speichern(self, d: dict) -> None:
+        self.r._schreiben("lokal_tests.json", d)
+
+    def starten(self, bo, *, alt: str, neu: str, faelle: list[dict], jetzt: str) -> dict:
+        if not re.fullmatch(r"[a-z0-9._-]+(:[a-z0-9._-]+)?", neu or ""):
+            raise ValueError("Ungueltiger Modellname.")
+        with _LOCK:
+            d = self.alle()
+            if any(t["neu"] == neu and t["status"] in ("laeuft", "urteil") for t in d.values()):
+                raise ValueError("Fuer dieses Modell laeuft schon ein Probelauf.")
+            tid = "LT-" + hashlib.sha1(f"{neu}{jetzt}".encode()).hexdigest()[:6].upper()
+            jobs = {}
+            for i, f in enumerate(faelle):
+                jobs[f"alt{i}"] = bo.anlegen(f["eingabe"], art="roh", von="Modell-Radar", stumm=True, zweck=f"lokaltest:{tid}:alt{i}",
+                                             system="Du bist ein hilfreicher Assistent von Hanserautisch. Antworte auf Deutsch.")
+                jobs[f"neu{i}"] = bo.anlegen(f["eingabe"], art="roh", von="Modell-Radar", stumm=True, zweck=f"lokaltest:{tid}:neu{i}",
+                                             system="Du bist ein hilfreicher Assistent von Hanserautisch. Antworte auf Deutsch.",
+                                             lokal_modell=neu)
+            d[tid] = {"id": tid, "alt": alt, "neu": neu, "faelle": faelle, "jobs": jobs, "status": "laeuft", "start": jetzt}
+            self._speichern(d)
+        return d[tid]
+
+    def tick(self, bo) -> list[str]:
+        from .skill_werkstatt import SYSTEM_URTEIL, _reihenfolge, urteil_lesen
+        meldungen = []
+        with _LOCK:
+            d = self.alle()
+            for tid, t in d.items():
+                jobs = {k: bo.get(v) for k, v in t["jobs"].items()}
+                if t["status"] == "laeuft":
+                    if any((j or {}).get("status") == "fehlgeschlagen" for j in jobs.values()):
+                        t |= {"status": "fehler", "grund": next((j.get("grund", "") for j in jobs.values() if (j or {}).get("status") == "fehlgeschlagen"), "")[:200]}
+                        meldungen.append(f"🧪 Probelauf {t['neu']} fehlgeschlagen: {t['grund']}")
+                    elif all((j or {}).get("status") == "fertig" for j in jobs.values()):
+                        for i, f in enumerate(t["faelle"]):
+                            neu_a, alt_a = jobs[f"neu{i}"]["ergebnis"], jobs[f"alt{i}"]["ergebnis"]
+                            a, b = (neu_a, alt_a) if _reihenfolge(tid, i) else (alt_a, neu_a)
+                            t["jobs"][f"urteil{i}"] = bo.anlegen(
+                                f"Aufgabe: {f['eingabe']}\nKriterien:\n" + "\n".join(f"- {k}" for k in f["kriterien"])
+                                + f"\n\nAntwort A:\n{a[:3500]}\n\nAntwort B:\n{b[:3500]}", art="roh", von="Modell-Radar", stumm=True,
+                                system=SYSTEM_URTEIL, zweck=f"lokaltest:{tid}:urteil{i}")
+                        dauer = lambda p: round(sum(float(jobs[k].get("dauer_s") or 0) for k in jobs if k.startswith(p)) / max(1, len(t["faelle"])), 1)
+                        t |= {"status": "urteil", "dauer_alt": dauer("alt"), "dauer_neu": dauer("neu")}
+                elif t["status"] == "urteil":
+                    urteile = {k: v for k, v in jobs.items() if k.startswith("urteil")}
+                    if any((j or {}).get("status") == "fehlgeschlagen" for j in urteile.values()):
+                        t |= {"status": "fehler", "grund": "Bewertung fehlgeschlagen"}
+                    elif urteile and all((j or {}).get("status") == "fertig" for j in urteile.values()):
+                        neu_p = alt_p = 0
+                        for i in range(len(t["faelle"])):
+                            u = urteil_lesen(urteile[f"urteil{i}"]["ergebnis"])
+                            vorne = _reihenfolge(tid, i)
+                            neu_p += u["A"] if vorne else u["B"]
+                            alt_p += u["B"] if vorne else u["A"]
+                        mx = sum(len(f["kriterien"]) for f in t["faelle"])
+                        besser = neu_p > alt_p
+                        t |= {"status": "fertig", "punkte_neu": neu_p, "punkte_alt": alt_p, "max": mx, "besser": besser}
+                        meldungen.append(f"🧪 Probelauf lokales Modell: {t['neu']} {neu_p}/{mx} gegen {t['alt']} {alt_p}/{mx} Kriterien, "
+                                         f"Zeit je Aufgabe {t['dauer_neu']} s gegen {t['dauer_alt']} s. "
+                                         + ("Das neue Modell war besser – Umstellen entscheidest du (LOCAL_LLM_MODEL in der .env)."
+                                            if besser else "Das heutige Modell bleibt besser oder gleich gut."))
+            self._speichern(d)
+        return meldungen
+
+
+def pruffaelle_fuer_modelltest(repo_eigen: Path) -> list[dict]:
+    """Standard-Pruffaelle + bis zu 5 aus aktiven Werkstatt-Skills (`skills_eigen/*/*/pruffaelle.json`)."""
+    out = list(STANDARD_PRUEFFAELLE)
+    for p in sorted(Path(repo_eigen).glob("*/*/pruffaelle.json"))[:5]:
+        try:
+            out += [f for f in json.loads(p.read_text(encoding="utf-8"))[:1] if f.get("eingabe") and f.get("kriterien")]
+        except (OSError, ValueError):
+            continue
+    return out[:10]

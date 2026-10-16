@@ -86,9 +86,9 @@ Hersteller nicht verpassen.“
 - Tests `test_modell_radar.py` (6, Gegenproben rot: Bestand, keine Verwechslung, Vorschlag einmal, nur bekannte Hersteller,
   Admin-Recht); Browser Rechner/iPad/iPhone mit echten Probedaten.
 
-## Etappe R4: Bessere lokale Modelle finden (geplant, Frage CEO 2026-10-16)
+## Etappe R4: Bessere lokale Modelle finden (Frage CEO 2026-10-16, Go 2026-10-16)
 
-- Status: geplant
+- Status: umgesetzt
 - Befund: R2 vergleicht nur Cloud-Modelle ueber Preis/Qualitaet; das lokale Modell auf dem MACO470 (heute `qwen3:30b-a3b`)
   wird dort seit 2026-10-16 bewusst **ausgenommen** (Preisvergleich ergibt fuer ein kostenloses, lokales Modell keinen
   Sinn). Neue lokale Modelle kommen bisher nur als Nachricht (Qwen, DeepSeek, Mistral, Ollama-Releases).
@@ -98,6 +98,15 @@ Hersteller nicht verpassen.“
   (altes gegen neues Modell, nachts), Ergebnis + Empfehlung; Umstellen bleibt CEO-Entscheidung.
 - Gate: Tests mit aufgezeichneten Daten; Download eines neuen Modells nur nach Freigabe (Speicherplatz, Laufzeit).
 - Aufwand: mittel.
+- Umsetzung (2026-10-16): `lies_ollama` (oeffentliche Liste `ollama.com/library?sort=newest`, robots.txt erlaubt sie),
+  `lokale_kandidaten` (Werkzeug-Faehigkeit Pflicht, keine Embedding-/Cloud-Modelle, andere Familie als heute, groesste
+  Variante bis zur Grenze = Groesse des heutigen Modells oder `LOCAL_LLM_MAX_B`), Vorschlag nur mit Qualitaetsdaten
+  (>= 3 Punkte besser) als Antrag, je Kandidat einmal. Probelauf per Klick „🧪 Probelauf“ (= Freigabe des Downloads):
+  `LokalTests` legt je Pruffall zwei Backoffice-Auftraege an (heutiges Modell / neues Modell ueber das neue Feld
+  `lokal_modell`), der Worker auf dem MACO470 laedt das Modell einmalig (`Ollama.mit_modell`, Download vor der Zeitmessung),
+  Bewertung verdeckt durch das heutige Modell; Ergebnis mit Punkten und Zeit je Aufgabe per Telegram und in LUNA-OS.
+  Pruffaelle: 5 feste Geschaeftsaufgaben + je einer aus aktiven Werkstatt-Skills. Umstellen bleibt CEO-Entscheidung.
+- Tests `test_lokale_modelle.py` (5, Gegenproben rot), Browser Rechner/iPad/iPhone; dazu BF-71 (GitHub-Schluessel).
 
 ## Nicht-Scope
 

@@ -18,7 +18,7 @@ from ..governance.leak_guard import redact
 STATUSES = ("neu", "in_arbeit", "fertig", "fehlgeschlagen")
 ARTEN = ("zusammenfassung", "entwurf", "bewertung", "analyse", "sonstiges", "roh")   # roh = Job-Auftrag mit eigenem System-Prompt
 _FELDER = ("art", "aufgabe", "von", "ergebnis", "zweitmeinung", "modell", "dauer_s", "grund", "meldung", "system", "zweck",
-           "stumm")
+           "stumm", "lokal_modell")
 
 
 def _now() -> str:
@@ -37,7 +37,7 @@ class AuftragStore:
     # -- Schreiben -------------------------------------------------------------------------------------------------
 
     def anlegen(self, aufgabe: str, *, art: str = "sonstiges", von: str = "CEO", system: str = "", zweck: str = "",
-                stumm: bool = False) -> str:
+                stumm: bool = False, lokal_modell: str = "") -> str:
         """`stumm`: Job-internes Ergebnis (Etappe 4) -- keine Meldung an den CEO, der Job verarbeitet es selbst."""
         aufgabe = (aufgabe or "").strip()
         if not aufgabe:
@@ -46,7 +46,8 @@ class AuftragStore:
         # BO = Backoffice -- Antraege heissen A-..., Second-Brain-Eintraege B-... (BF-29); sonst zum Verwechseln aehnlich.
         aid = "BO-" + datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:4]
         self._append({"ts": _now(), "id": aid, "event": "neu", "art": art, "aufgabe": aufgabe[:12000], "von": von,
-                      "system": system[:8000] or None, "zweck": zweck or None, "stumm": True if stumm else None})
+                      "system": system[:8000] or None, "zweck": zweck or None, "stumm": True if stumm else None,
+                      "lokal_modell": lokal_modell or None})        # MODELL_RADAR R4: Probelauf mit anderem lokalen Modell
         return aid
 
     def naechster(self) -> dict | None:

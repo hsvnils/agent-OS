@@ -1195,3 +1195,5 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-sk-akt { display: flex; gap: 6px; flex-wrap: wrap; } .v2-sk-ergebnis { color: var(--v2-accent); }
 .v2-sk-md { white-space: pre-wrap; font-size: 13px; background: var(--v2-bg1); border: 1px solid var(--v2-line-soft); border-radius: 12px; padding: 10px; max-height: 50vh; overflow: auto; }
 @media (max-width: 640px) { .v2-sk-zeile .v2-sk-akt { width: 100%; } .v2-sk-akt .v2-btn { min-height: 36px; min-width: 40px; } }
+.v2-radar-vor td { background: color-mix(in srgb, var(--v2-accent) 8%, transparent); }
+.v2-sk-kopf { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }

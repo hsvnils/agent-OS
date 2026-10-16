@@ -39,9 +39,10 @@ class FakeBO:
     def __init__(self):
         self.jobs = {}
 
-    def anlegen(self, aufgabe, *, art="sonstiges", von="", system="", zweck="", stumm=False):
+    def anlegen(self, aufgabe, *, art="sonstiges", von="", system="", zweck="", stumm=False, lokal_modell=""):
         jid = f"BO-{len(self.jobs) + 1}"
-        self.jobs[jid] = {"id": jid, "status": "neu", "aufgabe": aufgabe, "system": system, "zweck": zweck, "art": art, "stumm": stumm}
+        self.jobs[jid] = {"id": jid, "status": "neu", "aufgabe": aufgabe, "system": system, "zweck": zweck, "art": art, "stumm": stumm,
+                          "lokal_modell": lokal_modell}
         return jid
 
     def get(self, jid):

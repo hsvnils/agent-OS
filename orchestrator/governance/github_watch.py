@@ -38,6 +38,7 @@ class GitHubWatch:
     def __init__(self, env: dict[str, str] | None = None):
         import os
         self._token = (env or os.environ).get("GITHUB_TOKEN", "").strip()
+        self.schluessel_ungueltig = False
 
     def trending(self, topic: str, *, min_stars: int = 500, aktiv_seit_tage: int = 30,
                  max_results: int = 15) -> list[Repo]:
@@ -53,6 +54,11 @@ class GitHubWatch:
         try:
             with urllib.request.urlopen(req, timeout=15) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            if exc.code == 401 and self._token:          # BF-71: ungueltiger GITHUB_TOKEN -> oeffentlich weiter (Limit 10/min)
+                self._token, self.schluessel_ungueltig = "", True
+                return self.trending(topic, min_stars=min_stars, aktiv_seit_tage=aktiv_seit_tage, max_results=max_results)
+            return []
         except (urllib.error.URLError, TimeoutError, ValueError):
             return []
         out = []

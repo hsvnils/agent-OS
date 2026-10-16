@@ -480,7 +480,7 @@ def skill_lauf(token, chat_id, secrets, *, backoffice, jetzt=None, taeglich: boo
     ts = jetzt.isoformat(timespec="seconds")
     w = _skill_werkstatt()
     senden = (lambda text: _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(text)})) if chat_id else (lambda t: None)
-    out = {"radar": 0, "ideen": 0, "meldungen": 0, "verbesserungen": 0}
+    out = {"radar": 0, "radar_abgerufen": 0, "ideen": 0, "meldungen": 0, "verbesserungen": 0}
     if monatlich:
         if github is None:
             from ...governance.github_watch import GitHubWatch
@@ -488,7 +488,8 @@ def skill_lauf(token, chat_id, secrets, *, backoffice, jetzt=None, taeglich: boo
         repos = []
         for thema in sw.GITHUB_THEMEN:
             repos += github.trending(thema, min_stars=20, aktiv_seit_tage=365, max_results=30)
-        neu = w.radar_merken(repos, ts)
+        out["radar_abgerufen"] = len(repos)
+        neu = w.radar_merken(repos, ts) if repos else []
         out["radar"] = len(neu)
         if neu:
             senden(sw.radar_bericht(neu))
@@ -538,11 +539,11 @@ def _start_skill_loop(ctx, secrets, token, chat_id) -> None:
                 monat = jetzt.strftime("%Y-%m")
                 monatlich = jetzt.hour >= 8 and not ctx.agenda.briefing_gesendet("skill-radar", monat)
                 if ctx.watch is None or not ctx.watch.store.paused():
-                    skill_lauf(token, chat_id, secrets, backoffice=getattr(ctx, "backoffice", None),
-                               jetzt=jetzt.replace(tzinfo=None), taeglich=taeglich, monatlich=monatlich)
+                    o = skill_lauf(token, chat_id, secrets, backoffice=getattr(ctx, "backoffice", None),
+                                   jetzt=jetzt.replace(tzinfo=None), taeglich=taeglich, monatlich=monatlich)
                     if taeglich:
                         ctx.agenda.markiere_briefing("skill-luecken", datum)
-                    if monatlich:
+                    if monatlich and o.get("radar_abgerufen"):   # BF-71: leere GitHub-Antwort -> spaeter erneut versuchen
                         ctx.agenda.markiere_briefing("skill-radar", monat)
             except Exception as exc:
                 print(f"[skills] Fehler: {exc.__class__.__name__}: {exc}", flush=True)
@@ -571,7 +572,7 @@ def _nutzung_30_tage() -> dict:
 
 
 def radar_lauf(token, chat_id, secrets, *, antraege=None, jetzt=None, taeglich: bool = True, abruf=None, suche=None,
-               cfg=None) -> dict:
+               cfg=None, backoffice=None) -> dict:
     """MODELL_RADAR R1-R3: taeglich Hersteller-News (🔴 sofort) und Artificial Analysis (Vorschlaege als Antrag, nie
     automatisch wechseln); montags ab 09:00 der Wochenbericht. Nur lesen, kein LLM."""
     from datetime import datetime as _dt
@@ -606,6 +607,26 @@ def radar_lauf(token, chat_id, secrets, *, antraege=None, jetzt=None, taeglich: 
             if neu:
                 senden(f"🧭 Modell-Radar: {len(neu[:3])} Vorschlag/Vorschläge zum Modellwechsel liegt/liegen als Antrag bereit "
                        f"(LUNA-OS → Freigaben). Nichts wird automatisch umgestellt. {mr.AA_QUELLE}")
+        lokal = next((u["modell"] for u in unsere if u["einsatz"].startswith("Lokal")), "")
+        if lokal:                                               # R4: bessere lokale Modelle (Ollama-Bibliothek + AA)
+            try:
+                liste = mr.lies_ollama((abruf or mr.abrufen)(mr.OLLAMA_BIBLIOTHEK))
+                r._schreiben("ollama.json", {"ts": jetzt.isoformat(timespec="seconds"), "liste": liste})
+                k = mr.lokale_kandidaten(lokal, liste, (r.aa() or {}).get("modelle") or [],
+                                         max_b=float(secrets.get("LOCAL_LLM_MAX_B") or 0) or None)
+                for v in k["vorschlaege"]:
+                    if r.vorschlag_neu({"einsatz": "Lokal (MACO470)", "modell": lokal, "neu": {"slug": v["modell"], "name": v["modell"]},
+                                        "regel": "lokal"}, jetzt.isoformat(timespec="seconds")):
+                        titel, text = mr.lokal_vorschlag_text(lokal, v)
+                        if antraege is not None:
+                            antraege.stellen(titel, text, von="Researcher (Modell-Radar)", kategorie="modell", betroffen="Lokal (MACO470)")
+                        senden(f"🧭 {titel} – Antrag liegt bereit, Probelauf in LUNA-OS → Modell-Radar.")
+                        out["vorschlaege"] += 1
+            except Exception as exc:
+                r.fehler_merken("ollama", f"{exc.__class__.__name__}", jetzt.isoformat(timespec="seconds"))
+    if backoffice is not None:                                  # R4: Probelaeufe altes gegen neues lokales Modell
+        for m in mr.LokalTests(r).tick(backoffice):
+            senden(m)
     items = r.wochenbericht_faellig(jetzt)
     if items is not None:
         offen = len([a for a in (antraege.list("eingereicht") if antraege is not None else []) if a.get("kategorie") == "modell"])
@@ -636,7 +657,8 @@ def _start_radar_loop(ctx, secrets, token, chat_id) -> None:
                 datum = jetzt.strftime("%Y-%m-%d")
                 taeglich = jetzt.hour >= 7 and not ctx.agenda.briefing_gesendet("modell-radar", datum)
                 if (ctx.watch is None or not ctx.watch.store.paused()):
-                    radar_lauf(token, chat_id, secrets, antraege=ctx.antraege, jetzt=jetzt.replace(tzinfo=None), taeglich=taeglich)
+                    radar_lauf(token, chat_id, secrets, antraege=ctx.antraege, jetzt=jetzt.replace(tzinfo=None), taeglich=taeglich,
+                               backoffice=getattr(ctx, "backoffice", None))
                     if taeglich:
                         ctx.agenda.markiere_briefing("modell-radar", datum)
             except Exception as exc:

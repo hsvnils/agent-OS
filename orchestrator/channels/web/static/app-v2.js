@@ -4254,7 +4254,7 @@ async function renderSkills() {
     body = tile("Skill-Radar – was andere bauen (nur Ideen)", (d.radar || []).map(x => `<div class="v2-list-row v2-sk-zeile"><span class="v2-badge ${x.status === "luecke" ? "warn" : x.status === "vorhanden" ? "ok" : "neutral"}">${x.status === "luecke" ? "Lücke" : x.status === "vorhanden" ? "haben wir" : "ohne Bezug"}</span>
         <div class="grow"><a href="${esc(x.url)}" target="_blank" rel="noopener"><b>${esc(x.name)}</b></a> <small class="v2-sub">${x.sterne}★</small><small>${esc(x.kurz)}</small>
         <small class="v2-sub">${(x.abteilungen || []).map(a => `${esc(A[a] || a)}${x.eigener[a] ? " (eigener: " + esc(x.eigener[a]) + ")" : ""}`).join(" · ") || "keiner Abteilung zugeordnet"}</small></div></div>`).join("")
-      || emptyRow("Noch kein Lauf – einmal im Monat ab 08:00."), "w12", `<small class="v2-sub">Übernommen wird nichts – eigene Skills baut die Werkstatt.${d.radar_stand ? " Stand " + esc(zeitKurz(d.radar_stand)) : ""}</small>`);
+      || emptyRow("Noch kein Lauf – einmal im Monat ab 08:00."), "w12", `<span class="v2-sk-kopf"><small class="v2-sub">Übernommen wird nichts – eigene Skills baut die Werkstatt.${d.radar_stand ? " Stand " + esc(zeitKurz(d.radar_stand)) : ""}</small><button class="v2-btn sm" data-act="sk-radar-jetzt">Jetzt prüfen</button></span>`);
   }
   $("#v2-app").innerHTML = secHead("🛠 Skill-Werkstatt", "") + `<div class="v2-chips" style="margin:0 0 12px">${tabsHtml}</div><div class="v2-grid">${body}</div>`;
   const s = $(".v2-sk-ab"); if (s) s.addEventListener("change", () => { SK.ab = s.value; renderSkills(); });
@@ -4270,6 +4270,18 @@ async function skAnsehen(wid) {
 RENDER.modellradar = renderRadar;
 let RADAR_FILTER = "wichtig", RADAR_HERST = "";
 const RADAR_STUFE = { rot: ["err", "🔴 betrifft uns"], gelb: ["warn", "🟡 neu"], grau: ["neutral", "⚪ Archiv"] };
+function radarLokal(L, zahl) {                              // MODELL_RADAR R4: bessere lokale Modelle
+  const u = L.unser || {}, vor = new Set((L.vorschlaege || []).map(v => v.modell)), laeuft = new Set((L.tests || []).filter(t => ["laeuft", "urteil"].includes(t.status)).map(t => t.neu));
+  const zeilen = [...(L.kandidaten || [])].sort((a, b) => (vor.has(b.modell) - vor.has(a.modell)) || ((b.iq ?? -1) - (a.iq ?? -1))).slice(0, 15).map(k => `<tr${vor.has(k.modell) ? ' class="v2-radar-vor"' : ""}>
+    <td><b>${esc(k.modell)}</b>${vor.has(k.modell) ? ' <span class="v2-badge ok">Vorschlag</span>' : ""}<br><small class="v2-sub">${esc(k.kurz)}</small></td>
+    <td class="num">${zahl(k.groesse_b, " Mrd.")}</td><td class="num">${zahl(k.iq)}</td><td><small>${esc(k.aktualisiert)}</small></td>
+    <td>${laeuft.has(k.modell) ? '<span class="v2-badge wartet">🧪 läuft</span>' : `<button class="v2-btn sm" data-act="radar-lokaltest" data-id="${esc(k.modell)}">🧪 Probelauf</button>`}</td></tr>`).join("");
+  const tests = (L.tests || []).map(t => `<div class="v2-kv"><span>${esc(t.neu)} gegen ${esc(t.alt)} <small class="v2-sub">${esc(zeitKurz(t.start))}</small></span><b>${t.status === "fertig" ? `${t.punkte_neu}/${t.max} gegen ${t.punkte_alt}/${t.max}${t.besser ? " ✅ besser" : ""} · ${t.dauer_neu} s / ${t.dauer_alt} s` : t.status === "fehler" ? `⚠️ ${esc(t.grund || "Fehler")}` : t.status === "urteil" ? "⚖️ wird bewertet" : "🧪 läuft (meist nachts)"}</b></div>`).join("");
+  return tile("Lokale Modelle (MACO470)", `<div class="v2-kv"><span>Heute</span><b>${esc(u.modell || "–")} · ${zahl(u.groesse_b, " Mrd.")}${u.iq != null ? " · Qualität " + zahl(u.iq) : ""}</b></div>
+    <small class="v2-sub">Kandidaten: offene Modelle mit Werkzeug-Fähigkeit bis ${zahl(u.grenze_b, " Mrd.")} Parameter (Ollama-Bibliothek${L.stand ? ", Stand " + esc(zeitKurz(L.stand)) : ""}). Qualität nur mit Artificial-Analysis-Schlüssel. Ein Probelauf lädt das Modell auf den MACO470 und vergleicht es nachts an festen Prüffällen – umgestellt wird nur auf deine Entscheidung.</small>
+    ${zeilen ? `<div class="v2-tab-scroll"><table class="v2-table"><thead><tr><th>Modell</th><th class="num">Größe</th><th class="num">Qualität</th><th>Aktualisiert</th><th></th></tr></thead><tbody>${zeilen}</tbody></table></div>` : emptyRow("Noch keine Liste – der Researcher prüft täglich ab 07:00.")}
+    ${tests ? `<h3>Probeläufe</h3>${tests}` : ""}`, "w12");
+}
 async function renderRadar() {
   const d = await jget("/api/modell-radar");
   if (!d) { $("#v2-app").innerHTML = secHead("🧭 Modell-Radar", "") + emptyRow("Nur für Administratoren sichtbar."); return; }
@@ -4294,6 +4306,7 @@ async function renderRadar() {
     ${kpiTile("Vorschläge", String((d.vorschlaege || []).length), null, d.aa_aktiv ? "als Antrag unter Freigaben" : "Artificial Analysis noch ohne Schlüssel")}
     ${tile("Unsere Modelle", `<div class="v2-tab-scroll"><table class="v2-table"><thead><tr><th>Einsatz</th><th>Modell</th><th class="num">Qualität</th><th class="num">Preis/1 Mio.</th><th class="num">Tempo</th><th>Vorschlag</th></tr></thead><tbody>${modelle}</tbody></table></div>
       <small class="v2-sub">${d.aa_aktiv ? `${esc(d.quelle_aa)}${d.aa_stand ? " · Stand " + esc(zeitKurz(d.aa_stand)) : ""} · Qualität = Intelligenz-Index, Preis gemischt (3:1). Gewechselt wird nie automatisch.` : "Für Qualität, Preise und Vorschläge fehlt noch der Gratis-Schlüssel von Artificial Analysis (ARTIFICIALANALYSIS_API_KEY in der NAS-.env)."}</small>`, "w12")}
+    ${d.lokal ? radarLokal(d.lokal, zahl) : ""}
     ${tile("Neuigkeiten der Hersteller", `<div class="v2-chips" style="margin-bottom:8px">${chips}${herst}</div>` + (sicht.slice(0, 80).map(zeile).join("") || emptyRow(n.length ? "Nichts in dieser Auswahl." : "Noch kein Lauf – der Researcher prüft täglich ab 07:00.")), "w12")}
     ${tile("Quellen", (d.quellen || []).map(q => `<div class="v2-kv"><span>${esc(q.hersteller)} <small class="v2-sub">${esc(q.id)} · ${esc(q.art)}</small></span><b>${q.fehler ? `<span style="color:var(--v2-red)">⚠️ ${esc(q.fehler)}</span>` : q.ts ? "✅ " + esc(zeitKurz(q.ts)) : "–"}</b></div>`).join(""), "w12")}
   </div>`;
@@ -4620,6 +4633,12 @@ async function handleAct(act, el) {
     case "vs-neu": return vsDialog(id || "", val === "nachfassen");
     case "nw-filter": NW_FILTER = val; return renderNetzwerk();
     case "radar-filter": RADAR_FILTER = val; return renderRadar();
+    case "radar-lokaltest": { if (!confirm(`Probelauf mit ${id} starten?\n\nDer MACO470 lädt das Modell (einige GB) und vergleicht es nachts mit dem heutigen. Umgestellt wird nichts automatisch.`)) return;
+      const r = await jpost("/api/modell-radar/lokal-test", { modell: id }); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return renderRadar(); }
+    case "sk-radar-jetzt": { const b = el; b.disabled = true; b.textContent = "Prüfe …"; const r = await jpost("/api/skills/radar", {});
+      if (!r || r.ok === false) { b.disabled = false; b.textContent = "Jetzt prüfen"; return alert((r && r.hinweis) || "Fehler."); }
+      if (r.schluessel_ungueltig) alert("Hinweis: Der GitHub-Schlüssel (GITHUB_TOKEN) auf der NAS ist ungültig – geprüft wurde ohne Schlüssel. Bitte erneuern oder entfernen.");
+      return renderSkills(); }
     case "sk-tab": SK.tab = val; return renderSkills();
     case "sk-ansehen": return skAnsehen(id);
     case "sk-neu": { const r = await jpost("/api/skills/werkstatt", { abteilung: $("#sk-ab").value, titel: $("#sk-titel").value.trim(), warum: $("#sk-warum").value.trim(), gleich_bauen: true });

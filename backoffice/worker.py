@@ -156,6 +156,20 @@ class Ollama:
             raise RuntimeError("Ollama-Antwort abgebrochen (leere Huelle, done=false) -- Modell entladen/neu gestartet?")
         return re.sub(r"<think>.*?</think>\s*", "", (d.get("message") or {}).get("content", ""), flags=re.S).strip()
 
+    def mit_modell(self, name: str) -> "Ollama":
+        """MODELL_RADAR R4: dieselbe Verbindung mit einem anderen Modell -- fehlt es, wird es einmalig geladen (Download)."""
+        if not re.fullmatch(r"[a-z0-9._-]+(:[a-z0-9._-]+)?", name or ""):
+            raise ValueError("ungueltiger Modellname")
+        try:
+            with urllib.request.urlopen(self.url + "/api/tags", timeout=20) as r:
+                vorhanden = {m.get("name") for m in json.load(r).get("models", [])}
+        except Exception:
+            vorhanden = set()
+        if name not in vorhanden and f"{name}:latest" not in vorhanden:
+            _log(f"Lade Modell {name} fuer einen Probelauf (einmalig) ...")
+            self._post("/api/pull", {"model": name, "stream": False}, timeout=7200)
+        return Ollama(self.url, name, kontext=self.kontext, timeout=self.timeout)
+
     def entladen(self) -> None:
         try:
             self._post("/api/generate", {"model": self.modell, "keep_alive": 0}, timeout=60)
@@ -186,6 +200,11 @@ def gemini_gegenlesen(env: dict, auftrag: dict, entwurf: str) -> str:
 
 def verarbeite(auftrag: dict, ollama, gegenleser) -> dict:
     """Einen Auftrag erledigen -> Nutzdaten fuer /api/backoffice/ergebnis. Wirft nie."""
+    try:
+        if auftrag.get("lokal_modell"):                      # MODELL_RADAR R4: Probelauf mit anderem lokalen Modell
+            ollama = ollama.mit_modell(auftrag["lokal_modell"])   # Download vor der Zeitmessung
+    except Exception as exc:
+        return {"id": auftrag["id"], "ok": False, "grund": f"Modell nicht verfuegbar: {type(exc).__name__}: {str(exc)[:160]}"}
     t = time.time()
     try:
         text, probleme = "", ["kein Versuch"]

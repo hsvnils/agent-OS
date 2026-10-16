@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-16 17:15] — Claude Code
+- **Was:** MODELL_RADAR R4 gebaut: Kandidaten fuer das lokale Modell aus der Ollama-Bibliothek (Werkzeuge, passt auf den MACO470), Qualitaet aus Artificial Analysis, Vorschlag als Antrag; Probelauf altes gegen neues Modell ueber das Backoffice (neues Feld `lokal_modell`, Worker laedt das Modell einmalig), verdeckte Bewertung, Ergebnis per Telegram und in LUNA-OS (Kachel „Lokale Modelle“). BF-71: ungueltiger GITHUB_TOKEN auf der NAS -> GitHub-Abfragen fallen auf den oeffentlichen Zugang zurueck, Skill-Radar mit Knopf „Jetzt pruefen“ und erneutem Versuch. Live-Pruefung Skill-Werkstatt: v132, 53 Skills. Cache app-v2.js v133, style-v2.css v70.
+- **Warum:** CEO 2026-10-16: Go fuer R4 (bessere lokale Modelle); Fehler beim ersten Skill-Radar-Lauf gefunden.
+- **Betroffen:** `orchestrator/core/modell_radar.py`, `auftraege.py`, `backoffice/worker.py`, `orchestrator/governance/github_watch.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, Tests (`test_lokale_modelle.py` neu, `test_skill_werkstatt.py`), `orchestrator/.env.example`, `deploy/backup-from-nas.sh`, `MODELL_RADAR_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-16 09:05] — Claude Code
 - **Was:** SKILL_WERKSTATT S1-S4 gebaut: `core/skill_werkstatt.py` (Skill-Radar ueber GitHub-Themen -- nur Ideen, nichts uebernommen; Luecken aus Fachagent-Nutzung, Erfahrungen und Radar; Werkstatt mit Entwurf + Pruffaellen ueber das Backoffice, Probelauf mit/ohne Skill, verdeckte Bewertung, Aktivierung nur nach CEO-Freigabe nach `skills_eigen/`; Verbesserung ab 3 Rueckmeldungen, Rueckweg), `dept_skills` laedt eigene Werkstatt-Skills, LUNA-Werkzeug `skill_rueckmeldung`, Bot-Lauf, LUNA-OS LUNA & System -> 🛠 Skill-Werkstatt. Skill-Standard + Register: kein Import fremder Skills mehr (awesome-agent-skills verworfen). Modell-Radar: lokales Modell aus dem Cloud-Preisvergleich genommen, Etappe R4 (bessere lokale Modelle) geplant. Cache app-v2.js v132, style-v2.css v69.
 - **Warum:** CEO 2026-10-16: welche Skills Agenten nutzen beobachten, aber nur eigene Skills bauen und trainieren -- Go S1-S4; Frage, ob das Radar bessere lokale Modelle findet.

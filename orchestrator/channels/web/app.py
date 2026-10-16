@@ -4401,9 +4401,49 @@ def modell_radar_uebersicht(tage: int = 60):
                for q in mr.QUELLEN] + ([{"id": "artificialanalysis", "hersteller": "Artificial Analysis", "art": "api"}
                                        | ((st.get("quellen") or {}).get("artificialanalysis") or {}) | {"ts": (r.aa() or {}).get("ts", "")}]
                                       if sec.get("ARTIFICIALANALYSIS_API_KEY") else [])
-    return {"news": news, "modelle": tabelle, "quellen": quellen, "aa_aktiv": bool(sec.get("ARTIFICIALANALYSIS_API_KEY")),
+    lokal_modell = next((u["modell"] for u in unsere if u["einsatz"].startswith("Lokal")), "")
+    oll = r._lesen("ollama.json")
+    lokal = (mr.lokale_kandidaten(lokal_modell, oll.get("liste") or [], aa, max_b=float(sec.get("LOCAL_LLM_MAX_B") or 0) or None)
+             if lokal_modell else None)
+    if lokal is not None:
+        lokal |= {"stand": oll.get("ts", ""), "tests": sorted(({k: v for k, v in t.items() if k != "jobs"} for t in mr.LokalTests(r).alle().values()),
+                                                         key=lambda t: t["start"], reverse=True)[:10]}
+    return {"news": news, "modelle": tabelle, "quellen": quellen, "aa_aktiv": bool(sec.get("ARTIFICIALANALYSIS_API_KEY")), "lokal": lokal,
             "aa_stand": (r.aa() or {}).get("ts", ""), "vorschlaege": list(r.vorschlaege_gemerkt().values()),
             "hersteller": mr.HERSTELLER, "quelle_aa": mr.AA_QUELLE}
+
+
+@app.post("/api/modell-radar/lokal-test")
+async def modell_radar_lokal_test(request: Request):
+    """R4: Probelauf altes gegen neues lokales Modell ueber das Backoffice (Klick des CEO = Freigabe fuer den Download)."""
+    body = await _json(request)
+    from ...core import modell_radar as mr
+    from ..telegram.bot import _load_config
+    def tun():
+        unsere = mr.genutzte_modelle(_load_config(), _google_secrets())
+        alt = next((u["modell"] for u in unsere if u["einsatz"].startswith("Lokal")), "")
+        if not alt:
+            raise ValueError("Kein lokales Modell eingerichtet (LOCAL_LLM_MODEL).")
+        t = mr.LokalTests(mr.Radar(ROOT / "radar")).starten(_backoffice_store(), alt=alt, neu=str(body.get("modell") or "").strip(),
+                                                            faelle=mr.pruffaelle_fuer_modelltest(ROOT / "skills_eigen"),
+                                                            jetzt=jetzt_iso()[:19])
+        return {"test": {k: v for k, v in t.items() if k != "jobs"}}
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/skills/radar")
+def skills_radar_jetzt():
+    """Skill-Radar sofort pruefen (statt bis zum naechsten Monat zu warten) -- nur Metadaten, nichts uebernommen."""
+    from ...core.skill_werkstatt import GITHUB_THEMEN
+    from ...governance.github_watch import GitHubWatch
+    def tun():
+        gh = GitHubWatch(_google_secrets())
+        repos = [r for t in GITHUB_THEMEN for r in gh.trending(t, min_stars=20, aktiv_seit_tage=365, max_results=30)]
+        if not repos:
+            raise ValueError("GitHub hat nichts geliefert (Limit erreicht?) -- bitte spaeter erneut.")
+        neu = _werkstatt().radar_merken(repos, jetzt_iso()[:19])
+        return {"gefunden": len(repos), "neu": len(neu), "schluessel_ungueltig": gh.schluessel_ungueltig}
+    return _kunden_aktion(tun)
 
 
 # -- Netzwerk-Wache (NETZWERK_WACHE N1-N3): Uebersicht, Geraete benennen -- abgefragt wird nur vom Bot ----------------

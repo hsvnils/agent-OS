@@ -60,6 +60,7 @@ FILES=(
   radar/news.json                # MODELL_RADAR: Hersteller-Beitraege
   radar/stand.json               # MODELL_RADAR: Quellenstand, Wochenbericht
   radar/vorschlaege.json         # MODELL_RADAR: schon gemachte Vorschlaege
+  radar/lokal_tests.json         # MODELL_RADAR R4: Probelaeufe lokaler Modelle
   skills_werkstatt/werkstatt.json      # SKILL_WERKSTATT: Ideen, Entwuerfe, Ergebnisse
   skills_werkstatt/rueckmeldungen.json # SKILL_WERKSTATT: Rueckmeldungen je Skill
   skills_werkstatt/radar.json          # SKILL_WERKSTATT: Skill-Radar (nur Ideen)
