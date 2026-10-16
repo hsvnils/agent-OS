@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-16 08:52] — Claude Code
+- **Was:** Roadmap `SKILL_WERKSTATT_ROADMAP.md` angelegt (geplant): S1 Skill-Radar (nur Ideen, nichts uebernehmen), S2 Luecken aus eigener Arbeit, S3 Werkstatt mit Pruffaellen und Probelauf mit/ohne Skill, S4 Verbesserung aus Rueckmeldungen; Bestand 54 eigene Skills erfasst.
+- **Warum:** CEO 2026-10-16: auf dem Laufenden bleiben, welche Agenten-Skills genutzt werden, aber nur eigene Skills bauen und trainieren.
+- **Betroffen:** `SKILL_WERKSTATT_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-13 21:36] — Claude Code
 - **Was:** Deploy Modell-Radar geprueft: NAS liefert app-v2.js v131/style-v2.css v68 (🧭 Modell-Radar), `/api/modell-radar` zeigt 8 genutzte Modelle (u. a. lokal qwen3:30b-a3b); erster Bot-Lauf um 21:35 hat alle 17 Quellen gelesen (inkl. xAI/DeepSeek ueber Brave), keine Fehler, alles als Bestand uebernommen (keine Meldungsflut). Artificial Analysis noch ohne Schluessel.
 - **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
