@@ -40,6 +40,8 @@ einwilligungen/
 akquise/
 netzwerk/
 radar/
+skills_werkstatt/
+skills_eigen/
 
 # Live-Voice: lokale Stimmauswahl (Nutzerpraeferenz, kein Versionierungsbedarf)
 orchestrator/channels/voice/selected_voice.json

@@ -48,10 +48,11 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
                          "firma", "firmen", "pipeline", "marke", "partner", "sponsor", "radar", "influencer",
                          "beitrag", "beitraege", "posting", "to-do", "todo"],
     },
-    "akquise": {                                         # PARTNERLISTE P2: eigene kleine Gruppe (Token-Budget)
-        "werkzeuge": ["akquise_idee_merken"],
+    "akquise": {                                         # PARTNERLISTE P2 + SKILL_WERKSTATT S4: kleine Gruppe (Token-Budget)
+        "werkzeuge": ["akquise_idee_merken", "skill_rueckmeldung"],
         "stichwoerter": ["akquise", "potenziell", "moeglichen partner", "möglichen partner", "merk dir", "merke dir",
-                         "partner-idee", "kunden-idee", "firmen-idee", "ansprechen koennten", "ansprechen könnten"],
+                         "partner-idee", "kunden-idee", "firmen-idee", "ansprechen koennten", "ansprechen könnten",
+                         "skill", "rueckmeldung zum", "rückmeldung zum", "feedback zum"],
     },
     "mail": {
         "werkzeuge": ["mail_entwurf", "mail_lesen", "mail_markieren", "mail_senden", "mail_suchen", "posteingang"],

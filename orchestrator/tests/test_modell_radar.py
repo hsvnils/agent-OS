@@ -101,6 +101,8 @@ class TestLauf(unittest.TestCase):
         self.assertIsNone(mr.aa_finden("qwen3:14b", aa))
         v = mr.vorschlaege(UNSERE, aa)
         self.assertEqual([(x["regel"], x["neu"]["name"]) for x in v], [("guenstiger", "Billig Flash"), ("besser", "Klug Pro")])   # „Fremd“ nie
+        lokal = [{"einsatz": "Lokal (MACO470)", "modell": "gemini-2.5-flash"}]                  # lokal nie gegen Cloud-Preise
+        self.assertEqual(mr.vorschlaege(lokal, aa), [])
         k = mr.kostenvoranschlag(v[0], {"in": 2_000_000, "out": 1_000_000})
         self.assertIn("ca. 3.50 $ → 1.40 $ im Monat", k)
         titel, text = mr.vorschlag_text(v[0], None)

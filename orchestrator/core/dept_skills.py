@@ -26,11 +26,15 @@ def _body(text: str) -> str:
 def lade_dept_skills(key: str, repo) -> tuple[str, list[dict]]:
     """Laedt die gegateten Skills der Abteilung `<key>` aus `skills/<key>/`. -> (prompt_block, meta)."""
     basis = Path(repo) / "skills" / key
+    eigen = Path(repo) / "skills_eigen" / key          # SKILL_WERKSTATT: freigegebene eigene Skills (NAS, nicht im Git)
     meta: list[dict] = []
     bloecke: list[str] = []
-    if not basis.is_dir():
+    ordner = {p.name: p for p in sorted(basis.iterdir()) if p.is_dir()} if basis.is_dir() else {}
+    if eigen.is_dir():
+        ordner |= {p.name: p for p in sorted(eigen.iterdir()) if p.is_dir()}   # gleicher Name -> Werkstatt-Fassung gilt
+    if not ordner:
         return ("", meta)
-    for d in sorted(p for p in basis.iterdir() if p.is_dir()):
+    for d in (ordner[k] for k in sorted(ordner)):
         erg = pruefe_skill(d)
         md = d / "SKILL.md"
         if erg.blockiert or not md.exists():          # abgelehnt (hoch-Fund) oder kein SKILL.md -> nicht laden

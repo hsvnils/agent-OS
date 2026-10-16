@@ -81,6 +81,10 @@ Aenderungen nimmt **nur der Head of Agents auf ausdrueckliche CEO-Anweisung mit 
 
 ## 3 Import-Pipeline mit Security-Gate (Pflicht fuer Fremd-Skills)
 
+> **Seit 2026-10-16 (CEO):** Fremde Skills werden **nicht** importiert -- auch nicht ueber das Gate. Von aussen kommen
+> nur Ideen (Skill-Radar); jeder Skill wird selbst geschrieben (`lizenz: intern`). Die Pipeline unten bleibt als
+> Pruefung fuer **eigene** Skills (auch jeden Entwurf der Skill-Werkstatt) bestehen.
+
 **Jeder** externe Skill durchlaeuft vor der Uebernahme das statische Gate `orchestrator/core/skill_gate.py`
 (`pruefe_skill`) — es **fuehrt den Skill NIE aus**:
 
@@ -100,6 +104,17 @@ Aenderungen nimmt **nur der Head of Agents auf ausdrueckliche CEO-Anweisung mit 
 
 Ergebnisse sind als **SARIF-2.1.0** exportierbar (`GateErgebnis.sarif`) und ueber das HoA-Tool
 `skill_pruefen(pfad, sarif?)` abrufbar.
+
+## 3a Skill-Werkstatt (eigene Skills, SKILL_WERKSTATT S1-S4)
+
+- **Entwurf:** schreibt LUNA ueber das Backoffice (lokales Modell) -- Format wie oben, `lizenz: intern` Pflicht, keine
+  Skripte; dazu 2-5 **Pruffaelle** (`eingabe` + pruefbare `kriterien`).
+- **Probelauf:** jede Pruffall-Aufgabe einmal **mit** und einmal **ohne** Skill (bei Verbesserungen: neue gegen alte
+  Fassung), verdeckte Bewertung je Kriterium. Nur wenn der Skill besser abschneidet -> Freigabe durch den CEO.
+- **Ablage:** aktive Werkstatt-Skills in `skills_eigen/<abteilung>/<name>/SKILL.md` (+ `pruffaelle.json`, `versionen/`),
+  nur auf der NAS; `core/dept_skills.py` laedt sie zusaetzlich -- gleicher Ordnername ersetzt den Repo-Skill.
+- **Lernen:** Rueckmeldungen (👍/👎 + Korrektur) je Skill; ab 3 neuen (mind. eine Kritik) neue Version mit Probelauf,
+  Freigabe, Rueckweg auf die vorige Fassung jederzeit.
 
 ## 4 Governance / GATE
 

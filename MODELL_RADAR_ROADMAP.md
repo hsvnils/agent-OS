@@ -86,6 +86,19 @@ Hersteller nicht verpassen.“
 - Tests `test_modell_radar.py` (6, Gegenproben rot: Bestand, keine Verwechslung, Vorschlag einmal, nur bekannte Hersteller,
   Admin-Recht); Browser Rechner/iPad/iPhone mit echten Probedaten.
 
+## Etappe R4: Bessere lokale Modelle finden (geplant, Frage CEO 2026-10-16)
+
+- Status: geplant
+- Befund: R2 vergleicht nur Cloud-Modelle ueber Preis/Qualitaet; das lokale Modell auf dem MACO470 (heute `qwen3:30b-a3b`)
+  wird dort seit 2026-10-16 bewusst **ausgenommen** (Preisvergleich ergibt fuer ein kostenloses, lokales Modell keinen
+  Sinn). Neue lokale Modelle kommen bisher nur als Nachricht (Qwen, DeepSeek, Mistral, Ollama-Releases).
+- Ziel / Scope: Kandidaten nur **offene Modelle, die auf dem MACO470 laufen** (Groessen-Grenze aus dem heutigen Modell bzw.
+  freiem Arbeitsspeicher; Verfuegbarkeit in der Ollama-Bibliothek), Qualitaet laut Artificial Analysis; Vorschlag
+  „lokales Modell testen“ als Antrag. Nach Freigabe: Probelauf auf dem MACO470 mit den Pruffaellen der Skill-Werkstatt
+  (altes gegen neues Modell, nachts), Ergebnis + Empfehlung; Umstellen bleibt CEO-Entscheidung.
+- Gate: Tests mit aufgezeichneten Daten; Download eines neuen Modells nur nach Freigabe (Speicherplatz, Laufzeit).
+- Aufwand: mittel.
+
 ## Nicht-Scope
 
 Kein automatischer Modellwechsel, keine kostenpflichtigen Datenquellen (kommerzielle API von Artificial Analysis), keine

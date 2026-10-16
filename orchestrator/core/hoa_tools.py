@@ -59,6 +59,9 @@ def tool_specs() -> list[dict]:
               {"aufgabe": _str("Aufgabe/Frage, inkl. noetiger Zahlen/Regeln als Kontext."),
                "an": _str("Kuerzel des zustaendigen Fachagenten.")},
               ["aufgabe", "an"]),
+        _spec("skill_rueckmeldung", "Rueckmeldung des CEO zu einem Skill/Fachagenten merken (Skill-Werkstatt lernt daraus).",
+              {"skill": _str("abteilung/skill-name, z. B. cro/angebot-texten"), "gut": _bool("Lob ja/nein"),
+               "text": _str("Korrektur")}, ["skill", "gut"]),
         _spec("akquise_idee_merken", "Firma als Akquise-Idee merken (Kunde/Partner).",
               {"name": _str("Firma"), "art": _str("kunde|partner"), "notiz": _str("Warum"), "ort": _str("Ort")},
               ["name"]),
@@ -524,6 +527,18 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
 
     if name == "frage_finance":
         return {"finance": finance_text(ctx.finance_dir, sec)}
+
+    if name == "skill_rueckmeldung":                  # SKILL_WERKSTATT S4: Rueckmeldung im Chat
+        from pathlib import Path as _P
+        from .skill_werkstatt import Werkstatt
+        w = Werkstatt(_P(ctx.repo_root) / "skills_werkstatt", _P(ctx.repo_root) / "skills_eigen", _P(ctx.repo_root))
+        try:
+            r = w.rueckmeldung(str(args.get("skill") or ""), gut=bool(args.get("gut")), text=str(args.get("text") or ""),
+                               von="CEO (Chat)")
+        except KeyError:
+            return {"ok": False, "hinweis": "Skill nicht gefunden.",
+                    "skills": [f"{s['abteilung']}/{s['name']}" for s in w.skills()][:60]}
+        return {"ok": True, **r, "hinweis": "Ab 3 Rueckmeldungen baut die Werkstatt eine verbesserte Fassung (Freigabe in LUNA-OS)."}
 
     if name == "akquise_idee_merken":                 # PARTNERLISTE P2: freie Saetze im Chat
         from pathlib import Path as _P

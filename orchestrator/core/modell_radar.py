@@ -231,6 +231,8 @@ def vorschlaege(unsere: list[dict], aa: list[dict], *, hersteller: list[str] | N
     out = []
     je_modell: dict[str, list[str]] = {}                          # ein Vorschlag je Modell, Einsaetze zusammengefasst
     for u in unsere:
+        if u["einsatz"].startswith("Lokal"):                       # lokales Modell: kostet nichts, Daten bleiben im Haus --
+            continue                                               # Preisvergleich mit Cloud-Modellen waere sinnlos
         je_modell.setdefault(u["modell"], []).append(u["einsatz"])
     for modell, einsaetze in je_modell.items():
         u = {"modell": modell, "einsatz": ", ".join(dict.fromkeys(einsaetze))}

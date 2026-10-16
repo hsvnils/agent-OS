@@ -465,6 +465,92 @@ def _start_security_loop(ctx, secrets) -> None:
     threading.Thread(target=loop, daemon=True, name="security-loop").start()
 
 
+def _skill_werkstatt():
+    from ...core.skill_werkstatt import Werkstatt
+    return Werkstatt(ROOT / "skills_werkstatt", ROOT / "skills_eigen", ROOT)
+
+
+def skill_lauf(token, chat_id, secrets, *, backoffice, jetzt=None, taeglich: bool = False, monatlich: bool = False,
+               github=None, nutzung=None, trajektorien=None) -> dict:
+    """SKILL_WERKSTATT: Werkstatt-Schritte (immer), Luecken (`taeglich`), Skill-Radar (`monatlich`). Meldet nur, was eine
+    Entscheidung braucht. Fremde Skills werden nie geladen -- nur Name/Kurzbeschreibung/Sterne."""
+    from datetime import datetime as _dt, timedelta as _td
+    from ...core import skill_werkstatt as sw
+    jetzt = jetzt or _dt.now()
+    ts = jetzt.isoformat(timespec="seconds")
+    w = _skill_werkstatt()
+    senden = (lambda text: _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(text)})) if chat_id else (lambda t: None)
+    out = {"radar": 0, "ideen": 0, "meldungen": 0, "verbesserungen": 0}
+    if monatlich:
+        if github is None:
+            from ...governance.github_watch import GitHubWatch
+            github = GitHubWatch(secrets)
+        repos = []
+        for thema in sw.GITHUB_THEMEN:
+            repos += github.trending(thema, min_stars=20, aktiv_seit_tage=365, max_results=30)
+        neu = w.radar_merken(repos, ts)
+        out["radar"] = len(neu)
+        if neu:
+            senden(sw.radar_bericht(neu))
+    if taeglich:
+        if nutzung is None:
+            from ...core.agenten_profil import AgentenNutzung
+            nutzung = AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl").zaehlen(jetzt - _td(days=30))
+        if trajektorien is None:
+            from ...core.trajektorien import TrajektorienStore
+            trajektorien = TrajektorienStore(ROOT / "trajektorien" / "log.jsonl").list(500)
+        ideen = sw.luecken(w, nutzung=nutzung, trajektorien=trajektorien, jetzt=ts)
+        out["ideen"] = len(ideen)
+        if ideen:
+            senden(f"🛠 {len(ideen)} neue Skill-Idee(n) in der Werkstatt: " + "; ".join(f"{sw.ABTEILUNGEN[i['abteilung']]} – {i['titel']}"
+                   for i in ideen[:4]) + ". In LUNA-OS → Skill-Werkstatt mit „Entwurf bauen“ starten.")
+    if backoffice is not None:
+        for e in sw.verbesserungen_anstossen(w, jetzt=ts):        # S4: Verbesserungen laufen ohne Klick an (kostenlos, lokal)
+            sw.entwurf_starten(w, backoffice, e["id"])
+            out["verbesserungen"] += 1
+        for m in sw.tick(w, backoffice, jetzt=ts):
+            senden(m)
+            out["meldungen"] += 1
+    return out
+
+
+def _start_skill_loop(ctx, secrets, token, chat_id) -> None:
+    """SKILL_WERKSTATT: alle 10 min Werkstatt-Schritte, taeglich ab 08:00 Luecken, monatlich das Skill-Radar.
+    Aus mit SKILL_WERKSTATT=0; Notbremse gilt."""
+    import threading
+    import time
+    from datetime import datetime
+    if str(secrets.get("SKILL_WERKSTATT", "1")).strip().lower() in ("0", "false", "aus", "off", "nein") or ctx.agenda is None:
+        return
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("Europe/Berlin")
+    except Exception:
+        tz = None
+
+    def loop():
+        time.sleep(240)
+        while True:
+            try:
+                jetzt = datetime.now(tz) if tz else datetime.now()
+                datum = jetzt.strftime("%Y-%m-%d")
+                taeglich = jetzt.hour >= 8 and not ctx.agenda.briefing_gesendet("skill-luecken", datum)
+                monat = jetzt.strftime("%Y-%m")
+                monatlich = jetzt.hour >= 8 and not ctx.agenda.briefing_gesendet("skill-radar", monat)
+                if ctx.watch is None or not ctx.watch.store.paused():
+                    skill_lauf(token, chat_id, secrets, backoffice=getattr(ctx, "backoffice", None),
+                               jetzt=jetzt.replace(tzinfo=None), taeglich=taeglich, monatlich=monatlich)
+                    if taeglich:
+                        ctx.agenda.markiere_briefing("skill-luecken", datum)
+                    if monatlich:
+                        ctx.agenda.markiere_briefing("skill-radar", monat)
+            except Exception as exc:
+                print(f"[skills] Fehler: {exc.__class__.__name__}: {exc}", flush=True)
+            time.sleep(600)
+
+    threading.Thread(target=loop, daemon=True, name="skill-loop").start()
+
+
 def _modell_radar():
     from ...core.modell_radar import Radar
     return Radar(ROOT / "radar")
@@ -1904,6 +1990,7 @@ def main() -> None:
     _start_security_loop(ctx, secrets)  # Phase 21: nur aktiv mit SECURITY_AUDIT_ENABLED=1
     _start_netzwerk_loop(ctx, secrets, token, allowed)   # NETZWERK_WACHE: nur aktiv mit NETZWERK_WACHE=1
     _start_radar_loop(ctx, secrets, token, allowed)      # MODELL_RADAR: an (aus mit MODELL_RADAR=0)
+    _start_skill_loop(ctx, secrets, token, allowed)      # SKILL_WERKSTATT: an (aus mit SKILL_WERKSTATT=0)
     if secrets.get("SECURITY_AUDIT_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Security-Audit-Loop aktiv (taeglich 04:00, regelbasiert, L1-Meldung).", flush=True)
     _start_buchhaltung_loop(ctx)

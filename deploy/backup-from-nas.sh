@@ -60,6 +60,9 @@ FILES=(
   radar/news.json                # MODELL_RADAR: Hersteller-Beitraege
   radar/stand.json               # MODELL_RADAR: Quellenstand, Wochenbericht
   radar/vorschlaege.json         # MODELL_RADAR: schon gemachte Vorschlaege
+  skills_werkstatt/werkstatt.json      # SKILL_WERKSTATT: Ideen, Entwuerfe, Ergebnisse
+  skills_werkstatt/rueckmeldungen.json # SKILL_WERKSTATT: Rueckmeldungen je Skill
+  skills_werkstatt/radar.json          # SKILL_WERKSTATT: Skill-Radar (nur Ideen)
   orchestrator/state/luna_os_passkeys.json # LUNA-OS-Login: oeffentliche Passkey-Schluessel (Face ID)
 )
 
@@ -78,6 +81,9 @@ ssh -n -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH} && [ -d buchhaltung/belege ] 
 BELEGE=$(find "$DEST/buchhaltung/belege" -type f 2>/dev/null | wc -l | tr -d ' ')
 # Einwilligungen in Aufnahmen (EINWILLIGUNG_AUFNAHMEN E2): unterschriebene PDFs je Person -- nie geloescht, nur NAS + Backup
 ssh -n -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH} && [ -d einwilligungen/pdf ] && tar czf - einwilligungen/pdf 2>/dev/null" \
+  | tar xzf - -C "$DEST" 2>/dev/null || true
+# SKILL_WERKSTATT: freigegebene eigene Skills samt Versionen (nur NAS)
+ssh -n -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH} && [ -d skills_eigen ] && tar czf - skills_eigen 2>/dev/null" \
   | tar xzf - -C "$DEST" 2>/dev/null || true
 
 FILES_OK=$(find "$DEST" -type f -name '*.jsonl' 2>/dev/null | wc -l | tr -d ' ')

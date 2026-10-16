@@ -1188,3 +1188,10 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-radar-zeile a { color: var(--v2-fg); text-decoration: none; overflow-wrap: anywhere; } .v2-radar-zeile a:hover b { text-decoration: underline; }
 .v2-radar-anriss { color: var(--v2-muted); }
 .v2-radar-herst { width: auto; min-width: 160px; }
+/* SKILL_WERKSTATT */
+.v2-sk-zeile { align-items: flex-start; flex-wrap: wrap; }
+.v2-sk-zeile .grow { min-width: 200px; display: flex; flex-direction: column; gap: 2px; }
+.v2-sk-zeile a { color: var(--v2-fg); text-decoration: none; overflow-wrap: anywhere; }
+.v2-sk-akt { display: flex; gap: 6px; flex-wrap: wrap; } .v2-sk-ergebnis { color: var(--v2-accent); }
+.v2-sk-md { white-space: pre-wrap; font-size: 13px; background: var(--v2-bg1); border: 1px solid var(--v2-line-soft); border-radius: 12px; padding: 10px; max-height: 50vh; overflow: auto; }
+@media (max-width: 640px) { .v2-sk-zeile .v2-sk-akt { width: 100%; } .v2-sk-akt .v2-btn { min-height: 36px; min-width: 40px; } }

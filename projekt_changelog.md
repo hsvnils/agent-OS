@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-16 09:05] — Claude Code
+- **Was:** SKILL_WERKSTATT S1-S4 gebaut: `core/skill_werkstatt.py` (Skill-Radar ueber GitHub-Themen -- nur Ideen, nichts uebernommen; Luecken aus Fachagent-Nutzung, Erfahrungen und Radar; Werkstatt mit Entwurf + Pruffaellen ueber das Backoffice, Probelauf mit/ohne Skill, verdeckte Bewertung, Aktivierung nur nach CEO-Freigabe nach `skills_eigen/`; Verbesserung ab 3 Rueckmeldungen, Rueckweg), `dept_skills` laedt eigene Werkstatt-Skills, LUNA-Werkzeug `skill_rueckmeldung`, Bot-Lauf, LUNA-OS LUNA & System -> 🛠 Skill-Werkstatt. Skill-Standard + Register: kein Import fremder Skills mehr (awesome-agent-skills verworfen). Modell-Radar: lokales Modell aus dem Cloud-Preisvergleich genommen, Etappe R4 (bessere lokale Modelle) geplant. Cache app-v2.js v132, style-v2.css v69.
+- **Warum:** CEO 2026-10-16: welche Skills Agenten nutzen beobachten, aber nur eigene Skills bauen und trainieren -- Go S1-S4; Frage, ob das Radar bessere lokale Modelle findet.
+- **Betroffen:** `orchestrator/core/skill_werkstatt.py` (neu), `dept_skills.py`, `modell_radar.py`, `hoa_tools.py`, `werkzeugauswahl.py`, `team_auth.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, Tests (`test_skill_werkstatt.py` neu, `test_modell_radar.py`), `governance/skill-standard.md`, `orchestrator/.env.example`, `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `.gitignore`, `SKILL_WERKSTATT_ROADMAP.md`, `MODELL_RADAR_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-16 08:52] — Claude Code
 - **Was:** Roadmap `SKILL_WERKSTATT_ROADMAP.md` angelegt (geplant): S1 Skill-Radar (nur Ideen, nichts uebernehmen), S2 Luecken aus eigener Arbeit, S3 Werkstatt mit Pruffaellen und Probelauf mit/ohne Skill, S4 Verbesserung aus Rueckmeldungen; Bestand 54 eigene Skills erfasst.
 - **Warum:** CEO 2026-10-16: auf dem Laufenden bleiben, welche Agenten-Skills genutzt werden, aber nur eigene Skills bauen und trainieren.

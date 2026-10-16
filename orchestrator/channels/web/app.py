@@ -4295,6 +4295,89 @@ def _ideen():
     return IdeenStore(ROOT / "akquise")
 
 
+# -- Skill-Werkstatt (SKILL_WERKSTATT S1-S4): Anzeige, Entwurf starten, Freigabe, Rueckmeldungen ---------------------------
+def _werkstatt():
+    from ...core.skill_werkstatt import Werkstatt
+    return Werkstatt(ROOT / "skills_werkstatt", ROOT / "skills_eigen", ROOT)
+
+
+def _backoffice_store():
+    from ...core.auftraege import AuftragStore
+    return AuftragStore(ROOT / "backoffice" / "log.jsonl")
+
+
+@app.get("/api/skills")
+def skills_uebersicht():
+    from ...core.skill_werkstatt import ABTEILUNGEN
+    w = _werkstatt()
+    rm = w.rueckmeldungen()
+    skills = [s | {"rueckmeldungen": len(rm.get(f"{s['abteilung']}/{s['name']}", [])),
+                   "offen": len([r for r in rm.get(f"{s['abteilung']}/{s['name']}", []) if not r.get("verarbeitet")]),
+                   "zurueck_moeglich": (ROOT / "skills_eigen" / s["abteilung"] / s["ordner"] / "SKILL.md").exists()}
+              for s in w.skills()]
+    eintraege = sorted(w.eintraege().values(), key=lambda e: e["verlauf"][-1]["ts"], reverse=True)
+    ideen = sorted((w.radar().get("ideen") or {}).values(), key=lambda x: -x["sterne"])[:80]
+    return {"skills": skills, "werkstatt": [{k: v for k, v in e.items() if k not in ("aufgabe", "jobs")} for e in eintraege],
+            "radar": ideen, "radar_stand": w.radar().get("ts", ""), "abteilungen": ABTEILUNGEN}
+
+
+@app.post("/api/skills/werkstatt")
+async def skills_idee(request: Request):
+    body = await _json(request)
+    from ...core.skill_werkstatt import entwurf_starten
+    def tun():
+        e = _werkstatt().idee(abteilung=str(body.get("abteilung") or ""), titel=str(body.get("titel") or "").strip(),
+                              warum=str(body.get("warum") or "").strip() or "Wunsch des CEO", quelle="CEO", jetzt=jetzt_iso()[:19])
+        if not e:
+            raise ValueError("Diese Idee gibt es schon.")
+        if not e["titel"]:
+            raise ValueError("Bitte kurz beschreiben, was der Skill koennen soll.")
+        if body.get("gleich_bauen"):
+            e = entwurf_starten(_werkstatt(), _backoffice_store(), e["id"])
+        return {"eintrag": {k: v for k, v in e.items() if k not in ("aufgabe", "jobs")}}
+    return _kunden_aktion(tun)
+
+
+@app.get("/api/skills/werkstatt/{wid}")
+def skills_eintrag(wid: str):
+    e = _werkstatt().eintraege().get(wid)
+    if not e:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannt")
+    return {k: v for k, v in e.items() if k not in ("aufgabe", "jobs")}
+
+
+@app.post("/api/skills/werkstatt/{wid}/{aktion}")
+async def skills_aktion(wid: str, aktion: str, request: Request):
+    from ...core.skill_werkstatt import entwurf_starten
+    def tun():
+        w = _werkstatt()
+        if aktion == "bauen":
+            e = entwurf_starten(w, _backoffice_store(), wid)
+        elif aktion == "aktivieren":
+            e = w.aktivieren(wid, von=_von(request))
+        elif aktion == "verwerfen":
+            if wid not in w.eintraege():
+                raise KeyError(wid)
+            e = w.status(wid, "verworfen", f"verworfen ({_von(request)})")
+        else:
+            raise ValueError("Unbekannte Aktion.")
+        return {"eintrag": {k: v for k, v in e.items() if k not in ("aufgabe", "jobs")}}
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/skills/rueckmeldung")
+async def skills_rueckmeldung(request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _werkstatt().rueckmeldung(str(body.get("skill") or ""), gut=bool(body.get("gut")),
+                                                           text=str(body.get("text") or ""), von=_von(request)))
+
+
+@app.post("/api/skills/zurueck")
+async def skills_zurueck(request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _werkstatt().zurueck(str(body.get("abteilung") or ""), str(body.get("ordner") or "")))
+
+
 # -- Modell-Radar (MODELL_RADAR R1-R3): nur Anzeige -- abgefragt wird vom Bot ----------------------------------------
 @app.get("/api/modell-radar")
 def modell_radar_uebersicht(tage: int = 60):

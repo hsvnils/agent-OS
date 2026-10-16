@@ -124,6 +124,7 @@ const SECTIONS = [
   { id: "anbieter", icon: "🔌", label: "Anbieter", app: null },
   { id: "netzwerk", icon: "🛡", label: "Netzwerk", app: null },
   { id: "modellradar", icon: "🧭", label: "Modell-Radar", app: null },
+  { id: "skillwerkstatt", icon: "🛠", label: "Skill-Werkstatt", app: null },
   { id: "team", icon: "👥", label: "Team", app: "team" },
   { id: "einstellungen", icon: "⚙", label: "Einstellungen", app: null },
 ];
@@ -133,14 +134,14 @@ const BEREICHE = [
   { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen", "vertraege"] },
   { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["contentplan", "crm", "radar", "content", "cutter", "reel"] },
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
-  { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "modellradar", "devroadmap", "system", "netzwerk", "anbieter", "team", "einstellungen"] },
+  { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "skillwerkstatt", "modellradar", "devroadmap", "system", "netzwerk", "anbieter", "team", "einstellungen"] },
 ];
 const TEIL_INFO = {
   kunden: "Firmen, Ansprechpartner, Akte", vertraege: "AGB und Vertragsvorlagen", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
   belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
   radar: "Neue Collab-Chancen", contentplan: "Kalender: eigene Posts, Kunden, Drehs", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
-  wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", netzwerk: "Fritz!Box, NAS, Zertifikat", modellradar: "KI-Modelle und Hersteller-News", anbieter: "Dienste, Datenquellen, Kosten", team: "Team-Zugänge",
+  wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", netzwerk: "Fritz!Box, NAS, Zertifikat", modellradar: "KI-Modelle und Hersteller-News", skillwerkstatt: "Eigene Skills bauen, prüfen, verbessern", anbieter: "Dienste, Datenquellen, Kosten", team: "Team-Zugänge",
   einstellungen: "Depot, Briefings, Anmeldung",
 };
 const teilErlaubt = (b) => b.teile.filter(t => { const x = SECTIONS.find(s => s.id === t); return x && darf(x.app); });
@@ -4211,6 +4212,60 @@ async function renderAnbieter() {
     ${bereiche.map(b => { const z = liste.filter(a => a.bereich === b); return z.length ? tile(b, z.map(a => anbieterZeile(a, K && K.anbieter[a.id])).join(""), "w6") : ""; }).join("")}
   </div>`;
 }
+/* SKILL_WERKSTATT S1-S4: eigene Skills -- Werkstatt (Entwurf -> Probelauf mit/ohne -> Freigabe), Rueckmeldungen, Skill-Radar */
+RENDER.skillwerkstatt = renderSkills;
+let SK = { tab: "werkstatt", d: null, ab: "" };
+const SK_STATUS = { idee: ["neutral", "💡 Idee"], entwurf_angefragt: ["wartet", "✍️ Entwurf läuft"], probelauf: ["wartet", "🧪 Probelauf"], urteil: ["wartet", "⚖️ Bewertung"],
+  zur_freigabe: ["ok", "✅ besser – Freigabe"], nicht_besser: ["neutral", "➖ nicht besser"], aktiv: ["ok", "aktiv"], verworfen: ["neutral", "verworfen"], fehler: ["err", "⚠️ Fehler"] };
+async function renderSkills() {
+  const d = SK.d = await jget("/api/skills");
+  if (!d) { $("#v2-app").innerHTML = secHead("🛠 Skill-Werkstatt", "") + emptyRow("Nur für Administratoren sichtbar."); return; }
+  const A = d.abteilungen || {}, w = d.werkstatt || [];
+  const offen = w.filter(e => !["aktiv", "verworfen"].includes(e.status));
+  const tabsHtml = [["werkstatt", `Werkstatt (${offen.length})`], ["skills", `Unsere Skills (${(d.skills || []).length})`], ["radar", `Skill-Radar (${(d.radar || []).filter(x => x.status === "luecke").length} Lücken)`]]
+    .map(([k, l]) => `<button class="v2-chip ${SK.tab === k ? "on" : ""}" data-act="sk-tab" data-val="${k}">${l}</button>`).join("");
+  let body = "";
+  if (SK.tab === "werkstatt") {
+    const zeile = (e) => { const s = SK_STATUS[e.status] || ["neutral", e.status]; const r = e.ergebnis;
+      return `<div class="v2-list-row v2-sk-zeile"><span class="v2-badge ${s[0]}">${s[1]}</span><div class="grow"><b>${esc(e.titel)}</b>
+        <small>${esc(A[e.abteilung] || e.abteilung)} · ${esc(e.quelle)}${e.art === "verbesserung" ? " · Verbesserung" : ""} · ${esc(e.warum || "")}</small>
+        ${r ? `<small class="v2-sk-ergebnis">${e.art === "verbesserung" ? "neu" : "mit Skill"} ${r.kandidat}/${r.max} · ${e.art === "verbesserung" ? "alt" : "ohne"} ${r.vergleich}/${r.max} Kriterien</small>` : ""}
+        <small class="v2-sub">${esc((e.verlauf || []).slice(-1)[0]?.text || "")}</small></div>
+        <div class="v2-sk-akt">${["idee", "nicht_besser", "fehler"].includes(e.status) ? `<button class="v2-btn sm pri" data-act="sk-aktion" data-id="${esc(e.id)}" data-val="bauen">🛠 Entwurf bauen</button>` : ""}
+          ${e.skill_md ? `<button class="v2-btn sm" data-act="sk-ansehen" data-id="${esc(e.id)}">Ansehen</button>` : ""}
+          ${e.status === "zur_freigabe" ? `<button class="v2-btn sm ok" data-act="sk-aktion" data-id="${esc(e.id)}" data-val="aktivieren">✅ Aktivieren</button>` : ""}
+          ${!["aktiv", "verworfen"].includes(e.status) ? `<button class="v2-btn sm" data-act="sk-aktion" data-id="${esc(e.id)}" data-val="verwerfen">Verwerfen</button>` : ""}</div></div>`; };
+    body = tile("Neuen Skill wünschen", `<div class="v2-an-zeile"><label class="v2-feld"><small>Abteilung</small><select class="v2-inp" id="sk-ab">${Object.entries(A).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join("")}</select></label>
+        <label class="v2-feld"><small>Was soll der Skill können?</small><input class="v2-inp" id="sk-titel" maxlength="120" placeholder="z. B. Angebotstext für Gastronomie"></label></div>
+      <label class="v2-feld"><small>Warum / Beispiel (optional)</small><input class="v2-inp" id="sk-warum" maxlength="600"></label>
+      <div class="v2-card-actions"><button class="v2-btn pri" data-act="sk-neu">🛠 Entwurf bauen lassen</button></div><div class="v2-msg" id="sk-msg"></div>
+      <small class="v2-sub">LUNA schreibt den Skill selbst (lokales Modell, kostenlos), legt Prüffälle an und testet mit und ohne Skill. Aktiv wird er erst nach deiner Freigabe.</small>`, "w12")
+      + tile(`In Arbeit und Ideen (${offen.length})`, offen.map(zeile).join("") || emptyRow("Keine offenen Einträge."), "w12")
+      + (w.length > offen.length ? tile("Erledigt", w.filter(e => !offen.includes(e)).slice(0, 20).map(zeile).join(""), "w12") : "");
+  } else if (SK.tab === "skills") {
+    const liste = (d.skills || []).filter(s => !SK.ab || s.abteilung === SK.ab);
+    body = tile("Unsere Skills", `<select class="v2-inp v2-sk-ab" style="max-width:280px;margin-bottom:8px"><option value="">Alle Abteilungen</option>${Object.entries(A).map(([k, l]) => `<option value="${k}" ${k === SK.ab ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`
+      + liste.map(s => `<div class="v2-list-row v2-sk-zeile"><span class="v2-badge ${s.quelle === "werkstatt" ? "ok" : "neutral"}">${s.quelle === "werkstatt" ? "Werkstatt" : "Repo"}</span>
+        <div class="grow"><b>${esc(s.name)}</b> <small class="v2-sub">v${esc(s.version || "–")}</small><small>${esc(A[s.abteilung] || s.abteilung)} · ${esc(s.beschreibung)}</small>
+        ${s.rueckmeldungen ? `<small class="v2-sub">${s.rueckmeldungen} Rückmeldung(en), ${s.offen} neu – ab 3 baut die Werkstatt eine neue Fassung</small>` : ""}</div>
+        <div class="v2-sk-akt"><button class="v2-btn sm" data-act="sk-rm" data-id="${esc(s.abteilung + "/" + s.name)}" data-val="1" title="Gut">👍</button><button class="v2-btn sm" data-act="sk-rm" data-id="${esc(s.abteilung + "/" + s.name)}" data-val="0" title="Verbessern">👎 …</button>
+          ${s.zurueck_moeglich ? `<button class="v2-btn sm" data-act="sk-zurueck" data-id="${esc(s.abteilung)}" data-val="${esc(s.ordner)}" title="Vorige Fassung">↩️</button>` : ""}</div></div>`).join("") || emptyRow("Keine Skills."), "w12");
+  } else {
+    body = tile("Skill-Radar – was andere bauen (nur Ideen)", (d.radar || []).map(x => `<div class="v2-list-row v2-sk-zeile"><span class="v2-badge ${x.status === "luecke" ? "warn" : x.status === "vorhanden" ? "ok" : "neutral"}">${x.status === "luecke" ? "Lücke" : x.status === "vorhanden" ? "haben wir" : "ohne Bezug"}</span>
+        <div class="grow"><a href="${esc(x.url)}" target="_blank" rel="noopener"><b>${esc(x.name)}</b></a> <small class="v2-sub">${x.sterne}★</small><small>${esc(x.kurz)}</small>
+        <small class="v2-sub">${(x.abteilungen || []).map(a => `${esc(A[a] || a)}${x.eigener[a] ? " (eigener: " + esc(x.eigener[a]) + ")" : ""}`).join(" · ") || "keiner Abteilung zugeordnet"}</small></div></div>`).join("")
+      || emptyRow("Noch kein Lauf – einmal im Monat ab 08:00."), "w12", `<small class="v2-sub">Übernommen wird nichts – eigene Skills baut die Werkstatt.${d.radar_stand ? " Stand " + esc(zeitKurz(d.radar_stand)) : ""}</small>`);
+  }
+  $("#v2-app").innerHTML = secHead("🛠 Skill-Werkstatt", "") + `<div class="v2-chips" style="margin:0 0 12px">${tabsHtml}</div><div class="v2-grid">${body}</div>`;
+  const s = $(".v2-sk-ab"); if (s) s.addEventListener("change", () => { SK.ab = s.value; renderSkills(); });
+}
+async function skAnsehen(wid) {
+  const e = await jget(`/api/skills/werkstatt/${encodeURIComponent(wid)}`); if (!e) return;
+  openModal(`🛠 ${e.titel}`, `<div class="v2-form"><small class="v2-sub">${esc((e.verlauf || []).map(v => v.text).join(" → "))}</small>
+    <h3>Skill</h3><pre class="v2-sk-md">${esc(e.skill_md || "")}</pre>
+    <h3>Prüffälle</h3>${(e.pruffaelle || []).map((f, i) => `<div class="v2-kv"><span>${i + 1}. ${esc(f.eingabe)}</span></div><small class="v2-sub">${f.kriterien.map(esc).join(" · ")}</small>`).join("") || emptyRow("–")}
+    ${e.status === "zur_freigabe" ? `<div class="v2-card-actions"><button class="v2-btn ok" data-act="sk-aktion" data-id="${esc(e.id)}" data-val="aktivieren">✅ Aktivieren</button></div>` : ""}</div>`, true);
+}
 /* MODELL_RADAR R3: Hersteller-News, unsere Modelle vs. Artificial Analysis, Vorschlaege (Antraege) -- nur Anzeige */
 RENDER.modellradar = renderRadar;
 let RADAR_FILTER = "wichtig", RADAR_HERST = "";
@@ -4565,6 +4620,18 @@ async function handleAct(act, el) {
     case "vs-neu": return vsDialog(id || "", val === "nachfassen");
     case "nw-filter": NW_FILTER = val; return renderNetzwerk();
     case "radar-filter": RADAR_FILTER = val; return renderRadar();
+    case "sk-tab": SK.tab = val; return renderSkills();
+    case "sk-ansehen": return skAnsehen(id);
+    case "sk-neu": { const r = await jpost("/api/skills/werkstatt", { abteilung: $("#sk-ab").value, titel: $("#sk-titel").value.trim(), warum: $("#sk-warum").value.trim(), gleich_bauen: true });
+      if (!r || r.ok === false) return kundenMsg("sk-msg", (r && r.hinweis) || "Fehler.", false); return renderSkills(); }
+    case "sk-aktion": { if (val === "aktivieren" && !confirm("Skill aktivieren? Der Fachagent nutzt ihn ab sofort; die vorige Fassung bleibt als Rückweg.")) return;
+      const r = await jpost(`/api/skills/werkstatt/${encodeURIComponent(id)}/${val}`, {}); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
+      closeModal(); return renderSkills(); }
+    case "sk-rm": { const text = val === "0" ? prompt("Was soll besser werden?", "") : ""; if (val === "0" && text === null) return;
+      const r = await jpost("/api/skills/rueckmeldung", { skill: id, gut: val === "1", text: text || "" }); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
+      return renderSkills(); }
+    case "sk-zurueck": { if (!confirm("Vorige Fassung dieses Skills wiederherstellen?")) return; const r = await jpost("/api/skills/zurueck", { abteilung: id, ordner: val });
+      if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return renderSkills(); }
     case "nw-bekannt": { const r = await jpost(`/api/netzwerk/geraete/${encodeURIComponent(id)}`, { bekannt: val === "1" }); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return renderNetzwerk(); }
     case "nw-name": { const n = prompt("Name für dieses Gerät:", ""); if (!n || !n.trim()) return; const r = await jpost(`/api/netzwerk/geraete/${encodeURIComponent(id)}`, { name: n.trim(), bekannt: true }); if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler."); return renderNetzwerk(); }
     case "nw-loeschen": { if (!confirm("Gerät aus der Liste entfernen? Taucht es wieder auf, meldet LUNA es als neu.")) return; await jpost(`/api/netzwerk/geraete/${encodeURIComponent(id)}/loeschen`, {}); return renderNetzwerk(); }

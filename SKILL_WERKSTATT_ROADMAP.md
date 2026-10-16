@@ -1,10 +1,10 @@
 # Roadmap: Skill-Werkstatt -- eigene Skills beobachten, bauen, pruefen und verbessern
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-16
 - Arbeitsbranch: `ai/skill-werkstatt`
 - Basiscommit: `eac473f`
-- Naechster Schritt: CEO-Entscheidungen (Bedeutung „trainieren“, kein Import fremder Skills) und Go fuer S1-S4 abwarten.
+- Naechster Schritt: Deploy; erste Werkstatt-Idee vom CEO in LUNA-OS starten (Probelauf ueber das Backoffice, meist nachts), dann Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -33,7 +33,7 @@ keine Skills aus dem Internet nutzen, sondern diese am liebsten selbst trainiere
 
 ## Etappe S1: Skill-Radar (Researcher, nur Ideen)
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: monatlich ein Ueberblick, welche Skill-Arten fuer Agenten verbreitet sind. Quellen nur oeffentliche
   **Uebersichten**: Hersteller-Dokus/Neuigkeiten zu Agent-Skills (aus dem Modell-Radar), GitHub-Themen (`agent-skills`,
   `claude-skills` u. ae., ueber die vorhandene GitHub-Abfrage: Name, Kurzbeschreibung, Sterne). Regelbasiert in Kategorien
@@ -44,7 +44,7 @@ keine Skills aus dem Internet nutzen, sondern diese am liebsten selbst trainiere
 
 ## Etappe S2: Skill-Luecken aus unserer eigenen Arbeit
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: LUNA erkennt, wo ein Skill fehlt -- haeufige Fachagent-Anfragen ohne passenden Skill, wiederkehrende
   Ablaeufe im Erfahrungsspeicher, deine Korrekturen im Chat („nein, so …“), Fehlversuche. Daraus Vorschlag „Neuer Skill X
   fuer Abteilung Y“ mit Begruendung als Antrag (Kategorie `skill`). Zusammen mit den Ideen aus S1 eine Liste in LUNA-OS.
@@ -53,7 +53,7 @@ keine Skills aus dem Internet nutzen, sondern diese am liebsten selbst trainiere
 
 ## Etappe S3: Skill-Werkstatt -- bauen und pruefen
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: Aus einem freigegebenen Vorschlag schreibt LUNA einen **eigenen** Skill-Entwurf (Format wie bisher,
   `lizenz: intern`) mit 3-5 **Pruffaellen** (Eingabe + woran ein gutes Ergebnis erkennbar ist). Probelauf auf dem lokalen
   Modell (kostenlos): Aufgabe **mit und ohne** Skill, Bewertung nach den Pruffaellen. Erst wenn der Skill besser ist, legt
@@ -64,12 +64,32 @@ keine Skills aus dem Internet nutzen, sondern diese am liebsten selbst trainiere
 
 ## Etappe S4: Skills lernen aus Rueckmeldungen
 
-- Status: geplant
+- Status: umgesetzt
 - Ziel / Scope: 👍/👎 und kurze Korrektur zu Fachagent-Antworten (Telegram-Knoepfe, LUNA-OS) werden je Skill gesammelt.
   Monatlich (oder ab 3 Rueckmeldungen) schlaegt LUNA eine **verbesserte Version** vor (Aenderung sichtbar als Vorher/Nachher),
   die alten und neuen Pruffaelle muessen bestehen; Freigabe durch dich, jederzeit zurueck auf die alte Version.
 - Gate: Tests (Version, Rueckweg, Pruffaelle); Gegenprobe.
 - Aufwand: mittel.
+
+## Umsetzung (2026-10-16, Go CEO fuer S1-S4, Empfehlungen angenommen)
+
+- `core/skill_werkstatt.py`: Bestand (`eigene_skills`: Repo + `skills_eigen`), Einordnung fremder Skill-Arten per Stichwort
+  (englisch/deutsch) in 16 Abteilungen, „haben wir schon“ ueber Synonyme; Speicher `skills_werkstatt/`.
+- S1: `radar_merken` (GitHub-Themen agent-skills, claude-skills, ai-agent-skills, llm-skills; nur Name, Link, Sterne,
+  140-Zeichen-Anriss), monatlicher Bericht. S2: `luecken` (Abteilung >= 5x gefragt ohne Skill oder >= 30 % ohne Erfolg,
+  >= 3 erfolgreiche Ablaeufe gleicher Art, verbreitete Radar-Luecken >= 200 Sterne) -> Ideen in der Werkstatt; gestartet
+  wird per Klick „🛠 Entwurf bauen“ in LUNA-OS (statt Antrag -- ein freigegebener Antrag wuerde in der Entwicklungs-Roadmap
+  landen, nicht in der Werkstatt).
+- S3: `entwurf_starten` / `tick`: Entwurf + Pruffaelle (Backoffice, `art=roh`, stumm) -> Format + Security-Gate +
+  `lizenz: intern` -> Probelauf mit/ohne Skill -> verdeckte Bewertung je Kriterium -> „besser“ = zur Freigabe (Telegram),
+  sonst „nicht besser“; `aktivieren` schreibt nach `skills_eigen/` (vorige Fassung in `versionen/`).
+- S4: `rueckmeldung` (LUNA-OS 👍/👎, LUNA-Werkzeug `skill_rueckmeldung` im Chat), `verbesserungen_anstossen` ab 3 neuen
+  Rueckmeldungen -> neue Version alt gegen neu geprueft, Freigabe, `zurueck` jederzeit.
+- `core/dept_skills.py` laedt `skills_eigen/` mit (gleicher Name ersetzt den Repo-Skill, beide durchs Gate).
+- Bot `_start_skill_loop` (Standard an, `SKILL_WERKSTATT=0` aus, Notbremse). LUNA-OS: LUNA & System -> „🛠 Skill-Werkstatt“
+  (Werkstatt, Unsere Skills, Skill-Radar; nur administration).
+- Tests `test_skill_werkstatt.py` (7, Gegenproben rot: Freigabe nur nach Pruefung, Vergleich ohne Skill, nur eigene Lizenz,
+  Werkstatt-Skills geladen, erst ab 3 Rueckmeldungen, Admin-Recht); Browser Rechner/iPad/iPhone.
 
 ## Nicht-Scope
 
