@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-16 17:22] — Claude Code
+- **Was:** Deploy R4/BF-71 geprueft (v133, Backoffice-Worker auf dem MACO470 neu gestartet 17:20:29). Skill-Radar per „Jetzt pruefen“ live ausgeloest: GitHub lieferte 90 Projekte (oeffentlicher Zugang, Schluessel weiter ungueltig), 81 Ideen eingeordnet (56 Luecken, 11 vorhanden, 13 ohne Bezug). Korrektur Probelauf: die Seite „altes Modell“ laeuft jetzt ausdruecklich mit dem Chat-Modell (`lokal_modell=alt`), weil der Worker ein eigenes Standardmodell hat (qwen3:14b statt qwen3:30b-a3b); Test mit Gegenprobe.
+- **Warum:** CEO: alle vier Befehle ausgefuehrt; beim Pruefen gefunden.
+- **Betroffen:** `orchestrator/core/modell_radar.py`, `orchestrator/tests/test_lokale_modelle.py`, `projekt_changelog.md`
+
 ## [2026-10-16 17:15] — Claude Code
 - **Was:** MODELL_RADAR R4 gebaut: Kandidaten fuer das lokale Modell aus der Ollama-Bibliothek (Werkzeuge, passt auf den MACO470), Qualitaet aus Artificial Analysis, Vorschlag als Antrag; Probelauf altes gegen neues Modell ueber das Backoffice (neues Feld `lokal_modell`, Worker laedt das Modell einmalig), verdeckte Bewertung, Ergebnis per Telegram und in LUNA-OS (Kachel „Lokale Modelle“). BF-71: ungueltiger GITHUB_TOKEN auf der NAS -> GitHub-Abfragen fallen auf den oeffentlichen Zugang zurueck, Skill-Radar mit Knopf „Jetzt pruefen“ und erneutem Versuch. Live-Pruefung Skill-Werkstatt: v132, 53 Skills. Cache app-v2.js v133, style-v2.css v70.
 - **Warum:** CEO 2026-10-16: Go fuer R4 (bessere lokale Modelle); Fehler beim ersten Skill-Radar-Lauf gefunden.

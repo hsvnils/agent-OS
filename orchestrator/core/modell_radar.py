@@ -531,8 +531,10 @@ class LokalTests:
             tid = "LT-" + hashlib.sha1(f"{neu}{jetzt}".encode()).hexdigest()[:6].upper()
             jobs = {}
             for i, f in enumerate(faelle):
+                # ausdruecklich das heutige Modell -- der Worker hat ein eigenes Standardmodell (2026-10-16: qwen3:14b statt 30b-a3b)
                 jobs[f"alt{i}"] = bo.anlegen(f["eingabe"], art="roh", von="Modell-Radar", stumm=True, zweck=f"lokaltest:{tid}:alt{i}",
-                                             system="Du bist ein hilfreicher Assistent von Hanserautisch. Antworte auf Deutsch.")
+                                             system="Du bist ein hilfreicher Assistent von Hanserautisch. Antworte auf Deutsch.",
+                                             lokal_modell=alt)
                 jobs[f"neu{i}"] = bo.anlegen(f["eingabe"], art="roh", von="Modell-Radar", stumm=True, zweck=f"lokaltest:{tid}:neu{i}",
                                              system="Du bist ein hilfreicher Assistent von Hanserautisch. Antworte auf Deutsch.",
                                              lokal_modell=neu)

@@ -55,6 +55,7 @@ class TestProbelauf(unittest.TestCase):
             lt.starten(bo, alt="qwen3:30b-a3b", neu="x; rm -rf /", faelle=mr.STANDARD_PRUEFFAELLE, jetzt="t")
         t = lt.starten(bo, alt="qwen3:30b-a3b", neu="qwen3.5:27b", faelle=mr.STANDARD_PRUEFFAELLE[:2], jetzt="2026-10-16T20:00:00")
         self.assertEqual(sorted(k for k, v in t["jobs"].items() if bo.get(v)["lokal_modell"] == "qwen3.5:27b"), ["neu0", "neu1"])
+        self.assertEqual(sorted(k for k, v in t["jobs"].items() if bo.get(v)["lokal_modell"] == "qwen3:30b-a3b"), ["alt0", "alt1"])   # nicht Worker-Standard
         with self.assertRaises(ValueError):
             lt.starten(bo, alt="qwen3:30b-a3b", neu="qwen3.5:27b", faelle=mr.STANDARD_PRUEFFAELLE[:2], jetzt="t2")   # laeuft schon
         for j in bo.jobs.values():
