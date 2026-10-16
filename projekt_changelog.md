@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-16 17:26] — Claude Code
+- **Was:** Deploy der Probelauf-Korrektur geprueft: origin/main = e5e63bd, Code auf der NAS enthaelt `lokal_modell=alt`, Modell-Radar antwortet (lokales Modell qwen3:30b-a3b, Kandidaten folgen mit dem Lauf ab 07:00).
+- **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-16 17:22] — Claude Code
 - **Was:** Deploy R4/BF-71 geprueft (v133, Backoffice-Worker auf dem MACO470 neu gestartet 17:20:29). Skill-Radar per „Jetzt pruefen“ live ausgeloest: GitHub lieferte 90 Projekte (oeffentlicher Zugang, Schluessel weiter ungueltig), 81 Ideen eingeordnet (56 Luecken, 11 vorhanden, 13 ohne Bezug). Korrektur Probelauf: die Seite „altes Modell“ laeuft jetzt ausdruecklich mit dem Chat-Modell (`lokal_modell=alt`), weil der Worker ein eigenes Standardmodell hat (qwen3:14b statt qwen3:30b-a3b); Test mit Gegenprobe.
 - **Warum:** CEO: alle vier Befehle ausgefuehrt; beim Pruefen gefunden.
