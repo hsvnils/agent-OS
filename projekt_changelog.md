@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-18 14:43] — Claude Code
+- **Was:** Deploy der Radar-Korrektur geprueft: origin/main = 50a0b6c, Code auf der NAS enthaelt beide Korrekturen (Preis 0, Namensreihenfolge), Modell-Radar mit Artificial Analysis aktiv. Erster Abgleich mit Vorschlaegen beim naechsten Lauf ab 07:00.
+- **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
+- **Betroffen:** `projekt_changelog.md`
+
 ## [2026-10-18 13:35] — Claude Code
 - **Was:** Artificial-Analysis-Schluessel auf der NAS geprueft (vom CEO eingetragen; ein Eintrag, Abruf HTTP 200, 704 Modelle, ohne Wertausgabe). Abgleich mit den echten Daten: (1) Modelle mit Preis 0 (unbekannt/nicht buchbar) waeren als „guenstiger“ vorgeschlagen worden -> ausgeschlossen; (2) `claude-haiku-4-5` wurde nicht gefunden (AA: `claude-4-5-haiku`) -> Abgleich auch ueber gleiche Namensteile in anderer Reihenfolge. Tests mit Gegenprobe.
 - **Warum:** CEO hat den Schluessel eingetragen; vor dem ersten Lauf (morgen 07:00) gegen echte Daten geprueft.
