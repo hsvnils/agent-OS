@@ -219,6 +219,10 @@ def aa_finden(modell: str, aa: list[dict]) -> dict | None:
     treffer = [a for a in aa if re.sub(r"[^a-z0-9]", "", (a["slug"] or a["name"]).lower()) == k]
     if not treffer:
         treffer = [a for a in aa if re.sub(r"[^a-z0-9]", "", (a["slug"] or a["name"]).lower()).startswith(k)]
+    if not treffer:                                   # gleiche Teile, andere Reihenfolge: „claude-haiku-4-5“ ~ „claude-4-5-haiku“
+        teile = set(re.findall(r"[a-z]+|\d+", modell.lower().replace(":", "-")))
+        treffer = [a for a in aa if teile and teile <= set(re.findall(r"[a-z]+|\d+", (a["slug"] or "").lower()))
+                   and len(set(re.findall(r"[a-z]+|\d+", (a["slug"] or "").lower())) - teile) <= 2]
     return min(treffer, key=lambda a: len(a["slug"] or a["name"])) if treffer else None
 
 
@@ -226,7 +230,7 @@ def vorschlaege(unsere: list[dict], aa: list[dict], *, hersteller: list[str] | N
     """Je unserem Modell hoechstens zwei Vorschlaege: „guenstiger“ (gleiche Qualitaet, >= 30 % billiger) und „besser“
     (>= 5 Punkte mehr bei hoechstens +10 % Preis). Nur Modelle bekannter Hersteller, nur mit vollstaendigen Werten."""
     erlaubt = {h.lower().split(" ")[0] for h in (hersteller or HERSTELLER)} | {"alibaba", "google", "meta", "microsoft"}
-    kandidaten = [a for a in aa if a["iq"] is not None and a["preis"] is not None
+    kandidaten = [a for a in aa if a["iq"] is not None and a["preis"]                 # Preis 0 = unbekannt/nicht buchbar
                   and any(e in (a["hersteller"] or "").lower() for e in erlaubt)]
     out = []
     je_modell: dict[str, list[str]] = {}                          # ein Vorschlag je Modell, Einsaetze zusammengefasst

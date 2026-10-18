@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-18 13:35] — Claude Code
+- **Was:** Artificial-Analysis-Schluessel auf der NAS geprueft (vom CEO eingetragen; ein Eintrag, Abruf HTTP 200, 704 Modelle, ohne Wertausgabe). Abgleich mit den echten Daten: (1) Modelle mit Preis 0 (unbekannt/nicht buchbar) waeren als „guenstiger“ vorgeschlagen worden -> ausgeschlossen; (2) `claude-haiku-4-5` wurde nicht gefunden (AA: `claude-4-5-haiku`) -> Abgleich auch ueber gleiche Namensteile in anderer Reihenfolge. Tests mit Gegenprobe.
+- **Warum:** CEO hat den Schluessel eingetragen; vor dem ersten Lauf (morgen 07:00) gegen echte Daten geprueft.
+- **Betroffen:** `orchestrator/core/modell_radar.py`, `orchestrator/tests/test_modell_radar.py`, `projekt_changelog.md`
+
 ## [2026-10-16 17:26] — Claude Code
 - **Was:** Deploy der Probelauf-Korrektur geprueft: origin/main = e5e63bd, Code auf der NAS enthaelt `lokal_modell=alt`, Modell-Radar antwortet (lokales Modell qwen3:30b-a3b, Kandidaten folgen mit dem Lauf ab 07:00).
 - **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.

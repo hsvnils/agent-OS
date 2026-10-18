@@ -101,6 +101,12 @@ class TestLauf(unittest.TestCase):
         self.assertIsNone(mr.aa_finden("qwen3:14b", aa))
         v = mr.vorschlaege(UNSERE, aa)
         self.assertEqual([(x["regel"], x["neu"]["name"]) for x in v], [("guenstiger", "Billig Flash"), ("besser", "Klug Pro")])   # „Fremd“ nie
+        null = mr.aa_modelle({"data": AA["data"] + [{"name": "Ohne Preis", "slug": "ohne-preis", "model_creator": {"name": "Meta"},
+                                                     "evaluations": {"artificial_analysis_intelligence_index": 99}, "pricing": {"price_1m_blended_3_to_1": 0}}]})
+        self.assertNotIn("Ohne Preis", [x["neu"]["name"] for x in mr.vorschlaege(UNSERE, null)])   # Preis 0 = unbekannt, nie „guenstiger“
+        haiku = mr.aa_modelle({"data": [{"name": "Claude 4.5 Haiku", "slug": "claude-4-5-haiku", "model_creator": {"name": "Anthropic"}}]})
+        self.assertEqual(mr.aa_finden("claude-haiku-4-5", haiku)["name"], "Claude 4.5 Haiku")        # andere Reihenfolge
+        self.assertIsNone(mr.aa_finden("claude-haiku-4-5", mr.aa_modelle({"data": [{"name": "x", "slug": "claude-4-5-sonnet"}]})))
         lokal = [{"einsatz": "Lokal (MACO470)", "modell": "gemini-2.5-flash"}]                  # lokal nie gegen Cloud-Preise
         self.assertEqual(mr.vorschlaege(lokal, aa), [])
         k = mr.kostenvoranschlag(v[0], {"in": 2_000_000, "out": 1_000_000})
