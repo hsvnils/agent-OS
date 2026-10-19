@@ -4,7 +4,7 @@
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `d816b1d`
-- Naechster Schritt: Deploy des Blocks I1-I3 (CEO), danach F1-F3. Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
+- Naechster Schritt: F1-F3 bauen, dann Deploy des Blocks. Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -27,9 +27,9 @@ Links verschickt, sollen Fremdtexte schon markiert und Handlungen nach einem Ver
 | Nr. | Etappe | Inhalt | Aufwand | Status |
 |---|---|---|---|---|
 | 1 | D1 | Drive-Upload: Mails (.eml) mit neutralem Dateityp hochladen, 3 haengende Belege werden nachgeholt (BF-72) | klein | ✅ live (bad49d5) |
-| 2 | I1 | Jeder Fremdtext (Mail, Drive, Tabellen, Belege, Kundenantworten, Content-Feed) wird geprueft und markiert | mittel | ✅ gebaut (Deploy mit I3) |
-| 3 | I2 | Feinere Erkennung (Tarnungen, versteckter Text, Rollenmarken, Datenabfluss ueber Links) + Testkorpus | mittel | ✅ gebaut (Deploy mit I3) |
-| 4 | I3 | Handlungs-Sperre nach Verdacht (Senden, Termine, Schreiben, Loeschen, Freigaben nur nach Rueckfrage) | mittel | ✅ gebaut (Deploy offen) |
+| 2 | I1 | Jeder Fremdtext (Mail, Drive, Tabellen, Belege, Kundenantworten, Content-Feed) wird geprueft und markiert | mittel | ✅ live (d2bd03e) |
+| 3 | I2 | Feinere Erkennung (Tarnungen, versteckter Text, Rollenmarken, Datenabfluss ueber Links) + Testkorpus | mittel | ✅ live (d2bd03e) |
+| 4 | I3 | Handlungs-Sperre nach Verdacht (Senden, Termine, Schreiben, Loeschen, Freigaben nur nach Rueckfrage) | mittel | ✅ live (d2bd03e) |
 | 5 | F1 | Kundenordner je Kunde/Projekt auf der NAS (anlegen, hochladen, Lieferungen uebernehmen) | mittel | ⬜ offen |
 | 6 | F2 | Freigabe-Link mit Ablauf, optional Passwort, widerrufbar, Abruf-Protokoll | mittel | ⬜ offen (Weg A entschieden) |
 | 7 | F3 | Link per Mail (Versanddialog, Textbaustein „Dateifreigabe“, nur per Klick) | klein | ⬜ offen |

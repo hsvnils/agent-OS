@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 11:24] — Claude Code
+- **Was:** Deploy des Blocks I1-I3 (Prompt-Injection-Schutz) live geprueft: origin/main = d2bd03e, NAS-Code enthaelt `FREMD_WERKZEUGE`, `AKTIONS_WERKZEUGE`, `entferne_abfluss_links`; Testkorpus auf der NAS 38/38 erkannt, 0 Fehlalarme; LUNA-OS antwortet, Bot schreibt nach dem Neustart wieder (watch/log.jsonl).
+- **Warum:** Abnahme nach CEO-Deploy (Sammel-Roadmap `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`).
+- **Betroffen:** `DRIVE_ORDNER_SCHUTZ_ROADMAP.md` (I1-I3 live)
+
 ## [2026-10-19 10:58] — Claude Code
 - **Was:** Deploy von D1 (BF-72) live geprueft: alle 278 Belege liegen in Drive (vorher 275), die drei Mail-Belege (.eml) wurden nachgeholt; letzte Fehlermeldung der Beleg-Sicherung 07:58 vor dem Deploy, seitdem keine mehr.
 - **Warum:** Abnahme D1 nach CEO-Deploy (Sammel-Roadmap `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`).
