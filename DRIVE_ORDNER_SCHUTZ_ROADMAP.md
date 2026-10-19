@@ -4,7 +4,7 @@
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `d816b1d`
-- Naechster Schritt: Deploy des Blocks F1-F3 (CEO), danach I4. Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
+- Naechster Schritt: I4 bauen (Claude); Abnahme F1-F3 mit echtem Ordner (CEO). Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -30,9 +30,9 @@ Links verschickt, sollen Fremdtexte schon markiert und Handlungen nach einem Ver
 | 2 | I1 | Jeder Fremdtext (Mail, Drive, Tabellen, Belege, Kundenantworten, Content-Feed) wird geprueft und markiert | mittel | ✅ live (d2bd03e) |
 | 3 | I2 | Feinere Erkennung (Tarnungen, versteckter Text, Rollenmarken, Datenabfluss ueber Links) + Testkorpus | mittel | ✅ live (d2bd03e) |
 | 4 | I3 | Handlungs-Sperre nach Verdacht (Senden, Termine, Schreiben, Loeschen, Freigaben nur nach Rueckfrage) | mittel | ✅ live (d2bd03e) |
-| 5 | F1 | Kundenordner je Kunde/Projekt auf der NAS (anlegen, hochladen, Lieferungen uebernehmen) | mittel | ✅ gebaut (Deploy mit F3) |
-| 6 | F2 | Freigabe-Link mit Ablauf, optional Passwort, widerrufbar, Abruf-Protokoll | mittel | ✅ gebaut (Deploy mit F3) |
-| 7 | F3 | Link per Mail (Versanddialog, Textbaustein „Dateifreigabe“, nur per Klick) | klein | ✅ gebaut (Deploy offen) |
+| 5 | F1 | Kundenordner je Kunde/Projekt auf der NAS (anlegen, hochladen, Lieferungen uebernehmen) | mittel | ✅ live (9c74ce9) |
+| 6 | F2 | Freigabe-Link mit Ablauf, optional Passwort, widerrufbar, Abruf-Protokoll | mittel | ✅ live (9c74ce9) |
+| 7 | F3 | Link per Mail (Versanddialog, Textbaustein „Dateifreigabe“, nur per Klick) | klein | ✅ live (9c74ce9) |
 | 8 | I4 | Ueberwachung (CISO-Bericht, Leistungsbericht) + Angriffs-Testreihe in der Testsuite | klein bis mittel | ⬜ offen |
 
 Deploy: nach D1 sofort (kleiner Fix, stoppt die taeglichen Fehlermeldungen); danach je Block (I1-I3, F1-F3, I4) ein Deploy,

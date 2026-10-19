@@ -4,7 +4,7 @@
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `b9b9944`
-- Naechster Schritt: Deploy F1-F3 (CEO), danach Abnahme mit einem echten Ordner.
+- Naechster Schritt: Abnahme durch den CEO mit einem echten Ordner (anlegen, Link erstellen, am iPhone oeffnen), dann Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -40,7 +40,7 @@ freigegebenen Ordner per E-Mail mit.“
 
 ## Etappe F2: Freigabe-Link
 
-- Status: gebaut 2026-10-19 (`core/ordner_freigabe.py`, Routen `/teilen/<schluessel>` (+ `/datei/<i>`, `/zip`, Passwort per POST), Verwaltung im Kundenordner „🔗 Freigabe-Link“, CISO-Vermerk in `governance/zugriffs-policy.md`; Test `test_ordner_freigabe.py`), Deploy mit F3
+- Status: gebaut 2026-10-19 (`core/ordner_freigabe.py`, Routen `/teilen/<schluessel>` (+ `/datei/<i>`, `/zip`, Passwort per POST), Verwaltung im Kundenordner „🔗 Freigabe-Link“, CISO-Vermerk in `governance/zugriffs-policy.md`; Test `test_ordner_freigabe.py`) , live seit 2026-10-19 (9c74ce9)
 - Ziel / Scope (Weg A): „🔗 Freigeben …“ -> Link mit Ablauf (Standard 30 Tage), optional Passwort, Anzeige „Nur ansehen und
   herunterladen“. Oeffentliche Seite im Hanserautisch-Look mit Dateiliste und Einzel-/ZIP-Download; Abruf-Protokoll und
   „Link widerrufen“ am Ordner. Schutz: langer Zufallsschluessel, Ablauf, Begrenzung der Abrufe je Minute, keine anderen
@@ -51,7 +51,7 @@ freigegebenen Ordner per E-Mail mit.“
 
 ## Etappe F3: Link per Mail
 
-- Status: gebaut 2026-10-19 (Textbaustein-Art `dateifreigabe` mit Pflicht-Platzhalter `{link}`, `ordner_freigabe.mail_vorschau`/`mail_senden`, Dialog „✉️ Link senden …“ am Freigabe-Link, Chat-Werkzeug `kundenordner_link` (in der I3-Sperrliste); Tests in `test_ordner_freigabe.py`), Deploy offen
+- Status: gebaut 2026-10-19 (Textbaustein-Art `dateifreigabe` mit Pflicht-Platzhalter `{link}`, `ordner_freigabe.mail_vorschau`/`mail_senden`, Dialog „✉️ Link senden …“ am Freigabe-Link, Chat-Werkzeug `kundenordner_link` (in der I3-Sperrliste); Tests in `test_ordner_freigabe.py`) , live seit 2026-10-19 (9c74ce9)
 - Ziel / Scope: „✉️ Link senden …“ im Ordner: Versanddialog mit Empfaengern der Firma (wie bei Belegen, mehrere, CC/BCC),
   neue Textbaustein-Art „Dateifreigabe“ (Link, Ablaufdatum, ggf. Hinweis auf das Passwort -- das Passwort selbst nie in
   derselben Mail); Versand nur per Klick (Mails an Kunden = CEO-Tor). Auch aus dem Chat: LUNA bereitet die Mail vor, du

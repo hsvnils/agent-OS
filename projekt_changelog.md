@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 12:00] — Claude Code
+- **Was:** Deploy des Blocks F1-F3 (Kundenordner, Freigabe-Link, Link per Mail) live geprueft: origin/main = 9c74ce9, NAS-Code vorhanden; von aussen liefert `/teilen/<erfundener Schluessel>` 404 mit der Seite „Link nicht verfuegbar“ und den Sicherheits-Kopfzeilen (CSP, noindex, no-referrer); `/api/crm/kunden*` und der Pfad-Trick `/teilen/x/../../api/…` bleiben 401; angemeldet antwortet `/api/crm/kunden/<nr>/ordner`. Abnahme mit einem echten Ordner steht beim CEO.
+- **Warum:** Abnahme nach CEO-Deploy (Sammel-Roadmap `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`).
+- **Betroffen:** `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`, `KUNDENORDNER_FREIGABE_ROADMAP.md`, `ROADMAP.md` (Status live)
+
 ## [2026-10-19 11:44] — Claude Code
 - **Was:** KUNDENORDNER_FREIGABE F3 gebaut: Freigabe-Link per Mail. Neue Textbaustein-Art „Dateifreigabe“ (Platzhalter u. a. `{ordner}`, `{link}` -- Pflicht --, `{ablauf}`, `{passwort_hinweis}`), Versanddialog „✉️ Link senden …“ am aktiven Link mit Adressen der Firma, CC/BCC und Vorlagenwahl; Senden nur per Klick und nur fuer den CEO (Mail an Kunden = CEO-Tor), Link immer mit der oeffentlichen Adresse, der Text muss den Link enthalten und darf das Passwort nicht enthalten (Pruefung gegen den PBKDF2-Hash), Mail landet in der Firmenakte, Versand steht am Link. Chat: Werkzeug `kundenordner_link` -- Vorschau, gesendet erst mit CEO-Zustimmung; es steht auf der I3-Sperrliste. Browser-Test Rechner/iPad/iPhone. Cache v136.
 - **Warum:** CEO-Go 2026-10-19 fuer alle acht Etappen (Weg A), Etappe F3 -- schliesst den Block F1-F3 ab.
