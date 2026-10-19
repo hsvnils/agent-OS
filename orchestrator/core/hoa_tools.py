@@ -10,7 +10,7 @@ Vereinheitlichung (eine Quelle fuer Voice + Text) ist als Aufraeumschritt vorges
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ..governance.leak_guard import redact
 from .channels_common import finance_text  # leichte Helfer (siehe unten)
@@ -43,6 +43,7 @@ class ToolContext:
     social: object | None = None         # SocialStore (Social-Media-Analyzer, CBO/CCO) oder None
     approvals: object | None = None      # ApprovalStore (1-Tap-Freigaben per Telegram, Schritt 5) oder None
     agenten_nutzung: object | None = None  # AgentenNutzung (Fachagenten-Anfragen ohne Inhalte, AGENTEN_AUSBAU A1)
+    fremd_verdacht: list = field(default_factory=list)   # I1/I3: Injection-Verdacht im laufenden Gespraechszug
 
 
 def tool_specs() -> list[dict]:
@@ -503,11 +504,27 @@ def _termin_in_vergangenheit(a: dict) -> str:
     return ""
 
 
+# PROMPT_INJECTION_SCHUTZ I1: Werkzeuge, deren Ergebnis Text Dritter enthaelt (Mail, Dateien, Web, Nachrichten, Bildschirm).
+# Test `test_injection_schutz.py` prueft, dass jedes lesende Werkzeug mit Fremdinhalt hier steht.
+FREMD_WERKZEUGE = frozenset({
+    "mail_suchen", "mail_lesen", "posteingang", "drive_suchen", "drive_lesen", "tabelle_lesen", "kalender_agenda",
+    "kalender_kollisionen", "agenda_zeigen", "xmind_lesen", "recherche_ticket", "recherche_tickets_zeigen", "watch_digest",
+    "github_trends", "dept_briefing", "funde_bewerten", "innovation_scouting", "wissensstand", "crm_zeigen",
+    "crm_konversation", "crm_dm_abrufen", "ig_analyse", "social_media_analyzer", "insider_signale_zeigen",
+    "bildschirm_sehen", "brain_suchen", "erfahrung_abrufen", "meldung_details", "benachrichtigungen_zeigen", "briefing_jetzt",
+})
+
+
 def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
     """Fuehrt ein Werkzeug aus. FACHAGENTEN_ROUTING R3: Antworten ueber Werkzeuge zaehlen -- ohne Inhalte -- beim
     zustaendigen Bereich (`core/zustaendigkeit.py`); `delegate` protokolliert sich selbst, LUNA-Werkzeuge zaehlen nicht."""
     t0 = time.monotonic()
     res = _run_tool(name, args, ctx)
+    if name in FREMD_WERKZEUGE:                       # I1: Fremdtext markiert und abgegrenzt an das Modell
+        from .input_guard import schuetze_ergebnis
+        res, verdacht = schuetze_ergebnis(res, name)
+        if verdacht:
+            ctx.fremd_verdacht.append({"werkzeug": name, "muster": verdacht})
     if ctx.agenten_nutzung is not None and name != "delegate":
         try:
             from .zustaendigkeit import bereich_von

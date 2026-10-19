@@ -150,7 +150,7 @@ class ContentFeed:
             "TITEL: <praegnanter Content-Titel>\n"
             "IDEE: <2-3 Saetze: Aufhaenger + Umsetzung>\n"
             "FORMAT: <Reel|Post|Story|Carousel>\n\n"
-            f"Trend: {trend.get('title', '')}\n{(trend.get('description') or '')[:600]}")
+            + _fremd(f"Trend: {trend.get('title', '')}\n{(trend.get('description') or '')[:600]}"))
         if not antwort:
             return None
         titel = self._feld(antwort, "TITEL") or _erste_zeile(antwort)
@@ -169,7 +169,7 @@ class ContentFeed:
             "HOOK: <erster Satz, der in <=1 Sekunde fesselt>\n"
             "CAPTION: <2-4 Saetze Caption>\n"
             "HASHTAGS: <5-8 Hashtags mit #, durch Leerzeichen getrennt>\n\n"
-            f"Idee: {idee.get('title', '')}\n{(idee.get('description') or '')[:600]}")
+            + _fremd(f"Idee: {idee.get('title', '')}\n{(idee.get('description') or '')[:600]}"))
         if not antwort:
             return None
         hook = self._feld(antwort, "HOOK")
@@ -240,3 +240,11 @@ class ContentFeed:
                 abteilung="Content/Researcher", kategorie=kategorie, quelle="content-feed", detail=detail)
         except Exception:
             pass
+
+
+
+def _fremd(text: str) -> str:
+    """I1: Trend-Texte stammen aus dem Netz -> markiert und als Daten abgegrenzt."""
+    from .input_guard import schuetze_text, umschliesse_extern
+    t, _ = schuetze_text(text, "web-trend")
+    return t if t.startswith("[EXTERNER") else umschliesse_extern(t, "web-trend")

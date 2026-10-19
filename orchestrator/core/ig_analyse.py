@@ -115,7 +115,9 @@ class IgAnalyzer:
         if not transcript:
             return {"collab": False, "zusammenfassung": "", "stand": "", "offene_todos": [],
                     "warten_auf": "niemand", "modell": self.modell}
-        roh = self.llm(_SYSTEM, transcript)
+        from .input_guard import schuetze_text, umschliesse_extern          # I1: DMs sind Fremdinhalt
+        t, _ = schuetze_text(transcript, "instagram-dm")
+        roh = self.llm(_SYSTEM, t if t.startswith("[EXTERNER") else umschliesse_extern(t, "instagram-dm"))
         d = _json_aus_text(roh)
         todos = d.get("offene_todos") or []
         if isinstance(todos, str):

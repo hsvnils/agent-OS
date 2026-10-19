@@ -4,7 +4,7 @@
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `d816b1d`
-- Naechster Schritt: D1 deployen (CEO), danach I1-I3. Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
+- Naechster Schritt: I2 und I3 bauen, dann Deploy des Blocks I1-I3 (CEO). Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -26,8 +26,8 @@ Links verschickt, sollen Fremdtexte schon markiert und Handlungen nach einem Ver
 
 | Nr. | Etappe | Inhalt | Aufwand | Status |
 |---|---|---|---|---|
-| 1 | D1 | Drive-Upload: Mails (.eml) mit neutralem Dateityp hochladen, 3 haengende Belege werden nachgeholt (BF-72) | klein | ⬜ offen |
-| 2 | I1 | Jeder Fremdtext (Mail, Drive, Tabellen, Belege, Kundenantworten, Content-Feed) wird geprueft und markiert | mittel | ⬜ offen |
+| 1 | D1 | Drive-Upload: Mails (.eml) mit neutralem Dateityp hochladen, 3 haengende Belege werden nachgeholt (BF-72) | klein | ✅ live (bad49d5) |
+| 2 | I1 | Jeder Fremdtext (Mail, Drive, Tabellen, Belege, Kundenantworten, Content-Feed) wird geprueft und markiert | mittel | ✅ gebaut (Deploy mit I3) |
 | 3 | I2 | Feinere Erkennung (Tarnungen, versteckter Text, Rollenmarken, Datenabfluss ueber Links) + Testkorpus | mittel | ⬜ offen |
 | 4 | I3 | Handlungs-Sperre nach Verdacht (Senden, Termine, Schreiben, Loeschen, Freigaben nur nach Rueckfrage) | mittel | ⬜ offen |
 | 5 | F1 | Kundenordner je Kunde/Projekt auf der NAS (anlegen, hochladen, Lieferungen uebernehmen) | mittel | ⬜ offen |

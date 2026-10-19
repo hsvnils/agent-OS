@@ -989,7 +989,9 @@ def llm_beauftragen(st: EingangStore, backoffice, nummer: str) -> str:
     x = st.get(nummer)
     if backoffice is None or not x or len((x.get("text") or "").strip()) < 20:
         return ""
-    aid = backoffice.anlegen("Text der Eingangsrechnung:\n\n" + x["text"][:6000], art="roh", system=LLM_SYSTEM,
+    from .input_guard import schuetze_text                      # I1: Belegtext ist Fremdinhalt
+    aid = backoffice.anlegen("Text der Eingangsrechnung:\n\n" + schuetze_text(x["text"][:6000], "eingangsbeleg")[0],
+                             art="roh", system=LLM_SYSTEM,
                              zweck=f"beleg:{nummer}", stumm=True, von="LUNA-Belege")
     st.llm_auftrag_merken(nummer, aid)
     return aid

@@ -28,7 +28,7 @@
 
 ## Etappe I1: Abdeckung -- jeder Fremdtext wird markiert
 
-- Status: geplant
+- Status: gebaut 2026-10-19 (`input_guard.schuetze_ergebnis`/`schuetze_text`, `hoa_tools.FREMD_WERKZEUGE` in `run_tool`, Eingangsbelege, Content-Feed, Instagram-Analyse; Test `test_injection_schutz.py`), Deploy mit dem Block I1-I3
 - Ziel / Scope: zentrale Stelle im Werkzeug-Aufruf: Ergebnisse aller Werkzeuge mit Fremdinhalt (Mail, Drive, Tabellen,
   Recherche, Akte, Belegtexte, Kundenantworten, Content-Feed) laufen durch `input_guard` und kommen als klar abgegrenzter
   „nicht vertrauenswuerdiger Inhalt“ beim Modell an; Liste der Fremdinhalt-Werkzeuge im Code mit Test, dass keines fehlt.

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 10:49] — Claude Code
+- **Was:** PROMPT_INJECTION_SCHUTZ I1 gebaut: Ergebnisse aller Werkzeuge mit Fremdinhalt (Mail, Drive, Tabellen, Kalender, Recherche, CRM/DMs, Bildschirm, Briefing u. a., Liste `FREMD_WERKZEUGE`) werden zentral in `run_tool` geprueft, bei Verdacht markiert, lange Texte als Daten umschlossen und mit Hinweis `_extern` versehen; Verdacht wird je Gespraechszug in `ToolContext.fremd_verdacht` gesammelt (Grundlage fuer I3). Direkt an Modelle gehender Fremdtext ebenfalls geschuetzt: Eingangsbelege (Backoffice), Content-Feed (Idee/Entwurf), Instagram-Analyse. Test prueft, dass kein neues lesendes Werkzeug vergessen wird. D1 in der Sammel-Roadmap als live markiert.
+- **Warum:** CEO-Go 2026-10-19 fuer alle acht Etappen (Weg A), Reihenfolge D1 -> I1 -> I2 -> I3.
+- **Betroffen:** `orchestrator/core/input_guard.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/eingangsbelege.py`, `orchestrator/core/content_feed.py`, `orchestrator/core/ig_analyse.py`, `orchestrator/tests/test_injection_schutz.py`, `PROMPT_INJECTION_SCHUTZ_ROADMAP.md`, `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`
+
 ## [2026-10-19 10:28] — Claude Code
 - **Was:** D1 / BF-72 behoben: Drive-Upload von Mails (`message/*`) mit neutralem Dateityp `application/octet-stream` (Inhalt unveraendert); Test `test_drive_upload.py` mit Gegenprobe. Sammel-Roadmap auf „in Umsetzung“, Entscheidung Weg A im Register.
 - **Warum:** CEO 2026-10-19: Go fuer alle acht Etappen, Weg A, Empfehlungen passen.
