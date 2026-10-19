@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 10:17] — Claude Code
+- **Was:** Zwei Roadmaps angelegt (geplant): `KUNDENORDNER_FREIGABE_ROADMAP.md` (F1 Kundenordner, F2 Freigabe-Link mit Ablauf, F3 Link per Mail; Weg A eigener LUNA-OS-Link empfohlen) und `PROMPT_INJECTION_SCHUTZ_ROADMAP.md` (I1 Abdeckung aller Fremdtexte, I2 feinere Erkennung mit Testkorpus, I3 Handlungs-Sperre nach Verdacht, I4 Ueberwachung und Angriffstests). Drive-Problem analysiert und als BF-72 erfasst (3 Mail-Belege, Ursache nachgestellt).
+- **Warum:** CEO 2026-10-19: Kundenordner mit Freigabe-Link, Prompt-Injection-Schutz ausbauen, Frage nach Drive-Upload-Problemen.
+- **Betroffen:** `KUNDENORDNER_FREIGABE_ROADMAP.md`, `PROMPT_INJECTION_SCHUTZ_ROADMAP.md`, `ROADMAP.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-18 14:43] — Claude Code
 - **Was:** Deploy der Radar-Korrektur geprueft: origin/main = 50a0b6c, Code auf der NAS enthaelt beide Korrekturen (Preis 0, Namensreihenfolge), Modell-Radar mit Artificial Analysis aktiv. Erster Abgleich mit Vorschlaegen beim naechsten Lauf ab 07:00.
 - **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Live-Pruefung.
