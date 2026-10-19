@@ -4,7 +4,7 @@
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `d816b1d`
-- Naechster Schritt: F2 und F3 bauen, dann Deploy des Blocks F1-F3. Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
+- Naechster Schritt: F3 bauen, dann Deploy des Blocks F1-F3. Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -31,7 +31,7 @@ Links verschickt, sollen Fremdtexte schon markiert und Handlungen nach einem Ver
 | 3 | I2 | Feinere Erkennung (Tarnungen, versteckter Text, Rollenmarken, Datenabfluss ueber Links) + Testkorpus | mittel | ✅ live (d2bd03e) |
 | 4 | I3 | Handlungs-Sperre nach Verdacht (Senden, Termine, Schreiben, Loeschen, Freigaben nur nach Rueckfrage) | mittel | ✅ live (d2bd03e) |
 | 5 | F1 | Kundenordner je Kunde/Projekt auf der NAS (anlegen, hochladen, Lieferungen uebernehmen) | mittel | ✅ gebaut (Deploy mit F3) |
-| 6 | F2 | Freigabe-Link mit Ablauf, optional Passwort, widerrufbar, Abruf-Protokoll | mittel | ⬜ offen (Weg A entschieden) |
+| 6 | F2 | Freigabe-Link mit Ablauf, optional Passwort, widerrufbar, Abruf-Protokoll | mittel | ✅ gebaut (Deploy mit F3) |
 | 7 | F3 | Link per Mail (Versanddialog, Textbaustein „Dateifreigabe“, nur per Klick) | klein | ⬜ offen |
 | 8 | I4 | Ueberwachung (CISO-Bericht, Leistungsbericht) + Angriffs-Testreihe in der Testsuite | klein bis mittel | ⬜ offen |
 

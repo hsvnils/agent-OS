@@ -244,6 +244,8 @@ def auth(request: Request, cred: HTTPBasicCredentials = Depends(_security)):
     pfad = request.url.path
     if pfad.startswith("/api/webhook/") or pfad in _OFFEN:
         return
+    if pfad.startswith("/teilen/"):   # KUNDENORDNER F2: Freigabe-Links pruefen Schluessel/Ablauf/Passwort selbst (CISO)
+        return
     user = None
     token = request.cookies.get(COOKIE)
     s = _sitzungen.pruefen(token) if token else None
@@ -2135,7 +2137,7 @@ def kundenordner_datei(oid: str, i: int):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Datei nicht gefunden.")
     pfad, d = r
     return FileResponse(pfad, media_type=d.get("mime") or "application/octet-stream", filename=d.get("name") or pfad.name,
-                        content_disposition_type="inline")
+                        content_disposition_type="attachment" if d.get("mime") == "image/svg+xml" else "inline")
 
 
 @app.post("/api/crm/kundenordner/{oid}/datei/{i}/entfernen")
@@ -2147,6 +2149,201 @@ async def kundenordner_datei_entfernen(oid: str, i: int, request: Request):
 async def kundenordner_lieferung(oid: str, request: Request):
     body = await _json(request)
     return _kunden_aktion(lambda: _kundenordner().lieferung_uebernehmen(oid, body.get("lieferung") or "", von=_von(request)))
+
+
+# -- Freigabe-Links (KUNDENORDNER_FREIGABE F2, Weg A): /teilen/<schluessel> ohne Anmeldung, nur dieser eine Ordner -------
+def _freigaben():
+    from ...core.ordner_freigabe import Freigaben
+    return Freigaben(kunden_store.bh, ROOT / "orchestrator" / "state" / "freigabe_links.json", _kundenordner())
+
+
+@app.get("/api/crm/kundenordner/{oid}/freigaben")
+def freigaben_liste(oid: str):
+    return {"freigaben": _freigaben().fuer_ordner(oid)}
+
+
+@app.post("/api/crm/kundenordner/{oid}/freigaben")
+async def freigabe_anlegen(oid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _freigaben().anlegen(oid, tage=int(body.get("tage") or 30), passwort=body.get("passwort") or "",
+                                                       von=_von(request)))
+
+
+@app.post("/api/crm/freigaben/{fid}/widerrufen")
+async def freigabe_widerrufen(fid: str, request: Request):
+    return _kunden_aktion(lambda: _freigaben().widerrufen(fid, von=_von(request)))
+
+
+_TEILEN_KOPF = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Robots-Tag": "noindex, nofollow",
+                "X-Frame-Options": "DENY", "X-Content-Type-Options": "nosniff",
+                "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; "
+                                           "form-action 'self'; base-uri 'none'; frame-ancestors 'none'"}
+_TEILEN_TAKT: dict[str, list[float]] = {}      # IP -> Zeitpunkte der letzten Abrufe (Bremse je Minute)
+_TEILEN_OK: dict[str, tuple[str, float]] = {}  # Passwort-Cookie -> (Freigabe, gueltig bis)
+_TEILEN_GESEHEN: dict[tuple[str, str], float] = {}
+TEILEN_PRO_MINUTE = 120
+_TEILEN_COOKIE = "luna_teilen"
+
+
+def _teilen_freigabe(request: Request, schluessel: str) -> dict:
+    """Bremse + Schluessel + Passwort pruefen. Unbekannt/abgelaufen/widerrufen sieht von aussen gleich aus (404)."""
+    import time as _t
+    ip = _client_ip(request)
+    jetzt_s = _t.time()
+    takt = [x for x in _TEILEN_TAKT.get(ip, []) if jetzt_s - x < 60] + [jetzt_s]
+    _TEILEN_TAKT[ip] = takt
+    schl = f"teilen|{ip}"
+    if len(takt) > TEILEN_PRO_MINUTE or _sitzungen.gesperrt_s(schl):
+        raise HTTPException(429, "Zu viele Abrufe -- bitte später erneut.", headers=_TEILEN_KOPF)
+    f = _freigaben().finde(schluessel)
+    if not f:
+        _sitzungen.fehlversuch(schl)
+        raise HTTPException(404, "Dieser Link ist ungültig, abgelaufen oder wurde zurückgezogen.", headers=_TEILEN_KOPF)
+    if f.get("passwort_hash"):
+        ok = _TEILEN_OK.get(request.cookies.get(_TEILEN_COOKIE, ""))
+        if not ok or ok[0] != f["fid"] or ok[1] < jetzt_s:
+            f = f | {"gesperrt": True}
+    return f
+
+
+def _teilen_seite(titel: str, inhalt: str, status_code: int = 200) -> Response:
+    from html import escape as _e
+    html = f"""<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow"><title>{_e(titel)} · Hanserautisch</title><style>
+:root{{color-scheme:light dark;--bg:#f4f6fb;--karte:#fff;--text:#14171f;--leise:#5d6577;--linie:#e3e7ef;--akzent:#2f6bff}}
+@media (prefers-color-scheme:dark){{:root{{--bg:#0d1017;--karte:#161b25;--text:#eef1f7;--leise:#9aa3b5;--linie:#262d3b;--akzent:#6d9bff}}}}
+*{{box-sizing:border-box}}body{{margin:0;font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);
+padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}}
+main{{max-width:760px;margin:0 auto}}.kopf{{display:flex;align-items:center;gap:10px;margin:8px 0 18px}}.marke{{font-weight:800;letter-spacing:.02em}}
+.karte{{background:var(--karte);border:1px solid var(--linie);border-radius:18px;padding:18px;margin:12px 0}}h1{{font-size:22px;margin:0 0 4px;overflow-wrap:anywhere}}
+.leise{{color:var(--leise);font-size:14px}}ul{{list-style:none;margin:0;padding:0}}li{{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--linie)}}
+li:first-child{{border-top:0}}.name{{flex:1;min-width:0;overflow-wrap:anywhere}}a.knopf,button{{display:inline-block;background:var(--akzent);color:#fff;border:0;border-radius:999px;
+padding:10px 16px;font:inherit;font-weight:600;text-decoration:none;cursor:pointer;white-space:nowrap}}a.leicht{{background:transparent;color:var(--akzent);border:1px solid var(--linie)}}
+input{{font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--linie);background:var(--bg);color:var(--text);width:100%;margin:8px 0 12px}}
+.fehler{{color:#c0392b}}</style></head><body><main><div class="kopf"><span class="marke">HANSERAUTISCH</span><span class="leise">· Dateifreigabe</span></div>{inhalt}
+<p class="leise">Nur ansehen und herunterladen. Fragen? Antworte einfach auf die Mail mit diesem Link.</p></main></body></html>"""
+    return Response(html, status_code=status_code, media_type="text/html; charset=utf-8", headers=_TEILEN_KOPF)
+
+
+def _groesse(b: int) -> str:
+    return f"{b / 1048576:.1f} MB".replace(".", ",") if b > 1048576 else f"{max(1, round(b / 1024))} KB"
+
+
+@app.exception_handler(HTTPException)
+async def _http_fehler(request: Request, exc: HTTPException):
+    """Fehlerseiten unter /teilen/ als lesbare Seite (statt JSON); alles andere wie gehabt."""
+    from fastapi.exception_handlers import http_exception_handler
+    if request.url.path.startswith("/teilen/") and exc.status_code in (404, 429):
+        from html import escape as _e
+        return _teilen_seite("Link nicht verfügbar", f'<div class="karte"><h1>{"Link nicht verfügbar" if exc.status_code == 404 else "Kurz warten"}</h1>'
+                             f'<p class="leise">{_e(str(exc.detail))}</p></div>', exc.status_code)
+    return await http_exception_handler(request, exc)
+
+
+@app.get("/teilen/{schluessel}")
+def teilen_seite(schluessel: str, request: Request):
+    import time as _t
+    from html import escape as _e
+    f = _teilen_freigabe(request, schluessel)
+    o = f["ordner"]
+    if f.get("gesperrt"):
+        fehler = request.query_params.get("fehler")
+        return _teilen_seite(o["name"], f"""<div class="karte"><h1>{_e(o["name"])}</h1><p class="leise">Dieser Ordner ist mit einem Passwort geschützt.</p>
+<form method="post" action="/teilen/{_e(schluessel)}"><input type="password" name="passwort" autocomplete="current-password" placeholder="Passwort" required autofocus>
+{'<p class="fehler">Das Passwort stimmt nicht.</p>' if fehler else ''}<button type="submit">Öffnen</button></form></div>""")
+    ip = _client_ip(request)
+    schl = (f["fid"], ip)
+    if _t.time() - _TEILEN_GESEHEN.get(schl, 0) > 1800:          # Seitenaufruf hoechstens alle 30 min je Adresse protokollieren
+        _TEILEN_GESEHEN[schl] = _t.time()
+        _freigaben().abruf(f, "seite", ip=ip)
+    zeilen = "".join(f'<li><span>{"🎬" if str(d.get("mime", "")).startswith("video/") else "🖼️" if str(d.get("mime", "")).startswith("image/") else "📄"}</span>'
+                     f'<span class="name">{_e(d["name"])}<br><span class="leise">{_groesse(d.get("groesse") or 0)}</span></span>'
+                     f'<a class="knopf leicht" href="/teilen/{_e(schluessel)}/datei/{i}">Laden</a></li>' for i, d in enumerate(o["dateien"]))
+    ablauf = ".".join(reversed(f["ablauf"].split("-")))
+    return _teilen_seite(o["name"], f"""<div class="karte"><h1>{_e(o["name"])}</h1><p class="leise">{len(o["dateien"])} Datei(en) · verfügbar bis {ablauf}</p>
+{'<p><a class="knopf" href="/teilen/' + _e(schluessel) + '/zip">Alle herunterladen (ZIP)</a></p>' if len(o["dateien"]) > 1 else ''}</div>
+<div class="karte">{f"<ul>{zeilen}</ul>" if zeilen else '<p class="leise">Noch keine Dateien in diesem Ordner.</p>'}</div>""")
+
+
+@app.post("/teilen/{schluessel}")
+async def teilen_passwort(schluessel: str, request: Request):
+    import time as _t
+    import urllib.parse as _up
+    f = _teilen_freigabe(request, schluessel)
+    pw = (_up.parse_qs((await request.body()).decode("utf-8", "replace")).get("passwort") or [""])[0]
+    if not _freigaben().passwort_ok(f, pw):
+        _sitzungen.fehlversuch(f"teilen|{_client_ip(request)}")
+        return RedirectResponse(f"/teilen/{schluessel}?fehler=1", status_code=303, headers=_TEILEN_KOPF)
+    wert = secrets.token_urlsafe(32)
+    for k in [k for k, v in _TEILEN_OK.items() if v[1] < _t.time()]:
+        _TEILEN_OK.pop(k, None)
+    _TEILEN_OK[wert] = (f["fid"], _t.time() + 12 * 3600)
+    resp = RedirectResponse(f"/teilen/{schluessel}", status_code=303, headers=_TEILEN_KOPF)
+    resp.set_cookie(_TEILEN_COOKIE, wert, max_age=12 * 3600, httponly=True, secure=_ist_https(request), samesite="lax",
+                    path="/teilen/")
+    return resp
+
+
+def _teilen_offen(request: Request, schluessel: str) -> dict:
+    f = _teilen_freigabe(request, schluessel)
+    if f.get("gesperrt"):
+        raise HTTPException(403, "Passwort nötig.", headers=_TEILEN_KOPF)
+    return f
+
+
+@app.get("/teilen/{schluessel}/datei/{i}")
+def teilen_datei(schluessel: str, i: int, request: Request):
+    f = _teilen_offen(request, schluessel)
+    r = _kundenordner().datei(f["oid"], i)
+    if not r:
+        raise HTTPException(404, "Datei nicht gefunden.", headers=_TEILEN_KOPF)
+    pfad, d = r
+    _freigaben().abruf(f, "datei", datei=d["name"], ip=_client_ip(request))
+    return FileResponse(pfad, media_type=d.get("mime") or "application/octet-stream", filename=d["name"],
+                        content_disposition_type="attachment", headers=_TEILEN_KOPF)
+
+
+@app.get("/teilen/{schluessel}/zip")
+def teilen_zip(schluessel: str, request: Request):
+    """Alle Dateien als ZIP -- gestreamt (auch bei grossen Videos kein Zwischenspeicher), ohne Kompression."""
+    import zipfile
+    from ...core.kundenordner import _slug
+    f = _teilen_offen(request, schluessel)
+    ko = _kundenordner()
+    dateien = [r for r in (ko.datei(f["oid"], i) for i in range(len(f["ordner"]["dateien"]))) if r]
+    _freigaben().abruf(f, "zip", datei=f"{len(dateien)} Dateien", ip=_client_ip(request))
+
+    class _Puffer:
+        def __init__(self):
+            self.teile: list[bytes] = []
+        def write(self, b):
+            self.teile.append(bytes(b))
+            return len(b)
+        def flush(self):
+            pass
+        def holen(self) -> bytes:
+            b, self.teile = b"".join(self.teile), []
+            return b
+
+    def gen():
+        p = _Puffer()
+        namen: set[str] = set()
+        with zipfile.ZipFile(p, "w", zipfile.ZIP_STORED, allowZip64=True) as z:
+            for pfad, d in dateien:
+                n = d["name"]
+                while n in namen:
+                    n = "_" + n
+                namen.add(n)
+                with open(pfad, "rb") as quelle, z.open(n, "w", force_zip64=True) as ziel:
+                    for block in iter(lambda: quelle.read(1024 * 1024), b""):
+                        ziel.write(block)
+                        yield p.holen()
+                yield p.holen()
+        yield p.holen()
+
+    name = _slug(f["ordner"]["name"]) + ".zip"
+    return StreamingResponse(gen(), media_type="application/zip",
+                             headers=_TEILEN_KOPF | {"Content-Disposition": f'attachment; filename="{name}"'})
 
 
 # -- Postings + Kennzahlen (PROJEKTBERICHT P1/P2): je Position so viele Postings wie die Menge ---------------------------

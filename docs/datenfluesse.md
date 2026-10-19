@@ -314,7 +314,12 @@ orchestrator/state/luna_os_sitzungen.json  # Login-Sitzungen (nur Token-Hashes);
 - **Telegram:** Long-Poll `getUpdates` im Container `luna-telegram` — genau ein Poller, nie zusaetzlich starten.
 - **LUNA-OS** (Container `luna-os`, Port 8765, extern `https://os.hanserautisch.synology.me`): HTTP-Basic-Auth
   (CEO aus `.env` oder Team-Nutzer aus `luna_os_users`); ausgenommen nur `/api/webhook/*` (Meta, per
-  Verify-Token/HMAC geprueft). Routen-Gruppen: Kern (`/api/state`, `/api/me`, `/api/events`, `/api/prefs`,
+  Verify-Token/HMAC geprueft) und `/teilen/*` (KUNDENORDNER F2: Freigabe-Links fuer Kunden aus dem Internet; jede Route
+  prueft selbst Schluessel (nur SHA-256 in der Kette), Ablauf, Widerruf, optional Passwort (PBKDF2, Cookie `luna_teilen`
+  nur fuer `/teilen/`), Bremse je IP + Login-Fehlversuch-Sperre; liefert nur Dateien genau dieses Ordners;
+  Ereignisse `ordner_freigabe_angelegt/_widerrufen/_abruf` (IP gekuerzt), Links zum erneuten Anzeigen in
+  `orchestrator/state/freigabe_links.json`; interne Verwaltung `/api/crm/kundenordner/<id>/freigaben`,
+  `/api/crm/freigaben/<fid>/widerrufen`). Routen-Gruppen: Kern (`/api/state`, `/api/me`, `/api/events`, `/api/prefs`,
   `/api/settings`, …), Chat/Voice (`/api/chat`, `/api/tts`, `/api/sehen`, `/api/brain`), Antraege und
   Entwicklungs-Roadmap, Cutter (`/api/cutter/*`, Maschine-zu-Maschine), Backoffice (`/api/backoffice/*`, Modul
   administration, Maschine-zu-Maschine), Kunden-Stammdaten (`/api/crm/kunden*`, `/api/crm/ansprechpartner/*`,

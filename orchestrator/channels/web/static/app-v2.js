@@ -1284,16 +1284,44 @@ async function koLaden(nr, offen) {
   KO_NR = nr;
   const d = await jget(`/api/crm/kunden/${encodeURIComponent(nr)}/ordner`);
   const l = (d && d.ordner) || [];
-  box.innerHTML = (l.length ? l.map(o => { const n = (o.dateien || []).length;
+  const fg = await Promise.all(l.map(o => jget(`/api/crm/kundenordner/${encodeURIComponent(o.id)}/freigaben`)));
+  box.innerHTML = (l.length ? l.map((o, oi) => { const n = (o.dateien || []).length;
+    const fl = ((fg[oi] && fg[oi].freigaben) || []), aktiv = fl.filter(f => f.aktiv);
     const dateien = (o.dateien || []).map((f, i) => `<div class="v2-list-row"><span>${String(f.mime || "").startsWith("video/") ? "🎬" : String(f.mime || "").startsWith("image/") ? "🖼️" : "📄"}</span><div class="grow"><b><a href="/api/crm/kundenordner/${encodeURIComponent(o.id)}/datei/${i}" target="_blank" rel="noopener">${esc(f.name)}</a></b>
       <small>${groesseTxt(f.groesse)} · ${esc(zeit(f.ts))}${f.quelle ? " · aus Lieferung" : ""}</small></div><button class="v2-btn sm" data-act="ko-datei-weg" data-id="${esc(o.id)}" data-val="${i}" title="Datei aus dem Ordner löschen">✕</button></div>`).join("");
-    return `<details class="v2-lf v2-ko" ${offen === o.id ? "open" : ""}><summary><b>🗂️ ${esc(o.name)}</b> <small class="v2-sub">${n} Datei${n === 1 ? "" : "en"}${o.auftrag ? " · " + esc(o.auftrag) : ""}</small></summary>
+    return `<details class="v2-lf v2-ko" ${offen === o.id ? "open" : ""}><summary><b>🗂️ ${esc(o.name)}</b> <small class="v2-sub">${n} Datei${n === 1 ? "" : "en"}${o.auftrag ? " · " + esc(o.auftrag) : ""}${aktiv.length ? " · 🔗 freigegeben" : ""}</small></summary>
       ${dateien || `<div class="v2-sub">Noch leer.</div>`}
+      ${koFreigabenHtml(o, fl)}
       <div class="v2-form"><label class="v2-feld"><small>Dateien hinzufügen (Videos, Bilder, Audio, PDF, Office, ZIP – bis 4 GB je Datei)</small><input id="ko-dateien-${esc(o.id)}" type="file" multiple></label>
       <div id="ko-fort-${esc(o.id)}" class="v2-sub"></div><button class="v2-btn" data-act="ko-hochladen" data-id="${esc(o.id)}" data-val="${esc(nr)}">Hochladen</button></div></details>`; }).join("")
     : `<div class="v2-sub">Noch kein Ordner. Lege je Projekt einen an – darüber gibst du dem Kunden später Dateien frei.</div>`)
     + `<details style="margin-top:8px"><summary><small>+ Ordner anlegen</small></summary><div class="v2-form"><label class="v2-feld"><small>Name *</small><input id="ko-name" class="v2-inp" maxlength="120" placeholder="z. B. Herbstkampagne 2026"></label>
       <button class="v2-btn" data-act="ko-anlegen" data-id="${esc(nr)}">Ordner anlegen</button></div></details><div id="ko-msg" class="v2-msg"></div>`;
+}
+// KUNDENORDNER F2: Freigabe-Link (Ablauf, optional Passwort, widerrufbar, Abrufe sichtbar)
+function koFreigabenHtml(o, fl) {
+  const zeile = (f) => { const url = f.link ? location.origin + f.link : "";
+    const st = f.widerrufen ? `<span class="v2-badge err">zurückgezogen</span>` : f.aktiv ? `<span class="v2-badge ok">aktiv bis ${esc(datumDe(f.ablauf))}</span>` : `<span class="v2-badge neutral">abgelaufen ${esc(datumDe(f.ablauf))}</span>`;
+    const abrufe = (f.abrufe || []).map(a => `${esc(zeit(a.ts))} · ${esc({ seite: "angesehen", datei: "geladen: " + (a.datei || ""), zip: "ZIP geladen" }[a.art] || a.art)}`).join("<br>");
+    return `<div class="v2-ko-fg"><div class="v2-ko-status">${st}${f.mit_passwort ? ` <span class="v2-badge neutral">🔒 Passwort</span>` : ""}</div>
+      ${f.aktiv && url ? `<div class="v2-ko-link"><input class="v2-inp" readonly value="${esc(url)}" aria-label="Freigabe-Link"><button class="v2-btn sm" data-act="ko-link-kopieren" data-val="${esc(url)}">Kopieren</button></div>` : ""}
+      <small class="v2-sub">${f.abrufe_anzahl ? `${f.abrufe_anzahl} Abruf${f.abrufe_anzahl === 1 ? "" : "e"}` : "noch nicht abgerufen"}</small>
+      ${abrufe ? `<details><summary><small>Abrufe</small></summary><small class="v2-sub">${abrufe}</small></details>` : ""}
+      ${f.aktiv ? `<div class="v2-card-actions"><button class="v2-btn sm" data-act="ko-fg-widerrufen" data-id="${esc(f.fid)}" data-val="${esc(o.id)}">Link zurückziehen</button></div>` : ""}</div>`; };
+  return `<div class="v2-ko-freigabe"><b>🔗 Freigabe-Link</b> <small class="v2-sub">Nur ansehen und herunterladen, ohne Anmeldung</small>
+    ${fl.filter(f => f.aktiv).map(zeile).join("")}
+    <details ${fl.some(f => f.aktiv) ? "" : "open"}><summary><small>+ Neuen Link erstellen</small></summary><div class="v2-an-zeile">
+      <label class="v2-feld"><small>Gültig</small><select id="ko-fg-tage-${esc(o.id)}"><option value="7">7 Tage</option><option value="30" selected>30 Tage</option><option value="90">90 Tage</option></select></label>
+      <label class="v2-feld"><small>Passwort (optional, mind. 6 Zeichen)</small><input id="ko-fg-pw-${esc(o.id)}" class="v2-inp" type="text" autocomplete="off" placeholder="leer = ohne"></label></div>
+      <button class="v2-btn pri" data-act="ko-fg-anlegen" data-id="${esc(o.id)}">🔗 Link erstellen</button></details>
+    ${fl.some(f => !f.aktiv) ? `<details><summary><small>Frühere Links (${fl.filter(f => !f.aktiv).length})</small></summary>${fl.filter(f => !f.aktiv).map(zeile).join("")}</details>` : ""}</div>`;
+}
+async function koFreigabeAnlegen(oid) {
+  const r = await jpost(`/api/crm/kundenordner/${encodeURIComponent(oid)}/freigaben`, { tage: Number(($("#ko-fg-tage-" + oid) || {}).value || 30), passwort: (($("#ko-fg-pw-" + oid) || {}).value || "").trim() });
+  if (!r || !r.ok) return kundenMsg("ko-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+  await koLaden(KO_NR, oid);
+  try { await navigator.clipboard.writeText(location.origin + r.link); kundenMsg("ko-msg", `Link erstellt und kopiert – gültig bis ${datumDe(r.ablauf)}${r.mit_passwort ? ". Das Passwort schickst du getrennt (z. B. per Telefon oder SMS)." : "."}`, true); }
+  catch (e) { kundenMsg("ko-msg", `Link erstellt – gültig bis ${datumDe(r.ablauf)}.`, true); }
 }
 async function koAnlegen(nr) {
   const name = (($("#ko-name") || {}).value || "").trim(); if (!name) return kundenMsg("ko-msg", "Bitte einen Namen angeben.", false);
@@ -4791,6 +4819,11 @@ async function handleAct(act, el) {
       const r = await jpost(`/api/crm/kundenordner/${encodeURIComponent(id)}/datei/${val}/entfernen`, {});
       if (KO_NR) await koLaden(KO_NR, id); return kundenMsg("ko-msg", r && r.ok ? `${r.entfernt} gelöscht.` : (r && r.hinweis) || "Fehler.", !!(r && r.ok)); }
     case "lf-ordner": return koLieferungForm(id, val);
+    case "ko-fg-anlegen": return koFreigabeAnlegen(id);
+    case "ko-fg-widerrufen": { if (!confirm("Link zurückziehen? Der Kunde kann den Ordner danach nicht mehr öffnen.")) return;
+      const r = await jpost(`/api/crm/freigaben/${encodeURIComponent(id)}/widerrufen`, {}); await koLaden(KO_NR, val);
+      return kundenMsg("ko-msg", r && r.ok ? "Link zurückgezogen." : (r && r.hinweis) || "Fehler.", !!(r && r.ok)); }
+    case "ko-link-kopieren": { try { await navigator.clipboard.writeText(val); kundenMsg("ko-msg", "Link kopiert.", true); } catch (e) { kundenMsg("ko-msg", val, true); } return; }
     case "ko-lief-ok": return koLieferungOk(id, val);
     case "akte-zuordnen": return akteZuordnenForm(id);
     case "akte-zuordnen-ok": case "akte-zuordnen-keine": { const r = await jpost(`/api/crm/akte/${encodeURIComponent(id)}/zuordnen`, { firma: act === "akte-zuordnen-ok" ? $("#az-firma").value : "" });

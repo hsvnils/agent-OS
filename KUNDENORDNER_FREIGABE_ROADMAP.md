@@ -4,7 +4,7 @@
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `b9b9944`
-- Naechster Schritt: F2 (Freigabe-Link) und F3 (Link per Mail) bauen, dann Deploy F1-F3.
+- Naechster Schritt: F3 (Link per Mail) bauen, dann Deploy F1-F3.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -40,7 +40,7 @@ freigegebenen Ordner per E-Mail mit.“
 
 ## Etappe F2: Freigabe-Link
 
-- Status: geplant
+- Status: gebaut 2026-10-19 (`core/ordner_freigabe.py`, Routen `/teilen/<schluessel>` (+ `/datei/<i>`, `/zip`, Passwort per POST), Verwaltung im Kundenordner „🔗 Freigabe-Link“, CISO-Vermerk in `governance/zugriffs-policy.md`; Test `test_ordner_freigabe.py`), Deploy mit F3
 - Ziel / Scope (Weg A): „🔗 Freigeben …“ -> Link mit Ablauf (Standard 30 Tage), optional Passwort, Anzeige „Nur ansehen und
   herunterladen“. Oeffentliche Seite im Hanserautisch-Look mit Dateiliste und Einzel-/ZIP-Download; Abruf-Protokoll und
   „Link widerrufen“ am Ordner. Schutz: langer Zufallsschluessel, Ablauf, Begrenzung der Abrufe je Minute, keine anderen
