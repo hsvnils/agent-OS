@@ -91,8 +91,8 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `EMPFAENGER_MEHRERE_ROADMAP.md` | Mehrere Empfaenger beim Versand (Adressen der Firma anhaken, weitere von Hand, CC, BCC) in allen Versanddialogen | in Umsetzung (M1-M2 gebaut 2026-10-13) |
 | `MODELL_RADAR_ROADMAP.md` | Modell-Radar: Hersteller-News (Feeds/Seiten), Artificial-Analysis-Vergleich, Vorschlaege fuer Modellwechsel (nie automatisch) | in Umsetzung (R1-R4 gebaut, R4 lokale Modelle 2026-10-16) |
 | `SKILL_WERKSTATT_ROADMAP.md` | Skill-Werkstatt: Skill-Radar (nur Ideen), Luecken aus eigener Arbeit, eigene Skills mit Pruffaellen bauen und aus Rueckmeldungen verbessern -- kein Import fremder Skills | in Umsetzung (S1-S4 gebaut 2026-10-16) |
-| `DRIVE_ORDNER_SCHUTZ_ROADMAP.md` | Sammel-Roadmap: Drive-Fix (BF-72), Kundenordner mit Freigabe-Link, Prompt-Injection-Schutz -- Reihenfolge und Stand | in Umsetzung (alle acht Etappen live; CEO-Abnahme F1-F3 offen) |
-| `KUNDENORDNER_FREIGABE_ROADMAP.md` | Kundenordner auf der NAS, sicherer Freigabe-Link mit Ablauf, Link per Mail | in Umsetzung (F1-F3 live 2026-10-19, CEO-Abnahme offen) |
+| `DRIVE_ORDNER_SCHUTZ_ROADMAP.md` | Sammel-Roadmap: Drive-Fix (BF-72), Kundenordner mit Freigabe-Link, Prompt-Injection-Schutz -- Reihenfolge und Stand | abgeschlossen (2026-10-19, alle acht Etappen live und abgenommen) |
+| `KUNDENORDNER_FREIGABE_ROADMAP.md` | Kundenordner auf der NAS, sicherer Freigabe-Link mit Ablauf, Link per Mail | abgeschlossen (F1-F3 live, CEO-Abnahme 2026-10-19) |
 | `PROMPT_INJECTION_SCHUTZ_ROADMAP.md` | Prompt-Injection-Schutz: jeder Fremdtext markiert, feinere Erkennung, Handlungs-Sperre nach Verdacht, Angriffstests | abgeschlossen (I1-I4 live 2026-10-19) |
 | `SERIEN_UND_VORSTELLUNG_ROADMAP.md` | Wiederkehrender Content im Content-Plan; Vorstellungs-Mails an Unternehmen aus LUNA-OS (Firma beim Senden als Interessent) | in Umsetzung (S1, V1, V2 gebaut 2026-10-06) |
 | `IMPRESSUM_SUCHE_ROADMAP.md` | Kundendaten beim Anlegen einer Firma aus dem Impressum vorfuellen (regelbasiert, optional lokale KI) | in Umsetzung (I1 gebaut 2026-10-06) |

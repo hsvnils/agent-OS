@@ -1,10 +1,12 @@
 # Roadmap: Drive-Fix, Kundenordner mit Freigabe-Link, Prompt-Injection-Schutz (Sammel-Roadmap)
 
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `d816b1d`
-- Naechster Schritt: Abnahme F1-F3 mit echtem Ordner (CEO); danach Sammel-Roadmap abschliessen. Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
+- Naechster Schritt: keiner -- alle acht Etappen live, F1-F3 vom CEO abgenommen (inkl. iPhone-Fix ad36cb2), 2026-10-19.
+  Folgethemen: Fehlalarme „unsichtbare-zeichen“ bei Newslettern beobachten; Ordner loeschen (bisher nur Dateien) bei Bedarf;
+  Kunden-Upload in Ordner (Nicht-Scope von F1-F3, spaeter moeglich). Go CEO 2026-10-19 fuer alle acht Etappen, Weg A.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

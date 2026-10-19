@@ -1,10 +1,11 @@
 # Roadmap: Kundenordner auf der NAS mit Freigabe-Link per Mail
 
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `b9b9944`
-- Naechster Schritt: Abnahme durch den CEO mit einem echten Ordner (anlegen, Link erstellen, am iPhone oeffnen), dann Roadmap abschliessen.
+- Naechster Schritt: keiner -- F1-F3 live und vom CEO am 2026-10-19 abgenommen (Ordner, Upload, Link mit Passwort am iPhone,
+  Mail, Zurueckziehen); iPhone-Breite nachgebessert (ad36cb2). Folgethemen: Ordner loeschen, Kunden-Upload (spaeter).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

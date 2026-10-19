@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 13:10] — Claude Code
+- **Was:** CEO hat den iPhone-Fix geprueft („jetzt bleibt alles im Bild“). Sammel-Roadmap `DRIVE_ORDNER_SCHUTZ_ROADMAP.md` und `KUNDENORDNER_FREIGABE_ROADMAP.md` auf abgeschlossen gesetzt (Prompt-Injection-Roadmap war schon abgeschlossen); Folgethemen in den Roadmaps genannt (Newsletter-Fehlalarme beobachten, Ordner loeschen, Kunden-Upload).
+- **Warum:** CEO-Abnahme 2026-10-19 aller acht Etappen.
+- **Betroffen:** `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`, `KUNDENORDNER_FREIGABE_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-19 13:05] — Claude Code
 - **Was:** Deploy des iPhone-Fixes (Kundenordner zu breit) live geprueft: origin/main = ad36cb2, NAS liefert `style-v2.css?v=73` mit dem Fix aus. Gegenprobe am iPhone steht beim CEO.
 - **Warum:** Abnahme nach CEO-Deploy.
