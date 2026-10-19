@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 10:26] — Claude Code
+- **Was:** Sammel-Roadmap `DRIVE_ORDNER_SCHUTZ_ROADMAP.md` angelegt (geplant): Reihenfolge D1 -> I1 -> I2 -> I3 -> F1 -> F2 -> F3 -> I4 mit Status-Tabelle, verweist auf BF-72 und die Einzel-Roadmaps; im Roadmap-Verzeichnis eingetragen. Arbeitsanweisung „Status-Tabelle nach jedem erledigten Punkt“ im Gedaechtnis gespeichert.
+- **Warum:** CEO 2026-10-19: eine Roadmap fuer die drei Punkte; nach jedem erledigten Punkt erledigte und offene Punkte als Tabelle zeigen (generell).
+- **Betroffen:** `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-19 10:17] — Claude Code
 - **Was:** Zwei Roadmaps angelegt (geplant): `KUNDENORDNER_FREIGABE_ROADMAP.md` (F1 Kundenordner, F2 Freigabe-Link mit Ablauf, F3 Link per Mail; Weg A eigener LUNA-OS-Link empfohlen) und `PROMPT_INJECTION_SCHUTZ_ROADMAP.md` (I1 Abdeckung aller Fremdtexte, I2 feinere Erkennung mit Testkorpus, I3 Handlungs-Sperre nach Verdacht, I4 Ueberwachung und Angriffstests). Drive-Problem analysiert und als BF-72 erfasst (3 Mail-Belege, Ursache nachgestellt).
 - **Warum:** CEO 2026-10-19: Kundenordner mit Freigabe-Link, Prompt-Injection-Schutz ausbauen, Frage nach Drive-Upload-Problemen.

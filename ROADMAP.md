@@ -91,6 +91,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `EMPFAENGER_MEHRERE_ROADMAP.md` | Mehrere Empfaenger beim Versand (Adressen der Firma anhaken, weitere von Hand, CC, BCC) in allen Versanddialogen | in Umsetzung (M1-M2 gebaut 2026-10-13) |
 | `MODELL_RADAR_ROADMAP.md` | Modell-Radar: Hersteller-News (Feeds/Seiten), Artificial-Analysis-Vergleich, Vorschlaege fuer Modellwechsel (nie automatisch) | in Umsetzung (R1-R4 gebaut, R4 lokale Modelle 2026-10-16) |
 | `SKILL_WERKSTATT_ROADMAP.md` | Skill-Werkstatt: Skill-Radar (nur Ideen), Luecken aus eigener Arbeit, eigene Skills mit Pruffaellen bauen und aus Rueckmeldungen verbessern -- kein Import fremder Skills | in Umsetzung (S1-S4 gebaut 2026-10-16) |
+| `DRIVE_ORDNER_SCHUTZ_ROADMAP.md` | Sammel-Roadmap: Drive-Fix (BF-72), Kundenordner mit Freigabe-Link, Prompt-Injection-Schutz -- Reihenfolge und Stand | geplant |
 | `KUNDENORDNER_FREIGABE_ROADMAP.md` | Kundenordner auf der NAS, sicherer Freigabe-Link mit Ablauf, Link per Mail | geplant |
 | `PROMPT_INJECTION_SCHUTZ_ROADMAP.md` | Prompt-Injection-Schutz: jeder Fremdtext markiert, feinere Erkennung, Handlungs-Sperre nach Verdacht, Angriffstests | geplant |
 | `SERIEN_UND_VORSTELLUNG_ROADMAP.md` | Wiederkehrender Content im Content-Plan; Vorstellungs-Mails an Unternehmen aus LUNA-OS (Firma beim Senden als Interessent) | in Umsetzung (S1, V1, V2 gebaut 2026-10-06) |
