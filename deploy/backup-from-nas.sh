@@ -86,6 +86,21 @@ ssh -n -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH} && [ -d einwilligungen/pdf ] 
 # SKILL_WERKSTATT: freigegebene eigene Skills samt Versionen (nur NAS)
 ssh -n -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH} && [ -d skills_eigen ] && tar czf - skills_eigen 2>/dev/null" \
   | tar xzf - -C "$DEST" 2>/dev/null || true
+# KUNDENORDNER F1: Dateien fuer Kunden (auch grosse Videos) -- NICHT in jeden Zeitstempel-Stand (30 Kopien), sondern als
+# fortlaufender Spiegel `$DEST_BASE/kundenordner/`: nur fehlende Dateien werden geholt (Namen tragen den Hash -> neue
+# Inhalte = neue Namen). Auf der NAS geloeschte Dateien bleiben im Spiegel. rsync per SSH ist auf der NAS gesperrt -> tar.
+SPIEGEL="${DEST_BASE}/kundenordner"
+mkdir -p "$SPIEGEL"
+ssh -n -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH} && [ -d kundenordner ] && find kundenordner -type f -not -path '*/.upload/*' -printf '%s %P\n'" 2>/dev/null \
+  | while read -r groesse pfad; do
+      [ -f "$SPIEGEL/$pfad" ] && [ "$(stat -c %s "$SPIEGEL/$pfad")" = "$groesse" ] || printf '%s\n' "$pfad"
+    done > "${DEST_BASE}/.kundenordner-neu"
+if [ -s "${DEST_BASE}/.kundenordner-neu" ]; then
+  ssh -o BatchMode=yes "$NAS_SSH" "cd ${NAS_PATH}/kundenordner && tar cf - -T -" < "${DEST_BASE}/.kundenordner-neu" 2>/dev/null \
+    | tar xf - -C "$SPIEGEL" 2>/dev/null || true
+fi
+echo ">> Kundenordner-Spiegel: $(wc -l < "${DEST_BASE}/.kundenordner-neu" | tr -d ' ') neue Datei(en)."
+rm -f "${DEST_BASE}/.kundenordner-neu"
 
 FILES_OK=$(find "$DEST" -type f -name '*.jsonl' 2>/dev/null | wc -l | tr -d ' ')
 LINES=$(find "$DEST" -type f -name '*.jsonl' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ')

@@ -88,6 +88,8 @@ approvals/log.jsonl
 # Instagram/Meta Token-Store (Live-Secret, selbst-erneuernd -- nie committen)
 orchestrator/state/
 lieferungen/
+# Kundenordner (KUNDENORDNER_FREIGABE F1): Dateien fuer Kunden, nur NAS + Backup-Spiegel
+kundenordner/
 
 # Instagram-Postfach-Archiv (Collab-Radar, Live-Daten)
 ig_inbox/

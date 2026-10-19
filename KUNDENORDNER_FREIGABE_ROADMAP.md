@@ -1,10 +1,10 @@
 # Roadmap: Kundenordner auf der NAS mit Freigabe-Link per Mail
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `b9b9944`
-- Naechster Schritt: CEO-Entscheidung zum Weg (LUNA-OS-Link oder Synology-Freigabe) und Go fuer F1-F3 abwarten.
+- Naechster Schritt: F2 (Freigabe-Link) und F3 (Link per Mail) bauen, dann Deploy F1-F3.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -30,7 +30,7 @@ freigegebenen Ordner per E-Mail mit.“
 
 ## Etappe F1: Kundenordner
 
-- Status: geplant
+- Status: gebaut 2026-10-19 (`core/kundenordner.py`, Endpunkte `/api/crm/kunden/<nr>/ordner`, `/api/crm/kundenordner/*`, Firmenakte „🗂️ Kundenordner“, Knopf „🗂️ In Kundenordner“ an Lieferungen, Chat-Werkzeug `kundenordner_anlegen`, Backup-Spiegel in `deploy/backup-from-nas.sh`; Test `test_kundenordner.py`), Deploy mit F2/F3
 - Ziel / Scope: Ordner je Kunde und Projekt (`kundenordner/<Kundennummer>/<Projekt bzw. Auftrag>/`, nur NAS, nicht im Git,
   im Backup), angelegt per Knopf in der Firmenakte bzw. am Auftrag oder durch LUNA im Chat („leg fuer Kiez Burger einen
   Ordner Herbstkampagne an“). Dateien hochladen (auch grosse Videos in Stuecken, wie bei Lieferungen), ansehen, entfernen;

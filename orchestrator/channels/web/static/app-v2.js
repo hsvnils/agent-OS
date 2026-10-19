@@ -1241,11 +1241,12 @@ async function kundeDetail(nr, meldung) {
     <label class="v2-modlbl"><input type="checkbox" id="ke-aktiv" ${f.aktiv ? "checked" : ""}> Aktiv (inaktive Firmen bleiben erhalten, nur ausgeblendet)</label>
     <button class="v2-btn pri" data-act="kunde-speichern" data-id="${esc(f.nummer)}">Änderungen speichern</button><div id="ke-msg" class="v2-msg"></div></div>
     <h3>📁 Akte <small class="v2-sub">Dokumente &amp; Mails</small></h3><div id="akte-box"><div class="v2-empty">Lade…</div></div>
+    ${f.typ !== "lieferant" ? `<h3>🗂️ Kundenordner <small class="v2-sub">Dateien für den Kunden, auf der NAS</small></h3><div id="ko-box"><div class="v2-empty">Lade…</div></div>` : ""}
     <h3>Ansprechpartner</h3>${aps}<button class="v2-btn" data-act="kunde-ap-neu" data-id="${esc(f.nummer)}" style="margin-top:8px">+ Ansprechpartner</button><div id="kap-box"></div>
     <h3>Angebote</h3><button class="v2-btn" data-act="an-neu" data-id="${esc(f.nummer)}">+ Angebot für ${esc(f.name)}</button>
     <h3>Collab-CRM</h3>${collab}
     <h3>Verlauf</h3>${verlauf}`);
-  akteLaden(f.nummer);
+  akteLaden(f.nummer); koLaden(f.nummer);
 }
 // Etappe 22: oeffentliche Firmendaten (Impressum) vorschlagen -- uebernommen wird nur per Klick
 function kundeRecherche(f, d) {
@@ -1274,6 +1275,56 @@ async function akteLaden(nr) {
       <div class="v2-an-zeile"><label class="v2-feld"><small>Titel</small><input id="ak-titel" placeholder="z. B. Schreiben der Anwältin"></label><label class="v2-feld"><small>Datum</small><input id="ak-datum" type="date"></label><label class="v2-feld"><small>Bezug (optional)</small><input id="ak-bezug" placeholder="z. B. RG-11052026"></label></div>
       <label class="v2-feld"><small>Notiz</small><input id="ak-notiz"></label>
       <button class="v2-btn" data-act="akte-hochladen" data-id="${esc(nr)}">Ablegen</button><div id="ak-msg" class="v2-msg"></div></div></details>`;
+}
+// KUNDENORDNER F1: Ordner je Firma + Projekt (NAS), Dateien in 8-MB-Stuecken, Lieferungen uebernehmen
+const groesseTxt = (b) => b > 1048576 ? (b / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round((b || 0) / 1024)) + " KB";
+let KO_NR = "";
+async function koLaden(nr, offen) {
+  const box = $("#ko-box"); if (!box) return;
+  KO_NR = nr;
+  const d = await jget(`/api/crm/kunden/${encodeURIComponent(nr)}/ordner`);
+  const l = (d && d.ordner) || [];
+  box.innerHTML = (l.length ? l.map(o => { const n = (o.dateien || []).length;
+    const dateien = (o.dateien || []).map((f, i) => `<div class="v2-list-row"><span>${String(f.mime || "").startsWith("video/") ? "🎬" : String(f.mime || "").startsWith("image/") ? "🖼️" : "📄"}</span><div class="grow"><b><a href="/api/crm/kundenordner/${encodeURIComponent(o.id)}/datei/${i}" target="_blank" rel="noopener">${esc(f.name)}</a></b>
+      <small>${groesseTxt(f.groesse)} · ${esc(zeit(f.ts))}${f.quelle ? " · aus Lieferung" : ""}</small></div><button class="v2-btn sm" data-act="ko-datei-weg" data-id="${esc(o.id)}" data-val="${i}" title="Datei aus dem Ordner löschen">✕</button></div>`).join("");
+    return `<details class="v2-lf v2-ko" ${offen === o.id ? "open" : ""}><summary><b>🗂️ ${esc(o.name)}</b> <small class="v2-sub">${n} Datei${n === 1 ? "" : "en"}${o.auftrag ? " · " + esc(o.auftrag) : ""}</small></summary>
+      ${dateien || `<div class="v2-sub">Noch leer.</div>`}
+      <div class="v2-form"><label class="v2-feld"><small>Dateien hinzufügen (Videos, Bilder, Audio, PDF, Office, ZIP – bis 4 GB je Datei)</small><input id="ko-dateien-${esc(o.id)}" type="file" multiple></label>
+      <div id="ko-fort-${esc(o.id)}" class="v2-sub"></div><button class="v2-btn" data-act="ko-hochladen" data-id="${esc(o.id)}" data-val="${esc(nr)}">Hochladen</button></div></details>`; }).join("")
+    : `<div class="v2-sub">Noch kein Ordner. Lege je Projekt einen an – darüber gibst du dem Kunden später Dateien frei.</div>`)
+    + `<details style="margin-top:8px"><summary><small>+ Ordner anlegen</small></summary><div class="v2-form"><label class="v2-feld"><small>Name *</small><input id="ko-name" class="v2-inp" maxlength="120" placeholder="z. B. Herbstkampagne 2026"></label>
+      <button class="v2-btn" data-act="ko-anlegen" data-id="${esc(nr)}">Ordner anlegen</button></div></details><div id="ko-msg" class="v2-msg"></div>`;
+}
+async function koAnlegen(nr) {
+  const name = (($("#ko-name") || {}).value || "").trim(); if (!name) return kundenMsg("ko-msg", "Bitte einen Namen angeben.", false);
+  const r = await jpost(`/api/crm/kunden/${encodeURIComponent(nr)}/ordner`, { name });
+  if (!r || !r.ok) return kundenMsg("ko-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+  await koLaden(nr, r.id); kundenMsg("ko-msg", `Ordner „${r.name}“ angelegt.`, true);
+}
+async function koHochladen(oid, nr, el) {
+  const files = [...((($("#ko-dateien-" + oid) || {}).files) || [])]; if (!files.length) return kundenMsg("ko-msg", "Bitte Dateien wählen.", false);
+  const fort = $("#ko-fort-" + oid); el.disabled = true;
+  try { for (const f of files) await lfHochladen(oid, f, (t) => { if (fort) fort.textContent = t; }, "kundenordner"); }
+  catch (e) { el.disabled = false; return kundenMsg("ko-msg", e.message, false); }
+  await koLaden(nr, oid); kundenMsg("ko-msg", `${files.length} Datei(en) hochgeladen.`, true);
+}
+async function koLieferungForm(lid, auftrag) {
+  const d = await jget(`/api/crm/auftraege/${encodeURIComponent(auftrag)}/ordner`);
+  const l = (d && d.ordner) || [];
+  openModal("In Kundenordner übernehmen", `<div class="v2-form"><div class="v2-sub">Die Dateien dieser Lieferung werden in den Ordner kopiert (die Lieferung bleibt unverändert).</div>
+    ${l.length ? `<label class="v2-feld"><small>Ordner</small><select id="kol-ordner">${l.map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join("")}<option value="">+ Neuer Ordner …</option></select></label>` : ""}
+    <label class="v2-feld" id="kol-neu" ${l.length ? "hidden" : ""}><small>Name des neuen Ordners</small><input id="kol-name" class="v2-inp" value="${esc(auftrag)}"></label>
+    <button class="v2-btn pri" data-act="ko-lief-ok" data-id="${esc(lid)}" data-val="${esc(auftrag)}">Übernehmen</button><div id="kol-msg" class="v2-msg"></div></div>`);
+  const sel = $("#kol-ordner"); if (sel) sel.onchange = () => { $("#kol-neu").hidden = !!sel.value; };
+}
+async function koLieferungOk(lid, auftrag) {
+  let oid = ($("#kol-ordner") || {}).value || "";
+  if (!oid) { const d = await jget(`/api/crm/auftraege/${encodeURIComponent(auftrag)}/ordner`);
+    const r = await jpost(`/api/crm/kunden/${encodeURIComponent((d && d.firma) || "")}/ordner`, { name: ($("#kol-name") || {}).value || auftrag, auftrag });
+    if (!r || !r.ok) return kundenMsg("kol-msg", (r && r.hinweis) || "Keine Verbindung.", false); oid = r.id; }
+  const r = await jpost(`/api/crm/kundenordner/${encodeURIComponent(oid)}/lieferung`, { lieferung: lid });
+  if (!r || !r.ok) return kundenMsg("kol-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+  kundenMsg("kol-msg", `${r.uebernommen} Datei(en) übernommen${r.schon_da ? `, ${r.schon_da} lagen schon im Ordner` : ""}.`, true);
 }
 async function akteHochladen(nr) {
   const f = ($("#ak-datei") || {}).files; if (!f || !f.length) return kundenMsg("ak-msg", "Bitte eine Datei wählen.", false);
@@ -2529,6 +2580,7 @@ function lfAnzeige(x, mitEntfernen) {
       : `<div class="v2-lf-datei"><a href="${src}" target="_blank" rel="noopener">📄 ${esc(f.name)}</a><small>${gr}</small></div>`; }).join("");
   const links = (x.links || []).map(u => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">🔗 ${esc(u.replace(/^https?:\/\//, "").slice(0, 60))}</a>`).join("<br>");
   return `<div class="v2-lf"><div class="v2-lf-kopf"><b>📦 ${esc(x.titel)}</b><small>${esc(datumDe(x.datum))}${x.auftrag ? " · " + esc(x.auftrag) : ""}${x.notiz ? " · " + esc(x.notiz) : ""}</small>
+    ${mitEntfernen && (x.dateien || []).length ? `<button class="v2-btn sm" data-act="lf-ordner" data-id="${esc(x.id)}" data-val="${esc(x.auftrag)}" title="Dateien in einen Kundenordner übernehmen (zum Freigeben)">🗂️ In Kundenordner</button>` : ""}
     ${mitEntfernen ? `<button class="v2-btn sm" data-act="lf-entfernen" data-id="${esc(x.id)}" data-val="${esc(x.auftrag)}" title="Falsch angelegt? Entfernt die Lieferung samt Dateien">✕</button>` : ""}</div>
     ${links ? `<div class="v2-lf-links">${links}</div>` : ""}${dateien ? `<div class="v2-lf-dateien">${dateien}</div>` : ""}</div>`;
 }
@@ -2549,19 +2601,19 @@ async function abLieferungen(nr) {
   box.innerHTML = (l.length ? l.map(x => lfAnzeige(x, true)).join("") : `<div class="v2-sub">Noch nichts geliefert. Hier legst du ab, was an den Kunden ging – Dateien und/oder Links.</div>`)
     + `<details style="margin-top:8px"><summary><small>+ Lieferung hinzufügen</small></summary>${lfFormular(nr, false)}</details>`;
 }
-async function lfHochladen(lid, file, melde) {
+async function lfHochladen(lid, file, melde, basis = "lieferungen") {
   const uid = (Date.now().toString(36) + Math.random().toString(36).slice(2, 12)).replace(/[^a-z0-9]/g, "");
   const ST = 8 * 1024 * 1024, teile = Math.max(1, Math.ceil(file.size / ST));
   for (let i = 0; i < teile; i++) {
     let ok = false, hinweis = "";
     for (let versuch = 0; versuch < 3 && !ok; versuch++) {
-      try { const r = await fetch(`/api/crm/lieferungen/upload/${uid}/${i}`, { method: "PUT", body: file.slice(i * ST, (i + 1) * ST) });
+      try { const r = await fetch(`/api/crm/${basis}/upload/${uid}/${i}`, { method: "PUT", body: file.slice(i * ST, (i + 1) * ST) });
         const j = await r.json(); ok = r.ok && j.ok !== false; hinweis = j.hinweis || ""; } catch (e) { hinweis = "Netzwerk"; }
     }
     if (!ok) throw new Error(`${file.name}: Upload abgebrochen bei ${Math.round(i / teile * 100)} % (${hinweis})`);
     melde(`${file.name}: ${Math.round((i + 1) / teile * 100)} %`);
   }
-  const r = await jpost(`/api/crm/lieferungen/${encodeURIComponent(lid)}/fertig`, { upload_id: uid, name: file.name, groesse: file.size });
+  const r = await jpost(`/api/crm/${basis}/${encodeURIComponent(lid)}/fertig`, { upload_id: uid, name: file.name, groesse: file.size });
   if (!r || r.ok === false) throw new Error((r && r.hinweis) || `${file.name}: Abschluss fehlgeschlagen`);
 }
 // Lieferung anlegen + Dateien hochladen; `pflicht` = Titel zwingend (beim reinen „Lieferung hinzufuegen“)
@@ -4733,6 +4785,13 @@ async function handleAct(act, el) {
       if (km) { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/fahrt`, { km }); if (!r || r.ok === false) return zeitNeuZeichnen((r && r.hinweis) || "Fehler.", true); teile.push(`${km} km`); }
       ZEIT.ergebnis = null; return zeitNeuZeichnen(`Gespeichert: ${teile.filter(Boolean).join(", ")}.`); }
     case "akte-hochladen": return akteHochladen(id);
+    case "ko-anlegen": return koAnlegen(id);
+    case "ko-hochladen": return koHochladen(id, val, el);
+    case "ko-datei-weg": { if (!confirm("Datei endgültig aus dem Kundenordner löschen?")) return;
+      const r = await jpost(`/api/crm/kundenordner/${encodeURIComponent(id)}/datei/${val}/entfernen`, {});
+      if (KO_NR) await koLaden(KO_NR, id); return kundenMsg("ko-msg", r && r.ok ? `${r.entfernt} gelöscht.` : (r && r.hinweis) || "Fehler.", !!(r && r.ok)); }
+    case "lf-ordner": return koLieferungForm(id, val);
+    case "ko-lief-ok": return koLieferungOk(id, val);
     case "akte-zuordnen": return akteZuordnenForm(id);
     case "akte-zuordnen-ok": case "akte-zuordnen-keine": { const r = await jpost(`/api/crm/akte/${encodeURIComponent(id)}/zuordnen`, { firma: act === "akte-zuordnen-ok" ? $("#az-firma").value : "" });
       if (!r || !r.ok) return alert((r && r.hinweis) || "Fehler."); closeModal(); return renderDash(); }

@@ -66,6 +66,9 @@ def tool_specs() -> list[dict]:
         _spec("akquise_idee_merken", "Firma als Akquise-Idee merken (Kunde/Partner).",
               {"name": _str("Firma"), "art": _str("kunde|partner"), "notiz": _str("Warum"), "ort": _str("Ort")},
               ["name"]),
+        _spec("kundenordner_anlegen", "Legt fuer eine Kundenfirma einen Ordner (Projekt) auf der NAS an.",
+              {"firma": _str("Firmenname oder K-Nummer"), "name": _str("Ordnername"), "auftrag": _str("AB-Nummer")},
+              ["firma", "name"]),
         _spec("geschaeftsregeln", "Liest Geschaeftsregeln: Zahlungsbedingungen, Mahnwesen, Leistungskatalog/Preise, "
               "Projektstunde/km-Satz, AGB in Kraft. Keine Kunden-/Rechnungsdaten.",
               {"thema": _str("zahlung | mahnung | katalog | agb | leer = alles.")}, []),
@@ -585,6 +588,25 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         except ValueError as exc:
             return {"ok": False, "hinweis": str(exc)}
         return {"ok": True, "id": x["id"], "name": x["name"], "art": x["art"], "hinweis": "In LUNA-OS unter Kunden -> 💡 Ideen."}
+
+    if name == "kundenordner_anlegen":                # KUNDENORDNER_FREIGABE F1: „leg fuer Kiez Burger einen Ordner … an“
+        from pathlib import Path as _P
+        from .buchhaltung import Buchhaltung
+        from .kunden import KundenStore
+        from .kundenordner import Kundenordner
+        bh = Buchhaltung(_P(ctx.repo_root) / "buchhaltung")
+        ks = KundenStore(bh)
+        f = str(args.get("firma") or "").strip()
+        nr = f.upper() if ks.firma(f.upper()) else ks.finde(f)
+        if not nr:
+            return {"ok": False, "hinweis": f"Keine Firma „{f}“ gefunden -- bitte den genauen Namen oder die K-Nummer nennen."}
+        try:
+            o = Kundenordner(bh, _P(ctx.repo_root) / "kundenordner", ks).anlegen(
+                nr, str(args.get("name") or ""), auftrag=str(args.get("auftrag") or ""), von="LUNA (CEO-Auftrag)")
+        except (KeyError, ValueError) as exc:
+            return {"ok": False, "hinweis": str(exc).strip("'")}
+        return {"ok": True, "id": o["id"], "firma": o["firma_name"] or nr, "ordner": o["name"],
+                "hinweis": "In LUNA-OS in der Firmenakte unter 🗂️ Kundenordner; Dateien dort hochladen."}
 
     if name == "geschaeftsregeln":                    # FACHAGENTEN_ROUTING R2: nur lesen, ohne Kunden-/Rechnungsdaten
         from pathlib import Path as _P

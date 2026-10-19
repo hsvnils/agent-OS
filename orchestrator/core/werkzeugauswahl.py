@@ -54,6 +54,11 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
                          "partner-idee", "kunden-idee", "firmen-idee", "ansprechen koennten", "ansprechen könnten",
                          "skill", "rueckmeldung zum", "rückmeldung zum", "feedback zum"],
     },
+    "kundenordner": {                                    # KUNDENORDNER_FREIGABE F1-F3: kleine Gruppe (Token-Budget)
+        "werkzeuge": ["kundenordner_anlegen"],
+        "stichwoerter": ["kundenordner", "ordner", "freigabe-link", "freigabelink", "freigeben", "dateien teilen",
+                         "dateien fuer", "dateien für"],
+    },
     "mail": {
         "werkzeuge": ["mail_entwurf", "mail_lesen", "mail_markieren", "mail_senden", "mail_suchen", "posteingang"],
         "stichwoerter": ["mail", "e-mail", "email", "posteingang", "postfach", "gmail", "entwurf", "ungelesen",

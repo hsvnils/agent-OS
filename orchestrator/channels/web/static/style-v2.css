@@ -609,6 +609,10 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-lf-datei { display: grid; gap: 4px; min-width: 0; }
 .v2-lf-datei video, .v2-lf-datei img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; background: #000; }
 .v2-lf-datei small { color: var(--v2-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* KUNDENORDNER F1: Ordner als aufklappbare Karte; lange Dateinamen umbrechen statt ueberlaufen */
+.v2-ko > summary { cursor: pointer; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; overflow-wrap: anywhere; }
+.v2-ko .v2-list-row .grow { min-width: 0; }
+.v2-ko .v2-list-row b, .v2-ko .v2-list-row a { overflow-wrap: anywhere; }
 /* Stundenzettel (PROJEKTZEITEN Z1) */
 .v2-zt td, .v2-zt th { white-space: nowrap; }
 .v2-zt td:nth-child(6) { white-space: normal; min-width: 120px; }

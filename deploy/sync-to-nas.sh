@@ -50,6 +50,7 @@ TAR_EXCLUDES=(
   --exclude='./.env'
   --exclude='./orchestrator/state'
   --exclude='./lieferungen'           # Etappe 30: gelieferte Videos/Bilder (nur NAS, kein Backup laut CEO)
+  --exclude='./kundenordner'          # KUNDENORDNER F1: Dateien fuer Kunden (nur NAS, Backup als Spiegel)
   --exclude='./ig_inbox'
   --exclude='./reel_freigabe'
   --exclude='./reel_work'

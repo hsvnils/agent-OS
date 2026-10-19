@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 11:32] — Claude Code
+- **Was:** KUNDENORDNER_FREIGABE F1 gebaut: Kundenordner je Firma und Projekt unter `kundenordner/<Firma>/<Ordner>/` (nur NAS, nicht im Git, vom Code-Sync ausgenommen). Anlegen in der Firmenakte („🗂️ Kundenordner“) oder per Chat („leg fuer Kiez Alm einen Ordner Herbstkampagne an“, Werkzeug `kundenordner_anlegen`, neue kleine Werkzeuggruppe), Dateien hochladen in 8-MB-Stuecken bis 4 GB (Videos, Bilder, Audio, PDF, ZIP, Office, Text), ansehen, loeschen; Lieferungen eines Auftrags per Knopf „🗂️ In Kundenordner“ uebernehmen (Hardlink, Lieferung bleibt). Pfade nur innerhalb des eigenen Ordners. Liste als Ereignisse in der Hash-Kette; Backup als fortlaufender Spiegel `~/LUNA-Backups/kundenordner/` (nur neue Dateien, tar ueber SSH, weil rsync per SSH auf der NAS gesperrt ist). Browser-Test Rechner 1300, iPad 820, iPhone 17 Pro ohne Ueberlauf. Cache v134/v71.
+- **Warum:** CEO-Go 2026-10-19 fuer alle acht Etappen (Weg A), Etappe F1.
+- **Betroffen:** `orchestrator/core/kundenordner.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/style-v2.css`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/werkzeugauswahl.py`, `orchestrator/tests/test_kundenordner.py`, `.gitignore`, `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `docs/datenfluesse.md`, `AGENTS.md`, `ROADMAP.md`, `KUNDENORDNER_FREIGABE_ROADMAP.md`, `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`
+
 ## [2026-10-19 11:24] — Claude Code
 - **Was:** Deploy des Blocks I1-I3 (Prompt-Injection-Schutz) live geprueft: origin/main = d2bd03e, NAS-Code enthaelt `FREMD_WERKZEUGE`, `AKTIONS_WERKZEUGE`, `entferne_abfluss_links`; Testkorpus auf der NAS 38/38 erkannt, 0 Fehlalarme; LUNA-OS antwortet, Bot schreibt nach dem Neustart wieder (watch/log.jsonl).
 - **Warum:** Abnahme nach CEO-Deploy (Sammel-Roadmap `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`).

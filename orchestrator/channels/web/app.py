@@ -2090,6 +2090,65 @@ async def lieferung_entfernen(lid: str, request: Request):
     return _kunden_aktion(lambda: _lieferungen().entfernen(lid, body.get("grund") or "", von=_von(request)))
 
 
+# -- Kundenordner (KUNDENORDNER_FREIGABE F1): Ordner je Firma + Projekt auf der NAS, Upload in Stuecken ----------------
+def _kundenordner():
+    from ...core.kundenordner import Kundenordner
+    return Kundenordner(kunden_store.bh, ROOT / "kundenordner", kunden_store, _lieferungen())
+
+
+@app.get("/api/crm/kunden/{nr}/ordner")
+def kundenordner_liste(nr: str):
+    return {"ordner": _kundenordner().fuer_firma(nr)}
+
+
+@app.get("/api/crm/auftraege/{nummer}/ordner")
+def kundenordner_zum_auftrag(nummer: str):
+    """Ordner der Firma eines Auftrags (Auswahl fuer „Lieferung in den Kundenordner“)."""
+    a = _auftraege().auftrag(nummer)
+    return {"firma": a["firma"] if a else "", "ordner": _kundenordner().fuer_firma(a["firma"]) if a else []}
+
+
+@app.post("/api/crm/kunden/{nr}/ordner")
+async def kundenordner_anlegen(nr: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _kundenordner().anlegen(nr, body.get("name") or "", auftrag=body.get("auftrag") or "",
+                                                          von=_von(request)))
+
+
+@app.put("/api/crm/kundenordner/upload/{upload_id}/{teil}")
+async def kundenordner_stueck(upload_id: str, teil: int, request: Request):
+    daten = await request.body()
+    return _kunden_aktion(lambda: _kundenordner().stueck(upload_id, teil, daten))
+
+
+@app.post("/api/crm/kundenordner/{oid}/fertig")
+async def kundenordner_fertig(oid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _kundenordner().fertig(oid, body.get("upload_id") or "", body.get("name") or "",
+                                                         groesse=int(body.get("groesse") or -1), von=_von(request)))
+
+
+@app.get("/api/crm/kundenordner/{oid}/datei/{i}")
+def kundenordner_datei(oid: str, i: int):
+    r = _kundenordner().datei(oid, i)
+    if not r:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Datei nicht gefunden.")
+    pfad, d = r
+    return FileResponse(pfad, media_type=d.get("mime") or "application/octet-stream", filename=d.get("name") or pfad.name,
+                        content_disposition_type="inline")
+
+
+@app.post("/api/crm/kundenordner/{oid}/datei/{i}/entfernen")
+async def kundenordner_datei_entfernen(oid: str, i: int, request: Request):
+    return _kunden_aktion(lambda: _kundenordner().datei_entfernen(oid, i, von=_von(request)))
+
+
+@app.post("/api/crm/kundenordner/{oid}/lieferung")
+async def kundenordner_lieferung(oid: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _kundenordner().lieferung_uebernehmen(oid, body.get("lieferung") or "", von=_von(request)))
+
+
 # -- Postings + Kennzahlen (PROJEKTBERICHT P1/P2): je Position so viele Postings wie die Menge ---------------------------
 def _postings():
     from ...core.postings import Postings
