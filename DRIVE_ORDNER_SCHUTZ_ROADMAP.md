@@ -15,9 +15,9 @@ per Mail, (3) Schutz gegen Prompt Injection ausbauen und verfeinern. **Nach jede
 Tabelle mit erledigten und offenen Punkten** (CEO-Arbeitsanweisung, gilt generell).
 
 Diese Datei legt **Reihenfolge und Stand** fest. Die Einzelheiten je Etappe (Analyse, Scope, Gate) stehen in:
--  BF-72 (Drive),
--  (F1-F3),
--  (I1-I4).
+- `docs/bekannte-fehler.md` BF-72 (Drive),
+- `KUNDENORDNER_FREIGABE_ROADMAP.md` (F1-F3),
+- `PROMPT_INJECTION_SCHUTZ_ROADMAP.md` (I1-I4).
 
 ## Reihenfolge (Empfehlung) und Stand
 
@@ -46,8 +46,8 @@ oder auf Wunsch alles am Stueck.
 
 ## Doku
 
-, Status-Tabelle hier und in , Einzel-Roadmaps, ,
-, .
+`projekt_changelog.md`, Status-Tabelle hier und in `ROADMAP.md`, Einzel-Roadmaps, `docs/bekannte-fehler.md`,
+`docs/entscheidungs-register.md`, `docs/datenfluesse.md`.
 
 ## Definition of Done
 
