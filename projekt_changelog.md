@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 13:05] — Claude Code
+- **Was:** Deploy des iPhone-Fixes (Kundenordner zu breit) live geprueft: origin/main = ad36cb2, NAS liefert `style-v2.css?v=73` mit dem Fix aus. Gegenprobe am iPhone steht beim CEO.
+- **Warum:** Abnahme nach CEO-Deploy.
+- **Betroffen:** keine Dateien (nur Pruefung)
+
 ## [2026-10-19 12:35] — Claude Code
 - **Was:** CEO-Abnahme KUNDENORDNER F1-F3: alles funktioniert. Fix fuer die iPhone-Web-App: Dateiauswahl und weitere Elemente im Kundenordner ragten rechts aus dem Bildschirm. Ursache: Safari gibt dem Dateifeld eine feste Eigenbreite, und die als Raster gebauten Ordner-Karten wuchsen mit dem breitesten Inhalt mit. Jetzt Raster mit `minmax(0, 1fr)`, Felder hoechstens 100 % breit, Dateifelder `width: 100%` (gilt auch fuer Lieferungen und Akte-Upload). Nachgestellt mit breitem Dateifeld bei 402 px: vorher Karten bis 489 px, jetzt 371 px. Bisherige Pruefluecke: der Ueberlauf-Check lief mit 500 px Fensterbreite und zugeklappten Bereichen -- jetzt im 402-px-Rahmen mit allen Bereichen offen. Cache v73.
 - **Warum:** CEO 2026-10-19: „in der WebApp Version auf dem iPhone, der Dateiupload und einige andere Elemente, rechts außerhalb des Bildschirms“.
