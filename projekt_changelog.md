@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 10:58] — Claude Code
+- **Was:** Deploy von D1 (BF-72) live geprueft: alle 278 Belege liegen in Drive (vorher 275), die drei Mail-Belege (.eml) wurden nachgeholt; letzte Fehlermeldung der Beleg-Sicherung 07:58 vor dem Deploy, seitdem keine mehr.
+- **Warum:** Abnahme D1 nach CEO-Deploy (Sammel-Roadmap `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`).
+- **Betroffen:** keine Dateien (nur Pruefung); NAS `buchhaltung/log.jsonl` gelesen
+
 ## [2026-10-19 10:55] — Claude Code
 - **Was:** PROMPT_INJECTION_SCHUTZ I3 gebaut: Hat LUNA im laufenden Gespraechszug Fremdtext mit Injection-Verdacht gelesen, sind Werkzeuge mit Aussenwirkung (Mail senden/Entwurf, Termine, Drive/Tabellen schreiben, Antraege freigeben/umsetzen/mergen/pushen, Paper-Orders, Rechner-Steuerung, Budget, Gedaechtnis u. a.) fuer diesen Zug gesperrt; LUNA muss den CEO fragen, seine Bestaetigung im naechsten Zug gibt sie frei. Antworten werden vor dem Versand von Links zu fremden Adressen befreit, die Daten aus dem Gespraech tragen (Datenabfluss ueber Bild-/Link-Adressen). Beides wird im Aktivitaetsprotokoll (Kategorie `sicherheit`) festgehalten. Entscheidung im Register.
 - **Warum:** CEO-Go 2026-10-19 fuer alle acht Etappen (Weg A), Etappe I3 -- schliesst den Block I1-I3 ab.
