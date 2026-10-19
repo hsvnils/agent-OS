@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 12:35] — Claude Code
+- **Was:** CEO-Abnahme KUNDENORDNER F1-F3: alles funktioniert. Fix fuer die iPhone-Web-App: Dateiauswahl und weitere Elemente im Kundenordner ragten rechts aus dem Bildschirm. Ursache: Safari gibt dem Dateifeld eine feste Eigenbreite, und die als Raster gebauten Ordner-Karten wuchsen mit dem breitesten Inhalt mit. Jetzt Raster mit `minmax(0, 1fr)`, Felder hoechstens 100 % breit, Dateifelder `width: 100%` (gilt auch fuer Lieferungen und Akte-Upload). Nachgestellt mit breitem Dateifeld bei 402 px: vorher Karten bis 489 px, jetzt 371 px. Bisherige Pruefluecke: der Ueberlauf-Check lief mit 500 px Fensterbreite und zugeklappten Bereichen -- jetzt im 402-px-Rahmen mit allen Bereichen offen. Cache v73.
+- **Warum:** CEO 2026-10-19: „in der WebApp Version auf dem iPhone, der Dateiupload und einige andere Elemente, rechts außerhalb des Bildschirms“.
+- **Betroffen:** `orchestrator/channels/web/static/style-v2.css`, `orchestrator/channels/web/static/index-v2.html`
+
 ## [2026-10-19 12:27] — Claude Code
 - **Was:** Deploy von I4 live geprueft: origin/main = af40021, NAS-Code mit `injection_protokoll.py`, Protokoll in Bot und Web-App eingeschaltet (`sicherheit/` angelegt), Bot schreibt wieder (watch/log.jsonl); `/api/performance` liefert die Kennzahl `injection` -- direkt nach dem Start bereits 1 Verdacht aus dem CRM-Mail-Poll (Quelle `mail`, Muster `unsichtbare-zeichen`, vermutlich ein Newsletter mit unsichtbaren Fuellzeichen; beobachten, ob das ein Fehlalarm-Muster ist). Alle acht Etappen der Sammel-Roadmap sind live; offen ist nur die CEO-Abnahme von F1-F3.
 - **Warum:** Abnahme nach CEO-Deploy (Sammel-Roadmap `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`).

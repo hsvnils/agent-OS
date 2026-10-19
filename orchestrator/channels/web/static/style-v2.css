@@ -613,6 +613,10 @@ body.v2-lade-offen { overflow: hidden; }
 .v2-ko > summary { cursor: pointer; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; overflow-wrap: anywhere; }
 .v2-ko .v2-list-row .grow { min-width: 0; }
 .v2-ko .v2-list-row b, .v2-ko .v2-list-row a { overflow-wrap: anywhere; }
+.v2-lf, .v2-ko { grid-template-columns: minmax(0, 1fr); min-width: 0; max-width: 100%; }   /* Safari: Raster waechst sonst mit dem breitesten Inhalt */
+.v2-ko > *, .v2-ko .v2-form, .v2-ko .v2-feld, .v2-ko-freigabe, .v2-ko-fg, .v2-ko-fg > *, .v2-lf-form, .v2-lf-form .v2-feld { min-width: 0; max-width: 100%; }
+.v2-feld > input, .v2-feld > select, .v2-feld > textarea { min-width: 0; max-width: 100%; box-sizing: border-box; }
+input[type="file"] { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; }   /* iPhone: Dateifeld ist von sich aus breit */
 .v2-ko-freigabe { border-top: 1px solid var(--v2-line-soft); border-bottom: 1px solid var(--v2-line-soft); padding: 10px 0; margin-bottom: 4px; display: grid; gap: 8px; }
 .v2-ko-status { display: flex; gap: 6px; flex-wrap: wrap; }
 .v2-ko-fg { display: grid; gap: 6px; padding: 8px 0; justify-items: start; }
