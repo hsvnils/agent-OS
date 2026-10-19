@@ -515,10 +515,25 @@ FREMD_WERKZEUGE = frozenset({
 })
 
 
+def _sperre_protokollieren(ctx: ToolContext, name: str) -> None:
+    akt = getattr(ctx, "aktivitaet", None)
+    if akt is not None:
+        try:
+            quellen = ", ".join(sorted({v["werkzeug"] for v in ctx.fremd_verdacht}))
+            akt.log("Sicherheit", f"Werkzeug {name} gesperrt (Injection-Verdacht)", kategorie="sicherheit", detail=quellen)
+        except Exception:
+            pass
+
+
 def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
     """Fuehrt ein Werkzeug aus. FACHAGENTEN_ROUTING R3: Antworten ueber Werkzeuge zaehlen -- ohne Inhalte -- beim
     zustaendigen Bereich (`core/zustaendigkeit.py`); `delegate` protokolliert sich selbst, LUNA-Werkzeuge zaehlen nicht."""
     t0 = time.monotonic()
+    from .input_guard import AKTIONS_WERKZEUGE
+    if name in AKTIONS_WERKZEUGE and ctx.fremd_verdacht:   # I3: nach Fremdtext mit Verdacht keine Aussenwirkung im Zug
+        from .input_guard import sperr_antwort
+        _sperre_protokollieren(ctx, name)
+        return sperr_antwort(name, ctx.fremd_verdacht)
     res = _run_tool(name, args, ctx)
     if name in FREMD_WERKZEUGE:                       # I1: Fremdtext markiert und abgegrenzt an das Modell
         from .input_guard import schuetze_ergebnis

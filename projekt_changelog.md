@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 10:55] — Claude Code
+- **Was:** PROMPT_INJECTION_SCHUTZ I3 gebaut: Hat LUNA im laufenden Gespraechszug Fremdtext mit Injection-Verdacht gelesen, sind Werkzeuge mit Aussenwirkung (Mail senden/Entwurf, Termine, Drive/Tabellen schreiben, Antraege freigeben/umsetzen/mergen/pushen, Paper-Orders, Rechner-Steuerung, Budget, Gedaechtnis u. a.) fuer diesen Zug gesperrt; LUNA muss den CEO fragen, seine Bestaetigung im naechsten Zug gibt sie frei. Antworten werden vor dem Versand von Links zu fremden Adressen befreit, die Daten aus dem Gespraech tragen (Datenabfluss ueber Bild-/Link-Adressen). Beides wird im Aktivitaetsprotokoll (Kategorie `sicherheit`) festgehalten. Entscheidung im Register.
+- **Warum:** CEO-Go 2026-10-19 fuer alle acht Etappen (Weg A), Etappe I3 -- schliesst den Block I1-I3 ab.
+- **Betroffen:** `orchestrator/core/input_guard.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/hoa_conversation.py`, `orchestrator/tests/test_injection_schutz.py`, `docs/entscheidungs-register.md`, `PROMPT_INJECTION_SCHUTZ_ROADMAP.md`, `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`
+
 ## [2026-10-19 10:53] — Claude Code
 - **Was:** PROMPT_INJECTION_SCHUTZ I2 gebaut: Fremdtext wird vor der Pruefung normalisiert (Unicode-Doppelgaenger, Vollbreite, unsichtbare Formatzeichen, Umlaute, gesperrte Buchstaben, Leetspeak nur in Woertern aus Buchstaben und Ziffern); neue Muster fuer Rollen-Markierungen, Datenabfluss ueber Links/Bild-Adressen, Namen von LUNA-Werkzeugen mit Aussenwirkung, versteckten HTML-Text und Base64-Bloecke mit Anweisungen. Testkorpus mit 38 boesartigen und 30 harmlosen Texten (deutsch/englisch): Erkennung 18/38 -> 38/38, Fehlalarme 0/30 -> 0/30.
 - **Warum:** CEO-Go 2026-10-19 fuer alle acht Etappen (Weg A), Etappe I2.

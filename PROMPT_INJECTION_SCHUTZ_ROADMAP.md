@@ -48,7 +48,7 @@
 
 ## Etappe I3: Handlungs-Sperre nach Fremdtext
 
-- Status: geplant
+- Status: gebaut 2026-10-19 (Sperre in `hoa_tools.run_tool` ueber `input_guard.AKTIONS_WERKZEUGE` + `sperr_antwort`, Ruecksetzen je Zug in `HoaConversation.respond`, Link-Filter `input_guard.entferne_abfluss_links` vor jeder Antwort; Protokoll im Aktivitaetsprotokoll, Kategorie `sicherheit`), Deploy mit dem Block I1-I3
 - Ziel / Scope: Hat LUNA im laufenden Gespraechszug Fremdtext mit Verdacht gelesen, sind Werkzeuge mit Aussenwirkung
   (Mail senden, Termine, Dateien/Tabellen schreiben, Freigaben, Antraege umsetzen, Loeschen) fuer diesen Zug gesperrt bzw.
   nur nach ausdruecklicher Rueckfrage beim CEO; ausserdem: Antworten mit Links zu fremden Adressen, die Daten aus dem
