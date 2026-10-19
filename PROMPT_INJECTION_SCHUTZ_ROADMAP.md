@@ -37,7 +37,7 @@
 
 ## Etappe I2: Erkennung verfeinern
 
-- Status: geplant
+- Status: gebaut 2026-10-19 (`input_guard.normalisiere`, neue Muster rollen-markierung, link-exfiltration, werkzeug-aufruf, versteckter-text, base64-anweisung; Liste `AKTIONS_WERKZEUGE`; Korpus `orchestrator/tests/daten/injection_korpus.json`: vorher 18/38 erkannt, jetzt 38/38, Fehlalarme 0/30 vorher wie nachher), Deploy mit dem Block I1-I3
 - Ziel / Scope: Text vor dem Pruefen normalisieren (Unicode-Lookalikes, Leerzeichen/Punkte zwischen Buchstaben, Leetspeak,
   Gross-/Kleinschreibung), neue Muster: Rollen-Markierungen im Text („assistant:“, „system:“), Markdown-Bilder/Links, die
   Daten in eine Adresse schreiben, versteckter Text in HTML (unsichtbar, weiss auf weiss, winzig), Base64-Bloecke mit

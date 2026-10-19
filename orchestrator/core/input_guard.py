@@ -91,15 +91,89 @@ class Befund:
         return " | ".join(teile)
 
 
-def pruefe(text: str) -> Befund:
-    """Scannt Text auf Injection-Muster + PII. Deterministisch, kein LLM."""
-    t = text or ""
+# -- PROMPT_INJECTION_SCHUTZ I2: Tarnungen aufloesen + weitere Muster ----------------------------------------------------
+# Werkzeuge mit Aussenwirkung (Senden, Termine, Schreiben, Freigaben, Umsetzen, Rechner, Geld, Gedaechtnis). Ihr Name in
+# einem Fremdtext ist ein klares Angriffszeichen (I2); nach Verdacht sind sie im laufenden Zug gesperrt (I3).
+AKTIONS_WERKZEUGE = frozenset({
+    "mail_senden", "mail_entwurf", "termin_anlegen", "termin_aendern", "termin_loeschen", "drive_anlegen",
+    "tabelle_schreiben", "antrag_freigeben", "antrag_mergen", "antrag_pushen", "antrag_umsetzen", "technische_freigabe",
+    "paper_order", "paper_order_freigabe", "rechner_aktion", "rechner_ziel", "xmind_bearbeiten", "set_budget",
+    "investment_modus", "autonomie_pausieren", "steuerung_modus", "brain_merken", "erfahrung_merken", "auftrag_erteilen",
+})
+# Kyrillische/griechische Doppelgaenger lateinischer Buchstaben (Rest erledigt NFKC: Vollbreite, Mathe-Alphabete).
+_DOPPELGAENGER = str.maketrans("аеорсухіѕјкмнтвАЕОРСУХІЅЈКМНТВοαειτνκρΟΑΕΙΤΝΚΡ",
+                               "aeopcyxisjkmhtbAEOPCYXISJKMHTBoaeitvkpOAEITNKP")
+_UMLAUTE = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"})
+_LEET = str.maketrans("013457@$", "oieastas")
+_GESPERRT = re.compile(r"(?<![^\W_])(?:[^\W_][ .\-_*·]){2,}[^\W_](?![^\W_])")      # "i g n o r e", "i.g.n.o.r.e"
+_LEET_WORT = re.compile(r"\b(?=\w*[a-z])(?=\w*[013457@$])[\w@$]{3,}\b")              # nur Woerter aus Buchstaben UND Ziffern
+
+
+def normalisiere(text: str) -> str:
+    """Tarnungen aufloesen: NFKC, Doppelgaenger, unsichtbare Zeichen, Umlaute, Kleinschreibung, gesperrte Buchstaben,
+    Leetspeak (nur in Woertern mit Buchstaben und Ziffern -- Rechnungsnummern bleiben)."""
+    import unicodedata
+    t = unicodedata.normalize("NFKC", text or "").translate(_DOPPELGAENGER)
+    t = "".join(c for c in t if unicodedata.category(c) != "Cf").lower().translate(_UMLAUTE)   # Format-Zeichen (Zero-Width, weiches Trennzeichen)
+    t = _GESPERRT.sub(lambda m: re.sub(r"[ .\-_*·]", "", m.group()), t)
+    return _LEET_WORT.sub(lambda m: m.group().translate(_LEET), t)
+
+
+_NEU: list[tuple[str, re.Pattern]] = [
+    ("rollen-markierung", re.compile(
+        r"(^|\n)\s*(?:#+\s*|\[|<)?(assistant|developer|system ?prompt)\s*[\]>]?\s*:"
+        r"|(^|\n)\s*(?:#+\s*|\[|<)?system\s*[\]>]?\s*:[^\n]{0,60}\b(you|du|ignore|ignoriere|must|musst|always|immer|never|niemals)\b",
+        re.I)),
+    ("link-exfiltration", re.compile(
+        r"!\[[^\]]*\]\(\s*https?://[^)\s]*[?&][^)\s=]*=\s*(?:\{|\$|<|%7b|\[)"
+        r"|\b(append|add|include|attach|haenge|fuege|schreibe)\b[^.\n]{0,50}\b(to|an|in)\b[^.\n]{0,10}"
+        r"\b(url|link|query|adresse|bild-?url|image url)\b", re.I)),
+    ("werkzeug-aufruf", re.compile(
+        r"\b(" + "|".join(sorted(AKTIONS_WERKZEUGE)) + r")\b"
+        r"|\b(call|use|invoke|execute|run|rufe|nutze|verwende|fuehre)\b[^.\n]{0,20}\b(the )?(tool|function|werkzeug|funktion)\b"
+        r"[^.\n]{0,40}\b(send|mail|delete|loesch|transfer|ueberweis|aufruf|aus)", re.I)),
+]
+_VERSTECKT = re.compile(
+    r"<(\w+)[^>]*style\s*=\s*[\"'][^\"']*(display\s*:\s*none|visibility\s*:\s*hidden|font-size\s*:\s*0(?:px|pt|em)?\b"
+    r"|opacity\s*:\s*0(?:\.0+)?\s*[;\"']|color\s*:\s*(?:#fff\b|#ffffff|white)\b)[^\"']*[\"'][^>]*>(.*?)</\1>", re.I | re.S)
+_VERSTECKT_ANREDE = re.compile(r"\b(ignore|instruction|anweisung|assistant|prompt|ai|ki|llm|luna|you must|du musst|befehl"
+                               r"|send|sende|forward|leite)\b", re.I)
+_BASE64 = re.compile(r"(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{24,}={0,2}(?![A-Za-z0-9+/])")
+
+
+def _base64_anweisung(t: str) -> bool:
+    import base64
+    for m in _BASE64.finditer(t):
+        roh = m.group()
+        try:
+            d = base64.b64decode(roh + "=" * (-len(roh) % 4), validate=True).decode("utf-8")
+        except ValueError:
+            continue
+        if sum(c.isprintable() or c.isspace() for c in d) >= 0.95 * len(d) and _labels(d, tief=False):
+            return True
+    return False
+
+
+def _labels(t: str, *, tief: bool = True) -> list[str]:
+    """Alle Injection-Labels fuer `t` -- im Original und in der normalisierten Fassung."""
     inj: list[str] = []
     if _UNSICHTBAR.search(t):
         inj.append("unsichtbare-zeichen")
-    for label, rx in _INJECTION:
-        if rx.search(t):
+    n = normalisiere(t)
+    for label, rx in _INJECTION + _NEU:
+        if rx.search(t) or rx.search(n):
             inj.append(label)
+    if any(_VERSTECKT_ANREDE.search(m.group(3)) for m in _VERSTECKT.finditer(t)):
+        inj.append("versteckter-text")
+    if tief and _base64_anweisung(t):
+        inj.append("base64-anweisung")
+    return inj
+
+
+def pruefe(text: str) -> Befund:
+    """Scannt Text auf Injection-Muster + PII. Deterministisch, kein LLM."""
+    t = text or ""
+    inj = _labels(t)
     pii: list[str] = []
     if _EMAIL.search(t):
         pii.append("email")

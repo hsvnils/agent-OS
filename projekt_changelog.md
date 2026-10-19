@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 10:53] — Claude Code
+- **Was:** PROMPT_INJECTION_SCHUTZ I2 gebaut: Fremdtext wird vor der Pruefung normalisiert (Unicode-Doppelgaenger, Vollbreite, unsichtbare Formatzeichen, Umlaute, gesperrte Buchstaben, Leetspeak nur in Woertern aus Buchstaben und Ziffern); neue Muster fuer Rollen-Markierungen, Datenabfluss ueber Links/Bild-Adressen, Namen von LUNA-Werkzeugen mit Aussenwirkung, versteckten HTML-Text und Base64-Bloecke mit Anweisungen. Testkorpus mit 38 boesartigen und 30 harmlosen Texten (deutsch/englisch): Erkennung 18/38 -> 38/38, Fehlalarme 0/30 -> 0/30.
+- **Warum:** CEO-Go 2026-10-19 fuer alle acht Etappen (Weg A), Etappe I2.
+- **Betroffen:** `orchestrator/core/input_guard.py`, `orchestrator/tests/test_injection_schutz.py`, `orchestrator/tests/daten/injection_korpus.json`, `PROMPT_INJECTION_SCHUTZ_ROADMAP.md`, `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`
+
 ## [2026-10-19 10:49] — Claude Code
 - **Was:** PROMPT_INJECTION_SCHUTZ I1 gebaut: Ergebnisse aller Werkzeuge mit Fremdinhalt (Mail, Drive, Tabellen, Kalender, Recherche, CRM/DMs, Bildschirm, Briefing u. a., Liste `FREMD_WERKZEUGE`) werden zentral in `run_tool` geprueft, bei Verdacht markiert, lange Texte als Daten umschlossen und mit Hinweis `_extern` versehen; Verdacht wird je Gespraechszug in `ToolContext.fremd_verdacht` gesammelt (Grundlage fuer I3). Direkt an Modelle gehender Fremdtext ebenfalls geschuetzt: Eingangsbelege (Backoffice), Content-Feed (Idee/Entwurf), Instagram-Analyse. Test prueft, dass kein neues lesendes Werkzeug vergessen wird. D1 in der Sammel-Roadmap als live markiert.
 - **Warum:** CEO-Go 2026-10-19 fuer alle acht Etappen (Weg A), Reihenfolge D1 -> I1 -> I2 -> I3.

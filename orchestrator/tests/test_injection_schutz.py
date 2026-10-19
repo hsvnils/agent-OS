@@ -62,5 +62,28 @@ class TestDirekteStellen(unittest.TestCase):
         self.assertIn('schuetze_text(x["text"][:6000], "eingangsbeleg")', src)
 
 
+class TestKorpus(unittest.TestCase):
+    """I2: Erkennung im Korpus (Stand vor I2: 18/38 erkannt, 0/30 Fehlalarme) -- Erkennung darf nicht sinken,
+    Fehlalarme duerfen nicht steigen."""
+
+    def test_6_korpus(self):
+        import json
+        from pathlib import Path
+        k = json.loads((Path(__file__).parent / "daten" / "injection_korpus.json").read_text(encoding="utf-8"))
+        verpasst = [x for x in k["boese"] if not ig.pruefe(x).injection]
+        fehlalarm = [x for x in k["harmlos"] if ig.pruefe(x).injection]
+        self.assertEqual((verpasst, fehlalarm), ([], []))
+
+    def test_7_normalisierung_und_tempo(self):
+        import time
+        self.assertEqual(ig.normalisiere("Іgn0re  P R E V I O U S"), "ignore  previous")
+        self.assertEqual(ig.normalisiere("Rechnung 2024-0815, Größe"), "rechnung 2024-0815, groesse")
+        self.assertTrue(set(ig.AKTIONS_WERKZEUGE) <= {t["name"] for t in h.tool_specs()})
+        gross = ("<div style='color:red'>Moin " + "a b c d " * 40 + "</div>\n" + "QUJD" * 30 + " ") * 400
+        t0 = time.monotonic()
+        ig.pruefe(gross)
+        self.assertLess(time.monotonic() - t0, 2.0)
+
+
 if __name__ == "__main__":
     unittest.main()
