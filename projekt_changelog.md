@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 12:27] — Claude Code
+- **Was:** Deploy von I4 live geprueft: origin/main = af40021, NAS-Code mit `injection_protokoll.py`, Protokoll in Bot und Web-App eingeschaltet (`sicherheit/` angelegt), Bot schreibt wieder (watch/log.jsonl); `/api/performance` liefert die Kennzahl `injection` -- direkt nach dem Start bereits 1 Verdacht aus dem CRM-Mail-Poll (Quelle `mail`, Muster `unsichtbare-zeichen`, vermutlich ein Newsletter mit unsichtbaren Fuellzeichen; beobachten, ob das ein Fehlalarm-Muster ist). Alle acht Etappen der Sammel-Roadmap sind live; offen ist nur die CEO-Abnahme von F1-F3.
+- **Warum:** Abnahme nach CEO-Deploy (Sammel-Roadmap `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`).
+- **Betroffen:** `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`, `PROMPT_INJECTION_SCHUTZ_ROADMAP.md`, `ROADMAP.md` (Status)
+
 ## [2026-10-19 12:06] — Claude Code
 - **Was:** PROMPT_INJECTION_SCHUTZ I4 gebaut: Protokoll `sicherheit/injection.jsonl` (nur NAS + Backup, nie Inhalte -- Zeit, Art, Quelle, Muster, Pruefsumme; gleiche Mail binnen 24 h zaehlt einmal) fuer jeden Verdacht, jede Handlungs-Sperre und jeden entfernten Link; eingeschaltet nur im Betrieb (Bot, Web-App), Tests schreiben nichts. Leser: naechtlicher CISO-Bericht (Befund „Prompt-Injection …“ mit Quellen/Mustern), Leistungsbericht (Kennzahl „🛡️ Injection-Schutz“ in LUNA-OS und im Montags-Telegram, Trend zur Vorwoche), Telegram-Hinweis im 15-min-Poll bei Verdacht in Mails/Belegen. Angriffs-Testreihe mit der Suite: jeder Korpus-Angriff in sechs Kanaelen (Mail, Posteingang, Drive, Tabelle, Web, CRM) muss markiert ankommen und fuenf Aktionen sperren; harmlose Texte bleiben frei; Belege ans Backoffice und Web-Recherche markiert. Gegenproben (Kanal aus der Liste, Normalisierung aus, Aktion nicht gesperrt, Inhalt im Protokoll) schlagen an. Cache v137.
 - **Warum:** CEO-Go 2026-10-19 fuer alle acht Etappen (Weg A), Etappe I4 -- letzte Etappe der Sammel-Roadmap.

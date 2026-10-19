@@ -1,10 +1,11 @@
 # Roadmap: Schutz gegen Prompt Injection ausbauen und verfeinern
 
-- Status: geplant
+- Status: abgeschlossen
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `b9b9944`
-- Naechster Schritt: CEO-Go fuer I1-I4 abwarten.
+- Naechster Schritt: keiner (I1-I4 live seit 2026-10-19). Folgethema: beobachten, ob „unsichtbare-zeichen“ bei Newslettern
+  (Fuellzeichen im Vorschautext) Fehlalarme ausloest -- erster Fund direkt nach dem Deploy; bei Haeufung Muster verfeinern.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -58,7 +59,7 @@
 
 ## Etappe I4: Ueberwachung und Angriffstests
 
-- Status: gebaut 2026-10-19 (`core/injection_protokoll.py`, Haken in `input_guard.markiere_wenn_verdaechtig`/`protokolliere`, Sperre, Link-Filter, Web-Recherche; CISO-Bericht `_check_injection`, Leistungsbericht-Kennzahl „🛡️ Injection-Schutz“, Telegram-Hinweis bei Mails/Belegen; Angriffs-Testreihe `test_angriffe.py`: 38 Angriffe x 6 Kanaele x 5 Aktionen + harmloser Korpus, Belege, Web), Deploy offen
+- Status: gebaut 2026-10-19 (`core/injection_protokoll.py`, Haken in `input_guard.markiere_wenn_verdaechtig`/`protokolliere`, Sperre, Link-Filter, Web-Recherche; CISO-Bericht `_check_injection`, Leistungsbericht-Kennzahl „🛡️ Injection-Schutz“, Telegram-Hinweis bei Mails/Belegen; Angriffs-Testreihe `test_angriffe.py`: 38 Angriffe x 6 Kanaele x 5 Aktionen + harmloser Korpus, Belege, Web) , live seit 2026-10-19 (af40021)
 - Ziel / Scope: jeder Verdacht wird protokolliert (Quelle, Muster -- ohne Inhalt) und steht im naechtlichen CISO-Bericht
   und im Leistungsbericht; Telegram-Hinweis bei Verdacht in Mails/Belegen. Eine **Angriffs-Testreihe** (typische Angriffe
   gegen Mail, Drive, Web, Belege) laeuft mit der Testsuite und schlaegt an, wenn eine Aenderung den Schutz schwaecht.
