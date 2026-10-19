@@ -55,7 +55,7 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
                          "skill", "rueckmeldung zum", "rückmeldung zum", "feedback zum"],
     },
     "kundenordner": {                                    # KUNDENORDNER_FREIGABE F1-F3: kleine Gruppe (Token-Budget)
-        "werkzeuge": ["kundenordner_anlegen"],
+        "werkzeuge": ["kundenordner_anlegen", "kundenordner_link"],
         "stichwoerter": ["kundenordner", "ordner", "freigabe-link", "freigabelink", "freigeben", "dateien teilen",
                          "dateien fuer", "dateien für"],
     },

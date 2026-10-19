@@ -4,7 +4,7 @@
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `b9b9944`
-- Naechster Schritt: F3 (Link per Mail) bauen, dann Deploy F1-F3.
+- Naechster Schritt: Deploy F1-F3 (CEO), danach Abnahme mit einem echten Ordner.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -51,7 +51,7 @@ freigegebenen Ordner per E-Mail mit.“
 
 ## Etappe F3: Link per Mail
 
-- Status: geplant
+- Status: gebaut 2026-10-19 (Textbaustein-Art `dateifreigabe` mit Pflicht-Platzhalter `{link}`, `ordner_freigabe.mail_vorschau`/`mail_senden`, Dialog „✉️ Link senden …“ am Freigabe-Link, Chat-Werkzeug `kundenordner_link` (in der I3-Sperrliste); Tests in `test_ordner_freigabe.py`), Deploy offen
 - Ziel / Scope: „✉️ Link senden …“ im Ordner: Versanddialog mit Empfaengern der Firma (wie bei Belegen, mehrere, CC/BCC),
   neue Textbaustein-Art „Dateifreigabe“ (Link, Ablaufdatum, ggf. Hinweis auf das Passwort -- das Passwort selbst nie in
   derselben Mail); Versand nur per Klick (Mails an Kunden = CEO-Tor). Auch aus dem Chat: LUNA bereitet die Mail vor, du

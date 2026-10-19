@@ -319,7 +319,11 @@ orchestrator/state/luna_os_sitzungen.json  # Login-Sitzungen (nur Token-Hashes);
   nur fuer `/teilen/`), Bremse je IP + Login-Fehlversuch-Sperre; liefert nur Dateien genau dieses Ordners;
   Ereignisse `ordner_freigabe_angelegt/_widerrufen/_abruf` (IP gekuerzt), Links zum erneuten Anzeigen in
   `orchestrator/state/freigabe_links.json`; interne Verwaltung `/api/crm/kundenordner/<id>/freigaben`,
-  `/api/crm/freigaben/<fid>/widerrufen`). Routen-Gruppen: Kern (`/api/state`, `/api/me`, `/api/events`, `/api/prefs`,
+  `/api/crm/freigaben/<fid>/widerrufen`; F3: `GET /api/crm/freigaben/<fid>/versandvorschau`, `POST .../senden` -- Mail mit
+  dem Link ueber den Kundenversand (All-Inkl bzw. Gmail) nur nach CEO-Klick, Link immer mit der oeffentlichen Adresse
+  (`LUNA_OS_OEFFENTLICH`, Standard `https://os.hanserautisch.synology.me`), Passwort nie im Text, Mail in die
+  Firmenakte, Ereignis `ordner_freigabe_versendet`; Chat-Werkzeug `kundenordner_link` (Vorschau, Senden nur mit
+  `bestaetigt=true`)). Routen-Gruppen: Kern (`/api/state`, `/api/me`, `/api/events`, `/api/prefs`,
   `/api/settings`, …), Chat/Voice (`/api/chat`, `/api/tts`, `/api/sehen`, `/api/brain`), Antraege und
   Entwicklungs-Roadmap, Cutter (`/api/cutter/*`, Maschine-zu-Maschine), Backoffice (`/api/backoffice/*`, Modul
   administration, Maschine-zu-Maschine), Kunden-Stammdaten (`/api/crm/kunden*`, `/api/crm/ansprechpartner/*`,

@@ -2174,6 +2174,36 @@ async def freigabe_widerrufen(fid: str, request: Request):
     return _kunden_aktion(lambda: _freigaben().widerrufen(fid, von=_von(request)))
 
 
+@app.get("/api/crm/freigaben/{fid}/versandvorschau")
+def freigabe_versandvorschau(fid: str, vorlage: str = ""):
+    """F3: Mail mit dem Freigabe-Link vorbereiten (Vorlage „Dateifreigabe“); das Passwort steht nie im Text."""
+    from ...core.ordner_freigabe import basis_url, mail_vorschau
+    tb = _tb("dateifreigabe", vorlage)
+
+    def tun():
+        v = mail_vorschau(_freigaben(), kunden_store, fid, basis=basis_url(_google_secrets()), firmendaten=_firmendaten(),
+                          vorlage=tb["vorlage"], signatur=tb["signatur"])
+        vs = _versand_absender()
+        return v | {"absender": vs["absender"], "versand_kanal": vs["kanal"],
+                    "bereit": vs["bereit"] if vs["bereit"] is not None else bool(_google().verfuegbar())} | tb["auswahl"]
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/crm/freigaben/{fid}/senden")
+async def freigabe_senden(fid: str, request: Request):
+    """F3: Link per Mail -- Mail an Kunden = CEO-Tor: nur Modul finanzen (Owner), nur mit Bestaetigung."""
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if not hat_modul(u, "finanzen"):
+        return {"ok": False, "hinweis": "Mails an Kunden senden darf nur der CEO."}
+    body = await _json(request)
+    from ...core.ordner_freigabe import basis_url, mail_senden
+    tb = _tb("dateifreigabe", body.get("vorlage") or "")
+    return _kunden_aktion(lambda: mail_senden(_freigaben(), kunden_store, _versand_google(body), fid, body,
+                                              basis=basis_url(_google_secrets()), firmendaten=_firmendaten(),
+                                              vorlage=tb["vorlage"], signatur=tb["signatur"], absender_name=ABSENDER_NAME,
+                                              eigene=_eigene_adressen(), von=_von(request)))
+
+
 _TEILEN_KOPF = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Robots-Tag": "noindex, nofollow",
                 "X-Frame-Options": "DENY", "X-Content-Type-Options": "nosniff",
                 "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; "

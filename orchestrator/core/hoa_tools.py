@@ -69,6 +69,9 @@ def tool_specs() -> list[dict]:
         _spec("kundenordner_anlegen", "Legt fuer eine Kundenfirma einen Ordner (Projekt) auf der NAS an.",
               {"firma": _str("Firmenname oder K-Nummer"), "name": _str("Ordnername"), "auftrag": _str("AB-Nummer")},
               ["firma", "name"]),
+        _spec("kundenordner_link", "Freigabe-Link eines Kundenordners per Mail an die Firma: ohne bestaetigt nur Vorschau.",
+              {"firma": _str("Firma"), "ordner": _str("Ordnername"), "an": _str("Mail(s), leer = Ansprechpartner"),
+               "bestaetigt": _bool("CEO hat zugestimmt")}, ["firma", "ordner"]),
         _spec("geschaeftsregeln", "Liest Geschaeftsregeln: Zahlungsbedingungen, Mahnwesen, Leistungskatalog/Preise, "
               "Projektstunde/km-Satz, AGB in Kraft. Keine Kunden-/Rechnungsdaten.",
               {"thema": _str("zahlung | mahnung | katalog | agb | leer = alles.")}, []),
@@ -607,6 +610,56 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             return {"ok": False, "hinweis": str(exc).strip("'")}
         return {"ok": True, "id": o["id"], "firma": o["firma_name"] or nr, "ordner": o["name"],
                 "hinweis": "In LUNA-OS in der Firmenakte unter 🗂️ Kundenordner; Dateien dort hochladen."}
+
+    if name == "kundenordner_link":                   # KUNDENORDNER_FREIGABE F3: LUNA bereitet vor, CEO bestaetigt
+        from pathlib import Path as _P
+        from .buchhaltung import Buchhaltung
+        from .kunden import KundenStore
+        from .kundenordner import Kundenordner, _slug
+        from .ordner_freigabe import Freigaben, basis_url, mail_senden, mail_vorschau
+        from .textbausteine import TextbausteinStore
+        root = _P(ctx.repo_root)
+        bh = Buchhaltung(root / "buchhaltung")
+        ks = KundenStore(bh)
+        f = str(args.get("firma") or "").strip()
+        nr = f.upper() if ks.firma(f.upper()) else ks.finde(f)
+        if not nr:
+            return {"ok": False, "hinweis": f"Keine Firma „{f}“ gefunden."}
+        ko = Kundenordner(bh, root / "kundenordner", ks)
+        alle = ko.fuer_firma(nr)
+        s = _slug(str(args.get("ordner") or ""))
+        o = next((x for x in alle if x["slug"] == s), None) or next((x for x in alle if s and s in x["slug"]), None)
+        if not o:
+            return {"ok": False, "hinweis": "Ordner nicht gefunden. Vorhanden: " + (", ".join(x["name"] for x in alle) or "keiner")}
+        fg = Freigaben(bh, root / "orchestrator" / "state" / "freigabe_links.json", ko)
+        akt = next((x for x in fg.fuer_ordner(o["id"]) if x["aktiv"] and x["link"]), None)
+        bestaetigt = args.get("bestaetigt") is True
+        if not akt and not bestaetigt:
+            return {"ok": True, "vorschau": True, "ordner": o["name"], "dateien": len(o["dateien"]),
+                    "hinweis": "Noch kein Link: beim Senden wird einer erstellt (30 Tage, ohne Passwort). "
+                               "Erst nach ausdruecklicher CEO-Zustimmung mit bestaetigt=true senden."}
+        if not akt:
+            akt = {"fid": fg.anlegen(o["id"], von="LUNA (CEO-Auftrag)")["fid"]}
+        tb = TextbausteinStore(bh)
+        sec = ctx.secret_dict or {}
+        try:
+            fd = __import__("json").loads((bh.dir / "firmendaten.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            fd = {}
+        kw = {"basis": basis_url(sec), "firmendaten": fd, "vorlage": tb.vorlage("dateifreigabe"), "signatur": tb.laden()["signatur"]}
+        try:
+            if not bestaetigt:
+                v = mail_vorschau(fg, ks, akt["fid"], **kw)
+                return {"ok": True, "vorschau": True, "an": str(args.get("an") or "") or v["an"], "betreff": v["betreff"],
+                        "text": v["text"], "hinweis": "Vorschau -- gesendet wird erst nach CEO-Zustimmung (bestaetigt=true)."}
+            from ..governance.allinkl_mail import versandweg
+            r = mail_senden(fg, ks, versandweg(sec, ctx.google), akt["fid"],
+                            {"an": str(args.get("an") or ""), "bestaetigt": True}, absender_name="Hanserautisch – LUNA",
+                            eigene=[x for x in (sec.get("ALLINKL_ABSENDER", ""), sec.get("GOOGLE_ACCOUNT_EMAIL", "")) if "@" in x],
+                            von="LUNA (CEO-Auftrag)", **kw)
+        except (KeyError, ValueError) as exc:
+            return {"ok": False, "hinweis": str(exc).strip("'")}
+        return {"ok": True, "gesendet_an": r["an"], "ordner": o["name"]}
 
     if name == "geschaeftsregeln":                    # FACHAGENTEN_ROUTING R2: nur lesen, ohne Kunden-/Rechnungsdaten
         from pathlib import Path as _P

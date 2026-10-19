@@ -1305,9 +1305,9 @@ function koFreigabenHtml(o, fl) {
     const abrufe = (f.abrufe || []).map(a => `${esc(zeit(a.ts))} · ${esc({ seite: "angesehen", datei: "geladen: " + (a.datei || ""), zip: "ZIP geladen" }[a.art] || a.art)}`).join("<br>");
     return `<div class="v2-ko-fg"><div class="v2-ko-status">${st}${f.mit_passwort ? ` <span class="v2-badge neutral">🔒 Passwort</span>` : ""}</div>
       ${f.aktiv && url ? `<div class="v2-ko-link"><input class="v2-inp" readonly value="${esc(url)}" aria-label="Freigabe-Link"><button class="v2-btn sm" data-act="ko-link-kopieren" data-val="${esc(url)}">Kopieren</button></div>` : ""}
-      <small class="v2-sub">${f.abrufe_anzahl ? `${f.abrufe_anzahl} Abruf${f.abrufe_anzahl === 1 ? "" : "e"}` : "noch nicht abgerufen"}</small>
+      <small class="v2-sub">${f.abrufe_anzahl ? `${f.abrufe_anzahl} Abruf${f.abrufe_anzahl === 1 ? "" : "e"}` : "noch nicht abgerufen"}${(f.versendet || []).length ? ` · ✉️ gesendet an ${esc(f.versendet[f.versendet.length - 1].an)} am ${esc(zeit(f.versendet[f.versendet.length - 1].ts))}` : ""}</small>
       ${abrufe ? `<details><summary><small>Abrufe</small></summary><small class="v2-sub">${abrufe}</small></details>` : ""}
-      ${f.aktiv ? `<div class="v2-card-actions"><button class="v2-btn sm" data-act="ko-fg-widerrufen" data-id="${esc(f.fid)}" data-val="${esc(o.id)}">Link zurückziehen</button></div>` : ""}</div>`; };
+      ${f.aktiv ? `<div class="v2-card-actions">${f.link ? `<button class="v2-btn sm pri" data-act="ko-fg-senden" data-id="${esc(f.fid)}">✉️ Link senden …</button>` : ""}<button class="v2-btn sm" data-act="ko-fg-widerrufen" data-id="${esc(f.fid)}" data-val="${esc(o.id)}">Link zurückziehen</button></div>` : ""}</div>`; };
   return `<div class="v2-ko-freigabe"><b>🔗 Freigabe-Link</b> <small class="v2-sub">Nur ansehen und herunterladen, ohne Anmeldung</small>
     ${fl.filter(f => f.aktiv).map(zeile).join("")}
     <details ${fl.some(f => f.aktiv) ? "" : "open"}><summary><small>+ Neuen Link erstellen</small></summary><div class="v2-an-zeile">
@@ -1322,6 +1322,43 @@ async function koFreigabeAnlegen(oid) {
   await koLaden(KO_NR, oid);
   try { await navigator.clipboard.writeText(location.origin + r.link); kundenMsg("ko-msg", `Link erstellt und kopiert – gültig bis ${datumDe(r.ablauf)}${r.mit_passwort ? ". Das Passwort schickst du getrennt (z. B. per Telefon oder SMS)." : "."}`, true); }
   catch (e) { kundenMsg("ko-msg", `Link erstellt – gültig bis ${datumDe(r.ablauf)}.`, true); }
+}
+// KUNDENORDNER F3: Link per Mail (Vorlage „Dateifreigabe“, mehrere Empfaenger, CC/BCC) -- Senden nur per Klick (CEO-Tor)
+let KFS = { fid: "", geaendert: false };
+async function koLinkDialog(fid) {
+  KFS = { fid, geaendert: false };
+  openModal("✉️ Freigabe-Link senden", `<div class="v2-form" id="kfs-form"><div class="v2-empty">Lade…</div></div>`);
+  await koLinkVorschau(true);
+}
+async function koLinkVorschau(erst) {
+  const q = new URLSearchParams({ vorlage: ($("#kfs-vorlage") || {}).value || "" });
+  const v = await jget(`/api/crm/freigaben/${encodeURIComponent(KFS.fid)}/versandvorschau?${q}`);
+  const f = $("#kfs-form"); if (!f) return;
+  if (!v || v.ok === false) { f.innerHTML = `<div class="v2-msg err">${esc((v && v.hinweis) || "Keine Verbindung.")}</div>`; return; }
+  if (erst) {
+    f.innerHTML = `${empfBaustein("kfs", v)}
+      ${(v.vorlagen || []).length > 1 ? `<label class="v2-feld"><small>Vorlage</small><select class="v2-inp" id="kfs-vorlage">${v.vorlagen.map(x => `<option value="${esc(x.id)}" ${x.id === v.vorlage ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>` : ""}
+      <label class="v2-feld"><small>Betreff *</small><input class="v2-inp" id="kfs-betreff"></label>
+      <label class="v2-feld"><small>Text * (der Link muss drinbleiben)</small><textarea class="v2-inp" id="kfs-text" rows="11"></textarea></label>
+      ${v.mit_passwort ? `<div class="v2-msg">🔒 Der Ordner hat ein Passwort – es steht <b>nicht</b> in der Mail. Teile es getrennt mit (Telefon, SMS, Messenger).</div>` : ""}
+      <div class="v2-kv"><span>Link gültig bis</span><b>${esc(datumDe(v.ablauf))}</b></div>
+      <div class="v2-kv"><span>Absender</span><b>${esc(v.absender || "")}</b></div>
+      <div class="v2-card-actions"><button class="v2-btn pri" data-act="kfs-senden" id="kfs-knopf" ${v.bereit ? "" : "disabled title=\"Versand nicht eingerichtet\""}>✉️ Jetzt senden</button></div><div class="v2-msg" id="kfs-msg"></div>`;
+    f.addEventListener("input", (e) => { if (e.target.id === "kfs-text" || e.target.id === "kfs-betreff") KFS.geaendert = true; });
+    const sel = $("#kfs-vorlage"); if (sel) sel.addEventListener("change", () => { KFS.geaendert = false; koLinkVorschau(false); });
+  }
+  if (!KFS.geaendert) { $("#kfs-betreff").value = v.betreff; $("#kfs-text").value = v.text; }
+}
+async function koLinkSenden(el) {
+  const body = { an: $("#kfs-an").value.trim(), betreff: $("#kfs-betreff").value.trim(), text: $("#kfs-text").value.trim(),
+    vorlage: ($("#kfs-vorlage") || {}).value || "", bestaetigt: true };
+  const m = $("#kfs-msg");
+  if (!body.an) { m.className = "v2-msg err"; m.textContent = "Bitte mindestens einen Empfänger wählen."; return; }
+  if (!confirm(`Freigabe-Link jetzt an ${body.an} senden?`)) return;
+  el.disabled = true; m.className = "v2-msg"; m.textContent = "Sende …";
+  const r = await jpost(`/api/crm/freigaben/${encodeURIComponent(KFS.fid)}/senden`, body); el.disabled = false;
+  if (!r || r.ok === false) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return; }
+  return KO_NR ? kundeDetail(KO_NR, `✉️ Freigabe-Link an ${r.an} gesendet – die Mail liegt in der Akte.`) : closeModal();
 }
 async function koAnlegen(nr) {
   const name = (($("#ko-name") || {}).value || "").trim(); if (!name) return kundenMsg("ko-msg", "Bitte einen Namen angeben.", false);
@@ -4820,6 +4857,8 @@ async function handleAct(act, el) {
       if (KO_NR) await koLaden(KO_NR, id); return kundenMsg("ko-msg", r && r.ok ? `${r.entfernt} gelöscht.` : (r && r.hinweis) || "Fehler.", !!(r && r.ok)); }
     case "lf-ordner": return koLieferungForm(id, val);
     case "ko-fg-anlegen": return koFreigabeAnlegen(id);
+    case "ko-fg-senden": return koLinkDialog(id);
+    case "kfs-senden": return koLinkSenden(el);
     case "ko-fg-widerrufen": { if (!confirm("Link zurückziehen? Der Kunde kann den Ordner danach nicht mehr öffnen.")) return;
       const r = await jpost(`/api/crm/freigaben/${encodeURIComponent(id)}/widerrufen`, {}); await koLaden(KO_NR, val);
       return kundenMsg("ko-msg", r && r.ok ? "Link zurückgezogen." : (r && r.hinweis) || "Fehler.", !!(r && r.ok)); }

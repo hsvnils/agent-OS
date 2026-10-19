@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 11:44] — Claude Code
+- **Was:** KUNDENORDNER_FREIGABE F3 gebaut: Freigabe-Link per Mail. Neue Textbaustein-Art „Dateifreigabe“ (Platzhalter u. a. `{ordner}`, `{link}` -- Pflicht --, `{ablauf}`, `{passwort_hinweis}`), Versanddialog „✉️ Link senden …“ am aktiven Link mit Adressen der Firma, CC/BCC und Vorlagenwahl; Senden nur per Klick und nur fuer den CEO (Mail an Kunden = CEO-Tor), Link immer mit der oeffentlichen Adresse, der Text muss den Link enthalten und darf das Passwort nicht enthalten (Pruefung gegen den PBKDF2-Hash), Mail landet in der Firmenakte, Versand steht am Link. Chat: Werkzeug `kundenordner_link` -- Vorschau, gesendet erst mit CEO-Zustimmung; es steht auf der I3-Sperrliste. Browser-Test Rechner/iPad/iPhone. Cache v136.
+- **Warum:** CEO-Go 2026-10-19 fuer alle acht Etappen (Weg A), Etappe F3 -- schliesst den Block F1-F3 ab.
+- **Betroffen:** `orchestrator/core/ordner_freigabe.py`, `orchestrator/core/textbausteine.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/werkzeugauswahl.py`, `orchestrator/core/input_guard.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_ordner_freigabe.py`, `docs/datenfluesse.md`, `ROADMAP.md`, `KUNDENORDNER_FREIGABE_ROADMAP.md`, `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`
+
 ## [2026-10-19 11:39] — Claude Code
 - **Was:** KUNDENORDNER_FREIGABE F2 gebaut (Weg A): Freigabe-Link `/teilen/<schluessel>` fuer genau einen Kundenordner -- ohne LUNA-OS-Anmeldung, Gueltigkeit 7/30/90 Tage (Standard 30), optional Passwort, jederzeit zurueckziehbar, jeder Abruf protokolliert (Seite, Datei, ZIP; IP gekuerzt). Kundenseite im Hanserautisch-Look (hell/dunkel) mit Dateiliste, Einzel-Download und gestreamtem ZIP. Schutz: 32-Byte-Schluessel (nur Pruefsumme in der Kette), Bremse je IP + Sperre nach Fehlversuchen, nur Dateien dieses Ordners, Downloads als Anhang, Sicherheits-Kopfzeilen; SVG intern nie inline. Verwaltung im Kundenordner („🔗 Freigabe-Link“: erstellen, kopieren, Abrufe, zurueckziehen). CISO-Vermerk in der Zugriffs-Policy, Entscheidung im Register. Browser-Test Rechner/iPad/iPhone (intern und Kundenseite). Cache v135/v72.
 - **Warum:** CEO-Go 2026-10-19 fuer alle acht Etappen (Weg A), Etappe F2.

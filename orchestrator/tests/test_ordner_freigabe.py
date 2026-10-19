@@ -121,6 +121,63 @@ class TestFreigabe(FreigabeBasis):
         self.assertEqual(codes[-1], 429)
 
 
+class TestMail(FreigabeBasis):
+    """F3: Link per Mail -- Vorlage „Dateifreigabe“, Link + Ablauf im Text, nie das Passwort, nur mit Bestaetigung."""
+
+    def test_5_vorschau_und_senden(self):
+        r = self.freigeben(passwort="Kiez#Alm2026")
+        v = self.c.get(f"/api/crm/freigaben/{r['fid']}/versandvorschau", auth=self.a).json()
+        self.assertTrue(v["ok"], v)
+        voll = "https://os.hanserautisch.synology.me" + r["link"]
+        self.assertIn(voll, v["text"])                                              # nie die LAN-Adresse
+        self.assertIn(".".join(reversed(r["ablauf"].split("-"))), v["text"])
+        self.assertIn("Passwort erhalten Sie separat", v["text"])
+        self.assertNotIn("Kiez#Alm2026", v["text"] + v["betreff"])
+        self.assertEqual(v["art"], "dateifreigabe")
+        url = f"/api/crm/freigaben/{r['fid']}/senden"
+        self.assertIn("Bestaetigung", self.c.post(url, json={"an": "kunde@example.com"}, auth=self.a).json()["hinweis"])
+        self.assertIn("Link fehlt", self.c.post(url, json={"an": "kunde@example.com", "text": "Hallo", "bestaetigt": True},
+                                                auth=self.a).json()["hinweis"])
+        mit_pw = v["text"].replace("Bei Fragen", "Passwort: Kiez#Alm2026. Bei Fragen")
+        self.assertIn("Passwort steht im Text", self.c.post(url, json={"an": "kunde@example.com", "text": mit_pw, "bestaetigt": True},
+                                                           auth=self.a).json()["hinweis"])
+        self.assertEqual(self.g.gesendet, [])                                       # bis hier nichts raus
+        ok = self.c.post(url, json={"an": "kunde@example.com", "cc": "chef@example.com", "text": v["text"] + "\n\nPS: Gruss vom Kiez",
+                                    "betreff": v["betreff"], "bestaetigt": True}, auth=self.a).json()
+        self.assertTrue(ok["ok"], ok)
+        self.assertEqual(len(self.g.gesendet), 1)
+        self.assertIn(voll, self.g.gesendet[0]["text"])
+        self.assertIn("CC: chef@example.com", self.g.gesendet[0]["an"])
+        f = self.c.get(f"/api/crm/kundenordner/{self.oid}/freigaben", auth=self.a).json()["freigaben"][0]
+        self.assertEqual(f["versendet"][0]["an"], ok["an"])
+        akte = self.c.get(f"/api/crm/kunden/{self.k}/akte", auth=self.a).json()["dokumente"]
+        self.assertTrue(any(d.get("art") == "mail" for d in akte))                   # Mail liegt in der Firmenakte
+
+    def test_6_nur_ceo_und_nur_aktiv(self):
+        r = self.freigeben()
+        with mock.patch.object(self.w, "hat_modul", side_effect=lambda u, m: m != "finanzen"):   # Team ohne Finanzen
+            self.assertIn("nur der CEO", self.c.post(f"/api/crm/freigaben/{r['fid']}/senden", json={"bestaetigt": True},
+                                                     auth=self.a).json()["hinweis"])
+        self.c.post(f"/api/crm/freigaben/{r['fid']}/widerrufen", auth=self.a)
+        self.assertIn("zurueckgezogen", self.c.get(f"/api/crm/freigaben/{r['fid']}/versandvorschau", auth=self.a).json()["hinweis"])
+
+    def test_7_chat_vorschau_dann_senden(self):
+        from orchestrator.core.hoa_tools import ToolContext, run_tool
+        ctx = ToolContext(core=None, antraege=None, engine=None, finance_dir=None, repo_root=self.tmp, leak_secrets=[],
+                          google=self.g, secret_dict={})
+        bh = self.w.kunden_store.bh
+        with mock.patch("orchestrator.core.buchhaltung.Buchhaltung", return_value=bh):
+            v = run_tool("kundenordner_link", {"firma": self.k, "ordner": "herbst"}, ctx)
+            self.assertTrue(v["vorschau"], v)
+            self.assertEqual(self.g.gesendet, [])
+            r = run_tool("kundenordner_link", {"firma": self.k, "ordner": "herbst", "an": "kunde@example.com", "bestaetigt": True}, ctx)
+            self.assertTrue(r["ok"], r)
+            self.assertIn("/teilen/", self.g.gesendet[0]["text"])
+            v = run_tool("kundenordner_link", {"firma": self.k, "ordner": "herbst"}, ctx)
+            self.assertIn("https://os.hanserautisch.synology.me/teilen/", v["text"])  # gleicher Link, kein zweiter
+        self.assertEqual(len([f for f in self.w._freigaben().fuer_ordner(self.oid) if f["aktiv"]]), 1)
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()

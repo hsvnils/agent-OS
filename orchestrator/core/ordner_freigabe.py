@@ -77,6 +77,8 @@ class Freigaben:
                 out[d["fid"]] = dict(d) | {"angelegt": e["ts"], "von": e.get("von", ""), "abrufe": [], "widerrufen": ""}
             elif t == "ordner_freigabe_widerrufen" and d.get("fid") in out:
                 out[d["fid"]]["widerrufen"] = e["ts"]
+            elif t == "ordner_freigabe_versendet" and d.get("fid") in out:
+                out[d["fid"]].setdefault("versendet", []).append({"an": d.get("an", ""), "ts": e["ts"]})
             elif t == "ordner_freigabe_abruf" and d.get("fid") in out:
                 out[d["fid"]]["abrufe"].append({k: d.get(k) for k in ("art", "datei", "ip")} | {"ts": e["ts"]})
         return out
@@ -87,12 +89,14 @@ class Freigaben:
         return not f.get("widerrufen") and date.fromisoformat(f["ablauf"]) >= heute
 
     def fuer_ordner(self, oid: str) -> list[dict]:
+        return [f for f in self.fuer_ordner_alle() if f["oid"] == oid]
+
+    def fuer_ordner_alle(self) -> list[dict]:
         out = []
         for f in self._falte(self.bh.eintraege()).values():
-            if f["oid"] != oid:
-                continue
             x = {k: v for k, v in f.items() if k not in ("schluessel_hash", "passwort_hash")}
             out.append(x | {"aktiv": self.aktiv(f), "mit_passwort": bool(f.get("passwort_hash")), "link": self.link(f["fid"]),
+                            "versendet": f.get("versendet", []),
                             "abrufe_anzahl": len(f["abrufe"]), "abrufe": f["abrufe"][-10:][::-1]})
         return sorted(out, key=lambda x: x["angelegt"], reverse=True)
 
@@ -143,3 +147,88 @@ class Freigaben:
     def abruf(self, f: dict, art: str, *, datei: str = "", ip: str = "") -> None:
         self.bh.erfassen("ordner_freigabe_abruf", {"fid": f["fid"], "oid": f["oid"], "art": art, "datei": datei[:120],
                                                    "ip": ip_kurz(ip)}, von="Freigabe-Link")
+
+
+# -- Link per Mail (KUNDENORDNER_FREIGABE F3) -------------------------------------------------------------------------
+OEFFENTLICH = "https://os.hanserautisch.synology.me"     # Kunden erreichen nur diese Adresse (nie die LAN-IP)
+
+
+def basis_url(secrets_dict: dict | None) -> str:
+    return str((secrets_dict or {}).get("LUNA_OS_OEFFENTLICH") or OEFFENTLICH).rstrip("/")
+
+
+def _datum_de(iso: str) -> str:
+    return ".".join(reversed(iso[:10].split("-")))
+
+
+def mail_vorschau(freigaben: Freigaben, kunden, fid: str, *, basis: str, firmendaten: dict, vorlage: dict | None = None,
+                  signatur: str = "") -> dict:
+    """Betreff/Text aus der Vorlage „Dateifreigabe“ + Empfaenger-Vorschlaege der Firma. Das Passwort steht nie im Text."""
+    from .empfaenger import vorschlaege
+    from .textbausteine import anrede_werte, rendern
+    f = next((x for x in freigaben.fuer_ordner_alle() if x["fid"] == fid), None)
+    if not f:
+        raise KeyError(fid)
+    if not f["aktiv"]:
+        raise ValueError("Dieser Link ist abgelaufen oder zurueckgezogen -- bitte einen neuen erstellen.")
+    if not f["link"]:
+        raise ValueError("Der Link liegt nicht mehr vor (nur die Pruefsumme) -- bitte einen neuen erstellen.")
+    firma = kunden.firma(f["firma"]) or {}
+    aps = [a for a in firma.get("ansprechpartner_liste") or [] if a.get("aktiv", True) and a.get("mail")]
+    o = freigaben.ordner.get(f["oid"]) if freigaben.ordner else None
+    werte = anrede_werte(aps[0] if aps else None) | {
+        "kunde": firma.get("name", ""), "ordner": f["ordner_name"], "link": basis + f["link"], "ablauf": _datum_de(f["ablauf"]),
+        "anzahl": str(len((o or {}).get("dateien") or [])),
+        "passwort_hinweis": "Das Passwort erhalten Sie separat." if f["mit_passwort"] else ""}
+    betreff, text = rendern("dateifreigabe", werte, firmendaten, vorlage=vorlage, signatur=signatur)
+    return {"fid": fid, "firma": f["firma"], "an": (aps[0]["mail"] if aps else firma.get("rechnungsmail") or ""),
+            "adressen": vorschlaege(kunden, f["firma"]), "betreff": betreff, "text": text, "link": werte["link"],
+            "ablauf": f["ablauf"], "mit_passwort": f["mit_passwort"]}
+
+
+def _enthaelt_passwort(f_roh: dict, texte: list[str], bekannt: str) -> bool:
+    """Steht das Passwort im Mailtext? Es liegt nur als PBKDF2 vor -> nur die Woerter pruefen, die der CEO selbst
+    ergaenzt hat (nicht im vorbereiteten Text), hoechstens 30 (jede Pruefung kostet Rechenzeit)."""
+    import re
+    from .team_auth import pruefe_passwort
+    if not f_roh.get("passwort_hash"):
+        return False
+    alt = set(re.split(r"\s+", bekannt or ""))
+    kandidaten = []
+    for t in texte:
+        for w in re.split(r"\s+", t or ""):
+            for x in {w, w.strip(".,;:!?()[]{}\"'„“»«")}:
+                if PW_MIN <= len(x) <= 64 and x not in alt and x not in kandidaten:
+                    kandidaten.append(x)
+    return any(pruefe_passwort(x, f_roh["passwort_hash"]) for x in kandidaten[:30])
+
+
+def mail_senden(freigaben: Freigaben, kunden, versand, fid: str, daten: dict, *, basis: str, firmendaten: dict,
+                vorlage: dict | None = None, signatur: str = "", absender_name: str, eigene: list[str], von: str = "") -> dict:
+    """Link per Mail an die Firma -- nur mit ausdruecklicher Bestaetigung (Mail an Kunden = CEO-Tor). Der Text muss den
+    Link enthalten und darf das Passwort nicht enthalten. Die Mail landet in der Firmenakte."""
+    from .empfaenger import aus_body
+    from .firmenakte import Firmenakte
+    if (daten or {}).get("bestaetigt") is not True:
+        raise ValueError("Senden braucht die ausdrueckliche Bestaetigung.")
+    v = mail_vorschau(freigaben, kunden, fid, basis=basis, firmendaten=firmendaten, vorlage=vorlage, signatur=signatur)
+    betreff = str(daten.get("betreff") or v["betreff"]).strip()
+    text = str(daten.get("text") or v["text"]).strip()
+    if v["link"] not in text:
+        raise ValueError("Der Freigabe-Link fehlt im Text -- bitte nicht entfernen.")
+    roh = freigaben._falte(freigaben.bh.eintraege())[fid]
+    if _enthaelt_passwort(roh, [betreff, text], v["text"] + " " + v["betreff"]):
+        raise ValueError("Das Passwort steht im Text -- bitte entfernen und getrennt mitteilen (z. B. Telefon oder SMS).")
+    an = aus_body(daten if any(str(daten.get(k) or "").strip() for k in ("an", "cc", "bcc")) else {"an": v["an"]})
+    s = versand.mail_senden(an, betreff, text, bestaetigt=True, absender_name=absender_name)
+    if not s.get("ok"):
+        raise ValueError(s.get("hinweis") or "Senden fehlgeschlagen.")
+    akte = ""
+    r = versand.mail_roh(s["id"]) if s.get("id") and hasattr(versand, "mail_roh") else {}
+    if r.get("ok"):
+        akte = Firmenakte(freigaben.bh, kunden).mail_aufnehmen(r["roh"], s["id"], eigene=eigene, weitergeleitet=False,
+                                                               von=von, firma=v["firma"])["id"]
+    freigaben.bh.erfassen("ordner_freigabe_versendet", {"fid": fid, "oid": roh["oid"], "firma": v["firma"], "an": an,
+                                                        "betreff": betreff[:200], "message_id": s.get("id", ""),
+                                                        "kanal": s.get("kanal", ""), "akte_id": akte}, von=von)
+    return {"fid": fid, "an": an, "akte_id": akte}
