@@ -513,6 +513,10 @@ class GoogleWorkspace:
             return g
         try:
             from googleapiclient.http import MediaInMemoryUpload
+            if mime.startswith("message/"):
+                # BF-72: die Bibliothek baut eine MIME-Huelle; mit „message/rfc822“ verlangt Pythons E-Mail-Modul reines
+                # ASCII -> Mails mit Umlauten scheitern. Neutraler Typ, Inhalt bleibt Byte fuer Byte gleich (MD5-Gegenprobe).
+                mime = "application/octet-stream"
             svc = self.auth.service("drive", "v3")
             f = svc.files().create(body={"name": name, "parents": [ordner_id]},
                                    media_body=MediaInMemoryUpload(inhalt, mimetype=mime, resumable=False),

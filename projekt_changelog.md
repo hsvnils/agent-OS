@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-19 10:28] — Claude Code
+- **Was:** D1 / BF-72 behoben: Drive-Upload von Mails (`message/*`) mit neutralem Dateityp `application/octet-stream` (Inhalt unveraendert); Test `test_drive_upload.py` mit Gegenprobe. Sammel-Roadmap auf „in Umsetzung“, Entscheidung Weg A im Register.
+- **Warum:** CEO 2026-10-19: Go fuer alle acht Etappen, Weg A, Empfehlungen passen.
+- **Betroffen:** `orchestrator/governance/google_workspace.py`, `orchestrator/tests/test_drive_upload.py` (neu), `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`, `DRIVE_ORDNER_SCHUTZ_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-19 10:26] — Claude Code
 - **Was:** Sammel-Roadmap `DRIVE_ORDNER_SCHUTZ_ROADMAP.md` angelegt (geplant): Reihenfolge D1 -> I1 -> I2 -> I3 -> F1 -> F2 -> F3 -> I4 mit Status-Tabelle, verweist auf BF-72 und die Einzel-Roadmaps; im Roadmap-Verzeichnis eingetragen. Arbeitsanweisung „Status-Tabelle nach jedem erledigten Punkt“ im Gedaechtnis gespeichert.
 - **Warum:** CEO 2026-10-19: eine Roadmap fuer die drei Punkte; nach jedem erledigten Punkt erledigte und offene Punkte als Tabelle zeigen (generell).

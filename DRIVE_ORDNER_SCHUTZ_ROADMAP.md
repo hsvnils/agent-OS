@@ -1,10 +1,10 @@
 # Roadmap: Drive-Fix, Kundenordner mit Freigabe-Link, Prompt-Injection-Schutz (Sammel-Roadmap)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `d816b1d`
-- Naechster Schritt: CEO-Go fuer die Reihenfolge und Entscheidung Weg A/B (Freigabe-Link) abwarten; dann D1.
+- Naechster Schritt: D1 deployen (CEO), danach I1-I3. Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -31,7 +31,7 @@ Links verschickt, sollen Fremdtexte schon markiert und Handlungen nach einem Ver
 | 3 | I2 | Feinere Erkennung (Tarnungen, versteckter Text, Rollenmarken, Datenabfluss ueber Links) + Testkorpus | mittel | ⬜ offen |
 | 4 | I3 | Handlungs-Sperre nach Verdacht (Senden, Termine, Schreiben, Loeschen, Freigaben nur nach Rueckfrage) | mittel | ⬜ offen |
 | 5 | F1 | Kundenordner je Kunde/Projekt auf der NAS (anlegen, hochladen, Lieferungen uebernehmen) | mittel | ⬜ offen |
-| 6 | F2 | Freigabe-Link mit Ablauf, optional Passwort, widerrufbar, Abruf-Protokoll | mittel | ⬜ offen -- ⏳ CEO: Weg A/B, CISO-Freigabe |
+| 6 | F2 | Freigabe-Link mit Ablauf, optional Passwort, widerrufbar, Abruf-Protokoll | mittel | ⬜ offen (Weg A entschieden) |
 | 7 | F3 | Link per Mail (Versanddialog, Textbaustein „Dateifreigabe“, nur per Klick) | klein | ⬜ offen |
 | 8 | I4 | Ueberwachung (CISO-Bericht, Leistungsbericht) + Angriffs-Testreihe in der Testsuite | klein bis mittel | ⬜ offen |
 
