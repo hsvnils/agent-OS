@@ -4,7 +4,7 @@
 - Stand: 2026-10-19
 - Arbeitsbranch: `ai/kundenordner-injektion`
 - Basiscommit: `d816b1d`
-- Naechster Schritt: I4 bauen (Claude); Abnahme F1-F3 mit echtem Ordner (CEO). Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
+- Naechster Schritt: Deploy I4 (CEO); Abnahme F1-F3 mit echtem Ordner (CEO); danach Sammel-Roadmap abschliessen. Go CEO 2026-10-19 fuer alle acht Etappen, Weg A, Empfehlungen angenommen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -33,7 +33,7 @@ Links verschickt, sollen Fremdtexte schon markiert und Handlungen nach einem Ver
 | 5 | F1 | Kundenordner je Kunde/Projekt auf der NAS (anlegen, hochladen, Lieferungen uebernehmen) | mittel | ✅ live (9c74ce9) |
 | 6 | F2 | Freigabe-Link mit Ablauf, optional Passwort, widerrufbar, Abruf-Protokoll | mittel | ✅ live (9c74ce9) |
 | 7 | F3 | Link per Mail (Versanddialog, Textbaustein „Dateifreigabe“, nur per Klick) | klein | ✅ live (9c74ce9) |
-| 8 | I4 | Ueberwachung (CISO-Bericht, Leistungsbericht) + Angriffs-Testreihe in der Testsuite | klein bis mittel | ⬜ offen |
+| 8 | I4 | Ueberwachung (CISO-Bericht, Leistungsbericht) + Angriffs-Testreihe in der Testsuite | klein bis mittel | ✅ gebaut (Deploy offen) |
 
 Deploy: nach D1 sofort (kleiner Fix, stoppt die taeglichen Fehlermeldungen); danach je Block (I1-I3, F1-F3, I4) ein Deploy,
 oder auf Wunsch alles am Stueck.

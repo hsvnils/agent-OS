@@ -48,6 +48,8 @@ FILES=(
   backoffice/log.jsonl
   buchhaltung/log.jsonl
   einwilligungen/log.jsonl
+  # PROMPT_INJECTION_SCHUTZ I4: Verdacht/Sperren (ohne Inhalte, append-only)
+  sicherheit/injection.jsonl
   # Briefkopf + Bankverbindung (nur NAS, nie im Git; kein JSONL -> nicht im Zeilen-Check)
   buchhaltung/firmendaten.json
   buchhaltung/katalog.json       # Leistungskatalog/Preise (Etappe 3b; Aenderungen zusaetzlich in der Kette)

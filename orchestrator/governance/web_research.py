@@ -308,6 +308,7 @@ class WebResearch:
         kombiniert = " \n".join([erg.zusammenfassung] + [f"{t.titel} {t.auszug}" for t in erg.treffer])
         befund = input_guard.pruefe(kombiniert)
         if befund.injection:
+            input_guard.protokolliere("verdacht", "web-recherche", befund.injection, kombiniert)   # I4
             erg.sicherheit = "Prompt-Injection-Verdacht im externen Inhalt: " + ", ".join(befund.injection)
             erg.zusammenfassung = input_guard.MARKER + erg.zusammenfassung
             if self.notify:

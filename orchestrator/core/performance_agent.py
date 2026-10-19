@@ -70,7 +70,7 @@ def _median_stunden(paare: list[tuple[datetime, datetime]]) -> float | None:
 
 class PerformanceAgent:
     def __init__(self, *, reels=None, antraege=None, cutter=None, aktivitaet=None, kosten=None,
-                 nutzung=None, fachagenten=None, apps: tuple = DEFAULT_APPS):
+                 nutzung=None, fachagenten=None, injection=None, apps: tuple = DEFAULT_APPS):
         self.reels = reels          # ReelStore (Events: einreichen / status)
         self.antraege = antraege    # Antraege  (Events: event=eingereicht/freigegeben/...)
         self.cutter = cutter        # ContentStore luna_cutter_jobs (rows mit status + updated_at)
@@ -78,6 +78,7 @@ class PerformanceAgent:
         self.kosten = kosten
         self.nutzung = nutzung      # NutzungStore (App-Oeffnungen; Feature-Friedhof)
         self.fachagenten = fachagenten  # AgentenNutzung (Fachagenten-Anfragen, AGENTEN_AUSBAU A1)
+        self.injection = injection  # InjectionProtokoll (PROMPT_INJECTION_SCHUTZ I4)
         self.apps = tuple(apps)
 
     # -- Bereiche (je ein dict fuer EIN Zeitfenster) --
@@ -214,6 +215,15 @@ class PerformanceAgent:
                 "werkzeug": sum(x.get("werkzeug", 0) for x in je.values()),
                 "je_agent": dict(sorted(((k, x["anzahl"]) for k, x in je.items()), key=lambda kv: -kv[1]))}
 
+    def _injection(self, start: datetime, ende: datetime) -> dict | None:
+        """Prompt-Injection-Schutz: Verdacht, Sperren, entfernte Links (ohne Inhalte)."""
+        if self.injection is None:
+            return None
+        try:
+            return self.injection.zaehlen(start, ende)
+        except Exception:
+            return None
+
     def _friedhof(self, jetzt: datetime) -> list | None:
         """Apps der kanonischen Liste, die seit FRIEDHOF_TAGE nicht geoeffnet wurden. None ohne Nutzungsdaten
         (erste Tage nach Einfuehrung des Loggings waere sonst ALLES faelschlich 'brachliegend')."""
@@ -239,7 +249,8 @@ class PerformanceAgent:
                 "cutter": self._cutter(start, ende), "aktivitaet": self._aktivitaet(start, ende),
                 "kosten": self._kosten(start, ende),
                 "reaktionszeiten": self._reaktionszeiten(start, ende),
-                "nutzung": self._nutzung(start, ende), "fachagenten": self._fachagenten(start, ende)}
+                "nutzung": self._nutzung(start, ende), "fachagenten": self._fachagenten(start, ende),
+                "injection": self._injection(start, ende)}
 
     def historie(self, wochen: int = 8, jetzt: datetime | None = None) -> list[dict]:
         """Kennzahlen der letzten `wochen` Wochenfenster (aelteste zuerst) -- fuer den Verlaufs-Chart.
@@ -340,6 +351,13 @@ class PerformanceAgent:
         if nz:
             top = ", ".join(f"{a} ({n})" for a, n in list(nz["je_app"].items())[:3])
             z.append(f"\U0001f4f1 Nutzung: {nz['oeffnungen']} App-Oeffnungen" + (f" — meist: {top}" if top else ""))
+        ij = w.get("injection")
+        if ij is not None:
+            q = ", ".join(f"{k} ({n})" for k, n in list(ij["je_quelle"].items())[:3])
+            z.append(f"\U0001f6e1 Injection-Schutz: {ij['verdacht']} Verdacht, {ij['gesperrt']} Sperre(n), "
+                     f"{ij['links_entfernt']} Link(s) entfernt"
+                     + delta(ij["verdacht"], (v.get("injection") or {}).get("verdacht"))
+                     + (f" — Quellen: {q}" if q else ""))
         fa = w.get("fachagenten")
         if fa is not None:
             top = ", ".join(f"{a} ({n})" for a, n in list(fa["je_agent"].items())[:5])

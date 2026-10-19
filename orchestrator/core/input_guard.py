@@ -211,10 +211,30 @@ def redigiere_pii(text: str) -> str:
     return _CC.sub(_cc, t)
 
 
+# -- PROMPT_INJECTION_SCHUTZ I4: Protokoll (nur im Betrieb eingeschaltet; Tests schreiben nichts) ----------------------
+_PROTOKOLL = None
+
+
+def protokoll_setzen(p) -> None:
+    """Bot und Web-App setzen beim Start `InjectionProtokoll(ROOT / "sicherheit" / "injection.jsonl")`."""
+    global _PROTOKOLL
+    _PROTOKOLL = p
+
+
+def protokolliere(art: str, quelle: str, muster: list[str] | None = None, text: str = "") -> None:
+    if _PROTOKOLL is None:
+        return
+    try:
+        _PROTOKOLL.erfassen(art, quelle, muster, text=text)
+    except Exception:
+        pass                                       # das Protokoll darf nie den Ablauf stoeren
+
+
 def markiere_wenn_verdaechtig(text: str, quelle: str = "extern") -> tuple[str, Befund]:
     """Prueft `text`; bei Injection-Verdacht wird ein sichtbarer Marker vorangestellt. Gibt (text, Befund)."""
     b = pruefe(text)
     if b.injection:
+        protokolliere("verdacht", quelle, b.injection, text or "")
         return (MARKER + (text or ""), b)
     return (text or "", b)
 

@@ -213,7 +213,7 @@ class SecurityAgent:
     def audit(self) -> list[Finding]:
         checks = (self._check_secret_hygiene() + self._check_hardening()
                   + self._check_dependencies() + self._check_code_security() + self._check_taint()
-                  + self._check_netzwerk())
+                  + self._check_netzwerk() + self._check_injection())
         if self.http is not None:      # OSV.dev nur wenn ein HTTP-Client verdrahtet ist (sonst kein Rauschen)
             checks += self._check_osv()
         return checks
@@ -221,6 +221,25 @@ class SecurityAgent:
     def sarif(self) -> dict:
         """Fuehrt den Audit aus und gibt die Befunde als SARIF-2.1.0-Dokument zurueck (Inkr.5)."""
         return nach_sarif(self.audit())
+
+    def _check_injection(self) -> list[Finding]:
+        """PROMPT_INJECTION_SCHUTZ I4: Verdachtsfaelle, Sperren und entfernte Links der letzten 24 h (ohne Inhalte)."""
+        from datetime import datetime, timedelta
+        from .injection_protokoll import InjectionProtokoll
+        p = self.root / "sicherheit" / "injection.jsonl"
+        if not p.exists():
+            return []
+        jetzt = datetime.now()
+        z = InjectionProtokoll(p).zaehlen(jetzt - timedelta(hours=24), jetzt + timedelta(seconds=1))
+        if not (z["verdacht"] or z["gesperrt"] or z["links_entfernt"]):
+            return []
+        quellen = ", ".join(f"{q} {n}x" for q, n in z["je_quelle"].items())
+        muster = ", ".join(z["je_muster"])
+        return [Finding("injection", "mittel" if (z["gesperrt"] or z["links_entfernt"]) else "niedrig",
+                        f"Prompt-Injection: {z['verdacht']} Verdacht, {z['gesperrt']} Sperre(n), "
+                        f"{z['links_entfernt']} Link(s) entfernt (24 h)",
+                        detail=f"Quellen: {quellen or '-'}; Muster: {muster or '-'}",
+                        empfehlung="Abgewehrt (markiert/gesperrt). Bei Haeufung Absender pruefen; Inhalte nie befolgen.")]
 
     def _check_netzwerk(self) -> list[Finding]:
         """NETZWERK_WACHE N3: offene Befunde der Netzwerk-Wache (Fritz!Box, NAS, Aussensicht) in den CISO-Bericht -- nur

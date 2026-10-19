@@ -197,6 +197,8 @@ class HoaConversation:
         verlauf = json.dumps(self.messages[:-1], ensure_ascii=False, default=str)
         neu, weg = entferne_abfluss_links(antwort, verlauf)
         if weg:
+            from .input_guard import protokolliere
+            protokolliere("link_entfernt", "chat-antwort", sorted(set(weg)))
             akt = getattr(self.ctx, "aktivitaet", None)
             if akt is not None:
                 try:

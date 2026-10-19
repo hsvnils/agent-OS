@@ -58,7 +58,7 @@
 
 ## Etappe I4: Ueberwachung und Angriffstests
 
-- Status: geplant
+- Status: gebaut 2026-10-19 (`core/injection_protokoll.py`, Haken in `input_guard.markiere_wenn_verdaechtig`/`protokolliere`, Sperre, Link-Filter, Web-Recherche; CISO-Bericht `_check_injection`, Leistungsbericht-Kennzahl „🛡️ Injection-Schutz“, Telegram-Hinweis bei Mails/Belegen; Angriffs-Testreihe `test_angriffe.py`: 38 Angriffe x 6 Kanaele x 5 Aktionen + harmloser Korpus, Belege, Web), Deploy offen
 - Ziel / Scope: jeder Verdacht wird protokolliert (Quelle, Muster -- ohne Inhalt) und steht im naechtlichen CISO-Bericht
   und im Leistungsbericht; Telegram-Hinweis bei Verdacht in Mails/Belegen. Eine **Angriffs-Testreihe** (typische Angriffe
   gegen Mail, Drive, Web, Belege) laeuft mit der Testsuite und schlaegt an, wenn eine Aenderung den Schutz schwaecht.

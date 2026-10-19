@@ -690,7 +690,13 @@ def _performance_agent():
                             aktivitaet=Aktivitaet(ROOT / "aktivitaet" / "log.jsonl"),
                             kosten=KostenStore(ROOT / "finance" / "kosten-log.jsonl"),
                             nutzung=NutzungStore(ROOT / "nutzung" / "log.jsonl"),
-                            fachagenten=AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl"))
+                            fachagenten=AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl"),
+                            injection=_injection_protokoll())
+
+
+def _injection_protokoll():
+    from ...core.injection_protokoll import InjectionProtokoll
+    return InjectionProtokoll(ROOT / "sicherheit" / "injection.jsonl")
 
 
 @app.get("/api/performance")

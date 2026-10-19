@@ -210,6 +210,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `lieferungen/<Auftrag>/kennzahlen/` (Insights-Screenshots je Posting) | Telegram-Foto / Web (PROJEKTBERICHT P2, `core/postings.bild_ablegen`) | Web (`/api/crm/postings/<id>/bild/<i>`), Bericht | ja (`./lieferungen` ausgenommen) | nein (wie Lieferungen; Pruefsumme in der Hash-Kette, Zahlen selbst als Ereignis `posting_kennzahlen`) |
 | `lieferungen/<Vorgang>/konzept/` (Moodboard-Bilder der Konzept-Mappe) | Web (`POST /api/crm/konzept-bild/<vorgang>`, KONZEPT_MAPPE K1) | Web (`/api/crm/konzept-bild/<vorgang>/<i>`) | ja (`./lieferungen` ausgenommen) | nein (wie Lieferungen; Pruefsumme in der Hash-Kette) |
 | `kundenordner/<Firma>/<Ordner>/` (Videos, Bilder, Audio, PDF, ZIP, Office, Text) | Web (`POST /api/crm/kunden/<nr>/ordner`, `PUT /api/crm/kundenordner/upload/<id>/<teil>`, `POST .../<id>/fertig`, `POST .../<id>/lieferung` kopiert/verlinkt Lieferungs-Dateien; Chat-Werkzeug `kundenordner_anlegen`; KUNDENORDNER F1) | Web (`/api/crm/kundenordner/<id>/datei/<i>`, Firmenakte) | ja (`./kundenordner` ausgenommen) | ja, als fortlaufender Spiegel `~/LUNA-Backups/kundenordner/` (nur neue Dateien, tar ueber SSH; Liste in der Hash-Kette: `kundenordner_angelegt/_datei/_datei_entfernt`) |
+| `sicherheit/injection.jsonl` (Prompt-Injection: Verdacht, Sperren, entfernte Links -- Zeit, Quelle, Muster, Pruefsumme, **nie Inhalte**) | Bot + Web-App ueber `input_guard.protokolliere` (eingeschaltet nur im Betrieb: `bot.main`, `channels/web/__main__.py`; PROMPT_INJECTION_SCHUTZ I4) | CISO-Bericht 04:00 (`security_agent._check_injection`), Leistungsbericht (`/api/performance`, montags Telegram), Telegram-Hinweis im 15-min-Poll bei Mails/Belegen (`bot.injection_hinweis`, Stand `sicherheit/hinweis_stand.json`) | ja (`./sicherheit` ausgenommen) | ja (append-only) |
 | `orchestrator/state/rechtsquellen.json` (letzter Abgleich der Rechtsquellen aller Agenten, bekannte Abweichungen) | Bot (`core/rechtsquellen.lauf`, 04:30) | Bot | nein (`orchestrator/state` ausgenommen) | nein (fluechtig) |
 | `skills/clo/*/SKILL.md`, `quellen.md` (CLO-Skills + Normen im Wortlaut mit Stand) | Repo (Claude Code) | CLO-Agent (System-Prompt), Nachtlauf | ja (Code-Sync) | Git |
 | `skills/{cfo,cco,cro,cdo,ciso,cto,res,chro,cko,cpo,cxo,cao}/*/SKILL.md`, `skills/{cfo,ciso,chro}/*/quellen.md` (AGENTEN_AUSBAU A2/A3/A5: Skills; Normen UStG/UStDV/EStG/AO, TDDDG/BDSG, SGB IV mit Stand) | Repo (Claude Code) | Fachagent (System-Prompt), Nachtlauf (Quellen), Agenten-Profil (`/api/agenten/{key}/profil`) | ja (Code-Sync) | Git |
@@ -257,6 +258,8 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `projekt_changelog.md`, `finance/budget.md` | Bot, Web, Agenten | alle | ja | Git |
 
 ```doku-check:speicher
+sicherheit/injection.jsonl
+sicherheit/hinweis_stand.json
 einwilligungen/log.jsonl
 antraege/log.jsonl
 research/log.jsonl
@@ -300,6 +303,7 @@ content_ops/trends_cache.jsonl
 cutter_ops/jobs_cache.jsonl         # Cache von luna_cutter_jobs
 cutter_ops/worker_herzschlag.json   # wird bei jedem Worker-Poll neu geschrieben
 orchestrator/state/luna_os_sitzungen.json  # Login-Sitzungen (nur Token-Hashes); Verlust = einmal neu anmelden
+sicherheit/hinweis_stand.json       # I4: bis wann Injection-Hinweise gemeldet sind; Verlust = keine Altfaelle melden
 ```
 
 **MACO470** (WSL, Benutzer `luna`): `~/CutterInbox`, `~/CutterOutbox`, `~/ReelOutbox/<datum>/`,

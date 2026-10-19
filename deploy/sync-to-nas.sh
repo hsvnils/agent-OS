@@ -51,6 +51,7 @@ TAR_EXCLUDES=(
   --exclude='./orchestrator/state'
   --exclude='./lieferungen'           # Etappe 30: gelieferte Videos/Bilder (nur NAS, kein Backup laut CEO)
   --exclude='./kundenordner'          # KUNDENORDNER F1: Dateien fuer Kunden (nur NAS, Backup als Spiegel)
+  --exclude='./sicherheit'            # PROMPT_INJECTION_SCHUTZ I4: Injection-Protokoll (nur NAS + Backup)
   --exclude='./ig_inbox'
   --exclude='./reel_freigabe'
   --exclude='./reel_work'

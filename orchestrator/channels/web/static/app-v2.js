@@ -4284,6 +4284,12 @@ function leistungHtml(p) {
     const top = Object.entries(w.fachagenten.je_agent || {}).slice(0, 5).map(([a, n]) => `${esc(a.toUpperCase())} (${n})`).join(", ");
     h += zeile(null, "Fachagenten — wer wird gefragt", `${w.fachagenten.anfragen} Anfragen (${w.fachagenten.direkt || 0} direkt, ${w.fachagenten.werkzeug || 0} über Werkzeuge)${delta(w.fachagenten.anfragen, (v.fachagenten || {}).anfragen)}${top ? " · " + top : " · niemand gefragt"}${w.fachagenten.fehler ? ` · ${w.fachagenten.fehler} Fehler` : ""}`);
   }
+  if (w.injection) {   // PROMPT_INJECTION_SCHUTZ I4: abgewehrte Versuche (ohne Inhalte)
+    const ij = w.injection, q = Object.entries(ij.je_quelle || {}).slice(0, 3).map(([k, n]) => `${esc(k)} (${n})`).join(", ");
+    const mu = Object.keys(ij.je_muster || {}).slice(0, 3).map(esc).join(", ");
+    h += zeile(ij.gesperrt || ij.links_entfernt ? "gelb" : ij.verdacht ? null : "gruen", "🛡️ Injection-Schutz — abgewehrte Versuche",
+      `${ij.verdacht} Verdacht${delta(ij.verdacht, (v.injection || {}).verdacht)} · ${ij.gesperrt} Aktion(en) gesperrt · ${ij.links_entfernt} Link(s) entfernt${q ? " · Quellen: " + q : ""}${mu ? " · Muster: " + mu : ""}`);
+  }
   if (p.friedhof && p.friedhof.length) h += zeile("gelb", `Feature-Friedhof (> ${p.friedhof_tage} Tage nicht geöffnet)`, p.friedhof.map(esc).join(", "));
   h += zeile(p.ampeln.fehler, "Fehler gesamt", String(p.fehler_gesamt));
   if (p.historie && p.historie.length) {

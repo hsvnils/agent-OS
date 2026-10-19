@@ -1258,8 +1258,23 @@ def _leistungsbericht(ctx) -> str:
         cutter=ContentStore(None, "luna_cutter_jobs", CUTTER_FELDER, ROOT / "cutter_ops" / "jobs_cache.jsonl"),
         aktivitaet=ctx.aktivitaet, kosten=ctx.kosten,
         nutzung=NutzungStore(ROOT / "nutzung" / "log.jsonl"),
-        fachagenten=AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl"))
+        fachagenten=AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl"),
+        injection=_injection_protokoll())
     return agent.als_text()
+
+
+def _injection_protokoll():
+    from ...core.injection_protokoll import InjectionProtokoll
+    return InjectionProtokoll(ROOT / "sicherheit" / "injection.jsonl")
+
+
+def injection_hinweis(notify) -> int:
+    """PROMPT_INJECTION_SCHUTZ I4: neue Verdachtsfaelle aus Mails/Belegen -> ein Telegram-Hinweis (ohne Inhalt)."""
+    from ...core.injection_protokoll import hinweis_text
+    neu = _injection_protokoll().hinweise(ROOT / "sicherheit" / "hinweis_stand.json")
+    if neu and notify:
+        notify(hinweis_text(neu), abteilung="CISO/Security", kategorie="security", quelle="input-guard")
+    return len(neu)
 
 
 def _start_briefing_loop(ctx, notify) -> None:
@@ -1976,6 +1991,8 @@ def main() -> None:
     language = cfg.get("voice", {}).get("language", "de")
 
     from ...core.hoa_conversation import HoaConversation
+    from ...core import input_guard as _ig
+    _ig.protokoll_setzen(_injection_protokoll())          # PROMPT_INJECTION_SCHUTZ I4 (nur im Betrieb)
     ctx, _ = _build_ctx(cfg, secrets)
     model = cfg.get("voice", {}).get("llm_model", "claude-haiku-4-5")
     sessions: dict[int, HoaConversation] = {}
@@ -2115,6 +2132,10 @@ def main() -> None:
                         from ...core.buchhaltung import Buchhaltung, jetzt as _bh_jetzt
                         _bh = Buchhaltung(ROOT / "buchhaltung")
                         belege_sichern(_bh, ctx.google, notify=(ctx.notifications.enqueue if ctx.notifications else None))
+                        try:                                     # PROMPT_INJECTION_SCHUTZ I4: Hinweis bei Verdacht in Mails/Belegen
+                            injection_hinweis(ctx.notifications.enqueue if ctx.notifications else None)
+                        except Exception as exc:
+                            print(f"[injection_hinweis] {exc.__class__.__name__}", flush=True)
                         # CEO 2026-09-28: Nachfass-/Faelligkeits-Termine erledigter Angebote/Rechnungen nachholend loeschen
                         from ...core.erinnerungen import erledigte_entfernen
                         erledigte_entfernen(_bh, ctx.google)

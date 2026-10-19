@@ -90,6 +90,8 @@ orchestrator/state/
 lieferungen/
 # Kundenordner (KUNDENORDNER_FREIGABE F1): Dateien fuer Kunden, nur NAS + Backup-Spiegel
 kundenordner/
+# Protokoll des Prompt-Injection-Schutzes (PROMPT_INJECTION_SCHUTZ I4): nur NAS + Backup
+sicherheit/
 
 # Instagram-Postfach-Archiv (Collab-Radar, Live-Daten)
 ig_inbox/

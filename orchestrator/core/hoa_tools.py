@@ -537,8 +537,9 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
     t0 = time.monotonic()
     from .input_guard import AKTIONS_WERKZEUGE
     if name in AKTIONS_WERKZEUGE and ctx.fremd_verdacht:   # I3: nach Fremdtext mit Verdacht keine Aussenwirkung im Zug
-        from .input_guard import sperr_antwort
+        from .input_guard import protokolliere, sperr_antwort
         _sperre_protokollieren(ctx, name)
+        protokolliere("gesperrt", name, sorted({m for v in ctx.fremd_verdacht for m in v.get("muster", [])}))
         return sperr_antwort(name, ctx.fremd_verdacht)
     res = _run_tool(name, args, ctx)
     if name in FREMD_WERKZEUGE:                       # I1: Fremdtext markiert und abgegrenzt an das Modell
