@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-20 12:46] — Claude Code
+- **Was:** Nur lesende Analyse fuer die geplante Anbindung der App „Hanserautisch“ (Supabase-Projekt `yygrgcvepxrfbiaxvrmb`) an LUNA-OS (Abo-Kennzahlen, Apple/Google-Monatsberichte): LUNAs eigenes Supabase-Projekt, vorhandene Treiber, Zeitplaene, Finanzmodul, Anzeige. Bericht an den CEO; nichts gebaut, keine Verbindung zum App-Projekt, keine Secrets ausgegeben.
+- **Warum:** CEO-Auftrag 2026-10-20 („Analysiere zuerst nur lesend und berichte; nichts bauen“).
+- **Betroffen:** keine Dateien (nur Bericht)
+
 ## [2026-10-19 13:10] — Claude Code
 - **Was:** CEO hat den iPhone-Fix geprueft („jetzt bleibt alles im Bild“). Sammel-Roadmap `DRIVE_ORDNER_SCHUTZ_ROADMAP.md` und `KUNDENORDNER_FREIGABE_ROADMAP.md` auf abgeschlossen gesetzt (Prompt-Injection-Roadmap war schon abgeschlossen); Folgethemen in den Roadmaps genannt (Newsletter-Fehlalarme beobachten, Ordner loeschen, Kunden-Upload).
 - **Warum:** CEO-Abnahme 2026-10-19 aller acht Etappen.
