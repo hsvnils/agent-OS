@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-23 15:27] — Claude Code
+- **Was:** Roadmap `CLAUDE_AKTIV_ROADMAP.md` angelegt (Plan, nichts umgesetzt): C1 Vorbereitung ohne Schluessel (Modellnamen Sonnet 5.5/Haiku 5.5, Preistabelle, Router-Reihenfolge, Anthropic-Websuche aus, Datenschutz-Nachtrag), C2 zwei workspace-gebundene Schluessel eintragen und live pruefen, C3 alle Gemini-Wege umstellen, C4 Gemini abschalten. Entscheidung im Register. Befund: Der neue Netz-Agent-Schluessel ist gueltig, aber an keinen Workspace gebunden (API 400 „anthropic-workspace-id header“); Wert nie angezeigt.
+- **Warum:** CEO 2026-10-23: Chat und Fachagenten wieder ueber Claude (nicht das staerkste Modell), auf Gemini verzichten; Empfehlungen angenommen.
+- **Betroffen:** `CLAUDE_AKTIV_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-23 15:13] — Claude Code
 - **Was:** NETZ_AGENT Q1 verifiziert: zweite KEY-Variable im Container ist `GPG_KEY` (oeffentlicher Signatur-Fingerabdruck des Python-Basis-Images, kein Geheimnis); der Netz-Agent hat als einzigen Schluessel `BRAVE_API_KEY`.
 - **Warum:** Letzter offener Pruefpunkt von Q1 (CEO hat die Variablennamen geprueft).
