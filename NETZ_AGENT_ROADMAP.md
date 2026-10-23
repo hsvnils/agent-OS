@@ -4,7 +4,7 @@
 - Stand: 2026-10-23
 - Arbeitsbranch: `ai/netz-agent`
 - Basiscommit: `3158621`
-- Naechster Schritt: Deploy Q1 (CEO: Schluessel-Datei, Ordner, Container starten), danach Verifikation Q1; vor Q2 klaeren,
+- Naechster Schritt: zweite KEY-Variable im Container benennen (CEO, nur Namen), dann Q1 verifiziert; vor Q2 klaeren,
   wie die Claude-API abgerechnet wird.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
@@ -57,7 +57,7 @@ LUNA ◀──Ergebnis-Formular (Antwort, Fakten, Quellen; Laengen geprueft)─�
 
 ## Etappe Q1: Container und Warteschlange (ohne Modell)
 
-- Status: umgesetzt 2026-10-23 (`netz_agent/` mit `abruf.py` + `agent.py`, Dienst `luna-netz` in `deploy/docker-compose.yml`, Tests `netz_agent/tests` 6 gruen mit 4 Gegenproben; echter Probelauf vom MACO470: 8 Treffer, 3 Seiten geholt), Deploy offen
+- Status: deployt 2026-10-23 (27d2f57; Container `luna-netz` laeuft, sieht nur `netz_agent` und `netz_queue`; Probe-Auftrag ueber die Warteschlange: 8 Treffer, 2 Seiten -- erster Versuch direkt nach Start mit DNS-Fehler, BF-73). Offen fuer „verifiziert“: im Container zaehlt `env | grep -c KEY` **2** statt 1 -- Namen pruefen (vermutlich `GPG_KEY` aus dem Python-Basis-Image, oeffentlich)
 - Ziel / Scope / Nicht-Scope: neuer, eigenstaendiger Ordner `netz_agent/` (nur Standardbibliothek, **importiert nichts aus
   `orchestrator/`**); Container `luna-netz` in `deploy/docker-compose.yml` mit genau zwei Mounts: `netz_agent/` (nur
   lesen) und `netz_queue/` (lesen/schreiben); eigene `netz_agent/.env` nur mit `BRAVE_API_KEY` (nicht im Git); Nutzer ohne

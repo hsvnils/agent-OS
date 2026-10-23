@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-23 15:09] — Claude Code
+- **Was:** Deploy NETZ_AGENT Q1 geprueft: origin/main = 27d2f57; Container `luna-netz` gestartet (CEO), sieht nur `netz_agent` und `netz_queue`; eigene `netz_agent/.env` mit 1 Zeile (Brave-Schluessel, Wert nie angezeigt). Probe-Auftrag ueber `netz_queue/`: erster Versuch direkt nach Start DNS-Fehler (BF-73, sauber als Fehler gemeldet), zweiter ok (8 Treffer, 2 Seiten); Probe-Ergebnisse geloescht. Offen: `env | grep -c KEY` im Container = 2 statt 1 -- Namen werden geprueft, bevor Q1 als verifiziert gilt.
+- **Warum:** Abnahme nach CEO-Deploy (Go 2026-10-23).
+- **Betroffen:** `docs/bekannte-fehler.md` (BF-73), `NETZ_AGENT_ROADMAP.md`
+
 ## [2026-10-23 13:43] — Claude Code
 - **Was:** NETZ_AGENT Q1 gebaut: eigenstaendiges Paket `netz_agent/` (nur Standardbibliothek, importiert nichts aus LUNA) -- Auftraege aus `netz_queue/auftraege/`, Brave-Suche, Abruf **nur der Treffer-Seiten** (nur http/https, Port 80/443, jede aufgeloeste IP muss oeffentlich sein, Verbindung genau zur geprueften IP gegen DNS-Rebinding, Weiterleitungen einzeln neu geprueft, 1 MB/15 s je Seite, hoechstens 5 Seiten, nur HTML/Text, Skripte entfernt), Ergebnis nach `netz_queue/ergebnisse/`; Trockenlauf `--dry-run`. Neuer Dienst `luna-netz` in `deploy/docker-compose.yml`: nur zwei Mounts (`netz_agent/` lesend, `netz_queue/`), eigene `netz_agent/.env` nur mit `BRAVE_API_KEY`, lesendes Dateisystem, `cap_drop: ALL`, `no-new-privileges`, kein Port, 256 MB. Tests `netz_agent/tests` (6, vier Gegenproben rot), echter Probelauf vom MACO470 (8 Treffer, 3 Seiten; IPv4 wird bevorzugt). Q0 entschieden: Charta und Regel wie empfohlen, Modell Claude-API statt Gemini (Abrechnung vor Q2 klaeren). Doku: Zugriffs-Policy, Entscheidungs-Register, Datenfluesse, AGENTS.md Abschnitt 7, Test-Baseline, Ausschluesse.
 - **Warum:** CEO-Go Q1 2026-10-23.
