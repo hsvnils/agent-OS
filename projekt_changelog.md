@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-23 13:00] — Claude Code
+- **Was:** Roadmap `NETZ_AGENT_ROADMAP.md` angelegt (Plan, nichts umgesetzt): Q0 CEO-Entscheidungen (Modell, Charta Researcher, Regel in AGENTS.md), Q1 eigener Container `luna-netz` nur mit `netz_agent/` und `netz_queue/` und eigenem Brave-Schluessel, Q2 Modell ohne Werkzeuge + festes Ergebnis-Formular mit Pruefung, Q3 alle freien Netzwege umstellen + Wachtest, Q4 Heimnetz fuer den Container sperren, Q5 Angriffstests + Regel verbindlich. Bestandsaufnahme: heute gehen neben dem Researcher auch Watcher, Content-Feed, Modell-Radar, Rechtsquellen und Impressum-Vorschlaege direkt ins Netz.
+- **Warum:** CEO 2026-10-23: Agent fuer klare Aufgaben im Internet ohne Zugriff auf Dateien und Infos, Schutz gegen Prompt Injection; alle anderen Agenten ohne freie Websuche.
+- **Betroffen:** `NETZ_AGENT_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-20 12:46] — Claude Code
 - **Was:** Nur lesende Analyse fuer die geplante Anbindung der App „Hanserautisch“ (Supabase-Projekt `yygrgcvepxrfbiaxvrmb`) an LUNA-OS (Abo-Kennzahlen, Apple/Google-Monatsberichte): LUNAs eigenes Supabase-Projekt, vorhandene Treiber, Zeitplaene, Finanzmodul, Anzeige. Bericht an den CEO; nichts gebaut, keine Verbindung zum App-Projekt, keine Secrets ausgegeben.
 - **Warum:** CEO-Auftrag 2026-10-20 („Analysiere zuerst nur lesend und berichte; nichts bauen“).

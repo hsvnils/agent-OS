@@ -94,6 +94,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `DRIVE_ORDNER_SCHUTZ_ROADMAP.md` | Sammel-Roadmap: Drive-Fix (BF-72), Kundenordner mit Freigabe-Link, Prompt-Injection-Schutz -- Reihenfolge und Stand | abgeschlossen (2026-10-19, alle acht Etappen live und abgenommen) |
 | `KUNDENORDNER_FREIGABE_ROADMAP.md` | Kundenordner auf der NAS, sicherer Freigabe-Link mit Ablauf, Link per Mail | abgeschlossen (F1-F3 live, CEO-Abnahme 2026-10-19) |
 | `PROMPT_INJECTION_SCHUTZ_ROADMAP.md` | Prompt-Injection-Schutz: jeder Fremdtext markiert, feinere Erkennung, Handlungs-Sperre nach Verdacht, Angriffstests | abgeschlossen (I1-I4 live 2026-10-19) |
+| `NETZ_AGENT_ROADMAP.md` | Netz-Agent in Quarantaene: nur ein eigener Container ohne LUNA-Dateien geht ins Internet, liefert gepruefte Formulare; alle anderen Agenten ohne freie Websuche | geplant |
 | `SERIEN_UND_VORSTELLUNG_ROADMAP.md` | Wiederkehrender Content im Content-Plan; Vorstellungs-Mails an Unternehmen aus LUNA-OS (Firma beim Senden als Interessent) | in Umsetzung (S1, V1, V2 gebaut 2026-10-06) |
 | `IMPRESSUM_SUCHE_ROADMAP.md` | Kundendaten beim Anlegen einer Firma aus dem Impressum vorfuellen (regelbasiert, optional lokale KI) | in Umsetzung (I1 gebaut 2026-10-06) |
 | `GLOBALE_SUCHE_ROADMAP.md` | Globale Suche ueber alle Geschaeftsdaten, Ergebnisse nach Kategorien (Kunden, Angebote, Auftraege, Rechnungen, Ausgaben …) | in Umsetzung (G1 gebaut 2026-10-06) |
