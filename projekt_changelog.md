@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-23 15:13] — Claude Code
+- **Was:** NETZ_AGENT Q1 verifiziert: zweite KEY-Variable im Container ist `GPG_KEY` (oeffentlicher Signatur-Fingerabdruck des Python-Basis-Images, kein Geheimnis); der Netz-Agent hat als einzigen Schluessel `BRAVE_API_KEY`.
+- **Warum:** Letzter offener Pruefpunkt von Q1 (CEO hat die Variablennamen geprueft).
+- **Betroffen:** `NETZ_AGENT_ROADMAP.md`
+
 ## [2026-10-23 15:09] — Claude Code
 - **Was:** Deploy NETZ_AGENT Q1 geprueft: origin/main = 27d2f57; Container `luna-netz` gestartet (CEO), sieht nur `netz_agent` und `netz_queue`; eigene `netz_agent/.env` mit 1 Zeile (Brave-Schluessel, Wert nie angezeigt). Probe-Auftrag ueber `netz_queue/`: erster Versuch direkt nach Start DNS-Fehler (BF-73, sauber als Fehler gemeldet), zweiter ok (8 Treffer, 2 Seiten); Probe-Ergebnisse geloescht. Offen: `env | grep -c KEY` im Container = 2 statt 1 -- Namen werden geprueft, bevor Q1 als verifiziert gilt.
 - **Warum:** Abnahme nach CEO-Deploy (Go 2026-10-23).
