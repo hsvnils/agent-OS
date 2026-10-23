@@ -39,3 +39,29 @@ services:
     env_file:
       - /volume1/docker/ki-unternehmen/orchestrator/.env
     restart: unless-stopped
+
+  # NETZ_AGENT_ROADMAP Q1: Netz-Agent in Quarantaene -- einziger Weg fuer freie Websuchen/Seitenabrufe.
+  # Sieht NUR seinen eigenen Code (lesend) und die Warteschlange; keine LUNA-Dateien, keine LUNA-.env, kein Port nach aussen.
+  luna-netz:
+    image: luna-telegram:latest
+    container_name: luna-netz
+    working_dir: /app
+    command: ["python", "-m", "netz_agent"]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - NETZ_QUEUE=/app/netz_queue
+    volumes:
+      - /volume1/docker/ki-unternehmen/netz_agent:/app/netz_agent:ro
+      - /volume1/docker/ki-unternehmen/netz_queue:/app/netz_queue
+    env_file:
+      - /volume1/docker/ki-unternehmen/netz_agent/.env
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    restart: unless-stopped

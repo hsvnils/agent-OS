@@ -15,6 +15,7 @@ Stand 2026-09-28 auf dem MACO470 (`.venv`, `python -m pytest`), nach KUNDEN_FINA
 | `orchestrator/tests` | 995 bestanden (2026-09-30, nach BF-42), 0 rot, 4 uebersprungen (BF-38: einmal 1 rot, nicht reproduzierbar) | uebersprungen: Phase 17 „plan() erfordert macOS" (BF-01 behoben 2026-09-25) |
 | `cutter/tests` | 74 bestanden | – |
 | `backoffice/tests` | 14 bestanden | – |
+| `netz_agent/tests` | 6 bestanden (2026-10-23, NETZ_AGENT Q1) | – |
 
 Regel: **Kein neuer roter Test.** Wer die Baseline aendert (Test repariert oder bewusst rot), schreibt diese
 Tabelle fort.

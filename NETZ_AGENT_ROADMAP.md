@@ -1,10 +1,11 @@
 # Roadmap: Netz-Agent in Quarantaene (nur er geht ins Internet)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-23
 - Arbeitsbranch: `ai/netz-agent`
 - Basiscommit: `3158621`
-- Naechster Schritt: CEO-Entscheidungen Q0 (Modell, Charta, Regel) und Go fuer Q1 abwarten.
+- Naechster Schritt: Deploy Q1 (CEO: Schluessel-Datei, Ordner, Container starten), danach Verifikation Q1; vor Q2 klaeren,
+  wie die Claude-API abgerechnet wird.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -43,19 +44,20 @@ LUNA ◀──Ergebnis-Formular (Antwort, Fakten, Quellen; Laengen geprueft)─�
 
 ## Entscheidungen fuer den CEO (Q0)
 
-1. **Modell im Netz-Agenten** (fasst Seiten zum Formular zusammen): Empfehlung **Gemini Flash (Gratis-Stufe)** -- es sieht
+1. **Modell im Netz-Agenten** -- **entschieden 2026-10-23: Claude-API** (CEO, statt Gemini; Budget laut CEO 100 USD/Monat,
+   Abrechnung vor Q2 klaeren: das Claude-Max-Abo ist kein API-Guthaben). Urspruengliche Empfehlung **Gemini Flash (Gratis-Stufe)** -- es sieht
    nur oeffentliche Webseiten und die Frage, keine internen Daten. Alternative: lokales Modell auf dem MACO470 (dann
    braucht der Container Zugang ins Heimnetz, was Q4 widerspricht).
-2. **Charta:** Empfehlung: der Netz-Agent ist ein **technischer Arbeiter des Researchers** (keine eigene Charta, keine
+2. **Charta** -- **entschieden 2026-10-23: wie empfohlen.** Empfehlung: der Netz-Agent ist ein **technischer Arbeiter des Researchers** (keine eigene Charta, keine
    Gespraeche), die Capability `web_research` wandert vom Researcher zum Netz-Agenten; der Researcher formuliert die
    Aufgaben und bewertet die Ergebnisse. Das ist eine **Charta-Aenderung** an `agents/15_researcher.md` (HoA mit Diff, CEO-
    Bestaetigung).
-3. **Regel verbindlich machen** (Q5): „Nur der Netz-Agent ruft freie Webseiten und Websuchen ab“ in `AGENTS.md` 5.7 und
+3. **Regel verbindlich machen** -- **entschieden 2026-10-23: ja, nach Q3.** (Q5): „Nur der Netz-Agent ruft freie Webseiten und Websuchen ab“ in `AGENTS.md` 5.7 und
    `governance/zugriffs-policy.md` -- Aenderung der kanonischen Regeln, daher ausdrueckliches CEO-Go.
 
 ## Etappe Q1: Container und Warteschlange (ohne Modell)
 
-- Status: geplant
+- Status: umgesetzt 2026-10-23 (`netz_agent/` mit `abruf.py` + `agent.py`, Dienst `luna-netz` in `deploy/docker-compose.yml`, Tests `netz_agent/tests` 6 gruen mit 4 Gegenproben; echter Probelauf vom MACO470: 8 Treffer, 3 Seiten geholt), Deploy offen
 - Ziel / Scope / Nicht-Scope: neuer, eigenstaendiger Ordner `netz_agent/` (nur Standardbibliothek, **importiert nichts aus
   `orchestrator/`**); Container `luna-netz` in `deploy/docker-compose.yml` mit genau zwei Mounts: `netz_agent/` (nur
   lesen) und `netz_queue/` (lesen/schreiben); eigene `netz_agent/.env` nur mit `BRAVE_API_KEY` (nicht im Git); Nutzer ohne

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-23 13:43] — Claude Code
+- **Was:** NETZ_AGENT Q1 gebaut: eigenstaendiges Paket `netz_agent/` (nur Standardbibliothek, importiert nichts aus LUNA) -- Auftraege aus `netz_queue/auftraege/`, Brave-Suche, Abruf **nur der Treffer-Seiten** (nur http/https, Port 80/443, jede aufgeloeste IP muss oeffentlich sein, Verbindung genau zur geprueften IP gegen DNS-Rebinding, Weiterleitungen einzeln neu geprueft, 1 MB/15 s je Seite, hoechstens 5 Seiten, nur HTML/Text, Skripte entfernt), Ergebnis nach `netz_queue/ergebnisse/`; Trockenlauf `--dry-run`. Neuer Dienst `luna-netz` in `deploy/docker-compose.yml`: nur zwei Mounts (`netz_agent/` lesend, `netz_queue/`), eigene `netz_agent/.env` nur mit `BRAVE_API_KEY`, lesendes Dateisystem, `cap_drop: ALL`, `no-new-privileges`, kein Port, 256 MB. Tests `netz_agent/tests` (6, vier Gegenproben rot), echter Probelauf vom MACO470 (8 Treffer, 3 Seiten; IPv4 wird bevorzugt). Q0 entschieden: Charta und Regel wie empfohlen, Modell Claude-API statt Gemini (Abrechnung vor Q2 klaeren). Doku: Zugriffs-Policy, Entscheidungs-Register, Datenfluesse, AGENTS.md Abschnitt 7, Test-Baseline, Ausschluesse.
+- **Warum:** CEO-Go Q1 2026-10-23.
+- **Betroffen:** `netz_agent/` (neu), `deploy/docker-compose.yml`, `deploy/sync-to-nas.sh`, `.gitignore`, `AGENTS.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `governance/zugriffs-policy.md`, `NETZ_AGENT_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-23 13:00] — Claude Code
 - **Was:** Roadmap `NETZ_AGENT_ROADMAP.md` angelegt (Plan, nichts umgesetzt): Q0 CEO-Entscheidungen (Modell, Charta Researcher, Regel in AGENTS.md), Q1 eigener Container `luna-netz` nur mit `netz_agent/` und `netz_queue/` und eigenem Brave-Schluessel, Q2 Modell ohne Werkzeuge + festes Ergebnis-Formular mit Pruefung, Q3 alle freien Netzwege umstellen + Wachtest, Q4 Heimnetz fuer den Container sperren, Q5 Angriffstests + Regel verbindlich. Bestandsaufnahme: heute gehen neben dem Researcher auch Watcher, Content-Feed, Modell-Radar, Rechtsquellen und Impressum-Vorschlaege direkt ins Netz.
 - **Warum:** CEO 2026-10-23: Agent fuer klare Aufgaben im Internet ohne Zugriff auf Dateien und Infos, Schutz gegen Prompt Injection; alle anderen Agenten ohne freie Websuche.
