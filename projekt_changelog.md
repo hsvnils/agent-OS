@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 14:27] — Claude Code
+- **Was:** NETZ_AGENT Q4/Q5 live geprueft nach Deploy a916db1: Neustart loeschte die Sperre im Container, der Netz-Agent pausierte (fail closed), die DSM-Aufgabe (jede Minute; vom CEO nach falschem Startdatum korrigiert) setzte sie wieder, danach Sperrprobe gruen. Firmen-Suche hsv.de 1 s, kiez-alm.de 22 s; Zaehler in `sicherheit/netz_agent.jsonl` laufen (ohne Inhalte). Roadmap: Q4 verifiziert, Q5 live, CISO-Zeile im Bericht am 27.10. pruefen.
+- **Warum:** Live-Pruefung nach CEO-Deploy Q5.
+- **Betroffen:** `NETZ_AGENT_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-26 14:12] — Head of Agents (ausgefuehrt von Claude Code)
 - **Was:** NETZ_AGENT Q5 Teil 2 nach CEO-Bestaetigung des Diffs: neue Regel in `AGENTS.md` 5.7 „Freies Internet nur ueber den Netz-Agenten“; Zugriffs-Policy aktualisiert (`web_research` nur ueber den Netz-Agenten, Anthropic-Web aus, Netz-Agent Stand Q4/Q5, Historie); Charta-Aenderung `agents/15_researcher.md` (Auftraggeber des Netz-Agenten, keine eigenen Netzabrufe, keine internen Daten in Auftraegen, Netz-Agent als technischer Arbeiter ohne Charta, Modell-Zeile `claude-sonnet-5-5`). Register-Eintrag.
 - **Warum:** CEO-Go Q5, Diff ausdruecklich bestaetigt („Bestaetigt“) — Charta-Schreibrecht nach `AGENTS.md` 3.3.

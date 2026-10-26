@@ -4,7 +4,7 @@
 - Stand: 2026-10-26
 - Arbeitsbranch: `ai/netz-agent`
 - Basiscommit: `3158621`
-- Naechster Schritt: Q3 beobachten bis 2026-11-02; Q4 beim naechsten Container-Neustart gegenpruefen (Sperre kommt per DSM-Aufgabe zurueck); Q5 wartet auf CEO-Go.
+- Naechster Schritt: CISO-Bericht 2026-10-27 04:00 auf die Zeile „Netz-Agent“ pruefen; Q3 beobachten bis 2026-11-02, dann Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -110,7 +110,7 @@ LUNA ◀──Ergebnis-Formular (Antwort, Fakten, Quellen; Laengen geprueft)─�
 
 ## Etappe Q4: Heimnetz fuer den Netz-Agenten sperren
 
-- Status: umgesetzt 2026-10-26 (eigenes Docker-Netz `luna-netz-isoliert` 172.30.99.0/24 -- vorher lag der Container im gemeinsamen Compose-Netz und erreichte `luna-os` direkt; `deploy/netz_sperre.sh an|aus|status` mit Kette `LUNA-NETZ` in `DOCKER-USER` und `INPUT`; Sperrprobe `netz_agent/sperrprobe.py` alle 5 min -> `netz_queue/zustand.json` -> Systemcheck; Nachbesserungen live: DSM kennt kein REJECT (BF-75), biegt INPUT/FORWARD um (BF-79) und wirft Regeln auf NAS-Ebene immer wieder raus (BF-80/81) -> Sperre jetzt im Netz-Namensraum des Containers, DSM-Aufgabe beim Hochfahren und regelmaessig, Netz-Agent arbeitet ohne Sperre nicht, oeffentliche Namensserver (BF-77)), live 2026-10-26 (Probe aus dem Container: Fritz!Box, NAS-DSM, LUNA-OS, MACO470, Gateway, `luna-os` zu, Brave erreichbar; Zaehler der Sperrregeln steigen; eigene Probe des Agenten nach 5 min weiter gruen; Recherche und Firmen-Suche laufen; DSM-Aufgaben beim Hochfahren und regelmaessig angelegt). Offen: Gegenprobe beim naechsten Container-Neustart
+- Status: umgesetzt 2026-10-26 (eigenes Docker-Netz `luna-netz-isoliert` 172.30.99.0/24 -- vorher lag der Container im gemeinsamen Compose-Netz und erreichte `luna-os` direkt; `deploy/netz_sperre.sh an|aus|status` mit Kette `LUNA-NETZ` in `DOCKER-USER` und `INPUT`; Sperrprobe `netz_agent/sperrprobe.py` alle 5 min -> `netz_queue/zustand.json` -> Systemcheck; Nachbesserungen live: DSM kennt kein REJECT (BF-75), biegt INPUT/FORWARD um (BF-79) und wirft Regeln auf NAS-Ebene immer wieder raus (BF-80/81) -> Sperre jetzt im Netz-Namensraum des Containers, DSM-Aufgabe beim Hochfahren und regelmaessig, Netz-Agent arbeitet ohne Sperre nicht, oeffentliche Namensserver (BF-77)), live 2026-10-26 (Probe aus dem Container: Fritz!Box, NAS-DSM, LUNA-OS, MACO470, Gateway, `luna-os` zu, Brave erreichbar; Zaehler der Sperrregeln steigen; eigene Probe des Agenten nach 5 min weiter gruen; Recherche und Firmen-Suche laufen; DSM-Aufgaben beim Hochfahren und regelmaessig angelegt). Gegenprobe Neustart 2026-10-26: nach `docker compose restart` war die Sperre weg, der Netz-Agent pausierte (13:16-13:26 UTC, keine Auftraege angenommen), die DSM-Aufgabe (jede Minute) setzte sie wieder, danach arbeitete er sofort weiter
 - Ziel / Scope / Nicht-Scope: Der Container `luna-netz` darf ins Internet, aber nicht ins Heimnetz (NAS-Oberflaeche,
   Fritz!Box, MACO470, LUNA-OS): eigenes Docker-Netz plus Sperrregel fuer private Adressbereiche (DSM-Firewall oder
   `DOCKER-USER`-Regel -- fuehrt der CEO aus, Befehl liefert der Agent).
@@ -123,7 +123,7 @@ LUNA ◀──Ergebnis-Formular (Antwort, Fakten, Quellen; Laengen geprueft)─�
 
 ## Etappe Q5: Angriffstests und Regel verbindlich
 
-- Status: Testreihe und CISO-Zeile gebaut 2026-10-26 (`orchestrator/tests/test_netz_angriffe.py`: Anweisung auf der Seite, versteckter Text, Link-Abfluss, uebergrosse Antworten, kaputtes Formular, manipulierte Ergebnis-Datei, Statistik, CISO-Zeile; neu gehaertet: unsichtbarer Seitentext wird nicht uebernommen, fremde Links im Formular ersetzt); Regel in `AGENTS.md` 5.7, Zugriffs-Policy und Charta `15_researcher.md` nach CEO-Bestaetigung des Diffs uebernommen 2026-10-26; Deploy offen
+- Status: Testreihe und CISO-Zeile gebaut 2026-10-26 (`orchestrator/tests/test_netz_angriffe.py`: Anweisung auf der Seite, versteckter Text, Link-Abfluss, uebergrosse Antworten, kaputtes Formular, manipulierte Ergebnis-Datei, Statistik, CISO-Zeile; neu gehaertet: unsichtbarer Seitentext wird nicht uebernommen, fremde Links im Formular ersetzt); Regel in `AGENTS.md` 5.7, Zugriffs-Policy und Charta `15_researcher.md` nach CEO-Bestaetigung des Diffs uebernommen 2026-10-26; deployt 2026-10-26 (a916db1), live: Firmen-Suche ok, Zaehler in `sicherheit/netz_agent.jsonl` laufen ohne Inhalte. Offen: CISO-Zeile im Bericht 2026-10-27 04:00
 - Ziel / Scope / Nicht-Scope: Angriffs-Testreihe gegen den Netz-Agenten (praeparierte Seiten: Anweisungen, versteckter
   Text, Link-Abfluss, uebergrosse Antworten) -- er darf nichts ausser dem Formular liefern; Kennzahlen im CISO-Bericht
   (Auftraege, verworfene Formulare, Verdacht); Regel aus Q0 Nr. 3 in `AGENTS.md` 5.7 und `governance/zugriffs-policy.md`;
