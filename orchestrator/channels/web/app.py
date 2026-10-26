@@ -1640,6 +1640,100 @@ async def kunden_akte_hochladen(nummer: str, request: Request):
     return _kunden_aktion(tun)
 
 
+# -- Gespraechsleitfaden am Kunden (KUNDEN_CHECKLISTE C2) ---------------------------------------------------------------
+def _leitfaden():
+    from ...core.leitfaden import LeitfadenStore
+    return LeitfadenStore(kunden_store.bh, kunden_store)
+
+
+@app.get("/api/crm/leitfaden/fragen")
+def leitfaden_fragen():
+    from ...core.leitfaden import BLOECKE, EINLEITUNG, TITEL_LEITFADEN
+    return {"titel": TITEL_LEITFADEN, "einleitung": EINLEITUNG,
+            "bloecke": [{"buchstabe": b, "titel": t, "pflicht": p, "fragen": [{"id": fid, "frage": f} for fid, f, _ in fs]}
+                        for b, t, p, fs in BLOECKE]}
+
+
+@app.get("/api/crm/leitfaden/vorlage.{endung}")
+def leitfaden_vorlage(endung: str):
+    """Leere Checkliste zum Mitnehmen (PDF hochkant bzw. Word)."""
+    from ...core.leitfaden import dokument_docx, dokument_pdf
+    logo = kunden_store.bh.dir / "logo.jpg"
+    if endung == "pdf":
+        return Response(dokument_pdf(logo=logo), media_type="application/pdf",
+                        headers={"Content-Disposition": 'inline; filename="Kunden-Checkliste.pdf"'})
+    if endung == "docx":
+        return Response(dokument_docx(logo=logo),
+                        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        headers={"Content-Disposition": 'attachment; filename="Kunden-Checkliste.docx"'})
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "pdf oder docx")
+
+
+@app.get("/api/crm/kunden/{nummer}/leitfaeden")
+def kunden_leitfaeden(nummer: str):
+    firma = (nummer or "").strip().upper()
+    if not kunden_store.firma(firma):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Firma")
+    return {"leitfaeden": _leitfaden().liste(firma)}
+
+
+@app.post("/api/crm/kunden/{nummer}/leitfaeden")
+async def kunden_leitfaden_neu(nummer: str, request: Request):
+    body = await _json(request)
+    return _kunden_aktion(lambda: _leitfaden().anlegen((nummer or "").strip().upper(), titel=body.get("titel") or "",
+                                                       von=_von(request)))
+
+
+@app.get("/api/crm/leitfaden/{lid}")
+def leitfaden_detail(lid: str):
+    st = _leitfaden()
+    lf = st.get(lid)
+    if not lf:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannter Leitfaden")
+    f = kunden_store.firma(lf["firma"]) or {}
+    return {"leitfaden": lf, "firma": {"nummer": lf["firma"], "name": f.get("name", "")},
+            "vorgaenge": st.vorgaenge(lf["firma"])}
+
+
+@app.post("/api/crm/leitfaden/{lid}")
+async def leitfaden_speichern(lid: str, request: Request):
+    """Laufendes Speichern: {"kopf": {...}} oder {"frage": "B1", "text": "...", "erledigt": true}."""
+    body = await _json(request)
+
+    def tun():
+        st = _leitfaden()
+        if body.get("kopf"):
+            return st.kopf(lid, body["kopf"], von=_von(request))
+        return st.antwort(lid, str(body.get("frage") or ""), text=body.get("text"),
+                          erledigt=body.get("erledigt") if isinstance(body.get("erledigt"), bool) else None,
+                          von=_von(request))
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/crm/leitfaden/{lid}/abschliessen")
+async def leitfaden_abschliessen(lid: str, request: Request):
+    return _kunden_aktion(lambda: _leitfaden().abschliessen(lid, von=_von(request)))
+
+
+@app.get("/api/crm/leitfaden/{lid}/uebernahme")
+def leitfaden_uebernahme_vorschau(lid: str, vorgang: str):
+    return _kunden_aktion(lambda: _leitfaden().uebernahme_vorschau(lid, vorgang, _konzept()))
+
+
+@app.post("/api/crm/leitfaden/{lid}/uebernahme")
+async def leitfaden_uebernehmen(lid: str, request: Request):
+    body = await _json(request)
+
+    def tun():
+        if body.get("bestaetigt") is not True:
+            raise ValueError("Übernahme braucht die Bestätigung aus der Vorschau.")
+        felder = body.get("felder")
+        return _leitfaden().uebernehmen(lid, str(body.get("vorgang") or ""), _konzept(),
+                                        felder=[str(x) for x in felder] if isinstance(felder, list) else None,
+                                        von=_von(request))
+    return _kunden_aktion(tun)
+
+
 @app.get("/api/crm/akte/offen")
 def akte_offen():
     return {"mails": [{k: m.get(k) for k in ("id", "titel", "datum", "mail_von", "notiz", "kandidaten", "ts")}

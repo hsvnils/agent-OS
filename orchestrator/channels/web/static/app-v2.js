@@ -1241,12 +1241,13 @@ async function kundeDetail(nr, meldung) {
     <label class="v2-modlbl"><input type="checkbox" id="ke-aktiv" ${f.aktiv ? "checked" : ""}> Aktiv (inaktive Firmen bleiben erhalten, nur ausgeblendet)</label>
     <button class="v2-btn pri" data-act="kunde-speichern" data-id="${esc(f.nummer)}">Änderungen speichern</button><div id="ke-msg" class="v2-msg"></div></div>
     <h3>📁 Akte <small class="v2-sub">Dokumente &amp; Mails</small></h3><div id="akte-box"><div class="v2-empty">Lade…</div></div>
+    ${f.typ !== "lieferant" ? `<h3>📋 Gesprächsleitfaden <small class="v2-sub">im Telefonat/Meeting ausfüllen, danach Konzept</small></h3><div id="gl-box"><div class="v2-empty">Lade…</div></div>` : ""}
     ${f.typ !== "lieferant" ? `<h3>🗂️ Kundenordner <small class="v2-sub">Dateien für den Kunden, auf der NAS</small></h3><div id="ko-box"><div class="v2-empty">Lade…</div></div>` : ""}
     <h3>Ansprechpartner</h3>${aps}<button class="v2-btn" data-act="kunde-ap-neu" data-id="${esc(f.nummer)}" style="margin-top:8px">+ Ansprechpartner</button><div id="kap-box"></div>
     <h3>Angebote</h3><button class="v2-btn" data-act="an-neu" data-id="${esc(f.nummer)}">+ Angebot für ${esc(f.name)}</button>
     <h3>Collab-CRM</h3>${collab}
     <h3>Verlauf</h3>${verlauf}`);
-  akteLaden(f.nummer); koLaden(f.nummer);
+  akteLaden(f.nummer); koLaden(f.nummer); glListe(f.nummer);
 }
 // Etappe 22: oeffentliche Firmendaten (Impressum) vorschlagen -- uebernommen wird nur per Klick
 function kundeRecherche(f, d) {
@@ -1276,6 +1277,99 @@ async function akteLaden(nr) {
       <label class="v2-feld"><small>Notiz</small><input id="ak-notiz"></label>
       <button class="v2-btn" data-act="akte-hochladen" data-id="${esc(nr)}">Ablegen</button><div id="ak-msg" class="v2-msg"></div></div></details>`;
 }
+// KUNDEN_CHECKLISTE C2: Gespraechsleitfaden am Kunden -- im Gespraech ausfuellen (speichert laufend), Abschluss = PDF in
+// der Firmenakte, Antworten per Klick ins Briefing der Konzept-Mappe
+async function glListe(nr) {
+  const box = $("#gl-box"); if (!box) return;
+  const d = await jget(`/api/crm/kunden/${encodeURIComponent(nr)}/leitfaeden`);
+  const l = (d && d.leitfaeden) || [];
+  box.innerHTML = (l.length ? l.map(x => `<div class="v2-list-row klick" data-act="gl-oeffnen" data-id="${esc(x.id)}"><span>📋</span><div class="grow"><b>${esc(x.titel)}</b>
+      <small>${esc(datumDe(x.datum))}${x.gespraechspartner ? " · " + esc(x.gespraechspartner) : ""} · ${x.fortschritt.fertig}/${x.fortschritt.bloecke} Blöcke${x.offen_pflicht.length ? " · Pflicht offen: " + esc(x.offen_pflicht.map(p => p[0]).join(", ")) : " · Pflicht ✓"}${x.fassungen.length ? ` · 📄 Fassung ${x.fassungen.length} in der Akte` : ""}</small></div></div>`).join("")
+    : `<div class="v2-sub">Noch kein Leitfaden. Starte einen vor oder während des Gesprächs – alles wird sofort gespeichert.</div>`)
+    + `<div class="v2-an-zeile" style="margin-top:8px"><label class="v2-feld"><small>Titel</small><input id="gl-titel" class="v2-inp" maxlength="120" placeholder="z. B. Erstgespräch oder Herbstkampagne"></label></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="gl-neu" data-id="${esc(nr)}">📋 Leitfaden starten</button>
+      <a class="v2-btn" href="/api/crm/leitfaden/vorlage.pdf" target="_blank" rel="noopener">📄 Leere Checkliste (PDF)</a><a class="v2-btn" href="/api/crm/leitfaden/vorlage.docx">📝 Word</a></div><div id="gl-msg" class="v2-msg"></div>`;
+}
+let GL = { id: "", timer: {}, fragen: null };
+async function glOeffnen(id, meldung, fehler) {
+  openModal("📋 Gesprächsleitfaden", `<div class="v2-empty">Lade…</div>`, true);
+  const [d, fr] = await Promise.all([jget(`/api/crm/leitfaden/${encodeURIComponent(id)}`), GL.fragen ? GL.fragen : jget("/api/crm/leitfaden/fragen")]);
+  const lf = d && d.leitfaden; if (!lf || !fr) return openModal("📋 Gesprächsleitfaden", emptyRow("Leitfaden nicht gefunden."), true);
+  GL = { id, timer: {}, fragen: fr, firma: d.firma.nummer };
+  const ant = lf.antworten || {};
+  const bloecke = fr.bloecke.map(b => `<section class="v2-gl-block"><h3 class="v2-h3">${esc(b.buchstabe)}. ${esc(b.titel)}${b.pflicht ? ` <span class="v2-badge neutral">★ Pflicht</span>` : ""}</h3>
+    ${b.fragen.map(q => { const a = ant[q.id] || {}; return `<div class="v2-gl-frage"><label class="v2-modlbl"><input type="checkbox" data-gl-erledigt="${esc(q.id)}" ${a.erledigt ? "checked" : ""}> ${esc(q.frage)}</label>
+      <textarea class="v2-inp" rows="2" data-gl-frage="${esc(q.id)}" placeholder="Antwort / Stichworte">${esc(a.text || "")}</textarea></div>`; }).join("")}</section>`).join("");
+  const vorg = (d.vorgaenge || []);
+  const fassungen = (lf.fassungen || []).map(x => `<div class="v2-kv"><span>Fassung ${x.fassung}</span><b><a href="/api/crm/akte/${encodeURIComponent(x.akte_id)}/datei" target="_blank" rel="noopener">📄 PDF</a> · ${esc(zeit(x.ts))}</b></div>`).join("");
+  openModal(`📋 ${d.firma.name || lf.firma} · Gesprächsleitfaden`, `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}">${esc(meldung)}</div>` : ""}
+    <div class="v2-gl">
+      <div class="v2-form">
+        <div class="v2-an-zeile"><label class="v2-feld"><small>Titel</small><input class="v2-inp" data-gl-kopf="titel" maxlength="120" value="${esc(lf.titel)}"></label>
+          <label class="v2-feld"><small>Gesprächspartner</small><input class="v2-inp" data-gl-kopf="gespraechspartner" maxlength="200" value="${esc(lf.gespraechspartner || "")}" placeholder="Name, Rolle"></label>
+          <label class="v2-feld"><small>Datum</small><input type="date" data-gl-kopf="datum" value="${esc(lf.datum || "")}"></label></div>
+        <div class="v2-sub" id="gl-stand">${glStandText(lf)}</div>
+      </div>
+      ${bloecke}
+      <section class="v2-gl-block"><h3 class="v2-h3">Notizen</h3><textarea class="v2-inp" rows="6" data-gl-kopf="notizen" placeholder="Alles, was sonst wichtig ist">${esc(lf.notizen || "")}</textarea></section>
+      <section class="v2-gl-block"><h3 class="v2-h3">Abschließen</h3>
+        <div class="v2-sub">Erzeugt ein PDF mit allen Antworten und legt es in der Akte des Kunden ab. Du kannst danach weiter ergänzen und erneut abschließen (neue Fassung).</div>
+        <div class="v2-card-actions"><button class="v2-btn pri" data-act="gl-abschliessen" data-id="${esc(id)}">✅ Abschließen – PDF in die Akte</button><button class="v2-btn" data-act="kunde-detail" data-id="${esc(lf.firma)}">↩ zum Kunden</button></div>
+        ${fassungen}<div id="gla-msg" class="v2-msg"></div></section>
+      <section class="v2-gl-block"><h3 class="v2-h3">🎬 Ins Briefing übernehmen</h3>
+        ${vorg.length ? `<div class="v2-an-zeile"><label class="v2-feld"><small>Angebot / Auftrag</small><select id="gl-vorgang">${vorg.map(v => `<option value="${esc(v.nummer)}">${esc(v.nummer)} · ${esc(v.art)}${v.titel ? " · " + esc(v.titel) : ""}</option>`).join("")}</select></label></div>
+        <div class="v2-card-actions"><button class="v2-btn" data-act="gl-vorschau" data-id="${esc(id)}">Vorschau</button></div><div id="glu-box"></div>`
+        : `<div class="v2-sub">Sobald es für diesen Kunden ein Angebot oder einen Auftrag gibt, übernimmst du die Antworten hier ins Briefing der Konzept-Mappe.</div>`}
+      </section>
+    </div>`, true);
+  const body = document.querySelector("#v2-modal .v2-gl");
+  body.addEventListener("input", e => { const t = e.target;
+    if (t.dataset.glFrage) glSpeichernSpaeter("f:" + t.dataset.glFrage, { frage: t.dataset.glFrage, text: t.value });
+    else if (t.dataset.glKopf) glSpeichernSpaeter("k:" + t.dataset.glKopf, { kopf: { [t.dataset.glKopf]: t.value } }); });
+  body.addEventListener("change", e => { const t = e.target;      // change = Feld verlassen -> sofort speichern
+    if (t.dataset.glErledigt) return glSpeichern({ frage: t.dataset.glErledigt, erledigt: t.checked });
+    const k = t.dataset.glFrage ? "f:" + t.dataset.glFrage : t.dataset.glKopf ? "k:" + t.dataset.glKopf : "";
+    if (!k) return;
+    clearTimeout(GL.timer[k]); delete GL.timer[k];
+    glSpeichern(t.dataset.glFrage ? { frage: t.dataset.glFrage, text: t.value } : { kopf: { [t.dataset.glKopf]: t.value } }); });
+}
+function glStandText(lf) {
+  const f = lf.fortschritt || { fertig: 0, bloecke: 10 };
+  return `${f.fertig} von ${f.bloecke} Blöcken · ${(lf.offen_pflicht || []).length ? "Pflicht noch offen: " + esc(lf.offen_pflicht.join(", ")) : "alle Pflichtblöcke beantwortet ✓"} · <span id="gl-gespeichert">gespeichert</span>`;
+}
+function glSpeichernSpaeter(schluessel, daten) {
+  const s = $("#gl-gespeichert"); if (s) s.textContent = "speichert …";
+  clearTimeout(GL.timer[schluessel]);
+  GL.timer[schluessel] = setTimeout(() => { delete GL.timer[schluessel]; glSpeichern(daten); }, 700);
+}
+async function glSpeichern(daten) {
+  const s = $("#gl-gespeichert");
+  const r = await jpost(`/api/crm/leitfaden/${encodeURIComponent(GL.id)}`, daten);
+  if (!r || !r.ok) { if (s) { s.textContent = "⚠️ nicht gespeichert: " + ((r && r.hinweis) || "keine Verbindung"); s.className = "v2-neg"; } return; }
+  if (!Object.keys(GL.timer).length) {
+    const d = await jget(`/api/crm/leitfaden/${encodeURIComponent(GL.id)}`);
+    const st = $("#gl-stand"); if (st && d && d.leitfaden) st.innerHTML = glStandText(d.leitfaden);
+  }
+}
+async function glAlleSpeichern() {             // offene Eingaben sofort schreiben (vor Abschluss/Uebernahme)
+  const offen = Object.keys(GL.timer); offen.forEach(k => clearTimeout(GL.timer[k])); GL.timer = {};
+  for (const k of offen) {
+    const [art, feld] = [k.slice(0, 1), k.slice(2)];
+    const el = document.querySelector(art === "f" ? `[data-gl-frage="${feld}"]` : `[data-gl-kopf="${feld}"]`);
+    if (el) await glSpeichern(art === "f" ? { frage: feld, text: el.value } : { kopf: { [feld]: el.value } });
+  }
+}
+async function glVorschau(id) {
+  await glAlleSpeichern();
+  const box = $("#glu-box"); const vg = ($("#gl-vorgang") || {}).value || "";
+  const v = await jget(`/api/crm/leitfaden/${encodeURIComponent(id)}/uebernahme?vorgang=${encodeURIComponent(vg)}`);
+  if (!v || !v.ok) { box.innerHTML = `<div class="v2-msg err">${esc((v && v.hinweis) || "Keine Vorschau möglich.")}</div>`; return; }
+  if (!v.felder.length) { box.innerHTML = `<div class="v2-msg">Nichts Neues – das Briefing von ${esc(v.vorgang)} enthält diese Antworten schon (oder die passenden Fragen sind noch leer).</div>`; return; }
+  box.innerHTML = `<div class="v2-sub">Angehakte Felder werden im Briefing von ${esc(v.vorgang)} ersetzt:</div>${v.felder.map(f => `<div class="v2-gl-ueb"><label class="v2-modlbl"><input type="checkbox" data-gl-ueb="${esc(f.feld)}" checked> <b>${esc(f.label)}</b></label>
+    ${f.alt ? `<small class="v2-sub">bisher: ${esc(f.alt)}</small>` : ""}<div class="v2-gl-neu">${esc(f.neu).replace(/\n/g, "<br>")}</div></div>`).join("")}
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="gl-uebernehmen" data-id="${esc(id)}" data-val="${esc(v.vorgang)}">Ins Briefing übernehmen</button></div><div id="glu-msg" class="v2-msg"></div>`;
+}
+
 // KUNDENORDNER F1: Ordner je Firma + Projekt (NAS), Dateien in 8-MB-Stuecken, Lieferungen uebernehmen
 const groesseTxt = (b) => b > 1048576 ? (b / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round((b || 0) / 1024)) + " KB";
 let KO_NR = "";
@@ -4870,6 +4964,27 @@ async function handleAct(act, el) {
       if (km) { const r = await jpost(`/api/finanzen/zeit/${encodeURIComponent(id)}/fahrt`, { km }); if (!r || r.ok === false) return zeitNeuZeichnen((r && r.hinweis) || "Fehler.", true); teile.push(`${km} km`); }
       ZEIT.ergebnis = null; return zeitNeuZeichnen(`Gespeichert: ${teile.filter(Boolean).join(", ")}.`); }
     case "akte-hochladen": return akteHochladen(id);
+    case "gl-neu": {
+      const r = await jpost(`/api/crm/kunden/${encodeURIComponent(id)}/leitfaeden`, { titel: (($("#gl-titel") || {}).value || "").trim() });
+      if (!r || !r.ok) return kundenMsg("gl-msg", (r && r.hinweis) || "Fehler.", false);
+      return glOeffnen(r.id);
+    }
+    case "gl-oeffnen": return glOeffnen(id);
+    case "gl-abschliessen": {
+      await glAlleSpeichern();
+      const r = await jpost(`/api/crm/leitfaden/${encodeURIComponent(id)}/abschliessen`, {});
+      if (!r || !r.ok) return kundenMsg("gla-msg", (r && r.hinweis) || "Fehler.", false);
+      return glOeffnen(id, `Fassung ${r.fassung} als PDF in der Akte abgelegt.${r.offen_pflicht.length ? " Noch offen: " + r.offen_pflicht.join(", ") + "." : ""}`);
+    }
+    case "gl-vorschau": return glVorschau(id);
+    case "gl-uebernehmen": {
+      const felder = [...document.querySelectorAll("[data-gl-ueb]")].filter(x => x.checked).map(x => x.dataset.glUeb);
+      if (!felder.length) return kundenMsg("glu-msg", "Kein Feld ausgewählt.", false);
+      const r = await jpost(`/api/crm/leitfaden/${encodeURIComponent(id)}/uebernahme`, { vorgang: val, felder, bestaetigt: true });
+      if (!r || !r.ok) return kundenMsg("glu-msg", (r && r.hinweis) || "Fehler.", false);
+      $("#glu-box").innerHTML = `<div class="v2-msg ok">Ins Briefing von ${esc(r.vorgang)} übernommen.</div><div class="v2-card-actions"><button class="v2-btn" data-act="konzept" data-id="${esc(r.vorgang)}">🎬 Konzept-Mappe öffnen</button></div>`;
+      return;
+    }
     case "ko-anlegen": return koAnlegen(id);
     case "ko-hochladen": return koHochladen(id, val, el);
     case "ko-datei-weg": { if (!confirm("Datei endgültig aus dem Kundenordner löschen?")) return;

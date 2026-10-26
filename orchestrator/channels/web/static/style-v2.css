@@ -1210,3 +1210,14 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 @media (max-width: 640px) { .v2-sk-zeile .v2-sk-akt { width: 100%; } .v2-sk-akt .v2-btn { min-height: 36px; min-width: 40px; } }
 .v2-radar-vor td { background: color-mix(in srgb, var(--v2-accent) 8%, transparent); }
 .v2-sk-kopf { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* KUNDEN_CHECKLISTE C2: Gespraechsleitfaden (ganzseitig, Desktop/iPad/iPhone) */
+.v2-gl { max-width: 860px; margin: 0 auto; }
+.v2-gl-block { margin: 18px 0 8px; }
+.v2-gl-frage { margin: 10px 0 12px; }
+.v2-gl-frage .v2-modlbl { display: flex; gap: 8px; align-items: flex-start; font-weight: 600; line-height: 1.35; }
+.v2-gl-frage .v2-modlbl input { margin-top: 3px; flex: none; }
+.v2-gl textarea.v2-inp { width: 100%; box-sizing: border-box; margin-top: 6px; resize: vertical; font-size: 16px; }
+.v2-gl input.v2-inp, .v2-gl input[type="date"] { font-size: 16px; }
+.v2-gl-ueb { margin: 10px 0; padding: 8px 10px; border-left: 3px solid var(--v2-accent); }
+.v2-gl-neu { margin-top: 4px; white-space: normal; overflow-wrap: anywhere; }

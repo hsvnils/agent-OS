@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 15:24] — Claude Code
+- **Was:** KUNDEN_CHECKLISTE C2 gebaut (Branch `ai/kunden-leitfaden`): Gespraechsleitfaden am Kunden -- in der Kundenansicht starten (auch ohne Angebot), ganzseitig waehrend Telefonat/Meeting ausfuellen (Haken + Antwort je Frage, Notizen, speichert laufend), Fortschritt und offene Pflichtbloecke, Abschluss als PDF in der Firmenakte (Fassungen), Uebernahme ins Briefing der Konzept-Mappe mit Vorschau und Feldauswahl; leere Checkliste als PDF/Word zum Herunterladen. Fragenkatalog nach `orchestrator/core/leitfaden.py` verlegt (Skript nutzt ihn). Cache v140/v74. Tests mit Gegenproben.
+- **Warum:** CEO-Go C2.
+- **Betroffen:** `orchestrator/core/leitfaden.py`, `orchestrator/core/firmenakte.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/style-v2.css`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_leitfaden.py`, `scripts/kunden_checkliste_dokument.py`, `docs/datenfluesse.md`, `KUNDEN_CHECKLISTE_ROADMAP.md`
+
 ## [2026-10-26 15:12] — Claude Code
 - **Was:** KUNDEN_CHECKLISTE: C1 vom CEO abgenommen; C2 nach CEO-Wunsch neu zugeschnitten -- Gespraechsleitfaden am Kunden (auch ohne Vorgang), waehrend Telefonat/Meeting ausfuellbar mit laufendem Speichern, Abschluss als PDF in der Firmenakte (Fassungen), Uebernahme ins Briefing der Konzept-Mappe. Nur Plan.
 - **Warum:** CEO-Rueckmeldung zu C1.

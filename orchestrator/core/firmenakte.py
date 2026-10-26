@@ -21,6 +21,7 @@ from .buchhaltung import jetzt
 
 ARTEN = {"schreiben": "Schreiben/Brief", "anwalt": "Anwaltsschreiben", "vertrag": "Vertrag", "mail": "Mail",
          "notiz": "Notiz/Protokoll", "bericht": "Projektbericht", "konzept": "Konzept",
+         "leitfaden": "Gesprächsleitfaden",                                                      # KUNDEN_CHECKLISTE C2
          "sonstiges": "Sonstiges"}
 MAX_BYTES = 15 * 1024 * 1024
 FREEMAIL = {"gmail.com", "googlemail.com", "web.de", "gmx.de", "gmx.net", "icloud.com", "me.com", "mac.com", "outlook.com",
