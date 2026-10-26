@@ -4,7 +4,7 @@
 - Stand: 2026-10-26
 - Arbeitsbranch: `ai/claude-aktiv`
 - Basiscommit: `88708b5`
-- Naechster Schritt: Deploy C1 (CEO), danach Schluessel fuer Workspace „luna“ erzeugen und eintragen (C2).
+- Naechster Schritt: CEO-Go fuer C3 (Gemini-Wege umstellen, dabei Fachagenten direkt ueber die API statt Kommandozeile).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -59,7 +59,7 @@ seit Oktober im Claude-Max-Abo enthalten -- vom Agenten nicht pruefbar, der Live
 
 ## Etappe C2: Schluessel eintragen und live pruefen
 
-- Status: teilweise (2026-10-26: Netz-Agent-Schluessel workspace-gebunden in `netz_agent/.env`, Workspace „luna-netz“, `/v1/models` HTTP 200, echte Anfrage an `claude-haiku-5-5` ok; API-Guthaben vorhanden laut Konsole; alter ungebundener Schluessel vom CEO geloescht. Offen: Workspace „luna“ mit eigenem Schluessel fuer LUNA, Limit 80 USD)
+- Status: verifiziert 2026-10-26 (Netz-Agent: Workspace „luna-netz“, Limit 20 USD, `claude-haiku-5-5` antwortet. LUNA: Workspace „luna“, Limit 80 USD, Schluessel HTTP 200; Chat ueber LUNA-OS mit `claude-sonnet-5-5` in 4 s, ~0,02 EUR je Antwort; CTO-Fachagent nach Neu-Erstellen der Container ueber `claude-sonnet-5-5`, ~0,06 EUR je Anfrage (Kommandozeile mit grossem System-Prompt); BF-74: `compose restart` laedt die .env nicht neu. Offen nebenbei: Schluessel in der MACO470-.env fuer Tests tauschen)
 - Ziel / Scope / Nicht-Scope: CEO legt zwei workspace-gebundene Schluessel an (Workspace „luna“ und „luna-netz“, je mit
   Monatslimit) und traegt sie ein: LUNA in `orchestrator/.env` (NAS; MACO470 fuer Tests), Netz-Agent in `netz_agent/.env`
   (ersetzt den heutigen, nicht workspace-gebundenen). Agent prueft nur Status und eine echte Antwort. Danach Neustart der
@@ -75,7 +75,7 @@ seit Oktober im Claude-Max-Abo enthalten -- vom Agenten nicht pruefbar, der Live
 ## Etappe C3: Gemini-Wege umstellen
 
 - Status: geplant
-- Ziel / Scope / Nicht-Scope: jeden Gemini-Weg aus dem Datenschutz-Check auf Claude (Haiku 5.5 fuer Auslesen/Gegenlesen,
+- Ziel / Scope / Nicht-Scope: **Fachagenten direkt ueber die API** (wie der Chat) statt ueber die Claude-Kommandozeile -- gemessen 2026-10-26: ~0,06 EUR je CTO-Anfrage ueber die Kommandozeile gegen ~0,02 EUR je Chat-Antwort direkt; dazu jeden Gemini-Weg aus dem Datenschutz-Check auf Claude (Haiku 5.5 fuer Auslesen/Gegenlesen,
   Sonnet 5.5 fuer Pruefungen/Vorschlaege) oder lokal umstellen: Backoffice-Gegenlesen, Kennzahlen-Screenshots, Beleg-Fotos,
   CLO-Pruefung, Videograf, Bildschirm sehen, Cutter-Video-KI/Tagging, Routing-Probelauf. Je Weg einzeln, mit Schalter.
   Nicht-Scope: neue Funktionen.

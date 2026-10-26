@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 10:19] — Claude Code
+- **Was:** CLAUDE_AKTIV C2 verifiziert: LUNA-Schluessel (Workspace „luna“, Limit 80 USD) HTTP 200; Chat ueber LUNA-OS antwortet mit `claude-sonnet-5-5` (4 s, ~0,02 EUR); CTO-Fachagent zunaechst still auf Gemini ausgewichen -- Ursache: `docker compose restart` liest `env_file` nicht neu, die Claude-Kommandozeile sah noch den alten Schluessel (BF-74); nach `up -d --force-recreate` antwortet der CTO ueber `claude-sonnet-5-5` (~0,06 EUR je Anfrage). BF-18 geschlossen. Kostenbefund: Fachagenten ueber die Kommandozeile ~3x teurer als direkt -> in C3 aufgenommen.
+- **Warum:** CEO hat Schluessel eingetragen und Container neu erstellt (2026-10-26).
+- **Betroffen:** `docs/bekannte-fehler.md` (BF-18, BF-74), `CLAUDE_AKTIV_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-26 10:06] — Claude Code
 - **Was:** Datenschutz-Nachtrag ergaenzt um die Angaben aus der Anthropic-Konsole (Workspace „luna“): Daten in den USA (Workspace geo), Verarbeitung global (Inference geo unbeschraenkt), keine eigene Aufbewahrungsfrist eingestellt. CLAUDE_AKTIV C1 nach `main` gemergt (Fast-Forward), Suite gruen.
 - **Warum:** CEO-Screenshot und Go fuer Merge, Push und Deploy C1 (2026-10-26).
