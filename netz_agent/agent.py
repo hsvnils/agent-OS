@@ -93,13 +93,16 @@ class Agent:
 
     def bearbeite(self, a: dict) -> dict:
         a = pruefe_auftrag(a)
-        if a["art"] == "seiten":                               # Q3: feste Adressen roh holen (kein Modell)
-            seiten = []
-            for u in a["urls"]:
+        if a["art"] == "seiten":                               # Q3: feste Adressen roh holen (kein Modell), bis 5 gleichzeitig
+            from concurrent.futures import ThreadPoolExecutor
+
+            def eine(u):
                 try:
-                    seiten.append(self.hole(u, roh=True))
+                    return self.hole(u, roh=True)
                 except Exception as exc:
-                    seiten.append({"url": u, "fehler": f"{exc.__class__.__name__}: {str(exc)[:200]}"})
+                    return {"url": u, "fehler": f"{exc.__class__.__name__}: {str(exc)[:200]}"}
+            with ThreadPoolExecutor(max_workers=5) as pool:
+                seiten = list(pool.map(eine, a["urls"]))           # Reihenfolge bleibt erhalten
             return {"id": a["id"], "ok": True, "art": "seiten", "seiten": seiten, "fehler": "", "fertig": _jetzt()}
         treffer = self.suche(a["frage"], self.schluessel, a["anzahl"])
         seiten = []
@@ -168,4 +171,4 @@ def main() -> None:
             print(f"[netz-agent] {n} Auftrag/Auftraege bearbeitet", flush=True)
         if args.einmal:
             return
-        time.sleep(5)
+        time.sleep(1)                                          # Q3: kurze Wartezeit -- LUNA wartet synchron (Impressum, Chat)

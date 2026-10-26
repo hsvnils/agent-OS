@@ -92,3 +92,24 @@ class TestApi(ApiBasis):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestNetzAgentGebuendelt(unittest.TestCase):
+    """NETZ_AGENT Q3: die Impressum-Suche holt Startseite und die ueblichen Kandidaten in EINEM Netz-Agent-Auftrag."""
+    def test_ein_sammelauftrag(self):
+        from unittest import mock
+        from orchestrator.core import firmendaten, netz_auftraege
+        auftraege = []
+
+        class _Netz:
+            def __init__(self, *a, **k):
+                pass
+
+            def seiten(self, urls, **kw):
+                auftraege.append(list(urls))
+                return {u: {"text": IMPRESSUM if u.endswith("/impressum") else "<html>Start</html>"} for u in urls}
+        with mock.patch.object(netz_auftraege, "NetzAuftraege", _Netz), mock.patch.object(firmendaten, "oeffentlich", lambda u: u):
+            r = aus_impressum("https://kiez-beispiel.de/")
+        self.assertEqual(len(auftraege), 1)
+        self.assertIn("https://kiez-beispiel.de/impressum", auftraege[0])
+        self.assertTrue(r["vorschlaege"])

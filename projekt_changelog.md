@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 11:42] — Claude Code
+- **Was:** Deploy NETZ_AGENT Q3 live geprueft (origin/main = 2b0a6d5): Recherche ueber LUNA-OS laeuft ueber den Netz-Agenten (Research-Ticket mit Herkunft `netz-agent`, Antwort mit Quelle), Systemcheck „Netz-Agent erreichbar“ ok. Die Impressum-Suche lief dabei ins 60-s-Testlimit (bis zu 8 Einzelauftraege, Netz-Agent schaute nur alle 5 s). Nachbesserung: Impressum-Kandidaten in **einem** Sammelauftrag (`firmendaten._netz_mit_vorabruf`), Netz-Agent holt bis zu 5 Seiten gleichzeitig und prueft die Warteschlange jede Sekunde. Gemessen vom MACO470: hsv.de 2 s, kiez-alm.de 13 s (eine langsame Kandidaten-Adresse). Test fuer den Sammelauftrag.
+- **Warum:** Live-Pruefung nach CEO-Deploy Q3.
+- **Betroffen:** `orchestrator/core/firmendaten.py`, `netz_agent/agent.py`, `orchestrator/tests/test_impressum_suche.py`
+
 ## [2026-10-26 11:26] — Claude Code
 - **Was:** NETZ_AGENT Q3 umgesetzt: alle freien Netzwege laufen ueber den Netz-Agenten. Netz-Agent: neue Auftragsart `seiten` (feste Adressen roh holen, auch RSS/XML, bis 4 MB, Zeichensatz aus Kopf oder `<meta charset>`) und `suche` ohne Formular. LUNA: `WebResearch` nutzt `NetzProvider` (Researcher-Werkzeug, Watcher, Content-Feed, Innovations-Scouting); Firmen-/Impressum-Suche und Partner-Ideen ueber `such_funktion`; Firmen-Webseiten, Herstellerseiten/Feeds und Ollama-Bibliothek des Modell-Radars (AA-API bleibt direkt) und Gesetzestexte der Rechtsquellen ueber den Netz-Agenten; Brave-Klasse stillgelegt; Systemcheck „Web-Recherche (Netz-Agent)“ statt Brave-Schluessel; Ticket-Herkunft „netz-agent“. Wachtest `test_netz_wache.py`: direkte Netzaufrufe nur noch an gelisteten festen Schnittstellen, kein Brave-Host im LUNA-Code. Echte Proben vom MACO470: Researcher-Suche, Firmen-Suche, Hersteller-Feed, Ollama-Bibliothek, Gesetzestext ok; 31/31 Gesetzes-Pruefsummen unveraendert (dabei Zeichensatz-Fehler gefunden und behoben -- sonst Fehlalarm „alle Normen geaendert“); 15/15 Radar-Quellen mit identischen Beitraegen. Tests: Netz-Agent 12, LUNA-Seite 5, Wachtest 2 (Gegenproben rot); zwei Testerwartungen an die neue Herkunft angepasst, `test_impressum_suche` ohne die entfernte Umleitungs-Klasse.
 - **Warum:** CEO-Go Q3 2026-10-26 (CEO 2026-10-23: alle anderen Agenten ohne freie Websuche).

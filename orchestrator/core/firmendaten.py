@@ -112,6 +112,20 @@ def oeffentlich(url: str, *, aufloesen=socket.getaddrinfo) -> str:
     return url
 
 
+def _netz_mit_vorabruf(urls: list[str]):
+    """Holt `urls` in einem einzigen Netz-Agent-Auftrag; weitere Adressen (z. B. Impressum-Links der Startseite) einzeln."""
+    from .netz_auftraege import NetzAuftraege, NetzNichtErreichbar
+    vorrat = NetzAuftraege().seiten(list(dict.fromkeys(urls)), warten_s=90)
+
+    def abruf(u: str) -> str:
+        if u in vorrat:
+            if "text" in vorrat[u]:
+                return vorrat[u]["text"][:MAX_BYTES]
+            raise NetzNichtErreichbar(vorrat[u].get("fehler", "nicht abrufbar"))
+        return _abruf(u)
+    return abruf
+
+
 def _abruf(url: str) -> str:
     """NETZ_AGENT Q3: Firmen-Webseite ueber den Netz-Agenten holen (er prueft oeffentliche Adresse, Weiterleitungen,
     Groesse); LUNA wertet den Inhalt nur regelbasiert aus (kein Modell)."""
@@ -154,13 +168,14 @@ def _impressum_kandidaten(url: str, abruf) -> list[str]:
 def aus_impressum(url: str, *, abruf=None) -> dict:
     """IMPRESSUM_SUCHE I1: Kundendaten aus dem Impressum einer eingegebenen Website -- nur Vorschlaege, nichts gespeichert.
     -> {vorschlaege: {feld: wert}, quelle}. Regelbasiert (kein LLM)."""
-    abruf = abruf or _abruf
     url = (url or "").strip()
     if not url:
         raise ValueError("Bitte die Website oder den Link zum Impressum eingeben.")
     if "://" not in url:
         url = "https://" + url
-    oeffentlich(url) if abruf is _abruf else None              # Fehlermeldung frueh und verstaendlich
+    if abruf is None:                                          # NETZ_AGENT Q3: alle ueblichen Kandidaten in EINEM Auftrag
+        oeffentlich(url)                                       # Fehlermeldung frueh und verstaendlich
+        abruf = _netz_mit_vorabruf([url, _basis(url)] + [_basis(url) + p for p in ("/impressum", "/imprint", "/legal-notice")])
     for kandidat in _impressum_kandidaten(url, abruf):
         try:
             text = _text(abruf(kandidat))
