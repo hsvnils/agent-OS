@@ -18,6 +18,8 @@ an() {
   $IPT -F $KETTE
   for z in $PRIVAT; do $IPT -A $KETTE -d "$z" -j DROP || exit 1; done   # DROP: Synology-Kernel hat kein REJECT (BF-75)
   $IPT -C DOCKER-USER -s $NETZ -j $KETTE 2>/dev/null || $IPT -I DOCKER-USER 1 -s $NETZ -j $KETTE   # Weiterleitung (LAN, andere Container)
+  while $IPT -D FORWARD -s $NETZ -j $KETTE 2>/dev/null; do :; done                                  # BF-76: in FORWARD ganz nach oben,
+  $IPT -I FORWARD 1 -s $NETZ -j $KETTE                                                                # vor die ACCEPT-Regeln von Docker/DSM
   $IPT -C INPUT -s $NETZ -j $KETTE 2>/dev/null || $IPT -I INPUT 1 -s $NETZ -j $KETTE               # NAS selbst
   n=$($IPT -S $KETTE | grep -c -- "-j DROP")
   if [ "$n" -ne "$(echo $PRIVAT | wc -w)" ]; then echo "FEHLER: nur $n Sperrregeln gesetzt"; exit 1; fi
@@ -27,13 +29,15 @@ an() {
 aus() {
   while $IPT -D DOCKER-USER -s $NETZ -j $KETTE 2>/dev/null; do :; done
   while $IPT -D INPUT -s $NETZ -j $KETTE 2>/dev/null; do :; done
+  while $IPT -D FORWARD -s $NETZ -j $KETTE 2>/dev/null; do :; done
   $IPT -F $KETTE 2>/dev/null; $IPT -X $KETTE 2>/dev/null
   echo "Heimnetz-Sperre fuer luna-netz entfernt."
 }
 
 status() {
   $IPT -L $KETTE -n 2>/dev/null || echo "Kette $KETTE fehlt"
-  echo "DOCKER-USER: $($IPT -S DOCKER-USER 2>/dev/null | grep -c " $KETTE")  INPUT: $($IPT -S INPUT 2>/dev/null | grep -c " $KETTE")"
+  echo "DOCKER-USER: $($IPT -S DOCKER-USER 2>/dev/null | grep -c " $KETTE")  INPUT: $($IPT -S INPUT 2>/dev/null | grep -c " $KETTE")  FORWARD: $($IPT -S FORWARD 2>/dev/null | grep -c " $KETTE")"
+  echo "FORWARD (erste Regeln):"; $IPT -S FORWARD 2>/dev/null | sed -n 2,8p
 }
 
 case "${1:-}" in

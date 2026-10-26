@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 13:01] — Claude Code
+- **Was:** NETZ_AGENT Q4: Sperre mit DROP live gesetzt (7 Regeln); Sperrprobe: NAS-DSM, LUNA-OS, Gateway, `luna-os` zu, Fritz!Box und MACO470 noch offen (BF-76). Skript setzt den Sprung in die Kette jetzt zusaetzlich an Position 1 in `FORWARD` und zeigt bei `status` die Reihenfolge; Test.
+- **Warum:** Live-Probe Q4.
+- **Betroffen:** `deploy/netz_sperre.sh`, `netz_agent/tests/test_sperre.py`, `docs/bekannte-fehler.md`
+
 ## [2026-10-26 12:48] — Claude Code
 - **Was:** NETZ_AGENT Q4 Deploy-Befund: eigenes Netz `luna-netz-isoliert` angelegt, Container neu erstellt, DSM-Aufgabe beim Hochfahren angelegt (CEO). Sperr-Skript scheiterte still an fehlendem `REJECT` im Synology-Kernel (BF-75) -- die neue Sperrprobe zeigte das Heimnetz offen (`luna-os` per Name schon getrennt). Fix: `DROP`, Abbruch bei Regel-Fehler, Regelzaehlung; Test.
 - **Warum:** Live-Probe nach CEO-Deploy Q4.
