@@ -4,7 +4,7 @@
 - Stand: 2026-10-26
 - Arbeitsbranch: `ai/plan-checkliste-zahlungserinnerung` (Plan); Umsetzung auf eigenem Branch
 - Basiscommit: `30ccdb8`
-- Naechster Schritt: C1 -- CEO-Abnahme von `vorlagen/Kunden-Checkliste.pdf` und `.docx`; C2 nach eigenem Go.
+- Naechster Schritt: C1 abgenommen; C2 (Gespraechsleitfaden am Kunden, neu zugeschnitten 2026-10-26) wartet auf CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -62,7 +62,7 @@ einen Link, Rabattcode oder eine Aktion?
 
 ## Etappe C1: Fragenkatalog als Dokument
 
-- Status: Dokument erstellt 2026-10-26 (`scripts/kunden_checkliste_dokument.py` -> `vorlagen/Kunden-Checkliste.pdf` A4 hochkant, 4 Seiten, und `.docx`; Kopf wie Konzept-Vorlage, Kopffelder Kunde/Gespraechspartner/Datum/Projekt, Bloecke A-J mit Ankreuzkaestchen und zwei Antwortzeilen je Frage, ★ Pflicht bei B, C, D, I, J, Notizen). Download in LUNA-OS verschoben nach C2. CEO-Abnahme offen
+- Status: Dokument erstellt 2026-10-26 (`scripts/kunden_checkliste_dokument.py` -> `vorlagen/Kunden-Checkliste.pdf` A4 hochkant, 4 Seiten, und `.docx`; Kopf wie Konzept-Vorlage, Kopffelder Kunde/Gespraechspartner/Datum/Projekt, Bloecke A-J mit Ankreuzkaestchen und zwei Antwortzeilen je Frage, ★ Pflicht bei B, C, D, I, J, Notizen). Download in LUNA-OS verschoben nach C2. **Abgenommen vom CEO 2026-10-26**
 - Ziel / Scope / Nicht-Scope: Katalog (nach CEO-Pruefung) als `vorlagen/Kunden-Checkliste.pdf` (A4 hochkant) und
   `.docx`, nur Kopf; Ankreuzfelder und Platz fuer Antworten; zusaetzlich Download in LUNA-OS (Konzept-Mappe). Nicht-Scope:
   Online-Formular fuer Kunden.
@@ -72,18 +72,36 @@ einen Link, Rabattcode oder eine Aktion?
 - Risiko / Rueckweg: reine Vorlage.
 - Abhaengig von / Aufwand / Risiko: Q0 / klein / niedrig.
 
-## Etappe C2: Checkliste in der Konzept-Mappe
+## Etappe C2: Gespraechsleitfaden am Kunden (neu zugeschnitten, CEO 2026-10-26)
+
+CEO: „Die Checkliste soll man im System oeffnen und befuellen koennen, und daraus soll eine am Kunden speicherbare Datei
+werden -- ein Gespraechsleitfaden, den man waehrend eines Telefonats/Meetings ausfuellt, um danach ein Konzept vorlegen zu
+koennen.“
 
 - Status: geplant
-- Ziel / Scope / Nicht-Scope: Bereich „Checkliste“ je Vorgang in LUNA-OS (V2, ganzseitig, Desktop/iPad/iPhone):
-  Fragen abhaken, Antworten eintragen (Hash-Kette wie die Mappe), Uebernahme in die Briefing-Felder per Klick,
-  Fortschritt „8 von 10 Bloecken“, Hinweis bei fehlenden Pflichtfragen; Checkliste im Konzept-PDF optional.
-- Gate: Tests (Speichern, Uebernahme ins Briefing, Pflichtfragen, Rechte Modul), Gegenprobe; Darstellung Desktop, iPad
-  (820 px), iPhone (402 px) geprueft; Suite und Doku-Check gruen.
-- Verifikation: an einem echten Vorgang Checkliste ausfuellen -> erwartet: Briefing vorbefuellt, PDF zeigt die Antworten.
-- Dry-Run: Uebernahme zeigt vorher, welche Briefing-Felder ueberschrieben wuerden.
-- Risiko / Rueckweg: Bereich per Schalter ausblendbar; Briefing-Felder bleiben unveraendert, bis der CEO uebernimmt.
-- Abhaengig von / Aufwand / Risiko: C1 / mittel / niedrig.
+- Ziel / Scope / Nicht-Scope:
+  - **Ort:** am **Kunden** (Kundenansicht/Firmenakte, Knopf „📋 Gespraechsleitfaden“), auch **ohne** Angebot/Auftrag --
+    gerade fuer das erste Gespraech. Mehrere Leitfaeden je Kunde moeglich (z. B. je Kampagne), jeweils mit Titel.
+  - **Ausfuellen waehrend des Gespraechs:** ganzseitig auf Rechner, iPad und iPhone; Block fuer Block (A-J) mit
+    Fortschritt, Ankreuzen je Frage, kurzes Antwortfeld, freies Notizfeld; **speichert laufend** (kein Datenverlust, wenn
+    das Gespraech unterbrochen wird oder das Geraet wechselt); Pflichtbloecke markiert, „noch offen: ...“.
+  - **Abschliessen:** erzeugt ein **PDF** im Look der Checkliste (Kopf, Fragen mit Antworten, Notizen, Datum, Gespraechs-
+    partner) und legt es in der **Firmenakte** des Kunden ab (Art `leitfaden`); spaeteres Weiterbearbeiten erzeugt eine
+    neue Fassung, alte bleiben erhalten.
+  - **Weiter zum Konzept:** gibt es einen Vorgang (Angebot/Auftrag), uebernimmt ein Klick die passenden Antworten ins
+    Briefing der Konzept-Mappe (Ziel, Zielgruppe, Botschaft, Ton, Do's/Don'ts, Pflichtangaben, Freigabe), mit Vorschau,
+    welche Felder sich aendern.
+  - Download der leeren Checkliste (PDF/Word) in LUNA-OS.
+  - Nicht-Scope: Ausfuellen durch den Kunden selbst (oeffentlicher Link), Versand per Mail (geht ueber die Firmenakte
+    bzw. spaeter), Modell-Vorschlaege (C3).
+- Gate: Tests (Anlegen ohne Vorgang, laufendes Speichern, Abschluss -> PDF in der Firmenakte mit Fassung, Uebernahme ins
+  Briefing nur mit Bestaetigung, Rechte), Gegenprobe; Darstellung Desktop, iPad (820 px) und iPhone (402 px) geprueft;
+  Suite und Doku-Check gruen.
+- Verifikation: an einem echten Kunden waehrend eines (Probe-)Telefonats ausfuellen -> erwartet: Antworten nach Neuladen
+  noch da, PDF in der Firmenakte, Briefing vorbefuellt.
+- Dry-Run: Uebernahme ins Briefing zeigt vorher die Aenderungen.
+- Risiko / Rueckweg: Knopf per Schalter ausblendbar; Daten in der Hash-Kette (nichts geht verloren).
+- Abhaengig von / Aufwand / Risiko: C1 / mittel bis gross / niedrig.
 
 ## Etappe C3: Ideen- und Skript-Vorschlaege aus dem Briefing (optional)
 

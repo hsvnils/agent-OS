@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 15:12] — Claude Code
+- **Was:** KUNDEN_CHECKLISTE: C1 vom CEO abgenommen; C2 nach CEO-Wunsch neu zugeschnitten -- Gespraechsleitfaden am Kunden (auch ohne Vorgang), waehrend Telefonat/Meeting ausfuellbar mit laufendem Speichern, Abschluss als PDF in der Firmenakte (Fassungen), Uebernahme ins Briefing der Konzept-Mappe. Nur Plan.
+- **Warum:** CEO-Rueckmeldung zu C1.
+- **Betroffen:** `KUNDEN_CHECKLISTE_ROADMAP.md`
+
 ## [2026-10-26 15:01] — Claude Code
 - **Was:** KUNDEN_CHECKLISTE C1: Fragenkatalog als Dokument -- Generator `scripts/kunden_checkliste_dokument.py` erzeugt `vorlagen/Kunden-Checkliste.pdf` (A4 hochkant) und `vorlagen/Kunden-Checkliste.docx` (nur Kopf wie die Konzept-Vorlage, Bloecke A-J, Pflichtbloecke markiert, Antwortzeilen, Notizen). `vorlagen/` bleibt ausserhalb des Git. Download in LUNA-OS nach C2 verschoben.
 - **Warum:** CEO-Go C1.
