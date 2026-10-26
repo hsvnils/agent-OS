@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 15:52] — Claude Code
+- **Was:** KUNDEN_CHECKLISTE C2 nach CEO-Deploy live geprueft (nur lesend): origin/main = ef0e511, LUNA-OS liefert app-v2.js v140 / style v74, `/api/crm/leitfaden/fragen` 10 Bloecke, leere Checkliste als PDF (64 KB) und Word (37 KB) abrufbar; Netz-Agent-Sperre unveraendert aktiv. Kein Leitfaden an einem echten Kunden angelegt (Abnahme = CEO).
+- **Warum:** Live-Pruefung nach Deploy.
+- **Betroffen:** `KUNDEN_CHECKLISTE_ROADMAP.md`
+
 ## [2026-10-26 15:24] — Claude Code
 - **Was:** KUNDEN_CHECKLISTE C2 gebaut (Branch `ai/kunden-leitfaden`): Gespraechsleitfaden am Kunden -- in der Kundenansicht starten (auch ohne Angebot), ganzseitig waehrend Telefonat/Meeting ausfuellen (Haken + Antwort je Frage, Notizen, speichert laufend), Fortschritt und offene Pflichtbloecke, Abschluss als PDF in der Firmenakte (Fassungen), Uebernahme ins Briefing der Konzept-Mappe mit Vorschau und Feldauswahl; leere Checkliste als PDF/Word zum Herunterladen. Fragenkatalog nach `orchestrator/core/leitfaden.py` verlegt (Skript nutzt ihn). Cache v140/v74. Tests mit Gegenproben.
 - **Warum:** CEO-Go C2.
