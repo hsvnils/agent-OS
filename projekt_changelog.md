@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 15:01] — Claude Code
+- **Was:** KUNDEN_CHECKLISTE C1: Fragenkatalog als Dokument -- Generator `scripts/kunden_checkliste_dokument.py` erzeugt `vorlagen/Kunden-Checkliste.pdf` (A4 hochkant) und `vorlagen/Kunden-Checkliste.docx` (nur Kopf wie die Konzept-Vorlage, Bloecke A-J, Pflichtbloecke markiert, Antwortzeilen, Notizen). `vorlagen/` bleibt ausserhalb des Git. Download in LUNA-OS nach C2 verschoben.
+- **Warum:** CEO-Go C1.
+- **Betroffen:** `scripts/kunden_checkliste_dokument.py`, `vorlagen/` (lokal), `KUNDEN_CHECKLISTE_ROADMAP.md`
+
 ## [2026-10-26 14:59] — Claude Code
 - **Was:** ZAHLUNGSERINNERUNG Z1 gebaut (Branch `ai/zahlungserinnerung`): Zahlungserinnerung als Stufe 0 vor der 1. Mahnung -- Nummernkreis `ZE`, PDF und Mail im CEO-Wortlaut ohne Zinsen/Pauschale/Kosten, einmal je Rechnung und nur vor der 1. Mahnung, Rechnung als zweiter Anhang, Textbaustein `zahlungserinnerung`; Knopf in der Rechnungsansicht (V2, Cache v139), Zu erledigen, Belegverfolgung, Nummern-Erkennung (Firmenakte, Mail-Antworten, Netz-Auftraege); 1. Mahnung verweist auf die Erinnerung. Tests mit Gegenproben. Q0 beider neuen Roadmaps als entschieden eingetragen (Register).
 - **Warum:** CEO-Go Z1 (Empfehlungen angenommen).

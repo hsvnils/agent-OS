@@ -1,10 +1,10 @@
 # Roadmap: Kunden-Checkliste fuer Content-Konzept und Skripte
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-26
 - Arbeitsbranch: `ai/plan-checkliste-zahlungserinnerung` (Plan); Umsetzung auf eigenem Branch
 - Basiscommit: `30ccdb8`
-- Naechster Schritt: CEO prueft den Fragenkatalog (unten) und entscheidet Q0 (Form); danach Go fuer C1.
+- Naechster Schritt: C1 -- CEO-Abnahme von `vorlagen/Kunden-Checkliste.pdf` und `.docx`; C2 nach eigenem Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -62,7 +62,7 @@ einen Link, Rabattcode oder eine Aktion?
 
 ## Etappe C1: Fragenkatalog als Dokument
 
-- Status: geplant
+- Status: Dokument erstellt 2026-10-26 (`scripts/kunden_checkliste_dokument.py` -> `vorlagen/Kunden-Checkliste.pdf` A4 hochkant, 4 Seiten, und `.docx`; Kopf wie Konzept-Vorlage, Kopffelder Kunde/Gespraechspartner/Datum/Projekt, Bloecke A-J mit Ankreuzkaestchen und zwei Antwortzeilen je Frage, ★ Pflicht bei B, C, D, I, J, Notizen). Download in LUNA-OS verschoben nach C2. CEO-Abnahme offen
 - Ziel / Scope / Nicht-Scope: Katalog (nach CEO-Pruefung) als `vorlagen/Kunden-Checkliste.pdf` (A4 hochkant) und
   `.docx`, nur Kopf; Ankreuzfelder und Platz fuer Antworten; zusaetzlich Download in LUNA-OS (Konzept-Mappe). Nicht-Scope:
   Online-Formular fuer Kunden.

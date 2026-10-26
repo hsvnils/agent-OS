@@ -129,6 +129,8 @@ Hosts, die im Code nur als Link, Schema, Mock oder Test vorkommen (kein Datenflu
 
 ```doku-check:hosts-ignoriert
 schemas.xmlsoap.org            # SOAP-Namensraum im Fritz!Box-Aufruf (NETZWERK_WACHE), nie abgerufen
+schemas.openxmlformats.org     # Word-Namensraum in scripts/kunden_checkliste_dokument.py (.docx), nie abgerufen
+purl.org                       # Dublin-Core-Namensraum in scripts/kunden_checkliste_dokument.py (.docx), nie abgerufen
 aistudio.google.com            # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
 api-dashboard.search.brave.com # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
 app.agentops.ai                # Konto-Link in der Anbieter-Liste (dienste_register.py), nur angezeigt, nie abgerufen
