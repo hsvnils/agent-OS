@@ -16,10 +16,12 @@ an() {
   if ! $IPT -L DOCKER-USER -n >/dev/null 2>&1; then echo "FEHLER: Kette DOCKER-USER fehlt (Docker nicht gestartet?)"; exit 1; fi
   $IPT -N $KETTE 2>/dev/null
   $IPT -F $KETTE
-  for z in $PRIVAT; do $IPT -A $KETTE -d "$z" -j REJECT; done
+  for z in $PRIVAT; do $IPT -A $KETTE -d "$z" -j DROP || exit 1; done   # DROP: Synology-Kernel hat kein REJECT (BF-75)
   $IPT -C DOCKER-USER -s $NETZ -j $KETTE 2>/dev/null || $IPT -I DOCKER-USER 1 -s $NETZ -j $KETTE   # Weiterleitung (LAN, andere Container)
   $IPT -C INPUT -s $NETZ -j $KETTE 2>/dev/null || $IPT -I INPUT 1 -s $NETZ -j $KETTE               # NAS selbst
-  echo "Heimnetz-Sperre fuer luna-netz aktiv."
+  n=$($IPT -S $KETTE | grep -c -- "-j DROP")
+  if [ "$n" -ne "$(echo $PRIVAT | wc -w)" ]; then echo "FEHLER: nur $n Sperrregeln gesetzt"; exit 1; fi
+  echo "Heimnetz-Sperre fuer luna-netz aktiv ($n Sperrregeln)."
 }
 
 aus() {

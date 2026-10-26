@@ -67,7 +67,9 @@ class TestNetzUndSkript(unittest.TestCase):
             self.assertIn(z, s)
         self.assertIn("-I DOCKER-USER 1 -s $NETZ", s)
         self.assertIn("-I INPUT 1 -s $NETZ", s)
-        self.assertIn("aus()", s)                                                     # Rueckweg vorhanden
+        self.assertIn("aus()", s)
+        self.assertNotIn("-j REJECT", s)                                              # BF-75: Synology hat kein REJECT
+        self.assertIn('-j DROP || exit 1', s)                                         # Fehler nicht verschlucken                                                     # Rueckweg vorhanden
 
 
 if __name__ == "__main__":

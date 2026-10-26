@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 12:48] — Claude Code
+- **Was:** NETZ_AGENT Q4 Deploy-Befund: eigenes Netz `luna-netz-isoliert` angelegt, Container neu erstellt, DSM-Aufgabe beim Hochfahren angelegt (CEO). Sperr-Skript scheiterte still an fehlendem `REJECT` im Synology-Kernel (BF-75) -- die neue Sperrprobe zeigte das Heimnetz offen (`luna-os` per Name schon getrennt). Fix: `DROP`, Abbruch bei Regel-Fehler, Regelzaehlung; Test.
+- **Warum:** Live-Probe nach CEO-Deploy Q4.
+- **Betroffen:** `deploy/netz_sperre.sh`, `netz_agent/tests/test_sperre.py`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-26 12:13] — Claude Code
 - **Was:** NETZ_AGENT Q4 gebaut (Branch `ai/netz-agent-q4`): Container `luna-netz` bekommt ein eigenes Docker-Netz `luna-netz-isoliert` (172.30.99.0/24) -- bisher lag er im gemeinsamen Netz und haette `luna-os` direkt erreicht. `deploy/netz_sperre.sh an|aus|status` sperrt aus diesem Netz alle privaten Adressen (Kette `LUNA-NETZ` in `DOCKER-USER` und `INPUT`). Netz-Agent prueft die Sperre stuendlich (`netz_agent/sperrprobe.py`: Fritz!Box, NAS-DSM, LUNA-OS, MACO470, Gateway, `luna-os` muessen zu sein, Brave muss erreichbar sein) und schreibt `netz_queue/zustand.json`; LUNAs Systemcheck meldet Luecken oder eine veraltete Probe. Tests mit Gegenprobe; Register, Datenfluesse, Roadmap.
 - **Warum:** CEO-Go Q4.
