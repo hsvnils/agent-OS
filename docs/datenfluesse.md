@@ -209,6 +209,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 | `lieferungen/<Auftrag>/kennzahlen/` (Insights-Screenshots je Posting) | Telegram-Foto / Web (PROJEKTBERICHT P2, `core/postings.bild_ablegen`) | Web (`/api/crm/postings/<id>/bild/<i>`), Bericht | ja (`./lieferungen` ausgenommen) | nein (wie Lieferungen; Pruefsumme in der Hash-Kette, Zahlen selbst als Ereignis `posting_kennzahlen`) |
 | `lieferungen/<Vorgang>/konzept/` (Moodboard-Bilder der Konzept-Mappe) | Web (`POST /api/crm/konzept-bild/<vorgang>`, KONZEPT_MAPPE K1) | Web (`/api/crm/konzept-bild/<vorgang>/<i>`) | ja (`./lieferungen` ausgenommen) | nein (wie Lieferungen; Pruefsumme in der Hash-Kette) |
 | `kundenordner/<Firma>/<Ordner>/` (Videos, Bilder, Audio, PDF, ZIP, Office, Text) | Web (`POST /api/crm/kunden/<nr>/ordner`, `PUT /api/crm/kundenordner/upload/<id>/<teil>`, `POST .../<id>/fertig`, `POST .../<id>/lieferung` kopiert/verlinkt Lieferungs-Dateien; Chat-Werkzeug `kundenordner_anlegen`; KUNDENORDNER F1) | Web (`/api/crm/kundenordner/<id>/datei/<i>`, Firmenakte) | ja (`./kundenordner` ausgenommen) | ja, als fortlaufender Spiegel `~/LUNA-Backups/kundenordner/` (nur neue Dateien, tar ueber SSH; Liste in der Hash-Kette: `kundenordner_angelegt/_datei/_datei_entfernt`) |
+| `sicherheit/netz_agent.jsonl` (Netz-Agent: Zaehler je Auftrag -- Zeit, Art, ok, Formular gueltig/verworfen/ohne, Verdacht, verworfene Teile, **nie Inhalte**) | Bot + Web-App ueber `netz_auftraege._erfassen` (eingeschaltet nur im Betrieb: `bot.main`, `channels/web/__main__.py`; NETZ_AGENT Q5) | CISO-Bericht 04:00 (`security_agent._check_netz_agent`) | ja (`./sicherheit` ausgenommen) | ja (append-only) |
 | `sicherheit/injection.jsonl` (Prompt-Injection: Verdacht, Sperren, entfernte Links -- Zeit, Quelle, Muster, Pruefsumme, **nie Inhalte**) | Bot + Web-App ueber `input_guard.protokolliere` (eingeschaltet nur im Betrieb: `bot.main`, `channels/web/__main__.py`; PROMPT_INJECTION_SCHUTZ I4) | CISO-Bericht 04:00 (`security_agent._check_injection`), Leistungsbericht (`/api/performance`, montags Telegram), Telegram-Hinweis im 15-min-Poll bei Mails/Belegen (`bot.injection_hinweis`, Stand `sicherheit/hinweis_stand.json`) | ja (`./sicherheit` ausgenommen) | ja (append-only) |
 | `orchestrator/state/rechtsquellen.json` (letzter Abgleich der Rechtsquellen aller Agenten, bekannte Abweichungen) | Bot (`core/rechtsquellen.lauf`, 04:30) | Bot | nein (`orchestrator/state` ausgenommen) | nein (fluechtig) |
 | `skills/clo/*/SKILL.md`, `quellen.md` (CLO-Skills + Normen im Wortlaut mit Stand) | Repo (Claude Code) | CLO-Agent (System-Prompt), Nachtlauf | ja (Code-Sync) | Git |
@@ -258,6 +259,7 @@ ungesicherte Speicher stehen im Block `ohne-backup` unten.
 
 ```doku-check:speicher
 sicherheit/injection.jsonl
+sicherheit/netz_agent.jsonl
 sicherheit/hinweis_stand.json
 einwilligungen/log.jsonl
 antraege/log.jsonl

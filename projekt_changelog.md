@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 14:07] — Claude Code
+- **Was:** Nachtrag zu Q5 Teil 1: `sicherheit/netz_agent.jsonl` in die Datenfluss-Tabelle und ins Backup (append-only) aufgenommen; Doku-Check meldete die Luecke (vorheriger Commit lief trotz rotem Doku-Check durch).
+- **Warum:** Doku-Pflicht Datenfluesse/Backup.
+- **Betroffen:** `deploy/backup-from-nas.sh`, `docs/datenfluesse.md`
+
 ## [2026-10-26 14:05] — Claude Code
 - **Was:** NETZ_AGENT Q5 (Branch `ai/netz-agent-q5`), Teil 1: Angriffsreihe `orchestrator/tests/test_netz_angriffe.py` (verfuehrtes Modell im Netz-Agenten; bei LUNA kommt trotzdem nur das gepruefte Formular an). Neu gehaertet: unsichtbarer Seitentext (`hidden`, `aria-hidden`, `display:none`, `visibility:hidden`, Schriftgroesse/Deckkraft 0) geht nicht ans Modell (`netz_agent/abruf.py`); LUNA ersetzt im Formular alle Links, die keine Suchtreffer sind (`core/netz_auftraege.py`). Zaehler je Auftrag ohne Inhalte in `sicherheit/netz_agent.jsonl`, CISO-Bericht zeigt die Zeile „Netz-Agent“ (Auftraege, verworfene Formulare/Teile, Verdacht, Heimnetz-Sperre). Gegenproben rot. Regel- und Charta-Text liegen dem CEO als Diff vor (nicht angewendet).
 - **Warum:** CEO-Go Q5.
