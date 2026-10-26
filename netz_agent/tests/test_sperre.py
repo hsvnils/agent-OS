@@ -68,10 +68,9 @@ class TestNetzUndSkript(unittest.TestCase):
         self.assertIn("NETZ=172.30.99.0/24", s)
         for z in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "127.0.0.0/8"):
             self.assertIn(z, s)
-        self.assertIn("-I DOCKER-USER 1 -s $NETZ", s)
-        self.assertIn("-I INPUT 1 -s $NETZ", s)
-        self.assertIn("-I FORWARD 1 -s $NETZ", s)                                     # BF-76: vor Dockers ACCEPT-Regeln
-        self.assertIn("weg FORWARD", s)
+        self.assertIn('M="$IPT -t mangle"', s)                                        # BF-79: Sperre in mangle/PREROUTING
+        self.assertIn("$M -I PREROUTING 1 -s $NETZ -j $KETTE", s)
+        self.assertIn("weg mangle PREROUTING", s)                                     # Rueckweg
         self.assertNotIn("while", s)                                                  # BF-78: keine offene Schleife
         self.assertIn("aus()", s)
         self.assertNotIn("-j REJECT", s)                                              # BF-75: Synology hat kein REJECT
