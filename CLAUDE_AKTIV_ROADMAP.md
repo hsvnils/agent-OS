@@ -59,7 +59,7 @@ seit Oktober im Claude-Max-Abo enthalten -- vom Agenten nicht pruefbar, der Live
 
 ## Etappe C2: Schluessel eintragen und live pruefen
 
-- Status: geplant
+- Status: teilweise (2026-10-26: Netz-Agent-Schluessel workspace-gebunden in `netz_agent/.env`, Workspace „luna-netz“, `/v1/models` HTTP 200, echte Anfrage an `claude-haiku-5-5` ok; API-Guthaben vorhanden laut Konsole; alter ungebundener Schluessel vom CEO geloescht. Offen: Workspace „luna“ mit eigenem Schluessel fuer LUNA, Limit 80 USD)
 - Ziel / Scope / Nicht-Scope: CEO legt zwei workspace-gebundene Schluessel an (Workspace „luna“ und „luna-netz“, je mit
   Monatslimit) und traegt sie ein: LUNA in `orchestrator/.env` (NAS; MACO470 fuer Tests), Netz-Agent in `netz_agent/.env`
   (ersetzt den heutigen, nicht workspace-gebundenen). Agent prueft nur Status und eine echte Antwort. Danach Neustart der

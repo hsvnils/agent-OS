@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 09:53] — Claude Code
+- **Was:** Netz-Agent-Schluessel geprueft: neuer, an den Workspace „luna-netz“ gebundener Anthropic-Schluessel in `netz_agent/.env` (1 Zeile, Rechte 600, Wert nie angezeigt); `/v1/models` HTTP 200, echte Mini-Anfrage an `claude-haiku-5-5` beantwortet („OK“, 19/4 Token). Alter, nicht workspace-gebundener Schluessel vom CEO geloescht. Empfehlung Limit luna-netz 20 USD, Workspace „luna“ 80 USD.
+- **Warum:** CLAUDE_AKTIV C2 (Netz-Agent-Teil) / Vorbereitung NETZ_AGENT Q2.
+- **Betroffen:** `CLAUDE_AKTIV_ROADMAP.md`
+
 ## [2026-10-23 15:27] — Claude Code
 - **Was:** Roadmap `CLAUDE_AKTIV_ROADMAP.md` angelegt (Plan, nichts umgesetzt): C1 Vorbereitung ohne Schluessel (Modellnamen Sonnet 5.5/Haiku 5.5, Preistabelle, Router-Reihenfolge, Anthropic-Websuche aus, Datenschutz-Nachtrag), C2 zwei workspace-gebundene Schluessel eintragen und live pruefen, C3 alle Gemini-Wege umstellen, C4 Gemini abschalten. Entscheidung im Register. Befund: Der neue Netz-Agent-Schluessel ist gueltig, aber an keinen Workspace gebunden (API 400 „anthropic-workspace-id header“); Wert nie angezeigt.
 - **Warum:** CEO 2026-10-23: Chat und Fachagenten wieder ueber Claude (nicht das staerkste Modell), auf Gemini verzichten; Empfehlungen angenommen.
