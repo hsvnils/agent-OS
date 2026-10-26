@@ -16,9 +16,16 @@ from ..governance.leak_guard import redact
 
 # Richtwerte USD je 1 Mio. Token (Input, Output) -- ueberschreibbar; nur fuer Schaetzung/Trend.
 RATES_USD: dict[str, tuple[float, float]] = {
+    # Claude, Listenpreise Stand 2026-10 (CLAUDE_AKTIV C1)
+    "claude-haiku-5-5": (0.10, 0.50),
+    "claude-sonnet-5-5": (2.0, 10.0),
+    "claude-sonnet-5": (2.0, 10.0),
+    "claude-opus-5-5": (4.0, 20.0),
+    "claude-opus-5": (5.0, 25.0),
+    "claude-fable-5-1": (10.0, 50.0),
     "claude-haiku-4-5": (1.0, 5.0),
     "claude-sonnet-4-6": (3.0, 15.0),
-    "claude-opus-4-8": (15.0, 75.0),
+    "claude-opus-4-8": (5.0, 25.0),
     "gpt-4o": (2.5, 10.0),
     "gpt-4o-mini": (0.15, 0.60),
     # Gemini: Gratis-Tier -> 0 (bei Ueberschreitung des Free-Tier paid; Richtwerte gering).

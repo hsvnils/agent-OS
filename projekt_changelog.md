@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 10:03] — Claude Code
+- **Was:** CLAUDE_AKTIV C1 umgesetzt (ohne Schluessel, Betrieb unveraendert): Chat und Fachagenten auf `claude-sonnet-5-5`, Routing auf `claude-haiku-5-5` (`config.toml`, Standardwerte in Bot, Web-App, Voice, HoaConversation), Chat-Aufwand `low`. Modell-Router: fuer immer mitdenkende Modelle (Sonnet/Haiku 5.5, Opus 5.x, Fable 5.x) `thinking: adaptive` mit `drop_block` (LUNA kuerzt lange Verlaeufe selbst -> betroffene Denk-Bloecke werden verworfen statt eines 400) und mindestens 8.000 Token; aeltere Modelle unveraendert. Ausweich-Reihenfolge Claude -> lokal (wenn aktiv) -> Gemini -> OpenAI. Preistabelle um die 5.5-Modelle ergaenzt, Opus 4.8 auf 5/25 USD korrigiert. Anthropic-Websuche im Code fest aus (freie Websuche nur ueber den Netz-Agenten). Dienste-Register und Datenschutz-Nachtrag (Chat-Daten an Anthropic statt Google; OpenAI bleibt bis C4 letzter Ausweich). Tests `test_claude_aktiv.py` (3 Gegenproben rot), Erwartung in `test_lokal_llm.py` an die neue Reihenfolge angepasst; echtes SDK 0.111 mit abgefangener Verbindung: Kopfzeile, `thinking`, `output_config`, Denk-Block in der Antwort ok.
+- **Warum:** CEO-Go C1 2026-10-26 („Weiter gehts“).
+- **Betroffen:** `orchestrator/config.toml`, `orchestrator/core/model_router.py`, `orchestrator/core/hoa_conversation.py`, `orchestrator/core/kosten.py`, `orchestrator/governance/web_research.py`, `orchestrator/governance/dienste_register.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/voice/pipeline.py`, `orchestrator/tests/test_claude_aktiv.py`, `orchestrator/tests/test_lokal_llm.py`, `docs/datenschutz-ki-nutzung.md`, `CLAUDE_AKTIV_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-26 09:53] — Claude Code
 - **Was:** Netz-Agent-Schluessel geprueft: neuer, an den Workspace „luna-netz“ gebundener Anthropic-Schluessel in `netz_agent/.env` (1 Zeile, Rechte 600, Wert nie angezeigt); `/v1/models` HTTP 200, echte Mini-Anfrage an `claude-haiku-5-5` beantwortet („OK“, 19/4 Token). Alter, nicht workspace-gebundener Schluessel vom CEO geloescht. Empfehlung Limit luna-netz 20 USD, Workspace „luna“ 80 USD.
 - **Warum:** CLAUDE_AKTIV C2 (Netz-Agent-Teil) / Vorbereitung NETZ_AGENT Q2.

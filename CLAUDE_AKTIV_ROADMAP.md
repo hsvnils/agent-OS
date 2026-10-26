@@ -1,10 +1,10 @@
 # Roadmap: Claude wieder aktiv, Gemini abloesen
 
-- Status: geplant
-- Stand: 2026-10-23
+- Status: in Umsetzung
+- Stand: 2026-10-26
 - Arbeitsbranch: `ai/claude-aktiv`
 - Basiscommit: `88708b5`
-- Naechster Schritt: CEO-Go fuer C1 (Vorbereitung ohne Schluessel, aendert nichts am Betrieb).
+- Naechster Schritt: Deploy C1 (CEO), danach Schluessel fuer Workspace „luna“ erzeugen und eintragen (C2).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -42,7 +42,7 @@ seit Oktober im Claude-Max-Abo enthalten -- vom Agenten nicht pruefbar, der Live
 
 ## Etappe C1: Vorbereitung ohne Schluessel
 
-- Status: geplant
+- Status: umgesetzt 2026-10-26 (Modellnamen `claude-sonnet-5-5`/`claude-haiku-5-5` in `config.toml` und Code-Standardwerten, Chat-Aufwand `low`; Router: fuer immer mitdenkende Modelle `thinking: adaptive` + `drop_block` bei veraenderten Verlaeufen (Beta-Header `thinking-binding-controls-2026-08-01`) und mind. 8.000 Token; Reihenfolge Claude -> lokal -> Gemini -> OpenAI; Preistabelle inkl. 5.5-Modelle, Opus 4.8 korrigiert; Anthropic-Websuche im Code fest aus; Dienste-Register; Datenschutz-Nachtrag; Tests `test_claude_aktiv.py` mit 3 Gegenproben, echtes SDK 0.111 mit abgefangener Verbindung geprueft), Deploy offen
 - Ziel / Scope / Nicht-Scope: Modellnamen in `config.toml` und Code-Standardwerten auf `claude-sonnet-5-5` / `claude-haiku-5-5`;
   Preistabelle `core/kosten.py` (Sonnet 5.5, Haiku 5.5, Opus 5.5, Fable 5.1); Reihenfolge im Modell-Router pruefen und
   festlegen (Claude zuerst, dann lokal, dann Gemini); `WEB_RESEARCH_ANTHROPIC` im Code standardmaessig aus und auf der NAS

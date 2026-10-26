@@ -1964,18 +1964,18 @@ def _start_cfo_loop(ctx, notify) -> None:
 
 
 def _fallbacks(secrets: dict, cfg: dict, bereich: str = "chat") -> list[dict]:
-    """Fallbacks in Reihenfolge: Gemini (Gratis-Tier), dann OpenAI -- nur mit gesetztem Key. Dazu optional das
-    lokale LLM (`core/lokal_llm.py`, M6): je Bereich per .env `zuerst` (vor Anthropic) oder `zuletzt`."""
+    """Ausweich-Reihenfolge nach Claude (CLAUDE_AKTIV C1, CEO 2026-10-23): lokales LLM (`core/lokal_llm.py`, wenn fuer
+    den Bereich per .env aktiv; `zuerst` = sogar vor Claude), dann Gemini, dann OpenAI -- jeweils nur mit gesetztem Key."""
     from ...core.lokal_llm import eintrag
     from ...core.model_router import GEMINI_BASE_URL
     v = cfg.get("voice", {})
     lokal = eintrag(secrets, bereich)
-    return [
+    return ([lokal] if lokal else []) + [
         {"name": "gemini", "key": secrets.get("GEMINI_API_KEY", ""), "base_url": GEMINI_BASE_URL,
          "model": v.get("gemini_model", "gemini-2.5-flash")},
         {"name": "openai", "key": secrets.get("OPENAI_API_KEY", ""), "base_url": None,
          "model": v.get("openai_model", "gpt-4o-mini")},
-    ] + ([lokal] if lokal else [])
+    ]
 
 
 def main() -> None:
@@ -1994,7 +1994,7 @@ def main() -> None:
     from ...core import input_guard as _ig
     _ig.protokoll_setzen(_injection_protokoll())          # PROMPT_INJECTION_SCHUTZ I4 (nur im Betrieb)
     ctx, _ = _build_ctx(cfg, secrets)
-    model = cfg.get("voice", {}).get("llm_model", "claude-haiku-4-5")
+    model = cfg.get("voice", {}).get("llm_model", "claude-sonnet-5-5")
     sessions: dict[int, HoaConversation] = {}
     awaiting_betrag: dict[int, dict] = {}   # chat_id -> Order-Parameter, wenn auf 'Andere Summe' gewartet wird
 
@@ -2258,7 +2258,7 @@ def main() -> None:
                             _rstore = IgInboxStore(ROOT / "ig_inbox" / "log.jsonl", secrets=ctx.leak_secrets)
                             IgInboxSync(store=_rstore, reader=_rreader).voll_sync(wochen=8, zeit_budget_s=120)
                             _az = IgAnalyzer(llm=analyse_llm_aus_env(secrets),
-                                             modell=secrets.get("IG_ANALYSE_MODELL", "claude-haiku-4-5"))
+                                             modell=secrets.get("IG_ANALYSE_MODELL", "claude-haiku-5-5"))
                             if _az.verfuegbar():
                                 _az.analysiere_store(_rstore)
             except Exception as exc:
@@ -2294,7 +2294,8 @@ def main() -> None:
                             if conv is None:
                                 conv = HoaConversation(ctx, model=model,
                                                        api_key=secrets["ANTHROPIC_API_KEY"],
-                                                       fallbacks=_fallbacks(secrets, cfg))
+                                                       fallbacks=_fallbacks(secrets, cfg),
+                                                       effort=cfg.get("voice", {}).get("chat_effort", "low"))
                                 sessions[cid] = conv
                             kontext = f"(Proaktive Meldung, die ich dem CEO gesendet habe:) {ab}: {n['text']}"
                             if n.get("detail"):
@@ -2622,7 +2623,8 @@ def main() -> None:
                      "text": "Verlauf zurückgesetzt. Wie kann ich helfen?"})
                 continue
             conv = sessions.setdefault(chat_id, HoaConversation(
-                ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"], fallbacks=_fallbacks(secrets, cfg)))
+                ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"], fallbacks=_fallbacks(secrets, cfg),
+                effort=cfg.get("voice", {}).get("chat_effort", "low")))
             from ...core.lokal_llm import eintrag as _lokal_eintrag
             if (_lokal_eintrag(secrets, "chat") or {}).get("zuerst"):
                 # Lokales LLM zuerst: Antwort dauert 1-2 Minuten -> kurz Bescheid geben statt Funkstille.

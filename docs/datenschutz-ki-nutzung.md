@@ -17,6 +17,15 @@
   EWR/der Schweiz/UK gelten die Datenregeln der **Bezahl-Stufe auch fuer die Gratis-Stufe** -- „Google doesn't use your
   prompts ... or responses to improve our products“; Speicherung nur zur Missbrauchserkennung. Der Registereintrag vom
   2026-07-06 („Free-Tier nutzt Inhalte zum Training“) ist fuer den CEO (Deutschland) damit **ueberholt** (korrigiert).
+- **Nachtrag 2026-10-26 -- Umstieg auf Claude (`CLAUDE_AKTIV_ROADMAP.md`):** Sobald in C2 ein gueltiger Schluessel fuer
+  LUNA eingetragen ist, laufen **Chat und Fachagenten ueber Anthropic** (`claude-sonnet-5-5`, Routing `claude-haiku-5-5`).
+  Dieselben Datenarten wie oben (Mails, DMs, Drive/Tabellen, Bildschirmfotos ueber die Werkzeuge) gehen dann an
+  **Anthropic statt an Google**. Bis zum Abschalten in C4 bleiben **Gemini und -- falls auch Gemini scheitert -- OpenAI
+  (`gpt-4o-mini`, Schluessel gesetzt)** als Ausweich; das lokale Modell kommt vor Gemini, wenn es fuer den Bereich
+  eingeschaltet ist. Training: laut Anthropic werden Eingaben und Ausgaben der kommerziellen API standardmaessig nicht
+  zum Training genutzt; die **Aufbewahrungsfrist** zeigt die Konsole unter „Data retention“ -- in C2 vom CEO ablesen und
+  hier eintragen. Der **Netz-Agent** (Workspace „luna-netz“, `claude-haiku-5-5`) sieht nur oeffentliche Webseiten und die
+  Frage, keine internen Daten. **Abo-Kennzahlen der App** bekommen weiterhin kein Chat-Werkzeug.
 - **EU AI Act:** fuer das heutige LUNA kaum Pflichten -- siehe 4.
 
 ## 2. Wohin gehen welche Daten? (Stand Code 2026-09-29)

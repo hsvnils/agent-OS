@@ -220,6 +220,9 @@ class AnthropicProvider:
                                  zusammenfassung="".join(text_parts).strip())
 
 
+
+ANTHROPIC_WEB_ERLAUBT = False   # CLAUDE_AKTIV C1: keine Websuche an Anthropic vorbei am Netz-Agenten
+
 class WebResearch:
     """Brave-first-Router mit Eskalation auf Anthropic-Web + Leck-Schutz.
 
@@ -240,7 +243,10 @@ class WebResearch:
 
     @classmethod
     def from_env(cls, env: dict[str, str] | None = None, secrets: list[str] | None = None) -> "WebResearch":
-        return cls(einfach=BraveProvider(env), komplex=AnthropicProvider(env), secrets=secrets)
+        # CLAUDE_AKTIV C1 / NETZ_AGENT (CEO 2026-10-23): freie Websuche nur noch ueber den Netz-Agenten -- Anthropics
+        # eigene Websuche bleibt aus, auch wenn WEB_RESEARCH_ANTHROPIC=1 und ein gueltiger Schluessel gesetzt sind.
+        komplex = AnthropicProvider(env) if ANTHROPIC_WEB_ERLAUBT else AnthropicProvider({})
+        return cls(einfach=BraveProvider(env), komplex=komplex, secrets=secrets)
 
     def recherchiere(self, query: str, *, eskalation: bool = False, tiefe: str | None = None,
                      max_results: int = 5) -> RechercheErgebnis:

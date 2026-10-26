@@ -951,9 +951,9 @@ def _make_conversation():
     from ..telegram.bot import _fallbacks
     from ...core.hoa_conversation import HoaConversation
     cfg, secrets = _CTX_CACHE["cfg"], _CTX_CACHE["secrets"]
-    model = cfg.get("voice", {}).get("llm_model", "claude-haiku-4-5")
+    model = cfg.get("voice", {}).get("llm_model", "claude-sonnet-5-5")
     return HoaConversation(ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"],
-                           fallbacks=_fallbacks(secrets, cfg))
+                           fallbacks=_fallbacks(secrets, cfg), effort=cfg.get("voice", {}).get("chat_effort", "low"))
 
 
 def _luna_session():

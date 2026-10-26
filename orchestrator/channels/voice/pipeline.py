@@ -217,7 +217,7 @@ def build_pipeline(transport, core, cfg: dict, secrets: dict, *, finance_dir, le
     tts = build_tts(cfg, secrets)
     llm = AnthropicLLMService(
         api_key=secrets["ANTHROPIC_API_KEY"],
-        model=cfg.get("llm_model", "claude-haiku-4-5"),
+        model=cfg.get("llm_model", "claude-sonnet-5-5"),
     )
 
     context = LLMContext(

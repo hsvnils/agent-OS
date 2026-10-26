@@ -135,14 +135,14 @@ def anbieter(secrets: dict | None = None) -> list[dict]:
 def register(secrets: dict | None = None) -> dict:
     """CFO-Ueberblick (Tool `finance_dashboard`): Modelle + Dienste, live aus den vorhandenen Schluesseln."""
     modelle = [
-        {"name": "Chat (LUNA)", "modell": "claude-haiku-4-5", "provider": "anthropic",
-         "fallback": "gemini-2.5-flash -> gpt-4o-mini", "zweck": "Telegram-Dialog",
+        {"name": "Chat (LUNA)", "modell": "claude-sonnet-5-5", "provider": "anthropic",
+         "fallback": "lokal (wenn aktiv) -> gemini-2.5-flash -> gpt-4o-mini", "zweck": "Telegram-/LUNA-OS-Dialog",
          "kosten": "per Token", "erfassung": "gemessen"},
-        {"name": "Fachagenten (CTO/Berater/...)", "modell": "claude-opus-4-8", "provider": "anthropic (CLI/Abo)",
+        {"name": "Fachagenten (CTO/Berater/...)", "modell": "claude-sonnet-5-5", "provider": "anthropic (CLI)",
          "fallback": "-", "zweck": "Konsultation, Innovation, Self-Dev", "kosten": "Abo/per Token",
          "erfassung": "geschaetzt (CLI liefert keine Tokenzahl)"},
-        {"name": "Web-Recherche-Eskalation", "modell": "claude-sonnet-4-6", "provider": "anthropic-web",
-         "fallback": "Brave", "zweck": "komplexe Recherche", "kosten": "billbar",
+        {"name": "Web-Recherche-Eskalation", "modell": "aus (CLAUDE_AKTIV C1, freie Websuche nur ueber den Netz-Agenten)",
+         "provider": "anthropic-web", "fallback": "Brave", "zweck": "komplexe Recherche", "kosten": "-",
          "erfassung": "nicht instrumentiert"},
     ]
     dienste = [{"name": a["name"], "aktiv": a["stand"] == "eingerichtet", "kategorie": a["bereich"],

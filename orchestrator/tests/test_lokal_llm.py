@@ -89,7 +89,7 @@ class TestLokalLLM(unittest.TestCase):
             namen = [f["name"] for f in _fallbacks(secrets, {}, bereich=bereich)]
             self.assertEqual(namen, ["gemini", "openai"])
         namen = [f["name"] for f in _fallbacks({**secrets, "LOCAL_LLM_CHAT": "zuerst"}, {}, bereich="chat")]
-        self.assertEqual(namen, ["gemini", "openai", "lokal"])
+        self.assertEqual(namen, ["lokal", "gemini", "openai"])          # CLAUDE_AKTIV C1: lokal vor Gemini
 
     def test_4_denktext_wird_entfernt(self):
         self.assertEqual(lokal_llm.ohne_denktext("<think>hmm\nnaja</think>\n\nHallo CEO"), "Hallo CEO")

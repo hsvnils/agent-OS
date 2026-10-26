@@ -95,7 +95,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `KUNDENORDNER_FREIGABE_ROADMAP.md` | Kundenordner auf der NAS, sicherer Freigabe-Link mit Ablauf, Link per Mail | abgeschlossen (F1-F3 live, CEO-Abnahme 2026-10-19) |
 | `PROMPT_INJECTION_SCHUTZ_ROADMAP.md` | Prompt-Injection-Schutz: jeder Fremdtext markiert, feinere Erkennung, Handlungs-Sperre nach Verdacht, Angriffstests | abgeschlossen (I1-I4 live 2026-10-19) |
 | `NETZ_AGENT_ROADMAP.md` | Netz-Agent in Quarantaene: nur ein eigener Container ohne LUNA-Dateien geht ins Internet, liefert gepruefte Formulare; alle anderen Agenten ohne freie Websuche | in Umsetzung (Q1 gebaut 2026-10-23) |
-| `CLAUDE_AKTIV_ROADMAP.md` | Claude wieder aktiv (Chat/Fachagenten Sonnet 5.5, Routing/Netz-Agent Haiku 5.5, zwei begrenzte Schluessel), Gemini abloesen | geplant |
+| `CLAUDE_AKTIV_ROADMAP.md` | Claude wieder aktiv (Chat/Fachagenten Sonnet 5.5, Routing/Netz-Agent Haiku 5.5, zwei begrenzte Schluessel), Gemini abloesen | in Umsetzung (C1 gebaut 2026-10-26) |
 | `SERIEN_UND_VORSTELLUNG_ROADMAP.md` | Wiederkehrender Content im Content-Plan; Vorstellungs-Mails an Unternehmen aus LUNA-OS (Firma beim Senden als Interessent) | in Umsetzung (S1, V1, V2 gebaut 2026-10-06) |
 | `IMPRESSUM_SUCHE_ROADMAP.md` | Kundendaten beim Anlegen einer Firma aus dem Impressum vorfuellen (regelbasiert, optional lokale KI) | in Umsetzung (I1 gebaut 2026-10-06) |
 | `GLOBALE_SUCHE_ROADMAP.md` | Globale Suche ueber alle Geschaeftsdaten, Ergebnisse nach Kategorien (Kunden, Angebote, Auftraege, Rechnungen, Ausgaben …) | in Umsetzung (G1 gebaut 2026-10-06) |

@@ -89,8 +89,8 @@ TEXT_SYSTEM_PROMPT = (
 
 class HoaConversation:
     def __init__(self, ctx: ToolContext, *, api_key: str | None = None,
-                 model: str = "claude-haiku-4-5", client=None, fallbacks: list[dict] | None = None,
-                 max_tool_iterations: int = 8):
+                 model: str = "claude-sonnet-5-5", client=None, fallbacks: list[dict] | None = None,
+                 max_tool_iterations: int = 8, effort: str = "low"):
         self.ctx = ctx
         self.model = model
         self.max_iter = max_tool_iterations
@@ -114,7 +114,7 @@ class HoaConversation:
             from anthropic import Anthropic
             anthropic_client = Anthropic(api_key=api_key)
         from .model_router import ModelRouter
-        self.router = ModelRouter(anthropic_client, anthropic_model=model, fallbacks=fallbacks)
+        self.router = ModelRouter(anthropic_client, anthropic_model=model, fallbacks=fallbacks, effort=effort)
 
     def respond(self, user_text: str) -> str:
         from .kontext import pausen_notiz, verdichte

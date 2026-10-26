@@ -77,6 +77,24 @@ def _ist_fallback_fehler(exc: Exception) -> bool:
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 
+
+# CLAUDE_AKTIV C1: Modelle, die immer mitdenken (Sonnet/Haiku 5.5, Opus 5.x, Fable 5.x). Das Denken zaehlt zu max_tokens;
+# der Aufwand steuert es (Chat: low). Die API prueft, ob fruehere Gespraechsteile veraendert wurden -- LUNA kuerzt lange
+# Verlaeufe selbst (core/kontext.py) -> betroffene Denk-Bloecke verwerfen statt eines 400 (drop_block, Beta-Header).
+_IMMER_DENKEND = ("claude-sonnet-5-5", "claude-haiku-5-5", "claude-opus-5", "claude-fable-5", "claude-mythos-5")
+MIN_TOKENS_DENKEND = 8000
+BINDUNG_BETA = "thinking-binding-controls-2026-08-01"
+
+
+def claude_einstellungen(modell: str, max_tokens: int, effort: str) -> dict:
+    """Zusatz-Parameter fuer messages.create je nach Modellfamilie (aeltere Modelle: unveraendert)."""
+    if not str(modell).startswith(_IMMER_DENKEND):
+        return {"max_tokens": max_tokens}
+    return {"max_tokens": max(max_tokens, MIN_TOKENS_DENKEND),
+            "thinking": {"type": "adaptive", "block_binding": {"prefix_mismatch_behavior": "drop_block"}},
+            "output_config": {"effort": effort or "low"},
+            "extra_headers": {"anthropic-beta": BINDUNG_BETA}}
+
 class ModelRouter:
     """Anthropic zuerst; bei Engpass/Limit der Reihe nach durch die Fallbacks (OpenAI-kompatibel: OpenAI, Gemini).
 
@@ -84,9 +102,10 @@ class ModelRouter:
     geht es normal weiter (Anthropic, dann die uebrigen Fallbacks)."""
 
     def __init__(self, anthropic_client, *, anthropic_model: str, fallbacks: list[dict] | None = None,
-                 max_tokens: int = 1024):
+                 max_tokens: int = 1024, effort: str = "low"):
         self.anthropic_client = anthropic_client
         self.anthropic_model = anthropic_model
+        self.effort = effort
         # fallbacks: [{"name","key","base_url"(opt),"model"}] -- nur mit gesetztem key genutzt.
         self.fallbacks = [f for f in (fallbacks or []) if f.get("key")]
         self.max_tokens = max_tokens
@@ -100,8 +119,8 @@ class ModelRouter:
         danach = [f for f in self.fallbacks if not f.get("zuerst")]
         try:
             r = self.anthropic_client.messages.create(
-                model=self.anthropic_model, max_tokens=self.max_tokens, system=system,
-                tools=tools, messages=messages)
+                model=self.anthropic_model, system=system, tools=tools, messages=messages,
+                **claude_einstellungen(self.anthropic_model, self.max_tokens, self.effort))
             return _Norm(r.content, getattr(r, "usage", None), self.anthropic_model, "anthropic")
         except Exception as exc:
             if not (danach and _ist_fallback_fehler(exc)):
