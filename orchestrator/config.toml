@@ -18,9 +18,10 @@ berater = "claude-sonnet-5-5"
 routing = "claude-haiku-5-5"   # guenstiges Modell fuer internes Routing (Haiku 5.5: 0,10/0,50 USD je Mio. Token)
 
 [effort]
-hoa = "high"
-cto = "high"
-berater = "high"
+# CLAUDE_AKTIV C3: Fachagenten direkt ueber die API; "medium" haelt die Denk-Kosten klein (Sonnet 5.5 denkt immer mit).
+hoa = "medium"
+cto = "medium"
+berater = "medium"
 
 [observability]
 log_to_file = true

@@ -94,7 +94,7 @@ class TestVorschlag(ApiBasis):
     def test_4_ohne_schluessel_klare_meldung(self):
         with mock.patch.object(self.w, "_google_secrets", return_value={}):
             r = self.c.post(f"/api/crm/konzept-videograf/{self.an}", json={"art": "idee", "id": self.idee}).json()
-        self.assertEqual((r["ok"], r["hinweis"]), (False, "Kein Gemini-Zugang konfiguriert."))
+        self.assertEqual((r["ok"], r["hinweis"]), (False, "Kein Modell-Zugang konfiguriert."))
 
 
 if __name__ == "__main__":

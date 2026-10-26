@@ -183,7 +183,7 @@ class TestApi(ApiBasis):
         self.assertFalse(self.c.get("/api/contentplan?von=2026-10-01&bis=2026-10-31").json()["eintraege"])   # nur Entwurf
         with mock.patch.object(self.w, "_google_secrets", return_value={}):
             r = self.c.post("/api/contentplan/vorschlag", json={"von": "2026-10-05", "bis": "2026-10-11"}).json()
-        self.assertEqual((r["ok"], r["hinweis"]), (False, "Kein Gemini-Zugang konfiguriert."))
+        self.assertEqual((r["ok"], r["hinweis"]), (False, "Kein Modell-Zugang konfiguriert."))
 
 
 if __name__ == "__main__":

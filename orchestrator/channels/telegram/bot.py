@@ -49,7 +49,8 @@ def _build_ctx(cfg: dict, secrets: dict):
     """Live-HoA-Werkzeugkontext (Opus-Backend, Gedaechtnis, Antraege, Execution-Engine)."""
     from ...core.antraege import Antraege
     from ...core.entwicklungs_roadmap import EntwicklungsRoadmap
-    from ...core.backends import AgentSdkBackend, FallbackBackend
+    from ...core.backends import FallbackBackend
+    from ...core.claude_api import ClaudeApiBackend
     from ...core.execution import ExecutionEngine
     from ...core import execution_live as live
     from ...core.hoa import HeadOfAgents
@@ -62,11 +63,11 @@ def _build_ctx(cfg: dict, secrets: dict):
 
     from ...governance.leak_guard import is_redactable_secret
     secret_values = [v for v in secrets.values() if is_redactable_secret(v)]
-    # Fachagenten-Backend: Claude-CLI mit Gemini/OpenAI-Fallback (greift bei Anthropic-Sperre/Limit).
+    # Fachagenten-Backend: Claude direkt ueber die API (CLAUDE_AKTIV C3, statt Claude-Kommandozeile -- ~3x guenstiger),
+    # Ausweich lokal/Gemini/OpenAI bei Anthropic-Sperre/Limit.
     from ...core.auftraege import AuftragStore
     backend = FallbackBackend(
-        AgentSdkBackend(cfg["models"], cfg["effort"], gate=CeoGate(),
-                        max_turns=cfg["run"].get("max_turns", 4)),
+        ClaudeApiBackend(cfg["models"], cfg["effort"], api_key=(secrets.get("ANTHROPIC_API_KEY") or "").strip()),
         fallbacks=_fallbacks(secrets, cfg, bereich="fachagenten"),
         backoffice=AuftragStore(ROOT / "backoffice" / "log.jsonl", secrets=secret_values))   # Etappe 4, nur Hintergrund
     # Antrag adc5: zentrales Aktivitaetsprotokoll. Der Changelog-Callback ist die zentrale Engstelle
@@ -1090,7 +1091,11 @@ def _po_auslesen(token, secrets) -> None:
             if not p:
                 continue
             try:
-                werte = ps.auslesen(pid, key=(secrets.get("GEMINI_API_KEY") or "").strip())
+                from ...core.claude_api import cloud_client, kosten_protokoll, modell as _modell
+                from ...core.kosten import KostenStore
+                _cl, _anb = cloud_client(secrets, protokoll=kosten_protokoll(KostenStore(ROOT / "finance" / "kosten-log.jsonl"),
+                                                                            "kennzahlen"))
+                werte = ps.auslesen(pid, client=_cl, modell=_modell(_anb, "schnell")) if _cl else {}
             except Exception as exc:
                 print(f"[postings] Auslesen fehlgeschlagen: {exc.__class__.__name__}", flush=True)
                 werte = {}

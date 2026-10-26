@@ -1018,20 +1018,36 @@ LUNA_SYS = ("Du bist LUNA, der Head of Agents eines KI-Agenten-Unternehmens und 
             "niemals ae/oe/ue/ss). Du hilfst beim Bearbeiten von Anträgen, Meldungen und Aufgaben.")
 
 
+def _cloud(quelle: str, *, timeout: float = 60):
+    """CLAUDE_AKTIV C3: Claude (Anthropic-Schluessel gesetzt) sonst Gemini -- mit Kostenerfassung. -> (client, anbieter)."""
+    from ...core.claude_api import cloud_client, kosten_protokoll
+    from ...core.kosten import KostenStore
+    return cloud_client(_google_secrets(), timeout=timeout,
+                        protokoll=kosten_protokoll(KostenStore(ROOT / "finance" / "kosten-log.jsonl"), quelle))
+
+
+def _cloud_auslesen(quelle: str) -> dict:
+    """Parameter fuer `Postings.auslesen` (Client + schnelles Modell); ohne Zugang leer -> Fehlerhinweis im Formular."""
+    from ...core.claude_api import modell
+    client, anb = _cloud(quelle)
+    return {"client": client, "modell": modell(anb, "schnell")} if client else {}
+
+
 def _llm(messages):
-    """Ein LLM-Aufruf ueber Gemini (gratis) -> OpenAI-Fallback. Leck-geschuetzt. Leerer String bei Fehler."""
-    key = os.environ.get("GEMINI_API_KEY") or os.environ.get("OPENAI_API_KEY")
-    if not key:
+    """Ein kurzer LLM-Aufruf: Claude Haiku 5.5 (CLAUDE_AKTIV C3), sonst Gemini, sonst OpenAI. Leck-geschuetzt. Leer bei Fehler."""
+    from ...core.claude_api import modell as _modell
+    client, anb = _cloud("web-kurz")
+    if client is None and not os.environ.get("OPENAI_API_KEY"):
         return ""
     try:
         import openai
 
         from ...governance.leak_guard import is_redactable_secret, redact
-        from ...core.model_router import GEMINI_BASE_URL
-        base = GEMINI_BASE_URL if os.environ.get("GEMINI_API_KEY") else None
-        model = "gemini-2.5-flash" if base else "gpt-4o-mini"
-        client = openai.OpenAI(api_key=key, base_url=base)
-        r = client.chat.completions.create(model=model, messages=messages)
+        if client is None:
+            client, model = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"]), "gpt-4o-mini"
+        else:
+            model = _modell(anb, "schnell")
+        r = client.chat.completions.create(model=model, messages=messages, max_tokens=1600)
         out = (r.choices[0].message.content or "").strip()[:1600]
         sec = [v for v in os.environ.values() if is_redactable_secret(v)]
         return redact(out, sec)
@@ -2426,7 +2442,7 @@ async def posting_bild_hochladen(pid: str, request: Request):
         ps = _postings()
         b = ps.bild_ablegen(pid, daten, name, von=_von(request))
         try:
-            v = ps.auslesen(pid, key=(_google_secrets().get("GEMINI_API_KEY") or "").strip())
+            v = ps.auslesen(pid, **_cloud_auslesen("kennzahlen"))
             return {"bild": b, "vorschlag": v, "hinweis": "" if v else "Keine Zahlen erkannt -- bitte von Hand eintragen."}
         except Exception as exc:                          # Auslesen ist Komfort: Bild bleibt, Formular geht immer
             print(f"[postings] Auslesen fehlgeschlagen: {exc.__class__.__name__}", flush=True)   # keine Fehlertexte (Schluessel)
@@ -2826,13 +2842,14 @@ def contentplan_vorschlag(body: dict):
 
     def tun():
         plan = _contentplan().zeitraum(str(body.get("von") or ""), str(body.get("bis") or ""))
-        key = (_google_secrets().get("GEMINI_API_KEY") or "").strip()
-        if not key:
-            raise ValueError("Kein Gemini-Zugang konfiguriert.")
+        from ...core.claude_api import modell as _modell
+        client, anb = _cloud("contentplan", timeout=55)            # CLAUDE_AKTIV C3: Claude Sonnet 5.5, sonst Gemini
+        if client is None:
+            raise ValueError("Kein Modell-Zugang konfiguriert.")
         t0, ok = time.monotonic(), False
         try:
             erg = {"vorschlaege": vorschlag(plan, system=load_subagent("agents/10_cco-content.md", "cco").system_prompt,
-                                            client=openai.OpenAI(api_key=key, base_url=GEMINI_BASE_URL, timeout=55, max_retries=0))}
+                                            client=client, modell=_modell(anb, "stark"))}
             ok = True
             return erg
         except ValueError:
@@ -2881,15 +2898,15 @@ def konzept_videograf(vorgang: str, body: dict):
         import openai
         ks = _konzept()
         m = ks.mappe(vorgang)
-        key = (_google_secrets().get("GEMINI_API_KEY") or "").strip()
-        if not key:
-            raise ValueError("Kein Gemini-Zugang konfiguriert.")
-        client = openai.OpenAI(api_key=key, base_url=GEMINI_BASE_URL, timeout=55, max_retries=0)
+        from ...core.claude_api import modell as _modell
+        client, anb = _cloud("videograf", timeout=55)              # CLAUDE_AKTIV C3: Claude Sonnet 5.5, sonst Gemini
+        if client is None:
+            raise ValueError("Kein Modell-Zugang konfiguriert.")
         t0, ok = time.monotonic(), False
         try:
             erg = vorschlag(m, str(body.get("art") or ""), str(body.get("id") or ""),
                             system=load_subagent("agents/17_videograf.md", "vid").system_prompt, client=client,
-                            slots=ks.kontext(vorgang).get("slots"))
+                            slots=ks.kontext(vorgang).get("slots"), modell=_modell(anb, "stark"))
             ok = True
             return erg
         except (KeyError, ValueError):

@@ -177,6 +177,33 @@ class Ollama:
             pass
 
 
+GEGENLESEN_SYSTEM = ("Du bist ein kritischer Gegenleser. Deutsch, knapp (höchstens 8 Zeilen). "
+                     "Nenne Fehler, fehlende Punkte und ob du die Empfehlung teilst.")
+
+
+def gegenlesen(env: dict, auftrag: dict, entwurf: str, *, client=None) -> str:
+    """Stufe 2 der Gegenpruefung: seit CLAUDE_AKTIV C3 Claude Haiku 5.5 (Anthropic-Schluessel gesetzt), bei Fehler oder
+    ohne Schluessel wie bisher Gemini. Leer, wenn beides scheitert."""
+    key = (env.get("ANTHROPIC_API_KEY") or "").strip()
+    if key or client is not None:
+        try:
+            from orchestrator.core.model_router import claude_einstellungen
+            if client is None:
+                import anthropic
+                client = anthropic.Anthropic(api_key=key, timeout=120, max_retries=1)
+            modell = env.get("BACKOFFICE_GEGENLESER", "")
+            modell = modell if modell.startswith("claude-") else "claude-haiku-5-5"
+            r = client.messages.create(model=modell, system=GEGENLESEN_SYSTEM, messages=[
+                {"role": "user", "content": f"AUFTRAG:\n{auftrag.get('aufgabe', '')}\n\nENTWURF:\n{entwurf}"}],
+                **claude_einstellungen(modell, 1500, "low"))
+            text = "".join(getattr(b, "text", "") for b in r.content if getattr(b, "type", "") == "text").strip()
+            if text:
+                return text
+        except Exception as exc:
+            _log(f"Gegenlesen mit Claude fehlgeschlagen ({exc.__class__.__name__}) -- Gemini")
+    return gemini_gegenlesen(env, auftrag, entwurf)
+
+
 def gemini_gegenlesen(env: dict, auftrag: dict, entwurf: str) -> str:
     """Stufe 2 der Gegenpruefung (CEO 2026-09-27): Gemini prueft den lokalen Entwurf kritisch. Leer bei Fehler."""
     key = env.get("GEMINI_API_KEY", "")
@@ -186,9 +213,9 @@ def gemini_gegenlesen(env: dict, auftrag: dict, entwurf: str) -> str:
         import openai
         client = openai.OpenAI(api_key=key, base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
                                timeout=120, max_retries=1)
-        r = client.chat.completions.create(model=env.get("BACKOFFICE_GEGENLESER", "gemini-2.5-flash"), messages=[
-            {"role": "system", "content": "Du bist ein kritischer Gegenleser. Deutsch, knapp (höchstens 8 Zeilen). "
-                                          "Nenne Fehler, fehlende Punkte und ob du die Empfehlung teilst."},
+        gm = env.get("BACKOFFICE_GEGENLESER", "")
+        r = client.chat.completions.create(model=gm if gm.startswith("gemini") else "gemini-2.5-flash", messages=[
+            {"role": "system", "content": GEGENLESEN_SYSTEM},
             {"role": "user", "content": f"AUFTRAG:\n{auftrag.get('aufgabe', '')}\n\nENTWURF:\n{entwurf}"}])
         return (r.choices[0].message.content or "").strip()
     except Exception as exc:
@@ -285,7 +312,7 @@ def loop(*, intervall: float = 60.0, einmal: bool = False) -> None:
     while True:
         try:
             if bridge.aktiv():
-                durchlauf(bridge, ollama, lambda a, e: gemini_gegenlesen(env, a, e),
+                durchlauf(bridge, ollama, lambda a, e: gegenlesen(env, a, e),
                           schwelle_tag=tag, schwelle_nacht=nacht, offene=lambda: _offene(bridge))
         except Exception as exc:                             # nie den Worker mitreissen
             _log(f"Schleifen-Fehler: {exc}")

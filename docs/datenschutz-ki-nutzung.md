@@ -28,6 +28,13 @@
   bei Bedarf vom Anwalt pruefen lassen); „Inference geo: Unrestricted / Default: Global routing“ -- Verarbeitung weltweit,
   eine feste Region kostet das 1,1-Fache. Eine eigene Aufbewahrungsfrist ist dort nicht eingestellt (Anthropic-Standard). Der **Netz-Agent** (Workspace „luna-netz“, `claude-haiku-5-5`) sieht nur oeffentliche Webseiten und die
   Frage, keine internen Daten. **Abo-Kennzahlen der App** bekommen weiterhin kein Chat-Werkzeug.
+- **Nachtrag 2026-10-26 -- C3:** Ebenfalls auf Claude (sobald der Anthropic-Schluessel gesetzt ist, sonst wie bisher
+  Gemini): **Fachagenten** (direkt ueber die API, `claude-sonnet-5-5`), **Content-Plan-Vorschlaege** und
+  **Videograf-Vorschlaege** (`claude-sonnet-5-5`), **Kennzahlen-Screenshots auslesen** (`claude-haiku-5-5`, Bild geht an
+  Anthropic), **Kurzantworten** in LUNA-OS (`claude-haiku-5-5`), **Backoffice-Gegenlesen** (MACO470, `claude-haiku-5-5`,
+  bei Fehler Gemini). **Weiter bei Gemini:** die **Video-KI des Cutters** (`CUTTER_VIDEO_KI=1` auf dem MACO470 --
+  Claude versteht keine Videodateien; Entscheidung CEO offen), der Ausweich im Chat-Router (bis C4) und die abgeschaltete
+  DM-Analyse.
 - **EU AI Act:** fuer das heutige LUNA kaum Pflichten -- siehe 4.
 
 ## 2. Wohin gehen welche Daten? (Stand Code 2026-09-29)

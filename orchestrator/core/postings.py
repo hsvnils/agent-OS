@@ -218,14 +218,16 @@ class Postings:
         f = (self.ordner / p["bilder"][i]["pfad"]).resolve()
         return f if f.is_file() and self.ordner.resolve() in f.parents else None
 
-    def auslesen(self, pid: str, *, key: str = "", client=None) -> dict:
-        """Alle Screenshots des Postings an Gemini -> Vorschlag {feld: zahl} (gespeichert wird erst nach Bestaetigung)."""
+    def auslesen(self, pid: str, *, key: str = "", client=None, modell: str = "") -> dict:
+        """Alle Screenshots des Postings an das Modell (seit CLAUDE_AKTIV C3 Claude Haiku 5.5, sonst Gemini) -> Vorschlag
+        {feld: zahl} (gespeichert wird erst nach Bestaetigung)."""
         from .kennzahlen_lesen import lesen
         p = self._pruefe(pid)
         bilder = [(f.read_bytes(), f.name) for i in range(len(p["bilder"])) if (f := self.bild_datei(pid, i))]
         if not bilder:
             raise ValueError("Noch kein Screenshot an diesem Posting.")
-        return lesen(bilder[-4:], FELDER[p["format"]], FORMATE[p["format"]], key=key, client=client)
+        kw = {"modell": modell} if modell else {}
+        return lesen(bilder[-4:], FELDER[p["format"]], FORMATE[p["format"]], key=key, client=client, **kw)
 
     def erinnert(self, pid: str) -> None:
         self.bh.erfassen("posting_erinnert", {"id": pid}, von="LUNA-Kennzahlen")
