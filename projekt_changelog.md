@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 13:07] — Claude Code
+- **Was:** NETZ_AGENT Q4: `luna-netz` bekommt oeffentliche Namensserver (BF-77), weil die Sperre sonst auch die Namensaufloesung ueber die Fritz!Box abschneidet; Test. Zweiter Sperr-Lauf hing auf der NAS (Ursache offen, CEO-Ausgabe angefragt).
+- **Warum:** Live-Probe Q4.
+- **Betroffen:** `deploy/docker-compose.yml`, `netz_agent/tests/test_sperre.py`, `docs/bekannte-fehler.md`
+
 ## [2026-10-26 13:01] — Claude Code
 - **Was:** NETZ_AGENT Q4: Sperre mit DROP live gesetzt (7 Regeln); Sperrprobe: NAS-DSM, LUNA-OS, Gateway, `luna-os` zu, Fritz!Box und MACO470 noch offen (BF-76). Skript setzt den Sprung in die Kette jetzt zusaetzlich an Position 1 in `FORWARD` und zeigt bei `status` die Reihenfolge; Test.
 - **Warum:** Live-Probe Q4.

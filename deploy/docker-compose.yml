@@ -67,6 +67,9 @@ services:
     restart: unless-stopped
     networks:
       - netz_isoliert                # Q4: eigenes Netz, nicht im Netz von luna-os/luna-telegram
+    dns:                             # BF-77: oeffentliche Namensserver -- die Fritz!Box ist fuer den Container gesperrt
+      - 1.1.1.1
+      - 9.9.9.9
 
 networks:
   netz_isoliert:                     # Q4: Sperre ins Heimnetz per deploy/netz_sperre.sh (iptables, Quellnetz unten)

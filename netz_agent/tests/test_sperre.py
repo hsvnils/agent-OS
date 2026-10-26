@@ -54,6 +54,9 @@ class TestNetzUndSkript(unittest.TestCase):
         self.assertIn("- netz_isoliert", block)
         self.assertNotIn("network_mode", block)
         self.assertIn("subnet: 172.30.99.0/24", compose)
+        dns = re.search(r"dns:.*?\n((?:\s+- \S+\n)+)", block, re.S)                    # BF-77: kein Namensserver im Heimnetz
+        self.assertIsNotNone(dns)
+        self.assertFalse([z for z in re.findall(r"- (\S+)", dns.group(1)) if z.startswith(("192.168.", "10.", "172."))])
         for dienst in ("luna-telegram", "luna-os"):                                   # die anderen bleiben draussen
             b = re.search(rf"\n  {dienst}:\n(.*?)(?=\n  [a-z]|\n\S|\Z)", compose, re.S).group(1)
             self.assertNotIn("netz_isoliert", b)
