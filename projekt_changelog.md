@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 12:01] — Claude Code
+- **Was:** NETZ_AGENT Q3 live abgeschlossen: Firmen-Suche nach Deploy 3c66f81 ueber LUNA-OS geprueft (hsv.de 1-15 s, kiez-alm.de 21-45 s, je HTTP 200 mit 8 Feldern), Recherche mit Formular ueber die Warteschlange ok (3 Quellen, 10 s), keine haengenden Auftraege. `BRAVE_API_KEY` aus LUNAs `orchestrator/.env` entfernt (NAS: CEO, danach `luna-os`/`luna-telegram` per `--force-recreate`; MACO470: Claude Code, Backoffice-Dienst vom CEO neu gestartet); nur `netz_agent/.env` haelt den Schluessel noch. Roadmap: Q3 live, Wochen-Beobachtung bis 2026-11-02.
+- **Warum:** CEO-Go Q3; Schluessel-Entfernung nach erfolgreicher Live-Pruefung.
+- **Betroffen:** `NETZ_AGENT_ROADMAP.md`, `ROADMAP.md`, `orchestrator/.env` (NAS + MACO470, nicht im Git)
+
 ## [2026-10-26 11:42] — Claude Code
 - **Was:** Deploy NETZ_AGENT Q3 live geprueft (origin/main = 2b0a6d5): Recherche ueber LUNA-OS laeuft ueber den Netz-Agenten (Research-Ticket mit Herkunft `netz-agent`, Antwort mit Quelle), Systemcheck „Netz-Agent erreichbar“ ok. Die Impressum-Suche lief dabei ins 60-s-Testlimit (bis zu 8 Einzelauftraege, Netz-Agent schaute nur alle 5 s). Nachbesserung: Impressum-Kandidaten in **einem** Sammelauftrag (`firmendaten._netz_mit_vorabruf`), Netz-Agent holt bis zu 5 Seiten gleichzeitig und prueft die Warteschlange jede Sekunde. Gemessen vom MACO470: hsv.de 2 s, kiez-alm.de 13 s (eine langsame Kandidaten-Adresse). Test fuer den Sammelauftrag.
 - **Warum:** Live-Pruefung nach CEO-Deploy Q3.

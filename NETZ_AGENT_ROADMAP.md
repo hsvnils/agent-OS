@@ -1,10 +1,10 @@
 # Roadmap: Netz-Agent in Quarantaene (nur er geht ins Internet)
 
 - Status: in Umsetzung
-- Stand: 2026-10-23
+- Stand: 2026-10-26
 - Arbeitsbranch: `ai/netz-agent`
 - Basiscommit: `3158621`
-- Naechster Schritt: Deploy Q3 (CEO), Live-Pruefung, dann Brave-Schluessel aus der LUNA-`.env` entfernen.
+- Naechster Schritt: Q3 eine Woche beobachten (bis 2026-11-02); Q4 wartet auf CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -94,7 +94,7 @@ LUNA ◀──Ergebnis-Formular (Antwort, Fakten, Quellen; Laengen geprueft)─�
 
 ## Etappe Q3: Alle Netzwege umstellen
 
-- Status: umgesetzt 2026-10-26 (Netz-Agent: Auftragsart `seiten` (Rohinhalt, RSS/XML, Zeichensatz aus Kopf/`<meta charset>`) und `suche` ohne Formular; LUNA: `NetzProvider` in `WebResearch` (Researcher, Watcher, Content-Feed, Scouting), `such_funktion` fuer Firmen-/Partner-Suche, Seitenabrufe von Firmendaten, Modell-Radar (ausser AA-API) und Rechtsquellen ueber den Netz-Agenten, Brave-Klasse stillgelegt, Systemcheck „Netz-Agent erreichbar“; Wachtest `test_netz_wache.py` (feste Schnittstellen als Liste). Echte Proben vom MACO470: alle 5 Wege ok, 31/31 Gesetzes-Pruefsummen unveraendert, 15/15 Radar-Quellen mit identischen Beitraegen. Abweichung: GitHub-API bleibt feste Schnittstelle (Register). Offen: `BRAVE_API_KEY` aus `orchestrator/.env` entfernen (CEO, nach dem Deploy)), Deploy offen
+- Status: umgesetzt 2026-10-26 (Netz-Agent: Auftragsart `seiten` (Rohinhalt, RSS/XML, Zeichensatz aus Kopf/`<meta charset>`) und `suche` ohne Formular; LUNA: `NetzProvider` in `WebResearch` (Researcher, Watcher, Content-Feed, Scouting), `such_funktion` fuer Firmen-/Partner-Suche, Seitenabrufe von Firmendaten, Modell-Radar (ausser AA-API) und Rechtsquellen ueber den Netz-Agenten, Brave-Klasse stillgelegt, Systemcheck „Netz-Agent erreichbar“; Wachtest `test_netz_wache.py` (feste Schnittstellen als Liste). Echte Proben vom MACO470: alle 5 Wege ok, 31/31 Gesetzes-Pruefsummen unveraendert, 15/15 Radar-Quellen mit identischen Beitraegen. Abweichung: GitHub-API bleibt feste Schnittstelle (Register). Nachbesserung: Impressum-Kandidaten als ein Sammelauftrag, Netz-Agent holt bis zu 5 Seiten gleichzeitig, Takt 1 s), live 2026-10-26 (Live-Pruefung: Recherche mit Formular ok, Firmen-Suche HTTP 200 mit 8 Feldern, Warteschlange ohne haengende Auftraege; `BRAVE_API_KEY` aus `orchestrator/.env` auf NAS und MACO470 entfernt, `luna-os`/`luna-telegram` neu erstellt, Backoffice-Dienst neu gestartet). Wochen-Beobachtung bis 2026-11-02
 - Ziel / Scope / Nicht-Scope: Researcher (`web_research`), Watcher (Brave-Teil), Content-Feed, Innovations-Scouting,
   Impressum-Vorschlaege, Modell-Radar (Herstellerseiten), Rechtsquellen und Skill-/GitHub-Radar laufen ueber den
   Netz-Agenten; `BRAVE_API_KEY` wird aus `orchestrator/.env` entfernt (CEO). Feste Daten-Schnittstellen (siehe oben)
