@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 13:08] — Claude Code
+- **Was:** NETZ_AGENT Q4: Sperr-Skript hing auf der NAS in einer Loesch-Schleife (BF-78) -- ersetzt durch begrenzte Hilfsfunktion `weg` (nur solange `iptables -C` die Regel findet, max. 10 Versuche); Test.
+- **Warum:** Live-Probe Q4, CEO-Terminal blieb nach der Passworteingabe stehen.
+- **Betroffen:** `deploy/netz_sperre.sh`, `netz_agent/tests/test_sperre.py`, `docs/bekannte-fehler.md`
+
 ## [2026-10-26 13:07] — Claude Code
 - **Was:** NETZ_AGENT Q4: `luna-netz` bekommt oeffentliche Namensserver (BF-77), weil die Sperre sonst auch die Namensaufloesung ueber die Fritz!Box abschneidet; Test. Zweiter Sperr-Lauf hing auf der NAS (Ursache offen, CEO-Ausgabe angefragt).
 - **Warum:** Live-Probe Q4.

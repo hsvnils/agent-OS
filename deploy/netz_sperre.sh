@@ -11,6 +11,10 @@ KETTE=LUNA-NETZ
 PRIVAT="10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 100.64.0.0/10 127.0.0.0/8 224.0.0.0/4"
 IPT=/sbin/iptables
 
+weg() {   # Sprung aus einer Kette entfernen -- hoechstens 10 Versuche, nur solange er per -C da ist (BF-78: keine offene Schleife)
+  for _ in 1 2 3 4 5 6 7 8 9 10; do $IPT -C "$1" -s $NETZ -j $KETTE 2>/dev/null || return 0; $IPT -D "$1" -s $NETZ -j $KETTE 2>/dev/null; done
+}
+
 an() {
   for _ in $(seq 60); do $IPT -L DOCKER-USER -n >/dev/null 2>&1 && break; sleep 5; done
   if ! $IPT -L DOCKER-USER -n >/dev/null 2>&1; then echo "FEHLER: Kette DOCKER-USER fehlt (Docker nicht gestartet?)"; exit 1; fi
@@ -18,7 +22,7 @@ an() {
   $IPT -F $KETTE
   for z in $PRIVAT; do $IPT -A $KETTE -d "$z" -j DROP || exit 1; done   # DROP: Synology-Kernel hat kein REJECT (BF-75)
   $IPT -C DOCKER-USER -s $NETZ -j $KETTE 2>/dev/null || $IPT -I DOCKER-USER 1 -s $NETZ -j $KETTE   # Weiterleitung (LAN, andere Container)
-  while $IPT -D FORWARD -s $NETZ -j $KETTE 2>/dev/null; do :; done                                  # BF-76: in FORWARD ganz nach oben,
+  weg FORWARD                                                                                         # BF-76: in FORWARD ganz nach oben,
   $IPT -I FORWARD 1 -s $NETZ -j $KETTE                                                                # vor die ACCEPT-Regeln von Docker/DSM
   $IPT -C INPUT -s $NETZ -j $KETTE 2>/dev/null || $IPT -I INPUT 1 -s $NETZ -j $KETTE               # NAS selbst
   n=$($IPT -S $KETTE | grep -c -- "-j DROP")
@@ -27,9 +31,7 @@ an() {
 }
 
 aus() {
-  while $IPT -D DOCKER-USER -s $NETZ -j $KETTE 2>/dev/null; do :; done
-  while $IPT -D INPUT -s $NETZ -j $KETTE 2>/dev/null; do :; done
-  while $IPT -D FORWARD -s $NETZ -j $KETTE 2>/dev/null; do :; done
+  weg DOCKER-USER; weg INPUT; weg FORWARD
   $IPT -F $KETTE 2>/dev/null; $IPT -X $KETTE 2>/dev/null
   echo "Heimnetz-Sperre fuer luna-netz entfernt."
 }
