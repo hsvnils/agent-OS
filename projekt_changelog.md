@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 14:32] — Claude Code
+- **Was:** Zwei neue Roadmaps (nur Plan, keine Umsetzung): `ZAHLUNGSERINNERUNG_ROADMAP.md` (Beleg „Zahlungserinnerung“ vor der 1. Mahnung, Z1 Beleg/PDF/Versand, Z2 Telegram-Vorschlag) und `KUNDEN_CHECKLISTE_ROADMAP.md` (Fragenkatalog-Entwurf A-J, C1 Dokument, C2 in der Konzept-Mappe, C3 Ideen-/Skript-Vorschlaege); je Q0-Entscheidungen mit Empfehlung; im Roadmap-Verzeichnis eingetragen.
+- **Warum:** CEO-Wunsch 2026-10-26.
+- **Betroffen:** `ZAHLUNGSERINNERUNG_ROADMAP.md`, `KUNDEN_CHECKLISTE_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-26 14:27] — Claude Code
 - **Was:** NETZ_AGENT Q4/Q5 live geprueft nach Deploy a916db1: Neustart loeschte die Sperre im Container, der Netz-Agent pausierte (fail closed), die DSM-Aufgabe (jede Minute; vom CEO nach falschem Startdatum korrigiert) setzte sie wieder, danach Sperrprobe gruen. Firmen-Suche hsv.de 1 s, kiez-alm.de 22 s; Zaehler in `sicherheit/netz_agent.jsonl` laufen (ohne Inhalte). Roadmap: Q4 verifiziert, Q5 live, CISO-Zeile im Bericht am 27.10. pruefen.
 - **Warum:** Live-Pruefung nach CEO-Deploy Q5.
