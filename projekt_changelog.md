@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 13:35] — Claude Code
+- **Was:** NETZ_AGENT Q4 live geprueft: Sperre im Container-Netz haelt (CEO-Probe nach 60 s gruen, Agent-Proben 12:29 und 12:34 UTC gruen, Zaehler 192.168.0.0/16 und 172.16.0.0/12 steigen, Loopback/DNS frei). Recherche (10 s, 3 Quellen) und Firmen-Suche (hsv.de 2 s, kiez-alm.de 20 s) laufen. Roadmap: Q4 live, Gegenprobe beim naechsten Container-Neustart offen.
+- **Warum:** Live-Pruefung Q4 nach CEO-Deploy.
+- **Betroffen:** `NETZ_AGENT_ROADMAP.md`, `ROADMAP.md`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-26 13:24] — Claude Code
 - **Was:** NETZ_AGENT Q4: DSM warf die Sperre auf NAS-Ebene auch ohne Container-Start nach Sekunden wieder hinaus (BF-81). Sperr-Skript setzt die Regeln jetzt im Netz-Namensraum des Containers (`ip netns exec`, Kette `OUTPUT`, Loopback frei fuer den Docker-Namensdienst) und raeumt die alten NAS-Regeln weg. Test mit Gegenprobe, Doku.
 - **Warum:** Live-Probe Q4 (CEO-Ausgabe: „0 references“ 40 s nach dem Setzen).
