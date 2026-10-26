@@ -166,7 +166,7 @@ class WatchScheduler:
             tid = self.research.erstellen(
                 f"Fachbereichs-Wissensupdate {abteilung}: {len(neue)} neue Funde", abteilung=abteilung)
             self.research.in_arbeit(tid)
-            self.research.erledigen(tid, provider="brave",
+            self.research.erledigen(tid, provider="netz-agent",
                                     befund=f"{len(neue)} neue Einträge im Wissensstand {abteilung}.",
                                     quellen=quellen)
         self.store.mark_run(f"dept:{abteilung}")

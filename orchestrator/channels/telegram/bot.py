@@ -584,10 +584,9 @@ def radar_lauf(token, chat_id, secrets, *, antraege=None, jetzt=None, taeglich: 
     out = {"rot": 0, "vorschlaege": 0, "bericht": False}
     senden = (lambda text: _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(text)})) if chat_id else (lambda t: None)
     if taeglich:
-        if suche is None:
-            from ...governance.web_research import BraveProvider
-            brave = BraveProvider(secrets)
-            suche = (lambda q: [(t.titel, t.url, t.auszug) for t in brave.suche(q, max_results=5).treffer]) if brave.verfuegbar() else None
+        if suche is None:                                         # NETZ_AGENT Q3: Suche nur ueber den Netz-Agenten
+            from ...core.netz_auftraege import such_funktion
+            suche = such_funktion(anzahl=5, felder=("titel", "url", "auszug"))
         rot = mr.lauf_news(r, unsere, jetzt=jetzt, abruf=abruf or mr.abrufen, suche=suche)
         out["rot"] = len(rot)
         if rot:
@@ -937,9 +936,8 @@ def _akquise_klick(token, chat_id, data: str, mid) -> str:
         return "Entfernt"
     if op == "such":
         from ...core.firmendaten import FirmenRecherche
-        from ...governance.web_research import BraveProvider
-        brave = BraveProvider(_load_secrets())
-        suche = (lambda q: [(t.titel, t.url) for t in brave.suche(q, max_results=8).treffer]) if brave.verfuegbar() else None
+        from ...core.netz_auftraege import such_funktion             # NETZ_AGENT Q3
+        suche = such_funktion(anzahl=8)
         r = FirmenRecherche(None, suche=suche).fuer_idee(x["name"], x.get("web") or "")
         v = r["vorschlaege"]
         if not v:
@@ -2158,10 +2156,8 @@ def main() -> None:
                             try:
                                 from ...core.firmendaten import FirmenRecherche, wochenlauf
                                 from ...core.kunden import KundenStore as _KS
-                                from ...governance.web_research import BraveProvider
-                                _brave = BraveProvider(secrets)
-                                _suche = ((lambda q: [(t.titel, t.url) for t in _brave.suche(q, max_results=8).treffer])
-                                          if _brave.verfuegbar() else None)
+                                from ...core.netz_auftraege import such_funktion   # NETZ_AGENT Q3
+                                _suche = such_funktion(anzahl=8)
                                 _ks = _KS(_bh)
                                 _neu = wochenlauf(_ks, FirmenRecherche(_ks, suche=_suche))
                                 if _neu and ctx.notifications:

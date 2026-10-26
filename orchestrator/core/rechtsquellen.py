@@ -14,7 +14,6 @@ import hashlib
 import html
 import json
 import re
-import urllib.request
 from datetime import date
 from pathlib import Path
 
@@ -52,9 +51,9 @@ def wortlaut(roh_html: str) -> str:
 
 
 def _holen(url: str) -> str:
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (LUNA Rechtsquellen-Check)"})
-    with urllib.request.urlopen(req, timeout=25) as r:
-        return r.read().decode("iso-8859-1", "replace")
+    """NETZ_AGENT Q3: amtliche Seite ueber den Netz-Agenten holen (kein direkter Abruf aus LUNA)."""
+    from .netz_auftraege import NetzAuftraege
+    return NetzAuftraege().seite(url, warten_s=90)
 
 
 def pruefen(skills_dir: Path | str, *, heute: date | None = None, holen=_holen) -> dict:

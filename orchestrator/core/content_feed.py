@@ -224,7 +224,7 @@ class ContentFeed:
             f"Trend-Scouting: {len(erzeugt)} neue Kandidaten", abteilung="content")
         self.research.in_arbeit(tid)
         self.research.erledigen(
-            tid, provider="brave",
+            tid, provider="netz-agent",
             befund=f"{len(erzeugt)} neue Trend-Kandidaten (Status new) fuer das Content-Review angelegt.",
             quellen=quellen)
 

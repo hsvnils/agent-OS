@@ -9,12 +9,15 @@ from __future__ import annotations
 
 import http.client
 import ipaddress
+import re
 import socket
 import ssl
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
 
 MAX_BYTES = 1024 * 1024
+MAX_ROH = 4 * 1024 * 1024            # Q3: Rohinhalt fuer regelbasierte Auswertung (Feeds, Gesetzestexte, Impressum)
+ROH_TYPEN = ("text/", "application/xhtml", "application/xml", "application/rss+xml", "application/atom+xml")
 TIMEOUT = 15
 MAX_WEITER = 3
 MAX_TEXT = 20000
@@ -105,8 +108,25 @@ def html_zu_text(html: str) -> tuple[str, str]:
     return " ".join(p.titel.split()), "\n".join(z for z in zeilen if z)[:MAX_TEXT]
 
 
-def hole(url: str, *, aufloesen=socket.getaddrinfo, verbindung=None) -> dict:
-    """Seite holen -> {url, titel, text, status}. Wirft `Abgelehnt` bei Regelverletzung."""
+_META_CHARSET = re.compile(rb"""<meta[^>]+charset\s*=\s*["']?([A-Za-z0-9_.:-]+)""", re.I)
+_XML_ENCODING = re.compile(rb"""<\?xml[^>]+encoding\s*=\s*["']([A-Za-z0-9_.:-]+)""", re.I)
+
+
+def zeichensatz_von(art: str, koerper: bytes) -> str:
+    """Zeichensatz: aus dem Content-Type, sonst aus <meta charset>/<?xml encoding> der ersten 4 KB, sonst UTF-8 (Q3: die
+    Gesetzesseiten melden „text/html“ ohne Zeichensatz, sind aber ISO-8859-1 -- sonst wuerden Umlaute verfaelscht)."""
+    if "charset=" in art:
+        z = art.split("charset=", 1)[1].split(";")[0].strip().strip('"')
+        if z:
+            return z
+    kopf = koerper[:4096]
+    m = _META_CHARSET.search(kopf) or _XML_ENCODING.search(kopf)
+    return m.group(1).decode("ascii", "replace") if m else "utf-8"
+
+
+def hole(url: str, *, aufloesen=socket.getaddrinfo, verbindung=None, roh: bool = False) -> dict:
+    """Seite holen -> {url, titel, text, status}. `roh=True` (Q3): unveraenderter Inhalt bis `MAX_ROH` (auch RSS/XML) fuer
+    LUNAs regelbasierte Auswertung -- sonst reiner Text. Wirft `Abgelehnt` bei Regelverletzung."""
     for _ in range(MAX_WEITER + 1):
         schema, host, port, pfad, ip = pruefe_url(url, aufloesen)
         con = (verbindung or (_Https if schema == "https" else _Http))(host, ip, port, TIMEOUT)
@@ -119,18 +139,19 @@ def hole(url: str, *, aufloesen=socket.getaddrinfo, verbindung=None) -> dict:
                 url = urljoin(url, ziel)
                 continue
             art = (r.getheader("Content-Type") or "").lower()
-            if not (art.startswith("text/html") or art.startswith("text/plain") or art.startswith("application/xhtml")):
+            erlaubt = art.startswith(ROH_TYPEN) if roh else (
+                art.startswith("text/html") or art.startswith("text/plain") or art.startswith("application/xhtml"))
+            if not erlaubt:
                 raise Abgelehnt(f"Inhaltstyp nicht erlaubt: {art or '-'}")
-            roh = r.read(MAX_BYTES + 1)
-            if len(roh) > MAX_BYTES:
-                roh = roh[:MAX_BYTES]
-            zeichensatz = "utf-8"
-            if "charset=" in art:
-                zeichensatz = art.split("charset=", 1)[1].split(";")[0].strip() or "utf-8"
+            grenze = MAX_ROH if roh else MAX_BYTES
+            koerper = r.read(grenze + 1)[:grenze]
+            zeichensatz = zeichensatz_von(art, koerper)
             try:
-                inhalt = roh.decode(zeichensatz, "replace")
+                inhalt = koerper.decode(zeichensatz, "replace")
             except LookupError:
-                inhalt = roh.decode("utf-8", "replace")
+                inhalt = koerper.decode("utf-8", "replace")
+            if roh:
+                return {"url": url, "titel": "", "text": inhalt, "status": r.status, "typ": art.split(";")[0]}
             titel, text = html_zu_text(inhalt) if "html" in art else ("", inhalt[:MAX_TEXT])
             return {"url": url, "titel": titel[:300], "text": text, "status": r.status}
         finally:

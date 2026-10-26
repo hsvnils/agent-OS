@@ -64,9 +64,20 @@ _DATUM = re.compile(rf"^(?:{_MONATE}) \d{{1,2}}(?:, \d{{4}})?$")
 
 # -- Abruf ------------------------------------------------------------------------------------------------------------
 def abrufen(url: str, *, kopf: dict | None = None, max_bytes: int = 4_000_000) -> str:
-    """Oeffentliche Quelle lesen (eigener User-Agent, gzip, Groessengrenze). Nur feste https-Adressen aus QUELLEN/AA."""
+    """NETZ_AGENT Q3: Herstellerseiten/Feeds und die Ollama-Bibliothek ueber den Netz-Agenten; nur die feste
+    Artificial-Analysis-Schnittstelle (mit Schluessel) direkt (`aa_abrufen`)."""
     if not url.startswith("https://"):
         raise ValueError("nur https")
+    if url.startswith(AA_URL):
+        return aa_abrufen(url, kopf=kopf, max_bytes=max_bytes)
+    from .netz_auftraege import NetzAuftraege
+    return NetzAuftraege().seite(url, warten_s=90)[:max_bytes]
+
+
+def aa_abrufen(url: str, *, kopf: dict | None = None, max_bytes: int = 4_000_000) -> str:
+    """Feste Schnittstelle Artificial Analysis (JSON, Schluessel im Kopf) -- direkt, kein freier Seitenabruf."""
+    if not url.startswith(AA_URL):
+        raise ValueError("nur die Artificial-Analysis-Schnittstelle")
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept-Encoding": "gzip"} | (kopf or {}))
     with urllib.request.urlopen(req, timeout=20) as r:
         roh = r.read(max_bytes + 1)

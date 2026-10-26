@@ -58,7 +58,7 @@ class TestFormular(unittest.TestCase):
         q = Path(tempfile.mkdtemp())
         for client, erwartet in ((_Client({"antwort": "A", "fakten": [{"text": "F", "quelle": 1}], "unsicher": False, "grund": ""}), "A"),
                                  (_Client(fehler=RuntimeError("Limit")), None)):
-            a = ag.Agent(q, "s", suche=lambda f, s: TREFFER, hole=lambda u: {"url": u, "titel": "", "text": "t", "status": 200},
+            a = ag.Agent(q, "s", suche=lambda f, s, *a: TREFFER, hole=lambda u: {"url": u, "titel": "", "text": "t", "status": 200},
                          modell_client=client)
             e = a.bearbeite({"id": "auftrag-0001", "art": "suche", "frage": "x", "max_seiten": 1})
             self.assertTrue(e["ok"])
@@ -79,6 +79,39 @@ class TestFormular(unittest.TestCase):
         with mock.patch("urllib.request.urlopen", side_effect=oeffnen):
             t = ag.brave_suche("frage", "s", pause=0)
         self.assertEqual((len(aufrufe), t[0]["url"]), (2, "https://x.example/"))
+
+
+class TestSeiten(unittest.TestCase):
+    def test_5_feste_adressen_roh(self):
+        q = Path(tempfile.mkdtemp())
+        geholt = []
+
+        def hole(u, roh=False):
+            geholt.append((u, roh))
+            if "kaputt" in u:
+                raise ValueError("Keine oeffentliche Adresse")
+            return {"url": u, "titel": "", "text": "<rss>roh</rss>", "status": 200, "typ": "application/rss+xml"}
+        a = ag.Agent(q, "s", suche=lambda *x: self.fail("keine Suche"), hole=hole)
+        e = a.bearbeite({"id": "auftrag-0009", "art": "seiten", "urls": ["https://a.example/feed", "https://kaputt.example/", "ftp://x"]})
+        self.assertEqual(geholt, [("https://a.example/feed", True), ("https://kaputt.example/", True)])   # ftp verworfen, roh
+        self.assertEqual(e["seiten"][0]["text"], "<rss>roh</rss>")
+        self.assertIn("oeffentliche", e["seiten"][1]["fehler"])
+        with self.assertRaises(ValueError):
+            ag.pruefe_auftrag({"id": "auftrag-0010", "art": "seiten", "urls": ["https://x.example/"] * 21})
+        s = ag.pruefe_auftrag({"id": "auftrag-0011", "art": "suche", "frage": "x", "formular": False, "anzahl": 99})
+        self.assertEqual((s["formular"], s["anzahl"]), (False, 8))
+
+    def test_6_roh_abruf_xml(self):
+        from netz_agent import abruf
+        from netz_agent.tests.test_netz_agent import _Antwort, aufloesen, verbindung_mit
+        con, _ = verbindung_mit({"example.org": _Antwort(200, {"Content-Type": "application/rss+xml"}, b"<rss><item>x</item></rss>")})
+        s = abruf.hole("https://example.org/feed", aufloesen=aufloesen, verbindung=con, roh=True)
+        self.assertEqual((s["text"], s["typ"]), ("<rss><item>x</item></rss>", "application/rss+xml"))
+        with self.assertRaisesRegex(abruf.Abgelehnt, "Inhaltstyp"):
+            abruf.hole("https://example.org/feed", aufloesen=aufloesen, verbindung=con)       # ohne roh nur HTML/Text
+        con, _ = verbindung_mit({"example.org": _Antwort(200, {"Content-Type": "application/pdf"}, b"%PDF")})
+        with self.assertRaisesRegex(abruf.Abgelehnt, "Inhaltstyp"):
+            abruf.hole("https://example.org/x.pdf", aufloesen=aufloesen, verbindung=con, roh=True)   # auch roh nur Text/XML
 
 
 if __name__ == "__main__":

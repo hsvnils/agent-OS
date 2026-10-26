@@ -24,9 +24,6 @@ Sicherheit:
 from __future__ import annotations
 
 import json
-import urllib.error
-import urllib.parse
-import urllib.request
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -124,38 +121,20 @@ class MockProvider:
 
 
 class BraveProvider:
-    """Rohe Web-Treffer ueber die Brave Search API. Key: BRAVE_API_KEY (aus .env)."""
+    """Stillgelegt (NETZ_AGENT Q3, 2026-10-26): LUNA ruft Brave nicht mehr selbst auf -- freie Websuche laeuft nur
+    noch ueber den Netz-Agenten (`NetzProvider`, Container `luna-netz`). Bleibt als Platzhalter fuer alte Aufrufer."""
 
     name = "brave"
-    _ENDPOINT = "https://api.search.brave.com/res/v1/web/search"
 
     def __init__(self, env: dict[str, str] | None = None):
-        import os
-        self._key = (env or os.environ).get("BRAVE_API_KEY", "").strip()
+        pass
 
     def verfuegbar(self) -> bool:
-        return bool(self._key)
+        return False
 
     def suche(self, query: str, *, max_results: int = 5) -> RechercheErgebnis:
-        if not self.verfuegbar():
-            return RechercheErgebnis(ok=False, provider=self.name,
-                                     hinweis="Brave nicht aktiv (BRAVE_API_KEY fehlt) -- CEO-Tor.",
-                                     freigabe_anfrage=_fall_b())
-        params = urllib.parse.urlencode({"q": query, "count": max(1, min(max_results, 20))})
-        req = urllib.request.Request(
-            f"{self._ENDPOINT}?{params}",
-            headers={"Accept": "application/json", "X-Subscription-Token": self._key},
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-        except (urllib.error.URLError, TimeoutError, ValueError) as exc:
-            return RechercheErgebnis(ok=False, provider=self.name,
-                                     hinweis=f"Brave-Suche fehlgeschlagen: {str(exc)[:160]}")
-        results = ((data or {}).get("web") or {}).get("results") or []
-        treffer = [Treffer(titel=r.get("title", ""), url=r.get("url", ""),
-                           auszug=r.get("description", "")) for r in results[:max_results]]
-        return RechercheErgebnis(ok=True, provider=self.name, treffer=treffer)
+        return RechercheErgebnis(ok=False, provider=self.name,
+                                 hinweis="Brave laeuft nur noch ueber den Netz-Agenten (NETZ_AGENT Q3).")
 
 
 class AnthropicProvider:
@@ -221,6 +200,38 @@ class AnthropicProvider:
 
 
 
+class NetzProvider:
+    """NETZ_AGENT Q3: freie Websuche nur ueber den Netz-Agenten (Container `luna-netz`, ohne LUNA-Dateien). Liefert das
+    gepruefte, als fremd markierte Formular: Zusammenfassung = Antwort, Treffer = belegte Quellen (Auszug = Fakten)."""
+
+    name = "netz-agent"
+
+    def __init__(self, auftraege=None, *, warten_s: float = 120):
+        from ..core.netz_auftraege import NetzAuftraege
+        self.auftraege = auftraege or NetzAuftraege()
+        self.warten_s = warten_s
+
+    def verfuegbar(self) -> bool:
+        return self.auftraege.verfuegbar()
+
+    def suche(self, query: str, *, max_results: int = 5) -> RechercheErgebnis:
+        if not self.verfuegbar():
+            return RechercheErgebnis(ok=False, provider=self.name, hinweis="Netz-Agent nicht erreichbar (Warteschlange fehlt).")
+        try:
+            e = self.auftraege.frage(query[:300], max_seiten=3, warten_s=self.warten_s)
+        except ValueError as exc:                                  # z. B. interne Daten in der Frage
+            return RechercheErgebnis(ok=False, provider=self.name, hinweis=str(exc)[:200])
+        if not e.get("ok"):
+            return RechercheErgebnis(ok=False, provider=self.name, hinweis=str(e.get("hinweis") or "")[:200])
+        je_quelle: dict = {}
+        for f in e.get("fakten") or []:
+            je_quelle.setdefault(f.get("quelle"), []).append(f.get("text", ""))
+        treffer = [Treffer(titel=q.get("titel", ""), url=q["url"], auszug=" ".join(je_quelle.get(q.get("nr"), []))[:600])
+                   for q in (e.get("quellen") or [])[:max_results]]
+        return RechercheErgebnis(ok=True, provider=self.name, treffer=treffer, zusammenfassung=e.get("antwort", ""),
+                                 hinweis="unsicher: " + e.get("grund", "") if e.get("unsicher") else "")
+
+
 ANTHROPIC_WEB_ERLAUBT = False   # CLAUDE_AKTIV C1: keine Websuche an Anthropic vorbei am Netz-Agenten
 
 class WebResearch:
@@ -246,7 +257,10 @@ class WebResearch:
         # CLAUDE_AKTIV C1 / NETZ_AGENT (CEO 2026-10-23): freie Websuche nur noch ueber den Netz-Agenten -- Anthropics
         # eigene Websuche bleibt aus, auch wenn WEB_RESEARCH_ANTHROPIC=1 und ein gueltiger Schluessel gesetzt sind.
         komplex = AnthropicProvider(env) if ANTHROPIC_WEB_ERLAUBT else AnthropicProvider({})
-        return cls(einfach=BraveProvider(env), komplex=komplex, secrets=secrets)
+        # NETZ_AGENT Q3: einfache Websuche nur noch ueber den Netz-Agenten (nicht mehr direkt Brave).
+        from ..core.netz_auftraege import NetzAuftraege
+        queue = (env or {}).get("NETZ_QUEUE") if isinstance(env, dict) else None
+        return cls(einfach=NetzProvider(NetzAuftraege(queue)), komplex=komplex, secrets=secrets)
 
     def recherchiere(self, query: str, *, eskalation: bool = False, tiefe: str | None = None,
                      max_results: int = 5) -> RechercheErgebnis:

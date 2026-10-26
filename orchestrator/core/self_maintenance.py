@@ -32,8 +32,8 @@ class SelfMaintenance:
             "" if s.get("ANTHROPIC_API_KEY") else "Key fehlt -- LUNA kann nicht antworten.")
         add("Telegram", bool(s.get("TELEGRAM_BOT_TOKEN") and s.get("TELEGRAM_ALLOWED_CHAT_ID")),
             "" if s.get("TELEGRAM_BOT_TOKEN") else "Bot-Token/Chat-ID fehlt.")
-        add("Web-Recherche (Brave)", bool(s.get("BRAVE_API_KEY")),
-            "" if s.get("BRAVE_API_KEY") else "BRAVE_API_KEY fehlt -- Recherche/Watcher eingeschränkt.")
+        from .netz_auftraege import zustand as _netz_zustand        # NETZ_AGENT Q3: Websuche nur ueber den Netz-Agenten
+        add("Web-Recherche (Netz-Agent)", *_netz_zustand())
         from .lokal_llm import aktiv, erreichbar
         if aktiv(s):
             add("Lokales LLM (Ollama, MACO470)", *erreichbar(s["LOCAL_LLM_BASE_URL"]))

@@ -27,6 +27,7 @@ from . import abruf
 ID = re.compile(r"^[a-z0-9-]{8,40}$")
 MAX_FRAGE = 300
 MAX_SEITEN = 5
+MAX_URLS = 20                                  # Q3: Auftragsart „seiten“ (feste Adressen, z. B. Feeds, Gesetzestexte)
 MAX_TREFFER = 8
 BRAVE = "https://api.search.brave.com/res/v1/web/search"
 
@@ -58,15 +59,21 @@ def brave_suche(frage: str, schluessel: str, anzahl: int = MAX_TREFFER, *, versu
 
 
 def pruefe_auftrag(a: dict) -> dict:
-    if not isinstance(a, dict) or a.get("art") != "suche":
+    if not isinstance(a, dict) or a.get("art") not in ("suche", "seiten"):
         raise ValueError("Unbekannte Auftragsart")
     if not ID.match(str(a.get("id") or "")):
         raise ValueError("Ungueltige Auftrags-ID")
+    if a["art"] == "seiten":
+        urls = [str(u)[:1000] for u in (a.get("urls") or []) if str(u).startswith(("http://", "https://"))]
+        if not urls or len(urls) > MAX_URLS:
+            raise ValueError(f"1 bis {MAX_URLS} http(s)-Adressen noetig")
+        return {"id": a["id"], "art": "seiten", "urls": urls}
     frage = " ".join(str(a.get("frage") or "").split())
     if not frage or len(frage) > MAX_FRAGE:
         raise ValueError(f"Frage fehlt oder ist laenger als {MAX_FRAGE} Zeichen")
     n = int(a.get("max_seiten") or 0)
-    return {"id": a["id"], "art": "suche", "frage": frage, "max_seiten": max(0, min(n, MAX_SEITEN))}
+    return {"id": a["id"], "art": "suche", "frage": frage, "max_seiten": max(0, min(n, MAX_SEITEN)),
+            "formular": a.get("formular", True) is not False, "anzahl": max(1, min(int(a.get("anzahl") or MAX_TREFFER), MAX_TREFFER))}
 
 
 class Agent:
@@ -86,7 +93,15 @@ class Agent:
 
     def bearbeite(self, a: dict) -> dict:
         a = pruefe_auftrag(a)
-        treffer = self.suche(a["frage"], self.schluessel)
+        if a["art"] == "seiten":                               # Q3: feste Adressen roh holen (kein Modell)
+            seiten = []
+            for u in a["urls"]:
+                try:
+                    seiten.append(self.hole(u, roh=True))
+                except Exception as exc:
+                    seiten.append({"url": u, "fehler": f"{exc.__class__.__name__}: {str(exc)[:200]}"})
+            return {"id": a["id"], "ok": True, "art": "seiten", "seiten": seiten, "fehler": "", "fertig": _jetzt()}
+        treffer = self.suche(a["frage"], self.schluessel, a["anzahl"])
         seiten = []
         for t in treffer[:a["max_seiten"]]:                       # nur Seiten aus den Suchtreffern
             try:
@@ -94,7 +109,7 @@ class Agent:
             except Exception as exc:                               # Abgelehnt, Zeitueberschreitung, HTTP-Fehler
                 seiten.append({"url": t["url"], "fehler": f"{exc.__class__.__name__}: {str(exc)[:200]}"})
         formular = None
-        if self.modell_client is not None:
+        if self.modell_client is not None and a["formular"]:
             from . import formular as _formular
             try:
                 formular = _formular.erstellen(a["frage"], treffer, seiten, client=self.modell_client)

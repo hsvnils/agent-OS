@@ -110,7 +110,6 @@ accounts.google.com
 generativelanguage.googleapis.com
 api.deepgram.com
 api.elevenlabs.io
-api.search.brave.com
 data-api.ecb.europa.eu
 nominatim.openstreetmap.org
 router.project-osrm.org
@@ -341,7 +340,13 @@ sicherheit/hinweis_stand.json       # I4: bis wann Injection-Hinweise gemeldet s
   hoechstens 5 Seiten) und schreibt nach `netz_queue/ergebnisse/`. **Q2:** fasst die Seiten mit `api.anthropic.com`
   (`claude-haiku-5-5`, Workspace „luna-netz“, eigener Schluessel in `netz_agent/.env`, ohne Werkzeuge, festes JSON-Schema)
   zu einem Formular zusammen; Quellen nur als Treffer-Nummern. LUNA-Seite `core/netz_auftraege.py` stellt nur die reine
-  Frage ein (interne Daten abgelehnt) und gibt nur das gepruefte, markierte Formular weiter; noch kein LUNA-Weg nutzt es (Q3).
+  Frage ein (interne Daten abgelehnt) und gibt nur das gepruefte, markierte Formular weiter. **Q3 (2026-10-26): alle
+  freien Netzwege laufen ueber den Netz-Agenten** -- Researcher/Watcher/Content-Feed/Innovations-Scouting (`WebResearch`
+  mit `NetzProvider`, Formular), Firmen-/Impressum-Suche und Partner-Ideen (Auftrag `suche` ohne Formular, nur Treffer),
+  Firmen-Webseiten, Herstellerseiten/Feeds und Ollama-Bibliothek des Modell-Radars, Gesetzestexte der Rechtsquellen
+  (Auftrag `seiten`, Rohinhalt bis 4 MB, Zeichensatz aus Kopf oder `<meta charset>`; LUNA wertet ihn nur regelbasiert aus,
+  nie mit einem Modell). Brave ruft nur noch der Netz-Agent auf (`BRAVE_API_KEY` nur in `netz_agent/.env`). Direkt aus
+  LUNA nur noch feste Schnittstellen; Wachtest `orchestrator/tests/test_netz_wache.py`.
 - **Voice-Server** (localhost:7860, WebRTC) und **Mac-Orb** (ruft `127.0.0.1:8765`) — nur am MacBook.
 
 **Zeitplaene im Bot** (Europe/Berlin, Pruefung alle 5 min, Merker in `agenda`)

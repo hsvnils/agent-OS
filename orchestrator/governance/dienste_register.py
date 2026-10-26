@@ -39,7 +39,8 @@ ANBIETER = [
      "zweck": "Modell-Radar: Qualität, Preis und Tempo der KI-Modelle (Vorschläge für Modellwechsel)",
      "daten": "keine (nur Abruf der Modellliste)", "schluessel": ["ARTIFICIALANALYSIS_API_KEY"], "zugehoerig": [], "tarif": "gratis",
      "kosten_erfasst": True, "konto": "https://artificialanalysis.ai/insights"},
-    {"id": "brave", "lieferant": ["brave"], "name": "Brave Search", "bereich": "Recherche", "zweck": "Web-Recherche, Watcher, Impressum-Suche",
+    {"id": "brave", "lieferant": ["brave"], "name": "Brave Search", "bereich": "Recherche",
+     "zweck": "Web-Recherche, Watcher, Impressum-Suche -- nur ueber den Netz-Agenten (Schluessel in netz_agent/.env, NETZ_AGENT Q3)",
      "daten": "Suchbegriffe", "schluessel": ["BRAVE_API_KEY"], "zugehoerig": [], "tarif": "gratis_stufe",
      "kosten_erfasst": False, "konto": "https://api-dashboard.search.brave.com/"},
     # -- Investment ------------------------------------------------------------------------------------------

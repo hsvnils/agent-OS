@@ -1674,18 +1674,12 @@ _RECHERCHE_TEST = None                     # Tests: FirmenRecherche mit Fake-Suc
 
 
 def _recherche():
-    """Etappe 22: Firmendaten-Recherche mit Brave-Suche (nur wenn BRAVE_API_KEY gesetzt) und Impressums-Abruf."""
+    """Etappe 22: Firmendaten-Recherche -- Suche und Impressums-Abruf ueber den Netz-Agenten (NETZ_AGENT Q3)."""
     from ...core.firmendaten import FirmenRecherche
     if _RECHERCHE_TEST is not None:
         return _RECHERCHE_TEST
-    try:
-        from ..telegram.bot import _load_secrets
-        sec = _load_secrets()
-    except Exception:
-        sec = dict(os.environ)
-    from ...governance.web_research import BraveProvider
-    brave = BraveProvider(sec)
-    suche = (lambda q: [(t.titel, t.url) for t in brave.suche(q, max_results=8).treffer]) if brave.verfuegbar() else None
+    from ...core.netz_auftraege import such_funktion               # NETZ_AGENT Q3: Suche nur ueber den Netz-Agenten
+    suche = such_funktion(anzahl=8)
     return FirmenRecherche(kunden_store, suche=suche)
 
 

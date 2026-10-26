@@ -89,7 +89,7 @@ class TestWarteschlange(unittest.TestCase):
         self.q = Path(tempfile.mkdtemp())
         self.geholt = []
         treffer = [{"titel": f"T{i}", "url": f"https://example.org/{i}", "auszug": "a"} for i in range(8)]
-        self.agent = Agent(self.q, "schluessel", suche=lambda f, s: treffer,
+        self.agent = Agent(self.q, "schluessel", suche=lambda f, s, *a: treffer,
                            hole=lambda u: self.geholt.append(u) or {"url": u, "titel": "", "text": "Inhalt", "status": 200})
 
     def auftrag(self, name, daten):

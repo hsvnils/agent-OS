@@ -16,7 +16,6 @@ import ipaddress
 import re
 import socket
 import urllib.parse
-import urllib.request
 from datetime import datetime, timedelta
 
 from .buchhaltung import jetzt
@@ -113,20 +112,12 @@ def oeffentlich(url: str, *, aufloesen=socket.getaddrinfo) -> str:
     return url
 
 
-class _SichereUmleitung(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        oeffentlich(newurl)                                   # auch Umleitungen ins Heimnetz blockieren
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
-
-
 def _abruf(url: str) -> str:
-    oeffentlich(url)
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (LUNA Stammdaten-Recherche)",
-                                               "Accept": "text/html"})
-    with urllib.request.build_opener(_SichereUmleitung()).open(req, timeout=10) as r:
-        if "html" not in (r.headers.get("Content-Type") or "text/html"):
-            return ""
-        return r.read(MAX_BYTES).decode(r.headers.get_content_charset() or "utf-8", "replace")
+    """NETZ_AGENT Q3: Firmen-Webseite ueber den Netz-Agenten holen (er prueft oeffentliche Adresse, Weiterleitungen,
+    Groesse); LUNA wertet den Inhalt nur regelbasiert aus (kein Modell)."""
+    from .netz_auftraege import NetzAuftraege
+    oeffentlich(url)                                          # fruehe, verstaendliche Fehlermeldung
+    return NetzAuftraege().seite(url, warten_s=60)[:MAX_BYTES]
 
 
 _RECHTSFORM = re.compile(r"(?i)\b(GmbH\s*&\s*Co\.?\s*KG|GmbH|gGmbH|mbH|UG\s*\(haftungsbeschr(?:ä|ae)nkt\)|UG|AG|KGaA|KG|OHG|"

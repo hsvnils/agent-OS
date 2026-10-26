@@ -134,7 +134,7 @@ class TestContentFeed(unittest.TestCase):
         self.assertEqual(gemeldet[0][1]["kategorie"], "content")
         erledigt = tickets.list(status="erledigt")
         self.assertEqual(len(erledigt), 1)
-        self.assertEqual(erledigt[0]["provider"], "brave")
+        self.assertEqual(erledigt[0]["provider"], "netz-agent")
 
     def test_default_themen_aus_watch_config(self):
         # Ohne explizite Themen -> kuratierte Content-Themen (Abteilung 'cco').

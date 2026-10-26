@@ -35,8 +35,9 @@ class TestFrage(unittest.TestCase):
         self.assertFalse((q / "ergebnisse" / f"{aid}.json").exists())
         with self.assertRaises(ValueError):
             n.abholen("../../orchestrator/.env")
-        r = n.frage("Wetter Hamburg", warten_s=0.01, takt=0, schlaf=lambda s: None)
+        r = NetzAuftraege(q, schlaf=lambda s: None).frage("Wetter Hamburg", warten_s=0.01, takt=0)
         self.assertFalse(r["ok"])
+        self.assertFalse((q / "auftraege" / f"{r['id']}.json").exists())         # nicht abgeholter Auftrag zurueckgezogen
 
 
 class TestErgebnis(unittest.TestCase):
@@ -62,6 +63,61 @@ class TestErgebnis(unittest.TestCase):
         for roh in ({"ok": False, "fehler": "DNS"}, {"ok": True, "treffer": TREFFER, "formular": {"fehler": "Limit"}},
                     {"ok": True, "treffer": TREFFER, "formular": None}):
             self.assertFalse(pruefe_ergebnis(roh)["ok"])
+
+
+class _AgentImHintergrund:
+    """Beantwortet Auftraege in der Warteschlange sofort (statt Container) -- fuer die LUNA-Seite."""
+    def __init__(self, q, antwort):
+        self.q, self.antwort = q, antwort
+
+    def schlaf(self, _s):
+        for f in (self.q / "auftraege").glob("*.json"):
+            a = json.loads(f.read_text(encoding="utf-8"))
+            (self.q / "ergebnisse").mkdir(exist_ok=True)
+            (self.q / "ergebnisse" / f.name).write_text(json.dumps(self.antwort(a)), encoding="utf-8")
+            f.unlink()
+
+
+class TestQ3(unittest.TestCase):
+    def test_4_suche_seiten_provider(self):
+        from orchestrator.core.netz_auftraege import NetzNichtErreichbar, such_funktion
+        from orchestrator.governance.web_research import NetzProvider
+        q = Path(tempfile.mkdtemp())
+        (q / "auftraege").mkdir()
+
+        def antwort(a):
+            if a["art"] == "seiten":
+                return {"ok": True, "seiten": [{"url": u, "text": "<html>Impressum Kiez Alm GmbH</html>"} if "gut" in u
+                                               else {"url": u, "fehler": "Abgelehnt"} for u in a["urls"]]}
+            self.assertFalse(a["formular"]) if a["max_seiten"] == 0 else None
+            return {"ok": True, "treffer": TREFFER, "formular": {"antwort": "Sonnig.", "fakten": [{"text": "18 Grad", "quelle": 1}],
+                                                                 "quellen": [{"nr": 1, "url": "https://a.example/", "titel": "A"}],
+                                                                 "unsicher": False, "grund": ""}}
+        hg = _AgentImHintergrund(q, antwort)
+        n = NetzAuftraege(q, schlaf=hg.schlaf)
+        self.assertEqual(such_funktion(auftraege=n)("Kiez Alm Impressum"), [("A", "https://a.example/"), ("B", "https://b.example/")])
+        self.assertIn("Impressum", n.seite("https://gut.example/impressum"))
+        with self.assertRaises(NetzNichtErreichbar):
+            n.seite("https://boese.example/")
+        e = NetzProvider(n).suche("Wetter Hamburg")
+        self.assertEqual((e.ok, e.provider, e.zusammenfassung, e.treffer[0].auszug), (True, "netz-agent", "Sonnig.", "18 Grad"))
+        self.assertFalse(NetzProvider(n).suche("Was weiss info@kiezalm.de?").ok)          # interne Daten -> nicht raus
+        self.assertIsNone(such_funktion(auftraege=NetzAuftraege(Path(tempfile.mkdtemp()) / "fehlt")))
+
+    def test_5_systemcheck(self):
+        import os
+        import time as _t
+        from orchestrator.core.netz_auftraege import zustand
+        q = Path(tempfile.mkdtemp())
+        self.assertFalse(zustand(NetzAuftraege(q / "fehlt"))[0])
+        n = NetzAuftraege(q)
+        aid = n.einstellen("Wetter Hamburg")
+        self.assertEqual(zustand(n), (True, ""))
+        alt = _t.time() - 900
+        os.utime(q / "auftraege" / f"{aid}.json", (alt, alt))
+        ok, hinweis = zustand(n)
+        self.assertFalse(ok)
+        self.assertIn("luna-netz", hinweis)
 
 
 if __name__ == "__main__":

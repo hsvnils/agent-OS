@@ -1,7 +1,7 @@
 """IMPRESSUM_SUCHE I1: Kundendaten aus dem Impressum einer eingegebenen Website (nur Vorschlag) -- und nie Abrufe ins Heimnetz."""
 import unittest
 
-from orchestrator.core.firmendaten import (FirmenRecherche, NichtOeffentlich, _SichereUmleitung, aus_impressum, name_lesen,
+from orchestrator.core.firmendaten import (FirmenRecherche, NichtOeffentlich, aus_impressum, name_lesen,
                                            oeffentlich)
 from orchestrator.tests.test_angebote import ApiBasis
 
@@ -32,8 +32,7 @@ class TestSchutz(unittest.TestCase):
                 oeffentlich(url, aufloesen=ok)
 
     def test_umleitung_ins_heimnetz(self):
-        with self.assertRaises(NichtOeffentlich):
-            _SichereUmleitung().redirect_request(None, None, 302, "Found", {}, "http://192.168.178.129:8765/api/")
+        # NETZ_AGENT Q3: Weiterleitungen prueft jetzt der Netz-Agent (netz_agent/tests: test_2_weiterleitung_ins_heimnetz).
         with self.assertRaises(NichtOeffentlich):
             aus_impressum("http://127.0.0.1/impressum")                          # echter Abruf -> sofort abgelehnt
 
