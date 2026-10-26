@@ -4,7 +4,7 @@
 - Stand: 2026-10-26
 - Arbeitsbranch: `ai/claude-aktiv`
 - Basiscommit: `88708b5`
-- Naechster Schritt: Deploy C3 (CEO: NAS-Container neu starten, Backoffice-Worker auf dem MACO470 neu starten, MACO470-Schluessel tauschen).
+- Naechster Schritt: eine Woche stabiler Betrieb beobachten (Kostenlog, kein Gemini-Ausweich), danach C4 (ab 2026-11-02).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -74,7 +74,7 @@ seit Oktober im Claude-Max-Abo enthalten -- vom Agenten nicht pruefbar, der Live
 
 ## Etappe C3: Gemini-Wege umstellen
 
-- Status: umgesetzt 2026-10-26 (`core/claude_api.py`: `ClaudeApiBackend` fuer die Fachagenten -- echte Probe CTO 4,7 s / 0,012 EUR statt ~20 s / 0,063 EUR ueber die Kommandozeile; Adapter `ClaudeChat` + `cloud_client` fuer Content-Plan, Videograf, Kennzahlen-Screenshots -- echte Probe Haiku 5.5 alle 5 Werte richtig, 0,0001 EUR --, Kurzantworten; Backoffice-Gegenlesen auf dem MACO470 mit Gemini-Rueckfall; Kostenerfassung je Weg; Fachagenten-Aufwand `medium`; Tests `test_claude_c3.py` mit 3 Gegenproben). Cutter-Video-KI bleibt Gemini (CEO 2026-10-26, Option A: Claude liest keine Videodateien); Routing-Probelauf-Skript (manuell) und DM-Analyse (abgeschaltet) unveraendert. Deploy offen
+- Status: verifiziert 2026-10-26 (239fc17; live: CTO ueber LUNA-OS mit `ClaudeApiBackend` 0,0105 EUR (vorher 0,063 EUR), Chat ~0,015 EUR je Antwort; Backoffice-Gegenlesen auf dem MACO470 ueber Claude Haiku 5.5 in 7 s; MACO470-Schluessel getauscht (HTTP 200). Cutter-Video-KI bleibt Gemini (Option A). Probe-Werte: Screenshot-Auslesen 5/5 Zahlen, 0,0001 EUR)
 - Ziel / Scope / Nicht-Scope: **Fachagenten direkt ueber die API** (wie der Chat) statt ueber die Claude-Kommandozeile -- gemessen 2026-10-26: ~0,06 EUR je CTO-Anfrage ueber die Kommandozeile gegen ~0,02 EUR je Chat-Antwort direkt; dazu jeden Gemini-Weg aus dem Datenschutz-Check auf Claude (Haiku 5.5 fuer Auslesen/Gegenlesen,
   Sonnet 5.5 fuer Pruefungen/Vorschlaege) oder lokal umstellen: Backoffice-Gegenlesen, Kennzahlen-Screenshots, Beleg-Fotos,
   CLO-Pruefung, Videograf, Bildschirm sehen, Cutter-Video-KI/Tagging, Routing-Probelauf. Je Weg einzeln, mit Schalter.

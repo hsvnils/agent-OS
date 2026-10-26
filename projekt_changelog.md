@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 11:01] — Claude Code
+- **Was:** Deploy CLAUDE_AKTIV C3 live geprueft: origin/main = 239fc17, NAS mit `core/claude_api.py`; CTO-Fachagent ueber LUNA-OS mit dem direkten API-Backend (0,0105 EUR statt 0,063 EUR ueber die Kommandozeile), Chat ~0,015 EUR je Antwort; MACO470-Schluessel vom CEO per Kopierbefehl von der NAS uebernommen (HTTP 200, Sicherung `.env.vorher`), Backoffice-Worker neu gestartet, Gegenlesen laeuft ueber Claude Haiku 5.5 (7 s). C4 nach einer stabilen Woche (ab 02.11.).
+- **Warum:** Abnahme nach CEO-Deploy (Go 2026-10-26).
+- **Betroffen:** `CLAUDE_AKTIV_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-26 10:32] — Claude Code
 - **Was:** CEO-Entscheidung Cutter Option A im Register und in C4 festgehalten (Gemini nur noch fuer die Cutter-Video-KI auf dem MACO470); C3 nach `main` gemergt.
 - **Warum:** CEO 2026-10-26: „Go fuer Merge, Push und Deploy, Cutter Option A“.
