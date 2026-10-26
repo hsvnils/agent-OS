@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 13:24] — Claude Code
+- **Was:** NETZ_AGENT Q4: DSM warf die Sperre auf NAS-Ebene auch ohne Container-Start nach Sekunden wieder hinaus (BF-81). Sperr-Skript setzt die Regeln jetzt im Netz-Namensraum des Containers (`ip netns exec`, Kette `OUTPUT`, Loopback frei fuer den Docker-Namensdienst) und raeumt die alten NAS-Regeln weg. Test mit Gegenprobe, Doku.
+- **Warum:** Live-Probe Q4 (CEO-Ausgabe: „0 references“ 40 s nach dem Setzen).
+- **Betroffen:** `deploy/netz_sperre.sh`, `netz_agent/tests/test_sperre.py`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `NETZ_AGENT_ROADMAP.md`
+
 ## [2026-10-26 13:18] — Claude Code
 - **Was:** NETZ_AGENT Q4: mangle-Sperre wirkt (Zaehler, Probe gruen), DSM wirft sie aber bei Container-Starts wieder raus (BF-80). Netz-Agent arbeitet jetzt fail closed (Sperrprobe alle 5 min, bei Luecke alle 30 s, parallel; ohne Sperre keine Auftraege), Systemcheck meldet Probe aelter 30 min; Sperr-Skript setzt nur neu, wenn die Regel fehlt (fuer Wiederholung per DSM-Aufgabe). Tests mit Gegenprobe, Doku.
 - **Warum:** Live-Probe Q4 (CEO-Ausgabe: Kette ohne Referenz nach Neustart).

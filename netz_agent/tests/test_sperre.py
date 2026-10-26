@@ -83,14 +83,17 @@ class TestNetzUndSkript(unittest.TestCase):
         self.assertIn("NETZ=172.30.99.0/24", s)
         for z in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "127.0.0.0/8"):
             self.assertIn(z, s)
-        self.assertIn('M="$IPT -t mangle"', s)                                        # BF-79: Sperre in mangle/PREROUTING
-        self.assertIn("$M -I PREROUTING 1 -s $NETZ -j $KETTE", s)
-        self.assertIn("weg mangle PREROUTING", s)                                     # Rueckweg
+        self.assertIn('C() { ip netns exec $NS $IPT "$@"; }', s)                      # BF-81: Regeln im Container-Netz
+        self.assertIn("C -I OUTPUT 1 -j $KETTE", s)
+        self.assertIn("C -A $KETTE -o lo -j RETURN", s)                               # Docker-Namensdienst bleibt
+        self.assertLess(s.index("-o lo -j RETURN"), s.index('-d "$z" -j DROP'))
+        self.assertIn("C -D OUTPUT -j $KETTE", s)                                     # Rueckweg
+        self.assertIn("alt_weg", s)                                                   # alte Regeln auf der NAS weg
         self.assertNotIn("while", s)                                                  # BF-78: keine offene Schleife
         self.assertIn("aus()", s)
         self.assertIn('if aktiv; then', s)                                            # BF-80: Wiederholung ohne Luecke
         self.assertNotIn("-j REJECT", s)                                              # BF-75: Synology hat kein REJECT
-        self.assertIn('-j DROP || exit 1', s)                                         # Fehler nicht verschlucken                                                     # Rueckweg vorhanden
+        self.assertIn('-j DROP || exit 1', s)                                         # Fehler nicht verschlucken
 
 
 if __name__ == "__main__":
