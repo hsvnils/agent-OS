@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 16:12] — Claude Code
+- **Was:** Z2 und C3 nach CEO-Deploy live geprueft: origin/main = a4111f2, NAS-Code aktuell, LUNA-OS v141; Bot hat um 16:12 die Zahlungserinnerung zu RE-2026-0001 und RE-2026-0002 per Telegram vorgeschlagen (Agenda-Merker `mahnfrage:<re>:0`, gesetzt nur nach erfolgreichem Versand). Ideen-Vorschlag nicht live ausgeloest (Modellkosten, Abnahme CEO).
+- **Warum:** Live-Pruefung nach Deploy.
+- **Betroffen:** `ZAHLUNGSERINNERUNG_ROADMAP.md`, `KUNDEN_CHECKLISTE_ROADMAP.md`
+
 ## [2026-10-26 16:03] — Claude Code
 - **Was:** ZAHLUNGSERINNERUNG Z2 und KUNDEN_CHECKLISTE C3 gebaut (Branch `ai/z2-c3`). Z2: Telegram-Vorschlag der Zahlungserinnerung einmal je Rechnung ab 3 Tagen Ueberfaelligkeit (✅ sendet mit Rechnung als Anhang, ❌ setzt aus, Schalter `ZAHLUNGSERINNERUNG_VORSCHLAG`). C3: „💡 Ideen vorschlagen“ in der Konzept-Mappe -- Content-Agent liefert 3 Ideen mit Skript-Geruest aus dem Briefing (nur mit Pflicht-Briefing, ohne Freigabe-Personen/Notizen), Uebernahme je Klick als Idee. Cache v141. Tests mit Gegenproben; Datenfluesse und Datenschutz-Check ergaenzt.
 - **Warum:** CEO-Go Z2 und C3.

@@ -4,7 +4,7 @@
 - Stand: 2026-10-26
 - Arbeitsbranch: `ai/z2-c3`
 - Basiscommit: `30ccdb8`
-- Naechster Schritt: Z1 live (Abnahme CEO offen); Z2 gebaut -- Merge/Deploy (CEO, Neustart luna-telegram), dann erste Vorschlaege per Telegram pruefen.
+- Naechster Schritt: Abnahme durch den CEO (Z1 Testmail an sich selbst, Z2 Antwort auf die Telegram-Vorschlaege); danach Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -59,7 +59,7 @@ unserer Rechnung XYZ erinnern.“
 
 ## Etappe Z2: Vorschlag per Telegram und Uebergang zur 1. Mahnung
 
-- Status: gebaut 2026-10-26 (`MahnStore.faellige_folgemahnungen(erinnerung=True)` liefert Rechnungen ab 3 Tagen ueberfaellig ohne Erinnerung/Mahnung/Mahnverfahren und nicht ausgesetzt; Bot fragt im vorhandenen Folgemahnungs-Lauf 08-20 Uhr **einmal je Rechnung** (Merker ohne Datum), eigener Telegram-Text ohne Zinsen; ✅ sendet ueber `folgemahnung_senden` mit Stufe 0 (Rechnung als 2. Anhang, Textbaustein), ❌ setzt aus; Schalter `ZAHLUNGSERINNERUNG_VORSCHLAG=0` in `orchestrator/.env` schaltet ab (Standard an); 1. Mahnung nach Fristablauf wie in Z1). Deploy offen
+- Status: gebaut 2026-10-26 (`MahnStore.faellige_folgemahnungen(erinnerung=True)` liefert Rechnungen ab 3 Tagen ueberfaellig ohne Erinnerung/Mahnung/Mahnverfahren und nicht ausgesetzt; Bot fragt im vorhandenen Folgemahnungs-Lauf 08-20 Uhr **einmal je Rechnung** (Merker ohne Datum), eigener Telegram-Text ohne Zinsen; ✅ sendet ueber `folgemahnung_senden` mit Stufe 0 (Rechnung als 2. Anhang, Textbaustein), ❌ setzt aus; Schalter `ZAHLUNGSERINNERUNG_VORSCHLAG=0` in `orchestrator/.env` schaltet ab (Standard an); 1. Mahnung nach Fristablauf wie in Z1). Deployt 2026-10-26 (a4111f2); erster Lauf 16:12: Vorschlaege zu RE-2026-0001 und RE-2026-0002 per Telegram zugestellt (Merker nur bei erfolgreichem Versand). Abnahme offen
 - Ziel / Scope / Nicht-Scope: im 15-min-Poll: Rechnung X Tage ueberfaellig, nichts verschickt -> Telegram-Vorschlag
   (✅/✏️/❌, einmal je Rechnung, 09-21 Uhr); ❌ setzt die Erinnerung fuer diese Rechnung aus; nach Ablauf der
   Erinnerungsfrist ohne Zahlung schlaegt LUNA die 1. Mahnung vor (vorhandener Weg). CFO-Tagesmeldung angepasst.
