@@ -4,7 +4,7 @@
 - Stand: 2026-10-26
 - Arbeitsbranch: `ai/claude-aktiv`
 - Basiscommit: `88708b5`
-- Naechster Schritt: Deploy C3 (CEO: NAS-Container neu starten, Backoffice-Worker auf dem MACO470 neu starten, MACO470-Schluessel tauschen); CEO-Entscheidung Cutter-Video-KI.
+- Naechster Schritt: Deploy C3 (CEO: NAS-Container neu starten, Backoffice-Worker auf dem MACO470 neu starten, MACO470-Schluessel tauschen).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -74,7 +74,7 @@ seit Oktober im Claude-Max-Abo enthalten -- vom Agenten nicht pruefbar, der Live
 
 ## Etappe C3: Gemini-Wege umstellen
 
-- Status: umgesetzt 2026-10-26 (`core/claude_api.py`: `ClaudeApiBackend` fuer die Fachagenten -- echte Probe CTO 4,7 s / 0,012 EUR statt ~20 s / 0,063 EUR ueber die Kommandozeile; Adapter `ClaudeChat` + `cloud_client` fuer Content-Plan, Videograf, Kennzahlen-Screenshots -- echte Probe Haiku 5.5 alle 5 Werte richtig, 0,0001 EUR --, Kurzantworten; Backoffice-Gegenlesen auf dem MACO470 mit Gemini-Rueckfall; Kostenerfassung je Weg; Fachagenten-Aufwand `medium`; Tests `test_claude_c3.py` mit 3 Gegenproben). **Offen:** Cutter-Video-KI (`CUTTER_VIDEO_KI=1`) bleibt vorerst Gemini -- Claude liest keine Videodateien (CEO-Entscheidung); Routing-Probelauf-Skript (manuell) und DM-Analyse (abgeschaltet) unveraendert. Deploy offen
+- Status: umgesetzt 2026-10-26 (`core/claude_api.py`: `ClaudeApiBackend` fuer die Fachagenten -- echte Probe CTO 4,7 s / 0,012 EUR statt ~20 s / 0,063 EUR ueber die Kommandozeile; Adapter `ClaudeChat` + `cloud_client` fuer Content-Plan, Videograf, Kennzahlen-Screenshots -- echte Probe Haiku 5.5 alle 5 Werte richtig, 0,0001 EUR --, Kurzantworten; Backoffice-Gegenlesen auf dem MACO470 mit Gemini-Rueckfall; Kostenerfassung je Weg; Fachagenten-Aufwand `medium`; Tests `test_claude_c3.py` mit 3 Gegenproben). Cutter-Video-KI bleibt Gemini (CEO 2026-10-26, Option A: Claude liest keine Videodateien); Routing-Probelauf-Skript (manuell) und DM-Analyse (abgeschaltet) unveraendert. Deploy offen
 - Ziel / Scope / Nicht-Scope: **Fachagenten direkt ueber die API** (wie der Chat) statt ueber die Claude-Kommandozeile -- gemessen 2026-10-26: ~0,06 EUR je CTO-Anfrage ueber die Kommandozeile gegen ~0,02 EUR je Chat-Antwort direkt; dazu jeden Gemini-Weg aus dem Datenschutz-Check auf Claude (Haiku 5.5 fuer Auslesen/Gegenlesen,
   Sonnet 5.5 fuer Pruefungen/Vorschlaege) oder lokal umstellen: Backoffice-Gegenlesen, Kennzahlen-Screenshots, Beleg-Fotos,
   CLO-Pruefung, Videograf, Bildschirm sehen, Cutter-Video-KI/Tagging, Routing-Probelauf. Je Weg einzeln, mit Schalter.
@@ -88,8 +88,8 @@ seit Oktober im Claude-Max-Abo enthalten -- vom Agenten nicht pruefbar, der Live
 ## Etappe C4: Gemini abschalten
 
 - Status: geplant
-- Ziel / Scope / Nicht-Scope: nach einer stabilen Woche Gemini aus dem Router nehmen, `GEMINI_API_KEY` aus den `.env`
-  entfernen (CEO), Dienste-Register und Datenschutz-Check fortschreiben; Notfall-Ersatz ist dann das lokale Modell.
+- Ziel / Scope / Nicht-Scope: nach einer stabilen Woche Gemini aus dem Router nehmen, `GEMINI_API_KEY` aus der NAS-`.env`
+  entfernen (CEO) -- **auf dem MACO470 bleibt er nur fuer die Cutter-Video-KI** (CEO-Entscheidung 2026-10-26, Option A), Dienste-Register und Datenschutz-Check fortschreiben; Notfall-Ersatz ist dann das lokale Modell.
 - Gate: Suite gruen, Wachtest; eine Woche ohne Ausfall.
 - Verifikation: `grep -c GEMINI_API_KEY orchestrator/.env` (NAS) -> erwartet: 0; Chat antwortet weiter.
 - Dry-Run: Gemini im Router per Schalter aus, Schluessel erst nach 3 Tagen ohne Bedarf entfernen.

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 10:32] — Claude Code
+- **Was:** CEO-Entscheidung Cutter Option A im Register und in C4 festgehalten (Gemini nur noch fuer die Cutter-Video-KI auf dem MACO470); C3 nach `main` gemergt.
+- **Warum:** CEO 2026-10-26: „Go fuer Merge, Push und Deploy, Cutter Option A“.
+- **Betroffen:** `docs/entscheidungs-register.md`, `CLAUDE_AKTIV_ROADMAP.md`
+
 ## [2026-10-26 10:30] — Claude Code
 - **Was:** CLAUDE_AKTIV C3 umgesetzt: neues Modul `core/claude_api.py` -- Fachagenten direkt ueber die Claude-API (`ClaudeApiBackend`, statt Claude-Kommandozeile; Probe CTO 4,7 s / 0,012 EUR statt ~20 s / 0,063 EUR), Adapter `ClaudeChat` (Form der bisherigen Gemini-Aufrufe, intern Anthropic-SDK, Bilder als Bild-Bloecke) und `cloud_client` (Claude mit Schluessel, sonst Gemini). Umgestellt: Content-Plan- und Videograf-Vorschlaege (Sonnet 5.5), Kennzahlen-Screenshots in Web und Telegram (Haiku 5.5; Probe: 5/5 Werte richtig, 0,0001 EUR), Kurzantworten in LUNA-OS (Haiku 5.5), Backoffice-Gegenlesen auf dem MACO470 (Haiku 5.5, Gemini-Rueckfall). Kosten je Weg im Kostenlog. Fachagenten-Aufwand `medium`. Hinweistexte „Kein Modell-Zugang“, Oberflaechentext ohne Anbieternamen (Cache v138). Dienste-Register, Datenschutz-Nachtrag. Tests `test_claude_c3.py` (3 Gegenproben rot), zwei Testerwartungen an den neuen Hinweistext angepasst. Offen: Cutter-Video-KI bleibt Gemini (Claude liest keine Videodateien) -- CEO-Entscheidung.
 - **Warum:** CEO-Go C3 2026-10-26.
