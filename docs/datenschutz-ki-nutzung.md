@@ -23,8 +23,10 @@
   **Anthropic statt an Google**. Bis zum Abschalten in C4 bleiben **Gemini und -- falls auch Gemini scheitert -- OpenAI
   (`gpt-4o-mini`, Schluessel gesetzt)** als Ausweich; das lokale Modell kommt vor Gemini, wenn es fuer den Bereich
   eingeschaltet ist. Training: laut Anthropic werden Eingaben und Ausgaben der kommerziellen API standardmaessig nicht
-  zum Training genutzt; die **Aufbewahrungsfrist** zeigt die Konsole unter „Data retention“ -- in C2 vom CEO ablesen und
-  hier eintragen. Der **Netz-Agent** (Workspace „luna-netz“, `claude-haiku-5-5`) sieht nur oeffentliche Webseiten und die
+  zum Training genutzt. **Konsole, Workspace „luna“ (CEO-Screenshot 2026-10-26):** „Workspace geo: United States“ -- die
+  Daten des Workspaces liegen in den **USA** (Drittlanduebermittlung; Grundlage laut Anthropic-Vertragsbedingungen,
+  bei Bedarf vom Anwalt pruefen lassen); „Inference geo: Unrestricted / Default: Global routing“ -- Verarbeitung weltweit,
+  eine feste Region kostet das 1,1-Fache. Eine eigene Aufbewahrungsfrist ist dort nicht eingestellt (Anthropic-Standard). Der **Netz-Agent** (Workspace „luna-netz“, `claude-haiku-5-5`) sieht nur oeffentliche Webseiten und die
   Frage, keine internen Daten. **Abo-Kennzahlen der App** bekommen weiterhin kein Chat-Werkzeug.
 - **EU AI Act:** fuer das heutige LUNA kaum Pflichten -- siehe 4.
 
