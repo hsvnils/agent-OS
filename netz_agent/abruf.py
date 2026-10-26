@@ -75,12 +75,28 @@ class _Https(http.client.HTTPSConnection):
         self.sock = self._context.wrap_socket(roh, server_hostname=self.host)
 
 
+_LEER_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+_VERSTECKT_STIL = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden|font-size\s*:\s*0(?![.\d]*[1-9])|opacity\s*:\s*0(?![.\d]*[1-9])", re.I)
+
+
+def _versteckt(attrs) -> bool:
+    """Q5: fuer Menschen unsichtbarer Text (beliebter Ort fuer Anweisungen an Modelle) wird nicht uebernommen."""
+    a = {k.lower(): (v or "") for k, v in attrs}
+    return "hidden" in a or a.get("aria-hidden", "").lower() == "true" or bool(_VERSTECKT_STIL.search(a.get("style", "")))
+
+
 class _Text(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.teile, self.titel, self._weg, self._im_titel = [], "", 0, False
+        self._tiefe_versteckt = 0                      # > 0: innerhalb eines versteckten Elements
 
     def handle_starttag(self, tag, attrs):
+        if tag in _LEER_TAGS:
+            return
+        if self._tiefe_versteckt or _versteckt(attrs):
+            self._tiefe_versteckt += 1
+            return
         if tag in ("script", "style", "noscript", "template", "svg"):
             self._weg += 1
         elif tag == "title":
@@ -89,6 +105,11 @@ class _Text(HTMLParser):
             self.teile.append("\n")
 
     def handle_endtag(self, tag):
+        if tag in _LEER_TAGS:
+            return
+        if self._tiefe_versteckt:
+            self._tiefe_versteckt -= 1
+            return
         if tag in ("script", "style", "noscript", "template", "svg") and self._weg:
             self._weg -= 1
         elif tag == "title":
@@ -97,7 +118,7 @@ class _Text(HTMLParser):
     def handle_data(self, data):
         if self._im_titel:
             self.titel += data
-        elif not self._weg:
+        elif not self._weg and not self._tiefe_versteckt:
             self.teile.append(data)
 
 

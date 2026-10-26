@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 14:05] — Claude Code
+- **Was:** NETZ_AGENT Q5 (Branch `ai/netz-agent-q5`), Teil 1: Angriffsreihe `orchestrator/tests/test_netz_angriffe.py` (verfuehrtes Modell im Netz-Agenten; bei LUNA kommt trotzdem nur das gepruefte Formular an). Neu gehaertet: unsichtbarer Seitentext (`hidden`, `aria-hidden`, `display:none`, `visibility:hidden`, Schriftgroesse/Deckkraft 0) geht nicht ans Modell (`netz_agent/abruf.py`); LUNA ersetzt im Formular alle Links, die keine Suchtreffer sind (`core/netz_auftraege.py`). Zaehler je Auftrag ohne Inhalte in `sicherheit/netz_agent.jsonl`, CISO-Bericht zeigt die Zeile „Netz-Agent“ (Auftraege, verworfene Formulare/Teile, Verdacht, Heimnetz-Sperre). Gegenproben rot. Regel- und Charta-Text liegen dem CEO als Diff vor (nicht angewendet).
+- **Warum:** CEO-Go Q5.
+- **Betroffen:** `netz_agent/abruf.py`, `orchestrator/core/netz_auftraege.py`, `orchestrator/core/security_agent.py`, `orchestrator/channels/web/__main__.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_netz_angriffe.py`, `docs/datenfluesse.md`, `NETZ_AGENT_ROADMAP.md`
+
 ## [2026-10-26 13:35] — Claude Code
 - **Was:** NETZ_AGENT Q4 live geprueft: Sperre im Container-Netz haelt (CEO-Probe nach 60 s gruen, Agent-Proben 12:29 und 12:34 UTC gruen, Zaehler 192.168.0.0/16 und 172.16.0.0/12 steigen, Loopback/DNS frei). Recherche (10 s, 3 Quellen) und Firmen-Suche (hsv.de 2 s, kiez-alm.de 20 s) laufen. Roadmap: Q4 live, Gegenprobe beim naechsten Container-Neustart offen.
 - **Warum:** Live-Pruefung Q4 nach CEO-Deploy.

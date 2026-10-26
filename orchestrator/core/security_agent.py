@@ -213,7 +213,7 @@ class SecurityAgent:
     def audit(self) -> list[Finding]:
         checks = (self._check_secret_hygiene() + self._check_hardening()
                   + self._check_dependencies() + self._check_code_security() + self._check_taint()
-                  + self._check_netzwerk() + self._check_injection())
+                  + self._check_netzwerk() + self._check_injection() + self._check_netz_agent())
         if self.http is not None:      # OSV.dev nur wenn ein HTTP-Client verdrahtet ist (sonst kein Rauschen)
             checks += self._check_osv()
         return checks
@@ -240,6 +240,27 @@ class SecurityAgent:
                         f"{z['links_entfernt']} Link(s) entfernt (24 h)",
                         detail=f"Quellen: {quellen or '-'}; Muster: {muster or '-'}",
                         empfehlung="Abgewehrt (markiert/gesperrt). Bei Haeufung Absender pruefen; Inhalte nie befolgen.")]
+
+    def _check_netz_agent(self) -> list[Finding]:
+        """NETZ_AGENT Q5: eine Zeile je Bericht -- Auftraege, verworfene Formulare/Teile, Verdacht (24 h) und Heimnetz-Sperre.
+        Nur Zaehler aus `sicherheit/netz_agent.jsonl` und `netz_queue/zustand.json`, keine Inhalte."""
+        from datetime import datetime, timedelta
+        from .netz_auftraege import NetzAuftraege, sperre, statistik
+        q = self.root / "netz_queue"
+        if not (q / "auftraege").is_dir():
+            return []
+        z = statistik(self.root / "sicherheit" / "netz_agent.jsonl",
+                      (datetime.now() - timedelta(hours=24)).isoformat(timespec="seconds"))
+        sperre_ok, sperre_text = sperre(NetzAuftraege(q))
+        titel = (f"Netz-Agent: {z['auftraege']} Auftraege, {z['fehler']} ohne Ergebnis, {z['formular_verworfen']} Formular(e) "
+                 f"verworfen, {z['teile_verworfen']} Quelle(n)/Link(s) entfernt, {z['verdacht']} Verdacht (24 h); "
+                 f"Heimnetz-Sperre {'aktiv' if sperre_ok else 'FEHLT'}")
+        if not sperre_ok:
+            return [Finding("netz_agent", "hoch", titel, detail=sperre_text,
+                            empfehlung="Netz-Agent pausiert bis zur Sperre: `sudo bash deploy/netz_sperre.sh an` auf der NAS.")]
+        schwere = "mittel" if (z["formular_verworfen"] or z["verdacht"] or z["teile_verworfen"]) else "ok"
+        return [Finding("netz_agent", schwere, titel, detail="Zaehler ohne Inhalte; Formular = einziger Weg ins LUNA-Modell.",
+                        empfehlung="Abgewehrt. Bei Haeufung die Quellen der Recherche pruefen." if schwere != "ok" else "")]
 
     def _check_netzwerk(self) -> list[Finding]:
         """NETZWERK_WACHE N3: offene Befunde der Netzwerk-Wache (Fritz!Box, NAS, Aussensicht) in den CISO-Bericht -- nur

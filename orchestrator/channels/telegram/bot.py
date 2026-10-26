@@ -1996,6 +1996,8 @@ def main() -> None:
     from ...core.hoa_conversation import HoaConversation
     from ...core import input_guard as _ig
     _ig.protokoll_setzen(_injection_protokoll())          # PROMPT_INJECTION_SCHUTZ I4 (nur im Betrieb)
+    from ...core import netz_auftraege as _na
+    _na.statistik_setzen(ROOT / "sicherheit" / "netz_agent.jsonl")   # NETZ_AGENT Q5: Statistik fuer den CISO-Bericht
     ctx, _ = _build_ctx(cfg, secrets)
     model = cfg.get("voice", {}).get("llm_model", "claude-sonnet-5-5")
     sessions: dict[int, HoaConversation] = {}
