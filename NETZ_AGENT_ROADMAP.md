@@ -4,7 +4,7 @@
 - Stand: 2026-10-23
 - Arbeitsbranch: `ai/netz-agent`
 - Basiscommit: `3158621`
-- Naechster Schritt: Deploy Q2 (CEO: Sync, Container `luna-netz` neu erstellen), dann Go fuer Q3.
+- Naechster Schritt: CEO-Go fuer Q3 (alle freien Netzwege auf den Netz-Agenten umstellen, Wachtest).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -77,7 +77,7 @@ LUNA ◀──Ergebnis-Formular (Antwort, Fakten, Quellen; Laengen geprueft)─�
 
 ## Etappe Q2: Modell und Ergebnis-Formular
 
-- Status: umgesetzt 2026-10-26 (`netz_agent/formular.py`: Claude Haiku 5.5 ohne Werkzeuge, festes JSON-Schema per strukturierter Ausgabe, Quellen nur als Treffer-Nummern -> Adressen setzt der Agent; zweiter Suchversuch BF-73; LUNA-Seite `orchestrator/core/netz_auftraege.py`: Frage ohne interne Daten, Formular geprueft/gekuerzt/markiert, Verdacht ins Injection-Protokoll; Tests 4+3 mit 4 Gegenproben; echter Lauf vom MACO470: 3 Fragen -> 3 gueltige Formulare, je ~0,15 Cent, Reel-Preis-Frage korrekt `unsicher`), Deploy offen
+- Status: verifiziert 2026-10-26 (105b5ee; Container `luna-netz` neu erstellt, Probe ueber die NAS-Warteschlange: 8 Treffer, 3 Seiten, Formular mit `claude-haiku-5-5` fuer 0,0014 EUR, LUNA-Pruefung ok -- 4 Fakten, 3 Quellen)
 - Ziel / Scope / Nicht-Scope: Modell laut Q0 im Netz-Agenten (eigener Schluessel in `netz_agent/.env`); es bekommt nur
   die Frage und die Seiteninhalte, **keine Werkzeuge**, und liefert ein festes Formular: `antwort` (hoechstens 1.500
   Zeichen), `fakten` (hoechstens 10, je 300 Zeichen, jeweils mit Quellen-Nummer), `quellen` (nur URLs aus den Treffern),
