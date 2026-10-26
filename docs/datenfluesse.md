@@ -338,7 +338,10 @@ sicherheit/hinweis_stand.json       # I4: bis wann Injection-Hinweise gemeldet s
   `netz_agent/.env` nur mit `BRAVE_API_KEY`, kein Port nach aussen, nur lesendes Dateisystem. Liest Auftraege aus
   `netz_queue/auftraege/`, fragt `api.search.brave.com`, oeffnet **nur Seiten aus den Suchtreffern** (beliebige oeffentliche
   Hosts, nur http/https Port 80/443, private/lokale Adressen und Weiterleitungen dorthin gesperrt, 1 MB/15 s je Seite,
-  hoechstens 5 Seiten) und schreibt nach `netz_queue/ergebnisse/`. Noch kein LUNA-Modul stellt Auftraege ein (Q2/Q3).
+  hoechstens 5 Seiten) und schreibt nach `netz_queue/ergebnisse/`. **Q2:** fasst die Seiten mit `api.anthropic.com`
+  (`claude-haiku-5-5`, Workspace „luna-netz“, eigener Schluessel in `netz_agent/.env`, ohne Werkzeuge, festes JSON-Schema)
+  zu einem Formular zusammen; Quellen nur als Treffer-Nummern. LUNA-Seite `core/netz_auftraege.py` stellt nur die reine
+  Frage ein (interne Daten abgelehnt) und gibt nur das gepruefte, markierte Formular weiter; noch kein LUNA-Weg nutzt es (Q3).
 - **Voice-Server** (localhost:7860, WebRTC) und **Mac-Orb** (ruft `127.0.0.1:8765`) — nur am MacBook.
 
 **Zeitplaene im Bot** (Europe/Berlin, Pruefung alle 5 min, Merker in `agenda`)

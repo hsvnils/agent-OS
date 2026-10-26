@@ -2,8 +2,9 @@
 oeffnet nur Seiten aus den Suchtreffern und schreibt das Ergebnis nach `netz_queue/ergebnisse/`.
 
 Laeuft im eigenen Container `luna-netz`, der nur `netz_agent/` (lesend) und `netz_queue/` sieht -- keine LUNA-Dateien,
-keine LUNA-.env, nur `BRAVE_API_KEY`. In Q1 ohne Modell: Ergebnis = Treffer + Seitentexte (Rohdaten); LUNA behandelt sie
-als fremde Daten. Nur Standardbibliothek; importiert nichts aus LUNA.
+keine LUNA-.env, nur `BRAVE_API_KEY` und (Q2) `ANTHROPIC_API_KEY` aus dem eigenen Workspace „luna-netz“. Ergebnis =
+Treffer + Seitentexte + gepruefter Formular (`formular.py`, Claude Haiku 5.5 ohne Werkzeuge); LUNA behandelt alles als
+fremde Daten. Standardbibliothek + Anthropic-SDK aus dem Image; importiert nichts aus LUNA.
 
 Auftrag: {"id": "<a-z0-9-, 8-40>", "art": "suche", "frage": "<= 300 Zeichen", "max_seiten": 0-5}
 Ergebnis: {"id", "ok", "frage", "treffer": [{titel, url, auszug}], "seiten": [{url, titel, text, status}|{url, fehler}],
@@ -15,6 +16,7 @@ import json
 import os
 import re
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -33,12 +35,19 @@ def _jetzt() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def brave_suche(frage: str, schluessel: str, anzahl: int = MAX_TREFFER) -> list[dict]:
+def brave_suche(frage: str, schluessel: str, anzahl: int = MAX_TREFFER, *, versuche: int = 2, pause: float = 3.0) -> list[dict]:
     q = urllib.parse.urlencode({"q": frage, "count": anzahl, "safesearch": "moderate"})
     req = urllib.request.Request(f"{BRAVE}?{q}", headers={"Accept": "application/json", "X-Subscription-Token": schluessel,
                                                         "User-Agent": abruf.AGENT})
-    with urllib.request.urlopen(req, timeout=abruf.TIMEOUT) as r:
-        d = json.loads(r.read(abruf.MAX_BYTES).decode("utf-8", "replace"))
+    for v in range(versuche):                              # BF-73: Namensaufloesung kurz nach dem Start -> zweiter Versuch
+        try:
+            with urllib.request.urlopen(req, timeout=abruf.TIMEOUT) as r:
+                d = json.loads(r.read(abruf.MAX_BYTES).decode("utf-8", "replace"))
+            break
+        except urllib.error.URLError:
+            if v + 1 >= versuche:
+                raise
+            time.sleep(pause)
     out = []
     for t in ((d.get("web") or {}).get("results") or [])[:anzahl]:
         url = str(t.get("url") or "")
@@ -61,10 +70,11 @@ def pruefe_auftrag(a: dict) -> dict:
 
 
 class Agent:
-    def __init__(self, queue: Path | str, schluessel: str, *, suche=brave_suche, hole=abruf.hole):
+    def __init__(self, queue: Path | str, schluessel: str, *, suche=brave_suche, hole=abruf.hole, modell_client=None):
         self.q = Path(queue)
         self.schluessel = schluessel
         self.suche, self.hole = suche, hole
+        self.modell_client = modell_client                 # Q2: Anthropic-Client (None -> kein Formular, nur Rohdaten)
         for d in ("auftraege", "in_arbeit", "ergebnisse"):
             (self.q / d).mkdir(parents=True, exist_ok=True)
 
@@ -83,8 +93,15 @@ class Agent:
                 seiten.append(self.hole(t["url"]))
             except Exception as exc:                               # Abgelehnt, Zeitueberschreitung, HTTP-Fehler
                 seiten.append({"url": t["url"], "fehler": f"{exc.__class__.__name__}: {str(exc)[:200]}"})
-        return {"id": a["id"], "ok": True, "frage": a["frage"], "treffer": treffer, "seiten": seiten, "fehler": "",
-                "fertig": _jetzt()}
+        formular = None
+        if self.modell_client is not None:
+            from . import formular as _formular
+            try:
+                formular = _formular.erstellen(a["frage"], treffer, seiten, client=self.modell_client)
+            except Exception as exc:                           # Formular ist Zusatz -- Rohdaten gehen trotzdem zurueck
+                formular = {"fehler": f"{exc.__class__.__name__}: {str(exc)[:200]}"}
+        return {"id": a["id"], "ok": True, "frage": a["frage"], "treffer": treffer, "seiten": seiten, "formular": formular,
+                "fehler": "", "fertig": _jetzt()}
 
     def ein_durchlauf(self, *, trocken: bool = False) -> int:
         n = 0
@@ -124,7 +141,11 @@ def main() -> None:
     schluessel = os.environ.get("BRAVE_API_KEY", "")
     if not schluessel and not args.dry_run:
         raise SystemExit("BRAVE_API_KEY fehlt (netz_agent/.env)")
-    agent = Agent(args.queue, schluessel)
+    modell_client = None
+    if os.environ.get("ANTHROPIC_API_KEY") and not args.dry_run:
+        import anthropic
+        modell_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=90, max_retries=1)
+    agent = Agent(args.queue, schluessel, modell_client=modell_client)
     print(f"[netz-agent] bereit, Warteschlange {args.queue}{' (trocken)' if args.dry_run else ''}", flush=True)
     while True:
         n = agent.ein_durchlauf(trocken=args.dry_run)

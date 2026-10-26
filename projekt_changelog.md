@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 11:06] — Claude Code
+- **Was:** NETZ_AGENT Q2 gebaut: Netz-Agent fasst die geholten Seiten mit Claude Haiku 5.5 (Workspace „luna-netz“, ohne Werkzeuge) zu einem festen Formular zusammen (strukturierte Ausgabe per JSON-Schema: Antwort, Fakten mit Quellen-Nummer, unsicher/Grund); Quellen nur als Treffer-Nummern, die Adressen setzt der Agent selbst, Laengen hart begrenzt; Formular-Fehler lassen die Rohdaten trotzdem durch. Brave-Suche mit zweitem Versuch (BF-73 behoben). LUNA-Seite `core/netz_auftraege.py`: stellt nur die reine Frage ein (Mailadressen, IBAN, Kunden-/Belegnummern, Telefon, Pfade abgelehnt), gibt nur das gepruefte, als fremd markierte Formular weiter, Verdacht ins Injection-Protokoll; Rohtexte nie an LUNA-Modelle. Tests `netz_agent/tests/test_formular.py`, `orchestrator/tests/test_netz_auftraege.py` (4 Gegenproben rot). Echter Lauf vom MACO470 mit den Schluesseln des Netz-Agenten: 3 Fragen -> 3 gueltige Formulare, je ~0,15 Cent. Doku: Datenfluesse, Zugriffs-Policy, Test-Baseline.
+- **Warum:** CEO-Go Q2 2026-10-26.
+- **Betroffen:** `netz_agent/formular.py` (neu), `netz_agent/agent.py`, `netz_agent/tests/test_formular.py`, `orchestrator/core/netz_auftraege.py` (neu), `orchestrator/tests/test_netz_auftraege.py`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `governance/zugriffs-policy.md`, `NETZ_AGENT_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-26 11:01] — Claude Code
 - **Was:** Deploy CLAUDE_AKTIV C3 live geprueft: origin/main = 239fc17, NAS mit `core/claude_api.py`; CTO-Fachagent ueber LUNA-OS mit dem direkten API-Backend (0,0105 EUR statt 0,063 EUR ueber die Kommandozeile), Chat ~0,015 EUR je Antwort; MACO470-Schluessel vom CEO per Kopierbefehl von der NAS uebernommen (HTTP 200, Sicherung `.env.vorher`), Backoffice-Worker neu gestartet, Gegenlesen laeuft ueber Claude Haiku 5.5 (7 s). C4 nach einer stabilen Woche (ab 02.11.).
 - **Warum:** Abnahme nach CEO-Deploy (Go 2026-10-26).
