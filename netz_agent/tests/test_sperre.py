@@ -40,11 +40,26 @@ class TestSperrprobe(unittest.TestCase):
             ok, text = zustand(n)
             self.assertFalse(ok)
             self.assertIn("Heimnetz", text)
-            alt = (datetime.now(timezone.utc) - timedelta(hours=4)).isoformat()
+            alt = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
             (Path(d) / "zustand.json").write_text(json.dumps({"heimnetz_gesperrt": True, "zeit": alt}))
             self.assertIn("aelter", sperre(n)[1])
             (Path(d) / "zustand.json").write_text("kaputt")
             self.assertFalse(sperre(n)[0])
+
+
+class TestFailClosed(unittest.TestCase):
+    def test_5_ohne_sperre_keine_auftraege(self):
+        zu = lambda: sperrprobe.pruefen(verbinden_mit({("api.search.brave.com", 443)}))
+        auf = lambda: sperrprobe.pruefen(verbinden_mit({("api.search.brave.com", 443), ("192.168.178.184", 22)}))
+        with tempfile.TemporaryDirectory() as d:
+            a = Agent(d, "k")
+            self.assertFalse(a.bereit(jetzt=0, pruefen=auf))                           # Luecke -> pausiert
+            self.assertFalse(a.bereit(jetzt=10, pruefen=zu))                           # erst nach 30 s neu geprueft
+            self.assertTrue(a.bereit(jetzt=31, pruefen=zu))
+            self.assertTrue(a.bereit(jetzt=200, pruefen=auf))                          # 5 min nicht neu geprueft
+            self.assertFalse(a.bereit(jetzt=332, pruefen=auf))
+        src = (ROOT / "netz_agent" / "agent.py").read_text(encoding="utf-8")
+        self.assertIn("if not args.dry_run and not agent.bereit():", src)
 
 
 class TestNetzUndSkript(unittest.TestCase):
@@ -73,6 +88,7 @@ class TestNetzUndSkript(unittest.TestCase):
         self.assertIn("weg mangle PREROUTING", s)                                     # Rueckweg
         self.assertNotIn("while", s)                                                  # BF-78: keine offene Schleife
         self.assertIn("aus()", s)
+        self.assertIn('if aktiv; then', s)                                            # BF-80: Wiederholung ohne Luecke
         self.assertNotIn("-j REJECT", s)                                              # BF-75: Synology hat kein REJECT
         self.assertIn('-j DROP || exit 1', s)                                         # Fehler nicht verschlucken                                                     # Rueckweg vorhanden
 

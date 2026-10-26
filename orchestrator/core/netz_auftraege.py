@@ -181,8 +181,8 @@ def zustand(auftraege: NetzAuftraege | None = None, *, grenze_s: float = 600) ->
     return sperre(n)
 
 
-def sperre(auftraege: NetzAuftraege | None = None, *, max_alter_s: float = 3 * 3600) -> tuple[bool, str]:
-    """Q4: Sperrprobe des Netz-Agenten (`zustand.json`, stuendlich) -- nur zwei Felder werden gelesen. Fehlt die Datei,
+def sperre(auftraege: NetzAuftraege | None = None, *, max_alter_s: float = 1800) -> tuple[bool, str]:
+    """Q4: Sperrprobe des Netz-Agenten (`zustand.json`, alle 5 min) -- nur zwei Felder werden gelesen. Fehlt die Datei,
     gilt die Probe als noch nicht eingerichtet (kein Alarm)."""
     n = auftraege or NetzAuftraege()
     p = n.q / "zustand.json"
@@ -196,7 +196,7 @@ def sperre(auftraege: NetzAuftraege | None = None, *, max_alter_s: float = 3 * 3
     except Exception:
         return False, "Sperrprobe des Netz-Agenten unlesbar -- Container luna-netz pruefen."
     if not gesperrt:
-        return False, "Netz-Agent erreicht das Heimnetz -- Sperre fehlt (deploy/netz_sperre.sh an)."
+        return False, "Heimnetz-Sperre fehlt -- Netz-Agent pausiert, bis die DSM-Aufgabe sie neu setzt (deploy/netz_sperre.sh an)."
     if alter > max_alter_s:
-        return False, "Sperrprobe des Netz-Agenten aelter als 3 h -- Container luna-netz pruefen."
+        return False, "Sperrprobe des Netz-Agenten aelter als 30 min -- Container luna-netz pruefen."
     return True, ""

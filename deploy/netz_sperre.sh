@@ -4,7 +4,8 @@
 #   an      Regeln setzen (mehrfach aufrufbar, setzt nichts doppelt)
 #   aus     Regeln entfernen (Rueckweg)
 #   status  Regeln anzeigen
-# Laeuft als root auf der NAS (sudo bzw. DSM-Aufgabenplaner beim Hochfahren). Wartet bis zu 5 min auf Docker.
+# Laeuft als root auf der NAS (sudo bzw. DSM-Aufgabenplaner beim Hochfahren UND alle paar Minuten -- DSM wirft die
+# Regel bei Container-Starts raus, BF-80). Setzt nur neu, wenn sie fehlt. Wartet bis zu 5 min auf Docker.
 #
 # Die Sperre sitzt in der Tabelle `mangle`, Kette PREROUTING (BF-79): sie sieht jedes Paket aus dem Container, bevor
 # entschieden wird, ob es an die NAS selbst geht oder weitergeleitet wird. Die Filter-Ketten INPUT/FORWARD sind auf
@@ -29,7 +30,12 @@ alt_weg() {   # Stand vor BF-79 (Filter-Tabelle) aufraeumen
   $IPT -F $KETTE 2>/dev/null; $IPT -X $KETTE 2>/dev/null
 }
 
+aktiv() {   # Sprung da und alle Sperrregeln vorhanden?
+  $M -C PREROUTING -s $NETZ -j $KETTE 2>/dev/null && [ "$($M -S $KETTE 2>/dev/null | grep -c -- "-j DROP")" -eq "$(echo $PRIVAT | wc -w)" ]
+}
+
 an() {
+  if aktiv; then echo "Heimnetz-Sperre fuer luna-netz bereits aktiv."; return 0; fi   # BF-80: alle paar Minuten aufgerufen
   for _ in $(seq 60); do $IPT -L DOCKER-USER -n >/dev/null 2>&1 && break; sleep 5; done   # erst wenn Docker laeuft
   alt_weg
   $M -N $KETTE 2>/dev/null

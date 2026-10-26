@@ -29,6 +29,8 @@ MAX_FRAGE = 300
 MAX_SEITEN = 5
 MAX_URLS = 20                                  # Q3: Auftragsart „seiten“ (feste Adressen, z. B. Feeds, Gesetzestexte)
 MAX_TREFFER = 8
+PROBE_OK_S = 300                               # Q4/BF-80: Sperrprobe alle 5 min ...
+PROBE_LUECKE_S = 30                            # ... bei fehlender Sperre alle 30 s (Auftraege warten so lange)
 BRAVE = "https://api.search.brave.com/res/v1/web/search"
 
 
@@ -82,6 +84,8 @@ class Agent:
         self.schluessel = schluessel
         self.suche, self.hole = suche, hole
         self.modell_client = modell_client                 # Q2: Anthropic-Client (None -> kein Formular, nur Rohdaten)
+        self._probe_zeit: float | None = None              # Q4: Sperrprobe
+        self._gesperrt = False
         for d in ("auftraege", "in_arbeit", "ergebnisse"):
             (self.q / d).mkdir(parents=True, exist_ok=True)
 
@@ -99,6 +103,18 @@ class Agent:
         tmp.write_text(json.dumps(e, ensure_ascii=False), encoding="utf-8")
         tmp.replace(self.q / "zustand.json")
         return e
+
+    def bereit(self, *, jetzt: float | None = None, pruefen=None) -> bool:
+        """BF-80: Auftraege nur bei gesetzter Heimnetz-Sperre (fail closed). DSM wirft die Sperre bei Container-Starts
+        raus; die DSM-Aufgabe setzt sie alle paar Minuten neu. Probe alle 5 min, solange gesperrt; sonst alle 30 s."""
+        jetzt = time.monotonic() if jetzt is None else jetzt
+        if self._probe_zeit is None or jetzt - self._probe_zeit >= (PROBE_OK_S if self._gesperrt else PROBE_LUECKE_S):
+            self._probe_zeit = jetzt
+            e = self.sperrprobe(pruefen)
+            if e["heimnetz_gesperrt"] != self._gesperrt or not e["heimnetz_gesperrt"]:
+                print(f"[netz-agent] Heimnetz-Sperre {'aktiv' if e['heimnetz_gesperrt'] else 'FEHLT -- Auftraege pausiert: ' + ', '.join(e['heimnetz_offen'])}", flush=True)
+            self._gesperrt = bool(e["heimnetz_gesperrt"])
+        return self._gesperrt
 
     def bearbeite(self, a: dict) -> dict:
         a = pruefe_auftrag(a)
@@ -174,13 +190,12 @@ def main() -> None:
         modell_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=90, max_retries=1)
     agent = Agent(args.queue, schluessel, modell_client=modell_client)
     print(f"[netz-agent] bereit, Warteschlange {args.queue}{' (trocken)' if args.dry_run else ''}", flush=True)
-    letzte_probe = 0.0
     while True:
-        if not args.dry_run and time.monotonic() - letzte_probe > 3600:     # Q4: Heimnetz-Sperre stuendlich pruefen
-            letzte_probe = time.monotonic()
-            e = agent.sperrprobe()
-            if not e["heimnetz_gesperrt"]:
-                print(f"[netz-agent] WARNUNG Heimnetz erreichbar: {', '.join(e['heimnetz_offen'])}", flush=True)
+        if not args.dry_run and not agent.bereit():           # Q4/BF-80: ohne Heimnetz-Sperre keine Auftraege
+            if args.einmal:
+                return
+            time.sleep(1)
+            continue
         n = agent.ein_durchlauf(trocken=args.dry_run)
         if n:
             print(f"[netz-agent] {n} Auftrag/Auftraege bearbeitet", flush=True)

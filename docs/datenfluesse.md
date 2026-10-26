@@ -349,7 +349,7 @@ sicherheit/hinweis_stand.json       # I4: bis wann Injection-Hinweise gemeldet s
   LUNA nur noch feste Schnittstellen; Wachtest `orchestrator/tests/test_netz_wache.py`. **Q4:** eigenes Docker-Netz
   `luna-netz-isoliert` (172.30.99.0/24, nicht im Netz von `luna-os`/`luna-telegram`); `deploy/netz_sperre.sh` (root, beim
   Hochfahren) sperrt aus diesem Netz alle privaten Adressen (mangle/PREROUTING) (Fritz!Box, NAS, MACO470, andere Container). Der Agent prueft
-  das stuendlich (`netz_agent/sperrprobe.py`) und schreibt `netz_queue/zustand.json`; LUNAs Systemcheck liest daraus nur
+  das alle 5 min und arbeitet ohne Sperre nicht (`netz_agent/sperrprobe.py`) und schreibt `netz_queue/zustand.json`; LUNAs Systemcheck liest daraus nur
   `heimnetz_gesperrt` und den Zeitpunkt.
 - **Voice-Server** (localhost:7860, WebRTC) und **Mac-Orb** (ruft `127.0.0.1:8765`) — nur am MacBook.
 

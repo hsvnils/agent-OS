@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 13:18] — Claude Code
+- **Was:** NETZ_AGENT Q4: mangle-Sperre wirkt (Zaehler, Probe gruen), DSM wirft sie aber bei Container-Starts wieder raus (BF-80). Netz-Agent arbeitet jetzt fail closed (Sperrprobe alle 5 min, bei Luecke alle 30 s, parallel; ohne Sperre keine Auftraege), Systemcheck meldet Probe aelter 30 min; Sperr-Skript setzt nur neu, wenn die Regel fehlt (fuer Wiederholung per DSM-Aufgabe). Tests mit Gegenprobe, Doku.
+- **Warum:** Live-Probe Q4 (CEO-Ausgabe: Kette ohne Referenz nach Neustart).
+- **Betroffen:** `netz_agent/agent.py`, `netz_agent/sperrprobe.py`, `netz_agent/tests/test_sperre.py`, `orchestrator/core/netz_auftraege.py`, `deploy/netz_sperre.sh`, `docs/bekannte-fehler.md`, `docs/datenfluesse.md`, `NETZ_AGENT_ROADMAP.md`
+
 ## [2026-10-26 13:11] — Claude Code
 - **Was:** NETZ_AGENT Q4: Sperre wirkte nicht, weil DSM `FORWARD`/`INPUT` auf eigene Ketten umschreibt (`DEFAULT_FORWARD`, BF-79). Sperr-Skript setzt die Kette jetzt in `mangle`/`PREROUTING` (Position 1) und raeumt die alten Filter-Regeln weg; `status` zeigt Zaehler je Regel. Test, Doku.
 - **Warum:** Live-Probe Q4 (CEO-Ausgabe).

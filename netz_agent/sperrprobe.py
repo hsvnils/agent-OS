@@ -2,7 +2,7 @@
 
 Versucht kurze TCP-Verbindungen zu Fritz!Box, NAS (DSM, LUNA-OS), MACO470, zum Docker-Gateway und zum Container
 `luna-os`; jede davon muss scheitern. Gegenprobe: die Brave-Schnittstelle muss erreichbar sein (sonst sperrt die Regel
-zu viel). Ergebnis schreibt der Agent stuendlich nach `netz_queue/zustand.json`; LUNAs Systemcheck liest daraus nur
+zu viel). Ergebnis schreibt der Agent alle 5 min nach `netz_queue/zustand.json`; LUNAs Systemcheck liest daraus nur
 `heimnetz_gesperrt` und den Zeitpunkt. Nur Standardbibliothek.
 
 Aufruf im Container: `python -m netz_agent.sperrprobe`
@@ -34,8 +34,12 @@ def _verbinden(host: str, port: int, timeout: float) -> bool:
 
 
 def pruefen(verbinden=_verbinden, *, timeout: float = 3.0) -> dict:
-    offen = [name for name, host, port in HEIMNETZ if verbinden(host, port, timeout)]
-    internet = verbinden(INTERNET[1], INTERNET[2], timeout)
+    from concurrent.futures import ThreadPoolExecutor
+    ziele = HEIMNETZ + [INTERNET]
+    with ThreadPoolExecutor(max_workers=len(ziele)) as pool:          # gleichzeitig: gesperrte Ziele laufen ins Zeitlimit
+        erreichbar = list(pool.map(lambda z: verbinden(z[1], z[2], timeout), ziele))
+    offen = [z[0] for z, ok in zip(HEIMNETZ, erreichbar) if ok]
+    internet = erreichbar[-1]
     return {"heimnetz_gesperrt": not offen, "heimnetz_offen": offen, "internet": internet,
             "zeit": datetime.now(timezone.utc).isoformat(timespec="seconds")}
 
