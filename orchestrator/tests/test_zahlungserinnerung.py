@@ -3,7 +3,7 @@ Pauschale oder Mahnkosten, Rechnung als zweiter Anhang, nur einmal und nur vor d
 darauf, die Mahnstufen zaehlen weiter ab 1."""
 import json
 import unittest
-from datetime import timedelta
+from datetime import date, timedelta
 from unittest import mock
 
 from orchestrator.core.belegverfolgung import kette
@@ -88,6 +88,50 @@ class TestZahlungserinnerung(unittest.TestCase):
         self.assertEqual(namen[0], f"Zahlungserinnerung_{ze['nummer']}.pdf")
         self.assertEqual(len(namen), 2)                                          # Rechnung geht mit
         self.assertTrue(all(a[1] > 0 for a in g.gesendet[-1]["anhaenge"]))                   # Mock merkt sich die Groesse
+
+
+class TestVorschlagZ2(unittest.TestCase):
+    """Z2: Vorschlag per Telegram ab 3 Tagen Ueberfaelligkeit, nur ohne bisherige Erinnerung/Mahnung, ❌ setzt aus."""
+    def setUp(self):
+        self.bh, self.ks, _, self.k, self.ap = _stores()
+        self.rs, self.ms = RechnungStore(self.bh, self.ks), MahnStore(self.bh, self.ks)
+        with mock.patch("orchestrator.core.rechnungen.jetzt", return_value=jetzt() - timedelta(days=20)):
+            self.re = self.rs.festschreiben(_entwurf(self.rs, self.k, self.ap, zahlungsziel_tage=14), FD)["nummer"]
+        self.faellig = date.fromisoformat(self.rs.get(self.re)["faellig_am"])
+
+    def test_1_zeitpunkt_und_bedingungen(self):
+        vor = lambda tage, **kw: [(x["rechnung"], x["stufe"]) for x in
+                                  self.ms.faellige_folgemahnungen(self.faellig + timedelta(days=tage), **kw)]
+        self.assertEqual(vor(2, erinnerung=True), [])                              # erst ab 3 Tagen nach Faelligkeit
+        self.assertEqual(vor(3, erinnerung=True), [(self.re, 0)])
+        self.assertEqual(vor(10), [])                                                # Schalter aus -> kein Vorschlag
+        self.ms.aussetzen(self.re, 0, "nein")
+        self.assertEqual(vor(10, erinnerung=True), [])                               # ❌ -> fragt nicht mehr
+
+    def test_2_nach_erinnerung_oder_zahlung_kein_vorschlag(self):
+        tag = self.faellig + timedelta(days=10)
+        ze = self.ms.erstellen(self.re, FD, erinnerung=True)
+        self.assertEqual(self.ms.faellige_folgemahnungen(tag, erinnerung=True), [])
+        self.ms.versendet(ze["nummer"], {"an": "x"})
+        self.assertEqual(self.ms.faellige_folgemahnungen(jetzt().date() + timedelta(days=8), erinnerung=True)[0]["stufe"], 1)
+        with mock.patch("orchestrator.core.rechnungen.jetzt", return_value=jetzt() - timedelta(days=20)):
+            re2 = self.rs.festschreiben(_entwurf(self.rs, self.k, self.ap, zahlungsziel_tage=14), FD)["nummer"]
+        self.rs.bezahlt(re2, datum="")
+        self.assertNotIn(re2, [x["rechnung"] for x in self.ms.faellige_folgemahnungen(tag, erinnerung=True)])
+
+    def test_3_telegram_text_und_senden(self):
+        from orchestrator.core.mahnungen import folgemahnung_frage, folgemahnung_senden
+        v = self.ms.berechnen(self.re, erinnerung=True)
+        txt = folgemahnung_frage(v, "Brand X")
+        self.assertIn("Zahlungserinnerung", txt)
+        self.assertNotIn("Verzugszinsen", txt)
+        g = MockGoogleWorkspace()
+        r = folgemahnung_senden(self.bh, self.ks, g, self.re, 0, FD, von="Telegram:CEO")
+        self.assertTrue(r["nummer"].startswith("ZE-"))
+        self.assertEqual(len(g.gesendet[-1]["anhaenge"]), 2)
+        self.assertIn("Erinnerung", g.gesendet[-1]["betreff"])
+        with self.assertRaises(ValueError):
+            folgemahnung_senden(self.bh, self.ks, g, self.re, 0, FD, von="t")       # nur einmal
 
 
 class TestZahlungserinnerungApi(ApiBasis):

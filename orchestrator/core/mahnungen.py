@@ -57,6 +57,7 @@ def dateiname(m: dict) -> str:
 def _nur_mahnungen(ms: list[dict]) -> list[dict]:
     return [m for m in ms if int(m.get("stufe") or 0) >= 1]
 FRIST_TAGE = 7
+ERINNERUNG_NACH_TAGEN = 3                                                  # Z2: Vorschlag ab 3 Tagen Ueberfaelligkeit
 
 
 def basiszins(tag: date) -> float:
@@ -287,8 +288,10 @@ class MahnStore:
         self.bh.erfassen("mahnung_ausgesetzt", {"rechnung": rechnung, "stufe": int(stufe), "grund": str(grund)[:300]},
                          von=von)
 
-    def faellige_folgemahnungen(self, heute: date | None = None) -> list[dict]:
-        """Rechnungen, deren letzte Mahnung versendet ist, deren Frist abgelaufen ist und die noch offen sind."""
+    def faellige_folgemahnungen(self, heute: date | None = None, *, erinnerung: bool = False) -> list[dict]:
+        """Rechnungen, deren letzte Mahnung versendet ist, deren Frist abgelaufen ist und die noch offen sind.
+        ZAHLUNGSERINNERUNG Z2 (`erinnerung=True`): dazu Rechnungen, die seit mindestens `ERINNERUNG_NACH_TAGEN` Tagen
+        ueberfaellig sind und noch gar nichts bekommen haben -> Vorschlag Zahlungserinnerung (Stufe 0)."""
         heute = heute or jetzt().date()
         e = self.bh.eintraege()
         rechnungen = RechnungStore._falte(e)[1]
@@ -297,6 +300,14 @@ class MahnStore:
         for m in self._falte(e).values():
             je.setdefault(m["rechnung"], []).append(m)
         out = []
+        if erinnerung:
+            grenze = (heute - timedelta(days=ERINNERUNG_NACH_TAGEN)).isoformat()
+            verfahren = self.mahnverfahren(e)
+            for re_nr, r in rechnungen.items():
+                if (re_nr not in je and r["status"] == "offen" and r.get("art") != "storno" and r.get("faellig_am")
+                        and r["faellig_am"] <= grenze and r["geld_cent"] - r["bezahlt_cent"] > 0
+                        and (re_nr, 0) not in aus and re_nr not in verfahren):
+                    out.append({"rechnung": re_nr, "stufe": 0, "letzte": "", "frist_abgelaufen": r["faellig_am"]})
         for re_nr, ms in je.items():
             ms.sort(key=lambda m: m["stufe"])
             letzte = ms[-1]
@@ -407,7 +418,12 @@ ABSENDER_NAME = "Hanserautisch – LUNA"
 
 
 def folgemahnung_frage(m: dict, firma_name: str) -> str:
-    """Telegram-Vorschau fuer die naechste Mahnstufe (aus `MahnStore.berechnen`)."""
+    """Telegram-Vorschau fuer die naechste Mahnstufe bzw. die Zahlungserinnerung (aus `MahnStore.berechnen`)."""
+    if m["stufe"] == 0:
+        return (f"💬 {firma_name}: Rechnung {m['rechnung']} ist seit {datum_de(m['faellig_am'])} fällig, noch kein "
+                f"Zahlungseingang.\n\nFreundliche Zahlungserinnerung schicken (ohne Zinsen/Gebühren, Rechnung im Anhang)?\n"
+                f"Offen {eur(m['offen_cent'])} · neue Frist: {datum_de(m['frist'])}\n"
+                "Ansehen und anpassen geht auch in LUNA-OS an der Rechnung.")
     return (f"⚠️ {firma_name}: Frist der {STUFEN[m['stufe'] - 1]} zu {m['rechnung']} ist abgelaufen, noch kein "
             f"Zahlungseingang.\n\n{STUFEN[m['stufe']]} ({m['titel']}) jetzt senden?\n"
             f"Offen {eur(m['offen_cent'])} + Verzugszinsen {eur(m['zinsen_cent'])} + {m['gebuehr_text']} "
@@ -417,17 +433,18 @@ def folgemahnung_frage(m: dict, firma_name: str) -> str:
 def folgemahnung_senden(bh, kunden, google, rechnung: str, stufe: int, firmendaten: dict, *, von: str) -> dict:
     """Nach ✅ des CEO (Telegram): Mahnung der erwarteten Stufe festschreiben und sofort senden."""
     ms = MahnStore(bh, kunden)
-    vorschau = ms.berechnen(rechnung)
+    vorschau = ms.berechnen(rechnung, erinnerung=int(stufe) == 0)
     if vorschau["stufe"] != int(stufe):
         raise ValueError(f"Stand hat sich geaendert (naechste Stufe waere {vorschau['stufe']}) -- bitte in LUNA-OS pruefen.")
     an, ap = empfaenger(kunden, vorschau["firma"])
     if not an:
         raise ValueError("Keine Rechnungs-Mail beim Kunden hinterlegt -- bitte in LUNA-OS senden.")
-    m = ms.erstellen(rechnung, firmendaten, von=von)
+    m = ms.erstellen(rechnung, firmendaten, von=von, erinnerung=int(stufe) == 0)
     voll = ms.get(m["nummer"])
     from .textbausteine import TextbausteinStore              # Standardvorlage + Signatur (TEXTBAUSTEINE T2)
     tb = TextbausteinStore(bh)
-    betreff, text = mahnung_mail_text(voll, ap, firmendaten, vorlage=tb.vorlage("mahnung"), signatur=tb.laden()["signatur"],
+    betreff, text = mahnung_mail_text(voll, ap, firmendaten, vorlage=tb.vorlage(textbaustein_art(voll)),
+                                      signatur=tb.laden()["signatur"],
                                       kunde=(kunden.firma(voll["firma"]) or {}).get("name", ""))
     senden(ms, google, m["nummer"], an=an, betreff=betreff, text=text, von=von, absender_name=ABSENDER_NAME)
     return {"nummer": m["nummer"], "an": an, "summe_cent": m["summe_cent"], "frist": m["frist"]}

@@ -3011,6 +3011,46 @@ def konzept_videograf(vorgang: str, body: dict):
     return _kunden_aktion(tun)
 
 
+@app.post("/api/crm/konzept-ideen/{vorgang}")
+def konzept_ideen(vorgang: str):
+    """KUNDEN_CHECKLISTE C3: 3 Ideen mit Skript-Geruest aus dem Briefing (Content-Agent 10) -- nur Vorschlag, nichts
+    gespeichert; der CEO uebernimmt einzelne Ideen per Klick (POST .../idee)."""
+    import time
+    from ...core.agenten_profil import AgentenNutzung
+    from ...core.charter_loader import load_subagent
+    from ...core.claude_api import modell as _modell
+    from ...core.ideen_vorschlag import als_idee, fehlende, vorschlag
+
+    def tun():
+        ks = _konzept()
+        m = ks.mappe(vorgang)
+        offen = fehlende(m)
+        if offen:
+            raise ValueError("Briefing unvollständig – bitte erst ausfüllen: " + ", ".join(offen) + ".")
+        client, anb = _cloud("konzept_ideen", timeout=90)
+        if client is None:
+            raise ValueError("Kein Modell-Zugang konfiguriert.")
+        k = ks.kontext(vorgang)
+        t0, ok = time.monotonic(), False
+        try:
+            erg = vorschlag(m, system=load_subagent("agents/10_cco-content.md", "cco").system_prompt, client=client,
+                            modell=_modell(anb, "stark"), titel=k.get("titel", ""), slots=k.get("slots"))
+            ok = True
+            return {"ideen": [i | {"idee_felder": als_idee(i)} for i in erg["ideen"]], "quelle": erg["quelle"]}
+        except (KeyError, ValueError):
+            raise
+        except Exception as exc:                          # Netz/Kontingent: ohne Fehlertext (koennte Schluessel enthalten)
+            print(f"[konzept-ideen] {exc.__class__.__name__}", flush=True)
+            raise ValueError("Der Content-Agent ist gerade nicht erreichbar -- bitte gleich noch einmal versuchen.") from None
+        finally:
+            try:
+                AgentenNutzung(ROOT / "agenten_nutzung" / "log.jsonl").erfassen(
+                    "cco", ok=ok, dauer_ms=int((time.monotonic() - t0) * 1000), quelle="konzept")
+            except Exception:
+                pass
+    return _kunden_aktion(tun)
+
+
 @app.post("/api/crm/konzept-bild/{vorgang}")
 async def konzept_bild_hochladen(vorgang: str, request: Request, idee: str = ""):
     from urllib.parse import unquote

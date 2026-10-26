@@ -15,7 +15,7 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
 const jget = async (u) => { try { const r = await fetch(u); return r.ok ? await r.json() : null; } catch { return null; } };
 // Sofort sichtbar (CEO 2026-10-06): jede erfolgreiche Aenderung an /api laedt Glocke und aktuelle Seite neu --
 // sofort, wenn kein Fenster offen ist, sonst beim Schliessen. Reine Lese-/Vorschau-Aufrufe zaehlen nicht.
-const NUR_LESEN = /\/api\/(nutzung|prefs|chat|tts|sehen|login|logout|passkey)|\/(vorschlag|versandvorschau|vorschau)(\?|$)|konzept-videograf|mailentwurf|impressum-suche|\/pruefen$|\/eml$/;
+const NUR_LESEN = /\/api\/(nutzung|prefs|chat|tts|sehen|login|logout|passkey)|\/(vorschlag|versandvorschau|vorschau)(\?|$)|konzept-videograf|konzept-ideen|mailentwurf|impressum-suche|\/pruefen$|\/eml$/;
 let AENDERUNG_NR = 0, SEITE_NR = 0, AENDERUNG_TIMER = null;   // Zaehler statt Zeit: gleiche Millisekunde waere mehrdeutig
 const _fetchOriginal = window.fetch.bind(window);
 window.fetch = async (u, opt) => {
@@ -2328,7 +2328,7 @@ const KZ_ST = { idee: ["Idee", "neutral"], ausgewaehlt: ["ausgewählt", "ok"], v
 const kzBadge = (st) => { const [l, c] = KZ_ST[st] || [st, "neutral"]; return `<span class="v2-badge ${c}">${esc(l)}</span>`; };
 async function konzeptLaden(beleg, tab) {
   const box = $("#kz-box"); if (!box) return;
-  if (beleg !== KZ.beleg) KZ.vid = null;                    // Videograf-Vorschlag gehoert zum Vorgang
+  if (beleg !== KZ.beleg) { KZ.vid = null; KZ.iv = null; }  // Vorschlaege gehoeren zum Vorgang
   if (tab) KZ.tab = tab;
   const d = await jget(`/api/crm/konzept/${encodeURIComponent(beleg)}`);
   if (!d) { box.innerHTML = emptyRow("Konzept nicht verfügbar."); return; }
@@ -2354,7 +2354,8 @@ function konzeptZeichnen() {
         <label class="v2-btn sm v2-kz-upload">🖼 Bild<input type="file" accept="image/*" multiple hidden data-kz-bild="${esc(i.id)}"></label>
         ${i.status !== "verworfen" ? `<button class="v2-btn sm" data-act="kz-vid" data-id="${esc(i.id)}" data-val="idee">🎥 Videograf</button>` : ""}</div></div>`;
     const ideen = Object.values(m.ideen || {}).sort((a, b) => (a.status === "verworfen") - (b.status === "verworfen") || String(a.angelegt).localeCompare(String(b.angelegt)));
-    inhalt = `${ideen.length ? `<div class="v2-kz-liste">${ideen.map(karte).join("")}</div>` : `<div class="v2-sub">Noch keine Ideen.</div>`}
+    inhalt = `${kzIvPanel()}<div class="v2-card-actions" style="margin-bottom:8px"><button class="v2-btn" data-act="kz-iv" data-id="${esc(v)}" ${KZ.iv && KZ.iv.laden ? "disabled" : ""} title="3 Ideen mit Skript-Gerüst aus dem Briefing – nur Vorschlag">💡 Ideen vorschlagen</button></div>
+      ${ideen.length ? `<div class="v2-kz-liste">${ideen.map(karte).join("")}</div>` : `<div class="v2-sub">Noch keine Ideen.</div>`}
       ${bilder.filter(x => !x.idee).length ? `<h4>Moodboard</h4><div class="v2-kz-mood">${bilder.filter(x => !x.idee).map(x => `<a href="/api/crm/konzept-bild/${encodeURIComponent(v)}/${x.i}" target="_blank" rel="noopener"><img src="/api/crm/konzept-bild/${encodeURIComponent(v)}/${x.i}" alt="" loading="lazy"></a>`).join("")}</div>` : ""}
       <details class="v2-pz" ${ideen.length ? "" : "open"}><summary><b>+ Idee hinzufügen</b></summary><div class="v2-form">
         <label class="v2-feld"><small>Titel *</small><input id="kzi-titel" class="v2-inp" maxlength="160"></label>
@@ -2428,6 +2429,35 @@ async function kzVid(act, id, val) {
       const { ok, ...felder } = z; const r = await jpost(`/api/crm/konzept/${encodeURIComponent(v)}/szene`, { ...felder, quelle: KZ.vid.quelle || "Videograf-Agent (Vorschlag)" });
       if (!r || r.ok === false) { kundenMsg("kz-vid-msg", (r && r.hinweis) || "Keine Verbindung.", false); break; }
       z.ok = true; }
+    return konzeptLaden(KZ.beleg);
+  }
+}
+// KUNDEN_CHECKLISTE C3: Ideen-Vorschlaege des Content-Agenten aus dem Briefing -- per Klick als Idee uebernehmen
+function kzIvPanel() {
+  const x = KZ.iv; if (!x) return "";
+  if (x.laden) return `<div class="v2-kz-vid"><b>💡 Content-Agent denkt nach …</b><small class="v2-sub">3 Ideen aus dem Briefing – dauert meist 15–40 Sekunden.</small></div>`;
+  if (x.fehler) return `<div class="v2-kz-vid err"><b>💡 Kein Vorschlag</b><small class="v2-sub">${esc(x.fehler)}</small><div class="v2-card-actions"><button class="v2-btn sm" data-act="kz-iv-weg">Schließen</button></div></div>`;
+  return `<div class="v2-kz-vid"><div class="v2-kz-zeile"><b>💡 Vorschlag des Content-Agenten</b><span class="v2-sub">Vorschlag – nichts ist gespeichert</span></div>
+    ${x.ideen.map((i, n) => `<div class="v2-kz-szene${i.ok ? " ok" : ""}"><div class="grow"><b>${n + 1} · ${esc(i.titel)}</b><small class="v2-sub">${esc([i.format, i.laenge, i.ziel].filter(Boolean).join(" · "))}</small>
+      ${i.beschreibung ? `<p>${esc(i.beschreibung)}</p>` : ""}${i.hook ? `<small class="v2-sub"><b>Hook:</b> ${esc(i.hook)}</small><br>` : ""}${i.text ? `<small class="v2-sub"><b>Ablauf:</b> ${esc(i.text)}</small><br>` : ""}${i.cta ? `<small class="v2-sub"><b>CTA:</b> ${esc(i.cta)}</small>` : ""}</div>
+      ${i.ok ? `<span class="v2-badge ok">übernommen</span>` : `<button class="v2-btn sm" data-act="kz-iv-ueb" data-val="${n}">＋ als Idee</button>`}</div>`).join("")}
+    <div class="v2-card-actions"><button class="v2-btn sm" data-act="kz-iv-weg">Vorschlag schließen</button></div><div id="kz-iv-msg" class="v2-msg"></div></div>`;
+}
+async function kzIv(act, val) {
+  const v = KZ.d && KZ.d.kontext.vorgang; if (!v) return;
+  if (act === "kz-iv-weg") { KZ.iv = null; return konzeptZeichnen(); }
+  if (act === "kz-iv") {
+    KZ.iv = { laden: true, v }; konzeptZeichnen();
+    const r = await jpost(`/api/crm/konzept-ideen/${encodeURIComponent(v)}`, {});
+    if (!KZ.iv || KZ.iv.v !== v) return;
+    KZ.iv = r && r.ok !== false ? { ...r, v } : { fehler: (r && r.hinweis) || "Keine Verbindung.", v };
+    return konzeptZeichnen();
+  }
+  if (act === "kz-iv-ueb" && KZ.iv && KZ.iv.ideen) {
+    const i = KZ.iv.ideen[Number(val)]; if (!i || i.ok) return;
+    const r = await jpost(`/api/crm/konzept/${encodeURIComponent(v)}/idee`, i.idee_felder);
+    if (!r || r.ok === false) return kundenMsg("kz-iv-msg", (r && r.hinweis) || "Keine Verbindung.", false);
+    i.ok = true;
     return konzeptLaden(KZ.beleg);
   }
 }
@@ -5134,6 +5164,7 @@ async function handleAct(act, el) {
     case "bv-oeffnen": return belegVerfolgung(id);
     case "konzept": return konzeptFenster(id, val);
     case "kz-vid": case "kz-vid-ueb": case "kz-vid-weg": return kzVid(act, id, val);
+    case "kz-iv": case "kz-iv-ueb": case "kz-iv-weg": return kzIv(act, val);
     case "kz-tab": case "kz-briefing": case "kz-idee": case "kz-idee-status": case "kz-skript": case "kz-szene": case "kz-erledigt": case "kz-szene-weg":
     case "kz-dreh": case "kz-freigabe": case "kz-senden-form": case "kz-senden": case "kz-drehmodus": return kzAktion(act, id, val, el);
     case "dreh-haken": { const v = KZ.d ? KZ.d.kontext.vorgang : ""; const d = v ? null : await jget(`/api/crm/konzept/${encodeURIComponent(val)}`);

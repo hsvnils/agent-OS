@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 16:03] — Claude Code
+- **Was:** ZAHLUNGSERINNERUNG Z2 und KUNDEN_CHECKLISTE C3 gebaut (Branch `ai/z2-c3`). Z2: Telegram-Vorschlag der Zahlungserinnerung einmal je Rechnung ab 3 Tagen Ueberfaelligkeit (✅ sendet mit Rechnung als Anhang, ❌ setzt aus, Schalter `ZAHLUNGSERINNERUNG_VORSCHLAG`). C3: „💡 Ideen vorschlagen“ in der Konzept-Mappe -- Content-Agent liefert 3 Ideen mit Skript-Geruest aus dem Briefing (nur mit Pflicht-Briefing, ohne Freigabe-Personen/Notizen), Uebernahme je Klick als Idee. Cache v141. Tests mit Gegenproben; Datenfluesse und Datenschutz-Check ergaenzt.
+- **Warum:** CEO-Go Z2 und C3.
+- **Betroffen:** `orchestrator/core/mahnungen.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/core/ideen_vorschlag.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_zahlungserinnerung.py`, `orchestrator/tests/test_ideen_vorschlag.py`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, beide Roadmaps
+
 ## [2026-10-26 15:52] — Claude Code
 - **Was:** KUNDEN_CHECKLISTE C2 nach CEO-Deploy live geprueft (nur lesend): origin/main = ef0e511, LUNA-OS liefert app-v2.js v140 / style v74, `/api/crm/leitfaden/fragen` 10 Bloecke, leere Checkliste als PDF (64 KB) und Word (37 KB) abrufbar; Netz-Agent-Sperre unveraendert aktiv. Kein Leitfaden an einem echten Kunden angelegt (Abnahme = CEO).
 - **Warum:** Live-Pruefung nach Deploy.

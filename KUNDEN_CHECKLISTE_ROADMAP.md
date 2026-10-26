@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-10-26
-- Arbeitsbranch: `ai/kunden-leitfaden`
+- Arbeitsbranch: `ai/z2-c3`
 - Basiscommit: `30ccdb8`
-- Naechster Schritt: C2 deployt -- Abnahme durch den CEO in einem (Probe-)Gespraech auf Rechner, iPad und iPhone; C3 nach eigenem Go.
+- Naechster Schritt: C2 live (Abnahme CEO offen); C3 gebaut -- Merge/Deploy (CEO), dann an einem echten Vorgang Kosten messen (< 0,05 EUR).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -105,7 +105,7 @@ koennen.“
 
 ## Etappe C3: Ideen- und Skript-Vorschlaege aus dem Briefing (optional)
 
-- Status: geplant
+- Status: gebaut 2026-10-26 (`orchestrator/core/ideen_vorschlag.py`, Knopf „💡 Ideen vorschlagen“ im Reiter Ideen der Konzept-Mappe; Content-Agent 10 mit Skills als System-Prompt, Claude Sonnet 5.5; erst mit Ziel, Zielgruppe, Kernbotschaft und Tonalitaet; ans Modell nur Briefing ohne Freigaben/Notizen, Kampagnentitel, Leistungen, vorhandene Ideentitel; 3 Ideen mit Hook/Ablauf/CTA/Laenge, je Klick „＋ als Idee“ uebernommen (Skript-Geruest in der Beschreibung); Tests mit Modell-Attrappe und Gegenprobe). Deploy und Kostenmessung offen
 - Ziel / Scope / Nicht-Scope: Knopf „Ideen vorschlagen“ -> 3 Ideen + Skript-Geruest als Entwurf in der Mappe; nur
   Briefing-Inhalte ans Modell (keine Kontaktdaten), Kosten im Kostenlog. Nicht-Scope: Freigabe/Versand.
 - Gate: Tests mit Modell-Attrappe (nur Briefing im Prompt, Entwurfsstatus), Kostenmessung je Vorschlag.

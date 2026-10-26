@@ -2213,12 +2213,14 @@ def main() -> None:
                             from ...core.kunden import KundenStore as _KS
                             from ...core.mahnungen import MahnStore, folgemahnung_frage
                             _ks = _KS(_bh)
-                            for _f in MahnStore(_bh, _ks).faellige_folgemahnungen():
+                            _ze = str(secrets.get("ZAHLUNGSERINNERUNG_VORSCHLAG", "1")).strip().lower() not in ("0", "false", "nein", "off")
+                            for _f in MahnStore(_bh, _ks).faellige_folgemahnungen(erinnerung=_ze):
                                 _schl = f"mahnfrage:{_f['rechnung']}:{_f['stufe']}"
-                                if ctx.agenda.briefing_gesendet(_schl, _j.date().isoformat()):
+                                _tag = "einmal" if _f["stufe"] == 0 else _j.date().isoformat()   # Z2: Erinnerung nur 1x fragen
+                                if ctx.agenda.briefing_gesendet(_schl, _tag):
                                     continue
                                 try:
-                                    _v = MahnStore(_bh, _ks).berechnen(_f["rechnung"])
+                                    _v = MahnStore(_bh, _ks).berechnen(_f["rechnung"], erinnerung=_f["stufe"] == 0)
                                 except (ValueError, KeyError) as _exc:
                                     print(f"[mahnung] {_f['rechnung']}: {_exc}", flush=True)
                                     continue
@@ -2228,7 +2230,7 @@ def main() -> None:
                                 _name = (_ks.firma(_v["firma"]) or {}).get("name", _v["firma"])
                                 if _api(token, "sendMessage", {"chat_id": allowed, "text": fuer_telegram(folgemahnung_frage(_v, _name)),
                                                                "reply_markup": json.dumps(_kb)}).get("ok"):
-                                    ctx.agenda.markiere_briefing(_schl, _j.date().isoformat())
+                                    ctx.agenda.markiere_briefing(_schl, _tag)
                     except Exception as exc:
                         print(f"[beleg-sicherung] {exc}", flush=True)
                 # Instagram-DM-Poll: opt-in INSTAGRAM_DM_POLL=1. Token selbst-erneuernd (INSTAGRAM_USER_TOKEN
