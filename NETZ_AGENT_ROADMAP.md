@@ -123,7 +123,7 @@ LUNA ◀──Ergebnis-Formular (Antwort, Fakten, Quellen; Laengen geprueft)─�
 
 ## Etappe Q5: Angriffstests und Regel verbindlich
 
-- Status: Testreihe und CISO-Zeile gebaut 2026-10-26 (`orchestrator/tests/test_netz_angriffe.py`: Anweisung auf der Seite, versteckter Text, Link-Abfluss, uebergrosse Antworten, kaputtes Formular, manipulierte Ergebnis-Datei, Statistik, CISO-Zeile; neu gehaertet: unsichtbarer Seitentext wird nicht uebernommen, fremde Links im Formular ersetzt); Regel in `AGENTS.md`/Zugriffs-Policy und Charta Researcher als Diff beim CEO
+- Status: Testreihe und CISO-Zeile gebaut 2026-10-26 (`orchestrator/tests/test_netz_angriffe.py`: Anweisung auf der Seite, versteckter Text, Link-Abfluss, uebergrosse Antworten, kaputtes Formular, manipulierte Ergebnis-Datei, Statistik, CISO-Zeile; neu gehaertet: unsichtbarer Seitentext wird nicht uebernommen, fremde Links im Formular ersetzt); Regel in `AGENTS.md` 5.7, Zugriffs-Policy und Charta `15_researcher.md` nach CEO-Bestaetigung des Diffs uebernommen 2026-10-26; Deploy offen
 - Ziel / Scope / Nicht-Scope: Angriffs-Testreihe gegen den Netz-Agenten (praeparierte Seiten: Anweisungen, versteckter
   Text, Link-Abfluss, uebergrosse Antworten) -- er darf nichts ausser dem Formular liefern; Kennzahlen im CISO-Bericht
   (Auftraege, verworfene Formulare, Verdacht); Regel aus Q0 Nr. 3 in `AGENTS.md` 5.7 und `governance/zugriffs-policy.md`;

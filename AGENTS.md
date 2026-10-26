@@ -175,6 +175,12 @@ proaktiv und reicht ihn (ueber den HoA, ggf. mit CEO-Tor) ein, statt auf eine An
 - Der **CISO autorisiert** Berechtigungen und definiert die **Zugriffs-Policy** (welcher Agent darf was).
 - Der **CTO setzt** autorisierte Berechtigungen technisch **um**.
 - **Kein Agent erhaelt Zugriff ohne CISO-konforme Freigabe.**
+- **Freies Internet nur ueber den Netz-Agenten.** Freie Websuchen und Abrufe von Webseiten fuehrt ausschliesslich der
+  Netz-Agent aus (eigener Container ohne Dateien und Schluessel des Unternehmens, Heimnetz gesperrt). Alle anderen
+  Agenten stellen nur Auftraege an ihn -- mit der reinen Frage, nie mit internen Daten -- und erhalten nur sein
+  geprueftes Ergebnis-Formular; Rohtexte von Webseiten gehen nie an ein Modell. Direkt angebunden bleiben nur feste
+  Daten-Schnittstellen (Liste und Wachtest: `orchestrator/tests/test_netz_wache.py`); jede neue feste Schnittstelle
+  braucht eine CISO-Freigabe.
 
 ### 5.8 Standard-Eskalationszeile in jeder Charta
 

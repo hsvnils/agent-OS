@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 14:12] — Head of Agents (ausgefuehrt von Claude Code)
+- **Was:** NETZ_AGENT Q5 Teil 2 nach CEO-Bestaetigung des Diffs: neue Regel in `AGENTS.md` 5.7 „Freies Internet nur ueber den Netz-Agenten“; Zugriffs-Policy aktualisiert (`web_research` nur ueber den Netz-Agenten, Anthropic-Web aus, Netz-Agent Stand Q4/Q5, Historie); Charta-Aenderung `agents/15_researcher.md` (Auftraggeber des Netz-Agenten, keine eigenen Netzabrufe, keine internen Daten in Auftraegen, Netz-Agent als technischer Arbeiter ohne Charta, Modell-Zeile `claude-sonnet-5-5`). Register-Eintrag.
+- **Warum:** CEO-Go Q5, Diff ausdruecklich bestaetigt („Bestaetigt“) — Charta-Schreibrecht nach `AGENTS.md` 3.3.
+- **Betroffen:** `AGENTS.md`, `governance/zugriffs-policy.md`, `agents/15_researcher.md`, `docs/entscheidungs-register.md`, `NETZ_AGENT_ROADMAP.md`
+
 ## [2026-10-26 14:07] — Claude Code
 - **Was:** Nachtrag zu Q5 Teil 1: `sicherheit/netz_agent.jsonl` in die Datenfluss-Tabelle und ins Backup (append-only) aufgenommen; Doku-Check meldete die Luecke (vorheriger Commit lief trotz rotem Doku-Check durch).
 - **Warum:** Doku-Pflicht Datenfluesse/Backup.
