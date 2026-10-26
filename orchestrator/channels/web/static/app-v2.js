@@ -2484,7 +2484,7 @@ async function maDetail(nr, meldung, fehler) {
     + `<button class="v2-btn" data-act="bv-oeffnen" data-id="${esc(nr)}">🔗 Belegverfolgung</button><button class="v2-btn" data-act="re-detail" data-id="${esc(m.rechnung)}">↩ Rechnung ${esc(m.rechnung)}</button>`;
   if (!m.versendet_am) aktionen += `<button class="v2-btn pri" data-act="ma-senden" data-id="${esc(nr)}">✉️ Senden …</button>`;
   else if (!m.alt) aktionen += `<button class="v2-btn" data-act="ma-senden" data-id="${esc(nr)}" data-val="erneut" title="Gleiche Mahnung noch einmal schicken">✉️ Erneut senden …</button>`;
-  const status = `<div class="v2-kv"><span>Mahnung</span><b>${m.versendet_am ? (m.alt ? "vor LUNA verschickt" : "✉️ gesendet " + esc(zeit(m.versendet_am)) + ((m.mail || {}).an ? " an " + esc(m.mail.an) : "")) : "noch nicht gesendet"}</b></div>
+  const status = `<div class="v2-kv"><span>${m.stufe === 0 ? "Zahlungserinnerung" : "Mahnung"}</span><b>${m.versendet_am ? (m.alt ? "vor LUNA verschickt" : "✉️ gesendet " + esc(zeit(m.versendet_am)) + ((m.mail || {}).an ? " an " + esc(m.mail.an) : "")) : "noch nicht gesendet"}</b></div>
     ${(m.erneut || []).map(x => `<div class="v2-kv"><span>Erneut gesendet</span><b>${esc(zeit(x.ts))}${x.an ? " an " + esc(x.an) : ""}${x.kanal === "mail-programm" ? " (Mail-Programm)" : ""}</b></div>`).join("")}
     <div class="v2-kv"><span>Frist</span><b>${esc(datumDe(m.frist))}</b></div>
     <div class="v2-kv"><span>Rechnung</span><b><a href="#" data-act="re-detail" data-id="${esc(m.rechnung)}">${esc(m.rechnung)}</a> · ${esc((RE_STATUS[r.status] || [r.status || ""])[0])}</b></div>
@@ -3231,6 +3231,7 @@ async function reDetail(id, meldung, fehler) {
     if (r.ware_erhalten) aktionen += `<button class="v2-btn" data-act="re-ware-storno" data-id="${esc(r.nummer)}" title="Falsch erfassten Ware-Eingang zurücknehmen">↶ Ware-Eingang stornieren</button>`;
     if (r.status === "offen" && r.art !== "storno") aktionen += `<button class="v2-btn" data-act="re-bearbeiten" data-id="${esc(r.nummer)}" title="Ausgestellte Rechnungen werden nie verändert: LUNA storniert sie und legt einen Korrektur-Entwurf mit allen Daten an">✎ Bearbeiten …</button>`;
     if (r.status === "offen") aktionen += `<button class="v2-btn" data-act="re-storno" data-id="${esc(r.nummer)}">Stornieren …</button>`;
+    if (d.naechste_erinnerung) aktionen += `<button class="v2-btn" data-act="ma-form" data-id="${esc(r.nummer)}" data-val="erinnerung" title="Freundliche Erinnerung ohne Zinsen und Gebühren – vor der 1. Mahnung">💬 Zahlungserinnerung erstellen …</button>`;
     if (d.naechste_mahnung) aktionen += `<button class="v2-btn danger" data-act="ma-form" data-id="${esc(r.nummer)}">⚠️ ${esc(d.naechste_mahnung.titel)} erstellen …</button>`;
     if (r.status === "offen" && r.art !== "storno" && !d.mahnverfahren && (d.mahnungen || []).length) aktionen += `<button class="v2-btn" data-act="re-mv-form" data-id="${esc(r.nummer)}" title="Gerichtliches Mahnverfahren ist eingeleitet (z. B. durch die Anwältin)">⚖️ Mahnverfahren eintragen …</button>`;
     if (r.status === "offen" && r.art !== "storno" && (d.mahnungen || []).length < 3) aktionen += `<button class="v2-btn" data-act="re-altmahn-form" data-id="${esc(r.nummer)}" title="Mahnung, die du schon selbst verschickt hast">📨 Mahnung vor LUNA erfassen …</button>`;
@@ -3238,10 +3239,10 @@ async function reDetail(id, meldung, fehler) {
   if (r.auftrag) aktionen += `<button class="v2-btn" data-act="ab-detail" data-id="${esc(r.auftrag)}">↩ Auftrag ${esc(r.auftrag)}</button>`;
   if (r.bezug) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.bezug)}">↩ Original ${esc(r.bezug)}</button>`;
   if (r.storniert_durch) aktionen += `<button class="v2-btn" data-act="re-detail" data-id="${esc(r.storniert_durch)}">Storno ${esc(r.storniert_durch)}</button>`;
-  const MSTUFE = { 1: "Mahnstufe 1", 2: "Mahnstufe 2", 3: "Mahnstufe 3" };   // Brief an den Kunden: „1./2./3. Mahnung“
+  const MSTUFE = { 0: "Zahlungserinnerung", 1: "Mahnstufe 1", 2: "Mahnstufe 2", 3: "Mahnstufe 3" };   // Brief an den Kunden: „1./2./3. Mahnung“
   const mv = d.mahnverfahren;
   const dokumente = (d.dokumente || []).map(x => `<div class="v2-list-row"><span>📎</span><div class="grow"><b><a href="/api/crm/akte/${encodeURIComponent(x.id)}/datei" target="_blank" rel="noopener">${esc(x.titel)}</a></b><small>${esc(datumDe(x.datum))}${x.notiz ? " · " + esc(x.notiz) : ""}</small></div></div>`).join("");
-  const mahnungen = (d.mahnungen || []).map(m => `<div class="v2-list-row"><span>⚠️</span><div class="grow"><b><a href="#" data-act="ma-detail" data-id="${esc(m.nummer)}">${esc(MSTUFE[m.stufe])} ${esc(m.nummer)}</a> · ${cent2eur(m.summe_cent)}</b><small>${esc(datumDe(m.datum))} · Frist ${esc(datumDe(m.frist))} · ${m.versendet_am ? "✉️ gesendet an " + esc((m.mail || {}).an || "") : "noch nicht gesendet"}</small></div>
+  const mahnungen = (d.mahnungen || []).map(m => `<div class="v2-list-row"><span>${m.stufe === 0 ? "💬" : "⚠️"}</span><div class="grow"><b><a href="#" data-act="ma-detail" data-id="${esc(m.nummer)}">${esc(MSTUFE[m.stufe])} ${esc(m.nummer)}</a> · ${cent2eur(m.summe_cent)}</b><small>${esc(datumDe(m.datum))} · Frist ${esc(datumDe(m.frist))} · ${m.versendet_am ? "✉️ gesendet an " + esc((m.mail || {}).an || "") : "noch nicht gesendet"}</small></div>
     <a class="v2-btn sm" href="/api/finanzen/mahnungen/${encodeURIComponent(m.nummer)}/pdf" target="_blank" rel="noopener">📄</a><button class="v2-btn sm" data-act="bv-oeffnen" data-id="${esc(m.nummer)}" title="Belegverfolgung">🔗</button>${m.versendet_am ? "" : `<button class="v2-btn pri sm" data-act="ma-senden" data-id="${esc(m.nummer)}">✉️ Senden …</button>`}</div>`).join("");
   const zahlungen = (r.zahlungen || []).map((z, i) => `<div class="v2-list-row${z.storniert ? " v2-fin-storno" : ""}"><span>💶</span><div class="grow"><b>${cent2eur(z.betrag_cent)}${z.nebenforderung_cent ? " + " + cent2eur(z.nebenforderung_cent) + " Zinsen/Kosten" : ""}</b><small>${esc(datumDe(z.datum))}${z.zuordnung_jahr ? " · zugeordnet " + esc(z.zuordnung_jahr) : ""}${z.notiz ? " · " + esc(z.notiz) : ""}${z.storniert ? " · storniert: " + esc(z.storno_grund || "") : ""}</small></div>${!z.storniert && r.status !== "storniert" ? `<button class="v2-btn" data-act="re-zahlung-storno" data-id="${esc(r.nummer)}" data-val="${i}" title="Falsch erfasste Zahlung zurücknehmen">↶</button>` : ""}</div>`).join("");
   const lbl = { rechnung_entwurf: "Entwurf angelegt", rechnung_entwurf_geaendert: "Entwurf geändert", rechnung_festgeschrieben: "Festgeschrieben", rechnung_versendet: "Gesendet", rechnung_bezahlt: "Zahlung", rechnung_zahlung_storniert: "Zahlung storniert" };
@@ -3333,11 +3334,23 @@ async function reWareForm(nr) {
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 // Mahnung (Etappe 10): Vorschau mit Frist -> festschreiben (MA-Nummer, PDF) -> Versand mit Vorschau
-async function maForm(nr, frist) {
+// ZAHLUNGSERINNERUNG Z1: gleicher Ablauf als Stufe 0 (ZE-Nummer, ohne Zinsen/Gebuehren, Rechnung als 2. Anhang)
+async function maForm(nr, frist, erinnerung) {
   const box = $("#re-aktion-box"); if (!box) return;
   frist = frist || 7;
-  const v = await jget(`/api/finanzen/rechnungen/${encodeURIComponent(nr)}/mahnung-vorschau?frist_tage=${frist}`);
+  const v = await jget(`/api/finanzen/rechnungen/${encodeURIComponent(nr)}/mahnung-vorschau?frist_tage=${frist}${erinnerung ? "&erinnerung=true" : ""}`);
   if (!v || !v.ok) { box.innerHTML = `<div class="v2-msg err">${esc((v && v.hinweis) || "Keine Vorschau möglich.")}</div>`; return; }
+  if (v.stufe === 0) {
+    box.innerHTML = `<h3>Zahlungserinnerung zu ${esc(nr)}</h3><div class="v2-form" style="max-width:560px">
+    <label class="v2-feld"><small>Zahlungsfrist (Tage ab heute)</small><input id="ma-frist" type="number" min="1" max="60" value="${frist}"></label>
+    <table class="v2-table"><tbody><tr><td>Offener Rechnungsbetrag (fällig ${esc(datumDe(v.faellig_am))})</td><td style="text-align:right">${cent2eur(v.offen_cent)}</td></tr>
+      <tr><td><b>Zahlbar bis ${esc(datumDe(v.frist))}</b></td><td style="text-align:right"><b>${cent2eur(v.summe_cent)}</b></td></tr></tbody></table>
+    <small class="v2-sub">Freundlich, ohne Zinsen und Gebühren; die Rechnung geht noch einmal mit. Danach ist als Nächstes die 1. Mahnung möglich.</small>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ma-erstellen" data-id="${esc(nr)}" data-val="erinnerung">💬 Zahlungserinnerung festschreiben</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="ma-msg" class="v2-msg"></div></div>`;
+    $("#ma-frist").addEventListener("change", e => maForm(nr, Number(e.target.value) || 7, true));
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
   const zins = (v.zins_abschnitte || []).map(a => `<tr><td><small>Verzugszinsen ${String(a.satz).replace(".", ",")} % p. a. auf ${cent2eur(a.offen_cent)}, ${datumDe(a.von)}–${datumDe(a.bis)} (${a.tage} Tage)</small></td><td style="text-align:right">${cent2eur(a.cent)}</td></tr>`).join("");
   box.innerHTML = `<h3>${esc(v.titel)} zu ${esc(nr)}</h3><div class="v2-form" style="max-width:560px">
     <label class="v2-feld"><small>Zahlungsfrist (Tage ab heute)</small><input id="ma-frist" type="number" min="1" max="60" value="${frist}"></label>
@@ -3353,12 +3366,13 @@ async function maSendenVorschau(ma, erneut) {
   const box = $("#re-aktion-box"); if (!box) return;
   const v = await jget(`/api/finanzen/mahnungen/${encodeURIComponent(ma)}/versandvorschau`);
   if (!v) { box.innerHTML = emptyRow("Vorschau nicht verfügbar."); return; }
-  box.innerHTML = `<h3>Mahnung ${esc(ma)} ${erneut ? "erneut " : ""}senden</h3>${erneut ? `<div class="v2-msg">Gleiche Mahnung noch einmal – Stufe und Frist bleiben, die Mail wird an der Mahnung vermerkt.</div>` : ""}<div class="v2-form">
+  const artName = v.zusatz_pdf ? "Zahlungserinnerung" : "Mahnung";
+  box.innerHTML = `<h3>${artName} ${esc(ma)} ${erneut ? "erneut " : ""}senden</h3>${erneut ? `<div class="v2-msg">Gleiche ${artName} noch einmal – Stufe und Frist bleiben, die Mail wird daran vermerkt.</div>` : ""}<div class="v2-form">
     <div class="v2-kv"><span>Absender</span><b>${esc(v.absender)}</b></div>
     ${empfBaustein("mas", v)}
     <label class="v2-feld"><small>Betreff *</small><input id="mas-betreff" value="${esc(v.betreff)}"></label>
     <label class="v2-feld"><small>Text *</small><textarea id="mas-text" class="v2-inp" rows="8">${esc(v.text)}</textarea></label>
-    <div class="v2-kv"><span>Anhang</span><a href="/api/finanzen/mahnungen/${encodeURIComponent(ma)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a></div>${mailBlock("mahnung", ma, v, erneut)}
+    <div class="v2-kv"><span>Anhang</span><span><a href="/api/finanzen/mahnungen/${encodeURIComponent(ma)}/pdf" target="_blank" rel="noopener">📎 ${esc(v.pdf)}</a>${v.zusatz_pdf ? ` + 📎 ${esc(v.zusatz_pdf)}` : ""}</span></div>${mailBlock("mahnung", ma, v, erneut)}
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="ma-senden-jetzt" data-id="${esc(ma)}" ${erneut ? 'data-val="erneut"' : ""} ${sendSperre(v)}>✉️ Jetzt senden</button><button class="v2-btn" data-act="re-box-zu">Abbrechen</button></div><div id="mas-msg" class="v2-msg"></div></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -4942,10 +4956,10 @@ async function handleAct(act, el) {
       const t = [...document.querySelectorAll("#an-summe-box .v2-kv b")]; const g = t.length ? t[[...document.querySelectorAll("#an-summe-box .v2-kv span")].findIndex(s => s.textContent.includes("Gesamtbetrag"))] : null;
       if (g) { $("#an-ware-wert").value = g.textContent.replace(/[^\d,.-]/g, ""); anSumme(); } return;
     }
-    case "ma-form": return maForm(id);
+    case "ma-form": return maForm(id, 7, val === "erinnerung");
     case "ma-erstellen": {
       const frist = Number(($("#ma-frist") || {}).value) || 7;
-      const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/mahnung`, { frist_tage: frist, bestaetigt: true });
+      const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/mahnung`, { frist_tage: frist, bestaetigt: true, erinnerung: val === "erinnerung" });
       if (!r || !r.ok) return kundenMsg("ma-msg", (r && r.hinweis) || "Fehler.", false);
       if (AKTIV === "rechnungen") renderRechnungen();
       await reDetail(id, `${r.nummer} festgeschrieben — jetzt prüfen und senden.`); return maSendenVorschau(r.nummer);
@@ -4954,8 +4968,9 @@ async function handleAct(act, el) {
     case "ma-senden-jetzt": {
       const r = await jpost(`/api/finanzen/mahnungen/${encodeURIComponent(id)}/senden`, { an: $("#mas-an").value.trim(), betreff: $("#mas-betreff").value.trim(), text: $("#mas-text").value, bestaetigt: true, erneut: val === "erneut" });
       if (!r || !r.ok) return kundenMsg("mas-msg", (r && r.hinweis) || "Fehler.", false);
-      if (AKTIV !== "rechnungen" && !RE_DETAIL) return maDetail(id, `Mahnung ${id} an ${r.an} ${val === "erneut" ? "erneut " : ""}gesendet.`);
-      return reDetail(RE_DETAIL && RE_DETAIL.rechnung ? RE_DETAIL.rechnung.nummer : id, `Mahnung ${id} an ${r.an} ${val === "erneut" ? "erneut " : ""}gesendet.`);
+      const was = id.startsWith("ZE-") ? "Zahlungserinnerung" : "Mahnung";
+      if (AKTIV !== "rechnungen" && !RE_DETAIL) return maDetail(id, `${was} ${id} an ${r.an} ${val === "erneut" ? "erneut " : ""}gesendet.`);
+      return reDetail(RE_DETAIL && RE_DETAIL.rechnung ? RE_DETAIL.rechnung.nummer : id, `${was} ${id} an ${r.an} ${val === "erneut" ? "erneut " : ""}gesendet.`);
     }
     case "re-bezahlt": {
       const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/bezahlt`, { datum: $("#rez-datum").value, betrag: $("#rez-betrag").value.trim() || null, notiz: $("#rez-notiz").value.trim(), zuordnung_jahr: zehnTageWert("rez-zuord"), nebenforderung: ($("#rez-neben") || {}).value || null });

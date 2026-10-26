@@ -26,7 +26,7 @@ MAX_BYTES = 15 * 1024 * 1024
 FREEMAIL = {"gmail.com", "googlemail.com", "web.de", "gmx.de", "gmx.net", "icloud.com", "me.com", "mac.com", "outlook.com",
             "hotmail.com", "hotmail.de", "live.com", "live.de", "t-online.de", "yahoo.com", "yahoo.de", "aol.com", "freenet.de",
             "posteo.de", "proton.me", "protonmail.com", "mail.de"}
-_BEZUG = re.compile(r"^(RE|AN|AB|RG|MA|ER|EB)-[A-Z0-9\-]{3,30}$")
+_BEZUG = re.compile(r"^(RE|AN|AB|RG|MA|ZE|ER|EB)-[A-Z0-9\-]{3,30}$")
 
 
 def _domain(url_oder_mail: str) -> str:

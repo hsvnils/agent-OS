@@ -295,7 +295,8 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                                      "Zahlung oder Nachricht warten", "re-detail", r["nummer"], "", h))
                     continue
                 if not ms:                                   # Etappe 10: naechster Schritt im Mahnverfahren
-                    t = (f"Rechnung {r['nummer']} überfällig", f"{wer}; Mahnstufe 1 erstellen oder Zahlung erfassen", r["faellig_am"])
+                    t = (f"Rechnung {r['nummer']} überfällig", f"{wer}; Zahlungserinnerung oder Mahnstufe 1 erstellen oder "
+                         "Zahlung erfassen", r["faellig_am"])
                 elif not ms[-1].get("versendet_am"):
                     t = (f"{STUFEN[ms[-1]['stufe']]} {ms[-1]['nummer']} senden", wer, h)
                 elif ms[-1]["frist"] >= h:

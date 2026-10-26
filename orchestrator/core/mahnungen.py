@@ -13,6 +13,11 @@ Forderung je Mahnung (CEO-Entscheidung 2026-09-28):
 - Zinsen und Pauschalen sind Schadensersatz -- keine Umsatzsteuer, zaehlen nicht zum § 19-Umsatz.
 
 Nummern `MA-JJJJ-NNNN`, PDF als Geschaeftsbrief (6 Jahre), alles unveraenderbar in der Hash-Kette.
+
+ZAHLUNGSERINNERUNG Z1 (CEO 2026-10-26): freiwillige **Stufe 0** vor der 1. Mahnung -- Nummer `ZE-JJJJ-NNNN`, freundlicher
+Ton, **ohne** Zinsen, Pauschale oder Mahnkosten, Rechnung als zweiter Anhang; hoechstens eine je Rechnung und nur, solange
+noch keine Mahnung existiert. Gleiche Ereignisse wie Mahnungen (`mahnung_erstellt` mit `stufe: 0`); die Mahnstufen
+zaehlen ab 1 weiter, die 1. Mahnung nimmt Bezug auf die Erinnerung.
 """
 from __future__ import annotations
 
@@ -40,8 +45,17 @@ def tage_jahr(tag: date) -> int:
     return 366 if tag.year % 4 == 0 and (tag.year % 100 != 0 or tag.year % 400 == 0) else 365
 
 
-STUFEN = {1: "Mahnstufe 1", 2: "Mahnstufe 2", 3: "Mahnstufe 3"}          # Status in LUNA (CEO 2026-10-01)
-BRIEF = {1: "1. Mahnung", 2: "2. Mahnung", 3: "3. Mahnung"}                # Ueberschrift/Betreff an den Kunden
+STUFEN = {0: "Zahlungserinnerung", 1: "Mahnstufe 1", 2: "Mahnstufe 2", 3: "Mahnstufe 3"}   # Status in LUNA (CEO 2026-10-01)
+BRIEF = {0: "Zahlungserinnerung", 1: "1. Mahnung", 2: "2. Mahnung", 3: "3. Mahnung"}       # Ueberschrift/Betreff an den Kunden
+KREIS = {0: "ZE"}                                                          # sonst MA
+
+
+def dateiname(m: dict) -> str:
+    return f"{'Zahlungserinnerung' if m.get('stufe') == 0 else 'Mahnung'}_{m['nummer']}.pdf"
+
+
+def _nur_mahnungen(ms: list[dict]) -> list[dict]:
+    return [m for m in ms if int(m.get("stufe") or 0) >= 1]
 FRIST_TAGE = 7
 
 
@@ -144,8 +158,9 @@ class MahnStore:
     # -- Berechnen --------------------------------------------------------------------------------------------------
 
     def berechnen(self, rechnung: str, *, stichtag: str | None = None, frist_tage: int = FRIST_TAGE,
-                  eintraege: list[dict] | None = None) -> dict:
-        """Vorschau der naechsten Mahnung (ohne etwas zu schreiben). ValueError, wenn nicht mahnbar."""
+                  eintraege: list[dict] | None = None, erinnerung: bool = False) -> dict:
+        """Vorschau der naechsten Mahnung bzw. (`erinnerung=True`) der Zahlungserinnerung -- ohne etwas zu schreiben.
+        ValueError, wenn nicht moeglich."""
         e = self.bh.eintraege() if eintraege is None else eintraege
         rechnung = (rechnung or "").strip().upper()
         r = RechnungStore._falte(e)[1].get(rechnung)
@@ -159,7 +174,11 @@ class MahnStore:
         bisher = self.fuer_rechnung(rechnung, e)
         if bisher and not bisher[-1].get("versendet_am"):
             raise ValueError(f"{bisher[-1]['nummer']} ist noch nicht versendet -- erst senden, dann die naechste Stufe.")
-        stufe = len(bisher) + 1
+        mahn = _nur_mahnungen(bisher)
+        ze = [m for m in bisher if m.get("stufe") == 0]
+        if erinnerung and (mahn or ze):
+            raise ValueError("Eine Zahlungserinnerung geht nur einmal und nur vor der 1. Mahnung.")
+        stufe = 0 if erinnerung else len(mahn) + 1
         if stufe > 3:
             raise ValueError("Mahnstufe 3 ist verschickt -- weiter nur ueber Mahnverfahren/Inkasso (CEO).")
         if not 1 <= int(frist_tage) <= 60:
@@ -168,11 +187,17 @@ class MahnStore:
             raise ValueError(f"Der Geldteil von {rechnung} ist bezahlt -- offen ist nur die Ware (nicht mahnbar, nachfordern).")
         f = self.kunden.firma(r["firma"]) or {}
         verbraucher = bool(f.get("verbraucher"))
+        offen = r["geld_cent"] - r["bezahlt_cent"]         # Barter: nur der Geldteil
+        if stufe == 0:                                     # Zahlungserinnerung: nur der offene Betrag, keine Kosten
+            return {"rechnung": rechnung, "stufe": 0, "titel": BRIEF[0], "datum": heute.isoformat(),
+                    "frist": (heute + timedelta(days=int(frist_tage))).isoformat(), "faellig_am": r["faellig_am"],
+                    "rechnungsdatum": r.get("rechnungsdatum", ""), "firma": r["firma"], "verbraucher": verbraucher,
+                    "offen_cent": offen, "zinsen_cent": 0, "zins_abschnitte": [], "zins_tage": 0, "tageszins_cent": 0,
+                    "gebuehr_cent": 0, "gebuehr_text": "", "summe_cent": offen, "vorige": [], "erinnerung": None}
         zahlungen = [(z["datum"], int(z.get("betrag_cent") or 0)) for z in r.get("zahlungen", []) if not z.get("storniert")]
         z = verzugszinsen(r["geld_cent"], zahlungen, r["faellig_am"], heute.isoformat(),
                           AUFSCHLAG_VERBRAUCHER if verbraucher else AUFSCHLAG_UNTERNEHMER)
         gebuehr = KOSTEN_VERBRAUCHER_CENT * stufe if verbraucher else PAUSCHALE_UNTERNEHMER_CENT
-        offen = r["geld_cent"] - r["bezahlt_cent"]         # Barter: nur der Geldteil
         tageszins = round(offen * z["abschnitte"][-1]["satz"] / 100 / tage_jahr(heute)) if z["abschnitte"] else 0
         return {"rechnung": rechnung, "stufe": stufe, "titel": BRIEF[stufe], "datum": heute.isoformat(),
                 "frist": (heute + timedelta(days=int(frist_tage))).isoformat(), "faellig_am": r["faellig_am"],
@@ -182,19 +207,25 @@ class MahnStore:
                 "gebuehr_text": (f"Mahnkosten ({stufe} × {eur(KOSTEN_VERBRAUCHER_CENT)})" if verbraucher
                                  else "Verzugspauschale nach § 288 Abs. 5 BGB"),
                 "summe_cent": offen + z["zinsen_cent"] + gebuehr,
-                "vorige": [{"nummer": m["nummer"], "datum": m["datum"]} for m in bisher]}
+                "vorige": [{"nummer": m["nummer"], "datum": m["datum"]} for m in mahn],
+                "erinnerung": ({"nummer": ze[0]["nummer"], "datum": ze[0]["datum"]} if ze else None)}
 
     # -- Schreiben --------------------------------------------------------------------------------------------------
 
-    def erstellen(self, rechnung: str, firmendaten: dict, *, frist_tage: int = FRIST_TAGE, von: str = "") -> dict:
-        """Mahnung festschreiben: Nummer MA-, PDF (Geschaeftsbrief) und Eintrag in einem Schritt."""
+    def erstellen(self, rechnung: str, firmendaten: dict, *, frist_tage: int = FRIST_TAGE, von: str = "",
+                  erinnerung: bool = False) -> dict:
+        """Mahnung (MA-) bzw. Zahlungserinnerung (ZE-) festschreiben: Nummer, PDF (Geschaeftsbrief) und Eintrag in einem
+        Schritt."""
         heute = jetzt().date()
 
         def erzeuge(nummer, eintraege):
-            m = self.berechnen(rechnung, stichtag=heute.isoformat(), frist_tage=frist_tage, eintraege=eintraege)
-            return m, [(self.pdf(m | {"nummer": nummer}, firmendaten), f"Mahnung_{nummer}.pdf", "geschaeftsbrief")]
+            m = self.berechnen(rechnung, stichtag=heute.isoformat(), frist_tage=frist_tage, eintraege=eintraege,
+                               erinnerung=erinnerung)
+            m = m | {"nummer": nummer}
+            return m, [(self.pdf(m, firmendaten), dateiname(m), "geschaeftsbrief")]
 
-        ev = self.bh.festschreiben("MA", "mahnung_erstellt", erzeuge, jahr=heute.year, bezug=rechnung, von=von)
+        ev = self.bh.festschreiben(KREIS.get(0 if erinnerung else 1, "MA"), "mahnung_erstellt", erzeuge, jahr=heute.year,
+                                   bezug=rechnung, von=von)
         return {k: ev["daten"][k] for k in ("nummer", "stufe", "summe_cent", "frist")}
 
     def alt_erfassen(self, rechnung: str, *, datum: str, frist: str = "", summe=None, pdf: bytes | None = None,
@@ -219,7 +250,7 @@ class MahnStore:
             if r.get("art") == "storno" or r["status"] != "offen":
                 raise ValueError(f"{rechnung} ist {r['status']} -- keine Mahnung erfassbar.")
             bisher = self.fuer_rechnung(rechnung, e)
-            stufe = len(bisher) + 1
+            stufe = len(_nur_mahnungen(bisher)) + 1
             if stufe > 3:
                 raise ValueError("Es sind schon drei Mahnungen erfasst.")
             if tag < r["rechnungsdatum"] or (bisher and tag < bisher[-1]["datum"]):
@@ -291,9 +322,15 @@ class MahnStore:
         aps = [a for a in f.get("ansprechpartner_liste", []) if a.get("aktiv")]
         ap = aps[0] if aps else None
         vorige = ", ".join(f"{datum_de(v['datum'])}" for v in m["vorige"])
-        einl = {1: f"sicher ist es Ihrer Aufmerksamkeit entgangen: Unsere Rechnung {m['rechnung']} vom "
-                   f"{datum_de(m['rechnungsdatum'])} war am {datum_de(m['faellig_am'])} fällig und ist noch nicht "
-                   "(vollständig) bezahlt.",
+        if m["stufe"] == 0:
+            return self._teile_erinnerung(m, f, ap)
+        ze = m.get("erinnerung")
+        einl = {1: (f"leider ist zu unserer Zahlungserinnerung vom {datum_de(ze['datum'])} noch kein Zahlungseingang zu "
+                    f"verzeichnen: Unsere Rechnung {m['rechnung']} vom {datum_de(m['rechnungsdatum'])} war am "
+                    f"{datum_de(m['faellig_am'])} fällig und ist noch nicht (vollständig) bezahlt." if ze else
+                    f"sicher ist es Ihrer Aufmerksamkeit entgangen: Unsere Rechnung {m['rechnung']} vom "
+                    f"{datum_de(m['rechnungsdatum'])} war am {datum_de(m['faellig_am'])} fällig und ist noch nicht "
+                    "(vollständig) bezahlt."),
                 2: f"leider konnten wir trotz unserer Mahnung vom {vorige} noch keinen Zahlungseingang zu unserer Rechnung "
                    f"{m['rechnung']} feststellen.",
                 3: f"trotz unserer Mahnungen vom {vorige} ist unsere Rechnung {m['rechnung']} weiterhin nicht bezahlt. "
@@ -330,6 +367,25 @@ class MahnStore:
                                                 ("Rechnung", m["rechnung"]), ("Kundennummer", m["firma"]),
                                                 ("Zahlbar bis", datum_de(m["frist"]))]}
 
+    @staticmethod
+    def _teile_erinnerung(m: dict, f: dict, ap: dict | None) -> dict:
+        """Zahlungserinnerung (Stufe 0): freundlich, nur der offene Betrag -- Wortlaut nach CEO-Vorgabe 2026-10-26."""
+        einl = (f"im täglichen Stress gehen manchmal Dinge unter. Daher möchten wir euch gern an die Zahlung zu unserer "
+                f"Rechnung {m['rechnung']} vom {datum_de(m['rechnungsdatum'])} erinnern, die am {datum_de(m['faellig_am'])} "
+                "fällig war.")
+        pos = [{"beschreibung": f"Rechnung {m['rechnung']} vom {datum_de(m['rechnungsdatum'])}, fällig am "
+                                f"{datum_de(m['faellig_am'])} – offener Betrag", "menge": "1", "einheit": "",
+                "einzelpreis_cent": m["offen_cent"], "gesamt_cent": m["offen_cent"]}]
+        hinweise = [f"Bitte überweist den offenen Betrag von {eur(m['summe_cent'])} bis zum {datum_de(m['frist'])} unter "
+                    f"Angabe der Rechnungsnummer {m['rechnung']} auf das unten genannte Konto.",
+                    "Die Rechnung hängen wir euch noch einmal an.",
+                    "Falls ihr die Zahlung schon auf den Weg gebracht habt: Danke! Dann betrachtet diese Erinnerung bitte "
+                    "als gegenstandslos."]
+        return {"firma": f, "ap": ap, "anrede": anrede_moin(ap, f.get("name", "")), "einleitung": einl, "positionen": pos,
+                "hinweise": hinweise, "infos": [("Datum", datum_de(m["datum"])), ("Zahlungserinnerung", m["nummer"]),
+                                                ("Rechnung", m["rechnung"]), ("Kundennummer", m["firma"]),
+                                                ("Zahlbar bis", datum_de(m["frist"]))]}
+
 
 def mahnung_mail_text(m: dict, ap: dict | None, firmendaten: dict, *, vorlage: dict | None = None,
                       signatur: str = "", kunde: str = "") -> tuple[str, str]:
@@ -338,7 +394,13 @@ def mahnung_mail_text(m: dict, ap: dict | None, firmendaten: dict, *, vorlage: d
                             "faellig": datum_de(m["faellig_am"]), "stufe": BRIEF[m["stufe"]],
                             "mahnung_im_text": BRIEF[m["stufe"]] if m["stufe"] < 3 else "letzte Mahnung",
                             "betrag": eur(m["summe_cent"]), "frist": datum_de(m["frist"])}
-    return rendern("mahnung", w, firmendaten, vorlage=vorlage, signatur=signatur)
+    if m["stufe"] == 0:                                            # ZAHLUNGSERINNERUNG Z1: eigener Textbaustein
+        w = {k: v for k, v in w.items() if k not in ("stufe", "mahnung_im_text")}
+    return rendern(textbaustein_art(m), w, firmendaten, vorlage=vorlage, signatur=signatur)
+
+
+def textbaustein_art(m: dict) -> str:
+    return "zahlungserinnerung" if m.get("stufe") == 0 else "mahnung"
 
 
 ABSENDER_NAME = "Hanserautisch – LUNA"
@@ -396,9 +458,13 @@ def senden(ms: MahnStore, google, nummer: str, *, an: str, betreff: str, text: s
     if google is None or not google.verfuegbar():
         raise ValueError("Google ist nicht verbunden -- Senden nicht moeglich.")
     pfad = m["belege"][0]["pfad"]
-    pdf = (ms.bh.dir / pfad).read_bytes()
-    s = google.mail_senden(an, betreff, text, bestaetigt=True, absender_name=absender_name,
-                           anhaenge=[(f"Mahnung_{m['nummer']}.pdf", pdf, "application/pdf")])
+    anhaenge = [(dateiname(m), (ms.bh.dir / pfad).read_bytes(), "application/pdf")]
+    if m["stufe"] == 0:                                            # Zahlungserinnerung: Rechnung noch einmal anhaengen
+        r = RechnungStore._falte(ms.bh.eintraege())[1].get(m["rechnung"]) or {}
+        if r.get("belege"):
+            rp = r["belege"][0]["pfad"]
+            anhaenge.append((Path(rp).name.split("-", 1)[-1], (ms.bh.dir / rp).read_bytes(), "application/pdf"))
+    s = google.mail_senden(an, betreff, text, bestaetigt=True, absender_name=absender_name, anhaenge=anhaenge)
     if not s.get("ok"):
         raise ValueError(s.get("hinweis") or "Senden fehlgeschlagen.")
     mail = {"an": an, "message_id": s.get("id", ""), "thread_id": s.get("thread_id", ""), "betreff": betreff,

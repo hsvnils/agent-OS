@@ -19,6 +19,7 @@ import re
 import uuid
 
 ARTEN = {"angebot": "Angebot", "auftrag": "Auftragsbestätigung", "rechnung": "Rechnung", "storno": "Stornorechnung",
+         "zahlungserinnerung": "Zahlungserinnerung",                                             # ZAHLUNGSERINNERUNG Z1
          "mahnung": "Mahnung", "bericht": "Projektbericht", "konzept": "Konzept",
          "vorstellung": "Vorstellung", "vorstellung_nachfassen": "Vorstellung – Nachfassen",   # SERIEN_UND_VORSTELLUNG V1/V2
          "einwilligung": "Einwilligung (Kopie)",                                                  # EINWILLIGUNG_AUFNAHMEN E3
@@ -41,6 +42,8 @@ PLATZHALTER: dict[str, dict[str, str]] = {
                              "stufe": "„1. Mahnung“ / „2. Mahnung“ / „3. Mahnung“",
                              "mahnung_im_text": "„1. Mahnung“, „2. Mahnung“ bzw. „letzte Mahnung“", "betrag": "Gesamtbetrag",
                              "frist": "Zahlungsfrist (Datum)"},
+    "zahlungserinnerung": _GEMEINSAM | {"rechnung": "Rechnungsnummer", "faellig": "ursprüngliche Fälligkeit",
+                                        "betrag": "offener Betrag", "frist": "Zahlungsfrist (Datum)"},
     "bericht": _GEMEINSAM | {"titel_quote": "„ „Titel““ (leer ohne Titel)", "version_zusatz": "„ (Version 2)“ ab der 2. Fassung"},
     "vorstellung": {k: v for k, v in _GEMEINSAM.items() if k not in ("nummer", "titel", "titel_zusatz")}
                    | {"praesentation": "Präsentations-Zeile mit Canva-Link (aus dem Katalog)"},
@@ -60,7 +63,7 @@ PLATZHALTER: dict[str, dict[str, str]] = {
                              "version_zusatz": "„ (Version 2)“ ab der 2. Fassung"},
 }
 # frueherer fester Gruss (gilt, solange keine Signatur hinterlegt ist)
-GRUSS = {"bericht": "Viele Grüße", "konzept": "Viele Grüße"}
+GRUSS = {"bericht": "Viele Grüße", "konzept": "Viele Grüße", "zahlungserinnerung": "Viele Grüße"}
 
 STANDARD: dict[str, dict] = {
     "angebot": {"betreff": "Angebot {nummer}{titel_zusatz}",
@@ -80,6 +83,12 @@ STANDARD: dict[str, dict] = {
                         "Sie unsere {mahnung_im_text} ({nummer}). Bitte überweisen Sie den Gesamtbetrag von {betrag} bis "
                         "zum {frist}.\n\nSollte sich Ihre Zahlung mit dieser Nachricht überschnitten haben, betrachten "
                         "Sie sie bitte als gegenstandslos."},
+    "zahlungserinnerung": {"betreff": "Kurze Erinnerung zu unserer Rechnung {rechnung}",
+                           "text": "{anrede_moin}\n\nim täglichen Stress gehen manchmal Dinge unter. Daher möchten wir euch "
+                                   "gern an die Zahlung zu unserer Rechnung {rechnung} erinnern, die am {faellig} fällig war. "
+                                   "Offen sind noch {betrag} – wir freuen uns über eure Überweisung bis zum {frist}.\n\n"
+                                   "Die Zahlungserinnerung ({nummer}) und die Rechnung hängen wir euch noch einmal an. Falls "
+                                   "ihr schon bezahlt habt: Danke, dann ist diese Mail gegenstandslos."},
     "bericht": {"betreff": "Projektbericht {nummer}{titel_zusatz}{version_zusatz}",
                 "text": "{anrede_moin}\n\nanbei unser Projektbericht zur Kampagne{titel_quote} mit den erreichten Zahlen "
                         "je Posting.\n\nBei Fragen melden Sie sich gern."},

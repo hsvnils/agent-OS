@@ -24,7 +24,7 @@ _INTERN = [
     ("Mailadresse", re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")),
     ("IBAN", re.compile(r"\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}\b")),
     ("Kunden-/Firmennummer", re.compile(r"\bK-\d{5}(?:-\d{2})?\b")),
-    ("Belegnummer", re.compile(r"\b(?:AN|AB|RE|RG|ER|EB|GS|MA|L|KO|FG)-\d{4}[-\d]*\b|\bRG-\d{8}\b")),
+    ("Belegnummer", re.compile(r"\b(?:AN|AB|RE|RG|ER|EB|GS|MA|ZE|L|KO|FG)-\d{4}[-\d]*\b|\bRG-\d{8}\b")),
     ("Telefonnummer", re.compile(r"(?:\+\d{2}|\b0\d{2,4})[\s/-]?\d{3,}[\s-]?\d{2,}")),
     ("Dateipfad", re.compile(r"(?:^|\s)(?:/[\w.-]+){2,}|[A-Za-z]:\\\\|\.env\b")),
 ]

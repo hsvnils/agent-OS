@@ -71,7 +71,9 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 7. **Mahnwesen**: Die 1. Mahnung stoesst der Inhaber an; nach Fristablauf fragt LUNA per Telegram nach der 2. bzw.
    letzten Mahnung und versendet erst nach Bestaetigung. Verzugszinsen ab Faelligkeit (Basiszinssatz + 9 bzw. 5
    Prozentpunkte, taggenau), Verzugspauschale 40 EUR (Unternehmer) bzw. 2,50 EUR je Mahnung (Verbraucher). Mahnungen
-   `MA-JJJJ-NNNN` werden wie Rechnungen unveraenderbar abgelegt.
+   `MA-JJJJ-NNNN` werden wie Rechnungen unveraenderbar abgelegt. Seit 2026-10-26 kann der 1. Mahnung eine freundliche
+   **Zahlungserinnerung** `ZE-JJJJ-NNNN` vorausgehen (einmal je Rechnung, ohne Zinsen und Kosten, nur nach Bestaetigung
+   versendet, Rechnung als Anhang); sie wird wie eine Mahnung als Geschaeftsbrief unveraenderbar abgelegt.
 8. **Zahlungsbedingungen und Vorkasse** (Etappe 18): Je Angebot werden Zahlungsziel und optional eine Vorkasse (Prozent
    des Geldanteils oder fester Betrag, Frist in Tagen nach Auftragsbestaetigung oder festes Datum) festgelegt und
    unveraendert in Auftrag und Rechnung uebernommen. Die Vorkasse wird als eigene **Vorkasse-Rechnung** `RE-JJJJ-NNNN`

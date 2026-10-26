@@ -19,9 +19,9 @@ from email import policy
 from email.utils import parseaddr
 
 KENNUNG = re.compile(r"<(luna-[0-9a-f]{24})@", re.I)
-BELEGNR = re.compile(r"\b(?:AN|AB|RE|MA)-\d{4}-\d{4}\b|\bRG-\d{6,8}\b", re.I)
+BELEGNR = re.compile(r"\b(?:AN|AB|RE|MA|ZE)-\d{4}-\d{4}\b|\bRG-\d{6,8}\b", re.I)
 TESTMAIL = "TESTMAIL"                                          # Testmail aus LUNA-OS (Gate M2): nur melden, nichts ablegen
-ART = {"AN": "Angebot", "AB": "Auftrag", "RE": "Rechnung", "RG": "Rechnung", "MA": "Mahnung"}
+ART = {"AN": "Angebot", "AB": "Auftrag", "RE": "Rechnung", "RG": "Rechnung", "MA": "Mahnung", "ZE": "Zahlungserinnerung"}
 
 
 def schluessel(message_id: str, roh: bytes) -> str:

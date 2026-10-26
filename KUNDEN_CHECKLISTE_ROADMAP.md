@@ -47,7 +47,7 @@ Requisiten/Produkte, die bereitstehen muessen? Parken, Strom, Zugang?
 **J. Call to Action** -- Was soll der Zuschauer am Ende tun (folgen, reservieren, Link, anrufen, vorbeikommen)? Gibt es
 einen Link, Rabattcode oder eine Aktion?
 
-## Entscheidungen fuer den CEO (Q0) -- mit Empfehlung
+## Entscheidungen fuer den CEO (Q0) -- **entschieden 2026-10-26: alle Empfehlungen angenommen**
 
 1. **Form:** Empfehlung **beides**: (a) Checkliste als Dokument (PDF hochkant + Word, nur mit Kopf wie die
    Konzept-Vorlage) zum Mitnehmen ins Kundengespraech oder zum Vorab-Schicken; (b) in LUNA-OS in der Konzept-Mappe

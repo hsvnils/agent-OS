@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 14:59] — Claude Code
+- **Was:** ZAHLUNGSERINNERUNG Z1 gebaut (Branch `ai/zahlungserinnerung`): Zahlungserinnerung als Stufe 0 vor der 1. Mahnung -- Nummernkreis `ZE`, PDF und Mail im CEO-Wortlaut ohne Zinsen/Pauschale/Kosten, einmal je Rechnung und nur vor der 1. Mahnung, Rechnung als zweiter Anhang, Textbaustein `zahlungserinnerung`; Knopf in der Rechnungsansicht (V2, Cache v139), Zu erledigen, Belegverfolgung, Nummern-Erkennung (Firmenakte, Mail-Antworten, Netz-Auftraege); 1. Mahnung verweist auf die Erinnerung. Tests mit Gegenproben. Q0 beider neuen Roadmaps als entschieden eingetragen (Register).
+- **Warum:** CEO-Go Z1 (Empfehlungen angenommen).
+- **Betroffen:** `orchestrator/core/mahnungen.py`, `orchestrator/core/buchhaltung.py`, `orchestrator/core/textbausteine.py`, `orchestrator/core/belegverfolgung.py`, `orchestrator/core/todos.py`, `orchestrator/core/firmenakte.py`, `orchestrator/core/mail_antworten.py`, `orchestrator/core/netz_auftraege.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_zahlungserinnerung.py`, Doku
+
 ## [2026-10-26 14:32] — Claude Code
 - **Was:** Zwei neue Roadmaps (nur Plan, keine Umsetzung): `ZAHLUNGSERINNERUNG_ROADMAP.md` (Beleg „Zahlungserinnerung“ vor der 1. Mahnung, Z1 Beleg/PDF/Versand, Z2 Telegram-Vorschlag) und `KUNDEN_CHECKLISTE_ROADMAP.md` (Fragenkatalog-Entwurf A-J, C1 Dokument, C2 in der Konzept-Mappe, C3 Ideen-/Skript-Vorschlaege); je Q0-Entscheidungen mit Empfehlung; im Roadmap-Verzeichnis eingetragen.
 - **Warum:** CEO-Wunsch 2026-10-26.

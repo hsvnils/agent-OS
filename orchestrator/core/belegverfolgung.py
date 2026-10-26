@@ -17,7 +17,7 @@ from .angebote import AngebotStore, summen
 from .beauftragung import AuftragBuch
 from .firmenakte import _falte as akte_falte
 from .lieferungen import Lieferungen
-from .mahnungen import MahnStore
+from .mahnungen import STUFEN, MahnStore
 from .rechnungen import RechnungStore
 
 RANG = {"angebot": 0, "auftrag": 1, "lieferung": 2, "entwurf": 3, "vorkasse": 3, "rechnung": 3, "schlussrechnung": 3,
@@ -137,10 +137,10 @@ def kette(eintraege: list[dict], kennung: str, *, finanzen: bool = True) -> dict
     for m in MahnStore._falte(eintraege).values():
         r = rechnungen.get(m.get("rechnung"))
         knoten_neu(m["nummer"], "mahnung", m["nummer"], m.get("datum") or m.get("erstellt"),
-                   titel=f"Mahnstufe {m.get('stufe')}", betrag=m.get("summe_cent"), firma=(r or {}).get("firma", ""),
+                   titel=STUFEN.get(int(m.get("stufe") or 0), "Mahnung"), betrag=m.get("summe_cent"), firma=(r or {}).get("firma", ""),
                    status="gesendet" if m.get("versendet_am") else "",
                    oeffnen={"act": "ma-detail", "id": m["nummer"]})
-        kante(m.get("rechnung"), m["nummer"], "gemahnt")
+        kante(m.get("rechnung"), m["nummer"], "erinnert" if m.get("stufe") == 0 else "gemahnt")
     for re_nr, mv in MahnStore.mahnverfahren(eintraege).items():
         mid = f"MV:{re_nr}"
         knoten_neu(mid, "mahnverfahren", "Mahnverfahren", mv.get("datum") or mv["erfasst"], titel=mv.get("durch") or "",

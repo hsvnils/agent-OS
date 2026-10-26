@@ -3327,6 +3327,10 @@ def rechnung_detail(kennung: str):
         mahnbar = ""
     except (ValueError, KeyError) as exc:
         naechste, mahnbar = None, str(exc)
+    try:                                                 # ZAHLUNGSERINNERUNG Z1: moeglich, solange noch nicht gemahnt
+        erinnerung = ms.berechnen(r["nummer"], erinnerung=True) if r.get("nummer") else None
+    except (ValueError, KeyError):
+        erinnerung = None
     from ...core.firmenakte import Firmenakte
     doks = [{k: x.get(k) for k in ("id", "titel", "art", "datum", "notiz")}
             for x in Firmenakte(kunden_store.bh, kunden_store).zu_bezug(r.get("nummer", ""))] if r.get("nummer") else []
@@ -3335,7 +3339,7 @@ def rechnung_detail(kennung: str):
             "google": bool(_google().verfuegbar()), "firmendaten": bool(_firmendaten()),
             "steuernummer": bool(_firmendaten().get("steuernummer")), "mahnungen": mahn,
             "mahnverfahren": MahnStore.mahnverfahren(kunden_store.bh.eintraege()).get(r.get("nummer", "")) if r.get("nummer") else None,
-            "naechste_mahnung": naechste, "nicht_mahnbar": mahnbar,
+            "naechste_mahnung": naechste, "nicht_mahnbar": mahnbar, "naechste_erinnerung": erinnerung,
             "blatt": _blatt(lambda fd: belegblatt.rechnung(_rechnungen(), r, fd))}
 
 
@@ -3589,8 +3593,8 @@ def mahnung_detail(nummer: str):
 
 
 @app.get("/api/finanzen/rechnungen/{nummer}/mahnung-vorschau")
-def mahnung_vorschau(nummer: str, frist_tage: int = 7):
-    return _kunden_aktion(lambda: _mahn().berechnen(nummer, frist_tage=frist_tage))
+def mahnung_vorschau(nummer: str, frist_tage: int = 7, erinnerung: bool = False):
+    return _kunden_aktion(lambda: _mahn().berechnen(nummer, frist_tage=frist_tage, erinnerung=erinnerung))
 
 
 @app.post("/api/finanzen/rechnungen/{nummer}/mahnung")
@@ -3604,7 +3608,8 @@ async def mahnung_erstellen(nummer: str, request: Request):
         fd = _firmendaten()
         if not fd:
             raise ValueError("Firmendaten fehlen.")
-        return _mahn().erstellen(nummer, fd, frist_tage=int(body.get("frist_tage") or 7), von=_von(request))
+        return _mahn().erstellen(nummer, fd, frist_tage=int(body.get("frist_tage") or 7), von=_von(request),
+                                 erinnerung=body.get("erinnerung") is True)
     return _kunden_aktion(tun)
 
 
@@ -3613,22 +3618,24 @@ def mahnung_pdf(nummer: str):
     m = _mahn().get(nummer)
     if not m or not m.get("belege"):                    # Mahnung vor LUNA ohne PDF (Etappe 19)
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Mahnung bzw. kein PDF hinterlegt")
+    from ...core.mahnungen import dateiname
     return Response((kunden_store.bh.dir / m["belege"][0]["pfad"]).read_bytes(), media_type="application/pdf",
-                    headers={"Content-Disposition": f'inline; filename="Mahnung_{m["nummer"]}.pdf"'})
+                    headers={"Content-Disposition": f'inline; filename="{dateiname(m)}"'})
 
 
 @app.get("/api/finanzen/mahnungen/{nummer}/versandvorschau")
 def mahnung_versandvorschau(nummer: str, vorlage: str = ""):
-    from ...core.mahnungen import empfaenger, mahnung_mail_text
+    from ...core.mahnungen import dateiname, empfaenger, mahnung_mail_text, textbaustein_art
     m = _mahn().get(nummer)
     if not m:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Mahnung")
     an, ap = empfaenger(kunden_store, m["firma"])
-    tb = _tb("mahnung", vorlage)
+    tb = _tb(textbaustein_art(m), vorlage)
     betreff, text = mahnung_mail_text(m, ap, _firmendaten(), vorlage=tb["vorlage"], signatur=tb["signatur"],
                                       kunde=_kunde_name(m.get("firma")))
     vs = _versand_absender()
-    return {"an": an, "adressen": _adressen(m["firma"]), "betreff": betreff, "text": text, "pdf": f"Mahnung_{m['nummer']}.pdf",
+    return {"an": an, "adressen": _adressen(m["firma"]), "betreff": betreff, "text": text, "pdf": dateiname(m),
+            "zusatz_pdf": (f"Rechnung {m['rechnung']}" if m.get("stufe") == 0 else ""),
             "absender": vs["absender"], "google": bool(_google().verfuegbar()) if vs["bereit"] is None else vs["bereit"], "versand_kanal": vs["kanal"]} | tb["auswahl"]
 
 
@@ -4865,7 +4872,8 @@ def _beleg_pdf(art: str, nummer: str) -> tuple[str, bytes]:
         if not x or x.get("status") == "entwurf" or not x.get("belege"):
             raise KeyError(nummer)
         pfad = x["belege"][0]["pfad"]
-        name = Path(pfad).name.split("-", 1)[-1] if art == "rechnung" else f"Mahnung_{x['nummer']}.pdf"
+        from ...core.mahnungen import dateiname
+        name = Path(pfad).name.split("-", 1)[-1] if art == "rechnung" else dateiname(x)
         return name, (kunden_store.bh.dir / pfad).read_bytes()
     if art == "bericht":
         from ...core.projektbericht import dateiname

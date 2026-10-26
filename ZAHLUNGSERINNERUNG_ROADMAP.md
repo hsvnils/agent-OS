@@ -1,10 +1,10 @@
 # Roadmap: Zahlungserinnerung vor der 1. Mahnung
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-26
-- Arbeitsbranch: `ai/plan-checkliste-zahlungserinnerung` (Plan); Umsetzung auf eigenem Branch
+- Arbeitsbranch: `ai/zahlungserinnerung`
 - Basiscommit: `30ccdb8`
-- Naechster Schritt: CEO entscheidet Q0 (Nummernkreis, Frist, Vorschlag per Telegram, Text); danach Go fuer Z1.
+- Naechster Schritt: Z1 gebaut -- Deploy (CEO) und Abnahme an einer Testrechnung (Desktop/iPad/iPhone); Z2 nach eigenem Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -24,7 +24,7 @@ unserer Rechnung XYZ erinnern.“
 - Mail-Vorlagen in `core/textbausteine.py` (Art `mahnung` mit Betreff/Text, im LUNA-OS bearbeitbar).
 - Register: kein frueherer Eintrag zu „Zahlungserinnerung“.
 
-## Entscheidungen fuer den CEO (Q0) -- mit Empfehlung
+## Entscheidungen fuer den CEO (Q0) -- **entschieden 2026-10-26: alle Empfehlungen angenommen**
 
 1. **Eigener Beleg mit eigener Nummer?** Empfehlung: ja, `ZE-JJJJ-NNNN`, PDF als Geschaeftsbrief (6 Jahre), in der
    Hash-Kette und in der Belegverfolgung der Rechnung. Alternative: nur Mail ohne Beleg (dann fehlt der Nachweis).
@@ -43,7 +43,7 @@ unserer Rechnung XYZ erinnern.“
 
 ## Etappe Z1: Beleg, PDF und Versand aus LUNA-OS
 
-- Status: geplant
+- Status: gebaut 2026-10-26 (als Stufe 0 im Mahnwesen: gleiche Ereignisse, Nummernkreis `ZE`, PDF/Mail ohne Zinsen/Kosten, Wortlaut nach CEO-Vorgabe, Rechnung als zweiter Anhang beim Versand aus LUNA; Knopf „💬 Zahlungserinnerung erstellen …“ in der Rechnungsansicht, Zu erledigen, Belegverfolgung, Nummern-Erkennung in Firmenakte/Mail-Antworten; 1. Mahnung nimmt Bezug auf die Erinnerung. Nebenwirkung: nach Ablauf der Erinnerungsfrist fragt LUNA per Telegram nach der 1. Mahnung (vorhandener Folgemahnungs-Weg, nur nach ✅). Einschraenkung: der Weg „Mail-Programm (.eml)“ haengt nur die Zahlungserinnerung an). Deploy und Abnahme offen
 - Ziel / Scope / Nicht-Scope: Zahlungserinnerung in `MahnStore` als Stufe 0 bzw. eigene Art (Nummernkreis `ZE`),
   Ereignisse in der Hash-Kette (`zahlungserinnerung_erstellt/_versendet`), PDF hochkant (A4) im Belegstil, Mail-Vorlage
   als Textbaustein, Versand mit Vorschau nur nach CEO-Klick (Kundenversand wie bei Mahnungen, All-Inkl), Ablage in der
