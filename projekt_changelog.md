@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 10:06] — Claude Code
+- **Was:** Datenschutz-Nachtrag ergaenzt um die Angaben aus der Anthropic-Konsole (Workspace „luna“): Daten in den USA (Workspace geo), Verarbeitung global (Inference geo unbeschraenkt), keine eigene Aufbewahrungsfrist eingestellt. CLAUDE_AKTIV C1 nach `main` gemergt (Fast-Forward), Suite gruen.
+- **Warum:** CEO-Screenshot und Go fuer Merge, Push und Deploy C1 (2026-10-26).
+- **Betroffen:** `docs/datenschutz-ki-nutzung.md`
+
 ## [2026-10-26 10:03] — Claude Code
 - **Was:** CLAUDE_AKTIV C1 umgesetzt (ohne Schluessel, Betrieb unveraendert): Chat und Fachagenten auf `claude-sonnet-5-5`, Routing auf `claude-haiku-5-5` (`config.toml`, Standardwerte in Bot, Web-App, Voice, HoaConversation), Chat-Aufwand `low`. Modell-Router: fuer immer mitdenkende Modelle (Sonnet/Haiku 5.5, Opus 5.x, Fable 5.x) `thinking: adaptive` mit `drop_block` (LUNA kuerzt lange Verlaeufe selbst -> betroffene Denk-Bloecke werden verworfen statt eines 400) und mindestens 8.000 Token; aeltere Modelle unveraendert. Ausweich-Reihenfolge Claude -> lokal (wenn aktiv) -> Gemini -> OpenAI. Preistabelle um die 5.5-Modelle ergaenzt, Opus 4.8 auf 5/25 USD korrigiert. Anthropic-Websuche im Code fest aus (freie Websuche nur ueber den Netz-Agenten). Dienste-Register und Datenschutz-Nachtrag (Chat-Daten an Anthropic statt Google; OpenAI bleibt bis C4 letzter Ausweich). Tests `test_claude_aktiv.py` (3 Gegenproben rot), Erwartung in `test_lokal_llm.py` an die neue Reihenfolge angepasst; echtes SDK 0.111 mit abgefangener Verbindung: Kopfzeile, `thinking`, `output_config`, Denk-Block in der Antwort ok.
 - **Warum:** CEO-Go C1 2026-10-26 („Weiter gehts“).
