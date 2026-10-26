@@ -1,0 +1,40 @@
+#!/bin/bash
+# NETZ_AGENT Q4: Heimnetz-Sperre fuer den Container luna-netz (Netz luna-netz-isoliert, 172.30.99.0/24).
+# Der Container darf ins Internet, aber an keine private Adresse (Fritz!Box, NAS, MACO470, andere Container).
+#   an      Regeln setzen (mehrfach aufrufbar, setzt nichts doppelt)
+#   aus     Regeln entfernen (Rueckweg)
+#   status  Regeln anzeigen
+# Laeuft als root auf der NAS (sudo bzw. DSM-Aufgabenplaner beim Hochfahren). Wartet bis zu 5 min auf Docker.
+set -u
+NETZ=172.30.99.0/24
+KETTE=LUNA-NETZ
+PRIVAT="10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 100.64.0.0/10 127.0.0.0/8 224.0.0.0/4"
+IPT=/sbin/iptables
+
+an() {
+  for _ in $(seq 60); do $IPT -L DOCKER-USER -n >/dev/null 2>&1 && break; sleep 5; done
+  if ! $IPT -L DOCKER-USER -n >/dev/null 2>&1; then echo "FEHLER: Kette DOCKER-USER fehlt (Docker nicht gestartet?)"; exit 1; fi
+  $IPT -N $KETTE 2>/dev/null
+  $IPT -F $KETTE
+  for z in $PRIVAT; do $IPT -A $KETTE -d "$z" -j REJECT; done
+  $IPT -C DOCKER-USER -s $NETZ -j $KETTE 2>/dev/null || $IPT -I DOCKER-USER 1 -s $NETZ -j $KETTE   # Weiterleitung (LAN, andere Container)
+  $IPT -C INPUT -s $NETZ -j $KETTE 2>/dev/null || $IPT -I INPUT 1 -s $NETZ -j $KETTE               # NAS selbst
+  echo "Heimnetz-Sperre fuer luna-netz aktiv."
+}
+
+aus() {
+  while $IPT -D DOCKER-USER -s $NETZ -j $KETTE 2>/dev/null; do :; done
+  while $IPT -D INPUT -s $NETZ -j $KETTE 2>/dev/null; do :; done
+  $IPT -F $KETTE 2>/dev/null; $IPT -X $KETTE 2>/dev/null
+  echo "Heimnetz-Sperre fuer luna-netz entfernt."
+}
+
+status() {
+  $IPT -L $KETTE -n 2>/dev/null || echo "Kette $KETTE fehlt"
+  echo "DOCKER-USER: $($IPT -S DOCKER-USER 2>/dev/null | grep -c " $KETTE")  INPUT: $($IPT -S INPUT 2>/dev/null | grep -c " $KETTE")"
+}
+
+case "${1:-}" in
+  an) an ;; aus) aus ;; status) status ;;
+  *) echo "Aufruf: $0 an|aus|status"; exit 2 ;;
+esac

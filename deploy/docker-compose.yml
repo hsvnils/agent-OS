@@ -65,3 +65,15 @@ services:
       - no-new-privileges:true
     mem_limit: 256m
     restart: unless-stopped
+    networks:
+      - netz_isoliert                # Q4: eigenes Netz, nicht im Netz von luna-os/luna-telegram
+
+networks:
+  netz_isoliert:                     # Q4: Sperre ins Heimnetz per deploy/netz_sperre.sh (iptables, Quellnetz unten)
+    name: luna-netz-isoliert
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-luna-netz
+    ipam:
+      config:
+        - subnet: 172.30.99.0/24

@@ -178,4 +178,25 @@ def zustand(auftraege: NetzAuftraege | None = None, *, grenze_s: float = 600) ->
     alt = [p for p in (n.q / "auftraege").glob("*.json") if jetzt - p.stat().st_mtime > grenze_s]
     if alt:
         return False, f"{len(alt)} Auftrag/Auftraege seit ueber {int(grenze_s // 60)} min unbearbeitet -- Container luna-netz pruefen."
+    return sperre(n)
+
+
+def sperre(auftraege: NetzAuftraege | None = None, *, max_alter_s: float = 3 * 3600) -> tuple[bool, str]:
+    """Q4: Sperrprobe des Netz-Agenten (`zustand.json`, stuendlich) -- nur zwei Felder werden gelesen. Fehlt die Datei,
+    gilt die Probe als noch nicht eingerichtet (kein Alarm)."""
+    n = auftraege or NetzAuftraege()
+    p = n.q / "zustand.json"
+    if not p.exists():
+        return True, ""
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+        gesperrt = d.get("heimnetz_gesperrt") is True
+        from datetime import datetime
+        alter = time.time() - datetime.fromisoformat(str(d.get("zeit"))).timestamp()
+    except Exception:
+        return False, "Sperrprobe des Netz-Agenten unlesbar -- Container luna-netz pruefen."
+    if not gesperrt:
+        return False, "Netz-Agent erreicht das Heimnetz -- Sperre fehlt (deploy/netz_sperre.sh an)."
+    if alter > max_alter_s:
+        return False, "Sperrprobe des Netz-Agenten aelter als 3 h -- Container luna-netz pruefen."
     return True, ""

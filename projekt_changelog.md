@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-26 12:13] — Claude Code
+- **Was:** NETZ_AGENT Q4 gebaut (Branch `ai/netz-agent-q4`): Container `luna-netz` bekommt ein eigenes Docker-Netz `luna-netz-isoliert` (172.30.99.0/24) -- bisher lag er im gemeinsamen Netz und haette `luna-os` direkt erreicht. `deploy/netz_sperre.sh an|aus|status` sperrt aus diesem Netz alle privaten Adressen (Kette `LUNA-NETZ` in `DOCKER-USER` und `INPUT`). Netz-Agent prueft die Sperre stuendlich (`netz_agent/sperrprobe.py`: Fritz!Box, NAS-DSM, LUNA-OS, MACO470, Gateway, `luna-os` muessen zu sein, Brave muss erreichbar sein) und schreibt `netz_queue/zustand.json`; LUNAs Systemcheck meldet Luecken oder eine veraltete Probe. Tests mit Gegenprobe; Register, Datenfluesse, Roadmap.
+- **Warum:** CEO-Go Q4.
+- **Betroffen:** `deploy/docker-compose.yml`, `deploy/netz_sperre.sh`, `netz_agent/agent.py`, `netz_agent/sperrprobe.py`, `netz_agent/tests/test_sperre.py`, `orchestrator/core/netz_auftraege.py`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`, `NETZ_AGENT_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-26 12:01] — Claude Code
 - **Was:** NETZ_AGENT Q3 live abgeschlossen: Firmen-Suche nach Deploy 3c66f81 ueber LUNA-OS geprueft (hsv.de 1-15 s, kiez-alm.de 21-45 s, je HTTP 200 mit 8 Feldern), Recherche mit Formular ueber die Warteschlange ok (3 Quellen, 10 s), keine haengenden Auftraege. `BRAVE_API_KEY` aus LUNAs `orchestrator/.env` entfernt (NAS: CEO, danach `luna-os`/`luna-telegram` per `--force-recreate`; MACO470: Claude Code, Backoffice-Dienst vom CEO neu gestartet); nur `netz_agent/.env` haelt den Schluessel noch. Roadmap: Q3 live, Wochen-Beobachtung bis 2026-11-02.
 - **Warum:** CEO-Go Q3; Schluessel-Entfernung nach erfolgreicher Live-Pruefung.

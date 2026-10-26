@@ -4,7 +4,7 @@
 - Stand: 2026-10-26
 - Arbeitsbranch: `ai/netz-agent`
 - Basiscommit: `3158621`
-- Naechster Schritt: Q3 eine Woche beobachten (bis 2026-11-02); Q4 wartet auf CEO-Go.
+- Naechster Schritt: Q4 deployen (CEO: Container neu erstellen, Sperre setzen, Aufgabe beim Hochfahren), Live-Probe; Q3 beobachten bis 2026-11-02.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -110,7 +110,7 @@ LUNA ◀──Ergebnis-Formular (Antwort, Fakten, Quellen; Laengen geprueft)─�
 
 ## Etappe Q4: Heimnetz fuer den Netz-Agenten sperren
 
-- Status: geplant
+- Status: umgesetzt 2026-10-26 (eigenes Docker-Netz `luna-netz-isoliert` 172.30.99.0/24 -- vorher lag der Container im gemeinsamen Compose-Netz und erreichte `luna-os` direkt; `deploy/netz_sperre.sh an|aus|status` mit Kette `LUNA-NETZ` in `DOCKER-USER` und `INPUT`; stuendliche Sperrprobe `netz_agent/sperrprobe.py` -> `netz_queue/zustand.json` -> Systemcheck), Deploy und Live-Probe offen
 - Ziel / Scope / Nicht-Scope: Der Container `luna-netz` darf ins Internet, aber nicht ins Heimnetz (NAS-Oberflaeche,
   Fritz!Box, MACO470, LUNA-OS): eigenes Docker-Netz plus Sperrregel fuer private Adressbereiche (DSM-Firewall oder
   `DOCKER-USER`-Regel -- fuehrt der CEO aus, Befehl liefert der Agent).

@@ -91,6 +91,15 @@ class Agent:
         tmp.write_text(json.dumps(daten, ensure_ascii=False), encoding="utf-8")
         tmp.replace(ziel)
 
+    def sperrprobe(self, pruefen=None) -> dict:
+        """Q4: Heimnetz-Sperre pruefen und nach `zustand.json` schreiben (LUNAs Systemcheck liest es)."""
+        from . import sperrprobe
+        e = (pruefen or sperrprobe.pruefen)()
+        tmp = self.q / ".zustand.tmp"
+        tmp.write_text(json.dumps(e, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(self.q / "zustand.json")
+        return e
+
     def bearbeite(self, a: dict) -> dict:
         a = pruefe_auftrag(a)
         if a["art"] == "seiten":                               # Q3: feste Adressen roh holen (kein Modell), bis 5 gleichzeitig
@@ -165,7 +174,13 @@ def main() -> None:
         modell_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=90, max_retries=1)
     agent = Agent(args.queue, schluessel, modell_client=modell_client)
     print(f"[netz-agent] bereit, Warteschlange {args.queue}{' (trocken)' if args.dry_run else ''}", flush=True)
+    letzte_probe = 0.0
     while True:
+        if not args.dry_run and time.monotonic() - letzte_probe > 3600:     # Q4: Heimnetz-Sperre stuendlich pruefen
+            letzte_probe = time.monotonic()
+            e = agent.sperrprobe()
+            if not e["heimnetz_gesperrt"]:
+                print(f"[netz-agent] WARNUNG Heimnetz erreichbar: {', '.join(e['heimnetz_offen'])}", flush=True)
         n = agent.ein_durchlauf(trocken=args.dry_run)
         if n:
             print(f"[netz-agent] {n} Auftrag/Auftraege bearbeitet", flush=True)
