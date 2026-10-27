@@ -93,7 +93,7 @@ def _latin1(text: str) -> str:
 def beleg_pdf(*, art: str, nummer: str, firma: dict, empfaenger: list[str], infos: list[tuple[str, str]],
               einleitung: str, positionen: list[dict], summe_cent: int, hinweise: list[str], schluss: str,
               schrift_dir: Path | None = None, summen_zeilen: list[tuple[str, int]] | None = None,
-              link: tuple[str, str] | None = None, logo: Path | None = None) -> bytes:
+              link: tuple[str, str] | None = None, logo: Path | None = None, gesamt_label: str = "Gesamtbetrag") -> bytes:
     """Erzeugt das PDF. `positionen`: [{beschreibung, menge (Text), einheit, einzelpreis_cent, gesamt_cent}]."""
     from fpdf import FPDF
 
@@ -226,7 +226,7 @@ def beleg_pdf(*, art: str, nummer: str, firma: dict, empfaenger: list[str], info
         pdf.cell(sum(breiten[:4]), 5.5, T(label), align="R")
         pdf.cell(breiten[4] + breiten[5], 5.5, T(eur(betrag)), align="R", new_x="LMARGIN", new_y="NEXT")
     pdf.set_font(SCHRIFT, "B", 10)
-    pdf.cell(sum(breiten[:4]), 7, T("Gesamtbetrag"), align="R")
+    pdf.cell(sum(breiten[:4]), 7, T(gesamt_label), align="R")
     pdf.cell(breiten[4] + breiten[5], 7, T(eur(summe_cent)), align="R", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(4)
 
@@ -547,7 +547,7 @@ def hanserautisch_pdf(*, art: str, nummer: str | None, firma: dict, logo: Path |
         pdf.set_fill_color(0, 0, 0)
         farbe((255, 255, 255))
         pdf.set_font(S, "B", 10)
-        pdf.cell(bs - 32, 7, T("  Gesamtbetrag"), fill=True)
+        pdf.cell(bs - 32, 7, T("  " + summen.get("gesamt_label", "Gesamtbetrag")), fill=True)
         pdf.cell(32, 7, T(eur(summen["gesamt_cent"]) + "  "), align="R", fill=True, new_x="LMARGIN", new_y="NEXT")
         farbe((102, 102, 102))
         pdf.set_x(x0)

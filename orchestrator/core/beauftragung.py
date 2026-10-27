@@ -20,11 +20,12 @@ from .angebote import (AngebotStore, _bloecke, _empfaenger, _summen_zeilen, anre
 from .beleg_pdf import HINWEIS_19, beleg_pdf, datum_de, eur, hanserautisch_pdf
 from .buchhaltung import Buchhaltung, jetzt
 from .kunden import KundenStore
+from . import tkp_abrechnung
 from . import zahlungsbedingungen as zb
 
 STATUS = ("beauftragt", "erledigt", "storniert")
 _UEBERNAHME = ("firma", "ansprechpartner", "titel", "positionen", "zuschlaege", "rabatt_prozent", "layout", "bloecke", "ware",
-               "zahlung")
+               "zahlung", "abrechnung")                       # TKP_ABRECHNUNG T1: Abrechnungsart mit dem Auftrag eingefroren
 FORMULAR = _UEBERNAHME + ("datum", "einleitung")               # B1: im Formular aenderbar, solange nicht versendet
 
 
@@ -111,7 +112,8 @@ class AuftragBuch:
         pos = [p | {"gesamt_cent": positions_summe(p["menge"], p["einzelpreis_cent"])} for p in a["positionen"]]
         sm = summen(a["positionen"], a.get("zuschlaege") or [], a.get("rabatt_prozent") or 0)
         w = min(int((a.get("ware") or {}).get("wert_cent") or 0), sm["gesamt_cent"])
-        return a | {"positionen": pos, "summen": sm, "summe_cent": sm["gesamt_cent"], "inhalt": inhalt_hash(a),
+        return a | tkp_abrechnung.anreichern(a, sm, sm["gesamt_cent"] - w) | {
+                    "positionen": pos, "summen": sm, "summe_cent": sm["gesamt_cent"], "inhalt": inhalt_hash(a),
                     "ware_cent": w, "geld_cent": sm["gesamt_cent"] - w}
 
     # -- Lesen ---------------------------------------------------------------------------------------------------
@@ -157,7 +159,8 @@ class AuftragBuch:
             d = {k: a.get(k) for k in _UEBERNAHME} | {"angebot": angebot_nr, "datum": heute.isoformat(),
                                                       "leistung_von": lv, "leistung_bis": lb,
                                                       "notiz": str(notiz or "").strip()[:2000]}
-            vk = zb.vorkasse_cent(a.get("zahlung"), AngebotStore._anreichern(a, heute)["geld_cent"])
+            r = AngebotStore._anreichern(a, heute)
+            vk = zb.vorkasse_cent(a.get("zahlung"), r.get("vorkasse_basis_cent", r["geld_cent"]))
             if vk:                                            # Etappe 18: Vorkasse-Betrag und -Frist einfrieren
                 d |= {"vorkasse_cent": vk, "vorkasse_faellig": zb.vorkasse_frist(a["zahlung"], heute)}
             return d
@@ -200,7 +203,7 @@ class AuftragBuch:
             d = {k: kopf.get(k) for k in _UEBERNAHME if k in kopf} | {
                 "positionen": pos, "angebot": "", "datum": heute.isoformat(), "leistung_von": lv, "leistung_bis": lb,
                 "notiz": str(notiz or "").strip()[:2000]}
-            vk = zb.vorkasse_cent(kopf.get("zahlung"), geld)
+            vk = zb.vorkasse_cent(kopf.get("zahlung"), tkp_abrechnung.vorkasse_basis(kopf | {"positionen": pos}, geld))
             if vk:
                 d |= {"vorkasse_cent": vk, "vorkasse_faellig": zb.vorkasse_frist(kopf["zahlung"], heute)}
             return d
@@ -274,10 +277,10 @@ class AuftragBuch:
                 raise ValueError("Mindestens eine Position.")
             if {"firma", "ansprechpartner"} & set(diff):
                 self.angebote._pruefe_bezug(eintraege, rest)
-            if {"positionen", "zuschlaege", "rabatt_prozent", "ware", "zahlung", "datum"} & set(diff):
+            if {"positionen", "zuschlaege", "rabatt_prozent", "ware", "zahlung", "datum", "abrechnung"} & set(diff):
                 sm = summen(rest["positionen"], rest.get("zuschlaege") or [], rest.get("rabatt_prozent") or 0)
                 geld = sm["gesamt_cent"] - min(int((rest.get("ware") or {}).get("wert_cent") or 0), sm["gesamt_cent"])
-                vk = zb.vorkasse_cent(rest.get("zahlung"), geld)   # Vorkasse aus der neuen Fassung
+                vk = zb.vorkasse_cent(rest.get("zahlung"), tkp_abrechnung.vorkasse_basis(rest, geld))   # neue Fassung
                 vk_neu = {"vorkasse_cent": vk, "vorkasse_faellig": zb.vorkasse_frist(rest["zahlung"], rest["datum"]) if vk else ""}
                 diff.update({k: v for k, v in vk_neu.items() if (a.get(k) or (0 if k == "vorkasse_cent" else "")) != v})
             if not diff:
@@ -350,7 +353,9 @@ class AuftragBuch:
                       + (f" auf Grundlage unseres Angebots {a['angebot']}" if a.get("angebot") else "")   # Etappe 31
                       + (f" für den Leistungszeitraum {zeitraum}" if zeitraum else "") + ".")
         hinweise = ([HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
-                    + [x for x in [zb.text(a.get("zahlung"), a["geld_cent"], ab_datum=a["datum"])] if x]
+                    + [x for x in [tkp_abrechnung.angebot_text(a),
+                                   zb.text(a.get("zahlung"), a["geld_cent"], ab_datum=a["datum"],
+                                           basis_cent=a.get("vorkasse_basis_cent"))] if x]
                     + ([f"Anmerkung: {a['notiz']}"] if a.get("notiz") else []))
         infos = ([("Datum", datum_de(a["datum"])), ("Auftrag", a["nummer"])] + ([("Angebot", a["angebot"])] if a.get("angebot") else [])
                  + [("Kundennummer", a["firma"])] + ([("Leistung", zeitraum)] if zeitraum else [])
@@ -387,7 +392,8 @@ class AuftragBuch:
             infos=[("Datum", datum_de(a["datum"]))] + ([("Angebot", a["angebot"])] if a.get("angebot") else []) + [("Kundennummer", a["firma"]),
                    ("Leistung", zeitraum)] + ([("Version", str(a["fassung"]))] if int(a.get("fassung") or 1) > 1 else []),
             einleitung=anrede_moin(ap, f.get("name", "")) + "\n\n" + einleitung, positionen=[x | pdf_posten_standard(x) for x in a["positionen"]],
-            summe_cent=a["summe_cent"], hinweise=hinweise, schluss="", summen_zeilen=_summen_zeilen(a["summen"]))
+            summe_cent=a["summe_cent"], hinweise=hinweise, schluss="", summen_zeilen=_summen_zeilen(a["summen"]),
+            gesamt_label=a["summen"].get("gesamt_label", "Gesamtbetrag"))
 
     def pdf_ablegen(self, nummer: str, pdf: bytes, *, an: str = "", von: str = "") -> dict:
         a = self.auftrag(nummer)

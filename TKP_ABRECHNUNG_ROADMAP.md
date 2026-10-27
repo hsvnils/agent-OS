@@ -1,10 +1,10 @@
 # Roadmap: TKP-Abrechnung nach erzielter Reichweite und Reichweiten-Ausgleich
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-27
 - Arbeitsbranch: `ai/tkp-abrechnung`
 - Basiscommit: `31558c3`
-- Naechster Schritt: CEO entscheidet E1-E9 (Empfehlungen unten), dann Go fuer T1. Bis dahin wird nichts umgesetzt.
+- Naechster Schritt: T1-T3 umgesetzt (CEO-Go 2026-10-27, Empfehlungen E1-E9 angenommen) -- Merge, Deploy (`luna-os` + `luna-telegram`), dann CEO-Abnahme an einem Probe-Angebot je Abrechnungsart (Angebot -> Auftrag -> Kennzahlen -> Rechnungsentwurf, ohne Versand) und Sichtpruefung Desktop/iPad/iPhone. Vor dem ersten echten Kunden: Klauseltexte anwaltlich pruefen (E9).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -64,7 +64,16 @@ Minderleistung, gleiches Beispiel mit Ist 30.000: Nach Reichweite 1.390 EUR; mit
 
 ## Etappen
 
+Entscheidungen E1-E9: vom CEO am 2026-10-27 wie empfohlen angenommen („Empfehlungen passen, Go fuer T1-T3“).
+
 ### T1: Abrechnungsart im Angebot und Auftrag
+
+- Status: umgesetzt (2026-10-27) -- Kopf-Feld `abrechnung` (`core/tkp_abrechnung.pruefen`), mit dem Auftrag eingefroren
+  und dort aenderbar wie die uebrigen Formularfelder; Angebot/Auftrag zeigen „Gesamt (voraussichtlich)“, Hoechstbetrag und
+  Klauseltext (PDF beider Layouts, Belegblatt); Vorkasse bei „nach Reichweite“ nur auf Produktion + Festpreis-Positionen;
+  Inhalts-Hash alter Angebote unveraendert. LUNA-OS: Block „📊 Abrechnung der Reichweite“ mit Toleranz, Ausgleichs-TKP,
+  Deckel und Vorschau „hoechstens“. Abweichungen: Klauseltext wird aus den Werten erzeugt (kein frei aenderbarer
+  Textbaustein); Kleinunternehmer-Waechter prueft wie bisher die Rechnung, nicht das Angebot.
 
 - Ziel / Scope: Schalter „Abrechnung“ (Festpreis / Nach Reichweite / Festpreis mit Ausgleich) im Angebots-Editor mit
   Feldern Toleranz, Ausgleichs-TKP, Deckel; Server prueft und friert alles mit dem Auftrag ein. Angebotssumme bei „Nach
@@ -78,6 +87,14 @@ Minderleistung, gleiches Beispiel mit Ist 30.000: Nach Reichweite 1.390 EUR; mit
 
 ### T2: Rechnung mit Ist-Werten und Ausgleich
 
+- Status: umgesetzt (2026-10-27) -- „Rechnung erstellen“ uebernimmt die bestaetigten Kontakte (`rechnungs_positionen`):
+  nach Reichweite je TKP-Position eine Media-Zeile (erzielt x TKP, Kontakte je Position gedeckelt) + Produktionszeile; mit
+  Ausgleich eine Zeile „Reichweiten-Ausgleich: Mehr-/Minderleistung“ (einzige erlaubte negative Position). Betrag rechnet
+  immer der Server (`berechnen`); abweichender Wert nur mit Grund; fehlende Messung sperrt das Festschreiben; erneutes
+  „Rechnung erstellen“ zieht neue Messwerte in den bestehenden Entwurf nach (von Hand gesetzte Werte bleiben). Vorkasse wird
+  wie bisher als Abzug verrechnet. Projektbericht als PDF-Anlage: nicht umgesetzt (Bericht geht wie bisher eigenstaendig
+  raus).
+
 - Ziel / Scope: „Rechnung erstellen“ uebernimmt die bestaetigten Kontakte aus den Postings (Kampagnensumme): bei „Nach
   Reichweite“ Betrag je Position aus Ist (mit Deckel), bei „Ausgleich“ zusaetzliche Position „Ausgleich Mehrleistung“
   bzw. „Ausgleich Minderleistung“ (erste erlaubte negative Position, nur dieser Typ). Rechnung zeigt Plan, Ist, TKP,
@@ -90,6 +107,12 @@ Minderleistung, gleiches Beispiel mit Ist 30.000: Nach Reichweite 1.390 EUR; mit
 - Aufwand: mittel bis gross (negative Position und Summenlogik sind neu).
 
 ### T3: Bericht, Handlungsbedarf, Vertragstext
+
+- Status: umgesetzt (2026-10-27) -- Projektbericht schreibt „abgerechnet …“ statt „Mehrwert“, Handlungsbedarf
+  „Rechnung nach Reichweite erstellen“ (sobald alle TKP-Postings gemessen und noch keine Rechnung da), Vertragsentwurf
+  § 8 = Platzhalter `{Reichweite}` + `REICHWEITE_KLAUSELN` je Art (Entwurf; die in LUNA-OS schon geladene Vorlage v1 bleibt
+  unveraendert -- neue Fassung nur nach anwaltlicher Pruefung), Register-Eintrag. Tests `test_tkp_abrechnung.py` (16) +
+  7 Gegenproben rot, Suite gruen.
 
 - Ziel / Scope: Projektbericht nennt bei Abrechnung nach Reichweite/Ausgleich „abgerechnet“ statt „Mehrwert“;
   Handlungsbedarf „Kennzahlen komplett -> Rechnung nach Reichweite erstellen“; Vertragsentwurf § 8 in drei Varianten

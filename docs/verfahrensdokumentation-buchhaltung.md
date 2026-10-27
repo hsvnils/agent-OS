@@ -46,6 +46,12 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
    **Provisionen** (z. B. Affiliate): Angebot und Auftrag nennen nur das Modell (Euro je verkauftem Artikel bzw. Prozent
    vom vermittelten Umsatz); die Rechnung entsteht nach der Abrechnung (Stueckzahl bzw. Umsatz) mit ausgewiesener
    Berechnungsgrundlage; eine Rechnung mit nicht abgerechneter Provision kann nicht festgeschrieben werden.
+   **Abrechnung nach Reichweite / Reichweiten-Ausgleich** (TKP): Angebot und Auftrag nennen TKP, geplante Kontakte,
+   Toleranz und Hoechstbetrag; die Rechnung uebernimmt die bestaetigten Kennzahlen der Postings (Aufrufe bzw.
+   Impressionen, Stand 7 Tage) und weist je Position geplante, gemessene und abgerechnete Kontakte aus. Ein Ausgleich
+   wegen Minderleistung erscheint als **negative Position** auf derselben Rechnung (keine eigene Gutschrift); ein von der
+   Messung abweichender Wert braucht einen Grund an der Position; fehlt eine Messung, kann die Rechnung nicht
+   festgeschrieben werden.
    **Firmenakte**: Geschaeftsbriefe (z. B. Anwaltsschreiben, Vertraege) und Mails je Geschaeftspartner werden unveraendert
    (Original `.eml` + Hash) mit Datum und optionalem Bezug zur Rechnung abgelegt.
    **Eigene Arbeitszeit und Fahrten** zu Kundenterminen werden nur intern kalkulatorisch erfasst (Stundensatz, 0,30 EUR/km)
@@ -187,3 +193,4 @@ neuem Wert protokolliert; Nummern werden nie wiederverwendet.
 | 2026-10-02 | Projektzeiten optional auf der Rechnung (PROJEKTZEITEN Z2) ergaenzt | Claude Code |
 | 2026-10-06 | Einmalige Bereinigung der Testrechnungen RE-2026-0001 bis -0004 dokumentiert (Abschnitt 4) | Claude Code |
 | 2026-10-06 | Belege bis zum Versand bearbeitbar, Rechnung schreibt beim Versand fest, Bearbeiten danach mit Begruendung (BELEG_BEARBEITBAR B1-B3) | Claude Code |
+| 2026-10-27 | Abrechnung nach Reichweite und Reichweiten-Ausgleich (TKP_ABRECHNUNG T2) ergaenzt | Claude Code |

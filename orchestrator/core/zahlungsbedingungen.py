@@ -102,14 +102,18 @@ def _ziel_satz(tage: int) -> str:
             else f"zahlbar innerhalb von {tage} Tagen nach Rechnungsstellung ohne Abzug")
 
 
-def text(zb: dict | None, summe_cent: int, *, ab_datum: str = "") -> str:
-    """Satz fuer Angebot/Auftragsbestaetigung. Mit `ab_datum` wird die Vorkasse-Frist als Datum genannt."""
+def text(zb: dict | None, summe_cent: int, *, ab_datum: str = "", basis_cent: int | None = None) -> str:
+    """Satz fuer Angebot/Auftragsbestaetigung. Mit `ab_datum` wird die Vorkasse-Frist als Datum genannt. `basis_cent` =
+    abweichende Basis der Vorkasse (TKP_ABRECHNUNG E8: bei Abrechnung nach Reichweite nur die Produktion)."""
     if not zb:
         return ""
     v = zb.get("vorkasse")
-    vk = vorkasse_cent(zb, summe_cent)
+    vk = vorkasse_cent(zb, summe_cent if basis_cent is None else basis_cent)
     if v and vk:
         anteil = (f"{menge_text(v['prozent'])} % Vorkasse ({eur(vk)})" if v["art"] == "prozent" and vk < summe_cent
+                  and basis_cent is None
+                  else f"{menge_text(v['prozent'])} % Vorkasse auf die Produktion ({eur(vk)})" if v["art"] == "prozent"
+                  and basis_cent is not None
                   else f"Vorkasse des Gesamtbetrags ({eur(vk)})" if vk >= summe_cent else f"Vorkasse von {eur(vk)}")
         if v.get("frist_datum") or ab_datum:
             frist = f"bis zum {datum_de(vorkasse_frist(zb, ab_datum or date.today()))}"
@@ -118,7 +122,10 @@ def text(zb: dict | None, summe_cent: int, *, ab_datum: str = "") -> str:
             frist = "sofort nach Auftragsbestätigung" if not t else f"bis {t} Tage nach Auftragsbestätigung"
         satz = f"Zahlungsbedingungen: {anteil}, zahlbar {frist} gegen Vorkasse-Rechnung"
         rest = summe_cent - vk
-        satz += (f"; Restbetrag ({eur(rest)}) {_ziel_satz(zb.get('ziel_tage', ZIEL_STANDARD))}." if rest > 0 else ".")
+        if basis_cent is not None:
+            satz += f"; Rest nach Abrechnung der erzielten Reichweite, {_ziel_satz(zb.get('ziel_tage', ZIEL_STANDARD))}."
+        else:
+            satz += (f"; Restbetrag ({eur(rest)}) {_ziel_satz(zb.get('ziel_tage', ZIEL_STANDARD))}." if rest > 0 else ".")
     else:
         satz = f"Zahlungsbedingungen: {_ziel_satz(zb.get('ziel_tage', ZIEL_STANDARD))}."
     return " ".join(x for x in (satz, zb.get("text", "")) if x)

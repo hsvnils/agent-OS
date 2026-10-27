@@ -98,8 +98,7 @@ ENTWUERFE = {
         {"titel": "§ 7 Exklusivität",
          "text": "{Exklusivitaet}"},
         {"titel": "§ 8 Reichweite",
-         "text": "Genannte Reichweiten sind Planungsgrößen auf Basis von Erfahrungswerten und keine Garantie. Nach Abschluss "
-                 "erhält der Kunde einen Projektbericht mit den tatsächlich erreichten Zahlen."},
+         "text": "{Reichweite}"},
         {"titel": "§ 9 Haftung und Freistellung",
          "text": "Es gelten die Haftungsregeln der AGB des Auftragnehmers. Für vom Kunden vorgegebene Aussagen, Materialien und "
                  "Freigaben stellt der Kunde den Auftragnehmer von Ansprüchen Dritter frei."},
@@ -189,4 +188,26 @@ ENTWUERFE = {
                  "Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Widerruf und Beschwerde bei einer "
                  "Datenschutz-Aufsichtsbehörde. Eine Kopie dieser Erklärung erhalte ich auf Wunsch."},
     ]},
+}
+
+
+# TKP_ABRECHNUNG T3 (CEO 2026-10-27): § 8 je Abrechnungsart -- ebenfalls ENTWURF Claude Code, anwaltlich zu pruefen (E9).
+# {Reichweite} wird beim Vertrag je Auftrag (V3) mit dem Text der Abrechnungsart des Auftrags gefuellt.
+MESSUNG = ("Als Kontakt gelten Aufrufe bei Reels und Stories sowie Impressionen bei Bild-Posts, jeweils mit dem Stand sieben "
+           "Tage nach Veröffentlichung laut Plattform-Statistik; der Auftragnehmer weist sie im Projektbericht durch "
+           "Screenshots der Statistik nach.")
+REICHWEITE_KLAUSELN = {
+    "fest": "Genannte Reichweiten sind Planungsgrößen auf Basis von Erfahrungswerten und keine Garantie. Nach Abschluss "
+            "erhält der Kunde einen Projektbericht mit den tatsächlich erreichten Zahlen. Die Vergütung ist ein Festpreis "
+            "und hängt nicht von der erzielten Reichweite ab.",
+    "reichweite": "Die Vergütung der Reichweiten-Leistungen richtet sich nach den tatsächlich erzielten Kontakten: erzielte "
+                  "Kontakte × vereinbarter Tausend-Kontakt-Preis (TKP) / 1.000 je Leistung zuzüglich der vereinbarten festen "
+                  "Produktionskosten. " + MESSUNG + " Ist ein Höchstbetrag vereinbart, werden Kontakte nur bis zu diesem "
+                  "berechnet. Genannte Reichweiten sind Planungsgrößen und keine Garantie; eine Mindestvergütung über die "
+                  "Produktionskosten hinaus besteht nicht.",
+    "ausgleich": "Die Vergütung ist ein Festpreis auf Grundlage der geplanten Kontakte. " + MESSUNG + " Weicht die Summe der "
+                 "erzielten Kontakte aller Reichweiten-Leistungen um mehr als die vereinbarte Toleranz von der geplanten Summe "
+                 "ab, wird die gesamte Abweichung mit dem vereinbarten Ausgleichs-TKP je 1.000 Kontakte ausgeglichen: "
+                 "Mehrleistung als Aufschlag (begrenzt auf einen etwa vereinbarten Höchstbetrag), Minderleistung als Gutschrift "
+                 "in der Schlussrechnung. Darüber hinaus bestehen wegen abweichender Reichweite keine Ansprüche.",
 }

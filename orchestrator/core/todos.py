@@ -231,6 +231,16 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                                      {"pfad": f"/api/crm/auftraege/{a['nummer']}/folge-erledigt", "label": "✓ Erledigt"})
                                | {"dringend": False, "stufe": "woche"})
             ps = postings_aus(a)                         # P3: Abschluss -- Kennzahlen fehlen -> Bericht senden
+            tkp_ps = [p for p in ps if p["plan"]["tkp_cent"] and p["plan"]["kontakte"]]   # Pauschalen zaehlen nicht
+            if finanzen and (a.get("abrechnung") or {}).get("art") and tkp_ps and all(
+                    stand.get(p["id"], {}).get("kennzahlen") for p in tkp_ps):
+                from .rechnungen import RechnungStore as _RS   # TKP_ABRECHNUNG T3: gemessen -> nach Reichweite abrechnen
+                if not any(r.get("auftrag") == a["nummer"] and r.get("art", "rechnung") == "rechnung"
+                           and r["status"] != "storniert" for r in _RS._falte(e)[1].values()):
+                    out.append(_todo(f"ab-tkp-rechnung:{a['nummer']}", "Aufträge", "🧾",
+                                     f"Rechnung nach Reichweite erstellen: {a['nummer']}",
+                                     f"{firmen.get(a['firma'], a['firma'])} · alle Kontakte gemessen – „🧾 Rechnung erstellen“ "
+                                     "im Auftrag übernimmt sie", "ab-detail", a["nummer"], "", h) | {"stufe": "woche"})
             if a["status"] != "erledigt" or not ps or a.get("berichte") or a.get("bericht_entfaellt"):
                 continue
             fehlt = [p for p in ps if not stand.get(p["id"], {}).get("kennzahlen")]
