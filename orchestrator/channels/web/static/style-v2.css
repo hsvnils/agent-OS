@@ -1221,3 +1221,12 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-gl input.v2-inp, .v2-gl input[type="date"] { font-size: 16px; }
 .v2-gl-ueb { margin: 10px 0; padding: 8px 10px; border-left: 3px solid var(--v2-accent); }
 .v2-gl-neu { margin-top: 4px; white-space: normal; overflow-wrap: anywhere; }
+
+/* TODOS_ROADMAP T1: eigene To-dos */
+.v2-auf { align-items: flex-start; }
+.v2-auf-haken { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--v2-accent); background: none;
+  color: #fff; font-weight: 700; cursor: pointer; margin-top: 2px; }
+.v2-auf.erledigt .v2-auf-haken { background: var(--v2-accent); }
+.v2-auf.erledigt b { text-decoration: line-through; color: var(--v2-muted); }
+.v2-auf .grow.klick { cursor: pointer; min-width: 0; overflow-wrap: anywhere; }
+#auf-titel, #auf-faellig, #auf-uhrzeit, #aufb-titel, #aufb-faellig, #aufb-uhrzeit, #aufb-erinnerung { font-size: 16px; }

@@ -38,7 +38,7 @@ APP_MODUL = {
     "auftraege": "administration", "meldungen": "administration", "aktivitaet": "administration",
     "research": "administration", "agenten": "administration", "lagebild": "administration",
     "wissen": "administration", "finance": "administration", "luna": "administration",
-    "team": "administration",
+    "team": "administration", "aufgaben": "administration",                  # TODOS_ROADMAP T1: eigene To-dos des CEO
     "rechnungen": "finanzen", "belege": "finanzen", "finanzen": "finanzen",
 }
 # Sinnvolle Voreinstellung je Rolle, wenn beim Anlegen keine Module angegeben werden.
@@ -196,6 +196,7 @@ _MODUL_PFADE = {
 _ADMIN_POST_PREFIXE = ("/api/antraege/",)
 _ADMIN_PFADE = ("/api/chat", "/api/tts", "/api/sehen")
 _ADMIN_PREFIXE = ("/api/team", "/api/backoffice",   # Team-Verwaltung + Backoffice-Auftraege: nur administration
+                  "/api/aufgaben",                    # TODOS_ROADMAP: eigene To-dos des CEO
                   "/api/netzwerk",                    # NETZWERK_WACHE: Geraete/Befunde des Heimnetzes
                   "/api/modell-radar",                # MODELL_RADAR: genutzte Modelle, Vorschlaege
                   "/api/skills")                      # SKILL_WERKSTATT: Skills bauen, freigeben, Rueckmeldungen

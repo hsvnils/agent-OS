@@ -44,6 +44,7 @@ class ToolContext:
     approvals: object | None = None      # ApprovalStore (1-Tap-Freigaben per Telegram, Schritt 5) oder None
     agenten_nutzung: object | None = None  # AgentenNutzung (Fachagenten-Anfragen ohne Inhalte, AGENTEN_AUSBAU A1)
     fremd_verdacht: list = field(default_factory=list)   # I1/I3: Injection-Verdacht im laufenden Gespraechszug
+    knoepfe: list = field(default_factory=list)          # TODOS T3: Inline-Knoepfe unter der naechsten Telegram-Antwort
 
 
 def tool_specs() -> list[dict]:
@@ -246,6 +247,13 @@ def tool_specs() -> list[dict]:
               {"titel": _str("Titel."), "start": _str("Start ISO (2026-06-26T10:00:00)."),
                "ende": _str("Ende ISO."), "ort": _str("Optionaler Ort."),
                "bestaetigt": _bool("true erst nach CEO-Bestaetigung.")}, ["titel", "start", "ende"]),
+        _spec("todo_anlegen", "Eigenes To-do anlegen, sofort ohne Rueckfrage; Erinnerung per Kalender + Telegram. Datum "
+              "relativ zu JETZT berechnen; ohne Uhrzeit Erinnerung 09:00.",
+              {"titel": _str("Titel ohne Datum."), "faellig": _str("JJJJ-MM-TT oder leer."),
+               "uhrzeit": _str("HH:MM oder leer."), "erinnerung": _str("Abweichend: JJJJ-MM-TTTHH:MM."),
+               "notiz": _str("Details."), "ohne_erinnerung": _bool("true = keine Erinnerung.")}, ["titel"]),
+        _spec("todos_zeigen", "Offene eigene To-dos zeigen.", {}, []),
+        _spec("todo_erledigen", "Eigenes To-do abhaken (ID aus todos_zeigen).", {"id": _str("To-do-ID.")}, ["id"]),
         _spec("drive_suchen", "Durchsucht Google Drive (Volltext).",
               {"query": _str("Suchbegriff."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
         _spec("drive_lesen", "Liest den Textinhalt einer Drive-Datei (Google-Doc wird als Text exportiert).",
@@ -489,6 +497,41 @@ def tool_specs() -> list[dict]:
     ]
 
 
+def _todo_werkzeug(name: str, a: dict, ctx) -> dict:
+    """Eigene To-dos (TODOS T3): anlegen direkt (CEO-Nachricht = Auftrag), Kalender ohne Rueckfrage (eigene Termine)."""
+    from pathlib import Path
+    from .aufgaben import AufgabenStore, jetzt_lokal, kalender_abgleichen, zusammenfassung
+    st = AufgabenStore(Path(ctx.repo_root) / "todos" / "log.jsonl")
+    try:
+        if name == "todos_zeigen":
+            g = st.liste(mit_erledigt=False)
+            kurz = lambda x: {k: x[k] for k in ("id", "titel", "faellig", "uhrzeit", "erinnerung")}
+            return {"ok": True, **{k: [kurz(x) for x in v] for k, v in g.items() if k != "erledigt"}}
+        if name == "todo_erledigen":
+            x = st.erledigen(str(a.get("id") or "").strip(), von="LUNA-Chat")
+            hinweis = kalender_abgleichen(st, ctx.google, st.get(x["id"]) or x, von="LUNA-Chat")
+            return {"ok": True, "erledigt": x["titel"], **({"hinweis": hinweis} if hinweis else {})}
+        er = None if not a.get("erinnerung") else str(a["erinnerung"]).strip()[:16]
+        if a.get("ohne_erinnerung"):
+            er = ""
+        if er and er < jetzt_lokal().strftime("%Y-%m-%dT%H:%M"):
+            return {"ok": False, "hinweis": f"Erinnerung {er} liegt in der Vergangenheit -- jetzt ist "
+                                            f"{jetzt_lokal():%Y-%m-%dT%H:%M}. Bitte neu berechnen."}
+        x = st.anlegen(str(a.get("titel") or ""), faellig=str(a.get("faellig") or "").strip(),
+                       uhrzeit=str(a.get("uhrzeit") or "").strip(), erinnerung=er, notiz=str(a.get("notiz") or ""),
+                       quelle="Telegram/Chat", von="LUNA-Chat")
+        hinweis = kalender_abgleichen(st, ctx.google, x, von="LUNA-Chat") if x["erinnerung"] else ""
+        if getattr(ctx, "knoepfe", None) is not None:              # Telegram: Knopf „Rueckgaengig“ unter der Antwort
+            ctx.knoepfe.append({"text": "↶ Rückgängig", "callback_data": f"auf:{x['id']}:weg"})
+        return {"ok": True, "id": x["id"], "zusammenfassung": zusammenfassung(x),
+                **({"hinweis": hinweis} if hinweis else {}),
+                "anzeigen": "Bestaetige kurz mit der Zusammenfassung (Titel, Faelligkeit, Erinnerung)."}
+    except KeyError:
+        return {"ok": False, "hinweis": "To-do nicht gefunden -- ID aus todos_zeigen verwenden."}
+    except ValueError as exc:
+        return {"ok": False, "hinweis": str(exc)}
+
+
 def _termin_in_vergangenheit(a: dict) -> str:
     """BF-35: Termine mit einem Start in der Vergangenheit (Modell kannte das Datum nicht, erfand 2024) zurueckweisen --
     mit dem richtigen heutigen Datum als Hinweis, damit das Modell korrigieren kann. Leer = in Ordnung."""
@@ -564,6 +607,8 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
     args = args or {}
     sec = ctx.leak_secrets
 
+    if name in ("todo_anlegen", "todos_zeigen", "todo_erledigen"):          # TODOS_ROADMAP T3
+        return _todo_werkzeug(name, args, ctx)
     if name == "frage_finance":
         return {"finance": finance_text(ctx.finance_dir, sec)}
 

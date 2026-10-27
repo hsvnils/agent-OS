@@ -52,6 +52,7 @@ TAR_EXCLUDES=(
   --exclude='./lieferungen'           # Etappe 30: gelieferte Videos/Bilder (nur NAS, kein Backup laut CEO)
   --exclude='./kundenordner'          # KUNDENORDNER F1: Dateien fuer Kunden (nur NAS, Backup als Spiegel)
   --exclude='./sicherheit'            # PROMPT_INJECTION_SCHUTZ I4: Injection-Protokoll (nur NAS + Backup)
+  --exclude='./todos'                 # TODOS_ROADMAP: eigene To-dos des CEO (nur NAS + Backup)
   --exclude='./netz_queue'            # NETZ_AGENT Q1: Warteschlange des Netz-Agenten (nur NAS)
   --exclude='./netz_agent/.env'       # NETZ_AGENT Q1: eigener Brave-Schluessel des Netz-Agenten (nur NAS)
   --exclude='./ig_inbox'

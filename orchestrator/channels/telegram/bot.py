@@ -1113,6 +1113,32 @@ def _po_auslesen(token, secrets) -> None:
                 f"📊 {_po_name(p)} – erkannt aus {n} Screenshot(s):\n{zeilen}\nStimmt das?")})
 
 
+def _start_todo_loop(ctx, token, chat_id) -> None:
+    """TODOS_ROADMAP T2: faellige To-do-Erinnerungen jede Minute per Telegram (Knoepfe Erledigt/+1 Std./morgen).
+    Abschaltbar mit AUFGABEN_ERINNERUNG=0."""
+    import threading
+    import time
+    from ...core.aufgaben import AufgabenStore, erinnerungen_senden
+    if not chat_id or str((ctx.secret_dict or {}).get("AUFGABEN_ERINNERUNG", "1")).strip().lower() in ("0", "false", "nein", "off"):
+        return
+    st = AufgabenStore(ROOT / "todos" / "log.jsonl")
+
+    def senden(text, knoepfe):
+        return bool(_api(token, "sendMessage", {"chat_id": chat_id, "text": text,
+                                                "reply_markup": json.dumps({"inline_keyboard": knoepfe})}).get("ok"))
+
+    def loop():
+        time.sleep(30)
+        while True:
+            try:
+                erinnerungen_senden(st, senden)
+            except Exception as exc:
+                print(f"[todos] Erinnerung: {exc}", flush=True)
+            time.sleep(60)
+
+    threading.Thread(target=loop, daemon=True, name="todo-erinnerung").start()
+
+
 def _start_buchhaltung_loop(ctx) -> None:
     """KUNDEN_FINANZEN Etappe 1: taeglich 05:00 (DE) Hash-Kette + Belege der Buchhaltung pruefen, Alarm bei Befund.
 
@@ -2038,6 +2064,7 @@ def main() -> None:
     if secrets.get("SECURITY_AUDIT_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Security-Audit-Loop aktiv (taeglich 04:00, regelbasiert, L1-Meldung).", flush=True)
     _start_buchhaltung_loop(ctx)
+    _start_todo_loop(ctx, token, allowed)   # TODOS_ROADMAP T2: To-do-Erinnerungen (aus mit AUFGABEN_ERINNERUNG=0)
     _start_rechtsquellen_loop(ctx)  # CLO_AUSBAU C3: Rechtsquellen aller Agenten-Skills (CLO, CFO) naechtlich 04:30 auf Aenderungen pruefen  # KUNDEN_FINANZEN Etappe 1: Integritaetspruefung 05:00, nur melden
     offset = 0
     _last_poll = 0.0
@@ -2325,6 +2352,20 @@ def main() -> None:
                     cbchat = str((((cb.get("message") or {}).get("chat")) or {}).get("id", ""))
                     if allowed and cbchat != allowed:
                         _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "Nicht autorisiert."})
+                    elif data.startswith("auf:"):                  # TODOS T2/T3: Erledigt / +1 Std. / morgen / Rueckgaengig
+                        mid = (cb.get("message") or {}).get("message_id")
+                        try:
+                            from ...core.aufgaben import AufgabenStore as _AS, knopf as _aknopf
+                            _, _aid, _akt = data.split(":", 2)
+                            res = _aknopf(_AS(ROOT / "todos" / "log.jsonl"), ctx.google, _aid, _akt)
+                        except Exception as exc:
+                            res = "⚠️ Fehler"
+                            print(f"[todos] Knopf: {exc}", flush=True)
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": res[:180]})
+                        if mid:
+                            _api(token, "editMessageReplyMarkup", {"chat_id": cbchat, "message_id": mid,
+                                                                   "reply_markup": json.dumps({"inline_keyboard": []})})
+                            _api(token, "sendMessage", {"chat_id": cbchat, "text": fuer_telegram(res)})
                     elif data.startswith("mah:"):                  # Folgemahnung (Etappe 10) -- nur nach ✅ des CEO
                         _, re_nr, stufe, ent = data.split(":", 3)
                         mid = (cb.get("message") or {}).get("message_id")
@@ -2643,7 +2684,11 @@ def main() -> None:
                 print(f"[chat] Fehler, Session zurueckgesetzt: {exc}", flush=True)
                 antwort = ("Es gab gerade einen technischen Fehler — ich habe den Verlauf zurückgesetzt. "
                            "Bitte stell die Frage noch einmal.")
-            _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(antwort)[:4000]})
+            _nachricht = {"chat_id": chat_id, "text": fuer_telegram(antwort)[:4000]}
+            if ctx.knoepfe:                           # TODOS T3: z. B. „↶ Rueckgaengig“ unter der Bestaetigung
+                _nachricht["reply_markup"] = json.dumps({"inline_keyboard": [ctx.knoepfe[i:i + 2] for i in range(0, len(ctx.knoepfe), 2)]})
+                ctx.knoepfe.clear()
+            _api(token, "sendMessage", _nachricht)
             _deliver_approvals(token, chat_id, ctx)   # falls die Antwort eine Freigabe erzeugt hat: sofort senden
             # Phase 14: erzeugte Visualisierungen als Bild-Datei (SVG) nachsenden.
             if ctx.visuals:

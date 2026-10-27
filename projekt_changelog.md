@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-27 09:44] — Claude Code
+- **Was:** TODOS_ROADMAP T1-T3 gebaut (Branch `ai/todos`): eigene To-dos in LUNA-OS (neuer Navigationspunkt „✅ To-dos“, Schnell-Eingabe, Gruppen nach Faelligkeit, Abhaken, Bearbeiten, Loeschen; faellige To-dos in „Zu erledigen“), Erinnerung als Kalendertermin in LUNAs Kalender und per Telegram mit Knoepfen Erledigt/+1 Std./morgen (Bot-Thread jede Minute), LUNA-Werkzeuge `todo_anlegen/todos_zeigen/todo_erledigen` fuer freie Telegram-Nachrichten (ohne Rueckfrage, Knopf „↶ Rueckgaengig“). Speicher `todos/log.jsonl` nur NAS + Backup, Deploy-Ausschluss, .gitignore. Cache v142/v75. Tests mit Gegenproben; Register, Zugriffs-Policy, Datenfluesse.
+- **Warum:** CEO-Go T1-T3 (dringend).
+- **Betroffen:** `orchestrator/core/aufgaben.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/input_guard.py`, `orchestrator/core/werkzeugauswahl.py`, `orchestrator/core/team_auth.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/*`, `orchestrator/channels/telegram/bot.py`, Tests, `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `.gitignore`, Doku, `TODOS_ROADMAP.md`
+
 ## [2026-10-27 09:32] — Claude Code
 - **Was:** Neue Roadmap `TODOS_ROADMAP.md` (nur Plan): eigene To-dos in LUNA-OS (T1), Kalender- und Telegram-Erinnerung (T2), To-do per Telegram-Nachricht ueber ein LUNA-Werkzeug (T3); Q0-Entscheidungen mit Empfehlung; im Roadmap-Verzeichnis eingetragen.
 - **Warum:** CEO-Wunsch 2026-10-27 (dringend).

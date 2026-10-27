@@ -46,7 +46,7 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
         "stichwoerter": ["crm", "collab", "kooperation", "instagram", "insta", "ig", "dm", "direktnachricht",
                          "social", "follower", "reichweite", "insights", "content", "reel", "hashtag", "caption",
                          "firma", "firmen", "pipeline", "marke", "partner", "sponsor", "radar", "influencer",
-                         "beitrag", "beitraege", "posting", "to-do", "todo"],
+                         "beitrag", "beitraege", "posting"],
     },
     "akquise": {                                         # PARTNERLISTE P2 + SKILL_WERKSTATT S4: kleine Gruppe (Token-Budget)
         "werkzeuge": ["akquise_idee_merken", "skill_rueckmeldung"],
@@ -63,6 +63,11 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
         "werkzeuge": ["mail_entwurf", "mail_lesen", "mail_markieren", "mail_senden", "mail_suchen", "posteingang"],
         "stichwoerter": ["mail", "e-mail", "email", "posteingang", "postfach", "gmail", "entwurf", "ungelesen",
                          "gelesen", "absender", "anschreiben", "schreib", "antworte", "nachricht von", "newsletter"],
+    },
+    "aufgaben": {                                        # TODOS_ROADMAP T3: eigene To-dos (klein, Token-Budget)
+        "werkzeuge": ["todo_anlegen", "todos_zeigen", "todo_erledigen"],
+        "stichwoerter": ["to-do", "todo", "to do", "aufgabe", "erinner", "nicht vergessen", "denk dran", "denke dran",
+                         "abhaken", "hak ab", "hake ab"],
     },
     "kalender": {
         "werkzeuge": ["kalender_agenda", "kalender_kollisionen", "termin_aendern", "termin_anlegen", "termin_loeschen",

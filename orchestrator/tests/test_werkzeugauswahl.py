@@ -14,6 +14,8 @@ from orchestrator.core.hoa_tools import tool_specs
 # (CEO-Nachricht, erwartete Werkzeuge) -- Umlaute, Umgangssprache und Grenzfaelle bewusst dabei.
 TESTKATALOG = [
     ("Hallo LUNA", []),
+    ("To-do: Kiez Alm wegen Dreh anrufen, Freitag 10 Uhr", ["todo_anlegen"]),            # TODOS T3
+    ("Erinnere mich morgen um 9 an die Steuer", ["todo_anlegen"]),
     ("Guten Morgen, was steht heute an?", ["lagebild"]),
     ("Welche Anträge sind gerade offen?", ["antraege_zeigen"]),
     ("Zeig mir den Antrag mit der Endung 3f2a", ["antrag_details"]),

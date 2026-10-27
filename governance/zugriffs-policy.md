@@ -48,6 +48,10 @@
 > (CISO autorisiert); Credentials NUR in `orchestrator/.env` (separates Konto), Refresh-Token nie im Repo.
 > **Go-Live:** OAuth-Setup laut `deploy/google-oauth-setup.md`; ohne Credentials -> Fall-B-Hinweis (CEO-Tor).
 
+> **To-do-Termine (CEO 2026-10-27, TODOS_ROADMAP):** Kalendertermine zu eigenen To-dos des CEO legt LUNA ohne Rueckfrage an,
+> verschiebt und loescht sie -- nur diese eigenen, protokollierten Termine (Termin-ID am To-do in `todos/log.jsonl`);
+> fremde Termine bleiben gated.
+
 > **Ab 2026-10-26 (NETZ_AGENT, Regel `AGENTS.md` 5.7):** Freie Websuche und freie Seitenabrufe nur noch ueber den
 > Netz-Agenten; Brave ruft nur er auf (`BRAVE_API_KEY` nur in `netz_agent/.env`), Anthropic-Web ist aus. Die beiden
 > folgenden Absaetze sind Historie.

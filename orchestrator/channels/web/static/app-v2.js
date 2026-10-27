@@ -102,6 +102,7 @@ function reorder2(from, to) { const o = DASH2.order.filter(x => x !== from); o.s
 /* Sektionen (Icon-Nav). app = Gate ueber /api/me.apps (null = immer sichtbar). Deckt ALLE V1-Bereiche ab. */
 const SECTIONS = [
   { id: "dash", icon: "▦", label: "Dashboard", app: "home" },
+  { id: "aufgaben", icon: "✅", label: "To-dos", app: "aufgaben" },
   { id: "freigaben", icon: "✔", label: "Freigaben", app: "auftraege" },
   { id: "devroadmap", icon: "🗺", label: "Roadmap", app: null },
   { id: "investment", icon: "📈", label: "Investment", app: "investment" },
@@ -131,13 +132,14 @@ const SECTIONS = [
 const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.includes(app);
 // LUNA_OS_UI_ROADMAP Etappe 1: 4 Bereiche statt 19 Symbolen (CEO 2026-09-30, Skizze abgenommen). Reihenfolge nach Nutzung.
 const BEREICHE = [
+  { id: "todos", icon: "✅", label: "To-dos", teile: ["aufgaben"] },        // TODOS_ROADMAP T1 (CEO 2026-10-27)
   { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen", "vertraege"] },
   { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["contentplan", "crm", "radar", "content", "cutter", "reel"] },
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
   { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "skillwerkstatt", "modellradar", "devroadmap", "system", "netzwerk", "anbieter", "team", "einstellungen"] },
 ];
 const TEIL_INFO = {
-  kunden: "Firmen, Ansprechpartner, Akte", vertraege: "AGB und Vertragsvorlagen", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
+  aufgaben: "Eigene Aufgaben mit Erinnerung", kunden: "Firmen, Ansprechpartner, Akte", vertraege: "AGB und Vertragsvorlagen", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
   belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
   radar: "Neue Collab-Chancen", contentplan: "Kalender: eigene Posts, Kunden, Drehs", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
@@ -4573,6 +4575,66 @@ async function renderRadar() {
   </div>`;
   const s = $(".v2-radar-herst"); if (s) s.addEventListener("change", () => { RADAR_HERST = s.value; renderRadar(); });
 }
+/* TODOS_ROADMAP T1/T2: eigene To-dos -- Schnell-Eingabe, Gruppen nach Faelligkeit, abhaken, bearbeiten; Erinnerung
+   = Kalendertermin in LUNAs Kalender (CEO als Gast) + Telegram. Per Telegram: einfach „To-do: … Freitag 10 Uhr“ schreiben. */
+RENDER.aufgaben = renderAufgaben;
+const AUF_GRUPPEN = [["ueberfaellig", "⚠️ Überfällig"], ["heute", "📌 Heute"], ["demnaechst", "🗓 Demnächst"], ["ohne_datum", "📝 Ohne Datum"], ["erledigt", "✓ Erledigt (30 Tage)"]];
+async function renderAufgaben(meldung, fehler) {
+  const d = await jget("/api/aufgaben");
+  if (!d) { $("#v2-app").innerHTML = secHead("✅ To-dos", "") + emptyRow("Nur für Administratoren sichtbar."); return; }
+  const g = d.gruppen || {};
+  const offen = ["ueberfaellig", "heute", "demnaechst", "ohne_datum"].reduce((n, k) => n + (g[k] || []).length, 0);
+  const zeile = (a) => { const er = a.status === "erledigt";
+    const wann = [a.faellig ? datumDe(a.faellig) + (a.uhrzeit ? " " + a.uhrzeit : "") : "", a.erinnerung && !er ? "⏰ " + datumDe(a.erinnerung.slice(0, 10)) + " " + a.erinnerung.slice(11, 16) : "", a.quelle === "Telegram/Chat" ? "per Telegram" : ""].filter(Boolean).join(" · ");
+    return `<div class="v2-list-row v2-auf${er ? " erledigt" : ""}"><button class="v2-auf-haken" data-act="auf-haken" data-id="${esc(a.id)}" data-val="${er ? "auf" : "zu"}" aria-label="${er ? "wieder öffnen" : "erledigt"}">${er ? "✓" : ""}</button>
+      <div class="grow klick" data-act="auf-bearbeiten" data-id="${esc(a.id)}"><b>${esc(a.titel)}</b><small>${esc(wann)}${a.notiz ? " · " + esc(a.notiz.slice(0, 120)) : ""}</small></div></div>`; };
+  const gruppen = AUF_GRUPPEN.filter(([k]) => (g[k] || []).length).map(([k, n]) => tile(`${n} (${g[k].length})`, g[k].map(zeile).join(""), "w12")).join("");
+  $("#v2-app").innerHTML = secHead("✅ To-dos", `${offen} offen`) + `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}">${esc(meldung)}</div>` : ""}<div class="v2-grid">
+    ${tile("Neues To-do", `<div class="v2-form"><label class="v2-feld"><small>Was ist zu tun? *</small><input id="auf-titel" class="v2-inp" maxlength="200" placeholder="z. B. Kiez Alm wegen Dreh anrufen"></label>
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Fällig am</small><input id="auf-faellig" type="date"></label><label class="v2-feld"><small>Uhrzeit</small><input id="auf-uhrzeit" type="time"></label></div>
+      <label class="v2-modlbl"><input type="checkbox" id="auf-erinnern" checked> Erinnern (Kalender + Telegram; ohne Uhrzeit um 09:00)</label>
+      <details><summary><small>Notiz</small></summary><textarea id="auf-notiz" class="v2-inp" rows="3"></textarea></details>
+      <div class="v2-card-actions"><button class="v2-btn pri" data-act="auf-neu">✅ Anlegen</button></div><div id="auf-msg" class="v2-msg"></div>
+      <small class="v2-sub">Unterwegs: LUNA per Telegram schreiben, z. B. „To-do: Steuer machen, morgen 9 Uhr“.${d.google ? "" : " Kalender ist nicht verbunden – erinnert wird dann nur per Telegram."}</small></div>`, "w12")}
+    ${gruppen || tile("Alles erledigt", emptyRow("Keine offenen To-dos. 🎉"), "w12")}</div>`;
+  const t = $("#auf-titel"); if (t) t.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); aufAktion("auf-neu"); } });
+}
+async function aufBearbeiten(id) {
+  const d = await jget("/api/aufgaben"); const g = (d && d.gruppen) || {};
+  const a = Object.values(g).flat().find(x => x.id === id); if (!a) return renderAufgaben("To-do nicht gefunden.", true);
+  openModal("✅ To-do bearbeiten", `<div class="v2-form"><label class="v2-feld"><small>Titel *</small><input id="aufb-titel" class="v2-inp" maxlength="200" value="${esc(a.titel)}"></label>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Fällig am</small><input id="aufb-faellig" type="date" value="${esc(a.faellig)}"></label><label class="v2-feld"><small>Uhrzeit</small><input id="aufb-uhrzeit" type="time" value="${esc(a.uhrzeit)}"></label></div>
+    <label class="v2-feld"><small>Erinnerung (leer = keine)</small><input id="aufb-erinnerung" type="datetime-local" value="${esc(a.erinnerung)}"></label>
+    <label class="v2-feld"><small>Notiz</small><textarea id="aufb-notiz" class="v2-inp" rows="4">${esc(a.notiz)}</textarea></label>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="auf-speichern" data-id="${esc(id)}">Speichern</button><button class="v2-btn danger" data-act="auf-loeschen" data-id="${esc(id)}">Löschen</button></div><div id="aufb-msg" class="v2-msg"></div>
+    <small class="v2-sub">Angelegt ${esc(zeit(a.angelegt))}${a.quelle ? " · " + esc(a.quelle) : ""}${a.termin_id ? " · 📅 im Kalender" : ""}</small></div>`);
+}
+async function aufAktion(act, id, val) {
+  let r;
+  if (act === "auf-neu") {
+    const titel = ($("#auf-titel").value || "").trim(); if (!titel) return kundenMsg("auf-msg", "Bitte einen Titel eingeben.", false);
+    const faellig = $("#auf-faellig").value, uhrzeit = $("#auf-uhrzeit").value;
+    if (uhrzeit && !faellig) return kundenMsg("auf-msg", "Für eine Uhrzeit bitte auch ein Datum wählen.", false);
+    r = await jpost("/api/aufgaben", { titel, faellig, uhrzeit, notiz: ($("#auf-notiz").value || "").trim(), ...($("#auf-erinnern").checked ? {} : { erinnerung: "" }) });
+    if (!r || r.ok === false) return kundenMsg("auf-msg", (r && r.hinweis) || "Fehler.", false);
+    return renderAufgaben("Angelegt: " + r.aufgabe.titel + (r.hinweis_kalender ? " – " + r.hinweis_kalender : ""), !!r.hinweis_kalender);
+  }
+  if (act === "auf-haken") r = await jpost(`/api/aufgaben/${encodeURIComponent(id)}/erledigen`, { erledigt: val === "zu" });
+  if (act === "auf-bearbeiten") return aufBearbeiten(id);
+  if (act === "auf-speichern") {
+    r = await jpost(`/api/aufgaben/${encodeURIComponent(id)}`, { titel: $("#aufb-titel").value, faellig: $("#aufb-faellig").value, uhrzeit: $("#aufb-uhrzeit").value, erinnerung: ($("#aufb-erinnerung").value || "").slice(0, 16), notiz: $("#aufb-notiz").value });
+    if (!r || r.ok === false) return kundenMsg("aufb-msg", (r && r.hinweis) || "Fehler.", false);
+    closeModal();
+  }
+  if (act === "auf-loeschen") {
+    if (!confirm("To-do wirklich löschen?")) return;
+    r = await jpost(`/api/aufgaben/${encodeURIComponent(id)}/loeschen`, {}); closeModal();
+  }
+  if (!r || r.ok === false) return renderAufgaben((r && r.hinweis) || "Fehler.", true);
+  glockeAktualisieren();
+  return renderAufgaben(r.hinweis_kalender || "", !!r.hinweis_kalender);
+}
+
 /* NETZWERK_WACHE N1-N3: nur lesen und melden -- Uebersicht, Befunde, Geraete benennen (abgefragt wird vom Bot) */
 RENDER.netzwerk = renderNetzwerk;
 let NW_FILTER = "pruefen";
@@ -5165,6 +5227,7 @@ async function handleAct(act, el) {
     case "konzept": return konzeptFenster(id, val);
     case "kz-vid": case "kz-vid-ueb": case "kz-vid-weg": return kzVid(act, id, val);
     case "kz-iv": case "kz-iv-ueb": case "kz-iv-weg": return kzIv(act, val);
+    case "auf-neu": case "auf-haken": case "auf-bearbeiten": case "auf-speichern": case "auf-loeschen": return aufAktion(act, id, val);
     case "kz-tab": case "kz-briefing": case "kz-idee": case "kz-idee-status": case "kz-skript": case "kz-szene": case "kz-erledigt": case "kz-szene-weg":
     case "kz-dreh": case "kz-freigabe": case "kz-senden-form": case "kz-senden": case "kz-drehmodus": return kzAktion(act, id, val, el);
     case "dreh-haken": { const v = KZ.d ? KZ.d.kontext.vorgang : ""; const d = v ? null : await jget(`/api/crm/konzept/${encodeURIComponent(val)}`);

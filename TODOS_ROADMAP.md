@@ -1,10 +1,10 @@
 # Roadmap: To-dos in LUNA-OS und per Telegram (mit Kalender-Erinnerung)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-27
-- Arbeitsbranch: `ai/plan-todos` (Plan); Umsetzung auf eigenem Branch
+- Arbeitsbranch: `ai/todos`
 - Basiscommit: `78b35b0`
-- Naechster Schritt: CEO entscheidet Q0; danach Go fuer T1-T3 (am Stueck, ein Deploy).
+- Naechster Schritt: T1-T3 gebaut -- Merge/Deploy (CEO, Neustart luna-os + luna-telegram), dann Probe per Telegram (To-do in 15 min).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -23,7 +23,7 @@ zu senden, damit sie ein To-Do mit Erinnerung im Kalender anlegt.“
   Ausnahme fuer LUNAs **eigene, protokollierte** Erinnerungen (`core/erinnerungen.py`, CEO 2026-09-28).
 - Telegram-Chat laeuft ueber LUNA (Claude Sonnet 5.5) mit Werkzeugen; Bot-Zeitplaene pruefen alle 5 min.
 
-## Entscheidungen fuer den CEO (Q0) -- mit Empfehlung
+## Entscheidungen fuer den CEO (Q0) -- **entschieden 2026-10-27: alle Empfehlungen angenommen**
 
 1. **Ablage:** eigener Speicher `todos/log.jsonl` (Ereignisse, nichts geht verloren), nur NAS + Backup, nicht im Git.
    Felder: Titel, Notiz, faellig (Datum, optional Uhrzeit), Erinnerung (Zeitpunkt), optional Kunde, Quelle
@@ -42,7 +42,7 @@ zu senden, damit sie ein To-Do mit Erinnerung im Kalender anlegt.“
 
 ## Etappe T1: To-do-Speicher und Bereich in LUNA-OS
 
-- Status: geplant
+- Status: gebaut 2026-10-27 (`core/aufgaben.py`, `/api/aufgaben*` nur Modul administration, Bereich „✅ To-dos“ als eigener Navigationspunkt mit Schnell-Eingabe, Gruppen, Abhaken, Bearbeiten/Loeschen; faellige To-dos in „Zu erledigen“ mit „✓ Erledigt“; Speicher `todos/log.jsonl` nur NAS + Backup, vom Deploy ausgenommen). Deploy offen
 - Ziel / Scope / Nicht-Scope: `core/aufgaben.py` (anlegen, aendern, erledigen/wieder oeffnen, loeschen = als geloescht
   markieren), Endpunkte `/api/aufgaben*`; Bereich „✅ To-dos“ (Liste nach Faelligkeit, Schnell-Eingabe oben, Bearbeiten,
   Abhaken, optional Kunde), Desktop/iPad/iPhone; Eintraege in „Zu erledigen“. Nicht-Scope: Teilen mit Team, Wiederholungen.
@@ -55,7 +55,7 @@ zu senden, damit sie ein To-Do mit Erinnerung im Kalender anlegt.“
 
 ## Etappe T2: Kalender-Erinnerung und Telegram-Erinnerung
 
-- Status: geplant
+- Status: gebaut 2026-10-27 (Kalendertermin 15 min in LUNAs Kalender, Titel „✅ …“, anlegen/verschieben/loeschen ohne Rueckfrage nur fuer eigene To-do-Termine; Bot-Thread prueft jede Minute, Telegram mit „✓ Erledigt / ⏰ +1 Std. / ⏰ morgen“, gilt erst als erinnert, wenn Telegram den Versand bestaetigt; Schalter `AUFGABEN_ERINNERUNG=0`). Deploy offen
 - Ziel / Scope / Nicht-Scope: beim Anlegen mit Erinnerung Kalendertermin (LUNAs Kalender, CEO als Gast, Popup-Erinnerung),
   Termin-ID am To-do; Bot prueft alle 5 min faellige Erinnerungen und schickt sie per Telegram mit Knoepfen (Erledigt,
   +1 Std., morgen); Erledigen/Verschieben passt den Kalendertermin an bzw. loescht ihn. Nicht-Scope: fremde Termine.
@@ -68,7 +68,7 @@ zu senden, damit sie ein To-Do mit Erinnerung im Kalender anlegt.“
 
 ## Etappe T3: To-do per Telegram-Nachricht
 
-- Status: geplant
+- Status: gebaut 2026-10-27 (Werkzeuge `todo_anlegen`, `todos_zeigen`, `todo_erledigen`, eigene Gruppe in der Werkzeugauswahl mit Stichwoertern To-do/Aufgabe/Erinner…; Erinnerung in der Vergangenheit abgewiesen; `todo_anlegen`/`todo_erledigen` sind Aktions-Werkzeuge -> nach Fremdtext mit Verdacht gesperrt; Antwort mit Knopf „↶ Rueckgaengig“ unter der Telegram-Antwort). Deploy offen
 - Ziel / Scope / Nicht-Scope: Werkzeug `todo_anlegen` (und `todos_zeigen`, `todo_erledigen`) fuer LUNA: Titel, Faelligkeit,
   Erinnerung, optional Kunde aus freier Sprache (Datum relativ zu heute, Europe/Berlin); legt direkt an (Q0 Nr. 2), Antwort
   mit Zusammenfassung und „↶ Rueckgaengig“. Auch im LUNA-OS-Chat nutzbar. Nicht-Scope: Sprachnachrichten (folgen dem

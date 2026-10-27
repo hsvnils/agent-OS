@@ -52,6 +52,8 @@ FILES=(
   sicherheit/injection.jsonl
   # NETZ_AGENT Q5: Zaehler je Auftrag (ohne Inhalte, append-only)
   sicherheit/netz_agent.jsonl
+  # TODOS_ROADMAP: eigene To-dos des CEO (append-only)
+  todos/log.jsonl
   # Briefkopf + Bankverbindung (nur NAS, nie im Git; kein JSONL -> nicht im Zeilen-Check)
   buchhaltung/firmendaten.json
   buchhaltung/katalog.json       # Leistungskatalog/Preise (Etappe 3b; Aenderungen zusaetzlich in der Kette)

@@ -4020,6 +4020,16 @@ def _todos_fuer(u: dict) -> list[dict]:
             out += _vs_todos(kunden_store.bh, kunden_store, _date.fromisoformat(heute))
         except Exception as exc:
             print(f"[vorstellung] todos: {exc.__class__.__name__}", flush=True)
+    if hat_modul(u, "administration"):                         # TODOS_ROADMAP T1: eigene To-dos, faellig bis heute
+        try:
+            g = _aufgaben().liste(heute=heute, mit_erledigt=False)
+            for a in g["ueberfaellig"] + g["heute"]:
+                out.append({"id": f"auf:{a['id']}", "bereich": "To-dos", "icon": "✅", "titel": a["titel"],
+                            "detail": (a["uhrzeit"] + " Uhr" if a["uhrzeit"] else "") + (" · " + a["notiz"][:80] if a["notiz"] else ""),
+                            "act": "go:aufgaben", "act_id": "", "faellig": a["faellig"], "dringend": True,
+                            "erledigen": {"pfad": f"/api/aufgaben/{a['id']}/erledigen", "label": "✓ Erledigt"}})
+        except Exception as exc:
+            print(f"[aufgaben] todos: {exc.__class__.__name__}", flush=True)
     if hat_modul(u, "content_ops"):
         wartet = reel_store.liste(status="wartet")
         if wartet:
@@ -4028,6 +4038,60 @@ def _todos_fuer(u: dict) -> list[dict]:
                         "faellig": "", "dringend": False, "stufe": "woche", "erledigen": None})
     out.sort(key=lambda t: (not t["dringend"], t["faellig"] or "9999", t["titel"]))
     return out
+
+
+# -- Eigene To-dos (TODOS_ROADMAP T1/T2; Modul administration ueber den Pfad /api/aufgaben) ------------------------------
+def _aufgaben():
+    from ...core.aufgaben import AufgabenStore
+    return AufgabenStore(ROOT / "todos" / "log.jsonl")
+
+
+def _aufgabe_mit_kalender(fn, von: str):
+    """Aktion ausfuehren, danach den Kalendertermin des To-dos abgleichen (LUNAs eigener Termin, ohne Rueckfrage)."""
+    from ...core.aufgaben import kalender_abgleichen
+
+    def tun():
+        st = _aufgaben()
+        a = fn(st)
+        hinweis = kalender_abgleichen(st, _google(), st.get(a["id"]) or a, von=von)
+        return {"aufgabe": st.get(a["id"]) or a, **({"hinweis_kalender": hinweis} if hinweis else {})}
+    return _kunden_aktion(tun)
+
+
+@app.get("/api/aufgaben")
+def aufgaben_liste():
+    return {"gruppen": _aufgaben().liste(), "google": bool(_google().verfuegbar())}
+
+
+@app.post("/api/aufgaben")
+async def aufgabe_neu(request: Request):
+    b = await _json(request)
+    er = None if b.get("erinnerung") is None else str(b.get("erinnerung") or "")
+    return _aufgabe_mit_kalender(lambda st: st.anlegen(str(b.get("titel") or ""), faellig=str(b.get("faellig") or ""),
+                                                       uhrzeit=str(b.get("uhrzeit") or ""), erinnerung=er,
+                                                       notiz=str(b.get("notiz") or ""), kunde=str(b.get("kunde") or ""),
+                                                       quelle="LUNA-OS", von=_von(request)), _von(request))
+
+
+@app.post("/api/aufgaben/{aid}")
+async def aufgabe_aendern(aid: str, request: Request):
+    b = await _json(request)
+    felder = {k: b[k] for k in ("titel", "notiz", "faellig", "uhrzeit", "erinnerung", "kunde") if k in b}
+    return _aufgabe_mit_kalender(lambda st: st.aendern(aid, felder, von=_von(request)), _von(request))
+
+
+@app.post("/api/aufgaben/{aid}/erledigen")
+async def aufgabe_erledigen(aid: str, request: Request):
+    b = await _json(request)
+    return _aufgabe_mit_kalender(lambda st: st.erledigen(aid, b.get("erledigt") is not False, von=_von(request)), _von(request))
+
+
+@app.post("/api/aufgaben/{aid}/loeschen")
+async def aufgabe_loeschen(aid: str, request: Request):
+    def fn(st):
+        a = st.loeschen(aid, von=_von(request))
+        return a | {"status": "geloescht"}
+    return _aufgabe_mit_kalender(fn, _von(request))
 
 
 @app.get("/api/todos")
