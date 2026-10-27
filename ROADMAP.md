@@ -94,8 +94,8 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `DRIVE_ORDNER_SCHUTZ_ROADMAP.md` | Sammel-Roadmap: Drive-Fix (BF-72), Kundenordner mit Freigabe-Link, Prompt-Injection-Schutz -- Reihenfolge und Stand | abgeschlossen (2026-10-19, alle acht Etappen live und abgenommen) |
 | `KUNDENORDNER_FREIGABE_ROADMAP.md` | Kundenordner auf der NAS, sicherer Freigabe-Link mit Ablauf, Link per Mail | abgeschlossen (F1-F3 live, CEO-Abnahme 2026-10-19) |
 | `PROMPT_INJECTION_SCHUTZ_ROADMAP.md` | Prompt-Injection-Schutz: jeder Fremdtext markiert, feinere Erkennung, Handlungs-Sperre nach Verdacht, Angriffstests | abgeschlossen (I1-I4 live 2026-10-19) |
-| `ZAHLUNGSERINNERUNG_ROADMAP.md` | Zahlungserinnerung als freundlicher Beleg vor der 1. Mahnung (ohne Zinsen/Gebuehren), Vorschlag per Telegram | geplant (2026-10-26) |
-| `KUNDEN_CHECKLISTE_ROADMAP.md` | Kunden-Checkliste (Fragenkatalog) fuer Content-Konzept und Skripte: Dokument + abhakbar in der Konzept-Mappe | geplant (2026-10-26) |
+| `ZAHLUNGSERINNERUNG_ROADMAP.md` | Zahlungserinnerung als freundlicher Beleg vor der 1. Mahnung (ohne Zinsen/Gebuehren), Vorschlag per Telegram | abgeschlossen (2026-10-27, Abnahme im Betrieb) |
+| `KUNDEN_CHECKLISTE_ROADMAP.md` | Kunden-Checkliste (Fragenkatalog) fuer Content-Konzept und Skripte: Dokument + abhakbar in der Konzept-Mappe | abgeschlossen (2026-10-27, Abnahme im Betrieb) |
 | `NETZ_AGENT_ROADMAP.md` | Netz-Agent in Quarantaene: nur ein eigener Container ohne LUNA-Dateien geht ins Internet, liefert gepruefte Formulare; alle anderen Agenten ohne freie Websuche | in Umsetzung (Q1-Q5 live; Q3 in Beobachtung bis 2026-11-02) |
 | `CLAUDE_AKTIV_ROADMAP.md` | Claude wieder aktiv (Chat/Fachagenten Sonnet 5.5, Routing/Netz-Agent Haiku 5.5, zwei begrenzte Schluessel), Gemini abloesen | in Umsetzung (C1-C3 live 2026-10-26, C4 ab 02.11.) |
 | `SERIEN_UND_VORSTELLUNG_ROADMAP.md` | Wiederkehrender Content im Content-Plan; Vorstellungs-Mails an Unternehmen aus LUNA-OS (Firma beim Senden als Interessent) | in Umsetzung (S1, V1, V2 gebaut 2026-10-06) |

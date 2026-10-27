@@ -1,10 +1,10 @@
 # Roadmap: Zahlungserinnerung vor der 1. Mahnung
 
-- Status: in Umsetzung
-- Stand: 2026-10-26
+- Status: abgeschlossen
+- Stand: 2026-10-27
 - Arbeitsbranch: `ai/z2-c3`
 - Basiscommit: `30ccdb8`
-- Naechster Schritt: Abnahme durch den CEO (Z1 Testmail an sich selbst, Z2 Antwort auf die Telegram-Vorschlaege); danach Roadmap abschliessen.
+- Naechster Schritt: keiner -- abgeschlossen 2026-10-27 (CEO hakt ab, Test im laufenden Betrieb). Auffaelligkeiten im Betrieb als neuer Eintrag in `docs/bekannte-fehler.md`.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -43,7 +43,7 @@ unserer Rechnung XYZ erinnern.“
 
 ## Etappe Z1: Beleg, PDF und Versand aus LUNA-OS
 
-- Status: gebaut 2026-10-26 (als Stufe 0 im Mahnwesen: gleiche Ereignisse, Nummernkreis `ZE`, PDF/Mail ohne Zinsen/Kosten, Wortlaut nach CEO-Vorgabe, Rechnung als zweiter Anhang beim Versand aus LUNA; Knopf „💬 Zahlungserinnerung erstellen …“ in der Rechnungsansicht, Zu erledigen, Belegverfolgung, Nummern-Erkennung in Firmenakte/Mail-Antworten; 1. Mahnung nimmt Bezug auf die Erinnerung. Nebenwirkung: nach Ablauf der Erinnerungsfrist fragt LUNA per Telegram nach der 1. Mahnung (vorhandener Folgemahnungs-Weg, nur nach ✅). Einschraenkung: der Weg „Mail-Programm (.eml)“ haengt nur die Zahlungserinnerung an). Deploy und Abnahme offen
+- Status: gebaut 2026-10-26 (als Stufe 0 im Mahnwesen: gleiche Ereignisse, Nummernkreis `ZE`, PDF/Mail ohne Zinsen/Kosten, Wortlaut nach CEO-Vorgabe, Rechnung als zweiter Anhang beim Versand aus LUNA; Knopf „💬 Zahlungserinnerung erstellen …“ in der Rechnungsansicht, Zu erledigen, Belegverfolgung, Nummern-Erkennung in Firmenakte/Mail-Antworten; 1. Mahnung nimmt Bezug auf die Erinnerung. Nebenwirkung: nach Ablauf der Erinnerungsfrist fragt LUNA per Telegram nach der 1. Mahnung (vorhandener Folgemahnungs-Weg, nur nach ✅). Einschraenkung: der Weg „Mail-Programm (.eml)“ haengt nur die Zahlungserinnerung an). Deployt 2026-10-26. **Abgehakt vom CEO 2026-10-27 -- Abnahme im laufenden Betrieb**
 - Ziel / Scope / Nicht-Scope: Zahlungserinnerung in `MahnStore` als Stufe 0 bzw. eigene Art (Nummernkreis `ZE`),
   Ereignisse in der Hash-Kette (`zahlungserinnerung_erstellt/_versendet`), PDF hochkant (A4) im Belegstil, Mail-Vorlage
   als Textbaustein, Versand mit Vorschau nur nach CEO-Klick (Kundenversand wie bei Mahnungen, All-Inkl), Ablage in der
@@ -59,7 +59,7 @@ unserer Rechnung XYZ erinnern.“
 
 ## Etappe Z2: Vorschlag per Telegram und Uebergang zur 1. Mahnung
 
-- Status: gebaut 2026-10-26 (`MahnStore.faellige_folgemahnungen(erinnerung=True)` liefert Rechnungen ab 3 Tagen ueberfaellig ohne Erinnerung/Mahnung/Mahnverfahren und nicht ausgesetzt; Bot fragt im vorhandenen Folgemahnungs-Lauf 08-20 Uhr **einmal je Rechnung** (Merker ohne Datum), eigener Telegram-Text ohne Zinsen; ✅ sendet ueber `folgemahnung_senden` mit Stufe 0 (Rechnung als 2. Anhang, Textbaustein), ❌ setzt aus; Schalter `ZAHLUNGSERINNERUNG_VORSCHLAG=0` in `orchestrator/.env` schaltet ab (Standard an); 1. Mahnung nach Fristablauf wie in Z1). Deployt 2026-10-26 (a4111f2); erster Lauf 16:12: Vorschlaege zu RE-2026-0001 und RE-2026-0002 per Telegram zugestellt (Merker nur bei erfolgreichem Versand). Abnahme offen
+- Status: gebaut 2026-10-26 (`MahnStore.faellige_folgemahnungen(erinnerung=True)` liefert Rechnungen ab 3 Tagen ueberfaellig ohne Erinnerung/Mahnung/Mahnverfahren und nicht ausgesetzt; Bot fragt im vorhandenen Folgemahnungs-Lauf 08-20 Uhr **einmal je Rechnung** (Merker ohne Datum), eigener Telegram-Text ohne Zinsen; ✅ sendet ueber `folgemahnung_senden` mit Stufe 0 (Rechnung als 2. Anhang, Textbaustein), ❌ setzt aus; Schalter `ZAHLUNGSERINNERUNG_VORSCHLAG=0` in `orchestrator/.env` schaltet ab (Standard an); 1. Mahnung nach Fristablauf wie in Z1). Deployt 2026-10-26 (a4111f2); erster Lauf 16:12: Vorschlaege zu RE-2026-0001 und RE-2026-0002 per Telegram zugestellt (Merker nur bei erfolgreichem Versand). **Abgehakt vom CEO 2026-10-27 -- Abnahme im laufenden Betrieb**
 - Ziel / Scope / Nicht-Scope: im 15-min-Poll: Rechnung X Tage ueberfaellig, nichts verschickt -> Telegram-Vorschlag
   (✅/✏️/❌, einmal je Rechnung, 09-21 Uhr); ❌ setzt die Erinnerung fuer diese Rechnung aus; nach Ablauf der
   Erinnerungsfrist ohne Zahlung schlaegt LUNA die 1. Mahnung vor (vorhandener Weg). CFO-Tagesmeldung angepasst.

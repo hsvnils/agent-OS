@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-27 09:30] — Claude Code
+- **Was:** ZAHLUNGSERINNERUNG (Z1, Z2) und KUNDEN_CHECKLISTE (C3) vom CEO abgehakt -- Test im laufenden Betrieb; beide Roadmaps abgeschlossen (Status, Roadmap-Verzeichnis). Offen als Merker: Kosten des ersten echten Ideen-Vorschlags im Kostenlog pruefen.
+- **Warum:** CEO-Anweisung „im laufenden Betrieb, daher bitte vorerst einfach abhaken“.
+- **Betroffen:** `ZAHLUNGSERINNERUNG_ROADMAP.md`, `KUNDEN_CHECKLISTE_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-27 09:28] — Claude Code
 - **Was:** KUNDEN_CHECKLISTE C2 vom CEO abgenommen (Leitfaden getestet, PDF in der Akte passt). NETZ_AGENT Q5: CISO-Zeile „Netz-Agent“ auf der NAS geprueft (81 Auftraege/24 h, 0 Verdacht, Sperre aktiv; Schwere ok, daher nicht in der Telegram-Befundmeldung).
 - **Warum:** CEO-Abnahme; offene Pruefung aus NETZ_AGENT Q5.
