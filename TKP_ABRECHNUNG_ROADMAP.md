@@ -4,7 +4,7 @@
 - Stand: 2026-10-27
 - Arbeitsbranch: `ai/tkp-abrechnung`
 - Basiscommit: `31558c3`
-- Naechster Schritt: T1-T4 umgesetzt (CEO-Go 2026-10-27, Empfehlungen E1-E9 angenommen, E6 durch T4 revidiert) -- Merge, Deploy (`luna-os` + `luna-telegram`), dann CEO-Abnahme an einem Probe-Angebot je Abrechnungsart (Angebot -> Auftrag -> Kennzahlen -> Rechnungsentwurf, ohne Versand) und Sichtpruefung Desktop/iPad/iPhone. Vor dem ersten echten Kunden: Klauseltexte anwaltlich pruefen (E9).
+- Naechster Schritt: T1-T4 live seit 2026-10-27 13:44 (Merge, Sync, Neustart `luna-os` + `luna-telegram` geprueft). Offen: CEO-Abnahme an einem Probe-Angebot nach Reichweite (Angebot -> PDF; spaeter Auftrag -> Kennzahlen -> Rechnungsentwurf ohne Versand) und Sichtpruefung Desktop/iPad/iPhone; vor dem ersten echten Kunden Klauseltexte anwaltlich pruefen (E9).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

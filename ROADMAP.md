@@ -94,7 +94,7 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `DRIVE_ORDNER_SCHUTZ_ROADMAP.md` | Sammel-Roadmap: Drive-Fix (BF-72), Kundenordner mit Freigabe-Link, Prompt-Injection-Schutz -- Reihenfolge und Stand | abgeschlossen (2026-10-19, alle acht Etappen live und abgenommen) |
 | `KUNDENORDNER_FREIGABE_ROADMAP.md` | Kundenordner auf der NAS, sicherer Freigabe-Link mit Ablauf, Link per Mail | abgeschlossen (F1-F3 live, CEO-Abnahme 2026-10-19) |
 | `PROMPT_INJECTION_SCHUTZ_ROADMAP.md` | Prompt-Injection-Schutz: jeder Fremdtext markiert, feinere Erkennung, Handlungs-Sperre nach Verdacht, Angriffstests | abgeschlossen (I1-I4 live 2026-10-19) |
-| `TKP_ABRECHNUNG_ROADMAP.md` | TKP-Abrechnung nach erzielter Reichweite und Ausgleich von Mehr-/Minderleistung in Angebot, Auftrag und Rechnung | in Umsetzung (T1-T4 umgesetzt 2026-10-27, Deploy + CEO-Abnahme offen) |
+| `TKP_ABRECHNUNG_ROADMAP.md` | TKP-Abrechnung nach erzielter Reichweite und Ausgleich von Mehr-/Minderleistung in Angebot, Auftrag und Rechnung | in Umsetzung (T1-T4 live seit 2026-10-27, CEO-Abnahme offen) |
 | `TODOS_ROADMAP.md` | Eigene To-dos in LUNA-OS (Bereich + Kachel), per Telegram-Nachricht anlegen, Erinnerung im Kalender und per Telegram | abgeschlossen (2026-10-27, Abnahme im Betrieb) |
 | `ZAHLUNGSERINNERUNG_ROADMAP.md` | Zahlungserinnerung als freundlicher Beleg vor der 1. Mahnung (ohne Zinsen/Gebuehren), Vorschlag per Telegram | abgeschlossen (2026-10-27, Abnahme im Betrieb) |
 | `KUNDEN_CHECKLISTE_ROADMAP.md` | Kunden-Checkliste (Fragenkatalog) fuer Content-Konzept und Skripte: Dokument + abhakbar in der Konzept-Mappe | abgeschlossen (2026-10-27, Abnahme im Betrieb) |

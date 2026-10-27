@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-27 13:46] — Claude Code
+- **Was:** Deploy TKP_ABRECHNUNG T1-T4 geprueft: Code auf der NAS (`core/tkp_abrechnung.py`), Web liefert `app-v2.js?v=144` mit Messzeitraum-Auswahl, `luna-os` und `luna-telegram` neu gestartet 13:43/13:44, `luna-netz` unberuehrt; Roadmap-Status auf live.
+- **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Pruefung angefordert.
+- **Betroffen:** `TKP_ABRECHNUNG_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-27 13:27] — Claude Code
 - **Was:** Branch `ai/tkp-abrechnung` (TKP_ABRECHNUNG T1-T4) in `main` gemergt; Deploy `luna-os` + `luna-telegram` an den CEO uebergeben.
 - **Warum:** CEO: „Go fuer Merge, Push und Deploy“.
