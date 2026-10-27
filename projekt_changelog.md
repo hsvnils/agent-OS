@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-27 09:32] — Claude Code
+- **Was:** Neue Roadmap `TODOS_ROADMAP.md` (nur Plan): eigene To-dos in LUNA-OS (T1), Kalender- und Telegram-Erinnerung (T2), To-do per Telegram-Nachricht ueber ein LUNA-Werkzeug (T3); Q0-Entscheidungen mit Empfehlung; im Roadmap-Verzeichnis eingetragen.
+- **Warum:** CEO-Wunsch 2026-10-27 (dringend).
+- **Betroffen:** `TODOS_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-27 09:30] — Claude Code
 - **Was:** ZAHLUNGSERINNERUNG (Z1, Z2) und KUNDEN_CHECKLISTE (C3) vom CEO abgehakt -- Test im laufenden Betrieb; beide Roadmaps abgeschlossen (Status, Roadmap-Verzeichnis). Offen als Merker: Kosten des ersten echten Ideen-Vorschlags im Kostenlog pruefen.
 - **Warum:** CEO-Anweisung „im laufenden Betrieb, daher bitte vorerst einfach abhaken“.
