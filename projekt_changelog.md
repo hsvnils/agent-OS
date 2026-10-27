@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-27 09:58] — Claude Code
+- **Was:** TODOS T1-T3 nach CEO-Deploy live geprueft (nur lesend): origin/main = 4ce6308, Code auf der NAS, LUNA-OS v142, `/api/aufgaben` antwortet (leer, Kalender verbunden), App „aufgaben“ fuer den CEO freigeschaltet; Bot neu gestartet (Herzschlag 09:52). Probe per Telegram offen (CEO).
+- **Warum:** Live-Pruefung nach Deploy.
+- **Betroffen:** `TODOS_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-27 09:44] — Claude Code
 - **Was:** TODOS_ROADMAP T1-T3 gebaut (Branch `ai/todos`): eigene To-dos in LUNA-OS (neuer Navigationspunkt „✅ To-dos“, Schnell-Eingabe, Gruppen nach Faelligkeit, Abhaken, Bearbeiten, Loeschen; faellige To-dos in „Zu erledigen“), Erinnerung als Kalendertermin in LUNAs Kalender und per Telegram mit Knoepfen Erledigt/+1 Std./morgen (Bot-Thread jede Minute), LUNA-Werkzeuge `todo_anlegen/todos_zeigen/todo_erledigen` fuer freie Telegram-Nachrichten (ohne Rueckfrage, Knopf „↶ Rueckgaengig“). Speicher `todos/log.jsonl` nur NAS + Backup, Deploy-Ausschluss, .gitignore. Cache v142/v75. Tests mit Gegenproben; Register, Zugriffs-Policy, Datenfluesse.
 - **Warum:** CEO-Go T1-T3 (dringend).

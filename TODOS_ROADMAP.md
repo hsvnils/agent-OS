@@ -4,7 +4,7 @@
 - Stand: 2026-10-27
 - Arbeitsbranch: `ai/todos`
 - Basiscommit: `78b35b0`
-- Naechster Schritt: T1-T3 gebaut -- Merge/Deploy (CEO, Neustart luna-os + luna-telegram), dann Probe per Telegram (To-do in 15 min).
+- Naechster Schritt: deployt 2026-10-27 (4ce6308) -- Probe des CEO per Telegram („To-do: Testaufgabe, erinnere mich in 10 Minuten“), danach Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -42,7 +42,7 @@ zu senden, damit sie ein To-Do mit Erinnerung im Kalender anlegt.“
 
 ## Etappe T1: To-do-Speicher und Bereich in LUNA-OS
 
-- Status: gebaut 2026-10-27 (`core/aufgaben.py`, `/api/aufgaben*` nur Modul administration, Bereich „✅ To-dos“ als eigener Navigationspunkt mit Schnell-Eingabe, Gruppen, Abhaken, Bearbeiten/Loeschen; faellige To-dos in „Zu erledigen“ mit „✓ Erledigt“; Speicher `todos/log.jsonl` nur NAS + Backup, vom Deploy ausgenommen). Deploy offen
+- Status: gebaut 2026-10-27 (`core/aufgaben.py`, `/api/aufgaben*` nur Modul administration, Bereich „✅ To-dos“ als eigener Navigationspunkt mit Schnell-Eingabe, Gruppen, Abhaken, Bearbeiten/Loeschen; faellige To-dos in „Zu erledigen“ mit „✓ Erledigt“; Speicher `todos/log.jsonl` nur NAS + Backup, vom Deploy ausgenommen). Deployt 2026-10-27 (4ce6308; live: `/api/aufgaben` antwortet, App „aufgaben“ fuer den CEO freigeschaltet, Kalender verbunden, Oberflaeche v142). Probe offen
 - Ziel / Scope / Nicht-Scope: `core/aufgaben.py` (anlegen, aendern, erledigen/wieder oeffnen, loeschen = als geloescht
   markieren), Endpunkte `/api/aufgaben*`; Bereich „✅ To-dos“ (Liste nach Faelligkeit, Schnell-Eingabe oben, Bearbeiten,
   Abhaken, optional Kunde), Desktop/iPad/iPhone; Eintraege in „Zu erledigen“. Nicht-Scope: Teilen mit Team, Wiederholungen.
@@ -55,7 +55,7 @@ zu senden, damit sie ein To-Do mit Erinnerung im Kalender anlegt.“
 
 ## Etappe T2: Kalender-Erinnerung und Telegram-Erinnerung
 
-- Status: gebaut 2026-10-27 (Kalendertermin 15 min in LUNAs Kalender, Titel „✅ …“, anlegen/verschieben/loeschen ohne Rueckfrage nur fuer eigene To-do-Termine; Bot-Thread prueft jede Minute, Telegram mit „✓ Erledigt / ⏰ +1 Std. / ⏰ morgen“, gilt erst als erinnert, wenn Telegram den Versand bestaetigt; Schalter `AUFGABEN_ERINNERUNG=0`). Deploy offen
+- Status: gebaut 2026-10-27 (Kalendertermin 15 min in LUNAs Kalender, Titel „✅ …“, anlegen/verschieben/loeschen ohne Rueckfrage nur fuer eigene To-do-Termine; Bot-Thread prueft jede Minute, Telegram mit „✓ Erledigt / ⏰ +1 Std. / ⏰ morgen“, gilt erst als erinnert, wenn Telegram den Versand bestaetigt; Schalter `AUFGABEN_ERINNERUNG=0`). Deployt 2026-10-27 (4ce6308; live: `/api/aufgaben` antwortet, App „aufgaben“ fuer den CEO freigeschaltet, Kalender verbunden, Oberflaeche v142). Probe offen
 - Ziel / Scope / Nicht-Scope: beim Anlegen mit Erinnerung Kalendertermin (LUNAs Kalender, CEO als Gast, Popup-Erinnerung),
   Termin-ID am To-do; Bot prueft alle 5 min faellige Erinnerungen und schickt sie per Telegram mit Knoepfen (Erledigt,
   +1 Std., morgen); Erledigen/Verschieben passt den Kalendertermin an bzw. loescht ihn. Nicht-Scope: fremde Termine.
@@ -68,7 +68,7 @@ zu senden, damit sie ein To-Do mit Erinnerung im Kalender anlegt.“
 
 ## Etappe T3: To-do per Telegram-Nachricht
 
-- Status: gebaut 2026-10-27 (Werkzeuge `todo_anlegen`, `todos_zeigen`, `todo_erledigen`, eigene Gruppe in der Werkzeugauswahl mit Stichwoertern To-do/Aufgabe/Erinner…; Erinnerung in der Vergangenheit abgewiesen; `todo_anlegen`/`todo_erledigen` sind Aktions-Werkzeuge -> nach Fremdtext mit Verdacht gesperrt; Antwort mit Knopf „↶ Rueckgaengig“ unter der Telegram-Antwort). Deploy offen
+- Status: gebaut 2026-10-27 (Werkzeuge `todo_anlegen`, `todos_zeigen`, `todo_erledigen`, eigene Gruppe in der Werkzeugauswahl mit Stichwoertern To-do/Aufgabe/Erinner…; Erinnerung in der Vergangenheit abgewiesen; `todo_anlegen`/`todo_erledigen` sind Aktions-Werkzeuge -> nach Fremdtext mit Verdacht gesperrt; Antwort mit Knopf „↶ Rueckgaengig“ unter der Telegram-Antwort). Deployt 2026-10-27 (4ce6308; live: `/api/aufgaben` antwortet, App „aufgaben“ fuer den CEO freigeschaltet, Kalender verbunden, Oberflaeche v142). Probe offen
 - Ziel / Scope / Nicht-Scope: Werkzeug `todo_anlegen` (und `todos_zeigen`, `todo_erledigen`) fuer LUNA: Titel, Faelligkeit,
   Erinnerung, optional Kunde aus freier Sprache (Datum relativ zu heute, Europe/Berlin); legt direkt an (Q0 Nr. 2), Antwort
   mit Zusammenfassung und „↶ Rueckgaengig“. Auch im LUNA-OS-Chat nutzbar. Nicht-Scope: Sprachnachrichten (folgen dem
