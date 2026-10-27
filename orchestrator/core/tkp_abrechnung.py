@@ -10,7 +10,10 @@ Je Angebot (und mit ihm eingefroren im Auftrag) eine **Abrechnungsart** fuer all
   **ganze** Abweichung mit dem vereinbarten TKP (bzw. `ausgleich_tkp_cent`) ausgeglichen -- Mehrleistung als Aufschlag
   (hoechstens `deckel_prozent` vom geplanten Media-Wert), Minderleistung als Abzug (einzige negative Position).
 
-Kontakt = Aufrufe (Reel/Story) bzw. Impressionen (Bild-Post), Stand 7 Tage nach Veroeffentlichung -- dieselben
+T4 (CEO 2026-10-27): Messzeitraum je Angebot (`messtage` 7/10/14/30, Standard 10) -- die Kennzahlen-Erinnerung kommt an
+diesem Tag; Hoechstbetrag nur noch auf Wunsch (Standard: ohne Deckel -- geht ein Posting viral, zahlt der Kunde es auch).
+
+Kontakt = Aufrufe (Reel/Story) bzw. Impressionen (Bild-Post), Stand am Ende des Messzeitraums -- dieselben
 bestaetigten Kennzahlen wie im Projektbericht (`core/postings.py`). In der Rechnung tragen die betroffenen Positionen
 das Feld `reichweite` (Plan, gemessen, abgerechnet, TKP); den Betrag rechnet immer der Server. Ein von der Messung
 abweichender Wert braucht einen Grund; fehlt eine Messung, ist das Festschreiben gesperrt.
@@ -24,10 +27,15 @@ from .beleg_pdf import cent, eur, menge_text
 
 ARTEN = {"fest": "Festpreis", "reichweite": "Nach Reichweite", "ausgleich": "Festpreis mit Ausgleich"}
 TOLERANZ_STANDARD = 10
-DECKEL_STANDARD = 25
+MESSTAGE = (7, 10, 14, 30)
+MESSTAGE_STANDARD = 10
+MESSTAGE_ALT = 7                     # Auftraege von vor T4 (ohne Feld) messen nach 7 Tagen
 TYPEN = ("media", "ausgleich")
-MESSUNG = ("Kontakte = Aufrufe bei Reels und Stories, Impressionen bei Bild-Posts, Stand 7 Tage nach Veröffentlichung; "
-           "Nachweis über die Statistik (Insights) im Projektbericht")
+
+
+def messung(tage: int) -> str:
+    return (f"Kontakte = Aufrufe bei Reels und Stories, Impressionen bei Bild-Posts, Stand {tage} Tage nach Veröffentlichung; "
+            "Nachweis über die Statistik (Insights) im Projektbericht")
 
 
 def _rund(d: Decimal) -> int:
@@ -62,8 +70,14 @@ def pruefen(roh) -> dict:
     art = roh.get("art") or "fest"
     if art == "fest":
         return {}
-    out = {"art": art}
-    d = roh.get("deckel_prozent", DECKEL_STANDARD)
+    try:
+        tage = int(roh.get("messtage") or MESSTAGE_STANDARD)
+    except (TypeError, ValueError):
+        tage = 0
+    if tage not in MESSTAGE:
+        raise ValueError("Messzeitraum: 7, 10, 14 oder 30 Tage.")
+    out = {"art": art, "messtage": tage}
+    d = roh.get("deckel_prozent")
     if d not in (None, ""):
         out["deckel_prozent"] = _prozent(d, "Höchstbetrag", 500)
     if art == "ausgleich":
@@ -154,7 +168,7 @@ def angebot_text(a: dict) -> str:
     if ab["art"] == "reichweite":
         satz = ("Abrechnung nach Reichweite: Die genannte Summe ist voraussichtlich. Berechnet werden die tatsächlich "
                 "erzielten Kontakte je Leistung × vereinbarter TKP / 1.000 zuzüglich der festen Produktionskosten ("
-                + MESSUNG + ").")
+                + messung(ab.get("messtage", MESSTAGE_ALT)) + ").")
         if hoechst is not None:
             satz += (f" Abgerechnet werden höchstens {ab['deckel_prozent']} % mehr Kontakte als geplant; der Gesamtbetrag "
                      f"liegt damit bei höchstens {eur(hoechst)}.")
@@ -162,7 +176,8 @@ def angebot_text(a: dict) -> str:
     plan = sum(int(p["kontakte"]) * _stueck(p) for p in tkp)
     satz_tkp = (f"{eur(ab['ausgleich_tkp_cent'])} TKP" if ab.get("ausgleich_tkp_cent")
                 else "dem vereinbarten TKP der jeweiligen Leistung")
-    satz = (f"Reichweiten-Ausgleich: Geplant sind insgesamt {_tsd(plan)} Kontakte ({MESSUNG}). Weicht die erzielte Summe "
+    satz = (f"Reichweiten-Ausgleich: Geplant sind insgesamt {_tsd(plan)} Kontakte "
+            f"({messung(ab.get('messtage', MESSTAGE_ALT))}). Weicht die erzielte Summe "
             f"um mehr als {ab['toleranz_prozent']} % davon ab, gleichen wir die gesamte Abweichung mit {satz_tkp} je 1.000 "
             "Kontakte aus – Mehrleistung als Aufschlag, Minderleistung als Gutschrift auf der Rechnung. Die Produktion "
             "bleibt unverändert.")

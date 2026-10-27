@@ -193,8 +193,9 @@ ENTWUERFE = {
 
 # TKP_ABRECHNUNG T3 (CEO 2026-10-27): § 8 je Abrechnungsart -- ebenfalls ENTWURF Claude Code, anwaltlich zu pruefen (E9).
 # {Reichweite} wird beim Vertrag je Auftrag (V3) mit dem Text der Abrechnungsart des Auftrags gefuellt.
-MESSUNG = ("Als Kontakt gelten Aufrufe bei Reels und Stories sowie Impressionen bei Bild-Posts, jeweils mit dem Stand sieben "
-           "Tage nach Veröffentlichung laut Plattform-Statistik; der Auftragnehmer weist sie im Projektbericht durch "
+MESSUNG = ("Als Kontakt gelten Aufrufe bei Reels und Stories sowie Impressionen bei Bild-Posts, jeweils mit dem Stand am Ende "
+           "des im Angebot vereinbarten Messzeitraums nach Veröffentlichung laut Plattform-Statistik; der Auftragnehmer "
+           "weist sie im Projektbericht durch "
            "Screenshots der Statistik nach.")
 REICHWEITE_KLAUSELN = {
     "fest": "Genannte Reichweiten sind Planungsgrößen auf Basis von Erfahrungswerten und keine Garantie. Nach Abschluss "

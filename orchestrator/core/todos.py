@@ -204,18 +204,18 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                 out.append(_todo(f"an-nachfassen:{a['nummer']}", "Angebote", "📞", f"Angebot {a['nummer']} nachfassen",
                                  f"{name} · {a.get('titel') or ''}".strip(" ·"), "an-detail", a["nummer"], nf, h,
                                  {"pfad": f"/api/crm/angebote/{a['nummer']}/nachgefasst", "label": "✓ Nachgefasst"}))
-        from .postings import ERINNERN_TAGE, Postings, _faellig, lang_faellig, postings_aus   # PROJEKTBERICHT P2/P4
+        from .postings import Postings, _faellig, lang_faellig, postings_aus   # PROJEKTBERICHT P2/P4
         stand = Postings._falte(e)
         for a in AuftragBuch._falte(e).values():
             if a["status"] == "storniert":
                 continue
             for p in postings_aus(a):
                 x = stand.get(p["id"], {})
-                if _faellig(x, heute):
+                if _faellig(p | x, heute):
                     t = _todo(f"po-kennzahlen:{p['id']}", "Aufträge", "📊", f"Kennzahlen eintragen: {p['titel']} · {a['nummer']}",
                               f"{firmen.get(a['firma'], a['firma'])} · veröffentlicht am {x['datum'][8:10]}.{x['datum'][5:7]}. – "
                               "Screenshot an LUNA (Telegram) oder Formular im Auftrag", "ab-detail", a["nummer"],
-                              (date.fromisoformat(x["datum"]) + timedelta(days=ERINNERN_TAGE)).isoformat(), h)
+                              (date.fromisoformat(x["datum"]) + timedelta(days=p["messtage"])).isoformat(), h)
                     out.append(t | {"dringend": False, "stufe": "woche"})
                 elif lang_faellig(p | x, heute):              # P4: optionaler 30-Tage-Wert fuer Reels
                     out.append(_todo(f"po-30:{p['id']}", "Aufträge", "📈", f"30-Tage-Zahlen (optional): {p['titel']} · {a['nummer']}",
@@ -245,10 +245,10 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
                 continue
             fehlt = [p for p in ps if not stand.get(p["id"], {}).get("kennzahlen")]
             name = firmen.get(a["firma"], a["firma"])
-            if fehlt and not any(_faellig(stand.get(p["id"], {}), heute) for p in fehlt):
+            if fehlt and not any(_faellig(p | stand.get(p["id"], {}), heute) for p in fehlt):
                 out.append(_todo(f"ab-kennzahlen:{a['nummer']}", "Aufträge", "📊",
                                  f"Kennzahlen fehlen ({len(fehlt)} von {len(ps)}): {a['nummer']}",
-                                 f"{name} · erst veröffentlicht eintragen, nach 7 Tagen die Zahlen", "ab-detail", a["nummer"],
+                                 f"{name} · erst veröffentlicht eintragen, nach {ps[0]['messtage']} Tagen die Zahlen", "ab-detail", a["nummer"],
                                  "", h) | {"stufe": "spaeter"})
             elif not fehlt:
                 out.append(_todo(f"ab-bericht:{a['nummer']}", "Aufträge", "📝", f"Projektbericht senden: {a['nummer']}",

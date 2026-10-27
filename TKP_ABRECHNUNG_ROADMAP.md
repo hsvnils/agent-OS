@@ -4,7 +4,7 @@
 - Stand: 2026-10-27
 - Arbeitsbranch: `ai/tkp-abrechnung`
 - Basiscommit: `31558c3`
-- Naechster Schritt: T1-T3 umgesetzt (CEO-Go 2026-10-27, Empfehlungen E1-E9 angenommen) -- Merge, Deploy (`luna-os` + `luna-telegram`), dann CEO-Abnahme an einem Probe-Angebot je Abrechnungsart (Angebot -> Auftrag -> Kennzahlen -> Rechnungsentwurf, ohne Versand) und Sichtpruefung Desktop/iPad/iPhone. Vor dem ersten echten Kunden: Klauseltexte anwaltlich pruefen (E9).
+- Naechster Schritt: T1-T4 umgesetzt (CEO-Go 2026-10-27, Empfehlungen E1-E9 angenommen, E6 durch T4 revidiert) -- Merge, Deploy (`luna-os` + `luna-telegram`), dann CEO-Abnahme an einem Probe-Angebot je Abrechnungsart (Angebot -> Auftrag -> Kennzahlen -> Rechnungsentwurf, ohne Versand) und Sichtpruefung Desktop/iPad/iPhone. Vor dem ersten echten Kunden: Klauseltexte anwaltlich pruefen (E9).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -120,6 +120,16 @@ Entscheidungen E1-E9: vom CEO am 2026-10-27 wie empfohlen angenommen („Empfehl
 - Gate: Tests Bericht/Handlungsbedarf; Doku-Check gruen; CEO-Abnahme an einem Probe-Auftrag (Angebot -> Auftrag ->
   Kennzahlen -> Rechnung, ohne Versand).
 - Aufwand: klein.
+
+### T4: Messzeitraum je Angebot, ohne Standard-Deckel (CEO 2026-10-27)
+
+- Anlass (CEO): reines Abrechnen nach TKP im Nachgang „nach Zeitraum xyz“ als Verkaufsargument fuer skeptische Kunden
+  („nur zahlen, was ankommt“) -- Produktionsanteil fest angeben, dann TKP; geht Content viral, zahlt der Kunde das auch.
+- Status: umgesetzt (2026-10-27) -- Feld `messtage` (7/10/14/30, Standard 10) im Kopf `abrechnung`, mit dem Auftrag
+  eingefroren; jedes Posting traegt `messtage`, Kennzahlen-Erinnerung (Telegram + Handlungsbedarf) kommt an genau diesem Tag;
+  optionaler 30-Tage-Messpunkt entfaellt bei 30 Tagen; Auftraege ohne Feld bleiben bei 7 Tagen. **E6 revidiert:**
+  Hoechstbetrag nur noch auf Wunsch (Feld leer = keine Obergrenze). Mindestbetrag nicht noetig (Produktion = Minimum).
+  Angebots-/Klauseltext nennt den Messzeitraum. Tests (19) inkl. 3 neuer Gegenproben rot, Suite gruen.
 
 ## Nicht-Scope
 

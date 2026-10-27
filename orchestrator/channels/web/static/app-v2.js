@@ -1848,19 +1848,20 @@ function anZahlungFelder(z) {
 // TKP_ABRECHNUNG T1: Abrechnungsart je Angebot -- Festpreis / nach Reichweite / Festpreis mit Ausgleich
 function anAbrechnungFelder(ab) {
   ab = ab || {}; const art = ab.art || "fest";
-  const deckel = ab.art ? (ab.deckel_prozent ?? "") : 25;
+  const deckel = ab.deckel_prozent ?? "", tage = ab.messtage || 10;
   return `<h4 style="margin:10px 0 2px">📊 Abrechnung der Reichweite</h4>
     <div class="v2-an-zeile"><label class="v2-feld"><small>Abrechnung (TKP-Positionen)</small><select id="an-abr-art">${[["fest", "Festpreis"], ["reichweite", "Nach Reichweite (erzielte Kontakte × TKP)"], ["ausgleich", "Festpreis mit Ausgleich (Mehr-/Minderleistung)"]].map(([v, l]) => `<option value="${v}" ${art === v ? "selected" : ""}>${l}</option>`).join("")}</select></label></div>
     <div id="an-abr-box" ${art === "fest" ? "hidden" : ""}><div class="v2-an-zeile">
+      <label class="v2-feld"><small>Messzeitraum</small><select id="an-abr-tage">${[7, 10, 14, 30].map(t => `<option value="${t}" ${tage === t ? "selected" : ""}>${t} Tage nach Veröffentlichung</option>`).join("")}</select></label>
       <label class="v2-feld an-abr-aus" ${art === "ausgleich" ? "" : "hidden"}><small>Toleranz ± %</small><input id="an-abr-tol" type="number" min="0" max="50" value="${esc(String(ab.toleranz_prozent ?? 10))}" title="Abweichung bis zu dieser Grenze wird nicht ausgeglichen"></label>
       <label class="v2-feld an-abr-aus" ${art === "ausgleich" ? "" : "hidden"}><small>Ausgleichs-TKP €</small><input id="an-abr-tkp" inputmode="decimal" value="${ab.ausgleich_tkp_cent ? esc(cent2feld(ab.ausgleich_tkp_cent)) : ""}" placeholder="leer = vereinbarter TKP"></label>
-      <label class="v2-feld"><small>Höchstens + % Kontakte</small><input id="an-abr-deckel" type="number" min="0" max="500" value="${esc(String(deckel))}" placeholder="leer = ohne Obergrenze"></label></div>
-      <small class="v2-sub">Kontakt = Aufrufe (Reel/Story) bzw. Impressionen (Bild-Post), Stand 7 Tage nach Veröffentlichung. Die Rechnung übernimmt die gemessenen Kontakte aus den Postings; die Produktion bleibt fest.</small></div>`;
+      <label class="v2-feld"><small>Obergrenze + % Kontakte (optional)</small><input id="an-abr-deckel" type="number" min="0" max="500" value="${esc(String(deckel))}" placeholder="leer = keine – viral zahlt mit"></label></div>
+      <small class="v2-sub">Kontakt = Aufrufe (Reel/Story) bzw. Impressionen (Bild-Post), Stand am Ende des Messzeitraums – LUNA erinnert an dem Tag an die Zahlen. Die Rechnung übernimmt die gemessenen Kontakte; die Produktion bleibt fest. Obergrenze nur, wenn der Kunde ein festes Budget braucht.</small></div>`;
 }
 function anAbrechnung() {
   const art = ($("#an-abr-art") || {}).value || "fest"; if (art === "fest") return {};
   const d = ($("#an-abr-deckel") || {}).value.trim();
-  return { art, deckel_prozent: d, ...(art === "ausgleich" ? { toleranz_prozent: ($("#an-abr-tol") || {}).value || 10, ausgleich_tkp: ($("#an-abr-tkp") || {}).value.trim() } : {}) };
+  return { art, deckel_prozent: d, messtage: Number(($("#an-abr-tage") || {}).value || 10), ...(art === "ausgleich" ? { toleranz_prozent: ($("#an-abr-tol") || {}).value || 10, ausgleich_tkp: ($("#an-abr-tkp") || {}).value.trim() } : {}) };
 }
 function anHoechst(zuschlaege, rabatt) {   // wie core/tkp_abrechnung.hoechstbetrag -- Cent oder null
   const ab = anAbrechnung(); if (!ab.art || ab.deckel_prozent === "") return null;

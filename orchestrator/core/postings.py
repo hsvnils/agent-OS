@@ -58,8 +58,10 @@ def format_von(p: dict) -> tuple[str, str] | None:
 
 
 def postings_aus(auftrag: dict) -> list[dict]:
-    """Postings aus den (festgeschriebenen) Positionen eines Auftrags -- stabile IDs `<Auftrag>-P<Pos>-<Nr>`."""
+    """Postings aus den (festgeschriebenen) Positionen eines Auftrags -- stabile IDs `<Auftrag>-P<Pos>-<Nr>`.
+    `messtage` = Messzeitraum der Kennzahlen (TKP_ABRECHNUNG T4: je Auftrag vereinbart, sonst 7 Tage)."""
     out = []
+    messtage = int((auftrag.get("abrechnung") or {}).get("messtage") or ERINNERN_TAGE)
     for i, p in enumerate(auftrag.get("positionen") or []):
         f = format_von(p)
         if not f:
@@ -73,7 +75,7 @@ def postings_aus(auftrag: dict) -> list[dict]:
         for k in range(1, n + 1):
             out.append({"id": f"{auftrag['nummer']}-P{i + 1}-{k}", "auftrag": auftrag["nummer"], "position": i + 1,
                         "nr": k, "titel": f"{name} {k}" if n > 1 else name, "beschreibung": p.get("beschreibung", ""),
-                        "format": f[0], "plattform": f[1], "kontakt_feld": KONTAKT[f[0]],
+                        "format": f[0], "plattform": f[1], "kontakt_feld": KONTAKT[f[0]], "messtage": messtage,
                         "plan": {"kontakte": int(p.get("kontakte") or 0), "tkp_cent": int(p.get("tkp_cent") or 0),
                                  "produktion_cent": int(p.get("produktion_cent") or 0),
                                  "preis_cent": int(p.get("einzelpreis_cent") or 0)}})
@@ -118,7 +120,7 @@ class Postings:
         if not a:
             raise KeyError(auftrag)
         st = self._falte(e)
-        return [p | st.get(p["id"], {"bilder": [], "verlauf": []}) | {"kennzahl_faellig": _faellig(st.get(p["id"], {}))}
+        return [p | st.get(p["id"], {"bilder": [], "verlauf": []}) | {"kennzahl_faellig": _faellig(p | st.get(p["id"], {}))}
                 for p in postings_aus(a)]
 
     def get(self, pid: str) -> dict | None:
@@ -233,7 +235,7 @@ class Postings:
         self.bh.erfassen("posting_erinnert", {"id": pid}, von="LUNA-Kennzahlen")
 
     def faellige(self, heute: date | None = None) -> list[dict]:
-        """Postings, deren Kennzahlen faellig sind (veroeffentlicht + 7 Tage, noch keine Kennzahlen), mit Auftrag/Firma."""
+        """Postings, deren Kennzahlen faellig sind (veroeffentlicht + Messzeitraum, noch keine Kennzahlen), mit Auftrag/Firma."""
         from .beauftragung import AuftragBuch
         e = self.bh.eintraege()
         st = self._falte(e)
@@ -255,7 +257,7 @@ def _auftrag_von(pid: str) -> str:
 def _faellig(p: dict, heute: date | None = None) -> bool:
     if not p.get("datum") or p.get("kennzahlen"):
         return False
-    return date.fromisoformat(p["datum"]) + timedelta(days=ERINNERN_TAGE) <= (heute or jetzt().date())
+    return date.fromisoformat(p["datum"]) + timedelta(days=int(p.get("messtage") or ERINNERN_TAGE)) <= (heute or jetzt().date())
 
 
 def konditionen(auftrag: dict) -> dict:
@@ -305,7 +307,8 @@ def vergleich(postings: list[dict]) -> dict:
 
 def lang_faellig(p: dict, heute: date | None = None) -> bool:
     """P4: Reel mit 7-Tage-Zahlen, aber ohne 30-Tage-Wert, 30 Tage nach der Veroeffentlichung."""
-    if p.get("format") != "reel" or not p.get("datum") or not p.get("kennzahlen") or p.get("kennzahlen_30"):
+    if (p.get("format") != "reel" or not p.get("datum") or not p.get("kennzahlen") or p.get("kennzahlen_30")
+            or int(p.get("messtage") or ERINNERN_TAGE) >= MESSPUNKT_LANG):          # T4: schon nach 30 Tagen gemessen
         return False
     return date.fromisoformat(p["datum"]) + timedelta(days=MESSPUNKT_LANG) <= (heute or jetzt().date())
 

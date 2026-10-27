@@ -49,11 +49,12 @@ class TestKopf(unittest.TestCase):
     def test_1_pruefen(self):
         self.assertEqual(tkp.pruefen(None), {})
         self.assertEqual(tkp.pruefen({"art": "fest"}), {})
-        self.assertEqual(tkp.pruefen({"art": "reichweite"}), {"art": "reichweite", "deckel_prozent": 25})
-        self.assertEqual(tkp.pruefen({"art": "reichweite", "deckel_prozent": ""}), {"art": "reichweite"})   # ohne Deckel
+        self.assertEqual(tkp.pruefen({"art": "reichweite"}), {"art": "reichweite", "messtage": 10})    # T4: ohne Deckel
+        self.assertEqual(tkp.pruefen({"art": "reichweite", "deckel_prozent": "25", "messtage": "14"}),
+                         {"art": "reichweite", "messtage": 14, "deckel_prozent": 25})
         self.assertEqual(tkp.pruefen({"art": "ausgleich", "ausgleich_tkp": "20"}),
-                         {"art": "ausgleich", "deckel_prozent": 25, "toleranz_prozent": 10, "ausgleich_tkp_cent": 2000})
-        for falsch in ({"art": "pauschal"}, {"art": "ausgleich", "toleranz_prozent": 60}, {"art": "reichweite", "deckel_prozent": -1},
+                         {"art": "ausgleich", "messtage": 10, "toleranz_prozent": 10, "ausgleich_tkp_cent": 2000})
+        for falsch in ({"art": "pauschal"}, {"art": "reichweite", "messtage": 9}, {"art": "ausgleich", "toleranz_prozent": 60}, {"art": "reichweite", "deckel_prozent": -1},
                        {"art": "ausgleich", "ausgleich_tkp_cent": 50}):
             with self.assertRaises(ValueError, msg=falsch):
                 tkp.pruefen(falsch)
@@ -74,7 +75,8 @@ class TestKopf(unittest.TestCase):
 
 class TestAngebot(unittest.TestCase):
     def test_1_reichweite_voraussichtlich_hoechstens_vorkasse(self):
-        bh, ks, st, an, ab, nr, ps, rs = _ablauf({"art": "reichweite"}, zahlung={"vorkasse": {"art": "prozent", "prozent": 50}})
+        bh, ks, st, an, ab, nr, ps, rs = _ablauf({"art": "reichweite", "deckel_prozent": 25},
+                                                 zahlung={"vorkasse": {"art": "prozent", "prozent": 50}})
         a = st.angebot(an)
         self.assertEqual(a["summe_cent"], 2 * 160000 + 156000 + 40000)
         # Deckel 25 %: Reel 46.250 x 30 = 1.387,50 + 490 = 1.877,50 (x2); Feed 65.000 x 25 = 1.625 + 260 = 1.885
@@ -85,7 +87,7 @@ class TestAngebot(unittest.TestCase):
         self.assertIn("Abrechnung nach Reichweite", t)
         self.assertIn("höchstens 6.040,00 €", t)
         self.assertIn("Vorkasse auf die Produktion (820,00 €)", t)
-        self.assertEqual(ab.auftrag(nr)["abrechnung"], {"art": "reichweite", "deckel_prozent": 25})   # eingefroren
+        self.assertEqual(ab.auftrag(nr)["abrechnung"], {"art": "reichweite", "messtage": 10, "deckel_prozent": 25})
         self.assertEqual(ab.auftrag(nr)["vorkasse_cent"], 82000)
         self.assertIn("Abrechnung nach Reichweite", TEXT(ab.pdf(nr, FD)))
 
@@ -115,6 +117,14 @@ class TestRechnung(unittest.TestCase):
         r = rs.get(rs.festschreiben(eid, FD)["nummer"])
         self.assertEqual(r["summe_cent"], 270000 + 98000 + 150000 + 26000 + 40000)
         self.assertIn("60.000 Impressionen erzielt", TEXT(rs._pdf(r, FD)))
+
+    def test_2a_ohne_deckel_zahlt_viral_mit(self):
+        bh, ks, st, an, ab, nr, ps, rs = _ablauf({"art": "reichweite"}, pos=[REEL])
+        self.assertIsNone(st.angebot(an)["hoechst_cent"])
+        self.assertNotIn("höchstens", TEXT(st.pdf(an, FD)))
+        _messen(ps, nr, reel=(400000, 30000), feed=None)                                 # ein Reel geht viral
+        p = rs.get(rs.entwurf_aus_auftrag(ab.auftrag(nr), postings=ps.liste(nr))["entwurf_id"])["positionen"][0]
+        self.assertEqual(p["gesamt_cent"], 430000 * 3000 // 1000)                         # 12.900 EUR, nicht gedeckelt
 
     def test_2_deckel_greift(self):
         bh, ks, st, an, ab, nr, ps, rs = _ablauf({"art": "reichweite", "deckel_prozent": 10}, pos=[REEL])
@@ -191,6 +201,29 @@ class TestRechnung(unittest.TestCase):
         pos = rs.get(rs.entwurf_aus_auftrag(ab.auftrag(nr), postings=ps.liste(nr))["entwurf_id"])["positionen"]
         self.assertEqual(len(pos), 4)
         self.assertFalse(any(p.get("reichweite") for p in pos))
+
+
+class TestT4Messzeitraum(unittest.TestCase):
+    def test_1_erinnerung_am_vereinbarten_tag(self):
+        from datetime import date, timedelta
+        from orchestrator.core.todos import geschaefts_todos
+        bh, ks, st, an, ab, nr, ps, rs = _ablauf({"art": "reichweite", "messtage": 14}, pos=[REEL])
+        heute = jetzt().date()
+        ps.veroeffentlichen(f"{nr}-P1-1", datum=(heute - timedelta(days=10)).isoformat())
+        self.assertEqual(ps.get(f"{nr}-P1-1")["messtage"], 14)
+        self.assertEqual(ps.faellige(heute), [])                                          # Tag 10 von 14: noch nicht
+        self.assertEqual([p["id"] for p in ps.faellige(heute + timedelta(days=4))], [f"{nr}-P1-1"])
+        self.assertNotIn(f"po-kennzahlen:{nr}-P1-1", {t["id"] for t in geschaefts_todos(bh, ks, heute=heute)})
+        ids = {t["id"] for t in geschaefts_todos(bh, ks, heute=heute + timedelta(days=4))}
+        self.assertIn(f"po-kennzahlen:{nr}-P1-1", ids)
+        self.assertIn("14 Tage nach Veröffentlichung", TEXT(st.pdf(an, FD)))
+
+    def test_2_alte_auftraege_bleiben_bei_7_tagen(self):
+        from datetime import timedelta
+        bh, ks, st, an, ab, nr, ps, rs = _ablauf(None, pos=[REEL])
+        heute = jetzt().date()
+        ps.veroeffentlichen(f"{nr}-P1-1", datum=(heute - timedelta(days=7)).isoformat())
+        self.assertEqual([p["id"] for p in ps.faellige(heute)], [f"{nr}-P1-1"])
 
 
 class TestT3(unittest.TestCase):
