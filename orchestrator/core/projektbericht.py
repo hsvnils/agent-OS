@@ -48,7 +48,8 @@ def daten(a: dict, postings: list[dict], *, stundenzettel: dict | None = None, m
            "postings": zeilen, "summe": v["summe"] | {"reichweite": rw_sum, "interaktionen": inter_sum,
                                                        "kontakte_ist_alle": sum(z["kontakte_ist"] or 0 for z in gemessen),
                                                        "engagement_pct": round(inter_sum / rw_sum * 100, 1) if rw_sum else None},
-           "konditionen": konditionen(a), "fehlen": [z["titel"] for z in zeilen if z["kontakte_ist"] is None]}
+           "konditionen": konditionen(a), "fehlen": [z["titel"] for z in zeilen if z["kontakte_ist"] is None],
+           "abrechnung": (a.get("abrechnung") or {}).get("art", "")}          # TKP_ABRECHNUNG T3
     if stundenzettel and (mit_stunden or mit_km):
         sz = stundenzettel
         out["stunden"] = {"mit_stunden": mit_stunden, "mit_km": mit_km,
@@ -72,7 +73,11 @@ def fazit_vorschlag(d: dict) -> str:
                      + (f" bei {_tsd(s['reichweite'])} erreichten Konten" if s.get("reichweite") else "")
                      + (f" und {_tsd(s['interaktionen'])} Interaktionen" if s.get("interaktionen") else "") + ".")
     if s.get("erfuellung_pct") is not None:
-        if s["erfuellung_pct"] >= 100:
+        if d.get("abrechnung"):                            # TKP_ABRECHNUNG T3: wird abgerechnet, nicht geschenkt
+            teile.append(f"Die vereinbarte Reichweite wurde zu {_pz(s['erfuellung_pct'])} erreicht; abgerechnet wird "
+                         + ("nach den erzielten Kontakten" if d["abrechnung"] == "reichweite"
+                            else "mit dem vereinbarten Reichweiten-Ausgleich") + " – die Rechnung folgt.")
+        elif s["erfuellung_pct"] >= 100:
             teile.append(f"Die vereinbarte Reichweite wurde mit {_pz(s['erfuellung_pct'])} übertroffen – rechnerisch ein "
                          f"Mehrwert von {eur(s['mehrleistung_cent'])} zum vereinbarten TKP.")
         else:
@@ -211,7 +216,15 @@ def pdf(d: dict, *, firmendaten: dict, firma_name: str, fazit: str, logo: Path |
         for (t, bw), v in zip(sp2, werte):
             p.cell(bw, 6, T(v), align="L" if t == "Posting" else "R")
         p.ln()
-        if s.get("mehrleistung_pct") is not None:
+        if s.get("mehrleistung_pct") is not None and d.get("abrechnung"):
+            p.set_font(S, "B", 9)
+            p.set_text_color(*BLAU)
+            p.multi_cell(B, 5, T("Abgerechnet " + ("nach den erzielten Kontakten × vereinbartem TKP"
+                                                   if d["abrechnung"] == "reichweite"
+                                                   else "mit dem vereinbarten Reichweiten-Ausgleich")
+                                 + " laut Angebot – Beträge siehe Rechnung."), new_x="LMARGIN", new_y="NEXT")
+            p.set_text_color(0, 0, 0)
+        elif s.get("mehrleistung_pct") is not None:
             p.set_font(S, "B", 9)
             p.set_text_color(*BLAU)
             p.cell(B, 6, T(f"{'Mehrleistung' if s['mehrleistung_cent'] >= 0 else 'Minderleistung'} gesamt: "

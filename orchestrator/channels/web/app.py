@@ -3530,7 +3530,9 @@ async def rechnung_aus_auftrag(nummer: str, request: Request):
         a = _auftraege().auftrag(nummer)
         if not a:
             raise KeyError(nummer)
-        return _rechnungen().entwurf_aus_auftrag(a, vorkasse=bool(body.get("vorkasse")), von=_von(request))
+        vk = bool(body.get("vorkasse"))
+        posts = _postings().liste(a["nummer"]) if a.get("abrechnung") and not vk else None   # TKP_ABRECHNUNG T2
+        return _rechnungen().entwurf_aus_auftrag(a, vorkasse=vk, von=_von(request), postings=posts)
     return _kunden_aktion(tun)
 
 

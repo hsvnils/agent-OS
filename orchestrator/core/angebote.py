@@ -24,13 +24,15 @@ from .beleg_pdf import (HINWEIS_19, beleg_pdf, cent, datum_de, eur, hanserautisc
 from .buchhaltung import Buchhaltung, jetzt
 from .katalog import OMR, kalkulation_texte, tkp_preis
 from .kunden import KundenStore
+from . import tkp_abrechnung
 from . import zahlungsbedingungen as zb
 
 STATUS = ("entwurf", "versendet", "angenommen", "abgelehnt")
 KOPF_FELDER = ("firma", "ansprechpartner", "titel", "datum", "gueltig_bis", "einleitung", "schluss", "nachfassen_tage",
                "zuschlaege", "rabatt_prozent", "layout", "bloecke", "ware",   # 3b; „ware“ = Barter (Etappe 12)
                "zahlung",                                                     # Zahlungsbedingungen/Vorkasse (Etappe 18)
-               "praesentation")                                               # Canva-Link DE/EN (ANGEBOT_PRAESENTATION)
+               "praesentation",                                               # Canva-Link DE/EN (ANGEBOT_PRAESENTATION)
+               "abrechnung")                                                  # TKP_ABRECHNUNG T1: Festpreis/Reichweite/Ausgleich
 PRAES_SPRACHEN = ("de", "en", "")
 LAYOUTS = ("hanserautisch", "standard")
 SCHALTER = ("zeige_kalkulation", "zeige_kennzahlen", "tkp_zeigen", "omr_zeigen")
@@ -62,10 +64,10 @@ def _positionen(roh) -> list[dict]:
         try:
             m = menge(p.get("menge", 1))
             ep = (int(p["einzelpreis_cent"]) if "einzelpreis_cent" in p
-                  else cent(p.get("einzelpreis") or ("0" if p.get("provision") else "")))
+                  else cent(p.get("einzelpreis") or ("0" if p.get("provision") or p.get("reichweite") else "")))
         except ValueError as exc:
             raise ValueError(f"Position {i}: {exc}") from None
-        if ep < 0:
+        if ep < 0 and not p.get("reichweite"):                     # nur der Reichweiten-Ausgleich darf abziehen
             raise ValueError(f"Position {i}: negativer Preis.")
         pos = {"beschreibung": text, "menge": format(m, "f"), "einheit": str(p.get("einheit") or "").strip()[:30],
                "einzelpreis_cent": ep}
@@ -105,6 +107,11 @@ def _positionen(roh) -> list[dict]:
                 pos[k] = str(p[k]).strip()[:n]
         if p.get("gruppe_farbe") == "rot":
             pos["gruppe_farbe"] = "rot"
+        if p.get("reichweite"):                                    # TKP_ABRECHNUNG T2: Betrag aus erzielten Kontakten
+            for k in ("kontakte", "tkp_cent", "produktion_cent", "tkp_min_cent", "tkp_max_cent", "omr", "preis_vorher_cent",
+                      "preis_grund"):
+                pos.pop(k, None)
+            pos |= tkp_abrechnung.berechnen(p["reichweite"], i)
         out.append(pos)
     return out
 
@@ -174,6 +181,8 @@ def provision_text(pr: dict) -> str:
 def pdf_posten(p: dict) -> dict:
     """Zusatzfelder fuer die PDF-Zeile einer Provisionsposition (Betragstext statt 0,00 EUR, Modell im Detail)."""
     pr = p.get("provision")
+    if (p.get("reichweite") or {}).get("offen"):                # TKP_ABRECHNUNG: noch nicht gemessen
+        return {"betrag_text": "nach Messung", "einzel_text": "nach Messung", "gesamt_text": "offen", "menge": None}
     if not pr:
         return {}
     detail = " · ".join(x for x in (p.get("detail"), provision_text(pr)) if x)
@@ -187,6 +196,11 @@ def pdf_posten(p: dict) -> dict:
 def pdf_posten_standard(p: dict) -> dict:
     """Wie `pdf_posten`, fuer das schlichte Layout (Modell in der Beschreibung, Texte in den Betragsspalten)."""
     pr = p.get("provision")
+    if p.get("reichweite"):                                     # TKP_ABRECHNUNG: Rechenweg in die Beschreibung
+        extra = {"beschreibung": f"{p['beschreibung']} – {p.get('detail', '')}"}
+        if p["reichweite"].get("offen"):
+            extra |= {"einzel_text": "nach Messung", "gesamt_text": "offen"}
+        return extra
     if not pr:
         return {}
     extra = {"beschreibung": f"{p['beschreibung']} – {provision_text(pr)}"}
@@ -223,6 +237,8 @@ def _kopf(daten: dict) -> dict:
             out[k] = _ware(v)
         elif k == "zahlung":
             out[k] = zb.pruefen(v)
+        elif k == "abrechnung":
+            out[k] = tkp_abrechnung.pruefen(v)
         elif k == "praesentation":
             sprache = (v.get("sprache") if isinstance(v, dict) else v) or ""
             if sprache not in PRAES_SPRACHEN:
@@ -356,8 +372,8 @@ def anrede_moin(ap: dict | None, firma_name: str) -> str:
 
 def inhalt_hash(a: dict) -> str:
     """Hash des druckrelevanten Inhalts (welcher Stand ging raus?)."""
-    teil = {k: a.get(k) for k in KOPF_FELDER                      # leeres „ware“ zaehlt nicht (alte Staende gleich)
-            if k != "nachfassen_tage" and (k != "ware" or a.get("ware"))} | {"positionen": a.get("positionen")}
+    teil = {k: a.get(k) for k in KOPF_FELDER                      # leeres „ware“/„abrechnung“ zaehlt nicht (alte Staende gleich)
+            if k != "nachfassen_tage" and (k not in ("ware", "abrechnung") or a.get(k))} | {"positionen": a.get("positionen")}
     return hashlib.sha256(json.dumps(teil, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -444,7 +460,8 @@ class AngebotStore:
         if anzeige == "versendet" and a.get("gueltig_bis") and date.fromisoformat(a["gueltig_bis"]) < heute:
             anzeige = "abgelaufen"
         w = min(int((a.get("ware") or {}).get("wert_cent") or 0), sm["gesamt_cent"])
-        return a | {"positionen": pos, "summe_cent": sm["gesamt_cent"], "summen": sm, "anzeige_status": anzeige,
+        return a | tkp_abrechnung.anreichern(a, sm, sm["gesamt_cent"] - w) | {
+                    "positionen": pos, "summe_cent": sm["gesamt_cent"], "summen": sm, "anzeige_status": anzeige,
                     "ware_cent": w, "geld_cent": sm["gesamt_cent"] - w,
                     "layout": a.get("layout") or "standard", "inhalt": inhalt_hash(a)}
 
@@ -558,7 +575,8 @@ class AngebotStore:
         f = self.kunden.firma(a["firma"]) or {}
         ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == a.get("ansprechpartner")), None)
         hinweise = ([HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
-                    + [x for x in [zb.text(a.get("zahlung"), a["geld_cent"])] if x]
+                    + [x for x in [tkp_abrechnung.angebot_text(a), zb.text(a.get("zahlung"), a["geld_cent"],
+                                                                           basis_cent=a.get("vorkasse_basis_cent"))] if x]
                     + [f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."])
         infos = [("Datum", datum_de(a["datum"])), ("Angebot", a["nummer"]), ("Gültig bis", datum_de(a["gueltig_bis"])),
                  ("Kundennummer", a["firma"])] + ([("Version", str(a["fassung"]))] if int(a.get("fassung") or 1) > 1 else [])
@@ -607,7 +625,10 @@ class AngebotStore:
             einleitung=einleitung, positionen=[x | pdf_posten_standard(x) for x in a["positionen"]], summe_cent=a["summe_cent"],
             summen_zeilen=_summen_zeilen(a["summen"]),
             hinweise=[HINWEIS_19] + ware_hinweis(a["summe_cent"], a.get("ware"))
-            + [zb.text(a.get("zahlung"), a["geld_cent"]), f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."],
+            + [x for x in [tkp_abrechnung.angebot_text(a)] if x]
+            + [zb.text(a.get("zahlung"), a["geld_cent"], basis_cent=a.get("vorkasse_basis_cent")),
+               f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."],
+            gesamt_label=a["summen"].get("gesamt_label", "Gesamtbetrag"),
             schluss=schluss, link=_link(a))
 
     def _pdf_hanserautisch(self, a: dict, f: dict, ap: dict | None, firmendaten: dict) -> bytes:
@@ -632,7 +653,8 @@ class AngebotStore:
             zeige_kennzahlen=b.get("zeige_kennzahlen", True),
             gruppen=list(gruppen.values()), summen=a["summen"], zuschlag_liste=None,
             fuss_zusatz=" ".join(x for x in ware_hinweis(a["summe_cent"], a.get("ware"))
-                                 + [zb.text(a.get("zahlung"), a["geld_cent"]),
+                                 + [tkp_abrechnung.angebot_text(a),
+                                    zb.text(a.get("zahlung"), a["geld_cent"], basis_cent=a.get("vorkasse_basis_cent")),
                                     f"Dieses Angebot ist gültig bis {datum_de(a['gueltig_bis'])}."] if x),
             praesentation=_link(a))
 

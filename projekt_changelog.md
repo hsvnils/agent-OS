@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-27 13:22] — Claude Code
+- **Was:** TKP_ABRECHNUNG T4: Messzeitraum je Angebot (7/10/14/30 Tage, Standard 10) mit Kennzahlen-Erinnerung am vereinbarten Tag (Postings, Telegram, Handlungsbedarf; alte Auftraege bleiben bei 7 Tagen); Hoechstbetrag nur noch optional (kein Standard-Deckel mehr, E6 revidiert); Angebots- und Vertrags-Klauseltext mit Messzeitraum; LUNA-OS-Auswahl „Messzeitraum“ (app v144); Muster-PDFs unter `vorlagen/Muster_TKP/` (nicht im Git) neu erzeugt.
+- **Warum:** CEO 2026-10-27: reines Abrechnen nach TKP im Nachgang nach festem Zeitraum, Produktion fest, virale Reichweite wird bezahlt.
+- **Betroffen:** `orchestrator/core/tkp_abrechnung.py`, `core/postings.py`, `core/todos.py`, `core/vertrag_entwuerfe.py`, `channels/web/static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_tkp_abrechnung.py`, `TKP_ABRECHNUNG_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
+## [2026-10-27 13:02] — Claude Code
+- **Was:** TKP_ABRECHNUNG T1-T3 umgesetzt: neue Abrechnungsart je Angebot/Auftrag (Festpreis / nach Reichweite / Festpreis mit Ausgleich) mit Toleranz, Ausgleichs-TKP und Deckel; Angebot/Auftrag mit „Gesamt (voraussichtlich)“, Hoechstbetrag, Klauseltext, Vorkasse nur auf Produktion; Rechnung uebernimmt gemessene Kontakte aus den Postings (Media- + Produktionszeile bzw. Ausgleichszeile, Abzug bei Minderleistung), Festschreiben erst nach Messung, Abweichung nur mit Grund, Nachziehen neuer Messwerte; Projektbericht „abgerechnet“ statt „Mehrwert“, Handlungsbedarf „Rechnung nach Reichweite erstellen“, Vertragsentwurf § 8 je Art (Entwurf); LUNA-OS-Editor (app v143, style v76); Tests (16) mit 7 Gegenproben.
+- **Warum:** CEO-Go 2026-10-27 („Empfehlungen passen, Go fuer T1–T3“).
+- **Betroffen:** `orchestrator/core/tkp_abrechnung.py` (neu), `core/angebote.py`, `core/beauftragung.py`, `core/rechnungen.py`, `core/beleg_pdf.py`, `core/zahlungsbedingungen.py`, `core/projektbericht.py`, `core/todos.py`, `core/vertrag_entwuerfe.py`, `channels/web/app.py`, `channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`, `orchestrator/tests/test_tkp_abrechnung.py` (neu), `TKP_ABRECHNUNG_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/verfahrensdokumentation-buchhaltung.md`
+
+## [2026-10-27 12:35] — Claude Code
+- **Was:** Roadmap `TKP_ABRECHNUNG_ROADMAP.md` angelegt (Analyse Bestand, drei Abrechnungsarten Festpreis / Nach Reichweite / Festpreis mit Ausgleich, Entscheidungen E1-E9 mit Empfehlung, Etappen T1-T3) und im Roadmap-Verzeichnis eingetragen. Nichts umgesetzt.
+- **Warum:** CEO-Auftrag: TKP statt Summe anbieten und nach der Kampagne nach echter Reichweite abrechnen; Ausgleich von Mehr-/Minderleistung mit TKP im Angebot.
+- **Betroffen:** `TKP_ABRECHNUNG_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-27 10:02] — Claude Code
 - **Was:** TODOS_ROADMAP abgeschlossen: Anlegen per Telegram vom CEO bestaetigt (erstes To-do „Derbe Hamburg Konzept ausarbeiten“, ohne Datum); T1/T2 vom CEO abgehakt -- Erinnerung (Kalender + Telegram) wird im laufenden Betrieb beim ersten To-do mit Datum geprueft.
 - **Warum:** CEO-Anweisung „im laufenden Betrieb, bitte vorerst abhaken“.

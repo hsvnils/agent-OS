@@ -26,6 +26,7 @@ from .beleg_pdf import HINWEIS_19, beleg_pdf, cent, datum_de, eur, hanserautisch
 from .buchhaltung import Buchhaltung, jetzt
 from .eigenbelege import einnahmen_cent, zuordnung_pruefen
 from .kunden import KundenStore
+from . import tkp_abrechnung
 from . import zahlungsbedingungen as zb
 
 GRENZE_LAUFEND = 100_000_00     # Cent, § 19 Abs. 1 UStG (ab 2025): Ueberschreiten beendet den Status sofort
@@ -251,9 +252,11 @@ class RechnungStore:
         self.bh.erfassen("rechnung_entwurf", d | {"entwurf_id": eid}, von=von)
         return {"entwurf_id": eid}
 
-    def entwurf_aus_auftrag(self, auftrag: dict, *, vorkasse: bool = False, von: str = "") -> dict:
+    def entwurf_aus_auftrag(self, auftrag: dict, *, vorkasse: bool = False, von: str = "",
+                            postings: list[dict] | None = None) -> dict:
         """Entwurf aus einem Auftrag: die Rechnung (bzw. Schlussrechnung) -- oder mit `vorkasse=True` die
-        Vorkasse-Rechnung ueber den im Auftrag eingefrorenen Vorkasse-Betrag (Etappe 18)."""
+        Vorkasse-Rechnung ueber den im Auftrag eingefrorenen Vorkasse-Betrag (Etappe 18). `postings` = Postings mit
+        Kennzahlen (TKP_ABRECHNUNG T2: Abrechnung nach Reichweite bzw. Ausgleich aus den erzielten Kontakten)."""
         entwuerfe, rechnungen = self._stand()
         art = "anzahlung" if vorkasse else "rechnung"
         if auftrag.get("status") == "storniert":
@@ -271,7 +274,10 @@ class RechnungStore:
                 raise ValueError(f"Zu {auftrag['nummer']} gibt es schon die Vorkasse-Rechnung {vk[0]}.")
         offen = [e for e, x in entwuerfe.items() if x.get("auftrag") == auftrag["nummer"] and x.get("art", "rechnung") == art]
         if offen:
-            return {"entwurf_id": offen[0], "vorhanden": True}
+            neu = tkp_abrechnung.aktualisieren(entwuerfe[offen[0]].get("positionen") or [], postings) if postings else None
+            if neu:                                            # TKP_ABRECHNUNG T2: inzwischen gemessene Kontakte nachziehen
+                self.entwurf_aendern(offen[0], {"positionen": neu}, von=von)
+            return {"entwurf_id": offen[0], "vorhanden": True} | ({"aktualisiert": True} if neu else {})
         zahlung = auftrag.get("zahlung") or {}
         daten = {k: auftrag.get(k) for k in ("firma", "ansprechpartner", "titel", "layout", "bloecke", "leistung_von",
                                               "leistung_bis")}
@@ -288,7 +294,7 @@ class RechnungStore:
                                    "vereinbarte Vorkasse:")
         else:
             daten |= {k: auftrag.get(k) for k in ("zuschlaege", "rabatt_prozent", "ware")}
-            daten["positionen"] = [{k: v for k, v in p.items() if k != "gesamt_cent"} for p in auftrag["positionen"]]
+            daten["positionen"] = tkp_abrechnung.rechnungs_positionen(auftrag, postings or [])
         return self.entwurf_anlegen({k: v for k, v in daten.items() if v is not None}, von=von,
                                     intern={"art": art, "zahlung": zahlung,
                                             "vorkasse_faellig": auftrag.get("vorkasse_faellig") if vorkasse else ""})
@@ -347,6 +353,10 @@ class RechnungStore:
             if offen:                                                  # Etappe 23: erst abrechnen, dann festschreiben
                 raise ValueError(f"Provision noch nicht abgerechnet ({offen[0]}): verkaufte Stueck bzw. vermittelten "
                                  "Umsatz eintragen.")
+            offen = tkp_abrechnung.offene(x["positionen"])
+            if offen:                                                  # TKP_ABRECHNUNG T2: erst messen, dann festschreiben
+                raise ValueError(f"Erzielte Kontakte fehlen noch ({offen[0]}): Kennzahlen der Postings erfassen und die "
+                                 "Rechnung neu aus dem Auftrag erstellen – oder den Wert mit Grund eintragen.")
             if not x.get("leistung_von") and not x.get("leistung_bis") and art != "anzahlung":   # Vorkasse: Leistung folgt
                 raise ValueError("Leistungsdatum fehlt (Pflichtangabe).")
             if x["summe_cent"] <= 0:
