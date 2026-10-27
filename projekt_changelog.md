@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-27 12:35] — Claude Code
+- **Was:** Roadmap `TKP_ABRECHNUNG_ROADMAP.md` angelegt (Analyse Bestand, drei Abrechnungsarten Festpreis / Nach Reichweite / Festpreis mit Ausgleich, Entscheidungen E1-E9 mit Empfehlung, Etappen T1-T3) und im Roadmap-Verzeichnis eingetragen. Nichts umgesetzt.
+- **Warum:** CEO-Auftrag: TKP statt Summe anbieten und nach der Kampagne nach echter Reichweite abrechnen; Ausgleich von Mehr-/Minderleistung mit TKP im Angebot.
+- **Betroffen:** `TKP_ABRECHNUNG_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-27 10:02] — Claude Code
 - **Was:** TODOS_ROADMAP abgeschlossen: Anlegen per Telegram vom CEO bestaetigt (erstes To-do „Derbe Hamburg Konzept ausarbeiten“, ohne Datum); T1/T2 vom CEO abgehakt -- Erinnerung (Kalender + Telegram) wird im laufenden Betrieb beim ersten To-do mit Datum geprueft.
 - **Warum:** CEO-Anweisung „im laufenden Betrieb, bitte vorerst abhaken“.
