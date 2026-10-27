@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-27 10:02] — Claude Code
+- **Was:** TODOS_ROADMAP abgeschlossen: Anlegen per Telegram vom CEO bestaetigt (erstes To-do „Derbe Hamburg Konzept ausarbeiten“, ohne Datum); T1/T2 vom CEO abgehakt -- Erinnerung (Kalender + Telegram) wird im laufenden Betrieb beim ersten To-do mit Datum geprueft.
+- **Warum:** CEO-Anweisung „im laufenden Betrieb, bitte vorerst abhaken“.
+- **Betroffen:** `TODOS_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-10-27 09:58] — Claude Code
 - **Was:** TODOS T1-T3 nach CEO-Deploy live geprueft (nur lesend): origin/main = 4ce6308, Code auf der NAS, LUNA-OS v142, `/api/aufgaben` antwortet (leer, Kalender verbunden), App „aufgaben“ fuer den CEO freigeschaltet; Bot neu gestartet (Herzschlag 09:52). Probe per Telegram offen (CEO).
 - **Warum:** Live-Pruefung nach Deploy.
