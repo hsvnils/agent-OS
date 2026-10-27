@@ -4,7 +4,7 @@
 - Stand: 2026-10-26
 - Arbeitsbranch: `ai/netz-agent`
 - Basiscommit: `3158621`
-- Naechster Schritt: CISO-Bericht 2026-10-27 04:00 auf die Zeile „Netz-Agent“ pruefen; Q3 beobachten bis 2026-11-02, dann Roadmap abschliessen.
+- Naechster Schritt: Q3 beobachten bis 2026-11-02, dann Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -123,7 +123,7 @@ LUNA ◀──Ergebnis-Formular (Antwort, Fakten, Quellen; Laengen geprueft)─�
 
 ## Etappe Q5: Angriffstests und Regel verbindlich
 
-- Status: Testreihe und CISO-Zeile gebaut 2026-10-26 (`orchestrator/tests/test_netz_angriffe.py`: Anweisung auf der Seite, versteckter Text, Link-Abfluss, uebergrosse Antworten, kaputtes Formular, manipulierte Ergebnis-Datei, Statistik, CISO-Zeile; neu gehaertet: unsichtbarer Seitentext wird nicht uebernommen, fremde Links im Formular ersetzt); Regel in `AGENTS.md` 5.7, Zugriffs-Policy und Charta `15_researcher.md` nach CEO-Bestaetigung des Diffs uebernommen 2026-10-26; deployt 2026-10-26 (a916db1), live: Firmen-Suche ok, Zaehler in `sicherheit/netz_agent.jsonl` laufen ohne Inhalte. Offen: CISO-Zeile im Bericht 2026-10-27 04:00
+- Status: Testreihe und CISO-Zeile gebaut 2026-10-26 (`orchestrator/tests/test_netz_angriffe.py`: Anweisung auf der Seite, versteckter Text, Link-Abfluss, uebergrosse Antworten, kaputtes Formular, manipulierte Ergebnis-Datei, Statistik, CISO-Zeile; neu gehaertet: unsichtbarer Seitentext wird nicht uebernommen, fremde Links im Formular ersetzt); Regel in `AGENTS.md` 5.7, Zugriffs-Policy und Charta `15_researcher.md` nach CEO-Bestaetigung des Diffs uebernommen 2026-10-26; deployt 2026-10-26 (a916db1), live: Firmen-Suche ok, Zaehler in `sicherheit/netz_agent.jsonl` laufen ohne Inhalte. CISO-Zeile geprueft 2026-10-27 auf der NAS: „Netz-Agent: 81 Auftraege, 4 ohne Ergebnis, 0 Formulare verworfen, 0 Quellen/Links entfernt, 0 Verdacht (24 h); Heimnetz-Sperre aktiv“ (Schwere ok -- die Telegram-Meldung des Audits nennt nur Befunde, die Zeile erscheint dort erst bei Verdacht, Verwerfungen oder fehlender Sperre)
 - Ziel / Scope / Nicht-Scope: Angriffs-Testreihe gegen den Netz-Agenten (praeparierte Seiten: Anweisungen, versteckter
   Text, Link-Abfluss, uebergrosse Antworten) -- er darf nichts ausser dem Formular liefern; Kennzahlen im CISO-Bericht
   (Auftraege, verworfene Formulare, Verdacht); Regel aus Q0 Nr. 3 in `AGENTS.md` 5.7 und `governance/zugriffs-policy.md`;

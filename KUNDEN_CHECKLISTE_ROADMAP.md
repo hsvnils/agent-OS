@@ -4,7 +4,7 @@
 - Stand: 2026-10-26
 - Arbeitsbranch: `ai/z2-c3`
 - Basiscommit: `30ccdb8`
-- Naechster Schritt: Abnahme durch den CEO (C2 im Gespraech, C3 an einem Vorgang mit Briefing; Kosten je Vorschlag im Kostenlog pruefen, Ziel < 0,05 EUR); danach Roadmap abschliessen.
+- Naechster Schritt: C3-Abnahme durch den CEO an einem Vorgang mit Briefing (Kosten je Vorschlag im Kostenlog pruefen, Ziel < 0,05 EUR); danach Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -78,7 +78,7 @@ CEO: „Die Checkliste soll man im System oeffnen und befuellen koennen, und dar
 werden -- ein Gespraechsleitfaden, den man waehrend eines Telefonats/Meetings ausfuellt, um danach ein Konzept vorlegen zu
 koennen.“
 
-- Status: gebaut 2026-10-26 (`orchestrator/core/leitfaden.py` als einzige Fragenquelle fuer Dokument und Leitfaden; Kundenansicht „📋 Gespraechsleitfaden“ mit Liste, Start, Download leere Checkliste PDF/Word; ganzseitiger Leitfaden mit Kopf, Bloecken A-J, Haken + Antwort je Frage, Notizen, Speichern nach 0,7 s bzw. beim Verlassen eines Feldes, Fortschritt/Pflicht offen; Abschluss -> PDF in der Firmenakte als Fassung; Uebernahme ins Briefing mit Vorschau alt/neu und Feldauswahl; Tests mit Gegenproben). Deployt 2026-10-26 (ef0e511; live: Fragen-API 10 Bloecke, leere Checkliste PDF/Word abrufbar, Oberflaeche v140). Abnahme offen
+- Status: gebaut 2026-10-26 (`orchestrator/core/leitfaden.py` als einzige Fragenquelle fuer Dokument und Leitfaden; Kundenansicht „📋 Gespraechsleitfaden“ mit Liste, Start, Download leere Checkliste PDF/Word; ganzseitiger Leitfaden mit Kopf, Bloecken A-J, Haken + Antwort je Frage, Notizen, Speichern nach 0,7 s bzw. beim Verlassen eines Feldes, Fortschritt/Pflicht offen; Abschluss -> PDF in der Firmenakte als Fassung; Uebernahme ins Briefing mit Vorschau alt/neu und Feldauswahl; Tests mit Gegenproben). Deployt 2026-10-26 (ef0e511; live: Fragen-API 10 Bloecke, leere Checkliste PDF/Word abrufbar, Oberflaeche v140). **Abgenommen vom CEO 2026-10-27** (Leitfaden getestet, PDF in der Akte passt)
 - Ziel / Scope / Nicht-Scope:
   - **Ort:** am **Kunden** (Kundenansicht/Firmenakte, Knopf „📋 Gespraechsleitfaden“), auch **ohne** Angebot/Auftrag --
     gerade fuer das erste Gespraech. Mehrere Leitfaeden je Kunde moeglich (z. B. je Kampagne), jeweils mit Titel.
