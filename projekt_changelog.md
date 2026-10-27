@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-27 13:27] — Claude Code
+- **Was:** Branch `ai/tkp-abrechnung` (TKP_ABRECHNUNG T1-T4) in `main` gemergt; Deploy `luna-os` + `luna-telegram` an den CEO uebergeben.
+- **Warum:** CEO: „Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-10-27 13:22] — Claude Code
 - **Was:** TKP_ABRECHNUNG T4: Messzeitraum je Angebot (7/10/14/30 Tage, Standard 10) mit Kennzahlen-Erinnerung am vereinbarten Tag (Postings, Telegram, Handlungsbedarf; alte Auftraege bleiben bei 7 Tagen); Hoechstbetrag nur noch optional (kein Standard-Deckel mehr, E6 revidiert); Angebots- und Vertrags-Klauseltext mit Messzeitraum; LUNA-OS-Auswahl „Messzeitraum“ (app v144); Muster-PDFs unter `vorlagen/Muster_TKP/` (nicht im Git) neu erzeugt.
 - **Warum:** CEO 2026-10-27: reines Abrechnen nach TKP im Nachgang nach festem Zeitraum, Produktion fest, virale Reichweite wird bezahlt.
