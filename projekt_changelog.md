@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 12:49] — Claude Code
+- **Was:** CEO-Wahl der LUNA-Stimme (Qwen3-Stimmdesign Variante C) festgehalten; Stimme C per Klon mit dem Qwen3-Basismodell (0.6B und 1.7B) an neuem Text erprobt, Rechenzeit und Tonhoehe gemessen; Plan der Umstellung (Sprach-Arbeiter auf dem MACO470 nach Cutter-Muster, Briefing-Auftrag 07:30) als Vorschlag in die Roadmap.
+- **Warum:** CEO 2026-10-28: „C gefaellt mir am besten“.
+- **Betroffen:** `JARVIS_ALLTAG_ROADMAP.md` (J2b), `docs/entscheidungs-register.md`, `projekt_changelog.md`; Proben `vorlagen/Hoerprobe_Stimmen/5_*` (nicht im Git), Testumgebung `~/tts-probe/` (ausserhalb des Repos).
+
 ## [2026-10-28 11:17] — Claude Code
 - **Was:** J2b: vier ruhigere Qwen3-Stimmdesign-Varianten (A ruhig/tiefer, B reif/sonor, C souveraen, D wie 2b ruhiger) erzeugt und mit gemessener Tonhoehe an den CEO geschickt.
 - **Warum:** CEO: 2b gut, aber zu quietschig/euphorisch -- Alternativen gesucht.

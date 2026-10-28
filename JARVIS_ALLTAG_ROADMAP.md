@@ -90,8 +90,17 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
   CEO-Urteil 2026-10-28: Victoria (erste Probe) ohne Stimme -> korrigiert und neu geschickt; Serena „okay, aber nicht
   optimal“; Piper verworfen. Danach: Victoria gefaellt nicht; **Qwen3-Stimmdesign (2b) gut** (Tempo, Aussprache „top“),
   aber etwas quietschig/euphorisch -> vier ruhigere Beschreibungen erzeugt (je ca. 3,5 Min. Rechenzeit, Seed 7), mittlere
-  Tonhoehe gemessen: 2b 293 Hz, A 294 Hz, D 276 Hz, B 255 Hz, C 255 Hz (ElevenLabs Lola 219 Hz). Stand: wartet auf die
-  Wahl des CEO. Folge: Qwen3-Design taugt nur fuer vorbereitete Texte (Briefing), nicht live -- fuer Live-Sprache ist
+  Tonhoehe gemessen: 2b 293 Hz, A 294 Hz, D 276 Hz, B 255 Hz, C 255 Hz (ElevenLabs Lola 219 Hz). **CEO-Wahl
+  2026-10-28: Variante C („souveraen“: tiefe, samtige Stimme, Mitte 30, sachlich-freundlich) = LUNA-Stimme.**
+  Stimme festgehalten (2026-10-28): Klon aus der C-Probe mit dem Qwen3-Basismodell, neuer Text (ca. 15 s), Seed 7 --
+  0.6B: 94 s Rechenzeit (Faktor 6,3), 1.7B: 132 s (Faktor 8,6); Tonhoehe 224 bzw. 232 Hz (Original C 255 Hz, anderer
+  Text). Proben `5_Stimme_C_festgehalten_*.mp3`. Stand: CEO prueft, ob der Klon wie C klingt.
+- Plan der Umstellung (Vorschlag, **erst nach CEO-Go**): Sprach-Arbeiter auf dem MACO470 nach dem Muster des
+  Cutter-Workers -- er holt Sprachauftraege ueber die LUNA-OS-Schnittstelle ab (kein neuer offener Port am MACO470),
+  spricht sie mit der festgehaltenen Stimme C und laedt die MP3 zurueck. Der Bot stellt den Briefing-Text schon um
+  07:30 als Auftrag ein (bei ca. 2.400 Zeichen = 2,5-3 Min. Sprache rund 15-25 Min. Rechenzeit) und schickt die
+  Sprachnachricht, sobald sie fertig ist. Kommt bis 08:30 nichts (MACO470 aus), bleibt es beim Text -- kein
+  ElevenLabs-Ersatz fuers Briefing (Kontingent). Vorher: CISO-Freigabe der Verbindung, `docs/datenfluesse.md`, Tests. Folge: Qwen3-Design taugt nur fuer vorbereitete Texte (Briefing), nicht live -- fuer Live-Sprache ist
   weiter offen, ob eine Grafikkarte oder eine Cloud-Stimme noetig ist.
 
 ### J3: Abfahrts-Erinnerung
