@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 16:40] — Claude Code
+- **Was:** J2b nach dem Deploy geprueft: Dienst `sprachdienst` auf dem MACO470 aktiv (seit 16:31, 0 Neustarts), Endpunkt `/api/sprache/naechster` auf der NAS antwortet, keine offenen Auftraege. Abnahme = erste Sprachnachricht am 2026-10-29 nach dem 08:00-Briefing.
+- **Warum:** CEO 2026-10-28: „Alles erledigt, Dienst läuft, Einstellung ist an“.
+- **Betroffen:** keine Dateien ausser `projekt_changelog.md`.
+
 ## [2026-10-28 16:22] — Claude Code
 - **Was:** Branch `ai/j2b-lokale-stimme` nach `main` gemergt (9106d34); Suite 1552 gruen, Doku-Check ok. Deploy auf die NAS und Einrichtung des Dienstes `sprachdienst` auf dem MACO470 macht der CEO.
 - **Warum:** CEO 2026-10-28: „Go für Merge, Push und Deploy“.
