@@ -16,6 +16,7 @@ Stand 2026-09-28 auf dem MACO470 (`.venv`, `python -m pytest`), nach KUNDEN_FINA
 | `cutter/tests` | 74 bestanden | – |
 | `backoffice/tests` | 14 bestanden | – |
 | `netz_agent/tests` | 10 bestanden (2026-10-26, NETZ_AGENT Q2) | – |
+| `sprachdienst/tests` | 4 bestanden (2026-10-28, JARVIS J2b) | – |
 
 Regel: **Kein neuer roter Test.** Wer die Baseline aendert (Test repariert oder bewusst rot), schreibt diese
 Tabelle fort.
@@ -43,6 +44,7 @@ Tabelle fort.
 
 | ID | Symptom | Ursache | Umgehung | Beleg |
 |---|---|---|---|---|
+| BF-82 | Sprach-Arbeiter startet offline nicht: `OfflineModeIsEnabled` beim Laden von Qwen3-TTS | transformers 4.57.3 fragt bei einem Modellnamen in `_patch_mistral_regex` immer `model_info` online ab, auch mit `HF_HUB_OFFLINE=1` | `sprachdienst/worker.py` loest den Namen per `snapshot_download(..., local_files_only=True)` in den lokalen Ordner auf und laedt von dort | 2026-10-28 (J2b) |
 | BF-07 | MACO470-Worker tot, WSL faehrt herunter | WSL2 beendet die VM ohne offene Sitzung (`vmIdleTimeout=-1` reicht nicht) | Windows-Aufgabe `LUNA-WSL-Keepalive` (`sleep infinity`, alle 5 min Selbstheilung) | CL:196-203, MR:42-56 |
 | BF-13 | `cmdkey` ueber SSH scheitert, Explorer-Laufwerk ist sitzungsgebunden | Netzwerk-Logon ohne Credential-Store | SMB nativ per CIFS (E6) | CL:222-225 |
 | BF-14 | Facebook-Post scheitert trotz neuem Token in der `.env` | Token-Store (`orchestrator/state/instagram_token.json`) hat Vorrang vor dem `.env`-Seed | Store leeren, dann neu seeden | Gedaechtnis „Auto-Reel-Pipeline" |

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 14:16] — Claude Code
+- **Was:** JARVIS J2b umgesetzt -- Morgen-Briefing als Sprachnachricht mit der lokalen LUNA-Stimme C statt ElevenLabs: Warteschlange `core/sprachauftraege.py` (Bot legt den Auftrag nach dem 08:00-Briefing an, schickt die MP3 per Telegram, bis 10:00 nicht fertig -> einmal Hinweis), Endpunkte `/api/sprache/naechster|ergebnis` (nur Modul administration), Sprach-Arbeiter `sprachdienst/worker.py` (Qwen3-TTS 0.6B Basismodell, Klon der Probe C, offline, Modell nur bei Bedarf geladen) + Dienst `deploy/sprachdienst.service`; Einstellungstext angepasst (app-v2.js v146); Tests `test_sprachauftraege.py` (7) + `sprachdienst/tests` (4) mit 2 Gegenproben, Suite 1552 gruen; BF-82 (transformers fragt offline online nach) behoben; auf dem MACO470 `~/luna-sprache/` (eigene Umgebung + Stimmordner) eingerichtet; echte Probe 101 s Sprache in 595 s.
+- **Warum:** CEO 2026-10-28: „0.6B klingt gut, aber merke dir 1,7B auch mal, Go für die Umstellung“.
+- **Betroffen:** `orchestrator/core/sprachauftraege.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/core/team_auth.py`, `orchestrator/investment/store.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `sprachdienst/`, `deploy/sprachdienst.service`, `deploy/sync-to-nas.sh`, Tests, `JARVIS_ALLTAG_ROADMAP.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`.
+
 ## [2026-10-28 12:49] — Claude Code
 - **Was:** CEO-Wahl der LUNA-Stimme (Qwen3-Stimmdesign Variante C) festgehalten; Stimme C per Klon mit dem Qwen3-Basismodell (0.6B und 1.7B) an neuem Text erprobt, Rechenzeit und Tonhoehe gemessen; Plan der Umstellung (Sprach-Arbeiter auf dem MACO470 nach Cutter-Muster, Briefing-Auftrag 07:30) als Vorschlag in die Roadmap.
 - **Warum:** CEO 2026-10-28: „C gefaellt mir am besten“.

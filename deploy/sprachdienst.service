@@ -1,0 +1,26 @@
+# systemd-Dienst fuer den LUNA-Sprach-Arbeiter auf dem MACO470 (JARVIS_ALLTAG_ROADMAP.md, J2b).
+# Voraussetzungen (einmalig, auf dem MACO470): eigene Umgebung ~/luna-sprache/.venv (torch/torchaudio 2.11 CPU,
+# qwen-tts 0.1.1, transformers 4.57.3, soundfile), Stimmordner ~/luna-sprache/stimme_c (referenz.wav + referenz.txt),
+# Modell einmal in den Zwischenspeicher geladen (~/.cache/huggingface), ffmpeg.
+# Installation:
+#   sudo cp deploy/sprachdienst.service /etc/systemd/system/ && sudo systemctl daemon-reload
+#   sudo systemctl enable --now sprachdienst
+# Laeuft aus dem Arbeitsordner -> was dort ausgecheckt ist, laeuft (wie cutter-worker und backoffice-worker).
+[Unit]
+Description=LUNA Sprach-Arbeiter (lokale LUNA-Stimme fuer das Briefing)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=luna
+WorkingDirectory=/home/luna/ki-unternehmen
+Environment=HF_HUB_OFFLINE=1
+ExecStart=/home/luna/luna-sprache/.venv/bin/python -m sprachdienst.worker
+Restart=always
+RestartSec=30
+Nice=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

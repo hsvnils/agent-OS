@@ -199,7 +199,8 @@ _ADMIN_PREFIXE = ("/api/team", "/api/backoffice",   # Team-Verwaltung + Backoffi
                   "/api/aufgaben",                    # TODOS_ROADMAP: eigene To-dos des CEO
                   "/api/netzwerk",                    # NETZWERK_WACHE: Geraete/Befunde des Heimnetzes
                   "/api/modell-radar",                # MODELL_RADAR: genutzte Modelle, Vorschlaege
-                  "/api/skills")                      # SKILL_WERKSTATT: Skills bauen, freigeben, Rueckmeldungen
+                  "/api/skills",                      # SKILL_WERKSTATT: Skills bauen, freigeben, Rueckmeldungen
+                  "/api/sprache")                     # JARVIS J2b: Sprach-Arbeiter (MACO470), Maschine-zu-Maschine
 
 
 def modul_fuer_pfad(method: str, pfad: str) -> str | None:

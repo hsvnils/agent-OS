@@ -54,6 +54,7 @@ TAR_EXCLUDES=(
   --exclude='./sicherheit'            # PROMPT_INJECTION_SCHUTZ I4: Injection-Protokoll (nur NAS + Backup)
   --exclude='./todos'                 # TODOS_ROADMAP: eigene To-dos des CEO (nur NAS + Backup)
   --exclude='./netz_queue'            # NETZ_AGENT Q1: Warteschlange des Netz-Agenten (nur NAS)
+  --exclude='./sprache'               # JARVIS J2b: Sprachauftraege + MP3 der lokalen LUNA-Stimme (nur NAS)
   --exclude='./netz_agent/.env'       # NETZ_AGENT Q1: eigener Brave-Schluessel des Netz-Agenten (nur NAS)
   --exclude='./ig_inbox'
   --exclude='./reel_freigabe'

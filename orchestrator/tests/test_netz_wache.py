@@ -13,7 +13,7 @@ NETZ_AUFRUFE = {"urlopen", "HTTPConnection", "HTTPSConnection", "build_opener", 
 ERLAUBT = {
     "channels/telegram/bot.py": {"_api", "_send_document", "_send_audio", "_download_voice", "_transcribe"},  # Telegram, Deepgram
     "channels/web/app.py": {"_elevenlabs_tts"},
-    "core/alltag.py": {"elevenlabs_tts"},                 # ElevenLabs (LUNA-OS-Stimme + Briefing als Sprachnachricht)
+    "core/alltag.py": {"elevenlabs_tts"},                 # ElevenLabs (LUNA-OS-Stimme; Briefing seit J2b lokal)
     "core/hoa_tools.py": {"_http"},                       # OSV.dev (CISO)
     "core/lokal_llm.py": {"erreichbar"},                  # Ollama im Heimnetz
     "core/modell_radar.py": {"aa_abrufen"},               # Artificial-Analysis-API (mit Schluessel)
