@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 11:01] — Claude Code
+- **Was:** J2b nachgebessert: Victoria-Probe war stumm (Kokoro uebersprang Gewichte mit neuer weight_norm-Benennung ohne Fehler) -> Laden mit Umbenennung, Probe neu + Hersteller-Demo; zusaetzliche Probe Qwen3-TTS 1.7B VoiceDesign (Stimme per Beschreibung, Faktor 8); Piper-Proben auf CEO-Urteil geloescht.
+- **Warum:** CEO-Rueckmeldung zur Hoerprobe (Victoria ohne Stimme, Serena okay, Piper unbrauchbar).
+- **Betroffen:** `JARVIS_ALLTAG_ROADMAP.md`, `projekt_changelog.md`, `~/tts-probe/`, `vorlagen/Hoerprobe_Stimmen/` (lokal)
+
 ## [2026-10-28 10:51] — Claude Code
 - **Was:** J2b Hoerprobe erzeugt: Testumgebung `~/tts-probe/` auf dem MACO470 (zwei Python-Umgebungen, Modelle von Hugging Face: Kokoro-Deutsch Victoria, Piper Ramona/Kerstin, Qwen3-TTS 0.6B), fuenf Proben desselben Briefing-Texts inkl. ElevenLabs-Referenz unter `vorlagen/Hoerprobe_Stimmen/` (nicht im Git), Rechenzeiten in der Roadmap. Betrieb unveraendert.
 - **Warum:** CEO-Go J2b (2026-10-28).

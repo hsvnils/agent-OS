@@ -81,12 +81,14 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 
   | Probe | Modell | Rechenfaktor | live tauglich |
   |---|---|---|---|
-  | 1 | Kokoro-82M Deutsch „Victoria“ (kikiri-tts, Apache 2.0) | 0,21 (30 s Sprache in 6,5 s) | ja |
+  | 1 | Kokoro-82M Deutsch „Victoria“ (kikiri-tts, Apache 2.0) -- erste Probe ohne Sprache (Ladefehler: Gewichte mit neuer weight_norm-Benennung wurden von `KModel` stillschweigend uebersprungen), korrigiert durch Umbenennen beim Laden | 0,19 (30 s Sprache in 5,6 s) | ja |
   | 2 | Qwen3-TTS 0.6B CustomVoice „Serena“, Sprache Deutsch (Apache 2.0) | 2,85 (30 s in 87 s) | nein, nur Briefing |
-  | 3a/3b | Piper „Ramona“ / „Kerstin“ (low) | 0,07-0,08 | ja |
+  | 2b | Qwen3-TTS 1.7B VoiceDesign, Stimme per Beschreibung (deutsche Frau Anfang 30, Hochdeutsch) | 8,05 (27 s in 214 s) | nein, nur Briefing |
+  | 3a/3b | Piper „Ramona“ / „Kerstin“ (low) -- vom CEO verworfen („Muell“) | 0,07-0,08 | ja |
   | 4 | ElevenLabs „Lola“ (Referenz, ca. 220 Credits) | Cloud | ja |
 
-  Stand: wartet auf die Wahl des CEO.
+  CEO-Urteil 2026-10-28: Victoria (erste Probe) ohne Stimme -> korrigiert und neu geschickt; Serena „okay, aber nicht
+  optimal“; Piper verworfen. Stand: wartet auf das Urteil zu Victoria (neu) und Qwen3-Stimmdesign.
 
 ### J3: Abfahrts-Erinnerung
 
