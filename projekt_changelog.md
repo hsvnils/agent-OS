@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 10:30] — Claude Code
+- **Was:** Branch `ai/jarvis-alltag` (Gesamtroadmap + Paket A) in `main` gemergt (Suite gruen, Doku-Check ok), Deploy `luna-os` + `luna-telegram` an den CEO uebergeben; Recherche lokale deutsche Sprachausgabe (KugelAudio u. a.) im Register, Hardware-Befund MACO470: AMD Radeon 890M, kein CUDA.
+- **Warum:** CEO: „Go fuer Merge, Push und Deploy“; Frage nach lokalem deutschen ElevenLabs-Ersatz.
+- **Betroffen:** `main`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-10-28 10:20] — Claude Code
 - **Was:** JARVIS_ALLTAG Paket A umgesetzt: J1 Sprachnachrichten (Bestaetigung „Verstanden“, Fehler nie als Text an LUNA, auch Audio-Dateien), J2 Morgen-Briefing als Sprachnachricht (Einstellung, Standard aus; ElevenLabs gemeinsam in `core/alltag.py`), J3 Abfahrts-Erinnerung bei Terminen mit Ort (OSRM-Fahrzeit + Puffer, einmal je Termin), J4 Kundenpflege im Handlungsbedarf (lange kein Kontakt, Geburtstag am Ansprechpartner, Kampagnen-Jahrestag) mit Endpunkt `/api/crm/kundenpflege`; drei neue Einstellungen; Datenfluesse, Datenschutz-Nachtrag 8, Wachtest-Liste ergaenzt; Befund: keine lokale Spracherkennung auf dem MACO470 (Roadmap korrigiert). Dazu: Aleph Alpha Kolibri im Register zum Test vorgemerkt (CEO).
 - **Warum:** CEO-Go Paket A (2026-10-28); CEO: „Kolibri als lokales Sprachmodell testen“ aufnehmen.
