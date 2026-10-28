@@ -76,6 +76,17 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
   MACO470 = CISO-Freigabe + `docs/datenfluesse.md`).
 - Recht: nur Stimmen mit freier Lizenz; Klonen einer echten Stimme nur mit schriftlicher Einwilligung (CEO-Tor).
 - Aufwand: klein (Probe), mittel (Umstellung).
+- Hoerprobe erzeugt (2026-10-28, MACO470, nur Prozessor; Testumgebung `~/tts-probe/`, ausserhalb des Repos; Proben unter
+  `vorlagen/Hoerprobe_Stimmen/`, nicht im Git). Gleicher Text (ca. 30 s Sprache), Rechenzeit je Sekunde Sprache:
+
+  | Probe | Modell | Rechenfaktor | live tauglich |
+  |---|---|---|---|
+  | 1 | Kokoro-82M Deutsch „Victoria“ (kikiri-tts, Apache 2.0) | 0,21 (30 s Sprache in 6,5 s) | ja |
+  | 2 | Qwen3-TTS 0.6B CustomVoice „Serena“, Sprache Deutsch (Apache 2.0) | 2,85 (30 s in 87 s) | nein, nur Briefing |
+  | 3a/3b | Piper „Ramona“ / „Kerstin“ (low) | 0,07-0,08 | ja |
+  | 4 | ElevenLabs „Lola“ (Referenz, ca. 220 Credits) | Cloud | ja |
+
+  Stand: wartet auf die Wahl des CEO.
 
 ### J3: Abfahrts-Erinnerung
 

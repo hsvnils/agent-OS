@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 10:51] — Claude Code
+- **Was:** J2b Hoerprobe erzeugt: Testumgebung `~/tts-probe/` auf dem MACO470 (zwei Python-Umgebungen, Modelle von Hugging Face: Kokoro-Deutsch Victoria, Piper Ramona/Kerstin, Qwen3-TTS 0.6B), fuenf Proben desselben Briefing-Texts inkl. ElevenLabs-Referenz unter `vorlagen/Hoerprobe_Stimmen/` (nicht im Git), Rechenzeiten in der Roadmap. Betrieb unveraendert.
+- **Warum:** CEO-Go J2b (2026-10-28).
+- **Betroffen:** `JARVIS_ALLTAG_ROADMAP.md`, `projekt_changelog.md`, `~/tts-probe/` (lokal), `vorlagen/Hoerprobe_Stimmen/` (lokal)
+
 ## [2026-10-28 10:40] — Claude Code
 - **Was:** Recherche lokale deutsche weibliche Sprachausgabe (Kokoro-Deutsch, Qwen3-TTS, Chatterbox, Piper u. a., Lizenz- und Hardware-Pruefung) im Register; Etappe J2b (Hoerprobe, dann Umstellung) in `JARVIS_ALLTAG_ROADMAP.md` geplant. Nichts installiert.
 - **Warum:** CEO-Auftrag 2026-10-28: lokale Modelle pruefen (deutsch, natuerlich, weiblich), Kosten langfristig senken.
