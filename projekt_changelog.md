@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 10:35] — Claude Code
+- **Was:** Deploy Paket A geprueft (Code auf der NAS, `app-v2.js?v=145` mit neuen Einstellungen, `luna-os`/`luna-telegram` neu gestartet 10:32); ElevenLabs-Tarif per API gelesen (ohne Schluessel anzuzeigen): Tarif „payg“, 10.000 Credits/Monat, verbraucht 0, Reset 23.11.2026; Kostenschaetzung Sprachsteuerung fuer den CEO.
+- **Warum:** CEO: Deploy pruefen, Frage nach ElevenLabs-Kosten und Kosten einer Jarvis-Sprachsteuerung.
+- **Betroffen:** `JARVIS_ALLTAG_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-28 10:30] — Claude Code
 - **Was:** Branch `ai/jarvis-alltag` (Gesamtroadmap + Paket A) in `main` gemergt (Suite gruen, Doku-Check ok), Deploy `luna-os` + `luna-telegram` an den CEO uebergeben; Recherche lokale deutsche Sprachausgabe (KugelAudio u. a.) im Register, Hardware-Befund MACO470: AMD Radeon 890M, kein CUDA.
 - **Warum:** CEO: „Go fuer Merge, Push und Deploy“; Frage nach lokalem deutschen ElevenLabs-Ersatz.

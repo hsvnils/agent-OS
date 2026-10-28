@@ -4,7 +4,7 @@
 - Stand: 2026-10-28
 - Arbeitsbranch: `ai/jarvis-alltag`
 - Basiscommit: `d4ae65d`
-- Naechster Schritt: Paket A (J1-J4) umgesetzt (CEO-Go 2026-10-28) -- Merge, Deploy (`luna-os` + `luna-telegram`), dann Abnahme im Betrieb: Sprachnachricht schicken, Termin mit Ort anlegen, Einstellungen pruefen, auf Wunsch „Morgen-Briefing vorlesen“ einschalten. Danach Go fuer Paket B.
+- Naechster Schritt: Paket A live seit 2026-10-28 10:32 (Sync + Neustart `luna-os`/`luna-telegram` geprueft). Abnahme im Betrieb offen (Sprachnachricht, Termin mit Ort, Einstellungen). Vor dem Einschalten von „Morgen-Briefing vorlesen“: ElevenLabs-Kontingent beachten (10.000 Credits/Monat, Briefing braucht ca. 36.000) -- CEO entscheidet kuerzere Fassung oder Tarif. Danach Go fuer Paket B.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
