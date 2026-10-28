@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 10:40] — Claude Code
+- **Was:** Recherche lokale deutsche weibliche Sprachausgabe (Kokoro-Deutsch, Qwen3-TTS, Chatterbox, Piper u. a., Lizenz- und Hardware-Pruefung) im Register; Etappe J2b (Hoerprobe, dann Umstellung) in `JARVIS_ALLTAG_ROADMAP.md` geplant. Nichts installiert.
+- **Warum:** CEO-Auftrag 2026-10-28: lokale Modelle pruefen (deutsch, natuerlich, weiblich), Kosten langfristig senken.
+- **Betroffen:** `docs/entscheidungs-register.md`, `JARVIS_ALLTAG_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-28 10:35] — Claude Code
 - **Was:** Deploy Paket A geprueft (Code auf der NAS, `app-v2.js?v=145` mit neuen Einstellungen, `luna-os`/`luna-telegram` neu gestartet 10:32); ElevenLabs-Tarif per API gelesen (ohne Schluessel anzuzeigen): Tarif „payg“, 10.000 Credits/Monat, verbraucht 0, Reset 23.11.2026; Kostenschaetzung Sprachsteuerung fuer den CEO.
 - **Warum:** CEO: Deploy pruefen, Frage nach ElevenLabs-Kosten und Kosten einer Jarvis-Sprachsteuerung.

@@ -64,6 +64,19 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 - Gate: Sprachnachricht kommt an (Empfang geprueft), Kosten im Kostenlog sichtbar und unter dem Richtwert.
 - CEO-Tor: nur falls dafuer laufende Kosten entstehen (Kostenvoranschlag CFO). Aufwand: klein.
 
+### J2b: Lokale Sprachausgabe (Hoerprobe, dann Umstellung)
+
+- Anlass (CEO 2026-10-28): Stimme deutsch, natuerlich, weiblich; auf Dauer lokal, damit die Kosten bei mehr Sprache nicht
+  steigen (ElevenLabs-Kontingent 10.000 Credits/Monat, Jarvis-Sprachsteuerung waere 20-100 EUR/Monat).
+- Ziel / Scope: auf dem MACO470 (nur zum Testen, Betrieb unveraendert) Kokoro-Deutsch „Victoria“, Qwen3-TTS (0.6B, CPU)
+  und Piper „Ramona/Kerstin“ installieren, denselben Briefing-Text mit allen plus ElevenLabs „Lola“ als MP3 erzeugen,
+  Tempo je Modell messen (Sekunden Rechenzeit je Minute Sprache). CEO hoert und waehlt. Danach Umstellung: Sprachdienst
+  auf dem MACO470, LUNA (NAS) schickt Text im Heimnetz, ElevenLabs nur noch Ersatz.
+- Gate: Hoerproben beim CEO angekommen, Tempo dokumentiert; Umstellung erst nach Wahl des CEO (neue Verbindung NAS ->
+  MACO470 = CISO-Freigabe + `docs/datenfluesse.md`).
+- Recht: nur Stimmen mit freier Lizenz; Klonen einer echten Stimme nur mit schriftlicher Einwilligung (CEO-Tor).
+- Aufwand: klein (Probe), mittel (Umstellung).
+
 ### J3: Abfahrts-Erinnerung
 
 - Status: umgesetzt (2026-10-28) -- Bot prueft jede Minute die heutigen Termine mit Ort (ohne Online-Termine), Fahrzeit
