@@ -4797,7 +4797,7 @@ async function renderEinstellungen() {
   const a = nInp("depot_stop_pct", "Stop-Loss-Hinweis", "ab −x %") + nInp("depot_target_pct", "Take-Profit-Hinweis", "ab +x %") + chk("depot_alerts", "Advisory-Alerts (Telegram)", "an/aus");
   const b = nInp("paper_stop_pct", "Auto-Stop-Loss", "verkauft ab −x %") + nInp("paper_target_pct", "Take-Profit-Vorschlag", "ab +x %") + nInp("paper_order_betrag_usd", "Standard-Order-Betrag", "USD je 1-Tap-Kauf") + nInp("paper_dip_schwelle_pct", "Live-Dip-Empfindlichkeit", "% Bewegung");
   const c = nInp("briefing_morgen_stunde", "Morgen-Briefing", "Stunde 0–23") + nInp("briefing_abend_stunde", "Abend-Briefing", "Stunde 0–23") + nInp("ruhezeit_von", "Nicht stören von", "Stunde (leer = aus)") + nInp("ruhezeit_bis", "Nicht stören bis", "Stunde (leer = aus)") + chk("alert_investment", "Alerts: Investment") + chk("alert_crm", "Alerts: CRM") + chk("alert_security", "Alerts: Security") + chk("alert_content", "Alerts: Content")
-    + chk("briefing_audio", "Morgen-Briefing vorlesen", "zusätzlich als Sprachnachricht in Telegram (ElevenLabs, ca. 1–4 € im Monat)")
+    + chk("briefing_audio", "Morgen-Briefing vorlesen", "zusätzlich als Sprachnachricht in Telegram (lokale LUNA-Stimme, kostenlos, ca. 20 Min. nach dem Text)")
     + chk("abfahrt_erinnerung", "Abfahrts-Erinnerung", "bei Terminen mit Ort – ab Büro, ohne Live-Verkehr")
     + nInp("kundenpflege_tage", "Kundenpflege-Hinweis", "nach so vielen Tagen ohne Vorgang (0 = aus)");
   const actions = `<span id="set-msg" class="v2-msg"></span><button class="v2-btn pri" data-act="settings-save">Speichern</button>`;

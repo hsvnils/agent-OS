@@ -57,7 +57,7 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 - Status: umgesetzt (2026-10-28) -- Einstellung „Morgen-Briefing vorlesen“ (Standard **aus**: Kosten + Daten an
   ElevenLabs); Sprechfassung regelbasiert (`core/alltag.sprechfassung`, ohne Emojis/Kennungen/Links, max. 2.400 Zeichen),
   Stimme wie LUNA-OS (Lola), Versand als Audio in Telegram, einmal am Tag. ElevenLabs-Aufruf liegt jetzt gemeinsam in
-  `core/alltag.elevenlabs_tts` (auch fuer `/api/tts`).
+  `core/alltag.elevenlabs_tts` (auch fuer `/api/tts`). **Seit J2b lokale Stimme statt ElevenLabs** (siehe J2b).
 
 - Ziel / Scope: Morgen-Briefing zusaetzlich als kurze Sprachnachricht (1-2 Min.) in Telegram, schaltbar. Text wie heute,
   Stimme ueber die vorhandene Sprachausgabe (lokal bevorzugt, falls brauchbar; sonst ElevenLabs mit Kostenvoranschlag).
@@ -94,8 +94,17 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
   2026-10-28: Variante C („souveraen“: tiefe, samtige Stimme, Mitte 30, sachlich-freundlich) = LUNA-Stimme.**
   Stimme festgehalten (2026-10-28): Klon aus der C-Probe mit dem Qwen3-Basismodell, neuer Text (ca. 15 s), Seed 7 --
   0.6B: 94 s Rechenzeit (Faktor 6,3), 1.7B: 132 s (Faktor 8,6); Tonhoehe 224 bzw. 232 Hz (Original C 255 Hz, anderer
-  Text). Proben `5_Stimme_C_festgehalten_*.mp3`. Stand: CEO prueft, ob der Klon wie C klingt.
-- Plan der Umstellung (Vorschlag, **erst nach CEO-Go**): Sprach-Arbeiter auf dem MACO470 nach dem Muster des
+  Text). Proben `5_Stimme_C_festgehalten_*.mp3`. CEO: **0.6B „klingt gut“** -> wird genommen; **1.7B vorgemerkt**
+  (umschaltbar ueber `SPRACHE_MODELL`).
+- Umstellung (CEO-Go 2026-10-28) -- **umgesetzt, Abnahme offen:** `core/sprachauftraege.py` (Warteschlange, MP3 nach 30
+  Tagen entfernt), `/api/sprache/naechster|ergebnis` (nur Modul administration), `sprachdienst/worker.py` + Dienst
+  `deploy/sprachdienst.service` (eigene Umgebung `~/luna-sprache/.venv`, Stimmordner `~/luna-sprache/stimme_c`, offline).
+  Abweichung vom Plan: der Briefing-Text entsteht erst um 08:00, deshalb wird er dann in Auftrag gegeben (nicht 07:30)
+  -- die Sprachnachricht kommt ca. 10-16 Min. spaeter. Echte Probe mit dem fertigen Code: 1.519 Zeichen = 101 s Sprache
+  in 595 s (Faktor 5,9), offline. Nicht fertig bis 10:00 -> einmal kurzer Hinweis, der Text gilt. ElevenLabs bleibt nur
+  fuer die LUNA-OS-Stimme (`/api/tts`). Gate: am ersten Morgen mit Einstellung „Morgen-Briefing vorlesen“ kommt die
+  Sprachnachricht in Telegram an (Empfang durch den CEO bestaetigt).
+- Plan der Umstellung (wie vorgeschlagen): Sprach-Arbeiter auf dem MACO470 nach dem Muster des
   Cutter-Workers -- er holt Sprachauftraege ueber die LUNA-OS-Schnittstelle ab (kein neuer offener Port am MACO470),
   spricht sie mit der festgehaltenen Stimme C und laedt die MP3 zurueck. Der Bot stellt den Briefing-Text schon um
   07:30 als Auftrag ein (bei ca. 2.400 Zeichen = 2,5-3 Min. Sprache rund 15-25 Min. Rechenzeit) und schickt die

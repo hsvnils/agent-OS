@@ -1161,18 +1161,21 @@ def _start_todo_loop(ctx, token, chat_id) -> None:
 
 def _start_alltag_loop(ctx, token, chat_id) -> None:
     """JARVIS_ALLTAG Paket A (CEO-Go 2026-10-28), jede Minute:
-    J2 -- Morgen-Briefing zusaetzlich als Sprachnachricht (Einstellung „briefing_audio“, Standard aus: ElevenLabs kostet);
+    J2 -- Morgen-Briefing zusaetzlich als Sprachnachricht (Einstellung „briefing_audio“, Standard aus), seit J2b mit der
+          lokalen LUNA-Stimme (Sprach-Arbeiter auf dem MACO470, `core/sprachauftraege.py`);
     J3 -- Abfahrts-Erinnerung bei Terminen mit Ort (Einstellung „abfahrt_erinnerung“), je Termin genau einmal."""
     import threading
     import time
     from datetime import datetime
     from ...core import alltag
     from ...core.routen import Routen
+    from ...core.sprachauftraege import SprachStore, briefing_schritt
     if not chat_id or ctx.agenda is None:
         return
     tz = _tz_berlin()
     bh_dir = ROOT / "buchhaltung"
     routen = Routen(bh_dir / "geocache.json")
+    sprache = SprachStore(ROOT / "sprache" / "log.jsonl", secrets=ctx.leak_secrets)
 
     def heim() -> str:
         try:
@@ -1188,21 +1191,25 @@ def _start_alltag_loop(ctx, token, chat_id) -> None:
             return standard
 
     def briefing_audio(jetzt, datum):
+        # J2b: lokale LUNA-Stimme (Sprach-Arbeiter auf dem MACO470) statt ElevenLabs -- kostenlos, bleibt im Haus.
+        if not einstellung("briefing_audio", False):
+            return
         mb = getattr(ctx, "morgen_briefing", None)
-        if not mb or mb[0] != datum or ctx.agenda.briefing_gesendet("briefing-audio", datum) \
-                or not einstellung("briefing_audio", False):
-            return
-        key = (ctx.secret_dict or {}).get("ELEVENLABS_API_KEY", "")
-        ctx.agenda.markiere_briefing("briefing-audio", datum)       # einmal am Tag, auch wenn es scheitert (Kosten)
-        if not key:
-            return
-        from ..voice.voices import GERMAN_VOICES
-        stimme = (ctx.secret_dict or {}).get("LUNA_OS_VOICE_ID") or next(
-            (v["id"] for v in GERMAN_VOICES if v["name"] == "Lola"), GERMAN_VOICES[0]["id"])
-        text = alltag.sprechfassung(mb[1])
-        mp3 = alltag.elevenlabs_tts(text, stimme, key) if text else None
-        r = _send_audio(token, chat_id, f"Briefing_{datum}.mp3", mp3, titel=f"Morgen-Briefing {jetzt:%d.%m.}") if mp3 else {}
-        print(f"[alltag] Briefing-Audio {datum}: {len(text)} Zeichen, gesendet={bool(r.get('ok'))}", flush=True)
+        text = alltag.sprechfassung(mb[1]) if mb and mb[0] == datum else None
+        aktion, a = briefing_schritt(sprache, datum, jetzt, text)
+        if aktion == "senden":
+            r = _send_audio(token, chat_id, f"Briefing_{datum}.mp3", sprache.mp3_pfad(a["id"]).read_bytes(),
+                            titel=f"Morgen-Briefing {jetzt:%d.%m.}")
+            if r.get("ok"):
+                sprache.gesendet(a["id"])
+            else:
+                sprache.fehlschlag(a["id"], grund=f"Telegram: {str(r.get('error') or r.get('description'))[:120]}")
+            print(f"[alltag] Briefing-Audio {datum}: {a.get('sprache_s')} s Sprache, gesendet={bool(r.get('ok'))}",
+                  flush=True)
+        elif aktion == "hinweis" and not ctx.agenda.briefing_gesendet("briefing-audio-hinweis", datum):
+            ctx.agenda.markiere_briefing("briefing-audio-hinweis", datum)
+            _api(token, "sendMessage", {"chat_id": chat_id, "text": "🎙️ Die Sprachfassung des Briefings gibt es heute "
+                                        f"nicht ({a.get('grund') or 'unbekannt'}). Der Text oben gilt."})
 
     def abfahrten(jetzt, datum):
         if ctx.google is None or not einstellung("abfahrt_erinnerung", True):

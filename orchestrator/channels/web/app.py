@@ -23,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 
 from ...core.antraege import Antraege
 from ...core.auftraege import ARTEN as AUFTRAG_ARTEN, AuftragStore, kurz_id
+from ...core.sprachauftraege import SprachStore
 from ...core.entwicklungs_roadmap import EntwicklungsRoadmap
 from ...core.brain import Brain
 from ...core.crm import CrmStore
@@ -61,6 +62,7 @@ notifications = Notifications(ROOT / "notifications" / "log.jsonl")
 research = ResearchTickets(ROOT / "research" / "log.jsonl", changelog=_changelog)
 agenda = Agenda(ROOT / "agenda" / "log.jsonl")
 backoffice = AuftragStore(ROOT / "backoffice" / "log.jsonl")   # FRONTDESK_BACKOFFICE_ROADMAP.md
+sprache = SprachStore(ROOT / "sprache" / "log.jsonl")          # JARVIS_ALLTAG J2b: lokale LUNA-Stimme
 brain = Brain(ROOT / "brain" / "log.jsonl")
 
 
@@ -800,6 +802,36 @@ async def backoffice_ergebnis(request: Request):
         except Exception:
             pass
     return JSONResponse({"ok": True, "meldung": meldung})
+
+
+# -- Sprachauftraege (JARVIS_ALLTAG J2b): der Sprach-Arbeiter auf dem MACO470 spricht Texte mit der lokalen LUNA-Stimme.
+# Er holt per /naechster und laedt die MP3 per /ergebnis hoch; der Bot verschickt sie (Telegram). Kein Cloud-Dienst.
+
+@app.get("/api/sprache/naechster")
+def sprache_naechster():
+    sprache.aufraeumen(stunden=1)
+    a = sprache.naechster()
+    return {"auftrag": {"id": a["id"], "text": a.get("text", "")} if a else None}
+
+
+@app.post("/api/sprache/ergebnis")
+async def sprache_ergebnis(request: Request):
+    import base64 as _b64
+    d = await _json(request)
+    sid = (d.get("id") or "").strip()
+    if not sid or sprache.get(sid) is None:
+        return JSONResponse({"ok": False, "hinweis": "Unbekannter Sprachauftrag."})
+    if not d.get("ok"):
+        sprache.fehlschlag(sid, grund=str(d.get("grund") or "unbekannt"))
+        return JSONResponse({"ok": True})
+    try:
+        mp3 = _b64.b64decode(d.get("mp3_b64") or "", validate=True)
+        ok = sprache.fertig(sid, mp3, modell=str(d.get("modell") or ""), dauer_s=d.get("dauer_s") or 0,
+                            sprache_s=d.get("sprache_s") or 0)
+    except ValueError as exc:
+        sprache.fehlschlag(sid, grund=f"Ergebnis unbrauchbar: {exc}")
+        return JSONResponse({"ok": False, "hinweis": str(exc)})
+    return JSONResponse({"ok": ok})
 
 
 # -- #2: Nutzer-Praeferenzen (pro Nutzer, geraeteuebergreifend) -- z. B. das Dashboard-Layout. --------
