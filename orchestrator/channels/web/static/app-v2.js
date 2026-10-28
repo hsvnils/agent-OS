@@ -961,7 +961,7 @@ const firmaAusText = (t) => { const m = /^\s*([KLP]-\d{5})\s*·\s*(.*)$/.exec(t 
 function vertragZeile(v = {}) {
   return `<div class="v2-an-zeile v2-vertrag"><input class="v2-inp vt-bez" placeholder="Bezeichnung (z. B. AppleCare iPhone)" value="${esc(v.bezeichnung || "")}"><input class="v2-inp vt-nr" placeholder="Vertrags-/Policen-Nr." value="${esc(v.nummer || "")}"><input class="v2-inp vt-notiz" placeholder="Notiz (Laufzeit, Kündigung …)" value="${esc(v.notiz || "")}"></div>`;
 }
-const AP_FORM = [["vorname", "Vorname"], ["nachname", "Nachname"], ["rolle", "Rolle / Position"], ["mail", "Mail", "email"], ["telefon", "Telefon"], ["notiz", "Notiz", "textarea"]];
+const AP_FORM = [["vorname", "Vorname"], ["nachname", "Nachname"], ["rolle", "Rolle / Position"], ["mail", "Mail", "email"], ["telefon", "Telefon"], ["geburtstag", "Geburtstag (TT.MM., optional)"], ["notiz", "Notiz", "textarea"]];
 const FELD_LBL = Object.fromEntries([...FIRMA_FORM, ...AP_FORM].map(([k, l]) => [k, l.replace(" *", "")]).concat([["aktiv", "Aktiv"], ["collab", "Collab zugeordnet"], ["collab_entfernt", "Collab gelöst"], ["firma", "Firma"]]));
 let KUNDEN = { firmen: [], collab_ohne_nummer: [] }, KUNDEN_SUCHE = "", _kundenTimer = null;
 
@@ -4760,8 +4760,9 @@ async function renderTeam() {
 /* =========================== Einstellungen =========================== */
 const SETTING_KEYS = ["depot_stop_pct", "depot_target_pct", "depot_alerts", "paper_stop_pct", "paper_target_pct",
   "paper_order_betrag_usd", "paper_dip_schwelle_pct", "briefing_morgen_stunde", "briefing_abend_stunde",
-  "ruhezeit_von", "ruhezeit_bis", "alert_investment", "alert_crm", "alert_security", "alert_content"];
-const SETTING_BOOLS = new Set(["depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content"]);
+  "ruhezeit_von", "ruhezeit_bis", "alert_investment", "alert_crm", "alert_security", "alert_content",
+  "briefing_audio", "abfahrt_erinnerung", "kundenpflege_tage"];
+const SETTING_BOOLS = new Set(["depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content", "briefing_audio", "abfahrt_erinnerung"]);
 const SETTING_OPT = new Set(["ruhezeit_von", "ruhezeit_bis"]);
 RENDER.einstellungen = renderEinstellungen;
 RENDER.auftraege = () => { SUBTAB.angebote = "auftraege"; return renderAngebote(); };   // eigener Punkt, gleiche Seite
@@ -4795,7 +4796,10 @@ async function renderEinstellungen() {
   const chk = (k, label, sub) => `<label class="v2-set-row"><span class="v2-set-lbl">${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ""}</span><input id="set-${k}" type="checkbox" ${cfg[k] ? "checked" : ""}></label>`;
   const a = nInp("depot_stop_pct", "Stop-Loss-Hinweis", "ab −x %") + nInp("depot_target_pct", "Take-Profit-Hinweis", "ab +x %") + chk("depot_alerts", "Advisory-Alerts (Telegram)", "an/aus");
   const b = nInp("paper_stop_pct", "Auto-Stop-Loss", "verkauft ab −x %") + nInp("paper_target_pct", "Take-Profit-Vorschlag", "ab +x %") + nInp("paper_order_betrag_usd", "Standard-Order-Betrag", "USD je 1-Tap-Kauf") + nInp("paper_dip_schwelle_pct", "Live-Dip-Empfindlichkeit", "% Bewegung");
-  const c = nInp("briefing_morgen_stunde", "Morgen-Briefing", "Stunde 0–23") + nInp("briefing_abend_stunde", "Abend-Briefing", "Stunde 0–23") + nInp("ruhezeit_von", "Nicht stören von", "Stunde (leer = aus)") + nInp("ruhezeit_bis", "Nicht stören bis", "Stunde (leer = aus)") + chk("alert_investment", "Alerts: Investment") + chk("alert_crm", "Alerts: CRM") + chk("alert_security", "Alerts: Security") + chk("alert_content", "Alerts: Content");
+  const c = nInp("briefing_morgen_stunde", "Morgen-Briefing", "Stunde 0–23") + nInp("briefing_abend_stunde", "Abend-Briefing", "Stunde 0–23") + nInp("ruhezeit_von", "Nicht stören von", "Stunde (leer = aus)") + nInp("ruhezeit_bis", "Nicht stören bis", "Stunde (leer = aus)") + chk("alert_investment", "Alerts: Investment") + chk("alert_crm", "Alerts: CRM") + chk("alert_security", "Alerts: Security") + chk("alert_content", "Alerts: Content")
+    + chk("briefing_audio", "Morgen-Briefing vorlesen", "zusätzlich als Sprachnachricht in Telegram (ElevenLabs, ca. 1–4 € im Monat)")
+    + chk("abfahrt_erinnerung", "Abfahrts-Erinnerung", "bei Terminen mit Ort – ab Büro, ohne Live-Verkehr")
+    + nInp("kundenpflege_tage", "Kundenpflege-Hinweis", "nach so vielen Tagen ohne Vorgang (0 = aus)");
   const actions = `<span id="set-msg" class="v2-msg"></span><button class="v2-btn pri" data-act="settings-save">Speichern</button>`;
   $("#v2-app").innerHTML = secHead("Einstellungen", actions) + `<div class="v2-grid">
     ${tile("🎨 Darstellung", darstellungHtml(), "w12")}

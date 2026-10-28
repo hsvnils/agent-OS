@@ -11,8 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 NETZ_AUFRUFE = {"urlopen", "HTTPConnection", "HTTPSConnection", "build_opener", "create_connection"}
 # Modul -> Funktionen, die direkt ins Netz duerfen (nur feste Schnittstellen)
 ERLAUBT = {
-    "channels/telegram/bot.py": {"_api", "_send_document", "_download_voice", "_transcribe"},   # Telegram, Deepgram
+    "channels/telegram/bot.py": {"_api", "_send_document", "_send_audio", "_download_voice", "_transcribe"},  # Telegram, Deepgram
     "channels/web/app.py": {"_elevenlabs_tts"},
+    "core/alltag.py": {"elevenlabs_tts"},                 # ElevenLabs (LUNA-OS-Stimme + Briefing als Sprachnachricht)
     "core/hoa_tools.py": {"_http"},                       # OSV.dev (CISO)
     "core/lokal_llm.py": {"erreichbar"},                  # Ollama im Heimnetz
     "core/modell_radar.py": {"aa_abrufen"},               # Artificial-Analysis-API (mit Schluessel)

@@ -28,7 +28,7 @@ FIRMA_FELDER = ("name", "typ", "strasse", "plz", "ort", "land", "ustid", "steuer
                 "kundennummer_bei", "zahlungsweg", "rechnungs_absender", "vertraege",
                 "handelsregister")                                     # Etappe 22: aus dem Impressum
 VERTRAG_FELDER = ("bezeichnung", "nummer", "notiz")
-AP_FELDER = ("vorname", "nachname", "rolle", "mail", "telefon", "notiz", "aktiv")
+AP_FELDER = ("vorname", "nachname", "rolle", "mail", "telefon", "notiz", "aktiv", "geburtstag")   # JARVIS J4: Geburtstag
 _MAIL = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 # Zahlungsdienste versenden Belege fuer viele Haendler -> nie als Rechnungs-Absender einer Firma lernen/zuordnen
 ZAHLDIENSTE = re.compile(r"(?i)@(?:[\w-]+\.)*(?:paypal|stripe|klarna|sumup|mollie|adyen|braintreegateway)\.")
@@ -298,6 +298,7 @@ class KundenStore:
     def ansprechpartner_anlegen(self, firma: str, daten: dict, *, von: str = "") -> dict:
         firma = self.haupt(self._stand()[0], firma) or (firma or "").strip().upper()
         d = _bereinige(daten, AP_FELDER)
+        _geburtstag_pruefen(d)
         if not (d.get("vorname") or d.get("nachname")):
             raise ValueError("Name des Ansprechpartners fehlt.")
         d["aktiv"] = True
@@ -314,6 +315,7 @@ class KundenStore:
     def ansprechpartner_aendern(self, nummer: str, aenderungen: dict, *, von: str = "") -> dict:
         nummer = (nummer or "").strip().upper()
         neu = _bereinige(aenderungen, AP_FELDER)
+        _geburtstag_pruefen(neu)
         diff: dict = {}
 
         def pruefe(eintraege):
@@ -369,6 +371,13 @@ class KundenStore:
         except KeineAenderung:
             pass
         return {"nummer": nummer, "collab": k}
+
+
+def _geburtstag_pruefen(d: dict) -> None:
+    """JARVIS J4: Geburtstag optional, aber lesbar (TT.MM., TT.MM.JJJJ oder JJJJ-MM-TT)."""
+    from .alltag import geburtstag
+    if d.get("geburtstag") and not geburtstag(d["geburtstag"]):
+        raise ValueError("Geburtstag bitte als TT.MM. (z. B. 24.12.) oder TT.MM.JJJJ angeben.")
 
 
 def anzeige_nummer(f: dict) -> str:

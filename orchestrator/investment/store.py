@@ -41,6 +41,10 @@ SETTINGS_DEFAULTS = {
     "alert_content": True,
     # D -- VORSCHLAGSPAUSE P1 (CEO 2026-10-06): systemweit keine Investment-Vorschlaege, Tracking laeuft weiter
     "vorschlaege_pausiert": False,
+    # E -- JARVIS_ALLTAG Paket A (CEO-Go 2026-10-28)
+    "briefing_audio": False,        # J2: Morgen-Briefing zusaetzlich als Sprachnachricht (ElevenLabs, kleine Kosten)
+    "abfahrt_erinnerung": True,     # J3: „in 10 Min. losfahren“ bei Terminen mit Ort
+    "kundenpflege_tage": 60,        # J4: Hinweis, wenn ein Kunde so lange ohne Vorgang ist (0 = aus)
 }
 
 

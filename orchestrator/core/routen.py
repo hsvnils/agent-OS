@@ -78,3 +78,14 @@ class Routen:
         except Exception:
             return None
         return math.ceil(2 * meter / 1000)
+
+    def fahrzeit_min(self, start: str, ziel: str) -> float | None:
+        """JARVIS J3: Fahrzeit in Minuten (eine Richtung, Auto, OSRM -- ohne Live-Verkehr) oder None."""
+        a, b = self.koordinaten(start), self.koordinaten(ziel)
+        if not a or not b:
+            return None
+        try:
+            r = self.http(OSRM.format(a=f"{a[1]},{a[0]}", b=f"{b[1]},{b[0]}"))
+            return float(r["routes"][0]["duration"]) / 60
+        except Exception:
+            return None
