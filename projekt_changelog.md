@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 11:17] — Claude Code
+- **Was:** J2b: vier ruhigere Qwen3-Stimmdesign-Varianten (A ruhig/tiefer, B reif/sonor, C souveraen, D wie 2b ruhiger) erzeugt und mit gemessener Tonhoehe an den CEO geschickt.
+- **Warum:** CEO: 2b gut, aber zu quietschig/euphorisch -- Alternativen gesucht.
+- **Betroffen:** `JARVIS_ALLTAG_ROADMAP.md`, `projekt_changelog.md`, `vorlagen/Hoerprobe_Stimmen/` (lokal)
+
 ## [2026-10-28 11:01] — Claude Code
 - **Was:** J2b nachgebessert: Victoria-Probe war stumm (Kokoro uebersprang Gewichte mit neuer weight_norm-Benennung ohne Fehler) -> Laden mit Umbenennung, Probe neu + Hersteller-Demo; zusaetzliche Probe Qwen3-TTS 1.7B VoiceDesign (Stimme per Beschreibung, Faktor 8); Piper-Proben auf CEO-Urteil geloescht.
 - **Warum:** CEO-Rueckmeldung zur Hoerprobe (Victoria ohne Stimme, Serena okay, Piper unbrauchbar).

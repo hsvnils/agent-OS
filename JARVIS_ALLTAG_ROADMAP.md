@@ -88,7 +88,11 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
   | 4 | ElevenLabs „Lola“ (Referenz, ca. 220 Credits) | Cloud | ja |
 
   CEO-Urteil 2026-10-28: Victoria (erste Probe) ohne Stimme -> korrigiert und neu geschickt; Serena „okay, aber nicht
-  optimal“; Piper verworfen. Stand: wartet auf das Urteil zu Victoria (neu) und Qwen3-Stimmdesign.
+  optimal“; Piper verworfen. Danach: Victoria gefaellt nicht; **Qwen3-Stimmdesign (2b) gut** (Tempo, Aussprache „top“),
+  aber etwas quietschig/euphorisch -> vier ruhigere Beschreibungen erzeugt (je ca. 3,5 Min. Rechenzeit, Seed 7), mittlere
+  Tonhoehe gemessen: 2b 293 Hz, A 294 Hz, D 276 Hz, B 255 Hz, C 255 Hz (ElevenLabs Lola 219 Hz). Stand: wartet auf die
+  Wahl des CEO. Folge: Qwen3-Design taugt nur fuer vorbereitete Texte (Briefing), nicht live -- fuer Live-Sprache ist
+  weiter offen, ob eine Grafikkarte oder eine Cloud-Stimme noetig ist.
 
 ### J3: Abfahrts-Erinnerung
 
