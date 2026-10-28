@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 16:50] — Claude Code
+- **Was:** Kopfzeile „Naechster Schritt“ der Jarvis-Roadmap aktualisiert (J2b live, ElevenLabs-Hinweis veraltet, offene Abnahmen).
+- **Warum:** CEO-Frage 2026-10-28: „Was ist auf der Roadmap noch offen?“
+- **Betroffen:** `JARVIS_ALLTAG_ROADMAP.md`.
+
 ## [2026-10-28 16:40] — Claude Code
 - **Was:** J2b nach dem Deploy geprueft: Dienst `sprachdienst` auf dem MACO470 aktiv (seit 16:31, 0 Neustarts), Endpunkt `/api/sprache/naechster` auf der NAS antwortet, keine offenen Auftraege. Abnahme = erste Sprachnachricht am 2026-10-29 nach dem 08:00-Briefing.
 - **Warum:** CEO 2026-10-28: „Alles erledigt, Dienst läuft, Einstellung ist an“.
