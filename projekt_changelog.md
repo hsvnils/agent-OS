@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 10:05] — Claude Code
+- **Was:** Skills-Sammlung `emilkowalski/skills` (MIT, Commit 2d22863) nach Pruefung (nur Markdown, keine Skripte/Injection) fuer Claude Code unter `~/.claude/skills/` installiert (ausserhalb des Repos, Quelle in `QUELLE_emilkowalski.txt`), nicht fuer LUNA; Jarvis-Recherche (OpenJarvis, Hermes Agent, OpenClaw, Meetily) als Ideenquelle im Register vermerkt.
+- **Warum:** CEO-Auftrag 2026-10-28 (Skills installieren, Ideen fuer mehr Alltagsunterstuetzung recherchieren).
+- **Betroffen:** `~/.claude/skills/` (lokal), `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-10-27 13:46] — Claude Code
 - **Was:** Deploy TKP_ABRECHNUNG T1-T4 geprueft: Code auf der NAS (`core/tkp_abrechnung.py`), Web liefert `app-v2.js?v=144` mit Messzeitraum-Auswahl, `luna-os` und `luna-telegram` neu gestartet 13:43/13:44, `luna-netz` unberuehrt; Roadmap-Status auf live.
 - **Warum:** CEO: alle drei Deploy-Befehle ausgefuehrt, Pruefung angefordert.
