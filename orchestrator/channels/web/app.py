@@ -964,20 +964,9 @@ def _luna_session():
 
 
 def _elevenlabs_tts(text: str, voice_id: str, key: str):
-    """Spricht Text mit ElevenLabs (eleven_turbo_v2_5) -> MP3-Bytes. None bei Fehler."""
-    import urllib.request
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_128"
-    payload = json.dumps({"text": text, "model_id": "eleven_turbo_v2_5",
-                          "voice_settings": {"stability": 0.5, "similarity_boost": 0.75}}).encode()
-    req = urllib.request.Request(url, data=payload, method="POST",
-                                 headers={"xi-api-key": key, "Content-Type": "application/json",
-                                          "Accept": "audio/mpeg"})
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return r.read()
-    except Exception as exc:
-        print(f"[tts] ElevenLabs-Fehler: {str(exc)[:160]}", flush=True)
-        return None
+    """Spricht Text mit ElevenLabs -> MP3-Bytes, None bei Fehler (JARVIS J2: gemeinsam mit dem Bot in core/alltag)."""
+    from ...core.alltag import elevenlabs_tts
+    return elevenlabs_tts(text, voice_id, key)
 
 
 @app.post("/api/antraege/{antrag_id}/mehr-info")
@@ -3186,6 +3175,31 @@ def katalog_ist_kontakte():
     """Gemessene Kontakte je Katalog-Artikel (Median) -- Vorschlag fuer die Katalog-Kontakte, aendert nichts."""
     from ...core.postings import ist_kontakte
     return {"artikel": ist_kontakte(kunden_store.bh.eintraege())}
+
+
+@app.post("/api/crm/kundenpflege")
+async def kundenpflege_erledigt(request: Request):
+    """JARVIS_ALLTAG J4: Kundenpflege-Hinweis erledigt (gemeldet/gratuliert) -- zaehlt als Kontakt mit der Firma."""
+    body = await _json(request)
+
+    def tun():
+        sl = str(body.get("schluessel") or "")
+        art, _, rest = sl.partition(":")
+        teil = rest.split(":")[0].upper()
+        if art == "kp-kontakt":
+            firma = teil
+        elif art == "kp-geburtstag":
+            firma = next((f["nummer"] for f in kunden_store.firmen() for ap in (kunden_store.firma(f["nummer"]) or {})
+                          .get("ansprechpartner_liste", []) if ap["nummer"] == teil), "")
+        elif art == "kp-jahrestag":
+            firma = (_auftraege().auftrag(teil) or {}).get("firma", "")
+        else:
+            firma = ""
+        if not firma or not kunden_store.firma(firma):
+            raise ValueError("Unbekannter Kundenpflege-Hinweis.")
+        kunden_store.bh.erfassen("kundenpflege_erledigt", {"schluessel": sl[:120], "firma": firma}, von=_von(request))
+        return {"erledigt": sl}
+    return _kunden_aktion(tun)
 
 
 @app.post("/api/crm/auftraege/{nummer}/folge-erledigt")
@@ -5681,7 +5695,9 @@ async def investment_paper_order(request: Request):
 # -- Einstellungen (in der Weboberflaeche anpassbar; geteilte SSOT fuer Web + Telegram-Bot). --
 _SETTING_STUNDE = {"briefing_morgen_stunde", "briefing_abend_stunde"}
 _SETTING_STUNDE_OPT = {"ruhezeit_von", "ruhezeit_bis"}          # Stunde ODER None (= aus)
-_SETTING_BOOL = {"depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content", "vorschlaege_pausiert"}
+_SETTING_BOOL = {"depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content", "vorschlaege_pausiert",
+                 "briefing_audio", "abfahrt_erinnerung"}
+_SETTING_TAGE = {"kundenpflege_tage"}                           # ganze Tage 0-365 (0 = aus)
 
 
 def _coerce_setting(key: str, wert):
@@ -5690,6 +5706,8 @@ def _coerce_setting(key: str, wert):
         return bool(wert) if not isinstance(wert, str) else wert.strip().lower() in ("1", "true", "an", "ja", "on")
     if key in _SETTING_STUNDE:
         return max(0, min(23, int(float(wert))))
+    if key in _SETTING_TAGE:
+        return max(0, min(365, int(float(wert or 0))))
     if key in _SETTING_STUNDE_OPT:
         if wert in (None, "", "aus"):
             return None

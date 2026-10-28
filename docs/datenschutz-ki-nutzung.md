@@ -124,3 +124,14 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
   Drive, keine Verarbeitung durch KI-Modelle (Gemini/Claude/lokal) -- CEO-Entscheidung 2026-10-08.
 - Die Kopie an die Person geht nur per Klick aus `luna@hanserautisch.de` (All-Inkl).
 - Die Vorlage ist ein Entwurf; vor dem ersten echten Einsatz anwaltlich pruefen lassen.
+
+## 8. Nachtrag 2026-10-28: Sprache im Alltag (JARVIS_ALLTAG Paket A)
+
+- **Sprachnachrichten (J1):** Sprachnachrichten des CEO in Telegram gehen wie bisher an Deepgram (Text zurueck, keine
+  Speicherung bei LUNA ausser dem erkannten Text im Chat). Eine lokale Spracherkennung auf dem MACO470 ist **nicht**
+  installiert (Befund 2026-10-28); Umstellung waere eine eigene CEO-Entscheidung (Installation, Modell-Download).
+- **Briefing als Sprachnachricht (J2):** der Text des Morgen-Briefings (Termine, Firmennamen, offene Punkte) geht an
+  ElevenLabs (USA). Deshalb **standardmaessig aus**; der CEO schaltet es in den Einstellungen selbst ein.
+- **Abfahrts-Erinnerung (J3):** nur der Ort eines Termins geht an OpenStreetMap (Nominatim/OSRM), kein Titel, keine
+  Teilnehmer.
+- **Kundenpflege (J4):** rein intern, kein Dienst, kein Modell.

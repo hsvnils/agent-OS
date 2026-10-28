@@ -182,6 +182,19 @@ def geschaefts_todos(bh: Buchhaltung, kunden, *, finanzen: bool = True, crm: boo
     out: list[dict] = []
     if crm:
         from .firmenakte import _falte as _akte_falte                   # Etappe 24: Mails ohne eindeutige Firma
+        from .alltag import kundenpflege                      # JARVIS_ALLTAG J4: Kontakt, Geburtstag, Jahrestag
+        try:                                                  # Schwelle aus den Einstellungen (0 = aus)
+            from ..investment.store import InvestmentStore
+            _kp_tage = int(InvestmentStore(bh.dir.parent / "investment" / "log.jsonl").settings()["kundenpflege_tage"])
+        except Exception:
+            _kp_tage = 60
+        if _kp_tage:
+            for k in kundenpflege(e, kunden.firmen(), heute, tage=_kp_tage):
+                out.append(_todo(k["id"], "Kunden", {"kontakt": "👋", "geburtstag": "🎂", "jahrestag": "📅"}[k["art"]],
+                                 k["titel"], k["detail"], "kunde-detail", k["firma"], k["datum"], h,
+                                 {"pfad": "/api/crm/kundenpflege", "schluessel": k["id"],
+                                  "label": "✓ Gemeldet" if k["art"] != "jahrestag" else "✓ Erledigt"})
+                           | {"stufe": "woche" if k["art"] != "kontakt" else "spaeter"})
         for m in _akte_falte(e)[1].values():
             out.append(_todo(f"akte:{m['id']}", "Firmenakte", "✉️", f"Mail zuordnen: {m['titel'][:60]}",
                              f"von {m.get('mail_von') or '?'} – welcher Firma gehört die Mail?", "akte-zuordnen", m["id"],

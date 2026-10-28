@@ -1,10 +1,10 @@
 # Roadmap: LUNA als Jarvis im Alltag (Gesamtroadmap in Paketen)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-10-28
 - Arbeitsbranch: `ai/jarvis-alltag`
 - Basiscommit: `d4ae65d`
-- Naechster Schritt: CEO waehlt das erste Paket (Empfehlung: Paket A) und gibt das Go; bis dahin wird nichts umgesetzt.
+- Naechster Schritt: Paket A (J1-J4) umgesetzt (CEO-Go 2026-10-28) -- Merge, Deploy (`luna-os` + `luna-telegram`), dann Abnahme im Betrieb: Sprachnachricht schicken, Termin mit Ort anlegen, Einstellungen pruefen, auf Wunsch „Morgen-Briefing vorlesen“ einschalten. Danach Go fuer Paket B.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -22,8 +22,8 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 
 | Baustein | Stand | Nachweis |
 |---|---|---|
-| Sprachnachrichten in Telegram | werden schon in Text umgewandelt, **ueber Deepgram (Cloud)**, nur wenn ein Schluessel gesetzt ist; ob live aktiv: **unbekannt**, Probe noetig | `orchestrator/channels/telegram/bot.py:313-330`, `:2541`; `docs/datenfluesse.md` Zeile `api.deepgram.com` |
-| Lokale Spracherkennung | whisper laeuft auf dem MACO470 fuer den Cutter | `cutter/transkription.py` |
+| Sprachnachrichten in Telegram | werden schon in Text umgewandelt, **ueber Deepgram (Cloud)**; Schluessel auf der NAS gesetzt (2026-10-28 geprueft, ohne Wert) | `orchestrator/channels/telegram/bot.py:313-330`, `:2541`; `docs/datenfluesse.md` Zeile `api.deepgram.com` |
+| Lokale Spracherkennung | **nicht installiert** (2026-10-28 geprueft: kein whisper.cpp, kein faster-whisper auf dem MACO470; der Cutter faellt auf Deepgram zurueck) -- Annahme der ersten Fassung war falsch | `cutter/transkription.py` |
 | Sprachausgabe | ElevenLabs/Cartesia fuer LUNA-OS-Voice (`/api/tts`) | `docs/datenfluesse.md` Zeile `api.elevenlabs.io` |
 | Briefings | Morgen/Abend per Telegram, Lagebild | `core/briefing.py`, `core/insights.py` |
 | Routen | Adresse -> Koordinaten (Nominatim) -> Fahrstrecke (OSRM), **ohne Live-Verkehr** | `core/routen.py`, `docs/datenfluesse.md` |
@@ -38,6 +38,12 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 
 ### J1: Sprachnachrichten an LUNA
 
+- Status: umgesetzt (2026-10-28) -- Sprachnachrichten und Audio-Dateien -> Deepgram -> Text -> wie getippt (To-do,
+  Zeiterfassung, Fragen); LUNA bestaetigt „🎙️ Verstanden: …“; Erkennungsfehler gehen nicht mehr als Text an LUNA
+  (vorher „[Transkription fehlgeschlagen …]“ als Nachricht), sondern als klare Meldung. **Abweichung:** lokale
+  Spracherkennung nicht umgesetzt, weil auf dem MACO470 keine installiert ist -- Installation (faster-whisper +
+  Modell-Download) ist eine eigene CEO-Entscheidung und Voraussetzung fuer J6.
+
 - Ziel / Scope: Sprachnachricht in Telegram -> Text -> LUNA handelt wie bei getippter Nachricht (To-do anlegen, Notiz,
   Frage beantworten). Erst Probe, ob es heute schon laeuft. Dann Umstellung auf **lokale Spracherkennung (whisper auf dem
   MACO470)** statt Deepgram (Datenschutz, keine Kosten); Deepgram nur noch als Ersatz, wenn der MACO470 aus ist. LUNA
@@ -48,12 +54,21 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 
 ### J2: Briefing als Sprachnachricht
 
+- Status: umgesetzt (2026-10-28) -- Einstellung „Morgen-Briefing vorlesen“ (Standard **aus**: Kosten + Daten an
+  ElevenLabs); Sprechfassung regelbasiert (`core/alltag.sprechfassung`, ohne Emojis/Kennungen/Links, max. 2.400 Zeichen),
+  Stimme wie LUNA-OS (Lola), Versand als Audio in Telegram, einmal am Tag. ElevenLabs-Aufruf liegt jetzt gemeinsam in
+  `core/alltag.elevenlabs_tts` (auch fuer `/api/tts`).
+
 - Ziel / Scope: Morgen-Briefing zusaetzlich als kurze Sprachnachricht (1-2 Min.) in Telegram, schaltbar. Text wie heute,
   Stimme ueber die vorhandene Sprachausgabe (lokal bevorzugt, falls brauchbar; sonst ElevenLabs mit Kostenvoranschlag).
 - Gate: Sprachnachricht kommt an (Empfang geprueft), Kosten im Kostenlog sichtbar und unter dem Richtwert.
 - CEO-Tor: nur falls dafuer laufende Kosten entstehen (Kostenvoranschlag CFO). Aufwand: klein.
 
 ### J3: Abfahrts-Erinnerung
+
+- Status: umgesetzt (2026-10-28) -- Bot prueft jede Minute die heutigen Termine mit Ort (ohne Online-Termine), Fahrzeit
+  ab Firmenadresse (`Routen.fahrzeit_min`, OSRM), Abfahrt = Beginn - Fahrzeit - Puffer (15 %, mind. 10 Min.), Erinnerung
+  10 Min. vorher mit Google-Maps-Link, je Termin einmal; Einstellung „Abfahrts-Erinnerung“ (Standard an).
 
 - Ziel / Scope: Bei Kalenderterminen mit Ort rechnet LUNA die Fahrzeit (vorhandene Routen) und schickt rechtzeitig
   „In 20 Min. losfahren nach …“ mit Kartenlink. **Ohne Live-Verkehr** (OSRM kennt keinen Stau) -- daher Puffer
@@ -62,6 +77,11 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 - Aufwand: klein.
 
 ### J4: Kundenpflege-Hinweise
+
+- Status: umgesetzt (2026-10-28) -- „Zu erledigen“: „Lange nichts gehört“ (Kunden mit Auftrag, letzter Vorgang aelter als
+  die Einstellung „Kundenpflege-Hinweis“, Standard 60 Tage, 0 = aus), „🎂 Geburtstag“ (neues Feld am Ansprechpartner,
+  heute bis in 3 Tagen), „Vor einem Jahr: Kampagne …“ (+-3 Tage); Knopf „✓ Gemeldet“ zaehlt als Kontakt.
+  Tests `test_alltag.py` (10) mit 8 Gegenproben, Suite gruen.
 
 - Ziel / Scope: „Zu erledigen“ und Briefing melden: Kunde seit X Tagen ohne Kontakt (Standard 60), Geburtstag eines
   Ansprechpartners (neues optionales Feld), Jahrestag einer Kampagne („vor einem Jahr lief …“ -> Folgeangebot?).

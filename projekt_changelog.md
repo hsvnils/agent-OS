@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 10:20] — Claude Code
+- **Was:** JARVIS_ALLTAG Paket A umgesetzt: J1 Sprachnachrichten (Bestaetigung „Verstanden“, Fehler nie als Text an LUNA, auch Audio-Dateien), J2 Morgen-Briefing als Sprachnachricht (Einstellung, Standard aus; ElevenLabs gemeinsam in `core/alltag.py`), J3 Abfahrts-Erinnerung bei Terminen mit Ort (OSRM-Fahrzeit + Puffer, einmal je Termin), J4 Kundenpflege im Handlungsbedarf (lange kein Kontakt, Geburtstag am Ansprechpartner, Kampagnen-Jahrestag) mit Endpunkt `/api/crm/kundenpflege`; drei neue Einstellungen; Datenfluesse, Datenschutz-Nachtrag 8, Wachtest-Liste ergaenzt; Befund: keine lokale Spracherkennung auf dem MACO470 (Roadmap korrigiert). Dazu: Aleph Alpha Kolibri im Register zum Test vorgemerkt (CEO).
+- **Warum:** CEO-Go Paket A (2026-10-28); CEO: „Kolibri als lokales Sprachmodell testen“ aufnehmen.
+- **Betroffen:** `orchestrator/core/alltag.py` (neu), `core/routen.py`, `core/kunden.py`, `core/todos.py`, `investment/store.py`, `channels/telegram/bot.py`, `channels/web/app.py`, `static/app-v2.js` (v145), `index-v2.html`, `orchestrator/tests/test_alltag.py` (neu), `tests/test_netz_wache.py`, `JARVIS_ALLTAG_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-28 10:09] — Claude Code
 - **Was:** Gesamtroadmap `JARVIS_ALLTAG_ROADMAP.md` angelegt (Bestand mit Nachweisen, Pakete A-D mit Etappen J1-J9, Gates, Reihenfolge; Paket D verweist auf Phase 17) und im Roadmap-Verzeichnis eingetragen. Nichts umgesetzt.
 - **Warum:** CEO-Auftrag 2026-10-28: Gesamtroadmap der Jarvis-Ideen in abarbeitbaren Paketen.

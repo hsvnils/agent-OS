@@ -331,8 +331,28 @@ def _transcribe(audio: bytes, deepgram_key: str, language: str = "de") -> str:
         with urllib.request.urlopen(req, timeout=60) as r:
             d = json.loads(r.read())
         return d["results"]["channels"][0]["alternatives"][0]["transcript"]
+    except Exception as exc:                       # JARVIS J1: Fehler nie als Text an LUNA weitergeben
+        print(f"[sprache] Deepgram-Fehler: {str(exc)[:160]}", flush=True)
+        return ""
+
+
+def _send_audio(token: str, chat_id, dateiname: str, inhalt: bytes, *, titel: str = "", caption: str = "") -> dict:
+    """JARVIS J2: MP3 als Audio-Nachricht (Telegram sendAudio, multipart/form-data)."""
+    boundary = "----luna" + uuid.uuid4().hex
+    parts: list[bytes] = []
+    for name, wert in (("chat_id", str(chat_id)), ("title", titel), ("performer", "LUNA"), ("caption", caption[:1000])):
+        if wert:
+            parts.append(f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{wert}\r\n".encode())
+    parts.append((f"--{boundary}\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"{dateiname}\"\r\n"
+                  "Content-Type: audio/mpeg\r\n\r\n").encode())
+    parts += [inhalt, f"\r\n--{boundary}--\r\n".encode()]
+    req = urllib.request.Request(f"{API}/bot{token}/sendAudio", data=b"".join(parts),
+                                 headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return json.loads(r.read())
     except Exception as exc:
-        return f"[Transkription fehlgeschlagen: {exc}]"
+        return {"ok": False, "error": str(exc)}
 
 
 def _start_watch_loop(watch, interval_hours: float, *, maintenance=None, notify=None) -> None:
@@ -1139,6 +1159,81 @@ def _start_todo_loop(ctx, token, chat_id) -> None:
     threading.Thread(target=loop, daemon=True, name="todo-erinnerung").start()
 
 
+def _start_alltag_loop(ctx, token, chat_id) -> None:
+    """JARVIS_ALLTAG Paket A (CEO-Go 2026-10-28), jede Minute:
+    J2 -- Morgen-Briefing zusaetzlich als Sprachnachricht (Einstellung „briefing_audio“, Standard aus: ElevenLabs kostet);
+    J3 -- Abfahrts-Erinnerung bei Terminen mit Ort (Einstellung „abfahrt_erinnerung“), je Termin genau einmal."""
+    import threading
+    import time
+    from datetime import datetime
+    from ...core import alltag
+    from ...core.routen import Routen
+    if not chat_id or ctx.agenda is None:
+        return
+    tz = _tz_berlin()
+    bh_dir = ROOT / "buchhaltung"
+    routen = Routen(bh_dir / "geocache.json")
+
+    def heim() -> str:
+        try:
+            fd = json.loads((bh_dir / "firmendaten.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            fd = {}
+        return " ".join(x for x in (fd.get("strasse"), fd.get("plz"), fd.get("ort")) if x)
+
+    def einstellung(k, standard):
+        try:
+            return ctx.investment.store.settings().get(k, standard)
+        except Exception:
+            return standard
+
+    def briefing_audio(jetzt, datum):
+        mb = getattr(ctx, "morgen_briefing", None)
+        if not mb or mb[0] != datum or ctx.agenda.briefing_gesendet("briefing-audio", datum) \
+                or not einstellung("briefing_audio", False):
+            return
+        key = (ctx.secret_dict or {}).get("ELEVENLABS_API_KEY", "")
+        ctx.agenda.markiere_briefing("briefing-audio", datum)       # einmal am Tag, auch wenn es scheitert (Kosten)
+        if not key:
+            return
+        from ..voice.voices import GERMAN_VOICES
+        stimme = (ctx.secret_dict or {}).get("LUNA_OS_VOICE_ID") or next(
+            (v["id"] for v in GERMAN_VOICES if v["name"] == "Lola"), GERMAN_VOICES[0]["id"])
+        text = alltag.sprechfassung(mb[1])
+        mp3 = alltag.elevenlabs_tts(text, stimme, key) if text else None
+        r = _send_audio(token, chat_id, f"Briefing_{datum}.mp3", mp3, titel=f"Morgen-Briefing {jetzt:%d.%m.}") if mp3 else {}
+        print(f"[alltag] Briefing-Audio {datum}: {len(text)} Zeichen, gesendet={bool(r.get('ok'))}", flush=True)
+
+    def abfahrten(jetzt, datum):
+        if ctx.google is None or not einstellung("abfahrt_erinnerung", True):
+            return
+        start = heim()
+        if not start:
+            return
+        ag = ctx.google.kalender_agenda(tage=1, max_results=30)
+        if not ag.get("ok", True) or not ag.get("termine"):
+            return
+        for x in alltag.faellige_abfahrten(ag["termine"], jetzt, lambda ort: routen.fahrzeit_min(start, ort),
+                                           lambda s: ctx.agenda.briefing_gesendet(s, datum)):
+            if _api(token, "sendMessage", {"chat_id": chat_id, "text": alltag.abfahrt_text(x, jetzt),
+                                           "disable_web_page_preview": True}).get("ok"):
+                ctx.agenda.markiere_briefing(x["schluessel"], datum)
+
+    def loop():
+        time.sleep(45)
+        while True:
+            jetzt = (datetime.now(tz) if tz else datetime.now()).replace(tzinfo=None)
+            datum = jetzt.strftime("%Y-%m-%d")
+            for teil in (briefing_audio, abfahrten):
+                try:
+                    teil(jetzt, datum)
+                except Exception as exc:
+                    print(f"[alltag] {teil.__name__}: {exc.__class__.__name__}: {str(exc)[:120]}", flush=True)
+            time.sleep(60)
+
+    threading.Thread(target=loop, daemon=True, name="alltag").start()
+
+
 def _start_buchhaltung_loop(ctx) -> None:
     """KUNDEN_FINANZEN Etappe 1: taeglich 05:00 (DE) Hash-Kette + Belege der Buchhaltung pruefen, Alarm bei Befund.
 
@@ -1379,6 +1474,8 @@ def _start_briefing_loop(ctx, notify) -> None:
                     notify(text, abteilung="LUNA-Briefing", kategorie="briefing", quelle="briefing",
                            dedup_stunden=0)
                     ctx.agenda.markiere_briefing(art, datum)
+                    if art == "morgen":
+                        ctx.morgen_briefing = (datum, text)     # JARVIS J2: Vorlage fuer die Sprachnachricht
                 # Woechentlicher Leistungsbericht (CDO): Montag ~09:00, regelbasiert/kostenlos.
                 # Abschaltbar mit PERFORMANCE_REPORT_ENABLED=0 (Default: an).
                 if (jetzt.weekday() == 0 and jetzt.hour == 9
@@ -2065,6 +2162,7 @@ def main() -> None:
         print("Security-Audit-Loop aktiv (taeglich 04:00, regelbasiert, L1-Meldung).", flush=True)
     _start_buchhaltung_loop(ctx)
     _start_todo_loop(ctx, token, allowed)   # TODOS_ROADMAP T2: To-do-Erinnerungen (aus mit AUFGABEN_ERINNERUNG=0)
+    _start_alltag_loop(ctx, token, allowed)  # JARVIS_ALLTAG J2/J3: Briefing als Sprachnachricht, Abfahrts-Erinnerung
     _start_rechtsquellen_loop(ctx)  # CLO_AUSBAU C3: Rechtsquellen aller Agenten-Skills (CLO, CFO) naechtlich 04:30 auf Aenderungen pruefen  # KUNDEN_FINANZEN Etappe 1: Integritaetspruefung 05:00, nur melden
     offset = 0
     _last_poll = 0.0
@@ -2538,9 +2636,18 @@ def main() -> None:
                     print(f"[postings] Foto-Fehler: {exc.__class__.__name__}", flush=True)
                 continue
             text = msg.get("text")
-            if not text and msg.get("voice") and deepgram:
-                audio = _download_voice(token, msg["voice"]["file_id"])
-                text = _transcribe(audio, deepgram, language) if audio else None
+            _sprache = msg.get("voice") or msg.get("audio")
+            if not text and _sprache:                  # JARVIS J1: Sprachnachricht -> Text -> wie getippt
+                if not deepgram:
+                    _api(token, "sendMessage", {"chat_id": chat_id, "text": "🎙️ Sprachnachrichten sind noch nicht eingerichtet."})
+                    continue
+                audio = _download_voice(token, _sprache["file_id"])
+                text = _transcribe(audio, deepgram, language) if audio else ""
+                if not text.strip():
+                    _api(token, "sendMessage", {"chat_id": chat_id,
+                         "text": "🎙️ Die Sprachnachricht konnte ich nicht verstehen – bitte noch einmal oder tippen."})
+                    continue
+                _api(token, "sendMessage", {"chat_id": chat_id, "text": f"🎙️ Verstanden: „{text.strip()[:600]}“"})
             if not text:
                 continue
             # Antwort auf 'Andere Summe': Betrag lesen -> frische Freigabe (Ja/Nein/Andere Summe) senden
