@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 16:22] — Claude Code
+- **Was:** Branch `ai/j2b-lokale-stimme` nach `main` gemergt (9106d34); Suite 1552 gruen, Doku-Check ok. Deploy auf die NAS und Einrichtung des Dienstes `sprachdienst` auf dem MACO470 macht der CEO.
+- **Warum:** CEO 2026-10-28: „Go für Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`.
+
 ## [2026-10-28 14:16] — Claude Code
 - **Was:** JARVIS J2b umgesetzt -- Morgen-Briefing als Sprachnachricht mit der lokalen LUNA-Stimme C statt ElevenLabs: Warteschlange `core/sprachauftraege.py` (Bot legt den Auftrag nach dem 08:00-Briefing an, schickt die MP3 per Telegram, bis 10:00 nicht fertig -> einmal Hinweis), Endpunkte `/api/sprache/naechster|ergebnis` (nur Modul administration), Sprach-Arbeiter `sprachdienst/worker.py` (Qwen3-TTS 0.6B Basismodell, Klon der Probe C, offline, Modell nur bei Bedarf geladen) + Dienst `deploy/sprachdienst.service`; Einstellungstext angepasst (app-v2.js v146); Tests `test_sprachauftraege.py` (7) + `sprachdienst/tests` (4) mit 2 Gegenproben, Suite 1552 gruen; BF-82 (transformers fragt offline online nach) behoben; auf dem MACO470 `~/luna-sprache/` (eigene Umgebung + Stimmordner) eingerichtet; echte Probe 101 s Sprache in 595 s.
 - **Warum:** CEO 2026-10-28: „0.6B klingt gut, aber merke dir 1,7B auch mal, Go für die Umstellung“.
