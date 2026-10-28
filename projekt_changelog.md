@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-28 10:09] — Claude Code
+- **Was:** Gesamtroadmap `JARVIS_ALLTAG_ROADMAP.md` angelegt (Bestand mit Nachweisen, Pakete A-D mit Etappen J1-J9, Gates, Reihenfolge; Paket D verweist auf Phase 17) und im Roadmap-Verzeichnis eingetragen. Nichts umgesetzt.
+- **Warum:** CEO-Auftrag 2026-10-28: Gesamtroadmap der Jarvis-Ideen in abarbeitbaren Paketen.
+- **Betroffen:** `JARVIS_ALLTAG_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-10-28 10:05] — Claude Code
 - **Was:** Skills-Sammlung `emilkowalski/skills` (MIT, Commit 2d22863) nach Pruefung (nur Markdown, keine Skripte/Injection) fuer Claude Code unter `~/.claude/skills/` installiert (ausserhalb des Repos, Quelle in `QUELLE_emilkowalski.txt`), nicht fuer LUNA; Jarvis-Recherche (OpenJarvis, Hermes Agent, OpenClaw, Meetily) als Ideenquelle im Register vermerkt.
 - **Warum:** CEO-Auftrag 2026-10-28 (Skills installieren, Ideen fuer mehr Alltagsunterstuetzung recherchieren).
