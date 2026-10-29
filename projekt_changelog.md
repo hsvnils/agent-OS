@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 17:50] — Claude Code
+- **Was:** Zweig `ai/mail-auftrag` nach `main` gemergt (Auftrag per weitergeleiteter Mail).
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** siehe Eintrag Mail-Auftrag (Code, Deploy-Skripte, Doku)
+
 ## [2026-10-29 17:45] — Claude Code
 - **Was:** Auftrag per weitergeleiteter Mail: `core/mail_auftraege.py` (nur eigener CEO-Text ueber der Weiterleitung mit DKIM/DMARC zaehlt, Auftrag vs. Notiz regelbasiert, Mailinhalt nie in der Anweisung, Bestand beim ersten Lauf nur gemerkt); Bot prueft alle 2 min und antwortet per Telegram ueber LUNAs Chat-Sitzung; Speicher `mail_auftraege/log.jsonl` (Sync-Schutz, Backup). 4 neue Tests mit Gegenproben; Suite 1470 gruen.
 - **Warum:** CEO-Go fuer den Mail-Baustein (2026-10-29).
