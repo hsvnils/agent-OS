@@ -113,3 +113,4 @@ todos/                              # TODOS_ROADMAP: eigene To-dos (nur NAS + Ba
 regeln/                             # JARVIS J7: feste Regeln des CEO fuer LUNA (nur NAS + Backup)
 gedaechtnis/                        # JARVIS J8: Suchverzeichnis (abgeleitet, nur NAS)
 wochenplan/                         # JARVIS J9: Wochenplanung (nur NAS + Backup)
+mail_auftraege/                     # Auftrag per weitergeleiteter Mail (nur NAS + Backup)

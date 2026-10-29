@@ -143,6 +143,8 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
 - **Gedaechtnis-Suche (J8):** Kurztexte der Vorgaenge (Firmen, Akte, Angebote, Auftraege, Rechnungen, Belege, To-dos,
   Wissen) gehen von der NAS nur an das Suchmodell im Ollama auf dem MACO470 (Heimnetz, kein Cloud-Dienst); das
   Suchverzeichnis liegt nur auf der NAS. Die Treffer gehen -- wie jedes Werkzeug-Ergebnis -- an das jeweilige Chat-Modell.
+- **Auftrag per weitergeleiteter Mail (2026-10-29):** der Text des CEO ueber der Weiterleitung geht an das Chat-Modell
+  wie eine Telegram-Nachricht; die weitergeleitete Mail liest LUNA nur bei Bedarf ueber `mail_lesen` (wie bisher im Chat).
 - **Wochenplanung (J9):** regelbasiert, kein Modell; liest To-dos, Kalender und Rechnungen und schreibt erst nach
   CEO-Knopf Termine in LUNAs eigenen Kalender (Google, wie die To-do-Erinnerungen).
 - **Feste Regeln (J7):** bestaetigte Regeln des CEO (kurze Anweisungen, ggf. mit Firmennamen) stehen im

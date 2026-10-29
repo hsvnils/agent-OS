@@ -2258,6 +2258,7 @@ def main() -> None:
     _start_rechtsquellen_loop(ctx)  # CLO_AUSBAU C3: Rechtsquellen aller Agenten-Skills (CLO, CFO) naechtlich 04:30 auf Aenderungen pruefen  # KUNDEN_FINANZEN Etappe 1: Integritaetspruefung 05:00, nur melden
     offset = 0
     _last_poll = 0.0
+    _last_mailauftrag = 0.0
     tz = _tz_berlin()          # wurde hier vergessen -> NameError im Zustellblock (siehe _tz_berlin)
     try:                                           # Nachzustellungs-Lawine verhindern (siehe verwerfe_alte)
         # 3 Stunden: Nach einer Zustellstoerung ist nur noch das Aktuelle handlungsrelevant -- alles
@@ -2287,6 +2288,31 @@ def main() -> None:
         upd = _api(token, "getUpdates", {"offset": offset, "timeout": 30}, timeout=35)
         # Alle ~15 min kostenlos: neue Mails/Termin-Kollisionen pruefen + steckengebliebene Tickets schliessen.
         import time as _t
+        if allowed and ctx.google is not None and _t.time() - _last_mailauftrag > 120:
+            _last_mailauftrag = _t.time()            # Auftrag per weitergeleiteter Mail (nur der Text des CEO zaehlt)
+            try:
+                from ...core.mail_auftraege import MailAuftragStore, nachricht as _ma_nachricht, neue_auftraege
+                _abs = [x for x in str(secrets.get("BELEG_ABSENDER", BELEG_ABSENDER_STANDARD)).split(",") if x.strip()]
+                for _ma in neue_auftraege(ctx.google, MailAuftragStore(ROOT / "mail_auftraege" / "log.jsonl"), ceo=_abs):
+                    _cid = int(allowed)
+                    _conv = sessions.setdefault(_cid, HoaConversation(
+                        ctx, model=model, api_key=secrets["ANTHROPIC_API_KEY"], fallbacks=_fallbacks(secrets, cfg),
+                        effort=cfg.get("voice", {}).get("chat_effort", "low")))
+                    try:
+                        _antwort = _conv.respond(_ma_nachricht(_ma))
+                    except Exception as exc:
+                        sessions.pop(_cid, None)
+                        print(f"[mail-auftrag] Fehler: {exc.__class__.__name__}", flush=True)
+                        _antwort = "Den Auftrag konnte ich gerade nicht bearbeiten – schreib ihn mir bitte hier noch einmal."
+                    _n = {"chat_id": allowed, "text": fuer_telegram(f"📧 Zu deiner weitergeleiteten Mail „{_ma['betreff']}“:\n\n"
+                                                                    f"{_antwort}")[:4000]}
+                    if ctx.knoepfe:
+                        _n["reply_markup"] = json.dumps({"inline_keyboard": [ctx.knoepfe[i:i + 2] for i in range(0, len(ctx.knoepfe), 2)]})
+                        ctx.knoepfe.clear()
+                    _api(token, "sendMessage", _n)
+                    _deliver_approvals(token, allowed, ctx)
+            except Exception as exc:
+                print(f"[mail-auftrag] {exc.__class__.__name__}: {str(exc)[:120]}", flush=True)
         if _t.time() - _last_poll > 900:
             _last_poll = _t.time()
             try:                                   # Herzschlag fuer den Waechter auf dem MACO470 (BETRIEB Etappe 3)
