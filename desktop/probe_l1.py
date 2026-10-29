@@ -114,11 +114,19 @@ class Ohr(threading.Thread):
 class Mund:
     """Spricht Saetze nacheinander (Piper), kann jederzeit unterbrochen werden."""
 
-    def __init__(self, stimme: Path, geraet, protokoll: Protokoll, sprecher: int | None = None):
-        from piper import PiperVoice, SynthesisConfig
-        self.voice = PiperVoice.load(str(stimme))
-        self.syn = SynthesisConfig(speaker_id=sprecher) if sprecher is not None else None
-        self.rate = self.voice.config.sample_rate
+    def __init__(self, stimme: Path | str, geraet, protokoll: Protokoll, sprecher: int | None = None):
+        self.pocket = None
+        if str(stimme).startswith("pocket:"):            # Pocket TTS (Kyutai, Deutsch): eingebaute Stimme oder eigene WAV
+            from pocket_tts import TTSModel
+            sprache, _, name = str(stimme)[7:].partition("/")
+            self.pocket = TTSModel.load_model(language=sprache or "german")
+            self.pocket_stimme = self.pocket.get_state_for_audio_prompt(name or "anna")
+            self.rate = self.pocket.sample_rate
+        else:
+            from piper import PiperVoice, SynthesisConfig
+            self.voice = PiperVoice.load(str(stimme))
+            self.syn = SynthesisConfig(speaker_id=sprecher) if sprecher is not None else None
+            self.rate = self.voice.config.sample_rate
         self.geraet, self.prot = geraet, protokoll
         self.saetze: queue.Queue = queue.Queue()
         self._spricht = threading.Event()
@@ -150,7 +158,11 @@ class Mund:
             if text is None:
                 continue
             self.abbruch.clear()
-            ton = np.concatenate([c.audio_int16_array for c in self.voice.synthesize(text, syn_config=self.syn)])
+            if self.pocket is not None:
+                a = self.pocket.generate_audio(self.pocket_stimme, text).flatten().numpy()
+                ton = (np.clip(a, -1, 1) * 32767).astype(np.int16)
+            else:
+                ton = np.concatenate([c.audio_int16_array for c in self.voice.synthesize(text, syn_config=self.syn)])
             if self.abbruch.is_set():
                 continue
             self._spricht.set()
@@ -222,8 +234,9 @@ def geraet(name: str, eingang: bool):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--modell", default="qwen3:14b")
-    ap.add_argument("--stimme", default="de_DE-thorsten-high")
+    ap.add_argument("--modell", default="qwen3:30b-a3b-instruct-2507-q4_K_M")
+    ap.add_argument("--stimme", default="pocket:german/anna",
+                    help="pocket:<german|german_24l>/<stimme> oder Piper-Name, z. B. de_DE-thorsten-high")
     ap.add_argument("--modus", choices=("kopfhoerer", "lautsprecher"), default="kopfhoerer")
     ap.add_argument("--mikro", default="RODE NT-USB")
     ap.add_argument("--ausgabe", default="")
@@ -242,7 +255,7 @@ def main():
     gross = klein if a.ohr == "small" else WhisperModel(
         "mobiuslabsgmbh/faster-whisper-large-v3-turbo" if a.ohr == "turbo" else a.ohr, device="cpu", compute_type="int8")
     stimmen = HIER.parent / "stimmen"
-    mund = Mund(stimmen / f"{a.stimme}.onnx", out, prot, a.sprecher)
+    mund = Mund(a.stimme if a.stimme.startswith("pocket:") else stimmen / f"{a.stimme}.onnx", out, prot, a.sprecher)
     requests.post("http://localhost:11434/api/chat", timeout=300, json={
         "model": a.modell, "stream": False, "think": False, "keep_alive": "60m",
         "messages": [{"role": "user", "content": "Hallo"}]})          # Modell vorab in den Speicher laden

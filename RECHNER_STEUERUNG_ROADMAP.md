@@ -89,6 +89,8 @@ Hoerprobe. Genaue Werte misst L1. Spaeterer Ausbau ohne Planaenderung: eine Graf
     **Pocket TTS** (Kyutai, MIT, Deutsch): erster Ton 0,12 s, 4x Echtzeit (`german`), 0,4 s / 1,3x (`german_24l`);
     eigene Stimme nur nach Zustimmung zu Kyutais Bedingungen bei Hugging Face (CEO-Schritt).
   - Kette Satzende -> erstes Wort (ohne 0,6 s Pausenerkennung): **1,8-2,5 s** mit 30b-instruct + small (Gate < 3 s).
+  - Mit Pocket TTS im Probe-Programm (Standard jetzt `qwen3:30b-a3b-instruct-2507` + `pocket:german/anna`): erkannter
+    Text -> erster Ton **ca. 1,0 s** (warm); gesamt geschaetzt ca. 2,7 s inkl. Erkennung und Pausenerkennung.
 - Offen: CEO-Hoerprobe (Pocket-Stimmen, Entwuerfe junge Stimme), Live-Test am NT-USB (Unterbrechen, Erkennung).
 
 - Ziel / Scope: kleines Probe-Programm unter Windows: Aktivierungswort, Whisper-Erkennung, lokales Modell, lokale
