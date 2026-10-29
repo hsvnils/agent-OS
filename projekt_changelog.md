@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 09:55] — Claude Code
+- **Was:** Fehlende Briefing-Sprachnachricht untersucht: auf der NAS wurde kein Sprachauftrag angelegt, weil die Einstellung `briefing_audio` nie gespeichert wurde (kein Eintrag in `investment/log.jsonl`); Sprach-Arbeiter laeuft und ist erreichbar (naechtliche Zeitueberschreitungen 01:16-03:18 ohne Folgen). Als BF-83 eingetragen.
+- **Warum:** CEO 2026-10-29: „Ich habe heute morgen keine Sprachnachricht vom System als Briefing bekommen“.
+- **Betroffen:** `docs/bekannte-fehler.md`.
+
 ## [2026-10-28 16:50] — Claude Code
 - **Was:** Kopfzeile „Naechster Schritt“ der Jarvis-Roadmap aktualisiert (J2b live, ElevenLabs-Hinweis veraltet, offene Abnahmen).
 - **Warum:** CEO-Frage 2026-10-28: „Was ist auf der Roadmap noch offen?“
