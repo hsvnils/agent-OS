@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 12:54] — Claude Code
+- **Was:** J1: Echo „🎙️ Verstanden: …“ nach Sprachnachrichten entfernt -- LUNA antwortet direkt auf den Inhalt. Live-Test des CEO (gemischte Sprachnachricht mit 2 To-dos + Frage) vollstaendig umgesetzt.
+- **Warum:** CEO-Wunsch 2026-10-29: die Transkription als Text wird nicht gebraucht.
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/datenfluesse.md`
+
 ## [2026-10-29 11:06] — Claude Code
 - **Was:** Branch `ai/sprach-ergaenzung` (J2c) nach `main` gemergt; Suite gruen, Doku-Check ok. Deploy (NAS-Sync, Neustart `luna-os` + `luna-telegram`) macht der CEO.
 - **Warum:** CEO 2026-10-29: „Go für Merge, Push und Deploy“.

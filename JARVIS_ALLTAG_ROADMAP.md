@@ -39,7 +39,7 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 ### J1: Sprachnachrichten an LUNA
 
 - Status: umgesetzt (2026-10-28) -- Sprachnachrichten und Audio-Dateien -> Deepgram -> Text -> wie getippt (To-do,
-  Zeiterfassung, Fragen); LUNA bestaetigt „🎙️ Verstanden: …“; Erkennungsfehler gehen nicht mehr als Text an LUNA
+  Zeiterfassung, Fragen); LUNA antwortet direkt auf den Inhalt (seit 2026-10-29 kein Echo des erkannten Texts mehr, CEO-Wunsch); Erkennungsfehler gehen nicht mehr als Text an LUNA
   (vorher „[Transkription fehlgeschlagen …]“ als Nachricht), sondern als klare Meldung. **Abweichung:** lokale
   Spracherkennung nicht umgesetzt, weil auf dem MACO470 keine installiert ist -- Installation (faster-whisper +
   Modell-Download) ist eine eigene CEO-Entscheidung und Voraussetzung fuer J6.
@@ -47,7 +47,7 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 - Ziel / Scope: Sprachnachricht in Telegram -> Text -> LUNA handelt wie bei getippter Nachricht (To-do anlegen, Notiz,
   Frage beantworten). Erst Probe, ob es heute schon laeuft. Dann Umstellung auf **lokale Spracherkennung (whisper auf dem
   MACO470)** statt Deepgram (Datenschutz, keine Kosten); Deepgram nur noch als Ersatz, wenn der MACO470 aus ist. LUNA
-  antwortet mit „Verstanden: …“ und zeigt den erkannten Text.
+  antwortet direkt auf den Inhalt (Echo „Verstanden: …“ am 2026-10-29 auf CEO-Wunsch entfernt). Live-Test 2026-10-29: gemischte Nachricht (2 To-dos + Frage) vollstaendig umgesetzt.
 - Gate: Sprachnachricht „Erinner mich morgen um 10 an die Steuer“ ergibt ein To-do mit Termin (Empfang in Telegram
   geprueft); MACO470 aus -> Ersatzweg greift oder klare Meldung; Tests mit Gegenprobe.
 - Risiko: MACO470 nicht erreichbar -> Ersatzweg. Aufwand: klein.
