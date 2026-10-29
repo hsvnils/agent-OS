@@ -2341,6 +2341,7 @@ def main() -> None:
                     CrmMailTracker(crm=ctx.crm, google=ctx.google,
                                    eigene_adresse=secrets.get("GOOGLE_ACCOUNT_EMAIL", "luna.hanserautisch@gmail.com"),
                                    secrets=ctx.leak_secrets,
+                                   ceo_adressen=str(secrets.get("BELEG_ABSENDER", BELEG_ABSENDER_STANDARD)).split(","),
                                    notify=(ctx.notifications.enqueue if ctx.notifications else None)).lauf()
                 # LUNA_GOOGLE_KONTO Etappe 4: Kundenantworten auf gesendete Angebote erkennen und melden.
                 if ctx.google is not None and (ROOT / "buchhaltung" / "log.jsonl").exists() \

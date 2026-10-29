@@ -121,6 +121,31 @@ class TestCrmMailTracker(unittest.TestCase):
         self.assertEqual(r["erfasst"], 0)
         self.assertEqual(g.calls, [])                             # keine Firmen -> keine Gmail-Suche
 
+    def test_eigene_identitaet_wird_uebersprungen(self):
+        # BF-85: Meta-Testkonto "hsvnils" = CEO selbst -> keine Suche, keine Weiterleitungen dort einsortiert
+        for f in ("hsvnils", "Nike"):
+            self.s.verarbeite_eingang(f, "hi", quelle="instagram", extern_id="ig-" + f)
+        fwd = {"id": "m5", "von": "Nils <hsvnils@icloud.com>", "betreff": "WG: Instagram Collab", "snippet": "", "datum": "x"}
+        g = FakeGoogle({"hsvnils": [fwd], "Nike": [dict(fwd, betreff="WG: Nike Angebot")]})
+        CrmMailTracker(crm=self.s, google=g, ceo_adressen=["hsvnils@icloud.com", "nils@hanserautisch.de"]).lauf()
+        self.assertEqual(g.calls, ["Nike"])
+        self.assertEqual([m["richtung"] for m in self.s.konversation("Nike") if m["quelle"] == "mail"], ["ein"])
+        # Gegenprobe: ohne CEO-Adressen wuerde "hsvnils" weiter durchsucht
+        g2 = FakeGoogle({})
+        CrmMailTracker(crm=self.s, google=g2).lauf()
+        self.assertIn("hsvnils", g2.calls)
+
+    def test_identitaet_und_richtung(self):
+        t = CrmMailTracker(crm=self.s, google=FakeGoogle({}), eigene_adresse="luna.hanserautisch@gmail.com",
+                           ceo_adressen=["hsvnils@icloud.com", "nils.krueger@danceforgood.info", "nils@hanserautisch.de"])
+        for f in ("hsvnils", "HSVNils", "Dance for Good", "hanserautisch"):
+            self.assertTrue(t.ist_eigene_identitaet(f), f)
+        for f in ("Nike", "3 Legged Thing", "Nils Bau", "icloud"):
+            self.assertFalse(t.ist_eigene_identitaet(f), f)
+        self.assertEqual(t._richtung("hsvnils@icloud.com", "Re: Angebot"), "aus")
+        self.assertEqual(t._richtung("hsvnils@icloud.com", "Fwd: Angebot"), "ein")
+        self.assertEqual(t._richtung("a@nike.com", "Angebot"), "ein")
+
     def test_google_nicht_verfuegbar(self):
         self.s.verarbeite_eingang("Nike", "hi", quelle="instagram", extern_id="ig1")
         r = CrmMailTracker(crm=self.s, google=FakeGoogle({}, verfuegbar=False)).lauf()

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 20:57] — Claude Code
+- **Was:** CRM-Mail-Tracking ordnet keine Mails mehr der eigenen Identitaet des CEO zu: CRM-Firmen, deren Name einer eigenen Adresse entspricht (z. B. Meta-Testkonto „hsvnils“), werden uebersprungen; Mails des CEO = „aus“, seine Weiterleitungen = „ein“ (BF-85). 2 neue Tests mit Gegenprobe; Suite gruen.
+- **Warum:** CEO-Go „CRM-Zuordnung bei Weiterleitungen“ (3LT-Weiterleitung landete unter „hsvnils“).
+- **Betroffen:** `orchestrator/core/crm_mail.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_crm_mail.py`, `docs/bekannte-fehler.md`
+
 ## [2026-10-29 20:16] — Claude Code
 - **Was:** Zweig `ai/mail-auftrag-outlook` nach `main` gemergt (Outlook-Weiterleitungen, Werkzeug `firma_anlegen`); Suite 1585 gruen, Doku-Check ok. CEO-Wahl der Live-Stimme `Pocket german/anna` im Entscheidungs-Register festgehalten.
 - **Warum:** CEO: „10_Live_Pocket_anna, Push gemacht, Go fuer Merge, Push und Deploy“.
