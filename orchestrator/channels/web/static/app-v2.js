@@ -4765,6 +4765,18 @@ const SETTING_KEYS = ["depot_stop_pct", "depot_target_pct", "depot_alerts", "pap
 const SETTING_BOOLS = new Set(["depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content", "briefing_audio", "abfahrt_erinnerung"]);
 const SETTING_OPT = new Set(["ruhezeit_von", "ruhezeit_bis"]);
 RENDER.einstellungen = renderEinstellungen;
+// BF-83: jede Einstellung speichert beim Umlegen bzw. Verlassen des Feldes (change) -- ein uebersehener
+// Speichern-Knopf liess „Morgen-Briefing vorlesen“ ungespeichert. Fehlschlag: Schalter zurueck, Meldung rot.
+document.addEventListener("change", async (e) => {
+  const el = e.target; const k = el && el.id && el.id.startsWith("set-") ? el.id.slice(4) : "";
+  if (!SETTING_KEYS.includes(k)) return;
+  const wert = SETTING_BOOLS.has(k) ? el.checked : SETTING_OPT.has(k) && el.value.trim() === "" ? null : el.value;
+  const msg = $("#set-msg"); if (msg) { msg.textContent = "Speichere …"; msg.className = "v2-msg"; }
+  const r = await jpost("/api/settings", { settings: { [k]: wert } });
+  const ok = !!(r && r.ok && (r.gespeichert || []).includes(k));
+  if (!ok && SETTING_BOOLS.has(k)) el.checked = !el.checked;
+  if (msg) { msg.textContent = ok ? "Gespeichert ✓" : "Fehler beim Speichern"; msg.className = "v2-msg " + (ok ? "ok" : "err"); }
+});
 RENDER.auftraege = () => { SUBTAB.angebote = "auftraege"; return renderAngebote(); };   // eigener Punkt, gleiche Seite
 // VORSCHLAGSPAUSE P1: ein Schalter fuer alle Investment-Vorschlaege (Telegram + LUNA-OS); Tracking laeuft weiter
 function invPauseHtml(p) {
@@ -4800,7 +4812,7 @@ async function renderEinstellungen() {
     + chk("briefing_audio", "Morgen-Briefing vorlesen", "zusätzlich als Sprachnachricht in Telegram (lokale LUNA-Stimme, kostenlos, ca. 20 Min. nach dem Text)")
     + chk("abfahrt_erinnerung", "Abfahrts-Erinnerung", "bei Terminen mit Ort – ab Büro, ohne Live-Verkehr")
     + nInp("kundenpflege_tage", "Kundenpflege-Hinweis", "nach so vielen Tagen ohne Vorgang (0 = aus)");
-  const actions = `<span id="set-msg" class="v2-msg"></span><button class="v2-btn pri" data-act="settings-save">Speichern</button>`;
+  const actions = `<span id="set-msg" class="v2-msg">Änderungen werden sofort gespeichert</span>`;   // BF-83: kein Speichern-Knopf mehr
   $("#v2-app").innerHTML = secHead("Einstellungen", actions) + `<div class="v2-grid">
     ${tile("🎨 Darstellung", darstellungHtml(), "w12")}
     ${pause ? tile("📈 Investment-Vorschläge", invPauseHtml(pause), "w12") : ""}
@@ -5405,18 +5417,6 @@ async function handleAct(act, el) {
       return renderInvestment();
     }
     case "depot-storno": if (!confirm("Diese Buchung stornieren?")) return; await jpost("/api/investment/depot/storno", { id }); return renderInvestment();
-    case "settings-save": {
-      const settings = {};
-      for (const k of SETTING_KEYS) {
-        const e = $("#set-" + k); if (!e) continue;
-        if (SETTING_BOOLS.has(k)) settings[k] = e.checked;
-        else if (SETTING_OPT.has(k)) settings[k] = e.value.trim() === "" ? null : e.value;
-        else settings[k] = e.value;
-      }
-      const r = await jpost("/api/settings", { settings }); const msg = $("#set-msg");
-      if (msg) { msg.textContent = r && r.ok ? "Gespeichert ✓" : "Fehler beim Speichern"; msg.className = "v2-msg " + (r && r.ok ? "ok" : "err"); }
-      return;
-    }
     case "paper-sell": {
       const set = (k, v) => { const e = $("#" + k); if (e) e.value = v; };
       set("po-side", "sell"); set("po-sym", id); set("po-klasse", asset === "krypto" ? "krypto" : "aktie"); set("po-qty", val || "");

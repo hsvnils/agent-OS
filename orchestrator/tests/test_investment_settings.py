@@ -82,6 +82,18 @@ class TestSettingsEndpoint(unittest.TestCase):
         self.c.post("/api/settings", json={"settings": {
             "depot_stop_pct": 8, "depot_alerts": True, "briefing_morgen_stunde": 8, "ruhezeit_bis": ""}})
 
+    def test_einzelner_schalter_laesst_den_rest_stehen(self):
+        """BF-83: LUNA-OS speichert jeden Schalter einzeln beim Umlegen -- die uebrigen Werte bleiben unberuehrt."""
+        self.c.post("/api/settings", json={"settings": {"depot_stop_pct": "12", "briefing_morgen_stunde": "7"}})
+        r = self.c.post("/api/settings", json={"settings": {"briefing_audio": True}}).json()
+        self.assertTrue(r["ok"])
+        self.assertEqual(r["gespeichert"], ["briefing_audio"])
+        self.assertTrue(r["settings"]["briefing_audio"])
+        self.assertEqual((r["settings"]["depot_stop_pct"], r["settings"]["briefing_morgen_stunde"]), (12.0, 7))
+        r = self.c.post("/api/settings", json={"settings": {"depot_stop_pct": "zwoelf"}}).json()
+        self.assertFalse(r["ok"])                              # Unfug -> Fehler, LUNA-OS zeigt „Fehler beim Speichern“
+        self.assertEqual(r["settings"]["depot_stop_pct"], 12.0)
+
 
 class TestNotifierFilter(unittest.TestCase):
     def test_alert_erlaubt_und_ruhezeit(self):
