@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 10:59] — Claude Code
+- **Was:** JARVIS J2c: Die Briefing-Sprachnachricht ist jetzt eine kurze Sprach-Ergaenzung (ca. 1 Min.) statt des ganzen vorgelesenen Briefings -- vier Bloecke (Begruessung, der Tag mit naechstem Termin und Abfahrt, wichtig heute hoechstens 3 Punkte ohne Belegnummern, nur Zahlen). `core/alltag.sprach_ergaenzung`/`sprechpunkt`, im Bot einmal je Morgen gesammelt (Kalender, eigene To-dos, „Zu erledigen“, Antraege, Tickets, Agenda); Kalender-Ausfall wird ehrlich angesagt, Rueckfall auf die alte Sprechfassung. 3 Tests + 2 Gegenproben, Probelauf der echten Bot-Schleife mit nachgebauten Daten. Hoerprobe `vorlagen/Hoerprobe_Stimmen/7_Sprach_Ergaenzung_Beispiel.mp3` (nicht im Git). Einstellungstext angepasst (app-v2.js v148).
+- **Warum:** CEO 2026-10-29: „Go für die Sprach-Ergänzung mit den 4 Blöcken“.
+- **Betroffen:** `orchestrator/core/alltag.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_alltag.py`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`.
+
 ## [2026-10-29 09:59] — Claude Code
 - **Was:** LUNA-OS-Einstellungen speichern jetzt sofort beim Umlegen eines Schalters bzw. beim Verlassen eines Zahlenfeldes; Knopf „Speichern“ entfernt, Hinweis „Änderungen werden sofort gespeichert“, bei Fehlschlag springt der Schalter zurueck (app-v2.js v147). Neuer Test fuer Einzel-Speichern, Verhaltensprobe der Seite mit QuickJS (Erfolg, Fehlschlag, leeres Feld, fremdes Feld) mit Gegenproben. BF-83 ins Archiv (behoben). Einstellung `briefing_audio` auf der NAS als gespeichert bestaetigt.
 - **Warum:** CEO 2026-10-29: „Go für sofort speichern“ (BF-83).

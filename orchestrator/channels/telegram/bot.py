@@ -1190,12 +1190,57 @@ def _start_alltag_loop(ctx, token, chat_id) -> None:
         except Exception:
             return standard
 
+    def ergaenzung(jetzt):
+        """J2c: Daten fuer die vier Bloecke -- Kalender, dringende Punkte (eigene To-dos, dann „Zu erledigen“), Zahlen."""
+        termine, kalender_ok = [], ctx.google is not None
+        try:
+            ag = ctx.google.kalender_agenda(tage=1, max_results=30) if kalender_ok else None
+            kalender_ok = bool(ag) and ag.get("ok", True)
+            termine = (ag.get("termine") or []) if kalender_ok else []
+        except Exception as exc:
+            kalender_ok = False
+            print(f"[alltag] Sprach-Ergaenzung Kalender: {exc}", flush=True)
+        wichtig = []
+        try:
+            from ...core.aufgaben import AufgabenStore
+            g = AufgabenStore(ROOT / "todos" / "log.jsonl").liste(heute=jetzt.date().isoformat(), mit_erledigt=False)
+            wichtig += [alltag.sprechpunkt(x["titel"]) for x in g["ueberfaellig"] + g["heute"]]
+        except Exception as exc:
+            print(f"[alltag] Sprach-Ergaenzung To-dos: {exc}", flush=True)
+        if (bh_dir / "log.jsonl").exists():
+            try:
+                from ...core.buchhaltung import Buchhaltung
+                from ...core.kunden import KundenStore
+                from ...core.todos import geschaefts_todos
+                bh = Buchhaltung(bh_dir)
+                wichtig += [alltag.sprechpunkt(t["titel"], t["detail"])
+                            for t in sorted((t for t in geschaefts_todos(bh, KundenStore(bh), heute=jetzt.date())
+                                             if t["dringend"]), key=lambda t: t["faellig"])]
+            except Exception as exc:
+                print(f"[alltag] Sprach-Ergaenzung Zu erledigen: {exc}", flush=True)
+        antraege = [a for a in (ctx.antraege.list() if ctx.antraege is not None else [])
+                    if a.get("status") in ("eingereicht", "freigegeben")]
+        tickets = sum(len(ctx.research.list(s)) for s in ("offen", "in_arbeit")) if ctx.research is not None else 0
+        zahlen = [(len(antraege), "ein Antrag wartet auf dich", "Anträge warten auf dich"),
+                  (tickets, "ein offenes Research-Ticket", "offene Research-Tickets"),
+                  (len(ctx.agenda.offene()), "eine offene Aufgabe in der Agenda", "offene Aufgaben in der Agenda")]
+        start = heim()
+        return alltag.sprach_ergaenzung(jetzt, termine=termine, wichtig=list(dict.fromkeys(wichtig)), zahlen=zahlen,
+                                        fahrzeit=(lambda ort: routen.fahrzeit_min(start, ort)) if start else None,
+                                        kalender_ok=kalender_ok)
+
     def briefing_audio(jetzt, datum):
         # J2b: lokale LUNA-Stimme (Sprach-Arbeiter auf dem MACO470) statt ElevenLabs -- kostenlos, bleibt im Haus.
         if not einstellung("briefing_audio", False):
             return
         mb = getattr(ctx, "morgen_briefing", None)
-        text = alltag.sprechfassung(mb[1]) if mb and mb[0] == datum else None
+        text = None
+        if mb and mb[0] == datum and sprache.zum_zweck(f"briefing:{datum}") is None:     # Daten nur einmal sammeln
+            try:
+                text = ergaenzung(jetzt)                     # J2c: kurze Sprach-Ergaenzung statt alles vorlesen
+            except Exception as exc:
+                print(f"[alltag] Sprach-Ergaenzung: {exc.__class__.__name__}: {str(exc)[:120]}", flush=True)
+                text = alltag.sprechfassung(mb[1])
         aktion, a = briefing_schritt(sprache, datum, jetzt, text)
         if aktion == "senden":
             r = _send_audio(token, chat_id, f"Briefing_{datum}.mp3", sprache.mp3_pfad(a["id"]).read_bytes(),

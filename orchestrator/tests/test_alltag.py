@@ -104,6 +104,45 @@ class TestKundenpflege(unittest.TestCase):
         self.assertFalse(any(i.startswith("kp-") for i in ids))
 
 
+class TestSprachErgaenzung(unittest.TestCase):
+    """J2c: vier Bloecke statt alles vorlesen -- Begruessung, der Tag, wichtig heute (hoechstens 3), nur Zahlen."""
+    T = [{"start": "2026-10-29T15:30:00+01:00", "titel": "Call", "ort": "Zoom"},
+         {"start": "2026-10-29T11:00:00+01:00", "titel": "Dreh bei Kiez Alm", "ort": "Spielbudenplatz 1, 20359 Hamburg"},
+         {"start": "2026-10-29", "titel": "Feiertag"}, {"start": "2026-10-30T09:00:00+01:00", "titel": "Morgen"}]
+
+    def test_1_vier_bloecke(self):
+        s = alltag.sprach_ergaenzung(datetime(2026, 10, 29, 8, 1), termine=self.T, fahrzeit=lambda ort: 25,
+                                     wichtig=["Rechnung überfällig für Kiez Alm Gastro GmbH", "B", "C", "D", "E"],
+                                     zahlen=[(12, "ein Antrag wartet auf dich", "Anträge warten auf dich"),
+                                             (1, "ein offenes Research-Ticket", "offene Research-Tickets"), (0, "x", "y")])
+        self.assertEqual(s, "Guten Morgen, Nils. Heute ist Donnerstag, der 29. Oktober. Heute hast du 3 Termine. "
+                            "Der nächste: um 11 Uhr Dreh bei Kiez Alm, losfahren um 10 Uhr 25. "
+                            "Wichtig heute: Rechnung überfällig für Kiez Alm Gastro GmbH. B. C. "
+                            "Dazu kommen 2 weitere Punkte unter Zu erledigen. "
+                            "Außerdem: 12 Anträge warten auf dich, ein offenes Research-Ticket. Die Details stehen im Text.")
+
+    def test_2_leerer_tag_und_online_termin(self):
+        self.assertEqual(alltag.sprach_ergaenzung(datetime(2026, 11, 2, 8, 0), name="Nils"),
+                         "Guten Morgen, Nils. Heute ist Montag, der 2. November. Im Kalender steht heute nichts. "
+                         "Dringend ist heute nichts. Die Details stehen im Text.")
+        s = alltag.sprach_ergaenzung(datetime(2026, 10, 29, 12, 0), termine=self.T[:1], fahrzeit=lambda ort: 25)
+        self.assertIn("Heute hast du einen Termin: um 15 Uhr 30 Call.", s)         # Online -> keine Abfahrt
+        s = alltag.sprach_ergaenzung(datetime(2026, 10, 29, 8, 0), termine=self.T[2:3])
+        self.assertIn("Heute hast du einen Termin, ganztägig.", s)
+        s = alltag.sprach_ergaenzung(datetime(2026, 10, 29, 8, 0), kalender_ok=False)
+        self.assertIn("Den Kalender konnte ich heute nicht lesen.", s)
+        self.assertNotIn("Im Kalender steht heute nichts", s)
+
+    def test_3_sprechpunkt_ohne_belegnummer(self):
+        self.assertEqual(alltag.sprechpunkt("Angebot AN-2026-0012 nachfassen", "Hafenbar · Herbstkampagne"),
+                         "Angebot nachfassen für Hafenbar")
+        self.assertEqual(alltag.sprechpunkt("Rechnung RE-2026-0007 überfällig", "Kiez Alm Gastro GmbH; Zahlungserinnerung "
+                                            "oder Mahnstufe 1 erstellen"), "Rechnung überfällig für Kiez Alm Gastro GmbH")
+        self.assertEqual(alltag.sprechpunkt("Kontoauszug 10/2026 abgleichen", "Monat noch offen, 3 Buchungen"),
+                         "Kontoauszug 10/2026 abgleichen")                     # Detail mit Zahlen -> kein Anhaengsel
+        self.assertEqual(alltag.sprechpunkt("🎂 Geburtstag: Anna Muster", "Kiez Alm"), "Geburtstag: Anna Muster für Kiez Alm")
+
+
 class TestSprachnachricht(unittest.TestCase):
     def test_1_fehler_wird_nie_text(self):
         from orchestrator.channels.telegram import bot
