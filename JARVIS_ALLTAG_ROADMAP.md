@@ -153,6 +153,15 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 - Gate: Tests (Schwelle, einmal je Anlass, erledigt -> weg); Browser-Pruefung des neuen Feldes durch den CEO.
 - Aufwand: klein.
 
+## Zusatz: Auftrag per weitergeleiteter Mail (CEO-Go 2026-10-29)
+
+- Status: umgesetzt (2026-10-29), Abnahme offen (Test-Mail des CEO nach dem Deploy).
+- Der CEO leitet LUNA eine Mail weiter und schreibt darueber, was sie tun soll. Nur dieser eigene Text (Absender aus
+  `BELEG_ABSENDER`, DKIM/DMARC bestanden, Weiterleitungsmarke) wird wie eine Telegram-Nachricht behandelt; LUNA
+  antwortet in Telegram mit denselben Werkzeugen, Knoepfen und Grenzen. Die weitergeleitete Mail selbst ist Fremdtext
+  und nur ueber `mail_lesen` erreichbar (Injection-Schutz I1-I3). Reine Notizen („zur Info“, Zweck eines Belegs)
+  loesen nichts aus. Ablage in Akte/Belegen unveraendert. Pruefung alle 2 Minuten. Code `core/mail_auftraege.py`.
+
 ## Paket B -- „Verstehen, was reinkommt“
 
 - Status: zurueckgestellt (CEO 2026-10-29) -- kommt erst nach Paket C und D.

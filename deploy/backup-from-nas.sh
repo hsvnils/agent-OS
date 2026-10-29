@@ -58,6 +58,8 @@ FILES=(
   regeln/log.jsonl
   # JARVIS J9: Wochenplanung -- Vorschlaege + eingetragene Zeitbloecke (append-only)
   wochenplan/log.jsonl
+  # Auftrag per weitergeleiteter Mail -- bearbeitete Mail-IDs (append-only)
+  mail_auftraege/log.jsonl
   # Briefkopf + Bankverbindung (nur NAS, nie im Git; kein JSONL -> nicht im Zeilen-Check)
   buchhaltung/firmendaten.json
   buchhaltung/katalog.json       # Leistungskatalog/Preise (Etappe 3b; Aenderungen zusaetzlich in der Kette)
