@@ -134,7 +134,9 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
   ElevenLabs (USA). Deshalb **standardmaessig aus**; der CEO schaltet es in den Einstellungen selbst ein.
   **Seit J2b (2026-10-28):** gesprochen wird lokal auf dem MACO470 (Qwen3-TTS, Stimme C, offline) -- der Briefing-Text
   verlaesst das Haus nicht mehr; ElevenLabs bleibt nur fuer die LUNA-OS-Stimme (`/api/tts`). Die Stimme ist per
-  Beschreibung erzeugt, keine echte Person (keine Einwilligung noetig).
+  Beschreibung erzeugt, keine echte Person (keine Einwilligung noetig). **Seit J2c (2026-10-29)** wird statt des
+  ganzen Briefings eine kurze Ergaenzung gesprochen (Termine, To-do-Titel, Firmennamen, Anzahlen) -- ebenfalls nur
+  lokal auf dem MACO470.
 - **Abfahrts-Erinnerung (J3):** nur der Ort eines Termins geht an OpenStreetMap (Nominatim/OSRM), kein Titel, keine
   Teilnehmer.
 - **Kundenpflege (J4):** rein intern, kein Dienst, kein Modell.

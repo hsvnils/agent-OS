@@ -41,6 +41,78 @@ def sprechfassung(text: str, *, max_zeichen: int = SPRECH_MAX) -> str:
         + " Den Rest findest du im Briefing-Text."
 
 
+# -- J2c Sprach-Ergaenzung (CEO-Go 2026-10-29) -----------------------------------------------------------------------
+# Statt das ganze Briefing vorzulesen (Listen sind im Ohr unbrauchbar): ca. eine Minute mit vier Bloecken --
+# Begruessung, der Tag (Termine), wichtig heute (hoechstens 3), nur Zahlen. Das Text-Briefing bleibt, wie es ist.
+
+WICHTIG_MAX = 3
+_WOCHENTAG = ("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
+_MONAT = ("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November",
+          "Dezember")
+_BELEGNR = re.compile(r"\b[A-Z]{1,4}-\d{4}-\d{2,5}\b")      # AN-2026-0012, RE-..., AB-... klingen gesprochen schlimm
+
+
+def _uhr(t: datetime) -> str:
+    return f"{t.hour} Uhr" + (f" {t.minute}" if t.minute else "")
+
+
+def _sauber(text: str) -> str:
+    return sprechfassung(_BELEGNR.sub("", text or ""), max_zeichen=400).rstrip(".!?:").replace(" ,", ",").strip()
+
+
+def sprechpunkt(titel: str, detail: str = "") -> str:
+    """To-do -> kurzer Sprechsatz ohne Belegnummer; die Firma aus dem Detail („Kiez Alm · …“) kommt dazu."""
+    t = " ".join(_sauber(titel).split()).strip(" :·,-")
+    wer = re.split(r" · |; ", detail or "", maxsplit=1)[0].strip()
+    if wer and len(wer) <= 40 and not re.search(r"\d", wer) and wer.lower() not in t.lower():
+        t += f" für {_sauber(wer)}"
+    return t
+
+
+def sprach_ergaenzung(jetzt: datetime, *, termine: list[dict] | None = None, wichtig: list[str] | None = None,
+                      zahlen: list[tuple[int, str, str]] | None = None, fahrzeit=None, name: str = "Nils",
+                      kalender_ok: bool = True) -> str:
+    """Vier Bloecke als vorlesbarer Text. `termine` = Kalender-Agenda (start/titel/ort), `wichtig` = Sprechpunkte in
+    Rangfolge (dringend zuerst), `zahlen` = (Anzahl, Einzahl mit Artikel, Mehrzahl) -- Nullen fallen weg. `fahrzeit(ort)` ->
+    Minuten oder None (wie J3); ohne Fahrzeit keine Abfahrtszeit. `kalender_ok=False` -> ehrlich „nicht lesen koennen“
+    statt „nichts im Kalender“."""
+    teile = [f"Guten Morgen, {name}. Heute ist {_WOCHENTAG[jetzt.weekday()]}, der {jetzt.day}. {_MONAT[jetzt.month - 1]}."]
+
+    heute = [t for t in termine or [] if str(t.get("start") or "")[:10] == jetzt.date().isoformat()]
+    mit_zeit = sorted(((s, t) for t in heute if (s := _zeit(t.get("start", "")))), key=lambda x: x[0])
+    kommend = [(s, t) for s, t in mit_zeit if s > jetzt] or mit_zeit
+    if not kalender_ok:
+        teile.append("Den Kalender konnte ich heute nicht lesen.")
+    elif not heute:
+        teile.append("Im Kalender steht heute nichts.")
+    else:
+        satz = "Heute hast du einen Termin" if len(heute) == 1 else f"Heute hast du {len(heute)} Termine"
+        if kommend:
+            s, t = kommend[0]
+            satz += (": " if len(heute) == 1 else ". Der nächste: ") + f"um {_uhr(s)} {_sauber(t.get('titel') or 'Termin')}"
+            ort = t.get("ort") or ""
+            minuten = fahrzeit(ort) if fahrzeit and braucht_fahrt(ort) else None
+            if minuten and minuten >= 5:
+                satz += f", losfahren um {_uhr(abfahrt(s, minuten))}"
+        else:
+            satz += ", ganztägig"
+        teile.append(satz + ".")
+
+    w = [x for x in (wichtig or []) if x]
+    if not w:
+        teile.append("Dringend ist heute nichts.")
+    else:
+        teile.append("Wichtig heute: " + ". ".join(w[:WICHTIG_MAX]) + ".")
+        if len(w) > WICHTIG_MAX:
+            rest = len(w) - WICHTIG_MAX
+            teile.append(f"Dazu {'kommt ein weiterer Punkt' if rest == 1 else f'kommen {rest} weitere Punkte'}"
+                         " unter Zu erledigen.")
+
+    z = [ein if n == 1 else f"{n} {mehr}" for n, ein, mehr in zahlen or [] if n]   # „ein Ticket“ statt „1 Ticket“
+    teile.append(("Außerdem: " + ", ".join(z) + ". " if z else "") + "Die Details stehen im Text.")
+    return " ".join(teile)
+
+
 # -- J3 Abfahrt ------------------------------------------------------------------------------------------------------
 
 PUFFER = 0.15                                       # +15 % auf die Fahrzeit (kein Live-Verkehr)

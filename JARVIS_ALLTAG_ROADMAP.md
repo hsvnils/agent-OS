@@ -112,6 +112,22 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
   ElevenLabs-Ersatz fuers Briefing (Kontingent). Vorher: CISO-Freigabe der Verbindung, `docs/datenfluesse.md`, Tests. Folge: Qwen3-Design taugt nur fuer vorbereitete Texte (Briefing), nicht live -- fuer Live-Sprache ist
   weiter offen, ob eine Grafikkarte oder eine Cloud-Stimme noetig ist.
 
+### J2c: Sprach-Ergaenzung statt alles vorlesen
+
+- Status: umgesetzt (2026-10-29), Abnahme offen.
+- Anlass (CEO 2026-10-29): Das ganze Briefing vorzulesen ist „quatsch“, wenn viele Punkte (z. B. offene Antraege)
+  darin stehen. Das Text-Briefing bleibt, wie es ist; die Sprachnachricht ist eine **kurze Ergaenzung (ca. 1 Min.)**.
+- Inhalt, vier Bloecke (CEO-Go 2026-10-29): (1) Begruessung mit Wochentag und Datum; (2) der Tag: Anzahl Termine,
+  der naechste mit Uhrzeit und Abfahrtszeit (wie J3, nur bei Ort); (3) wichtig heute: hoechstens 3 Punkte --
+  ueberfaellige/heutige eigene To-dos, dann dringende Punkte aus „Zu erledigen“ (Belegnummern weg, Firma dazu),
+  der Rest als Anzahl; (4) nur Zahlen: wartende Antraege, offene Research-Tickets, offene Agenda-Aufgaben.
+- Regelbasiert (`core/alltag.sprach_ergaenzung`, `sprechpunkt`), kein Sprachmodell -- nichts wird dazuerfunden;
+  Kalender nicht lesbar -> „Den Kalender konnte ich heute nicht lesen“ statt „nichts im Kalender“. Faellt das
+  Zusammenstellen ganz aus, wird wie bisher die Sprechfassung des Briefings gesprochen. Die Daten werden nur einmal
+  je Morgen gesammelt (beim Anlegen des Auftrags).
+- Gate: am naechsten Morgen kommt die Ergaenzung (statt des ganzen Briefings) in Telegram an, CEO bestaetigt Inhalt
+  und Laenge. Spaeter optional: freie Formulierung durch das lokale Modell (erst nach eigenem Go).
+
 ### J3: Abfahrts-Erinnerung
 
 - Status: umgesetzt (2026-10-28) -- Bot prueft jede Minute die heutigen Termine mit Ort (ohne Online-Termine), Fahrzeit
