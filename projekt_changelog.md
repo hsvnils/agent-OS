@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 17:55] — Claude Code
+- **Was:** CEO-Antworten zu Paket D in `RECHNER_STEUERUNG_ROADMAP.md` eingetragen (Auftraege meist lokal, Claude nur fuer Schwieriges; RODE NT-USB statt Headset; Cloud-Schritt jedes Mal nachfragen; Augen-aus-Liste wie vorgeschlagen; Installation fuer L1 erlaubt).
+- **Warum:** CEO-Antworten 2026-10-29.
+- **Betroffen:** `RECHNER_STEUERUNG_ROADMAP.md`
+
 ## [2026-10-29 17:47] — Claude Code
 - **Was:** `RECHNER_STEUERUNG_ROADMAP.md` als Mischform neu geplant: CEO-Entscheidungen L0 eingetragen (Windows App, Aktivierungswort + Headset, lokal statt Live-APIs, Hoerprobe, Bestaetigungen/Browser wie empfohlen, Prioritaet Beauftragen per Sprache); Etappen L1-L6 (Probe Ohr/Kopf/Mund lokal, Desktop + Beauftragen, Augen, Haende, laengere Aufgaben, Feinschliff); Live-APIs im Register verworfen. Nichts umgesetzt.
 - **Warum:** CEO-Antworten und Auftrag „Paket D als Mischform planen“ (2026-10-29).

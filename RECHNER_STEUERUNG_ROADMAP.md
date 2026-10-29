@@ -4,7 +4,7 @@
 - Stand: 2026-10-29
 - Arbeitsbranch: `ai/rechner-steuerung-plan`
 - Basiscommit: `969acf3`
-- Naechster Schritt: CEO beantwortet die offenen Fragen (Abschnitt „Noch offen“) und gibt Go fuer die Probe L1 (Ohr, Kopf, Mund lokal -- nichts bedienen).
+- Naechster Schritt: alle Fragen beantwortet (2026-10-29) -- naechster sicherer Schritt ist die Probe L1 nach ausdruecklichem CEO-Go fuer L1.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -39,7 +39,7 @@
 | **Kopf fuer Bedienen** | lokales Modell (`qwen3:30b-a3b` oder `qwen3:14b`, Ollama) entscheidet Handgriffe | „Frag Claude“: ein schwerer Schritt geht an Claude |
 | **Augen** | Windows-Bedienschnittstelle liest Fenster, Knoepfe, Felder und Texte **ohne Bildmodell** (schnell); Bildmodell `gemma3:27b` bei Bedarf (ca. 10-15 s) | „Schau genau hin“: ein Bildschirmfoto an Claude |
 | **Haende** | Windows-Bedienschnittstelle (Knopf/Feld per Name), Tastatur, Dateien | -- |
-| **Auftraege an LUNA** (To-dos, Termine, Mail-Entwuerfe, Kunden, Rechnungen, Gedaechtnis) | Sprache wird lokal zu Text | der **Text** geht wie heute aus Telegram an LUNA (Chat-Modell Claude, bestehender Datenfluss) -- siehe „Noch offen“ Nr. 1 |
+| **Auftraege an LUNA** (To-dos, Termine, Mail-Entwuerfe, Kunden, Rechnungen, Gedaechtnis) | lokales Modell mit LUNAs Werkzeugen ueber die LUNA-OS-API (CEO 2026-10-29) | nur schwierige/unloesbare Auftraege nach „ja“ an Claude |
 
 Cloud-Schritte kuendigt LUNA an („Dafuer frage ich Claude, ein Bildschirmausschnitt geht raus – okay?“) und fuehrt
 sie erst nach deinem „ja“ aus. Fenster aus der Augen-aus-Liste (Banking, Passwort-Manager …) sieht sie nie.
@@ -140,18 +140,15 @@ Hoerprobe. Genaue Werte misst L1. Spaeterer Ausbau ohne Planaenderung: eine Graf
 
 Nach **L2** ist deine wichtigste Aufgabe (Beauftragen per Sprache) im Alltag nutzbar, nach **L4** das Bedienen.
 
-## Noch offen (Fragen an den CEO)
+## Weitere Entscheidungen des CEO (2026-10-29, Antworten auf „Noch offen“)
 
-1. **Auftraege an LUNA:** Der **Text** deiner Auftraege geht wie heute bei Telegram an LUNAs Chat-Modell (Claude) --
-   Ton und Bildschirm bleiben lokal. Passt das? Oder soll LUNA auch dafuer lokal denken (langsamer, weniger klug;
-   heute als Ausweich vorhanden)?
-2. **Headset** vorhanden (am MACO470 bzw. am MacBook fuer die Windows App)? Ohne Headset hoert LUNA sich selbst und
-   Videos mit -- Unterbrechen klappt dann schlecht.
-3. **„Frag Claude“ / „schau genau hin“:** jedes Mal kurz nachfragen (Vorschlag) oder pro Sitzung einmal erlauben?
-4. **Augen-aus-Liste:** welche Apps/Fenster nie? Vorschlag: Banking, PayPal, Passwort-Manager, Windows-Sicherheit,
-   alles mit „Passwort“ im Fenstertitel.
-5. **Installation auf dem MACO470:** fuer L1 kommen Python-Pakete und Modelle unter Windows dazu (kostenlos, ca. 1-3 GB,
-   ohne Einfluss auf Cutter/Backup). Einverstanden?
+| Frage | Entscheidung | Folge fuer den Plan |
+|---|---|---|
+| Auftraege an LUNA | **das meiste lokal**, nur schwierige/unloesbare Fragen und Aufgaben an Claude | L2: Auftraege laufen ueber das lokale Modell mit LUNAs Werkzeugen (LUNA-OS-API); Claude nur als Eskalation |
+| Headset | keins -- **RODE NT-USB** (USB-Studiomikrofon mit Kopfhoerer-Anschluss) | L1 misst Unterbrechen mit Lautsprechern (Echo-Unterdrueckung) und mit Kopfhoerer am NT-USB; Empfehlung danach |
+| „Frag Claude“ / „schau genau hin“ | **jedes Mal nachfragen** | kein Cloud-Schritt ohne „ja“ im selben Moment |
+| Augen-aus-Liste | **wie vorgeschlagen**: Banking, PayPal, Passwort-Manager, Windows-Sicherheit, „Passwort“ im Fenstertitel | L3 |
+| Installation fuer L1 | **erlaubt** (Python-Pakete + Modelle unter Windows, kostenlos, ca. 1-3 GB) | L1 kann starten |
 
 ## Nicht-Scope
 
