@@ -1183,7 +1183,8 @@ def _start_alltag_loop(ctx, token, chat_id) -> None:
     """JARVIS_ALLTAG Paket A (CEO-Go 2026-10-28), jede Minute:
     J2 -- Morgen-Briefing zusaetzlich als Sprachnachricht (Einstellung „briefing_audio“, Standard aus), seit J2b mit der
           lokalen LUNA-Stimme (Sprach-Arbeiter auf dem MACO470, `core/sprachauftraege.py`);
-    J3 -- Abfahrts-Erinnerung bei Terminen mit Ort (Einstellung „abfahrt_erinnerung“), je Termin genau einmal."""
+    J3 -- Abfahrts-Erinnerung bei Terminen mit Ort (Einstellung „abfahrt_erinnerung“), je Termin genau einmal;
+    J9 -- montags Wochenplanung (Zeitbloecke, Eintrag erst nach ✅), freitags 16 Uhr Wochenrueckblick."""
     import threading
     import time
     from datetime import datetime
@@ -1291,12 +1292,30 @@ def _start_alltag_loop(ctx, token, chat_id) -> None:
                                            "disable_web_page_preview": True}).get("ok"):
                 ctx.agenda.markiere_briefing(x["schluessel"], datum)
 
+    def wochenplanung(jetzt, datum):
+        """J9: montags nach dem Morgen-Briefing Zeitbloecke vorschlagen (Eintrag erst nach ✅), freitags Rueckblick."""
+        from ...core import wochenplan
+        stunde = int(einstellung("briefing_morgen_stunde", 8) or 8)
+        if (jetzt.weekday() == 0 and stunde * 60 + 15 <= jetzt.hour * 60 + jetzt.minute < 12 * 60
+                and einstellung("wochenplanung", True) and not ctx.agenda.briefing_gesendet("wochenplan", datum)):
+            ctx.agenda.markiere_briefing("wochenplan", datum)
+            v = wochenplan.vorschlag_erstellen(ROOT, ctx.google, jetzt)
+            n = {"chat_id": chat_id, "text": fuer_telegram(v["text"])}
+            if v.get("id"):
+                n["reply_markup"] = json.dumps({"inline_keyboard": [wochenplan.knoepfe(v["id"])]})
+            _api(token, "sendMessage", n)
+        if (jetzt.weekday() == 4 and wochenplan.RUECKBLICK_STUNDE <= jetzt.hour < 20
+                and einstellung("wochenrueckblick", True) and not ctx.agenda.briefing_gesendet("wochenrueckblick", datum)):
+            ctx.agenda.markiere_briefing("wochenrueckblick", datum)
+            _api(token, "sendMessage", {"chat_id": chat_id,
+                                        "text": fuer_telegram(wochenplan.rueckblick_erstellen(ROOT, ctx.google, jetzt))})
+
     def loop():
         time.sleep(45)
         while True:
             jetzt = (datetime.now(tz) if tz else datetime.now()).replace(tzinfo=None)
             datum = jetzt.strftime("%Y-%m-%d")
-            for teil in (briefing_audio, abfahrten):
+            for teil in (briefing_audio, abfahrten, wochenplanung):
                 try:
                     teil(jetzt, datum)
                 except Exception as exc:
@@ -2537,6 +2556,20 @@ def main() -> None:
                             _api(token, "editMessageReplyMarkup", {"chat_id": cbchat, "message_id": mid,
                                                                    "reply_markup": json.dumps({"inline_keyboard": []})})
                             _api(token, "sendMessage", {"chat_id": cbchat, "text": fuer_telegram(res)})
+                    elif data.startswith("wpl:"):                  # JARVIS J9: Zeitbloecke eintragen / nicht
+                        mid = (cb.get("message") or {}).get("message_id")
+                        try:
+                            from ...core.wochenplan import WochenplanStore as _WS
+                            _, _pid, _pakt = data.split(":", 2)
+                            _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "Moment …"})
+                            res = _WS(ROOT / "wochenplan" / "log.jsonl").entscheiden(_pid, _pakt == "ja", ctx.google)
+                        except Exception as exc:
+                            res = "⚠️ Fehler"
+                            print(f"[wochenplan] Knopf: {exc}", flush=True)
+                        if mid:
+                            _api(token, "editMessageReplyMarkup", {"chat_id": cbchat, "message_id": mid,
+                                                                   "reply_markup": json.dumps({"inline_keyboard": []})})
+                        _api(token, "sendMessage", {"chat_id": cbchat, "text": fuer_telegram(res)})
                     elif data.startswith("rgl:"):                  # JARVIS J7: feste Regel bestaetigen / ablehnen
                         mid = (cb.get("message") or {}).get("message_id")
                         try:

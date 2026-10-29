@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 16:49] — Claude Code
+- **Was:** JARVIS J9 „Wochenplanung mit Zeitbloecken“: `core/wochenplan.py` (Luecken Mo-Fr 9-18, Mittag/Puffer/ganztaegig, Bloecke je To-do, frische Kollisionspruefung vor dem Eintragen, Wochenrueckblick); Bot montags nach dem Morgen-Briefing + freitags 16 Uhr, Knoepfe `wpl:`; Werkzeug `wochenplan_vorschlagen` (Gruppe „aufgaben“); Einstellungen `wochenplanung`/`wochenrueckblick` (LUNA-OS, app-v2.js v150); Speicher `wochenplan/log.jsonl` (Sync-Schutz, Backup). 8 neue Tests mit Gegenproben; Suite 1466 gruen.
+- **Warum:** CEO-Go fuer J9 (2026-10-29).
+- **Betroffen:** `orchestrator/core/wochenplan.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/werkzeugauswahl.py`, `orchestrator/investment/store.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_wochenplan.py`, `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `.gitignore`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-29 16:32] — Claude Code
 - **Was:** Zweig `ai/gedaechtnis-suche` nach `main` gemergt (J8 Gedaechtnis-Suche mit lokalem Suchmodell).
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.

@@ -55,6 +55,7 @@ TAR_EXCLUDES=(
   --exclude='./todos'                 # TODOS_ROADMAP: eigene To-dos des CEO (nur NAS + Backup)
   --exclude='./regeln'                # JARVIS J7: feste Regeln des CEO fuer LUNA (nur NAS + Backup)
   --exclude='./gedaechtnis'           # JARVIS J8: Suchverzeichnis der Bedeutungssuche (abgeleitet, nur NAS)
+  --exclude='./wochenplan'            # JARVIS J9: Wochenplanung (nur NAS + Backup)
   --exclude='./netz_queue'            # NETZ_AGENT Q1: Warteschlange des Netz-Agenten (nur NAS)
   --exclude='./sprache'               # JARVIS J2b: Sprachauftraege + MP3 der lokalen LUNA-Stimme (nur NAS)
   --exclude='./netz_agent/.env'       # NETZ_AGENT Q1: eigener Brave-Schluessel des Netz-Agenten (nur NAS)

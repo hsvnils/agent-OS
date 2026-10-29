@@ -5747,7 +5747,7 @@ async def investment_paper_order(request: Request):
 _SETTING_STUNDE = {"briefing_morgen_stunde", "briefing_abend_stunde"}
 _SETTING_STUNDE_OPT = {"ruhezeit_von", "ruhezeit_bis"}          # Stunde ODER None (= aus)
 _SETTING_BOOL = {"depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content", "vorschlaege_pausiert",
-                 "briefing_audio", "abfahrt_erinnerung"}
+                 "briefing_audio", "abfahrt_erinnerung", "wochenplanung", "wochenrueckblick"}
 _SETTING_TAGE = {"kundenpflege_tage"}                           # ganze Tage 0-365 (0 = aus)
 
 

@@ -4,7 +4,7 @@
 - Stand: 2026-10-28
 - Arbeitsbranch: `ai/jarvis-alltag`
 - Basiscommit: `d4ae65d`
-- Naechster Schritt: Reihenfolge seit 2026-10-29 (CEO): A -> C -> D -> B. Paket A live, J1 abgenommen; J2c/J3/J4 Abnahme im Alltag. J7 live, J8 umgesetzt (2026-10-29), beide Abnahme im Betrieb; danach Go fuer J9. Paket B (J5/J6) zurueckgestellt hinter C und D.
+- Naechster Schritt: Reihenfolge seit 2026-10-29 (CEO): A -> C -> D -> B. Paket A live, J1 abgenommen; J2c/J3/J4 Abnahme im Alltag. Paket C umgesetzt: J7 + J8 live, J9 umgesetzt (2026-10-29) -- Abnahme im Betrieb (erster Wochenplan Montag 02.11., erster Rueckblick Freitag 30.10.). Danach Paket D (Phase 17) mit eigenem Go. Paket B (J5/J6) zurueckgestellt hinter C und D.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -211,6 +211,16 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 - Aufwand: mittel.
 
 ### J9: Wochenplanung mit Zeitbloecken
+
+- Status: umgesetzt (2026-10-29), Abnahme offen -- `core/wochenplan.py`, regelbasiert (kein Modell, keine Kosten).
+  **Montag** nach dem Morgen-Briefing (+15 min, bis 12 Uhr): offene eigene To-dos ohne feste Uhrzeit (ueberfaellig,
+  faellig bis Sonntag, dann ohne Datum, aelteste zuerst; hoechstens 6) als 1-Stunden-Bloecke in freie Luecken Mo-Fr
+  9-18 Uhr, Mittag 12-13 frei, 15 min Puffer um Termine, ganztaegige Termine sperren den Tag, nie nach der Faelligkeit.
+  Knoepfe „✅ Eintragen / ❌ Nein“; nach ✅ wird der Kalender **frisch** geprueft, belegte Bloecke fallen weg, die
+  uebrigen kommen als „🧱 …“ in LUNAs Kalender. Auch per Chat („Plan mir die Woche“, Werkzeug `wochenplan_vorschlagen`).
+  **Freitag 16 Uhr** Wochenrueckblick: erledigte/offene To-dos, Rechnungen der Woche, offene Forderungen, Termine der
+  naechsten Woche. Beides in den Einstellungen abschaltbar (`wochenplanung`, `wochenrueckblick`, Standard an).
+  Speicher `wochenplan/log.jsonl`. Test: 8 Self-Checks inkl. Gate „kein Block ueberschneidet einen Termin“ mit Gegenproben.
 
 - Ziel / Scope: Montags schlaegt LUNA vor, offene To-dos als Bloecke in freie Kalenderluecken zu legen (CEO bestaetigt
   per Knopf); freitags Wochenrueckblick (erledigt, offen, Umsatz, naechste Woche).

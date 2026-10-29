@@ -71,9 +71,10 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
                          "ab jetzt", "ab sofort"],
     },
     "aufgaben": {                                        # TODOS_ROADMAP T3: eigene To-dos (klein, Token-Budget)
-        "werkzeuge": ["todo_anlegen", "todos_zeigen", "todo_erledigen"],
+        "werkzeuge": ["todo_anlegen", "todos_zeigen", "todo_erledigen", "wochenplan_vorschlagen"],
         "stichwoerter": ["to-do", "todo", "to do", "aufgabe", "erinner", "nicht vergessen", "denk dran", "denke dran",
-                         "abhaken", "hak ab", "hake ab"],
+                         "abhaken", "hak ab", "hake ab", "wochenplan", "woche planen", "plan mir die woche",
+                         "plane meine woche", "zeitblock", "zeitbloecke"],
     },
     "kalender": {
         "werkzeuge": ["kalender_agenda", "kalender_kollisionen", "termin_aendern", "termin_anlegen", "termin_loeschen",
