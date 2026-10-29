@@ -1,178 +1,172 @@
-# Roadmap: LUNA Live am Rechner (Jarvis Paket D = Phase 17, MACO470)
+# Roadmap: LUNA live am Rechner (Jarvis Paket D = Phase 17, MACO470) -- Mischform lokal + Cloud auf Ansage
 
 - Status: geplant
 - Stand: 2026-10-29
 - Arbeitsbranch: `ai/rechner-steuerung-plan`
 - Basiscommit: `969acf3`
-- Naechster Schritt: CEO beantwortet die Fragen in L0 und gibt Go fuer die Machbarkeitsprobe L1 (nur Sprechen + Sehen, keine Handgriffe).
+- Naechster Schritt: CEO beantwortet die offenen Fragen (Abschnitt „Noch offen“) und gibt Go fuer die Probe L1 (Ohr, Kopf, Mund lokal -- nichts bedienen).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
-## Anforderung (CEO, 2026-10-29, ersetzt den ersten Entwurf D0-D6)
+## Anforderung (CEO, 2026-10-29)
 
 > „Wie mit ChatGPT Sprache eine Unterhaltung mit LUNA auf meinem Rechner fuehren und gemeinsam mit ihr arbeiten
 > koennen, und zwar an allem. Waehrend ich spreche, muss sie weiter zuhoeren und schnell reagieren koennen.
 > Ausserdem soll sie schnell und praezise Aufgaben ausfuehren koennen. Ich will meinen Rechner hands-free mit ihr
-> benutzen. Sie muss verstehen, was gerade auf dem Bildschirm ist, und es auch umsetzen koennen. Wie die
-> Astra-Praesentation bzw. ein Jarvis.“
+> benutzen. Sie muss verstehen, was gerade auf dem Bildschirm ist, und es auch umsetzen koennen.“
+> **Das Wichtigste: das Bedienen und Beauftragen von Aufgaben per Sprache.**
+> **Loesung lokal und kostenlos -- als Mischform** (Cloud nur auf ausdrueckliche Ansage fuer einzelne schwere Schritte).
 
-Rechner: **MACO470** (Windows 11). Der CEO arbeitet dort direkt **oder per Fernzugriff vom MacBook**.
+## Entscheidungen des CEO (2026-10-29)
 
-Daraus folgen fuenf harte Eigenschaften:
-
-| Eigenschaft | Bedeutet technisch |
+| Frage | Entscheidung |
 |---|---|
-| Gespraech wie ChatGPT Voice | Sprache rein und raus **direkt** (Speech-to-Speech), Antwortbeginn unter ca. 1 s |
-| Zuhoeren waehrend sie spricht | **Unterbrechen** („barge-in“): LUNA verstummt, sobald du sprichst, und hoert weiter zu |
-| Versteht den Bildschirm | laufend Bildschirmbilder (ca. 1 pro Sekunde) im selben Gespraech + Liste der Bedienelemente |
-| Fuehrt schnell und praezise aus | Handgriffe ueber die Windows-Bedienschnittstelle (Knopf/Feld per Name statt Pixel), Tastatur, Dateien |
-| Hands-free | Aktivierungswort bzw. offene Sitzung, Not-Aus per Sprache („Stopp“) und Tastenkuerzel |
+| Rechner | MACO470 (Windows 11), direkt oder per **Windows App** vom MacBook (Mikrofon-Umleitung) |
+| Zuhoeren | Aktivierungswort „LUNA“, dann offene Sitzung bis „Danke LUNA“ oder 2 Min. Ruhe; mit Headset |
+| Bild und Ton | **bleiben lokal** -- keine dauerhafte Uebertragung an Google/OpenAI (Live-APIs verworfen) |
+| Kosten | kostenlos im Normalbetrieb; Cloud nur auf Ansage (Mischform) |
+| Stimme | Hoerprobe Pflicht, dann Entscheidung; notfalls die, die geht, „solange der Rest klappt“ |
+| Bestaetigen per Sprache | harmlos direkt; Senden/Loeschen nur nach „Ja, senden/loeschen“ mit Wiederholung; Geld/Vertraege/Posten nie per Sprache |
+| Browser | ansehen/vorlesen ja; Handgriffe nur auf direkte Ansage; Webtext nie als Befehl (Ausnahme zu AGENTS.md 5.7, CISO-Eintrag bei Umsetzung) |
+| Wichtigste Aufgabe | Bedienen und Beauftragen per Sprache |
+
+## Mischform -- was wo laeuft
+
+| Teil | Lokal auf dem MACO470 (Standard, kostenlos) | Cloud -- nur auf deine Ansage |
+|---|---|---|
+| **Ohr** | Spracherkennung Whisper (lokal), Sprechpausen-Erkennung, Aktivierungswort, Unterbrechen | -- |
+| **Mund** | lokale Stimme (Kandidaten nach Hoerprobe) | -- |
+| **Kopf fuer Bedienen** | lokales Modell (`qwen3:30b-a3b` oder `qwen3:14b`, Ollama) entscheidet Handgriffe | „Frag Claude“: ein schwerer Schritt geht an Claude |
+| **Augen** | Windows-Bedienschnittstelle liest Fenster, Knoepfe, Felder und Texte **ohne Bildmodell** (schnell); Bildmodell `gemma3:27b` bei Bedarf (ca. 10-15 s) | „Schau genau hin“: ein Bildschirmfoto an Claude |
+| **Haende** | Windows-Bedienschnittstelle (Knopf/Feld per Name), Tastatur, Dateien | -- |
+| **Auftraege an LUNA** (To-dos, Termine, Mail-Entwuerfe, Kunden, Rechnungen, Gedaechtnis) | Sprache wird lokal zu Text | der **Text** geht wie heute aus Telegram an LUNA (Chat-Modell Claude, bestehender Datenfluss) -- siehe „Noch offen“ Nr. 1 |
+
+Cloud-Schritte kuendigt LUNA an („Dafuer frage ich Claude, ein Bildschirmausschnitt geht raus – okay?“) und fuehrt
+sie erst nach deinem „ja“ aus. Fenster aus der Augen-aus-Liste (Banking, Passwort-Manager …) sieht sie nie.
 
 ## Endbild -- so fuehlt es sich am Ende an
 
-- Du sagst „LUNA?“ -- sie ist da. Du redest normal, unterbrichst sie, sie hoert dich und reagiert sofort.
-- „Was steht in der Mail, die gerade offen ist?“ -- sie liest vom Bildschirm vor und fasst zusammen.
-- „Antworte Kiez Alm, dass der Dreh am Dienstag passt, Ton wie immer“ -- sie schreibt den Entwurf sichtbar ins
-  Mail-Programm; du sagst „freundlicher, und erwaehn das Angebot“ -- sie aendert es live. **Senden machst du** (oder
-  ausdrueckliches „Ja, senden“ -- siehe L0 Nr. 6).
-- „Leg in XMind Aeste fuer Briefing, Dreh, Schnitt an“ -- die Knoten entstehen, waehrend du weiterredest.
-- „Sortier die Downloads“ -- sie sagt, was sie vorhat, und tut es nach deinem „ja“.
-- „Wie viel hat Kiez Alm noch offen?“ -- sie fragt LUNAs Geschaeftsdaten ab (Rechnungen, To-dos, Kalender,
-  Gedaechtnis-Suche J8) und antwortet, ohne dass du etwas oeffnest.
+- „LUNA?“ -- sie ist da. Du redest normal, unterbrichst sie, sie hoert sofort auf und hoert zu.
+- **Beauftragen:** „Leg ein To-do an: Angebot Kiez Alm bis Freitag“, „Was steht morgen an?“, „Schreib Anna einen
+  Entwurf, dass Dienstag passt“, „Was hat CR Container gebucht?“ -- erledigt wie in Telegram, Antwort gesprochen.
+- **Bedienen:** „Oeffne Outlook“, „Neue Mail an Anna, Betreff Dreh“, „Scroll runter“, „Klick auf Senden“ (-> „Ja, senden?“),
+  „Leg den Ordner Kiez Alm in Dokumente an und schieb die zwei PDFs rein“.
+- **Bildschirm verstehen:** „Was steht in der offenen Mail?“, „Welche Dateien liegen hier?“ -- sofort aus der
+  Bedienschnittstelle; „Was ist auf dem Bild?“ -- Bildmodell (langsamer) oder auf Ansage Claude.
+- **Laengere Aufgaben:** „Exportier die Praesentation als PDF in den Kundenordner“ -- Schritt fuer Schritt, sie sagt an,
+  was sie tut, und haelt bei Unsicherheit an.
 - „Stopp.“ -- alles haelt sofort an.
+
+**Ehrlich zu erwarten (lokal):** Antworten setzen eher nach **ca. 1,5-3 s** ein (ChatGPT Voice: unter 1 s); das lokale
+Modell versteht einfache, klare Ansagen gut, bei verschachtelten Aufgaben hilft „frag Claude“. Die Stimme haengt an der
+Hoerprobe. Genaue Werte misst L1. Spaeterer Ausbau ohne Planaenderung: eine Grafikkarte macht alles deutlich schneller
+(CEO-Tor, nicht geplant).
 
 ## Bestand und Recherche (2026-10-29)
 
 | Thema | Befund | Folgerung |
 |---|---|---|
-| **OpenJarvis** (`open-jarvis/openjarvis`, Apache 2.0, ca. 12k Sterne, Stanford) | lokal-zuerst Agenten-Rahmen (Ollama, Briefing mit Sprachausgabe, Skills, Windows-Installer); **kein Echtzeit-Gespraech, kein Unterbrechen, keine Bildschirm- oder Rechnersteuerung** laut README | hilft fuer dieses Paket **nicht** -- bleibt Ideenquelle (Register 2026-10-28) |
-| **Gemini Live API** (Google, Technik hinter „Astra“) | Sprache rein/raus direkt, Unterbrechen, **Bild-/Video-Frames im selben Gespraech** (JPEG, ca. 1/s), Werkzeugaufrufe; aktuelles Modell `gemini-3.1-flash-live-preview` (Vorschau); Bezahlstufe: Daten **nicht** zum Training | **bester Kandidat** fuer Ohr, Mund und Augen |
-| **OpenAI Realtime API** (`gpt-realtime`) | Sprache direkt, Unterbrechen, Bildeingabe, Werkzeuge | Alternative, nach eigener Einschaetzung teurer -- Vergleich in L1 |
-| **Claude** (wieder aktiv, Sonnet 5.5) | stark im Planen und in Rechnersteuerung, aber **keine Echtzeit-Sprache** | als „Ausfuehrer“ fuer laengere Aufgaben hinter dem Gespraech (L4) |
-| **Microsoft UFO²** (`microsoft/UFO`, MIT) | Windows-Agent: Bedienschnittstelle (UIA) + Bilderkennung, ueber 20 Windows-Apps getestet; ohne Sprache | Vorlage/Baustein fuer praezise Handgriffe (L3/L4), Uebernahme erst nach Pruefung |
-| Lokal auf dem MACO470 | `gemma3:27b` liest einen Testbildschirm, Klick-Position grob falsch, ca. 13 s je Antwort; Sprach-Arbeiter-Stimme ca. 7x langsamer als Echtzeit | lokal ist **fuer Live zu langsam** -- bleibt fuer Hintergrund und Datenschutz-Faelle |
-| Vorhanden im Repo | Steuer-Schleife mit Gefahr-Halt (`runner/computer_use.py`), XMind-Dateiformat (`runner/xmind.py`), Sandbox-Policy (Phase 25), Bruecken-Muster NAS<->MACO470 (`sprachdienst/`), Injection-Schutz (`core/input_guard.py`), Geschaeftsdaten-Werkzeuge (`core/hoa_tools.py`) | wird wiederverwendet |
-| MACO470 | Windows-Python 3.12 vorhanden; Sitzung „nils“ an der Konsole seit 15.10.; kein Auto-Login | App laeuft in deiner angemeldeten Sitzung |
-
-**Architektur-Vorschlag:**
-
-```
-Mikrofon/Lautsprecher (am MACO470 oder per Fernzugriff vom MacBook)
-        │  Ton live, Bildschirm ~1 Bild/s
-        ▼
-LUNA-Desktop (neue App unter Windows, in deiner Sitzung)
-   ├─ Gespraech: Live-Modell (Ohr + Mund + Augen, Unterbrechen)
-   ├─ Haende: Windows-Bedienschnittstelle, Tastatur, Dateien  ── Sandbox-Policy, Not-Aus, Protokoll
-   ├─ Ausfuehrer fuer laengere Aufgaben (Claude), Gespraech laeuft weiter
-   └─ LUNA-Wissen: Kunden, Rechnungen, To-dos, Kalender, Gedaechtnis ── ueber LUNA-OS-API (NAS)
-```
-
-## L0 -- Fragen an den CEO (vor L1)
-
-1. **Fernzugriff:** Womit waehlst du dich vom MacBook ein -- Microsoft Remote Desktop / „Windows App“, oder etwas
-   anderes (AnyDesk, Parsec, Chrome Remote Desktop)? Ton und Mikrofon muessen durch die Verbindung; bei Remote
-   Desktop geht das (Mikrofon-Umleitung einschalten).
-2. **Hands-free -- wie soll LUNA zuhoeren?**
-   (a) Aktivierungswort „LUNA“, danach offene Sitzung, bis du „Danke LUNA“ sagst oder 2 Min. Ruhe ist;
-   (b) Sitzung per Tastenkuerzel an/aus und dann dauerhaft offen; (c) immer offen, wenn die App laeuft.
-   Vorschlag: (a) -- mit Kopfhoerer/Headset, sonst hoert sie Videos und andere Stimmen mit.
-3. **Cloud fuer Bild und Ton:** Live geht nur mit einem Cloud-Modell. Bildschirm und Sprache gehen dann waehrend der
-   Sitzung an **Google** (Bezahlstufe, kein Training; Server ggf. ausserhalb der EU). Auf dem Bildschirm sind
-   Kundendaten. Einverstanden? Gibt es Apps/Fenster, die LUNA **nie** sehen darf (z. B. Banking, Passwort-Manager)?
-   -> dort schaltet sie die Augen automatisch aus.
-4. **Kosten:** Gemini Live rechnet nach Minuten/Token ab. Grobe eigene Schaetzung: **ca. 1-3 EUR je Stunde
-   Gespraech mit Bildschirm** (CFO-Kostenvoranschlag vor L1-Freigabe). Wie viele Stunden pro Tag ungefaehr? Soll es
-   ein Monatslimit geben, bei dem LUNA warnt bzw. stoppt?
-5. **Stimme:** Live spricht LUNA mit einer **Stimme des Anbieters** (deutsch, mehrere weibliche Stimmen zur Wahl),
-   nicht mit der lokalen Stimme C -- die ist fuer Echtzeit zu langsam. In Ordnung? (Hoerprobe in L1.)
-6. **Bestaetigen ohne Haende:** Was soll ein gesprochenes „Ja“ freigeben duerfen? Vorschlag:
-   - harmlos (oeffnen, tippen, Entwurf, verschieben): direkt bzw. nach kurzem „ja“;
-   - **Senden, Loeschen (Papierkorb), Kalender anderer:** nur nach ausdruecklichem „Ja, senden/loeschen“, LUNA
-     wiederholt vorher genau, was passiert;
-   - **Geld, Vertraege, Posten:** nie per Sprache -- nur Entwurf, Abschluss durch dich (AGENTS.md 4).
-7. **„An allem“ -- auch der Browser?** Wenn LUNA Webseiten auf deinem Bildschirm liest und bedient, sieht das Modell
-   fremde Webinhalte. Das widerspricht heute der Regel „freies Internet nur ueber den Netz-Agenten“ (AGENTS.md 5.7)
-   und ist der Hauptweg fuer eingeschleuste Anweisungen. Vorschlag: Browser **ansehen und vorlesen ja**, Handgriffe
-   im Browser nur auf deine direkte Ansage, Texte von Webseiten zaehlen als Fremdtext (keine Befehle daraus). Das
-   ist eine **Regel-Ausnahme**, die du ausdruecklich entscheiden musst (CISO).
-8. **Die wichtigsten 5 Alltagsaufgaben** am Rechner, an denen wir „schnell und praezise“ messen? (z. B. Mail
-   beantworten, XMind, Ordner sortieren, LUNA-OS bedienen, Canva/Office …)
+| OpenJarvis | lokaler Agenten-Rahmen ohne Echtzeit-Gespraech/Bildschirm/Rechnersteuerung | nicht geeignet (Register) |
+| Gemini Live / OpenAI Realtime | koennen alles live, aber Bild + Ton dauerhaft an den Anbieter, kostet | **verworfen** (CEO: lokal) |
+| Microsoft UFO² (MIT) | Windows-Agent mit Bedienschnittstelle + Bilderkennung | Vorlage fuer Haende (L4), Uebernahme nach Pruefung |
+| Lokales Bildmodell `gemma3:27b` | liest Testbildschirm richtig, Klick-Position falsch, ca. 13 s | Augen ueber Bedienschnittstelle, Bild nur ergaenzend |
+| Lokale Stimmen | Stimme C (Qwen3-TTS 0.6B) ca. 7x langsamer als Echtzeit; Kokoro/Piper echtzeitfaehig, in J2b verworfen | Hoerprobe L1 entscheidet (inkl. Versuch, Stimme C zu beschleunigen) |
+| MACO470 | Windows-Python 3.12, Sitzung „nils“ aktiv seit 15.10., kein Auto-Login, 30 GB RAM, Radeon 890M | App laeuft in deiner angemeldeten Sitzung |
+| Repo | Steuer-Schleife (`runner/computer_use.py`), XMind (`runner/xmind.py`), Sandbox-Policy (Phase 25), Bruecken-Muster (`sprachdienst/`), Injection-Schutz, LUNA-Werkzeuge | wird wiederverwendet |
 
 ## Etappen
 
-### L1: Machbarkeitsprobe „Sprechen + Sehen“ (keine Handgriffe)
+### L1: Probe „Ohr, Kopf, Mund“ -- lokal, ohne Bildschirm, ohne Handgriffe
 
-- Ziel / Scope: kleines Probe-Programm unter Windows: Gespraech mit dem Live-Modell, Unterbrechen, Bildschirm
-  ~1 Bild/s; LUNA beantwortet Fragen zum Bildschirm. **Kann nichts bedienen.** Vergleich Gemini Live gegen OpenAI
-  Realtime (je 10 Minuten), auch **ueber den Fernzugriff vom MacBook**. Hoerprobe der Stimmen.
-- Gate (gemessen, Werte in dieser Datei): Antwortbeginn im Mittel unter 1,5 s; Unterbrechen stoppt LUNA unter
-  0,5 s; 10 von 10 Bildschirmfragen richtig (z. B. „welche Datei ist markiert?“); Deutsch ohne Aussetzer;
-  Kosten je Minute gemessen.
-- CEO-Tor: neues kostenpflichtiges Modell + Bildschirm an Anbieter (L0 Nr. 3/4); CFO-Kostenvoranschlag.
-- Aufwand: klein-mittel. Rueckweg: Programm schliessen, nichts installiert ausser der Python-Umgebung.
+- Ziel / Scope: kleines Probe-Programm unter Windows: Aktivierungswort, Whisper-Erkennung, lokales Modell, lokale
+  Stimme, Unterbrechen. **Messen statt schaetzen:** Ende deines Satzes -> erstes Wort von LUNA; Unterbrechen -> Stille;
+  Erkennung deutscher Saetze (inkl. Firmennamen); `qwen3:30b-a3b` gegen `qwen3:14b` (Tempo, Werkzeug-Treffsicherheit);
+  **Hoerprobe** der echtzeitfaehigen Stimmen + Versuch, Stimme C zu beschleunigen; alles auch ueber die Windows App
+  vom MacBook.
+- Gate: Antwortbeginn im Mittel **unter 3 s** (Ziel 2 s); Unterbrechen **unter 0,5 s**; Erkennung **mind. 9 von 10**
+  Testsaetzen woertlich richtig; Hoerprobe entschieden (CEO). Werte in dieser Datei.
+- Aufwand: mittel. Kosten: keine. Rueckweg: Programm schliessen; nur Python-Pakete und Modelle installiert (CEO-Info
+  vorab, Groesse ca. 1-3 GB).
+- Stopp-Kriterium: Wird das Gate klar verfehlt, legen wir dir vor dem Weiterbau die Optionen vor (z. B. Grafikkarte,
+  mehr Cloud) -- kein Weiterbau auf Verdacht.
 
-### L2: LUNA-Desktop-App mit Sitzung, Not-Aus und LUNA-Wissen
+### L2: LUNA-Desktop + Beauftragen per Sprache (wichtigste Aufgabe zuerst)
 
-- Ziel / Scope: daraus die App: startet mit deiner Anmeldung (Aufgabenplanung), kleines Symbol unten rechts,
-  Aktivierungswort/Tastenkuerzel (L0 Nr. 2), „Stopp“ + Tastenkuerzel = sofort stumm und still, Protokoll jeder
-  Sitzung (ohne Tonaufnahme). LUNAs Persoenlichkeit, Datum, **feste Regeln (J7)**. Lesende Werkzeuge ueber die
-  LUNA-OS-API: To-dos, Kalender, Kunden, Rechnungen, Gedaechtnis-Suche (J8); To-do anlegen. Augen aus bei Apps aus
-  L0 Nr. 3.
-- Gate: 3 Arbeitstage im Alltag ohne Absturz; „Stopp“ wirkt unter 0,5 s (Test); Augen-aus-Liste greift (Test mit
-  Gegenprobe).
-- CISO: eigenes Maschinenkonto fuer die LUNA-OS-API (wie Sprach-Arbeiter).
+- Ziel / Scope: daraus die App: startet mit deiner Anmeldung, kleines Symbol, Aktivierungswort, „Stopp“ +
+  Tastenkuerzel, Protokoll jeder Sitzung (ohne Tonaufnahme). **Auftraege an LUNA:** gesprochener Auftrag -> LUNA (wie
+  Telegram, mit Gespraechsverlauf) -> Antwort gesprochen; Freigaben per „Ja, …“ nach Wiederholung. Neues
+  Maschinenkonto fuer die LUNA-OS-API (CISO).
+- Gate: 10 typische Auftraege (To-do, Termin, Mail-Entwurf, Kunden-/Rechnungsfrage, Gedaechtnis, Wochenplan) per
+  Sprache richtig; „Stopp“ unter 0,5 s; 3 Arbeitstage ohne Absturz.
 
-### L3: Haende -- schnelle, praezise Handgriffe
+### L3: Augen -- Bildschirm verstehen
 
-- Ziel / Scope: App oeffnen/wechseln, tippen, Tastenkuerzel, Knopf/Feld/Menue per Name klicken
-  (Bedienschnittstelle, Bild nur zur Kontrolle), scrollen, markieren, Dateien kopieren/verschieben/umbenennen. Jede
-  Aktion durch Sandbox-Policy (Ordner-/App-Liste) und Bestaetigungsstufen (L0 Nr. 6). Bildschirmtext gilt als
-  Fremdtext (Injection-Schutz).
-- Gate: 20 Einzelhandgriffe in den 5 Alltags-Apps (L0 Nr. 8), Trefferquote und Zeit je Handgriff gemessen (Ziel:
-  95 % richtig, unter 2 s); gefaehrlicher Handgriff ohne „Ja, …“ wird nicht ausgefuehrt (Test).
+- Ziel / Scope: „Was ist offen / was steht da?“ aus der Bedienschnittstelle (Fenster, Inhalte, markiertes Element);
+  Bildmodell auf Wunsch; **Mischform:** „schau genau hin“ -> Ausschnitt an Claude nach deinem „ja“. Augen-aus-Liste.
+  Bildschirmtext ist Fremdtext (Injection-Schutz).
+- Gate: 10 Bildschirmfragen in deinen Apps, mind. 9 richtig, Antwort aus der Bedienschnittstelle unter 2 s; Augen-aus
+  greift (Test mit Gegenprobe); Cloud-Blick nie ohne „ja“ (Test).
+- CEO-Tor: Cloud-Blick = Bildschirmausschnitt an Anthropic (Datenschutz-Eintrag, nur auf Ansage).
 
-### L4: Laengere Aufgaben im Hintergrund, Gespraech laeuft weiter
+### L4: Haende -- Bedienen per Sprache
 
-- Ziel / Scope: „Exportier alle Praesentationen als PDF in die Kundenordner“ -> LUNA gibt es an den Ausfuehrer
-  (Claude mit Rechnersteuerung oder UFO²-Baustein, nach Pruefung), sagt Zwischenstaende an, haelt bei Unsicherheit
-  an und fragt. Du kannst waehrenddessen weiterreden.
-- Gate: 5 Mehrschritt-Aufgaben, Erfolgsquote dokumentiert; Abbruch per „Stopp“ mitten in der Kette (Test).
-- CEO-Tor: Kosten des Ausfuehrers (CFO).
+- Ziel / Scope: App oeffnen/wechseln, tippen/diktieren, Tastenkuerzel, Knopf/Feld/Menue per Name, scrollen,
+  markieren, Dateien kopieren/verschieben/umbenennen; Sandbox-Policy (Apps/Ordner) und Bestaetigungsstufen.
+- Gate: 20 Handgriffe in deinen Alltags-Apps, **mind. 95 % richtig, je unter 3 s**; „Ja, senden/loeschen“ ohne
+  Wiederholung nie ausgefuehrt (Test).
 
-### L5: Feinschliff im Alltag
+### L5: Laengere Aufgaben
 
-- Ziel / Scope: die 5 Alltagsaufgaben gezielt schneller/sicherer machen (App-Kenntnisse, Kuerzel), Kosten im
-  Kostenbericht des CFO, Ausfall-Verhalten (Cloud weg -> „Live gerade nicht verfuegbar“, Telegram geht weiter).
-- Gate: 2 Wochen Alltag, deine Abnahme.
+- Ziel / Scope: Ziel -> Kette von Handgriffen (vorhandene Steuer-Schleife), lokal; bei schweren Schritten „frag Claude“
+  (nach „ja“); Ansagen waehrend der Arbeit, du kannst weiterreden oder „Stopp“ sagen.
+- Gate: 5 Mehrschritt-Aufgaben, Erfolgsquote dokumentiert; Abbruch mitten in der Kette (Test).
+
+### L6: Feinschliff im Alltag
+
+- Ziel / Scope: deine haeufigsten Ansagen schneller/sicherer machen (App-Kenntnisse, Kuerzel, eigene Woerter),
+  Cloud-Kosten im CFO-Bericht, Verhalten bei MACO470-Neustart/Fernzugriff.
+- Gate: 2 Wochen Alltag, CEO-Abnahme.
 
 ## Reihenfolge und Aufwand
 
 | Etappe | Aufwand | Kosten | Abhaengigkeit |
 |---|---|---|---|
-| L1 Probe Sprechen + Sehen | klein-mittel | Probe-Minuten | L0 Nr. 1, 3, 4, 5 |
-| L2 Desktop-App + Wissen | mittel | laufend je Gespraechsstunde | L1 bestanden, L0 Nr. 2 |
-| L3 Haende | mittel-gross | wie L2 | L2, L0 Nr. 6-8 |
-| L4 Hintergrund-Ausfuehrer | gross | zusaetzlich je Aufgabe | L3 |
-| L5 Feinschliff | mittel | -- | L4 |
+| L1 Probe Ohr/Kopf/Mund | mittel | keine | Go |
+| L2 Desktop + Beauftragen | mittel | keine (Text an LUNA wie Telegram) | L1 bestanden, CISO-Konto |
+| L3 Augen | mittel | Cloud-Blick nur auf Ansage (Cent-Betraege) | L2 |
+| L4 Haende | mittel-gross | keine | L3 |
+| L5 Laengere Aufgaben | gross | „frag Claude“ nur auf Ansage | L4 |
+| L6 Feinschliff | mittel | -- | L5 |
 
-Nach **L1** weisst du, ob es sich wie ChatGPT Voice anfuehlt -- erst dann lohnt sich der Rest. Nach **L3** ist
-das Ziel „hands-free am Rechner“ im Kern erreicht.
+Nach **L2** ist deine wichtigste Aufgabe (Beauftragen per Sprache) im Alltag nutzbar, nach **L4** das Bedienen.
+
+## Noch offen (Fragen an den CEO)
+
+1. **Auftraege an LUNA:** Der **Text** deiner Auftraege geht wie heute bei Telegram an LUNAs Chat-Modell (Claude) --
+   Ton und Bildschirm bleiben lokal. Passt das? Oder soll LUNA auch dafuer lokal denken (langsamer, weniger klug;
+   heute als Ausweich vorhanden)?
+2. **Headset** vorhanden (am MACO470 bzw. am MacBook fuer die Windows App)? Ohne Headset hoert LUNA sich selbst und
+   Videos mit -- Unterbrechen klappt dann schlecht.
+3. **„Frag Claude“ / „schau genau hin“:** jedes Mal kurz nachfragen (Vorschlag) oder pro Sitzung einmal erlauben?
+4. **Augen-aus-Liste:** welche Apps/Fenster nie? Vorschlag: Banking, PayPal, Passwort-Manager, Windows-Sicherheit,
+   alles mit „Passwort“ im Fenstertitel.
+5. **Installation auf dem MACO470:** fuer L1 kommen Python-Pakete und Modelle unter Windows dazu (kostenlos, ca. 1-3 GB,
+   ohne Einfluss auf Cutter/Backup). Einverstanden?
 
 ## Nicht-Scope
 
-Zahlungen, Vertragsabschluesse, Posten (nur Entwuerfe); Systemeinstellungen, Installationen, Passwort-Manager,
-`.env`/Schluessel; Daten anderer Personen aufzeichnen (keine Tonaufnahme gespeichert); der Telegram-Bot (bleibt auf
-der NAS); `cutter-worker`/Backup/Keepalive; MacBook als eigener Steuer-Rechner (nur als Fernzugriff); Charta-
-Aenderungen.
+Dauerhafte Uebertragung von Bild/Ton an Cloud-Anbieter; Zahlungen, Vertragsabschluesse, Posten (nur Entwuerfe);
+Systemeinstellungen, Installationen durch LUNA, Passwort-Manager, `.env`/Schluessel; Tonaufnahmen speichern; der
+Telegram-Bot (bleibt auf der NAS); `cutter-worker`/Backup/Keepalive; MacBook als eigener Steuer-Rechner;
+Grafikkarten-Kauf (eigene Entscheidung); Charta-Aenderungen.
 
 ## Dokumentationspflicht bei Umsetzung
 
 `projekt_changelog.md`, Etappen-Status hier, `ROADMAP.md` (Phase 17 + Verzeichnis), `JARVIS_ALLTAG_ROADMAP.md`
-Paket D, `docs/entscheidungs-register.md` (L0-Entscheidungen, Modellwahl, UFO²), `docs/datenfluesse.md` (Live-
-Modell, Bildschirm, API-Bruecke), `docs/datenschutz-ki-nutzung.md` (Bildschirm + Sprache an Anbieter),
-`finance/kosten-statistik.md` (laufende Kosten), `governance/sandbox-policy.*`, `AGENTS.md` 5.7 (falls Browser-
-Ausnahme) und Abschnitt 7 (neuer Ordner der Desktop-App), `docs/bekannte-fehler.md`.
+Paket D, `docs/entscheidungs-register.md`, `docs/datenfluesse.md` (Desktop-App, API-Bruecke, Cloud-Blick),
+`docs/datenschutz-ki-nutzung.md`, `finance/kosten-statistik.md` (Cloud-Schritte), `governance/sandbox-policy.*`,
+`AGENTS.md` 5.7 (Browser-Ausnahme, CISO) und Abschnitt 7 (Ordner der Desktop-App), `docs/bekannte-fehler.md`.
 
 ## Definition of Done
 
-L1-L5 verifiziert, CEO-Abnahme im Alltag; der CEO setzt den Status auf abgeschlossen.
+L1-L6 verifiziert, CEO-Abnahme im Alltag; der CEO setzt den Status auf abgeschlossen.

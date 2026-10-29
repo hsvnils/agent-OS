@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 17:47] — Claude Code
+- **Was:** `RECHNER_STEUERUNG_ROADMAP.md` als Mischform neu geplant: CEO-Entscheidungen L0 eingetragen (Windows App, Aktivierungswort + Headset, lokal statt Live-APIs, Hoerprobe, Bestaetigungen/Browser wie empfohlen, Prioritaet Beauftragen per Sprache); Etappen L1-L6 (Probe Ohr/Kopf/Mund lokal, Desktop + Beauftragen, Augen, Haende, laengere Aufgaben, Feinschliff); Live-APIs im Register verworfen. Nichts umgesetzt.
+- **Warum:** CEO-Antworten und Auftrag „Paket D als Mischform planen“ (2026-10-29).
+- **Betroffen:** `RECHNER_STEUERUNG_ROADMAP.md`, `ROADMAP.md`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-29 17:31] — Claude Code
 - **Was:** `RECHNER_STEUERUNG_ROADMAP.md` nach der CEO-Anforderung neu gefasst: Live-Gespraech wie ChatGPT Voice mit Unterbrechen, Bildschirmverstaendnis, hands-free, schnelle Handgriffe; Recherche OpenJarvis (nicht geeignet), Gemini Live API (Favorit), OpenAI Realtime, Claude als Ausfuehrer, Microsoft UFO² (zu pruefen); Fragen L0, Etappen L1-L5; Register-Eintraege. Nichts umgesetzt.
 - **Warum:** CEO-Rueckmeldung zum ersten Entwurf (2026-10-29): D0 Nr. 2-6 verworfen, Anforderung neu definiert.

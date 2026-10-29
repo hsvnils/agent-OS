@@ -229,7 +229,7 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 
 ## Paket D -- „Haende am Rechner“ (= Phase 17)
 
-- Plan seit 2026-10-29 in `RECHNER_STEUERUNG_ROADMAP.md` (neu gefasst nach CEO-Anforderung: Live-Gespraech + Bildschirm + Haende, Etappen L1-L5, Fragen L0) -- wartet auf CEO.
+- Plan seit 2026-10-29 in `RECHNER_STEUERUNG_ROADMAP.md` (Mischform lokal + Cloud auf Ansage, Etappen L1-L6) -- wartet auf CEO.
 
 - LUNA bedient den Rechner (MACO470/Windows) auf ausdrueckliche Anweisung -- Plan W1-W7 steht in `ROADMAP.md`
   (Phase 17), mit Not-Aus, Protokoll und CEO-Tor. Wird nach A-C oder auf ausdruecklichen Wunsch vorgezogen.
