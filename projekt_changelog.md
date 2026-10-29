@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 13:13] — Claude Code
+- **Was:** J1 als abgenommen markiert: Sprachnachricht ergab To-dos mit Kalendertermin in LUNAs Kalender (bei Google geprueft, im iPhone des CEO sichtbar).
+- **Warum:** CEO-Live-Test 2026-10-29 bestanden.
+- **Betroffen:** `JARVIS_ALLTAG_ROADMAP.md`
+
 ## [2026-10-29 13:05] — Claude Code
 - **Was:** Zweig `ai/sprache-ohne-echo` nach `main` gemergt (J1 ohne Echo des erkannten Texts).
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.

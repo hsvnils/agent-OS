@@ -38,7 +38,8 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 
 ### J1: Sprachnachrichten an LUNA
 
-- Status: umgesetzt (2026-10-28) -- Sprachnachrichten und Audio-Dateien -> Deepgram -> Text -> wie getippt (To-do,
+- Status: abgenommen (2026-10-29) -- CEO-Live-Test: gemischte Sprachnachricht -> To-dos mit Termin in LUNAs Kalender
+  (im iPhone sichtbar, nur mit Ladeverzoegerung). Umgesetzt 2026-10-28: Sprachnachrichten und Audio-Dateien -> Deepgram -> Text -> wie getippt (To-do,
   Zeiterfassung, Fragen); LUNA antwortet direkt auf den Inhalt (seit 2026-10-29 kein Echo des erkannten Texts mehr, CEO-Wunsch); Erkennungsfehler gehen nicht mehr als Text an LUNA
   (vorher „[Transkription fehlgeschlagen …]“ als Nachricht), sondern als klare Meldung. **Abweichung:** lokale
   Spracherkennung nicht umgesetzt, weil auf dem MACO470 keine installiert ist -- Installation (faster-whisper +
