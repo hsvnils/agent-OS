@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 17:31] — Claude Code
+- **Was:** `RECHNER_STEUERUNG_ROADMAP.md` nach der CEO-Anforderung neu gefasst: Live-Gespraech wie ChatGPT Voice mit Unterbrechen, Bildschirmverstaendnis, hands-free, schnelle Handgriffe; Recherche OpenJarvis (nicht geeignet), Gemini Live API (Favorit), OpenAI Realtime, Claude als Ausfuehrer, Microsoft UFO² (zu pruefen); Fragen L0, Etappen L1-L5; Register-Eintraege. Nichts umgesetzt.
+- **Warum:** CEO-Rueckmeldung zum ersten Entwurf (2026-10-29): D0 Nr. 2-6 verworfen, Anforderung neu definiert.
+- **Betroffen:** `RECHNER_STEUERUNG_ROADMAP.md`, `ROADMAP.md`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-29 16:59] — Claude Code
 - **Was:** Plan fuer Jarvis Paket D (Phase 17, LUNA bedient den Rechner, Windows/MACO470) als `RECHNER_STEUERUNG_ROADMAP.md`: Ziel, Endbild, Bestand (read-only geprueft: Windows-Python, Sitzung, kein Auto-Login; Probe lokales Bildmodell mit kuenstlichem Testbild: liest Text, Klick-Position ungenau, ca. 13 s), CEO-Fragen D0, Etappen D1-D6; im Roadmap-Verzeichnis und in `JARVIS_ALLTAG_ROADMAP.md` verlinkt. Nichts umgesetzt.
 - **Warum:** CEO-Go fuer die Planung von Paket D (2026-10-29).
