@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 13:05] — Claude Code
+- **Was:** Zweig `ai/sprache-ohne-echo` nach `main` gemergt (J1 ohne Echo des erkannten Texts).
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `orchestrator/channels/telegram/bot.py`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/datenfluesse.md`
+
 ## [2026-10-29 12:54] — Claude Code
 - **Was:** J1: Echo „🎙️ Verstanden: …“ nach Sprachnachrichten entfernt -- LUNA antwortet direkt auf den Inhalt. Live-Test des CEO (gemischte Sprachnachricht mit 2 To-dos + Frage) vollstaendig umgesetzt.
 - **Warum:** CEO-Wunsch 2026-10-29: die Transkription als Text wird nicht gebraucht.
