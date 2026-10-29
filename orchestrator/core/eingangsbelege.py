@@ -1253,7 +1253,9 @@ def mails_ablegen(st: EingangStore, google) -> list[dict]:
 
 # --- Beleg-Mails ohne PDF und automatische Weiterleitungen (KUNDEN_FINANZEN Etappe 13, CEO 2026-09-29) ---------------
 _WEITER_MARKE = re.compile(r"(?i)anfang der weitergeleiteten nachricht|begin forwarded message|-{2,}\s*(?:forwarded message|"
-                           r"weitergeleitete nachricht|original message|urspr[üu]ngliche nachricht)\s*-{2,}")
+                           r"weitergeleitete nachricht|original message|urspr[üu]ngliche nachricht)\s*-{2,}|"
+                           # Outlook (auch Outlook im Web/iOS): Linie aus Unterstrichen, darunter „From:“/„Von:“
+                           r"_{8,}[ \t]*(?=\r?\n[ \t]*(?:von|from)[ \t]*:)")
 _WEITER_BETREFF = re.compile(r"(?i)^\s*(?:fwd?|wg|wtr|weitergeleitet)\s*:")
 _KOPF_FELD = re.compile(r"(?i)^(von|from|betreff|subject|datum|date|gesendet|sent|an|to|cc|antwort an|reply-to)\s*:\s*(.*)$")
 _BELEG_WORT = re.compile(r"(?i)rechnung|beleg|quittung|receipt|invoice|zahlung|payment|remittance|auftragsbest|"
@@ -1338,6 +1340,12 @@ _ZWECK_WEG = re.compile(r"(?i)^(?:von meinem \w+ gesendet|gesendet (?:von|mit) .
                         r"herzliche|freundliche)?\s*gr[üu](?:ß|ss)e,?|lg,?|vg,?|mfg,?|nils|nils kr[üu]ger|--)\s*$")
 
 
+_SIGNATUR = re.compile(r"(?i)^(?:danke(?: dir| schön| schoen)?|vielen dank|(?:viele|liebe|beste|herzliche|freundliche|sonnige)\s+"
+                       r"gr[üu](?:ß|ss)e\b.*|gr[üu](?:ß|ss)e\b.*|mit freundlichen gr[üu](?:ß|ss)en.*|lg|vg|mfg|--|nils(?: kr[üu]ger)?)"
+                       r"[\s,.!]*$")
+_ANHANG_ZEILE = re.compile(r"^\[[^\]]*\.(?:png|jpe?g|gif)\]$", re.I)
+
+
 def zweck_aus_mail(roh: bytes) -> str:
     """Text des CEO ueber der Weiterleitung („Fuer den Dreh im Athleticum gekauft“) -> Zweck des Belegs. Gruss, Name
     und „Von meinem iPhone gesendet“ fallen weg; ohne Weiterleitungsmarke (automatische Weiterleitung) leer."""
@@ -1346,7 +1354,11 @@ def zweck_aus_mail(roh: bytes) -> str:
     if not marke:
         return ""
     zeilen = [z.strip() for z in text[:marke.start()].splitlines()]
-    zeilen = [z for z in zeilen if z and not _ZWECK_WEG.match(z) and not _KOPF_FELD.match(z)]
+    for i, z in enumerate(zeilen):                     # Signatur: ab „Danke“/„Herzliche Gruesse aus …“ alles weg
+        if _SIGNATUR.match(z):
+            zeilen = zeilen[:i]
+            break
+    zeilen = [z for z in zeilen if z and not _ZWECK_WEG.match(z) and not _KOPF_FELD.match(z) and not _ANHANG_ZEILE.match(z)]
     return re.sub(r"\s+", " ", " ".join(zeilen)).strip()[:ZWECK_MAX]
 
 

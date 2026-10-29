@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 18:26] — Claude Code
+- **Was:** Nachbau Mail-Auftrag: Outlook-Weiterleitungen (Linie `____` + „From:“) werden erkannt, Text des CEO ohne Signatur (BF-84, wirkt auch fuer Zweck/Akte); neues LUNA-Werkzeug `firma_anlegen` (Firma + Ansprechpartner, Vorschau mit Dubletten-Pruefung, erst nach CEO-Ja, Mail per `mail_id` in die Akte), Gruppe „stammdaten“, gesperrt nach Fremdtext-Verdacht. 2 neue Tests mit Gegenproben; Suite 1472 gruen.
+- **Warum:** CEO-Go nach der ersten Testmail (Outlook-Format nicht erkannt, kein Werkzeug fuer Kunde anlegen).
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/werkzeugauswahl.py`, `orchestrator/core/input_guard.py`, `orchestrator/core/mail_auftraege.py`, `orchestrator/tests/test_mail_auftraege.py`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/bekannte-fehler.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-29 17:50] — Claude Code
 - **Was:** Zweig `ai/mail-auftrag` nach `main` gemergt (Auftrag per weitergeleiteter Mail).
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
