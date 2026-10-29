@@ -257,6 +257,8 @@ def tool_specs() -> list[dict]:
               "Einmaliges oder schon unter FESTE REGELN Stehendes.", {"regel": _str("Kurze Anweisung an dich."),
                                                 "anlass": _str("Was korrigiert wurde.")}, ["regel"]),
         _spec("todos_zeigen", "Offene eigene To-dos zeigen.", {}, []),
+        _spec("wochenplan_vorschlagen", "Offene To-dos als Zeitbloecke in freie Kalenderluecken dieser Woche "
+              "vorschlagen; eingetragen wird erst nach CEO-Knopf.", {}, []),
         _spec("todo_erledigen", "Eigenes To-do abhaken (ID aus todos_zeigen).", {"id": _str("To-do-ID.")}, ["id"]),
         _spec("drive_suchen", "Durchsucht Google Drive (Volltext).",
               {"query": _str("Suchbegriff."), "max": _str("Max. Treffer (Default 10).")}, ["query"]),
@@ -632,6 +634,16 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
 
     if name in ("todo_anlegen", "todos_zeigen", "todo_erledigen"):          # TODOS_ROADMAP T3
         return _todo_werkzeug(name, args, ctx)
+    if name == "wochenplan_vorschlagen":              # JARVIS J9: Vorschlag, Eintrag erst nach CEO-Knopf
+        from pathlib import Path
+        from .aufgaben import jetzt_lokal
+        from .wochenplan import knoepfe, vorschlag_erstellen
+        v = vorschlag_erstellen(Path(ctx.repo_root), ctx.google, jetzt_lokal(), von="LUNA-Chat")
+        if v.get("id") and getattr(ctx, "knoepfe", None) is not None:
+            ctx.knoepfe.extend(knoepfe(v["id"]))
+        return {"ok": v["ok"], "vorschlag": v["text"],
+                "anzeigen": "Gib den Vorschlag so weiter. Noch NICHTS ist eingetragen -- erst nach dem Knopf "
+                            "„✅ Eintragen“ unter deiner Antwort." if v.get("id") else "Gib den Hinweis weiter."}
     if name == "regel_vorschlagen":                   # JARVIS J7: Vorschlag, gilt erst nach CEO-Knopf
         return _regel_vorschlagen(args, ctx)
     if name == "frage_finance":

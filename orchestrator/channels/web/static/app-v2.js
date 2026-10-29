@@ -4761,8 +4761,8 @@ async function renderTeam() {
 const SETTING_KEYS = ["depot_stop_pct", "depot_target_pct", "depot_alerts", "paper_stop_pct", "paper_target_pct",
   "paper_order_betrag_usd", "paper_dip_schwelle_pct", "briefing_morgen_stunde", "briefing_abend_stunde",
   "ruhezeit_von", "ruhezeit_bis", "alert_investment", "alert_crm", "alert_security", "alert_content",
-  "briefing_audio", "abfahrt_erinnerung", "kundenpflege_tage"];
-const SETTING_BOOLS = new Set(["depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content", "briefing_audio", "abfahrt_erinnerung"]);
+  "briefing_audio", "abfahrt_erinnerung", "kundenpflege_tage", "wochenplanung", "wochenrueckblick"];
+const SETTING_BOOLS = new Set(["depot_alerts", "alert_investment", "alert_crm", "alert_security", "alert_content", "briefing_audio", "abfahrt_erinnerung", "wochenplanung", "wochenrueckblick"]);
 const SETTING_OPT = new Set(["ruhezeit_von", "ruhezeit_bis"]);
 RENDER.einstellungen = renderEinstellungen;
 // BF-83: jede Einstellung speichert beim Umlegen bzw. Verlassen des Feldes (change) -- ein uebersehener
@@ -4811,7 +4811,9 @@ async function renderEinstellungen() {
   const c = nInp("briefing_morgen_stunde", "Morgen-Briefing", "Stunde 0–23") + nInp("briefing_abend_stunde", "Abend-Briefing", "Stunde 0–23") + nInp("ruhezeit_von", "Nicht stören von", "Stunde (leer = aus)") + nInp("ruhezeit_bis", "Nicht stören bis", "Stunde (leer = aus)") + chk("alert_investment", "Alerts: Investment") + chk("alert_crm", "Alerts: CRM") + chk("alert_security", "Alerts: Security") + chk("alert_content", "Alerts: Content")
     + chk("briefing_audio", "Morgen-Briefing vorlesen", "kurze Sprach-Ergänzung in Telegram, ca. 1 Min. (lokale LUNA-Stimme, kostenlos, ca. 10 Min. nach dem Text)")
     + chk("abfahrt_erinnerung", "Abfahrts-Erinnerung", "bei Terminen mit Ort – ab Büro, ohne Live-Verkehr")
-    + nInp("kundenpflege_tage", "Kundenpflege-Hinweis", "nach so vielen Tagen ohne Vorgang (0 = aus)");
+    + nInp("kundenpflege_tage", "Kundenpflege-Hinweis", "nach so vielen Tagen ohne Vorgang (0 = aus)")
+    + chk("wochenplanung", "Wochenplanung (Montag)", "Zeitblöcke für offene To-dos vorschlagen – eingetragen wird erst nach deinem ✅")
+    + chk("wochenrueckblick", "Wochenrückblick (Freitag 16 Uhr)", "erledigt, offen, Rechnungen, nächste Woche");
   const actions = `<span id="set-msg" class="v2-msg">Änderungen werden sofort gespeichert</span>`;   // BF-83: kein Speichern-Knopf mehr
   $("#v2-app").innerHTML = secHead("Einstellungen", actions) + `<div class="v2-grid">
     ${tile("🎨 Darstellung", darstellungHtml(), "w12")}

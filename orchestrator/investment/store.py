@@ -45,6 +45,9 @@ SETTINGS_DEFAULTS = {
     "briefing_audio": False,        # J2: Morgen-Briefing zusaetzlich als Sprachnachricht (J2b: lokale Stimme, 0 EUR)
     "abfahrt_erinnerung": True,     # J3: „in 10 Min. losfahren“ bei Terminen mit Ort
     "kundenpflege_tage": 60,        # J4: Hinweis, wenn ein Kunde so lange ohne Vorgang ist (0 = aus)
+    # F -- JARVIS_ALLTAG J9 (CEO-Go 2026-10-29)
+    "wochenplanung": True,          # Montag: Zeitbloecke fuer offene To-dos vorschlagen (Eintrag erst nach ✅)
+    "wochenrueckblick": True,       # Freitag 16 Uhr: Wochenrueckblick per Telegram
 }
 
 
