@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 21:36] — Claude Code
+- **Was:** Zweig `ai/crm-weiterleitung` nach `main` gemergt (CRM-Mail-Tracking ohne eigene Identitaet, BF-85); Suite gruen, Doku-Check ok.
+- **Warum:** CEO: „Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `orchestrator/core/crm_mail.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_crm_mail.py`, `docs/bekannte-fehler.md`
+
 ## [2026-10-29 20:57] — Claude Code
 - **Was:** CRM-Mail-Tracking ordnet keine Mails mehr der eigenen Identitaet des CEO zu: CRM-Firmen, deren Name einer eigenen Adresse entspricht (z. B. Meta-Testkonto „hsvnils“), werden uebersprungen; Mails des CEO = „aus“, seine Weiterleitungen = „ein“ (BF-85). 2 neue Tests mit Gegenprobe; Suite gruen.
 - **Warum:** CEO-Go „CRM-Zuordnung bei Weiterleitungen“ (3LT-Weiterleitung landete unter „hsvnils“).
