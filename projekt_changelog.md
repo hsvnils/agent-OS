@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 16:32] — Claude Code
+- **Was:** Zweig `ai/gedaechtnis-suche` nach `main` gemergt (J8 Gedaechtnis-Suche mit lokalem Suchmodell).
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** siehe Eintrag J8 (Code, Deploy-Skript, Doku)
+
 ## [2026-10-29 16:22] — Claude Code
 - **Was:** JARVIS J8 „Bessere Suche im Gedaechtnis“: Suchmodell `qwen3-embedding:0.6b` ins Ollama auf dem MACO470 geladen (CEO-Go); `core/gedaechtnis.py` (Vorgaenge aus Firmen, Akte, Angeboten, Auftraegen mit Bericht, Rechnungen, Belegen + Lieferanten-Summen, To-dos, Wissen, Research, Antraegen; Wort- + Bedeutungssuche, Fallback Wortsuche); `brain_suchen` nutzt sie (Treffer mit Quelle + Datum); Embed-Aufruf in `core/lokal_llm.einbetten` (dieselbe feste Ollama-Schnittstelle, Netz-Wachtest ergaenzt); Bot-Takt `gedaechtnis-loop` stuendlich. Gate an Backup-Kopie: 0/10 -> 9/10. 7 neue Tests mit Gegenproben; Suite 1458 gruen.
 - **Warum:** CEO-Go fuer J8 mit dem lokalen Suchmodell (2026-10-29).
