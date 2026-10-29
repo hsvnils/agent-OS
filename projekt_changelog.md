@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 11:06] — Claude Code
+- **Was:** Branch `ai/sprach-ergaenzung` (J2c) nach `main` gemergt; Suite gruen, Doku-Check ok. Deploy (NAS-Sync, Neustart `luna-os` + `luna-telegram`) macht der CEO.
+- **Warum:** CEO 2026-10-29: „Go für Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`.
+
 ## [2026-10-29 10:59] — Claude Code
 - **Was:** JARVIS J2c: Die Briefing-Sprachnachricht ist jetzt eine kurze Sprach-Ergaenzung (ca. 1 Min.) statt des ganzen vorgelesenen Briefings -- vier Bloecke (Begruessung, der Tag mit naechstem Termin und Abfahrt, wichtig heute hoechstens 3 Punkte ohne Belegnummern, nur Zahlen). `core/alltag.sprach_ergaenzung`/`sprechpunkt`, im Bot einmal je Morgen gesammelt (Kalender, eigene To-dos, „Zu erledigen“, Antraege, Tickets, Agenda); Kalender-Ausfall wird ehrlich angesagt, Rueckfall auf die alte Sprechfassung. 3 Tests + 2 Gegenproben, Probelauf der echten Bot-Schleife mit nachgebauten Daten. Hoerprobe `vorlagen/Hoerprobe_Stimmen/7_Sprach_Ergaenzung_Beispiel.mp3` (nicht im Git). Einstellungstext angepasst (app-v2.js v148).
 - **Warum:** CEO 2026-10-29: „Go für die Sprach-Ergänzung mit den 4 Blöcken“.
