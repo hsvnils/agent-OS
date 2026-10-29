@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 15:39] — Claude Code
+- **Was:** JARVIS J7 „LUNA lernt aus Korrekturen“ gebaut: Werkzeug `regel_vorschlagen` (Gruppe „lernen“), Speicher `regeln/log.jsonl` (`core/regeln.py`), Telegram-Knoepfe `rgl:<id>:ja|nein`, LUNA-OS-Kachel „🧠 Feste Regeln fuer LUNA“ in den Einstellungen (`/api/regeln`, Modul administration; app-v2.js v149, style-v2.css v77); bestaetigte Regeln im Chat-System-Prompt. Veralteten Satz zum Anthropic-Limit aus dem Prompt entfernt. 8 neue Tests mit Gegenproben; Suite 1451 gruen.
+- **Warum:** CEO-Go fuer J7 (2026-10-29).
+- **Betroffen:** `orchestrator/core/regeln.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/hoa_conversation.py`, `orchestrator/core/werkzeugauswahl.py`, `orchestrator/core/input_guard.py`, `orchestrator/core/team_auth.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/style-v2.css`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_regeln.py`, `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `.gitignore`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-29 13:19] — Claude Code
 - **Was:** Jarvis-Roadmap umsortiert: Paket B (J5, J6) hinter Paket C und D; neue Reihenfolge A -> C -> D -> B, naechster Schritt J7 (wartet auf Go).
 - **Warum:** CEO-Anweisung 2026-10-29.

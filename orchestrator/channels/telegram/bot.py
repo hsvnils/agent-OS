@@ -2516,6 +2516,20 @@ def main() -> None:
                             _api(token, "editMessageReplyMarkup", {"chat_id": cbchat, "message_id": mid,
                                                                    "reply_markup": json.dumps({"inline_keyboard": []})})
                             _api(token, "sendMessage", {"chat_id": cbchat, "text": fuer_telegram(res)})
+                    elif data.startswith("rgl:"):                  # JARVIS J7: feste Regel bestaetigen / ablehnen
+                        mid = (cb.get("message") or {}).get("message_id")
+                        try:
+                            from ...core.regeln import RegelStore as _RS, knopf as _rknopf
+                            _, _rid, _rakt = data.split(":", 2)
+                            res = _rknopf(_RS(ROOT / "regeln" / "log.jsonl"), _rid, _rakt)
+                        except Exception as exc:
+                            res = "⚠️ Fehler"
+                            print(f"[regeln] Knopf: {exc}", flush=True)
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": res[:180]})
+                        if mid:
+                            _api(token, "editMessageReplyMarkup", {"chat_id": cbchat, "message_id": mid,
+                                                                   "reply_markup": json.dumps({"inline_keyboard": []})})
+                            _api(token, "sendMessage", {"chat_id": cbchat, "text": fuer_telegram(res)})
                     elif data.startswith("mah:"):                  # Folgemahnung (Etappe 10) -- nur nach ✅ des CEO
                         _, re_nr, stufe, ent = data.split(":", 3)
                         mid = (cb.get("message") or {}).get("message_id")

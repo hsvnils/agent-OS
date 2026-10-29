@@ -4819,10 +4819,24 @@ async function renderEinstellungen() {
     ${tile("🏦 Echtes Depot (Beratung)", a, "w4")}
     ${tile("💼 Paper-Depot (Spielgeld)", b, "w4")}
     ${tile("🔔 Benachrichtigungen & Briefings", c, "w4")}
+    ${tile("🧠 Feste Regeln für LUNA", `<div id="set-regeln"><div class="v2-empty">Lade …</div></div>`, "w12")}
     ${tile("✉️ Textbausteine & Signatur", `<div id="set-tb"><div class="v2-empty">Lade …</div></div>`, "w12")}
     ${tile("🔐 Anmeldung & Geräte", `<div id="set-anmeldung"><div class="v2-empty">Lade …</div></div>`, "w12")}
   </div><div class="v2-sub" style="margin-top:8px">Gilt für Anzeige, Telegram-Hinweise und Briefings. Moduswechsel (advisory→paper→live) und Budget bleiben separat abgesichert.</div>`;
-  anmeldungBox(); tbLaden();
+  anmeldungBox(); tbLaden(); regelnLaden();
+}
+// JARVIS J7: Regeln, die der CEO LUNA per Korrektur beigebracht hat -- bestätigen, ablehnen, löschen
+async function regelnLaden(meldung) {
+  const box = $("#set-regeln"); if (!box) return;
+  const d = await jget("/api/regeln"); if (!d) { box.innerHTML = emptyRow("Nicht verfügbar."); return; }
+  const zeile = (r, offen) => `<div class="v2-regel"><div class="v2-regel-text">${esc(r.text)}${r.anlass ? `<small>Anlass: ${esc(r.anlass)}</small>` : ""}</div>
+    <div class="v2-card-actions">${offen ? `<button class="v2-btn sm pri" data-act="regel" data-val="${esc(r.id)}:bestaetigen">✅ Als Regel merken</button><button class="v2-btn sm" data-act="regel" data-val="${esc(r.id)}:ablehnen">❌ Nein</button>`
+      : `<button class="v2-btn sm" data-act="regel" data-val="${esc(r.id)}:loeschen">Löschen</button>`}</div></div>`;
+  box.innerHTML = (meldung ? `<div class="v2-msg ${meldung.ok ? "ok" : "err"}" style="margin-bottom:10px">${esc(meldung.text)}</div>` : "")
+    + `<small class="v2-sub">Korrigierst du LUNA, schlägt sie eine Regel vor. Erst nach deinem ✅ gilt sie – in jedem Gespräch, bis du sie löschst. Höchstens ${d.max} Regeln.</small>`
+    + (d.offen.length ? `<div class="v2-sub" style="margin-top:10px"><b>Wartet auf dich (${d.offen.length})</b></div>` + d.offen.map(r => zeile(r, true)).join("") : "")
+    + `<div class="v2-sub" style="margin-top:10px"><b>Aktiv (${d.aktiv.length})</b></div>`
+    + (d.aktiv.length ? d.aktiv.map(r => zeile(r, false)).join("") : emptyRow("Noch keine Regeln – korrigiere LUNA einfach im Chat."));
 }
 // TEXTBAUSTEINE T1: Vorlagen je Belegart + Signatur (wirken ab dem naechsten Versand)
 let TB = null;
@@ -5304,6 +5318,11 @@ async function handleAct(act, el) {
     case "ma-detail": return maDetail(id);
     case "mp-oeffnen": case "mp-eml": case "mp-adresse": case "mp-versendet": return mpAktion(act, id, val);
     case "tb-art": case "tb-neu": case "tb-weg": case "tb-standard": case "tb-ph": case "tb-speichern": return tbAktion(act, id, val, el);
+    case "regel": { const [rid, aktion] = String(val).split(":");
+      if (aktion === "loeschen" && !confirm("Diese Regel löschen? LUNA hält sich danach nicht mehr daran.")) return;
+      const r = await jpost(`/api/regeln/${encodeURIComponent(rid)}`, { aktion });
+      const ok = !!(r && r.ok);
+      return regelnLaden({ ok, text: ok ? { bestaetigen: "Regel gilt ab der nächsten Nachricht ✓", ablehnen: "Verworfen ✓", loeschen: "Gelöscht ✓" }[aktion] : ((r && r.hinweis) || "Fehler") }); }
     case "ag-profil": return agentProfil(id);
     case "bl-reiter": { const w = el.closest(".v2-beleg"); if (!w) return; w.dataset.tab = val; w.querySelectorAll(".v2-beleg-reiter button").forEach(b => b.classList.toggle("on", b.dataset.val === val)); return; }
     case "zt-auswertung": return val === "frei" ? ztAuswertung("frei", $("#aw-von").value, $("#aw-bis").value) : ztAuswertung(val);

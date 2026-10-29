@@ -252,6 +252,10 @@ def tool_specs() -> list[dict]:
               {"titel": _str("Titel ohne Datum."), "faellig": _str("JJJJ-MM-TT oder leer."),
                "uhrzeit": _str("HH:MM oder leer."), "erinnerung": _str("Abweichend: JJJJ-MM-TTTHH:MM."),
                "notiz": _str("Details."), "ohne_erinnerung": _bool("true = keine Erinnerung.")}, ["titel"]),
+        _spec("regel_vorschlagen", "Korrigiert dich der CEO und soll das kuenftig gelten (Schreibweise, Format, Vorgehen): "
+              "erst korrigieren, dann hiermit eine feste Regel vorschlagen -- gilt erst nach seinem Knopf. Nicht fuer "
+              "Einmaliges oder schon unter FESTE REGELN Stehendes.", {"regel": _str("Kurze Anweisung an dich."),
+                                                "anlass": _str("Was korrigiert wurde.")}, ["regel"]),
         _spec("todos_zeigen", "Offene eigene To-dos zeigen.", {}, []),
         _spec("todo_erledigen", "Eigenes To-do abhaken (ID aus todos_zeigen).", {"id": _str("To-do-ID.")}, ["id"]),
         _spec("drive_suchen", "Durchsucht Google Drive (Volltext).",
@@ -532,6 +536,25 @@ def _todo_werkzeug(name: str, a: dict, ctx) -> dict:
         return {"ok": False, "hinweis": str(exc)}
 
 
+def _regel_vorschlagen(a: dict, ctx) -> dict:
+    from pathlib import Path
+    from .regeln import RegelStore
+    try:
+        r = RegelStore(Path(ctx.repo_root) / "regeln" / "log.jsonl").vorschlagen(
+            str(a.get("regel") or ""), anlass=str(a.get("anlass") or ""), von="LUNA-Chat")
+    except ValueError as exc:
+        return {"ok": False, "hinweis": str(exc)}
+    if r["status"] == "bestaetigt":
+        return {"ok": True, "id": r["id"], "hinweis": "Diese Regel gilt schon -- nichts Neues vorschlagen."}
+    if getattr(ctx, "knoepfe", None) is not None:              # Telegram: Knoepfe unter der Antwort
+        ctx.knoepfe.extend([{"text": "✅ Als Regel merken", "callback_data": f"rgl:{r['id']}:ja"},
+                            {"text": "❌ Nein", "callback_data": f"rgl:{r['id']}:nein"}])
+    return {"ok": True, "id": r["id"], "regel": r["text"],
+            "anzeigen": "Frag den CEO in einem Satz, ob das als feste Regel gelten soll, und nenne den Regeltext. Die "
+                        "Knoepfe stehen unter deiner Antwort (sonst LUNA-OS -> Einstellungen). Sag NICHT, die Regel "
+                        "gelte schon."}
+
+
 def _termin_in_vergangenheit(a: dict) -> str:
     """BF-35: Termine mit einem Start in der Vergangenheit (Modell kannte das Datum nicht, erfand 2024) zurueckweisen --
     mit dem richtigen heutigen Datum als Hinweis, damit das Modell korrigieren kann. Leer = in Ordnung."""
@@ -609,6 +632,8 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
 
     if name in ("todo_anlegen", "todos_zeigen", "todo_erledigen"):          # TODOS_ROADMAP T3
         return _todo_werkzeug(name, args, ctx)
+    if name == "regel_vorschlagen":                   # JARVIS J7: Vorschlag, gilt erst nach CEO-Knopf
+        return _regel_vorschlagen(args, ctx)
     if name == "frage_finance":
         return {"finance": finance_text(ctx.finance_dir, sec)}
 

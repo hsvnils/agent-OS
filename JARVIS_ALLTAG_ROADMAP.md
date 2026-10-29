@@ -4,7 +4,7 @@
 - Stand: 2026-10-28
 - Arbeitsbranch: `ai/jarvis-alltag`
 - Basiscommit: `d4ae65d`
-- Naechster Schritt: Reihenfolge seit 2026-10-29 (CEO): A -> C -> D -> B. Paket A live, J1 abgenommen; J2c/J3/J4 Abnahme im Alltag. Als Naechstes Paket C, beginnend mit J7 -- wartet auf CEO-Go. Paket B (J5/J6) zurueckgestellt hinter C und D.
+- Naechster Schritt: Reihenfolge seit 2026-10-29 (CEO): A -> C -> D -> B. Paket A live, J1 abgenommen; J2c/J3/J4 Abnahme im Alltag. J7 umgesetzt (2026-10-29), Abnahme offen; danach Go fuer J8. Paket B (J5/J6) zurueckgestellt hinter C und D.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -177,6 +177,14 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 ## Paket C -- „Mitdenken und lernen“
 
 ### J7: LUNA lernt aus Korrekturen
+
+- Status: umgesetzt (2026-10-29), Abnahme offen -- Werkzeug `regel_vorschlagen` (Gruppe „lernen“, geladen bei
+  Korrektur-Woertern wie „falsch“, „heisst“, „merk dir“, „ab jetzt“) legt einen Vorschlag an; Knoepfe „✅ Als Regel
+  merken / ❌ Nein“ unter LUNAs Antwort in Telegram, sonst in LUNA-OS -> Einstellungen -> „🧠 Feste Regeln fuer LUNA“
+  (dort auch Loeschen). Bestaetigte Regeln stehen im System-Prompt jedes Gespraechs (hoechstens 30, je 200 Zeichen).
+  Schutz: Regeltexte mit Injection-Muster werden abgewiesen, Werkzeug nach Fremdtext-Verdacht gesperrt. Speicher
+  `regeln/log.jsonl` (`core/regeln.py`). Nebenbei: veralteter Satz zum Anthropic-Limit „bis 1. Juli“ aus dem Chat-Prompt
+  entfernt (Platz fuer das Token-Budget der Werkzeugauswahl).
 
 - Ziel / Scope: Korrigiert der CEO etwas (Schreibweise, Format, Vorgehen), schlaegt LUNA eine feste Regel vor
   („Kiez Alm, nie Kizalm – als Regel merken?“). Erst nach Bestaetigung gilt sie; Liste der Regeln in LUNA-OS, jederzeit

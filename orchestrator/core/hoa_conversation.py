@@ -46,9 +46,7 @@ TEXT_SYSTEM_PROMPT = (
     "'freigegeben'/'ist freigegeben'/'genehmigt'/'freigeben', beziehe das auf den zuletzt von dir gemeldeten "
     "oder besprochenen Antrag (steht im Verlauf der proaktiven Meldungen); bei Unklarheit schau in "
     "'antraege_zeigen' (status 'eingereicht') und frage KURZ nach, welcher gemeint ist, bevor du "
-    "'antrag_freigeben' nutzt -- erst danach 'antrag_umsetzen'. Scheitert 'antrag_umsetzen' (Anthropic-Limit "
-    "bis 1. Juli sperrt die Code-Ausfuehrung), sag das dem CEO klar: Vorschlaege/Entscheidungen gehen, die "
-    "Umsetzung wartet auf den Anthropic-Zugang. "
+    "'antrag_freigeben' nutzt -- erst danach 'antrag_umsetzen'. Scheitert 'antrag_umsetzen', sag das dem CEO klar. "
     "Tickets: dein aktiver Stand sind die OFFENEN Tickets ('offene_tickets', abteilungsuebergreifend); "
     "geschlossene liegen im Abteilungsarchiv und holst du nur bei Bedarf ('abteilung_tickets'). "
     "Kostensenkung: 'kosten_optimierung' laesst den CFO Freeware-/Token-Sparpotenziale pruefen; "
@@ -102,6 +100,8 @@ class HoaConversation:
         kontext = _zahl(s.get("LOCAL_LLM_KONTEXT"), 32768)
         fix = geschaetzte_tokens(TEXT_SYSTEM_PROMPT, self.tools)
         antwort = _zahl(s.get("LOCAL_LLM_MAX_TOKENS"), 4096)
+        from .regeln import MAX_AKTIV, MAX_TEXT
+        fix += MAX_AKTIV * MAX_TEXT // 3                 # J7: Platz fuer die festen Regeln im System-Prompt freihalten
         self.verlauf_budget = max(int(kontext * 0.9 - fix - antwort), 0)
         self.pause_stunden = _zahl(s.get("CHAT_PAUSE_STUNDEN"), 2)
         self.letzte_nachricht: float | None = None
@@ -138,7 +138,7 @@ class HoaConversation:
         for _ in range(self.max_iter):
             self.messages = verdichte(self.messages, self.verlauf_budget)
             try:
-                resp = self.router.create(system=system_prompt(), tools=self._aktuelle_tools(),
+                resp = self.router.create(system=system_prompt(regeln=self._regeln()), tools=self._aktuelle_tools(),
                                           messages=self.messages)
             except Exception as exc:
                 # Kaputter Verlauf (z. B. 'tool_use ids ohne tool_result') -> Verlauf zuruecksetzen
@@ -146,7 +146,7 @@ class HoaConversation:
                 if self._ist_verlauf_fehler(exc):
                     self.messages = [{"role": "user", "content": user_text}]
                     try:
-                        resp = self.router.create(system=system_prompt(), tools=self._aktuelle_tools(),
+                        resp = self.router.create(system=system_prompt(regeln=self._regeln()), tools=self._aktuelle_tools(),
                                                   messages=self.messages)
                     except Exception as exc2:
                         self.messages = []
@@ -190,6 +190,15 @@ class HoaConversation:
                                 "content": json.dumps(out, ensure_ascii=False)})
             self.messages.append({"role": "user", "content": results})
         return "Ich konnte das gerade nicht abschliessen -- bitte praezisiere kurz."
+
+    def _regeln(self) -> str:
+        """J7: bestaetigte Regeln des CEO fuer den System-Prompt -- ein Lesefehler darf den Chat nie blockieren."""
+        try:
+            from pathlib import Path
+            from .regeln import RegelStore, prompt_text
+            return prompt_text(RegelStore(Path(self.ctx.repo_root) / "regeln" / "log.jsonl").aktive())
+        except Exception:
+            return ""
 
     def _ohne_abfluss_links(self, antwort: str) -> str:
         """I3: Links zu fremden Adressen mit Daten aus dem Gespraech entfernen (Datenabfluss ueber Links)."""
@@ -360,14 +369,14 @@ def jetzt_berlin():
         return datetime.now()
 
 
-def system_prompt(jetzt=None) -> str:
+def system_prompt(jetzt=None, regeln: str = "") -> str:
     """Fester Prompt + aktuelles Datum. Ohne Datum rechnete das Modell „morgen" von seinem Trainingsstand aus und trug
     einen Termin am 16.05.2024 ein (BF-35, 2026-09-28)."""
     j = jetzt or jetzt_berlin()
     return (TEXT_SYSTEM_PROMPT + f" JETZT: Heute ist {_WOCHENTAGE[j.weekday()]}, der {j:%d.%m.%Y}, {j:%H:%M} Uhr "
             f"(Europe/Berlin). Rechne 'heute', 'morgen', 'Freitag', 'naechste Woche' immer von diesem Datum aus und "
             f"gib Termine/Zeiten an Werkzeuge immer mit vollem Datum im Format {j:%Y}-MM-TTTHH:MM:SS an. Nenne dem CEO "
-            f"Datum mit Wochentag, damit er es pruefen kann.")
+            f"Datum mit Wochentag, damit er es pruefen kann." + regeln)
 
 
 def _fehlertext(exc: Exception) -> str:

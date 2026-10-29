@@ -54,6 +54,8 @@ FILES=(
   sicherheit/netz_agent.jsonl
   # TODOS_ROADMAP: eigene To-dos des CEO (append-only)
   todos/log.jsonl
+  # JARVIS J7: feste Regeln des CEO fuer LUNA (append-only)
+  regeln/log.jsonl
   # Briefkopf + Bankverbindung (nur NAS, nie im Git; kein JSONL -> nicht im Zeilen-Check)
   buchhaltung/firmendaten.json
   buchhaltung/katalog.json       # Leistungskatalog/Preise (Etappe 3b; Aenderungen zusaetzlich in der Kette)
