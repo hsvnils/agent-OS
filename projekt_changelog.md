@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 16:51] — Claude Code
+- **Was:** Zweig `ai/wochenplanung` nach `main` gemergt (J9 Wochenplanung mit Zeitbloecken + Wochenrueckblick).
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** siehe Eintrag J9 (Code, Deploy-Skripte, Doku)
+
 ## [2026-10-29 16:49] — Claude Code
 - **Was:** JARVIS J9 „Wochenplanung mit Zeitbloecken“: `core/wochenplan.py` (Luecken Mo-Fr 9-18, Mittag/Puffer/ganztaegig, Bloecke je To-do, frische Kollisionspruefung vor dem Eintragen, Wochenrueckblick); Bot montags nach dem Morgen-Briefing + freitags 16 Uhr, Knoepfe `wpl:`; Werkzeug `wochenplan_vorschlagen` (Gruppe „aufgaben“); Einstellungen `wochenplanung`/`wochenrueckblick` (LUNA-OS, app-v2.js v150); Speicher `wochenplan/log.jsonl` (Sync-Schutz, Backup). 8 neue Tests mit Gegenproben; Suite 1466 gruen.
 - **Warum:** CEO-Go fuer J9 (2026-10-29).
