@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 09:59] — Claude Code
+- **Was:** LUNA-OS-Einstellungen speichern jetzt sofort beim Umlegen eines Schalters bzw. beim Verlassen eines Zahlenfeldes; Knopf „Speichern“ entfernt, Hinweis „Änderungen werden sofort gespeichert“, bei Fehlschlag springt der Schalter zurueck (app-v2.js v147). Neuer Test fuer Einzel-Speichern, Verhaltensprobe der Seite mit QuickJS (Erfolg, Fehlschlag, leeres Feld, fremdes Feld) mit Gegenproben. BF-83 ins Archiv (behoben). Einstellung `briefing_audio` auf der NAS als gespeichert bestaetigt.
+- **Warum:** CEO 2026-10-29: „Go für sofort speichern“ (BF-83).
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_investment_settings.py`, `docs/bekannte-fehler.md`.
+
 ## [2026-10-29 09:55] — Claude Code
 - **Was:** Fehlende Briefing-Sprachnachricht untersucht: auf der NAS wurde kein Sprachauftrag angelegt, weil die Einstellung `briefing_audio` nie gespeichert wurde (kein Eintrag in `investment/log.jsonl`); Sprach-Arbeiter laeuft und ist erreichbar (naechtliche Zeitueberschreitungen 01:16-03:18 ohne Folgen). Als BF-83 eingetragen.
 - **Warum:** CEO 2026-10-29: „Ich habe heute morgen keine Sprachnachricht vom System als Briefing bekommen“.
