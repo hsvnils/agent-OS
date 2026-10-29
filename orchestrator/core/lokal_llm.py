@@ -70,6 +70,20 @@ def erreichbar(base_url: str, timeout: float = 3.0) -> tuple[bool, str]:
         return False, f"nicht erreichbar ({exc.__class__.__name__}) -- MACO470/Ollama pruefen; Cloud uebernimmt."
 
 
+def einbetten(ollama_url: str, modell: str, texte: list[str], timeout: float = 20) -> list[list[float]] | None:
+    """JARVIS J8: Texte mit dem Suchmodell derselben Ollama-Instanz einbetten (`/api/embed`, Heimnetz). None = Fehler."""
+    import json
+    body = json.dumps({"model": modell, "input": texte}).encode()
+    req = urllib.request.Request(ollama_url.rstrip("/") + "/api/embed", data=body,
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            vek = json.loads(r.read()).get("embeddings") or []
+    except Exception:  # noqa: BLE001 -- MACO470 aus/Modell fehlt -> Aufrufer faellt auf die Wortsuche zurueck
+        return None
+    return vek if len(vek) == len(texte) else None
+
+
 def _zahl(wert, standard: float) -> float:
     try:
         return float(wert) if wert not in (None, "") else standard

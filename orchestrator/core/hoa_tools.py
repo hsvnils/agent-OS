@@ -334,9 +334,9 @@ def tool_specs() -> list[dict]:
               {"text": _str("Der zu merkende Inhalt."), "titel": _str("Kurztitel (optional)."),
                "tags": {"type": "array", "items": {"type": "string"}, "description": "Schlagworte (optional)."}},
               ["text"]),
-        _spec("brain_suchen", "Durchsucht das Second Brain quellenuebergreifend: gespeichertes Wissen + interne "
-              "Daten (Research-Befunde, Antraege) + -- falls verfuegbar -- Gmail und Drive. Liefert die besten "
-              "Treffer mit Quelle; fasse sie fuer den CEO zusammen.",
+        _spec("brain_suchen", "Gedaechtnis-Suche (Wort + Bedeutung): Firmen, Akte, Angebote, Auftraege mit Bericht, "
+              "Rechnungen, Belege, To-dos, Wissen, Research, Antraege + Gmail/Drive. Fasse zusammen und nenne je "
+              "Aussage die Quelle (Nummer, Datum).",
               {"frage": _str("Wonach suchen?")}, ["frage"]),
         _spec("erfahrung_merken", "Phase 26: haelt einen erfolgreich geloesten Ablauf als Trajektorie fest "
               "(Aufgabe -> Vorgehen -> Ergebnis), damit LUNA bei aehnlichen Aufgaben daraus schoepfen kann. "
@@ -1928,39 +1928,22 @@ def _content_feed(ctx: ToolContext, sb, sec: list[str]):
 
 
 def _brain_suchen(frage: str, ctx: ToolContext, sec: list[str]) -> dict:
-    """Quellenuebergreifende Suche fuers Second Brain: Wissensspeicher + interne Stores + Google (Mail/Drive)."""
-    from .brain import _tokens
-    q = set(_tokens(frage))
+    """Quellenuebergreifende Suche (JARVIS J8): Geschaeftsdaten + Wissen + Research + Antraege per Wort- und
+    Bedeutungssuche (`core/gedaechtnis.py`, Suchmodell auf dem MACO470), dazu Gmail/Drive live."""
+    from pathlib import Path
+    from .gedaechtnis import INDEX, VektorIndex, dokumente, einbetter_aus, suchen
     treffer: list[dict] = []
-
-    if ctx.brain is not None:
-        for e in ctx.brain.suchen(frage, limit=6):
-            treffer.append({"quelle": "brain:" + e.get("quelle", "notiz"),
-                            "titel": e.get("titel") or (e.get("text", "")[:50]),
-                            "text": e.get("text", "")[:300], "ref": e.get("id", "")})
-
-    def _lex(text: str) -> int:
-        return len(q & set(_tokens(text)))
-
-    if ctx.research is not None:
-        try:
-            for t in ctx.research.list():
-                blob = (t.get("frage", "") or "") + " " + (t.get("befund", "") or "")
-                if _lex(blob) >= 1:
-                    treffer.append({"quelle": "research", "titel": (t.get("frage") or "")[:60],
-                                    "text": (t.get("befund") or t.get("status", ""))[:300],
-                                    "ref": t.get("ticket_id", "")})
-        except Exception:
-            pass
-    if ctx.antraege is not None:
-        try:
-            for a in ctx.antraege.list():
-                blob = (a.get("titel", "") or "") + " " + (a.get("beschreibung", "") or "")
-                if _lex(blob) >= 1:
-                    treffer.append({"quelle": "antrag", "titel": (a.get("titel") or "")[:60],
-                                    "text": (a.get("beschreibung") or "")[:300], "ref": a.get("antrag_id", "")})
-        except Exception:
-            pass
+    modus = "wort"
+    try:
+        root = Path(ctx.repo_root)
+        docs = dokumente(root, brain=ctx.brain, research=ctx.research, antraege=ctx.antraege)
+        r = suchen(frage, docs, index=VektorIndex(root / INDEX),
+                   einbetter=einbetter_aus(getattr(ctx, "secret_dict", None)), limit=8)
+        modus = r["modus"]
+        treffer = [{"quelle": x["quelle"], "titel": x["titel"], "text": x["text"][:400], "ref": x["ref"],
+                    **({"datum": x["datum"]} if x["datum"] else {})} for x in r["treffer"]]
+    except Exception as exc:
+        treffer = [{"quelle": "fehler", "titel": "Interne Suche fehlgeschlagen", "text": str(exc)[:160], "ref": ""}]
     # Live-Quellen (nur wenn Google verbunden): Gmail + Drive
     if ctx.google is not None:
         try:
@@ -1981,7 +1964,7 @@ def _brain_suchen(frage: str, ctx: ToolContext, sec: list[str]) -> dict:
         except Exception:
             pass
 
-    return {"anzahl": len(treffer), "treffer": _redact_obj({"t": treffer[:12]}, sec)["t"]}
+    return {"anzahl": len(treffer), "suche": modus, "treffer": _redact_obj({"t": treffer[:12]}, sec)["t"]}
 
 
 def _redact_obj(obj: dict, secrets: list[str]) -> dict:

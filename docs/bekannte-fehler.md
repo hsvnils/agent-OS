@@ -12,7 +12,7 @@ Stand 2026-09-28 auf dem MACO470 (`.venv`, `python -m pytest`), nach KUNDEN_FINA
 
 | Suite | Ergebnis | Erwartet rot / uebersprungen |
 |---|---|---|
-| `orchestrator/tests` | 1451 bestanden (2026-10-29, nach JARVIS J7), 0 rot, 4 uebersprungen (BF-38: einmal 1 rot, nicht reproduzierbar) | uebersprungen: Phase 17 „plan() erfordert macOS" (BF-01 behoben 2026-09-25) |
+| `orchestrator/tests` | 1458 bestanden (2026-10-29, nach JARVIS J8), 0 rot, 4 uebersprungen (BF-38: einmal 1 rot, nicht reproduzierbar) | uebersprungen: Phase 17 „plan() erfordert macOS" (BF-01 behoben 2026-09-25) |
 | `cutter/tests` | 74 bestanden | – |
 | `backoffice/tests` | 14 bestanden | – |
 | `netz_agent/tests` | 10 bestanden (2026-10-26, NETZ_AGENT Q2) | – |

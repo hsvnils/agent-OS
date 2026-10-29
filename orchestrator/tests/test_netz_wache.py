@@ -15,7 +15,7 @@ ERLAUBT = {
     "channels/web/app.py": {"_elevenlabs_tts"},
     "core/alltag.py": {"elevenlabs_tts"},                 # ElevenLabs (LUNA-OS-Stimme; Briefing seit J2b lokal)
     "core/hoa_tools.py": {"_http"},                       # OSV.dev (CISO)
-    "core/lokal_llm.py": {"erreichbar"},                  # Ollama im Heimnetz
+    "core/lokal_llm.py": {"erreichbar", "einbetten"},     # Ollama im Heimnetz (Chat-Modell + Suchmodell J8)
     "core/modell_radar.py": {"aa_abrufen"},               # Artificial-Analysis-API (mit Schluessel)
     "core/netzwerk.py": {"_digest_opener", "_echt", "zertifikat_tage"},   # Fritz!Box, DSM, eigenes Zertifikat
     "core/routen.py": {"_json"},                          # Nominatim/OSRM

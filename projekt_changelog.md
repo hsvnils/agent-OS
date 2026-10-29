@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 16:22] — Claude Code
+- **Was:** JARVIS J8 „Bessere Suche im Gedaechtnis“: Suchmodell `qwen3-embedding:0.6b` ins Ollama auf dem MACO470 geladen (CEO-Go); `core/gedaechtnis.py` (Vorgaenge aus Firmen, Akte, Angeboten, Auftraegen mit Bericht, Rechnungen, Belegen + Lieferanten-Summen, To-dos, Wissen, Research, Antraegen; Wort- + Bedeutungssuche, Fallback Wortsuche); `brain_suchen` nutzt sie (Treffer mit Quelle + Datum); Embed-Aufruf in `core/lokal_llm.einbetten` (dieselbe feste Ollama-Schnittstelle, Netz-Wachtest ergaenzt); Bot-Takt `gedaechtnis-loop` stuendlich. Gate an Backup-Kopie: 0/10 -> 9/10. 7 neue Tests mit Gegenproben; Suite 1458 gruen.
+- **Warum:** CEO-Go fuer J8 mit dem lokalen Suchmodell (2026-10-29).
+- **Betroffen:** `orchestrator/core/gedaechtnis.py`, `orchestrator/core/lokal_llm.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_gedaechtnis.py`, `orchestrator/tests/test_netz_wache.py`, `deploy/sync-to-nas.sh`, `.gitignore`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-29 15:48] — Claude Code
 - **Was:** Zweig `ai/lernen-aus-korrekturen` nach `main` gemergt (J7 LUNA lernt aus Korrekturen).
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.

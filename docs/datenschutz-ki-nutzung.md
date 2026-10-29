@@ -140,6 +140,9 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
 - **Abfahrts-Erinnerung (J3):** nur der Ort eines Termins geht an OpenStreetMap (Nominatim/OSRM), kein Titel, keine
   Teilnehmer.
 - **Kundenpflege (J4):** rein intern, kein Dienst, kein Modell.
+- **Gedaechtnis-Suche (J8):** Kurztexte der Vorgaenge (Firmen, Akte, Angebote, Auftraege, Rechnungen, Belege, To-dos,
+  Wissen) gehen von der NAS nur an das Suchmodell im Ollama auf dem MACO470 (Heimnetz, kein Cloud-Dienst); das
+  Suchverzeichnis liegt nur auf der NAS. Die Treffer gehen -- wie jedes Werkzeug-Ergebnis -- an das jeweilige Chat-Modell.
 - **Feste Regeln (J7):** bestaetigte Regeln des CEO (kurze Anweisungen, ggf. mit Firmennamen) stehen im
   System-Prompt jedes Chats und gehen damit an das jeweilige Chat-Modell -- wie jede andere Chat-Nachricht, kein neuer
   Dienst. Gespeichert nur auf der NAS (`regeln/log.jsonl`) + Backup, jederzeit in LUNA-OS loeschbar.

@@ -4,7 +4,7 @@
 - Stand: 2026-10-28
 - Arbeitsbranch: `ai/jarvis-alltag`
 - Basiscommit: `d4ae65d`
-- Naechster Schritt: Reihenfolge seit 2026-10-29 (CEO): A -> C -> D -> B. Paket A live, J1 abgenommen; J2c/J3/J4 Abnahme im Alltag. J7 umgesetzt (2026-10-29), Abnahme offen; danach Go fuer J8. Paket B (J5/J6) zurueckgestellt hinter C und D.
+- Naechster Schritt: Reihenfolge seit 2026-10-29 (CEO): A -> C -> D -> B. Paket A live, J1 abgenommen; J2c/J3/J4 Abnahme im Alltag. J7 live, J8 umgesetzt (2026-10-29), beide Abnahme im Betrieb; danach Go fuer J9. Paket B (J5/J6) zurueckgestellt hinter C und D.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -193,6 +193,17 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 - Aufwand: mittel.
 
 ### J8: Bessere Suche im Gedaechtnis
+
+- Status: umgesetzt (2026-10-29), Abnahme offen -- `brain_suchen` durchsucht jetzt auch Firmen, Firmenakte, Angebote,
+  Auftraege (mit Kennzahlen + Projektbericht), Rechnungen, Eingangsbelege (+ Zusammenfassung je Lieferant), eigene
+  To-dos, Wissen, Research und offene/erledigte Antraege (abgelehnte/geloeschte nicht -- Rauschen). Wortsuche (BM25) +
+  Bedeutungssuche (Suchmodell `qwen3-embedding:0.6b`, Apache 2.0, im Ollama auf dem MACO470, CEO-Go 2026-10-29), gemischt
+  per Reciprocal Rank Fusion; MACO470 aus -> nur Wortsuche. Suchverzeichnis `gedaechtnis/vektoren.json` auf der NAS,
+  stuendlich nachgezogen (Bot-Takt), Erstaufbau ca. 30 s. Code `core/gedaechtnis.py`.
+- **Gate-Messung 2026-10-29** (Kopie des Backups vom 29.10., 488 Vorgaenge, Treffer = richtige Quelle unter den ersten 5):
+  heutige Suche **0/10**, nur Wortsuche **6/10**, Wort + Bedeutung **9/10**. Verfehlt: „Wo haben wir Webhosting und unsere
+  Domains?“ -- dass All-Inkl der Hoster ist, steht nirgends in den Daten (nur Kategorie „Software, Abos, Hosting“);
+  abhilfe: Notiz an der Firma oder „merk dir“. Eine Suche dauert auf dem MACO470 ca. 1,4 s.
 
 - Ziel / Scope: Fragen wie „Was hat Kiez Alm letztes Jahr gebucht und wie lief es?“ ueber Akte, Mails, Angebote,
   Berichte und Wissen hinweg -- mit Bedeutungssuche (lokal auf dem MACO470), Antwort mit Quellenangaben.
