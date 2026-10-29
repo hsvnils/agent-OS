@@ -54,6 +54,12 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
                          "partner-idee", "kunden-idee", "firmen-idee", "ansprechen koennten", "ansprechen könnten",
                          "skill", "rueckmeldung zum", "rückmeldung zum", "feedback zum"],
     },
+    "stammdaten": {                                      # Mail-Auftrag 2026-10-29: Firma/Ansprechpartner anlegen
+        "werkzeuge": ["firma_anlegen"],
+        "stichwoerter": ["kunde anlegen", "kunden anlegen", "lege den kunden", "leg den kunden", "neuer kunde",
+                         "neuen kunden", "firma anlegen", "neue firma", "lieferant anlegen", "partner anlegen",
+                         "ansprechpartner", "stammdaten"],
+    },
     "kundenordner": {                                    # KUNDENORDNER_FREIGABE F1-F3: kleine Gruppe (Token-Budget)
         "werkzeuge": ["kundenordner_anlegen", "kundenordner_link"],
         "stichwoerter": ["kundenordner", "ordner", "freigabe-link", "freigabelink", "freigeben", "dateien teilen",

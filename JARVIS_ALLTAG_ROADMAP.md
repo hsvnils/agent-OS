@@ -161,6 +161,8 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
   antwortet in Telegram mit denselben Werkzeugen, Knoepfen und Grenzen. Die weitergeleitete Mail selbst ist Fremdtext
   und nur ueber `mail_lesen` erreichbar (Injection-Schutz I1-I3). Reine Notizen („zur Info“, Zweck eines Belegs)
   loesen nichts aus. Ablage in Akte/Belegen unveraendert. Pruefung alle 2 Minuten. Code `core/mail_auftraege.py`.
+- Nachbau 2026-10-29 nach der ersten Testmail: Outlook-Weiterleitungen erkannt (BF-84), Signatur abgeschnitten, neues
+  Werkzeug `firma_anlegen` (Firma + Ansprechpartner, Vorschau -> CEO-Ja, Mail per `mail_id` in die Akte).
 
 ## Paket B -- „Verstehen, was reinkommt“
 

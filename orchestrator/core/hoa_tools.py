@@ -257,6 +257,15 @@ def tool_specs() -> list[dict]:
               "Einmaliges oder schon unter FESTE REGELN Stehendes.", {"regel": _str("Kurze Anweisung an dich."),
                                                 "anlass": _str("Was korrigiert wurde.")}, ["regel"]),
         _spec("todos_zeigen", "Offene eigene To-dos zeigen.", {}, []),
+        _spec("firma_anlegen", "Firma (Kunde/Lieferant/Partner) mit optionalem Ansprechpartner in den Stammdaten anlegen. "
+              "OHNE bestaetigt=true nur Vorschau + Dubletten-Pruefung; erst nach CEO-Ja mit bestaetigt=true.",
+              {"name": _str("Firmenname."), "typ": _str("kunde | lieferant | partner (Standard kunde)."),
+               "website": _str("Website."), "rechnungsmail": _str("Mail der Firma."), "telefon": _str("Telefon."),
+               "ort": _str("Ort."), "notiz": _str("Notiz."), "ap_vorname": _str("Ansprechpartner Vorname."),
+               "ap_nachname": _str("Ansprechpartner Nachname."), "ap_mail": _str("Ansprechpartner Mail."),
+               "ap_telefon": _str("Ansprechpartner Telefon."), "ap_rolle": _str("Ansprechpartner Rolle."),
+               "mail_id": _str("Gmail-ID einer weitergeleiteten Mail -> danach in die Akte der Firma."),
+               "bestaetigt": _bool("true erst nach CEO-Bestaetigung.")}, ["name"]),
         _spec("wochenplan_vorschlagen", "Offene To-dos als Zeitbloecke in freie Kalenderluecken dieser Woche "
               "vorschlagen; eingetragen wird erst nach CEO-Knopf.", {}, []),
         _spec("todo_erledigen", "Eigenes To-do abhaken (ID aus todos_zeigen).", {"id": _str("To-do-ID.")}, ["id"]),
@@ -538,6 +547,55 @@ def _todo_werkzeug(name: str, a: dict, ctx) -> dict:
         return {"ok": False, "hinweis": str(exc)}
 
 
+def _firma_anlegen(a: dict, ctx) -> dict:
+    """Firma + optional Ansprechpartner anlegen (Hash-Kette der Buchhaltung). Ohne `bestaetigt` nur Vorschau."""
+    from pathlib import Path
+    from .buchhaltung import Buchhaltung
+    from .firmenakte import Firmenakte
+    from .kunden import DubletteFehler, KundenStore
+    root = Path(ctx.repo_root) / "buchhaltung"
+    if not (root / "log.jsonl").exists():
+        return {"ok": False, "hinweis": "Keine Buchhaltung/Stammdaten auf diesem System."}
+    ks = KundenStore(Buchhaltung(root))
+    t = lambda k: " ".join(str(a.get(k) or "").split())[:200]
+    typ = t("typ").lower() or "kunde"
+    if typ not in ("kunde", "lieferant", "partner"):
+        return {"ok": False, "hinweis": "typ bitte kunde, lieferant oder partner."}
+    firma = {k: t(k) for k in ("name", "website", "rechnungsmail", "telefon", "ort", "notiz") if t(k)} | {"typ": typ}
+    ap = {k[3:]: t(k) for k in ("ap_vorname", "ap_nachname", "ap_mail", "ap_telefon", "ap_rolle") if t(k)}
+    if not firma.get("name"):
+        return {"ok": False, "hinweis": "Firmenname fehlt."}
+    vorhanden = ks.finde(firma["name"], ap.get("mail") or firma.get("rechnungsmail", ""))
+    if not a.get("bestaetigt"):
+        return {"ok": False, "bestaetigung_noetig": True, "vorschau": {"firma": firma, "ansprechpartner": ap or None},
+                **({"moegliche_dublette": vorhanden, "hinweis_dublette": "Diese Firma gibt es vermutlich schon -- "
+                    "nicht doppelt anlegen, sondern den CEO fragen."} if vorhanden else {}),
+                "anzeigen": "Zeig dem CEO die Vorschau in zwei Zeilen und frag, ob du anlegen sollst. Erst nach seinem Ja "
+                            "erneut mit bestaetigt=true."}
+    try:
+        nr = ks.firma_anlegen(firma, von="LUNA-Chat (CEO-Auftrag)")["nummer"]
+    except DubletteFehler as exc:
+        return {"ok": False, "dublette": exc.nummern, "hinweis": str(exc)}
+    except ValueError as exc:
+        return {"ok": False, "hinweis": str(exc)}
+    out = {"ok": True, "firma": nr, "name": firma["name"]}
+    if ap.get("vorname") or ap.get("nachname"):
+        try:
+            out["ansprechpartner"] = ks.ansprechpartner_anlegen(nr, ap, von="LUNA-Chat (CEO-Auftrag)")["nummer"]
+        except (ValueError, KeyError) as exc:
+            out["hinweis_ansprechpartner"] = str(exc)
+    if t("mail_id"):
+        akte = Firmenakte(ks.bh, ks)
+        offen = [d for d in akte.offene() if d.get("mail_id") == t("mail_id")]
+        if offen:
+            akte.zuordnen(offen[0]["id"], nr, von="LUNA-Chat (CEO-Auftrag)")
+            out["akte"] = "Mail in die Akte gelegt."
+        else:
+            out["akte"] = ("Die Mail liegt noch nicht in der Ablage -- der Akten-Abgleich (alle 15 Min.) legt sie "
+                           "automatisch in diese Akte, weil Absender/Domain jetzt zur Firma passen.")
+    return out
+
+
 def _regel_vorschlagen(a: dict, ctx) -> dict:
     from pathlib import Path
     from .regeln import RegelStore
@@ -644,6 +702,8 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"ok": v["ok"], "vorschlag": v["text"],
                 "anzeigen": "Gib den Vorschlag so weiter. Noch NICHTS ist eingetragen -- erst nach dem Knopf "
                             "„✅ Eintragen“ unter deiner Antwort." if v.get("id") else "Gib den Hinweis weiter."}
+    if name == "firma_anlegen":                       # Mail-Auftrag 2026-10-29: Stammdaten aus dem Chat, erst nach CEO-Ja
+        return _firma_anlegen(args, ctx)
     if name == "regel_vorschlagen":                   # JARVIS J7: Vorschlag, gilt erst nach CEO-Knopf
         return _regel_vorschlagen(args, ctx)
     if name == "frage_finance":

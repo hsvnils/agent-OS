@@ -99,7 +99,7 @@ AKTIONS_WERKZEUGE = frozenset({
     "tabelle_schreiben", "antrag_freigeben", "antrag_mergen", "antrag_pushen", "antrag_umsetzen", "technische_freigabe",
     "paper_order", "paper_order_freigabe", "rechner_aktion", "rechner_ziel", "xmind_bearbeiten", "set_budget",
     "investment_modus", "autonomie_pausieren", "steuerung_modus", "brain_merken", "erfahrung_merken", "auftrag_erteilen",
-    "kundenordner_link", "todo_anlegen", "todo_erledigen", "regel_vorschlagen",
+    "kundenordner_link", "todo_anlegen", "todo_erledigen", "regel_vorschlagen", "firma_anlegen",
 })
 # Kyrillische/griechische Doppelgaenger lateinischer Buchstaben (Rest erledigt NFKC: Vollbreite, Mathe-Alphabete).
 _DOPPELGAENGER = str.maketrans("аеорсухіѕјкмнтвАЕОРСУХІЅЈКМНТВοαειτνκρΟΑΕΙΤΝΚΡ",
