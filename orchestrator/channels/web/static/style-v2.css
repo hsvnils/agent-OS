@@ -971,6 +971,11 @@ input[type="file"] { width: 100%; max-width: 100%; min-width: 0; box-sizing: bor
 .v2-kz-vid .v2-kz-szene .grow { min-width: 0; } .v2-kz-vid .v2-kz-szene small { overflow-wrap: anywhere; }
 .v2-kz-vid-txt p { margin: 2px 0 0; font-size: 13px; color: var(--v2-muted); }
 
+/* JARVIS J7: feste Regeln */
+.v2-regel { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-top: 1px solid var(--v2-line-soft); }
+.v2-regel-text { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+.v2-regel-text small { display: block; margin-top: 2px; color: var(--v2-muted); font-size: 12px; }
+.v2-regel .v2-card-actions { margin: 0; }
 /* TEXTBAUSTEINE T1/T3 */
 .v2-tb-vorlage { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--v2-line-soft); }
 .v2-tb-arten, .v2-tb-ph { margin: 10px 0 4px; } .v2-tb-ph .v2-chip { font-family: ui-monospace, monospace; font-size: 12px; }

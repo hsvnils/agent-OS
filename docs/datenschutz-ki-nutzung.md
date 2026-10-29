@@ -140,3 +140,6 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
 - **Abfahrts-Erinnerung (J3):** nur der Ort eines Termins geht an OpenStreetMap (Nominatim/OSRM), kein Titel, keine
   Teilnehmer.
 - **Kundenpflege (J4):** rein intern, kein Dienst, kein Modell.
+- **Feste Regeln (J7):** bestaetigte Regeln des CEO (kurze Anweisungen, ggf. mit Firmennamen) stehen im
+  System-Prompt jedes Chats und gehen damit an das jeweilige Chat-Modell -- wie jede andere Chat-Nachricht, kein neuer
+  Dienst. Gespeichert nur auf der NAS (`regeln/log.jsonl`) + Backup, jederzeit in LUNA-OS loeschbar.

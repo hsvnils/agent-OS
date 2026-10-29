@@ -197,6 +197,7 @@ _ADMIN_POST_PREFIXE = ("/api/antraege/",)
 _ADMIN_PFADE = ("/api/chat", "/api/tts", "/api/sehen")
 _ADMIN_PREFIXE = ("/api/team", "/api/backoffice",   # Team-Verwaltung + Backoffice-Auftraege: nur administration
                   "/api/aufgaben",                    # TODOS_ROADMAP: eigene To-dos des CEO
+                  "/api/regeln",                      # JARVIS J7: feste Regeln des CEO fuer LUNA
                   "/api/netzwerk",                    # NETZWERK_WACHE: Geraete/Befunde des Heimnetzes
                   "/api/modell-radar",                # MODELL_RADAR: genutzte Modelle, Vorschlaege
                   "/api/skills",                      # SKILL_WERKSTATT: Skills bauen, freigeben, Rueckmeldungen

@@ -4142,6 +4142,25 @@ async def aufgabe_loeschen(aid: str, request: Request):
     return _aufgabe_mit_kalender(fn, _von(request))
 
 
+# -- Feste Regeln des CEO fuer LUNA (JARVIS J7; Modul administration ueber den Pfad /api/regeln) ------------------------
+def _regeln():
+    from ...core.regeln import RegelStore
+    return RegelStore(ROOT / "regeln" / "log.jsonl")
+
+
+@app.get("/api/regeln")
+def regeln_liste():
+    from ...core.regeln import MAX_AKTIV
+    return _regeln().liste() | {"max": MAX_AKTIV}
+
+
+@app.post("/api/regeln/{rid}")
+async def regel_entscheiden(rid: str, request: Request):
+    """{aktion: bestaetigen | ablehnen | loeschen} -- bestaetigen nur hier oder per Telegram-Knopf des CEO."""
+    b = await _json(request)
+    return _kunden_aktion(lambda: {"regel": _regeln().entscheiden(rid, str(b.get("aktion") or ""), von=_von(request))})
+
+
 @app.get("/api/todos")
 def todos_liste(request: Request):
     u = getattr(request.state, "user", None) or _ceo_user()

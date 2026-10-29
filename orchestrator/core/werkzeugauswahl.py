@@ -64,6 +64,12 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
         "stichwoerter": ["mail", "e-mail", "email", "posteingang", "postfach", "gmail", "entwurf", "ungelesen",
                          "gelesen", "absender", "anschreiben", "schreib", "antworte", "nachricht von", "newsletter"],
     },
+    "lernen": {                                          # JARVIS J7: Korrektur des CEO -> feste Regel vorschlagen
+        "werkzeuge": ["regel_vorschlagen"],
+        "stichwoerter": ["falsch", "korrig", "heisst", "schreibt man", "schreibt sich", "richtig ist", "regel",
+                         "merk dir", "merke dir", "immer so", "nie wieder", "nicht so", "in zukunft", "kuenftig",
+                         "ab jetzt", "ab sofort"],
+    },
     "aufgaben": {                                        # TODOS_ROADMAP T3: eigene To-dos (klein, Token-Budget)
         "werkzeuge": ["todo_anlegen", "todos_zeigen", "todo_erledigen"],
         "stichwoerter": ["to-do", "todo", "to do", "aufgabe", "erinner", "nicht vergessen", "denk dran", "denke dran",
