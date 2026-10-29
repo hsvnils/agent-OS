@@ -2699,7 +2699,7 @@ def main() -> None:
                     _api(token, "sendMessage", {"chat_id": chat_id,
                          "text": "🎙️ Die Sprachnachricht konnte ich nicht verstehen – bitte noch einmal oder tippen."})
                     continue
-                _api(token, "sendMessage", {"chat_id": chat_id, "text": f"🎙️ Verstanden: „{text.strip()[:600]}“"})
+                # CEO 2026-10-29: kein Echo des erkannten Texts -- LUNA antwortet direkt auf den Inhalt
             if not text:
                 continue
             # Antwort auf 'Andere Summe': Betrag lesen -> frische Freigabe (Ja/Nein/Andere Summe) senden
