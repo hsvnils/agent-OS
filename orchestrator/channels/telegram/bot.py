@@ -1159,6 +1159,26 @@ def _start_todo_loop(ctx, token, chat_id) -> None:
     threading.Thread(target=loop, daemon=True, name="todo-erinnerung").start()
 
 
+def _start_gedaechtnis_loop(ctx, secrets) -> None:
+    """JARVIS J8: Suchverzeichnis der Bedeutungssuche stuendlich nachziehen (Suchmodell im Ollama auf dem MACO470).
+    Ist der MACO470 aus, passiert nichts -- die Suche faellt dann auf die Wortsuche zurueck. Aus mit GEDAECHTNIS=aus."""
+    import threading
+    import time
+    from ...core.gedaechtnis import einbetter_aus, hintergrund_aktualisieren
+    if einbetter_aus(secrets) is None:
+        return
+
+    def loop():
+        time.sleep(120)
+        while True:
+            n = hintergrund_aktualisieren(ROOT, secrets, brain=getattr(ctx, "brain", None),
+                                          research=getattr(ctx, "research", None), antraege=getattr(ctx, "antraege", None))
+            if n:
+                print(f"[gedaechtnis] {n} Eintraege neu im Suchverzeichnis", flush=True)
+            time.sleep(3600)
+    threading.Thread(target=loop, daemon=True, name="gedaechtnis-loop").start()
+
+
 def _start_alltag_loop(ctx, token, chat_id) -> None:
     """JARVIS_ALLTAG Paket A (CEO-Go 2026-10-28), jede Minute:
     J2 -- Morgen-Briefing zusaetzlich als Sprachnachricht (Einstellung „briefing_audio“, Standard aus), seit J2b mit der
@@ -2215,6 +2235,7 @@ def main() -> None:
     _start_buchhaltung_loop(ctx)
     _start_todo_loop(ctx, token, allowed)   # TODOS_ROADMAP T2: To-do-Erinnerungen (aus mit AUFGABEN_ERINNERUNG=0)
     _start_alltag_loop(ctx, token, allowed)  # JARVIS_ALLTAG J2/J3: Briefing als Sprachnachricht, Abfahrts-Erinnerung
+    _start_gedaechtnis_loop(ctx, secrets)    # JARVIS J8: Suchverzeichnis der Bedeutungssuche (stuendlich)
     _start_rechtsquellen_loop(ctx)  # CLO_AUSBAU C3: Rechtsquellen aller Agenten-Skills (CLO, CFO) naechtlich 04:30 auf Aenderungen pruefen  # KUNDEN_FINANZEN Etappe 1: Integritaetspruefung 05:00, nur melden
     offset = 0
     _last_poll = 0.0

@@ -111,3 +111,4 @@ entwicklung/
 backoffice/log.jsonl
 todos/                              # TODOS_ROADMAP: eigene To-dos (nur NAS + Backup)
 regeln/                             # JARVIS J7: feste Regeln des CEO fuer LUNA (nur NAS + Backup)
+gedaechtnis/                        # JARVIS J8: Suchverzeichnis (abgeleitet, nur NAS)
