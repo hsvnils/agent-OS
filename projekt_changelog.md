@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 15:48] — Claude Code
+- **Was:** Zweig `ai/lernen-aus-korrekturen` nach `main` gemergt (J7 LUNA lernt aus Korrekturen).
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** siehe Eintrag J7 (Code, Deploy-Skripte, Doku)
+
 ## [2026-10-29 15:39] — Claude Code
 - **Was:** JARVIS J7 „LUNA lernt aus Korrekturen“ gebaut: Werkzeug `regel_vorschlagen` (Gruppe „lernen“), Speicher `regeln/log.jsonl` (`core/regeln.py`), Telegram-Knoepfe `rgl:<id>:ja|nein`, LUNA-OS-Kachel „🧠 Feste Regeln fuer LUNA“ in den Einstellungen (`/api/regeln`, Modul administration; app-v2.js v149, style-v2.css v77); bestaetigte Regeln im Chat-System-Prompt. Veralteten Satz zum Anthropic-Limit aus dem Prompt entfernt. 8 neue Tests mit Gegenproben; Suite 1451 gruen.
 - **Warum:** CEO-Go fuer J7 (2026-10-29).
