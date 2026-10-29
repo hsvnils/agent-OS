@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 21:40] — Claude Code
+- **Was:** Collab-CRM auf der NAS bereinigt: alle 38 Eintraege der Test-„Firma“ „hsvnils“ (Meta-Test-DMs, Status/To-do, 30 falsch einsortierte Mails) entfernt, ebenso deren Zeilen in der Supabase-Spiegelung (`crm_companies`/`crm_messages`/`crm_todos`). Einsortiert: die 3LT-Collab-Mail als neue CRM-Firma „3 Legged Thing“ (Status in_gespraech). Rechnungs-/Beleg-Weiterleitungen und Test-Angebote gehoeren nicht ins Collab-CRM (liegen bereits in Belegen); dein Collab-Anschreiben vom 28.09. ist in Gmail nicht mehr vorhanden und nicht zuordenbar. Sicherung: `crm/log.jsonl.vor-bereinigung-20261029`.
+- **Warum:** CEO-Auftrag „Bitte aufraeumen ... dann bitte die Firma hsvnils loeschen“ (Datenloeschung = CEO-Tor, freigegeben).
+- **Betroffen:** `crm/log.jsonl` (NAS), Supabase `crm_*`, `docs/bekannte-fehler.md`
+
 ## [2026-10-29 21:36] — Claude Code
 - **Was:** Zweig `ai/crm-weiterleitung` nach `main` gemergt (CRM-Mail-Tracking ohne eigene Identitaet, BF-85); Suite gruen, Doku-Check ok.
 - **Warum:** CEO: „Go fuer Merge, Push und Deploy“.
