@@ -78,6 +78,19 @@ Hoerprobe. Genaue Werte misst L1. Spaeterer Ausbau ohne Planaenderung: eine Graf
 
 ### L1: Probe „Ohr, Kopf, Mund“ -- lokal, ohne Bildschirm, ohne Handgriffe
 
+- Status: in Umsetzung (2026-10-29) -- Probe-Programm `desktop/probe_l1.py` (unter Windows in
+  `C:\Users\Nils\luna-desktop`, eigene Python-Umgebung, Start `start_probe.bat`), Messskripte in `desktop/`.
+- **Zwischenstand Messungen 2026-10-29** (MACO470, CPU, Trockenlauf ohne Mikrofon, warm):
+  - Ohr: Whisper `small` ca. 1,0-1,3 s fuer 4 s Sprache (schreibt „Kiezalm“), `large-v3-turbo` ca. 4 s (schreibt „Kiez Alm“).
+  - Kopf: `qwen3:30b-a3b-instruct-2507` (neu geladen, 18 GB) erstes Token 0,2-0,4 s, ca. 14 Token/s;
+    `qwen3:14b` 0,2-0,4 s, ca. 9 Token/s; altes `qwen3:30b-a3b` denkt trotz Abschalten laut (unbrauchbar).
+    Modellwechsel kostet 15-30 s (Backoffice nutzt nachts `qwen3:14b`).
+  - Mund: Piper sofort, aber Klang abgelehnt (CEO: „alle scheisse“, LUNA = **junge, weibliche Stimme**);
+    **Pocket TTS** (Kyutai, MIT, Deutsch): erster Ton 0,12 s, 4x Echtzeit (`german`), 0,4 s / 1,3x (`german_24l`);
+    eigene Stimme nur nach Zustimmung zu Kyutais Bedingungen bei Hugging Face (CEO-Schritt).
+  - Kette Satzende -> erstes Wort (ohne 0,6 s Pausenerkennung): **1,8-2,5 s** mit 30b-instruct + small (Gate < 3 s).
+- Offen: CEO-Hoerprobe (Pocket-Stimmen, Entwuerfe junge Stimme), Live-Test am NT-USB (Unterbrechen, Erkennung).
+
 - Ziel / Scope: kleines Probe-Programm unter Windows: Aktivierungswort, Whisper-Erkennung, lokales Modell, lokale
   Stimme, Unterbrechen. **Messen statt schaetzen:** Ende deines Satzes -> erstes Wort von LUNA; Unterbrechen -> Stille;
   Erkennung deutscher Saetze (inkl. Firmennamen); `qwen3:30b-a3b` gegen `qwen3:14b` (Tempo, Werkzeug-Treffsicherheit);

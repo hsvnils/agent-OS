@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 18:50] — Claude Code
+- **Was:** Paket D L1 begonnen: Windows-Umgebung `C:\Users\Nils\luna-desktop` (faster-whisper, Piper, Pocket TTS, webrtcvad), Modell `qwen3:30b-a3b-instruct-2507-q4_K_M` ins Ollama geladen, Probe-Programm `desktop/probe_l1.py` (Weckwort, Unterbrechen, gestreamte Antwort, frueher Sprechbeginn) + Messskripte; Messungen und Hoerproben (Piper, MLS-Frauenstimmen, Pocket TTS, drei Entwuerfe junge Stimme) in `vorlagen/Hoerprobe_Stimmen/` (nicht im Git). Zwischenstand in der Roadmap; `AGENTS.md` Abschnitt 7 um `desktop/` ergaenzt.
+- **Warum:** CEO-Go fuer L1 (2026-10-29).
+- **Betroffen:** `desktop/`, `RECHNER_STEUERUNG_ROADMAP.md`, `AGENTS.md`
+
 ## [2026-10-29 17:55] — Claude Code
 - **Was:** CEO-Antworten zu Paket D in `RECHNER_STEUERUNG_ROADMAP.md` eingetragen (Auftraege meist lokal, Claude nur fuer Schwieriges; RODE NT-USB statt Headset; Cloud-Schritt jedes Mal nachfragen; Augen-aus-Liste wie vorgeschlagen; Installation fuer L1 erlaubt).
 - **Warum:** CEO-Antworten 2026-10-29.
