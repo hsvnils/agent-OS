@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 20:16] — Claude Code
+- **Was:** Zweig `ai/mail-auftrag-outlook` nach `main` gemergt (Outlook-Weiterleitungen, Werkzeug `firma_anlegen`); Suite 1585 gruen, Doku-Check ok. CEO-Wahl der Live-Stimme `Pocket german/anna` im Entscheidungs-Register festgehalten.
+- **Warum:** CEO: „10_Live_Pocket_anna, Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `orchestrator/core/*` (per Merge), `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-10-29 18:26] — Claude Code
 - **Was:** Nachbau Mail-Auftrag: Outlook-Weiterleitungen (Linie `____` + „From:“) werden erkannt, Text des CEO ohne Signatur (BF-84, wirkt auch fuer Zweck/Akte); neues LUNA-Werkzeug `firma_anlegen` (Firma + Ansprechpartner, Vorschau mit Dubletten-Pruefung, erst nach CEO-Ja, Mail per `mail_id` in die Akte), Gruppe „stammdaten“, gesperrt nach Fremdtext-Verdacht. 2 neue Tests mit Gegenproben; Suite 1472 gruen.
 - **Warum:** CEO-Go nach der ersten Testmail (Outlook-Format nicht erkannt, kein Werkzeug fuer Kunde anlegen).
