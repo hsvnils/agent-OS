@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-29 13:19] — Claude Code
+- **Was:** Jarvis-Roadmap umsortiert: Paket B (J5, J6) hinter Paket C und D; neue Reihenfolge A -> C -> D -> B, naechster Schritt J7 (wartet auf Go).
+- **Warum:** CEO-Anweisung 2026-10-29.
+- **Betroffen:** `JARVIS_ALLTAG_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-29 13:13] — Claude Code
 - **Was:** J1 als abgenommen markiert: Sprachnachricht ergab To-dos mit Kalendertermin in LUNAs Kalender (bei Google geprueft, im iPhone des CEO sichtbar).
 - **Warum:** CEO-Live-Test 2026-10-29 bestanden.

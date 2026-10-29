@@ -4,7 +4,7 @@
 - Stand: 2026-10-28
 - Arbeitsbranch: `ai/jarvis-alltag`
 - Basiscommit: `d4ae65d`
-- Naechster Schritt: Paket A live seit 2026-10-28 10:32, J2b (lokale Stimme C, Sprach-Arbeiter MACO470) live seit 2026-10-28 16:31 -- damit ist das ElevenLabs-Kontingent fuer das Briefing kein Thema mehr. Abnahme im Betrieb offen: erste Briefing-Sprachnachricht 2026-10-29, Sprachnachricht an LUNA, Termin mit Ort, Kundenpflege-Hinweise. Danach Go fuer Paket B.
+- Naechster Schritt: Reihenfolge seit 2026-10-29 (CEO): A -> C -> D -> B. Paket A live, J1 abgenommen; J2c/J3/J4 Abnahme im Alltag. Als Naechstes Paket C, beginnend mit J7 -- wartet auf CEO-Go. Paket B (J5/J6) zurueckgestellt hinter C und D.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -155,6 +155,8 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 
 ## Paket B -- „Verstehen, was reinkommt“
 
+- Status: zurueckgestellt (CEO 2026-10-29) -- kommt erst nach Paket C und D.
+
 ### J5: Post abfotografieren
 
 - Ziel / Scope: Brief/Bescheid/Vertrag als Foto an LUNA -> Absender, Betreff, **Frist** erkennen -> To-do mit Erinnerung
@@ -207,9 +209,11 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 | Paket | Etappen | Aufwand | Kosten | Abhaengigkeit |
 |---|---|---|---|---|
 | A Sofort im Alltag | J1-J4 | klein | keine bis gering (J2 ggf. Sprachausgabe) | keine |
-| B Verstehen, was reinkommt | J5-J6 | mittel | keine (lokal) | J1 (lokale Spracherkennung) fuer J6 |
 | C Mitdenken und lernen | J7-J9 | mittel | keine (lokal) | J8 nutzt MACO470 |
 | D Haende am Rechner | Phase 17 W1-W7 | gross | offen | eigene Planung |
+| B Verstehen, was reinkommt | J5-J6 | mittel | keine (lokal) | J1 (lokale Spracherkennung) fuer J6 |
+
+Reihenfolge (CEO 2026-10-29): **A -> C -> D -> B** -- Paket B steht hinter C und D.
 
 ## Nicht-Scope
 
