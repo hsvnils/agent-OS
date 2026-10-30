@@ -4,7 +4,7 @@
 - Stand: 2026-10-28
 - Arbeitsbranch: `ai/jarvis-alltag`
 - Basiscommit: `d4ae65d`
-- Naechster Schritt: Reihenfolge seit 2026-10-29 (CEO): A -> C -> D -> B. Paket A live, J1 abgenommen; J2c/J3/J4 Abnahme im Alltag. Paket C umgesetzt: J7 + J8 live, J9 umgesetzt (2026-10-29) -- Abnahme im Betrieb (erster Wochenplan Montag 02.11., erster Rueckblick Freitag 30.10.). Danach Paket D (Phase 17) mit eigenem Go. Paket B (J5/J6) zurueckgestellt hinter C und D.
+- Naechster Schritt: Reihenfolge seit 2026-10-29 (CEO): A -> C -> D -> B. Paket A live, J1 abgenommen; J2c/J3/J4 Abnahme im Alltag. Paket C live (J7-J9), Abnahme im Betrieb. Paket D geplant in `RECHNER_STEUERUNG_ROADMAP.md` -- CEO prueft Plan und beantwortet D0. Paket B (J5/J6) zurueckgestellt hinter C und D.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -239,6 +239,8 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 - Aufwand: mittel.
 
 ## Paket D -- „Haende am Rechner“ (= Phase 17)
+
+- Plan seit 2026-10-29 in `RECHNER_STEUERUNG_ROADMAP.md` (Mischform lokal + Cloud auf Ansage, Etappen L1-L6) -- wartet auf CEO.
 
 - LUNA bedient den Rechner (MACO470/Windows) auf ausdrueckliche Anweisung -- Plan W1-W7 steht in `ROADMAP.md`
   (Phase 17), mit Not-Aus, Protokoll und CEO-Tor. Wird nach A-C oder auf ausdruecklichen Wunsch vorgezogen.

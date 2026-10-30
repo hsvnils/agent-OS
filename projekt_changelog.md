@@ -17,6 +17,31 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-30 10:24] — Claude Code
+- **Was:** Paket D L2 gebaut: NAS-Endpunkte `/api/desktop/werkzeuge` + `/api/desktop/werkzeug` (feste Werkzeugliste `core/desktop_werkzeuge.py`), Rolle `maschine` + Modul `desktop` in `team_auth` (Maschinenkonten erreichen nur ihre Endpunkte), Maschinenkonto `maco470-desktop` angelegt und bis zum Deploy deaktiviert; LUNA-Desktop `desktop/luna_desktop.py` (lokales Modell mit Werkzeugen, Werkzeugpflicht/Erfolgs-/Ja-Sicherungen, Namensliste, Stopp per Wort/Strg+Alt+L/Taskleisten-Symbol), Startdateien, Trockenlauf `desktop/trocken_desktop.py`; unter Windows `pystray`, `pynput` installiert; Probe L1 um Andockstellen erweitert. Tests `test_desktop_werkzeuge`, `test_luna_desktop` mit Gegenproben; Suite gruen. BF-86, Entscheidungs-Register, Datenfluesse, Roadmap nachgetragen.
+- **Warum:** CEO-Go fuer L2 (2026-10-30): LUNA soll am Rechner Kontext kennen und Auftraege per Sprache annehmen.
+- **Betroffen:** `orchestrator/core/desktop_werkzeuge.py`, `orchestrator/core/team_auth.py`, `orchestrator/channels/web/app.py`, `orchestrator/tests/test_desktop_werkzeuge.py`, `orchestrator/tests/test_luna_desktop.py`, `orchestrator/tests/test_team_auth.py`, `desktop/*`, `RECHNER_STEUERUNG_ROADMAP.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`; Supabase `luna_os_users` (Konto `maco470-desktop`)
+
+## [2026-10-30 09:53] — Claude Code
+- **Was:** Live-Test 2 der Probe L1 ausgewertet (Echo geloest, Unterbrechen 0,24 s, Antwortbeginn 3,8-4,2 s, erfundene Firmen-Infos); Nachbesserung: gestreamte Pocket-Stimme, Anweisung gegen Erfinden, Trockenlauf ohne Ton (`desktop/trocken_pocket.py`), Messwerte in der Roadmap.
+- **Warum:** CEO 2026-10-30: „Test fertig, bitte Protokoll auswerten. Sie versteht den Kontext noch gar nicht richtig.“
+- **Betroffen:** `desktop/probe_l1.py`, `desktop/trocken_pocket.py`, `RECHNER_STEUERUNG_ROADMAP.md`
+
+## [2026-10-30 09:42] — Claude Code
+- **Was:** L1b: Probe mit WebRTC-Echo-Ausloeschung (`livekit`, lokal, unter Windows installiert), eigener 16-kHz-Ausgabestrom als Fernsignal, Vorwaermen mit gleichen Modell-Optionen, Einschwingzeit und Echo-Sperre; Raum-Test-Skript `desktop/aec_raum.py` (Echo -44 dB, 0 Sprach-Rahmen im Echo). Auf dem MACO470 aktualisiert und Start geprueft.
+- **Warum:** CEO-Go fuer L1b nach Live-Test 1 (LUNA hoerte sich selbst).
+- **Betroffen:** `desktop/probe_l1.py`, `desktop/aec_raum.py`, `RECHNER_STEUERUNG_ROADMAP.md`
+
+## [2026-10-30 09:32] — Claude Code
+- **Was:** Live-Test 1 der Probe L1 ausgewertet und in der Roadmap festgehalten (Gate verfehlt: Selbst-Hoeren ueber die Creative Stage, Antwortbeginn 8-30 s); Vorschlag L1b (Echo-Ausloeschen, Vorwaermen, Echo-Filter).
+- **Warum:** CEO 2026-10-30: „Test fertig, bitte Protokoll auswerten“.
+- **Betroffen:** `RECHNER_STEUERUNG_ROADMAP.md`
+
+## [2026-10-30 09:24] — Claude Code
+- **Was:** Probe L1: Ton standardmaessig ueber die Creative Stage (Lautsprecher-Modus mit Echo-Schwelle); `start_probe.bat` = Creative Stage, Kopfhoerer-Variante heisst jetzt `start_probe_kopfhoerer.bat`. Auf dem MACO470 aktualisiert, Geraetewahl geprueft (Ausgabe Creative Stage, Mikrofon RODE NT-USB).
+- **Warum:** CEO 2026-10-30: „Ausgabe muss die Creative Stage sein“.
+- **Betroffen:** `desktop/probe_l1.py`, `desktop/start_probe.bat`, `desktop/start_probe_kopfhoerer.bat`
+
 ## [2026-10-30 09:13] — Claude Code
 - **Was:** Zweig `ai/sprache-ohne-doppelte` nach `main` gemergt (J2c ohne Doppelnennung); Suite gruen, Doku-Check ok.
 - **Warum:** CEO: „Go fuer Merge, Push und Deploy“.
@@ -47,20 +72,45 @@ Eintragsformat:
 - **Warum:** CEO: „10_Live_Pocket_anna, Push gemacht, Go fuer Merge, Push und Deploy“.
 - **Betroffen:** `orchestrator/core/*` (per Merge), `docs/entscheidungs-register.md`, `projekt_changelog.md`
 
+## [2026-10-29 18:50] — Claude Code
+- **Was:** Paket D L1 begonnen: Windows-Umgebung `C:\Users\Nils\luna-desktop` (faster-whisper, Piper, Pocket TTS, webrtcvad), Modell `qwen3:30b-a3b-instruct-2507-q4_K_M` ins Ollama geladen, Probe-Programm `desktop/probe_l1.py` (Weckwort, Unterbrechen, gestreamte Antwort, frueher Sprechbeginn) + Messskripte; Messungen und Hoerproben (Piper, MLS-Frauenstimmen, Pocket TTS, drei Entwuerfe junge Stimme) in `vorlagen/Hoerprobe_Stimmen/` (nicht im Git). Zwischenstand in der Roadmap; `AGENTS.md` Abschnitt 7 um `desktop/` ergaenzt.
+- **Warum:** CEO-Go fuer L1 (2026-10-29).
+- **Betroffen:** `desktop/`, `RECHNER_STEUERUNG_ROADMAP.md`, `AGENTS.md`
+
 ## [2026-10-29 18:26] — Claude Code
 - **Was:** Nachbau Mail-Auftrag: Outlook-Weiterleitungen (Linie `____` + „From:“) werden erkannt, Text des CEO ohne Signatur (BF-84, wirkt auch fuer Zweck/Akte); neues LUNA-Werkzeug `firma_anlegen` (Firma + Ansprechpartner, Vorschau mit Dubletten-Pruefung, erst nach CEO-Ja, Mail per `mail_id` in die Akte), Gruppe „stammdaten“, gesperrt nach Fremdtext-Verdacht. 2 neue Tests mit Gegenproben; Suite 1472 gruen.
 - **Warum:** CEO-Go nach der ersten Testmail (Outlook-Format nicht erkannt, kein Werkzeug fuer Kunde anlegen).
 - **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/werkzeugauswahl.py`, `orchestrator/core/input_guard.py`, `orchestrator/core/mail_auftraege.py`, `orchestrator/tests/test_mail_auftraege.py`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/bekannte-fehler.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
+## [2026-10-29 17:55] — Claude Code
+- **Was:** CEO-Antworten zu Paket D in `RECHNER_STEUERUNG_ROADMAP.md` eingetragen (Auftraege meist lokal, Claude nur fuer Schwieriges; RODE NT-USB statt Headset; Cloud-Schritt jedes Mal nachfragen; Augen-aus-Liste wie vorgeschlagen; Installation fuer L1 erlaubt).
+- **Warum:** CEO-Antworten 2026-10-29.
+- **Betroffen:** `RECHNER_STEUERUNG_ROADMAP.md`
 
 ## [2026-10-29 17:50] — Claude Code
 - **Was:** Zweig `ai/mail-auftrag` nach `main` gemergt (Auftrag per weitergeleiteter Mail).
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
 - **Betroffen:** siehe Eintrag Mail-Auftrag (Code, Deploy-Skripte, Doku)
 
+## [2026-10-29 17:47] — Claude Code
+- **Was:** `RECHNER_STEUERUNG_ROADMAP.md` als Mischform neu geplant: CEO-Entscheidungen L0 eingetragen (Windows App, Aktivierungswort + Headset, lokal statt Live-APIs, Hoerprobe, Bestaetigungen/Browser wie empfohlen, Prioritaet Beauftragen per Sprache); Etappen L1-L6 (Probe Ohr/Kopf/Mund lokal, Desktop + Beauftragen, Augen, Haende, laengere Aufgaben, Feinschliff); Live-APIs im Register verworfen. Nichts umgesetzt.
+- **Warum:** CEO-Antworten und Auftrag „Paket D als Mischform planen“ (2026-10-29).
+- **Betroffen:** `RECHNER_STEUERUNG_ROADMAP.md`, `ROADMAP.md`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/entscheidungs-register.md`
+
 ## [2026-10-29 17:45] — Claude Code
 - **Was:** Auftrag per weitergeleiteter Mail: `core/mail_auftraege.py` (nur eigener CEO-Text ueber der Weiterleitung mit DKIM/DMARC zaehlt, Auftrag vs. Notiz regelbasiert, Mailinhalt nie in der Anweisung, Bestand beim ersten Lauf nur gemerkt); Bot prueft alle 2 min und antwortet per Telegram ueber LUNAs Chat-Sitzung; Speicher `mail_auftraege/log.jsonl` (Sync-Schutz, Backup). 4 neue Tests mit Gegenproben; Suite 1470 gruen.
 - **Warum:** CEO-Go fuer den Mail-Baustein (2026-10-29).
 - **Betroffen:** `orchestrator/core/mail_auftraege.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_mail_auftraege.py`, `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `.gitignore`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
+## [2026-10-29 17:31] — Claude Code
+- **Was:** `RECHNER_STEUERUNG_ROADMAP.md` nach der CEO-Anforderung neu gefasst: Live-Gespraech wie ChatGPT Voice mit Unterbrechen, Bildschirmverstaendnis, hands-free, schnelle Handgriffe; Recherche OpenJarvis (nicht geeignet), Gemini Live API (Favorit), OpenAI Realtime, Claude als Ausfuehrer, Microsoft UFO² (zu pruefen); Fragen L0, Etappen L1-L5; Register-Eintraege. Nichts umgesetzt.
+- **Warum:** CEO-Rueckmeldung zum ersten Entwurf (2026-10-29): D0 Nr. 2-6 verworfen, Anforderung neu definiert.
+- **Betroffen:** `RECHNER_STEUERUNG_ROADMAP.md`, `ROADMAP.md`, `JARVIS_ALLTAG_ROADMAP.md`, `docs/entscheidungs-register.md`
+
+## [2026-10-29 16:59] — Claude Code
+- **Was:** Plan fuer Jarvis Paket D (Phase 17, LUNA bedient den Rechner, Windows/MACO470) als `RECHNER_STEUERUNG_ROADMAP.md`: Ziel, Endbild, Bestand (read-only geprueft: Windows-Python, Sitzung, kein Auto-Login; Probe lokales Bildmodell mit kuenstlichem Testbild: liest Text, Klick-Position ungenau, ca. 13 s), CEO-Fragen D0, Etappen D1-D6; im Roadmap-Verzeichnis und in `JARVIS_ALLTAG_ROADMAP.md` verlinkt. Nichts umgesetzt.
+- **Warum:** CEO-Go fuer die Planung von Paket D (2026-10-29).
+- **Betroffen:** `RECHNER_STEUERUNG_ROADMAP.md`, `ROADMAP.md`, `JARVIS_ALLTAG_ROADMAP.md`
 
 ## [2026-10-29 16:51] — Claude Code
 - **Was:** Zweig `ai/wochenplanung` nach `main` gemergt (J9 Wochenplanung mit Zeitbloecken + Wochenrueckblick).

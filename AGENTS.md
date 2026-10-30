@@ -269,6 +269,7 @@ Autonomie). Kostenvoranschlag des CFO und Budget-Check des HoA sind die **Vorber
 | `finance/kosten-statistik.md` | Fortlaufende Kostenstatistik (CFO), monatlich, mit Historie. |
 | `lieferungen/`             | Gelieferte Dateien je Auftrag auf der NAS (nicht im Git, kein Backup); Code `orchestrator/core/lieferungen.py`. |
 | `kundenordner/`            | Kundenordner je Firma + Projekt auf der NAS (nicht im Git, Backup als Spiegel); Code `orchestrator/core/kundenordner.py`. |
+| `desktop/`                 | LUNA-Desktop (Jarvis Paket D): Probe L1 und Messskripte; laeuft unter Windows auf dem MACO470 (`C:\Users\Nils\luna-desktop`), nicht im Container. |
 | `netz_agent/`              | Netz-Agent in Quarantaene: eigener Container `luna-netz`, einziger Weg fuer freie Websuchen/Seitenabrufe; nur Standardbibliothek, importiert nichts aus `orchestrator/`. |
 | `netz_queue/`              | Warteschlange des Netz-Agenten (Auftraege/Ergebnisse) auf der NAS, nicht im Git. |
 | `buchhaltung/`             | Live-Buchhaltung auf der NAS (Hash-Kette `log.jsonl`, Belege), nicht im Git; Code `orchestrator/core/buchhaltung.py`. |
