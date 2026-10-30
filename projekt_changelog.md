@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-30 10:35] — Claude Code
+- **Was:** Nach dem Deploy Maschinenkonto `maco470-desktop` aktiviert und vom MACO470 geprueft: `/api/desktop/werkzeuge` 200 (19 Werkzeuge, 6 Gruppen); `/api/state`, `/api/me`, `/api/crm`, `/api/chat`, `/api/aufgaben` je 403; `mail_senden` ueber den Desktop 403; falsches Passwort 401; `brain_suchen` „3 Legged Thing“ liefert 11 Treffer (Fremdtext markiert).
+- **Warum:** CEO: „Deploy gemacht, luna-os neu gestartet“ -- Freischaltung erst nach aktiver Maschinen-Sperre (CISO).
+- **Betroffen:** Supabase `luna_os_users` (`maco470-desktop` aktiv)
+
 ## [2026-10-30 10:33] — Claude Code
 - **Was:** Zweig `ai/luna-desktop-l2` nach `main` gemergt (Paket D: Plan, Probe L1/L1b, LUNA-Desktop L2 mit `/api/desktop/*` und Maschinenkonto); Suite gruen, Doku-Check ok.
 - **Warum:** CEO: „Go fuer Merge, Push und Deploy“.
