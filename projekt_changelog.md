@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-30 10:33] — Claude Code
+- **Was:** Zweig `ai/luna-desktop-l2` nach `main` gemergt (Paket D: Plan, Probe L1/L1b, LUNA-Desktop L2 mit `/api/desktop/*` und Maschinenkonto); Suite gruen, Doku-Check ok.
+- **Warum:** CEO: „Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `orchestrator/core/desktop_werkzeuge.py`, `orchestrator/core/team_auth.py`, `orchestrator/channels/web/app.py`, `desktop/*`, `RECHNER_STEUERUNG_ROADMAP.md`, Doku
+
 ## [2026-10-30 10:24] — Claude Code
 - **Was:** Paket D L2 gebaut: NAS-Endpunkte `/api/desktop/werkzeuge` + `/api/desktop/werkzeug` (feste Werkzeugliste `core/desktop_werkzeuge.py`), Rolle `maschine` + Modul `desktop` in `team_auth` (Maschinenkonten erreichen nur ihre Endpunkte), Maschinenkonto `maco470-desktop` angelegt und bis zum Deploy deaktiviert; LUNA-Desktop `desktop/luna_desktop.py` (lokales Modell mit Werkzeugen, Werkzeugpflicht/Erfolgs-/Ja-Sicherungen, Namensliste, Stopp per Wort/Strg+Alt+L/Taskleisten-Symbol), Startdateien, Trockenlauf `desktop/trocken_desktop.py`; unter Windows `pystray`, `pynput` installiert; Probe L1 um Andockstellen erweitert. Tests `test_desktop_werkzeuge`, `test_luna_desktop` mit Gegenproben; Suite gruen. BF-86, Entscheidungs-Register, Datenfluesse, Roadmap nachgetragen.
 - **Warum:** CEO-Go fuer L2 (2026-10-30): LUNA soll am Rechner Kontext kennen und Auftraege per Sprache annehmen.
