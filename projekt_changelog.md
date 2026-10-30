@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-30 09:24] — Claude Code
+- **Was:** Probe L1: Ton standardmaessig ueber die Creative Stage (Lautsprecher-Modus mit Echo-Schwelle); `start_probe.bat` = Creative Stage, Kopfhoerer-Variante heisst jetzt `start_probe_kopfhoerer.bat`. Auf dem MACO470 aktualisiert, Geraetewahl geprueft (Ausgabe Creative Stage, Mikrofon RODE NT-USB).
+- **Warum:** CEO 2026-10-30: „Ausgabe muss die Creative Stage sein“.
+- **Betroffen:** `desktop/probe_l1.py`, `desktop/start_probe.bat`, `desktop/start_probe_kopfhoerer.bat`
+
 ## [2026-10-29 18:50] — Claude Code
 - **Was:** Paket D L1 begonnen: Windows-Umgebung `C:\Users\Nils\luna-desktop` (faster-whisper, Piper, Pocket TTS, webrtcvad), Modell `qwen3:30b-a3b-instruct-2507-q4_K_M` ins Ollama geladen, Probe-Programm `desktop/probe_l1.py` (Weckwort, Unterbrechen, gestreamte Antwort, frueher Sprechbeginn) + Messskripte; Messungen und Hoerproben (Piper, MLS-Frauenstimmen, Pocket TTS, drei Entwuerfe junge Stimme) in `vorlagen/Hoerprobe_Stimmen/` (nicht im Git). Zwischenstand in der Roadmap; `AGENTS.md` Abschnitt 7 um `desktop/` ergaenzt.
 - **Warum:** CEO-Go fuer L1 (2026-10-29).

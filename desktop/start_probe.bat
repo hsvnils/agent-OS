@@ -1,5 +1,5 @@
 @echo off
-rem LUNA-Probe L1 -- Kopfhoerer am RODE NT-USB (empfohlen)
+rem LUNA-Probe L1 -- Ton ueber die Creative Stage (Standard, CEO 2026-10-30)
 cd /d %~dp0
-venv\Scripts\python.exe probe\probe_l1.py --modus kopfhoerer %*
+venv\Scripts\python.exe probe\probe_l1.py --modus lautsprecher %*
 pause

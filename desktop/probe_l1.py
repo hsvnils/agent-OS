@@ -10,7 +10,7 @@ Laeuft unter **Windows** auf dem MACO470 (nicht im WSL), alles lokal und kostenl
 **Kann nichts bedienen** und hat keinen Zugriff auf LUNAs Daten. Es wird **kein Ton gespeichert**; das Protokoll
 `sitzung_log.jsonl` enthaelt nur Zeiten und den erkannten Text.
 
-Start: `start_probe.bat` (Kopfhoerer am NT-USB) bzw. `start_probe_lautsprecher.bat`. Beenden: Fenster schliessen
+Start: `start_probe.bat` (Ton ueber die Creative Stage, CEO 2026-10-30) bzw. `start_probe_kopfhoerer.bat` (Kopfhoerer am NT-USB). Beenden: Fenster schliessen
 oder Strg+C.
 """
 from __future__ import annotations
@@ -237,13 +237,13 @@ def main():
     ap.add_argument("--modell", default="qwen3:30b-a3b-instruct-2507-q4_K_M")
     ap.add_argument("--stimme", default="pocket:german/anna",
                     help="pocket:<german|german_24l>/<stimme> oder Piper-Name, z. B. de_DE-thorsten-high")
-    ap.add_argument("--modus", choices=("kopfhoerer", "lautsprecher"), default="kopfhoerer")
+    ap.add_argument("--modus", choices=("kopfhoerer", "lautsprecher"), default="lautsprecher")
     ap.add_argument("--mikro", default="RODE NT-USB")
     ap.add_argument("--ausgabe", default="")
     ap.add_argument("--sprecher", type=int, default=None, help="bei de_DE-mls-medium: Nummer aus der Hoerprobe")
     ap.add_argument("--ohr", default="small", help="Whisper-Modell in der Sitzung: small | medium | turbo")
     a = ap.parse_args()
-    aus_name = a.ausgabe or ("RODE NT-USB" if a.modus == "kopfhoerer" else "Creative")
+    aus_name = a.ausgabe or ("RODE NT-USB" if a.modus == "kopfhoerer" else "Creative Stage")
     mic, out = geraet(a.mikro, True), geraet(aus_name, False)
     prot = Protokoll(HIER / "sitzung_log.jsonl")
     print(f"LUNA-Probe L1 -- Modell {a.modell}, Stimme {a.stimme}, Modus {a.modus}")
