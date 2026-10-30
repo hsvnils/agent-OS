@@ -104,7 +104,16 @@ Hoerprobe. Genaue Werte misst L1. Spaeterer Ausbau ohne Planaenderung: eine Graf
   eigenem 16-kHz-Ausgabestrom (jeder abgespielte Block = Fernsignal); Vorwaermen mit denselben Modell-Optionen;
   300 ms Einschwingen ohne Unterbrechen; Echo-Sperre (eigene Worte der letzten 8 s). Raum-Test Creative Stage ->
   NT-USB (`desktop/aec_raum.py`): Echo-Pegel 838 -> 5 (ca. -44 dB), Sprach-Erkennung im Echo 111 -> 0 von 264
-  Rahmen. Offen: Live-Test 2 (CEO).
+  Rahmen.
+- Live-Test 2 (2026-10-30, Creative Stage, Echo-Ausloeschung an): **Echo geloest** -- keine Selbst-Unterbrechung, keine
+  Echo-Fetzen; echtes Unterbrechen durch den CEO nach **0,24 s** (Gate < 0,5 s); Erkennung 3 von 3 richtig (Firmennamen
+  wie „Kiezalm“ zusammengeschrieben); Antwortbeginn **3,8-4,2 s** (Gate < 3 s verfehlt). CEO: „versteht den Kontext
+  noch gar nicht“ -- erwartbar, die Probe hat keinen Zugriff auf LUNAs Daten (= L2); sie hat aber Firmen **erfunden**
+  (3LT als „Scherz“, Kiez Alm als „Laden“).
+- Nachbesserung danach: Stimme wird **gestreamt** (Pocket `generate_audio_stream`, Ton beginnt mit dem ersten Stueck),
+  Anweisung „nie erfinden, ehrlich sagen“. Trockenlauf: Text -> erster Ton 0,9-1,9 s (vorher ca. 2,7 s); die Antworten
+  auf 3LT/Kiez Alm sagen jetzt ehrlich „kein Zugriff in der Probe“. Erwartung live: ca. 2,5-3,5 s inkl. 0,6 s
+  Pausenerkennung -- Bestaetigung im naechsten Live-Test.
 
 - Ziel / Scope: kleines Probe-Programm unter Windows: Aktivierungswort, Whisper-Erkennung, lokales Modell, lokale
   Stimme, Unterbrechen. **Messen statt schaetzen:** Ende deines Satzes -> erstes Wort von LUNA; Unterbrechen -> Stille;

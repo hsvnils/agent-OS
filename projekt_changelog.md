@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-30 09:53] — Claude Code
+- **Was:** Live-Test 2 der Probe L1 ausgewertet (Echo geloest, Unterbrechen 0,24 s, Antwortbeginn 3,8-4,2 s, erfundene Firmen-Infos); Nachbesserung: gestreamte Pocket-Stimme, Anweisung gegen Erfinden, Trockenlauf ohne Ton (`desktop/trocken_pocket.py`), Messwerte in der Roadmap.
+- **Warum:** CEO 2026-10-30: „Test fertig, bitte Protokoll auswerten. Sie versteht den Kontext noch gar nicht richtig.“
+- **Betroffen:** `desktop/probe_l1.py`, `desktop/trocken_pocket.py`, `RECHNER_STEUERUNG_ROADMAP.md`
+
 ## [2026-10-30 09:42] — Claude Code
 - **Was:** L1b: Probe mit WebRTC-Echo-Ausloeschung (`livekit`, lokal, unter Windows installiert), eigener 16-kHz-Ausgabestrom als Fernsignal, Vorwaermen mit gleichen Modell-Optionen, Einschwingzeit und Echo-Sperre; Raum-Test-Skript `desktop/aec_raum.py` (Echo -44 dB, 0 Sprach-Rahmen im Echo). Auf dem MACO470 aktualisiert und Start geprueft.
 - **Warum:** CEO-Go fuer L1b nach Live-Test 1 (LUNA hoerte sich selbst).

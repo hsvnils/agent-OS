@@ -51,7 +51,9 @@ SATZ = re.compile(r"(.+?[.!?…])(\s+|$)", re.S)
 SYSTEM = ("Du bist LUNA, die persoenliche Assistentin von Nils (Firma Hanserautisch, Hamburg). Du sprichst mit ihm "
           "per Stimme am Rechner. Antworte auf Deutsch, natuerlich und kurz: meist ein bis zwei Saetze, keine Listen, "
           "keine Sonderzeichen, kein Markdown. Duze ihn. Das ist eine Probe: du kannst noch nichts am Rechner bedienen "
-          "und nicht auf Kunden oder Termine zugreifen -- sag das ehrlich, wenn er danach fragt. Heute ist {datum}.")
+          "und nicht auf Kunden, Termine oder Mails zugreifen. Fragt er nach einer Firma, Person, einem Kunden oder etwas aus "
+          "seinem Geschaeft, erfinde nie etwas und rate nicht: sag kurz, dass du in dieser Probe noch keinen Zugriff auf "
+          "seine Daten hast. Heute ist {datum}.")
 
 
 def jetzt() -> float:
@@ -213,6 +215,39 @@ class Mund:
         if self.echo:
             self.echo.abgespielt(block)
 
+    def _anhaengen(self, ton: np.ndarray):
+        with self._lock:
+            self._ton = np.concatenate([self._ton, ton])
+        if self.erster_ton is None:
+            self.erster_ton = jetzt()
+
+    def _warten_bis_leer(self):
+        while not self.abbruch.is_set():
+            with self._lock:
+                if not len(self._ton):
+                    return
+            time.sleep(0.02)
+
+    def _pocket_streamen(self, text: str):
+        from math import gcd
+        from scipy.signal import resample_poly
+        g = gcd(RATE, self.rate)
+        self.gesagt.append((jetzt(), text))
+        for stueck in self.pocket.generate_audio_stream(self.pocket_stimme, text, stop=self.abbruch):
+            if self.abbruch.is_set():
+                break
+            a = resample_poly(stueck.flatten().numpy(), RATE // g, self.rate // g)
+            self._spricht.set()
+            self._anhaengen((np.clip(a, -1, 1) * 32767).astype(np.int16))
+        self._warten_bis_leer()
+        self._nachklingen()
+
+    def _nachklingen(self):
+        if self.saetze.empty():
+            time.sleep(0.15)                   # kurzes Nachklingen, bevor das Ohr wieder normal hoert
+            if self.saetze.empty():
+                self._spricht.clear()
+
     def kuerzlich_gesagt(self) -> str:
         grenze = jetzt() - ECHO_FENSTER_S
         return " ".join(s for t, s in self.gesagt if t >= grenze)
@@ -238,36 +273,23 @@ class Mund:
             if text is None:
                 continue
             self.abbruch.clear()
-            if self.pocket is not None:
-                a = self.pocket.generate_audio(self.pocket_stimme, text).flatten().numpy()
-            else:
-                a = np.concatenate([c.audio_int16_array for c in self.voice.synthesize(text, syn_config=self.syn)]
-                                   ).astype(np.float32) / 32768.0
+            if self.pocket is not None:                # Stueckweise abspielen, sobald erzeugt (erster Ton ca. 0,1 s)
+                self._pocket_streamen(text)
+                continue
+            a = np.concatenate([c.audio_int16_array for c in self.voice.synthesize(text, syn_config=self.syn)]
+                               ).astype(np.float32) / 32768.0
             if self.rate != RATE:                      # alles auf 16 kHz (Takt der Echo-Ausloeschung)
                 from math import gcd
                 from scipy.signal import resample_poly
                 g = gcd(RATE, self.rate)
                 a = resample_poly(a, RATE // g, self.rate // g)
-            ton = (np.clip(a, -1, 1) * 32767).astype(np.int16)
             if self.abbruch.is_set():
                 continue
             self._spricht.set()
             self.gesagt.append((jetzt(), text))
-            with self._lock:
-                self._ton = np.concatenate([self._ton, ton])
-            if self.erster_ton is None:
-                self.erster_ton = jetzt()
-            while not self.abbruch.is_set():
-                with self._lock:
-                    rest = len(self._ton)
-                if not rest:
-                    break
-                time.sleep(0.02)
-            if self.saetze.empty():
-                time.sleep(0.15)                   # kurzes Nachklingen, bevor das Ohr wieder normal hoert
-                if self.saetze.empty():
-                    self._spricht.clear()
-
+            self._anhaengen((np.clip(a, -1, 1) * 32767).astype(np.int16))
+            self._warten_bis_leer()
+            self._nachklingen()
 
 def _erste_phrase(text: str) -> int:
     """Ende der ersten sprechbaren Teil-Phrase (Komma/Doppelpunkt nach mind. 2 Woertern oder 7 Woerter), sonst 0."""
