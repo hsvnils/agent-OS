@@ -91,7 +91,15 @@ Hoerprobe. Genaue Werte misst L1. Spaeterer Ausbau ohne Planaenderung: eine Graf
   - Kette Satzende -> erstes Wort (ohne 0,6 s Pausenerkennung): **1,8-2,5 s** mit 30b-instruct + small (Gate < 3 s).
   - Mit Pocket TTS im Probe-Programm (Standard jetzt `qwen3:30b-a3b-instruct-2507` + `pocket:german/anna`): erkannter
     Text -> erster Ton **ca. 1,0 s** (warm); gesamt geschaetzt ca. 2,7 s inkl. Erkennung und Pausenerkennung.
-- Offen: CEO-Hoerprobe (Pocket-Stimmen, Entwuerfe junge Stimme), Live-Test am NT-USB (Unterbrechen, Erkennung).
+- Hoerprobe entschieden (CEO 2026-10-29): **Pocket `german/anna`**. Ausgabe ueber die **Creative Stage** (CEO 2026-10-30).
+- Live-Test 1 (2026-10-30, Creative Stage + NT-USB, 6 Wechsel): **Gate verfehlt.** CEO: „sehr holprig, sie hoert sich
+  selbst“, Stimme okay. Messwerte: Antwortbeginn 8,5-29,5 s (erstes Token 0,2-0,3 s, nur der erste Wechsel 27 s);
+  sie unterbrach sich 6x selbst (jeweils ca. 0,43 s nach Sprechbeginn); 3 von 6 „Aeusserungen“ waren Echo-Fetzen
+  („Ja.“, „Und jetzt.“, „Na, ihr wisst.“). Ursachen: (1) kein Echo-Ausloeschen -- der Lautsprecher kommt ins Mikrofon,
+  die Pegel-Schwelle versagt beim Einschwingen; (2) Vorwaermen mit anderen Modell-Einstellungen -> Neuladen (27 s);
+  (3) Ton-Erzeugung konkurriert waehrend des Echo-Kreislaufs mit Erkennung und Modell um die CPU.
+  Vorschlag L1b: echtes Echo-Ausloeschen (WebRTC-AEC, lokal, kostenlos), Vorwaermen in der Probe selbst, eigene
+  Worte nie als Eingabe; danach Live-Test 2 mit Creative Stage. Bildschirm verstehen = L3, Bedienen = L4 (nicht L1).
 
 - Ziel / Scope: kleines Probe-Programm unter Windows: Aktivierungswort, Whisper-Erkennung, lokales Modell, lokale
   Stimme, Unterbrechen. **Messen statt schaetzen:** Ende deines Satzes -> erstes Wort von LUNA; Unterbrechen -> Stille;

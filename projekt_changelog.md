@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-30 09:32] — Claude Code
+- **Was:** Live-Test 1 der Probe L1 ausgewertet und in der Roadmap festgehalten (Gate verfehlt: Selbst-Hoeren ueber die Creative Stage, Antwortbeginn 8-30 s); Vorschlag L1b (Echo-Ausloeschen, Vorwaermen, Echo-Filter).
+- **Warum:** CEO 2026-10-30: „Test fertig, bitte Protokoll auswerten“.
+- **Betroffen:** `RECHNER_STEUERUNG_ROADMAP.md`
+
 ## [2026-10-30 09:24] — Claude Code
 - **Was:** Probe L1: Ton standardmaessig ueber die Creative Stage (Lautsprecher-Modus mit Echo-Schwelle); `start_probe.bat` = Creative Stage, Kopfhoerer-Variante heisst jetzt `start_probe_kopfhoerer.bat`. Auf dem MACO470 aktualisiert, Geraetewahl geprueft (Ausgabe Creative Stage, Mikrofon RODE NT-USB).
 - **Warum:** CEO 2026-10-30: „Ausgabe muss die Creative Stage sein“.
