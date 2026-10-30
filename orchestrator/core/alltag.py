@@ -69,6 +69,18 @@ def sprechpunkt(titel: str, detail: str = "") -> str:
     return t
 
 
+def _vergleich(text: str) -> str:
+    return " ".join(re.sub(r"[^\w]+", " ", (text or "").lower()).split())
+
+
+def _gleich(a: str, b: str) -> bool:
+    """Gleicher Punkt, wenn identisch oder einer den anderen ganz enthaelt (Firmenzusatz „fuer X“, Termin-Praefix)."""
+    if not a or not b:
+        return False
+    kurz, lang = sorted((a, b), key=len)
+    return kurz == lang or (len(kurz) >= 12 and kurz in lang)
+
+
 def sprach_ergaenzung(jetzt: datetime, *, termine: list[dict] | None = None, wichtig: list[str] | None = None,
                       zahlen: list[tuple[int, str, str]] | None = None, fahrzeit=None, name: str = "Nils",
                       kalender_ok: bool = True) -> str:
@@ -81,6 +93,7 @@ def sprach_ergaenzung(jetzt: datetime, *, termine: list[dict] | None = None, wic
     heute = [t for t in termine or [] if str(t.get("start") or "")[:10] == jetzt.date().isoformat()]
     mit_zeit = sorted(((s, t) for t in heute if (s := _zeit(t.get("start", "")))), key=lambda x: x[0])
     kommend = [(s, t) for s, t in mit_zeit if s > jetzt] or mit_zeit
+    genannt = []                                    # gesprochene Termin-Titel (gegen Doppelnennung unten)
     if not kalender_ok:
         teile.append("Den Kalender konnte ich heute nicht lesen.")
     elif not heute:
@@ -89,6 +102,7 @@ def sprach_ergaenzung(jetzt: datetime, *, termine: list[dict] | None = None, wic
         satz = "Heute hast du einen Termin" if len(heute) == 1 else f"Heute hast du {len(heute)} Termine"
         if kommend:
             s, t = kommend[0]
+            genannt.append(_sauber(t.get("titel") or ""))
             satz += (": " if len(heute) == 1 else ". Der nächste: ") + f"um {_uhr(s)} {_sauber(t.get('titel') or 'Termin')}"
             ort = t.get("ort") or ""
             minuten = fahrzeit(ort) if fahrzeit and braucht_fahrt(ort) else None
@@ -98,7 +112,14 @@ def sprach_ergaenzung(jetzt: datetime, *, termine: list[dict] | None = None, wic
             satz += ", ganztägig"
         teile.append(satz + ".")
 
-    w = [x for x in (wichtig or []) if x]
+    # Kein Punkt doppelt (CEO 2026-10-30): was schon als Termin genannt ist (z. B. ein Wochenplan-Block zum To-do)
+    # und was sich nur in Schreibweise/Firmenzusatz unterscheidet, faellt weg -- auch aus der Restzahl.
+    gesagt = [_vergleich(x) for x in genannt]
+    w = []
+    for x in wichtig or []:
+        v = _vergleich(x)
+        if v and not any(_gleich(v, g) for g in gesagt + [_vergleich(y) for y in w]):
+            w.append(x)
     if not w:
         teile.append("Dringend ist heute nichts.")
     else:

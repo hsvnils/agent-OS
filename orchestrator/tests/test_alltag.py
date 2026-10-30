@@ -133,6 +133,25 @@ class TestSprachErgaenzung(unittest.TestCase):
         self.assertIn("Den Kalender konnte ich heute nicht lesen.", s)
         self.assertNotIn("Im Kalender steht heute nichts", s)
 
+    def test_4_nichts_doppelt(self):
+        # Fall vom 30.10.: Wochenplan-Block im Kalender + gleichnamiges To-do wurde zweimal gesprochen
+        T = [{"start": "2026-10-30T14:00:00+01:00", "titel": "Marketingroadmap ausarbeiten und Meilensteine festlegen"}]
+        w = ["Offene Nachrichten beantworten", "Marketingroadmap ausarbeiten und Meilensteine festlegen",
+             "Zusammenfassung an Fantastic Friends schicken", "zusammenfassung an fantastic friends schicken!",
+             "Zusammenfassung an Fantastic Friends schicken für Fantastic Friends", "Angebot nachfassen", "Rechnung prüfen"]
+        s = alltag.sprach_ergaenzung(datetime(2026, 10, 30, 7, 5), termine=T, wichtig=w)
+        self.assertEqual(s.count("Marketingroadmap"), 1)
+        self.assertEqual(s.lower().count("fantastic friends"), 1)
+        self.assertIn("Wichtig heute: Offene Nachrichten beantworten. Zusammenfassung an Fantastic Friends schicken. "
+                      "Angebot nachfassen. Dazu kommt ein weiterer Punkt unter Zu erledigen.", s)
+        # Termin nicht gesprochen (nur Anzahl, naechster ist ein anderer) -> To-do darf genannt werden
+        T2 = T + [{"start": "2026-10-30T10:00:00+01:00", "titel": "Call"}]
+        s = alltag.sprach_ergaenzung(datetime(2026, 10, 30, 7, 5), termine=T2, wichtig=w[1:2])
+        self.assertIn("Wichtig heute: Marketingroadmap", s)
+        # kurze, aehnliche Punkte bleiben getrennt
+        s = alltag.sprach_ergaenzung(datetime(2026, 10, 30, 7, 5), wichtig=["Rechnung", "Rechnung prüfen"])
+        self.assertIn("Rechnung. Rechnung prüfen.", s)
+
     def test_3_sprechpunkt_ohne_belegnummer(self):
         self.assertEqual(alltag.sprechpunkt("Angebot AN-2026-0012 nachfassen", "Hafenbar · Herbstkampagne"),
                          "Angebot nachfassen für Hafenbar")
