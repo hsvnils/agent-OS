@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-30 11:33] — Claude Code
+- **Was:** LUNA-Desktop Echo-Nachbesserung (BF-87): Echo-Zuordnung nach Zeitstempel, Echo-Sperre ab Aufnahmezeit, im Lautsprecher-Modus erst leiser statt sofort abbrechen, „Danke Juna/Lena“ beendet; Last-Test `desktop/aec_last.py`; Startdateien aufgeraeumt (`start_luna_kopfhoerer.bat` neu, Probe-Starter entfernt, auch auf dem MACO470); Tests `test_probe_echo` mit Gegenprobe; Suite gruen.
+- **Warum:** CEO 2026-10-30 nach Live-Test: „Laeuft nicht, sie hoert sich weiter selber“ (dabei versehentlich die alte Probe gestartet).
+- **Betroffen:** `desktop/probe_l1.py`, `desktop/aec_last.py`, `desktop/start_luna_kopfhoerer.bat`, `desktop/start_probe*.bat` (entfernt), `orchestrator/tests/test_probe_echo.py`, `RECHNER_STEUERUNG_ROADMAP.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-30 10:35] — Claude Code
 - **Was:** Nach dem Deploy Maschinenkonto `maco470-desktop` aktiviert und vom MACO470 geprueft: `/api/desktop/werkzeuge` 200 (19 Werkzeuge, 6 Gruppen); `/api/state`, `/api/me`, `/api/crm`, `/api/chat`, `/api/aufgaben` je 403; `mail_senden` ueber den Desktop 403; falsches Passwort 401; `brain_suchen` „3 Legged Thing“ liefert 11 Treffer (Fremdtext markiert).
 - **Warum:** CEO: „Deploy gemacht, luna-os neu gestartet“ -- Freischaltung erst nach aktiver Maschinen-Sperre (CISO).
