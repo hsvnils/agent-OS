@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-30 18:39] — Claude Code
+- **Was:** Rechnungsvorlage „Schlicht (DIN)“ als bearbeitbare Word-Datei nachgebaut (Logo + blau/roter Balken, Anschriftfeld DIN 5008 Form B, Infoblock, Positionstabelle mit Kopfwiederholung, Gesamtbetrag, Hinweis § 19 UStG, Zahlungstext, Fusszeile mit Firmen-/Bankdaten und Seitenzahl); Platzhalter in eckigen Klammern.
+- **Warum:** CEO-Anweisung („Rechnungsvorlage Schlicht (DIN) als Word, die man bearbeiten kann“).
+- **Betroffen:** `vorlagen/Rechnung-Vorlage-Schlicht-DIN.docx` (nicht im Git: enthaelt Bankdaten, Repo ist oeffentlich); Vorbild `orchestrator/core/beleg_pdf.py` (`beleg_pdf`), Code unveraendert.
+
 ## [2026-10-30 11:33] — Claude Code
 - **Was:** LUNA-Desktop Echo-Nachbesserung (BF-87): Echo-Zuordnung nach Zeitstempel, Echo-Sperre ab Aufnahmezeit, im Lautsprecher-Modus erst leiser statt sofort abbrechen, „Danke Juna/Lena“ beendet; Last-Test `desktop/aec_last.py`; Startdateien aufgeraeumt (`start_luna_kopfhoerer.bat` neu, Probe-Starter entfernt, auch auf dem MACO470); Tests `test_probe_echo` mit Gegenprobe; Suite gruen.
 - **Warum:** CEO 2026-10-30 nach Live-Test: „Laeuft nicht, sie hoert sich weiter selber“ (dabei versehentlich die alte Probe gestartet).
