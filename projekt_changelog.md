@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-30 09:13] — Claude Code
+- **Was:** Zweig `ai/sprache-ohne-doppelte` nach `main` gemergt (J2c ohne Doppelnennung); Suite gruen, Doku-Check ok.
+- **Warum:** CEO: „Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `orchestrator/core/alltag.py`, `orchestrator/tests/test_alltag.py`, `JARVIS_ALLTAG_ROADMAP.md`
+
 ## [2026-10-30 09:05] — Claude Code
 - **Was:** J2c Sprach-Ergaenzung ohne Doppelnennung: ein Punkt, der schon als naechster Termin gesprochen wurde, und gleiche Punkte (andere Schreibweise, Firmenzusatz) fallen aus „Wichtig heute“ und aus der Restzahl. Neuer Test mit Gegenprobe; Suite gruen.
 - **Warum:** CEO 2026-10-30: Sprachnachricht „Top“, aber „Marketingroadmap ausarbeiten …“ kam doppelt (Wochenplan-Termin + To-do).
