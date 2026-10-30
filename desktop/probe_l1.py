@@ -46,6 +46,24 @@ SITZUNG_RUHE_S = 120
 WECKWORT = re.compile(r"\b(luna|lunar|luner|lona|luhna)\b", re.I)
 ENDE = re.compile(r"\b(danke|tschüss|tschuess|bis später|bis spaeter)\b.*\bluna\b|\bluna\b.*\b(danke|tschüss)\b", re.I)
 MODELL_OPTIONEN = {"num_ctx": 4096, "temperature": 0.6}
+STOPP = re.compile(r"^\W*(stopp?|stop|halt|ruhe|sei still)\W*(luna)?\W*$", re.I)
+NAMEN = ""                        # Hinweis an Whisper (Firmen-/Eigennamen), setzt der LUNA-Desktop
+AKTUELL: dict = {}                # laufende Teile (Mund) fuer Tastenkuerzel/Symbol des LUNA-Desktop
+
+
+def system_text() -> str:
+    return SYSTEM.format(datum=datetime.now().strftime("%A, %d.%m.%Y"))
+
+
+def nutzer_text(text: str) -> str:
+    return text
+
+
+def vorwaermen(modell: str):
+    requests.post("http://localhost:11434/api/chat", timeout=300, json={          # gleiche Optionen wie kopf(),
+        "model": modell, "stream": False, "think": False, "keep_alive": "60m",    # sonst laedt Ollama neu (Test 1: 27 s)
+        "options": {**MODELL_OPTIONEN, "num_predict": 1},
+        "messages": [{"role": "system", "content": system_text()}, {"role": "user", "content": "Hallo"}]})
 SATZ = re.compile(r"(.+?[.!?…])(\s+|$)", re.S)
 
 SYSTEM = ("Du bist LUNA, die persoenliche Assistentin von Nils (Firma Hanserautisch, Hamburg). Du sprichst mit ihm "
@@ -374,14 +392,12 @@ def main():
     stimmen = HIER.parent / "stimmen"
     mund = Mund(a.stimme if a.stimme.startswith("pocket:") else stimmen / f"{a.stimme}.onnx", out, prot, a.sprecher,
                 echo)
+    AKTUELL["mund"] = mund
     print("Lade das Sprachmodell (beim ersten Start bis zu 30 s) ...")
-    requests.post("http://localhost:11434/api/chat", timeout=300, json={          # gleiche Optionen wie kopf(),
-        "model": a.modell, "stream": False, "think": False, "keep_alive": "60m",  # sonst laedt Ollama neu (Test 1: 27 s)
-        "options": {**MODELL_OPTIONEN, "num_predict": 1}, "messages": [{"role": "user", "content": "Hallo"}]})
+    vorwaermen(a.modell)
     q: queue.Queue = queue.Queue()
     Ohr(mic, a.modus, q, mund, echo).start()
-    datum = datetime.now().strftime("%A, %d.%m.%Y")
-    verlauf = [{"role": "system", "content": SYSTEM.format(datum=datum)}]
+    verlauf = [{"role": "system", "content": system_text()}]
     sitzung_bis = 0.0
     print("\nBereit. Sag „LUNA, …“ – zum Beenden der Sitzung „Danke LUNA“.\n")
     while True:
@@ -389,7 +405,8 @@ def main():
         in_sitzung = jetzt() < sitzung_bis
         t0 = jetzt()
         segs, _ = (gross if in_sitzung else klein).transcribe(u["audio"], language="de", beam_size=1,
-                                                               vad_filter=False, condition_on_previous_text=False)
+                                                               vad_filter=False, condition_on_previous_text=False,
+                                                               initial_prompt=NAMEN or None)
         text = " ".join(s.text.strip() for s in segs).strip()
         t_text = jetzt()
         if not text:
@@ -404,6 +421,7 @@ def main():
                 print(f"   (ignoriert: {text})")
                 continue
             sitzung_bis = jetzt() + SITZUNG_RUHE_S
+            verlauf = [{"role": "system", "content": system_text()}]       # neue Sitzung = frischer Kontext
             nach = text[m.end():].strip(" ,.!?")
             if len(nach) < 3:                                         # nur „LUNA?“ -> kurz melden
                 mund.erster_ton = None
@@ -412,19 +430,23 @@ def main():
                 print(f"🟢 Sitzung offen  ({text})")
                 continue
             if len(text.split()) > 3:                                 # Weckwort mit Satz -> Satz genauer erkennen
-                segs, _ = gross.transcribe(u["audio"], language="de", beam_size=1, vad_filter=False)
+                segs, _ = gross.transcribe(u["audio"], language="de", beam_size=1, vad_filter=False,
+                                           initial_prompt=NAMEN or None)
                 text = " ".join(s.text.strip() for s in segs).strip()
                 t_text = jetzt()
             print("🟢 Sitzung offen")
         sitzung_bis = jetzt() + SITZUNG_RUHE_S
         print(f"🗣  Du: {text}")
+        if STOPP.match(text):                                         # „Stopp“ = still sein, nicht antworten
+            prot.schreibe(art="stopp", text=text)
+            continue
         if ENDE.search(text):
             mund.sag("Gern. Bis gleich.")
             sitzung_bis = 0.0
             prot.schreibe(art="ende", text=text)
             print("⚪ Sitzung beendet")
             continue
-        verlauf.append({"role": "user", "content": text})
+        verlauf.append({"role": "user", "content": nutzer_text(text)})
         mund.erster_ton = None
         mund.unterbrochen.clear()
         antwort, erst = kopf(a.modell, verlauf, mund, mund.unterbrochen)

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-30 10:24] — Claude Code
+- **Was:** Paket D L2 gebaut: NAS-Endpunkte `/api/desktop/werkzeuge` + `/api/desktop/werkzeug` (feste Werkzeugliste `core/desktop_werkzeuge.py`), Rolle `maschine` + Modul `desktop` in `team_auth` (Maschinenkonten erreichen nur ihre Endpunkte), Maschinenkonto `maco470-desktop` angelegt und bis zum Deploy deaktiviert; LUNA-Desktop `desktop/luna_desktop.py` (lokales Modell mit Werkzeugen, Werkzeugpflicht/Erfolgs-/Ja-Sicherungen, Namensliste, Stopp per Wort/Strg+Alt+L/Taskleisten-Symbol), Startdateien, Trockenlauf `desktop/trocken_desktop.py`; unter Windows `pystray`, `pynput` installiert; Probe L1 um Andockstellen erweitert. Tests `test_desktop_werkzeuge`, `test_luna_desktop` mit Gegenproben; Suite gruen. BF-86, Entscheidungs-Register, Datenfluesse, Roadmap nachgetragen.
+- **Warum:** CEO-Go fuer L2 (2026-10-30): LUNA soll am Rechner Kontext kennen und Auftraege per Sprache annehmen.
+- **Betroffen:** `orchestrator/core/desktop_werkzeuge.py`, `orchestrator/core/team_auth.py`, `orchestrator/channels/web/app.py`, `orchestrator/tests/test_desktop_werkzeuge.py`, `orchestrator/tests/test_luna_desktop.py`, `orchestrator/tests/test_team_auth.py`, `desktop/*`, `RECHNER_STEUERUNG_ROADMAP.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`; Supabase `luna_os_users` (Konto `maco470-desktop`)
+
 ## [2026-10-30 09:53] — Claude Code
 - **Was:** Live-Test 2 der Probe L1 ausgewertet (Echo geloest, Unterbrechen 0,24 s, Antwortbeginn 3,8-4,2 s, erfundene Firmen-Infos); Nachbesserung: gestreamte Pocket-Stimme, Anweisung gegen Erfinden, Trockenlauf ohne Ton (`desktop/trocken_pocket.py`), Messwerte in der Roadmap.
 - **Warum:** CEO 2026-10-30: „Test fertig, bitte Protokoll auswerten. Sie versteht den Kontext noch gar nicht richtig.“

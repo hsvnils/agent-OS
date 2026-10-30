@@ -129,6 +129,22 @@ Hoerprobe. Genaue Werte misst L1. Spaeterer Ausbau ohne Planaenderung: eine Graf
 
 ### L2: LUNA-Desktop + Beauftragen per Sprache (wichtigste Aufgabe zuerst)
 
+- Status: umgesetzt (2026-10-30), Live-Test offen (CEO). Bau:
+  - NAS: `core/desktop_werkzeuge.py` (feste Liste von 19 Werkzeugen: Gedaechtnis, To-dos, Kalender, Mails lesen +
+    Entwurf, Firmen, CRM -- nichts sendet, loescht oder kostet), `GET /api/desktop/werkzeuge`, `POST /api/desktop/werkzeug`;
+    Maschinenkonto `maco470-desktop` (Rolle `maschine`, Modul `desktop`, erreicht **nur** `/api/desktop/*`; CISO-Regel
+    `team_auth.maschine_darf`). Konto angelegt und bis zum Deploy **deaktiviert**.
+  - MACO470: `desktop/luna_desktop.py` (auf der Probe: Ohr, Echo-Ausloeschung, Mund) -- lokales Modell mit Werkzeugen,
+    Namensliste fuer die Erkennung (`namen.txt`), „Stopp“ gesprochen, Strg+Alt+L, Symbol in der Taskleiste
+    (`start_luna_symbol.vbs`); Autostart bewusst noch NICHT eingerichtet (erst nach deiner Abnahme).
+  - Befund: das lokale Modell laesst im Gespraech Werkzeuge weg und **erfindet** (z. B. eine offene Rechnung ueber
+    1.250 Euro bei der Kiez Alm). Daher drei feste Sicherungen im Code: Werkzeugpflicht (Saetze mit Daten-/Aktionsbezug
+    werden erst nach einem Werkzeug vorgelesen, sonst einmal nachgefordert, sonst „konnte ich nicht sicher erledigen“),
+    Erfolgsmeldungen nur nach wirklich geklapptem Werkzeug, „Ja“ auf eine Vorschau fuehrt der Code selbst aus;
+    `bestaetigt` nur nach gesprochenem Ja, je Zug hoechstens einmal; fehlende Pflichtangaben gehen nie an die NAS.
+  - Trockenlauf (8 Saetze, nachgebaute Ergebnisse): 8 von 8 richtig, nichts erfunden; „Moment.“ nach 1,6 s,
+    eigentliche Antwort mit Werkzeug nach ca. 5-9 s (CPU: Werkzeugaufruf erzeugen + zweite Runde).
+
 - Ziel / Scope: daraus die App: startet mit deiner Anmeldung, kleines Symbol, Aktivierungswort, „Stopp“ +
   Tastenkuerzel, Protokoll jeder Sitzung (ohne Tonaufnahme). **Auftraege an LUNA:** gesprochener Auftrag -> LUNA (wie
   Telegram, mit Gespraechsverlauf) -> Antwort gesprochen; Freigaben per „Ja, …“ nach Wiederholung. Neues

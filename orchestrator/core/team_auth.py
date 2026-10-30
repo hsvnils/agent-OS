@@ -21,13 +21,14 @@ import os
 
 # -- Module + Rollen ---------------------------------------------------------
 
-MODULE = ("content_ops", "crm", "invest", "administration", "finanzen")
+MODULE = ("content_ops", "crm", "invest", "administration", "finanzen", "desktop")
 MODUL_LABELS = {
     "content_ops": "Content (Trends/Ideen/Drafts/Quellen/AI-Inbox)",
     "crm": "Collab-CRM",
     "invest": "Investment",
     "administration": "Administration (Auftraege/Chat/System)",
     "finanzen": "Finanzen (Kunden/Angebote/Rechnungen/Belege/EUeR)",
+    "desktop": "LUNA-Desktop (Werkzeuge fuer das lokale Sprachmodell am MACO470)",
 }
 # Welche LUNA-OS-App gehoert zu welchem Modul (SSOT fuer die Frontend-Sichtbarkeit).
 APP_MODUL = {
@@ -44,10 +45,11 @@ APP_MODUL = {
 # Sinnvolle Voreinstellung je Rolle, wenn beim Anlegen keine Module angegeben werden.
 ROLLE_STANDARD_MODULE = {
     "owner": list(MODULE),
-    "admin": [m for m in MODULE if m != "finanzen"],   # Finanzen: nur owner oder ausdruecklich zugeteilt (Etappe 1)
+    "admin": [m for m in MODULE if m not in ("finanzen", "desktop")],   # Finanzen: nur owner oder ausdruecklich zugeteilt (Etappe 1)
     "team": ["content_ops", "crm"],
     "content": ["content_ops"],
     "viewer": ["content_ops"],
+    "maschine": [],                                    # Maschinenkonten: Module immer ausdruecklich (z. B. desktop)
 }
 
 
@@ -191,6 +193,7 @@ _MODUL_PFADE = {
     "crm": ("/api/crm",),
     "invest": ("/api/investment",),
     "finanzen": ("/api/buchhaltung", "/api/finanzen"),
+    "desktop": ("/api/desktop",),                       # Paket D L2: LUNA-Desktop am MACO470
 }
 # Administrative Aktionen (nur owner/admin bzw. administration-Modul).
 _ADMIN_POST_PREFIXE = ("/api/antraege/",)
@@ -216,6 +219,13 @@ def modul_fuer_pfad(method: str, pfad: str) -> str | None:
     if method.upper() == "POST" and pfad == "/api/brain":
         return "administration"
     return None
+
+
+def maschine_darf(user: dict, modul: str | None) -> bool:
+    """Maschinenkonten (Rolle `maschine`) erreichen NUR die Endpunkte ihrer Module -- keine Kernendpunkte (CISO L2)."""
+    if (user.get("role") or "").strip().lower() != "maschine":
+        return True
+    return bool(modul) and modul in (user.get("allowed_modules") or [])
 
 
 # -- CLI (Nutzerverwaltung, lokal/auf der NAS -- Passwort bleibt ausserhalb des Chats) ----------------

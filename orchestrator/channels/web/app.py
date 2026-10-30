@@ -46,7 +46,8 @@ from ...core.insights import Insights
 from ...core.notifications import Notifications
 from ...core.reel_store import ReelStore
 from ...core.research_tickets import ResearchTickets
-from ...core.team_auth import MODULE, MODUL_LABELS, TeamAuth, erlaubte_apps, hat_modul, modul_fuer_pfad
+from ...core.team_auth import (MODULE, MODUL_LABELS, TeamAuth, erlaubte_apps, hat_modul, maschine_darf,
+                                 modul_fuer_pfad)
 from ...core.sitzungen import COOKIE, LAUFZEIT_TAGE, Sitzungen, geraet_aus
 from ...core.passkeys import PasskeyFehler, Passkeys
 from ...governance.changelog_tool import append_changelog
@@ -277,6 +278,8 @@ def auth(request: Request, cred: HTTPBasicCredentials = Depends(_security)):
     if modul and not hat_modul(user, modul):
         raise HTTPException(status.HTTP_403_FORBIDDEN,
                             f"Kein Zugriff auf Modul '{modul}'")
+    if not maschine_darf(user, modul):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Maschinenkonto: nur die eigenen Endpunkte")
 
 
 app = FastAPI(title="LUNA-OS", dependencies=[Depends(auth)])
@@ -1074,6 +1077,32 @@ def _llm(messages):
         return redact(out, sec)
     except Exception as exc:
         return f"(LLM-Fehler: {str(exc)[:120]})"
+
+
+# -- Paket D L2: LUNA-Desktop (MACO470) -- Werkzeuge fuer das lokale Sprachmodell --------------------------------------
+_DESKTOP = None
+
+
+def _desktop():
+    global _DESKTOP
+    if _DESKTOP is None:
+        from ...core.desktop_werkzeuge import DesktopWerkzeuge
+        _DESKTOP = DesktopWerkzeuge(_ctx_cached)
+    return _DESKTOP
+
+
+@app.get("/api/desktop/werkzeuge")
+async def desktop_werkzeuge():
+    from ...core.desktop_werkzeuge import gruppen, specs
+    return JSONResponse({"ok": True, "werkzeuge": specs(), "gruppen": gruppen()})
+
+
+@app.post("/api/desktop/werkzeug")
+async def desktop_werkzeug(request: Request):
+    b = await request.json()
+    args = b.get("args") if isinstance(b.get("args"), dict) else {}
+    r = await asyncio.to_thread(_desktop().ausfuehren, str(b.get("name") or ""), args, str(b.get("zug") or ""))
+    return JSONResponse(r, status_code=200 if r.get("ok") or "nicht verfuegbar" in r.get("fehler", "") else 403)
 
 
 @app.post("/api/chat")
