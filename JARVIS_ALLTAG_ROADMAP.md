@@ -115,7 +115,7 @@ reinkommt), C (mitdenken und lernen), D (Haende am Rechner). Paket D ist die sch
 
 ### J2c: Sprach-Ergaenzung statt alles vorlesen
 
-- Status: umgesetzt (2026-10-29), Abnahme offen.
+- Status: umgesetzt (2026-10-29); erste Ergaenzung 30.10. vom CEO als „Top“ bewertet, ein Punkt kam doppelt (Wochenplan-Termin + gleichnamiges To-do) -> seit 2026-10-30 wird nichts doppelt gesprochen (schon genannter Termin, gleiche Punkte in anderer Schreibweise oder mit Firmenzusatz fallen weg, auch aus der Restzahl).
 - Anlass (CEO 2026-10-29): Das ganze Briefing vorzulesen ist „quatsch“, wenn viele Punkte (z. B. offene Antraege)
   darin stehen. Das Text-Briefing bleibt, wie es ist; die Sprachnachricht ist eine **kurze Ergaenzung (ca. 1 Min.)**.
 - Inhalt, vier Bloecke (CEO-Go 2026-10-29): (1) Begruessung mit Wochentag und Datum; (2) der Tag: Anzahl Termine,
