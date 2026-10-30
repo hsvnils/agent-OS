@@ -100,6 +100,11 @@ Hoerprobe. Genaue Werte misst L1. Spaeterer Ausbau ohne Planaenderung: eine Graf
   (3) Ton-Erzeugung konkurriert waehrend des Echo-Kreislaufs mit Erkennung und Modell um die CPU.
   Vorschlag L1b: echtes Echo-Ausloeschen (WebRTC-AEC, lokal, kostenlos), Vorwaermen in der Probe selbst, eigene
   Worte nie als Eingabe; danach Live-Test 2 mit Creative Stage. Bildschirm verstehen = L3, Bedienen = L4 (nicht L1).
+- L1b umgesetzt (CEO-Go 2026-10-30): WebRTC-Echo-Ausloeschung (Python-Paket `livekit`, Apache 2.0, lokal) mit
+  eigenem 16-kHz-Ausgabestrom (jeder abgespielte Block = Fernsignal); Vorwaermen mit denselben Modell-Optionen;
+  300 ms Einschwingen ohne Unterbrechen; Echo-Sperre (eigene Worte der letzten 8 s). Raum-Test Creative Stage ->
+  NT-USB (`desktop/aec_raum.py`): Echo-Pegel 838 -> 5 (ca. -44 dB), Sprach-Erkennung im Echo 111 -> 0 von 264
+  Rahmen. Offen: Live-Test 2 (CEO).
 
 - Ziel / Scope: kleines Probe-Programm unter Windows: Aktivierungswort, Whisper-Erkennung, lokales Modell, lokale
   Stimme, Unterbrechen. **Messen statt schaetzen:** Ende deines Satzes -> erstes Wort von LUNA; Unterbrechen -> Stille;
