@@ -41,10 +41,14 @@ ENDE_STILLE_MS = 600              # so lange Pause = Satz zu Ende
 START_FRAMES = 4                  # 120 ms Sprache = Beginn
 UNTERBRECHEN_FRAMES = 8           # 240 ms Sprache waehrend LUNA redet = Unterbrechen
 EINSCHWINGEN_FRAMES = 10          # die ersten 300 ms ihres Sprechens nie als Unterbrechen werten
+GEDUCKT = 0.25                    # Lautstaerke, sobald jemand in ihre Rede spricht (Lautsprecher-Modus), bis geklaert ist,
+                                  # ob es Nils war oder ihr eigenes Echo
 ECHO_FENSTER_S = 8.0              # so lange zaehlen ihre gesprochenen Worte fuer die Echo-Sperre
 SITZUNG_RUHE_S = 120
 WECKWORT = re.compile(r"\b(luna|lunar|luner|lona|luhna)\b", re.I)
-ENDE = re.compile(r"\b(danke|tschüss|tschuess|bis später|bis spaeter)\b.*\bluna\b|\bluna\b.*\b(danke|tschüss)\b", re.I)
+_LUNA_ENDE = r"(luna|juna|lena|luner|lunar|lona)"            # „Danke LUNA“ wird oft als Juna/Lena erkannt (Test 30.10.)
+ENDE = re.compile(r"\b(danke|tschüss|tschuess|bis später|bis spaeter)\b.*\b" + _LUNA_ENDE + r"\b|\b" + _LUNA_ENDE
+                  + r"\b.*\b(danke|tschüss)\b", re.I)
 MODELL_OPTIONEN = {"num_ctx": 4096, "temperature": 0.6}
 STOPP = re.compile(r"^\W*(stopp?|stop|halt|ruhe|sei still)\W*(luna)?\W*$", re.I)
 NAMEN = ""                        # Hinweis an Whisper (Firmen-/Eigennamen), setzt der LUNA-Desktop
@@ -89,29 +93,38 @@ class Protokoll:
 
 
 class Echo:
-    """WebRTC-Echo-Ausloeschung (AEC3 ueber `livekit`): Fernsignal = was der Mund abspielt, in 10-ms-Bloecken."""
+    """WebRTC-Echo-Ausloeschung (AEC3 ueber `livekit`): Fernsignal = was der Mund abspielt, in 10-ms-Bloecken.
+
+    Zuordnung nach **Zeitstempel** (Test 30.10.: unter Last -- Stimme wird waehrend des Abspielens erzeugt -- lief die
+    Verarbeitung hinterher und die Ausloeschung kam aus dem Takt): jeder Lautsprecher-Block traegt die Zeit, zu der er
+    hoerbar wird, jeder Mikrofon-Block die Zeit der Aufnahme; vor einem Mikrofon-Block gehen genau die Lautsprecher-Bloecke
+    an die Ausloeschung, die bis dahin erklungen sind -- egal, wie weit die Verarbeitung gerade hinterherhinkt."""
 
     def __init__(self):
         from livekit import rtc
         self.rtc = rtc
         self.apm = rtc.AudioProcessingModule(echo_cancellation=True, noise_suppression=True, high_pass_filter=True,
                                              auto_gain_control=False)
-        self.fern: queue.Queue = queue.Queue()
+        self.fern: deque = deque()
+        self._lock = threading.Lock()
 
-    def abgespielt(self, block: np.ndarray):
-        self.fern.put(block.copy())
+    def abgespielt(self, block: np.ndarray, hoerbar_ab: float | None = None):
+        with self._lock:
+            self.fern.append((jetzt() if hoerbar_ab is None else hoerbar_ab, block.copy()))
 
     def _rahmen(self, block: np.ndarray):
         f = self.rtc.AudioFrame.create(RATE, 1, BLOCK)
         np.frombuffer(f.data, dtype=np.int16)[:] = block
         return f
 
-    def reinigen(self, mic: np.ndarray) -> np.ndarray:
+    def reinigen(self, mic: np.ndarray, aufgenommen: float | None = None) -> np.ndarray:
+        bis = jetzt() if aufgenommen is None else aufgenommen
         while True:
-            try:
-                self.apm.process_reverse_stream(self._rahmen(self.fern.get_nowait()))
-            except queue.Empty:
-                break
+            with self._lock:
+                if not self.fern or self.fern[0][0] > bis:
+                    break
+                _, b = self.fern.popleft()
+            self.apm.process_reverse_stream(self._rahmen(b))
         f = self._rahmen(mic)
         self.apm.process_stream(f)
         return np.frombuffer(f.data, dtype=np.int16).copy()
@@ -142,13 +155,19 @@ class Ohr(threading.Thread):
     def run(self):
         puffer, stimme, stille, laeuft, start_t, unterbrechen, waehrend = [], 0, 0, False, 0.0, 0, False
         vorlauf = deque(maxlen=10)
-        with sd.InputStream(samplerate=RATE, channels=1, dtype="int16", blocksize=BLOCK, device=self.geraet) as st:
+        roh: queue.Queue = queue.Queue()
+        latenz = [0.0]
+
+        def aufnahme(daten, _n, _zeit, _status):          # Zeitstempel der Aufnahme (fuer die Echo-Zuordnung)
+            roh.put((jetzt() - latenz[0], daten[:, 0].copy()))
+        with sd.InputStream(samplerate=RATE, channels=1, dtype="int16", blocksize=BLOCK, device=self.geraet,
+                            callback=aufnahme) as st:
+            latenz[0] = float(st.latency or 0.0)
             while True:
                 teile = []
                 for _ in range(FRAME // BLOCK):
-                    daten, _ = st.read(BLOCK)
-                    b = daten[:, 0].copy()
-                    teile.append(self.echo.reinigen(b) if self.echo else b)
+                    t_auf, b = roh.get()
+                    teile.append(self.echo.reinigen(b, t_auf) if self.echo else b)
                 f = np.concatenate(teile)
                 rms = float(np.sqrt(np.mean(f.astype(np.float32) ** 2)))
                 sprache = self.vad.is_speech(f.tobytes(), RATE)
@@ -158,8 +177,11 @@ class Ohr(threading.Thread):
                     laut_genug = self.modus != "lautsprecher" or rms > max(echo * 2.5, self.grundrauschen * 6)
                     eingeschwungen = len(self.pegel) >= EINSCHWINGEN_FRAMES
                     unterbrechen = unterbrechen + 1 if (sprache and laut_genug and eingeschwungen) else 0
-                    if unterbrechen >= UNTERBRECHEN_FRAMES:
-                        self.mund.unterbrechen(jetzt() - UNTERBRECHEN_FRAMES * 0.03)
+                    if unterbrechen >= UNTERBRECHEN_FRAMES and not laeuft:
+                        if self.modus == "lautsprecher":
+                            self.mund.leiser()            # erst leiser -- verstummen erst, wenn klar ist: das war Nils
+                        else:
+                            self.mund.unterbrechen(jetzt() - UNTERBRECHEN_FRAMES * 0.03)
                         unterbrechen, laeuft, puffer, stimme, stille = 0, True, list(vorlauf), START_FRAMES, 0
                         start_t, waehrend = jetzt(), True
                     vorlauf.append(f)
@@ -207,10 +229,13 @@ class Mund:
         self._ton = np.zeros(0, dtype=np.int16)        # noch abzuspielen (16 kHz)
         self._lock = threading.Lock()
         self.zuletzt_ton = 0.0
+        self.lautstaerke = 1.0
         self.gesagt: deque = deque(maxlen=20)          # (Zeit, Satz) fuer die Echo-Sperre
         self.strom = sd.OutputStream(samplerate=RATE, channels=1, dtype="int16", blocksize=BLOCK, device=geraet,
                                      callback=self._ausgabe)
+        self._latenz = 0.0
         self.strom.start()
+        self._latenz = float(self.strom.latency or 0.0)
         self._spricht = threading.Event()
         self.abbruch = threading.Event()
         self.unterbrochen = threading.Event()   # gilt fuer die ganze laufende Antwort (Kopf hoert auf zu streamen)
@@ -225,13 +250,13 @@ class Mund:
         with self._lock:
             n = min(frames, len(self._ton))
             block = np.zeros(frames, dtype=np.int16)
-            block[:n] = self._ton[:n]
+            block[:n] = self._ton[:n] if self.lautstaerke >= 1.0 else (self._ton[:n] * self.lautstaerke).astype(np.int16)
             self._ton = self._ton[n:]
         if n:
             self.zuletzt_ton = jetzt()
         out[:, 0] = block
         if self.echo:
-            self.echo.abgespielt(block)
+            self.echo.abgespielt(block, jetzt() + self._latenz)
 
     def _anhaengen(self, ton: np.ndarray):
         with self._lock:
@@ -265,10 +290,21 @@ class Mund:
             time.sleep(0.15)                   # kurzes Nachklingen, bevor das Ohr wieder normal hoert
             if self.saetze.empty():
                 self._spricht.clear()
+                self.lautstaerke = 1.0                  # fertig gesprochen -> naechste Antwort wieder normal laut
 
-    def kuerzlich_gesagt(self) -> str:
-        grenze = jetzt() - ECHO_FENSTER_S
-        return " ".join(s for t, s in self.gesagt if t >= grenze)
+    def leiser(self):
+        if self._spricht.is_set() and self.lautstaerke >= 1.0:
+            self.lautstaerke = GEDUCKT
+            self.prot.schreibe(art="geduckt")
+
+    def normal(self):
+        self.lautstaerke = 1.0
+
+    def kuerzlich_gesagt(self, von: float | None = None, bis: float | None = None) -> str:
+        """Was LUNA rund um die Aufnahme gesagt hat (Echo-Sperre misst ab der Aufnahme, nicht ab der Auswertung)."""
+        bis = jetzt() if bis is None else bis
+        von = (bis if von is None else von) - ECHO_FENSTER_S
+        return " ".join(s for t, s in self.gesagt if von <= t <= bis)
 
     def sag(self, text: str):
         self.saetze.put(text)
@@ -282,6 +318,7 @@ class Mund:
             self.saetze.get_nowait()
         with self._lock:
             self._ton = np.zeros(0, dtype=np.int16)
+        self.lautstaerke = 1.0
         self.prot.schreibe(art="unterbrochen", s=round(jetzt() - sprachbeginn, 3))
         print("   ✋ unterbrochen")
 
@@ -409,12 +446,15 @@ def main():
                                                                initial_prompt=NAMEN or None)
         text = " ".join(s.text.strip() for s in segs).strip()
         t_text = jetzt()
-        if not text:
+        echo = bool(text) and u.get("waehrend") and ist_eigenes_echo(text, mund.kuerzlich_gesagt(u["start"], u["ende"]))
+        if not text or echo:
+            if echo:
+                prot.schreibe(art="echo_verworfen", text=text)
+                print(f"   (eigenes Echo verworfen: {text})")
+            mund.normal()                                             # war nicht Nils -> normal weitersprechen
             continue
-        if u.get("waehrend") and ist_eigenes_echo(text, mund.kuerzlich_gesagt()):
-            prot.schreibe(art="echo_verworfen", text=text)
-            print(f"   (eigenes Echo verworfen: {text})")
-            continue
+        if mund.lautstaerke < 1.0:                                    # geduckt und es war wirklich Nils -> verstummen
+            mund.unterbrechen(u["start"])
         if not in_sitzung:
             m = WECKWORT.search(text)
             if not m:

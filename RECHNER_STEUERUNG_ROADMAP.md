@@ -144,6 +144,14 @@ Hoerprobe. Genaue Werte misst L1. Spaeterer Ausbau ohne Planaenderung: eine Graf
     `bestaetigt` nur nach gesprochenem Ja, je Zug hoechstens einmal; fehlende Pflichtangaben gehen nie an die NAS.
   - Trockenlauf (8 Saetze, nachgebaute Ergebnisse): 8 von 8 richtig, nichts erfunden; „Moment.“ nach 1,6 s,
     eigentliche Antwort mit Werkzeug nach ca. 5-9 s (CPU: Werkzeugaufruf erzeugen + zweite Runde).
+  - Live-Test 1 L2 (2026-10-30 11:22): versehentlich die alte Probe gestartet (keine Werkzeuge) -- und das Echo war
+    zurueck (7 Selbst-Unterbrechungen nach 0,24 s, eigene Saetze als Eingabe, „Danke LUNA“ als „Juna/Lena“ erkannt).
+    Nachbesserung: Echo-Zuordnung nach Zeitstempel (Aufnahme/Abspielen), Echo-Sperre misst ab der Aufnahme (vorher
+    lief das 8-s-Fenster ab, waehrend die Aeusserung in der Warteschlange lag), im Lautsprecher-Modus **erst leiser
+    (25 %), verstummen erst, wenn die Erkennung zeigt: das war Nils** -- sonst normal weiter; „Danke Juna/Lena“ beendet.
+    Last-Test (`desktop/aec_last.py`, Stimme + Whisper + grosses Modell gleichzeitig): 0 Selbst-Unterbrechungen; der
+    Live-Fehler liess sich im Test aber auch mit dem alten Stand nicht nachstellen (vermutlich Lautstaerke/Abstand).
+    Startdateien aufgeraeumt: nur noch `start_luna.bat`, `start_luna_kopfhoerer.bat`, `start_luna_symbol.vbs`.
 
 - Ziel / Scope: daraus die App: startet mit deiner Anmeldung, kleines Symbol, Aktivierungswort, „Stopp“ +
   Tastenkuerzel, Protokoll jeder Sitzung (ohne Tonaufnahme). **Auftraege an LUNA:** gesprochener Auftrag -> LUNA (wie

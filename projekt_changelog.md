@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-31 12:24] — Claude Code
+- **Was:** Soofi S (spaeter/beobachten) und LM Studio Bionic (verworfen, Referenz fuer L4) bewertet und ins Entscheidungs-Register eingetragen.
+- **Warum:** CEO-Frage, ob die beiden Angebote uns helfen.
+- **Betroffen:** `docs/entscheidungs-register.md`
+
+## [2026-10-30 18:39] — Claude Code
+- **Was:** Rechnungsvorlage „Schlicht (DIN)“ als bearbeitbare Word-Datei nachgebaut (Logo + blau/roter Balken, Anschriftfeld DIN 5008 Form B, Infoblock, Positionstabelle mit Kopfwiederholung, Gesamtbetrag, Hinweis § 19 UStG, Zahlungstext, Fusszeile mit Firmen-/Bankdaten und Seitenzahl); Platzhalter in eckigen Klammern.
+- **Warum:** CEO-Anweisung („Rechnungsvorlage Schlicht (DIN) als Word, die man bearbeiten kann“).
+- **Betroffen:** `vorlagen/Rechnung-Vorlage-Schlicht-DIN.docx` (nicht im Git: enthaelt Bankdaten, Repo ist oeffentlich); Vorbild `orchestrator/core/beleg_pdf.py` (`beleg_pdf`), Code unveraendert.
+
+## [2026-10-30 11:33] — Claude Code
+- **Was:** LUNA-Desktop Echo-Nachbesserung (BF-87): Echo-Zuordnung nach Zeitstempel, Echo-Sperre ab Aufnahmezeit, im Lautsprecher-Modus erst leiser statt sofort abbrechen, „Danke Juna/Lena“ beendet; Last-Test `desktop/aec_last.py`; Startdateien aufgeraeumt (`start_luna_kopfhoerer.bat` neu, Probe-Starter entfernt, auch auf dem MACO470); Tests `test_probe_echo` mit Gegenprobe; Suite gruen.
+- **Warum:** CEO 2026-10-30 nach Live-Test: „Laeuft nicht, sie hoert sich weiter selber“ (dabei versehentlich die alte Probe gestartet).
+- **Betroffen:** `desktop/probe_l1.py`, `desktop/aec_last.py`, `desktop/start_luna_kopfhoerer.bat`, `desktop/start_probe*.bat` (entfernt), `orchestrator/tests/test_probe_echo.py`, `RECHNER_STEUERUNG_ROADMAP.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-30 10:35] — Claude Code
 - **Was:** Nach dem Deploy Maschinenkonto `maco470-desktop` aktiviert und vom MACO470 geprueft: `/api/desktop/werkzeuge` 200 (19 Werkzeuge, 6 Gruppen); `/api/state`, `/api/me`, `/api/crm`, `/api/chat`, `/api/aufgaben` je 403; `mail_senden` ueber den Desktop 403; falsches Passwort 401; `brain_suchen` „3 Legged Thing“ liefert 11 Treffer (Fremdtext markiert).
 - **Warum:** CEO: „Deploy gemacht, luna-os neu gestartet“ -- Freischaltung erst nach aktiver Maschinen-Sperre (CISO).
