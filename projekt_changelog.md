@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-31 12:54] — Claude Code
+- **Was:** `ai/luna-desktop-echo` (Echo-Fix BF-87, Doku Rechnungsvorlage, Register Soofi/Bionic) in `main` gemergt und gepusht; kein NAS-Deploy noetig (nur LUNA-Desktop auf dem MACO470, dort schon identisch). Beim Testlauf BF-88 (datumsabhaengiger Wochenplan-Test, am Wochenende rot) und einen Wackel-Test (BF-38) erfasst.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `main`, `docs/bekannte-fehler.md`
+
 ## [2026-10-31 12:24] — Claude Code
 - **Was:** Soofi S (spaeter/beobachten) und LM Studio Bionic (verworfen, Referenz fuer L4) bewertet und ins Entscheidungs-Register eingetragen.
 - **Warum:** CEO-Frage, ob die beiden Angebote uns helfen.
