@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-10-31 12:24] — Claude Code
+- **Was:** Soofi S (spaeter/beobachten) und LM Studio Bionic (verworfen, Referenz fuer L4) bewertet und ins Entscheidungs-Register eingetragen.
+- **Warum:** CEO-Frage, ob die beiden Angebote uns helfen.
+- **Betroffen:** `docs/entscheidungs-register.md`
+
 ## [2026-10-30 18:39] — Claude Code
 - **Was:** Rechnungsvorlage „Schlicht (DIN)“ als bearbeitbare Word-Datei nachgebaut (Logo + blau/roter Balken, Anschriftfeld DIN 5008 Form B, Infoblock, Positionstabelle mit Kopfwiederholung, Gesamtbetrag, Hinweis § 19 UStG, Zahlungstext, Fusszeile mit Firmen-/Bankdaten und Seitenzahl); Platzhalter in eckigen Klammern.
 - **Warum:** CEO-Anweisung („Rechnungsvorlage Schlicht (DIN) als Word, die man bearbeiten kann“).
