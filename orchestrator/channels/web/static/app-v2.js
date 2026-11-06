@@ -3652,7 +3652,7 @@ async function blDetail(nr, meldung, fehler) {
   const w = (k) => f ? (k === "betrag" ? cent2feld(f.betrag_cent) : f[k] || "") : (v[k] || "");
   const src = `/api/finanzen/belege/${encodeURIComponent(nr)}/datei`;
   const vorschau = (b.mime || "").startsWith("image/") ? `<img src="${src}" alt="Beleg" class="v2-bl-bild">`
-    : b.mime === "application/pdf" ? `<iframe src="${src}" class="v2-bl-pdf" title="Beleg"></iframe>` : `<pre class="v2-mail-text">${esc(b.text || "")}</pre>`;
+    : b.mime === "application/pdf" ? `<div class="v2-bl-vorschau"><iframe src="${src}" class="v2-bl-pdf" title="Beleg"></iframe></div><a class="v2-bl-gross" href="${src}" target="_blank" rel="noopener">📄 Beleg groß öffnen</a>` : `<pre class="v2-mail-text">${esc(b.text || "")}</pre>`;
   const quelle = { "e-rechnung": "E-Rechnung (exakt)", regeln: "Schnell-Erkennung", backoffice: "LUNA-Backoffice (lokale KI)" }[v.quelle] || v.quelle || "";
   const kiLaeuft = !f && v.quelle !== "backoffice" && v.quelle !== "e-rechnung" && ["neu", "in_arbeit"].includes(d.ki_status);
   const katOpt = Object.entries(ein ? BL_KAT_EIN : BL_KAT).map(([k, l]) => `<option value="${esc(k)}" ${w("kategorie") === k ? "selected" : ""}>${esc(l)}</option>`).join("");

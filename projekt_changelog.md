@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-06 10:07] — Claude Code
+- **Was:** BF-91 behoben: Beleg-Detail am iPhone (PDF-Vorschau schob das Formular aus dem Bild) -- Vorschau im begrenzten Rahmen, Spalten schrumpfbar, Link „Beleg gross oeffnen“ am Telefon; Cache v152/CSS v78; Wachtest.
+- **Warum:** CEO-Meldung 2026-11-06 bei der Abnahme von Etappe 32.
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`, `orchestrator/tests/test_beleg_iphone.py` (neu), `docs/bekannte-fehler.md`
+
 ## [2026-11-06 09:57] — Claude Code
 - **Was:** `ai/belege-bezahlt-briefing` (Etappe 32) in `main` gemergt und gepusht; Suite 1504 gruen, 1 rot = BF-90 (Baseline), Doku-Check gruen. Deploy auf die NAS + Neustart `luna-os` und `luna-telegram` durch den CEO.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
