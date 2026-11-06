@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-06 10:11] — Claude Code
+- **Was:** `ai/beleg-iphone` (BF-91) in `main` gemergt und gepusht; Suite gruen bis auf BF-90 (Baseline). Deploy + Neustart `luna-os` durch den CEO.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `main`
+
 ## [2026-11-06 10:07] — Claude Code
 - **Was:** BF-91 behoben: Beleg-Detail am iPhone (PDF-Vorschau schob das Formular aus dem Bild) -- Vorschau im begrenzten Rahmen, Spalten schrumpfbar, Link „Beleg gross oeffnen“ am Telefon; Cache v152/CSS v78; Wachtest.
 - **Warum:** CEO-Meldung 2026-11-06 bei der Abnahme von Etappe 32.
