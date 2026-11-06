@@ -3753,7 +3753,7 @@ function blZahlungBlock(v) {
   const zukunft = datum > heute, an = (z.status === "bezahlt" || z.status === "lastschrift") && !zukunft;
   const weg = z.weg ? ` (${esc(z.weg)})` : "";
   const info = z.status === "bezahlt" ? `💶 Laut Beleg schon bezahlt${weg}${z.datum ? "" : " – Datum aus dem Rechnungsdatum, bitte prüfen"}.`
-    : z.status === "lastschrift" ? (zukunft ? `🏦 Lastschrift angekündigt für <b>${esc(datumDe(datum))}</b> – „Fällig am“ ist gesetzt. Die Zahlung erfasst du ab dem Tag mit „Zahlung erfassen“ (Datum ist dann vorgeschlagen).`
+    : z.status === "lastschrift" ? (zukunft ? `🏦 Lastschrift angekündigt für <b>${esc(datumDe(datum))}</b> – an dem Tag <b>bucht LUNA den Beleg selbst</b> und erfasst die Zahlung. Du musst nichts tun; buchst du vorher selbst, erfasst LUNA am Tag nur die Zahlung.`
       : `🏦 Lastschrift am <b>${esc(datumDe(datum))}</b> – schon vorbei, Zahlung kann gleich mitgebucht werden.`) : "";
   return `${info ? `<div class="v2-msg" style="margin:8px 0">${info}</div>` : ""}
     <div class="v2-an-zeile"><label class="v2-modlbl" style="grid-column: span 2"><input type="checkbox" id="bl-bz-an" ${an ? "checked" : ""} ${zukunft && z.status === "lastschrift" ? "disabled" : ""}> Schon bezahlt – Zahlung gleich mitbuchen</label>

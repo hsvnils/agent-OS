@@ -34,7 +34,7 @@ ENDUNGEN = {".pdf": "application/pdf", ".xml": "application/xml", ".jpg": "image
 KATEGORIEN = {
     "wareneinkauf": ("Wareneinkauf / Material", ("ware", "material", "einkauf", "druck", "merch", "textil", "shirt")),
     "fremdleistungen": ("Fremdleistungen (Freelancer, Subunternehmer)", ("freelancer", "honorar", "dienstleistung", "schnitt", "fotograf", "videoproduktion")),
-    "software": ("Software, Abos, Hosting", ("software", "abo", "subscription", "lizenz", "hosting", "cloud", "adobe", "canva", "google", "apple", "microsoft", "openai", "anthropic", "domain")),
+    "software": ("Software, Abos, Hosting", ("software", "abo", "subscription", "lizenz", "hosting", "cloud", "adobe", "canva", "google", "apple", "microsoft", "openai", "anthropic", "domain", "wiso", "buhl data", "lexware", "datev")),
     "werbung": ("Werbung / Marketing", ("werbung", "anzeige", "ads", "marketing", "kampagne", "promotion", "sponsor")),
     "telekommunikation": ("Telefon / Internet", ("telefon", "mobilfunk", "internet", "telekom", "vodafone", "o2", "1&1")),
     "buero": ("Arbeitsmittel & Zubehör (Kabel, Speicherkarten, Büro, Versand, Requisiten)",
@@ -294,6 +294,16 @@ def kategorie_raten(text: str) -> str:
     treffer = [(sum(t.count(w) for w in woerter), k) for k, (_, woerter) in KATEGORIEN.items() if woerter]
     beste = max(treffer, default=(0, "sonstiges"))
     return beste[1] if beste[0] > 0 else "sonstiges"
+
+
+def kategorie_sicher(text: str) -> str:
+    """Kategorie nur bei klarem Vorsprung (mind. 2 Treffer und doppelt so viele wie die naechste), sonst "".
+    Fuer Buchungen ohne CEO-Blick (Lastschrift-Automatik): Wortteile wie „ware“ in „Software“ duerfen nicht entscheiden."""
+    t = (text or "").lower()
+    treffer = sorted(((sum(t.count(w) for w in woerter), k) for k, (_, woerter) in KATEGORIEN.items() if woerter), reverse=True)
+    if not treffer or treffer[0][0] < 2 or (len(treffer) > 1 and treffer[0][0] < 2 * treffer[1][0]):
+        return ""
+    return treffer[0][1]
 
 
 _POS_BETRAG = re.compile(r"-?\d{1,3}(?:\.\d{3})*,\d{2}")
@@ -1217,6 +1227,56 @@ def euro_buchen(st: EingangStore, nummer: str, betrag_cent: int, datum: str, *, 
     return {"nummer": nummer, "betrag_cent": betrag_cent, "datum": datum, "art": "einnahme" if ein else "ausgabe"}
 
 
+LASTSCHRIFT_VON = "LUNA-Lastschrift (automatisch)"
+
+
+def lastschrift_automatisch(x: dict) -> str:
+    """Abbuchungstag, an dem LUNA den Beleg selbst bucht (CEO 2026-11-06), sonst "". Voraussetzung: angekuendigte
+    Lastschrift mit Datum, Euro-Betrag erkannt, Zahlung noch offen."""
+    v = x.get("vorschlag") or {}
+    z = v.get("zahlung") or {}
+    if z.get("status") != "lastschrift" or not z.get("datum") or x.get("status") == "verworfen" or x.get("bezahlt_am"):
+        return ""
+    if x.get("status") != "gebucht" and (not v.get("betrag") or (v.get("waehrung") or "EUR") != "EUR"):
+        return ""
+    return z["datum"]
+
+
+def lastschriften_buchen(st: EingangStore, kunden=None, heute: date | None = None) -> dict:
+    """Taeglich (05:00, mit dem Abo-Lauf): Belege mit erreichtem Abbuchungstag buchen (falls noch offen) und die
+    Zahlung zum Abbuchungstag erfassen. Rueckgabe {gebucht: [...], fehler: [...]}."""
+    heute = (heute or jetzt().date()).isoformat()
+    erg = {"gebucht": [], "fehler": []}
+    for x in st._falte(st.bh.eintraege()).values():
+        tag = lastschrift_automatisch(x)
+        if not tag or tag > heute:
+            continue
+        nr, v = x["nummer"], x.get("vorschlag") or {}
+        try:
+            if x["status"] != "gebucht":
+                kat = v.get("kategorie") or ""
+                if v.get("quelle") not in ("backoffice", "e-rechnung"):  # nur KI/E-Rechnung oder eindeutige Stichworte
+                    kat = kategorie_sicher(x.get("text") or "")
+                lief = lieferant_bereinigen(v.get("lieferant") or "")
+                if not lief or not kat or kat == "sonstiges":
+                    raise ValueError("Lieferant/Kategorie nicht sicher erkannt -- bitte in LUNA-OS buchen")
+                felder = {"art": "ausgabe", "lieferant": lief, "rechnungsnummer": v.get("rechnungsnummer", ""),
+                          "rechnungsdatum": v.get("rechnungsdatum") or tag, "faellig_am": tag, "betrag": v["betrag"],
+                          "kategorie": kat, "leistung": v.get("leistung", ""),
+                          "notiz": "Automatisch gebucht: Lastschrift laut Beleg (CEO-Vorgabe 2026-11-06)"}
+                if kunden is not None:
+                    felder["lieferant_firma"] = kunden.zuordnen(lief, art="ausgabe", absender=v.get("absender") or "",
+                                                                von=LASTSCHRIFT_VON)
+                st.buchen(nr, felder, von=LASTSCHRIFT_VON)
+            st.bezahlt(nr, tag, notiz="Lastschrift laut Beleg", von=LASTSCHRIFT_VON)
+            g = st.get(nr) or {}
+            f = g.get("felder") or {}
+            erg["gebucht"].append(f"{f.get('lieferant', nr)} {eur(f.get('betrag_cent', 0))} ({nr})")
+        except (KeyError, ValueError) as exc:
+            erg["fehler"].append(f"{nr}: {exc}")
+    return erg
+
+
 def absender_echt(roh: bytes, absender: list[str]) -> bool:
     """Absender ist einer der eigenen UND von Gmail bestaetigt: im obersten `Authentication-Results`-Kopf (den setzt
     mx.google.com beim Empfang) besteht DMARC oder DKIM fuer genau die Domain der Absenderadresse. Faelschungen des
@@ -1419,6 +1479,12 @@ def _datum_kopf(w: str) -> str:
         return (_iso("", *m.groups()) if m else "") or datum_frei(w)
 
 
+def lieferant_bereinigen(name: str) -> str:
+    """Absendernamen wie „Onlinerechnung der Buhl Data Service GmbH“ -> „Buhl Data Service GmbH“."""
+    return re.sub(r"(?i)^(?:online-?)?(?:rechnung(?:sversand)?|rechnungen|buchhaltung|billing|invoices?)\s+(?:der|des|von|from)\s+",
+                  "", str(name or "")).strip()
+
+
 def vorschlag_mail(text: str, orig: dict) -> dict:
     """Vorschlag fuer eine Rechnung im Mailtext: Regeln + Mail-Wissen (Haendler statt Zahlungsdienst, Betrag = hoechster
     Euro-Betrag = Brutto, Datum ersatzweise aus dem Original-Kopf)."""
@@ -1438,6 +1504,7 @@ def vorschlag_mail(text: str, orig: dict) -> dict:
                      if (m := rx.search(f"{text[:2000]}\n{orig.get('betreff', '')}"))), "")
     haendler = haendler.rstrip(".").strip()                               # PayPal kuerzt lange Namen („Dropbox Internationa...“)
     name = re.split(r"\s+via\s+", str(orig.get("von_name") or "").strip().strip('"'))[0]
+    name = lieferant_bereinigen(name)
     v["lieferant"] = (haendler or name or v.get("lieferant") or "")[:120]
     if not v.get("rechnungsdatum"):
         v["rechnungsdatum"] = _datum_kopf(orig.get("datum", ""))

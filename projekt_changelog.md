@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-06 10:50] — Claude Code
+- **Was:** Lastschrift-Automatik: LUNA bucht Belege mit angekuendigter Lastschrift am Abbuchungstag selbst (Beleg + Zahlung, taeglich 05:00), nur mit sicherer Kategorie; Lieferantennamen wie „Onlinerechnung der …“ bereinigt; Software-Stichworte (WISO, Buhl, Lexware, DATEV); Briefing/Formular zeigen „LUNA bucht am … selbst“. Entscheidung im Register. BF-91 vom CEO am iPhone bestaetigt.
+- **Warum:** CEO 2026-11-06: „WISO muss LUNA sich, da sie das Datum der Abbuchung kennt, auf den Tag legen, um es dann selbst zu buchen.“
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/core/beleg_briefing.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html` (v153), `orchestrator/tests/test_beleg_zahlung.py`, `docs/entscheidungs-register.md`, `KUNDEN_FINANZEN_ROADMAP.md`, `docs/bekannte-fehler.md`
+
 ## [2026-11-06 10:11] — Claude Code
 - **Was:** `ai/beleg-iphone` (BF-91) in `main` gemergt und gepusht; Suite gruen bis auf BF-90 (Baseline). Deploy + Neustart `luna-os` durch den CEO.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.

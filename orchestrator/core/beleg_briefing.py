@@ -11,7 +11,7 @@ import re
 from datetime import datetime, timedelta
 
 from .beleg_pdf import cent, eur
-from .eingangsbelege import _BELEG_WORT, EingangStore
+from .eingangsbelege import _BELEG_WORT, EingangStore, lastschrift_automatisch
 
 
 def vorheriges_briefing(jetzt: datetime, stunden: list[int]) -> datetime:
@@ -73,13 +73,15 @@ def zeilen(eintraege: list[dict], seit: datetime) -> list[str]:
             von = next((s["von"] for s in reversed(x.get("verlauf") or []) if s.get("typ") == "eingang_gebucht"), "")
             z = v.get("zahlung") or {}
             zahl = (f"bezahlt {_tag(x['bezahlt_am'])}" if x.get("bezahlt_am")
-                    else f"Lastschrift am {_tag(z['datum'])} – Zahlung ab dann bitte erfassen"
-                    if z.get("status") == "lastschrift" and z.get("datum")
+                    else f"Lastschrift am {_tag(z['datum'])} – LUNA erfasst die Zahlung dann selbst"
+                    if lastschrift_automatisch(x)
                     else "teilweise bezahlt – Rest bitte erfassen" if x.get("bezahlt_cent")
                     else "Zahlung noch offen – bitte bezahlen bzw. erfassen")
             out.append(f"✅ {kopf} → gebucht {_wer(von)} · {zahl} ({x['nummer']})")
         elif x["status"] == "verworfen":
             out.append(f"🗑 {kopf} → verworfen{': ' + x['grund'][:60] if x.get('grund') else ''} ({x['nummer']})")
+        elif (tag := lastschrift_automatisch(x)):              # CEO 2026-11-06: bucht LUNA am Abbuchungstag selbst
+            out.append(f"🏦 {kopf} → Lastschrift am {_tag(tag)}: LUNA bucht den Beleg dann selbst ({x['nummer']})")
         else:
             z = v.get("zahlung") or {}
             extra = ("; laut Beleg schon bezahlt" if z.get("status") == "bezahlt"
