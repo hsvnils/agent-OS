@@ -427,6 +427,45 @@ def selgros_lesen(text: str) -> dict | None:
             "positionen": [{"text": p["text"], "betrag": eur(p["brutto"]).replace(" €", "")} for p in pos]}
 
 
+# Zahlungshinweise auf dem Beleg (CEO 2026-11-06): „schon bezahlt“ bzw. angekuendigte Lastschrift -> Vorschlag beim Buchen
+_BEZAHLT = re.compile(
+    r"(?i)sie haben (?:eine zahlung|.{0,80}?) (?:gesendet|bezahlt|gezahlt)|\bbereits (?:vollst[aä]ndig )?(?:bezahlt|beglichen)"
+    r"|\b(?:betrag|rechnung|rechnungsbetrag|bestellung)\s+(?:wurde|ist)\s+(?:bereits\s+|erfolgreich\s+)?(?:bezahlt|beglichen)"
+    r"|zahlung (?:erhalten|eingegangen|erfolgt|erfolgreich)|(?:zahlungs)?status\s*:?\s*(?:bezahlt|paid)\b"
+    r"|\bpaid on\b|\bdate paid\b|\bamount paid\b|\bpayment received\b|\bpaid in full\b|\bpayment successful\b"
+    r"|\bbezahlt am\b|\bquittung\b|\breceipt\b|\bkartenzahlung\b|\bkundenbeleg\b")
+_OFFEN = re.compile(r"(?i)bitte [üu]berweisen|zahlbar (?:bis|innerhalb|sofort)|zahlungsziel|offener betrag|noch offen|"
+                    r"zahlungserinnerung|mahnung|\bdue date\b|\bpay by\b")
+_BEZAHLT_DATUM = re.compile(r"(?i)(?:bezahlt am|zahlungsdatum|transaktionsdatum|paid on|date paid|payment date)\s*:?\s*(.{0,30})")
+_LASTSCHRIFT = re.compile(r"(?i)lastschrift|abbuch|abgebucht|bucht?en wir .{0,80}?\bab\b|eingezogen|einziehen|sepa-?mandat|"
+                          r"mandatsreferenz")
+_LASTSCHRIFT_DATUM = re.compile(r"(?i)(?:am|zum|ab dem)\s+" + _DATUM + r"[^.]{0,80}?(?:\bab\b|abgebucht|eingezogen|belastet)|"
+                                r"(?:abbuchung|lastschrift|einzug|belastung)[^.]{0,40}?(?:am|zum)\s+" + _DATUM)
+_ZAHLWEG = (("PayPal", r"paypal"), ("Kreditkarte", r"kreditkarte|visa|mastercard|american express|amex"),
+            ("Apple Pay", r"apple pay"), ("Karte", r"kartenzahlung|ec-karte|girocard"))
+
+
+def zahlung_erkennen(text: str) -> dict:
+    """Bezahlt-Hinweis im Belegtext: {"status": "bezahlt"|"lastschrift", "datum": ISO|"", "weg": "PayPal"...} oder {}.
+    Nur ein Vorschlag -- gebucht wird die Zahlung erst mit dem Buchen durch den CEO."""
+    t = (text or "").replace("\xa0", " ")
+    weg = next((n for n, rx in _ZAHLWEG if re.search(rx, t, re.I)), "")
+    if _LASTSCHRIFT.search(t) and not re.search(r"(?i)lastschrift (?:ist )?(?:fehlgeschlagen|zur[uü]ck)", t):
+        m = _LASTSCHRIFT_DATUM.search(t)
+        g = [x for x in (m.groups() if m else ()) if x]
+        return {"status": "lastschrift", "datum": _iso(t, *g[:3]) if len(g) >= 3 else "", "weg": "Lastschrift"}
+    if not _BEZAHLT.search(t):
+        return {}
+    lab = _BEZAHLT_DATUM.search(t)
+    datum = ""
+    if lab:
+        m = re.search(_DATUM, lab.group(1))
+        datum = _iso(t, *m.groups()) if m else datum_frei(lab.group(1))
+    if _OFFEN.search(t) and not datum:                   # Rechnung mit Zahlungsaufforderung: nur mit ausdruecklichem Datum
+        return {}
+    return {"status": "bezahlt", "datum": datum, "weg": weg}
+
+
 def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
     """Schneller Vorschlag ohne KI. E-Rechnungs-Felder haben Vorrang (exakt)."""
     t = text or ""
@@ -525,6 +564,10 @@ def vorschlag_regeln(text: str, e_rechnung: dict | None = None) -> dict:
         v["quelle"] = "e-rechnung"
     if (h := hinweise_raten(t)):
         v["hinweise"] = h
+    if (z := zahlung_erkennen(t)):
+        v["zahlung"] = z
+        if z["status"] == "lastschrift" and z["datum"] and not v.get("faellig_am"):
+            v["faellig_am"] = z["datum"]
     return v
 
 
@@ -1260,7 +1303,7 @@ _WEITER_BETREFF = re.compile(r"(?i)^\s*(?:fwd?|wg|wtr|weitergeleitet)\s*:")
 _KOPF_FELD = re.compile(r"(?i)^(von|from|betreff|subject|datum|date|gesendet|sent|an|to|cc|antwort an|reply-to)\s*:\s*(.*)$")
 _BELEG_WORT = re.compile(r"(?i)rechnung|beleg|quittung|receipt|invoice|zahlung|payment|remittance|auftragsbest|"
                          r"bestellbest|abrechnung|gutschrift|kaufbest|order confirmation")
-_EUR_BETRAG = re.compile(r"(\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2})\s*(?:€|EUR)|€\s?(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})")
+_EUR_BETRAG = re.compile(r"(\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2})\s*(?:€|EUR)|(?:€|\bEUR)\s?(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})")   # auch „EUR 39,99“ (Buhl/WISO)
 _FREMD_BETRAG = re.compile(r"(?:\$|USD|US\$)\s?\d+[.,]\d{2}|\d+[.,]\d{2}\s?(?:USD|\$)")
 _QUITTUNG = re.compile(r"(?i)receipt|quittung|zahlungsbest[äa]tigung|payment[_ -]?confirmation")
 

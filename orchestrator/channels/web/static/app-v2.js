@@ -3647,6 +3647,8 @@ async function blDetail(nr, meldung, fehler) {
   BL_KAT = d.kategorien || BL_KAT; BL_KAT_EIN = d.kategorien_einnahme || BL_KAT_EIN;
   const f = Object.keys(b.felder || {}).length ? b.felder : null, v = b.vorschlag || {};
   const art = (f ? f.art : v.art) || "ausgabe", ein = art === "einnahme";
+  const lz = (v.zahlung || {}).status === "lastschrift" ? (v.zahlung.datum || "") : "";
+  if (lz && lz <= heuteIso()) BL_ZAHL_DATUM[nr] = lz; else delete BL_ZAHL_DATUM[nr];
   const w = (k) => f ? (k === "betrag" ? cent2feld(f.betrag_cent) : f[k] || "") : (v[k] || "");
   const src = `/api/finanzen/belege/${encodeURIComponent(nr)}/datei`;
   const vorschau = (b.mime || "").startsWith("image/") ? `<img src="${src}" alt="Beleg" class="v2-bl-bild">`
@@ -3695,6 +3697,7 @@ async function blDetail(nr, meldung, fehler) {
           <div class="v2-card-actions"><button class="v2-btn sm" data-act="bl-pos-neu">+ Position</button><button class="v2-btn sm" data-act="bl-pos-diff">Differenz als Position</button></div>
           <div id="bl-pos-summe" class="v2-sub"></div></div></div>
         <label class="v2-feld"><small>Notiz</small><input id="bl-notiz" value="${esc(f ? f.notiz || "" : v.kurs_notiz || (v.betrag_fremd ? `${v.betrag_fremd} ${v.waehrung} laut Beleg` : ""))}" ${gesperrt}></label>
+        ${!f && b.status !== "verworfen" ? blZahlungBlock(v) : ""}
         ${b.status !== "verworfen" ? `<div class="v2-card-actions"><button class="v2-btn pri" data-act="bl-buchen" data-id="${esc(nr)}">✔ ${f ? "Korrektur buchen" : "Buchen"}</button>
           ${f && rest !== 0 ? `<button class="v2-btn ok" data-act="bl-bezahlt-form" data-id="${esc(nr)}">💶 ${ein ? "Geldeingang erfassen" : "Zahlung erfassen"}</button>` : ""}
           ${!f ? `<button class="v2-btn" data-act="bl-verwerfen" data-id="${esc(nr)}">Kein Beleg / verwerfen</button><button class="v2-btn" data-act="bl-nachweis" data-id="${esc(nr)}">🧾 Ist Zahlungsnachweis zu …</button>` : ""}</div>` : `<div class="v2-msg">Verworfen: ${esc(b.grund || "")}</div><div class="v2-card-actions"><button class="v2-btn" data-act="bl-reaktivieren" data-id="${esc(nr)}">↺ Verwerfen zurücknehmen …</button></div>`}
@@ -3742,12 +3745,27 @@ function blPosSync() {
   const privat = w.filter(p => p.kategorie === "privat").reduce((x, p) => x + feld2cent(p.betrag), 0), diff = gesamt - summe;
   $("#bl-pos-summe").innerHTML = `Summe Positionen <b>${cent2eur(summe)}</b> · Rechnungsbetrag <b>${cent2eur(gesamt)}</b>${diff ? ` · <span style="color:var(--v2-red)">Differenz ${cent2eur(diff)}</span> (z. B. Versand, Rabatt)` : " · ✓ passt"}${privat ? ` · davon privat ${cent2eur(privat)} → absetzbar ${cent2eur(summe - privat)}` : ""}`;
 }
+// CEO 2026-11-06: Bezahlt-Hinweis vom Beleg (PayPal, Quittung, Lastschrift) als Vorschlag – mitgebucht wird nur mit Haken
+let BL_ZAHL_DATUM = {};
+function blZahlungBlock(v) {
+  const z = v.zahlung || {}, heute = heuteIso();
+  const datum = z.datum || (z.status === "bezahlt" ? v.rechnungsdatum : "") || heute;
+  const zukunft = datum > heute, an = (z.status === "bezahlt" || z.status === "lastschrift") && !zukunft;
+  const weg = z.weg ? ` (${esc(z.weg)})` : "";
+  const info = z.status === "bezahlt" ? `💶 Laut Beleg schon bezahlt${weg}${z.datum ? "" : " – Datum aus dem Rechnungsdatum, bitte prüfen"}.`
+    : z.status === "lastschrift" ? (zukunft ? `🏦 Lastschrift angekündigt für <b>${esc(datumDe(datum))}</b> – „Fällig am“ ist gesetzt. Die Zahlung erfasst du ab dem Tag mit „Zahlung erfassen“ (Datum ist dann vorgeschlagen).`
+      : `🏦 Lastschrift am <b>${esc(datumDe(datum))}</b> – schon vorbei, Zahlung kann gleich mitgebucht werden.`) : "";
+  return `${info ? `<div class="v2-msg" style="margin:8px 0">${info}</div>` : ""}
+    <div class="v2-an-zeile"><label class="v2-modlbl" style="grid-column: span 2"><input type="checkbox" id="bl-bz-an" ${an ? "checked" : ""} ${zukunft && z.status === "lastschrift" ? "disabled" : ""}> Schon bezahlt – Zahlung gleich mitbuchen</label>
+      <label class="v2-feld"><small>Bezahlt am</small><input id="bl-bz-datum" type="date" max="${esc(heute)}" value="${esc(zukunft ? heute : datum)}"></label></div>
+    <input type="hidden" id="bl-bz-notiz" value="${esc(z.weg ? `laut Beleg: ${z.weg}` : "laut Beleg")}">`;
+}
 function blBezahltForm(nr) {
   const box = $("#bl-aktion-box"); if (!box) return;
   box.innerHTML = `<h3>Zahlung erfassen</h3><div class="v2-form" style="max-width:420px">
-    <div class="v2-an-zeile"><label class="v2-feld"><small>Bezahlt am</small><input id="blz-datum" type="date" value="${heuteIso()}"></label>
+    <div class="v2-an-zeile"><label class="v2-feld"><small>Bezahlt am</small><input id="blz-datum" type="date" value="${esc(BL_ZAHL_DATUM[nr] || heuteIso())}"></label>
       <label class="v2-feld"><small>Betrag (leer = offener Rest)</small><input id="blz-betrag" inputmode="decimal" placeholder="Rest"></label></div>
-    <label class="v2-feld"><small>Notiz</small><input id="blz-notiz" placeholder="z. B. PayPal, Kreditkarte"></label><div id="blz-zuord"></div>
+    <label class="v2-feld"><small>Notiz</small><input id="blz-notiz" placeholder="z. B. PayPal, Kreditkarte" value="${BL_ZAHL_DATUM[nr] ? "Lastschrift laut Beleg" : ""}"></label><div id="blz-zuord"></div>
     <div class="v2-card-actions"><button class="v2-btn ok" data-act="bl-bezahlt" data-id="${esc(nr)}">💶 Zahlung buchen</button><button class="v2-btn" data-act="bl-box-zu">Abbrechen</button></div><div id="blz-msg" class="v2-msg"></div></div>`;
   zehnTageVerdrahten("blz-datum", "blz-zuord");
   box.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -3758,12 +3776,14 @@ async function blBuchen(nr, trotz) {
     betrag: $("#bl-betrag").value.trim(), kategorie: $("#bl-kat").value, leistung: $("#bl-leistung").value.trim(), notiz: $("#bl-notiz").value.trim(), trotz_doppelt: !!trotz, art: $("#bl-art").value,
     nutzungsdauer_jahre: $("#bl-kat").value === "anlage" ? $("#bl-nd").value : "" };
   if (blPosAktiv()) felder.aufteilung = blPosWerte().filter(p => p.text || p.betrag);
-  const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(nr)}/buchen`, { felder });
+  const bz = $("#bl-bz-an"), bezahlt = bz && bz.checked && !bz.disabled ? { datum: $("#bl-bz-datum").value, notiz: $("#bl-bz-notiz").value } : null;
+  const r = await jpost(`/api/finanzen/belege/${encodeURIComponent(nr)}/buchen`, { felder, bezahlt });
   if (!r) return kundenMsg("bl-form-msg", "Keine Verbindung zum Server.", false);
   if (!r.ok && /schon als/.test(r.hinweis || "") && confirm(r.hinweis + "\n\nTrotzdem buchen?")) return blBuchen(nr, true);
   if (!r.ok) return kundenMsg("bl-form-msg", r.hinweis || "Fehler.", false);
   if (AKTIV === "belege") renderBelege();
-  return blDetail(nr, `Gebucht: ${r.felder.lieferant} · ${cent2eur(r.felder.betrag_cent)} · ${r.felder.art === "einnahme" ? "Einnahme (Gutschrift)" : BL_KAT[r.felder.kategorie] || r.felder.kategorie}`);
+  const zm = r.zahlung ? ` · Zahlung am ${datumDe(r.zahlung.bezahlt_am || bezahlt.datum)} erfasst` : r.zahlung_hinweis ? ` · ⚠️ ${r.zahlung_hinweis}` : "";
+  return blDetail(nr, `Gebucht: ${r.felder.lieferant} · ${cent2eur(r.felder.betrag_cent)} · ${r.felder.art === "einnahme" ? "Einnahme (Gutschrift)" : BL_KAT[r.felder.kategorie] || r.felder.kategorie}${zm}`, !!r.zahlung_hinweis);
 }
 
 /* =========================== Finanzen (KUNDEN_FINANZEN Etappe 7) =========================== */

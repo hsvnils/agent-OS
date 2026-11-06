@@ -982,6 +982,27 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   manuellen Auftrag, Zeit buchbar; Browsertest Formular -> Auftrag; Suite + Doku-Check gruen.
 - Aufwand: mittel.
 
+### Etappe 32: Bezahlt-Hinweise vom Beleg und Belege im Briefing
+
+- Status: gebaut auf `ai/belege-bezahlt-briefing` (CEO-Go 2026-11-06), Deploy und CEO-Abnahme offen.
+- Anlass (CEO 2026-11-06): eine Software-Rechnung per Mail blieb liegen (BF-89); auf PayPal-Belegen u. a. steht schon,
+  dass bezahlt ist, trotzdem musste jede Zahlung von Hand erfasst werden (158 von 169 gebuchten Eingangsbelegen).
+- Umsetzung:
+  - Betrag mit vorangestellter Waehrung („EUR 39,99“) wird erkannt (`_EUR_BETRAG`).
+  - `zahlung_erkennen`: „schon bezahlt“ (PayPal „Sie haben eine Zahlung gesendet“, Quittung/Receipt, „Date paid“,
+    Kartenzahlung, „bereits bezahlt“ u. a.; nicht bei Zahlungsaufforderung ohne Datum) bzw. angekuendigte Lastschrift mit
+    Datum (setzt „Faellig am“). Ergebnis als `vorschlag.zahlung`.
+  - Buchungsformular: Haken „Schon bezahlt -- Zahlung gleich mitbuchen“ mit Datum, vorbelegt aus dem Hinweis; kuenftige
+    Lastschrift = Hinweis, Haken gesperrt, ab dem Tag schlaegt „Zahlung erfassen“ das Datum vor. Gebucht wird weiter nur
+    mit dem Klick des CEO (Zahlungsdatum entscheidet das EUeR-Jahr).
+  - Briefing (morgens und abends): Abschnitt „Belege seit dem letzten Briefing“ -- je Beleg Absender, Betrag, Status
+    (gebucht von dir/LUNA, bezahlt am, oder was von Hand zu tun ist), automatisch gebuchte Abos, Rechnungsmails, die als
+    Brief in der Akte gelandet sind; zu tun zuerst, hoechstens 15 Zeilen. `core/beleg_briefing.py`.
+- Gate: Tests `test_beleg_zahlung.py` (11, Gegenprobe rot ohne Fix; nur erfundene Testdaten), Suite + Doku-Check gruen.
+  Browsertest war auf der Werkbank nicht moeglich -> Sichtpruefung durch den CEO (Rechner, iPad, iPhone).
+- Abnahme: die liegengebliebene Mail kommt nach dem Neustart als Beleg (Lastschrift 01.12.); naechstes Briefing zeigt den
+  Abschnitt.
+
 ## Reihenfolge
 
 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 (ohne Auto-Weiterleitung) -> 14 -> 13 (Auto-Weiterleitung) -> 15/16 (unabhaengig, nach CEO-Go). Etappe 6 (Belege) kann nach Etappe 2 vorgezogen werden, falls Einkaeufe zuerst

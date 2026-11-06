@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-06 09:48] — Claude Code
+- **Was:** Etappe 32 gebaut: Rechnungsbetrag „EUR 39,99“ wird erkannt (BF-89); Bezahlt-/Lastschrift-Hinweise vom Beleg als Vorschlag, Zahlung beim Buchen per Haken mitbuchen; Briefing morgens/abends mit „Belege seit dem letzten Briefing“ (Absender, Betrag, gebucht von wem / was von Hand zu tun ist). BF-90 (alternder Test) erfasst.
+- **Warum:** CEO-Go 2026-11-06 („Go fuer beides, gebuchte Belege ins naechste Briefing“).
+- **Betroffen:** `orchestrator/core/eingangsbelege.py`, `orchestrator/core/beleg_briefing.py` (neu), `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html` (v151), `orchestrator/channels/telegram/bot.py`, `orchestrator/tests/test_beleg_zahlung.py` (neu), `KUNDEN_FINANZEN_ROADMAP.md`, `docs/bekannte-fehler.md`
+
 ## [2026-10-31 12:54] — Claude Code
 - **Was:** `ai/luna-desktop-echo` (Echo-Fix BF-87, Doku Rechnungsvorlage, Register Soofi/Bionic) in `main` gemergt und gepusht; kein NAS-Deploy noetig (nur LUNA-Desktop auf dem MACO470, dort schon identisch). Beim Testlauf BF-88 (datumsabhaengiger Wochenplan-Test, am Wochenende rot) und einen Wackel-Test (BF-38) erfasst.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
