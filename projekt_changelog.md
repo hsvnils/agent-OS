@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-06 11:05] — Claude Code
+- **Was:** `ai/lastschrift-automatisch` in `main` gemergt und gepusht; Suite gruen bis auf BF-90 (Baseline). Deploy + Neustart `luna-os` und `luna-telegram` durch den CEO.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `main`
+
 ## [2026-11-06 10:50] — Claude Code
 - **Was:** Lastschrift-Automatik: LUNA bucht Belege mit angekuendigter Lastschrift am Abbuchungstag selbst (Beleg + Zahlung, taeglich 05:00), nur mit sicherer Kategorie; Lieferantennamen wie „Onlinerechnung der …“ bereinigt; Software-Stichworte (WISO, Buhl, Lexware, DATEV); Briefing/Formular zeigen „LUNA bucht am … selbst“. Entscheidung im Register. BF-91 vom CEO am iPhone bestaetigt.
 - **Warum:** CEO 2026-11-06: „WISO muss LUNA sich, da sie das Datum der Abbuchung kennt, auf den Tag legen, um es dann selbst zu buchen.“
