@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-06 09:57] — Claude Code
+- **Was:** `ai/belege-bezahlt-briefing` (Etappe 32) in `main` gemergt und gepusht; Suite 1504 gruen, 1 rot = BF-90 (Baseline), Doku-Check gruen. Deploy auf die NAS + Neustart `luna-os` und `luna-telegram` durch den CEO.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `main`
+
 ## [2026-11-06 09:48] — Claude Code
 - **Was:** Etappe 32 gebaut: Rechnungsbetrag „EUR 39,99“ wird erkannt (BF-89); Bezahlt-/Lastschrift-Hinweise vom Beleg als Vorschlag, Zahlung beim Buchen per Haken mitbuchen; Briefing morgens/abends mit „Belege seit dem letzten Briefing“ (Absender, Betrag, gebucht von wem / was von Hand zu tun ist). BF-90 (alternder Test) erfasst.
 - **Warum:** CEO-Go 2026-11-06 („Go fuer beides, gebuchte Belege ins naechste Briefing“).
