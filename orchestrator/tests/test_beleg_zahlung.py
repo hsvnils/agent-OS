@@ -8,10 +8,10 @@ from orchestrator.core.beleg_briefing import text, vorheriges_briefing, zeilen
 from orchestrator.core.eingangsbelege import mail_ist_beleg, vorschlag_mail, vorschlag_regeln, zahlung_erkennen
 from orchestrator.tests.test_eingangsbelege import TEXT, _pdf
 
-WISO = ("Hallo Max Muster, die Rechnung für Steuer-Software 2027 ist jetzt verfügbar. Ihre Rechnung in der Übersicht "   # erfundene Werte
+WISO = ("Betreff: Ihre Online-Rechnung für WISO Steuer 2027 Hallo Max Muster, die Rechnung für WISO Steuer 2027 ist jetzt verfügbar. Ihre Rechnung in der Übersicht "   # erfundene Werte
         "Kundennummer: 12345678 Rechnungsnummer: 26RS00000001 Rechnungsdatum: 04.11.2026 Rechnungsbetrag: EUR 39,99 "
         "Zahlung Sie müssen sich um nichts kümmern. Den Rechnungsbetrag buchen wir am 01.12.2026 vom Konto: *******00 "
-        "mit der Mandatsreferenz MD0000000000 ab.")
+        "mit der Mandatsreferenz MD0000000000 ab. Freundliche Grüße Ihre Buhl Data Service GmbH")
 
 
 class TestErkennung(unittest.TestCase):
@@ -133,8 +133,8 @@ class TestBriefing(unittest.TestCase):
         z = zeilen(self._log(), self.SEIT)
         self.assertEqual(len(z), 4, z)
         self.assertFalse(any("ER-2026-0001" in x for x in z))                          # vor dem letzten Briefing
-        self.assertIn("Buhl Data Service GmbH – 39,99 € → noch NICHT gebucht", z[0])
-        self.assertIn("Lastschrift am 01.12.", z[0])
+        self.assertIn("🏦 Buhl Data Service GmbH – 39,99 € → Lastschrift am 01.12.: LUNA bucht den Beleg dann selbst", z[0])
+        self.assertNotIn("bitte", z[0])                                                 # nichts von Hand zu tun
         self.assertIn("Dropbox – 19,99 € → gebucht von dir · bezahlt 03.11.", z[1])
         self.assertIn("Sky – 33,60 € → automatisch gebucht von LUNA", z[2])
         self.assertFalse(any("Anthropic" in x for x in z))                              # vom CEO selbst angelegt
@@ -144,8 +144,9 @@ class TestBriefing(unittest.TestCase):
     def test_2_text_zu_tun_zuerst_und_begrenzt(self):
         t = text(self._log(), self.SEIT, max_zeilen=2)
         self.assertTrue(t.startswith("📥 Belege seit dem letzten Briefing (4):"))
-        self.assertIn("Von Hand zu tun: 2 Punkte.", t)
+        self.assertIn("Von Hand zu tun: 1 Punkt.", t)
         self.assertIn("… und 2 weitere", t)
+        self.assertLess(t.index("D-1"), t.index("Buhl"))                               # zu tun steht oben
         self.assertNotIn("Dropbox", t)                                                  # erledigtes faellt zuerst weg
         self.assertEqual(text(self._log(), datetime(2026, 11, 7)), "")
 
@@ -153,6 +154,62 @@ class TestBriefing(unittest.TestCase):
         self.assertEqual(vorheriges_briefing(datetime(2026, 11, 7, 8, 2), [8, 20]), datetime(2026, 11, 6, 20, 0))
         self.assertEqual(vorheriges_briefing(datetime(2026, 11, 6, 20, 0), [8, 20]), datetime(2026, 11, 6, 8, 0))
 
+
+
+class TestLastschriftAutomatisch(unittest.TestCase):
+    """CEO 2026-11-06: Lastschrift-Belege bucht LUNA am Abbuchungstag selbst (Beleg + Zahlung)."""
+    MAIL = WISO.replace("01.12.2026", "01.10.2026")                                    # Abbuchung in der Vergangenheit
+
+    def setUp(self):
+        from orchestrator.core.eingangsbelege import EingangStore
+        from orchestrator.tests.test_angebote import _stores
+        self.bh, self.ks, *_ = _stores()
+        self.st = EingangStore(self.bh)
+
+    def _beleg(self, text=None, **extra):
+        r = self.st.aufnehmen(_pdf("x"), "Mail-Rechnung.pdf", quelle="mail", text=text or self.MAIL,
+                              vorschlag_extra={"lieferant": "Onlinerechnung der Buhl Data Service GmbH"} | extra)
+        return r["nummer"]
+
+    def test_1_am_tag_gebucht_und_bezahlt(self):
+        from datetime import date
+        from orchestrator.core.eingangsbelege import LASTSCHRIFT_VON, lastschriften_buchen
+        nr = self._beleg()
+        self.assertEqual(lastschriften_buchen(self.st, self.ks, date(2026, 9, 30)), {"gebucht": [], "fehler": []})
+        r = lastschriften_buchen(self.st, self.ks, date(2026, 10, 1))
+        self.assertEqual(r["gebucht"], [f"Buhl Data Service GmbH 39,99 € ({nr})"], r)
+        x = self.st.get(nr)
+        self.assertEqual((x["status"], x["bezahlt_am"], x["felder"]["kategorie"]), ("gebucht", "2026-10-01", "software"))
+        self.assertEqual(x["verlauf"][-1]["von"], LASTSCHRIFT_VON)
+        self.assertTrue(x["felder"]["lieferant_firma"])                                 # haengt an den Stammdaten
+        self.assertEqual(lastschriften_buchen(self.st, self.ks, date(2026, 10, 2)), {"gebucht": [], "fehler": []})
+        z = zeilen(self.bh.eintraege(), datetime(2026, 1, 1))
+        self.assertIn("gebucht von LUNA · bezahlt 01.10.", z[0])
+
+    def test_2_vom_ceo_gebucht_nur_zahlung(self):
+        from datetime import date
+        from orchestrator.core.eingangsbelege import lastschriften_buchen
+        nr = self._beleg()
+        self.st.buchen(nr, {"lieferant": "Buhl", "betrag": "39,99", "kategorie": "software",
+                            "rechnungsdatum": "2026-09-04"}, von="LUNA-OS:ceo")
+        lastschriften_buchen(self.st, self.ks, date(2026, 10, 1))
+        x = self.st.get(nr)
+        self.assertEqual((x["felder"]["lieferant"], x["bezahlt_am"]), ("Buhl", "2026-10-01"))   # Buchung bleibt
+
+    def test_3_unsicher_nicht_buchen(self):
+        from datetime import date
+        from orchestrator.core.eingangsbelege import lastschriften_buchen
+        text = "Rechnung 39,99 EUR. Den Betrag buchen wir am 01.10.2026 von Ihrem Konto ab."
+        nr = self._beleg(text)
+        r = lastschriften_buchen(self.st, self.ks, date(2026, 10, 1))
+        self.assertEqual(r["gebucht"], [])
+        self.assertIn("Kategorie", r["fehler"][0])
+        self.assertEqual(self.st.get(nr)["status"], "zu_pruefen")
+
+    def test_4_lieferant_bereinigt(self):
+        from orchestrator.core.eingangsbelege import lieferant_bereinigen
+        self.assertEqual(lieferant_bereinigen("Onlinerechnung der Buhl Data Service GmbH"), "Buhl Data Service GmbH")
+        self.assertEqual(lieferant_bereinigen("Rechnung Müller GmbH"), "Rechnung Müller GmbH")
 
 if __name__ == "__main__":
     unittest.main()

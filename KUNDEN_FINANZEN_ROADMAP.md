@@ -1002,6 +1002,10 @@ Jede Etappe: eigener Branch, Tests + Gegenproben, Probelauf, CEO-Go, Deploy, Ver
   Browsertest war auf der Werkbank nicht moeglich -> Sichtpruefung durch den CEO (Rechner, iPad, iPhone).
 - Abnahme: die liegengebliebene Mail kommt nach dem Neustart als Beleg (Lastschrift 01.12.); naechstes Briefing zeigt den
   Abschnitt.
+- Nachtrag 2026-11-06 (CEO): **Lastschrift-Belege bucht LUNA am Abbuchungstag selbst** (`lastschriften_buchen`, taeglich
+  05:00 mit dem Abo-Lauf): Beleg mit sicherer Kategorie (`kategorie_sicher` -- KI/E-Rechnung oder klarer Stichwort-Vorsprung)
+  und bereinigtem Lieferanten (`lieferant_bereinigen`) buchen, Zahlung zum Abbuchungstag erfassen; unsicher -> Meldung.
+  Briefing zeigt 🏦 „LUNA bucht am … selbst“ statt To-do. iPhone-Darstellung (BF-91) vom CEO abgenommen.
 
 ## Reihenfolge
 

@@ -1360,6 +1360,16 @@ def _start_buchhaltung_loop(ctx) -> None:
                         _abo_lauf(_bh, KundenStore(_bh), notify=ctx.notifications.enqueue)
                     except Exception as _exc:
                         print(f"[abos] Fehler: {_exc}", flush=True)
+                    try:                                    # CEO 2026-11-06: Lastschrift-Belege am Abbuchungstag selbst buchen
+                        from ...core.eingangsbelege import EingangStore as _ES, lastschriften_buchen
+                        _ls = lastschriften_buchen(_ES(_bh), KundenStore(_bh), jetzt.date())
+                        if _ls["gebucht"] or _ls["fehler"]:
+                            ctx.notifications.enqueue(
+                                "🏦 Lastschrift" + (" automatisch gebucht: " + "; ".join(_ls["gebucht"]) if _ls["gebucht"] else "")
+                                + (" – nicht automatisch buchbar: " + "; ".join(_ls["fehler"]) if _ls["fehler"] else ""),
+                                abteilung="CFO", kategorie="finanzen", quelle="lastschrift", detail="LUNA-OS -> Belege")
+                    except Exception as _exc:
+                        print(f"[lastschrift] Fehler: {_exc}", flush=True)
                     try:                                    # REELS_ROADMAP: Verfall nach 30 Tagen, Videos loeschen
                         from ...core.reel_store import VERFALL_TAGE, ReelStore as _RS
                         _rr = _RS(ROOT / "reel_freigabe" / "log.jsonl").aufraeumen(jetzt.date())
