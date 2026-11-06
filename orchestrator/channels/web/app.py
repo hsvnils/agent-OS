@@ -4045,7 +4045,15 @@ async def beleg_buchen(nummer: str, request: Request):
         felder["lieferant_firma"] = _firma_fuer_beleg(felder.get("lieferant_firma") or "", felder.get("lieferant") or "",
                                                       felder.get("art") or "ausgabe",
                                                       (x.get("vorschlag") or {}).get("absender") or "", _von(request))
-        return st.buchen(nummer, felder, von=_von(request))
+        erst = x["status"] == "zu_pruefen"
+        r = st.buchen(nummer, felder, von=_von(request))
+        z = body.get("bezahlt") or {}
+        if erst and z.get("datum"):                    # CEO 2026-11-06: Bezahlt-Hinweis vom Beleg gleich mitbuchen
+            try:
+                r["zahlung"] = st.bezahlt(nummer, z["datum"], notiz=z.get("notiz") or "laut Beleg", von=_von(request))
+            except ValueError as exc:                  # Buchung bleibt, Zahlung dann von Hand
+                r["zahlung_hinweis"] = f"Gebucht, Zahlung aber nicht erfasst: {exc}"
+        return r
     return _kunden_aktion(_mit_aufraeumen(tun, _von(request)))
 
 

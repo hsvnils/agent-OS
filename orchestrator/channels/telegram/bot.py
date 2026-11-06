@@ -1562,6 +1562,18 @@ def _start_briefing_loop(ctx, notify) -> None:
                                 text += "\n\nNachts im Backoffice erledigt:\n" + "\n".join(f"  - {z}" for z in bz)
                         except Exception as exc:
                             print(f"[briefing] Backoffice-Fehler: {exc}", flush=True)
+                    # Belege seit dem letzten Briefing: von wem, wie hoch, gebucht oder von Hand (CEO 2026-11-06)
+                    try:
+                        from ...core.beleg_briefing import text as beleg_text, vorheriges_briefing
+                        from ...core.buchhaltung import Buchhaltung
+                        if (ROOT / "buchhaltung" / "log.jsonl").exists():
+                            _j = jetzt.replace(tzinfo=None) if tz else jetzt
+                            bt = beleg_text(Buchhaltung(ROOT / "buchhaltung").eintraege(),
+                                            vorheriges_briefing(_j, list(_plan())))
+                            if bt:
+                                text += "\n\n" + bt
+                    except Exception as exc:
+                        print(f"[briefing] Beleg-Fehler: {exc}", flush=True)
                     notify(text, abteilung="LUNA-Briefing", kategorie="briefing", quelle="briefing",
                            dedup_stunden=0)
                     ctx.agenda.markiere_briefing(art, datum)
