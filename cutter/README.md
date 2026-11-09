@@ -57,6 +57,11 @@ den Ausschnitt nicht mehr blind „ab ~20 %", sondern legt ihn per **ffmpeg-Szen
 zusammenhaengende Szene (kurz nach dem Schnitt) -- so startet das Reel nicht mitten in einem Uebergang. Kein
 OpenCV/keine Extra-Abhaengigkeit. Abschaltbar mit `--ohne-szenen` bzw. `CUTTER_SZENEN=0`.
 
+**Stil-Schalter (CUTTER_AUSBAU C2):** `CUTTER_STIL=v1` (Standard) oder `v2`, `CUTTER_UEBERGANG=weich` (Standard) oder `hart`,
+in `orchestrator/.env` oder der Prozess-Umgebung. `v2`: Push-in mit S-Kurve, richtige Geschwindigkeit bei 25/60 fps, 48 kHz,
+Lautheit zweistufig (-14 LUFS, reine B-Roll -24 LUFS), Sprech-Clips enden an Satzgrenze oder Pause, lauteste Stelle als B-Roll-Ausschnitt,
+staerkster Clip als Hook. Der Bericht nennt `stil`, `schnitt_weg` (`weich`, `hart`, `hart_notweg`) und `uebergang_fehler`.
+
 **Unbeaufsichtigt (Mac anlassen, Clips reinlegen — fertig):**
 ```bash
 python -m cutter.watch        # Inbox ~/CutterInbox  ->  Outbox ~/CutterOutbox

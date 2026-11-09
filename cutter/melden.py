@@ -12,6 +12,8 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+from . import ffmpeg_ops
+
 API = "https://api.telegram.org"
 
 
@@ -30,6 +32,13 @@ def sende_reel(token: str, chat_id: str, video: Path, caption: str = "") -> bool
     if caption:
         feld("caption", caption[:1000])
     feld("supports_streaming", "true")
+    # Ohne echte Masse raet die Telegram-App die Form des Players und zerrt das Bild (BF-94).
+    info = ffmpeg_ops.probe(Path(video))
+    if info and info.breite > 0 and info.hoehe > 0:
+        feld("width", str(info.breite))
+        feld("height", str(info.hoehe))
+        if info.dauer > 0:
+            feld("duration", str(max(1, round(info.dauer))))
     teile.append((f"--{grenze}\r\nContent-Disposition: form-data; name=\"video\"; "
                   f"filename=\"{Path(video).name}\"\r\nContent-Type: video/mp4\r\n\r\n").encode())
     teile.append(Path(video).read_bytes())

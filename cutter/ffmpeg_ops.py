@@ -7,6 +7,8 @@ unscharfem Hintergrund (klassischer Reel-Look), normalisiertem Ton und sauberen 
 from __future__ import annotations
 
 import json
+import math
+import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,6 +26,40 @@ _ZOOM = (f"scale={int(BREITE*1.25)}:{int(HOEHE*1.25)}:force_original_aspect_rati
          f"crop={int(BREITE*1.25)}:{int(HOEHE*1.25)},"
          f"zoompan=z='min(zoom+0.0008,1.18)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
          f"s={BREITE}x{HOEHE}:fps={FPS},setsar=1")
+
+# CUTTER_AUSBAU C2 (CUTTER_STIL=v2): Werte aus dem Skill `davinci-resolve-schnitt`, Startwerte.
+ZIEL_LUFS_V2 = -14.0        # Sprache und normaler Ton
+ZIEL_LUFS_BROLL = -24.0     # reine B-Roll: Stadion-Atmo hoerbar, aber Platz fuer die Musik aus der App
+ZIEL_TP_V2 = -1.5           # 0,5 dB Reserve, damit nach dem AAC-Encoding -1 dBTP gehalten wird
+ZIEL_HZ_V2 = 48000
+ZOOM_ZIEL_V2 = 1.12
+TON_BLENDE_V2 = 0.05        # kurze Tonblende je Clip gegen Knackser am harten Schnitt
+
+letzter_fehler = ""         # Grund des letzten gescheiterten ffmpeg-Aufrufs (BF-92: wurde frueher verworfen)
+
+
+def s_kurve(p: float) -> float:
+    """Weicher Verlauf 0 -> 1 (Ease an beiden Enden), statt linear."""
+    p = max(0.0, min(1.0, p))
+    return p * p * (3 - 2 * p)
+
+
+def zoom_ausdruck(frames: int, ziel: float = ZOOM_ZIEL_V2) -> str:
+    """ffmpeg-Ausdruck fuer den Push-in: 1.0 im ersten Bild, `ziel` im letzten, dazwischen S-Kurve."""
+    n = max(1, frames - 1)
+    p = f"min(on/{n},1)"
+    return f"1+{ziel - 1:.4f}*{p}*{p}*(3-2*{p})"
+
+
+def _vertikal_filter_v2(zoom: bool, dauer: float) -> str:
+    """9:16 fuellen, bei B-Roll Push-in. `fps` VOR zoompan, sonst laufen 60-fps-Clips in halber Geschwindigkeit."""
+    if not zoom:
+        return f"{_FUELLEN},{_GRADE}"
+    frames = max(2, round(dauer * FPS))
+    return (f"fps={FPS},scale={BREITE * 2}:{HOEHE * 2}:force_original_aspect_ratio=increase,"
+            f"crop={BREITE * 2}:{HOEHE * 2},"
+            f"zoompan=z='{zoom_ausdruck(frames)}':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
+            f"s={BREITE}x{HOEHE}:fps={FPS},setsar=1,{_GRADE}")
 
 
 def _vertikal_filter(zoom: bool) -> str:
@@ -118,12 +154,16 @@ def _schwarzrand_crop(quelle: Path, start: float, dauer: float) -> str | None:
 
 
 def segment_normalisieren(quelle: Path, ziel: Path, *, start: float, dauer: float,
-                          hat_audio: bool, zoom: bool = False, randschnitt: bool = True) -> bool:
+                          hat_audio: bool, zoom: bool = False, randschnitt: bool = True,
+                          stil: str = "v1", ton_blende: bool = False) -> bool:
     """Schneidet [start, start+dauer], entfernt schwarze Raender, fuellt 9:16 (Crop-to-Fill), graded.
 
     `zoom=True` legt einen sanften Ken-Burns-Zoom drueber (fuer B-Roll). `randschnitt` entfernt
     eingebrannte schwarze Balken vor dem Fuellen. Clips ohne Ton bekommen eine stille Tonspur.
+    `stil="v2"`: Push-in mit S-Kurve und 48 kHz; `ton_blende` blendet den Ton an den Clip-Enden kurz (harter Schnitt).
     """
+    v2 = stil == "v2"
+    hz = ZIEL_HZ_V2 if v2 else 44100
     vorfilter = ""
     if randschnitt:
         crop = _schwarzrand_crop(quelle, start, dauer)
@@ -133,11 +173,15 @@ def segment_normalisieren(quelle: Path, ziel: Path, *, start: float, dauer: floa
            "-i", str(quelle)]
     if not hat_audio:
         cmd += ["-f", "lavfi", "-t", f"{max(0.1, dauer):.3f}", "-i",
-                "anullsrc=channel_layout=stereo:sample_rate=44100"]
-    cmd += ["-vf", vorfilter + _vertikal_filter(zoom), "-r", str(FPS),
-            "-map", "0:v:0", "-map", ("1:a:0" if not hat_audio else "0:a:0?"),
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
-            "-c:a", "aac", "-ar", "44100", "-ac", "2",
+                f"anullsrc=channel_layout=stereo:sample_rate={hz}"]
+    bild = _vertikal_filter_v2(zoom, dauer) if v2 else _vertikal_filter(zoom)
+    cmd += ["-vf", vorfilter + bild, "-r", str(FPS),
+            "-map", "0:v:0", "-map", ("1:a:0" if not hat_audio else "0:a:0?")]
+    if ton_blende:
+        ende = max(0.0, dauer - TON_BLENDE_V2)
+        cmd += ["-af", f"afade=t=in:d={TON_BLENDE_V2},afade=t=out:st={ende:.3f}:d={TON_BLENDE_V2}"]
+    cmd += ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-ar", str(hz), "-ac", "2",
             "-shortest", "-movflags", "+faststart", str(ziel)]
     return _run(cmd)
 
@@ -190,25 +234,7 @@ def zusammenfuegen_xfade(segmente: list[Path], ziel: Path, *, uebergang: float =
                      "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
                      "-c:a", "aac", "-ar", "44100", "-ac", "2", "-movflags", "+faststart", str(ziel)])
 
-    T = uebergang
-    # Fester Uebergang fuer ALLE Schnitte: weiches Ueberblenden (Crossfade).
-    typ = "fade"
-    dauern = [max(0.5, dauer_von(s)) for s in segmente]
-    filters: list[str] = []
-    # Video: xfade-Kette mit kumulativem Offset.
-    vlabel, cum = "[0:v]", dauern[0]
-    for i in range(1, n):
-        out = f"[v{i}]"
-        offset = max(0.1, cum - T)
-        filters.append(f"{vlabel}[{i}:v]xfade=transition={typ}:"
-                       f"duration={T}:offset={offset:.3f}{out}")
-        vlabel, cum = out, cum + dauern[i] - T
-    # Audio: acrossfade-Kette.
-    alabel = "[0:a]"
-    for i in range(1, n):
-        out = f"[a{i}]"
-        filters.append(f"{alabel}[{i}:a]acrossfade=d={T}{out}")
-        alabel = out
+    filters, vlabel, alabel = _xfade_graph(segmente, uebergang)
     af = f"{alabel}aresample=44100" + (",volume=0.15" if leiser_ton else "") + \
         ",loudnorm=I=-16:TP=-1.5:LRA=11[aout]"
     filters.append(af)
@@ -220,6 +246,113 @@ def zusammenfuegen_xfade(segmente: list[Path], ziel: Path, *, uebergang: float =
             "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-ar", "44100", "-ac", "2", "-movflags", "+faststart", str(ziel)]
     return _run(cmd)
+
+
+def _xfade_graph(segmente: list[Path], uebergang: float) -> tuple[list[str], str, str]:
+    """Filter fuer weiches Ueberblenden aller Schnitte -> (Filter, Video-Label, Ton-Label)."""
+    T, n = uebergang, len(segmente)
+    dauern = [max(0.5, dauer_von(s)) for s in segmente]
+    filters: list[str] = []
+    # Video: xfade-Kette mit kumulativem Offset.
+    vlabel, cum = "[0:v]", dauern[0]
+    for i in range(1, n):
+        out = f"[v{i}]"
+        offset = max(0.1, cum - T)
+        filters.append(f"{vlabel}[{i}:v]xfade=transition=fade:duration={T}:offset={offset:.3f}{out}")
+        vlabel, cum = out, cum + dauern[i] - T
+    # Audio: acrossfade-Kette.
+    alabel = "[0:a]"
+    for i in range(1, n):
+        out = f"[a{i}]"
+        filters.append(f"{alabel}[{i}:a]acrossfade=d={T}{out}")
+        alabel = out
+    return filters, vlabel, alabel
+
+
+def messe_lautheit(pfad: Path, *, ziel_lufs: float, ziel_tp: float = ZIEL_TP_V2, lra: float = 11) -> dict | None:
+    """Erster loudnorm-Durchgang: liefert die Messwerte als dict, None bei Fehler."""
+    try:
+        r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(pfad), "-vn", "-af",
+                            f"loudnorm=I={ziel_lufs}:TP={ziel_tp}:LRA={lra}:print_format=json", "-f", "null", "-"],
+                           capture_output=True, text=True, timeout=600)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    text = r.stderr or ""
+    i, j = text.rfind("{"), text.rfind("}")
+    if r.returncode != 0 or i < 0 or j <= i:
+        return None
+    try:
+        return json.loads(text[i:j + 1])
+    except ValueError:
+        return None
+
+
+def loudnorm_filter(m: dict | None, *, ziel_lufs: float, ziel_tp: float = ZIEL_TP_V2, lra: float = 11) -> str:
+    """Filter fuer den zweiten Durchgang. Stille oder fehlende Messung: nur auf 48 kHz wandeln, nie hochziehen."""
+    try:
+        werte = [float(m[k]) for k in ("input_i", "input_tp", "input_lra", "input_thresh", "target_offset")]
+    except (KeyError, TypeError, ValueError):
+        return f"aresample={ZIEL_HZ_V2}"
+    if not all(math.isfinite(w) for w in werte) or werte[0] < -70:
+        return f"aresample={ZIEL_HZ_V2}"
+    i, tp, l, thresh, offset = werte
+    return (f"loudnorm=I={ziel_lufs}:TP={ziel_tp}:LRA={lra}:measured_I={i}:measured_TP={tp}:measured_LRA={l}:"
+            f"measured_thresh={thresh}:offset={offset}:linear=true,aresample={ZIEL_HZ_V2}")
+
+
+def ton_mastern(roh: Path, ziel: Path, *, ziel_lufs: float) -> bool:
+    """Zweistufige Lautheit: messen, dann gezielt anheben. Das Bild wird nur kopiert."""
+    af = loudnorm_filter(messe_lautheit(roh, ziel_lufs=ziel_lufs), ziel_lufs=ziel_lufs)
+    return _run(["ffmpeg", "-y", "-i", str(roh), "-map", "0:v:0", "-map", "0:a:0", "-c:v", "copy", "-af", af,
+                 "-c:a", "aac", "-b:a", "192k", "-ar", str(ZIEL_HZ_V2), "-ac", "2", "-movflags", "+faststart", str(ziel)])
+
+
+def zusammenfuegen_v2(segmente: list[Path], ziel: Path, *, weich: bool, ziel_lufs: float,
+                      untertitel_ass: Path | None = None, uebergang: float = 0.35) -> bool:
+    """CUTTER_STIL=v2: Schnitt (hart oder weich), danach Ton in eigenem Schritt auf das Ziel bringen."""
+    if not segmente:
+        return False
+    weich = weich and len(segmente) > 1 and untertitel_ass is None
+    roh, liste = ziel.with_suffix(".roh.mkv"), ziel.with_suffix(".concat.txt")
+    bild = ["-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
+            "-c:a", "pcm_s16le", "-ar", str(ZIEL_HZ_V2), "-ac", "2", str(roh)]
+    if weich:
+        filters, vlabel, alabel = _xfade_graph(segmente, uebergang)
+        cmd = ["ffmpeg", "-y"]
+        for s in segmente:
+            cmd += ["-i", str(s)]
+        cmd += ["-filter_complex", ";".join(filters), "-map", vlabel, "-map", alabel] + bild
+    else:                                       # Concat liest nacheinander und braucht kaum Speicher
+        liste.write_text("".join(f"file '{s.as_posix()}'\n" for s in segmente), encoding="utf-8")
+        cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(liste)]
+        if untertitel_ass is not None and hat_filter("subtitles"):
+            cmd += ["-vf", f"subtitles={untertitel_ass.as_posix()}"]
+        cmd += bild
+    try:
+        return _run(cmd) and ton_mastern(roh, ziel, ziel_lufs=ziel_lufs)
+    finally:
+        roh.unlink(missing_ok=True)
+        liste.unlink(missing_ok=True)
+
+
+def lautester_moment(pfad: Path, *, timeout: int = 180) -> tuple[float, float] | None:
+    """Sucht die lauteste Stelle eines Clips -> (Sekunde, Pegel in LUFS). None bei Stille oder Fehler."""
+    try:
+        r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(pfad), "-vn", "-af",
+                            "ebur128=framelog=info", "-f", "null", "-"],
+                           capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return lies_lautesten(r.stderr or "")
+
+
+def lies_lautesten(text: str) -> tuple[float, float] | None:
+    """Zieht aus der ebur128-Ausgabe die Stelle mit dem hoechsten Momentan-Pegel (Fenster 0,4 s)."""
+    werte = [(float(m), float(t)) for t, m in re.findall(r"\bt:\s*([\d.]+)\s+TARGET:.*?\bM:\s*(-?[\d.]+)", text)]
+    if not werte:
+        return None
+    pegel, zeit = max(werte)
+    return None if pegel < -60 else (round(max(0.0, zeit - 0.2), 2), pegel)
 
 
 def zusammenfuegen(segmente: list[Path], ziel: Path, *, untertitel_ass: Path | None = None,
@@ -302,8 +435,13 @@ def _parse_szenen_pts(text: str) -> list[float]:
 
 
 def _run(cmd: list[str]) -> bool:
+    global letzter_fehler
+    letzter_fehler = ""
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=1200)
-        return r.returncode == 0
-    except (OSError, subprocess.SubprocessError):
+    except (OSError, subprocess.SubprocessError) as exc:
+        letzter_fehler = f"{type(exc).__name__}: {exc}"[:300]
         return False
+    if r.returncode != 0:                       # Rueckgabe -9 = vom System beendet (z. B. Speicher voll)
+        letzter_fehler = f"Rueckgabe {r.returncode}: {(r.stderr or '')[-500:]}"
+    return r.returncode == 0
