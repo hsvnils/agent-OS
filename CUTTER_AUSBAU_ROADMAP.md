@@ -1,9 +1,9 @@
 # Roadmap: Cutter-Ausbau (Schnittwissen ins echte Video)
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-11-09
 - Arbeitsbranch: `ai/plan-cutter-ausbau` (Plan); Umsetzung je Etappe auf eigenem `ai/`-Branch
 - Basiscommit: `ea47a7b`
-- Naechster Schritt: CEO prueft den Plan und gibt Etappe C1 frei; bis dahin wird nichts umgesetzt.
+- Naechster Schritt: C1 umgesetzt auf `ai/cutter-c1-kontrolle`, wartet auf Go fuer Merge und Deploy; danach naechster Reel-Job als Nachweis. Vor C2: CEO-Entscheidung Ueberblenden (BF-92).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -47,13 +47,16 @@ Schnittplan-Format, Qualitaetskontrolle, neue ffmpeg-Bewegungen und Tonkette, FC
 Reihenfolge: C1 zuerst, weil sie jede weitere Etappe messbar macht. C2 vor C3. C4, C5 und C6 sind unabhaengig. Alles, was das Bild aendert, haengt am Schalter
 `CUTTER_STIL` (`v1` = heute, `v2` = neu), Standard bleibt `v1` bis zur CEO-Abnahme. Rueckweg jeweils: Schalter auf `v1`.
 
-### Etappe C1: Kontrolle am fertigen Video (geplant, klein, Risiko niedrig)
+### Etappe C1: Kontrolle am fertigen Video (umgesetzt, nicht deployt)
 - **Ziel:** Nach jedem Render prueft der Cutter das Ergebnis selbst: Masse, fps, Tonspur, Dauer, Lautheit und True Peak (`ebur128`), Schwarzbild, Standbild, lange Stille.
 - **Wirkung:** Schlechte Reels gehen nicht zur Freigabe, sondern werden mit Grund gemeldet. Erst nur messen und melden, Sperren erst nach CEO-Freigabe.
 - **Gate:** Tests mit erzeugten Fehlvideos (schwarz, stumm, falsches Format) werden rot erkannt, gesundes Video gruen; Gegenprobe.
 - **Pruefung:** Lauf auf Probeclips, Bericht zeigt erwartete Werte; nach Deploy der naechste echte Job mit Bericht im Log.
+- **Stand 2026-11-09:** `cutter/qualitaet.py`, eingebunden in `pipeline.py`, `reel_daily.py`, `worker.py`; sechs echte Reels nachgemessen (je ca. 2 s). Reine B-Roll-Reels sind absichtlich leise, dort wird der Tonpegel nicht bewertet.
+- **Befund:** siehe BF-92.
 
 ### Etappe C2: Schnitt-Grundlagen (geplant, mittel, Risiko mittel)
+- **Vorab CEO-Entscheidung:** Der CEO hat am 2026-06-27 „immer Ueberblenden als fester Effekt“ vorgegeben; der harte Schnitt als Standard weicht davon ab. Nur nach ausdruecklicher Aenderung, sonst bleibt Ueberblenden.
 - **Ziel:** Harter Schnitt als Standard, Push-in mit S-Kurve statt linear, Schnitt auf Wortgrenzen und Stille, staerkster Moment nach vorne, 48 kHz, Lautheit zweistufig auf -14 LUFS / -1 dBTP.
 - **Gate:** Tests gruen; dasselbe Spiel als `v1` und `v2` nebeneinander, **CEO-Sichtabnahme am iPhone**.
 - **Pruefung:** ffprobe und C1-Bericht je Variante; ein Vergleichspaar liegt dem CEO vor.

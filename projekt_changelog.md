@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-09 14:39] — Claude Code
+- **Was:** CUTTER_AUSBAU C1: Kontrolle am fertigen Video (`cutter/qualitaet.py`, Einbindung in Pipeline, Nachtlauf und Worker, Meldung per Telegram nur bei Befund, keine Sperre). Beim Nachmessen echter Reels BF-92 gefunden.
+- **Warum:** CEO-Go fuer C1 (2026-11-09).
+- **Betroffen:** `cutter/qualitaet.py`, `cutter/pipeline.py`, `cutter/reel_daily.py`, `cutter/worker.py`, `cutter/tests/test_qualitaet.py`, `cutter/README.md`, `CUTTER_AUSBAU_ROADMAP.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-09 14:31] — Claude Code
 - **Was:** Roadmap `CUTTER_AUSBAU_ROADMAP.md` angelegt (Etappen C1-C6, nur Plan) und im Verzeichnis sowie Register eingetragen.
 - **Warum:** CEO-Auftrag Cutter aufstocken; CEO-Angabe 2026-11-09: Resolve Free.
