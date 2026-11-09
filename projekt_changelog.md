@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-09 14:27] — Claude Code
+- **Was:** GitHub nach Skills und Werkzeugen fuers Cutten durchsucht und im Register bewertet (nur READMEs/Dateilisten, nichts installiert oder ausgefuehrt).
+- **Warum:** CEO-Auftrag 2026-11-09.
+- **Betroffen:** `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
+
 ## [2026-11-09 14:25] — Claude Code
 - **Was:** `ai/davinci-skill` in `main` gemergt und gepusht (CCO-Skill `davinci-resolve-schnitt`).
 - **Warum:** CEO: „Push gemacht, Go für Merge, Push und Deploy“.
