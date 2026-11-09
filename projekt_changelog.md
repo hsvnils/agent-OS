@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-09 14:40] — Claude Code
+- **Was:** Projekt-Skill `.claude/skills/davinci-resolve-schnitt/SKILL.md` als Einstieg fuer Claude Code (verweist auf den CCO-Skill und das Nachschlagewerk, keine Inhaltsdoppelung).
+- **Warum:** CEO 2026-11-09: Die Skills sollen vor allem auch fuer Claude Code nutzbar sein.
+- **Betroffen:** `.claude/skills/davinci-resolve-schnitt/SKILL.md`, `projekt_changelog.md`
+
 ## [2026-11-09 14:39] — Claude Code
 - **Was:** CUTTER_AUSBAU C1: Kontrolle am fertigen Video (`cutter/qualitaet.py`, Einbindung in Pipeline, Nachtlauf und Worker, Meldung per Telegram nur bei Befund, keine Sperre). Beim Nachmessen echter Reels BF-92 gefunden.
 - **Warum:** CEO-Go fuer C1 (2026-11-09).
