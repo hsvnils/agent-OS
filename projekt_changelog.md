@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-09 14:31] — Claude Code
+- **Was:** Roadmap `CUTTER_AUSBAU_ROADMAP.md` angelegt (Etappen C1-C6, nur Plan) und im Verzeichnis sowie Register eingetragen.
+- **Warum:** CEO-Auftrag Cutter aufstocken; CEO-Angabe 2026-11-09: Resolve Free.
+- **Betroffen:** `CUTTER_AUSBAU_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-11-09 14:27] — Claude Code
 - **Was:** GitHub nach Skills und Werkzeugen fuers Cutten durchsucht und im Register bewertet (nur READMEs/Dateilisten, nichts installiert oder ausgefuehrt).
 - **Warum:** CEO-Auftrag 2026-11-09.
