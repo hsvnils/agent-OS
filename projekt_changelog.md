@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-09 19:46] — Claude Code
+- **Was:** BF-94 behoben: Der Cutter schickt beim Telegram-Versand jetzt Breite, Hoehe und Dauer des Reels mit, damit die App das Bild nicht verzerrt. Probe an den CEO-Chat gesendet, Telegram meldet 1080x1920. BF-93 korrigiert (keine 25-fps-Clips in HSV gegen BMG).
+- **Warum:** CEO: alle Vergleichsvideos verzerrt, das darf nie so sein. Die Dateien selbst sind proportional korrekt.
+- **Betroffen:** `cutter/melden.py`, `cutter/tests/test_melden.py`, `docs/bekannte-fehler.md`, `CUTTER_AUSBAU_ROADMAP.md`
+
 ## [2026-11-09 17:32] — Claude Code
 - **Was:** CUTTER_AUSBAU C2 auf Branch: Stil v2 hinter den Schaltern `CUTTER_STIL` und `CUTTER_UEBERGANG` (S-Kurve, 25/60-fps-Korrektur, 48 kHz, zweistufige Lautheit, Schnitt an Satzgrenzen, lauteste Stelle und staerkster Clip vorn). ffmpeg-Fehlergrund und Schnittweg stehen jetzt im Bericht (BF-92). Neuer Eintrag BF-93.
 - **Warum:** CEO-Go fuer C2 mit Vergleich am iPhone (2026-11-09).

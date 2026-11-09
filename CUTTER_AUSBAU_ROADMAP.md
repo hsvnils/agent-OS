@@ -3,7 +3,7 @@
 - Stand: 2026-11-09
 - Arbeitsbranch: `ai/plan-cutter-ausbau` (Plan); Umsetzung je Etappe auf eigenem `ai/`-Branch
 - Basiscommit: `ea47a7b`
-- Naechster Schritt: C2 umgesetzt auf `ai/cutter-c2-schnitt`, CEO-Sichtabnahme am iPhone (drei Varianten) offen; C1 ist deployt, Nachweis im Nachtlauf offen.
+- Naechster Schritt: C2 ist gemergt (Standard bleibt `v1`). Offen: CEO-Sichtprobe zur Verzerrung (BF-94) und Wahl der Variante; C1-Nachweis im Nachtlauf.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -55,7 +55,7 @@ Reihenfolge: C1 zuerst, weil sie jede weitere Etappe messbar macht. C2 vor C3. C
 - **Stand 2026-11-09:** `cutter/qualitaet.py`, eingebunden in `pipeline.py`, `reel_daily.py`, `worker.py`; sechs echte Reels nachgemessen (je ca. 2 s). Reine B-Roll-Reels sind absichtlich leise, dort wird der Tonpegel nicht bewertet.
 - **Befund:** siehe BF-92.
 
-### Etappe C2: Schnitt-Grundlagen (umgesetzt, Sichtabnahme offen)
+### Etappe C2: Schnitt-Grundlagen (gemergt, Stil v2 aus, Sichtabnahme offen)
 - **Vorab CEO-Entscheidung:** Der CEO hat am 2026-06-27 „immer Ueberblenden als fester Effekt“ vorgegeben; der harte Schnitt als Standard weicht davon ab. Nur nach ausdruecklicher Aenderung, sonst bleibt Ueberblenden.
 - **Ziel:** Harter Schnitt als Standard, Push-in mit S-Kurve statt linear, Schnitt auf Wortgrenzen und Stille, staerkster Moment nach vorne, 48 kHz, Lautheit zweistufig auf -14 LUFS / -1 dBTP.
 - **Gate:** Tests gruen; dasselbe Spiel als `v1` und `v2` nebeneinander, **CEO-Sichtabnahme am iPhone**.
