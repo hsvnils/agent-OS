@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-09 16:44] — Claude Code
+- **Was:** `ai/cutter-c1-kontrolle` in `main` gemergt und gepusht (CUTTER_AUSBAU C1, Claude-Code-Einstieg in das Schnittwissen, Roadmap, GitHub-Sichtung). Roadmap-Status nachgezogen.
+- **Warum:** CEO: „Push gemacht, Go für Merge, Push und Deploy“.
+- **Betroffen:** `main`, `CUTTER_AUSBAU_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-09 14:40] — Claude Code
 - **Was:** Projekt-Skill `.claude/skills/davinci-resolve-schnitt/SKILL.md` als Einstieg fuer Claude Code (verweist auf den CCO-Skill und das Nachschlagewerk, keine Inhaltsdoppelung).
 - **Warum:** CEO 2026-11-09: Die Skills sollen vor allem auch fuer Claude Code nutzbar sein.

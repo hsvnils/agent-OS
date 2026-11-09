@@ -3,7 +3,7 @@
 - Stand: 2026-11-09
 - Arbeitsbranch: `ai/plan-cutter-ausbau` (Plan); Umsetzung je Etappe auf eigenem `ai/`-Branch
 - Basiscommit: `ea47a7b`
-- Naechster Schritt: C1 umgesetzt auf `ai/cutter-c1-kontrolle`, wartet auf Go fuer Merge und Deploy; danach naechster Reel-Job als Nachweis. Vor C2: CEO-Entscheidung Ueberblenden (BF-92).
+- Naechster Schritt: C1 in `main` (2026-11-09), Deploy durch den CEO offen; danach naechster Reel-Job als Nachweis. Vor C2: CEO-Entscheidung Ueberblenden (BF-92).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
