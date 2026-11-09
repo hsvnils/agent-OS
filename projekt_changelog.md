@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-09 17:32] — Claude Code
+- **Was:** CUTTER_AUSBAU C2 auf Branch: Stil v2 hinter den Schaltern `CUTTER_STIL` und `CUTTER_UEBERGANG` (S-Kurve, 25/60-fps-Korrektur, 48 kHz, zweistufige Lautheit, Schnitt an Satzgrenzen, lauteste Stelle und staerkster Clip vorn). ffmpeg-Fehlergrund und Schnittweg stehen jetzt im Bericht (BF-92). Neuer Eintrag BF-93.
+- **Warum:** CEO-Go fuer C2 mit Vergleich am iPhone (2026-11-09).
+- **Betroffen:** `cutter/ffmpeg_ops.py`, `cutter/pipeline.py`, `cutter/tests/test_stil_v2.py`, `cutter/README.md`, `CUTTER_AUSBAU_ROADMAP.md`, `ROADMAP.md`, `docs/bekannte-fehler.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-11-09 16:44] — Claude Code
 - **Was:** `ai/cutter-c1-kontrolle` in `main` gemergt und gepusht (CUTTER_AUSBAU C1, Claude-Code-Einstieg in das Schnittwissen, Roadmap, GitHub-Sichtung). Roadmap-Status nachgezogen.
 - **Warum:** CEO: „Push gemacht, Go für Merge, Push und Deploy“.

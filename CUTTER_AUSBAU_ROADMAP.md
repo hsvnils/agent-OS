@@ -3,7 +3,7 @@
 - Stand: 2026-11-09
 - Arbeitsbranch: `ai/plan-cutter-ausbau` (Plan); Umsetzung je Etappe auf eigenem `ai/`-Branch
 - Basiscommit: `ea47a7b`
-- Naechster Schritt: C1 in `main` (2026-11-09), Deploy durch den CEO offen; danach naechster Reel-Job als Nachweis. Vor C2: CEO-Entscheidung Ueberblenden (BF-92).
+- Naechster Schritt: C2 umgesetzt auf `ai/cutter-c2-schnitt`, CEO-Sichtabnahme am iPhone (drei Varianten) offen; C1 ist deployt, Nachweis im Nachtlauf offen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -47,7 +47,7 @@ Schnittplan-Format, Qualitaetskontrolle, neue ffmpeg-Bewegungen und Tonkette, FC
 Reihenfolge: C1 zuerst, weil sie jede weitere Etappe messbar macht. C2 vor C3. C4, C5 und C6 sind unabhaengig. Alles, was das Bild aendert, haengt am Schalter
 `CUTTER_STIL` (`v1` = heute, `v2` = neu), Standard bleibt `v1` bis zur CEO-Abnahme. Rueckweg jeweils: Schalter auf `v1`.
 
-### Etappe C1: Kontrolle am fertigen Video (umgesetzt, nicht deployt)
+### Etappe C1: Kontrolle am fertigen Video (deployt 2026-11-09)
 - **Ziel:** Nach jedem Render prueft der Cutter das Ergebnis selbst: Masse, fps, Tonspur, Dauer, Lautheit und True Peak (`ebur128`), Schwarzbild, Standbild, lange Stille.
 - **Wirkung:** Schlechte Reels gehen nicht zur Freigabe, sondern werden mit Grund gemeldet. Erst nur messen und melden, Sperren erst nach CEO-Freigabe.
 - **Gate:** Tests mit erzeugten Fehlvideos (schwarz, stumm, falsches Format) werden rot erkannt, gesundes Video gruen; Gegenprobe.
@@ -55,11 +55,12 @@ Reihenfolge: C1 zuerst, weil sie jede weitere Etappe messbar macht. C2 vor C3. C
 - **Stand 2026-11-09:** `cutter/qualitaet.py`, eingebunden in `pipeline.py`, `reel_daily.py`, `worker.py`; sechs echte Reels nachgemessen (je ca. 2 s). Reine B-Roll-Reels sind absichtlich leise, dort wird der Tonpegel nicht bewertet.
 - **Befund:** siehe BF-92.
 
-### Etappe C2: Schnitt-Grundlagen (geplant, mittel, Risiko mittel)
+### Etappe C2: Schnitt-Grundlagen (umgesetzt, Sichtabnahme offen)
 - **Vorab CEO-Entscheidung:** Der CEO hat am 2026-06-27 „immer Ueberblenden als fester Effekt“ vorgegeben; der harte Schnitt als Standard weicht davon ab. Nur nach ausdruecklicher Aenderung, sonst bleibt Ueberblenden.
 - **Ziel:** Harter Schnitt als Standard, Push-in mit S-Kurve statt linear, Schnitt auf Wortgrenzen und Stille, staerkster Moment nach vorne, 48 kHz, Lautheit zweistufig auf -14 LUFS / -1 dBTP.
 - **Gate:** Tests gruen; dasselbe Spiel als `v1` und `v2` nebeneinander, **CEO-Sichtabnahme am iPhone**.
 - **Pruefung:** ffprobe und C1-Bericht je Variante; ein Vergleichspaar liegt dem CEO vor.
+- **Stand 2026-11-09:** Schalter `CUTTER_STIL` (Standard `v1`) und `CUTTER_UEBERGANG` (Standard `weich`, CEO-Vorgabe 2026-06-27). v2: S-Kurve, `fps` vor `zoompan` (BF-93), Tonblende am harten Schnitt, 48 kHz, Lautheit zweistufig -14 LUFS (B-Roll -24 LUFS, Startwert), Sprech-Clips enden an Satzgrenze oder Pause, lauteste Stelle als Ausschnitt, staerkster Clip vorn. Drei Varianten aus HSV gegen BMG gerendert, C1-Bericht ohne Befund.
 
 ### Etappe C3: Bewegung aus dem Schnittplan (geplant, gross, Risiko mittel)
 - **Ziel:** JSON-Schnittplan je Reel (Clip, Zeiten, Bewegung, Uebergang). Bausteine: Punch-in-Stufen 100/110/120 %, Speed Ramp, Freeze, kurzer Impact-Shake, Whip- und Zoom-Uebergang, Dosierregel „hoechstens eine Hauptbewegung“. Regeln und Grenzen aus dem Skill, Zoom nur innerhalb der Pixelreserve.

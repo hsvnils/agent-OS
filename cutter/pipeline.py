@@ -28,13 +28,18 @@ class Auswahl:
     start: float
     dauer: float
     transkript: list = field(default_factory=list)   # [{start,ende,text}] (lokal, nur Sprache)
+    pegel: float | None = None                       # v2: Pegel der lautesten Stelle (nur B-Roll)
 
 
 def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
                     max_sprache: float = 14.0, broll_dauer: float = 3.2,
                     transkribieren: bool = True, gemini: bool = True,
-                    untertitel: bool = False, sprache: str = "de") -> dict:
-    """Schneidet alle Clips eines Ordners zu einem Reel. Gibt einen Bericht (dict) zurueck."""
+                    untertitel: bool = False, sprache: str = "de", stil: str | None = None,
+                    uebergang: str | None = None) -> dict:
+    """Schneidet alle Clips eines Ordners zu einem Reel. Gibt einen Bericht (dict) zurueck.
+
+    `stil` v1/v2 und `uebergang` weich/hart: Ohne Angabe gelten `CUTTER_STIL` (Standard v1) und `CUTTER_UEBERGANG`
+    (Standard weich, CEO-Vorgabe 2026-06-27)."""
     ordner = Path(ordner)
     if not fo.ffmpeg_vorhanden():
         return {"ok": False, "fehler": "ffmpeg/ffprobe nicht gefunden (brew install ffmpeg)."}
@@ -43,6 +48,8 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
         return {"ok": False, "fehler": f"Keine Video-Clips in {ordner} gefunden."}
 
     env = _lade_env()
+    stil = _wahl(stil or env.get("CUTTER_STIL"), ("v1", "v2"), "v1")
+    weich = _wahl(uebergang or env.get("CUTTER_UEBERGANG"), ("weich", "hart"), "weich") == "weich"
     weg = tr.verfuegbar() if transkribieren else ""
 
     auswahlen: list[Auswahl] = []
@@ -50,7 +57,7 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
         info = fo.probe(pfad)
         if info is None or info.dauer <= 0:
             continue
-        auswahlen.append(_clip_auswaehlen(info, weg, max_sprache, broll_dauer, sprache, env))
+        auswahlen.append(_clip_auswaehlen(info, weg, max_sprache, broll_dauer, sprache, env, stil))
 
     if not auswahlen:
         return {"ok": False, "fehler": "Keine lesbaren Clips."}
@@ -76,6 +83,11 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
         if order:
             auswahlen = [auswahlen[i] for i in order if 0 <= i < len(auswahlen)] or auswahlen
 
+    if stil == "v2" and reihenfolge_methode == "dateiname":
+        auswahlen, verschoben = _staerkster_nach_vorn(auswahlen)
+        if verschoben:
+            reihenfolge_methode = "staerkster-clip-vorn"
+
     auswahlen = _auf_budget(auswahlen, ziel_dauer)
 
     # Segmente normalisieren + Untertitel-Zeiten global aufbauen.
@@ -84,7 +96,8 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
     for i, a in enumerate(auswahlen):
         seg = arbeit / f"seg_{i:03d}.mp4"
         if not fo.segment_normalisieren(a.clip.pfad, seg, start=a.start, dauer=a.dauer,
-                                        hat_audio=a.clip.hat_audio, zoom=(a.typ == "broll")):
+                                        hat_audio=a.clip.hat_audio, zoom=(a.typ == "broll"),
+                                        stil=stil, ton_blende=(stil == "v2" and not weich)):
             continue
         if a.typ == "sprache":
             for t in a.transkript:
@@ -111,18 +124,29 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
             _schreibe_ass(ass_events, ass)
 
     nur_broll = all(a.typ == "broll" for a in auswahlen)
-    if untertitel and ass:                         # Untertitel-Einbrennen nur im Hart-Schnitt-Pfad
+    schnitt_weg, uebergang_fehler = "weich", None
+    ton_ziel = fo.ZIEL_LUFS_BROLL if nur_broll else fo.ZIEL_LUFS_V2
+    if stil == "v2":
+        schnitt_weg = "weich" if (weich and not ass and len(segmente) > 1) else "hart"
+        ok = fo.zusammenfuegen_v2(segmente, ausgabe, weich=(schnitt_weg == "weich"), ziel_lufs=ton_ziel, untertitel_ass=ass)
+        if not ok and schnitt_weg == "weich":
+            schnitt_weg, uebergang_fehler = "hart_notweg", fo.letzter_fehler
+            ok = fo.zusammenfuegen_v2(segmente, ausgabe, weich=False, ziel_lufs=ton_ziel)
+    elif untertitel and ass:                       # Untertitel-Einbrennen nur im Hart-Schnitt-Pfad
+        schnitt_weg = "hart"
         ok = fo.zusammenfuegen(segmente, ausgabe, untertitel_ass=ass, leiser_ton=nur_broll)
     else:                                          # Standard: weiche Uebergaenge + Effekte
         ok = fo.zusammenfuegen_xfade(segmente, ausgabe, leiser_ton=nur_broll)
         if not ok:                                 # Fallback: harte Schnitte, falls Uebergaenge scheitern
+            schnitt_weg, uebergang_fehler = "hart_notweg", fo.letzter_fehler
             ok = fo.zusammenfuegen(segmente, ausgabe, leiser_ton=nur_broll)
     if ok:                                         # Unter Telegram-Limit (50 MB) halten
         fo.auf_groesse_begrenzen(ausgabe, max_mb=48)
 
     if ok:                                         # CUTTER_AUSBAU C1: fertiges Video messen (meldet nur, sperrt nicht)
         try:
-            qualitaets_bericht = qualitaet.pruefe_video(ausgabe, ziel_lufs=None if nur_broll else qualitaet.ZIEL_LUFS)
+            kontroll_ziel = ton_ziel if stil == "v2" else (None if nur_broll else qualitaet.ZIEL_LUFS)
+            qualitaets_bericht = qualitaet.pruefe_video(ausgabe, ziel_lufs=kontroll_ziel)
         except Exception as exc:
             qualitaets_bericht = {"gemessen": False, "ok": None, "fehler": str(exc)[:300], "befunde": []}
     else:
@@ -146,11 +170,45 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
                      "ausschnitt": f"{a.start:.1f}-{a.start + a.dauer:.1f}s"}
                     for a in auswahlen[:len(segmente)]],
         "qualitaet": qualitaets_bericht,
+        "stil": stil,
+        "schnitt_weg": schnitt_weg,
+        "uebergang_fehler": uebergang_fehler,
         "hinweis": "Fertiges Reel als Datei. Instagram-Posten + Musik machst du in der App (CEO-Tor).",
     }
 
 
-def _clip_auswaehlen(info, weg, max_sprache, broll_dauer, sprache, env) -> Auswahl:
+def _wahl(wert, erlaubt: tuple, standard: str) -> str:
+    wert = str(wert or "").strip().lower()
+    return wert if wert in erlaubt else standard
+
+
+def _dauer_bis_grenze(info, transkript: list, start: float, max_sprache: float) -> float:
+    """v2: Laenge eines Sprech-Clips, die nicht mitten im Satz endet (Satzende, sonst laengste Sprechpause)."""
+    ende = min(info.dauer, transkript[-1]["ende"] + 0.2)
+    if ende - start <= max_sprache:
+        return max(1.0, ende - start)
+    grenze = start + max_sprache
+    passend = [t["ende"] + 0.2 for t in transkript if t["ende"] + 0.2 <= grenze and t["ende"] - start >= 1.0]
+    if passend:
+        return max(passend) - start
+    pausen = [(a + b) / 2 for a, b in fo.stille_spannen(info.pfad, mindest_stille=0.25) if start + 1.0 <= (a + b) / 2 <= grenze]
+    return (max(pausen) - start) if pausen else max_sprache
+
+
+def _staerkster_nach_vorn(auswahlen: list) -> tuple[list, bool]:
+    """v2: Bei reiner B-Roll kommt der Clip mit der lautesten Stelle als Hook an den Anfang, Rest bleibt in Reihenfolge."""
+    if not auswahlen or not all(a.typ == "broll" for a in auswahlen):
+        return auswahlen, False
+    mit_pegel = [a for a in auswahlen if a.pegel is not None]
+    if not mit_pegel:
+        return auswahlen, False
+    bester = max(mit_pegel, key=lambda a: a.pegel)
+    if bester is auswahlen[0]:
+        return auswahlen, False
+    return [bester] + [a for a in auswahlen if a is not bester], True
+
+
+def _clip_auswaehlen(info, weg, max_sprache, broll_dauer, sprache, env, stil: str = "v1") -> Auswahl:
     """Erkennt Sprache und waehlt den besten Ausschnitt des Clips."""
     transkript = []
     if weg and info.hat_audio and info.dauer >= 0.8:
@@ -160,11 +218,18 @@ def _clip_auswaehlen(info, weg, max_sprache, broll_dauer, sprache, env) -> Auswa
         start = max(0.0, transkript[0]["start"] - 0.2)
         ende = min(info.dauer, transkript[-1]["ende"] + 0.2)
         dauer = min(max_sprache, max(1.0, ende - start))
+        if stil == "v2":
+            dauer = _dauer_bis_grenze(info, transkript, start, max_sprache)
         return Auswahl(info, "sprache", start, dauer, transkript)
     # B-Roll: szenenbewusst den praegnantesten Ausschnitt waehlen (Fallback: ab ~20 %).
-    start = _broll_start(info, broll_dauer, env)
+    moment = fo.lautester_moment(info.pfad) if (stil == "v2" and info.hat_audio) else None
+    if moment:                                     # v2: lauteste Stelle (Tor, Jubel) liegt bei 40 % des Ausschnitts
+        reserve = max(0.0, info.dauer - broll_dauer)   # nicht in die ersten Wackler nach dem Aufnahmestart
+        start = max(min(0.5, reserve), min(moment[0] - 0.4 * broll_dauer, reserve))
+    else:
+        start = _broll_start(info, broll_dauer, env)
     dauer = min(broll_dauer, max(0.8, info.dauer - start))
-    return Auswahl(info, "broll", start, dauer, [])
+    return Auswahl(info, "broll", start, dauer, [], pegel=moment[1] if moment else None)
 
 
 def _broll_start(info, broll_dauer: float, env: dict) -> float:
@@ -214,7 +279,7 @@ def _lade_env() -> dict:
                 k, _, v = line.partition("=")
                 env[k.strip()] = v.strip().strip('"').strip("'")
     # Cutter-Schalter duerfen per Prozess-Umgebung (CLI / launchd) gesetzt werden.
-    for k in ("CUTTER_VIDEO_KI", "CUTTER_VIDEO_MODEL", "CUTTER_SZENEN"):
+    for k in ("CUTTER_VIDEO_KI", "CUTTER_VIDEO_MODEL", "CUTTER_SZENEN", "CUTTER_STIL", "CUTTER_UEBERGANG"):
         if os.environ.get(k):
             env[k] = os.environ[k]
     return env
