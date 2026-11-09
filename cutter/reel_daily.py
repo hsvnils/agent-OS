@@ -30,6 +30,7 @@ from pathlib import Path
 
 from . import ffmpeg_ops as fo
 from . import melden
+from . import qualitaet
 from . import reel_select as rs
 from . import reel_source as rq
 from .pipeline import schneide_ordner
@@ -213,7 +214,7 @@ def lauf(*, source: Path, outbox: Path, state: Path, tag: date | None = None,
 
     return {"ok": True, "datum": tag.isoformat(), "thema": thema[0], "spiel": label, "reel": str(ausgabe),
             "verwendet": len(verwendet), "dauer_sek": bericht.get("dauer_sek"), "caption": caption,
-            "spiele": spiele, "metadata": str(tag_dir / "metadata.json")}
+            "spiele": spiele, "metadata": str(tag_dir / "metadata.json"), "qualitaet": bericht.get("qualitaet")}
 
 
 def _bruecke():
@@ -267,6 +268,23 @@ def _melde_fehlschlag(res: dict) -> bool:
         return False
 
 
+def _melde_qualitaet(res: dict) -> bool:
+    """CUTTER_AUSBAU C1: Auffaelligkeiten des naechtlichen Reels per Telegram. Nur bei Befund, wirft nie."""
+    try:
+        text = qualitaet.als_text(res.get("qualitaet"))
+        if not text:
+            return False
+        from .pipeline import _lade_env
+        env = _lade_env()
+        token = os.environ.get("TELEGRAM_BOT_TOKEN") or env.get("TELEGRAM_BOT_TOKEN", "")
+        chat = os.environ.get("TELEGRAM_ALLOWED_CHAT_ID") or env.get("TELEGRAM_ALLOWED_CHAT_ID", "")
+        if not (token and chat):
+            return False
+        return melden.sende_text(token, chat, f"🎬 Reel {res.get('spiel') or res.get('thema') or ''}\n{text}")
+    except Exception:
+        return False
+
+
 def _pfad(cli: str | None, env_key: str, fallback: str) -> Path:
     return Path(cli).expanduser() if cli else Path(os.environ.get(env_key, fallback)).expanduser()
 
@@ -312,6 +330,7 @@ def main(argv=None) -> int:
                alle_spiele=a.alle_spiele, min_dauer=a.min_dauer)
     if a.einreichen and res.get("ok"):
         res.update(_einreichen(res))
+        _melde_qualitaet(res)
     elif a.einreichen:
         _melde_fehlschlag(res)          # Stille ist der zweite Fehler: der naechtliche Lauf muss sich melden
     print(json.dumps(res, ensure_ascii=False, indent=2))

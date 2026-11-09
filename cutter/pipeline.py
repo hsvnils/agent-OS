@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import ffmpeg_ops as fo
+from . import qualitaet
 from . import transkription as tr
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -119,6 +120,14 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
     if ok:                                         # Unter Telegram-Limit (50 MB) halten
         fo.auf_groesse_begrenzen(ausgabe, max_mb=48)
 
+    if ok:                                         # CUTTER_AUSBAU C1: fertiges Video messen (meldet nur, sperrt nicht)
+        try:
+            qualitaets_bericht = qualitaet.pruefe_video(ausgabe, ziel_lufs=None if nur_broll else qualitaet.ZIEL_LUFS)
+        except Exception as exc:
+            qualitaets_bericht = {"gemessen": False, "ok": None, "fehler": str(exc)[:300], "befunde": []}
+    else:
+        qualitaets_bericht = None
+
     if untertitel and ass_events:
         untertitel_status = "eingebrannt" if (ok and ass) else (f"als .srt ({srt.name})" if srt else False)
     else:
@@ -136,6 +145,7 @@ def schneide_ordner(ordner, ausgabe=None, *, ziel_dauer: float = 45.0,
         "details": [{"datei": a.clip.pfad.name, "typ": a.typ,
                      "ausschnitt": f"{a.start:.1f}-{a.start + a.dauer:.1f}s"}
                     for a in auswahlen[:len(segmente)]],
+        "qualitaet": qualitaets_bericht,
         "hinweis": "Fertiges Reel als Datei. Instagram-Posten + Musik machst du in der App (CEO-Tor).",
     }
 

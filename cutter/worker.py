@@ -28,7 +28,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from . import melden, reel_daily
+from . import melden
+from . import qualitaet, reel_daily
 from .luna_bridge import LunaBridge
 from .pipeline import _lade_env
 from .watch import MARKER, _stabil, _verarbeite
@@ -85,7 +86,8 @@ def verarbeite_reel_job(job: dict, *, source: Path, outbox: Path, state: Path,
                               f"🎬 Reel '{label}' fertig — {res.get('verwendet')} Clips, "
                               f"{res.get('dauer_sek')}s. "
                               + ("Wartet auf deine Freigabe." if eingereicht
-                                 else "Einreichen fehlgeschlagen (liegt in der Outbox)."))
+                                 else "Einreichen fehlgeschlagen (liegt in der Outbox).")
+                              + (f"\n{text}" if (text := qualitaet.als_text(res.get("qualitaet"))) else ""))
     else:
         grund = str(res.get("fehler") or res.get("hinweis") or "unbekannt")
         bridge.melden(job_id=job_id, projekt=label, status="failed", fehler=grund[:300])

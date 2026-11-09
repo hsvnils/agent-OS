@@ -17,6 +17,27 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-09 14:40] — Claude Code
+- **Was:** Projekt-Skill `.claude/skills/davinci-resolve-schnitt/SKILL.md` als Einstieg fuer Claude Code (verweist auf den CCO-Skill und das Nachschlagewerk, keine Inhaltsdoppelung).
+- **Warum:** CEO 2026-11-09: Die Skills sollen vor allem auch fuer Claude Code nutzbar sein.
+- **Betroffen:** `.claude/skills/davinci-resolve-schnitt/SKILL.md`, `projekt_changelog.md`
+
+## [2026-11-09 14:39] — Claude Code
+- **Was:** CUTTER_AUSBAU C1: Kontrolle am fertigen Video (`cutter/qualitaet.py`, Einbindung in Pipeline, Nachtlauf und Worker, Meldung per Telegram nur bei Befund, keine Sperre). Beim Nachmessen echter Reels BF-92 gefunden.
+- **Warum:** CEO-Go fuer C1 (2026-11-09).
+- **Betroffen:** `cutter/qualitaet.py`, `cutter/pipeline.py`, `cutter/reel_daily.py`, `cutter/worker.py`, `cutter/tests/test_qualitaet.py`, `cutter/README.md`, `CUTTER_AUSBAU_ROADMAP.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
+## [2026-11-09 14:31] — Claude Code
+- **Was:** Roadmap `CUTTER_AUSBAU_ROADMAP.md` angelegt (Etappen C1-C6, nur Plan) und im Verzeichnis sowie Register eingetragen.
+- **Warum:** CEO-Auftrag Cutter aufstocken; CEO-Angabe 2026-11-09: Resolve Free.
+- **Betroffen:** `CUTTER_AUSBAU_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
+## [2026-11-09 14:27] — Claude Code
+- **Was:** GitHub nach Skills und Werkzeugen fuers Cutten durchsucht und im Register bewertet (nur READMEs/Dateilisten, nichts installiert oder ausgefuehrt).
+- **Warum:** CEO-Auftrag 2026-11-09.
+- **Betroffen:** `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
+
 ## [2026-11-09 14:25] — Claude Code
 - **Was:** `ai/davinci-skill` in `main` gemergt und gepusht (CCO-Skill `davinci-resolve-schnitt`).
 - **Warum:** CEO: „Push gemacht, Go für Merge, Push und Deploy“.

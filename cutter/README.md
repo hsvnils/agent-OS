@@ -20,6 +20,8 @@ ohne externe Dienste. Laeuft lokal auf dem Mac. **Posten bleibt CEO-Tor** (der C
 - Lautheit normalisiert (loudnorm).
 - **Gemini** (gratis) ordnet die Clips zu einer stimmigen Reihenfolge (Hook zuerst).
 
+- **Kontrolle am fertigen Video** (`qualitaet.py`): Format, Bildrate, Ton, Lautheit, Schwarzbild, Standbild, Stille. Misst und meldet nur.
+
 ## Voraussetzungen
 
 | Werkzeug | Zweck | Status |
