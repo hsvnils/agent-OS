@@ -3,7 +3,7 @@
 - Stand: 2026-11-09
 - Arbeitsbranch: `ai/plan-cutter-ausbau` (Plan); Umsetzung je Etappe auf eigenem `ai/`-Branch
 - Basiscommit: `ea47a7b`
-- Naechster Schritt: C2 ist gemergt (Standard bleibt `v1`). Offen: CEO-Sichtprobe zur Verzerrung (BF-94) und Wahl der Variante; C1-Nachweis im Nachtlauf.
+- Naechster Schritt: C2 ist gemergt (Standard bleibt `v1`). C2 ist deployt, Verzerrung (BF-94) vom CEO als behoben bestaetigt. Offen: Wahl der Variante; C1-Nachweis im Nachtlauf.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

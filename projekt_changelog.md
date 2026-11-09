@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-09 19:49] — Claude Code
+- **Was:** BF-94 als bestaetigt eingetragen, C2 als deployt vermerkt.
+- **Warum:** CEO: Deploy gemacht, Probevideo ist nicht mehr verzerrt.
+- **Betroffen:** `docs/bekannte-fehler.md`, `CUTTER_AUSBAU_ROADMAP.md`
+
 ## [2026-11-09 19:47] — Claude Code
 - **Was:** `ai/cutter-c2-schnitt` nach `main` gemergt und gepusht. Standard bleibt Stil v1, Stil v2 bleibt bis zur CEO-Abnahme aus.
 - **Warum:** CEO: „Go fuer Merge, Push und Deploy“.
