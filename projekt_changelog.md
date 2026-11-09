@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-09 14:25] — Claude Code
+- **Was:** `ai/davinci-skill` in `main` gemergt und gepusht (CCO-Skill `davinci-resolve-schnitt`).
+- **Warum:** CEO: „Push gemacht, Go für Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-11-06 11:05] — Claude Code
 - **Was:** `ai/lastschrift-automatisch` in `main` gemergt und gepusht; Suite gruen bis auf BF-90 (Baseline). Deploy + Neustart `luna-os` und `luna-telegram` durch den CEO.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
