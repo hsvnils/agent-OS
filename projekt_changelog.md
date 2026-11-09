@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-09 19:47] — Claude Code
+- **Was:** `ai/cutter-c2-schnitt` nach `main` gemergt und gepusht. Standard bleibt Stil v1, Stil v2 bleibt bis zur CEO-Abnahme aus.
+- **Warum:** CEO: „Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `main`, `ROADMAP.md`
+
 ## [2026-11-09 19:46] — Claude Code
 - **Was:** BF-94 behoben: Der Cutter schickt beim Telegram-Versand jetzt Breite, Hoehe und Dauer des Reels mit, damit die App das Bild nicht verzerrt. Probe an den CEO-Chat gesendet, Telegram meldet 1080x1920. BF-93 korrigiert (keine 25-fps-Clips in HSV gegen BMG).
 - **Warum:** CEO: alle Vergleichsvideos verzerrt, das darf nie so sein. Die Dateien selbst sind proportional korrekt.
