@@ -20,7 +20,7 @@ from orchestrator.governance.ceo_gate_hook import CeoGate
 
 REPO = Path(__file__).resolve().parents[2]
 NEU = {"cfo": ["abschluss-check-euer", "beleg-gobd-pruefung", "liquiditaetsvorschau", "preis-margen-analyse"],
-       "cco": ["briefing-zu-konzept", "content-kalender", "hook-und-skript", "reel-dramaturgie"],
+       "cco": ["briefing-zu-konzept", "content-kalender", "davinci-resolve-schnitt", "hook-und-skript", "reel-dramaturgie"],
        "cro": ["angebot-nachfassen", "folgeauftrag-upsell"], "cdo": ["kampagnen-auswertung"]}
 
 
@@ -150,7 +150,7 @@ class TestA1Profil(unittest.TestCase):
         c = TestClient(webapp.app)
         r = c.get("/api/agenten/cco/profil")
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.json()["skills"]), 4)
+        self.assertEqual(len(r.json()["skills"]), 5)
         self.assertEqual(c.get("/api/agenten/gibtsnicht/profil").status_code, 404)
         self.assertEqual(len(c.get("/api/agenten-uebersicht").json()["agenten"]), 19)
 

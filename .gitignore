@@ -42,6 +42,8 @@ netzwerk/
 radar/
 skills_werkstatt/
 skills_eigen/
+# Ausfuehrliche Skill-Nachschlagewerke (aus Handbuechern/Webquellen abgeleitet): oeffentliches Repo, daher nicht im Git; gehen per Sync auf die NAS
+skills/*/*/referenz/
 
 # Live-Voice: lokale Stimmauswahl (Nutzerpraeferenz, kein Versionierungsbedarf)
 orchestrator/channels/voice/selected_voice.json

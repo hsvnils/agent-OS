@@ -22,6 +22,11 @@ Eintragsformat:
 - **Warum:** CEO: „Push gemacht, Go für Merge, Push und Deploy“.
 - **Betroffen:** `main`, `projekt_changelog.md`
 
+## [2026-11-09 14:18] — Claude Code
+- **Was:** Neuer CCO-Skill `davinci-resolve-schnitt` (Keyframes, Uebergaenge, Effekte, Ton, Export, Genres, Short und Longform, Automatisierungsgrenzen) plus Nachschlagewerk `referenz/` (9 Dateien, nicht im Git, `.gitignore` ergaenzt); Erwartung in `test_agenten_ausbau.py` auf 5 CCO-Skills angepasst; zwei Register-Eintraege.
+- **Warum:** CEO-Auftrag 2026-11-09: alle Funktionen von DaVinci Resolve und Best Practices erfahrener Cutter fuer Social Media und YouTube, inklusive Techniken „wann was“, in einen Skill.
+- **Betroffen:** `skills/cco/davinci-resolve-schnitt/SKILL.md`, `.gitignore`, `orchestrator/tests/test_agenten_ausbau.py`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-11-06 11:05] — Claude Code
 - **Was:** `ai/lastschrift-automatisch` in `main` gemergt und gepusht; Suite gruen bis auf BF-90 (Baseline). Deploy + Neustart `luna-os` und `luna-telegram` durch den CEO.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
