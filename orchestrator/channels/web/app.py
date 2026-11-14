@@ -4299,6 +4299,31 @@ async def finanzen_saeulen_stunden(request: Request):
         b.get("jahr"), b.get("monat"), b.get("person") or "", b.get("saeule") or "", b.get("stunden"), von=_von(request)))
 
 
+@app.get("/api/finanzen/plan")
+def finanzen_plan():
+    """MONETARISIERUNG M2: Plan, Gate-Leiter mit Kontinuitaet, Ampel je Saeule, Kooperationen Soll/Ist."""
+    from ...core.plan import Plan
+    return Plan(kunden_store.bh, kunden_store).auswertung()
+
+
+@app.post("/api/finanzen/plan")
+async def finanzen_plan_speichern(request: Request):
+    """Ganzen Plan speichern (neue Fassung, die alte bleibt im Verlauf)."""
+    from ...core.plan import Plan
+    b = await _json(request)
+    return _kunden_aktion(lambda: Plan(kunden_store.bh, kunden_store).speichern(
+        b.get("plan") or {}, notiz=b.get("notiz") or "", von=_von(request)))
+
+
+@app.post("/api/finanzen/plan/kriterium")
+async def finanzen_plan_kriterium(request: Request):
+    """Ein Kriterium eines Gates abhaken oder wieder oeffnen."""
+    from ...core.plan import Plan
+    b = await _json(request)
+    return _kunden_aktion(lambda: Plan(kunden_store.bh, kunden_store).kriterium(
+        str(b.get("gate") or ""), int(b.get("index") or 0), bool(b.get("erledigt")), von=_von(request)))
+
+
 @app.get("/api/finanzen/ki-kosten")
 def finanzen_ki_kosten(jahr: int = 0):
     """KI-Verbrauch (geschaetzt) je Monat/Anbieter + Monatsbudget -- nur Anzeige, nicht in der EUeR."""

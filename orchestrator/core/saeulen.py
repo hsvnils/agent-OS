@@ -225,6 +225,34 @@ class Saeulen:
                 "hinweis": "Zusätzliche Sicht: EÜR und Kleinunternehmer-Grenze bleiben unverändert. Ob Auszahlungen "
                            "aus dem Ausland (Meta, Stores) zur Grenze zählen, klärt der Steuerberater (BF-95)."}
 
+    def monatsreihe(self, jahre: list[int]) -> dict[str, dict]:
+        """Je Monat „JJJJ-MM": Einnahmen, Gewinn (wie Finanzen, inkl. Gemeinkosten), Deckungsbeitrag je Saeule und
+        Gruppe, Kooperationen (Anzahl Belege + Euro). Grundlage fuer Plan, Gates und Ampel (MONETARISIERUNG M2)."""
+        st = self.f._stand()
+        wirk = self._wirksam(st, AuftragBuch._falte(st["e"]))
+        out: dict[str, dict] = {}
+        for jahr in jahre:
+            for m in range(1, 13):
+                out[f"{jahr}-{m:02d}"] = {"einnahmen_cent": 0, "gewinn_cent": 0, "db": {}, "koop_belege": set(),
+                                          "koop_cent": 0}
+            for z in self.f.posten(jahr, st=st):
+                if z["storniert"]:
+                    continue
+                x = out[f"{jahr}-{z['monat']:02d}"]
+                s = (wirk.get(z["bezug"]) or {}).get("saeule") or OHNE
+                wert = z["betrag_cent"] if z["art"] == "einnahme" else -z["abziehbar_cent"]
+                x["gewinn_cent"] += wert
+                if z["art"] == "einnahme":
+                    x["einnahmen_cent"] += wert
+                for code in {s, SAEULEN[s][1] if s in SAEULEN else OHNE}:
+                    x["db"][code] = x["db"].get(code, 0) + wert
+                if s == "S1" and z["art"] == "einnahme":
+                    x["koop_belege"].add(z["bezug"])
+                    x["koop_cent"] += wert
+        for x in out.values():
+            x["koop_anzahl"] = len(x.pop("koop_belege"))
+        return out
+
     # -- Schreiben ------------------------------------------------------------------------------------------------
 
     def _bekannt(self) -> set[str]:
