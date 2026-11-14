@@ -17,6 +17,15 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 17:58] — Claude Code
+- **Was:** Readback der ersten echten Teilrechnung RE-2026-0003 (nur lesend ueber die LUNA-OS-API): Art Teilrechnung,
+  Summe 800 EUR, PDF-Hinweis im CEO-Wortlaut, Versand per All-Inkl, Payment-Check-Termin, To-do „Rest abrechnen“ zum
+  31.12.2026 mit Erinnerung, Cockpit-Stufe -- alles wie erwartet. Befund: Katalog-Detailtext der Affiliate-Partnerschaft
+  enthaelt eine interne Arbeitsanweisung und erscheint auf Kundenbelegen (Aenderung nur nach CEO-Go). Roadmap-Status
+  auf verifiziert.
+- **Warum:** CEO 2026-11-14: „Kontrollier mal bitte die Rechnungen von Fantastic Frames“.
+- **Betroffen:** `TEILRECHNUNG_ROADMAP.md`, `ROADMAP.md` (keine Daten geaendert)
+
 ## [2026-11-14 17:39] — Claude Code
 - **Was:** `ai/teilrechnung` nach `main` gemergt und gepusht; Roadmap-Status fortgeschrieben. Deploy (NAS-Sync, Neustart
   `luna-os`/`luna-telegram`) macht der CEO.

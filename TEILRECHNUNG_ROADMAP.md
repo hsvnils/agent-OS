@@ -4,8 +4,8 @@
 - Stand: 2026-11-14
 - Arbeitsbranch: `ai/teilrechnung`
 - Basiscommit: `8500711`
-- Naechster Schritt: T1 auf `main`, Deploy durch den CEO; danach die echte Rechnung an Fantastic Frames (Entwurf
-  `E-343f4cfe`) mit „Spaeter abrechnen am 31.12.2026“ an Position 2 senden. Sichtabnahme gesammelt am Ende.
+- Naechster Schritt: T1 deployt und an der echten Rechnung verifiziert (RE-2026-0003, 2026-11-14). Am 31.12.2026 die
+  Folgerechnung erstellen (To-do A-bef2420a erinnert); danach Abnahme durch den CEO und Roadmap abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur aktuellen
   Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -34,7 +34,7 @@ Verkaufszahlen beim Kunden (Mail = CEO-Tor).
 
 ## Etappen
 
-### T1 Teilrechnung und Folgerechnung (mittel, Risiko niedrig) -- umgesetzt 2026-11-14, gemergt
+### T1 Teilrechnung und Folgerechnung (mittel, Risiko niedrig) -- verifiziert 2026-11-14 (RE-2026-0003)
 - **Stand:** Position mit `spaeter_am` (`angebote._positionen`), Summe ohne diese Positionen (`angebote.summen`, Feld
   `spaeter`), PDF-Hinweis (`spaeter_hinweis`), Rechnung mit `teil` {abrechnung_am, positionen}, Folgerechnung mit `folge_zu`
   (`RechnungStore.folgerechnung`, `POST /api/finanzen/rechnungen/<nr>/folgerechnung`), Ereignis `rechnung_teil_aufgabe`
