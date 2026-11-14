@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 17:03] — Claude Code
+- **Was:** Produktiver Datenwrite nach CEO-Go (A8): Plan-Vorlage aus Monetarisierungsplan Entwurf 0.4 einmal ueber
+  `POST /api/finanzen/plan` eingespielt (ein Ereignis `plan_gespeichert`, Gates G0-G6). Vorher Trockenlauf (kein Plan vorhanden,
+  Vorlage gueltig), danach Readback: 7 Gates, naechstes Ziel G0, Schwellen wie erwartet (z. B. G3 2*L_nils = 1.900 EUR).
+  L Celine bleibt leer (A9), Fixkosten ein Wert fuer alle Gates (A10).
+- **Warum:** CEO 2026-11-14: „Go fuer A8, Vorlage einspielen".
+- **Betroffen:** `buchhaltung/log.jsonl` (NAS, ein Ereignis), `MONETARISIERUNG_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-11-14 16:48] — Claude Code
 - **Was:** `ai/monetarisierung-m2` nach `main` gemergt und gepusht; Roadmap-Status fortgeschrieben. Deploy (NAS-Sync, Neustart
   `luna-os`/`luna-telegram`) macht der CEO.
