@@ -140,7 +140,7 @@ class TestA1Profil(unittest.TestCase):
 
     def test_3_uebersicht_alle_agenten(self):
         u = {x["key"]: x for x in uebersicht(REPO, watch_log=self.watch, nutzung=self.n)}
-        self.assertEqual(len(u), 19)                                             # HoA + 15 + CIO + Risk + Videograf
+        self.assertEqual(len(u), 20)                                             # HoA + 15 + CIO + Risk + Videograf + CMO
         self.assertEqual((u["cfo"]["skills"], u["cfo"]["funde"], u["cfo"]["nutzung30"]), (4, 2, 1))
         self.assertEqual(u["clo"]["skills"], 7)
 
@@ -152,7 +152,7 @@ class TestA1Profil(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()["skills"]), 5)
         self.assertEqual(c.get("/api/agenten/gibtsnicht/profil").status_code, 404)
-        self.assertEqual(len(c.get("/api/agenten-uebersicht").json()["agenten"]), 19)
+        self.assertEqual(len(c.get("/api/agenten-uebersicht").json()["agenten"]), 20)
 
 
 class TestA1Leistungsbericht(unittest.TestCase):

@@ -28,7 +28,8 @@ Head of Agents (00)
    ├── 15  RES   — Researcher (zentraler Web-Recherche-Dienst)
    ├── 16  CIO   — Chief Investment Officer (Investment-Abteilung)
    │       └── 16a Risk-Agent (aktiv) — Pflicht-Gegenpruefer (Checker)
-   └── 17  VID   — Videograf-Berater (Drehpraxis fuer Kundenauftraege)
+   ├── 17  VID   — Videograf-Berater (Drehpraxis fuer Kundenauftraege)
+   └── 18  CMO   — Marketing Manager (Wachstum, Kanaele, Launches)
 ```
 
 Kommunikationsregel: Abteilungs-Agenten sprechen **nur mit dem Head of Agents**, nie direkt mit dem CEO.
@@ -66,6 +67,7 @@ Zwei Zustaende werden unterschieden:
 | CIO  | Chief Investment Officer | Entwurf | **befragbar** | `16_cio.md` |
 | CIO-RISK | Risk-Agent (Unter-Agent des CIO) | **aktiv** | **befragbar** | `16a_risk-agent.md` |
 | VID  | Videograf-Berater | **aktiv** | **befragbar** | `17_videograf.md` |
+| CMO  | Marketing Manager | **aktiv** | **befragbar** | `18_cmo.md` |
 
 > **Charta aktiv (Welle 1):** Head of Agents, CFO, CBO, CTO, CCO, Unternehmensberater, Researcher.
 > **Welle 2 (AGENTEN_AUSBAU A6, 2026-10-05):** CAO, CISO, CPO, CXO, CHRO, CLO, CKO aktiv; CIO bleibt Entwurf.

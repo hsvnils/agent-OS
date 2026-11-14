@@ -22,7 +22,7 @@ Marktanalysen, Szenarien und entscheidungsreife Vorlagen fuer den CEO (ueber den
 ## Tools & Zugaenge
 - Lesezugriff auf Wissensbasis (CKO) und Daten/KPIs (CDO).
 - Recherche ueber den Researcher (Tool `recherche_beauftragen`).
-- **Skills** (`skills/berater/`, durch das Security-Gate, im System-Prompt): `strukturiertes-problemloesen`, `strategie-framework-toolkit`, `effizienz-prozess-review`.
+- **Skills** (`skills/berater/`, durch das Security-Gate, im System-Prompt): `strukturiertes-problemloesen`, `strategie-framework-toolkit`, `effizienz-prozess-review`, `geschaeftsmodell-unit-economics`, `meilensteine-stage-gate`, `kapazitaet-make-or-buy`, `szenarien-annahmen`, `monetarisierungsplan`.
 - **Befragung:** LUNA fragt den Agenten ueber `delegate` (nur Beratung/Text); jede Anfrage wird ohne Inhalte gezaehlt
   (Agenten-Profil in LUNA-OS, Leistungsbericht).
 

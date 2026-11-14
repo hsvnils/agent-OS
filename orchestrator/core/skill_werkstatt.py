@@ -29,14 +29,16 @@ from pathlib import Path
 ABTEILUNGEN = {"berater": "Unternehmensberater", "cao": "Verwaltung (CAO)", "cfo": "Finanzen (CFO)", "cro": "Vertrieb (CRO)",
                "ciso": "Sicherheit (CISO)", "cbo": "Marke (CBO)", "cpo": "Produkt (CPO)", "cto": "Technik (CTO)",
                "cxo": "Erlebnis (CXO)", "cco": "Content (CCO)", "cdo": "Daten (CDO)", "chro": "Personal (CHRO)",
-               "clo": "Recht (CLO)", "cko": "Wissen (CKO)", "res": "Researcher", "vid": "Videograf"}
+               "clo": "Recht (CLO)", "cko": "Wissen (CKO)", "res": "Researcher", "vid": "Videograf",
+               "cmo": "Marketing (CMO)"}
 # Stichwoerter (englisch/deutsch) -> Abteilung, fuer die Einordnung fremder Skill-Arten (nur Idee, nie Inhalt)
 STICHWORTE = {
     "cfo": ["finance", "invoice", "accounting", "tax", "bookkeeping", "budget", "expense", "rechnung", "steuer"],
     "clo": ["legal", "contract", "compliance", "gdpr", "privacy", "law", "terms", "vertrag", "recht"],
     "ciso": ["security", "pentest", "vulnerab", "secret", "threat", "malware", "sicherheit"],
     "cto": ["coding", "code-review", "developer", "git", "testing", "devops", "debug", "deploy", "refactor"],
-    "cco": ["content", "social", "instagram", "tiktok", "copywriting", "marketing", "seo", "blog", "caption"],
+    "cco": ["content", "social", "instagram", "tiktok", "copywriting", "seo", "blog", "caption"],
+    "cmo": ["marketing", "growth", "campaign", "launch", "audience", "media-kit", "sponsorship", "influencer"],
     "vid": ["video", "editing", "youtube", "reel", "subtitle", "film", "storyboard"],
     "cro": ["sales", "crm", "lead", "outreach", "pitch", "prospect", "negotiat", "proposal"],
     "cdo": ["data", "analytics", "sql", "dashboard", "chart", "metric", "spreadsheet", "excel"],

@@ -32,6 +32,7 @@ ALL_AGENT_CHARTERS: dict[str, str] = {
     "cio": "agents/16_cio.md",
     "risk": "agents/16a_risk-agent.md",
     "vid": "agents/17_videograf.md",
+    "cmo": "agents/18_cmo.md",
 }
 
 

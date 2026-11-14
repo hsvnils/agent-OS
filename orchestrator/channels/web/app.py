@@ -1224,6 +1224,7 @@ _DEPARTMENTS = [
     ("researcher", "15 · Researcher", "Web-Recherche", []),
     ("cio", "16 · CIO", "Investment", [("risk", "Risk-Agent", "standby")]),
     ("vid", "17 · VID", "Videograf-Berater", []),
+    ("cmo", "18 · CMO", "Marketing Manager", []),
 ]
 
 

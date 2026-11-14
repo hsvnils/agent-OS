@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 13:55] — Head of Agents (Claude Code)
+- **Was:** Neuer Agent 18 CMO (Marketing Manager) mit Charta `agents/18_cmo.md` angelegt und als befragbarer Fachagent angemeldet (Charten-Liste, `delegate`, Zustaendigkeit, Skill-Werkstatt, Agenten-Uebersicht, Register, Organigramm). Skill-Zeile des Unternehmensberaters um fuenf Skills ergaenzt. Agenten-Test auf 20 Agenten nachgezogen.
+- **Warum:** CEO-Anweisung mit Diff-Vorlage, bestaetigt am 2026-11-14 („Charten bestaetigt").
+- **Betroffen:** `agents/18_cmo.md`, `agents/01_unternehmensberater.md`, `agents/REGISTRY.md`, `governance/organigramm.md`, `orchestrator/core/subagents.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/zustaendigkeit.py`, `orchestrator/core/skill_werkstatt.py`, `orchestrator/channels/web/app.py`, `orchestrator/tests/test_agenten_ausbau.py`
+
 ## [2026-11-14 13:38] — Claude Code
 - **Was:** Unternehmensberater um fuenf Skills erweitert (Unit Economics, Stage-Gates, Kapazitaet/Make-or-Buy, Szenarien/Annahmen, Monetarisierungsplan); sieben Skills fuer den geplanten Marketing Manager (CMO) unter `skills/cmo/`; Claude-Code-Einstiege `unternehmensberatung` und `marketing-manager`; Ordner `strategie/` vom Git ausgeschlossen (Plaene mit echten Zahlen); BF-95 (Verdacht Umsatzwaechter) eingetragen. Alle Skills bestehen das Skill-Gate. Charta CMO und Skill-Zeile des Beraters warten auf CEO-Bestaetigung.
 - **Warum:** CEO: Berater und Marketing Manager mit Skills ausstatten (Best Practices aus dem Netz), danach Marketing- und Monetarisierungsplan erstellen.

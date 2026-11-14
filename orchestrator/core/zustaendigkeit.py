@@ -31,6 +31,7 @@ ZUSTAENDIG: dict[str, str] = {
     "cio": "Investment (Test)",
     "risk": "Investment-Risiko",
     "vid": "Drehpraxis: Shotlist, Kamera, Licht, Ton, Equipment, Drehplan",
+    "cmo": "Marketing: Reichweiten-Wachstum, Posting-Rhythmus, Zielgruppe, Partner-Zielprofil, Media-Kit, Launch von App und Merch",
 }
 
 ROUTING_REGEL = (
