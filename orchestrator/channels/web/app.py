@@ -3695,8 +3695,39 @@ async def rechnung_festschreiben(eid: str, request: Request):
                 rs.erinnerung_merken(r["nummer"], {"datum": r["faellig_am"], "id": t.get("termin_id", "")}, von=_von(request))
             else:
                 hinweise.append(f"Kalender: {t.get('hinweis') or 'Fehler'}")
+        _teil_aufgaben(rs, r["nummer"], request, hinweise)
         return {"nummer": r["nummer"], "faellig_am": r["faellig_am"], "hinweise": hinweise}
     return _kunden_aktion(tun)
+
+
+def _teil_aufgaben(rs, nummer: str, request: Request, hinweise: list) -> None:
+    """TEILRECHNUNG: zur Teilrechnung ein To-do „Rest abrechnen“ (mit Telegram-Erinnerung am Termin); zur Folgerechnung
+    das To-do der Teilrechnung abhaken. Fehler hier verhindern das Festschreiben nicht (nur Hinweis)."""
+    try:
+        x = rs.get(nummer) or {}
+        name = (kunden_store.firma(x.get("firma", "")) or {}).get("name", x.get("firma", ""))
+        if x.get("teil"):
+            t = x["teil"]
+            a = _aufgaben().anlegen(f"Rest abrechnen: {nummer} – {name}", faellig=t["abrechnung_am"], kunde=x.get("firma", ""),
+                                    notiz=f"Teilrechnung {nummer}: offen ist {', '.join(t['positionen'])}. Zahlen beim Kunden "
+                                          "anfragen, dann in LUNA-OS bei der Rechnung „Folgerechnung erstellen“.",
+                                    quelle="Teilrechnung", von=_von(request))
+            rs.teil_aufgabe_merken(nummer, a["id"], von=_von(request))
+            hinweise.append(f"To-do angelegt: Rest abrechnen am {t['abrechnung_am'][8:10]}.{t['abrechnung_am'][5:7]}."
+                            f"{t['abrechnung_am'][:4]}.")
+        elif x.get("folge_zu"):
+            t = rs.get(x["folge_zu"]) or {}
+            if t.get("teil_aufgabe"):
+                _aufgaben().erledigen(t["teil_aufgabe"], von=_von(request))
+                hinweise.append(f"To-do zur Teilrechnung {x['folge_zu']} erledigt.")
+    except Exception as exc:                                       # noqa: BLE001 -- Festschreiben ist schon passiert
+        hinweise.append(f"To-do: {exc}")
+
+
+@app.post("/api/finanzen/rechnungen/{nummer}/folgerechnung")
+async def rechnung_folgerechnung(nummer: str, request: Request):
+    """TEILRECHNUNG: Entwurf der Folgerechnung ueber die spaeter abzurechnenden Positionen."""
+    return _kunden_aktion(lambda: _rechnungen().folgerechnung(nummer, von=_von(request)))
 
 
 def eur_text(c: int) -> str:

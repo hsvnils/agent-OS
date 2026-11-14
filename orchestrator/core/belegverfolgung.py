@@ -20,11 +20,11 @@ from .lieferungen import Lieferungen
 from .mahnungen import STUFEN, MahnStore
 from .rechnungen import RechnungStore
 
-RANG = {"angebot": 0, "auftrag": 1, "lieferung": 2, "entwurf": 3, "vorkasse": 3, "rechnung": 3, "schlussrechnung": 3,
+RANG = {"angebot": 0, "auftrag": 1, "lieferung": 2, "entwurf": 3, "vorkasse": 3, "rechnung": 3, "schlussrechnung": 3, "teilrechnung": 3,
         "storno": 4, "zahlung": 5, "mahnung": 6, "mahnverfahren": 7, "bericht": 8, "dokument": 9}
-FINANZ = {"entwurf", "vorkasse", "rechnung", "schlussrechnung", "storno", "zahlung", "mahnung", "mahnverfahren"}
+FINANZ = {"entwurf", "vorkasse", "rechnung", "schlussrechnung", "teilrechnung", "storno", "zahlung", "mahnung", "mahnverfahren"}
 ART_TEXT = {"angebot": "Angebot", "auftrag": "Auftrag", "entwurf": "Rechnungsentwurf", "vorkasse": "Vorkasse-Rechnung",
-            "rechnung": "Rechnung", "schlussrechnung": "Schlussrechnung", "storno": "Stornorechnung", "zahlung": "Zahlung",
+            "rechnung": "Rechnung", "schlussrechnung": "Schlussrechnung", "teilrechnung": "Teilrechnung", "storno": "Stornorechnung", "zahlung": "Zahlung",
             "mahnung": "Mahnung", "mahnverfahren": "Mahnverfahren", "lieferung": "Lieferung", "bericht": "Projektbericht",
             "dokument": "Dokument"}
 
@@ -100,6 +100,8 @@ def kette(eintraege: list[dict], kennung: str, *, finanzen: bool = True) -> dict
         art = {"anzahlung": "vorkasse"}.get(art, art)
         if art == "rechnung" and r.get("abzuege"):
             art = "schlussrechnung"
+        elif art == "rechnung" and r.get("teil"):
+            art = "teilrechnung"
         knoten_neu(r["nummer"], art, r["nummer"], r.get("rechnungsdatum") or r.get("festgeschrieben_am"),
                    titel=r.get("titel"), betrag=r.get("summe_cent"), status=r["status"], firma=r.get("firma", ""),
                    oeffnen={"act": "re-detail", "id": r["nummer"]})
@@ -124,6 +126,8 @@ def kette(eintraege: list[dict], kennung: str, *, finanzen: bool = True) -> dict
             kante(ab.get("nummer"), rid, "abgezogen in")
         if r.get("korrektur_zu"):
             kante(r["korrektur_zu"], rid, "ersetzt durch")
+        if r.get("folge_zu") and r.get("art") != "storno":          # TEILRECHNUNG: Rest abgerechnet in
+            kante(r["folge_zu"], rid, "Rest abgerechnet in")
     # aeltere Korrekturen ohne `korrektur_zu`: naechste Rechnung desselben Auftrags nach der stornierten
     mit_korr = {r.get("korrektur_zu") for _, r in alle_re if r.get("korrektur_zu")}
     for o in rechnungen.values():

@@ -377,7 +377,10 @@ class Finanzen:
                                   "liste": sorted(verbind, key=lambda x: x["faellig_am"] or "9")},
             "pipeline": {"angebote_anzahl": len(offen_an), "angebote_cent": sum(a["summe_cent"] for a in offen_an),
                          "auftraege_anzahl": len(auftraege), "auftraege_cent": auftrag_summe,
-                         "rechnung_entwuerfe": len(entwuerfe)},
+                         "rechnung_entwuerfe": len(entwuerfe),
+                         "reste": sorted(({"nummer": r["nummer"], "firma": firmen.get(r["firma"], r["firma"]),   # TEILRECHNUNG
+                                           "am": r["teil"]["abrechnung_am"]} for r in st["rechnungen"].values()
+                                          if r.get("rest_offen")), key=lambda x: x["am"])},
             "belege_zu_pruefen": zu_pruefen,
             "waechter": w,
             "letzte": [z for z in reversed(journal)][:8],

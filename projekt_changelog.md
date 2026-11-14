@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 17:33] — Claude Code
+- **Was:** TEILRECHNUNG T1 umgesetzt (Branch `ai/teilrechnung`, neue Roadmap `TEILRECHNUNG_ROADMAP.md`): Position mit
+  „Spaeter abrechnen am“, Teilrechnung (Summe ohne die Position, PDF-Hinweis im CEO-Wortlaut), Folgerechnung nur ueber die
+  offenen Positionen und genau einmal, Storno-Reihenfolge, To-do „Rest abrechnen“ mit Erinnerung (abgehakt mit der
+  Folgerechnung), Belegverfolgung, Finanz-Cockpit-Stufe; LUNA-OS Editor/Detail/Liste, Cache v156/v82; 7 Tests inkl.
+  Gegenproben, zwei Mutationsproben rot; PDF in beiden Layouts und Editor am iPhone geprueft.
+- **Warum:** CEO 2026-11-14: Rechnung an Fantastic Frames (800 EUR + Affiliate) „splitten“, Affiliate am 31.12.2026 abrechnen.
+- **Betroffen:** `orchestrator/core/angebote.py`, `orchestrator/core/rechnungen.py`, `orchestrator/core/belegverfolgung.py`,
+  `orchestrator/core/finanzen.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`,
+  `static/index-v2.html`, `orchestrator/tests/test_teilrechnung.py`, `TEILRECHNUNG_ROADMAP.md`, `ROADMAP.md`,
+  `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-11-14 17:03] — Claude Code
 - **Was:** Produktiver Datenwrite nach CEO-Go (A8): Plan-Vorlage aus Monetarisierungsplan Entwurf 0.4 einmal ueber
   `POST /api/finanzen/plan` eingespielt (ein Ereignis `plan_gespeichert`, Gates G0-G6). Vorher Trockenlauf (kein Plan vorhanden,
