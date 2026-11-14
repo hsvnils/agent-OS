@@ -1,10 +1,11 @@
 # Roadmap: LUNA-OS als Steuerzentrale fuer Monetarisierung und Weg zur Selbststaendigkeit
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-11-14
 - Arbeitsbranch: `ai/plan-monetarisierung`
 - Basiscommit: `a048c2d`
-- Naechster Schritt: CEO prueft die Etappen M1 bis M8 und gibt das Go fuer die erste Etappe (Empfehlung: M1 Saeulen).
+- Naechster Schritt: CEO-Freigabe fuer Merge und Deploy von M1, danach Sichtabnahme in LUNA-OS (Finanzen -> Saeulen) auf Rechner und
+  iPhone und einmalige Zuordnung der Einnahmen 2026; danach Go fuer M2.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -61,7 +62,11 @@ wiederkehrende Erinnerungen, Import von Store-Abrechnungen, lesender Abruf der A
 Reihenfolge: M1 -> M2 sind das Fundament. M3, M4 und M6 sind unabhaengig danach. M5 braucht L4b der App und Daten ab 01.01.2027.
 M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
 
-### M1 Saeulen fuer Einnahmen und Stunden (mittel, Risiko niedrig)
+### M1 Saeulen fuer Einnahmen und Stunden (mittel, Risiko niedrig) -- umgesetzt 2026-11-14
+- **Stand:** `orchestrator/core/saeulen.py`, Reiter Finanzen -> Saeulen, `GET /api/finanzen/saeulen`,
+  `POST /api/finanzen/saeulen/zuordnen|stunden`, Ereignisse `saeule_zugeordnet`/`saeule_stunden`; 8 Tests mit Gegenprobe
+  (`orchestrator/tests/test_saeulen.py`). Probe auf einer Lesekopie der Kette: Summe der Saeulen = 3.026,08 EUR = Einnahmen 2026.
+  Stunden ohne Auftrag als Schaetzung je Monat/Person/Saeule (die Zeiterfassung verlangt einen Auftrag).
 - **Ziel:** Jede Einnahme (Rechnung, Gutschrift, Eigenbeleg) und jede Projektzeit bekommt eine Saeule; Vorschlag per Regel
   (Gegenpartei/Text), Bestaetigung durch Menschen. Einmalige Zuordnung der Bestandsdaten 2026.
 - **Anzeige:** Finanzen -> Saeulen: Monat und Jahr je Saeule mit Deckungsbeitrag, Stunden und Euro je Stunde; Summe zusaetzlich.

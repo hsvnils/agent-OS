@@ -1246,3 +1246,21 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-auf.erledigt b { text-decoration: line-through; color: var(--v2-muted); }
 .v2-auf .grow.klick { cursor: pointer; min-width: 0; overflow-wrap: anywhere; }
 #auf-titel, #auf-faellig, #auf-uhrzeit, #aufb-titel, #aufb-faellig, #aufb-uhrzeit, #aufb-erinnerung { font-size: 16px; }
+
+/* Erlös-Säulen (MONETARISIERUNG M1) */
+.v2-tile.v2-sl { min-width: 0; }   /* breite Tabelle scrollt in der Kachel, statt das Raster aufzuziehen */
+.v2-sl-punkt { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: middle; }
+.v2-sl-tab tr.v2-sl-unter td { color: var(--v2-muted); font-size: 12.5px; } .v2-sl-tab tr.v2-sl-unter td:first-child { padding-left: 26px; }
+.v2-sl-tab tr.v2-sl-ohne td { color: var(--v2-muted); }
+.v2-sl-stapel { flex: 1; width: 60%; max-width: 26px; display: flex; flex-direction: column-reverse; justify-content: flex-start; border-bottom: 1px solid var(--v2-line); }
+.v2-sl-stapel i { display: block; width: 100%; min-height: 2px; } .v2-sl-stapel i:last-child { border-radius: 3px 3px 0 0; }
+.v2-sl-legende { flex-wrap: wrap; row-gap: 6px; }
+.v2-sl-wisch { display: none; }
+.v2-sl-beleg { align-items: center; gap: 10px; } .v2-sl-beleg .grow { min-width: 0; } .v2-sl-beleg .grow small { display: block; overflow-wrap: anywhere; }
+.v2-sl-wahl { width: auto; max-width: 220px; flex: 0 0 auto; }
+.v2-an-zeile.v2-sl-stdform { grid-template-columns: 1fr 1fr; }
+.v2-sl-aus { margin-top: 12px; } .v2-sl-aus summary { cursor: pointer; color: var(--v2-muted); font-size: 13px; padding: 6px 0; }
+@media (max-width: 600px) {
+  .v2-sl-beleg { flex-wrap: wrap; } .v2-sl-wahl { max-width: none; width: 100%; } .v2-sl-wisch { display: block; margin-bottom: 4px; }
+
+}

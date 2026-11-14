@@ -22,6 +22,7 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Erloes-Saeulen in LUNA-OS (M1):** Saeule je Beleg als eigenes Ereignis in der Hash-Kette (additiv, EUeR unveraendert), Regel-Vorschlag nur mit Bestaetigung durch Menschen, mehrdeutig = kein Vorschlag, Supabase-Kosten ohne Vorschlag (App oder LUNA), Stunden ohne Auftrag als Monats-Schaetzung je Person | 2026-11-14 | BESCHLOSSEN | `orchestrator/core/saeulen.py`, `MONETARISIERUNG_ROADMAP.md` M1 |
 | **Marketing Manager (CMO) als Agent 18:** eigener Agent statt Aufteilung auf CRO/CBO/CCO; CMO liefert Zielgruppe, Kanaele, Partner-Zielprofil, Media-Kit, Launches, CRO bleibt fuer Preise und Angebote | 2026-11-14 | BESCHLOSSEN (CEO) | `agents/18_cmo.md`, `skills/cmo/` |
 | **Partner-Regel:** keine Sportwetten-Partner; Alkohol nur nach Markenpruefung im Einzelfall | 2026-11-14 | BESCHLOSSEN (CEO) | `skills/cmo/partner-zielprofil`, Monetarisierungsplan |
 | **Monetarisierungsplan vertraulich:** Plaene mit echten Zahlen liegen in `strategie/` (nicht im oeffentlichen Git), Organigramm als XMind wird per `scripts/xmind_bauen.py` aus Charten und Skills erzeugt | 2026-11-14 | BESCHLOSSEN | `.gitignore`, `governance/organigramm.xmind` |
@@ -251,6 +252,17 @@
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-11-14 — Erloes-Saeulen in LUNA-OS (MONETARISIERUNG M1)
+
+**Was:** Jede Einnahme, Ausgabe und Projektzeit kann einer Saeule zugeordnet werden (S1 Kooperationen, S2a-d Plattformen,
+S3a/b Fan-App, S4 Affiliates, S5 Merch, S6 Auftragsproduktion). **Warum so:** Ein eigenes Ereignis statt eines Felds in
+Rechnung/Beleg laesst festgeschriebene Belege unberuehrt und ist jederzeit umkehrbar. Vorschlaege per Regel sparen Klicks,
+zaehlen aber erst nach Bestaetigung; bei Mehrdeutigkeit (z. B. „Reel-Produktion“ und „Story“ in einer Rechnung) gibt es
+bewusst keinen Vorschlag. Plattform-Regeln greifen bei eigenen Rechnungen nur ueber die Gegenpartei („Facebook-Reel“ fuer
+einen Kunden ist keine Facebook-Auszahlung). Die Zeiterfassung verlangt einen Auftrag; Arbeit fuer eigene Kanaele wird
+deshalb als Monats-Schaetzung je Person erfasst. **Verworfen:** Saeule als Pflichtfeld beim Festschreiben (aendert den
+Rechnungsablauf, eigene Etappe falls gewuenscht).
 
 ### 2026-09-25 — Nachtrag: Entscheidungen 2026-06-25 bis 2026-09-25
 

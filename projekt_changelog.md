@@ -17,6 +17,16 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 16:05] — Claude Code
+- **Was:** MONETARISIERUNG M1 umgesetzt (Branch `ai/plan-monetarisierung`): neues Modul `orchestrator/core/saeulen.py`
+  (Saeule je Beleg, Regel-Vorschlaege, Vererbung Auftrag/Rechnung, Stunden-Schaetzung, Deckungsbeitrag und Euro je Stunde),
+  Endpunkte `/api/finanzen/saeulen*`, Reiter Finanzen -> Saeulen (Tabelle, Monatsverlauf je Saeule, Belege zuordnen,
+  Stunden ohne Auftrag), Cache v154/v80, 8 Tests mit Gegenprobe; Sichtpruefung Rechner, iPad 820 px, iPhone 402 px.
+- **Warum:** CEO-Go fuer M1 (2026-11-14); Einnahmen und Stunden immer je Saeule.
+- **Betroffen:** `orchestrator/core/saeulen.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`,
+  `static/index-v2.html`, `orchestrator/tests/test_saeulen.py`, `MONETARISIERUNG_ROADMAP.md`, `ROADMAP.md`,
+  `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-11-14 14:17] — Claude Code
 - **Was:** Roadmap `MONETARISIERUNG_ROADMAP.md` angelegt (M1 Saeulen, M2 Plan/Meilensteine, M3 Reichweiten, M4 Posting-Rhythmus, M5 App-Kennzahlen ueber `luna_reader`, M6 wiederkehrende Erinnerungen, M7 Store-Abrechnungen, M8 Kneipen) und im Roadmap-Verzeichnis eingetragen. Nur Plan, keine Umsetzung. Monetarisierungsplan lokal auf 0.4 (App-Stand eingearbeitet).
 - **Warum:** CEO: alles im LUNA-OS sehen und damit arbeiten; App-Infos aus der App-Sitzung vom 14.11.
