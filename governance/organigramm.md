@@ -3,7 +3,7 @@
 > **Lebendes Dokument.** Es aendert sich, sobald Abteilungen **Unter-Agenten** bekommen.
 > **Quelle der Wahrheit fuer Agenten, Status und Charta-Dateien ist [`agents/REGISTRY.md`](../agents/REGISTRY.md).**
 > Dieses Dokument ist die **visuelle Hierarchie-Darstellung** und verweist auf die Registry — Status- und
-> Bestandsangaben werden **dort** gepflegt, nicht hier doppelt. Visuelle Map: [`organigramm.xmind`](organigramm.xmind).
+> Bestandsangaben werden **dort** gepflegt, nicht hier doppelt. Visuelle Map: [`organigramm.xmind`](organigramm.xmind). Sie wird erzeugt mit `python3 scripts/xmind_bauen.py organigramm` (nach jeder Charta- oder Skill-Aenderung; der Test `test_xmind_bauen.py` meldet eine veraltete Datei).
 > `AGENTS.md` bleibt uebergeordnet; bei Widerspruch gilt `AGENTS.md`.
 
 ---

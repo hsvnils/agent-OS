@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 14:01] — Claude Code
+- **Was:** `scripts/xmind_bauen.py` erzeugt das Organigramm als XMind aus Charten und Skill-Ordnern (inkl. CMO, Netz-Agent, Team) sowie Mindmaps/Zeitstrahlen aus JSON; `governance/organigramm.xmind` neu erzeugt (war Stand 23.06.); Test `test_xmind_bauen.py` mit Gegenprobe (veraltete Datei wird rot). Drei Entscheidungen im Register (CMO, keine Sportwetten-Partner, vertrauliche Plaene in `strategie/`). Monetarisierungsplan 0.2 und Zeitstrahl-XMind liegen nur lokal in `strategie/` (nicht im Git).
+- **Warum:** CEO: XMind mit Zeitstrahl zur Selbststaendigkeit und aktuelles LUNA-Organigramm; Kooperationen je Meilenstein.
+- **Betroffen:** `scripts/xmind_bauen.py`, `governance/organigramm.xmind`, `governance/organigramm.md`, `orchestrator/tests/test_xmind_bauen.py`, `docs/entscheidungs-register.md`
+
 ## [2026-11-14 13:55] — Head of Agents (Claude Code)
 - **Was:** Neuer Agent 18 CMO (Marketing Manager) mit Charta `agents/18_cmo.md` angelegt und als befragbarer Fachagent angemeldet (Charten-Liste, `delegate`, Zustaendigkeit, Skill-Werkstatt, Agenten-Uebersicht, Register, Organigramm). Skill-Zeile des Unternehmensberaters um fuenf Skills ergaenzt. Agenten-Test auf 20 Agenten nachgezogen.
 - **Warum:** CEO-Anweisung mit Diff-Vorlage, bestaetigt am 2026-11-14 („Charten bestaetigt").
