@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 13:38] — Claude Code
+- **Was:** Unternehmensberater um fuenf Skills erweitert (Unit Economics, Stage-Gates, Kapazitaet/Make-or-Buy, Szenarien/Annahmen, Monetarisierungsplan); sieben Skills fuer den geplanten Marketing Manager (CMO) unter `skills/cmo/`; Claude-Code-Einstiege `unternehmensberatung` und `marketing-manager`; Ordner `strategie/` vom Git ausgeschlossen (Plaene mit echten Zahlen); BF-95 (Verdacht Umsatzwaechter) eingetragen. Alle Skills bestehen das Skill-Gate. Charta CMO und Skill-Zeile des Beraters warten auf CEO-Bestaetigung.
+- **Warum:** CEO: Berater und Marketing Manager mit Skills ausstatten (Best Practices aus dem Netz), danach Marketing- und Monetarisierungsplan erstellen.
+- **Betroffen:** `skills/berater/`, `skills/cmo/`, `.claude/skills/`, `.gitignore`, `docs/bekannte-fehler.md`
+
 ## [2026-11-09 19:49] — Claude Code
 - **Was:** BF-94 als bestaetigt eingetragen, C2 als deployt vermerkt.
 - **Warum:** CEO: Deploy gemacht, Probevideo ist nicht mehr verzerrt.
