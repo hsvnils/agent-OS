@@ -4274,6 +4274,31 @@ def finanzen_posten(jahr: int = 0, zeitraum: str = "jahr", art: str = "", katego
     return {"jahr": j, "zeitraum": zeitraum, "zeilen": z, "kennzahlen": kennzahlen(z)}
 
 
+@app.get("/api/finanzen/saeulen")
+def finanzen_saeulen(jahr: int = 0):
+    """MONETARISIERUNG M1: Einnahmen, Ausgaben und Stunden je Erloes-Saeule (zusaetzliche Sicht, EUeR unveraendert)."""
+    from ...core.saeulen import Saeulen
+    return Saeulen(kunden_store.bh, kunden_store).auswertung(jahr or int(jetzt_iso()[:4]))
+
+
+@app.post("/api/finanzen/saeulen/zuordnen")
+async def finanzen_saeulen_zuordnen(request: Request):
+    """[{bezug, saeule}] bestaetigen oder aendern (saeule "" = zuruecknehmen) -- immer durch einen Menschen."""
+    from ...core.saeulen import Saeulen
+    body = await _json(request)
+    return _kunden_aktion(lambda: Saeulen(kunden_store.bh, kunden_store).zuordnen(
+        body.get("zuordnungen") or [], von=_von(request)))
+
+
+@app.post("/api/finanzen/saeulen/stunden")
+async def finanzen_saeulen_stunden(request: Request):
+    """Geschaetzte Stunden ohne Auftrag je Monat, Person und Saeule (0 = loeschen)."""
+    from ...core.saeulen import Saeulen
+    b = await _json(request)
+    return _kunden_aktion(lambda: Saeulen(kunden_store.bh, kunden_store).stunden(
+        b.get("jahr"), b.get("monat"), b.get("person") or "", b.get("saeule") or "", b.get("stunden"), von=_von(request)))
+
+
 @app.get("/api/finanzen/ki-kosten")
 def finanzen_ki_kosten(jahr: int = 0):
     """KI-Verbrauch (geschaetzt) je Monat/Anbieter + Monatsbudget -- nur Anzeige, nicht in der EUeR."""

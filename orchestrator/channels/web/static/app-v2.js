@@ -3810,9 +3810,9 @@ async function renderFinanzen(meldung) {
   FIN_JAHR = u.jahr;
   const jahrWahl = `<select id="fin-jahr" class="v2-inp" style="width:auto">${u.jahre.map(j => `<option ${j === u.jahr ? "selected" : ""}>${j}</option>`).join("")}</select>`;
   const zeitWahl = sub === "uebersicht" ? `<select id="fin-zeit" class="v2-inp" style="width:auto"><option value="jahr">Ganzes Jahr</option>${[1, 2, 3, 4].map(q => `<option value="q${q}">Q${q}</option>`).join("")}${FIN_MONATE.map((m, i) => `<option value="m${String(i + 1).padStart(2, "0")}">${m}</option>`).join("")}</select>` : "";
-  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : sub === "abschluss" ? await finAbschluss(u.jahr) : sub === "abos" ? await finAbos() : await finUebersicht(u);
+  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : sub === "abschluss" ? await finAbschluss(u.jahr) : sub === "abos" ? await finAbos() : sub === "saeulen" ? await finSaeulen(u.jahr) : await finUebersicht(u);
   $("#v2-app").innerHTML = secHead("Finanzen " + (sub === "uebersicht" ? finZeitName(u.zeitraum, u.jahr) : u.jahr), `${jahrWahl}${zeitWahl}<button class="v2-btn" data-act="eb-neu" data-val="ausgabe">− Ausgabe ohne Beleg</button><button class="v2-btn pri" data-act="eb-neu" data-val="einnahme">+ Einnahme ohne Rechnung</button>`)
-    + tabs("finanzen", [["uebersicht", "Übersicht"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"], ["abos", "Abos"], ["abschluss", "Jahresabschluss"]])
+    + tabs("finanzen", [["uebersicht", "Übersicht"], ["saeulen", "Säulen"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"], ["abos", "Abos"], ["abschluss", "Jahresabschluss"]])
     + (meldung ? `<div class="v2-msg ok" style="margin-bottom:12px">${esc(meldung)}</div>` : "") + `<div class="v2-grid">${body}</div>`;
   $("#fin-jahr").addEventListener("change", e => { FIN_JAHR = Number(e.target.value); renderFinanzen(); });
   const zw = $("#fin-zeit"); if (zw) { zw.value = u.zeitraum; zw.addEventListener("change", e => { FIN_ZEIT = e.target.value; renderFinanzen(); }); }
@@ -3934,6 +3934,71 @@ async function finUebersicht(u) {
     ${tile("Top-Kunden · " + zn, kunden, "w6")}
     ${tile("Letzte Zahlungen", zeilen, "w12")}`;
 }
+/* ---- Erlös-Säulen (MONETARISIERUNG M1): Einnahmen, Kosten und Stunden je Säule; EÜR bleibt unverändert ---- */
+const SL_FARBE = { S1: "#2f7dd1", S2: "#7b5cd6", S3: "#1f9d6b", S4: "#e08a00", S5: "#d0417a", S6: "#6b7a8c", ohne: "#b9c0c9" };
+let SL = null;
+async function finSaeulen(jahr) {
+  const d = SL = await jget(`/api/finanzen/saeulen?jahr=${jahr}`);
+  if (!d || !d.gruppen) return tile("Säulen", emptyRow("Säulen nicht erreichbar."), "w12");
+  const h = (m) => m ? dauerTxt(m) : "–", eh = (x) => x.euro_je_stunde_cent == null ? "–" : cent2eur(x.euro_je_stunde_cent);
+  const zeile = (x, unter) => `<tr${unter ? ' class="v2-sl-unter"' : ""}><td>${unter ? "" : `<i class="v2-sl-punkt" style="background:${SL_FARBE[x.gruppe] || SL_FARBE.ohne}"></i>`}${unter ? esc(x.name) : `<b>${esc(x.name)}</b>`}</td>
+    <td style="text-align:right">${esc(cent2eur(x.einnahmen_cent))}</td><td style="text-align:right">${x.ausgaben_cent ? "−" + esc(cent2eur(x.ausgaben_cent)) : "–"}</td>
+    <td style="text-align:right">${unter ? esc(cent2eur(x.db_cent)) : `<b>${esc(cent2eur(x.db_cent))}</b>`}</td><td style="text-align:right" title="erfasst ${esc(h(x.minuten_erfasst))} · geschätzt ${esc(h(x.minuten_geschaetzt))}">${esc(h(x.minuten))}</td><td style="text-align:right">${esc(eh(x))}</td></tr>`;
+  const leer = (x) => !x.einnahmen_cent && !x.ausgaben_cent && !x.minuten;
+  const rows = d.gruppen.map(g => zeile(g, false) + (g.teile || []).filter(t => !leer(t) || !t.name.includes("gemeinsam")).map(t => zeile(t, true)).join("")).join("");
+  const o = d.ohne, gem = o.ausgaben_cent;
+  const tabelle = `<small class="v2-sub v2-sl-wisch">← seitlich wischen: Kosten, Deckungsbeitrag, Stunden, € je Stunde</small><div class="v2-tab-scroll"><table class="v2-table v2-sl-tab"><thead><tr><th>Säule</th><th style="text-align:right">Einnahmen</th><th style="text-align:right">Direkte Kosten</th><th style="text-align:right">Deckungsbeitrag</th><th style="text-align:right">Stunden</th><th style="text-align:right">€ je Stunde</th></tr></thead>
+    <tbody>${rows}<tr class="v2-sl-ohne"><td><i class="v2-sl-punkt" style="background:${SL_FARBE.ohne}"></i>Nicht zugeordnet</td><td style="text-align:right">${esc(cent2eur(o.einnahmen_cent))}</td><td></td><td></td><td style="text-align:right">${esc(h(o.minuten))}</td><td></td></tr>
+    <tr class="v2-sl-ohne"><td>Gemeinkosten (Ausgaben ohne Säule)</td><td></td><td style="text-align:right">${gem ? "−" + esc(cent2eur(gem)) : "–"}</td><td></td><td></td><td></td></tr></tbody>
+    <tfoot><tr><td><b>Summe</b></td><td style="text-align:right"><b>${esc(cent2eur(d.summe.einnahmen_cent))}</b></td><td style="text-align:right"><b>−${esc(cent2eur(d.summe.ausgaben_cent))}</b></td><td style="text-align:right"><b>${esc(cent2eur(d.summe.gewinn_cent))}</b></td><td style="text-align:right"><b>${esc(h(d.summe.minuten))}</b></td><td></td></tr></tfoot></table></div>
+    <small class="v2-sub">${d.stimmig ? "✓ Summe der Säulen = Einnahmen laut Finanzen." : "⚠️ Summe der Säulen weicht von den Einnahmen ab – bitte melden."} Deckungsbeitrag = Einnahmen minus Kosten, die der Säule zugeordnet sind. Gewinn = Summe der Deckungsbeiträge minus Gemeinkosten. ${esc(d.hinweis)}</small>`;
+  // Monatsverlauf gestapelt je Säule
+  const gr = [...d.gruppen, { code: "ohne", name: "nicht zugeordnet", monate: o.monate }];
+  const mx = Math.max(1, ...d.monate.map((_, i) => gr.reduce((a, g) => a + Math.max(0, g.monate[i]), 0)));
+  const verlauf = `<div class="v2-fin-monate">${d.monate.map((m, i) => `<div class="v2-fin-monat" title="${esc(m)}: ${gr.filter(g => g.monate[i]).map(g => `${esc(g.name)} ${esc(cent2eur(g.monate[i]))}`).join(" · ") || "keine Einnahmen"}"><div class="v2-sl-stapel">${gr.map(g => g.monate[i] > 0 ? `<i style="height:${Math.max(2, Math.round(g.monate[i] / mx * 100))}%;background:${SL_FARBE[g.code]}"></i>` : "").join("")}</div><small>${esc(m)}</small></div>`).join("")}</div>
+    <div class="v2-legend v2-sl-legende">${gr.map(g => `<span><i style="background:${SL_FARBE[g.code]}"></i>${esc(g.name)}</span>`).join("")}</div>`;
+  // Zuordnen
+  const opts = (wert) => `<option value="">— keine —</option>${d.saeulen.map(x => `<option value="${esc(x.code)}" ${x.code === wert ? "selected" : ""}>${esc(x.code + " · " + x.name)}</option>`).join("")}`;
+  const QUELLE = { mensch: "bestätigt", auftrag: "vom Auftrag", rechnung: "von der Rechnung" };
+  const beleg = (b) => `<div class="v2-list-row v2-sl-beleg"><div class="grow"><b class="klick" data-act="${String(b.bezug).startsWith("RE-") || String(b.bezug).startsWith("RG-") ? "re-detail" : FIN_ACT[b.quelle] || "bl-detail"}" data-id="${esc(b.bezug)}">${esc(b.gegenpartei || b.bezug)}</b><small>${esc(datumDe(b.datum))} · ${esc(b.bezug)} · ${esc(cent2eur(b.betrag_cent))}${b.text ? " · " + esc(b.text) : ""}</small>
+      ${b.saeule ? `<small><span class="v2-badge ok">${esc(QUELLE[b.saeule_quelle] || "zugeordnet")}</span></small>` : b.vorschlag ? `<small><span class="v2-badge wartet">Vorschlag</span> ${esc(b.grund)}</small>` : b.grund ? `<small><span class="v2-badge neutral">offen</span> ${esc(b.grund)}</small>` : ""}</div>
+    <select class="v2-inp v2-sl-wahl" data-sl-bezug="${esc(b.bezug)}" aria-label="Säule für ${esc(b.bezug)}">${opts(b.saeule || b.vorschlag)}</select></div>`;
+  const ein = d.belege.filter(b => b.art === "einnahme"), aus = d.belege.filter(b => b.art === "ausgabe");
+  const vorschlaege = d.belege.filter(b => !b.saeule && b.vorschlag);
+  const offenAus = aus.filter(b => !b.saeule).length;
+  const zuordnen = `${vorschlaege.length ? `<div class="v2-card-actions" style="margin-bottom:8px"><button class="v2-btn pri" data-act="sl-uebernehmen">✓ ${vorschlaege.length} Vorschläge übernehmen</button></div>` : ""}
+    <div id="sl-msg"></div>
+    <h3 class="v2-h3">Einnahmen ${d.offen ? `<span class="v2-badge wartet">${d.offen} offen</span>` : `<span class="v2-badge ok">alle zugeordnet</span>`}</h3>
+    ${ein.map(beleg).join("") || emptyRow("Keine Einnahmen in " + d.jahr + ".")}
+    <details class="v2-sl-aus"><summary>Ausgaben einer Säule zuordnen (freiwillig, für den Deckungsbeitrag) · ${aus.length - offenAus} von ${aus.length} zugeordnet</summary>
+    ${aus.map(beleg).join("") || emptyRow("Keine Ausgaben.")}</details>
+    <small class="v2-sub">Ein „Vorschlag“ zählt erst, wenn ihr ihn übernehmt oder auswählt. Auswahl ändern speichert sofort; „— keine —“ nimmt die Zuordnung zurück.</small>`;
+  // Stunden ohne Auftrag
+  const jetztM = new Date().getFullYear() === d.jahr ? new Date().getMonth() + 1 : 12;
+  const stunden = `<div class="v2-an-zeile v2-sl-stdform">
+      <label class="v2-feld"><small>Monat</small><select id="sl-monat" class="v2-inp">${d.monate.map((m, i) => `<option value="${i + 1}" ${i + 1 === jetztM ? "selected" : ""}>${esc(FIN_MONATE[i])}</option>`).join("")}</select></label>
+      <label class="v2-feld"><small>Person</small><select id="sl-person" class="v2-inp">${Object.entries(d.personen).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join("")}</select></label>
+      <label class="v2-feld"><small>Säule</small><select id="sl-saeule" class="v2-inp">${d.saeulen.map(x => `<option value="${esc(x.code)}">${esc(x.code + " · " + x.name)}</option>`).join("")}</select></label>
+      <label class="v2-feld"><small>Stunden im Monat</small><input id="sl-std" class="v2-inp" inputmode="decimal" placeholder="z. B. 20"></label></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="sl-stunden">Speichern</button></div><div id="sl-std-msg"></div>
+    ${d.schaetzungen.length ? `<div class="v2-tab-scroll"><table class="v2-table"><thead><tr><th>Monat</th><th>Person</th><th>Säule</th><th style="text-align:right">Stunden</th><th></th></tr></thead><tbody>${d.schaetzungen.map(x => `<tr><td>${esc(FIN_MONATE[x.monat - 1])}</td><td>${esc(x.person_name)}</td><td>${esc(x.saeule + " · " + x.saeule_name)}</td><td style="text-align:right">${esc(dauerTxt(x.minuten))}</td><td style="text-align:right"><button class="v2-btn sm" data-act="sl-stunden-weg" data-val="${x.monat}|${esc(x.person)}|${esc(x.saeule)}" aria-label="Schätzung löschen">✕</button></td></tr>`).join("")}</tbody></table></div>` : emptyRow("Noch keine Schätzung.")}
+    <small class="v2-sub">Für Arbeit ohne Kundenauftrag (eigene Kanäle, App, Merch). Zeiten aus der Zeiterfassung zählen automatisch über den Auftrag – die hier nicht noch einmal eintragen. Gleicher Monat, Person und Säule überschreibt den alten Wert.</small>`;
+  const top = [...d.gruppen].filter(g => g.einnahmen_cent).sort((a, b) => b.einnahmen_cent - a.einnahmen_cent)[0];
+  return `${kpiTile("Einnahmen " + d.jahr, cent2eur(d.summe.einnahmen_cent), null, top ? `größte Säule: ${top.name} (${Math.round(top.einnahmen_cent / Math.max(1, d.summe.einnahmen_cent) * 100)} %)` : "noch keine Einnahmen")}
+    ${kpiTile("Nicht zugeordnet", cent2eur(o.einnahmen_cent), null, d.offen ? `${d.offen} Einnahme(n) ohne Säule – unten zuordnen` : "alle Einnahmen haben eine Säule")}
+    ${kpiTile("Stunden " + d.jahr, h(d.summe.minuten), null, "Zeiterfassung + Schätzungen")}
+    ${tile("Säulen " + d.jahr, tabelle, "w12 v2-sl")}
+    ${tile("Einnahmen je Monat und Säule", verlauf, "w12 v2-sl")}
+    ${tile("Belege zuordnen", zuordnen, "w8 v2-sl")}
+    ${tile("Stunden ohne Auftrag", stunden, "w4 v2-sl")}`;
+}
+async function slZuordnen(liste, msg) {
+  const r = await jpost("/api/finanzen/saeulen/zuordnen", { zuordnungen: liste });
+  if (!r || !r.ok) { const m = $("#sl-msg"); if (m) m.innerHTML = `<div class="v2-msg err">${esc((r && r.hinweis) || "Keine Verbindung zum Server.")}</div>`; return; }
+  return renderFinanzen(msg || "Säule gespeichert.");
+}
+document.addEventListener("change", (e) => { const s = e.target.closest && e.target.closest("[data-sl-bezug]"); if (!s) return;
+  s.disabled = true; slZuordnen([{ bezug: s.dataset.slBezug, saeule: s.value }]); });
 // Etappe 26: kalkulatorische Kosten (eigene Arbeitszeit, Fahrten) -- zuschaltbar, nie Teil der echten Zahlen/EÜR
 function finKalkAn() { try { return localStorage.getItem("luna-fin-kalk") !== "aus"; } catch (e) { return true; } }
 // Etappe 27: Plattform-Einnahmen -- erzielt je Monat neben ausgezahlt (Zufluss)
@@ -5107,6 +5172,14 @@ async function handleAct(act, el) {
       glockeAktualisieren();
       return AKTIV === "handlung" ? renderHandlung() : renderDash();
     }
+    case "sl-uebernehmen": { const v = ((SL && SL.belege) || []).filter(b => !b.saeule && b.vorschlag); if (!v.length) return;
+      el.disabled = true; return slZuordnen(v.map(b => ({ bezug: b.bezug, saeule: b.vorschlag })), `${v.length} Vorschläge übernommen.`); }
+    case "sl-stunden": case "sl-stunden-weg": {
+      const [monat, person, saeule] = act === "sl-stunden" ? [$("#sl-monat").value, $("#sl-person").value, $("#sl-saeule").value] : val.split("|");
+      if (act === "sl-stunden-weg" && !confirm("Diese Schätzung löschen?")) return;
+      const r = await jpost("/api/finanzen/saeulen/stunden", { jahr: FIN_JAHR, monat, person, saeule, stunden: act === "sl-stunden" ? $("#sl-std").value : "0" });
+      if (!r || !r.ok) { const m = $("#sl-std-msg"); if (m) m.innerHTML = `<div class="v2-msg err">${esc((r && r.hinweis) || "Keine Verbindung zum Server.")}</div>`; return; }
+      return renderFinanzen(act === "sl-stunden" ? "Stunden gespeichert." : "Schätzung gelöscht."); }
     case "fin-drill": return finDrill(val);
     case "fin-vv": {
       const betrag = prompt(`Verbleibender Verlust aus ${val} in € (z. B. 2.622,59):`, ""); if (betrag === null) return;
