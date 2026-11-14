@@ -4,8 +4,8 @@
 - Stand: 2026-11-14
 - Arbeitsbranch: `ai/plan-monetarisierung`
 - Basiscommit: `a048c2d`
-- Naechster Schritt: M2 umgesetzt auf `ai/monetarisierung-m2` -- CEO-Freigabe fuer Merge und Deploy, danach (mit eigenem Go) Plan-Vorlage
-  aus Entwurf 0.4 einspielen; Sichtabnahme M1+M2 gesammelt am Ende; dann Go fuer die naechste Etappe.
+- Naechster Schritt: M2 auf `main`, Deploy durch den CEO; danach (eigenes Go, A8) Plan-Vorlage aus Entwurf 0.4 einspielen;
+  Sichtabnahme M1+M2 gesammelt am Ende; dann Go fuer die naechste Etappe.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -74,7 +74,7 @@ M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
 - **Gate:** Tests mit Gegenprobe (unbekannte Gegenpartei bleibt unzugeordnet); Summe aller Saeulen = bisheriger Umsatz;
   CEO-Sichtabnahme auf Rechner und iPhone.
 
-### M2 Plan, Meilensteine und Ampel (mittel, Risiko niedrig) -- umgesetzt 2026-11-14
+### M2 Plan, Meilensteine und Ampel (mittel, Risiko niedrig) -- umgesetzt 2026-11-14, gemergt (Sichtabnahme am Ende)
 - **Stand:** `orchestrator/core/plan.py` (Plan als Ereignis `plan_gespeichert`, Regeln in_folge/schnitt/x_von_y mit Formeln wie
   `2*L_nils`, Ampel, Kooperationen Soll/Ist), `Saeulen.monatsreihe`, Reiter Finanzen -> Plan mit Formular und Verlauf,
   `GET/POST /api/finanzen/plan`, `POST /api/finanzen/plan/kriterium`; 10 Tests inkl. Gegenprobe 5+1 Monate.

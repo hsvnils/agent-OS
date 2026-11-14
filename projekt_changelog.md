@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 16:48] — Claude Code
+- **Was:** `ai/monetarisierung-m2` nach `main` gemergt und gepusht; Roadmap-Status fortgeschrieben. Deploy (NAS-Sync, Neustart
+  `luna-os`/`luna-telegram`) macht der CEO.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy von M2 (2026-11-14).
+- **Betroffen:** `main`, `MONETARISIERUNG_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-11-14 16:35] — Claude Code
 - **Was:** MONETARISIERUNG M2 umgesetzt (Branch `ai/monetarisierung-m2`): `orchestrator/core/plan.py` (Plan, Gates mit
   Kontinuitaetsregeln, Formeln mit E/L/N, Ampel je Saeule, Kooperationen Soll/Ist, Verlauf), `Saeulen.monatsreihe`,
