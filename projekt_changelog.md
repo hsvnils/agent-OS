@@ -17,6 +17,14 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 18:00] — Claude Code
+- **Was:** Produktiver Datenwrite nach CEO-Go (A11): Katalog-Artikel `affiliate` (Affiliate-Partnerschaft), Feld `hinweis`
+  geleert (vorher interne Arbeitsanweisung „Betrag je Abrechnungszeitraum laut Provisionsabrechnung des Partners eintragen“,
+  erschien auf Kundenbelegen). Ueber `POST /api/crm/katalog`; vorher Trockenlauf mit Diff (genau ein Feld), danach Readback
+  (genau ein Feld geaendert, keine Preise). Festgeschriebene Belege bleiben unveraendert.
+- **Warum:** CEO 2026-11-14: „Go fuer Katalogtext aendern“.
+- **Betroffen:** `buchhaltung/katalog.json` (NAS), Ereignis in der Kette (Katalog-Aenderung)
+
 ## [2026-11-14 17:58] — Claude Code
 - **Was:** Readback der ersten echten Teilrechnung RE-2026-0003 (nur lesend ueber die LUNA-OS-API): Art Teilrechnung,
   Summe 800 EUR, PDF-Hinweis im CEO-Wortlaut, Versand per All-Inkl, Payment-Check-Termin, To-do „Rest abrechnen“ zum
