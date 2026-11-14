@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 14:17] — Claude Code
+- **Was:** Roadmap `MONETARISIERUNG_ROADMAP.md` angelegt (M1 Saeulen, M2 Plan/Meilensteine, M3 Reichweiten, M4 Posting-Rhythmus, M5 App-Kennzahlen ueber `luna_reader`, M6 wiederkehrende Erinnerungen, M7 Store-Abrechnungen, M8 Kneipen) und im Roadmap-Verzeichnis eingetragen. Nur Plan, keine Umsetzung. Monetarisierungsplan lokal auf 0.4 (App-Stand eingearbeitet).
+- **Warum:** CEO: alles im LUNA-OS sehen und damit arbeiten; App-Infos aus der App-Sitzung vom 14.11.
+- **Betroffen:** `MONETARISIERUNG_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-11-14 14:15] — Claude Code
 - **Was:** `ai/saeulen-brueckenjob` nach `main` gemergt und gepusht.
 - **Warum:** CEO: „Go fuer Merge, Push und Deploy".
