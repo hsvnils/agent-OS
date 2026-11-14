@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 14:07] — Claude Code
+- **Was:** `ai/berater-cmo-skills` nach `main` gemergt und gepusht (Berater- und CMO-Skills, Marketing Manager als Agent 18, XMind-Organigramm, Generator).
+- **Warum:** CEO: „Go fuer Merge, Push und Deploy".
+- **Betroffen:** `main`
+
 ## [2026-11-14 14:01] — Claude Code
 - **Was:** `scripts/xmind_bauen.py` erzeugt das Organigramm als XMind aus Charten und Skill-Ordnern (inkl. CMO, Netz-Agent, Team) sowie Mindmaps/Zeitstrahlen aus JSON; `governance/organigramm.xmind` neu erzeugt (war Stand 23.06.); Test `test_xmind_bauen.py` mit Gegenprobe (veraltete Datei wird rot). Drei Entscheidungen im Register (CMO, keine Sportwetten-Partner, vertrauliche Plaene in `strategie/`). Monetarisierungsplan 0.2 und Zeitstrahl-XMind liegen nur lokal in `strategie/` (nicht im Git).
 - **Warum:** CEO: XMind mit Zeitstrahl zur Selbststaendigkeit und aktuelles LUNA-Organigramm; Kooperationen je Meilenstein.
