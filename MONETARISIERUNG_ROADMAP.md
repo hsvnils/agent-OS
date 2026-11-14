@@ -4,8 +4,8 @@
 - Stand: 2026-11-14
 - Arbeitsbranch: `ai/plan-monetarisierung`
 - Basiscommit: `a048c2d`
-- Naechster Schritt: CEO-Freigabe fuer Merge und Deploy von M1, danach Sichtabnahme in LUNA-OS (Finanzen -> Saeulen) auf Rechner und
-  iPhone und einmalige Zuordnung der Einnahmen 2026; danach Go fuer M2.
+- Naechster Schritt: M1 auf `main` (5a6cdc1), Deploy durch den CEO; Sichtabnahme macht der CEO gesammelt am Ende. Bis dahin
+  Go fuer M2 abwarten.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -62,7 +62,7 @@ wiederkehrende Erinnerungen, Import von Store-Abrechnungen, lesender Abruf der A
 Reihenfolge: M1 -> M2 sind das Fundament. M3, M4 und M6 sind unabhaengig danach. M5 braucht L4b der App und Daten ab 01.01.2027.
 M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
 
-### M1 Saeulen fuer Einnahmen und Stunden (mittel, Risiko niedrig) -- umgesetzt 2026-11-14
+### M1 Saeulen fuer Einnahmen und Stunden (mittel, Risiko niedrig) -- umgesetzt 2026-11-14, gemergt (Deploy durch CEO, Sichtabnahme gesammelt am Ende)
 - **Stand:** `orchestrator/core/saeulen.py`, Reiter Finanzen -> Saeulen, `GET /api/finanzen/saeulen`,
   `POST /api/finanzen/saeulen/zuordnen|stunden`, Ereignisse `saeule_zugeordnet`/`saeule_stunden`; 8 Tests mit Gegenprobe
   (`orchestrator/tests/test_saeulen.py`). Probe auf einer Lesekopie der Kette: Summe der Saeulen = 3.026,08 EUR = Einnahmen 2026.

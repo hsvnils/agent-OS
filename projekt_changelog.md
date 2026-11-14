@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 16:20] — Claude Code
+- **Was:** `ai/plan-monetarisierung` nach `main` gemergt (5a6cdc1) und gepusht; Roadmap-Status fortgeschrieben.
+  Deploy (NAS-Sync, Neustart `luna-os`/`luna-telegram`) macht der CEO; die Sichtabnahme macht er gesammelt am Ende.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy (2026-11-14).
+- **Betroffen:** `main`, `MONETARISIERUNG_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-11-14 16:05] — Claude Code
 - **Was:** MONETARISIERUNG M1 umgesetzt (Branch `ai/plan-monetarisierung`): neues Modul `orchestrator/core/saeulen.py`
   (Saeule je Beleg, Regel-Vorschlaege, Vererbung Auftrag/Rechnung, Stunden-Schaetzung, Deckungsbeitrag und Euro je Stunde),
