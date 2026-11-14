@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 16:35] — Claude Code
+- **Was:** MONETARISIERUNG M2 umgesetzt (Branch `ai/monetarisierung-m2`): `orchestrator/core/plan.py` (Plan, Gates mit
+  Kontinuitaetsregeln, Formeln mit E/L/N, Ampel je Saeule, Kooperationen Soll/Ist, Verlauf), `Saeulen.monatsreihe`,
+  Endpunkte `/api/finanzen/plan*`, Reiter Finanzen -> Plan (Stufenleiter, naechstes Ziel, Ampel, Kooperationen, Gewinn je Monat,
+  Ziele je Saeule und Gate, Formular), Cache v155/v81, 10 Tests inkl. Gegenprobe; Sichtpruefung Rechner und iPhone 402 px.
+  Dazu vertraulich (nicht im Git): `strategie/offene-punkte-ceo.md` (Sammelliste offener CEO-Punkte) und
+  `strategie/plan-vorlage-0.4.json` (Vorlage zum Einspielen nach Go).
+- **Warum:** CEO-Go fuer M2 und Auftrag „alles Offene notieren, damit nichts verloren geht" (2026-11-14).
+- **Betroffen:** `orchestrator/core/plan.py`, `orchestrator/core/saeulen.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`,
+  `static/style-v2.css`, `static/index-v2.html`, `orchestrator/tests/test_plan.py`, `MONETARISIERUNG_ROADMAP.md`, `ROADMAP.md`,
+  `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-11-14 16:20] — Claude Code
 - **Was:** `ai/plan-monetarisierung` nach `main` gemergt (5a6cdc1) und gepusht; Roadmap-Status fortgeschrieben.
   Deploy (NAS-Sync, Neustart `luna-os`/`luna-telegram`) macht der CEO; die Sichtabnahme macht er gesammelt am Ende.

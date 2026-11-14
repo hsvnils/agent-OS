@@ -1264,3 +1264,20 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
   .v2-sl-beleg { flex-wrap: wrap; } .v2-sl-wahl { max-width: none; width: 100%; } .v2-sl-wisch { display: block; margin-bottom: 4px; }
 
 }
+
+/* Plan und Meilensteine (MONETARISIERUNG M2) */
+.v2-pl-leiter { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 10px; }
+.v2-pl-stufe { flex: 1 0 120px; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--v2-line); background: var(--v2-line-soft); }
+.v2-pl-stufe span { font-size: 13px; } .v2-pl-stufe small { color: var(--v2-muted); font-size: 11.5px; }
+.v2-pl-stufe.erreicht { background: var(--v2-green-soft); border-color: var(--v2-green); }
+.v2-pl-stufe.naechstes { border: 2px solid var(--v2-accent); background: transparent; }
+.v2-pl-krit { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; }
+.v2-pl-gate { border-top: 1px solid var(--v2-line-soft); padding: 8px 0; } .v2-pl-gate summary { cursor: pointer; padding: 4px 0; }
+.v2-pl-weg th, .v2-pl-weg td { white-space: nowrap; }
+.v2-pl-person { display: flex; flex-direction: column; gap: 2px; padding: 6px 0; border-bottom: 1px solid var(--v2-line-soft); } .v2-pl-person small { color: var(--v2-muted); }
+.v2-an-zeile.v2-pl-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.v2-an-zeile.v2-pl-regel { grid-template-columns: 1.4fr 1fr .6fr .6fr 1.4fr auto; padding: 6px 0 10px; border-bottom: 1px dashed var(--v2-line); }
+.v2-pl-ziele { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.v2-pl-form textarea { width: 100%; }
+@media (max-width: 820px) { .v2-pl-ziele { grid-template-columns: repeat(2, minmax(0, 1fr)); } .v2-an-zeile.v2-pl-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .v2-an-zeile.v2-pl-regel { grid-template-columns: 1fr 1fr; } .v2-an-zeile.v2-pl-regel button { justify-self: start; } }

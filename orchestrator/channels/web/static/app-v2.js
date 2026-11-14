@@ -3810,9 +3810,9 @@ async function renderFinanzen(meldung) {
   FIN_JAHR = u.jahr;
   const jahrWahl = `<select id="fin-jahr" class="v2-inp" style="width:auto">${u.jahre.map(j => `<option ${j === u.jahr ? "selected" : ""}>${j}</option>`).join("")}</select>`;
   const zeitWahl = sub === "uebersicht" ? `<select id="fin-zeit" class="v2-inp" style="width:auto"><option value="jahr">Ganzes Jahr</option>${[1, 2, 3, 4].map(q => `<option value="q${q}">Q${q}</option>`).join("")}${FIN_MONATE.map((m, i) => `<option value="m${String(i + 1).padStart(2, "0")}">${m}</option>`).join("")}</select>` : "";
-  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : sub === "abschluss" ? await finAbschluss(u.jahr) : sub === "abos" ? await finAbos() : sub === "saeulen" ? await finSaeulen(u.jahr) : await finUebersicht(u);
+  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : sub === "abschluss" ? await finAbschluss(u.jahr) : sub === "abos" ? await finAbos() : sub === "saeulen" ? await finSaeulen(u.jahr) : sub === "plan" ? await finPlan() : await finUebersicht(u);
   $("#v2-app").innerHTML = secHead("Finanzen " + (sub === "uebersicht" ? finZeitName(u.zeitraum, u.jahr) : u.jahr), `${jahrWahl}${zeitWahl}<button class="v2-btn" data-act="eb-neu" data-val="ausgabe">− Ausgabe ohne Beleg</button><button class="v2-btn pri" data-act="eb-neu" data-val="einnahme">+ Einnahme ohne Rechnung</button>`)
-    + tabs("finanzen", [["uebersicht", "Übersicht"], ["saeulen", "Säulen"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"], ["abos", "Abos"], ["abschluss", "Jahresabschluss"]])
+    + tabs("finanzen", [["uebersicht", "Übersicht"], ["saeulen", "Säulen"], ["plan", "Plan"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"], ["abos", "Abos"], ["abschluss", "Jahresabschluss"]])
     + (meldung ? `<div class="v2-msg ok" style="margin-bottom:12px">${esc(meldung)}</div>` : "") + `<div class="v2-grid">${body}</div>`;
   $("#fin-jahr").addEventListener("change", e => { FIN_JAHR = Number(e.target.value); renderFinanzen(); });
   const zw = $("#fin-zeit"); if (zw) { zw.value = u.zeitraum; zw.addEventListener("change", e => { FIN_ZEIT = e.target.value; renderFinanzen(); }); }
@@ -3991,6 +3991,125 @@ async function finSaeulen(jahr) {
     ${tile("Einnahmen je Monat und Säule", verlauf, "w12 v2-sl")}
     ${tile("Belege zuordnen", zuordnen, "w8 v2-sl")}
     ${tile("Stunden ohne Auftrag", stunden, "w4 v2-sl")}`;
+}
+/* ---- Plan, Meilensteine und Ampel (MONETARISIERUNG M2) ---- */
+let PL = null;
+const PL_AMPEL = { gruen: ["ok", "grün"], gelb: ["wartet", "gelb"], rot: ["err", "rot"] };
+const plMonat = (ym) => ym ? `${FIN_MONATE[Number(ym.slice(5, 7)) - 1].slice(0, 3)} ${ym.slice(0, 4)}` : "";
+function plSchwelle(r) { return r.geld ? cent2eur(r.schwelle) : String(r.schwelle); }
+function plIst(r) {
+  const a = r.regel.art, n = r.regel.monate;
+  if (a === "in_folge") return `${r.ist} von ${n} Monaten in Folge`;
+  if (a === "x_von_y") return `${r.ist} von ${n} Monaten`;
+  return `Schnitt ${r.geld ? cent2eur(r.ist) : r.ist}`;
+}
+async function finPlan() {
+  const d = PL = await jget("/api/finanzen/plan");
+  if (!d) return tile("Plan", emptyRow("Plan nicht erreichbar."), "w12 v2-sl");
+  const knopf = `<button class="v2-btn pri sm" data-act="plan-bearbeiten">✎ Plan bearbeiten</button>`;
+  if (!d.hat_plan) return tile("Plan und Meilensteine", `<div class="v2-msg">Noch kein Plan hinterlegt. Hier tragt ihr Netto-Bedarf, Ersatzbedarf und Netto-Lücke je Person, die Annahmen und die Meilensteine (Gates) mit ihren Regeln ein. LUNA rechnet dann jeden Monat nach, wo ihr steht.</div><div class="v2-card-actions" style="margin-top:10px">${knopf}</div>`, "w12 v2-sl");
+  const g0 = d.gates.find(g => g.naechstes);
+  // Gate-Leiter
+  const leiter = `<div class="v2-pl-leiter">${d.gates.map(g => `<div class="v2-pl-stufe ${g.erreicht ? "erreicht" : g.naechstes ? "naechstes" : ""}"><b>${esc(g.code)}</b><span>${esc(g.name)}</span><small>${g.erreicht ? "✓ erreicht" : g.naechstes ? "nächstes Ziel" : g.fruehestens ? "frühestens " + esc(plMonat(g.fruehestens)) : "offen"}</small></div>`).join("")}</div>
+    <small class="v2-sub">Stand: abgeschlossene Monate bis ${esc(plMonat(d.bis_monat))}. ${esc(d.hinweis)}</small>`;
+  // Nächstes Gate
+  const regelZeile = (r) => `<div class="v2-list-row"><span class="v2-badge ${r.erfuellt ? "ok" : "neutral"}">${r.erfuellt ? "✓" : "offen"}</span><div class="grow"><b>${esc(r.text.replace("{s}", plSchwelle(r)))}</b><small>${esc(plIst(r))}${r.voll ? "" : " · noch nicht genug abgeschlossene Monate"}</small></div></div>`;
+  const kritZeile = (g, k, i) => `<label class="v2-modlbl v2-pl-krit"><input type="checkbox" data-act="plan-krit" data-id="${esc(g.code)}" data-val="${i}" ${k.erledigt ? "checked" : ""}> ${esc(k.text)}</label>`;
+  const gateDetail = (g) => `${(g.regeln_stand || []).map(regelZeile).join("") || ""}${g.kriterien.length ? `<h3 class="v2-h3">Kriterien</h3>${g.kriterien.map((k, i) => kritZeile(g, k, i)).join("")}` : ""}
+    ${g.koop_noetig || g.koop_anzahl ? `<div class="v2-kv" style="margin-top:8px"><span>Kooperationen je Monat</span><b>${g.koop_anzahl || "–"} geplant${g.koop_noetig ? ` · ${g.koop_noetig} nötig für das Säulenziel` : ""}</b></div>` : ""}
+    ${g.notiz ? `<small class="v2-sub">${esc(g.notiz)}</small>` : ""}`;
+  const naechstes = g0 ? tile(`Nächstes Ziel: ${g0.code} · ${g0.name}`, gateDetail(g0) + (g0.fruehestens ? `<small class="v2-sub">Frühestens ${esc(plMonat(g0.fruehestens))}. Erreicht, wenn alle Regeln und Kriterien erfüllt sind.</small>` : ""), "w8 v2-sl")
+    : tile("Alle Gates erreicht", emptyRow("Glückwunsch – alle Meilensteine sind erfüllt."), "w8 v2-sl");
+  // Ampel je Säule
+  const amp = d.ampeln.length ? `<table class="v2-table"><thead><tr><th>Säule</th><th style="text-align:right">Ist</th><th style="text-align:right">Ziel</th><th></th></tr></thead><tbody>${d.ampeln.map(a => `<tr><td><i class="v2-sl-punkt" style="background:${SL_FARBE[a.gruppe] || SL_FARBE.ohne}"></i>${esc(a.name)}</td><td style="text-align:right" title="3-Monats-Schnitt ${esc(cent2eur(a.schnitt3_cent))}">${esc(cent2eur(a.letzter_cent))}</td><td style="text-align:right">${esc(cent2eur(a.ziel_cent))}</td><td style="text-align:right"><span class="v2-badge ${PL_AMPEL[a.ampel][0]}">${PL_AMPEL[a.ampel][1]} ${a.quote}%</span></td></tr>`).join("")}</tbody></table>
+    <small class="v2-sub">Deckungsbeitrag im letzten abgeschlossenen Monat (${esc(plMonat(d.bis_monat))}) gegen das Säulenziel von ${esc(g0 ? g0.code : "–")}. Grün ab 95 %, gelb ab 80 %, rot darunter oder zwei Monate gelb in Folge.</small>` : emptyRow("Für das nächste Gate sind keine Säulenziele hinterlegt.");
+  // Kooperationen Soll/Ist
+  const k = d.koop, kmx = Math.max(1, k.soll_anzahl, ...k.monate.map(m => m.anzahl));
+  const koop = `<div class="v2-kv"><span>Soll je Monat (${esc(g0 ? g0.code : "–")})</span><b>${k.soll_anzahl} Kooperation(en) · ${esc(cent2eur(k.soll_cent))}</b></div>
+    <div class="v2-fin-monate v2-pl-koop">${k.monate.map(m => `<div class="v2-fin-monat" title="${esc(plMonat(m.monat))}: ${m.anzahl} Kooperation(en), ${esc(cent2eur(m.cent))}"><div class="v2-fin-saeulen"><i style="height:${Math.round(m.anzahl / kmx * 100)}%;background:${m.anzahl >= k.soll_anzahl && k.soll_anzahl ? "var(--v2-green)" : SL_FARBE.S1};width:60%"></i></div><small>${esc(plMonat(m.monat).slice(0, 3))}</small><small><b>${m.anzahl}</b></small></div>`).join("")}</div>
+    <small class="v2-sub">Anzahl Kooperationen (Säule S1) je Monat; grün = Soll erreicht. Euro im Tooltip.</small>`;
+  // Gewinn je Monat
+  const gmx = Math.max(1, ...d.monate.map(m => Math.abs(m.gewinn_cent)));
+  const gewinn = `<div class="v2-fin-monate">${d.monate.map(m => `<div class="v2-fin-monat" title="${esc(plMonat(m.monat))}: Gewinn ${esc(cent2eur(m.gewinn_cent))} · Einnahmen ${esc(cent2eur(m.einnahmen_cent))}"><div class="v2-fin-saeulen"><i style="height:${Math.max(1, Math.round(Math.abs(m.gewinn_cent) / gmx * 100))}%;background:${m.gewinn_cent >= 0 ? "var(--v2-green)" : "var(--v2-red)"};width:60%"></i></div><small>${esc(plMonat(m.monat).slice(0, 3))}</small></div>`).join("")}</div>
+    <small class="v2-sub">Gewinn wie in den Finanzen (Einnahmen minus absetzbare Ausgaben); rot = Verlust.</small>`;
+  // Weg je Säule und Gate
+  const codes = d.auswahl.ziel_codes.filter(c => d.gates.some(g => g.ziele[c]));
+  const weg = `<small class="v2-sub v2-sl-wisch">← seitlich wischen: weitere Gates</small><div class="v2-tab-scroll"><table class="v2-table v2-pl-weg"><thead><tr><th>Säule</th>${d.gates.map(g => `<th style="text-align:right">${esc(g.code)}</th>`).join("")}</tr></thead><tbody>
+    ${codes.map(c => `<tr><td><i class="v2-sl-punkt" style="background:${SL_FARBE[c.slice(0, 2)] || SL_FARBE.ohne}"></i>${esc(c + " · " + d.auswahl.saeulen[c])}</td>${d.gates.map(g => `<td style="text-align:right">${g.ziele[c] ? esc(cent2eur(g.ziele[c])) : "–"}</td>`).join("")}</tr>`).join("")}
+    <tr class="v2-sl-ohne"><td>minus Fixkosten</td>${d.gates.map(() => `<td style="text-align:right">−${esc(cent2eur(d.plan.annahmen.fixkosten_cent))}</td>`).join("")}</tr></tbody>
+    <tfoot><tr><td><b>Gewinn-Ziel je Monat</b></td>${d.gates.map(g => `<td style="text-align:right"><b>${g.ziel_summe_cent ? esc(cent2eur(g.ziel_gewinn_cent)) : "–"}</b></td>`).join("")}</tr>
+    <tr><td>Kooperationen je Monat</td>${d.gates.map(g => `<td style="text-align:right">${g.koop_anzahl || g.koop_noetig || "–"}${g.koop_noetig && g.koop_anzahl !== g.koop_noetig ? ` <small>(nötig ${g.koop_noetig})</small>` : ""}</td>`).join("")}</tr>
+    <tr><td>Stunden für Kooperationen</td>${d.gates.map(g => `<td style="text-align:right">${g.stunden_koop ? esc(String(g.stunden_koop).replace(".", ",")) + " h" : "–"}</td>`).join("")}</tr>
+    <tr><td>frühestens</td>${d.gates.map(g => `<td style="text-align:right">${esc(plMonat(g.fruehestens) || "–")}</td>`).join("")}</tr></tfoot></table></div>
+    <small class="v2-sub">Ziele sind Deckungsbeitrag je Monat und Säule. „Nötig“ = Säulenziel Kooperationen geteilt durch Ø ${esc(cent2eur(d.plan.annahmen.koop_schnitt_cent))} je Kooperation.</small>`;
+  const andere = d.gates.filter(g => !g.naechstes).map(g => `<details class="v2-pl-gate"><summary><b>${esc(g.code)} · ${esc(g.name)}</b> ${g.erreicht ? `<span class="v2-badge ok">erreicht</span>` : ""}</summary>${gateDetail(g)}</details>`).join("");
+  const verlauf = d.verlauf.map(v => `<div class="v2-list-row"><div class="grow"><b>${esc(datumKurz(v.ts.slice(0, 10)))} ${esc(v.ts.slice(11, 16))}</b><small>${esc(v.notiz || "Plan geändert")}${v.von ? " · " + esc(v.von) : ""}</small></div></div>`).join("");
+  const pers = Object.keys(d.auswahl.personen).map(p => { const w = d.plan.personen[p] || {}; return `<div class="v2-pl-person"><b>${esc(d.auswahl.personen[p])}</b><small>Netto-Bedarf ${esc(cent2eur(w.netto_cent))} · E ${esc(cent2eur(w.E_cent))} · L ${esc(cent2eur(w.L_cent))}</small></div>`; }).join("");
+  return `${tile("Weg zur Selbstständigkeit", leiter, "w12 v2-sl", knopf)}
+    ${naechstes}
+    ${tile("Ampel je Säule", amp, "w4 v2-sl")}
+    ${tile("Kooperationen Soll/Ist", koop, "w6 v2-sl")}
+    ${tile("Gewinn je Monat", gewinn, "w6 v2-sl")}
+    ${tile("Ziele je Säule und Gate", weg, "w12 v2-sl")}
+    ${tile("Weitere Gates", andere || emptyRow("Keine weiteren Gates."), "w8 v2-sl")}
+    ${tile("Personen und Annahmen", pers + `<div class="v2-kv"><span>Ø je Kooperation</span><b>${esc(cent2eur(d.plan.annahmen.koop_schnitt_cent))}</b></div><div class="v2-kv"><span>Fixkosten je Monat</span><b>${esc(cent2eur(d.plan.annahmen.fixkosten_cent))}</b></div><div class="v2-kv"><span>Stunden je Kooperation</span><b>${esc(String(d.plan.annahmen.stunden_je_koop).replace(".", ","))}</b></div><small class="v2-sub">E = Ersatzbedarf (Gewinn je Monat, der ein Vollzeit-Netto ersetzt), L = Netto-Lücke durch den Brückenjob. In Regeln als E_nils, L_celine usw. nutzbar.</small>`, "w4 v2-sl")}
+    ${tile("Änderungsverlauf", verlauf || emptyRow("Noch keine Änderung."), "w12 v2-sl")}`;
+}
+// Plan-Formular: alles als Text/Euro, der Server prüft und rechnet in Cent
+function plEditor(plan) {
+  const a = PL.auswahl, eurF = (c) => c ? cent2feld(c) : "";
+  const inp = (attr, wert, ph = "", mode = "decimal") => `<input class="v2-inp" ${attr} value="${esc(wert)}" placeholder="${esc(ph)}" inputmode="${mode}">`;
+  const pers = Object.keys(a.personen).map(p => { const w = plan.personen[p] || {}; return `<div class="v2-an-zeile v2-pl-4"><div class="v2-feld"><small>Person</small><b>${esc(a.personen[p])}</b></div>
+      <label class="v2-feld"><small>Netto-Bedarf je Monat (€)</small>${inp(`data-pp="${p}" data-k="netto_cent"`, eurF(w.netto_cent))}</label>
+      <label class="v2-feld"><small>E – Ersatzbedarf Gewinn (€)</small>${inp(`data-pp="${p}" data-k="E_cent"`, eurF(w.E_cent))}</label>
+      <label class="v2-feld"><small>L – Netto-Lücke Brückenjob (€)</small>${inp(`data-pp="${p}" data-k="L_cent"`, eurF(w.L_cent))}</label></div>`; }).join("");
+  const an = plan.annahmen;
+  const regel = (gi, r, ri) => `<div class="v2-an-zeile v2-pl-regel" data-regel="${gi}">
+      <label class="v2-feld"><small>Was</small><select class="v2-inp" data-r="was">${Object.entries(a.was).map(([k, l]) => `<option value="${esc(k)}" ${k === r.was ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+      <label class="v2-feld"><small>Art</small><select class="v2-inp" data-r="art">${Object.entries(a.arten).map(([k, l]) => `<option value="${esc(k)}" ${k === r.art ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+      <label class="v2-feld"><small>Monate</small>${inp('data-r="monate"', r.monate || 6, "", "numeric")}</label>
+      <label class="v2-feld"><small>x (bei x von y)</small>${inp('data-r="x"', r.x || "", "", "numeric")}</label>
+      <label class="v2-feld"><small>Schwelle (€ oder Formel)</small>${inp('data-r="schwelle"', r.schwelle || "", "z. B. 1000 oder 2*L_nils", "text")}</label>
+      <button class="v2-btn sm" data-act="plan-regel-weg" data-id="${gi}" data-val="${ri}" aria-label="Regel entfernen">✕</button></div>`;
+  const gate = (g, gi) => `<details class="v2-pl-gate" data-gate="${gi}" ${gi === plan._offen ? "open" : ""}><summary><b>${esc(g.code || "neu")} · ${esc(g.name || "")}</b></summary>
+      <div class="v2-an-zeile v2-pl-4"><label class="v2-feld"><small>Kürzel *</small>${inp('data-g="code"', g.code || "", "G1", "text")}</label>
+        <label class="v2-feld"><small>Name *</small>${inp('data-g="name"', g.name || "", "", "text")}</label>
+        <label class="v2-feld"><small>Frühestens (JJJJ-MM)</small>${inp('data-g="fruehestens"', g.fruehestens || "", "2027-06", "text")}</label>
+        <label class="v2-feld"><small>Kooperationen je Monat</small>${inp('data-g="koop_anzahl"', g.koop_anzahl || "", "", "numeric")}</label></div>
+      <h3 class="v2-h3">Säulenziele (Deckungsbeitrag je Monat, €)</h3>
+      <div class="v2-pl-ziele">${a.ziel_codes.map(c => `<label class="v2-feld"><small>${esc(c + " · " + a.saeulen[c])}</small>${inp(`data-z="${c}"`, eurF((g.ziele || {})[c]))}</label>`).join("")}</div>
+      <h3 class="v2-h3">Regeln mit Kontinuität</h3>${(g.regeln || []).map((r, ri) => regel(gi, r, ri)).join("")}
+      <div class="v2-card-actions"><button class="v2-btn sm" data-act="plan-regel-neu" data-id="${gi}">+ Regel</button></div>
+      <label class="v2-feld" style="margin-top:10px"><small>Kriterien zum Abhaken (eine Zeile je Kriterium)</small><textarea class="v2-inp" rows="3" data-g="kriterien">${esc((g.kriterien || []).map(k => k.text).join("\n"))}</textarea></label>
+      <label class="v2-feld"><small>Notiz</small>${inp('data-g="notiz"', g.notiz || "", "", "text")}</label>
+      <div class="v2-card-actions"><button class="v2-btn sm" data-act="plan-gate-weg" data-id="${gi}">Gate entfernen</button></div></details>`;
+  openModal("Plan bearbeiten", `<div class="v2-form v2-pl-form" id="pl-form">
+    <h3 class="v2-h3">Personen</h3>${pers}
+    <h3 class="v2-h3">Annahmen</h3><div class="v2-an-zeile"><label class="v2-feld"><small>Ø je Kooperation (€)</small>${inp('data-a="koop_schnitt_cent"', eurF(an.koop_schnitt_cent))}</label>
+      <label class="v2-feld"><small>Fixkosten je Monat (€)</small>${inp('data-a="fixkosten_cent"', eurF(an.fixkosten_cent))}</label>
+      <label class="v2-feld"><small>Stunden je Kooperation</small>${inp('data-a="stunden_je_koop"', an.stunden_je_koop ? String(an.stunden_je_koop).replace(".", ",") : "")}</label></div>
+    <h3 class="v2-h3">Gates (Meilensteine, Reihenfolge = Leiter)</h3>${(plan.gates || []).map(gate).join("")}
+    <div class="v2-card-actions"><button class="v2-btn sm" data-act="plan-gate-neu">+ Gate</button></div>
+    <small class="v2-sub">Formeln in Schwellen: Zahlen in €, dazu E_nils, L_nils, N_nils, E_celine, L_celine, N_celine, FIX, KOOP, verbunden mit + und *, z. B. „E_nils+2*L_celine“. Bei „Kooperationen“ ist die Schwelle eine Anzahl.</small>
+    <label class="v2-feld"><small>Was wurde geändert? (für den Verlauf)</small><input class="v2-inp" id="pl-notiz" placeholder="z. B. Netto-Lücke Nils angepasst"></label>
+    <div id="pl-msg"></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="plan-speichern">Speichern</button></div></div>`, true);
+}
+function plSammeln() {
+  const f = $("#pl-form"), v = (el) => el ? el.value.trim() : "";
+  const plan = { personen: {}, annahmen: {}, gates: [] };
+  f.querySelectorAll("[data-pp]").forEach(el => { (plan.personen[el.dataset.pp] = plan.personen[el.dataset.pp] || {})[el.dataset.k] = v(el); });
+  f.querySelectorAll("[data-a]").forEach(el => { plan.annahmen[el.dataset.a] = v(el); });
+  const alt = (PL.plan.gates || []);
+  f.querySelectorAll("[data-gate]").forEach(box => {
+    const g = { ziele: {}, regeln: [] }; box.querySelectorAll("[data-g]").forEach(el => { g[el.dataset.g] = v(el); });
+    box.querySelectorAll("[data-z]").forEach(el => { if (v(el)) g.ziele[el.dataset.z] = v(el); });
+    box.querySelectorAll("[data-regel]").forEach(z => { const r = {}; z.querySelectorAll("[data-r]").forEach(el => { r[el.dataset.r] = v(el); }); g.regeln.push(r); });
+    const vorher = alt.find(x => x.code === g.code) || { kriterien: [] };
+    g.kriterien = (g.kriterien || "").split("\n").map(t => t.trim()).filter(Boolean).map(t => ({ text: t, erledigt: !!(vorher.kriterien.find(k => k.text === t) || {}).erledigt }));
+    plan.gates.push(g);
+  });
+  return plan;
 }
 async function slZuordnen(liste, msg) {
   const r = await jpost("/api/finanzen/saeulen/zuordnen", { zuordnungen: liste });
@@ -5180,6 +5299,18 @@ async function handleAct(act, el) {
       const r = await jpost("/api/finanzen/saeulen/stunden", { jahr: FIN_JAHR, monat, person, saeule, stunden: act === "sl-stunden" ? $("#sl-std").value : "0" });
       if (!r || !r.ok) { const m = $("#sl-std-msg"); if (m) m.innerHTML = `<div class="v2-msg err">${esc((r && r.hinweis) || "Keine Verbindung zum Server.")}</div>`; return; }
       return renderFinanzen(act === "sl-stunden" ? "Stunden gespeichert." : "Schätzung gelöscht."); }
+    case "plan-bearbeiten": { if (!PL) PL = await jget("/api/finanzen/plan"); return plEditor(JSON.parse(JSON.stringify(PL.plan))); }
+    case "plan-gate-neu": { const p = plSammeln(); p.gates.push({ code: "G" + p.gates.length, name: "", ziele: {}, regeln: [], kriterien: [] }); p._offen = p.gates.length - 1; return plEditor(p); }
+    case "plan-gate-weg": { if (!confirm("Dieses Gate aus dem Formular entfernen? (Erst „Speichern“ übernimmt es.)")) return; const p = plSammeln(); p.gates.splice(Number(id), 1); return plEditor(p); }
+    case "plan-regel-neu": { const p = plSammeln(); p.gates[Number(id)].regeln.push({ was: "gewinn", art: "in_folge", monate: 6, schwelle: "" }); p._offen = Number(id); return plEditor(p); }
+    case "plan-regel-weg": { const p = plSammeln(); p.gates[Number(id)].regeln.splice(Number(val), 1); p._offen = Number(id); return plEditor(p); }
+    case "plan-speichern": {
+      el.disabled = true; const r = await jpost("/api/finanzen/plan", { plan: plSammeln(), notiz: ($("#pl-notiz") || {}).value || "" }); el.disabled = false;
+      if (!r || !r.ok) { const m = $("#pl-msg"); if (m) m.innerHTML = `<div class="v2-msg err">${esc((r && r.hinweis) || "Keine Verbindung zum Server.")}</div>`; return; }
+      closeModal(); return renderFinanzen(r.geaendert ? "Plan gespeichert." : "Keine Änderung."); }
+    case "plan-krit": {
+      const r = await jpost("/api/finanzen/plan/kriterium", { gate: id, index: Number(val), erledigt: el.checked });
+      if (!r || !r.ok) { el.checked = !el.checked; return alert((r && r.hinweis) || "Fehler."); } return renderFinanzen("Kriterium gespeichert."); }
     case "fin-drill": return finDrill(val);
     case "fin-vv": {
       const betrag = prompt(`Verbleibender Verlust aus ${val} in € (z. B. 2.622,59):`, ""); if (betrag === null) return;

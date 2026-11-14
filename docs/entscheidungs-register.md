@@ -22,6 +22,7 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Plan und Gates in LUNA-OS (M2):** Plan als Ereignis in der Kette mit Verlauf; Zahlen nur in LUNA-OS (nicht im oeffentlichen Code); Kontinuitaetsregeln in_folge/schnitt/x_von_y nur ueber abgeschlossene Monate; Schwellen als Formel aus E/L/N je Person; Anteils-Kriterien vorerst zum Abhaken | 2026-11-14 | BESCHLOSSEN | `orchestrator/core/plan.py`, `MONETARISIERUNG_ROADMAP.md` M2 |
 | **Erloes-Saeulen in LUNA-OS (M1):** Saeule je Beleg als eigenes Ereignis in der Hash-Kette (additiv, EUeR unveraendert), Regel-Vorschlag nur mit Bestaetigung durch Menschen, mehrdeutig = kein Vorschlag, Supabase-Kosten ohne Vorschlag (App oder LUNA), Stunden ohne Auftrag als Monats-Schaetzung je Person | 2026-11-14 | BESCHLOSSEN | `orchestrator/core/saeulen.py`, `MONETARISIERUNG_ROADMAP.md` M1 |
 | **Marketing Manager (CMO) als Agent 18:** eigener Agent statt Aufteilung auf CRO/CBO/CCO; CMO liefert Zielgruppe, Kanaele, Partner-Zielprofil, Media-Kit, Launches, CRO bleibt fuer Preise und Angebote | 2026-11-14 | BESCHLOSSEN (CEO) | `agents/18_cmo.md`, `skills/cmo/` |
 | **Partner-Regel:** keine Sportwetten-Partner; Alkohol nur nach Markenpruefung im Einzelfall | 2026-11-14 | BESCHLOSSEN (CEO) | `skills/cmo/partner-zielprofil`, Monetarisierungsplan |
@@ -252,6 +253,16 @@
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-11-14 — Plan, Gates und Ampel in LUNA-OS (MONETARISIERUNG M2)
+
+**Was:** Der Plan (Netto-Bedarf, Ersatzbedarf E, Netto-Luecke L je Person; Annahmen; Gates mit Saeulenzielen, Regeln und
+Kriterien) liegt als Ereignis `plan_gespeichert` in der Kette, jede Fassung bleibt als Verlauf. **Warum so:** Das Repo ist
+oeffentlich, deshalb stehen keine Planzahlen im Code; die Vorlage aus Entwurf 0.4 liegt vertraulich in `strategie/` und wird
+nur nach CEO-Go eingespielt. Regeln zaehlen nur abgeschlossene Monate (ein halber Monat wuerde Gates verfaelschen); der
+Schnitt wird ungerundet verglichen. Schwellen duerfen Formeln wie `2*L_nils` sein, damit eine geaenderte Netto-Luecke alle
+Gates mitzieht. **Zurueckgestellt:** automatische Pruefung der Anteils-Kriterien (groesste Saeule, Plattform-Anteil,
+wiederkehrend) und Fixkosten je Gate -- vorerst Kriterien zum Abhaken bzw. ein Fixkosten-Wert.
 
 ### 2026-11-14 — Erloes-Saeulen in LUNA-OS (MONETARISIERUNG M1)
 
