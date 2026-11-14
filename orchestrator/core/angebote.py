@@ -107,6 +107,11 @@ def _positionen(roh) -> list[dict]:
                 pos[k] = str(p[k]).strip()[:n]
         if p.get("gruppe_farbe") == "rot":
             pos["gruppe_farbe"] = "rot"
+        if str(p.get("spaeter_am") or "").strip():                 # TEILRECHNUNG: Position wird spaeter gesondert abgerechnet
+            try:
+                pos["spaeter_am"] = date.fromisoformat(str(p["spaeter_am"]).strip()[:10]).isoformat()
+            except ValueError:
+                raise ValueError(f"Position {i}: Datum „später abrechnen am“ ungueltig.") from None
         if p.get("reichweite"):                                    # TKP_ABRECHNUNG T2: Betrag aus erzielten Kontakten
             for k in ("kontakte", "tkp_cent", "produktion_cent", "tkp_min_cent", "tkp_max_cent", "omr", "preis_vorher_cent",
                       "preis_grund"):
@@ -178,9 +183,19 @@ def provision_text(pr: dict) -> str:
     return satz + (f" · abgerechnet: {menge_text(pr['prozent'])} % von {eur(pr['basis_cent'])} Umsatz" if "basis_cent" in pr else "")
 
 
+def spaeter_hinweis(p: dict) -> str:
+    """TEILRECHNUNG (CEO-Wortlaut 2026-11-14): „Wird am 31.12.2026 gesondert abgerechnet (5,00 € je verkauftem Artikel).“"""
+    pr = p.get("provision")
+    satz = provision_text({k: v for k, v in pr.items() if k not in ("stueck", "basis_cent")}) if pr else ""
+    return f"Wird am {datum_de(p['spaeter_am'])} gesondert abgerechnet" + (f" ({satz})" if satz else "") + "."
+
+
 def pdf_posten(p: dict) -> dict:
     """Zusatzfelder fuer die PDF-Zeile einer Provisionsposition (Betragstext statt 0,00 EUR, Modell im Detail)."""
     pr = p.get("provision")
+    if p.get("spaeter_am"):                                     # TEILRECHNUNG: ohne Betrag, mit Termin
+        return {"detail": " · ".join(x for x in (p.get("detail"), spaeter_hinweis(p)) if x), "betrag_text": "folgt",
+                "einzel_text": "folgt", "gesamt_text": "folgt", "menge": None}
     if (p.get("reichweite") or {}).get("offen"):                # TKP_ABRECHNUNG: noch nicht gemessen
         return {"betrag_text": "nach Messung", "einzel_text": "nach Messung", "gesamt_text": "offen", "menge": None}
     if not pr:
@@ -196,6 +211,8 @@ def pdf_posten(p: dict) -> dict:
 def pdf_posten_standard(p: dict) -> dict:
     """Wie `pdf_posten`, fuer das schlichte Layout (Modell in der Beschreibung, Texte in den Betragsspalten)."""
     pr = p.get("provision")
+    if p.get("spaeter_am"):                                     # TEILRECHNUNG
+        return {"beschreibung": f"{p['beschreibung']} – {spaeter_hinweis(p)}", "einzel_text": "folgt", "gesamt_text": "folgt"}
     if p.get("reichweite"):                                     # TKP_ABRECHNUNG: Rechenweg in die Beschreibung
         extra = {"beschreibung": f"{p['beschreibung']} – {p.get('detail', '')}"}
         if p["reichweite"].get("offen"):
@@ -347,6 +364,8 @@ def summen(positionen: list[dict], zuschlaege: list[dict], rabatt_prozent: float
     """Summe Formate + Zuschlaege (Prozent auf die Summe aller Formate, wie im Generator) - Paketrabatt, in Cent."""
     from decimal import ROUND_HALF_UP, Decimal
     rund = lambda d: int(d.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    spaeter = [p for p in positionen if p.get("spaeter_am")]      # TEILRECHNUNG: zaehlt erst in der Folgerechnung
+    positionen = [p for p in positionen if not p.get("spaeter_am")]
     formate = sum(positions_summe(p["menge"], p["einzelpreis_cent"]) for p in positionen if not p.get("provision"))
     zu = [(z["name"], z["prozent"], rund(Decimal(formate) * Decimal(str(z["prozent"])) / 100)) for z in zuschlaege]
     zwischen = formate + sum(c for _, _, c in zu)
@@ -357,6 +376,8 @@ def summen(positionen: list[dict], zuschlaege: list[dict], rabatt_prozent: float
         out["provision_cent"] = sum(positions_summe(p["menge"], p["einzelpreis_cent"]) for p in prov)
         out["provision_offen"] = any(not provision_abgerechnet(p) for p in prov)
         out["gesamt_cent"] += out["provision_cent"]
+    if spaeter:
+        out["spaeter"] = [{"beschreibung": p["beschreibung"], "am": p["spaeter_am"]} for p in spaeter]
     return out
 
 

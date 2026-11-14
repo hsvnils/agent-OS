@@ -22,6 +22,7 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Teilrechnung statt Rechnung splitten:** Position mit „spaeter abrechnen am“, Teilrechnung jetzt, Folgerechnung genau einmal zur Teilrechnung; verworfen: Position loeschen + neuer Auftrag (Bezug geht verloren), Vorkasse-Modell (rechnet Abschlaege, nicht Positionen) | 2026-11-14 | BESCHLOSSEN (CEO) | `TEILRECHNUNG_ROADMAP.md`, `orchestrator/core/rechnungen.py` |
 | **Plan und Gates in LUNA-OS (M2):** Plan als Ereignis in der Kette mit Verlauf; Zahlen nur in LUNA-OS (nicht im oeffentlichen Code); Kontinuitaetsregeln in_folge/schnitt/x_von_y nur ueber abgeschlossene Monate; Schwellen als Formel aus E/L/N je Person; Anteils-Kriterien vorerst zum Abhaken | 2026-11-14 | BESCHLOSSEN | `orchestrator/core/plan.py`, `MONETARISIERUNG_ROADMAP.md` M2 |
 | **Erloes-Saeulen in LUNA-OS (M1):** Saeule je Beleg als eigenes Ereignis in der Hash-Kette (additiv, EUeR unveraendert), Regel-Vorschlag nur mit Bestaetigung durch Menschen, mehrdeutig = kein Vorschlag, Supabase-Kosten ohne Vorschlag (App oder LUNA), Stunden ohne Auftrag als Monats-Schaetzung je Person | 2026-11-14 | BESCHLOSSEN | `orchestrator/core/saeulen.py`, `MONETARISIERUNG_ROADMAP.md` M1 |
 | **Marketing Manager (CMO) als Agent 18:** eigener Agent statt Aufteilung auf CRO/CBO/CCO; CMO liefert Zielgruppe, Kanaele, Partner-Zielprofil, Media-Kit, Launches, CRO bleibt fuer Preise und Angebote | 2026-11-14 | BESCHLOSSEN (CEO) | `agents/18_cmo.md`, `skills/cmo/` |
@@ -253,6 +254,16 @@
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-11-14 — Teilrechnung mit spaeter abgerechneter Position (CEO)
+
+**Was:** Eine Rechnungsposition kann „spaeter abrechnen am“ bekommen; die Rechnung heisst dann Teilrechnung, die Position
+steht ohne Betrag mit dem Hinweis „Wird am … gesondert abgerechnet (…).“ auf dem PDF (Wortlaut CEO). Den Rest rechnet genau
+eine Folgerechnung zur Teilrechnung ab. **Warum so:** Jede Rechnung bleibt vollstaendig und eigenstaendig, der Kunde kann den
+festen Teil sofort zahlen, der Bezug Angebot -> Auftrag -> Teilrechnung -> Folgerechnung bleibt lueckenlos, und die beiden
+Belege koennen verschiedenen Saeulen zugeordnet werden (z. B. S1 Kooperation und S4 Affiliate). **Verworfen:** Position aus
+der Rechnung loeschen und spaeter neu anlegen (keine Verbindung, keine Erinnerung); Vorkasse-Modell (Abschlag auf die
+Gesamtsumme, nicht je Position).
 
 ### 2026-11-14 — Plan, Gates und Ampel in LUNA-OS (MONETARISIERUNG M2)
 

@@ -36,6 +36,7 @@ FELDER = ("firma", "ansprechpartner", "titel", "leistung_von", "leistung_bis", "
           "layout", "bloecke", "zuschlaege", "rabatt_prozent", "ware", "zahlung")
 _ALT_NR = re.compile(r"[A-Z0-9][A-Z0-9\-/_.]{2,39}")
 ARTEN_TEXT = {"rechnung": "Rechnung", "anzahlung": "Vorkasse-Rechnung", "storno": "Stornorechnung"}
+TEIL_TEXT = "Teilrechnung"       # TEILRECHNUNG: Rechnung mit Positionen, die spaeter gesondert abgerechnet werden
 VERWENDUNG = ("content", "privat", "leihgabe")         # Barter-Ware: betrieblich fuer Content (Standard) / privat / zurueck
 
 
@@ -132,6 +133,14 @@ class RechnungStore:
                 r["verlauf"].append(spur | {"grund": d.get("grund", "")})
             elif t == "rechnung_erinnerung":                  # Payment-Check-Termin (Etappe 18: geloescht bei Zahlung)
                 rechnungen[d["nummer"]]["erinnerung"] = d.get("termin")
+            elif t == "rechnung_teil_aufgabe":                # TEILRECHNUNG: To-do „Rest abrechnen“
+                rechnungen[d["nummer"]]["teil_aufgabe"] = d.get("aufgabe", "")
+        for r in rechnungen.values():                        # TEILRECHNUNG: Folgerechnung zuordnen, Rest offen?
+            if r.get("teil"):
+                folge = [x["nummer"] for x in rechnungen.values() if x.get("folge_zu") == r["nummer"]
+                         and x["status"] != "storniert" and x.get("art") != "storno"]
+                r["folge"] = folge[0] if folge else ""
+                r["rest_offen"] = r["status"] != "storniert" and not folge
         for r in rechnungen.values():                        # bezahlt = Geldteil gezahlt UND Ware erhalten (Barter)
             r.setdefault("ware_cent", 0)
             r.setdefault("geld_cent", r.get("summe_cent", 0))
@@ -165,8 +174,8 @@ class RechnungStore:
 
     def _mit_abzug(self, x: dict, rechnungen: dict) -> dict:
         """Entwurf einer (Schluss-)Rechnung: aktuelle Vorkasse-Abzuege einrechnen."""
-        if x.get("art", "rechnung") != "rechnung" or not x.get("auftrag"):
-            return x
+        if x.get("art", "rechnung") != "rechnung" or not x.get("auftrag") or x.get("folge_zu"):
+            return x                                         # Folgerechnung: Vorkasse ist in der Teilrechnung abgezogen
         return x | {"abzuege": self._abzuege(x["auftrag"], rechnungen)}
 
     def _stand(self):
@@ -203,13 +212,14 @@ class RechnungStore:
                 continue
             ueber = r["status"] == "offen" and r.get("faellig_am", "9") < heute
             liste.append({k: r.get(k) for k in ("nummer", "art", "bezug", "firma", "titel", "rechnungsdatum", "faellig_am",
-                                                 "summe_cent", "bezahlt_cent", "status", "auftrag")}
+                                                 "summe_cent", "bezahlt_cent", "status", "auftrag", "teil", "folge",
+                                                 "rest_offen", "folge_zu")}
                          | {"firma_name": firmen.get(r["firma"], ""), "ueberfaellig": ueber,
                             "versendet": bool(r.get("versendet_mail"))})
         ents = [self._summen(self._mit_abzug(x, rechnungen)) for x in entwuerfe.values()]
         return {"rechnungen": sorted(liste, key=lambda x: x["nummer"], reverse=True),
                 "entwuerfe": [{k: x.get(k) for k in ("entwurf_id", "firma", "titel", "auftrag", "summe_cent", "angelegt",
-                                                      "art")}
+                                                      "art", "folge_zu")}
                               | {"firma_name": firmen.get(x["firma"], "")} for x in ents],
                 "waechter": self.waechter(rechnungen=rechnungen, eintraege=eintraege)}
 
@@ -247,7 +257,8 @@ class RechnungStore:
         for k in ("auftrag", "angebot"):
             if daten.get(k):
                 d[k] = str(daten[k]).upper()[:20]
-        d |= {k: v for k, v in (intern or {}).items() if k in ("art", "zahlung", "vorkasse_faellig", "korrektur_zu") and v}
+        d |= {k: v for k, v in (intern or {}).items() if k in ("art", "zahlung", "vorkasse_faellig", "korrektur_zu", "folge_zu")
+              and v}
         eid = "E-" + uuid.uuid4().hex[:8]
         self.bh.erfassen("rechnung_entwurf", d | {"entwurf_id": eid}, von=von)
         return {"entwurf_id": eid}
@@ -263,9 +274,13 @@ class RechnungStore:
             raise ValueError(f"{auftrag['nummer']} ist storniert.")
         aktiv = [r for r in rechnungen.values() if r.get("auftrag") == auftrag["nummer"] and r["status"] != "storniert"
                  and r.get("art") != "storno"]
-        schluss = [r["nummer"] for r in aktiv if r.get("art", "rechnung") == "rechnung"]
+        schluss = [r for r in aktiv if r.get("art", "rechnung") == "rechnung"]
+        teil = [r for r in schluss if r.get("rest_offen")]
+        if teil:
+            raise ValueError(f"Zu {auftrag['nummer']} gibt es die Teilrechnung {teil[0]['nummer']} -- den Rest bitte dort mit "
+                             "„Folgerechnung erstellen“ abrechnen.")
         if schluss:
-            raise ValueError(f"Zu {auftrag['nummer']} gibt es schon die Rechnung {schluss[0]}.")
+            raise ValueError(f"Zu {auftrag['nummer']} gibt es schon die Rechnung {schluss[0]['nummer']}.")
         if vorkasse:
             if not auftrag.get("vorkasse_cent"):
                 raise ValueError(f"{auftrag['nummer']} hat keine Vorkasse vereinbart.")
@@ -344,16 +359,33 @@ class RechnungStore:
             if art == "anzahlung" and aktiv:                          # Etappe 18: unter der Sperre erneut pruefen
                 raise ValueError(f"Zu {x['auftrag']} gibt es schon die Rechnung {aktiv[0]['nummer']} -- keine "
                                  "weitere Vorkasse-Rechnung.")
-            if art == "rechnung" and any(r.get("art", "rechnung") == "rechnung" for r in aktiv):
+            spaeter = [p for p in x.get("positionen") or [] if p.get("spaeter_am")]
+            if x.get("folge_zu"):                                     # TEILRECHNUNG: Rest zur Teilrechnung abrechnen
+                t = rechnungen.get(x["folge_zu"])
+                if not t or not t.get("teil"):
+                    raise ValueError(f"{x['folge_zu']} ist keine Teilrechnung.")
+                if t["status"] == "storniert":
+                    raise ValueError(f"Die Teilrechnung {t['nummer']} ist storniert -- keine Folgerechnung moeglich.")
+                if t.get("folge"):
+                    raise ValueError(f"Der Rest von {t['nummer']} ist schon mit {t['folge']} abgerechnet.")
+                if spaeter:
+                    raise ValueError("Eine Folgerechnung rechnet den Rest ab -- keine Position erneut auf später verschieben.")
+            elif art == "rechnung" and any(r.get("art", "rechnung") == "rechnung" for r in aktiv):
                 raise ValueError(f"Zu {x['auftrag']} gibt es schon eine Rechnung.")
+            if spaeter and art != "rechnung":
+                raise ValueError("„Später abrechnen“ gibt es nur auf einer normalen Rechnung.")
+            for p in spaeter:
+                if p["spaeter_am"] < heute.isoformat():
+                    raise ValueError(f"„Später abrechnen am“ liegt in der Vergangenheit ({p['beschreibung']}).")
             from .projektabrechnung import mit_anlage, pruefe_festschreiben
             pruefe_festschreiben(x, eintraege)                        # PROJEKTZEITEN Z2: nichts doppelt abrechnen
             x = self._summen(self._mit_abzug(x, rechnungen))
-            offen = [p["beschreibung"] for p in x["positionen"] if p.get("provision") and not provision_abgerechnet(p)]
+            offen = [p["beschreibung"] for p in x["positionen"] if p.get("provision") and not provision_abgerechnet(p)
+                     and not p.get("spaeter_am")]
             if offen:                                                  # Etappe 23: erst abrechnen, dann festschreiben
                 raise ValueError(f"Provision noch nicht abgerechnet ({offen[0]}): verkaufte Stueck bzw. vermittelten "
                                  "Umsatz eintragen.")
-            offen = tkp_abrechnung.offene(x["positionen"])
+            offen = tkp_abrechnung.offene([p for p in x["positionen"] if not p.get("spaeter_am")])
             if offen:                                                  # TKP_ABRECHNUNG T2: erst messen, dann festschreiben
                 raise ValueError(f"Erzielte Kontakte fehlen noch ({offen[0]}): Kennzahlen der Postings erfassen und die "
                                  "Rechnung neu aus dem Auftrag erstellen – oder den Wert mit Grund eintragen.")
@@ -385,9 +417,15 @@ class RechnungStore:
                 kopf["projektzeiten"] = x["projektzeiten"]
             if x.get("korrektur_zu"):                                 # Belegverfolgung: ersetzt die stornierte Rechnung
                 kopf["korrektur_zu"] = x["korrektur_zu"]
+            if spaeter:                                               # TEILRECHNUNG: Termin der Folgerechnung
+                kopf["teil"] = {"abrechnung_am": min(p["spaeter_am"] for p in spaeter),
+                                "positionen": [p["beschreibung"] for p in spaeter]}
+            if x.get("folge_zu"):
+                kopf["folge_zu"] = x["folge_zu"]
             pdf = mit_anlage(self._pdf(kopf | {"nummer": nummer}, firmendaten), kopf | {"nummer": nummer}, firmendaten,
                              self.bh.dir / "logo.jpg")
-            return kopf, [(pdf, f"{ARTEN_TEXT[art].replace('-', '')}_{nummer}.pdf", "beleg")]
+            name = TEIL_TEXT if spaeter else ARTEN_TEXT[art].replace('-', '')
+            return kopf, [(pdf, f"{name}_{nummer}.pdf", "beleg")]
 
         ev = self.bh.festschreiben("RE", "rechnung_festgeschrieben", erzeuge, jahr=heute.year, bezug=eid, von=von)
         return {"nummer": ev["daten"]["nummer"], "faellig_am": ev["daten"]["faellig_am"], "warnung": info.get("warnung"),
@@ -421,12 +459,15 @@ class RechnungStore:
                 raise ValueError(f"{nummer} ist (teil)bezahlt -- erst die Zahlung klaeren (Rueckzahlung), dann stornieren.")
             if o.get("ware_erhalten"):
                 raise ValueError(f"Zu {nummer} ist Ware als erhalten gebucht -- erst den Ware-Eingang stornieren.")
+            if o.get("folge"):                                # TEILRECHNUNG: erst die Folgerechnung stornieren
+                raise ValueError(f"Der Rest von {nummer} ist in {o['folge']} abgerechnet -- erst diese stornieren.")
             abgezogen = [r["nummer"] for r in rechnungen.values() if r["status"] != "storniert" and r.get("art") != "storno"
                          and any(a["nummer"] == nummer for a in r.get("abzuege") or [])]
             if abgezogen:
                 raise ValueError(f"{nummer} ist in der Schlussrechnung {abgezogen[0]} abgezogen -- erst diese stornieren.")
             original.update(o)
-            pos = [p | {"einzelpreis_cent": -int(p["einzelpreis_cent"])} for p in o["positionen"]]
+            pos = [p | {"einzelpreis_cent": -int(p["einzelpreis_cent"])} for p in o["positionen"]
+                   if not p.get("spaeter_am")]                # TEILRECHNUNG: der Hinweis auf spaeter gehoert nicht ins Storno
             kopf = {k: o.get(k) for k in FELDER} | {"positionen": pos, "art": "storno", "bezug": nummer, "grund": grund,
                                                     "auftrag": o.get("auftrag", ""), "angebot": o.get("angebot", ""),
                                                     "rechnungsdatum": heute.isoformat(), "faellig_am": heute.isoformat(),
@@ -447,7 +488,7 @@ class RechnungStore:
                 if original.get(k):
                     d[k] = original[k]
             out["korrektur_entwurf"] = self.entwurf_anlegen(
-                d, von=von, intern={k: original.get(k) for k in ("art", "zahlung", "vorkasse_faellig")}
+                d, von=von, intern={k: original.get(k) for k in ("art", "zahlung", "vorkasse_faellig", "folge_zu")}
                 | {"korrektur_zu": nummer})["entwurf_id"]
             if original.get("projektzeiten"):                 # Z2: die (durch das Storno freien) Zeiten bleiben gewaehlt
                 self.bh.erfassen("rechnung_entwurf_geaendert", {"entwurf_id": out["korrektur_entwurf"],
@@ -628,6 +669,36 @@ class RechnungStore:
                                   von=von, pruefe=pruefe)
         return {"storniert": index}
 
+    def folgerechnung(self, nummer: str, *, von: str = "") -> dict:
+        """TEILRECHNUNG: Entwurf ueber die spaeter abzurechnenden Positionen einer Teilrechnung (einmal je Teilrechnung;
+        ein offener Entwurf wird wiederverwendet)."""
+        entwuerfe, rechnungen = self._stand()
+        t = rechnungen.get((nummer or "").strip().upper())
+        if not t:
+            raise KeyError(nummer)
+        if not t.get("teil"):
+            raise ValueError(f"{t['nummer']} ist keine Teilrechnung.")
+        if t["status"] == "storniert":
+            raise ValueError(f"{t['nummer']} ist storniert.")
+        if t.get("folge"):
+            raise ValueError(f"Der Rest von {t['nummer']} ist schon mit {t['folge']} abgerechnet.")
+        offen = [e for e, x in entwuerfe.items() if x.get("folge_zu") == t["nummer"]]
+        if offen:
+            return {"entwurf_id": offen[0], "vorhanden": True}
+        pos = [{k: v for k, v in p.items() if k not in ("spaeter_am", "gesamt_cent")} for p in t["positionen"]
+               if p.get("spaeter_am")]
+        daten = {k: t.get(k) for k in ("firma", "ansprechpartner", "titel", "layout", "bloecke", "zahlungsziel_tage")
+                 if t.get(k) not in (None, "")}
+        daten |= {"positionen": pos, "auftrag": t.get("auftrag", ""), "angebot": t.get("angebot", ""),
+                  "leistung_von": t.get("leistung_von") or t["rechnungsdatum"], "leistung_bis": t["teil"]["abrechnung_am"],
+                  "einleitung": f"wie in unserer Teilrechnung {t['nummer']} vom {datum_de(t['rechnungsdatum'])} angekündigt, "
+                                "rechnen wir hiermit die noch offene Leistung ab:"}
+        return self.entwurf_anlegen({k: v for k, v in daten.items() if v not in (None, "")}, von=von,
+                                    intern={"art": "rechnung", "zahlung": t.get("zahlung"), "folge_zu": t["nummer"]})
+
+    def teil_aufgabe_merken(self, nummer: str, aufgabe: str, *, von: str = "") -> None:
+        self.bh.erfassen("rechnung_teil_aufgabe", {"nummer": nummer, "aufgabe": aufgabe}, von=von)
+
     def erinnerung_merken(self, nummer: str, termin: dict, *, von: str = "") -> None:
         self.bh.erfassen("rechnung_erinnerung", {"nummer": nummer, "termin": termin}, von=von)
 
@@ -656,6 +727,7 @@ class RechnungStore:
         ap = next((x for x in f.get("ansprechpartner_liste", []) if x["nummer"] == r.get("ansprechpartner")), None)
         storno = r.get("art") == "storno"
         art = ("Schlussrechnung" if r.get("abzuege") and not storno
+               else TEIL_TEXT if (r.get("teil") or r["summen"].get("spaeter")) and not storno
                else ARTEN_TEXT.get(r.get("art") or "rechnung", "Rechnung"))
         lv, lb = r.get("leistung_von"), r.get("leistung_bis")
         leistung = (f"{datum_de(lv)} – {datum_de(lb)}" if lv and lb else datum_de(lv or lb))
@@ -667,6 +739,8 @@ class RechnungStore:
             infos.append(f"Storno zu: {r['bezug']}")
         elif r.get("auftrag"):
             infos.append(f"Auftrag: {r['auftrag']}")
+        if r.get("folge_zu") and not storno:
+            infos.append(f"Zu Teilrechnung: {r['folge_zu']}")
         einleitung = (f"hiermit stornieren wir die Rechnung {r['bezug']}. Grund: {r.get('grund', '')}" if storno else
                       r.get("einleitung") or "vielen Dank für Ihren Auftrag. Wir berechnen Ihnen folgende Leistungen:")
         w, g = ware_geld(r["summe_cent"], r.get("ware")) if not storno else (0, r["summe_cent"])
@@ -718,7 +792,8 @@ def rechnung_mail_text(r: dict, ap: dict | None, firmendaten: dict, *, vorlage: 
                        signatur: str = "", kunde: str = "") -> tuple[str, str]:
     from .textbausteine import anrede_werte, rendern
     t = r.get("titel") or ""
-    art = "Schlussrechnung" if r.get("abzuege") else ARTEN_TEXT.get(r.get("art") or "rechnung", "Rechnung")
+    art = ("Schlussrechnung" if r.get("abzuege") else TEIL_TEXT if r.get("teil") and r.get("art") != "storno"
+           else ARTEN_TEXT.get(r.get("art") or "rechnung", "Rechnung"))
     w = anrede_werte(ap) | {"kunde": kunde, "nummer": r["nummer"], "titel": t, "titel_zusatz": f" – {t}" if t else "",
                             "betrag": eur(r["summe_cent"]), "faellig": datum_de(r["faellig_am"]) if r.get("faellig_am") else "",
                             "rechnungsart": art, "bezug": r.get("bezug") or ""}

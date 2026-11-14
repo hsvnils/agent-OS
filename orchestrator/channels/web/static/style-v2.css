@@ -1281,3 +1281,8 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-pl-form textarea { width: 100%; }
 @media (max-width: 820px) { .v2-pl-ziele { grid-template-columns: repeat(2, minmax(0, 1fr)); } .v2-an-zeile.v2-pl-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .v2-an-zeile.v2-pl-regel { grid-template-columns: 1fr 1fr; } .v2-an-zeile.v2-pl-regel button { justify-self: start; } }
+
+/* Teilrechnung: Position spaeter abrechnen */
+.an-p-spaeter-box { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.an-p-spaeter-box small { color: var(--v2-muted); } .an-p-spaeter-box .an-p-spaeter { width: auto; max-width: 170px; }
+.an-p-spaeter-box small.v2-sub { flex-basis: 100%; }
