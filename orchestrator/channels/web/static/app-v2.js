@@ -117,6 +117,7 @@ const SECTIONS = [
   { id: "radar", icon: "🎯", label: "Radar", app: "crm" },
   { id: "content", icon: "✎", label: "Content", app: "trends" },
   { id: "contentplan", icon: "🗓", label: "Content-Plan", app: "trends" },
+  { id: "reichweite", icon: "📊", label: "Reichweiten", app: "trends" },
   { id: "cutter", icon: "🎬", label: "Cutter", app: "cutter" },
   { id: "reel", icon: "📤", label: "Reels", app: "cutter" },
   { id: "wissen", icon: "🧠", label: "Wissen", app: "wissen" },
@@ -134,14 +135,14 @@ const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.inclu
 const BEREICHE = [
   { id: "todos", icon: "✅", label: "To-dos", teile: ["aufgaben"] },        // TODOS_ROADMAP T1 (CEO 2026-10-27)
   { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen", "vertraege"] },
-  { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["contentplan", "crm", "radar", "content", "cutter", "reel"] },
+  { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["contentplan", "reichweite", "crm", "radar", "content", "cutter", "reel"] },
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
   { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "skillwerkstatt", "modellradar", "devroadmap", "system", "netzwerk", "anbieter", "team", "einstellungen"] },
 ];
 const TEIL_INFO = {
   aufgaben: "Eigene Aufgaben mit Erinnerung", kunden: "Firmen, Ansprechpartner, Akte", vertraege: "AGB und Vertragsvorlagen", angebote: "Angebote, Katalog, Preisliste", auftraege: "Laufende und gelieferte Aufträge", rechnungen: "Rechnungen, Zahlungen, Mahnungen",
   belege: "Eingangsbelege prüfen und buchen", finanzen: "Übersicht, Journal, EÜR, Abschluss", crm: "Collab-Anfragen und Verlauf",
-  radar: "Neue Collab-Chancen", contentplan: "Kalender: eigene Posts, Kunden, Drehs", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
+  radar: "Neue Collab-Chancen", contentplan: "Kalender: eigene Posts, Kunden, Drehs", reichweite: "Follower und Reichweite je Plattform", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
   wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", netzwerk: "Fritz!Box, NAS, Zertifikat", modellradar: "KI-Modelle und Hersteller-News", skillwerkstatt: "Eigene Skills bauen, prüfen, verbessern", anbieter: "Dienste, Datenquellen, Kosten", team: "Team-Zugänge",
   einstellungen: "Depot, Briefings, Anmeldung",
@@ -4844,6 +4845,67 @@ RENDER.aufgaben = renderAufgaben;
 const AUF_GRUPPEN = [["ueberfaellig", "⚠️ Überfällig"], ["heute", "📌 Heute"], ["demnaechst", "🗓 Demnächst"], ["ohne_datum", "📝 Ohne Datum"], ["erledigt", "✓ Erledigt (30 Tage)"]];
 const AUF_WDH = [["", "nicht wiederholen"], ["woechentlich", "wöchentlich"], ["monatlich", "monatlich"], ["quartalsweise", "quartalsweise"], ["jaehrlich", "jährlich"]];
 const aufWdhSelect = (id, wert) => `<label class="v2-feld"><small>Wiederholen</small><select id="${id}" class="v2-inp">${AUF_WDH.map(([k, l]) => `<option value="${k}" ${k === (wert || "") ? "selected" : ""}>${l}</option>`).join("")}</select></label>`;
+/* ---- Reichweiten je Plattform (MONETARISIERUNG M3) ---- */
+RENDER.reichweite = renderReichweite;
+let RW = null, RW_PL = "instagram", RW_CSV = null;
+const rwZahl = (n) => n == null ? "–" : Number(n).toLocaleString("de-DE");
+const rwDelta = (n) => n == null ? "" : `<span class="delta ${n >= 0 ? "up" : "down"}">${n >= 0 ? "↗ +" : "↘ "}${rwZahl(n)}</span>`;
+function rwKurve(p) {   // eine Reihe je Plattform, eigene Skala (Werte liegen um Groessenordnungen auseinander)
+  const pkt = p.wochen.filter(w => w.werte.follower != null).map(w => ({ w: w.woche, v: w.werte.follower }));
+  if (pkt.length < 2) return `<small class="v2-sub">${pkt.length ? "Verlauf ab der zweiten Woche." : "Noch keine Follower-Zahl."}</small>`;
+  const B = 300, H = 70, min = Math.min(...pkt.map(x => x.v)), max = Math.max(...pkt.map(x => x.v)), sp = Math.max(1, max - min);
+  const x = (i) => 6 + i * (B - 12) / (pkt.length - 1), y = (v) => H - 8 - (v - min) / sp * (H - 16);
+  return `<svg class="v2-rw-kurve" viewBox="0 0 ${B} ${H}" role="img" aria-label="Follower-Verlauf ${esc(p.name)}: ${rwZahl(pkt[0].v)} bis ${rwZahl(pkt[pkt.length - 1].v)}">
+    <polyline points="${pkt.map((q, i) => `${x(i).toFixed(1)},${y(q.v).toFixed(1)}`).join(" ")}" fill="none" stroke="var(--v2-accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pkt.map((q, i) => `<g><circle cx="${x(i).toFixed(1)}" cy="${y(q.v).toFixed(1)}" r="9" fill="transparent"><title>Woche ab ${datumDe(q.w)}: ${rwZahl(q.v)} Follower</title></circle><circle cx="${x(i).toFixed(1)}" cy="${y(q.v).toFixed(1)}" r="${i === pkt.length - 1 ? 4 : 2.5}" fill="var(--v2-accent)" pointer-events="none"/></g>`).join("")}</svg>
+    <small class="v2-sub">${datumDe(pkt[0].w)} – ${datumDe(pkt[pkt.length - 1].w)} · ${pkt.length} Wochen</small>`;
+}
+async function renderReichweite(meldung, fehler) {
+  const d = RW = await jget("/api/reichweite");
+  if (!d) { $("#v2-app").innerHTML = secHead("📊 Reichweiten") + emptyRow("Reichweiten nicht erreichbar (Modul Content nötig)."); return; }
+  const M = d.metriken, Q = { hand: "✍️ von Hand", csv: "📄 CSV", api: "🔄 automatisch" };
+  const karte = (p) => tile(p.name, `<div class="v2-kpi">${rwZahl(p.follower)} ${rwDelta(p.delta_4w)}</div>
+    <div class="v2-sub">Follower${p.stand_woche ? " · Stand Woche ab " + esc(datumDe(p.stand_woche)) : ""}${p.delta_4w != null ? " · Veränderung 4 Wochen" : ""}${p.delta_12w != null ? ` · 12 Wochen ${p.delta_12w >= 0 ? "+" : ""}${rwZahl(p.delta_12w)}` : ""}</div>
+    ${rwKurve(p)}${p.luecken.length ? `<div class="v2-rw-luecke"><span class="v2-badge wartet">Lücke</span> <small>keine Werte für ${p.luecken.length === 4 ? "die letzten 4 Wochen" : p.luecken.map(w => "Woche ab " + datumDe(w)).join(", ")}</small></div>` : ""}`, "w3 v2-sl");
+  const p = d.plattformen.find(x => x.id === RW_PL) || d.plattformen[0];
+  const spalten = Object.keys(M).filter(k => p.wochen.some(w => w.werte[k] != null));
+  const tabelle = p.wochen.length ? `<div class="v2-tab-scroll"><table class="v2-table v2-rw-tab"><thead><tr><th>Woche ab</th>${spalten.map(k => `<th style="text-align:right">${esc(M[k].name)}</th>`).join("")}<th>Quelle</th><th></th></tr></thead><tbody>
+    ${[...p.wochen].reverse().map(w => `<tr><td>${esc(datumDe(w.woche))}${w.bruch ? ` <span class="v2-badge neutral" title="${esc(d.hinweis)}">vor 15.06.</span>` : ""}</td>${spalten.map(k => `<td style="text-align:right">${rwZahl(w.werte[k])}</td>`).join("")}
+      <td><small>${esc([...new Set(Object.values(w.quellen))].map(q => Q[q] || q).join(", "))}</small></td><td style="text-align:right"><button class="v2-btn sm" data-act="rw-weg" data-id="${esc(p.id)}" data-val="${esc(w.woche)}" aria-label="Woche entfernen">✕</button></td></tr>`).join("")}</tbody></table></div>`
+    : emptyRow("Noch keine Werte für " + p.name + ".");
+  const plWahl = (id, wert) => `<select id="${id}" class="v2-inp">${Object.entries(d.plattform_namen).map(([k, n]) => `<option value="${k}" ${k === wert ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`;
+  const form = `<div class="v2-form"><div class="v2-an-zeile"><label class="v2-feld"><small>Plattform</small>${plWahl("rw-pl", RW_PL)}</label>
+      <label class="v2-feld"><small>Woche (ein Tag der Woche)</small><input id="rw-woche" type="date" class="v2-inp" value="${esc(d.letzte_volle_woche)}"></label></div>
+    <div class="v2-rw-felder">${Object.entries(M).filter(([k]) => k !== "reichweite_28t").map(([k, m]) => `<label class="v2-feld"><small>${esc(m.name)}${m.art === "stand" ? " (Stand)" : ""}</small><input class="v2-inp rw-wert" data-k="${k}" inputmode="numeric"></label>`).join("")}</div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="rw-speichern">Speichern</button></div><div id="rw-msg" class="v2-msg"></div>
+    <small class="v2-sub">Leere Felder bleiben unverändert. Follower = Stand am Ende der Woche, alle anderen Werte = Summe der Woche.</small></div>`;
+  const imp = `<div class="v2-form"><div class="v2-an-zeile"><label class="v2-feld"><small>Plattform</small>${plWahl("rw-csv-pl", RW_PL)}</label>
+      <label class="v2-feld"><small>CSV-Export</small><input id="rw-csv" type="file" accept=".csv,text/csv" class="v2-inp"></label></div>
+    <div class="v2-card-actions"><button class="v2-btn" data-act="rw-csv-pruefen">Vorschau</button></div><div id="rw-csv-box"></div>
+    <small class="v2-sub">Facebook: Business Suite → Insights → Exportieren. TikTok Studio und YouTube Studio: Export als CSV. Erst Vorschau mit Spaltenzuordnung, dann speichern.</small></div>`;
+  $("#v2-app").innerHTML = secHead("📊 Reichweiten", `<span class="v2-sub">${rwZahl(d.follower_summe)} Follower gesamt</span><button class="v2-btn" data-act="rw-ig">🔄 Instagram jetzt abrufen</button>`)
+    + (meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="margin-bottom:12px">${esc(meldung)}</div>` : "")
+    + `<div class="v2-grid">${d.plattformen.map(karte).join("")}
+      ${tile("Wochenwerte", `<div class="v2-tabs" style="margin-bottom:8px">${d.plattformen.map(x => `<button class="${x.id === p.id ? "active" : ""}" data-act="rw-tab" data-id="${esc(x.id)}">${esc(x.name)}</button>`).join("")}</div>${tabelle}<small class="v2-sub">${esc(d.hinweis)} Instagram holt LUNA montags automatisch (Follower, Reichweite 28 Tage).</small>`, "w12 v2-sl")}
+      ${tile("Woche eintragen", form, "w6 v2-sl")}${tile("CSV importieren", imp, "w6 v2-sl")}</div>`;
+}
+async function rwCsvSenden(speichern) {
+  const box = $("#rw-csv-box"), f = $("#rw-csv").files[0];
+  if (!f && !RW_CSV) return box.innerHTML = `<div class="v2-msg err">Bitte eine CSV-Datei wählen.</div>`;
+  if (f) RW_CSV = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.readAsDataURL(f); });
+  const zuordnung = {}; document.querySelectorAll(".rw-zu").forEach(s => { zuordnung[s.dataset.sp] = s.value; });
+  const r = await jpost("/api/reichweite/import", { plattform: $("#rw-csv-pl").value, datei: RW_CSV, ...(Object.keys(zuordnung).length ? { zuordnung } : {}), speichern });
+  if (!r || !r.ok) return box.innerHTML = `<div class="v2-msg err">${esc((r && r.hinweis) || "Keine Verbindung zum Server.")}</div>`;
+  if (speichern) { RW_CSV = null; RW_PL = $("#rw-csv-pl").value; return renderReichweite(`${r.gespeichert} Woche(n) aus der CSV gespeichert.`); }
+  const v = r.vorschau, M = RW.metriken, opt = (wert) => `<option value="">— nicht übernehmen —</option><option value="_datum" ${wert === "_datum" ? "selected" : ""}>Datum</option>${Object.entries(M).map(([k, m]) => `<option value="${k}" ${k === wert ? "selected" : ""}>${esc(m.name)}</option>`).join("")}`;
+  const ks = [...new Set(v.wochen.flatMap(w => Object.keys(w.werte)))];
+  box.innerHTML = `<h3 class="v2-h3">Spalten</h3><div class="v2-rw-zuordnung">${v.spalten.map(sp => `<label class="v2-feld"><small>${esc(sp.name)}</small><select class="v2-inp rw-zu" data-sp="${esc(sp.name)}">${opt(sp.zuordnung)}</select></label>`).join("")}</div>
+    <div class="v2-card-actions"><button class="v2-btn sm" data-act="rw-csv-pruefen">Zuordnung anwenden</button></div>
+    <h3 class="v2-h3">${v.wochen.length} Woche(n) · ${esc(datumDe(v.von))} – ${esc(datumDe(v.bis))} · ${v.taeglich ? "Tageswerte, zu Wochen zusammengefasst" : "Wochenwerte"}</h3>
+    ${v.hinweise.map(h => `<div class="v2-msg">${esc(h)}</div>`).join("")}
+    <div class="v2-tab-scroll"><table class="v2-table"><thead><tr><th>Woche ab</th>${ks.map(k => `<th style="text-align:right">${esc(M[k].name)}</th>`).join("")}</tr></thead><tbody>${v.wochen.map(w => `<tr><td>${esc(datumDe(w.woche))}${w.vollstaendig ? "" : " <small>(unvollständig)</small>"}</td>${ks.map(k => `<td style="text-align:right">${rwZahl(w.werte[k])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="rw-csv-speichern">✓ ${v.wochen.length} Woche(n) speichern</button></div>`;
+}
 async function renderAufgaben(meldung, fehler) {
   const [d, vl] = await Promise.all([jget("/api/aufgaben"), jget("/api/aufgaben/vorlagen")]);
   if (!d) { $("#v2-app").innerHTML = secHead("✅ To-dos", "") + emptyRow("Nur für Administratoren sichtbar."); return; }
@@ -5338,6 +5400,16 @@ async function handleAct(act, el) {
     case "re-folge": { el.disabled = true; const r = await jpost(`/api/finanzen/rechnungen/${encodeURIComponent(id)}/folgerechnung`, {}); el.disabled = false;
       if (!r || !r.ok) return alert((r && r.hinweis) || "Keine Verbindung zum Server.");
       return reDetail(r.entwurf_id, r.vorhanden ? "Es gab schon einen Entwurf der Folgerechnung." : "Entwurf der Folgerechnung angelegt — Zahlen eintragen, dann senden."); }
+    case "rw-tab": RW_PL = id; return renderReichweite();
+    case "rw-csv-pruefen": return rwCsvSenden(false);
+    case "rw-csv-speichern": el.disabled = true; return rwCsvSenden(true);
+    case "rw-weg": { if (!confirm(`Werte der Woche ab ${datumDe(val)} entfernen?`)) return; const r = await jpost("/api/reichweite/entfernen", { plattform: id, woche: val }); return renderReichweite(r && r.ok ? "Woche entfernt." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
+    case "rw-ig": { el.disabled = true; el.textContent = "Lade …"; const r = await jpost("/api/reichweite/instagram", {}); RW_PL = "instagram"; return renderReichweite(r && r.ok ? `Instagram: ${rwZahl(r.eintrag.werte.follower)} Follower gespeichert.` : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
+    case "rw-speichern": {
+      const werte = {}; document.querySelectorAll(".rw-wert").forEach(i => { if (i.value.trim() !== "") werte[i.dataset.k] = i.value.trim(); });
+      const r = await jpost("/api/reichweite", { plattform: $("#rw-pl").value, woche: $("#rw-woche").value, werte });
+      if (!r || !r.ok) return kundenMsg("rw-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
+      RW_PL = $("#rw-pl").value; return renderReichweite("Gespeichert."); }
     case "fin-drill": return finDrill(val);
     case "fin-vv": {
       const betrag = prompt(`Verbleibender Verlust aus ${val} in € (z. B. 2.622,59):`, ""); if (betrag === null) return;

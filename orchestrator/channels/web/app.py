@@ -4380,6 +4380,75 @@ async def finanzen_plan_kriterium(request: Request):
         str(b.get("gate") or ""), int(b.get("index") or 0), bool(b.get("erledigt")), von=_von(request)))
 
 
+def _reichweite():
+    from ...core.reichweite import Reichweite
+    return Reichweite(ROOT / "reichweite" / "log.jsonl")
+
+
+@app.get("/api/reichweite")
+def reichweite_uebersicht():
+    """MONETARISIERUNG M3: Follower und Reichweiten je Plattform mit Verlauf (Modul content_ops)."""
+    return _reichweite().uebersicht()
+
+
+@app.post("/api/reichweite")
+async def reichweite_erfassen(request: Request):
+    b = await _json(request)
+    return _kunden_aktion(lambda: {"eintrag": _reichweite().erfassen(
+        str(b.get("plattform") or ""), str(b.get("woche") or ""), b.get("werte") or {}, quelle="hand",
+        notiz=str(b.get("notiz") or ""), von=_von(request))})
+
+
+@app.post("/api/reichweite/entfernen")
+async def reichweite_entfernen(request: Request):
+    b = await _json(request)
+    return _kunden_aktion(lambda: _reichweite().entfernen(str(b.get("plattform") or ""), str(b.get("woche") or ""),
+                                                          von=_von(request)) or {})
+
+
+@app.post("/api/reichweite/import")
+async def reichweite_import(request: Request):
+    """CSV-Export: ohne `speichern` nur Vorschau (Trockenlauf), mit `speichern: true` werden die Wochen geschrieben."""
+    import base64
+    from ...core.reichweite import PLATTFORMEN, import_vorschau
+    b = await _json(request)
+
+    def tun():
+        plattform = str(b.get("plattform") or "")
+        if plattform not in PLATTFORMEN:
+            raise ValueError("Bitte die Plattform wählen.")
+        try:
+            roh = base64.b64decode(str(b.get("datei") or ""), validate=True)
+        except ValueError:
+            raise ValueError("Datei nicht lesbar.") from None
+        if not roh or len(roh) > 5_000_000:
+            raise ValueError("Bitte eine CSV-Datei bis 5 MB wählen.")
+        v = import_vorschau(roh, b.get("zuordnung") or None)
+        if b.get("speichern") is True:
+            return {"gespeichert": _reichweite().import_speichern(plattform, v, von=_von(request)), "vorschau": v}
+        return {"vorschau": v}
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/reichweite/instagram")
+async def reichweite_instagram(request: Request):
+    """Instagram jetzt abrufen (eigenes Konto, vorhandener Zugang) -- sonst macht das der Bot montags um 05:00."""
+    from ...core.reichweite import instagram_uebernehmen
+    from ...core.social_kit import MetaInsights
+    from ...governance.instagram_token import ig_reader_aus_env
+
+    def tun():
+        env = _google_secrets()
+        r = ig_reader_aus_env(env)
+        if not r.verfuegbar:
+            raise ValueError("Instagram-Zugang fehlt (INSTAGRAM_IG_USER_ID + Token in der NAS-.env).")
+        e = instagram_uebernehmen(_reichweite(), MetaInsights(r.token, r.own_id).hole(), von=_von(request))
+        if not e:
+            raise ValueError("Instagram hat keine Werte geliefert (Zugang oder Rechte prüfen).")
+        return {"eintrag": e}
+    return _kunden_aktion(tun)
+
+
 @app.get("/api/finanzen/ki-kosten")
 def finanzen_ki_kosten(jahr: int = 0):
     """KI-Verbrauch (geschaetzt) je Monat/Anbieter + Monatsbudget -- nur Anzeige, nicht in der EUeR."""

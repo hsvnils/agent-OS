@@ -1370,6 +1370,17 @@ def _start_buchhaltung_loop(ctx) -> None:
                                 abteilung="CFO", kategorie="finanzen", quelle="lastschrift", detail="LUNA-OS -> Belege")
                     except Exception as _exc:
                         print(f"[lastschrift] Fehler: {_exc}", flush=True)
+                    if jetzt.weekday() == 0:                # MONETARISIERUNG M3: Instagram-Wochenwerte (eigenes Konto)
+                        try:
+                            from ...core.reichweite import Reichweite as _RW, instagram_uebernehmen
+                            from ...core.social_kit import MetaInsights as _MI
+                            from ...governance.instagram_token import ig_reader_aus_env as _igr
+                            _r = _igr(ctx.secret_dict or {})
+                            if _r.verfuegbar and not instagram_uebernehmen(
+                                    _RW(ROOT / "reichweite" / "log.jsonl"), _MI(_r.token, _r.own_id).hole()):
+                                print("[reichweite] Instagram lieferte keine Werte", flush=True)
+                        except Exception as _exc:
+                            print(f"[reichweite] Fehler: {_exc.__class__.__name__}", flush=True)
                     try:                                    # MONETARISIERUNG M6: Teilzeit-Antrag rechtzeitig (To-do einmal je Gate)
                         from ...core.aufgaben import AufgabenStore as _AS
                         from ...core.daten_rhythmus import teilzeit_erinnern

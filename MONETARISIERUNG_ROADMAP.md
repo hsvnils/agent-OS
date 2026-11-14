@@ -4,8 +4,8 @@
 - Stand: 2026-11-14
 - Arbeitsbranch: `ai/plan-monetarisierung`
 - Basiscommit: `a048c2d`
-- Naechster Schritt: M6 auf `main`, Deploy durch den CEO; danach waehlt der CEO in LUNA-OS (To-dos) die Vorlagen; Gate M6:
-  erste Erinnerung kommt per Telegram an (`typ:"sent"`). Sichtabnahme gesammelt am Ende; Go fuer die naechste Etappe.
+- Naechster Schritt: M3 umgesetzt auf `ai/monetarisierung-m3` -- CEO-Freigabe fuer Merge und Deploy; Gate M3 mit je einem echten
+  Export (Facebook, TikTok, YouTube): Import = Werte der Konsole; Facebook-Schnittstelle nur nach CISO-Freigabe (eigene Entscheidung).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -84,7 +84,12 @@ M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
   (Anzahl und Euro) je Monat. Alles im LUNA-OS bearbeitbar, Aenderungen mit Verlauf.
 - **Gate:** Tests rechnen die Kontinuitaet nach (5 gute Monate + 1 schlechter = nicht erreicht); Gegenprobe; Sichtabnahme.
 
-### M3 Reichweiten und Follower je Plattform (mittel, Risiko mittel)
+### M3 Reichweiten und Follower je Plattform (mittel, Risiko mittel) -- umgesetzt 2026-11-14
+- **Stand:** `orchestrator/core/reichweite.py` (Speicher `reichweite/log.jsonl`, Wochenwerte je Plattform, CSV-Import mit
+  Vorschau und Spaltenzuordnung, Tagesreichweite wird nicht addiert, Bruchmarke Meta 15.06.2026), Instagram automatisch montags
+  (Bot, vorhandener Zugang) und per Knopf, LUNA-OS Content & Collabs -> Reichweiten (Follower je Plattform mit Verlauf, Luecken,
+  Wochentabelle, Eingabe von Hand, CSV-Import); 9 Tests inkl. Gegenproben. **Offen:** Kalibrierung mit echten Exporten (Gate);
+  Facebook-Seite ueber die Schnittstelle braucht einen neuen Zugang (Seiten-Token mit `read_insights`) = CISO-Freigabe.
 - **Ziel:** Woechentliche Kennzahlen je Plattform mit Verlauf und Diagramm: Follower, Reichweite, Aufrufe, Interaktionen,
   Shares, Saves. Wege: Instagram automatisch (vorhanden); Facebook-Seite ueber die Meta-Schnittstelle (`read_insights`,
   `pages_read_engagement`, CISO-Freigabe); CSV-Import aus Business Suite, TikTok Studio und YouTube Studio; Screenshot als Rueckfall.

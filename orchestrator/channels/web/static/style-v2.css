@@ -1290,3 +1290,13 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 /* Wiederkehrende To-dos (MONETARISIERUNG M6) */
 .v2-auf-vorlage { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid var(--v2-line-soft); }
 .v2-auf-vorlage span { display: flex; flex-direction: column; gap: 2px; min-width: 0; } .v2-auf-vorlage small { color: var(--v2-muted); overflow-wrap: anywhere; }
+
+/* Reichweiten (MONETARISIERUNG M3) */
+.v2-tile.w3 { grid-column: span 3; }
+@media (max-width: 1000px) { .v2-tile.w3 { grid-column: span 6; } }
+@media (max-width: 620px) { .v2-tile.w3 { grid-column: span 12; } }
+.v2-rw-kurve { width: 100%; height: 70px; display: block; margin-top: 8px; overflow: visible; }
+.v2-rw-luecke { margin-top: 6px; } .v2-rw-luecke small { color: var(--v2-muted); }
+.v2-rw-felder { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.v2-rw-zuordnung { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.v2-rw-tab td, .v2-rw-tab th { white-space: nowrap; }

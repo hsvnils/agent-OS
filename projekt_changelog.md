@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 18:31] — Claude Code
+- **Was:** MONETARISIERUNG M3 umgesetzt (Branch `ai/monetarisierung-m3`): `core/reichweite.py` (Wochenwerte je Plattform,
+  CSV-Import mit Vorschau/Spaltenzuordnung, robuste Trennzeichen- und Kodierungserkennung, Bruchmarke Meta), Speicher
+  `reichweite/log.jsonl` (Deploy-Schutz, Backup, Datenfluss-Doku), Endpunkte `/api/reichweite*` (Modul content_ops),
+  Instagram montags im Bot-Tageslauf und per Knopf, LUNA-OS Content & Collabs -> Reichweiten (Kacheln mit Verlauf, Luecken,
+  Wochentabelle, Eingabe, CSV-Import), Vorlage „Reichweiten“ verweist auf den Import, Cache v158/v84; 9 Tests inkl.
+  Gegenproben; Sichtpruefung Rechner und iPhone 402 px.
+- **Warum:** CEO-Go fuer M3 (2026-11-14).
+- **Betroffen:** `orchestrator/core/reichweite.py`, `orchestrator/core/team_auth.py`, `orchestrator/core/daten_rhythmus.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/telegram/bot.py`, `static/app-v2.js`, `static/style-v2.css`,
+  `static/index-v2.html`, `orchestrator/tests/test_reichweite.py`, `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`,
+  `MONETARISIERUNG_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-11-14 18:16] — Claude Code
 - **Was:** `ai/monetarisierung-m6` nach `main` gemergt und gepusht; Roadmap-Status fortgeschrieben. Deploy (NAS-Sync, Neustart
   `luna-os`/`luna-telegram`) macht der CEO.
