@@ -3,7 +3,7 @@
 > **Lebendes Dokument.** Es aendert sich, sobald Abteilungen **Unter-Agenten** bekommen.
 > **Quelle der Wahrheit fuer Agenten, Status und Charta-Dateien ist [`agents/REGISTRY.md`](../agents/REGISTRY.md).**
 > Dieses Dokument ist die **visuelle Hierarchie-Darstellung** und verweist auf die Registry — Status- und
-> Bestandsangaben werden **dort** gepflegt, nicht hier doppelt. Visuelle Map: [`organigramm.xmind`](organigramm.xmind).
+> Bestandsangaben werden **dort** gepflegt, nicht hier doppelt. Visuelle Map: [`organigramm.xmind`](organigramm.xmind). Sie wird erzeugt mit `python3 scripts/xmind_bauen.py organigramm` (nach jeder Charta- oder Skill-Aenderung; der Test `test_xmind_bauen.py` meldet eine veraltete Datei).
 > `AGENTS.md` bleibt uebergeordnet; bei Widerspruch gilt `AGENTS.md`.
 
 ---
@@ -17,7 +17,7 @@ CEO (Nils)
 Head of Agents (00)
    │  Supervisor — zerlegt, delegiert, buendelt, eskaliert
    ▼
-Abteilungsleiter (C-Rollen / Berater / Researcher / CIO / Videograf, 01–17)
+Abteilungsleiter (C-Rollen / Berater / Researcher / CIO / Videograf / Marketing, 01–18)
    │  je Abteilung ein verantwortlicher Leit-Agent
    ▼
 Unter-Agenten je Abteilung
@@ -30,7 +30,7 @@ Unter-Agenten je Abteilung
 
 - **Ebene 1 — CEO (Nils):** spricht ausschliesslich mit dem Head of Agents.
 - **Ebene 2 — Head of Agents (00):** einziger Gespraechspartner des CEO; Supervisor aller Abteilungen.
-- **Ebene 3 — Abteilungsleiter (01–17):** die C-Rollen / Berater / Researcher / CIO / Videograf (17, seit 2026-10-05); sprechen nur mit dem HoA.
+- **Ebene 3 — Abteilungsleiter (01–18):** die C-Rollen / Berater / Researcher / CIO / Videograf (17, seit 2026-10-05) / Marketing Manager (18, seit 2026-11-14); sprechen nur mit dem HoA.
 - **Ebene 4 — Unter-Agenten:** **jede Abteilung kann Unter-Agenten erhalten** (spezialisierte Sub-Agenten).
   Sie werden vom jeweiligen Abteilungsleiter gefuehrt und sprechen nicht direkt mit dem HoA oder CEO. Anlage
   neuer (Unter-)Agenten erfolgt als Charta ueber den HoA (CEO-Tor). **Erster AKTIVER Unter-Agent: der
@@ -49,6 +49,7 @@ Die meisten Unter-Agenten sind **Status: geplant** (Skizze; keine eigenen Dateie
 | 00 · Head of Agents | Supervisor — keine eigene Unter-Ebene |
 | **16 · CIO** | **Risk-Agent (AKTIV, `16a_risk-agent.md`)**; Markt-Screener, Technik, Fundamental, Sentiment, Synthese (geplant) |
 | 17 · VID (Videograf-Berater) | vorerst keine (`17_videograf.md`) |
+| 18 · CMO (Marketing Manager) | vorerst keine (`18_cmo.md`) |
 | 01 · Unternehmensberater | Unter-Agenten bei Bedarf |
 | 02 · CAO | Unter-Agenten bei Bedarf |
 | 03 · CFO | bei Bedarf — z. B. Kosten-Sammler |

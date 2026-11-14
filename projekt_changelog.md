@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 14:01] — Claude Code
+- **Was:** `scripts/xmind_bauen.py` erzeugt das Organigramm als XMind aus Charten und Skill-Ordnern (inkl. CMO, Netz-Agent, Team) sowie Mindmaps/Zeitstrahlen aus JSON; `governance/organigramm.xmind` neu erzeugt (war Stand 23.06.); Test `test_xmind_bauen.py` mit Gegenprobe (veraltete Datei wird rot). Drei Entscheidungen im Register (CMO, keine Sportwetten-Partner, vertrauliche Plaene in `strategie/`). Monetarisierungsplan 0.2 und Zeitstrahl-XMind liegen nur lokal in `strategie/` (nicht im Git).
+- **Warum:** CEO: XMind mit Zeitstrahl zur Selbststaendigkeit und aktuelles LUNA-Organigramm; Kooperationen je Meilenstein.
+- **Betroffen:** `scripts/xmind_bauen.py`, `governance/organigramm.xmind`, `governance/organigramm.md`, `orchestrator/tests/test_xmind_bauen.py`, `docs/entscheidungs-register.md`
+
+## [2026-11-14 13:55] — Head of Agents (Claude Code)
+- **Was:** Neuer Agent 18 CMO (Marketing Manager) mit Charta `agents/18_cmo.md` angelegt und als befragbarer Fachagent angemeldet (Charten-Liste, `delegate`, Zustaendigkeit, Skill-Werkstatt, Agenten-Uebersicht, Register, Organigramm). Skill-Zeile des Unternehmensberaters um fuenf Skills ergaenzt. Agenten-Test auf 20 Agenten nachgezogen.
+- **Warum:** CEO-Anweisung mit Diff-Vorlage, bestaetigt am 2026-11-14 („Charten bestaetigt").
+- **Betroffen:** `agents/18_cmo.md`, `agents/01_unternehmensberater.md`, `agents/REGISTRY.md`, `governance/organigramm.md`, `orchestrator/core/subagents.py`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/zustaendigkeit.py`, `orchestrator/core/skill_werkstatt.py`, `orchestrator/channels/web/app.py`, `orchestrator/tests/test_agenten_ausbau.py`
+
+## [2026-11-14 13:38] — Claude Code
+- **Was:** Unternehmensberater um fuenf Skills erweitert (Unit Economics, Stage-Gates, Kapazitaet/Make-or-Buy, Szenarien/Annahmen, Monetarisierungsplan); sieben Skills fuer den geplanten Marketing Manager (CMO) unter `skills/cmo/`; Claude-Code-Einstiege `unternehmensberatung` und `marketing-manager`; Ordner `strategie/` vom Git ausgeschlossen (Plaene mit echten Zahlen); BF-95 (Verdacht Umsatzwaechter) eingetragen. Alle Skills bestehen das Skill-Gate. Charta CMO und Skill-Zeile des Beraters warten auf CEO-Bestaetigung.
+- **Warum:** CEO: Berater und Marketing Manager mit Skills ausstatten (Best Practices aus dem Netz), danach Marketing- und Monetarisierungsplan erstellen.
+- **Betroffen:** `skills/berater/`, `skills/cmo/`, `.claude/skills/`, `.gitignore`, `docs/bekannte-fehler.md`
+
 ## [2026-11-09 19:49] — Claude Code
 - **Was:** BF-94 als bestaetigt eingetragen, C2 als deployt vermerkt.
 - **Warum:** CEO: Deploy gemacht, Probevideo ist nicht mehr verzerrt.
