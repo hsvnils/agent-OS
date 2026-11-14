@@ -4025,7 +4025,8 @@ async function finPlan() {
   const gateDetail = (g) => `${(g.regeln_stand || []).map(regelZeile).join("") || ""}${g.kriterien.length ? `<h3 class="v2-h3">Kriterien</h3>${g.kriterien.map((k, i) => kritZeile(g, k, i)).join("")}` : ""}
     ${g.koop_noetig || g.koop_anzahl ? `<div class="v2-kv" style="margin-top:8px"><span>Kooperationen je Monat</span><b>${g.koop_anzahl || "–"} geplant${g.koop_noetig ? ` · ${g.koop_noetig} nötig für das Säulenziel` : ""}</b></div>` : ""}
     ${g.notiz ? `<small class="v2-sub">${esc(g.notiz)}</small>` : ""}`;
-  const naechstes = g0 ? tile(`Nächstes Ziel: ${g0.code} · ${g0.name}`, gateDetail(g0) + (g0.fruehestens ? `<small class="v2-sub">Frühestens ${esc(plMonat(g0.fruehestens))}. Erreicht, wenn alle Regeln und Kriterien erfüllt sind.</small>` : ""), "w8 v2-sl")
+  const tz = (d.teilzeit || []).map(t => `<div class="v2-msg">📅 ${esc(t.gate)} ${esc(t.name)} ist ${t.stand} von ${t.von} Monaten auf Kurs – jetzt den Teilzeit-Antrag vorbereiten (3 Monate Vorlauf). LUNA legt dafür ein To-do an.</div>`).join("");
+  const naechstes = g0 ? tile(`Nächstes Ziel: ${g0.code} · ${g0.name}`, tz + gateDetail(g0) + (g0.fruehestens ? `<small class="v2-sub">Frühestens ${esc(plMonat(g0.fruehestens))}. Erreicht, wenn alle Regeln und Kriterien erfüllt sind.</small>` : ""), "w8 v2-sl")
     : tile("Alle Gates erreicht", emptyRow("Glückwunsch – alle Meilensteine sind erfüllt."), "w8 v2-sl");
   // Ampel je Säule
   const amp = d.ampeln.length ? `<table class="v2-table"><thead><tr><th>Säule</th><th style="text-align:right">Ist</th><th style="text-align:right">Ziel</th><th></th></tr></thead><tbody>${d.ampeln.map(a => `<tr><td><i class="v2-sl-punkt" style="background:${SL_FARBE[a.gruppe] || SL_FARBE.ohne}"></i>${esc(a.name)}</td><td style="text-align:right" title="3-Monats-Schnitt ${esc(cent2eur(a.schnitt3_cent))}">${esc(cent2eur(a.letzter_cent))}</td><td style="text-align:right">${esc(cent2eur(a.ziel_cent))}</td><td style="text-align:right"><span class="v2-badge ${PL_AMPEL[a.ampel][0]}">${PL_AMPEL[a.ampel][1]} ${a.quote}%</span></td></tr>`).join("")}</tbody></table>
@@ -4841,24 +4842,29 @@ async function renderRadar() {
    = Kalendertermin in LUNAs Kalender (CEO als Gast) + Telegram. Per Telegram: einfach „To-do: … Freitag 10 Uhr“ schreiben. */
 RENDER.aufgaben = renderAufgaben;
 const AUF_GRUPPEN = [["ueberfaellig", "⚠️ Überfällig"], ["heute", "📌 Heute"], ["demnaechst", "🗓 Demnächst"], ["ohne_datum", "📝 Ohne Datum"], ["erledigt", "✓ Erledigt (30 Tage)"]];
+const AUF_WDH = [["", "nicht wiederholen"], ["woechentlich", "wöchentlich"], ["monatlich", "monatlich"], ["quartalsweise", "quartalsweise"], ["jaehrlich", "jährlich"]];
+const aufWdhSelect = (id, wert) => `<label class="v2-feld"><small>Wiederholen</small><select id="${id}" class="v2-inp">${AUF_WDH.map(([k, l]) => `<option value="${k}" ${k === (wert || "") ? "selected" : ""}>${l}</option>`).join("")}</select></label>`;
 async function renderAufgaben(meldung, fehler) {
-  const d = await jget("/api/aufgaben");
+  const [d, vl] = await Promise.all([jget("/api/aufgaben"), jget("/api/aufgaben/vorlagen")]);
   if (!d) { $("#v2-app").innerHTML = secHead("✅ To-dos", "") + emptyRow("Nur für Administratoren sichtbar."); return; }
   const g = d.gruppen || {};
   const offen = ["ueberfaellig", "heute", "demnaechst", "ohne_datum"].reduce((n, k) => n + (g[k] || []).length, 0);
   const zeile = (a) => { const er = a.status === "erledigt";
-    const wann = [a.faellig ? datumDe(a.faellig) + (a.uhrzeit ? " " + a.uhrzeit : "") : "", a.erinnerung && !er ? "⏰ " + datumDe(a.erinnerung.slice(0, 10)) + " " + a.erinnerung.slice(11, 16) : "", a.quelle === "Telegram/Chat" ? "per Telegram" : ""].filter(Boolean).join(" · ");
+    const wann = [a.faellig ? datumDe(a.faellig) + (a.uhrzeit ? " " + a.uhrzeit : "") : "", a.wiederholung ? "🔁 " + (AUF_WDH.find(([k]) => k === a.wiederholung) || ["", a.wiederholung])[1] : "", a.erinnerung && !er ? "⏰ " + datumDe(a.erinnerung.slice(0, 10)) + " " + a.erinnerung.slice(11, 16) : "", a.quelle === "Telegram/Chat" ? "per Telegram" : ""].filter(Boolean).join(" · ");
     return `<div class="v2-list-row v2-auf${er ? " erledigt" : ""}"><button class="v2-auf-haken" data-act="auf-haken" data-id="${esc(a.id)}" data-val="${er ? "auf" : "zu"}" aria-label="${er ? "wieder öffnen" : "erledigt"}">${er ? "✓" : ""}</button>
       <div class="grow klick" data-act="auf-bearbeiten" data-id="${esc(a.id)}"><b>${esc(a.titel)}</b><small>${esc(wann)}${a.notiz ? " · " + esc(a.notiz.slice(0, 120)) : ""}</small></div></div>`; };
   const gruppen = AUF_GRUPPEN.filter(([k]) => (g[k] || []).length).map(([k, n]) => tile(`${n} (${g[k].length})`, g[k].map(zeile).join(""), "w12")).join("");
   $("#v2-app").innerHTML = secHead("✅ To-dos", `${offen} offen`) + `${meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}">${esc(meldung)}</div>` : ""}<div class="v2-grid">
     ${tile("Neues To-do", `<div class="v2-form"><label class="v2-feld"><small>Was ist zu tun? *</small><input id="auf-titel" class="v2-inp" maxlength="200" placeholder="z. B. Kiez Alm wegen Dreh anrufen"></label>
-      <div class="v2-an-zeile"><label class="v2-feld"><small>Fällig am</small><input id="auf-faellig" type="date"></label><label class="v2-feld"><small>Uhrzeit</small><input id="auf-uhrzeit" type="time"></label></div>
+      <div class="v2-an-zeile"><label class="v2-feld"><small>Fällig am</small><input id="auf-faellig" type="date"></label><label class="v2-feld"><small>Uhrzeit</small><input id="auf-uhrzeit" type="time"></label>${aufWdhSelect("auf-wdh", "")}</div>
       <label class="v2-modlbl"><input type="checkbox" id="auf-erinnern" checked> Erinnern (Kalender + Telegram; ohne Uhrzeit um 09:00)</label>
       <details><summary><small>Notiz</small></summary><textarea id="auf-notiz" class="v2-inp" rows="3"></textarea></details>
       <div class="v2-card-actions"><button class="v2-btn pri" data-act="auf-neu">✅ Anlegen</button></div><div id="auf-msg" class="v2-msg"></div>
       <small class="v2-sub">Unterwegs: LUNA per Telegram schreiben, z. B. „To-do: Steuer machen, morgen 9 Uhr“.${d.google ? "" : " Kalender ist nicht verbunden – erinnert wird dann nur per Telegram."}</small></div>`, "w12")}
-    ${gruppen || tile("Alles erledigt", emptyRow("Keine offenen To-dos. 🎉"), "w12")}</div>`;
+    ${gruppen || tile("Alles erledigt", emptyRow("Keine offenen To-dos. 🎉"), "w12")}
+    ${vl && (vl.vorlagen || []).length ? tile("🔁 Regelmäßige Datenlieferungen (Monetarisierung)", `<div class="v2-form">${vl.vorlagen.map(v => `<label class="v2-modlbl v2-auf-vorlage"><input type="checkbox" class="auf-vl" value="${esc(v.id)}" ${v.aktiv ? "disabled" : ""}> <span><b>${esc(v.titel)}</b><small>${esc(v.wann)}${v.aktiv ? " · ✓ läuft schon" : ""} — ${esc(v.notiz)}</small></span></label>`).join("")}
+      <div class="v2-card-actions"><button class="v2-btn pri" data-act="auf-vorlagen">🔁 Ausgewählte anlegen</button></div><div id="auf-vl-msg" class="v2-msg"></div>
+      <small class="v2-sub">Jede Vorlage wird ein wiederkehrendes To-do mit Erinnerung (Kalender + Telegram). Beim Erledigen legt LUNA den nächsten Termin an.</small></div>`, "w12") : ""}</div>`;
   const t = $("#auf-titel"); if (t) t.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); aufAktion("auf-neu"); } });
 }
 async function aufBearbeiten(id) {
@@ -4867,6 +4873,7 @@ async function aufBearbeiten(id) {
   openModal("✅ To-do bearbeiten", `<div class="v2-form"><label class="v2-feld"><small>Titel *</small><input id="aufb-titel" class="v2-inp" maxlength="200" value="${esc(a.titel)}"></label>
     <div class="v2-an-zeile"><label class="v2-feld"><small>Fällig am</small><input id="aufb-faellig" type="date" value="${esc(a.faellig)}"></label><label class="v2-feld"><small>Uhrzeit</small><input id="aufb-uhrzeit" type="time" value="${esc(a.uhrzeit)}"></label></div>
     <label class="v2-feld"><small>Erinnerung (leer = keine)</small><input id="aufb-erinnerung" type="datetime-local" value="${esc(a.erinnerung)}"></label>
+    ${aufWdhSelect("aufb-wdh", a.wiederholung)}
     <label class="v2-feld"><small>Notiz</small><textarea id="aufb-notiz" class="v2-inp" rows="4">${esc(a.notiz)}</textarea></label>
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="auf-speichern" data-id="${esc(id)}">Speichern</button><button class="v2-btn danger" data-act="auf-loeschen" data-id="${esc(id)}">Löschen</button></div><div id="aufb-msg" class="v2-msg"></div>
     <small class="v2-sub">Angelegt ${esc(zeit(a.angelegt))}${a.quelle ? " · " + esc(a.quelle) : ""}${a.termin_id ? " · 📅 im Kalender" : ""}</small></div>`);
@@ -4877,14 +4884,24 @@ async function aufAktion(act, id, val) {
     const titel = ($("#auf-titel").value || "").trim(); if (!titel) return kundenMsg("auf-msg", "Bitte einen Titel eingeben.", false);
     const faellig = $("#auf-faellig").value, uhrzeit = $("#auf-uhrzeit").value;
     if (uhrzeit && !faellig) return kundenMsg("auf-msg", "Für eine Uhrzeit bitte auch ein Datum wählen.", false);
-    r = await jpost("/api/aufgaben", { titel, faellig, uhrzeit, notiz: ($("#auf-notiz").value || "").trim(), ...($("#auf-erinnern").checked ? {} : { erinnerung: "" }) });
+    const wiederholung = $("#auf-wdh").value;
+    if (wiederholung && !faellig) return kundenMsg("auf-msg", "Für eine Wiederholung bitte ein Fälligkeitsdatum wählen.", false);
+    r = await jpost("/api/aufgaben", { titel, faellig, uhrzeit, wiederholung, notiz: ($("#auf-notiz").value || "").trim(), ...($("#auf-erinnern").checked ? {} : { erinnerung: "" }) });
     if (!r || r.ok === false) return kundenMsg("auf-msg", (r && r.hinweis) || "Fehler.", false);
     return renderAufgaben("Angelegt: " + r.aufgabe.titel + (r.hinweis_kalender ? " – " + r.hinweis_kalender : ""), !!r.hinweis_kalender);
+  }
+  if (act === "auf-vorlagen") {
+    const ids = [...document.querySelectorAll(".auf-vl:checked")].map(x => x.value);
+    if (!ids.length) return kundenMsg("auf-vl-msg", "Bitte mindestens eine Vorlage ankreuzen.", false);
+    r = await jpost("/api/aufgaben/vorlagen", { ids });
+    if (!r || r.ok === false) return kundenMsg("auf-vl-msg", (r && r.hinweis) || "Fehler.", false);
+    glockeAktualisieren();
+    return renderAufgaben(`Angelegt: ${r.angelegt.join(", ") || "nichts (lief schon)"}` + (r.hinweis_kalender ? " – " + r.hinweis_kalender : ""), !!r.hinweis_kalender);
   }
   if (act === "auf-haken") r = await jpost(`/api/aufgaben/${encodeURIComponent(id)}/erledigen`, { erledigt: val === "zu" });
   if (act === "auf-bearbeiten") return aufBearbeiten(id);
   if (act === "auf-speichern") {
-    r = await jpost(`/api/aufgaben/${encodeURIComponent(id)}`, { titel: $("#aufb-titel").value, faellig: $("#aufb-faellig").value, uhrzeit: $("#aufb-uhrzeit").value, erinnerung: ($("#aufb-erinnerung").value || "").slice(0, 16), notiz: $("#aufb-notiz").value });
+    r = await jpost(`/api/aufgaben/${encodeURIComponent(id)}`, { titel: $("#aufb-titel").value, faellig: $("#aufb-faellig").value, uhrzeit: $("#aufb-uhrzeit").value, erinnerung: ($("#aufb-erinnerung").value || "").slice(0, 16), notiz: $("#aufb-notiz").value, wiederholung: $("#aufb-wdh").value });
     if (!r || r.ok === false) return kundenMsg("aufb-msg", (r && r.hinweis) || "Fehler.", false);
     closeModal();
   }
@@ -5544,7 +5561,7 @@ async function handleAct(act, el) {
     case "konzept": return konzeptFenster(id, val);
     case "kz-vid": case "kz-vid-ueb": case "kz-vid-weg": return kzVid(act, id, val);
     case "kz-iv": case "kz-iv-ueb": case "kz-iv-weg": return kzIv(act, val);
-    case "auf-neu": case "auf-haken": case "auf-bearbeiten": case "auf-speichern": case "auf-loeschen": return aufAktion(act, id, val);
+    case "auf-neu": case "auf-vorlagen": case "auf-haken": case "auf-bearbeiten": case "auf-speichern": case "auf-loeschen": return aufAktion(act, id, val);
     case "kz-tab": case "kz-briefing": case "kz-idee": case "kz-idee-status": case "kz-skript": case "kz-szene": case "kz-erledigt": case "kz-szene-weg":
     case "kz-dreh": case "kz-freigabe": case "kz-senden-form": case "kz-senden": case "kz-drehmodus": return kzAktion(act, id, val, el);
     case "dreh-haken": { const v = KZ.d ? KZ.d.kontext.vorgang : ""; const d = v ? null : await jget(`/api/crm/konzept/${encodeURIComponent(val)}`);

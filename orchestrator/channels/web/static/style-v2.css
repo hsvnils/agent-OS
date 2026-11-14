@@ -1286,3 +1286,7 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .an-p-spaeter-box { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
 .an-p-spaeter-box small { color: var(--v2-muted); } .an-p-spaeter-box .an-p-spaeter { width: auto; max-width: 170px; }
 .an-p-spaeter-box small.v2-sub { flex-basis: 100%; }
+
+/* Wiederkehrende To-dos (MONETARISIERUNG M6) */
+.v2-auf-vorlage { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid var(--v2-line-soft); }
+.v2-auf-vorlage span { display: flex; flex-direction: column; gap: 2px; min-width: 0; } .v2-auf-vorlage small { color: var(--v2-muted); overflow-wrap: anywhere; }

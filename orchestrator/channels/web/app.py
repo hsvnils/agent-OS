@@ -4187,13 +4187,38 @@ async def aufgabe_neu(request: Request):
     return _aufgabe_mit_kalender(lambda st: st.anlegen(str(b.get("titel") or ""), faellig=str(b.get("faellig") or ""),
                                                        uhrzeit=str(b.get("uhrzeit") or ""), erinnerung=er,
                                                        notiz=str(b.get("notiz") or ""), kunde=str(b.get("kunde") or ""),
-                                                       quelle="LUNA-OS", von=_von(request)), _von(request))
+                                                       quelle="LUNA-OS", von=_von(request),
+                                                       wiederholung=str(b.get("wiederholung") or "")), _von(request))
+
+
+@app.get("/api/aufgaben/vorlagen")
+def aufgaben_vorlagen():
+    """MONETARISIERUNG M6: Vorlagen fuer wiederkehrende Datenlieferungen (Stand: schon aktiv?)."""
+    from ...core.daten_rhythmus import vorlagen
+    return {"vorlagen": vorlagen(_aufgaben())}
+
+
+@app.post("/api/aufgaben/vorlagen")
+async def aufgaben_vorlagen_anlegen(request: Request):
+    """Gewaehlte Vorlagen als wiederkehrende To-dos anlegen (inkl. Kalendertermin, wie jedes To-do)."""
+    from datetime import date as _date
+    from ...core.aufgaben import kalender_abgleichen
+    from ...core.daten_rhythmus import vorlagen_anlegen
+    b = await _json(request)
+
+    def tun():
+        st = _aufgaben()
+        neu = vorlagen_anlegen(st, [str(i) for i in b.get("ids") or []], _date.fromisoformat(jetzt_iso()[:10]),
+                               von=_von(request))
+        hinweise = [h for h in (kalender_abgleichen(st, _google(), a, von=_von(request)) for a in neu) if h]
+        return {"angelegt": [a["titel"] for a in neu], **({"hinweis_kalender": hinweise[0]} if hinweise else {})}
+    return _kunden_aktion(tun)
 
 
 @app.post("/api/aufgaben/{aid}")
 async def aufgabe_aendern(aid: str, request: Request):
     b = await _json(request)
-    felder = {k: b[k] for k in ("titel", "notiz", "faellig", "uhrzeit", "erinnerung", "kunde") if k in b}
+    felder = {k: b[k] for k in ("titel", "notiz", "faellig", "uhrzeit", "erinnerung", "kunde", "wiederholung") if k in b}
     return _aufgabe_mit_kalender(lambda st: st.aendern(aid, felder, von=_von(request)), _von(request))
 
 

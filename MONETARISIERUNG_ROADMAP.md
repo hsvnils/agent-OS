@@ -4,8 +4,8 @@
 - Stand: 2026-11-14
 - Arbeitsbranch: `ai/plan-monetarisierung`
 - Basiscommit: `a048c2d`
-- Naechster Schritt: M1+M2 live, Plan-Vorlage 0.4 eingespielt (2026-11-14). Sichtabnahme M1+M2 gesammelt am Ende; Go fuer die
-  naechste Etappe (Vorschlag M6 Erinnerungen oder M3 Reichweiten).
+- Naechster Schritt: M6 umgesetzt auf `ai/monetarisierung-m6` -- CEO-Freigabe fuer Merge und Deploy; danach waehlt der CEO in
+  LUNA-OS (To-dos) die Vorlagen; Gate M6: erste Erinnerung kommt per Telegram an (`typ:"sent"`). Sichtabnahme gesammelt am Ende.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -103,7 +103,12 @@ M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
 - **Datenschutz:** nur Summen, kein Chat-Werkzeug, kein Sprachmodell. Neue Verbindung in `docs/datenfluesse.md`.
 - **Gate:** Readback gegen App Store Connect und Play Console fuer einen Stichtag; Verbindung lehnt Tabellenzugriff ab (Gegenprobe).
 
-### M6 Wiederkehrende Erinnerungen (mittel, Risiko niedrig)
+### M6 Wiederkehrende Erinnerungen (mittel, Risiko niedrig) -- umgesetzt 2026-11-14
+- **Stand:** To-dos mit `wiederholung` (woechentlich/monatlich/quartalsweise/jaehrlich, `serie`, `naechste`): Erledigen legt
+  genau einen Nachfolger an (Erinnerung mit gleichem Abstand, Kalender mit); Vorlagen fuer Datenlieferungen
+  (`orchestrator/core/daten_rhythmus.py`, `GET/POST /api/aufgaben/vorlagen`, Auswahl durch den CEO); Teilzeit-Antrag: Tageslauf
+  05:00 legt je Brueckenjob-Gate einmal ein To-do an, sobald die „in Folge“-Regel zur Haelfte steht; Chat-Werkzeug
+  `todo_anlegen` mit `wiederholung`. 10 Tests inkl. Gegenprobe. Kneipen-Enddatum folgt mit M8 (braucht App-Daten).
 - **Ziel:** Wiederholungen fuer To-dos (woechentlich, monatlich, quartalsweise) mit Telegram-Erinnerung: Reichweiten-Export
   montags, Abrechnungen bis zum 5., Quartalsdaten, Kneipen-Listung verlaengern vor `listed_until`, Teilzeit-Antrag 3 Monate vor
   einem Brueckenjob-Gate.
