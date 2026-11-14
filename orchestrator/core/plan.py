@@ -250,10 +250,11 @@ class Plan:
                                "quote": round((werte[-1] if werte else 0) / ziel * 100) if ziel else None,
                                "ampel": ampel(ziel, werte)})
         koop = [{"monat": m["monat"], "anzahl": m["koop_anzahl"], "cent": m["koop_cent"]} for m in letzte]
+        from .daten_rhythmus import teilzeit_vorlauf                    # M6: Teilzeit-Antrag 3 Monate vorher
         return {"stand": heute.isoformat(), "bis_monat": reihe[-1]["monat"] if reihe else "",
                 "plan": plan, "hat_plan": bool(plan["gates"]), "variablen": var,
                 "gates": gates, "ziel_gate": ziel_gate["code"] if ziel_gate else "",
-                "ampeln": ampeln,
+                "ampeln": ampeln, "teilzeit": teilzeit_vorlauf({"gates": gates}),
                 "koop": {"monate": koop, "soll_anzahl": ziel_gate["koop_anzahl"] if ziel_gate else 0,
                          "soll_cent": ziel_gate["ziele"].get("S1", 0) if ziel_gate else 0},
                 "monate": [{"monat": m["monat"], "gewinn_cent": m["gewinn_cent"], "einnahmen_cent": m["einnahmen_cent"]}

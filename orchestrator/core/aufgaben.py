@@ -10,6 +10,10 @@ abgeleitet wird. Anlegen in LUNA-OS (Bereich „✅ To-dos“) oder per Telegram
   zum Zeitpunkt (Bot, alle 5 min) mit „Erledigt“ / „+1 Std.“ / „morgen“.
 - Kalender-Termine von To-dos sind LUNAs **eigene, protokollierte** Termine: anlegen, verschieben und beim Erledigen
   loeschen ohne Rueckfrage (CEO 2026-10-27, wie die Beleg-Erinnerungen 2026-09-28).
+- **Wiederholung** (MONETARISIERUNG M6): woechentlich, monatlich, quartalsweise, jaehrlich -- braucht eine Faelligkeit.
+  Beim Erledigen legt LUNA genau einmal das naechste To-do derselben Serie an (Faelligkeit im Takt weiter, nie in der
+  Vergangenheit; Erinnerung mit demselben Abstand). Wieder oeffnen loescht den Nachfolger nicht; erneutes Erledigen
+  legt keinen zweiten an.
 """
 from __future__ import annotations
 
@@ -21,6 +25,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 STANDARD_UHRZEIT = "09:00"
+WIEDERHOLUNG = {"woechentlich": "wöchentlich", "monatlich": "monatlich", "quartalsweise": "quartalsweise",
+                "jaehrlich": "jährlich"}
 TERMIN_MINUTEN = 15
 MAX_TITEL, MAX_NOTIZ = 200, 2000
 _DATUM = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -49,6 +55,27 @@ def _pruefe_zeit(faellig: str, uhrzeit: str, erinnerung: str) -> None:
         raise ValueError("Eine Uhrzeit braucht ein Datum.")
     if erinnerung and not _ZEIT.match(erinnerung):
         raise ValueError("Erinnerung bitte als JJJJ-MM-TTTHH:MM.")
+
+
+def naechster_termin(faellig: str, turnus: str, heute: str, tag: int = 0) -> str:
+    """Naechste Faelligkeit nach `faellig` im Takt; ueberspringt verpasste Termine bis heute oder spaeter.
+    `tag` = gewuenschter Monatstag (31 -> jeweils Monatsende)."""
+    from calendar import monthrange
+    from datetime import date
+    d = date.fromisoformat(faellig)
+    tag = tag or d.day
+    monate = {"monatlich": 1, "quartalsweise": 3, "jaehrlich": 12}.get(turnus)
+    while True:
+        if turnus == "woechentlich":
+            d = d + timedelta(days=7)
+        elif monate:
+            m = d.month - 1 + monate
+            j, m = d.year + m // 12, m % 12 + 1
+            d = date(j, m, min(tag, monthrange(j, m)[1]))
+        else:
+            raise ValueError("Unbekannte Wiederholung.")
+        if d.isoformat() >= heute:
+            return d.isoformat()
 
 
 def standard_erinnerung(faellig: str, uhrzeit: str) -> str:
@@ -81,7 +108,8 @@ class AufgabenStore:
             if t == "angelegt":
                 out[aid] = {"id": aid, "titel": "", "notiz": "", "faellig": "", "uhrzeit": "", "erinnerung": "",
                             "kunde": "", "quelle": "", "status": "offen", "angelegt": e["ts"], "erledigt_am": "",
-                            "termin_id": "", "erinnert": "", "von": e.get("von", "")} | d
+                            "termin_id": "", "erinnert": "", "von": e.get("von", ""), "wiederholung": "",
+                            "serie": "", "naechste": ""} | d
             elif aid not in out:
                 continue
             elif t == "geaendert":
@@ -152,7 +180,8 @@ class AufgabenStore:
         return a
 
     def anlegen(self, titel: str, *, faellig: str = "", uhrzeit: str = "", erinnerung: str | None = None, notiz: str = "",
-                kunde: str = "", quelle: str = "LUNA-OS", von: str = "") -> dict:
+                kunde: str = "", quelle: str = "LUNA-OS", von: str = "", wiederholung: str = "", serie: str = "",
+                tag: int = 0) -> dict:
         titel = _t(titel, MAX_TITEL)
         if not titel:
             raise ValueError("Titel fehlt.")
@@ -161,10 +190,13 @@ class AufgabenStore:
         _pruefe_zeit(faellig, uhrzeit, er)
         if er and not faellig:
             faellig = er[:10]
+        wiederholung = _wiederholung(wiederholung, faellig)
         aid = "A-" + uuid.uuid4().hex[:8]
         self._schreibe("angelegt", aid, {"titel": titel, "notiz": _t(notiz, MAX_NOTIZ, einzeilig=False), "faellig": faellig,
                                          "uhrzeit": uhrzeit, "erinnerung": er, "kunde": _t(kunde, 20),
-                                         "quelle": _t(quelle, 40)}, von)
+                                         "quelle": _t(quelle, 40)}
+                       | ({"wiederholung": wiederholung, "serie": serie or aid, "tag": int(tag or faellig[8:10])}
+                          if wiederholung else {}), von)
         return self.get(aid)
 
     def aendern(self, aid: str, felder: dict, *, von: str = "") -> dict:
@@ -181,6 +213,12 @@ class AufgabenStore:
         for k in ("faellig", "uhrzeit", "erinnerung"):
             if k in felder:
                 neu[k] = (felder[k] or "").strip()
+        if "wiederholung" in felder:
+            neu["wiederholung"] = _wiederholung(felder["wiederholung"], neu.get("faellig", a["faellig"]))
+            if neu["wiederholung"] and not a.get("serie"):
+                neu |= {"serie": a["id"], "tag": int(neu.get("faellig", a["faellig"])[8:10])}
+        elif "faellig" in neu and a.get("wiederholung"):
+            _wiederholung(a["wiederholung"], neu["faellig"])                 # Wiederholung braucht ein Datum
         if ("faellig" in neu or "uhrzeit" in neu) and "erinnerung" not in neu and (a["erinnerung"] or a["faellig"] == ""):
             neu["erinnerung"] = standard_erinnerung(neu.get("faellig", a["faellig"]), neu.get("uhrzeit", a["uhrzeit"]))
         z = a | neu
@@ -195,7 +233,23 @@ class AufgabenStore:
         if (a["status"] == "erledigt") == erledigt:
             return a
         self._schreibe("erledigt" if erledigt else "geoeffnet", aid, None, von)
+        if erledigt and a.get("wiederholung") and a.get("faellig") and not (a.get("naechste") and self.get(a["naechste"])):
+            self._naechste(a, von)
         return self.get(aid)
+
+    def _naechste(self, a: dict, von: str) -> dict:
+        """Wiederholung: naechstes To-do der Serie (genau eines), Erinnerung mit demselben Abstand zur Faelligkeit."""
+        heute = jetzt_lokal().date().isoformat()
+        f = naechster_termin(a["faellig"], a["wiederholung"], heute, int(a.get("tag") or 0))
+        er = ""
+        if a.get("erinnerung"):
+            abstand = datetime.fromisoformat(a["erinnerung"]) - datetime.fromisoformat(a["faellig"])
+            er = (datetime.fromisoformat(f) + abstand).strftime("%Y-%m-%dT%H:%M")
+        n = self.anlegen(a["titel"], faellig=f, uhrzeit=a.get("uhrzeit", ""), erinnerung=er, notiz=a.get("notiz", ""),
+                         kunde=a.get("kunde", ""), quelle=a.get("quelle") or "Wiederholung", von=von,
+                         wiederholung=a["wiederholung"], serie=a.get("serie") or a["id"], tag=int(a.get("tag") or 0))
+        self._schreibe("geaendert", a["id"], {"naechste": n["id"]}, von)
+        return n
 
     def loeschen(self, aid: str, *, von: str = "") -> dict:
         a = self._vorhanden(aid)
@@ -219,7 +273,16 @@ class AufgabenStore:
 
 # -- Kalender (LUNAs eigene Termine, ohne Rueckfrage) -------------------------------------------------------------------
 def kalender_abgleichen(store: AufgabenStore, google, a: dict, *, von: str = "LUNA") -> str:
-    """Termin passend zum To-do anlegen, verschieben oder loeschen. -> Hinweis (leer = ok/nichts zu tun)."""
+    """Termin passend zum To-do anlegen, verschieben oder loeschen. -> Hinweis (leer = ok/nichts zu tun).
+    Wiederholung: beim Erledigen bekommt auch das naechste To-do der Serie seinen Termin."""
+    h = _kalender_eins(store, google, a, von=von)
+    n = store.get(a.get("naechste") or "") if a.get("status") == "erledigt" else None
+    if n and n["status"] == "offen" and n["erinnerung"] and not n.get("termin_id"):
+        h = h or _kalender_eins(store, google, n, von=von)
+    return h
+
+
+def _kalender_eins(store: AufgabenStore, google, a: dict, *, von: str = "LUNA") -> str:
     if google is None or not getattr(google, "verfuegbar", lambda: False)():
         return "Kalender nicht verbunden -- Erinnerung kommt nur per Telegram."
     jetzt = jetzt_lokal().strftime("%Y-%m-%dT%H:%M")
@@ -250,11 +313,22 @@ def kalender_abgleichen(store: AufgabenStore, google, a: dict, *, von: str = "LU
 def zusammenfassung(a: dict) -> str:
     from .beleg_pdf import datum_de
     teile = [f"✅ To-do: {a['titel']}"]
+    if a.get("wiederholung"):
+        teile.append(f"🔁 {WIEDERHOLUNG.get(a['wiederholung'], a['wiederholung'])}")
     if a["faellig"]:
         teile.append(f"fällig {datum_de(a['faellig'])}" + (f" {a['uhrzeit']} Uhr" if a["uhrzeit"] else ""))
     if a["erinnerung"]:
         teile.append(f"Erinnerung {datum_de(a['erinnerung'][:10])} {a['erinnerung'][11:16]} Uhr")
     return " · ".join(teile)
+
+
+def _wiederholung(w, faellig: str) -> str:
+    w = str(w or "").strip()
+    if w and w not in WIEDERHOLUNG:
+        raise ValueError("Wiederholung: wöchentlich, monatlich, quartalsweise oder jährlich.")
+    if w and not faellig:
+        raise ValueError("Eine Wiederholung braucht ein Fälligkeitsdatum.")
+    return w
 
 
 def plus_stunde(a: dict, jetzt: datetime | None = None) -> str:
@@ -277,7 +351,8 @@ def erinnerungen_senden(store: AufgabenStore, senden, *, jetzt: datetime | None 
     """Faellige Erinnerungen per Telegram (`senden(text, inline_keyboard) -> bool`); als erinnert gilt nur, was ankam."""
     gesendet = []
     for a in store.faellige_erinnerungen(jetzt):
-        text = "⏰ Erinnerung: " + a["titel"] + (f"\n{a['notiz']}" if a.get("notiz") else "")
+        text = ("⏰ Erinnerung: " + a["titel"] + (f" (🔁 {WIEDERHOLUNG.get(a['wiederholung'], '')})" if a.get("wiederholung") else "")
+                + (f"\n{a['notiz']}" if a.get("notiz") else ""))
         if senden(text[:3500], erinnerungs_knoepfe(a["id"])):
             store.erinnert(a["id"], a["erinnerung"])
             gesendet.append(a["id"])

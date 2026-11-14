@@ -1370,6 +1370,18 @@ def _start_buchhaltung_loop(ctx) -> None:
                                 abteilung="CFO", kategorie="finanzen", quelle="lastschrift", detail="LUNA-OS -> Belege")
                     except Exception as _exc:
                         print(f"[lastschrift] Fehler: {_exc}", flush=True)
+                    try:                                    # MONETARISIERUNG M6: Teilzeit-Antrag rechtzeitig (To-do einmal je Gate)
+                        from ...core.aufgaben import AufgabenStore as _AS
+                        from ...core.daten_rhythmus import teilzeit_erinnern
+                        from ...core.plan import Plan as _Plan
+                        _tz = teilzeit_erinnern(_AS(ROOT / "todos" / "log.jsonl"), _Plan(_bh, KundenStore(_bh)).auswertung(),
+                                                jetzt.date())
+                        if _tz:
+                            ctx.notifications.enqueue("📅 " + "; ".join(a["titel"] for a in _tz) + " -- To-do angelegt.",
+                                                      abteilung="Head of Agents", kategorie="finanzen", quelle="plan",
+                                                      detail="LUNA-OS -> To-dos")
+                    except Exception as _exc:
+                        print(f"[plan-teilzeit] Fehler: {_exc}", flush=True)
                     try:                                    # REELS_ROADMAP: Verfall nach 30 Tagen, Videos loeschen
                         from ...core.reel_store import VERFALL_TAGE, ReelStore as _RS
                         _rr = _RS(ROOT / "reel_freigabe" / "log.jsonl").aufraeumen(jetzt.date())

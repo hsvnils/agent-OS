@@ -22,6 +22,7 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Wiederkehrende To-dos (M6):** Nachfolger erst beim Erledigen (genau einer je Serie), nicht im Voraus; Vorlagen fuer Datenlieferungen nur auf CEO-Auswahl; Teilzeit-Antrag automatisch einmal je Brueckenjob-Gate ab halber Kontinuitaet. Hebt den Nicht-Scope „Wiederholung“ aus `TODOS_ROADMAP.md` auf (CEO-Go M6) | 2026-11-14 | BESCHLOSSEN | `orchestrator/core/aufgaben.py`, `orchestrator/core/daten_rhythmus.py` |
 | **Teilrechnung statt Rechnung splitten:** Position mit „spaeter abrechnen am“, Teilrechnung jetzt, Folgerechnung genau einmal zur Teilrechnung; verworfen: Position loeschen + neuer Auftrag (Bezug geht verloren), Vorkasse-Modell (rechnet Abschlaege, nicht Positionen) | 2026-11-14 | BESCHLOSSEN (CEO) | `TEILRECHNUNG_ROADMAP.md`, `orchestrator/core/rechnungen.py` |
 | **Plan und Gates in LUNA-OS (M2):** Plan als Ereignis in der Kette mit Verlauf; Zahlen nur in LUNA-OS (nicht im oeffentlichen Code); Kontinuitaetsregeln in_folge/schnitt/x_von_y nur ueber abgeschlossene Monate; Schwellen als Formel aus E/L/N je Person; Anteils-Kriterien vorerst zum Abhaken | 2026-11-14 | BESCHLOSSEN | `orchestrator/core/plan.py`, `MONETARISIERUNG_ROADMAP.md` M2 |
 | **Erloes-Saeulen in LUNA-OS (M1):** Saeule je Beleg als eigenes Ereignis in der Hash-Kette (additiv, EUeR unveraendert), Regel-Vorschlag nur mit Bestaetigung durch Menschen, mehrdeutig = kein Vorschlag, Supabase-Kosten ohne Vorschlag (App oder LUNA), Stunden ohne Auftrag als Monats-Schaetzung je Person | 2026-11-14 | BESCHLOSSEN | `orchestrator/core/saeulen.py`, `MONETARISIERUNG_ROADMAP.md` M1 |
@@ -254,6 +255,15 @@
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-11-14 — Wiederkehrende To-dos und Datenlieferungen (MONETARISIERUNG M6)
+
+**Was:** To-dos koennen sich woechentlich, monatlich, quartalsweise oder jaehrlich wiederholen; beim Erledigen entsteht genau
+ein Nachfolger. **Warum so:** Ein Nachfolger erst beim Erledigen haelt die Liste kurz (keine zwoelf Monats-To-dos im Voraus),
+verpasste Termine werden uebersprungen statt nachgeholt, und die Serie bleibt ueber `serie` nachvollziehbar. Vorlagen werden
+nicht automatisch angelegt, weil der CEO entscheidet, welche Lieferungen er wirklich leisten will. Der Teilzeit-Antrag kommt
+automatisch, weil die 3-Monats-Frist sonst leicht verpasst wird. **Revidiert:** Nicht-Scope „Wiederholung“ aus
+`TODOS_ROADMAP.md` (2026-10-27) -- jetzt umgesetzt.
 
 ### 2026-11-14 — Teilrechnung mit spaeter abgerechneter Position (CEO)
 

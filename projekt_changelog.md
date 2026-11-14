@@ -17,6 +17,18 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 18:06] — Claude Code
+- **Was:** MONETARISIERUNG M6 umgesetzt (Branch `ai/monetarisierung-m6`): Wiederholung fuer To-dos (`core/aufgaben.py`:
+  `wiederholung`, `serie`, `naechste`, `naechster_termin`, Kalender auch fuer den Nachfolger), Vorlagen fuer Datenlieferungen
+  und Teilzeit-Erinnerung (`core/daten_rhythmus.py`), Endpunkte `/api/aufgaben/vorlagen`, Tageslauf im Bot (05:00),
+  Chat-Werkzeug `todo_anlegen` mit `wiederholung`, Plan-Hinweis Teilzeit, LUNA-OS To-dos (Feld „Wiederholen“, 🔁, Vorlagen-Kachel),
+  Cache v157/v83; 10 Tests inkl. Gegenprobe; Sichtpruefung Rechner und iPhone 402 px.
+- **Warum:** CEO-Go fuer M6 (2026-11-14).
+- **Betroffen:** `orchestrator/core/aufgaben.py`, `orchestrator/core/daten_rhythmus.py`, `orchestrator/core/plan.py`,
+  `orchestrator/core/hoa_tools.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`,
+  `static/style-v2.css`, `static/index-v2.html`, `orchestrator/tests/test_wiederholung.py`, `MONETARISIERUNG_ROADMAP.md`,
+  `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`
+
 ## [2026-11-14 18:00] — Claude Code
 - **Was:** Produktiver Datenwrite nach CEO-Go (A11): Katalog-Artikel `affiliate` (Affiliate-Partnerschaft), Feld `hinweis`
   geleert (vorher interne Arbeitsanweisung „Betrag je Abrechnungszeitraum laut Provisionsabrechnung des Partners eintragen“,
