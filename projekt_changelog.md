@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 17:39] — Claude Code
+- **Was:** `ai/teilrechnung` nach `main` gemergt und gepusht; Roadmap-Status fortgeschrieben. Deploy (NAS-Sync, Neustart
+  `luna-os`/`luna-telegram`) macht der CEO.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy der Teilrechnung (2026-11-14).
+- **Betroffen:** `main`, `TEILRECHNUNG_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-11-14 17:33] — Claude Code
 - **Was:** TEILRECHNUNG T1 umgesetzt (Branch `ai/teilrechnung`, neue Roadmap `TEILRECHNUNG_ROADMAP.md`): Position mit
   „Spaeter abrechnen am“, Teilrechnung (Summe ohne die Position, PDF-Hinweis im CEO-Wortlaut), Folgerechnung nur ueber die
