@@ -4,8 +4,8 @@
 - Stand: 2026-11-14
 - Arbeitsbranch: `ai/plan-monetarisierung`
 - Basiscommit: `a048c2d`
-- Naechster Schritt: M6 umgesetzt auf `ai/monetarisierung-m6` -- CEO-Freigabe fuer Merge und Deploy; danach waehlt der CEO in
-  LUNA-OS (To-dos) die Vorlagen; Gate M6: erste Erinnerung kommt per Telegram an (`typ:"sent"`). Sichtabnahme gesammelt am Ende.
+- Naechster Schritt: M6 auf `main`, Deploy durch den CEO; danach waehlt der CEO in LUNA-OS (To-dos) die Vorlagen; Gate M6:
+  erste Erinnerung kommt per Telegram an (`typ:"sent"`). Sichtabnahme gesammelt am Ende; Go fuer die naechste Etappe.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -103,7 +103,7 @@ M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
 - **Datenschutz:** nur Summen, kein Chat-Werkzeug, kein Sprachmodell. Neue Verbindung in `docs/datenfluesse.md`.
 - **Gate:** Readback gegen App Store Connect und Play Console fuer einen Stichtag; Verbindung lehnt Tabellenzugriff ab (Gegenprobe).
 
-### M6 Wiederkehrende Erinnerungen (mittel, Risiko niedrig) -- umgesetzt 2026-11-14
+### M6 Wiederkehrende Erinnerungen (mittel, Risiko niedrig) -- umgesetzt 2026-11-14, gemergt
 - **Stand:** To-dos mit `wiederholung` (woechentlich/monatlich/quartalsweise/jaehrlich, `serie`, `naechste`): Erledigen legt
   genau einen Nachfolger an (Erinnerung mit gleichem Abstand, Kalender mit); Vorlagen fuer Datenlieferungen
   (`orchestrator/core/daten_rhythmus.py`, `GET/POST /api/aufgaben/vorlagen`, Auswahl durch den CEO); Teilzeit-Antrag: Tageslauf
