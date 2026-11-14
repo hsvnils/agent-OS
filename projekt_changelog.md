@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-14 14:11] — Claude Code
+- **Was:** Skills `geschaeftsmodell-unit-economics`, `monetarisierungsplan`, `meilensteine-stage-gate` (Berater) und `marketingplan` (CMO) auf 1.1.0: Pflicht zur Darstellung je Saeule (S1 Kooperationen bis S6 Auftragsproduktion) und Brueckenjob als erster Schritt (Versicherungsschwelle 20 Std + halbe Bezugsgroesse, Brueckenteilzeit). Monetarisierungsplan 0.3 und Zeitstrahl-XMind (lokal in `strategie/`, nicht im Git) entsprechend umgebaut.
+- **Warum:** CEO: immer nach Saeulen sortieren; erster Schritt fuer Nils und Celine ist ein Job mit weniger Stunden, der die Versicherung traegt.
+- **Betroffen:** `skills/berater/geschaeftsmodell-unit-economics/`, `skills/berater/monetarisierungsplan/`, `skills/berater/meilensteine-stage-gate/`, `skills/cmo/marketingplan/`
+
 ## [2026-11-14 14:07] — Claude Code
 - **Was:** `ai/berater-cmo-skills` nach `main` gemergt und gepusht (Berater- und CMO-Skills, Marketing Manager als Agent 18, XMind-Organigramm, Generator).
 - **Warum:** CEO: „Go fuer Merge, Push und Deploy".

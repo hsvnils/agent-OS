@@ -1,6 +1,6 @@
 ---
 name: geschaeftsmodell-unit-economics
-version: 1.0.0
+version: 1.1.0
 beschreibung: Bewertet jede Erloesquelle nach Deckungsbeitrag, Euro je Stunde und Verbrauch der Kleinunternehmergrenze statt nach Umsatz.
 lizenz: intern
 autor: Head of Agents
@@ -16,6 +16,11 @@ Quelle an Steuer- und Plattform-Spielraum.
 
 ## Wann anwenden
 Bei jeder Frage „lohnt sich Quelle X?", bei Monetarisierungsplaenen, Preisentscheidungen und Priorisierung.
+
+## Immer nach Saeulen (CEO 2026-11-14)
+Jede Rechnung, jedes Ziel und jede Auswertung wird **je Saeule** gefuehrt, nie als Sammelposten: S1 Kooperationen ·
+S2 Plattform-Monetarisierung (S2a Facebook, S2b TikTok, S2c YouTube, S2d Instagram) · S3 Fan-App (S3a Abos, S3b Kneipen) ·
+S4 Affiliates · S5 Merch · S6 Auftragsproduktion. Summen nur zusaetzlich.
 
 ## Mini-Canvas je Erloesquelle (statt einem grossen Canvas)
 Bei Creator-Marken ist die Reichweite zugleich Ressource, Kanal und Produkt. Deshalb je Quelle sechs Felder:

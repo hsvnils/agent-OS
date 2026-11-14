@@ -1,6 +1,6 @@
 ---
 name: monetarisierungsplan
-version: 1.0.0
+version: 1.1.0
 beschreibung: Fuehrt durch einen vollstaendigen Marketing- und Monetarisierungsplan: Ist-Lage, Quellen, Gates, Kapazitaet, Daten-Rhythmus und Abbildung in LUNA-OS.
 lizenz: intern
 autor: Head of Agents
@@ -12,6 +12,11 @@ modell: Richtwert (modell-agnostisch)
 
 Der Rahmen, der die anderen Berater-Skills zusammenfuehrt. Ergebnis ist ein Plan, mit dem die Menschen und LUNA
 monatlich arbeiten koennen -- nicht ein Dokument fuer die Schublade.
+
+## Immer nach Saeulen (CEO 2026-11-14)
+Jede Rechnung, jedes Ziel und jede Auswertung wird **je Saeule** gefuehrt, nie als Sammelposten: S1 Kooperationen ·
+S2 Plattform-Monetarisierung (S2a Facebook, S2b TikTok, S2c YouTube, S2d Instagram) · S3 Fan-App (S3a Abos, S3b Kneipen) ·
+S4 Affiliates · S5 Merch · S6 Auftragsproduktion. Summen nur zusaetzlich.
 
 ## Ablauf
 1. **Ziel und Randbedingungen** klaeren: wie viele Personen, ab wann, Ersatzbedarf, verfuegbare Stunden,

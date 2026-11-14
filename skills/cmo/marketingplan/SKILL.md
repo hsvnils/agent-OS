@@ -1,6 +1,6 @@
 ---
 name: marketingplan
-version: 1.0.0
+version: 1.1.0
 beschreibung: Erstellt und fuehrt den Marketingplan je Quartal mit Zielen, Kanaelen, Kampagnen, Kapazitaet und Plan/Ist-Ampel.
 lizenz: intern
 autor: Head of Agents
@@ -14,6 +14,11 @@ Der Marketingplan uebersetzt die Umsatzziele des Monetarisierungsplans in Reichw
 
 ## Wann anwenden
 Quartalsplanung, Monatsbericht, neue Erloesquelle (App, Merch, Kneipen), wenn ein Bereich hinter Plan liegt.
+
+## Immer nach Saeulen (CEO 2026-11-14)
+Jede Rechnung, jedes Ziel und jede Auswertung wird **je Saeule** gefuehrt, nie als Sammelposten: S1 Kooperationen ·
+S2 Plattform-Monetarisierung (S2a Facebook, S2b TikTok, S2c YouTube, S2d Instagram) · S3 Fan-App (S3a Abos, S3b Kneipen) ·
+S4 Affiliates · S5 Merch · S6 Auftragsproduktion. Summen nur zusaetzlich.
 
 ## Aufbau
 1. **Ziele** aus dem Monetarisierungsplan ableiten (z. B. „30 aktive Kneipen bis Saisonende" -> Leads, Besuche, Pitches).

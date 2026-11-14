@@ -1,6 +1,6 @@
 ---
 name: meilensteine-stage-gate
-version: 1.0.0
+version: 1.1.0
 beschreibung: Legt Meilensteine mit Kontinuitaets-Bedingungen fuer den Weg vom Nebenerwerb in die Selbststaendigkeit fest und misst Plan gegen Ist.
 lizenz: intern
 autor: Head of Agents
@@ -31,8 +31,18 @@ wird bei Erreichen freigegeben, z. B. Teilzeit beantragen).
 - **G4 Absicherung:** Ruecklage von 6 Monatsausgaben (privat plus betrieblich), Steuerruecklage getrennt,
   Kranken- und Rentenversicherung als Selbststaendiger durchgerechnet.
 - **G5 Pipeline:** gebuchte Erloese der naechsten 3 Monate decken mindestens 50 % des Bedarfs.
-- **Sprung Person 1** erst, wenn G2 bis G5 gleichzeitig gelten; Zwischenschritt Teilzeit empfehlen.
-- **Sprung Person 2** mit denselben Gates, Bedarf dann fuer zwei Personen.
+- **Erster Schritt je Person ist ein Brueckenjob** (Teilzeit im Hauptjob), nicht die Kuendigung: Gate „Gewinn mindestens
+  2 x Netto-Luecke, 6 Monate in Folge, Ruecklage 6 x Luecke".
+- **Sprung in die Vollzeit** erst, wenn G2 bis G5 gleichzeitig gelten; Person 2 mit denselben Gates, Bedarf fuer zwei.
+- Ziele je Gate **pro Saeule** angeben (S1 Kooperationen, S2 Plattformen je Plattform, S3 App, S4 Affiliates, S5 Merch,
+  S6 Auftragsproduktion), nie als Sammelposten.
+
+## Brueckenjob: versichert bleiben (Stand 2026, mit Krankenkasse bestaetigen)
+- Mehr als 20 Wochenstunden **und** mehr als die halbe monatliche Bezugsgroesse brutto (2026: 1.977,50 EUR) -> die Kasse vermutet
+  Nebenberuflichkeit, KV/PV/RV/AV laufen ueber den Arbeitgeber. Darunter Einzelfallpruefung; Midijob nicht sicher, Minijob nie.
+- Netto sinkt weniger als die Stunden (Progression): Netto-Verlust ca. 80-85 % des prozentualen Stundenverlusts.
+- Brueckenteilzeit § 9a TzBfG (Rueckkehrrecht, Arbeitgeber > 45 Beschaeftigte) vor § 8 TzBfG (ohne Rueckkehr) pruefen;
+  Antrag 3 Monate vorher in Textform. Nebentaetigkeit beim Arbeitgeber anzeigen, Krankenkasse informieren, Statusbestaetigung holen.
 
 ## Ersatzbedarf richtig rechnen
 Ersatzbedarf = bisheriges Netto + wegfallende Arbeitgeberanteile (Kranken-, Pflege-, Rentenversicherung) +
