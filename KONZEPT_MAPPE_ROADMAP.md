@@ -1,9 +1,9 @@
 # Roadmap: Konzept-Mappe je Vorgang (Briefing, Ideen, Skript, Shotlist, Drehplan, Kunden-Freigabe)
 - Status: in Umsetzung
-- Stand: 2026-10-05
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-konzept-vertrag` (Plan); Umsetzung auf eigenem Branch
 - Basiscommit: `6636d02`
-- Naechster Schritt: K1-K3 gebaut (2026-10-05); Deploy + Abnahme an einem echten Vorgang; K4 nach eigenem Go.
+- Naechster Schritt: Pruefung 2026-11-15: live, nie benutzt (0 Ereignisse) -- Abnahme am naechsten echten Vorgang (z. B. AB-2026-0006); K4 nach eigenem Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

@@ -1,9 +1,9 @@
 # Roadmap: Belegverfolgung (Belegkette als Zeitstrahl in jeder Belegart)
 - Status: in Umsetzung
-- Stand: 2026-10-03
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/belegverfolgung`
 - Basiscommit: `fd77aa7`
-- Naechster Schritt: B1+B2 gebaut (2026-10-03); Deploy + gemeinsamer Test mit PROJEKTZEITEN/PROJEKTBERICHT, Abnahme an AB-2026-0001.
+- Naechster Schritt: Pruefung 2026-11-15: abschliessbar -- echte Kette AN-0001 -> AB-0001 -> RE-0001 -> ZE-0001 vollstaendig, CEO-Rueckmeldung 05.10. eingearbeitet; wartet auf CEO-Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

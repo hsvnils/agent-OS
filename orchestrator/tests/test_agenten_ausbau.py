@@ -139,7 +139,7 @@ class TestA1Profil(unittest.TestCase):
             profil(REPO, "../agents/x", watch_log=self.watch, nutzung=self.n)
 
     def test_3_uebersicht_alle_agenten(self):
-        u = {x["key"]: x for x in uebersicht(REPO, watch_log=self.watch, nutzung=self.n)}
+        u = {x["key"]: x for x in uebersicht(REPO, watch_log=self.watch, nutzung=self.n, jetzt=datetime(2026, 10, 5))}   # BF-90
         self.assertEqual(len(u), 20)                                             # HoA + 15 + CIO + Risk + Videograf + CMO
         self.assertEqual((u["cfo"]["skills"], u["cfo"]["funde"], u["cfo"]["nutzung30"]), (4, 2, 1))
         self.assertEqual(u["clo"]["skills"], 7)

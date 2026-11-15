@@ -1,10 +1,10 @@
 # Roadmap: Wiederkehrender Content und Vorstellungs-Mails aus LUNA-OS
 
 - Status: in Umsetzung
-- Stand: 2026-10-06
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/serien-und-akquise`
 - Basiscommit: `ba6465b`
-- Naechster Schritt: S1, V1, V2 live (2026-10-06) -- echter Testversand an eine CEO-Adresse (Gate V1), dann Roadmap abschliessen.
+- Naechster Schritt: Pruefung 2026-11-15: V1/V2 verifiziert (3 Vorstellungen, alle Antworten erkannt); S1 (Serien im Content-Plan) nie benutzt -- CEO legt eine Serie an oder nimmt S1 ohne Nutzung ab.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

@@ -1,16 +1,10 @@
 # Roadmap: Kunden, Angebote, Rechnungen und Finanzen in LUNA-OS
 
 - Status: in Umsetzung
-- Stand: 2026-09-30
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/kunden-finanzen` (geschlossen 2026-09-29, alles auf main; naechste Etappe auf neuem Branch)
 - Basiscommit: `649a974`
-- Naechster Schritt: Etappe 27 (Plattform-Auszahlungen) live, Nachtrag gebucht -- CEO-Abnahme offen; Etappe 26 (kalkulatorische Kosten zuschaltbar) live -- CEO-Abnahme offen; Etappe 19 live (Hands of God/Kiezalm uebernommen 2026-09-30), Etappe 20 live, Etappe 23 live, Etappen 21, 22 live; 24 (Firmenakte) und 25 (Zeiterfassung) umgesetzt -- gemeinsamer Deploy offen; 21 Kalkulation + Lager, 22 Firmendaten-Recherche. Etappe 18 (Zahlungsbedingungen/Vorkasse) umgesetzt -- Deploy + CEO-Abnahme (ein Angebot mit Vorkasse bis zur Schlussrechnung durchspielen). Etappen 15/16 sind live (2026-09-29) -- CEO-Abnahme (erstes Abo anlegen, ein Angebot mit
-  Community-Fit + OMR-Vergleich als PDF ansehen). CEO-Abnahme Etappen 13/14 beim Buchen der offenen Belege (ER-0033/-0035: Lieferant aus der Liste
-  waehlen, Vorschlag stammt noch von vor dem Update); Luecken (Adressen) fuellen, sobald Belege sie zeigen; erste echte
-  Auto-Weiterleitung pruefen.
-  Abnahme Etappen 9-11 (Export/PDF, Verfahrensdokumentation freigeben, Mahnung durchspielen, eine
-  gemischte Rechnung aufteilen); Deploy + Abnahme Etappe 12 (Barter-Deal einmal von Angebot bis Ware-Eingang
-  durchspielen). Etappe 3c wartet auf Meta-Exporte. Offen aus Etappe 6: Live-Probe der OCR mit einem fotografierten Beleg.
+- Naechster Schritt: Pruefung 2026-11-15: Sammelabnahme moeglich fuer die genutzten Etappen 10, 13-16, 19, 22-24, 27, 28, 30, 32; je ein Probelauf fuer 9, 11, 12, 18, 20, 21, 25, 26; 3c geparkt (Meta-Exporte). „Deploy offen“ im Text ist ueberholt.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

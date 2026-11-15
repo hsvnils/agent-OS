@@ -1,10 +1,10 @@
 # Roadmap: TKP-Abrechnung nach erzielter Reichweite und Reichweiten-Ausgleich
 
 - Status: in Umsetzung
-- Stand: 2026-10-27
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/tkp-abrechnung`
 - Basiscommit: `31558c3`
-- Naechster Schritt: T1-T4 live seit 2026-10-27 13:44 (Merge, Sync, Neustart `luna-os` + `luna-telegram` geprueft). Offen: CEO-Abnahme an einem Probe-Angebot nach Reichweite (Angebot -> PDF; spaeter Auftrag -> Kennzahlen -> Rechnungsentwurf ohne Versand) und Sichtpruefung Desktop/iPad/iPhone; vor dem ersten echten Kunden Klauseltexte anwaltlich pruefen (E9).
+- Naechster Schritt: Pruefung 2026-11-15: Probe unvollstaendig: einziges Angebot nach Reichweite ist AN-2026-0004 „Test“, am 11.11. per Mail an einen echten Interessenten gegangen -- CEO klaert das; danach interne Probe bis zum Rechnungsentwurf ohne Versand; E9 vor dem ersten echten Kunden.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

@@ -140,10 +140,11 @@ def profil(repo: Path | str, key: str, *, watch_log: Path | str, nutzung: Agente
                         "tage90": n90 or {"anzahl": 0, "direkt": 0, "werkzeug": 0, "fehler": 0, "zuletzt": "", "median_s": None}}}
 
 
-def uebersicht(repo: Path | str, *, watch_log: Path | str, nutzung: AgentenNutzung) -> list[dict]:
+def uebersicht(repo: Path | str, *, watch_log: Path | str, nutzung: AgentenNutzung,
+               jetzt: datetime | None = None) -> list[dict]:
     out, funde = [], _funde_alle(Path(watch_log))
     for key in CHARTEN:
-        p = profil(repo, key, watch_log=watch_log, nutzung=nutzung, _funde=funde)
+        p = profil(repo, key, watch_log=watch_log, nutzung=nutzung, jetzt=jetzt, _funde=funde)
         out.append({"key": key, "titel": p["charta"]["titel"], "status": p["charta"]["status"],
                     "skills": len(p["skills"]), "quellen": len(p["quellen"]), "watcher": len(p["watcher"]),
                     "funde": p["funde_gesamt"], "letzter_fund": (p["funde"][0]["ts"] if p["funde"] else ""),

@@ -1,10 +1,10 @@
 # Roadmap: LUNA als Jarvis im Alltag (Gesamtroadmap in Paketen)
 
 - Status: in Umsetzung
-- Stand: 2026-10-28
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/jarvis-alltag`
 - Basiscommit: `d4ae65d`
-- Naechster Schritt: Reihenfolge seit 2026-10-29 (CEO): A -> C -> D -> B. Paket A live, J1 abgenommen; J2c/J3/J4 Abnahme im Alltag. Paket C live (J7-J9), Abnahme im Betrieb. Paket D geplant in `RECHNER_STEUERUNG_ROADMAP.md` -- CEO prueft Plan und beantwortet D0. Paket B (J5/J6) zurueckgestellt hinter C und D.
+- Naechster Schritt: Pruefung 2026-11-15: Pakete A und C im Betrieb (J2c taeglich, Mail-Auftraege 2x); J3/J7/J8 ohne Beleg -- CEO nimmt J2c und Mail-Auftrag ab, Rest bei Gelegenheit; danach Paket D.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

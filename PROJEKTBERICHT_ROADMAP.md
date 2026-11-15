@@ -1,9 +1,9 @@
 # Roadmap: Social-Kennzahlen je Posting und Projektbericht zum Abschluss
 - Status: in Umsetzung
-- Stand: 2026-10-03
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
-- Naechster Schritt: CEO-Go 2026-10-02 fuer alle Etappen am Stueck; Bau auf `ai/projekt-etappen` (alle Etappen fertig; naechster Schritt: Deploy + Abnahme an einem echten Projekt).
+- Naechster Schritt: Pruefung 2026-11-15: Fehler BF-96: Fazit im versendeten Bericht AB-2026-0004 war veraltet („0 mit gemessenen Zahlen“) -- beheben nach Go, dann OCR-Probe mit echtem Screenshot und CEO-Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

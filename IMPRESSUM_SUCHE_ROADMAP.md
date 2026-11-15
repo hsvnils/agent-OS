@@ -1,10 +1,10 @@
 # Roadmap: Kundendaten aus dem Impressum beim Anlegen einer Firma
 
 - Status: in Umsetzung
-- Stand: 2026-10-06
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/impressum-suche`
 - Basiscommit: `1120e1f`
-- Naechster Schritt: I1 live (2026-10-06) -- Abnahme durch den CEO beim naechsten Neukunden; I2 (lokale KI) nur bei Bedarf.
+- Naechster Schritt: Pruefung 2026-11-15: live, Nutzung unbelegt (6 Neukunden ohne Impressum-URL) -- CEO sagt, ob er die Suche benutzt; dann abschliessen, I2 zurueckstellen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

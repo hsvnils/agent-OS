@@ -1,10 +1,10 @@
 # Roadmap: Globale Suche in LUNA-OS
 
 - Status: in Umsetzung
-- Stand: 2026-10-06
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/suche-und-sortierung`
 - Basiscommit: `e3c8e23`
-- Naechster Schritt: G1 live (2026-10-06) -- Abnahme durch den CEO im Alltag; G2 (Inhalte von Belegen/Mails) nur bei Bedarf.
+- Naechster Schritt: Pruefung 2026-11-15: G1 abschliessbar (im Alltag benutzt, Befund PUMA 06.10.); G2 nur bei Bedarf als neue Roadmap; wartet auf CEO-Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

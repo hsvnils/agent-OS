@@ -1,9 +1,9 @@
 # Roadmap: Vertragswerk (Vorlagen-Bibliothek, Vertrag je Auftrag, AGB am Angebot)
 - Status: in Umsetzung
-- Stand: 2026-10-05
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-konzept-vertrag` (Plan); Umsetzung auf eigenem Branch
 - Basiscommit: `6636d02`
-- Naechster Schritt: V1+V2 gebaut (2026-10-05); CEO laedt die ersten Entwuerfe, liest sie; CLO-Ausbau (C1-C4) erzeugt Pruefbericht + Version 2; dann anwaltliche Pruefung (CEO-Tor); danach Go fuer V3/V4.
+- Naechster Schritt: Pruefung 2026-11-15: v2-Fassungen eingespielt (08.10.), keine Vorlage „geprueft“ -- CEO beauftragt die Anwaltspruefung (CEO-Tor); danach Go fuer V3/V4.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

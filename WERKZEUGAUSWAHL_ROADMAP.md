@@ -1,11 +1,10 @@
 # Roadmap: Werkzeugauswahl — nur passende Werkzeuge je Nachricht
 
 - Status: in Umsetzung
-- Stand: 2026-09-26
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/werkzeugauswahl`
 - Basiscommit: `3523a38`
-- Naechster Schritt: **2026-10-03** Etappe 3 auswerten (Kostenlog `quelle: chat` Ø `in`-Token vorher/nachher, Anteil
-  „nachgeladen" im Aktivitaetsprotokoll, Kategorie `werkzeug`), dann Roadmap abschliessen. Bis dahin nichts zu tun.
+- Naechster Schritt: Pruefung 2026-11-15: abschliessbar -- Chat-Eingabe -53 % Token in der Messwoche, 0 % nachgeladen; wartet auf CEO-Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
