@@ -56,7 +56,7 @@ _PLATTFORM = [
 _EINNAHME = [
     (r"affiliate|provision|partnerprogramm", "S4", "Provision/Affiliate"),
     (r"merch|shirt|kalender|tasse|hoodie|printful|spreadshirt", "S5", "Merch-Verkauf"),
-    (r"kneipe|listung", "S3b", "Kneipen-Listung"),
+    (r"kneipe|listung|spieltags-partner", "S3b", "Kneipen-Listung"),
     (r"collab|kooperation|gewinnspiel|sponsor|werbepartner|kampagne|story|posting|product placement", "S1",
      "Kooperation/Sponsoring"),
     (r"imagefilm|auftragsproduktion|produktion|schnitt|\bdreh|recruiting|hochzeit|eventvideo", "S6",

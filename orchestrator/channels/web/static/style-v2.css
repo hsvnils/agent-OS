@@ -1306,6 +1306,13 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-rw-wk.err { color: var(--v2-red); background: var(--v2-red-soft); }
 .v2-rw-wk.warn { color: var(--v2-amber); background: var(--v2-amber-soft); }
 .v2-rw-wk.neutral { color: var(--v2-muted); background: transparent; box-shadow: inset 0 0 0 1px var(--v2-line, rgba(127,127,127,.3)); }
+@media (max-width: 640px) {   /* M8 Kneipen: Zeilen als Karten */
+  .v2-kn-tab, .v2-kn-tab tbody { display: block; width: 100%; } .v2-kn-tab thead { display: none; }
+  .v2-kn-tab tr { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--v2-line-soft); }
+  .v2-kn-tab td { display: block; border: 0; padding: 0; }
+  .v2-kn-tab td:nth-child(2), .v2-kn-tab td:nth-child(4) { justify-self: end; text-align: right; }
+  .v2-kn-tab td:nth-child(5) { grid-column: 1 / -1; }
+}
 .v2-rw-rh tr.v2-rw-soll-edit td { white-space: normal; }
 .v2-rw-rh td { vertical-align: middle; } .v2-rw-rh td:first-child { min-width: 150px; }
 @media (max-width: 640px) {   /* M4 Posting-Rhythmus: Zeilen als Karten statt Wisch-Tabelle */

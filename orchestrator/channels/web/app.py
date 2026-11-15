@@ -3696,6 +3696,7 @@ async def rechnung_festschreiben(eid: str, request: Request):
             else:
                 hinweise.append(f"Kalender: {t.get('hinweis') or 'Fehler'}")
         _teil_aufgaben(rs, r["nummer"], request, hinweise)
+        _kneipen_aufgaben(rs, r["nummer"], request, hinweise)
         return {"nummer": r["nummer"], "faellig_am": r["faellig_am"], "hinweise": hinweise}
     return _kunden_aktion(tun)
 
@@ -3722,6 +3723,30 @@ def _teil_aufgaben(rs, nummer: str, request: Request, hinweise: list) -> None:
                 hinweise.append(f"To-do zur Teilrechnung {x['folge_zu']} erledigt.")
     except Exception as exc:                                       # noqa: BLE001 -- Festschreiben ist schon passiert
         hinweise.append(f"To-do: {exc}")
+
+
+def _kneipen_aufgaben(rs, nummer: str, request: Request, hinweise: list) -> None:
+    """MONETARISIERUNG M8: Kneipen-Listung -> To-dos „in der App listen“ und „Verlängerung anbieten“ (nur Hinweis bei Fehler)."""
+    from ...core.buchhaltung import jetzt as _jetzt
+    from ...core.kneipen import aufgaben
+    try:
+        x = rs.get(nummer) or {}
+        name = (kunden_store.firma(x.get("firma", "")) or {}).get("name", x.get("firma", ""))
+        neu = aufgaben(_aufgaben(), x, name, _jetzt().date(), von=_von(request))
+        if neu:
+            hinweise.append("Kneipen-Listung: " + "; ".join(f"To-do „{a['titel']}“" for a in neu) + ".")
+    except Exception as exc:                                       # noqa: BLE001 -- Festschreiben ist schon passiert
+        hinweise.append(f"Kneipen-To-do: {exc}")
+
+
+@app.get("/api/finanzen/kneipen")
+def kneipen_uebersicht():
+    """M8: aktive und auslaufende Kneipen-Listungen (abgeleitet aus den Rechnungen)."""
+    from ...core.buchhaltung import jetzt as _jetzt
+    from ...core.kneipen import uebersicht
+    rs = _rechnungen()
+    _, rechnungen = rs._stand()
+    return uebersicht(rechnungen, {f["nummer"]: f["name"] for f in kunden_store.firmen()}, _jetzt().date())
 
 
 @app.post("/api/finanzen/rechnungen/{nummer}/folgerechnung")

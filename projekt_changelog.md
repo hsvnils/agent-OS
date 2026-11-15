@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 11:13] — Claude Code
+- **Was:** MONETARISIERUNG M8 umgesetzt (Branch `ai/monetarisierung-m8`): `core/kneipen.py` (Listungen aus festgeschriebenen
+  Rechnungen, Status aktiv/laeuft aus/kommend/abgelaufen, To-dos App-Eintrag + Verlaengerung je Rechnung einmal),
+  Festschreiben-Hook und `GET /api/finanzen/kneipen`, Finanzen-Reiter „Kneipen“ (Handy als Karten), Katalog-Standard
+  „Kneipen (Fan-App)“, Kneipen-Formate in der Preisliste nicht vorausgewaehlt, Saeulen-Regel S3b um „Spieltags-Partner“
+  ergaenzt, Cache v160/v86; 6 Tests inkl. Gegenproben (Storno, nur einmal); Sichtpruefung Rechner, iPad 820 px, iPhone 402 px.
+  Live-Katalog nicht geaendert (Preise = CEO, A16). Doku: Roadmaps, Datenfluesse, Register, offene Punkte (A16, C7).
+- **Warum:** CEO-Go fuer M8 (2026-11-15).
+- **Betroffen:** `orchestrator/core/kneipen.py`, `orchestrator/core/katalog.py`, `orchestrator/core/saeulen.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/*`, `orchestrator/tests/test_kneipen.py`,
+  `orchestrator/tests/test_katalog.py` (Standard jetzt 19 Formate),
+  `MONETARISIERUNG_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-11-15 10:44] — Claude Code
 - **Was:** Branch `ai/monetarisierung-m4` (Posting-Rhythmus Soll/Ist) nach `main` gemergt; Suite 1703 gruen, rot nur die
   bekannten BF-88/BF-90.

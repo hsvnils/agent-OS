@@ -4,8 +4,9 @@
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-monetarisierung`
 - Basiscommit: `a048c2d`
-- Naechster Schritt: M4 umgesetzt auf `ai/monetarisierung-m4` -- CEO-Freigabe fuer Merge und Deploy; Gate M4: Ist-Zaehlung
-  Instagram einer Stichwoche gegen die Instagram-App pruefen; Startwerte des Solls bestaetigen oder anpassen (offene Punkte A15).
+- Naechster Schritt: M8 umgesetzt auf `ai/monetarisierung-m8` -- CEO-Freigabe fuer Merge und Deploy; danach Kneipen-Formate
+  im Live-Katalog anlegen (Preise = CEO-Entscheidung, offene Punkte A16); Gate M8 mit der ersten echten Kneipe. Uebrig: M5 (L4b, ab
+  01.01.2027), M7 (ab Februar 2027).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -96,7 +97,7 @@ M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
 - **Achtung:** Meta hat 2025/2026 Metriken umgestellt (`views` statt `impressions`); Zeitreihen werden mit Bruchmarke gefuehrt.
 - **Gate:** Import echter Exporte ergibt dieselben Werte wie die Konsole (Stichprobe je Plattform); Gegenprobe mit kaputter CSV.
 
-### M4 Posting-Rhythmus Soll/Ist (klein, Risiko niedrig) -- umgesetzt 2026-11-15
+### M4 Posting-Rhythmus Soll/Ist (klein, Risiko niedrig) -- umgesetzt 2026-11-15, gemergt und deployt 2026-11-15
 - **Stand:** `orchestrator/core/posting_rhythmus.py`: Soll je Plattform und Format als Spanne je Woche (Startwerte aus dem Skill,
   Aenderung gilt ab der laufenden Woche, Ereignis `soll` im Reichweiten-Log); Ist: Instagram taeglich aus der Medienliste des
   eigenen Kontos (gleiche Schnittstelle und gleicher Zugang wie M3, Zeitpunkte in Europe/Berlin), Facebook eingetragen oder
@@ -131,7 +132,13 @@ M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
   Kennzeichnung „Leistungsort Ausland" fuer die spaetere Waechter-Korrektur (BF-95).
 - **Gate:** Summe je Monat = Auszahlung laut Bank; Gegenprobe mit Rueckbuchung.
 
-### M8 Kneipen als Kunden (klein, Risiko niedrig)
+### M8 Kneipen als Kunden (klein, Risiko niedrig) -- umgesetzt 2026-11-15
+- **Stand:** `orchestrator/core/kneipen.py`: Listungen werden aus den festgeschriebenen Rechnungen abgeleitet (Positionen
+  `kneipe_monat`/`kneipe_saison` oder Text „Spieltags-Partner“/„Kneipen-Listung“; Zeitraum = Leistungszeitraum, sonst Monate bzw.
+  30.06. am Saisonende; Storno nimmt sie heraus) -- kein eigener Speicher. Beim Festschreiben zwei To-dos mit Telegram-Erinnerung:
+  „in der App bis … listen“ und 14 Tage vor Ablauf „Verlaengerung anbieten“ (je Rechnung einmal). Finanzen -> Reiter „Kneipen“
+  (`GET /api/finanzen/kneipen`), Katalog-Standard „Kneipen (Fan-App)“, Kneipen-Formate in der Marken-Preisliste nicht vorausgewaehlt,
+  Saeulen-Regel S3b erkennt „Spieltags-Partner“. 6 Tests inkl. Gegenproben (Storno, nur einmal). Live-Katalog unveraendert (A16).
 - **Ziel:** Kneipen-Listung als Katalogposition (Monat und Saisonpaket), Rechnung ueber LUNA, Liste aktiver und auslaufender
   Listungen mit Erinnerung, das Enddatum in der App zu setzen.
 - **Gate:** Testkneipe von Angebot bis Rechnung; Erinnerung kommt an.
