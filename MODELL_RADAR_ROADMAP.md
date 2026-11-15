@@ -4,7 +4,7 @@
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/modell-radar`
 - Basiscommit: `b40d9d1`
-- Naechster Schritt: BF-97 behoben 2026-11-15 auf `ai/entscheidungen-1115` (neue AA-Schnittstelle, Google-Entwickler-Feed, Ausfall-Meldung ab 3 Tagen) -- nach Deploy ersten Lauf pruefen (To-do), dann Abnahme; 8 offene Radar-Antraege: Uebersicht mit Empfehlung liegt beim CEO.
+- Naechster Schritt: BF-97 behoben 2026-11-15 auf `ai/entscheidungen-1115` (neue AA-Schnittstelle, Google-Entwickler-Feed, Ausfall-Meldung ab 3 Tagen) -- nach Deploy ersten Lauf pruefen (To-do), dann Abnahme; offene Radar-Antraege am 2026-11-15 vom CEO entschieden (abgelehnt).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

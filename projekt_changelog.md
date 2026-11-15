@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 14:27] — Head of Agents (Claude Code)
+- **Was:** Charta CCO: Skill `davinci-resolve-schnitt` in die Skill-Zeile aufgenommen (Diff am 15.11. vorgelegt, CEO bestaetigt). Dazu CEO-Entscheidungen live: 10 Antraege abgelehnt, 2 zurueckgestellt (Wiedervorlage-To-do 01.02.2027); Plan Celine 2.500 EUR netto, L 800 EUR, E 4.600 EUR; Cutter-B-Roll bleibt -24 LUFS. Register und Roadmap-Koepfe fortgeschrieben.
+- **Warum:** CEO „1 Nein, 2 ok, 3 und 4 wie empfohlen, für celine bitte 2500€ netto annehmen und eintragen“ (2026-11-15).
+- **Betroffen:** `agents/10_cco-content.md`, `docs/entscheidungs-register.md`, `CUTTER_AUSBAU_ROADMAP.md`, `MODELL_RADAR_ROADMAP.md`; Live-Daten NAS (Antraege, Plan, To-dos)
+
 ## [2026-11-15 13:49] — Claude Code
 - **Was:** CEO-Entscheidungsliste 1-25 umgesetzt. Live in LUNA-OS: Saeulen RG-18032026/RG-20092026 -> S4, RE-2026-0001 -> S1; alle vier Daten-Vorlagen aktiv; Katalog: Gruppe „Kneipen (Fan-App)“ mit Spieltags-Partner 10 EUR/Monat und Saisonpaket 99 EUR bis 30.06., App-Spieltags-/Tippspiel-Sponsor und Paket Saison-Partner „Ab Saison 2027/28 buchbar“; 20 datierte To-dos fuer offene Abnahmen und Termine (F4). Code (`ai/entscheidungen-1115`): BF-96 Projektbericht-Fazit bleibt aktuell, solange der Vorschlag unveraendert ist (`fazit_fuer`, `auto`, Hinweis bei veraltetem Text); BF-97 Modell-Radar auf neue Artificial-Analysis-Schnittstelle `/api/v2/language/models/free` (seitenweise, Mischpreis selbst gerechnet), Google-Entwickler-Feed statt umgeleitetem Gemini-Changelog, Fehlertext mit Statuscode, Telegram-Meldung bei Ausfall ab 3 Tagen; BF-98 Backoffice-Worker meldet seinen Wartegrund (RAM-Waechter), Zeitlimit nennt ihn; Katalog-Standard wie live. Doku: Register, bekannte Fehler, Datenfluesse, Roadmap-Koepfe (RECHNER_STEUERUNG zurueckgestellt), F4-Wortlaut.
 - **Warum:** CEO „1–25 wie empfohlen, Saisonpaket 99 €“ (2026-11-15).
