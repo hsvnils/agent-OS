@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 10:26] — Claude Code
+- **Was:** Branch `ai/monetarisierung-m3` (Reichweiten je Plattform) nach `main` gemergt; Suite 1694 gruen, rot nur
+  die bekannten BF-88/BF-90.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy von MONETARISIERUNG M3 (2026-11-15).
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-11-14 18:31] — Claude Code
 - **Was:** MONETARISIERUNG M3 umgesetzt (Branch `ai/monetarisierung-m3`): `core/reichweite.py` (Wochenwerte je Plattform,
   CSV-Import mit Vorschau/Spaltenzuordnung, robuste Trennzeichen- und Kodierungserkennung, Bruchmarke Meta), Speicher
