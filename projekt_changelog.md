@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 10:44] — Claude Code
+- **Was:** Branch `ai/monetarisierung-m4` (Posting-Rhythmus Soll/Ist) nach `main` gemergt; Suite 1703 gruen, rot nur die
+  bekannten BF-88/BF-90.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy von MONETARISIERUNG M4 (2026-11-15).
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-11-15 10:35] — Claude Code
 - **Was:** MONETARISIERUNG M4 umgesetzt (Branch `ai/monetarisierung-m4`): `core/posting_rhythmus.py` (Soll je Plattform und
   Format mit Gueltigkeit ab Woche, Ist aus Instagram-Medienliste in Berliner Zeit, Facebook-Reels der Pipeline als „mindestens“,
