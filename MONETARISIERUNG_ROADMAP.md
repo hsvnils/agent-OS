@@ -4,7 +4,7 @@
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-monetarisierung`
 - Basiscommit: `a048c2d`
-- Naechster Schritt: M8 umgesetzt auf `ai/monetarisierung-m8` -- CEO-Freigabe fuer Merge und Deploy; danach Kneipen-Formate
+- Naechster Schritt: M8 gemergt (Deploy durch CEO); danach Kneipen-Formate
   im Live-Katalog anlegen (Preise = CEO-Entscheidung, offene Punkte A16); Gate M8 mit der ersten echten Kneipe. Uebrig: M5 (L4b, ab
   01.01.2027), M7 (ab Februar 2027).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
@@ -132,7 +132,7 @@ M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
   Kennzeichnung „Leistungsort Ausland" fuer die spaetere Waechter-Korrektur (BF-95).
 - **Gate:** Summe je Monat = Auszahlung laut Bank; Gegenprobe mit Rueckbuchung.
 
-### M8 Kneipen als Kunden (klein, Risiko niedrig) -- umgesetzt 2026-11-15
+### M8 Kneipen als Kunden (klein, Risiko niedrig) -- umgesetzt 2026-11-15, gemergt 2026-11-15 (Deploy durch CEO)
 - **Stand:** `orchestrator/core/kneipen.py`: Listungen werden aus den festgeschriebenen Rechnungen abgeleitet (Positionen
   `kneipe_monat`/`kneipe_saison` oder Text „Spieltags-Partner“/„Kneipen-Listung“; Zeitraum = Leistungszeitraum, sonst Monate bzw.
   30.06. am Saisonende; Storno nimmt sie heraus) -- kein eigener Speicher. Beim Festschreiben zwei To-dos mit Telegram-Erinnerung:

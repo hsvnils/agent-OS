@@ -17,6 +17,12 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 11:27] — Claude Code
+- **Was:** Branch `ai/monetarisierung-m8` (Kneipen als Kunden) nach `main` gemergt; Suite 1709 gruen, rot nur die bekannten
+  BF-88/BF-90. Roadmap: M8 gemergt.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy von MONETARISIERUNG M8 (2026-11-15).
+- **Betroffen:** `main`, `MONETARISIERUNG_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-15 11:13] — Claude Code
 - **Was:** MONETARISIERUNG M8 umgesetzt (Branch `ai/monetarisierung-m8`): `core/kneipen.py` (Listungen aus festgeschriebenen
   Rechnungen, Status aktiv/laeuft aus/kommend/abgelaufen, To-dos App-Eintrag + Verlaengerung je Rechnung einmal),
