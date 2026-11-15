@@ -257,6 +257,17 @@
 
 ## Eintraege (neueste oben)
 
+### 2026-11-15 — Posting-Rhythmus Soll/Ist (MONETARISIERUNG M4)
+
+**Was:** Soll je Plattform und Format als Spanne je Woche, Ist automatisch (Instagram, LUNA-Reels auf Facebook) oder von Hand,
+Hinweis im Morgen-Briefing. **Warum so:** Startwerte aus dem Skill `kanal-wachstum`, aber jederzeit aenderbar; eine Aenderung gilt
+ab der laufenden Woche, damit alte Wochen nicht nachtraeglich rot oder gruen werden. Instagram-Beitraege werden in Berliner Zeit
+gezaehlt (Meta liefert UTC -- ein Post am Sonntag 23:30 gehoert sonst in die falsche Woche) und nur fuer Wochen, die die
+Medienliste vollstaendig abdeckt. Facebook zaehlt ohne eingetragenen Wert nur die Reels der Pipeline und zeigt sie als
+„mindestens“, weil von Hand gepostete Beitraege unbekannt sind. Briefing-Hinweise nur, wo das Ist sicher bekannt ist: Tempo-Hinweis
+nur fuer automatisch gezaehlte Formate, Rueckblick dienstags (nach dem Eintragen am Montag). Kein Raten bei fehlenden Werten.
+**Verworfen:** Stories zaehlen (Meta liefert nur die letzten 24 Stunden), neuer Facebook-Zugang (siehe M3, CISO).
+
 ### 2026-11-14 — Reichweiten je Plattform (MONETARISIERUNG M3)
 
 **Was:** Follower und Wochenwerte je Plattform mit Verlauf; Instagram automatisch, Facebook/TikTok/YouTube per CSV-Export oder

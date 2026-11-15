@@ -1,11 +1,11 @@
 # Roadmap: LUNA-OS als Steuerzentrale fuer Monetarisierung und Weg zur Selbststaendigkeit
 
 - Status: in Umsetzung
-- Stand: 2026-11-14
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-monetarisierung`
 - Basiscommit: `a048c2d`
-- Naechster Schritt: M3 umgesetzt auf `ai/monetarisierung-m3` -- CEO-Freigabe fuer Merge und Deploy; Gate M3 mit je einem echten
-  Export (Facebook, TikTok, YouTube): Import = Werte der Konsole; Facebook-Schnittstelle nur nach CISO-Freigabe (eigene Entscheidung).
+- Naechster Schritt: M4 umgesetzt auf `ai/monetarisierung-m4` -- CEO-Freigabe fuer Merge und Deploy; Gate M4: Ist-Zaehlung
+  Instagram einer Stichwoche gegen die Instagram-App pruefen; Startwerte des Solls bestaetigen oder anpassen (offene Punkte A15).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -84,7 +84,7 @@ M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
   (Anzahl und Euro) je Monat. Alles im LUNA-OS bearbeitbar, Aenderungen mit Verlauf.
 - **Gate:** Tests rechnen die Kontinuitaet nach (5 gute Monate + 1 schlechter = nicht erreicht); Gegenprobe; Sichtabnahme.
 
-### M3 Reichweiten und Follower je Plattform (mittel, Risiko mittel) -- umgesetzt 2026-11-14
+### M3 Reichweiten und Follower je Plattform (mittel, Risiko mittel) -- umgesetzt 2026-11-14, gemergt und deployt 2026-11-15
 - **Stand:** `orchestrator/core/reichweite.py` (Speicher `reichweite/log.jsonl`, Wochenwerte je Plattform, CSV-Import mit
   Vorschau und Spaltenzuordnung, Tagesreichweite wird nicht addiert, Bruchmarke Meta 15.06.2026), Instagram automatisch montags
   (Bot, vorhandener Zugang) und per Knopf, LUNA-OS Content & Collabs -> Reichweiten (Follower je Plattform mit Verlauf, Luecken,
@@ -96,7 +96,14 @@ M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
 - **Achtung:** Meta hat 2025/2026 Metriken umgestellt (`views` statt `impressions`); Zeitreihen werden mit Bruchmarke gefuehrt.
 - **Gate:** Import echter Exporte ergibt dieselben Werte wie die Konsole (Stichprobe je Plattform); Gegenprobe mit kaputter CSV.
 
-### M4 Posting-Rhythmus Soll/Ist (klein, Risiko niedrig)
+### M4 Posting-Rhythmus Soll/Ist (klein, Risiko niedrig) -- umgesetzt 2026-11-15
+- **Stand:** `orchestrator/core/posting_rhythmus.py`: Soll je Plattform und Format als Spanne je Woche (Startwerte aus dem Skill,
+  Aenderung gilt ab der laufenden Woche, Ereignis `soll` im Reichweiten-Log); Ist: Instagram taeglich aus der Medienliste des
+  eigenen Kontos (gleiche Schnittstelle und gleicher Zugang wie M3, Zeitpunkte in Europe/Berlin), Facebook eingetragen oder
+  mindestens die von LUNA geposteten Reels, TikTok/YouTube von Hand (neue Metriken `beitraege_kurz`, `beitraege_lang`);
+  Briefing dienstags (Vorwoche unter Soll) und mittwochs bis samstags (automatisch gezaehlt und hinter dem Wochen-Tempo);
+  LUNA-OS Reichweiten -> Kachel „Posting-Rhythmus“ mit 8-Wochen-Verlauf und Soll-Bearbeitung, `POST /api/reichweite/soll`.
+  9 Tests inkl. Gegenprobe (Zaehlung nach UTC statt Berlin wird rot).
 - **Ziel:** Soll je Plattform und Woche (Startwerte aus Skill `kanal-wachstum`, anpassbar), Ist aus Instagram-Schnittstelle und
   Importen; Hinweis im Briefing, wo nachzulegen ist (z. B. TikTok-Videos ueber 1 Minute fuer Creator Rewards).
 - **Gate:** Ist-Zaehlung stimmt mit einer Stichwoche ueberein.

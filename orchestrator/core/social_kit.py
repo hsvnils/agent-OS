@@ -118,6 +118,20 @@ class MetaInsights:
             pass
         return snap
 
+    def beitraege(self, limit: int = 50) -> list[dict] | None:
+        """Medienliste des eigenen Kontos (Zeitpunkt + Format) fuer den Posting-Rhythmus (M4). None bei Fehler."""
+        if not self.verfuegbar:
+            return None
+        try:
+            med = self.http(f"{self.base}/{self.ig_user_id}/media",
+                            {"fields": "timestamp,media_product_type", "limit": str(limit)})
+        except Exception:
+            return None
+        if not isinstance(med, dict) or med.get("error"):
+            return None
+        return [{"timestamp": p.get("timestamp", ""), "media_product_type": p.get("media_product_type", "")}
+                for p in med.get("data", [])]
+
 
 class SocialStore:
     """Monats-Snapshots als event-sourced JSONL (juengster je Monat gewinnt). Leck-geschuetzt."""

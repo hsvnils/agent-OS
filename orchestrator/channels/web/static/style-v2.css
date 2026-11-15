@@ -1300,3 +1300,23 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-rw-felder { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
 .v2-rw-zuordnung { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
 .v2-rw-tab td, .v2-rw-tab th { white-space: nowrap; }
+.v2-rw-reihe { display: flex; gap: 3px; }
+.v2-rw-wk { width: 20px; height: 20px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+.v2-rw-wk.ok { color: var(--v2-green); background: var(--v2-green-soft); }
+.v2-rw-wk.err { color: var(--v2-red); background: var(--v2-red-soft); }
+.v2-rw-wk.warn { color: var(--v2-amber); background: var(--v2-amber-soft); }
+.v2-rw-wk.neutral { color: var(--v2-muted); background: transparent; box-shadow: inset 0 0 0 1px var(--v2-line, rgba(127,127,127,.3)); }
+.v2-rw-rh tr.v2-rw-soll-edit td { white-space: normal; }
+.v2-rw-rh td { vertical-align: middle; } .v2-rw-rh td:first-child { min-width: 150px; }
+@media (max-width: 640px) {   /* M4 Posting-Rhythmus: Zeilen als Karten statt Wisch-Tabelle */
+  .v2-rw-rh, .v2-rw-rh tbody { display: block; width: 100%; } .v2-rw-rh thead { display: none; }
+  .v2-rw-rh tr { display: grid; grid-template-columns: max-content 1fr auto; gap: 6px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--v2-line-soft); }
+  .v2-rw-rh td { display: block; border: 0; padding: 0; text-align: left !important; min-width: 0 !important; }
+  .v2-rw-rh td:nth-child(1) { grid-column: 1 / 3; } .v2-rw-rh td:nth-child(6) { grid-column: 3; grid-row: 1; justify-self: end; }
+  .v2-rw-rh td:nth-child(2)::before { content: "Soll "; color: var(--v2-muted); font-size: 12px; }
+  .v2-rw-rh td:nth-child(3)::before { content: "diese Woche "; color: var(--v2-muted); font-size: 12px; }
+  .v2-rw-rh td:nth-child(4) { grid-column: 1 / 3; } .v2-rw-rh td:nth-child(5) { justify-self: end; }
+  .v2-rw-rh td:nth-child(5)::before { content: "im Soll "; color: var(--v2-muted); }
+  .v2-rw-rh td:nth-child(2), .v2-rw-rh td:nth-child(3), .v2-rw-rh td:nth-child(5) { white-space: nowrap; }
+  .v2-rw-rh tr.v2-rw-soll-edit { display: block; } .v2-rw-wk { width: 22px; height: 22px; }
+}
