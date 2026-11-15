@@ -2783,6 +2783,7 @@ async function abBericht(nr) {
     ${(d.daten.fehlen || []).length ? `<div class="v2-msg warn">Noch ohne Zahlen: ${esc(d.daten.fehlen.join(", "))}</div>` : ""}
     <details class="v2-pz" ${b.length || !offen ? "" : "open"}><summary><b>${b.length ? "Neue Version erstellen" : "Bericht erstellen"}</b> <small class="v2-sub">Vorschau prüfen, dann senden</small></summary>
     <div class="v2-form">
+      ${d.fazit_veraltet ? `<div class="v2-msg warn">Das gespeicherte Fazit ist ein älterer Vorschlag und passt nicht mehr zu den aktuellen Zahlen. <button class="v2-btn" data-act="ber-vorschlag" data-id="${esc(nr)}">Aktuellen Vorschlag übernehmen</button></div>` : ""}
       <label class="v2-feld"><small>Fazit (LUNA schlägt es aus den Zahlen vor – anpassen)</small><textarea id="ber-fazit" class="v2-inp" rows="6" maxlength="3000">${esc(e.fazit != null && e.fazit !== "" ? e.fazit : d.fazit_vorschlag)}</textarea></label>
       ${d.zeiten ? `<div class="v2-ab-haken"><label><input type="checkbox" id="ber-std" ${e.stunden ? "checked" : ""}> Stunden im Bericht zeigen</label><label><input type="checkbox" id="ber-km" ${e.km ? "checked" : ""}> km zeigen</label></div>` : ""}
       <div class="v2-card-actions"><button class="v2-btn" data-act="ber-vorschau" data-id="${esc(nr)}">💾 Speichern &amp; 📄 Vorschau</button><button class="v2-btn pri" data-act="ber-senden-form" data-id="${esc(nr)}">✉️ Senden …</button>${!b.length && !d.entfaellt ? `<button class="v2-btn" data-act="ber-entfaellt" data-id="${esc(nr)}" title="z. B. reiner Dreh ohne Postings">Kein Bericht nötig …</button>` : ""}</div>
@@ -5663,6 +5664,7 @@ async function handleAct(act, el) {
         if ((AKTIV === "angebote" || AKTIV === "auftraege")) renderAngebote(); glockeAktualisieren();
         return abDetail(id, "Als geliefert markiert — bereit für die Rechnung. Zeit ist für diesen Auftrag jetzt gesperrt."); }
       catch (e) { el.disabled = false; return kundenMsg("lf-msg", e.message, false); } }
+    case "ber-vorschlag": { const d = await jget(`/api/crm/auftraege/${encodeURIComponent(id)}/bericht`); if (d && $("#ber-fazit")) $("#ber-fazit").value = d.fazit_vorschlag; return; }
     case "ber-vorschau": { const w = window.open("about:blank", "_blank"); if (await berSpeichern(id)) { if (w) w.location = `/api/crm/auftraege/${encodeURIComponent(id)}/bericht/pdf`; kundenMsg("ber-msg", "Gespeichert.", true); } else if (w) w.close(); return; }
     case "ber-senden-form": return berSendenForm(id);
     case "ber-senden": return berSenden(id);

@@ -1,10 +1,10 @@
 # Roadmap: LUNA live am Rechner (Jarvis Paket D = Phase 17, MACO470) -- Mischform lokal + Cloud auf Ansage
 
-- Status: in Umsetzung
+- Status: geplant
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/rechner-steuerung-plan`
 - Basiscommit: `969acf3`
-- Naechster Schritt: Pruefung 2026-11-15: Kopf war veraltet: L2 gebaut (30.10.), Live-Test offen, seitdem ungenutzt -- CEO macht den Live-Test L2 oder stellt die Roadmap zurueck.
+- Naechster Schritt: zurueckgestellt 2026-11-15 (CEO-Entscheidung: Monetarisierung hat Vorrang; Live-Test L2 erst bei Wiederaufnahme).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

@@ -112,14 +112,16 @@ class TestWorker(unittest.TestCase):
         w._zuletzt_gewartet[0] = False
         b = FakeBridge([{"id": "A-8", "kurz": "8", "art": "entwurf", "aufgabe": "x"}])
         with mock.patch.object(w, "_log") as log:
+            gruende = []
             for _ in range(3):                                           # dreimal zu wenig RAM -> nur EIN Eintrag
                 w.durchlauf(b, FakeOllama([GUT]), lambda a, e: "", messen=lambda: 10.6,
-                            jetzt=datetime(2026, 9, 27, 13), offene=lambda: 1)
+                            jetzt=datetime(2026, 9, 27, 13), offene=lambda g="": gruende.append(g) or 1)
+            self.assertTrue(gruende and all("10.6 GB" in g for g in gruende), gruende)   # BF-98: Grund geht mit
             texte = [c.args[0] for c in log.call_args_list]
             self.assertEqual(len([t for t in texte if t.startswith("Wartet")]), 1)
             self.assertIn("10.6 GB", texte[0])
             w.durchlauf(b, FakeOllama([GUT]), lambda a, e: "", messen=lambda: 16.0,
-                        jetzt=datetime(2026, 9, 27, 13), offene=lambda: 1, nachlauf_s=0)
+                        jetzt=datetime(2026, 9, 27, 13), offene=lambda g="": 1, nachlauf_s=0)
             self.assertTrue(any(t.startswith("Speicher reicht wieder") for t in [c.args[0] for c in log.call_args_list]))
         self.assertFalse(w._zuletzt_gewartet[0])
 

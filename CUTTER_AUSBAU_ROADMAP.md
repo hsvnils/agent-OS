@@ -3,7 +3,7 @@
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-cutter-ausbau` (Plan); Umsetzung je Etappe auf eigenem `ai/`-Branch
 - Basiscommit: `ea47a7b`
-- Naechster Schritt: Pruefung 2026-11-15: C1-Nachweis blockiert: Nachtlauf ueberspringt seit 07.11., weil 10 Reels auf Freigabe warten -- CEO sichtet die Reels und waehlt die Variante; dann C1-Nachweis im naechsten Nachtlauf.
+- Naechster Schritt: Pruefung 2026-11-15: CEO sichtet die 10 wartenden Reels (To-do 20.11., aeltestes verfaellt 27.11.) und waehlt die Variante (To-do 22.11.); B-Roll-Lautheit -24 LUFS: Rueckfrage an den CEO (Sprache/normaler Ton ist schon -14 LUFS); Umzug des Nachtlaufs auf den MACO470 erst nach BF-98 (CEO 2026-11-15).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

@@ -616,7 +616,7 @@ def radar_lauf(token, chat_id, secrets, *, antraege=None, jetzt=None, taeglich: 
             try:
                 neu = mr.lauf_aa(r, unsere, schluessel=schluessel, jetzt=jetzt, abruf=abruf or mr.abrufen)
             except Exception as exc:
-                r.fehler_merken("artificialanalysis", f"{exc.__class__.__name__}", jetzt.isoformat(timespec="seconds"))
+                r.fehler_merken("artificialanalysis", f"{exc.__class__.__name__}: {exc}", jetzt.isoformat(timespec="seconds"))
                 neu = []
             nutzung = _nutzung_30_tage() if neu else {}
             for v in neu[:3]:                                   # hoechstens 3 neue Antraege je Tag
@@ -632,6 +632,7 @@ def radar_lauf(token, chat_id, secrets, *, antraege=None, jetzt=None, taeglich: 
             try:
                 liste = mr.lies_ollama((abruf or mr.abrufen)(mr.OLLAMA_BIBLIOTHEK))
                 r._schreiben("ollama.json", {"ts": jetzt.isoformat(timespec="seconds"), "liste": liste})
+                r.erfolg_merken("ollama", len(liste), jetzt.isoformat(timespec="seconds"))
                 k = mr.lokale_kandidaten(lokal, liste, (r.aa() or {}).get("modelle") or [],
                                          max_b=float(secrets.get("LOCAL_LLM_MAX_B") or 0) or None)
                 for v in k["vorschlaege"]:
@@ -643,7 +644,12 @@ def radar_lauf(token, chat_id, secrets, *, antraege=None, jetzt=None, taeglich: 
                         senden(f"🧭 {titel} – Antrag liegt bereit, Probelauf in LUNA-OS → Modell-Radar.")
                         out["vorschlaege"] += 1
             except Exception as exc:
-                r.fehler_merken("ollama", f"{exc.__class__.__name__}", jetzt.isoformat(timespec="seconds"))
+                r.fehler_merken("ollama", f"{exc.__class__.__name__}: {exc}", jetzt.isoformat(timespec="seconds"))
+        ids = {q["id"] for q in mr.QUELLEN} | {"ollama"} | ({"artificialanalysis"} if schluessel else set())
+        aus = r.ausfaelle(jetzt, ids=ids)                          # BF-97: mehrtaegiger Ausfall -> einmal melden
+        if aus:
+            senden(mr.meldung_ausfall(aus))
+        out["ausfaelle"] = len(aus)
     if backoffice is not None:                                  # R4: Probelaeufe altes gegen neues lokales Modell
         for m in mr.LokalTests(r).tick(backoffice):
             senden(m)

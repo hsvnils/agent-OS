@@ -6,7 +6,8 @@ from datetime import timedelta
 
 from orchestrator.core.buchhaltung import jetzt
 from orchestrator.core.kunden import KundenStore
-from orchestrator.core.projektbericht import daten, entfaellt, entwurf_speichern, fazit_vorschlag, pdf
+from orchestrator.core.projektbericht import (daten, entfaellt, entwurf_speichern, fazit_fuer, fazit_veraltet,
+                                             fazit_vorschlag, pdf)
 from orchestrator.core.todos import geschaefts_todos
 from orchestrator.tests.test_angebote import ApiBasis
 from orchestrator.tests.test_postings import FEED, PAUSCHAL, REEL, _auftrag
@@ -86,6 +87,30 @@ class TestBericht(unittest.TestCase):
             entfaellt(self.bh, self.ab, self.nr, "")
         entfaellt(self.bh, self.ab, self.nr, "reiner Dreh")
         self.assertEqual(self.ab.auftrag(self.nr)["abschluss"]["bericht"], "entfaellt")
+
+
+class TestFazitBF96(unittest.TestCase):
+    """BF-96: unveraenderter Vorschlag wird nicht festgeschrieben -- spaetere Kennzahlen aendern das Fazit im PDF."""
+    def test_1_vorschlag_bleibt_aktuell(self):
+        bh, ab, nr, ps = _auftrag([REEL, FEED] + PAUSCHAL)
+        pid = f"{nr}-P1-1"
+        ps.veroeffentlichen(pid, datum=GESTERN, link="https://www.instagram.com/p/x/")
+        alt = fazit_vorschlag(daten(ab.auftrag(nr), ps.liste(nr)))
+        self.assertIn("davon 0 mit gemessenen Zahlen", alt)
+        entwurf_speichern(bh, ab, nr, fazit=alt, stunden=False, km=False, vorschlag=alt)
+        e = ab.auftrag(nr)["bericht"]
+        self.assertEqual((e["fazit"], e["auto"]), ("", True))
+        ps.kennzahlen_setzen(pid, {"aufrufe": 50000})
+        d = daten(ab.auftrag(nr), ps.liste(nr))
+        self.assertNotIn("davon 0", fazit_fuer(e, d))
+        self.assertEqual(fazit_fuer(e, d), fazit_vorschlag(d))
+        # Gegenprobe: geaenderter Text bleibt fest
+        entwurf_speichern(bh, ab, nr, fazit="Eigener Text", stunden=False, km=False, vorschlag=fazit_vorschlag(d))
+        self.assertEqual(fazit_fuer(ab.auftrag(nr)["bericht"], d), "Eigener Text")
+        self.assertFalse(fazit_veraltet(ab.auftrag(nr)["bericht"], d))
+        # Altbestand (vor dem Fix gespeicherter Vorschlag) wird als veraltet erkannt
+        entwurf_speichern(bh, ab, nr, fazit=alt, stunden=False, km=False)
+        self.assertTrue(fazit_veraltet(ab.auftrag(nr)["bericht"], d))
 
 
 class TestLernenP4(unittest.TestCase):

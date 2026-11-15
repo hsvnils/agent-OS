@@ -3,7 +3,7 @@
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-zeit-bericht` (Plan); Umsetzung je Etappe auf eigenem Branch
 - Basiscommit: `6d66942`
-- Naechster Schritt: Pruefung 2026-11-15: Fehler BF-96: Fazit im versendeten Bericht AB-2026-0004 war veraltet („0 mit gemessenen Zahlen“) -- beheben nach Go, dann OCR-Probe mit echtem Screenshot und CEO-Abnahme.
+- Naechster Schritt: BF-96 behoben 2026-11-15 auf `ai/entscheidungen-1115` (unveraenderter Fazit-Vorschlag bleibt aktuell, Hinweis bei veraltetem Text) -- nach Deploy korrigierten Bericht AB-2026-0004 an den Kunden (CEO, To-do 20.11.), dann OCR-Probe und Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

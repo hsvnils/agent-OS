@@ -24,7 +24,11 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from pathlib import Path
 
-AA_URL = "https://artificialanalysis.ai/api/v2/data/llms/models"
+AA_BASIS = "https://artificialanalysis.ai/api/v2/"
+# BF-97: die alte Schnittstelle /api/v2/data/llms/models ist seit 04.11.2026 abgeschaltet (410 Gone) -> Gratis-Nachfolger
+AA_URL = AA_BASIS + "language/models/free"
+AA_SEITEN_MAX = 10
+AUSFALL_TAGE = 3            # BF-97: so lange ohne Erfolg -> einmal melden
 AA_QUELLE = "Daten: Artificial Analysis (artificialanalysis.ai)"
 USER_AGENT = "LUNA-Modell-Radar/1.0 (Hanserautisch; einmal taeglich)"
 
@@ -37,7 +41,9 @@ QUELLEN = [
     {"id": "openai-api", "hersteller": "OpenAI", "art": "changelog", "url": "https://developers.openai.com/api/docs/changelog"},
     {"id": "deepmind", "hersteller": "Google", "art": "feed", "url": "https://deepmind.google/blog/rss.xml"},
     {"id": "google-ai", "hersteller": "Google", "art": "feed", "url": "https://blog.google/technology/ai/rss/"},
-    {"id": "gemini-api", "hersteller": "Google", "art": "changelog", "url": "https://ai.google.dev/gemini-api/docs/changelog"},
+    # BF-97: ai.google.dev/gemini-api/docs/changelog leitet seit ca. 02.11.2026 auf eine Skript-Seite von AI Studio um
+    # (ohne lesbaren Text) -> Google-Entwickler-Blog als Feed (Gemini-Modelle fuer Entwickler, mit Datum)
+    {"id": "google-dev", "hersteller": "Google", "art": "feed", "url": "https://blog.google/technology/developers/rss/"},
     {"id": "meta", "hersteller": "Meta", "art": "links", "url": "https://ai.meta.com/blog/",
      "muster": r'https://ai\.meta\.com/blog/[a-z0-9-]+/?', "basis": ""},
     {"id": "mistral", "hersteller": "Mistral", "art": "feed", "url": "https://mistral.ai/news/rss"},
@@ -68,7 +74,7 @@ def abrufen(url: str, *, kopf: dict | None = None, max_bytes: int = 4_000_000) -
     Artificial-Analysis-Schnittstelle (mit Schluessel) direkt (`aa_abrufen`)."""
     if not url.startswith("https://"):
         raise ValueError("nur https")
-    if url.startswith(AA_URL):
+    if url.startswith(AA_BASIS):
         return aa_abrufen(url, kopf=kopf, max_bytes=max_bytes)
     from .netz_auftraege import NetzAuftraege
     return NetzAuftraege().seite(url, warten_s=90)[:max_bytes]
@@ -76,7 +82,7 @@ def abrufen(url: str, *, kopf: dict | None = None, max_bytes: int = 4_000_000) -
 
 def aa_abrufen(url: str, *, kopf: dict | None = None, max_bytes: int = 4_000_000) -> str:
     """Feste Schnittstelle Artificial Analysis (JSON, Schluessel im Kopf) -- direkt, kein freier Seitenabruf."""
-    if not url.startswith(AA_URL):
+    if not url.startswith(AA_BASIS):
         raise ValueError("nur die Artificial-Analysis-Schnittstelle")
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept-Encoding": "gzip"} | (kopf or {}))
     with urllib.request.urlopen(req, timeout=20) as r:
@@ -217,10 +223,16 @@ def aa_modelle(roh: dict) -> list[dict]:
     for d in (roh or {}).get("data") or []:
         ev, pr = d.get("evaluations") or {}, d.get("pricing") or {}
         zahl = lambda x: float(x) if isinstance(x, (int, float)) else None
+        p_in, p_out = zahl(pr.get("price_1m_input_tokens")), zahl(pr.get("price_1m_output_tokens"))
+        preis = zahl(pr.get("price_1m_blended_3_to_1"))
+        if preis is None and p_in is not None and p_out is not None:        # neue API: Mischpreis 3:1 selbst rechnen
+            preis = round((3 * p_in + p_out) / 4, 4)
+        tempo = zahl(d.get("median_output_tokens_per_second"))
+        if tempo is None:
+            tempo = zahl((d.get("performance") or {}).get("median_output_tokens_per_second"))
         out.append({"name": d.get("name", ""), "slug": d.get("slug", ""), "hersteller": (d.get("model_creator") or {}).get("name", ""),
-                    "iq": zahl(ev.get("artificial_analysis_intelligence_index")), "preis": zahl(pr.get("price_1m_blended_3_to_1")),
-                    "preis_in": zahl(pr.get("price_1m_input_tokens")), "preis_out": zahl(pr.get("price_1m_output_tokens")),
-                    "tempo": zahl(d.get("median_output_tokens_per_second"))})
+                    "iq": zahl(ev.get("artificial_analysis_intelligence_index")), "preis": preis,
+                    "preis_in": p_in, "preis_out": p_out, "tempo": tempo})
     return out
 
 
@@ -341,8 +353,30 @@ class Radar:
         with _LOCK:
             st = self._lesen("stand.json")
             q = st.setdefault("quellen", {}).setdefault(quelle_id, {})
-            q |= {"fehler": fehler[:120], "fehler_ts": jetzt}
+            q |= {"fehler": fehler[:120], "fehler_ts": jetzt, "fehler_seit": q.get("fehler_seit") or jetzt}
             self._schreiben("stand.json", st)
+
+    def erfolg_merken(self, quelle_id: str, anzahl: int, jetzt: str) -> None:
+        """Erfolgreicher Abruf ohne News-Speicher (Artificial Analysis, Ollama) -> Fehler und Ausfall-Meldung zuruecksetzen."""
+        with _LOCK:
+            st = self._lesen("stand.json")
+            st.setdefault("quellen", {})[quelle_id] = {"ts": jetzt, "anzahl": anzahl, "fehler": ""}
+            self._schreiben("stand.json", st)
+
+    def ausfaelle(self, jetzt: datetime, *, ids: set[str]) -> list[dict]:
+        """BF-97: Quellen, die seit mindestens AUSFALL_TAGE Tagen nur Fehler liefern und noch nicht gemeldet sind
+        (danach als gemeldet markiert; ein Erfolg setzt das zurueck)."""
+        grenze = (jetzt - timedelta(days=AUSFALL_TAGE)).isoformat(timespec="seconds")
+        out = []
+        with _LOCK:
+            st = self._lesen("stand.json")
+            for qid, q in (st.get("quellen") or {}).items():
+                if qid in ids and q.get("fehler") and not q.get("gemeldet") and (q.get("fehler_seit") or "9") <= grenze:
+                    out.append({"id": qid, "fehler": q["fehler"], "seit": q["fehler_seit"], "zuletzt_ok": q.get("ts", "")})
+                    q["gemeldet"] = jetzt.isoformat(timespec="seconds")
+            if out:
+                self._schreiben("stand.json", st)
+        return out
 
     def aa_speichern(self, modelle: list[dict], jetzt: str) -> None:
         self._schreiben("aa.json", {"ts": jetzt, "modelle": modelle})
@@ -401,9 +435,18 @@ def lauf_news(radar: Radar, unsere: list[dict], *, jetzt: datetime, abruf=abrufe
 
 def lauf_aa(radar: Radar, unsere: list[dict], *, schluessel: str, jetzt: datetime, abruf=abrufen) -> list[dict]:
     """Taeglich: Artificial-Analysis-Liste holen (ein Abruf), cachen -> neue Vorschlaege (je einmal)."""
-    roh = json.loads(abruf(AA_URL, kopf={"x-api-key": schluessel, "Accept": "application/json"}))
-    aa = aa_modelle(roh)
+    daten = []
+    for seite in range(1, AA_SEITEN_MAX + 1):                 # neue API liefert seitenweise (200 je Seite)
+        roh = json.loads(abruf(AA_URL if seite == 1 else f"{AA_URL}?page={seite}",
+                               kopf={"x-api-key": schluessel, "Accept": "application/json"}))
+        daten += (roh or {}).get("data") or []
+        if not ((roh or {}).get("pagination") or {}).get("has_more"):
+            break
+    aa = aa_modelle({"data": daten})
+    if not aa:
+        raise ValueError("keine Modelle erkannt (Antwort geaendert?)")
     radar.aa_speichern(aa, jetzt.isoformat(timespec="seconds"))
+    radar.erfolg_merken("artificialanalysis", len(aa), jetzt.isoformat(timespec="seconds"))
     return [v for v in vorschlaege(unsere, aa) if radar.vorschlag_neu(v, jetzt.isoformat(timespec="seconds"))]
 
 
@@ -419,6 +462,14 @@ def vorschlag_text(v: dict, nutzung: dict | None = None) -> tuple[str, str]:
             + "\n\nNichts wird automatisch umgestellt – neues Modell = CEO-Freigabe; vorher die Qualität an echten Aufgaben testen."
             + f"\n\n{AA_QUELLE}")
     return titel, text
+
+
+def meldung_ausfall(items: list[dict]) -> str:
+    """BF-97: eine Nachricht fuer alle Quellen, die seit Tagen nichts liefern."""
+    z = [f"• {x['id']}: seit {x['seit'][8:10]}.{x['seit'][5:7]}. – {x['fehler']}" for x in items]
+    return ("⚠️ Modell-Radar: " + ("eine Quelle liefert" if len(items) == 1 else f"{len(items)} Quellen liefern")
+            + f" seit mindestens {AUSFALL_TAGE} Tagen nichts:\n" + "\n".join(z)
+            + "\nDer Radar läuft mit den übrigen Quellen weiter. Bitte in einer Claude-Sitzung prüfen lassen.")
 
 
 def meldung_rot(items: list[dict]) -> str:

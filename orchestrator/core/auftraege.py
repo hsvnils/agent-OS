@@ -77,6 +77,23 @@ class AuftragStore:
                 n += 1
         return n
 
+    # -- Worker-Zustand (BF-98) -------------------------------------------------------------------------------------
+
+    def worker_melden(self, grund: str) -> None:
+        """Worker wartet (z. B. RAM-Waechter): letzter Grund mit Zeit -- steht dann im Fehlgrund eines Zeitlimits."""
+        p = self.path.with_name("worker_status.json")
+        tmp = p.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"ts": _now(), "grund": str(grund or "")[:200]}, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(p)
+
+    def worker_wartegrund(self, *, minuten: float = 30) -> str:
+        """Grund, wenn der Worker in den letzten `minuten` gemeldet hat, dass er wartet; sonst ''."""
+        try:
+            d = json.loads(self.path.with_name("worker_status.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return ""
+        return d.get("grund", "") if _ts(d.get("ts", "")) >= datetime.now() - timedelta(minutes=minuten) else ""
+
     # -- Lesen -----------------------------------------------------------------------------------------------------
 
     def get(self, auftrag_id: str) -> dict | None:

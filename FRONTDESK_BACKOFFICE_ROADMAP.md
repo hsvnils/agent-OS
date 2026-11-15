@@ -4,7 +4,7 @@
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `ec1173c`
-- Naechster Schritt: Pruefung 2026-11-15: Fehler BF-98: Backoffice nimmt nachts oft keine Auftraege an (November 45x Zeitlimit mit Claude-Ausweich) -- Ursache auf dem MACO470 klaeren, Roadmap auf Claude als Frontdesk anpassen, neu beobachten.
+- Naechster Schritt: BF-98 eingegrenzt 2026-11-15 (RAM-Waechter, frei oft nur 11-12 GB); Worker meldet ab Deploy seinen Wartegrund, das Zeitlimit nennt ihn -- naechste Fehlnacht auswerten, dann Gegenmassnahme vorschlagen (CEO-Go).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

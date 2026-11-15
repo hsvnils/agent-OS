@@ -19,6 +19,9 @@ from decimal import ROUND_HALF_UP, Decimal
 from .buchhaltung import Buchhaltung
 
 
+AB_SAISON = "Ab Saison 2027/28 buchbar – "
+
+
 def _p(id_, name, basis, euro, hinweis="", einheit=""):
     return {"id": id_, "name": name, "basis": basis, "preis_cent": int(euro * 100), "hinweis": hinweis,
             "einheit": einheit, "aktiv": True}
@@ -128,14 +131,17 @@ STANDARD = {
             _p("push", "App Push-Notification", "1.000 aktive Nutzer", 150,
                "Direkt auf den Sperrbildschirm, max. 1× pro Monat und Partner"),
             _p("banner", "App-Banner Home-Tab, 1 Woche", "Sichtbar bei jedem App-Start", 250),
+            # CEO 2026-11-15 (A6): in der App noch nicht gebaut -> erst ab Saison 2027/28 buchbar
             _p("spieltag", "App-Sponsoring Spieltag", "Tippspiel oder Startelf-Voting", 350,
-               "„Präsentiert von“ über den gesamten Spieltag"),
+               AB_SAISON + "„Präsentiert von“ über den gesamten Spieltag"),
             _p("saison", "App Saison-Sponsoring Tippspiel", "Namensrecht und Branding", 1200,
-               "Abrechnung monatlich, Laufzeit Saison", "Monat"),
+               AB_SAISON + "Abrechnung monatlich, Laufzeit Saison", "Monat"),
         ]},
         {"name": "Kneipen (Fan-App)", "farbe": "blau", "items": [          # MONETARISIERUNG M8, Saeule S3b
             _p("kneipe_monat", "Spieltags-Partner in der Fan-App", "Hervorgehobene Kneipe an jedem Spieltag", 10,
                "Grundeintrag bleibt gratis; Laufzeit = Menge in Monaten", "Monat"),
+            _p("kneipe_saison", "Saisonpaket Spieltags-Partner", "Hervorgehobene Kneipe bis Saisonende (30.06.)", 99,
+               "Grundeintrag bleibt gratis; gilt bis zum 30.06. der laufenden Saison", "Saison"),   # CEO 2026-11-15 (A16)
         ]},
         {"name": "Vor Ort", "farbe": "blau", "items": [
             _p("stadion", "Stadion-Aktivierung, Tagespauschale", "Produktion vor Ort inkl. Team", 750,
@@ -147,7 +153,7 @@ STANDARD = {
             _p("pk_match", "Paket Matchday", "Reel Standalone + Story-Serie + App-Push + X-Post", 2250,
                "Volle Präsenz rund um einen Spieltag, 10 % Paketvorteil"),
             _p("pk_saison", "Paket Saison-Partner", "App-Saison-Sponsoring + 2 Reel-Integrationen + 2 Story-Serien", 3600,
-               "Monatliche Dauerpräsenz, 20 % Paketvorteil", "Monat"),
+               AB_SAISON + "Monatliche Dauerpräsenz, 20 % Paketvorteil", "Monat"),
         ]},
     ],
     "zuschlaege": [

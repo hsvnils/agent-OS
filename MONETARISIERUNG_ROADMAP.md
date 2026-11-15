@@ -4,7 +4,7 @@
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-monetarisierung`
 - Basiscommit: `a048c2d`
-- Naechster Schritt: M8 gemergt (Deploy durch CEO); danach Kneipen-Formate
+- Naechster Schritt: Kneipen-Formate live im Katalog (2026-11-15: Monat 10 EUR, Saisonpaket 99 EUR bis 30.06.); Gate M8 mit der ersten echten Kneipe; Sichtabnahme C1-C7 (To-do 29.11.); M5 ab L4b + Daten ab 01.01.27, M7 ab Feb 2027.
   im Live-Katalog anlegen (Preise = CEO-Entscheidung, offene Punkte A16); Gate M8 mit der ersten echten Kneipe. Uebrig: M5 (L4b, ab
   01.01.2027), M7 (ab Februar 2027).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
