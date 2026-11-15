@@ -133,6 +133,10 @@ STANDARD = {
             _p("saison", "App Saison-Sponsoring Tippspiel", "Namensrecht und Branding", 1200,
                "Abrechnung monatlich, Laufzeit Saison", "Monat"),
         ]},
+        {"name": "Kneipen (Fan-App)", "farbe": "blau", "items": [          # MONETARISIERUNG M8, Saeule S3b
+            _p("kneipe_monat", "Spieltags-Partner in der Fan-App", "Hervorgehobene Kneipe an jedem Spieltag", 10,
+               "Grundeintrag bleibt gratis; Laufzeit = Menge in Monaten", "Monat"),
+        ]},
         {"name": "Vor Ort", "farbe": "blau", "items": [
             _p("stadion", "Stadion-Aktivierung, Tagespauschale", "Produktion vor Ort inkl. Team", 750,
                "Ausspielung über die gebuchten Formate"),

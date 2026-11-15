@@ -3233,11 +3233,12 @@ function katalogFormatNeu(gi) {
 }
 
 /* ---------- Preisliste ---------- */
+const KNEIPE_RE = /^kneipe_|spieltags-partner|kneipen-listung/i;   // M8: Kneipen-Formate nicht automatisch in der Marken-Preisliste
 async function renderPreisliste() {
   const [k, kd] = await Promise.all([katalogLaden(true), jget("/api/crm/kunden")]);
   if (!k) { $("#v2-app").innerHTML = anKopf() + emptyRow("Katalog nicht erreichbar."); return; }
   const firmen = ((kd && kd.firmen) || []).filter(f => f.aktiv);
-  const wahl = k.gruppen.map(g => `<div class="v2-feld"><small style="color:${g.farbe === "rot" ? "var(--v2-red)" : "var(--v2-accent)"}"><b>${esc(g.name)}</b></small>${g.items.filter(it => it.aktiv).map(it => `<label class="v2-modlbl"><input type="checkbox" class="pl-id" value="${esc(it.id)}" checked> ${esc(it.name)} — ${cent2eur(it.preis_cent)}${it.einheit ? " / " + esc(it.einheit) : ""}</label>`).join("")}</div>`).join("");
+  const wahl = k.gruppen.map(g => `<div class="v2-feld"><small style="color:${g.farbe === "rot" ? "var(--v2-red)" : "var(--v2-accent)"}"><b>${esc(g.name)}</b></small>${g.items.filter(it => it.aktiv).map(it => `<label class="v2-modlbl"><input type="checkbox" class="pl-id" value="${esc(it.id)}" ${KNEIPE_RE.test(it.id + " " + it.name) ? "" : "checked"}> ${esc(it.name)} — ${cent2eur(it.preis_cent)}${it.einheit ? " / " + esc(it.einheit) : ""}</label>`).join("")}</div>`).join("");
   const form = `<div class="v2-form"><label class="v2-feld"><small>Empfänger (optional)</small><select id="pl-firma"><option value="">— ohne Empfänger —</option>${firmen.map(f => `<option value="${esc(f.nummer)}">${esc(f.nummer)} · ${esc(f.name)}</option>`).join("")}</select></label>
     <label class="v2-feld"><small>Ansprechpartner</small><select id="pl-ap"><option value="">— keiner —</option></select></label>
     <button class="v2-btn pri" data-act="pl-pdf">📄 Preisliste als PDF</button>
@@ -3818,15 +3819,28 @@ async function renderFinanzen(meldung) {
   FIN_JAHR = u.jahr;
   const jahrWahl = `<select id="fin-jahr" class="v2-inp" style="width:auto">${u.jahre.map(j => `<option ${j === u.jahr ? "selected" : ""}>${j}</option>`).join("")}</select>`;
   const zeitWahl = sub === "uebersicht" ? `<select id="fin-zeit" class="v2-inp" style="width:auto"><option value="jahr">Ganzes Jahr</option>${[1, 2, 3, 4].map(q => `<option value="q${q}">Q${q}</option>`).join("")}${FIN_MONATE.map((m, i) => `<option value="m${String(i + 1).padStart(2, "0")}">${m}</option>`).join("")}</select>` : "";
-  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : sub === "abschluss" ? await finAbschluss(u.jahr) : sub === "abos" ? await finAbos() : sub === "saeulen" ? await finSaeulen(u.jahr) : sub === "plan" ? await finPlan() : await finUebersicht(u);
+  const body = sub === "journal" ? await finJournal(u.jahr) : sub === "euer" ? await finEuer(u.jahr) : sub === "anlagen" ? await finAnlagen(u.jahr) : sub === "abschluss" ? await finAbschluss(u.jahr) : sub === "abos" ? await finAbos() : sub === "saeulen" ? await finSaeulen(u.jahr) : sub === "plan" ? await finPlan() : sub === "kneipen" ? await finKneipen() : await finUebersicht(u);
   $("#v2-app").innerHTML = secHead("Finanzen " + (sub === "uebersicht" ? finZeitName(u.zeitraum, u.jahr) : u.jahr), `${jahrWahl}${zeitWahl}<button class="v2-btn" data-act="eb-neu" data-val="ausgabe">− Ausgabe ohne Beleg</button><button class="v2-btn pri" data-act="eb-neu" data-val="einnahme">+ Einnahme ohne Rechnung</button>`)
-    + tabs("finanzen", [["uebersicht", "Übersicht"], ["saeulen", "Säulen"], ["plan", "Plan"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"], ["abos", "Abos"], ["abschluss", "Jahresabschluss"]])
+    + tabs("finanzen", [["uebersicht", "Übersicht"], ["saeulen", "Säulen"], ["plan", "Plan"], ["kneipen", "Kneipen"], ["journal", "Journal"], ["euer", "EÜR"], ["anlagen", "Anlagen"], ["abos", "Abos"], ["abschluss", "Jahresabschluss"]])
     + (meldung ? `<div class="v2-msg ok" style="margin-bottom:12px">${esc(meldung)}</div>` : "") + `<div class="v2-grid">${body}</div>`;
   $("#fin-jahr").addEventListener("change", e => { FIN_JAHR = Number(e.target.value); renderFinanzen(); });
   const zw = $("#fin-zeit"); if (zw) { zw.value = u.zeitraum; zw.addEventListener("change", e => { FIN_ZEIT = e.target.value; renderFinanzen(); }); }
 }
 /* ---- Abos / wiederkehrende Zahlungen (KUNDEN_FINANZEN Etappe 15) ---- */
 let ABOS = { abos: [], turnus: {}, kategorien: { ausgabe: {}, einnahme: {} }, firmen: [], summe: {} };
+async function finKneipen() {   // MONETARISIERUNG M8: bezahlte Kneipen-Listungen (aus den Rechnungen abgeleitet)
+  const d = await jget("/api/finanzen/kneipen");
+  if (!d) return emptyRow("Kneipen nicht erreichbar.");
+  const ST = { aktiv: ["ok", "aktiv"], laeuft_aus: ["warn", "läuft aus"], kommend: ["neutral", "beginnt bald"], abgelaufen: ["err", "abgelaufen"] };
+  const paket = (x) => x.pakete.map(p => p === "saison" ? "Saisonpaket" : "Monat").join(" + ");
+  const rows = d.kneipen.map(k => { const l = k.listungen[0], [c, t] = ST[k.status];
+    return `<tr class="klick" data-act="re-detail" data-id="${esc(l.rechnung)}"><td><b>${esc(k.name)}</b><br><small class="v2-sub">${esc(k.firma)}${k.listungen.length > 1 ? ` · ${k.listungen.length} Listungen` : ""}</small></td>
+      <td><span class="v2-badge ${c}">${t}</span></td><td>${esc(datumDe(l.von))} – ${esc(datumDe(k.bis))}${k.status === "laeuft_aus" ? `<br><small class="v2-sub">noch ${k.tage_rest} Tag(e)</small>` : ""}</td>
+      <td>${esc(paket(l))}</td><td><small>${esc(l.rechnung)}</small> ${l.bezahlt ? `<span class="v2-badge ok">bezahlt</span>` : `<span class="v2-badge wartet">offen</span>`}</td></tr>`; }).join("");
+  return `${kpiTile("Aktive Listungen", String(d.aktiv), null, "bezahlte Spieltags-Partner")}${kpiTile("Laufen bald aus", String(d.laeuft_aus), null, "in den nächsten 21 Tagen")}
+    ${tile("🍺 Kneipen", (rows ? `<div class="v2-tab-scroll"><table class="v2-table v2-kn-tab"><thead><tr><th>Kneipe</th><th>Status</th><th>Zeitraum</th><th>Paket</th><th>Rechnung</th></tr></thead><tbody>${rows}</tbody></table></div>` : emptyRow("Noch keine bezahlte Listung. Verkauf über Angebot → Auftrag → Rechnung mit „Spieltags-Partner“ aus dem Katalog."))
+      + `<small class="v2-sub">${esc(d.hinweis)} Beim Festschreiben legt LUNA zwei To-dos an: Enddatum in der App eintragen und 14 Tage vor Ablauf Verlängerung anbieten.</small>`, "w12")}`;
+}
 async function finAbos() {
   ABOS = await jget("/api/finanzen/abos") || ABOS;
   const a = ABOS.abos || [], aktiv = a.filter(x => x.status === "aktiv");

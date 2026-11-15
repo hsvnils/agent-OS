@@ -27,7 +27,7 @@ class TestKatalog(unittest.TestCase):
     def test_1_standard_wie_generator(self):
         k = pruefe(copy.deepcopy(STANDARD))
         items = {it["id"]: it for g in k["gruppen"] for it in g["items"]}
-        self.assertEqual(len(items), 18)                                               # 15 Formate + 3 Pakete
+        self.assertEqual(len(items), 19)                                               # 15 Formate + 3 Pakete + Kneipe (M8)
         self.assertEqual((items["reel_solo"]["preis_cent"], items["pk_saison"]["einheit"]), (160000, "Monat"))
         self.assertEqual([z["prozent"] for z in k["zuschlaege"]], [25, 60, 50, 20, 25, 20])
         # Pakete wie im Generator nachgerechnet: Matchday = (1600+600+150+150) - 10 %, Saison = (1200+2*1050+2*600) - 20 %

@@ -257,6 +257,15 @@
 
 ## Eintraege (neueste oben)
 
+### 2026-11-15 — Kneipen als Kunden (MONETARISIERUNG M8)
+
+**Was:** Bezahlte Kneipen-Listung „Spieltags-Partner“ wird ueber Angebot -> Auftrag -> Rechnung verkauft; LUNA zeigt aktive und
+auslaufende Listungen und erinnert an App-Eintrag und Verlaengerung. **Warum so:** Die Listung wird aus der Rechnung abgeleitet
+statt doppelt gespeichert -- eine Quelle, Storno wirkt sofort, nichts kann auseinanderlaufen. LUNA schreibt nicht in die App
+(Nicht-Scope, eigenes Projekt), deshalb ein To-do fuer den Betreiber statt einer Schnittstelle. Kneipen-Formate stehen im
+gemeinsamen Katalog, sind in der Marken-Preisliste aber nicht vorausgewaehlt. **Offen (CEO):** Preise im Live-Katalog
+(Monat laut Plan 10 EUR, Saisonpaket offen) -- Preise sind CEO-Entscheidung, LUNA legt sie nicht selbst an.
+
 ### 2026-11-15 — Posting-Rhythmus Soll/Ist (MONETARISIERUNG M4)
 
 **Was:** Soll je Plattform und Format als Spanne je Woche, Ist automatisch (Instagram, LUNA-Reels auf Facebook) oder von Hand,
