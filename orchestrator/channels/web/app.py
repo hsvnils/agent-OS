@@ -1305,7 +1305,9 @@ def overview():
     """Command-Center-Uebersicht: reale Counts, Provider-Status (aus .env), Agentenliste."""
     offene = _offene_antraege()
     offene_research = [t for t in research.list() if t.get("status") in ("offen", "in_arbeit")]
-    providers = [{"name": n, "connected": bool(_secret(k))} for n, k in (
+    from ...core.claude_api import gemini_key
+    providers = [{"name": n, "connected": bool(gemini_key(_secrets_dict()) if k == "GEMINI_API_KEY" else _secret(k))}
+                 for n, k in (
         ("Claude", "ANTHROPIC_API_KEY"), ("Gemini", "GEMINI_API_KEY"), ("OpenAI", "OPENAI_API_KEY"),
         ("ElevenLabs", "ELEVENLABS_API_KEY"), ("Deepgram", "DEEPGRAM_API_KEY"), ("Brave", "BRAVE_API_KEY"),
         ("GitHub", "GITHUB_TOKEN"), ("Google", "GOOGLE_OAUTH_REFRESH_TOKEN"))]

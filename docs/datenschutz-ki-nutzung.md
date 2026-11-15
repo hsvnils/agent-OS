@@ -17,6 +17,12 @@
   EWR/der Schweiz/UK gelten die Datenregeln der **Bezahl-Stufe auch fuer die Gratis-Stufe** -- „Google doesn't use your
   prompts ... or responses to improve our products“; Speicherung nur zur Missbrauchserkennung. Der Registereintrag vom
   2026-07-06 („Free-Tier nutzt Inhalte zum Training“) ist fuer den CEO (Deutschland) damit **ueberholt** (korrigiert).
+- **Nachtrag 2026-11-15 -- C4 Gemini aus (`CLAUDE_AKTIV_ROADMAP.md`):** Schalter `GEMINI_AUS=1` in der NAS-`.env` nimmt Gemini
+  aus allen LUNA-Wegen (Chat-/Fachagenten-Ausweich, `cloud_client`, Instagram-Analyse, Backoffice-Gegenlesen); danach gehen
+  **keine Daten mehr an Google**, ausser der Cutter-Video-KI auf dem MACO470 (`CUTTER_VIDEO_KI=1`, eigener Schluessel,
+  CEO 2026-10-26). Ausweich bei Claude-Ausfall: lokales Modell (wenn `LOCAL_LLM_CHAT` an) und **OpenAI `gpt-4o-mini`**
+  (Schluessel gesetzt) -- dorthin gehen im Notfall dieselben Datenarten wie an Claude. Nach 3 Tagen ohne Bedarf entfernt
+  der CEO `GEMINI_API_KEY` aus der NAS-`.env`.
 - **Nachtrag 2026-10-26 -- Umstieg auf Claude (`CLAUDE_AKTIV_ROADMAP.md`):** Sobald in C2 ein gueltiger Schluessel fuer
   LUNA eingetragen ist, laufen **Chat und Fachagenten ueber Anthropic** (`claude-sonnet-5-5`, Routing `claude-haiku-5-5`).
   Dieselben Datenarten wie oben (Mails, DMs, Drive/Tabellen, Bildschirmfotos ueber die Werkzeuge) gehen dann an

@@ -137,10 +137,10 @@ def register(secrets: dict | None = None) -> dict:
     """CFO-Ueberblick (Tool `finance_dashboard`): Modelle + Dienste, live aus den vorhandenen Schluesseln."""
     modelle = [
         {"name": "Chat (LUNA)", "modell": "claude-sonnet-5-5", "provider": "anthropic",
-         "fallback": "lokal (wenn aktiv) -> gemini-2.5-flash -> gpt-4o-mini", "zweck": "Telegram-/LUNA-OS-Dialog",
+         "fallback": "lokal (wenn aktiv) -> gemini-2.5-flash (aus mit GEMINI_AUS=1) -> gpt-4o-mini", "zweck": "Telegram-/LUNA-OS-Dialog",
          "kosten": "per Token", "erfassung": "gemessen"},
         {"name": "Fachagenten (CTO/Berater/...)", "modell": "claude-sonnet-5-5", "provider": "anthropic (API direkt)",
-         "fallback": "lokal (wenn aktiv) -> gemini -> openai", "zweck": "Konsultation, Innovation, Self-Dev",
+         "fallback": "lokal (wenn aktiv; mit GEMINI_AUS=1 auch die Chat-Einstellung) -> gemini (aus mit GEMINI_AUS=1) -> openai", "zweck": "Konsultation, Innovation, Self-Dev",
          "kosten": "per Token", "erfassung": "gemessen"},
         {"name": "Web-Recherche-Eskalation", "modell": "aus (CLAUDE_AKTIV C1, freie Websuche nur ueber den Netz-Agenten)",
          "provider": "anthropic-web", "fallback": "Brave", "zweck": "komplexe Recherche", "kosten": "-",

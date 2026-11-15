@@ -6,7 +6,10 @@
 - `ClaudeChat`: kleiner Adapter mit der Form `client.chat.completions.create(model, messages, max_tokens)`, damit die
   bisherigen Gemini-Stellen (Content-Plan, Videograf, Kennzahlen-Screenshots, Gegenlesen, Kurzantworten) ohne Umbau auf
   Claude laufen. Intern das offizielle Anthropic-SDK; Bilder (`image_url` mit `data:`-URL) werden zu Bild-Bloecken.
-- `cloud_client(secrets)`: Claude, sobald ein Anthropic-Schluessel gesetzt ist, sonst wie bisher Gemini (Schalter bis C4).
+- `cloud_client(secrets)`: Claude, sobald ein Anthropic-Schluessel gesetzt ist, sonst Gemini -- ausser `GEMINI_AUS=1`.
+- `gemini_key(secrets)` (CLAUDE_AKTIV C4): einzige Stelle, an der LUNA (NAS) den Gemini-Schluessel liest; mit
+  `GEMINI_AUS=1` liefert sie "" -> Gemini ist ueberall aus, auch wenn der Schluessel noch in der `.env` steht (Dry-Run vor
+  dem Entfernen). Der Cutter auf dem MACO470 (`cutter/`) liest seinen Schluessel weiter selbst (CEO 2026-10-26, Option A).
 """
 from __future__ import annotations
 
@@ -17,6 +20,17 @@ from .model_router import claude_einstellungen
 SCHNELL = "claude-haiku-5-5"      # Auslesen, Gegenlesen, Kurzantworten
 STARK = "claude-sonnet-5-5"       # Vorschlaege, Fachagenten
 GEMINI = {"schnell": "gemini-2.5-flash", "stark": "gemini-2.5-flash"}
+_AN = ("1", "true", "ja", "an", "on", "yes")
+
+
+def gemini_aus(secrets: dict) -> bool:
+    """CLAUDE_AKTIV C4: Schalter `GEMINI_AUS=1` in der .env."""
+    return str((secrets or {}).get("GEMINI_AUS") or "").strip().lower() in _AN
+
+
+def gemini_key(secrets: dict) -> str:
+    """Gemini-Schluessel -- oder "", wenn nicht gesetzt oder per `GEMINI_AUS=1` abgeschaltet."""
+    return "" if gemini_aus(secrets) else str((secrets or {}).get("GEMINI_API_KEY") or "").strip()
 
 
 def _text(content) -> str:
@@ -130,7 +144,7 @@ def cloud_client(secrets: dict, *, timeout: float = 60, protokoll=None, gemini_b
     key = (s.get("ANTHROPIC_API_KEY") or "").strip()
     if key:
         return ClaudeChat(key, timeout=timeout, protokoll=protokoll), "claude"
-    gkey = (s.get("GEMINI_API_KEY") or "").strip()
+    gkey = gemini_key(s)
     if gkey:
         import openai
         from .model_router import GEMINI_BASE_URL

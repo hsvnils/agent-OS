@@ -2248,12 +2248,18 @@ def _start_cfo_loop(ctx, notify) -> None:
 def _fallbacks(secrets: dict, cfg: dict, bereich: str = "chat") -> list[dict]:
     """Ausweich-Reihenfolge nach Claude (CLAUDE_AKTIV C1, CEO 2026-10-23): lokales LLM (`core/lokal_llm.py`, wenn fuer
     den Bereich per .env aktiv; `zuerst` = sogar vor Claude), dann Gemini, dann OpenAI -- jeweils nur mit gesetztem Key."""
+    from ...core.claude_api import gemini_aus, gemini_key
     from ...core.lokal_llm import eintrag
     from ...core.model_router import GEMINI_BASE_URL
     v = cfg.get("voice", {})
     lokal = eintrag(secrets, bereich)
+    if not lokal and gemini_aus(secrets) and bereich != "chat":
+        # C4: ohne Gemini ist das lokale Modell der Notfall-Ersatz -- auch fuer Bereiche ohne eigene Einstellung
+        lokal = eintrag(secrets, "chat")
+        if lokal:
+            lokal = lokal | {"zuerst": False}
     return ([lokal] if lokal else []) + [
-        {"name": "gemini", "key": secrets.get("GEMINI_API_KEY", ""), "base_url": GEMINI_BASE_URL,
+        {"name": "gemini", "key": gemini_key(secrets), "base_url": GEMINI_BASE_URL,
          "model": v.get("gemini_model", "gemini-2.5-flash")},
         {"name": "openai", "key": secrets.get("OPENAI_API_KEY", ""), "base_url": None,
          "model": v.get("openai_model", "gpt-4o-mini")},

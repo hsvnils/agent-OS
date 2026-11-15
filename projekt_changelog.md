@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 14:42] — Claude Code
+- **Was:** CLAUDE_AKTIV C4 gebaut: Schalter `GEMINI_AUS=1` mit einziger Lesestelle `claude_api.gemini_key` -- wirkt in `cloud_client`, Router-Ausweich (`bot._fallbacks`), Instagram-Analyse, Modell-Radar-Liste, Uebersicht und Backoffice-Gegenlesen; mit Schalter nutzen Fachagenten die lokale Chat-Einstellung als Notfall-Ersatz. Tests `TestC4GeminiAus` mit Gegenprobe; Datenschutz-Check, Dienste-Register, Datenfluesse, Register, Roadmap fortgeschrieben; To-do 19.11. „Gemini-Schluessel entfernen“.
+- **Warum:** CEO „Go für C4“ (2026-11-15).
+- **Betroffen:** `orchestrator/core/claude_api.py`, `ig_analyse.py`, `modell_radar.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `backoffice/worker.py`, `orchestrator/governance/dienste_register.py`, `orchestrator/tests/test_claude_c3.py`, `docs/datenschutz-ki-nutzung.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`, `CLAUDE_AKTIV_ROADMAP.md`; Live: To-do (NAS)
+
 ## [2026-11-15 14:28] — Claude Code
 - **Was:** `ai/entscheidungen-1115` nach `main` gemergt (CEO-Go), Branch lokal geloescht.
 - **Warum:** CEO „Go für Merge“ (2026-11-15).

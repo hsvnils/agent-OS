@@ -169,13 +169,15 @@ def lies_changelog(text: str, url: str) -> list[dict]:
 # -- Unsere Modelle --------------------------------------------------------------------------------------------------
 def genutzte_modelle(cfg: dict, secrets: dict) -> list[dict]:
     """Welche Modelle LUNA nutzt (nur Namen) -> [{einsatz, modell}] aus config.toml und .env."""
+    from .claude_api import gemini_key
     v, m, s = cfg.get("voice") or {}, cfg.get("models") or {}, secrets or {}
+    gem = bool(gemini_key(s))
     roh = [("Chat (Hauptmodell)", v.get("llm_model")),
-           ("Chat-Rückfall Gemini", v.get("gemini_model", "gemini-2.5-flash") if s.get("GEMINI_API_KEY") else ""),
+           ("Chat-Rückfall Gemini", v.get("gemini_model", "gemini-2.5-flash") if gem else ""),
            ("Chat-Rückfall OpenAI", v.get("openai_model", "gpt-4o-mini") if s.get("OPENAI_API_KEY") else ""),
            ("Fachagenten", m.get("hoa")), ("Routing", m.get("routing")),
            ("Lokal (MACO470)", s.get("LOCAL_LLM_MODEL")), ("Instagram-Analyse", s.get("IG_ANALYSE_MODELL")),
-           ("Videograf/Content", "gemini-2.5-flash" if s.get("GEMINI_API_KEY") else "")]
+           ("Videograf/Content", "gemini-2.5-flash" if gem else "")]
     out, gesehen = [], set()
     for einsatz, modell in roh:
         modell = str(modell or "").strip()
