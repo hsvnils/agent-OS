@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 17:34] — Claude Code
+- **Was:** Schalter `GEMINI_AUS=1` in der NAS-`orchestrator/.env` ergaenzt (eine Zeile angehaengt, keine Werte angezeigt). Wirksam nach Container-Neuerstellung durch den CEO.
+- **Warum:** CEO „Ja, trag die Zeile ein“ (CLAUDE_AKTIV C4).
+- **Betroffen:** NAS `orchestrator/.env` (nicht im Git)
+
 ## [2026-11-15 17:09] — Claude Code
 - **Was:** Branch `ai/claude-aktiv-c4` (Schalter `GEMINI_AUS`) nach main gemergt und gepusht; lokaler Branch geloescht.
 - **Warum:** CEO „Push gemacht, Go fuer Merge, Push und Deploy“.
