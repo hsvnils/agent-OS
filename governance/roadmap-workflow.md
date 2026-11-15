@@ -1,7 +1,7 @@
 # Roadmap-Workflow
 
 - Status: verbindlich
-- Stand: 2026-09-27
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/doku-standards`
 - Hinweis: Diese Datei beschreibt den verbindlichen Ablauf fuer Roadmaps. Sie ist selbst keine Roadmap und
   aktiviert keine Arbeit. `AGENTS.md` bleibt uebergeordnet; bei Widerspruch gilt `AGENTS.md`.
@@ -125,6 +125,13 @@ ausschliesslich: read-only Analyse, die Roadmap-Datei selbst, ihr Eintrag im Roa
   werden Deploy-Befehl und noetiger Neustart ausdruecklich benannt. **Arbeitsbranches, die vollstaendig in `main`
   enthalten sind** (Pruefung `git merge-base --is-ancestor <branch> main`), darf der Agent ohne Rueckfrage lokal
   loeschen (CEO 2026-09-27); nicht gemergte Branches und Branches auf GitHub nie ohne Auftrag.
+
+- **F4 Abnahme nachhalten (CEO 2026-11-15).** Wartet eine Roadmap nach dem Deploy nur noch auf eine Abnahme durch den CEO
+  oder auf eine Beobachtung („nach dem ersten Lauf pruefen", „eine Woche beobachten"), wird dafuer **sofort ein datiertes
+  To-do mit Erinnerung** angelegt (LUNA-OS To-dos, Quelle `Roadmap:<DATEI>`), und der Agent prueft eine Beobachtung am
+  Stichtag selbst mit Beleg. Ohne Ausloeser bleibt der letzte Schritt sonst liegen (Aufraeumen 2026-11-15: 29 von 34 offenen
+  Roadmaps seit ueber 14 Tagen unveraendert). `scripts/doku_check.py` meldet solche Roadmaps als Hinweis
+  (`--liegengeblieben`); der Agent nennt die Treffer bei jedem Etappen-Gate.
 
 ## Pflicht-Header (Vorlage)
 

@@ -17,6 +17,19 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 11:57] — Claude Code
+- **Was:** Aufraeumen der Roadmaps (Branch `ai/aufraeumen-roadmaps`): 34 offene Roadmaps lesend gegen die NAS geprueft; Kopf
+  (Stand, Naechster Schritt) von 30 Roadmaps mit dem belegten Stand fortgeschrieben (RECHNER_STEUERUNG Status geplant -> in
+  Umsetzung, wie im Inhalt); 11 sind abschliessbar und warten auf die CEO-Abnahme (roadmap-workflow C8). Neue Fehler BF-96
+  (veraltetes Fazit im versendeten Projektbericht), BF-97 (Modell-Radar-Abruf still kaputt), BF-98 (Backoffice nachts) in
+  `docs/bekannte-fehler.md`. BF-88/BF-90 behoben (Tests an fester Uhr; `agenten_profil.uebersicht` nimmt `jetzt`), Suite erstmals
+  ganz gruen (1712). Neuer fester Arbeitsschritt F4 in `governance/roadmap-workflow.md` (offene Abnahme = datiertes To-do) und
+  Hinweis „liegengeblieben“ im Doku-Check (`--liegengeblieben`, Test).
+- **Warum:** CEO-Auftrag 2026-11-15: aufraeumen und Ursache nennen, damit kuenftig nichts mehr liegen bleibt.
+- **Betroffen:** 30 `*_ROADMAP.md`, `ROADMAP.md`, `governance/roadmap-workflow.md`, `scripts/doku_check.py`,
+  `orchestrator/core/agenten_profil.py`, `orchestrator/tests/test_agenten_ausbau.py`, `orchestrator/tests/test_wochenplan.py`,
+  `orchestrator/tests/test_doku_check.py`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-15 11:27] — Claude Code
 - **Was:** Branch `ai/monetarisierung-m8` (Kneipen als Kunden) nach `main` gemergt; Suite 1709 gruen, rot nur die bekannten
   BF-88/BF-90. Roadmap: M8 gemergt.

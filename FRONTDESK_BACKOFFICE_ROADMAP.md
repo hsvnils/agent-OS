@@ -1,11 +1,10 @@
 # Roadmap: Frontdesk/Backoffice — Gemini spricht, das lokale LLM arbeitet im Hintergrund
 
 - Status: in Umsetzung
-- Stand: 2026-09-26
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/frontdesk-backoffice`
 - Basiscommit: `ec1173c`
-- Naechster Schritt: 2026-09-28 Morgen-Briefing pruefen (Nacht-Jobs 02:00/03:00/04:00 lokal? Meldungen gebuendelt?), dann
-  7 Tage Beobachtung (Etappe 5).
+- Naechster Schritt: Pruefung 2026-11-15: Fehler BF-98: Backoffice nimmt nachts oft keine Auftraege an (November 45x Zeitlimit mit Claude-Ausweich) -- Ursache auf dem MACO470 klaeren, Roadmap auf Claude als Frontdesk anpassen, neu beobachten.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

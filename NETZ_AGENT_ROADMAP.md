@@ -1,10 +1,10 @@
 # Roadmap: Netz-Agent in Quarantaene (nur er geht ins Internet)
 
 - Status: in Umsetzung
-- Stand: 2026-10-26
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/netz-agent`
 - Basiscommit: `3158621`
-- Naechster Schritt: Q3 beobachten bis 2026-11-02, dann Roadmap abschliessen.
+- Naechster Schritt: Pruefung 2026-11-15: abschliessbar -- 85 von 85 Recherchen ueber den Netz-Agenten, Heimnetz gesperrt, Brave-Schluessel entfernt; wartet auf CEO-Abnahme (Q5).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

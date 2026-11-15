@@ -3,9 +3,12 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
+from unittest import mock
 
 from orchestrator.core import wochenplan as wp
 from orchestrator.core.aufgaben import AufgabenStore
+
+MONTAG = datetime(2026, 11, 9, 8, 0)                     # BF-88: fester Wochentag (Montagmorgen, Woche frei)
 
 MO = datetime(2026, 11, 2, 8, 20)                      # Montag, kurz nach dem Morgen-Briefing
 
@@ -109,7 +112,8 @@ class TestEintragen(unittest.TestCase):
         g = FakeGoogle([])
         ctx = ToolContext(core=None, antraege=None, engine=None, finance_dir=self.root, repo_root=self.root,
                           leak_secrets=[], google=g)
-        out = run_tool("wochenplan_vorschlagen", {}, ctx)
+        with mock.patch("orchestrator.core.aufgaben.jetzt_lokal", return_value=MONTAG):   # BF-88: nicht an der echten Uhr
+            out = run_tool("wochenplan_vorschlagen", {}, ctx)
         self.assertTrue(out["ok"])
         self.assertEqual([k["callback_data"].rsplit(":", 1)[1] for k in ctx.knoepfe], ["ja", "nein"])
         self.assertEqual(g.angelegt, [])

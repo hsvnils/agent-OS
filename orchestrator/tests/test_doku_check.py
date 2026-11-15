@@ -101,5 +101,17 @@ class TestDokuCheck(unittest.TestCase):
             self.assertEqual(self.dc.pruefe_roadmaps(), [])
 
 
+    def test_6_liegengebliebene_roadmaps(self):
+        """Aufraeumen 2026-11-15: alte „in Umsetzung“-Roadmaps werden als Hinweis gemeldet, abgeschlossene nicht."""
+        from datetime import date
+        d = Path(tempfile.mkdtemp())
+        kopf = "# Roadmap: {n}\n\n- Status: {s}\n- Stand: {d}\n- Naechster Schritt: {x}\n"
+        (d / "ALT_ROADMAP.md").write_text(kopf.format(n="Alt", s="in Umsetzung", d="2026-10-01", x="Abnahme CEO"), encoding="utf-8")
+        (d / "NEU_ROADMAP.md").write_text(kopf.format(n="Neu", s="in Umsetzung", d="2026-11-10", x="bauen"), encoding="utf-8")
+        (d / "FERTIG_ROADMAP.md").write_text(kopf.format(n="Fertig", s="abgeschlossen", d="2026-09-01", x="keiner"), encoding="utf-8")
+        with mock.patch.object(self.dc, "ROOT", d):
+            z = self.dc.liegengeblieben(date(2026, 11, 15))
+        self.assertEqual(z, ["ALT_ROADMAP.md: seit 45 Tagen unveraendert -- Abnahme CEO"])
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,10 +1,10 @@
 # Roadmap: Modell-Radar (Artificial Analysis + Hersteller-News)
 
 - Status: in Umsetzung
-- Stand: 2026-10-13
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/modell-radar`
 - Basiscommit: `b40d9d1`
-- Naechster Schritt: Deploy; CEO legt das Gratis-Konto bei Artificial Analysis an und traegt ARTIFICIALANALYSIS_API_KEY in die NAS-.env ein; erster Lauf ab 07:00 (Bestand), dann Abnahme.
+- Naechster Schritt: Pruefung 2026-11-15: Fehler BF-97: Abruf Artificial Analysis scheitert seit 05.11. still (HTTPError), Quelle gemini-api liefert seit 02.11. nichts -- beheben nach Go, dann Abnahme; 10 Radar-Antraege warten auf Entscheidung.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

@@ -1,10 +1,10 @@
 # Roadmap: Claude wieder aktiv, Gemini abloesen
 
 - Status: in Umsetzung
-- Stand: 2026-10-26
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/claude-aktiv`
 - Basiscommit: `88708b5`
-- Naechster Schritt: eine Woche stabiler Betrieb beobachten (Kostenlog, kein Gemini-Ausweich), danach C4 (ab 2026-11-02).
+- Naechster Schritt: Pruefung 2026-11-15: Beobachtungswoche erfuellt (seit 26.10. nur 2 Gemini-Notfaelle) -- wartet auf CEO-Go fuer C4.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

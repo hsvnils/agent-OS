@@ -1,10 +1,9 @@
 # Roadmap: Kundenmails ueber All-Inkl (luna@hanserautisch.de) statt Gmail
 - Status: in Umsetzung
-- Stand: 2026-10-05
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/mail-allinkl`
 - Basiscommit: `3a08276`
-- Naechster Schritt: M3 Beobachten (eine Woche: Zustellung, Spam beim Empfaenger, erkannte Kundenantworten), danach
-  CEO-Bestaetigung und Roadmap abschliessen.
+- Naechster Schritt: Pruefung 2026-11-15: abschliessbar -- seit 05.10. alle Kundenmails ueber All-Inkl (ca. 13), 6 Antworten per IMAP erkannt; wartet nur auf CEO-Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

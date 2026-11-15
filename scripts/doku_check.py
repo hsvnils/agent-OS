@@ -17,6 +17,10 @@ Prueft:
                   in `orchestrator/governance/dienste_register.py` (Seite „Anbieter & Datenquellen“), und jeder
                   dort gefuehrte Schluessel kommt im Code noch vor (VORSCHLAGSPAUSE_ANBIETER P2).
 
+Zusaetzlich (nur Hinweis, kein Fehler): Roadmaps, die seit mehr als `LIEGEN_TAGE` Tagen „in Umsetzung“ oder „geplant“
+stehen, ohne dass ihr `Stand` fortgeschrieben wurde -- dort wartet meist eine Abnahme oder Beobachtung, die niemand mehr
+ansieht (Aufraeumen 2026-11-15). `--liegengeblieben` gibt nur diese Liste aus.
+
 Die Soll-Listen stehen maschinenlesbar in `docs/datenfluesse.md` in Codebloecken ```doku-check:<name>```.
 
 Aufruf:  python3 scripts/doku_check.py          -> Bericht, Exit 1 bei Abweichung
@@ -258,7 +262,32 @@ def pruefe_anbieter() -> list[str]:
     return fehler
 
 
+LIEGEN_TAGE = 14
+
+
+def liegengeblieben(heute=None) -> list[str]:
+    """Roadmaps „in Umsetzung“/„geplant“ mit `Stand` aelter als LIEGEN_TAGE -> Hinweiszeilen (aelteste zuerst)."""
+    from datetime import date
+    heute = heute or date.today()
+    out = []
+    for p in sorted(ROOT.glob("*_ROADMAP.md")):
+        kopf = "\n".join(p.read_text(encoding="utf-8").splitlines()[:25])
+        st = re.search(r"^-\s*Status:\s*(.+)$", kopf, re.M)
+        sd = re.search(r"^-\s*Stand:\s*(\d{4}-\d{2}-\d{2})", kopf, re.M)
+        nx = re.search(r"^-\s*Naechster Schritt:\s*(.+)$", kopf, re.M)
+        if not st or not sd or st.group(1).strip() not in ("in Umsetzung", "geplant"):
+            continue
+        tage = (heute - date.fromisoformat(sd.group(1))).days
+        if tage > LIEGEN_TAGE:
+            out.append((sd.group(1), f"{p.name}: seit {tage} Tagen unveraendert -- {(nx.group(1) if nx else '')[:110]}"))
+    return [z for _, z in sorted(out)]
+
+
 def main(argv: list[str]) -> int:
+    if "--liegengeblieben" in argv:
+        for z in liegengeblieben():
+            print(z)
+        return 0
     if "--liste" in argv:
         for name, werte in ist_mengen().items():
             print(f"## {name} ({len(werte)})")
@@ -272,6 +301,10 @@ def main(argv: list[str]) -> int:
             print(f"  - {f}")
         return 1
     print("Doku-Check: ok")
+    alt = liegengeblieben()
+    if alt:
+        print(f"Hinweis: {len(alt)} Roadmap(s) seit ueber {LIEGEN_TAGE} Tagen unveraendert (Abnahme/Beobachtung offen?) -- "
+              "`python3 scripts/doku_check.py --liegengeblieben`")
     return 0
 
 

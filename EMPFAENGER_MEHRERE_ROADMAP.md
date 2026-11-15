@@ -1,10 +1,10 @@
 # Roadmap: Mehrere Empfaenger beim Versand von Belegen
 
 - Status: in Umsetzung
-- Stand: 2026-10-13
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/mehrere-empfaenger`
 - Basiscommit: `6a6a87e`
-- Naechster Schritt: Deploy, dann Abnahme durch den CEO (eine echte Mail mit CC/BCC an eigene Adressen) und Roadmap abschliessen.
+- Naechster Schritt: Pruefung 2026-11-15: live, CC/BCC nie benutzt -- CEO sendet einen Beleg mit CC und BCC an eigene Adressen, dann abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

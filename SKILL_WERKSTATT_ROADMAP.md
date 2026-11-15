@@ -1,10 +1,10 @@
 # Roadmap: Skill-Werkstatt -- eigene Skills beobachten, bauen, pruefen und verbessern
 
 - Status: in Umsetzung
-- Stand: 2026-10-16
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/skill-werkstatt`
 - Basiscommit: `eac473f`
-- Naechster Schritt: Deploy; erste Werkstatt-Idee vom CEO in LUNA-OS starten (Probelauf ueber das Backoffice, meist nachts), dann Abnahme.
+- Naechster Schritt: Pruefung 2026-11-15: S1/S2 laufen (35 Ideen, Monatsradar 01.11.); S3/S4 ungeprueft -- CEO startet bei einer Idee „Entwurf bauen“ (Achtung: Backoffice nimmt nachts oft nichts an, siehe FRONTDESK_BACKOFFICE).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

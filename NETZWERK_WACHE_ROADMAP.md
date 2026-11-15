@@ -1,10 +1,10 @@
 # Roadmap: Netzwerk-Wache (Fritz!Box, NAS, Aussensicht)
 
 - Status: in Umsetzung
-- Stand: 2026-10-10
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/netzwerk-wache`
 - Basiscommit: `6f20343`
-- Naechster Schritt: Deploy; CEO legt die Konten in Fritz!Box und DSM an, traegt sie mit NETZWERK_WACHE=1 in die NAS-.env ein und startet die Container neu -- dann erster echter Lauf und Abnahme.
+- Naechster Schritt: Pruefung 2026-11-15: Code deployt, nie gelaufen -- CEO legt Lesekonten in Fritz!Box und DSM an, traegt sie mit NETZWERK_WACHE=1 in die NAS-.env ein, Neustart; dann erster Lauf.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

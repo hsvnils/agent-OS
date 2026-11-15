@@ -1,10 +1,10 @@
 # Roadmap: Grund der Arbeitszeit und Zeiten nachtragen
 
 - Status: in Umsetzung
-- Stand: 2026-10-09
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/zeitgrund-partnerliste`
 - Basiscommit: `a680e53`
-- Naechster Schritt: Deploy (CEO), dann Abnahme durch den CEO (Telegram-Test) und Roadmap abschliessen.
+- Naechster Schritt: Pruefung 2026-11-15: live, seit dem Deploy nie benutzt -- CEO stoppt eine Zeit per Telegram und traegt eine nach, dann abschliessen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

@@ -1,9 +1,9 @@
 # Roadmap: CLO-Ausbau (Skills, Rechtsquellen, Beobachtung, echter Pruef-Lauf)
 - Status: in Umsetzung
-- Stand: 2026-10-05
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/clo-ausbau`
 - Basiscommit: `77fa015`
-- Naechster Schritt: C1-C5 umgesetzt (2026-10-05); offen nur noch: CEO liest Pruefbericht, uebernimmt ggf. Version 2, Anwaeltin prueft.
+- Naechster Schritt: Pruefung 2026-11-15: abschliessbar -- Skills, Nachtlauf Rechtsquellen (15.11.: 35 Normen, 0 Fehler), Pruefbericht und Version 2 erledigt; Anwaltspruefung wird nur noch in VERTRAGSWERK gefuehrt; wartet auf CEO-Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

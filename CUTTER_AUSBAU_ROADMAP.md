@@ -1,9 +1,9 @@
 # Roadmap: Cutter-Ausbau (Schnittwissen ins echte Video)
 - Status: in Umsetzung
-- Stand: 2026-11-09
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-cutter-ausbau` (Plan); Umsetzung je Etappe auf eigenem `ai/`-Branch
 - Basiscommit: `ea47a7b`
-- Naechster Schritt: C2 ist gemergt (Standard bleibt `v1`). C2 ist deployt, Verzerrung (BF-94) vom CEO als behoben bestaetigt. Offen: Wahl der Variante; C1-Nachweis im Nachtlauf.
+- Naechster Schritt: Pruefung 2026-11-15: C1-Nachweis blockiert: Nachtlauf ueberspringt seit 07.11., weil 10 Reels auf Freigabe warten -- CEO sichtet die Reels und waehlt die Variante; dann C1-Nachweis im naechsten Nachtlauf.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

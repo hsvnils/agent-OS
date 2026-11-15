@@ -1,12 +1,10 @@
 # Roadmap: Betrieb und Qualitaet (aus der Antrags-Durchsicht 2026-09-29)
 
 - Status: in Umsetzung
-- Stand: 2026-09-29
+- Stand: 2026-11-15
 - Arbeitsbranch: `ai/antraege-aufraeumen`
 - Basiscommit: `79d6fbc`
-- Naechster Schritt: Etappe 1 live (2026-09-29) -- nach Montag 05.10. 04:00 pruefen, dass hoechstens ein Antrag kam und
-  keiner ein abgelehntes Thema wiederholt. Etappe 2 live. Etappe 3 live und vom CEO abgenommen (Telegram-Meldungen kamen an). Etappe 4 entschieden. Letzter Schritt: nach Montag
-  05.10. 04:00 den ersten Wochenlauf pruefen (Etappe 1), dann Status „abgeschlossen“.
+- Naechster Schritt: Pruefung 2026-11-15: abschliessbar -- Wochenlauf an 5 Montagen mit hoechstens einem Antrag, keine Wiederholung abgelehnter Themen; wartet auf CEO-Abnahme.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
