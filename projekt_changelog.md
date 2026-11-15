@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 17:09] — Claude Code
+- **Was:** Branch `ai/claude-aktiv-c4` (Schalter `GEMINI_AUS`) nach main gemergt und gepusht; lokaler Branch geloescht.
+- **Warum:** CEO „Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** main (Merge-Commit), CLAUDE_AKTIV_ROADMAP.md (C4)
+
 ## [2026-11-15 14:42] — Claude Code
 - **Was:** CLAUDE_AKTIV C4 gebaut: Schalter `GEMINI_AUS=1` mit einziger Lesestelle `claude_api.gemini_key` -- wirkt in `cloud_client`, Router-Ausweich (`bot._fallbacks`), Instagram-Analyse, Modell-Radar-Liste, Uebersicht und Backoffice-Gegenlesen; mit Schalter nutzen Fachagenten die lokale Chat-Einstellung als Notfall-Ersatz. Tests `TestC4GeminiAus` mit Gegenprobe; Datenschutz-Check, Dienste-Register, Datenfluesse, Register, Roadmap fortgeschrieben; To-do 19.11. „Gemini-Schluessel entfernen“.
 - **Warum:** CEO „Go für C4“ (2026-11-15).
