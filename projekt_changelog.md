@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 14:28] — Claude Code
+- **Was:** `ai/entscheidungen-1115` nach `main` gemergt (CEO-Go), Branch lokal geloescht.
+- **Warum:** CEO „Go für Merge“ (2026-11-15).
+- **Betroffen:** `main`
+
 ## [2026-11-15 14:27] — Head of Agents (Claude Code)
 - **Was:** Charta CCO: Skill `davinci-resolve-schnitt` in die Skill-Zeile aufgenommen (Diff am 15.11. vorgelegt, CEO bestaetigt). Dazu CEO-Entscheidungen live: 10 Antraege abgelehnt, 2 zurueckgestellt (Wiedervorlage-To-do 01.02.2027); Plan Celine 2.500 EUR netto, L 800 EUR, E 4.600 EUR; Cutter-B-Roll bleibt -24 LUFS. Register und Roadmap-Koepfe fortgeschrieben.
 - **Warum:** CEO „1 Nein, 2 ok, 3 und 4 wie empfohlen, für celine bitte 2500€ netto annehmen und eintragen“ (2026-11-15).
