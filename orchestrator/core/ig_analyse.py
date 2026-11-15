@@ -95,7 +95,8 @@ def analyse_llm_aus_env(env: dict):
         key = env.get("ANTHROPIC_API_KEY")
         return _anthropic_call(modell, key) if key else None
     if low.startswith("gemini"):
-        key, base_url = env.get("GEMINI_API_KEY"), GEMINI_BASE_URL
+        from .claude_api import gemini_key
+        key, base_url = gemini_key(env), GEMINI_BASE_URL
     else:
         key, base_url = env.get("OPENAI_API_KEY"), None
     return _openai_call(modell, key, base_url) if key else None

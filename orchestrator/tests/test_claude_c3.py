@@ -81,6 +81,32 @@ class TestAdapter(unittest.TestCase):
         self.assertEqual(gebucht[0]["quelle"], "videograf")
 
 
+class TestC4GeminiAus(unittest.TestCase):
+    """CLAUDE_AKTIV C4: Schalter GEMINI_AUS=1 nimmt Gemini ueberall heraus, auch wenn der Schluessel noch da ist."""
+    def test_7_schalter(self):
+        from orchestrator.channels.telegram import bot
+        from orchestrator.core.claude_api import gemini_aus, gemini_key
+        from orchestrator.core.modell_radar import genutzte_modelle
+        from backoffice import worker
+        an = {"GEMINI_API_KEY": "g", "GEMINI_AUS": "1"}
+        self.assertEqual((gemini_aus(an), gemini_key(an)), (True, ""))
+        self.assertEqual(gemini_key({"GEMINI_API_KEY": " g "}), "g")                       # Gegenprobe: ohne Schalter
+        self.assertEqual(cloud_client(an), (None, ""))
+        self.assertEqual(cloud_client({"GEMINI_API_KEY": "g", "GEMINI_AUS": "0"})[1], "gemini")
+        fb = {f["name"]: f for f in bot._fallbacks(an, {})}
+        self.assertEqual(fb["gemini"]["key"], "")                                           # Router ueberspringt leere Keys
+        self.assertEqual(bot._fallbacks({"GEMINI_API_KEY": "g"}, {})[0]["key"], "g")
+        self.assertNotIn("gemini-2.5-flash", [m["modell"] for m in genutzte_modelle({}, an)])
+        self.assertEqual(worker.gemini_gegenlesen(an, {}, "E"), "")
+
+    def test_8_lokal_als_notfall_fuer_fachagenten(self):
+        from orchestrator.channels.telegram import bot
+        lokal = {"LOCAL_LLM_BASE_URL": "http://x:11434/v1", "LOCAL_LLM_MODEL": "qwen3:14b", "LOCAL_LLM_CHAT": "zuletzt"}
+        fb = bot._fallbacks(lokal | {"GEMINI_AUS": "1"}, {}, bereich="fachagenten")
+        self.assertEqual((fb[0]["name"], fb[0]["zuerst"]), ("lokal", False))
+        self.assertNotEqual(bot._fallbacks(lokal, {}, bereich="fachagenten")[0]["name"], "lokal")   # ohne Schalter wie bisher
+
+
 class TestBackofficeGegenlesen(unittest.TestCase):
     def test_5_claude_dann_gemini(self):
         from backoffice import worker

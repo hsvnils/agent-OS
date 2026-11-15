@@ -4,7 +4,7 @@
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/claude-aktiv`
 - Basiscommit: `88708b5`
-- Naechster Schritt: CEO-Go fuer C4 am 2026-11-15; Bestandsaufnahme der Gemini-Wege gemacht (seit 26.10. nur 2 Notfaelle: CTO 26.10., CFO-Nachtjob 06.11.) -- C4 als eigene Etappe bauen: Schalter im Router, nach 3 Tagen ohne Bedarf entfernt der CEO den Schluessel auf der NAS (MACO470 behaelt ihn fuer den Cutter).
+- Naechster Schritt: C4 gebaut 2026-11-15 -- CEO setzt `GEMINI_AUS=1` (NAS-.env) und erstellt die Container neu; nach 3 Tagen ohne Bedarf Schluessel entfernen (To-do), dann Abnahme und Abschluss.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -87,7 +87,13 @@ seit Oktober im Claude-Max-Abo enthalten -- vom Agenten nicht pruefbar, der Live
 
 ## Etappe C4: Gemini abschalten
 
-- Status: geplant
+- Status: umgesetzt 2026-11-15 (`ai/claude-aktiv-c4`): Schalter `GEMINI_AUS=1` (`claude_api.gemini_aus/gemini_key`, einzige
+  Lesestelle fuer LUNA) in `cloud_client`, Router-Ausweich (`bot._fallbacks`), Instagram-Analyse, Modell-Radar-Liste,
+  Uebersicht und Backoffice-Gegenlesen; mit Schalter nutzen Fachagenten die lokale Chat-Einstellung als Notfall-Ersatz.
+  Bestandsaufnahme: seit 26.10. nur 2 Gemini-Notfaelle (CTO 26.10., CFO-Nachtjob 06.11.). NAS heute: `LOCAL_LLM_CHAT` aus,
+  OpenAI-Schluessel gesetzt -> Ausweich nach C4 = OpenAI `gpt-4o-mini`. Tests `test_claude_c3.TestC4GeminiAus` mit Gegenprobe.
+  Offen (CEO): `GEMINI_AUS=1` in die NAS-`.env`, Container neu erstellen (BF-74), nach 3 Tagen ohne Bedarf `GEMINI_API_KEY`
+  entfernen; optional `LOCAL_LLM_CHAT=zuletzt` fuer den lokalen Notfall-Ersatz.
 - Ziel / Scope / Nicht-Scope: nach einer stabilen Woche Gemini aus dem Router nehmen, `GEMINI_API_KEY` aus der NAS-`.env`
   entfernen (CEO) -- **auf dem MACO470 bleibt er nur fuer die Cutter-Video-KI** (CEO-Entscheidung 2026-10-26, Option A), Dienste-Register und Datenschutz-Check fortschreiben; Notfall-Ersatz ist dann das lokale Modell.
 - Gate: Suite gruen, Wachtest; eine Woche ohne Ausfall.

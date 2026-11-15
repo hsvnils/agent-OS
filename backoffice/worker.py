@@ -206,7 +206,8 @@ def gegenlesen(env: dict, auftrag: dict, entwurf: str, *, client=None) -> str:
 
 def gemini_gegenlesen(env: dict, auftrag: dict, entwurf: str) -> str:
     """Stufe 2 der Gegenpruefung (CEO 2026-09-27): Gemini prueft den lokalen Entwurf kritisch. Leer bei Fehler."""
-    key = env.get("GEMINI_API_KEY", "")
+    from orchestrator.core.claude_api import gemini_key
+    key = gemini_key(env)                     # CLAUDE_AKTIV C4: mit GEMINI_AUS=1 kein Gemini (Cutter liest selbst)
     if not key:
         return ""
     try:
