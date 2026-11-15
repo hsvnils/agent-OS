@@ -22,6 +22,7 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Reichweiten (M3):** eigener Speicher `reichweite/log.jsonl` statt Social-Store; Wochenwerte, Follower als Stand; Tagesreichweiten werden nicht zu Wochen addiert; CSV erst Vorschau, dann speichern; Facebook-Seite per Schnittstelle zurueckgestellt bis CISO-Freigabe (neuer Zugang), bis dahin CSV | 2026-11-14 | BESCHLOSSEN | `orchestrator/core/reichweite.py`, `MONETARISIERUNG_ROADMAP.md` M3 |
 | **Wiederkehrende To-dos (M6):** Nachfolger erst beim Erledigen (genau einer je Serie), nicht im Voraus; Vorlagen fuer Datenlieferungen nur auf CEO-Auswahl; Teilzeit-Antrag automatisch einmal je Brueckenjob-Gate ab halber Kontinuitaet. Hebt den Nicht-Scope „Wiederholung“ aus `TODOS_ROADMAP.md` auf (CEO-Go M6) | 2026-11-14 | BESCHLOSSEN | `orchestrator/core/aufgaben.py`, `orchestrator/core/daten_rhythmus.py` |
 | **Teilrechnung statt Rechnung splitten:** Position mit „spaeter abrechnen am“, Teilrechnung jetzt, Folgerechnung genau einmal zur Teilrechnung; verworfen: Position loeschen + neuer Auftrag (Bezug geht verloren), Vorkasse-Modell (rechnet Abschlaege, nicht Positionen) | 2026-11-14 | BESCHLOSSEN (CEO) | `TEILRECHNUNG_ROADMAP.md`, `orchestrator/core/rechnungen.py` |
 | **Plan und Gates in LUNA-OS (M2):** Plan als Ereignis in der Kette mit Verlauf; Zahlen nur in LUNA-OS (nicht im oeffentlichen Code); Kontinuitaetsregeln in_folge/schnitt/x_von_y nur ueber abgeschlossene Monate; Schwellen als Formel aus E/L/N je Person; Anteils-Kriterien vorerst zum Abhaken | 2026-11-14 | BESCHLOSSEN | `orchestrator/core/plan.py`, `MONETARISIERUNG_ROADMAP.md` M2 |
@@ -255,6 +256,17 @@
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-11-14 — Reichweiten je Plattform (MONETARISIERUNG M3)
+
+**Was:** Follower und Wochenwerte je Plattform mit Verlauf; Instagram automatisch, Facebook/TikTok/YouTube per CSV-Export oder
+von Hand. **Warum so:** Der vorhandene Social-Store fuehrt nur Instagram-Monatswerte; fuer den Plan braucht es alle
+Plattformen woechentlich, deshalb ein eigener, gesicherter Speicher. Reichweite ist eine Anzahl verschiedener Personen und
+laesst sich aus Tageswerten nicht addieren -- falsche Wochenzahlen waeren schlimmer als eine Luecke. Exporte unterscheiden sich
+je Plattform und aendern sich; daher Vorschau mit sichtbarer, aenderbarer Spaltenzuordnung statt fester Parser.
+**Zurueckgestellt:** Facebook-Seiten-Insights ueber die Meta-Schnittstelle -- braucht einen neuen Seiten-Zugang
+(`read_insights`, `pages_read_engagement`) und damit eine CISO-Freigabe (AGENTS.md 5.7); Screenshot-Auslesen (Bilder gingen an ein
+Sprachmodell).
 
 ### 2026-11-14 — Wiederkehrende To-dos und Datenlieferungen (MONETARISIERUNG M6)
 

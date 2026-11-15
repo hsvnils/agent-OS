@@ -15,8 +15,9 @@ from datetime import date, timedelta
 VORLAGEN = [
     {"id": "reichweite", "titel": "Reichweiten der Woche sichern (Facebook, TikTok, YouTube)", "wiederholung": "woechentlich",
      "wann": "montags",
-     "notiz": "Instagram holt LUNA selbst. Facebook: Business Suite → Insights → Exportieren (CSV). TikTok Studio und "
-              "YouTube Studio: Export (CSV) oder Screenshot. Follower, Reichweite, Aufrufe, Interaktionen, Top/Flop-Beitrag."},
+     "notiz": "Instagram holt LUNA montags selbst. Facebook: Business Suite → Insights → Exportieren (CSV); TikTok Studio "
+              "und YouTube Studio: Export (CSV). In LUNA-OS → Content & Collabs → Reichweiten → „CSV importieren“ "
+              "oder Werte von Hand eintragen."},
     {"id": "abrechnungen", "titel": "Auszahlungen und Abrechnungen des Vormonats erfassen", "wiederholung": "monatlich",
      "wann": "am 5. jedes Monats",
      "notiz": "Facebook, YouTube, TikTok, Affiliates (Hands of God, Fantastic Frames), App Store Connect und Google Play "
