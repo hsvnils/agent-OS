@@ -4883,11 +4883,38 @@ async function renderReichweite(meldung, fehler) {
       <label class="v2-feld"><small>CSV-Export</small><input id="rw-csv" type="file" accept=".csv,text/csv" class="v2-inp"></label></div>
     <div class="v2-card-actions"><button class="v2-btn" data-act="rw-csv-pruefen">Vorschau</button></div><div id="rw-csv-box"></div>
     <small class="v2-sub">Facebook: Business Suite → Insights → Exportieren. TikTok Studio und YouTube Studio: Export als CSV. Erst Vorschau mit Spaltenzuordnung, dann speichern.</small></div>`;
+  const rhythmus = rwRhythmus(d.rhythmus);
   $("#v2-app").innerHTML = secHead("📊 Reichweiten", `<span class="v2-sub">${rwZahl(d.follower_summe)} Follower gesamt</span><button class="v2-btn" data-act="rw-ig">🔄 Instagram jetzt abrufen</button>`)
     + (meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}" style="margin-bottom:12px">${esc(meldung)}</div>` : "")
     + `<div class="v2-grid">${d.plattformen.map(karte).join("")}
-      ${tile("Wochenwerte", `<div class="v2-tabs" style="margin-bottom:8px">${d.plattformen.map(x => `<button class="${x.id === p.id ? "active" : ""}" data-act="rw-tab" data-id="${esc(x.id)}">${esc(x.name)}</button>`).join("")}</div>${tabelle}<small class="v2-sub">${esc(d.hinweis)} Instagram holt LUNA montags automatisch (Follower, Reichweite 28 Tage).</small>`, "w12 v2-sl")}
+      ${rhythmus}
+      ${tile("Wochenwerte", `<div class="v2-tabs" style="margin-bottom:8px">${d.plattformen.map(x => `<button class="${x.id === p.id ? "active" : ""}" data-act="rw-tab" data-id="${esc(x.id)}">${esc(x.name)}</button>`).join("")}</div>${tabelle}<small class="v2-sub">${esc(d.hinweis)} Instagram holt LUNA automatisch: montags Follower und Reichweite 28 Tage, täglich die Zahl der Beiträge.</small>`, "w12 v2-sl")}
       ${tile("Woche eintragen", form, "w6 v2-sl")}${tile("CSV importieren", imp, "w6 v2-sl")}</div>`;
+}
+let RW_SOLL = "";   // "plattform:format" in Bearbeitung
+const RW_ST = { ok: ["ok", "✓", "Soll erreicht"], unter: ["err", "✗", "unter Soll"], offen: ["warn", "…", "laufende Woche, noch unter Soll"], unbekannt: ["neutral", "–", "kein Wert"] };
+function rwRhythmus(r) {   // MONETARISIERUNG M4: Posting-Rhythmus Soll/Ist je Plattform und Format
+  if (!r) return "";
+  const soll = (mn, mx) => mx == null ? `mind. ${mn}` : mn === mx ? String(mn) : `${mn}–${mx}`;
+  const Q = { api: "automatisch gezählt", hand: "von Hand", csv: "aus CSV", pipeline: "von LUNA gepostete Reels (mindestens)" };
+  const zeilen = r.plattformen.flatMap(p => p.formate.map(f => {
+    const a = f.aktuell, st = RW_ST[a.status], key = `${p.id}:${f.id}`;
+    const ist = a.ist == null ? "–" : (a.mindestens ? "≥ " : "") + rwZahl(a.ist);
+    const reihe = f.verlauf.map(v => { const [k, z, t] = RW_ST[v.status];
+      return `<span class="v2-rw-wk ${k}" title="Woche ab ${esc(datumDe(v.woche))}: ${v.ist == null ? "kein Wert" : (v.mindestens ? "mind. " : "") + v.ist} von ${esc(soll(v.soll_min, v.soll_max))} – ${t}">${z}</span>`; }).join("");
+    const edit = RW_SOLL === key ? `<tr class="v2-rw-soll-edit"><td colspan="6"><div class="v2-an-zeile">
+        <label class="v2-feld"><small>Mindestens je Woche</small><input id="rw-soll-min" class="v2-inp" type="number" min="0" max="50" value="${esc(String(f.soll_min))}"></label>
+        <label class="v2-feld"><small>Höchstens (leer = offen)</small><input id="rw-soll-max" class="v2-inp" type="number" min="0" max="50" value="${f.soll_max == null ? "" : esc(String(f.soll_max))}"></label></div>
+        <div class="v2-card-actions"><button class="v2-btn pri sm" data-act="rw-soll-speichern" data-id="${esc(key)}">Soll speichern</button><button class="v2-btn sm" data-act="rw-soll" data-id="">Abbrechen</button></div>
+        <small class="v2-sub">Gilt ab dieser Woche; frühere Wochen bleiben am damaligen Soll gemessen.</small><div id="rw-soll-msg" class="v2-msg"></div></td></tr>` : "";
+    return `<tr><td><b>${esc(p.name)}</b><br><small>${esc(f.name)}</small>${f.tipp ? `<br><small class="v2-sub">${esc(f.tipp)}</small>` : ""}</td>
+      <td style="text-align:right">${esc(soll(f.soll_min, f.soll_max))}</td>
+      <td style="text-align:right"><span class="v2-badge ${st[0]}" title="${esc(a.quelle ? Q[a.quelle] || a.quelle : "noch kein Wert")}">${ist}</span></td>
+      <td><div class="v2-rw-reihe" role="img" aria-label="Letzte ${f.verlauf.length} Wochen: ${f.erfuellt} von ${f.bewertet} bewerteten Wochen im Soll">${reihe}</div></td>
+      <td style="text-align:right"><small>${f.bewertet ? `${f.erfuellt}/${f.bewertet}` : "–"}</small></td>
+      <td style="text-align:right"><button class="v2-btn sm" data-act="rw-soll" data-id="${esc(key)}" aria-label="Soll ändern">✎</button></td></tr>${edit}`; })).join("");
+  return tile("📅 Posting-Rhythmus", `<div class="v2-tab-scroll"><table class="v2-table v2-rw-rh"><thead><tr><th>Format</th><th style="text-align:right">Soll/Woche</th><th style="text-align:right">diese Woche</th><th>letzte ${r.wochen.length} Wochen</th><th style="text-align:right">im Soll</th><th></th></tr></thead><tbody>${zeilen}</tbody></table></div>
+    <small class="v2-sub">${esc(r.hinweis)} ${r.tage_rest ? `Noch ${r.tage_rest} Tag(e) bis Sonntag.` : "Heute endet die Woche."} ✓ erreicht · ✗ unter Soll · … läuft · – kein Wert.</small>`, "w12 v2-sl");
 }
 async function rwCsvSenden(speichern) {
   const box = $("#rw-csv-box"), f = $("#rw-csv").files[0];
@@ -5401,10 +5428,15 @@ async function handleAct(act, el) {
       if (!r || !r.ok) return alert((r && r.hinweis) || "Keine Verbindung zum Server.");
       return reDetail(r.entwurf_id, r.vorhanden ? "Es gab schon einen Entwurf der Folgerechnung." : "Entwurf der Folgerechnung angelegt — Zahlen eintragen, dann senden."); }
     case "rw-tab": RW_PL = id; return renderReichweite();
+    case "rw-soll": RW_SOLL = id; return renderReichweite();
+    case "rw-soll-speichern": { const [plattform, format] = id.split(":");
+      const r = await jpost("/api/reichweite/soll", { plattform, format, min: $("#rw-soll-min").value, max: $("#rw-soll-max").value });
+      if (!r || !r.ok) return kundenMsg("rw-soll-msg", (r && r.hinweis) || "Keine Verbindung zum Server.", false);
+      RW_SOLL = ""; return renderReichweite("Soll gespeichert (gilt ab dieser Woche)."); }
     case "rw-csv-pruefen": return rwCsvSenden(false);
     case "rw-csv-speichern": el.disabled = true; return rwCsvSenden(true);
     case "rw-weg": { if (!confirm(`Werte der Woche ab ${datumDe(val)} entfernen?`)) return; const r = await jpost("/api/reichweite/entfernen", { plattform: id, woche: val }); return renderReichweite(r && r.ok ? "Woche entfernt." : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
-    case "rw-ig": { el.disabled = true; el.textContent = "Lade …"; const r = await jpost("/api/reichweite/instagram", {}); RW_PL = "instagram"; return renderReichweite(r && r.ok ? `Instagram: ${rwZahl(r.eintrag.werte.follower)} Follower gespeichert.` : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
+    case "rw-ig": { el.disabled = true; el.textContent = "Lade …"; const r = await jpost("/api/reichweite/instagram", {}); RW_PL = "instagram"; return renderReichweite(r && r.ok ? `Instagram: ${rwZahl(r.eintrag.werte.follower)} Follower gespeichert${r.beitraege_wochen == null ? ", Beiträge nicht abrufbar" : `, Beiträge gezählt${r.beitraege_wochen.length ? ` (${r.beitraege_wochen.length} Woche(n) aktualisiert)` : ""}`}.` : (r && r.hinweis) || "Fehler.", !(r && r.ok)); }
     case "rw-speichern": {
       const werte = {}; document.querySelectorAll(".rw-wert").forEach(i => { if (i.value.trim() !== "") werte[i.dataset.k] = i.value.trim(); });
       const r = await jpost("/api/reichweite", { plattform: $("#rw-pl").value, woche: $("#rw-woche").value, werte });

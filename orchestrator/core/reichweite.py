@@ -39,6 +39,8 @@ METRIKEN = {                      # schluessel -> (Anzeige, Art: stand = Stand a
     "profilbesuche": ("Profilbesuche", "woche"),
     "link_klicks": ("Link-Klicks", "woche"),
     "beitraege": ("Beiträge", "woche"),
+    "beitraege_kurz": ("davon Reels/Shorts", "woche"),          # M4 Posting-Rhythmus
+    "beitraege_lang": ("davon über 1 Minute/Langvideo", "woche"),
 }
 META_BRUCH = "2026-06-15"
 QUELLEN = ("hand", "csv", "api")

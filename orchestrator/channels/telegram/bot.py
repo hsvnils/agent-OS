@@ -1370,17 +1370,20 @@ def _start_buchhaltung_loop(ctx) -> None:
                                 abteilung="CFO", kategorie="finanzen", quelle="lastschrift", detail="LUNA-OS -> Belege")
                     except Exception as _exc:
                         print(f"[lastschrift] Fehler: {_exc}", flush=True)
-                    if jetzt.weekday() == 0:                # MONETARISIERUNG M3: Instagram-Wochenwerte (eigenes Konto)
-                        try:
-                            from ...core.reichweite import Reichweite as _RW, instagram_uebernehmen
-                            from ...core.social_kit import MetaInsights as _MI
-                            from ...governance.instagram_token import ig_reader_aus_env as _igr
-                            _r = _igr(ctx.secret_dict or {})
-                            if _r.verfuegbar and not instagram_uebernehmen(
-                                    _RW(ROOT / "reichweite" / "log.jsonl"), _MI(_r.token, _r.own_id).hole()):
+                    try:                                    # MONETARISIERUNG M3 (montags Follower) + M4 (taeglich Beitraege)
+                        from ...core.posting_rhythmus import instagram_abrufen
+                        from ...core.reichweite import Reichweite as _RW, instagram_uebernehmen
+                        from ...core.social_kit import MetaInsights as _MI
+                        from ...governance.instagram_token import ig_reader_aus_env as _igr
+                        _r = _igr(ctx.secret_dict or {})
+                        if _r.verfuegbar:
+                            _rws, _mi = _RW(ROOT / "reichweite" / "log.jsonl"), _MI(_r.token, _r.own_id)
+                            if jetzt.weekday() == 0 and not instagram_uebernehmen(_rws, _mi.hole()):
                                 print("[reichweite] Instagram lieferte keine Werte", flush=True)
-                        except Exception as _exc:
-                            print(f"[reichweite] Fehler: {_exc.__class__.__name__}", flush=True)
+                            if instagram_abrufen(_rws, _mi, jetzt.date()) is None:
+                                print("[reichweite] Instagram-Medienliste nicht abrufbar", flush=True)
+                    except Exception as _exc:
+                        print(f"[reichweite] Fehler: {_exc.__class__.__name__}", flush=True)
                     try:                                    # MONETARISIERUNG M6: Teilzeit-Antrag rechtzeitig (To-do einmal je Gate)
                         from ...core.aufgaben import AufgabenStore as _AS
                         from ...core.daten_rhythmus import teilzeit_erinnern
@@ -1607,6 +1610,17 @@ def _start_briefing_loop(ctx, notify) -> None:
                                 text += "\n\n" + bt
                     except Exception as exc:
                         print(f"[briefing] Beleg-Fehler: {exc}", flush=True)
+                    if art == "morgen":                     # MONETARISIERUNG M4: wo beim Posten nachzulegen ist
+                        try:
+                            from ...core.posting_rhythmus import auswertung as _pr_ausw, briefing_zeilen as _pr_zeilen
+                            from ...core.reel_store import ReelStore as _RS
+                            from ...core.reichweite import Reichweite as _RW
+                            _pz = _pr_zeilen(_pr_ausw(_RW(ROOT / "reichweite" / "log.jsonl"),
+                                                      _RS(ROOT / "reel_freigabe" / "log.jsonl"), jetzt.date()))
+                            if _pz:
+                                text += "\n\nPosting-Rhythmus:\n" + "\n".join(f"  - {z}" for z in _pz)
+                        except Exception as exc:
+                            print(f"[briefing] Posting-Rhythmus-Fehler: {exc.__class__.__name__}", flush=True)
                     notify(text, abteilung="LUNA-Briefing", kategorie="briefing", quelle="briefing",
                            dedup_stunden=0)
                     ctx.agenda.markiere_briefing(art, datum)

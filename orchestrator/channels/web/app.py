@@ -4387,8 +4387,20 @@ def _reichweite():
 
 @app.get("/api/reichweite")
 def reichweite_uebersicht():
-    """MONETARISIERUNG M3: Follower und Reichweiten je Plattform mit Verlauf (Modul content_ops)."""
-    return _reichweite().uebersicht()
+    """MONETARISIERUNG M3: Follower und Reichweiten je Plattform mit Verlauf (Modul content_ops); M4: Posting-Rhythmus."""
+    from ...core.posting_rhythmus import auswertung
+    st = _reichweite()
+    return st.uebersicht() | {"rhythmus": auswertung(st, reel_store)}
+
+
+@app.post("/api/reichweite/soll")
+async def reichweite_soll(request: Request):
+    """M4: Soll je Plattform und Format (gilt ab der laufenden Woche)."""
+    from ...core.posting_rhythmus import soll_setzen
+    b = await _json(request)
+    return _kunden_aktion(lambda: {"soll": soll_setzen(_reichweite(), str(b.get("plattform") or ""),
+                                                       str(b.get("format") or ""), b.get("min"), b.get("max"),
+                                                       von=_von(request))})
 
 
 @app.post("/api/reichweite")
@@ -4442,10 +4454,12 @@ async def reichweite_instagram(request: Request):
         r = ig_reader_aus_env(env)
         if not r.verfuegbar:
             raise ValueError("Instagram-Zugang fehlt (INSTAGRAM_IG_USER_ID + Token in der NAS-.env).")
-        e = instagram_uebernehmen(_reichweite(), MetaInsights(r.token, r.own_id).hole(), von=_von(request))
+        mi = MetaInsights(r.token, r.own_id)
+        e = instagram_uebernehmen(_reichweite(), mi.hole(), von=_von(request))
         if not e:
             raise ValueError("Instagram hat keine Werte geliefert (Zugang oder Rechte prüfen).")
-        return {"eintrag": e}
+        from ...core.posting_rhythmus import instagram_abrufen
+        return {"eintrag": e, "beitraege_wochen": instagram_abrufen(_reichweite(), mi, von=_von(request))}
     return _kunden_aktion(tun)
 
 

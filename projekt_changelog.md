@@ -17,6 +17,20 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 10:35] — Claude Code
+- **Was:** MONETARISIERUNG M4 umgesetzt (Branch `ai/monetarisierung-m4`): `core/posting_rhythmus.py` (Soll je Plattform und
+  Format mit Gueltigkeit ab Woche, Ist aus Instagram-Medienliste in Berliner Zeit, Facebook-Reels der Pipeline als „mindestens“,
+  TikTok/YouTube von Hand; Briefing-Zeilen), `MetaInsights.beitraege`, neue Metriken `beitraege_kurz`/`beitraege_lang`,
+  `POST /api/reichweite/soll`, Rhythmus in `GET /api/reichweite`, Bot: Medienliste taeglich 05:00, Morgen-Briefing
+  „Posting-Rhythmus“; LUNA-OS Kachel „Posting-Rhythmus“ (Handy als Karten), Cache v159/v85; 9 Tests inkl. Gegenprobe
+  (UTC-Zaehlung wird rot); Sichtpruefung Rechner, iPad 820 px, iPhone 402 px. Doku: Roadmaps, Datenfluesse, Register,
+  offene Punkte (A15, C6).
+- **Warum:** CEO-Go fuer M4 (2026-11-15).
+- **Betroffen:** `orchestrator/core/posting_rhythmus.py`, `orchestrator/core/reichweite.py`, `orchestrator/core/social_kit.py`,
+  `orchestrator/channels/web/app.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/static/*`,
+  `orchestrator/tests/test_posting_rhythmus.py`, `MONETARISIERUNG_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`,
+  `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
 ## [2026-11-15 10:26] — Claude Code
 - **Was:** Branch `ai/monetarisierung-m3` (Reichweiten je Plattform) nach `main` gemergt; Suite 1694 gruen, rot nur
   die bekannten BF-88/BF-90.
