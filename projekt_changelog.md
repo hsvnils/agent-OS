@@ -17,6 +17,13 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-15 12:14] — Claude Code
+- **Was:** Branch `ai/aufraeumen-roadmaps` nach `main` gemergt; CEO-Sammelabnahme: 11 Roadmaps auf „abgeschlossen“ gesetzt
+  (Kopf und Roadmap-Verzeichnis): MAILVERSAND_ALLINKL, GLOBALE_SUCHE, KOPFZEILE_SUCHE_MENUE, LUNA_OS_UI, BELEGVERFOLGUNG,
+  DIGITALER_BELEG, CLO_AUSBAU, BETRIEB, REELS, WERKZEUGAUSWAHL, NETZ_AGENT.
+- **Warum:** CEO-Go 2026-11-15 fuer Merge und Sammelabnahme (roadmap-workflow C8).
+- **Betroffen:** die 11 `*_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-15 11:57] — Claude Code
 - **Was:** Aufraeumen der Roadmaps (Branch `ai/aufraeumen-roadmaps`): 34 offene Roadmaps lesend gegen die NAS geprueft; Kopf
   (Stand, Naechster Schritt) von 30 Roadmaps mit dem belegten Stand fortgeschrieben (RECHNER_STEUERUNG Status geplant -> in

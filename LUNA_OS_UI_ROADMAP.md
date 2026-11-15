@@ -1,9 +1,9 @@
 # Roadmap: LUNA-OS Navigation, Handlungsbedarf und WebApp-Login
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-ui-navigation` (Plan); Umsetzung je Etappe auf eigenem Branch `ai/ui-etappe-<n>`
 - Basiscommit: `86393dc`
-- Naechster Schritt: Pruefung 2026-11-15: abschliessbar -- Face ID eingerichtet (31.10.), Navigation taeglich in Gebrauch, Investment-Alter seit 30.09. gemergt; wartet auf CEO-Abnahme.
+- Naechster Schritt: keiner -- abgeschlossen 2026-11-15 (CEO-Sammelabnahme nach Pruefung mit Belegen: Face ID eingerichtet (31.10.), Navigation taeglich in Gebrauch, Investment-Alter seit 30.09. gemergt).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

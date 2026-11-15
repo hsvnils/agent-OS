@@ -1,10 +1,10 @@
 # Roadmap: Kopfzeile aufraeumen -- Suchleiste mit Vorschlaegen, Aufklapp-Menues, Portrait
 
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/kopfzeile-suche-menue`
 - Basiscommit: `c5299b2`
-- Naechster Schritt: Pruefung 2026-11-15: live und taeglich benutzt (Navigation seit 01.10. mehrere hundert Aufrufe); wartet auf CEO-Abnahme.
+- Naechster Schritt: keiner -- abgeschlossen 2026-11-15 (CEO-Sammelabnahme nach Pruefung mit Belegen: live und taeglich benutzt (Navigation seit 01.10. mehrere hundert Aufrufe)).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

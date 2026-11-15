@@ -1,10 +1,10 @@
 # Roadmap: Betrieb und Qualitaet (aus der Antrags-Durchsicht 2026-09-29)
 
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/antraege-aufraeumen`
 - Basiscommit: `79d6fbc`
-- Naechster Schritt: Pruefung 2026-11-15: abschliessbar -- Wochenlauf an 5 Montagen mit hoechstens einem Antrag, keine Wiederholung abgelehnter Themen; wartet auf CEO-Abnahme.
+- Naechster Schritt: keiner -- abgeschlossen 2026-11-15 (CEO-Sammelabnahme nach Pruefung mit Belegen: Wochenlauf an 5 Montagen mit hoechstens einem Antrag, keine Wiederholung abgelehnter Themen).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

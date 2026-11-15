@@ -1,9 +1,9 @@
 # Roadmap: Reels aufraeumen (Verfall, Videos loeschen, Nachschub-Bremse)
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/plan-reels` (Plan); Umsetzung auf `ai/reels-aufraeumen`
 - Basiscommit: `fbfa09c`
-- Naechster Schritt: Pruefung 2026-11-15: abschliessbar -- Verfall, Loeschung (36 Videos) und Bremse wirken; Hinweis: 10 Reels warten seit 06.11. auf Freigabe, aeltestes verfaellt am 27.11.; wartet auf CEO-Abnahme.
+- Naechster Schritt: keiner -- abgeschlossen 2026-11-15 (CEO-Sammelabnahme nach Pruefung mit Belegen: Verfall, Loeschung (36 Videos) und Bremse wirken; Hinweis: 10 Reels warten seit 06.11. auf Freigabe, aeltestes verfaellt am 27.11).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

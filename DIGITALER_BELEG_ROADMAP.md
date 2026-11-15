@@ -1,9 +1,9 @@
 # Roadmap: Digitaler Beleg (Belegblatt in LUNA-OS statt Datenliste)
-- Status: in Umsetzung
+- Status: abgeschlossen
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/digitaler-beleg`
 - Basiscommit: `df6385c`
-- Naechster Schritt: Pruefung 2026-11-15: abschliessbar -- Belegblatt live, alle Belegarten echt vorhanden, Folgeroadmaps darauf abgeschlossen; wartet auf CEO-Abnahme.
+- Naechster Schritt: keiner -- abgeschlossen 2026-11-15 (CEO-Sammelabnahme nach Pruefung mit Belegen: Belegblatt live, alle Belegarten echt vorhanden, Folgeroadmaps darauf abgeschlossen).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

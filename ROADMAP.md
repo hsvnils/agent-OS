@@ -65,25 +65,25 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | Roadmap | Thema | Art |
 |---|---|---|
 | `LUNA_GOOGLE_KONTO_ROADMAP.md` | Eigenes Google-Konto fuer LUNA (Gmail, Kalender, Drive, Sheets), hanserautisch@gmail.com entkoppeln | abgeschlossen (2026-09-28) |
-| `BETRIEB_ROADMAP.md` | Betrieb und Qualitaet aus der Antrags-Durchsicht: Ideen-Laeufe entruempeln, Changelog-Check, Betriebs-Monitoring Ende-zu-Ende, Datenschutz-Check KI | geplant (2026-09-29) |
+| `BETRIEB_ROADMAP.md` | Betrieb und Qualitaet aus der Antrags-Durchsicht: Ideen-Laeufe entruempeln, Changelog-Check, Betriebs-Monitoring Ende-zu-Ende, Datenschutz-Check KI | abgeschlossen (2026-11-15, CEO-Sammelabnahme) |
 | `PROJEKTZEITEN_ROADMAP.md` | Projektzeiten als Stundenzettel (Tag, Ein/Aus, Taetigkeit, Summen, Korrektur) und optional in der Rechnung | umgesetzt (Z1-Z3 2026-10-02/03, Abnahme CEO offen) |
 | `PROJEKTBERICHT_ROADMAP.md` | Postings je Position, Kennzahlen-Erinnerung nach 7 Tagen per Telegram-Screenshot, Projektbericht und Status „abgeschlossen“ | umgesetzt (P1-P4 2026-10-02/03, Abnahme CEO offen) |
-| `BELEGVERFOLGUNG_ROADMAP.md` | Belegverfolgung: verbundene Belege je Belegart als Zeitstrahl (vorher/nachher), zum Oeffnen | umgesetzt (B1+B2 2026-10-03, Abnahme CEO offen) |
-| `DIGITALER_BELEG_ROADMAP.md` | Digitaler Beleg: jeder Beleg in LUNA-OS als Belegblatt (Anschrift, Positionen, Summen, Stempel), Variante A | umgesetzt (D1-D3 2026-10-04, Abnahme CEO offen) |
+| `BELEGVERFOLGUNG_ROADMAP.md` | Belegverfolgung: verbundene Belege je Belegart als Zeitstrahl (vorher/nachher), zum Oeffnen | abgeschlossen (2026-11-15, CEO-Sammelabnahme) |
+| `DIGITALER_BELEG_ROADMAP.md` | Digitaler Beleg: jeder Beleg in LUNA-OS als Belegblatt (Anschrift, Positionen, Summen, Stempel), Variante A | abgeschlossen (2026-11-15, CEO-Sammelabnahme) |
 | `KONZEPT_MAPPE_ROADMAP.md` | Konzept-Mappe je Vorgang: Briefing, Ideen, Skript je Posting, Shotlist + Drehplan, Kunden-Freigabe, PDF | umgesetzt (K1-K3 2026-10-05, Abnahme CEO offen) |
 | `VERTRAGSWERK_ROADMAP.md` | Vertragswerk: Vorlagen-Bibliothek (AGB, Kooperation, Nutzungsrechte, NDA), Vertrag je Auftrag, AGB am Angebot | in Umsetzung (V1+V2 2026-10-05, anwaltliche Pruefung offen) |
-| `CLO_AUSBAU_ROADMAP.md` | CLO-Ausbau: Skills (Werbekennzeichnung, AGB, Nutzungsrechte, Musik, § 19 UStG, KI-Kennzeichnung, Club-/Markenrechte), Rechtsquellen mit Stand, Beobachtung, Pruef-Lauf der Vertragsentwuerfe | in Umsetzung (C1-C4 2026-10-05, C5 offen) |
+| `CLO_AUSBAU_ROADMAP.md` | CLO-Ausbau: Skills (Werbekennzeichnung, AGB, Nutzungsrechte, Musik, § 19 UStG, KI-Kennzeichnung, Club-/Markenrechte), Rechtsquellen mit Stand, Beobachtung, Pruef-Lauf der Vertragsentwuerfe | abgeschlossen (2026-11-15, CEO-Sammelabnahme) |
 | `AGENTEN_AUSBAU_ROADMAP.md` | Agenten-Ausbau: Bestandsaufnahme aller Agenten, Nutzung messen, Skills/Quellen fuer Geschaefts- und Betriebsagenten, Watcher, Rand-Agenten, Charten | abgeschlossen (A1-A6 live 2026-10-05) |
 | `FACHAGENTEN_ROUTING_ROADMAP.md` | Fachagenten-Routing: LUNA bestimmt die zustaendige Abteilung selbst, Zustaendigkeitskarte, Geschaeftsregeln lesbar, Zaehlung inkl. Werkzeuge, Routing-Test | abgeschlossen (2026-10-05) |
 | `ANGEBOT_PRAESENTATION_ROADMAP.md` | Canva-Praesentation (DE/EN, je Angebot waehlbar) in Angebots-PDF, digitalem Beleg und Mailtext | abgeschlossen (2026-10-05) |
 | `VIDEOGRAF_ROADMAP.md` | Videograf-Berater als Agent 17: Charta (CEO-Tor), 5 Skills, Vorschlaege per Knopf in der Konzept-Mappe und im Chat | abgeschlossen (2026-10-05) |
 | `TEXTBAUSTEINE_MAILVERSAND_ROADMAP.md` | Textbausteine mit Signatur fuer 6 Belegarten (auch Gmail-Versand) und Knopf „Im Mail-Programm oeffnen“ (Apple Mail iPhone/Mac, Outlook MACO470) | abgeschlossen (T1-T3, T5 live; T4 Geraete-Abnahme gestrichen 2026-10-05) |
 | `CONTENT_PLAN_ROADMAP.md` | Content-Plan als Kalender (eigene + Kunden-Postings, Drehtermine, Anlaesse; Monat/Woche/Liste) | abgeschlossen (C1-C3 live 2026-10-05, C4 Spielplan gestrichen) |
-| `MAILVERSAND_ALLINKL_ROADMAP.md` | Kundenmails ueber All-Inkl (luna@hanserautisch.de) statt Gmail, inkl. Antworten per IMAP | in Umsetzung (M1+M2 live und verifiziert 2026-10-05; M3 Beobachten) |
+| `MAILVERSAND_ALLINKL_ROADMAP.md` | Kundenmails ueber All-Inkl (luna@hanserautisch.de) statt Gmail, inkl. Antworten per IMAP | abgeschlossen (2026-11-15, CEO-Sammelabnahme) |
 | `BELEG_EINE_EBENE_ROADMAP.md` | Beleg in einer Ebene: Formular an der Stelle des Blatts (gesperrt nur lesen) + Umschalter Vorschau; Angebot, Auftrag, Rechnung | abgeschlossen (2026-10-07, vorerst abgenommen) |
 | `BELEG_BEARBEITBAR_ROADMAP.md` | Belege bis zum Versand bearbeitbar, mit dem Versand festgeschrieben, danach nur „Bearbeiten“ mit Begruendung (Auftrag, Angebot, Rechnung) | abgeschlossen (2026-10-07, vorerst abgenommen) |
 | `VORSCHLAGSPAUSE_ANBIETER_ROADMAP.md` | Investment-Vorschlaege systemweit pausieren (Tracking laeuft weiter) und Liste aller Anbieter/Datenquellen mit Kostenhinweis | abgeschlossen (P1+P2 live 2026-10-06, P3 live 2026-10-07) |
-| `KOPFZEILE_SUCHE_MENUE_ROADMAP.md` | Kopfzeile: Suchleiste mit Vorschlaegen, Aufklapp-Menues bei Maus-Over, Hell/Dunkel + Orb/Hologramm in die Einstellungen, LUNAs Portrait als Logo | in Umsetzung (K1-K5 gebaut 2026-10-07) |
+| `KOPFZEILE_SUCHE_MENUE_ROADMAP.md` | Kopfzeile: Suchleiste mit Vorschlaegen, Aufklapp-Menues bei Maus-Over, Hell/Dunkel + Orb/Hologramm in die Einstellungen, LUNAs Portrait als Logo | abgeschlossen (2026-11-15, CEO-Sammelabnahme) |
 | `EINWILLIGUNG_AUFNAHMEN_ROADMAP.md` | Einwilligung in Video-/Bildaufnahmen: Vorlage im Vertragswerk, Unterschrift mit dem Apple Pencil am iPad, PDF je Person am Auftrag, Kopie und Widerruf | abgeschlossen (2026-10-09, CEO-Abnahme am iPad) |
 | `ZEITERFASSUNG_GRUND_ROADMAP.md` | Grund der Arbeitszeit (Dreharbeiten, Postproduktion & Schnitt …) und Zeiten nachtragen im OS und per Telegram | in Umsetzung (Z1-Z2 gebaut 2026-10-09) |
 | `PARTNERLISTE_ROADMAP.md` | Liste potenzieller Partner und Kunden (Ideen), Erfassung per Telegram, Anschreiben ueber die Vorstellungs-Mail | in Umsetzung (P1-P3 gebaut 2026-10-09) |
@@ -100,19 +100,19 @@ Diese Datei ist die **Master-Roadmap**. Neue Roadmaps entstehen nach `governance
 | `TODOS_ROADMAP.md` | Eigene To-dos in LUNA-OS (Bereich + Kachel), per Telegram-Nachricht anlegen, Erinnerung im Kalender und per Telegram | abgeschlossen (2026-10-27, Abnahme im Betrieb) |
 | `ZAHLUNGSERINNERUNG_ROADMAP.md` | Zahlungserinnerung als freundlicher Beleg vor der 1. Mahnung (ohne Zinsen/Gebuehren), Vorschlag per Telegram | abgeschlossen (2026-10-27, Abnahme im Betrieb) |
 | `KUNDEN_CHECKLISTE_ROADMAP.md` | Kunden-Checkliste (Fragenkatalog) fuer Content-Konzept und Skripte: Dokument + abhakbar in der Konzept-Mappe | abgeschlossen (2026-10-27, Abnahme im Betrieb) |
-| `NETZ_AGENT_ROADMAP.md` | Netz-Agent in Quarantaene: nur ein eigener Container ohne LUNA-Dateien geht ins Internet, liefert gepruefte Formulare; alle anderen Agenten ohne freie Websuche | in Umsetzung (Q1-Q5 live; Q3 in Beobachtung bis 2026-11-02) |
+| `NETZ_AGENT_ROADMAP.md` | Netz-Agent in Quarantaene: nur ein eigener Container ohne LUNA-Dateien geht ins Internet, liefert gepruefte Formulare; alle anderen Agenten ohne freie Websuche | abgeschlossen (2026-11-15, CEO-Sammelabnahme) |
 | `CLAUDE_AKTIV_ROADMAP.md` | Claude wieder aktiv (Chat/Fachagenten Sonnet 5.5, Routing/Netz-Agent Haiku 5.5, zwei begrenzte Schluessel), Gemini abloesen | in Umsetzung (C1-C3 live 2026-10-26, C4 ab 02.11.) |
 | `SERIEN_UND_VORSTELLUNG_ROADMAP.md` | Wiederkehrender Content im Content-Plan; Vorstellungs-Mails an Unternehmen aus LUNA-OS (Firma beim Senden als Interessent) | in Umsetzung (S1, V1, V2 gebaut 2026-10-06) |
 | `IMPRESSUM_SUCHE_ROADMAP.md` | Kundendaten beim Anlegen einer Firma aus dem Impressum vorfuellen (regelbasiert, optional lokale KI) | in Umsetzung (I1 gebaut 2026-10-06) |
-| `GLOBALE_SUCHE_ROADMAP.md` | Globale Suche ueber alle Geschaeftsdaten, Ergebnisse nach Kategorien (Kunden, Angebote, Auftraege, Rechnungen, Ausgaben …) | in Umsetzung (G1 gebaut 2026-10-06) |
-| `REELS_ROADMAP.md` | Reels aufraeumen: Verfall nach 30 Tagen, Videos abgelehnter/verfallener Reels loeschen, Nachschub-Bremse bei 10 | in Umsetzung (Etappe 1 umgesetzt 2026-10-01, Deploy offen) |
+| `GLOBALE_SUCHE_ROADMAP.md` | Globale Suche ueber alle Geschaeftsdaten, Ergebnisse nach Kategorien (Kunden, Angebote, Auftraege, Rechnungen, Ausgaben …) | abgeschlossen (2026-11-15, CEO-Sammelabnahme) |
+| `REELS_ROADMAP.md` | Reels aufraeumen: Verfall nach 30 Tagen, Videos abgelehnter/verfallener Reels loeschen, Nachschub-Bremse bei 10 | abgeschlossen (2026-11-15, CEO-Sammelabnahme) |
 | `CUTTER_AUSBAU_ROADMAP.md` | Cutter-Ausbau: Schnittwissen ins echte Video (Kontrolle, Bewegung, Ton, FCPXML fuer Resolve Free) | in Umsetzung (C1 deployt 2026-11-09, C2 gemergt mit Stil v2 aus, Sichtabnahme offen; weitere Etappen je CEO-Go) |
 | `TEILRECHNUNG_ROADMAP.md` | Teilrechnung: Position spaeter gesondert abrechnen, Folgerechnung genau einmal | in Umsetzung: T1 verifiziert an RE-2026-0003, Folgerechnung am 31.12.2026 |
 | `MONETARISIERUNG_ROADMAP.md` | LUNA-OS als Steuerzentrale fuer Monetarisierung: Saeulen, Meilensteine, Reichweiten, App-Kennzahlen, Erinnerungen | in Umsetzung: M1+M2+M3+M4+M6 live, M8 umgesetzt (Sichtabnahme am Ende), M5, M7 geplant |
-| `LUNA_OS_UI_ROADMAP.md` | LUNA-OS: Navigation in 4 Bereichen, Handlungsbedarf systemweit, Bereichs-Startseiten, iPhone-Seitenmenue, WebApp-Login mit Schluesselbund und Passkey | in Umsetzung (Etappen 1-6 umgesetzt 2026-09-30, Deploy offen) |
+| `LUNA_OS_UI_ROADMAP.md` | LUNA-OS: Navigation in 4 Bereichen, Handlungsbedarf systemweit, Bereichs-Startseiten, iPhone-Seitenmenue, WebApp-Login mit Schluesselbund und Passkey | abgeschlossen (2026-11-15, CEO-Sammelabnahme) |
 | `KUNDEN_FINANZEN_ROADMAP.md` | Kunden (CRM-Stammdaten), Angebote, Beauftragung, Rechnungen, Belege, Finanzen/EUeR in LUNA-OS | in Umsetzung (Etappen 1-8 abgenommen, 9-12 live, 13 Abo-Mails live, 14 Lieferanten-Stammdaten live, 15 Abos + 16 TKP live, 18 Vorkasse umgesetzt, 19 Altrechnungen live, 20 EZB-Kurs live, 23 Provision live, 21 Kalkulation/Lager + 22 Firmendaten umgesetzt, 3c geplant, 17 verworfen) |
 | `FRONTDESK_BACKOFFICE_ROADMAP.md` | Gemini spricht im Chat, lokales LLM arbeitet Auftraege im Hintergrund ab | in Umsetzung (Etappen 1-3 verifiziert) |
-| `WERKZEUGAUSWAHL_ROADMAP.md` | Nur passende Werkzeuge je Nachricht (Prompt ~13.600 -> <= 5.000 Token) | live, Beobachtung bis 2026-10-03 |
+| `WERKZEUGAUSWAHL_ROADMAP.md` | Nur passende Werkzeuge je Nachricht (Prompt ~13.600 -> <= 5.000 Token) | abgeschlossen (2026-11-15, CEO-Sammelabnahme) |
 | `LOKALES_LLM_ROADMAP.md` | Lokales LLM (M6): Ollama auf dem MACO470 fuer Jobs + Chat-Fallback | abgeschlossen (2026-09-26) — Rest in Frontdesk/Backoffice |
 | `BETRIEBSLUECKEN_ROADMAP.md` | Betriebsluecken schliessen (BF-01/03/04/08) | abgeschlossen (2026-09-26) |
 | `INVESTMENT_ROADMAP.md` | Investment-Abteilung (CIO) | Bestand (vor Workflow) |
