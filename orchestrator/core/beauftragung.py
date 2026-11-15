@@ -71,7 +71,7 @@ class AuftragBuch:
                 a["verlauf"].append(spur | {"an": d.get("an", "")})
             elif t == "auftrag_bericht":                  # PROJEKTBERICHT P3: Entwurf (Fazit, Haken Stunden/km)
                 a = out[d["nummer"]]
-                a["bericht"] = {k: d.get(k) for k in ("fazit", "stunden", "km")} | {"geaendert": e["ts"]}
+                a["bericht"] = {k: d.get(k) for k in ("fazit", "stunden", "km", "auto")} | {"geaendert": e["ts"]}
             elif t == "auftrag_bericht_versendet":        # P3: eingefrorenes PDF in der Firmenakte
                 a = out[d["nummer"]]
                 a.setdefault("berichte", []).append({k: d.get(k) for k in ("akte_id", "sha256", "an", "betreff", "version")}

@@ -137,7 +137,13 @@ class FallbackBackend:
             if a.get("status") == "fehlgeschlagen":
                 raise RuntimeError(f"Backoffice-Auftrag {aid} fehlgeschlagen: {a.get('grund', '')}")
             self._schlaf(self.backoffice_takt)
-        self.backoffice.fehlschlag(aid, grund="Zeitlimit -- Job nutzte den Cloud-Fallback", meldung="keine")
+        warte = ""
+        try:
+            warte = self.backoffice.worker_wartegrund()            # BF-98: warum hat der Worker nichts geholt?
+        except Exception:
+            pass
+        self.backoffice.fehlschlag(aid, grund="Zeitlimit -- Job nutzte den Cloud-Fallback"
+                                   + (f" (Worker wartete: {warte})" if warte else ""), meldung="keine")
         raise TimeoutError(f"Backoffice-Auftrag {aid}: kein Ergebnis nach {self.backoffice_timeout:.0f} s")
 
     def _kompatibel(self, fb: dict, agent_key: str, system_prompt: str, message: str) -> str:

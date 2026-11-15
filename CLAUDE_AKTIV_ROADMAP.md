@@ -4,7 +4,7 @@
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/claude-aktiv`
 - Basiscommit: `88708b5`
-- Naechster Schritt: Pruefung 2026-11-15: Beobachtungswoche erfuellt (seit 26.10. nur 2 Gemini-Notfaelle) -- wartet auf CEO-Go fuer C4.
+- Naechster Schritt: CEO-Go fuer C4 am 2026-11-15; Bestandsaufnahme der Gemini-Wege gemacht (seit 26.10. nur 2 Notfaelle: CTO 26.10., CFO-Nachtjob 06.11.) -- C4 als eigene Etappe bauen: Schalter im Router, nach 3 Tagen ohne Bedarf entfernt der CEO den Schluessel auf der NAS (MACO470 behaelt ihn fuer den Cutter).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

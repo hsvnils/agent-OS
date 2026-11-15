@@ -756,7 +756,9 @@ def _backoffice_nacht(jetzt: datetime | None = None) -> bool:
 
 
 @app.get("/api/backoffice")
-def backoffice_liste():
+def backoffice_liste(wartet: str = ""):
+    if wartet:                                    # BF-98: Worker meldet, warum er gerade nichts holt (RAM-Waechter)
+        backoffice.worker_melden(wartet)
     return {"auftraege": backoffice.list()[:100], "arten": list(AUFTRAG_ARTEN)}
 
 
@@ -3316,21 +3318,21 @@ def _bericht(nummer: str):
 
 
 def _bericht_pdf(a: dict, d: dict, version: int) -> bytes:
-    from ...core.projektbericht import fazit_vorschlag, pdf
+    from ...core.projektbericht import fazit_fuer, pdf
     f = kunden_store.firma(a["firma"]) or {}
-    fazit = (a.get("bericht") or {}).get("fazit")
     return pdf(d, firmendaten=_firmendaten(), firma_name=f.get("name", ""), logo=kunden_store.bh.dir / "logo.jpg",
-               fazit=fazit if fazit is not None else fazit_vorschlag(d), version=version)
+               fazit=fazit_fuer(a.get("bericht") or {}, d), version=version)
 
 
 @app.get("/api/crm/auftraege/{nummer}/bericht")
 def bericht_detail(nummer: str):
-    from ...core.projektbericht import fazit_vorschlag
+    from ...core.projektbericht import fazit_veraltet, fazit_vorschlag
     try:
         a, d = _bericht(nummer)
     except KeyError:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Auftragsnummer")
-    return {"daten": d, "entwurf": a.get("bericht") or {}, "fazit_vorschlag": fazit_vorschlag(d),
+    e = a.get("bericht") or {}
+    return {"daten": d, "entwurf": e, "fazit_vorschlag": fazit_vorschlag(d), "fazit_veraltet": fazit_veraltet(e, d),
             "berichte": a.get("berichte") or [], "entfaellt": a.get("bericht_entfaellt") or "",
             "abschluss": a.get("abschluss") or {}, "abgeschlossen": bool(a.get("abgeschlossen")),
             "zeiten": bool(_zeit().stundenzettel(a["nummer"])["eintraege"])}
@@ -3338,11 +3340,18 @@ def bericht_detail(nummer: str):
 
 @app.post("/api/crm/auftraege/{nummer}/bericht")
 async def bericht_speichern(nummer: str, request: Request):
-    from ...core.projektbericht import entwurf_speichern
+    from ...core.projektbericht import entwurf_speichern, fazit_vorschlag
     body = await _json(request)
-    return _kunden_aktion(lambda: entwurf_speichern(kunden_store.bh, _auftraege(), nummer, fazit=body.get("fazit") or "",
-                                                    stunden=bool(body.get("stunden")), km=bool(body.get("km")),
-                                                    von=_von(request)))
+
+    def tun():
+        try:
+            vorschlag = fazit_vorschlag(_bericht(nummer)[1])
+        except KeyError:
+            vorschlag = None
+        return entwurf_speichern(kunden_store.bh, _auftraege(), nummer, fazit=body.get("fazit") or "",
+                                 stunden=bool(body.get("stunden")), km=bool(body.get("km")), von=_von(request),
+                                 vorschlag=vorschlag)
+    return _kunden_aktion(tun)
 
 
 @app.post("/api/crm/auftraege/{nummer}/bericht/entfaellt")

@@ -128,7 +128,7 @@ ausschliesslich: read-only Analyse, die Roadmap-Datei selbst, ihr Eintrag im Roa
 
 - **F4 Abnahme nachhalten (CEO 2026-11-15).** Wartet eine Roadmap nach dem Deploy nur noch auf eine Abnahme durch den CEO
   oder auf eine Beobachtung („nach dem ersten Lauf pruefen", „eine Woche beobachten"), wird dafuer **sofort ein datiertes
-  To-do mit Erinnerung** angelegt (LUNA-OS To-dos, Quelle `Roadmap:<DATEI>`), und der Agent prueft eine Beobachtung am
+  To-do mit Erinnerung** angelegt (LUNA-OS To-dos, Notiz beginnt mit `Roadmap: <DATEI>`), und der Agent prueft eine Beobachtung am
   Stichtag selbst mit Beleg. Ohne Ausloeser bleibt der letzte Schritt sonst liegen (Aufraeumen 2026-11-15: 29 von 34 offenen
   Roadmaps seit ueber 14 Tagen unveraendert). `scripts/doku_check.py` meldet solche Roadmaps als Hinweis
   (`--liegengeblieben`); der Agent nennt die Treffer bei jedem Etappen-Gate.

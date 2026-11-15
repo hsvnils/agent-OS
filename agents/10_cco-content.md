@@ -20,7 +20,7 @@ Storytelling und Audience-Aufbau. **Steuert den Video-Cutter-Agenten.**
 - Lese-/Schreibzugriff auf Content-Assets; Steuerschnittstelle zum **Video-Cutter** (laeuft auf dem MACO470,
   naechtliches Reel zur CEO-Freigabe); Content-Feed (Trends -> Ideen -> Entwuerfe); Konzept-Mappe je Vorgang in
   LUNA-OS; Abstimmung mit CBO, CXO, CDO und CRO ueber den Head of Agents.
-- **Skills** (`skills/cco/`, durch das Security-Gate, im System-Prompt): `hook-und-skript`, `reel-dramaturgie`, `content-kalender`, `briefing-zu-konzept`.
+- **Skills** (`skills/cco/`, durch das Security-Gate, im System-Prompt): `hook-und-skript`, `reel-dramaturgie`, `content-kalender`, `briefing-zu-konzept`, `davinci-resolve-schnitt`.
 - **Befragung:** LUNA fragt den Agenten ueber `delegate` (nur Beratung/Text); jede Anfrage wird ohne Inhalte gezaehlt
   (Agenten-Profil in LUNA-OS, Leistungsbericht).
 

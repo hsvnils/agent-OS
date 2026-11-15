@@ -280,13 +280,36 @@ def dateiname(nr: str, version: int) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]", "_", f"Projektbericht_{nr}" + (f"_v{version}" if version > 1 else "")) + ".pdf"
 
 
-def entwurf_speichern(bh, ab, nr: str, *, fazit: str, stunden: bool, km: bool, von: str = "") -> dict:
+def fazit_fuer(entwurf: dict, d: dict) -> str:
+    """BF-96: Fazit fuer PDF/Versand. Unveraenderter Vorschlag (``auto``) oder noch kein Entwurf -> immer der aktuelle
+    Vorschlag aus den Zahlen; nur ein vom Menschen geaenderter Text bleibt fest."""
+    if not entwurf or entwurf.get("auto") or entwurf.get("fazit") is None:
+        return fazit_vorschlag(d)
+    return entwurf["fazit"]
+
+
+def fazit_veraltet(entwurf: dict, d: dict) -> bool:
+    """BF-96: gespeicherter Text ist ein frueherer automatischer Vorschlag (vor dem Fix gespeichert), der nicht mehr zu
+    den Zahlen passt -> Hinweis vor dem Versand."""
+    f = (entwurf or {}).get("fazit") or ""
+    if not f or (entwurf or {}).get("auto"):
+        return False
+    return f.startswith(("Im Rahmen der Kampagne", "Vielen Dank für die Zusammenarbeit!")) and f != fazit_vorschlag(d)
+
+
+def entwurf_speichern(bh, ab, nr: str, *, fazit: str, stunden: bool, km: bool, von: str = "",
+                      vorschlag: str | None = None) -> dict:
+    """``vorschlag`` = aktueller Fazit-Vorschlag: ist der Text unveraendert, wird er nicht festgeschrieben (BF-96)."""
     a = ab.auftrag(nr)
     if not a:
         raise KeyError(nr)
     if a["status"] == "storniert":
         raise ValueError(f"{a['nummer']} ist storniert.")
-    d = {"nummer": a["nummer"], "fazit": str(fazit or "").strip()[:MAX_FAZIT], "stunden": bool(stunden), "km": bool(km)}
+    text = str(fazit or "").strip()[:MAX_FAZIT]
+    auto = vorschlag is not None and text == str(vorschlag).strip()
+    d = {"nummer": a["nummer"], "fazit": "" if auto else text, "stunden": bool(stunden), "km": bool(km)}
+    if auto:
+        d["auto"] = True
     bh.erfassen("auftrag_bericht", d, von=von)
     return {"bericht": d}
 

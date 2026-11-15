@@ -263,7 +263,7 @@ def durchlauf(bridge, ollama, gegenleser, *, messen=verfuegbar_gb, jetzt=None, s
     erlaubt, grund = darf_laden(None if geladen else messen(), geladen=geladen, nacht=ist_nacht(jetzt),
                                 schwelle_tag=schwelle_tag, schwelle_nacht=schwelle_nacht)
     if not erlaubt:
-        anzahl = offene() if offene else None
+        anzahl = offene(grund) if offene else None                 # BF-98: Wartegrund geht an LUNA-OS
         if anzahl and not _zuletzt_gewartet[0]:
             _log(f"Wartet: {anzahl} Auftrag/Auftraege offen, aber {grund} — spaetestens ab {NACHT[0]}:00 Uhr.")
             _zuletzt_gewartet[0] = True
@@ -296,8 +296,9 @@ def durchlauf(bridge, ollama, gegenleser, *, messen=verfuegbar_gb, jetzt=None, s
     return n
 
 
-def _offene(bridge) -> int:
-    r = bridge._req("/api/backoffice") or {}
+def _offene(bridge, grund: str = "") -> int:
+    from urllib.parse import quote
+    r = bridge._req("/api/backoffice" + (f"?wartet={quote(grund)}" if grund else "")) or {}
     return sum(1 for a in r.get("auftraege", []) if a.get("status") == "neu")
 
 
@@ -313,7 +314,7 @@ def loop(*, intervall: float = 60.0, einmal: bool = False) -> None:
         try:
             if bridge.aktiv():
                 durchlauf(bridge, ollama, lambda a, e: gegenlesen(env, a, e),
-                          schwelle_tag=tag, schwelle_nacht=nacht, offene=lambda: _offene(bridge))
+                          schwelle_tag=tag, schwelle_nacht=nacht, offene=lambda grund="": _offene(bridge, grund))
         except Exception as exc:                             # nie den Worker mitreissen
             _log(f"Schleifen-Fehler: {exc}")
         if einmal:

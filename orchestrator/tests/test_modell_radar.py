@@ -120,6 +120,47 @@ class TestLauf(unittest.TestCase):
         self.assertEqual(mr.lauf_aa(r, UNSERE, schluessel="AAKEY", jetzt=datetime(2026, 10, 14, 7), abruf=self._abruf), [])   # je einmal
 
 
+class TestBF97(unittest.TestCase):
+    """BF-97: neue AA-Schnittstelle (seitenweise, Mischpreis selbst gerechnet) und Meldung bei mehrtaegigem Ausfall."""
+    NEU = [{"data": [{"name": "Gemini 2.5 Flash", "slug": "gemini-2-5-flash", "model_creator": {"name": "Google"},
+                      "evaluations": {"artificial_analysis_intelligence_index": 50},
+                      "pricing": {"price_1m_input_tokens": 0.5, "price_1m_output_tokens": 2.5},
+                      "performance": {"median_output_tokens_per_second": 200}}],
+            "pagination": {"page": 1, "has_more": True}},
+           {"data": [{"name": "Billig Flash", "slug": "billig-flash", "model_creator": {"name": "Google"},
+                      "evaluations": {"artificial_analysis_intelligence_index": 51},
+                      "pricing": {"price_1m_input_tokens": 0.2, "price_1m_output_tokens": 1.0}}],
+            "pagination": {"page": 2, "has_more": False}}]
+
+    def test_1_neue_schnittstelle_seitenweise(self):
+        urls = []
+        def abruf(url, kopf=None):
+            urls.append(url)
+            return json.dumps(self.NEU[1] if url.endswith("?page=2") else self.NEU[0])
+        r = mr.Radar(Path(tempfile.mkdtemp()) / "radar")
+        mr.lauf_aa(r, UNSERE, schluessel="K", jetzt=datetime(2026, 11, 16, 7), abruf=abruf)
+        self.assertEqual(urls, [mr.AA_URL, mr.AA_URL + "?page=2"])
+        self.assertNotIn("/data/", mr.AA_URL)
+        aa = {m["slug"]: m for m in r.aa()["modelle"]}
+        self.assertEqual((aa["gemini-2-5-flash"]["preis"], aa["gemini-2-5-flash"]["tempo"]), (1.0, 200.0))
+        self.assertEqual(r.stand()["quellen"]["artificialanalysis"]["fehler"], "")
+        self.assertNotIn("gemini-api", [q["id"] for q in mr.QUELLEN])
+
+    def test_2_ausfall_einmal_melden(self):
+        r = mr.Radar(Path(tempfile.mkdtemp()) / "radar")
+        for tag in (5, 6, 7):
+            r.fehler_merken("artificialanalysis", "HTTPError: HTTP Error 410: Gone", f"2026-11-0{tag}T07:00:00")
+        self.assertEqual(r.ausfaelle(datetime(2026, 11, 7, 7), ids={"artificialanalysis"}), [])       # erst 2 Tage
+        aus = r.ausfaelle(datetime(2026, 11, 8, 7, 1), ids={"artificialanalysis"})
+        self.assertEqual([(x["id"], x["seit"]) for x in aus], [("artificialanalysis", "2026-11-05T07:00:00")])
+        self.assertIn("410", mr.meldung_ausfall(aus))
+        self.assertEqual(r.ausfaelle(datetime(2026, 11, 9, 7), ids={"artificialanalysis"}), [])       # nur einmal
+        self.assertEqual(r.ausfaelle(datetime(2026, 11, 9, 7), ids=set()), [])                       # alte Quelle egal
+        r.erfolg_merken("artificialanalysis", 5, "2026-11-10T07:00:00")                               # Erfolg setzt zurueck
+        r.fehler_merken("artificialanalysis", "Timeout", "2026-11-11T07:00:00")
+        self.assertEqual(r.ausfaelle(datetime(2026, 11, 14, 7), ids={"artificialanalysis"})[0]["seit"], "2026-11-11T07:00:00")
+
+
 class TestBot(unittest.TestCase):
     def test_5_lauf_antraege_wochenbericht(self):
         from orchestrator.channels.telegram import bot

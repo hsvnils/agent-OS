@@ -41,6 +41,18 @@ class TestBackofficeJobs(unittest.TestCase):
         if a:
             store.fertig(a["id"], ergebnis="lokales Ergebnis", modell="qwen3:14b", meldung="keine")
 
+    def test_0_zeitlimit_nennt_wartegrund_bf98(self):
+        """BF-98: wartet der Worker (RAM-Waechter), steht der Grund im Fehlgrund des Zeitlimits; ohne Meldung nicht."""
+        b, uhr = _backend(self.store, worker=lambda st: st.worker_melden("nur 10.2 GB verfuegbar (< 11 GB nachts)"))
+        with hintergrund_modus(), mock.patch("orchestrator.core.backends.time.monotonic", side_effect=lambda: uhr[0]):
+            self.assertEqual(b.respond("cco", "s", "m", {}), "aus der Cloud")
+        self.assertIn("Worker wartete: nur 10.2 GB", self.store.list()[0]["grund"])
+        store2 = AuftragStore(Path(tempfile.mkdtemp()) / "b.jsonl")                 # Gegenprobe: keine Meldung
+        b2, uhr2 = _backend(store2)
+        with hintergrund_modus(), mock.patch("orchestrator.core.backends.time.monotonic", side_effect=lambda: uhr2[0]):
+            b2.respond("cco", "s", "m", {})
+        self.assertEqual(store2.list()[0]["grund"], "Zeitlimit -- Job nutzte den Cloud-Fallback")
+
     def test_1_ohne_hintergrund_direkt_cloud(self):
         b, _ = _backend(self.store)
         self.assertEqual(b.respond("cfo", "s", "m", {}), "aus der Cloud")

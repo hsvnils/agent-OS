@@ -4,7 +4,7 @@
 - Stand: 2026-11-15
 - Arbeitsbranch: `ai/modell-radar`
 - Basiscommit: `b40d9d1`
-- Naechster Schritt: Pruefung 2026-11-15: Fehler BF-97: Abruf Artificial Analysis scheitert seit 05.11. still (HTTPError), Quelle gemini-api liefert seit 02.11. nichts -- beheben nach Go, dann Abnahme; 10 Radar-Antraege warten auf Entscheidung.
+- Naechster Schritt: BF-97 behoben 2026-11-15 auf `ai/entscheidungen-1115` (neue AA-Schnittstelle, Google-Entwickler-Feed, Ausfall-Meldung ab 3 Tagen) -- nach Deploy ersten Lauf pruefen (To-do), dann Abnahme; offene Radar-Antraege am 2026-11-15 vom CEO entschieden (abgelehnt).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
