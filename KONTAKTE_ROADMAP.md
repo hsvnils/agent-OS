@@ -4,7 +4,7 @@
 - Stand: 2026-11-19
 - Arbeitsbranch: `ai/kontakte-roadmap`
 - Basiscommit: `c0af13f`
-- Naechster Schritt: K1-K4 live (2026-11-19 gemergt und deployt) -- offen: Testmail an eine CEO-Adresse und Antwort darauf (verifiziert K3+K4); danach Go fuer K5 (CISO-Freigabe).
+- Naechster Schritt: K1-K4 live, K3+K4 echt verifiziert (2026-11-19). Offen: Abnahme K1/K2 mit echter Visitenkarte; K5 (nils@) wartet auf CEO-Go und CISO-Freigabe.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -107,7 +107,7 @@
 
 ### Etappe K4: Mail schreiben am Ansprechpartner (Absender luna@)
 
-- Status: live (2026-11-19 gemergt und deployt; `core/kontakt_mail.py`, Dialog „✉️ Mail schreiben“ in der Firmen-Ansicht und „✉️ Mail“ am Ansprechpartner, Vorschau vor dem Senden, Anhaenge aus der Akte, LUNA-Entwurf nur aus Stichworten, nils@ bis K5 gesperrt, Verlauf am Ansprechpartner, Schalter `KONTAKT_MAIL`; `test_kontakt_mail.py`; Sichtpruefung headless Rechner/iPad/iPhone ok. Offen: Testmail an den CEO + Antwort nach Deploy)
+- Status: live (2026-11-19 gemergt und deployt; `core/kontakt_mail.py`, Dialog „✉️ Mail schreiben“ in der Firmen-Ansicht und „✉️ Mail“ am Ansprechpartner, Vorschau vor dem Senden, Anhaenge aus der Akte, LUNA-Entwurf nur aus Stichworten, nils@ bis K5 gesperrt, Verlauf am Ansprechpartner, Schalter `KONTAKT_MAIL`; `test_kontakt_mail.py`; Sichtpruefung headless Rechner/iPad/iPhone ok. Verifiziert 2026-11-19: Testmail aus LUNA-OS kam an, Antwort von fremder Adresse um 21:45 der Firma + Ansprechpartner zugeordnet, Akte + Telegram-Meldung zugestellt (`typ: sent`))
 - Ziel / Scope / Nicht-Scope: In LUNA-OS am Ansprechpartner (und in der Firmen-Ansicht) Knopf „✉️ Mail schreiben“: Betreff,
   Text, optional Anhang aus der Akte, Absender-Auswahl (vorerst nur luna@, nils@ ausgegraut bis K5). Versand erst nach
   „Senden“ des CEO (Oeffentlichkeit = CEO-Tor, der Klick ist die Freigabe); LUNA formuliert auf Wunsch einen Entwurf, sendet

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 21:46] — Claude Code
+- **Was:** KONTAKTE K3+K4 echt verifiziert: Testmail aus LUNA-OS an Ansprechpartner AP-00012 (Testkunde K-00022) kam an; Antwort von fremder Adresse vom 15-min-Poll zugeordnet (`mail_antwort` art kontakt, Akte D-566b1232), Telegram-Meldung zugestellt (`typ: sent`). Vorherige Probe mit einer eigenen CEO-Adresse wurde wie entschieden ignoriert.
+- **Warum:** Verifikation K3/K4 (Wirkung beim Empfaenger).
+- **Betroffen:** KONTAKTE_ROADMAP.md, ROADMAP.md.
+
 ## [2026-11-19 21:04] — Claude Code
 - **Was:** Entscheidung im Register: Antwort-Pruefung luna@ bleibt bei 15 Minuten (Vorschlag 5 Minuten verworfen).
 - **Warum:** CEO-Entscheidung.
