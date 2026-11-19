@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 18:55] — Claude Code
+- **Was:** K2-Sichtpruefung headless (lokaler Pruefserver mit Beispieldaten, Chrome unter Windows): To-do-Liste und Firmen-Ansicht auf Rechner 1440, iPad 820, iPhone 402 ok, kein Ueberlauf; in KONTAKTE_ROADMAP.md vermerkt.
+- **Warum:** Gate K2 (Sichtpruefung nach Deploy).
+- **Betroffen:** KONTAKTE_ROADMAP.md.
+
 ## [2026-11-19 18:42] — Claude Code
 - **Was:** KONTAKTE K3: Antworten auf freie Mails an Ansprechpartner erkennen. Neues Ereignis `kontakt_mail_gesendet` (Funktion `kontakt_mail_vermerken`, ab K4 vom Versand gerufen); der 15-min-Poll ordnet Antworten nur ueber `In-Reply-To`/`References` zu, legt sie in die Firmenakte (neues Feld `ansprechpartner` am Akten-Dokument) und meldet „Antwort von <Name> (<Firma>)“. Auch Antworten auf Belege/Vorstellungen tragen den Ansprechpartner, wenn die Absenderadresse hinterlegt ist. Dry-Run `GET /api/crm/antworten/trocken` (liest nur). Tests `test_kontakt_antworten.py` (6, mit Gegenproben), Suite 1747 gruen.
 - **Warum:** CEO-Go fuer K3 (Grundlage fuer K4 Mail aus LUNA-OS).
