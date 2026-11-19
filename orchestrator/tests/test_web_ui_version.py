@@ -18,6 +18,12 @@ class TestNurNochV2(unittest.TestCase):
             self.assertIn("app-v2.js", r.text, url)
             self.assertIn("Kontrollraum", r.text, url)
 
+    def test_startseite_nie_heuristisch_gecacht(self):
+        """BF-100: neue ?v=-Nummern muessen nach dem Deploy sofort ankommen (iPhone-Web-App zeigte die alte Oberflaeche)."""
+        r = self.c.get("/")
+        self.assertIn("no-cache", r.headers.get("cache-control", ""))
+        self.assertTrue(r.headers.get("etag"))                                  # Nachfragen bleibt billig (304)
+
     def test_v1_dateien_sind_weg(self):
         for name in ("index.html", "app.js", "style.css", "vendor/winbox.bundle.min.js"):
             self.assertFalse((STATIC / name).exists(), name)
