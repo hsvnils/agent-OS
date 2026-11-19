@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 from orchestrator.core.eingangsbelege import _kopf_adresse, mail_text, weiterleitung
-from orchestrator.core.firmenakte import Firmenakte, firma_zu_adresse, mails_pruefen
+from orchestrator.core.firmenakte import Firmenakte, akte_mails_wegsortieren, firma_zu_adresse, mails_pruefen
 from orchestrator.core.mail_auftraege import MailAuftragStore, ist_auftrag, nachricht, neue_auftraege
 from orchestrator.tests.test_angebote import _stores
 from orchestrator.tests.test_mail_belege import ABS, _G, _mail
@@ -157,6 +157,37 @@ class TestWerkzeug(unittest.TestCase):
         self.assertIn("akte_ablegen", {s["name"] for s in tool_specs()})
         self.assertIn("akte_ablegen", AKTIONS_WERKZEUGE)
         self.assertIn("akte_ablegen", auswahl(nachricht({"id": "x", "betreff": "b", "von": "v", "auftrag": "Bitte ablegen"}))[0])
+
+
+class TestWegsortieren(unittest.TestCase):
+    """CEO 2026-11-19: bearbeitete Mails in LUNAs Gmail gelesen + weggeraeumt; wartende bleiben im Posteingang."""
+    def test_1_erledigte_weg_wartende_bleiben(self):
+        bh, ks, ms, hog, akte = _setup()
+        fremd = OUTLOOK.replace("tf@mail-sports.com", "a@fremd-firma.de")
+        g = _G({"1a1f391fc73dd610": _mail(f"Nils <{NILS}>", "WG: Messe", text=OUTLOOK),
+                "1a1f391964c39ead": _mail(f"Nils <{NILS}>", "WG: X", text=fremd),
+                "1a1f391964c39eaf": _mail(f"Nils <{NILS}>", "WG: Y", text=fremd.replace("a@fremd", "b@fremd"))})
+        mails_pruefen(akte, g, ceo=ABS_ALLE, luna=LUNA)
+        weg = akte_mails_wegsortieren(akte, g)
+        self.assertEqual(g.abgelegt, [("1a1f391fc73dd610", "LUNA/Akte/" + akte.akte(ms)[0]["datum"][:4])])
+        self.assertEqual([w["mail_id"] for w in weg], ["1a1f391fc73dd610"])
+        self.assertEqual(akte_mails_wegsortieren(akte, g), [])                              # idempotent
+        o = {m["mail_id"]: m["id"] for m in akte.offene()}
+        akte.zuordnen(o["1a1f391964c39ead"], hog)                                        # jetzt zugeordnet -> weg
+        akte.zuordnen(o["1a1f391964c39eaf"], "")                                         # „keine Firma“ -> auch weg
+        self.assertEqual(sorted(w["mail_id"] for w in akte_mails_wegsortieren(akte, g)),
+                         ["1a1f391964c39ead", "1a1f391964c39eaf"])
+        self.assertEqual(len(g.abgelegt), 3)
+
+    def test_2_gegenprobe_wartend_und_fremde_kennung(self):
+        bh, ks, ms, hog, akte = _setup()
+        g = _G({"1a1f391964c39ead": _mail(f"Nils <{NILS}>", "WG: X", text=OUTLOOK.replace("tf@mail-sports.com", "a@x-y.de"))})
+        mails_pruefen(akte, g, ceo=ABS_ALLE, luna=LUNA)
+        self.assertEqual(akte_mails_wegsortieren(akte, g), [])                              # wartet -> bleibt
+        akte.mail_aufnehmen(_mail("A <a@x.de>", "Antwort", text="ok"), "imap-abc", eigene=ABS_ALLE, weitergeleitet=False,
+                            firma=ms)
+        self.assertEqual(akte_mails_wegsortieren(akte, g), [])                              # keine Gmail-ID -> nichts
+        self.assertEqual(g.abgelegt, [])
 
 
 if __name__ == "__main__":

@@ -2510,6 +2510,8 @@ def main() -> None:
                             mails_pruefen(Firmenakte(_bh, _KS2(_bh)), ctx.google, ceo=_abs,
                                           luna=secrets.get("GOOGLE_ACCOUNT_EMAIL", "luna.hanserautisch@gmail.com"),
                                           gesehen=_AKTE_MAILS_GESEHEN)
+                            from ...core.firmenakte import akte_mails_wegsortieren   # CEO 2026-11-19: gelesen + LUNA/Akte
+                            akte_mails_wegsortieren(Firmenakte(_bh, _KS2(_bh)), ctx.google)
                         except Exception as exc:
                             print(f"[akte] Mails: {exc}", flush=True)
                         # Fremdwaehrung (z. B. Meta in USD): KI-Vorschlaege holen, dann Kalender „Euro-Betrag eintragen“
