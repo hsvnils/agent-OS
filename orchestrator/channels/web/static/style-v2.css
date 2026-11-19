@@ -1327,3 +1327,8 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
   .v2-rw-rh td:nth-child(2), .v2-rw-rh td:nth-child(3), .v2-rw-rh td:nth-child(5) { white-space: nowrap; }
   .v2-rw-rh tr.v2-rw-soll-edit { display: block; } .v2-rw-wk { width: 22px; height: 22px; }
 }
+/* KONTAKTE K4: Knoepfe am Ansprechpartner, lange Adressen/Betreffs umbrechen */
+.v2-ap-knoepfe { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+.v2-list-row:has(.v2-ap-knoepfe) { flex-wrap: wrap; }
+.v2-umbruch { overflow-wrap: anywhere; min-width: 0; }
+#km-vorschau .v2-kv b { text-align: right; }

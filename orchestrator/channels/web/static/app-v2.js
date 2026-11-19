@@ -1087,6 +1087,82 @@ async function vsSenden(el, trotz) {
   AN_FIRMEN = []; if (AKTIV === "kunden") renderKunden();
   return kundeDetail(r.firma, `✉️ Mail an ${r.an} gesendet${r.neu_angelegt ? " – Firma als Interessent angelegt" : ""}. Antworten meldet LUNA per Telegram.`);
 }
+/* KONTAKTE K4: freie Mail an Ansprechpartner/Firma (Absender luna@, nils@ ab K5), Senden nur per Klick, Antwort -> Akte (K3) */
+let KM = { firma: "", v: null };
+async function kmDialog(firma, ap) {
+  const d = await jget("/api/crm/kunden/" + encodeURIComponent(firma)); const f = d && d.firma; if (!f) return;
+  const aps = (f.ansprechpartner_liste || []).filter(a => a.aktiv || a.nummer === ap);
+  KM = { firma: f.nummer, v: null };
+  openModal(`✉️ Mail an ${f.name}`, `<div class="v2-form" id="km-form">
+    <label class="v2-feld"><small>Ansprechpartner</small><select class="v2-inp" id="km-ap"><option value="">— an die Firma (ohne Ansprechpartner) —</option>${aps.map(a => `<option value="${esc(a.nummer)}" ${a.nummer === ap ? "selected" : ""}>${esc([a.vorname, a.nachname].filter(Boolean).join(" ") || a.nummer)}${a.rolle ? " · " + esc(a.rolle) : ""}${a.mail ? "" : " (keine Mail)"}</option>`).join("")}</select></label>
+    ${empfBaustein("km", { an: "" })}
+    <label class="v2-feld"><small>Absender</small><select class="v2-inp" id="km-absender"></select></label>
+    <label class="v2-feld"><small>Betreff *</small><input class="v2-inp" id="km-betreff" maxlength="200"></label>
+    <details class="v2-empf-kopie" id="km-ki"><summary><small>🪄 LUNA formuliert einen Entwurf</small></summary>
+      <label class="v2-feld"><small>Stichworte – worum geht es? (nur diese Stichworte gehen an das Modell, keine Namen aus den Stammdaten)</small><textarea class="v2-inp" id="km-stichworte" rows="3" placeholder="z. B. Danke fürs Gespräch beim Derby, Angebot kommt nächste Woche, Termin für Dreh vorschlagen"></textarea></label>
+      <div class="v2-card-actions"><button class="v2-btn" data-act="km-entwurf">🪄 Entwurf einsetzen</button></div></details>
+    <label class="v2-feld"><small>Text * (mit deiner Signatur)</small><textarea class="v2-inp" id="km-text" rows="12"></textarea></label>
+    <div class="v2-feld"><small>Anhänge aus der Akte (optional)</small><div class="v2-empf-liste" id="km-anhaenge"></div></div>
+    <div class="v2-tile" id="km-vorschau"></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="km-senden" id="km-senden-knopf">✉️ Jetzt senden</button></div><div class="v2-msg" id="km-msg"></div></div>`);
+  $("#km-ap").addEventListener("change", () => kmLaden(true));
+  $("#km-form").addEventListener("input", kmVorschau); $("#km-form").addEventListener("change", kmVorschau);
+  await kmLaden(false);
+  ($("#km-betreff") || {}).focus?.();
+}
+async function kmLaden(nurEmpfaenger) {
+  const v = await jget(`/api/crm/kontakt/mail/vorschau?firma=${encodeURIComponent(KM.firma)}&ap=${encodeURIComponent($("#km-ap").value)}`);
+  if (!v || !$("#km-form")) return;
+  const alt = KM.v; KM.v = v;
+  empfSetzen("km", v);
+  const t = $("#km-text");
+  if (!nurEmpfaenger || !t.value.trim() || (alt && t.value === alt.text)) t.value = v.text;
+  else if (alt && t.value.startsWith(alt.anrede)) t.value = v.anrede + t.value.slice(alt.anrede.length);   // Anrede mitziehen
+  if (!nurEmpfaenger) {
+    $("#km-absender").innerHTML = v.absender.map(a => `<option value="${esc(a.id)}" ${a.frei ? "" : "disabled"} title="${esc(a.hinweis)}">${esc(a.adresse)}${a.frei ? "" : " – ab K5"}</option>`).join("");
+    $("#km-anhaenge").innerHTML = v.akte.length ? v.akte.map(x => `<label class="v2-modlbl"><input type="checkbox" class="km-anhang" value="${esc(x.id)}"> <span><b>${esc(x.titel)}</b> <small class="v2-sub">${esc(datumDe(x.datum))} · ${esc(x.art)}</small></span></label>`).join("") : `<small class="v2-sub">Die Akte ist leer.</small>`;
+  }
+  const k = $("#km-senden-knopf"); k.disabled = !v.bereit || !v.aktiv;
+  k.title = !v.aktiv ? "Ausgeschaltet (KONTAKT_MAIL=0)" : v.bereit ? "" : "Versand über luna@ ist nicht eingerichtet";
+  kmVorschau();
+}
+function kmVorschau() {
+  const box = $("#km-vorschau"), v = KM.v; if (!box || !v) return;
+  const anh = [...document.querySelectorAll(".km-anhang:checked")].map(x => x.closest("label").querySelector("b").textContent);
+  const abs = ($("#km-absender") || {}).value || "luna", a = (v.absender.find(x => x.id === abs) || {}).adresse || "";
+  box.innerHTML = `<div class="v2-tile-h"><span class="t">Vorschau vor dem Senden</span></div>
+    <div class="v2-kv"><span>Von</span><b>${esc(abs === "luna" ? v.absender_anzeige : a)}</b></div>
+    <div class="v2-kv"><span>An</span><b class="v2-umbruch">${esc($("#km-an").value || "—")}</b></div>
+    <div class="v2-kv"><span>Betreff</span><b class="v2-umbruch">${esc($("#km-betreff").value.trim() || "—")}</b></div>
+    <div class="v2-kv"><span>Anhänge</span><b class="v2-umbruch">${anh.length ? esc(anh.join(", ")) : "keine"}</b></div>
+    ${v.bereit ? "" : `<div class="v2-msg err">Versand über luna@ ist nicht eingerichtet (Kundenversand steht nicht auf All-Inkl).</div>`}`;
+}
+async function kmEntwurf(el) {
+  const m = $("#km-msg"), t = $("#km-text"), v = KM.v || {};
+  el.disabled = true; m.className = "v2-msg"; m.textContent = "🪄 LUNA formuliert …";
+  const r = await jpost("/api/crm/kontakt/mail/entwurf", { stichworte: $("#km-stichworte").value.trim() }); el.disabled = false;
+  if (!r || r.ok === false) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return; }
+  t.value = `${v.anrede || ""}\n\n${r.text}\n\n${v.gruss || ""}`.trim();
+  m.className = "v2-msg ok"; m.textContent = "Entwurf eingesetzt – bitte lesen und anpassen. Gesendet wird erst mit „Jetzt senden“.";
+}
+async function kmSenden(el) {
+  const body = { firma: KM.firma, ansprechpartner: $("#km-ap").value, an: $("#km-an").value.trim(), absender: $("#km-absender").value,
+    betreff: $("#km-betreff").value.trim(), text: $("#km-text").value.trim(), bestaetigt: true,
+    anhaenge: [...document.querySelectorAll(".km-anhang:checked")].map(x => x.value) };
+  const m = $("#km-msg");
+  if (!body.an || !body.betreff || !body.text) { m.className = "v2-msg err"; m.textContent = "Empfänger, Betreff und Text sind Pflicht."; return; }
+  if (!confirm(`Mail „${body.betreff}“ jetzt an ${body.an} senden?`)) return;
+  el.disabled = true; m.className = "v2-msg"; m.textContent = "Sende …";
+  const r = await jpost("/api/crm/kontakt/mail/senden", body); el.disabled = false;
+  if (!r || r.ok === false) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Keine Verbindung."; return; }
+  return kundeDetail(r.firma, `✉️ Mail an ${r.an} gesendet${r.anhaenge.length ? ` (${r.anhaenge.length} Anhang/Anhänge)` : ""} – Kopie in der Akte. Antworten meldet LUNA per Telegram.`);
+}
+async function kmVerlauf(firma, ap, name) {
+  const r = await jget(`/api/crm/kontakt/verlauf?firma=${encodeURIComponent(firma)}&ap=${encodeURIComponent(ap)}`);
+  const l = (r && r.verlauf) || [];
+  openModal(`✉️ Verlauf · ${name || ap}`, `${l.map(x => `<div class="v2-list-row klick" data-act="km-datei" data-id="${esc(x.id)}"><span>${x.quelle === "mail" ? "✉️" : "📄"}</span><div class="grow"><b class="v2-umbruch">${esc(x.titel)}</b><small>${esc(datumDe(x.datum))}${x.mail_von ? " · von " + esc(x.mail_von) : ""}</small></div><span>›</span></div>`).join("") || emptyRow("Noch keine Mails mit diesem Ansprechpartner.")}
+    <div class="v2-card-actions"><button class="v2-btn" data-act="kunde-detail-zurueck" data-id="${esc(firma)}">← Zur Firma</button><button class="v2-btn pri" data-act="km-neu" data-id="${esc(firma)}" data-val="${esc(ap)}">✉️ Mail schreiben</button></div>`);
+}
 /* PARTNERLISTE P1-P3: Merkzettel fuer Firmen, die wir als Kunde oder Partner ansprechen koennten (nicht in der Kette) */
 let IDEEN = { ideen: [], arten: {}, status: {} };
 const IDEE_BADGE = { idee: "neutral", angeschrieben: "wartet", antwort: "ok", interessent: "wartet", kunde: "ok", kein_interesse: "neutral" };
@@ -1228,7 +1304,7 @@ async function kundeDetail(nr, meldung) {
   const d = await jget("/api/crm/kunden/" + encodeURIComponent(nr));
   const f = d && d.firma; if (!f) return openModal(nr, emptyRow("Firma nicht gefunden."));
   const todos = (d && d.todos) || [], apTodos = (nrAp) => todos.filter(t => t.ansprechpartner === nrAp).length;   // KONTAKTE K2
-  const aps = (f.ansprechpartner_liste || []).map(a => `<div class="v2-list-row"><span class="v2-badge ${a.aktiv ? "aktiv" : "neutral"}">${esc(a.nummer)}</span><div class="grow"><b>${esc([a.vorname, a.nachname].filter(Boolean).join(" "))}</b><small>${esc([a.rolle, a.mail, a.telefon, apTodos(a.nummer) ? `📝 ${apTodos(a.nummer)} offene(s) To-do(s)` : ""].filter(Boolean).join(" · "))}</small></div><button class="v2-btn" data-act="kunde-ap-edit" data-id="${esc(a.nummer)}" data-val="${esc(f.nummer)}">Bearbeiten</button></div>`).join("") || emptyRow("Noch kein Ansprechpartner.");
+  const aps = (f.ansprechpartner_liste || []).map(a => `<div class="v2-list-row"><span class="v2-badge ${a.aktiv ? "aktiv" : "neutral"}">${esc(a.nummer)}</span><div class="grow"><b>${esc([a.vorname, a.nachname].filter(Boolean).join(" "))}</b><small>${esc([a.rolle, a.mail, a.telefon, apTodos(a.nummer) ? `📝 ${apTodos(a.nummer)} offene(s) To-do(s)` : ""].filter(Boolean).join(" · "))}</small></div><div class="v2-ap-knoepfe">${d.kontakt_mail && a.aktiv && a.mail && f.typ !== "lieferant" ? `<button class="v2-btn sm" data-act="km-neu" data-id="${esc(f.nummer)}" data-val="${esc(a.nummer)}" title="Mail an ${esc(a.mail)}">✉️ Mail</button>` : ""}${(d.ap_mails || {})[a.nummer] ? `<button class="v2-btn sm" data-act="km-verlauf" data-id="${esc(f.nummer)}" data-val="${esc(a.nummer)}" data-name="${esc([a.vorname, a.nachname].filter(Boolean).join(" "))}">Verlauf (${d.ap_mails[a.nummer]})</button>` : ""}<button class="v2-btn sm" data-act="kunde-ap-edit" data-id="${esc(a.nummer)}" data-val="${esc(f.nummer)}">Bearbeiten</button></div></div>`).join("") || emptyRow("Noch kein Ansprechpartner.");
   const collab = (f.collab || []).map(c => `<div class="v2-list-row"><span>🤝</span><div class="grow"><b>${esc(c)}</b></div><button class="v2-btn" data-act="kunde-collab-los" data-id="${esc(f.nummer)}" data-val="${esc(c)}">Lösen</button></div>`).join("") || emptyRow("Keine Collab-Firma verknüpft.");
   const verlauf = (f.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc({ firma_angelegt: "Angelegt", firma_geaendert: "Geändert", firma_nummer_ergaenzt: "Nummer ergänzt", collab_zugeordnet: "Collab verknüpft", collab_geloest: "Collab gelöst" }[v.typ] || v.typ)}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")} · ${esc(Object.entries(v.felder || {}).filter(([k, w]) => w !== "" && w != null).map(([k, w]) => `${FELD_LBL[k] || (k === "nummer_ergaenzt" ? "Nummer" : k)}: ${typeof w === "boolean" ? (w ? "ja" : "nein") : Array.isArray(w) ? w.map(v => [v.bezeichnung, v.nummer].filter(Boolean).join(" ")).join(", ") : w}`).join(" · "))}</small></div></div>`).join("");
   const bu = (d && d.buchungen) || { belege: [], je_jahr: {}, abo: {} };
@@ -1238,7 +1314,7 @@ async function kundeDetail(nr, meldung) {
   const nummern = (f.nummern || [f.nummer]).filter(x => x !== firmaNr(f));
   openModal(`${firmaNr(f)} · ${f.name}`, `${meldung ? `<div class="v2-msg ok">${esc(meldung)}</div>` : ""}
     ${nummern.length ? `<div class="v2-sub">Auch gültig: ${esc(nummern.join(", "))}</div>` : ""}
-    ${f.typ !== "lieferant" ? `<div class="v2-card-actions"><button class="v2-btn" data-act="vs-neu" data-id="${esc(f.nummer)}">✉️ Mail schreiben</button></div>` : ""}
+    ${f.typ !== "lieferant" ? `<div class="v2-card-actions">${d.kontakt_mail ? `<button class="v2-btn" data-act="km-neu" data-id="${esc(f.nummer)}">✉️ Mail schreiben</button>` : ""}<button class="v2-btn" data-act="vs-neu" data-id="${esc(f.nummer)}">📣 Vorstellung / Nachfassen</button></div>` : ""}
     ${(f.luecken || []).length && f.typ !== "kunde" ? `<div class="v2-msg err">Es fehlt noch: ${esc(f.luecken.join(", "))} – steht meist auf der Rechnung.</div>` : ""}
     ${todos.length ? `<h3>📝 Offene To-dos (${todos.length})</h3>${todos.map(t => `<div class="v2-list-row klick" data-act="auf-bearbeiten" data-id="${esc(t.id)}"><div class="grow"><b>${esc(t.titel)}</b><small>${esc([t.faellig ? datumDe(t.faellig) : "ohne Datum", t.ansprechpartner_name ? "👤 " + t.ansprechpartner_name : ""].filter(Boolean).join(" · "))}</small></div></div>`).join("")}` : ""}
     ${f.typ !== "kunde" || (bu.belege || []).length ? `<h3>Belege & Zahlungen</h3>${buHtml}` : ""}
@@ -5409,6 +5485,12 @@ async function handleAct(act, el) {
     case "suche-treffer": return sucheTreffer(val, id);
     case "impressum-suchen": return impressumSuchen(val, el);
     case "vs-senden": return vsSenden(el);
+    case "km-neu": return kmDialog(id, val || "");
+    case "km-entwurf": return kmEntwurf(el);
+    case "km-senden": return kmSenden(el);
+    case "km-verlauf": return kmVerlauf(id, val, el.dataset.name || "");
+    case "km-datei": window.open(`/api/crm/akte/${encodeURIComponent(id)}/datei`, "_blank", "noopener"); return;
+    case "kunde-detail-zurueck": return kundeDetail(id);
     case "vs-trotzdem": return vsSenden($("#vs-senden-knopf"), true);
     case "vs-dublette-nehmen": { const s = $("#vs-firma"); if (!s) return; if (![...s.options].some(o => o.value === id)) s.insertAdjacentHTML("beforeend", `<option value="${esc(id)}">${esc(id)}</option>`);
       s.value = id; s.dispatchEvent(new Event("change")); const m = $("#vs-msg"); if (m) { m.className = "v2-msg"; m.textContent = "Vorhandene Firma gewählt – bitte prüfen und senden."; } return; }

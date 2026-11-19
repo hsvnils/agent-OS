@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 20:44] — Claude Code
+- **Was:** KONTAKTE K4: freie Mail an Ansprechpartner/Firma aus LUNA-OS (`core/kontakt_mail.py`). Endpunkte `GET /api/crm/kontakt/mail/vorschau`, `POST /api/crm/kontakt/mail/senden` (nur CEO, nur mit Bestaetigung, nur ueber luna@/All-Inkl; nils@ bis K5 gesperrt), `POST /api/crm/kontakt/mail/entwurf` (Claude Haiku, nur Stichworte des CEO), `GET /api/crm/kontakt/verlauf`. Nach dem Versand .eml + PDF in die Firmenakte mit Ansprechpartner und Ereignis `kontakt_mail_gesendet` (K3 erkennt die Antwort); Anhaenge nur aus der Akte derselben Firma. UI: Firmen-Ansicht „✉️ Mail schreiben“ (Vorstellung jetzt eigener Knopf „📣 Vorstellung / Nachfassen“), am Ansprechpartner „✉️ Mail“ + „Verlauf (n)“; Cache v163/v87. `kontakt_mail_vermerken` nimmt auch die nackte Kennung. Tests `test_kontakt_mail.py` (5, Gegenproben rot), Suite 1752 gruen; Sichtpruefung headless Rechner/iPad/iPhone ok; Datenfluesse + Datenschutz-Nachtrag.
+- **Warum:** CEO-Go fuer K4 (KONTAKTE_ROADMAP.md).
+- **Betroffen:** orchestrator/core/kontakt_mail.py, orchestrator/core/mail_antworten.py, orchestrator/channels/web/app.py, static/app-v2.js, static/style-v2.css, static/index-v2.html, orchestrator/tests/test_kontakt_mail.py, KONTAKTE_ROADMAP.md, ROADMAP.md, docs/datenfluesse.md, docs/datenschutz-ki-nutzung.md, docs/bekannte-fehler.md.
+
 ## [2026-11-19 19:10] — Claude Code
 - **Was:** Branch `ai/kontakte-k3` per `--no-ff` in `main` gemergt (K3 Antworten auf freie Mails an Ansprechpartner), Status in KONTAKTE_ROADMAP.md und ROADMAP.md auf live gesetzt; Deploy code-only durch den CEO.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
