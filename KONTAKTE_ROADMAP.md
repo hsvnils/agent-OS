@@ -4,7 +4,7 @@
 - Stand: 2026-11-19
 - Arbeitsbranch: `ai/kontakte-roadmap`
 - Basiscommit: `c0af13f`
-- Naechster Schritt: K1+K2+K3 live (K1/K2-Abnahme mit echter Visitenkarte offen; K3 wird mit K4 echt verifiziert). Naechste Etappe K4 -- wartet auf CEO-Go.
+- Naechster Schritt: K1-K3 live; K4 gebaut (Branch `ai/kontakte-k4`, Tests gruen) -- CEO pusht, Go fuer Merge + Deploy, dann Testmail an eine CEO-Adresse und Antwort darauf (verifiziert K3+K4); danach Go fuer K5 (CISO-Freigabe).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -107,7 +107,7 @@
 
 ### Etappe K4: Mail schreiben am Ansprechpartner (Absender luna@)
 
-- Status: geplant
+- Status: umgesetzt (2026-11-19; `core/kontakt_mail.py`, Dialog „✉️ Mail schreiben“ in der Firmen-Ansicht und „✉️ Mail“ am Ansprechpartner, Vorschau vor dem Senden, Anhaenge aus der Akte, LUNA-Entwurf nur aus Stichworten, nils@ bis K5 gesperrt, Verlauf am Ansprechpartner, Schalter `KONTAKT_MAIL`; `test_kontakt_mail.py`; Sichtpruefung headless Rechner/iPad/iPhone ok. Offen: Testmail an den CEO + Antwort nach Deploy)
 - Ziel / Scope / Nicht-Scope: In LUNA-OS am Ansprechpartner (und in der Firmen-Ansicht) Knopf „✉️ Mail schreiben“: Betreff,
   Text, optional Anhang aus der Akte, Absender-Auswahl (vorerst nur luna@, nils@ ausgegraut bis K5). Versand erst nach
   „Senden“ des CEO (Oeffentlichkeit = CEO-Tor, der Klick ist die Freigabe); LUNA formuliert auf Wunsch einen Entwurf, sendet
