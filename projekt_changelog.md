@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 20:56] — Claude Code
+- **Was:** Entscheidung im Register: Antworten von eigenen Adressen des CEO bleiben ignoriert (Variante a); Probe K3/K4 mit fremder Adresse.
+- **Warum:** CEO-Entscheidung nach Testmail an hsvnils@icloud.com.
+- **Betroffen:** docs/entscheidungs-register.md.
+
 ## [2026-11-19 20:53] — Claude Code
 - **Was:** BF-100 behoben: Startseite `/` von LUNA-OS mit `Cache-Control: no-cache` -- Safari (iPhone-Web-App) hatte sie heuristisch aufgehoben und nach dem K4-Deploy die alte Oberflaeche ohne „✉️ Mail“ gezeigt. Test mit Gegenprobe; Eintrag in `docs/bekannte-fehler.md`.
 - **Warum:** CEO-Meldung: mobil kein Mail-Knopf am Ansprechpartner.
