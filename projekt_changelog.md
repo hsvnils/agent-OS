@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 12:49] — Claude Code
+- **Was:** Roadmap `KONTAKTE_ROADMAP.md` angelegt (K1 Visitenkarte lesen/anlegen, K2 To-do verknuepft, K3 Antworten auf freie Mails, K4 Mail aus LUNA-OS mit luna@, K5 Absender nils@ mit CISO-Freigabe) und in `ROADMAP.md` registriert; nur Plan, nichts umgesetzt.
+- **Warum:** CEO 2026-11-19: Visitenkarte per Telegram anlegen inkl. To-do; Mail am Ansprechpartner aus LUNA-OS, Absender waehlbar luna@/nils@.
+- **Betroffen:** KONTAKTE_ROADMAP.md, ROADMAP.md
+
 ## [2026-11-19 12:47] — Claude Code
 - **Was:** Branch `ai/mail-ablage` (BF-99, Werkzeug `akte_ablegen`) nach main gemergt und gepusht; lokaler Branch geloescht.
 - **Warum:** CEO „Push gemacht, Go fuer Merge, Push und Deploy“.
