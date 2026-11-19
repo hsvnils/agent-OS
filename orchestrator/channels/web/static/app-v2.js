@@ -1227,7 +1227,8 @@ async function kundeDetail(nr, meldung) {
   openModal(nr, `<div class="v2-empty">Lade…</div>`);
   const d = await jget("/api/crm/kunden/" + encodeURIComponent(nr));
   const f = d && d.firma; if (!f) return openModal(nr, emptyRow("Firma nicht gefunden."));
-  const aps = (f.ansprechpartner_liste || []).map(a => `<div class="v2-list-row"><span class="v2-badge ${a.aktiv ? "aktiv" : "neutral"}">${esc(a.nummer)}</span><div class="grow"><b>${esc([a.vorname, a.nachname].filter(Boolean).join(" "))}</b><small>${esc([a.rolle, a.mail, a.telefon].filter(Boolean).join(" · "))}</small></div><button class="v2-btn" data-act="kunde-ap-edit" data-id="${esc(a.nummer)}" data-val="${esc(f.nummer)}">Bearbeiten</button></div>`).join("") || emptyRow("Noch kein Ansprechpartner.");
+  const todos = (d && d.todos) || [], apTodos = (nrAp) => todos.filter(t => t.ansprechpartner === nrAp).length;   // KONTAKTE K2
+  const aps = (f.ansprechpartner_liste || []).map(a => `<div class="v2-list-row"><span class="v2-badge ${a.aktiv ? "aktiv" : "neutral"}">${esc(a.nummer)}</span><div class="grow"><b>${esc([a.vorname, a.nachname].filter(Boolean).join(" "))}</b><small>${esc([a.rolle, a.mail, a.telefon, apTodos(a.nummer) ? `📝 ${apTodos(a.nummer)} offene(s) To-do(s)` : ""].filter(Boolean).join(" · "))}</small></div><button class="v2-btn" data-act="kunde-ap-edit" data-id="${esc(a.nummer)}" data-val="${esc(f.nummer)}">Bearbeiten</button></div>`).join("") || emptyRow("Noch kein Ansprechpartner.");
   const collab = (f.collab || []).map(c => `<div class="v2-list-row"><span>🤝</span><div class="grow"><b>${esc(c)}</b></div><button class="v2-btn" data-act="kunde-collab-los" data-id="${esc(f.nummer)}" data-val="${esc(c)}">Lösen</button></div>`).join("") || emptyRow("Keine Collab-Firma verknüpft.");
   const verlauf = (f.verlauf || []).slice().reverse().map(v => `<div class="v2-list-row"><div class="grow"><b>${esc({ firma_angelegt: "Angelegt", firma_geaendert: "Geändert", firma_nummer_ergaenzt: "Nummer ergänzt", collab_zugeordnet: "Collab verknüpft", collab_geloest: "Collab gelöst" }[v.typ] || v.typ)}</b><small>${esc(zeit(v.ts))} · ${esc(v.von || "")} · ${esc(Object.entries(v.felder || {}).filter(([k, w]) => w !== "" && w != null).map(([k, w]) => `${FELD_LBL[k] || (k === "nummer_ergaenzt" ? "Nummer" : k)}: ${typeof w === "boolean" ? (w ? "ja" : "nein") : Array.isArray(w) ? w.map(v => [v.bezeichnung, v.nummer].filter(Boolean).join(" ")).join(", ") : w}`).join(" · "))}</small></div></div>`).join("");
   const bu = (d && d.buchungen) || { belege: [], je_jahr: {}, abo: {} };
@@ -1239,6 +1240,7 @@ async function kundeDetail(nr, meldung) {
     ${nummern.length ? `<div class="v2-sub">Auch gültig: ${esc(nummern.join(", "))}</div>` : ""}
     ${f.typ !== "lieferant" ? `<div class="v2-card-actions"><button class="v2-btn" data-act="vs-neu" data-id="${esc(f.nummer)}">✉️ Mail schreiben</button></div>` : ""}
     ${(f.luecken || []).length && f.typ !== "kunde" ? `<div class="v2-msg err">Es fehlt noch: ${esc(f.luecken.join(", "))} – steht meist auf der Rechnung.</div>` : ""}
+    ${todos.length ? `<h3>📝 Offene To-dos (${todos.length})</h3>${todos.map(t => `<div class="v2-list-row klick" data-act="auf-bearbeiten" data-id="${esc(t.id)}"><div class="grow"><b>${esc(t.titel)}</b><small>${esc([t.faellig ? datumDe(t.faellig) : "ohne Datum", t.ansprechpartner_name ? "👤 " + t.ansprechpartner_name : ""].filter(Boolean).join(" · "))}</small></div></div>`).join("")}` : ""}
     ${f.typ !== "kunde" || (bu.belege || []).length ? `<h3>Belege & Zahlungen</h3>${buHtml}` : ""}
     <h3>Stammdaten</h3>${kundeRecherche(f, d)}<div class="v2-form">${f.verbraucher ? "" : impressumSuche("ke")}${formFelder("ke", FIRMA_FORM, f)}
     <label class="v2-modlbl"><input type="checkbox" id="ke-aktiv" ${f.aktiv ? "checked" : ""}> Aktiv (inaktive Firmen bleiben erhalten, nur ausgeblendet)</label>
@@ -4954,7 +4956,7 @@ async function renderAufgaben(meldung, fehler) {
   const g = d.gruppen || {};
   const offen = ["ueberfaellig", "heute", "demnaechst", "ohne_datum"].reduce((n, k) => n + (g[k] || []).length, 0);
   const zeile = (a) => { const er = a.status === "erledigt";
-    const wann = [a.faellig ? datumDe(a.faellig) + (a.uhrzeit ? " " + a.uhrzeit : "") : "", a.wiederholung ? "🔁 " + (AUF_WDH.find(([k]) => k === a.wiederholung) || ["", a.wiederholung])[1] : "", a.erinnerung && !er ? "⏰ " + datumDe(a.erinnerung.slice(0, 10)) + " " + a.erinnerung.slice(11, 16) : "", a.quelle === "Telegram/Chat" ? "per Telegram" : ""].filter(Boolean).join(" · ");
+    const wann = [a.faellig ? datumDe(a.faellig) + (a.uhrzeit ? " " + a.uhrzeit : "") : "", a.wiederholung ? "🔁 " + (AUF_WDH.find(([k]) => k === a.wiederholung) || ["", a.wiederholung])[1] : "", a.erinnerung && !er ? "⏰ " + datumDe(a.erinnerung.slice(0, 10)) + " " + a.erinnerung.slice(11, 16) : "", a.quelle === "Telegram/Chat" ? "per Telegram" : "", aufWer(a)].filter(Boolean).join(" · ");
     return `<div class="v2-list-row v2-auf${er ? " erledigt" : ""}"><button class="v2-auf-haken" data-act="auf-haken" data-id="${esc(a.id)}" data-val="${er ? "auf" : "zu"}" aria-label="${er ? "wieder öffnen" : "erledigt"}">${er ? "✓" : ""}</button>
       <div class="grow klick" data-act="auf-bearbeiten" data-id="${esc(a.id)}"><b>${esc(a.titel)}</b><small>${esc(wann)}${a.notiz ? " · " + esc(a.notiz.slice(0, 120)) : ""}</small></div></div>`; };
   const gruppen = AUF_GRUPPEN.filter(([k]) => (g[k] || []).length).map(([k, n]) => tile(`${n} (${g[k].length})`, g[k].map(zeile).join(""), "w12")).join("");
@@ -4971,6 +4973,8 @@ async function renderAufgaben(meldung, fehler) {
       <small class="v2-sub">Jede Vorlage wird ein wiederkehrendes To-do mit Erinnerung (Kalender + Telegram). Beim Erledigen legt LUNA den nächsten Termin an.</small></div>`, "w12") : ""}</div>`;
   const t = $("#auf-titel"); if (t) t.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); aufAktion("auf-neu"); } });
 }
+// KONTAKTE K2: Firma und Ansprechpartner am To-do
+function aufWer(a) { return [a.kunde ? "🏢 " + (a.kunde_name || a.kunde) : "", a.ansprechpartner ? "👤 " + (a.ansprechpartner_name || a.ansprechpartner) : ""].filter(Boolean).join(" · "); }
 async function aufBearbeiten(id) {
   const d = await jget("/api/aufgaben"); const g = (d && d.gruppen) || {};
   const a = Object.values(g).flat().find(x => x.id === id); if (!a) return renderAufgaben("To-do nicht gefunden.", true);
@@ -4980,6 +4984,7 @@ async function aufBearbeiten(id) {
     ${aufWdhSelect("aufb-wdh", a.wiederholung)}
     <label class="v2-feld"><small>Notiz</small><textarea id="aufb-notiz" class="v2-inp" rows="4">${esc(a.notiz)}</textarea></label>
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="auf-speichern" data-id="${esc(id)}">Speichern</button><button class="v2-btn danger" data-act="auf-loeschen" data-id="${esc(id)}">Löschen</button></div><div id="aufb-msg" class="v2-msg"></div>
+    ${a.kunde ? `<div class="v2-list-row klick" data-act="kunde-detail" data-id="${esc(a.kunde)}"><div class="grow"><b>${esc(aufWer(a))}</b><small>Firma öffnen</small></div></div>` : ""}
     <small class="v2-sub">Angelegt ${esc(zeit(a.angelegt))}${a.quelle ? " · " + esc(a.quelle) : ""}${a.termin_id ? " · 📅 im Kalender" : ""}</small></div>`);
 }
 async function aufAktion(act, id, val) {

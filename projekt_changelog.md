@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 13:24] — Claude Code
+- **Was:** KONTAKTE K2 umgesetzt: Bildunterschrift zur Visitenkarte wird (regelbasiert, z. B. „in 7 Tagen“, „bis Freitag“, „fuer Januar“, „3.12.“) zum To-do mit Firma **und** Ansprechpartner, sichtbar in der Vorschau vor dem Knopf; ohne Aufgabe wird sie Notiz am Kontakt. To-dos haben das neue Feld `ansprechpartner` (API, Wiederholung, Chat-Werkzeug `todo_anlegen` mit `kunde`/`ansprechpartner`). LUNA-OS zeigt Firma/Kontakt am To-do (mit Sprung zur Firma) und die offenen To-dos in der Firmen-Ansicht und am Kontakt; Cache v162.
+- **Warum:** CEO 2026-11-19 „Go fuer K2“.
+- **Betroffen:** orchestrator/core/visitenkarte.py, aufgaben.py, hoa_tools.py, orchestrator/channels/telegram/bot.py, orchestrator/channels/web/app.py, static/app-v2.js, static/index-v2.html, orchestrator/tests/test_visitenkarte.py, KONTAKTE_ROADMAP.md, ROADMAP.md, docs/datenfluesse.md, docs/bekannte-fehler.md
+
 ## [2026-11-19 13:11] — Claude Code
 - **Was:** Branches `ai/gmail-akte-ablage` (Akten-Mails in Gmail wegsortieren) und `ai/kontakte-roadmap` (Roadmap Kontakte + K1 Visitenkarte) nach main gemergt (Konflikte Changelog/Baseline zusammengefuehrt, Baseline 1735) und gepusht; lokale Branches geloescht.
 - **Warum:** CEO „Push gemacht, Go fuer Merge, Push und Deploy“.
