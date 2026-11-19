@@ -147,9 +147,10 @@ def _beleg_firma(bh, kunden, nummer: str) -> str:
 
 
 def antworten_pruefen(bh, kunden, postfach, *, eigene: list[str], notify=None, tage: int = 30, von: str = "LUNA-Mail",
-                      trocken: bool = False) -> list[dict]:
+                      trocken: bool = False, nur_kontakt: bool = False) -> list[dict]:
     """Neue Kundenantworten erfassen, ablegen und melden. Rueckgabe: Liste der neuen Antworten.
-    `trocken=True`: nur zeigen, was zugeordnet wuerde -- nichts erfassen, ablegen oder melden."""
+    `trocken=True`: nur zeigen, was zugeordnet wuerde -- nichts erfassen, ablegen oder melden.
+    `nur_kontakt=True` (Postfach nils@, K5): ausschliesslich Antworten auf freie Mails an Ansprechpartner (Kennung)."""
     from .angebote import AngebotStore
     from .firmenakte import Firmenakte
     eintraege = bh.eintraege()
@@ -168,6 +169,8 @@ def antworten_pruefen(bh, kunden, postfach, *, eigene: list[str], notify=None, t
             continue
         absender = parseaddr(str(m.get("From", "")))[1].lower()
         kontakt = kontakt_zuordnen(roh, km)
+        if nur_kontakt and not kontakt:
+            continue                                           # K5 Postfach nils@: nur Antworten auf LUNAs Kontakt-Mails
         nummer = kontakt["firma"] if kontakt else zuordnen(roh, zu, mahn_re)
         if not absender or not nummer or (absender in eigene and nummer != TESTMAIL):
             continue                                           # CEO/LUNA zaehlen nie als Kunde -- ausser beim Testlauf

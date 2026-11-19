@@ -240,3 +240,63 @@ class AllInklMail:
 
 def _imap_name(ordner: str) -> str:
     return f'"{ordner}"' if " " in ordner and not ordner.startswith('"') else ordner
+
+
+# -- KONTAKTE K5: Absender nils@hanserautisch.de (zweiter Zugang, CISO-geprueft) -------------------------------------
+NILS_SCHLUESSEL = ("ALLINKL_SMTP_HOST", "ALLINKL_IMAP_HOST", "NILS_MAIL_USER", "NILS_MAIL_PASSWORT")
+_LUNA_KENNUNG = re.compile(rb"<luna-[0-9a-f]{24}@", re.I)
+
+
+class NilsMail(AllInklMail):
+    """Postfach des CEO (nils@) -- gleicher All-Inkl-Server, eigener Zugang aus `NILS_MAIL_USER`/`NILS_MAIL_PASSWORT`.
+
+    Auflagen des CISO (K5): Senden nur nach CEO-Klick (wie luna@), Kopie in „Gesendet“ von nils@; der Posteingang wird
+    **nur** nach Antworten auf von LUNA gesendete Mails durchsucht -- der Server filtert per IMAP-SEARCH auf eine
+    LUNA-Kennung in `In-Reply-To`/`References`, LUNA prueft die Kopfzeilen nach und laedt erst dann den Inhalt
+    (BODY.PEEK, Gelesen-Status bleibt). Alle anderen Mails werden nie heruntergeladen. Nichts wird verschoben/geloescht."""
+
+    kanal = "allinkl-nils"
+
+    def __init__(self, env: dict, *, smtp_fabrik=None, imap_fabrik=None):
+        super().__init__(env, smtp_fabrik=smtp_fabrik, imap_fabrik=imap_fabrik)
+        g = lambda k, d="": (env.get(k) or d).strip()
+        self.user, self._pw = g("NILS_MAIL_USER"), env.get("NILS_MAIL_PASSWORT") or ""
+        self.adresse, self.ordner = g("NILS_MAIL_ABSENDER") or self.user, g("NILS_GESENDET_ORDNER")
+
+    def fehlend(self) -> list[str]:
+        werte = {"ALLINKL_SMTP_HOST": self.smtp_host, "ALLINKL_IMAP_HOST": self.imap_host,
+                 "NILS_MAIL_USER": self.user, "NILS_MAIL_PASSWORT": self._pw}
+        return [k for k in NILS_SCHLUESSEL if not werte[k]]
+
+    def posteingang(self, *, tage: int = 30, max_mails: int = 200) -> list[dict]:
+        from datetime import date, timedelta
+        if not self.verfuegbar():
+            return []
+        monate = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        d = date.today() - timedelta(days=tage)
+        seit = f"{d.day:02d}-{monate[d.month - 1]}-{d.year}"
+        out = []
+        i = self._imap()
+        try:
+            i.login(self.user, self._pw)
+            typ, _ = i.select("INBOX", readonly=True)
+            if typ != "OK":
+                return []
+            typ, daten = i.uid("SEARCH", None, "SINCE", seit, "OR", "HEADER", "In-Reply-To", "<luna-",
+                               "HEADER", "References", "<luna-")
+            uids = (daten[0].split() if typ == "OK" and daten and daten[0] else [])[-max_mails:]
+            for uid in uids:
+                typ, teile = i.uid("FETCH", uid, "(BODY.PEEK[HEADER.FIELDS (IN-REPLY-TO REFERENCES)])")
+                kopf = next((t[1] for t in teile or [] if isinstance(t, tuple) and len(t) > 1), b"") if typ == "OK" else b""
+                if not _LUNA_KENNUNG.search(kopf or b""):
+                    continue                                 # Server-Treffer ohne echte Kennung -> Inhalt nie laden
+                typ, teile = i.uid("FETCH", uid, "(BODY.PEEK[])")
+                roh = next((t[1] for t in teile or [] if isinstance(t, tuple) and len(t) > 1), None) if typ == "OK" else None
+                if roh:
+                    out.append({"uid": uid.decode() if isinstance(uid, bytes) else str(uid), "roh": roh})
+        finally:
+            try:
+                i.logout()
+            except Exception:
+                pass
+        return out

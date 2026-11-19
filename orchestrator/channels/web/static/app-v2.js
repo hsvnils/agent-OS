@@ -1119,23 +1119,24 @@ async function kmLaden(nurEmpfaenger) {
   if (!nurEmpfaenger || !t.value.trim() || (alt && t.value === alt.text)) t.value = v.text;
   else if (alt && t.value.startsWith(alt.anrede)) t.value = v.anrede + t.value.slice(alt.anrede.length);   // Anrede mitziehen
   if (!nurEmpfaenger) {
-    $("#km-absender").innerHTML = v.absender.map(a => `<option value="${esc(a.id)}" ${a.frei ? "" : "disabled"} title="${esc(a.hinweis)}">${esc(a.adresse)}${a.frei ? "" : " – ab K5"}</option>`).join("");
+    $("#km-absender").innerHTML = v.absender.map(a => `<option value="${esc(a.id)}" ${a.frei ? "" : "disabled"} title="${esc(a.hinweis)}">${esc(a.adresse)}${a.frei ? "" : " – nicht eingerichtet"}</option>`).join("");
     $("#km-anhaenge").innerHTML = v.akte.length ? v.akte.map(x => `<label class="v2-modlbl"><input type="checkbox" class="km-anhang" value="${esc(x.id)}"> <span><b>${esc(x.titel)}</b> <small class="v2-sub">${esc(datumDe(x.datum))} · ${esc(x.art)}</small></span></label>`).join("") : `<small class="v2-sub">Die Akte ist leer.</small>`;
   }
-  const k = $("#km-senden-knopf"); k.disabled = !v.bereit || !v.aktiv;
-  k.title = !v.aktiv ? "Ausgeschaltet (KONTAKT_MAIL=0)" : v.bereit ? "" : "Versand über luna@ ist nicht eingerichtet";
   kmVorschau();
 }
 function kmVorschau() {
   const box = $("#km-vorschau"), v = KM.v; if (!box || !v) return;
+  const gew = (v.absender.find(x => x.id === (($("#km-absender") || {}).value || "luna")) || {}), k = $("#km-senden-knopf");
+  if (k) { k.disabled = !gew.frei || !v.aktiv; k.title = !v.aktiv ? "Ausgeschaltet (KONTAKT_MAIL=0)" : gew.frei ? "" : (gew.hinweis || "Versand nicht eingerichtet"); }
   const anh = [...document.querySelectorAll(".km-anhang:checked")].map(x => x.closest("label").querySelector("b").textContent);
   const abs = ($("#km-absender") || {}).value || "luna", a = (v.absender.find(x => x.id === abs) || {}).adresse || "";
   box.innerHTML = `<div class="v2-tile-h"><span class="t">Vorschau vor dem Senden</span></div>
-    <div class="v2-kv"><span>Von</span><b>${esc(abs === "luna" ? v.absender_anzeige : a)}</b></div>
+    <div class="v2-kv"><span>Von</span><b class="v2-umbruch">${esc(abs === "luna" ? v.absender_anzeige : (v.nils_name ? `${v.nils_name} <${a}>` : a))}</b></div>
     <div class="v2-kv"><span>An</span><b class="v2-umbruch">${esc($("#km-an").value || "—")}</b></div>
     <div class="v2-kv"><span>Betreff</span><b class="v2-umbruch">${esc($("#km-betreff").value.trim() || "—")}</b></div>
     <div class="v2-kv"><span>Anhänge</span><b class="v2-umbruch">${anh.length ? esc(anh.join(", ")) : "keine"}</b></div>
-    ${v.bereit ? "" : `<div class="v2-msg err">Versand über luna@ ist nicht eingerichtet (Kundenversand steht nicht auf All-Inkl).</div>`}`;
+    ${abs === "nils" ? `<div class="v2-msg">Absender nils@: Kopie landet in deinem Ordner „Gesendet“; LUNA liest in deinem Postfach nur die Antworten auf diese Mail.</div>` : ""}
+    ${v.bereit || abs === "nils" ? "" : `<div class="v2-msg err">Versand über luna@ ist nicht eingerichtet (Kundenversand steht nicht auf All-Inkl).</div>`}`;
 }
 async function kmEntwurf(el) {
   const m = $("#km-msg"), t = $("#km-text"), v = KM.v || {};
