@@ -107,7 +107,7 @@ class AufgabenStore:
             t, aid, d = e.get("typ"), e.get("id"), e.get("daten") or {}
             if t == "angelegt":
                 out[aid] = {"id": aid, "titel": "", "notiz": "", "faellig": "", "uhrzeit": "", "erinnerung": "",
-                            "kunde": "", "quelle": "", "status": "offen", "angelegt": e["ts"], "erledigt_am": "",
+                            "kunde": "", "ansprechpartner": "", "quelle": "", "status": "offen", "angelegt": e["ts"], "erledigt_am": "",
                             "termin_id": "", "erinnert": "", "von": e.get("von", ""), "wiederholung": "",
                             "serie": "", "naechste": ""} | d
             elif aid not in out:
@@ -181,7 +181,7 @@ class AufgabenStore:
 
     def anlegen(self, titel: str, *, faellig: str = "", uhrzeit: str = "", erinnerung: str | None = None, notiz: str = "",
                 kunde: str = "", quelle: str = "LUNA-OS", von: str = "", wiederholung: str = "", serie: str = "",
-                tag: int = 0) -> dict:
+                tag: int = 0, ansprechpartner: str = "") -> dict:
         titel = _t(titel, MAX_TITEL)
         if not titel:
             raise ValueError("Titel fehlt.")
@@ -195,6 +195,7 @@ class AufgabenStore:
         self._schreibe("angelegt", aid, {"titel": titel, "notiz": _t(notiz, MAX_NOTIZ, einzeilig=False), "faellig": faellig,
                                          "uhrzeit": uhrzeit, "erinnerung": er, "kunde": _t(kunde, 20),
                                          "quelle": _t(quelle, 40)}
+                       | ({"ansprechpartner": _t(ansprechpartner, 20)} if ansprechpartner else {})
                        | ({"wiederholung": wiederholung, "serie": serie or aid, "tag": int(tag or faellig[8:10])}
                           if wiederholung else {}), von)
         return self.get(aid)
@@ -210,6 +211,8 @@ class AufgabenStore:
             neu["notiz"] = _t(felder["notiz"], MAX_NOTIZ, einzeilig=False)
         if "kunde" in felder:
             neu["kunde"] = _t(felder["kunde"], 20)
+        if "ansprechpartner" in felder:                                     # KONTAKTE K2
+            neu["ansprechpartner"] = _t(felder["ansprechpartner"], 20)
         for k in ("faellig", "uhrzeit", "erinnerung"):
             if k in felder:
                 neu[k] = (felder[k] or "").strip()
@@ -246,7 +249,8 @@ class AufgabenStore:
             abstand = datetime.fromisoformat(a["erinnerung"]) - datetime.fromisoformat(a["faellig"])
             er = (datetime.fromisoformat(f) + abstand).strftime("%Y-%m-%dT%H:%M")
         n = self.anlegen(a["titel"], faellig=f, uhrzeit=a.get("uhrzeit", ""), erinnerung=er, notiz=a.get("notiz", ""),
-                         kunde=a.get("kunde", ""), quelle=a.get("quelle") or "Wiederholung", von=von,
+                         kunde=a.get("kunde", ""), ansprechpartner=a.get("ansprechpartner", ""),
+                         quelle=a.get("quelle") or "Wiederholung", von=von,
                          wiederholung=a["wiederholung"], serie=a.get("serie") or a["id"], tag=int(a.get("tag") or 0))
         self._schreibe("geaendert", a["id"], {"naechste": n["id"]}, von)
         return n

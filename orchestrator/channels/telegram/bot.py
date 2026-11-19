@@ -1036,7 +1036,7 @@ def _vk_foto(token, chat_id, foto: dict, name: str, caption: str, secrets: dict)
     karte = vk.lesen(daten, name, client=cl, modell=_modell(anb, "schnell") if cl else "", ocr=vk.ocr_lokal)
     if karte.get("art") != "visitenkarte":
         return False
-    v = vk.vorschlag(karte, KundenStore(Buchhaltung(ROOT / "buchhaltung")))
+    v = vk.vorschlag(karte, KundenStore(Buchhaltung(ROOT / "buchhaltung")), caption)
     schluessel = uuid.uuid4().hex[:10]
     while len(_VK_WARTET) >= 20:                        # nie unbegrenzt Bilder im Speicher
         _VK_WARTET.pop(next(iter(_VK_WARTET)))
@@ -1060,13 +1060,19 @@ def _vk_knopf(data: str) -> str:
         return "❌ Visitenkarte verworfen – nichts angelegt."
     ks = KundenStore(Buchhaltung(ROOT / "buchhaltung"))
     try:
-        r = vk.anlegen(w["v"], wahl, ks, Firmenakte(ks.bh, ks), w["bild"], w["name"])
+        from ...core.aufgaben import AufgabenStore
+        r = vk.anlegen(w["v"], wahl, ks, Firmenakte(ks.bh, ks), w["bild"], w["name"],
+                       todos=AufgabenStore(ROOT / "todos" / "log.jsonl"))
     except (ValueError, KeyError) as exc:
         return f"⚠️ Nicht angelegt: {exc}"
     teile = [f"🏢 {r['name']} ({r['firma']})" + (" – neu angelegt" if r["neu_firma"] else "")]
     if r["ansprechpartner"]:
         teile.append(f"👤 Kontakt {r['ansprechpartner']}" + (" – neu angelegt" if r["neu_ap"] else " – war schon da"))
     teile.append("📎 Foto liegt in der Akte.")
+    if r.get("todo"):
+        f = r["todo"]["faellig"]
+        teile.append(f"📝 To-do „{r['todo']['titel']}“" + (f" für {f[8:10]}.{f[5:7]}.{f[:4]}" if f else "") +
+                     " – mit Firma und Kontakt verknüpft.")
     return "✅ Visitenkarte übernommen:\n" + "\n".join(teile)
 
 

@@ -252,7 +252,9 @@ def tool_specs() -> list[dict]:
               {"titel": _str("Titel ohne Datum."), "faellig": _str("JJJJ-MM-TT oder leer."),
                "uhrzeit": _str("HH:MM oder leer."), "erinnerung": _str("Abweichend: JJJJ-MM-TTTHH:MM."),
                "notiz": _str("Details."), "ohne_erinnerung": _bool("true = keine Erinnerung."),
-               "wiederholung": _str("Optional: woechentlich | monatlich | quartalsweise | jaehrlich (braucht faellig).")},
+               "wiederholung": _str("Optional: woechentlich | monatlich | quartalsweise | jaehrlich (braucht faellig)."),
+               "kunde": _str("Optional: Firmennummer (K-/L-/P-) aus den Stammdaten, wenn das To-do zu einer Firma gehoert."),
+               "ansprechpartner": _str("Optional: Nummer des Ansprechpartners (AP-...) dieser Firma.")},
               ["titel"]),
         _spec("regel_vorschlagen", "Korrigiert dich der CEO und soll das kuenftig gelten (Schreibweise, Format, Vorgehen): "
               "erst korrigieren, dann hiermit eine feste Regel vorschlagen -- gilt erst nach seinem Knopf. Nicht fuer "
@@ -541,7 +543,9 @@ def _todo_werkzeug(name: str, a: dict, ctx) -> dict:
                                             f"{jetzt_lokal():%Y-%m-%dT%H:%M}. Bitte neu berechnen."}
         x = st.anlegen(str(a.get("titel") or ""), faellig=str(a.get("faellig") or "").strip(),
                        uhrzeit=str(a.get("uhrzeit") or "").strip(), erinnerung=er, notiz=str(a.get("notiz") or ""),
-                       quelle="Telegram/Chat", von="LUNA-Chat", wiederholung=str(a.get("wiederholung") or "").strip())
+                       quelle="Telegram/Chat", von="LUNA-Chat", wiederholung=str(a.get("wiederholung") or "").strip(),
+                       kunde=str(a.get("kunde") or "").strip().upper(),
+                       ansprechpartner=str(a.get("ansprechpartner") or "").strip().upper())
         hinweis = kalender_abgleichen(st, ctx.google, x, von="LUNA-Chat") if x["erinnerung"] else ""
         if getattr(ctx, "knoepfe", None) is not None:              # Telegram: Knopf „Rueckgaengig“ unter der Antwort
             ctx.knoepfe.append({"text": "↶ Rückgängig", "callback_data": f"auf:{x['id']}:weg"})

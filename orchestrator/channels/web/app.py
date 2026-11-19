@@ -1658,7 +1658,14 @@ def kunden_detail(nummer: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Firmenkundennummer")
     from ...core.firmendaten import NAMEN, luecken, offene_vorschlaege
     v = offene_vorschlaege(kunden_store.bh.eintraege()).get(f["nummer"]) or {}
+    nummern = set(f.get("nummern") or [f["nummer"]])
+    try:                                                          # KONTAKTE K2: offene To-dos dieser Firma
+        todos = [a for g in _todo_namen(_aufgaben().liste(mit_erledigt=False)).values() for a in g
+                 if a.get("kunde") in nummern]
+    except Exception:
+        todos = []
     return {"firma": f, "buchungen": _firma_buchungen(f["nummer"]), "luecken": luecken(f), "feldnamen": NAMEN,
+            "todos": todos,
             "vorschlaege": v.get("vorschlaege") or {}, "vorschlag_quelle": v.get("quelle", ""),
             "vorschlag_ts": v.get("ts", "")}
 
@@ -4211,9 +4218,25 @@ def _aufgabe_mit_kalender(fn, von: str):
     return _kunden_aktion(tun)
 
 
+def _todo_namen(gruppen: dict) -> dict:
+    """KONTAKTE K2: Firma und Ansprechpartner eines To-dos mit Namen (fuer Anzeige und Sprung zur Firma)."""
+    firmen, aps = {}, {}
+    try:
+        st, ap = kunden_store._stand()
+        firmen = {n: f["name"] for f in st.values() for n in f.get("nummern") or [f["nummer"]]}
+        aps = {a["nummer"]: " ".join(x for x in (a.get("vorname"), a.get("nachname")) if x) for a in ap.values()}
+    except Exception:
+        pass
+    for liste in gruppen.values():
+        for a in liste:
+            a["kunde_name"] = firmen.get(a.get("kunde") or "", "")
+            a["ansprechpartner_name"] = aps.get(a.get("ansprechpartner") or "", "")
+    return gruppen
+
+
 @app.get("/api/aufgaben")
 def aufgaben_liste():
-    return {"gruppen": _aufgaben().liste(), "google": bool(_google().verfuegbar())}
+    return {"gruppen": _todo_namen(_aufgaben().liste()), "google": bool(_google().verfuegbar())}
 
 
 @app.post("/api/aufgaben")
@@ -4223,6 +4246,7 @@ async def aufgabe_neu(request: Request):
     return _aufgabe_mit_kalender(lambda st: st.anlegen(str(b.get("titel") or ""), faellig=str(b.get("faellig") or ""),
                                                        uhrzeit=str(b.get("uhrzeit") or ""), erinnerung=er,
                                                        notiz=str(b.get("notiz") or ""), kunde=str(b.get("kunde") or ""),
+                                                       ansprechpartner=str(b.get("ansprechpartner") or ""),
                                                        quelle="LUNA-OS", von=_von(request),
                                                        wiederholung=str(b.get("wiederholung") or "")), _von(request))
 
@@ -4254,7 +4278,8 @@ async def aufgaben_vorlagen_anlegen(request: Request):
 @app.post("/api/aufgaben/{aid}")
 async def aufgabe_aendern(aid: str, request: Request):
     b = await _json(request)
-    felder = {k: b[k] for k in ("titel", "notiz", "faellig", "uhrzeit", "erinnerung", "kunde", "wiederholung") if k in b}
+    felder = {k: b[k] for k in ("titel", "notiz", "faellig", "uhrzeit", "erinnerung", "kunde", "ansprechpartner",
+                                "wiederholung") if k in b}
     return _aufgabe_mit_kalender(lambda st: st.aendern(aid, felder, von=_von(request)), _von(request))
 
 

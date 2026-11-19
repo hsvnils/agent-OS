@@ -4,7 +4,7 @@
 - Stand: 2026-11-19
 - Arbeitsbranch: `ai/kontakte-roadmap`
 - Basiscommit: `c0af13f`
-- Naechster Schritt: K1 gebaut (Branch, Tests gruen) -- CEO pusht, Go fuer Merge + Deploy, dann Abnahme mit einer echten Visitenkarte; danach Go fuer K2.
+- Naechster Schritt: K2 gebaut (Branch `ai/kontakte-k2`, Tests gruen) -- CEO pusht, Go fuer Merge + Deploy; danach Sichtpruefung headless, Abnahme K1+K2 mit einer echten Visitenkarte mit Bildunterschrift; dann Go fuer K3.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -81,7 +81,7 @@
 
 ### Etappe K2: To-do aus der Bildunterschrift, verknuepft
 
-- Status: geplant
+- Status: umgesetzt (2026-11-19; Datumserkennung regelbasiert `visitenkarte.todo_aus_text`, ohne Aufgabe wird die Bildunterschrift Notiz am Kontakt; `todo_anlegen` im Chat kennt jetzt `kunde` + `ansprechpartner`; Sichtpruefung headless nach Deploy gegen LUNA-OS)
 - Ziel / Scope / Nicht-Scope: Bildunterschrift („Nachfassen in 7 Tagen“, „Angebot bis Freitag“) wird nach dem Anlegen als
   To-do angelegt -- mit `kunde` = Firma und neuem Feld `ansprechpartner` (AP-Nummer). LUNA-OS zeigt den Ansprechpartner am
   To-do und die offenen To-dos am Ansprechpartner. Gilt auch fuer `todo_anlegen` im Chat (optional Ansprechpartner).

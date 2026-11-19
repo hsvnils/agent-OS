@@ -9,7 +9,7 @@ from unittest import mock
 
 from orchestrator.core import visitenkarte as vk
 from orchestrator.core.firmenakte import Firmenakte
-from orchestrator.tests.test_angebote import _stores
+from orchestrator.tests.test_angebote import ApiBasis, _stores
 
 KARTE = {"art": "visitenkarte", "firma": "Alta Seta GmbH", "vorname": "Patrick", "nachname": "Muster", "rolle": "Vertrieb",
          "mail": "patrick@alta-seta.de", "telefon": "+49 171 1234567", "website": "alta-seta.de", "ort": "Neustadt"}
@@ -137,11 +137,106 @@ class TestBot(unittest.TestCase):
         self.assertFalse(vk.an({"VISITENKARTE": "0"}))
         self.assertTrue(vk.an({}))
 
+    def test_4_bildunterschrift_wird_todo(self):
+        from orchestrator.core.aufgaben import AufgabenStore
+        with mock.patch("orchestrator.core.claude_api.cloud_client", return_value=(_Client(json.dumps(KARTE)), "claude")):
+            self.assertTrue(self.bot._vk_foto("T", 1, {"file_id": "f"}, "k.jpg", "Nachfassen in 7 Tagen", {}))
+        self.assertIn("📝 To-do: Nachfassen", self.gesendet[-1][1]["text"])
+        kb = json.loads(self.gesendet[-1][1]["reply_markup"])["inline_keyboard"]
+        res = self.bot._vk_knopf(kb[0][0]["callback_data"])
+        self.assertIn("mit Firma und Kontakt verknüpft", res)
+        t = [a for g in AufgabenStore(self.root / "todos" / "log.jsonl").liste().values() for a in g]
+        self.assertEqual(len(t), 1)
+        self.assertTrue(t[0]["kunde"].startswith("K-") and t[0]["ansprechpartner"].startswith("AP-"))
+
     def test_3_wartendes_posting_hat_vorrang(self):
         quelle = Path(self.bot.__file__).read_text(encoding="utf-8")
         i = quelle.index("KONTAKTE K1: Visitenkarte, wenn kein Posting")
         self.assertIn("not _PO_FOTO_WARTET.get(str(chat_id))", quelle[i:i + 400])
         self.assertLess(i, quelle.index("_po_foto(token, chat_id, _foto"))
+
+
+class TestK2Todo(unittest.TestCase):
+    """KONTAKTE K2: Bildunterschrift -> To-do mit Firma UND Ansprechpartner; ohne Aufgabe -> Notiz am Kontakt."""
+    H = __import__("datetime").date(2026, 11, 19)                                         # Donnerstag
+
+    def test_1_datum_und_titel(self):
+        f = lambda t: vk.todo_aus_text(t, self.H, "Patrick Muster", "Alta Seta")
+        self.assertEqual(f("Nachfassen in 7 Tagen"), {"titel": "Nachfassen: Patrick Muster (Alta Seta)", "faellig": "2026-11-26"})
+        self.assertEqual(f("Bitte Angebot bis Freitag schicken")["faellig"], "2026-11-20")
+        self.assertEqual(f("Donnerstag anrufen")["faellig"], "2026-11-26")                # gleicher Wochentag -> naechste Woche
+        self.assertEqual(f("Erinnerung für Januar")["faellig"], "2027-01-01")
+        self.assertEqual(f("Ende Februar nachfassen")["faellig"], "2027-02-28")
+        self.assertEqual(f("anrufen am 3.12.")["faellig"], "2026-12-03")
+        self.assertEqual(f("am 1.11. melden")["faellig"], "2027-11-01")                   # vergangen -> naechstes Jahr
+        self.assertEqual(f("in zwei Wochen Termin machen")["faellig"], "2026-12-03")
+        self.assertEqual(f("Moin Luna, morgen anrufen, danke")["titel"], "Anrufen: Patrick Muster (Alta Seta)")
+        self.assertEqual(f("Angebot schicken")["faellig"], "")                            # Aufgabe ohne Datum
+        self.assertIsNone(f("Messe HSV, nettes Gespräch"))                                # Gegenprobe: keine Aufgabe
+        self.assertIsNone(f(""))
+
+    def test_2_anlegen_verknuepft(self):
+        from orchestrator.core.aufgaben import AufgabenStore
+        bh, ks, _st, _k, _ap = _stores()
+        akte, todos = Firmenakte(bh, ks), AufgabenStore(Path(tempfile.mkdtemp()) / "todos.jsonl")
+        v = vk.vorschlag(KARTE, ks, "Nachfassen in 7 Tagen", self.H)
+        self.assertIn("📝 To-do: Nachfassen: Patrick Muster (Alta Seta GmbH) – fällig 26.11.2026", vk.text(v))
+        self.assertEqual(sum(len(g) for g in todos.liste().values()), 0)                 # Vorschau schreibt nichts
+        r = vk.anlegen(v, "kunde", ks, akte, b"\xff\xd8", "k.jpg", todos=todos)
+        t = todos.get(r["todo"]["id"])
+        self.assertEqual((t["kunde"], t["ansprechpartner"], t["faellig"], t["quelle"]),
+                         (r["firma"], r["ansprechpartner"], "2026-11-26", "Visitenkarte"))
+        self.assertTrue(t["erinnerung"].startswith("2026-11-26"))                         # Telegram-Erinnerung am Tag
+        self.assertIn("Nachfassen in 7 Tagen", t["notiz"])
+        # zweite Karte derselben Person mit neuer Aufgabe: kein neuer Kontakt, aber neues To-do am selben Kontakt
+        v2 = vk.vorschlag(KARTE, ks, "Angebot bis Freitag", self.H)
+        self.assertEqual(vk.knoepfe(v2, "s")[0][0]["text"], "📎 Foto + To-do ablegen")
+        r2 = vk.anlegen(v2, "foto", ks, akte, b"\xff\xd8", "k.jpg", todos=todos)
+        self.assertEqual((r2["neu_ap"], todos.get(r2["todo"]["id"])["ansprechpartner"]), (False, r["ansprechpartner"]))
+
+    def test_3_ohne_aufgabe_notiz_am_kontakt(self):
+        from orchestrator.core.aufgaben import AufgabenStore
+        bh, ks, _st, _k, _ap = _stores()
+        todos = AufgabenStore(Path(tempfile.mkdtemp()) / "todos.jsonl")
+        v = vk.vorschlag(KARTE, ks, "Messe Volksparkstadion", self.H)
+        self.assertIn("🗒 Notiz zum Kontakt: Messe Volksparkstadion", vk.text(v))
+        r = vk.anlegen(v, "lieferant", ks, Firmenakte(bh, ks), b"\xff\xd8", "k.jpg", todos=todos)
+        self.assertIsNone(r["todo"])
+        self.assertEqual(sum(len(g) for g in todos.liste().values()), 0)
+        self.assertEqual(ks.firma(r["firma"])["ansprechpartner_liste"][0]["notiz"], "Messe Volksparkstadion")
+
+
+class TestK2Api(ApiBasis):
+    def test_1_namen_und_firmen_todos(self):
+        from orchestrator.core.aufgaben import AufgabenStore
+        store = AufgabenStore(Path(tempfile.mkdtemp()) / "todos.jsonl")
+        with mock.patch.object(self.w, "_aufgaben", return_value=store):
+            r = self.c.post("/api/aufgaben", json={"titel": "Nachfassen", "faellig": "2030-01-02", "kunde": self.k,
+                                                   "ansprechpartner": self.ap}).json()
+            self.assertTrue(r["ok"], r)
+            self.c.post("/api/aufgaben", json={"titel": "Anderes"})
+            a = [x for g in self.c.get("/api/aufgaben").json()["gruppen"].values() for x in g if x["titel"] == "Nachfassen"][0]
+            self.assertEqual((a["kunde"], a["ansprechpartner"]), (self.k, self.ap))
+            self.assertTrue(a["kunde_name"] and a["ansprechpartner_name"])
+            d = self.c.get(f"/api/crm/kunden/{self.k}").json()
+            self.assertEqual([t["titel"] for t in d["todos"]], ["Nachfassen"])            # Gegenprobe: „Anderes“ fehlt
+            aid = a["id"]
+            self.assertTrue(self.c.post(f"/api/aufgaben/{aid}", json={"ansprechpartner": ""}).json()["ok"])
+            self.assertEqual(store.get(aid)["ansprechpartner"], "")
+
+    def test_2_oberflaeche_und_chat(self):
+        js = (Path(self.w.__file__).parent / "static" / "app-v2.js").read_text(encoding="utf-8")
+        for teil in ("function aufWer", "Offene To-dos", "apTodos("):
+            self.assertIn(teil, js)
+        from orchestrator.core.hoa_tools import ToolContext, run_tool, tool_specs
+        props = next(s for s in tool_specs() if s["name"] == "todo_anlegen")["input_schema"]["properties"]
+        self.assertIn("ansprechpartner", props)
+        root = Path(tempfile.mkdtemp())
+        ctx = ToolContext(core=None, antraege=None, engine=None, finance_dir=root, repo_root=root, leak_secrets=[])
+        r = run_tool("todo_anlegen", {"titel": "X", "kunde": "k-00001", "ansprechpartner": "ap-00002", "ohne_erinnerung": True}, ctx)
+        from orchestrator.core.aufgaben import AufgabenStore
+        t = AufgabenStore(root / "todos" / "log.jsonl").get(r["id"])
+        self.assertEqual((t["kunde"], t["ansprechpartner"]), ("K-00001", "AP-00002"))
 
 
 if __name__ == "__main__":
