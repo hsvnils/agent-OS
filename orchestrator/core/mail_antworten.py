@@ -62,7 +62,8 @@ def gesendete(eintraege: list[dict]) -> tuple[dict, dict]:
 def kontakt_mail_vermerken(bh, *, firma: str, ansprechpartner: str, message_id: str, betreff: str = "", an=None,
                            kanal: str = "allinkl", akte_id: str = "", von: str = "") -> dict:
     """K4 ruft das nach erfolgreichem Versand: ab dann erkennt der Poll Antworten auf diese Mail (Kennung)."""
-    kennung = (KENNUNG.findall(f"<{str(message_id or '').strip('<>')}>") or [""])[0].lower()
+    mid = str(message_id or "").strip().strip("<>")
+    kennung = (KENNUNG.findall(f"<{mid if '@' in mid else mid + '@'}>") or [""])[0].lower()   # auch nackte Kennung (Versand-id)
     if not kennung or not firma:
         raise ValueError("Kennung der gesendeten Mail und Firma sind Pflicht.")
     return bh.erfassen(KONTAKT_GESENDET, {"firma": str(firma).upper(), "ansprechpartner": str(ansprechpartner or "").upper(),

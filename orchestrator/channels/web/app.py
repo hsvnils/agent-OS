@@ -1664,8 +1664,16 @@ def kunden_detail(nummer: str):
                  if a.get("kunde") in nummern]
     except Exception:
         todos = []
+    from ...core.kontakt_mail import aktiv as _km_aktiv
+    ap_mails: dict = {}                                           # KONTAKTE K4: Mails je Ansprechpartner (Akte)
+    try:
+        for x in _akte().akte(f["nummer"]):
+            if x.get("ansprechpartner"):
+                ap_mails[x["ansprechpartner"]] = ap_mails.get(x["ansprechpartner"], 0) + 1
+    except KeyError:
+        pass
     return {"firma": f, "buchungen": _firma_buchungen(f["nummer"]), "luecken": luecken(f), "feldnamen": NAMEN,
-            "todos": todos,
+            "todos": todos, "kontakt_mail": _km_aktiv(), "ap_mails": ap_mails,
             "vorschlaege": v.get("vorschlaege") or {}, "vorschlag_quelle": v.get("quelle", ""),
             "vorschlag_ts": v.get("ts", "")}
 
@@ -5166,6 +5174,73 @@ async def vorstellung_senden(request: Request):
             except KeyError:
                 pass                                                 # Idee inzwischen geloescht -- Mail ist trotzdem raus
         return r
+    return _kunden_aktion(tun)
+
+
+# -- Mail an Ansprechpartner (KONTAKTE K4): Absender luna@, Senden nur nach CEO-Klick, Antwort-Erkennung ueber K3 ---------
+@app.get("/api/crm/kontakt/mail/vorschau")
+def kontakt_mail_vorschau(firma: str, ap: str = ""):
+    """K4 Dry-Run/Vorbelegung: Empfaenger, Anrede + Signatur, Absender-Auswahl (nils@ bis K5 gesperrt), Akte fuer Anhaenge."""
+    from ...core.kontakt_mail import ABSENDER, GESPERRT, aktiv, vorschlag
+    from ...core.textbausteine import TextbausteinStore
+    try:
+        v = vorschlag(kunden_store, firma, ap, signatur=TextbausteinStore(kunden_store.bh).laden()["signatur"])
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Firma") from None
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from None
+    vs = _versand_absender()
+    akte = [{k: x.get(k, "") for k in ("id", "titel", "datum", "art")} for x in _akte().akte(v["firma"]["nummer"])
+            if x.get("dateien")][:40]
+    return v | {"aktiv": aktiv(), "adressen": _adressen(v["firma"]["nummer"]), "akte": akte,
+                "absender": [{"id": k, "adresse": a, "frei": k not in GESPERRT, "hinweis": GESPERRT.get(k, "")}
+                             for k, a in ABSENDER.items()],
+                "bereit": vs["kanal"] == "allinkl" and bool(vs["bereit"]), "absender_anzeige": vs["absender"]}
+
+
+@app.get("/api/crm/kontakt/verlauf")
+def kontakt_verlauf(firma: str, ap: str):
+    """K4: Mails am Ansprechpartner (gesendet + Antworten) aus der Firmenakte."""
+    from ...core.kontakt_mail import verlauf
+    try:
+        return {"verlauf": verlauf(_akte(), firma, ap)}
+    except KeyError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unbekannte Firma") from None
+
+
+@app.post("/api/crm/kontakt/mail/entwurf")
+async def kontakt_mail_entwurf(request: Request):
+    """K4: LUNA formuliert aus den Stichworten des CEO den Hauptteil -- nur die Stichworte gehen an das Modell."""
+    from ...core.claude_api import modell as _modell
+    from ...core.kontakt_mail import entwurf
+    body = await _json(request)
+
+    def tun():
+        client, anb = _cloud("kontakt-mail", timeout=45)
+        if client is None:
+            raise ValueError("Kein Modell-Zugang konfiguriert.")
+        try:
+            return {"text": entwurf(str(body.get("stichworte") or ""), client=client, modell=_modell(anb, "schnell"))}
+        except ValueError:
+            raise
+        except Exception as exc:                          # ohne Fehlertext (koennte Schluessel enthalten)
+            print(f"[kontakt-mail] {exc.__class__.__name__}", flush=True)
+            raise ValueError("LUNA ist gerade nicht erreichbar -- bitte gleich noch einmal versuchen.") from None
+    return _kunden_aktion(tun)
+
+
+@app.post("/api/crm/kontakt/mail/senden")
+async def kontakt_mail_senden(request: Request):
+    """K4: Oeffentlichkeit = CEO-Tor -- nur Modul finanzen (Owner), nur mit Bestaetigung; danach Akte + Kennung (K3)."""
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if not hat_modul(u, "finanzen"):
+        return {"ok": False, "hinweis": "Mails an Ansprechpartner senden darf nur der CEO."}
+    body = await _json(request)
+
+    def tun():
+        from ...core.kontakt_mail import senden
+        return senden(kunden_store.bh, kunden_store, _versand_google({}), body, absender_name=ABSENDER_NAME,
+                      eigene=_eigene_adressen(), von=_von(request))
     return _kunden_aktion(tun)
 
 
