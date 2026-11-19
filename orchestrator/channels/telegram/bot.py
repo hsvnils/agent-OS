@@ -1017,6 +1017,59 @@ def _postings():
     return Postings(bh, AuftragBuch(bh, ks, AngebotStore(bh, ks)), ROOT / "lieferungen")
 
 
+_VK_WARTET: dict = {}              # KONTAKTE K1: Schluessel -> {v, bild, name, caption} (wartet auf den Knopf)
+
+
+def _vk_foto(token, chat_id, foto: dict, name: str, caption: str, secrets: dict) -> bool:
+    """K1: Foto als Visitenkarte lesen -> Vorschau mit Knoepfen. False = keine Visitenkarte (weiter wie bisher)."""
+    import uuid
+    from ...core import visitenkarte as vk
+    from ...core.buchhaltung import Buchhaltung
+    from ...core.claude_api import cloud_client, kosten_protokoll, modell as _modell
+    from ...core.kosten import KostenStore
+    from ...core.kunden import KundenStore
+    daten = _download_voice(token, foto["file_id"])
+    if not daten:
+        return False
+    cl, anb = cloud_client(secrets, protokoll=kosten_protokoll(KostenStore(ROOT / "finance" / "kosten-log.jsonl"),
+                                                               "visitenkarte"))
+    karte = vk.lesen(daten, name, client=cl, modell=_modell(anb, "schnell") if cl else "", ocr=vk.ocr_lokal)
+    if karte.get("art") != "visitenkarte":
+        return False
+    v = vk.vorschlag(karte, KundenStore(Buchhaltung(ROOT / "buchhaltung")))
+    schluessel = uuid.uuid4().hex[:10]
+    while len(_VK_WARTET) >= 20:                        # nie unbegrenzt Bilder im Speicher
+        _VK_WARTET.pop(next(iter(_VK_WARTET)))
+    _VK_WARTET[schluessel] = {"v": v, "bild": daten, "name": name, "caption": caption}
+    _api(token, "sendMessage", {"chat_id": chat_id, "text": fuer_telegram(vk.text(v)),
+                                "reply_markup": json.dumps({"inline_keyboard": vk.knoepfe(v, schluessel)})})
+    return True
+
+
+def _vk_knopf(data: str) -> str:
+    """Knopf vkn:<schluessel>:<kunde|lieferant|partner|ap|foto|nein>."""
+    from ...core import visitenkarte as vk
+    from ...core.buchhaltung import Buchhaltung
+    from ...core.firmenakte import Firmenakte
+    from ...core.kunden import KundenStore
+    _, schluessel, wahl = (data.split(":", 2) + ["", ""])[:3]
+    w = _VK_WARTET.pop(schluessel, None)
+    if not w:
+        return "⚠️ Diese Visitenkarte ist nicht mehr offen – bitte das Foto noch einmal schicken."
+    if wahl == "nein":
+        return "❌ Visitenkarte verworfen – nichts angelegt."
+    ks = KundenStore(Buchhaltung(ROOT / "buchhaltung"))
+    try:
+        r = vk.anlegen(w["v"], wahl, ks, Firmenakte(ks.bh, ks), w["bild"], w["name"])
+    except (ValueError, KeyError) as exc:
+        return f"⚠️ Nicht angelegt: {exc}"
+    teile = [f"🏢 {r['name']} ({r['firma']})" + (" – neu angelegt" if r["neu_firma"] else "")]
+    if r["ansprechpartner"]:
+        teile.append(f"👤 Kontakt {r['ansprechpartner']}" + (" – neu angelegt" if r["neu_ap"] else " – war schon da"))
+    teile.append("📎 Foto liegt in der Akte.")
+    return "✅ Visitenkarte übernommen:\n" + "\n".join(teile)
+
+
 def _po_name(p: dict) -> str:
     return f"{p['titel']} · {p.get('auftrag_titel') or p['auftrag']} ({p['auftrag']})"
 
@@ -2708,6 +2761,18 @@ def main() -> None:
                             _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
                                                             "reply_markup": json.dumps({"inline_keyboard": []}),
                                                             "text": fuer_telegram(res)})
+                    elif data.startswith("vkn:"):                  # KONTAKTE K1: Visitenkarte anlegen/verwerfen
+                        mid = (cb.get("message") or {}).get("message_id")
+                        try:
+                            res = _vk_knopf(data)
+                        except Exception as exc:
+                            res = "⚠️ Das hat nicht geklappt – bitte in LUNA-OS anlegen."
+                            print(f"[visitenkarte] Knopf: {exc.__class__.__name__}", flush=True)
+                        _api(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "OK"})
+                        if mid:
+                            _api(token, "editMessageText", {"chat_id": cbchat, "message_id": mid,
+                                                            "reply_markup": json.dumps({"inline_keyboard": []}),
+                                                            "text": fuer_telegram(res)})
                     elif data.startswith(("pkz:", "pkj:", "pkk:")):  # PROJEKTBERICHT P2: Kennzahlen per Screenshot
                         mid = (cb.get("message") or {}).get("message_id")
                         res = _po_knopf(cbchat, data)
@@ -2848,6 +2913,14 @@ def main() -> None:
             _doc = msg.get("document") or {}
             _foto = (msg.get("photo") or [None])[-1] or (_doc if str(_doc.get("mime_type", "")).startswith("image/") else None)
             if _foto and (ROOT / "buchhaltung" / "log.jsonl").exists():   # PROJEKTBERICHT P2: Insights-Screenshot
+                try:                                   # KONTAKTE K1: Visitenkarte, wenn kein Posting auf ein Bild wartet
+                    from ...core.visitenkarte import an as _vk_an
+                    if not _PO_FOTO_WARTET.get(str(chat_id)) and _vk_an(secrets) and _vk_foto(
+                            token, chat_id, _foto, _doc.get("file_name") or "visitenkarte.jpg", msg.get("caption") or "",
+                            secrets):
+                        continue
+                except Exception as exc:
+                    print(f"[visitenkarte] {exc.__class__.__name__}: {str(exc)[:120]}", flush=True)
                 try:
                     _po_foto(token, chat_id, _foto, _doc.get("file_name") or f"telegram-{_foto.get('file_unique_id', 'bild')}.jpg")
                 except Exception as exc:

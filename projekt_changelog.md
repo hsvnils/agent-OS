@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 13:10] — Claude Code
+- **Was:** KONTAKTE K1 umgesetzt: Visitenkarten-Foto per Telegram (wenn kein Posting auf einen Screenshot wartet) wird von Claude Haiku gelesen (Rueckfall tesseract), mit Stammdaten abgeglichen und als Vorschau mit Knoepfen (Kunde/Lieferant/Partner bzw. Kontakt anlegen, Verwerfen) gezeigt; nach dem Knopf Firma + Ansprechpartner (nichts doppelt) und Foto in die Firmenakte. Schalter `VISITENKARTE=0`. E1-E4 im Entscheidungs-Register.
+- **Warum:** CEO 2026-11-19 „E1-E4 wie empfohlen, Go fuer K1“.
+- **Betroffen:** orchestrator/core/visitenkarte.py (neu), orchestrator/channels/telegram/bot.py, orchestrator/tests/test_visitenkarte.py (neu), KONTAKTE_ROADMAP.md, ROADMAP.md, docs/entscheidungs-register.md, docs/datenschutz-ki-nutzung.md, docs/datenfluesse.md, docs/bekannte-fehler.md
+
 ## [2026-11-19 12:49] — Claude Code
 - **Was:** Roadmap `KONTAKTE_ROADMAP.md` angelegt (K1 Visitenkarte lesen/anlegen, K2 To-do verknuepft, K3 Antworten auf freie Mails, K4 Mail aus LUNA-OS mit luna@, K5 Absender nils@ mit CISO-Freigabe) und in `ROADMAP.md` registriert; nur Plan, nichts umgesetzt.
 - **Warum:** CEO 2026-11-19: Visitenkarte per Telegram anlegen inkl. To-do; Mail am Ansprechpartner aus LUNA-OS, Absender waehlbar luna@/nils@.

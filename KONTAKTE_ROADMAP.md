@@ -1,10 +1,10 @@
 # Roadmap: Kontakte -- Visitenkarte per Telegram und Mail aus LUNA-OS
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-11-19
 - Arbeitsbranch: `ai/kontakte-roadmap`
 - Basiscommit: `c0af13f`
-- Naechster Schritt: CEO entscheidet E1-E4 (unten) und gibt das Go fuer Etappe K1.
+- Naechster Schritt: K1 gebaut (Branch, Tests gruen) -- CEO pusht, Go fuer Merge + Deploy, dann Abnahme mit einer echten Visitenkarte; danach Go fuer K2.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -37,7 +37,7 @@
 - **Register:** keine Vorentscheidung zu Visitenkarten oder freiem Mailversand (`docs/entscheidungs-register.md` geprueft).
   Bekannt: BF-99 (Mail-Ablage, 2026-11-19 behoben) -- dieselbe Akte nimmt kuenftig auch die Antworten auf.
 
-## Entscheidungen fuer den CEO (vor K1 bzw. K4)
+## Entscheidungen fuer den CEO (vor K1 bzw. K4) -- E1-E4 am 2026-11-19 „wie empfohlen“ beschlossen
 
 | # | Frage | Empfehlung |
 |---|---|---|
@@ -65,7 +65,7 @@
 
 ### Etappe K1: Visitenkarte lesen und anlegen (Telegram)
 
-- Status: geplant
+- Status: umgesetzt (2026-11-19, `core/visitenkarte.py`, Bot `_vk_foto`/`_vk_knopf`, `test_visitenkarte.py`)
 - Ziel / Scope / Nicht-Scope: Foto ohne wartendes Posting -> Visitenkarte erkennen (E2) -> Felder auslesen (Firma, Vorname,
   Nachname, Rolle, Mail, Telefon, Website, Ort) -> Vorschau in Telegram mit Knoepfen „✅ Anlegen“, „✏️ In LUNA-OS
   aendern“, „❌ Verwerfen“. Gibt es die Firma schon (Domain/Name, `KundenStore.finde`), wird nur der Ansprechpartner
