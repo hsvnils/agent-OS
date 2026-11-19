@@ -4,7 +4,7 @@
 - Stand: 2026-11-19
 - Arbeitsbranch: `ai/kontakte-roadmap`
 - Basiscommit: `c0af13f`
-- Naechster Schritt: K2 gebaut (Branch `ai/kontakte-k2`, Tests gruen) -- CEO pusht, Go fuer Merge + Deploy; danach Sichtpruefung headless, Abnahme K1+K2 mit einer echten Visitenkarte mit Bildunterschrift; dann Go fuer K3.
+- Naechster Schritt: K1+K2 live (Abnahme mit echter Visitenkarte offen). K3 gebaut (Branch `ai/kontakte-k3`, Tests gruen) -- CEO pusht, Go fuer Merge + Deploy; danach Go fuer K4.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -65,7 +65,7 @@
 
 ### Etappe K1: Visitenkarte lesen und anlegen (Telegram)
 
-- Status: umgesetzt (2026-11-19, `core/visitenkarte.py`, Bot `_vk_foto`/`_vk_knopf`, `test_visitenkarte.py`)
+- Status: live (2026-11-19, `core/visitenkarte.py`, Bot `_vk_foto`/`_vk_knopf`, `test_visitenkarte.py`)
 - Ziel / Scope / Nicht-Scope: Foto ohne wartendes Posting -> Visitenkarte erkennen (E2) -> Felder auslesen (Firma, Vorname,
   Nachname, Rolle, Mail, Telefon, Website, Ort) -> Vorschau in Telegram mit Knoepfen „✅ Anlegen“, „✏️ In LUNA-OS
   aendern“, „❌ Verwerfen“. Gibt es die Firma schon (Domain/Name, `KundenStore.finde`), wird nur der Ansprechpartner
@@ -81,7 +81,7 @@
 
 ### Etappe K2: To-do aus der Bildunterschrift, verknuepft
 
-- Status: umgesetzt (2026-11-19; Datumserkennung regelbasiert `visitenkarte.todo_aus_text`, ohne Aufgabe wird die Bildunterschrift Notiz am Kontakt; `todo_anlegen` im Chat kennt jetzt `kunde` + `ansprechpartner`; Sichtpruefung headless nach Deploy gegen LUNA-OS)
+- Status: live (2026-11-19; Datumserkennung regelbasiert `visitenkarte.todo_aus_text`, ohne Aufgabe wird die Bildunterschrift Notiz am Kontakt; `todo_anlegen` im Chat kennt jetzt `kunde` + `ansprechpartner`; Sichtpruefung headless 2026-11-19 ok: Rechner/iPad 820/iPhone 402)
 - Ziel / Scope / Nicht-Scope: Bildunterschrift („Nachfassen in 7 Tagen“, „Angebot bis Freitag“) wird nach dem Anlegen als
   To-do angelegt -- mit `kunde` = Firma und neuem Feld `ansprechpartner` (AP-Nummer). LUNA-OS zeigt den Ansprechpartner am
   To-do und die offenen To-dos am Ansprechpartner. Gilt auch fuer `todo_anlegen` im Chat (optional Ansprechpartner).
@@ -95,7 +95,7 @@
 
 ### Etappe K3: Antworten auf freie Mails erkennen (Grundlage fuer K4)
 
-- Status: geplant
+- Status: umgesetzt (2026-11-19; Ereignis `kontakt_mail_gesendet` + `kontakt_mail_vermerken` als Schnittstelle fuer K4, Zuordnung nur ueber die Kennung, Akte-Feld `ansprechpartner`, Ansprechpartner auch bei Beleg-Antworten ueber die Absenderadresse, Dry-Run `GET /api/crm/antworten/trocken`; `test_kontakt_antworten.py`)
 - Ziel / Scope / Nicht-Scope: `core/mail_antworten.py` ordnet Antworten nicht nur Belegen, sondern auch freien Mails an
   Ansprechpartner zu (Message-ID der versendeten Mail -> Firma/Ansprechpartner) und legt sie in die Firmenakte; Telegram-
   Meldung „Antwort von <Name> (<Firma>)“. Nicht-Scope: Versand (K4).
