@@ -166,7 +166,7 @@ class Firmenakte:
         return [self.kunden.firma(f["nummer"]) or f for f in self.kunden.firmen()]
 
     def mail_aufnehmen(self, roh: bytes, mid: str, *, eigene: list[str], weitergeleitet: bool, von: str = "LUNA-Mail",
-                       bezug: str = "", firma: str = "") -> dict:
+                       bezug: str = "", firma: str = "", ansprechpartner: str = "") -> dict:
         """Mail in die Akte (oder „zuordnen“). `eigene` = Adressen des CEO und von LUNA (zaehlen nie als Firma).
         Weitergeleitet: Firma aus dem Original-Absender, Text darueber = Notiz. Rueckgabe {id, firma|""}."""
         from .eingangsbelege import mail_pdf, mail_text, weiterleitung, zweck_aus_mail
@@ -220,6 +220,8 @@ class Firmenakte:
         daten = {"id": did, "titel": betreff, "art": "mail", "datum": datum, "bezug": bezug, "notiz": notiz, "quelle": "mail",
                  "mail_id": mid, "mail_von": orig.get("von") or parseaddr(str(m.get("From", "")))[1],
                  "dateien": list(reversed(dateien))}                      # PDF-Ansicht zuerst, .eml dahinter
+        if ansprechpartner:
+            daten["ansprechpartner"] = str(ansprechpartner).upper()               # KONTAKTE K3: Verlauf am Ansprechpartner
         if len(treffer) == 1:
             self.bh.erfassen("akte_dokument", daten | {"firma": treffer[0]}, von=von)
             return {"id": did, "firma": treffer[0]}

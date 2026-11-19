@@ -5061,6 +5061,23 @@ def kundenversand_status():
     return out
 
 
+@app.get("/api/crm/antworten/trocken")
+def antworten_trocken(tage: int = 30):
+    """KONTAKTE K3 Dry-Run: welche Mails im Postfach luna@ wuerden als Antwort zugeordnet (Beleg, Vorstellung,
+    freie Mail an Ansprechpartner)? Liest nur (BODY.PEEK), schreibt, legt ab und meldet nichts."""
+    def tun():
+        from ...core.mail_antworten import antworten_pruefen
+        from ...governance.allinkl_mail import AllInklMail
+        a = AllInklMail(_google_secrets())
+        if not a.verfuegbar():
+            raise ValueError("Postfach luna@hanserautisch.de ist nicht eingerichtet.")
+        treffer = antworten_pruefen(kunden_store.bh, kunden_store, a, eigene=_eigene_adressen(),
+                                    tage=max(1, min(int(tage), 90)), trocken=True)
+        return {"treffer": [{k: x.get(k, "") for k in ("nummer", "art", "ansprechpartner", "von", "datum", "betreff")}
+                            for x in treffer]}
+    return _kunden_aktion(tun)
+
+
 @app.post("/api/finanzen/kundenversand/testmail")
 async def kundenversand_testmail(request: Request):
     """Eine Testmail ueber All-Inkl an eine Adresse des CEO (Gate M1) -- nur mit Bestaetigung, Modul finanzen."""

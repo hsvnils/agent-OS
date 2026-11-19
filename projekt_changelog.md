@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 18:42] — Claude Code
+- **Was:** KONTAKTE K3: Antworten auf freie Mails an Ansprechpartner erkennen. Neues Ereignis `kontakt_mail_gesendet` (Funktion `kontakt_mail_vermerken`, ab K4 vom Versand gerufen); der 15-min-Poll ordnet Antworten nur ueber `In-Reply-To`/`References` zu, legt sie in die Firmenakte (neues Feld `ansprechpartner` am Akten-Dokument) und meldet „Antwort von <Name> (<Firma>)“. Auch Antworten auf Belege/Vorstellungen tragen den Ansprechpartner, wenn die Absenderadresse hinterlegt ist. Dry-Run `GET /api/crm/antworten/trocken` (liest nur). Tests `test_kontakt_antworten.py` (6, mit Gegenproben), Suite 1747 gruen.
+- **Warum:** CEO-Go fuer K3 (Grundlage fuer K4 Mail aus LUNA-OS).
+- **Betroffen:** `orchestrator/core/mail_antworten.py`, `orchestrator/core/firmenakte.py`, `orchestrator/channels/web/app.py`, `orchestrator/tests/test_kontakt_antworten.py`, KONTAKTE_ROADMAP.md, ROADMAP.md, docs/datenfluesse.md, docs/bekannte-fehler.md.
+
 ## [2026-11-19 16:39] — Claude Code
 - **Was:** Branch `ai/kontakte-k2` (K2: To-do aus der Bildunterschrift der Visitenkarte, mit Firma und Ansprechpartner verknuepft; LUNA-OS zeigt Firma/Kontakt am To-do und offene To-dos in der Firmenansicht) per `--no-ff` in `main` gemergt, gepusht, lokaler Branch geloescht.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
