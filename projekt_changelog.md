@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 13:05] — Claude Code
+- **Was:** Erledigte Akten-Mails (bei einer Firma abgelegt oder „keine Firma“) werden in LUNAs Gmail als gelesen markiert und nach `LUNA/Akte/<Jahr>` verschoben (`firmenakte.akte_mails_wegsortieren`, im 15-min-Poll, nachholend); wartende Mails unter „Mail zuordnen“ bleiben im Posteingang. Tests mit Gegenproben.
+- **Warum:** CEO 2026-11-19: bearbeitete Mails in LUNAs Gmail auf gelesen stellen und wegsortieren.
+- **Betroffen:** orchestrator/core/firmenakte.py, orchestrator/channels/telegram/bot.py, orchestrator/tests/test_mail_firmenablage.py, docs/datenfluesse.md, docs/bekannte-fehler.md
+
 ## [2026-11-19 12:47] — Claude Code
 - **Was:** Branch `ai/mail-ablage` (BF-99, Werkzeug `akte_ablegen`) nach main gemergt und gepusht; lokaler Branch geloescht.
 - **Warum:** CEO „Push gemacht, Go fuer Merge, Push und Deploy“.

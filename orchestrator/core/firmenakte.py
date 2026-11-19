@@ -343,3 +343,42 @@ def mails_pruefen(akte: Firmenakte, google, *, ceo: list[str], luna: str, tage: 
         elif cc or von_ceo:
             neu.append(akte.mail_aufnehmen(roh, mid, eigene=ceo + [luna], weitergeleitet=False)["id"])
     return neu
+
+
+_GMAIL_ID = re.compile(r"[0-9a-f]{12,20}")
+
+
+def akte_mails_wegsortieren(akte: Firmenakte, google) -> list[dict]:
+    """CEO 2026-11-19: erledigte Akten-Mails in LUNAs Gmail als gelesen markieren und nach `LUNA/Akte/<Jahr>` verschieben
+    (wie die Beleg-Mails, `eingangsbelege.mails_ablegen`). Erledigt = bei einer Firma abgelegt oder „gehoert zu keiner
+    Firma“; Mails unter „Mail zuordnen“ bleiben im Posteingang (sie warten auf den CEO). Nachholend und idempotent, nur
+    Gmail-Mails (keine IMAP-/All-Inkl-Kennungen); bei Fehler versucht es der naechste Lauf erneut."""
+    from .eingangsbelege import MAIL_ABGELEGT, MAIL_ORDNER, _abgelegt
+    if google is None or not google.verfuegbar() or not hasattr(google, "mail_ablegen"):
+        return []
+    eintraege = akte.bh.eintraege()
+    fertig = _abgelegt(eintraege)
+    docs, offen_jetzt = _falte(eintraege)
+    erledigt = {d["mail_id"]: (d["id"], d.get("datum") or d["ts"]) for d in docs.values() if d.get("mail_id")}
+    offen_alt = {}
+    for e in eintraege:                                   # „gehoert zu keiner Firma“ ist auch erledigt
+        d = e["daten"]
+        if e["typ"] == "akte_mail_offen":
+            offen_alt[d["id"]] = d
+        elif e["typ"] == "akte_mail_zugeordnet" and not d.get("firma") and d.get("id") in offen_alt:
+            m = offen_alt[d["id"]]
+            if m.get("mail_id"):
+                erledigt[m["mail_id"]] = (m["id"], m.get("datum") or e["ts"])
+    out = []
+    for mid, (did, datum) in sorted(erledigt.items()):
+        if mid in fertig or not _GMAIL_ID.fullmatch(mid or ""):
+            continue
+        ordner = f"{MAIL_ORDNER}/Akte/{str(datum)[:4]}"
+        try:
+            r = google.mail_ablegen(mid, ordner)
+        except Exception:
+            continue
+        if r.get("ok"):
+            akte.bh.erfassen(MAIL_ABGELEGT, {"mail_id": mid, "ordner": ordner, "akte": did}, von="LUNA-Mail")
+            out.append({"mail_id": mid, "ordner": ordner})
+    return out
