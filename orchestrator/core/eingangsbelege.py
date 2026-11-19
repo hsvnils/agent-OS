@@ -1403,15 +1403,39 @@ def mail_text(roh: bytes) -> str:
     return text if len(text) >= len(html) // 2 else html        # Textteil nur „siehe HTML“ -> HTML nehmen
 
 
+_ADRESSE = re.compile(r"[\w.+'-]+@[\w-]+(?:\.[\w-]+)+")
+
+
+def _kopf_adresse(w: str) -> tuple[str, str]:
+    """„Name <a@b.de>“ -> (Name, a@b.de). Outlook schreibt auch „a@b.de <a@b.de>“ oder „a@b.de<mailto:a@b.de>“ -- daran
+    scheitert `parseaddr` (leere Adresse); dann zaehlt die letzte Adresse der Zeile."""
+    from email.utils import parseaddr
+    name, adr = parseaddr(w)
+    if "@" not in adr:
+        alle = _ADRESSE.findall(w or "")
+        adr = alle[-1] if alle else ""
+        name = re.sub(r"<[^>]*>|" + _ADRESSE.pattern, "", w or "").strip(" \t\"'")
+    return name, adr.lower()
+
+
+def _kopf_adressen(w: str) -> list[str]:
+    out = []
+    for a in _ADRESSE.findall(w or ""):
+        a = a.lower()
+        if a not in out:
+            out.append(a)
+    return out
+
+
 def weiterleitung(roh: bytes, text: str) -> tuple[dict, str, bool]:
-    """-> (original {von_name, von, betreff, datum}, Text ab dem Original, markiert). Ohne Weiterleitungsmarke (auto-
+    """-> (original {von_name, von, betreff, datum, an}, Text ab dem Original, markiert). Ohne Weiterleitungsmarke (auto-
     matische Weiterleitung) stammen die Angaben aus den Mail-Koepfen."""
     import email
     from email import policy
     from email.utils import parseaddr
     m = email.message_from_bytes(roh, policy=policy.default)
     marke = _WEITER_MARKE.search(text)
-    orig = {"von_name": "", "von": "", "betreff": str(m.get("Subject", "")), "datum": ""}
+    orig = {"von_name": "", "von": "", "betreff": str(m.get("Subject", "")), "datum": "", "an": []}
     if not marke:
         name, adr = parseaddr(str(m.get("From", "")))
         orig |= {"von_name": name, "von": adr.lower(), "datum": str(m.get("Date", ""))}
@@ -1425,8 +1449,10 @@ def weiterleitung(roh: bytes, text: str) -> tuple[dict, str, bool]:
         if f:
             k, w = f.group(1).lower(), f.group(2).strip()
             if k in ("von", "from"):
-                name, adr = parseaddr(w)
-                orig |= {"von_name": name, "von": adr.lower()}
+                name, adr = _kopf_adresse(w)
+                orig |= {"von_name": name, "von": adr}
+            elif k in ("an", "to", "cc"):                    # Empfaenger des Originals (weitergeleitete eigene Mail)
+                orig["an"] += [a for a in _kopf_adressen(w) if a not in orig["an"]]
             elif k in ("betreff", "subject"):
                 orig["betreff"] = w
             elif k in ("datum", "date", "gesendet", "sent"):

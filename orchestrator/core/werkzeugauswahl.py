@@ -60,6 +60,11 @@ GRUPPEN: dict[str, dict[str, list[str]]] = {
                          "neuen kunden", "firma anlegen", "neue firma", "lieferant anlegen", "partner anlegen",
                          "ansprechpartner", "stammdaten"],
     },
+    "ablage": {                                          # Mail-Ablage 2026-11-19: weitergeleitete Mail beim Kunden ablegen
+        "werkzeuge": ["akte_ablegen"],
+        "stichwoerter": ["ablegen", "ablage", "akte", "beim kunden", "am kunden", "zum kunden", "weitergeleitet",
+                         "zuordnen"],
+    },
     "kundenordner": {                                    # KUNDENORDNER_FREIGABE F1-F3: kleine Gruppe (Token-Budget)
         "werkzeuge": ["kundenordner_anlegen", "kundenordner_link"],
         "stichwoerter": ["kundenordner", "ordner", "freigabe-link", "freigabelink", "freigeben", "dateien teilen",
