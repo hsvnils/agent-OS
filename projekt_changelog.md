@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 21:04] — Claude Code
+- **Was:** Entscheidung im Register: Antwort-Pruefung luna@ bleibt bei 15 Minuten (Vorschlag 5 Minuten verworfen).
+- **Warum:** CEO-Entscheidung.
+- **Betroffen:** docs/entscheidungs-register.md.
+
 ## [2026-11-19 20:57] — Claude Code
 - **Was:** Branch `ai/fix-startseite-cache` per `--no-ff` in `main` gemergt (BF-100 Startseite `Cache-Control: no-cache`, Register-Eintrag eigene Adressen); Deploy code-only durch den CEO.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.

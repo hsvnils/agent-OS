@@ -22,6 +22,7 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Antwort-Pruefung luna@ alle 5 statt 15 Minuten** (nur IMAP, keine Tokens; Schalter `ANTWORTEN_MINUTEN` vorgeschlagen) | 2026-11-19 | **VERWORFEN** (CEO: alles bleibt bei 15 Minuten) | Bot-Poll `channels/telegram/bot.py` unveraendert |
 | **Antworten von eigenen Adressen des CEO werden nie als Kundenantwort zugeordnet** (auch nicht ueber die Mail-Kennung) -- Probe der Antwort-Erkennung K3/K4 mit einer fremden Adresse | 2026-11-19 | **BESTAND** (CEO waehlt Variante a; Variante b „eigene Adresse mit Kennungs-Treffer zuordnen“ verworfen) | `core/mail_antworten.py` (`eigene`), Eintrag unten |
 | **Kontakte K1-K5 (Visitenkarte, Mail aus LUNA-OS), E1-E4 „wie empfohlen“:** E1 Visitenkarte liest Claude Haiku (Bild an Anthropic wie die Kennzahlen-Screenshots), Rueckfall lokal `tesseract` + Regeln; E2 wartet ein Posting auf einen Screenshot, bleibt alles wie bisher, sonst erkennt das Modell Visitenkarte/anderes; E3 Foto in die Firmenakte; E4 Absender nils@ in eigener Etappe K5 mit CISO-Freigabe, Lesezugang nur fuer Antworten auf LUNA-Mails | 2026-11-19 | **BESCHLOSSEN** (CEO) | `KONTAKTE_ROADMAP.md` |
 | **Weitergeleitete Mails an LUNAs Gmail statt luna@hanserautisch.de** -- Auftraege/Ablage lesen nur das Gmail-Konto von LUNA; luna@ (All-Inkl) dient dem Kundenversand und Kundenantworten | 2026-11-19 | **BESTAND** (bestaetigt auf CEO-Frage); Umleitung luna@ -> Gmail moeglich, braucht Test der Echtheitspruefung | Antwort an CEO 2026-11-19 |
