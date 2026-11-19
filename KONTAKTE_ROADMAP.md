@@ -4,7 +4,7 @@
 - Stand: 2026-11-19
 - Arbeitsbranch: `ai/kontakte-roadmap`
 - Basiscommit: `c0af13f`
-- Naechster Schritt: K1-K4 live, K3+K4 echt verifiziert (2026-11-19). Offen: Abnahme K1/K2 mit echter Visitenkarte; K5 (nils@) wartet auf CEO-Go und CISO-Freigabe.
+- Naechster Schritt: K1-K4 live (K3+K4 verifiziert); K5 gebaut (Branch `ai/kontakte-k5`) -- CEO pusht, Go fuer Merge + Deploy, traegt `NILS_MAIL_USER`/`NILS_MAIL_PASSWORT` in die NAS-`.env` ein, dann Verbindungspruefung, Testmail von nils@ + Antwort. Danach Roadmap-Abschluss (K1/K2-Abnahme offen).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -122,7 +122,7 @@
 
 ### Etappe K5: Absender nils@hanserautisch.de
 
-- Status: geplant
+- Status: umgesetzt (2026-11-19; `NilsMail` in `governance/allinkl_mail.py`, Absender-Auswahl im K4-Dialog, Poll + Dry-Run fuer nils@ mit `nur_kontakt`, Verbindungspruefung `GET /api/crm/kontakt/nils/pruefen`, CISO-Pruefung in `governance/zugriffs-policy.md`; `test_kontakt_nils.py`. Offen: CEO traegt Zugangsdaten ein, Testmail + Antwort)
 - Ziel / Scope / Nicht-Scope: zweiter Zugang (SMTP senden, IMAP **nur lesend**) fuer nils@; Absender-Auswahl in K4 wird
   freigeschaltet. LUNA liest im Postfach von nils@ **nur** Antworten auf von LUNA versendete Mails (Message-ID-Treffer),
   nichts sonst; Kopie der gesendeten Mail in „Gesendet“ von nils@, damit der CEO sie im eigenen Programm sieht.
