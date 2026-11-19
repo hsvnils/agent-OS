@@ -2503,6 +2503,21 @@ def main() -> None:
                                             notify=(ctx.notifications.enqueue if ctx.notifications else None))
                     except Exception as exc:
                         print(f"[mail_antworten] {exc.__class__.__name__}", flush=True)
+                    try:                                   # KONTAKTE K5: Postfach nils@ -- nur Antworten auf LUNAs Kontakt-Mails
+                        from ...governance.allinkl_mail import NilsMail
+                        _sec = _load_secrets()
+                        _np = NilsMail(_sec)
+                        if _np.verfuegbar():
+                            from ...core.buchhaltung import Buchhaltung
+                            from ...core.kunden import KundenStore
+                            from ...core.mail_antworten import antworten_pruefen as _imap_antworten
+                            _bh = Buchhaltung(ROOT / "buchhaltung")
+                            _imap_antworten(_bh, KundenStore(_bh), _np, nur_kontakt=True,
+                                            eigene=[_np.adresse, _sec.get("ALLINKL_ABSENDER", ""), _sec.get("GOOGLE_ACCOUNT_EMAIL", "")]
+                                            + str(_sec.get("BELEG_ABSENDER", BELEG_ABSENDER_STANDARD)).split(","),
+                                            notify=(ctx.notifications.enqueue if ctx.notifications else None))
+                    except Exception as exc:
+                        print(f"[mail_antworten nils] {exc.__class__.__name__}", flush=True)
                 # LUNA_GOOGLE_KONTO Etappe 6: Belege ausser Haus in LUNAs Drive (+ taeglicher Stand ab 03:00).
                 if ctx.google is not None and (ROOT / "buchhaltung" / "log.jsonl").exists() \
                         and (ctx.watch is None or not ctx.watch.store.paused()):

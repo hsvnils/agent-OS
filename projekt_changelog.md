@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 21:53] — Claude Code
+- **Was:** KONTAKTE K5: Absender nils@hanserautisch.de. `NilsMail` (eigener Zugang `NILS_MAIL_USER`/`NILS_MAIL_PASSWORT`, gleicher All-Inkl-Server): Senden nur per CEO-Klick, Kopie in „Gesendet“ von nils@; Posteingang nur lesend und nur Antworten auf LUNA-Mails (IMAP-Suche nach Kennung, Kopf-Nachpruefung, erst dann Inhalt). `antworten_pruefen(nur_kontakt=True)` im Bot-Poll und im Dry-Run; Verbindungspruefung `GET /api/crm/kontakt/nils/pruefen`; Dialog: nils@ nur waehlbar mit Zugangsdaten, Vorschau mit Name; Cache v164. CISO-Pruefung mit Auflagen und Restrisiko in `governance/zugriffs-policy.md` (`nils_mail`); Dienste-Register, Datenfluesse, Entscheidungs-Register. Tests `test_kontakt_nils.py` (5, Gegenproben rot), Suite 1758 gruen.
+- **Warum:** CEO-Go fuer K5.
+- **Betroffen:** orchestrator/governance/allinkl_mail.py, orchestrator/governance/dienste_register.py, orchestrator/core/kontakt_mail.py, orchestrator/core/mail_antworten.py, orchestrator/channels/web/app.py, orchestrator/channels/telegram/bot.py, static/app-v2.js, static/index-v2.html, orchestrator/tests/test_kontakt_nils.py, orchestrator/tests/test_kontakt_mail.py, governance/zugriffs-policy.md, docs/datenfluesse.md, docs/entscheidungs-register.md, docs/bekannte-fehler.md, KONTAKTE_ROADMAP.md, ROADMAP.md.
+
 ## [2026-11-19 21:46] — Claude Code
 - **Was:** KONTAKTE K3+K4 echt verifiziert: Testmail aus LUNA-OS an Ansprechpartner AP-00012 (Testkunde K-00022) kam an; Antwort von fremder Adresse vom 15-min-Poll zugeordnet (`mail_antwort` art kontakt, Akte D-566b1232), Telegram-Meldung zugestellt (`typ: sent`). Vorherige Probe mit einer eigenen CEO-Adresse wurde wie entschieden ignoriert.
 - **Warum:** Verifikation K3/K4 (Wirkung beim Empfaenger).

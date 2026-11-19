@@ -5081,10 +5081,15 @@ def antworten_trocken(tage: int = 30):
         a = AllInklMail(_google_secrets())
         if not a.verfuegbar():
             raise ValueError("Postfach luna@hanserautisch.de ist nicht eingerichtet.")
-        treffer = antworten_pruefen(kunden_store.bh, kunden_store, a, eigene=_eigene_adressen(),
-                                    tage=max(1, min(int(tage), 90)), trocken=True)
-        return {"treffer": [{k: x.get(k, "") for k in ("nummer", "art", "ansprechpartner", "von", "datum", "betreff")}
-                            for x in treffer]}
+        t = max(1, min(int(tage), 90))
+        treffer = [x | {"postfach": "luna"} for x in antworten_pruefen(kunden_store.bh, kunden_store, a,
+                                                                       eigene=_eigene_adressen(), tage=t, trocken=True)]
+        n = _nils_mail()                                              # K5: nils@ nur Antworten auf LUNAs Kontakt-Mails
+        if n is not None:
+            treffer += [x | {"postfach": "nils"} for x in antworten_pruefen(
+                kunden_store.bh, kunden_store, n, eigene=_eigene_adressen(), tage=t, trocken=True, nur_kontakt=True)]
+        return {"treffer": [{k: x.get(k, "") for k in ("nummer", "art", "ansprechpartner", "von", "datum", "betreff",
+                                                       "postfach")} for x in treffer]}
     return _kunden_aktion(tun)
 
 
@@ -5183,7 +5188,7 @@ async def vorstellung_senden(request: Request):
 @app.get("/api/crm/kontakt/mail/vorschau")
 def kontakt_mail_vorschau(firma: str, ap: str = ""):
     """K4 Dry-Run/Vorbelegung: Empfaenger, Anrede + Signatur, Absender-Auswahl (nils@ bis K5 gesperrt), Akte fuer Anhaenge."""
-    from ...core.kontakt_mail import ABSENDER, GESPERRT, aktiv, vorschlag
+    from ...core.kontakt_mail import absender_liste, aktiv, vorschlag
     from ...core.textbausteine import TextbausteinStore
     try:
         v = vorschlag(kunden_store, firma, ap, signatur=TextbausteinStore(kunden_store.bh).laden()["signatur"])
@@ -5195,9 +5200,29 @@ def kontakt_mail_vorschau(firma: str, ap: str = ""):
     akte = [{k: x.get(k, "") for k in ("id", "titel", "datum", "art")} for x in _akte().akte(v["firma"]["nummer"])
             if x.get("dateien")][:40]
     return v | {"aktiv": aktiv(), "adressen": _adressen(v["firma"]["nummer"]), "akte": akte,
-                "absender": [{"id": k, "adresse": a, "frei": k not in GESPERRT, "hinweis": GESPERRT.get(k, "")}
-                             for k, a in ABSENDER.items()],
+                "absender": absender_liste(vs["kanal"] == "allinkl" and bool(vs["bereit"]), _nils_mail()),
+                "nils_name": _nils_name(),
                 "bereit": vs["kanal"] == "allinkl" and bool(vs["bereit"]), "absender_anzeige": vs["absender"]}
+
+
+def _nils_mail():
+    """KONTAKTE K5: Zugang nils@ (None, wenn nicht eingerichtet)."""
+    from ...governance.allinkl_mail import NilsMail
+    n = NilsMail(_google_secrets())
+    return n if n.verfuegbar() else None
+
+
+def _nils_name() -> str:
+    sec = _google_secrets()
+    return (sec.get("NILS_MAIL_NAME") or (_firmendaten() or {}).get("inhaber") or "").strip()
+
+
+@app.get("/api/crm/kontakt/nils/pruefen")
+def kontakt_nils_pruefen():
+    """K5 Dry-Run: nur Anmeldung an SMTP + IMAP von nils@ (kein Versand, kein Lesen von Mails)."""
+    from ...governance.allinkl_mail import NilsMail
+    r = NilsMail(_google_secrets()).verbindung_pruefen()
+    return {k: v for k, v in r.items() if k in ("ok", "smtp", "imap", "gesendet_ordner", "fehlend", "smtp_fehler", "imap_fehler")}
 
 
 @app.get("/api/crm/kontakt/verlauf")
@@ -5240,8 +5265,14 @@ async def kontakt_mail_senden(request: Request):
     body = await _json(request)
 
     def tun():
-        from ...core.kontakt_mail import senden
-        return senden(kunden_store.bh, kunden_store, _versand_google({}), body, absender_name=ABSENDER_NAME,
+        from ...core.kontakt_mail import NILS_FEHLT, senden
+        if str(body.get("absender") or "luna").strip().lower() == "nils":     # K5: Absender nils@
+            versand, name = _nils_mail(), _nils_name()
+            if versand is None:
+                raise ValueError(NILS_FEHLT)
+        else:
+            versand, name = _versand_google({}), ABSENDER_NAME
+        return senden(kunden_store.bh, kunden_store, versand, body, absender_name=name,
                       eigene=_eigene_adressen(), von=_von(request))
     return _kunden_aktion(tun)
 

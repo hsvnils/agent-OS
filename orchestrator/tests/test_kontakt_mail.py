@@ -1,5 +1,5 @@
 """KONTAKTE K4: Mail an Ansprechpartner aus LUNA-OS -- Versand nur mit Bestaetigung (Fake-SMTP, kein echter Versand),
-Absender nils@ bis K5 gesperrt, Kopie in die Akte mit Ansprechpartner, Kennung -> Antwort wird erkannt (K3), Anhang nur
+Absender nils@ ohne eigenen Zugang gesperrt (K5), Kopie in die Akte mit Ansprechpartner, Kennung -> Antwort wird erkannt (K3), Anhang nur
 aus der Akte derselben Firma, Entwurf schickt nur die Stichworte ans Modell, Schalter KONTAKT_MAIL=0."""
 import email
 import os
@@ -49,7 +49,7 @@ class TestKontaktMail(ApiBasis):
         self.assertFalse(self.c.post("/api/crm/kontakt/mail/senden", json=self._body(bestaetigt=False)).json()["ok"])
         r, p = self._senden(absender="nils")
         self.assertFalse(r["ok"])
-        self.assertIn("K5", r["hinweis"])
+        self.assertIn("NILS_MAIL_USER", r["hinweis"])                                     # K5: ohne Zugang gesperrt
         self.assertFalse([x for x in p if x[0] == "send"])                                    # nils@ -> nichts gesendet
         r, p = self._senden()
         self.assertTrue(r["ok"], r)

@@ -2,7 +2,8 @@
 
 - **CEO-Tor Oeffentlichkeit:** gesendet wird nur mit `bestaetigt=True` (Klick „Jetzt senden“ im Dialog). LUNA formuliert
   auf Wunsch einen Entwurf (`entwurf`), sendet aber nie selbst.
-- **Absender:** vorerst nur `luna` (All-Inkl); `nils` ist bis K5 gesperrt (eigener Zugang mit CISO-Freigabe).
+- **Absender:** `luna` (All-Inkl, Kundenversand) oder -- seit K5 -- `nils` (eigener Zugang `NILS_MAIL_USER`/
+  `NILS_MAIL_PASSWORT`, CISO-geprueft); ohne diese Zugangsdaten bleibt nils@ im Dialog gesperrt.
 - **Nach dem Versand:** Kopie (.eml + PDF-Ansicht) in die Firmenakte -- mit Ansprechpartner --, und das Ereignis
   `kontakt_mail_gesendet` (K3), damit der 15-min-Poll die Antwort ueber die Kennung zuordnet.
 - **Anhaenge:** nur Dokumente aus der Akte derselben Firma (erste Datei = PDF-Ansicht bzw. Upload), zusammen hoechstens
@@ -16,7 +17,16 @@ import os
 from pathlib import Path
 
 ABSENDER = {"luna": "luna@hanserautisch.de", "nils": "nils@hanserautisch.de"}
-GESPERRT = {"nils": "Absender nils@ wird erst mit Etappe K5 freigeschaltet (eigener Zugang, CISO-Freigabe)."}
+KANAL = {"luna": "allinkl", "nils": "allinkl-nils"}
+NILS_FEHLT = "Absender nils@ ist nicht eingerichtet (NILS_MAIL_USER/NILS_MAIL_PASSWORT fehlen in der NAS-.env)."
+
+
+def absender_liste(luna_bereit: bool, nils) -> list[dict]:
+    """Auswahl im Dialog: nils@ nur frei, wenn der Zugang eingerichtet ist (Adresse aus der .env)."""
+    nils_ok = bool(nils is not None and nils.verfuegbar())
+    return [{"id": "luna", "adresse": ABSENDER["luna"], "frei": bool(luna_bereit), "hinweis": ""},
+            {"id": "nils", "adresse": (nils.adresse if nils_ok else ABSENDER["nils"]), "frei": nils_ok,
+             "hinweis": "" if nils_ok else NILS_FEHLT}]
 MAX_ANHANG = 15 * 1024 * 1024
 _MIME = {".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
          ".eml": "message/rfc822", ".txt": "text/plain"}
@@ -79,12 +89,13 @@ def senden(bh, kunden, versand, daten: dict, *, absender_name: str, eigene: list
     if d.get("bestaetigt") is not True:
         raise ValueError("Senden braucht die ausdrueckliche Bestaetigung.")
     absender = str(d.get("absender") or "luna").strip().lower()
-    if absender in GESPERRT:
-        raise ValueError(GESPERRT[absender])
     if absender not in ABSENDER:
         raise ValueError("Unbekannter Absender.")
-    if getattr(versand, "kanal", "") != "allinkl":
-        raise ValueError("Mails an Ansprechpartner gehen nur ueber luna@ (All-Inkl) -- Kundenversand steht auf einem anderen Weg.")
+    if getattr(versand, "kanal", "") != KANAL[absender]:          # Versandweg muss zum gewaehlten Absender passen
+        raise ValueError(NILS_FEHLT if absender == "nils" else
+                         "Mails an Ansprechpartner gehen nur ueber luna@ (All-Inkl) -- Kundenversand steht auf einem anderen Weg.")
+    if absender == "nils" and not versand.verfuegbar():
+        raise ValueError(NILS_FEHLT)
     f, ap = _ap(kunden, str(d.get("firma") or ""), str(d.get("ansprechpartner") or ""))
     betreff, text = str(d.get("betreff") or "").strip(), str(d.get("text") or "").strip()
     if not str(d.get("an") or "").strip() or not betreff or not text:
@@ -104,7 +115,7 @@ def senden(bh, kunden, versand, daten: dict, *, absender_name: str, eigene: list
     kontakt_mail_vermerken(bh, firma=f["nummer"], ansprechpartner=ap_nr, message_id=s["id"], betreff=betreff, an=an,
                            kanal=s.get("kanal", "allinkl"), akte_id=akte_id, von=von)
     return {"firma": f["nummer"], "ansprechpartner": ap_nr, "an": an, "akte_id": akte_id, "kennung": s["id"],
-            "anhaenge": [a[0] for a in anhaenge], "gesendet_ordner": s.get("gesendet_ordner", "")}
+            "anhaenge": [a[0] for a in anhaenge], "gesendet_ordner": s.get("gesendet_ordner", ""), "absender": absender}
 
 
 def verlauf(akte, firma: str, ap_nr: str) -> list[dict]:
