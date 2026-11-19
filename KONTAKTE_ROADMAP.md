@@ -81,7 +81,7 @@
 
 ### Etappe K2: To-do aus der Bildunterschrift, verknuepft
 
-- Status: live (2026-11-19; Datumserkennung regelbasiert `visitenkarte.todo_aus_text`, ohne Aufgabe wird die Bildunterschrift Notiz am Kontakt; `todo_anlegen` im Chat kennt jetzt `kunde` + `ansprechpartner`; Sichtpruefung headless nach Deploy gegen LUNA-OS)
+- Status: live (2026-11-19; Datumserkennung regelbasiert `visitenkarte.todo_aus_text`, ohne Aufgabe wird die Bildunterschrift Notiz am Kontakt; `todo_anlegen` im Chat kennt jetzt `kunde` + `ansprechpartner`; Sichtpruefung headless 2026-11-19 ok: Rechner/iPad 820/iPhone 402)
 - Ziel / Scope / Nicht-Scope: Bildunterschrift („Nachfassen in 7 Tagen“, „Angebot bis Freitag“) wird nach dem Anlegen als
   To-do angelegt -- mit `kunde` = Firma und neuem Feld `ansprechpartner` (AP-Nummer). LUNA-OS zeigt den Ansprechpartner am
   To-do und die offenen To-dos am Ansprechpartner. Gilt auch fuer `todo_anlegen` im Chat (optional Ansprechpartner).
