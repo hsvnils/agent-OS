@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 16:39] — Claude Code
+- **Was:** Branch `ai/kontakte-k2` (K2: To-do aus der Bildunterschrift der Visitenkarte, mit Firma und Ansprechpartner verknuepft; LUNA-OS zeigt Firma/Kontakt am To-do und offene To-dos in der Firmenansicht) per `--no-ff` in `main` gemergt, gepusht, lokaler Branch geloescht.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `main`, KONTAKTE_ROADMAP.md (K2), Deploy auf NAS (code-only, Cache v162) durch den CEO.
+
 ## [2026-11-19 13:24] — Claude Code
 - **Was:** KONTAKTE K2 umgesetzt: Bildunterschrift zur Visitenkarte wird (regelbasiert, z. B. „in 7 Tagen“, „bis Freitag“, „fuer Januar“, „3.12.“) zum To-do mit Firma **und** Ansprechpartner, sichtbar in der Vorschau vor dem Knopf; ohne Aufgabe wird sie Notiz am Kontakt. To-dos haben das neue Feld `ansprechpartner` (API, Wiederholung, Chat-Werkzeug `todo_anlegen` mit `kunde`/`ansprechpartner`). LUNA-OS zeigt Firma/Kontakt am To-do (mit Sprung zur Firma) und die offenen To-dos in der Firmen-Ansicht und am Kontakt; Cache v162.
 - **Warum:** CEO 2026-11-19 „Go fuer K2“.
