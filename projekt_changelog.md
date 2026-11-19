@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 19:10] — Claude Code
+- **Was:** Branch `ai/kontakte-k3` per `--no-ff` in `main` gemergt (K3 Antworten auf freie Mails an Ansprechpartner), Status in KONTAKTE_ROADMAP.md und ROADMAP.md auf live gesetzt; Deploy code-only durch den CEO.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** main, KONTAKTE_ROADMAP.md, ROADMAP.md.
+
 ## [2026-11-19 18:55] — Claude Code
 - **Was:** K2-Sichtpruefung headless (lokaler Pruefserver mit Beispieldaten, Chrome unter Windows): To-do-Liste und Firmen-Ansicht auf Rechner 1440, iPad 820, iPhone 402 ok, kein Ueberlauf; in KONTAKTE_ROADMAP.md vermerkt.
 - **Warum:** Gate K2 (Sichtpruefung nach Deploy).

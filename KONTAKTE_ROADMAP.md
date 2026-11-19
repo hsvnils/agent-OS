@@ -4,7 +4,7 @@
 - Stand: 2026-11-19
 - Arbeitsbranch: `ai/kontakte-roadmap`
 - Basiscommit: `c0af13f`
-- Naechster Schritt: K1+K2 live (Abnahme mit echter Visitenkarte offen). K3 gebaut (Branch `ai/kontakte-k3`, Tests gruen) -- CEO pusht, Go fuer Merge + Deploy; danach Go fuer K4.
+- Naechster Schritt: K1+K2+K3 live (K1/K2-Abnahme mit echter Visitenkarte offen; K3 wird mit K4 echt verifiziert). Naechste Etappe K4 -- wartet auf CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -95,7 +95,7 @@
 
 ### Etappe K3: Antworten auf freie Mails erkennen (Grundlage fuer K4)
 
-- Status: umgesetzt (2026-11-19; Ereignis `kontakt_mail_gesendet` + `kontakt_mail_vermerken` als Schnittstelle fuer K4, Zuordnung nur ueber die Kennung, Akte-Feld `ansprechpartner`, Ansprechpartner auch bei Beleg-Antworten ueber die Absenderadresse, Dry-Run `GET /api/crm/antworten/trocken`; `test_kontakt_antworten.py`)
+- Status: live (2026-11-19 gemergt und deployt; Ereignis `kontakt_mail_gesendet` + `kontakt_mail_vermerken` als Schnittstelle fuer K4, Zuordnung nur ueber die Kennung, Akte-Feld `ansprechpartner`, Ansprechpartner auch bei Beleg-Antworten ueber die Absenderadresse, Dry-Run `GET /api/crm/antworten/trocken`; `test_kontakt_antworten.py`)
 - Ziel / Scope / Nicht-Scope: `core/mail_antworten.py` ordnet Antworten nicht nur Belegen, sondern auch freien Mails an
   Ansprechpartner zu (Message-ID der versendeten Mail -> Firma/Ansprechpartner) und legt sie in die Firmenakte; Telegram-
   Meldung „Antwort von <Name> (<Firma>)“. Nicht-Scope: Versand (K4).
