@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 20:57] — Claude Code
+- **Was:** Branch `ai/fix-startseite-cache` per `--no-ff` in `main` gemergt (BF-100 Startseite `Cache-Control: no-cache`, Register-Eintrag eigene Adressen); Deploy code-only durch den CEO.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** main, orchestrator/channels/web/app.py, docs/bekannte-fehler.md, docs/entscheidungs-register.md.
+
 ## [2026-11-19 20:56] — Claude Code
 - **Was:** Entscheidung im Register: Antworten von eigenen Adressen des CEO bleiben ignoriert (Variante a); Probe K3/K4 mit fremder Adresse.
 - **Warum:** CEO-Entscheidung nach Testmail an hsvnils@icloud.com.
