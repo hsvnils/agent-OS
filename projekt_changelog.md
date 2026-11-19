@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 12:47] — Claude Code
+- **Was:** Branch `ai/mail-ablage` (BF-99, Werkzeug `akte_ablegen`) nach main gemergt und gepusht; lokaler Branch geloescht.
+- **Warum:** CEO „Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** main (Merge-Commit)
+
 ## [2026-11-19 12:44] — Claude Code
 - **Was:** BF-99 behoben: weitergeleitete Mails mit „bitte beim Kunden ablegen“ landen jetzt beim richtigen Kunden. Outlook-Kopfzeilen robust gelesen, weitergeleitete eigene Mails nach Empfaenger zugeordnet, Marken-Abgleich ueber Domain-Endungen, neues LUNA-Werkzeug `akte_ablegen`, Auftragstext an LUNA angepasst. Live: 4 wartende Mails zugeordnet (Alta Seta -> K-00021, Messe/Hr. Froese -> L-00031, 11Teamsports -> L-00032, Ideen + Info -> K-00008), Titel der Nachfass-Erinnerung A-6eab5680 korrigiert (MAIL-SPORTS statt 11Teamsports).
 - **Warum:** CEO 2026-11-19: Weiterleitungen von hanserautisch.de und hsvnils@icloud.com mit klarer Bitte muessen funktionieren.
