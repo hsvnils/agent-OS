@@ -382,7 +382,9 @@ def _mtimes():
 @app.get("/")
 def index(request: Request):
     """LUNA-OS (V2 ist seit 2026-09-29 das einzige Design; alte `?ui=v1`-Lesezeichen landen ebenfalls hier)."""
-    return FileResponse(STATIC / "index-v2.html")
+    # BF-100: ohne Cache-Control hob Safari (iPhone-Web-App) die Startseite heuristisch auf -> alte ?v=-Nummern, neue
+    # Knoepfe fehlten nach dem Deploy. no-cache = jedes Mal mit ETag nachfragen (meist 304, kostet fast nichts).
+    return FileResponse(STATIC / "index-v2.html", headers={"Cache-Control": "no-cache"})
 
 
 # -- Login, Sitzungen, Passkeys (LUNA_OS_UI_ROADMAP Etappen 2 + 6) --------------------------------------------------

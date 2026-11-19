@@ -22,6 +22,7 @@
 
 | Quelle / Idee | Geprueft | Entscheidung | Ergebnis / wohin |
 |---|---|---|---|
+| **Antworten von eigenen Adressen des CEO werden nie als Kundenantwort zugeordnet** (auch nicht ueber die Mail-Kennung) -- Probe der Antwort-Erkennung K3/K4 mit einer fremden Adresse | 2026-11-19 | **BESTAND** (CEO waehlt Variante a; Variante b „eigene Adresse mit Kennungs-Treffer zuordnen“ verworfen) | `core/mail_antworten.py` (`eigene`), Eintrag unten |
 | **Kontakte K1-K5 (Visitenkarte, Mail aus LUNA-OS), E1-E4 „wie empfohlen“:** E1 Visitenkarte liest Claude Haiku (Bild an Anthropic wie die Kennzahlen-Screenshots), Rueckfall lokal `tesseract` + Regeln; E2 wartet ein Posting auf einen Screenshot, bleibt alles wie bisher, sonst erkennt das Modell Visitenkarte/anderes; E3 Foto in die Firmenakte; E4 Absender nils@ in eigener Etappe K5 mit CISO-Freigabe, Lesezugang nur fuer Antworten auf LUNA-Mails | 2026-11-19 | **BESCHLOSSEN** (CEO) | `KONTAKTE_ROADMAP.md` |
 | **Weitergeleitete Mails an LUNAs Gmail statt luna@hanserautisch.de** -- Auftraege/Ablage lesen nur das Gmail-Konto von LUNA; luna@ (All-Inkl) dient dem Kundenversand und Kundenantworten | 2026-11-19 | **BESTAND** (bestaetigt auf CEO-Frage); Umleitung luna@ -> Gmail moeglich, braucht Test der Echtheitspruefung | Antwort an CEO 2026-11-19 |
 | **CEO-Entscheidungen 2026-11-15 (Liste 1-25, „wie empfohlen“):** Saeulen Hands of God = S4 Affiliate, CR Container = S1 Kooperation; Gate G4 „groesste Saeule hoechstens 60 %“ und Abo-Basis 250 EUR (G3) stehen schon so im Plan; Fixkosten 400 EUR fuer alle Gates (Quartals-Check passt an); alle vier Daten-Vorlagen aktiv; Posting-Startwerte bleiben (nach 4 Wochen anpassen); Kneipen Monat 10 EUR, **Saisonpaket 99 EUR** bis 30.06. (CEO statt vorgeschlagener 69 EUR); App-Spieltags-/Tippspiel-Sponsor und Saison-Paket „ab Saison 2027/28 buchbar“; offene Abnahmen als datierte To-dos (F4 jetzt Standard) | 2026-11-15 | **BESCHLOSSEN** (CEO) | Live in LUNA-OS (Saeulen, Vorlagen, Katalog, 20 To-dos); `MONETARISIERUNG_ROADMAP.md`, `governance/roadmap-workflow.md` F4 |
@@ -268,6 +269,14 @@
 ---
 
 ## Eintraege (neueste oben)
+
+### 2026-11-19 — Antworten von eigenen Adressen bleiben ignoriert (KONTAKTE K3/K4)
+
+**Was:** Mails von Adressen des CEO (z. B. iCloud, Gmail, nils@) zaehlen nie als Antwort einer Firma -- auch dann nicht, wenn
+sie per `In-Reply-To`/`References` auf eine von LUNA gesendete Mail verweisen. Die Probe der Antwort-Erkennung laeuft deshalb mit
+einem Ansprechpartner mit fremder Adresse. **Warum so:** Sonst landen eigene Antworten des CEO in einem Verlauf als
+„Kundenantwort“ in der Akte und loesen Telegram-Meldungen ueber sich selbst aus. **Verworfen:** Ausnahme bei Kennungs-Treffer
+(Variante b), CEO-Entscheidung 2026-11-19.
 
 ### 2026-11-15 — Kneipen als Kunden (MONETARISIERUNG M8)
 
