@@ -59,7 +59,22 @@ def firma_zu_adresse(firmen: list[dict], adresse: str) -> str:
         doms.discard("")
         if any(dom == d or dom.endswith("." + d) for d in doms):
             return f["nummer"]
-    return ""
+    # Gleicher Markenname unter anderer Endung (handsofgod.de <-> handsofgod.football, mail-sports.com <-> mailsports.de);
+    # nur bei genau einer passenden Firma und Namen ab 5 Zeichen.
+    kern = _marke(dom)
+    if len(kern) < 5:
+        return ""
+    treffer = {f["nummer"] for f in firmen for d in [_domain(f.get("website") or "")] + [_domain(x) for x in re.split(
+        r"[,;\s]+", " ".join([f.get("rechnungsmail") or "", f.get("rechnungs_absender") or ""]
+                             + [p.get("mail") or "" for p in f.get("ansprechpartner_liste") or []])) if x.strip()]
+               if d and d not in FREEMAIL and _marke(d) == kern}
+    return treffer.pop() if len(treffer) == 1 else ""
+
+
+def _marke(domain: str) -> str:
+    """„mail-sports.com“ -> „mailsports“ (vorletzter Teil ohne Bindestriche)."""
+    teile = (domain or "").split(".")
+    return teile[-2].replace("-", "") if len(teile) >= 2 else ""
 
 
 def _falte(eintraege: list[dict]) -> tuple[dict, dict]:
@@ -162,6 +177,9 @@ class Firmenakte:
         firmen = self._firmen_mit_ansprechpartnern()
         if weitergeleitet and markiert:
             kandidaten = [orig.get("von", "")]
+            o = (orig.get("von") or "").lower()
+            if not o or o in eigene or any(o.endswith("@" + _domain(x)) and _domain(x) not in FREEMAIL for x in eigene):
+                kandidaten = list(orig.get("an") or [])        # weitergeleitete EIGENE Mail -> Firma = Empfaenger
             notiz = zweck_aus_mail(roh)
         else:
             kandidaten = [a for _, a in getaddresses([str(m.get(h, "")) for h in ("From", "To", "Cc", "Reply-To")])]

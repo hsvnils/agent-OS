@@ -21,7 +21,7 @@ ERLAUBT = (
     "todos_zeigen", "todo_anlegen", "todo_erledigen",
     "kalender_agenda", "kalender_kollisionen", "termin_anlegen", "termin_aendern",
     "posteingang", "mail_suchen", "mail_lesen", "mail_entwurf",
-    "firma_anlegen", "crm_zeigen", "auftraege_zeigen",
+    "firma_anlegen", "akte_ablegen", "crm_zeigen", "auftraege_zeigen",
 )
 MAX_ERGEBNIS = 6000                 # Zeichen je Werkzeug-Ergebnis an das lokale Modell (Kontext 8k Token)
 MAX_ZUEGE = 20

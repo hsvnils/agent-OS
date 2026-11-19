@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 12:44] — Claude Code
+- **Was:** BF-99 behoben: weitergeleitete Mails mit „bitte beim Kunden ablegen“ landen jetzt beim richtigen Kunden. Outlook-Kopfzeilen robust gelesen, weitergeleitete eigene Mails nach Empfaenger zugeordnet, Marken-Abgleich ueber Domain-Endungen, neues LUNA-Werkzeug `akte_ablegen`, Auftragstext an LUNA angepasst. Live: 4 wartende Mails zugeordnet (Alta Seta -> K-00021, Messe/Hr. Froese -> L-00031, 11Teamsports -> L-00032, Ideen + Info -> K-00008), Titel der Nachfass-Erinnerung A-6eab5680 korrigiert (MAIL-SPORTS statt 11Teamsports).
+- **Warum:** CEO 2026-11-19: Weiterleitungen von hanserautisch.de und hsvnils@icloud.com mit klarer Bitte muessen funktionieren.
+- **Betroffen:** orchestrator/core/eingangsbelege.py, firmenakte.py, hoa_tools.py, mail_auftraege.py, werkzeugauswahl.py, input_guard.py, desktop_werkzeuge.py, orchestrator/tests/test_mail_firmenablage.py, docs/bekannte-fehler.md; Live-Daten buchhaltung/log.jsonl (Zuordnungen), todos
+
 ## [2026-11-15 17:34] — Claude Code
 - **Was:** Schalter `GEMINI_AUS=1` in der NAS-`orchestrator/.env` ergaenzt (eine Zeile angehaengt, keine Werte angezeigt). Wirksam nach Container-Neuerstellung durch den CEO.
 - **Warum:** CEO „Ja, trag die Zeile ein“ (CLAUDE_AKTIV C4).

@@ -268,6 +268,11 @@ def tool_specs() -> list[dict]:
                "ap_telefon": _str("Ansprechpartner Telefon."), "ap_rolle": _str("Ansprechpartner Rolle."),
                "mail_id": _str("Gmail-ID einer weitergeleiteten Mail -> danach in die Akte der Firma."),
                "bestaetigt": _bool("true erst nach CEO-Bestaetigung.")}, ["name"]),
+        _spec("akte_ablegen", "Mail in die Firmenakte eines Kunden/Lieferanten/Partners legen (z. B. weitergeleitete Mail "
+              "mit „bitte beim Kunden ablegen“). Firma als Nummer (K-/L-/P-) oder Name; ohne Firma ordnet LUNA nach "
+              "Absender/Empfaenger zu. Liegt die Mail schon unter „Mail zuordnen“, wird sie dort zugeordnet.",
+              {"mail_id": _str("Gmail-ID der Mail."), "firma": _str("Firmennummer oder Firmenname (optional).")},
+              ["mail_id"]),
         _spec("wochenplan_vorschlagen", "Offene To-dos als Zeitbloecke in freie Kalenderluecken dieser Woche "
               "vorschlagen; eingetragen wird erst nach CEO-Knopf.", {}, []),
         _spec("todo_erledigen", "Eigenes To-do abhaken (ID aus todos_zeigen).", {"id": _str("To-do-ID.")}, ["id"]),
@@ -600,6 +605,70 @@ def _firma_anlegen(a: dict, ctx) -> dict:
     return out
 
 
+def _akte_ablegen(a: dict, ctx) -> dict:
+    """Mail auf CEO-Bitte in die Firmenakte legen (Mail-Ablage 2026-11-19). Reihenfolge: schon abgelegt -> melden;
+    wartet unter „Mail zuordnen“ -> zuordnen; noch nicht verarbeitet -> jetzt aus Gmail holen und ablegen."""
+    from pathlib import Path
+    from .buchhaltung import Buchhaltung
+    from .eingangsbelege import BELEG_ABSENDER_STANDARD
+    from .firmenakte import Firmenakte, _falte
+    from .kunden import KundenStore
+    root = Path(ctx.repo_root) / "buchhaltung"
+    if not (root / "log.jsonl").exists():
+        return {"ok": False, "hinweis": "Keine Buchhaltung/Stammdaten auf diesem System."}
+    ks = KundenStore(Buchhaltung(root))
+    mid = str(a.get("mail_id") or "").strip()
+    if not mid:
+        return {"ok": False, "hinweis": "mail_id fehlt (Gmail-ID der Mail)."}
+    wunsch, nr = " ".join(str(a.get("firma") or "").split())[:120], ""
+    if wunsch:
+        f = ks.firma(wunsch)
+        if f:
+            nr = f["nummer"]
+        else:
+            treffer = ks.firmen(suche=wunsch)
+            if len(treffer) != 1:
+                return {"ok": False, "kandidaten": [{"nummer": t["nummer"], "name": t["name"]} for t in treffer[:8]],
+                        "hinweis": ("Keine Firma gefunden -- Namen pruefen oder mit firma_anlegen (mail_id mitgeben) "
+                                    "anlegen." if not treffer else "Mehrere Firmen passen -- Nummer waehlen oder CEO fragen.")}
+            nr = treffer[0]["nummer"]
+    akte = Firmenakte(ks.bh, ks)
+    docs, offen = _falte(ks.bh.eintraege())
+    name = lambda n: (ks.firma(n) or {}).get("name", n)
+    schon = [d for d in docs.values() if d.get("mail_id") == mid]
+    if schon:
+        d = schon[0]
+        if not nr or d.get("firma") == nr:
+            return {"ok": True, "id": d["id"], "firma": d.get("firma"), "name": name(d.get("firma")),
+                    "hinweis": "Die Mail lag schon in dieser Akte."}
+        return {"ok": False, "id": d["id"], "firma": d.get("firma"), "name": name(d.get("firma")),
+                "hinweis": "Die Mail liegt schon in der Akte einer anderen Firma -- umhaengen kann nur der CEO in LUNA-OS."}
+    warten = [d for d in offen.values() if d.get("mail_id") == mid]
+    if warten:
+        if not nr:
+            return {"ok": False, "id": warten[0]["id"], "hinweis": "Die Mail wartet unter „Mail zuordnen“ -- welche Firma?"}
+        akte.zuordnen(warten[0]["id"], nr, von="LUNA-Chat (CEO-Auftrag)")
+        return {"ok": True, "id": warten[0]["id"], "firma": nr, "name": name(nr)}
+    if ctx.google is None:
+        return {"ok": False, "hinweis": "Kein Mailzugang auf diesem System."}
+    roh = ctx.google.mail_roh(mid)
+    if not roh.get("ok"):
+        return {"ok": False, "hinweis": f"Mail {mid} nicht lesbar: {roh.get('hinweis') or roh.get('fehler') or 'unbekannt'}"}
+    sec = ctx.secret_dict or {}
+    eigene = [x.strip().lower() for x in str(sec.get("BELEG_ABSENDER") or BELEG_ABSENDER_STANDARD).split(",") if "@" in x]
+    luna = str(sec.get("GOOGLE_ACCOUNT_EMAIL") or getattr(ctx.google, "konto_adresse", "") or "").strip().lower()
+    import email as _email
+    from email import policy as _policy
+    from email.utils import parseaddr as _pa
+    von = _pa(str(_email.message_from_bytes(roh["roh"], policy=_policy.default).get("From", "")))[1].lower()
+    r = akte.mail_aufnehmen(roh["roh"], mid, eigene=eigene + ([luna] if luna else []), weitergeleitet=von in eigene,
+                            von="LUNA-Chat (CEO-Auftrag)", firma=nr)
+    if not r["firma"]:
+        return {"ok": False, "id": r["id"], "hinweis": "Keine eindeutige Firma -- die Mail wartet jetzt unter „Mail "
+                                                      "zuordnen“. Frag den CEO, zu welcher Firma sie gehoert."}
+    return {"ok": True, "id": r["id"], "firma": r["firma"], "name": name(r["firma"])}
+
+
 def _regel_vorschlagen(a: dict, ctx) -> dict:
     from pathlib import Path
     from .regeln import RegelStore
@@ -706,6 +775,8 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         return {"ok": v["ok"], "vorschlag": v["text"],
                 "anzeigen": "Gib den Vorschlag so weiter. Noch NICHTS ist eingetragen -- erst nach dem Knopf "
                             "„✅ Eintragen“ unter deiner Antwort." if v.get("id") else "Gib den Hinweis weiter."}
+    if name == "akte_ablegen":                        # Mail-Ablage 2026-11-19: „bitte beim Kunden ablegen“
+        return _akte_ablegen(args, ctx)
     if name == "firma_anlegen":                       # Mail-Auftrag 2026-10-29: Stammdaten aus dem Chat, erst nach CEO-Ja
         return _firma_anlegen(args, ctx)
     if name == "regel_vorschlagen":                   # JARVIS J7: Vorschlag, gilt erst nach CEO-Knopf
