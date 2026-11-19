@@ -17,10 +17,25 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 13:11] — Claude Code
+- **Was:** Branches `ai/gmail-akte-ablage` (Akten-Mails in Gmail wegsortieren) und `ai/kontakte-roadmap` (Roadmap Kontakte + K1 Visitenkarte) nach main gemergt (Konflikte Changelog/Baseline zusammengefuehrt, Baseline 1735) und gepusht; lokale Branches geloescht.
+- **Warum:** CEO „Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** main (Merge-Commits), projekt_changelog.md, docs/bekannte-fehler.md
+
+## [2026-11-19 13:10] — Claude Code
+- **Was:** KONTAKTE K1 umgesetzt: Visitenkarten-Foto per Telegram (wenn kein Posting auf einen Screenshot wartet) wird von Claude Haiku gelesen (Rueckfall tesseract), mit Stammdaten abgeglichen und als Vorschau mit Knoepfen (Kunde/Lieferant/Partner bzw. Kontakt anlegen, Verwerfen) gezeigt; nach dem Knopf Firma + Ansprechpartner (nichts doppelt) und Foto in die Firmenakte. Schalter `VISITENKARTE=0`. E1-E4 im Entscheidungs-Register.
+- **Warum:** CEO 2026-11-19 „E1-E4 wie empfohlen, Go fuer K1“.
+- **Betroffen:** orchestrator/core/visitenkarte.py (neu), orchestrator/channels/telegram/bot.py, orchestrator/tests/test_visitenkarte.py (neu), KONTAKTE_ROADMAP.md, ROADMAP.md, docs/entscheidungs-register.md, docs/datenschutz-ki-nutzung.md, docs/datenfluesse.md, docs/bekannte-fehler.md
+
 ## [2026-11-19 13:05] — Claude Code
 - **Was:** Erledigte Akten-Mails (bei einer Firma abgelegt oder „keine Firma“) werden in LUNAs Gmail als gelesen markiert und nach `LUNA/Akte/<Jahr>` verschoben (`firmenakte.akte_mails_wegsortieren`, im 15-min-Poll, nachholend); wartende Mails unter „Mail zuordnen“ bleiben im Posteingang. Tests mit Gegenproben.
 - **Warum:** CEO 2026-11-19: bearbeitete Mails in LUNAs Gmail auf gelesen stellen und wegsortieren.
 - **Betroffen:** orchestrator/core/firmenakte.py, orchestrator/channels/telegram/bot.py, orchestrator/tests/test_mail_firmenablage.py, docs/datenfluesse.md, docs/bekannte-fehler.md
+
+## [2026-11-19 12:49] — Claude Code
+- **Was:** Roadmap `KONTAKTE_ROADMAP.md` angelegt (K1 Visitenkarte lesen/anlegen, K2 To-do verknuepft, K3 Antworten auf freie Mails, K4 Mail aus LUNA-OS mit luna@, K5 Absender nils@ mit CISO-Freigabe) und in `ROADMAP.md` registriert; nur Plan, nichts umgesetzt.
+- **Warum:** CEO 2026-11-19: Visitenkarte per Telegram anlegen inkl. To-do; Mail am Ansprechpartner aus LUNA-OS, Absender waehlbar luna@/nils@.
+- **Betroffen:** KONTAKTE_ROADMAP.md, ROADMAP.md
 
 ## [2026-11-19 12:47] — Claude Code
 - **Was:** Branch `ai/mail-ablage` (BF-99, Werkzeug `akte_ablegen`) nach main gemergt und gepusht; lokaler Branch geloescht.

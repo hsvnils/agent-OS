@@ -17,6 +17,7 @@
   EWR/der Schweiz/UK gelten die Datenregeln der **Bezahl-Stufe auch fuer die Gratis-Stufe** -- „Google doesn't use your
   prompts ... or responses to improve our products“; Speicherung nur zur Missbrauchserkennung. Der Registereintrag vom
   2026-07-06 („Free-Tier nutzt Inhalte zum Training“) ist fuer den CEO (Deutschland) damit **ueberholt** (korrigiert).
+- **Nachtrag 2026-11-19 -- Visitenkarten (`KONTAKTE_ROADMAP.md` K1, CEO E1):** Ein per Telegram geschicktes Foto, auf das kein Posting wartet, geht an **Claude Haiku** (`claude-haiku-5-5`, wie die Kennzahlen-Screenshots), das nur „Visitenkarte ja/nein“ und die Kartenfelder (Firma, Name, Rolle, Mail, Telefon, Website, Anschrift) zurueckgibt. Personenbezug Dritter: ja -- Geschaeftskontaktdaten, die die Person selbst uebergeben hat. Gespeichert wird erst nach dem Knopf des CEO (Stammdaten + Foto in der Firmenakte). Rueckfall ohne Modell: lokale Texterkennung (`tesseract`), nichts verlaesst das Haus. Abschalten: `VISITENKARTE=0`.
 - **Nachtrag 2026-11-15 -- C4 Gemini aus (`CLAUDE_AKTIV_ROADMAP.md`):** Schalter `GEMINI_AUS=1` in der NAS-`.env` nimmt Gemini
   aus allen LUNA-Wegen (Chat-/Fachagenten-Ausweich, `cloud_client`, Instagram-Analyse, Backoffice-Gegenlesen); danach gehen
   **keine Daten mehr an Google**, ausser der Cutter-Video-KI auf dem MACO470 (`CUTTER_VIDEO_KI=1`, eigener Schluessel,
