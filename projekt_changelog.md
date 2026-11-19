@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-19 22:22] — Claude Code
+- **Was:** Branch `ai/kontakte-k5` per `--no-ff` in `main` gemergt (K5 Absender nils@), Status in KONTAKTE_ROADMAP.md und ROADMAP.md nachgezogen; Deploy code-only durch den CEO (Cache v164). nils@ bleibt gesperrt, bis der CEO `NILS_MAIL_USER`/`NILS_MAIL_PASSWORT` in die NAS-`.env` eintraegt.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** main, KONTAKTE_ROADMAP.md, ROADMAP.md.
+
 ## [2026-11-19 21:53] — Claude Code
 - **Was:** KONTAKTE K5: Absender nils@hanserautisch.de. `NilsMail` (eigener Zugang `NILS_MAIL_USER`/`NILS_MAIL_PASSWORT`, gleicher All-Inkl-Server): Senden nur per CEO-Klick, Kopie in „Gesendet“ von nils@; Posteingang nur lesend und nur Antworten auf LUNA-Mails (IMAP-Suche nach Kennung, Kopf-Nachpruefung, erst dann Inhalt). `antworten_pruefen(nur_kontakt=True)` im Bot-Poll und im Dry-Run; Verbindungspruefung `GET /api/crm/kontakt/nils/pruefen`; Dialog: nils@ nur waehlbar mit Zugangsdaten, Vorschau mit Name; Cache v164. CISO-Pruefung mit Auflagen und Restrisiko in `governance/zugriffs-policy.md` (`nils_mail`); Dienste-Register, Datenfluesse, Entscheidungs-Register. Tests `test_kontakt_nils.py` (5, Gegenproben rot), Suite 1758 gruen.
 - **Warum:** CEO-Go fuer K5.
