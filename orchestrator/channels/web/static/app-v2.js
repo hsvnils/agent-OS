@@ -4947,8 +4947,8 @@ RENDER.ofc = renderOfc;
 const OFC_STATUS = { offen: ["wartet", "kommt"], vorbei: ["neutral", "vorbei"], abgeschlossen: ["ok", "abgeschlossen"] };
 async function renderOfc(meldung, fehler) {
   OFC_M_AKTIV = false;
-  const d = await jget("/api/ofc/uebersicht");
-  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
+  const [d, pst] = await Promise.all([jget("/api/ofc/uebersicht"), jget("/api/ofc/post/status")]);
+  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-post">📬 Postfach</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
   if (!d) { $("#v2-app").innerHTML = kopf + emptyRow("OFC nicht erreichbar (nur für den CEO)."); return; }
   const su = d.summe, zeile = (x) => `<div class="v2-list-row klick v2-ofc-zeile" data-act="ofc-spiel" data-id="${esc(x.id)}">
       <div class="v2-ofc-datum"><b>${x.spieltag ? esc(datumDe(x.spieltag)) : "–"}</b><small>${esc(x.uhrzeit || "")}</small></div>
@@ -4966,7 +4966,9 @@ async function renderOfc(meldung, fehler) {
       ${tile("Hinweise", `<div class="v2-kpi">${su.hinweise}</div><div class="v2-sub">bei offenen Spielen</div>`, "v2-ofc-kpi")}
       <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Offene Spiele</span></div>${offen.map(zeile).join("") || emptyRow(d.spiele.length ? "Keine offenen Spiele." : "Noch nichts eingelesen – oben „Ordner einlesen“.")}</div>
       ${fertig.length ? `<div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Abgeschlossen</span></div>${fertig.map(zeile).join("")}</div>` : ""}
-    </div><div class="v2-sub" style="margin-top:8px">${d.letzter_import ? "Zuletzt eingelesen: " + esc(zeit(d.letzter_import)) : ""} · Zahlungen folgen in Etappe O4/O5.</div>`;
+    </div><div class="v2-sub" style="margin-top:8px">${[d.letzter_import ? "Zuletzt eingelesen: " + esc(zeit(d.letzter_import)) : "",
+      pst && pst.zeit ? `Postfach geprüft: ${esc(zeit(pst.zeit))}${pst.ok === false ? " (" + esc(pst.hinweis || "Fehler") + ")" : pst.wartet ? ` · ${pst.wartet} Bestellung(en) warten auf die Rechnung` : ""}` : "",
+      d.verworfen && d.verworfen.length ? `${d.verworfen.length} verworfen` : "", "Zahlungen folgen in Etappe O4/O5."].filter(Boolean).join(" · ")}</div>`;
 }
 async function ofcSpiel(sid) {
   openModal("⚽ Spiel", `<div class="v2-empty">Lade…</div>`);
@@ -4987,7 +4989,8 @@ async function ofcSpiel(sid) {
     ${d.hinweise.length ? `<div class="v2-ofc-hinweise" style="margin-top:8px">${d.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
     <h3>🎟 Tickets (${d.tickets.length})</h3>${tk}
     <h3>🧾 Rechnung</h3>${rg}
-    <div class="v2-sub" style="margin-top:10px">✏️ ändert den Namen und benennt die Ticket-Datei auf der NAS passend um – es wird nie etwas gelöscht.</div>`);
+    <div class="v2-sub" style="margin-top:10px">✏️ ändert den Namen und benennt die Ticket-Datei auf der NAS passend um – es wird nie etwas gelöscht.</div>
+    <div class="v2-card-actions"><button class="v2-btn sm" data-act="ofc-verwerfen" data-id="${esc(sid)}">🗑 Spiel im Reiter verwerfen</button></div>`);
 }
 async function ofcImport() {
   openModal("🔄 Ordner einlesen", `<div class="v2-empty">Prüfe den Ordner auf der NAS … (dauert einige Sekunden)</div>`);
@@ -5007,6 +5010,33 @@ async function ofcImportOk(el) {
   const r = await jpost("/api/ofc/import", { bestaetigt: true }); el.disabled = false;
   if (!r || r.ok === false) { $("#ofc-msg").className = "v2-msg err"; $("#ofc-msg").textContent = (r && r.hinweis) || "Fehler."; return; }
   closeModal(); return renderOfc(`Eingelesen: ${r.spiele_neu.length} neue und ${r.spiele_geaendert.length} geänderte Spiele, ${r.tickets_neu} neue Tickets.`);
+}
+/* OFC_ROADMAP O3: Neue Bestellungen aus dem Postfach (HSV-Mails); läuft auch automatisch alle 15 Minuten */
+const OFC_POST_STATUS = { neu: ["ok", "neues Spiel"], ergaenzen: ["wartet", "ergänzen"], vorhanden: ["neutral", "schon da"], wartet: ["warn", "wartet"], verworfen: ["neutral", "verworfen"] };
+async function ofcPost() {
+  openModal("📬 Postfach", `<div class="v2-empty">Lese die HSV-Mails im Postfach moin@ … (dauert einige Sekunden)</div>`);
+  const v = await jget("/api/ofc/post/vorschau");
+  if (!v || !v.ok) return openModal("📬 Postfach", `<div class="v2-msg err">${esc((v && v.hinweis) || "Keine Verbindung.")}</div>`);
+  const zeile = (b) => `<div class="v2-list-row"><span class="v2-badge ${OFC_POST_STATUS[b.status][0]}">${OFC_POST_STATUS[b.status][1]}</span>
+      <div class="grow"><b class="v2-umbruch">${esc(b.spiel || "Bestellung " + b.rechnungsnr)}</b>
+        <small>${[b.spieltag ? datumDe(b.spieltag) : "", "Rechnung " + b.rechnungsnr, b.ordner ? "Ordner „" + b.ordner + "“" : "", `${b.tickets_in_mails} Ticket-PDF(s) in Mails`].filter(Boolean).map(esc).join(" · ")}</small>
+        ${b.dateien_neu.length ? `<small class="v2-umbruch">Neu: ${esc(b.dateien_neu.join(", "))}</small>` : ""}
+        ${b.hinweis ? `<div class="v2-ofc-hinweise"><span class="v2-badge warn">${esc(b.hinweis)}</span></div>` : ""}</div></div>`;
+  openModal("📬 Postfach", `<div class="v2-sub">Vorschau aus ${v.mails} HSV-Mail(s) mit PDF – noch nichts angelegt. Dateien werden nur neu angelegt, nie überschrieben oder gelöscht. LUNA prüft das Postfach außerdem alle 15 Minuten selbst.</div>
+    <div style="margin-top:8px">${v.bestellungen.map(zeile).join("") || emptyRow("Keine HSV-Bestellungen in den letzten Wochen.")}</div>
+    <div class="v2-card-actions">${v.dateien ? `<button class="v2-btn pri" data-act="ofc-post-ok">${v.dateien} Datei(en) anlegen</button>` : `<span class="v2-sub">Alles aktuell – nichts anzulegen.</span>`}</div><div class="v2-msg" id="ofc-post-msg"></div>`);
+}
+async function ofcPostOk(el) {
+  el.disabled = true; $("#ofc-post-msg").textContent = "Lege an …";
+  const r = await jpost("/api/ofc/post", { bestaetigt: true }); el.disabled = false;
+  if (!r || r.ok === false) { $("#ofc-post-msg").className = "v2-msg err"; $("#ofc-post-msg").textContent = (r && r.hinweis) || "Fehler."; return; }
+  closeModal(); return renderOfc(`Aus dem Postfach angelegt: ${r.geschrieben} Datei(en)${r.fehler && r.fehler.length ? `, ${r.fehler.length} nicht möglich` : ""}.`, !!(r.fehler && r.fehler.length));
+}
+async function ofcVerwerfen(sid) {
+  if (!confirm(`Spiel „${sid}“ im Reiter ausblenden?\nOrdner und Dateien auf der NAS bleiben unverändert.`)) return;
+  const r = await jpost(`/api/ofc/spiel/${encodeURIComponent(sid)}/verwerfen`, { bestaetigt: true });
+  if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
+  closeModal(); return renderOfc("Spiel verworfen – Ordner auf der NAS ist unverändert.");
 }
 /* OFC_ROADMAP O2: Namen je Ticket ändern, Datei umbenennen (Vorschau, Bestätigung, Rückgängig; nie löschen) */
 let OFC_SP = null, OFC_NAMEN = null, _ofcNameTimer = null;
@@ -5644,6 +5674,9 @@ async function handleAct(act, el) {
     case "km-neu": return kmDialog(id, val || "");
     case "ofc-spiel": return ofcSpiel(id);
     case "ofc-import": return ofcImport();
+    case "ofc-post": return ofcPost();
+    case "ofc-post-ok": return ofcPostOk(el);
+    case "ofc-verwerfen": return ofcVerwerfen(id);
     case "ofc-mitglieder": return renderOfcMitglieder(false);
     case "ofc-mitglieder-neu": return renderOfcMitglieder(true);
     case "ofc-zurueck": return renderOfc();

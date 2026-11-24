@@ -6269,6 +6269,61 @@ async def ofc_import(request: Request):
     return import_anwenden(_ofc_store(), von=_von(request))
 
 
+def _ofc_post_starten():
+    """O3: Fanclub-Postfach alle 15 Minuten auf neue HSV-Bestellungen pruefen (nur wo der Fanclub-Ordner eingehaengt ist)."""
+    try:
+        from ...core.ofc_post import starten
+        starten(_ofc_store, _ofc_postfach)
+    except Exception:
+        pass
+
+
+app.router.on_startup.append(_ofc_post_starten)
+
+
+@app.get("/api/ofc/post/vorschau")
+def ofc_post_vorschau(request: Request):
+    """O3 Dry-Run: welche Bestellungen/Dateien aus den HSV-Mails angelegt wuerden -- schreibt nichts."""
+    _nur_ceo(request)
+    from ...core.ofc_post import HSV_DOMAINS, TAGE, oeffentlich, post_plan
+    p = _ofc_postfach()
+    if not p.verfuegbar():
+        return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
+    try:
+        return oeffentlich(post_plan(_ofc_store(), p.posteingang(tage=TAGE, nur=HSV_DOMAINS)))
+    except Exception as exc:
+        return {"ok": False, "hinweis": f"Postfach nicht lesbar ({exc.__class__.__name__})."}
+
+
+@app.post("/api/ofc/post")
+async def ofc_post_abholen(request: Request):
+    """O3: Bestellungen aus dem Postfach anlegen (nur mit Bestaetigung; Dateien nur neu, nie ueberschreiben)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Abholen braucht die Bestätigung."}
+    from ...core.ofc_post import lauf
+    return lauf(_ofc_store(), _ofc_postfach(), von=_von(request))
+
+
+@app.get("/api/ofc/post/status")
+def ofc_post_status(request: Request):
+    _nur_ceo(request)
+    from ...core.ofc_post import letzter_lauf
+    return letzter_lauf()
+
+
+@app.post("/api/ofc/spiel/{sid}/verwerfen")
+async def ofc_spiel_verwerfen(request: Request, sid: str):
+    """O3 Rueckweg: falsch erkanntes Spiel im Reiter ausblenden (Ereignis; der Ordner auf der NAS bleibt)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Verwerfen braucht die Bestätigung."}
+    from ...core.ofc_store import spiel_verwerfen
+    return spiel_verwerfen(_ofc_store(), sid, verworfen=body.get("zurueck") is not True, von=_von(request))
+
+
 @app.get("/api/ofc/ticket/{nr}/name/vorschau")
 def ofc_name_vorschau(request: Request, nr: str, name: str = "", rueckgaengig: int = 0):
     """O2 Dry-Run: aus welchem Namen/welcher Datei wird was -- aendert nichts."""
