@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 20:51] — Claude Code
+- **Was:** OFC O5 Fassung 3 nach dem Deploy auf der NAS geprueft (VERSION 3, `app-v2.js` v172): der automatische Lauf hat alle 42 Eingaenge neu bewertet -- 24 automatisch (vorher 10), 2 „kein Ticket“ (Trikot, Bankueberweisung), 16 offen, davon 7 mit vorgewaehltem Spiel; 32 Karten bezahlt (vorher 12). Eigene Zahlungen unveraendert 9/9 automatisch. `OFC_ROADMAP.md` „Naechster Schritt“ fortgeschrieben.
+- **Warum:** CEO 2026-11-24: „Deploy gemacht“ -- Wirkung auf der NAS nachweisen.
+- **Betroffen:** `OFC_ROADMAP.md`, `projekt_changelog.md` (nur Pruefung, kein Code)
+
 ## [2026-11-24 20:35] — Claude Code
 - **Was:** Merge `ai/ofc-zuordnung` (OFC O5 Zuordnung Fassung 3) und `ai/ofc-kasse` (Roadmap Beitraege/Kasse) nach `main` (`--no-ff`, Changelog-Konflikt zusammengefuehrt), main gepusht, beide Branches lokal und remote geloescht. CEO-Entscheidungen E-K1 (Beitragsjahr = Kalenderjahr, faellig 01.01.) und E-K2 (Goldmitgliedschaft 40 € pro Jahr) in `OFC_KASSE_ROADMAP.md` und `docs/entscheidungs-register.md` eingetragen; E-K3 bis E-K9 offen.
 - **Warum:** CEO 2026-11-24: „Go fuer Merge, Push und Deploy“; „Ja, 01.01. Goldmitgliedschaft kostet 40 Euro pro Jahr“.

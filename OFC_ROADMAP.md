@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-11-24
-- Arbeitsbranch: `ai/ofc-zuordnung`
+- Arbeitsbranch: `main` (alle Etappen gemergt)
 - Basiscommit: `734b284`
-- Naechster Schritt: O5-Nachbesserung Fassung 3 (Branch `ai/ofc-zuordnung`) pushen, mergen, deployen; danach auf der NAS pruefen (erwartet nach dem naechsten Lauf: ca. 24 Eingaenge automatisch, 2 kein Ticket, 16 offen). Offen: Gesamtabnahme durch den CEO -- To-do A-212c2ea6, faellig 27.11.2026; danach Status „abgeschlossen“.
+- Naechster Schritt: Alle Etappen live und auf der NAS geprueft; O5 Fassung 3 live seit 2026-11-24 (24 von 42 Eingaengen automatisch, 2 kein Ticket, 16 offen, 32 Karten bezahlt; eigene Zahlungen 9/9). Offen: Gesamtabnahme durch den CEO -- To-do A-212c2ea6, faellig 27.11.2026; danach Status „abgeschlossen“.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
