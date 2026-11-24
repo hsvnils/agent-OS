@@ -1340,6 +1340,9 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-kv.v2-ofc-feld { gap: 12px; align-items: flex-start; }
 .v2-ofc-knoepfe { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 .v2-ofc-vorschau { margin: 10px 0; }
+.v2-ofc-zuordnen { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+.v2-ofc-zuordnen select { flex: 1 1 220px; min-width: 0; max-width: 100%; }
+@media (max-width: 600px) { .v2-ofc-zuordnen select { flex-basis: 100%; } }
 .v2-ofc-vorschau .v2-kv b { text-align: right; }
 .v2-kv.v2-ofc-feld span { flex: 0 1 45%; }
 .v2-kv.v2-ofc-feld b { flex: 1 1 55%; text-align: right; }

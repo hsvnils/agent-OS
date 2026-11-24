@@ -187,7 +187,7 @@ def lauf(store: OfcStore, postfach, *, von: str = "auto") -> dict:
     return r
 
 
-def starten(store_fabrik, postfach_fabrik, *, minuten: int = 15) -> threading.Thread | None:
+def starten(store_fabrik, postfach_fabrik, *, minuten: int = 15, weitere: tuple = ()) -> threading.Thread | None:
     """Hintergrund-Abruf alle `minuten` -- nur wenn der Fanclub-Ordner da ist und `OFC_AUTO_POST` nicht 0 ist."""
     if os.environ.get("OFC_AUTO_POST", "1").strip() == "0" or not ofc.nas_ordner().is_dir():
         return None
@@ -196,6 +196,11 @@ def starten(store_fabrik, postfach_fabrik, *, minuten: int = 15) -> threading.Th
         time.sleep(600)                                    # erster Lauf 10 Minuten nach dem Start
         while True:
             lauf(store_fabrik(), postfach_fabrik())
+            for f in weitere:                                  # O4: eigene PayPal-Zahlungen im selben Takt
+                try:
+                    f(store_fabrik(), postfach_fabrik())
+                except Exception:
+                    pass
             time.sleep(max(5, minuten) * 60)
 
     t = threading.Thread(target=schleife, name="ofc-post", daemon=True)

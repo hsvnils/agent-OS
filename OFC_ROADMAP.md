@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-11-24
-- Arbeitsbranch: `ai/ofc-o3`
+- Arbeitsbranch: `ai/ofc-o4`
 - Basiscommit: `734b284`
-- Naechster Schritt: O3 gemergt -- CEO deployt (code-only + Neustart); danach Vorschau „📬 Postfach“ mit echten Mails pruefen (erster automatischer Lauf 10 Minuten nach Start). Gesamtabnahme am Ende der Roadmap. Danach O4 nach CEO-Go.
+- Naechster Schritt: O4 umgesetzt auf `ai/ofc-o4` -- Push, Merge, Deploy (code-only + Neustart); danach Vorschau „💳 Zahlungen -> Aus Postfach holen“ mit echten Mails pruefen (Zuordnung). Gesamtabnahme am Ende der Roadmap. Danach O5 nach CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -156,7 +156,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O4: Eigene PayPal-Zahlungen dem Spiel zuordnen
 
-- Status: geplant
+- Status: umgesetzt (2026-11-24; `core/ofc_zahlung.py`: PayPal-Belege an Eventim/HSV erkennen -- gesendet, „Spaeter bezahlen“ (Faelligkeit +30 Tage, Abbuchung erfolgreich/fehlgeschlagen), Erstattung; Mitgliederzahlungen (O5) und andere Haendler ignoriert; Zuordnung per Punkte: Rechnungs-/Auftrags-/Bestellnummer im Beleg (sicher), Betrag = Rechnung, Datum nahe Rechnung, Gegner im Beleg; eindeutig -> automatisch, sonst Vorschlaege + „Zuordnen“/„Kein Ticketkauf“/„loesen“; Dubletten ueber Transaktionscode; Ereignis `ofc_zahlung` ohne Mailtext; Ansicht „💳 Zahlungen“, im Spiel „Eigene Zahlung“ mit Bezahlt/Rechnung, Hinweise „Eigene Zahlung nicht zugeordnet“ und „Abbuchung fehlgeschlagen“; automatisch im 15-Minuten-Takt. `test_ofc_zahlung.py`; Sichtpruefung headless Rechner/iPhone ok. Grenze: Eventim-Kaeufe ohne HSV-Rechnung haben keine gemeinsame Nummer -> meist Zuordnen per Klick)
 - Ziel / Scope / Nicht-Scope: PayPal-Mail „Zahlung gesendet“ (an Eventim/HSV) erkennen; Zuordnung zur Bestellung ueber
   Betrag + Zeitfenster + Empfaenger; Referenzen (PayPal-Transaktionscode, Rechnungsnr, Auftrags-Nr, Kunden-Nr) am Spiel.
   Uneindeutig -> „Zuordnen“. Nicht-Scope: Mitgliederzahlungen.

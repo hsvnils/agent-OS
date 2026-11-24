@@ -50,6 +50,7 @@ class OfcStore:
     def stand(self) -> dict:
         spiele: dict = {}
         tickets: dict = {}
+        zahlungen: dict = {}
         letzter_import = ""
         for e in self.eintraege():
             d, t = e["daten"], e["typ"]
@@ -59,12 +60,14 @@ class OfcStore:
                 tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]}).update({k: v for k, v in d.items() if k != "ticketnr"})
             elif t == "ofc_import":
                 letzter_import = e["ts"]
+            elif t == "ofc_zahlung":
+                zahlungen.setdefault(d["id"], {"id": d["id"]}).update({k: v for k, v in d.items() if k != "id"})
             elif t == "ofc_name":
                 tk = tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})
                 tk.update(name=d["name_neu"], datei=d["datei_neu"])
                 tk["letzte_aenderung"] = {"ts": e["ts"], "name_alt": d["name_alt"], "datei_alt": d["datei_alt"],
                                           "name_neu": d["name_neu"], "datei_neu": d["datei_neu"]}
-        return {"spiele": spiele, "tickets": tickets, "letzter_import": letzter_import}
+        return {"spiele": spiele, "tickets": tickets, "zahlungen": zahlungen, "letzter_import": letzter_import}
 
 
 # -- Import -------------------------------------------------------------------------------------------------------------
@@ -162,8 +165,13 @@ def import_anwenden(store: OfcStore, saison: Path | None = None, *, von: str = "
 
 
 # -- Uebersicht -------------------------------------------------------------------------------------------------------
-def _hinweise(s: dict, tks: list[dict]) -> list[str]:
+def _hinweise(s: dict, tks: list[dict], zahl: list[dict] | None = None) -> list[str]:
     h = []
+    if zahl is not None and (s.get("rechnungen") or zahl):
+        if not zahl and any(r.get("summe_cent") for r in s.get("rechnungen") or []):
+            h.append("Eigene Zahlung nicht zugeordnet")
+        if any(z.get("abbuchung") == "fehlgeschlagen" for z in zahl):
+            h.append("Später bezahlen: Abbuchung fehlgeschlagen")
     if not s.get("rechnungen"):
         h.append("Rechnung fehlt im Ordner")
     ohne_rg = {t["rechnungsnr"] for t in tks if t.get("ohne_rechnung")}
@@ -179,8 +187,14 @@ def _hinweise(s: dict, tks: list[dict]) -> list[str]:
 
 
 def uebersicht(store: OfcStore, heute: date | None = None) -> dict:
+    from .ofc_zahlung import zahlungs_status
     heute = heute or date.today()
     st = store.stand()
+    zs = zahlungs_status(st, heute)
+    je_z: dict = {}
+    for z in zs:
+        if z.get("spiel"):
+            je_z.setdefault(z["spiel"], []).append(z)
     je: dict = {}
     for t in st["tickets"].values():
         je.setdefault(t["spiel"], []).append(t)
@@ -195,11 +209,13 @@ def uebersicht(store: OfcStore, heute: date | None = None) -> dict:
                                              "uhrzeit", "ort", "pfad")}
                       | {"status": status, "karten": len(tks), "mit_name": sum(1 for t in tks if t.get("name")),
                          "summe_cent": sum(r.get("summe_cent") or 0 for r in s.get("rechnungen") or []),
-                         "hinweise": _hinweise(s, tks)})
+                         "bezahlt_cent": _bezahlt(je_z.get(s["id"], [])),
+                         "hinweise": _hinweise(s, tks, je_z.get(s["id"], []))})
     spiele.sort(key=lambda x: (x["status"] == "abgeschlossen", x.get("spieltag") or "9999"))
     offen = [x for x in spiele if x["status"] != "abgeschlossen"]
     return {"spiele": spiele, "letzter_import": st["letzter_import"],
             "verworfen": sorted(sid for sid, s in st["spiele"].items() if s.get("verworfen")),
+            "zahlungen_offen": sum(1 for z in zs if z.get("zuordnung") == "offen"),
             "summe": {"spiele": len(spiele), "offen": len(offen), "karten": sum(x["karten"] for x in spiele),
                       "ohne_name": sum(x["karten"] - x["mit_name"] for x in offen),
                       "hinweise": sum(len(x["hinweise"]) for x in offen)}}
@@ -210,8 +226,14 @@ def spiel_detail(store: OfcStore, sid: str) -> dict | None:
     s = st["spiele"].get(sid)
     if not s:
         return None
+    from .ofc_zahlung import zahlungs_status
     tks = sorted((t for t in st["tickets"].values() if t["spiel"] == sid), key=lambda t: (t["rechnungsnr"], t["pos"]))
-    return {"spiel": s, "tickets": tks, "hinweise": _hinweise(s, tks)}
+    zahl = [z for z in zahlungs_status(st) if z.get("spiel") == sid]
+    return {"spiel": s, "tickets": tks, "zahlungen": zahl, "bezahlt_cent": _bezahlt(zahl), "hinweise": _hinweise(s, tks, zahl)}
+
+
+def _bezahlt(zahl: list[dict]) -> int:
+    return sum(-z["betrag_cent"] if z.get("art") == "erstattung" else z["betrag_cent"] for z in zahl)
 
 
 def datei_pfad(store: OfcStore, sid: str, datei: str, saison: Path | None = None) -> Path | None:
