@@ -198,7 +198,7 @@ zuordnen, viel Handarbeit. Wunsch:
 ## Folgethemen (CEO 2026-11-24, eigene Roadmap)
 
 - **Mitgliedsbeitraege und Fanclub-Kasse** -- Beitraege und Kasse laufen ueber PayPal; eigene Roadmap nach OFC (nutzt
-  Mitgliederliste OM und PayPal-Erkennung O5).
+  Mitgliederliste OM und PayPal-Erkennung O5) -> geplant in `OFC_KASSE_ROADMAP.md` (2026-11-24).
 
 ## Ideen (nicht im Scope, auf Wunsch)
 

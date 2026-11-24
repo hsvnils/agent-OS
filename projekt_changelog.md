@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 19:57] — Claude Code
+- **Was:** Roadmap `OFC_KASSE_ROADMAP.md` geplant (Mitgliedsbeitraege und Fanclub-Kasse, Etappen KA0-KA5, Entscheidungen E-K1 bis E-K9 mit Empfehlung); Analyse read-only mit Belegen (Mitgliederliste nur gezaehlt: Gold 65, Beitrag 67 x 40 €, `Nächste Zahlung` 42 von 119 gepflegt; PayPal-Eingaenge 120 Tage 2.511,50 €, keine Mitteilung mit „Beitrag“). In `ROADMAP.md` registriert, Folgethema in `OFC_ROADMAP.md` verlinkt. Nichts gebaut.
+- **Warum:** CEO 2026-11-24: „Plane die Roadmap fuer Mitgliedsbeitraege und Fanclub-Kasse.“
+- **Betroffen:** `OFC_KASSE_ROADMAP.md`, `ROADMAP.md`, `OFC_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-24 18:25] — Claude Code
 - **Was:** OFC nach dem O6-Deploy auf der NAS geprueft: automatischer Lauf speichert 9 eigene Zahlungen (alle automatisch, „Spaeter bezahlen“ mit richtigem Kaufdatum, Altfaelle ersetzt), 42 Eingaenge neu bewertet (10 automatisch -> 12 Karten bezahlt, 32 zum Zuordnen), Postfach ohne Neues. To-do „Gesamtabnahme OFC-Roadmap“ (A-212c2ea6, faellig 27.11.2026 18:00) angelegt (F4). Roadmap-Kopf nachgetragen.
 - **Warum:** CEO „Deploy gemacht“; Regel F4 (Abnahme nachhalten).
