@@ -55,6 +55,8 @@ FILES=(
   # TODOS_ROADMAP: eigene To-dos des CEO (append-only)
   todos/log.jsonl
   reichweite/log.jsonl
+  # OFC_ROADMAP O1: Fanclub HSVInside -- Spiele/Tickets/Zahlungen (append-only, getrennt von der Buchhaltung)
+  fanclub/log.jsonl
   # JARVIS J7: feste Regeln des CEO fuer LUNA (append-only)
   regeln/log.jsonl
   # JARVIS J9: Wochenplanung -- Vorschlaege + eingetragene Zeitbloecke (append-only)

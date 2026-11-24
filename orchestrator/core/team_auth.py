@@ -69,6 +69,8 @@ def hat_modul(user: dict, modul: str) -> bool:
 def erlaubte_apps(user: dict) -> list[str]:
     """App-IDs, die dieser Nutzer sehen darf (immer inkl. 'home')."""
     apps = ["home"] + [app for app, modul in APP_MODUL.items() if hat_modul(user, modul)]
+    if (user or {}).get("role", "").strip().lower() == "owner":
+        apps.append("ofc")                                   # OFC_ROADMAP O1: Fanclub nur fuer den CEO (kein Modul)
     return apps
 
 

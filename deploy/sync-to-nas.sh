@@ -54,6 +54,7 @@ TAR_EXCLUDES=(
   --exclude='./sicherheit'            # PROMPT_INJECTION_SCHUTZ I4: Injection-Protokoll (nur NAS + Backup)
   --exclude='./todos'                 # TODOS_ROADMAP: eigene To-dos des CEO (nur NAS + Backup)
   --exclude='./reichweite'            # MONETARISIERUNG M3: Follower/Reichweiten je Plattform (nur NAS + Backup)
+  --exclude='./fanclub'               # OFC_ROADMAP O1: Fanclub-Speicher (nur NAS + Backup)
   --exclude='./regeln'                # JARVIS J7: feste Regeln des CEO fuer LUNA (nur NAS + Backup)
   --exclude='./gedaechtnis'           # JARVIS J8: Suchverzeichnis der Bedeutungssuche (abgeleitet, nur NAS)
   --exclude='./wochenplan'            # JARVIS J9: Wochenplanung (nur NAS + Backup)

@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-o0`
 - Basiscommit: `734b284`
-- Naechster Schritt: O0 deployt; Postfach-Analyse ok. Offen: BF-101 -- CEO berechtigt in DSM den Benutzer `nilskrueger` auf `Fanclub HSVInside` (lesen), dann Ordner-Analyse auf der NAS; danach Go fuer O1. E5b: CEO hat die Mitgliedertabelle mit LUNAs Google-Konto geteilt (Betrachter) -- in OM nutzen.
+- Naechster Schritt: O0 verifiziert; O1 gebaut (Branch `ai/ofc-o1`) -- CEO pusht, Go fuer Merge + Deploy (code-only + Neustart `luna-os`), dann im Reiter OFC „Ordner einlesen“ (Vorschau -> Uebernehmen) und Abgleich mit dem CEO. Danach OM (Tabelle geteilt) oder O2.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -88,7 +88,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O0: Zugang und Analyse (nur lesend)
 
-- Status: umgesetzt (2026-11-24; `HsvInsideMail` nur lesend/Absenderfilter, `core/ofc.py` Rechnung/Ticket/Ordner-/Postfach-Analyse, Endpunkte `/api/ofc/...` nur CEO, Mount `:ro`, CISO in `governance/zugriffs-policy.md`; `test_ofc.py`. Probelauf Ordner (Kopie, 2026-11-24): 12 Spiele, 11 Rechnungen erkannt (inkl. Auswaerts/DFB-Pokal/Freundschaft, Heim/Auswaerts), 70 Karten, 77 Ticket-Dateien; SVWvsHSV ohne Rechnung, HSVvsFCB mit 2. Bestellung ohne Rechnung, HSVvsVFB ohne Namen. Deployt 2026-11-24. Verbindung moin@ ok. **Postfach-Analyse live (120 Tage, 108 Mails):** PayPal „erhalten“ 40 (34 mit Mitteilung, alle mit Transaktionscode); PayPal „gesendet“ 21 -- die Zahlungen an **CTS EVENTIM** (HSV-Ticketshop) mit Bestellnummer, Positionszeile „Tickets HSV …: <Anzahl>“, Gesamtbetrag, Transaktionscode; PayPal sonstiges 29 (u. a. **„Spaeter bezahlen“ in 30 Tagen** bei CTS EVENTIM, Abbuchungen, Ueberweisungen aufs Bankkonto); HSV 18 (`hsv.de`, `service.hsv.de` mit „Kopie der Rechnung <Nr> vom <Datum>“, Ticket-PDFs `<Rechnungsnr>-<Pos>.pdf` und `Rechnung.pdf`; `news.hsv.de` = Newsletter). **Eigene Eventim-Mails gibt es nicht** -- „Eventim“ = PayPal-Beleg an CTS EVENTIM. Ordner-Analyse auf der NAS: BF-101 (Berechtigung).)
+- Status: umgesetzt (2026-11-24; `HsvInsideMail` nur lesend/Absenderfilter, `core/ofc.py` Rechnung/Ticket/Ordner-/Postfach-Analyse, Endpunkte `/api/ofc/...` nur CEO, Mount `:ro`, CISO in `governance/zugriffs-policy.md`; `test_ofc.py`. Probelauf Ordner (Kopie, 2026-11-24): 12 Spiele, 11 Rechnungen erkannt (inkl. Auswaerts/DFB-Pokal/Freundschaft, Heim/Auswaerts), 70 Karten, 77 Ticket-Dateien; SVWvsHSV ohne Rechnung, HSVvsFCB mit 2. Bestellung ohne Rechnung, HSVvsVFB ohne Namen. Deployt 2026-11-24. Verbindung moin@ ok. **Postfach-Analyse live (120 Tage, 108 Mails):** PayPal „erhalten“ 40 (34 mit Mitteilung, alle mit Transaktionscode); PayPal „gesendet“ 21 -- die Zahlungen an **CTS EVENTIM** (HSV-Ticketshop) mit Bestellnummer, Positionszeile „Tickets HSV …: <Anzahl>“, Gesamtbetrag, Transaktionscode; PayPal sonstiges 29 (u. a. **„Spaeter bezahlen“ in 30 Tagen** bei CTS EVENTIM, Abbuchungen, Ueberweisungen aufs Bankkonto); HSV 18 (`hsv.de`, `service.hsv.de` mit „Kopie der Rechnung <Nr> vom <Datum>“, Ticket-PDFs `<Rechnungsnr>-<Pos>.pdf` und `Rechnung.pdf`; `news.hsv.de` = Newsletter). **Eigene Eventim-Mails gibt es nicht** -- „Eventim“ = PayPal-Beleg an CTS EVENTIM. Ordner-Analyse auf der NAS nach BF-101 (DSM-Berechtigung) ok: 12 Spiele, 11 erkannt, 70 Karten, 77 Dateien -- **verifiziert**.)
 - Ziel / Scope / Nicht-Scope: Zugang moin@ nach E1 (Klasse wie `NilsMail`, Absenderfilter), Mount nach E2 (erst nur
   lesend). Dry-Run-Bericht in LUNA-OS bzw. als Skript: Mails je Absender der letzten 90 Tage, erkannte Felder je Typ
   (PayPal erhalten / PayPal gesendet / Eventim / HSV-Rechnung) **ohne** Namen/Betraege ins Log; Ordner-Scan wie oben.
@@ -102,7 +102,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O1: Spiele, Tickets und Bestand (Reiter OFC, lesen)
 
-- Status: geplant
+- Status: umgesetzt (2026-11-24; Speicher `fanclub/log.jsonl`, `core/ofc_store.py` Import mit Vorschau (wiederholbar, Namen aus Dateinamen nur beim ersten Erfassen, Spiel-ID = Ordnername), Reiter „OFC“ nur CEO (Spiele, Karten, Namen, Status, Hinweise; Spiel-Detail mit Tickets und Rechnung, PDFs oeffnen); Probelauf auf Kopie der echten Saison: 12 Spiele, 77 Tickets, 68 mit Namen, zweiter Lauf ohne Aenderung; Sichtpruefung headless Rechner/iPad/iPhone ok; `test_ofc_store.py`. Offen: Deploy, erster Import auf der NAS)
 - Ziel / Scope / Nicht-Scope: Speicher `fanclub/log.jsonl` (Spiele, Rechnungen, Tickets, Personen, Zahlungen als
   Ereignisse). Import des Bestands (E4): `Rechnung.pdf` lesen (Rechnungsnr, Auftrags-/Kunden-Nr, Spiel, Datum, Tickets
   mit Block/Reihe/Sitz/Preis), Ticket-Dateien ueber die Ticketnummer im PDF zuordnen, Namen aus den Dateinamen

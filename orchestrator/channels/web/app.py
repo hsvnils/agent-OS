@@ -6213,6 +6213,62 @@ def ofc_analyse_postfach(request: Request, tage: int = 90):
         return {"ok": False, "hinweis": f"Postfach nicht lesbar ({exc.__class__.__name__})."}
 
 
+def _ofc_store():
+    from ...core.ofc_store import OfcStore
+    return OfcStore(ROOT / "fanclub")
+
+
+@app.get("/api/ofc/uebersicht")
+def ofc_uebersicht(request: Request):
+    """O1: Spiele der Saison mit Karten, Namen, Status und Hinweisen (E8: Hinweise nur hier, keine Telegram-Nachricht)."""
+    _nur_ceo(request)
+    from ...core.ofc import nas_ordner
+    from ...core.ofc_store import uebersicht
+    return uebersicht(_ofc_store()) | {"saison_ordner": nas_ordner().name}
+
+
+@app.get("/api/ofc/spiel/{sid}")
+def ofc_spiel(request: Request, sid: str):
+    _nur_ceo(request)
+    from ...core.ofc_store import spiel_detail
+    d = spiel_detail(_ofc_store(), sid)
+    if not d:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Spiel nicht gefunden")
+    return d
+
+
+@app.get("/api/ofc/spiel/{sid}/datei")
+def ofc_datei(request: Request, sid: str, name: str):
+    """Ticket-PDF oder Rechnung eines Spiels anzeigen -- nur Dateien, die LUNA dem Spiel zugeordnet hat."""
+    _nur_ceo(request)
+    from ...core.ofc_store import datei_pfad
+    p = datei_pfad(_ofc_store(), sid, name)
+    if p is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Datei nicht gefunden")
+    return Response(p.read_bytes(), media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="{p.name}"', "Cache-Control": "no-store"})
+
+
+@app.get("/api/ofc/import/vorschau")
+def ofc_import_vorschau(request: Request):
+    """O1 Dry-Run: was der Import aus dem Saison-Ordner neu anlegen/aendern wuerde -- schreibt nichts."""
+    _nur_ceo(request)
+    from ...core.ofc_store import import_plan
+    plan = import_plan(_ofc_store())
+    return {k: v for k, v in plan.items() if k != "ereignisse"}
+
+
+@app.post("/api/ofc/import")
+async def ofc_import(request: Request):
+    """O1: Import uebernehmen (nur mit Bestaetigung). Schreibt nur in LUNAs Speicher `fanclub/`, nie auf die Freigabe."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Import braucht die Bestaetigung."}
+    from ...core.ofc_store import import_anwenden
+    return import_anwenden(_ofc_store(), von=_von(request))
+
+
 @app.get("/api/ofc/analyse/ordner")
 def ofc_analyse_ordner(request: Request):
     """O0 Dry-Run: Spielordner der Saison auf der NAS -- Zahlen je Spiel, keine Namen, nichts gespeichert."""
