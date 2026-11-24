@@ -37,6 +37,26 @@ def pdf_text(pfad: Path) -> str:
     return "\n".join(p.extract_text() or "" for p in r.pages)
 
 
+def pdf_bytes_text(daten: bytes) -> str:
+    """O3: Text eines PDF-Anhangs (ohne ihn auf Platte zu legen)."""
+    import io
+    import pypdf
+    r = pypdf.PdfReader(io.BytesIO(daten))
+    return "\n".join(p.extract_text() or "" for p in r.pages)
+
+
+def mail_pdfs(roh: bytes) -> tuple[dict, list[tuple[str, bytes]]]:
+    """O3: Kopf (Absender-Domain, Message-ID, Datum) und alle PDF-Anhaenge einer Mail."""
+    m = email.message_from_bytes(roh, policy=policy.default)
+    dom = parseaddr(str(m.get("From", "")))[1].lower().rpartition("@")[2]
+    pdfs = []
+    for a in m.iter_attachments():
+        name = a.get_filename() or ""
+        if a.get_content_type() == "application/pdf" or name.lower().endswith(".pdf"):
+            pdfs.append((Path(name).name, a.get_payload(decode=True) or b""))
+    return {"domain": dom, "message_id": str(m.get("Message-ID", "")).strip(), "datum": str(m.get("Date", ""))}, pdfs
+
+
 # Pos  Ticketnummer  Block  Preisgruppe (auch zwei Woerter, z. B. Gaestebereich)  Reihe  Sitz  Preis
 _RE_TICKET = re.compile(r"^\s*(\d+)\s+(\d{9,14})-(\d+)\s+(\S+)\s+(.+?)\s+(\S+)\s+(\S+)\s+([\d.]*\d,\d\d)\s*EUR", re.M)
 # „[Wettbewerb ][26-27 ]<Titel> / 28.11.2026 / 15:30 (Ort)“ -- z. B. „26-27 Hamburger SV - FC Bayern …“, „Auswaerts 26-27

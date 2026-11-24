@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-11-24
-- Arbeitsbranch: `ai/ofc-o2`
+- Arbeitsbranch: `ai/ofc-o3`
 - Basiscommit: `734b284`
-- Naechster Schritt: O2 gemergt -- CEO deployt mit `docker compose up -d luna-os` (Mount wird schreibend). CEO testet alles gesammelt am Ende der Roadmap (CEO 2026-11-24). Danach O3 nach CEO-Go.
+- Naechster Schritt: O3 umgesetzt auf `ai/ofc-o3` -- Push, Merge, Deploy (code-only + Neustart); danach Vorschau „📬 Postfach“ mit echten Mails pruefen (erster automatischer Lauf 10 Minuten nach Start). Gesamtabnahme am Ende der Roadmap. Danach O4 nach CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -144,7 +144,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O3: Neue Bestellungen automatisch (HSV/Eventim)
 
-- Status: geplant
+- Status: umgesetzt (2026-11-24; `core/ofc_post.py`: HSV-Mails mit PDF -> Rechnung/Tickets je Rechnungsnummer; bekanntes Spiel (Rechnungsnr oder Spieltag + Paarung) wird ergaenzt, neues Spiel bekommt Ordner nach E3 (`HSV vs <Gegner>` / `<Gegner> vs HSV`, bei Namensgleichheit mit Datum), Tickets ohne Rechnung bleiben „wartet“, per O2 umbenannte Tickets werden nicht erneut abgelegt; Dateien nur neu, nie ueberschreiben/loeschen; danach Import O1. Automatisch alle 15 Minuten in `luna-os` (erster Lauf 10 Minuten nach Start, `OFC_AUTO_POST=0` schaltet ab), Knopf „📬 Postfach“ mit Vorschau, Status unter der Spieleliste, „Spiel verwerfen“ (Ereignis, Ordner bleibt). Postfach-Abruf auf `hsv.de` eingeschraenkt (`posteingang(nur=...)`). Befund O0: Eventim schickt keine eigenen Mails -- Eventim-Kaeufe kommen nur als PayPal-Beleg und laufen ueber O4. `test_ofc_post.py`; Sichtpruefung headless Rechner/iPhone ok)
 - Ziel / Scope / Nicht-Scope: Im Bot-Poll HSV-Rechnungsmail und Eventim-Mail erkennen (Regeln aus O0), zu einer Bestellung
   zusammenfuehren (gleiche Summe, kurzer Zeitabstand, Rechnungs-/Auftragsnummer), Spiel anlegen, Spielordner anlegen,
   Rechnung und Tickets dort ablegen (Namensmuster), Hinweis im Reiter OFC (E8: keine Telegram-Nachricht). Nicht-Scope: Zahlungen.

@@ -359,16 +359,21 @@ class HsvInsideMail(AllInklMail):
         except Exception as exc:
             return {"ok": False, "imap": False, "imap_fehler": exc.__class__.__name__}
 
-    def _suche(self) -> list:
+    def _suche(self, domains: tuple | None = None) -> list:
         """IMAP-SEARCH: (FROM d1) ODER (FROM d2) ... -- verschachteltes OR, wie IMAP es verlangt."""
-        teile: list = ["FROM", self.domains[-1]]
-        for d in reversed(self.domains[:-1]):
+        domains = domains or self.domains
+        teile: list = ["FROM", domains[-1]]
+        for d in reversed(domains[:-1]):
             teile = ["OR", "FROM", d] + teile
         return teile
 
-    def posteingang(self, *, tage: int = 90, max_mails: int = 500) -> list[dict]:
+    def posteingang(self, *, tage: int = 90, max_mails: int = 500, nur: tuple | None = None) -> list[dict]:
+        """`nur`: Teilmenge der erlaubten Domains (z. B. nur `hsv.de` fuer O3) -- nie mehr als erlaubt."""
         from datetime import date, timedelta
         if not self.verfuegbar():
+            return []
+        domains = tuple(d for d in (nur or self.domains) if d in self.domains)
+        if not domains:
             return []
         monate = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
         d = date.today() - timedelta(days=tage)
@@ -380,13 +385,13 @@ class HsvInsideMail(AllInklMail):
             typ, _ = i.select("INBOX", readonly=True)
             if typ != "OK":
                 return []
-            typ, daten = i.uid("SEARCH", None, "SINCE", seit, *self._suche())
+            typ, daten = i.uid("SEARCH", None, "SINCE", seit, *self._suche(domains))
             uids = (daten[0].split() if typ == "OK" and daten and daten[0] else [])[-max_mails:]
             for uid in uids:
                 typ, teile = i.uid("FETCH", uid, "(BODY.PEEK[HEADER.FIELDS (FROM)])")
                 kopf = next((t[1] for t in teile or [] if isinstance(t, tuple) and len(t) > 1), b"") if typ == "OK" else b""
                 von = (kopf or b"").decode("utf-8", "replace").partition(":")[2].strip()
-                if not _domain_erlaubt(von, self.domains):
+                if not _domain_erlaubt(von, domains):
                     continue                                 # Server-Treffer, aber Absender nicht erlaubt -> nie laden
                 typ, teile = i.uid("FETCH", uid, "(BODY.PEEK[])")
                 roh = next((t[1] for t in teile or [] if isinstance(t, tuple) and len(t) > 1), None) if typ == "OK" else None

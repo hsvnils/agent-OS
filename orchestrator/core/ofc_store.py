@@ -186,6 +186,8 @@ def uebersicht(store: OfcStore, heute: date | None = None) -> dict:
         je.setdefault(t["spiel"], []).append(t)
     spiele = []
     for s in st["spiele"].values():
+        if s.get("verworfen"):
+            continue
         tks = je.get(s["id"], [])
         tag = s.get("spieltag") or ""
         status = "abgeschlossen" if s.get("abgeschlossen") else ("vorbei" if tag and tag < heute.isoformat() else "offen")
@@ -197,6 +199,7 @@ def uebersicht(store: OfcStore, heute: date | None = None) -> dict:
     spiele.sort(key=lambda x: (x["status"] == "abgeschlossen", x.get("spieltag") or "9999"))
     offen = [x for x in spiele if x["status"] != "abgeschlossen"]
     return {"spiele": spiele, "letzter_import": st["letzter_import"],
+            "verworfen": sorted(sid for sid, s in st["spiele"].items() if s.get("verworfen")),
             "summe": {"spiele": len(spiele), "offen": len(offen), "karten": sum(x["karten"] for x in spiele),
                       "ohne_name": sum(x["karten"] - x["mit_name"] for x in offen),
                       "hinweise": sum(len(x["hinweise"]) for x in offen)}}
@@ -332,3 +335,11 @@ def namen_vorschlaege(store: OfcStore, mitglieder: list[dict] | None = None) -> 
             gesehen.add(k)
             out.append(n.strip())
     return out
+
+
+def spiel_verwerfen(store: OfcStore, sid: str, *, verworfen: bool = True, von: str = "") -> dict:
+    """O3: Spiel im Reiter ausblenden (oder wieder zeigen). Nur ein Ereignis -- Ordner und Dateien bleiben unveraendert."""
+    if sid not in store.stand()["spiele"]:
+        return {"ok": False, "hinweis": "Spiel nicht gefunden."}
+    store.erfassen("ofc_spiel", {"id": sid, "verworfen": verworfen}, von=von)
+    return {"ok": True, "id": sid, "verworfen": verworfen}
