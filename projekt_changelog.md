@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 16:58] — Claude Code
+- **Was:** OFC O4: Eigene PayPal-Zahlungen an Eventim/HSV aus dem Postfach moin@ (nur PayPal-Absender, nur lesend) erkennen (gesendet, Später bezahlen mit Fälligkeit/Abbuchung, Erstattung), Spielen zuordnen (Nummer, Betrag + Datum, Gegner; eindeutig automatisch, sonst per Klick), Ansicht „💳 Zahlungen“, „Eigene Zahlung“ im Spiel, Hinweise im Reiter; automatisch im 15-Minuten-Takt. Nur Ergebnisfelder gespeichert (Ereignis `ofc_zahlung`), kein Mailtext. Cache v169/v91. Baseline 1799. Nach dem O3-Deploy die Vorschau mit echten Mails geprueft (1 Datei: Rechnung zur 2. Bestellung HSVvsFCB).
+- **Warum:** CEO „Deploy gemacht, Go für O4“ (Abnahme gesammelt am Ende der Roadmap).
+- **Betroffen:** `orchestrator/core/ofc_zahlung.py` (neu), `orchestrator/core/ofc_store.py`, `orchestrator/core/ofc_post.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `orchestrator/tests/test_ofc_zahlung.py` (neu), `OFC_ROADMAP.md`, `governance/zugriffs-policy.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-24 16:47] — Claude Code
 - **Was:** `ai/ofc-o3` (OFC O3 neue Bestellungen aus dem Postfach) nach `main` gemergt und gepusht, Branch geloescht; Roadmap-Naechster-Schritt aktualisiert.
 - **Warum:** CEO „Go für Merge, Push und Deploy“.

@@ -6273,7 +6273,8 @@ def _ofc_post_starten():
     """O3: Fanclub-Postfach alle 15 Minuten auf neue HSV-Bestellungen pruefen (nur wo der Fanclub-Ordner eingehaengt ist)."""
     try:
         from ...core.ofc_post import starten
-        starten(_ofc_store, _ofc_postfach)
+        from ...core.ofc_zahlung import lauf as zahl_lauf
+        starten(_ofc_store, _ofc_postfach, weitere=(zahl_lauf,))
     except Exception:
         pass
 
@@ -6322,6 +6323,50 @@ async def ofc_spiel_verwerfen(request: Request, sid: str):
         return {"ok": False, "hinweis": "Verwerfen braucht die Bestätigung."}
     from ...core.ofc_store import spiel_verwerfen
     return spiel_verwerfen(_ofc_store(), sid, verworfen=body.get("zurueck") is not True, von=_von(request))
+
+
+@app.get("/api/ofc/zahlungen")
+def ofc_zahlungen(request: Request):
+    """O4: eigene PayPal-Zahlungen (Eventim/HSV) mit Zuordnung und „Später bezahlen“-Status."""
+    _nur_ceo(request)
+    from ...core.ofc_zahlung import zahlungs_status
+    st = _ofc_store().stand()
+    spiele = sorted(({"id": sid, "spiel": s.get("spiel") or sid, "spieltag": s.get("spieltag") or ""}
+                     for sid, s in st["spiele"].items() if not s.get("verworfen")), key=lambda x: x["spieltag"] or "9999")
+    return {"zahlungen": list(reversed(zahlungs_status(st))), "spiele": spiele}
+
+
+@app.get("/api/ofc/zahlungen/vorschau")
+def ofc_zahlungen_vorschau(request: Request):
+    """O4 Dry-Run: neue eigene PayPal-Zahlungen aus dem Postfach und ihre Zuordnung -- speichert nichts."""
+    _nur_ceo(request)
+    from ...core.ofc_zahlung import PAYPAL_DOMAINS, TAGE, oeffentlich, zahl_plan
+    p = _ofc_postfach()
+    if not p.verfuegbar():
+        return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
+    try:
+        return oeffentlich(zahl_plan(_ofc_store(), p.posteingang(tage=TAGE, nur=PAYPAL_DOMAINS)))
+    except Exception as exc:
+        return {"ok": False, "hinweis": f"Postfach nicht lesbar ({exc.__class__.__name__})."}
+
+
+@app.post("/api/ofc/zahlungen/abholen")
+async def ofc_zahlungen_abholen(request: Request):
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Übernehmen braucht die Bestätigung."}
+    from ...core.ofc_zahlung import lauf
+    return lauf(_ofc_store(), _ofc_postfach(), von=_von(request))
+
+
+@app.post("/api/ofc/zahlung/{zid}/zuordnen")
+async def ofc_zahlung_zuordnen(request: Request, zid: str):
+    """O4: Zahlung per Klick einem Spiel zuordnen, loesen (spiel leer) oder ignorieren (kein Ticketkauf)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.ofc_zahlung import zuordnen
+    return zuordnen(_ofc_store(), zid, str(body.get("spiel") or ""), ignorieren=body.get("ignorieren") is True, von=_von(request))
 
 
 @app.get("/api/ofc/ticket/{nr}/name/vorschau")
