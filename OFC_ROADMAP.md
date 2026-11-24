@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-o2`
 - Basiscommit: `734b284`
-- Naechster Schritt: O2 umgesetzt auf `ai/ofc-o2` -- Merge, Push, Deploy mit `docker compose up -d luna-os` (Mount wird schreibend). CEO testet alles gesammelt am Ende der Roadmap (CEO 2026-11-24). Danach O3 nach CEO-Go.
+- Naechster Schritt: O2 gemergt -- CEO deployt mit `docker compose up -d luna-os` (Mount wird schreibend). CEO testet alles gesammelt am Ende der Roadmap (CEO 2026-11-24). Danach O3 nach CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

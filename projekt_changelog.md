@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 16:27] — Claude Code
+- **Was:** `ai/ofc-o2` (OFC O2 Namen und Umbenennen) nach `main` gemergt und gepusht, Branch geloescht; Roadmap-Naechster-Schritt aktualisiert.
+- **Warum:** CEO „Go für Merge, Push und Deploy“.
+- **Betroffen:** `OFC_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-24 16:24] — Claude Code
 - **Was:** OFC O2: Name je Ticket aendern mit Vorschau „aus X wird Y“, Bestaetigung und „Rueckgaengig“; die Ticket-Datei auf der NAS wird nach `<Rechnungsnr>-<Pos>[A|B]-<Name>.pdf` umbenannt (nie geloescht/ueberschrieben, Kollision abgelehnt), Protokoll als Ereignis `ofc_name`. Namensvorschlaege aus der Mitgliederliste (OM). Fanclub-Mount in `luna-os` schreibend. Cache v167/v90. Baseline 1783.
 - **Warum:** CEO „Go für O2“ (Test gesammelt am Ende der Roadmap).
