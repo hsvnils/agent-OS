@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-o3`
 - Basiscommit: `734b284`
-- Naechster Schritt: O3 umgesetzt auf `ai/ofc-o3` -- Push, Merge, Deploy (code-only + Neustart); danach Vorschau „📬 Postfach“ mit echten Mails pruefen (erster automatischer Lauf 10 Minuten nach Start). Gesamtabnahme am Ende der Roadmap. Danach O4 nach CEO-Go.
+- Naechster Schritt: O3 gemergt -- CEO deployt (code-only + Neustart); danach Vorschau „📬 Postfach“ mit echten Mails pruefen (erster automatischer Lauf 10 Minuten nach Start). Gesamtabnahme am Ende der Roadmap. Danach O4 nach CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

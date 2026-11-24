@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 16:47] — Claude Code
+- **Was:** `ai/ofc-o3` (OFC O3 neue Bestellungen aus dem Postfach) nach `main` gemergt und gepusht, Branch geloescht; Roadmap-Naechster-Schritt aktualisiert.
+- **Warum:** CEO „Go für Merge, Push und Deploy“.
+- **Betroffen:** `OFC_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-24 16:43] — Claude Code
 - **Was:** OFC O3: Neue Bestellungen aus HSV-Mails im Postfach moin@ (nur `hsv.de`, nur lesend): Rechnung/Ticket-PDFs je Rechnungsnummer, bekanntes Spiel ergaenzen, neues Spiel mit Ordner nach E3 anlegen, Tickets ohne Rechnung warten; Dateien nur neu (nie ueberschreiben/loeschen), danach Import. Automatisch alle 15 Minuten in `luna-os` (erster Lauf 10 Minuten nach Start, `OFC_AUTO_POST=0` schaltet ab), Knopf „📬 Postfach“ mit Vorschau, Status im Reiter, „Spiel verwerfen“. `HsvInsideMail.posteingang(nur=...)`. Cache v168. Baseline 1791.
 - **Warum:** CEO „Go für O3“ (Abnahme gesammelt am Ende der Roadmap).
