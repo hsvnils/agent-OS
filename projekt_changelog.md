@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 11:36] — Claude Code
+- **Was:** Branch `ai/ofc-o1` per `--no-ff` in `main` gemergt (OFC O1: Reiter, Speicher `fanclub/`, Import); Deploy code-only durch den CEO (Cache v165/v88).
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** main, OFC_ROADMAP.md.
+
 ## [2026-11-24 11:30] — Claude Code
 - **Was:** OFC O0 verifiziert (Ordner-Analyse auf der NAS nach DSM-Berechtigung: 12 Spiele, 11 erkannt; BF-101 behoben). OFC O1: Speicher `fanclub/log.jsonl` (nicht im Git, Sync-Ausschluss, Backup), `core/ofc_store.py` (Import aus dem Saison-Ordner mit Vorschau, wiederholbar; Uebersicht mit Status/Hinweisen; Dateien nur zugeordnete), Endpunkte `/api/ofc/uebersicht`, `/api/ofc/spiel/<id>`, `/api/ofc/spiel/<id>/datei`, `/api/ofc/import/vorschau`, `POST /api/ofc/import` (nur CEO), neuer Bereich „OFC“ in LUNA-OS (App `ofc` nur fuer owner), Cache v165/v88. Fehlende Leseberechtigung gibt jetzt einen Hinweis statt 500. Probelauf auf einer Kopie der echten Saison: 12 Spiele, 77 Tickets, 68 mit Namen. Tests `test_ofc_store.py` (5, Gegenproben rot), Suite 1771 gruen; Sichtpruefung headless ok.
 - **Warum:** CEO-Go fuer O1 (2026-11-24).
