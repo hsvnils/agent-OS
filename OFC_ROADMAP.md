@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-11-24
-- Arbeitsbranch: `ai/ofc-o6`
+- Arbeitsbranch: `ai/ofc-zuordnung`
 - Basiscommit: `734b284`
-- Naechster Schritt: Alle Etappen live und auf der NAS geprueft (9/9 eigene Zahlungen automatisch, 10 Eingaenge automatisch, 32 zum Zuordnen). Offen: Gesamtabnahme durch den CEO -- To-do A-212c2ea6, faellig 27.11.2026; danach Status „abgeschlossen“.
+- Naechster Schritt: O5-Nachbesserung Fassung 3 (Branch `ai/ofc-zuordnung`) pushen, mergen, deployen; danach auf der NAS pruefen (erwartet nach dem naechsten Lauf: ca. 24 Eingaenge automatisch, 2 kein Ticket, 16 offen). Offen: Gesamtabnahme durch den CEO -- To-do A-212c2ea6, faellig 27.11.2026; danach Status „abgeschlossen“.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -168,7 +168,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O5: Zahlungseingaenge der Mitglieder
 
-- Status: umgesetzt (2026-11-24; `core/ofc_eingang.py`: PayPal „Zahlung erhalten“ -> Name, Betrag, Mitteilung, Transaktionscode, Datum; Rueckzahlung an ein Mitglied negativ; E6: automatisch, wenn der Betrag genau zu offenen Tickets auf den Namen des Zahlers (oder Alias) passt -- bei mehreren Spielen entscheidet der Gegner in der Mitteilung, Sammelzahlung fuer mehrere Spiele moeglich; sonst „Zuordnen“ mit Vorschlaegen oder „Tickets waehlen“ (auch Teil-/Ueberzahlung), „Kein Ticket“ (z. B. Beitrag), loesen; Alias wird beim Klick gelernt; Ticketstatus bezahlt/teilweise im Spiel, „x/y bezahlt“ in der Liste, Saldo je Zahler; Ansicht „💶 Eingaenge“; automatisch im 15-Minuten-Takt; `test_ofc_eingang.py`; Sichtpruefung headless Rechner/iPhone ok. PayPal-CSV-Import zurueckgestellt)
+- Status: umgesetzt (2026-11-24; `core/ofc_eingang.py`: PayPal „Zahlung erhalten“ -> Name, Betrag, Mitteilung, Transaktionscode, Datum; Rueckzahlung an ein Mitglied negativ; E6: automatisch, wenn der Betrag genau zu offenen Tickets auf den Namen des Zahlers (oder Alias) passt -- bei mehreren Spielen entscheidet der Gegner in der Mitteilung, Sammelzahlung fuer mehrere Spiele moeglich; sonst „Zuordnen“ mit Vorschlaegen oder „Tickets waehlen“ (auch Teil-/Ueberzahlung), „Kein Ticket“ (z. B. Beitrag), loesen; Alias wird beim Klick gelernt; Ticketstatus bezahlt/teilweise im Spiel, „x/y bezahlt“ in der Liste, Saldo je Zahler; Ansicht „💶 Eingaenge“; automatisch im 15-Minuten-Takt; `test_ofc_eingang.py`; Sichtpruefung headless Rechner/iPhone ok. PayPal-CSV-Import zurueckgestellt. **Fassung 3 (2026-11-24 abends, CEO: ohne Handabgleich):** Ticketnamen robust (zusammengeschrieben, Blockkuerzel, Ziffern, Akzente); Spiel aus der Mitteilung inkl. Spitznamen, Pokal, Heim/Auswaerts -- dort auch freie Karten und aufgerundete Betraege bis 5 €; sonst „Tickets waehlen“ mit vorgewaehltem Spiel; Teilzahlungen binnen 3 Tagen zusammen; Bankueberweisung/Trikot -> „kein Ticket“; offene Eingaenge bei jedem Lauf neu bewertet, Klicks nie. Probe auf echten Daten: 24 statt 10 automatisch)
 - Ziel / Scope / Nicht-Scope: PayPal-Mail „Geld erhalten“ erkennen (Name, Betrag, Mitteilung, Transaktionscode); Vorschlag
   Spiel + Ticket(s) ueber Name/Personenliste, Verwendungszweck (Gegner, Datum, Anzahl) und Betrag (E6); eindeutige Faelle
   automatisch, sonst Liste „Zuordnen“; Aufteilen auf mehrere Tickets/Spiele; Saldo je Person; Ticketstatus bezahlt/offen.

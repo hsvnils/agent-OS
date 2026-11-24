@@ -15,6 +15,7 @@ from __future__ import annotations
 import email
 import hashlib
 import re
+import unicodedata
 from email import policy
 from email.utils import parseaddr, parsedate_to_datetime
 from itertools import combinations
@@ -23,7 +24,7 @@ from . import ofc
 from .ofc_store import OfcStore
 from .ofc_zahlung import PAYPAL_DOMAINS, _BETRAG, _cent, _datum
 
-VERSION = 2                     # Erkennungsstand; automatisch erzeugte Eintraege aelterer Fassung werden neu bewertet
+VERSION = 3                     # Erkennungsstand; automatisch erzeugte Eintraege aelterer Fassung werden neu bewertet
 TAGE = 120
 _LABELS = ("transaktionscode", "transaktions", "datum", "betrag", "zahlung", "details", "hilfe", "paypal", "sie sind",
            "bitte", "hinweis")
@@ -157,59 +158,205 @@ def bezahlt_stand(st: dict) -> dict:
 
 
 # -- Vorschlaege ------------------------------------------------------------------------------------------------------
-def _name_passt(ticketname: str, zahler: set[str]) -> bool:
-    w = _woerter(ticketname)
-    return bool(w) and any(w <= z or (len(w) == 1 and next(iter(w)) in z) for z in zahler)
+_FREI = {"", "frei", "offen", "unbekannt"}
+_KEIN_NAME = {"hsv", "vs", "hamburger", "sv", "fc", "tsg", "fsv", "1", "05", "04", "borussia", "eintracht", "tickets",
+              "ticket", "dfb", "pokal", "heim", "auswaerts", "spiel", "gegen", "und", "the"}
+# Spitznamen/Staedte -> Kuerzel (gilt in beide Richtungen ueber die Merkmale eines Spiels)
+_SYNONYME = {"bmg": {"gladbach", "moenchengladbach", "fohlen"}, "vfb": {"stuttgart"}, "fcb": {"bayern", "muenchen"},
+             "sge": {"frankfurt"}, "svw": {"bremen", "werder"}, "s04": {"schalke"}, "bvb": {"dortmund"},
+             "koeln": {"effzeh", "koelle"}, "m05": {"mainz"}, "hajduk": {"split"}, "kopenhagen": {"copenhagen", "koebenhavn"}}
+_PHRASEN = ((r"nord\s*sued|sued\s*nord", "fcb"), (r"nordderby|nord\s+derby", "svw"))
+_NICHT_TICKET = re.compile(r"trikot|schal|merch|beitrag|mitglied|spende|aufkleber|shirt|hoodie|cap\b", re.I)
+_BANK = re.compile(r"sparkasse|\bbank\b|volksbank|commerzbank|\bing\b|••|\*\*\d", re.I)
+RUNDUNG_CENT = 500                                                    # „aufgerundet“: bis 5 € ueber dem Kartenpreis
+
+
+def _falten(s: str) -> str:
+    s = s.replace("ß", "ss")
+    for a, b in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("Ä", "Ae"), ("Ö", "Oe"), ("Ü", "Ue")):
+        s = s.replace(a, b)
+    return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c))
+
+
+def _ticket_woerter(name: str) -> set[str]:
+    """Ticketname -> Namenswoerter: „28B-ReneSchnettler“ -> {rene, schnettler}, „Johannes1“ -> {johannes}."""
+    s = _falten(name)
+    s = re.sub(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=\d)(?=[A-Za-z]{3})", " ", s)
+    s = re.sub(r"(?<=[A-Za-z])\d+\b", "", s)
+    return {w for w in _norm(s).split() if len(w) >= 2 and not re.fullmatch(r"\d+[a-z]?", w) and w not in _FREI}
+
+
+def _frei(name: str) -> bool:
+    return not _ticket_woerter(name)
+
+
+def _name_passt(ticketname: str, zahler: list[set[str]]) -> bool:
+    w = _ticket_woerter(ticketname)
+    return bool(w) and any(z and (w <= z or (len(w) == 1 and next(iter(w)) in z)) for z in zahler)
+
+
+def _merkmale(sid: str, s: dict) -> set[str]:
+    """Woerter, an denen man ein Spiel in einer Mitteilung erkennt (Gegner, Kuerzel aus dem Ordner, Spitznamen)."""
+    roh = _norm(_falten(re.sub(r"(?i)hsv|vs", " ", sid))) + " " + _norm(_falten(s.get("gegner") or ""))
+    w = {x for x in roh.split() if len(x) >= 3 and x not in _KEIN_NAME} | {x for x in roh.split() if x in ("s04", "m05")}
+    for k, v in _SYNONYME.items():
+        if k in w or v & w:
+            w |= v | {k}
+    if "pokal" in _norm(sid + " " + (s.get("wettbewerb") or "")):
+        w |= {"pokal", "dfb"}
+    return w
+
+
+def _heim(sid: str) -> bool:
+    return _norm(sid).replace(" ", "").startswith("hsv")
+
+
+def _erwaehnt(st: dict, mitteilung: str) -> tuple[set[str], bool]:
+    """Spiele, die die Mitteilung nennt -> ({sid}, Ort-Konflikt). Pokal/Heim/Auswaerts trennen gleiche Gegner."""
+    t = _norm(_falten(mitteilung or ""))
+    if not t:
+        return set(), False
+    mt = set(t.split())
+    for muster, k in _PHRASEN:
+        if re.search(muster, t):
+            mt.add(k)
+    treffer = {}
+    for sid, s in st["spiele"].items():
+        if s.get("verworfen"):
+            continue
+        m = _merkmale(sid, s) & mt
+        if m:
+            treffer[sid] = m
+    if not treffer:
+        return set(), False
+    woerter = t.split()
+    ort = ""
+    if mt & {"in", "bei", "auswaerts", "away"}:
+        ort = "aus"
+    elif "heim" in mt:
+        ort = "heim"
+    elif "hsv" in woerter:
+        i = woerter.index("hsv")
+        alle = set().union(*treffer.values())
+        pos = [j for j, x in enumerate(woerter) if x in alle]
+        if pos:
+            ort = "heim" if i < min(pos) else "aus"
+    menge = set(treffer)
+    if mt & {"pokal", "dfb"}:
+        p = {sid for sid in menge if "pokal" in _norm(sid + " " + (st["spiele"][sid].get("wettbewerb") or ""))}
+        menge = p or menge
+    if ort:
+        o = {sid for sid in menge if _heim(sid) == (ort == "heim")}
+        if not o:
+            return menge, True                                         # „Köln vs HSV“, aber nur das Heimspiel im Bestand
+        menge = o
+    return menge, False
+
+
+def _beste_kombi(pool: list[tuple[int, str, bool]], betrag: int, rundung: bool = False):
+    """pool [(offen_cent, ticketnr, ist_zahler)] -> beste Teilmenge mit Summe == Betrag (oder bis RUNDUNG_CENT darunter).
+    Bevorzugt Tickets auf den Namen des Zahlers, dann die Reihenfolge."""
+    beste = None
+    for k in range(1, min(len(pool), 10) + 1):
+        for kombi in combinations(pool, k):
+            summe = sum(p for p, _, _ in kombi)
+            rest = betrag - summe
+            if not (rest == 0 or (rundung and 0 < rest <= RUNDUNG_CENT and rest < min(p for p, _, _ in pool))):
+                continue
+            wert = (rest == 0, summe, sum(1 for *_, z in kombi if z))
+            if beste is None or wert > beste[0]:
+                beste = (wert, [nr for _, nr, _ in kombi], summe)
+    return (beste[1], beste[2]) if beste else None
 
 
 def vorschlag(z: dict, st: dict, offen: dict) -> dict:
-    """E6-Entscheidung fuer einen Eingang: {zuordnung: auto|offen, tickets, vorschlaege: [{spiel, tickets, summe, gruende}]}."""
+    """E6-Entscheidung fuer einen Eingang: {zuordnung: auto|offen|info, tickets, vorschlaege, wahl?, grund?}.
+
+    1. Nennt die Mitteilung ein Spiel, zaehlen nur dessen Tickets: Name + Betrag, sonst freie Karten (ohne Namen/„Frei“)
+       mit passendem Betrag (auch aufgerundet bis 5 €) -> automatisch. Passt der Betrag nur mit Karten anderer Namen ->
+       „Tickets wählen“ mit vorgewaehltem Spiel.
+    2. Ohne Spiel in der Mitteilung: genau eine Kombination aus Tickets auf den Namen des Zahlers mit genau dem Betrag.
+    Ueberweisungen aufs Bankkonto -> info; Mitteilung „Trikot/Beitrag …“ ohne passendes Ticket -> info."""
+    if _BANK.search(z.get("name") or ""):
+        return {"zuordnung": "info", "tickets": [], "vorschlaege": [], "grund": "Überweisung auf das Bankkonto"}
     if z["betrag_cent"] <= 0:
         return {"zuordnung": "offen", "tickets": [], "vorschlaege": []}
-    zahler = [_woerter(z["name"])] + [_woerter(a) for a in _aliase(st).get(_norm(z["name"]), set())]
-    mt = _woerter(z.get("mitteilung") or "")
+    zahler = [x for x in [_woerter(_falten(z["name"]))] + [_ticket_woerter(a) for a in _aliase(st).get(_norm(z["name"]), set())] if x]
+    erw, ort_konflikt = _erwaehnt(st, z.get("mitteilung") or "")
     je_spiel: dict = {}
     for nr, t in st["tickets"].items():
         s = st["spiele"].get(t["spiel"]) or {}
         if nr not in offen or s.get("verworfen"):                      # auch abgeschlossene: Zahlungen kommen oft danach
             continue
-        if _name_passt(t.get("name") or "", [x for x in zahler if x]):
-            je_spiel.setdefault(t["spiel"], []).append(nr)
+        je_spiel.setdefault(t["spiel"], []).append((nr, _name_passt(t.get("name") or "", zahler), _frei(t.get("name") or "")))
     moeglich = []
     for sid, nrs in je_spiel.items():
-        s = st["spiele"][sid]
-        gegner = {w for w in _woerter(s.get("gegner") or sid) if len(w) >= 3 and w not in ("hsv", "vs", "hamburger", "sv", "fc")}
-        gruende = ["Name passt"] + (["Gegner in der Mitteilung"] if gegner & mt else [])
-        preise = [(offen[nr], nr) for nr in nrs]
-        for k in range(len(preise), 0, -1):                            # alle Tickets, sonst Teilmengen gleicher Summe
-            for kombi in combinations(preise, k):
-                if sum(p for p, _ in kombi) == z["betrag_cent"] and all(p for p, _ in kombi):
-                    moeglich.append({"spiel": sid, "tickets": [nr for _, nr in kombi], "summe": z["betrag_cent"],
-                                     "gruende": gruende + ["Betrag passt"], "mitteilung": bool(gegner & mt)})
-                    break
-            else:
-                continue
-            break
+        eigene = [nr for nr, n, _ in nrs if n]
+        if not eigene:
+            continue
+        gruende = ["Name passt"] + (["Spiel in der Mitteilung"] if sid in erw else [])
+        mit_preis = [(offen[nr], nr, True) for nr in eigene if offen[nr]]
+        k = _beste_kombi(mit_preis, z["betrag_cent"]) if mit_preis else None
+        if k:
+            moeglich.append({"spiel": sid, "tickets": k[0], "summe": k[1], "gruende": gruende + ["Betrag passt"]})
+        elif not mit_preis and len(eigene) == 1:                       # Preis unbekannt (keine Rechnung)
+            moeglich.append({"spiel": sid, "tickets": eigene, "summe": z["betrag_cent"], "gruende": gruende + ["Preis unbekannt"]})
         else:
-            moeglich.append({"spiel": sid, "tickets": nrs, "summe": sum(offen[nr] for nr in nrs), "gruende": gruende,
-                             "mitteilung": bool(gegner & mt)})
-    if len([m for m in moeglich if "Betrag passt" in m["gruende"]]) == 0 and len(je_spiel) > 1:
-        alle = [(offen[nr], nr, sid) for sid, nrs in je_spiel.items() for nr in nrs]
-        if sum(p for p, _, _ in alle) == z["betrag_cent"] and all(p for p, _, _ in alle):   # Sammelzahlung fuer mehrere Spiele
-            moeglich.append({"spiel": "", "tickets": [nr for _, nr, _ in alle], "summe": z["betrag_cent"],
-                             "gruende": ["Name passt", "Betrag passt", "mehrere Spiele"], "mitteilung": False})
+            moeglich.append({"spiel": sid, "tickets": eigene, "summe": sum(offen[nr] for nr in eigene), "gruende": gruende})
     treffer = [m for m in moeglich if "Betrag passt" in m["gruende"]]
-    if len(treffer) > 1 and sum(1 for m in treffer if m["mitteilung"]) == 1:
-        treffer = [m for m in treffer if m["mitteilung"]]
-    erwaehnt = {sid for sid, s in st["spiele"].items() if not s.get("verworfen")
-                and {w for w in _woerter(s.get("gegner") or sid) if len(w) >= 3 and w not in ("hsv", "vs", "hamburger", "sv", "fc")} & mt}
-    if len(treffer) == 1 and erwaehnt and treffer[0]["spiel"] not in erwaehnt and not (
-            not treffer[0]["spiel"] and {st["tickets"][nr]["spiel"] for nr in treffer[0]["tickets"]} & erwaehnt):
-        treffer = []                                                   # Mitteilung nennt ein anderes Spiel -> per Klick
-    moeglich.sort(key=lambda m: ("Betrag passt" not in m["gruende"], not m["mitteilung"], m["spiel"]))
+    if not treffer and len(je_spiel) > 1:                              # Sammelzahlung fuer mehrere Spiele
+        alle = [(offen[nr], nr, sid) for sid, nrs in je_spiel.items() for nr, n, _ in nrs if n]
+        if len(alle) > 1 and sum(p for p, _, _ in alle) == z["betrag_cent"] and all(p for p, _, _ in alle) \
+                and len({sid for *_, sid in alle}) > 1 and (not erw or {sid for *_, sid in alle} <= erw):
+            m = {"spiel": "", "tickets": [nr for _, nr, _ in alle], "summe": z["betrag_cent"],
+                 "gruende": ["Name passt", "Betrag passt", "mehrere Spiele"]}
+            moeglich.append(m)
+            treffer = [m]
+    wahl = None
+    if erw:                                                            # 1. die Mitteilung nennt das Spiel
+        treffer = [m for m in treffer if m["spiel"] in erw or (not m["spiel"] and {st["tickets"][nr]["spiel"] for nr in m["tickets"]} <= erw)]
+        unbekannt = [m for m in moeglich if m["spiel"] in erw and "Preis unbekannt" in m["gruende"]]
+        if not treffer and len(unbekannt) == 1:
+            treffer = unbekannt
+        if not treffer:
+            frei_treffer, fremd = [], []
+            for sid in sorted(erw):
+                nrs = je_spiel.get(sid, [])
+                pool = [(offen[nr], nr, n) for nr, n, f in nrs if (n or f) and offen[nr]]
+                k = _beste_kombi(pool, z["betrag_cent"], rundung=True) if pool else None
+                if k:
+                    g = ["Spiel in der Mitteilung"] + (["Name passt"] if any(n for nr, n, _ in nrs if nr in k[0]) else []) \
+                        + (["freie Karte"] if any(f for nr, _, f in nrs if nr in k[0]) else []) \
+                        + (["Betrag passt"] if k[1] == z["betrag_cent"] else [f"aufgerundet (+{(z['betrag_cent'] - k[1]) / 100:.2f} €)".replace(".", ",")])
+                    frei_treffer.append({"spiel": sid, "tickets": k[0], "summe": k[1], "gruende": g})
+                    continue
+                preise = sorted({offen[nr] for nr, _, _ in nrs if offen[nr]})
+                for p in preise:
+                    if p and z["betrag_cent"] % p == 0 and z["betrag_cent"] // p <= len(nrs):
+                        fremd.append({"spiel": sid, "karten": z["betrag_cent"] // p, "preis_cent": p,
+                                      "tickets": [nr for nr, n, _ in nrs if n]})
+                        break
+            moeglich = frei_treffer + moeglich
+            treffer = frei_treffer
+            if not frei_treffer and len(fremd) == 1:
+                wahl = fremd[0]
+        if ort_konflikt:
+            treffer = []                                               # Mitteilung nennt ein Spiel, das so nicht im Bestand ist
+    seen, liste = set(), []
+    for m in sorted(moeglich, key=lambda m: ("Betrag passt" not in m["gruende"] and not any(g.startswith("aufgerundet") for g in m["gruende"]),
+                                            m["spiel"] not in erw, "Preis unbekannt" not in m["gruende"], m["spiel"])):
+        key = (m["spiel"], tuple(m["tickets"]))
+        if key not in seen:
+            seen.add(key)
+            liste.append(m)
+    out = {"zuordnung": "offen", "tickets": [], "vorschlaege": liste[:4]}
+    if wahl:
+        out["wahl"] = wahl
     if len(treffer) == 1:
-        return {"zuordnung": "auto", "tickets": treffer[0]["tickets"], "vorschlaege": moeglich[:4]}
-    return {"zuordnung": "offen", "tickets": [], "vorschlaege": moeglich[:4]}
+        out.update(zuordnung="auto", tickets=treffer[0]["tickets"])
+    elif not treffer and _NICHT_TICKET.search(z.get("mitteilung") or "") and not erw:
+        out.update(zuordnung="info", grund="Kein Ticket laut Mitteilung")
+    return out
 
 
 def _offen(st: dict) -> dict:
@@ -219,11 +366,24 @@ def _offen(st: dict) -> dict:
             if not bz[nr]["bezahlt"]}
 
 
+def _neu_bewerten(e: dict) -> bool:
+    """Automatisch entschiedene/offene Eintraege ohne Klick des CEO werden bei jedem Lauf neu bewertet."""
+    if e.get("von_hand") or e.get("zuordnung") in ("manuell", "ignoriert"):
+        return False
+    return e.get("zuordnung") == "offen" or (e.get("v") != VERSION and e.get("zuordnung") in ("auto", "info"))
+
+
+def _gleich(a: dict, b: dict) -> bool:
+    keys = ("zuordnung", "tickets", "wahl", "grund")
+    return all(a.get(k) == b.get(k) for k in keys) and [(m["spiel"], m["tickets"]) for m in a.get("vorschlaege") or []] \
+        == [(m["spiel"], m["tickets"]) for m in b.get("vorschlaege") or []] and a.get("v") == b.get("v")
+
+
 def eingang_plan(store: OfcStore, mails: list[dict]) -> dict:
-    """Dry-Run: neue Eingaenge mit Vorschlag/Auto-Zuordnung -- schreibt nichts."""
+    """Dry-Run: neue (und neu bewertete) Eingaenge mit Vorschlag/Auto-Zuordnung -- schreibt nichts."""
     st = store.stand()
-    alt = {i for i, e in st.get("eingaenge", {}).items() if e.get("v") != VERSION and e.get("zuordnung") in ("auto", "offen")}
-    if alt:                                                            # alte automatische Bewertung zaehlt nicht mehr
+    alt = {i: e for i, e in st.get("eingaenge", {}).items() if _neu_bewerten(e)}
+    if alt:                                                            # ohne Klick: Bewertung zaehlt nicht, wird neu gemacht
         st = st | {"eingaenge": {i: e for i, e in st["eingaenge"].items() if i not in alt}}
     bekannt = st.get("eingaenge", {})
     offen = _offen(st)
@@ -235,8 +395,40 @@ def eingang_plan(store: OfcStore, mails: list[dict]) -> dict:
         for nr in e["tickets"]:                                         # im selben Lauf nicht doppelt vergeben
             offen.pop(nr, None)
         neu.append(e)
+    _teilzahlungen(neu, st, offen)
+    neu = [e for e in neu if not (e["id"] in alt and _gleich(alt[e["id"]], e))]
     return {"ok": True, "neu": neu, "auto": sum(1 for e in neu if e["zuordnung"] == "auto"),
-            "offen": sum(1 for e in neu if e["zuordnung"] == "offen")}
+            "offen": sum(1 for e in neu if e["zuordnung"] == "offen"),
+            "neu_bewertet": sum(1 for e in neu if e["id"] in alt)}
+
+
+def _teilzahlungen(neu: list[dict], st: dict, offen: dict) -> None:
+    """Gleicher Zahler, mehrere offene Betraege binnen 3 Tagen, die zusammen genau passen (z. B. 81 € + 1 €)."""
+    from datetime import date as _d
+    gruppen: dict = {}
+    for e in neu:
+        if e["zuordnung"] == "offen" and e["betrag_cent"] > 0:
+            gruppen.setdefault(_norm(e["name"]), []).append(e)
+    for es in gruppen.values():
+        if len(es) < 2:
+            continue
+        for k in range(min(len(es), 3), 1, -1):
+            for kombi in combinations(es, k):
+                try:
+                    tage = [_d.fromisoformat(e["datum"]) for e in kombi]
+                except ValueError:
+                    continue
+                if (max(tage) - min(tage)).days > 3 or any(e["zuordnung"] != "offen" for e in kombi):
+                    continue
+                summe = {"name": kombi[0]["name"], "betrag_cent": sum(e["betrag_cent"] for e in kombi),
+                         "mitteilung": " ".join(e.get("mitteilung") or "" for e in kombi)}
+                v = vorschlag(summe, st, offen)
+                if v["zuordnung"] != "auto":
+                    continue
+                for e in kombi:
+                    e.update(zuordnung="auto", tickets=list(v["tickets"]), grund="Teilzahlungen zusammen")
+                for nr in v["tickets"]:
+                    offen.pop(nr, None)
 
 
 def eingang_anwenden(store: OfcStore, mails: list[dict], *, von: str = "") -> dict:
@@ -257,10 +449,11 @@ def eingang_zuordnen(store: OfcStore, eid: str, tickets: list[str], *, ignoriere
     if fremd:
         return {"ok": False, "hinweis": f"Ticket nicht gefunden: {fremd[0]}"}
     zu = "ignoriert" if ignorieren else ("manuell" if tickets else "offen")
-    store.erfassen("ofc_eingang", {"id": eid, "tickets": [] if ignorieren else list(tickets), "zuordnung": zu}, von=von)
+    store.erfassen("ofc_eingang", {"id": eid, "tickets": [] if ignorieren else list(tickets), "zuordnung": zu, "von_hand": True},
+                   von=von)                                            # Klick des CEO -> wird nie automatisch neu bewertet
     neu_alias = []
     if zu == "manuell":
-        zahler = _woerter(e.get("name") or "")
+        zahler = _woerter(_falten(e.get("name") or ""))
         for nr in tickets:
             tn = st["tickets"][nr].get("name") or ""
             if tn and not _name_passt(tn, [zahler]) and tn not in neu_alias:

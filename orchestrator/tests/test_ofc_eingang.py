@@ -195,3 +195,79 @@ class TestNachbesserung(_Basis):
         oe.eingang_anwenden(self.st, [_erhalten("Ben Beispiel", "35,00")])
         self.assertEqual(self.bezahlt(), {"262236181415-2", "262236187777-2"})
         self.assertEqual(oe.eingang_plan(self.st, [_erhalten("Ben Beispiel", "35,00")])["neu"], [])
+
+
+class TestV3(unittest.TestCase):
+    """Fassung 3: Ticketnamen wie „28B-ReneSchnettler“, Spiel aus der Mitteilung (Spitznamen, Pokal, Heim/Auswaerts),
+    freie Karten, aufgerundet, Teilzahlungen, Preis unbekannt, Bank/Trikot -> info, Klick wird nie neu bewertet."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.d = Path(self.tmp.name)
+        s = self.d / "Tickets 26-27"
+        _ordner(s, "HSVvsBMG", "262230000001", "Borussia Moenchengladbach", ["28B-ErikaMuster", "Frei"])
+        _ordner(s, "HSVvsSGE - DFB-Pokal", "262230000002", "Eintracht Frankfurt", ["20A - Ben", "Carla"])
+        _ordner(s, "SGEvsHSV", "262230000003", "Eintracht Frankfurt", ["Ben", "Dora"])
+        self.st = OfcStore(self.d / "fanclub")
+        self.p = mock.patch.object(ofc, "pdf_text", _pdf_als_text)
+        self.p.start()
+        import_anwenden(self.st, s)
+
+    def tearDown(self):
+        self.p.stop()
+        self.tmp.cleanup()
+
+    def plan(self, *mails):
+        return {e["id"]: e for e in oe.eingang_plan(self.st, list(mails))["neu"]}
+
+    def test_12_ticketname_zusammengeschrieben_und_spitzname(self):
+        self.assertEqual(oe._ticket_woerter("28BOkkaHammen"), {"okka", "hammen"})
+        self.assertEqual(oe._ticket_woerter("28B-ReneSchnettler"), {"rene", "schnettler"})
+        self.assertEqual(oe._ticket_woerter("Johannes1"), {"johannes"})
+        self.assertTrue(oe._frei("Frei") and oe._frei("") and not oe._frei("Ben"))
+        e = self.plan(_erhalten("Érika Muster", "35,00"))["e-1EE11111EE1111111"]
+        self.assertEqual((e["zuordnung"], e["tickets"]), ("auto", ["262230000001-1"]))
+        e = self.plan(_erhalten("Max Neu", "35,00", "HSV - Gladbach"))["e-1EE11111EE1111111"]
+        self.assertEqual((e["zuordnung"], e["tickets"]), ("auto", ["262230000001-2"]))        # freie Karte im genannten Spiel
+
+    def test_13_pokal_heim_auswaerts(self):
+        e = self.plan(_erhalten("Ben Beispiel", "35,00", "Frankfurt DFB-Pokal"))["e-1EE11111EE1111111"]
+        self.assertEqual((e["zuordnung"], e["tickets"]), ("auto", ["262230000002-1"]))
+        e = self.plan(_erhalten("Ben Beispiel", "35,00", "Karten in Frankfurt"))["e-1EE11111EE1111111"]
+        self.assertEqual((e["zuordnung"], e["tickets"]), ("auto", ["262230000003-1"]))
+        e = self.plan(_erhalten("Ben Beispiel", "35,00", "Frankfurt"))["e-1EE11111EE1111111"]
+        self.assertEqual(e["zuordnung"], "offen")                                         # Pokal oder auswaerts?
+        e = self.plan(_erhalten("Ben Beispiel", "35,00", "Gladbach vs HSV"))["e-1EE11111EE1111111"]
+        self.assertEqual(e["zuordnung"], "offen")                                         # nur das Heimspiel im Bestand
+
+    def test_14_aufgerundet_wahl_teilzahlungen(self):
+        e = self.plan(_erhalten("Max Neu", "37,00", "Gladbach"))["e-1EE11111EE1111111"]
+        self.assertEqual((e["zuordnung"], e["tickets"]), ("auto", ["262230000001-2"]))
+        self.assertTrue(any(g.startswith("aufgerundet (+2,00") for g in e["vorschlaege"][0]["gruende"]))
+        e = self.plan(_erhalten("Ben Beispiel", "70,00", "Pokal"))["e-1EE11111EE1111111"]
+        self.assertEqual((e["zuordnung"], e["wahl"]["karten"], e["wahl"]["tickets"]), ("offen", 2, ["262230000002-1"]))
+        v = self.plan(_erhalten("Dora D.", "34,00"), _erhalten("Dora D.", "1,00", tc="7CC77777CC7777777", mid="<t@p>"))
+        self.assertEqual({(e["zuordnung"], tuple(e["tickets"])) for e in v.values()}, {("auto", ("262230000003-2",))})
+        oe.eingang_anwenden(self.st, [_erhalten("Dora D.", "34,00"), _erhalten("Dora D.", "1,00", tc="7CC77777CC7777777", mid="<t@p>")])
+        self.assertTrue(oe.bezahlt_stand(self.st.stand())["tickets"]["262230000003-2"]["bezahlt"])
+
+    def test_15_bank_trikot_info_und_klick_bleibt(self):
+        b = _pp("Sie haben eine Rückzahlung gesendet", "Sie haben eine Rückzahlung an Hamburger Sparkasse AG ••1234 gesendet\n"
+                "Betrag 50,00\xa0€\xa0EUR\nTransaktionscode\n8BB88888BB8888888\n", "<b@p>")
+        t = _erhalten("Carla Neu", "16,00", "Trikot", tc="9TT99999TT9999999", mid="<tr@p>")
+        v = self.plan(b, t)
+        self.assertEqual(sorted(e["zuordnung"] for e in v.values()), ["info", "info"])
+        oe.eingang_anwenden(self.st, [b, t, _erhalten("Max Neu", "35,00", "Gladbach")])
+        self.assertEqual(oe.eingang_plan(self.st, [b, t, _erhalten("Max Neu", "35,00", "Gladbach")])["neu"], [])   # unveraendert: nichts neu
+        oe.eingang_zuordnen(self.st, "e-1EE11111EE1111111", [])                            # CEO loest per Klick
+        self.assertEqual(oe.eingang_plan(self.st, [_erhalten("Max Neu", "35,00", "Gladbach")])["neu"], [])
+        self.assertTrue(self.st.stand()["eingaenge"]["e-1EE11111EE1111111"]["von_hand"])
+
+    def test_16_offene_werden_mit_neuem_alias_neu_bewertet(self):
+        p = _erhalten("Gerd Vater", "70,00", "Pokal")
+        oe.eingang_anwenden(self.st, [p])
+        self.assertEqual(self.st.stand()["eingaenge"]["e-1EE11111EE1111111"]["zuordnung"], "offen")
+        self.st.erfassen("ofc_alias", {"zahler": "gerd vater", "name": "20A - Ben"})
+        self.st.erfassen("ofc_alias", {"zahler": "gerd vater", "name": "Carla"})
+        e = oe.eingang_plan(self.st, [p])
+        self.assertEqual((e["neu_bewertet"], e["neu"][0]["zuordnung"]), (1, "auto"))
