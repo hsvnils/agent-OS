@@ -5068,18 +5068,20 @@ async function renderOfcEingaenge() {
   OFC_E = await jget("/api/ofc/eingaenge");
   if (!OFC_E) { $("#v2-app").innerHTML = kopf + emptyRow("Nicht erreichbar."); return; }
   const tk = Object.fromEntries(OFC_E.tickets.map(x => [x.ticketnr, x]));
+  OFC_E.spiele = Object.fromEntries(OFC_E.tickets.map(x => [x.spiel, x.spiel_titel]));
   const tkText = (nrs) => nrs.map(nr => tk[nr] ? `${tk[nr].name || "ohne Namen"} (${tk[nr].spiel_titel})` : nr).join(", ");
   const zeile = (e) => `<div class="v2-list-row v2-ofc-zeile"><div class="v2-ofc-datum"><b>${esc(datumDe(e.datum))}</b><small>${e.betrag_cent < 0 ? "−" : ""}${esc(cent2eur(Math.abs(e.betrag_cent)))}</small></div>
       <div class="grow"><b class="v2-umbruch">${esc(e.name)}</b>${e.rueckzahlung ? ` <span class="v2-badge neutral">Rückzahlung</span>` : ""}
         ${e.mitteilung ? `<small class="v2-umbruch">„${esc(e.mitteilung)}“</small>` : ""}
-        ${(e.tickets || []).length ? `<small class="v2-umbruch">→ ${esc(tkText(e.tickets))} <a href="#" data-act="ofc-ein-zu" data-id="${esc(e.id)}" data-val="">lösen</a></small>`
-          : e.zuordnung === "ignoriert" ? `<small>kein Ticket (z. B. Beitrag) · <a href="#" data-act="ofc-ein-zu" data-id="${esc(e.id)}" data-val="">wieder aufnehmen</a></small>`
-          : `${(e.vorschlaege || []).map((v, i) => !v.tickets.length ? "" : `<div class="v2-ofc-zuordnen"><span class="v2-sub v2-umbruch">★ ${esc(tkText(v.tickets))} · ${esc(cent2eur(v.summe))} (${esc(v.gruende.join(", "))})</span>
+        ${(e.tickets || []).length ? `<small class="v2-umbruch">→ ${esc(tkText(e.tickets))}${e.grund ? " · " + esc(e.grund) : ""} <a href="#" data-act="ofc-ein-zu" data-id="${esc(e.id)}" data-val="">lösen</a></small>`
+          : e.zuordnung === "ignoriert" || e.zuordnung === "info" ? `<div class="v2-sub">${esc(e.grund || "kein Ticket (z. B. Beitrag)")} · <a href="#" data-act="ofc-ein-zu" data-id="${esc(e.id)}" data-val="">wieder aufnehmen</a></div>`
+          : `${e.wahl && OFC_E.spiele[e.wahl.spiel] ? `<div class="v2-sub v2-umbruch">📌 Mitteilung nennt ${esc(OFC_E.spiele[e.wahl.spiel])}: ${e.wahl.karten} Karte(n) à ${esc(cent2eur(e.wahl.preis_cent))} – bitte die Tickets wählen.</div>` : ""}
+             ${(e.vorschlaege || []).map((v, i) => !v.tickets.length ? "" : `<div class="v2-ofc-zuordnen"><span class="v2-sub v2-umbruch">★ ${esc(tkText(v.tickets))} · ${esc(cent2eur(v.summe))} (${esc(v.gruende.join(", "))})</span>
                <button class="v2-btn sm pri" data-act="ofc-ein-vs" data-id="${esc(e.id)}" data-val="${i}">Übernehmen</button></div>`).join("")}
              <div class="v2-ofc-zuordnen"><button class="v2-btn sm" data-act="ofc-ein-waehlen" data-id="${esc(e.id)}">Tickets wählen …</button>
              <button class="v2-btn sm" data-act="ofc-ein-ign" data-id="${esc(e.id)}">Kein Ticket</button></div>`}</div>
       <span class="v2-badge ${OFC_ZUO[e.zuordnung][0]}">${OFC_ZUO[e.zuordnung][1].replace("kein Ticketkauf", "kein Ticket")}</span></div>`;
-  const offen = OFC_E.eingaenge.filter(e => e.zuordnung === "offen"), zu = OFC_E.eingaenge.filter(e => (e.tickets || []).length), ign = OFC_E.eingaenge.filter(e => e.zuordnung === "ignoriert");
+  const offen = OFC_E.eingaenge.filter(e => e.zuordnung === "offen"), zu = OFC_E.eingaenge.filter(e => (e.tickets || []).length), ign = OFC_E.eingaenge.filter(e => e.zuordnung === "ignoriert" || e.zuordnung === "info");
   $("#v2-app").innerHTML = kopf + `<div class="v2-grid">
       <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Zuordnen (${offen.length})</span></div>${offen.map(zeile).join("") || emptyRow("Alles zugeordnet.")}</div>
       <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Zugeordnet (${zu.length})</span></div>${zu.map(zeile).join("") || emptyRow(OFC_E.eingaenge.length ? "Noch nichts zugeordnet." : "Noch keine Eingänge – oben „Aus Postfach holen“.")}</div>
@@ -5096,15 +5098,17 @@ function ofcEinWaehlen(id) {
   const e = OFC_E.eingaenge.find(x => x.id === id); if (!e) return;
   const liste = OFC_E.tickets.filter(x => !x.bezahlt);
   openModal(`💶 ${e.name} · ${cent2eur(e.betrag_cent)}`, `<div class="v2-sub">${e.mitteilung ? "„" + esc(e.mitteilung) + "“ · " : ""}Tickets wählen – auch mehrere Spiele. Passt die Summe nicht, bleibt der Rest als Saldo.</div>
-    <input id="ofc-ein-q" class="v2-inp" style="width:100%;box-sizing:border-box;margin-top:8px" type="search" placeholder="Name oder Spiel filtern">
-    <div id="ofc-ein-liste" style="margin-top:8px">${liste.map(x => `<label class="v2-list-row v2-ofc-wahl" data-such="${esc((x.name + " " + x.spiel_titel).toLowerCase())}"><input type="checkbox" value="${esc(x.ticketnr)}" data-preis="${x.offen_cent}">
+    <input id="ofc-ein-q" class="v2-inp" style="width:100%;box-sizing:border-box;margin-top:8px" type="search" placeholder="Name oder Spiel filtern" value="${esc(e.wahl && OFC_E.spiele[e.wahl.spiel] ? OFC_E.spiele[e.wahl.spiel] : "")}">
+    <div id="ofc-ein-liste" style="margin-top:8px">${liste.map(x => `<label class="v2-list-row v2-ofc-wahl" data-such="${esc((x.name + " " + x.spiel_titel).toLowerCase())}"><input type="checkbox" value="${esc(x.ticketnr)}" data-preis="${x.offen_cent}"${e.wahl && (e.wahl.tickets || []).includes(x.ticketnr) ? " checked" : ""}>
       <div class="grow"><b>${esc(x.name || "ohne Namen")}</b><small>${esc(x.spiel_titel)}${x.spieltag ? " · " + esc(datumDe(x.spieltag)) : ""} · ${esc(x.ticketnr)}</small></div><span>${esc(cent2eur(x.offen_cent))}</span></label>`).join("") || emptyRow("Keine offenen Tickets.")}</div>
     <div class="v2-kv"><span>Ausgewählt</span><b id="ofc-ein-summe">0,00 €</b></div>
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-ein-ok" data-id="${esc(id)}">Zuordnen</button></div>`);
   const sum = () => { const s = [...document.querySelectorAll("#ofc-ein-liste input:checked")].reduce((a, i) => a + Number(i.dataset.preis || 0), 0);
     $("#ofc-ein-summe").textContent = cent2eur(s) + (s === e.betrag_cent ? " ✓" : ` (Zahlung ${cent2eur(e.betrag_cent)})`); };
+  const filtern = () => { const q = $("#ofc-ein-q").value.trim().toLowerCase(); document.querySelectorAll(".v2-ofc-wahl").forEach(l => { l.style.display = !q || l.dataset.such.includes(q) ? "" : "none"; }); };
   $("#ofc-ein-liste").addEventListener("change", sum);
-  $("#ofc-ein-q").addEventListener("input", (ev) => { const q = ev.target.value.trim().toLowerCase(); document.querySelectorAll(".v2-ofc-wahl").forEach(l => { l.style.display = !q || l.dataset.such.includes(q) ? "" : "none"; }); });
+  $("#ofc-ein-q").addEventListener("input", filtern);
+  filtern(); sum();
 }
 async function ofcEinHolen() {
   openModal("📬 Eingänge aus dem Postfach", `<div class="v2-empty">Lese die PayPal-Mails … (dauert einige Sekunden)</div>`);
@@ -5122,7 +5126,7 @@ async function ofcEinHolenOk(el) {
 }
 /* OFC_ROADMAP O4: Eigene PayPal-Zahlungen (Eventim/HSV) den Spielen zuordnen; „Später bezahlen“ mit Fälligkeit */
 const OFC_ZART = { gesendet: "PayPal-Zahlung", spaeter: "Später bezahlen", erstattung: "Erstattung" };
-const OFC_ZUO = { auto: ["ok", "automatisch"], manuell: ["ok", "zugeordnet"], offen: ["warn", "zuordnen"], ignoriert: ["neutral", "kein Ticketkauf"] };
+const OFC_ZUO = { auto: ["ok", "automatisch"], manuell: ["ok", "zugeordnet"], offen: ["warn", "zuordnen"], ignoriert: ["neutral", "kein Ticketkauf"], info: ["neutral", "kein Ticket"] };
 let OFC_Z = null;
 async function renderOfcZahlungen() {
   OFC_M_AKTIV = true;
