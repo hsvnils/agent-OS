@@ -17,6 +17,10 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 19:57] — Claude Code
+- **Was:** Roadmap `OFC_KASSE_ROADMAP.md` geplant (Mitgliedsbeitraege und Fanclub-Kasse, Etappen KA0-KA5, Entscheidungen E-K1 bis E-K9 mit Empfehlung); Analyse read-only mit Belegen (Mitgliederliste nur gezaehlt: Gold 65, Beitrag 67 x 40 €, `Nächste Zahlung` 42 von 119 gepflegt; PayPal-Eingaenge 120 Tage 2.511,50 €, keine Mitteilung mit „Beitrag“). In `ROADMAP.md` registriert, Folgethema in `OFC_ROADMAP.md` verlinkt. Nichts gebaut.
+- **Warum:** CEO 2026-11-24: „Plane die Roadmap fuer Mitgliedsbeitraege und Fanclub-Kasse.“
+- **Betroffen:** `OFC_KASSE_ROADMAP.md`, `ROADMAP.md`, `OFC_ROADMAP.md`, `projekt_changelog.md`
 ## [2026-11-24 19:56] — Claude Code
 - **Was:** OFC O5 Zuordnung der Zahlungseingaenge, Fassung 3 (`orchestrator/core/ofc_eingang.py`, VERSION 3): Ticketnamen robust gelesen (zusammengeschrieben, Blockkuerzel, Ziffern, Akzente), Spiel aus der Mitteilung (Spitznamen, Pokal, Heim/Auswaerts) entscheidet, freie Karten und aufgerundete Betraege bis 5 € im genannten Spiel automatisch, Teilzahlungen binnen 3 Tagen zusammen, Preis unbekannt nur mit Spiel in der Mitteilung, Bankueberweisung/Trikot -> „kein Ticket“ (info), „Tickets waehlen“ mit vorgewaehltem Spiel und vorangekreuzten Karten; offene Eingaenge werden bei jedem Lauf neu bewertet und nur bei Aenderung neu gespeichert, Klicks des CEO (`von_hand`) nie. Ansicht „💶 Eingaenge“ zeigt Grund (aufgerundet, Teilzahlungen) und Hinweis „Mitteilung nennt …“ (`app-v2.js` v172). 5 neue Tests (`test_ofc_eingang.py` TestV3). Probe auf einer lesenden Kopie der echten Daten: 24 statt 10 automatisch, 2 kein Ticket, 16 offen (8 mit vorgewaehltem Spiel). Suite 1826 gruen, Doku-Check ok, Sichtpruefung headless Rechner/iPhone ok.
 - **Warum:** CEO 2026-11-24: Eingaenge der Mitglieder sollen ohne manuellen Abgleich dem Spiel zugeordnet werden; die Analyse der 32 offenen zeigte Schreibweisen auf den Tickets und Spielnamen in der Mitteilung als Hauptursache.
