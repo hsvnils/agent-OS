@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 11:00] — Claude Code
+- **Was:** OFC O0 (Fanclub HSVInside): `HsvInsideMail` (Postfach moin@hsvinside.de nur lesend, nur PayPal/Eventim/HSV per Server-Suche + Absender-Pruefung, kein Senden), `core/ofc.py` (HSV-Rechnung und Tickets lesen inkl. Auswaerts/Pokal/Freundschaft, Heim/Auswaerts, Ordner-Analyse ohne Namen, Postfach-Analyse maskiert), Endpunkte `GET /api/ofc/postfach/pruefen`, `/api/ofc/analyse/postfach`, `/api/ofc/analyse/ordner` (nur CEO), Mount `HSVInside_Shared/Fanclub HSVInside` -> `/fanclub_nas:ro` in `luna-os`. CISO-Pruefung (Zugriffs-Policy), Dienste-Register, Datenfluesse, Datenschutz-Nachtrag (keine KI fuer Mitgliederdaten), Entscheidungs-Register E1-E8; Roadmap um OM (Mitgliederliste), Statistik je Mitglied und Folgethema Kasse/Beitraege ergaenzt. Probelauf auf einer Kopie der Saison: 11 von 12 Rechnungen erkannt. Tests `test_ofc.py` (8, Gegenproben rot), Suite 1766 gruen.
+- **Warum:** CEO-Entscheidungen E1-E8 und Go fuer O0 (2026-11-24).
+- **Betroffen:** orchestrator/governance/allinkl_mail.py, orchestrator/governance/dienste_register.py, orchestrator/core/ofc.py, orchestrator/channels/web/app.py, orchestrator/tests/test_ofc.py, deploy/docker-compose.yml, governance/zugriffs-policy.md, docs/datenfluesse.md, docs/datenschutz-ki-nutzung.md, docs/entscheidungs-register.md, docs/bekannte-fehler.md, OFC_ROADMAP.md, ROADMAP.md.
+
 ## [2026-11-24 10:42] — Claude Code
 - **Was:** Roadmap `OFC_ROADMAP.md` (Fanclub HSVInside: Tickets, Namen, Dateien umbenennen, HSV-/Eventim-Bestellungen und PayPal-Zahlungen aus moin@hsvinside.de, getrennt von der Buchhaltung) mit read-only Analyse der NAS-Ordner `Tickets 26-27` und einer HSV-Rechnung; Etappen O0-O6, Entscheidungen E1-E8; im Roadmap-Verzeichnis eingetragen.
 - **Warum:** CEO-Auftrag 2026-11-24 (Roadmap zur Pruefung, noch kein Go).

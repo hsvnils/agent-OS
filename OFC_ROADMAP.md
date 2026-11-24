@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-o0`
 - Basiscommit: `734b284`
-- Naechster Schritt: E1-E8 entschieden, Go fuer O0 (2026-11-24) -- O0 in Arbeit auf `ai/ofc-o0`; offen E5b (Anbindung Mitgliederliste).
+- Naechster Schritt: O0 gebaut (Branch `ai/ofc-o0`) -- CEO pusht, Go fuer Merge + Deploy, `luna-os` neu erstellen (Mount), `HSVINSIDE_*` in die NAS-`.env`; dann Postfach-Analyse mit dem CEO durchsehen. Offen: E5b (Mitgliederliste).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -88,7 +88,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O0: Zugang und Analyse (nur lesend)
 
-- Status: geplant
+- Status: umgesetzt (2026-11-24; `HsvInsideMail` nur lesend/Absenderfilter, `core/ofc.py` Rechnung/Ticket/Ordner-/Postfach-Analyse, Endpunkte `/api/ofc/...` nur CEO, Mount `:ro`, CISO in `governance/zugriffs-policy.md`; `test_ofc.py`. Probelauf Ordner (Kopie, 2026-11-24): 12 Spiele, 11 Rechnungen erkannt (inkl. Auswaerts/DFB-Pokal/Freundschaft, Heim/Auswaerts), 70 Karten, 77 Ticket-Dateien; SVWvsHSV ohne Rechnung, HSVvsFCB mit 2. Bestellung ohne Rechnung, HSVvsVFB ohne Namen. Offen: Deploy, Zugangsdaten moin@, Postfach-Analyse)
 - Ziel / Scope / Nicht-Scope: Zugang moin@ nach E1 (Klasse wie `NilsMail`, Absenderfilter), Mount nach E2 (erst nur
   lesend). Dry-Run-Bericht in LUNA-OS bzw. als Skript: Mails je Absender der letzten 90 Tage, erkannte Felder je Typ
   (PayPal erhalten / PayPal gesendet / Eventim / HSV-Rechnung) **ohne** Namen/Betraege ins Log; Ordner-Scan wie oben.
