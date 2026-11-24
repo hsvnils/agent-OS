@@ -1,10 +1,10 @@
 # Roadmap: OFC-Kasse -- Mitgliedsbeitraege und Fanclub-Kasse HSVInside
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-11-24
-- Arbeitsbranch: `ai/ofc-kasse`
+- Arbeitsbranch: `ai/ofc-ka0`
 - Basiscommit: `fda2486`
-- Naechster Schritt: E-K1 (Kalenderjahr, 01.01.), E-K2 (Gold 40 €/Jahr), E-K5 (nur PayPal) entschieden, E-K8 entfaellt. Offen: E-K3 (neue Mitglieder: voller Beitrag?) und „wie empfohlen“ fuer E-K4, E-K6, E-K7, E-K9; dann Go fuer KA0. Vorher wird nichts gebaut.
+- Naechster Schritt: KA0 umgesetzt auf `ai/ofc-ka0` (Push, Merge, Deploy durch CEO-Go). Danach Go fuer KA1 (Beitragszahlungen erkennen). Fuer KA4 wird der PayPal-Aktivitaeten-Export (CSV) gebraucht -- der gelieferte „Balance Reconciliation Report“ enthaelt 0 Eintraege.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -54,19 +54,19 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 |---|---|---|
 | E-K1 | Beitragsjahr und Faelligkeit | **Entschieden (CEO 2026-11-24): Kalenderjahr, faellig 01.01.** |
 | E-K2 | Woher kommt der Soll-Beitrag? | **Entschieden (CEO 2026-11-24): Goldmitgliedschaft 40 € pro Jahr.** Empfehlung zur Quelle: aus der Google-Tabelle (Spalten `Beitrag` + Mitgliedschaft), nur lesend; fehlt `Beitrag` bei Gold: 40 €. Bezahlt-Status lebt nur in LUNA. |
-| E-K3 | Neue Mitglieder im laufenden Jahr | Voller Beitrag ab dem Eintrittsjahr (kein anteiliger Betrag), Faelligkeit = Eintrittsdatum. |
-| E-K4 | Wann gilt ein Eingang automatisch als Beitrag? | Name = Mitglied (oder gelernter Alias) **und** Betrag = Beitrag oder Vielfaches (mehrere Jahre/Mitglieder), **und** kein Ticket passt -- oder die Mitteilung nennt Beitrag/Mitgliedschaft/Gold. Sonst Vorschlag. |
+| E-K3 | Neue Mitglieder im laufenden Jahr | **Entschieden (CEO 2026-11-24): anteilig ab dem Beitrittsmonat** (Monat mitgezaehlt, faellig am Beitrittstag). Zurzeit werden keine neuen Goldmitglieder aufgenommen. |
+| E-K4 | Wann gilt ein Eingang automatisch als Beitrag? | **Entschieden (CEO 2026-11-24): wie empfohlen.** Name = Mitglied (oder gelernter Alias) **und** Betrag = Beitrag oder Vielfaches (mehrere Jahre/Mitglieder), **und** kein Ticket passt -- oder die Mitteilung nennt Beitrag/Mitgliedschaft/Gold. Sonst Vorschlag. |
 | E-K5 | Was gehoert zur Kasse? | **Entschieden (CEO 2026-11-24): ausschliesslich PayPal.** Kasse = ein Konto (PayPal), kein Bargeld, kein Bankkonto. Anfangsbestand traegt der CEO zu einem Stichtag ein; Auszahlungen von PayPal auf ein Bankkonto zaehlen als Abgang (Kategorie „Auszahlung“). |
-| E-K6 | Geschaeftsjahr fuer den Kassenbericht | Kalenderjahr (passt zum Beitragsjahr); alternativ Saison Juli-Juni. |
-| E-K7 | Abgleich mit PayPal | CEO laedt den PayPal-Kontoauszug (CSV-Export) im Reiter hoch; kein API-Zugang (waere neuer Zugang, CISO). |
+| E-K6 | Geschaeftsjahr fuer den Kassenbericht | **Entschieden (CEO 2026-11-24): wie empfohlen.** Kalenderjahr (passt zum Beitragsjahr); alternativ Saison Juli-Juni. |
+| E-K7 | Abgleich mit PayPal | **Entschieden (CEO 2026-11-24): wie empfohlen.** CEO laedt den PayPal-Kontoauszug (CSV-Export) im Reiter hoch; kein API-Zugang (waere neuer Zugang, CISO). |
 | E-K8 | Abgleich mit der Bank | **Entfaellt** (E-K5: nur PayPal). |
-| E-K9 | Kategorien im Kassenbuch | Tickets, Beitraege, Merch/Trikot, Spenden, Gebuehren, Auslagen, Auszahlung, Sonstiges -- im Reiter erweiterbar. |
+| E-K9 | Kategorien im Kassenbuch | **Entschieden (CEO 2026-11-24): wie empfohlen.** Tickets, Beitraege, Merch/Trikot, Spenden, Gebuehren, Auslagen, Auszahlung, Sonstiges -- im Reiter erweiterbar. |
 
 ## Etappen
 
 ### Etappe KA0: Beitragsdaten lesen und pruefen
 
-- Status: geplant
+- Status: umgesetzt (2026-11-24; `core/ofc_beitraege.py`: Mitgliedschaft vereinheitlicht (Gold/kostenfrei/Foerder/Vorstand/unklar), Soll je Kalenderjahr faellig 01.01., Gold 40 € (fehlt der Betrag: 40 € + Hinweis; abweichender Betrag gilt + Hinweis), Eintritt im Jahr anteilig ab Beitrittsmonat, spaeterer Eintritt = 0 €; Hinweise zur Datenqualitaet; `GET /api/ofc/beitraege?jahr=` nur CEO, nur lesend; Ansicht „🎫 Beitraege“ (Soll, Arten, Filter beitragspflichtig/mit Hinweis/alle, Jahr wechseln); `test_ofc_beitraege.py`; Probe auf echten Daten: 119 Mitglieder, 66 beitragspflichtig, Soll 2.640 €, 9 mit Hinweis (Dubletten + 1 x kostenfrei mit 40 €); Sichtpruefung headless Rechner/iPad/iPhone ok)
 - Ziel / Scope / Nicht-Scope: Aus der Mitgliederliste je Mitglied Soll-Beitrag, Mitgliedschaftsart (Schreibweisen
   vereinheitlicht) und Faelligkeit ableiten (E-K1 bis E-K3); Datenqualitaets-Hinweise im Reiter (Gold ohne Beitrag,
   Gold ohne `Nächste Zahlung`, Foerdermitglied ohne Betrag, Betrag bei kostenfrei). Nicht-Scope: Zahlungen, Schreiben

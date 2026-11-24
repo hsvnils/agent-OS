@@ -4948,7 +4948,7 @@ const OFC_STATUS = { offen: ["wartet", "kommt"], vorbei: ["neutral", "vorbei"], 
 async function renderOfc(meldung, fehler) {
   OFC_M_AKTIV = false;
   const [d, pst] = await Promise.all([jget("/api/ofc/uebersicht"), jget("/api/ofc/post/status")]);
-  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-saison">📊 Saison</button> <button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-eingaenge">💶 Eingänge</button> <button class="v2-btn" data-act="ofc-zahlungen">💳 Zahlungen</button> <button class="v2-btn" data-act="ofc-post">📬 Postfach</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
+  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-saison">📊 Saison</button> <button class="v2-btn" data-act="ofc-beitraege">🎫 Beiträge</button> <button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-eingaenge">💶 Eingänge</button> <button class="v2-btn" data-act="ofc-zahlungen">💳 Zahlungen</button> <button class="v2-btn" data-act="ofc-post">📬 Postfach</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
   if (!d) { $("#v2-app").innerHTML = kopf + emptyRow("OFC nicht erreichbar (nur für den CEO)."); return; }
   const su = d.summe, zeile = (x) => `<div class="v2-list-row klick v2-ofc-zeile" data-act="ofc-spiel" data-id="${esc(x.id)}">
       <div class="v2-ofc-datum"><b>${x.spieltag ? esc(datumDe(x.spieltag)) : "–"}</b><small>${esc(x.uhrzeit || "")}</small></div>
@@ -5253,6 +5253,38 @@ async function ofcNameOk(el, rueck) {
 /* OFC_ROADMAP OM: Mitgliederliste (Google-Forms-Tabelle, nur lesend, nichts gespeichert, keine KI) */
 const OFC_M = { daten: null, suche: "", ansicht: "mitglied" };
 let OFC_M_AKTIV = false;
+/* OFC_KASSE_ROADMAP KA0: Soll-Beitrag je Mitglied (Kalenderjahr, fällig 01.01., Gold 40 €, Eintritt anteilig) – nur lesend */
+const OFC_B = { jahr: new Date().getFullYear(), daten: null, filter: "pflichtig", suche: "" };
+async function renderOfcBeitraege(neu) {
+  OFC_M_AKTIV = true;
+  const kopf = secHead("🎫 OFC · Beiträge", `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> <button class="v2-btn" data-act="ofc-b-jahr" data-val="-1">‹ ${OFC_B.jahr - 1}</button> <button class="v2-btn" data-act="ofc-b-jahr" data-val="1">${OFC_B.jahr + 1} ›</button> <button class="v2-btn" data-act="ofc-b-neu">🔄 Neu laden</button>`);
+  if (!OFC_B.daten || OFC_B.daten.jahr !== OFC_B.jahr || neu) { $("#v2-app").innerHTML = kopf + `<div class="v2-empty">Lese die Mitgliederliste …</div>`; OFC_B.daten = await jget(`/api/ofc/beitraege?jahr=${OFC_B.jahr}` + (neu ? "&neu=1" : "")); }
+  const d = OFC_B.daten;
+  if (!d || !d.ok) { OFC_B.daten = null; $("#v2-app").innerHTML = kopf + `<div class="v2-msg err">${esc((d && d.hinweis) || "Mitgliederliste nicht erreichbar.")}</div>`; return; }
+  const s = d.summen, tab = (k, l, n) => `<button class="v2-btn ${OFC_B.filter === k ? "pri" : ""}" data-act="ofc-b-filter" data-id="${k}">${l} (${n})</button>`;
+  const mitHinweis = d.mitglieder.filter(x => x.hinweise.length).length;
+  $("#v2-app").innerHTML = kopf + `<div class="v2-grid">
+      ${tile("Soll " + d.jahr, `<div class="v2-kpi">${esc(cent2eur(s.soll_cent))}</div><div class="v2-sub">${s.beitragspflichtig} beitragspflichtig · fällig 01.01.${d.jahr}</div>`, "v2-ofc-kpi")}
+      ${tile("Mitglieder", `<div class="v2-kpi">${s.mitglieder}</div><div class="v2-sub">Gold ${s.gold} · kostenfrei ${s.standard} · Förder ${s.foerder} · Vorstand ${s.vorstand}${s.unbekannt ? " · unklar " + s.unbekannt : ""}</div>`, "v2-ofc-kpi")}
+      <div class="v2-tile w12"><div class="v2-card-actions" style="margin:0 0 8px">${tab("pflichtig", "Beitragspflichtig", s.beitragspflichtig)} ${tab("hinweis", "Mit Hinweis", mitHinweis)} ${tab("alle", "Alle", s.mitglieder)}</div>
+        ${d.hinweise.length ? `<div class="v2-ofc-hinweise" style="margin-bottom:8px">${d.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
+        <input id="ofc-b-suche" class="v2-inp" style="width:100%;box-sizing:border-box" type="search" autocomplete="off" placeholder="Name oder Nummer suchen" value="${esc(OFC_B.suche)}">
+        <div id="ofc-b-liste" style="margin-top:8px"></div></div>
+    </div><div class="v2-sub" style="margin-top:8px">Soll aus der Tabelle „Mitgliedschaftsanfrage“ (nur lesend) · Kalenderjahr, fällig 01.01. · Gold 40 € · Eintritt im Jahr anteilig ab Beitrittsmonat · gelesen ${esc(zeit(d.gelesen))}. Bezahlt/offen folgt mit der Beitragserkennung.</div>`;
+  const q = $("#ofc-b-suche"); q.addEventListener("input", () => { OFC_B.suche = q.value; ofcBListe(); });
+  ofcBListe();
+}
+function ofcBListe() {
+  const d = OFC_B.daten, q = OFC_B.suche.trim().toLowerCase(), el = $("#ofc-b-liste"); if (!d || !el) return;
+  const liste = d.mitglieder.filter(x => OFC_B.filter === "alle" || (OFC_B.filter === "hinweis" ? x.hinweise.length : x.soll_cent > 0))
+    .filter(x => !q || [x.name, x.nummer].some(v => (v || "").toLowerCase().includes(q)));
+  el.innerHTML = liste.map(x => `<div class="v2-list-row">
+      <span class="v2-badge neutral">${esc(x.nummer)}</span>
+      <div class="grow"><b class="v2-umbruch">${esc(x.name || "–")}</b>
+        <small>${[x.art_text, x.seit ? "seit " + datumDe(x.seit) : "", x.anteilig ? "anteilig, fällig " + datumDe(x.faellig) : ""].filter(Boolean).map(esc).join(" · ")}</small>
+        ${x.hinweise.length ? `<div class="v2-ofc-hinweise">${x.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}</div>
+      <b>${esc(cent2eur(x.soll_cent))}</b></div>`).join("") || emptyRow(q ? "Kein Treffer." : "Keine Einträge.");
+}
 async function renderOfcMitglieder(neu) {
   OFC_M_AKTIV = true;
   const kopf = secHead("👥 OFC · Mitglieder", `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> <button class="v2-btn" data-act="ofc-mitglieder-neu">🔄 Neu laden</button>`);
@@ -5842,6 +5874,10 @@ async function handleAct(act, el) {
     case "ofc-post": return ofcPost();
     case "ofc-zahlungen": return renderOfcZahlungen();
     case "ofc-saison": return renderOfcSaison();
+    case "ofc-beitraege": return renderOfcBeitraege();
+    case "ofc-b-neu": return renderOfcBeitraege(true);
+    case "ofc-b-jahr": OFC_B.jahr += Number(val); return renderOfcBeitraege();
+    case "ofc-b-filter": OFC_B.filter = id; return renderOfcBeitraege();
     case "ofc-s-alle": OFC_S_ALLE = !OFC_S_ALLE; return renderOfcSaison();
     case "ofc-s-kopieren": return ofcSKopieren(val, el);
     case "ofc-abschluss": return ofcAbschluss(id, !!val);

@@ -93,6 +93,8 @@ def auswerten(werte: list[list]) -> dict:
             "zeile": zi, "nummer": nr, "status": "mitglied" if nr else "anfrage",
             "name": re.sub(r"\s+", " ", f"{vor} {nach}").strip(), "vorname": vor, "nachname": nach,
             "mitgliedschaft": g.get("mitgliedschaft", ""), "seit": g.get("seit", ""),
+            "beitrag": g.get("beitrag", ""), "naechste_zahlung": g.get("naechste_zahlung", ""),
+            "kommentar": g.get("kommentar", ""),
             "email": g.get("email", "") or g.get("email_absender", ""),
             "eingang": _datum(g.get("zeitstempel", "")),
             "felder": [[kopf[i], z[i]] for i in range(len(kopf)) if kopf[i] and z[i]],

@@ -6521,6 +6521,20 @@ def ofc_mitglieder(request: Request, neu: int = 0):
         return {"ok": False, "hinweis": f"Mitgliederliste nicht lesbar ({exc.__class__.__name__})."}
 
 
+@app.get("/api/ofc/beitraege")
+def ofc_beitraege(request: Request, jahr: int = 0, neu: int = 0):
+    """OFC-Kasse KA0: Soll-Beitrag je Mitglied im Beitragsjahr aus der Mitgliederliste -- nur lesend, keine KI."""
+    _nur_ceo(request)
+    from ...core.ofc_beitraege import beitraege
+    from ...core.ofc_mitglieder import lesen
+    if jahr and not 2020 <= jahr <= 2100:
+        return {"ok": False, "hinweis": "Jahr ungültig."}
+    try:
+        return beitraege(lesen(_google().auth, neu=bool(neu)), jahr or None)
+    except Exception as exc:                                  # ohne Fehlertext (koennte Kennungen enthalten)
+        return {"ok": False, "hinweis": f"Mitgliederliste nicht lesbar ({exc.__class__.__name__})."}
+
+
 @app.get("/api/ofc/analyse/ordner")
 def ofc_analyse_ordner(request: Request):
     """O0 Dry-Run: Spielordner der Saison auf der NAS -- Zahlen je Spiel, keine Namen, nichts gespeichert."""

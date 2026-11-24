@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 21:11] — Claude Code
+- **Was:** OFC-Kasse KA0 umgesetzt: `orchestrator/core/ofc_beitraege.py` (Soll-Beitrag je Mitglied aus der Mitgliederliste, nur lesend, keine KI: Kalenderjahr faellig 01.01., Gold 40 €, Eintritt anteilig ab Beitrittsmonat, Hinweise zur Datenqualitaet), `ofc_mitglieder.py` liefert zusaetzlich Beitrag/Naechste Zahlung/Kommentar, Endpunkt `GET /api/ofc/beitraege` (nur CEO), Ansicht „🎫 Beitraege“ (`app-v2.js` v173), `test_ofc_beitraege.py` (5 Tests). CEO-Entscheidungen E-K3 (anteilig), E-K4/E-K6/E-K7/E-K9 (wie empfohlen) eingetragen. Probe auf echten Daten: 66 beitragspflichtig, Soll 2.640 €. Suite 1831 gruen, Doku-Check ok, Sichtpruefung headless Rechner/iPad/iPhone ok. Der gelieferte PayPal-Bericht wurde nur nach Aufbau gelesen (Haendler-Abgleich, 0 Eintraege) und nicht kopiert.
+- **Warum:** CEO 2026-11-24: „Anteilig des Beitrittsmonats … Rest wie empfohlen, Go fuer KA0“.
+- **Betroffen:** `orchestrator/core/ofc_beitraege.py`, `orchestrator/core/ofc_mitglieder.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_ofc_beitraege.py`, `OFC_KASSE_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
 ## [2026-11-24 20:51] — Claude Code
 - **Was:** CEO-Entscheidung E-K5 in `OFC_KASSE_ROADMAP.md` eingearbeitet: Fanclub-Kasse nur PayPal (ein Konto, kein Bargeld, keine Bank); E-K8 (Bank-CSV) entfaellt, KA3/KA4 entsprechend verkleinert, Kategorie „Auszahlung“ statt „Umbuchung“. Register und `ROADMAP.md` nachgezogen.
 - **Warum:** CEO 2026-11-24: „Wir nutzen ausschliesslich PayPal“.
