@@ -300,3 +300,101 @@ class NilsMail(AllInklMail):
             except Exception:
                 pass
         return out
+
+
+# -- OFC_ROADMAP O0: Postfach moin@hsvinside.de (Fanclub), nur lesend, nur PayPal/Eventim/HSV ------------------------
+HSVINSIDE_SCHLUESSEL = ("HSVINSIDE_IMAP_HOST", "HSVINSIDE_MAIL_USER", "HSVINSIDE_MAIL_PASSWORT")
+HSVINSIDE_ABSENDER_STANDARD = ("paypal.de", "paypal.com", "eventim.de", "eventim.com", "hsv.de")
+
+
+def _domain_erlaubt(von: str, domains) -> bool:
+    from email.utils import parseaddr
+    d = parseaddr(von or "")[1].rpartition("@")[2].lower().strip()
+    return bool(d) and any(d == x or d.endswith("." + x) for x in domains)
+
+
+class HsvInsideMail(AllInklMail):
+    """Fanclub-Postfach (OFC). Auflagen CISO (E1, 2026-11-24): **nur lesen** (`select readonly`, `BODY.PEEK`), Server-Suche
+    nur nach Absendern der erlaubten Domains (PayPal, Eventim, HSV; erweiterbar per `HSVINSIDE_ABSENDER`), Absender-Kopf
+    wird nachgeprueft, erst dann der Inhalt geladen -- alle anderen Mails werden nie heruntergeladen; kein Senden, nichts
+    verschieben/loeschen/markieren. Host darf ein anderer All-Inkl-Server sein (`HSVINSIDE_IMAP_HOST`)."""
+
+    kanal = "hsvinside"
+
+    def __init__(self, env: dict, *, imap_fabrik=None):
+        super().__init__(env, imap_fabrik=imap_fabrik)
+        g = lambda k, d="": (env.get(k) or d).strip()
+        self.imap_host = g("HSVINSIDE_IMAP_HOST") or g("ALLINKL_IMAP_HOST")
+        self.imap_port = int(g("HSVINSIDE_IMAP_PORT", "993") or 993)
+        self.user, self._pw = g("HSVINSIDE_MAIL_USER"), env.get("HSVINSIDE_MAIL_PASSWORT") or ""
+        self.adresse = self.user
+        extra = [x.strip().lower().lstrip("@") for x in g("HSVINSIDE_ABSENDER").split(",") if x.strip()]
+        self.domains = tuple(dict.fromkeys(list(HSVINSIDE_ABSENDER_STANDARD) + extra))
+        if imap_fabrik is None:
+            self._imap = lambda: imaplib.IMAP4_SSL(self.imap_host, self.imap_port, ssl_context=ssl.create_default_context(),
+                                                   timeout=30)
+
+    def fehlend(self) -> list[str]:
+        werte = {"HSVINSIDE_IMAP_HOST": self.imap_host, "HSVINSIDE_MAIL_USER": self.user, "HSVINSIDE_MAIL_PASSWORT": self._pw}
+        return [k for k in HSVINSIDE_SCHLUESSEL if not werte[k]]
+
+    def mail_senden(self, *a, **k) -> dict:
+        return {"ok": False, "hinweis": "Das Fanclub-Postfach wird nur gelesen -- LUNA sendet von dort nichts."}
+
+    def verbindung_pruefen(self) -> dict:
+        """Nur IMAP-Anmeldung + Ordner INBOX nur lesend oeffnen -- keine Mail wird gelesen."""
+        if not self.verfuegbar():
+            return {"ok": False, "fehlend": self.fehlend()}
+        try:
+            i = self._imap()
+            try:
+                i.login(self.user, self._pw)
+                typ, _ = i.select("INBOX", readonly=True)
+                return {"ok": typ == "OK", "imap": True}
+            finally:
+                try:
+                    i.logout()
+                except Exception:
+                    pass
+        except Exception as exc:
+            return {"ok": False, "imap": False, "imap_fehler": exc.__class__.__name__}
+
+    def _suche(self) -> list:
+        """IMAP-SEARCH: (FROM d1) ODER (FROM d2) ... -- verschachteltes OR, wie IMAP es verlangt."""
+        teile: list = ["FROM", self.domains[-1]]
+        for d in reversed(self.domains[:-1]):
+            teile = ["OR", "FROM", d] + teile
+        return teile
+
+    def posteingang(self, *, tage: int = 90, max_mails: int = 500) -> list[dict]:
+        from datetime import date, timedelta
+        if not self.verfuegbar():
+            return []
+        monate = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        d = date.today() - timedelta(days=tage)
+        seit = f"{d.day:02d}-{monate[d.month - 1]}-{d.year}"
+        out = []
+        i = self._imap()
+        try:
+            i.login(self.user, self._pw)
+            typ, _ = i.select("INBOX", readonly=True)
+            if typ != "OK":
+                return []
+            typ, daten = i.uid("SEARCH", None, "SINCE", seit, *self._suche())
+            uids = (daten[0].split() if typ == "OK" and daten and daten[0] else [])[-max_mails:]
+            for uid in uids:
+                typ, teile = i.uid("FETCH", uid, "(BODY.PEEK[HEADER.FIELDS (FROM)])")
+                kopf = next((t[1] for t in teile or [] if isinstance(t, tuple) and len(t) > 1), b"") if typ == "OK" else b""
+                von = (kopf or b"").decode("utf-8", "replace").partition(":")[2].strip()
+                if not _domain_erlaubt(von, self.domains):
+                    continue                                 # Server-Treffer, aber Absender nicht erlaubt -> nie laden
+                typ, teile = i.uid("FETCH", uid, "(BODY.PEEK[])")
+                roh = next((t[1] for t in teile or [] if isinstance(t, tuple) and len(t) > 1), None) if typ == "OK" else None
+                if roh:
+                    out.append({"uid": uid.decode() if isinstance(uid, bytes) else str(uid), "roh": roh})
+        finally:
+            try:
+                i.logout()
+            except Exception:
+                pass
+        return out

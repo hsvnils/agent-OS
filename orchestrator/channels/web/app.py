@@ -6179,6 +6179,48 @@ def _coerce_setting(key: str, wert):
     return max(0.0, float(wert))                                # pct / Betrag
 
 
+# -- OFC (Fanclub HSVInside, OFC_ROADMAP O0): nur CEO, nur lesend, getrennt von der Buchhaltung ---------------------------
+def _nur_ceo(request: Request) -> None:
+    u = getattr(request.state, "user", None) or _ceo_user()
+    if u.get("role") != "owner":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "nur fuer den CEO")
+
+
+def _ofc_postfach():
+    from ...governance.allinkl_mail import HsvInsideMail
+    return HsvInsideMail(_google_secrets())
+
+
+@app.get("/api/ofc/postfach/pruefen")
+def ofc_postfach_pruefen(request: Request):
+    """O0: nur Anmeldung + INBOX nur lesend oeffnen -- keine Mail wird gelesen."""
+    _nur_ceo(request)
+    r = _ofc_postfach().verbindung_pruefen()
+    return {k: v for k, v in r.items() if k in ("ok", "imap", "fehlend", "imap_fehler")}
+
+
+@app.get("/api/ofc/analyse/postfach")
+def ofc_analyse_postfach(request: Request, tage: int = 90):
+    """O0 Dry-Run: Mails von PayPal/Eventim/HSV nach Typ, gefundene Felder, maskierte Muster -- nichts gespeichert."""
+    _nur_ceo(request)
+    from ...core.ofc import mail_analyse
+    p = _ofc_postfach()
+    if not p.verfuegbar():
+        return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet (fehlt in der .env: " + ", ".join(p.fehlend()) + ")."}
+    try:
+        return mail_analyse(p, tage=max(1, min(int(tage), 365)))
+    except Exception as exc:                                  # ohne Fehlertext (koennte Zugangsdaten enthalten)
+        return {"ok": False, "hinweis": f"Postfach nicht lesbar ({exc.__class__.__name__})."}
+
+
+@app.get("/api/ofc/analyse/ordner")
+def ofc_analyse_ordner(request: Request):
+    """O0 Dry-Run: Spielordner der Saison auf der NAS -- Zahlen je Spiel, keine Namen, nichts gespeichert."""
+    _nur_ceo(request)
+    from ...core.ofc import ordner_analyse
+    return ordner_analyse()
+
+
 @app.get("/api/anbieter")
 def anbieter_liste(request: Request, bereich: str = ""):
     """VORSCHLAGSPAUSE_ANBIETER P2: alle externen Anbieter/Datenquellen mit Zweck, Stand und Kostenhinweis --
