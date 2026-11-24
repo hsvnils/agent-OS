@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 16:24] — Claude Code
+- **Was:** OFC O2: Name je Ticket aendern mit Vorschau „aus X wird Y“, Bestaetigung und „Rueckgaengig“; die Ticket-Datei auf der NAS wird nach `<Rechnungsnr>-<Pos>[A|B]-<Name>.pdf` umbenannt (nie geloescht/ueberschrieben, Kollision abgelehnt), Protokoll als Ereignis `ofc_name`. Namensvorschlaege aus der Mitgliederliste (OM). Fanclub-Mount in `luna-os` schreibend. Cache v167/v90. Baseline 1783.
+- **Warum:** CEO „Go für O2“ (Test gesammelt am Ende der Roadmap).
+- **Betroffen:** `orchestrator/core/ofc_store.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `orchestrator/tests/test_ofc_namen.py` (neu), `deploy/docker-compose.yml`, `OFC_ROADMAP.md`, `governance/zugriffs-policy.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-24 16:17] — Claude Code
 - **Was:** OFC OM nach Deploy auf der NAS geprueft: `/api/ofc/mitglieder` liest die echte Tabelle (119 Mitglieder, 11 Anfragen, 18 Spalten erkannt, Hinweise 2 Nummern / 3 Namen mehrfach); Startseite liefert v166. Roadmap nachgetragen.
 - **Warum:** CEO „Deploy gemacht“.

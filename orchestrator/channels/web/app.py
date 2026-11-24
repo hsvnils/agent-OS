@@ -6269,6 +6269,41 @@ async def ofc_import(request: Request):
     return import_anwenden(_ofc_store(), von=_von(request))
 
 
+@app.get("/api/ofc/ticket/{nr}/name/vorschau")
+def ofc_name_vorschau(request: Request, nr: str, name: str = "", rueckgaengig: int = 0):
+    """O2 Dry-Run: aus welchem Namen/welcher Datei wird was -- aendert nichts."""
+    _nur_ceo(request)
+    from ...core.ofc_store import namen_plan, rueckgaengig_plan
+    return rueckgaengig_plan(_ofc_store(), nr) if rueckgaengig else namen_plan(_ofc_store(), nr, name)
+
+
+@app.post("/api/ofc/ticket/{nr}/name")
+async def ofc_name_setzen(request: Request, nr: str):
+    """O2: Name speichern und Ticket-Datei umbenennen (nur mit Bestaetigung; nie loeschen, nie ueberschreiben)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Ändern braucht die Bestätigung."}
+    from ...core.ofc_store import namen_setzen, rueckgaengig
+    if body.get("rueckgaengig"):
+        return rueckgaengig(_ofc_store(), nr, von=_von(request))
+    return namen_setzen(_ofc_store(), nr, str(body.get("name") or ""), von=_von(request))
+
+
+@app.get("/api/ofc/namen")
+def ofc_namen(request: Request):
+    """O2: Namensvorschlaege -- Mitglieder aus der Liste (OM, falls lesbar), dann bisher vergebene Namen."""
+    _nur_ceo(request)
+    from ...core.ofc_mitglieder import lesen
+    from ...core.ofc_store import namen_vorschlaege
+    try:
+        m = lesen(_google().auth)
+    except Exception:
+        m = {}
+    return {"namen": namen_vorschlaege(_ofc_store(), m.get("mitglieder") if m.get("ok") else []),
+            "mitglieder_ok": bool(m.get("ok"))}
+
+
 @app.get("/api/ofc/mitglieder")
 def ofc_mitglieder(request: Request, neu: int = 0):
     """OM: Mitgliederliste aus der geteilten Google-Forms-Tabelle -- nur lesend, nichts gespeichert, keine KI."""
