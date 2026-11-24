@@ -174,3 +174,44 @@ class TestApi(ApiBasis):
                     for url in ("/api/ofc/zahlungen", "/api/ofc/zahlungen/vorschau"):
                         self.assertEqual(self.c.get(url).status_code, 403, url)
                     self.assertEqual(self.c.post(f"/api/ofc/zahlung/{offen['id']}/zuordnen", json={"spiel": ""}).status_code, 403)
+
+
+ERINNERUNG = _pp("Ihre Zahlung auf PayPal Später nach 30 Tagen",
+                 "Hallo, Max\nErinnerung: Zahlung für Ihren Einkauf an Max nach 30 Tagen über 123,40\xa0€\xa0EUR bei "
+                 "CTS EVENTIM AG & Co.\n123,40\xa0€\xa0EUR\nHändler\nCTS EVENTIM AG & Co\nDatum des Einzugs\n8. November 2026\n",
+                 datum="Thu, 05 Nov 2026 10:00:00 +0100", mid="<e@paypal.de>")
+
+
+class TestNachbesserung(_Basis):
+    def test_9_dropbox_mit_bestellnr_ignoriert(self):
+        self.assertIsNone(oz.paypal_lesen(_gesendet("19,99", "Dropbox International Unlimited", "4DD44444DD4444444",
+                                                    extra="Bestellnummer\nAB12345678\n", mid="<d@paypal.de>")["roh"]))
+
+    def test_10_erinnerung_einzugsdatum_und_dublette(self):
+        e = oz.paypal_lesen(ERINNERUNG["roh"])
+        self.assertEqual((e["art"], e["datum"], e["faellig"]), ("spaeter", "2026-10-09", "2026-11-08"))
+        self.assertEqual(len(oz.zahlungen_aus_mails([SPAETER, ERINNERUNG])), 1)            # ein Kauf
+        oz.zahl_anwenden(self.st, [SPAETER])
+        self.assertEqual(oz.zahl_plan(self.st, [ERINNERUNG])["neu"], [])                 # spaeter kommt die Erinnerung
+
+    def test_11_bezahlte_rechnung_nicht_doppelt(self):
+        oz.zahl_anwenden(self.st, [_gesendet()])                                          # FCB 70,00 bezahlt
+        z = oz.zahl_plan(self.st, [_gesendet(tc="2BB22222BB2222222", mid="<n@paypal.de>")])["neu"][0]
+        self.assertEqual(z["zuordnung"], "offen")
+        self.assertNotIn("Betrag = Rechnung", (z["vorschlaege"] or [{"gruende": []}])[0]["gruende"])
+
+    def test_12_alte_fassung_wird_neu_bewertet_klicks_bleiben(self):
+        self.st.erfassen("ofc_zahlung", {"id": "alt-dropbox", "art": "gesendet", "betrag_cent": 1999, "datum": "2026-10-09",
+                                         "haendler": "Dropbox", "zuordnung": "offen", "spiel": ""})
+        self.st.erfassen("ofc_zahlung", {"id": "alt-klick", "art": "gesendet", "betrag_cent": 500, "datum": "2026-10-01",
+                                         "haendler": "CTS EVENTIM", "zuordnung": "manuell", "spiel": "HSV vs FCB"})
+        self.st.erfassen("ofc_zahlung", {"id": "1AB23456CD7890123", "art": "gesendet", "betrag_cent": 7000, "datum": "2026-10-06",
+                                         "haendler": "HSV", "zuordnung": "offen", "spiel": ""})
+        v = oz.zahl_plan(self.st, [_gesendet()])
+        self.assertEqual(v["ersetzt"], ["alt-dropbox"])
+        self.assertEqual([(z["id"], z["zuordnung"]) for z in v["neu"]], [("1AB23456CD7890123", "auto")])
+        oz.zahl_anwenden(self.st, [_gesendet()])
+        ids = {z["id"]: z for z in oz.zahlungs_status(self.st.stand())}
+        self.assertEqual(set(ids), {"alt-klick", "1AB23456CD7890123"})
+        self.assertEqual(ids["alt-klick"]["spiel"], "HSV vs FCB")
+        self.assertEqual(oz.zahl_plan(self.st, [_gesendet()])["neu"], [])

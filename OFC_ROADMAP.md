@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-11-24
-- Arbeitsbranch: `ai/ofc-o4`
+- Arbeitsbranch: `ai/ofc-o5`
 - Basiscommit: `734b284`
-- Naechster Schritt: O4 gemergt -- CEO deployt (code-only + Neustart); danach Vorschau „💳 Zahlungen -> Aus Postfach holen“ mit echten Mails pruefen (Zuordnung). Gesamtabnahme am Ende der Roadmap. Danach O5 nach CEO-Go.
+- Naechster Schritt: O5 (mit O4-Nachbesserung) umgesetzt auf `ai/ofc-o5` -- Push, Merge, Deploy (code-only + Neustart); danach Vorschau Zahlungen und Eingaenge mit echten Mails pruefen. Gesamtabnahme am Ende der Roadmap. Danach O6 nach CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -156,7 +156,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O4: Eigene PayPal-Zahlungen dem Spiel zuordnen
 
-- Status: umgesetzt (2026-11-24; `core/ofc_zahlung.py`: PayPal-Belege an Eventim/HSV erkennen -- gesendet, „Spaeter bezahlen“ (Faelligkeit +30 Tage, Abbuchung erfolgreich/fehlgeschlagen), Erstattung; Mitgliederzahlungen (O5) und andere Haendler ignoriert; Zuordnung per Punkte: Rechnungs-/Auftrags-/Bestellnummer im Beleg (sicher), Betrag = Rechnung, Datum nahe Rechnung, Gegner im Beleg; eindeutig -> automatisch, sonst Vorschlaege + „Zuordnen“/„Kein Ticketkauf“/„loesen“; Dubletten ueber Transaktionscode; Ereignis `ofc_zahlung` ohne Mailtext; Ansicht „💳 Zahlungen“, im Spiel „Eigene Zahlung“ mit Bezahlt/Rechnung, Hinweise „Eigene Zahlung nicht zugeordnet“ und „Abbuchung fehlgeschlagen“; automatisch im 15-Minuten-Takt. `test_ofc_zahlung.py`; Sichtpruefung headless Rechner/iPhone ok. Grenze: Eventim-Kaeufe ohne HSV-Rechnung haben keine gemeinsame Nummer -> meist Zuordnen per Klick)
+- Status: umgesetzt (2026-11-24; `core/ofc_zahlung.py`: PayPal-Belege an Eventim/HSV erkennen -- gesendet, „Spaeter bezahlen“ (Faelligkeit +30 Tage, Abbuchung erfolgreich/fehlgeschlagen), Erstattung; Mitgliederzahlungen (O5) und andere Haendler ignoriert; Zuordnung per Punkte: Rechnungs-/Auftrags-/Bestellnummer im Beleg (sicher), Betrag = Rechnung, Datum nahe Rechnung, Gegner im Beleg; eindeutig -> automatisch, sonst Vorschlaege + „Zuordnen“/„Kein Ticketkauf“/„loesen“; Dubletten ueber Transaktionscode; Ereignis `ofc_zahlung` ohne Mailtext; Ansicht „💳 Zahlungen“, im Spiel „Eigene Zahlung“ mit Bezahlt/Rechnung, Hinweise „Eigene Zahlung nicht zugeordnet“ und „Abbuchung fehlgeschlagen“; automatisch im 15-Minuten-Takt. `test_ofc_zahlung.py`; Sichtpruefung headless Rechner/iPhone ok. Grenze: Eventim-Kaeufe ohne HSV-Rechnung haben keine gemeinsame Nummer -> meist Zuordnen per Klick. **Nachbesserung 2026-11-24 nach Probelauf mit echten Mails** (12 Zahlungen, 4 automatisch -- alle richtig): nur Haendler Eventim/HSV (Dropbox raus), „Spaeter bezahlen“ Kauf- + Erinnerungsmail = ein Kauf mit Kaufdatum, bereits bezahlte Rechnung zaehlt nicht erneut ueber den Betrag, alte automatische Eintraege werden neu bewertet (Klicks bleiben); Erkenntnis: auch HSV-Heimspiele laufen ueber „CTS EVENTIM Sports GmbH“)
 - Ziel / Scope / Nicht-Scope: PayPal-Mail „Zahlung gesendet“ (an Eventim/HSV) erkennen; Zuordnung zur Bestellung ueber
   Betrag + Zeitfenster + Empfaenger; Referenzen (PayPal-Transaktionscode, Rechnungsnr, Auftrags-Nr, Kunden-Nr) am Spiel.
   Uneindeutig -> „Zuordnen“. Nicht-Scope: Mitgliederzahlungen.
@@ -168,7 +168,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O5: Zahlungseingaenge der Mitglieder
 
-- Status: geplant
+- Status: umgesetzt (2026-11-24; `core/ofc_eingang.py`: PayPal „Zahlung erhalten“ -> Name, Betrag, Mitteilung, Transaktionscode, Datum; Rueckzahlung an ein Mitglied negativ; E6: automatisch, wenn der Betrag genau zu offenen Tickets auf den Namen des Zahlers (oder Alias) passt -- bei mehreren Spielen entscheidet der Gegner in der Mitteilung, Sammelzahlung fuer mehrere Spiele moeglich; sonst „Zuordnen“ mit Vorschlaegen oder „Tickets waehlen“ (auch Teil-/Ueberzahlung), „Kein Ticket“ (z. B. Beitrag), loesen; Alias wird beim Klick gelernt; Ticketstatus bezahlt/teilweise im Spiel, „x/y bezahlt“ in der Liste, Saldo je Zahler; Ansicht „💶 Eingaenge“; automatisch im 15-Minuten-Takt; `test_ofc_eingang.py`; Sichtpruefung headless Rechner/iPhone ok. PayPal-CSV-Import zurueckgestellt)
 - Ziel / Scope / Nicht-Scope: PayPal-Mail „Geld erhalten“ erkennen (Name, Betrag, Mitteilung, Transaktionscode); Vorschlag
   Spiel + Ticket(s) ueber Name/Personenliste, Verwendungszweck (Gegner, Datum, Anzahl) und Betrag (E6); eindeutige Faelle
   automatisch, sonst Liste „Zuordnen“; Aufteilen auf mehrere Tickets/Spiele; Saldo je Person; Ticketstatus bezahlt/offen.

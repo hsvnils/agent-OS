@@ -119,3 +119,4 @@
 | 2026-11-24 | `fanclub_nas` | hoa (LUNA) | OFC O2: Mount schreibend (nur Umbenennen von Ticket-Dateien, nie loeschen/ueberschreiben) | CEO (E2, Go O2); Inbetriebnahme = CEO erstellt `luna-os` neu (`docker compose up -d luna-os`) |
 | 2026-11-24 | `hsvinside_mail`, `fanclub_nas` | hoa (LUNA) | OFC O3: HSV-Mails (nur `hsv.de`, nur lesend) automatisch alle 15 Minuten in `luna-os`; Ordner/Dateien nur neu anlegen | CEO (Go O3); kein neuer Zugang |
 | 2026-11-24 | `hsvinside_mail` | hoa (LUNA) | OFC O4: PayPal-Mails (nur `paypal.de`/`paypal.com`, nur lesend) fuer eigene Zahlungen an Eventim/HSV; nur Ergebnisfelder gespeichert | CEO (Go O4); kein neuer Zugang |
+| 2026-11-24 | `hsvinside_mail` | hoa (LUNA) | OFC O5: Zahlungseingaenge der Mitglieder aus denselben PayPal-Mails (Name, Betrag, Mitteilung) im Fanclub-Speicher, nur CEO | CEO (Go O5); kein neuer Zugang |

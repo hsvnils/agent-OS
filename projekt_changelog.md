@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 17:11] — Claude Code
+- **Was:** OFC O5: Zahlungseingaenge der Mitglieder (PayPal „Zahlung erhalten“, Rueckzahlungen negativ) den Tickets zuordnen -- eindeutig automatisch (Betrag = offene Tickets auf den Namen/Alias, Mitteilung entscheidet bei mehreren Spielen, Sammelzahlung), sonst Vorschlaege/„Tickets waehlen“/„Kein Ticket“; Alias-Lernen, Ticketstatus bezahlt/teilweise, Saldo je Zahler, Ansicht „💶 Eingaenge“, automatisch im 15-Minuten-Takt. Dazu O4-Nachbesserung nach Probelauf mit echten Mails: nur Eventim/HSV, „Spaeter bezahlen“ ohne Doppel, bezahlte Rechnung nicht doppelt, alte automatische Eintraege neu bewertet. Cache v170/v92. Baseline 1812.
+- **Warum:** CEO „Deploy gemacht, Go für O5“ (Abnahme gesammelt am Ende der Roadmap); Probelauf O4 zeigte Dropbox und doppelte „Spaeter bezahlen“.
+- **Betroffen:** `orchestrator/core/ofc_eingang.py` (neu), `orchestrator/core/ofc_zahlung.py`, `orchestrator/core/ofc_store.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `orchestrator/tests/test_ofc_eingang.py` (neu), `orchestrator/tests/test_ofc_zahlung.py`, `OFC_ROADMAP.md`, `governance/zugriffs-policy.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-24 17:01] — Claude Code
 - **Was:** `ai/ofc-o4` (OFC O4 eigene PayPal-Zahlungen) nach `main` gemergt und gepusht, Branch geloescht. Erster automatischer O3-Lauf auf der NAS ok (1 Datei: Rechnung zur 2. Bestellung HSVvsFCB, Hinweis „Bestellung ohne Rechnung“ weg).
 - **Warum:** CEO „Go für Merge, Push und Deploy“.
