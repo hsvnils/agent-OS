@@ -36,6 +36,8 @@ services:
       # Outbox/State schreibt der Job nach /app/reel_work (Repo-Mount, schon beschreibbar; gitignored/sync-excl).
       # Nightly: docker exec luna-os python -m cutter.reel_daily --source /reelsrc --outbox /app/reel_work/outbox ...
       - /volume1/SocialMediaTeam/Dropbox-Medien/Dateianfragen:/reelsrc:ro
+      # OFC_ROADMAP O0 (CEO E2, 2026-11-24): nur der Fanclub-Ordner, vorerst NUR LESEND (Schreiben erst ab O2, eigenes Go).
+      - "/volume1/HSVInside_Shared/Fanclub HSVInside:/fanclub_nas:ro"
     env_file:
       - /volume1/docker/ki-unternehmen/orchestrator/.env
     restart: unless-stopped

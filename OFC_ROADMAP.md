@@ -1,10 +1,10 @@
 # Roadmap: OFC -- Tickets und Zahlungen des Fanclubs HSVInside
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-11-24
-- Arbeitsbranch: `ai/ofc-roadmap`
+- Arbeitsbranch: `ai/ofc-o0`
 - Basiscommit: `734b284`
-- Naechster Schritt: CEO prueft die Roadmap und entscheidet E1-E8; danach Go fuer O0 (Zugang + Analyse, nur lesend).
+- Naechster Schritt: E1-E8 entschieden, Go fuer O0 (2026-11-24) -- O0 in Arbeit auf `ai/ofc-o0`; offen E5b (Anbindung Mitgliederliste).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -58,29 +58,31 @@ zuordnen, viel Handarbeit. Wunsch:
 - **Dateien:** nur umbenennen/ablegen/verschieben in der Fanclub-Freigabe, nie loeschen; jede Aenderung protokolliert und
   rueckgaengig machbar.
 
-## Entscheidungen fuer den CEO (vor O0)
+## Entscheidungen des CEO (2026-11-24)
 
-- **E1 Zugang moin@hsvinside.de** -- neuer Zugang = CISO-Freigabe (AGENTS.md 5.7). **Empfehlung:** wie K5: nur lesend,
+- **E1 Zugang moin@hsvinside.de** -- **BESCHLOSSEN wie empfohlen.** neuer Zugang = CISO-Freigabe (AGENTS.md 5.7). **Empfehlung:** wie K5: nur lesend,
   Server-Suche nur nach Absendern von PayPal, Eventim und HSV (Liste in O0 festgelegt), andere Mails nie laden; nichts
   verschieben/loeschen; Zugangsdaten `HSVINSIDE_MAIL_USER`/`HSVINSIDE_MAIL_PASSWORT` traegt der CEO selbst ein.
-- **E2 Freigabe einhaengen** -- `HSVInside_Shared/Fanclub HSVInside` in den Container `luna-os` (nicht `luna-telegram`).
+- **E2 Freigabe einhaengen** -- **BESCHLOSSEN wie empfohlen.** `HSVInside_Shared/Fanclub HSVInside` in den Container `luna-os` (nicht `luna-telegram`).
   **Empfehlung:** nur dieser Unterordner, **schreibend** (Umbenennen/Ablegen/Verschieben), Aenderung in
   `deploy/docker-compose.yml`; der CEO fuehrt `docker compose up -d` aus (Container wird neu erstellt).
-- **E3 Saison-Ordner** -- **Empfehlung:** Ordnername je Saison in LUNA einstellbar (heute `Tickets 26-27`), neue
-  Spielordner nach dem bisherigen Muster `HSVvs<Gegner>` bzw. `<Gegner>vsHSV`.
-- **E4 Bestand** -- **Empfehlung:** alle Spiele der Saison 26-27 inkl. `Abgeschlossen` uebernehmen (Rechnung + Tickets +
+- **E3 Saison-Ordner** -- **BESCHLOSSEN (CEO):** Saison-Ordner in LUNA einstellbar (heute `Tickets 26-27`); neue Spielordner
+  heissen bei Heimspielen `HSV vs <Gegner>`, bei Auswaertsspielen `<Gegner> vs HSV`. Bestehende Ordner bleiben, wie sie sind.
+- **E4 Bestand** -- **BESCHLOSSEN wie empfohlen.** **Empfehlung:** alle Spiele der Saison 26-27 inkl. `Abgeschlossen` uebernehmen (Rechnung + Tickets +
   Namen aus den Dateinamen); PayPal-Zahlungen rueckwirkend, soweit sie im Postfach liegen, sonst per PayPal-CSV-Export
   (Upload in LUNA-OS).
-- **E5 Mitgliederliste** -- **Empfehlung:** schlanke Personenliste (Name, optional PayPal-Name/-Mail), die beim Zuordnen
-  mitlernt; Vorschlaege beim Namen-Eintragen und beim Zahlungseingang. Keine Uebernahme aus der Mitgliedschafts-Excel
-  (nur auf Wunsch).
-- **E6 Zahlung -> Ticket** -- **Empfehlung:** eindeutig = automatisch (Betrag passt zu offenen Tickets eines Spiels **und**
+- **E5 Mitgliederliste** -- **BESCHLOSSEN (CEO): direkt die Mitgliederliste nehmen.** Sie liegt in Google Forms (Antworten =
+  eine Tabelle); dieselbe Liste enthaelt Anfragen und Mitglieder -- Mitglied ist, wer eine Mitgliedsnummer hat. **Vorschlag
+  Anbindung (offen, E5b):** der CEO teilt die Antwort-Tabelle **nur lesend** mit LUNAs Google-Konto; LUNA liest sie ueber den
+  vorhandenen Sheets-Zugang (`google_workspace`, kein neuer Zugangstyp), nie schreibend. Alternative: Excel-Export per Upload
+  (veraltet aber sofort). Umsetzung in Etappe OM.
+- **E6 Zahlung -> Ticket** -- **BESCHLOSSEN wie empfohlen.** **Empfehlung:** eindeutig = automatisch (Betrag passt zu offenen Tickets eines Spiels **und**
   Name oder Verwendungszweck passt); sonst Vorschlag mit einem Klick. Eine Zahlung darf mehrere Tickets/Spiele abdecken
   (aufteilen), Ueber-/Unterzahlung wird als Saldo je Person gefuehrt.
-- **E7 Abschliessen** -- **Empfehlung:** LUNA meldet „abschliessbar“ (alle bezahlt + Spieltag vorbei), der CEO klickt
+- **E7 Abschliessen** -- **BESCHLOSSEN wie empfohlen.** **Empfehlung:** LUNA meldet „abschliessbar“ (alle bezahlt + Spieltag vorbei), der CEO klickt
   „Abschliessen“ -> Ordner wandert nach `Abgeschlossen`. Kein automatisches Verschieben.
-- **E8 Meldungen** -- **Empfehlung:** Telegram bei neuer Bestellung (Spiel angelegt, X Karten), bei Zahlungseingang
-  (zugeordnet oder „bitte zuordnen“) und 3 Tage vor dem Spiel, falls noch Tickets ohne Namen oder unbezahlt sind.
+- **E8 Meldungen** -- **BESCHLOSSEN (CEO): keine Telegram-Nachrichten.** Hinweise (neue Bestellung, „bitte zuordnen“,
+  Spiel bald ohne Namen/Zahlung) erscheinen nur im Reiter OFC (Zaehler/Markierung).
 
 ## Etappen
 
@@ -113,6 +115,20 @@ zuordnen, viel Handarbeit. Wunsch:
 - Risiko / Rueckweg: nur lesend auf der Freigabe; Speicher loeschbar ohne Folgen.
 - Abhaengig von / Aufwand / Risiko: O0 / mittel / gering.
 
+### Etappe OM: Mitgliederliste (CEO 2026-11-24)
+
+- Status: geplant
+- Ziel / Scope / Nicht-Scope: Mitgliederliste aus der Google-Forms-Antworttabelle lesen (E5/E5b): Name, Mitgliedsnummer,
+  Kontaktfelder nach Bedarf; ohne Mitgliedsnummer = Anfrage. Nutzung: Namensvorschlaege fuer Tickets (O2), Zuordnung der
+  PayPal-Zahlungen ueber Name/PayPal-Mail (O5), Statistik je Mitglied (O6). Anzeige im Reiter OFC (Mitglieder/Anfragen).
+  Nicht-Scope: in die Tabelle schreiben, Mitgliedsnummern vergeben, Beitraege (eigene Roadmap).
+- Gate: Tests (Spalten erkennen, Anfrage vs. Mitglied, Namensdubletten); Lesezugriff nur lesend (Gegenprobe: kein
+  Schreibaufruf); Datenfluss + Datenschutz-Hinweis dokumentiert.
+- Verifikation: Zahl der Mitglieder/Anfragen im Reiter = Tabelle (Stichprobe CEO).
+- Dry-Run: Probelauf zeigt erkannte Spalten und Anzahl, ohne zu speichern.
+- Risiko / Rueckweg: Freigabe der Tabelle fuer LUNA zuruecknehmen.
+- Abhaengig von / Aufwand / Risiko: E5b, O1 / klein / gering.
+
 ### Etappe O2: Namen zuweisen und Dateien umbenennen
 
 - Status: geplant
@@ -131,9 +147,9 @@ zuordnen, viel Handarbeit. Wunsch:
 - Status: geplant
 - Ziel / Scope / Nicht-Scope: Im Bot-Poll HSV-Rechnungsmail und Eventim-Mail erkennen (Regeln aus O0), zu einer Bestellung
   zusammenfuehren (gleiche Summe, kurzer Zeitabstand, Rechnungs-/Auftragsnummer), Spiel anlegen, Spielordner anlegen,
-  Rechnung und Tickets dort ablegen (Namensmuster), Telegram-Meldung (E8). Nicht-Scope: Zahlungen.
+  Rechnung und Tickets dort ablegen (Namensmuster), Hinweis im Reiter OFC (E8: keine Telegram-Nachricht). Nicht-Scope: Zahlungen.
 - Gate: Tests mit Fixtures aus O0 (Paar erkannt, Dublette nicht doppelt, nur Eventim ohne HSV bleibt „wartet“).
-- Verifikation: naechste echte Bestellung erscheint im Reiter und als Ordner mit allen Tickets; Meldung in Telegram.
+- Verifikation: naechste echte Bestellung erscheint im Reiter und als Ordner mit allen Tickets.
 - Dry-Run: Probelauf zeigt, welche Bestellungen angelegt wuerden.
 - Risiko / Rueckweg: Fehlerkennung -> Spiel im Reiter verwerfen (Ereignis, Ordner bleibt).
 - Abhaengig von / Aufwand / Risiko: O0, O1 / mittel / mittel.
@@ -159,7 +175,7 @@ zuordnen, viel Handarbeit. Wunsch:
   Optional Import PayPal-CSV fuer alte Zahlungen (E4). Nicht-Scope: Mahnungen an Mitglieder.
 - Gate: Tests (Teilzahlung, Sammelzahlung fuer 2 Spiele, falscher Betrag, unbekannter Name, Rueckzahlung, Dublette aus Mail
   und CSV); Gegenproben.
-- Verifikation: echte Zahlung eines Mitglieds -> Ticket „bezahlt“ im Reiter, Meldung in Telegram.
+- Verifikation: echte Zahlung eines Mitglieds -> Ticket „bezahlt“ im Reiter.
 - Dry-Run: Probelauf zeigt Vorschlaege ohne zu speichern.
 - Risiko / Rueckweg: Zuordnung loesbar; nichts verlaesst das Haus.
 - Abhaengig von / Aufwand / Risiko: O1, (O4) / mittel / mittel (Datenqualitaet der Verwendungszwecke).
@@ -169,8 +185,9 @@ zuordnen, viel Handarbeit. Wunsch:
 - Status: geplant
 - Ziel / Scope / Nicht-Scope: „abschliessbar“-Hinweis und Knopf „Abschliessen“ (E7: Ordner nach `Abgeschlossen`);
   offene Posten je Person (wer schuldet was, fuer welches Spiel) mit Text zum Kopieren (z. B. fuer WhatsApp); Saison-
-  uebersicht: Summe eingekauft / eingenommen / offen / Differenz; Export als CSV und PDF (A4 hochkant). Erinnerung 3 Tage
-  vor dem Spiel (E8). Nicht-Scope: Versand an Mitglieder.
+  uebersicht: Summe eingekauft / eingenommen / offen / Differenz; Export als CSV und PDF (A4 hochkant). Hinweis im Reiter 3 Tage
+  vor dem Spiel (E8, keine Telegram-Nachricht). **Statistik je Mitglied** (CEO 2026-11-24): wer hat wie oft Karten
+  bekommen (je Saison, je Wettbewerb), als Grundlage fuer eine faire Vergabe. Nicht-Scope: Versand an Mitglieder.
 - Gate: Tests (Abschluss nur wenn bezahlt + Datum vorbei; Verschieben mit Kollision); Sichtpruefung.
 - Verifikation: ein echtes, vollstaendig bezahltes vergangenes Spiel per Klick abschliessen -> Ordner liegt in
   `Abgeschlossen`, Reiter zeigt „abgeschlossen“.
@@ -178,14 +195,17 @@ zuordnen, viel Handarbeit. Wunsch:
 - Risiko / Rueckweg: Ordner zurueckschieben (Knopf „wieder oeffnen“).
 - Abhaengig von / Aufwand / Risiko: O1-O5 / klein / gering.
 
+## Folgethemen (CEO 2026-11-24, eigene Roadmap)
+
+- **Mitgliedsbeitraege und Fanclub-Kasse** -- Beitraege und Kasse laufen ueber PayPal; eigene Roadmap nach OFC (nutzt
+  Mitgliederliste OM und PayPal-Erkennung O5).
+
 ## Ideen (nicht im Scope, auf Wunsch)
 
 - Ticket-PDF direkt aus dem Reiter teilen (Datei-Link wie `/teilen/*` mit Ablauf) statt per Hand verschicken -- Oeffentlichkeit,
   braucht eigenes Go + CISO.
 - Warteliste je Spiel (wer will Karten, wenn welche frei werden).
 - Sitzplan-Ansicht (Block/Reihe/Sitz) fuer Gruppen, die zusammen sitzen wollen.
-- Mitgliedsbeitraege und Fanclub-Kasse im selben Reiter (eigene Roadmap).
-- Statistik je Mitglied (Spiele pro Saison) fuer eine faire Kartenvergabe bei Knappheit.
 
 ## Dokumentation bei der Umsetzung
 
