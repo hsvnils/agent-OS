@@ -129,6 +129,7 @@ const SECTIONS = [
   { id: "skillwerkstatt", icon: "🛠", label: "Skill-Werkstatt", app: null },
   { id: "team", icon: "👥", label: "Team", app: "team" },
   { id: "einstellungen", icon: "⚙", label: "Einstellungen", app: null },
+  { id: "ofc", icon: "⚽", label: "OFC", app: "ofc" },              // OFC_ROADMAP O1: Fanclub, nur CEO
 ];
 const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.includes(app);
 // LUNA_OS_UI_ROADMAP Etappe 1: 4 Bereiche statt 19 Symbolen (CEO 2026-09-30, Skizze abgenommen). Reihenfolge nach Nutzung.
@@ -137,6 +138,7 @@ const BEREICHE = [
   { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen", "vertraege"] },
   { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["contentplan", "reichweite", "crm", "radar", "content", "cutter", "reel"] },
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
+  { id: "ofc", icon: "⚽", label: "OFC", teile: ["ofc"] },
   { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "skillwerkstatt", "modellradar", "devroadmap", "system", "netzwerk", "anbieter", "team", "einstellungen"] },
 ];
 const TEIL_INFO = {
@@ -145,7 +147,7 @@ const TEIL_INFO = {
   radar: "Neue Collab-Chancen", contentplan: "Kalender: eigene Posts, Kunden, Drehs", reichweite: "Follower und Reichweite je Plattform", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
   wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", netzwerk: "Fritz!Box, NAS, Zertifikat", modellradar: "KI-Modelle und Hersteller-News", skillwerkstatt: "Eigene Skills bauen, prüfen, verbessern", anbieter: "Dienste, Datenquellen, Kosten", team: "Team-Zugänge",
-  einstellungen: "Depot, Briefings, Anmeldung",
+  einstellungen: "Depot, Briefings, Anmeldung", ofc: "Fanclub: Spiele, Tickets, Zahlungen",
 };
 const teilErlaubt = (b) => b.teile.filter(t => { const x = SECTIONS.find(s => s.id === t); return x && darf(x.app); });
 const bereichVon = (id) => BEREICHE.find(b => "b-" + b.id === id || b.teile.includes(id));
@@ -4940,6 +4942,69 @@ const AUF_GRUPPEN = [["ueberfaellig", "⚠️ Überfällig"], ["heute", "📌 He
 const AUF_WDH = [["", "nicht wiederholen"], ["woechentlich", "wöchentlich"], ["monatlich", "monatlich"], ["quartalsweise", "quartalsweise"], ["jaehrlich", "jährlich"]];
 const aufWdhSelect = (id, wert) => `<label class="v2-feld"><small>Wiederholen</small><select id="${id}" class="v2-inp">${AUF_WDH.map(([k, l]) => `<option value="${k}" ${k === (wert || "") ? "selected" : ""}>${l}</option>`).join("")}</select></label>`;
 /* ---- Reichweiten je Plattform (MONETARISIERUNG M3) ---- */
+/* OFC_ROADMAP O1: Fanclub HSVInside -- Spiele, Tickets, Hinweise (nur CEO; getrennt von der Buchhaltung; keine Telegram-Nachrichten) */
+RENDER.ofc = renderOfc;
+const OFC_STATUS = { offen: ["wartet", "kommt"], vorbei: ["neutral", "vorbei"], abgeschlossen: ["ok", "abgeschlossen"] };
+async function renderOfc(meldung, fehler) {
+  const d = await jget("/api/ofc/uebersicht");
+  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
+  if (!d) { $("#v2-app").innerHTML = kopf + emptyRow("OFC nicht erreichbar (nur für den CEO)."); return; }
+  const su = d.summe, zeile = (x) => `<div class="v2-list-row klick v2-ofc-zeile" data-act="ofc-spiel" data-id="${esc(x.id)}">
+      <div class="v2-ofc-datum"><b>${x.spieltag ? esc(datumDe(x.spieltag)) : "–"}</b><small>${esc(x.uhrzeit || "")}</small></div>
+      <div class="grow"><b class="v2-umbruch">${esc(x.spiel)}</b>
+        <small>${[x.heimspiel === true ? "🏠 Heim" : x.heimspiel === false ? "🚌 Auswärts" : "", x.wettbewerb && x.wettbewerb !== "Auswärts" ? esc(x.wettbewerb) : "",
+          `🎟 ${x.karten} Karte${x.karten === 1 ? "" : "n"}`, `👤 ${x.mit_name}/${x.karten} mit Namen`].filter(Boolean).join(" · ")}</small>
+        ${x.status !== "abgeschlossen" && x.hinweise.length ? `<div class="v2-ofc-hinweise">${x.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}</div>
+      <span class="v2-badge ${OFC_STATUS[x.status][0]}">${OFC_STATUS[x.status][1]}</span></div>`;
+  const offen = d.spiele.filter(x => x.status !== "abgeschlossen"), fertig = d.spiele.filter(x => x.status === "abgeschlossen");
+  $("#v2-app").innerHTML = kopf + (meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}">${esc(meldung)}</div>` : "")
+    + `<div class="v2-grid">
+      ${tile("Saison", `<div class="v2-kpi">${su.spiele}</div><div class="v2-sub">Spiele · Ordner „${esc(d.saison_ordner)}“</div>`)}
+      ${tile("Karten", `<div class="v2-kpi">${su.karten}</div><div class="v2-sub">insgesamt</div>`)}
+      ${tile("Ohne Namen", `<div class="v2-kpi">${su.ohne_name}</div><div class="v2-sub">bei offenen Spielen</div>`)}
+      ${tile("Hinweise", `<div class="v2-kpi">${su.hinweise}</div><div class="v2-sub">bei offenen Spielen</div>`)}
+      <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Offene Spiele</span></div>${offen.map(zeile).join("") || emptyRow(d.spiele.length ? "Keine offenen Spiele." : "Noch nichts eingelesen – oben „Ordner einlesen“.")}</div>
+      ${fertig.length ? `<div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Abgeschlossen</span></div>${fertig.map(zeile).join("")}</div>` : ""}
+    </div><div class="v2-sub" style="margin-top:8px">${d.letzter_import ? "Zuletzt eingelesen: " + esc(zeit(d.letzter_import)) : ""} · Zahlungen folgen in Etappe O4/O5.</div>`;
+}
+async function ofcSpiel(sid) {
+  openModal("⚽ Spiel", `<div class="v2-empty">Lade…</div>`);
+  const d = await jget("/api/ofc/spiel/" + encodeURIComponent(sid)); if (!d) return openModal("⚽ Spiel", emptyRow("Spiel nicht gefunden."));
+  const s = d.spiel, datei = (n) => `/api/ofc/spiel/${encodeURIComponent(sid)}/datei?name=${encodeURIComponent(n)}`;
+  const rg = (s.rechnungen || []).map(r => `<div class="v2-kv"><span>Rechnung ${esc(r.rechnungsnr)}</span><b>${esc(cent2eur(r.summe_cent || 0))} · ${r.anzahl} Karte(n)</b></div>
+      <div class="v2-kv"><span>Auftrag / Kunde</span><b>${esc(r.auftragsnr || "–")} / ${esc(r.kundennr || "–")}</b></div>
+      <div class="v2-kv"><span>Datum · Zahlart</span><b>${r.datum ? esc(datumDe(r.datum)) : "–"} · ${esc(r.zahlart || "–")}</b></div>
+      ${r.datei ? `<div class="v2-card-actions"><a class="v2-btn sm" href="${datei(r.datei)}" target="_blank" rel="noopener">📄 ${esc(r.datei)}</a></div>` : ""}`).join("") || emptyRow("Keine Rechnung im Ordner.");
+  const tk = d.tickets.map(t => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(t.ticketnr.split("-")[1] || "")}</span>
+      <div class="grow"><b>${t.name ? esc(t.name) : `<span class="v2-sub">ohne Namen</span>`}</b>
+        <small>${[t.block ? "Block " + esc(t.block) : "", t.reihe && t.reihe !== "-" ? "Reihe " + esc(t.reihe) : "", t.sitz && t.sitz !== "-" ? "Sitz " + esc(t.sitz) : "",
+          t.preis_cent ? esc(cent2eur(t.preis_cent)) : "", t.ohne_rechnung ? "Bestellung " + esc(t.rechnungsnr) + " (keine Rechnung)" : ""].filter(Boolean).join(" · ")}</small></div>
+      ${t.datei ? `<a class="v2-btn sm" href="${datei(t.datei)}" target="_blank" rel="noopener" aria-label="Ticket öffnen">🎟</a>` : `<span class="v2-badge warn">Datei fehlt</span>`}</div>`).join("") || emptyRow("Keine Tickets.");
+  openModal(`⚽ ${s.spiel}`, `<div class="v2-sub">${[s.spieltag ? datumDe(s.spieltag) + (s.uhrzeit ? ", " + s.uhrzeit : "") : "", s.ort, s.wettbewerb, s.heimspiel === true ? "Heimspiel" : s.heimspiel === false ? "Auswärtsspiel" : "", "Ordner „" + s.pfad + "“"].filter(Boolean).map(esc).join(" · ")}</div>
+    ${d.hinweise.length ? `<div class="v2-ofc-hinweise" style="margin-top:8px">${d.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
+    <h3>🎟 Tickets (${d.tickets.length})</h3>${tk}
+    <h3>🧾 Rechnung</h3>${rg}
+    <div class="v2-sub" style="margin-top:10px">Namen ändern und Dateien umbenennen kommt mit Etappe O2.</div>`);
+}
+async function ofcImport() {
+  openModal("🔄 Ordner einlesen", `<div class="v2-empty">Prüfe den Ordner auf der NAS … (dauert einige Sekunden)</div>`);
+  const v = await jget("/api/ofc/import/vorschau");
+  if (!v || !v.ok) return openModal("🔄 Ordner einlesen", `<div class="v2-msg err">${esc((v && v.hinweis) || "Keine Verbindung.")}</div>`);
+  const nix = !v.spiele_neu.length && !v.spiele_geaendert.length && !v.tickets_neu && !v.tickets_geaendert;
+  openModal("🔄 Ordner einlesen", `<div class="v2-sub">Vorschau für „${esc(v.saison)}“ – noch nichts gespeichert. Auf der NAS wird nichts verändert.</div>
+    <div class="v2-kv"><span>Neue Spiele</span><b>${v.spiele_neu.length}</b></div>${v.spiele_neu.length ? `<small class="v2-sub">${esc(v.spiele_neu.join(", "))}</small>` : ""}
+    <div class="v2-kv"><span>Geänderte Spiele</span><b>${v.spiele_geaendert.length}</b></div>${v.spiele_geaendert.length ? `<small class="v2-sub">${esc(v.spiele_geaendert.join(", "))}</small>` : ""}
+    <div class="v2-kv"><span>Neue Tickets</span><b>${v.tickets_neu} (davon ${v.namen_neu} mit Namen aus dem Dateinamen)</b></div>
+    <div class="v2-kv"><span>Geänderte Tickets</span><b>${v.tickets_geaendert}</b></div>
+    ${v.fehler.length ? `<div class="v2-msg err">Nicht lesbar: ${esc(v.fehler.map(f => f.ordner).join(", "))}</div>` : ""}
+    <div class="v2-card-actions">${nix ? `<span class="v2-sub">Alles aktuell – nichts zu übernehmen.</span>` : `<button class="v2-btn pri" data-act="ofc-import-ok">Übernehmen</button>`}</div><div class="v2-msg" id="ofc-msg"></div>`);
+}
+async function ofcImportOk(el) {
+  el.disabled = true; $("#ofc-msg").textContent = "Übernehme …";
+  const r = await jpost("/api/ofc/import", { bestaetigt: true }); el.disabled = false;
+  if (!r || r.ok === false) { $("#ofc-msg").className = "v2-msg err"; $("#ofc-msg").textContent = (r && r.hinweis) || "Fehler."; return; }
+  closeModal(); return renderOfc(`Eingelesen: ${r.spiele_neu.length} neue und ${r.spiele_geaendert.length} geänderte Spiele, ${r.tickets_neu} neue Tickets.`);
+}
 RENDER.reichweite = renderReichweite;
 let RW = null, RW_PL = "instagram", RW_CSV = null;
 const rwZahl = (n) => n == null ? "–" : Number(n).toLocaleString("de-DE");
@@ -5487,6 +5552,9 @@ async function handleAct(act, el) {
     case "impressum-suchen": return impressumSuchen(val, el);
     case "vs-senden": return vsSenden(el);
     case "km-neu": return kmDialog(id, val || "");
+    case "ofc-spiel": return ofcSpiel(id);
+    case "ofc-import": return ofcImport();
+    case "ofc-import-ok": return ofcImportOk(el);
     case "km-entwurf": return kmEntwurf(el);
     case "km-senden": return kmSenden(el);
     case "km-verlauf": return kmVerlauf(id, val, el.dataset.name || "");

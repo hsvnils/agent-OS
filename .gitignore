@@ -112,6 +112,7 @@ entwicklung/
 # Backoffice-Auftraege (Live-Daten auf der NAS)
 backoffice/log.jsonl
 todos/                              # TODOS_ROADMAP: eigene To-dos (nur NAS + Backup)
+fanclub/                            # OFC_ROADMAP O1: Fanclub-Speicher (nur NAS + Backup)
 regeln/                             # JARVIS J7: feste Regeln des CEO fuer LUNA (nur NAS + Backup)
 gedaechtnis/                        # JARVIS J8: Suchverzeichnis (abgeleitet, nur NAS)
 wochenplan/                         # JARVIS J9: Wochenplanung (nur NAS + Backup)

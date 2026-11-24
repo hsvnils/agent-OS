@@ -123,7 +123,7 @@ def _spielordner(saison: Path) -> list[tuple[Path, bool]]:
 
 def ordner_lesen(ordner: Path) -> dict:
     """Ein Spielordner -> Rechnung + Tickets (mit Namen aus dem Dateinamen). Intern; der Bericht zeigt keine Namen."""
-    rgs = [rechnung_aus_text(pdf_text(f)) for f in sorted(ordner.glob("Rechnung*.pdf"))]
+    rgs = [rechnung_aus_text(pdf_text(f)) | {"datei": f.name} for f in sorted(ordner.glob("Rechnung*.pdf"))]
     rechnung = rgs[0] if rgs else {"erkannt": False, "tickets": []}
     for weitere in rgs[1:]:                                   # mehrere Bestellungen fuer ein Spiel
         rechnung = rechnung | {"tickets": rechnung["tickets"] + weitere["tickets"],
@@ -140,7 +140,7 @@ def ordner_lesen(ordner: Path) -> dict:
             pass
         dateien.append({"datei": f.name, "ticketnr": t.get("ticketnr", ""), **{k: v for k, v in datei_name(f.name).items()
                                                                               if k in ("name", "zusatz")}})
-    return {"ordner": ordner.name, "rechnung": rechnung, "rechnungen": len(rgs), "tickets": dateien}
+    return {"ordner": ordner.name, "rechnung": rechnung, "rechnungen": len(rgs), "rechnungs_liste": rgs, "tickets": dateien}
 
 
 def ordner_analyse(saison: Path | None = None) -> dict:
@@ -148,8 +148,12 @@ def ordner_analyse(saison: Path | None = None) -> dict:
     saison = saison or nas_ordner()
     if not saison.is_dir():
         return {"ok": False, "hinweis": f"Saison-Ordner nicht gefunden ({saison.name}) -- Mount pruefen (E2)."}
+    try:
+        liste = _spielordner(saison)
+    except PermissionError:                                  # BF-101: Freigabe erlaubt den Container-Benutzer nicht
+        return {"ok": False, "hinweis": "Keine Leseberechtigung auf den Fanclub-Ordner (DSM: Benutzer nilskrueger berechtigen)."}
     spiele = []
-    for ordner, fertig in _spielordner(saison):
+    for ordner, fertig in liste:
         try:
             d = ordner_lesen(ordner)
         except Exception as exc:

@@ -1332,3 +1332,9 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-list-row:has(.v2-ap-knoepfe) { flex-wrap: wrap; }
 .v2-umbruch { overflow-wrap: anywhere; min-width: 0; }
 #km-vorschau .v2-kv b { text-align: right; }
+/* OFC_ROADMAP O1: Fanclub-Reiter */
+.v2-ofc-zeile { align-items: flex-start; }
+.v2-ofc-datum { display: flex; flex-direction: column; min-width: 78px; }
+.v2-ofc-datum small { color: var(--v2-muted); }
+.v2-ofc-hinweise { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+@media (max-width: 600px) { .v2-ofc-datum { min-width: 64px; } }
