@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 11:15] — Claude Code
+- **Was:** Branch `ai/ofc-o0` (inkl. Roadmap-Commit) per `--no-ff` in `main` gemergt (OFC O0); Deploy durch den CEO mit Neuerstellen von `luna-os` (neuer Mount `/fanclub_nas:ro`); Zugangsdaten `HSVINSIDE_*` vom CEO eingetragen.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** main, OFC_ROADMAP.md, deploy/docker-compose.yml.
+
 ## [2026-11-24 11:00] — Claude Code
 - **Was:** OFC O0 (Fanclub HSVInside): `HsvInsideMail` (Postfach moin@hsvinside.de nur lesend, nur PayPal/Eventim/HSV per Server-Suche + Absender-Pruefung, kein Senden), `core/ofc.py` (HSV-Rechnung und Tickets lesen inkl. Auswaerts/Pokal/Freundschaft, Heim/Auswaerts, Ordner-Analyse ohne Namen, Postfach-Analyse maskiert), Endpunkte `GET /api/ofc/postfach/pruefen`, `/api/ofc/analyse/postfach`, `/api/ofc/analyse/ordner` (nur CEO), Mount `HSVInside_Shared/Fanclub HSVInside` -> `/fanclub_nas:ro` in `luna-os`. CISO-Pruefung (Zugriffs-Policy), Dienste-Register, Datenfluesse, Datenschutz-Nachtrag (keine KI fuer Mitgliederdaten), Entscheidungs-Register E1-E8; Roadmap um OM (Mitgliederliste), Statistik je Mitglied und Folgethema Kasse/Beitraege ergaenzt. Probelauf auf einer Kopie der Saison: 11 von 12 Rechnungen erkannt. Tests `test_ofc.py` (8, Gegenproben rot), Suite 1766 gruen.
 - **Warum:** CEO-Entscheidungen E1-E8 und Go fuer O0 (2026-11-24).

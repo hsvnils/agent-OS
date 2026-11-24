@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-o0`
 - Basiscommit: `734b284`
-- Naechster Schritt: O0 gebaut (Branch `ai/ofc-o0`) -- CEO pusht, Go fuer Merge + Deploy, `luna-os` neu erstellen (Mount), `HSVINSIDE_*` in die NAS-`.env`; dann Postfach-Analyse mit dem CEO durchsehen. Offen: E5b (Mitgliederliste).
+- Naechster Schritt: O0 gemergt (2026-11-24) -- CEO deployt und erstellt `luna-os` neu (Mount); dann Verbindungspruefung moin@, Ordner- und Postfach-Analyse auf der NAS und mit dem CEO durchsehen. Offen: E5b (Mitgliederliste), Absenderadressen HSV/Eventim.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
