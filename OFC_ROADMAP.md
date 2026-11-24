@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-o5`
 - Basiscommit: `734b284`
-- Naechster Schritt: O5 (mit O4-Nachbesserung) umgesetzt auf `ai/ofc-o5` -- Push, Merge, Deploy (code-only + Neustart); danach Vorschau Zahlungen und Eingaenge mit echten Mails pruefen. Gesamtabnahme am Ende der Roadmap. Danach O6 nach CEO-Go.
+- Naechster Schritt: O5 (mit O4-Nachbesserung) gemergt -- CEO deployt (code-only + Neustart); danach Vorschau Zahlungen und Eingaenge mit echten Mails pruefen. Gesamtabnahme am Ende der Roadmap. Danach O6 nach CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

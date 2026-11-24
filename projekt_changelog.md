@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 17:26] — Claude Code
+- **Was:** `ai/ofc-o5` (OFC O5 Zahlungseingaenge + O4-Nachbesserung) nach `main` gemergt und gepusht, Branch geloescht. Automatischer Lauf nach O4-Deploy: 12 Zahlungen gespeichert (4 automatisch, 8 offen) -- werden nach diesem Deploy neu bewertet.
+- **Warum:** CEO „Go für Merge, Push und Deploy“.
+- **Betroffen:** `OFC_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-24 17:11] — Claude Code
 - **Was:** OFC O5: Zahlungseingaenge der Mitglieder (PayPal „Zahlung erhalten“, Rueckzahlungen negativ) den Tickets zuordnen -- eindeutig automatisch (Betrag = offene Tickets auf den Namen/Alias, Mitteilung entscheidet bei mehreren Spielen, Sammelzahlung), sonst Vorschlaege/„Tickets waehlen“/„Kein Ticket“; Alias-Lernen, Ticketstatus bezahlt/teilweise, Saldo je Zahler, Ansicht „💶 Eingaenge“, automatisch im 15-Minuten-Takt. Dazu O4-Nachbesserung nach Probelauf mit echten Mails: nur Eventim/HSV, „Spaeter bezahlen“ ohne Doppel, bezahlte Rechnung nicht doppelt, alte automatische Eintraege neu bewertet. Cache v170/v92. Baseline 1812.
 - **Warum:** CEO „Deploy gemacht, Go für O5“ (Abnahme gesammelt am Ende der Roadmap); Probelauf O4 zeigte Dropbox und doppelte „Spaeter bezahlen“.
