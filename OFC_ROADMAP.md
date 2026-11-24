@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-o0`
 - Basiscommit: `734b284`
-- Naechster Schritt: O1 gemergt -- CEO deployt (code-only + Neustart), im Reiter OFC „Ordner einlesen“ -> Uebernehmen, Abgleich mit dem CEO. Danach OM (Tabelle geteilt) oder O2.
+- Naechster Schritt: O1 live, erster Import auf der NAS erfolgt (12 Spiele, 77 Karten) -- offen: Abgleich und Sichtabnahme durch den CEO. Danach OM (Tabelle geteilt) oder O2 nach CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -102,7 +102,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O1: Spiele, Tickets und Bestand (Reiter OFC, lesen)
 
-- Status: umgesetzt (2026-11-24; Speicher `fanclub/log.jsonl`, `core/ofc_store.py` Import mit Vorschau (wiederholbar, Namen aus Dateinamen nur beim ersten Erfassen, Spiel-ID = Ordnername), Reiter „OFC“ nur CEO (Spiele, Karten, Namen, Status, Hinweise; Spiel-Detail mit Tickets und Rechnung, PDFs oeffnen); Probelauf auf Kopie der echten Saison: 12 Spiele, 77 Tickets, 68 mit Namen, zweiter Lauf ohne Aenderung; Sichtpruefung headless Rechner/iPad/iPhone ok; `test_ofc_store.py`. Gemergt 2026-11-24; offen: Deploy, erster Import auf der NAS)
+- Status: umgesetzt (2026-11-24; Speicher `fanclub/log.jsonl`, `core/ofc_store.py` Import mit Vorschau (wiederholbar, Namen aus Dateinamen nur beim ersten Erfassen, Spiel-ID = Ordnername), Reiter „OFC“ nur CEO (Spiele, Karten, Namen, Status, Hinweise; Spiel-Detail mit Tickets und Rechnung, PDFs oeffnen); Probelauf auf Kopie der echten Saison: 12 Spiele, 77 Tickets, 68 mit Namen, zweiter Lauf ohne Aenderung; Sichtpruefung headless Rechner/iPad/iPhone ok; `test_ofc_store.py`. Gemergt und deployt 2026-11-24; erster Import auf der NAS durch den CEO: 12 Spiele, 77 Karten, 4 offen, erneute Vorschau ohne Aenderung; offen: Abgleich und Sichtabnahme durch den CEO)
 - Ziel / Scope / Nicht-Scope: Speicher `fanclub/log.jsonl` (Spiele, Rechnungen, Tickets, Personen, Zahlungen als
   Ereignisse). Import des Bestands (E4): `Rechnung.pdf` lesen (Rechnungsnr, Auftrags-/Kunden-Nr, Spiel, Datum, Tickets
   mit Block/Reihe/Sitz/Preis), Ticket-Dateien ueber die Ticketnummer im PDF zuordnen, Namen aus den Dateinamen

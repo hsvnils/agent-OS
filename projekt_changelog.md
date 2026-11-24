@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 16:05] — Claude Code
+- **Was:** OFC O1 nach Deploy geprueft: erster Import auf der NAS (CEO) ergibt 12 Spiele, 77 Karten, 4 offene Spiele, 3 Hinweise; erneute Vorschau zeigt keine Aenderung (wiederholbar). Roadmap-Status nachgetragen.
+- **Warum:** CEO: „Deploy gemacht, Ordner eingelesen“.
+- **Betroffen:** `OFC_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-24 11:36] — Claude Code
 - **Was:** Branch `ai/ofc-o1` per `--no-ff` in `main` gemergt (OFC O1: Reiter, Speicher `fanclub/`, Import); Deploy code-only durch den CEO (Cache v165/v88).
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
