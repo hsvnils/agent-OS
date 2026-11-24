@@ -1,0 +1,202 @@
+# Roadmap: OFC -- Tickets und Zahlungen des Fanclubs HSVInside
+
+- Status: geplant
+- Stand: 2026-11-24
+- Arbeitsbranch: `ai/ofc-roadmap`
+- Basiscommit: `734b284`
+- Naechster Schritt: CEO prueft die Roadmap und entscheidet E1-E8; danach Go fuer O0 (Zugang + Analyse, nur lesend).
+- Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
+  aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
+
+## Anlass (CEO 2026-11-24)
+
+Der CEO kauft ueber den Offiziellen Fanclub (OFC) HSVInside Karten fuer Spiele und gibt sie an Mitglieder weiter.
+Probleme heute: Zahlungen der Mitglieder den Tickets/Spielen zuordnen, die eigenen PayPal-Abbuchungen dem Spiel
+zuordnen, viel Handarbeit. Wunsch:
+
+- eigener Reiter **„OFC“** in LUNA-OS;
+- Postfach **moin@hsvinside.de** (All-Inkl) auslesen: eingehende PayPal-Zahlungen der Mitglieder, eigene Zahlungen
+  (Summe, Referenzen), Mails von Eventim und HSV -- kommen fast gleichzeitig mit derselben Summe;
+- Ordner auf der NAS `HSVInside_Shared/Fanclub HSVInside/Tickets 26-27` (Unterordner je Spiel; fertige Spiele in
+  `Abgeschlossen` = alle Tickets bezahlt **und** Spieltag vorbei);
+- HSV-Rechnungsnummern usw. mitfuehren;
+- **nicht** in die normale Buchhaltung;
+- je Spiel sichtbar, wie viele Karten es gibt (aus den Mail-Anhaengen); Namen je Ticket eintragen und jederzeit
+  aendern; LUNA benennt die Ticket-Datei auf der NAS danach um.
+
+## Analyse (read-only, mit Belegen, 2026-11-24)
+
+- **Ordner auf der NAS:** `/volume1/HSVInside_Shared/Fanclub HSVInside/Tickets 26-27` mit 4 offenen Spielordnern
+  (`HSV vs S04`, `HSVvsFCB`, `HSVvsSGE - DFB-Pokal`, `SVWvsHSV`) und 8 Spielen unter `Abgeschlossen`; 95 PDFs (ohne
+  Synology-Metadaten `@eaDir`). Je Spiel: `Rechnung.pdf` (HSV), meist `ATGB_Ticketing_260630.pdf` (AGB) und die Tickets.
+- **Dateinamen der Tickets:** ueberwiegend `<Rechnungsnr>-<Pos>-<Name>.pdf` (z. B. Muster `<N>-<N>-<Name>.pdf`);
+  Abweichungen: ohne Namen (`<N>-<N>.pdf`, z. B. `Abgeschlossen/HSVvsVFB` alle 8), mit Zusatz (`…-<N>A-<Name>`,
+  `…-<N>B-<Name>` beim DFB-Pokal), Name mit Ziffer. Namen der Mitglieder stehen also heute schon im Dateinamen.
+- **HSV-Rechnung (Beispiel `HSVvsFCB/Rechnung.pdf`, Text per `pypdf` lesbar):** Rechnungsnr (12 Ziffern), Auftrags-Nr,
+  Kunden-Nr, Datum, Spiel mit Datum/Uhrzeit/Ort („26-27 Hamburger SV - FC Bayern Muenchen / 28.11.2026 / 15:30“), je
+  Ticket Position, Ticketnummer `<Rechnungsnr>-<Pos>`, Block, Preisgruppe, Reihe, Sitz, Preis; Gesamtsumme, Anzahl,
+  **Zahlart: PayPal**.
+- **Ticket-PDF:** enthaelt Kundennummer, Rechnungsnummer und **Ticketnummer `<Rechnungsnr>-<Pos>`** -> jede Datei laesst
+  sich eindeutig einer Rechnungsposition zuordnen, auch ohne Dateinamen.
+- **Container:** `luna-os` sieht heute nur `/volume1/docker/ki-unternehmen` und (nur lesend) einen Clip-Ordner
+  (`deploy/docker-compose.yml` Zeile 33-38) -- die Freigabe `HSVInside_Shared` ist **nicht** eingehaengt.
+- **Postfach moin@hsvinside.de:** keine Zugangsdaten in der NAS-`.env` (Namen geprueft: kein `HSVINSIDE_*`). Die Adresse
+  steht in LUNAs Liste der CEO-eigenen Adressen (`orchestrator/core/eingangsbelege.py` Zeile 1698) -- Mails von dort
+  zaehlen nie als Kunde. **Mail-Formate (PayPal, Eventim, HSV) sind noch unbekannt** -> O0 analysiert sie lesend.
+- **Register:** keine Vorentscheidung zu Fanclub/OFC/hsvinside (`docs/entscheidungs-register.md` geprueft).
+- **Wiederverwendbar:** IMAP nur lesend + Filter wie K5 (`NilsMail`, Server-Suche, `BODY.PEEK`), PDF-Text (`pypdf`),
+  LUNA-OS-Bereiche (`BEREICHE` in `static/app-v2.js` Zeile 135), Rollen/Module fuer Sichtbarkeit nur CEO.
+
+## Grundsaetze
+
+- **Getrennt von der Buchhaltung:** eigener Speicher `fanclub/` auf der NAS (nicht im Git), eigene Ereignisse; nichts in
+  `buchhaltung/log.jsonl`, EUeR, Kostenstatistik oder Firmenakte. Kein Bezug zu Hanserautisch-Kunden.
+- **Keine KI fuer Mitgliederdaten:** Auslesen und Zuordnen regelbasiert (feste Mail-/PDF-Formate, Betrag, Zeit,
+  Verwendungszweck); was nicht eindeutig ist, landet in „Zuordnen“ mit Vorschlaegen -- der CEO klickt.
+- **Nur CEO sieht OFC** (Team-Nutzer nicht); Namen und Zahlungen der Mitglieder sind personenbezogene Daten.
+- **Keine Mails/Nachrichten an Mitglieder** durch LUNA (Oeffentlichkeit = CEO-Tor); hoechstens Text zum Kopieren.
+- **Dateien:** nur umbenennen/ablegen/verschieben in der Fanclub-Freigabe, nie loeschen; jede Aenderung protokolliert und
+  rueckgaengig machbar.
+
+## Entscheidungen fuer den CEO (vor O0)
+
+- **E1 Zugang moin@hsvinside.de** -- neuer Zugang = CISO-Freigabe (AGENTS.md 5.7). **Empfehlung:** wie K5: nur lesend,
+  Server-Suche nur nach Absendern von PayPal, Eventim und HSV (Liste in O0 festgelegt), andere Mails nie laden; nichts
+  verschieben/loeschen; Zugangsdaten `HSVINSIDE_MAIL_USER`/`HSVINSIDE_MAIL_PASSWORT` traegt der CEO selbst ein.
+- **E2 Freigabe einhaengen** -- `HSVInside_Shared/Fanclub HSVInside` in den Container `luna-os` (nicht `luna-telegram`).
+  **Empfehlung:** nur dieser Unterordner, **schreibend** (Umbenennen/Ablegen/Verschieben), Aenderung in
+  `deploy/docker-compose.yml`; der CEO fuehrt `docker compose up -d` aus (Container wird neu erstellt).
+- **E3 Saison-Ordner** -- **Empfehlung:** Ordnername je Saison in LUNA einstellbar (heute `Tickets 26-27`), neue
+  Spielordner nach dem bisherigen Muster `HSVvs<Gegner>` bzw. `<Gegner>vsHSV`.
+- **E4 Bestand** -- **Empfehlung:** alle Spiele der Saison 26-27 inkl. `Abgeschlossen` uebernehmen (Rechnung + Tickets +
+  Namen aus den Dateinamen); PayPal-Zahlungen rueckwirkend, soweit sie im Postfach liegen, sonst per PayPal-CSV-Export
+  (Upload in LUNA-OS).
+- **E5 Mitgliederliste** -- **Empfehlung:** schlanke Personenliste (Name, optional PayPal-Name/-Mail), die beim Zuordnen
+  mitlernt; Vorschlaege beim Namen-Eintragen und beim Zahlungseingang. Keine Uebernahme aus der Mitgliedschafts-Excel
+  (nur auf Wunsch).
+- **E6 Zahlung -> Ticket** -- **Empfehlung:** eindeutig = automatisch (Betrag passt zu offenen Tickets eines Spiels **und**
+  Name oder Verwendungszweck passt); sonst Vorschlag mit einem Klick. Eine Zahlung darf mehrere Tickets/Spiele abdecken
+  (aufteilen), Ueber-/Unterzahlung wird als Saldo je Person gefuehrt.
+- **E7 Abschliessen** -- **Empfehlung:** LUNA meldet „abschliessbar“ (alle bezahlt + Spieltag vorbei), der CEO klickt
+  „Abschliessen“ -> Ordner wandert nach `Abgeschlossen`. Kein automatisches Verschieben.
+- **E8 Meldungen** -- **Empfehlung:** Telegram bei neuer Bestellung (Spiel angelegt, X Karten), bei Zahlungseingang
+  (zugeordnet oder „bitte zuordnen“) und 3 Tage vor dem Spiel, falls noch Tickets ohne Namen oder unbezahlt sind.
+
+## Etappen
+
+### Etappe O0: Zugang und Analyse (nur lesend)
+
+- Status: geplant
+- Ziel / Scope / Nicht-Scope: Zugang moin@ nach E1 (Klasse wie `NilsMail`, Absenderfilter), Mount nach E2 (erst nur
+  lesend). Dry-Run-Bericht in LUNA-OS bzw. als Skript: Mails je Absender der letzten 90 Tage, erkannte Felder je Typ
+  (PayPal erhalten / PayPal gesendet / Eventim / HSV-Rechnung) **ohne** Namen/Betraege ins Log; Ordner-Scan wie oben.
+  Ergebnis: feste Erkennungsregeln je Mailtyp + Beispiel-Fixtures (anonymisiert) fuer die Tests. Nicht-Scope: speichern.
+- Gate: CISO-Pruefung in `governance/zugriffs-policy.md`; Tests: nur gefilterte Mails werden geladen (Gegenprobe), Mount
+  nur der Fanclub-Ordner; Verbindungspruefung ohne Lesen.
+- Verifikation: Dry-Run auf der NAS listet je Mailtyp Anzahl + erkannte Felder; Stichprobe mit dem CEO (3 Mails je Typ).
+- Dry-Run: ist die Etappe selbst.
+- Risiko / Rueckweg: Zugang eng; Entfernen der `.env`-Zeilen bzw. der Mount-Zeile.
+- Abhaengig von / Aufwand / Risiko: E1, E2 / mittel / mittel (neuer Zugang).
+
+### Etappe O1: Spiele, Tickets und Bestand (Reiter OFC, lesen)
+
+- Status: geplant
+- Ziel / Scope / Nicht-Scope: Speicher `fanclub/log.jsonl` (Spiele, Rechnungen, Tickets, Personen, Zahlungen als
+  Ereignisse). Import des Bestands (E4): `Rechnung.pdf` lesen (Rechnungsnr, Auftrags-/Kunden-Nr, Spiel, Datum, Tickets
+  mit Block/Reihe/Sitz/Preis), Ticket-Dateien ueber die Ticketnummer im PDF zuordnen, Namen aus den Dateinamen
+  vorbelegen. Neuer Bereich **„OFC“** in LUNA-OS (nur CEO): Spiele der Saison mit Datum, Karten gesamt/mit Namen/bezahlt,
+  Status (offen, abschliessbar, abgeschlossen); Spiel-Detail mit Rechnung und Ticketliste. Nicht-Scope: Aendern.
+- Gate: Tests mit Beispiel-Rechnung/-Tickets (Fixtures ohne echte Namen); Import-Dry-Run zeigt alle 12 Spiele und die
+  Ticketzahlen; Sichtpruefung Rechner/iPad/iPhone.
+- Verifikation: Zahlen im Reiter = Ordner auf der NAS (z. B. HSVvsFCB: 4 Karten, Rechnung 140,00 EUR).
+- Dry-Run: Import zeigt erst, was angelegt wuerde.
+- Risiko / Rueckweg: nur lesend auf der Freigabe; Speicher loeschbar ohne Folgen.
+- Abhaengig von / Aufwand / Risiko: O0 / mittel / gering.
+
+### Etappe O2: Namen zuweisen und Dateien umbenennen
+
+- Status: geplant
+- Ziel / Scope / Nicht-Scope: Je Ticket Name eintragen/aendern (Vorschlaege aus der Personenliste, E5). Nach dem Speichern
+  benennt LUNA die Datei nach dem Muster `<Rechnungsnr>-<Pos>-<Name>.pdf` um (Name dateisicher, Umlaute bleiben, keine
+  Schraegstriche); Vorschau vor dem Umbenennen, Protokoll alt -> neu, „Rueckgaengig“. Nicht-Scope: Loeschen.
+- Gate: Tests (Umbenennen, Namenswechsel, Kollision, Sonderzeichen, Datei fehlt/ist offen); Gegenprobe; Mount schreibend
+  (E2) erst ab hier.
+- Verifikation: Name im Reiter aendern -> auf der NAS (Finder/Drive) neuer Dateiname, alte Datei nicht mehr vorhanden.
+- Dry-Run: Vorschau „aus X wird Y“ vor dem Klick.
+- Risiko / Rueckweg: falscher Name -> neu benennen oder Rueckgaengig; Dateien werden nie geloescht.
+- Abhaengig von / Aufwand / Risiko: O1 / klein / gering.
+
+### Etappe O3: Neue Bestellungen automatisch (HSV/Eventim)
+
+- Status: geplant
+- Ziel / Scope / Nicht-Scope: Im Bot-Poll HSV-Rechnungsmail und Eventim-Mail erkennen (Regeln aus O0), zu einer Bestellung
+  zusammenfuehren (gleiche Summe, kurzer Zeitabstand, Rechnungs-/Auftragsnummer), Spiel anlegen, Spielordner anlegen,
+  Rechnung und Tickets dort ablegen (Namensmuster), Telegram-Meldung (E8). Nicht-Scope: Zahlungen.
+- Gate: Tests mit Fixtures aus O0 (Paar erkannt, Dublette nicht doppelt, nur Eventim ohne HSV bleibt „wartet“).
+- Verifikation: naechste echte Bestellung erscheint im Reiter und als Ordner mit allen Tickets; Meldung in Telegram.
+- Dry-Run: Probelauf zeigt, welche Bestellungen angelegt wuerden.
+- Risiko / Rueckweg: Fehlerkennung -> Spiel im Reiter verwerfen (Ereignis, Ordner bleibt).
+- Abhaengig von / Aufwand / Risiko: O0, O1 / mittel / mittel.
+
+### Etappe O4: Eigene PayPal-Zahlungen dem Spiel zuordnen
+
+- Status: geplant
+- Ziel / Scope / Nicht-Scope: PayPal-Mail „Zahlung gesendet“ (an Eventim/HSV) erkennen; Zuordnung zur Bestellung ueber
+  Betrag + Zeitfenster + Empfaenger; Referenzen (PayPal-Transaktionscode, Rechnungsnr, Auftrags-Nr, Kunden-Nr) am Spiel.
+  Uneindeutig -> „Zuordnen“. Nicht-Scope: Mitgliederzahlungen.
+- Gate: Tests (gleiche Summe zweimal am Tag, Teilerstattung/Rueckzahlung, Gebuehren).
+- Verifikation: bestehende Spiele zeigen ihre PayPal-Abbuchung mit Transaktionscode (Stichprobe mit PayPal-Konto).
+- Dry-Run: Probelauf ueber die letzten 90 Tage.
+- Risiko / Rueckweg: falsche Zuordnung per Klick loesen.
+- Abhaengig von / Aufwand / Risiko: O0, O1 / klein / gering.
+
+### Etappe O5: Zahlungseingaenge der Mitglieder
+
+- Status: geplant
+- Ziel / Scope / Nicht-Scope: PayPal-Mail „Geld erhalten“ erkennen (Name, Betrag, Mitteilung, Transaktionscode); Vorschlag
+  Spiel + Ticket(s) ueber Name/Personenliste, Verwendungszweck (Gegner, Datum, Anzahl) und Betrag (E6); eindeutige Faelle
+  automatisch, sonst Liste „Zuordnen“; Aufteilen auf mehrere Tickets/Spiele; Saldo je Person; Ticketstatus bezahlt/offen.
+  Optional Import PayPal-CSV fuer alte Zahlungen (E4). Nicht-Scope: Mahnungen an Mitglieder.
+- Gate: Tests (Teilzahlung, Sammelzahlung fuer 2 Spiele, falscher Betrag, unbekannter Name, Rueckzahlung, Dublette aus Mail
+  und CSV); Gegenproben.
+- Verifikation: echte Zahlung eines Mitglieds -> Ticket „bezahlt“ im Reiter, Meldung in Telegram.
+- Dry-Run: Probelauf zeigt Vorschlaege ohne zu speichern.
+- Risiko / Rueckweg: Zuordnung loesbar; nichts verlaesst das Haus.
+- Abhaengig von / Aufwand / Risiko: O1, (O4) / mittel / mittel (Datenqualitaet der Verwendungszwecke).
+
+### Etappe O6: Abschluss, offene Posten, Saisonuebersicht
+
+- Status: geplant
+- Ziel / Scope / Nicht-Scope: „abschliessbar“-Hinweis und Knopf „Abschliessen“ (E7: Ordner nach `Abgeschlossen`);
+  offene Posten je Person (wer schuldet was, fuer welches Spiel) mit Text zum Kopieren (z. B. fuer WhatsApp); Saison-
+  uebersicht: Summe eingekauft / eingenommen / offen / Differenz; Export als CSV und PDF (A4 hochkant). Erinnerung 3 Tage
+  vor dem Spiel (E8). Nicht-Scope: Versand an Mitglieder.
+- Gate: Tests (Abschluss nur wenn bezahlt + Datum vorbei; Verschieben mit Kollision); Sichtpruefung.
+- Verifikation: ein echtes, vollstaendig bezahltes vergangenes Spiel per Klick abschliessen -> Ordner liegt in
+  `Abgeschlossen`, Reiter zeigt „abgeschlossen“.
+- Dry-Run: Vorschau „verschiebe X nach Abgeschlossen/X“.
+- Risiko / Rueckweg: Ordner zurueckschieben (Knopf „wieder oeffnen“).
+- Abhaengig von / Aufwand / Risiko: O1-O5 / klein / gering.
+
+## Ideen (nicht im Scope, auf Wunsch)
+
+- Ticket-PDF direkt aus dem Reiter teilen (Datei-Link wie `/teilen/*` mit Ablauf) statt per Hand verschicken -- Oeffentlichkeit,
+  braucht eigenes Go + CISO.
+- Warteliste je Spiel (wer will Karten, wenn welche frei werden).
+- Sitzplan-Ansicht (Block/Reihe/Sitz) fuer Gruppen, die zusammen sitzen wollen.
+- Mitgliedsbeitraege und Fanclub-Kasse im selben Reiter (eigene Roadmap).
+- Statistik je Mitglied (Spiele pro Saison) fuer eine faire Kartenvergabe bei Knappheit.
+
+## Dokumentation bei der Umsetzung
+
+`projekt_changelog.md`, Etappen-Status hier, `ROADMAP.md`, `docs/entscheidungs-register.md` (E1-E8),
+`docs/datenfluesse.md` (Postfach moin@, Freigabe-Mount, Speicher `fanclub/`), `governance/zugriffs-policy.md` (CISO),
+`docs/datenschutz-ki-nutzung.md` (Hinweis: keine KI fuer Mitgliederdaten), `AGENTS.md` Abschnitt 7 (`fanclub/`),
+`docs/bekannte-fehler.md` (Test-Baseline), Backup-Umfang (`fanclub/` in die Sicherung).
+
+## Definition of Done
+
+Neue Bestellungen erscheinen ohne Handarbeit als Spiel mit Rechnung und Tickets; Namen sind je Ticket gepflegt und die
+Dateien heissen danach; eigene PayPal-Zahlungen und Zahlungen der Mitglieder sind den Spielen/Tickets zugeordnet (Rest in
+„Zuordnen“); fertige Spiele lassen sich per Klick abschliessen. Der CEO nimmt jede Etappe ab und setzt die Roadmap auf
+abgeschlossen.

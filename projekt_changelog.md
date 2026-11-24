@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 10:42] — Claude Code
+- **Was:** Roadmap `OFC_ROADMAP.md` (Fanclub HSVInside: Tickets, Namen, Dateien umbenennen, HSV-/Eventim-Bestellungen und PayPal-Zahlungen aus moin@hsvinside.de, getrennt von der Buchhaltung) mit read-only Analyse der NAS-Ordner `Tickets 26-27` und einer HSV-Rechnung; Etappen O0-O6, Entscheidungen E1-E8; im Roadmap-Verzeichnis eingetragen.
+- **Warum:** CEO-Auftrag 2026-11-24 (Roadmap zur Pruefung, noch kein Go).
+- **Betroffen:** OFC_ROADMAP.md, ROADMAP.md.
+
 ## [2026-11-19 22:22] — Claude Code
 - **Was:** Branch `ai/kontakte-k5` per `--no-ff` in `main` gemergt (K5 Absender nils@), Status in KONTAKTE_ROADMAP.md und ROADMAP.md nachgezogen; Deploy code-only durch den CEO (Cache v164). nils@ bleibt gesperrt, bis der CEO `NILS_MAIL_USER`/`NILS_MAIL_PASSWORT` in die NAS-`.env` eintraegt.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
