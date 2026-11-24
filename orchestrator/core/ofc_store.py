@@ -216,13 +216,22 @@ def uebersicht(store: OfcStore, heute: date | None = None) -> dict:
         tks = je.get(s["id"], [])
         tag = s.get("spieltag") or ""
         status = "abgeschlossen" if s.get("abgeschlossen") else ("vorbei" if tag and tag < heute.isoformat() else "offen")
+        n_bez = sum(1 for t in tks if bz.get(t["ticketnr"], {}).get("bezahlt"))
+        if status == "vorbei" and tks and n_bez == len(tks):
+            status = "abschliessbar"                                   # O6/E7: Spieltag vorbei + alles bezahlt
+        hinweise = _hinweise(s, tks, je_z.get(s["id"], []))
+        if status == "offen" and tag:
+            tage = (date.fromisoformat(tag) - heute).days
+            ohne, unbez = sum(1 for t in tks if not t.get("name")), len(tks) - n_bez
+            if 0 <= tage <= 3 and (ohne or unbez):                      # O6/E8: 3 Tage vorher nur im Reiter
+                hinweise.insert(0, f"Spiel {'heute' if tage == 0 else 'in ' + str(tage) + ' Tag(en)'}: "
+                                + " · ".join(x for x in (f"{ohne} ohne Namen" if ohne else "", f"{unbez} unbezahlt" if unbez else "") if x))
         spiele.append({k: s.get(k) for k in ("id", "spiel", "gegner", "heimspiel", "wettbewerb", "saison", "spieltag",
                                              "uhrzeit", "ort", "pfad")}
                       | {"status": status, "karten": len(tks), "mit_name": sum(1 for t in tks if t.get("name")),
                          "summe_cent": sum(r.get("summe_cent") or 0 for r in s.get("rechnungen") or []),
                          "bezahlt_cent": _bezahlt(je_z.get(s["id"], [])),
-                         "karten_bezahlt": sum(1 for t in tks if bz.get(t["ticketnr"], {}).get("bezahlt")),
-                         "hinweise": _hinweise(s, tks, je_z.get(s["id"], []))})
+                         "karten_bezahlt": n_bez, "hinweise": hinweise})
     spiele.sort(key=lambda x: (x["status"] == "abgeschlossen", x.get("spieltag") or "9999"))
     offen = [x for x in spiele if x["status"] != "abgeschlossen"]
     return {"spiele": spiele, "letzter_import": st["letzter_import"],

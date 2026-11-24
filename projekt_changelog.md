@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 17:39] — Claude Code
+- **Was:** OFC O6: Status „abschließbar“, Abschließen/Wieder öffnen (Ordner nach/aus `Abgeschlossen/`, Vorschau, nie löschen), 3-Tage-Hinweis im Reiter, Ansicht „📊 Saison“ (Summen, offene Posten mit Text zum Kopieren, Statistik je Mitglied), Export CSV und PDF (A4 hochkant). Nachbesserung nach Probelauf mit echten Mails: O4 „Später bezahlen“ (Erinnerung = „Sie bezahlen in N Tagen“), O5 (abgeschlossene Spiele zählen mit; Mitteilung mit anderem Spiel -> keine Automatik; alte automatische Einträge neu bewertet). Cache v171/v93. Baseline 1821.
+- **Warum:** CEO „Deploy gemacht, Go für O6“ (Abnahme gesammelt am Ende der Roadmap); Probelauf O5: 0 automatisch, O4: „Später bezahlen“ verkehrt herum.
+- **Betroffen:** `orchestrator/core/ofc_saison.py` (neu), `orchestrator/core/ofc_store.py`, `orchestrator/core/ofc_zahlung.py`, `orchestrator/core/ofc_eingang.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `orchestrator/tests/test_ofc_saison.py` (neu), `orchestrator/tests/test_ofc_zahlung.py`, `orchestrator/tests/test_ofc_eingang.py`, `OFC_ROADMAP.md`, `ROADMAP.md`, `governance/zugriffs-policy.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-24 17:26] — Claude Code
 - **Was:** `ai/ofc-o5` (OFC O5 Zahlungseingaenge + O4-Nachbesserung) nach `main` gemergt und gepusht, Branch geloescht. Automatischer Lauf nach O4-Deploy: 12 Zahlungen gespeichert (4 automatisch, 8 offen) -- werden nach diesem Deploy neu bewertet.
 - **Warum:** CEO „Go für Merge, Push und Deploy“.

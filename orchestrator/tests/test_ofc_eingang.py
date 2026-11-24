@@ -171,3 +171,27 @@ class TestApi(ApiBasis):
                     for url in ("/api/ofc/eingaenge", "/api/ofc/eingaenge/vorschau"):
                         self.assertEqual(self.c.get(url).status_code, 403, url)
                     self.assertEqual(self.c.post("/api/ofc/eingang/e-6BB66666BB6666666/zuordnen", json={"tickets": []}).status_code, 403)
+
+
+class TestNachbesserung(_Basis):
+    def test_10_abgeschlossen_zaehlt_mitteilung_anderes_spiel_nicht_auto(self):
+        from orchestrator.core.ofc_store import ofc as _o
+        ab = self.s / _o.ABGESCHLOSSEN
+        ab.mkdir()
+        (self.s / "HSV vs FCB").rename(ab / "HSV vs FCB")
+        import_anwenden(self.st, self.s)
+        e = oe.eingang_plan(self.st, [_erhalten("Ben Beispiel", "35,00")])["neu"][0]
+        self.assertEqual((e["zuordnung"], e["tickets"]), ("auto", ["262236181415-2"]))   # abgeschlossenes Spiel
+        e = oe.eingang_plan(self.st, [_erhalten("Ben Beispiel", "35,00", "Frankfurt")])["neu"][0]
+        self.assertEqual(e["zuordnung"], "offen")                                     # Mitteilung nennt anderes Spiel
+
+    def test_11_alte_fassung_neu_bewertet_klick_bleibt(self):
+        self.st.erfassen("ofc_eingang", {"id": "e-1EE11111EE1111111", "name": "Ben Beispiel", "betrag_cent": 3500,
+                                         "datum": "2026-10-07", "zuordnung": "offen", "tickets": [], "v": 1})
+        self.st.erfassen("ofc_eingang", {"id": "e-klick", "name": "Carla", "betrag_cent": 3500, "datum": "2026-10-01",
+                                         "zuordnung": "manuell", "tickets": ["262236187777-2"], "v": 1})
+        v = oe.eingang_plan(self.st, [_erhalten("Ben Beispiel", "35,00")])
+        self.assertEqual([(e["id"], e["zuordnung"]) for e in v["neu"]], [("e-1EE11111EE1111111", "auto")])
+        oe.eingang_anwenden(self.st, [_erhalten("Ben Beispiel", "35,00")])
+        self.assertEqual(self.bezahlt(), {"262236181415-2", "262236187777-2"})
+        self.assertEqual(oe.eingang_plan(self.st, [_erhalten("Ben Beispiel", "35,00")])["neu"], [])

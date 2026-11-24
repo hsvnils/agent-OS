@@ -4944,11 +4944,11 @@ const aufWdhSelect = (id, wert) => `<label class="v2-feld"><small>Wiederholen</s
 /* ---- Reichweiten je Plattform (MONETARISIERUNG M3) ---- */
 /* OFC_ROADMAP O1: Fanclub HSVInside -- Spiele, Tickets, Hinweise (nur CEO; getrennt von der Buchhaltung; keine Telegram-Nachrichten) */
 RENDER.ofc = renderOfc;
-const OFC_STATUS = { offen: ["wartet", "kommt"], vorbei: ["neutral", "vorbei"], abgeschlossen: ["ok", "abgeschlossen"] };
+const OFC_STATUS = { offen: ["wartet", "kommt"], vorbei: ["neutral", "vorbei"], abschliessbar: ["ok", "abschließbar"], abgeschlossen: ["ok", "abgeschlossen"] };
 async function renderOfc(meldung, fehler) {
   OFC_M_AKTIV = false;
   const [d, pst] = await Promise.all([jget("/api/ofc/uebersicht"), jget("/api/ofc/post/status")]);
-  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-eingaenge">💶 Eingänge</button> <button class="v2-btn" data-act="ofc-zahlungen">💳 Zahlungen</button> <button class="v2-btn" data-act="ofc-post">📬 Postfach</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
+  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-saison">📊 Saison</button> <button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-eingaenge">💶 Eingänge</button> <button class="v2-btn" data-act="ofc-zahlungen">💳 Zahlungen</button> <button class="v2-btn" data-act="ofc-post">📬 Postfach</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
   if (!d) { $("#v2-app").innerHTML = kopf + emptyRow("OFC nicht erreichbar (nur für den CEO)."); return; }
   const su = d.summe, zeile = (x) => `<div class="v2-list-row klick v2-ofc-zeile" data-act="ofc-spiel" data-id="${esc(x.id)}">
       <div class="v2-ofc-datum"><b>${x.spieltag ? esc(datumDe(x.spieltag)) : "–"}</b><small>${esc(x.uhrzeit || "")}</small></div>
@@ -4995,7 +4995,9 @@ async function ofcSpiel(sid) {
       || emptyRow("Noch keine PayPal-Zahlung zugeordnet.")}
     ${(d.zahlungen || []).length ? `<div class="v2-kv"><span>Bezahlt / Rechnung</span><b>${esc(cent2eur(d.bezahlt_cent))} / ${esc(cent2eur((s.rechnungen || []).reduce((a, r) => a + (r.summe_cent || 0), 0)))}</b></div>` : ""}
     <div class="v2-sub" style="margin-top:10px">✏️ ändert den Namen und benennt die Ticket-Datei auf der NAS passend um – es wird nie etwas gelöscht.</div>
-    <div class="v2-card-actions"><button class="v2-btn sm" data-act="ofc-verwerfen" data-id="${esc(sid)}">🗑 Spiel im Reiter verwerfen</button></div>`);
+    <div class="v2-card-actions">${s.abgeschlossen ? `<button class="v2-btn sm" data-act="ofc-abschluss" data-id="${esc(sid)}" data-val="1">↩︎ Wieder öffnen</button>`
+      : `<button class="v2-btn sm pri" data-act="ofc-abschluss" data-id="${esc(sid)}" data-val="">✅ Abschließen</button>`}
+      <button class="v2-btn sm" data-act="ofc-verwerfen" data-id="${esc(sid)}">🗑 Spiel im Reiter verwerfen</button></div>`);
 }
 async function ofcImport() {
   openModal("🔄 Ordner einlesen", `<div class="v2-empty">Prüfe den Ordner auf der NAS … (dauert einige Sekunden)</div>`);
@@ -5015,6 +5017,48 @@ async function ofcImportOk(el) {
   const r = await jpost("/api/ofc/import", { bestaetigt: true }); el.disabled = false;
   if (!r || r.ok === false) { $("#ofc-msg").className = "v2-msg err"; $("#ofc-msg").textContent = (r && r.hinweis) || "Fehler."; return; }
   closeModal(); return renderOfc(`Eingelesen: ${r.spiele_neu.length} neue und ${r.spiele_geaendert.length} geänderte Spiele, ${r.tickets_neu} neue Tickets.`);
+}
+/* OFC_ROADMAP O6: Abschluss (E7), offene Posten mit Text zum Kopieren, Saisonübersicht, Statistik, Export */
+let OFC_S_ALLE = false;
+async function renderOfcSaison() {
+  OFC_M_AKTIV = true;
+  const kopf = secHead("📊 OFC · Saison", `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> <a class="v2-btn" href="/api/ofc/export.pdf" target="_blank" rel="noopener">📄 PDF</a> <a class="v2-btn" href="/api/ofc/export.csv">⬇︎ CSV</a>`);
+  const d = await jget("/api/ofc/saison" + (OFC_S_ALLE ? "?alle=1" : ""));
+  if (!d) { $("#v2-app").innerHTML = kopf + emptyRow("Nicht erreichbar."); return; }
+  const su = d.summen, kpi = (l, v, s) => tile(l, `<div class="v2-kpi">${esc(v)}</div><div class="v2-sub">${esc(s)}</div>`, "v2-ofc-kpi");
+  const st = d.statistik;
+  $("#v2-app").innerHTML = kopf + `<div class="v2-grid">
+      ${kpi("Eingekauft", cent2eur(su.eingekauft_cent), `${su.spiele} Spiele · ${su.karten} Karten`)}
+      ${kpi("Eingenommen", cent2eur(su.eingenommen_cent), `${su.karten_bezahlt} Karten bezahlt`)}
+      ${kpi("Offen", cent2eur(su.offen_cent), su.nicht_zugeordnet_cent ? `+ ${cent2eur(su.nicht_zugeordnet_cent)} nicht zugeordnet` : "bei den Mitgliedern")}
+      ${kpi("Differenz", cent2eur(su.differenz_cent), `eigene Zahlungen ${cent2eur(su.eigene_zahlungen_cent)}`)}
+      <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Offene Posten (${d.posten.length})</span>
+        <label class="v2-sub"><input type="checkbox" data-act="ofc-s-alle" ${OFC_S_ALLE ? "checked" : ""}> inkl. abgeschlossene Spiele</label></div>
+        ${d.posten.map((x, i) => `<div class="v2-list-row v2-ofc-zeile"><div class="grow"><b class="v2-umbruch">${esc(x.name)}</b>
+          <small class="v2-umbruch">${x.posten.map(y => `${esc(y.spiel)}${y.spieltag ? " (" + esc(datumDe(y.spieltag)) + ")" : ""}${y.preis_bekannt ? " " + esc(cent2eur(y.offen_cent)) : " Betrag unbekannt"}`).join(" · ")}</small></div>
+          <div class="v2-ofc-knoepfe"><b>${x.summe_cent ? esc(cent2eur(x.summe_cent)) : "–"}</b>${x.text ? `<button class="v2-btn sm" data-act="ofc-s-kopieren" data-val="${i}" aria-label="Text kopieren">📋</button>` : ""}</div></div>`).join("")
+          || emptyRow("Keine offenen Posten.")}</div>
+      <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Statistik je Mitglied</span><span class="v2-sub">${st.ohne_namen ? st.ohne_namen + " Karten ohne Namen nicht gezählt" : ""}</span></div>
+        <div class="v2-ofc-tabelle"><table><thead><tr><th>Name</th><th>Karten</th><th>Spiele</th>${st.wettbewerbe.map(w => `<th>${esc(w)}</th>`).join("")}</tr></thead>
+        <tbody>${st.personen.map(x => `<tr><td>${esc(x.name)}</td><td><b>${x.karten}</b></td><td>${x.spiele}</td>${st.wettbewerbe.map(w => `<td>${x.je_wettbewerb[w] || ""}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>
+    </div><div class="v2-sub" style="margin-top:8px">📋 kopiert eine Erinnerung zum Einfügen (z. B. WhatsApp) – LUNA verschickt nichts.</div>`;
+  OFC_S_DATEN = d;
+}
+let OFC_S_DATEN = null;
+async function ofcSKopieren(i, el) {
+  const x = OFC_S_DATEN && OFC_S_DATEN.posten[Number(i)]; if (!x || !x.text) return;
+  try { await navigator.clipboard.writeText(x.text); const o = el.textContent; el.textContent = "✓"; setTimeout(() => { el.textContent = o; }, 1500); }
+  catch (e) { openModal("📋 Text kopieren", `<textarea class="v2-inp" style="width:100%;min-height:160px;box-sizing:border-box">${esc(x.text)}</textarea>`); }
+}
+async function ofcAbschluss(sid, zurueck) {
+  const v = await jget(`/api/ofc/spiel/${encodeURIComponent(sid)}/abschluss/vorschau${zurueck ? "?zurueck=1" : ""}`);
+  if (!v || !v.ok) return alert((v && v.hinweis) || "Fehler.");
+  const frage = `${zurueck ? "Wieder öffnen" : "Abschließen"}: Ordner „${v.von}“ → „${v.nach}“ verschieben?\nEs wird nichts gelöscht.`
+    + (!zurueck && !v.abschliessbar ? `\n\n⚠️ ${v.hinweis}\nTrotzdem abschließen?` : "");
+  if (!confirm(frage)) return;
+  const r = await jpost(`/api/ofc/spiel/${encodeURIComponent(sid)}/abschluss`, { bestaetigt: true, zurueck: !!zurueck, trotzdem: !zurueck && !v.abschliessbar });
+  if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
+  closeModal(); return renderOfc(zurueck ? "Spiel wieder geöffnet." : "Spiel abgeschlossen – Ordner liegt in „Abgeschlossen“.");
 }
 /* OFC_ROADMAP O5: Zahlungseingänge der Mitglieder -> Tickets (E6: eindeutig automatisch, sonst per Klick), Saldo je Zahler */
 let OFC_E = null;
@@ -5793,6 +5837,10 @@ async function handleAct(act, el) {
     case "ofc-import": return ofcImport();
     case "ofc-post": return ofcPost();
     case "ofc-zahlungen": return renderOfcZahlungen();
+    case "ofc-saison": return renderOfcSaison();
+    case "ofc-s-alle": OFC_S_ALLE = !OFC_S_ALLE; return renderOfcSaison();
+    case "ofc-s-kopieren": return ofcSKopieren(val, el);
+    case "ofc-abschluss": return ofcAbschluss(id, !!val);
     case "ofc-eingaenge": return renderOfcEingaenge();
     case "ofc-ein-holen": return ofcEinHolen();
     case "ofc-ein-holen-ok": return ofcEinHolenOk(el);

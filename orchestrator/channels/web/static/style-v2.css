@@ -1344,6 +1344,10 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-ofc-zuordnen select { flex: 1 1 220px; min-width: 0; max-width: 100%; }
 @media (max-width: 600px) { .v2-ofc-zuordnen select { flex-basis: 100%; } }
 .v2-ofc-wahl { cursor: pointer; gap: 10px; }
+.v2-ofc-tabelle { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.v2-ofc-tabelle table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.v2-ofc-tabelle th, .v2-ofc-tabelle td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--v2-line, rgba(0,0,0,.08)); white-space: nowrap; }
+.v2-ofc-tabelle th { color: var(--v2-muted); font-weight: 600; }
 .v2-ofc-wahl input { width: 20px; height: 20px; flex-shrink: 0; }
 .v2-ofc-vorschau .v2-kv b { text-align: right; }
 .v2-kv.v2-ofc-feld span { flex: 0 1 45%; }

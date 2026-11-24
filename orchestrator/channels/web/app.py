@@ -6426,6 +6426,55 @@ async def ofc_eingang_zuordnen(request: Request, eid: str):
     return eingang_zuordnen(_ofc_store(), eid, [str(x) for x in tks], ignorieren=body.get("ignorieren") is True, von=_von(request))
 
 
+@app.get("/api/ofc/saison")
+def ofc_saison(request: Request, alle: int = 0):
+    """O6: Saisonuebersicht (Summen), offene Posten je Person (mit Text zum Kopieren), Statistik je Mitglied."""
+    _nur_ceo(request)
+    from ...core.ofc import nas_ordner
+    from ...core.ofc_saison import offene_posten, saison_summen, statistik
+    st = _ofc_store().stand()
+    return {"saison": nas_ordner().name, "summen": saison_summen(st), "posten": offene_posten(st, alle=bool(alle)),
+            "statistik": statistik(st)}
+
+
+@app.get("/api/ofc/export.csv")
+def ofc_export_csv(request: Request):
+    _nur_ceo(request)
+    from ...core.ofc_saison import export_csv
+    return Response(export_csv(_ofc_store().stand()), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="hsvinside-tickets.csv"', "Cache-Control": "no-store"})
+
+
+@app.get("/api/ofc/export.pdf")
+def ofc_export_pdf(request: Request):
+    _nur_ceo(request)
+    from ...core.ofc import nas_ordner
+    from ...core.ofc_saison import export_pdf
+    saison = nas_ordner().name.replace("Tickets", "").strip()
+    return Response(export_pdf(_ofc_store().stand(), saison_name=saison), media_type="application/pdf",
+                    headers={"Content-Disposition": 'inline; filename="hsvinside-saison.pdf"', "Cache-Control": "no-store"})
+
+
+@app.get("/api/ofc/spiel/{sid}/abschluss/vorschau")
+def ofc_abschluss_vorschau(request: Request, sid: str, zurueck: int = 0):
+    """O6 Dry-Run: Ordner nach `Abgeschlossen` verschieben (oder zurueck) -- aendert nichts."""
+    _nur_ceo(request)
+    from ...core.ofc_saison import abschluss_plan
+    return abschluss_plan(_ofc_store(), sid, zurueck=bool(zurueck))
+
+
+@app.post("/api/ofc/spiel/{sid}/abschluss")
+async def ofc_abschluss(request: Request, sid: str):
+    """O6/E7: Spiel abschliessen bzw. wieder oeffnen (Ordner verschieben, nie loeschen) -- nur mit Bestaetigung."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Abschließen braucht die Bestätigung."}
+    from ...core.ofc_saison import abschliessen
+    return abschliessen(_ofc_store(), sid, zurueck=body.get("zurueck") is True, trotzdem=body.get("trotzdem") is True,
+                        von=_von(request))
+
+
 @app.get("/api/ofc/ticket/{nr}/name/vorschau")
 def ofc_name_vorschau(request: Request, nr: str, name: str = "", rueckgaengig: int = 0):
     """O2 Dry-Run: aus welchem Namen/welcher Datei wird was -- aendert nichts."""
