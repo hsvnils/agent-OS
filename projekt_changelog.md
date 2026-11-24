@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 18:07] — Claude Code
+- **Was:** `ai/ofc-o6` (OFC O6 + Nachbesserung O4/O5) nach `main` gemergt und gepusht, Branch geloescht.
+- **Warum:** CEO „Go für Merge, Push und Deploy“.
+- **Betroffen:** `OFC_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-24 17:39] — Claude Code
 - **Was:** OFC O6: Status „abschließbar“, Abschließen/Wieder öffnen (Ordner nach/aus `Abgeschlossen/`, Vorschau, nie löschen), 3-Tage-Hinweis im Reiter, Ansicht „📊 Saison“ (Summen, offene Posten mit Text zum Kopieren, Statistik je Mitglied), Export CSV und PDF (A4 hochkant). Nachbesserung nach Probelauf mit echten Mails: O4 „Später bezahlen“ (Erinnerung = „Sie bezahlen in N Tagen“), O5 (abgeschlossene Spiele zählen mit; Mitteilung mit anderem Spiel -> keine Automatik; alte automatische Einträge neu bewertet). Cache v171/v93. Baseline 1821.
 - **Warum:** CEO „Deploy gemacht, Go für O6“ (Abnahme gesammelt am Ende der Roadmap); Probelauf O5: 0 automatisch, O4: „Später bezahlen“ verkehrt herum.

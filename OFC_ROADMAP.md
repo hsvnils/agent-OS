@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-o6`
 - Basiscommit: `734b284`
-- Naechster Schritt: O6 (mit Nachbesserung O4/O5) umgesetzt auf `ai/ofc-o6` -- Push, Merge, Deploy (code-only + Neustart); danach Vorschau pruefen und To-do „Gesamtabnahme OFC“ anlegen (F4). Gesamtabnahme durch den CEO: alle Etappen auf Rechner/iPad/iPhone.
+- Naechster Schritt: O6 (mit Nachbesserung O4/O5) gemergt -- CEO deployt (code-only + Neustart); danach Vorschau pruefen und To-do „Gesamtabnahme OFC“ anlegen (F4). Gesamtabnahme durch den CEO: alle Etappen auf Rechner/iPad/iPhone.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
