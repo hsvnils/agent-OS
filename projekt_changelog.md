@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 16:13] — Claude Code
+- **Was:** `ai/ofc-om` (OFC OM Mitgliederliste) nach `main` gemergt und gepusht, Branch geloescht; Roadmap-Naechster-Schritt aktualisiert.
+- **Warum:** CEO „Go für Merge, Push und Deploy“.
+- **Betroffen:** `OFC_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-24 16:08] — Claude Code
 - **Was:** OFC OM: Mitgliederliste nur lesend aus der geteilten Google-Tabelle „Mitgliedschaftsanfrage“ (Blatt „Formularantworten 1“; Mitglied = HSVInside-Nummer, sonst Anfrage; Hinweise auf doppelte Nummern/Namen). Neuer Endpunkt `GET /api/ofc/mitglieder` (nur CEO), Ansicht „👥 Mitglieder“ im Reiter OFC (Suche, Mitglieder/Anfragen, Detail mit allen Spalten). Nichts gespeichert (5 Minuten im Speicher), keine KI, nur Lese-Aufrufe. Cache v166/v89.
 - **Warum:** CEO „Go für OM“; Entscheidungen: nur Formularantworten, alle Spalten.

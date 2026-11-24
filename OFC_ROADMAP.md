@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-om`
 - Basiscommit: `734b284`
-- Naechster Schritt: OM umgesetzt auf `ai/ofc-om` -- CEO pusht, Merge + Deploy (code-only), dann Stichprobe der Mitglieder/Anfragen im Reiter OFC -> Mitglieder. Danach O2 nach CEO-Go (braucht Schreibzugriff auf den Fanclub-Ordner).
+- Naechster Schritt: OM gemergt -- CEO deployt (code-only + Neustart), dann Stichprobe der Mitglieder/Anfragen im Reiter OFC -> Mitglieder. Danach O2 nach CEO-Go (braucht Schreibzugriff auf den Fanclub-Ordner).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -117,7 +117,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe OM: Mitgliederliste (CEO 2026-11-24)
 
-- Status: umgesetzt (2026-11-24; `core/ofc_mitglieder.py`, `GET /api/ofc/mitglieder`, Ansicht „👥 Mitglieder“ im Reiter OFC mit Suche, Reitern Mitglieder/Anfragen und Detail mit allen Spalten. CEO-Entscheidung: nur Blatt „Formularantworten 1“, alle Spalten. Probelauf gegen die echte Tabelle: 119 Mitglieder, 11 Anfragen, 18 von 18 Spalten erkannt, Hinweise 2 Nummern und 3 Namen mehrfach. Nur `files.list`/`values.get` (Gegenprobe-Test), nichts gespeichert, keine KI; `test_ofc_mitglieder.py`; Sichtpruefung headless Rechner/iPad/iPhone ok; offen: Merge, Deploy, Stichprobe CEO)
+- Status: umgesetzt (2026-11-24; `core/ofc_mitglieder.py`, `GET /api/ofc/mitglieder`, Ansicht „👥 Mitglieder“ im Reiter OFC mit Suche, Reitern Mitglieder/Anfragen und Detail mit allen Spalten. CEO-Entscheidung: nur Blatt „Formularantworten 1“, alle Spalten. Probelauf gegen die echte Tabelle: 119 Mitglieder, 11 Anfragen, 18 von 18 Spalten erkannt, Hinweise 2 Nummern und 3 Namen mehrfach. Nur `files.list`/`values.get` (Gegenprobe-Test), nichts gespeichert, keine KI; `test_ofc_mitglieder.py`; Sichtpruefung headless Rechner/iPad/iPhone ok; gemergt 2026-11-24; offen: Deploy, Stichprobe CEO)
 - Ziel / Scope / Nicht-Scope: Mitgliederliste aus der Google-Forms-Antworttabelle lesen (E5/E5b): Name, Mitgliedsnummer,
   Kontaktfelder nach Bedarf; ohne Mitgliedsnummer = Anfrage. Nutzung: Namensvorschlaege fuer Tickets (O2), Zuordnung der
   PayPal-Zahlungen ueber Name/PayPal-Mail (O5), Statistik je Mitglied (O6). Anzeige im Reiter OFC (Mitglieder/Anfragen).
