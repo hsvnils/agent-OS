@@ -23,7 +23,7 @@ from . import ofc
 from .ofc_store import OfcStore
 from .ofc_zahlung import PAYPAL_DOMAINS, _BETRAG, _cent, _datum
 
-VERSION = 1
+VERSION = 2                     # Erkennungsstand; automatisch erzeugte Eintraege aelterer Fassung werden neu bewertet
 TAGE = 120
 _LABELS = ("transaktionscode", "transaktions", "datum", "betrag", "zahlung", "details", "hilfe", "paypal", "sie sind",
            "bitte", "hinweis")
@@ -171,7 +171,7 @@ def vorschlag(z: dict, st: dict, offen: dict) -> dict:
     je_spiel: dict = {}
     for nr, t in st["tickets"].items():
         s = st["spiele"].get(t["spiel"]) or {}
-        if nr not in offen or s.get("verworfen") or s.get("abgeschlossen"):
+        if nr not in offen or s.get("verworfen"):                      # auch abgeschlossene: Zahlungen kommen oft danach
             continue
         if _name_passt(t.get("name") or "", [x for x in zahler if x]):
             je_spiel.setdefault(t["spiel"], []).append(nr)
@@ -201,6 +201,11 @@ def vorschlag(z: dict, st: dict, offen: dict) -> dict:
     treffer = [m for m in moeglich if "Betrag passt" in m["gruende"]]
     if len(treffer) > 1 and sum(1 for m in treffer if m["mitteilung"]) == 1:
         treffer = [m for m in treffer if m["mitteilung"]]
+    erwaehnt = {sid for sid, s in st["spiele"].items() if not s.get("verworfen")
+                and {w for w in _woerter(s.get("gegner") or sid) if len(w) >= 3 and w not in ("hsv", "vs", "hamburger", "sv", "fc")} & mt}
+    if len(treffer) == 1 and erwaehnt and treffer[0]["spiel"] not in erwaehnt and not (
+            not treffer[0]["spiel"] and {st["tickets"][nr]["spiel"] for nr in treffer[0]["tickets"]} & erwaehnt):
+        treffer = []                                                   # Mitteilung nennt ein anderes Spiel -> per Klick
     moeglich.sort(key=lambda m: ("Betrag passt" not in m["gruende"], not m["mitteilung"], m["spiel"]))
     if len(treffer) == 1:
         return {"zuordnung": "auto", "tickets": treffer[0]["tickets"], "vorschlaege": moeglich[:4]}
@@ -217,6 +222,9 @@ def _offen(st: dict) -> dict:
 def eingang_plan(store: OfcStore, mails: list[dict]) -> dict:
     """Dry-Run: neue Eingaenge mit Vorschlag/Auto-Zuordnung -- schreibt nichts."""
     st = store.stand()
+    alt = {i for i, e in st.get("eingaenge", {}).items() if e.get("v") != VERSION and e.get("zuordnung") in ("auto", "offen")}
+    if alt:                                                            # alte automatische Bewertung zaehlt nicht mehr
+        st = st | {"eingaenge": {i: e for i, e in st["eingaenge"].items() if i not in alt}}
     bekannt = st.get("eingaenge", {})
     offen = _offen(st)
     neu = []

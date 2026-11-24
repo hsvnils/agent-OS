@@ -23,7 +23,7 @@ from .ofc_store import OfcStore
 PAYPAL_DOMAINS = ("paypal.de", "paypal.com")
 TAGE = 120
 FRIST_SPAETER = 30
-VERSION = 2                       # Erkennungsstand; automatisch erzeugte Eintraege aelterer Fassung werden neu bewertet
+VERSION = 3                       # Erkennungsstand; automatisch erzeugte Eintraege aelterer Fassung werden neu bewertet
 _HAENDLER_OK = re.compile(r"eventim|hamburger\s*s(port|v)|\bhsv\b|fu(ss|ß)ball\s*ag", re.I)
 _MONATE = {m: i + 1 for i, m in enumerate(("januar", "februar", "märz", "april", "mai", "juni", "juli", "august",
                                            "september", "oktober", "november", "dezember"))}
@@ -116,12 +116,15 @@ def paypal_lesen(roh: bytes) -> dict | None:
     datum = _datum(_nach("Datum des", text) or "") or _datum(text) or gesendet
     faellig = ""
     if art == "spaeter" and datum:
-        # Zwei Mails je Kauf: Kauf („Sie bezahlen in 30 Tagen“, Kaufdatum) und Erinnerung vor der Abbuchung (Einzugsdatum).
-        erinnerung = not re.search(r"Sie bezahlen in", betreff, re.I)
-        einzug = bool(lab and re.search(r"einzug|abbuch|f(ä|ae)llig|belast|zahlung", lab[1], re.I)) or \
-            (erinnerung and not (lab and re.search(r"kauf|bestell", lab[1], re.I)))
-        if einzug:
-            faellig, datum = datum, (date.fromisoformat(datum) - timedelta(days=FRIST_SPAETER)).isoformat()
+        # Zwei Mails je Kauf (Probelauf 2026-11-24): Kaufmail („… nach 30 Tagen“, Datum = Kauf) und Erinnerung vor der
+        # Abbuchung („Sie bezahlen in N Tagen“, Datum = Einzug). Erinnerung -> Kaufdatum = Einzug - 30 Tage.
+        n = re.search(r"Sie bezahlen in (\d+) Tag", betreff, re.I)
+        if n:
+            einzug = datum if not (lab and re.search(r"kauf|bestell", lab[1], re.I)) else ""
+            if not einzug and gesendet:
+                einzug = (date.fromisoformat(gesendet) + timedelta(days=int(n[1]))).isoformat()
+            faellig = einzug or datum
+            datum = (date.fromisoformat(faellig) - timedelta(days=FRIST_SPAETER)).isoformat()
         else:
             faellig = (date.fromisoformat(datum) + timedelta(days=FRIST_SPAETER)).isoformat()
     z = {"art": art, "betrag_cent": abs(_cent(b[1])), "datum": datum or gesendet, "mail_datum": gesendet,
@@ -255,6 +258,12 @@ def zahlungs_status(st: dict, heute: date | None = None) -> list[dict]:
         if z.get("zuordnung") == "info":
             continue
         z = dict(z)
+        if z.get("art") == "spaeter" and z.get("spiel"):
+            rg = [r for r in (st["spiele"].get(z["spiel"]) or {}).get("rechnungen") or []
+                  if r.get("summe_cent") == z["betrag_cent"] and r.get("datum")]
+            if rg:
+                z["datum"] = rg[0]["datum"]
+                z["faellig"] = (date.fromisoformat(rg[0]["datum"]) + timedelta(days=FRIST_SPAETER)).isoformat()
         if z.get("art") == "spaeter" and z.get("datum"):
             faellig = date.fromisoformat(z.get("faellig") or (date.fromisoformat(z["datum"]) + timedelta(days=FRIST_SPAETER)).isoformat())
             z["faellig"] = faellig.isoformat()

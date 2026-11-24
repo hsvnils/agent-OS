@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-11-24
-- Arbeitsbranch: `ai/ofc-o5`
+- Arbeitsbranch: `ai/ofc-o6`
 - Basiscommit: `734b284`
-- Naechster Schritt: O5 (mit O4-Nachbesserung) gemergt -- CEO deployt (code-only + Neustart); danach Vorschau Zahlungen und Eingaenge mit echten Mails pruefen. Gesamtabnahme am Ende der Roadmap. Danach O6 nach CEO-Go.
+- Naechster Schritt: O6 (mit Nachbesserung O4/O5) umgesetzt auf `ai/ofc-o6` -- Push, Merge, Deploy (code-only + Neustart); danach Vorschau pruefen und To-do „Gesamtabnahme OFC“ anlegen (F4). Gesamtabnahme durch den CEO: alle Etappen auf Rechner/iPad/iPhone.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -182,7 +182,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O6: Abschluss, offene Posten, Saisonuebersicht
 
-- Status: geplant
+- Status: umgesetzt (2026-11-24; `core/ofc_saison.py`: Status „abschliessbar“ (Spieltag vorbei + alle Karten bezahlt), im Spiel „Abschliessen“/„Wieder oeffnen“ mit Vorschau (Ordner nach/aus `Abgeschlossen/`, Kollision auch Gross/Klein abgelehnt, nie loeschen), „trotzdem“ nur nach zweiter Rueckfrage; Hinweis 3 Tage vor dem Spiel (ohne Namen/unbezahlt) nur im Reiter; Ansicht „📊 Saison“: eingekauft/eingenommen/offen/Differenz, offene Posten je Kartenname mit 📋-Text zum Kopieren (inkl. abgeschlossene auf Wunsch), Statistik je Mitglied (Karten, Spiele, je Wettbewerb), Export CSV und PDF A4 hochkant; `test_ofc_saison.py`; Sichtpruefung headless Rechner/iPhone + PDF ok. Dazu Nachbesserung O4 („Spaeter bezahlen“: Erinnerung = „Sie bezahlen in N Tagen“) und O5 (abgeschlossene Spiele zaehlen mit, Mitteilung mit anderem Spiel verhindert Automatik) nach Probelauf mit echten Mails)
 - Ziel / Scope / Nicht-Scope: „abschliessbar“-Hinweis und Knopf „Abschliessen“ (E7: Ordner nach `Abgeschlossen`);
   offene Posten je Person (wer schuldet was, fuer welches Spiel) mit Text zum Kopieren (z. B. fuer WhatsApp); Saison-
   uebersicht: Summe eingekauft / eingenommen / offen / Differenz; Export als CSV und PDF (A4 hochkant). Hinweis im Reiter 3 Tage

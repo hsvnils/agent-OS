@@ -34,7 +34,7 @@ def _gesendet(betrag="70,00", haendler="Hamburger Sport-Verein e.V.", tc="1AB234
                f"{datum}\n{extra}Gesamtbetrag\n{betrag}\xa0€\xa0EUR\nTransaktionscode: {tc}\n", mid=mid)
 
 
-SPAETER = _pp("Ihr Kauf bei CTS EVENTIM AG & Co... – Sie bezahlen in 30 Tagen",
+SPAETER = _pp("Ihr Kauf auf PayPal Später nach 30 Tagen",
               "Hallo, Max\nIhre Zahlung für Ihren Einkauf an Max nach 30 Tagen für Ihre Bestellung über 123,40\xa0€\xa0EUR bei "
               "CTS EVENTIM AG & Co. KGaA.\n123,40\xa0€\xa0EUR\nHändler\nCTS EVENTIM AG & Co\nDatum des Kaufs\n9. Oktober 2026\n",
               mid="<s@paypal.de>")
@@ -176,7 +176,7 @@ class TestApi(ApiBasis):
                     self.assertEqual(self.c.post(f"/api/ofc/zahlung/{offen['id']}/zuordnen", json={"spiel": ""}).status_code, 403)
 
 
-ERINNERUNG = _pp("Ihre Zahlung auf PayPal Später nach 30 Tagen",
+ERINNERUNG = _pp("Ihr Kauf bei CTS EVENTIM AG & Co – Sie bezahlen in 3 Tagen",
                  "Hallo, Max\nErinnerung: Zahlung für Ihren Einkauf an Max nach 30 Tagen über 123,40\xa0€\xa0EUR bei "
                  "CTS EVENTIM AG & Co.\n123,40\xa0€\xa0EUR\nHändler\nCTS EVENTIM AG & Co\nDatum des Einzugs\n8. November 2026\n",
                  datum="Thu, 05 Nov 2026 10:00:00 +0100", mid="<e@paypal.de>")
