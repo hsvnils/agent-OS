@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-o6`
 - Basiscommit: `734b284`
-- Naechster Schritt: O6 (mit Nachbesserung O4/O5) gemergt -- CEO deployt (code-only + Neustart); danach Vorschau pruefen und To-do „Gesamtabnahme OFC“ anlegen (F4). Gesamtabnahme durch den CEO: alle Etappen auf Rechner/iPad/iPhone.
+- Naechster Schritt: Alle Etappen live und auf der NAS geprueft (9/9 eigene Zahlungen automatisch, 10 Eingaenge automatisch, 32 zum Zuordnen). Offen: Gesamtabnahme durch den CEO -- To-do A-212c2ea6, faellig 27.11.2026; danach Status „abgeschlossen“.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

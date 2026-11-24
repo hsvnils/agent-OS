@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 18:25] — Claude Code
+- **Was:** OFC nach dem O6-Deploy auf der NAS geprueft: automatischer Lauf speichert 9 eigene Zahlungen (alle automatisch, „Spaeter bezahlen“ mit richtigem Kaufdatum, Altfaelle ersetzt), 42 Eingaenge neu bewertet (10 automatisch -> 12 Karten bezahlt, 32 zum Zuordnen), Postfach ohne Neues. To-do „Gesamtabnahme OFC-Roadmap“ (A-212c2ea6, faellig 27.11.2026 18:00) angelegt (F4). Roadmap-Kopf nachgetragen.
+- **Warum:** CEO „Deploy gemacht“; Regel F4 (Abnahme nachhalten).
+- **Betroffen:** `OFC_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-24 18:07] — Claude Code
 - **Was:** `ai/ofc-o6` (OFC O6 + Nachbesserung O4/O5) nach `main` gemergt und gepusht, Branch geloescht.
 - **Warum:** CEO „Go für Merge, Push und Deploy“.
