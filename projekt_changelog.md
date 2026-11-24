@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 16:17] — Claude Code
+- **Was:** OFC OM nach Deploy auf der NAS geprueft: `/api/ofc/mitglieder` liest die echte Tabelle (119 Mitglieder, 11 Anfragen, 18 Spalten erkannt, Hinweise 2 Nummern / 3 Namen mehrfach); Startseite liefert v166. Roadmap nachgetragen.
+- **Warum:** CEO „Deploy gemacht“.
+- **Betroffen:** `OFC_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-24 16:13] — Claude Code
 - **Was:** `ai/ofc-om` (OFC OM Mitgliederliste) nach `main` gemergt und gepusht, Branch geloescht; Roadmap-Naechster-Schritt aktualisiert.
 - **Warum:** CEO „Go für Merge, Push und Deploy“.
