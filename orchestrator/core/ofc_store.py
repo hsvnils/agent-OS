@@ -8,10 +8,15 @@
   danach gilt der Name in LUNA (ab O2 im Reiter aenderbar).
 - Spiel-ID = Ordnername (bleibt beim Verschieben nach `Abgeschlossen` gleich).
 - Keine Namen in Protokollen; nichts wird auf der Freigabe geaendert (O1 liest nur).
+- O2: Name je Ticket aendern (`namen_plan` = Vorschau, `namen_setzen`, `rueckgaengig`); die Ticket-Datei wird nach
+  `<Rechnungsnr>-<Pos>[A|B]-<Name>.pdf` umbenannt -- nie geloescht, nie ueberschrieben. Ereignis `ofc_name`
+  (alt -> neu, Datei alt -> neu) = Protokoll und Grundlage fuer „Rueckgaengig“.
 """
 from __future__ import annotations
 
 import json
+import os
+import re
 import threading
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -54,6 +59,11 @@ class OfcStore:
                 tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]}).update({k: v for k, v in d.items() if k != "ticketnr"})
             elif t == "ofc_import":
                 letzter_import = e["ts"]
+            elif t == "ofc_name":
+                tk = tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})
+                tk.update(name=d["name_neu"], datei=d["datei_neu"])
+                tk["letzte_aenderung"] = {"ts": e["ts"], "name_alt": d["name_alt"], "datei_alt": d["datei_alt"],
+                                          "name_neu": d["name_neu"], "datei_neu": d["datei_neu"]}
         return {"spiele": spiele, "tickets": tickets, "letzter_import": letzter_import}
 
 
@@ -212,3 +222,113 @@ def datei_pfad(store: OfcStore, sid: str, datei: str, saison: Path | None = None
         return None
     p = (saison / d["spiel"]["pfad"] / datei).resolve()
     return p if p.is_file() and saison.resolve() in p.parents else None
+
+
+# -- O2: Namen aendern und Dateien umbenennen ---------------------------------------------------------------------------
+_VERBOTEN = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
+
+
+def name_sauber(name: str) -> str:
+    """Name fuer LUNA und Dateiname: Leerraum zusammengefasst, Pfad-/Sonderzeichen raus, Umlaute bleiben, max. 80 Zeichen."""
+    n = re.sub(r"\s+", " ", _VERBOTEN.sub(" ", name or "")).strip().strip(".").strip()
+    return n[:80].strip()
+
+
+def datei_fuer_name(ticketnr: str, datei_alt: str, name: str) -> str:
+    """Neuer Dateiname; Rechnungsnr/Pos/Zusatz (A/B) aus dem bisherigen Dateinamen, sonst aus der Ticketnummer."""
+    teile = ofc.datei_name(datei_alt) if datei_alt else {}
+    kopf = f"{teile['rechnungsnr']}-{teile['pos']}{teile['zusatz']}" if teile else ticketnr
+    return f"{kopf}-{name}.pdf" if name else f"{kopf}.pdf"
+
+
+def _ordner_des_spiels(st: dict, sid: str, saison: Path) -> Path | None:
+    s = st["spiele"].get(sid)
+    if not s or not s.get("pfad"):
+        return None
+    o = (saison / s["pfad"]).resolve()
+    return o if saison.resolve() in o.parents and o.is_dir() else None
+
+
+def _gleich_ohne_gross(a: str, b: str) -> bool:
+    return a.casefold() == b.casefold()
+
+
+def namen_plan(store: OfcStore, ticketnr: str, name: str, saison: Path | None = None, *,
+               datei_ziel: str | None = None, name_roh: bool = False) -> dict:
+    """Dry-Run: aus welchem Namen/welcher Datei wird was? Prueft Datei vorhanden und Kollision. Schreibt nichts."""
+    saison = saison or ofc.nas_ordner()
+    st = store.stand()
+    tk = st["tickets"].get(ticketnr)
+    if not tk:
+        return {"ok": False, "hinweis": "Ticket nicht gefunden."}
+    neu = name if name_roh else name_sauber(name)
+    alt_d = tk.get("datei", "")
+    plan = {"ok": True, "ticketnr": ticketnr, "spiel": tk["spiel"], "name_alt": tk.get("name", ""), "name_neu": neu,
+            "datei_alt": alt_d, "datei_neu": alt_d, "umbenennen": False}
+    if not alt_d:                                                    # keine Datei im Ordner -> nur der Name in LUNA
+        plan["hinweis"] = "Keine Ticket-Datei im Ordner – nur der Name in LUNA wird gespeichert."
+        return plan
+    ordner = _ordner_des_spiels(st, tk["spiel"], saison)
+    if ordner is None or not (ordner / alt_d).is_file():
+        return plan | {"ok": False, "hinweis": f"Datei „{alt_d}“ nicht gefunden – bitte zuerst „Ordner einlesen“."}
+    ziel = datei_ziel if datei_ziel is not None else datei_fuer_name(ticketnr, alt_d, neu)
+    if "/" in ziel or "\\" in ziel or ziel.startswith(".") or not ziel.lower().endswith(".pdf"):
+        return plan | {"ok": False, "hinweis": "Ungültiger Dateiname."}
+    plan["datei_neu"] = ziel
+    if ziel != alt_d:
+        kollision = [p.name for p in ordner.iterdir() if _gleich_ohne_gross(p.name, ziel) and p.name != alt_d]
+        if kollision:
+            return plan | {"ok": False, "hinweis": f"Im Ordner gibt es schon „{kollision[0]}“ – nichts geändert."}
+        plan["umbenennen"] = True
+    if plan["name_neu"] == plan["name_alt"] and not plan["umbenennen"]:
+        plan["hinweis"] = "Keine Änderung."
+    return plan
+
+
+def _anwenden(store: OfcStore, plan: dict, saison: Path, von: str, rueck: bool) -> dict:
+    if not plan["ok"] or (plan["name_neu"] == plan["name_alt"] and not plan["umbenennen"]):
+        return plan
+    with _LOCK:
+        if plan["umbenennen"]:
+            o = _ordner_des_spiels(store.stand(), plan["spiel"], saison)
+            quelle, ziel = o / plan["datei_alt"], o / plan["datei_neu"]
+            if ziel.exists() and not _gleich_ohne_gross(quelle.name, ziel.name):
+                return plan | {"ok": False, "hinweis": "Zieldatei ist inzwischen vorhanden – nichts geändert."}
+            try:
+                os.rename(quelle, ziel)                              # nie loeschen; Kollision oben ausgeschlossen
+            except OSError as exc:
+                return plan | {"ok": False, "hinweis": f"Umbenennen nicht möglich ({exc.__class__.__name__}) – "
+                                                       "Datei geöffnet oder keine Schreibrechte?"}
+    store.erfassen("ofc_name", {k: plan[k] for k in ("ticketnr", "spiel", "name_alt", "name_neu", "datei_alt", "datei_neu")}
+                   | {"rueckgaengig": rueck}, von=von)
+    return plan | {"gespeichert": True}
+
+
+def namen_setzen(store: OfcStore, ticketnr: str, name: str, saison: Path | None = None, *, von: str = "") -> dict:
+    saison = saison or ofc.nas_ordner()
+    return _anwenden(store, namen_plan(store, ticketnr, name, saison), saison, von, False)
+
+
+def rueckgaengig_plan(store: OfcStore, ticketnr: str, saison: Path | None = None) -> dict:
+    tk = store.stand()["tickets"].get(ticketnr) or {}
+    la = tk.get("letzte_aenderung")
+    if not la:
+        return {"ok": False, "hinweis": "Keine Änderung zum Rückgängigmachen."}
+    return namen_plan(store, ticketnr, la["name_alt"], saison, name_roh=True,
+                      datei_ziel=la["datei_alt"] if tk.get("datei") and la.get("datei_alt") else None)
+
+
+def rueckgaengig(store: OfcStore, ticketnr: str, saison: Path | None = None, *, von: str = "") -> dict:
+    saison = saison or ofc.nas_ordner()
+    return _anwenden(store, rueckgaengig_plan(store, ticketnr, saison), saison, von, True)
+
+
+def namen_vorschlaege(store: OfcStore, mitglieder: list[dict] | None = None) -> list[str]:
+    """Mitglieder (OM) zuerst, dann bisher vergebene Namen -- ohne Dubletten."""
+    out, gesehen = [], set()
+    for n in [m.get("name", "") for m in (mitglieder or [])] + sorted(t.get("name", "") for t in store.stand()["tickets"].values()):
+        k = n.strip().casefold()
+        if n.strip() and k not in gesehen:
+            gesehen.add(k)
+            out.append(n.strip())
+    return out

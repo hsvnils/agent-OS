@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-11-24
-- Arbeitsbranch: `ai/ofc-om`
+- Arbeitsbranch: `ai/ofc-o2`
 - Basiscommit: `734b284`
-- Naechster Schritt: OM live (NAS liest 119 Mitglieder, 11 Anfragen) -- offen: Stichprobe der Mitglieder/Anfragen im Reiter OFC -> Mitglieder. Danach O2 nach CEO-Go (braucht Schreibzugriff auf den Fanclub-Ordner).
+- Naechster Schritt: O2 umgesetzt auf `ai/ofc-o2` -- Merge, Push, Deploy mit `docker compose up -d luna-os` (Mount wird schreibend). CEO testet alles gesammelt am Ende der Roadmap (CEO 2026-11-24). Danach O3 nach CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -131,7 +131,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O2: Namen zuweisen und Dateien umbenennen
 
-- Status: geplant
+- Status: umgesetzt (2026-11-24; `core/ofc_store.py` `namen_plan`/`namen_setzen`/`rueckgaengig`/`namen_vorschlaege`, Ereignis `ofc_name` (Protokoll alt -> neu), Endpunkte Vorschau/Speichern/Rueckgaengig/Namen; im Spiel-Detail ✏️ je Ticket mit Vorschlaegen aus der Mitgliederliste, Vorschau „aus X wird Y“, „Rueckgaengig“. Dateiname `<Rechnungsnr>-<Pos>[A|B]-<Name>.pdf` (Zusatz A/B bleibt, Name dateisicher, Umlaute bleiben), Kollision auch bei Gross/Klein abgelehnt, nie loeschen/ueberschreiben, Datei fehlt -> nur Name in LUNA, Datei verschoben -> Hinweis „Ordner einlesen“; Mount schreibend in `deploy/docker-compose.yml`; `test_ofc_namen.py`; Sichtpruefung headless Rechner/iPhone ok; Abnahme CEO am Ende der Roadmap)
 - Ziel / Scope / Nicht-Scope: Je Ticket Name eintragen/aendern (Vorschlaege aus der Personenliste, E5). Nach dem Speichern
   benennt LUNA die Datei nach dem Muster `<Rechnungsnr>-<Pos>-<Name>.pdf` um (Name dateisicher, Umlaute bleiben, keine
   Schraegstriche); Vorschau vor dem Umbenennen, Protokoll alt -> neu, „Rueckgaengig“. Nicht-Scope: Loeschen.

@@ -4946,6 +4946,7 @@ const aufWdhSelect = (id, wert) => `<label class="v2-feld"><small>Wiederholen</s
 RENDER.ofc = renderOfc;
 const OFC_STATUS = { offen: ["wartet", "kommt"], vorbei: ["neutral", "vorbei"], abgeschlossen: ["ok", "abgeschlossen"] };
 async function renderOfc(meldung, fehler) {
+  OFC_M_AKTIV = false;
   const d = await jget("/api/ofc/uebersicht");
   const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
   if (!d) { $("#v2-app").innerHTML = kopf + emptyRow("OFC nicht erreichbar (nur für den CEO)."); return; }
@@ -4970,6 +4971,7 @@ async function renderOfc(meldung, fehler) {
 async function ofcSpiel(sid) {
   openModal("⚽ Spiel", `<div class="v2-empty">Lade…</div>`);
   const d = await jget("/api/ofc/spiel/" + encodeURIComponent(sid)); if (!d) return openModal("⚽ Spiel", emptyRow("Spiel nicht gefunden."));
+  OFC_SP = d;
   const s = d.spiel, datei = (n) => `/api/ofc/spiel/${encodeURIComponent(sid)}/datei?name=${encodeURIComponent(n)}`;
   const rg = (s.rechnungen || []).map(r => `<div class="v2-kv"><span>Rechnung ${esc(r.rechnungsnr)}</span><b>${esc(cent2eur(r.summe_cent || 0))} · ${r.anzahl} Karte(n)</b></div>
       <div class="v2-kv"><span>Auftrag / Kunde</span><b>${esc(r.auftragsnr || "–")} / ${esc(r.kundennr || "–")}</b></div>
@@ -4979,12 +4981,13 @@ async function ofcSpiel(sid) {
       <div class="grow"><b>${t.name ? esc(t.name) : `<span class="v2-sub">ohne Namen</span>`}</b>
         <small>${[t.block ? "Block " + esc(t.block) : "", t.reihe && t.reihe !== "-" ? "Reihe " + esc(t.reihe) : "", t.sitz && t.sitz !== "-" ? "Sitz " + esc(t.sitz) : "",
           t.preis_cent ? esc(cent2eur(t.preis_cent)) : "", t.ohne_rechnung ? "Bestellung " + esc(t.rechnungsnr) + " (keine Rechnung)" : ""].filter(Boolean).join(" · ")}</small></div>
-      ${t.datei ? `<a class="v2-btn sm" href="${datei(t.datei)}" target="_blank" rel="noopener" aria-label="Ticket öffnen">🎟</a>` : `<span class="v2-badge warn">Datei fehlt</span>`}</div>`).join("") || emptyRow("Keine Tickets.");
+      <div class="v2-ofc-knoepfe"><button class="v2-btn sm" data-act="ofc-name" data-id="${esc(t.ticketnr)}" aria-label="Namen ändern">✏️</button>
+      ${t.datei ? `<a class="v2-btn sm" href="${datei(t.datei)}" target="_blank" rel="noopener" aria-label="Ticket öffnen">🎟</a>` : `<span class="v2-badge warn">Datei fehlt</span>`}</div></div>`).join("") || emptyRow("Keine Tickets.");
   openModal(`⚽ ${s.spiel}`, `<div class="v2-sub">${[s.spieltag ? datumDe(s.spieltag) + (s.uhrzeit ? ", " + s.uhrzeit : "") : "", s.ort, s.wettbewerb, s.heimspiel === true ? "Heimspiel" : s.heimspiel === false ? "Auswärtsspiel" : "", "Ordner „" + s.pfad + "“"].filter(Boolean).map(esc).join(" · ")}</div>
     ${d.hinweise.length ? `<div class="v2-ofc-hinweise" style="margin-top:8px">${d.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
     <h3>🎟 Tickets (${d.tickets.length})</h3>${tk}
     <h3>🧾 Rechnung</h3>${rg}
-    <div class="v2-sub" style="margin-top:10px">Namen ändern und Dateien umbenennen kommt mit Etappe O2.</div>`);
+    <div class="v2-sub" style="margin-top:10px">✏️ ändert den Namen und benennt die Ticket-Datei auf der NAS passend um – es wird nie etwas gelöscht.</div>`);
 }
 async function ofcImport() {
   openModal("🔄 Ordner einlesen", `<div class="v2-empty">Prüfe den Ordner auf der NAS … (dauert einige Sekunden)</div>`);
@@ -5005,9 +5008,58 @@ async function ofcImportOk(el) {
   if (!r || r.ok === false) { $("#ofc-msg").className = "v2-msg err"; $("#ofc-msg").textContent = (r && r.hinweis) || "Fehler."; return; }
   closeModal(); return renderOfc(`Eingelesen: ${r.spiele_neu.length} neue und ${r.spiele_geaendert.length} geänderte Spiele, ${r.tickets_neu} neue Tickets.`);
 }
+/* OFC_ROADMAP O2: Namen je Ticket ändern, Datei umbenennen (Vorschau, Bestätigung, Rückgängig; nie löschen) */
+let OFC_SP = null, OFC_NAMEN = null, _ofcNameTimer = null;
+async function ofcName(nr) {
+  const tk = OFC_SP && OFC_SP.tickets.find(x => x.ticketnr === nr); if (!tk) return;
+  if (!OFC_NAMEN) { const r = await jget("/api/ofc/namen"); OFC_NAMEN = (r && r.namen) || []; }
+  const la = tk.letzte_aenderung;
+  openModal(`✏️ Ticket ${tk.ticketnr}`, `<div class="v2-sub">${esc(OFC_SP.spiel.spiel)}${tk.block ? " · Block " + esc(tk.block) : ""}${tk.reihe && tk.reihe !== "-" ? " · Reihe " + esc(tk.reihe) : ""}${tk.sitz && tk.sitz !== "-" ? " · Sitz " + esc(tk.sitz) : ""}</div>
+    <label class="v2-feld" style="margin-top:10px"><small>Name auf dem Ticket</small>
+      <input id="ofc-name-inp" class="v2-inp" style="width:100%;box-sizing:border-box" list="ofc-namen-dl" autocomplete="off" value="${esc(tk.name || "")}" placeholder="Vor- und Nachname"></label>
+    <datalist id="ofc-namen-dl">${OFC_NAMEN.map(n => `<option value="${esc(n)}">`).join("")}</datalist>
+    <div id="ofc-name-vs" class="v2-ofc-vorschau"></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" id="ofc-name-ok" data-act="ofc-name-ok" data-id="${esc(nr)}" disabled>Speichern</button>
+      ${la ? `<button class="v2-btn" data-act="ofc-name-rueck" data-id="${esc(nr)}">↩︎ Rückgängig</button>` : ""}</div>
+    ${la ? `<div class="v2-sub">Letzte Änderung ${esc(zeit(la.ts))}: „${esc(la.name_alt || "ohne Namen")}“ → „${esc(la.name_neu || "ohne Namen")}“</div>` : ""}
+    <div class="v2-msg" id="ofc-name-msg"></div>`);
+  const i = $("#ofc-name-inp"); i.addEventListener("input", () => { clearTimeout(_ofcNameTimer); _ofcNameTimer = setTimeout(() => ofcNameVorschau(nr), 250); });
+  i.focus(); ofcNameVorschau(nr);
+}
+function ofcVsHtml(v) {
+  if (!v) return `<div class="v2-msg err">Keine Verbindung.</div>`;
+  const zeile = (l, a, b) => `<div class="v2-kv v2-ofc-feld"><span>${l}</span><b class="v2-umbruch">${a === b ? esc(a || "–") : `<s class="v2-sub">${esc(a || "–")}</s><br>→ ${esc(b || "–")}`}</b></div>`;
+  return zeile("Name", v.name_alt || "ohne Namen", v.name_neu || "ohne Namen") + (v.datei_alt ? zeile("Datei auf der NAS", v.datei_alt, v.datei_neu) : "")
+    + (v.hinweis ? `<div class="v2-msg ${v.ok ? "" : "err"}">${esc(v.hinweis)}</div>` : "");
+}
+async function ofcNameVorschau(nr) {
+  const i = $("#ofc-name-inp"); if (!i) return;
+  const v = await jget(`/api/ofc/ticket/${encodeURIComponent(nr)}/name/vorschau?name=${encodeURIComponent(i.value)}`);
+  if (!$("#ofc-name-vs")) return;
+  $("#ofc-name-vs").innerHTML = ofcVsHtml(v);
+  $("#ofc-name-ok").disabled = !(v && v.ok && (v.umbenennen || v.name_neu !== v.name_alt));
+  $("#ofc-name-ok").textContent = v && v.umbenennen ? "Speichern und umbenennen" : "Speichern";
+}
+async function ofcNameOk(el, rueck) {
+  const nr = el.dataset.id, m = $("#ofc-name-msg");
+  if (rueck) {
+    const v = await jget(`/api/ofc/ticket/${encodeURIComponent(nr)}/name/vorschau?rueckgaengig=1`);
+    $("#ofc-name-vs").innerHTML = ofcVsHtml(v);
+    if (!v || !v.ok) return;
+    if (!confirm("Letzte Änderung rückgängig machen?" + (v.umbenennen ? `\nDatei: ${v.datei_alt} → ${v.datei_neu}` : ""))) return;
+  }
+  el.disabled = true; m.className = "v2-msg"; m.textContent = "Speichere …";
+  const r = await jpost(`/api/ofc/ticket/${encodeURIComponent(nr)}/name`, rueck ? { bestaetigt: true, rueckgaengig: true } : { bestaetigt: true, name: $("#ofc-name-inp").value });
+  el.disabled = false;
+  if (!r || r.ok === false) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Fehler."; return; }
+  OFC_NAMEN = null; await ofcSpiel(OFC_SP.spiel.id);
+  if (AKTIV === "ofc" && !OFC_M_AKTIV) renderOfc();
+}
 /* OFC_ROADMAP OM: Mitgliederliste (Google-Forms-Tabelle, nur lesend, nichts gespeichert, keine KI) */
 const OFC_M = { daten: null, suche: "", ansicht: "mitglied" };
+let OFC_M_AKTIV = false;
 async function renderOfcMitglieder(neu) {
+  OFC_M_AKTIV = true;
   const kopf = secHead("👥 OFC · Mitglieder", `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> <button class="v2-btn" data-act="ofc-mitglieder-neu">🔄 Neu laden</button>`);
   if (!OFC_M.daten || neu) { $("#v2-app").innerHTML = kopf + `<div class="v2-empty">Lese die Tabelle …</div>`; OFC_M.daten = await jget("/api/ofc/mitglieder" + (neu ? "?neu=1" : "")); }
   const d = OFC_M.daten;
@@ -5597,6 +5649,9 @@ async function handleAct(act, el) {
     case "ofc-zurueck": return renderOfc();
     case "ofc-m-ansicht": OFC_M.ansicht = id; return renderOfcMitglieder(false);
     case "ofc-person": return ofcPerson(id);
+    case "ofc-name": return ofcName(id);
+    case "ofc-name-ok": return ofcNameOk(el, false);
+    case "ofc-name-rueck": return ofcNameOk(el, true);
     case "ofc-import-ok": return ofcImportOk(el);
     case "km-entwurf": return kmEntwurf(el);
     case "km-senden": return kmSenden(el);
