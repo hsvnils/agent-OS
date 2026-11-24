@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 11:19] — Claude Code
+- **Was:** OFC O0 auf der NAS geprueft: Verbindung moin@ ok; Postfach-Analyse (108 Mails: PayPal erhalten/gesendet/sonstiges, HSV; keine eigenen Eventim-Mails -- Eventim = PayPal-Zahlung an CTS EVENTIM) in OFC_ROADMAP.md festgehalten; Ordner-Analyse scheitert an der NAS-Berechtigung (BF-101 neu in `docs/bekannte-fehler.md`). E5b: Mitgliedertabelle vom CEO mit LUNAs Google-Konto geteilt.
+- **Warum:** Verifikation O0 nach Deploy.
+- **Betroffen:** OFC_ROADMAP.md, docs/bekannte-fehler.md.
+
 ## [2026-11-24 11:15] — Claude Code
 - **Was:** Branch `ai/ofc-o0` (inkl. Roadmap-Commit) per `--no-ff` in `main` gemergt (OFC O0); Deploy durch den CEO mit Neuerstellen von `luna-os` (neuer Mount `/fanclub_nas:ro`); Zugangsdaten `HSVINSIDE_*` vom CEO eingetragen.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.

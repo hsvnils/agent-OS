@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-o0`
 - Basiscommit: `734b284`
-- Naechster Schritt: O0 gemergt (2026-11-24) -- CEO deployt und erstellt `luna-os` neu (Mount); dann Verbindungspruefung moin@, Ordner- und Postfach-Analyse auf der NAS und mit dem CEO durchsehen. Offen: E5b (Mitgliederliste), Absenderadressen HSV/Eventim.
+- Naechster Schritt: O0 deployt; Postfach-Analyse ok. Offen: BF-101 -- CEO berechtigt in DSM den Benutzer `nilskrueger` auf `Fanclub HSVInside` (lesen), dann Ordner-Analyse auf der NAS; danach Go fuer O1. E5b: CEO hat die Mitgliedertabelle mit LUNAs Google-Konto geteilt (Betrachter) -- in OM nutzen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -88,7 +88,7 @@ zuordnen, viel Handarbeit. Wunsch:
 
 ### Etappe O0: Zugang und Analyse (nur lesend)
 
-- Status: umgesetzt (2026-11-24; `HsvInsideMail` nur lesend/Absenderfilter, `core/ofc.py` Rechnung/Ticket/Ordner-/Postfach-Analyse, Endpunkte `/api/ofc/...` nur CEO, Mount `:ro`, CISO in `governance/zugriffs-policy.md`; `test_ofc.py`. Probelauf Ordner (Kopie, 2026-11-24): 12 Spiele, 11 Rechnungen erkannt (inkl. Auswaerts/DFB-Pokal/Freundschaft, Heim/Auswaerts), 70 Karten, 77 Ticket-Dateien; SVWvsHSV ohne Rechnung, HSVvsFCB mit 2. Bestellung ohne Rechnung, HSVvsVFB ohne Namen. Offen: Deploy, Zugangsdaten moin@, Postfach-Analyse)
+- Status: umgesetzt (2026-11-24; `HsvInsideMail` nur lesend/Absenderfilter, `core/ofc.py` Rechnung/Ticket/Ordner-/Postfach-Analyse, Endpunkte `/api/ofc/...` nur CEO, Mount `:ro`, CISO in `governance/zugriffs-policy.md`; `test_ofc.py`. Probelauf Ordner (Kopie, 2026-11-24): 12 Spiele, 11 Rechnungen erkannt (inkl. Auswaerts/DFB-Pokal/Freundschaft, Heim/Auswaerts), 70 Karten, 77 Ticket-Dateien; SVWvsHSV ohne Rechnung, HSVvsFCB mit 2. Bestellung ohne Rechnung, HSVvsVFB ohne Namen. Deployt 2026-11-24. Verbindung moin@ ok. **Postfach-Analyse live (120 Tage, 108 Mails):** PayPal „erhalten“ 40 (34 mit Mitteilung, alle mit Transaktionscode); PayPal „gesendet“ 21 -- die Zahlungen an **CTS EVENTIM** (HSV-Ticketshop) mit Bestellnummer, Positionszeile „Tickets HSV …: <Anzahl>“, Gesamtbetrag, Transaktionscode; PayPal sonstiges 29 (u. a. **„Spaeter bezahlen“ in 30 Tagen** bei CTS EVENTIM, Abbuchungen, Ueberweisungen aufs Bankkonto); HSV 18 (`hsv.de`, `service.hsv.de` mit „Kopie der Rechnung <Nr> vom <Datum>“, Ticket-PDFs `<Rechnungsnr>-<Pos>.pdf` und `Rechnung.pdf`; `news.hsv.de` = Newsletter). **Eigene Eventim-Mails gibt es nicht** -- „Eventim“ = PayPal-Beleg an CTS EVENTIM. Ordner-Analyse auf der NAS: BF-101 (Berechtigung).)
 - Ziel / Scope / Nicht-Scope: Zugang moin@ nach E1 (Klasse wie `NilsMail`, Absenderfilter), Mount nach E2 (erst nur
   lesend). Dry-Run-Bericht in LUNA-OS bzw. als Skript: Mails je Absender der letzten 90 Tage, erkannte Felder je Typ
   (PayPal erhalten / PayPal gesendet / Eventim / HSV-Rechnung) **ohne** Namen/Betraege ins Log; Ordner-Scan wie oben.
