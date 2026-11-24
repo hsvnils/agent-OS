@@ -6269,6 +6269,17 @@ async def ofc_import(request: Request):
     return import_anwenden(_ofc_store(), von=_von(request))
 
 
+@app.get("/api/ofc/mitglieder")
+def ofc_mitglieder(request: Request, neu: int = 0):
+    """OM: Mitgliederliste aus der geteilten Google-Forms-Tabelle -- nur lesend, nichts gespeichert, keine KI."""
+    _nur_ceo(request)
+    from ...core.ofc_mitglieder import lesen
+    try:
+        return lesen(_google().auth, neu=bool(neu))
+    except Exception as exc:                                  # ohne Fehlertext (koennte Kennungen enthalten)
+        return {"ok": False, "hinweis": f"Mitgliederliste nicht lesbar ({exc.__class__.__name__})."}
+
+
 @app.get("/api/ofc/analyse/ordner")
 def ofc_analyse_ordner(request: Request):
     """O0 Dry-Run: Spielordner der Saison auf der NAS -- Zahlen je Spiel, keine Namen, nichts gespeichert."""

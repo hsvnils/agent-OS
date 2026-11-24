@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 16:08] — Claude Code
+- **Was:** OFC OM: Mitgliederliste nur lesend aus der geteilten Google-Tabelle „Mitgliedschaftsanfrage“ (Blatt „Formularantworten 1“; Mitglied = HSVInside-Nummer, sonst Anfrage; Hinweise auf doppelte Nummern/Namen). Neuer Endpunkt `GET /api/ofc/mitglieder` (nur CEO), Ansicht „👥 Mitglieder“ im Reiter OFC (Suche, Mitglieder/Anfragen, Detail mit allen Spalten). Nichts gespeichert (5 Minuten im Speicher), keine KI, nur Lese-Aufrufe. Cache v166/v89.
+- **Warum:** CEO „Go für OM“; Entscheidungen: nur Formularantworten, alle Spalten.
+- **Betroffen:** `docs/bekannte-fehler.md` (Baseline 1776), `orchestrator/core/ofc_mitglieder.py` (neu), `orchestrator/channels/web/app.py`, `static/app-v2.js`, `static/style-v2.css`, `static/index-v2.html`, `orchestrator/tests/test_ofc_mitglieder.py` (neu), `OFC_ROADMAP.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`, `governance/zugriffs-policy.md`, `projekt_changelog.md`
+
 ## [2026-11-24 16:05] — Claude Code
 - **Was:** OFC O1 nach Deploy geprueft: erster Import auf der NAS (CEO) ergibt 12 Spiele, 77 Karten, 4 offene Spiele, 3 Hinweise; erneute Vorschau zeigt keine Aenderung (wiederholbar). Roadmap-Status nachgetragen.
 - **Warum:** CEO: „Deploy gemacht, Ordner eingelesen“.

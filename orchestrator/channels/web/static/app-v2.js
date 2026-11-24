@@ -4947,7 +4947,7 @@ RENDER.ofc = renderOfc;
 const OFC_STATUS = { offen: ["wartet", "kommt"], vorbei: ["neutral", "vorbei"], abgeschlossen: ["ok", "abgeschlossen"] };
 async function renderOfc(meldung, fehler) {
   const d = await jget("/api/ofc/uebersicht");
-  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
+  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
   if (!d) { $("#v2-app").innerHTML = kopf + emptyRow("OFC nicht erreichbar (nur für den CEO)."); return; }
   const su = d.summe, zeile = (x) => `<div class="v2-list-row klick v2-ofc-zeile" data-act="ofc-spiel" data-id="${esc(x.id)}">
       <div class="v2-ofc-datum"><b>${x.spieltag ? esc(datumDe(x.spieltag)) : "–"}</b><small>${esc(x.uhrzeit || "")}</small></div>
@@ -5004,6 +5004,44 @@ async function ofcImportOk(el) {
   const r = await jpost("/api/ofc/import", { bestaetigt: true }); el.disabled = false;
   if (!r || r.ok === false) { $("#ofc-msg").className = "v2-msg err"; $("#ofc-msg").textContent = (r && r.hinweis) || "Fehler."; return; }
   closeModal(); return renderOfc(`Eingelesen: ${r.spiele_neu.length} neue und ${r.spiele_geaendert.length} geänderte Spiele, ${r.tickets_neu} neue Tickets.`);
+}
+/* OFC_ROADMAP OM: Mitgliederliste (Google-Forms-Tabelle, nur lesend, nichts gespeichert, keine KI) */
+const OFC_M = { daten: null, suche: "", ansicht: "mitglied" };
+async function renderOfcMitglieder(neu) {
+  const kopf = secHead("👥 OFC · Mitglieder", `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> <button class="v2-btn" data-act="ofc-mitglieder-neu">🔄 Neu laden</button>`);
+  if (!OFC_M.daten || neu) { $("#v2-app").innerHTML = kopf + `<div class="v2-empty">Lese die Tabelle …</div>`; OFC_M.daten = await jget("/api/ofc/mitglieder" + (neu ? "?neu=1" : "")); }
+  const d = OFC_M.daten;
+  if (!d || !d.ok) { OFC_M.daten = null; $("#v2-app").innerHTML = kopf + `<div class="v2-msg err">${esc((d && d.hinweis) || "Mitgliederliste nicht erreichbar.")}</div>`; return; }
+  const tab = (k, l, n) => `<button class="v2-btn ${OFC_M.ansicht === k ? "pri" : ""}" data-act="ofc-m-ansicht" data-id="${k}">${l} (${n})</button>`;
+  $("#v2-app").innerHTML = kopf + `<div class="v2-grid">
+      ${tile("Mitglieder", `<div class="v2-kpi">${d.summe.mitglieder}</div><div class="v2-sub">mit HSVInside-Nummer</div>`, "v2-ofc-kpi")}
+      ${tile("Anfragen", `<div class="v2-kpi">${d.summe.anfragen}</div><div class="v2-sub">ohne Nummer</div>`, "v2-ofc-kpi")}
+      <div class="v2-tile w12"><div class="v2-card-actions" style="margin:0 0 8px">${tab("mitglied", "Mitglieder", d.summe.mitglieder)} ${tab("anfrage", "Anfragen", d.summe.anfragen)}</div>
+        ${d.hinweise.length ? `<div class="v2-ofc-hinweise" style="margin-bottom:8px">${d.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
+        <input id="ofc-m-suche" class="v2-inp" style="width:100%;box-sizing:border-box" type="search" autocomplete="off" placeholder="Name, Nummer oder E-Mail suchen" value="${esc(OFC_M.suche)}">
+        <div id="ofc-m-liste" style="margin-top:8px"></div></div>
+    </div><div class="v2-sub" style="margin-top:8px">Quelle: Tabelle „Mitgliedschaftsanfrage“, Blatt „${esc(d.blatt)}“ · gelesen ${esc(zeit(d.gelesen))} · nur lesend, nichts gespeichert.</div>`;
+  const s = $("#ofc-m-suche"); s.addEventListener("input", () => { OFC_M.suche = s.value; ofcMListe(); });
+  ofcMListe();
+}
+function ofcMListe() {
+  const d = OFC_M.daten, q = OFC_M.suche.trim().toLowerCase(), el = $("#ofc-m-liste"); if (!d || !el) return;
+  const liste = (OFC_M.ansicht === "mitglied" ? d.mitglieder : d.anfragen)
+    .filter(p => !q || [p.name, p.nummer, p.email].some(x => (x || "").toLowerCase().includes(q)));
+  el.innerHTML = liste.map(p => `<div class="v2-list-row klick" data-act="ofc-person" data-id="${p.zeile}">
+      <span class="v2-badge ${p.nummer ? "neutral" : "wartet"}">${esc(p.nummer || "Anfrage")}</span>
+      <div class="grow"><b class="v2-umbruch">${esc(p.name || "–")}</b>
+        <small>${[p.mitgliedschaft, p.seit ? "seit " + p.seit : "", !p.nummer && p.eingang ? "eingegangen " + datumDe(p.eingang) : ""].filter(Boolean).map(esc).join(" · ")}</small>
+        ${p.hinweise.length ? `<div class="v2-ofc-hinweise">${p.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}</div></div>`).join("")
+    || emptyRow(q ? "Kein Treffer." : "Keine Einträge.");
+}
+function ofcPerson(zeile) {
+  const d = OFC_M.daten; if (!d) return;
+  const p = [...d.mitglieder, ...d.anfragen].find(x => String(x.zeile) === String(zeile)); if (!p) return;
+  openModal(`👤 ${p.name || "Person"}`, `<div class="v2-sub">${p.nummer ? "Mitglied Nr. " + esc(p.nummer) : "Anfrage (noch keine Nummer)"} · Zeile ${p.zeile} der Tabelle</div>
+    ${p.hinweise.length ? `<div class="v2-ofc-hinweise" style="margin-top:8px">${p.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
+    <div style="margin-top:8px">${p.felder.map(([k, v]) => `<div class="v2-kv v2-ofc-feld"><span>${esc(k)}</span><b class="v2-umbruch">${esc(v)}</b></div>`).join("")}</div>
+    <div class="v2-sub" style="margin-top:10px">Ändern nur in der Google-Tabelle – LUNA liest nur.</div>`);
 }
 RENDER.reichweite = renderReichweite;
 let RW = null, RW_PL = "instagram", RW_CSV = null;
@@ -5554,6 +5592,11 @@ async function handleAct(act, el) {
     case "km-neu": return kmDialog(id, val || "");
     case "ofc-spiel": return ofcSpiel(id);
     case "ofc-import": return ofcImport();
+    case "ofc-mitglieder": return renderOfcMitglieder(false);
+    case "ofc-mitglieder-neu": return renderOfcMitglieder(true);
+    case "ofc-zurueck": return renderOfc();
+    case "ofc-m-ansicht": OFC_M.ansicht = id; return renderOfcMitglieder(false);
+    case "ofc-person": return ofcPerson(id);
     case "ofc-import-ok": return ofcImportOk(el);
     case "km-entwurf": return kmEntwurf(el);
     case "km-senden": return kmSenden(el);
