@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-kasse`
 - Basiscommit: `fda2486`
-- Naechster Schritt: CEO prueft die Entscheidungen E-K1 bis E-K9 (Empfehlungen stehen dabei) und gibt das Go fuer KA0. Vorher wird nichts gebaut.
+- Naechster Schritt: E-K1 (Kalenderjahr, faellig 01.01.) und E-K2 (Gold 40 € pro Jahr) entschieden. Offen: E-K3 bis E-K9 (vor allem E-K5: gehoeren PayPal-Konto und Bankkonto dem Fanclub, gibt es Bargeld?) und das Go fuer KA0. Vorher wird nichts gebaut.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -52,8 +52,8 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 | Nr | Frage | Empfehlung |
 |---|---|---|
-| E-K1 | Beitragsjahr und Faelligkeit | Kalenderjahr, faellig 01.01.; steht in `Nächste Zahlung` ein Datum, gilt dieses. |
-| E-K2 | Woher kommt der Soll-Beitrag? | Aus der Google-Tabelle (Spalten `Beitrag` + Mitgliedschaft), nur lesend; fehlt `Beitrag` bei Gold: 40 €. Bezahlt-Status lebt nur in LUNA. |
+| E-K1 | Beitragsjahr und Faelligkeit | **Entschieden (CEO 2026-11-24): Kalenderjahr, faellig 01.01.** |
+| E-K2 | Woher kommt der Soll-Beitrag? | **Entschieden (CEO 2026-11-24): Goldmitgliedschaft 40 € pro Jahr.** Empfehlung zur Quelle: aus der Google-Tabelle (Spalten `Beitrag` + Mitgliedschaft), nur lesend; fehlt `Beitrag` bei Gold: 40 €. Bezahlt-Status lebt nur in LUNA. |
 | E-K3 | Neue Mitglieder im laufenden Jahr | Voller Beitrag ab dem Eintrittsjahr (kein anteiliger Betrag), Faelligkeit = Eintrittsdatum. |
 | E-K4 | Wann gilt ein Eingang automatisch als Beitrag? | Name = Mitglied (oder gelernter Alias) **und** Betrag = Beitrag oder Vielfaches (mehrere Jahre/Mitglieder), **und** kein Ticket passt -- oder die Mitteilung nennt Beitrag/Mitgliedschaft/Gold. Sonst Vorschlag. |
 | E-K5 | Was gehoert zur Kasse? | PayPal-Konto + Bankkonto + Bargeld als drei Konten; Umbuchung PayPal -> Bank zaehlt neutral. Anfangsbestand je Konto traegt der CEO zu einem Stichtag ein. |
