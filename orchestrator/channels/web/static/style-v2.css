@@ -1338,3 +1338,4 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-ofc-datum small { color: var(--v2-muted); }
 .v2-ofc-hinweise { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 @media (max-width: 600px) { .v2-ofc-datum { min-width: 64px; } }
+@media (max-width: 600px) { .v2-tile.v2-ofc-kpi { grid-column: span 6; } .v2-tile.v2-ofc-kpi .v2-kpi { font-size: 28px; } }

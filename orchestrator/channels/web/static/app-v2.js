@@ -4959,10 +4959,10 @@ async function renderOfc(meldung, fehler) {
   const offen = d.spiele.filter(x => x.status !== "abgeschlossen"), fertig = d.spiele.filter(x => x.status === "abgeschlossen");
   $("#v2-app").innerHTML = kopf + (meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}">${esc(meldung)}</div>` : "")
     + `<div class="v2-grid">
-      ${tile("Saison", `<div class="v2-kpi">${su.spiele}</div><div class="v2-sub">Spiele · Ordner „${esc(d.saison_ordner)}“</div>`)}
-      ${tile("Karten", `<div class="v2-kpi">${su.karten}</div><div class="v2-sub">insgesamt</div>`)}
-      ${tile("Ohne Namen", `<div class="v2-kpi">${su.ohne_name}</div><div class="v2-sub">bei offenen Spielen</div>`)}
-      ${tile("Hinweise", `<div class="v2-kpi">${su.hinweise}</div><div class="v2-sub">bei offenen Spielen</div>`)}
+      ${tile("Saison", `<div class="v2-kpi">${su.spiele}</div><div class="v2-sub">Spiele · Ordner „${esc(d.saison_ordner)}“</div>`, "v2-ofc-kpi")}
+      ${tile("Karten", `<div class="v2-kpi">${su.karten}</div><div class="v2-sub">insgesamt</div>`, "v2-ofc-kpi")}
+      ${tile("Ohne Namen", `<div class="v2-kpi">${su.ohne_name}</div><div class="v2-sub">bei offenen Spielen</div>`, "v2-ofc-kpi")}
+      ${tile("Hinweise", `<div class="v2-kpi">${su.hinweise}</div><div class="v2-sub">bei offenen Spielen</div>`, "v2-ofc-kpi")}
       <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Offene Spiele</span></div>${offen.map(zeile).join("") || emptyRow(d.spiele.length ? "Keine offenen Spiele." : "Noch nichts eingelesen – oben „Ordner einlesen“.")}</div>
       ${fertig.length ? `<div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Abgeschlossen</span></div>${fertig.map(zeile).join("")}</div>` : ""}
     </div><div class="v2-sub" style="margin-top:8px">${d.letzter_import ? "Zuletzt eingelesen: " + esc(zeit(d.letzter_import)) : ""} · Zahlungen folgen in Etappe O4/O5.</div>`;

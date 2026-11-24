@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 11:30] — Claude Code
+- **Was:** OFC O0 verifiziert (Ordner-Analyse auf der NAS nach DSM-Berechtigung: 12 Spiele, 11 erkannt; BF-101 behoben). OFC O1: Speicher `fanclub/log.jsonl` (nicht im Git, Sync-Ausschluss, Backup), `core/ofc_store.py` (Import aus dem Saison-Ordner mit Vorschau, wiederholbar; Uebersicht mit Status/Hinweisen; Dateien nur zugeordnete), Endpunkte `/api/ofc/uebersicht`, `/api/ofc/spiel/<id>`, `/api/ofc/spiel/<id>/datei`, `/api/ofc/import/vorschau`, `POST /api/ofc/import` (nur CEO), neuer Bereich „OFC“ in LUNA-OS (App `ofc` nur fuer owner), Cache v165/v88. Fehlende Leseberechtigung gibt jetzt einen Hinweis statt 500. Probelauf auf einer Kopie der echten Saison: 12 Spiele, 77 Tickets, 68 mit Namen. Tests `test_ofc_store.py` (5, Gegenproben rot), Suite 1771 gruen; Sichtpruefung headless ok.
+- **Warum:** CEO-Go fuer O1 (2026-11-24).
+- **Betroffen:** orchestrator/core/ofc.py, orchestrator/core/ofc_store.py, orchestrator/core/team_auth.py, orchestrator/channels/web/app.py, static/app-v2.js, static/style-v2.css, static/index-v2.html, orchestrator/tests/test_ofc_store.py, .gitignore, deploy/sync-to-nas.sh, deploy/backup-from-nas.sh, AGENTS.md, docs/datenfluesse.md, docs/bekannte-fehler.md, OFC_ROADMAP.md, ROADMAP.md.
+
 ## [2026-11-24 11:19] — Claude Code
 - **Was:** OFC O0 auf der NAS geprueft: Verbindung moin@ ok; Postfach-Analyse (108 Mails: PayPal erhalten/gesendet/sonstiges, HSV; keine eigenen Eventim-Mails -- Eventim = PayPal-Zahlung an CTS EVENTIM) in OFC_ROADMAP.md festgehalten; Ordner-Analyse scheitert an der NAS-Berechtigung (BF-101 neu in `docs/bekannte-fehler.md`). E5b: Mitgliedertabelle vom CEO mit LUNAs Google-Konto geteilt.
 - **Warum:** Verifikation O0 nach Deploy.
