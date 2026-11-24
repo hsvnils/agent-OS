@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-o4`
 - Basiscommit: `734b284`
-- Naechster Schritt: O4 umgesetzt auf `ai/ofc-o4` -- Push, Merge, Deploy (code-only + Neustart); danach Vorschau „💳 Zahlungen -> Aus Postfach holen“ mit echten Mails pruefen (Zuordnung). Gesamtabnahme am Ende der Roadmap. Danach O5 nach CEO-Go.
+- Naechster Schritt: O4 gemergt -- CEO deployt (code-only + Neustart); danach Vorschau „💳 Zahlungen -> Aus Postfach holen“ mit echten Mails pruefen (Zuordnung). Gesamtabnahme am Ende der Roadmap. Danach O5 nach CEO-Go.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

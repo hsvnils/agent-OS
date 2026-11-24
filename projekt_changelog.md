@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-24 17:01] — Claude Code
+- **Was:** `ai/ofc-o4` (OFC O4 eigene PayPal-Zahlungen) nach `main` gemergt und gepusht, Branch geloescht. Erster automatischer O3-Lauf auf der NAS ok (1 Datei: Rechnung zur 2. Bestellung HSVvsFCB, Hinweis „Bestellung ohne Rechnung“ weg).
+- **Warum:** CEO „Go für Merge, Push und Deploy“.
+- **Betroffen:** `OFC_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-24 16:58] — Claude Code
 - **Was:** OFC O4: Eigene PayPal-Zahlungen an Eventim/HSV aus dem Postfach moin@ (nur PayPal-Absender, nur lesend) erkennen (gesendet, Später bezahlen mit Fälligkeit/Abbuchung, Erstattung), Spielen zuordnen (Nummer, Betrag + Datum, Gegner; eindeutig automatisch, sonst per Klick), Ansicht „💳 Zahlungen“, „Eigene Zahlung“ im Spiel, Hinweise im Reiter; automatisch im 15-Minuten-Takt. Nur Ergebnisfelder gespeichert (Ereignis `ofc_zahlung`), kein Mailtext. Cache v169/v91. Baseline 1799. Nach dem O3-Deploy die Vorschau mit echten Mails geprueft (1 Datei: Rechnung zur 2. Bestellung HSVvsFCB).
 - **Warum:** CEO „Deploy gemacht, Go für O4“ (Abnahme gesammelt am Ende der Roadmap).
