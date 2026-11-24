@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-kasse`
 - Basiscommit: `fda2486`
-- Naechster Schritt: E-K1 (Kalenderjahr, faellig 01.01.) und E-K2 (Gold 40 € pro Jahr) entschieden. Offen: E-K3 bis E-K9 (vor allem E-K5: gehoeren PayPal-Konto und Bankkonto dem Fanclub, gibt es Bargeld?) und das Go fuer KA0. Vorher wird nichts gebaut.
+- Naechster Schritt: E-K1 (Kalenderjahr, 01.01.), E-K2 (Gold 40 €/Jahr), E-K5 (nur PayPal) entschieden, E-K8 entfaellt. Offen: E-K3 (neue Mitglieder: voller Beitrag?) und „wie empfohlen“ fuer E-K4, E-K6, E-K7, E-K9; dann Go fuer KA0. Vorher wird nichts gebaut.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -33,8 +33,8 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 - **Speicher:** `fanclub/log.jsonl` (Ereignisse `ofc_*`), nur CEO sichtbar, nicht in der Buchhaltung.
 - **Register:** PayPal-CSV-Import am 2026-11-24 zurueckgestellt (`docs/entscheidungs-register.md`, OFC O5) -- wird hier
   fuer den Kassenabgleich wieder aufgegriffen. Kein Zugang zu PayPal-API oder Online-Banking vorhanden.
-- **Unbekannt (vom CEO zu klaeren):** wem PayPal-Konto und Bankkonto gehoeren (Fanclub oder privat), ob es Bargeld
-  gibt, welcher Zeitraum das Geschaeftsjahr ist, wie neue Mitglieder im laufenden Jahr zahlen.
+- **Geklaert (CEO 2026-11-24):** Der Fanclub nutzt ausschliesslich PayPal (E-K5). **Noch offen:** welcher Zeitraum das
+  Geschaeftsjahr ist (E-K6), wie neue Mitglieder im laufenden Jahr zahlen (E-K3).
 
 ## Grundsaetze (wie OFC)
 
@@ -56,11 +56,11 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 | E-K2 | Woher kommt der Soll-Beitrag? | **Entschieden (CEO 2026-11-24): Goldmitgliedschaft 40 € pro Jahr.** Empfehlung zur Quelle: aus der Google-Tabelle (Spalten `Beitrag` + Mitgliedschaft), nur lesend; fehlt `Beitrag` bei Gold: 40 €. Bezahlt-Status lebt nur in LUNA. |
 | E-K3 | Neue Mitglieder im laufenden Jahr | Voller Beitrag ab dem Eintrittsjahr (kein anteiliger Betrag), Faelligkeit = Eintrittsdatum. |
 | E-K4 | Wann gilt ein Eingang automatisch als Beitrag? | Name = Mitglied (oder gelernter Alias) **und** Betrag = Beitrag oder Vielfaches (mehrere Jahre/Mitglieder), **und** kein Ticket passt -- oder die Mitteilung nennt Beitrag/Mitgliedschaft/Gold. Sonst Vorschlag. |
-| E-K5 | Was gehoert zur Kasse? | PayPal-Konto + Bankkonto + Bargeld als drei Konten; Umbuchung PayPal -> Bank zaehlt neutral. Anfangsbestand je Konto traegt der CEO zu einem Stichtag ein. |
+| E-K5 | Was gehoert zur Kasse? | **Entschieden (CEO 2026-11-24): ausschliesslich PayPal.** Kasse = ein Konto (PayPal), kein Bargeld, kein Bankkonto. Anfangsbestand traegt der CEO zu einem Stichtag ein; Auszahlungen von PayPal auf ein Bankkonto zaehlen als Abgang (Kategorie „Auszahlung“). |
 | E-K6 | Geschaeftsjahr fuer den Kassenbericht | Kalenderjahr (passt zum Beitragsjahr); alternativ Saison Juli-Juni. |
 | E-K7 | Abgleich mit PayPal | CEO laedt den PayPal-Kontoauszug (CSV-Export) im Reiter hoch; kein API-Zugang (waere neuer Zugang, CISO). |
-| E-K8 | Abgleich mit der Bank | CEO laedt den Kontoauszug als CSV hoch; kein Online-Banking-Zugang. |
-| E-K9 | Kategorien im Kassenbuch | Tickets, Beitraege, Merch/Trikot, Spenden, Gebuehren, Auslagen, Umbuchung, Sonstiges -- im Reiter erweiterbar. |
+| E-K8 | Abgleich mit der Bank | **Entfaellt** (E-K5: nur PayPal). |
+| E-K9 | Kategorien im Kassenbuch | Tickets, Beitraege, Merch/Trikot, Spenden, Gebuehren, Auslagen, Auszahlung, Sonstiges -- im Reiter erweiterbar. |
 
 ## Etappen
 
@@ -111,24 +111,23 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 - Status: geplant
 - Ziel / Scope / Nicht-Scope: Kassenbuch des Fanclubs aus allen vorhandenen Quellen: Einnahmen (Tickets O5, Beitraege
-  KA1, Merch/Spenden), Ausgaben (eigene Ticketzahlungen O4, Erstattungen, Gebuehren), Umbuchungen PayPal <-> Bank
-  (neutral); Konten nach E-K5 mit Anfangsbestand; Kategorien E-K9; Buchung per Hand fuer Bargeld und Auslagen (mit
-  optionalem Beleg-Foto in `fanclub/`); Kassenstand je Konto und gesamt. Nicht-Scope: Buchhaltung, Steuer.
-- Gate: Tests (Umbuchung neutral, Storno statt Loeschen, Doppelte ueber Transaktionscode, Kassenstand =
+  KA1, Merch/Spenden), Ausgaben (eigene Ticketzahlungen O4, Erstattungen, Gebuehren, Auszahlungen auf ein Bankkonto);
+  ein Konto PayPal (E-K5) mit Anfangsbestand; Kategorien E-K9; Buchung per Hand fuer Auslagen und Korrekturen (mit
+  optionalem Beleg-Foto in `fanclub/`); Kassenstand. Nicht-Scope: Buchhaltung, Steuer.
+- Gate: Tests (Auszahlung als Abgang, Storno statt Loeschen, Doppelte ueber Transaktionscode, Kassenstand =
   Anfangsbestand + Summe); Sichtpruefung.
 - Verifikation: Kassenstand PayPal in LUNA = Guthaben laut PayPal-Konto des CEO (Stichtag, vom CEO abgelesen).
 - Dry-Run: Vorschau jeder Handbuchung.
 - Risiko / Rueckweg: Storno-Buchung; Anfangsbestand aenderbar mit Historie.
 - Abhaengig von / Aufwand / Risiko: KA1, O4, O5 / mittel / mittel.
 
-### Etappe KA4: Abgleich mit PayPal- und Bank-Kontoauszug
+### Etappe KA4: Abgleich mit dem PayPal-Kontoauszug
 
 - Status: geplant
-- Ziel / Scope / Nicht-Scope: CSV-Upload im Reiter (PayPal-Aktivitaeten, Bank-Kontoauszug, E-K7/E-K8): Zeilen mit
+- Ziel / Scope / Nicht-Scope: CSV-Upload im Reiter (PayPal-Aktivitaeten, E-K7; Bank entfaellt nach E-K5): Zeilen mit
   vorhandenen Buchungen abgleichen (Transaktionscode, Betrag, Datum), fehlende als Vorschlag uebernehmen (alte Zahlungen
-  vor dem Postfach-Zeitraum, Gebuehren), Abweichungen anzeigen. Bank-CSV-Leser der Buchhaltung auf Wiederverwendung
-  pruefen (nur Code, keine Daten). Nicht-Scope: API-Zugaenge, automatischer Abruf.
-- Gate: Tests (PayPal-CSV deutsch, Dubletten, Gebuehrenzeilen, Umbuchung zur Bank, Bank-CSV); Gegenprobe mit
+  vor dem Postfach-Zeitraum, Gebuehren), Abweichungen anzeigen. Nicht-Scope: API-Zugaenge, automatischer Abruf.
+- Gate: Tests (PayPal-CSV deutsch, Dubletten, Gebuehrenzeilen, Auszahlung auf ein Bankkonto); Gegenprobe mit
   erfundenen Dateien.
 - Verifikation: echter PayPal-Export eines Monats -> 0 unerklaerte Abweichungen oder klare Liste.
 - Dry-Run: Upload zeigt erst die Vorschau, uebernimmt nur nach Klick.
@@ -139,7 +138,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 - Status: geplant
 - Ziel / Scope / Nicht-Scope: Kassenbericht je Geschaeftsjahr (E-K6): Anfangsbestand, Einnahmen und Ausgaben nach
-  Kategorie, Endbestand je Konto, Beitragsquote, offene Posten (Tickets + Beitraege); PDF A4 hochkant + CSV, z. B. fuer
+  Kategorie, Endbestand, Beitragsquote, offene Posten (Tickets + Beitraege); PDF A4 hochkant + CSV, z. B. fuer
   Kassenpruefung oder Mitgliederversammlung. Nicht-Scope: Veroeffentlichung (CEO-Tor), steuerliche Bewertung.
 - Gate: Tests (Summen gehen auf, Jahresgrenze, leere Kategorien); Sichtpruefung PDF.
 - Verifikation: Bericht fuer ein abgeschlossenes Testjahr stimmt mit dem Kassenbuch ueberein.

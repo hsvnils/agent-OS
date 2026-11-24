@@ -18,6 +18,11 @@ Eintragsformat:
 ## Eintraege
 
 ## [2026-11-24 20:51] — Claude Code
+- **Was:** CEO-Entscheidung E-K5 in `OFC_KASSE_ROADMAP.md` eingearbeitet: Fanclub-Kasse nur PayPal (ein Konto, kein Bargeld, keine Bank); E-K8 (Bank-CSV) entfaellt, KA3/KA4 entsprechend verkleinert, Kategorie „Auszahlung“ statt „Umbuchung“. Register und `ROADMAP.md` nachgezogen.
+- **Warum:** CEO 2026-11-24: „Wir nutzen ausschliesslich PayPal“.
+- **Betroffen:** `OFC_KASSE_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `projekt_changelog.md`
+
+## [2026-11-24 20:51] — Claude Code
 - **Was:** OFC O5 Fassung 3 nach dem Deploy auf der NAS geprueft (VERSION 3, `app-v2.js` v172): der automatische Lauf hat alle 42 Eingaenge neu bewertet -- 24 automatisch (vorher 10), 2 „kein Ticket“ (Trikot, Bankueberweisung), 16 offen, davon 7 mit vorgewaehltem Spiel; 32 Karten bezahlt (vorher 12). Eigene Zahlungen unveraendert 9/9 automatisch. `OFC_ROADMAP.md` „Naechster Schritt“ fortgeschrieben.
 - **Warum:** CEO 2026-11-24: „Deploy gemacht“ -- Wirkung auf der NAS nachweisen.
 - **Betroffen:** `OFC_ROADMAP.md`, `projekt_changelog.md` (nur Pruefung, kein Code)
