@@ -51,6 +51,8 @@ class OfcStore:
         spiele: dict = {}
         tickets: dict = {}
         zahlungen: dict = {}
+        eingaenge: dict = {}
+        aliase: dict = {}
         letzter_import = ""
         for e in self.eintraege():
             d, t = e["daten"], e["typ"]
@@ -62,12 +64,19 @@ class OfcStore:
                 letzter_import = e["ts"]
             elif t == "ofc_zahlung":
                 zahlungen.setdefault(d["id"], {"id": d["id"]}).update({k: v for k, v in d.items() if k != "id"})
+            elif t == "ofc_eingang":
+                eingaenge.setdefault(d["id"], {"id": d["id"]}).update({k: v for k, v in d.items() if k != "id"})
+            elif t == "ofc_alias":
+                lst = aliase.setdefault(d["zahler"], [])
+                if d["name"] not in lst:
+                    lst.append(d["name"])
             elif t == "ofc_name":
                 tk = tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})
                 tk.update(name=d["name_neu"], datei=d["datei_neu"])
                 tk["letzte_aenderung"] = {"ts": e["ts"], "name_alt": d["name_alt"], "datei_alt": d["datei_alt"],
                                           "name_neu": d["name_neu"], "datei_neu": d["datei_neu"]}
-        return {"spiele": spiele, "tickets": tickets, "zahlungen": zahlungen, "letzter_import": letzter_import}
+        return {"spiele": spiele, "tickets": tickets, "zahlungen": zahlungen, "eingaenge": eingaenge, "aliase": aliase,
+                "letzter_import": letzter_import}
 
 
 # -- Import -------------------------------------------------------------------------------------------------------------
@@ -187,10 +196,12 @@ def _hinweise(s: dict, tks: list[dict], zahl: list[dict] | None = None) -> list[
 
 
 def uebersicht(store: OfcStore, heute: date | None = None) -> dict:
+    from .ofc_eingang import bezahlt_stand
     from .ofc_zahlung import zahlungs_status
     heute = heute or date.today()
     st = store.stand()
     zs = zahlungs_status(st, heute)
+    bz = bezahlt_stand(st)["tickets"]
     je_z: dict = {}
     for z in zs:
         if z.get("spiel"):
@@ -210,12 +221,14 @@ def uebersicht(store: OfcStore, heute: date | None = None) -> dict:
                       | {"status": status, "karten": len(tks), "mit_name": sum(1 for t in tks if t.get("name")),
                          "summe_cent": sum(r.get("summe_cent") or 0 for r in s.get("rechnungen") or []),
                          "bezahlt_cent": _bezahlt(je_z.get(s["id"], [])),
+                         "karten_bezahlt": sum(1 for t in tks if bz.get(t["ticketnr"], {}).get("bezahlt")),
                          "hinweise": _hinweise(s, tks, je_z.get(s["id"], []))})
     spiele.sort(key=lambda x: (x["status"] == "abgeschlossen", x.get("spieltag") or "9999"))
     offen = [x for x in spiele if x["status"] != "abgeschlossen"]
     return {"spiele": spiele, "letzter_import": st["letzter_import"],
             "verworfen": sorted(sid for sid, s in st["spiele"].items() if s.get("verworfen")),
             "zahlungen_offen": sum(1 for z in zs if z.get("zuordnung") == "offen"),
+            "eingaenge_offen": sum(1 for e in st.get("eingaenge", {}).values() if e.get("zuordnung") == "offen"),
             "summe": {"spiele": len(spiele), "offen": len(offen), "karten": sum(x["karten"] for x in spiele),
                       "ohne_name": sum(x["karten"] - x["mit_name"] for x in offen),
                       "hinweise": sum(len(x["hinweise"]) for x in offen)}}
@@ -226,8 +239,11 @@ def spiel_detail(store: OfcStore, sid: str) -> dict | None:
     s = st["spiele"].get(sid)
     if not s:
         return None
+    from .ofc_eingang import bezahlt_stand
     from .ofc_zahlung import zahlungs_status
-    tks = sorted((t for t in st["tickets"].values() if t["spiel"] == sid), key=lambda t: (t["rechnungsnr"], t["pos"]))
+    bz = bezahlt_stand(st)["tickets"]
+    tks = sorted((t | bz.get(t["ticketnr"], {}) for t in st["tickets"].values() if t["spiel"] == sid),
+                 key=lambda t: (t["rechnungsnr"], t["pos"]))
     zahl = [z for z in zahlungs_status(st) if z.get("spiel") == sid]
     return {"spiel": s, "tickets": tks, "zahlungen": zahl, "bezahlt_cent": _bezahlt(zahl), "hinweise": _hinweise(s, tks, zahl)}
 

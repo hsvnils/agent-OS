@@ -6273,8 +6273,9 @@ def _ofc_post_starten():
     """O3: Fanclub-Postfach alle 15 Minuten auf neue HSV-Bestellungen pruefen (nur wo der Fanclub-Ordner eingehaengt ist)."""
     try:
         from ...core.ofc_post import starten
+        from ...core.ofc_eingang import lauf as eingang_lauf
         from ...core.ofc_zahlung import lauf as zahl_lauf
-        starten(_ofc_store, _ofc_postfach, weitere=(zahl_lauf,))
+        starten(_ofc_store, _ofc_postfach, weitere=(zahl_lauf, eingang_lauf))
     except Exception:
         pass
 
@@ -6367,6 +6368,62 @@ async def ofc_zahlung_zuordnen(request: Request, zid: str):
     body = await _json(request)
     from ...core.ofc_zahlung import zuordnen
     return zuordnen(_ofc_store(), zid, str(body.get("spiel") or ""), ignorieren=body.get("ignorieren") is True, von=_von(request))
+
+
+@app.get("/api/ofc/eingaenge")
+def ofc_eingaenge(request: Request):
+    """O5: Zahlungseingaenge der Mitglieder mit Zuordnung, offene Tickets (zum Zuordnen) und Saldo je Zahler."""
+    _nur_ceo(request)
+    from ...core.ofc_eingang import _offen, bezahlt_stand
+    st = _ofc_store().stand()
+    offen = _offen(st)
+    tickets = sorted(({"ticketnr": nr, "name": t.get("name") or "", "spiel": t["spiel"],
+                       "spiel_titel": (st["spiele"].get(t["spiel"]) or {}).get("spiel") or t["spiel"],
+                       "spieltag": (st["spiele"].get(t["spiel"]) or {}).get("spieltag") or "",
+                       "preis_cent": t.get("preis_cent") or 0, "offen_cent": offen.get(nr, 0), "bezahlt": nr not in offen}
+                      for nr, t in st["tickets"].items()
+                      if not (st["spiele"].get(t["spiel"]) or {}).get("verworfen")), key=lambda x: (x["spieltag"] or "9999", x["ticketnr"]))
+    es = sorted(st.get("eingaenge", {}).values(), key=lambda e: (e.get("datum") or "", e["id"]), reverse=True)
+    saldo = bezahlt_stand(st)["saldo"]
+    return {"eingaenge": es, "tickets": tickets,
+            "saldo": sorted(({"name": k, "saldo_cent": v} for k, v in saldo.items() if v), key=lambda x: x["name"].casefold())}
+
+
+@app.get("/api/ofc/eingaenge/vorschau")
+def ofc_eingaenge_vorschau(request: Request):
+    """O5 Dry-Run: neue Zahlungseingaenge aus dem Postfach mit Vorschlaegen -- speichert nichts."""
+    _nur_ceo(request)
+    from ...core.ofc_eingang import TAGE, eingang_plan
+    from ...core.ofc_zahlung import PAYPAL_DOMAINS
+    p = _ofc_postfach()
+    if not p.verfuegbar():
+        return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
+    try:
+        return eingang_plan(_ofc_store(), p.posteingang(tage=TAGE, nur=PAYPAL_DOMAINS))
+    except Exception as exc:
+        return {"ok": False, "hinweis": f"Postfach nicht lesbar ({exc.__class__.__name__})."}
+
+
+@app.post("/api/ofc/eingaenge/abholen")
+async def ofc_eingaenge_abholen(request: Request):
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Übernehmen braucht die Bestätigung."}
+    from ...core.ofc_eingang import lauf
+    return lauf(_ofc_store(), _ofc_postfach(), von=_von(request))
+
+
+@app.post("/api/ofc/eingang/{eid}/zuordnen")
+async def ofc_eingang_zuordnen(request: Request, eid: str):
+    """O5: Eingang per Klick Tickets zuordnen (auch mehrere Spiele / Teilzahlung), loesen oder ignorieren."""
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.ofc_eingang import eingang_zuordnen
+    tks = body.get("tickets") or []
+    if not isinstance(tks, list):
+        return {"ok": False, "hinweis": "Tickets als Liste angeben."}
+    return eingang_zuordnen(_ofc_store(), eid, [str(x) for x in tks], ignorieren=body.get("ignorieren") is True, von=_von(request))
 
 
 @app.get("/api/ofc/ticket/{nr}/name/vorschau")

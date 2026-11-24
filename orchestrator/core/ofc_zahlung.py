@@ -23,6 +23,7 @@ from .ofc_store import OfcStore
 PAYPAL_DOMAINS = ("paypal.de", "paypal.com")
 TAGE = 120
 FRIST_SPAETER = 30
+VERSION = 2                       # Erkennungsstand; automatisch erzeugte Eintraege aelterer Fassung werden neu bewertet
 _HAENDLER_OK = re.compile(r"eventim|hamburger\s*s(port|v)|\bhsv\b|fu(ss|ß)ball\s*ag", re.I)
 _MONATE = {m: i + 1 for i, m in enumerate(("januar", "februar", "märz", "april", "mai", "juni", "juli", "august",
                                            "september", "oktober", "november", "dezember"))}
@@ -111,21 +112,36 @@ def paypal_lesen(roh: bytes) -> dict | None:
     tc = re.search(r"Transaktions(?:code|-ID|nummer)\s*:?\s*([A-Z0-9]{10,20})", text)
     bnr = _nach("Bestellnummer", text)
     bnr = bnr if re.fullmatch(r"[\w-]{4,30}", bnr or "") else ""
+    lab = re.search(r"Datum de[rs]\s+([A-Za-zÄÖÜäöüß]+)", text)
     datum = _datum(_nach("Datum des", text) or "") or _datum(text) or gesendet
+    faellig = ""
+    if art == "spaeter" and datum:
+        # Zwei Mails je Kauf: Kauf („Sie bezahlen in 30 Tagen“, Kaufdatum) und Erinnerung vor der Abbuchung (Einzugsdatum).
+        erinnerung = not re.search(r"Sie bezahlen in", betreff, re.I)
+        einzug = bool(lab and re.search(r"einzug|abbuch|f(ä|ae)llig|belast|zahlung", lab[1], re.I)) or \
+            (erinnerung and not (lab and re.search(r"kauf|bestell", lab[1], re.I)))
+        if einzug:
+            faellig, datum = datum, (date.fromisoformat(datum) - timedelta(days=FRIST_SPAETER)).isoformat()
+        else:
+            faellig = (date.fromisoformat(datum) + timedelta(days=FRIST_SPAETER)).isoformat()
     z = {"art": art, "betrag_cent": abs(_cent(b[1])), "datum": datum or gesendet, "mail_datum": gesendet,
-         "haendler": haendler, "bestellnr": bnr, "transaktionscode": tc[1] if tc else "",
+         "haendler": haendler, "bestellnr": bnr, "transaktionscode": tc[1] if tc else "", "v": VERSION,
          "nummern": sorted(set(re.findall(r"\b\d{6,14}\b", alles)))}
-    z["id"] = z["transaktionscode"] or "z-" + hashlib.sha1(
-        f"{art}|{z['betrag_cent']}|{z['datum']}|{haendler.lower()}|{bnr}|{m.get('Message-ID', '')}".encode()).hexdigest()[:16]
+    if faellig:
+        z["faellig"] = faellig
+    schluessel = f"{art}|{z['betrag_cent']}|{z['datum']}" if art == "spaeter" else \
+        f"{art}|{z['betrag_cent']}|{z['datum']}|{haendler.lower()}|{bnr}|{m.get('Message-ID', '')}"
+    z["id"] = z["transaktionscode"] or "z-" + hashlib.sha1(schluessel.encode()).hexdigest()[:16]
     z["_text"] = alles.lower()                                       # nur fuer die Zuordnung, wird nie gespeichert
-    if art in ("gesendet", "spaeter", "erstattung") and not (_HAENDLER_OK.search(haendler) or bnr):
-        return None                                                  # andere Haendler -> nicht OFC
+    if art in ("gesendet", "spaeter", "erstattung") and not _HAENDLER_OK.search(haendler):
+        return None                                                  # andere Haendler (z. B. Dropbox) -> nicht OFC
     return z
 
 
 # -- Zuordnung -------------------------------------------------------------------------------------------------------
-def kandidaten(z: dict, st: dict) -> list[tuple[int, str, list[str]]]:
-    """Punkte je Spiel: (punkte, spiel_id, gruende), absteigend."""
+def kandidaten(z: dict, st: dict, belegt: set | None = None) -> list[tuple[int, str, list[str]]]:
+    """Punkte je Spiel: (punkte, spiel_id, gruende), absteigend. `belegt`: (spiel, betrag) schon bezahlt -> kein Betrags-Treffer."""
+    belegt = belegt or set()
     out = []
     nummern = set(z.get("nummern") or []) | ({z["bestellnr"]} if z.get("bestellnr") else set())
     text = z.get("_text", "")
@@ -143,7 +159,7 @@ def kandidaten(z: dict, st: dict) -> list[tuple[int, str, list[str]]]:
         if nummern & refs:
             p += 100; g.append("Nummer passt")
         summen = {r.get("summe_cent") for r in rg if r.get("summe_cent")} | {v for (sp, _), v in je_rg.items() if sp == sid and v}
-        if z["betrag_cent"] in summen:
+        if z["betrag_cent"] in summen and (sid, z["betrag_cent"]) not in belegt:
             p += 50; g.append("Betrag = Rechnung")
         tage = [r.get("datum") for r in rg if r.get("datum")]
         if z.get("datum") and any(-3 <= (date.fromisoformat(z["datum"]) - date.fromisoformat(d)).days <= 14 for d in tage):
@@ -158,14 +174,20 @@ def kandidaten(z: dict, st: dict) -> list[tuple[int, str, list[str]]]:
     return sorted(out, key=lambda x: (-x[0], x[1]))
 
 
-def _entscheiden(z: dict, st: dict) -> dict:
+def _entscheiden(z: dict, st: dict, belegt: set | None = None) -> dict:
     if z["art"] not in ("gesendet", "spaeter", "erstattung"):
         return {"spiel": "", "zuordnung": "info", "vorschlaege": []}
-    k = kandidaten(z, st)
+    k = kandidaten(z, st, belegt)
     vs = [{"spiel": sid, "punkte": p, "gruende": g} for p, sid, g in k[:3]]
     if k and k[0][0] >= 70 and (len(k) == 1 or k[1][0] < k[0][0]):
         return {"spiel": k[0][1], "zuordnung": "auto", "vorschlaege": vs}
     return {"spiel": "", "zuordnung": "offen", "vorschlaege": vs}
+
+
+def _gleicher_kauf(a: dict, b: dict) -> bool:
+    """„Später bezahlen“: Kauf- und Erinnerungsmail desselben Kaufs (gleicher Betrag, Kaufdatum +-3 Tage)."""
+    return a["art"] == b["art"] == "spaeter" and a["betrag_cent"] == b["betrag_cent"] and \
+        abs((date.fromisoformat(a["datum"]) - date.fromisoformat(b["datum"])).days) <= 3
 
 
 def zahlungen_aus_mails(mails: list[dict]) -> list[dict]:
@@ -175,27 +197,38 @@ def zahlungen_aus_mails(mails: list[dict]) -> list[dict]:
             z = paypal_lesen(x["roh"])
         except Exception:
             continue
-        if z and z["id"] not in ids:
+        if z and z["id"] not in ids and not any(_gleicher_kauf(z, o) for o in out):
             ids.add(z["id"])
             out.append(z)
     return sorted(out, key=lambda z: (z["datum"], z["id"]))
 
 
 def zahl_plan(store: OfcStore, mails: list[dict]) -> dict:
-    """Dry-Run: neue Zahlungen und ihre Zuordnung. Bereits gespeicherte (gleiche ID) bleiben, wie sie sind."""
+    """Dry-Run: neue Zahlungen und ihre Zuordnung. Per Klick gesetzte (manuell/ignoriert) bleiben, wie sie sind;
+    automatisch erzeugte Eintraege aelterer Erkennung (`v` < VERSION) werden neu bewertet bzw. als ersetzt markiert."""
     st = store.stand()
-    bekannt = st.get("zahlungen", {})
-    neu = []
+    alle = {i: z for i, z in st.get("zahlungen", {}).items() if not z.get("ersetzt")}
+    alt = {i for i, z in alle.items() if z.get("v") != VERSION and z.get("zuordnung") in ("auto", "offen", "info")}
+    bekannt = {i: z for i, z in alle.items() if i not in alt}
+    belegt = {(z["spiel"], z.get("betrag_cent")) for z in bekannt.values() if z.get("spiel")}
+    neu, gesehen = [], set()
     for z in zahlungen_aus_mails(mails):
-        if z["id"] in bekannt:
+        gesehen.add(z["id"])
+        if z["id"] in bekannt or any(_gleicher_kauf(z, b) for b in bekannt.values() if b.get("datum")):
             continue
-        neu.append({k: v for k, v in z.items() if k != "_text"} | _entscheiden(z, st))
-    return {"ok": True, "neu": neu, "auto": sum(1 for z in neu if z["zuordnung"] == "auto"),
+        e = {k: v for k, v in z.items() if k != "_text"} | _entscheiden(z, st, belegt)
+        if e["spiel"]:
+            belegt.add((e["spiel"], e["betrag_cent"]))
+        neu.append(e)
+    ersetzt = sorted(alt - gesehen)
+    return {"ok": True, "neu": neu, "ersetzt": ersetzt, "auto": sum(1 for z in neu if z["zuordnung"] == "auto"),
             "offen": sum(1 for z in neu if z["zuordnung"] == "offen")}
 
 
 def zahl_anwenden(store: OfcStore, mails: list[dict], *, von: str = "") -> dict:
     plan = zahl_plan(store, mails)
+    for zid in plan["ersetzt"]:
+        store.erfassen("ofc_zahlung", {"id": zid, "ersetzt": True}, von=von)
     for z in plan["neu"]:
         store.erfassen("ofc_zahlung", {k: v for k, v in z.items() if k not in ("nummern",)}, von=von)
     return plan
@@ -215,7 +248,7 @@ def zuordnen(store: OfcStore, zid: str, spiel: str, *, ignorieren: bool = False,
 def zahlungs_status(st: dict, heute: date | None = None) -> list[dict]:
     """Alle eigenen Zahlungen mit Status; „Später bezahlen“ mit Faelligkeit und Abbuchung (gleicher Betrag, 45 Tage)."""
     heute = heute or date.today()
-    zs = sorted(st.get("zahlungen", {}).values(), key=lambda z: (z.get("datum") or "", z["id"]))
+    zs = sorted((z for z in st.get("zahlungen", {}).values() if not z.get("ersetzt")), key=lambda z: (z.get("datum") or "", z["id"]))
     info = [z for z in zs if z.get("art") in ("abbuchung_ok", "abbuchung_fehler", "abbuchung_hinweis")]
     out = []
     for z in zs:
@@ -223,7 +256,7 @@ def zahlungs_status(st: dict, heute: date | None = None) -> list[dict]:
             continue
         z = dict(z)
         if z.get("art") == "spaeter" and z.get("datum"):
-            faellig = date.fromisoformat(z["datum"]) + timedelta(days=FRIST_SPAETER)
+            faellig = date.fromisoformat(z.get("faellig") or (date.fromisoformat(z["datum"]) + timedelta(days=FRIST_SPAETER)).isoformat())
             z["faellig"] = faellig.isoformat()
             passt = [i for i in info if i.get("betrag_cent") == z["betrag_cent"] and i.get("datum")
                      and 0 <= (date.fromisoformat(i["datum"]) - date.fromisoformat(z["datum"])).days <= 45]
