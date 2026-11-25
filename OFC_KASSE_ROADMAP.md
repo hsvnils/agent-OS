@@ -96,7 +96,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 ### Etappe KA2: Beitragsuebersicht und offene Beitraege
 
-- Status: geplant
+- Status: umgesetzt (2026-11-25; `core/ofc_beitraege.py` `jahr_stand`: je Mitglied und Jahr Soll / bezahlt / offen mit Status bezahlt, teilweise, offen, erlassen, kostenfrei, nicht erfasst (Jahre vor 2027 liefen vor LUNA), Zahlungen mit Zahler, „seit ueber 4 Wochen offen“, Erinnerungstext zum Kopieren; per Klick „bezahlt“ (z. B. vor der Erfassung), „Erlassen“, „zuruecksetzen“ mit Rueckfrage (Ereignis `ofc_beitrag`); Ansicht „🎫 Beitraege“ mit Kennzahlen Soll/Bezahlt/Offen/Quote, Filter offen/bezahlt/beitragspflichtig/mit Hinweis/alle, Jahr wechseln; Hinweis auf der OFC-Startseite bei ueberfaelligen Beitraegen (E8, keine Nachricht); Export CSV und PDF A4 hochkant (`core/ofc_pdf.py`, gemeinsamer Baustein fuer KA5); Endpunkte `/api/ofc/beitraege` (+ `/hinweis`, `/export.csv`, `/export.pdf`), `POST /api/ofc/beitrag` nur CEO; Tests in `test_ofc_beitraege.py`)
 - Ziel / Scope / Nicht-Scope: Ansicht „🎫 Beitraege“ je Jahr: Soll / bezahlt / offen je Mitglied, Filter (offen,
   Gold, neu), Summen; offene Beitraege mit **Text zum Kopieren** (wie O6); Hinweis im Reiter ab 4 Wochen nach
   Faelligkeit; Export CSV + PDF (A4 hochkant). Per Klick: „bezahlt (bar/Ueberweisung)“ fuer Zahlungen ausserhalb von

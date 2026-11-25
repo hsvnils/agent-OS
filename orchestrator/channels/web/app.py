@@ -6544,18 +6544,69 @@ def ofc_mitglieder(request: Request, neu: int = 0):
         return {"ok": False, "hinweis": f"Mitgliederliste nicht lesbar ({exc.__class__.__name__})."}
 
 
-@app.get("/api/ofc/beitraege")
-def ofc_beitraege(request: Request, jahr: int = 0, neu: int = 0):
-    """OFC-Kasse KA0: Soll-Beitrag je Mitglied im Beitragsjahr aus der Mitgliederliste -- nur lesend, keine KI."""
-    _nur_ceo(request)
-    from ...core.ofc_beitraege import beitraege
+def _ofc_beitrag_jahr(jahr: int, neu: bool = False) -> dict:
+    from datetime import date as _date
+    from ...core.ofc_beitraege import jahr_stand
     from ...core.ofc_mitglieder import lesen
     if jahr and not 2020 <= jahr <= 2100:
         return {"ok": False, "hinweis": "Jahr ungültig."}
     try:
-        return beitraege(lesen(_google().auth, neu=bool(neu)), jahr or None)
+        return jahr_stand(_ofc_store().stand(), lesen(_google().auth, neu=neu), jahr or _date.today().year)
     except Exception as exc:                                  # ohne Fehlertext (koennte Kennungen enthalten)
         return {"ok": False, "hinweis": f"Mitgliederliste nicht lesbar ({exc.__class__.__name__})."}
+
+
+@app.get("/api/ofc/beitraege")
+def ofc_beitraege(request: Request, jahr: int = 0, neu: int = 0):
+    """OFC-Kasse KA0/KA2: Soll, bezahlt, offen je Mitglied im Beitragsjahr -- Mitgliederliste nur lesend, keine KI."""
+    _nur_ceo(request)
+    return _ofc_beitrag_jahr(jahr, bool(neu))
+
+
+@app.get("/api/ofc/beitraege/hinweis")
+def ofc_beitraege_hinweis(request: Request):
+    """KA2: ueberfaellige Beitraege des laufenden Jahres fuer den Hinweis im Reiter (E8: keine Nachricht)."""
+    _nur_ceo(request)
+    from ...core.ofc_beitraege import beitrag_hinweis
+    return beitrag_hinweis(_ofc_store().stand(), _ofc_mitglieder_daten())
+
+
+@app.post("/api/ofc/beitrag")
+async def ofc_beitrag_setzen(request: Request):
+    """KA2: Beitrag eines Mitglieds per Klick als bezahlt / erlassen markieren oder zuruecksetzen (nur mit Bestaetigung)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_beitraege import beitrag_setzen
+    try:
+        jahr = int(body.get("jahr") or 0)
+    except (TypeError, ValueError):
+        return {"ok": False, "hinweis": "Jahr ungültig."}
+    return beitrag_setzen(_ofc_store(), str(body.get("nummer") or ""), jahr, str(body.get("status") or ""),
+                          daten=_ofc_mitglieder_daten(), von=_von(request))
+
+
+@app.get("/api/ofc/beitraege/export.csv")
+def ofc_beitraege_csv(request: Request, jahr: int = 0):
+    _nur_ceo(request)
+    from ...core.ofc_beitraege import export_csv
+    j = _ofc_beitrag_jahr(jahr)
+    if not j.get("ok"):
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, j.get("hinweis") or "nicht lesbar")
+    return Response(export_csv(j), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="hsvinside-beitraege-{j["jahr"]}.csv"', "Cache-Control": "no-store"})
+
+
+@app.get("/api/ofc/beitraege/export.pdf")
+def ofc_beitraege_pdf(request: Request, jahr: int = 0):
+    _nur_ceo(request)
+    from ...core.ofc_beitraege import export_pdf
+    j = _ofc_beitrag_jahr(jahr)
+    if not j.get("ok"):
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, j.get("hinweis") or "nicht lesbar")
+    return Response(export_pdf(j), media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="hsvinside-beitraege-{j["jahr"]}.pdf"', "Cache-Control": "no-store"})
 
 
 @app.get("/api/ofc/analyse/ordner")

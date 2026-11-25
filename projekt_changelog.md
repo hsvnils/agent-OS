@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-25 23:44] — Claude Code
+- **Was:** OFC-Kasse KA2 Beitragsuebersicht: bezahlt/offen je Mitglied und Jahr, Erinnerungstext zum Kopieren, per Klick bezahlt/erlassen/zuruecksetzen, Hinweis bei ueberfaelligen Beitraegen, Export CSV/PDF (`app-v2.js` v174).
+- **Warum:** CEO 2026-11-25: „Baue jetzt moeglichst viel nacheinander (ggf. bis KA5), beginne mit KA1 … testen koennen wir ganz am Ende“.
+- **Betroffen:** `orchestrator/core/ofc_beitraege.py`, `orchestrator/core/ofc_pdf.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_ofc_beitraege.py`, `OFC_KASSE_ROADMAP.md`
+
 ## [2026-11-25 23:41] — Claude Code
 - **Was:** OFC-Kasse KA1 Beitragszahlungen erkennen: Art je Eingang, automatische Beitragserkennung (E-K4), Klick-Zuordnung mit Mitgliedersuche und Alias, neue Ereignistypen im Fanclub-Speicher fuer Beitraege/Kasse (`ofc_beitrag`, `ofc_beitrag_alias`, `ofc_kasse*`, `ofc_einstellung`).
 - **Warum:** CEO 2026-11-25: „Baue jetzt moeglichst viel nacheinander (ggf. bis KA5), beginne mit KA1 … testen koennen wir ganz am Ende“.

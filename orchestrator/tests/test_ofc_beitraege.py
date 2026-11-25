@@ -63,7 +63,7 @@ class TestSoll(unittest.TestCase):
     def test_4_fehler_und_nur_lesend(self):
         self.assertFalse(ob.beitraege({"ok": False, "hinweis": "x"})["ok"])
         src = open(ob.__file__, encoding="utf-8").read()
-        for verboten in ("values().update", "values().append", "batchUpdate", "open(", "write_text", "erfassen("):
+        for verboten in ("values().update", "values().append", "batchUpdate", "write_text", "unlink"):  # Tabelle nie schreiben
             self.assertNotIn(verboten, src, verboten)
 
 
@@ -100,7 +100,7 @@ MITGLIEDER = om.auswerten([KOPF, _z("10", "Erika", GOLD, beitrag="40,00 €"), _
                            _z("14", "Zoe", GOLD), _z("15", "Zoe", GOLD)])     # Zoe Muster doppelt
 
 
-class TestKA1(unittest.TestCase):
+class _KA1Basis(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         s = Path(self.tmp.name) / "Tickets 26-27"
@@ -118,6 +118,9 @@ class TestKA1(unittest.TestCase):
 
     def plan(self, *mails):
         return oe.eingang_plan(self.st, list(mails), MITGLIEDER)["neu"]
+
+
+class TestKA1(_KA1Basis):
 
     def test_6_beitrag_automatisch_ein_und_zwei_jahre(self):
         e = self.plan(_erhalten("Paul Muster", "40,00"))[0]
@@ -178,3 +181,68 @@ class TestKA1Api(ApiBasis):
             self.assertFalse(self.c.post("/api/ofc/eingang/e-1EE11111EE1111111/art", json={"art": "beitrag", "beitrag": "x"}).json()["ok"])
             with mock.patch.object(self.w, "_ceo_user", return_value={"role": "team", "allowed_modules": ["finanzen"]}):
                 self.assertEqual(self.c.post("/api/ofc/eingang/e-1EE11111EE1111111/art", json={"art": "merch"}).status_code, 403)
+
+
+# -- KA2: Beitragsuebersicht ------------------------------------------------------------------------------------------
+from datetime import date                                                # noqa: E402
+
+
+class TestKA2(_KA1Basis):
+    def test_12_stand_bezahlt_teilweise_erlassen_ueberfaellig(self):
+        oe.eingang_anwenden(self.st, [_erhalten("Paul Muster", "40,00")], mitglieder=MITGLIEDER)
+        oe.eingang_anwenden(self.st, [_erhalten("Lena Muster", "20,00", tc="5LL55555LL5555555", mid="<l@p>")], mitglieder=MITGLIEDER)
+        oe.eingang_art(self.st, "e-5LL55555LL5555555", "beitrag", beitrag=[{"nummer": "12", "jahr": 2027}], mitglieder=MITGLIEDER)
+        ob.beitrag_setzen(self.st, "14", 2027, "erlassen", daten=MITGLIEDER)
+        j = ob.jahr_stand(self.st.stand(), MITGLIEDER, 2027, heute=date(2027, 3, 1))
+        m = {x["nummer"]: x for x in j["mitglieder"]}
+        self.assertEqual({k: m[k]["status"] for k in ("10", "11", "12", "13", "14", "15")},
+                         {"10": "offen", "11": "bezahlt", "12": "teilweise", "13": "frei", "14": "erlassen", "15": "offen"})
+        self.assertEqual((m["12"]["offen_cent"], m["12"]["bezahlt_cent"]), (2000, 2000))
+        self.assertTrue(m["10"]["ueberfaellig"] and "40,00 €" in m["10"]["text"] and "Hallo Erika" in m["10"]["text"])
+        self.assertEqual(m["11"]["text"], "")
+        s = j["stand"]
+        self.assertEqual((s["soll_cent"], s["bezahlt_cent"], s["offen_cent"], s["ueberfaellig"]), (16000, 6000, 10000, 3))
+        self.assertFalse(ob.jahr_stand(self.st.stand(), MITGLIEDER, 2027, heute=date(2027, 1, 20))["mitglieder"][0]["ueberfaellig"])
+        j26 = ob.jahr_stand(self.st.stand(), MITGLIEDER, 2026)
+        self.assertEqual((j26["erfasst"], {x["status"] for x in j26["mitglieder"]}), (False, {"nicht_erfasst", "frei"}))
+        ob.beitrag_setzen(self.st, "10", 2027, "bezahlt")
+        self.assertEqual({x["nummer"]: x["status"] for x in ob.jahr_stand(self.st.stand(), MITGLIEDER, 2027)["mitglieder"]}["10"], "bezahlt")
+        self.assertNotIn("10|2027", ob.offene_beitraege(self.st.stand(), MITGLIEDER, 2027))
+        ob.beitrag_setzen(self.st, "10", 2027, "offen")
+        self.assertIn("10|2027", ob.offene_beitraege(self.st.stand(), MITGLIEDER, 2027))
+        self.assertFalse(ob.beitrag_setzen(self.st, "10", 2027, "xyz")["ok"])
+        self.assertFalse(ob.beitrag_setzen(self.st, "99", 2027, "bezahlt", daten=MITGLIEDER)["ok"])
+        h = ob.beitrag_hinweis(self.st.stand(), MITGLIEDER, heute=date(2027, 3, 1))
+        self.assertEqual((h["ueberfaellig"], h["offen_cent"]), (3, 10000))
+
+    def test_13_export_csv_pdf_hochkant(self):
+        j = ob.jahr_stand(self.st.stand(), MITGLIEDER, 2027)
+        c = ob.export_csv(j).decode("utf-8-sig").splitlines()
+        self.assertTrue(c[0].startswith("Jahr;Nummer;Name")); self.assertEqual(len(c), 7)
+        pdf = ob.export_pdf(j)
+        from pypdf import PdfReader
+        import io
+        r = PdfReader(io.BytesIO(pdf))
+        self.assertLess(float(r.pages[0].mediabox.width), float(r.pages[0].mediabox.height))
+        self.assertIn("Beiträge 2027", r.pages[0].extract_text())
+
+
+class TestKA2Api(ApiBasis):
+    def test_14_endpunkte_nur_ceo(self):
+        om._CACHE.clear()
+        g = mock.Mock(); g.auth = _Rec(WERTE)
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(self.w, "ROOT", Path(d)), \
+                mock.patch.object(self.w, "_google", return_value=g), mock.patch.dict(os.environ, {"OFC_MITGLIEDER_TABELLE": "", "OFC_BEITRAG_AB": "2026"}):
+            j = self.c.get("/api/ofc/beitraege", params={"jahr": 2026}).json()
+            self.assertEqual((j["erfasst"], j["stand"]["offen_cent"]), (True, 14000))
+            self.assertFalse(self.c.post("/api/ofc/beitrag", json={"nummer": "1", "jahr": 2026, "status": "bezahlt"}).json()["ok"])
+            r = self.c.post("/api/ofc/beitrag", json={"nummer": "1", "jahr": 2026, "status": "bezahlt", "bestaetigt": True}).json()
+            self.assertTrue(r["ok"])
+            self.assertEqual(self.c.get("/api/ofc/beitraege", params={"jahr": 2026}).json()["stand"]["offen_cent"], 10000)
+            self.assertTrue(self.c.get("/api/ofc/beitraege/export.pdf", params={"jahr": 2026}).content.startswith(b"%PDF"))
+            self.assertIn("Nummer", self.c.get("/api/ofc/beitraege/export.csv", params={"jahr": 2026}).content.decode("utf-8-sig"))
+            self.assertIn("ueberfaellig", self.c.get("/api/ofc/beitraege/hinweis").json())
+            with mock.patch.object(self.w, "_ceo_user", return_value={"role": "team", "allowed_modules": ["finanzen"]}):
+                for url in ("/api/ofc/beitraege", "/api/ofc/beitraege/hinweis", "/api/ofc/beitraege/export.csv", "/api/ofc/beitraege/export.pdf"):
+                    self.assertEqual(self.c.get(url).status_code, 403, url)
+                self.assertEqual(self.c.post("/api/ofc/beitrag", json={"bestaetigt": True}).status_code, 403)
