@@ -1355,3 +1355,10 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 @media (max-width: 600px) { .v2-kv.v2-ofc-feld { flex-direction: column; gap: 2px; } .v2-kv.v2-ofc-feld b { text-align: left; } }
 @media (max-width: 600px) { .v2-ofc-datum { min-width: 64px; } }
 @media (max-width: 600px) { .v2-tile.v2-ofc-kpi { grid-column: span 6; } .v2-tile.v2-ofc-kpi .v2-kpi { font-size: 28px; } }
+/* OFC_KASSE_ROADMAP KA3: Eingabefelder und Filterzeile der Kasse */
+.v2-ofc-eingabe { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.v2-ofc-eingabe label { font-size: 12px; color: var(--v2-muted); }
+.v2-ofc-eingabe .v2-inp { width: 100%; box-sizing: border-box; }
+.v2-ofc-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.v2-ofc-filter select { flex: 0 1 220px; min-width: 0; max-width: 100%; }
+@media (max-width: 600px) { .v2-ofc-filter select, .v2-ofc-filter input { flex-basis: 100%; } }

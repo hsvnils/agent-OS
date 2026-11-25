@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-25 23:47] — Claude Code
+- **Was:** OFC-Kasse KA3 Kassenbuch: Buchungen aus PayPal-Eingaengen, eigenen Zahlungen und Handbuchungen (mit Beleg), Anfangsbestand und Kassenstand, Kategorie per Klick, Storno, Ansicht „💰 Kasse“ (`style-v2.css` v94).
+- **Warum:** CEO 2026-11-25: „Baue jetzt moeglichst viel nacheinander (ggf. bis KA5), beginne mit KA1 … testen koennen wir ganz am Ende“.
+- **Betroffen:** `orchestrator/core/ofc_kasse.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/style-v2.css`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_ofc_kasse.py`, `OFC_KASSE_ROADMAP.md`
+
 ## [2026-11-25 23:44] — Claude Code
 - **Was:** OFC-Kasse KA2 Beitragsuebersicht: bezahlt/offen je Mitglied und Jahr, Erinnerungstext zum Kopieren, per Klick bezahlt/erlassen/zuruecksetzen, Hinweis bei ueberfaelligen Beitraegen, Export CSV/PDF (`app-v2.js` v174).
 - **Warum:** CEO 2026-11-25: „Baue jetzt moeglichst viel nacheinander (ggf. bis KA5), beginne mit KA1 … testen koennen wir ganz am Ende“.

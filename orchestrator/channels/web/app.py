@@ -6449,6 +6449,75 @@ async def ofc_eingang_art(request: Request, eid: str):
                        mitglieder=_ofc_mitglieder_daten() if bt else None, von=_von(request))
 
 
+@app.get("/api/ofc/kasse")
+def ofc_kasse(request: Request, jahr: int = 0):
+    """OFC-Kasse KA3: Kassenbuch (PayPal) -- Buchungen aus Eingaengen, eigenen Zahlungen und Handbuchungen, Kassenstand."""
+    _nur_ceo(request)
+    from ...core.ofc_kasse import kassenbuch
+    return kassenbuch(_ofc_store().stand(), jahr=jahr or None)
+
+
+@app.post("/api/ofc/kasse/buchung")
+async def ofc_kasse_buchung(request: Request):
+    """KA3: Handbuchung (z. B. Gebuehr, Auslage) mit optionalem Beleg -- nur mit Bestaetigung."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_kasse import buchung_anlegen
+    try:
+        beleg, name = _datei_b64(body.get("beleg"))
+        betrag = int(body.get("betrag_cent"))
+    except (ValueError, TypeError):
+        return {"ok": False, "hinweis": "Betrag oder Beleg ungültig."}
+    return buchung_anlegen(_ofc_store(), datum=str(body.get("datum") or ""), betrag_cent=betrag,
+                           kategorie=str(body.get("kategorie") or ""), text=str(body.get("text") or ""),
+                           beleg=beleg, beleg_name=name, von=_von(request))
+
+
+@app.post("/api/ofc/kasse/storno")
+async def ofc_kasse_storno(request: Request):
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_kasse import storno
+    return storno(_ofc_store(), str(body.get("id") or ""), zurueck=body.get("zurueck") is True, von=_von(request))
+
+
+@app.post("/api/ofc/kasse/kategorie")
+async def ofc_kasse_kategorie(request: Request):
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.ofc_kasse import kategorie_setzen
+    return kategorie_setzen(_ofc_store(), str(body.get("quelle") or ""), str(body.get("kategorie") or ""), von=_von(request))
+
+
+@app.post("/api/ofc/kasse/anfangsbestand")
+async def ofc_kasse_anfangsbestand(request: Request):
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_kasse import anfangsbestand_setzen
+    try:
+        betrag = int(body.get("betrag_cent"))
+    except (ValueError, TypeError):
+        return {"ok": False, "hinweis": "Betrag ungültig."}
+    return anfangsbestand_setzen(_ofc_store(), str(body.get("datum") or ""), betrag, von=_von(request))
+
+
+@app.get("/api/ofc/kasse/beleg/{bid}")
+def ofc_kasse_beleg(request: Request, bid: str):
+    _nur_ceo(request)
+    from ...core.ofc_kasse import beleg_pfad
+    p = beleg_pfad(_ofc_store(), bid)
+    if p is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Beleg nicht gefunden")
+    typ = {".pdf": "application/pdf", ".png": "image/png", ".webp": "image/webp", ".heic": "image/heic"}.get(p.suffix.lower(), "image/jpeg")
+    return Response(p.read_bytes(), media_type=typ, headers={"Content-Disposition": f'inline; filename="{p.name}"', "Cache-Control": "no-store"})
+
+
 @app.get("/api/ofc/saison")
 def ofc_saison(request: Request, alle: int = 0):
     """O6: Saisonuebersicht (Summen), offene Posten je Person (mit Text zum Kopieren), Statistik je Mitglied."""

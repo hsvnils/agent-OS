@@ -109,7 +109,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 ### Etappe KA3: Kassenbuch
 
-- Status: geplant
+- Status: umgesetzt (2026-11-25; `core/ofc_kasse.py`: Kassenbuch nur PayPal (E-K5) aus PayPal-Eingaengen (Kategorie nach Art; Rueckzahlung und Auszahlung aufs Bankkonto als Abgang; noch nicht zugeordnete zaehlen als „noch nicht zugeordnet“), eigenen Zahlungen (Abgang Tickets, Erstattung Zugang, „Spaeter bezahlen“ erst ab Faelligkeit und nur ohne fehlgeschlagene Abbuchung, sonst „vorgemerkt“) und Handbuchungen mit optionalem Beleg (`fanclub/belege/`, nur neu anlegen, PDF/Bild bis 10 MB); Anfangsbestand mit Historie (`ofc_kasse_start`), Kassenstand ab Stichtag; Kategorie je Buchung per Klick (`ofc_kasse_kat`); Storno statt Loeschen; Ansicht „💰 Kasse“ mit Kassenstand, Einnahmen/Ausgaben, Vorgemerkt, je Kategorie, Buchungsliste mit Filter; Endpunkte `/api/ofc/kasse` (+ `/buchung`, `/storno`, `/kategorie`, `/anfangsbestand`, `/beleg/<id>`) nur CEO; `test_ofc_kasse.py`)
 - Ziel / Scope / Nicht-Scope: Kassenbuch des Fanclubs aus allen vorhandenen Quellen: Einnahmen (Tickets O5, Beitraege
   KA1, Merch/Spenden), Ausgaben (eigene Ticketzahlungen O4, Erstattungen, Gebuehren, Auszahlungen auf ein Bankkonto);
   ein Konto PayPal (E-K5) mit Anfangsbestand; Kategorien E-K9; Buchung per Hand fuer Auslagen und Korrekturen (mit
