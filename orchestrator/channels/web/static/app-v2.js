@@ -5074,20 +5074,52 @@ async function renderOfcEingaenge() {
       <div class="grow"><b class="v2-umbruch">${esc(e.name)}</b>${e.rueckzahlung ? ` <span class="v2-badge neutral">Rückzahlung</span>` : ""}
         ${e.mitteilung ? `<small class="v2-umbruch">„${esc(e.mitteilung)}“</small>` : ""}
         ${(e.tickets || []).length ? `<small class="v2-umbruch">→ ${esc(tkText(e.tickets))}${e.grund ? " · " + esc(e.grund) : ""} <a href="#" data-act="ofc-ein-zu" data-id="${esc(e.id)}" data-val="">lösen</a></small>`
+          : ofcEinArtZu(e) ? `<small class="v2-umbruch">→ ${esc(ofcEinArtText(e))} <a href="#" data-act="ofc-ein-zu" data-id="${esc(e.id)}" data-val="">lösen</a></small>`
           : e.zuordnung === "ignoriert" || e.zuordnung === "info" ? `<div class="v2-sub">${esc(e.grund || "kein Ticket (z. B. Beitrag)")} · <a href="#" data-act="ofc-ein-zu" data-id="${esc(e.id)}" data-val="">wieder aufnehmen</a></div>`
           : `${e.wahl && OFC_E.spiele[e.wahl.spiel] ? `<div class="v2-sub v2-umbruch">📌 Mitteilung nennt ${esc(OFC_E.spiele[e.wahl.spiel])}: ${e.wahl.karten} Karte(n) à ${esc(cent2eur(e.wahl.preis_cent))} – bitte die Tickets wählen.</div>` : ""}
              ${(e.vorschlaege || []).map((v, i) => !v.tickets.length ? "" : `<div class="v2-ofc-zuordnen"><span class="v2-sub v2-umbruch">★ ${esc(tkText(v.tickets))} · ${esc(cent2eur(v.summe))} (${esc(v.gruende.join(", "))})</span>
                <button class="v2-btn sm pri" data-act="ofc-ein-vs" data-id="${esc(e.id)}" data-val="${i}">Übernehmen</button></div>`).join("")}
+             ${(e.beitrag_vorschlaege || []).map((v, i) => `<div class="v2-ofc-zuordnen"><span class="v2-sub v2-umbruch">★ Beitrag ${esc(v.beitrag.map(b => b.jahr + ": " + b.name + " (" + b.nummer + ")").join(", "))} · ${esc(cent2eur(v.summe))} (${esc(v.gruende.join(", "))})</span>
+               <button class="v2-btn sm pri" data-act="ofc-ein-bvs" data-id="${esc(e.id)}" data-val="${i}">Übernehmen</button></div>`).join("")}
              <div class="v2-ofc-zuordnen"><button class="v2-btn sm" data-act="ofc-ein-waehlen" data-id="${esc(e.id)}">Tickets wählen …</button>
-             <button class="v2-btn sm" data-act="ofc-ein-ign" data-id="${esc(e.id)}">Kein Ticket</button></div>`}</div>
+             <button class="v2-btn sm" data-act="ofc-ein-artwahl" data-id="${esc(e.id)}">Beitrag / andere Art …</button></div>`}</div>
       <span class="v2-badge ${OFC_ZUO[e.zuordnung][0]}">${OFC_ZUO[e.zuordnung][1].replace("kein Ticketkauf", "kein Ticket")}</span></div>`;
-  const offen = OFC_E.eingaenge.filter(e => e.zuordnung === "offen"), zu = OFC_E.eingaenge.filter(e => (e.tickets || []).length), ign = OFC_E.eingaenge.filter(e => e.zuordnung === "ignoriert" || e.zuordnung === "info");
+  const offen = OFC_E.eingaenge.filter(e => e.zuordnung === "offen"), zu = OFC_E.eingaenge.filter(e => (e.tickets || []).length || ofcEinArtZu(e)), ign = OFC_E.eingaenge.filter(e => e.zuordnung === "ignoriert" || e.zuordnung === "info");
   $("#v2-app").innerHTML = kopf + `<div class="v2-grid">
       <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Zuordnen (${offen.length})</span></div>${offen.map(zeile).join("") || emptyRow("Alles zugeordnet.")}</div>
       <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Zugeordnet (${zu.length})</span></div>${zu.map(zeile).join("") || emptyRow(OFC_E.eingaenge.length ? "Noch nichts zugeordnet." : "Noch keine Eingänge – oben „Aus Postfach holen“.")}</div>
       ${OFC_E.saldo.length ? `<div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Saldo je Zahler</span></div>${OFC_E.saldo.map(s => `<div class="v2-kv"><span>${esc(s.name)}</span><b>${s.saldo_cent > 0 ? "Guthaben " : "offen "}${esc(cent2eur(Math.abs(s.saldo_cent)))}</b></div>`).join("")}</div>` : ""}
       ${ign.length ? `<div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Kein Ticket (${ign.length})</span></div>${ign.map(zeile).join("")}</div>` : ""}
     </div><div class="v2-sub" style="margin-top:8px">Zahlungseingänge der Mitglieder aus PayPal · nur für dich sichtbar · LUNA schreibt niemandem · prüft alle 15 Minuten.</div>`;
+}
+const OFC_EART = { beitrag: "Beitrag", merch: "Merch", spende: "Spende", sonstiges: "Sonstiges (kein Ticket)" };
+function ofcEinArtZu(e) { return ["auto", "manuell"].includes(e.zuordnung) && ["beitrag", "merch", "spende", "sonstiges"].includes(e.art) && !(e.tickets || []).length; }
+function ofcEinArtText(e) { return e.art === "beitrag" ? "Beitrag " + (e.beitrag || []).map(b => b.jahr + ": " + b.name + " (" + b.nummer + ")").join(", ") : OFC_EART[e.art] || e.art; }
+async function ofcEinArt(id, art, beitrag) {
+  const r = await jpost(`/api/ofc/eingang/${encodeURIComponent(id)}/art`, { art, beitrag: beitrag || [] });
+  if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
+  closeModal(); return renderOfcEingaenge();
+}
+async function ofcEinArtWahl(id) {
+  const e = OFC_E.eingaenge.find(x => x.id === id); if (!e) return;
+  const jahr = Math.max(new Date().getFullYear() + (new Date().getMonth() >= 10 ? 1 : 0), 2027);
+  openModal(`💶 ${e.name} · ${cent2eur(e.betrag_cent)}`, `<div class="v2-sub">${e.mitteilung ? "„" + esc(e.mitteilung) + "“ · " : ""}Was ist diese Zahlung?</div>
+    <div class="v2-card-actions" style="margin-top:8px"><button class="v2-btn" data-act="ofc-ein-artset" data-id="${esc(id)}" data-val="merch">Merch</button>
+      <button class="v2-btn" data-act="ofc-ein-artset" data-id="${esc(id)}" data-val="spende">Spende</button>
+      <button class="v2-btn" data-act="ofc-ein-ign" data-id="${esc(id)}">Sonstiges (kein Ticket)</button></div>
+    <div class="v2-tile-h" style="margin-top:12px"><span class="t">Beitrag – Mitglied(er) wählen</span></div>
+    <div class="v2-kv"><span>Beitragsjahr</span><b><input id="ofc-ein-bjahr" class="v2-inp" type="number" min="2020" max="2100" value="${jahr}" style="width:90px"></b></div>
+    <input id="ofc-ein-bq" class="v2-inp" style="width:100%;box-sizing:border-box;margin-top:8px" type="search" placeholder="Name oder Nummer suchen" value="${esc(e.name)}">
+    <div id="ofc-ein-bliste" style="margin-top:8px"><div class="v2-empty">Lese die Mitgliederliste …</div></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-ein-bok" data-id="${esc(id)}">Als Beitrag zuordnen</button></div>`);
+  const d = await jget(`/api/ofc/beitraege?jahr=${jahr}`);
+  const el = $("#ofc-ein-bliste"); if (!el) return;
+  if (!d || !d.ok) { el.innerHTML = `<div class="v2-msg err">${esc((d && d.hinweis) || "Mitgliederliste nicht erreichbar.")}</div>`; return; }
+  el.innerHTML = d.mitglieder.filter(x => x.jahresbeitrag_cent > 0).map(x => `<label class="v2-list-row v2-ofc-bwahl" data-such="${esc((x.name + " " + x.nummer).toLowerCase())}"><input type="checkbox" value="${esc(x.nummer)}">
+      <div class="grow"><b>${esc(x.name)}</b><small>${esc(x.nummer)} · ${esc(x.art_text)}</small></div><span>${esc(cent2eur(x.jahresbeitrag_cent))}</span></label>`).join("") || emptyRow("Keine beitragspflichtigen Mitglieder.");
+  const filtern = () => { const w = $("#ofc-ein-bq").value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    document.querySelectorAll(".v2-ofc-bwahl").forEach(l => { l.style.display = !w.length || w.some(x => x.length > 2 && l.dataset.such.includes(x)) || l.querySelector("input").checked ? "" : "none"; }); };
+  $("#ofc-ein-bq").addEventListener("input", filtern); filtern();
 }
 async function ofcEinZu(id, tickets, ignorieren) {
   const r = await jpost(`/api/ofc/eingang/${encodeURIComponent(id)}/zuordnen`, ignorieren ? { ignorieren: true } : { tickets });
@@ -5888,6 +5920,11 @@ async function handleAct(act, el) {
     case "ofc-ein-ign": return ofcEinZu(id, [], true);
     case "ofc-ein-vs": { const e = OFC_E.eingaenge.find(x => x.id === id); return ofcEinZu(id, e.vorschlaege[Number(val)].tickets, false); }
     case "ofc-ein-waehlen": return ofcEinWaehlen(id);
+    case "ofc-ein-artwahl": return ofcEinArtWahl(id);
+    case "ofc-ein-artset": return ofcEinArt(id, val);
+    case "ofc-ein-bvs": { const e = OFC_E.eingaenge.find(x => x.id === id); return ofcEinArt(id, "beitrag", e.beitrag_vorschlaege[Number(val)].beitrag.map(b => ({ nummer: b.nummer, jahr: b.jahr }))); }
+    case "ofc-ein-bok": { const j = Number(($("#ofc-ein-bjahr") || {}).value || 0), nrs = [...document.querySelectorAll("#ofc-ein-bliste input:checked")].map(i => i.value);
+      if (!nrs.length) return alert("Bitte mindestens ein Mitglied wählen."); return ofcEinArt(id, "beitrag", nrs.map(nummer => ({ nummer, jahr: j }))); }
     case "ofc-ein-ok": return ofcEinZu(id, [...document.querySelectorAll("#ofc-ein-liste input:checked")].map(i => i.value), false);
     case "ofc-zahl-holen": return ofcZahlHolen();
     case "ofc-zahl-holen-ok": return ofcZahlHolenOk(el);

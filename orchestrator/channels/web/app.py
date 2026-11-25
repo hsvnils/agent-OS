@@ -6218,6 +6218,16 @@ def _ofc_store():
     return OfcStore(ROOT / "fanclub")
 
 
+def _ofc_mitglieder_daten():
+    """OFC-Kasse KA1: Mitgliederliste (nur lesend, 5 Minuten im Speicher) -- None, wenn nicht lesbar."""
+    try:
+        from ...core.ofc_mitglieder import lesen
+        d = lesen(_google().auth)
+        return d if d.get("ok") else None
+    except Exception:
+        return None
+
+
 @app.get("/api/ofc/uebersicht")
 def ofc_uebersicht(request: Request):
     """O1: Spiele der Saison mit Karten, Namen, Status und Hinweisen (E8: Hinweise nur hier, keine Telegram-Nachricht)."""
@@ -6275,7 +6285,7 @@ def _ofc_post_starten():
         from ...core.ofc_post import starten
         from ...core.ofc_eingang import lauf as eingang_lauf
         from ...core.ofc_zahlung import lauf as zahl_lauf
-        starten(_ofc_store, _ofc_postfach, weitere=(zahl_lauf, eingang_lauf))
+        starten(_ofc_store, _ofc_postfach, weitere=(zahl_lauf, lambda st, pf: eingang_lauf(st, pf, mitglieder=_ofc_mitglieder_daten())))
     except Exception:
         pass
 
@@ -6399,7 +6409,7 @@ def ofc_eingaenge_vorschau(request: Request):
     if not p.verfuegbar():
         return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
     try:
-        return eingang_plan(_ofc_store(), p.posteingang(tage=TAGE, nur=PAYPAL_DOMAINS))
+        return eingang_plan(_ofc_store(), p.posteingang(tage=TAGE, nur=PAYPAL_DOMAINS), _ofc_mitglieder_daten())
     except Exception as exc:
         return {"ok": False, "hinweis": f"Postfach nicht lesbar ({exc.__class__.__name__})."}
 
@@ -6411,7 +6421,7 @@ async def ofc_eingaenge_abholen(request: Request):
     if body.get("bestaetigt") is not True:
         return {"ok": False, "hinweis": "Übernehmen braucht die Bestätigung."}
     from ...core.ofc_eingang import lauf
-    return lauf(_ofc_store(), _ofc_postfach(), von=_von(request))
+    return lauf(_ofc_store(), _ofc_postfach(), von=_von(request), mitglieder=_ofc_mitglieder_daten())
 
 
 @app.post("/api/ofc/eingang/{eid}/zuordnen")
@@ -6424,6 +6434,19 @@ async def ofc_eingang_zuordnen(request: Request, eid: str):
     if not isinstance(tks, list):
         return {"ok": False, "hinweis": "Tickets als Liste angeben."}
     return eingang_zuordnen(_ofc_store(), eid, [str(x) for x in tks], ignorieren=body.get("ignorieren") is True, von=_von(request))
+
+
+@app.post("/api/ofc/eingang/{eid}/art")
+async def ofc_eingang_art(request: Request, eid: str):
+    """OFC-Kasse KA1: Eingang per Klick als Beitrag (Mitglied + Jahr), Merch, Spende oder Sonstiges einordnen."""
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.ofc_eingang import eingang_art
+    bt = body.get("beitrag") or []
+    if not isinstance(bt, list) or not all(isinstance(x, dict) for x in bt):
+        return {"ok": False, "hinweis": "Beitrag als Liste {nummer, jahr} angeben."}
+    return eingang_art(_ofc_store(), eid, str(body.get("art") or ""), beitrag=bt,
+                       mitglieder=_ofc_mitglieder_daten() if bt else None, von=_von(request))
 
 
 @app.get("/api/ofc/saison")

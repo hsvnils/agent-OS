@@ -83,3 +83,98 @@ class TestApi(ApiBasis):
         with mock.patch.object(self.w, "_google", return_value=g):
             r = self.c.get("/api/ofc/beitraege", params={"neu": 1}).json()
             self.assertEqual(r["ok"], False); self.assertNotIn("geheim", r["hinweis"])
+
+
+# -- KA1: Beitragszahlungen erkennen ----------------------------------------------------------------------------------
+import tempfile                                                          # noqa: E402
+from pathlib import Path                                                 # noqa: E402
+
+from orchestrator.core import ofc                                        # noqa: E402
+from orchestrator.core import ofc_eingang as oe                          # noqa: E402
+from orchestrator.core.ofc_store import OfcStore, import_anwenden        # noqa: E402
+from orchestrator.tests.test_ofc import _pdf_als_text                    # noqa: E402
+from orchestrator.tests.test_ofc_eingang import _erhalten, _ordner       # noqa: E402
+
+MITGLIEDER = om.auswerten([KOPF, _z("10", "Erika", GOLD, beitrag="40,00 €"), _z("11", "Paul", GOLD),
+                           _z("12", "Lena", GOLD, beitrag="40,00 €"), _z("13", "Tom", "Standardmitgliedschaft (Kostenfrei)"),
+                           _z("14", "Zoe", GOLD), _z("15", "Zoe", GOLD)])     # Zoe Muster doppelt
+
+
+class TestKA1(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        s = Path(self.tmp.name) / "Tickets 26-27"
+        _ordner(s, "HSV vs FCB", "262236181415", "FC Bayern Muenchen", ["Erika Muster", "Ben Beispiel"])
+        self.st = OfcStore(Path(self.tmp.name) / "fanclub")
+        self.p = mock.patch.object(ofc, "pdf_text", _pdf_als_text)
+        self.p.start()
+        import_anwenden(self.st, s)
+        self.env = mock.patch.dict(os.environ, {"OFC_BEITRAG_AB": "2027"})
+        self.env.start()
+
+    def tearDown(self):
+        self.p.stop(); self.env.stop()
+        self.tmp.cleanup()
+
+    def plan(self, *mails):
+        return oe.eingang_plan(self.st, list(mails), MITGLIEDER)["neu"]
+
+    def test_6_beitrag_automatisch_ein_und_zwei_jahre(self):
+        e = self.plan(_erhalten("Paul Muster", "40,00"))[0]
+        self.assertEqual((e["zuordnung"], e["art"], [(b["nummer"], b["jahr"], b["cent"]) for b in e["beitrag"]]),
+                         ("auto", "beitrag", [("11", 2027, 4000)]))
+        e = self.plan(_erhalten("Paul Muster", "80,00"))[0]
+        self.assertEqual([(b["jahr"], b["cent"]) for b in e["beitrag"]], [(2027, 4000), (2028, 4000)])
+        oe.eingang_anwenden(self.st, [_erhalten("Paul Muster", "40,00")], mitglieder=MITGLIEDER)
+        self.assertEqual(ob.bezahlt_je_jahr(self.st.stand())["11|2027"]["cent"], 4000)
+        self.assertNotIn("11|2027", ob.offene_beitraege(self.st.stand(), MITGLIEDER, 2028))
+        e = self.plan(_erhalten("Paul Muster", "40,00", tc="2PP22222PP2222222", mid="<p2@p>"))[0]
+        self.assertEqual([(b["jahr"]) for b in e["beitrag"]], [2028])                          # naechstes offenes Jahr
+
+    def test_7_ticket_geht_vor_ausser_mitteilung_nennt_beitrag(self):
+        e = self.plan(_erhalten("Erika Muster", "35,00"))[0]
+        self.assertEqual((e["zuordnung"], e["art"], e["tickets"]), ("auto", "ticket", ["262236181415-1"]))
+        e = self.plan(_erhalten("Erika Muster", "40,00"))[0]
+        self.assertEqual((e["zuordnung"], e["art"]), ("auto", "beitrag"))                     # kein Ticket passt
+        e = self.plan(_erhalten("Lena Muster", "30,00", "Mitgliedsbeitrag"))[0]
+        self.assertEqual((e["zuordnung"], e["beitrag_vorschlaege"][0]["beitrag"][0]["nummer"]), ("offen", "12"))
+        e = self.plan(_erhalten("Unbekannt Person", "40,00", "Beitrag 2027"))[0]
+        self.assertEqual(e["zuordnung"], "offen")                                             # nicht als „kein Ticket“
+
+    def test_8_doppelter_name_kostenfrei_ohne_liste(self):
+        self.assertEqual(self.plan(_erhalten("Zoe Muster", "40,00"))[0]["zuordnung"], "offen")
+        self.assertEqual(len(self.plan(_erhalten("Zoe Muster", "40,00"))[0]["beitrag_vorschlaege"]), 2)
+        self.assertEqual(self.plan(_erhalten("Tom Muster", "40,00"))[0]["zuordnung"], "offen")    # kostenfrei
+        self.assertEqual(oe.eingang_plan(self.st, [_erhalten("Paul Muster", "40,00")])["neu"][0]["zuordnung"], "offen")
+
+    def test_9_klick_beitrag_familie_alias_und_loesen(self):
+        oe.eingang_anwenden(self.st, [_erhalten("Max Anders", "80,00")], mitglieder=MITGLIEDER)
+        eid = "e-1EE11111EE1111111"
+        self.assertFalse(oe.eingang_art(self.st, eid, "beitrag", beitrag=[], mitglieder=MITGLIEDER)["ok"])
+        self.assertFalse(oe.eingang_art(self.st, eid, "xyz")["ok"])
+        r = oe.eingang_art(self.st, eid, "beitrag", beitrag=[{"nummer": "11", "jahr": 2027}, {"nummer": "12", "jahr": 2027}],
+                           mitglieder=MITGLIEDER)
+        self.assertEqual((r["ok"], [b["cent"] for b in r["beitrag"]], r["aliase_neu"]), (True, [4000, 4000], ["11", "12"]))
+        x = self.st.stand()["eingaenge"][eid]
+        self.assertEqual((x["art"], x["zuordnung"], x["von_hand"]), ("beitrag", "manuell", True))
+        e = self.plan(_erhalten("Max Anders", "80,00", tc="3MM33333MM3333333", mid="<m3@p>"))[0]
+        self.assertEqual((e["zuordnung"], sorted((b["nummer"], b["jahr"]) for b in e["beitrag"])),
+                         ("auto", [("11", 2028), ("12", 2028)]))                                # Familie ueber Alias
+        oe.eingang_zuordnen(self.st, eid, [])                                                   # loesen
+        x = self.st.stand()["eingaenge"][eid]
+        self.assertEqual((x["zuordnung"], x["art"], x["beitrag"]), ("offen", None, []))
+        self.assertTrue(oe.eingang_art(self.st, eid, "merch")["ok"])
+        self.assertEqual(self.st.stand()["eingaenge"][eid]["art"], "merch")
+
+
+class TestKA1Api(ApiBasis):
+    def test_11_endpunkt_art_nur_ceo(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(self.w, "ROOT", Path(d)), \
+                mock.patch.object(self.w, "_ofc_mitglieder_daten", return_value=MITGLIEDER):
+            st = OfcStore(Path(d) / "fanclub")
+            oe.eingang_anwenden(st, [_erhalten("Max Anders", "40,00")])
+            r = self.c.post("/api/ofc/eingang/e-1EE11111EE1111111/art", json={"art": "beitrag", "beitrag": [{"nummer": "11", "jahr": 2027}]}).json()
+            self.assertEqual((r["ok"], r["beitrag"][0]["cent"]), (True, 4000))
+            self.assertFalse(self.c.post("/api/ofc/eingang/e-1EE11111EE1111111/art", json={"art": "beitrag", "beitrag": "x"}).json()["ok"])
+            with mock.patch.object(self.w, "_ceo_user", return_value={"role": "team", "allowed_modules": ["finanzen"]}):
+                self.assertEqual(self.c.post("/api/ofc/eingang/e-1EE11111EE1111111/art", json={"art": "merch"}).status_code, 403)

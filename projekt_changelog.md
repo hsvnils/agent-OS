@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-25 23:41] — Claude Code
+- **Was:** OFC-Kasse KA1 Beitragszahlungen erkennen: Art je Eingang, automatische Beitragserkennung (E-K4), Klick-Zuordnung mit Mitgliedersuche und Alias, neue Ereignistypen im Fanclub-Speicher fuer Beitraege/Kasse (`ofc_beitrag`, `ofc_beitrag_alias`, `ofc_kasse*`, `ofc_einstellung`).
+- **Warum:** CEO 2026-11-25: „Baue jetzt moeglichst viel nacheinander (ggf. bis KA5), beginne mit KA1 … testen koennen wir ganz am Ende“.
+- **Betroffen:** `orchestrator/core/ofc_beitraege.py`, `orchestrator/core/ofc_eingang.py`, `orchestrator/core/ofc_store.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/tests/test_ofc_beitraege.py`, `OFC_KASSE_ROADMAP.md`
+
 ## [2026-11-25 23:33] — Claude Code
 - **Was:** OFC-Kasse KA0 nach dem Deploy auf der NAS geprueft (`app-v2.js` v173, `ofc_beitraege.py` vorhanden): `/api/ofc/beitraege` fuer 2026 und 2027 je 119 Mitglieder, 66 beitragspflichtig, Soll 2.640 €, 9 mit Hinweis -- wie in der Probe. Nur Pruefung, kein Code.
 - **Warum:** CEO 2026-11-25: „Deploy gemacht“ -- Wirkung auf der NAS nachweisen.

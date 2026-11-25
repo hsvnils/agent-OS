@@ -53,6 +53,13 @@ class OfcStore:
         zahlungen: dict = {}
         eingaenge: dict = {}
         aliase: dict = {}
+        beitrag_status: dict = {}                                   # OFC-Kasse KA2: "nummer|jahr" -> {status, ts}
+        beitrag_aliase: dict = {}                                   # KA1: Zahler (normiert) -> [Mitgliedsnummern]
+        kasse: dict = {}                                            # KA3: Handbuchungen/Importzeilen (id -> Buchung)
+        kasse_start: list = []                                      # KA3: Anfangsbestand (Historie, letzter gilt)
+        kasse_kat: dict = {}                                        # KA3: Kategorie je Quelle (umgestellt per Klick)
+        kasse_importe: dict = {}                                    # KA4: CSV-Importlaeufe
+        einstellungen: dict = {}
         letzter_import = ""
         for e in self.eintraege():
             d, t = e["daten"], e["typ"]
@@ -70,12 +77,30 @@ class OfcStore:
                 lst = aliase.setdefault(d["zahler"], [])
                 if d["name"] not in lst:
                     lst.append(d["name"])
+            elif t == "ofc_beitrag":
+                beitrag_status[f"{d['nummer']}|{d['jahr']}"] = {"status": d["status"], "ts": e["ts"], "von": e.get("von", "")}
+            elif t == "ofc_beitrag_alias":
+                lst = beitrag_aliase.setdefault(d["zahler"], [])
+                if d["nummer"] not in lst:
+                    lst.append(d["nummer"])
+            elif t == "ofc_kasse":
+                kasse.setdefault(d["id"], {"id": d["id"], "ts": e["ts"]}).update({k: v for k, v in d.items() if k != "id"})
+            elif t == "ofc_kasse_start":
+                kasse_start.append(d | {"ts": e["ts"]})
+            elif t == "ofc_kasse_kat":
+                kasse_kat[d["quelle"]] = d["kategorie"]
+            elif t == "ofc_kasse_import":
+                kasse_importe.setdefault(d["id"], {"id": d["id"], "ts": e["ts"]}).update({k: v for k, v in d.items() if k != "id"})
+            elif t == "ofc_einstellung":
+                einstellungen.update(d)
             elif t == "ofc_name":
                 tk = tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})
                 tk.update(name=d["name_neu"], datei=d["datei_neu"])
                 tk["letzte_aenderung"] = {"ts": e["ts"], "name_alt": d["name_alt"], "datei_alt": d["datei_alt"],
                                           "name_neu": d["name_neu"], "datei_neu": d["datei_neu"]}
         return {"spiele": spiele, "tickets": tickets, "zahlungen": zahlungen, "eingaenge": eingaenge, "aliase": aliase,
+                "beitrag_status": beitrag_status, "beitrag_aliase": beitrag_aliase, "kasse": kasse, "kasse_start": kasse_start,
+                "kasse_kat": kasse_kat, "kasse_importe": kasse_importe, "einstellungen": einstellungen,
                 "letzter_import": letzter_import}
 
 

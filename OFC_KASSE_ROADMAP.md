@@ -81,7 +81,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 ### Etappe KA1: Beitragszahlungen erkennen
 
-- Status: geplant
+- Status: umgesetzt (2026-11-25; `core/ofc_beitraege.py` + `core/ofc_eingang.py` VERSION 4: Eingaenge bekommen eine Art (Ticket, Beitrag, Merch, Spende, Sonstiges); Beitrag automatisch nach E-K4 (Name = Mitglied oder gelernter Alias, Betrag = offene Beitraege, auch mehrere Jahre oder Familie; Ticket geht vor, ausser die Mitteilung nennt den Beitrag; doppelte Namen nie automatisch); erstes erfasstes Beitragsjahr 2027 (`OFC_BEITRAG_AB` / Einstellung), Zahlungen ab November zaehlen fuers Folgejahr, aeltestes offenes Jahr zuerst; „Beitrag / andere Art …“ per Klick mit Mitgliedersuche, Alias wird gelernt; Mitteilung „Beitrag“ wird nie „kein Ticket“; Mitgliederliste geht nur lesend in den 15-Minuten-Lauf; `POST /api/ofc/eingang/{eid}/art`; Tests in `test_ofc_beitraege.py`)
 - Ziel / Scope / Nicht-Scope: PayPal-Eingaenge (O5) bekommen neben „Ticket“ die Art **„Beitrag“** (Jahr + Mitglied);
   Regel E-K4 automatisch, sonst Vorschlag „Beitrag von X fuer 2027“; Mehrjahres- und Familienzahlung (ein Zahler fuer
   mehrere Mitglieder, Alias wie in O5); „Kein Ticket“ aus O5 wird zu waehlbarer Art (Beitrag, Merch, Spende,
