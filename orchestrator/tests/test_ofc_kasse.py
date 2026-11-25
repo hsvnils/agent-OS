@@ -118,3 +118,99 @@ class TestKasseApi(ApiBasis):
                 self.assertEqual(self.c.get(f"/api/ofc/kasse/beleg/{r['id']}").status_code, 403)
                 for url in ("/api/ofc/kasse/buchung", "/api/ofc/kasse/storno", "/api/ofc/kasse/kategorie", "/api/ofc/kasse/anfangsbestand"):
                     self.assertEqual(self.c.post(url, json={"bestaetigt": True}).status_code, 403, url)
+
+
+# -- KA4: Abgleich mit dem PayPal-Kontoauszug -------------------------------------------------------------------------
+from orchestrator.core import ofc_kasse_import as ki                     # noqa: E402
+
+KOPF_AKT = '"Datum","Uhrzeit","Zeitzone","Beschreibung","Währung","Brutto","Entgelt","Netto","Guthaben","Transaktionscode","Absender E-Mail-Adresse","Name","Hinweis"'
+
+
+def _akt(*zeilen):
+    return ("﻿" + KOPF_AKT + "\n" + "\n".join(zeilen) + "\n").encode("utf-8")
+
+
+CSV = _akt(
+    '"01.10.2026","10:00:00","Europe/Berlin","Zahlung erhalten","EUR","40,00","0,00","40,00","140,00","9AA99999AA9999999","a@example.org","Alt Person",""',
+    '"05.10.2026","11:00:00","Europe/Berlin","Zahlung an Händler","EUR","-70,00","0,00","-70,00","70,00","7ZZ77777ZZ7777777","","CTS EVENTIM",""',
+    '"07.10.2026","10:00:00","Europe/Berlin","Zahlung erhalten","EUR","35,00","0,00","35,00","105,00","1EE11111EE1111111","b@example.org","Ben Beispiel",""',
+    '"08.10.2026","09:00:00","Europe/Berlin","Zahlung erhalten","EUR","10,00","-0,55","9,45","114,45","4GG44444GG4444444","c@example.org","Shop Kunde",""',
+    '"09.10.2026","09:00:00","Europe/Berlin","Allgemeine Währungsumrechnung","USD","-5,00","0,00","-5,00","114,45","5UU55555UU5555555","","",""',
+    '"10.10.2026","09:00:00","Europe/Berlin","Abbuchung auf Bankkonto","EUR","-14,45","0,00","-14,45","100,00","6BB66666BB6666666","","",""')
+
+
+class TestImport(_Basis):
+    def test_5_lesen_und_abgleich(self):
+        g = ki.csv_lesen(CSV)
+        self.assertEqual((g["ok"], g["format"], len(g["zeilen"])), (True, "aktivitaeten", 6))
+        self.assertEqual((g["zeilen"][3]["brutto_cent"], g["zeilen"][3]["gebuehr_cent"], g["zeilen"][3]["guthaben_cent"]), (1000, -55, 11445))
+        n = len(self.st.eintraege())
+        v = ki.import_plan(self.st.stand(), g["zeilen"])
+        self.assertEqual(len(self.st.eintraege()), n)                                              # Vorschau schreibt nichts
+        e = {x["tc"]: x for x in v["zeilen"]}
+        self.assertEqual(e["1EE11111EE1111111"]["ergebnis"], "bekannt")
+        self.assertEqual((e["7ZZ77777ZZ7777777"]["ergebnis"], e["7ZZ77777ZZ7777777"]["buchung"]), ("passt", "zahlung:z-1"))
+        self.assertEqual((e["9AA99999AA9999999"]["ergebnis"], e["9AA99999AA9999999"]["kategorie"]), ("neu", "sonstiges"))
+        self.assertEqual(e["6BB66666BB6666666"]["kategorie"], "auszahlung")
+        self.assertEqual(e["5UU55555UU5555555"]["ergebnis"], "uebersprungen")
+        self.assertTrue(e["4GG44444GG4444444"]["gebuehr_neu"])
+        self.assertEqual((e["4GG44444GG4444444"]["ergebnis"], e["4GG44444GG4444444"]["buchung"]), ("passt", "zahlung:z-3"))  # Betrag +-3 Tage
+        self.assertEqual((v["neu"], v["gebuehren"], v["neu_cent"], v["gebuehren_cent"]), (2, 1, 4000 - 1445, -55))
+        self.assertEqual(v["vergleich"]["start_vorschlag"], {"datum": "2026-10-01", "betrag_cent": 10000})
+        self.assertNotIn("luna_cent", v["vergleich"])
+
+    def test_6_uebernehmen_doppelt_storno(self):
+        r = ki.import_anwenden(self.st, CSV, "auszug.csv", anfangsbestand_uebernehmen=True)
+        self.assertEqual((r["ok"], r["gebucht"]), (True, 3))
+        self.assertTrue((self.st.dir / "importe" / f"{r['import_id']}.csv").read_bytes() == CSV)
+        st = self.st.stand()
+        self.assertEqual(st["kasse_start"][-1]["betrag_cent"], 10000)
+        v = ki.import_plan(st, ki.csv_lesen(CSV)["zeilen"])
+        self.assertEqual((v["neu"], v["gebuehren"]), (0, 0))                                        # zweiter Import: nichts doppelt
+        self.assertEqual(ki.import_anwenden(self.st, CSV, "auszug.csv")["gebucht"], 0)
+        k = ok.kassenbuch(self.st.stand(), heute=date(2026, 10, 20))
+        b = {x["id"]: x for x in k["buchungen"]}
+        self.assertTrue(any(x["kategorie"] == "gebuehren" and x["betrag_cent"] == -55 for x in b.values()))
+        s = ki.import_storno(self.st, r["import_id"])
+        self.assertEqual(s["storniert"], 3)
+        self.assertTrue(all(x["status"] == "storniert" for x in ok.kassenbuch(self.st.stand())["buchungen"] if x.get("import_id") == r["import_id"]))
+        self.assertFalse(ki.import_storno(self.st, "i-gibtsnicht")["ok"])
+        self.assertEqual(ki.import_plan(self.st.stand(), ki.csv_lesen(CSV)["zeilen"])["neu"], 2)     # nach Storno wieder neu
+
+    def test_7_formate_und_fehler(self):
+        leer = ('﻿"RH","Name des Berichts"\n"RH","BALANCE_RECONCILIATION_REPORT"\n"RD","Händlerkonto-ID","Erstellt am"\n'
+                '"RF","Dateinummer","Einträge insgesamt"\n').encode("utf-8")
+        g = ki.csv_lesen(leer)
+        self.assertEqual((g["format"], g["zeilen"]), ("abgleichsbericht", []))
+        self.assertIn("0 Einträge", g["hinweis"])
+        rd = ('"RH","x"\n"RD","Händlerkonto-ID","Datensatznummer","Erstellt am","Bruttotransaktionsbetrag","Bruttogebühren gesamt","Kundenname","Transaktionswährung"\n'
+              '"RD","M1","3XX33333XX3333333","2026/10/02 10:00:00 +0200","12,50","-0,40","Neu Kunde","EUR"\n').encode("utf-8")
+        g = ki.csv_lesen(rd)
+        z = g["zeilen"][0]
+        self.assertEqual((z["datum"], z["brutto_cent"], z["gebuehr_cent"], z["tc"], z["name"]), ("2026-10-02", 1250, -40, "3XX33333XX3333333", "Neu Kunde"))
+        self.assertFalse(ki.csv_lesen(b"")["ok"])
+        self.assertFalse(ki.csv_lesen(b"a,b,c\n1,2,3\n")["ok"])
+        self.assertFalse(ki.csv_lesen(b"x" * (ki.MAX_BYTES + 1))["ok"])
+        sem = ("Datum;Name;Brutto;Gebühr;Transaktionscode\n02.10.2026;X;1.234,56;0;T1\n").encode("latin-1")
+        self.assertEqual(ki.csv_lesen(sem)["zeilen"][0]["brutto_cent"], 123456)
+        src = Path(ki.__file__).read_text(encoding="utf-8")
+        for verboten in ("unlink", "rmtree", "os.remove", "os.replace", "shutil", '"wb"'):
+            self.assertNotIn(verboten, src, verboten)
+
+
+class TestImportApi(ApiBasis):
+    def test_8_endpunkte(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(self.w, "ROOT", Path(d)):
+            datei = {"name": "a.csv", "daten": base64.b64encode(CSV).decode()}
+            v = self.c.post("/api/ofc/kasse/import/vorschau", json={"datei": datei}).json()
+            self.assertEqual((v["ok"], v["neu"]), (True, 5))                                          # leere Kasse: alles neu
+            self.assertFalse(self.c.post("/api/ofc/kasse/import", json={"datei": datei}).json()["ok"])
+            r = self.c.post("/api/ofc/kasse/import", json={"datei": datei, "bestaetigt": True}).json()
+            self.assertEqual((r["ok"], r["gebucht"]), (True, 6))
+            self.assertNotIn("zeilen", r)
+            self.assertEqual(len(self.c.get("/api/ofc/kasse/importe").json()["importe"]), 1)
+            self.assertTrue(self.c.post(f"/api/ofc/kasse/import/{r['import_id']}/storno", json={"bestaetigt": True}).json()["ok"])
+            with mock.patch.object(self.w, "_ceo_user", return_value={"role": "team", "allowed_modules": ["finanzen"]}):
+                self.assertEqual(self.c.get("/api/ofc/kasse/importe").status_code, 403)
+                self.assertEqual(self.c.post("/api/ofc/kasse/import/vorschau", json={"datei": datei}).status_code, 403)
+                self.assertEqual(self.c.post("/api/ofc/kasse/import", json={"datei": datei, "bestaetigt": True}).status_code, 403)

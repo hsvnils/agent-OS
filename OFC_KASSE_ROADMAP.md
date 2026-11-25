@@ -123,7 +123,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 ### Etappe KA4: Abgleich mit dem PayPal-Kontoauszug
 
-- Status: geplant
+- Status: umgesetzt (2026-11-25; `core/ofc_kasse_import.py`: PayPal-CSV-Upload im Reiter „💰 Kasse“ (Aktivitaeten-Export deutsch/englisch, Spalten am Namen erkannt, Trenner/Zeichensatz automatisch; „Balance Reconciliation Report“ RH/RD/RF -- ohne Buchungszeilen kommt der Hinweis auf den Aktivitaeten-Export); Abgleich je Zeile: Transaktionscode bekannt / gleicher Betrag +-3 Tage / neu mit Kategorie-Vorschlag (Auszahlung, Einzahlung vom Bankkonto, Gebuehren, Tickets, Beitraege, Spenden, Merch, Sonstiges); PayPal-Gebuehren als eigene Buchung; Nicht-EUR/ausstehend/Memo zaehlen nicht; Guthaben laut PayPal gegen Kassenstand in LUNA, ohne Anfangsbestand Uebernahme aus der ersten Zeile; Vorschau schreibt nichts, Uebernehmen nur mit Bestaetigung, Originaldatei nur neu in `fanclub/importe/`, zweiter Import bucht nichts doppelt, Import als Ganzes stornierbar; neue Kategorie „Einzahlung (Bank)“; Endpunkte `/api/ofc/kasse/import/vorschau`, `/api/ofc/kasse/import`, `/api/ofc/kasse/importe`, `/api/ofc/kasse/import/<id>/storno` nur CEO; Tests in `test_ofc_kasse.py`. Gegenprobe mit der gelieferten leeren Datei: erkannt, Hinweis korrekt. Echte Abnahme braucht den Aktivitaeten-Export)
 - Ziel / Scope / Nicht-Scope: CSV-Upload im Reiter (PayPal-Aktivitaeten, E-K7; Bank entfaellt nach E-K5): Zeilen mit
   vorhandenen Buchungen abgleichen (Transaktionscode, Betrag, Datum), fehlende als Vorschlag uebernehmen (alte Zahlungen
   vor dem Postfach-Zeitraum, Gebuehren), Abweichungen anzeigen. Nicht-Scope: API-Zugaenge, automatischer Abruf.

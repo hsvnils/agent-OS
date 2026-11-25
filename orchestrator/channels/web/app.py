@@ -6507,6 +6507,56 @@ async def ofc_kasse_anfangsbestand(request: Request):
     return anfangsbestand_setzen(_ofc_store(), str(body.get("datum") or ""), betrag, von=_von(request))
 
 
+@app.post("/api/ofc/kasse/import/vorschau")
+async def ofc_kasse_import_vorschau(request: Request):
+    """KA4 Dry-Run: PayPal-CSV lesen und mit der Kasse abgleichen -- speichert nichts (auch nicht die Datei)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.ofc_kasse_import import csv_lesen, import_plan
+    try:
+        roh, _name = _datei_b64(body.get("datei"))
+    except (ValueError, TypeError):
+        return {"ok": False, "hinweis": "Datei nicht lesbar."}
+    gel = csv_lesen(roh)
+    if not gel.get("ok") or not gel.get("zeilen"):
+        return gel | {"zeilen": []}
+    return import_plan(_ofc_store().stand(), gel["zeilen"]) | {"format": gel["format"]}
+
+
+@app.post("/api/ofc/kasse/import")
+async def ofc_kasse_import(request: Request):
+    """KA4: PayPal-CSV uebernehmen (nur mit Bestaetigung) -- neue Zeilen + Gebuehren als Buchungen, Datei in `fanclub/importe/`."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_kasse_import import import_anwenden
+    try:
+        roh, name = _datei_b64(body.get("datei"))
+    except (ValueError, TypeError):
+        return {"ok": False, "hinweis": "Datei nicht lesbar."}
+    r = import_anwenden(_ofc_store(), roh, name or "paypal.csv", anfangsbestand_uebernehmen=body.get("anfangsbestand") is True,
+                        von=_von(request))
+    return {k: v for k, v in r.items() if k != "zeilen"}
+
+
+@app.get("/api/ofc/kasse/importe")
+def ofc_kasse_importe(request: Request):
+    _nur_ceo(request)
+    from ...core.ofc_kasse_import import importe
+    return {"importe": importe(_ofc_store().stand())}
+
+
+@app.post("/api/ofc/kasse/import/{iid}/storno")
+async def ofc_kasse_import_storno(request: Request, iid: str):
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_kasse_import import import_storno
+    return import_storno(_ofc_store(), iid, von=_von(request))
+
+
 @app.get("/api/ofc/kasse/beleg/{bid}")
 def ofc_kasse_beleg(request: Request, bid: str):
     _nur_ceo(request)

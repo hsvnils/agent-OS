@@ -5452,6 +5452,58 @@ async function ofcKStorno(id, zurueck) {
   if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
   return renderOfcKasse();
 }
+/* OFC_KASSE_ROADMAP KA4: Abgleich mit dem PayPal-Kontoauszug (CSV-Upload, Vorschau, Übernehmen, Import stornieren) */
+let OFC_KI = null;
+async function ofcKExtra() {
+  const el = $("#ofc-k-extra"); if (!el) return;
+  el.innerHTML = `<button class="v2-btn" data-act="ofc-ki-start">⬆︎ PayPal-CSV</button>`;
+  const r = await jget("/api/ofc/kasse/importe"), liste = (r && r.importe) || [];
+  const g = $("#v2-app .v2-grid"); if (!g || !liste.length) return;
+  g.insertAdjacentHTML("beforeend", `<div class="v2-tile w12"><div class="v2-tile-h"><span class="t">CSV-Importe (${liste.length})</span></div>
+    ${liste.map(x => `<div class="v2-list-row"><div class="grow"><b class="v2-umbruch">${esc(x.datei || x.id)}</b><small>${esc(zeit(x.ts))} · ${x.zeilen} Zeilen · ${x.gebucht} gebucht · ${esc(datumDe(x.von_datum))}–${esc(datumDe(x.bis_datum))}${x.storniert ? " · storniert" : ""}</small></div>
+      ${x.storniert ? "" : `<button class="v2-btn sm" data-act="ofc-ki-storno" data-id="${esc(x.id)}">Import stornieren</button>`}</div>`).join("")}</div>`);
+}
+function ofcKIStart() {
+  OFC_KI = null;
+  openModal("⬆︎ PayPal-Kontoauszug abgleichen", `<div class="v2-sub">In PayPal unter <b>Aktivitäten → Kontoauszüge → Aktivitäten herunterladen</b> eine CSV-Datei erstellen und hier hochladen. LUNA zeigt erst eine Vorschau; übernommen wird nur, was du bestätigst.</div>
+    <div class="v2-ofc-eingabe"><label>CSV-Datei</label><input id="ofc-ki-datei" class="v2-inp" type="file" accept=".csv,text/csv"></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-ki-vorschau">Vorschau</button></div><div id="ofc-ki-ergebnis"></div>`);
+}
+async function ofcKIVorschau(el) {
+  const f = $("#ofc-ki-datei").files[0], box = $("#ofc-ki-ergebnis"); if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { box.innerHTML = `<div class="v2-msg err">Die Datei ist größer als 5 MB.</div>`; return; }
+  const b64 = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1] || ""); r.readAsDataURL(f); });
+  OFC_KI = { name: f.name, daten: b64 }; el.disabled = true; box.innerHTML = `<div class="v2-empty">Gleiche ab …</div>`;
+  const v = await jpost("/api/ofc/kasse/import/vorschau", { datei: OFC_KI }); el.disabled = false;
+  if (!v || v.ok === false) { box.innerHTML = `<div class="v2-msg err">${esc((v && v.hinweis) || "Fehler.")}</div>`; return; }
+  if (!(v.zeilen || []).length) { box.innerHTML = `<div class="v2-msg err">${esc(v.hinweis || "Keine Buchungszeilen in der Datei.")}</div>`; return; }
+  const ve = v.vergleich, kat = (OFC_K.daten && OFC_K.daten.kategorien) || {};
+  const ERG = { bekannt: ["ok", "schon da"], passt: ["ok", "passt"], neu: ["warn", "neu"], uebersprungen: ["neutral", "zählt nicht"] };
+  box.innerHTML = `<div class="v2-ofc-vorschau">
+      <div class="v2-kv"><span>Zeilen</span><b>${v.anzahl} · schon da ${v.bekannt} · passt ${v.passt} · neu ${v.neu} · zählt nicht ${v.uebersprungen}</b></div>
+      <div class="v2-kv"><span>Neu zu buchen</span><b>${esc(cent2eur(v.neu_cent))}${v.gebuehren ? ` + ${v.gebuehren} Gebühr(en) ${esc(cent2eur(v.gebuehren_cent))}` : ""}</b></div>
+      ${ve ? `<div class="v2-kv"><span>Guthaben laut PayPal am ${esc(datumDe(ve.datum))}</span><b>${esc(cent2eur(ve.paypal_cent))}</b></div>
+        ${ve.luna_cent !== undefined ? `<div class="v2-kv"><span>Kassenstand in LUNA danach</span><b>${esc(cent2eur(ve.luna_cent))}${ve.abweichung_cent ? ` · Abweichung ${esc(cent2eur(ve.abweichung_cent))}` : " ✓"}</b></div>`
+          : `<label class="v2-list-row v2-ofc-wahl"><input type="checkbox" id="ofc-ki-start" checked><div class="grow"><b>Anfangsbestand übernehmen</b><small>${esc(cent2eur(ve.start_vorschlag.betrag_cent))} zum ${esc(datumDe(ve.start_vorschlag.datum))} (aus der ersten Zeile)</small></div></label>`}` : ""}
+    </div>
+    <div style="max-height:320px;overflow:auto">${v.zeilen.filter(x => x.ergebnis !== "bekannt").map(x => `<div class="v2-list-row"><div class="v2-ofc-datum"><b>${esc(datumDe(x.datum))}</b></div>
+      <div class="grow"><b class="v2-umbruch">${esc([x.beschreibung, x.name].filter(Boolean).join(" – ") || "PayPal")}</b><small>${x.ergebnis === "neu" ? "→ " + esc(kat[x.kategorie] || x.kategorie) : ""}${x.gebuehr_neu ? " · Gebühr " + esc(cent2eur(x.gebuehr_cent)) : ""}${x.status ? " · " + esc(x.status) : ""}</small></div>
+      <div style="text-align:right"><b>${esc(cent2eur(x.brutto_cent))}</b><br><span class="v2-badge ${ERG[x.ergebnis][0]}">${ERG[x.ergebnis][1]}</span></div></div>`).join("") || emptyRow("Alle Zeilen sind schon in der Kasse.")}</div>
+    <div class="v2-card-actions">${v.neu || v.gebuehren || (ve && ve.luna_cent === undefined) ? `<button class="v2-btn pri" data-act="ofc-ki-ok">Übernehmen</button>` : ""}</div><div class="v2-msg" id="ofc-ki-msg"></div>`;
+}
+async function ofcKIOk(el) {
+  if (!OFC_KI) return;
+  const start = $("#ofc-ki-start"); el.disabled = true;
+  const r = await jpost("/api/ofc/kasse/import", { datei: OFC_KI, bestaetigt: true, anfangsbestand: !!(start && start.checked) }); el.disabled = false;
+  if (!r || r.ok === false) { $("#ofc-ki-msg").className = "v2-msg err"; $("#ofc-ki-msg").textContent = (r && r.hinweis) || "Fehler."; return; }
+  closeModal(); return renderOfcKasse(r.hinweis || `${r.gebucht} Buchung(en) übernommen.`);
+}
+async function ofcKIStorno(iid) {
+  if (!confirm("Diesen Import stornieren? Seine Buchungen bleiben sichtbar, zählen aber nicht mehr.")) return;
+  const r = await jpost(`/api/ofc/kasse/import/${encodeURIComponent(iid)}/storno`, { bestaetigt: true });
+  if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
+  return renderOfcKasse(`${r.storniert} Buchung(en) storniert.`);
+}
 async function renderOfcMitglieder(neu) {
   OFC_M_AKTIV = true;
   const kopf = secHead("👥 OFC · Mitglieder", `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> <button class="v2-btn" data-act="ofc-mitglieder-neu">🔄 Neu laden</button>`);
@@ -6056,6 +6108,10 @@ async function handleAct(act, el) {
     case "ofc-k-katwahl": return ofcKKatWahl(id);
     case "ofc-k-katset": return ofcKKatSet(id, val);
     case "ofc-k-storno": return ofcKStorno(id, val);
+    case "ofc-ki-start": return ofcKIStart();
+    case "ofc-ki-vorschau": return ofcKIVorschau(el);
+    case "ofc-ki-ok": return ofcKIOk(el);
+    case "ofc-ki-storno": return ofcKIStorno(id);
     case "ofc-b-setzen": return ofcBSetzen(id, val);
     case "ofc-s-alle": OFC_S_ALLE = !OFC_S_ALLE; return renderOfcSaison();
     case "ofc-s-kopieren": return ofcSKopieren(val, el);

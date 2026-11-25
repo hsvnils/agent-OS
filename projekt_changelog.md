@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-25 23:50] — Claude Code
+- **Was:** OFC-Kasse KA4 Abgleich mit dem PayPal-Kontoauszug: CSV-Upload mit Vorschau, Abgleich ueber Transaktionscode bzw. Betrag/Datum, Gebuehren, Guthaben-Vergleich, Anfangsbestand aus der CSV, Import stornierbar (`app-v2.js` v175).
+- **Warum:** CEO 2026-11-25: „Baue jetzt moeglichst viel nacheinander (ggf. bis KA5), beginne mit KA1 … testen koennen wir ganz am Ende“.
+- **Betroffen:** `orchestrator/core/ofc_kasse_import.py`, `orchestrator/core/ofc_kasse.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_ofc_kasse.py`, `OFC_KASSE_ROADMAP.md`
+
 ## [2026-11-25 23:47] — Claude Code
 - **Was:** OFC-Kasse KA3 Kassenbuch: Buchungen aus PayPal-Eingaengen, eigenen Zahlungen und Handbuchungen (mit Beleg), Anfangsbestand und Kassenstand, Kategorie per Klick, Storno, Ansicht „💰 Kasse“ (`style-v2.css` v94).
 - **Warum:** CEO 2026-11-25: „Baue jetzt moeglichst viel nacheinander (ggf. bis KA5), beginne mit KA1 … testen koennen wir ganz am Ende“.

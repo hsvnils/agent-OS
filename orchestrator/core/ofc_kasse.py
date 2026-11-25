@@ -21,7 +21,8 @@ from pathlib import Path
 from .ofc_store import OfcStore
 
 KATEGORIEN = {"tickets": "Tickets", "beitraege": "Beiträge", "merch": "Merch/Trikot", "spenden": "Spenden",
-              "gebuehren": "Gebühren", "auslagen": "Auslagen", "auszahlung": "Auszahlung", "sonstiges": "Sonstiges",
+              "gebuehren": "Gebühren", "auslagen": "Auslagen", "auszahlung": "Auszahlung", "einzahlung": "Einzahlung (Bank)",
+              "sonstiges": "Sonstiges",
               "offen": "noch nicht zugeordnet"}
 _ART_KAT = {"ticket": "tickets", "beitrag": "beitraege", "merch": "merch", "spende": "spenden", "sonstiges": "sonstiges",
             "auszahlung": "auszahlung"}
