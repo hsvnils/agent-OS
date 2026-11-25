@@ -6557,6 +6557,47 @@ async def ofc_kasse_import_storno(request: Request, iid: str):
     return import_storno(_ofc_store(), iid, von=_von(request))
 
 
+def _ofc_kassenbericht(jahr: int) -> dict:
+    from datetime import date as _date
+    from ...core.ofc_beitraege import jahr_stand
+    from ...core.ofc_kasse import kassenbericht
+    jahr = jahr or _date.today().year
+    if not 2020 <= jahr <= 2100:
+        return {"ok": False, "hinweis": "Jahr ungültig."}
+    st = _ofc_store().stand()
+    m = _ofc_mitglieder_daten()
+    return kassenbericht(st, jahr, beitraege=jahr_stand(st, m, jahr) if m else None)
+
+
+@app.get("/api/ofc/kasse/bericht")
+def ofc_kasse_bericht(request: Request, jahr: int = 0):
+    """KA5: Kassenbericht je Geschaeftsjahr (Kalenderjahr) -- reine Auswertung, schreibt nichts."""
+    _nur_ceo(request)
+    return _ofc_kassenbericht(jahr)
+
+
+@app.get("/api/ofc/kasse/bericht.pdf")
+def ofc_kasse_bericht_pdf(request: Request, jahr: int = 0):
+    _nur_ceo(request)
+    from ...core.ofc_kasse import bericht_pdf
+    b = _ofc_kassenbericht(jahr)
+    if not b.get("ok"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, b.get("hinweis") or "Fehler")
+    return Response(bericht_pdf(b), media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="hsvinside-kassenbericht-{b["jahr"]}.pdf"', "Cache-Control": "no-store"})
+
+
+@app.get("/api/ofc/kasse/bericht.csv")
+def ofc_kasse_bericht_csv(request: Request, jahr: int = 0):
+    _nur_ceo(request)
+    from ...core.ofc_kasse import bericht_csv
+    b = _ofc_kassenbericht(jahr)
+    if not b.get("ok"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, b.get("hinweis") or "Fehler")
+    return Response(bericht_csv(_ofc_store().stand(), b), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="hsvinside-kassenbuch-{b["jahr"]}.csv"', "Cache-Control": "no-store"})
+
+
 @app.get("/api/ofc/kasse/beleg/{bid}")
 def ofc_kasse_beleg(request: Request, bid: str):
     _nur_ceo(request)

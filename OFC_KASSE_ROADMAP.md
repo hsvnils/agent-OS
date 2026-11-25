@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-11-24
-- Arbeitsbranch: `main` (KA0 gemergt)
+- Arbeitsbranch: `ai/ofc-kasse-bau`
 - Basiscommit: `fda2486`
-- Naechster Schritt: KA0 live und auf der NAS geprueft (2026-11-25: 119 Mitglieder, 66 beitragspflichtig, Soll 2.640 € fuer 2026 und 2027, 9 mit Hinweis). Naechster Schritt: Go fuer KA1 (Beitragszahlungen erkennen). Fuer KA4 wird der PayPal-Aktivitaeten-Export (CSV) gebraucht.
+- Naechster Schritt: KA0-KA5 umgesetzt (KA1-KA5 auf `ai/ofc-kasse-bau`, ein Deploy am Ende). Danach Gesamtabnahme durch den CEO (alle Etappen zusammen): Beitraege 2027, Eingaenge mit Beitragsvorschlaegen, Kasse mit Anfangsbestand, PayPal-Aktivitaeten-Export (CSV) hochladen und abgleichen, Kassenbericht. Danach Status „abgeschlossen“.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -136,7 +136,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 ### Etappe KA5: Kassenbericht
 
-- Status: geplant
+- Status: umgesetzt (2026-11-25; `core/ofc_kasse.py` `kassenbericht`: je Geschaeftsjahr (Kalenderjahr) Anfangsbestand (aus Anfangsbestand + Bewegungen bis 31.12. Vorjahr; liegt der Stichtag im Jahr, beginnt der Bericht dort), Einnahmen/Ausgaben je Kategorie mit Anzahl, Endbestand, offene Tickets, offene Beitraege und Beitragsquote, „Spaeter bezahlen“ noch nicht abgebucht, noch nicht zugeordnete Eingaenge; Dialog „📄 Kassenbericht“ in der Kasse mit Jahr wechseln; PDF A4 hochkant (Hinweis: kein Steuer-/Rechtsdokument, Pruefung durch die Kassenpruefer) und CSV (Kassenbuch des Jahres); `GET /api/ofc/kasse/bericht` (+ `.pdf`, `.csv`) nur CEO, schreibt nichts; Tests in `test_ofc_kasse.py`. Sichtpruefung KA1-KA5 headless Rechner/iPad/iPhone ok, dabei Mitgliederfilter im Art-Dialog repariert)
 - Ziel / Scope / Nicht-Scope: Kassenbericht je Geschaeftsjahr (E-K6): Anfangsbestand, Einnahmen und Ausgaben nach
   Kategorie, Endbestand, Beitragsquote, offene Posten (Tickets + Beitraege); PDF A4 hochkant + CSV, z. B. fuer
   Kassenpruefung oder Mitgliederversammlung. Nicht-Scope: Veroeffentlichung (CEO-Tor), steuerliche Bewertung.

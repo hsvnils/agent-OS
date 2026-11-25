@@ -214,3 +214,50 @@ class TestImportApi(ApiBasis):
                 self.assertEqual(self.c.get("/api/ofc/kasse/importe").status_code, 403)
                 self.assertEqual(self.c.post("/api/ofc/kasse/import/vorschau", json={"datei": datei}).status_code, 403)
                 self.assertEqual(self.c.post("/api/ofc/kasse/import", json={"datei": datei, "bestaetigt": True}).status_code, 403)
+
+
+# -- KA5: Kassenbericht -----------------------------------------------------------------------------------------------
+class TestBericht(_Basis):
+    def test_9_summen_gehen_auf_jahresgrenze_stichtag(self):
+        b = ok.kassenbericht(self.st.stand(), 2026, heute=date(2026, 12, 1))
+        self.assertIsNone(b["anfangsbestand_cent"]); self.assertIsNone(b["endbestand_cent"])
+        self.assertEqual(sum(k["einnahmen_cent"] + k["ausgaben_cent"] for k in b["je_kategorie"]), b["einnahmen_cent"] + b["ausgaben_cent"])
+        ok.anfangsbestand_setzen(self.st, "2025-12-01", 5000)
+        ok.buchung_anlegen(self.st, datum="2025-12-15", betrag_cent=-1000, kategorie="auslagen", text="Vorjahr")
+        ok.buchung_anlegen(self.st, datum="2027-01-02", betrag_cent=-700, kategorie="gebuehren", text="Folgejahr")
+        b = ok.kassenbericht(self.st.stand(), 2026, heute=date(2026, 12, 1))
+        self.assertEqual((b["ab"], b["anfangsbestand_cent"]), ("2026-01-01", 4000))                 # 5000 - 1000 aus Dez. 2025
+        self.assertEqual(b["endbestand_cent"], 4000 + b["einnahmen_cent"] + b["ausgaben_cent"])
+        self.assertEqual(b["endbestand_cent"], ok.kassenbericht(self.st.stand(), 2027, heute=date(2026, 12, 1))["anfangsbestand_cent"])
+        self.assertFalse(any(k["kategorie"] == "gebuehren" for k in b["je_kategorie"]))             # Folgejahr nicht drin
+        ok.anfangsbestand_setzen(self.st, "2026-10-06", 10000)                                       # Stichtag mitten im Jahr
+        b = ok.kassenbericht(self.st.stand(), 2026, heute=date(2026, 12, 1))
+        self.assertEqual((b["ab"], b["anfangsbestand_cent"]), ("2026-10-06", 10000))
+        self.assertIsNone(ok.kassenbericht(self.st.stand(), 2025)["anfangsbestand_cent"])
+        self.assertEqual(ok.kassenbericht(self.st.stand(), 2030)["buchungen"], 0)
+
+    def test_10_pdf_hochkant_csv(self):
+        ok.anfangsbestand_setzen(self.st, "2026-01-01", 0)
+        b = ok.kassenbericht(self.st.stand(), 2026, beitraege={"ok": True, "erfasst": True,
+                             "stand": {"offen": 2, "teilweise": 0, "offen_cent": 8000, "quote": 50}})
+        from pypdf import PdfReader
+        import io
+        r = PdfReader(io.BytesIO(ok.bericht_pdf(b)))
+        self.assertLess(float(r.pages[0].mediabox.width), float(r.pages[0].mediabox.height))
+        t = r.pages[0].extract_text()
+        self.assertIn("Kassenbericht 2026", t); self.assertIn("Beitragsquote 50", t)
+        c = ok.bericht_csv(self.st.stand(), b).decode("utf-8-sig").splitlines()
+        self.assertTrue(c[0].startswith("Datum;Betrag;Kategorie")); self.assertEqual(len(c), 1 + b["buchungen"])
+
+
+class TestBerichtApi(ApiBasis):
+    def test_11_endpunkte(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(self.w, "ROOT", Path(d)), \
+                mock.patch.object(self.w, "_ofc_mitglieder_daten", return_value=None):
+            self.assertTrue(self.c.get("/api/ofc/kasse/bericht", params={"jahr": 2026}).json()["ok"])
+            self.assertFalse(self.c.get("/api/ofc/kasse/bericht", params={"jahr": 1999}).json()["ok"])
+            self.assertTrue(self.c.get("/api/ofc/kasse/bericht.pdf", params={"jahr": 2026}).content.startswith(b"%PDF"))
+            self.assertIn("Datum;Betrag", self.c.get("/api/ofc/kasse/bericht.csv", params={"jahr": 2026}).content.decode("utf-8-sig"))
+            with mock.patch.object(self.w, "_ceo_user", return_value={"role": "team", "allowed_modules": ["finanzen"]}):
+                for url in ("/api/ofc/kasse/bericht", "/api/ofc/kasse/bericht.pdf", "/api/ofc/kasse/bericht.csv"):
+                    self.assertEqual(self.c.get(url).status_code, 403, url)

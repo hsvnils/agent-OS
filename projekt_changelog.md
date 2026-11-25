@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-25 23:55] — Claude Code
+- **Was:** OFC-Kasse KA5 Kassenbericht je Geschaeftsjahr (PDF/CSV) und Abschluss KA1-KA5: Doku nachgetragen (Datenfluesse, Datenschutz, Entscheidungsregister, Test-Baseline 1850, Roadmap/ROADMAP.md), Sichtpruefung aller neuen Ansichten headless auf Rechner/iPad/iPhone (`app-v2.js` v176).
+- **Warum:** CEO 2026-11-25: „Baue jetzt moeglichst viel nacheinander (ggf. bis KA5), beginne mit KA1 … testen koennen wir ganz am Ende“.
+- **Betroffen:** `orchestrator/core/ofc_kasse.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `orchestrator/channels/web/static/index-v2.html`, `orchestrator/tests/test_ofc_kasse.py`, `OFC_KASSE_ROADMAP.md`, `ROADMAP.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
 ## [2026-11-25 23:50] — Claude Code
 - **Was:** OFC-Kasse KA4 Abgleich mit dem PayPal-Kontoauszug: CSV-Upload mit Vorschau, Abgleich ueber Transaktionscode bzw. Betrag/Datum, Gebuehren, Guthaben-Vergleich, Anfangsbestand aus der CSV, Import stornierbar (`app-v2.js` v175).
 - **Warum:** CEO 2026-11-25: „Baue jetzt moeglichst viel nacheinander (ggf. bis KA5), beginne mit KA1 … testen koennen wir ganz am Ende“.

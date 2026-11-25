@@ -203,3 +203,83 @@ def beleg_pfad(store: OfcStore, bid: str) -> Path | None:
         return None
     p = store.dir / "belege" / b["beleg"]
     return p if p.is_file() and p.parent == store.dir / "belege" else None
+
+
+# -- KA5: Kassenbericht je Geschaeftsjahr (E-K6: Kalenderjahr) ---------------------------------------------------------
+def kassenbericht(st: dict, jahr: int, *, beitraege: dict | None = None, heute: date | None = None) -> dict:
+    """Anfangsbestand, Einnahmen/Ausgaben je Kategorie, Endbestand, Beitragsquote, offene Posten.
+    Liegt der Anfangsbestand mitten im Jahr, beginnt der Bericht am Stichtag (damit die Summen aufgehen)."""
+    from .ofc_saison import offene_posten
+    heute = heute or date.today()
+    alle = [b for b in buchungen(st, heute) if b["status"] == "gebucht"]
+    start = anfangsbestand(st)
+    von, bis = f"{jahr}-01-01", f"{jahr}-12-31"
+    anfang = None
+    ab = von
+    if start and start["datum"] <= von:
+        anfang = int(start["betrag_cent"]) + sum(b["betrag_cent"] for b in alle if start["datum"] <= b["datum"] < von)
+    elif start and start["datum"] <= bis:
+        anfang, ab = int(start["betrag_cent"]), start["datum"]
+    im_jahr = [b for b in alle if ab <= b["datum"] <= bis]
+    je_kat: dict = {}
+    for b in im_jahr:
+        k = je_kat.setdefault(b["kategorie"], {"kategorie": b["kategorie"], "text": KATEGORIEN.get(b["kategorie"], b["kategorie"]),
+                                               "einnahmen_cent": 0, "ausgaben_cent": 0, "anzahl": 0})
+        k["einnahmen_cent" if b["betrag_cent"] > 0 else "ausgaben_cent"] += b["betrag_cent"]
+        k["anzahl"] += 1
+    ein = sum(k["einnahmen_cent"] for k in je_kat.values())
+    aus = sum(k["ausgaben_cent"] for k in je_kat.values())
+    tickets_offen = sum(x["summe_cent"] for x in offene_posten(st, alle=True))
+    bt = (beitraege or {}).get("stand") if (beitraege or {}).get("ok") and (beitraege or {}).get("erfasst") else None
+    return {"ok": True, "jahr": jahr, "ab": ab, "bis": bis, "anfangsbestand_cent": anfang,
+            "einnahmen_cent": ein, "ausgaben_cent": aus, "endbestand_cent": None if anfang is None else anfang + ein + aus,
+            "je_kategorie": sorted(je_kat.values(), key=lambda k: list(KATEGORIEN).index(k["kategorie"]) if k["kategorie"] in KATEGORIEN else 99),
+            "buchungen": len(im_jahr), "nicht_zugeordnet": sum(1 for b in im_jahr if b["kategorie"] == "offen"),
+            "vorgemerkt_cent": sum(b["betrag_cent"] for b in buchungen(st, heute) if b["status"] == "vorgemerkt" and b["datum"][:4] == str(jahr)),
+            "tickets_offen_cent": tickets_offen, "beitraege": bt}
+
+
+def bericht_csv(st: dict, b: dict) -> bytes:
+    import csv
+    import io
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["Datum", "Betrag", "Kategorie", "Text", "Herkunft", "Transaktionscode"])
+    for x in sorted((x for x in buchungen(st) if x["status"] == "gebucht" and b["ab"] <= x["datum"] <= b["bis"]), key=lambda x: (x["datum"], x["id"])):
+        w.writerow([x["datum"], _eur(x["betrag_cent"]), KATEGORIEN.get(x["kategorie"], x["kategorie"]), x["text"], x["herkunft"],
+                    x.get("transaktionscode") or ""])
+    return ("﻿" + buf.getvalue()).encode("utf-8")
+
+
+def bericht_pdf(b: dict) -> bytes:
+    from .ofc_pdf import bericht_pdf as _pdf
+    eur = lambda c: "unbekannt" if c is None else _eur(c)  # noqa: E731
+    zeilen = [[k["text"], str(k["anzahl"]), _eur(k["einnahmen_cent"]) if k["einnahmen_cent"] else "",
+               _eur(k["ausgaben_cent"]) if k["ausgaben_cent"] else ""] for k in b["je_kategorie"]]
+    zeilen.append(["Summe", str(b["buchungen"]), _eur(b["einnahmen_cent"]), _eur(b["ausgaben_cent"])])
+    abschnitte = [("Einnahmen und Ausgaben nach Kategorie", [("Kategorie", 0), ("Anzahl", 18), ("Einnahmen", 30), ("Ausgaben", 30)], zeilen),
+                  ("Kassenentwicklung", [("Posten", 0), ("Betrag", 40)],
+                   [[f"Anfangsbestand am {_tag(b['ab'])}", eur(b["anfangsbestand_cent"])], ["+ Einnahmen", _eur(b["einnahmen_cent"])],
+                    ["− Ausgaben", _eur(abs(b["ausgaben_cent"]))], [f"Endbestand am {_tag(b['bis'])}", eur(b["endbestand_cent"])]]),
+                  ("Offene Posten", [("Posten", 0), ("Betrag", 40)],
+                   [["Tickets (noch nicht bezahlt)", _eur(b["tickets_offen_cent"])]]
+                   + ([[f"Beiträge {b['jahr']} offen ({b['beitraege']['offen'] + b['beitraege']['teilweise']} Mitglieder)",
+                        _eur(b["beitraege"]["offen_cent"])]] if b.get("beitraege") else [])
+                   + ([["„Später bezahlen“ noch nicht abgebucht", _eur(abs(b["vorgemerkt_cent"]))]] if b["vorgemerkt_cent"] else []))]
+    stichtag = f" – Bericht ab Stichtag {_tag(b['ab'])}" if b["ab"] != f"{b['jahr']}-01-01" else ""
+    text = (f"Geschäftsjahr {b['jahr']} (Kalenderjahr){stichtag} · "
+            f"{b['buchungen']} Buchungen" + (f" · Beitragsquote {b['beitraege']['quote']} %" if b.get("beitraege") else "")
+            + (f" · {b['nicht_zugeordnet']} Eingang/Eingänge noch nicht zugeordnet" if b["nicht_zugeordnet"] else ""))
+    return _pdf(f"HSVInside – Kassenbericht {b['jahr']}",
+                [("Anfangsbestand", eur(b["anfangsbestand_cent"])), ("Einnahmen", _eur(b["einnahmen_cent"])),
+                 ("Ausgaben", _eur(abs(b["ausgaben_cent"]))), ("Endbestand", eur(b["endbestand_cent"]))],
+                abschnitte, text=text,
+                fuss="Kasse = PayPal-Konto des Fanclubs. Quelle: PayPal-Mails im Fanclub-Postfach, hochgeladene PayPal-Kontoauszüge "
+                     "und Handbuchungen. Erstellt von LUNA – kein Steuer- oder Rechtsdokument; Prüfung und Unterschrift durch die Kassenprüfer.")
+
+
+def _tag(iso: str) -> str:
+    try:
+        return date.fromisoformat(iso[:10]).strftime("%d.%m.%Y")
+    except (TypeError, ValueError):
+        return ""
