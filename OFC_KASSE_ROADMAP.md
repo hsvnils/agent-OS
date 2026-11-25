@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `main` (KA0 gemergt)
 - Basiscommit: `fda2486`
-- Naechster Schritt: KA0 gemergt (2026-11-25), Deploy durch den CEO; danach auf der NAS pruefen (`/api/ofc/beitraege?jahr=2027`: 66 beitragspflichtig, Soll 2.640 €). Dann Go fuer KA1 (Beitragszahlungen erkennen). Fuer KA4 wird der PayPal-Aktivitaeten-Export (CSV) gebraucht.
+- Naechster Schritt: KA0 live und auf der NAS geprueft (2026-11-25: 119 Mitglieder, 66 beitragspflichtig, Soll 2.640 € fuer 2026 und 2027, 9 mit Hinweis). Naechster Schritt: Go fuer KA1 (Beitragszahlungen erkennen). Fuer KA4 wird der PayPal-Aktivitaeten-Export (CSV) gebraucht.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

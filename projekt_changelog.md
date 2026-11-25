@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-25 23:33] — Claude Code
+- **Was:** OFC-Kasse KA0 nach dem Deploy auf der NAS geprueft (`app-v2.js` v173, `ofc_beitraege.py` vorhanden): `/api/ofc/beitraege` fuer 2026 und 2027 je 119 Mitglieder, 66 beitragspflichtig, Soll 2.640 €, 9 mit Hinweis -- wie in der Probe. Nur Pruefung, kein Code.
+- **Warum:** CEO 2026-11-25: „Deploy gemacht“ -- Wirkung auf der NAS nachweisen.
+- **Betroffen:** `OFC_KASSE_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-25 23:32] — Claude Code
 - **Was:** Merge `ai/ofc-ka0` (OFC-Kasse KA0) nach `main` (`--no-ff`), main gepusht, Branch lokal und remote geloescht; `OFC_KASSE_ROADMAP.md` „Naechster Schritt“ fortgeschrieben.
 - **Warum:** CEO 2026-11-25: „Go fuer Merge, Push und Deploy“.
