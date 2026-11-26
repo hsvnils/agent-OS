@@ -6772,9 +6772,12 @@ def ofc_namen(request: Request):
         m = lesen(_google().auth)
     except Exception:
         m = {}
+    from ...core.ofc_verzeichnis import gekuendigte_nummern
+    _gek = gekuendigte_nummern(_ofc_store().stand())
     return {"namen": namen_vorschlaege(_ofc_store(), m.get("mitglieder") if m.get("ok") else []),
             "personen": [{"name": p["name"], "nummer": p["nummer"], "vorname": p.get("vorname", ""), "nachname": p.get("nachname", ""),
-                          "email": p.get("email", "")} for p in (m.get("mitglieder") or []) if m.get("ok") and p["name"]],
+                          "email": p.get("email", "")} for p in (m.get("mitglieder") or []) if m.get("ok") and p["name"]
+                         and str(p["nummer"]) not in _gek],                    # OFC_MITGLIEDER E4: Gekuendigte nicht vorschlagen
             "extern": sorted(_ofc_store().stand()["personen"].values(), key=lambda x: (x.get("nachname", ""), x.get("vorname", ""))),
             "mitglieder_ok": bool(m.get("ok"))}
 
@@ -6934,6 +6937,66 @@ async def ofc_mitglieder_import(request: Request):
         return {"ok": False, "hinweis": f"Mitgliederliste nicht lesbar ({exc.__class__.__name__})."}
     b = body.get("behalten") if isinstance(body.get("behalten"), dict) else {}
     return import_anwenden(_ofc_store(), daten, b, von=_von(request))
+
+
+@app.get("/api/ofc/verzeichnis")
+def ofc_verzeichnis_liste(request: Request):
+    """OFC_MITGLIEDER MV2: LUNA-Verzeichnis (Mitglieder, Anfragen, Archiv) mit Zahlen je Mitgliedschaft -- nur CEO, keine KI."""
+    _nur_ceo(request)
+    from ...core.ofc_verzeichnis import uebersicht
+    return uebersicht(_ofc_store().stand())
+
+
+@app.get("/api/ofc/verzeichnis/export.csv")
+def ofc_verzeichnis_export(request: Request, ansicht: str = "mitglied"):
+    """MV2: Export (CSV, Semikolon, UTF-8) -- Download im Browser des CEO."""
+    _nur_ceo(request)
+    from ...core.ofc_verzeichnis import export_csv
+    a = ansicht if ansicht in ("mitglied", "anfrage", "archiv", "alle") else "mitglied"
+    return Response(export_csv(_ofc_store().stand(), a), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="HSVInside-{a}.csv"', "Cache-Control": "no-store"})
+
+
+@app.get("/api/ofc/verzeichnis/{pid}")
+def ofc_verzeichnis_eintrag(request: Request, pid: str):
+    """MV2: ein Eintrag mit Verlauf (wer, wann, welche Felder)."""
+    _nur_ceo(request)
+    from ...core.ofc_verzeichnis import verlauf
+    st = _ofc_store()
+    p = (st.stand().get("verzeichnis") or {}).get(pid)
+    if not p:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Eintrag nicht gefunden")
+    return {"ok": True, "person": p, "verlauf": verlauf(st, pid)}
+
+
+@app.post("/api/ofc/verzeichnis")
+async def ofc_verzeichnis_speichern(request: Request):
+    """MV2: Mitglied anlegen (ohne `id`) oder aendern -- nur mit Bestaetigung; Nummer eindeutig, E-Mail geprueft."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Speichern braucht die Bestätigung."}
+    from ...core.ofc_verzeichnis import speichern
+    felder = body.get("felder") if isinstance(body.get("felder"), dict) else {}
+    return speichern(_ofc_store(), str(body.get("id") or ""), felder, von=_von(request))
+
+
+@app.post("/api/ofc/verzeichnis/{pid}/{aktion}")
+async def ofc_verzeichnis_aktion(request: Request, pid: str, aktion: str):
+    """MV2: `aufnehmen` (Anfrage -> Mitglied), `kuendigen` (ins Archiv, keine Nachrichten mehr), `wieder` (aus dem Archiv)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core import ofc_verzeichnis as vz
+    st, von = _ofc_store(), _von(request)
+    if aktion == "aufnehmen":
+        return vz.aufnehmen(st, pid, nummer=str(body.get("nummer") or ""), mitgliedschaft=str(body.get("mitgliedschaft") or ""), von=von)
+    if aktion == "kuendigen":
+        return vz.kuendigen(st, pid, datum=str(body.get("datum") or ""), notiz=str(body.get("notiz") or ""), von=von)
+    if aktion == "wieder":
+        return vz.wieder_aufnehmen(st, pid, von=von)
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "Unbekannte Aktion")
 
 
 @app.get("/api/ofc/mitglieder/abgleich")

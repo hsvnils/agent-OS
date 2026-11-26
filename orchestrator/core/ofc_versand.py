@@ -79,6 +79,8 @@ def plan(st: dict, sid: str, mitglieder: list[dict] | None) -> dict:
                              "preis_cent": t.get("preis_cent") or 0})
         g["betrag_cent"] += max(0, (t.get("preis_cent") or 0) - (b.get("bezahlt_cent") or 0))
     frueher = _gesendet(st)
+    from .ofc_verzeichnis import gekuendigte_nummern
+    gek = gekuendigte_nummern(st)
     out = []
     for nr, g in sorted(gruppen.items(), key=lambda x: x[0].zfill(8)):
         ms = je_nr.get(nr, [])
@@ -94,7 +96,9 @@ def plan(st: dict, sid: str, mitglieder: list[dict] | None) -> dict:
                and not x.get("test") and set(x.get("tickets") or []) >= nrn]
         g["gebeten_am"] = max((x.get("ts", "") for x in alt), default="")
         g["extern"] = bool(m and m.get("extern"))
-        if mitglieder is None and not g["extern"]:
+        if nr in gek:                                                   # OFC_MITGLIEDER E4: Gekuendigte nie anschreiben
+            g["status"], g["hinweis"] = "gesperrt", "Mitglied gekündigt – keine Nachrichten mehr."
+        elif mitglieder is None and not g["extern"]:
             g["status"], g["hinweis"] = "gesperrt", "Mitgliederliste nicht lesbar."
         elif not m:
             g["status"], g["hinweis"] = "gesperrt", ("Mitgliedsnummer mehrfach in der Liste." if len(ms) > 1 else "Mitgliedsnummer nicht in der Liste.")
@@ -217,6 +221,7 @@ def tickets_plan(st: dict, sid: str, mitglieder: list[dict] | None) -> dict:
         g = gruppen.setdefault(nr, {"nummer": nr, "tickets": []})
         g["tickets"].append({"ticketnr": t["ticketnr"], "name": t.get("name", ""), "platz": _platz(t), "datei": t.get("datei", ""),
                              "wallet": t.get("wallet", ""), "gesendet_am": gesendet.get(t["ticketnr"], "")})
+    from .ofc_verzeichnis import gekuendigte_nummern
     out = []
     for nr, g in sorted(gruppen.items(), key=lambda x: x[0].zfill(8)):
         ms = je_nr.get(nr, [])
@@ -228,7 +233,9 @@ def tickets_plan(st: dict, sid: str, mitglieder: list[dict] | None) -> dict:
         offen = [x for x in g["tickets"] if not x["gesendet_am"]]
         g["gesendet_am"] = max((x["gesendet_am"] for x in g["tickets"]), default="")
         fehlt = [h for h, ok in (("PDF fehlt", all(x["datei"] for x in offen)), ("Wallet fehlt", all(x["wallet"] for x in offen))) if not ok]
-        if not offen:
+        if nr in gekuendigte_nummern(st):                                # OFC_MITGLIEDER E4: Gekuendigte nie anschreiben
+            g["status"], g["hinweis"] = "gesperrt", "Mitglied gekündigt – keine Nachrichten mehr."
+        elif not offen:
             g["status"], g["hinweis"] = "gesendet", ""
         elif not m or "@" not in (m.get("email") or ""):
             g["status"], g["hinweis"] = "gesperrt", "Keine E-Mail-Adresse."

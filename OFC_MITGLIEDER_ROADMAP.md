@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-mitglieder`
 - Basiscommit: `4b1dde2`
-- Naechster Schritt: MV0+MV1 live, Import am 2026-11-26 auf CEO-Anweisung ausgefuehrt (130 Eintraege, Abgleich 0 Abweichungen; doppelte Nummern: 3125 und 3126 bleiben bei Zeile 100/102, Zeile 101 -> 3146, Zeile 103 -> 3147). Empfehlung an den CEO: dieselben neuen Nummern bis MV3 auch in der Google-Tabelle eintragen. Dann Go fuer MV2.
+- Naechster Schritt: MV2 umgesetzt auf `ai/ofc-mitglieder-mv2` (CEO-Go 2026-11-26; CEO pflegt die Google-Tabelle nicht mehr). Nach Merge/Deploy arbeitet 👥 Mitglieder mit dem LUNA-Verzeichnis; danach Go fuer MV3 (alle OFC-Funktionen lesen aus LUNA, u. a. Beitrags-Soll ohne Gekuendigte).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -87,7 +87,7 @@ auf das eigene Verzeichnis mit Parallelbetrieb und Abgleich, Export (CSV/PDF) fu
 
 ### Etappe MV2: Bearbeiten in LUNA-OS
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (`ofc_verzeichnis.speichern/aufnehmen/kuendigen/wieder_aufnehmen/verlauf/export_csv`, `GET/POST /api/ofc/verzeichnis…`; 👥 Mitglieder zeigt nach dem Import das LUNA-Verzeichnis mit Reitern Mitglieder/Anfragen/Archiv, Filtern, ＋ Mitglied, ✏️ Bearbeiten, Kuendigen, Aufnehmen, Wieder aufnehmen, Verlauf, Export; **Gekuendigte sind schon jetzt fuer Zahlungsbitten und Ticketversand gesperrt und fehlen in der Personensuche**; Beitrags-Soll folgt mit MV3; Tests `test_ofc_verzeichnis.py` mit Gegenproben)
 - Ziel / Scope: In 👥 Mitglieder:
   - **„＋ Mitglied“** legt ein Mitglied an (Nummer nach E5).
   - **✏️ Bearbeiten** fuer alle Felder aus E1.
