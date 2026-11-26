@@ -70,19 +70,19 @@ def soll(p: dict, jahr: int) -> dict:
     if a == "gold":
         if b is None:
             jahres = GOLD_CENT
-            h.append("Gold ohne Beitrag in der Tabelle – 40 € angenommen")
+            h.append("Gold ohne Beitrag in den Mitgliederdaten – 40 € angenommen")
         else:
             jahres = b
             if b != GOLD_CENT:
-                h.append(f"Gold mit {_euro(b)} in der Tabelle (statt 40 €)")
+                h.append(f"Gold mit {_euro(b)} in den Mitgliederdaten (statt 40 €)")
     elif a == "standard":
         jahres = 0
         if b:
-            h.append(f"Kostenfrei, aber {_euro(b)} in der Tabelle")
+            h.append(f"Kostenfrei, aber {_euro(b)} in den Mitgliederdaten")
     elif a == "foerder":
         jahres = b or 0
         if not b:
-            h.append("Förderbetrag fehlt in der Tabelle" + (f" – Kommentar: „{p['kommentar'][:80]}“" if p.get("kommentar") else ""))
+            h.append("Förderbetrag fehlt in den Mitgliederdaten" + (f" – Kommentar: „{p['kommentar'][:80]}“" if p.get("kommentar") else ""))
     else:
         jahres = b or 0
         if a == "unbekannt":
@@ -105,11 +105,12 @@ def beitraege(daten: dict, jahr: int | None = None) -> dict:
     if not daten or not daten.get("ok"):
         return {"ok": False, "hinweis": (daten or {}).get("hinweis") or "Mitgliederliste nicht lesbar."}
     jahr = jahr or date.today().year
-    liste = [soll(p, jahr) for p in daten.get("mitglieder", [])]
+    liste = [soll(p, jahr) for p in daten.get("mitglieder", [])        # OFC_MITGLIEDER E4: kein Soll nach dem Kuendigungsjahr
+             if not (str(p.get("gekuendigt_am") or "")[:4].isdigit() and int(str(p["gekuendigt_am"])[:4]) < jahr)]
     je_art = {k: sum(1 for x in liste if x["art"] == k) for k in ARTEN}
     hinweise = list(daten.get("hinweise") or [])
     if (n := sum(1 for x in liste if x["hinweise"])):
-        hinweise.append(f"{n} Mitglied(er) mit Hinweis – bitte in der Tabelle prüfen")
+        hinweise.append(f"{n} Mitglied(er) mit Hinweis – bitte beim Mitglied prüfen")
     gold_ohne = sum(1 for x in liste if x["art"] == "gold" and not x["naechste_zahlung"])
     return {"ok": True, "jahr": jahr, "mitglieder": liste, "hinweise": hinweise,
             "summen": {"mitglieder": len(liste), **je_art, "beitragspflichtig": sum(1 for x in liste if x["soll_cent"]),

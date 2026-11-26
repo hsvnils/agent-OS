@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 20:24] — Claude Code
+- **Was:** OFC_MITGLIEDER MV3: LUNA-Verzeichnis ist Quelle aller OFC-Funktionen (Beitraege, Eingangs-Erkennung, Zahlungsbitten, Ticketversand, Namenssuche, Mitglieder-API) ueber `ofc_verzeichnis.als_mitgliederliste` und die Weiche `quelle` (Rueckweg `OFC_MITGLIEDER_QUELLE=google`); Import-Vorschau/Abgleich lesen weiter die Tabelle; Beitraege ohne Soll nach dem Kuendigungsjahr, Foerderbetrag als Beitrag; Texte ohne Tabellenbezug; Zugriffs-Policy (Tabelle nur noch Archiv), Datenfluesse, Register; Baseline 1929. MV2-Deploy auf der NAS geprueft (119 Mitglieder, 11 Anfragen).
+- **Warum:** CEO: „Deploy gemacht, Go fuer MV3“.
+- **Betroffen:** `orchestrator/core/ofc_verzeichnis.py`, `orchestrator/core/ofc_beitraege.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_ofc_verzeichnis.py`, `OFC_MITGLIEDER_ROADMAP.md`, `governance/zugriffs-policy.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-26 20:09] — Claude Code
 - **Was:** Merge `ai/ofc-mitglieder-mv2` nach `main` (OFC_MITGLIEDER MV2), Branch geloescht; Deploy-Befehle an den CEO.
 - **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.

@@ -186,3 +186,69 @@ class TestApiMV2(ApiBasis):
                     self.assertEqual(self.c.get("/api/ofc/verzeichnis/export.csv").status_code, 403)
                     self.assertEqual(self.c.post("/api/ofc/verzeichnis", json={"bestaetigt": True}).status_code, 403)
                     self.assertEqual(self.c.post(f"/api/ofc/verzeichnis/{r['id']}/wieder", json={"bestaetigt": True}).status_code, 403)
+
+
+class TestMV3(unittest.TestCase):
+    """MV3: LUNA als Quelle in derselben Form wie die Tabelle; Beitraege ohne Soll nach dem Kuendigungsjahr; Rueckweg google."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.st = OfcStore(Path(self.tmp.name) / "fanclub")
+        daten = auswerten(_werte())
+        zeile_cara = next(p["zeile"] for p in daten["mitglieder"] if p["vorname"] == "Cara")
+        vz.import_anwenden(self.st, daten, {"0008": zeile_cara})
+        self.p = {p["vorname"]: p for p in self.st.stand()["verzeichnis"].values()}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_quelle(self):
+        self.assertEqual(vz.quelle(self.st.stand(), env={}), "luna")
+        self.assertEqual(vz.quelle(self.st.stand(), env={"OFC_MITGLIEDER_QUELLE": "google"}), "google")
+        self.assertEqual(vz.quelle({"verzeichnis": {}}, env={}), "google")
+
+    def test_gleiche_form_und_aenderungen_wirken(self):
+        vz.speichern(self.st, self.p["Anna"]["id"], {"email": "anna.neu@example.org"})
+        d = vz.als_mitgliederliste(self.st.stand())
+        m = {p["vorname"]: p for p in d["mitglieder"]}
+        self.assertEqual(m["Anna"]["email"], "anna.neu@example.org")                  # Aenderung in LUNA zaehlt
+        self.assertEqual((m["Anna"]["name"], m["Anna"]["nummer"], m["Bert"]["nummer"]), ("Anna Muster", "0007", "0011"))
+        self.assertEqual(m["Bert"]["mitgliedschaft"], "Gold")
+        self.assertEqual([p["vorname"] for p in d["anfragen"]], ["Neu"])
+        for k in ("zeile", "status", "vorname", "nachname", "seit", "beitrag", "naechste_zahlung", "kommentar", "felder", "hinweise"):
+            self.assertIn(k, m["Anna"])
+
+    def test_beitraege_ohne_gekuendigte_im_folgejahr(self):
+        from orchestrator.core.ofc_beitraege import beitraege
+        vz.kuendigen(self.st, self.p["Anna"]["id"], datum="2027-03-01")
+        d = vz.als_mitgliederliste(self.st.stand())
+        nr27 = {x["nummer"] for x in beitraege(d, 2027)["mitglieder"]}
+        nr28 = {x["nummer"] for x in beitraege(d, 2028)["mitglieder"]}
+        self.assertIn("0007", nr27)                                                       # im Kuendigungsjahr noch Soll
+        self.assertNotIn("0007", nr28)                                                    # danach nicht mehr
+        self.assertIn("0011", nr28)
+
+    def test_foerderbetrag_als_beitrag(self):
+        from orchestrator.core.ofc_beitraege import soll
+        vz.speichern(self.st, self.p["Fred"]["id"], {"foerder_betrag": "60,00 €", "seit": "01.01.2020"})
+        fred = next(p for p in vz.als_mitgliederliste(self.st.stand())["mitglieder"] if p["vorname"] == "Fred")
+        self.assertEqual(soll(fred, 2027)["soll_cent"], 6000)
+
+
+class TestApiMV3(ApiBasis):
+    def test_datenquelle_luna(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d:
+            st = OfcStore(Path(d) / "fanclub")
+            st.erfassen("ofc_verzeichnis", {"id": "P-1", "nummer": "0042", "vorname": "Lina", "nachname": "Luna", "email": "l@example.org",
+                                            "mitgliedschaft": "gold", "status": "mitglied", "seit": "01.01.2020"})
+            with mock.patch.object(self.w, "_ofc_store", return_value=st), \
+                    mock.patch.object(self.w, "_ofc_tabelle_daten", side_effect=AssertionError("Tabelle darf nicht gelesen werden")):
+                d1 = self.w._ofc_mitglieder_daten()
+                self.assertEqual((d1["quelle"], d1["mitglieder"][0]["nummer"]), ("luna", "0042"))
+                self.assertEqual(self.c.get("/api/ofc/mitglieder").json()["blatt"], "LUNA-Verzeichnis")
+                self.assertIn({"name": "Lina Luna", "nummer": "0042", "vorname": "Lina", "nachname": "Luna", "email": "l@example.org"},
+                              self.c.get("/api/ofc/namen").json()["personen"])
+            with mock.patch.object(self.w, "_ofc_store", return_value=st), mock.patch.dict("os.environ", {"OFC_MITGLIEDER_QUELLE": "google"}), \
+                    mock.patch.object(self.w, "_ofc_tabelle_daten", return_value={"ok": True, "quelle": "google"}):
+                self.assertEqual(self.w._ofc_mitglieder_daten()["quelle"], "google")       # Rueckweg
