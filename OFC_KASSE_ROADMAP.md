@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-kasse-bau`
 - Basiscommit: `fda2486`
-- Naechster Schritt: KA0-KA5 live (2026-11-26), KA4b live, KA4c (vorgemerkte Zahlungen) auf `ai/ofc-kasse-ka4c`. Danach Gesamtabnahme durch den CEO (alle Etappen zusammen): Beitraege 2027, Eingaenge mit Beitragsvorschlaegen, Kasse mit Anfangsbestand, PayPal-Aktivitaeten-Export (CSV) hochladen und abgleichen, Kassenbericht. Danach Status „abgeschlossen“.
+- Naechster Schritt: KA0-KA5, KA4b und KA4c live (2026-11-26). Der echte PayPal-Export wurde am 2026-11-26 vom CEO importiert und auf der NAS nachgeprueft: Der Kassenstand stimmt mit dem PayPal-Guthaben ueberein bis auf eine Trikot-Zahlung, die im Export fehlt (CEO klaert). Offen beim CEO: Trikot-Zahlung klaeren, nicht zugeordnete Eingaenge zuordnen, zurueckgegebene Lastschriften in PayPal pruefen, Gesamtabnahme (Rechner/iPad/iPhone). Danach Status „abgeschlossen“.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

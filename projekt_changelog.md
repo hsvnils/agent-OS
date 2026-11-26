@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 15:09] — Claude Code
+- **Was:** OFC-Kasse: Import des echten PayPal-Exports durch den CEO auf der NAS nachgeprueft (Kassenstand stimmt bis auf eine im Export fehlende Trikot-Zahlung); Naechster Schritt der Roadmap fortgeschrieben.
+- **Warum:** CEO meldet „Import gemacht“.
+- **Betroffen:** `OFC_KASSE_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 12:55] — Claude Code
 - **Was:** Branch `ai/ofc-kasse-ka4c` (vorgemerkte Spaeter-bezahlen-Zahlungen per CSV bestaetigen) per --no-ff in `main` gemergt, Branch lokal und remote geloescht.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
