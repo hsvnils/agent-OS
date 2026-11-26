@@ -61,6 +61,7 @@ class OfcStore:
         kasse_importe: dict = {}                                    # KA4: CSV-Importlaeufe
         einstellungen: dict = {}
         mails: dict = {}                                            # OFC_TICKETVERSAND TV3: gesendete Mails
+        personen: dict = {}                                         # TV3b: externe Personen G<Nr> (Name, E-Mail)
         letzter_import = ""
         for e in self.eintraege():
             d, t = e["daten"], e["typ"]
@@ -97,6 +98,8 @@ class OfcStore:
             elif t == "ofc_wallet":                                 # OFC_TICKETVERSAND TV1: Wallet-Link je Ticket
                 tk = tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})
                 tk.update(wallet=d.get("url", ""), wallet_quelle=d.get("quelle", ""))
+            elif t == "ofc_person":                                 # TV3b: externe Person (G<Nr>), kein Mitglied
+                personen.setdefault(d["id"], {"id": d["id"]}).update({k: v for k, v in d.items() if k != "id"})
             elif t == "ofc_mail":                                   # TV3: Versandprotokoll (ohne Mailtext)
                 mails[d["id"]] = d | {"ts": e["ts"]}
             elif t == "ofc_mitglied":                               # TV2: Mitgliedsnummer je Ticket (leer = Gast)
@@ -108,7 +111,7 @@ class OfcStore:
                                           "name_neu": d["name_neu"], "datei_neu": d["datei_neu"]}
         return {"spiele": spiele, "tickets": tickets, "zahlungen": zahlungen, "eingaenge": eingaenge, "aliase": aliase,
                 "beitrag_status": beitrag_status, "beitrag_aliase": beitrag_aliase, "kasse": kasse, "kasse_start": kasse_start,
-                "kasse_kat": kasse_kat, "kasse_importe": kasse_importe, "einstellungen": einstellungen, "mails": mails,
+                "kasse_kat": kasse_kat, "kasse_importe": kasse_importe, "einstellungen": einstellungen, "mails": mails, "personen": personen,
                 "letzter_import": letzter_import}
 
 
@@ -308,6 +311,30 @@ def mitglied_setzen(store: OfcStore, ticketnr: str, nummer: str, *, von: str = "
         return {"ok": True, "geaendert": False}
     store.erfassen("ofc_mitglied", {"ticketnr": ticketnr, "nummer": nummer}, von=von)
     return {"ok": True, "geaendert": True}
+
+
+_RE_MAIL = re.compile(r"[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+")
+
+
+def person_speichern(store: OfcStore, vorname: str, nachname: str, email: str, pid: str = "", *, von: str = "") -> dict:
+    """TV3b: externe Person (kein Mitglied) anlegen oder aendern. Gleiche E-Mail = dieselbe Person. -> {ok, id}"""
+    vn, nn = name_sauber(vorname), name_sauber(nachname)
+    mail = (email or "").strip()
+    if not (vn or nn):
+        return {"ok": False, "hinweis": "Vor- oder Nachname angeben."}
+    if mail and not _RE_MAIL.fullmatch(mail):
+        return {"ok": False, "hinweis": "E-Mail-Adresse ist ungültig."}
+    pers = store.stand()["personen"]
+    if pid and pid not in pers:
+        return {"ok": False, "hinweis": "Person nicht gefunden."}
+    if not pid and mail:
+        pid = next((k for k, p in pers.items() if (p.get("email") or "").casefold() == mail.casefold()), "")
+    if not pid:
+        pid = "G" + str(1 + max((int(k[1:]) for k in pers if k[1:].isdigit()), default=0))
+    alt = pers.get(pid, {})
+    if (alt.get("vorname"), alt.get("nachname"), alt.get("email")) != (vn, nn, mail):
+        store.erfassen("ofc_person", {"id": pid, "vorname": vn, "nachname": nn, "email": mail}, von=von)
+    return {"ok": True, "id": pid}
 
 
 def spieltag_setzen(store: OfcStore, sid: str, kennung: str, *, von: str = "") -> dict:

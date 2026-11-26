@@ -178,3 +178,5 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
 - Die Adresse kommt live aus der Mitgliederliste (Google-Tabelle, nur lesend) ueber die Mitgliedsnummer am Ticket. LUNA
   speichert sie nicht; das Protokoll enthaelt nur die maskierte Adresse.
 - Zweck: Abwicklung der Kartenvergabe im Mitgliedsverhaeltnis (Zahlung und Zustellung der Karten).
+- **TV3b (2026-11-26):** Fuer Personen ausserhalb des Fanclubs (z. B. Ersatz bei Krankheit) speichert LUNA Vorname, Nachname und
+  E-Mail im Fanclub-Speicher auf der NAS (nicht im Git, im Backup), nur fuer Zahlungsbitte und Ticketversand; keine KI.

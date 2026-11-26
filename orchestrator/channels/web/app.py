@@ -6740,10 +6740,17 @@ async def ofc_name_setzen(request: Request, nr: str):
     body = await _json(request)
     if body.get("bestaetigt") is not True:
         return {"ok": False, "hinweis": "Ändern braucht die Bestätigung."}
-    from ...core.ofc_store import mitglied_setzen, name_sauber, namen_setzen, rueckgaengig
+    from ...core.ofc_store import mitglied_setzen, name_sauber, namen_setzen, person_speichern, rueckgaengig
     if body.get("rueckgaengig"):
         return rueckgaengig(_ofc_store(), nr, von=_von(request))
     st = _ofc_store()
+    if isinstance(body.get("extern"), dict):                   # TV3b: externe Person (Name + E-Mail) statt Mitglied
+        e = body["extern"]
+        pr = person_speichern(st, str(e.get("vorname") or ""), str(e.get("nachname") or ""), str(e.get("email") or ""),
+                              str(e.get("id") or ""), von=_von(request))
+        if not pr["ok"]:
+            return pr
+        body["mitglied"] = pr["id"]
     if "mitglied" in body:                                     # OFC_TICKETVERSAND TV2: Mitgliedsnummer mitmerken
         m = mitglied_setzen(st, nr, str(body.get("mitglied") or ""), von=_von(request))
         if not m["ok"]:
@@ -6765,7 +6772,9 @@ def ofc_namen(request: Request):
     except Exception:
         m = {}
     return {"namen": namen_vorschlaege(_ofc_store(), m.get("mitglieder") if m.get("ok") else []),
-            "personen": [{"name": p["name"], "nummer": p["nummer"]} for p in (m.get("mitglieder") or []) if m.get("ok") and p["name"]],
+            "personen": [{"name": p["name"], "nummer": p["nummer"], "vorname": p.get("vorname", ""), "nachname": p.get("nachname", ""),
+                          "email": p.get("email", "")} for p in (m.get("mitglieder") or []) if m.get("ok") and p["name"]],
+            "extern": sorted(_ofc_store().stand()["personen"].values(), key=lambda x: (x.get("nachname", ""), x.get("vorname", ""))),
             "mitglieder_ok": bool(m.get("ok"))}
 
 

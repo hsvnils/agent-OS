@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-ticketversand`
 - Basiscommit: `81ee7f0`
-- Naechster Schritt: TV3 umgesetzt auf `ai/ofc-ticketversand-tv3` (CEO-Go 2026-11-26, kein PayPal.me); nach Merge/Deploy zuerst „Testmail an moin@“ (Abnahme TV3), dann erste echte Zahlungsbitte; danach Go fuer TV4.
+- Naechster Schritt: TV3 live (Testmail 26.11. angekommen, Protokoll ok). TV3b umgesetzt auf `ai/ofc-ticketversand-tv3b`; nach Merge/Deploy Personen an den offenen Spielen eintragen (CEO), dann Go fuer TV4.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -178,6 +178,21 @@ Versandprotokoll; Ansicht auf Rechner, iPad und iPhone.
 - Risiko / Rueckweg: Eine falsche Mail kann nicht zurueckgeholt werden; daher Vorschau, Bestaetigung, Testmodus und Limit.
   Schalter `OFC_MAILVERSAND=0` sperrt alles.
 - Abhaengig von: TV2. Aufwand: mittel.
+
+### Etappe TV3b: Person am Ticket (Mitglied oder extern), Textkorrektur, klarere Knoepfe
+
+- Status: umgesetzt 2026-11-26 (CEO-Go)
+- Ziel / Scope:
+  - **Dialog ✏️ „Person“:** „Mitglied oder bekannte Person suchen“ fuellt Vorname, Nachname und E-Mail; ein Mitglied wird
+    ueber die Nummer gemerkt (Daten aus der Liste, Felder gesperrt, „✕ loesen“).
+  - **Externe Personen** (CEO: Karten gehen auch ausserhalb weiter) mit Vorname, Nachname und E-Mail bekommen eine eigene
+    Nummer `G<n>` (Ereignis `ofc_person` im Fanclub-Speicher, gleiche E-Mail = gleiche Person) und erscheinen in der Suche
+    wieder. Verwendungszweck dann z. B. „11-G3“.
+  - **Beim Oeffnen** bleibt der Name auf dem Ticket; der Name der Person greift nur bei aktiver Auswahl.
+  - **Mailtext:** „über deinen Fanclub HSVInside“.
+  - **Knoepfe** auf dem Rechner mit Wort („Person“, „PDF“, „Wallet“, „Link“), auf dem iPhone nur Symbol, mit Hinweis beim
+    Darueberfahren.
+- Gate: Tests `test_ofc_versand.py` (`TestExtern`, API mit `extern`), headless Rechner/iPhone.
 
 ### Etappe TV4: Zahlung zuordnen und Tickets senden
 
