@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 20:31] — Claude Code
+- **Was:** OFC_MITGLIEDER MV4 erledigt (CEO: Google-Formular geschlossen, Freigabe der Tabelle zurueckgenommen); auf der NAS geprueft, dass Verzeichnis, Beitraege und Personensuche ohne Tabelle aus LUNA laufen; To-do MV4 erledigt; Roadmap, ROADMAP, Register und Zugriffs-Policy (Zugang beendet) fortgeschrieben.
+- **Warum:** CEO: „Formular geschlossen und Freigabe zurückgenommen“.
+- **Betroffen:** `OFC_MITGLIEDER_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `governance/zugriffs-policy.md`, `projekt_changelog.md`, `todos/log.jsonl` (NAS)
+
 ## [2026-11-26 20:29] — Claude Code
 - **Was:** MV3 nach Deploy auf der NAS verifiziert: Beitraege 2027 aus dem LUNA-Verzeichnis identisch mit dem Stand aus der Tabelle (119/65/52/1/1, 66 beitragspflichtig, Soll 2.640 €); Mitglieder-API, Personensuche (119) und Zahlungsbitten (11-0001) lesen aus LUNA. Roadmap/ROADMAP fortgeschrieben, To-do MV4 (30.11.) angelegt.
 - **Warum:** CEO: „Deploy gemacht“; Abnahme nachhalten (F4).

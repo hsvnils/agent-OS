@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-mitglieder`
 - Basiscommit: `4b1dde2`
-- Naechster Schritt: MV3 live und verifiziert (2026-11-26: Beitraege 2027 aus LUNA identisch mit der Tabelle -- 119 Mitglieder, 65 Gold, 52 Standard, 1 Foerder, 1 Vorstand, 66 beitragspflichtig, Soll 2.640 €; Mitglieder-API, Personensuche und Zahlungsbitten lesen aus LUNA). Offen MV4 (CEO): Google-Formular schliessen, Freigabe der Tabelle fuer LUNAs Konto zuruecknehmen; danach Sichtabnahme und Status „abgeschlossen“.
+- Naechster Schritt: MV4 erledigt (2026-11-26, CEO: Formular geschlossen, Freigabe zurueckgenommen); alle OFC-Funktionen laufen aus LUNA (geprueft). Offen nur die Sichtabnahme 👥 Mitglieder auf Rechner/iPad/iPhone durch den CEO, dann Status „abgeschlossen“.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -121,7 +121,7 @@ auf das eigene Verzeichnis mit Parallelbetrieb und Abgleich, Export (CSV/PDF) fu
 
 ### Etappe MV4: Google-Formular abschalten (CEO)
 
-- Status: geplant
+- Status: erledigt 2026-11-26 (CEO; danach auf der NAS geprueft: Verzeichnis 119 + 11, Beitraege 2027 Soll 2.640 € aus LUNA, Personensuche 119; der Abgleich mit der Tabelle meldet nach Ablauf des 5-Minuten-Speichers „nicht lesbar“ -- gewollt)
 - Ziel / Scope: Der CEO schliesst das Google-Formular und nimmt die Freigabe der Tabelle fuer LUNAs Google-Konto zurueck.
   LUNA liest die Tabelle danach nicht mehr; der Lese-Code bleibt fuer einen Rueckweg im Repo (Schalter).
 - Gate: Mitgliederansicht und alle OFC-Funktionen laufen ohne Tabelle (LUNA zeigt „Quelle: LUNA“).
