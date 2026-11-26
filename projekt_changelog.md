@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 18:10] — Claude Code
+- **Was:** Merge `ai/ofc-ticketversand-tv3` nach `main` (OFC_TICKETVERSAND TV3), Branch geloescht; Deploy-Befehle an den CEO.
+- **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-11-26 18:02] — Claude Code
 - **Was:** OFC_TICKETVERSAND TV3: Zahlungsbitte je Mitglied und Spiel per Mail aus moin@hsvinside.de (feste Vorlage mit Spiel, Karten, Betrag, Verwendungszweck `<Spieltag>-<Nr>`, PayPal an moin@), Senden nur nach CEO-Klick mit Auflagen (ein Empfaenger, nie doppelt ohne „erneut“, 30/Stunde, Testmail an moin@, Protokoll ohne Text, Schalter `OFC_MAILVERSAND`); Abschnitt „✉️ Zahlungsbitten“ im Spiel; Zugriffs-Policy (CISO), Datenfluesse, Datenschutz-Nachtrag, Register, Dienste-Register, Roadmap, Baseline 1902.
 - **Warum:** CEO: „Go fuer TV3, keinen PayPal.me-Link“.
