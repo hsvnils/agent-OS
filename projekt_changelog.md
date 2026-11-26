@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 20:29] — Claude Code
+- **Was:** MV3 nach Deploy auf der NAS verifiziert: Beitraege 2027 aus dem LUNA-Verzeichnis identisch mit dem Stand aus der Tabelle (119/65/52/1/1, 66 beitragspflichtig, Soll 2.640 €); Mitglieder-API, Personensuche (119) und Zahlungsbitten (11-0001) lesen aus LUNA. Roadmap/ROADMAP fortgeschrieben, To-do MV4 (30.11.) angelegt.
+- **Warum:** CEO: „Deploy gemacht“; Abnahme nachhalten (F4).
+- **Betroffen:** `OFC_MITGLIEDER_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`, `todos/log.jsonl` (NAS)
+
 ## [2026-11-26 20:28] — Claude Code
 - **Was:** Merge `ai/ofc-mitglieder-mv3` nach `main` (OFC_MITGLIEDER MV3), Branch geloescht; Deploy-Befehle an den CEO.
 - **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.
