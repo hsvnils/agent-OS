@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 19:08] — Claude Code
+- **Was:** OFC_TICKETVERSAND TV3c: Karten von Hand als bezahlt markieren (je Karte „💶 bezahlt“, je Person „💶 alle bezahlt“; Zahlart, Datum, Notiz; „↩︎ bezahlt“ nimmt zurueck; Ereignis `ofc_bezahlt`), wirkt in Bezahlt-Stand, Zahlungsbitten und Mitgliederansicht, keine Kassenbuchung; Knoepfe im Spiel brechen bei Platzmangel um; Baseline 1905.
+- **Warum:** CEO: „manuell Zahlungen als bezahlt markieren“, Go TV3c.
+- **Betroffen:** `orchestrator/core/ofc_store.py`, `orchestrator/core/ofc_eingang.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`, `orchestrator/tests/test_ofc_versand.py`, `OFC_TICKETVERSAND_ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-26 18:58] — Claude Code
 - **Was:** Merge `ai/ofc-ticketversand-tv3b` nach `main` (OFC_TICKETVERSAND TV3b), Branch geloescht; Deploy-Befehle an den CEO. Neuer CEO-Wunsch (Karten von Hand als bezahlt markieren) als TV3c vorgelegt.
 - **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.

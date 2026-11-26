@@ -100,6 +100,8 @@ class OfcStore:
                 tk.update(wallet=d.get("url", ""), wallet_quelle=d.get("quelle", ""))
             elif t == "ofc_person":                                 # TV3b: externe Person (G<Nr>), kein Mitglied
                 personen.setdefault(d["id"], {"id": d["id"]}).update({k: v for k, v in d.items() if k != "id"})
+            elif t == "ofc_bezahlt":                                # TV3c: von Hand bezahlt (oder zurueckgenommen)
+                tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})["hand_bezahlt"] = d | {"ts": e["ts"], "von": e.get("von", "")}
             elif t == "ofc_mail":                                   # TV3: Versandprotokoll (ohne Mailtext)
                 mails[d["id"]] = d | {"ts": e["ts"]}
             elif t == "ofc_mitglied":                               # TV2: Mitgliedsnummer je Ticket (leer = Gast)
@@ -335,6 +337,36 @@ def person_speichern(store: OfcStore, vorname: str, nachname: str, email: str, p
     if (alt.get("vorname"), alt.get("nachname"), alt.get("email")) != (vn, nn, mail):
         store.erfassen("ofc_person", {"id": pid, "vorname": vn, "nachname": nn, "email": mail}, von=von)
     return {"ok": True, "id": pid}
+
+
+BEZAHLT_ARTEN = {"bar": "Bar", "ueberweisung": "Überweisung", "paypal": "PayPal", "sonstiges": "Sonstiges"}
+
+
+def bezahlt_markieren(store: OfcStore, ticketnrn: list[str], bezahlt: bool, *, art: str = "bar", datum: str = "",
+                      notiz: str = "", von: str = "") -> dict:
+    """TV3c: Karten von Hand als bezahlt markieren (oder die Markierung zuruecknehmen). Nichts wird geloescht; die Kasse
+    (= PayPal-Konto) bleibt unberuehrt -- Bar/Ueberweisung kommen nicht ins Kassenbuch."""
+    from datetime import date as _d
+    st = store.stand()
+    nrn = [n for n in dict.fromkeys(ticketnrn or []) if n in st["tickets"]]
+    if not nrn:
+        return {"ok": False, "hinweis": "Keine Karte gefunden."}
+    if bezahlt and art not in BEZAHLT_ARTEN:
+        return {"ok": False, "hinweis": "Zahlart: Bar, Überweisung, PayPal oder Sonstiges."}
+    datum = (datum or _d.today().isoformat())[:10]
+    try:
+        _d.fromisoformat(datum)
+    except ValueError:
+        return {"ok": False, "hinweis": "Datum als JJJJ-MM-TT."}
+    n = 0
+    for nr in nrn:
+        alt = st["tickets"][nr].get("hand_bezahlt") or {}
+        if bool(alt.get("bezahlt")) == bezahlt and (not bezahlt or (alt.get("art"), alt.get("datum")) == (art, datum)):
+            continue
+        store.erfassen("ofc_bezahlt", {"ticketnr": nr, "bezahlt": bezahlt, "art": art if bezahlt else "", "datum": datum if bezahlt else "",
+                                       "notiz": (notiz or "").strip()[:200]}, von=von)
+        n += 1
+    return {"ok": True, "geaendert": n}
 
 
 def spieltag_setzen(store: OfcStore, sid: str, kennung: str, *, von: str = "") -> dict:

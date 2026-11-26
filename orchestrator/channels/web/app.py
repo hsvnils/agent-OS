@@ -6841,6 +6841,22 @@ async def ofc_zahlungsbitte_senden(request: Request, sid: str):
                               erneut=bool(body.get("erneut")), von=_von(request))
 
 
+@app.post("/api/ofc/tickets/bezahlt")
+async def ofc_tickets_bezahlt(request: Request):
+    """TV3c: Karten von Hand als bezahlt markieren oder zuruecknehmen (Bar, Ueberweisung …) -- nur mit Bestaetigung; Kasse
+    (PayPal-Konto) bleibt unberuehrt."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_store import bezahlt_markieren
+    nrn = body.get("tickets") or []
+    if not isinstance(nrn, list) or not all(isinstance(x, str) for x in nrn):
+        return {"ok": False, "hinweis": "Karten als Liste angeben."}
+    return bezahlt_markieren(_ofc_store(), nrn, body.get("bezahlt") is not False, art=str(body.get("art") or "bar"),
+                             datum=str(body.get("datum") or ""), notiz=str(body.get("notiz") or ""), von=_von(request))
+
+
 @app.post("/api/ofc/wallet/abholen")
 async def ofc_wallet_abholen(request: Request):
     """TV1: Wallet-Links aus den HSV-Mails nachholen (nur lesend, bis 365 Tage); zugeordnet nur ueber die Ticketnummer."""
