@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/app-kennzahlen` (Teil 1), `ai/app-kennzahlen-live` (Erweiterung Live, AK5-AK7)
 - Basiscommit: `fef5b17`
-- Naechster Schritt: AK4 teilweise erfuellt (Abgleich der Stichtage 01.11., 15.11., 22.11. am 2026-11-26 durch den CEO: alle gleich); offen nur der Lauf am 27./28.11. (Claude Code prueft am 28.11.). Live-Erweiterung: Antworten der App-Sitzung liegen vor (unten); wartet auf L1-L6 und Go fuer AK5+AK6.
+- Naechster Schritt: AK5+AK6 (Live-Zahlen) umgesetzt auf `ai/app-kennzahlen-live` (CEO-Go 2026-11-26, L1-L6 wie empfohlen); nach Merge/Deploy (Neustart beider Container) prueft Claude Code den ersten Live-Abruf (nur Zaehlungen), dann AK7. AK4: Lauf am 27./28.11. pruefe ich am 28.11.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -254,12 +254,12 @@ Live-Werte sind vorlaeufig und gehoeren **nicht** in die Tageswerte.
 
 | Nr | Frage | Empfehlung |
 |---|---|---|
-| L1 | Wo stellt man den Takt ein? | **In LUNA-OS im Bereich App** (nur CEO), Standard 15 Minuten, erlaubt 5-60. Eine `.env`-Zeile braeuchte jedes Mal einen Neustart. |
-| L2 | Nach einem 401 ist der Live-Abruf angehalten. Wie geht es weiter? | **Knopf „Live wieder starten“** im Bereich App (nur CEO) plus Meldung per Telegram; der Tagesabruf behandelt 401 wie bisher. |
-| L3 | Tagesverlauf fuer die Kurve „Registrierungen heute“? | **Ja**, Dateien je Tag, nach 7 Tagen automatisch geloescht (nur diese eigenen Live-Zwischenwerte; die Tageswerte bleiben unberuehrt). |
-| L4 | 4 Fehlschlaege hintereinander: nur Telegram oder auch die Glocke? | **Beides**, wie bei den Tageswerten (E4): einmal melden, bis es wieder geht. |
-| L5 | Live-Abgleich fuer die Abnahme? | **Wie beim Kontroll-Abgleich:** Du fuegst das Ergebnis von `select * from public.luna_live_kennzahlen_v1();` in LUNA-OS ein, LUNA vergleicht je Kennzahl den Wert mit dem Live-Stand derselben Minute und zeigt ✅/❌. So sieht kein Modell die Zahlen. |
-| L6 | `anmeldungen_ohne_abschluss` in den Tageswerten? | **Ja**, als Momentaufnahme ab dem ersten Nachtlauf; in „Registrierte gesamt“ als zweite, gestrichelte Linie („ohne Profil“), sobald Daten da sind. |
+| L1 (wie empfohlen) | Wo stellt man den Takt ein? | **In LUNA-OS im Bereich App** (nur CEO), Standard 15 Minuten, erlaubt 5-60. Eine `.env`-Zeile braeuchte jedes Mal einen Neustart. |
+| L2 (wie empfohlen) | Nach einem 401 ist der Live-Abruf angehalten. Wie geht es weiter? | **Knopf „Live wieder starten“** im Bereich App (nur CEO) plus Meldung per Telegram; der Tagesabruf behandelt 401 wie bisher. |
+| L3 (wie empfohlen) | Tagesverlauf fuer die Kurve „Registrierungen heute“? | **Ja**, Dateien je Tag, nach 7 Tagen automatisch geloescht (nur diese eigenen Live-Zwischenwerte; die Tageswerte bleiben unberuehrt). |
+| L4 (wie empfohlen) | 4 Fehlschlaege hintereinander: nur Telegram oder auch die Glocke? | **Beides**, wie bei den Tageswerten (E4): einmal melden, bis es wieder geht. |
+| L5 (wie empfohlen) | Live-Abgleich fuer die Abnahme? | **Wie beim Kontroll-Abgleich:** Du fuegst das Ergebnis von `select * from public.luna_live_kennzahlen_v1();` in LUNA-OS ein, LUNA vergleicht je Kennzahl den Wert mit dem Live-Stand derselben Minute und zeigt ✅/❌. So sieht kein Modell die Zahlen. |
+| L6 (wie empfohlen) | `anmeldungen_ohne_abschluss` in den Tageswerten? | **Ja**, als Momentaufnahme ab dem ersten Nachtlauf; in „Registrierte gesamt“ als zweite, gestrichelte Linie („ohne Profil“), sobald Daten da sind. |
 
 ### Antworten der App-Sitzung (2026-11-26, zu den Rueckfragen aus `LUNA_ANTWORT_LIVE.md`)
 
@@ -285,7 +285,7 @@ Live-Werte sind vorlaeufig und gehoeren **nicht** in die Tageswerte.
 
 ### Etappe AK5: Live-Abruf, Ablage und Meldungen
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (`abrufen_live`, `live_lauf` im Minuten-Thread von `luna-telegram`, `live.json` + `live_verlauf/` mit Loeschen nach 7 Tagen, `live_einstellung.json` (Takt 5-60, Freigabe nach 401), Fehlerregeln, Meilensteine mit denselben Schluesseln, Glocke; Tests `test_app_kennzahlen_live.py` mit Gegenproben; nebenbei: beschaedigte Zeilen im Tages-Archiv werden uebersprungen)
 - Ziel / Scope:
   - **Abruf:** `abrufen_live` mit `art=live`, gleiche Schutzregeln (Token nur aus der Umgebung, nie in Log oder Fehlertext,
     Schema-Pruefung, Zeitlimit). Takt nach L1 im bestehenden Minuten-Thread.
@@ -313,7 +313,7 @@ Live-Werte sind vorlaeufig und gehoeren **nicht** in die Tageswerte.
 
 ### Etappe AK6: Anzeige „Heute live“, Live-Abgleich, neue Tageskennzahl
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (Block „Heute live“ mit Stand, veraltet ab 45 Minuten, 9 Kacheln, „Anmeldungen ohne Abschluss“ mit Hinweis, Kurve „Registrierungen heute“, Takt und „Live wieder starten“, Live-Abgleich; Abschnitte „bis gestern“; `anmeldungen_ohne_abschluss` im Katalog, gestrichelte Linie; headless Rechner/iPhone)
 - Ziel / Scope:
   - **Block „Heute live“** oben im Bereich App:
     - Zeile „Stand HH:MM“; ist der letzte erfolgreiche Abruf aelter als 45 Minuten, sind die Zahlen grau und als „veraltet“

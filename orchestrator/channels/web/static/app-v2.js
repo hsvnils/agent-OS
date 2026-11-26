@@ -4999,11 +4999,11 @@ function akStunden(werte) {   // 24 Saeulen 00-23 Uhr (Berlin), Wert per Hover/T
 }
 const akKv = (zeilen) => zeilen.map(([l, v]) => `<div class="v2-kv"><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join("");
 // Diagramm-Platzhalter; gezeichnet wird nach dem Rendern breiten-bewusst (akZeichnen)
-function akChart(id, serien, art = "balken", fmt = akZahl) {
-  AK.ch[id] = { serien: serien.filter(s => s.werte.some(v => v != null)), art, fmt, tage: AK.d.tage };
+function akChart(id, serien, art = "balken", fmt = akZahl, tage = null, zeit = false) {
+  AK.ch[id] = { serien: serien.filter(s => s.werte.some(v => v != null)), art, fmt, tage: tage || AK.d.tage, zeit };
   const s = AK.ch[id].serien;
   if (!s.length) return emptyRow("Im Zeitraum keine Werte.");
-  const leg = s.length > 1 ? `<div class="v2-legend">${s.map((x, i) => `<span><i class="v2-ak-f${i}"></i>${esc(x.name)}</span>`).join("")}</div>` : "";
+  const leg = s.length > 1 ? `<div class="v2-legend">${s.map((x, i) => `<span><i class="v2-ak-f${i}${x.gestrichelt ? " v2-ak-fdash" : ""}"></i>${esc(x.name)}</span>`).join("")}</div>` : "";
   return `<div class="v2-ak-chart" data-ak="${id}" role="img" aria-label="${esc(s.map(x => x.name).join(", "))}"></div>${leg}`;
 }
 let _akRO = null;
@@ -5021,7 +5021,8 @@ function akZeichnen(el) {
   const y = v => H - padB - ((v - min) / (max - min)) * (H - padT - padB);
   const grid = [0, .5, 1].map(f => { const t = min + (max - min) / 1.08 * f, yy = y(t).toFixed(1); return `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" class="v2-cgrid"/><text x="${padL - 5}" y="${+yy + 3}" class="v2-cax" text-anchor="end">${esc(c.fmt(t))}</text>`; }).join("");
   const xi = n > 2 ? [0, Math.floor((n - 1) / 2), n - 1] : [...Array(n).keys()];
-  const xl = xi.map(i => `<text x="${x(i).toFixed(1)}" y="${H - 6}" class="v2-cax" text-anchor="${i === 0 ? "start" : i === n - 1 ? "end" : "middle"}">${esc(datumDe(c.tage[i]).replace(/\.\d{4}$/, ""))}</text>`).join("");
+  const xlab = (i) => c.zeit ? new Date(c.tage[i]).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : datumDe(c.tage[i]).replace(/\.\d{4}$/, "");
+  const xl = xi.map(i => `<text x="${x(i).toFixed(1)}" y="${H - 6}" class="v2-cax" text-anchor="${i === 0 ? "start" : i === n - 1 ? "end" : "middle"}">${esc(xlab(i))}</text>`).join("");
   let marks = "";
   if (c.art === "balken" && c.serien.length === 1) {
     const bw = Math.max(1, Math.min(18, (W - padL - padR) / n - 2)), y0 = y(0);
@@ -5031,13 +5032,13 @@ function akZeichnen(el) {
     marks = c.serien.map((s, si) => { let d = "", auf = false;
       s.werte.forEach((v, i) => { if (v == null) { auf = false; return; } d += `${auf ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`; auf = true; });
       const pkt = s.werte.filter(v => v != null).length <= 2 ? s.werte.map((v, i) => v == null ? "" : `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="4" class="v2-ak-p${si}"/>`).join("") : "";
-      return `<path d="${d}" class="v2-ak-l${si}"/>${pkt}`; }).join("");
+      return `<path d="${d}" class="v2-ak-l${si}${s.gestrichelt ? " v2-ak-dash" : ""}"/>${pkt}`; }).join("");
   }
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" class="v2-chart">${grid}${marks}${xl}<line class="v2-ak-cross" x1="0" x2="0" y1="${padT}" y2="${H - padB}" style="display:none"/></svg><div class="v2-ctip" style="display:none"></div>`;
   const svg = el.querySelector("svg"), tip = el.querySelector(".v2-ctip"), cross = el.querySelector(".v2-ak-cross");
   const zeig = (ev) => { const r = svg.getBoundingClientRect(); let i = Math.round(((ev.clientX - r.left) / r.width * W - padL) / ((W - padL - padR) / Math.max(1, n - 1))); i = Math.max(0, Math.min(n - 1, i));
     cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.style.display = "";
-    tip.innerHTML = `<b>${esc(datumDe(c.tage[i]))}</b>` + c.serien.map((s, si) => `<br>${c.serien.length > 1 ? `<i class="v2-ak-f${si}"></i>${esc(s.name)}: ` : ""}${esc(s.werte[i] == null ? "keine Daten" : c.fmt(s.werte[i]))}`).join("");
+    tip.innerHTML = `<b>${esc(c.zeit ? xlab(i) + " Uhr" : datumDe(c.tage[i]))}</b>` + c.serien.map((s, si) => `<br>${c.serien.length > 1 ? `<i class="v2-ak-f${si}"></i>${esc(s.name)}: ` : ""}${esc(s.werte[i] == null ? "keine Daten" : c.fmt(s.werte[i]))}`).join("");
     tip.style.display = "block"; tip.style.left = Math.max(0, Math.min(r.width - 170, ev.clientX - r.left - 70)) + "px"; };
   svg.addEventListener("pointermove", zeig); svg.addEventListener("pointerdown", zeig);
   svg.addEventListener("pointerleave", () => { tip.style.display = "none"; cross.style.display = "none"; });
@@ -5045,7 +5046,8 @@ function akZeichnen(el) {
 async function renderAppKennzahlen(meldung, fehler) {
   const zr = AK_ZEITRAUM.map(([id, l]) => `<button class="v2-btn ${AK.zeitraum === id ? "pri" : ""}" data-act="ak-zeitraum" data-val="${id}">${l}</button>`).join(" ");
   const kopf = secHead("📱 Hanserautisch-App", `${zr} <button class="v2-btn" data-act="ak-abrufen">⟳ Jetzt abrufen</button> <button class="v2-btn" data-act="ak-abgleich">✓ Abgleich</button>`);
-  const d = AK.d = await jget("/api/app-kennzahlen?zeitraum=" + AK.zeitraum);
+  const [d, lv] = await Promise.all([jget("/api/app-kennzahlen?zeitraum=" + AK.zeitraum), jget("/api/app-kennzahlen/live")]);
+  AK.d = d; AK.lv = lv;
   if (!d || !d.ok) { $("#v2-app").innerHTML = kopf + emptyRow("App-Kennzahlen nicht erreichbar (nur für den CEO)."); return; }
   AK.ch = {};
   const st = d.status || {}, la = st.letzter_abruf;
@@ -5064,7 +5066,8 @@ async function renderAppKennzahlen(meldung, fehler) {
     ${tile("MRR brutto", `<div class="v2-kpi">${esc(akEuro(mrr && mrr.wert))}</div><div class="v2-sub">monatlicher Abo-Wert · ${esc(stand(mrr))}</div>`, "w3 v2-ofc-kpi")}
     ${tile("Registrierte", `<div class="v2-kpi">${esc(akZahl(regG && regG.wert))}</div><div class="v2-sub">+${esc(akZahl(regS))} im Zeitraum</div>`, "w3 v2-ofc-kpi")}
     ${tile("Registrierungen pro Tag", akChart("reg", [{ name: "Registrierungen", werte: regT }]), "w6")}
-    ${tile("Registrierte gesamt", akChart("regg", [{ name: "Registrierte", werte: akTage("registrierte_gesamt") }], "linie"), "w6")}`;
+    ${tile("Registrierte gesamt", akChart("regg", [{ name: "Registrierte", werte: akTage("registrierte_gesamt") },
+      ...(akTage("anmeldungen_ohne_abschluss", { dim1: "ohne_profil" }).some(v => v != null) ? [{ name: "Anmeldungen ohne Profil", werte: akTage("anmeldungen_ohne_abschluss", { dim1: "ohne_profil" }), gestrichelt: true }] : [])], "linie"), "w6")}`;
   const spieltage = akReihen("tippquote_registriert").flatMap(r => r.werte.map((v, i) => v == null ? null : { tag: d.tage[i], liga: r.dim1, runde: r.dim2, quote: v,
     konten: (akReihen("tippende_konten", { dim1: r.dim1, dim2: r.dim2 })[0] || { werte: [] }).werte[i] })).filter(Boolean).sort((a, b) => b.tag.localeCompare(a.tag));
   const sumKv = (paare) => akKv(paare.map(([l, k, f]) => [l, akZahl(akSumme(k, f || {}) ?? 0)]));   // Ereignisse: fehlend = 0
@@ -5100,11 +5103,61 @@ async function renderAppKennzahlen(meldung, fehler) {
   const abschnitt = (t) => `<div class="v2-ak-abschnitt">${esc(t)}</div>`;
   $("#v2-app").innerHTML = kopf + msg
     + `<div class="v2-sub" style="margin:-8px 0 12px">${esc(datumDe(d.von))} bis ${esc(datumDe(d.bis))} · Tagessummen der App, ohne Personen · nur für dich sichtbar, an kein KI-Modell${d.unbekannt ? ` · ${d.unbekannt} neue Kennzahl(en) gespeichert, noch nicht angezeigt` : ""}</div>`
-    + abschnitt("Überblick") + `<div class="v2-grid">${oben}</div>`
-    + abschnitt("Community") + `<div class="v2-grid">${community}</div>`
-    + abschnitt("Geld") + `<div class="v2-grid">${geld}</div>`
-    + abschnitt("Betrieb") + `<div class="v2-grid">${betrieb}</div>`;
+    + akLiveBlock(lv)
+    + abschnitt("Überblick · bis gestern") + `<div class="v2-grid">${oben}</div>`
+    + abschnitt("Community · bis gestern") + `<div class="v2-grid">${community}</div>`
+    + abschnitt("Geld · bis gestern") + `<div class="v2-grid">${geld}</div>`
+    + abschnitt("Betrieb · bis gestern") + `<div class="v2-grid">${betrieb}</div>`;
   akMount();
+}
+/* AK6: „Heute live“ – vorläufige Live-Zahlen (alle 15 Min.), grau ab 45 Min. ohne erfolgreichen Abruf */
+function akLiveBlock(lv) {
+  if (!lv || !lv.ok) return "";
+  const e = lv.einstellung || {};
+  const kopf = `<div class="v2-ak-abschnitt">Heute live</div>`;
+  const knoepfe = `<button class="v2-btn sm" data-act="ak-live-takt" data-val="${e.takt_min || 15}">⏱ alle ${e.takt_min || 15} Min.</button>
+    ${lv.gestoppt ? `<button class="v2-btn sm pri" data-act="ak-live-start">▶ Live wieder starten</button>` : ""} <button class="v2-btn sm" data-act="ak-live-abgleich">✓ Live-Abgleich</button>`;
+  if (!lv.vorhanden) return kopf + `<div class="v2-sub" style="margin-bottom:8px">${lv.gestoppt ? "Live-Abruf angehalten (401)." : "Noch kein Live-Stand – der erste Abruf kommt im nächsten Takt."} ${knoepfe}</div>`;
+  const w = {}; (lv.zeilen || []).forEach(z => { const k = z.kennzahl + "|" + (z.dim1 || "") + "|" + (z.dim2 || ""); w[k] = (w[k] || 0) + z.wert; });
+  const sum = (k) => Object.entries(w).filter(([x]) => x.startsWith(k + "|")).reduce((a, [, v]) => a + v, 0);
+  const wert = (k, d1 = "") => w[`${k}|${d1}|`];
+  const aeq = wert("abo_aequivalente"), anteil = aeq ? Math.min(1, aeq / 1000) : 0;
+  const stand = lv.stand ? new Date(lv.stand).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "–";
+  const ohneProfil = wert("anmeldungen_ohne_abschluss", "ohne_profil"), unbest = wert("anmeldungen_ohne_abschluss", "email_unbestaetigt");
+  const t = (titel, gross, klein) => tile(titel, `<div class="v2-kpi">${esc(gross)}</div>${klein ? `<div class="v2-sub">${klein}</div>` : ""}`, "w3 v2-ofc-kpi");
+  const kacheln = [
+    t("Registrierte jetzt", akZahl(wert("registrierte_stand")), `+${esc(akZahl(sum("registrierungen")))} heute`
+      + (ohneProfil != null || unbest != null ? `<br><span title="Supabase „Authentication“ zählt Anmeldungen, LUNA zählt Profile – der Unterschied ist „ohne Profil“.">Anmeldungen ohne Abschluss: ${esc(akZahl(ohneProfil || 0))} ohne Profil, ${esc(akZahl(unbest || 0))} E-Mail unbestätigt ⓘ</span>` : "")),
+    tile("Abo-Äquivalente", `<div class="v2-kpi">${esc(akZahl(aeq, 1))}</div><div class="v2-ak-ziel"><i style="width:${(anteil * 100).toFixed(1)}%"></i></div><div class="v2-sub">Ziel 1.000</div>`, "w3 v2-ofc-kpi"),
+    t("Aktive Abos", akZahl(wert("abos_aktiv", "gesamt"))), t("MRR brutto", akEuro(wert("abo_mrr_brutto", "gesamt"))),
+    t("Neue Abos heute", akZahl(sum("abos_neu"))), t("Tipps heute", akZahl(sum("tipps"))), t("Check-ins heute", akZahl(sum("checkins"))),
+    t("Chatnachrichten heute", akZahl(sum("chatnachrichten"))), t("Offene Moderation", akZahl(sum("moderation_offen")))].join("");
+  const vl = lv.verlauf_heute || [];
+  const kurve = vl.length > 1 ? tile("Registrierungen heute", akChart("live-reg", [{ name: "Registrierungen heute", werte: vl.map(x => x.registrierungen) }], "linie", akZahl, vl.map(x => x.ts), true), "w12") : "";
+  return kopf + `<div class="v2-sub" style="margin:-4px 0 10px">${lv.veraltet ? `<span class="v2-badge warn">veraltet</span> ` : ""}Stand ${esc(stand)} Uhr · vorläufig, verbindlich ist der Nachtlauf ${lv.gestoppt ? "· <b>angehalten (401)</b>" : lv.fehlschlaege ? "· " + lv.fehlschlaege + " Abruf(e) gescheitert" : ""} · ${knoepfe}</div>`
+    + `<div class="v2-grid${lv.veraltet ? " v2-ak-veraltet" : ""}">${kacheln}${kurve}</div>`;
+}
+async function akLiveTakt(alt) {
+  const v = prompt("Live-Takt in Minuten (5–60):", alt || "15"); if (v == null) return;
+  const r = await jpost("/api/app-kennzahlen/live/einstellung", { bestaetigt: true, takt_min: v });
+  return renderAppKennzahlen(r && r.ok ? `Live-Takt: alle ${r.takt_min} Minuten.` : ((r && r.hinweis) || "Fehler."), !(r && r.ok));
+}
+async function akLiveStart() {
+  if (!confirm("Live-Abruf wieder starten?")) return;
+  const r = await jpost("/api/app-kennzahlen/live/einstellung", { bestaetigt: true, freigeben: true });
+  return renderAppKennzahlen(r && r.ok ? "Live-Abruf freigegeben – der nächste Abruf kommt innerhalb einer Minute." : "Fehler.", !(r && r.ok));
+}
+function akLiveAbgleich() {
+  openModal("Live-Abgleich", `<div class="v2-sub">In Supabase <code>select * from public.luna_live_kennzahlen_v1();</code> ausführen – möglichst zur Minute des LUNA-Stands – und das Ergebnis hier einfügen. LUNA vergleicht Kennzahl, Aufteilung und Wert; ein Zähler darf um 1 abweichen (dazwischen dazugekommen).</div>
+    <textarea id="ak-lab-text" class="v2-inp" rows="10" style="width:100%;margin-top:8px;font-family:var(--v2-mono);font-size:12px" placeholder="datum | kennzahl | dim1 | dim2 | wert | stand"></textarea>
+    <div style="margin-top:10px"><button class="v2-btn pri" data-act="ak-live-abgleich-los">Vergleichen</button></div><div id="ak-lab-erg" style="margin-top:12px"></div>`);
+}
+async function akLiveAbgleichLos() {
+  const r = await jpost("/api/app-kennzahlen/live/abgleich", { text: $("#ak-lab-text").value }), el = $("#ak-lab-erg");
+  if (!r || !r.ok) { el.innerHTML = `<div class="v2-msg err">${esc((r && r.hinweis) || "Abgleich nicht möglich.")}</div>`; return; }
+  const sym = { gleich: "✅", knapp: "≈", abweichend: "❌" };
+  el.innerHTML = `<div class="v2-msg ${r.gleich ? "ok" : "err"}">${r.gleich ? "✅ Alles gleich" : `❌ ${r.abweichend} Wert(e) weichen ab`}${r.knapp ? ` · ${r.knapp} um 1 (dazwischen dazugekommen)` : ""} · LUNA-Stand ${esc(r.live_stand ? new Date(r.live_stand).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "–")}</div>`
+    + r.zeilen.map(z => `<div class="v2-kv v2-ofc-feld"><span class="v2-umbruch">${sym[z.stufe]} ${esc([z.kennzahl, z.dim1, z.dim2].filter(Boolean).join(" · "))}</span><b>${z.stufe === "gleich" ? esc(akZahl(z.ist, 2)) : `LUNA ${esc(akZahl(z.ist, 2))} · Supabase ${esc(akZahl(z.soll, 2))}`}</b></div>`).join("");
 }
 async function akAbrufen(el) {
   if (el) { el.disabled = true; el.textContent = "Ruft ab …"; }
@@ -6633,6 +6686,10 @@ async function handleAct(act, el) {
     case "ak-abrufen": return akAbrufen(el);
     case "ak-abgleich": return akAbgleich();
     case "ak-abgleich-los": return akAbgleichLos();
+    case "ak-live-takt": return akLiveTakt(val);
+    case "ak-live-start": return akLiveStart();
+    case "ak-live-abgleich": return akLiveAbgleich();
+    case "ak-live-abgleich-los": return akLiveAbgleichLos();
     case "ofc-spiel": return ofcSpiel(id);
     case "ofc-wallet-kopie": return ofcWalletKopie(id, el);
     case "ofc-zb-vs": return ofcZbVorschau(id, val);

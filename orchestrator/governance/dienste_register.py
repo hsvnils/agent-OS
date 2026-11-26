@@ -94,7 +94,7 @@ ANBIETER = [
      "daten": "Investment-Prognosen, App-Daten", "schluessel": ["SUPABASE_SERVICE_ROLE_KEY"], "zugehoerig": [], "tarif": "paket",
      "kosten_erfasst": False, "konto": "https://supabase.com/dashboard"},
     {"id": "hanserautisch_app", "name": "Hanserautisch-App (Kennzahlen)", "bereich": "Betrieb",
-     "zweck": "Tagessummen der eigenen App (Registrierungen, Community, Abos, Betrieb) für den Bereich App (APP_KENNZAHLEN)",
+     "zweck": "Tagessummen und Live-Zahlen (alle 15 Min.) der eigenen App (Registrierungen, Community, Abos, Betrieb) für den Bereich App (APP_KENNZAHLEN)",
      "daten": "keine (nur Abruf; zurück kommen nur Tagessummen, keine Personen)", "schluessel": ["HANSERAUTISCH_LUNA_API_TOKEN"],
      "zugehoerig": [], "tarif": "gratis", "kosten_erfasst": True, "konto": "", "intern": True},
     {"id": "agentops", "lieferant": ["agentops"], "name": "AgentOps", "bereich": "Betrieb", "zweck": "Beobachtung der Agenten (optional)",
