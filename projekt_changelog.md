@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 20:01] — Claude Code
+- **Was:** Mitglieder-Import ins LUNA-Verzeichnis auf der NAS ausgefuehrt (CEO-Anweisung mit Konfliktwahl): 130 Eintraege uebernommen, zwei doppelte Nummern aufgeloest (Zeile 101 -> 3146, Zeile 103 -> 3147), Abgleich Tabelle <-> LUNA 0 Abweichungen; Roadmap fortgeschrieben.
+- **Warum:** CEO: „Deploy gemacht“ + Vorgabe, wer 3125/3126 behaelt und dass die anderen die naechsten freien Nummern bekommen.
+- **Betroffen:** `fanclub/log.jsonl` (NAS, Ereignisse `ofc_verzeichnis`), `OFC_MITGLIEDER_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 19:47] — Claude Code
 - **Was:** Merge `ai/ofc-mitglieder` nach `main` (OFC_MITGLIEDER MV0 + MV1), Branch geloescht; Deploy-Befehle an den CEO.
 - **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.

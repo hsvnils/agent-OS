@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-mitglieder`
 - Basiscommit: `4b1dde2`
-- Naechster Schritt: MV0+MV1 umgesetzt auf `ai/ofc-mitglieder` (CEO-Go 2026-11-26, E1-E6 wie empfohlen, E4 mit Kuendigen/Archiv); nach Merge/Deploy in 👥 Mitglieder „🗂 LUNA-Verzeichnis“: Vorschau pruefen, doppelte Nummern waehlen, uebernehmen; Abgleich 0 -> Go fuer MV2.
+- Naechster Schritt: MV0+MV1 live, Import am 2026-11-26 auf CEO-Anweisung ausgefuehrt (130 Eintraege, Abgleich 0 Abweichungen; doppelte Nummern: 3125 und 3126 bleiben bei Zeile 100/102, Zeile 101 -> 3146, Zeile 103 -> 3147). Empfehlung an den CEO: dieselben neuen Nummern bis MV3 auch in der Google-Tabelle eintragen. Dann Go fuer MV2.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
