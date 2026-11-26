@@ -139,6 +139,25 @@ CSV = _akt(
     '"10.10.2026","09:00:00","Europe/Berlin","Abbuchung auf Bankkonto","EUR","-14,45","0,00","-14,45","100,00","6BB66666BB6666666","","",""')
 
 
+# Muster aus dem echten Aktivitaeten-Export (KA4b), Namen und Codes erfunden
+kopf = ('"Datum","Uhrzeit","Zeitzone","Name","Typ","Status","Währung","Brutto","Gebühr","Netto","Absender E-Mail-Adresse",'
+        '"Empfänger E-Mail-Adresse","Transaktionscode","Guthaben","Zugehöriger Transaktionscode","Auswirkung auf Guthaben"')
+z = lambda d, u, n, t, st, b, tc, g, bez, w: f'"{d}","{u}","MEZ","{n}","{t}","{st}","EUR","{b}","0,00","{b}","","","{tc}","{g}","{bez}","{w}"'  # noqa: E731
+CSV_ECHT = ("\ufeff" + kopf + "\n" + "\n".join([
+    z("01.10.2026", "10:00:00", "Mitglied A", "Handyzahlung", "Abgeschlossen", "41,00", "T01", "141,00", "", "Haben"),
+    z("02.10.2026", "10:00:00", "Ticketshop", "PayPal Express-Zahlung", "Abgeschlossen", "-392,00", "T02", "-251,00", "", "Soll"),
+    z("02.10.2026", "10:00:00", "", "Zahlung per PayPal-Käuferkredit", "Abgeschlossen", "392,00", "T03", "141,00", "T02", "Haben"),
+    z("14.10.2026", "02:35:00", "PayPal Europe", "Allgemeine Zahlung", "Abgeschlossen", "-392,00", "T04", "-251,00", "", "Soll"),
+    z("14.10.2026", "02:35:00", "", "Bankgutschrift auf PayPal-Konto", "Ausstehend", "392,00", "T05", "141,00", "T04", "Haben"),
+    z("20.10.2026", "01:39:14", "", "Verbindlichkeiten", "Abgeschlossen", "392,00", "T06", "533,00", "T05", "Haben"),
+    z("20.10.2026", "01:39:14", "", "Rückbuchung von ACH-Gutschrift", "Abgeschlossen", "-392,00", "T07", "141,00", "T05", "Soll"),
+    z("20.10.2026", "01:39:15", "PayPal Europe", "Rückbuchung", "Abgeschlossen", "392,00", "T08", "533,00", "T04", "Haben"),
+    z("20.10.2026", "01:39:15", "", "Forderungen", "Abgeschlossen", "-392,00", "T09", "141,00", "T08", "Soll"),
+    z("21.10.2026", "09:00:00", "", "Anforderung gesendet", "Abgeschlossen", "58,00", "T10", "141,00", "", "Memo"),
+    z("22.10.2026", "09:00:00", "", "Von Nutzer eingeleitete Abbuchung", "Wird bearbeitet", "-100,00", "T11", "41,00", "", "Soll"),
+]) + "\n").encode("utf-8")
+
+
 class TestImport(_Basis):
     def test_5_lesen_und_abgleich(self):
         g = ki.csv_lesen(CSV)
@@ -150,7 +169,7 @@ class TestImport(_Basis):
         e = {x["tc"]: x for x in v["zeilen"]}
         self.assertEqual(e["1EE11111EE1111111"]["ergebnis"], "bekannt")
         self.assertEqual((e["7ZZ77777ZZ7777777"]["ergebnis"], e["7ZZ77777ZZ7777777"]["buchung"]), ("passt", "zahlung:z-1"))
-        self.assertEqual((e["9AA99999AA9999999"]["ergebnis"], e["9AA99999AA9999999"]["kategorie"]), ("neu", "sonstiges"))
+        self.assertEqual((e["9AA99999AA9999999"]["ergebnis"], e["9AA99999AA9999999"]["kategorie"]), ("neu", "offen"))  # KA4b: zuordnen
         self.assertEqual(e["6BB66666BB6666666"]["kategorie"], "auszahlung")
         self.assertEqual(e["5UU55555UU5555555"]["ergebnis"], "uebersprungen")
         self.assertTrue(e["4GG44444GG4444444"]["gebuehr_neu"])
@@ -176,6 +195,30 @@ class TestImport(_Basis):
         self.assertTrue(all(x["status"] == "storniert" for x in ok.kassenbuch(self.st.stand())["buchungen"] if x.get("import_id") == r["import_id"]))
         self.assertFalse(ki.import_storno(self.st, "i-gibtsnicht")["ok"])
         self.assertEqual(ki.import_plan(self.st.stand(), ki.csv_lesen(CSV)["zeilen"])["neu"], 2)     # nach Storno wieder neu
+
+    def test_7b_echter_export_ka4b(self):
+        """Muster aus dem echten Aktivitaeten-Export: Ausstehend zaehlt, PayPal-intern hebt sich auf, Spaeter bezahlen, Ruecklastschrift."""
+        roh = CSV_ECHT
+        g = ki.csv_lesen(roh)
+        self.assertEqual(len(g["zeilen"]), 11)
+        v = ki.import_plan({}, g["zeilen"])
+        e = {x["tc"]: x for x in v["zeilen"]}
+        self.assertEqual((e["T02"]["ergebnis"], e["T03"]["ergebnis"]), ("finanziert", "finanziert"))
+        self.assertEqual((e["T06"]["ergebnis"], e["T09"]["ergebnis"]), ("technisch", "technisch"))      # Sekunden weichen ab
+        self.assertEqual((e["T04"]["kategorie"], e["T05"]["kategorie"]), ("tickets", "einzahlung"))   # Ausstehend zaehlt
+        self.assertEqual((e["T07"]["kategorie"], e["T08"]["kategorie"]), ("einzahlung", "tickets"))   # Rueckbuchung erbt
+        self.assertEqual(e["T10"]["ergebnis"], "uebersprungen")
+        self.assertEqual(e["T11"]["kategorie"], "auszahlung")
+        self.assertEqual((v["lastschrift_zurueck"], v["lastschrift_zurueck_cent"]), (1, -39200))
+        start = v["vergleich"]["start_vorschlag"]["betrag_cent"]
+        self.assertEqual(start, 10000)
+        self.assertEqual(start + sum(x["brutto_cent"] for x in v["zeilen"] if x["zaehlt"]), v["vergleich"]["paypal_cent"])  # Guthaben geht auf
+        with tempfile.TemporaryDirectory() as d:
+            leer = OfcStore(Path(d) / "fanclub")
+            r = ki.import_anwenden(leer, roh, "export.csv", anfangsbestand_uebernehmen=True)
+            self.assertEqual((r["gebucht"], r["nicht_gebucht"]), (6, []))                  # 11 - Memo - 2 finanziert - 2 technisch
+            self.assertEqual(ki.import_plan(leer.stand(), g["zeilen"])["vergleich"]["abweichung_cent"], 0)
+            self.assertEqual(ok.kassenbuch(leer.stand(), heute=date(2026, 10, 30))["kassenstand_cent"], 4100)
 
     def test_7_formate_und_fehler(self):
         leer = ('﻿"RH","Name des Berichts"\n"RH","BALANCE_RECONCILIATION_REPORT"\n"RD","Händlerkonto-ID","Erstellt am"\n'

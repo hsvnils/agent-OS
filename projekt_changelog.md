@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 12:44] — Claude Code
+- **Was:** OFC-Kasse KA4b: PayPal-CSV-Import an den echten Aktivitaeten-Export angepasst (zaehlt nach „Auswirkung auf Guthaben“, PayPal-interne Verrechnungen und „Spaeter bezahlen“-Finanzierung werden nicht gebucht, Lastschriften = Einzahlung, Rueckbuchung erbt Kategorie, Abbuchung = Auszahlung, Geld von Personen ohne Hinweis = „noch nicht zugeordnet“, Hinweis auf zurueckgegebene Lastschriften, kein stilles Verwerfen mehr); Vorschau-UI (v177); Test mit nachgebauten Mustern; Gegenprobe echte Datei geht auf den Cent auf.
+- **Warum:** CEO hat den echten Export geliefert (2026-11-26); die Vorschau haette ca. 60 Zeilen falsch gebucht. CEO-Entscheidungen: Konto nur Fanclub, Abbuchungen aufs Privatkonto = Auszahlung.
+- **Betroffen:** `orchestrator/core/ofc_kasse_import.py`, `orchestrator/core/ofc_kasse.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_ofc_kasse.py`, `OFC_KASSE_ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
 ## [2026-11-26 12:11] — Claude Code
 - **Was:** Branch `ai/ofc-kasse-bau` (KA1-KA5: Beitragszahlungen erkennen, Beitragsuebersicht, Kassenbuch, PayPal-CSV-Abgleich, Kassenbericht) per --no-ff in `main` gemergt, Branch lokal und remote geloescht.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
