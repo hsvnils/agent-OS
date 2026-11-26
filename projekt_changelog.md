@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 18:58] — Claude Code
+- **Was:** Merge `ai/ofc-ticketversand-tv3b` nach `main` (OFC_TICKETVERSAND TV3b), Branch geloescht; Deploy-Befehle an den CEO. Neuer CEO-Wunsch (Karten von Hand als bezahlt markieren) als TV3c vorgelegt.
+- **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-11-26 18:46] — Claude Code
 - **Was:** OFC_TICKETVERSAND TV3b: Dialog „Person“ am Ticket (Suche fuellt Vorname/Nachname/E-Mail aus Mitgliederliste oder bekannten Personen; externe Personen mit eigener Nummer `G<n>`, Ereignis `ofc_person`), Zahlungsbitte auch an Externe (Zweck z. B. „11-G3“), Mailtext „über deinen Fanclub HSVInside“, Knoepfe mit Wort auf dem Rechner, Ticketname bleibt beim Oeffnen; Testmail-Protokoll auf der NAS geprueft (gesendet, 11-0001); Baseline 1904.
 - **Warum:** CEO: Testmail passt; Textaenderung; Karten gehen auch an Personen ausserhalb (Go TV3b).
