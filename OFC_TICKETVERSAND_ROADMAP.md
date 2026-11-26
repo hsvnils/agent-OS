@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-ticketversand`
 - Basiscommit: `81ee7f0`
-- Naechster Schritt: TV3 live (Testmail 26.11. angekommen, Protokoll ok). TV3b umgesetzt auf `ai/ofc-ticketversand-tv3b`; nach Merge/Deploy Personen an den offenen Spielen eintragen (CEO), dann Go fuer TV4.
+- Naechster Schritt: TV3b live (Deploy 2026-11-26). TV3c (Karten von Hand als bezahlt) umgesetzt auf `ai/ofc-ticketversand-tv3c`; nach Merge/Deploy Go fuer TV4.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -193,6 +193,20 @@ Versandprotokoll; Ansicht auf Rechner, iPad und iPhone.
   - **Knoepfe** auf dem Rechner mit Wort („Person“, „PDF“, „Wallet“, „Link“), auf dem iPhone nur Symbol, mit Hinweis beim
     Darueberfahren.
 - Gate: Tests `test_ofc_versand.py` (`TestExtern`, API mit `extern`), headless Rechner/iPhone.
+
+### Etappe TV3c: Karten von Hand als bezahlt markieren
+
+- Status: umgesetzt 2026-11-26 (CEO-Go)
+- Ziel / Scope:
+  - **Knopf „💶 bezahlt“ je Karte** und **„💶 alle bezahlt“** je Person in den Zahlungsbitten. Ein Fenster fragt Zahlart
+    (Bar, Ueberweisung, PayPal, Sonstiges), Datum und Notiz ab.
+  - **„↩︎ bezahlt“** nimmt die Markierung zurueck.
+  - **Protokoll:** Ereignis `ofc_bezahlt` (nichts geloescht).
+  - **Wirkung:** `bezahlt_stand` zaehlt die Karte als bezahlt. Damit gibt es keine Zahlungsbitte mehr, beim Mitglied ist
+    nichts offen, und das Spiel kann „abschliessbar“ werden.
+  - **Kasse (= PayPal-Konto) unberuehrt:** Bar und Ueberweisung buchen nichts.
+- Gate: Tests `test_ofc_versand.py` (`TestHandBezahlt`, API) mit Gegenprobe; headless Rechner/iPhone (Knoepfe brechen unter
+  den Text um).
 
 ### Etappe TV4: Zahlung zuordnen und Tickets senden
 

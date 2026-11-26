@@ -146,6 +146,9 @@ def bezahlt_stand(st: dict) -> dict:
     for nr, x in tk.items():
         preis = st["tickets"][nr].get("preis_cent") or 0
         x["bezahlt"] = bool(x["zahler"]) and (x["bezahlt_cent"] >= preis if preis else x["bezahlt_cent"] > 0)
+        hb = st["tickets"][nr].get("hand_bezahlt") or {}
+        if hb.get("bezahlt"):                                          # OFC_TICKETVERSAND TV3c: vom CEO als bezahlt markiert
+            x.update(bezahlt=True, bezahlt_cent=max(x["bezahlt_cent"], preis), hand=hb)
     zugeordnet: dict = {}                                              # Saldo = gezahlt - Preise der zugeordneten Tickets
     for e in st.get("eingaenge", {}).values():
         if e.get("zuordnung") not in ("auto", "manuell") or e.get("ersetzt"):
