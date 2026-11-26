@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 20:47] — Claude Code
+- **Was:** APP_KENNZAHLEN AK5 + AK6 (Live-Zahlen): Abruf `art=live` im Takt (Standard 15, einstellbar 5-60, nie parallel) im Minuten-Thread von `luna-telegram`, eigene Ablage `live.json` + Tagesverlauf (nach 7 Tagen geloescht) getrennt von den Tageswerten, 401 haelt an bis „Live wieder starten“, ab 4 Fehlschlaegen genau eine Meldung (Telegram + Glocke), Meilensteine ohne Dopplung; Block „Heute live“ im Bereich App (Stand, veraltet ab 45 Min., 9 Kacheln, Anmeldungen ohne Abschluss, Kurve heute), Abschnitte „bis gestern“, Live-Abgleich, neue Tageskennzahl `anmeldungen_ohne_abschluss` als gestrichelte Linie; Archiv ueberspringt beschaedigte Zeilen; Policy, Datenfluesse, Register, Dienste-Register, Baseline 1938.
+- **Warum:** CEO: „wie empfohlen, Go fuer AK5 und AK6“.
+- **Betroffen:** `orchestrator/core/app_kennzahlen.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`, `orchestrator/governance/dienste_register.py`, `orchestrator/tests/test_app_kennzahlen_live.py`, `APP_KENNZAHLEN_ROADMAP.md`, `governance/zugriffs-policy.md`, `docs/datenfluesse.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
+## [2026-11-26 20:41] — Claude Code
+- **Was:** Antworten der App-Sitzung zu den Live-Rueckfragen in `APP_KENNZAHLEN_ROADMAP.md` uebernommen (Spalten des Live-Abgleichs, Antwortformat inkl. `art`, Mitternacht Berlin, keine Mehrkosten, nie unter 5 Minuten, Meilenstein bei sinkendem `registrierte_stand` nur einmal); AK4: Stichtag-Abgleich laut CEO erledigt („Alle gleich“), offen nur der Lauf am 27./28.11.
+- **Warum:** CEO hat die Antwort vom Mac weitergegeben.
+- **Betroffen:** `APP_KENNZAHLEN_ROADMAP.md`, `projekt_changelog.md`
+
+## [2026-11-26 20:35] — Claude Code
+- **Was:** `APP_KENNZAHLEN_ROADMAP.md` um die Erweiterung „Live-Zahlen / Heute live“ ergaenzt (Analyse, Entscheidungen L1-L6, Etappen AK5-AK7) nach Uebergabe `LUNA_UEBERGABE_LIVE.md`; Antwort mit Rueckfragen fuer die App-Sitzung als `LUNA_ANTWORT_LIVE.md` im Download-Ordner des CEO (nicht im Git). Kein Code.
+- **Warum:** CEO: Roadmap pruefen, bevor er freigibt, und Antwort an Claude Code auf dem Mac.
+- **Betroffen:** `APP_KENNZAHLEN_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 20:32] — Claude Code
 - **Was:** OFC-Mitglieder: Sichtabnahme zurueckgestellt (App-Thema vorgezogen); To-do „OFC-Mitglieder: Sichtabnahme“ faellig 03.12. angelegt; Roadmap und ROADMAP fortgeschrieben.
 - **Warum:** CEO: „Sichtabnahme stellen wir zurueck, weil wir was bzgl der App im Luna zwischenschieben muessen.“

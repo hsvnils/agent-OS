@@ -82,6 +82,7 @@ KATALOG: dict[str, dict] = {
     "moderation_aeltester_stunden": {"ab": "2026-11-24", "art": "moment", "einheit": "stunden", "text": "Ältester offener Eintrag"},
     "datenbank_mb": {"ab": "2026-11-24", "art": "moment", "einheit": "mb", "text": "Datenbankgröße"},
     "tagesabschluss_lauf": {"ab": "2026-05-14", "art": "lauf", "einheit": "anzahl", "text": "Tagesabschluss-Lauf"},
+    "anmeldungen_ohne_abschluss": {"ab": "2026-11-26", "art": "moment", "einheit": "anzahl", "text": "Anmeldungen ohne Abschluss"},
 }
 
 
@@ -157,10 +158,19 @@ def abrufen(von: str, bis: str, *, env=None, oeffnen=None) -> dict:
     """Ein GET an die feste Adresse. Gibt die geprueften Zeilen zurueck oder wirft `AbrufFehler` (ohne Geheimnisse)."""
     if not (_DATUM.match(von or "") and _DATUM.match(bis or "")):
         raise AbrufFehler(400, "Zeitraum falsch (Fehler im eigenen Code)")
+    return _get(f"von={von}&bis={bis}", env=env, oeffnen=oeffnen)
+
+
+def abrufen_live(*, env=None, oeffnen=None) -> dict:
+    """AK5: Live-Abruf `art=live` (ohne von/bis) -- gleiche Adresse, gleiches Token, gleiche Schutzregeln."""
+    return _get("art=live", env=env, oeffnen=oeffnen)
+
+
+def _get(abfrage: str, *, env=None, oeffnen=None) -> dict:
     tok = ((env if env is not None else os.environ).get(TOKEN_ENV) or "").strip()
     if not tok:
         raise AbrufFehler(401, "Token fehlt in der Umgebung")
-    req = urllib.request.Request(f"{QUELLE_URL}?von={von}&bis={bis}", method="GET",
+    req = urllib.request.Request(f"{QUELLE_URL}?{abfrage}", method="GET",
                                  headers={"Authorization": "Bearer " + tok, "Accept": "application/json",
                                           "User-Agent": "LUNA-app-kennzahlen"})
     try:
@@ -240,6 +250,8 @@ class Archiv:
                     continue
                 t = e.get("typ")
                 if t == "wert":
+                    if not all(isinstance(e.get(f), str) for f in ("datum", "kennzahl", "stand")):
+                        continue                              # beschaedigte Zeile ueberspringen statt abbrechen
                     k = _schluessel(e)
                     alt = werte.get(k)
                     if alt is None or (_parse_ts(e["stand"]) or datetime.min.replace(tzinfo=timezone.utc)) > (
@@ -495,6 +507,11 @@ def stoerung(archiv: Archiv, *, heute: date | None = None, env=None) -> str | No
     ab = [a for a in archiv.abrufe() if a.get("art") in ("lauf", "manuell")]
     if ab and not ab[-1].get("ok"):
         return f"Letzter Abruf der App-Kennzahlen gescheitert ({ab[-1].get('status') or 'Netz'})"
+    lv = live_lesen(archiv.pfad.parent)                              # AK5/L4: Live-Stoerung auch in der Glocke
+    if lv.get("gestoppt") and not live_freigegeben(archiv.pfad.parent, lv):
+        return "Live-Zahlen der App angehalten (401) – im Bereich App „Live wieder starten“"
+    if (lv.get("fehlschlaege") or 0) >= LIVE_MELDEN_AB:
+        return "Live-Zahlen der App seit über einer Stunde nicht erreichbar"
     lt = archiv.letzter_tag()
     if lt and date.fromisoformat(lt) < heute - timedelta(days=2) and (jetzt_berlin().hour, jetzt_berlin().minute) >= START:
         return f"App-Kennzahlen nicht aktuell (letzter Tag {lt})"
@@ -614,3 +631,207 @@ def _main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(_main())
+
+
+# -- AK5: Live-Zahlen „Heute live“ (CEO-Go 2026-11-26) ------------------------------------------------------------------
+# Getrennt von den Tageswerten: `live.json` (letzter Stand, ersetzt; schreibt nur der Lauf in luna-telegram),
+# `live_einstellung.json` (Takt, Freigabe nach 401; schreibt nur luna-os), Verlauf je Tag `live_verlauf/<tag>.jsonl`
+# (nur Summen je Kennzahl, nach 7 Tagen geloescht -- CEO L3).
+LIVE_TAKT_STANDARD, LIVE_TAKT_MIN, LIVE_TAKT_MAX = 15, 5, 60
+LIVE_MELDEN_AB = 4                                       # 4 Fehlschlaege hintereinander -> eine Meldung (Telegram + Glocke)
+LIVE_VERALTET_MIN = 45
+LIVE_VERLAUF_TAGE = 7
+
+
+def _json_lesen(p: Path) -> dict:
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _json_schreiben(p: Path, d: dict) -> None:
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_suffix(p.suffix + ".tmp")
+    tmp.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+    os.replace(tmp, p)                                    # atomar: die Anzeige sieht nie eine halbe Datei
+
+
+def live_lesen(ordner) -> dict:
+    return _json_lesen(Path(ordner) / "live.json")
+
+
+def live_einstellung(ordner) -> dict:
+    e = _json_lesen(Path(ordner) / "live_einstellung.json")
+    try:
+        takt = int(e.get("takt_min") or LIVE_TAKT_STANDARD)
+    except (TypeError, ValueError):
+        takt = LIVE_TAKT_STANDARD
+    return {"takt_min": min(LIVE_TAKT_MAX, max(LIVE_TAKT_MIN, takt)), "freigabe": e.get("freigabe", "")}
+
+
+def live_einstellen(ordner, *, takt_min: int | None = None, freigeben: bool = False, jetzt: datetime | None = None) -> dict:
+    """luna-os: Takt (5-60, CEO L1) setzen oder den Live-Abruf nach einem 401 wieder freigeben (CEO L2)."""
+    e = _json_lesen(Path(ordner) / "live_einstellung.json")
+    if takt_min is not None:
+        if not LIVE_TAKT_MIN <= int(takt_min) <= LIVE_TAKT_MAX:
+            return {"ok": False, "hinweis": f"Takt {LIVE_TAKT_MIN}–{LIVE_TAKT_MAX} Minuten."}
+        e["takt_min"] = int(takt_min)
+    if freigeben:
+        e["freigabe"] = _iso(jetzt or datetime.now(timezone.utc))
+    _json_schreiben(Path(ordner) / "live_einstellung.json", e)
+    return {"ok": True, **live_einstellung(ordner)}
+
+
+def live_freigegeben(ordner, lv: dict) -> bool:
+    f = live_einstellung(ordner)["freigabe"]
+    return bool(f and lv.get("gestoppt") and f > lv["gestoppt"])
+
+
+def _summen(zeilen: list[dict]) -> dict:
+    out: dict = {}
+    for z in zeilen:
+        out[z["kennzahl"]] = out.get(z["kennzahl"], 0) + z["wert"]
+    return out
+
+
+def _verlauf_aufraeumen(ordner: Path, heute: date) -> int:
+    """Nur eigene Live-Zwischenwerte: Dateien aelter als 7 Tage loeschen (CEO L3). Tageswerte bleiben unberuehrt."""
+    d = ordner / "live_verlauf"
+    n = 0
+    if not d.is_dir():
+        return 0
+    grenze = (heute - timedelta(days=LIVE_VERLAUF_TAGE)).isoformat()
+    for f in d.glob("*.jsonl"):
+        if _DATUM.match(f.stem) and f.stem < grenze:
+            f.unlink()
+            n += 1
+    return n
+
+
+def live_lauf(archiv: Archiv, *, jetzt: datetime | None = None, notify=None, abruf=abrufen_live, env=None) -> dict:
+    """Jede Minute aufgerufen (luna-telegram). Faellig nach Takt; nie zwei Abrufe parallel (ein Thread, ein Lauf)."""
+    e = env if env is not None else os.environ
+    if (e.get("APP_KENNZAHLEN_LIVE") or "1").strip().lower() in ("0", "aus", "off", "false"):
+        return {"aus": True}
+    ordner = archiv.pfad.parent
+    jetzt = (jetzt or jetzt_berlin()).astimezone(_tz())
+    lv = live_lesen(ordner)
+    if lv.get("gestoppt") and not live_freigegeben(ordner, lv):
+        return {"gestoppt": True}
+    takt = live_einstellung(ordner)["takt_min"]
+    letzt = _parse_ts(lv.get("letzter_versuch"))
+    if letzt and jetzt < letzt + timedelta(minutes=takt):
+        return {"faellig": False}
+    ts = _iso(jetzt)
+    try:
+        r = abruf(env=env) if env is not None else abruf()
+    except AbrufFehler as exc:
+        lv.update(letzter_versuch=ts, status=exc.status, fehler=exc.text, fehlschlaege=(lv.get("fehlschlaege") or 0) + 1)
+        if exc.status == 401:
+            lv["gestoppt"] = ts
+            _melde(archiv, notify, f"live401:{ts}", "Live-Abruf abgelehnt (401) – angehalten. Im Bereich App „Live wieder starten“.", jetzt)
+        elif lv["fehlschlaege"] == LIVE_MELDEN_AB:
+            _melde(archiv, notify, f"livefehler:{lv.get('letzter_erfolg') or 'nie'}",
+                   f"Live-Zahlen seit {LIVE_MELDEN_AB} Abrufen nicht erreichbar ({exc.status or 'Netz'}). LUNA versucht es weiter.", jetzt)
+        _json_schreiben(ordner / "live.json", lv)
+        return {"ok": False, "status": exc.status}
+    zeilen = r["zeilen"]
+    neu = {"letzter_versuch": ts, "letzter_erfolg": ts, "status": 200, "fehlschlaege": 0, "gestoppt": "",
+           "stand": max((z["stand"] for z in zeilen), key=lambda x: _parse_ts(x), default=ts), "revision": r.get("revision", ""),
+           "datum": max((z["datum"] for z in zeilen), default=jetzt.date().isoformat()), "zeilen": zeilen,
+           "verworfen": r.get("verworfen", 0)}
+    _json_schreiben(ordner / "live.json", neu)
+    vdir = ordner / "live_verlauf"
+    vdir.mkdir(parents=True, exist_ok=True)
+    with open(vdir / f"{neu['datum']}.jsonl", "a", encoding="utf-8") as f:
+        f.write(json.dumps({"ts": ts, "summen": _summen(zeilen)}, ensure_ascii=False) + "\n")
+    _verlauf_aufraeumen(ordner, jetzt.date())
+    live_meilensteine(archiv, zeilen, jetzt=jetzt, notify=notify)
+    return {"ok": True, "zeilen": len(zeilen)}
+
+
+def live_meilensteine(archiv: Archiv, zeilen: list[dict], *, jetzt: datetime, notify=None) -> list[str]:
+    """Gleiche Schluessel wie beim Tagesabruf -> nie doppelt, auch wenn ein Wert sinkt und wieder steigt."""
+    w = {(z["kennzahl"], z.get("dim1", ""), z.get("dim2", "")): z["wert"] for z in zeilen}
+    aeq, reg = w.get(("abo_aequivalente", "", "")), w.get(("registrierte_stand", "", ""))
+    basis = archiv.gemeldet("meilenstein-basis")
+    schwellen = [(f"meilenstein:abo:{s}", f"🎉 {s} Abo-Äquivalente erreicht (Ziel 1.000).") for s in ABO_MEILENSTEINE if aeq is not None and aeq >= s]
+    if reg is not None:
+        schwellen += [(f"meilenstein:reg:{t}", f"🎉 {t:,} registrierte Konten erreicht.".replace(",", ".")) for t in range(1000, int(reg) + 1, 1000)]
+    out = []
+    for schl, text in schwellen:
+        if basis:
+            if _melde(archiv, notify, schl, text, jetzt, "info"):
+                out.append(schl)
+        elif not archiv.gemeldet(schl):
+            archiv.melden_vermerken(schl, _iso(jetzt))
+    if not basis:
+        archiv.melden_vermerken("meilenstein-basis", _iso(jetzt))
+    return out
+
+
+def live_ansicht(archiv: Archiv, *, jetzt: datetime | None = None) -> dict:
+    """Fuer die Anzeige „Heute live“ (nur CEO): letzter Stand, Alter, veraltet, Einstellung, Verlauf heute."""
+    ordner = archiv.pfad.parent
+    jetzt = (jetzt or jetzt_berlin()).astimezone(_tz())
+    lv = live_lesen(ordner)
+    erfolg = _parse_ts(lv.get("letzter_erfolg"))
+    alter = int((jetzt - erfolg).total_seconds() // 60) if erfolg else None
+    verlauf = []
+    p = ordner / "live_verlauf" / f"{jetzt.date().isoformat()}.jsonl"
+    if p.exists():
+        for zeile in p.read_text(encoding="utf-8").splitlines():
+            try:
+                x = json.loads(zeile)
+                verlauf.append({"ts": x["ts"], "registrierungen": x["summen"].get("registrierungen", 0)})
+            except (ValueError, KeyError):
+                continue
+    return {"ok": True, "vorhanden": bool(erfolg), "zeilen": lv.get("zeilen") or [], "stand": lv.get("stand", ""),
+            "datum": lv.get("datum", ""), "letzter_erfolg": lv.get("letzter_erfolg", ""), "letzter_versuch": lv.get("letzter_versuch", ""),
+            "alter_min": alter, "veraltet": alter is None or alter > LIVE_VERALTET_MIN, "fehlschlaege": lv.get("fehlschlaege", 0),
+            "gestoppt": bool(lv.get("gestoppt")) and not live_freigegeben(ordner, lv), "status": lv.get("status"),
+            "einstellung": live_einstellung(ordner), "verlauf_heute": verlauf}
+
+
+def live_status(archiv: Archiv, *, jetzt: datetime | None = None) -> dict:
+    """Nur Zaehlungen und Zeitpunkte -- keine Werte (fuer die Pruefung durch Claude Code)."""
+    a = live_ansicht(archiv, jetzt=jetzt)
+    return {k: a[k] for k in ("ok", "vorhanden", "letzter_erfolg", "letzter_versuch", "alter_min", "veraltet", "fehlschlaege",
+                              "gestoppt", "status", "einstellung")} | {"kennzahlen": len({z["kennzahl"] for z in a["zeilen"]}),
+                                                                       "zeilen": len(a["zeilen"]), "verlauf_heute": len(a["verlauf_heute"])}
+
+
+def _zellen(zeile: str) -> list[str]:
+    if "\t" in zeile:
+        return [c.strip() for c in zeile.split("\t")]
+    if "|" in zeile:
+        return [c.strip() for c in zeile.strip().strip("|").split("|")]
+    return [c.strip() for c in zeile.split(";" if ";" in zeile else ",")]
+
+
+def live_abgleich(archiv: Archiv, text: str) -> dict:
+    """AK6/L5: Ergebnis von `luna_live_kennzahlen_v1()` (datum, kennzahl, dim1, dim2, wert, stand) gegen den Live-Stand.
+    Verglichen werden nur kennzahl, dim1, dim2, wert; Zaehler duerfen um 1 abweichen (dazwischen dazugekommen)."""
+    soll = {}
+    for zeile in (text or "").splitlines():
+        c = _zellen(zeile)
+        if len(c) < 5 or not _DATUM.match(c[0]) or not _KENNZAHL.match(c[1] or ""):
+            continue
+        d1, d2 = ("" if x.upper() == "NULL" else x for x in (c[2], c[3]))
+        try:
+            soll[(c[1], d1, d2)] = float(c[4].replace(",", "."))
+        except ValueError:
+            continue
+    if not soll:
+        return {"ok": False, "hinweis": "Keine Zeilen erkannt. Erwartet: datum, kennzahl, dim1, dim2, wert, stand."}
+    ist = {(z["kennzahl"], z.get("dim1", ""), z.get("dim2", "")): z["wert"] for z in live_lesen(archiv.pfad.parent).get("zeilen") or []}
+    zeilen = []
+    for k in sorted(set(soll) | set(ist)):
+        a, b = soll.get(k, 0.0), ist.get(k, 0.0)
+        diff = abs(a - b)
+        stufe = "gleich" if diff <= 1e-6 else ("knapp" if diff <= 1 and float(a).is_integer() and float(b).is_integer() else "abweichend")
+        zeilen.append({"kennzahl": k[0], "dim1": k[1], "dim2": k[2], "soll": a, "ist": b, "stufe": stufe})
+    return {"ok": True, "gleich": all(z["stufe"] != "abweichend" for z in zeilen), "zeilen": zeilen,
+            "abweichend": sum(1 for z in zeilen if z["stufe"] == "abweichend"),
+            "knapp": sum(1 for z in zeilen if z["stufe"] == "knapp"), "live_stand": live_lesen(archiv.pfad.parent).get("stand", "")}

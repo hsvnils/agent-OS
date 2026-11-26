@@ -6519,6 +6519,46 @@ def app_kennzahlen_abrufen(request: Request):
     return {k: erg.get(k) for k in ("ok", "status", "von", "bis", "zeilen", "neu", "aktualisiert", "verworfen", "fehler")}
 
 
+@app.get("/api/app-kennzahlen/live")
+def app_kennzahlen_live(request: Request):
+    """AK6: „Heute live“ -- letzter Live-Stand (vorlaeufig), Alter, veraltet, Takt, Verlauf heute. Nur CEO, kein KI-Modell."""
+    _nur_ceo(request)
+    from ...core.app_kennzahlen import live_ansicht
+    return live_ansicht(_app_archiv())
+
+
+@app.get("/api/app-kennzahlen/live/status")
+def app_kennzahlen_live_status(request: Request):
+    """AK5: nur Zaehlungen und Zeitpunkte des Live-Abrufs -- keine Werte."""
+    _nur_ceo(request)
+    from ...core.app_kennzahlen import live_status
+    return live_status(_app_archiv())
+
+
+@app.post("/api/app-kennzahlen/live/einstellung")
+async def app_kennzahlen_live_einstellung(request: Request):
+    """AK6/L1-L2: Takt (5-60 Minuten) setzen oder den Live-Abruf nach einem 401 wieder starten -- nur mit Bestaetigung."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.app_kennzahlen import live_einstellen
+    try:
+        takt = int(body["takt_min"]) if body.get("takt_min") not in (None, "") else None
+    except (TypeError, ValueError):
+        return {"ok": False, "hinweis": "Takt als ganze Zahl (Minuten)."}
+    return live_einstellen(_app_archiv().pfad.parent, takt_min=takt, freigeben=bool(body.get("freigeben")))
+
+
+@app.post("/api/app-kennzahlen/live/abgleich")
+async def app_kennzahlen_live_abgleich(request: Request):
+    """AK6/L5: Ergebnis von luna_live_kennzahlen_v1() gegen den Live-Stand (deterministisch, ohne Modell)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.app_kennzahlen import live_abgleich
+    return live_abgleich(_app_archiv(), str(body.get("text") or "")[:200_000])
+
+
 @app.post("/api/app-kennzahlen/abgleich")
 async def app_kennzahlen_abgleich(request: Request):
     """Kontroll-Abgleich: Ergebnis der Supabase-Kontrollabfrage fuer einen Stichtag gegen das Archiv (deterministisch)."""

@@ -1413,10 +1413,14 @@ def _start_app_kennzahlen_loop(ctx, secrets) -> None:
                 ak.lauf(archiv, notify=ctx.notifications.enqueue if ctx.notifications else None)
             except Exception as exc:                  # nur der Typ -- nie Inhalt (koennte Antwortteile enthalten)
                 print(f"[app_kennzahlen] {exc.__class__.__name__}", flush=True)
+            try:                                      # AK5: Live-Zahlen im eigenen Takt (Standard 15 Min., nie unter 5)
+                ak.live_lauf(archiv, notify=ctx.notifications.enqueue if ctx.notifications else None)
+            except Exception as exc:
+                print(f"[app_kennzahlen live] {exc.__class__.__name__}", flush=True)
             time.sleep(60)
 
     threading.Thread(target=loop, daemon=True, name="app_kennzahlen").start()
-    print("App-Kennzahlen-Loop aktiv (taeglich ab 06:30 Berlin, nur lesend).", flush=True)
+    print("App-Kennzahlen-Loop aktiv (taeglich ab 06:30 Berlin + Live im Takt, nur lesend).", flush=True)
 
 
 def _start_buchhaltung_loop(ctx) -> None:
