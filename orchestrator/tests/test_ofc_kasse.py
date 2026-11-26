@@ -220,6 +220,26 @@ class TestImport(_Basis):
             self.assertEqual(ki.import_plan(leer.stand(), g["zeilen"])["vergleich"]["abweichung_cent"], 0)
             self.assertEqual(ok.kassenbuch(leer.stand(), heute=date(2026, 10, 30))["kassenstand_cent"], 4100)
 
+    def test_7c_vorgemerkt_wird_bestaetigt(self):
+        """KA4c: Spaeter bezahlen mit fehlgeschlagener Abbuchung (vorgemerkt) -> PayPal-Zeile bucht sie, LUNA-Eintrag ersetzt."""
+        with tempfile.TemporaryDirectory() as d:
+            st = OfcStore(Path(d) / "fanclub")
+            st.erfassen("ofc_zahlung", {"id": "z-s", "art": "spaeter", "betrag_cent": 39200, "datum": "2026-09-14",
+                                        "faellig": "2026-10-14", "zuordnung": "auto", "haendler": "CTS EVENTIM"})
+            st.erfassen("ofc_zahlung", {"id": "z-f", "art": "abbuchung_fehler", "betrag_cent": 39200, "datum": "2026-10-16",
+                                        "zuordnung": "info"})
+            self.assertEqual({b["id"]: b["status"] for b in ok.buchungen(st.stand())}["zahlung:z-s"], "vorgemerkt")
+            g = ki.csv_lesen(CSV_ECHT)
+            e = {x["tc"]: x for x in ki.import_plan(st.stand(), g["zeilen"])["zeilen"]}
+            self.assertEqual((e["T04"]["ergebnis"], e["T04"]["buchung"], e["T04"]["kategorie"]), ("bestaetigt", "zahlung:z-s", "tickets"))
+            r = ki.import_anwenden(st, CSV_ECHT, "export.csv", anfangsbestand_uebernehmen=True)
+            ids = {b["id"] for b in ok.buchungen(st.stand())}
+            self.assertNotIn("zahlung:z-s", ids)                                                 # ersetzt, nicht doppelt
+            self.assertEqual(ki.import_plan(st.stand(), g["zeilen"])["vergleich"]["abweichung_cent"], 0)
+            self.assertTrue(any("laut PayPal abgebucht" in b["text"] for b in ok.buchungen(st.stand())))
+            ki.import_storno(st, r["import_id"])
+            self.assertIn("zahlung:z-s", {b["id"] for b in ok.buchungen(st.stand())})          # Storno holt ihn zurueck
+
     def test_7_formate_und_fehler(self):
         leer = ('﻿"RH","Name des Berichts"\n"RH","BALANCE_RECONCILIATION_REPORT"\n"RD","Händlerkonto-ID","Erstellt am"\n'
                 '"RF","Dateinummer","Einträge insgesamt"\n').encode("utf-8")

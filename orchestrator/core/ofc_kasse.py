@@ -53,6 +53,7 @@ def buchungen(st: dict, heute: date | None = None) -> list[dict]:
     from .ofc_zahlung import zahlungs_status
     heute = heute or date.today()
     kat = st.get("kasse_kat") or {}
+    ersetzt = {b["bestaetigt"] for b in (st.get("kasse") or {}).values() if b.get("bestaetigt") and not b.get("storniert")}
     out = []
     for e in st.get("eingaenge", {}).values():
         if e.get("ersetzt") or not e.get("betrag_cent"):
@@ -68,6 +69,8 @@ def buchungen(st: dict, heute: date | None = None) -> list[dict]:
         if z.get("art") not in ("gesendet", "spaeter", "erstattung"):
             continue
         q = f"zahlung:{z['id']}"
+        if q in ersetzt:                                                 # laut PayPal-Auszug abgebucht -> zaehlt dort
+            continue
         vz = 1 if z["art"] == "erstattung" else -1
         datum, status = z.get("datum") or "", "gebucht"
         if z["art"] == "spaeter":
@@ -81,7 +84,7 @@ def buchungen(st: dict, heute: date | None = None) -> list[dict]:
             text += " (Abbuchung fehlgeschlagen)"
         out.append({"id": q, "quelle": "zahlung", "datum": datum, "betrag_cent": vz * int(z.get("betrag_cent") or 0),
                     "kategorie": kat.get(q) or ("sonstiges" if z.get("zuordnung") == "ignoriert" else "tickets"),
-                    "text": text, "status": status, "herkunft": "Eigene Zahlung",
+                    "text": text, "status": status, "herkunft": "Eigene Zahlung", "art": z["art"],
                     "transaktionscode": z.get("transaktionscode") or ""})
     for b in (st.get("kasse") or {}).values():
         q = f"kasse:{b['id']}"
@@ -136,7 +139,7 @@ def _datum_ok(d: str) -> bool:
 
 def buchung_anlegen(store: OfcStore, *, datum: str, betrag_cent: int, kategorie: str, text: str,
                     beleg: bytes = b"", beleg_name: str = "", von: str = "", import_id: str = "",
-                    transaktionscode: str = "") -> dict:
+                    transaktionscode: str = "", bestaetigt: str = "") -> dict:
     """Handbuchung (+ Zugang / - Abgang); Beleg wird nur neu angelegt (`fanclub/belege/<id><endung>`)."""
     if not _datum_ok(datum):
         return {"ok": False, "hinweis": "Datum ungültig."}
@@ -166,6 +169,8 @@ def buchung_anlegen(store: OfcStore, *, datum: str, betrag_cent: int, kategorie:
         d["import_id"] = import_id
     if transaktionscode:
         d["transaktionscode"] = transaktionscode
+    if bestaetigt:                                                       # KA4c: bestaetigt eine vorgemerkte Zahlung (ersetzt sie)
+        d["bestaetigt"] = bestaetigt
     store.erfassen("ofc_kasse", d, von=von)
     return {"ok": True, "id": bid, "buchung": d}
 

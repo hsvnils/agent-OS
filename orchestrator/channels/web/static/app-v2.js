@@ -5506,7 +5506,7 @@ async function ofcKIVorschau(el) {
   if (!(v.zeilen || []).length) { box.innerHTML = `<div class="v2-msg err">${esc(v.hinweis || "Keine Buchungszeilen in der Datei.")}</div>`; return; }
   const ve = v.vergleich, kat = (OFC_K.daten && OFC_K.daten.kategorien) || {};
   const ERG = { bekannt: ["ok", "schon da"], passt: ["ok", "passt"], neu: ["warn", "neu"], uebersprungen: ["neutral", "zählt nicht"],
-    technisch: ["neutral", "PayPal-intern"], finanziert: ["neutral", "Später bezahlen"] };
+    technisch: ["neutral", "PayPal-intern"], finanziert: ["neutral", "Später bezahlen"], bestaetigt: ["ok", "jetzt abgebucht"] };
   box.innerHTML = `<div class="v2-ofc-vorschau">
       <div class="v2-kv"><span>Zeilen</span><b>${v.anzahl} · schon da ${v.bekannt} · passt ${v.passt} · neu ${v.neu} · zählt nicht ${v.uebersprungen}</b></div>
       ${v.technisch || v.finanziert ? `<div class="v2-kv"><span>Heben sich auf (nicht gebucht)</span><b>${v.technisch ? `${v.technisch} PayPal-intern` : ""}${v.technisch && v.finanziert ? " · " : ""}${v.finanziert ? `${v.finanziert} Kauf mit „Später bezahlen“ (zählt bei Abbuchung)` : ""}</b></div>` : ""}
@@ -5517,7 +5517,7 @@ async function ofcKIVorschau(el) {
           : `<label class="v2-list-row v2-ofc-wahl"><input type="checkbox" id="ofc-ki-start" checked><div class="grow"><b>Anfangsbestand übernehmen</b><small>${esc(cent2eur(ve.start_vorschlag.betrag_cent))} zum ${esc(datumDe(ve.start_vorschlag.datum))} (aus der ersten Zeile)</small></div></label>`}` : ""}
     </div>
     <div style="max-height:320px;overflow:auto">${v.zeilen.filter(x => !["bekannt", "technisch"].includes(x.ergebnis)).map(x => `<div class="v2-list-row"><div class="v2-ofc-datum"><b>${esc(datumDe(x.datum))}</b></div>
-      <div class="grow"><b class="v2-umbruch">${esc([x.beschreibung, x.name].filter(Boolean).join(" – ") || "PayPal")}</b><small>${x.ergebnis === "neu" ? "→ " + esc(kat[x.kategorie] || x.kategorie) : ""}${x.gebuehr_neu ? " · Gebühr " + esc(cent2eur(x.gebuehr_cent)) : ""}${x.status ? " · " + esc(x.status) : ""}</small></div>
+      <div class="grow"><b class="v2-umbruch">${esc([x.beschreibung, x.name].filter(Boolean).join(" – ") || "PayPal")}</b><small>${x.ergebnis === "neu" || x.ergebnis === "bestaetigt" ? "→ " + esc(kat[x.kategorie] || x.kategorie) : ""}${x.gebuehr_neu ? " · Gebühr " + esc(cent2eur(x.gebuehr_cent)) : ""}${x.status ? " · " + esc(x.status) : ""}</small></div>
       <div style="text-align:right"><b>${esc(cent2eur(x.brutto_cent))}</b><br><span class="v2-badge ${ERG[x.ergebnis][0]}">${ERG[x.ergebnis][1]}</span></div></div>`).join("") || emptyRow("Alle Zeilen sind schon in der Kasse.")}</div>
     <div class="v2-card-actions">${v.neu || v.gebuehren || (ve && ve.luna_cent === undefined) ? `<button class="v2-btn pri" data-act="ofc-ki-ok">Übernehmen</button>` : ""}</div><div class="v2-msg" id="ofc-ki-msg"></div>`;
 }
