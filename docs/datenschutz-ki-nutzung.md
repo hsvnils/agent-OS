@@ -170,3 +170,11 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
     uebernommen und in `benachrichtigungen_zeigen`/`meldung_details` ausgeblendet;
   - nicht im Morgen-Briefing, nicht in der Globalen Suche.
 - Anzeige nur fuer den CEO (Rolle owner). Kontroll-Abgleich mit Supabase deterministisch in LUNA-OS.
+
+## 10. Nachtrag 2026-11-26: Mails an Fanclub-Mitglieder (OFC_TICKETVERSAND TV3)
+
+- LUNA sendet aus moin@hsvinside.de **Zahlungsbitten** an Mitglieder, nur nach Klick des CEO. Inhalt ist eine feste Vorlage:
+  Spiel, Karten, Betrag, Verwendungszweck. **Keine KI**, kein Modell sieht Adressen oder Namen.
+- Die Adresse kommt live aus der Mitgliederliste (Google-Tabelle, nur lesend) ueber die Mitgliedsnummer am Ticket. LUNA
+  speichert sie nicht; das Protokoll enthaelt nur die maskierte Adresse.
+- Zweck: Abwicklung der Kartenvergabe im Mitgliedsverhaeltnis (Zahlung und Zustellung der Karten).

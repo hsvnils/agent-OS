@@ -5183,6 +5183,7 @@ async function ofcSpiel(sid) {
     <div class="v2-sub">${[s.spieltag ? datumDe(s.spieltag) + (s.uhrzeit ? ", " + s.uhrzeit : "") : "", s.ort, s.wettbewerb, s.heimspiel === true ? "Heimspiel" : s.heimspiel === false ? "Auswärtsspiel" : "", "Ordner „" + s.pfad + "“"].filter(Boolean).map(esc).join(" · ")}</div>
     ${d.hinweise.length ? `<div class="v2-ofc-hinweise" style="margin-top:8px">${d.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
     <h3>🎟 Tickets (${d.tickets.length})</h3>${tk}
+    <h3>✉️ Zahlungsbitten</h3><div id="ofc-zb"><div class="v2-empty">Lade…</div></div>
     <h3>🧾 Rechnung</h3>${rg}
     <h3>💳 Eigene Zahlung</h3>${(d.zahlungen || []).map(z => `<div class="v2-kv"><span>${esc(datumDe(z.datum))} · ${esc(OFC_ZART[z.art] || z.art)}${z.transaktionscode ? " · " + esc(z.transaktionscode) : ""}</span><b>${z.art === "erstattung" ? "−" : ""}${esc(cent2eur(z.betrag_cent))}</b></div>`).join("")
       || emptyRow("Noch keine PayPal-Zahlung zugeordnet.")}
@@ -5191,6 +5192,50 @@ async function ofcSpiel(sid) {
     <div class="v2-card-actions">${s.abgeschlossen ? `<button class="v2-btn sm" data-act="ofc-abschluss" data-id="${esc(sid)}" data-val="1">↩︎ Wieder öffnen</button>`
       : `<button class="v2-btn sm pri" data-act="ofc-abschluss" data-id="${esc(sid)}" data-val="">✅ Abschließen</button>`}
       <button class="v2-btn sm" data-act="ofc-verwerfen" data-id="${esc(sid)}">🗑 Spiel im Reiter verwerfen</button></div>`);
+  ofcZb(sid);
+}
+/* OFC_TICKETVERSAND TV3: Zahlungsbitte je Mitglied per Mail aus moin@ (Vorschau, Bestätigung, Testmail an moin@) */
+const OFC_ZB_STATUS = { bereit: ["warn", "bereit"], gebeten: ["ok", "gebeten"], gesperrt: ["neutral", "fehlt etwas"] };
+async function ofcZb(sid) {
+  const p = await jget(`/api/ofc/spiel/${encodeURIComponent(sid)}/zahlungsbitten`), el = $("#ofc-zb"); if (!el) return;
+  if (!p || !p.ok) { el.innerHTML = emptyRow((p && p.hinweis) || "Nicht erreichbar."); return; }
+  el.innerHTML = (p.bereit ? `<div class="v2-card-actions"><button class="v2-btn sm pri" data-act="ofc-zb-alle" data-id="${esc(sid)}">✉️ An alle bereiten senden (${p.bereit})</button></div>` : "")
+    + (p.gruppen.map(g => `<div class="v2-list-row"><div class="grow"><b class="v2-umbruch">${esc(g.name || "Mitglied")}</b> <span class="v2-badge neutral">Nr. ${esc(g.nummer)}</span>
+        <small>${[`${g.tickets.length} Karte(n)`, cent2eur(g.betrag_cent), g.verwendungszweck ? "Zweck " + g.verwendungszweck : "", g.adresse_maskiert, g.gebeten_am ? "gebeten " + zeit(g.gebeten_am) : "", g.hinweis].filter(Boolean).map(esc).join(" · ")}</small></div>
+      <div class="v2-ofc-knoepfe"><span class="v2-badge ${OFC_ZB_STATUS[g.status][0]}">${OFC_ZB_STATUS[g.status][1]}</span>
+        ${g.status !== "gesperrt" ? `<button class="v2-btn sm" data-act="ofc-zb-vs" data-id="${esc(sid)}" data-val="${esc(g.nummer)}">👁 Mail</button>` : ""}</div></div>`).join("")
+      || emptyRow("Keine offenen Karten mit Mitglied."))
+    + (p.ohne_mitglied ? `<div class="v2-sub" style="margin-top:6px">${p.ohne_mitglied} offene Karte(n) ohne Mitglied – bei ✏️ das Mitglied wählen, das zahlt (auch für Gäste).</div>` : "");
+}
+async function ofcZbVorschau(sid, nummer) {
+  const v = await jget(`/api/ofc/spiel/${encodeURIComponent(sid)}/zahlungsbitten?nummer=${encodeURIComponent(nummer)}`);
+  if (!v || !v.ok) return alert((v && v.hinweis) || "Nicht erreichbar.");
+  const g = v.gruppe;
+  openModal("✉️ Zahlungsbitte", `<div class="v2-kv v2-ofc-feld"><span>An</span><b>${esc(g.name)} · ${esc(g.adresse_maskiert)}</b></div>
+    <div class="v2-kv v2-ofc-feld"><span>Von</span><b>HSVInside &lt;moin@hsvinside.de&gt;</b></div>
+    <div class="v2-kv v2-ofc-feld"><span>Betreff</span><b class="v2-umbruch">${esc(v.betreff)}</b></div>
+    <pre class="v2-ofc-mail">${esc(v.text)}</pre>
+    ${g.gebeten_am ? `<div class="v2-msg">Schon gebeten am ${esc(zeit(g.gebeten_am))}.</div>` : ""}
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-zb-senden" data-id="${esc(sid)}" data-val="${esc(nummer)}" data-erneut="${g.gebeten_am ? "1" : ""}">${g.gebeten_am ? "Erneut senden" : "Senden"}</button>
+      <button class="v2-btn" data-act="ofc-zb-test" data-id="${esc(sid)}" data-val="${esc(nummer)}">Testmail an moin@</button>
+      <button class="v2-btn" data-act="ofc-spiel" data-id="${esc(sid)}">← Zurück</button></div><div class="v2-msg" id="ofc-zb-msg"></div>`);
+}
+async function ofcZbSenden(el, test) {
+  const sid = el.dataset.id, nummer = el.dataset.val, erneut = !!el.dataset.erneut;
+  if (!test && !confirm(`Zahlungsbitte jetzt an Mitglied ${nummer} senden?`)) return;
+  el.disabled = true; const m = $("#ofc-zb-msg"); m.className = "v2-msg"; m.textContent = "Sende …";
+  const r = await jpost(`/api/ofc/spiel/${encodeURIComponent(sid)}/zahlungsbitte`, { bestaetigt: true, nummer, test, erneut });
+  el.disabled = false;
+  if (!r || !r.ok) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Fehler."; return; }
+  m.className = "v2-msg ok"; m.textContent = test ? `Testmail an ${r.an} gesendet – schau ins Fanclub-Postfach.` : `Gesendet an ${r.an} (Kopie in „${r.gesendet_ordner || "Gesendet"}“).`;
+}
+async function ofcZbAlle(sid) {
+  const p = await jget(`/api/ofc/spiel/${encodeURIComponent(sid)}/zahlungsbitten`); if (!p || !p.ok) return;
+  const b = p.gruppen.filter(g => g.status === "bereit");
+  if (!b.length || !confirm(`Zahlungsbitten an ${b.length} Mitglied(er) senden?\n\n` + b.map(g => `${g.name} (Nr. ${g.nummer}) – ${cent2eur(g.betrag_cent)} – ${g.verwendungszweck}`).join("\n"))) return;
+  const r = await jpost(`/api/ofc/spiel/${encodeURIComponent(sid)}/zahlungsbitte`, { bestaetigt: true, alle: true });
+  alert(r ? `${r.gesendet} gesendet.` + (r.fehler && r.fehler.length ? `\nNicht gesendet: ` + r.fehler.map(f => `Nr. ${f.nummer}: ${f.hinweis}`).join("; ") : "") : "Fehler.");
+  return ofcSpiel(sid);
 }
 async function ofcImport() {
   openModal("🔄 Ordner einlesen", `<div class="v2-empty">Prüfe den Ordner auf der NAS … (dauert einige Sekunden)</div>`);
@@ -6360,6 +6405,10 @@ async function handleAct(act, el) {
     case "ak-abgleich-los": return akAbgleichLos();
     case "ofc-spiel": return ofcSpiel(id);
     case "ofc-wallet-kopie": return ofcWalletKopie(id, el);
+    case "ofc-zb-vs": return ofcZbVorschau(id, val);
+    case "ofc-zb-senden": return ofcZbSenden(el, false);
+    case "ofc-zb-test": return ofcZbSenden(el, true);
+    case "ofc-zb-alle": return ofcZbAlle(id);
     case "ofc-wallet-hand": return ofcWalletHand(id);
     case "ofc-wallet-holen": return ofcWalletHolen(el);
     case "ofc-spieltag": return ofcSpieltag(id, val);

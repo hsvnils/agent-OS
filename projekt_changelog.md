@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 18:02] — Claude Code
+- **Was:** OFC_TICKETVERSAND TV3: Zahlungsbitte je Mitglied und Spiel per Mail aus moin@hsvinside.de (feste Vorlage mit Spiel, Karten, Betrag, Verwendungszweck `<Spieltag>-<Nr>`, PayPal an moin@), Senden nur nach CEO-Klick mit Auflagen (ein Empfaenger, nie doppelt ohne „erneut“, 30/Stunde, Testmail an moin@, Protokoll ohne Text, Schalter `OFC_MAILVERSAND`); Abschnitt „✉️ Zahlungsbitten“ im Spiel; Zugriffs-Policy (CISO), Datenfluesse, Datenschutz-Nachtrag, Register, Dienste-Register, Roadmap, Baseline 1902.
+- **Warum:** CEO: „Go fuer TV3, keinen PayPal.me-Link“.
+- **Betroffen:** `orchestrator/core/ofc_versand.py`, `orchestrator/governance/allinkl_mail.py`, `orchestrator/core/ofc_store.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`, `orchestrator/governance/dienste_register.py`, `orchestrator/tests/test_ofc_versand.py`, `governance/zugriffs-policy.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `OFC_TICKETVERSAND_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 17:43] — Claude Code
 - **Was:** Nach Deploy „alle Ordner“ auf der NAS verifiziert (nur Zaehlungen): 46 Wallet-Links neu, 52 von 77 Karten mit Wallet, alle Karten der offenen Spiele mit Datum abgedeckt; 2 Spiele ohne Treffer im Spielplan. Roadmap fortgeschrieben.
 - **Warum:** CEO: „Deploy gemacht, Links geholt“.

@@ -6797,6 +6797,41 @@ async def ofc_ticket_wallet(request: Request, nr: str):
     return wallet_von_hand(_ofc_store(), nr, str(body.get("url") or ""), von=_von(request))
 
 
+@app.get("/api/ofc/spiel/{sid}/zahlungsbitten")
+def ofc_zahlungsbitten(request: Request, sid: str, nummer: str = ""):
+    """OFC_TICKETVERSAND TV3: je Mitglied offene Karten, Betrag, Verwendungszweck, Status; mit `nummer` die Mail-Vorschau."""
+    _nur_ceo(request)
+    from ...core import ofc_versand
+    m = _ofc_mitglieder_daten()
+    st = _ofc_store().stand()
+    liste = m["mitglieder"] if m else None
+    return ofc_versand.vorschau(st, sid, nummer, liste) if nummer else ofc_versand.plan(st, sid, liste)
+
+
+@app.post("/api/ofc/spiel/{sid}/zahlungsbitte")
+async def ofc_zahlungsbitte_senden(request: Request, sid: str):
+    """TV3: Zahlungsbitte(n) senden -- nur mit Bestaetigung; `nummer` = ein Mitglied, `alle` = alle mit Status „bereit“;
+    `test` = an moin@ selbst; `erneut` = trotz frueherer Bitte. Aus moin@ (CISO TV3)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Senden braucht die Bestätigung."}
+    from ...core import ofc_versand
+    p = _ofc_postfach()
+    if not p.verfuegbar():
+        return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
+    m = _ofc_mitglieder_daten()
+    liste = m["mitglieder"] if m else None
+    st = _ofc_store()
+    if body.get("alle"):
+        nrn = [g["nummer"] for g in ofc_versand.plan(st.stand(), sid, liste).get("gruppen", []) if g["status"] == "bereit"]
+        erg = [dict(ofc_versand.senden(st, p, sid, n, liste, von=_von(request)), nummer=n) for n in nrn]
+        return {"ok": all(e["ok"] for e in erg), "gesendet": sum(1 for e in erg if e["ok"]),
+                "fehler": [{"nummer": e["nummer"], "hinweis": e.get("hinweis", "")} for e in erg if not e["ok"]]}
+    return ofc_versand.senden(st, p, sid, str(body.get("nummer") or ""), liste, test=bool(body.get("test")),
+                              erneut=bool(body.get("erneut")), von=_von(request))
+
+
 @app.post("/api/ofc/wallet/abholen")
 async def ofc_wallet_abholen(request: Request):
     """TV1: Wallet-Links aus den HSV-Mails nachholen (nur lesend, bis 365 Tage); zugeordnet nur ueber die Ticketnummer."""
