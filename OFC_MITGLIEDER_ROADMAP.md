@@ -40,7 +40,7 @@ in LUNA-OS ein (**Variante a**); eine oeffentliche Anmeldeseite ist **nicht** Te
 
 ## Scope
 
-Eigenes Mitgliederverzeichnis in LUNA (einmaliger Import aus der Tabelle), Mitglieder anlegen und bearbeiten, Mitgliedschaft
+Eigenes Mitgliederverzeichnis in LUNA (einmaliger Import aus der Tabelle), Mitglieder anlegen, bearbeiten und kuendigen (Archiv, keine Nachrichten mehr), Mitgliedschaft
 und Status sichtbar und filterbar, Anfrage -> Mitglied aufnehmen, Verlauf jeder Aenderung, Umstellung aller OFC-Funktionen
 auf das eigene Verzeichnis mit Parallelbetrieb und Abgleich, Export (CSV/PDF) fuer den Vorstand.
 
@@ -48,7 +48,7 @@ auf das eigene Verzeichnis mit Parallelbetrieb und Abgleich, Export (CSV/PDF) fu
 
 - Oeffentliche Anmeldeseite (Variante b): spaeter eigene Roadmap mit CEO-Freigabe und CISO-Pruefung.
 - Schreiben in die Google-Tabelle (bleibt nur lesend, bis sie abgeschaltet wird).
-- Endgueltiges Loeschen von Mitgliederdaten (CEO-Tor; Austritt = Status, nicht loeschen).
+- Endgueltiges Loeschen von Mitgliederdaten (CEO-Tor; Kuendigung = Archiv, nicht loeschen).
 - Mails an Mitglieder ausser den bestehenden Zahlungsbitten/Tickets (TV3/TV4).
 - Schutzbereiche nach `governance/roadmap-workflow.md` B4.
 
@@ -59,7 +59,7 @@ auf das eigene Verzeichnis mit Parallelbetrieb und Abgleich, Export (CSV/PDF) fu
 | E1 | Welche Felder uebernimmt LUNA? | **Alle 18**, aufgeraeumt: Anrede, Vor-/Nachname, E-Mail (die zweite E-Mail-Spalte nur, wenn die erste leer ist), Handy, Adresse, Geburtstag, HSV-Mitglied + HSV-Nummer, anderer Fanclub, Mitgliedschaft, Beitrag, Mitglied seit, Naechste Zahlung, Kommentar, „Anfrage am“ (Zeitstempel). |
 | E2 | Mitgliedschaftsarten? | **Gold** (jaehrlich, Betrag aus E-K2 = 40 €), **Standard** (kostenfrei), **Foerder** (Betrag je Mitglied eintragbar). **Vorstand** ist keine eigene Art, sondern ein Haken „Vorstand“ zusaetzlich zur Mitgliedschaft. Beide Gold-Schreibweisen werden „Gold“. |
 | E3 | Doppelte Nummern (2) und doppelte Namen (3)? | **In der Import-Vorschau (MV0) klaerst du sie**: Fuer jede doppelte Nummer waehlst du, wer sie behaelt; der andere bekommt die naechste freie Nummer. Doppelte Namen werden nur angezeigt (koennen echte Namensvettern sein). |
-| E4 | Austritt? | **Status „ausgetreten“ mit Datum**, nichts wird geloescht; Ausgetretene sind ausgeblendet, aber per Filter sichtbar. Endgueltiges Loeschen (z. B. auf Wunsch nach DSGVO) spaeter als eigene Funktion mit Bestaetigung (CEO-Tor). |
+| E4 (CEO-Zusatz 2026-11-26) | Kuendigung? | **Knopf „Kündigen“ am Mitglied** (Datum der Kuendigung, optional Notiz, mit Rueckfrage): das Mitglied wandert ins **Archiv** (eigene Ansicht „🗄 Archiv“, aus Liste und Suche verschwunden) und bekommt **keine Nachrichten mehr** von LUNA -- Zahlungsbitten und Ticketmails werden im Code fuer Archivierte gesperrt, auch bei offenen Karten. Ab dem Folgejahr kein Beitrags-Soll mehr; bereits Bezahltes bleibt. Nichts wird geloescht; „Wieder aufnehmen“ holt es zurueck. Endgueltiges Loeschen (z. B. auf Wunsch nach DSGVO) spaeter als eigene Funktion mit Bestaetigung (CEO-Tor). |
 | E5 | Neue Mitgliedsnummern? | **Naechste freie Nummer** (hoechste + 1, vierstellig wie bisher); du kannst sie beim Anlegen aendern. |
 | E6 | Wann wird umgeschaltet? | **Nach einem Parallelbetrieb**: LUNA zeigt einen Abgleich Tabelle <-> LUNA. Bei 0 Abweichungen schaltest du um; ab da ist LUNA die Quelle und die Tabelle nur noch Archiv. Danach schliesst du das Google-Formular. |
 
@@ -92,14 +92,16 @@ auf das eigene Verzeichnis mit Parallelbetrieb und Abgleich, Export (CSV/PDF) fu
   - **„＋ Mitglied“** legt ein Mitglied an (Nummer nach E5).
   - **✏️ Bearbeiten** fuer alle Felder aus E1.
   - **Mitgliedschaft** (Gold/Standard/Foerder + Betrag) und Haken „Vorstand“.
-  - **Austritt** mit Datum (E4).
+  - **„Kündigen“** mit Datum und Rueckfrage (E4): Mitglied ins **Archiv**, aus Liste und Suche ausgeblendet, „Wieder
+    aufnehmen“ moeglich; im Code gesperrt fuer jede Mail (Zahlungsbitte, Tickets) und ohne Beitrags-Soll ab dem Folgejahr.
   - **Anfrage aufnehmen:** Anfrage -> Mitglied mit Nummer.
   - **Verlauf** je Mitglied (wer, wann, was geaendert).
   - **Liste** mit Filter nach Mitgliedschaft, Status und Vorstand; Zahlen je Art oben.
   - **Export** CSV/PDF.
   
   Ansicht auf Rechner, iPad und iPhone.
-- Gate: Tests mit Gegenproben (Nummer doppelt -> abgelehnt; Austritt loescht nichts; ungueltige E-Mail -> abgelehnt);
+- Gate: Tests mit Gegenproben (Nummer doppelt -> abgelehnt; Kuendigen loescht nichts; gekuendigtes Mitglied bekommt keine
+  Zahlungsbitte und keine Ticketmail, auch nicht automatisch; ungueltige E-Mail -> abgelehnt);
   headless Rechner/iPad/iPhone.
 - Abhaengig von: MV1. Aufwand: mittel-gross.
 

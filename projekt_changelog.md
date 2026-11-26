@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 19:36] — Claude Code
+- **Was:** `OFC_MITGLIEDER_ROADMAP.md` ergaenzt: Knopf „Kündigen“ am Mitglied (Archiv, aus Liste/Suche ausgeblendet, keine Zahlungsbitten/Ticketmails mehr, kein Beitrags-Soll ab Folgejahr, „Wieder aufnehmen“, nichts geloescht) in E4, MV2 und Gate.
+- **Warum:** CEO-Zusatz vor dem Push.
+- **Betroffen:** `OFC_MITGLIEDER_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 19:35] — Claude Code
 - **Was:** Neue Roadmap `OFC_MITGLIEDER_ROADMAP.md` (Mitglieder nur noch in LUNA-OS, Etappen MV0-MV4, Entscheidungen E1-E6, Variante a: Anfragen traegt der CEO ein) angelegt und registriert; read-only Analyse der Mitgliederliste nur als Zaehlungen; TV5-Test mit dem Spiel gegen Leverkusen vermerkt. Kein Code.
 - **Warum:** CEO: „weg vom Google-Formular, nur noch LUNA-OS“ – „Ja, Roadmap anlegen, Variante (a)“.
