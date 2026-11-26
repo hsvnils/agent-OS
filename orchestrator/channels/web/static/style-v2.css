@@ -1362,3 +1362,30 @@ button.v2-chip.on { color: var(--v2-fg); font-weight: 700; background: var(--v2-
 .v2-ofc-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .v2-ofc-filter select { flex: 0 1 220px; min-width: 0; max-width: 100%; }
 @media (max-width: 600px) { .v2-ofc-filter select, .v2-ofc-filter input { flex-basis: 100%; } }
+
+/* APP_KENNZAHLEN AK2: Bereich App -- Diagramme (Farben geprueft: OKLab-Abstand >= 8,7 auch bei Farbsehschwaeche; Status-Farben bleiben frei) */
+:root { --v2-ak-0: #2f6bff; --v2-ak-1: #a16207; --v2-ak-2: #be185d; }
+html.v2-dark { --v2-ak-0: #5b8bff; --v2-ak-1: #d4a017; --v2-ak-2: #e0619b; }
+.v2-ak-abschnitt { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--v2-muted); margin: 22px 0 10px; }
+.v2-ak-chart { position: relative; touch-action: pan-y; }
+.v2-ak-bar0 { fill: var(--v2-ak-0); }
+.v2-ak-l0, .v2-ak-l1, .v2-ak-l2 { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.v2-ak-l0 { stroke: var(--v2-ak-0); } .v2-ak-l1 { stroke: var(--v2-ak-1); } .v2-ak-l2 { stroke: var(--v2-ak-2); }
+.v2-ak-p0 { fill: var(--v2-ak-0); } .v2-ak-p1 { fill: var(--v2-ak-1); } .v2-ak-p2 { fill: var(--v2-ak-2); }
+.v2-ak-p0, .v2-ak-p1, .v2-ak-p2 { stroke: var(--v2-card-solid); stroke-width: 2; }
+.v2-ak-cross { stroke: var(--v2-faint); stroke-width: 1; stroke-dasharray: 3 3; }
+i.v2-ak-f0, i.v2-ak-f1, i.v2-ak-f2 { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+i.v2-ak-f0 { background: var(--v2-ak-0); } i.v2-ak-f1 { background: var(--v2-ak-1); } i.v2-ak-f2 { background: var(--v2-ak-2); }
+.v2-ak-row { display: grid; grid-template-columns: minmax(90px, 40%) 1fr auto; align-items: center; gap: 10px; padding: 6px 0; font-size: 13px; }
+.v2-ak-row .lbl { color: var(--v2-muted); }
+.v2-ak-row b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.v2-ak-row .v2-bar i { background: var(--v2-ak-0); }
+.v2-ak-ziel { height: 8px; border-radius: 4px; background: var(--v2-line-soft); margin: 8px 0 4px; overflow: hidden; }
+.v2-ak-ziel i { display: block; height: 100%; border-radius: 4px; background: var(--v2-ak-0); }
+.v2-tile .v2-kv span small { font-size: 12px; }
+.v2-ak-std { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; align-items: end; height: 120px; margin-top: 10px; }
+.v2-ak-std div { height: 100%; display: flex; align-items: flex-end; }
+.v2-ak-std i { display: block; width: 100%; background: var(--v2-ak-0); border-radius: 4px 4px 0 0; }
+.v2-ak-std-x { position: relative; height: 16px; font-size: 10px; color: var(--v2-faint); }
+.v2-ak-std-x span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.v2-ak-std-x span:first-child { transform: none; } .v2-ak-std-x span:last-child { transform: translateX(-100%); }

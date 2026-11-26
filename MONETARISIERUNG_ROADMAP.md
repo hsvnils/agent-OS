@@ -110,6 +110,8 @@ M7 braucht die erste Store-Abrechnung (Anfang Februar 2027). M8 kann jederzeit.
 - **Gate:** Ist-Zaehlung stimmt mit einer Stichwoche ueberein.
 
 ### M5 App-Kennzahlen (mittel, Risiko mittel; braucht L4b und Daten ab 01.01.2027)
+- **Ersetzt (2026-11-26):** wird mit `APP_KENNZAHLEN_ROADMAP.md` umgesetzt -- statt Datenbank-Rolle `luna_reader` eine
+  HTTPS-Function mit eigenem Lese-Token (CEO-Auftrag aus der App-Sitzung). Installationen/Store-Exporte bleiben bei M7.
 - **Ziel:** Taeglicher Abruf von `luna.abo_kennzahlen(von, bis)` ueber den Session-Pooler mit TLS; Anzeige aktive Abos
   (Monat/Jahr, Store), Neu, Kuendigungen, Konten, aktive Push-Geraete, Tippspiel-Teilnehmer; dazu Installationen aus
   Store-Exporten. Ziel „1.000 Abo-Aequivalente bis 27.11.2027" als Kurve.

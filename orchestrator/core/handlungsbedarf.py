@@ -21,7 +21,7 @@ from .betriebswaechter import BOT_STUMM_MIN, ZUSTELLUNG_MIN
 STUFEN = ("dringend", "woche", "spaeter")
 INVESTMENT_MAX_TAGE = 2      # Kauf-/Verkaufs-Chancen veralten schnell; aeltere offene Telegram-Anfragen sind ueberholt
 # To-do-Bereich (core/todos.py, /api/todos) -> Bereich der Navigation
-_BEREICH = {"CRM": "content", "Content": "content", "Investment": "investment", "Freigaben": "luna", "Betrieb": "luna"}
+_BEREICH = {"App": "app", "CRM": "content", "Content": "content", "Investment": "investment", "Freigaben": "luna", "Betrieb": "luna"}
 
 
 def _stufe(p: dict, woche_bis: str) -> str:
@@ -33,7 +33,7 @@ def _stufe(p: dict, woche_bis: str) -> str:
 
 
 def zusammenstellen(todos: list[dict], *, antraege: list[dict] | None = None, investment: list[dict] | None = None,
-                    betrieb: dict | None = None, heute: date) -> dict:
+                    betrieb: dict | None = None, heute: date, app_stoerung: str | None = None) -> dict:
     punkte = [dict(t) for t in todos]
     if antraege:
         aeltester = min((a.get("verlauf") or [{}])[0].get("ts", "") for a in antraege)[:10]
@@ -66,6 +66,10 @@ def zusammenstellen(todos: list[dict], *, antraege: list[dict] | None = None, in
                            "titel": f"{betrieb['unzugestellt']} Telegram-Meldung(en) hängen seit {int(alt)} Minuten",
                            "detail": "Zustellung an dich klemmt", "act": "go:system", "act_id": "",
                            "faellig": heute.isoformat(), "dringend": True, "erledigen": None})
+    if app_stoerung:                               # APP_KENNZAHLEN (CEO E4): Stoerung auch in der Glocke, ohne Werte
+        punkte.append({"id": "app-kennzahlen", "bereich": "App", "icon": "📱", "titel": app_stoerung,
+                       "detail": "Bereich App öffnen; dort „Jetzt abrufen“", "act": "go:appkennzahlen", "act_id": "",
+                       "faellig": heute.isoformat(), "dringend": True, "erledigen": None})
     woche_bis = (heute + timedelta(days=7)).isoformat()
     for p in punkte:
         p["stufe"] = _stufe(p, woche_bis)

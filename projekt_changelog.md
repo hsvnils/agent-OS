@@ -17,6 +17,21 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 15:47] — Claude Code
+- **Was:** APP_KENNZAHLEN AK0-AK3 umgesetzt: Abruf der Tagessummen der Hanserautisch-App (nur GET, Token nur aus der Umgebung, Schema-Pruefung, 400-Tage-Abschnitte), Archiv `app_kennzahlen/log.jsonl` mit Upsert nach `stand`, taeglicher Lauf ab 06:30 im Bot (Wiederholung 5/15/45 Min., 401/400 ohne Wiederholung), Telegram-Meldungen (Frische, Fehlschlaege, Moderation, Cron/Function, Meilensteine) ohne Chat-Verlauf/Chat-Werkzeuge, Stoerung in der Glocke, neuer Hauptmenuepunkt „📱 App“ (nur CEO) mit Kennzahlen, Zeitraeumen und Kontroll-Abgleich; CISO-Freigabe, Dienste-Register, Datenfluesse, Netz-Wache, Backup/Deploy-Ausschluss, Datenschutz-Nachtrag, Entscheidungs-Register, M5-Verweis, Baseline 1878.
+- **Warum:** CEO-Go fuer AK0-AK3, Entscheidungen E1-E4 „wie empfohlen“.
+- **Betroffen:** `orchestrator/core/app_kennzahlen.py`, `orchestrator/channels/telegram/bot.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`, `orchestrator/core/hoa_tools.py`, `orchestrator/core/handlungsbedarf.py`, `orchestrator/core/team_auth.py`, `orchestrator/governance/dienste_register.py`, `orchestrator/tests/test_app_kennzahlen.py`, `orchestrator/tests/test_netz_wache.py`, `deploy/sync-to-nas.sh`, `deploy/backup-from-nas.sh`, `.gitignore`, `AGENTS.md`, `APP_KENNZAHLEN_ROADMAP.md`, `MONETARISIERUNG_ROADMAP.md`, `governance/zugriffs-policy.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
+## [2026-11-26 15:31] — Claude Code
+- **Was:** Token `HANSERAUTISCH_LUNA_API_TOKEN` vom CEO per SSH vom MACO470 in die NAS-`.env` uebertragen (ohne Wertanzeige, Pruefsumme gleich) und auf dem MACO470 entfernt; Roadmap (Token-Angaben der App-Sitzung, Dry-Run ohne echte Quelle) und Zugriffs-Policy fortgeschrieben.
+- **Warum:** Empfehlung der App-Sitzung: Token nur dort, wo der Abruf laeuft (NAS).
+- **Betroffen:** `orchestrator/.env` (NAS, MACO470; nicht im Git), `APP_KENNZAHLEN_ROADMAP.md`, `governance/zugriffs-policy.md`, `projekt_changelog.md`
+
+## [2026-11-26 15:23] — Claude Code
+- **Was:** Neue Roadmap `APP_KENNZAHLEN_ROADMAP.md` (Kennzahlen der Hanserautisch-App, Etappen AK0-AK4, offene Entscheidungen E1-E4) angelegt und im Roadmap-Verzeichnis registriert; Zugang `app_kennzahlen` in der Zugriffs-Policy als GEPLANT, geplanter Datenfluss in `docs/datenfluesse.md`; OFC-Kasse als zurueckgestellt markiert. Einmaliger Lesetest der Schnittstelle (nur Status/Zeilenzahlen, keine Werte). Kein Code, kein Deploy.
+- **Warum:** CEO-Auftrag aus `LUNA_UEBERGABE.md` (App-Entwicklung), nach LUNA-Workflow erst Roadmap, Bau erst nach Go je Etappe.
+- **Betroffen:** `APP_KENNZAHLEN_ROADMAP.md`, `ROADMAP.md`, `OFC_KASSE_ROADMAP.md`, `governance/zugriffs-policy.md`, `docs/datenfluesse.md`, `projekt_changelog.md`
+
 ## [2026-11-26 15:18] — Claude Code
 - **Was:** CEO hat auf dem MACO470 den Schluessel `HANSERAUTISCH_LUNA_API_TOKEN` in `orchestrator/.env` eingetragen (Anleitung angepasst, Eintrag ohne Wertanzeige geprueft, Download-Kopie geloescht).
 - **Warum:** Dringender Auftrag des CEO aus der App-Entwicklung (MacBook); OFC-Kasse dafuer kurz zurueckgestellt.
