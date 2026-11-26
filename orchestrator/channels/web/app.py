@@ -6911,6 +6911,39 @@ async def ofc_wallet_abholen(request: Request):
         return {"ok": False, "hinweis": f"Postfach-Abruf fehlgeschlagen ({exc.__class__.__name__})."}
 
 
+@app.get("/api/ofc/mitglieder/import/vorschau")
+def ofc_mitglieder_import_vorschau(request: Request):
+    """OFC_MITGLIEDER MV0: was aus der Google-Tabelle ins LUNA-Verzeichnis uebernommen wuerde, mit Konflikten -- schreibt nichts."""
+    _nur_ceo(request)
+    from ...core.ofc_verzeichnis import import_vorschau
+    return import_vorschau(_ofc_mitglieder_daten(), _ofc_store().stand())
+
+
+@app.post("/api/ofc/mitglieder/import")
+async def ofc_mitglieder_import(request: Request):
+    """MV1: einmaliger Import ins LUNA-Verzeichnis (nur mit Bestaetigung; `behalten` = {Nummer: Zeile})."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Übernehmen braucht die Bestätigung."}
+    from ...core.ofc_mitglieder import lesen
+    from ...core.ofc_verzeichnis import import_anwenden
+    try:
+        daten = lesen(_google().auth, neu=True)
+    except Exception as exc:                                  # ohne Fehlertext (koennte Kennungen enthalten)
+        return {"ok": False, "hinweis": f"Mitgliederliste nicht lesbar ({exc.__class__.__name__})."}
+    b = body.get("behalten") if isinstance(body.get("behalten"), dict) else {}
+    return import_anwenden(_ofc_store(), daten, b, von=_von(request))
+
+
+@app.get("/api/ofc/mitglieder/abgleich")
+def ofc_mitglieder_abgleich(request: Request):
+    """MV1/MV3: Abgleich Google-Tabelle <-> LUNA-Verzeichnis (Abweichungen je Feld und Zeile)."""
+    _nur_ceo(request)
+    from ...core.ofc_verzeichnis import abgleich
+    return abgleich(_ofc_mitglieder_daten(), _ofc_store().stand())
+
+
 @app.get("/api/ofc/mitglieder")
 def ofc_mitglieder(request: Request, neu: int = 0):
     """OM: Mitgliederliste aus der geteilten Google-Forms-Tabelle -- nur lesend, nichts gespeichert, keine KI."""

@@ -1,10 +1,10 @@
 # Roadmap: OFC-Mitglieder nur noch in LUNA-OS (weg vom Google-Formular)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-mitglieder`
 - Basiscommit: `4b1dde2`
-- Naechster Schritt: Roadmap liegt dem CEO vor; Entscheidungen E1-E6 beantworten, dann Go fuer MV0 (Import-Vorschau, nur lesend).
+- Naechster Schritt: MV0+MV1 umgesetzt auf `ai/ofc-mitglieder` (CEO-Go 2026-11-26, E1-E6 wie empfohlen, E4 mit Kuendigen/Archiv); nach Merge/Deploy in 👥 Mitglieder „🗂 LUNA-Verzeichnis“: Vorschau pruefen, doppelte Nummern waehlen, uebernehmen; Abgleich 0 -> Go fuer MV2.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -56,18 +56,18 @@ auf das eigene Verzeichnis mit Parallelbetrieb und Abgleich, Export (CSV/PDF) fu
 
 | Nr | Frage | Empfehlung |
 |---|---|---|
-| E1 | Welche Felder uebernimmt LUNA? | **Alle 18**, aufgeraeumt: Anrede, Vor-/Nachname, E-Mail (die zweite E-Mail-Spalte nur, wenn die erste leer ist), Handy, Adresse, Geburtstag, HSV-Mitglied + HSV-Nummer, anderer Fanclub, Mitgliedschaft, Beitrag, Mitglied seit, Naechste Zahlung, Kommentar, „Anfrage am“ (Zeitstempel). |
-| E2 | Mitgliedschaftsarten? | **Gold** (jaehrlich, Betrag aus E-K2 = 40 €), **Standard** (kostenfrei), **Foerder** (Betrag je Mitglied eintragbar). **Vorstand** ist keine eigene Art, sondern ein Haken „Vorstand“ zusaetzlich zur Mitgliedschaft. Beide Gold-Schreibweisen werden „Gold“. |
-| E3 | Doppelte Nummern (2) und doppelte Namen (3)? | **In der Import-Vorschau (MV0) klaerst du sie**: Fuer jede doppelte Nummer waehlst du, wer sie behaelt; der andere bekommt die naechste freie Nummer. Doppelte Namen werden nur angezeigt (koennen echte Namensvettern sein). |
+| E1 (wie empfohlen) | Welche Felder uebernimmt LUNA? | **Alle 18**, aufgeraeumt: Anrede, Vor-/Nachname, E-Mail (die zweite E-Mail-Spalte nur, wenn die erste leer ist), Handy, Adresse, Geburtstag, HSV-Mitglied + HSV-Nummer, anderer Fanclub, Mitgliedschaft, Beitrag, Mitglied seit, Naechste Zahlung, Kommentar, „Anfrage am“ (Zeitstempel). |
+| E2 (wie empfohlen) | Mitgliedschaftsarten? | **Gold** (jaehrlich, Betrag aus E-K2 = 40 €), **Standard** (kostenfrei), **Foerder** (Betrag je Mitglied eintragbar). **Vorstand** ist keine eigene Art, sondern ein Haken „Vorstand“ zusaetzlich zur Mitgliedschaft. Beide Gold-Schreibweisen werden „Gold“. |
+| E3 (wie empfohlen) | Doppelte Nummern (2) und doppelte Namen (3)? | **In der Import-Vorschau (MV0) klaerst du sie**: Fuer jede doppelte Nummer waehlst du, wer sie behaelt; der andere bekommt die naechste freie Nummer. Doppelte Namen werden nur angezeigt (koennen echte Namensvettern sein). |
 | E4 (CEO-Zusatz 2026-11-26) | Kuendigung? | **Knopf „Kündigen“ am Mitglied** (Datum der Kuendigung, optional Notiz, mit Rueckfrage): das Mitglied wandert ins **Archiv** (eigene Ansicht „🗄 Archiv“, aus Liste und Suche verschwunden) und bekommt **keine Nachrichten mehr** von LUNA -- Zahlungsbitten und Ticketmails werden im Code fuer Archivierte gesperrt, auch bei offenen Karten. Ab dem Folgejahr kein Beitrags-Soll mehr; bereits Bezahltes bleibt. Nichts wird geloescht; „Wieder aufnehmen“ holt es zurueck. Endgueltiges Loeschen (z. B. auf Wunsch nach DSGVO) spaeter als eigene Funktion mit Bestaetigung (CEO-Tor). |
-| E5 | Neue Mitgliedsnummern? | **Naechste freie Nummer** (hoechste + 1, vierstellig wie bisher); du kannst sie beim Anlegen aendern. |
-| E6 | Wann wird umgeschaltet? | **Nach einem Parallelbetrieb**: LUNA zeigt einen Abgleich Tabelle <-> LUNA. Bei 0 Abweichungen schaltest du um; ab da ist LUNA die Quelle und die Tabelle nur noch Archiv. Danach schliesst du das Google-Formular. |
+| E5 (wie empfohlen) | Neue Mitgliedsnummern? | **Naechste freie Nummer** (hoechste + 1, vierstellig wie bisher); du kannst sie beim Anlegen aendern. |
+| E6 (wie empfohlen) | Wann wird umgeschaltet? | **Nach einem Parallelbetrieb**: LUNA zeigt einen Abgleich Tabelle <-> LUNA. Bei 0 Abweichungen schaltest du um; ab da ist LUNA die Quelle und die Tabelle nur noch Archiv. Danach schliesst du das Google-Formular. |
 
 ## Etappen
 
 ### Etappe MV0: Import-Vorschau (nur lesend)
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (`core/ofc_verzeichnis.py` `import_vorschau`, `GET /api/ofc/mitglieder/import/vorschau`; `ofc_mitglieder.lesen` liefert dazu alle erkannten Felder als `werte`)
 - Ziel / Scope: `GET /api/ofc/mitglieder/import/vorschau` zeigt, was uebernommen wuerde: Anzahl, Felder, Mitgliedschaften
   nach E2, Konflikte (doppelte Nummern mit Auswahl, doppelte Namen, fehlende E-Mail). Nichts wird gespeichert.
 - Gate: Vorschau auf der NAS: 119 Mitglieder + 11 Anfragen, 2 Nummernkonflikte, Gold einheitlich.
@@ -75,7 +75,7 @@ auf das eigene Verzeichnis mit Parallelbetrieb und Abgleich, Export (CSV/PDF) fu
 
 ### Etappe MV1: Eigenes Verzeichnis und einmaliger Import
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (`import_anwenden` einmalig mit Konfliktwahl, Ereignis `ofc_verzeichnis`, `GET /api/ofc/mitglieder/abgleich` -- bewusst geloeste Nummernkonflikte zaehlen nicht als Abweichung; Knopf „🗂 LUNA-Verzeichnis“; Tests `test_ofc_verzeichnis.py` mit Gegenproben)
 - Ziel / Scope:
   - **Speicher:** Ereignisse `ofc_person_mitglied` (anlegen/aendern) im Fanclub-Speicher `fanclub/log.jsonl`; jede Aenderung
     ist ein neues Ereignis (Verlauf).

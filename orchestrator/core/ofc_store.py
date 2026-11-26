@@ -62,6 +62,7 @@ class OfcStore:
         einstellungen: dict = {}
         mails: dict = {}                                            # OFC_TICKETVERSAND TV3: gesendete Mails
         personen: dict = {}                                         # TV3b: externe Personen G<Nr> (Name, E-Mail)
+        verzeichnis: dict = {}                                      # OFC_MITGLIEDER MV1: Mitglieder in LUNA (id -> Datensatz)
         letzter_import = ""
         for e in self.eintraege():
             d, t = e["daten"], e["typ"]
@@ -98,6 +99,8 @@ class OfcStore:
             elif t == "ofc_wallet":                                 # OFC_TICKETVERSAND TV1: Wallet-Link je Ticket
                 tk = tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})
                 tk.update(wallet=d.get("url", ""), wallet_quelle=d.get("quelle", ""))
+            elif t == "ofc_verzeichnis":                            # OFC_MITGLIEDER MV1: eigenes Mitgliederverzeichnis
+                verzeichnis.setdefault(d["id"], {"id": d["id"]}).update({k: v for k, v in d.items() if k != "id"})
             elif t == "ofc_person":                                 # TV3b: externe Person (G<Nr>), kein Mitglied
                 personen.setdefault(d["id"], {"id": d["id"]}).update({k: v for k, v in d.items() if k != "id"})
             elif t == "ofc_bezahlt":                                # TV3c: von Hand bezahlt (oder zurueckgenommen)
@@ -113,7 +116,7 @@ class OfcStore:
                                           "name_neu": d["name_neu"], "datei_neu": d["datei_neu"]}
         return {"spiele": spiele, "tickets": tickets, "zahlungen": zahlungen, "eingaenge": eingaenge, "aliase": aliase,
                 "beitrag_status": beitrag_status, "beitrag_aliase": beitrag_aliase, "kasse": kasse, "kasse_start": kasse_start,
-                "kasse_kat": kasse_kat, "kasse_importe": kasse_importe, "einstellungen": einstellungen, "mails": mails, "personen": personen,
+                "kasse_kat": kasse_kat, "kasse_importe": kasse_importe, "einstellungen": einstellungen, "mails": mails, "personen": personen, "verzeichnis": verzeichnis,
                 "letzter_import": letzter_import}
 
 

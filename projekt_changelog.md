@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 19:41] — Claude Code
+- **Was:** OFC_MITGLIEDER MV0 + MV1: Import-Vorschau (Mitglieder/Anfragen, Mitgliedschaften nach E2, Vorstand, ohne E-Mail, doppelte Nummern mit Auswahl, doppelte Namen, unklare Mitgliedschaft), einmaliger Import ins eigene Verzeichnis (Ereignis `ofc_verzeichnis`, alle Felder, Konfliktnummern -> naechste freie Nummer, nie doppelt), Abgleich Tabelle <-> LUNA; Knopf „🗂 LUNA-Verzeichnis“ in 👥 Mitglieder; Roadmap/ROADMAP, Register, Datenfluesse, Datenschutz-Nachtrag, Baseline 1920.
+- **Warum:** CEO: „wie empfohlen, Go fuer MV0 und MV1“.
+- **Betroffen:** `orchestrator/core/ofc_verzeichnis.py`, `orchestrator/core/ofc_mitglieder.py`, `orchestrator/core/ofc_store.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_ofc_verzeichnis.py`, `OFC_MITGLIEDER_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `docs/datenschutz-ki-nutzung.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-26 19:36] — Claude Code
 - **Was:** `OFC_MITGLIEDER_ROADMAP.md` ergaenzt: Knopf „Kündigen“ am Mitglied (Archiv, aus Liste/Suche ausgeblendet, keine Zahlungsbitten/Ticketmails mehr, kein Beitrags-Soll ab Folgejahr, „Wieder aufnehmen“, nichts geloescht) in E4, MV2 und Gate.
 - **Warum:** CEO-Zusatz vor dem Push.

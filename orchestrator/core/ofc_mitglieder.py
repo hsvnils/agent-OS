@@ -98,6 +98,7 @@ def auswerten(werte: list[list]) -> dict:
             "email": g.get("email", "") or g.get("email_absender", ""),
             "eingang": _datum(g.get("zeitstempel", "")),
             "felder": [[kopf[i], z[i]] for i in range(len(kopf)) if kopf[i] and z[i]],
+            "werte": dict(g),                                   # OFC_MITGLIEDER MV0: alle erkannten Felder (fuer den Import)
             "hinweise": [],
         })
     nrn = Counter(p["nummer"] for p in personen if p["nummer"])
