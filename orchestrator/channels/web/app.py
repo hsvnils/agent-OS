@@ -6740,10 +6740,18 @@ async def ofc_name_setzen(request: Request, nr: str):
     body = await _json(request)
     if body.get("bestaetigt") is not True:
         return {"ok": False, "hinweis": "Ändern braucht die Bestätigung."}
-    from ...core.ofc_store import namen_setzen, rueckgaengig
+    from ...core.ofc_store import mitglied_setzen, name_sauber, namen_setzen, rueckgaengig
     if body.get("rueckgaengig"):
         return rueckgaengig(_ofc_store(), nr, von=_von(request))
-    return namen_setzen(_ofc_store(), nr, str(body.get("name") or ""), von=_von(request))
+    st = _ofc_store()
+    if "mitglied" in body:                                     # OFC_TICKETVERSAND TV2: Mitgliedsnummer mitmerken
+        m = mitglied_setzen(st, nr, str(body.get("mitglied") or ""), von=_von(request))
+        if not m["ok"]:
+            return m
+        tk = st.stand()["tickets"].get(nr) or {}
+        if name_sauber(str(body.get("name") or "")) == (tk.get("name") or ""):
+            return {"ok": True, "hinweis": "Mitglied gespeichert." if m["geaendert"] else "Keine Änderung."}
+    return namen_setzen(st, nr, str(body.get("name") or ""), von=_von(request))
 
 
 @app.get("/api/ofc/namen")
@@ -6757,7 +6765,53 @@ def ofc_namen(request: Request):
     except Exception:
         m = {}
     return {"namen": namen_vorschlaege(_ofc_store(), m.get("mitglieder") if m.get("ok") else []),
+            "personen": [{"name": p["name"], "nummer": p["nummer"]} for p in (m.get("mitglieder") or []) if m.get("ok") and p["name"]],
             "mitglieder_ok": bool(m.get("ok"))}
+
+
+@app.get("/api/ofc/mitglied/{nummer}/tickets")
+def ofc_mitglied_tickets(request: Request, nummer: str):
+    """OFC_TICKETVERSAND TV2: Tickets eines Mitglieds (ueber die am Ticket gemerkte Nummer), offen/bezahlt -- nur CEO."""
+    _nur_ceo(request)
+    from ...core.ofc_store import tickets_je_mitglied
+    return tickets_je_mitglied(_ofc_store(), nummer.strip()[:20])
+
+
+@app.post("/api/ofc/spiel/{sid}/spieltag")
+async def ofc_spieltag(request: Request, sid: str):
+    """TV2/E2: Spieltag-Kennung von Hand (1-34, P1-P6, S<Nr>), leer = aus dem Spielplan."""
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.ofc_store import spieltag_setzen
+    return spieltag_setzen(_ofc_store(), sid, str(body.get("kennung") or ""), von=_von(request))
+
+
+@app.post("/api/ofc/ticket/{nr}/wallet")
+async def ofc_ticket_wallet(request: Request, nr: str):
+    """TV1: Wallet-Link von Hand eintragen oder leeren (nur https) -- nur mit Bestaetigung."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_wallet import wallet_von_hand
+    return wallet_von_hand(_ofc_store(), nr, str(body.get("url") or ""), von=_von(request))
+
+
+@app.post("/api/ofc/wallet/abholen")
+async def ofc_wallet_abholen(request: Request):
+    """TV1: Wallet-Links aus den HSV-Mails nachholen (nur lesend, bis 365 Tage); zugeordnet nur ueber die Ticketnummer."""
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.ofc_post import HSV_DOMAINS
+    from ...core.ofc_wallet import wallet_anwenden
+    p = _ofc_postfach()
+    if not p.verfuegbar():
+        return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
+    try:
+        tage = max(1, min(int(body.get("tage") or 365), 365))
+        return wallet_anwenden(_ofc_store(), p.posteingang(tage=tage, nur=HSV_DOMAINS), von=_von(request)) | {"tage": tage}
+    except Exception as exc:                                  # ohne Fehlertext (koennte Zugangsdaten enthalten)
+        return {"ok": False, "hinweis": f"Postfach-Abruf fehlgeschlagen ({exc.__class__.__name__})."}
 
 
 @app.get("/api/ofc/mitglieder")
