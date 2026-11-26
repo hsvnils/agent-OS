@@ -134,3 +134,146 @@ def abgleich(daten: dict | None, st: dict) -> dict:
             zeilen.append({"zeile": z, "felder": diff})
     return {"ok": True, "importiert": True, "abweichungen": len(zeilen), "je_feld": dict(je_feld), "zeilen": zeilen[:50],
             "luna": len(luna), "tabelle": len(tab)}
+
+
+# -- MV2: Bearbeiten in LUNA-OS (CEO-Go 2026-11-26) ---------------------------------------------------------------------
+_RE_MAIL = re.compile(r"[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+")
+BEARBEITBAR = tuple(f for f in FELDER if f != "anfrage_am")
+STATUS = {"mitglied": "Mitglied", "anfrage": "Anfrage", "archiv": "Gekündigt (Archiv)"}
+
+
+def eintraege(st: dict) -> list[dict]:
+    return list((st.get("verzeichnis") or {}).values())
+
+
+def gekuendigte_nummern(st: dict) -> set[str]:
+    """Nummern im Archiv -- an diese Mitglieder geht keine Nachricht mehr (E4)."""
+    return {str(p.get("nummer")) for p in eintraege(st) if p.get("status") == "archiv" and p.get("nummer")}
+
+
+def uebersicht(st: dict) -> dict:
+    ps = eintraege(st)
+    mg = [p for p in ps if p.get("status") == "mitglied"]
+    return {"ok": True, "importiert": bool(ps), "mitglieder": len(mg), "anfragen": sum(1 for p in ps if p.get("status") == "anfrage"),
+            "archiv": sum(1 for p in ps if p.get("status") == "archiv"),
+            "je_art": {MITGLIEDSCHAFTEN.get(k, "unklar"): sum(1 for p in mg if (p.get("mitgliedschaft") or "") == k) for k in (*MITGLIEDSCHAFTEN, "")},
+            "vorstand": sum(1 for p in mg if p.get("vorstand")),
+            "naechste_nummer": naechste_nummer([p.get("nummer") for p in ps]),
+            "personen": sorted(ps, key=lambda p: (p.get("status") != "mitglied", str(p.get("nummer") or "").zfill(8),
+                                                 p.get("nachname", ""), p.get("vorname", "")))}
+
+
+def _pruefen(st: dict, pid: str, d: dict) -> str:
+    if not (str(d.get("vorname") or "").strip() or str(d.get("nachname") or "").strip()):
+        return "Vor- oder Nachname angeben."
+    mail = str(d.get("email") or "").strip()
+    if mail and not _RE_MAIL.fullmatch(mail):
+        return "E-Mail-Adresse ist ungültig."
+    nr = str(d.get("nummer") or "").strip()
+    if nr and any(str(p.get("nummer")) == nr and p["id"] != pid for p in eintraege(st)):
+        return f"Nummer {nr} ist schon vergeben."
+    if (d.get("mitgliedschaft") or "") not in ("", *MITGLIEDSCHAFTEN):
+        return "Mitgliedschaft: Gold, Standard oder Förder."
+    return ""
+
+
+def speichern(store, pid: str, daten: dict, *, von: str = "") -> dict:
+    """Mitglied anlegen (pid leer) oder aendern. Gespeichert werden nur geaenderte Felder (Verlauf)."""
+    st = store.stand()
+    alt = (st.get("verzeichnis") or {}).get(pid) if pid else None
+    if pid and not alt:
+        return {"ok": False, "hinweis": "Eintrag nicht gefunden."}
+    neu = {k: daten[k] for k in BEARBEITBAR if k in daten}
+    for k, v in list(neu.items()):
+        neu[k] = bool(v) if k == "vorstand" else str(v if v is not None else "").strip()[:500]
+    voll = (alt or {}) | neu
+    if not alt:
+        voll.setdefault("status", "mitglied")
+        if voll["status"] == "mitglied" and not voll.get("nummer"):
+            voll["nummer"] = neu["nummer"] = naechste_nummer([p.get("nummer") for p in eintraege(st)])
+    fehler = _pruefen(st, pid, voll)
+    if fehler:
+        return {"ok": False, "hinweis": fehler}
+    if alt:
+        neu = {k: v for k, v in neu.items() if (alt.get(k) if k != "vorstand" else bool(alt.get(k))) != v}
+        if not neu:
+            return {"ok": True, "id": pid, "geaendert": []}
+        store.erfassen("ofc_verzeichnis", {"id": pid, **neu}, von=von)
+        return {"ok": True, "id": pid, "geaendert": sorted(neu)}
+    pid = "P-" + uuid.uuid4().hex[:10]
+    store.erfassen("ofc_verzeichnis", {"id": pid, **{k: voll.get(k, "" if k != "vorstand" else False) for k in FELDER},
+                                       "status": voll["status"], "quelle": "hand"}, von=von)
+    return {"ok": True, "id": pid, "nummer": voll.get("nummer", ""), "neu": True}
+
+
+def aufnehmen(store, pid: str, *, nummer: str = "", mitgliedschaft: str = "", seit: str = "", von: str = "") -> dict:
+    """Anfrage -> Mitglied mit Nummer (naechste freie, wenn leer)."""
+    from datetime import date
+    st = store.stand()
+    p = (st.get("verzeichnis") or {}).get(pid)
+    if not p or p.get("status") != "anfrage":
+        return {"ok": False, "hinweis": "Keine offene Anfrage."}
+    nr = (nummer or "").strip() or naechste_nummer([x.get("nummer") for x in eintraege(st)])
+    d = {"nummer": nr, "mitgliedschaft": mitgliedschaft or p.get("mitgliedschaft", ""), "vorname": p.get("vorname"),
+         "nachname": p.get("nachname"), "email": p.get("email")}
+    fehler = _pruefen(st, pid, d)
+    if fehler:
+        return {"ok": False, "hinweis": fehler}
+    store.erfassen("ofc_verzeichnis", {"id": pid, "status": "mitglied", "nummer": nr, "mitgliedschaft": d["mitgliedschaft"],
+                                       "seit": seit or date.today().strftime("%d.%m.%Y")}, von=von)
+    return {"ok": True, "nummer": nr}
+
+
+def kuendigen(store, pid: str, *, datum: str = "", notiz: str = "", von: str = "") -> dict:
+    """E4: ins Archiv -- keine Nachrichten mehr, kein Beitrags-Soll ab Folgejahr, nichts geloescht."""
+    from datetime import date
+    p = (store.stand().get("verzeichnis") or {}).get(pid)
+    if not p or p.get("status") == "archiv":
+        return {"ok": False, "hinweis": "Nicht gefunden oder schon gekündigt."}
+    datum = (datum or date.today().isoformat())[:10]
+    try:
+        date.fromisoformat(datum)
+    except ValueError:
+        return {"ok": False, "hinweis": "Datum als JJJJ-MM-TT."}
+    store.erfassen("ofc_verzeichnis", {"id": pid, "status": "archiv", "status_vorher": p.get("status", "mitglied"),
+                                       "gekuendigt_am": datum, "kuendigung_notiz": (notiz or "").strip()[:200]}, von=von)
+    return {"ok": True}
+
+
+def wieder_aufnehmen(store, pid: str, *, von: str = "") -> dict:
+    p = (store.stand().get("verzeichnis") or {}).get(pid)
+    if not p or p.get("status") != "archiv":
+        return {"ok": False, "hinweis": "Nicht im Archiv."}
+    store.erfassen("ofc_verzeichnis", {"id": pid, "status": p.get("status_vorher") or "mitglied", "gekuendigt_am": "",
+                                       "kuendigung_notiz": ""}, von=von)
+    return {"ok": True}
+
+
+def verlauf(store, pid: str) -> list[dict]:
+    """Je Aenderung: Zeitpunkt, wer, welche Felder (ohne Werte)."""
+    out = []
+    for e in store.eintraege():
+        if e.get("typ") == "ofc_verzeichnis" and e["daten"].get("id") == pid:
+            felder = sorted(k for k in e["daten"] if k not in ("id",))
+            out.append({"ts": e["ts"], "von": e.get("von", ""), "felder": ["übernommen aus der Tabelle"] if e["daten"].get("quelle") == "import"
+                        else (["angelegt"] if e["daten"].get("quelle") == "hand" else felder)})
+    return out
+
+
+def export_csv(st: dict, ansicht: str = "mitglied") -> bytes:
+    import csv
+    import io
+    b = io.StringIO()
+    w = csv.writer(b, delimiter=";")
+    w.writerow(["Nummer", "Status", "Anrede", "Vorname", "Nachname", "E-Mail", "Handy", "Adresse", "Geburtstag", "Mitgliedschaft",
+                "Vorstand", "Förderbetrag", "Mitglied seit", "Beitrag", "Nächste Zahlung", "HSV-Mitglied", "HSV-Nr.", "Anderer Fanclub",
+                "Gekündigt am", "Kommentar"])
+    for p in uebersicht(st)["personen"]:
+        if ansicht != "alle" and p.get("status") != ansicht:
+            continue
+        w.writerow([p.get("nummer", ""), STATUS.get(p.get("status"), ""), p.get("anrede", ""), p.get("vorname", ""), p.get("nachname", ""),
+                    p.get("email", ""), p.get("handy", ""), p.get("adresse", ""), p.get("geburtstag", ""),
+                    MITGLIEDSCHAFTEN.get(p.get("mitgliedschaft") or "", ""), "ja" if p.get("vorstand") else "", p.get("foerder_betrag", ""),
+                    p.get("seit", ""), p.get("beitrag", ""), p.get("naechste_zahlung", ""), p.get("hsv_mitglied", ""), p.get("hsv_nr", ""),
+                    p.get("anderer_fanclub", ""), p.get("gekuendigt_am", ""), p.get("kommentar", "")])
+    return ("﻿" + b.getvalue()).encode("utf-8")

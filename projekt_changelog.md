@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 20:07] — Claude Code
+- **Was:** OFC_MITGLIEDER MV2: 👥 Mitglieder arbeitet mit dem LUNA-Verzeichnis (Reiter Mitglieder/Anfragen/🗄 Archiv, Filter Gold/Standard/Foerder/Vorstand/ohne, Suche, Zahlen je Art), ＋ Mitglied (naechste freie Nummer), ✏️ Bearbeiten aller Felder (nur Geaendertes, Nummer eindeutig, E-Mail geprueft), Anfrage aufnehmen, Kuendigen ins Archiv (nichts geloescht, Wieder aufnehmen), Verlauf, CSV-Export; Gekuendigte sofort fuer Zahlungsbitten/Ticketversand gesperrt und nicht mehr in der Personensuche; Baseline 1924.
+- **Warum:** CEO: „Go fuer MV2“ (Google-Tabelle wird nicht mehr gepflegt).
+- **Betroffen:** `orchestrator/core/ofc_verzeichnis.py`, `orchestrator/core/ofc_versand.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_ofc_verzeichnis.py`, `OFC_MITGLIEDER_ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-26 20:01] — Claude Code
 - **Was:** Mitglieder-Import ins LUNA-Verzeichnis auf der NAS ausgefuehrt (CEO-Anweisung mit Konfliktwahl): 130 Eintraege uebernommen, zwei doppelte Nummern aufgeloest (Zeile 101 -> 3146, Zeile 103 -> 3147), Abgleich Tabelle <-> LUNA 0 Abweichungen; Roadmap fortgeschrieben.
 - **Warum:** CEO: „Deploy gemacht“ + Vorgabe, wer 3125/3126 behaelt und dass die anderen die naechsten freien Nummern bekommen.

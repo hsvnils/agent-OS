@@ -5936,8 +5936,107 @@ async function ofcKIStorno(iid) {
   if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
   return renderOfcKasse(`${r.storniert} Buchung(en) storniert.`);
 }
+/* OFC_MITGLIEDER MV2: Mitglieder in LUNA bearbeiten – Liste, Filter, Anlegen, Bearbeiten, Aufnehmen, Kündigen (Archiv), Verlauf, Export */
+const OFC_V = { daten: null, ansicht: "mitglied", suche: "", filter: "" };
+const OFC_V_ART = { gold: "Gold", standard: "Standard", foerder: "Förder" };
+const OFC_V_FELDER = [["nummer", "Mitgliedsnummer"], ["anrede", "Anrede"], ["vorname", "Vorname"], ["nachname", "Nachname"], ["email", "E-Mail"],
+  ["handy", "Handy"], ["adresse", "Adresse"], ["geburtstag", "Geburtstag"], ["mitgliedschaft", "Mitgliedschaft"], ["foerder_betrag", "Förderbetrag"],
+  ["vorstand", "Vorstand"], ["seit", "Mitglied seit"], ["beitrag", "Beitrag"], ["naechste_zahlung", "Nächste Zahlung"], ["hsv_mitglied", "HSV-Mitglied"],
+  ["hsv_nr", "HSV-Mitgliedsnummer"], ["anderer_fanclub", "Anderer Fanclub"], ["kommentar", "Kommentar"], ["anfrage_am", "Anfrage am"],
+  ["gekuendigt_am", "Gekündigt am"], ["kuendigung_notiz", "Notiz zur Kündigung"]];
+const ofcVName = (p) => `${p.vorname || ""} ${p.nachname || ""}`.trim() || "–";
+async function renderOfcVz(meldung, fehler) {
+  OFC_M_AKTIV = true;
+  const d = OFC_V.daten = await jget("/api/ofc/verzeichnis");
+  const kopf = secHead("👥 OFC · Mitglieder", `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> <button class="v2-btn pri" data-act="ofc-v-form" data-id="">＋ Mitglied</button> <a class="v2-btn" href="/api/ofc/verzeichnis/export.csv?ansicht=${OFC_V.ansicht}">⬇ Export</a> <button class="v2-btn" data-act="ofc-vz">🗂 Abgleich</button>`);
+  if (!d || !d.ok) { $("#v2-app").innerHTML = kopf + emptyRow("Verzeichnis nicht erreichbar."); return; }
+  const tab = (k, l, n) => `<button class="v2-btn ${OFC_V.ansicht === k ? "pri" : ""}" data-act="ofc-v-ansicht" data-id="${k}">${l} (${n})</button>`;
+  const chip = (k, l) => `<button class="v2-btn sm ${OFC_V.filter === k ? "pri" : ""}" data-act="ofc-v-filter" data-id="${k}">${l}</button>`;
+  $("#v2-app").innerHTML = kopf + (meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}">${esc(meldung)}</div>` : "") + `<div class="v2-grid">
+      ${tile("Mitglieder", `<div class="v2-kpi">${d.mitglieder}</div><div class="v2-sub">aktiv · nächste Nr. ${esc(d.naechste_nummer)}</div>`, "w3 v2-ofc-kpi")}
+      ${tile("Gold", `<div class="v2-kpi">${d.je_art.Gold || 0}</div><div class="v2-sub">jährlicher Beitrag</div>`, "w3 v2-ofc-kpi")}
+      ${tile("Standard / Förder", `<div class="v2-kpi">${d.je_art.Standard || 0} / ${d.je_art["Förder"] || 0}</div><div class="v2-sub">${d.je_art.unklar ? d.je_art.unklar + " ohne Mitgliedschaft" : "kostenfrei / freier Betrag"}</div>`, "w3 v2-ofc-kpi")}
+      ${tile("Vorstand", `<div class="v2-kpi">${d.vorstand}</div><div class="v2-sub">${d.archiv} im Archiv</div>`, "w3 v2-ofc-kpi")}
+      <div class="v2-tile w12"><div class="v2-card-actions" style="margin:0 0 8px">${tab("mitglied", "Mitglieder", d.mitglieder)} ${tab("anfrage", "Anfragen", d.anfragen)} ${tab("archiv", "🗄 Archiv", d.archiv)}</div>
+        ${OFC_V.ansicht === "mitglied" ? `<div class="v2-card-actions" style="margin:0 0 8px">${chip("", "Alle")} ${chip("gold", "Gold")} ${chip("standard", "Standard")} ${chip("foerder", "Förder")} ${chip("vorstand", "Vorstand")} ${chip("unklar", "ohne Mitgliedschaft")}</div>` : ""}
+        <input id="ofc-v-suche" class="v2-inp" style="width:100%;box-sizing:border-box" type="search" autocomplete="off" placeholder="Name, Nummer oder E-Mail suchen" value="${esc(OFC_V.suche)}">
+        <div id="ofc-v-liste" style="margin-top:8px"></div></div>
+    </div><div class="v2-sub" style="margin-top:8px">Quelle: LUNA-Verzeichnis (Fanclub-Speicher auf der NAS, nur für dich, keine KI). Gekündigte stehen im Archiv und bekommen keine Nachrichten mehr.</div>`;
+  const s = $("#ofc-v-suche"); s.addEventListener("input", () => { OFC_V.suche = s.value; ofcVListe(); });
+  ofcVListe();
+}
+function ofcVListe() {
+  const d = OFC_V.daten, q = OFC_V.suche.trim().toLowerCase(), el = $("#ofc-v-liste"); if (!d || !el) return;
+  const f = OFC_V.filter;
+  const liste = d.personen.filter(p => p.status === OFC_V.ansicht)
+    .filter(p => OFC_V.ansicht !== "mitglied" || !f || (f === "vorstand" ? p.vorstand : f === "unklar" ? !p.mitgliedschaft : p.mitgliedschaft === f))
+    .filter(p => !q || [ofcVName(p), p.nummer, p.email].some(x => String(x || "").toLowerCase().includes(q)));
+  el.innerHTML = liste.map(p => `<div class="v2-list-row klick" data-act="ofc-v-person" data-id="${esc(p.id)}">
+      <span class="v2-badge ${p.status === "anfrage" ? "wartet" : "neutral"}">${esc(p.nummer || "Anfrage")}</span>
+      <div class="grow"><b class="v2-umbruch">${esc(ofcVName(p))}</b>
+        <small>${[OFC_V_ART[p.mitgliedschaft] || (p.status === "mitglied" ? "ohne Mitgliedschaft" : ""), p.vorstand ? "Vorstand" : "", p.seit ? "seit " + p.seit : "",
+          p.status === "anfrage" && p.anfrage_am ? "angefragt " + datumDe(p.anfrage_am) : "", p.status === "archiv" && p.gekuendigt_am ? "gekündigt " + datumDe(p.gekuendigt_am) : ""].filter(Boolean).map(esc).join(" · ")}</small></div></div>`).join("")
+    || emptyRow(q || f ? "Kein Treffer." : "Keine Einträge.");
+}
+async function ofcVPerson(pid) {
+  const r = await jget("/api/ofc/verzeichnis/" + encodeURIComponent(pid)); if (!r || !r.ok) return alert("Eintrag nicht gefunden.");
+  const p = r.person;
+  const wert = (k) => k === "vorstand" ? (p.vorstand ? "ja" : "") : k === "mitgliedschaft" ? (OFC_V_ART[p.mitgliedschaft] || "") : (k.endsWith("_am") && p[k] ? datumDe(p[k]) : p[k]);
+  const knoepfe = p.status === "mitglied" ? `<button class="v2-btn" data-act="ofc-v-kuendigen" data-id="${esc(pid)}">Kündigen</button>`
+    : p.status === "anfrage" ? `<button class="v2-btn pri" data-act="ofc-v-aufnehmen" data-id="${esc(pid)}">Als Mitglied aufnehmen</button>`
+    : `<button class="v2-btn" data-act="ofc-v-wieder" data-id="${esc(pid)}">Wieder aufnehmen</button>`;
+  openModal(`👤 ${ofcVName(p)}`, `<div class="v2-sub">${p.status === "mitglied" ? "Mitglied Nr. " + esc(p.nummer) : p.status === "anfrage" ? "Anfrage (noch keine Nummer)" : "Gekündigt – im Archiv, keine Nachrichten mehr"}</div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-v-form" data-id="${esc(pid)}">✏️ Bearbeiten</button> ${knoepfe}</div>
+    <div>${OFC_V_FELDER.filter(([k]) => wert(k)).map(([k, l]) => `<div class="v2-kv v2-ofc-feld"><span>${esc(l)}</span><b class="v2-umbruch">${esc(wert(k))}</b></div>`).join("")}</div>
+    <h3>🎟 Tickets</h3><div id="ofc-person-tk">${p.nummer ? `<div class="v2-empty">Lade…</div>` : emptyRow("Noch keine Mitgliedsnummer.")}</div>
+    <h3>🕘 Verlauf</h3>${r.verlauf.slice().reverse().map(v => `<div class="v2-kv v2-ofc-feld"><span>${esc(zeit(v.ts))}${v.von ? " · " + esc(v.von) : ""}</span><b class="v2-umbruch">${esc(v.felder.join(", "))}</b></div>`).join("") || emptyRow("–")}`);
+  if (p.nummer) ofcPersonTickets(p.nummer);
+}
+function ofcVForm(pid) {
+  const p = pid ? (OFC_V.daten.personen.find(x => x.id === pid) || {}) : { nummer: OFC_V.daten.naechste_nummer, mitgliedschaft: "gold" };
+  const feld = (k, l, typ = "text") => `<label class="v2-feld"><small>${esc(l)}</small><input id="ofc-vf-${k}" class="v2-inp" type="${typ}" autocomplete="off" value="${esc(p[k] || "")}"></label>`;
+  openModal(pid ? `✏️ ${ofcVName(p)}` : "＋ Neues Mitglied", `<div class="v2-ofc-person">
+      ${feld("nummer", "Mitgliedsnummer")}${feld("anrede", "Anrede")}${feld("vorname", "Vorname")}${feld("nachname", "Nachname")}
+      <label class="v2-feld ofc-voll"><small>E-Mail</small><input id="ofc-vf-email" class="v2-inp" type="email" autocomplete="off" value="${esc(p.email || "")}"></label>
+      ${feld("handy", "Handy", "tel")}${feld("geburtstag", "Geburtstag")}
+      <label class="v2-feld ofc-voll"><small>Adresse</small><input id="ofc-vf-adresse" class="v2-inp" autocomplete="off" value="${esc(p.adresse || "")}"></label>
+      <label class="v2-feld"><small>Mitgliedschaft</small><select id="ofc-vf-mitgliedschaft" class="v2-inp"><option value="">– bitte wählen –</option>${Object.entries(OFC_V_ART).map(([k, l]) => `<option value="${k}" ${p.mitgliedschaft === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+      ${feld("foerder_betrag", "Förderbetrag (nur Förder)")}
+      <label class="v2-feld"><small>Vorstand</small><span><input id="ofc-vf-vorstand" type="checkbox" ${p.vorstand ? "checked" : ""}> im Vorstand</span></label>
+      ${feld("seit", "Mitglied seit")}${feld("beitrag", "Beitrag")}${feld("naechste_zahlung", "Nächste Zahlung")}
+      ${feld("hsv_mitglied", "HSV-Mitglied")}${feld("hsv_nr", "HSV-Mitgliedsnummer")}
+      <label class="v2-feld ofc-voll"><small>Anderer Fanclub</small><input id="ofc-vf-anderer_fanclub" class="v2-inp" autocomplete="off" value="${esc(p.anderer_fanclub || "")}"></label>
+      <label class="v2-feld ofc-voll"><small>Kommentar</small><textarea id="ofc-vf-kommentar" class="v2-inp" rows="3">${esc(p.kommentar || "")}</textarea></label></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-v-speichern" data-id="${esc(pid || "")}">Speichern</button></div><div class="v2-msg" id="ofc-vf-msg"></div>`);
+}
+async function ofcVSpeichern(el) {
+  const felder = {};
+  ["nummer", "anrede", "vorname", "nachname", "email", "handy", "geburtstag", "adresse", "mitgliedschaft", "foerder_betrag", "seit", "beitrag",
+    "naechste_zahlung", "hsv_mitglied", "hsv_nr", "anderer_fanclub", "kommentar"].forEach(k => { const i = $("#ofc-vf-" + k); if (i) felder[k] = i.value; });
+  felder.vorstand = !!($("#ofc-vf-vorstand") || {}).checked;
+  el.disabled = true;
+  const r = await jpost("/api/ofc/verzeichnis", { bestaetigt: true, id: el.dataset.id, felder });
+  el.disabled = false;
+  if (!r || !r.ok) { const m = $("#ofc-vf-msg"); m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Fehler."; return; }
+  closeModal(); return renderOfcVz(r.neu ? `Mitglied Nr. ${r.nummer} angelegt.` : (r.geaendert.length ? "Gespeichert: " + r.geaendert.join(", ") : "Keine Änderung."));
+}
+function ofcVKuendigen(pid) {
+  const p = OFC_V.daten.personen.find(x => x.id === pid) || {};
+  openModal("Kündigen", `<div class="v2-sub">${esc(ofcVName(p))} (Nr. ${esc(p.nummer || "–")}) kommt ins Archiv: aus Liste und Suche ausgeblendet, <b>keine Nachrichten mehr</b> (keine Zahlungsbitten, keine Tickets), kein Beitrag ab dem Folgejahr. Gelöscht wird nichts – „Wieder aufnehmen“ geht jederzeit.</div>
+    <label class="v2-feld" style="margin-top:10px"><small>Gekündigt am</small><input id="ofc-vk-datum" class="v2-inp" type="date" value="${new Date().toISOString().slice(0, 10)}"></label>
+    <label class="v2-feld"><small>Notiz (optional)</small><input id="ofc-vk-notiz" class="v2-inp" autocomplete="off" maxlength="200"></label>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-v-kuendigen-ok" data-id="${esc(pid)}">Kündigen</button></div><div class="v2-msg" id="ofc-vk-msg"></div>`);
+}
+async function ofcVAktion(pid, aktion, body, text) {
+  if (text && !confirm(text)) return;
+  const r = await jpost(`/api/ofc/verzeichnis/${encodeURIComponent(pid)}/${aktion}`, { bestaetigt: true, ...(body || {}) });
+  if (!r || !r.ok) return alert((r && r.hinweis) || "Fehler.");
+  closeModal();
+  return renderOfcVz(aktion === "aufnehmen" ? `Aufgenommen als Mitglied Nr. ${r.nummer}.` : aktion === "kuendigen" ? "Gekündigt – ins Archiv verschoben." : "Wieder aufgenommen.");
+}
 async function renderOfcMitglieder(neu) {
   OFC_M_AKTIV = true;
+  if (!neu) { const u = await jget("/api/ofc/verzeichnis"); if (u && u.ok && u.importiert) return renderOfcVz(); }   // MV2: LUNA-Verzeichnis
   const kopf = secHead("👥 OFC · Mitglieder", `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> <button class="v2-btn" data-act="ofc-mitglieder-neu">🔄 Neu laden</button> <button class="v2-btn" data-act="ofc-vz">🗂 LUNA-Verzeichnis</button>`);
   if (!OFC_M.daten || neu) { $("#v2-app").innerHTML = kopf + `<div class="v2-empty">Lese die Tabelle …</div>`; OFC_M.daten = await jget("/api/ofc/mitglieder" + (neu ? "?neu=1" : "")); }
   const d = OFC_M.daten;
@@ -6539,6 +6638,15 @@ async function handleAct(act, el) {
     case "ofc-zb-vs": return ofcZbVorschau(id, val);
     case "ofc-bez": return ofcBez(id);
     case "ofc-vz": return ofcVz();
+    case "ofc-v-ansicht": OFC_V.ansicht = id; OFC_V.filter = ""; return renderOfcVz();
+    case "ofc-v-filter": OFC_V.filter = id; return ofcVListe();
+    case "ofc-v-person": return ofcVPerson(id);
+    case "ofc-v-form": return ofcVForm(id);
+    case "ofc-v-speichern": return ofcVSpeichern(el);
+    case "ofc-v-kuendigen": return ofcVKuendigen(id);
+    case "ofc-v-kuendigen-ok": return ofcVAktion(id, "kuendigen", { datum: $("#ofc-vk-datum").value, notiz: $("#ofc-vk-notiz").value });
+    case "ofc-v-wieder": return ofcVAktion(id, "wieder", {}, "Aus dem Archiv wieder aufnehmen?");
+    case "ofc-v-aufnehmen": { const n = prompt("Mitgliedsnummer (leer = nächste freie):", ""); if (n == null) return; return ofcVAktion(id, "aufnehmen", { nummer: n }); }
     case "ofc-vz-ok": return ofcVzOk(el);
     case "ofc-tv-vs": return ofcTvVorschau(id, val);
     case "ofc-tv-senden": return ofcTvSenden(el, false);

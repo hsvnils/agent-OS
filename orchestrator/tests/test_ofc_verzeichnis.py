@@ -84,3 +84,105 @@ class TestApi(ApiBasis):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestMV2(unittest.TestCase):
+    """MV2: anlegen, aendern (nur Geaendertes), Nummer eindeutig, E-Mail geprueft, aufnehmen, kuendigen (Archiv, nichts
+    geloescht), wieder aufnehmen, Verlauf, Export, Gekuendigte bekommen keine Nachrichten."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.st = OfcStore(Path(self.tmp.name) / "fanclub")
+        daten = auswerten(_werte())
+        zeile_cara = next(p["zeile"] for p in daten["mitglieder"] if p["vorname"] == "Cara")
+        vz.import_anwenden(self.st, daten, {"0008": zeile_cara})
+        self.p = {p["vorname"]: p for p in self.st.stand()["verzeichnis"].values()}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_anlegen_aendern_pruefen(self):
+        r = vz.speichern(self.st, "", {"vorname": "Lea", "nachname": "Neu", "email": "lea@example.org", "mitgliedschaft": "gold"})
+        self.assertEqual((r["ok"], r["nummer"]), (True, "0012"))                       # naechste freie Nummer
+        self.assertFalse(vz.speichern(self.st, "", {"vorname": "X", "nummer": "0007"})["ok"])          # Nummer vergeben
+        self.assertFalse(vz.speichern(self.st, "", {"vorname": "X", "email": "kaputt"})["ok"])
+        self.assertFalse(vz.speichern(self.st, "", {"nachname": ""})["ok"])
+        self.assertFalse(vz.speichern(self.st, "", {"vorname": "X", "mitgliedschaft": "platin"})["ok"])
+        pid = self.p["Anna"]["id"]
+        r = vz.speichern(self.st, pid, {"vorname": "Anna", "handy": "0171 9", "vorstand": True})
+        self.assertEqual(r["geaendert"], ["handy", "vorstand"])                        # nur Geaendertes
+        self.assertEqual(vz.speichern(self.st, pid, {"handy": "0171 9"})["geaendert"], [])
+        self.assertIn(["handy", "vorstand"], [v["felder"] for v in vz.verlauf(self.st, pid)])
+
+    def test_aufnehmen_kuendigen_wieder(self):
+        neu = self.p["Neu"]["id"]
+        r = vz.aufnehmen(self.st, neu, mitgliedschaft="standard")
+        self.assertEqual(r["nummer"], "0012")
+        self.assertEqual(self.st.stand()["verzeichnis"][neu]["status"], "mitglied")
+        self.assertFalse(vz.aufnehmen(self.st, neu)["ok"])
+        anna = self.p["Anna"]["id"]
+        n_vorher = len(self.st.stand()["verzeichnis"])
+        self.assertTrue(vz.kuendigen(self.st, anna, datum="2026-11-30", notiz="per Mail")["ok"])
+        a = self.st.stand()["verzeichnis"][anna]
+        self.assertEqual((a["status"], a["gekuendigt_am"]), ("archiv", "2026-11-30"))
+        self.assertEqual(len(self.st.stand()["verzeichnis"]), n_vorher)                 # nichts geloescht
+        self.assertEqual(vz.gekuendigte_nummern(self.st.stand()), {"0007"})
+        self.assertEqual(vz.uebersicht(self.st.stand())["archiv"], 1)
+        self.assertTrue(vz.wieder_aufnehmen(self.st, anna)["ok"])
+        self.assertEqual(self.st.stand()["verzeichnis"][anna]["status"], "mitglied")
+        self.assertEqual(vz.gekuendigte_nummern(self.st.stand()), set())
+
+    def test_export(self):
+        csv = vz.export_csv(self.st.stand(), "mitglied").decode("utf-8")
+        self.assertIn("Nummer;Status;Anrede", csv)
+        self.assertIn("anna@example.org", csv)
+        self.assertNotIn("Neu;", csv.split("\n", 1)[1].split(";Neu;")[0] if ";Neu;" in csv else "")   # Anfrage nicht unter Mitglieder
+
+
+class TestKeineNachrichtAnGekuendigte(unittest.TestCase):
+    def test_zahlungsbitte_und_tickets_gesperrt(self):
+        from unittest import mock
+        from orchestrator.core import ofc, ofc_versand
+        from orchestrator.core.ofc_store import bezahlt_markieren, import_anwenden, mitglied_setzen
+        from orchestrator.core.ofc_wallet import wallet_von_hand
+        from orchestrator.tests.test_ofc import _pdf_als_text
+        from orchestrator.tests.test_ofc_store import _saison
+        from orchestrator.tests.test_ofc_versand import MITGLIEDER, FakePf
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(ofc, "pdf_text", _pdf_als_text):
+            saison = _saison(Path(d))
+            st = OfcStore(Path(d) / "fanclub")
+            import_anwenden(st, saison)
+            mitglied_setzen(st, "262236181415-1", "1004")
+            st.erfassen("ofc_verzeichnis", {"id": "P-x", "nummer": "1004", "vorname": "Anna", "status": "mitglied"})
+            self.assertEqual(ofc_versand.plan(st.stand(), "HSV vs FCB", MITGLIEDER)["gruppen"][0]["status"], "bereit")
+            vz.kuendigen(st, "P-x")
+            g = ofc_versand.plan(st.stand(), "HSV vs FCB", MITGLIEDER)["gruppen"][0]
+            self.assertEqual(g["status"], "gesperrt")                                   # Gegenprobe zum Zustand davor
+            pf = FakePf()
+            self.assertFalse(ofc_versand.senden(st, pf, "HSV vs FCB", "1004", MITGLIEDER)["ok"])
+            with mock.patch.object(ofc, "nas_ordner", return_value=saison):
+                bezahlt_markieren(st, ["262236181415-1"], True)
+                wallet_von_hand(st, "262236181415-1", "https://www.eventimsports.de/wallet/x/1")
+                self.assertEqual(ofc_versand.tickets_plan(st.stand(), "HSV vs FCB", MITGLIEDER)["gruppen"][0]["status"], "gesperrt")
+                self.assertFalse(ofc_versand.tickets_senden(st, pf, "HSV vs FCB", "1004", MITGLIEDER, erneut=True)["ok"])
+            self.assertEqual(pf.gesendet, [])
+
+
+class TestApiMV2(ApiBasis):
+    def test_endpunkte(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d:
+            st = OfcStore(Path(d) / "fanclub")
+            with mock.patch.object(self.w, "_ofc_store", return_value=st):
+                self.assertFalse(self.c.post("/api/ofc/verzeichnis", json={"felder": {"vorname": "A"}}).json()["ok"])   # ohne Bestaetigung
+                r = self.c.post("/api/ofc/verzeichnis", json={"bestaetigt": True, "felder": {"vorname": "A", "nachname": "B"}}).json()
+                self.assertTrue(r["ok"], r)
+                self.assertEqual(self.c.get("/api/ofc/verzeichnis").json()["mitglieder"], 1)
+                self.assertTrue(self.c.post(f"/api/ofc/verzeichnis/{r['id']}/kuendigen", json={"bestaetigt": True}).json()["ok"])
+                self.assertEqual(self.c.get(f"/api/ofc/verzeichnis/{r['id']}").json()["person"]["status"], "archiv")
+                self.assertIn("text/csv", self.c.get("/api/ofc/verzeichnis/export.csv?ansicht=archiv").headers["content-type"])
+                with mock.patch.object(self.w, "_ceo_user", return_value={"role": "team", "allowed_modules": ["finanzen"]}):
+                    self.assertEqual(self.c.get("/api/ofc/verzeichnis").status_code, 403)
+                    self.assertEqual(self.c.get("/api/ofc/verzeichnis/export.csv").status_code, 403)
+                    self.assertEqual(self.c.post("/api/ofc/verzeichnis", json={"bestaetigt": True}).status_code, 403)
+                    self.assertEqual(self.c.post(f"/api/ofc/verzeichnis/{r['id']}/wieder", json={"bestaetigt": True}).status_code, 403)
