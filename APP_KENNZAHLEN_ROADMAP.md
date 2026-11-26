@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/app-kennzahlen` (Teil 1), `ai/app-kennzahlen-live` (Erweiterung Live, AK5-AK7)
 - Basiscommit: `fef5b17`
-- Naechster Schritt: Teil 1 (AK0-AK3) live, AK4-Abnahme am 28.11. offen. Erweiterung **Live-Zahlen** (AK5-AK7, Auftrag aus `LUNA_UEBERGABE_LIVE.md` vom 2026-11-26) liegt dem CEO vor: Entscheidungen L1-L6 beantworten, dann Go fuer AK5+AK6.
+- Naechster Schritt: AK4 teilweise erfuellt (Abgleich der Stichtage 01.11., 15.11., 22.11. am 2026-11-26 durch den CEO: alle gleich); offen nur der Lauf am 27./28.11. (Claude Code prueft am 28.11.). Live-Erweiterung: Antworten der App-Sitzung liegen vor (unten); wartet auf L1-L6 und Go fuer AK5+AK6.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -186,7 +186,7 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
 
 ### Etappe AK4: Abnahme
 
-- Status: geplant
+- Status: teilweise erfuellt -- Abgleich der Stichtage 01.11., 15.11., 22.11. am 2026-11-26 durch den CEO: „Alle gleich“ (laut App-Sitzung); offen: Lauf am 27. und 28.11. von selbst (Pruefung durch Claude Code am 28.11.)
 - Gate (aus dem Auftrag):
   1. Der Erstabruf ab 2026-05-14 ist vollstaendig.
   2. Fuer drei Stichtage zeigt der Kontroll-Abgleich je Kennzahl dieselbe Zeilenzahl und Summe wie die
@@ -260,6 +260,28 @@ Live-Werte sind vorlaeufig und gehoeren **nicht** in die Tageswerte.
 | L4 | 4 Fehlschlaege hintereinander: nur Telegram oder auch die Glocke? | **Beides**, wie bei den Tageswerten (E4): einmal melden, bis es wieder geht. |
 | L5 | Live-Abgleich fuer die Abnahme? | **Wie beim Kontroll-Abgleich:** Du fuegst das Ergebnis von `select * from public.luna_live_kennzahlen_v1();` in LUNA-OS ein, LUNA vergleicht je Kennzahl den Wert mit dem Live-Stand derselben Minute und zeigt ✅/❌. So sieht kein Modell die Zahlen. |
 | L6 | `anmeldungen_ohne_abschluss` in den Tageswerten? | **Ja**, als Momentaufnahme ab dem ersten Nachtlauf; in „Registrierte gesamt“ als zweite, gestrichelte Linie („ohne Profil“), sobald Daten da sind. |
+
+### Antworten der App-Sitzung (2026-11-26, zu den Rueckfragen aus `LUNA_ANTWORT_LIVE.md`)
+
+- **Vorschlag bestaetigt:**
+  - Takt 15 Minuten, erlaubt 5-60, **nie unter 5**, kein paralleler zweiter Abruf;
+  - bei Fehlern nicht sofort wiederholen, sondern beim naechsten Takt;
+  - `live.json` getrennt von den Tageswerten; Fehlerverhalten, Anzeige und gestrichelte Linie wie vorgeschlagen.
+- **`luna_live_kennzahlen_v1()`:**
+  - Spalten in dieser Reihenfolge: `datum`, `kennzahl`, `dim1`, `dim2`, `wert`, `stand`; sortiert nach kennzahl, dim1,
+    dim2.
+  - `dim1`/`dim2` sind leere Zeichenketten, nie NULL (beim Kopieren leere Zelle; ein `NULL` wird wie leer behandelt).
+  - Im Abgleich zaehlen nur kennzahl, dim1, dim2 und wert; eine Abweichung um 1 bei Zaehlern ist kein Fehler.
+- **Antwortformat:** `ok`, `anzahl` und `zeilen` sind immer da; statt `von`/`bis` steht `"art": "live"`. Neu auch beim
+  Tagesabruf: `"art": "tag"`. Zusaetzliche Felder muessen erlaubt sein; das tut `schema_pruefen` bereits, es prueft nur
+  `ok` und `zeilen`.
+- **Mitternacht:** Die Grenze ist Mitternacht Europe/Berlin. Danach kommt der neue Tag mit Zaehlern ab 0
+  (`registrierungen` = 0, andere fehlen = 0); die Stand-Zahlen laufen ohne Sprung weiter.
+- **Kosten:** kein Rate-Limit; jeder Abruf dauert 12-15 ms. 96 bzw. 288 Aufrufe am Tag sind im Tarif enthalten, keine
+  Mehrkosten.
+- **Meilensteine:** `registrierte_stand` ist richtig. Der Wert kann durch Kontoloeschungen sinken, deshalb jede Schwelle
+  wirklich nur einmal melden, auch wenn der Wert kurz darunter und wieder darueber geht. Das ist bereits so: Der
+  Meldungs-Vermerk je Schwelle bleibt bestehen; der Test in AK5 deckt den Fall ausdruecklich ab.
 
 ### Etappe AK5: Live-Abruf, Ablage und Meldungen
 

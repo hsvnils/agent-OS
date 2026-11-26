@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 20:41] — Claude Code
+- **Was:** Antworten der App-Sitzung zu den Live-Rueckfragen in `APP_KENNZAHLEN_ROADMAP.md` uebernommen (Spalten des Live-Abgleichs, Antwortformat inkl. `art`, Mitternacht Berlin, keine Mehrkosten, nie unter 5 Minuten, Meilenstein bei sinkendem `registrierte_stand` nur einmal); AK4: Stichtag-Abgleich laut CEO erledigt („Alle gleich“), offen nur der Lauf am 27./28.11.
+- **Warum:** CEO hat die Antwort vom Mac weitergegeben.
+- **Betroffen:** `APP_KENNZAHLEN_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 20:35] — Claude Code
 - **Was:** `APP_KENNZAHLEN_ROADMAP.md` um die Erweiterung „Live-Zahlen / Heute live“ ergaenzt (Analyse, Entscheidungen L1-L6, Etappen AK5-AK7) nach Uebergabe `LUNA_UEBERGABE_LIVE.md`; Antwort mit Rueckfragen fuer die App-Sitzung als `LUNA_ANTWORT_LIVE.md` im Download-Ordner des CEO (nicht im Git). Kein Code.
 - **Warum:** CEO: Roadmap pruefen, bevor er freigibt, und Antwort an Claude Code auf dem Mac.
