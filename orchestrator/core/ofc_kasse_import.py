@@ -7,6 +7,11 @@
   Gebuehren werden als eigene Buchung „Gebuehren“ vorgeschlagen. Nicht-EUR, ausstehende/abgelehnte und Memo-Zeilen zaehlen nicht.
 - Guthaben-Spalte: Vergleich „PayPal-Guthaben laut Auszug“ gegen den Kassenstand in LUNA; ohne Anfangsbestand kann er
   aus der ersten Zeile uebernommen werden.
+- KA4b (echter Aktivitaeten-Export): zaehlt, was das Guthaben bewegt (Spalte „Auswirkung auf Guthaben“ Soll/Haben, auch
+  „Ausstehend“); interne Verrechnungen (Verbindlichkeiten/Forderungen, Einbehaltungen) heben sich je Tag auf ->
+  „technisch“; Kauf ueber „Spaeter bezahlen“ (Zahlung + Kaeuferkredit-Gutschrift) -> „finanziert“, die Ausgabe zaehlt bei der
+  Abbuchung; Bank-Lastschriften -> Einzahlung, zurueckgegebene Lastschriften -> Einzahlung negativ, eine „Rueckbuchung“
+  erbt die Kategorie der zurueckgebuchten Zahlung. Abbuchungen aufs Bankkonto (Privatkonto des CEO) -> Auszahlung.
 - Uebernehmen nur nach Vorschau + Bestaetigung; die Datei wird unveraendert in `fanclub/importe/` abgelegt (nur neu);
   ein Importlauf ist als Ganzes stornierbar (Buchungen bleiben sichtbar). Nichts wird geloescht.
 """
@@ -38,6 +43,8 @@ _SPALTEN = [                                       # (Schluessel, exakte Namen, 
     ("auswirkung", ("auswirkung auf guthaben", "balance impact"), ()),
     ("hinweis", ("hinweis", "memo", "note", "betreff"), ()),
 ]
+_WIRKUNG = {"soll": True, "haben": True, "debit": True, "credit": True, "memo": False}
+_TECHNISCH = ("verbindlichkeiten", "forderungen", "einbehaltung für offene autorisierung", "rückbuchung allgemeiner einbehaltung")
 _NICHT = re.compile(r"ausstehend|storniert|abgelehnt|pending|denied|reversed|vorläufig", re.I)
 
 
@@ -126,19 +133,28 @@ def csv_lesen(roh: bytes) -> dict:
              "brutto_cent": brutto, "gebuehr_cent": _cent(g("gebuehr")) or 0, "guthaben_cent": _cent(g("guthaben")),
              "tc": g("tc")[:40], "bezug": g("bezug")[:40], "status": g("status")[:30], "waehrung": (g("waehrung") or "EUR").upper()[:5],
              "auswirkung": g("auswirkung")[:20], "hinweis": g("hinweis")[:120]}
-        z["zaehlt"] = z["waehrung"] == "EUR" and not _NICHT.search(z["status"]) and z["auswirkung"].casefold() != "memo"
+        wirkung = z["auswirkung"].casefold()
+        if wirkung in _WIRKUNG:                                   # KA4b: was das Guthaben bewegt, zaehlt -- auch „Ausstehend“
+            z["zaehlt"] = z["waehrung"] == "EUR" and _WIRKUNG[wirkung]
+        else:
+            z["zaehlt"] = z["waehrung"] == "EUR" and not _NICHT.search(z["status"]) and wirkung != "memo"
         zeilen.append(z)
     return {"ok": True, "format": fmt, "zeilen": zeilen}
 
 
 def _kategorie(z: dict) -> str:
     t = f"{z['beschreibung']} {z['name']} {z['hinweis']}".casefold()
+    typ = z["beschreibung"].casefold()
     if re.search(r"gebühr|gebuehr|fee", t) and not z["name"]:
         return "gebuehren"
-    if re.search(r"bankkonto|auszahlung|abbuchung auf|überweisung auf|withdraw", t) and z["brutto_cent"] < 0:
-        return "auszahlung"
-    if re.search(r"bankgutschrift|einzahlung|aufladung|bank deposit|von bankkonto", t) and z["brutto_cent"] > 0:
+    if re.search(r"ach-gutschrift|ach-überweisung|bankgutschrift", typ):          # Lastschrift vom Bankkonto (+) bzw. zurueckgegeben (-)
         return "einzahlung"
+    if re.search(r"bankkonto|auszahlung|abbuchung|überweisung auf|withdraw", t) and z["brutto_cent"] < 0:
+        return "auszahlung"
+    if re.search(r"einzahlung|aufladung|bank deposit|von bankkonto", t) and z["brutto_cent"] > 0:
+        return "einzahlung"
+    if typ == "allgemeine zahlung" and "paypal" in z["name"].casefold() and z["brutto_cent"] < 0:
+        return "tickets"                                                          # Abbuchung „Spaeter bezahlen“ (Tickets)
     if re.search(r"eventim|hamburger sport|hsv", t):
         return "tickets"
     if re.search(r"beitrag|mitglied", t):
@@ -147,7 +163,27 @@ def _kategorie(z: dict) -> str:
         return "spenden"
     if re.search(r"trikot|merch|schal", t):
         return "merch"
-    return "sonstiges"
+    return "offen" if z["brutto_cent"] > 0 else "sonstiges"                     # Geld von Personen ohne Hinweis: zuordnen
+
+
+def _vorab(zeilen: list[dict]) -> dict[int, str]:
+    """KA4b: Zeilen, die sich innerhalb der Datei aufheben -> {nr: "technisch"|"finanziert"}."""
+    out: dict[int, str] = {}
+    gruppen: dict[tuple, list[dict]] = {}
+    for z in zeilen:
+        if z["zaehlt"]:
+            gruppen.setdefault(z["datum"], []).append(z)          # je Tag (Sekunden weichen ab)
+    je_tc = {z["tc"]: z for z in zeilen if z["zaehlt"] and z["tc"]}
+    for g in gruppen.values():
+        tech = [z for z in g if z["beschreibung"].casefold() in _TECHNISCH]
+        if tech and sum(z["brutto_cent"] for z in tech) == 0:
+            out.update({z["nr"]: "technisch" for z in tech})
+    for z in zeilen:
+        if z["zaehlt"] and "käuferkredit" in z["beschreibung"].casefold() and z["brutto_cent"] > 0:
+            kauf = je_tc.get(z["bezug"])
+            if kauf and kauf["brutto_cent"] == -z["brutto_cent"] and kauf["nr"] not in out:
+                out[z["nr"]] = out[kauf["nr"]] = "finanziert"
+    return out
 
 
 def import_plan(st: dict, zeilen: list[dict]) -> dict:
@@ -156,25 +192,40 @@ def import_plan(st: dict, zeilen: list[dict]) -> dict:
     codes = {b["transaktionscode"] for b in alle if b.get("transaktionscode") and b["status"] != "storniert"}
     codes |= {e["id"][2:] for e in st.get("eingaenge", {}).values() if e["id"].startswith("e-")}
     ohne_code = [b for b in alle if not b.get("transaktionscode") and b["status"] != "storniert" and b["quelle"] in ("eingang", "zahlung")]
+    je_id = {b["id"]: b for b in alle}
     benutzt: set[str] = set()
+    vorab = _vorab(zeilen)
     out = []
     for z in zeilen:
         x = dict(z)
+        k = _kategorie(z)
         if not z["zaehlt"]:
             x["ergebnis"] = "uebersprungen"
+        elif z["nr"] in vorab:
+            x["ergebnis"] = vorab[z["nr"]]
         elif z["tc"] and z["tc"] in codes:
             x["ergebnis"] = "bekannt"
         else:
-            treffer = next((b for b in ohne_code if b["id"] not in benutzt and b["betrag_cent"] == z["brutto_cent"] and b["datum"]
-                            and abs((date.fromisoformat(b["datum"]) - date.fromisoformat(z["datum"])).days) <= 3), None)
+            umkehr = z["beschreibung"].casefold() == "rückbuchung" or "ach-" in z["beschreibung"].casefold()
+            treffer = None if umkehr else next((b for b in ohne_code if b["id"] not in benutzt and b["betrag_cent"] == z["brutto_cent"] and b["datum"]
+                            and abs((date.fromisoformat(b["datum"]) - date.fromisoformat(z["datum"])).days) <= 3
+                            and (b["kategorie"] == k or {b["kategorie"], k}.isdisjoint(("auszahlung", "einzahlung")))), None)
             if treffer:
                 benutzt.add(treffer["id"])
                 x.update(ergebnis="passt", buchung=treffer["id"])
             else:
-                x.update(ergebnis="neu", kategorie=_kategorie(z))
+                x.update(ergebnis="neu", kategorie=k)
         if z["zaehlt"] and z["gebuehr_cent"] and f"{z['tc']}:gebuehr" not in codes:
             x["gebuehr_neu"] = True
         out.append(x)
+    je_tc = {x["tc"]: x for x in out if x["tc"]}
+    for x in out:                                         # „Rueckbuchung“ erbt die Kategorie der zurueckgebuchten Zahlung
+        if x["ergebnis"] == "neu" and x["beschreibung"].casefold() == "rückbuchung":
+            ziel = je_tc.get(x["bezug"])
+            if ziel:
+                x["kategorie"] = (je_id.get(ziel.get("buchung", ""), {}).get("kategorie") or ziel.get("kategorie")
+                                  or _kategorie(ziel))
+    rueck = [x for x in out if x["zaehlt"] and "rückbuchung von ach-gutschrift" in x["beschreibung"].casefold()]
     neu = [x for x in out if x["ergebnis"] == "neu"]
     geb = [x for x in out if x.get("gebuehr_neu")]
     vergleich = None
@@ -197,6 +248,9 @@ def import_plan(st: dict, zeilen: list[dict]) -> dict:
             "passt": sum(1 for x in out if x["ergebnis"] == "passt"), "neu": len(neu), "gebuehren": len(geb),
             "uebersprungen": sum(1 for x in out if x["ergebnis"] == "uebersprungen"),
             "neu_cent": sum(x["brutto_cent"] for x in neu), "gebuehren_cent": sum(x["gebuehr_cent"] for x in geb),
+            "technisch": sum(1 for x in out if x["ergebnis"] == "technisch"),
+            "finanziert": sum(1 for x in out if x["ergebnis"] == "finanziert"),
+            "lastschrift_zurueck": len(rueck), "lastschrift_zurueck_cent": sum(x["brutto_cent"] for x in rueck),
             "vergleich": vergleich, "hat_anfangsbestand": bool(anfangsbestand(st))}
 
 
@@ -214,13 +268,15 @@ def import_anwenden(store: OfcStore, roh: bytes, dateiname: str, *, anfangsbesta
     ordner.mkdir(parents=True, exist_ok=True)
     with open(ordner / f"{iid}.csv", "xb") as f:                         # Original nur neu ablegen
         f.write(roh)
-    n = 0
+    n, fehler = 0, []
     for x in plan["zeilen"]:
         text = " – ".join(t for t in (x["beschreibung"], x["name"], x["hinweis"]) if t) or "PayPal"
         if x["ergebnis"] == "neu":
             r = buchung_anlegen(store, datum=x["datum"], betrag_cent=x["brutto_cent"], kategorie=x["kategorie"], text=text,
                                 von=von, import_id=iid, transaktionscode=x["tc"])
             n += bool(r.get("ok"))
+            if not r.get("ok"):
+                fehler.append(f"{x['datum']} {text[:40]}: {r.get('hinweis')}")
         if x.get("gebuehr_neu"):
             r = buchung_anlegen(store, datum=x["datum"], betrag_cent=x["gebuehr_cent"], kategorie="gebuehren",
                                 text=f"PayPal-Gebühr – {text}", von=von, import_id=iid,
@@ -232,7 +288,8 @@ def import_anwenden(store: OfcStore, roh: bytes, dateiname: str, *, anfangsbesta
     store.erfassen("ofc_kasse_import", {"id": iid, "datei": dateiname[:120], "format": gel["format"], "zeilen": plan["anzahl"],
                                         "gebucht": n, "von_datum": min((x["datum"] for x in plan["zeilen"]), default=""),
                                         "bis_datum": max((x["datum"] for x in plan["zeilen"]), default="")}, von=von)
-    return plan | {"ok": True, "import_id": iid, "gebucht": n}
+    return plan | {"ok": True, "import_id": iid, "gebucht": n, "nicht_gebucht": fehler,
+                   **({"hinweis": f"{n} Buchung(en) übernommen, {len(fehler)} nicht: " + "; ".join(fehler[:3])} if fehler else {})}
 
 
 def import_storno(store: OfcStore, iid: str, *, von: str = "") -> dict:

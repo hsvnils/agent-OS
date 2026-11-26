@@ -140,7 +140,7 @@ def buchung_anlegen(store: OfcStore, *, datum: str, betrag_cent: int, kategorie:
     """Handbuchung (+ Zugang / - Abgang); Beleg wird nur neu angelegt (`fanclub/belege/<id><endung>`)."""
     if not _datum_ok(datum):
         return {"ok": False, "hinweis": "Datum ungültig."}
-    if kategorie not in KATEGORIEN or kategorie == "offen":
+    if kategorie not in KATEGORIEN or (kategorie == "offen" and not import_id):     # „offen“ nur aus dem CSV-Import
         return {"ok": False, "hinweis": "Kategorie unbekannt."}
     if not isinstance(betrag_cent, int) or not betrag_cent or abs(betrag_cent) > 10_000_000:
         return {"ok": False, "hinweis": "Betrag ungültig."}
