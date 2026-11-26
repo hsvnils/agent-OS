@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 19:47] — Claude Code
+- **Was:** Merge `ai/ofc-mitglieder` nach `main` (OFC_MITGLIEDER MV0 + MV1), Branch geloescht; Deploy-Befehle an den CEO.
+- **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-11-26 19:41] — Claude Code
 - **Was:** OFC_MITGLIEDER MV0 + MV1: Import-Vorschau (Mitglieder/Anfragen, Mitgliedschaften nach E2, Vorstand, ohne E-Mail, doppelte Nummern mit Auswahl, doppelte Namen, unklare Mitgliedschaft), einmaliger Import ins eigene Verzeichnis (Ereignis `ofc_verzeichnis`, alle Felder, Konfliktnummern -> naechste freie Nummer, nie doppelt), Abgleich Tabelle <-> LUNA; Knopf „🗂 LUNA-Verzeichnis“ in 👥 Mitglieder; Roadmap/ROADMAP, Register, Datenfluesse, Datenschutz-Nachtrag, Baseline 1919.
 - **Warum:** CEO: „wie empfohlen, Go fuer MV0 und MV1“.
