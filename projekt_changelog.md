@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 19:28] — Claude Code
+- **Was:** TV4 nach Deploy auf der NAS verifiziert (LUNA-OS liefert `app-v2.js?v=184`, `GET /api/ofc/spiel/HSVvsFCB/ticketversand` ok, Automatik aus, noch keine bezahlte Karte mit Person); To-do TV5 (28.11.) angelegt.
+- **Warum:** CEO: „Deploy gemacht“; Abnahme nachhalten (F4).
+- **Betroffen:** `projekt_changelog.md`, `todos/log.jsonl` (NAS)
+
 ## [2026-11-26 19:27] — Claude Code
 - **Was:** Merge `ai/ofc-ticketversand-tv4` nach `main` (OFC_TICKETVERSAND TV4, Automatik aus), Branch geloescht; Deploy-Befehle und Testdurchlauf (TV5) an den CEO.
 - **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.
