@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 22:03] — Claude Code
+- **Was:** Branch `ai/app-kennzahlen-live` (AK5 Live-Abruf, AK6 Anzeige „Heute live“) per `--no-ff` in `main` gemergt, gepusht, Branch geloescht.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `main`, `orchestrator/core/app_kennzahlen.py`, Bot-Loop, Web-Endpunkte, LUNA-OS V2, `APP_KENNZAHLEN_ROADMAP.md`
+
 ## [2026-11-26 20:47] — Claude Code
 - **Was:** APP_KENNZAHLEN AK5 + AK6 (Live-Zahlen): Abruf `art=live` im Takt (Standard 15, einstellbar 5-60, nie parallel) im Minuten-Thread von `luna-telegram`, eigene Ablage `live.json` + Tagesverlauf (nach 7 Tagen geloescht) getrennt von den Tageswerten, 401 haelt an bis „Live wieder starten“, ab 4 Fehlschlaegen genau eine Meldung (Telegram + Glocke), Meilensteine ohne Dopplung; Block „Heute live“ im Bereich App (Stand, veraltet ab 45 Min., 9 Kacheln, Anmeldungen ohne Abschluss, Kurve heute), Abschnitte „bis gestern“, Live-Abgleich, neue Tageskennzahl `anmeldungen_ohne_abschluss` als gestrichelte Linie; Archiv ueberspringt beschaedigte Zeilen; Policy, Datenfluesse, Register, Dienste-Register, Baseline 1938.
 - **Warum:** CEO: „wie empfohlen, Go fuer AK5 und AK6“.
