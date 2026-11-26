@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 19:35] — Claude Code
+- **Was:** Neue Roadmap `OFC_MITGLIEDER_ROADMAP.md` (Mitglieder nur noch in LUNA-OS, Etappen MV0-MV4, Entscheidungen E1-E6, Variante a: Anfragen traegt der CEO ein) angelegt und registriert; read-only Analyse der Mitgliederliste nur als Zaehlungen; TV5-Test mit dem Spiel gegen Leverkusen vermerkt. Kein Code.
+- **Warum:** CEO: „weg vom Google-Formular, nur noch LUNA-OS“ – „Ja, Roadmap anlegen, Variante (a)“.
+- **Betroffen:** `OFC_MITGLIEDER_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 19:28] — Claude Code
 - **Was:** TV4 nach Deploy auf der NAS verifiziert (LUNA-OS liefert `app-v2.js?v=184`, `GET /api/ofc/spiel/HSVvsFCB/ticketversand` ok, Automatik aus, noch keine bezahlte Karte mit Person); To-do TV5 (28.11.) angelegt.
 - **Warum:** CEO: „Deploy gemacht“; Abnahme nachhalten (F4).
