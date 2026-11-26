@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 20:09] — Claude Code
+- **Was:** Merge `ai/ofc-mitglieder-mv2` nach `main` (OFC_MITGLIEDER MV2), Branch geloescht; Deploy-Befehle an den CEO.
+- **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-11-26 20:07] — Claude Code
 - **Was:** OFC_MITGLIEDER MV2: 👥 Mitglieder arbeitet mit dem LUNA-Verzeichnis (Reiter Mitglieder/Anfragen/🗄 Archiv, Filter Gold/Standard/Foerder/Vorstand/ohne, Suche, Zahlen je Art), ＋ Mitglied (naechste freie Nummer), ✏️ Bearbeiten aller Felder (nur Geaendertes, Nummer eindeutig, E-Mail geprueft), Anfrage aufnehmen, Kuendigen ins Archiv (nichts geloescht, Wieder aufnehmen), Verlauf, CSV-Export; Gekuendigte sofort fuer Zahlungsbitten/Ticketversand gesperrt und nicht mehr in der Personensuche; Baseline 1924.
 - **Warum:** CEO: „Go fuer MV2“ (Google-Tabelle wird nicht mehr gepflegt).
