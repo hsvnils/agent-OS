@@ -157,6 +157,12 @@ body.v2 { margin: 0; font-family: var(--v2-font); color: var(--v2-fg); backgroun
 .v2-sec-head { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 18px; }
 .v2-sec-head h1 { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -.4px; }
 .v2-sec-head .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Titel oben in einer Zeile, Unterpunkte darunter in einer Reihe (zu schmal: seitlich wischen statt umbrechen) */
+.v2-sec-head.stapel { flex-direction: column; align-items: stretch; gap: 12px; }
+.v2-sec-head.stapel h1 { white-space: nowrap; }
+.v2-sec-head.stapel .actions { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 6px 6px 14px; margin: -6px -6px -14px; }
+.v2-sec-head.stapel .actions::-webkit-scrollbar { display: none; }
+.v2-sec-head.stapel .actions > .v2-btn { flex: 0 0 auto; white-space: nowrap; }
 .v2-empty { color: var(--v2-faint); padding: 22px; text-align: center; font-size: 14px; }
 .v2-list-row { display: flex; align-items: center; gap: 12px; padding: 13px 4px; border-top: 1px solid var(--v2-line-soft); }
 .v2-list-row:first-child { border-top: none; }

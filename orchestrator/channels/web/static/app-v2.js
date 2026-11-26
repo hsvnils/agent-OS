@@ -490,7 +490,7 @@ async function renderBereich() {
 BEREICHE.forEach(b => { RENDER["b-" + b.id] = renderBereich; });
 
 /* =========================== Bausteine =========================== */
-function secHead(title, actions = "") { return `<div class="v2-sec-head"><h1>${esc(title)}</h1><div class="actions">${actions}</div></div>`; }
+function secHead(title, actions = "", cls = "") { return `<div class="v2-sec-head${cls ? " " + cls : ""}"><h1>${esc(title)}</h1><div class="actions">${actions}</div></div>`; }
 // Info-Symbol mit Mouseover-Erklaerung (erscheint neben den drei Punkten an jedem erklaerten Container).
 function infoTip(text) { return `<span class="v2-info" tabindex="0">i<span class="v2-info-pop">${esc(text)}</span></span>`; }
 // Titel -> Klartext-Erklaerung: welcher Container ist das und was passiert da? (laienverstaendlich)
@@ -5184,7 +5184,7 @@ const OFC_STATUS = { offen: ["wartet", "kommt"], vorbei: ["neutral", "vorbei"], 
 async function renderOfc(meldung, fehler) {
   OFC_M_AKTIV = false;
   const [d, pst] = await Promise.all([jget("/api/ofc/uebersicht"), jget("/api/ofc/post/status")]);
-  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-saison">📊 Saison</button> <button class="v2-btn" data-act="ofc-beitraege">🎫 Beiträge</button> <button class="v2-btn" data-act="ofc-kasse">💰 Kasse</button> <button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-eingaenge">💶 Eingänge</button> <button class="v2-btn" data-act="ofc-zahlungen">💳 Zahlungen</button> <button class="v2-btn" data-act="ofc-post">📬 Postfach</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button> <button class="v2-btn" data-act="ofc-wallet-holen">📱 Wallet-Links holen</button>`);
+  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-saison">📊 Saison</button> <button class="v2-btn" data-act="ofc-beitraege">🎫 Beiträge</button> <button class="v2-btn" data-act="ofc-kasse">💰 Kasse</button> <button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-eingaenge">💶 Eingänge</button> <button class="v2-btn" data-act="ofc-zahlungen">💳 Zahlungen</button> <button class="v2-btn" data-act="ofc-post">📬 Postfach</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button> <button class="v2-btn" data-act="ofc-wallet-holen">📱 Wallet-Links holen</button>`, "stapel");
   if (!d) { $("#v2-app").innerHTML = kopf + emptyRow("OFC nicht erreichbar (nur für den CEO)."); return; }
   const su = d.summe, zeile = (x) => `<div class="v2-list-row klick v2-ofc-zeile" data-act="ofc-spiel" data-id="${esc(x.id)}">
       <div class="v2-ofc-datum"><b>${x.spieltag ? esc(datumDe(x.spieltag)) : "–"}</b><small>${esc(x.uhrzeit || "")}</small></div>
