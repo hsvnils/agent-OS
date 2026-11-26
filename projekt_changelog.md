@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 12:50] — Claude Code
+- **Was:** Branch `ai/ofc-kasse-ka4b` (KA4b PayPal-Import fuer den echten Aktivitaeten-Export) per --no-ff in `main` gemergt, Branch lokal und remote geloescht.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `main`, `orchestrator/core/ofc_kasse_import.py`, `OFC_KASSE_ROADMAP.md`
+
 ## [2026-11-26 12:44] — Claude Code
 - **Was:** OFC-Kasse KA4b: PayPal-CSV-Import an den echten Aktivitaeten-Export angepasst (zaehlt nach „Auswirkung auf Guthaben“, PayPal-interne Verrechnungen und „Spaeter bezahlen“-Finanzierung werden nicht gebucht, Lastschriften = Einzahlung, Rueckbuchung erbt Kategorie, Abbuchung = Auszahlung, Geld von Personen ohne Hinweis = „noch nicht zugeordnet“, Hinweis auf zurueckgegebene Lastschriften, kein stilles Verwerfen mehr); Vorschau-UI (v177); Test mit nachgebauten Mustern; Gegenprobe echte Datei geht auf den Cent auf.
 - **Warum:** CEO hat den echten Export geliefert (2026-11-26); die Vorschau haette ca. 60 Zeilen falsch gebucht. CEO-Entscheidungen: Konto nur Fanclub, Abbuchungen aufs Privatkonto = Auszahlung.
