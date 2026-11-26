@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 22:21] — Claude Code
+- **Was:** OFC-Startseite: Titel „OFC · HSVInside“ in einer Zeile, die Unterpunkte (Saison bis Wallet-Links holen) darunter in einer Reihe; zu schmale Bildschirme (iPad/iPhone) wischen die Reihe seitlich statt umzubrechen. `secHead` hat dafuer eine optionale Klasse (`stapel`). Cache v189/CSS v100. Headless geprueft auf Rechner, iPad, iPhone; Suite 1939 gruen.
+- **Warum:** CEO-Wunsch 2026-11-26 (Screenshot: Titel umgebrochen, Knoepfe in zwei Reihen).
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`
+
 ## [2026-11-26 22:11] — Claude Code
 - **Was:** Branch `ai/app-kennzahlen-meilenstein-wechsel` (Test Meilensteine beim Wechsel Tagesabruf -> Live) per `--no-ff` in `main` gemergt, gepusht, Branch geloescht. Nur Test/Doku, kein Deploy noetig.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
