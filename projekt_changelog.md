@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 22:10] — Claude Code
+- **Was:** Test `test_wechsel_tagesabruf_zu_live_meldet_alte_schwellen_nicht` ergaenzt: Schwellen, die der Tagesabruf vermerkt oder gemeldet hat, meldet der erste Live-Abruf nicht erneut (auch beim Wechsel `registrierte_gesamt` -> `registrierte_stand`); erst eine neue Schwelle wird gemeldet. Gegenproben: eigene Live-Schluessel und fehlendes Vermerken beim Tagesabruf machen den Test rot. NAS nach Deploy geprueft: erster Live-Abruf 22:06 mit Status 200, 9 Kennzahlen, 0 neue Meldungen, 0 Meilenstein-Meldungen. Baseline 1939.
+- **Warum:** CEO-Auftrag nach Deploy AK5/AK6: kein altes Meilenstein-Ereignis darf beim Wechsel auf Live erneut gemeldet werden.
+- **Betroffen:** `orchestrator/tests/test_app_kennzahlen_live.py`, `docs/bekannte-fehler.md`
+
 ## [2026-11-26 22:03] — Claude Code
 - **Was:** Branch `ai/app-kennzahlen-live` (AK5 Live-Abruf, AK6 Anzeige „Heute live“) per `--no-ff` in `main` gemergt, gepusht, Branch geloescht.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
