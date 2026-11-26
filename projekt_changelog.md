@@ -18,6 +18,11 @@ Eintragsformat:
 ## Eintraege
 
 ## [2026-11-26 12:55] — Claude Code
+- **Was:** Branch `ai/ofc-kasse-ka4c` (vorgemerkte Spaeter-bezahlen-Zahlungen per CSV bestaetigen) per --no-ff in `main` gemergt, Branch lokal und remote geloescht.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `main`, `orchestrator/core/ofc_kasse.py`, `orchestrator/core/ofc_kasse_import.py`
+
+## [2026-11-26 12:55] — Claude Code
 - **Was:** OFC-Kasse KA4c: CSV-Zeilen, die zu einer nur vorgemerkten „Spaeter bezahlen“-Zahlung passen (Abbuchung war fehlgeschlagen), werden als „jetzt abgebucht“ gebucht und ersetzen den vorgemerkten Eintrag (Storno holt ihn zurueck); Abbuchung am Faelligkeitstag darf wieder passen; UI v178; Test `test_7c_vorgemerkt_wird_bestaetigt`.
 - **Warum:** Vorschau mit der echten CSV auf der NAS haette nach dem Import 1.000,94 € statt 11,48 € Kassenstand ergeben (vorgemerkte Abbuchungen 1.364,80 € fehlten, 392 € doppelt).
 - **Betroffen:** `orchestrator/core/ofc_kasse.py`, `orchestrator/core/ofc_kasse_import.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_ofc_kasse.py`, `OFC_KASSE_ROADMAP.md`, `docs/bekannte-fehler.md`
