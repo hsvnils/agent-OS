@@ -1390,3 +1390,10 @@ i.v2-ak-f0 { background: var(--v2-ak-0); } i.v2-ak-f1 { background: var(--v2-ak-
 .v2-ak-std-x span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
 .v2-ak-std-x span:first-child { transform: none; } .v2-ak-std-x span:last-child { transform: translateX(-100%); }
 .v2-ofc-mail { white-space: pre-wrap; font-family: var(--v2-font); font-size: 13px; background: var(--v2-line-soft); border-radius: 10px; padding: 12px; margin: 10px 0; overflow-wrap: anywhere; }
+.v2-knopf-txt { font-size: 12px; }
+@media (max-width: 600px) { .v2-knopf-txt { display: none; } }
+.v2-ofc-person { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; margin: 4px 0 6px; }
+.v2-ofc-person .ofc-voll { grid-column: 1 / -1; }
+.v2-ofc-person .v2-inp { width: 100%; box-sizing: border-box; }
+.v2-ofc-person .v2-inp[readonly] { opacity: .75; }
+@media (max-width: 420px) { .v2-ofc-person { grid-template-columns: 1fr; } }

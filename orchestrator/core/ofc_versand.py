@@ -59,6 +59,9 @@ def plan(st: dict, sid: str, mitglieder: list[dict] | None) -> dict:
     kn = _kennung(s)["kennung"]
     bz = bezahlt_stand(st)["tickets"]
     je_nr = _mitglieder_je_nummer(mitglieder)
+    for pid, pe in (st.get("personen") or {}).items():              # TV3b: externe Personen G<Nr>
+        je_nr[pid] = [{"nummer": pid, "vorname": pe.get("vorname", ""), "name": f"{pe.get('vorname', '')} {pe.get('nachname', '')}".strip(),
+                       "email": pe.get("email", ""), "extern": True}]
     gruppen: dict = {}
     ohne = 0
     for t in st["tickets"].values():
@@ -90,12 +93,13 @@ def plan(st: dict, sid: str, mitglieder: list[dict] | None) -> dict:
         alt = [x for x in frueher if x.get("art") == "zahlungsbitte" and x.get("spiel") == sid and x.get("nummer") == nr
                and not x.get("test") and set(x.get("tickets") or []) >= nrn]
         g["gebeten_am"] = max((x.get("ts", "") for x in alt), default="")
-        if mitglieder is None:
+        g["extern"] = bool(m and m.get("extern"))
+        if mitglieder is None and not g["extern"]:
             g["status"], g["hinweis"] = "gesperrt", "Mitgliederliste nicht lesbar."
         elif not m:
             g["status"], g["hinweis"] = "gesperrt", ("Mitgliedsnummer mehrfach in der Liste." if len(ms) > 1 else "Mitgliedsnummer nicht in der Liste.")
         elif "@" not in adresse:
-            g["status"], g["hinweis"] = "gesperrt", "Keine E-Mail-Adresse in der Mitgliederliste."
+            g["status"], g["hinweis"] = "gesperrt", ("Keine E-Mail-Adresse eingetragen." if g["extern"] else "Keine E-Mail-Adresse in der Mitgliederliste.")
         elif not kn:
             g["status"], g["hinweis"] = "gesperrt", "Spieltag fehlt – im Spiel bei ✏️ eintragen."
         elif not g["betrag_cent"]:
@@ -116,7 +120,7 @@ def text(s: dict, g: dict) -> tuple[str, str]:
     betreff = f"HSVInside: Bitte um Zahlung – {spiel}" + (f" ({tag})" if tag else "")
     t = (f"Moin {g.get('vorname') or ''},\n\n".replace(" ,", ",")
          + f"für das Spiel {spiel}" + (f" am {tag}" if tag else "") + (f" um {zeit} Uhr" if zeit else "")
-         + f" hast du über den HSVInside {'diese Karte' if len(g['tickets']) == 1 else 'diese Karten'}:\n{karten}\n\n"
+         + f" hast du über deinen Fanclub HSVInside {'diese Karte' if len(g['tickets']) == 1 else 'diese Karten'}:\n{karten}\n\n"
          + f"Bitte zahle {_euro(g['betrag_cent'])} per PayPal an {PAYPAL}.\n"
          + f"Verwendungszweck: {g['verwendungszweck']}\n\n"
          + "Bitte gib genau diesen Verwendungszweck an – so können wir deine Zahlung sofort zuordnen. "
@@ -156,7 +160,8 @@ def senden(store, postfach, sid: str, nummer: str, mitglieder: list[dict] | None
         return {"ok": False, "hinweis": f"Schon am {g['gebeten_am'][:10]} gebeten – zum erneuten Senden „erneut“ wählen."}
     if _letzte_stunde(st, jetzt) >= LIMIT_STUNDE:
         return {"ok": False, "hinweis": f"Höchstens {LIMIT_STUNDE} Mails je Stunde – bitte später weiter."}
-    m = next((x for x in mitglieder or [] if str(x.get("nummer")) == nummer), {})
+    pe = (st.get("personen") or {}).get(nummer)
+    m = {"email": pe.get("email", "")} if pe else next((x for x in mitglieder or [] if str(x.get("nummer")) == nummer), {})
     an = PAYPAL if test else (m.get("email") or "").strip()
     betreff = ("[TEST] " if test else "") + v["betreff"]
     r = postfach.mail_senden(an, betreff, v["text"], bestaetigt=True, absender_name=ABSENDER_NAME, ofc_freigabe=True)

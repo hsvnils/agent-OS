@@ -5171,13 +5171,13 @@ async function ofcSpiel(sid) {
       <div class="v2-kv"><span>Datum · Zahlart</span><b>${r.datum ? esc(datumDe(r.datum)) : "–"} · ${esc(r.zahlart || "–")}</b></div>
       ${r.datei ? `<div class="v2-card-actions"><a class="v2-btn sm" href="${datei(r.datei)}" target="_blank" rel="noopener">📄 ${esc(r.datei)}</a></div>` : ""}`).join("") || emptyRow("Keine Rechnung im Ordner.");
   const tk = d.tickets.map(t => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(t.ticketnr.split("-")[1] || "")}</span>
-      <div class="grow"><b>${t.name ? esc(t.name) : `<span class="v2-sub">ohne Namen</span>`}</b> ${t.mitglied ? `<span class="v2-badge neutral">Nr. ${esc(t.mitglied)}</span>` : ""} ${t.bezahlt ? `<span class="v2-badge ok">bezahlt</span>` : t.bezahlt_cent ? `<span class="v2-badge warn">teilweise ${esc(cent2eur(t.bezahlt_cent))}</span>` : ""}
+      <div class="grow"><b>${t.name ? esc(t.name) : `<span class="v2-sub">ohne Namen</span>`}</b> ${t.mitglied ? `<span class="v2-badge neutral">${t.mitglied.startsWith("G") ? "extern " + esc(t.mitglied) : "Nr. " + esc(t.mitglied)}</span>` : ""} ${t.bezahlt ? `<span class="v2-badge ok">bezahlt</span>` : t.bezahlt_cent ? `<span class="v2-badge warn">teilweise ${esc(cent2eur(t.bezahlt_cent))}</span>` : ""}
         <small>${[t.block ? "Block " + esc(t.block) : "", t.reihe && t.reihe !== "-" ? "Reihe " + esc(t.reihe) : "", t.sitz && t.sitz !== "-" ? "Sitz " + esc(t.sitz) : "",
           t.preis_cent ? esc(cent2eur(t.preis_cent)) : "", t.ohne_rechnung ? "Bestellung " + esc(t.rechnungsnr) + " (keine Rechnung)" : ""].filter(Boolean).join(" · ")}</small></div>
-      <div class="v2-ofc-knoepfe"><button class="v2-btn sm" data-act="ofc-name" data-id="${esc(t.ticketnr)}" aria-label="Namen ändern">✏️</button>
-      ${t.datei ? `<a class="v2-btn sm" href="${datei(t.datei)}" target="_blank" rel="noopener" aria-label="PDF-Ticket öffnen">📄</a>` : `<span class="v2-badge warn">Datei fehlt</span>`}
-      ${t.wallet ? `<a class="v2-btn sm" href="${esc(t.wallet)}" target="_blank" rel="noopener noreferrer" aria-label="Wallet-Ticket öffnen">📱</a><button class="v2-btn sm" data-act="ofc-wallet-kopie" data-id="${esc(t.ticketnr)}" aria-label="Wallet-Link kopieren">📋</button>`
-        : `<button class="v2-btn sm" data-act="ofc-wallet-hand" data-id="${esc(t.ticketnr)}" aria-label="Wallet-Link eintragen" title="Wallet fehlt – Link eintragen">📱＋</button>`}</div></div>`).join("") || emptyRow("Keine Tickets.");
+      <div class="v2-ofc-knoepfe"><button class="v2-btn sm" data-act="ofc-name" data-id="${esc(t.ticketnr)}" aria-label="Name und Person ändern" title="Name und Person ändern">✏️<span class="v2-knopf-txt"> Person</span></button>
+      ${t.datei ? `<a class="v2-btn sm" href="${datei(t.datei)}" target="_blank" rel="noopener" aria-label="PDF-Ticket öffnen" title="PDF-Ticket öffnen">📄<span class="v2-knopf-txt"> PDF</span></a>` : `<span class="v2-badge warn">Datei fehlt</span>`}
+      ${t.wallet ? `<a class="v2-btn sm" href="${esc(t.wallet)}" target="_blank" rel="noopener noreferrer" aria-label="Wallet-Ticket öffnen" title="Wallet-Ticket öffnen">📱<span class="v2-knopf-txt"> Wallet</span></a><button class="v2-btn sm" data-act="ofc-wallet-kopie" data-id="${esc(t.ticketnr)}" aria-label="Wallet-Link kopieren" title="Wallet-Link kopieren">📋<span class="v2-knopf-txt"> Link</span></button>`
+        : `<button class="v2-btn sm" data-act="ofc-wallet-hand" data-id="${esc(t.ticketnr)}" aria-label="Wallet-Link eintragen" title="Wallet fehlt – Link eintragen">📱＋<span class="v2-knopf-txt"> Wallet</span></button>`}</div></div>`).join("") || emptyRow("Keine Tickets.");
   const kn = s.kennung || {};
   openModal(`⚽ ${s.spiel}`, `<div class="v2-kv"><span>Spieltag für den Verwendungszweck</span><b>${kn.kennung ? esc(kn.kennung.startsWith("P") ? "Pokal " + kn.kennung.slice(1) + ". Runde" : kn.kennung.startsWith("S") ? "Sonstiges Spiel " + kn.kennung.slice(1) : kn.kennung + ". Spieltag") + ` <small class="v2-sub">(${kn.quelle === "hand" ? "von dir" : "aus dem Spielplan"})</small>` : `<span class="v2-badge warn">fehlt</span>`} <button class="v2-btn sm" data-act="ofc-spieltag" data-id="${esc(sid)}" data-val="${esc(kn.quelle === "hand" ? kn.kennung : "")}" aria-label="Spieltag ändern">✏️</button></b></div>
     <div class="v2-sub">${[s.spieltag ? datumDe(s.spieltag) + (s.uhrzeit ? ", " + s.uhrzeit : "") : "", s.ort, s.wettbewerb, s.heimspiel === true ? "Heimspiel" : s.heimspiel === false ? "Auswärtsspiel" : "", "Ordner „" + s.pfad + "“"].filter(Boolean).map(esc).join(" · ")}</div>
@@ -5188,7 +5188,7 @@ async function ofcSpiel(sid) {
     <h3>💳 Eigene Zahlung</h3>${(d.zahlungen || []).map(z => `<div class="v2-kv"><span>${esc(datumDe(z.datum))} · ${esc(OFC_ZART[z.art] || z.art)}${z.transaktionscode ? " · " + esc(z.transaktionscode) : ""}</span><b>${z.art === "erstattung" ? "−" : ""}${esc(cent2eur(z.betrag_cent))}</b></div>`).join("")
       || emptyRow("Noch keine PayPal-Zahlung zugeordnet.")}
     ${(d.zahlungen || []).length ? `<div class="v2-kv"><span>Bezahlt / Rechnung</span><b>${esc(cent2eur(d.bezahlt_cent))} / ${esc(cent2eur((s.rechnungen || []).reduce((a, r) => a + (r.summe_cent || 0), 0)))}</b></div>` : ""}
-    <div class="v2-sub" style="margin-top:10px">✏️ ändert den Namen (mit Mitglied aus der Liste) und benennt die Ticket-Datei auf der NAS passend um – es wird nie etwas gelöscht. 📄 PDF-Ticket · 📱 Wallet-Ticket · 📋 Wallet-Link kopieren.</div>
+    <div class="v2-sub" style="margin-top:10px">✏️ Person: Mitglied aus der Liste oder externe Person (Name, E-Mail) – die Ticket-Datei auf der NAS wird passend umbenannt, nie gelöscht. 📄 PDF-Ticket · 📱 Wallet-Ticket · 📋 Wallet-Link kopieren.</div>
     <div class="v2-card-actions">${s.abgeschlossen ? `<button class="v2-btn sm" data-act="ofc-abschluss" data-id="${esc(sid)}" data-val="1">↩︎ Wieder öffnen</button>`
       : `<button class="v2-btn sm pri" data-act="ofc-abschluss" data-id="${esc(sid)}" data-val="">✅ Abschließen</button>`}
       <button class="v2-btn sm" data-act="ofc-verwerfen" data-id="${esc(sid)}">🗑 Spiel im Reiter verwerfen</button></div>`);
@@ -5200,12 +5200,12 @@ async function ofcZb(sid) {
   const p = await jget(`/api/ofc/spiel/${encodeURIComponent(sid)}/zahlungsbitten`), el = $("#ofc-zb"); if (!el) return;
   if (!p || !p.ok) { el.innerHTML = emptyRow((p && p.hinweis) || "Nicht erreichbar."); return; }
   el.innerHTML = (p.bereit ? `<div class="v2-card-actions"><button class="v2-btn sm pri" data-act="ofc-zb-alle" data-id="${esc(sid)}">✉️ An alle bereiten senden (${p.bereit})</button></div>` : "")
-    + (p.gruppen.map(g => `<div class="v2-list-row"><div class="grow"><b class="v2-umbruch">${esc(g.name || "Mitglied")}</b> <span class="v2-badge neutral">Nr. ${esc(g.nummer)}</span>
+    + (p.gruppen.map(g => `<div class="v2-list-row"><div class="grow"><b class="v2-umbruch">${esc(g.name || "Mitglied")}</b> <span class="v2-badge neutral">${g.extern ? "extern " + esc(g.nummer) : "Nr. " + esc(g.nummer)}</span>
         <small>${[`${g.tickets.length} Karte(n)`, cent2eur(g.betrag_cent), g.verwendungszweck ? "Zweck " + g.verwendungszweck : "", g.adresse_maskiert, g.gebeten_am ? "gebeten " + zeit(g.gebeten_am) : "", g.hinweis].filter(Boolean).map(esc).join(" · ")}</small></div>
       <div class="v2-ofc-knoepfe"><span class="v2-badge ${OFC_ZB_STATUS[g.status][0]}">${OFC_ZB_STATUS[g.status][1]}</span>
         ${g.status !== "gesperrt" ? `<button class="v2-btn sm" data-act="ofc-zb-vs" data-id="${esc(sid)}" data-val="${esc(g.nummer)}">👁 Mail</button>` : ""}</div></div>`).join("")
       || emptyRow("Keine offenen Karten mit Mitglied."))
-    + (p.ohne_mitglied ? `<div class="v2-sub" style="margin-top:6px">${p.ohne_mitglied} offene Karte(n) ohne Mitglied – bei ✏️ das Mitglied wählen, das zahlt (auch für Gäste).</div>` : "");
+    + (p.ohne_mitglied ? `<div class="v2-sub" style="margin-top:6px">${p.ohne_mitglied} offene Karte(n) ohne Person – bei ✏️ ein Mitglied wählen oder eine Person mit E-Mail eintragen.</div>` : "");
 }
 async function ofcZbVorschau(sid, nummer) {
   const v = await jget(`/api/ofc/spiel/${encodeURIComponent(sid)}/zahlungsbitten?nummer=${encodeURIComponent(nummer)}`);
@@ -5480,7 +5480,7 @@ async function ofcVerwerfen(sid) {
 /* OFC_TICKETVERSAND TV1/TV2: Wallet-Links, Spieltag je Spiel */
 async function ofcWalletKopie(nr, el) {
   const t = OFC_SP && OFC_SP.tickets.find(x => x.ticketnr === nr); if (!t || !t.wallet) return;
-  try { await navigator.clipboard.writeText(t.wallet); el.textContent = "✓"; setTimeout(() => { el.textContent = "📋"; }, 1500); }
+  try { await navigator.clipboard.writeText(t.wallet); const alt = el.innerHTML; el.textContent = "✓ kopiert"; setTimeout(() => { el.innerHTML = alt; }, 1500); }
   catch { prompt("Wallet-Link (kopieren):", t.wallet); }
 }
 async function ofcWalletHand(nr) {
@@ -5502,48 +5502,84 @@ async function ofcSpieltag(sid, alt) {
 }
 /* OFC_ROADMAP O2: Namen je Ticket ändern, Datei umbenennen (Vorschau, Bestätigung, Rückgängig; nie löschen) */
 let OFC_SP = null, OFC_NAMEN = null, _ofcNameTimer = null;
+/* OFC_TICKETVERSAND TV3b: Person am Ticket = Mitglied (aus der Liste) oder externe Person (Vorname, Nachname, E-Mail, G<Nr>) */
+let OFC_PERSONEN = [], OFC_EXTERN = [], OFC_WAHL = null;
+const ofcPersonText = (p) => `${p.name} (Nr. ${p.nummer})`;
+const ofcExternText = (p) => `${`${p.vorname || ""} ${p.nachname || ""}`.trim()} (${p.id}, extern)`;
 async function ofcName(nr) {
   const tk = OFC_SP && OFC_SP.tickets.find(x => x.ticketnr === nr); if (!tk) return;
-  if (!OFC_NAMEN) { const r = await jget("/api/ofc/namen"); OFC_NAMEN = (r && r.namen) || []; OFC_PERSONEN = (r && r.personen) || []; }
-  const opt = [...OFC_PERSONEN.map(p => ofcPersonText(p)), ...OFC_NAMEN.filter(n => !OFC_PERSONEN.some(p => p.name === n))];
-  const vorbel = tk.mitglied ? (OFC_PERSONEN.find(p => p.nummer === tk.mitglied && p.name === tk.name) ? ofcPersonText({ name: tk.name, nummer: tk.mitglied }) : `${tk.name || ""} (Nr. ${tk.mitglied})`) : (tk.name || "");
+  if (!OFC_NAMEN) { const r = await jget("/api/ofc/namen"); OFC_NAMEN = (r && r.namen) || []; OFC_PERSONEN = (r && r.personen) || []; OFC_EXTERN = (r && r.extern) || []; }
+  OFC_WAHL = null;
+  let vn = "", nn = "", mail = "";
+  const z = (tk.mitglied || "").trim();
+  if (z) {
+    const p = z.startsWith("G") ? OFC_EXTERN.find(x => x.id === z) : OFC_PERSONEN.find(x => x.nummer === z);
+    if (p) { OFC_WAHL = { typ: z.startsWith("G") ? "extern" : "mitglied", id: z }; vn = p.vorname || ""; nn = p.nachname || ""; mail = p.email || ""; }
+    else OFC_WAHL = { typ: "mitglied", id: z };
+  }
+  // Beim Oeffnen bleibt der Name auf dem Ticket (keine ungewollte Umbenennung); der Name der Person greift nur bei aktiver Auswahl
+  if (tk.name && `${vn} ${nn}`.trim() !== tk.name.trim()) { const t = tk.name.trim().split(/\s+/); vn = t[0] || ""; nn = t.slice(1).join(" "); }
+  if (!vn && !nn) { const t = (tk.name || "").trim().split(/\s+/); vn = t[0] || ""; nn = t.slice(1).join(" "); }
+  const opt = [...OFC_PERSONEN.map(ofcPersonText), ...OFC_EXTERN.map(ofcExternText)];
   const la = tk.letzte_aenderung;
   openModal(`✏️ Ticket ${tk.ticketnr}`, `<div class="v2-sub">${esc(OFC_SP.spiel.spiel)}${tk.block ? " · Block " + esc(tk.block) : ""}${tk.reihe && tk.reihe !== "-" ? " · Reihe " + esc(tk.reihe) : ""}${tk.sitz && tk.sitz !== "-" ? " · Sitz " + esc(tk.sitz) : ""}</div>
-    <label class="v2-feld" style="margin-top:10px"><small>Name auf dem Ticket</small>
-      <input id="ofc-name-inp" class="v2-inp" style="width:100%;box-sizing:border-box" list="ofc-namen-dl" autocomplete="off" value="${esc(vorbel)}" placeholder="Name tippen – Mitglied aus der Liste wählen"></label>
+    <label class="v2-feld" style="margin-top:10px"><small>Mitglied oder bekannte Person suchen</small>
+      <input id="ofc-such" class="v2-inp" style="width:100%;box-sizing:border-box" list="ofc-namen-dl" autocomplete="off" placeholder="Name oder Nummer tippen und auswählen"></label>
     <datalist id="ofc-namen-dl">${opt.map(n => `<option value="${esc(n)}">`).join("")}</datalist>
-    <div class="v2-sub" id="ofc-name-mg" style="margin-top:4px"></div>
+    <div id="ofc-wahl" style="margin:6px 0"></div>
+    <div class="v2-ofc-person">
+      <label class="v2-feld"><small>Vorname</small><input id="ofc-vn" class="v2-inp" autocomplete="off" value="${esc(vn)}"></label>
+      <label class="v2-feld"><small>Nachname</small><input id="ofc-nn" class="v2-inp" autocomplete="off" value="${esc(nn)}"></label>
+      <label class="v2-feld ofc-voll"><small>E-Mail (für Zahlungsbitte und Tickets)</small><input id="ofc-mail" class="v2-inp" type="email" autocomplete="off" value="${esc(mail)}"></label>
+    </div>
+    <div class="v2-sub">Ohne Mitglied: Vorname, Nachname und E-Mail eintragen – LUNA merkt sich die Person (Nummer „G…“) für das nächste Mal. Nur ein Name (z. B. „Frei“) geht auch, dann gibt es keine Zahlungsbitte.</div>
     <div id="ofc-name-vs" class="v2-ofc-vorschau"></div>
     <div class="v2-card-actions"><button class="v2-btn pri" id="ofc-name-ok" data-act="ofc-name-ok" data-id="${esc(nr)}" disabled>Speichern</button>
       ${la ? `<button class="v2-btn" data-act="ofc-name-rueck" data-id="${esc(nr)}">↩︎ Rückgängig</button>` : ""}</div>
     ${la ? `<div class="v2-sub">Letzte Änderung ${esc(zeit(la.ts))}: „${esc(la.name_alt || "ohne Namen")}“ → „${esc(la.name_neu || "ohne Namen")}“</div>` : ""}
     <div class="v2-msg" id="ofc-name-msg"></div>`);
-  const i = $("#ofc-name-inp"); i.addEventListener("input", () => { clearTimeout(_ofcNameTimer); _ofcNameTimer = setTimeout(() => ofcNameVorschau(nr), 250); });
-  i.focus(); ofcNameVorschau(nr);
+  const neu = () => { clearTimeout(_ofcNameTimer); _ofcNameTimer = setTimeout(() => ofcNameVorschau(nr), 250); };
+  $("#ofc-such").addEventListener("input", (ev) => {
+    const w = ev.target.value.trim();
+    const m = OFC_PERSONEN.find(p => ofcPersonText(p) === w), e = OFC_EXTERN.find(p => ofcExternText(p) === w);
+    if (!m && !e) return;
+    OFC_WAHL = m ? { typ: "mitglied", id: m.nummer } : { typ: "extern", id: e.id };
+    const p = m || e; $("#ofc-vn").value = p.vorname || (m ? m.name.split(" ")[0] : ""); $("#ofc-nn").value = p.nachname || (m ? m.name.split(" ").slice(1).join(" ") : "");
+    $("#ofc-mail").value = p.email || ""; ev.target.value = ""; ofcWahlZeigen(); neu();
+  });
+  ["#ofc-vn", "#ofc-nn", "#ofc-mail"].forEach(s => $(s).addEventListener("input", neu));
+  ofcWahlZeigen(); ofcNameVorschau(nr);
+}
+function ofcWahlZeigen() {
+  const el = $("#ofc-wahl"); if (!el) return;
+  const mg = OFC_WAHL && OFC_WAHL.typ === "mitglied";
+  ["#ofc-vn", "#ofc-nn", "#ofc-mail"].forEach(s => { const i = $(s); if (i) i.readOnly = mg; });
+  el.innerHTML = OFC_WAHL ? `<span class="v2-badge ${mg ? "ok" : "neutral"}">${mg ? "👤 Mitglied Nr. " + esc(OFC_WAHL.id) + " – Daten aus der Mitgliederliste" : "👤 Person " + esc(OFC_WAHL.id) + " (extern)"}</span>
+      <button class="v2-btn sm" data-act="ofc-wahl-weg" aria-label="Zuordnung lösen">✕ lösen</button>` : `<span class="v2-sub">Kein Mitglied gewählt.</span>`;
+}
+function ofcNameDaten() {
+  const vn = ($("#ofc-vn") || {}).value || "", nn = ($("#ofc-nn") || {}).value || "", mail = (($("#ofc-mail") || {}).value || "").trim();
+  const name = `${vn.trim()} ${nn.trim()}`.trim();
+  if (OFC_WAHL && OFC_WAHL.typ === "mitglied") return { name, mitglied: OFC_WAHL.id };
+  if (OFC_WAHL || mail) return { name, extern: { id: OFC_WAHL ? OFC_WAHL.id : "", vorname: vn.trim(), nachname: nn.trim(), email: mail } };
+  return { name, mitglied: "" };
 }
 function ofcVsHtml(v) {
   if (!v) return `<div class="v2-msg err">Keine Verbindung.</div>`;
   const zeile = (l, a, b) => `<div class="v2-kv v2-ofc-feld"><span>${l}</span><b class="v2-umbruch">${a === b ? esc(a || "–") : `<s class="v2-sub">${esc(a || "–")}</s><br>→ ${esc(b || "–")}`}</b></div>`;
   return zeile("Name", v.name_alt || "ohne Namen", v.name_neu || "ohne Namen") + (v.datei_alt ? zeile("Datei auf der NAS", v.datei_alt, v.datei_neu) : "")
-    + (v.hinweis ? `<div class="v2-msg ${v.ok ? "" : "err"}">${esc(v.hinweis)}</div>` : "");
-}
-let OFC_PERSONEN = [];
-const ofcPersonText = (p) => `${p.name} (Nr. ${p.nummer})`;
-function ofcNameTeile(wert) {   // „Anna Muster (Nr. 1004)“ -> {name, nummer}; ohne Klammer: Name, Mitglied nur bei eindeutigem Namen
-  const m = String(wert || "").match(/^(.*?)\s*\(Nr\.\s*([^)]+)\)\s*$/);
-  if (m) return { name: m[1].trim(), nummer: m[2].trim() };
-  const t = String(wert || "").trim(), treffer = OFC_PERSONEN.filter(p => p.name.toLowerCase() === t.toLowerCase());
-  return { name: t, nummer: treffer.length === 1 ? treffer[0].nummer : "" };
+    + (v.hinweis && v.hinweis !== "Keine Änderung." ? `<div class="v2-msg ${v.ok ? "" : "err"}">${esc(v.hinweis)}</div>` : "");
 }
 async function ofcNameVorschau(nr) {
-  const i = $("#ofc-name-inp"); if (!i) return;
-  const tn = ofcNameTeile(i.value), tk = OFC_SP && OFC_SP.tickets.find(x => x.ticketnr === nr);
-  const mg = $("#ofc-name-mg"); if (mg) mg.innerHTML = tn.nummer ? `👤 Mitglied Nr. ${esc(tn.nummer)} – die Tickets erscheinen beim Mitglied` : (tn.name ? "Kein Mitglied gewählt (Gast). Für ein Mitglied den Eintrag mit „(Nr. …)“ aus der Liste wählen." : "");
-  const v = await jget(`/api/ofc/ticket/${encodeURIComponent(nr)}/name/vorschau?name=${encodeURIComponent(tn.name)}`);
+  if (!$("#ofc-vn")) return;
+  const d = ofcNameDaten(), tk = OFC_SP && OFC_SP.tickets.find(x => x.ticketnr === nr);
+  const v = await jget(`/api/ofc/ticket/${encodeURIComponent(nr)}/name/vorschau?name=${encodeURIComponent(d.name)}`);
   if (!$("#ofc-name-vs")) return;
   $("#ofc-name-vs").innerHTML = ofcVsHtml(v);
-  const mitgliedNeu = tk && (tk.mitglied || "") !== tn.nummer;
-  $("#ofc-name-ok").disabled = !(v && v.ok && (v.umbenennen || v.name_neu !== v.name_alt || mitgliedNeu));
+  const ex = d.extern && OFC_EXTERN.find(p => p.id === d.extern.id);
+  const personNeu = tk && (d.extern ? (!ex || ex.vorname !== d.extern.vorname || ex.nachname !== d.extern.nachname || (ex.email || "") !== d.extern.email || tk.mitglied !== ex.id)
+    : (tk.mitglied || "") !== d.mitglied);
+  $("#ofc-name-ok").disabled = !(v && v.ok && (v.umbenennen || v.name_neu !== v.name_alt || personNeu));
   $("#ofc-name-ok").textContent = v && v.umbenennen ? "Speichern und umbenennen" : "Speichern";
 }
 async function ofcNameOk(el, rueck) {
@@ -5555,8 +5591,7 @@ async function ofcNameOk(el, rueck) {
     if (!confirm("Letzte Änderung rückgängig machen?" + (v.umbenennen ? `\nDatei: ${v.datei_alt} → ${v.datei_neu}` : ""))) return;
   }
   el.disabled = true; m.className = "v2-msg"; m.textContent = "Speichere …";
-  const tn = ofcNameTeile($("#ofc-name-inp").value);
-  const r = await jpost(`/api/ofc/ticket/${encodeURIComponent(nr)}/name`, rueck ? { bestaetigt: true, rueckgaengig: true } : { bestaetigt: true, name: tn.name, mitglied: tn.nummer });
+  const r = await jpost(`/api/ofc/ticket/${encodeURIComponent(nr)}/name`, rueck ? { bestaetigt: true, rueckgaengig: true } : { bestaetigt: true, ...ofcNameDaten() });
   el.disabled = false;
   if (!r || r.ok === false) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Fehler."; return; }
   OFC_NAMEN = null; await ofcSpiel(OFC_SP.spiel.id);
@@ -6406,6 +6441,7 @@ async function handleAct(act, el) {
     case "ofc-spiel": return ofcSpiel(id);
     case "ofc-wallet-kopie": return ofcWalletKopie(id, el);
     case "ofc-zb-vs": return ofcZbVorschau(id, val);
+    case "ofc-wahl-weg": { const mg = OFC_WAHL && OFC_WAHL.typ === "mitglied"; OFC_WAHL = null; if (mg && $("#ofc-mail")) $("#ofc-mail").value = ""; ofcWahlZeigen(); const b = $("#ofc-name-ok"); return b && ofcNameVorschau(b.dataset.id); }
     case "ofc-zb-senden": return ofcZbSenden(el, false);
     case "ofc-zb-test": return ofcZbSenden(el, true);
     case "ofc-zb-alle": return ofcZbAlle(id);
