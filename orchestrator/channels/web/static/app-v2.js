@@ -5186,6 +5186,7 @@ async function ofcSpiel(sid) {
     ${d.hinweise.length ? `<div class="v2-ofc-hinweise" style="margin-top:8px">${d.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
     <h3>🎟 Tickets (${d.tickets.length})</h3>${tk}
     <h3>✉️ Zahlungsbitten</h3><div id="ofc-zb"><div class="v2-empty">Lade…</div></div>
+    <h3>🎟 Ticketversand</h3><div id="ofc-tv"><div class="v2-empty">Lade…</div></div>
     <h3>🧾 Rechnung</h3>${rg}
     <h3>💳 Eigene Zahlung</h3>${(d.zahlungen || []).map(z => `<div class="v2-kv"><span>${esc(datumDe(z.datum))} · ${esc(OFC_ZART[z.art] || z.art)}${z.transaktionscode ? " · " + esc(z.transaktionscode) : ""}</span><b>${z.art === "erstattung" ? "−" : ""}${esc(cent2eur(z.betrag_cent))}</b></div>`).join("")
       || emptyRow("Noch keine PayPal-Zahlung zugeordnet.")}
@@ -5194,7 +5195,41 @@ async function ofcSpiel(sid) {
     <div class="v2-card-actions">${s.abgeschlossen ? `<button class="v2-btn sm" data-act="ofc-abschluss" data-id="${esc(sid)}" data-val="1">↩︎ Wieder öffnen</button>`
       : `<button class="v2-btn sm pri" data-act="ofc-abschluss" data-id="${esc(sid)}" data-val="">✅ Abschließen</button>`}
       <button class="v2-btn sm" data-act="ofc-verwerfen" data-id="${esc(sid)}">🗑 Spiel im Reiter verwerfen</button></div>`);
-  ofcZb(sid);
+  ofcZb(sid); ofcTv(sid);
+}
+/* OFC_TICKETVERSAND TV4: Tickets nach Zahlung senden (PDF-Anhang + Wallet-Links), automatisch nur eindeutige Fälle */
+const OFC_TV_STATUS = { bereit: ["warn", "bereit"], gesendet: ["ok", "gesendet"], gesperrt: ["neutral", "fehlt etwas"] };
+async function ofcTv(sid) {
+  const p = await jget(`/api/ofc/spiel/${encodeURIComponent(sid)}/ticketversand`), el = $("#ofc-tv"); if (!el) return;
+  if (!p || !p.ok) { el.innerHTML = emptyRow((p && p.hinweis) || "Nicht erreichbar."); return; }
+  el.innerHTML = `<div class="v2-sub" style="margin-bottom:6px">${p.auto ? "🤖 Automatik an: Nach einer PayPal-Zahlung mit passendem Verwendungszweck schickt LUNA die Tickets selbst." : "Automatik aus – Tickets per Knopf senden (einschalten nach der Abnahme)."}</div>`
+    + (p.gruppen.map(g => `<div class="v2-list-row"><div class="grow"><b class="v2-umbruch">${esc(g.name || "Person")}</b> <span class="v2-badge neutral">${g.extern ? "extern " + esc(g.nummer) : "Nr. " + esc(g.nummer)}</span>
+        <small>${[`${g.tickets.length} bezahlte Karte(n)`, g.tickets.every(x => x.wallet) ? "📱 Wallet ok" : "📱 Wallet fehlt", g.adresse_maskiert, g.gesendet_am ? "gesendet " + zeit(g.gesendet_am) : "", g.hinweis].filter(Boolean).map(esc).join(" · ")}</small></div>
+      <div class="v2-ofc-knoepfe"><span class="v2-badge ${OFC_TV_STATUS[g.status][0]}">${OFC_TV_STATUS[g.status][1]}</span>
+        ${g.status !== "gesperrt" ? `<button class="v2-btn sm" data-act="ofc-tv-vs" data-id="${esc(sid)}" data-val="${esc(g.nummer)}">👁 Mail</button>` : ""}</div></div>`).join("")
+      || emptyRow("Noch keine bezahlten Karten mit Person."));
+}
+async function ofcTvVorschau(sid, nummer) {
+  const v = await jget(`/api/ofc/spiel/${encodeURIComponent(sid)}/ticketversand?nummer=${encodeURIComponent(nummer)}`);
+  if (!v || !v.ok) return alert((v && v.hinweis) || "Nicht erreichbar.");
+  const g = v.gruppe, schon = g.status === "gesendet";
+  openModal("🎟 Tickets senden", `<div class="v2-kv v2-ofc-feld"><span>An</span><b>${esc(g.name)} · ${esc(g.adresse_maskiert)}</b></div>
+    <div class="v2-kv v2-ofc-feld"><span>Betreff</span><b class="v2-umbruch">${esc(v.betreff)}</b></div>
+    <div class="v2-kv v2-ofc-feld"><span>Anhänge</span><b class="v2-umbruch">${v.anhaenge.length ? v.anhaenge.map(esc).join("<br>") : "–"}</b></div>
+    <pre class="v2-ofc-mail">${esc(v.text)}</pre>
+    ${schon ? `<div class="v2-msg">Schon gesendet am ${esc(zeit(g.gesendet_am))}.</div>` : ""}
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-tv-senden" data-id="${esc(sid)}" data-val="${esc(nummer)}" data-erneut="${schon ? "1" : ""}">${schon ? "Erneut senden" : "Senden"}</button>
+      <button class="v2-btn" data-act="ofc-tv-test" data-id="${esc(sid)}" data-val="${esc(nummer)}">Testmail an moin@</button>
+      <button class="v2-btn" data-act="ofc-spiel" data-id="${esc(sid)}">← Zurück</button></div><div class="v2-msg" id="ofc-tv-msg"></div>`);
+}
+async function ofcTvSenden(el, test) {
+  const sid = el.dataset.id, nummer = el.dataset.val, erneut = !!el.dataset.erneut;
+  if (!test && !confirm(`Tickets jetzt an ${nummer.startsWith("G") ? "Person " : "Mitglied "}${nummer} senden?`)) return;
+  el.disabled = true; const m = $("#ofc-tv-msg"); m.className = "v2-msg"; m.textContent = "Sende …";
+  const r = await jpost(`/api/ofc/spiel/${encodeURIComponent(sid)}/tickets_senden`, { bestaetigt: true, nummer, test, erneut });
+  el.disabled = false;
+  if (!r || !r.ok) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Fehler."; return; }
+  m.className = "v2-msg ok"; m.textContent = `${test ? "Testmail" : "Tickets"} an ${r.an} gesendet (${r.karten} Karte(n), ${r.anhaenge} PDF).`;
 }
 /* OFC_TICKETVERSAND TV3c: Karten von Hand als bezahlt markieren (Bar, Überweisung …) – Kasse (PayPal) bleibt unberührt */
 const OFC_BEZ_ART = { bar: "Bar", ueberweisung: "Überweisung", paypal: "PayPal", sonstiges: "Sonstiges" };
@@ -6468,6 +6503,9 @@ async function handleAct(act, el) {
     case "ofc-wallet-kopie": return ofcWalletKopie(id, el);
     case "ofc-zb-vs": return ofcZbVorschau(id, val);
     case "ofc-bez": return ofcBez(id);
+    case "ofc-tv-vs": return ofcTvVorschau(id, val);
+    case "ofc-tv-senden": return ofcTvSenden(el, false);
+    case "ofc-tv-test": return ofcTvSenden(el, true);
     case "ofc-bez-ok": return ofcBezSenden(id, true);
     case "ofc-bez-weg": return ofcBezSenden(id, false);
     case "ofc-wahl-weg": { const mg = OFC_WAHL && OFC_WAHL.typ === "mitglied"; OFC_WAHL = null; if (mg && $("#ofc-mail")) $("#ofc-mail").value = ""; ofcWahlZeigen(); const b = $("#ofc-name-ok"); return b && ofcNameVorschau(b.dataset.id); }

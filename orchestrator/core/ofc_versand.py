@@ -175,3 +175,167 @@ def senden(store, postfach, sid: str, nummer: str, mitglieder: list[dict] | None
         return {"ok": False, "hinweis": r.get("hinweis") or "Senden fehlgeschlagen."}
     return {"ok": True, "an": maskiert(an), "test": test, "verwendungszweck": g["verwendungszweck"],
             "gesendet_ordner": r.get("gesendet_ordner", "")}
+
+
+# -- TV4: Tickets nach Zahlung senden (PDF als Anhang + Wallet-Links) --------------------------------------------------
+AUTO_TAGE = 14                                            # Auto-Versand nur fuer Zahlungen der letzten 14 Tage
+
+
+def auto_an(env=None) -> bool:
+    """Auto-Versand nur mit `OFC_AUTO_TICKETVERSAND=1` (CEO E5: erst nach der Abnahme einschalten)."""
+    import os
+    return ((env if env is not None else os.environ).get("OFC_AUTO_TICKETVERSAND") or "0").strip().lower() in ("1", "ja", "an", "true")
+
+
+def _ticket_gesendet(st: dict) -> dict:
+    """ticketnr -> Zeitpunkt der letzten echten Ticketmail."""
+    out: dict = {}
+    for m in _gesendet(st):
+        if m.get("art") == "tickets" and not m.get("test"):
+            for nr in m.get("tickets") or []:
+                out[nr] = max(out.get(nr, ""), m.get("ts", ""))
+    return out
+
+
+def tickets_plan(st: dict, sid: str, mitglieder: list[dict] | None) -> dict:
+    """Je Person: bezahlte Karten dieses Spiels mit Status bereit/gesendet/gesperrt (PDF, Wallet, Adresse)."""
+    from .ofc_eingang import bezahlt_stand
+    s = st["spiele"].get(sid)
+    if not s:
+        return {"ok": False, "hinweis": "Spiel nicht gefunden."}
+    bz = bezahlt_stand(st)["tickets"]
+    gesendet = _ticket_gesendet(st)
+    je_nr = _mitglieder_je_nummer(mitglieder)
+    for pid, pe in (st.get("personen") or {}).items():
+        je_nr[pid] = [{"nummer": pid, "vorname": pe.get("vorname", ""), "name": f"{pe.get('vorname', '')} {pe.get('nachname', '')}".strip(),
+                       "email": pe.get("email", ""), "extern": True}]
+    gruppen: dict = {}
+    for t in st["tickets"].values():
+        nr = (t.get("mitglied") or "").strip()
+        if t.get("spiel") != sid or not nr or not bz.get(t["ticketnr"], {}).get("bezahlt"):
+            continue
+        g = gruppen.setdefault(nr, {"nummer": nr, "tickets": []})
+        g["tickets"].append({"ticketnr": t["ticketnr"], "name": t.get("name", ""), "platz": _platz(t), "datei": t.get("datei", ""),
+                             "wallet": t.get("wallet", ""), "gesendet_am": gesendet.get(t["ticketnr"], "")})
+    out = []
+    for nr, g in sorted(gruppen.items(), key=lambda x: x[0].zfill(8)):
+        ms = je_nr.get(nr, [])
+        m = ms[0] if len(ms) == 1 else None
+        g["tickets"].sort(key=lambda x: x["ticketnr"])
+        g["name"], g["vorname"] = (m or {}).get("name", ""), (m or {}).get("vorname", "") or ((m or {}).get("name", "").split(" ")[0] if m else "")
+        g["extern"] = bool(m and m.get("extern"))
+        g["adresse_maskiert"] = maskiert((m or {}).get("email", ""))
+        offen = [x for x in g["tickets"] if not x["gesendet_am"]]
+        g["gesendet_am"] = max((x["gesendet_am"] for x in g["tickets"]), default="")
+        fehlt = [h for h, ok in (("PDF fehlt", all(x["datei"] for x in offen)), ("Wallet fehlt", all(x["wallet"] for x in offen))) if not ok]
+        if not offen:
+            g["status"], g["hinweis"] = "gesendet", ""
+        elif not m or "@" not in (m.get("email") or ""):
+            g["status"], g["hinweis"] = "gesperrt", "Keine E-Mail-Adresse."
+        elif "PDF fehlt" in fehlt:
+            g["status"], g["hinweis"] = "gesperrt", "PDF-Ticket fehlt im Ordner."
+        else:
+            g["status"], g["hinweis"] = "bereit", ("Wallet-Link fehlt – nur PDF." if fehlt else "")
+        g["offen"] = [x["ticketnr"] for x in offen]
+        out.append(g)
+    return {"ok": True, "spiel": sid, "gruppen": out, "bereit": sum(1 for g in out if g["status"] == "bereit")}
+
+
+def tickets_text(s: dict, g: dict, tickets: list[dict]) -> tuple[str, str]:
+    """Feste Vorlage (keine KI). -> (Betreff, Text)."""
+    tag, zeit = _datum(s.get("spieltag", "")), s.get("uhrzeit", "")
+    spiel = s.get("spiel", "")
+    zeilen = "\n".join(f"- {x['platz'] or 'Karte'}{' – ' + x['name'] if x['name'] else ''}"
+                       + (f"\n  Wallet (Apple/Google): {x['wallet']}" if x.get("wallet") else "") for x in tickets)
+    betreff = f"HSVInside: Deine Tickets – {spiel}" + (f" ({tag})" if tag else "")
+    t = (f"Moin {g.get('vorname') or ''},\n\n".replace(" ,", ",")
+         + f"danke für deine Zahlung! Hier {'ist deine Karte' if len(tickets) == 1 else 'sind deine Karten'} für {spiel}"
+         + (f" am {tag}" if tag else "") + (f" um {zeit} Uhr" if zeit else "") + ":\n\n" + zeilen + "\n\n"
+         + "Die PDF-Tickets hängen an dieser Mail. Für das Handy-Wallet den Link auf dem Handy öffnen.\n\n"
+         + "Viel Spaß im Stadion!\nHSVInside – Offizieller Fanclub des Hamburger SV\n")
+    return betreff, t
+
+
+def tickets_vorschau(st: dict, sid: str, nummer: str, mitglieder: list[dict] | None) -> dict:
+    p = tickets_plan(st, sid, mitglieder)
+    if not p["ok"]:
+        return p
+    g = next((x for x in p["gruppen"] if x["nummer"] == nummer), None)
+    if not g:
+        return {"ok": False, "hinweis": "Für diese Person gibt es in diesem Spiel keine bezahlten Karten."}
+    tks = [x for x in g["tickets"] if x["ticketnr"] in g["offen"]] or g["tickets"]
+    betreff, t = tickets_text(st["spiele"][sid], g, tks)
+    return {"ok": True, "gruppe": g, "betreff": betreff, "text": t, "tickets": [x["ticketnr"] for x in tks],
+            "anhaenge": [x["datei"] for x in tks if x["datei"]]}
+
+
+def tickets_senden(store, postfach, sid: str, nummer: str, mitglieder: list[dict] | None, *, test: bool = False,
+                   erneut: bool = False, auto: bool = False, von: str = "", jetzt: datetime | None = None) -> dict:
+    """Ticketmail mit PDF-Anhaengen und Wallet-Links. Ohne „erneut“ nur Karten, die noch nicht gesendet wurden."""
+    from .ofc_store import datei_pfad
+    jetzt = jetzt or datetime.now(timezone.utc)
+    st = store.stand()
+    v = tickets_vorschau(st, sid, nummer, mitglieder)
+    if not v["ok"]:
+        return v
+    g = v["gruppe"]
+    if g["status"] == "gesperrt":
+        return {"ok": False, "hinweis": g["hinweis"]}
+    if g["status"] == "gesendet" and not erneut and not test:
+        return {"ok": False, "hinweis": f"Tickets schon am {g['gesendet_am'][:10]} gesendet – zum erneuten Senden „erneut“ wählen."}
+    if auto and (g["hinweis"] or not g["offen"]):
+        return {"ok": False, "hinweis": "Automatisch nur mit PDF und Wallet-Link für alle Karten."}
+    if _letzte_stunde(st, jetzt) >= LIMIT_STUNDE:
+        return {"ok": False, "hinweis": f"Höchstens {LIMIT_STUNDE} Mails je Stunde – bitte später weiter."}
+    anh = []
+    for x in g["tickets"]:
+        if x["ticketnr"] not in v["tickets"] or not x["datei"]:
+            continue
+        p = datei_pfad(store, sid, x["datei"])
+        if p is None:
+            return {"ok": False, "hinweis": f"PDF „{x['datei']}“ nicht gefunden – bitte „Ordner einlesen“."}
+        anh.append((p.name, p.read_bytes(), "application/pdf"))
+    pe = (st.get("personen") or {}).get(nummer)
+    m = {"email": pe.get("email", "")} if pe else next((x for x in mitglieder or [] if str(x.get("nummer")) == nummer), {})
+    an = PAYPAL if test else (m.get("email") or "").strip()
+    r = postfach.mail_senden(an, ("[TEST] " if test else "") + v["betreff"], v["text"], bestaetigt=True, anhaenge=anh,
+                             absender_name=ABSENDER_NAME, ofc_freigabe=True)
+    store.erfassen("ofc_mail", {"id": "M-" + uuid.uuid4().hex[:10], "art": "tickets", "spiel": sid, "nummer": nummer,
+                                "tickets": v["tickets"], "anhaenge": len(anh), "an": maskiert(an), "test": test, "auto": auto,
+                                "status": "gesendet" if r.get("ok") else "fehler", "message_id": r.get("message_id", ""),
+                                "hinweis": "" if r.get("ok") else str(r.get("hinweis", ""))[:200]}, von=von)
+    if not r.get("ok"):
+        return {"ok": False, "hinweis": r.get("hinweis") or "Senden fehlgeschlagen."}
+    return {"ok": True, "an": maskiert(an), "test": test, "karten": len(v["tickets"]), "anhaenge": len(anh)}
+
+
+def auto_lauf(store, postfach, mitglieder: list[dict] | None, *, env=None, heute=None) -> dict:
+    """Im 15-Minuten-Lauf: Tickets automatisch senden, wenn eine PayPal-Zahlung per Verwendungszweck zugeordnet wurde
+    (Code + genauer Betrag), die Person eine Adresse hat, PDF und Wallet fuer alle Karten da sind und noch nichts
+    gesendet wurde. Nur mit `OFC_AUTO_TICKETVERSAND=1`."""
+    from datetime import date, timedelta as _td
+    if not auto_an(env):
+        return {"ok": True, "aus": True, "gesendet": 0}
+    heute = heute or date.today()
+    grenze = (heute - _td(days=AUTO_TAGE)).isoformat()
+    st = store.stand()
+    ziele = set()
+    for e in (st.get("eingaenge") or {}).values():
+        if e.get("zuordnung") != "auto" or not e.get("zweck") or e.get("ersetzt") or (e.get("datum") or "") < grenze:
+            continue
+        for nr in e.get("tickets") or []:
+            t = st["tickets"].get(nr) or {}
+            if t.get("mitglied"):
+                ziele.add((t["spiel"], t["mitglied"]))
+    gesendet, fehler = 0, []
+    for sid, nummer in sorted(ziele):
+        p = tickets_plan(store.stand(), sid, mitglieder)
+        g = next((x for x in p.get("gruppen", []) if x["nummer"] == nummer), None)
+        if not g or g["status"] != "bereit" or g["hinweis"]:
+            continue
+        r = tickets_senden(store, postfach, sid, nummer, mitglieder, auto=True, von="auto")
+        if r["ok"]:
+            gesendet += 1
+        else:
+            fehler.append(r.get("hinweis", ""))
+    return {"ok": True, "gesendet": gesendet, "fehler": fehler}

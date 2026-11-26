@@ -180,3 +180,5 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
 - Zweck: Abwicklung der Kartenvergabe im Mitgliedsverhaeltnis (Zahlung und Zustellung der Karten).
 - **TV3b (2026-11-26):** Fuer Personen ausserhalb des Fanclubs (z. B. Ersatz bei Krankheit) speichert LUNA Vorname, Nachname und
   E-Mail im Fanclub-Speicher auf der NAS (nicht im Git, im Backup), nur fuer Zahlungsbitte und Ticketversand; keine KI.
+- **TV4 (2026-11-26):** Ticketmails enthalten die PDF-Tickets (Name auf dem Ticket) und Wallet-Links; sie gehen nur an die Person am
+  Ticket. Automatisch nur nach eindeutig zugeordneter Zahlung; keine KI.

@@ -274,6 +274,35 @@ def _beste_kombi(pool: list[tuple[int, str, bool]], betrag: int, rundung: bool =
     return (beste[1], beste[2]) if beste else None
 
 
+# OFC_TICKETVERSAND TV4: Verwendungszweck aus der Zahlungsbitte, z. B. „11-1004“, „P2-0001“, „11-G3“ (auch „11 1004“, „11/1004“)
+_ZWECK = re.compile(r"(?<![\w-])(P[1-6]|S\d{1,2}|\d{1,2})\s*[-–/_ ]\s*(G\d{1,4}|\d{1,6})(?![\w-])", re.I)
+
+
+def _nr_gleich(a: str, b: str) -> bool:
+    a, b = (a or "").strip().upper(), (b or "").strip().upper()
+    if a.startswith("G") or b.startswith("G"):
+        return a == b
+    return bool(a) and a.lstrip("0") == b.lstrip("0")
+
+
+def zweck_treffer(z: dict, st: dict, offen: dict) -> dict | None:
+    """Mitteilung nennt <Spieltag>-<Nr> UND die offenen Karten dieser Person in genau diesem Spiel kosten genau den Betrag
+    -> {spiel, tickets, zweck}. Sonst None (dann greifen die bisherigen Regeln)."""
+    from .ofc_spielplan import kennung
+    kandidaten = []
+    for m in _ZWECK.finditer(z.get("mitteilung") or ""):
+        kn, nr = m.group(1).upper(), m.group(2).upper()
+        for sid, s in st["spiele"].items():
+            if s.get("verworfen") or kennung(s)["kennung"] != kn:
+                continue
+            tks = sorted(t for t, tk in st["tickets"].items() if tk.get("spiel") == sid and t in offen
+                         and _nr_gleich(tk.get("mitglied") or "", nr))
+            if tks and sum(offen[t] for t in tks) == z["betrag_cent"]:
+                kandidaten.append({"spiel": sid, "tickets": tks, "zweck": f"{kn}-{nr}"})
+    eindeutig = {(k["spiel"], tuple(k["tickets"])): k for k in kandidaten}
+    return next(iter(eindeutig.values())) if len(eindeutig) == 1 else None
+
+
 def vorschlag(z: dict, st: dict, offen: dict) -> dict:
     """E6-Entscheidung fuer einen Eingang: {zuordnung: auto|offen|info, tickets, vorschlaege, wahl?, grund?}.
 
@@ -286,6 +315,11 @@ def vorschlag(z: dict, st: dict, offen: dict) -> dict:
         return {"zuordnung": "info", "tickets": [], "vorschlaege": [], "grund": "Überweisung auf das Bankkonto", "art": "auszahlung"}
     if z["betrag_cent"] <= 0:
         return {"zuordnung": "offen", "tickets": [], "vorschlaege": []}
+    vz = zweck_treffer(z, st, offen)                                   # TV4: Verwendungszweck <Spieltag>-<Nr> geht vor
+    if vz:
+        return {"zuordnung": "auto", "tickets": vz["tickets"], "grund": f"Verwendungszweck {vz['zweck']}", "zweck": vz["zweck"],
+                "vorschlaege": [{"spiel": vz["spiel"], "tickets": vz["tickets"], "summe": z["betrag_cent"],
+                                 "gruende": ["Verwendungszweck", "Betrag passt"]}]}
     zahler = [x for x in [_woerter(_falten(z["name"]))] + [_ticket_woerter(a) for a in _aliase(st).get(_norm(z["name"]), set())] if x]
     erw, ort_konflikt = _erwaehnt(st, z.get("mitteilung") or "")
     je_spiel: dict = {}
