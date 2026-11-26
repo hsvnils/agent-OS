@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 17:16] — Claude Code
+- **Was:** OFC_TICKETVERSAND TV0 auf der NAS ausgewertet (nur Zaehlungen): 3 Ticket-Mails, 6 Wallet-Links (eventimsports.de, Ticketnummer im Link, je Ticket ein Link), 1 Bestellung ohne Link, keine Spieltag-Nummer in Rechnung/Ticket, 0 von 36 Ticketnamen mit genauem Treffer in der Mitgliederliste; Befund und Anpassung TV1/TV2 in der Roadmap.
+- **Warum:** CEO: „Deploy gemacht“.
+- **Betroffen:** `OFC_TICKETVERSAND_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 17:14] — Claude Code
 - **Was:** Merge `ai/ofc-ticketversand` nach `main` (OFC_TICKETVERSAND TV0), Branch geloescht; Deploy-Befehle an den CEO.
 - **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.

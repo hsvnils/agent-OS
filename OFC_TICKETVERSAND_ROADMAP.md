@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-ticketversand`
 - Basiscommit: `81ee7f0`
-- Naechster Schritt: TV0 (Analyse, nur lesend) umgesetzt auf `ai/ofc-ticketversand` (CEO-Go 2026-11-26, E1-E7 wie empfohlen, E2 geaendert); Push, Merge, Deploy durch den CEO, dann `GET /api/ofc/analyse/wallet` auf der NAS auswerten und TV1 danach zuschneiden.
+- Naechster Schritt: TV0 live und ausgewertet (2026-11-26, Befund unten). Offen: CEO-Rueckmeldung zur Bestellung ohne Wallet-Links und zur Schreibweise der Ticketnamen; dann Go fuer TV1 (angepasst) + TV2.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -45,6 +45,31 @@ Mal Mails an Mitglieder gehen.
     Kopieren“. Dieser Auftrag **revidiert** das ausdruecklich (CEO). Das kommt mit Datum ins Entscheidungs-Register.
   - E8 (kein Telegram) bleibt; Hinweise stehen im OFC-Reiter.
   - Keine KI fuer Mitgliederdaten bleibt; die Mailtexte sind feste Vorlagen.
+
+## Befund TV0 (NAS, 2026-11-26, 180 Tage, nur Zaehlungen)
+
+- **Mails:** 21 HSV-Mails, davon 3 mit Ticket-PDFs (10 Tickets). Aeltere Spiele kamen ueber den Fanclub-Ordner (O1), nicht
+  per Mail; fuer sie gibt es im Postfach keine Wallet-Links mehr. Wallet gibt es also vor allem fuer **neue Bestellungen**.
+- **Wallet-Links:**
+  - 6 Links, alle auf `www.eventimsports.de/wallet/<…>/<…>`.
+  - 2 von 3 Mails haben **genau einen Link je Ticket**, und **die Ticketnummer steckt im Link** (6 von 6). Damit laesst
+    sich jeder Link sicher seinem Ticket zuordnen, unabhaengig von der Reihenfolge.
+  - Keine `.pkpass`-Anhaenge.
+  - Linktext maskiert „##-## … - …“ (vermutlich Saison und Paarung).
+- **Eine Bestellung (4 Tickets) hat gar keinen Link** in der Mail. Entweder kam das Wallet getrennt, oder es gab dafuer
+  keins. Klaert der CEO.
+- **Spieltag-Nummer:** steht weder in Rechnung noch Ticket (0 von 3) -> der CEO traegt sie je Spiel ein (E2).
+- **Adressen:** Von 36 Ticketnamen hat **keiner** einen genauen Namenstreffer in der Mitgliederliste (119 Mitglieder, alle
+  mit E-Mail). Die Namen auf den Tickets sind offenbar anders geschrieben (z. B. nur Vorname, Spitzname, andere
+  Reihenfolge). Die Namen selbst wurden nicht angesehen (keine Mitgliederdaten an ein Modell). TV2 braucht deshalb eine
+  Zuordnung per Auswahl durch den CEO statt eines automatischen Treffers.
+
+**Anpassungen:**
+- **TV1:** Wallet-Links werden aus **allen** HSV-Mails gelesen, nicht nur aus Mails mit PDFs, und ueber die Ticketnummer im
+  Link dem Ticket zugeordnet. Ohne Link steht „Wallet fehlt“; der CEO kann einen Link von Hand eintragen.
+- **TV2:** Die Zuordnung Ticketname -> Mitglied laeuft ueber eine Auswahlliste der Mitglieder (Suche nach Name oder
+  Nummer, Vorschlaege nach Nachname/Vorname). Gemerkt wird je Ticketname einmal, auch die Mitgliedsnummer fuer den
+  Verwendungszweck (E2).
 
 ## Scope
 
