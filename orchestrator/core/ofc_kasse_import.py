@@ -10,7 +10,8 @@
 - KA4b (echter Aktivitaeten-Export): zaehlt, was das Guthaben bewegt (Spalte „Auswirkung auf Guthaben“ Soll/Haben, auch
   „Ausstehend“); interne Verrechnungen (Verbindlichkeiten/Forderungen, Einbehaltungen) heben sich je Tag auf ->
   „technisch“; Kauf ueber „Spaeter bezahlen“ (Zahlung + Kaeuferkredit-Gutschrift) -> „finanziert“, die Ausgabe zaehlt bei der
-  Abbuchung; Bank-Lastschriften -> Einzahlung, zurueckgegebene Lastschriften -> Einzahlung negativ, eine „Rueckbuchung“
+  Abbuchung; KA4c: passt eine Zeile zu einer nur vorgemerkten „Spaeter bezahlen“-Zahlung, ist sie laut PayPal abgebucht ->
+  gebucht, der vorgemerkte LUNA-Eintrag wird ersetzt (Storno des Imports holt ihn zurueck); Bank-Lastschriften -> Einzahlung, zurueckgegebene Lastschriften -> Einzahlung negativ, eine „Rueckbuchung“
   erbt die Kategorie der zurueckgebuchten Zahlung. Abbuchungen aufs Bankkonto (Privatkonto des CEO) -> Auszahlung.
 - Uebernehmen nur nach Vorschau + Bestaetigung; die Datei wird unveraendert in `fanclub/importe/` abgelegt (nur neu);
   ein Importlauf ist als Ganzes stornierbar (Buchungen bleiben sichtbar). Nichts wird geloescht.
@@ -209,8 +210,12 @@ def import_plan(st: dict, zeilen: list[dict]) -> dict:
             umkehr = z["beschreibung"].casefold() == "rückbuchung" or "ach-" in z["beschreibung"].casefold()
             treffer = None if umkehr else next((b for b in ohne_code if b["id"] not in benutzt and b["betrag_cent"] == z["brutto_cent"] and b["datum"]
                             and abs((date.fromisoformat(b["datum"]) - date.fromisoformat(z["datum"])).days) <= 3
-                            and (b["kategorie"] == k or {b["kategorie"], k}.isdisjoint(("auszahlung", "einzahlung")))), None)
-            if treffer:
+                            and (b["kategorie"] == k or {b["kategorie"], k}.isdisjoint(("auszahlung", "einzahlung"))
+                                 or (b.get("art") == "spaeter" and b["datum"] == z["datum"]))), None)
+            if treffer and treffer["status"] == "vorgemerkt":          # KA4c: PayPal hat abgebucht -> buchen, LUNA-Eintrag ersetzen
+                benutzt.add(treffer["id"])
+                x.update(ergebnis="bestaetigt", buchung=treffer["id"], kategorie=treffer["kategorie"], text=treffer["text"])
+            elif treffer:
                 benutzt.add(treffer["id"])
                 x.update(ergebnis="passt", buchung=treffer["id"])
             else:
@@ -226,7 +231,7 @@ def import_plan(st: dict, zeilen: list[dict]) -> dict:
                 x["kategorie"] = (je_id.get(ziel.get("buchung", ""), {}).get("kategorie") or ziel.get("kategorie")
                                   or _kategorie(ziel))
     rueck = [x for x in out if x["zaehlt"] and "rückbuchung von ach-gutschrift" in x["beschreibung"].casefold()]
-    neu = [x for x in out if x["ergebnis"] == "neu"]
+    neu = [x for x in out if x["ergebnis"] in ("neu", "bestaetigt")]
     geb = [x for x in out if x.get("gebuehr_neu")]
     vergleich = None
     mit_g = [x for x in out if x["zaehlt"] and x.get("guthaben_cent") is not None]
@@ -245,7 +250,8 @@ def import_plan(st: dict, zeilen: list[dict]) -> dict:
             luna += sum(x["gebuehr_cent"] for x in geb if start["datum"] <= x["datum"] <= bis)
             vergleich.update(luna_cent=luna, abweichung_cent=letzte["guthaben_cent"] - luna)
     return {"ok": True, "zeilen": out, "anzahl": len(out), "bekannt": sum(1 for x in out if x["ergebnis"] == "bekannt"),
-            "passt": sum(1 for x in out if x["ergebnis"] == "passt"), "neu": len(neu), "gebuehren": len(geb),
+            "passt": sum(1 for x in out if x["ergebnis"] == "passt"), "neu": len(neu),
+            "bestaetigt": sum(1 for x in out if x["ergebnis"] == "bestaetigt"), "gebuehren": len(geb),
             "uebersprungen": sum(1 for x in out if x["ergebnis"] == "uebersprungen"),
             "neu_cent": sum(x["brutto_cent"] for x in neu), "gebuehren_cent": sum(x["gebuehr_cent"] for x in geb),
             "technisch": sum(1 for x in out if x["ergebnis"] == "technisch"),
@@ -271,9 +277,11 @@ def import_anwenden(store: OfcStore, roh: bytes, dateiname: str, *, anfangsbesta
     n, fehler = 0, []
     for x in plan["zeilen"]:
         text = " – ".join(t for t in (x["beschreibung"], x["name"], x["hinweis"]) if t) or "PayPal"
-        if x["ergebnis"] == "neu":
-            r = buchung_anlegen(store, datum=x["datum"], betrag_cent=x["brutto_cent"], kategorie=x["kategorie"], text=text,
-                                von=von, import_id=iid, transaktionscode=x["tc"])
+        if x["ergebnis"] in ("neu", "bestaetigt"):
+            bst = x["buchung"] if x["ergebnis"] == "bestaetigt" else ""
+            r = buchung_anlegen(store, datum=x["datum"], betrag_cent=x["brutto_cent"], kategorie=x["kategorie"],
+                                text=f"{x['text']} (laut PayPal abgebucht)" if bst else text,
+                                von=von, import_id=iid, transaktionscode=x["tc"], bestaetigt=bst)
             n += bool(r.get("ok"))
             if not r.get("ok"):
                 fehler.append(f"{x['datum']} {text[:40]}: {r.get('hinweis')}")

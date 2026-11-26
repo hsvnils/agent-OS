@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-kasse-bau`
 - Basiscommit: `fda2486`
-- Naechster Schritt: KA0-KA5 live (2026-11-26), KA4b (echter Export) auf `ai/ofc-kasse-ka4b`. Danach Gesamtabnahme durch den CEO (alle Etappen zusammen): Beitraege 2027, Eingaenge mit Beitragsvorschlaegen, Kasse mit Anfangsbestand, PayPal-Aktivitaeten-Export (CSV) hochladen und abgleichen, Kassenbericht. Danach Status „abgeschlossen“.
+- Naechster Schritt: KA0-KA5 live (2026-11-26), KA4b live, KA4c (vorgemerkte Zahlungen) auf `ai/ofc-kasse-ka4c`. Danach Gesamtabnahme durch den CEO (alle Etappen zusammen): Beitraege 2027, Eingaenge mit Beitragsvorschlaegen, Kasse mit Anfangsbestand, PayPal-Aktivitaeten-Export (CSV) hochladen und abgleichen, Kassenbericht. Danach Status „abgeschlossen“.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -137,6 +137,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 ### Etappe KA4b: Echter Aktivitaeten-Export (Nachschaerfung)
 
 - Status: umgesetzt (2026-11-26; Anlass: Vorschau mit dem echten Export des CEO (162 Zeilen, 07.05.-24.11.) haette rund 60 PayPal-interne Zeilen und die „Spaeter bezahlen“-Finanzierung falsch gebucht. `core/ofc_kasse_import.py`: es zaehlt, was das Guthaben bewegt (Spalte „Auswirkung auf Guthaben“ Soll/Haben, auch „Ausstehend“/„Wird bearbeitet“); Verbindlichkeiten/Forderungen und Einbehaltungen, die sich am selben Tag aufheben -> „PayPal-intern“, nicht gebucht; Kauf mit „Spaeter bezahlen“ (Zahlung + Kaeuferkredit-Gutschrift) -> nicht gebucht, die Ausgabe zaehlt bei der Abbuchung; Bankgutschrift/ACH -> „Einzahlung (Bank)“, zurueckgegebene Lastschrift -> Einzahlung negativ, „Rueckbuchung“ erbt die Kategorie der zurueckgebuchten Zahlung; Abbuchung „Spaeter bezahlen“ (Allgemeine Zahlung an PayPal) -> Tickets; Abbuchungen aufs Bankkonto -> Auszahlung; Geld von Personen ohne Hinweis -> „noch nicht zugeordnet“ (vorher Sonstiges; der Import verwarf solche Zeilen sogar still -> jetzt erlaubt + Meldung, falls eine Zeile nicht gebucht wird); Abgleich „passt“ nur bei passender Kategorie (Abbuchung passte sonst auf eine Ticketzahlung); Hinweis auf zurueckgegebene Lastschriften in der Vorschau. Gegenprobe echte Datei: Anfangsbestand 871,54 € + alle zaehlenden Zeilen = 11,48 € = Guthaben laut PayPal. Test `test_7b_echter_export_ka4b` mit erfundenen Namen)
+- Nachtrag KA4c (2026-11-26, nach dem Deploy; Vorschau auf der NAS haette 1.000,94 € statt 11,48 € ergeben): passt eine Zeile zu einer nur „vorgemerkten“ Spaeter-bezahlen-Zahlung (Abbuchung war fehlgeschlagen), hat PayPal sie abgebucht -> Ergebnis „jetzt abgebucht“, Buchung aus der CSV mit dem LUNA-Text, der vorgemerkte Eintrag wird ersetzt (Storno des Imports holt ihn zurueck); eine Abbuchung am Faelligkeitstag einer Spaeter-bezahlen-Zahlung darf wieder „passen“. Test `test_7c_vorgemerkt_wird_bestaetigt`.
 - Entscheidungen CEO 2026-11-26: Ueber das PayPal-Konto laeuft **nur der Fanclub** (auch Abos und Zahlungen an Personen gehoeren in die Kasse); Abbuchungen aufs Bankkonto gehen aufs **Privatkonto des CEO** -> Auszahlung (Abgang).
 
 ### Etappe KA5: Kassenbericht
