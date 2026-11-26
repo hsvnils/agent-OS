@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-ticketversand`
 - Basiscommit: `81ee7f0`
-- Naechster Schritt: TV1 + TV2 umgesetzt auf `ai/ofc-ticketversand-tv12` (CEO-Go 2026-11-26); Push, Merge, Deploy (Neustart `luna-os`), dann auf der NAS „📱 Wallet-Links holen“ und Zaehlung pruefen; danach Namen/Mitglieder eintragen (CEO) und Go fuer TV3.
+- Naechster Schritt: TV1+TV2 live (2026-11-26: 6 Wallet-Links, 9 von 12 Spielen mit Spieltag; bis dahin nur INBOX gelesen). Fanclub-Postfach liest jetzt alle Ordner (Branch `ai/ofc-alle-ordner`); nach Merge/Deploy erneut „📱 Wallet-Links holen“ und Zaehlung pruefen, dann Namen/Mitglieder (CEO) und Go fuer TV3.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

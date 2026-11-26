@@ -10,6 +10,7 @@ der `.env`, nie in Fehlertexten oder Logs.
 """
 from __future__ import annotations
 
+import email
 import imaplib
 import re
 import smtplib
@@ -307,6 +308,9 @@ HSVINSIDE_SCHLUESSEL = ("HSVINSIDE_IMAP_HOST", "HSVINSIDE_MAIL_USER", "HSVINSIDE
 HSVINSIDE_ABSENDER_STANDARD = ("paypal.de", "paypal.com", "eventim.de", "eventim.com", "hsv.de")
 
 
+_ORDNER_AUS = re.compile(r"(?i)(papierkorb|trash|gel[oö]scht|deleted|spam|junk|gesendet|sent|entw[uü]rf|draft|archiv-spam)")
+
+
 def _domain_erlaubt(von: str, domains) -> bool:
     from email.utils import parseaddr
     d = parseaddr(von or "")[1].rpartition("@")[2].lower().strip()
@@ -359,6 +363,33 @@ class HsvInsideMail(AllInklMail):
         except Exception as exc:
             return {"ok": False, "imap": False, "imap_fehler": exc.__class__.__name__}
 
+    def _ordner(self, i) -> list[str]:
+        """Alle waehlbaren Ordner (IMAP LIST) ohne Papierkorb, Spam, Gesendet und Entwuerfe; INBOX zuerst. Ohne LIST nur INBOX."""
+        try:
+            typ, zeilen = i.list()
+        except Exception:
+            return ["INBOX"]
+        if typ != "OK" or not zeilen:
+            return ["INBOX"]
+        out = []
+        for z in zeilen:
+            if not isinstance(z, bytes):
+                continue
+            m = re.match(rb'^\(([^)]*)\)\s+(?:"[^"]*"|NIL)\s+(.+)$', z.strip())
+            if not m:
+                continue
+            flags = m.group(1).decode("ascii", "replace").lower()
+            name = m.group(2).decode("utf-8", "replace").strip()
+            if name.startswith('"') and name.endswith('"'):
+                name = name[1:-1].replace('\\"', '"')
+            if "\\noselect" in flags or any(f in flags for f in ("\\trash", "\\junk", "\\sent", "\\drafts")):
+                continue
+            if _ORDNER_AUS.search(name):
+                continue
+            out.append(name)
+        out = sorted(set(out), key=lambda n: (n.upper() != "INBOX", n.lower()))
+        return out or ["INBOX"]
+
     def _suche(self, domains: tuple | None = None) -> list:
         """IMAP-SEARCH: (FROM d1) ODER (FROM d2) ... -- verschachteltes OR, wie IMAP es verlangt."""
         domains = domains or self.domains
@@ -378,25 +409,34 @@ class HsvInsideMail(AllInklMail):
         monate = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
         d = date.today() - timedelta(days=tage)
         seit = f"{d.day:02d}-{monate[d.month - 1]}-{d.year}"
-        out = []
+        out, gesehen = [], set()
         i = self._imap()
         try:
             i.login(self.user, self._pw)
-            typ, _ = i.select("INBOX", readonly=True)
-            if typ != "OK":
-                return []
-            typ, daten = i.uid("SEARCH", None, "SINCE", seit, *self._suche(domains))
-            uids = (daten[0].split() if typ == "OK" and daten and daten[0] else [])[-max_mails:]
-            for uid in uids:
-                typ, teile = i.uid("FETCH", uid, "(BODY.PEEK[HEADER.FIELDS (FROM)])")
-                kopf = next((t[1] for t in teile or [] if isinstance(t, tuple) and len(t) > 1), b"") if typ == "OK" else b""
-                von = (kopf or b"").decode("utf-8", "replace").partition(":")[2].strip()
-                if not _domain_erlaubt(von, domains):
-                    continue                                 # Server-Treffer, aber Absender nicht erlaubt -> nie laden
-                typ, teile = i.uid("FETCH", uid, "(BODY.PEEK[])")
-                roh = next((t[1] for t in teile or [] if isinstance(t, tuple) and len(t) > 1), None) if typ == "OK" else None
-                if roh:
-                    out.append({"uid": uid.decode() if isinstance(uid, bytes) else str(uid), "roh": roh})
+            for ordner in self._ordner(i):              # CEO 2026-11-26: alle Ordner (ohne Papierkorb/Spam/Gesendet/Entwuerfe)
+                typ, _ = i.select(ordner if ordner == "INBOX" else _imap_name(ordner), readonly=True)
+                if typ != "OK":
+                    continue
+                typ, daten = i.uid("SEARCH", None, "SINCE", seit, *self._suche(domains))
+                uids = (daten[0].split() if typ == "OK" and daten and daten[0] else [])[-max_mails:]
+                for uid in uids:
+                    if len(out) >= max_mails:
+                        break
+                    typ, teile = i.uid("FETCH", uid, "(BODY.PEEK[HEADER.FIELDS (FROM MESSAGE-ID)])")
+                    kopf = next((t[1] for t in teile or [] if isinstance(t, tuple) and len(t) > 1), b"") if typ == "OK" else b""
+                    k = email.message_from_bytes(kopf or b"")
+                    von = str(k.get("From") or "").strip() or (kopf or b"").decode("utf-8", "replace").partition(":")[2].strip()
+                    if not _domain_erlaubt(von, domains):
+                        continue                             # Server-Treffer, aber Absender nicht erlaubt -> nie laden
+                    mid = str(k.get("Message-ID") or "").strip()
+                    if mid and mid in gesehen:
+                        continue                             # dieselbe Mail in zwei Ordnern nur einmal
+                    typ, teile = i.uid("FETCH", uid, "(BODY.PEEK[])")
+                    roh = next((t[1] for t in teile or [] if isinstance(t, tuple) and len(t) > 1), None) if typ == "OK" else None
+                    if roh:
+                        gesehen.add(mid)
+                        u = uid.decode() if isinstance(uid, bytes) else str(uid)
+                        out.append({"uid": u if ordner == "INBOX" else f"{ordner}:{u}", "roh": roh, "ordner": ordner})
         finally:
             try:
                 i.logout()

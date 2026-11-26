@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 17:34] — Claude Code
+- **Was:** Fanclub-Postfach moin@ liest alle Ordner statt nur INBOX (ohne Papierkorb/Spam/Gesendet/Entwuerfe, Dubletten per Message-ID, Fallback INBOX), Schutzregeln unveraendert; Tests mit Gegenproben; Zugriffs-Policy (CISO), Register, Datenfluesse, Roadmap, Baseline 1896.
+- **Warum:** CEO: Ticket-Mails liegen in eigenen Ordnern -- „Go, alle Ordner durchsuchen“.
+- **Betroffen:** `orchestrator/governance/allinkl_mail.py`, `orchestrator/tests/test_ofc_ordner.py`, `governance/zugriffs-policy.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `OFC_TICKETVERSAND_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 17:28] — Claude Code
 - **Was:** Merge `ai/ofc-ticketversand-tv12` nach `main` (OFC_TICKETVERSAND TV1 + TV2), Branch geloescht; Deploy-Befehle an den CEO.
 - **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.
