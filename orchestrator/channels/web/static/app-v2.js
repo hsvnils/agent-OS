@@ -4948,7 +4948,7 @@ const OFC_STATUS = { offen: ["wartet", "kommt"], vorbei: ["neutral", "vorbei"], 
 async function renderOfc(meldung, fehler) {
   OFC_M_AKTIV = false;
   const [d, pst] = await Promise.all([jget("/api/ofc/uebersicht"), jget("/api/ofc/post/status")]);
-  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-saison">📊 Saison</button> <button class="v2-btn" data-act="ofc-beitraege">🎫 Beiträge</button> <button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-eingaenge">💶 Eingänge</button> <button class="v2-btn" data-act="ofc-zahlungen">💳 Zahlungen</button> <button class="v2-btn" data-act="ofc-post">📬 Postfach</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
+  const kopf = secHead("⚽ OFC · HSVInside", `<button class="v2-btn" data-act="ofc-saison">📊 Saison</button> <button class="v2-btn" data-act="ofc-beitraege">🎫 Beiträge</button> <button class="v2-btn" data-act="ofc-kasse">💰 Kasse</button> <button class="v2-btn" data-act="ofc-mitglieder">👥 Mitglieder</button> <button class="v2-btn" data-act="ofc-eingaenge">💶 Eingänge</button> <button class="v2-btn" data-act="ofc-zahlungen">💳 Zahlungen</button> <button class="v2-btn" data-act="ofc-post">📬 Postfach</button> <button class="v2-btn" data-act="ofc-import">🔄 Ordner einlesen</button>`);
   if (!d) { $("#v2-app").innerHTML = kopf + emptyRow("OFC nicht erreichbar (nur für den CEO)."); return; }
   const su = d.summe, zeile = (x) => `<div class="v2-list-row klick v2-ofc-zeile" data-act="ofc-spiel" data-id="${esc(x.id)}">
       <div class="v2-ofc-datum"><b>${x.spieltag ? esc(datumDe(x.spieltag)) : "–"}</b><small>${esc(x.uhrzeit || "")}</small></div>
@@ -4970,7 +4970,12 @@ async function renderOfc(meldung, fehler) {
       d.eingaenge_offen ? `<a href="#" data-act="ofc-eingaenge">💶 ${d.eingaenge_offen} Eingang/Eingänge zuordnen</a>` : "",
       d.zahlungen_offen ? `<a href="#" data-act="ofc-zahlungen">💳 ${d.zahlungen_offen} Zahlung(en) zuordnen</a>` : "",
       pst && pst.zeit ? `Postfach geprüft: ${esc(zeit(pst.zeit))}${pst.ok === false ? " (" + esc(pst.hinweis || "Fehler") + ")" : pst.wartet ? ` · ${pst.wartet} Bestellung(en) warten auf die Rechnung` : ""}` : "",
-      d.verworfen && d.verworfen.length ? `${d.verworfen.length} verworfen` : ""].filter(Boolean).join(" · ")}</div>`;
+      d.verworfen && d.verworfen.length ? `${d.verworfen.length} verworfen` : ""].filter(Boolean).join(" · ")}<span id="ofc-b-hinweis"></span></div>`;
+  ofcBHinweis();
+}
+async function ofcBHinweis() {
+  const h = await jget("/api/ofc/beitraege/hinweis"), el = $("#ofc-b-hinweis");
+  if (el && h && h.ok && h.ueberfaellig) el.innerHTML = ` · <a href="#" data-act="ofc-beitraege">🎫 ${h.ueberfaellig} Beitrag/Beiträge ${h.jahr} seit über 4 Wochen offen (${esc(cent2eur(h.offen_cent))})</a>`;
 }
 async function ofcSpiel(sid) {
   openModal("⚽ Spiel", `<div class="v2-empty">Lade…</div>`);
@@ -5074,20 +5079,56 @@ async function renderOfcEingaenge() {
       <div class="grow"><b class="v2-umbruch">${esc(e.name)}</b>${e.rueckzahlung ? ` <span class="v2-badge neutral">Rückzahlung</span>` : ""}
         ${e.mitteilung ? `<small class="v2-umbruch">„${esc(e.mitteilung)}“</small>` : ""}
         ${(e.tickets || []).length ? `<small class="v2-umbruch">→ ${esc(tkText(e.tickets))}${e.grund ? " · " + esc(e.grund) : ""} <a href="#" data-act="ofc-ein-zu" data-id="${esc(e.id)}" data-val="">lösen</a></small>`
+          : ofcEinArtZu(e) ? `<small class="v2-umbruch">→ ${esc(ofcEinArtText(e))} <a href="#" data-act="ofc-ein-zu" data-id="${esc(e.id)}" data-val="">lösen</a></small>`
           : e.zuordnung === "ignoriert" || e.zuordnung === "info" ? `<div class="v2-sub">${esc(e.grund || "kein Ticket (z. B. Beitrag)")} · <a href="#" data-act="ofc-ein-zu" data-id="${esc(e.id)}" data-val="">wieder aufnehmen</a></div>`
           : `${e.wahl && OFC_E.spiele[e.wahl.spiel] ? `<div class="v2-sub v2-umbruch">📌 Mitteilung nennt ${esc(OFC_E.spiele[e.wahl.spiel])}: ${e.wahl.karten} Karte(n) à ${esc(cent2eur(e.wahl.preis_cent))} – bitte die Tickets wählen.</div>` : ""}
              ${(e.vorschlaege || []).map((v, i) => !v.tickets.length ? "" : `<div class="v2-ofc-zuordnen"><span class="v2-sub v2-umbruch">★ ${esc(tkText(v.tickets))} · ${esc(cent2eur(v.summe))} (${esc(v.gruende.join(", "))})</span>
                <button class="v2-btn sm pri" data-act="ofc-ein-vs" data-id="${esc(e.id)}" data-val="${i}">Übernehmen</button></div>`).join("")}
+             ${(e.beitrag_vorschlaege || []).map((v, i) => `<div class="v2-ofc-zuordnen"><span class="v2-sub v2-umbruch">★ Beitrag ${esc(v.beitrag.map(b => b.jahr + ": " + b.name + " (" + b.nummer + ")").join(", "))} · ${esc(cent2eur(v.summe))} (${esc(v.gruende.join(", "))})</span>
+               <button class="v2-btn sm pri" data-act="ofc-ein-bvs" data-id="${esc(e.id)}" data-val="${i}">Übernehmen</button></div>`).join("")}
              <div class="v2-ofc-zuordnen"><button class="v2-btn sm" data-act="ofc-ein-waehlen" data-id="${esc(e.id)}">Tickets wählen …</button>
-             <button class="v2-btn sm" data-act="ofc-ein-ign" data-id="${esc(e.id)}">Kein Ticket</button></div>`}</div>
+             <button class="v2-btn sm" data-act="ofc-ein-artwahl" data-id="${esc(e.id)}">Beitrag / andere Art …</button></div>`}</div>
       <span class="v2-badge ${OFC_ZUO[e.zuordnung][0]}">${OFC_ZUO[e.zuordnung][1].replace("kein Ticketkauf", "kein Ticket")}</span></div>`;
-  const offen = OFC_E.eingaenge.filter(e => e.zuordnung === "offen"), zu = OFC_E.eingaenge.filter(e => (e.tickets || []).length), ign = OFC_E.eingaenge.filter(e => e.zuordnung === "ignoriert" || e.zuordnung === "info");
+  const offen = OFC_E.eingaenge.filter(e => e.zuordnung === "offen"), zu = OFC_E.eingaenge.filter(e => (e.tickets || []).length || ofcEinArtZu(e)), ign = OFC_E.eingaenge.filter(e => e.zuordnung === "ignoriert" || e.zuordnung === "info");
   $("#v2-app").innerHTML = kopf + `<div class="v2-grid">
       <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Zuordnen (${offen.length})</span></div>${offen.map(zeile).join("") || emptyRow("Alles zugeordnet.")}</div>
       <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Zugeordnet (${zu.length})</span></div>${zu.map(zeile).join("") || emptyRow(OFC_E.eingaenge.length ? "Noch nichts zugeordnet." : "Noch keine Eingänge – oben „Aus Postfach holen“.")}</div>
       ${OFC_E.saldo.length ? `<div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Saldo je Zahler</span></div>${OFC_E.saldo.map(s => `<div class="v2-kv"><span>${esc(s.name)}</span><b>${s.saldo_cent > 0 ? "Guthaben " : "offen "}${esc(cent2eur(Math.abs(s.saldo_cent)))}</b></div>`).join("")}</div>` : ""}
       ${ign.length ? `<div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Kein Ticket (${ign.length})</span></div>${ign.map(zeile).join("")}</div>` : ""}
     </div><div class="v2-sub" style="margin-top:8px">Zahlungseingänge der Mitglieder aus PayPal · nur für dich sichtbar · LUNA schreibt niemandem · prüft alle 15 Minuten.</div>`;
+}
+const OFC_EART = { beitrag: "Beitrag", merch: "Merch", spende: "Spende", sonstiges: "Sonstiges (kein Ticket)" };
+function ofcEinArtZu(e) { return ["auto", "manuell"].includes(e.zuordnung) && ["beitrag", "merch", "spende", "sonstiges"].includes(e.art) && !(e.tickets || []).length; }
+function ofcEinArtText(e) { return e.art === "beitrag" ? "Beitrag " + (e.beitrag || []).map(b => b.jahr + ": " + b.name + " (" + b.nummer + ")").join(", ") : OFC_EART[e.art] || e.art; }
+async function ofcEinArt(id, art, beitrag) {
+  const r = await jpost(`/api/ofc/eingang/${encodeURIComponent(id)}/art`, { art, beitrag: beitrag || [] });
+  if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
+  closeModal(); return renderOfcEingaenge();
+}
+async function ofcEinArtWahl(id) {
+  const e = OFC_E.eingaenge.find(x => x.id === id); if (!e) return;
+  const jahr = Math.max(new Date().getFullYear() + (new Date().getMonth() >= 10 ? 1 : 0), 2027);
+  openModal(`💶 ${e.name} · ${cent2eur(e.betrag_cent)}`, `<div class="v2-sub">${e.mitteilung ? "„" + esc(e.mitteilung) + "“ · " : ""}Was ist diese Zahlung?</div>
+    <div class="v2-card-actions" style="margin-top:8px"><button class="v2-btn" data-act="ofc-ein-artset" data-id="${esc(id)}" data-val="merch">Merch</button>
+      <button class="v2-btn" data-act="ofc-ein-artset" data-id="${esc(id)}" data-val="spende">Spende</button>
+      <button class="v2-btn" data-act="ofc-ein-ign" data-id="${esc(id)}">Sonstiges (kein Ticket)</button></div>
+    <div class="v2-tile-h" style="margin-top:12px"><span class="t">Beitrag – Mitglied(er) wählen</span></div>
+    <div class="v2-kv"><span>Beitragsjahr</span><b><input id="ofc-ein-bjahr" class="v2-inp" type="number" min="2020" max="2100" value="${jahr}" style="width:90px"></b></div>
+    <input id="ofc-ein-bq" class="v2-inp" style="width:100%;box-sizing:border-box;margin-top:8px" type="search" placeholder="Name oder Nummer suchen" value="${esc(e.name)}">
+    <div id="ofc-ein-bliste" style="margin-top:8px"><div class="v2-empty">Lese die Mitgliederliste …</div></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-ein-bok" data-id="${esc(id)}">Als Beitrag zuordnen</button></div>`);
+  const d = await jget(`/api/ofc/beitraege?jahr=${jahr}`);
+  const el = $("#ofc-ein-bliste"); if (!el) return;
+  if (!d || !d.ok) { el.innerHTML = `<div class="v2-msg err">${esc((d && d.hinweis) || "Mitgliederliste nicht erreichbar.")}</div>`; return; }
+  el.innerHTML = d.mitglieder.filter(x => x.jahresbeitrag_cent > 0).map(x => `<label class="v2-list-row v2-ofc-bwahl" data-such="${esc((x.name + " " + x.nummer).toLowerCase())}"><input type="checkbox" value="${esc(x.nummer)}">
+      <div class="grow"><b>${esc(x.name)}</b><small>${esc(x.nummer)} · ${esc(x.art_text)}</small></div><span>${esc(cent2eur(x.jahresbeitrag_cent))}</span></label>`).join("") || emptyRow("Keine beitragspflichtigen Mitglieder.");
+  el.insertAdjacentHTML("afterbegin", `<div class="v2-sub" id="ofc-ein-bhint" style="display:none">Kein Mitglied passt zum Suchbegriff – alle werden angezeigt.</div>`);
+  const filtern = () => { const w = $("#ofc-ein-bq").value.trim().toLowerCase().split(/\s+/).filter(Boolean), zeilen = [...document.querySelectorAll(".v2-ofc-bwahl")];
+    const passt = (l) => !w.length || w.some(x => x.length > 2 && l.dataset.such.includes(x)) || l.querySelector("input").checked;
+    const keiner = w.length && !zeilen.some(passt);
+    zeilen.forEach(l => { l.style.display = keiner || passt(l) ? "" : "none"; });
+    $("#ofc-ein-bhint").style.display = keiner ? "" : "none"; };
+  $("#ofc-ein-bq").addEventListener("input", filtern); filtern();
 }
 async function ofcEinZu(id, tickets, ignorieren) {
   const r = await jpost(`/api/ofc/eingang/${encodeURIComponent(id)}/zuordnen`, ignorieren ? { ignorieren: true } : { tickets });
@@ -5253,37 +5294,242 @@ async function ofcNameOk(el, rueck) {
 /* OFC_ROADMAP OM: Mitgliederliste (Google-Forms-Tabelle, nur lesend, nichts gespeichert, keine KI) */
 const OFC_M = { daten: null, suche: "", ansicht: "mitglied" };
 let OFC_M_AKTIV = false;
-/* OFC_KASSE_ROADMAP KA0: Soll-Beitrag je Mitglied (Kalenderjahr, fällig 01.01., Gold 40 €, Eintritt anteilig) – nur lesend */
-const OFC_B = { jahr: new Date().getFullYear(), daten: null, filter: "pflichtig", suche: "" };
+/* OFC_KASSE_ROADMAP KA0/KA2: Beiträge je Jahr – Soll aus der Mitgliederliste (nur lesend), bezahlt aus PayPal-Eingängen,
+   offen mit Text zum Kopieren (LUNA schreibt niemandem), per Klick bezahlt/erlassen, Export CSV/PDF */
+const OFC_B = { jahr: new Date().getFullYear() + (new Date().getMonth() >= 10 ? 1 : 0), daten: null, filter: "offen", suche: "" };
+const OFC_BST = { bezahlt: ["ok", "bezahlt"], teilweise: ["warn", "teilweise"], offen: ["warn", "offen"], erlassen: ["neutral", "erlassen"],
+  frei: ["neutral", "kostenfrei"], nicht_erfasst: ["neutral", "nicht erfasst"] };
 async function renderOfcBeitraege(neu) {
   OFC_M_AKTIV = true;
   const kopf = secHead("🎫 OFC · Beiträge", `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> <button class="v2-btn" data-act="ofc-b-jahr" data-val="-1">‹ ${OFC_B.jahr - 1}</button> <button class="v2-btn" data-act="ofc-b-jahr" data-val="1">${OFC_B.jahr + 1} ›</button> <button class="v2-btn" data-act="ofc-b-neu">🔄 Neu laden</button>`);
   if (!OFC_B.daten || OFC_B.daten.jahr !== OFC_B.jahr || neu) { $("#v2-app").innerHTML = kopf + `<div class="v2-empty">Lese die Mitgliederliste …</div>`; OFC_B.daten = await jget(`/api/ofc/beitraege?jahr=${OFC_B.jahr}` + (neu ? "&neu=1" : "")); }
   const d = OFC_B.daten;
   if (!d || !d.ok) { OFC_B.daten = null; $("#v2-app").innerHTML = kopf + `<div class="v2-msg err">${esc((d && d.hinweis) || "Mitgliederliste nicht erreichbar.")}</div>`; return; }
-  const s = d.summen, tab = (k, l, n) => `<button class="v2-btn ${OFC_B.filter === k ? "pri" : ""}" data-act="ofc-b-filter" data-id="${k}">${l} (${n})</button>`;
-  const mitHinweis = d.mitglieder.filter(x => x.hinweise.length).length;
+  const s = d.summen, st = d.stand, n = (f) => d.mitglieder.filter(f).length;
+  const tab = (k, l, z) => `<button class="v2-btn ${OFC_B.filter === k ? "pri" : ""}" data-act="ofc-b-filter" data-id="${k}">${l} (${z})</button>`;
   $("#v2-app").innerHTML = kopf + `<div class="v2-grid">
-      ${tile("Soll " + d.jahr, `<div class="v2-kpi">${esc(cent2eur(s.soll_cent))}</div><div class="v2-sub">${s.beitragspflichtig} beitragspflichtig · fällig 01.01.${d.jahr}</div>`, "v2-ofc-kpi")}
+      ${tile("Soll " + d.jahr, `<div class="v2-kpi">${esc(cent2eur(d.erfasst ? st.soll_cent : s.soll_cent))}</div><div class="v2-sub">${s.beitragspflichtig} beitragspflichtig · fällig 01.01.${d.jahr}</div>`, "v2-ofc-kpi")}
+      ${d.erfasst ? tile("Bezahlt", `<div class="v2-kpi">${esc(cent2eur(st.bezahlt_cent))}</div><div class="v2-sub">${st.bezahlt} Mitglieder · Quote ${st.quote} %</div>`, "v2-ofc-kpi")
+        + tile("Offen", `<div class="v2-kpi">${esc(cent2eur(st.offen_cent))}</div><div class="v2-sub">${st.offen + st.teilweise} Mitglieder${st.ueberfaellig ? ` · <b>${st.ueberfaellig} seit über 4 Wochen</b>` : ""}</div>`, "v2-ofc-kpi")
+        : tile("Nicht erfasst", `<div class="v2-kpi">–</div><div class="v2-sub">Beiträge vor ${d.start_jahr} liefen vor LUNA</div>`, "v2-ofc-kpi")}
       ${tile("Mitglieder", `<div class="v2-kpi">${s.mitglieder}</div><div class="v2-sub">Gold ${s.gold} · kostenfrei ${s.standard} · Förder ${s.foerder} · Vorstand ${s.vorstand}${s.unbekannt ? " · unklar " + s.unbekannt : ""}</div>`, "v2-ofc-kpi")}
-      <div class="v2-tile w12"><div class="v2-card-actions" style="margin:0 0 8px">${tab("pflichtig", "Beitragspflichtig", s.beitragspflichtig)} ${tab("hinweis", "Mit Hinweis", mitHinweis)} ${tab("alle", "Alle", s.mitglieder)}</div>
+      <div class="v2-tile w12"><div class="v2-card-actions" style="margin:0 0 8px">${d.erfasst ? tab("offen", "Offen", n(x => x.offen_cent > 0)) + " " + tab("bezahlt", "Bezahlt", n(x => x.status === "bezahlt")) + " " : ""}${tab("pflichtig", "Beitragspflichtig", s.beitragspflichtig)} ${tab("hinweis", "Mit Hinweis", n(x => x.hinweise.length))} ${tab("alle", "Alle", s.mitglieder)}
+          <a class="v2-btn" href="/api/ofc/beitraege/export.pdf?jahr=${d.jahr}" target="_blank" rel="noopener">📄 PDF</a> <a class="v2-btn" href="/api/ofc/beitraege/export.csv?jahr=${d.jahr}">⬇︎ CSV</a></div>
         ${d.hinweise.length ? `<div class="v2-ofc-hinweise" style="margin-bottom:8px">${d.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
         <input id="ofc-b-suche" class="v2-inp" style="width:100%;box-sizing:border-box" type="search" autocomplete="off" placeholder="Name oder Nummer suchen" value="${esc(OFC_B.suche)}">
         <div id="ofc-b-liste" style="margin-top:8px"></div></div>
-    </div><div class="v2-sub" style="margin-top:8px">Soll aus der Tabelle „Mitgliedschaftsanfrage“ (nur lesend) · Kalenderjahr, fällig 01.01. · Gold 40 € · Eintritt im Jahr anteilig ab Beitrittsmonat · gelesen ${esc(zeit(d.gelesen))}. Bezahlt/offen folgt mit der Beitragserkennung.</div>`;
+    </div><div class="v2-sub" style="margin-top:8px">Soll aus der Tabelle „Mitgliedschaftsanfrage“ (nur lesend) · Kalenderjahr, fällig 01.01. · Gold 40 € · Eintritt im Jahr anteilig ab Beitrittsmonat · bezahlt aus den PayPal-Eingängen (💶) · erfasst ab ${d.start_jahr} · gelesen ${esc(zeit(d.gelesen))} · LUNA schreibt niemandem.</div>`;
   const q = $("#ofc-b-suche"); q.addEventListener("input", () => { OFC_B.suche = q.value; ofcBListe(); });
+  if (!d.erfasst && ["offen", "bezahlt"].includes(OFC_B.filter)) OFC_B.filter = "pflichtig";
   ofcBListe();
 }
 function ofcBListe() {
   const d = OFC_B.daten, q = OFC_B.suche.trim().toLowerCase(), el = $("#ofc-b-liste"); if (!d || !el) return;
-  const liste = d.mitglieder.filter(x => OFC_B.filter === "alle" || (OFC_B.filter === "hinweis" ? x.hinweise.length : x.soll_cent > 0))
+  const f = OFC_B.filter;
+  const liste = d.mitglieder.filter(x => f === "alle" || (f === "hinweis" ? x.hinweise.length : f === "offen" ? x.offen_cent > 0 : f === "bezahlt" ? x.status === "bezahlt" : x.soll_cent > 0))
     .filter(x => !q || [x.name, x.nummer].some(v => (v || "").toLowerCase().includes(q)));
-  el.innerHTML = liste.map(x => `<div class="v2-list-row">
+  el.innerHTML = liste.map(x => { const i = d.mitglieder.indexOf(x), b = OFC_BST[x.status] || ["neutral", x.status || ""];
+    return `<div class="v2-list-row">
       <span class="v2-badge neutral">${esc(x.nummer)}</span>
       <div class="grow"><b class="v2-umbruch">${esc(x.name || "–")}</b>
-        <small>${[x.art_text, x.seit ? "seit " + datumDe(x.seit) : "", x.anteilig ? "anteilig, fällig " + datumDe(x.faellig) : ""].filter(Boolean).map(esc).join(" · ")}</small>
-        ${x.hinweise.length ? `<div class="v2-ofc-hinweise">${x.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}</div>
-      <b>${esc(cent2eur(x.soll_cent))}</b></div>`).join("") || emptyRow(q ? "Kein Treffer." : "Keine Einträge.");
+        <small>${[x.art_text, x.seit ? "seit " + datumDe(x.seit) : "", x.anteilig ? "anteilig, fällig " + datumDe(x.faellig) : "",
+          ...(x.zahlungen || []).map(z => "💶 " + datumDe(z.datum) + " " + cent2eur(z.cent) + (z.name && z.name !== x.name ? " von " + z.name : "")),
+          x.status_hand ? "per Klick: " + x.status_hand : ""].filter(Boolean).map(esc).join(" · ")}</small>
+        ${x.hinweise.length || x.ueberfaellig ? `<div class="v2-ofc-hinweise">${x.ueberfaellig ? `<span class="v2-badge warn">seit über 4 Wochen offen</span>` : ""}${x.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
+        ${d.erfasst && x.soll_cent ? `<div class="v2-ofc-zuordnen">${x.text ? `<button class="v2-btn sm" data-act="ofc-b-kopieren" data-val="${i}">📋 Erinnerung</button>` : ""}
+          ${x.status !== "bezahlt" && x.status !== "erlassen" ? `<button class="v2-btn sm" data-act="ofc-b-setzen" data-id="${esc(x.nummer)}" data-val="bezahlt">✓ bezahlt</button> <button class="v2-btn sm" data-act="ofc-b-setzen" data-id="${esc(x.nummer)}" data-val="erlassen">Erlassen</button>` : ""}
+          ${x.status_hand && x.status_hand !== "offen" ? `<button class="v2-btn sm" data-act="ofc-b-setzen" data-id="${esc(x.nummer)}" data-val="offen">↩︎ zurücksetzen</button>` : ""}</div>` : ""}</div>
+      <div style="text-align:right"><b>${esc(cent2eur(x.offen_cent > 0 ? x.offen_cent : x.soll_cent))}</b><br><span class="v2-badge ${b[0]}">${esc(b[1])}</span></div></div>`; }).join("")
+    || emptyRow(q ? "Kein Treffer." : f === "offen" ? "Keine offenen Beiträge." : "Keine Einträge.");
+}
+async function ofcBKopieren(i, el) {
+  const x = OFC_B.daten && OFC_B.daten.mitglieder[Number(i)]; if (!x || !x.text) return;
+  try { await navigator.clipboard.writeText(x.text); const o = el.textContent; el.textContent = "✓ kopiert"; setTimeout(() => { el.textContent = o; }, 1500); }
+  catch (e) { openModal("📋 Erinnerung kopieren", `<textarea class="v2-inp" style="width:100%;min-height:160px;box-sizing:border-box">${esc(x.text)}</textarea>`); }
+}
+async function ofcBSetzen(nummer, status) {
+  const x = OFC_B.daten.mitglieder.find(m => m.nummer === nummer); if (!x) return;
+  const t = { bezahlt: "als bezahlt markieren (z. B. vor der Erfassung bezahlt)", erlassen: "erlassen", offen: "zurücksetzen" }[status];
+  if (!confirm(`Beitrag ${OFC_B.jahr} von ${x.name} ${t}?`)) return;
+  const r = await jpost("/api/ofc/beitrag", { nummer, jahr: OFC_B.jahr, status, bestaetigt: true });
+  if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
+  return renderOfcBeitraege();
+}
+/* OFC_KASSE_ROADMAP KA3: Kassenbuch (nur PayPal) – Buchungen aus Eingängen, eigenen Zahlungen und Handbuchungen */
+const OFC_K = { jahr: 0, kat: "", suche: "", daten: null };
+const eurZuCent = (s) => { const t = String(s || "").replace(/[^0-9,.-]/g, ""); if (!t) return NaN; const n = t.includes(",") ? t.replace(/\./g, "").replace(",", ".") : t; return Math.round(parseFloat(n) * 100); };
+async function renderOfcKasse(meldung) {
+  OFC_M_AKTIV = true;
+  const jahrNav = OFC_K.jahr ? `<button class="v2-btn" data-act="ofc-k-jahr" data-val="${OFC_K.jahr - 1}">‹ ${OFC_K.jahr - 1}</button> <button class="v2-btn" data-act="ofc-k-jahr" data-val="0">Alle</button> <button class="v2-btn" data-act="ofc-k-jahr" data-val="${OFC_K.jahr + 1}">${OFC_K.jahr + 1} ›</button>`
+    : `<button class="v2-btn" data-act="ofc-k-jahr" data-val="${new Date().getFullYear()}">Jahr ${new Date().getFullYear()}</button>`;
+  const kopf = secHead("💰 OFC · Kasse" + (OFC_K.jahr ? " " + OFC_K.jahr : ""), `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> ${jahrNav} <button class="v2-btn pri" data-act="ofc-k-neu">＋ Buchung</button> <button class="v2-btn" data-act="ofc-k-start">Anfangsbestand</button> <span id="ofc-k-extra"></span>`);
+  const d = OFC_K.daten = await jget("/api/ofc/kasse" + (OFC_K.jahr ? "?jahr=" + OFC_K.jahr : ""));
+  if (!d || !d.ok) { $("#v2-app").innerHTML = kopf + emptyRow("Kasse nicht erreichbar."); return; }
+  const a = d.anfangsbestand;
+  const kats = Object.entries(d.kategorien).map(([k, l]) => `<option value="${k}" ${OFC_K.kat === k ? "selected" : ""}>${esc(l)}</option>`).join("");
+  $("#v2-app").innerHTML = kopf + (meldung ? `<div class="v2-msg ok">${esc(meldung)}</div>` : "") + `<div class="v2-grid">
+      ${tile("Kassenstand", d.kassenstand_cent === null ? `<div class="v2-kpi">–</div><div class="v2-sub"><a href="#" data-act="ofc-k-start">Anfangsbestand eintragen</a>, dann rechnet LUNA den Stand</div>`
+        : `<div class="v2-kpi">${esc(cent2eur(d.kassenstand_cent))}</div><div class="v2-sub">PayPal · ab ${esc(datumDe(a.datum))} mit ${esc(cent2eur(a.betrag_cent))}</div>`, "v2-ofc-kpi")}
+      ${tile("Einnahmen" + (OFC_K.jahr ? " " + OFC_K.jahr : ""), `<div class="v2-kpi">${esc(cent2eur(d.einnahmen_cent))}</div><div class="v2-sub">gebucht</div>`, "v2-ofc-kpi")}
+      ${tile("Ausgaben" + (OFC_K.jahr ? " " + OFC_K.jahr : ""), `<div class="v2-kpi">${esc(cent2eur(Math.abs(d.ausgaben_cent)))}</div><div class="v2-sub">gebucht</div>`, "v2-ofc-kpi")}
+      ${tile("Vorgemerkt", `<div class="v2-kpi">${esc(cent2eur(Math.abs(d.vorgemerkt_cent)))}</div><div class="v2-sub">„Später bezahlen“ noch nicht abgebucht</div>`, "v2-ofc-kpi")}
+      <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Nach Kategorie</span></div>
+        ${d.je_kategorie.map(k => `<div class="v2-kv"><span><a href="#" data-act="ofc-k-filter" data-val="${k.kategorie}">${esc(k.text)}</a></span><b>${k.einnahmen_cent ? "+" + esc(cent2eur(k.einnahmen_cent)) : ""}${k.einnahmen_cent && k.ausgaben_cent ? " · " : ""}${k.ausgaben_cent ? "−" + esc(cent2eur(Math.abs(k.ausgaben_cent))) : ""}</b></div>`).join("") || emptyRow("Noch keine Buchungen.")}
+        ${d.nicht_zugeordnet ? `<div class="v2-sub" style="margin-top:6px"><a href="#" data-act="ofc-eingaenge">💶 ${d.nicht_zugeordnet} Eingang/Eingänge noch nicht zugeordnet</a></div>` : ""}</div>
+      <div class="v2-tile w12"><div class="v2-tile-h"><span class="t">Buchungen</span></div>
+        <div class="v2-ofc-filter"><select id="ofc-k-kat" class="v2-inp"><option value="">Alle Kategorien</option>${kats}</select>
+          <input id="ofc-k-suche" class="v2-inp" type="search" autocomplete="off" placeholder="Text suchen" value="${esc(OFC_K.suche)}" style="flex:1;min-width:140px"></div>
+        <div id="ofc-k-liste"></div></div>
+    </div><div class="v2-sub" style="margin-top:8px">Kasse = PayPal-Konto des Fanclubs · getrennt von der Buchhaltung · Buchungen aus Mails ändern sich über die Zuordnung (💶/💳), Handbuchungen per Storno · nichts wird gelöscht.</div>`;
+  $("#ofc-k-kat").addEventListener("change", (ev) => { OFC_K.kat = ev.target.value; ofcKListe(); });
+  $("#ofc-k-suche").addEventListener("input", (ev) => { OFC_K.suche = ev.target.value; ofcKListe(); });
+  ofcKListe();
+  if (typeof ofcKExtra === "function") ofcKExtra();
+}
+function ofcKListe() {
+  const d = OFC_K.daten, el = $("#ofc-k-liste"); if (!d || !el) return;
+  const q = OFC_K.suche.trim().toLowerCase();
+  const liste = d.buchungen.filter(b => (!OFC_K.kat || b.kategorie === OFC_K.kat) && (!q || b.text.toLowerCase().includes(q)));
+  el.innerHTML = liste.slice(0, 400).map(b => `<div class="v2-list-row v2-ofc-zeile" ${b.status !== "gebucht" ? 'style="opacity:.6"' : ""}>
+      <div class="v2-ofc-datum"><b>${esc(datumDe(b.datum))}</b><small>${esc(b.herkunft)}</small></div>
+      <div class="grow"><b class="v2-umbruch">${esc(b.text)}</b>
+        <small><a href="#" data-act="ofc-k-katwahl" data-id="${esc(b.id)}">${esc(d.kategorien[b.kategorie] || b.kategorie)} ✎</a>${b.vor_stichtag ? " · vor dem Anfangsbestand" : ""}${b.beleg ? ` · <a href="/api/ofc/kasse/beleg/${esc(b.id.split(":")[1])}" target="_blank" rel="noopener">📎 Beleg</a>` : ""}
+          ${["hand", "import"].includes(b.quelle) ? ` · <a href="#" data-act="ofc-k-storno" data-id="${esc(b.id.split(":")[1])}" data-val="${b.status === "storniert" ? "1" : ""}">${b.status === "storniert" ? "Storno aufheben" : "stornieren"}</a>` : ""}</small></div>
+      <div style="text-align:right"><b>${b.betrag_cent > 0 ? "+" : "−"}${esc(cent2eur(Math.abs(b.betrag_cent)))}</b>${b.status !== "gebucht" ? `<br><span class="v2-badge ${b.status === "vorgemerkt" ? "warn" : "neutral"}">${esc(b.status)}</span>` : ""}</div></div>`).join("")
+    + (liste.length > 400 ? `<div class="v2-sub">… ${liste.length - 400} weitere – bitte filtern.</div>` : "") || emptyRow("Keine Buchungen.");
+}
+function ofcKNeu() {
+  const heute = new Date().toISOString().slice(0, 10), d = OFC_K.daten;
+  openModal("＋ Buchung (Kasse)", `<div class="v2-sub">Für alles, was nicht aus den PayPal-Mails kommt: Gebühren, Auslagen, Korrekturen. Vorschau vor dem Speichern.</div>
+    <div class="v2-ofc-eingabe"><label>Datum</label><input id="ofc-k-datum" class="v2-inp" type="date" value="${heute}"></div>
+    <div class="v2-ofc-eingabe"><label>Richtung</label><select id="ofc-k-richtung" class="v2-inp"><option value="-1">Ausgabe (−)</option><option value="1">Einnahme (+)</option></select></div>
+    <div class="v2-ofc-eingabe"><label>Betrag in €</label><input id="ofc-k-betrag" class="v2-inp" inputmode="decimal" placeholder="z. B. 3,49"></div>
+    <div class="v2-ofc-eingabe"><label>Kategorie</label><select id="ofc-k-katneu" class="v2-inp">${Object.entries(d.kategorien).filter(([k]) => k !== "offen").map(([k, l]) => `<option value="${k}" ${k === "gebuehren" ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></div>
+    <div class="v2-ofc-eingabe"><label>Text</label><input id="ofc-k-text" class="v2-inp" maxlength="200" placeholder="z. B. PayPal-Gebühr Oktober"></div>
+    <div class="v2-ofc-eingabe"><label>Beleg (optional)</label><input id="ofc-k-beleg" class="v2-inp" type="file" accept="application/pdf,image/*"></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-k-neu-ok">Weiter</button></div><div class="v2-msg" id="ofc-k-msg"></div>`);
+}
+async function ofcKNeuOk(el) {
+  const betrag = eurZuCent($("#ofc-k-betrag").value), richtung = Number($("#ofc-k-richtung").value), msg = $("#ofc-k-msg");
+  if (!betrag || betrag <= 0) { msg.className = "v2-msg err"; msg.textContent = "Bitte einen Betrag eingeben."; return; }
+  const kat = $("#ofc-k-katneu").value, text = $("#ofc-k-text").value.trim(), datum = $("#ofc-k-datum").value;
+  if (!text) { msg.className = "v2-msg err"; msg.textContent = "Bitte einen Text eingeben."; return; }
+  if (!confirm(`Buchung speichern?\n${datumDe(datum)} · ${richtung > 0 ? "+" : "−"}${cent2eur(betrag)} · ${OFC_K.daten.kategorien[kat]}\n${text}`)) return;
+  let beleg = null; const f = $("#ofc-k-beleg").files[0];
+  if (f) { if (f.size > 10 * 1024 * 1024) { msg.className = "v2-msg err"; msg.textContent = "Beleg ist größer als 10 MB."; return; }
+    const b64 = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1] || ""); r.readAsDataURL(f); });
+    beleg = { name: f.name, daten: b64 }; }
+  el.disabled = true;
+  const r = await jpost("/api/ofc/kasse/buchung", { datum, betrag_cent: richtung * betrag, kategorie: kat, text, beleg, bestaetigt: true }); el.disabled = false;
+  if (!r || r.ok === false) { msg.className = "v2-msg err"; msg.textContent = (r && r.hinweis) || "Fehler."; return; }
+  closeModal(); return renderOfcKasse("Buchung gespeichert.");
+}
+function ofcKStart() {
+  const a = OFC_K.daten && OFC_K.daten.anfangsbestand;
+  openModal("Anfangsbestand der Kasse", `<div class="v2-sub">PayPal-Guthaben zu Beginn eines Stichtags (z. B. aus der PayPal-App). Ab diesem Tag rechnet LUNA den Kassenstand. Frühere Werte bleiben in der Historie.</div>
+    <div class="v2-ofc-eingabe"><label>Stichtag</label><input id="ofc-k-sdatum" class="v2-inp" type="date" value="${a ? a.datum : new Date().toISOString().slice(0, 10)}"></div>
+    <div class="v2-ofc-eingabe"><label>Guthaben in €</label><input id="ofc-k-sbetrag" class="v2-inp" inputmode="decimal" value="${a ? (a.betrag_cent / 100).toFixed(2).replace(".", ",") : ""}"></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-k-start-ok">Speichern</button></div><div class="v2-msg" id="ofc-k-smsg"></div>`);
+}
+async function ofcKStartOk() {
+  const b = eurZuCent($("#ofc-k-sbetrag").value), datum = $("#ofc-k-sdatum").value;
+  if (isNaN(b)) { $("#ofc-k-smsg").className = "v2-msg err"; $("#ofc-k-smsg").textContent = "Bitte einen Betrag eingeben."; return; }
+  if (!confirm(`Anfangsbestand ${cent2eur(b)} zum ${datumDe(datum)} speichern?`)) return;
+  const r = await jpost("/api/ofc/kasse/anfangsbestand", { datum, betrag_cent: b, bestaetigt: true });
+  if (!r || r.ok === false) { $("#ofc-k-smsg").className = "v2-msg err"; $("#ofc-k-smsg").textContent = (r && r.hinweis) || "Fehler."; return; }
+  closeModal(); return renderOfcKasse("Anfangsbestand gespeichert.");
+}
+function ofcKKatWahl(quelle) {
+  const d = OFC_K.daten, b = d.buchungen.find(x => x.id === quelle); if (!b) return;
+  openModal("Kategorie ändern", `<div class="v2-sub">${esc(datumDe(b.datum))} · ${esc(b.text)} · ${esc(cent2eur(b.betrag_cent))}</div>
+    <div class="v2-card-actions" style="flex-wrap:wrap">${Object.entries(d.kategorien).filter(([k]) => k !== "offen").map(([k, l]) => `<button class="v2-btn ${k === b.kategorie ? "pri" : ""}" data-act="ofc-k-katset" data-id="${esc(quelle)}" data-val="${k}">${esc(l)}</button>`).join(" ")}</div>
+    ${b.quelle === "eingang" ? `<div class="v2-sub" style="margin-top:8px">Tipp: Tickets und Beiträge ordnest du besser unter <a href="#" data-act="ofc-eingaenge">💶 Eingänge</a> zu – dann stimmen auch Ticket- und Beitragsstatus.</div>` : ""}`);
+}
+async function ofcKKatSet(quelle, kat) {
+  const r = await jpost("/api/ofc/kasse/kategorie", { quelle, kategorie: kat });
+  if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
+  closeModal(); return renderOfcKasse();
+}
+async function ofcKStorno(id, zurueck) {
+  if (!confirm(zurueck ? "Storno aufheben?" : "Buchung stornieren? Sie bleibt sichtbar, zählt aber nicht mehr.")) return;
+  const r = await jpost("/api/ofc/kasse/storno", { id, zurueck: !!zurueck, bestaetigt: true });
+  if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
+  return renderOfcKasse();
+}
+/* OFC_KASSE_ROADMAP KA4: Abgleich mit dem PayPal-Kontoauszug (CSV-Upload, Vorschau, Übernehmen, Import stornieren) */
+let OFC_KI = null;
+async function ofcKExtra() {
+  const el = $("#ofc-k-extra"); if (!el) return;
+  el.innerHTML = `<button class="v2-btn" data-act="ofc-ki-start">⬆︎ PayPal-CSV</button> <button class="v2-btn" data-act="ofc-kb">📄 Kassenbericht</button>`;
+  const r = await jget("/api/ofc/kasse/importe"), liste = (r && r.importe) || [];
+  const g = $("#v2-app .v2-grid"); if (!g || !liste.length) return;
+  g.insertAdjacentHTML("beforeend", `<div class="v2-tile w12"><div class="v2-tile-h"><span class="t">CSV-Importe (${liste.length})</span></div>
+    ${liste.map(x => `<div class="v2-list-row"><div class="grow"><b class="v2-umbruch">${esc(x.datei || x.id)}</b><small>${esc(zeit(x.ts))} · ${x.zeilen} Zeilen · ${x.gebucht} gebucht · ${esc(datumDe(x.von_datum))}–${esc(datumDe(x.bis_datum))}${x.storniert ? " · storniert" : ""}</small></div>
+      ${x.storniert ? "" : `<button class="v2-btn sm" data-act="ofc-ki-storno" data-id="${esc(x.id)}">Import stornieren</button>`}</div>`).join("")}</div>`);
+}
+/* OFC_KASSE_ROADMAP KA5: Kassenbericht je Geschäftsjahr (Kalenderjahr) mit PDF/CSV */
+async function ofcKB(jahr) {
+  jahr = jahr || OFC_K.jahr || new Date().getFullYear();
+  openModal(`📄 Kassenbericht ${jahr}`, `<div class="v2-empty">Rechne …</div>`);
+  const b = await jget(`/api/ofc/kasse/bericht?jahr=${jahr}`);
+  if (!b || !b.ok) return openModal("📄 Kassenbericht", `<div class="v2-msg err">${esc((b && b.hinweis) || "Fehler.")}</div>`);
+  const e = (c) => c === null || c === undefined ? "unbekannt" : cent2eur(c);
+  openModal(`📄 Kassenbericht ${jahr}`, `<div class="v2-card-actions" style="margin:0 0 8px"><button class="v2-btn" data-act="ofc-kb-jahr" data-val="${jahr - 1}">‹ ${jahr - 1}</button> <button class="v2-btn" data-act="ofc-kb-jahr" data-val="${jahr + 1}">${jahr + 1} ›</button></div>
+    ${b.ab !== jahr + "-01-01" ? `<div class="v2-sub">Bericht ab dem Stichtag des Anfangsbestands (${esc(datumDe(b.ab))}).</div>` : ""}
+    ${b.anfangsbestand_cent === null ? `<div class="v2-msg err">Ohne Anfangsbestand kennt LUNA Anfangs- und Endbestand nicht – unter „Anfangsbestand“ eintragen oder per PayPal-CSV übernehmen.</div>` : ""}
+    <div class="v2-ofc-vorschau">
+      <div class="v2-kv"><span>Anfangsbestand ${esc(datumDe(b.ab))}</span><b>${esc(e(b.anfangsbestand_cent))}</b></div>
+      ${b.je_kategorie.map(k => `<div class="v2-kv"><span>${esc(k.text)} (${k.anzahl})</span><b>${k.einnahmen_cent ? "+" + esc(cent2eur(k.einnahmen_cent)) : ""}${k.einnahmen_cent && k.ausgaben_cent ? " · " : ""}${k.ausgaben_cent ? "−" + esc(cent2eur(Math.abs(k.ausgaben_cent))) : ""}</b></div>`).join("")}
+      <div class="v2-kv"><span>Einnahmen / Ausgaben</span><b>+${esc(cent2eur(b.einnahmen_cent))} · −${esc(cent2eur(Math.abs(b.ausgaben_cent)))}</b></div>
+      <div class="v2-kv"><span><b>Endbestand ${esc(datumDe(b.bis))}</b></span><b>${esc(e(b.endbestand_cent))}</b></div>
+      <div class="v2-kv"><span>Offene Tickets</span><b>${esc(cent2eur(b.tickets_offen_cent))}</b></div>
+      ${b.beitraege ? `<div class="v2-kv"><span>Beiträge ${jahr} offen · Quote</span><b>${esc(cent2eur(b.beitraege.offen_cent))} · ${b.beitraege.quote} %</b></div>` : ""}
+      ${b.vorgemerkt_cent ? `<div class="v2-kv"><span>„Später bezahlen“ noch nicht abgebucht</span><b>${esc(cent2eur(Math.abs(b.vorgemerkt_cent)))}</b></div>` : ""}
+      ${b.nicht_zugeordnet ? `<div class="v2-sub">${b.nicht_zugeordnet} Eingang/Eingänge noch nicht zugeordnet – <a href="#" data-act="ofc-eingaenge">💶 Eingänge</a></div>` : ""}
+    </div>
+    <div class="v2-card-actions"><a class="v2-btn pri" href="/api/ofc/kasse/bericht.pdf?jahr=${jahr}" target="_blank" rel="noopener">📄 PDF</a> <a class="v2-btn" href="/api/ofc/kasse/bericht.csv?jahr=${jahr}">⬇︎ CSV (Kassenbuch)</a></div>
+    <div class="v2-sub">Kein Steuer- oder Rechtsdokument · Veröffentlichung nur durch dich.</div>`);
+}
+function ofcKIStart() {
+  OFC_KI = null;
+  openModal("⬆︎ PayPal-Kontoauszug abgleichen", `<div class="v2-sub">In PayPal unter <b>Aktivitäten → Kontoauszüge → Aktivitäten herunterladen</b> eine CSV-Datei erstellen und hier hochladen. LUNA zeigt erst eine Vorschau; übernommen wird nur, was du bestätigst.</div>
+    <div class="v2-ofc-eingabe"><label>CSV-Datei</label><input id="ofc-ki-datei" class="v2-inp" type="file" accept=".csv,text/csv"></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-ki-vorschau">Vorschau</button></div><div id="ofc-ki-ergebnis"></div>`);
+}
+async function ofcKIVorschau(el) {
+  const f = $("#ofc-ki-datei").files[0], box = $("#ofc-ki-ergebnis"); if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { box.innerHTML = `<div class="v2-msg err">Die Datei ist größer als 5 MB.</div>`; return; }
+  const b64 = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1] || ""); r.readAsDataURL(f); });
+  OFC_KI = { name: f.name, daten: b64 }; el.disabled = true; box.innerHTML = `<div class="v2-empty">Gleiche ab …</div>`;
+  const v = await jpost("/api/ofc/kasse/import/vorschau", { datei: OFC_KI }); el.disabled = false;
+  if (!v || v.ok === false) { box.innerHTML = `<div class="v2-msg err">${esc((v && v.hinweis) || "Fehler.")}</div>`; return; }
+  if (!(v.zeilen || []).length) { box.innerHTML = `<div class="v2-msg err">${esc(v.hinweis || "Keine Buchungszeilen in der Datei.")}</div>`; return; }
+  const ve = v.vergleich, kat = (OFC_K.daten && OFC_K.daten.kategorien) || {};
+  const ERG = { bekannt: ["ok", "schon da"], passt: ["ok", "passt"], neu: ["warn", "neu"], uebersprungen: ["neutral", "zählt nicht"] };
+  box.innerHTML = `<div class="v2-ofc-vorschau">
+      <div class="v2-kv"><span>Zeilen</span><b>${v.anzahl} · schon da ${v.bekannt} · passt ${v.passt} · neu ${v.neu} · zählt nicht ${v.uebersprungen}</b></div>
+      <div class="v2-kv"><span>Neu zu buchen</span><b>${esc(cent2eur(v.neu_cent))}${v.gebuehren ? ` + ${v.gebuehren} Gebühr(en) ${esc(cent2eur(v.gebuehren_cent))}` : ""}</b></div>
+      ${ve ? `<div class="v2-kv"><span>Guthaben laut PayPal am ${esc(datumDe(ve.datum))}</span><b>${esc(cent2eur(ve.paypal_cent))}</b></div>
+        ${ve.luna_cent !== undefined ? `<div class="v2-kv"><span>Kassenstand in LUNA danach</span><b>${esc(cent2eur(ve.luna_cent))}${ve.abweichung_cent ? ` · Abweichung ${esc(cent2eur(ve.abweichung_cent))}` : " ✓"}</b></div>`
+          : `<label class="v2-list-row v2-ofc-wahl"><input type="checkbox" id="ofc-ki-start" checked><div class="grow"><b>Anfangsbestand übernehmen</b><small>${esc(cent2eur(ve.start_vorschlag.betrag_cent))} zum ${esc(datumDe(ve.start_vorschlag.datum))} (aus der ersten Zeile)</small></div></label>`}` : ""}
+    </div>
+    <div style="max-height:320px;overflow:auto">${v.zeilen.filter(x => x.ergebnis !== "bekannt").map(x => `<div class="v2-list-row"><div class="v2-ofc-datum"><b>${esc(datumDe(x.datum))}</b></div>
+      <div class="grow"><b class="v2-umbruch">${esc([x.beschreibung, x.name].filter(Boolean).join(" – ") || "PayPal")}</b><small>${x.ergebnis === "neu" ? "→ " + esc(kat[x.kategorie] || x.kategorie) : ""}${x.gebuehr_neu ? " · Gebühr " + esc(cent2eur(x.gebuehr_cent)) : ""}${x.status ? " · " + esc(x.status) : ""}</small></div>
+      <div style="text-align:right"><b>${esc(cent2eur(x.brutto_cent))}</b><br><span class="v2-badge ${ERG[x.ergebnis][0]}">${ERG[x.ergebnis][1]}</span></div></div>`).join("") || emptyRow("Alle Zeilen sind schon in der Kasse.")}</div>
+    <div class="v2-card-actions">${v.neu || v.gebuehren || (ve && ve.luna_cent === undefined) ? `<button class="v2-btn pri" data-act="ofc-ki-ok">Übernehmen</button>` : ""}</div><div class="v2-msg" id="ofc-ki-msg"></div>`;
+}
+async function ofcKIOk(el) {
+  if (!OFC_KI) return;
+  const start = $("#ofc-ki-start"); el.disabled = true;
+  const r = await jpost("/api/ofc/kasse/import", { datei: OFC_KI, bestaetigt: true, anfangsbestand: !!(start && start.checked) }); el.disabled = false;
+  if (!r || r.ok === false) { $("#ofc-ki-msg").className = "v2-msg err"; $("#ofc-ki-msg").textContent = (r && r.hinweis) || "Fehler."; return; }
+  closeModal(); return renderOfcKasse(r.hinweis || `${r.gebucht} Buchung(en) übernommen.`);
+}
+async function ofcKIStorno(iid) {
+  if (!confirm("Diesen Import stornieren? Seine Buchungen bleiben sichtbar, zählen aber nicht mehr.")) return;
+  const r = await jpost(`/api/ofc/kasse/import/${encodeURIComponent(iid)}/storno`, { bestaetigt: true });
+  if (!r || r.ok === false) return alert((r && r.hinweis) || "Fehler.");
+  return renderOfcKasse(`${r.storniert} Buchung(en) storniert.`);
 }
 async function renderOfcMitglieder(neu) {
   OFC_M_AKTIV = true;
@@ -5878,6 +6124,24 @@ async function handleAct(act, el) {
     case "ofc-b-neu": return renderOfcBeitraege(true);
     case "ofc-b-jahr": OFC_B.jahr += Number(val); return renderOfcBeitraege();
     case "ofc-b-filter": OFC_B.filter = id; return renderOfcBeitraege();
+    case "ofc-b-kopieren": return ofcBKopieren(val, el);
+    case "ofc-kasse": return renderOfcKasse();
+    case "ofc-k-jahr": OFC_K.jahr = Number(val) || 0; return renderOfcKasse();
+    case "ofc-k-filter": OFC_K.kat = val; return renderOfcKasse();
+    case "ofc-k-neu": return ofcKNeu();
+    case "ofc-k-neu-ok": return ofcKNeuOk(el);
+    case "ofc-k-start": return ofcKStart();
+    case "ofc-k-start-ok": return ofcKStartOk();
+    case "ofc-k-katwahl": return ofcKKatWahl(id);
+    case "ofc-k-katset": return ofcKKatSet(id, val);
+    case "ofc-k-storno": return ofcKStorno(id, val);
+    case "ofc-ki-start": return ofcKIStart();
+    case "ofc-kb": return ofcKB();
+    case "ofc-kb-jahr": return ofcKB(Number(val));
+    case "ofc-ki-vorschau": return ofcKIVorschau(el);
+    case "ofc-ki-ok": return ofcKIOk(el);
+    case "ofc-ki-storno": return ofcKIStorno(id);
+    case "ofc-b-setzen": return ofcBSetzen(id, val);
     case "ofc-s-alle": OFC_S_ALLE = !OFC_S_ALLE; return renderOfcSaison();
     case "ofc-s-kopieren": return ofcSKopieren(val, el);
     case "ofc-abschluss": return ofcAbschluss(id, !!val);
@@ -5888,6 +6152,11 @@ async function handleAct(act, el) {
     case "ofc-ein-ign": return ofcEinZu(id, [], true);
     case "ofc-ein-vs": { const e = OFC_E.eingaenge.find(x => x.id === id); return ofcEinZu(id, e.vorschlaege[Number(val)].tickets, false); }
     case "ofc-ein-waehlen": return ofcEinWaehlen(id);
+    case "ofc-ein-artwahl": return ofcEinArtWahl(id);
+    case "ofc-ein-artset": return ofcEinArt(id, val);
+    case "ofc-ein-bvs": { const e = OFC_E.eingaenge.find(x => x.id === id); return ofcEinArt(id, "beitrag", e.beitrag_vorschlaege[Number(val)].beitrag.map(b => ({ nummer: b.nummer, jahr: b.jahr }))); }
+    case "ofc-ein-bok": { const j = Number(($("#ofc-ein-bjahr") || {}).value || 0), nrs = [...document.querySelectorAll("#ofc-ein-bliste input:checked")].map(i => i.value);
+      if (!nrs.length) return alert("Bitte mindestens ein Mitglied wählen."); return ofcEinArt(id, "beitrag", nrs.map(nummer => ({ nummer, jahr: j }))); }
     case "ofc-ein-ok": return ofcEinZu(id, [...document.querySelectorAll("#ofc-ein-liste input:checked")].map(i => i.value), false);
     case "ofc-zahl-holen": return ofcZahlHolen();
     case "ofc-zahl-holen-ok": return ofcZahlHolenOk(el);

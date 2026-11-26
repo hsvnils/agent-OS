@@ -24,7 +24,7 @@ from . import ofc
 from .ofc_store import OfcStore
 from .ofc_zahlung import PAYPAL_DOMAINS, _BETRAG, _cent, _datum
 
-VERSION = 3                     # Erkennungsstand; automatisch erzeugte Eintraege aelterer Fassung werden neu bewertet
+VERSION = 4                     # Erkennungsstand; automatisch erzeugte Eintraege aelterer Fassung werden neu bewertet
 TAGE = 120
 _LABELS = ("transaktionscode", "transaktions", "datum", "betrag", "zahlung", "details", "hilfe", "paypal", "sie sind",
            "bitte", "hinweis")
@@ -166,7 +166,9 @@ _SYNONYME = {"bmg": {"gladbach", "moenchengladbach", "fohlen"}, "vfb": {"stuttga
              "sge": {"frankfurt"}, "svw": {"bremen", "werder"}, "s04": {"schalke"}, "bvb": {"dortmund"},
              "koeln": {"effzeh", "koelle"}, "m05": {"mainz"}, "hajduk": {"split"}, "kopenhagen": {"copenhagen", "koebenhavn"}}
 _PHRASEN = ((r"nord\s*sued|sued\s*nord", "fcb"), (r"nordderby|nord\s+derby", "svw"))
-_NICHT_TICKET = re.compile(r"trikot|schal|merch|beitrag|mitglied|spende|aufkleber|shirt|hoodie|cap\b", re.I)
+_MERCH = re.compile(r"trikot|schal|merch|aufkleber|shirt|hoodie|cap\b|sticker|fahne", re.I)
+_SPENDE = re.compile(r"spende", re.I)
+ARTEN = ("ticket", "beitrag", "merch", "spende", "sonstiges")
 _BANK = re.compile(r"sparkasse|\bbank\b|volksbank|commerzbank|\bing\b|••|\*\*\d", re.I)
 RUNDUNG_CENT = 500                                                    # „aufgerundet“: bis 5 € ueber dem Kartenpreis
 
@@ -278,7 +280,7 @@ def vorschlag(z: dict, st: dict, offen: dict) -> dict:
     2. Ohne Spiel in der Mitteilung: genau eine Kombination aus Tickets auf den Namen des Zahlers mit genau dem Betrag.
     Ueberweisungen aufs Bankkonto -> info; Mitteilung „Trikot/Beitrag …“ ohne passendes Ticket -> info."""
     if _BANK.search(z.get("name") or ""):
-        return {"zuordnung": "info", "tickets": [], "vorschlaege": [], "grund": "Überweisung auf das Bankkonto"}
+        return {"zuordnung": "info", "tickets": [], "vorschlaege": [], "grund": "Überweisung auf das Bankkonto", "art": "auszahlung"}
     if z["betrag_cent"] <= 0:
         return {"zuordnung": "offen", "tickets": [], "vorschlaege": []}
     zahler = [x for x in [_woerter(_falten(z["name"]))] + [_ticket_woerter(a) for a in _aliase(st).get(_norm(z["name"]), set())] if x]
@@ -354,8 +356,10 @@ def vorschlag(z: dict, st: dict, offen: dict) -> dict:
         out["wahl"] = wahl
     if len(treffer) == 1:
         out.update(zuordnung="auto", tickets=treffer[0]["tickets"])
-    elif not treffer and _NICHT_TICKET.search(z.get("mitteilung") or "") and not erw:
-        out.update(zuordnung="info", grund="Kein Ticket laut Mitteilung")
+    elif not treffer and not erw and (m := _MERCH.search(z.get("mitteilung") or "") or _SPENDE.search(z.get("mitteilung") or "")):
+        spende = bool(_SPENDE.search(m.group(0)))
+        out.update(zuordnung="info", grund="Spende laut Mitteilung" if spende else "Merch laut Mitteilung (kein Ticket)",
+                   art="spende" if spende else "merch")
     return out
 
 
@@ -374,26 +378,49 @@ def _neu_bewerten(e: dict) -> bool:
 
 
 def _gleich(a: dict, b: dict) -> bool:
-    keys = ("zuordnung", "tickets", "wahl", "grund")
+    keys = ("zuordnung", "tickets", "wahl", "grund", "art", "beitrag")
+    if [(tuple((x["nummer"], x["jahr"]) for x in m["beitrag"])) for m in a.get("beitrag_vorschlaege") or []] != \
+            [(tuple((x["nummer"], x["jahr"]) for x in m["beitrag"])) for m in b.get("beitrag_vorschlaege") or []]:
+        return False
     return all(a.get(k) == b.get(k) for k in keys) and [(m["spiel"], m["tickets"]) for m in a.get("vorschlaege") or []] \
         == [(m["spiel"], m["tickets"]) for m in b.get("vorschlaege") or []] and a.get("v") == b.get("v")
 
 
-def eingang_plan(store: OfcStore, mails: list[dict]) -> dict:
-    """Dry-Run: neue (und neu bewertete) Eingaenge mit Vorschlag/Auto-Zuordnung -- schreibt nichts."""
+def eingang_plan(store: OfcStore, mails: list[dict], mitglieder: dict | None = None) -> dict:
+    """Dry-Run: neue (und neu bewertete) Eingaenge mit Vorschlag/Auto-Zuordnung -- schreibt nichts.
+    Mit Mitgliederliste (OFC-Kasse KA1) werden auch Beitragszahlungen erkannt."""
+    from . import ofc_beitraege as ob
     st = store.stand()
     alt = {i: e for i, e in st.get("eingaenge", {}).items() if _neu_bewerten(e)}
     if alt:                                                            # ohne Klick: Bewertung zaehlt nicht, wird neu gemacht
         st = st | {"eingaenge": {i: e for i, e in st["eingaenge"].items() if i not in alt}}
     bekannt = st.get("eingaenge", {})
     offen = _offen(st)
+    from datetime import date as _d
+    offen_b = ob.offene_beitraege(st, mitglieder, _d.today().year + 2) if mitglieder else {}
     neu = []
     for z in eingaenge_aus_mails(mails):
         if z["id"] in bekannt:
             continue
         e = z | vorschlag(z, st, offen)
+        bv = ob.beitrag_vorschlag(z, st, mitglieder, offen_b) if mitglieder else None
+        wort = bool(ob.BEITRAG_WORT.search(z.get("mitteilung") or ""))
+        if bv:
+            e["beitrag_vorschlaege"] = bv["vorschlaege"]
+            if bv["auto"] and (wort or e["zuordnung"] != "auto"):
+                e.update(zuordnung="auto", tickets=[], art="beitrag", beitrag=bv["auto"], grund=ob.beitrag_text(bv["auto"]))
+                for b in bv["auto"]:
+                    offen_b.pop(f"{b['nummer']}|{b['jahr']}", None)
+        if wort and e["zuordnung"] == "info" and e.get("art") in ("merch", "spende"):
+            e.update(zuordnung="offen", art=None, grund=None)            # „Beitrag“ in der Mitteilung -> per Klick
+        if e["zuordnung"] == "auto" and e.get("art") != "beitrag":
+            e["art"] = "ticket"
         for nr in e["tickets"]:                                         # im selben Lauf nicht doppelt vergeben
             offen.pop(nr, None)
+        e.setdefault("art", None)
+        e.setdefault("beitrag", [])
+        e.setdefault("grund", None)
+        e.setdefault("beitrag_vorschlaege", [])
         neu.append(e)
     _teilzahlungen(neu, st, offen)
     neu = [e for e in neu if not (e["id"] in alt and _gleich(alt[e["id"]], e))]
@@ -426,13 +453,13 @@ def _teilzahlungen(neu: list[dict], st: dict, offen: dict) -> None:
                 if v["zuordnung"] != "auto":
                     continue
                 for e in kombi:
-                    e.update(zuordnung="auto", tickets=list(v["tickets"]), grund="Teilzahlungen zusammen")
+                    e.update(zuordnung="auto", tickets=list(v["tickets"]), grund="Teilzahlungen zusammen", art="ticket")
                 for nr in v["tickets"]:
                     offen.pop(nr, None)
 
 
-def eingang_anwenden(store: OfcStore, mails: list[dict], *, von: str = "") -> dict:
-    plan = eingang_plan(store, mails)
+def eingang_anwenden(store: OfcStore, mails: list[dict], *, von: str = "", mitglieder: dict | None = None) -> dict:
+    plan = eingang_plan(store, mails, mitglieder)
     for e in plan["neu"]:
         store.erfassen("ofc_eingang", {k: v for k, v in e.items() if k != "vorschlaege"}
                        | {"vorschlaege": [{k: v for k, v in m.items() if k != "mitteilung"} for m in e["vorschlaege"]]}, von=von)
@@ -449,7 +476,8 @@ def eingang_zuordnen(store: OfcStore, eid: str, tickets: list[str], *, ignoriere
     if fremd:
         return {"ok": False, "hinweis": f"Ticket nicht gefunden: {fremd[0]}"}
     zu = "ignoriert" if ignorieren else ("manuell" if tickets else "offen")
-    store.erfassen("ofc_eingang", {"id": eid, "tickets": [] if ignorieren else list(tickets), "zuordnung": zu, "von_hand": True},
+    store.erfassen("ofc_eingang", {"id": eid, "tickets": [] if ignorieren else list(tickets), "zuordnung": zu, "von_hand": True,
+                                   "art": "sonstiges" if ignorieren else ("ticket" if tickets else None), "beitrag": []},
                    von=von)                                            # Klick des CEO -> wird nie automatisch neu bewertet
     neu_alias = []
     if zu == "manuell":
@@ -463,10 +491,48 @@ def eingang_zuordnen(store: OfcStore, eid: str, tickets: list[str], *, ignoriere
     return {"ok": True, "id": eid, "zuordnung": zu, "tickets": [] if ignorieren else list(tickets), "aliase_neu": neu_alias}
 
 
-def lauf(store: OfcStore, postfach, *, von: str = "auto") -> dict:
+def eingang_art(store: OfcStore, eid: str, art: str, *, beitrag: list[dict] | None = None, mitglieder: dict | None = None,
+               von: str = "") -> dict:
+    """OFC-Kasse KA1: Art eines Eingangs per Klick setzen -- Beitrag (Mitglied + Jahr), Merch, Spende, Sonstiges.
+    Bei „Beitrag“ wird der Betrag der Reihe nach auf die offenen Beitraege verteilt; ein Zahler mit anderem Namen
+    als das Mitglied wird als Alias gelernt (Familie zahlt mit)."""
+    from . import ofc_beitraege as ob
+    st = store.stand()
+    e = st.get("eingaenge", {}).get(eid)
+    if not e:
+        return {"ok": False, "hinweis": "Zahlungseingang nicht gefunden."}
+    if art not in ARTEN or art == "ticket":
+        return {"ok": False, "hinweis": "Art unbekannt."}
+    items, neu_alias = [], []
+    if art == "beitrag":
+        ms = {p["nummer"]: p for p in ob._mitglieder(mitglieder) if p.get("nummer")}
+        if not beitrag or not ms:
+            return {"ok": False, "hinweis": "Mitglied und Jahr wählen (Mitgliederliste nötig)."}
+        offen_b = ob.offene_beitraege(st, mitglieder, max(int(b.get("jahr") or 0) for b in beitrag))
+        rest = e.get("betrag_cent", 0)
+        for i, b in enumerate(beitrag):
+            nr, j = str(b.get("nummer") or ""), int(b.get("jahr") or 0)
+            if nr not in ms or not 2000 <= j <= 2100:
+                return {"ok": False, "hinweis": f"Mitglied {nr} / Jahr {j} unbekannt."}
+            soll = offen_b.get(f"{nr}|{j}", ob.soll(ms[nr], j)["soll_cent"])
+            teil = rest if i == len(beitrag) - 1 else min(rest, soll)
+            items.append({"nummer": nr, "name": ms[nr].get("name", ""), "jahr": j, "cent": max(teil, 0)})
+            rest -= max(teil, 0)
+        zahler = _woerter(_falten(e.get("name") or ""))
+        for b in items:
+            if not ob._name_passt_mitglied(ms[b["nummer"]], zahler) and b["nummer"] not in neu_alias:
+                neu_alias.append(b["nummer"])
+    store.erfassen("ofc_eingang", {"id": eid, "tickets": [], "zuordnung": "manuell", "von_hand": True, "art": art,
+                                   "beitrag": items, "grund": ob.beitrag_text(items) if items else None}, von=von)
+    for nr in neu_alias:
+        store.erfassen("ofc_beitrag_alias", {"zahler": _norm(e.get("name") or ""), "nummer": nr}, von=von)
+    return {"ok": True, "id": eid, "art": art, "beitrag": items, "aliase_neu": neu_alias}
+
+
+def lauf(store: OfcStore, postfach, *, von: str = "auto", mitglieder: dict | None = None) -> dict:
     try:
         if not postfach.verfuegbar():
             return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
-        return eingang_anwenden(store, postfach.posteingang(tage=TAGE, nur=PAYPAL_DOMAINS), von=von)
+        return eingang_anwenden(store, postfach.posteingang(tage=TAGE, nur=PAYPAL_DOMAINS), von=von, mitglieder=mitglieder)
     except Exception as exc:
         return {"ok": False, "hinweis": f"Postfach-Abruf fehlgeschlagen ({exc.__class__.__name__})."}

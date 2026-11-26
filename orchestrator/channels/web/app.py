@@ -6218,6 +6218,16 @@ def _ofc_store():
     return OfcStore(ROOT / "fanclub")
 
 
+def _ofc_mitglieder_daten():
+    """OFC-Kasse KA1: Mitgliederliste (nur lesend, 5 Minuten im Speicher) -- None, wenn nicht lesbar."""
+    try:
+        from ...core.ofc_mitglieder import lesen
+        d = lesen(_google().auth)
+        return d if d.get("ok") else None
+    except Exception:
+        return None
+
+
 @app.get("/api/ofc/uebersicht")
 def ofc_uebersicht(request: Request):
     """O1: Spiele der Saison mit Karten, Namen, Status und Hinweisen (E8: Hinweise nur hier, keine Telegram-Nachricht)."""
@@ -6275,7 +6285,7 @@ def _ofc_post_starten():
         from ...core.ofc_post import starten
         from ...core.ofc_eingang import lauf as eingang_lauf
         from ...core.ofc_zahlung import lauf as zahl_lauf
-        starten(_ofc_store, _ofc_postfach, weitere=(zahl_lauf, eingang_lauf))
+        starten(_ofc_store, _ofc_postfach, weitere=(zahl_lauf, lambda st, pf: eingang_lauf(st, pf, mitglieder=_ofc_mitglieder_daten())))
     except Exception:
         pass
 
@@ -6399,7 +6409,7 @@ def ofc_eingaenge_vorschau(request: Request):
     if not p.verfuegbar():
         return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
     try:
-        return eingang_plan(_ofc_store(), p.posteingang(tage=TAGE, nur=PAYPAL_DOMAINS))
+        return eingang_plan(_ofc_store(), p.posteingang(tage=TAGE, nur=PAYPAL_DOMAINS), _ofc_mitglieder_daten())
     except Exception as exc:
         return {"ok": False, "hinweis": f"Postfach nicht lesbar ({exc.__class__.__name__})."}
 
@@ -6411,7 +6421,7 @@ async def ofc_eingaenge_abholen(request: Request):
     if body.get("bestaetigt") is not True:
         return {"ok": False, "hinweis": "Übernehmen braucht die Bestätigung."}
     from ...core.ofc_eingang import lauf
-    return lauf(_ofc_store(), _ofc_postfach(), von=_von(request))
+    return lauf(_ofc_store(), _ofc_postfach(), von=_von(request), mitglieder=_ofc_mitglieder_daten())
 
 
 @app.post("/api/ofc/eingang/{eid}/zuordnen")
@@ -6424,6 +6434,179 @@ async def ofc_eingang_zuordnen(request: Request, eid: str):
     if not isinstance(tks, list):
         return {"ok": False, "hinweis": "Tickets als Liste angeben."}
     return eingang_zuordnen(_ofc_store(), eid, [str(x) for x in tks], ignorieren=body.get("ignorieren") is True, von=_von(request))
+
+
+@app.post("/api/ofc/eingang/{eid}/art")
+async def ofc_eingang_art(request: Request, eid: str):
+    """OFC-Kasse KA1: Eingang per Klick als Beitrag (Mitglied + Jahr), Merch, Spende oder Sonstiges einordnen."""
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.ofc_eingang import eingang_art
+    bt = body.get("beitrag") or []
+    if not isinstance(bt, list) or not all(isinstance(x, dict) for x in bt):
+        return {"ok": False, "hinweis": "Beitrag als Liste {nummer, jahr} angeben."}
+    return eingang_art(_ofc_store(), eid, str(body.get("art") or ""), beitrag=bt,
+                       mitglieder=_ofc_mitglieder_daten() if bt else None, von=_von(request))
+
+
+@app.get("/api/ofc/kasse")
+def ofc_kasse(request: Request, jahr: int = 0):
+    """OFC-Kasse KA3: Kassenbuch (PayPal) -- Buchungen aus Eingaengen, eigenen Zahlungen und Handbuchungen, Kassenstand."""
+    _nur_ceo(request)
+    from ...core.ofc_kasse import kassenbuch
+    return kassenbuch(_ofc_store().stand(), jahr=jahr or None)
+
+
+@app.post("/api/ofc/kasse/buchung")
+async def ofc_kasse_buchung(request: Request):
+    """KA3: Handbuchung (z. B. Gebuehr, Auslage) mit optionalem Beleg -- nur mit Bestaetigung."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_kasse import buchung_anlegen
+    try:
+        beleg, name = _datei_b64(body.get("beleg"))
+        betrag = int(body.get("betrag_cent"))
+    except (ValueError, TypeError):
+        return {"ok": False, "hinweis": "Betrag oder Beleg ungültig."}
+    return buchung_anlegen(_ofc_store(), datum=str(body.get("datum") or ""), betrag_cent=betrag,
+                           kategorie=str(body.get("kategorie") or ""), text=str(body.get("text") or ""),
+                           beleg=beleg, beleg_name=name, von=_von(request))
+
+
+@app.post("/api/ofc/kasse/storno")
+async def ofc_kasse_storno(request: Request):
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_kasse import storno
+    return storno(_ofc_store(), str(body.get("id") or ""), zurueck=body.get("zurueck") is True, von=_von(request))
+
+
+@app.post("/api/ofc/kasse/kategorie")
+async def ofc_kasse_kategorie(request: Request):
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.ofc_kasse import kategorie_setzen
+    return kategorie_setzen(_ofc_store(), str(body.get("quelle") or ""), str(body.get("kategorie") or ""), von=_von(request))
+
+
+@app.post("/api/ofc/kasse/anfangsbestand")
+async def ofc_kasse_anfangsbestand(request: Request):
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_kasse import anfangsbestand_setzen
+    try:
+        betrag = int(body.get("betrag_cent"))
+    except (ValueError, TypeError):
+        return {"ok": False, "hinweis": "Betrag ungültig."}
+    return anfangsbestand_setzen(_ofc_store(), str(body.get("datum") or ""), betrag, von=_von(request))
+
+
+@app.post("/api/ofc/kasse/import/vorschau")
+async def ofc_kasse_import_vorschau(request: Request):
+    """KA4 Dry-Run: PayPal-CSV lesen und mit der Kasse abgleichen -- speichert nichts (auch nicht die Datei)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.ofc_kasse_import import csv_lesen, import_plan
+    try:
+        roh, _name = _datei_b64(body.get("datei"))
+    except (ValueError, TypeError):
+        return {"ok": False, "hinweis": "Datei nicht lesbar."}
+    gel = csv_lesen(roh)
+    if not gel.get("ok") or not gel.get("zeilen"):
+        return gel | {"zeilen": []}
+    return import_plan(_ofc_store().stand(), gel["zeilen"]) | {"format": gel["format"]}
+
+
+@app.post("/api/ofc/kasse/import")
+async def ofc_kasse_import(request: Request):
+    """KA4: PayPal-CSV uebernehmen (nur mit Bestaetigung) -- neue Zeilen + Gebuehren als Buchungen, Datei in `fanclub/importe/`."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_kasse_import import import_anwenden
+    try:
+        roh, name = _datei_b64(body.get("datei"))
+    except (ValueError, TypeError):
+        return {"ok": False, "hinweis": "Datei nicht lesbar."}
+    r = import_anwenden(_ofc_store(), roh, name or "paypal.csv", anfangsbestand_uebernehmen=body.get("anfangsbestand") is True,
+                        von=_von(request))
+    return {k: v for k, v in r.items() if k != "zeilen"}
+
+
+@app.get("/api/ofc/kasse/importe")
+def ofc_kasse_importe(request: Request):
+    _nur_ceo(request)
+    from ...core.ofc_kasse_import import importe
+    return {"importe": importe(_ofc_store().stand())}
+
+
+@app.post("/api/ofc/kasse/import/{iid}/storno")
+async def ofc_kasse_import_storno(request: Request, iid: str):
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_kasse_import import import_storno
+    return import_storno(_ofc_store(), iid, von=_von(request))
+
+
+def _ofc_kassenbericht(jahr: int) -> dict:
+    from datetime import date as _date
+    from ...core.ofc_beitraege import jahr_stand
+    from ...core.ofc_kasse import kassenbericht
+    jahr = jahr or _date.today().year
+    if not 2020 <= jahr <= 2100:
+        return {"ok": False, "hinweis": "Jahr ungültig."}
+    st = _ofc_store().stand()
+    m = _ofc_mitglieder_daten()
+    return kassenbericht(st, jahr, beitraege=jahr_stand(st, m, jahr) if m else None)
+
+
+@app.get("/api/ofc/kasse/bericht")
+def ofc_kasse_bericht(request: Request, jahr: int = 0):
+    """KA5: Kassenbericht je Geschaeftsjahr (Kalenderjahr) -- reine Auswertung, schreibt nichts."""
+    _nur_ceo(request)
+    return _ofc_kassenbericht(jahr)
+
+
+@app.get("/api/ofc/kasse/bericht.pdf")
+def ofc_kasse_bericht_pdf(request: Request, jahr: int = 0):
+    _nur_ceo(request)
+    from ...core.ofc_kasse import bericht_pdf
+    b = _ofc_kassenbericht(jahr)
+    if not b.get("ok"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, b.get("hinweis") or "Fehler")
+    return Response(bericht_pdf(b), media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="hsvinside-kassenbericht-{b["jahr"]}.pdf"', "Cache-Control": "no-store"})
+
+
+@app.get("/api/ofc/kasse/bericht.csv")
+def ofc_kasse_bericht_csv(request: Request, jahr: int = 0):
+    _nur_ceo(request)
+    from ...core.ofc_kasse import bericht_csv
+    b = _ofc_kassenbericht(jahr)
+    if not b.get("ok"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, b.get("hinweis") or "Fehler")
+    return Response(bericht_csv(_ofc_store().stand(), b), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="hsvinside-kassenbuch-{b["jahr"]}.csv"', "Cache-Control": "no-store"})
+
+
+@app.get("/api/ofc/kasse/beleg/{bid}")
+def ofc_kasse_beleg(request: Request, bid: str):
+    _nur_ceo(request)
+    from ...core.ofc_kasse import beleg_pfad
+    p = beleg_pfad(_ofc_store(), bid)
+    if p is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Beleg nicht gefunden")
+    typ = {".pdf": "application/pdf", ".png": "image/png", ".webp": "image/webp", ".heic": "image/heic"}.get(p.suffix.lower(), "image/jpeg")
+    return Response(p.read_bytes(), media_type=typ, headers={"Content-Disposition": f'inline; filename="{p.name}"', "Cache-Control": "no-store"})
 
 
 @app.get("/api/ofc/saison")
@@ -6521,18 +6704,69 @@ def ofc_mitglieder(request: Request, neu: int = 0):
         return {"ok": False, "hinweis": f"Mitgliederliste nicht lesbar ({exc.__class__.__name__})."}
 
 
-@app.get("/api/ofc/beitraege")
-def ofc_beitraege(request: Request, jahr: int = 0, neu: int = 0):
-    """OFC-Kasse KA0: Soll-Beitrag je Mitglied im Beitragsjahr aus der Mitgliederliste -- nur lesend, keine KI."""
-    _nur_ceo(request)
-    from ...core.ofc_beitraege import beitraege
+def _ofc_beitrag_jahr(jahr: int, neu: bool = False) -> dict:
+    from datetime import date as _date
+    from ...core.ofc_beitraege import jahr_stand
     from ...core.ofc_mitglieder import lesen
     if jahr and not 2020 <= jahr <= 2100:
         return {"ok": False, "hinweis": "Jahr ungültig."}
     try:
-        return beitraege(lesen(_google().auth, neu=bool(neu)), jahr or None)
+        return jahr_stand(_ofc_store().stand(), lesen(_google().auth, neu=neu), jahr or _date.today().year)
     except Exception as exc:                                  # ohne Fehlertext (koennte Kennungen enthalten)
         return {"ok": False, "hinweis": f"Mitgliederliste nicht lesbar ({exc.__class__.__name__})."}
+
+
+@app.get("/api/ofc/beitraege")
+def ofc_beitraege(request: Request, jahr: int = 0, neu: int = 0):
+    """OFC-Kasse KA0/KA2: Soll, bezahlt, offen je Mitglied im Beitragsjahr -- Mitgliederliste nur lesend, keine KI."""
+    _nur_ceo(request)
+    return _ofc_beitrag_jahr(jahr, bool(neu))
+
+
+@app.get("/api/ofc/beitraege/hinweis")
+def ofc_beitraege_hinweis(request: Request):
+    """KA2: ueberfaellige Beitraege des laufenden Jahres fuer den Hinweis im Reiter (E8: keine Nachricht)."""
+    _nur_ceo(request)
+    from ...core.ofc_beitraege import beitrag_hinweis
+    return beitrag_hinweis(_ofc_store().stand(), _ofc_mitglieder_daten())
+
+
+@app.post("/api/ofc/beitrag")
+async def ofc_beitrag_setzen(request: Request):
+    """KA2: Beitrag eines Mitglieds per Klick als bezahlt / erlassen markieren oder zuruecksetzen (nur mit Bestaetigung)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Braucht die Bestätigung."}
+    from ...core.ofc_beitraege import beitrag_setzen
+    try:
+        jahr = int(body.get("jahr") or 0)
+    except (TypeError, ValueError):
+        return {"ok": False, "hinweis": "Jahr ungültig."}
+    return beitrag_setzen(_ofc_store(), str(body.get("nummer") or ""), jahr, str(body.get("status") or ""),
+                          daten=_ofc_mitglieder_daten(), von=_von(request))
+
+
+@app.get("/api/ofc/beitraege/export.csv")
+def ofc_beitraege_csv(request: Request, jahr: int = 0):
+    _nur_ceo(request)
+    from ...core.ofc_beitraege import export_csv
+    j = _ofc_beitrag_jahr(jahr)
+    if not j.get("ok"):
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, j.get("hinweis") or "nicht lesbar")
+    return Response(export_csv(j), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="hsvinside-beitraege-{j["jahr"]}.csv"', "Cache-Control": "no-store"})
+
+
+@app.get("/api/ofc/beitraege/export.pdf")
+def ofc_beitraege_pdf(request: Request, jahr: int = 0):
+    _nur_ceo(request)
+    from ...core.ofc_beitraege import export_pdf
+    j = _ofc_beitrag_jahr(jahr)
+    if not j.get("ok"):
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, j.get("hinweis") or "nicht lesbar")
+    return Response(export_pdf(j), media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="hsvinside-beitraege-{j["jahr"]}.pdf"', "Cache-Control": "no-store"})
 
 
 @app.get("/api/ofc/analyse/ordner")

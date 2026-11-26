@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-11-24
-- Arbeitsbranch: `main` (KA0 gemergt)
+- Arbeitsbranch: `ai/ofc-kasse-bau`
 - Basiscommit: `fda2486`
-- Naechster Schritt: KA0 live und auf der NAS geprueft (2026-11-25: 119 Mitglieder, 66 beitragspflichtig, Soll 2.640 € fuer 2026 und 2027, 9 mit Hinweis). Naechster Schritt: Go fuer KA1 (Beitragszahlungen erkennen). Fuer KA4 wird der PayPal-Aktivitaeten-Export (CSV) gebraucht.
+- Naechster Schritt: KA0-KA5 umgesetzt (KA1-KA5 auf `ai/ofc-kasse-bau`, ein Deploy am Ende). Danach Gesamtabnahme durch den CEO (alle Etappen zusammen): Beitraege 2027, Eingaenge mit Beitragsvorschlaegen, Kasse mit Anfangsbestand, PayPal-Aktivitaeten-Export (CSV) hochladen und abgleichen, Kassenbericht. Danach Status „abgeschlossen“.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -81,7 +81,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 ### Etappe KA1: Beitragszahlungen erkennen
 
-- Status: geplant
+- Status: umgesetzt (2026-11-25; `core/ofc_beitraege.py` + `core/ofc_eingang.py` VERSION 4: Eingaenge bekommen eine Art (Ticket, Beitrag, Merch, Spende, Sonstiges); Beitrag automatisch nach E-K4 (Name = Mitglied oder gelernter Alias, Betrag = offene Beitraege, auch mehrere Jahre oder Familie; Ticket geht vor, ausser die Mitteilung nennt den Beitrag; doppelte Namen nie automatisch); erstes erfasstes Beitragsjahr 2027 (`OFC_BEITRAG_AB` / Einstellung), Zahlungen ab November zaehlen fuers Folgejahr, aeltestes offenes Jahr zuerst; „Beitrag / andere Art …“ per Klick mit Mitgliedersuche, Alias wird gelernt; Mitteilung „Beitrag“ wird nie „kein Ticket“; Mitgliederliste geht nur lesend in den 15-Minuten-Lauf; `POST /api/ofc/eingang/{eid}/art`; Tests in `test_ofc_beitraege.py`)
 - Ziel / Scope / Nicht-Scope: PayPal-Eingaenge (O5) bekommen neben „Ticket“ die Art **„Beitrag“** (Jahr + Mitglied);
   Regel E-K4 automatisch, sonst Vorschlag „Beitrag von X fuer 2027“; Mehrjahres- und Familienzahlung (ein Zahler fuer
   mehrere Mitglieder, Alias wie in O5); „Kein Ticket“ aus O5 wird zu waehlbarer Art (Beitrag, Merch, Spende,
@@ -96,7 +96,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 ### Etappe KA2: Beitragsuebersicht und offene Beitraege
 
-- Status: geplant
+- Status: umgesetzt (2026-11-25; `core/ofc_beitraege.py` `jahr_stand`: je Mitglied und Jahr Soll / bezahlt / offen mit Status bezahlt, teilweise, offen, erlassen, kostenfrei, nicht erfasst (Jahre vor 2027 liefen vor LUNA), Zahlungen mit Zahler, „seit ueber 4 Wochen offen“, Erinnerungstext zum Kopieren; per Klick „bezahlt“ (z. B. vor der Erfassung), „Erlassen“, „zuruecksetzen“ mit Rueckfrage (Ereignis `ofc_beitrag`); Ansicht „🎫 Beitraege“ mit Kennzahlen Soll/Bezahlt/Offen/Quote, Filter offen/bezahlt/beitragspflichtig/mit Hinweis/alle, Jahr wechseln; Hinweis auf der OFC-Startseite bei ueberfaelligen Beitraegen (E8, keine Nachricht); Export CSV und PDF A4 hochkant (`core/ofc_pdf.py`, gemeinsamer Baustein fuer KA5); Endpunkte `/api/ofc/beitraege` (+ `/hinweis`, `/export.csv`, `/export.pdf`), `POST /api/ofc/beitrag` nur CEO; Tests in `test_ofc_beitraege.py`)
 - Ziel / Scope / Nicht-Scope: Ansicht „🎫 Beitraege“ je Jahr: Soll / bezahlt / offen je Mitglied, Filter (offen,
   Gold, neu), Summen; offene Beitraege mit **Text zum Kopieren** (wie O6); Hinweis im Reiter ab 4 Wochen nach
   Faelligkeit; Export CSV + PDF (A4 hochkant). Per Klick: „bezahlt (bar/Ueberweisung)“ fuer Zahlungen ausserhalb von
@@ -109,7 +109,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 ### Etappe KA3: Kassenbuch
 
-- Status: geplant
+- Status: umgesetzt (2026-11-25; `core/ofc_kasse.py`: Kassenbuch nur PayPal (E-K5) aus PayPal-Eingaengen (Kategorie nach Art; Rueckzahlung und Auszahlung aufs Bankkonto als Abgang; noch nicht zugeordnete zaehlen als „noch nicht zugeordnet“), eigenen Zahlungen (Abgang Tickets, Erstattung Zugang, „Spaeter bezahlen“ erst ab Faelligkeit und nur ohne fehlgeschlagene Abbuchung, sonst „vorgemerkt“) und Handbuchungen mit optionalem Beleg (`fanclub/belege/`, nur neu anlegen, PDF/Bild bis 10 MB); Anfangsbestand mit Historie (`ofc_kasse_start`), Kassenstand ab Stichtag; Kategorie je Buchung per Klick (`ofc_kasse_kat`); Storno statt Loeschen; Ansicht „💰 Kasse“ mit Kassenstand, Einnahmen/Ausgaben, Vorgemerkt, je Kategorie, Buchungsliste mit Filter; Endpunkte `/api/ofc/kasse` (+ `/buchung`, `/storno`, `/kategorie`, `/anfangsbestand`, `/beleg/<id>`) nur CEO; `test_ofc_kasse.py`)
 - Ziel / Scope / Nicht-Scope: Kassenbuch des Fanclubs aus allen vorhandenen Quellen: Einnahmen (Tickets O5, Beitraege
   KA1, Merch/Spenden), Ausgaben (eigene Ticketzahlungen O4, Erstattungen, Gebuehren, Auszahlungen auf ein Bankkonto);
   ein Konto PayPal (E-K5) mit Anfangsbestand; Kategorien E-K9; Buchung per Hand fuer Auslagen und Korrekturen (mit
@@ -123,7 +123,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 ### Etappe KA4: Abgleich mit dem PayPal-Kontoauszug
 
-- Status: geplant
+- Status: umgesetzt (2026-11-25; `core/ofc_kasse_import.py`: PayPal-CSV-Upload im Reiter „💰 Kasse“ (Aktivitaeten-Export deutsch/englisch, Spalten am Namen erkannt, Trenner/Zeichensatz automatisch; „Balance Reconciliation Report“ RH/RD/RF -- ohne Buchungszeilen kommt der Hinweis auf den Aktivitaeten-Export); Abgleich je Zeile: Transaktionscode bekannt / gleicher Betrag +-3 Tage / neu mit Kategorie-Vorschlag (Auszahlung, Einzahlung vom Bankkonto, Gebuehren, Tickets, Beitraege, Spenden, Merch, Sonstiges); PayPal-Gebuehren als eigene Buchung; Nicht-EUR/ausstehend/Memo zaehlen nicht; Guthaben laut PayPal gegen Kassenstand in LUNA, ohne Anfangsbestand Uebernahme aus der ersten Zeile; Vorschau schreibt nichts, Uebernehmen nur mit Bestaetigung, Originaldatei nur neu in `fanclub/importe/`, zweiter Import bucht nichts doppelt, Import als Ganzes stornierbar; neue Kategorie „Einzahlung (Bank)“; Endpunkte `/api/ofc/kasse/import/vorschau`, `/api/ofc/kasse/import`, `/api/ofc/kasse/importe`, `/api/ofc/kasse/import/<id>/storno` nur CEO; Tests in `test_ofc_kasse.py`. Gegenprobe mit der gelieferten leeren Datei: erkannt, Hinweis korrekt. Echte Abnahme braucht den Aktivitaeten-Export)
 - Ziel / Scope / Nicht-Scope: CSV-Upload im Reiter (PayPal-Aktivitaeten, E-K7; Bank entfaellt nach E-K5): Zeilen mit
   vorhandenen Buchungen abgleichen (Transaktionscode, Betrag, Datum), fehlende als Vorschlag uebernehmen (alte Zahlungen
   vor dem Postfach-Zeitraum, Gebuehren), Abweichungen anzeigen. Nicht-Scope: API-Zugaenge, automatischer Abruf.
@@ -136,7 +136,7 @@ und Kassenbericht -- getrennt von der Buchhaltung von Hanserautisch.
 
 ### Etappe KA5: Kassenbericht
 
-- Status: geplant
+- Status: umgesetzt (2026-11-25; `core/ofc_kasse.py` `kassenbericht`: je Geschaeftsjahr (Kalenderjahr) Anfangsbestand (aus Anfangsbestand + Bewegungen bis 31.12. Vorjahr; liegt der Stichtag im Jahr, beginnt der Bericht dort), Einnahmen/Ausgaben je Kategorie mit Anzahl, Endbestand, offene Tickets, offene Beitraege und Beitragsquote, „Spaeter bezahlen“ noch nicht abgebucht, noch nicht zugeordnete Eingaenge; Dialog „📄 Kassenbericht“ in der Kasse mit Jahr wechseln; PDF A4 hochkant (Hinweis: kein Steuer-/Rechtsdokument, Pruefung durch die Kassenpruefer) und CSV (Kassenbuch des Jahres); `GET /api/ofc/kasse/bericht` (+ `.pdf`, `.csv`) nur CEO, schreibt nichts; Tests in `test_ofc_kasse.py`. Sichtpruefung KA1-KA5 headless Rechner/iPad/iPhone ok, dabei Mitgliederfilter im Art-Dialog repariert)
 - Ziel / Scope / Nicht-Scope: Kassenbericht je Geschaeftsjahr (E-K6): Anfangsbestand, Einnahmen und Ausgaben nach
   Kategorie, Endbestand, Beitragsquote, offene Posten (Tickets + Beitraege); PDF A4 hochkant + CSV, z. B. fuer
   Kassenpruefung oder Mitgliederversammlung. Nicht-Scope: Veroeffentlichung (CEO-Tor), steuerliche Bewertung.
