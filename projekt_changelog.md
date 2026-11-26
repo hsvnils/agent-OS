@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 17:14] — Claude Code
+- **Was:** Merge `ai/ofc-ticketversand` nach `main` (OFC_TICKETVERSAND TV0), Branch geloescht; Deploy-Befehle an den CEO.
+- **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-11-26 17:12] — Claude Code
 - **Was:** OFC_TICKETVERSAND TV0: Analyse der HSV-Mails auf Wallet-Links und `.pkpass`-Anhaenge (nur lesend, Bericht ohne Links/Namen/Mailtext), Pruefung auf Spieltag-Nummer in Rechnung/Ticket, Adress-Abdeckung aus der Mitgliederliste nur als Zahlen (`GET /api/ofc/analyse/wallet`, nur CEO); Entscheidungen E1-E7 (E2 geaendert: Verwendungszweck `<Spieltag>-<Mitgliedsnummer>`) in Roadmap und Register; Revision „keine Mails an Mitglieder“ in `OFC_ROADMAP.md` vermerkt; Baseline 1884.
 - **Warum:** CEO: „wie empfohlen, Go fuer TV0“ + Wunsch einfacher Verwendungszweck.
