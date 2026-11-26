@@ -4,7 +4,7 @@
 - Stand: 2026-11-24
 - Arbeitsbranch: `ai/ofc-kasse-bau`
 - Basiscommit: `fda2486`
-- Naechster Schritt: ZURUECKGESTELLT am 2026-11-26 zugunsten `APP_KENNZAHLEN_ROADMAP.md` (CEO). KA0-KA5, KA4b und KA4c live (2026-11-26). Der echte PayPal-Export wurde am 2026-11-26 vom CEO importiert und auf der NAS nachgeprueft: Der Kassenstand stimmt mit dem PayPal-Guthaben ueberein bis auf eine Trikot-Zahlung, die im Export fehlt (CEO klaert). Offen beim CEO: Trikot-Zahlung klaeren, nicht zugeordnete Eingaenge zuordnen, zurueckgegebene Lastschriften in PayPal pruefen, Gesamtabnahme (Rechner/iPad/iPhone). Danach Status „abgeschlossen“.
+- Naechster Schritt: Wieder aufgenommen 2026-11-26 (nach APP_KENNZAHLEN AK0-AK3); Folge-Roadmap `OFC_TICKETVERSAND_ROADMAP.md` (Wallet + PDF, Zahlungsbitte, Ticketversand) geplant. KA0-KA5, KA4b und KA4c live (2026-11-26). Der echte PayPal-Export wurde am 2026-11-26 vom CEO importiert und auf der NAS nachgeprueft: Der Kassenstand stimmt mit dem PayPal-Guthaben ueberein bis auf eine Trikot-Zahlung, die im Export fehlt (CEO klaert). Offen beim CEO: Trikot-Zahlung klaeren, nicht zugeordnete Eingaenge zuordnen, zurueckgegebene Lastschriften in PayPal pruefen, Gesamtabnahme (Rechner/iPad/iPhone). Danach Status „abgeschlossen“.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

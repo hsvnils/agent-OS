@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 17:06] — Claude Code
+- **Was:** Neue Roadmap `OFC_TICKETVERSAND_ROADMAP.md` (Wallet-Links + PDF je Ticket, Zahlungsbitte per Mail mit Verwendungszweck, Zuordnung, Ticketversand nach Zahlung; Etappen TV0-TV5, Entscheidungen E1-E7) angelegt und registriert; OFC-Kasse wieder aufgenommen. Nur Plan und read-only Analyse, kein Code.
+- **Warum:** CEO-Auftrag 2026-11-26 („Zeig mir eine Roadmap dafuer“).
+- **Betroffen:** `OFC_TICKETVERSAND_ROADMAP.md`, `ROADMAP.md`, `OFC_KASSE_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 16:52] — Claude Code
 - **Was:** APP_KENNZAHLEN nach Deploy auf der NAS verifiziert (Erstabruf Status 200, 2.255 Zeilen, 196 Tage, 33 Kennzahlen, 0 verworfen; eine Moderations-Meldung zugestellt, `typ:"sent"`); To-do „App-Kennzahlen abnehmen (AK4)“ faellig 28.11. angelegt; Roadmap und Verzeichnis fortgeschrieben.
 - **Warum:** CEO: „Deploy gemacht“; Abnahme nachhalten (roadmap-workflow F4).
