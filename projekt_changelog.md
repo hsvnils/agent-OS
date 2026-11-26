@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 15:31] — Claude Code
+- **Was:** Token `HANSERAUTISCH_LUNA_API_TOKEN` vom CEO per SSH vom MACO470 in die NAS-`.env` uebertragen (ohne Wertanzeige, Pruefsumme gleich) und auf dem MACO470 entfernt; Roadmap (Token-Angaben der App-Sitzung, Dry-Run ohne echte Quelle) und Zugriffs-Policy fortgeschrieben.
+- **Warum:** Empfehlung der App-Sitzung: Token nur dort, wo der Abruf laeuft (NAS).
+- **Betroffen:** `orchestrator/.env` (NAS, MACO470; nicht im Git), `APP_KENNZAHLEN_ROADMAP.md`, `governance/zugriffs-policy.md`, `projekt_changelog.md`
+
 ## [2026-11-26 15:23] — Claude Code
 - **Was:** Neue Roadmap `APP_KENNZAHLEN_ROADMAP.md` (Kennzahlen der Hanserautisch-App, Etappen AK0-AK4, offene Entscheidungen E1-E4) angelegt und im Roadmap-Verzeichnis registriert; Zugang `app_kennzahlen` in der Zugriffs-Policy als GEPLANT, geplanter Datenfluss in `docs/datenfluesse.md`; OFC-Kasse als zurueckgestellt markiert. Einmaliger Lesetest der Schnittstelle (nur Status/Zeilenzahlen, keine Werte). Kein Code, kein Deploy.
 - **Warum:** CEO-Auftrag aus `LUNA_UEBERGABE.md` (App-Entwicklung), nach LUNA-Workflow erst Roadmap, Bau erst nach Go je Etappe.

@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/app-kennzahlen`
 - Basiscommit: `fef5b17`
-- Naechster Schritt: Roadmap liegt dem CEO vor; offene Entscheidungen E1-E4 beantworten, dann Go fuer AK0 (CISO-Pruefung und Token auf der NAS) und AK1.
+- Naechster Schritt: Token liegt seit 2026-11-26 nur noch auf der NAS (MACO-Kopie entfernt). Roadmap liegt dem CEO vor; offene Entscheidungen E1-E4 beantworten, dann Go fuer AK0 (CISO-Pruefung) und AK1.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -42,9 +42,11 @@ Fuer die OFC-Kasse zurueckgestellt (CEO 2026-11-26: „was dringendes vorziehen�
     `pushes_art` 806, `tipps` 235, `chatnachrichten_stunde` 219, `pushes` 214.
   - Noch keine Zeilen fuer `abo_bewegungen`, `abos_neu`, `kontoloeschungen` (fehlende Zeile = 0 bzw. Messbeginn).
 - **B5 Umfang:** rund 40-60 Zeilen je Tag, rund 20.000 im Jahr. Das passt in eine NAS-Datei; es braucht keine Datenbank.
-- **Token:** liegt seit 2026-11-26 in `orchestrator/.env` auf dem **MACO470**, eingetragen vom CEO und ohne Wertanzeige
-  geprueft. Die Zeitplaene laufen aber im Container `luna-telegram` und die Anzeige in `luna-os`, beide auf der **NAS**.
-  Dort fehlt das Token noch (AK0, CEO).
+- **Token:** Lese-Token nur fuer diese eine Function (Angaben der App-Sitzung 2026-11-26): kein Datenbank-Zugang, kein
+  Schreiben, keine anderen Functions; Schutzbedarf vertraulich (geschaeftliche Kennzahlen), nicht personenbezogen; Sperren
+  durch ein neues Token in Supabase (altes sofort 401). Es gehoert nur dorthin, wo der Abruf laeuft: seit 2026-11-26 in der
+  **NAS**-`.env` (vom CEO per SSH uebertragen, ohne Wertanzeige, Pruefsumme MACO = NAS), die Kopie auf dem MACO470 ist
+  entfernt (Readback `0`).
 - **Netz-Regel (`AGENTS.md` 5.7):** Das ist eine feste Daten-Schnittstelle, keine freie Websuche. Sie darf direkt
   angebunden werden, braucht aber eine CISO-Freigabe und einen Eintrag im Wachtest `orchestrator/tests/test_netz_wache.py`.
 - **Vorgaenger-Plan:** `MONETARISIERUNG_ROADMAP.md` M5 sah einen Datenbank-Zugang ueber die Rolle `luna_reader`
@@ -93,8 +95,7 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
   - nur TLS mit Zertifikatspruefung;
   - Antwort wird auf das Schema geprueft (Felder, Typen, Datumsformat), alles andere wird verworfen.
   
-  Der CEO traegt das Token in die **NAS**-`.env` ein (`/volume1/docker/ki-unternehmen/orchestrator/.env`); den Befehl
-  ohne Wertanzeige liefert Claude Code. Die MACO470-Kopie bleibt fuer Entwicklung und Probe.
+  Token in der **NAS**-`.env`: **erledigt 2026-11-26** (CEO, Readback `1`, Pruefsumme gleich), MACO470-Kopie entfernt.
 - Nicht-Scope: Container-Neustart (folgt mit dem Deploy von AK1).
 - Gate: Zugriffs-Policy-Zeile `app_kennzahlen` auf **FREIGEGEBEN (CISO, Auflagen)**, Aenderungshistorie ergaenzt.
 - Verifikation: `ssh luna-nas "grep -c '^HANSERAUTISCH_LUNA_API_TOKEN=' /volume1/docker/ki-unternehmen/orchestrator/.env"`
@@ -130,8 +131,9 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
   - Eine fehlende Zeile ergibt 0, vor `ab` dagegen „keine Daten“.
   - Eine kaputte Antwort (falsches Schema) wird verworfen.
 - Gate: Test-Gate (Baseline `docs/bekannte-fehler.md`, kein neuer roter Test), Doku-Check gruen.
-- Dry-Run: CLI `--dry-run` auf dem MACO470 gegen die echte Quelle -> erwartet: rund 2.255 Zeilen ab 14.05., 0 Fehler.
-  Ausgegeben werden nur Zaehlungen.
+- Dry-Run: Tests mit einer nachgebauten Antwort im echten Format (Felder aus dem Lesetest B1). Gegen die echte Quelle
+  gibt es keinen Probelauf vom MACO470 aus, weil das Token nur noch auf der NAS liegt. Erste echte Pruefung ist der erste
+  Abruf auf der NAS -> erwartet: rund 2.255+ Zeilen ab 14.05., Status 200, nur Zaehlungen geprueft.
 - Verifikation nach dem Deploy (NAS, nur Zaehlungen): Die Abruf-Protokollzeile meldet Status 200, und die Zeilenzahl im
   Archiv entspricht der `anzahl` der Antwort.
 - Risiko / Rueckweg: Das Archiv ist nur additiv; ein Fehler betrifft nur die eigene Datei. Rueckweg: Abruf per Schalter
