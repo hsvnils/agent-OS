@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-ticketversand`
 - Basiscommit: `81ee7f0`
-- Naechster Schritt: TV1+TV2 und „alle Ordner“ live und verifiziert (2026-11-26: 52 von 77 Karten mit Wallet-Link, alle Karten der offenen Spiele mit Datum; 2 Spiele ohne Spieltag im Spielplan -> CEO traegt S<Nr> ein). Offen: Namen mit Mitglied eintragen (CEO), dann Go fuer TV3 (Zahlungsbitte per Mail aus moin@).
+- Naechster Schritt: TV3 umgesetzt auf `ai/ofc-ticketversand-tv3` (CEO-Go 2026-11-26, kein PayPal.me); nach Merge/Deploy zuerst „Testmail an moin@“ (Abnahme TV3), dann erste echte Zahlungsbitte; danach Go fuer TV4.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -156,7 +156,7 @@ Versandprotokoll; Ansicht auf Rechner, iPad und iPhone.
 
 ### Etappe TV3: Zahlungsbitte per Knopf (Senden ueber moin@)
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (`core/ofc_versand.py`, `HsvInsideMail.mail_senden` mit Auflagen, Abschnitt „✉️ Zahlungsbitten“ im Spiel mit Mail-Vorschau, Senden, Testmail an moin@, „an alle bereiten“; Adresse aus der Mitgliederliste ueber die Nummer am Ticket; Tests `test_ofc_versand.py` mit Gegenproben)
 - Ziel / Scope:
   - **Senden aus moin@:** freigeschaltet nach E1 und CISO-Auflagen:
     - nur aus der OFC-Ansicht;

@@ -332,6 +332,11 @@ class HsvInsideMail(AllInklMail):
         self.imap_port = int(g("HSVINSIDE_IMAP_PORT", "993") or 993)
         self.user, self._pw = g("HSVINSIDE_MAIL_USER"), env.get("HSVINSIDE_MAIL_PASSWORT") or ""
         self.adresse = self.user
+        # OFC_TICKETVERSAND TV3 (CEO-Go 2026-11-26): Senden ueber denselben All-Inkl-Server, Kopie in „Gesendet“ von moin@
+        self.smtp_host = g("HSVINSIDE_SMTP_HOST") or self.imap_host
+        self.smtp_port = int(g("HSVINSIDE_SMTP_PORT", "465") or 465)
+        self.ordner = g("HSVINSIDE_GESENDET_ORDNER")
+        self._mailversand_an = g("OFC_MAILVERSAND", "1").lower() not in ("0", "false", "aus", "off", "no")
         extra = [x.strip().lower().lstrip("@") for x in g("HSVINSIDE_ABSENDER").split(",") if x.strip()]
         self.domains = tuple(dict.fromkeys(list(HSVINSIDE_ABSENDER_STANDARD) + extra))
         if imap_fabrik is None:
@@ -342,8 +347,20 @@ class HsvInsideMail(AllInklMail):
         werte = {"HSVINSIDE_IMAP_HOST": self.imap_host, "HSVINSIDE_MAIL_USER": self.user, "HSVINSIDE_MAIL_PASSWORT": self._pw}
         return [k for k in HSVINSIDE_SCHLUESSEL if not werte[k]]
 
-    def mail_senden(self, *a, **k) -> dict:
-        return {"ok": False, "hinweis": "Das Fanclub-Postfach wird nur gelesen -- LUNA sendet von dort nichts."}
+    def mail_senden(self, an: str, betreff: str, text: str, *, bestaetigt: bool = False, anhaenge: list | None = None,
+                    absender_name: str = "", ofc_freigabe: bool = False) -> dict:
+        """TV3-Auflagen (CISO 2026-11-26): Senden NUR aus dem OFC-Versand (`ofc_freigabe=True`, gesetzt allein von
+        `core/ofc_versand.py` nach CEO-Klick), nur mit Bestaetigung, genau EIN Empfaenger (kein CC/BCC), abschaltbar
+        mit `OFC_MAILVERSAND=0`. Lesen bleibt unveraendert nur lesend."""
+        if not ofc_freigabe:
+            return {"ok": False, "hinweis": "Aus dem Fanclub-Postfach sendet LUNA nur Zahlungsbitten und Tickets aus der OFC-Ansicht."}
+        if not self._mailversand_an:
+            return {"ok": False, "hinweis": "Mailversand aus dem Fanclub-Postfach ist abgeschaltet (OFC_MAILVERSAND=0)."}
+        an = (an or "").strip()
+        if not re.fullmatch(r"[^@\s,;<>]+@[^@\s,;<>]+\.[^@\s,;<>]+", an):
+            return {"ok": False, "hinweis": "Genau eine gültige E-Mail-Adresse nötig."}
+        return AllInklMail.mail_senden(self, an, betreff, text, bestaetigt=bestaetigt, anhaenge=anhaenge,
+                                       absender_name=absender_name or "HSVInside")
 
     def verbindung_pruefen(self) -> dict:
         """Nur IMAP-Anmeldung + Ordner INBOX nur lesend oeffnen -- keine Mail wird gelesen."""

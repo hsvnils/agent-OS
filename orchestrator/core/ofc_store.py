@@ -60,6 +60,7 @@ class OfcStore:
         kasse_kat: dict = {}                                        # KA3: Kategorie je Quelle (umgestellt per Klick)
         kasse_importe: dict = {}                                    # KA4: CSV-Importlaeufe
         einstellungen: dict = {}
+        mails: dict = {}                                            # OFC_TICKETVERSAND TV3: gesendete Mails
         letzter_import = ""
         for e in self.eintraege():
             d, t = e["daten"], e["typ"]
@@ -96,6 +97,8 @@ class OfcStore:
             elif t == "ofc_wallet":                                 # OFC_TICKETVERSAND TV1: Wallet-Link je Ticket
                 tk = tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})
                 tk.update(wallet=d.get("url", ""), wallet_quelle=d.get("quelle", ""))
+            elif t == "ofc_mail":                                   # TV3: Versandprotokoll (ohne Mailtext)
+                mails[d["id"]] = d | {"ts": e["ts"]}
             elif t == "ofc_mitglied":                               # TV2: Mitgliedsnummer je Ticket (leer = Gast)
                 tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})["mitglied"] = d.get("nummer", "")
             elif t == "ofc_name":
@@ -105,7 +108,7 @@ class OfcStore:
                                           "name_neu": d["name_neu"], "datei_neu": d["datei_neu"]}
         return {"spiele": spiele, "tickets": tickets, "zahlungen": zahlungen, "eingaenge": eingaenge, "aliase": aliase,
                 "beitrag_status": beitrag_status, "beitrag_aliase": beitrag_aliase, "kasse": kasse, "kasse_start": kasse_start,
-                "kasse_kat": kasse_kat, "kasse_importe": kasse_importe, "einstellungen": einstellungen,
+                "kasse_kat": kasse_kat, "kasse_importe": kasse_importe, "einstellungen": einstellungen, "mails": mails,
                 "letzter_import": letzter_import}
 
 
