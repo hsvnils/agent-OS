@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 17:43] — Claude Code
+- **Was:** Nach Deploy „alle Ordner“ auf der NAS verifiziert (nur Zaehlungen): 46 Wallet-Links neu, 52 von 77 Karten mit Wallet, alle Karten der offenen Spiele mit Datum abgedeckt; 2 Spiele ohne Treffer im Spielplan. Roadmap fortgeschrieben.
+- **Warum:** CEO: „Deploy gemacht, Links geholt“.
+- **Betroffen:** `OFC_TICKETVERSAND_ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 17:34] — Claude Code
 - **Was:** Merge `ai/ofc-alle-ordner` nach `main` (Fanclub-Postfach alle Ordner), Branch geloescht; Deploy-Befehle an den CEO.
 - **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.

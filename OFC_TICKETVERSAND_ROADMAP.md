@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-ticketversand`
 - Basiscommit: `81ee7f0`
-- Naechster Schritt: TV1+TV2 live (2026-11-26: 6 Wallet-Links, 9 von 12 Spielen mit Spieltag; bis dahin nur INBOX gelesen). Fanclub-Postfach liest jetzt alle Ordner (Branch `ai/ofc-alle-ordner`); nach Merge/Deploy erneut „📱 Wallet-Links holen“ und Zaehlung pruefen, dann Namen/Mitglieder (CEO) und Go fuer TV3.
+- Naechster Schritt: TV1+TV2 und „alle Ordner“ live und verifiziert (2026-11-26: 52 von 77 Karten mit Wallet-Link, alle Karten der offenen Spiele mit Datum; 2 Spiele ohne Spieltag im Spielplan -> CEO traegt S<Nr> ein). Offen: Namen mit Mitglied eintragen (CEO), dann Go fuer TV3 (Zahlungsbitte per Mail aus moin@).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
