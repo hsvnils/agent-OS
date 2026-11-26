@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 16:52] — Claude Code
+- **Was:** APP_KENNZAHLEN nach Deploy auf der NAS verifiziert (Erstabruf Status 200, 2.255 Zeilen, 196 Tage, 33 Kennzahlen, 0 verworfen; eine Moderations-Meldung zugestellt, `typ:"sent"`); To-do „App-Kennzahlen abnehmen (AK4)“ faellig 28.11. angelegt; Roadmap und Verzeichnis fortgeschrieben.
+- **Warum:** CEO: „Deploy gemacht“; Abnahme nachhalten (roadmap-workflow F4).
+- **Betroffen:** `APP_KENNZAHLEN_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`, `todos/log.jsonl` (NAS)
+
 ## [2026-11-26 16:47] — Claude Code
 - **Was:** Merge `ai/app-kennzahlen` nach `main` (APP_KENNZAHLEN AK0-AK3), Branch geloescht; Deploy-Befehle an den CEO.
 - **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.

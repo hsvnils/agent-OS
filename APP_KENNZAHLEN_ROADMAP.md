@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/app-kennzahlen`
 - Basiscommit: `fef5b17`
-- Naechster Schritt: AK0-AK3 umgesetzt auf `ai/app-kennzahlen` (CEO-Go 2026-11-26, E1-E4 wie empfohlen); Push, Merge und Deploy durch den CEO, dann Neuerstellung beider Container (`docker compose up -d`, wegen neuem Token in der `.env`), danach Erstabruf auf der NAS pruefen (nur Zaehlungen) und AK4 (Abgleich drei Stichtage, zwei Tage Lauf von selbst).
+- Naechster Schritt: AK0-AK3 live seit 2026-11-26 (Erstabruf auf der NAS 16:48: Status 200, 2.255 Zeilen, 196 Tage ab 14.05., 33 Kennzahlen, 0 verworfen; erste Meldung zugestellt). AK4 offen: Abgleich dreier Stichtage durch den CEO und Lauf am 27. und 28.11. von selbst -- To-do „App-Kennzahlen abnehmen (AK4)“ faellig 28.11., Claude Code prueft den Lauf am Stichtag.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -87,7 +87,7 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
 
 ### Etappe AK0: Zugang freigeben (CISO) und Token auf die NAS
 
-- Status: umgesetzt (CISO-Pruefung 2026-11-26 durch den HoA, Auflagen im Code und per Test belegt; Token auf der NAS)
+- Status: deployt und verifiziert (2026-11-26, Erstabruf ok), umgesetzt (CISO-Pruefung 2026-11-26 durch den HoA, Auflagen im Code und per Test belegt; Token auf der NAS)
 - Ziel / Scope: CISO-Pruefung der neuen festen Schnittstelle nach `AGENTS.md` 5.7:
   - nur diese eine Adresse, nur GET;
   - Token nur aus der Umgebung lesen, nie in Log, Fehlertext, Antwort, Datei oder Repo;
@@ -106,7 +106,7 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
 
 ### Etappe AK1: Abruf und Archiv
 
-- Status: umgesetzt 2026-11-26 (`orchestrator/core/app_kennzahlen.py`, Tests `test_app_kennzahlen.py`)
+- Status: deployt und verifiziert (2026-11-26, Erstabruf ok), umgesetzt 2026-11-26 (`orchestrator/core/app_kennzahlen.py`, Tests `test_app_kennzahlen.py`)
 - Ziel / Scope: Neues Modul `orchestrator/core/app_kennzahlen.py`. Es macht Folgendes:
   - **Client:** Er liest das Token aus der Umgebung. Er teilt Zeitraeume in Abschnitte von hoechstens 400 Tagen und setzt
     `bis` nie nach heute (Berlin). Fehler behandelt er nach der Statustabelle; Fehlertexte enthalten nie das Token.
@@ -142,7 +142,7 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
 
 ### Etappe AK2: Kachel „Hanserautisch-App“ und Kontroll-Abgleich
 
-- Status: umgesetzt 2026-11-26 (Hauptmenuepunkt „📱 App“, nur CEO; headless geprueft Rechner/iPad/iPhone, hell/dunkel)
+- Status: deployt und verifiziert (2026-11-26, Erstabruf ok), umgesetzt 2026-11-26 (Hauptmenuepunkt „📱 App“, nur CEO; headless geprueft Rechner/iPad/iPhone, hell/dunkel)
 - Ziel / Scope: LUNA-OS-Kachel, sichtbar nach E1. Inhalt:
   - **Oben:** Abo-Aequivalente gegen das Ziel 1.000, aktive Abos, MRR brutto, Registrierungen pro Tag und gesamt.
   - **Community:** Tipps je Art, Tippquote je Spieltag, Chatnachrichten pro Tag (Community/Freunde) und je Stunde,
@@ -164,7 +164,7 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
 
 ### Etappe AK3: Taeglicher Lauf und Meldungen
 
-- Status: umgesetzt 2026-11-26 (Thread `app_kennzahlen` in `luna-telegram`)
+- Status: deployt und verifiziert (2026-11-26, Erstabruf ok), umgesetzt 2026-11-26 (Thread `app_kennzahlen` in `luna-telegram`)
 - Ziel / Scope: Zeitplan im Container `luna-telegram` (einziger Ort fuer Zeitplaene).
   - **Taeglicher Lauf** ab 06:30 Berlin: `von = gestern - 3`, `bis = gestern`. Verpasste Tage werden ab dem letzten
     gespeicherten Tag minus 3 nachgeholt.
