@@ -2,9 +2,9 @@
 
 - Status: in Umsetzung
 - Stand: 2026-11-26
-- Arbeitsbranch: `ai/app-kennzahlen`
+- Arbeitsbranch: `ai/app-kennzahlen` (Teil 1), `ai/app-kennzahlen-live` (Erweiterung Live, AK5-AK7)
 - Basiscommit: `fef5b17`
-- Naechster Schritt: AK0-AK3 live seit 2026-11-26 (Erstabruf auf der NAS 16:48: Status 200, 2.255 Zeilen, 196 Tage ab 14.05., 33 Kennzahlen, 0 verworfen; erste Meldung zugestellt). AK4 offen: Abgleich dreier Stichtage durch den CEO und Lauf am 27. und 28.11. von selbst -- To-do „App-Kennzahlen abnehmen (AK4)“ faellig 28.11., Claude Code prueft den Lauf am Stichtag.
+- Naechster Schritt: Teil 1 (AK0-AK3) live, AK4-Abnahme am 28.11. offen. Erweiterung **Live-Zahlen** (AK5-AK7, Auftrag aus `LUNA_UEBERGABE_LIVE.md` vom 2026-11-26) liegt dem CEO vor: Entscheidungen L1-L6 beantworten, dann Go fuer AK5+AK6.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -221,6 +221,103 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
   drei Reihen je Diagramm. OKLab-Abstand mindestens 8,7 auch bei simulierter Rot-, Gruen- und Blauschwaeche; Status-Farben
   bleiben frei. Der Validator des Dataviz-Skills war hier nicht lauffaehig (kein Node); die Pruefung wurde in Python
   nachgerechnet.
+
+## Erweiterung: Live-Zahlen „Heute live“ (Auftrag 2026-11-26 abends)
+
+### Auftrag
+
+Uebergabe `LUNA_UEBERGABE_LIVE.md` aus der App-Entwicklung (Stand 2026-11-26, ohne Secret-Werte). Zusaetzlich zum
+naechtlichen Tagesabruf holt LUNA alle 15 Minuten eine kleine Auswahl an Live-Zahlen und zeigt sie im Bereich „📱 App“ oben
+als „Heute live“ mit der Uhrzeit des Stands. Gleiche Function, gleiches Token, neuer Parameter `art=live` (ohne `von`/`bis`).
+Live-Werte sind vorlaeufig und gehoeren **nicht** in die Tageswerte.
+
+### Analyse (Belege aus Code und Uebergabe)
+
+- **Kein neuer Zugang, kein neuer Host:** dieselbe Adresse `…/functions/v1/luna-kennzahlen`, dasselbe Token
+  `HANSERAUTISCH_LUNA_API_TOKEN` (NAS-`.env`), derselbe Abruf-Code (`core/app_kennzahlen.py` `abrufen`, Netz-Wache
+  `_urlopen`). Die CISO-Freigabe vom 2026-11-26 deckt „nur GET an diese eine Adresse“ ab; neu ist nur der Takt.
+- **Last:** 96 Abrufe je Tag (alle 15 Minuten), die Antwort hat wenige Dutzend Zeilen. Fuer NAS und Function unkritisch.
+- **Wo der Lauf laeuft:** im bestehenden Minuten-Thread `app_kennzahlen` im Container `luna-telegram`; die Anzeige liest in
+  `luna-os` die Ablage. Beide Container haben das Token in der Umgebung.
+- **Ablage getrennt von den Tageswerten:**
+  - `app_kennzahlen/live.json` enthaelt den letzten Live-Stand und wird bei jedem Abruf ersetzt.
+  - Dazu kommt optional ein Tagesverlauf `app_kennzahlen/live_verlauf/<JJJJ-MM-TT>.jsonl`, aelter als 7 Tage wird geloescht
+    (L3). Loeschen eigener, vorlaeufiger Zwischenwerte ist ein CEO-Tor (Loeschen von Daten) und wird mit dieser
+    Roadmap ausdruecklich vorgelegt.
+- **Meilensteine:** Die Schluessel bleiben dieselben wie beim Tagesabruf (`meilenstein:abo:<n>`, `meilenstein:reg:<n>`), damit
+  nichts doppelt kommt. Fuer die Registrierten zaehlt live `registrierte_stand` (Profile jetzt) statt `registrierte_gesamt`.
+- **Moderation ueber 24 Stunden** bleibt am Tagesabruf (sonst alle 15 Minuten).
+- **Datenschutz unveraendert:** nur Summen; Meldungen `quelle=app_kennzahlen` gehen nicht in Chat-Verlauf, Chat-Werkzeuge
+  oder Briefing; Abo- und Umsatzzahlen gehen an kein KI-Modell.
+
+### Offene Entscheidungen (CEO)
+
+| Nr | Frage | Empfehlung |
+|---|---|---|
+| L1 | Wo stellt man den Takt ein? | **In LUNA-OS im Bereich App** (nur CEO), Standard 15 Minuten, erlaubt 5-60. Eine `.env`-Zeile braeuchte jedes Mal einen Neustart. |
+| L2 | Nach einem 401 ist der Live-Abruf angehalten. Wie geht es weiter? | **Knopf „Live wieder starten“** im Bereich App (nur CEO) plus Meldung per Telegram; der Tagesabruf behandelt 401 wie bisher. |
+| L3 | Tagesverlauf fuer die Kurve „Registrierungen heute“? | **Ja**, Dateien je Tag, nach 7 Tagen automatisch geloescht (nur diese eigenen Live-Zwischenwerte; die Tageswerte bleiben unberuehrt). |
+| L4 | 4 Fehlschlaege hintereinander: nur Telegram oder auch die Glocke? | **Beides**, wie bei den Tageswerten (E4): einmal melden, bis es wieder geht. |
+| L5 | Live-Abgleich fuer die Abnahme? | **Wie beim Kontroll-Abgleich:** Du fuegst das Ergebnis von `select * from public.luna_live_kennzahlen_v1();` in LUNA-OS ein, LUNA vergleicht je Kennzahl den Wert mit dem Live-Stand derselben Minute und zeigt ✅/❌. So sieht kein Modell die Zahlen. |
+| L6 | `anmeldungen_ohne_abschluss` in den Tageswerten? | **Ja**, als Momentaufnahme ab dem ersten Nachtlauf; in „Registrierte gesamt“ als zweite, gestrichelte Linie („ohne Profil“), sobald Daten da sind. |
+
+### Etappe AK5: Live-Abruf, Ablage und Meldungen
+
+- Status: geplant
+- Ziel / Scope:
+  - **Abruf:** `abrufen_live` mit `art=live`, gleiche Schutzregeln (Token nur aus der Umgebung, nie in Log oder Fehlertext,
+    Schema-Pruefung, Zeitlimit). Takt nach L1 im bestehenden Minuten-Thread.
+  - **Ablage:** `live.json` (ersetzt) und der Tagesverlauf nach L3 mit Loeschen nach 7 Tagen. Unbekannte Kennzahlen werden
+    gespeichert; bei den heutigen Zaehlern ist eine fehlende Zeile 0.
+  - **Fehler:**
+    - 401 meldet sofort und haelt den Live-Abruf an (L2);
+    - 502 und Netzfehler versucht LUNA beim naechsten Takt still erneut;
+    - nach 4 Fehlschlaegen hintereinander gibt es eine Meldung (Telegram und Glocke, L4), bis es wieder geht.
+  - **Meilensteine** aus den Live-Zahlen mit denselben Schluesseln (keine Dopplung).
+  - **Doku:** Dienste-Register (Zweck), `docs/datenfluesse.md` (Speicher, Takt), Zugriffs-Policy (Takt), Backup-Liste
+    bzw. `ohne-backup` fuer die Live-Dateien.
+- Gate: Tests mit Gegenproben:
+  - Live-Werte landen nie im Tages-Archiv;
+  - der Takt wird eingehalten und ist nicht schneller als 5 Minuten;
+  - nach 401 kein weiterer Abruf bis zur Freigabe;
+  - 3 Fehlschlaege melden nichts, der 4. genau einmal, nach Erfolg ist die Sperre wieder offen;
+  - ein Meilenstein kommt nicht doppelt (Tagesabruf und Live);
+  - Verlauf aelter als 7 Tage wird geloescht, juengere Dateien bleiben;
+  - das Token steht weder in Log noch in Datei.
+- Verifikation (NAS, nur Zaehlungen): `GET /api/app-kennzahlen/live/status` -> erwartet: letzter Abruf 200, Alter unter 16
+  Minuten, Zahl der Kennzahlen > 0.
+- Risiko / Rueckweg: Schalter `APP_KENNZAHLEN_LIVE=0` stoppt nur den Live-Abruf; die Tageswerte laufen weiter.
+- Aufwand: mittel.
+
+### Etappe AK6: Anzeige „Heute live“, Live-Abgleich, neue Tageskennzahl
+
+- Status: geplant
+- Ziel / Scope:
+  - **Block „Heute live“** oben im Bereich App:
+    - Zeile „Stand HH:MM“; ist der letzte erfolgreiche Abruf aelter als 45 Minuten, sind die Zahlen grau und als „veraltet“
+      markiert.
+    - Kacheln: Registrierte jetzt („+N heute“), Abo-Aequivalente gegen 1.000, aktive Abos, MRR brutto, neue Abos heute,
+      Tipps heute, Check-ins heute, Chatnachrichten heute, offene Moderation.
+    - Darunter klein „Anmeldungen ohne Abschluss: X ohne Profil, Y E-Mail unbestaetigt“ mit Hinweis (Supabase
+      Authentication zaehlt Anmeldungen, LUNA zaehlt Profile).
+    - Optional die Kurve „Registrierungen heute“ (L3).
+  - **Bisherige Kacheln** sind beschriftet mit „bis gestern“.
+  - **Einstellungen:** Takt (L1) und „Live wieder starten“ (L2).
+  - **Live-Abgleich** (L5).
+  - **Neue Tageskennzahl:** `anmeldungen_ohne_abschluss` in den Katalog, gestrichelte Linie in „Registrierte gesamt“ (L6).
+  - **Geraete:** Rechner, iPad, iPhone, hell und dunkel.
+- Gate: Tests mit Gegenproben (veraltet ab 45 Minuten; ❌ bei abweichendem Wert); headless Rechner/iPad/iPhone.
+- Abhaengig von: AK5. Aufwand: mittel.
+
+### Etappe AK7: Abnahme Live
+
+- Gate (aus dem Auftrag):
+  1. Der Live-Abgleich zur selben Minute zeigt je Kennzahl denselben Wert; kleine Abweichungen sind nur erlaubt, wenn genau
+     dazwischen etwas dazukam.
+  2. Der Live-Abruf laeuft einen Tag lang im Takt ohne Telegram-Flut. Claude Code prueft das Protokoll: rund 96 Abrufe,
+     hoechstens eine Fehlermeldung.
+  3. Sichtabnahme auf Rechner, iPad und iPhone.
+- Nach dem Deploy wird sofort ein datiertes To-do angelegt (F4).
 
 ## Reihenfolge, Aufwand, Deploy
 

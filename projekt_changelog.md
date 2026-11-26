@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 20:35] — Claude Code
+- **Was:** `APP_KENNZAHLEN_ROADMAP.md` um die Erweiterung „Live-Zahlen / Heute live“ ergaenzt (Analyse, Entscheidungen L1-L6, Etappen AK5-AK7) nach Uebergabe `LUNA_UEBERGABE_LIVE.md`; Antwort mit Rueckfragen fuer die App-Sitzung als `LUNA_ANTWORT_LIVE.md` im Download-Ordner des CEO (nicht im Git). Kein Code.
+- **Warum:** CEO: Roadmap pruefen, bevor er freigibt, und Antwort an Claude Code auf dem Mac.
+- **Betroffen:** `APP_KENNZAHLEN_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`
+
 ## [2026-11-26 20:32] — Claude Code
 - **Was:** OFC-Mitglieder: Sichtabnahme zurueckgestellt (App-Thema vorgezogen); To-do „OFC-Mitglieder: Sichtabnahme“ faellig 03.12. angelegt; Roadmap und ROADMAP fortgeschrieben.
 - **Warum:** CEO: „Sichtabnahme stellen wir zurueck, weil wir was bzgl der App im Luna zwischenschieben muessen.“
