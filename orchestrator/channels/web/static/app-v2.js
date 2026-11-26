@@ -5658,6 +5658,41 @@ async function ofcNameOk(el, rueck) {
   OFC_NAMEN = null; await ofcSpiel(OFC_SP.spiel.id);
   if (AKTIV === "ofc" && !OFC_M_AKTIV) renderOfc();
 }
+/* OFC_MITGLIEDER MV0/MV1: eigenes Verzeichnis in LUNA – Import-Vorschau, Konflikte, einmaliger Import, Abgleich */
+async function ofcVz() {
+  openModal("🗂 LUNA-Verzeichnis", `<div class="v2-empty">Lade…</div>`);
+  const a = await jget("/api/ofc/mitglieder/abgleich");
+  if (!a || !a.ok) return openModal("🗂 LUNA-Verzeichnis", emptyRow((a && a.hinweis) || "Nicht erreichbar."));
+  if (a.importiert) {
+    return openModal("🗂 LUNA-Verzeichnis", `<div class="v2-msg ${a.abweichungen ? "" : "ok"}">${a.abweichungen ? `${a.abweichungen} Abweichung(en) zwischen Google-Tabelle und LUNA` : "✅ Google-Tabelle und LUNA stimmen überein"}</div>
+      <div class="v2-kv"><span>Einträge in LUNA / in der Tabelle</span><b>${a.luna} / ${a.tabelle}</b></div>
+      ${Object.entries(a.je_feld).map(([f, n]) => `<div class="v2-kv"><span>Abweichend: ${esc(f)}</span><b>${n}</b></div>`).join("")}
+      ${a.zeilen.length ? `<div class="v2-sub" style="margin-top:6px">Zeilen der Tabelle: ${esc(a.zeilen.map(z => z.zeile + " (" + z.felder.join(", ") + ")").join(" · "))}</div>` : ""}
+      <div class="v2-sub" style="margin-top:10px">Bis zum Umschalten (MV3) lesen Beiträge, Zahlungsbitten und Ticketversand weiter die Google-Tabelle. Änderungen in der Tabelle zeigt der Abgleich als Abweichung.</div>`);
+  }
+  const v = await jget("/api/ofc/mitglieder/import/vorschau");
+  if (!v || !v.ok) return openModal("🗂 LUNA-Verzeichnis", emptyRow((v && v.hinweis) || "Nicht erreichbar."));
+  const dopp = Object.entries(v.doppelte_nummern);
+  openModal("🗂 Mitglieder in LUNA übernehmen", `<div class="v2-sub">Vorschau – noch nichts gespeichert. Danach liegen die Mitglieder in LUNA (Fanclub-Speicher auf der NAS, nur für dich, keine KI). Die Google-Tabelle bleibt unverändert.</div>
+    <div class="v2-kv"><span>Mitglieder / Anfragen</span><b>${v.mitglieder} / ${v.anfragen}</b></div>
+    ${Object.entries(v.mitgliedschaften).map(([k, n]) => `<div class="v2-kv"><span>${esc(k)}</span><b>${n}</b></div>`).join("")}
+    <div class="v2-kv"><span>davon Vorstand</span><b>${v.vorstand}</b></div>
+    <div class="v2-kv"><span>ohne E-Mail</span><b>${v.ohne_email}</b></div>
+    ${dopp.length ? `<h3>Doppelte Mitgliedsnummern – wer behält die Nummer?</h3>` + dopp.map(([n, ps]) => `<div class="v2-ofc-feld" style="margin:6px 0"><b>Nr. ${esc(n)}</b>${ps.map(p => `<label style="display:block;margin:4px 0"><input type="radio" name="vz-${esc(n)}" value="${p.zeile}"> ${esc(p.name)} <small class="v2-sub">(${esc(p.email || "ohne E-Mail")}, Zeile ${p.zeile})</small></label>`).join("")}<small class="v2-sub">Die andere Person bekommt die nächste freie Nummer (ab ${esc(v.naechste_nummer)}).</small></div>`).join("") : ""}
+    ${v.doppelte_namen.length ? `<div class="v2-msg">Doppelte Namen (nur Hinweis, evtl. Namensvettern): ${esc(v.doppelte_namen.join(", "))}</div>` : ""}
+    ${v.unklar.length ? `<div class="v2-msg">Mitgliedschaft unklar (später in LUNA setzen): ${esc(v.unklar.map(u => u.name).join(", "))}</div>` : ""}
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-vz-ok">In LUNA übernehmen</button></div><div class="v2-msg" id="ofc-vz-msg"></div>`);
+}
+async function ofcVzOk(el) {
+  const behalten = {}; document.querySelectorAll("#v2-modal input[type=radio]:checked").forEach(r => { behalten[r.name.slice(3)] = Number(r.value); });
+  if (!confirm("Mitglieder jetzt einmalig in LUNA übernehmen?")) return;
+  el.disabled = true; const m = $("#ofc-vz-msg"); m.className = "v2-msg"; m.textContent = "Übernehme …";
+  const r = await jpost("/api/ofc/mitglieder/import", { bestaetigt: true, behalten });
+  el.disabled = false;
+  if (!r || !r.ok) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Fehler."; return; }
+  m.className = "v2-msg ok"; m.textContent = `${r.uebernommen} Einträge übernommen.` + (r.neue_nummern.length ? " Neue Nummern: " + r.neue_nummern.map(x => `${x.alt} → ${x.neu}`).join(", ") : "");
+  setTimeout(ofcVz, 1500);
+}
 /* OFC_ROADMAP OM: Mitgliederliste (Google-Forms-Tabelle, nur lesend, nichts gespeichert, keine KI) */
 const OFC_M = { daten: null, suche: "", ansicht: "mitglied" };
 let OFC_M_AKTIV = false;
@@ -5903,7 +5938,7 @@ async function ofcKIStorno(iid) {
 }
 async function renderOfcMitglieder(neu) {
   OFC_M_AKTIV = true;
-  const kopf = secHead("👥 OFC · Mitglieder", `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> <button class="v2-btn" data-act="ofc-mitglieder-neu">🔄 Neu laden</button>`);
+  const kopf = secHead("👥 OFC · Mitglieder", `<button class="v2-btn" data-act="ofc-zurueck">← Spiele</button> <button class="v2-btn" data-act="ofc-mitglieder-neu">🔄 Neu laden</button> <button class="v2-btn" data-act="ofc-vz">🗂 LUNA-Verzeichnis</button>`);
   if (!OFC_M.daten || neu) { $("#v2-app").innerHTML = kopf + `<div class="v2-empty">Lese die Tabelle …</div>`; OFC_M.daten = await jget("/api/ofc/mitglieder" + (neu ? "?neu=1" : "")); }
   const d = OFC_M.daten;
   if (!d || !d.ok) { OFC_M.daten = null; $("#v2-app").innerHTML = kopf + `<div class="v2-msg err">${esc((d && d.hinweis) || "Mitgliederliste nicht erreichbar.")}</div>`; return; }
@@ -6503,6 +6538,8 @@ async function handleAct(act, el) {
     case "ofc-wallet-kopie": return ofcWalletKopie(id, el);
     case "ofc-zb-vs": return ofcZbVorschau(id, val);
     case "ofc-bez": return ofcBez(id);
+    case "ofc-vz": return ofcVz();
+    case "ofc-vz-ok": return ofcVzOk(el);
     case "ofc-tv-vs": return ofcTvVorschau(id, val);
     case "ofc-tv-senden": return ofcTvSenden(el, false);
     case "ofc-tv-test": return ofcTvSenden(el, true);

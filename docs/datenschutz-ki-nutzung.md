@@ -182,3 +182,10 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
   E-Mail im Fanclub-Speicher auf der NAS (nicht im Git, im Backup), nur fuer Zahlungsbitte und Ticketversand; keine KI.
 - **TV4 (2026-11-26):** Ticketmails enthalten die PDF-Tickets (Name auf dem Ticket) und Wallet-Links; sie gehen nur an die Person am
   Ticket. Automatisch nur nach eindeutig zugeordneter Zahlung; keine KI.
+
+## 11. Nachtrag 2026-11-26: Mitgliederverzeichnis in LUNA (OFC_MITGLIEDER)
+
+- Nach dem einmaligen Import speichert LUNA die Mitgliederdaten (Name, Anrede, E-Mail, Handy, Adresse, Geburtstag, HSV-Angaben,
+  Mitgliedschaft, Beitrag, Kommentar) im Fanclub-Speicher auf der NAS (nicht im Git, im Backup). Bisher wurden sie nur gelesen.
+- Nur der CEO sieht sie (Rolle owner), keine KI. Gekuendigte Mitglieder kommen ins Archiv und erhalten keine Nachrichten mehr;
+  endgueltiges Loeschen kommt spaeter als eigene Funktion mit Bestaetigung.
