@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 15:18] — Claude Code
+- **Was:** CEO hat auf dem MACO470 den Schluessel `HANSERAUTISCH_LUNA_API_TOKEN` in `orchestrator/.env` eingetragen (Anleitung angepasst, Eintrag ohne Wertanzeige geprueft, Download-Kopie geloescht).
+- **Warum:** Dringender Auftrag des CEO aus der App-Entwicklung (MacBook); OFC-Kasse dafuer kurz zurueckgestellt.
+- **Betroffen:** `orchestrator/.env` (MACO470, nicht im Git)
+
 ## [2026-11-26 15:09] — Claude Code
 - **Was:** OFC-Kasse: Import des echten PayPal-Exports durch den CEO auf der NAS nachgeprueft (Kassenstand stimmt bis auf eine im Export fehlende Trikot-Zahlung); Naechster Schritt der Roadmap fortgeschrieben.
 - **Warum:** CEO meldet „Import gemacht“.
