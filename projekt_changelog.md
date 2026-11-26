@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 19:27] — Claude Code
+- **Was:** Merge `ai/ofc-ticketversand-tv4` nach `main` (OFC_TICKETVERSAND TV4, Automatik aus), Branch geloescht; Deploy-Befehle und Testdurchlauf (TV5) an den CEO.
+- **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-11-26 19:15] — Claude Code
 - **Was:** OFC_TICKETVERSAND TV4: PayPal-Zahlungen ueber den Verwendungszweck `<Spieltag>-<Nr>` zuordnen (nur bei genauem Betrag, vor allen anderen Regeln), Ticketmail aus moin@ mit PDF-Tickets als Anhang und Wallet-Links (Abschnitt „🎟 Ticketversand“ im Spiel: Vorschau, Senden, Testmail an moin@, nie doppelt), Automatik im 15-Minuten-Lauf nur fuer eindeutige Faelle mit Schalter `OFC_AUTO_TICKETVERSAND` (Standard aus); Zugriffs-Policy (CISO), Datenfluesse, Datenschutz, Register, Dienste-Register, Roadmap; Baseline 1915.
 - **Warum:** CEO: „Go fuer TV4“ (E5: automatisch, wenn eindeutig).
