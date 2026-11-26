@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 12:11] — Claude Code
+- **Was:** Branch `ai/ofc-kasse-bau` (KA1-KA5: Beitragszahlungen erkennen, Beitragsuebersicht, Kassenbuch, PayPal-CSV-Abgleich, Kassenbericht) per --no-ff in `main` gemergt, Branch lokal und remote geloescht.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `main`, `OFC_KASSE_ROADMAP.md`, `orchestrator/core/ofc_*`, `orchestrator/channels/web/`
+
 ## [2026-11-25 23:55] — Claude Code
 - **Was:** OFC-Kasse KA5 Kassenbericht je Geschaeftsjahr (PDF/CSV) und Abschluss KA1-KA5: Doku nachgetragen (Datenfluesse, Datenschutz, Entscheidungsregister, Test-Baseline 1850, Roadmap/ROADMAP.md), Sichtpruefung aller neuen Ansichten headless auf Rechner/iPad/iPhone (`app-v2.js` v176).
 - **Warum:** CEO 2026-11-25: „Baue jetzt moeglichst viel nacheinander (ggf. bis KA5), beginne mit KA1 … testen koennen wir ganz am Ende“.
