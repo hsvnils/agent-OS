@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 15:23] — Claude Code
+- **Was:** Neue Roadmap `APP_KENNZAHLEN_ROADMAP.md` (Kennzahlen der Hanserautisch-App, Etappen AK0-AK4, offene Entscheidungen E1-E4) angelegt und im Roadmap-Verzeichnis registriert; Zugang `app_kennzahlen` in der Zugriffs-Policy als GEPLANT, geplanter Datenfluss in `docs/datenfluesse.md`; OFC-Kasse als zurueckgestellt markiert. Einmaliger Lesetest der Schnittstelle (nur Status/Zeilenzahlen, keine Werte). Kein Code, kein Deploy.
+- **Warum:** CEO-Auftrag aus `LUNA_UEBERGABE.md` (App-Entwicklung), nach LUNA-Workflow erst Roadmap, Bau erst nach Go je Etappe.
+- **Betroffen:** `APP_KENNZAHLEN_ROADMAP.md`, `ROADMAP.md`, `OFC_KASSE_ROADMAP.md`, `governance/zugriffs-policy.md`, `docs/datenfluesse.md`, `projekt_changelog.md`
+
 ## [2026-11-26 15:18] — Claude Code
 - **Was:** CEO hat auf dem MACO470 den Schluessel `HANSERAUTISCH_LUNA_API_TOKEN` in `orchestrator/.env` eingetragen (Anleitung angepasst, Eintrag ohne Wertanzeige geprueft, Download-Kopie geloescht).
 - **Warum:** Dringender Auftrag des CEO aus der App-Entwicklung (MacBook); OFC-Kasse dafuer kurz zurueckgestellt.

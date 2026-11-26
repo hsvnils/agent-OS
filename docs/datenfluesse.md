@@ -85,6 +85,12 @@ Kalendereinladung, Alpaca-Order (Paper), Git-Push eines Antrags-Branches.
 | `esm.sh` | `channels/voice/static/app.js` (Browser) | – / JS-Module | – | lesen (Client) |
 | **Ollama (lokal)** `http://192.168.178.184:11434/v1` (MACO470, nur LAN) | `core/lokal_llm.py` ueber `core/model_router.py` (Chat) und `core/backends.py` (Fachagenten/Jobs); seit JARVIS J8 auch `/api/embed` mit dem Suchmodell `qwen3-embedding:0.6b` (`core/lokal_llm.einbetten` ueber `core/gedaechtnis.py`, aufgerufen von `brain_suchen` und dem Bot-Takt `gedaechtnis-loop`) | Prompts, Kontext, Werkzeugliste / Antworten; J8: Kurztexte der Vorgaenge (Firmen, Akte, Angebote, Auftraege, Rechnungen, Belege, To-dos, Wissen, Research, Antraege) und Suchfragen / Vektoren — **bleibt im Haus** | `LOCAL_LLM_BASE_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_CHAT`, `LOCAL_LLM_FACHAGENTEN`, `LOCAL_LLM_TIMEOUT`, `LOCAL_LLM_MAX_TOKENS` | lesen; je Bereich `zuerst`/`zuletzt`/`aus` |
 
+Geplant, noch nicht angebunden (`APP_KENNZAHLEN_ROADMAP.md`, wartet auf CEO-Go und CISO-Freigabe): Function
+`luna-kennzahlen` der Hanserautisch-App (Supabase-Projekt der App, nur HTTPS-GET mit eigenem Token
+`HANSERAUTISCH_LUNA_API_TOKEN`, nur Tagessummen, keine Personen) -> Archiv `app_kennzahlen/log.jsonl` auf der NAS ->
+Kachel in `luna-os` und Telegram-Meldungen; taeglich ab 06:30 im Container `luna-telegram`. Die Zahlen gehen an kein
+KI-Modell. Host, Speicher und Zeitplan kommen mit dem Code (AK1) in die doku-check-Bloecke.
+
 Nicht angebunden, obwohl erwaehnt: AgentOps (nur Key-Check/Dienste-Register). Ollama steht nicht im Doku-Check-Block, weil
 der Code es nur ueber die `.env`-Adresse (IP) anspricht.
 
