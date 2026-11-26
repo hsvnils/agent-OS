@@ -179,7 +179,13 @@ def lauf(store: OfcStore, postfach, *, von: str = "auto") -> dict:
         if not postfach.verfuegbar():
             r = {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
         else:
-            r = oeffentlich(post_anwenden(store, postfach.posteingang(tage=TAGE, nur=HSV_DOMAINS), von=von))
+            mails = postfach.posteingang(tage=TAGE, nur=HSV_DOMAINS)
+            r = oeffentlich(post_anwenden(store, mails, von=von))
+            try:                                    # OFC_TICKETVERSAND TV1: Wallet-Links aus denselben HSV-Mails
+                from .ofc_wallet import wallet_anwenden
+                r["wallet_neu"] = wallet_anwenden(store, mails, von=von)["neu"]
+            except Exception as exc:
+                r["wallet_fehler"] = exc.__class__.__name__
     except Exception as exc:
         r = {"ok": False, "hinweis": f"Postfach-Abruf fehlgeschlagen ({exc.__class__.__name__})."}
     _LETZTER.clear()

@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 17:27] — Claude Code
+- **Was:** OFC_TICKETVERSAND TV1 + TV2: Wallet-Links aus allen HSV-Mails je Ticket (Zuordnung ueber die Ticketnummer im Link, im 15-Minuten-Lauf, Nachholen per Knopf, Handeintrag), im Spiel 📄 PDF · 📱 Wallet · 📋 kopieren; Mitgliedsnummer je Ticket per Auswahl „Name (Nr. …)“, Tickets und offener Betrag beim Mitglied; HSV-Spielplan 2026/27 als feste Datei (OpenLigaDB, einmal geholt), Spieltag je Spiel automatisch oder von Hand; Analyse um Datum und reine Wallet-Mails ergaenzt; Baseline 1894.
+- **Warum:** CEO-Go TV1/TV2 mit Hinweisen (keine Namen auf Tickets, Mitgliedsnummer merken, Spielplan einmal ziehen).
+- **Betroffen:** `orchestrator/core/ofc_wallet.py`, `orchestrator/core/ofc_spielplan.py`, `orchestrator/core/ofc_store.py`, `orchestrator/core/ofc_post.py`, `orchestrator/channels/web/app.py`, `orchestrator/channels/web/static/app-v2.js`, `index-v2.html`, `orchestrator/tests/test_ofc_ticketversand.py`, `OFC_TICKETVERSAND_ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-26 17:16] — Claude Code
 - **Was:** OFC_TICKETVERSAND TV0 auf der NAS ausgewertet (nur Zaehlungen): 3 Ticket-Mails, 6 Wallet-Links (eventimsports.de, Ticketnummer im Link, je Ticket ein Link), 1 Bestellung ohne Link, keine Spieltag-Nummer in Rechnung/Ticket, 0 von 36 Ticketnamen mit genauem Treffer in der Mitgliederliste; Befund und Anpassung TV1/TV2 in der Roadmap.
 - **Warum:** CEO: „Deploy gemacht“.

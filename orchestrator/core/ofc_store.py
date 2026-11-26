@@ -93,6 +93,11 @@ class OfcStore:
                 kasse_importe.setdefault(d["id"], {"id": d["id"], "ts": e["ts"]}).update({k: v for k, v in d.items() if k != "id"})
             elif t == "ofc_einstellung":
                 einstellungen.update(d)
+            elif t == "ofc_wallet":                                 # OFC_TICKETVERSAND TV1: Wallet-Link je Ticket
+                tk = tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})
+                tk.update(wallet=d.get("url", ""), wallet_quelle=d.get("quelle", ""))
+            elif t == "ofc_mitglied":                               # TV2: Mitgliedsnummer je Ticket (leer = Gast)
+                tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})["mitglied"] = d.get("nummer", "")
             elif t == "ofc_name":
                 tk = tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})
                 tk.update(name=d["name_neu"], datei=d["datei_neu"])
@@ -256,7 +261,9 @@ def uebersicht(store: OfcStore, heute: date | None = None) -> dict:
                       | {"status": status, "karten": len(tks), "mit_name": sum(1 for t in tks if t.get("name")),
                          "summe_cent": sum(r.get("summe_cent") or 0 for r in s.get("rechnungen") or []),
                          "bezahlt_cent": _bezahlt(je_z.get(s["id"], [])),
-                         "karten_bezahlt": n_bez, "hinweise": hinweise})
+                         "karten_bezahlt": n_bez, "hinweise": hinweise,
+                         "wallet": sum(1 for t in tks if t.get("wallet")), "mit_mitglied": sum(1 for t in tks if t.get("mitglied")),
+                         "kennung": _kennung(s)["kennung"]})
     spiele.sort(key=lambda x: (x["status"] == "abgeschlossen", x.get("spieltag") or "9999"))
     offen = [x for x in spiele if x["status"] != "abgeschlossen"]
     return {"spiele": spiele, "letzter_import": st["letzter_import"],
@@ -279,7 +286,59 @@ def spiel_detail(store: OfcStore, sid: str) -> dict | None:
     tks = sorted((t | bz.get(t["ticketnr"], {}) for t in st["tickets"].values() if t["spiel"] == sid),
                  key=lambda t: (t["rechnungsnr"], t["pos"]))
     zahl = [z for z in zahlungs_status(st) if z.get("spiel") == sid]
-    return {"spiel": s, "tickets": tks, "zahlungen": zahl, "bezahlt_cent": _bezahlt(zahl), "hinweise": _hinweise(s, tks, zahl)}
+    return {"spiel": s | {"kennung": _kennung(s)}, "tickets": tks, "zahlungen": zahl, "bezahlt_cent": _bezahlt(zahl),
+            "hinweise": _hinweise(s, tks, zahl)}
+
+
+def _kennung(s: dict) -> dict:
+    from .ofc_spielplan import kennung
+    return kennung(s)
+
+
+def mitglied_setzen(store: OfcStore, ticketnr: str, nummer: str, *, von: str = "") -> dict:
+    """OFC_TICKETVERSAND TV2: Mitgliedsnummer am Ticket merken (leer = Gast/kein Mitglied). Nur wenn sie sich aendert."""
+    tk = store.stand()["tickets"].get(ticketnr)
+    if not tk:
+        return {"ok": False, "hinweis": "Ticket nicht gefunden."}
+    nummer = re.sub(r"\s+", "", str(nummer or ""))[:20]
+    if (tk.get("mitglied") or "") == nummer:
+        return {"ok": True, "geaendert": False}
+    store.erfassen("ofc_mitglied", {"ticketnr": ticketnr, "nummer": nummer}, von=von)
+    return {"ok": True, "geaendert": True}
+
+
+def spieltag_setzen(store: OfcStore, sid: str, kennung: str, *, von: str = "") -> dict:
+    """TV2/E2: Spieltag-Kennung eines Spiels von Hand (z. B. „11“, „P2“, „S1“); leer = wieder aus dem Spielplan."""
+    from .ofc_spielplan import kennung_gueltig
+    if sid not in store.stand()["spiele"]:
+        return {"ok": False, "hinweis": "Spiel nicht gefunden."}
+    k = (kennung or "").strip().upper()
+    if k and not kennung_gueltig(k):
+        return {"ok": False, "hinweis": "Erlaubt: 1–34 (Bundesliga), P1–P6 (Pokal) oder S1, S2 … (sonstige Spiele)."}
+    store.erfassen("ofc_spiel", {"id": sid, "spieltag_nr": k}, von=von)
+    return {"ok": True, "kennung": k}
+
+
+def tickets_je_mitglied(store: OfcStore, nummer: str) -> dict:
+    """TV2: alle Tickets eines Mitglieds (ueber die gemerkte Nummer) mit Spiel, Platz, Preis und Bezahlt-Stand."""
+    from .ofc_eingang import bezahlt_stand
+    st = store.stand()
+    bz = bezahlt_stand(st)["tickets"]
+    out = []
+    for t in st["tickets"].values():
+        if not nummer or (t.get("mitglied") or "") != nummer:
+            continue
+        s = st["spiele"].get(t.get("spiel"), {})
+        b = bz.get(t["ticketnr"], {})
+        out.append({"ticketnr": t["ticketnr"], "spiel_id": t.get("spiel"), "spiel": s.get("spiel", t.get("spiel", "")),
+                    "spieltag": s.get("spieltag", ""), "kennung": _kennung(s)["kennung"] if s else "", "name": t.get("name", ""),
+                    "block": t.get("block", ""), "reihe": t.get("reihe", ""), "sitz": t.get("sitz", ""),
+                    "preis_cent": t.get("preis_cent") or 0, "bezahlt": bool(b.get("bezahlt")), "bezahlt_cent": b.get("bezahlt_cent", 0),
+                    "wallet": bool(t.get("wallet")), "abgeschlossen": bool(s.get("abgeschlossen"))})
+    out.sort(key=lambda x: x["spieltag"] or "9999", reverse=True)
+    offen = sum(max(0, x["preis_cent"] - x["bezahlt_cent"]) for x in out if not x["bezahlt"])
+    return {"ok": True, "nummer": nummer, "tickets": out, "anzahl": len(out), "offen_cent": offen,
+            "spiele": len({x["spiel_id"] for x in out})}
 
 
 def _bezahlt(zahl: list[dict]) -> int:

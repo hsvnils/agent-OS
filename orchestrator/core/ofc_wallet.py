@@ -57,6 +57,15 @@ def _pdf(daten: bytes) -> str:
         return ""
 
 
+def _datum(roh: bytes) -> str:
+    """Nur der Tag der Mail (JJJJ-MM-TT), kein Inhalt."""
+    from email.utils import parsedate_to_datetime
+    try:
+        return parsedate_to_datetime(ofc.mail_pdfs(roh)[0]["datum"]).date().isoformat()
+    except Exception:
+        return ""
+
+
 def _links(htmls: list[str], texte: list[str]) -> list[tuple[str, str]]:
     """Alle Links als (url, linktext). HTML-Anker zuerst; im Text nur nackte URLs ohne Linktext."""
     out, gesehen = [], set()
@@ -125,10 +134,13 @@ def analyse(postfach, *, tage: int = 120, mitglieder: list[dict] | None = None, 
     """TV0-Bericht. `tickets` = OfcStore.stand()['tickets'] (fuer die Adress-Abdeckung), `mitglieder` = OM-Liste."""
     mails = postfach.posteingang(tage=tage, nur=HSV_DOMAINS)
     hosts, muster, linktexte, verhaeltnis = Counter(), Counter(), Counter(), Counter()
-    je_mail = []
+    je_mail, nur_wallet = [], []
     for x in mails:
         best, n = bestellungen_aus_mails([x])
-        if not n:
+        if not n:                                             # Wallet-Mail ohne PDFs? (z. B. getrennt verschickt)
+            h, tx, _ = _teile(x["roh"])
+            if any(ist_wallet(u, t) for u, t in _links(h, tx)):
+                nur_wallet.append({"datum": _datum(x["roh"]), "wallet_links": sum(1 for u, t in _links(h, tx) if ist_wallet(u, t))})
             continue
         ticketnrn = {t for b in best.values() for t in b["tickets"]}
         htmls, texte, pk = _teile(x["roh"])
@@ -150,7 +162,7 @@ def analyse(postfach, *, tage: int = 120, mitglieder: list[dict] | None = None, 
         distinct = len({u for u, _ in wallet})
         kt = len(ticketnrn)
         verhaeltnis["gleich" if distinct == kt else "weniger" if distinct < kt else "mehr"] += 1
-        je_mail.append({"tickets": kt, "pdfs": len(ofc.mail_pdfs(x["roh"])[1]), "links": len(alle), "wallet_links": len(wallet),
+        je_mail.append({"datum": _datum(x["roh"]), "tickets": kt, "pdfs": len(ofc.mail_pdfs(x["roh"])[1]), "links": len(alle), "wallet_links": len(wallet),
                         "wallet_verschieden": distinct, "pkpass_anhaenge": pk, "ticketnr_im_link": mit_nr_url,
                         "ticketnr_im_linktext": mit_nr_text, "rechnung": any(b["rechnung"] for b in best.values()),
                         "spieltag_in_rechnung": st_rg, "spieltag_im_ticket": st_tk})
@@ -161,7 +173,7 @@ def analyse(postfach, *, tage: int = 120, mitglieder: list[dict] | None = None, 
             "spieltag_im_ticket": sum(m["spieltag_im_ticket"] for m in je_mail),
             "verhaeltnis_wallet_zu_tickets": dict(verhaeltnis), "wallet_hosts": dict(hosts.most_common(10)),
             "link_muster": dict(muster.most_common(10)), "linktexte_maskiert": dict(linktexte.most_common(10)),
-            "je_mail": je_mail[:60], "adressen": adressen_abdeckung(tickets or {}, mitglieder)}
+            "je_mail": je_mail[:60], "mails_nur_wallet": nur_wallet[:60], "adressen": adressen_abdeckung(tickets or {}, mitglieder)}
 
 
 def _norm(n: str) -> str:
@@ -181,3 +193,60 @@ def adressen_abdeckung(tickets: dict, mitglieder: list[dict] | None) -> dict:
             "ohne_treffer": len(namen) - eindeutig - mehrdeutig - sum(1 for n in namen if je_name[n] == 1 and n not in mit_mail),
             "treffer_ohne_mail": sum(1 for n in namen if je_name[n] == 1 and n not in mit_mail),
             "mitglieder_mit_mail": sum(1 for m in mitglieder if "@" in (m.get("email") or "")), "mitglieder": len(mitglieder)}
+
+
+# -- TV1: Wallet-Links speichern (CEO-Go 2026-11-26) -------------------------------------------------------------------
+# Befund TV0: je Ticket ein Link auf www.eventimsports.de/wallet/<..>/<..>, die Ticketnummer steckt im Link. Zugeordnet
+# wird deshalb NUR ueber die Ticketnummer im Link -- aus allen HSV-Mails (auch ohne PDFs), nie ueber die Reihenfolge.
+def _ohne_strich(s: str) -> str:
+    return s.replace("-", "")
+
+
+def wallet_links(roh: bytes, ticketnrn: set[str]) -> dict[str, str]:
+    """Mail -> {ticketnr: url} fuer Wallet-Links (nur https), die genau eine bekannte Ticketnummer enthalten."""
+    htmls, texte, _ = _teile(roh)
+    out: dict[str, str] = {}
+    for url, text in _links(htmls, texte):
+        if not url.lower().startswith("https://") or not ist_wallet(url, text):
+            continue
+        u = _ohne_strich(url)
+        treffer = [t for t in ticketnrn if _ohne_strich(t) in u]
+        # Gegen Praefix-Treffer (…-1 in …-12): die laengste Nummer gewinnt, nur wenn eindeutig
+        if treffer:
+            laengste = max(len(_ohne_strich(t)) for t in treffer)
+            treffer = [t for t in treffer if len(_ohne_strich(t)) == laengste]
+        if len(treffer) == 1:
+            out.setdefault(treffer[0], url)
+    return out
+
+
+def wallet_anwenden(store, mails: list[dict], *, von: str = "auto") -> dict:
+    """Neue oder geaenderte Wallet-Links als Ereignis `ofc_wallet` speichern. Von Hand eingetragene Links bleiben."""
+    from .ofc_post import _ist_hsv
+    tickets = store.stand()["tickets"]
+    nrn = set(tickets)
+    neu = gleich = 0
+    for x in mails:
+        kopf = ofc.mail_pdfs(x["roh"])[0]
+        if not _ist_hsv(kopf["domain"]):
+            continue
+        for nr, url in wallet_links(x["roh"], nrn).items():
+            t = tickets[nr]
+            if t.get("wallet_quelle") == "hand" or t.get("wallet") == url:
+                gleich += 1
+                continue
+            store.erfassen("ofc_wallet", {"ticketnr": nr, "url": url, "quelle": "mail", "mail": kopf["message_id"][:200]}, von=von)
+            t["wallet"] = url
+            neu += 1
+    return {"ok": True, "neu": neu, "unveraendert": gleich}
+
+
+def wallet_von_hand(store, ticketnr: str, url: str, *, von: str = "") -> dict:
+    """CEO traegt einen Wallet-Link selbst ein (oder leert ihn). Nur https, hoechstens 2.000 Zeichen."""
+    url = (url or "").strip()
+    if ticketnr not in store.stand()["tickets"]:
+        return {"ok": False, "hinweis": "Ticket nicht gefunden."}
+    if url and (not url.lower().startswith("https://") or len(url) > 2000 or any(c.isspace() for c in url)):
+        return {"ok": False, "hinweis": "Bitte einen vollständigen https-Link einfügen."}
+    store.erfassen("ofc_wallet", {"ticketnr": ticketnr, "url": url, "quelle": "hand" if url else ""}, von=von)
+    return {"ok": True}

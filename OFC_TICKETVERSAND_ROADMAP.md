@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-ticketversand`
 - Basiscommit: `81ee7f0`
-- Naechster Schritt: TV0 live und ausgewertet (2026-11-26, Befund unten). Offen: CEO-Rueckmeldung zur Bestellung ohne Wallet-Links und zur Schreibweise der Ticketnamen; dann Go fuer TV1 (angepasst) + TV2.
+- Naechster Schritt: TV1 + TV2 umgesetzt auf `ai/ofc-ticketversand-tv12` (CEO-Go 2026-11-26); Push, Merge, Deploy (Neustart `luna-os`), dann auf der NAS „📱 Wallet-Links holen“ und Zaehlung pruefen; danach Namen/Mitglieder eintragen (CEO) und Go fuer TV3.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -63,6 +63,8 @@ Mal Mails an Mitglieder gehen.
   mit E-Mail). Die Namen auf den Tickets sind offenbar anders geschrieben (z. B. nur Vorname, Spitzname, andere
   Reihenfolge). Die Namen selbst wurden nicht angesehen (keine Mitgliederdaten an ein Modell). TV2 braucht deshalb eine
   Zuordnung per Auswahl durch den CEO statt eines automatischen Treffers.
+
+**CEO-Hinweise 2026-11-26:** Auf den Tickets steht kein Name (die Namen traegt der CEO in LUNA ein, mit Mitglied aus der Liste); die Mitgliedsnummer gehoert ans Ticket, damit beim Mitglied Tickets und offene Betraege sichtbar sind; der Spielplan wird einmal geholt und bestimmt den Spieltag. Eine Beispiel-Mail vom 23.11. (Wallet) wird vom 15-Minuten-Lauf erfasst, weil Wallet-Links jetzt aus allen HSV-Mails gelesen werden.
 
 **Anpassungen:**
 - **TV1:** Wallet-Links werden aus **allen** HSV-Mails gelesen, nicht nur aus Mails mit PDFs, und ueber die Ticketnummer im
@@ -124,7 +126,7 @@ Versandprotokoll; Ansicht auf Rechner, iPad und iPhone.
 
 ### Etappe TV1: Wallet-Links speichern und neben dem PDF anzeigen
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (`core/ofc_wallet.py` `wallet_links`/`wallet_anwenden`/`wallet_von_hand`, im 15-Minuten-Lauf `ofc_post.lauf` mit denselben Mails, Knopf „📱 Wallet-Links holen“ bis 365 Tage, je Ticket 📄/📱/📋 bzw. 📱＋; Tests `test_ofc_ticketversand.py` mit Gegenproben)
 - Ziel / Scope:
   - **Speichern:** Der 15-Minuten-Lauf (O3) liest kuenftig auch den Mailtext der HSV-Mails und speichert je Ticket den
     Wallet-Link (Ereignis `ofc_wallet` mit Ticketnummer und Link, Quelle Message-ID) im Fanclub-Speicher auf der NAS.
@@ -143,7 +145,7 @@ Versandprotokoll; Ansicht auf Rechner, iPad und iPhone.
 
 ### Etappe TV2: Empfaenger je Person
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (CEO: Tickets tragen keinen Namen, der CEO traegt ihn ein: Auswahl „Name (Nr. …)“ merkt die Mitgliedsnummer am Ticket, Ereignis `ofc_mitglied`; beim Mitglied Tickets, Spiele und offener Betrag; **Spielplan** 2026/27 als feste Datei `core/ofc_spielplan.py` (OpenLigaDB, einmal geholt), Spieltag je Spiel aus dem Datum oder von Hand)
 - Ziel / Scope:
   - Je Ticketname schlaegt LUNA die Adresse aus der Mitgliederliste vor (eindeutiger Namenstreffer).
   - Der CEO bestaetigt einmal je Person oder traegt die Adresse von Hand ein (Gaeste). Das wird als Ereignis `ofc_kontakt`
