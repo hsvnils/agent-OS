@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 17:12] — Claude Code
+- **Was:** OFC_TICKETVERSAND TV0: Analyse der HSV-Mails auf Wallet-Links und `.pkpass`-Anhaenge (nur lesend, Bericht ohne Links/Namen/Mailtext), Pruefung auf Spieltag-Nummer in Rechnung/Ticket, Adress-Abdeckung aus der Mitgliederliste nur als Zahlen (`GET /api/ofc/analyse/wallet`, nur CEO); Entscheidungen E1-E7 (E2 geaendert: Verwendungszweck `<Spieltag>-<Mitgliedsnummer>`) in Roadmap und Register; Revision „keine Mails an Mitglieder“ in `OFC_ROADMAP.md` vermerkt; Baseline 1884.
+- **Warum:** CEO: „wie empfohlen, Go fuer TV0“ + Wunsch einfacher Verwendungszweck.
+- **Betroffen:** `orchestrator/core/ofc_wallet.py`, `orchestrator/channels/web/app.py`, `orchestrator/tests/test_ofc_wallet.py`, `OFC_TICKETVERSAND_ROADMAP.md`, `OFC_ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/datenfluesse.md`, `docs/bekannte-fehler.md`, `projekt_changelog.md`
+
 ## [2026-11-26 17:06] — Claude Code
 - **Was:** Neue Roadmap `OFC_TICKETVERSAND_ROADMAP.md` (Wallet-Links + PDF je Ticket, Zahlungsbitte per Mail mit Verwendungszweck, Zuordnung, Ticketversand nach Zahlung; Etappen TV0-TV5, Entscheidungen E1-E7) angelegt und registriert; OFC-Kasse wieder aufgenommen. Nur Plan und read-only Analyse, kein Code.
 - **Warum:** CEO-Auftrag 2026-11-26 („Zeig mir eine Roadmap dafuer“).
