@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 20:32] — Claude Code
+- **Was:** OFC-Mitglieder: Sichtabnahme zurueckgestellt (App-Thema vorgezogen); To-do „OFC-Mitglieder: Sichtabnahme“ faellig 03.12. angelegt; Roadmap und ROADMAP fortgeschrieben.
+- **Warum:** CEO: „Sichtabnahme stellen wir zurueck, weil wir was bzgl der App im Luna zwischenschieben muessen.“
+- **Betroffen:** `OFC_MITGLIEDER_ROADMAP.md`, `ROADMAP.md`, `projekt_changelog.md`, `todos/log.jsonl` (NAS)
+
 ## [2026-11-26 20:31] — Claude Code
 - **Was:** OFC_MITGLIEDER MV4 erledigt (CEO: Google-Formular geschlossen, Freigabe der Tabelle zurueckgenommen); auf der NAS geprueft, dass Verzeichnis, Beitraege und Personensuche ohne Tabelle aus LUNA laufen; To-do MV4 erledigt; Roadmap, ROADMAP, Register und Zugriffs-Policy (Zugang beendet) fortgeschrieben.
 - **Warum:** CEO: „Formular geschlossen und Freigabe zurückgenommen“.

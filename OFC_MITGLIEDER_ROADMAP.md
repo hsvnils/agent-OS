@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-mitglieder`
 - Basiscommit: `4b1dde2`
-- Naechster Schritt: MV4 erledigt (2026-11-26, CEO: Formular geschlossen, Freigabe zurueckgenommen); alle OFC-Funktionen laufen aus LUNA (geprueft). Offen nur die Sichtabnahme 👥 Mitglieder auf Rechner/iPad/iPhone durch den CEO, dann Status „abgeschlossen“.
+- Naechster Schritt: ZURUECKGESTELLT am 2026-11-26 (CEO: App-Thema vorgezogen). MV0-MV4 erledigt und geprueft; offen nur die Sichtabnahme 👥 Mitglieder auf Rechner/iPad/iPhone (To-do 03.12.), dann Status „abgeschlossen“.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
