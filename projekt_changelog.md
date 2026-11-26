@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 17:28] — Claude Code
+- **Was:** Merge `ai/ofc-ticketversand-tv12` nach `main` (OFC_TICKETVERSAND TV1 + TV2), Branch geloescht; Deploy-Befehle an den CEO.
+- **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-11-26 17:27] — Claude Code
 - **Was:** OFC_TICKETVERSAND TV1 + TV2: Wallet-Links aus allen HSV-Mails je Ticket (Zuordnung ueber die Ticketnummer im Link, im 15-Minuten-Lauf, Nachholen per Knopf, Handeintrag), im Spiel 📄 PDF · 📱 Wallet · 📋 kopieren; Mitgliedsnummer je Ticket per Auswahl „Name (Nr. …)“, Tickets und offener Betrag beim Mitglied; HSV-Spielplan 2026/27 als feste Datei (OpenLigaDB, einmal geholt), Spieltag je Spiel automatisch oder von Hand; Analyse um Datum und reine Wallet-Mails ergaenzt; Baseline 1894.
 - **Warum:** CEO-Go TV1/TV2 mit Hinweisen (keine Namen auf Tickets, Mitgliedsnummer merken, Spielplan einmal ziehen).
