@@ -57,6 +57,8 @@ FILES=(
   reichweite/log.jsonl
   # OFC_ROADMAP O1: Fanclub HSVInside -- Spiele/Tickets/Zahlungen (append-only, getrennt von der Buchhaltung)
   fanclub/log.jsonl
+  # APP_KENNZAHLEN: Archiv der App-Kennzahlen (append-only, nur Tagessummen)
+  app_kennzahlen/log.jsonl
   # JARVIS J7: feste Regeln des CEO fuer LUNA (append-only)
   regeln/log.jsonl
   # JARVIS J9: Wochenplanung -- Vorschlaege + eingetragene Zeitbloecke (append-only)

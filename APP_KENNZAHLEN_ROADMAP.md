@@ -1,10 +1,10 @@
 # Roadmap: Kennzahlen der Hanserautisch-App in LUNA-OS (Teil 1)
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/app-kennzahlen`
 - Basiscommit: `fef5b17`
-- Naechster Schritt: Token liegt seit 2026-11-26 nur noch auf der NAS (MACO-Kopie entfernt). Roadmap liegt dem CEO vor; offene Entscheidungen E1-E4 beantworten, dann Go fuer AK0 (CISO-Pruefung) und AK1.
+- Naechster Schritt: AK0-AK3 umgesetzt auf `ai/app-kennzahlen` (CEO-Go 2026-11-26, E1-E4 wie empfohlen); Push, Merge und Deploy durch den CEO, dann Neuerstellung beider Container (`docker compose up -d`, wegen neuem Token in der `.env`), danach Erstabruf auf der NAS pruefen (nur Zaehlungen) und AK4 (Abgleich drei Stichtage, zwei Tage Lauf von selbst).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -78,16 +78,16 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
 
 | Nr | Frage | Empfehlung |
 |---|---|---|
-| E1 | Wer sieht die Kachel? | **Nur der CEO** (Rolle owner, wie OFC), weil Abo- und Umsatzzahlen drin stehen. Team spaeter per eigener Freigabe. |
-| E2 | Was heisst „Saison“ im Zeitraum-Filter? | **01.07. bis 30.06.**, die laufende Saison 2026/27 also ab 01.07.2026 (Daten ab 14.05.). |
-| E3 | Wo liegt das Archiv? | **NAS-Datei** `app_kennzahlen/log.jsonl` (Ereignis-Log wie `fanclub/`, nicht im Git, im naechtlichen Backup). Kein Supabase, damit die Zahlen nicht in eine weitere Cloud gehen. |
-| E4 | Meilenstein-Meldungen nur per Telegram oder zusaetzlich als To-do? | **Nur Telegram**; Stoerungen (401, zwei Fehlschlaege, kein frischer Lauf) zusaetzlich in der Glocke von LUNA-OS. |
+| E1 (CEO 2026-11-26: wie empfohlen) | Wer sieht die Kachel? | **Nur der CEO** (Rolle owner, wie OFC), weil Abo- und Umsatzzahlen drin stehen. Team spaeter per eigener Freigabe. |
+| E2 (wie empfohlen) | Was heisst „Saison“ im Zeitraum-Filter? | **01.07. bis 30.06.**, die laufende Saison 2026/27 also ab 01.07.2026 (Daten ab 14.05.). |
+| E3 (wie empfohlen) | Wo liegt das Archiv? | **NAS-Datei** `app_kennzahlen/log.jsonl` (Ereignis-Log wie `fanclub/`, nicht im Git, im naechtlichen Backup). Kein Supabase, damit die Zahlen nicht in eine weitere Cloud gehen. |
+| E4 (wie empfohlen) | Meilenstein-Meldungen nur per Telegram oder zusaetzlich als To-do? | **Nur Telegram**; Stoerungen (401, zwei Fehlschlaege, kein frischer Lauf) zusaetzlich in der Glocke von LUNA-OS. |
 
 ## Etappen
 
 ### Etappe AK0: Zugang freigeben (CISO) und Token auf die NAS
 
-- Status: geplant
+- Status: umgesetzt (CISO-Pruefung 2026-11-26 durch den HoA, Auflagen im Code und per Test belegt; Token auf der NAS)
 - Ziel / Scope: CISO-Pruefung der neuen festen Schnittstelle nach `AGENTS.md` 5.7:
   - nur diese eine Adresse, nur GET;
   - Token nur aus der Umgebung lesen, nie in Log, Fehlertext, Antwort, Datei oder Repo;
@@ -106,7 +106,7 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
 
 ### Etappe AK1: Abruf und Archiv
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (`orchestrator/core/app_kennzahlen.py`, Tests `test_app_kennzahlen.py`)
 - Ziel / Scope: Neues Modul `orchestrator/core/app_kennzahlen.py`. Es macht Folgendes:
   - **Client:** Er liest das Token aus der Umgebung. Er teilt Zeitraeume in Abschnitte von hoechstens 400 Tagen und setzt
     `bis` nie nach heute (Berlin). Fehler behandelt er nach der Statustabelle; Fehlertexte enthalten nie das Token.
@@ -142,7 +142,7 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
 
 ### Etappe AK2: Kachel „Hanserautisch-App“ und Kontroll-Abgleich
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (Hauptmenuepunkt „📱 App“, nur CEO; headless geprueft Rechner/iPad/iPhone, hell/dunkel)
 - Ziel / Scope: LUNA-OS-Kachel, sichtbar nach E1. Inhalt:
   - **Oben:** Abo-Aequivalente gegen das Ziel 1.000, aktive Abos, MRR brutto, Registrierungen pro Tag und gesamt.
   - **Community:** Tipps je Art, Tippquote je Spieltag, Chatnachrichten pro Tag (Community/Freunde) und je Stunde,
@@ -164,7 +164,7 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
 
 ### Etappe AK3: Taeglicher Lauf und Meldungen
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (Thread `app_kennzahlen` in `luna-telegram`)
 - Ziel / Scope: Zeitplan im Container `luna-telegram` (einziger Ort fuer Zeitplaene).
   - **Taeglicher Lauf** ab 06:30 Berlin: `von = gestern - 3`, `bis = gestern`. Verpasste Tage werden ab dem letzten
     gespeicherten Tag minus 3 nachgeholt.
@@ -195,6 +195,32 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
   
   Dazu kommt die Sichtabnahme durch den CEO auf Rechner, iPad und iPhone.
 - Nach dem Deploy wird sofort ein datiertes To-do „Roadmap: APP_KENNZAHLEN_ROADMAP.md“ angelegt (F4).
+
+## Umsetzungsstand (2026-11-26)
+
+- **CISO-Pruefung AK0 (HoA nach `AGENTS.md` 5.7):** Die Auflagen sind erfuellt und per Test belegt:
+  - nur die eine Adresse, nur GET;
+  - Token nur aus der Umgebung, nie in Fehlertext oder Ausnahme (Gegenprobe);
+  - TLS mit Zertifikatspruefung, Zeitlimit 60 s;
+  - Antwort-Schema geprueft, ungueltige Zeilen verworfen;
+  - Eintrag im Wachtest `test_netz_wache.py`.
+- **Datenschutz:** Meldungen mit `quelle=app_kennzahlen` gehen nicht in den Chat-Verlauf des Bots (der fuegte zugestellte
+  Meldungen bisher als Kontext fuers Modell an), sind in `benachrichtigungen_zeigen`/`meldung_details` ausgeblendet und
+  kommen nicht ins Morgen-Briefing. Kein Chat-Werkzeug fuer die Zahlen.
+- **Gegenproben:** Sechs absichtliche Fehler machen die Tests rot:
+  - Filter im Chat-Werkzeug entfernt;
+  - Upsert ueberschreibt immer;
+  - nach 401 wird wiederholt;
+  - Meilensteine schon beim Erstabruf;
+  - Ausnahmetext im Fehler;
+  - Bot gibt die Meldung in den Chat.
+- **Abweichung vom Plan:** Es gab keinen Dry-Run gegen die echte Quelle vom MACO470 aus, weil das Token nur auf der NAS
+  liegt (Empfehlung der App-Sitzung). Erste echte Pruefung ist der Erstabruf nach dem Deploy (startet etwa 90 Sekunden
+  nach dem Neustart von selbst, weil das Archiv leer ist).
+- **Diagrammfarben:** Blau/Ocker/Magenta (hell `#2f6bff/#a16207/#be185d`, dunkel `#5b8bff/#d4a017/#e0619b`), hoechstens
+  drei Reihen je Diagramm. OKLab-Abstand mindestens 8,7 auch bei simulierter Rot-, Gruen- und Blauschwaeche; Status-Farben
+  bleiben frei. Der Validator des Dataviz-Skills war hier nicht lauffaehig (kein Node); die Pruefung wurde in Python
+  nachgerechnet.
 
 ## Reihenfolge, Aufwand, Deploy
 

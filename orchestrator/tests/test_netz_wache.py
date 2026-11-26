@@ -14,6 +14,7 @@ ERLAUBT = {
     "channels/telegram/bot.py": {"_api", "_send_document", "_send_audio", "_download_voice", "_transcribe"},  # Telegram, Deepgram
     "channels/web/app.py": {"_elevenlabs_tts"},
     "core/alltag.py": {"elevenlabs_tts"},                 # ElevenLabs (LUNA-OS-Stimme; Briefing seit J2b lokal)
+    "core/app_kennzahlen.py": {"_urlopen"},               # Kennzahlen-Function der eigenen App (CISO AK0, nur GET)
     "core/hoa_tools.py": {"_http"},                       # OSV.dev (CISO)
     "core/lokal_llm.py": {"erreichbar", "einbetten"},     # Ollama im Heimnetz (Chat-Modell + Suchmodell J8)
     "core/modell_radar.py": {"aa_abrufen"},               # Artificial-Analysis-API (mit Schluessel)

@@ -1169,7 +1169,8 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             return {"offen": []}
         return {"offen": [{"id": n["id"], "abteilung": n.get("abteilung", ""),
                            "kategorie": n.get("kategorie", ""), "text": redact(n.get("text", ""), sec)}
-                          for n in ctx.notifications.pending()]}
+                          for n in ctx.notifications.pending()
+                          if n.get("quelle") != "app_kennzahlen"]}   # APP_KENNZAHLEN: App-Zahlen an kein Modell
 
     if name == "meldung_details":
         if ctx.notifications is None:
@@ -1177,6 +1178,8 @@ def _run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
         n = ctx.notifications.get(str(args.get("id", "")).strip())
         if not n:
             return {"fehler": "Meldung nicht gefunden."}
+        if n.get("quelle") == "app_kennzahlen":     # APP_KENNZAHLEN: App-Zahlen gehen an kein KI-Modell
+            return {"fehler": "Meldungen zur App-Kennzahlen stehen nur in LUNA-OS (Bereich App), nicht im Chat."}
         return {"id": n["id"], "abteilung": n.get("abteilung", ""), "kategorie": n.get("kategorie", ""),
                 "ts": n.get("ts", ""), "text": redact(n.get("text", ""), sec),
                 "detail": redact(n.get("detail", "") or "(kein weiterer Hintergrund gespeichert)", sec)}

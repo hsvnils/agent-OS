@@ -4347,9 +4347,16 @@ def handlungsbedarf(request: Request):
             inv = ApprovalStore(ROOT / "approvals" / "log.jsonl").offen()
         except Exception:
             inv = None
+    app_st = None
+    if u.get("role") == "owner":                   # APP_KENNZAHLEN (CEO E1/E4): nur der CEO, nur der Stoerungstext
+        try:
+            from ...core import app_kennzahlen as _ak
+            app_st = _ak.stoerung(_app_archiv())
+        except Exception:
+            app_st = None
     return zusammenstellen(_todos_fuer(u), antraege=antraege.list(status="eingereicht") if admin else None,
                            investment=inv, betrieb=betrieb_status() if admin else None,
-                           heute=_date.fromisoformat(jetzt_iso()[:10]))
+                           heute=_date.fromisoformat(jetzt_iso()[:10]), app_stoerung=app_st)
 
 
 @app.post("/api/finanzen/hinweis-quittieren")
@@ -6447,6 +6454,49 @@ async def ofc_eingang_art(request: Request, eid: str):
         return {"ok": False, "hinweis": "Beitrag als Liste {nummer, jahr} angeben."}
     return eingang_art(_ofc_store(), eid, str(body.get("art") or ""), beitrag=bt,
                        mitglieder=_ofc_mitglieder_daten() if bt else None, von=_von(request))
+
+
+# -- APP_KENNZAHLEN AK1/AK2: Kennzahlen der Hanserautisch-App (nur CEO; Zahlen gehen an kein KI-Modell) ----------
+def _app_archiv():
+    from ...core.app_kennzahlen import Archiv
+    return Archiv(ROOT / "app_kennzahlen")
+
+
+@app.get("/api/app-kennzahlen/status")
+def app_kennzahlen_status(request: Request):
+    """Nur Zaehlungen und Zeitpunkte (letzter Abruf, Zeilen je Kennzahl, unbekannte Kennzahlen) -- keine Werte."""
+    _nur_ceo(request)
+    from ...core.app_kennzahlen import status as _st
+    return _st(_app_archiv())
+
+
+@app.get("/api/app-kennzahlen")
+def app_kennzahlen(request: Request, zeitraum: str = "30"):
+    """Tagesreihen fuer die Kachel „Hanserautisch-App“ (7, 30, saison, alles); fehlende Tage = 0 ab Messbeginn."""
+    _nur_ceo(request)
+    from ...core.app_kennzahlen import auswertung, status as _st
+    d = auswertung(_app_archiv(), zeitraum if zeitraum in ("7", "30", "saison", "alles") else "30")
+    s = _st(_app_archiv())
+    d["status"] = {k: s[k] for k in ("token", "zeilen", "tage", "erster_tag", "letzter_tag", "datenstand", "letzter_abruf")}
+    return d
+
+
+@app.post("/api/app-kennzahlen/abrufen")
+def app_kennzahlen_abrufen(request: Request):
+    """„Jetzt abrufen“: faelligen Zeitraum von der App holen (nur lesend); Rueckgabe nur Zaehlungen."""
+    _nur_ceo(request)
+    from ...core.app_kennzahlen import abholen
+    erg = abholen(_app_archiv(), art="manuell")
+    return {k: erg.get(k) for k in ("ok", "status", "von", "bis", "zeilen", "neu", "aktualisiert", "verworfen", "fehler")}
+
+
+@app.post("/api/app-kennzahlen/abgleich")
+async def app_kennzahlen_abgleich(request: Request):
+    """Kontroll-Abgleich: Ergebnis der Supabase-Kontrollabfrage fuer einen Stichtag gegen das Archiv (deterministisch)."""
+    _nur_ceo(request)
+    body = await _json(request)
+    from ...core.app_kennzahlen import abgleich
+    return abgleich(_app_archiv(), str(body.get("datum") or ""), str(body.get("text") or "")[:200_000])
 
 
 @app.get("/api/ofc/kasse")

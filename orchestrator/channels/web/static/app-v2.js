@@ -130,6 +130,7 @@ const SECTIONS = [
   { id: "team", icon: "👥", label: "Team", app: "team" },
   { id: "einstellungen", icon: "⚙", label: "Einstellungen", app: null },
   { id: "ofc", icon: "⚽", label: "OFC", app: "ofc" },              // OFC_ROADMAP O1: Fanclub, nur CEO
+  { id: "appkennzahlen", icon: "📱", label: "App", app: "app_kennzahlen" },   // APP_KENNZAHLEN AK2: nur CEO
 ];
 const darf = (app) => app == null || app === "home" || !ME.apps || ME.apps.includes(app);
 // LUNA_OS_UI_ROADMAP Etappe 1: 4 Bereiche statt 19 Symbolen (CEO 2026-09-30, Skizze abgenommen). Reihenfolge nach Nutzung.
@@ -137,6 +138,7 @@ const BEREICHE = [
   { id: "todos", icon: "✅", label: "To-dos", teile: ["aufgaben"] },        // TODOS_ROADMAP T1 (CEO 2026-10-27)
   { id: "geschaeft", icon: "💼", label: "Geschäft", teile: ["kunden", "angebote", "auftraege", "rechnungen", "belege", "finanzen", "vertraege"] },
   { id: "content", icon: "🎬", label: "Content & Collabs", teile: ["contentplan", "reichweite", "crm", "radar", "content", "cutter", "reel"] },
+  { id: "app", icon: "📱", label: "App", teile: ["appkennzahlen"] },          // APP_KENNZAHLEN AK2 (CEO 2026-11-26)
   { id: "investment", icon: "📈", label: "Investment", teile: ["investment"] },
   { id: "ofc", icon: "⚽", label: "OFC", teile: ["ofc"] },
   { id: "luna", icon: "🌙", label: "LUNA & System", teile: ["freigaben", "agenten", "wissen", "skillwerkstatt", "modellradar", "devroadmap", "system", "netzwerk", "anbieter", "team", "einstellungen"] },
@@ -147,7 +149,7 @@ const TEIL_INFO = {
   radar: "Neue Collab-Chancen", contentplan: "Kalender: eigene Posts, Kunden, Drehs", reichweite: "Follower und Reichweite je Plattform", content: "Trends, Ideen, Entwürfe", cutter: "Schnitt-Aufträge", reel: "Reels freigeben",
   investment: "Depot, Paper-Handel, Prognosen", freigaben: "Anträge von LUNA", agenten: "Agenten und ihr Status",
   wissen: "LUNAs Gedächtnis", devroadmap: "Geplante Entwicklung", system: "Betrieb und Sicherheit", netzwerk: "Fritz!Box, NAS, Zertifikat", modellradar: "KI-Modelle und Hersteller-News", skillwerkstatt: "Eigene Skills bauen, prüfen, verbessern", anbieter: "Dienste, Datenquellen, Kosten", team: "Team-Zugänge",
-  einstellungen: "Depot, Briefings, Anmeldung", ofc: "Fanclub: Spiele, Tickets, Zahlungen",
+  einstellungen: "Depot, Briefings, Anmeldung", ofc: "Fanclub: Spiele, Tickets, Zahlungen", appkennzahlen: "Kennzahlen der Hanserautisch-App",
 };
 const teilErlaubt = (b) => b.teile.filter(t => { const x = SECTIONS.find(s => s.id === t); return x && darf(x.app); });
 const bereichVon = (id) => BEREICHE.find(b => "b-" + b.id === id || b.teile.includes(id));
@@ -4943,6 +4945,187 @@ const AUF_WDH = [["", "nicht wiederholen"], ["woechentlich", "wöchentlich"], ["
 const aufWdhSelect = (id, wert) => `<label class="v2-feld"><small>Wiederholen</small><select id="${id}" class="v2-inp">${AUF_WDH.map(([k, l]) => `<option value="${k}" ${k === (wert || "") ? "selected" : ""}>${l}</option>`).join("")}</select></label>`;
 /* ---- Reichweiten je Plattform (MONETARISIERUNG M3) ---- */
 /* OFC_ROADMAP O1: Fanclub HSVInside -- Spiele, Tickets, Hinweise (nur CEO; getrennt von der Buchhaltung; keine Telegram-Nachrichten) */
+/* =========================== App-Kennzahlen (APP_KENNZAHLEN AK2, nur CEO) ===========================
+   Tagessummen der Hanserautisch-App aus dem NAS-Archiv. Nur Anzeige im Browser -- die Zahlen gehen an kein KI-Modell. */
+RENDER.appkennzahlen = renderAppKennzahlen;
+const AK = { zeitraum: "30", d: null, ch: {} };
+const AK_ZEITRAUM = [["7", "7 Tage"], ["30", "30 Tage"], ["saison", "Saison"], ["alles", "Alles"]];
+const AK_DIM = { ergebnis: "Ergebnis", startelf: "Startelf", wechsel: "Wechsel", spielernote: "Spielernote", player_of_the_match: "Player of the Match",
+  standort: "Standort", manuell: "Manuell", nachtrag: "Nachtrag", legacy: "Alt (legacy)", community: "Community", freunde: "Freunde",
+  eingereicht: "Eingereicht", freigegeben: "Freigegeben", abgelehnt: "Abgelehnt", suche: "Suche", biete: "Biete",
+  app_store: "App Store", google_play: "Google Play", geschenk: "Geschenk", monatlich: "monatlich", jaehrlich: "jährlich", gesamt: "Gesamt",
+  ios: "iOS", android: "Android", unbekannt: "unbekannt", sent: "zugestellt", failed: "fehlgeschlagen", no_tokens: "kein Gerät",
+  preference_skipped: "abbestellt", dedup_skipped: "doppelt", blocked_skipped: "blockiert",
+  neu: "Neu", verlaengert: "Verlängert", verlaengerung_aus: "Verlängerung aus", verlaengerung_wieder_an: "Verlängerung wieder an",
+  abgelaufen: "Abgelaufen", erstattet: "Erstattet", zahlungsproblem: "Zahlungsproblem", reaktiviert: "Reaktiviert", tarifwechsel: "Tarifwechsel",
+  meldungen: "Meldungen", fangesaenge: "Fangesänge", herren: "Herren", frauen: "Frauen", weniger_als_3: "Vereine mit weniger als 3 Fans" };
+const AK_LIGA = { "78": "Bundesliga", "79": "2. Bundesliga", "81": "DFB-Pokal" };
+const akDim = (x) => AK_DIM[x] || (x && x.startsWith("rejected_") ? "abgelehnt (" + x.slice(9) + ")" : x || "–");
+const akZahl = (v, nk = 0) => v == null ? "–" : Number(v).toLocaleString("de-DE", { maximumFractionDigits: nk, minimumFractionDigits: nk });
+const akEuro = (v) => v == null ? "–" : Number(v).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+const akPct = (v) => v == null ? "–" : (Number(v) * 100).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " %";
+// Reihen (Zeitraum) und letzte Werte (gesamtes Archiv); f = {dim1, dim2} filtert, fehlende Felder = alle
+const akReihen = (k, f = {}) => (AK.d ? AK.d.reihen : []).filter(r => r.kennzahl === k && (f.dim1 == null || r.dim1 === f.dim1) && (f.dim2 == null || r.dim2 === f.dim2));
+function akTage(k, f = {}) {
+  const rs = akReihen(k, f), n = AK.d ? AK.d.tage.length : 0;
+  return Array.from({ length: n }, (_, i) => { const v = rs.map(r => r.werte[i]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) : null; });
+}
+const akSumme = (k, f = {}) => { const t = akTage(k, f).filter(x => x != null); return t.length ? t.reduce((a, b) => a + b, 0) : null; };
+function akLetzt(k, f = {}) {   // letzter bekannter Wert (Summe ueber passende Reihen am juengsten Tag)
+  const rs = akReihen(k, f).filter(r => r.letzter_tag); if (!rs.length) return null;
+  const tag = rs.map(r => r.letzter_tag).sort().pop();
+  return { tag, wert: rs.filter(r => r.letzter_tag === tag).reduce((a, r) => a + (r.letzter_wert || 0), 0) };
+}
+function akJeDim(k, dim = "dim1", f = {}) {   // Summe im Zeitraum je Auspraegung, absteigend
+  const m = {}; akReihen(k, f).forEach(r => { const s = r.werte.filter(x => x != null).reduce((a, b) => a + b, 0); m[r[dim]] = (m[r[dim]] || 0) + s; });
+  return Object.entries(m).filter(([, v]) => v).sort((a, b) => b[1] - a[1]);
+}
+function akLetztJeDim(k, dim = "dim1", f = {}) {
+  const m = {}; akReihen(k, f).forEach(r => { if (r.letzter_tag) { const x = m[r[dim]]; if (!x || r.letzter_tag > x.tag) m[r[dim]] = { tag: r.letzter_tag, wert: r.letzter_wert }; else if (r.letzter_tag === x.tag) x.wert += r.letzter_wert; } });
+  return Object.entries(m).map(([d, x]) => [d, x.wert]).sort((a, b) => b[1] - a[1]);
+}
+function akBalkenListe(eintraege, fmt = akZahl, max = 12) {
+  if (!eintraege.length) return emptyRow("Im Zeitraum keine Werte.");
+  const mx = Math.max(...eintraege.map(e => Math.abs(e[1])), 1);
+  return eintraege.slice(0, max).map(([l, v]) => `<div class="v2-ak-row"><span class="lbl v2-umbruch">${esc(l)}</span><div class="v2-bar"><i style="width:${Math.max(2, Math.round(Math.abs(v) / mx * 100))}%"></i></div><b>${esc(fmt(v))}</b></div>`).join("")
+    + (eintraege.length > max ? `<div class="v2-sub">… ${eintraege.length - max} weitere</div>` : "");
+}
+function akStunden(werte) {   // 24 Saeulen 00-23 Uhr (Berlin), Wert per Hover/Tippen im title
+  const mx = Math.max(...werte, 1);
+  if (!werte.some(v => v)) return emptyRow("Im Zeitraum keine Werte.");
+  return `<div class="v2-ak-std">${werte.map((v, h) => `<div title="${String(h).padStart(2, "0")} Uhr: ${akZahl(v)}"><i style="height:${v ? Math.max(3, Math.round(v / mx * 100)) : 0}%"></i></div>`).join("")}</div>
+    <div class="v2-ak-std-x">${[0, 6, 12, 18, 23].map(h => `<span style="left:${(h + .5) / 24 * 100}%">${h} Uhr</span>`).join("")}</div>
+    <div class="v2-sub" style="margin-top:4px">Meiste Nachrichten um ${werte.indexOf(Math.max(...werte))} Uhr (${akZahl(Math.max(...werte))})</div>`;
+}
+const akKv = (zeilen) => zeilen.map(([l, v]) => `<div class="v2-kv"><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join("");
+// Diagramm-Platzhalter; gezeichnet wird nach dem Rendern breiten-bewusst (akZeichnen)
+function akChart(id, serien, art = "balken", fmt = akZahl) {
+  AK.ch[id] = { serien: serien.filter(s => s.werte.some(v => v != null)), art, fmt, tage: AK.d.tage };
+  const s = AK.ch[id].serien;
+  if (!s.length) return emptyRow("Im Zeitraum keine Werte.");
+  const leg = s.length > 1 ? `<div class="v2-legend">${s.map((x, i) => `<span><i class="v2-ak-f${i}"></i>${esc(x.name)}</span>`).join("")}</div>` : "";
+  return `<div class="v2-ak-chart" data-ak="${id}" role="img" aria-label="${esc(s.map(x => x.name).join(", "))}"></div>${leg}`;
+}
+let _akRO = null;
+function akMount() {
+  const els = document.querySelectorAll(".v2-ak-chart"); els.forEach(akZeichnen);
+  if (!_akRO) _akRO = new ResizeObserver(es => es.forEach(e => akZeichnen(e.target)));
+  try { _akRO.disconnect(); els.forEach(el => _akRO.observe(el)); } catch { }
+}
+function akZeichnen(el) {
+  const c = AK.ch[el.dataset.ak]; if (!c) return;
+  const n = c.tage.length, W = Math.max(260, Math.round(el.clientWidth || 600)), H = 150, padL = 40, padR = 8, padT = 10, padB = 22;
+  const alle = c.serien.flatMap(s => s.werte).filter(v => v != null);
+  const max = Math.max(1e-9, ...alle) * 1.08, min = Math.min(0, ...alle);
+  const x = i => padL + (n <= 1 ? (W - padL - padR) / 2 : i * (W - padL - padR) / (n - 1));
+  const y = v => H - padB - ((v - min) / (max - min)) * (H - padT - padB);
+  const grid = [0, .5, 1].map(f => { const t = min + (max - min) / 1.08 * f, yy = y(t).toFixed(1); return `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" class="v2-cgrid"/><text x="${padL - 5}" y="${+yy + 3}" class="v2-cax" text-anchor="end">${esc(c.fmt(t))}</text>`; }).join("");
+  const xi = n > 2 ? [0, Math.floor((n - 1) / 2), n - 1] : [...Array(n).keys()];
+  const xl = xi.map(i => `<text x="${x(i).toFixed(1)}" y="${H - 6}" class="v2-cax" text-anchor="${i === 0 ? "start" : i === n - 1 ? "end" : "middle"}">${esc(datumDe(c.tage[i]).replace(/\.\d{4}$/, ""))}</text>`).join("");
+  let marks = "";
+  if (c.art === "balken" && c.serien.length === 1) {
+    const bw = Math.max(1, Math.min(18, (W - padL - padR) / n - 2)), y0 = y(0);
+    marks = c.serien[0].werte.map((v, i) => { if (v == null || v === 0) return ""; const yy = y(v), h = Math.max(1, y0 - yy), r = Math.min(4, bw / 2, h);
+      return `<path class="v2-ak-bar0" d="M${(x(i) - bw / 2).toFixed(1)} ${y0.toFixed(1)}V${(yy + r).toFixed(1)}q0 -${r} ${r} -${r}h${(bw - 2 * r).toFixed(1)}q${r} 0 ${r} ${r}V${y0.toFixed(1)}Z"/>`; }).join("");
+  } else {
+    marks = c.serien.map((s, si) => { let d = "", auf = false;
+      s.werte.forEach((v, i) => { if (v == null) { auf = false; return; } d += `${auf ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`; auf = true; });
+      const pkt = s.werte.filter(v => v != null).length <= 2 ? s.werte.map((v, i) => v == null ? "" : `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="4" class="v2-ak-p${si}"/>`).join("") : "";
+      return `<path d="${d}" class="v2-ak-l${si}"/>${pkt}`; }).join("");
+  }
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" class="v2-chart">${grid}${marks}${xl}<line class="v2-ak-cross" x1="0" x2="0" y1="${padT}" y2="${H - padB}" style="display:none"/></svg><div class="v2-ctip" style="display:none"></div>`;
+  const svg = el.querySelector("svg"), tip = el.querySelector(".v2-ctip"), cross = el.querySelector(".v2-ak-cross");
+  const zeig = (ev) => { const r = svg.getBoundingClientRect(); let i = Math.round(((ev.clientX - r.left) / r.width * W - padL) / ((W - padL - padR) / Math.max(1, n - 1))); i = Math.max(0, Math.min(n - 1, i));
+    cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.style.display = "";
+    tip.innerHTML = `<b>${esc(datumDe(c.tage[i]))}</b>` + c.serien.map((s, si) => `<br>${c.serien.length > 1 ? `<i class="v2-ak-f${si}"></i>${esc(s.name)}: ` : ""}${esc(s.werte[i] == null ? "keine Daten" : c.fmt(s.werte[i]))}`).join("");
+    tip.style.display = "block"; tip.style.left = Math.max(0, Math.min(r.width - 170, ev.clientX - r.left - 70)) + "px"; };
+  svg.addEventListener("pointermove", zeig); svg.addEventListener("pointerdown", zeig);
+  svg.addEventListener("pointerleave", () => { tip.style.display = "none"; cross.style.display = "none"; });
+}
+async function renderAppKennzahlen(meldung, fehler) {
+  const zr = AK_ZEITRAUM.map(([id, l]) => `<button class="v2-btn ${AK.zeitraum === id ? "pri" : ""}" data-act="ak-zeitraum" data-val="${id}">${l}</button>`).join(" ");
+  const kopf = secHead("📱 Hanserautisch-App", `${zr} <button class="v2-btn" data-act="ak-abrufen">⟳ Jetzt abrufen</button> <button class="v2-btn" data-act="ak-abgleich">✓ Abgleich</button>`);
+  const d = AK.d = await jget("/api/app-kennzahlen?zeitraum=" + AK.zeitraum);
+  if (!d || !d.ok) { $("#v2-app").innerHTML = kopf + emptyRow("App-Kennzahlen nicht erreichbar (nur für den CEO)."); return; }
+  AK.ch = {};
+  const st = d.status || {}, la = st.letzter_abruf;
+  const msg = meldung ? `<div class="v2-msg ${fehler ? "err" : "ok"}">${esc(meldung)}</div>` : "";
+  if (!st.zeilen) {
+    $("#v2-app").innerHTML = kopf + msg + emptyRow(st.token ? (la ? `Noch keine Daten. Letzter Abruf ${zeit(la.ts)}: ${la.ok ? "ok" : "gescheitert (" + (la.status || "Netz") + ")"}.` : "Noch keine Daten – der erste Abruf läuft kurz nach dem Start von selbst, oder oben „Jetzt abrufen“.") : "Token fehlt in der Umgebung von LUNA-OS.");
+    return;
+  }
+  const aeq = akLetzt("abo_aequivalente"), abos = akLetzt("abos_aktiv", { dim1: "gesamt" }), mrr = akLetzt("abo_mrr_brutto", { dim1: "gesamt" });
+  const regT = akTage("registrierungen"), regS = akSumme("registrierungen"), regG = akLetzt("registrierte_gesamt");
+  const ziel = d.ziel_abo_aequivalente || 1000, anteil = aeq ? Math.min(1, aeq.wert / ziel) : 0;
+  const stand = (x) => x ? `Stand ${datumDe(x.tag)}` : "noch keine Momentaufnahme";
+  const oben = `
+    ${tile("Abo-Äquivalente", `<div class="v2-kpi">${esc(akZahl(aeq && aeq.wert, 1))}</div><div class="v2-ak-ziel" role="progressbar" aria-valuemin="0" aria-valuemax="${ziel}" aria-valuenow="${aeq ? aeq.wert : 0}"><i style="width:${(anteil * 100).toFixed(1)}%"></i></div><div class="v2-sub">Ziel ${akZahl(ziel)} · ${esc(stand(aeq))}</div>`, "w3 v2-ofc-kpi")}
+    ${tile("Aktive Abos", `<div class="v2-kpi">${esc(akZahl(abos && abos.wert))}</div><div class="v2-sub">${esc(stand(abos))}</div>`, "w3 v2-ofc-kpi")}
+    ${tile("MRR brutto", `<div class="v2-kpi">${esc(akEuro(mrr && mrr.wert))}</div><div class="v2-sub">monatlicher Abo-Wert · ${esc(stand(mrr))}</div>`, "w3 v2-ofc-kpi")}
+    ${tile("Registrierte", `<div class="v2-kpi">${esc(akZahl(regG && regG.wert))}</div><div class="v2-sub">+${esc(akZahl(regS))} im Zeitraum</div>`, "w3 v2-ofc-kpi")}
+    ${tile("Registrierungen pro Tag", akChart("reg", [{ name: "Registrierungen", werte: regT }]), "w6")}
+    ${tile("Registrierte gesamt", akChart("regg", [{ name: "Registrierte", werte: akTage("registrierte_gesamt") }], "linie"), "w6")}`;
+  const spieltage = akReihen("tippquote_registriert").flatMap(r => r.werte.map((v, i) => v == null ? null : { tag: d.tage[i], liga: r.dim1, runde: r.dim2, quote: v,
+    konten: (akReihen("tippende_konten", { dim1: r.dim1, dim2: r.dim2 })[0] || { werte: [] }).werte[i] })).filter(Boolean).sort((a, b) => b.tag.localeCompare(a.tag));
+  const sumKv = (paare) => akKv(paare.map(([l, k, f]) => [l, akZahl(akSumme(k, f || {}) ?? 0)]));   // Ereignisse: fehlend = 0
+  const community = `
+    ${tile("Tipps pro Tag", akChart("tipps", [{ name: "Tipps", werte: akTage("tipps") }]), "w8")}
+    ${tile("Tipps je Art", akBalkenListe(akJeDim("tipps").map(([k, v]) => [akDim(k), v])), "w4")}
+    ${tile("Tippquote je Spieltag", spieltage.length ? spieltage.slice(0, 12).map(s => `<div class="v2-kv"><span>${esc(AK_LIGA[s.liga] || "Liga " + s.liga)} · ${esc(s.runde)}<br><small class="v2-sub">${esc(datumDe(s.tag))}${s.konten != null ? " · " + esc(akZahl(s.konten)) + " Konten" : ""}</small></span><b>${esc(akPct(s.quote))}</b></div>`).join("") : emptyRow("Im Zeitraum kein Spieltag."), "w4")}
+    ${tile("Chatnachrichten pro Tag", akChart("chat", [{ name: "Community", werte: akTage("chatnachrichten", { dim1: "community" }) }, { name: "Freunde", werte: akTage("chatnachrichten", { dim1: "freunde" }) }], "linie"), "w8")}
+    ${tile("Chat je Stunde (Summe im Zeitraum)", akStunden(Array.from({ length: 24 }, (_, h) => { const hh = String(h).padStart(2, "0"); return akJeDim("chatnachrichten_stunde", "dim2").filter(([k]) => k === hh).reduce((a, [, v]) => a + v, 0); })), "w6")}
+    ${tile("Check-ins je Methode", akBalkenListe(akJeDim("checkins").map(([k, v]) => [akDim(k), v])), "w6")}
+    ${tile("Community im Zeitraum", sumKv([["Freundschaften angenommen", "freundschaften_angenommen"], ["Fangesänge eingereicht", "fangesaenge", { dim1: "eingereicht" }], ["Fangesänge freigegeben", "fangesaenge", { dim1: "freigegeben" }], ["Fangesänge abgelehnt", "fangesaenge", { dim1: "abgelehnt" }], ["Fangesang-Bewertungen", "fangesang_bewertungen"], ["Mitfahren: Suche", "mitfahrangebote", { dim1: "suche" }], ["Mitfahren: Biete", "mitfahrangebote", { dim1: "biete" }], ["Stadionbewertungen", "stadionbewertungen"], ["Chat entfernt (Moderation)", "chatnachrichten_entfernt"]])
+      + akKv([["Offene Freundschaftsanfragen", akZahl((akLetzt("freundschaftsanfragen_offen") || {}).wert)]]), "w6")}
+    ${tile("Lieblingsvereine", ["herren", "frauen"].map(g => `<div class="v2-sub" style="margin:6px 0 2px"><b>${AK_DIM[g]}</b></div>` + akBalkenListe(akLetztJeDim("lieblingsverein", "dim2", { dim1: g }).map(([k, v]) => [akDim(k), v]), akZahl, 8)).join(""), "w6")}`;
+  const BEW = ["neu", "verlaengert", "verlaengerung_aus", "verlaengerung_wieder_an", "abgelaufen", "erstattet", "zahlungsproblem", "reaktiviert", "tarifwechsel"];
+  const bew = akJeDim("abo_bewegungen"), bewM = Object.fromEntries(bew);
+  const geld = `
+    ${tile("Abo-Bewegungen im Zeitraum", akKv(BEW.map(b => [akDim(b), akZahl(bewM[b] || 0)])) + (d.tage.length && d.tage[0] < "2026-11-25" ? `<div class="v2-sub" style="margin-top:6px">Gemessen erst ab 25.11.2026.</div>` : ""), "w4")}
+    ${tile("Neue Abos je Store", akBalkenListe(akJeDim("abos_neu").map(([k, v]) => [akDim(k), v])), "w4")}
+    ${tile("Umwandlung und Geschenke", akKv([["Umwandlung (zahlend / registriert)", akPct((akLetzt("umwandlung_registriert") || {}).wert)], ["Geschenke, die in 30 Tagen auslaufen", akZahl((akLetzt("geschenke_auslaufend_30_tage") || {}).wert)],
+      ...akLetztJeDim("abo_mrr_netto").map(([k, v]) => ["MRR netto " + akDim(k) + " (Schätzung)", akEuro(v)])]), "w4")}`;
+  const modA = akLetztJeDim("moderation_aeltester_stunden"), modO = akLetztJeDim("moderation_offen");
+  const fnSt = akLetzt("function_fehler_stunden_erfasst");
+  const betrieb = `
+    ${tile("Pushes je Status", akBalkenListe(akJeDim("pushes").map(([k, v]) => [akDim(k), v])), "w4")}
+    ${tile("Pushes je Plattform", akBalkenListe(akJeDim("pushes", "dim2").map(([k, v]) => [akDim(k), v])) + akKv([["Push-Quote iOS", akPct((akLetzt("push_quote", { dim1: "ios" }) || {}).wert)], ["Push-Quote Android", akPct((akLetzt("push_quote", { dim1: "android" }) || {}).wert)], ["Geräte mit Push", akZahl((akLetzt("push_geraete", { dim1: "gesamt" }) || {}).wert)]]), "w4")}
+    ${tile("Moderation", akKv(["meldungen", "fangesaenge"].map(k => [k, (modO.find(x => x[0] === k) || [k, akLetzt("moderation_offen") ? 0 : null])[1]]).map(([k, v]) => { const a = modA.find(x => x[0] === k); return [akDim(k) + " offen", akZahl(v) + (a ? ` · ältester ${akZahl(a[1], 1)} h` : "")]; })), "w4")}
+    ${tile("Cron- und Function-Fehler", akChart("fehler", [{ name: "Cron-Fehlschläge", werte: akTage("cron_fehlschlaege") }, { name: "Function-Fehler", werte: akTage("function_fehler") }], "linie")
+      + akKv([["Cron-Läufe im Zeitraum", akZahl(akSumme("cron_laeufe"))], ["Function-Fehler erfasst", fnSt ? akZahl(fnSt.wert) + " von 24 Stunden (" + datumDe(fnSt.tag) + ")" : "–"]]), "w8")}
+    ${tile("Daten und Stand", akKv([["Datenbankgröße", (akLetzt("datenbank_mb") ? akZahl(akLetzt("datenbank_mb").wert, 1) + " MB" : "–")],
+      ...akLetztJeDim("store_datenstand_stunden").map(([k, v]) => ["Store-Meldung " + akDim(k), "vor " + akZahl(v, 1) + " h"]),
+      ["Datenstand (letzte Berechnung)", st.datenstand ? zeit(st.datenstand) : "–"], ["Letzter Abruf", la ? `${zeit(la.ts)} · ${la.ok ? "ok" : "gescheitert (" + (la.status || "Netz") + ")"}` : "–"],
+      ["Archiv", `${akZahl(st.zeilen)} Werte · ${akZahl(st.tage)} Tage ab ${datumDe(st.erster_tag)}`]]), "w4")}`;
+  const abschnitt = (t) => `<div class="v2-ak-abschnitt">${esc(t)}</div>`;
+  $("#v2-app").innerHTML = kopf + msg
+    + `<div class="v2-sub" style="margin:-8px 0 12px">${esc(datumDe(d.von))} bis ${esc(datumDe(d.bis))} · Tagessummen der App, ohne Personen · nur für dich sichtbar, an kein KI-Modell${d.unbekannt ? ` · ${d.unbekannt} neue Kennzahl(en) gespeichert, noch nicht angezeigt` : ""}</div>`
+    + abschnitt("Überblick") + `<div class="v2-grid">${oben}</div>`
+    + abschnitt("Community") + `<div class="v2-grid">${community}</div>`
+    + abschnitt("Geld") + `<div class="v2-grid">${geld}</div>`
+    + abschnitt("Betrieb") + `<div class="v2-grid">${betrieb}</div>`;
+  akMount();
+}
+async function akAbrufen(el) {
+  if (el) { el.disabled = true; el.textContent = "Ruft ab …"; }
+  const r = await jpost("/api/app-kennzahlen/abrufen", {});
+  if (!r) return renderAppKennzahlen("Abruf nicht möglich.", true);
+  return renderAppKennzahlen(r.ok ? `Abgerufen ${datumDe(r.von)}–${datumDe(r.bis)}: ${r.zeilen} Zeilen, ${r.neu} neu, ${r.aktualisiert} aktualisiert.` : `Abruf gescheitert (${r.status || "Netz"}: ${r.fehler || ""}).`, !r.ok);
+}
+function akAbgleich() {
+  const gestern = new Date(Date.now() - 5 * 864e5).toISOString().slice(0, 10);
+  openModal("Kontroll-Abgleich", `<div class="v2-sub">Ergebnis der Kontrollabfrage aus Supabase (Spalten kennzahl, zeilen, summe) für einen Stichtag einfügen. LUNA vergleicht Zeilenzahl und Summe je Kennzahl. Nimm einen Tag, der mindestens 4 Tage zurückliegt – die letzten drei Tage rechnet die App noch nach.</div>
+    <label class="v2-sub" style="display:block;margin-top:10px">Stichtag <input id="ak-ab-datum" class="v2-inp" type="date" value="${gestern}"></label>
+    <textarea id="ak-ab-text" class="v2-inp" rows="10" style="width:100%;margin-top:8px;font-family:var(--v2-mono);font-size:12px" placeholder="kennzahl | zeilen | summe | stand"></textarea>
+    <div style="margin-top:10px"><button class="v2-btn pri" data-act="ak-abgleich-los">Vergleichen</button></div><div id="ak-ab-erg" style="margin-top:12px"></div>`);
+}
+async function akAbgleichLos() {
+  const r = await jpost("/api/app-kennzahlen/abgleich", { datum: $("#ak-ab-datum").value, text: $("#ak-ab-text").value }), el = $("#ak-ab-erg");
+  if (!r || !r.ok) { el.innerHTML = `<div class="v2-msg err">${esc((r && r.hinweis) || "Abgleich nicht möglich.")}</div>`; return; }
+  el.innerHTML = `<div class="v2-msg ${r.gleich ? "ok" : "err"}">${r.gleich ? "✅ Alles gleich" : `❌ ${r.abweichend} Kennzahl(en) weichen ab`} · ${esc(datumDe(r.datum))}</div>`
+    + r.zeilen.map(z => `<div class="v2-kv v2-ofc-feld"><span class="v2-umbruch">${z.gleich ? "✅" : "❌"} ${esc(z.kennzahl)}</span><b>${z.gleich ? esc(z.zeilen_ist + " Zeilen") : `LUNA ${esc(akZahl(z.zeilen_ist))} Zeilen · Σ ${esc(akZahl(z.summe_ist, 4))}<br>Supabase ${esc(akZahl(z.zeilen_soll))} Zeilen · Σ ${esc(akZahl(z.summe_soll, 4))}`}</b></div>`).join("");
+}
+
 RENDER.ofc = renderOfc;
 const OFC_STATUS = { offen: ["wartet", "kommt"], vorbei: ["neutral", "vorbei"], abschliessbar: ["ok", "abschließbar"], abgeschlossen: ["ok", "abgeschlossen"] };
 async function renderOfc(meldung, fehler) {
@@ -6118,6 +6301,10 @@ async function handleAct(act, el) {
     case "impressum-suchen": return impressumSuchen(val, el);
     case "vs-senden": return vsSenden(el);
     case "km-neu": return kmDialog(id, val || "");
+    case "ak-zeitraum": AK.zeitraum = val; return renderAppKennzahlen();
+    case "ak-abrufen": return akAbrufen(el);
+    case "ak-abgleich": return akAbgleich();
+    case "ak-abgleich-los": return akAbgleichLos();
     case "ofc-spiel": return ofcSpiel(id);
     case "ofc-import": return ofcImport();
     case "ofc-post": return ofcPost();

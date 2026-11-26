@@ -1390,6 +1390,35 @@ def _start_alltag_loop(ctx, token, chat_id) -> None:
     threading.Thread(target=loop, daemon=True, name="alltag").start()
 
 
+def _start_app_kennzahlen_loop(ctx, secrets) -> None:
+    """APP_KENNZAHLEN AK3: jede Minute pruefen, ob der Abruf der App-Kennzahlen faellig ist (ab 06:30 Berlin, bei leerem
+    Archiv sofort; Wiederholung nach 5/15/45 Minuten) und danach Meldungen. Regelbasiert, kein Modell; die Zahlen gehen an
+    kein KI-Modell. Aus mit APP_KENNZAHLEN_AN=0; ohne Token passiert nichts."""
+    import threading
+    import time
+
+    from ...core import app_kennzahlen as ak
+    if (secrets.get("APP_KENNZAHLEN_AN") or "1").strip().lower() in ("0", "false", "no", "off", "aus"):
+        print("App-Kennzahlen-Loop aus (APP_KENNZAHLEN_AN=0).", flush=True)
+        return
+    if not ak.token_vorhanden():
+        print("App-Kennzahlen-Loop aus (Token fehlt in der Umgebung).", flush=True)
+        return
+    archiv = ak.Archiv(ROOT / "app_kennzahlen")
+
+    def loop():
+        time.sleep(90)
+        while True:
+            try:
+                ak.lauf(archiv, notify=ctx.notifications.enqueue if ctx.notifications else None)
+            except Exception as exc:                  # nur der Typ -- nie Inhalt (koennte Antwortteile enthalten)
+                print(f"[app_kennzahlen] {exc.__class__.__name__}", flush=True)
+            time.sleep(60)
+
+    threading.Thread(target=loop, daemon=True, name="app_kennzahlen").start()
+    print("App-Kennzahlen-Loop aktiv (taeglich ab 06:30 Berlin, nur lesend).", flush=True)
+
+
 def _start_buchhaltung_loop(ctx) -> None:
     """KUNDEN_FINANZEN Etappe 1: taeglich 05:00 (DE) Hash-Kette + Belege der Buchhaltung pruefen, Alarm bei Befund.
 
@@ -2382,6 +2411,7 @@ def main() -> None:
     if secrets.get("SECURITY_AUDIT_ENABLED", "").strip().lower() in ("1", "true", "yes", "on"):
         print("Security-Audit-Loop aktiv (taeglich 04:00, regelbasiert, L1-Meldung).", flush=True)
     _start_buchhaltung_loop(ctx)
+    _start_app_kennzahlen_loop(ctx, secrets)   # APP_KENNZAHLEN AK3: Tageskennzahlen der App (aus mit APP_KENNZAHLEN_AN=0)
     _start_todo_loop(ctx, token, allowed)   # TODOS_ROADMAP T2: To-do-Erinnerungen (aus mit AUFGABEN_ERINNERUNG=0)
     _start_alltag_loop(ctx, token, allowed)  # JARVIS_ALLTAG J2/J3: Briefing als Sprachnachricht, Abfahrts-Erinnerung
     _start_gedaechtnis_loop(ctx, secrets)    # JARVIS J8: Suchverzeichnis der Bedeutungssuche (stuendlich)
@@ -2684,6 +2714,9 @@ def main() -> None:
                         ctx.notifications.mark_sent(n["id"])
                         # Kontext in die CEO-Session geben, damit LUNA bei Rueckfragen ("ist freigegeben")
                         # weiss, worauf der CEO sich bezieht (Pushes kommen sonst ausserhalb des Chats an).
+                        # Ausnahme APP_KENNZAHLEN: App-Zahlen gehen an kein KI-Modell -> nicht in den Chat-Verlauf.
+                        if n.get("quelle") == "app_kennzahlen":
+                            continue
                         try:
                             cid = int(allowed)
                             conv = sessions.get(cid)

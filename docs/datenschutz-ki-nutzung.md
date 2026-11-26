@@ -159,3 +159,14 @@ Quelle: Art. 50 und Art. 113 (artificialintelligenceact.eu, abgerufen 2026-09-29
 - **Feste Regeln (J7):** bestaetigte Regeln des CEO (kurze Anweisungen, ggf. mit Firmennamen) stehen im
   System-Prompt jedes Chats und gehen damit an das jeweilige Chat-Modell -- wie jede andere Chat-Nachricht, kein neuer
   Dienst. Gespeichert nur auf der NAS (`regeln/log.jsonl`) + Backup, jederzeit in LUNA-OS loeschbar.
+
+## 9. Nachtrag 2026-11-26: Kennzahlen der Hanserautisch-App (APP_KENNZAHLEN)
+
+- LUNA holt taeglich nur **Tagessummen** der App (keine Konten, Namen, E-Mails, Inhalte) per HTTPS-GET von der eigenen
+  Function `luna-kennzahlen`; Archiv nur auf der NAS (`app_kennzahlen/log.jsonl`, Backup).
+- **Abo- und Umsatzzahlen gehen an kein KI-Modell:**
+  - kein Chat-Werkzeug;
+  - Telegram-Meldungen entstehen im Code (`quelle=app_kennzahlen`), werden nicht in den Chat-Verlauf des Bots
+    uebernommen und in `benachrichtigungen_zeigen`/`meldung_details` ausgeblendet;
+  - nicht im Morgen-Briefing, nicht in der Globalen Suche.
+- Anzeige nur fuer den CEO (Rolle owner). Kontroll-Abgleich mit Supabase deterministisch in LUNA-OS.
