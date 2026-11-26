@@ -6235,6 +6235,23 @@ def _ofc_mitglieder_daten():
         return None
 
 
+@app.get("/api/ofc/analyse/wallet")
+def ofc_analyse_wallet(request: Request, tage: int = 120):
+    """OFC_TICKETVERSAND TV0 (Dry-Run): Wallet-Links in den HSV-Mails zaehlen -- nur lesend, nichts gespeichert; der Bericht
+    enthaelt keine Links, Namen oder Mailtexte (nur Zaehlungen, Hosts, maskierte Muster)."""
+    _nur_ceo(request)
+    from ...core.ofc_wallet import analyse
+    p = _ofc_postfach()
+    if not p.verfuegbar():
+        return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
+    m = _ofc_mitglieder_daten()
+    try:
+        return analyse(p, tage=max(1, min(int(tage), 365)), mitglieder=m["mitglieder"] if m else None,
+                       tickets=_ofc_store().stand()["tickets"])
+    except Exception as exc:                                  # ohne Fehlertext (koennte Zugangsdaten enthalten)
+        return {"ok": False, "hinweis": f"Analyse fehlgeschlagen ({exc.__class__.__name__})."}
+
+
 @app.get("/api/ofc/uebersicht")
 def ofc_uebersicht(request: Request):
     """O1: Spiele der Saison mit Karten, Namen, Status und Hinweisen (E8: Hinweise nur hier, keine Telegram-Nachricht)."""
