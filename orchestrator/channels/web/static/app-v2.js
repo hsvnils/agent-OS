@@ -5668,7 +5668,7 @@ async function ofcVz() {
       <div class="v2-kv"><span>Einträge in LUNA / in der Tabelle</span><b>${a.luna} / ${a.tabelle}</b></div>
       ${Object.entries(a.je_feld).map(([f, n]) => `<div class="v2-kv"><span>Abweichend: ${esc(f)}</span><b>${n}</b></div>`).join("")}
       ${a.zeilen.length ? `<div class="v2-sub" style="margin-top:6px">Zeilen der Tabelle: ${esc(a.zeilen.map(z => z.zeile + " (" + z.felder.join(", ") + ")").join(" · "))}</div>` : ""}
-      <div class="v2-sub" style="margin-top:10px">Bis zum Umschalten (MV3) lesen Beiträge, Zahlungsbitten und Ticketversand weiter die Google-Tabelle. Änderungen in der Tabelle zeigt der Abgleich als Abweichung.</div>`);
+      <div class="v2-sub" style="margin-top:10px">Seit der Umstellung ist LUNA die Quelle für Beiträge, Zahlungsbitten, Ticketversand und Suche. Der Abgleich zeigt nur noch Unterschiede zur alten Google-Tabelle (Archiv) – Änderungen in LUNA erscheinen hier als Abweichung, das ist gewollt.</div>`);
   }
   const v = await jget("/api/ofc/mitglieder/import/vorschau");
   if (!v || !v.ok) return openModal("🗂 LUNA-Verzeichnis", emptyRow((v && v.hinweis) || "Nicht erreichbar."));
@@ -5720,7 +5720,7 @@ async function renderOfcBeitraege(neu) {
         ${d.hinweise.length ? `<div class="v2-ofc-hinweise" style="margin-bottom:8px">${d.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
         <input id="ofc-b-suche" class="v2-inp" style="width:100%;box-sizing:border-box" type="search" autocomplete="off" placeholder="Name oder Nummer suchen" value="${esc(OFC_B.suche)}">
         <div id="ofc-b-liste" style="margin-top:8px"></div></div>
-    </div><div class="v2-sub" style="margin-top:8px">Soll aus der Tabelle „Mitgliedschaftsanfrage“ (nur lesend) · Kalenderjahr, fällig 01.01. · Gold 40 € · Eintritt im Jahr anteilig ab Beitrittsmonat · bezahlt aus den PayPal-Eingängen (💶) · erfasst ab ${d.start_jahr} · gelesen ${esc(zeit(d.gelesen))} · LUNA schreibt niemandem.</div>`;
+    </div><div class="v2-sub" style="margin-top:8px">Soll aus ${d.blatt === "LUNA-Verzeichnis" ? "dem LUNA-Verzeichnis (👥 Mitglieder)" : "der Tabelle „Mitgliedschaftsanfrage“ (nur lesend)"} · Kalenderjahr, fällig 01.01. · Gold 40 € · Eintritt im Jahr anteilig ab Beitrittsmonat · bezahlt aus den PayPal-Eingängen (💶) · erfasst ab ${d.start_jahr} · gelesen ${esc(zeit(d.gelesen))} · LUNA schreibt niemandem.</div>`;
   const q = $("#ofc-b-suche"); q.addEventListener("input", () => { OFC_B.suche = q.value; ofcBListe(); });
   if (!d.erfasst && ["offen", "bezahlt"].includes(OFC_B.filter)) OFC_B.filter = "pflichtig";
   ofcBListe();

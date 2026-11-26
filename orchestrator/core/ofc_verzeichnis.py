@@ -277,3 +277,50 @@ def export_csv(st: dict, ansicht: str = "mitglied") -> bytes:
                     p.get("seit", ""), p.get("beitrag", ""), p.get("naechste_zahlung", ""), p.get("hsv_mitglied", ""), p.get("hsv_nr", ""),
                     p.get("anderer_fanclub", ""), p.get("gekuendigt_am", ""), p.get("kommentar", "")])
     return ("﻿" + b.getvalue()).encode("utf-8")
+
+
+# -- MV3: LUNA-Verzeichnis als Quelle aller OFC-Funktionen (CEO-Go 2026-11-26) -------------------------------------------
+_TEXT_ART = {"gold": "Gold", "standard": "Standard", "foerder": "Förder"}
+
+
+def als_mitgliederliste(st: dict) -> dict:
+    """Verzeichnis in derselben Form wie `ofc_mitglieder.lesen` (Mitglieder + Anfragen), damit Beitraege, Eingangs-Erkennung,
+    Zahlungsbitten, Ticketversand und Namenssuche unveraendert weiterlaufen. Gekuendigte stehen mit `gekuendigt_am` in der
+    Mitgliederliste (fuer Beitraege bis zum Kuendigungsjahr); Nachrichten an sie sperrt `gekuendigte_nummern`."""
+    from datetime import datetime
+    ps = eintraege(st)
+    if not ps:
+        return {"ok": False, "hinweis": "LUNA-Verzeichnis ist leer."}
+
+    def person(p: dict) -> dict:
+        art = p.get("mitgliedschaft") or ""
+        text = _TEXT_ART.get(art, "Vorstand" if p.get("vorstand") else "")
+        beitrag = p.get("beitrag") or (p.get("foerder_betrag") if art == "foerder" else "") or ""
+        name = f"{p.get('vorname', '')} {p.get('nachname', '')}".strip()
+        felder = [[lbl, str(p.get(k) if k != "vorstand" else ("ja" if p.get("vorstand") else ""))]
+                  for k, lbl in (("nummer", "Mitgliedsnummer"), ("anrede", "Anrede"), ("vorname", "Vorname"), ("nachname", "Nachname"),
+                                 ("email", "E-Mail"), ("handy", "Handy"), ("adresse", "Adresse"), ("geburtstag", "Geburtstag"),
+                                 ("mitgliedschaft", "Mitgliedschaft"), ("vorstand", "Vorstand"), ("seit", "Mitglied seit"),
+                                 ("beitrag", "Beitrag"), ("kommentar", "Kommentar")) if p.get(k)]
+        return {"id": p["id"], "zeile": p.get("zeile"), "nummer": str(p.get("nummer") or ""),
+                "status": "anfrage" if p.get("status") == "anfrage" else "mitglied", "name": name,
+                "vorname": p.get("vorname", ""), "nachname": p.get("nachname", ""), "mitgliedschaft": text, "seit": p.get("seit", ""),
+                "beitrag": beitrag, "naechste_zahlung": p.get("naechste_zahlung", ""), "kommentar": p.get("kommentar", ""),
+                "email": p.get("email", ""), "eingang": p.get("anfrage_am", ""), "felder": felder, "hinweise": [],
+                "werte": {k: p.get(k, "") for k in FELDER}, "gekuendigt_am": p.get("gekuendigt_am", "") if p.get("status") == "archiv" else ""}
+
+    mg = sorted((person(p) for p in ps if p.get("status") in ("mitglied", "archiv") and p.get("nummer")),
+                key=lambda p: p["nummer"].zfill(8))
+    an = sorted((person(p) for p in ps if p.get("status") == "anfrage"), key=lambda p: p["eingang"], reverse=True)
+    return {"ok": True, "quelle": "luna", "spalten": [], "erkannt": [], "mitglieder": mg, "anfragen": an, "hinweise": [],
+            "summe": {"mitglieder": sum(1 for p in mg if not p["gekuendigt_am"]), "anfragen": len(an), "zeilen": len(mg) + len(an)},
+            "blatt": "LUNA-Verzeichnis", "gelesen": datetime.now().isoformat(timespec="seconds")}
+
+
+def quelle(st: dict, env=None) -> str:
+    """`luna` sobald das Verzeichnis existiert (MV3), Rueckweg per `OFC_MITGLIEDER_QUELLE=google`."""
+    import os
+    wahl = ((env if env is not None else os.environ).get("OFC_MITGLIEDER_QUELLE") or "").strip().lower()
+    if wahl == "google":
+        return "google"
+    return "luna" if (st.get("verzeichnis") or {}) else "google"

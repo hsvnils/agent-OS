@@ -6226,7 +6226,18 @@ def _ofc_store():
 
 
 def _ofc_mitglieder_daten():
-    """OFC-Kasse KA1: Mitgliederliste (nur lesend, 5 Minuten im Speicher) -- None, wenn nicht lesbar."""
+    """Mitgliederliste fuer alle OFC-Funktionen. OFC_MITGLIEDER MV3: aus dem LUNA-Verzeichnis, sobald es existiert (Rueckweg
+    `OFC_MITGLIEDER_QUELLE=google`); sonst wie bisher aus der Google-Tabelle. None, wenn nicht lesbar."""
+    from ...core import ofc_verzeichnis as _vz
+    st = _ofc_store().stand()
+    if _vz.quelle(st) == "luna":
+        d = _vz.als_mitgliederliste(st)
+        return d if d.get("ok") else None
+    return _ofc_tabelle_daten()
+
+
+def _ofc_tabelle_daten():
+    """OFC-Kasse KA1: Mitgliederliste aus der Google-Tabelle (nur lesend, 5 Minuten im Speicher) -- None, wenn nicht lesbar."""
     try:
         from ...core.ofc_mitglieder import lesen
         d = lesen(_google().auth)
@@ -6766,12 +6777,8 @@ async def ofc_name_setzen(request: Request, nr: str):
 def ofc_namen(request: Request):
     """O2: Namensvorschlaege -- Mitglieder aus der Liste (OM, falls lesbar), dann bisher vergebene Namen."""
     _nur_ceo(request)
-    from ...core.ofc_mitglieder import lesen
     from ...core.ofc_store import namen_vorschlaege
-    try:
-        m = lesen(_google().auth)
-    except Exception:
-        m = {}
+    m = _ofc_mitglieder_daten() or {}                          # OFC_MITGLIEDER MV3: aus der gewaehlten Quelle
     from ...core.ofc_verzeichnis import gekuendigte_nummern
     _gek = gekuendigte_nummern(_ofc_store().stand())
     return {"namen": namen_vorschlaege(_ofc_store(), m.get("mitglieder") if m.get("ok") else []),
@@ -6919,7 +6926,7 @@ def ofc_mitglieder_import_vorschau(request: Request):
     """OFC_MITGLIEDER MV0: was aus der Google-Tabelle ins LUNA-Verzeichnis uebernommen wuerde, mit Konflikten -- schreibt nichts."""
     _nur_ceo(request)
     from ...core.ofc_verzeichnis import import_vorschau
-    return import_vorschau(_ofc_mitglieder_daten(), _ofc_store().stand())
+    return import_vorschau(_ofc_tabelle_daten(), _ofc_store().stand())
 
 
 @app.post("/api/ofc/mitglieder/import")
@@ -7004,7 +7011,7 @@ def ofc_mitglieder_abgleich(request: Request):
     """MV1/MV3: Abgleich Google-Tabelle <-> LUNA-Verzeichnis (Abweichungen je Feld und Zeile)."""
     _nur_ceo(request)
     from ...core.ofc_verzeichnis import abgleich
-    return abgleich(_ofc_mitglieder_daten(), _ofc_store().stand())
+    return abgleich(_ofc_tabelle_daten(), _ofc_store().stand())
 
 
 @app.get("/api/ofc/mitglieder")
@@ -7012,6 +7019,9 @@ def ofc_mitglieder(request: Request, neu: int = 0):
     """OM: Mitgliederliste aus der geteilten Google-Forms-Tabelle -- nur lesend, nichts gespeichert, keine KI."""
     _nur_ceo(request)
     from ...core.ofc_mitglieder import lesen
+    from ...core.ofc_verzeichnis import quelle
+    if quelle(_ofc_store().stand()) == "luna":                 # MV3: Quelle ist LUNA
+        return _ofc_mitglieder_daten() or {"ok": False, "hinweis": "LUNA-Verzeichnis nicht lesbar."}
     try:
         return lesen(_google().auth, neu=bool(neu))
     except Exception as exc:                                  # ohne Fehlertext (koennte Kennungen enthalten)
@@ -7025,7 +7035,9 @@ def _ofc_beitrag_jahr(jahr: int, neu: bool = False) -> dict:
     if jahr and not 2020 <= jahr <= 2100:
         return {"ok": False, "hinweis": "Jahr ungültig."}
     try:
-        return jahr_stand(_ofc_store().stand(), lesen(_google().auth, neu=neu), jahr or _date.today().year)
+        from ...core.ofc_verzeichnis import quelle
+        daten = _ofc_mitglieder_daten() if quelle(_ofc_store().stand()) == "luna" else lesen(_google().auth, neu=neu)
+        return jahr_stand(_ofc_store().stand(), daten, jahr or _date.today().year)
     except Exception as exc:                                  # ohne Fehlertext (koennte Kennungen enthalten)
         return {"ok": False, "hinweis": f"Mitgliederliste nicht lesbar ({exc.__class__.__name__})."}
 

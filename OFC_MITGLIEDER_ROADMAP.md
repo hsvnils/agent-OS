@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-mitglieder`
 - Basiscommit: `4b1dde2`
-- Naechster Schritt: MV2 umgesetzt auf `ai/ofc-mitglieder-mv2` (CEO-Go 2026-11-26; CEO pflegt die Google-Tabelle nicht mehr). Nach Merge/Deploy arbeitet 👥 Mitglieder mit dem LUNA-Verzeichnis; danach Go fuer MV3 (alle OFC-Funktionen lesen aus LUNA, u. a. Beitrags-Soll ohne Gekuendigte).
+- Naechster Schritt: MV2 live (Deploy 2026-11-26, 119 Mitglieder + 11 Anfragen aus LUNA). MV3 umgesetzt auf `ai/ofc-mitglieder-mv3`; nach Merge/Deploy prueft Claude Code Beitraege 2027 (Zahlen vor/nach), dann MV4: der CEO schliesst das Google-Formular und nimmt die Freigabe der Tabelle zurueck.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -107,7 +107,7 @@ auf das eigene Verzeichnis mit Parallelbetrieb und Abgleich, Export (CSV/PDF) fu
 
 ### Etappe MV3: Umstellen auf LUNA als Quelle
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (`ofc_verzeichnis.als_mitgliederliste` in der Form von `ofc_mitglieder.lesen`, Weiche `quelle` -- LUNA sobald das Verzeichnis existiert, Rueckweg `OFC_MITGLIEDER_QUELLE=google`; `_ofc_mitglieder_daten()` und alle direkten Leser (Namen, Mitglieder-API, Beitraege) folgen der Weiche, Import-Vorschau und Abgleich lesen weiter die Tabelle (`_ofc_tabelle_daten`); Beitraege ohne Soll nach dem Kuendigungsjahr, Foerderbetrag als Beitrag; Hinweistexte ohne Tabellenbezug; Tests mit Gegenproben)
 - Ziel / Scope:
   - **Umschalter:** `_ofc_mitglieder_daten()` liefert je nach `OFC_MITGLIEDER_QUELLE` (`google` | `luna`) die Daten aus
     der Tabelle oder aus dem eigenen Verzeichnis, in derselben Form.
