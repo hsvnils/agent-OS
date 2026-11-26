@@ -54,7 +54,7 @@ zuordnen, viel Handarbeit. Wunsch:
 - **Keine KI fuer Mitgliederdaten:** Auslesen und Zuordnen regelbasiert (feste Mail-/PDF-Formate, Betrag, Zeit,
   Verwendungszweck); was nicht eindeutig ist, landet in „Zuordnen“ mit Vorschlaegen -- der CEO klickt.
 - **Nur CEO sieht OFC** (Team-Nutzer nicht); Namen und Zahlungen der Mitglieder sind personenbezogene Daten.
-- **Keine Mails/Nachrichten an Mitglieder** durch LUNA (Oeffentlichkeit = CEO-Tor); hoechstens Text zum Kopieren.
+- **Keine Mails/Nachrichten an Mitglieder** durch LUNA (Oeffentlichkeit = CEO-Tor); hoechstens Text zum Kopieren. **Revidiert 2026-11-26 (CEO):** Zahlungsbitte und Ticketversand per Mail, siehe `OFC_TICKETVERSAND_ROADMAP.md`.
 - **Dateien:** nur umbenennen/ablegen/verschieben in der Fanclub-Freigabe, nie loeschen; jede Aenderung protokolliert und
   rueckgaengig machbar.
 

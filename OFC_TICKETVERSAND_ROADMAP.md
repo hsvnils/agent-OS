@@ -1,10 +1,10 @@
 # Roadmap: OFC Ticketversand -- Wallet + PDF, Zahlungsbitte per Mail, Tickets nach Zahlung
 
-- Status: geplant
+- Status: in Umsetzung
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-ticketversand`
 - Basiscommit: `81ee7f0`
-- Naechster Schritt: Roadmap liegt dem CEO vor; Entscheidungen E1-E7 beantworten, dann Go fuer TV0 (Analyse der HSV-Mails auf Wallet-Links, nur lesend).
+- Naechster Schritt: TV0 (Analyse, nur lesend) umgesetzt auf `ai/ofc-ticketversand` (CEO-Go 2026-11-26, E1-E7 wie empfohlen, E2 geaendert); Push, Merge, Deploy durch den CEO, dann `GET /api/ofc/analyse/wallet` auf der NAS auswerten und TV1 danach zuschneiden.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -67,19 +67,19 @@ Versandprotokoll; Ansicht auf Rechner, iPad und iPhone.
 
 | Nr | Frage | Empfehlung |
 |---|---|---|
-| E1 | Von welcher Adresse gehen die Mails? | **moin@hsvinside.de** (Fanclub-Postfach, Antworten landen dort). Braucht SMTP-Freigabe (CISO), das Passwort ist schon in der NAS-`.env`. |
-| E2 | Wie sieht der Verwendungszweck aus? | **`<Gegner> <TT.MM.> <Vorname Nachname> K<Kurzcode>`**, z. B. „FCB 13.12. Anna Muster K4152“. Das Spiel und die Person sind lesbar, der Kurzcode (aus der Ticketnummer) macht die Zuordnung auch bei Tippfehlern sicher. Mehrere Karten einer Person fuer ein Spiel = **eine** Zahlung mit einem Code. |
-| E3 | Wie wird bezahlt? | PayPal wie bisher (E-K5). Die Mail nennt die PayPal-Adresse des Fanclubs und, falls vorhanden, einen **PayPal.me-Link mit Betrag**. Den PayPal.me-Namen traegst du in der `.env` ein (nicht im Repo). |
-| E4 | Woher kommt die Adresse je Person? | **Vorschlag aus der Mitgliederliste, Bestaetigung durch dich einmal je Person**; danach merkt LUNA sich die Zuordnung (im Fanclub-Speicher auf der NAS, nicht im Git). Gaeste traegst du von Hand ein. Ohne bestaetigte Adresse kein Versand. |
-| E5 | Ticketversand nach Zahlung automatisch? | **Ja, aber nur wenn alles eindeutig ist:** Verwendungszweck mit gueltigem Kurzcode **und** Betrag genau gleich **und** bestaetigte Adresse **und** PDF + Wallet-Link vorhanden **und** noch nicht gesendet. Sonst Vorschlag mit Knopf „Tickets senden“. Abschaltbar (`OFC_AUTO_TICKETVERSAND=0`); an erst nach der Abnahme von TV4. |
-| E6 | Zahlungsbitte gesammelt oder je Spiel? | **Je Person und Spiel eine Mail** (passt zu einem Verwendungszweck). Knopf je Spiel „Zahlungsbitten an alle offenen senden“ mit Vorschau der Liste. |
-| E7 | Kopie an dich? | **Ja:** Jede gesendete Mail liegt in „Gesendet“ von moin@, und das Versandprotokoll steht im Spiel (wer, wann, was; ohne Mailtext). |
+| E1 (wie empfohlen) | Von welcher Adresse gehen die Mails? | **moin@hsvinside.de** (Fanclub-Postfach, Antworten landen dort). Braucht SMTP-Freigabe (CISO), das Passwort ist schon in der NAS-`.env`. |
+| E2 (CEO 2026-11-26, **geaendert**) | Wie sieht der Verwendungszweck aus? | **`<Spieltag>-<Mitgliedsnummer>`**, z. B. „12-1004“ (12. Spieltag Bundesliga, Mitglied 1004) -- kurz und leicht zu tippen. Fuer Spiele ohne Bundesliga-Spieltag ein Buchstabe davor: Pokal `P<Runde>` (z. B. „P2-1004“), sonstige Spiele `S<laufende Nr. in der Saison>`. Gaeste zahlen unter der Nummer des Mitglieds, das sie mitbringt; ohne Mitglied vergibt LUNA `G<Nr>`. Mehrere Karten einer Person fuer ein Spiel = eine Zahlung. Die Spieltag-Nummer liest LUNA aus Rechnung/Ticket, falls sie dort steht (TV0 prueft das); sonst traegst du sie je Spiel einmal ein. |
+| E3 (wie empfohlen) | Wie wird bezahlt? | PayPal wie bisher (E-K5). Die Mail nennt die PayPal-Adresse des Fanclubs und, falls vorhanden, einen **PayPal.me-Link mit Betrag**. Den PayPal.me-Namen traegst du in der `.env` ein (nicht im Repo). |
+| E4 (wie empfohlen) | Woher kommt die Adresse je Person? | **Vorschlag aus der Mitgliederliste, Bestaetigung durch dich einmal je Person**; danach merkt LUNA sich die Zuordnung (im Fanclub-Speicher auf der NAS, nicht im Git). Gaeste traegst du von Hand ein. Ohne bestaetigte Adresse kein Versand. |
+| E5 (wie empfohlen) | Ticketversand nach Zahlung automatisch? | **Ja, aber nur wenn alles eindeutig ist:** Verwendungszweck mit gueltigem Kurzcode **und** Betrag genau gleich **und** bestaetigte Adresse **und** PDF + Wallet-Link vorhanden **und** noch nicht gesendet. Sonst Vorschlag mit Knopf „Tickets senden“. Abschaltbar (`OFC_AUTO_TICKETVERSAND=0`); an erst nach der Abnahme von TV4. |
+| E6 (wie empfohlen) | Zahlungsbitte gesammelt oder je Spiel? | **Je Person und Spiel eine Mail** (passt zu einem Verwendungszweck). Knopf je Spiel „Zahlungsbitten an alle offenen senden“ mit Vorschau der Liste. |
+| E7 (wie empfohlen) | Kopie an dich? | **Ja:** Jede gesendete Mail liegt in „Gesendet“ von moin@, und das Versandprotokoll steht im Spiel (wer, wann, was; ohne Mailtext). |
 
 ## Etappen
 
 ### Etappe TV0: Analyse der HSV-Mails (nur lesend)
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (`orchestrator/core/ofc_wallet.py`, `GET /api/ofc/analyse/wallet`, Tests `test_ofc_wallet.py` mit Gegenprobe Maskierung); prueft zusaetzlich, ob die Spieltag-Nummer in Rechnung oder Ticket steht (E2)
 - Ziel / Scope: Ein Dry-Run-Endpunkt nur fuer den CEO, `GET /api/ofc/analyse/wallet`. Er liest die HSV-Mails (60 Tage, nur
   lesend) und meldet **maskiert**:
   - je Mail die Zahl der PDFs und der Wallet-Links;
