@@ -127,6 +127,27 @@ class TestMeilensteine(_Basis):
         self.assertEqual(len([t for t, _ in self.mel if "🎉" in t]), 2)
 
 
+    def test_wechsel_tagesabruf_zu_live_meldet_alte_schwellen_nicht(self):
+        # 1. allererster Tagesabruf: schon erreichte Schwellen werden still vermerkt (Basis)
+        self.ar.uebernehmen([z("2026-11-24", "registrierte_gesamt", 2100), z("2026-11-24", "abo_aequivalente", 260)], "t")
+        ak.pruefen(self.ar, jetzt=T0 - timedelta(days=2), notify=self.notify)
+        self.assertEqual([t for t, _ in self.mel if "🎉" in t], [])
+        # 2. naechster Tagesabruf meldet eine neue Schwelle regulaer
+        self.ar.uebernehmen([z("2026-11-25", "registrierte_gesamt", 3050), z("2026-11-25", "abo_aequivalente", 270)], "t")
+        ak.pruefen(self.ar, jetzt=T0 - timedelta(days=1), notify=self.notify)
+        self.assertEqual(len([t for t, _ in self.mel if "🎉" in t]), 1)
+        # 3. erster Live-Abruf (registrierte_stand statt _gesamt, Werte bis knapp unter die naechste Schwelle): nichts erneut
+        self.lauf(T0, FakeLive([live({"registrierte_stand": 3999, "abo_aequivalente": 499})]))
+        self.assertEqual(len([t for t, _ in self.mel if "🎉" in t]), 1)
+        for k in ("meilenstein:reg:1000", "meilenstein:reg:2000", "meilenstein:reg:3000", "meilenstein:abo:250"):
+            self.assertTrue(self.ar.gemeldet(k), k)
+        # 4. erst eine wirklich neue Schwelle meldet Live
+        self.lauf(T0 + timedelta(minutes=15), FakeLive([live({"registrierte_stand": 4001, "abo_aequivalente": 499})]))
+        neu = [t for t, _ in self.mel if "🎉" in t]
+        self.assertEqual(len(neu), 2)
+        self.assertIn("4.000 registrierte", neu[-1])
+
+
 class TestAnsichtUndAbgleich(_Basis):
     def test_veraltet_ab_45_minuten(self):
         self.lauf(T0, FakeLive([]))
