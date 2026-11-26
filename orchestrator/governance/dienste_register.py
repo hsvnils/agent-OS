@@ -69,7 +69,7 @@ ANBIETER = [
     {"id": "google", "name": "Google Workspace (LUNAs Konto)", "bereich": "Kommunikation", "zweck": "Gmail, Kalender, Drive (Belegkopien)",
      "daten": "Mails, Termine, Beleg-PDFs", "schluessel": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_OAUTH_REFRESH_TOKEN"],
      "zugehoerig": [], "tarif": "gratis", "kosten_erfasst": False, "konto": "https://console.cloud.google.com/"},
-    {"id": "allinkl", "lieferant": ["all-inkl"], "name": "All-Inkl (Mail luna@, nils@hanserautisch.de, moin@hsvinside.de)", "bereich": "Kommunikation", "zweck": "Kundenmails senden und Antworten lesen (nils@ seit KONTAKTE K5: nur Antworten auf LUNA-Mails; moin@ seit OFC_TICKETVERSAND TV3: Zahlungsbitten an Mitglieder nach CEO-Klick)",
+    {"id": "allinkl", "lieferant": ["all-inkl"], "name": "All-Inkl (Mail luna@, nils@hanserautisch.de, moin@hsvinside.de)", "bereich": "Kommunikation", "zweck": "Kundenmails senden und Antworten lesen (nils@ seit KONTAKTE K5: nur Antworten auf LUNA-Mails; moin@ seit OFC_TICKETVERSAND TV3/TV4: Zahlungsbitten und Ticketmails an Mitglieder/Personen)",
      "daten": "Kundenmails mit Belegen", "schluessel": ["ALLINKL_MAIL_PASSWORT"], "zugehoerig": ["NILS_MAIL_PASSWORT", "HSVINSIDE_MAIL_PASSWORT"], "tarif": "paket",
      "kosten_erfasst": False, "konto": "https://kas.all-inkl.com/"},
     {"id": "meta", "name": "Meta (Instagram/Facebook)", "bereich": "Kommunikation", "zweck": "Instagram-Kennzahlen, Reels auf Facebook",

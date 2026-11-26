@@ -4,7 +4,7 @@
 - Stand: 2026-11-26
 - Arbeitsbranch: `ai/ofc-ticketversand`
 - Basiscommit: `81ee7f0`
-- Naechster Schritt: TV3b live (Deploy 2026-11-26). TV3c (Karten von Hand als bezahlt) umgesetzt auf `ai/ofc-ticketversand-tv3c`; nach Merge/Deploy Go fuer TV4.
+- Naechster Schritt: TV3c live. TV4 umgesetzt auf `ai/ofc-ticketversand-tv4` (Automatik standardmaessig AUS); nach Merge/Deploy Testdurchlauf mit dem CEO (Zahlungsbitte -> PayPal-Zahlung mit Verwendungszweck -> Zuordnung -> Ticketmail per Knopf), dann `OFC_AUTO_TICKETVERSAND=1` in der NAS-`.env` + Neuerstellung `luna-os` (TV5).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -210,7 +210,11 @@ Versandprotokoll; Ansicht auf Rechner, iPad und iPhone.
 
 ### Etappe TV4: Zahlung zuordnen und Tickets senden
 
-- Status: geplant
+- Status: umgesetzt 2026-11-26 (CEO-Go). Umsetzung:
+  - **Zuordnung:** `ofc_eingang.zweck_treffer` erkennt „11-1004“, „11 1004“, „11/1004“, „P2-0001“, „11-G3“ (fuehrende Nullen egal) und greift nur bei genau passendem Betrag der offenen Karten dieser Person in diesem Spiel; sonst gelten die bisherigen Regeln.
+  - **Ticketmail** (`ofc_versand.tickets_*`): PDF-Tickets als Anhang, Wallet-Links im Text, feste Vorlage; Abschnitt „🎟 Ticketversand“ im Spiel mit Vorschau, Senden, Testmail an moin@, nie doppelt ohne „erneut“.
+  - **Automatik** `auto_lauf` im 15-Minuten-Lauf: nur Zahlungen der letzten 14 Tage, die per Verwendungszweck zugeordnet wurden, nur mit Adresse, PDF und Wallet fuer alle Karten, nur einmal; Schalter `OFC_AUTO_TICKETVERSAND=1` (Standard aus).
+  - **Tests** `test_ofc_tv4.py` mit Gegenproben.
 - Ziel / Scope:
   - **Zuordnung:** `ofc_eingang` erkennt zuerst den Kurzcode aus dem Verwendungszweck. Passt der Betrag genau, sind die
     Tickets bezahlt; sonst greifen die bisherigen Regeln (Name + Betrag + Gegner).

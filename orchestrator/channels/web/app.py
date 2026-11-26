@@ -6309,7 +6309,8 @@ def _ofc_post_starten():
         from ...core.ofc_post import starten
         from ...core.ofc_eingang import lauf as eingang_lauf
         from ...core.ofc_zahlung import lauf as zahl_lauf
-        starten(_ofc_store, _ofc_postfach, weitere=(zahl_lauf, lambda st, pf: eingang_lauf(st, pf, mitglieder=_ofc_mitglieder_daten())))
+        starten(_ofc_store, _ofc_postfach, weitere=(zahl_lauf, lambda st, pf: eingang_lauf(st, pf, mitglieder=_ofc_mitglieder_daten()),
+                                                    _ofc_ticket_auto))
     except Exception:
         pass
 
@@ -6804,6 +6805,42 @@ async def ofc_ticket_wallet(request: Request, nr: str):
         return {"ok": False, "hinweis": "Braucht die Bestätigung."}
     from ...core.ofc_wallet import wallet_von_hand
     return wallet_von_hand(_ofc_store(), nr, str(body.get("url") or ""), von=_von(request))
+
+
+def _ofc_ticket_auto(st, pf):
+    """OFC_TICKETVERSAND TV4: Tickets automatisch senden (nur mit OFC_AUTO_TICKETVERSAND=1, nur eindeutige Faelle)."""
+    from ...core import ofc_versand
+    m = _ofc_mitglieder_daten()
+    return ofc_versand.auto_lauf(st, pf, m["mitglieder"] if m else None)
+
+
+@app.get("/api/ofc/spiel/{sid}/ticketversand")
+def ofc_ticketversand(request: Request, sid: str, nummer: str = ""):
+    """TV4: je Person bezahlte Karten mit Status (bereit/gesendet/gesperrt); mit `nummer` die Mail-Vorschau."""
+    _nur_ceo(request)
+    from ...core import ofc_versand
+    m = _ofc_mitglieder_daten()
+    st = _ofc_store().stand()
+    liste = m["mitglieder"] if m else None
+    if nummer:
+        return ofc_versand.tickets_vorschau(st, sid, nummer, liste)
+    return ofc_versand.tickets_plan(st, sid, liste) | {"auto": ofc_versand.auto_an()}
+
+
+@app.post("/api/ofc/spiel/{sid}/tickets_senden")
+async def ofc_tickets_senden(request: Request, sid: str):
+    """TV4: Tickets (PDF-Anhang + Wallet-Links) an eine Person senden -- nur mit Bestaetigung; `test` = an moin@."""
+    _nur_ceo(request)
+    body = await _json(request)
+    if body.get("bestaetigt") is not True:
+        return {"ok": False, "hinweis": "Senden braucht die Bestätigung."}
+    from ...core import ofc_versand
+    p = _ofc_postfach()
+    if not p.verfuegbar():
+        return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
+    m = _ofc_mitglieder_daten()
+    return ofc_versand.tickets_senden(_ofc_store(), p, sid, str(body.get("nummer") or ""), m["mitglieder"] if m else None,
+                                      test=bool(body.get("test")), erneut=bool(body.get("erneut")), von=_von(request))
 
 
 @app.get("/api/ofc/spiel/{sid}/zahlungsbitten")
