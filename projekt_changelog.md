@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-26 16:47] — Claude Code
+- **Was:** Merge `ai/app-kennzahlen` nach `main` (APP_KENNZAHLEN AK0-AK3), Branch geloescht; Deploy-Befehle an den CEO.
+- **Warum:** CEO: „Push gemacht, Go fuer Merge, Push und Deploy“.
+- **Betroffen:** `main`, `projekt_changelog.md`
+
 ## [2026-11-26 15:47] — Claude Code
 - **Was:** APP_KENNZAHLEN AK0-AK3 umgesetzt: Abruf der Tagessummen der Hanserautisch-App (nur GET, Token nur aus der Umgebung, Schema-Pruefung, 400-Tage-Abschnitte), Archiv `app_kennzahlen/log.jsonl` mit Upsert nach `stand`, taeglicher Lauf ab 06:30 im Bot (Wiederholung 5/15/45 Min., 401/400 ohne Wiederholung), Telegram-Meldungen (Frische, Fehlschlaege, Moderation, Cron/Function, Meilensteine) ohne Chat-Verlauf/Chat-Werkzeuge, Stoerung in der Glocke, neuer Hauptmenuepunkt „📱 App“ (nur CEO) mit Kennzahlen, Zeitraeumen und Kontroll-Abgleich; CISO-Freigabe, Dienste-Register, Datenfluesse, Netz-Wache, Backup/Deploy-Ausschluss, Datenschutz-Nachtrag, Entscheidungs-Register, M5-Verweis, Baseline 1878.
 - **Warum:** CEO-Go fuer AK0-AK3, Entscheidungen E1-E4 „wie empfohlen“.
