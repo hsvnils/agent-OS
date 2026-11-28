@@ -1,10 +1,10 @@
 # Roadmap: OFC Ticketversand -- Wallet + PDF, Zahlungsbitte per Mail, Tickets nach Zahlung
 
 - Status: in Umsetzung
-- Stand: 2026-11-26
+- Stand: 2026-11-28
 - Arbeitsbranch: `ai/ofc-ticketversand`
 - Basiscommit: `81ee7f0`
-- Naechster Schritt: TV3c live. TV4 umgesetzt auf `ai/ofc-ticketversand-tv4` (Automatik standardmaessig AUS); nach Merge/Deploy Testdurchlauf mit dem CEO (Zahlungsbitte -> PayPal-Zahlung mit Verwendungszweck -> Zuordnung -> Ticketmail per Knopf), dann `OFC_AUTO_TICKETVERSAND=1` in der NAS-`.env` + Neuerstellung `luna-os` (TV5).
+- Naechster Schritt: Erweiterung Handsteuerung (TV6, TV7) geplant 2026-11-28, wartet auf CEO-Go und die Entscheidungen E7-E10. TV5 (Test mit Leverkusen, dann Automatik an) bleibt offen.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -246,6 +246,58 @@ Versandprotokoll; Ansicht auf Rechner, iPad und iPhone.
   
   Dazu kommt die Sichtabnahme auf Rechner, iPad und iPhone. Danach wird der Auto-Versand dauerhaft eingeschaltet (E5).
 - Nach dem Deploy wird sofort ein datiertes To-do „Roadmap: OFC_TICKETVERSAND_ROADMAP.md“ angelegt (F4).
+
+## Erweiterung Handsteuerung (CEO 2026-11-28, Plan)
+
+Auftrag nach der Sichtabnahme der Mitglieder:
+1. Eine Karte **von Hand als „nicht bezahlt“** markieren koennen -- nur mit **Grund**, genau wie beim Anhaken „bezahlt“.
+2. **Je Person von Hand** die **Ticketmail** und die **Zahlungsbitte** anstossen koennen.
+3. Ticketversand **vor** einer abgehakten Zahlung nur mit **Kommentar**.
+
+Bestand (read-only geprueft):
+- „💶 bezahlt“ (TV3c) fragt Zahlart und Datum ab; die Notiz ist bisher **freiwillig**. „↩︎ bezahlt“ nimmt nur eine
+  Hand-Markierung zurueck; eine von LUNA zugeordnete PayPal-Zahlung laesst sich bisher **nicht** ueberstimmen.
+- Zahlungsbitte je Person gibt es schon (Spiel oeffnen -> „✉️ Zahlungsbitten“ -> „👁 Mail“ -> Senden/Erneut senden).
+- Ticketversand je Person gibt es nur fuer **bezahlte** Karten; unbezahlte Karten erscheinen dort gar nicht.
+
+### Offene Entscheidungen (CEO)
+
+| Nr. | Frage | Empfehlung |
+|---|---|---|
+| E7 | Grund Pflicht auch beim Anhaken „bezahlt“ und beim Zuruecknehmen? | **Ja, bei jeder Hand-Aenderung** (mind. 3 Zeichen), steht im Verlauf der Karte. |
+| E8 | Was bewirkt „nicht bezahlt“? | **Ueberstimmt alles**, auch eine zugeordnete PayPal-Zahlung (z. B. Rueckbuchung, falsch zugeordnet). Die Karte ist wieder offen (Zahlungsbitte moeglich, beim Mitglied offen), die Automatik sendet dafuer nie. Die Zuordnung des Eingangs und die Kasse bleiben unveraendert; ein Hinweis zeigt „PayPal-Eingang zugeordnet, von Hand nicht bezahlt“. Zuruecknehmen geht jederzeit (mit Grund). |
+| E9 | Text der Ticketmail vor Zahlung? | **Ohne** „danke fuer deine Zahlung“, dafuer mit offenem Betrag, Verwendungszweck und PayPal-Adresse moin@hsvinside.de. |
+| E10 | Wo die Knoepfe? | **Im Spiel** (Ticketversand zeigt alle Personen mit Karten, unbezahlte mit „🎟 Vor Zahlung senden“) **und** in der Mitgliederansicht je Spiel „✉️ Zahlungsbitte“ und „🎟 Tickets senden“ -- beide oeffnen dieselbe Vorschau. |
+
+Bleibt unveraendert: Gekuendigte und Personen ohne E-Mail bleiben gesperrt; jede Mail mit Vorschau, Rueckfrage und
+Testmail an moin@; hoechstens 30 Mails je Stunde; die Automatik (TV4) sendet nie vor einer Zahlung.
+
+### Etappe TV6: Bezahlt / nicht bezahlt von Hand mit Grund
+
+- Status: geplant
+- Inhalt:
+  - Neue Markierung „nicht bezahlt“ (Ereignis `ofc_bezahlt` mit `nicht_bezahlt`) mit Pflicht-Grund; sie gilt in
+    `bezahlt_stand` vor der PayPal-Zuordnung (E8).
+  - Grund Pflicht bei jeder Hand-Aenderung (E7); serverseitig geprueft, nicht nur im Dialog.
+  - Am Ticket: „❌ nicht bezahlt“ (bei bezahlten Karten) und „↩︎ Markierung zuruecknehmen“; Abzeichen mit Grund beim
+    Darueberfahren; Verlauf der Hand-Markierungen im Spiel.
+  - Wirkung ueberall gleich: Spieluebersicht, Zahlungsbitten, Ticketversand, Mitgliederansicht, Automatik.
+- Tests mit Gegenproben: ohne Grund abgelehnt; „nicht bezahlt“ schlaegt PayPal-Zuordnung; Automatik sendet nicht;
+  Zahlungsbitte wieder moeglich; Zuruecknehmen stellt den alten Stand her; Kasse unveraendert.
+- Gate: am Testspiel eine per PayPal bezahlte Karte auf „nicht bezahlt“ setzen und zuruecknehmen.
+
+### Etappe TV7: Versand je Person von Hand
+
+- Status: geplant
+- Inhalt:
+  - Ticketversand listet **alle** Personen mit Karten des Spiels; unbezahlte mit „🎟 Vor Zahlung senden“ -> Vorschau mit
+    Text nach E9 und **Pflicht-Kommentar**; der Kommentar steht im Mail-Protokoll.
+  - In der Mitgliederansicht je Spiel „✉️ Zahlungsbitte“ und „🎟 Tickets senden“ (E10).
+  - Server prueft: vor Zahlung nur mit Kommentar und nur von Hand (nie Automatik).
+- Tests mit Gegenproben: ohne Kommentar abgelehnt; Automatik sendet unbezahlt nie; Text ohne Dank; Gekuendigte gesperrt.
+- Gate: Testmail an moin@ fuer eine unbezahlte Karte, danach Sichtabnahme auf Rechner, iPad, iPhone.
+
+Reihenfolge: TV6 -> TV7, nach Go am Stueck gebaut, ein Deploy (nur `luna-os`). Danach weiter mit TV5.
 
 ## Reihenfolge, Aufwand, Deploy
 

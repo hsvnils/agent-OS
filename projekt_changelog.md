@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-28 10:05] — Claude Code
+- **Was:** (1) `OFC_MITGLIEDER_ROADMAP.md` abgeschlossen (CEO: „Sichtabnahme ok“), To-do 03.12. erledigt. (2) APP_KENNZAHLEN AK4 bestanden: Tageslauf 27.11. und 28.11. jeweils 06:30 von selbst, Status 200, 0 verworfen; Meldungen einmalig (NAS, nur Zaehlungen); To-do erledigt. (3) Plan „Handsteuerung“ in `OFC_TICKETVERSAND_ROADMAP.md`: TV6 (bezahlt/nicht bezahlt von Hand mit Pflicht-Grund, „nicht bezahlt“ ueberstimmt die PayPal-Zuordnung) und TV7 (Zahlungsbitte und Ticketmail je Person von Hand, Ticketversand vor Zahlung nur mit Kommentar), Entscheidungen E7-E10 mit Empfehlung. Noch nichts gebaut.
+- **Warum:** CEO 2026-11-28 nach der Sichtabnahme; Roadmap-Workflow (erst Plan, dann Go).
+- **Betroffen:** `OFC_MITGLIEDER_ROADMAP.md`, `APP_KENNZAHLEN_ROADMAP.md`, `OFC_TICKETVERSAND_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-11-26 23:57] — Claude Code
 - **Was:** Branch `ai/ofc-kopfzeile` (OFC-Titel einzeilig, Unterpunkte in einer Reihe) per `--no-ff` in `main` gemergt, gepusht, Branch geloescht.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
