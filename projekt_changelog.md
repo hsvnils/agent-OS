@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-28 10:44] — Claude Code
+- **Was:** Branch `ai/ofc-tv67-abnahme` (Doku: TV6/TV7 abgenommen) per `--no-ff` in `main` gemergt, gepusht, Branch geloescht. Kein Deploy noetig.
+- **Warum:** CEO-Go fuer Merge und Push.
+- **Betroffen:** `main`, `OFC_TICKETVERSAND_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-11-28 10:42] — Claude Code
 - **Was:** Deploy Status-Knopf auf der NAS bestaetigt (v191/CSS v102 ausgeliefert). TV6/TV7 als abgenommen eingetragen (CEO „Test ok“), To-do „Handsteuerung testen“ erledigt; naechster Schritt TV5.
 - **Warum:** CEO „Deploy gemacht“ nach dem Test 2026-11-28.
