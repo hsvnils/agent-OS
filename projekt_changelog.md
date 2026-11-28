@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-28 10:18] — Claude Code
+- **Was:** Branch `ai/ofc-handsteuerung` (TV6/TV7 Handsteuerung, inkl. Plan-Commit von `ai/ofc-handsteuerung-plan`) per `--no-ff` in `main` gemergt, gepusht, beide Branches geloescht.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `main`, OFC-Ticketversand (LUNA-OS V2 v190/CSS v101)
+
 ## [2026-11-28 10:14] — Claude Code
 - **Was:** OFC_TICKETVERSAND TV6 + TV7 (Handsteuerung). TV6: Karten von Hand als „nicht bezahlt“ markieren (ueberstimmt auch eine zugeordnete PayPal-Zahlung; Zuordnung und Kasse bleiben), jede Hand-Aenderung (bezahlt, nicht bezahlt, zuruecknehmen) nur mit Grund, Verlauf „Von Hand geaendert“ im Spiel. TV7: Ticketversand listet alle Personen mit Karten; vor der Zahlung nur von Hand mit Pflicht-Kommentar (im Mail-Protokoll), Mailtext ohne Dank mit offenem Betrag, Verwendungszweck und PayPal-Adresse; Automatik sendet nie vor Zahlung; in der Mitgliederansicht je Spiel „✉️ Zahlungsbitte“ und „🎟 Tickets senden“. Knopfleiste im Spiel-Dialog bricht jetzt sauber um. Cache v190/CSS v101. Tests `test_ofc_handsteuerung.py` (9, mit Gegenproben), alte Tests auf Pflicht-Grund angepasst; Suite 1948 gruen; headless geprueft auf Rechner und iPhone.
 - **Warum:** CEO-Go 2026-11-28 („wie empfohlen, Go fuer TV6 und TV7“, E7-E10).
