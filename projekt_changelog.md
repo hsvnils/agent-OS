@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-28 10:40] — Claude Code
+- **Was:** Branch `ai/ofc-status-knopf` (Bezahlt-Stand als Knopf mit Dialog „Status aendern“) per `--no-ff` in `main` gemergt, gepusht, Branch geloescht.
+- **Warum:** CEO-Go fuer Merge, Push und Deploy.
+- **Betroffen:** `main`, LUNA-OS V2 (`app-v2.js` v191, `style-v2.css` v102)
+
 ## [2026-11-28 10:39] — Claude Code
 - **Was:** OFC TV6 nachgebessert: Die eigenen Knoepfe „💶 bezahlt“, „❌ nicht bezahlt“ und „↩︎ zurück“ in der Ticketzeile entfallen; der Bezahlt-Stand (offen / teilweise / bezahlt / nicht bezahlt von Hand) ist selbst ein kleiner Knopf und oeffnet den Dialog „Status aendern“ (passende Ziele, Zahlart/Datum nur bei bezahlt, Grund Pflicht). „💶 alle bezahlt“ bei den Zahlungsbitten bleibt. Backend unveraendert. Cache v191/CSS v102; headless geprueft (Rechner, iPhone, Ablauf „zuruecknehmen“ echt durchgeklickt); Suite 1948 gruen.
 - **Warum:** CEO nach dem Test 2026-11-28: Der Knopf „nicht bezahlt“ war zu praesent, wird selten gebraucht und verwirrt.
