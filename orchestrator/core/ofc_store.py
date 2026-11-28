@@ -103,8 +103,10 @@ class OfcStore:
                 verzeichnis.setdefault(d["id"], {"id": d["id"]}).update({k: v for k, v in d.items() if k != "id"})
             elif t == "ofc_person":                                 # TV3b: externe Person (G<Nr>), kein Mitglied
                 personen.setdefault(d["id"], {"id": d["id"]}).update({k: v for k, v in d.items() if k != "id"})
-            elif t == "ofc_bezahlt":                                # TV3c: von Hand bezahlt (oder zurueckgenommen)
-                tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})["hand_bezahlt"] = d | {"ts": e["ts"], "von": e.get("von", "")}
+            elif t == "ofc_bezahlt":                                # TV3c/TV6: von Hand bezahlt, nicht bezahlt oder zurueckgenommen
+                tk = tickets.setdefault(d["ticketnr"], {"ticketnr": d["ticketnr"]})
+                tk["hand_bezahlt"] = d | {"ts": e["ts"], "von": e.get("von", "")}
+                tk.setdefault("hand_verlauf", []).append(tk["hand_bezahlt"])
             elif t == "ofc_mail":                                   # TV3: Versandprotokoll (ohne Mailtext)
                 mails[d["id"]] = d | {"ts": e["ts"]}
             elif t == "ofc_mitglied":                               # TV2: Mitgliedsnummer je Ticket (leer = Gast)
@@ -297,8 +299,12 @@ def spiel_detail(store: OfcStore, sid: str) -> dict | None:
     tks = sorted((t | bz.get(t["ticketnr"], {}) for t in st["tickets"].values() if t["spiel"] == sid),
                  key=lambda t: (t["rechnungsnr"], t["pos"]))
     zahl = [z for z in zahlungs_status(st) if z.get("spiel") == sid]
+    verlauf = [{"ticketnr": t["ticketnr"], "name": t.get("name", ""), **{k: h.get(k, "") for k in
+                ("ts", "von", "bezahlt", "nicht_bezahlt", "art", "datum", "notiz")}}
+               for t in tks for h in t.get("hand_verlauf") or []]
+    verlauf = [x for _, x in sorted(enumerate(verlauf), key=lambda p: (p[1]["ts"], p[0]), reverse=True)]   # neueste oben
     return {"spiel": s | {"kennung": _kennung(s)}, "tickets": tks, "zahlungen": zahl, "bezahlt_cent": _bezahlt(zahl),
-            "hinweise": _hinweise(s, tks, zahl)}
+            "hinweise": _hinweise(s, tks, zahl), "hand_verlauf": verlauf}
 
 
 def _kennung(s: dict) -> dict:
@@ -345,15 +351,24 @@ def person_speichern(store: OfcStore, vorname: str, nachname: str, email: str, p
 BEZAHLT_ARTEN = {"bar": "Bar", "ueberweisung": "Überweisung", "paypal": "PayPal", "sonstiges": "Sonstiges"}
 
 
-def bezahlt_markieren(store: OfcStore, ticketnrn: list[str], bezahlt: bool, *, art: str = "bar", datum: str = "",
-                      notiz: str = "", von: str = "") -> dict:
-    """TV3c: Karten von Hand als bezahlt markieren (oder die Markierung zuruecknehmen). Nichts wird geloescht; die Kasse
-    (= PayPal-Konto) bleibt unberuehrt -- Bar/Ueberweisung kommen nicht ins Kassenbuch."""
+GRUND_MIN = 3                                            # TV6/E7: jede Hand-Aenderung braucht einen Grund
+
+
+def bezahlt_markieren(store: OfcStore, ticketnrn: list[str], bezahlt: bool, *, nicht: bool = False, art: str = "bar",
+                      datum: str = "", notiz: str = "", von: str = "") -> dict:
+    """TV3c/TV6: Karten von Hand als bezahlt oder als NICHT bezahlt markieren (ueberstimmt auch eine zugeordnete
+    PayPal-Zahlung) oder die Hand-Markierung zuruecknehmen (bezahlt=False, nicht=False). Immer mit Grund (E7). Nichts wird
+    geloescht; die Kasse (= PayPal-Konto) und die Zuordnung der Eingaenge bleiben unberuehrt."""
     from datetime import date as _d
     st = store.stand()
     nrn = [n for n in dict.fromkeys(ticketnrn or []) if n in st["tickets"]]
     if not nrn:
         return {"ok": False, "hinweis": "Keine Karte gefunden."}
+    grund = (notiz or "").strip()[:200]
+    if len(grund) < GRUND_MIN:
+        return {"ok": False, "hinweis": "Bitte einen Grund angeben (mindestens 3 Zeichen)."}
+    if bezahlt and nicht:
+        return {"ok": False, "hinweis": "Entweder bezahlt oder nicht bezahlt."}
     if bezahlt and art not in BEZAHLT_ARTEN:
         return {"ok": False, "hinweis": "Zahlart: Bar, Überweisung, PayPal oder Sonstiges."}
     datum = (datum or _d.today().isoformat())[:10]
@@ -364,10 +379,16 @@ def bezahlt_markieren(store: OfcStore, ticketnrn: list[str], bezahlt: bool, *, a
     n = 0
     for nr in nrn:
         alt = st["tickets"][nr].get("hand_bezahlt") or {}
-        if bool(alt.get("bezahlt")) == bezahlt and (not bezahlt or (alt.get("art"), alt.get("datum")) == (art, datum)):
-            continue
-        store.erfassen("ofc_bezahlt", {"ticketnr": nr, "bezahlt": bezahlt, "art": art if bezahlt else "", "datum": datum if bezahlt else "",
-                                       "notiz": (notiz or "").strip()[:200]}, von=von)
+        if bezahlt:
+            if alt.get("bezahlt") and (alt.get("art"), alt.get("datum")) == (art, datum):
+                continue
+        elif nicht:
+            if alt.get("nicht_bezahlt"):
+                continue
+        elif not alt.get("bezahlt") and not alt.get("nicht_bezahlt"):
+            continue                                                 # nichts von Hand gesetzt -> nichts zurueckzunehmen
+        store.erfassen("ofc_bezahlt", {"ticketnr": nr, "bezahlt": bool(bezahlt), "nicht_bezahlt": bool(nicht),
+                                       "art": art if bezahlt else "", "datum": datum if bezahlt else "", "notiz": grund}, von=von)
         n += 1
     return {"ok": True, "geaendert": n}
 

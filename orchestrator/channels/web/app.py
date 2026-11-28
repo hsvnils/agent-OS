@@ -6890,7 +6890,8 @@ async def ofc_tickets_senden(request: Request, sid: str):
         return {"ok": False, "hinweis": "Postfach moin@ ist nicht eingerichtet."}
     m = _ofc_mitglieder_daten()
     return ofc_versand.tickets_senden(_ofc_store(), p, sid, str(body.get("nummer") or ""), m["mitglieder"] if m else None,
-                                      test=bool(body.get("test")), erneut=bool(body.get("erneut")), von=_von(request))
+                                      test=bool(body.get("test")), erneut=bool(body.get("erneut")),
+                                      kommentar=str(body.get("kommentar") or ""), von=_von(request))
 
 
 @app.get("/api/ofc/spiel/{sid}/zahlungsbitten")
@@ -6940,7 +6941,8 @@ async def ofc_tickets_bezahlt(request: Request):
     nrn = body.get("tickets") or []
     if not isinstance(nrn, list) or not all(isinstance(x, str) for x in nrn):
         return {"ok": False, "hinweis": "Karten als Liste angeben."}
-    return bezahlt_markieren(_ofc_store(), nrn, body.get("bezahlt") is not False, art=str(body.get("art") or "bar"),
+    nicht = body.get("nicht") is True                                    # TV6: von Hand NICHT bezahlt (mit Grund)
+    return bezahlt_markieren(_ofc_store(), nrn, body.get("bezahlt") is not False and not nicht, nicht=nicht, art=str(body.get("art") or "bar"),
                              datum=str(body.get("datum") or ""), notiz=str(body.get("notiz") or ""), von=_von(request))
 
 

@@ -72,12 +72,12 @@ class TestZweck(_Basis):
 
 class TestTicketsSenden(_Basis):
     def bereit(self):
-        bezahlt_markieren(self.st, ["262236181415-1", "262236181415-2"], True, art="bar")
+        bezahlt_markieren(self.st, ["262236181415-1", "262236181415-2"], True, art="bar", notiz="bar bezahlt")
         for nr in ("262236181415-1", "262236181415-2"):
             wallet_von_hand(self.st, nr, f"https://www.eventimsports.de/wallet/{nr}/x")
 
     def test_plan_und_senden_mit_anhang(self):
-        self.assertEqual(ofc_versand.tickets_plan(self.st.stand(), "HSV vs FCB", MITGLIEDER)["gruppen"], [])  # nichts bezahlt
+        self.assertTrue(ofc_versand.tickets_plan(self.st.stand(), "HSV vs FCB", MITGLIEDER)["gruppen"][0]["vor_zahlung"])  # nichts bezahlt
         self.bereit()
         g = ofc_versand.tickets_plan(self.st.stand(), "HSV vs FCB", MITGLIEDER)["gruppen"][0]
         self.assertEqual((g["status"], g["hinweis"]), ("bereit", ""))
@@ -142,10 +142,10 @@ class TestAuto(_Basis):
         pf = FakePf()
         self.eingang("11-1004", 2 * self.preis)
         self.assertEqual(ofc_versand.auto_lauf(self.st, pf, MITGLIEDER, env=AN)["gesendet"], 0)          # Wallet fehlt
-        bezahlt_markieren(self.st, ["262236181415-1", "262236181415-2"], False)
+        bezahlt_markieren(self.st, ["262236181415-1", "262236181415-2"], False, notiz="zurueck")
         for nr in ("262236181415-1", "262236181415-2"):
             wallet_von_hand(self.st, nr, f"https://www.eventimsports.de/wallet/{nr}/x")
-        bezahlt_markieren(self.st, ["262236181415-1", "262236181415-2"], True)                         # von Hand bezahlt
+        bezahlt_markieren(self.st, ["262236181415-1", "262236181415-2"], True, notiz="bar")                # von Hand bezahlt
         self.assertEqual(ofc_versand.auto_lauf(self.st, pf, MITGLIEDER, env=AN, heute=date(2099, 1, 1))["gesendet"], 0)  # Zahlung alt
         self.assertEqual(pf.gesendet, [])
 

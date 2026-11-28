@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-28 10:14] — Claude Code
+- **Was:** OFC_TICKETVERSAND TV6 + TV7 (Handsteuerung). TV6: Karten von Hand als „nicht bezahlt“ markieren (ueberstimmt auch eine zugeordnete PayPal-Zahlung; Zuordnung und Kasse bleiben), jede Hand-Aenderung (bezahlt, nicht bezahlt, zuruecknehmen) nur mit Grund, Verlauf „Von Hand geaendert“ im Spiel. TV7: Ticketversand listet alle Personen mit Karten; vor der Zahlung nur von Hand mit Pflicht-Kommentar (im Mail-Protokoll), Mailtext ohne Dank mit offenem Betrag, Verwendungszweck und PayPal-Adresse; Automatik sendet nie vor Zahlung; in der Mitgliederansicht je Spiel „✉️ Zahlungsbitte“ und „🎟 Tickets senden“. Knopfleiste im Spiel-Dialog bricht jetzt sauber um. Cache v190/CSS v101. Tests `test_ofc_handsteuerung.py` (9, mit Gegenproben), alte Tests auf Pflicht-Grund angepasst; Suite 1948 gruen; headless geprueft auf Rechner und iPhone.
+- **Warum:** CEO-Go 2026-11-28 („wie empfohlen, Go fuer TV6 und TV7“, E7-E10).
+- **Betroffen:** `orchestrator/core/ofc_store.py`, `ofc_eingang.py`, `ofc_versand.py`, `orchestrator/channels/web/app.py`, `static/app-v2.js`, `style-v2.css`, `index-v2.html`, `orchestrator/tests/test_ofc_handsteuerung.py`, `test_ofc_tv4.py`, `test_ofc_versand.py`, `test_ofc_verzeichnis.py`, `OFC_TICKETVERSAND_ROADMAP.md`, `ROADMAP.md`, `docs/entscheidungs-register.md`, `docs/bekannte-fehler.md`
+
 ## [2026-11-28 10:05] — Claude Code
 - **Was:** (1) `OFC_MITGLIEDER_ROADMAP.md` abgeschlossen (CEO: „Sichtabnahme ok“), To-do 03.12. erledigt. (2) APP_KENNZAHLEN AK4 bestanden: Tageslauf 27.11. und 28.11. jeweils 06:30 von selbst, Status 200, 0 verworfen; Meldungen einmalig (NAS, nur Zaehlungen); To-do erledigt. (3) Plan „Handsteuerung“ in `OFC_TICKETVERSAND_ROADMAP.md`: TV6 (bezahlt/nicht bezahlt von Hand mit Pflicht-Grund, „nicht bezahlt“ ueberstimmt die PayPal-Zuordnung) und TV7 (Zahlungsbitte und Ticketmail je Person von Hand, Ticketversand vor Zahlung nur mit Kommentar), Entscheidungen E7-E10 mit Empfehlung. Noch nichts gebaut.
 - **Warum:** CEO 2026-11-28 nach der Sichtabnahme; Roadmap-Workflow (erst Plan, dann Go).

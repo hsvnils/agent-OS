@@ -1406,7 +1406,7 @@ i.v2-ak-f0 { background: var(--v2-ak-0); } i.v2-ak-f1 { background: var(--v2-ak-
 /* TV3c: Ticketzeile im Spiel -- Knoepfe brechen bei Platzmangel unter den Text um, statt ihn zusammenzudruecken */
 #v2-modal .v2-list-row:has(> .v2-ofc-knoepfe) { flex-wrap: wrap; }
 #v2-modal .v2-list-row:has(> .v2-ofc-knoepfe) > .grow { min-width: 200px; flex: 1 1 200px; }
-#v2-modal .v2-ofc-knoepfe { flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+#v2-modal .v2-ofc-knoepfe { flex-wrap: wrap; justify-content: flex-end; margin-left: auto; flex-shrink: 1; min-width: 0; max-width: 100%; }
 /* AK6: Heute live */
 .v2-ak-dash { stroke-dasharray: 5 4; }
 i.v2-ak-fdash { background: transparent !important; border: 2px dashed var(--v2-ak-1); width: 7px; height: 7px; }

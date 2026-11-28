@@ -5224,11 +5224,14 @@ async function ofcSpiel(sid) {
       <div class="v2-kv"><span>Datum · Zahlart</span><b>${r.datum ? esc(datumDe(r.datum)) : "–"} · ${esc(r.zahlart || "–")}</b></div>
       ${r.datei ? `<div class="v2-card-actions"><a class="v2-btn sm" href="${datei(r.datei)}" target="_blank" rel="noopener">📄 ${esc(r.datei)}</a></div>` : ""}`).join("") || emptyRow("Keine Rechnung im Ordner.");
   const tk = d.tickets.map(t => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(t.ticketnr.split("-")[1] || "")}</span>
-      <div class="grow"><b>${t.name ? esc(t.name) : `<span class="v2-sub">ohne Namen</span>`}</b> ${t.mitglied ? `<span class="v2-badge neutral">${t.mitglied.startsWith("G") ? "extern " + esc(t.mitglied) : "Nr. " + esc(t.mitglied)}</span>` : ""} ${t.bezahlt ? `<span class="v2-badge ok">bezahlt${t.hand ? " (" + esc(OFC_BEZ_ART[t.hand.art] || "von Hand") + ")" : ""}</span>` : t.bezahlt_cent ? `<span class="v2-badge warn">teilweise ${esc(cent2eur(t.bezahlt_cent))}</span>` : ""}
+      <div class="grow"><b>${t.name ? esc(t.name) : `<span class="v2-sub">ohne Namen</span>`}</b> ${t.mitglied ? `<span class="v2-badge neutral">${t.mitglied.startsWith("G") ? "extern " + esc(t.mitglied) : "Nr. " + esc(t.mitglied)}</span>` : ""} ${t.bezahlt ? `<span class="v2-badge ok"${t.hand && t.hand.notiz ? ` title="Grund: ${esc(t.hand.notiz)}"` : ""}>bezahlt${t.hand ? " (" + esc(OFC_BEZ_ART[t.hand.art] || "von Hand") + ")" : ""}</span>`
+          : t.hand && t.hand.nicht_bezahlt ? `<span class="v2-badge warn" title="Grund: ${esc(t.hand.notiz || "")}">nicht bezahlt (von Hand)</span>${t.paypal_zugeordnet ? ` <span class="v2-badge neutral" title="Die PayPal-Zahlung bleibt zugeordnet, zählt aber nicht.">PayPal-Eingang zugeordnet</span>` : ""}`
+          : t.bezahlt_cent ? `<span class="v2-badge warn">teilweise ${esc(cent2eur(t.bezahlt_cent))}</span>` : ""}
         <small>${[t.block ? "Block " + esc(t.block) : "", t.reihe && t.reihe !== "-" ? "Reihe " + esc(t.reihe) : "", t.sitz && t.sitz !== "-" ? "Sitz " + esc(t.sitz) : "",
           t.preis_cent ? esc(cent2eur(t.preis_cent)) : "", t.ohne_rechnung ? "Bestellung " + esc(t.rechnungsnr) + " (keine Rechnung)" : ""].filter(Boolean).join(" · ")}</small></div>
       <div class="v2-ofc-knoepfe">${!t.bezahlt ? `<button class="v2-btn sm" data-act="ofc-bez" data-id="${esc(t.ticketnr)}" aria-label="Als bezahlt markieren" title="Als bezahlt markieren (Bar, Überweisung …)">💶<span class="v2-knopf-txt"> bezahlt</span></button>`
-        : t.hand ? `<button class="v2-btn sm" data-act="ofc-bez-weg" data-id="${esc(t.ticketnr)}" aria-label="Markierung bezahlt zurücknehmen" title="Markierung „bezahlt“ zurücknehmen">↩︎<span class="v2-knopf-txt"> bezahlt</span></button>` : ""}
+        : `<button class="v2-btn sm" data-act="ofc-bez-nicht" data-id="${esc(t.ticketnr)}" aria-label="Als nicht bezahlt markieren" title="Als nicht bezahlt markieren (mit Grund) – überstimmt auch PayPal">❌<span class="v2-knopf-txt"> nicht bezahlt</span></button>`}
+        ${t.hand ? `<button class="v2-btn sm" data-act="ofc-bez-weg" data-id="${esc(t.ticketnr)}" aria-label="Markierung von Hand zurücknehmen" title="Markierung von Hand zurücknehmen (mit Grund)">↩︎<span class="v2-knopf-txt"> zurück</span></button>` : ""}
       <button class="v2-btn sm" data-act="ofc-name" data-id="${esc(t.ticketnr)}" aria-label="Name und Person ändern" title="Name und Person ändern">✏️<span class="v2-knopf-txt"> Person</span></button>
       ${t.datei ? `<a class="v2-btn sm" href="${datei(t.datei)}" target="_blank" rel="noopener" aria-label="PDF-Ticket öffnen" title="PDF-Ticket öffnen">📄<span class="v2-knopf-txt"> PDF</span></a>` : `<span class="v2-badge warn">Datei fehlt</span>`}
       ${t.wallet ? `<a class="v2-btn sm" href="${esc(t.wallet)}" target="_blank" rel="noopener noreferrer" aria-label="Wallet-Ticket öffnen" title="Wallet-Ticket öffnen">📱<span class="v2-knopf-txt"> Wallet</span></a><button class="v2-btn sm" data-act="ofc-wallet-kopie" data-id="${esc(t.ticketnr)}" aria-label="Wallet-Link kopieren" title="Wallet-Link kopieren">📋<span class="v2-knopf-txt"> Link</span></button>`
@@ -5238,6 +5241,7 @@ async function ofcSpiel(sid) {
     <div class="v2-sub">${[s.spieltag ? datumDe(s.spieltag) + (s.uhrzeit ? ", " + s.uhrzeit : "") : "", s.ort, s.wettbewerb, s.heimspiel === true ? "Heimspiel" : s.heimspiel === false ? "Auswärtsspiel" : "", "Ordner „" + s.pfad + "“"].filter(Boolean).map(esc).join(" · ")}</div>
     ${d.hinweise.length ? `<div class="v2-ofc-hinweise" style="margin-top:8px">${d.hinweise.map(h => `<span class="v2-badge warn">${esc(h)}</span>`).join("")}</div>` : ""}
     <h3>🎟 Tickets (${d.tickets.length})</h3>${tk}
+    ${(d.hand_verlauf || []).length ? `<h3>🖐 Von Hand geändert</h3>${d.hand_verlauf.map(h => `<div class="v2-kv v2-ofc-feld"><span>${esc(zeit(h.ts))} · Karte ${esc(h.ticketnr.split("-")[1] || h.ticketnr)}${h.name ? " · " + esc(h.name) : ""}</span><b class="v2-umbruch">${h.bezahlt ? "bezahlt (" + esc(OFC_BEZ_ART[h.art] || h.art) + ")" : h.nicht_bezahlt ? "nicht bezahlt" : "zurückgenommen"}${h.notiz ? " – " + esc(h.notiz) : ""}</b></div>`).join("")}` : ""}
     <h3>✉️ Zahlungsbitten</h3><div id="ofc-zb"><div class="v2-empty">Lade…</div></div>
     <h3>🎟 Ticketversand</h3><div id="ofc-tv"><div class="v2-empty">Lade…</div></div>
     <h3>🧾 Rechnung</h3>${rg}
@@ -5257,10 +5261,10 @@ async function ofcTv(sid) {
   if (!p || !p.ok) { el.innerHTML = emptyRow((p && p.hinweis) || "Nicht erreichbar."); return; }
   el.innerHTML = `<div class="v2-sub" style="margin-bottom:6px">${p.auto ? "🤖 Automatik an: Nach einer PayPal-Zahlung mit passendem Verwendungszweck schickt LUNA die Tickets selbst." : "Automatik aus – Tickets per Knopf senden (einschalten nach der Abnahme)."}</div>`
     + (p.gruppen.map(g => `<div class="v2-list-row"><div class="grow"><b class="v2-umbruch">${esc(g.name || "Person")}</b> <span class="v2-badge neutral">${g.extern ? "extern " + esc(g.nummer) : "Nr. " + esc(g.nummer)}</span>
-        <small>${[`${g.tickets.length} bezahlte Karte(n)`, g.tickets.every(x => x.wallet) ? "📱 Wallet ok" : "📱 Wallet fehlt", g.adresse_maskiert, g.gesendet_am ? "gesendet " + zeit(g.gesendet_am) : "", g.hinweis].filter(Boolean).map(esc).join(" · ")}</small></div>
-      <div class="v2-ofc-knoepfe"><span class="v2-badge ${OFC_TV_STATUS[g.status][0]}">${OFC_TV_STATUS[g.status][1]}</span>
-        ${g.status !== "gesperrt" ? `<button class="v2-btn sm" data-act="ofc-tv-vs" data-id="${esc(sid)}" data-val="${esc(g.nummer)}">👁 Mail</button>` : ""}</div></div>`).join("")
-      || emptyRow("Noch keine bezahlten Karten mit Person."));
+        <small>${[`${g.tickets.length} Karte(n)`, g.unbezahlt ? `${g.unbezahlt} unbezahlt` : "alle bezahlt", g.tickets.every(x => x.wallet) ? "📱 Wallet ok" : "📱 Wallet fehlt", g.adresse_maskiert, g.gesendet_am ? "gesendet " + zeit(g.gesendet_am) : "", g.hinweis].filter(Boolean).map(esc).join(" · ")}</small></div>
+      <div class="v2-ofc-knoepfe">${g.vor_zahlung && g.status === "bereit" ? `<span class="v2-badge warn">vor Zahlung</span>` : `<span class="v2-badge ${OFC_TV_STATUS[g.status][0]}">${OFC_TV_STATUS[g.status][1]}</span>`}
+        ${g.status !== "gesperrt" ? `<button class="v2-btn sm" data-act="ofc-tv-vs" data-id="${esc(sid)}" data-val="${esc(g.nummer)}">${g.vor_zahlung && g.status === "bereit" ? "🎟 Vor Zahlung senden" : "👁 Mail"}</button>` : ""}</div></div>`).join("")
+      || emptyRow("Noch keine Karten mit Person."));
 }
 async function ofcTvVorschau(sid, nummer) {
   const v = await jget(`/api/ofc/spiel/${encodeURIComponent(sid)}/ticketversand?nummer=${encodeURIComponent(nummer)}`);
@@ -5271,15 +5275,19 @@ async function ofcTvVorschau(sid, nummer) {
     <div class="v2-kv v2-ofc-feld"><span>Anhänge</span><b class="v2-umbruch">${v.anhaenge.length ? v.anhaenge.map(esc).join("<br>") : "–"}</b></div>
     <pre class="v2-ofc-mail">${esc(v.text)}</pre>
     ${schon ? `<div class="v2-msg">Schon gesendet am ${esc(zeit(g.gesendet_am))}.</div>` : ""}
+    ${g.vor_zahlung ? `<div class="v2-msg err">Die Zahlung ist noch nicht abgehakt (${esc(String(g.unbezahlt))} Karte(n) offen${g.offen_cent ? ", " + esc(cent2eur(g.offen_cent)) : ""}). Senden nur mit Kommentar – die Mail enthält dann den Zahlungshinweis statt eines Danks.</div>
+      <label class="v2-feld"><small>Kommentar (Pflicht)</small><input id="ofc-tv-kommentar" class="v2-inp" autocomplete="off" maxlength="300" placeholder="z. B. zahlt bar am Stadion"></label>` : ""}
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-tv-senden" data-id="${esc(sid)}" data-val="${esc(nummer)}" data-erneut="${schon ? "1" : ""}">${schon ? "Erneut senden" : "Senden"}</button>
       <button class="v2-btn" data-act="ofc-tv-test" data-id="${esc(sid)}" data-val="${esc(nummer)}">Testmail an moin@</button>
       <button class="v2-btn" data-act="ofc-spiel" data-id="${esc(sid)}">← Zurück</button></div><div class="v2-msg" id="ofc-tv-msg"></div>`);
 }
 async function ofcTvSenden(el, test) {
   const sid = el.dataset.id, nummer = el.dataset.val, erneut = !!el.dataset.erneut;
-  if (!test && !confirm(`Tickets jetzt an ${nummer.startsWith("G") ? "Person " : "Mitglied "}${nummer} senden?`)) return;
-  el.disabled = true; const m = $("#ofc-tv-msg"); m.className = "v2-msg"; m.textContent = "Sende …";
-  const r = await jpost(`/api/ofc/spiel/${encodeURIComponent(sid)}/tickets_senden`, { bestaetigt: true, nummer, test, erneut });
+  const ki = $("#ofc-tv-kommentar"), kommentar = ki ? ki.value.trim() : "", m = $("#ofc-tv-msg");
+  if (ki && !test && kommentar.length < 3) { m.className = "v2-msg err"; m.textContent = "Bitte einen Kommentar angeben (mindestens 3 Zeichen)."; return; }
+  if (!test && !confirm(`Tickets jetzt an ${nummer.startsWith("G") ? "Person " : "Mitglied "}${nummer} senden?${ki ? "\n\nDie Zahlung ist noch nicht abgehakt." : ""}`)) return;
+  el.disabled = true; m.className = "v2-msg"; m.textContent = "Sende …";
+  const r = await jpost(`/api/ofc/spiel/${encodeURIComponent(sid)}/tickets_senden`, { bestaetigt: true, nummer, test, erneut, kommentar });
   el.disabled = false;
   if (!r || !r.ok) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Fehler."; return; }
   m.className = "v2-msg ok"; m.textContent = `${test ? "Testmail" : "Tickets"} an ${r.an} gesendet (${r.karten} Karte(n), ${r.anhaenge} PDF).`;
@@ -5292,16 +5300,28 @@ function ofcBez(ids) {
   openModal("💶 Als bezahlt markieren", `<div class="v2-sub">${nrn.length === 1 ? "Karte " + esc(nrn[0]) : nrn.length + " Karten"} · ${esc(OFC_SP.spiel.spiel)}</div>
     <label class="v2-feld" style="margin-top:10px"><small>Zahlart</small><select id="ofc-bez-art" class="v2-inp">${Object.entries(OFC_BEZ_ART).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join("")}</select></label>
     <label class="v2-feld"><small>Datum</small><input id="ofc-bez-datum" class="v2-inp" type="date" value="${heute}"></label>
-    <label class="v2-feld"><small>Notiz (optional)</small><input id="ofc-bez-notiz" class="v2-inp" autocomplete="off" maxlength="200" placeholder="z. B. bar am Stadion"></label>
+    <label class="v2-feld"><small>Grund (Pflicht)</small><input id="ofc-bez-notiz" class="v2-inp" autocomplete="off" maxlength="200" placeholder="z. B. bar am Stadion"></label>
     <div class="v2-sub">Die Karte zählt dann überall als bezahlt (keine Zahlungsbitte mehr, nichts offen beim Mitglied). Bar und Überweisung kommen nicht in die Kasse – die Kasse ist das PayPal-Konto.</div>
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-bez-ok" data-id="${esc(nrn.join(","))}">Als bezahlt markieren</button>
       <button class="v2-btn" data-act="ofc-spiel" data-id="${esc(OFC_SP.spiel.id)}">← Zurück</button></div><div class="v2-msg" id="ofc-bez-msg"></div>`);
 }
-async function ofcBezSenden(ids, bezahlt) {
+/* TV6: „nicht bezahlt“ (überstimmt auch PayPal) und „zurücknehmen“ – beide nur mit Grund */
+function ofcBezGrund(ids, modus) {
+  const nrn = String(ids || "").split(",").filter(Boolean); if (!nrn.length || !OFC_SP) return;
+  const nicht = modus === "nicht";
+  openModal(nicht ? "❌ Als nicht bezahlt markieren" : "↩︎ Markierung zurücknehmen", `<div class="v2-sub">${nrn.length === 1 ? "Karte " + esc(nrn[0]) : nrn.length + " Karten"} · ${esc(OFC_SP.spiel.spiel)}</div>
+    <div class="v2-sub" style="margin-top:8px">${nicht ? "Die Karte gilt dann als offen – auch wenn LUNA eine PayPal-Zahlung zugeordnet hat (die Zuordnung und die Kasse bleiben unverändert). Zahlungsbitte wieder möglich, die Automatik sendet keine Tickets."
+      : "LUNA entscheidet dann wieder allein nach den zugeordneten Zahlungen."}</div>
+    <label class="v2-feld" style="margin-top:10px"><small>Grund (Pflicht)</small><input id="ofc-bez-notiz" class="v2-inp" autocomplete="off" maxlength="200" placeholder="${nicht ? "z. B. PayPal-Zahlung zurückgebucht" : "z. B. versehentlich markiert"}"></label>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="${nicht ? "ofc-bez-nicht-ok" : "ofc-bez-weg-ok"}" data-id="${esc(nrn.join(","))}">${nicht ? "Als nicht bezahlt markieren" : "Zurücknehmen"}</button>
+      <button class="v2-btn" data-act="ofc-spiel" data-id="${esc(OFC_SP.spiel.id)}">← Zurück</button></div><div class="v2-msg" id="ofc-bez-msg"></div>`);
+}
+async function ofcBezSenden(ids, bezahlt, nicht) {
   const nrn = String(ids || "").split(",").filter(Boolean);
-  if (!bezahlt && !confirm("Markierung „bezahlt“ für diese Karte zurücknehmen?")) return;
-  const body = bezahlt ? { bestaetigt: true, tickets: nrn, bezahlt: true, art: $("#ofc-bez-art").value, datum: $("#ofc-bez-datum").value, notiz: $("#ofc-bez-notiz").value }
-    : { bestaetigt: true, tickets: nrn, bezahlt: false };
+  const notiz = ($("#ofc-bez-notiz") || {}).value || "";
+  if (notiz.trim().length < 3) { const m = $("#ofc-bez-msg"); if (m) { m.className = "v2-msg err"; m.textContent = "Bitte einen Grund angeben (mindestens 3 Zeichen)."; } return; }
+  const body = bezahlt ? { bestaetigt: true, tickets: nrn, bezahlt: true, art: $("#ofc-bez-art").value, datum: $("#ofc-bez-datum").value, notiz }
+    : { bestaetigt: true, tickets: nrn, bezahlt: false, nicht: !!nicht, notiz };
   const r = await jpost("/api/ofc/tickets/bezahlt", body);
   if (!r || r.ok === false) { const m = $("#ofc-bez-msg"); if (m) { m.className = "v2-msg err"; m.textContent = (r && r.hinweis) || "Fehler."; } else alert((r && r.hinweis) || "Fehler."); return; }
   await ofcSpiel(OFC_SP.spiel.id);
@@ -6131,9 +6151,16 @@ async function ofcPersonTickets(nummer) {
   const d = await jget(`/api/ofc/mitglied/${encodeURIComponent(nummer)}/tickets`), el = $("#ofc-person-tk"); if (!el) return;
   if (!d || !d.ok) { el.innerHTML = emptyRow("Tickets nicht erreichbar."); return; }
   el.innerHTML = `<div class="v2-kv"><span>${d.anzahl} Ticket(s) bei ${d.spiele} Spiel(en)</span><b>${d.offen_cent ? `<span class="v2-badge warn">offen ${esc(cent2eur(d.offen_cent))}</span>` : `<span class="v2-badge ok">nichts offen</span>`}</b></div>`
-    + (d.tickets.map(t => `<div class="v2-list-row klick" data-act="ofc-spiel" data-id="${esc(t.spiel_id)}"><div class="grow"><b class="v2-umbruch">${esc(t.spiel)}</b>
+    + (d.tickets.map((t, i) => `<div class="v2-list-row klick" data-act="ofc-spiel" data-id="${esc(t.spiel_id)}"><div class="grow"><b class="v2-umbruch">${esc(t.spiel)}</b>
         <small>${[t.spieltag ? datumDe(t.spieltag) : "", t.kennung ? (t.kennung.startsWith("P") ? "Pokal " + t.kennung.slice(1) : t.kennung.startsWith("S") ? t.kennung : t.kennung + ". Spieltag") : "", t.block ? "Block " + t.block : "", t.reihe && t.reihe !== "-" ? "Reihe " + t.reihe : "", t.sitz && t.sitz !== "-" ? "Sitz " + t.sitz : "", t.wallet ? "📱 Wallet" : ""].filter(Boolean).map(esc).join(" · ")}</small></div>
-        <div style="text-align:right"><b>${esc(cent2eur(t.preis_cent))}</b><br>${t.bezahlt ? `<span class="v2-badge ok">bezahlt</span>` : `<span class="v2-badge warn">offen</span>`}</div></div>`).join("") || emptyRow("Noch keine Tickets mit dieser Mitgliedsnummer."));
+        <div style="text-align:right"><b>${esc(cent2eur(t.preis_cent))}</b><br>${t.bezahlt ? `<span class="v2-badge ok">bezahlt</span>` : `<span class="v2-badge warn">offen</span>`}</div></div>`
+        + ((d.tickets[i + 1] || {}).spiel_id !== t.spiel_id ? ofcPersonSpielKnoepfe(d, t.spiel_id, nummer) : "")).join("") || emptyRow("Noch keine Tickets mit dieser Mitgliedsnummer."));
+}
+/* TV7/E10: je Spiel Zahlungsbitte und Ticketmail direkt aus der Mitgliederansicht (dieselbe Vorschau wie im Spiel) */
+function ofcPersonSpielKnoepfe(d, sid, nummer) {
+  const tks = d.tickets.filter(x => x.spiel_id === sid), offen = tks.some(x => !x.bezahlt);
+  return `<div class="v2-card-actions" style="margin:0 0 10px">${offen ? `<button class="v2-btn sm" data-act="ofc-zb-vs" data-id="${esc(sid)}" data-val="${esc(nummer)}">✉️ Zahlungsbitte</button>` : ""}
+    <button class="v2-btn sm" data-act="ofc-tv-vs" data-id="${esc(sid)}" data-val="${esc(nummer)}">🎟 Tickets senden${offen ? " (vor Zahlung)" : ""}</button></div>`;
 }
 RENDER.reichweite = renderReichweite;
 let RW = null, RW_PL = "instagram", RW_CSV = null;
@@ -6709,7 +6736,10 @@ async function handleAct(act, el) {
     case "ofc-tv-senden": return ofcTvSenden(el, false);
     case "ofc-tv-test": return ofcTvSenden(el, true);
     case "ofc-bez-ok": return ofcBezSenden(id, true);
-    case "ofc-bez-weg": return ofcBezSenden(id, false);
+    case "ofc-bez-weg": return ofcBezGrund(id, "weg");
+    case "ofc-bez-nicht": return ofcBezGrund(id, "nicht");
+    case "ofc-bez-weg-ok": return ofcBezSenden(id, false, false);
+    case "ofc-bez-nicht-ok": return ofcBezSenden(id, false, true);
     case "ofc-wahl-weg": { const mg = OFC_WAHL && OFC_WAHL.typ === "mitglied"; OFC_WAHL = null; if (mg && $("#ofc-mail")) $("#ofc-mail").value = ""; ofcWahlZeigen(); const b = $("#ofc-name-ok"); return b && ofcNameVorschau(b.dataset.id); }
     case "ofc-zb-senden": return ofcZbSenden(el, false);
     case "ofc-zb-test": return ofcZbSenden(el, true);
