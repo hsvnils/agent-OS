@@ -4,7 +4,7 @@
 - Stand: 2026-11-28
 - Arbeitsbranch: `ai/ofc-ticketversand`
 - Basiscommit: `81ee7f0`
-- Naechster Schritt: TV6+TV7 umgesetzt auf `ai/ofc-handsteuerung` (CEO-Go 2026-11-28, E7-E10 wie empfohlen); nach Merge/Deploy (nur `luna-os`) Gate: eine Karte auf „nicht bezahlt“ und zurueck, Testmail vor Zahlung an moin@, Sichtabnahme. Danach TV5.
+- Naechster Schritt: TV6+TV7 live und vom CEO getestet (2026-11-28, „Test ok“; Status-Knopf nachgebessert, v191). Weiter mit TV5: Test mit dem Spiel gegen Leverkusen (Zweck 15-<Nr>), dann `OFC_AUTO_TICKETVERSAND=1` in der NAS-`.env` + Neuerstellung `luna-os`.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -274,7 +274,7 @@ Testmail an moin@; hoechstens 30 Mails je Stunde; die Automatik (TV4) sendet nie
 
 ### Etappe TV6: Bezahlt / nicht bezahlt von Hand mit Grund
 
-- Status: umgesetzt 2026-11-28 (`bezahlt_markieren(..., nicht=)` mit `GRUND_MIN`, `bezahlt_stand` mit `nicht_bezahlt` vor PayPal, `hand_verlauf` im Spiel; Knoepfe „❌ nicht bezahlt“ / „↩︎ zurück“ mit Grund-Dialog -- nach CEO-Test 2026-11-28 ersetzt: der Bezahlt-Stand am Ticket ist selbst der Knopf und oeffnet „Status aendern“ (bezahlt / nicht bezahlt / zuruecknehmen, immer mit Grund); Tests `test_ofc_handsteuerung.py` mit Gegenproben)
+- Status: abgenommen 2026-11-28 (CEO „Test ok“); umgesetzt 2026-11-28 (`bezahlt_markieren(..., nicht=)` mit `GRUND_MIN`, `bezahlt_stand` mit `nicht_bezahlt` vor PayPal, `hand_verlauf` im Spiel; Knoepfe „❌ nicht bezahlt“ / „↩︎ zurück“ mit Grund-Dialog -- nach CEO-Test 2026-11-28 ersetzt: der Bezahlt-Stand am Ticket ist selbst der Knopf und oeffnet „Status aendern“ (bezahlt / nicht bezahlt / zuruecknehmen, immer mit Grund); Tests `test_ofc_handsteuerung.py` mit Gegenproben)
 - Inhalt:
   - Neue Markierung „nicht bezahlt“ (Ereignis `ofc_bezahlt` mit `nicht_bezahlt`) mit Pflicht-Grund; sie gilt in
     `bezahlt_stand` vor der PayPal-Zuordnung (E8).
@@ -288,7 +288,7 @@ Testmail an moin@; hoechstens 30 Mails je Stunde; die Automatik (TV4) sendet nie
 
 ### Etappe TV7: Versand je Person von Hand
 
-- Status: umgesetzt 2026-11-28 (`tickets_plan` mit allen Karten, `vor_zahlung`/`unbezahlt`/`offen_cent`; `tickets_senden(kommentar=)` vor Zahlung nur von Hand mit Kommentar, Automatik nie; Text nach E9; Knoepfe „🎟 Vor Zahlung senden“ und in der Mitgliederansicht „✉️ Zahlungsbitte“ / „🎟 Tickets senden“; Tests mit Gegenproben)
+- Status: abgenommen 2026-11-28 (CEO „Test ok“); umgesetzt 2026-11-28 (`tickets_plan` mit allen Karten, `vor_zahlung`/`unbezahlt`/`offen_cent`; `tickets_senden(kommentar=)` vor Zahlung nur von Hand mit Kommentar, Automatik nie; Text nach E9; Knoepfe „🎟 Vor Zahlung senden“ und in der Mitgliederansicht „✉️ Zahlungsbitte“ / „🎟 Tickets senden“; Tests mit Gegenproben)
 - Inhalt:
   - Ticketversand listet **alle** Personen mit Karten des Spiels; unbezahlte mit „🎟 Vor Zahlung senden“ -> Vorschau mit
     Text nach E9 und **Pflicht-Kommentar**; der Kommentar steht im Mail-Protokoll.

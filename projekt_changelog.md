@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-28 10:42] — Claude Code
+- **Was:** Deploy Status-Knopf auf der NAS bestaetigt (v191/CSS v102 ausgeliefert). TV6/TV7 als abgenommen eingetragen (CEO „Test ok“), To-do „Handsteuerung testen“ erledigt; naechster Schritt TV5.
+- **Warum:** CEO „Deploy gemacht“ nach dem Test 2026-11-28.
+- **Betroffen:** `OFC_TICKETVERSAND_ROADMAP.md`, `ROADMAP.md`
+
 ## [2026-11-28 10:40] — Claude Code
 - **Was:** Branch `ai/ofc-status-knopf` (Bezahlt-Stand als Knopf mit Dialog „Status aendern“) per `--no-ff` in `main` gemergt, gepusht, Branch geloescht.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.
