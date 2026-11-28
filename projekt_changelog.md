@@ -17,6 +17,11 @@ Eintragsformat:
 
 ## Eintraege
 
+## [2026-11-28 10:39] — Claude Code
+- **Was:** OFC TV6 nachgebessert: Die eigenen Knoepfe „💶 bezahlt“, „❌ nicht bezahlt“ und „↩︎ zurück“ in der Ticketzeile entfallen; der Bezahlt-Stand (offen / teilweise / bezahlt / nicht bezahlt von Hand) ist selbst ein kleiner Knopf und oeffnet den Dialog „Status aendern“ (passende Ziele, Zahlart/Datum nur bei bezahlt, Grund Pflicht). „💶 alle bezahlt“ bei den Zahlungsbitten bleibt. Backend unveraendert. Cache v191/CSS v102; headless geprueft (Rechner, iPhone, Ablauf „zuruecknehmen“ echt durchgeklickt); Suite 1948 gruen.
+- **Warum:** CEO nach dem Test 2026-11-28: Der Knopf „nicht bezahlt“ war zu praesent, wird selten gebraucht und verwirrt.
+- **Betroffen:** `orchestrator/channels/web/static/app-v2.js`, `style-v2.css`, `index-v2.html`, `OFC_TICKETVERSAND_ROADMAP.md`
+
 ## [2026-11-28 10:18] — Claude Code
 - **Was:** Branch `ai/ofc-handsteuerung` (TV6/TV7 Handsteuerung, inkl. Plan-Commit von `ai/ofc-handsteuerung-plan`) per `--no-ff` in `main` gemergt, gepusht, beide Branches geloescht.
 - **Warum:** CEO-Go fuer Merge, Push und Deploy.

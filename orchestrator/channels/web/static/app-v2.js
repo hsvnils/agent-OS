@@ -5224,15 +5224,10 @@ async function ofcSpiel(sid) {
       <div class="v2-kv"><span>Datum · Zahlart</span><b>${r.datum ? esc(datumDe(r.datum)) : "–"} · ${esc(r.zahlart || "–")}</b></div>
       ${r.datei ? `<div class="v2-card-actions"><a class="v2-btn sm" href="${datei(r.datei)}" target="_blank" rel="noopener">📄 ${esc(r.datei)}</a></div>` : ""}`).join("") || emptyRow("Keine Rechnung im Ordner.");
   const tk = d.tickets.map(t => `<div class="v2-list-row"><span class="v2-badge neutral">${esc(t.ticketnr.split("-")[1] || "")}</span>
-      <div class="grow"><b>${t.name ? esc(t.name) : `<span class="v2-sub">ohne Namen</span>`}</b> ${t.mitglied ? `<span class="v2-badge neutral">${t.mitglied.startsWith("G") ? "extern " + esc(t.mitglied) : "Nr. " + esc(t.mitglied)}</span>` : ""} ${t.bezahlt ? `<span class="v2-badge ok"${t.hand && t.hand.notiz ? ` title="Grund: ${esc(t.hand.notiz)}"` : ""}>bezahlt${t.hand ? " (" + esc(OFC_BEZ_ART[t.hand.art] || "von Hand") + ")" : ""}</span>`
-          : t.hand && t.hand.nicht_bezahlt ? `<span class="v2-badge warn" title="Grund: ${esc(t.hand.notiz || "")}">nicht bezahlt (von Hand)</span>${t.paypal_zugeordnet ? ` <span class="v2-badge neutral" title="Die PayPal-Zahlung bleibt zugeordnet, zählt aber nicht.">PayPal-Eingang zugeordnet</span>` : ""}`
-          : t.bezahlt_cent ? `<span class="v2-badge warn">teilweise ${esc(cent2eur(t.bezahlt_cent))}</span>` : ""}
+      <div class="grow"><b>${t.name ? esc(t.name) : `<span class="v2-sub">ohne Namen</span>`}</b> ${t.mitglied ? `<span class="v2-badge neutral">${t.mitglied.startsWith("G") ? "extern " + esc(t.mitglied) : "Nr. " + esc(t.mitglied)}</span>` : ""} ${ofcBezKnopf(t)}
         <small>${[t.block ? "Block " + esc(t.block) : "", t.reihe && t.reihe !== "-" ? "Reihe " + esc(t.reihe) : "", t.sitz && t.sitz !== "-" ? "Sitz " + esc(t.sitz) : "",
           t.preis_cent ? esc(cent2eur(t.preis_cent)) : "", t.ohne_rechnung ? "Bestellung " + esc(t.rechnungsnr) + " (keine Rechnung)" : ""].filter(Boolean).join(" · ")}</small></div>
-      <div class="v2-ofc-knoepfe">${!t.bezahlt ? `<button class="v2-btn sm" data-act="ofc-bez" data-id="${esc(t.ticketnr)}" aria-label="Als bezahlt markieren" title="Als bezahlt markieren (Bar, Überweisung …)">💶<span class="v2-knopf-txt"> bezahlt</span></button>`
-        : `<button class="v2-btn sm" data-act="ofc-bez-nicht" data-id="${esc(t.ticketnr)}" aria-label="Als nicht bezahlt markieren" title="Als nicht bezahlt markieren (mit Grund) – überstimmt auch PayPal">❌<span class="v2-knopf-txt"> nicht bezahlt</span></button>`}
-        ${t.hand ? `<button class="v2-btn sm" data-act="ofc-bez-weg" data-id="${esc(t.ticketnr)}" aria-label="Markierung von Hand zurücknehmen" title="Markierung von Hand zurücknehmen (mit Grund)">↩︎<span class="v2-knopf-txt"> zurück</span></button>` : ""}
-      <button class="v2-btn sm" data-act="ofc-name" data-id="${esc(t.ticketnr)}" aria-label="Name und Person ändern" title="Name und Person ändern">✏️<span class="v2-knopf-txt"> Person</span></button>
+      <div class="v2-ofc-knoepfe"><button class="v2-btn sm" data-act="ofc-name" data-id="${esc(t.ticketnr)}" aria-label="Name und Person ändern" title="Name und Person ändern">✏️<span class="v2-knopf-txt"> Person</span></button>
       ${t.datei ? `<a class="v2-btn sm" href="${datei(t.datei)}" target="_blank" rel="noopener" aria-label="PDF-Ticket öffnen" title="PDF-Ticket öffnen">📄<span class="v2-knopf-txt"> PDF</span></a>` : `<span class="v2-badge warn">Datei fehlt</span>`}
       ${t.wallet ? `<a class="v2-btn sm" href="${esc(t.wallet)}" target="_blank" rel="noopener noreferrer" aria-label="Wallet-Ticket öffnen" title="Wallet-Ticket öffnen">📱<span class="v2-knopf-txt"> Wallet</span></a><button class="v2-btn sm" data-act="ofc-wallet-kopie" data-id="${esc(t.ticketnr)}" aria-label="Wallet-Link kopieren" title="Wallet-Link kopieren">📋<span class="v2-knopf-txt"> Link</span></button>`
         : `<button class="v2-btn sm" data-act="ofc-wallet-hand" data-id="${esc(t.ticketnr)}" aria-label="Wallet-Link eintragen" title="Wallet fehlt – Link eintragen">📱＋<span class="v2-knopf-txt"> Wallet</span></button>`}</div></div>`).join("") || emptyRow("Keine Tickets.");
@@ -5305,16 +5300,37 @@ function ofcBez(ids) {
     <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-bez-ok" data-id="${esc(nrn.join(","))}">Als bezahlt markieren</button>
       <button class="v2-btn" data-act="ofc-spiel" data-id="${esc(OFC_SP.spiel.id)}">← Zurück</button></div><div class="v2-msg" id="ofc-bez-msg"></div>`);
 }
-/* TV6: „nicht bezahlt“ (überstimmt auch PayPal) und „zurücknehmen“ – beide nur mit Grund */
-function ofcBezGrund(ids, modus) {
-  const nrn = String(ids || "").split(",").filter(Boolean); if (!nrn.length || !OFC_SP) return;
-  const nicht = modus === "nicht";
-  openModal(nicht ? "❌ Als nicht bezahlt markieren" : "↩︎ Markierung zurücknehmen", `<div class="v2-sub">${nrn.length === 1 ? "Karte " + esc(nrn[0]) : nrn.length + " Karten"} · ${esc(OFC_SP.spiel.spiel)}</div>
-    <div class="v2-sub" style="margin-top:8px">${nicht ? "Die Karte gilt dann als offen – auch wenn LUNA eine PayPal-Zahlung zugeordnet hat (die Zuordnung und die Kasse bleiben unverändert). Zahlungsbitte wieder möglich, die Automatik sendet keine Tickets."
-      : "LUNA entscheidet dann wieder allein nach den zugeordneten Zahlungen."}</div>
-    <label class="v2-feld" style="margin-top:10px"><small>Grund (Pflicht)</small><input id="ofc-bez-notiz" class="v2-inp" autocomplete="off" maxlength="200" placeholder="${nicht ? "z. B. PayPal-Zahlung zurückgebucht" : "z. B. versehentlich markiert"}"></label>
-    <div class="v2-card-actions"><button class="v2-btn pri" data-act="${nicht ? "ofc-bez-nicht-ok" : "ofc-bez-weg-ok"}" data-id="${esc(nrn.join(","))}">${nicht ? "Als nicht bezahlt markieren" : "Zurücknehmen"}</button>
+/* TV6 (CEO 2026-11-28): der Bezahlt-Stand ist selbst der Knopf – Klick öffnet „Status ändern“ (bezahlt / nicht bezahlt /
+   zurück zu LUNA), immer mit Grund. Keine eigenen Knöpfe mehr in der Zeile. */
+function ofcBezKnopf(t) {
+  const h = t.hand || {}, nr = esc(t.ticketnr);
+  const [cls, txt] = t.bezahlt ? ["ok", "bezahlt" + (h.bezahlt ? " (" + (OFC_BEZ_ART[h.art] || "von Hand") + ")" : "")]
+    : h.nicht_bezahlt ? ["warn", "nicht bezahlt (von Hand)"] : t.bezahlt_cent ? ["warn", "teilweise " + cent2eur(t.bezahlt_cent)] : ["neutral", "offen"];
+  const tip = (h.notiz ? "Grund: " + h.notiz + " · " : "") + "Klicken, um den Status zu ändern";
+  return `<button type="button" class="v2-badge ${cls} v2-badge-knopf" data-act="ofc-bez-status" data-id="${nr}" title="${esc(tip)}" aria-label="Status ${esc(txt)} – ändern">${esc(txt)} ▾</button>`;
+}
+function ofcBezStatus(nr) {
+  const t = ((OFC_SP && OFC_SP.tickets) || []).find(x => x.ticketnr === nr); if (!t) return;
+  const h = t.hand || {}, heute = new Date().toISOString().slice(0, 10);
+  const ziele = [!t.bezahlt ? ["bezahlt", "💶 Bezahlt (Bar, Überweisung …)"] : null, t.bezahlt ? ["nicht", "❌ Nicht bezahlt"] : null,
+    h.bezahlt || h.nicht_bezahlt ? ["zurueck", "↩︎ Markierung zurücknehmen – LUNA entscheidet wieder nach den Zahlungen"] : null].filter(Boolean);
+  const jetzt = t.bezahlt ? "bezahlt" + (h.bezahlt ? " (von Hand, " + (OFC_BEZ_ART[h.art] || h.art) + ")" : " (PayPal)") : h.nicht_bezahlt ? "nicht bezahlt (von Hand)" : "offen";
+  openModal("Status ändern", `<div class="v2-sub">Karte ${esc(nr.split("-")[1] || nr)}${t.name ? " · " + esc(t.name) : ""} · ${esc(OFC_SP.spiel.spiel)}</div>
+    <div class="v2-kv v2-ofc-feld"><span>Aktuell</span><b>${esc(jetzt)}${h.notiz ? " – " + esc(h.notiz) : ""}</b></div>
+    ${t.paypal_zugeordnet ? `<div class="v2-sub">Eine PayPal-Zahlung ist zugeordnet, zählt aber wegen „nicht bezahlt“ nicht.</div>` : ""}
+    <div style="margin:10px 0 12px">${ziele.map(([k, l], i) => `<label class="v2-feld" style="flex-direction:row;align-items:center;gap:8px"><input type="radio" name="ofc-bez-ziel" value="${k}" ${i === 0 ? "checked" : ""}> <span>${esc(l)}</span></label>`).join("")}</div>
+    <div id="ofc-bez-felder"><label class="v2-feld"><small>Zahlart</small><select id="ofc-bez-art" class="v2-inp">${Object.entries(OFC_BEZ_ART).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join("")}</select></label>
+      <label class="v2-feld"><small>Datum</small><input id="ofc-bez-datum" class="v2-inp" type="date" value="${heute}"></label></div>
+    <label class="v2-feld"><small>Grund (Pflicht)</small><input id="ofc-bez-notiz" class="v2-inp" autocomplete="off" maxlength="200"></label>
+    <div class="v2-sub" id="ofc-bez-hinweis"></div>
+    <div class="v2-card-actions"><button class="v2-btn pri" data-act="ofc-bez-status-ok" data-id="${esc(nr)}">Speichern</button>
       <button class="v2-btn" data-act="ofc-spiel" data-id="${esc(OFC_SP.spiel.id)}">← Zurück</button></div><div class="v2-msg" id="ofc-bez-msg"></div>`);
+  const HINW = { bezahlt: ["z. B. bar am Stadion", "Die Karte zählt dann überall als bezahlt. Bar und Überweisung kommen nicht in die Kasse – die Kasse ist das PayPal-Konto."],
+    nicht: ["z. B. PayPal-Zahlung zurückgebucht", "Die Karte gilt dann als offen – auch wenn LUNA eine PayPal-Zahlung zugeordnet hat (Zuordnung und Kasse bleiben). Zahlungsbitte wieder möglich, die Automatik sendet keine Tickets."],
+    zurueck: ["z. B. versehentlich markiert", "LUNA entscheidet dann wieder allein nach den zugeordneten Zahlungen."] };
+  const anpassen = () => { const z = (document.querySelector('input[name="ofc-bez-ziel"]:checked') || {}).value || "bezahlt";
+    $("#ofc-bez-felder").style.display = z === "bezahlt" ? "" : "none"; $("#ofc-bez-notiz").placeholder = HINW[z][0]; $("#ofc-bez-hinweis").textContent = HINW[z][1]; };
+  document.querySelectorAll('input[name="ofc-bez-ziel"]').forEach(r => r.addEventListener("change", anpassen)); anpassen();
 }
 async function ofcBezSenden(ids, bezahlt, nicht) {
   const nrn = String(ids || "").split(",").filter(Boolean);
@@ -6736,10 +6752,8 @@ async function handleAct(act, el) {
     case "ofc-tv-senden": return ofcTvSenden(el, false);
     case "ofc-tv-test": return ofcTvSenden(el, true);
     case "ofc-bez-ok": return ofcBezSenden(id, true);
-    case "ofc-bez-weg": return ofcBezGrund(id, "weg");
-    case "ofc-bez-nicht": return ofcBezGrund(id, "nicht");
-    case "ofc-bez-weg-ok": return ofcBezSenden(id, false, false);
-    case "ofc-bez-nicht-ok": return ofcBezSenden(id, false, true);
+    case "ofc-bez-status": return ofcBezStatus(id);
+    case "ofc-bez-status-ok": { const z = (document.querySelector('input[name="ofc-bez-ziel"]:checked') || {}).value; return ofcBezSenden(id, z === "bezahlt", z === "nicht"); }
     case "ofc-wahl-weg": { const mg = OFC_WAHL && OFC_WAHL.typ === "mitglied"; OFC_WAHL = null; if (mg && $("#ofc-mail")) $("#ofc-mail").value = ""; ofcWahlZeigen(); const b = $("#ofc-name-ok"); return b && ofcNameVorschau(b.dataset.id); }
     case "ofc-zb-senden": return ofcZbSenden(el, false);
     case "ofc-zb-test": return ofcZbSenden(el, true);
