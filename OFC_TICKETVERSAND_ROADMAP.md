@@ -274,7 +274,7 @@ Testmail an moin@; hoechstens 30 Mails je Stunde; die Automatik (TV4) sendet nie
 
 ### Etappe TV6: Bezahlt / nicht bezahlt von Hand mit Grund
 
-- Status: umgesetzt 2026-11-28 (`bezahlt_markieren(..., nicht=)` mit `GRUND_MIN`, `bezahlt_stand` mit `nicht_bezahlt` vor PayPal, `hand_verlauf` im Spiel; Knoepfe „❌ nicht bezahlt“ / „↩︎ zurück“ mit Grund-Dialog; Tests `test_ofc_handsteuerung.py` mit Gegenproben)
+- Status: umgesetzt 2026-11-28 (`bezahlt_markieren(..., nicht=)` mit `GRUND_MIN`, `bezahlt_stand` mit `nicht_bezahlt` vor PayPal, `hand_verlauf` im Spiel; Knoepfe „❌ nicht bezahlt“ / „↩︎ zurück“ mit Grund-Dialog -- nach CEO-Test 2026-11-28 ersetzt: der Bezahlt-Stand am Ticket ist selbst der Knopf und oeffnet „Status aendern“ (bezahlt / nicht bezahlt / zuruecknehmen, immer mit Grund); Tests `test_ofc_handsteuerung.py` mit Gegenproben)
 - Inhalt:
   - Neue Markierung „nicht bezahlt“ (Ereignis `ofc_bezahlt` mit `nicht_bezahlt`) mit Pflicht-Grund; sie gilt in
     `bezahlt_stand` vor der PayPal-Zuordnung (E8).
