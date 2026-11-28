@@ -1,10 +1,10 @@
 # Roadmap: Kennzahlen der Hanserautisch-App in LUNA-OS (Teil 1)
 
 - Status: in Umsetzung
-- Stand: 2026-11-26
+- Stand: 2026-11-28
 - Arbeitsbranch: `ai/app-kennzahlen` (Teil 1), `ai/app-kennzahlen-live` (Erweiterung Live, AK5-AK7)
 - Basiscommit: `fef5b17`
-- Naechster Schritt: AK5+AK6 (Live-Zahlen) umgesetzt auf `ai/app-kennzahlen-live` (CEO-Go 2026-11-26, L1-L6 wie empfohlen); nach Merge/Deploy (Neustart beider Container) prueft Claude Code den ersten Live-Abruf (nur Zaehlungen), dann AK7. AK4: Lauf am 27./28.11. pruefe ich am 28.11.
+- Naechster Schritt: AK0-AK6 live; AK4 bestanden 2026-11-28. Offen: AK7 (Live-Abgleich + Sichtabnahme durch den CEO, To-do 27.11.), danach Status „abgeschlossen“.
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 
@@ -186,7 +186,7 @@ Telegram-Meldungen, Doku (Zugriffs-Policy, Dienste-Register, `docs/datenfluesse.
 
 ### Etappe AK4: Abnahme
 
-- Status: teilweise erfuellt -- Abgleich der Stichtage 01.11., 15.11., 22.11. am 2026-11-26 durch den CEO: „Alle gleich“ (laut App-Sitzung); offen: Lauf am 27. und 28.11. von selbst (Pruefung durch Claude Code am 28.11.)
+- Status: bestanden 2026-11-28 -- Stichtage 01.11., 15.11., 22.11. „Alle gleich“ (CEO 2026-11-26); Tageslauf am 27.11. und 28.11. jeweils 06:30 von selbst, Status 200, 0 verworfen, letzter Tag 27.11. (NAS, nur Zaehlungen); Meldungen einmalig (1 Meilenstein neu, 1 Function-Fehler).
 - Gate (aus dem Auftrag):
   1. Der Erstabruf ab 2026-05-14 ist vollstaendig.
   2. Fuer drei Stichtage zeigt der Kontroll-Abgleich je Kennzahl dieselbe Zeilenzahl und Summe wie die

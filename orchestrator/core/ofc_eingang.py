@@ -147,7 +147,9 @@ def bezahlt_stand(st: dict) -> dict:
         preis = st["tickets"][nr].get("preis_cent") or 0
         x["bezahlt"] = bool(x["zahler"]) and (x["bezahlt_cent"] >= preis if preis else x["bezahlt_cent"] > 0)
         hb = st["tickets"][nr].get("hand_bezahlt") or {}
-        if hb.get("bezahlt"):                                          # OFC_TICKETVERSAND TV3c: vom CEO als bezahlt markiert
+        if hb.get("nicht_bezahlt"):                                    # TV6/E8: von Hand NICHT bezahlt -- ueberstimmt PayPal
+            x.update(bezahlt=False, bezahlt_cent=0, hand=hb, paypal_zugeordnet=bool(x["zahler"]))
+        elif hb.get("bezahlt"):                                        # OFC_TICKETVERSAND TV3c: vom CEO als bezahlt markiert
             x.update(bezahlt=True, bezahlt_cent=max(x["bezahlt_cent"], preis), hand=hb)
     zugeordnet: dict = {}                                              # Saldo = gezahlt - Preise der zugeordneten Tickets
     for e in st.get("eingaenge", {}).values():

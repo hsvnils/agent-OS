@@ -1,10 +1,10 @@
 # Roadmap: OFC-Mitglieder nur noch in LUNA-OS (weg vom Google-Formular)
 
-- Status: in Umsetzung
-- Stand: 2026-11-26
+- Status: abgeschlossen
+- Stand: 2026-11-28
 - Arbeitsbranch: `ai/ofc-mitglieder`
 - Basiscommit: `4b1dde2`
-- Naechster Schritt: ZURUECKGESTELLT am 2026-11-26 (CEO: App-Thema vorgezogen). MV0-MV4 erledigt und geprueft; offen nur die Sichtabnahme 👥 Mitglieder auf Rechner/iPad/iPhone (To-do 03.12.), dann Status „abgeschlossen“.
+- Naechster Schritt: keiner -- abgeschlossen 2026-11-28 (Sichtabnahme durch den CEO: „Sichtabnahme ok“).
 - Hinweis: Diese Roadmap ist ein geplanter Ablauf und wird nur durch einen ausdruecklichen CEO-Auftrag zur
   aktuellen Arbeit. Sie aktiviert keine Umsetzung automatisch.
 

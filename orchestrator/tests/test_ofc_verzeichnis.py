@@ -161,7 +161,7 @@ class TestKeineNachrichtAnGekuendigte(unittest.TestCase):
             pf = FakePf()
             self.assertFalse(ofc_versand.senden(st, pf, "HSV vs FCB", "1004", MITGLIEDER)["ok"])
             with mock.patch.object(ofc, "nas_ordner", return_value=saison):
-                bezahlt_markieren(st, ["262236181415-1"], True)
+                bezahlt_markieren(st, ["262236181415-1"], True, notiz="bar")
                 wallet_von_hand(st, "262236181415-1", "https://www.eventimsports.de/wallet/x/1")
                 self.assertEqual(ofc_versand.tickets_plan(st.stand(), "HSV vs FCB", MITGLIEDER)["gruppen"][0]["status"], "gesperrt")
                 self.assertFalse(ofc_versand.tickets_senden(st, pf, "HSV vs FCB", "1004", MITGLIEDER, erneut=True)["ok"])

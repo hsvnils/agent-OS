@@ -183,7 +183,7 @@ class TestApi(ApiBasis):
                                                                                          "extern": {"vorname": "X", "email": "kaputt"}}).json()["ok"])
                 self.assertEqual(self.c.get("/api/ofc/namen").json()["extern"][0]["id"], "G1")
                 self.assertFalse(self.c.post("/api/ofc/tickets/bezahlt", json={"tickets": ["262236181415-1"]}).json()["ok"])
-                self.assertTrue(self.c.post("/api/ofc/tickets/bezahlt", json={"bestaetigt": True, "tickets": ["262236181415-1"], "art": "bar"}).json()["ok"])
+                self.assertTrue(self.c.post("/api/ofc/tickets/bezahlt", json={"bestaetigt": True, "tickets": ["262236181415-1"], "art": "bar", "notiz": "bar am Stadion"}).json()["ok"])
                 self.assertTrue(st.stand()["tickets"]["262236181415-1"]["hand_bezahlt"]["bezahlt"])
                 with mock.patch.object(self.w, "_ceo_user", return_value={"role": "team", "allowed_modules": ["finanzen"]}):
                     self.assertEqual(self.c.get("/api/ofc/spiel/HSV vs FCB/zahlungsbitten").status_code, 403)
@@ -203,7 +203,7 @@ class TestHandBezahlt(_Basis):
         from orchestrator.core.ofc_kasse import kassenbuch
         from orchestrator.core.ofc_store import bezahlt_markieren, tickets_je_mitglied
         kasse_vorher = len(kassenbuch(self.st.stand())["buchungen"])
-        self.assertFalse(bezahlt_markieren(self.st, ["262236181415-1"], True, art="gold")["ok"])
+        self.assertFalse(bezahlt_markieren(self.st, ["262236181415-1"], True, art="gold", notiz="Stadion")["ok"])
         self.assertFalse(bezahlt_markieren(self.st, ["gibtsnicht"], True)["ok"])
         r = bezahlt_markieren(self.st, ["262236181415-1", "262236181415-2"], True, art="bar", datum="2026-11-27", notiz="Stadion")
         self.assertEqual(r["geaendert"], 2)
@@ -213,8 +213,8 @@ class TestHandBezahlt(_Basis):
         self.assertEqual(ofc_versand.plan(self.st.stand(), "HSV vs FCB", MITGLIEDER)["gruppen"], [])   # keine Zahlungsbitte
         self.assertEqual(tickets_je_mitglied(self.st, "1004")["offen_cent"], 0)
         self.assertEqual(len(kassenbuch(self.st.stand())["buchungen"]), kasse_vorher)               # Kasse unberuehrt
-        self.assertEqual(bezahlt_markieren(self.st, ["262236181415-1"], True, art="bar", datum="2026-11-27")["geaendert"], 0)
-        bezahlt_markieren(self.st, ["262236181415-1"], False)
+        self.assertEqual(bezahlt_markieren(self.st, ["262236181415-1"], True, art="bar", datum="2026-11-27", notiz="Stadion")["geaendert"], 0)
+        bezahlt_markieren(self.st, ["262236181415-1"], False, notiz="versehentlich")
         bz = bezahlt_stand(self.st.stand())["tickets"]
         self.assertFalse(bz["262236181415-1"]["bezahlt"])                                         # Gegenprobe: zurueck
         self.assertTrue(bz["262236181415-2"]["bezahlt"])
